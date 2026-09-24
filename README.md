@@ -1,10 +1,9 @@
 # Мій простір / Tarasevych Hub
 
-- App ID: 
-- Live snapshot: 
-- Production host: 
-- Public URL: https://hub.tarasevych.com
-
+Ідентифікатор програми:
+Знімок у реальному часі:
+Ведучий виробництва:
+Публічна URL-адреса: https://hub.tarasevych.com
 
 імена хостів:
 
