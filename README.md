@@ -6,7 +6,7 @@
 - Public URL: https://hub.tarasevych.com
 
 
-hostnames:
+імена хостів:
 
 - hub.tarasevych.com
 - mail.tarasevych.com
