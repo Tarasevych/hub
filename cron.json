@@ -1,0 +1,1 @@
+[{"name":"mail-provider-maintenance","cron":"*/5 * * * *","handler":"mailMaintenanceCron","timezone":"Europe/Brussels","payload":{"batchLimit":3}},{"name":"google-suite-bplus-sync","cron":"*/5 * * * *","handler":"googleSuiteSyncCron","timezone":"Europe/Brussels","payload":{"accountLimit":10}}]
