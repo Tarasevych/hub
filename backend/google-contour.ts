@@ -10,6 +10,7 @@ export const GOOGLE_CLIENT_ID_ALIASES=['GOOGLE_SUITE_CLIENT_ID','GOOGLE_OAUTH_CL
 export const GRANT_KEY_ALIASES=['GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1','OWNER_VAULT_ENCRYPTION_KEY_V1'] as const;
 export const CONTOUR_TABLE='credential_contours_v1';
 const REVEAL_CONFIRM='REVEAL_SECRET';
+const CONTOUR_REVEAL_DISABLED=true;
 const KNOWN_PLATFORM_KEYS=[
   'GOOGLE_SUITE_CLIENT_ID',
   'GOOGLE_OAUTH_CLIENT_ID',
@@ -92,7 +93,6 @@ const decryptSecret=(record:Pick<ContourRecord,'ciphertext'|'iv'|'authTag'|'algo
   decipher.setAuthTag(Buffer.from(record.authTag,'base64url'));
   return Buffer.concat([decipher.update(Buffer.from(record.ciphertext,'base64url')),decipher.final()]).toString('utf8');
 };
-const deriveGrantKey=(clientSecret:string)=>createHash('sha256').update(`mij-prostir-grant-v1|${clientSecret}`).digest('hex');
 const mask=(value:string)=>{
   const n=String(value||'');
   if(!n)return '';
@@ -120,7 +120,9 @@ async function readNamed(names:string[],aliases:readonly string[]){
 async function wrapKey(names:string[],clientSecret=''){
   const dedicated=await readNamed(names,GRANT_KEY_ALIASES);
   if(dedicated)return dedicated.value;
-  if(clientSecret)return deriveGrantKey(clientSecret);
+  // SECURITY: no fallback that derives the grant-wrapping key from the OAuth client secret.
+  // A dedicated GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1 must be configured.
+  void clientSecret;
   return '';
 }
 async function latestContour(provider:ContourProvider){
@@ -395,6 +397,9 @@ export function createGoogleContourRoutes(deps:{
     'POST /api/owner/google-contour/reveal':[async(ctx)=>{
       const auth=await owner(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_CONTOUR_FORBIDDEN',403);
+      // SECURITY: never return platform secrets (OAuth client secret, grant-wrapping key) to a browser.
+      // Read them in the AppDeploy secrets console instead.
+      if(CONTOUR_REVEAL_DISABLED)return deps.fail('OWNER_CONTOUR_REVEAL_DISABLED',403);
       if(!revealHostAllowed(ctx.event))return deps.fail('OWNER_CONTOUR_REVEAL_HOST_FORBIDDEN',403);
       const body=deps.body(ctx.body);
       if(String(body.confirm||'')!==REVEAL_CONFIRM)return deps.fail('OWNER_CONTOUR_REVEAL_CONFIRM_REQUIRED',400);

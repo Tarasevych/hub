@@ -6,7 +6,9 @@ export const OWNER_VAULT_TABLE='owner_vault_v1';
 export const OWNER_VAULT_PURPOSES=['home-assistant','telegram','github','webhook','other'] as const;
 const MAX_ITEMS=40;
 const MAX_VALUE=8192;
-const KEY_CANDIDATES=['OWNER_VAULT_ENCRYPTION_KEY_V1','GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1','MAIL_TOKEN_ENCRYPTION_KEY_V1','GOOGLE_SUITE_CLIENT_SECRET','GOOGLE_OAUTH_CLIENT_SECRET'] as const;
+// SECURITY: dedicated vault key only. Previously fell back to other encryption keys and even to the
+// Google OAuth client secrets (key reuse; the client secret is also sent to Google on every token call).
+const KEY_CANDIDATES=['OWNER_VAULT_ENCRYPTION_KEY_V1'] as const;
 const REVEAL_CONFIRM='REVEAL_SECRET';
 
 export type OwnerVaultPurpose=typeof OWNER_VAULT_PURPOSES[number];
