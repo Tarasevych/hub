@@ -1,0 +1,1 @@
+export const normalizeMailAddress=(value:string)=>{const match=/<([^>]+)>/.exec(String(value||'')),candidate=(match?.[1]||String(value||'')).trim().toLowerCase();return/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(candidate)?candidate:''};

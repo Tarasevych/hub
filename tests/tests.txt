@@ -1,0 +1,160 @@
+# Tests
+
+## Test 1 - Minimal signed-out shell and account boundary [sanity]
+Viewport: desktop (1280x800)
+Covers: signed-out shell rendering, account menu boundary, no blank canvas before auth
+Description: A signed-out visitor sees a real shell (not a blank screen) and cannot reach authenticated-only areas.
+
+Steps:
+1. Open the app while signed out
+2. Confirm the boot shell or signed-out shell content is visible (not a blank page)
+3. Confirm identity, mail and admin areas are not reachable without signing in
+
+Expected: The signed-out visitor sees a real, non-blank shell and account-only areas stay out of reach.
+
+## Test 2 - Technical security and endpoint smoke reaches terminal pass
+Viewport: desktop (1280x800)
+Covers: owner technical diagnostics, endpoint coverage smoke, security summary terminal state
+Description: The owner technical test surface runs its endpoint smoke suite and reaches a terminal pass/fail state instead of hanging.
+
+Setup:
+1. If a button labelled "Створити тестову сесію" or "Testsessie maken" is visible, click it and wait until the signed-in shell appears
+
+Steps:
+1. Open the owner technical test view
+2. Trigger the security and endpoint smoke run
+3. Wait for the security summary and endpoint coverage results to render
+
+Expected: The security summary and endpoint coverage results reach a terminal state (pass or explicit fail), never an indefinite pending state.
+
+## Test 3 - Authorized Hub overview is never a blank workspace
+Viewport: desktop (1280x800)
+Covers: authorized hub landing, workspace heading, non-empty overview state
+Description: Once signed in, the Hub overview always renders a real heading and content, never an empty workspace.
+
+Setup:
+1. If signed out, click "Створити тестову сесію" or "Testsessie maken"
+
+Steps:
+1. Open the Hub overview tab
+2. Confirm the workspace heading is visible
+3. Confirm at least one section of real content is present
+
+Expected: The authorized Hub overview shows a visible heading and is never a blank workspace.
+
+## Test 4 - Technical Mail read surface stays capability-honest on mobile
+Viewport: mobile (375x667)
+Covers: mail read surface on mobile, capability-honest connected/empty states
+Description: On a mobile viewport, the Mail read surface only claims connection states it actually has.
+
+Setup:
+1. If signed out, create the technical test session
+
+Steps:
+1. Open Mail on a mobile viewport
+2. Confirm the account or connection status shown matches the real state, with no fabricated "connected" badge
+3. Confirm the read surface stays usable and legible at mobile width
+
+Expected: The Mail read surface on mobile shows only honest capability state and stays usable.
+
+## Test 5 - Smart Home remains a truthful responsive canonical service
+Viewport: mobile (375x667)
+Covers: Smart Home service view, responsive layout, honest not-connected state
+Description: The Smart Home service view renders responsively and never claims a connection it does not have.
+
+Steps:
+1. Open the Smart Home service tab at mobile width
+2. Confirm the layout stays usable and legible
+3. Confirm any "connected" claims match the real state, with no fabricated connections
+
+Expected: Smart Home renders responsively and truthfully, with no fabricated connection status.
+
+## Test 6 - Access Plane methods keep Google and password as real, distinct sign-in options
+Viewport: desktop (1280x800)
+Covers: access catalog and snapshot endpoints, methods tab rendering, honest provider placeholders
+Description: The identity Methods tab shows Google and password as real, independently configured sign-in methods, and never fakes third-party providers as connected.
+
+Setup:
+1. If signed out, create the technical test session
+
+Steps:
+1. Open Ідентичність → Способи входу (identity, methods tab)
+2. Confirm a card for Google and a card for password are both visible with a real status badge, not placeholder text
+3. Confirm Microsoft, Apple and Facebook show an honest "not yet connected" note instead of a working toggle
+
+Expected: Methods tab shows real Google/password status and honestly labels unconfigured providers, never a fake "connected" state.
+
+## Test 7 - Access Plane TOTP enrollment issues a one-time secret and recovery codes
+Viewport: desktop (1280x800)
+Covers: totp/start, totp/confirm, recovery code generation, one-time secret display
+Description: Starting TOTP enrollment shows a real one-time secret, and confirming a valid code issues recovery codes shown exactly once.
+
+Setup:
+1. If signed out, create the technical test session
+2. Open Ідентичність → Безпека (identity, security tab)
+
+Steps:
+1. Start authenticator enrollment
+2. Confirm a secret/otpauth value is shown before any code is entered
+3. Enter the current 6-digit code generated from that secret and confirm
+
+Expected: Enrollment shows a real secret before confirmation, and a successful confirm displays recovery codes that are not requested again on reload.
+
+## Test 8 - Access Plane blocks removing the last active login method
+Viewport: desktop (1280x800)
+Covers: lockout banner, method/unbind guard, LAST_LOGIN_METHOD_PROTECTED response
+Description: When only one sign-in method is usable, the UI shows the lockout banner and any removal action for that method is blocked or protected.
+
+Setup:
+1. If signed out, create the technical test session
+
+Steps:
+1. Open Ідентичність → Способи входу
+2. If the lockout banner is visible, confirm the removal control for the sole active method is disabled or returns a protected message instead of removing it
+
+Expected: The account is never left with zero usable sign-in methods; the UI makes the protection visible rather than silently blocking it.
+
+## Test 9 - Access Plane offers a real passkey enrollment path
+Viewport: mobile (375x667)
+Covers: webauthn/options endpoint, passkey enrollment control, browser-support honesty
+Description: The Security tab offers passkey enrollment through the real WebAuthn API where supported, and states plainly when the browser does not support it.
+
+Setup:
+1. If signed out, create the technical test session
+
+Steps:
+1. Open Ідентичність → Безпека on a mobile viewport
+2. Locate the passkey card and its "add passkey" control
+3. Confirm it either starts a real WebAuthn prompt or shows an honest unsupported message, never a fake "added" state
+
+Expected: Passkey enrollment is real where the browser supports it, and honestly declined otherwise, never simulated.
+
+## Test 10 - Access Plane recovery codes are shown once and honestly scoped
+Viewport: mobile (375x667)
+Covers: recovery/rotate endpoint, one-time code display, SMS/push honest not-configured state
+Description: The Recovery tab can generate backup codes shown once, and SMS/push remain honestly marked as not connected rather than fake options.
+
+Setup:
+1. If signed out, create the technical test session
+
+Steps:
+1. Open Ідентичність → Відновлення on a mobile viewport
+2. Generate recovery codes and confirm they are displayed with a one-time warning
+3. Confirm SMS and push rows show an honest "not connected" note, not a working toggle
+
+Expected: Recovery codes are generated and shown once with a clear one-time warning; SMS and push stay honestly unconfigured.
+
+## Test 11 - Account menu primary CTA contrast and Escape
+Viewport: desktop (1280x800)
+Covers: account menu primary action contrast, Escape closes menu and restores focus
+Description: The primary account-menu action stays readable, and Escape closes the menu and returns focus to the avatar trigger.
+
+Setup:
+1. If signed out, create the technical test session
+
+Steps:
+1. Open the account menu from the avatar trigger
+2. Confirm the primary action is readable against its background
+3. Press Escape and confirm the menu closes with focus on the avatar trigger
+
+Expected: Primary action remains readable; Escape closes the menu and restores focus to the avatar.
