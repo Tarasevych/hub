@@ -2,7 +2,9 @@ import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypt
 import {db,secrets} from '../server/platform';
 import {TECH_ORIGIN} from './deployment-identity';
 
-export const DEFAULT_GOOGLE_CLIENT_ID='488811159106-bnoiul4fhqr2hgqqfkuvq64aqs5va7rc.apps.googleusercontent.com';
+// Zelf gehost: géén hardcoded standaard-client-ID meer. Client-ID en -secret komen alleen uit env
+// (GOOGLE_OAUTH_CLIENT_ID/GOOGLE_SUITE_CLIENT_ID en GOOGLE_OAUTH_CLIENT_SECRET/GOOGLE_SUITE_CLIENT_SECRET).
+// Ontbreken ze, dan is Google-login/koppelen uitgeschakeld (connectEnabled=false), zonder crash.
 export const GOOGLE_REDIRECT_URI='https://id.tarasevych.com/';
 export const GOOGLE_CLIENT_REF='google_suite_web_oauth_client';
 export const GOOGLE_SECRET_ALIASES=['GOOGLE_OAUTH_CLIENT_SECRET','GOOGLE_SUITE_CLIENT_SECRET'] as const;
@@ -137,41 +139,29 @@ export async function resolveGoogleContour():Promise<GoogleContour>{
   const platformSecret=await readNamed(names,GOOGLE_SECRET_ALIASES);
   const platformClient=await readNamed(names,GOOGLE_CLIENT_ID_ALIASES);
   const wrap=await wrapKey(names,platformSecret?.value||'');
-  const stored=await latestContour('google');
-  let vaultSecret='';
-  if(stored&&wrap){try{vaultSecret=decryptSecret(stored,wrap,'google',stored.clientId);}catch{vaultSecret='';}}
-  const clientSecret=(vaultSecret||platformSecret?.value||'').trim();
-  const clientId=(stored?.clientId||platformClient?.value||DEFAULT_GOOGLE_CLIENT_ID).trim();
+  // Zelf gehost: een in de database opgeslagen "contour" (client-ID/secret) wordt genegeerd;
+  // alleen env telt. latestContour() blijft bestaan voor diagnose/opruimen.
+  void wrap;
+  const vaultSecret='';
+  const clientSecret=(platformSecret?.value||'').trim();
+  const clientId=(platformClient?.value||'').trim();
   const redirectUri=GOOGLE_REDIRECT_URI;
   const grantKey=await wrapKey(names,clientSecret);
   const credentialsConfigured=Boolean(clientSecret&&clientId);
   const encryptionConfigured=Boolean(grantKey);
   const redirectConfigured=redirectUri===GOOGLE_REDIRECT_URI;
   const missing:string[]=[];
-  if(!credentialsConfigured)missing.push('GOOGLE_OAUTH_CLIENT_SECRET');
+  if(!clientId)missing.push('GOOGLE_OAUTH_CLIENT_ID');
+  if(!clientSecret)missing.push('GOOGLE_OAUTH_CLIENT_SECRET');
   if(!encryptionConfigured)missing.push('GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1');
   const hasVaultOverride=Boolean(vaultSecret);
   const hasPlatformSecret=Boolean(platformSecret);
   const source=!credentialsConfigured?'missing':hasVaultOverride&&hasPlatformSecret?'mixed':hasVaultOverride?'vault':'platform';
-  return{clientId,clientSecret,redirectUri,grantKey,credentialsConfigured,encryptionConfigured,redirectConfigured,connectEnabled:credentialsConfigured&&encryptionConfigured&&redirectConfigured,source,missing,hasVaultOverride,hasPlatformSecret,lockProtected:hasPlatformSecret||hasVaultOverride,publicClientId:clientId,updatedAt:stored?.updatedAt||0};
+  return{clientId,clientSecret,redirectUri,grantKey,credentialsConfigured,encryptionConfigured,redirectConfigured,connectEnabled:credentialsConfigured&&encryptionConfigured&&redirectConfigured,source,missing,hasVaultOverride,hasPlatformSecret,lockProtected:hasPlatformSecret||hasVaultOverride,publicClientId:clientId,updatedAt:0};
 }
 
-const readPlatformSecret=secrets.readSecret.bind(secrets);
-let contourResolveDepth=0;
-try{
-  const mutable=secrets as {readSecret:(name:string)=>Promise<string>};
-  mutable.readSecret=async(name:string)=>{
-    if(contourResolveDepth===0&&(GOOGLE_SECRET_ALIASES as readonly string[]).includes(name)){
-      contourResolveDepth+=1;
-      try{
-        const contour=await resolveGoogleContour();
-        if(contour.clientSecret)return contour.clientSecret;
-      }catch{/* fall through to platform secret */}
-      finally{contourResolveDepth-=1;}
-    }
-    return readPlatformSecret(name);
-  };
-}catch{/* secrets may be frozen; vault override still stored, platform secret remains readable */}
+// Zelf gehost: de vroegere globale override van secrets.readSecret (secret uit de database)
+// is verwijderd. Secrets komen uitsluitend uit env via server/platform/secrets.ts.
 
 export function publicGoogleContour(contour:GoogleContour){
   return{
@@ -207,7 +197,7 @@ export async function googleContourKeyCards(){
       aliases:[...GOOGLE_CLIENT_ID_ALIASES],
       configured:Boolean(contour.clientId),
       working:Boolean(contour.clientId),
-      source:contour.publicClientId===DEFAULT_GOOGLE_CLIENT_ID&&!names.includes('GOOGLE_SUITE_CLIENT_ID')?'default':'platform',
+      source:contour.publicClientId?'platform':'missing',
       masked:mask(contour.publicClientId),
       revealable:true,
       editable:true,
@@ -335,13 +325,18 @@ export const googleContourPolicySelfTest=()=>[
   {id:'google-one-contour-secret-name',passed:GOOGLE_SECRET_ALIASES[0]==='GOOGLE_OAUTH_CLIENT_SECRET'},
   {id:'google-suite-secret-is-alias',passed:GOOGLE_SECRET_ALIASES.includes('GOOGLE_SUITE_CLIENT_SECRET')},
   {id:'google-redirect-is-identity-root',passed:GOOGLE_REDIRECT_URI==='https://id.tarasevych.com/'},
-  {id:'google-default-web-client-id',passed:DEFAULT_GOOGLE_CLIENT_ID.startsWith('488811159106-')},
+  {id:'google-client-id-env-only',passed:!/\d{6,}-[a-z0-9]+\.apps\.googleusercontent\.com/.test(String(resolveGoogleContour))},
   {id:'google-identity-and-suite-share-client-ref',passed:GOOGLE_CLIENT_REF==='google_suite_web_oauth_client'}
 ];
 
 export async function saveGoogleContour(input:{clientId?:string;clientSecret?:string;redirectUri?:string}){
+  // Zelf gehost: Google-client wordt alleen via env geconfigureerd, niet via de UI/database.
+  void input;
+  throw new Error('GOOGLE_CONTOUR_ENV_ONLY');
+}
+async function legacySaveGoogleContour(input:{clientId?:string;clientSecret?:string;redirectUri?:string}){
   const current=await resolveGoogleContour();
-  const clientId=String(input.clientId||current.clientId||DEFAULT_GOOGLE_CLIENT_ID).trim();
+  const clientId=String(input.clientId||current.clientId||'').trim();
   const redirectUri=GOOGLE_REDIRECT_URI;
   const nextSecret=String(input.clientSecret||'').trim()||current.clientSecret;
   if(!nextSecret)throw new Error('GOOGLE_CONTOUR_SECRET_REQUIRED');
@@ -445,3 +440,5 @@ export function createGoogleContourRoutes(deps:{
     }]
   };
 }
+void legacySaveGoogleContour;
+void decryptSecret;

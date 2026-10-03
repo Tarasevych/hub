@@ -1,7 +1,7 @@
 import { db, error, invites, isInviteError, json, router, secrets } from '../server/platform';
 import { createHash, createHmac, createPublicKey, randomBytes, verify } from 'node:crypto';
 import {API_COOKIE_PATH, COOKIE_DOMAIN as OWNER_COOKIE_DOMAIN, COOKIE_SCOPE as OWNER_COOKIE_SCOPE, ECOSYSTEM_COOKIE, REDIRECT_COOKIE, TECH_ORIGIN as OWNER_TECH_ORIGIN} from './deployment-identity';
-import {resolveGoogleContour, DEFAULT_GOOGLE_CLIENT_ID} from './google-contour';
+import {resolveGoogleContour} from './google-contour';
 import {MAIL_JOB_TYPES,MAIL_PROVIDER_SCOPES,decryptMailToken,encryptMailToken,mailGoogleAuthorizationUrl,mailGoogleOAuthMaterial,mailGoogleStateParts,mailGoogleStateValue,mailJobIdempotencyKey,mailPlatformPolicySelfTest,mailProviderReadiness,type MailJobRecord,type MailTokenEnvelope} from './mail-platform';
 import {gmailHistoryMessageIds,gmailMaxHistoryId,gmailParserPolicySelfTest,normalizeGmailMessage,type GmailMessage} from './mail-gmail';import type{MailClassificationSignals}from'../shared/mail-smart-inbox';
 import {buildGmailRawMessage,mailCommandPolicySelfTest,mailSendPayloadHash,normalizeMailRecipients,normalizeMailSendInput,type MailSendInput} from './mail-commands';
@@ -26,7 +26,7 @@ import {writePmidMapForAccount} from './mail-search-durable';
 import {runMailPmidBootstrapPage} from './mail-pmid-bootstrap';
 import {createMailHandwritingRoutes} from './mail-handwriting';import {apiPlatformOwnerContract} from './api-platform-tokens';import {createApiPlatformRoutes} from './api-platform-tokens';import {createApiPlatformVaultRoutes} from './api-platform-vault';import {createApiPlatformConnectionRoutes} from './api-platform-connections';import {can,canManageRole,canonicalWorkspaceRole,denyMutation,grantFromDecision,permissionsFor,rbacLab,rejectForeignOwnerUserId,shareRoleFromInput,wrapFactoryMutations} from './rbac';
 
-let CLIENT_ID = DEFAULT_GOOGLE_CLIENT_ID;const refreshClientId = async () => { try { const contour = await resolveGoogleContour(); if (contour.clientId) CLIENT_ID = contour.clientId; } catch {} };refreshClientId();setInterval(refreshClientId, 5 * 60 * 1000);
+let CLIENT_ID = ''; /* zelf gehost: alleen uit env (resolveGoogleContour) */const refreshClientId = async () => { try { const contour = await resolveGoogleContour(); if (contour.clientId) CLIENT_ID = contour.clientId; } catch {} };refreshClientId();setInterval(refreshClientId, 5 * 60 * 1000);
 const OWNER = 'tarasevych.pavlo@gmail.com';
 const APP_ORIGIN = 'https://hub.tarasevych.com';
 const REDIRECT_URI = `${APP_ORIGIN}/api/auth/google`;
