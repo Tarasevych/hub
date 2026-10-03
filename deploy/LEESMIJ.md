@@ -3,7 +3,9 @@
 Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/Ubuntu, als root):
 
 1. **Pakketten**: Node 24 (`/usr/bin/node`, bijv. via NodeSource), `npm`, `git`, `rsync`, `curl`,
-   PostgreSQL 17 (server + `postgresql-client-17` voor `pg_dump`), `cloudflared`.
+   PostgreSQL 17 (server + `postgresql-client-17` voor `pg_dump`), `age` (versleutelde back-ups), `cloudflared`.
+   Zet de publieke age-sleutel in `/etc/mijn-ruimte/backup-ontvanger.age.pub` (root, 0644); zonder die sleutel
+   weigert de back-up (en dus ook `installeren`, dat vooraf een back-up maakt). Zie `HERSTEL.md`.
 2. **Inrichten**: `deploy/installeer-app.sh inrichten /pad/naar/checkout`
    - systeemgebruiker `mijnruimte` (geen shell), groep `mijnruimte-backup` (voor de host die back-ups ophaalt);
    - mappen `/srv/mijn-ruimte/{releases,dashboard}`, `/srv/data/uploads`, `/srv/backups/mijn-ruimte`, `/etc/mijn-ruimte`;
@@ -33,7 +35,9 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
 | `mijn-ruimte-google-sync.timer` | `google-suite-bplus-sync`, elke 5 min (verschoven met 2 min). |
 | `mijn-ruimte-opruimen.timer` | `opruimen` (verlopen OAuth-states, PKCE, transacties, handoffs, sessies, limietrijen), elk uur. |
 | `mijn-ruimte-backup.service` / `.timer` | Dagelijks 03:30 `backup-maken.sh`. |
-| `backup-maken.sh` | `pg_dump` (custom-formaat) + `uploads.tar.gz` + `SHA256SUMS` + `KLAAR` in `/srv/backups/mijn-ruimte/<datum>/`; bewaart 7 dagen op de VM. |
+| `backup-maken.sh` | `pg_dump` (custom-formaat) en uploads-tar, rechtstreeks door `age -R` (alleen de publieke sleutel staat op de VM) → `database.dump.age`, `uploads.tar.gz.age` + `info.txt`, `SHA256SUMS`, `KLAAR` in `/srv/backups/mijn-ruimte/<datum>/`; bewaart 7 dagen op de VM. |
+| `reservekopie-ophalen.ps1` | Windows-host: haalt de nieuwste versleutelde back-up via SSH op naar `R:\mijn-ruimte-reservekopie\vm-back-ups\` (weigert onversleutelde). |
+| `HERSTEL.md` | Noodplan: terugzetten vanaf GitHub + versleutelde back-up + age-herstelsleutel. |
 | `cloudflared.service` | Gehardende unit voor de tunnel (`tunnel run` met `/etc/cloudflared/config.yml`). |
 | `cloudflared-config.yml` | Sjabloon: hub, id, mail, cloud, ai, github, huis, api, admin, dashboard → `http://127.0.0.1:8080`; rest 404. |
 | `installeer-app.sh` | `inrichten`, `installeren`, `terugdraaien [release]`, `lijst`, `dashboard <map>`. Start na een geslaagde installatie ook de timers. |
@@ -52,6 +56,8 @@ Dit zijn geen app-geheimen (die staan in `ENV-VARS.md`), alleen instellingen van
 | `BOUW_GEHEUGEN_MAX` / `BOUW_SWAP_MAX` / `BOUW_HEAP_MB` | `installeer-app.sh` | `1400M` / `2G` / `2048` | Geheugenplafond (cgroup) en Node-heap voor de build. De vite-build heeft ~1,5 GB heap nodig; op een VM met 2 GB RAM wijkt hij uit naar swap. Een tekort stopt alleen de build. |
 | `BACKUP_DIR` | `backup-maken.sh` | `/srv/backups/mijn-ruimte` | Doelmap van de back-ups op de VM. |
 | `BACKUP_BEWAAR_DAGEN` | `backup-maken.sh` | `7` | Hoeveel dagen back-ups op de VM blijven staan. |
+| `BACKUP_ONTVANGER` | `backup-maken.sh` | `/etc/mijn-ruimte/backup-ontvanger.age.pub` | Publieke age-sleutel waarnaar versleuteld wordt. |
+| `BACKUP_ONVERSLEUTELD` | `backup-maken.sh` | uit | `1` = zonder versleuteling (alleen voor tests). |
 
 ## Tunnel (Cloudflare) — ingericht op 3 okt 2026
 Tunnel `mijn-ruimte`, ID `a176c08b-29e7-47b0-95d9-9ec9383572f2` (het ID is niet geheim). Alle tien hostnamen zijn
@@ -59,7 +65,8 @@ CNAME's naar `<ID>.cfargotunnel.com` (aangemaakt met `cloudflared tunnel route d
 
 Op de VM:
 - `/etc/cloudflared/config.yml` (root, 0644): ingress zoals `deploy/cloudflared-config.yml`, ingevuld met het ID.
-- `/etc/cloudflared/<ID>.json` (root:root, 0600): tunnel-credentials. **Geheim**; zit niet in de app-back-up.
+- `/etc/cloudflared/<ID>.json` (root:root, 0600): tunnel-credentials. **Geheim**; zit niet in de app-back-up, wel
+  (samen met `geheimen.env`) in het age-archief `R:\mijn-ruimte-reservekopie\geheimen\` (zie `HERSTEL.md`).
 - `cloudflared.service` uit `deploy/cloudflared.service` (i.p.v. `cloudflared service install`): draait als root maar
   zonder capabilities, ProtectSystem=strict, enz. (`systemd-analyze security`: 1,8 OK). Alleen uitgaand (QUIC/7844);
   ufw ongewijzigd. Lokaal luistert cloudflared alleen op `127.0.0.1:20241` (metrics).
@@ -87,20 +94,26 @@ Migraties zijn alleen vooruit: het schema blijft op de nieuwste stand. Houd migr
 uitbreidend (kolommen/tabellen toevoegen, niets hernoemen of verwijderen in dezelfde release).
 
 ## Back-ups ophalen (pull vanaf de host)
-De VM duwt niets weg. Een host-gebruiker (bijv. `backup`, lid van `mijnruimte-backup` op de VM, alleen
-SSH-sleutel, liefst met `command=`-beperking tot rsync) haalt op:
+De VM duwt niets weg. De Windows-host haalt op met `deploy/reservekopie-ophalen.ps1` (SSH als `beheer`, lid van
+`mijnruimte-backup`): nieuwste map met `KLAAR`, alleen `.age`-bestanden, SHA256SUMS gecontroleerd, naar
+`R:\mijn-ruimte-reservekopie\vm-back-ups\<stempel>\`. Een Linux-host kan hetzelfde met rsync:
 ```bash
 rsync -a vm:/srv/backups/mijn-ruimte/ /pad/op/host/mijn-ruimte/
 for d in /pad/op/host/mijn-ruimte/2*/; do [ -f "$d/KLAAR" ] && (cd "$d" && sha256sum -c --quiet SHA256SUMS); done
 ```
-Bewaar `geheimen.env` (vooral alle `*_KEY_V1` en `RECOVERY_CODE_PEPPER`) **apart** en offline:
-zonder die sleutels zijn TOTP-geheimen, tokens en kluisitems in de dump onbruikbaar.
+De back-ups zijn versleuteld naar de publieke age-sleutel; ontsleutelen kan alleen met de offline
+herstelsleutel. `geheimen.env` (vooral alle `*_KEY_V1` en `RECOVERY_CODE_PEPPER`) zit er niet in maar staat
+in een apart age-archief: zonder die sleutels zijn TOTP-geheimen, tokens en kluisitems in de dump onbruikbaar.
 
 ## Back-up terugzetten
+Volledig stappenplan (ontsleutelen op de pc, klare tekst via SSH de VM in): `HERSTEL.md`. Kort, op een machine
+met de herstelsleutel:
 ```bash
+age -d -i herstelsleutel-age.txt -o database.dump database.dump.age
+age -d -i herstelsleutel-age.txt uploads.tar.gz.age | tar -xzf - -C /srv/data
 systemctl stop mijn-ruimte 'mijn-ruimte-*.timer'
 sudo -u postgres dropdb mijnruimte && sudo -u postgres createdb -O mijnruimte mijnruimte
-sudo -u postgres pg_restore --no-owner --role=mijnruimte -d mijnruimte /pad/database.dump
-tar -xzf /pad/uploads.tar.gz -C /srv/data && chown -R mijnruimte:mijnruimte /srv/data/uploads
+sudo -u postgres pg_restore --no-owner --role=mijnruimte -d mijnruimte database.dump && shred -u database.dump
+chown -R mijnruimte:mijnruimte /srv/data/uploads
 systemctl start mijn-ruimte 'mijn-ruimte-*.timer'
 ```

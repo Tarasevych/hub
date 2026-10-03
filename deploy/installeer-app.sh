@@ -109,6 +109,12 @@ inrichten() {
   fi
   systemctl enable "$DIENST" "${TIMERS[@]}" >/dev/null
   melding "dienst en timers ingeschakeld (starten na de eerste installatie)"
+  if ! command -v age >/dev/null 2>&1; then
+    waarschuwing "age ontbreekt (apt install age): de back-up (ook die vóór elke installatie) weigert zonder."
+  fi
+  if ! grep -Eqs '^age1[0-9a-z]{58}$' /etc/mijn-ruimte/backup-ontvanger.age.pub; then
+    waarschuwing "/etc/mijn-ruimte/backup-ontvanger.age.pub ontbreekt: zet daar de PUBLIEKE age-sleutel (0644). Zie HERSTEL.md."
+  fi
   if [ ! -s "$GEHEIMEN" ]; then
     waarschuwing "$GEHEIMEN ontbreekt nog. Maak hem aan volgens ENV-VARS.md (0600 root:root volstaat: systemd leest hem als root)."
   fi
