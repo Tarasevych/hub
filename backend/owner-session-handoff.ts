@@ -1,6 +1,6 @@
 import {createHash,randomBytes} from 'node:crypto';
 import {db} from '../server/platform';
-import {API_COOKIE_PATH, ECOSYSTEM_COOKIE} from './deployment-identity';
+import {COOKIE_SCOPE, ECOSYSTEM_COOKIE} from './deployment-identity';
 
 const HANDOFF_MS=120000;
 const OWNER_SESSION_TABLE='owner_service_sessions_v1';
@@ -17,7 +17,7 @@ const headers=(event:Record<string,unknown>)=>{const raw=((event.headers||{})as 
 const hostOf=(event:Record<string,unknown>)=>String(headers(event)['x-forwarded-host']||headers(event).host||'').split(':')[0].toLowerCase();
 const asService=(value:unknown):ServiceId|null=>{const candidate=String(value||'') as ServiceId;return candidate in SERVICE_ORIGINS?candidate:null};
 const serviceOfHost=(event:Record<string,unknown>)=>asService((Object.entries(SERVICE_ORIGINS).find(([,origin])=>new URL(origin).hostname===hostOf(event))||[])[0]||'');
-const cookie=(token:string,maxAge:number,sessionId:string)=>`${ECOSYSTEM_COOKIE}=${encodeURIComponent(`${sessionId}.${token}`)}; Path=${API_COOKIE_PATH}; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=None; Partitioned`;
+const cookie=(token:string,maxAge:number,sessionId:string)=>`${ECOSYSTEM_COOKIE}=${encodeURIComponent(`${sessionId}.${token}`)}; ${COOKIE_SCOPE}; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
 
 export function createOwnerHandoffRoutes(deps:{
   requireSession:(event:Record<string,unknown>,body:unknown)=>Promise<SessionAuth>;
