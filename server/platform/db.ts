@@ -20,8 +20,20 @@ import { controleerRijen, type GeraakteRij } from './rls-audit';
  * DATABASE_URL_APP: als rol mijnruimte_app in een korte transactie met SET LOCAL app.user_id/app.service,
  * zodat de RLS-policy's gelden. Anders: systeempool (zoals vroeger).
  */
-async function q(sql: string, params: unknown[]): Promise<{ rows: any[]; rowCount: number | null }> {
-  const gebruiker = gebruikerVanContext();
+/**
+ * Sessie-infrastructuur: altijd via de systeemrol. Deze tabellen worden door de sessiecontrole zelf gelezen
+ * (vóór er een gebruiker bekend is) en bijgewerkt voor sessies van een ander account in dezelfde browser
+ * (rootsessie bij een tab-overlay). Routes raken ze niet rechtstreeks.
+ */
+export const SYSTEEM_TABELLEN: ReadonlySet<string> = new Set([
+  'owner_service_sessions_v1',
+  'owner_tab_sessions_v1',
+  'owner_auth_transactions_v1',
+  'owner_revocation_state_v1',
+]);
+
+async function q(table: string, sql: string, params: unknown[]): Promise<{ rows: any[]; rowCount: number | null }> {
+  const gebruiker = SYSTEEM_TABELLEN.has(table) ? null : gebruikerVanContext();
   if (!gebruiker || !appRolActief()) return getPool('systeem').query(sql, params);
   const client = await getPool('app').connect();
   try {
@@ -40,7 +52,7 @@ async function q(sql: string, params: unknown[]): Promise<{ rows: any[]; rowCoun
 const geraakt = (rows: any[]): GeraakteRij[] => rows.map((r) => ({ owner_id: r.owner_id ?? null, ws: r.ws ?? (r.data && typeof r.data === 'object' ? (r.data as Record<string, unknown>).workspaceId as string : null) ?? null }));
 /** Audit-modus: tellen wat RLS zou weigeren (zie rls-audit.ts); faalt nooit de query zelf. */
 const audit = (tbl: string, actie: 'lezen' | 'toevoegen' | 'wijzigen' | 'verwijderen', rows: any[]) => {
-  if (!gebruikerVanContext() || !rows.length) return;
+  if (!gebruikerVanContext() || !rows.length || SYSTEEM_TABELLEN.has(tbl)) return;
   void controleerRijen(tbl, actie, geraakt(rows)).catch(() => undefined);
 };
 
@@ -93,7 +105,7 @@ export const db = {
     const valid = rows.filter((r) => r.ok);
     if (valid.length) {
       try {
-        const result = await q(
+        const result = await q(table, 
           `INSERT INTO app.records (tbl, id, data)
            SELECT $1, x.id, x.data FROM jsonb_to_recordset($2::jsonb) AS x(id text, data jsonb)
            RETURNING owner_id, data->>'workspaceId' AS ws`,
@@ -105,7 +117,7 @@ export const db = {
         console.error('[db.add] batch mislukt, per record opnieuw:', (err as Error).message);
         for (const row of valid) {
           try {
-            const result = await q("INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3::jsonb) RETURNING owner_id, data->>'workspaceId' AS ws", [table, row.id, row.data]);
+            const result = await q(table, "INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3::jsonb) RETURNING owner_id, data->>'workspaceId' AS ws", [table, row.id, row.data]);
             audit(table, 'toevoegen', result.rows);
           } catch {
             row.ok = false;
@@ -124,7 +136,7 @@ export const db = {
     const wanted = ids.filter(validId);
     const found = new Map<string, T>();
     if (wanted.length) {
-      const result = await q('SELECT id, data, owner_id FROM app.records WHERE tbl = $1 AND id = ANY($2::text[])', [table, wanted]);
+      const result = await q(table, 'SELECT id, data, owner_id FROM app.records WHERE tbl = $1 AND id = ANY($2::text[])', [table, wanted]);
       audit(table, 'lezen', result.rows);
       for (const row of result.rows) found.set(row.id, row.data as T);
     }
@@ -146,7 +158,7 @@ export const db = {
       params.push(filter);
       where += ' AND data @> $4::jsonb';
     }
-    const result = await q(`SELECT id, seq, data, owner_id FROM app.records WHERE ${where} ORDER BY seq LIMIT $3`, params);
+    const result = await q(table, `SELECT id, seq, data, owner_id FROM app.records WHERE ${where} ORDER BY seq LIMIT $3`, params);
     const rows = result.rows.slice(0, limit);
     audit(table, 'lezen', rows);
     const items = rows.map((row) => ({ ...(row.data as object), id: row.id as string })) as Array<Omit<T, 'id'> & { id: string }>;
@@ -167,12 +179,20 @@ export const db = {
     const valid = prepared.filter((p) => p.ok);
     const updated = new Set<string>();
     if (valid.length) {
-      const result = await q(
-        `UPDATE app.records r SET data = u.data, updated_at = now()
-         FROM jsonb_to_recordset($2::jsonb) AS u(id text, data jsonb)
-         WHERE r.tbl = $1 AND r.id = u.id RETURNING r.id, r.owner_id, r.data->>'workspaceId' AS ws`,
-        [table, JSON.stringify(valid.map((p) => ({ id: p.id, data: JSON.parse(p.data) })))],
-      );
+      let result: { rows: any[] };
+      try {
+        result = await q(table,
+          `UPDATE app.records r SET data = u.data, updated_at = now()
+           FROM jsonb_to_recordset($2::jsonb) AS u(id text, data jsonb)
+           WHERE r.tbl = $1 AND r.id = u.id RETURNING r.id, r.owner_id, r.data->>'workspaceId' AS ws`,
+          [table, JSON.stringify(valid.map((p) => ({ id: p.id, data: JSON.parse(p.data) })))],
+        );
+      } catch (err) {
+        // RLS (afdwingen): nieuwe inhoud hoort bij een ander account (WITH CHECK) → niets bijgewerkt.
+        if ((err as { code?: string }).code !== '42501') throw err;
+        console.warn(`[db.update] door RLS geweigerd: ${table}`);
+        result = { rows: [] };
+      }
       audit(table, 'wijzigen', result.rows);
       for (const row of result.rows) updated.add(row.id);
     }
@@ -187,7 +207,7 @@ export const db = {
     const wanted = ids.filter(validId);
     const deleted = new Set<string>();
     if (wanted.length) {
-      const result = await q("DELETE FROM app.records WHERE tbl = $1 AND id = ANY($2::text[]) RETURNING id, owner_id, data->>'workspaceId' AS ws", [table, wanted]);
+      const result = await q(table, "DELETE FROM app.records WHERE tbl = $1 AND id = ANY($2::text[]) RETURNING id, owner_id, data->>'workspaceId' AS ws", [table, wanted]);
       audit(table, 'verwijderen', result.rows);
       for (const row of result.rows) deleted.add(row.id);
     }
@@ -200,7 +220,7 @@ export const db = {
    */
   async takeOne<T = Record<string, any>>(table: string, filter: Record<string, unknown>): Promise<(T & { id: string }) | null> {
     checkTable(table);
-    const result = await q(
+    const result = await q(table, 
       `DELETE FROM app.records WHERE (tbl, id) = (
          SELECT tbl, id FROM app.records WHERE tbl = $1 AND data @> $2::jsonb ORDER BY seq LIMIT 1 FOR UPDATE SKIP LOCKED
        ) RETURNING id, data, owner_id`,
@@ -222,7 +242,7 @@ export const db = {
     checkTable(table);
     const veld = /^[A-Za-z_][A-Za-z0-9_]{0,60}$/;
     if (!validId(id) || !veld.test(field) || (countField !== undefined && !veld.test(countField)) || typeof value !== 'string' || !value) return false;
-    const result = await q(
+    const result = await q(table, 
       `UPDATE app.records SET updated_at = now(), data = (
          SELECT CASE WHEN $5::text IS NULL THEN d ELSE jsonb_set(d, ARRAY[$5::text], to_jsonb(jsonb_array_length(d -> $3::text))) END
          FROM (SELECT jsonb_set(data, ARRAY[$3::text], COALESCE(
