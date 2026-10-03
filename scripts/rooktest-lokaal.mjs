@@ -286,6 +286,30 @@ try {
     await pool.query("delete from app.invites where context->>'workspaceId' = any($1)", [[wsLid, wsEig]]);
   }
 
+  // B4d. Fase 3: privacy — analytics standaard uit, anonieme tellers alleen met toestemming, export met step-up zonder geheimen.
+  {
+    const naamG = `rooktest.${randomBytes(4).toString('hex')}`;
+    const telRij = async () => (await pool.query("select data from app.records where tbl='analytics_tellers_v1' and data->>'naam'=$1", [naamG])).rows;
+    let t = await api('id.tarasevych.com', '/api/owner/privacy/status', idBody(), c1);
+    const g1 = await api('id.tarasevych.com', '/api/owner/privacy/gebeurtenis', { ...idBody(), naam: naamG }, c1);
+    const voor = await telRij();
+    check('analytics: standaard geen toestemming, gebeurtenis zonder toestemming niet geteld', t.status === 200 && t.data?.analyticsConsent === false && g1.status === 200 && g1.data?.geteld === false && voor.length === 0, `${t.status} ${JSON.stringify(t.data?.analyticsConsent)} ${g1.status}`);
+    await api('id.tarasevych.com', '/api/owner/privacy/toestemming', { ...idBody(), analyticsConsent: true }, c1);
+    await api('id.tarasevych.com', '/api/owner/privacy/gebeurtenis', { ...idBody(), naam: naamG }, c1);
+    await api('id.tarasevych.com', '/api/owner/privacy/gebeurtenis', { ...idBody(), naam: naamG }, c1);
+    const na = await telRij();
+    check('analytics: met toestemming anonieme dagteller (geen userId), daarna weer uit', na.length === 1 && Number(na[0].data.aantal) === 2 && !JSON.stringify(na[0].data).includes(eigenaar), JSON.stringify(na[0]?.data || {}));
+    await api('id.tarasevych.com', '/api/owner/privacy/toestemming', { ...idBody(), analyticsConsent: false }, c1);
+    await pool.query("delete from app.records where tbl='analytics_tellers_v1' and data->>'naam'=$1", [naamG]);
+    t = await api('id.tarasevych.com', '/api/owner/privacy/export', idBody(), c1);
+    const del = await api('id.tarasevych.com', '/api/owner/identity/account/delete', { ...idBody(), confirmEmail: 'rooktest-eigenaar@example.test' }, c1);
+    await pool.query("insert into app.records (tbl,id,data) values ('owner_step_up_v1', gen_random_uuid()::text, $1)", [{ userId: eigenaar, googleAt: Date.now(), sessies: {}, updatedAt: Date.now() }]);
+    const ex = await api('id.tarasevych.com', '/api/owner/privacy/export', idBody(), c1);
+    const tekst = JSON.stringify(ex.data || {});
+    check('GDPR-export: zonder step-up 403 (ook account verwijderen), met step-up 200 met eigen gegevens, zonder tokenHash/secret', t.status === 403 && t.data?.error === 'STEP_UP_REQUIRED' && del.status === 403 && del.data?.error === 'STEP_UP_REQUIRED' && ex.status === 200 && ex.data?.formaat === 'mijn-ruimte-export-v1' && Array.isArray(ex.data?.gegevens?.users) && tekst.includes('rooktest-eigenaar@example.test') && !/tokenHash|"secret|passwordHash/i.test(tekst), `${t.status} ${del.status} ${ex.status}`);
+    await pool.query("delete from app.records where tbl='owner_step_up_v1' and data->>'userId'=$1", [eigenaar]);
+  }
+
   // B5. Eigenaar uit OWNER_EMAIL: eigenaar mag admin, lid niet.
   r = await api('admin.tarasevych.com', '/api/owner/admin/bootstrap', { service: 'admin', tabContext: tab() }, c1);
   const rLid = await api('admin.tarasevych.com', '/api/owner/admin/bootstrap', { service: 'admin', tabContext: tab() }, `${naam}=${encodeURIComponent(await zaaiSessie(lid))}`);

@@ -4,6 +4,7 @@
 // browsergrants die verlopen zijn, plus oude rate-limit- en lockout-rijen.
 // Een respijt (GRACE_MS) houdt pas verlopen rijen nog even vast voor diagnose/audit.
 import {getPool} from '../server/platform/pg';
+import {verlopenVerwijderingenAfronden} from './privacy';
 
 const GRACE_MS=24*60*60*1000;
 // tabel -> velden (epoch-ms) waarvan er één verlopen moet zijn
@@ -45,5 +46,8 @@ export async function opruimen(now=Date.now()){
 export async function opruimCron(){
   const verwijderd=await opruimen();
   console.log('[opruimen] verwijderd:',JSON.stringify(verwijderd));
-  return{statusCode:200,body:JSON.stringify({ok:true,verwijderd})};
+  // Fase 3: accounts na 30 dagen herstelperiode definitief wissen (alleen met ACCOUNT_DEFINITIEF_WISSEN=1).
+  let accounts:Awaited<ReturnType<typeof verlopenVerwijderingenAfronden>>|{fout:string};
+  try{accounts=await verlopenVerwijderingenAfronden();if(accounts.accounts.length)console.log(`[opruimen] verlopen accountverwijderingen (${accounts.uitgevoerd?'gewist':'droog, ACCOUNT_DEFINITIEF_WISSEN≠1'}):`,JSON.stringify(accounts.accounts))}catch(e){accounts={fout:String((e as Error)?.message||e)};console.error('[opruimen] accounts afronden mislukt:',accounts.fout)}
+  return{statusCode:200,body:JSON.stringify({ok:true,verwijderd,accounts})};
 }
