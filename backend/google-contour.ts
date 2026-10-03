@@ -329,7 +329,7 @@ export const googleContourPolicySelfTest=()=>[
   {id:'google-identity-and-suite-share-client-ref',passed:GOOGLE_CLIENT_REF==='google_suite_web_oauth_client'}
 ];
 
-export async function saveGoogleContour(input:{clientId?:string;clientSecret?:string;redirectUri?:string}){
+export async function saveGoogleContour(input:{clientId?:string;clientSecret?:string;redirectUri?:string}):Promise<GoogleContour>{
   // Zelf gehost: Google-client wordt alleen via env geconfigureerd, niet via de UI/database.
   void input;
   throw new Error('GOOGLE_CONTOUR_ENV_ONLY');

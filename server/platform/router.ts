@@ -6,7 +6,8 @@ export interface RouterResponse {
   headers: Record<string, string>;
   body: string;
 }
-export interface LambdaEvent {
+// Type-alias i.p.v. interface: de backend geeft events door als Record<string, unknown>.
+export type LambdaEvent = {
   headers: Record<string, string>;
   body: string;
   isBase64Encoded: false;
@@ -14,7 +15,7 @@ export interface LambdaEvent {
   rawQueryString: string;
   queryStringParameters: Record<string, string>;
   requestContext: { http: { method: string; path: string; sourceIp: string; userAgent: string } };
-}
+};
 export interface RouterContext {
   body: unknown;
   query: Record<string, string>;
