@@ -10,6 +10,9 @@
     R:\mijn-ruimte-reservekopie\vm-back-ups\<stempel>\ (KLAAR als laatste).
   - Al aanwezig en in orde? Dan wordt niets gedaan.
   - Schrijft een regel per run naar <Doel>\ophalen.log.
+  - Daarna (ook als ophalen mislukt) scripts\cloud\cloud-reservekopie.ps1: de versleutelde back-ups
+    naar Google Drive. Niet gekoppeld (cloud-koppelen.ps1 nog niet gedaan) = alleen een logregel.
+    Overslaan met -ZonderCloud.
   Ontsleutelen gebeurt hier NIET; daarvoor is de offline herstelsleutel nodig (zie HERSTEL.md).
 
 .EXAMPLE
@@ -21,7 +24,8 @@ param(
   [string]$Sleutel = 'T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver',
   [string]$BronMap = '/srv/backups/mijn-ruimte',
   [string]$Doel = 'R:\mijn-ruimte-reservekopie\vm-back-ups',
-  [string]$Tussenmap = (Join-Path $env:USERPROFILE 'mr-ophalen')
+  [string]$Tussenmap = (Join-Path $env:USERPROFILE 'mr-ophalen'),
+  [switch]$ZonderCloud
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2
@@ -61,7 +65,7 @@ function Controleer-Map([string]$map) {
   if (-not (Test-Path -LiteralPath (Join-Path $map 'KLAAR'))) { throw 'KLAAR ontbreekt' }
 }
 
-try {
+function Haal-Op {
   if (-not (Test-Path -LiteralPath $Doel)) { New-Item -ItemType Directory -Path $Doel | Out-Null }
 
   # 1. Nieuwste volledige back-up op de VM.
@@ -85,7 +89,7 @@ try {
   if (Test-Path -LiteralPath (Join-Path $eind 'KLAAR')) {
     Controleer-Map $eind
     Schrijf-Log "OK $stempel was al aanwezig en klopt; niets te doen"
-    exit 0
+    return
   }
 
   # 4. Ophalen naar de tussenmap (C:\Users\t), controleren, verplaatsen.
@@ -105,8 +109,19 @@ try {
 
   $grootte = [math]::Round(((Get-ChildItem -LiteralPath $eind | Measure-Object Length -Sum).Sum / 1KB), 1)
   Schrijf-Log "OK $stempel opgehaald naar $eind ($grootte KB, SHA256SUMS gecontroleerd)"
-  exit 0
-} catch {
-  Schrijf-Log "FOUT $($_.Exception.Message)"
-  exit 1
 }
+
+$code = 0
+try { Haal-Op } catch { Schrijf-Log "FOUT $($_.Exception.Message)"; $code = 1 }
+
+# Daarna: versleutelde back-ups naar Google Drive (eigen log: R:\mijn-ruimte-reservekopie\cloud\cloud.log).
+$cloud = Join-Path $PSScriptRoot 'cloud\cloud-reservekopie.ps1'
+if (-not $ZonderCloud -and (Test-Path -LiteralPath $cloud)) {
+  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $cloud | Out-Null
+  switch ($LASTEXITCODE) {
+    0 { Schrijf-Log 'OK cloud: Google Drive bijgewerkt (zie ..\cloud\cloud.log)' }
+    3 { Schrijf-Log 'cloud: nog niet gekoppeld (scripts\cloud\cloud-koppelen.ps1)' }
+    default { Schrijf-Log "FOUT cloud-upload (code $LASTEXITCODE), zie ..\cloud\cloud.log"; $code = 1 }
+  }
+}
+exit $code

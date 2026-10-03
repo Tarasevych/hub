@@ -3,6 +3,10 @@
 > Hele pc kwijt? Gebruik de **offline herstelset** (`R:\mijn-ruimte-reservekopie\herstelset\`, kopie op een
 > externe schijf): stap-voor-stapplan `00-BEGIN-HIER-UA.txt/.pdf` en `00-BEGIN-HIER-NL.txt`, met
 > `scripts\herstel-vm.sh` en `scripts\ontsleutel-naar-vm.ps1`. Dit bestand is de korte versie.
+>
+> Externe schijf ook kwijt? Elke dag staan dezelfde **versleutelde** back-ups en de hele herstelset
+> (`herstelset-<datum>.zip.age`) op Google Drive in `mijn-ruimte-reservekopie/` (zie `deploy/cloud/UITLEG-LEESMIJ.txt`
+> en hoofdstuk 4 van `00-BEGIN-HIER-NL.txt`). Alleen `.age` + SHA256 staan daar; de herstelsleutel nooit.
 
 Je hebt vier dingen nodig. Zonder de **herstelsleutel** zijn 3 en 4 onbruikbaar.
 

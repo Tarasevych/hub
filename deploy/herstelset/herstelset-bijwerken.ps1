@@ -113,7 +113,7 @@ if ($Doel) {
 # 0. Eventueel eerst de nieuwste back-up ophalen.
 if ($HaalEerstOp) {
   Melding 'nieuwste back-up ophalen van de VM...'
-  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Project 'scripts\reservekopie-ophalen.ps1')
+  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Project 'scripts\reservekopie-ophalen.ps1') -ZonderCloud
   if ($LASTEXITCODE -ne 0) { Write-Warning 'ophalen mislukt; de set wordt gemaakt met de nieuwste back-up die al op R:\ staat' }
 }
 
@@ -147,6 +147,8 @@ else { Kopieer-Map $dp.FullName "$sc\deploy-bestanden" }
 [void](Controleer-Sommen "$sc\deploy-bestanden")
 Copy-Item -LiteralPath (Join-Path $Project 'HERSTEL.md'), (Join-Path $Project 'scripts\reservekopie-ophalen.ps1'), (Join-Path $Project 'scripts\herstelset-bijwerken.ps1'), (Join-Path $Bron 'nieuwe-vm-maken.ps1'), (Join-Path $Bron 'herstel-vm.sh'), (Join-Path $Bron 'ontsleutel-naar-vm.ps1') -Destination $sc
 Get-ChildItem -LiteralPath (Join-Path $Project 'scripts') -File | Where-Object { $_.Extension -in '.sh', '.ps1' -and $_.Name -notin 'reservekopie-ophalen.ps1', 'herstelset-bijwerken.ps1' } | Copy-Item -Destination "$sc\vm"
+$cl = Join-Path $Project 'scripts\cloud'
+if (Test-Path -LiteralPath $cl) { New-Item -ItemType Directory -Force -Path "$sc\cloud" | Out-Null; Get-ChildItem -LiteralPath $cl -File | Where-Object { $_.Extension -in '.ps1', '.txt' } | Copy-Item -Destination "$sc\cloud" }
 $vt = @(Get-ChildItem -LiteralPath (Join-Path $Project 'scripts') -Directory -Filter 'vtpm-*' | Sort-Object Name | Select-Object -Last 1)
 if ($vt.Count) { Kopieer-Map $vt[0].FullName "$sc\vtpm" }
 
