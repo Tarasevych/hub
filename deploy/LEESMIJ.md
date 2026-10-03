@@ -45,6 +45,8 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
 | `cloudflared-config.yml` | Sjabloon: hub, id, mail, cloud, ai, github, huis, api, admin, dashboard → `http://127.0.0.1:8080`; rest 404. |
 | `installeer-app.sh` | `inrichten`, `installeren`, `terugdraaien [release]`, `lijst`, `dashboard <map>`. Start na een geslaagde installatie ook de timers. |
 | `geheimen-aanvullen.sh` | Genereert ontbrekende sleutels (`openssl rand`) in `geheimen.env`; bestaande waarden blijven, niets wordt getoond. |
+| `google-login-zetten.sh` | Installeren als `/usr/local/sbin/google-login-zetten` (`install -o root -g root -m 0755`). Leest twee regels van stdin (client-ID, client-secret), controleert het formaat, zet `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` in `geheimen.env` (eigenaar/rechten blijven, atomisch via tijdelijk bestand + `mv`), verwijdert een afwijkende `GOOGLE_SUITE_CLIENT_ID` (die wint anders), herstart `mijn-ruimte`, eist `is-active` + HTTP 200 voor `Host: hub.tarasevych.com` op `127.0.0.1:8080`. Back-up (root, 0600) wordt na succes geshred; bij falen oud bestand terug + herstart. Toont nooit waarden. |
+| `../scripts/google-login-instellen.ps1` | Windows-pc: vraagt Client ID (zichtbaar) en Client secret (`Read-Host -AsSecureString`) en stuurt ze via de **stdin** van `ssh -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver -o BatchMode=yes beheer@10.77.0.10 sudo -n /usr/local/sbin/google-login-zetten`; toont alleen OK/mislukt. Vereist dat `beheer` dit zonder wachtwoord mag (`sudo -n`, zoals in `HERSTEL.md`). |
 
 ## Opties (omgevingsvariabelen van de scripts)
 Dit zijn geen app-geheimen (die staan in `ENV-VARS.md`), alleen instellingen van de deployscripts:
