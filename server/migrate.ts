@@ -38,6 +38,16 @@ export async function migrate({ statusOnly = false } = {}): Promise<string[]> {
       client.release();
     }
   }
+  if (!statusOnly) {
+    // Rechten van de rollen (fase 2) na elke run bijwerken: nieuwe tabellen krijgen zo meteen de juiste rechten.
+    const rechten = path.join(migrationsDir(), 'rechten.sql');
+    try {
+      const sql = await readFile(rechten, 'utf8');
+      await pool.query(sql);
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw new Error(`RECHTEN_MISLUKT: ${(err as Error).message}`);
+    }
+  }
   return applied;
 }
 

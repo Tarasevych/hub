@@ -22,7 +22,14 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
    naar `/srv/mijn-ruimte/dashboard`, `root:mijnruimte`, bestanden 0640: alleen-lezen voor de dienst).
 7. **Tunnel**: zie "Tunnel" hieronder. `inrichten` zet een `/etc/cloudflared/config.yml` klaar met plaatshouder
    `TUNNEL-ID-INVULLEN`; tunnel aanmaken, DNS en `cloudflared.service` volgen daarna (vraagt een Cloudflare-login).
-8. **Controle**: `systemctl status mijn-ruimte`, `systemctl list-timers 'mijn-ruimte-*'`,
+8. **Databaserollen (beveiliging fase 2, optioneel maar aanbevolen)**: na een geslaagde `installeren`:
+   `deploy/db-rollen-instellen.sh instellen` — maakt `mijnruimte_migrator` (eigenaar schema), `mijnruimte_app`
+   (alleen DML op `app.records`, onder RLS) en `mijnruimte_system` (BYPASSRLS: cron, aanmelden, beheer, back-up),
+   schrijft `DATABASE_URL_MIGRATIE/_APP/_SYSTEM` in `geheimen.env` (wachtwoorden op de VM gemaakt, nooit getoond),
+   herstart en controleert; mislukt dat, dan alles terug. RLS staat daarna in **audit-modus**:
+   `db-rollen-instellen.sh status` toont wat afdwingen zou weigeren; `rls-aan` / `rls-uit` schakelt direct (zonder
+   herstart). Zonder deze stap werkt alles met de ene oude rol zoals vroeger. Zie `RUNBOOK-FASE-2-3.md`.
+9. **Controle**: `systemctl status mijn-ruimte`, `systemctl list-timers 'mijn-ruimte-*'`,
    `journalctl -u mijn-ruimte -f`, `curl -s http://127.0.0.1:8080/__gezondheid`.
 
 ## Bestanden
@@ -44,6 +51,8 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
 | `cloudflared.service` | Gehardende unit voor de tunnel (`tunnel run` met `/etc/cloudflared/config.yml`). |
 | `cloudflared-config.yml` | Sjabloon: hub, id, mail, cloud, ai, github, huis, api, admin, dashboard → `http://127.0.0.1:8080`; rest 404. |
 | `installeer-app.sh` | `inrichten`, `installeren`, `terugdraaien [release]`, `lijst`, `dashboard <map>`. Start na een geslaagde installatie ook de timers. |
+| `db-rollen-instellen.sh` | Als root: `instellen`, `status`, `rls-aan`, `rls-uit`, `terugdraaien`. Voert `db-rollen.sql` + `../migrations/rechten.sql` (resp. `db-rollen-terug.sql`) uit als `postgres` via stdin; wachtwoorden alleen als psql-variabelen via stdin, hergebruikt bestaande. `geheimen.env` atomisch (eigenaar/rechten blijven). |
+| `db-rollen.sql` / `db-rollen-terug.sql` | Rollen, eigendom, rechten, `FORCE ROW LEVEL SECURITY`, `jsonb_contains` LEAKPROOF (GIN-index onder RLS; opnieuw draaien na een major-upgrade van Postgres) / eigendom terug naar de oude rol, FORCE en afdwingen uit. |
 | `geheimen-aanvullen.sh` | Genereert ontbrekende sleutels (`openssl rand`) in `geheimen.env`; bestaande waarden blijven, niets wordt getoond. |
 | `google-login-zetten.sh` | Installeren als `/usr/local/sbin/google-login-zetten` (`install -o root -g root -m 0755`). Leest twee regels van stdin (client-ID, client-secret), controleert het formaat, zet `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` in `geheimen.env` (eigenaar/rechten blijven, atomisch via tijdelijk bestand + `mv`), verwijdert een afwijkende `GOOGLE_SUITE_CLIENT_ID` (die wint anders), herstart `mijn-ruimte`, eist `is-active` + HTTP 200 voor `Host: hub.tarasevych.com` op `127.0.0.1:8080`. Back-up (root, 0600) wordt na succes geshred; bij falen oud bestand terug + herstart. Toont nooit waarden. |
 | `../scripts/google-login-instellen.ps1` | Windows-pc: vraagt Client ID (zichtbaar) en Client secret (`Read-Host -AsSecureString`) en stuurt ze via de **stdin** van `ssh -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver -o BatchMode=yes beheer@203.0.113.10 sudo -n /usr/local/sbin/google-login-zetten`; toont alleen OK/mislukt. Vereist dat `beheer` dit zonder wachtwoord mag (`sudo -n`, zoals in `HERSTEL.md`). |
@@ -97,6 +106,9 @@ HSTS van de app dekt browsers pas na het eerste https-bezoek). Daarna in Google 
 `deploy/installeer-app.sh terugdraaien` (vorige release) of `… terugdraaien 20261003-101500`.
 Migraties zijn alleen vooruit: het schema blijft op de nieuwste stand. Houd migraties daarom
 uitbreidend (kolommen/tabellen toevoegen, niets hernoemen of verwijderen in dezelfde release).
+Met de databaserollen: eerst `deploy/db-rollen-instellen.sh terugdraaien` (variabelen weg, eigendom terug, FORCE
+uit), dán `installeer-app.sh terugdraaien` naar een release van vóór fase 2. Een oudere release negeert de
+`DATABASE_URL_*`-variabelen, maar `pg_dump` als de oude rol werkt onder FORCE RLS niet meer.
 
 ## Back-ups ophalen (pull vanaf de host)
 De VM duwt niets weg. De Windows-host haalt op met `deploy/reservekopie-ophalen.ps1` (SSH als `beheer`, lid van
@@ -122,3 +134,5 @@ sudo -u postgres pg_restore --no-owner --role=mijnruimte -d mijnruimte database.
 chown -R mijnruimte:mijnruimte /srv/data/uploads
 systemctl start mijn-ruimte 'mijn-ruimte-*.timer'
 ```
+Waren de databaserollen ingesteld, draai daarna opnieuw `deploy/db-rollen-instellen.sh instellen` (zet eigendom,
+rechten en FORCE weer goed; de bestaande wachtwoorden blijven).
