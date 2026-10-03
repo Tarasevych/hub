@@ -48,6 +48,7 @@ Dit zijn geen app-geheimen (die staan in `ENV-VARS.md`), alleen instellingen van
 | `NODE` | `installeer-app.sh` | `/usr/bin/node` | Pad naar Node 24. |
 | `PORT` | `installeer-app.sh`, `mijn-ruimte.service` | `8080` | Lokale poort (gezondheidscontrole op `http://127.0.0.1:$PORT/__gezondheid`); houd gelijk aan de unit en `cloudflared-config.yml`. |
 | `UPLOADS_DIR` | `backup-maken.sh`, units | `/srv/data/uploads` | Map met geüploade bestanden. |
+| `BOUW_GEHEUGEN_MAX` / `BOUW_SWAP_MAX` / `BOUW_HEAP_MB` | `installeer-app.sh` | `1400M` / `2G` / `2048` | Geheugenplafond (cgroup) en Node-heap voor de build. De vite-build heeft ~1,5 GB heap nodig; op een VM met 2 GB RAM wijkt hij uit naar swap. Een tekort stopt alleen de build. |
 | `BACKUP_DIR` | `backup-maken.sh` | `/srv/backups/mijn-ruimte` | Doelmap van de back-ups op de VM. |
 | `BACKUP_BEWAAR_DAGEN` | `backup-maken.sh` | `7` | Hoeveel dagen back-ups op de VM blijven staan. |
 
