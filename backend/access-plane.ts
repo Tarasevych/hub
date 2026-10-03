@@ -1,6 +1,6 @@
 import {createHmac,randomBytes,scrypt,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
-import {db,clearLoginFailures,envKey32,lockoutRemaining,openWithEnvKey,pepperedHash,registerLoginFailure,sealWithEnvKey} from '../server/platform';
+import {db,clearLoginFailures,envKey32,isOwnerEmail,lockoutRemaining,openWithEnvKey,pepperedHash,registerLoginFailure,sealWithEnvKey} from '../server/platform';
 import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './google-contour';
 import {stapOpFout,totpStapOpVastleggen,type StapOpAuth} from './stap-op';
 import {meld} from './melder';
@@ -372,7 +372,8 @@ export function createAccessPlaneRoutes(deps:{
   };
   const ownerGate=async(event:Record<string,unknown>,body:unknown)=>{
     const auth=await gate(event,body);
-    if(!auth||auth.user.role!=='owner')return null;
+    // Fase 3: eigenaar = rol owner ÉN OWNER_EMAIL (isOwnerEmail), overal dezelfde regel.
+    if(!auth||auth.user.role!=='owner'||!isOwnerEmail(auth.user.email))return null;
     return auth;
   };
   // Fase 3: step-up (verse Google-aanmelding of TOTP binnen 5 min) voor gevoelige acties; null = mag door.

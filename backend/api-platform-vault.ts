@@ -1,5 +1,5 @@
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
-import {db,secrets} from '../server/platform';
+import {db,isOwnerEmail,secrets} from '../server/platform';
 import {stapOpFout,type StapOpAuth} from './stap-op';
 
 export const OWNER_VAULT_TABLE='owner_vault_v1';
@@ -191,7 +191,7 @@ export function createApiPlatformVaultRoutes(deps:{
     'POST /api/owner/api-platform/vault/:id/reveal':[async(ctx)=>{
       const auth=await ownerGate(ctx.event,ctx.body);
       if(!auth||'errorCode'in auth)return deps.fail('OWNER_API_SESSION_REQUIRED',403);
-      if(auth.user.role!=='owner')return deps.fail('OWNER_VAULT_REVEAL_FORBIDDEN',403);
+      if(auth.user.role!=='owner'||!isOwnerEmail(auth.user.email))return deps.fail('OWNER_VAULT_REVEAL_FORBIDDEN',403);
       if(!revealHostAllowed(ctx.event))return deps.fail('OWNER_VAULT_REVEAL_HOST_FORBIDDEN',403);
       const body=deps.body(ctx.body);
       if(String(body.confirm||'')!==REVEAL_CONFIRM)return deps.fail('OWNER_VAULT_REVEAL_CONFIRM_REQUIRED',400);
