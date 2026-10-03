@@ -92,6 +92,13 @@ function Wissel([string]$nieuw, [string]$doel) {
   if (Test-Path -LiteralPath $oud) { Remove-Item -LiteralPath $oud -Recurse -Force }
 }
 
+# Doel vooraf controleren (voordat er iets gebouwd wordt).
+if ($Doel) {
+  $schijf = ([IO.Path]::GetPathRoot($Doel)).ToUpper()
+  if (-not $schijf -or $schijf -in 'C:\', 'D:\', 'T:\', 'R:\') { throw "-Doel $Doel niet toegestaan (kies de externe schijf, bijv. E:\)" }
+  if (-not (Test-Path -LiteralPath $schijf)) { throw "schijf $schijf niet gevonden (is de USB-schijf aangesloten?)" }
+}
+
 # 0. Eventueel eerst de nieuwste back-up ophalen.
 if ($HaalEerstOp) {
   Melding 'nieuwste back-up ophalen van de VM...'
@@ -169,9 +176,6 @@ Melding "herstelset klaar: $Set ($n bestanden, $mb MB, alle controlesommen OK)"
 
 # 2. Eventueel naar een externe schijf.
 if ($Doel) {
-  $schijf = ([IO.Path]::GetPathRoot($Doel)).ToUpper()
-  if ($schijf -in 'C:\', 'D:\', 'T:\', 'R:\') { throw "-Doel $Doel niet toegestaan (kies de externe schijf, bijv. E:\)" }
-  if (-not (Test-Path -LiteralPath $schijf)) { throw "schijf $schijf niet gevonden (is de USB-schijf aangesloten?)" }
   $vrij = (Get-PSDrive -Name $schijf.Substring(0, 1)).Free
   if ($vrij -lt ($mb * 1MB * 2)) { throw "te weinig vrije ruimte op $schijf" }
   $eind = Join-Path $Doel 'mijn-ruimte-herstelset'
