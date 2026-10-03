@@ -419,3 +419,102 @@ De webhooks (`/api/owner/mail/microsoft/webhook`, `/api/owner/mail/google/pubsub
 8. **Passkeys (WebAuthn):** voorlopig uitzetten (aanbevolen) of goed implementeren.
 9. **Fase 2** (relationeel schema voor mail) nu of later.
 10. **Cloudflare Access** voor `admin.`/`api.` als extra laag (met bypass voor webhooks en callbacks)?
+
+## 10. Voortgang
+
+### 10.1 Fase A: afgerond (3 okt 2026, branch `zelf-hosten`, niet gepusht, niet gedeployd)
+
+Beslissingen van de eigenaar die zijn toegepast:
+1. **Schone database.** Geen migratie van AppDeploy-data en geen export-endpoint.
+2. **AI staat uit.**
+   - `ai.extract`/`ai.ocr`/`ai.generate` gooien `AI_NOT_CONFIGURED` (503).
+   - Cloud valt terug op de ingebouwde deterministische suggesties (`aiState=fallback`, `CLOUD_AI_FALLBACK`).
+   - Vertalen geeft 503 `AI_NOT_CONFIGURED`. Handschrift-OCR blijft 503 `MAIL_HANDWRITING_OCR_UNAVAILABLE`.
+3. **Dashboard.**
+   - De server serveert `DASHBOARD_DIR` (standaard `/srv/mijn-ruimte/dashboard`) voor `dashboard.tarasevych.com`.
+   - Ontbreekt de map, dan geeft hij 404. Er is daar geen API.
+   - Nog niet geïntegreerd. Het herstelde materiaal staat buiten de repo (`/workspace/dashboard-patch/`, `qa.html`, `qa-id.html`).
+4. **Google alleen via env.**
+   - De hardcoded client-ID en de database-override van secrets zijn weg.
+   - Zonder `GOOGLE_OAUTH_CLIENT_ID`/`_SECRET` geldt `configured:false` en is er geen crash.
+   - Microsoft/Outlook is uit zolang de env ontbreekt.
+5. **Eén aanmelding voor alle `*.tarasevych.com`-subdomeinen.**
+   - Cookies: `Domain=.tarasevych.com; Path=/; Secure; HttpOnly; SameSite=Lax` (tab-cookies `Strict`).
+   - Geen `SameSite=None`/`Partitioned` meer. De API is same-origin per host (`/api/*`).
+   - Multi-user en multi-account (ecosysteemsessie, tab-sessies, browser-grants, account wisselen) zijn ongewijzigd. Alle cookies delen één jar, net als vroeger op de ene API-host.
+
+Wat er nu is:
+- **Platformlaag** (`server/platform/`):
+  - `db` op Postgres-JSONB (`app.records`).
+  - `storage` op lokaal FS (`UPLOADS_DIR`, strikte padcontrole, atomisch schrijven).
+  - `secrets` uit env (allow-list), `ai` (uit), `invites`, `router/json/error`.
+- **Migraties:** `migrations/0001_basis.sql` plus de runner `server/migrate.ts` (advisory lock, transactie per bestand).
+- **Frontend-laag:** `src/platform/client.ts` (same-origin `api`, `image.resizeIfNeeded`, `invitesClient`).
+- **Server** `server/start.ts` (`node:http`, `127.0.0.1:PORT`):
+  - Host-allow-list: 421 voor onbekende hosts.
+  - Gezondheidscheck `/__gezondheid` (inclusief DB).
+  - Lambda-achtig event voor de bestaande router.
+  - Client-IP alleen uit `cf-connecting-ip`. `x-forwarded-*`, `forwarded` en `x-real-ip` worden genegeerd of overschreven.
+  - `dist/` met SPA-fallback, ETag/304 en immutable assets.
+  - CSP als HTTP-header (gelijk aan de meta-CSP, plus `frame-ancestors 'none'`), HSTS, nosniff, Referrer-Policy, X-Frame-Options en Permissions-Policy.
+  - Body-limiet 12 MB, nette shutdown.
+- **Cron:** `server/cron.ts`, CLI voor `mail-provider-maintenance` en `google-suite-bplus-sync`. Voor systemd-timers, met `pg_try_advisory_lock` en logging naar `app.cron_runs`.
+- **Build:**
+  - `security-build` als Vite-plugin, zodat de werkboom niet meer wordt herschreven.
+  - `npm run build` = audits + Vite + `dist-server/*.mjs` (esbuild).
+  - `package-lock.json` is gegenereerd (Node 24).
+
+Rooktests op deze box (Postgres 17.11, Node 24.21):
+- **curl:**
+  - `/__gezondheid` → `{"ok":true,"db":true}`; `/api/_healthcheck` → 200.
+  - hub/id/cloud laden 200 met CSP-header. SPA-fallback werkt; een ontbrekend asset geeft 404. Assets: immutable + ETag/304.
+  - Onbekende host → 421. `X-Forwarded-Host` vervalsen → 421. Padtraversal → index/404, nooit bestanden buiten `dist/`.
+  - Dashboard: 404 zonder map, 200 met map (eigen CSP). `/api/*` op het dashboard → 404.
+- **`scripts/rooktest-lokaal.mjs`** (22/22):
+  - Afgemelde bootstrap; wis-cookie met `Domain=.tarasevych.com` en `SameSite=Lax`, zonder `Partitioned`.
+  - Eén gezaaide sessie is geldig op hub, cloud, mail en id. Een service die niet bij de host past → 401.
+  - Accountlijst (multi-account) antwoordt. Sessie-IP = `cf-connecting-ip`.
+  - Werkruimte maken; de rij staat in `app.records`.
+  - Bestand uploaden en downloaden levert identieke bytes, met de `storage_objects`-rij en het bestand op schijf. Zoeken vindt het item.
+  - Een tweede gebruiker ziet de items van de eigenaar niet.
+  - Wachtwoordverificatie: juist → ok, fout → 401.
+  - Google zonder env: `configured:false`, geen 500.
+- **`scripts/lokaal-e2e/`** (Playwright met Chrome via een https-testproxy, zoals de tunnel), 6/6:
+  - `tests.txt` test 1: afgemelde shell op hub/id is niet leeg.
+  - `tests.txt` test 3: aangemelde Hub toont "Огляд" met inhoud; cloud werkt ook.
+  - De cookie geldt ook voor mail. Geen CSP-schendingen.
+- **Migraties:** opnieuw draaien is idempotent.
+- **Cron:**
+  - Beide taken: ok.
+  - Een tweede gelijktijdige run wordt overgeslagen (lock).
+  - Een onbekende taak geeft exitcode 2.
+
+Bekende beperkingen:
+- Inloggen kan nu alleen met een in de database gezaaide sessie of na het instellen van een Google-client.
+- Wachtwoordlogin verifieert wel, maar geeft (zoals in de bestaande code) geen sessie uit.
+
+### 10.2 Fase B: nog te doen
+- **Beveiliging** (zie §5 en `SECURITY-NOTES.md`):
+  - Rate limiting en lockout (tabellen `app.rate_limits`/`app.login_lockouts` bestaan al).
+  - Willekeurige PKCE-verifier en nonce.
+  - CSRF-Origin-allow-list.
+  - TOTP-secret versleutelen en recovery-pepper.
+  - Eigenaar uit env in plaats van hardcoded (`index.ts`, `rbac.ts`).
+  - Vault `revealHostAllowed` zonder localhost.
+  - Passkeys echt verifiëren.
+  - Atomische handoff-redeem (`db.takeOne`).
+  - SSRF-DNS-pinning.
+  - DOMPurify in `MailRichDocumentPreview`.
+  - CSP op de callback-HTML.
+- **Onderhoud en deploy:**
+  - Een `/api/auth/google/start` zonder geconfigureerde client maakt nog steeds een state-rij aan. Hier is een guard (503) plus rate limit nodig.
+  - TTL-opruimtaak voor verlopen rijen (oauth-states, transacties, sessies, en dergelijke).
+  - systemd-units/-timers, cloudflared-config en back-ups (`pg_dump` + `UPLOADS_DIR`).
+- **Typecheck:** de servertypecheck geeft nog 77 bestaande meldingen (37× impliciete `any` voor `ctx`). De frontend heeft ongeveer 219 bestaande meldingen.
+- **Met de eigenaar:** de nieuwe Google OAuth-client, de keuze van de AI-provider en de dashboardintegratie.
+
+### 10.3 Nieuwe open beslissingen
+- `dist/l002-diagnostic.json` (audit-uitvoer) wordt mee gepubliceerd. Vraag: weglaten of afschermen?
+- Cookies met `Domain=.tarasevych.com` zijn zichtbaar voor **elk** subdomein. Elke host onder `tarasevych.com` moet dus vertrouwd zijn. Er mag geen derde partij onder dat domein draaien.
+- `'wasm-unsafe-eval'` staat (net als vandaag) niet in de CSP. WASM-voorbeelden (sql.js, h5wasm, pdf.js) werken daardoor mogelijk niet. Vraag: toestaan?
+- De technische AppDeploy-host en OwnerTestApp-paden zijn inert, maar staan nog in de code (de l002-audit verwacht ze). Vraag: opruimen in fase B?
