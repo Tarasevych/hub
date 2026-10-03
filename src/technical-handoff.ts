@@ -8,6 +8,8 @@ let pendingQueryCode = '';
 let nativeAssign: ((url: string | URL) => void) | null = null;
 let patchTried = false;
 
+const FINALIZE_TIMEOUT_MS = 12000;
+
 if (typeof location !== 'undefined') {
   try {
     const url = new URL(location.href);
@@ -30,6 +32,20 @@ const go = (url: string) => {
   }
 };
 
+const withTimeout = <T,>(promise: Promise<T>, ms: number) =>
+  Promise.race([
+    promise,
+    new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error('timeout')), ms))
+  ]);
+
+const clearOwnerHandoffHash = () => {
+  try {
+    const url = new URL(location.href);
+    url.hash = '';
+    history.replaceState({}, '', `${url.pathname}${url.search}`);
+  } catch {}
+};
+
 export async function consumeTechnicalHandoff() {
   try {
     const queryOk = await consumeQueryHandoff();
@@ -37,24 +53,24 @@ export async function consumeTechnicalHandoff() {
     if (consumedTechnical || typeof location === 'undefined' || !isTechnicalHost()) return queryOk;
     const match = /[#&]owner_handoff=([^&]+)/.exec(location.hash || '');
     if (!match) return queryOk;
-    consumedTechnical = true;
     const handoffToken = decodeURIComponent(match[1] || '');
-    try {
-      const url = new URL(location.href);
-      url.hash = '';
-      history.replaceState({}, '', `${url.pathname}${url.search}`);
-    } catch {}
     if (!handoffToken) return queryOk;
     const route = resolveCanonicalRoute();
-    await Promise.race([
+    const finalize = () =>
       api.post('/api/owner/identity/technical/finalize', {
         service: route.service || 'hub',
         tabContext: ecosystemTabContext(),
         sourceOrigin: location.origin,
         handoffToken
-      }),
-      new Promise((_, reject) => window.setTimeout(() => reject(new Error('timeout')), 1500))
-    ]);
+      });
+    try {
+      await withTimeout(finalize(), FINALIZE_TIMEOUT_MS);
+    } catch {
+      await withTimeout(finalize(), FINALIZE_TIMEOUT_MS);
+    }
+    consumedTechnical = true;
+    clearOwnerHandoffHash();
+    setEcosystemSessionLikely(true);
     return true;
   } catch {
     return false;
@@ -67,15 +83,15 @@ export async function consumeQueryHandoff() {
   if (!code || typeof location === 'undefined') return false;
   try {
     const route = resolveCanonicalRoute();
-    await Promise.race([
+    await withTimeout(
       api.post('/api/owner/session/handoff/redeem', {
         service: route.service || 'hub',
         tabContext: ecosystemTabContext(),
         sourceOrigin: location.origin,
         code
       }),
-      new Promise((_, reject) => window.setTimeout(() => reject(new Error('timeout')), 1500))
-    ]);
+      FINALIZE_TIMEOUT_MS
+    );
     setEcosystemSessionLikely(true);
     return true;
   } catch {
@@ -109,10 +125,10 @@ export async function assignCanonicalService(target: string, fallbackUrl: string
     return;
   }
   try {
-    const raced = await Promise.race([
+    const raced = await withTimeout(
       api.post('/api/owner/session/handoff/create', {...authBody, target, tab}),
-      new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error('timeout')), 800))
-    ]);
+      800
+    );
     const url = String((raced as {data?: {url?: string}})?.data?.url || '');
     if (allowedHandoffOrigin(url)) {
       go(url);

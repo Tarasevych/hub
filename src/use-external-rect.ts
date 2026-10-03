@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 /**
  * Reads the live bounding rect of a DOM element matched by a CSS selector,
@@ -14,5 +14,8 @@ export function useExternalRectGetter(selector: string) {
       return el ? el.getBoundingClientRect() : null;
     };
   }, [selector]);
-  return () => ref.current();
+  // A stable function identity matters: callers use this as a useEffect
+  // dependency, and returning a fresh closure every render made those
+  // effects tear down and re-run on every unrelated re-render.
+  return useCallback(() => ref.current(), []);
 }
