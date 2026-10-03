@@ -36,6 +36,7 @@ const DRIVE_SELECTIONS = 'cloud_provider_selections_v1';
 const MAIL_SELECTIONS = 'google_suite_mail_selections_v1';
 const LEGACY_DRIVE_TOKENS = 'cloud_provider_tokens_v1';
 const CLOUD_AUDIT = 'cloud_audit_v1';
+// Zelf gehost: Google keert altijd terug op id.tarasevych.com (niet op de AppDeploy-origin).
 const CALLBACK = 'https://id.tarasevych.com/';
 const CLOUD_ORIGIN = 'https://cloud.tarasevych.com';
 const MAIL_ORIGIN = 'https://mail.tarasevych.com';

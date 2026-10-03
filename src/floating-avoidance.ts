@@ -7,7 +7,7 @@ export type FloatingZone = {
   kind: ZoneKind;
   getRect: () => DOMRect | null;
   fallbacks: Point[];
-  applyFallback?: (point: Point) => void;
+  applyFallback?: (point: Point | null) => void;
   reserveFlow?: (padding: number) => void;
 };
 
@@ -66,6 +66,9 @@ export function recompute() {
 
     const colliding = settled.some((item) => rectsOverlap(rect, item.rect));
     if (!colliding) {
+      // Nothing is blocking this zone (any more): let it report back to its
+      // normal position instead of staying stuck in a corner forever.
+      zone.applyFallback?.(null);
       settled.push({ zone, rect });
       continue;
     }
