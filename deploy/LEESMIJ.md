@@ -18,8 +18,8 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
    gezondheidscontrole (`/__gezondheid`); mislukt die, dan automatisch terug naar de vorige release.
 6. **Dashboard**: `deploy/installeer-app.sh dashboard /pad/naar/dashboardmap` (alleen `*.html/*.css/*.js`/afbeeldingen,
    naar `/srv/mijn-ruimte/dashboard`, `root:mijnruimte`, bestanden 0640: alleen-lezen voor de dienst).
-7. **Tunnel**: zie "Tunnel" hieronder. `inrichten` zet al een `/etc/cloudflared/config.yml` klaar met plaatshouder
-   `TUNNEL-ID-INVULLEN` (niet ingeschakeld).
+7. **Tunnel**: zie "Tunnel" hieronder. `inrichten` zet een `/etc/cloudflared/config.yml` klaar met plaatshouder
+   `TUNNEL-ID-INVULLEN`; tunnel aanmaken, DNS en `cloudflared.service` volgen daarna (vraagt een Cloudflare-login).
 8. **Controle**: `systemctl status mijn-ruimte`, `systemctl list-timers 'mijn-ruimte-*'`,
    `journalctl -u mijn-ruimte -f`, `curl -s http://127.0.0.1:8080/__gezondheid`.
 
@@ -34,6 +34,7 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
 | `mijn-ruimte-opruimen.timer` | `opruimen` (verlopen OAuth-states, PKCE, transacties, handoffs, sessies, limietrijen), elk uur. |
 | `mijn-ruimte-backup.service` / `.timer` | Dagelijks 03:30 `backup-maken.sh`. |
 | `backup-maken.sh` | `pg_dump` (custom-formaat) + `uploads.tar.gz` + `SHA256SUMS` + `KLAAR` in `/srv/backups/mijn-ruimte/<datum>/`; bewaart 7 dagen op de VM. |
+| `cloudflared.service` | Gehardende unit voor de tunnel (`tunnel run` met `/etc/cloudflared/config.yml`). |
 | `cloudflared-config.yml` | Sjabloon: hub, id, mail, cloud, ai, github, huis, api, admin, dashboard → `http://127.0.0.1:8080`; rest 404. |
 | `installeer-app.sh` | `inrichten`, `installeren`, `terugdraaien [release]`, `lijst`, `dashboard <map>`. Start na een geslaagde installatie ook de timers. |
 | `geheimen-aanvullen.sh` | Genereert ontbrekende sleutels (`openssl rand`) in `geheimen.env`; bestaande waarden blijven, niets wordt getoond. |
@@ -52,21 +53,33 @@ Dit zijn geen app-geheimen (die staan in `ENV-VARS.md`), alleen instellingen van
 | `BACKUP_DIR` | `backup-maken.sh` | `/srv/backups/mijn-ruimte` | Doelmap van de back-ups op de VM. |
 | `BACKUP_BEWAAR_DAGEN` | `backup-maken.sh` | `7` | Hoeveel dagen back-ups op de VM blijven staan. |
 
-## Tunnel (Cloudflare; vraagt een Cloudflare-login, nog niet gedaan)
-Als root op de VM:
+## Tunnel (Cloudflare) — ingericht op 3 okt 2026
+Tunnel `mijn-ruimte`, ID `a176c08b-29e7-47b0-95d9-9ec9383572f2` (het ID is niet geheim). Alle tien hostnamen zijn
+CNAME's naar `<ID>.cfargotunnel.com` (aangemaakt met `cloudflared tunnel route dns`; er bestonden nog geen records).
+
+Op de VM:
+- `/etc/cloudflared/config.yml` (root, 0644): ingress zoals `deploy/cloudflared-config.yml`, ingevuld met het ID.
+- `/etc/cloudflared/<ID>.json` (root:root, 0600): tunnel-credentials. **Geheim**; zit niet in de app-back-up.
+- `cloudflared.service` uit `deploy/cloudflared.service` (i.p.v. `cloudflared service install`): draait als root maar
+  zonder capabilities, ProtectSystem=strict, enz. (`systemd-analyze security`: 1,8 OK). Alleen uitgaand (QUIC/7844);
+  ufw ongewijzigd. Lokaal luistert cloudflared alleen op `127.0.0.1:20241` (metrics).
+- `cert.pem` (accountcertificaat van `tunnel login`) is na het aanmaken en routeren **geshred**. Voor nieuwe
+  DNS-routes of tunnelbeheer opnieuw `cloudflared tunnel login` doen en `cert.pem` daarna weer verwijderen.
+
+Opnieuw opbouwen (bijv. nieuwe VM), als root:
 ```bash
-cloudflared tunnel login                       # opent een URL: inloggen bij Cloudflare, zone tarasevych.com kiezen
-cloudflared tunnel create mijn-ruimte          # schrijft /root/.cloudflared/<ID>.json en toont het tunnel-ID
-install -m 0600 /root/.cloudflared/<ID>.json /etc/cloudflared/<ID>.json
-sed -i 's/TUNNEL-ID-INVULLEN/<ID>/g' /etc/cloudflared/config.yml
-cloudflared tunnel ingress validate --config /etc/cloudflared/config.yml
+cloudflared tunnel login                                  # cert.pem in /root/.cloudflared
+# credentials terughalen voor de bestaande tunnel (of: tunnel create + route dns --overwrite-dns)
+cloudflared tunnel token --cred-file /etc/cloudflared/<ID>.json mijn-ruimte && chmod 600 /etc/cloudflared/<ID>.json
+sed 's/<TUNNEL-ID>/<ID>/g' deploy/cloudflared-config.yml > /etc/cloudflared/config.yml
+cloudflared tunnel --config /etc/cloudflared/config.yml ingress validate
 for h in hub id mail cloud ai github huis api admin dashboard; do cloudflared tunnel route dns mijn-ruimte $h.tarasevych.com; done
-cloudflared service install                    # maakt cloudflared.service (leest /etc/cloudflared/config.yml)
-systemctl enable --now cloudflared
+install -m 0644 deploy/cloudflared.service /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now cloudflared
+shred -u /root/.cloudflared/cert.pem
 ```
-Bestaan er al DNS-records voor deze namen (bijv. van AppDeploy), dan eerst in het Cloudflare-dashboard verwijderen
-of `route dns --overwrite-dns` gebruiken. De tunnel maakt alleen uitgaande verbindingen (poort 7844 naar Cloudflare);
-ufw hoeft niet open. Daarna in Google Cloud de redirect-URI's op `https://id.tarasevych.com/…` zetten (ENV-VARS.md).
+Aanbevolen in het Cloudflare-dashboard: SSL/TLS **Full**, **Always Use HTTPS** aan (nu antwoordt `http://` nog met 200;
+HSTS van de app dekt browsers pas na het eerste https-bezoek). Daarna in Google Cloud de redirect-URI's op
+`https://id.tarasevych.com/…` zetten (ENV-VARS.md).
 
 ## Terugdraaien
 `deploy/installeer-app.sh terugdraaien` (vorige release) of `… terugdraaien 20261003-101500`.
