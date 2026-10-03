@@ -31,6 +31,8 @@ set -euo pipefail
 umask 027
 
 : "${DATABASE_URL:?DATABASE_URL ontbreekt (EnvironmentFile /etc/mijn-ruimte/geheimen.env)}"
+# Fase 2: app.records heeft RLS (FORCE). De dump moet alle rijen zien → systeemrol (BYPASSRLS) als die er is.
+DUMP_URL="${DATABASE_URL_SYSTEM:-$DATABASE_URL}"
 UPLOADS_DIR="${UPLOADS_DIR:-/srv/data/uploads}"
 BACKUP_DIR="${BACKUP_DIR:-/srv/backups/mijn-ruimte}"
 BEWAAR_DAGEN="${BACKUP_BEWAAR_DAGEN:-7}"
@@ -55,7 +57,7 @@ mkdir -p "$tmp"
 trap 'rm -rf "$tmp"' ERR
 
 echo "[backup] database dumpen…"
-pg_dump --dbname="$DATABASE_URL" --format=custom --compress=6 --no-owner --no-privileges | schrijf "$tmp/database.dump$ext"
+pg_dump --dbname="$DUMP_URL" --format=custom --compress=6 --no-owner --no-privileges | schrijf "$tmp/database.dump$ext"
 
 echo "[backup] uploads archiveren…"
 if [ -d "$UPLOADS_DIR" ]; then
@@ -66,7 +68,7 @@ else
 fi
 
 release="$(readlink -f /srv/mijn-ruimte/current 2>/dev/null || echo onbekend)"
-migraties="$(psql "$DATABASE_URL" -Atc "select string_agg(version, ',' order by version) from app.schema_migrations" 2>/dev/null || echo onbekend)"
+migraties="$(psql "$DUMP_URL" -Atc "select string_agg(version, ',' order by version) from app.schema_migrations" 2>/dev/null || echo onbekend)"
 {
   echo "tijdstip=$(date --iso-8601=seconds)"
   echo "release=$release"

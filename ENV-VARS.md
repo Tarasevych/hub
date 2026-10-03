@@ -22,6 +22,20 @@ Formaat van `geheimen.env`: één `NAAM=waarde` per regel, zonder aanhalingsteke
 > Wissel je een `*_KEY_V1` later, dan kunnen bestaande versleutelde gegevens niet meer worden gelezen.
 > Bewaar de sleutels daarom ook in de offline back-up (wachtwoordmanager), los van de databaseback-up.
 
+
+### Databaserollen (beveiliging fase 2, optioneel)
+Worden alleen door `deploy/db-rollen-instellen.sh instellen` geschreven (nooit met de hand nodig). Ontbreekt een
+variabele, dan valt de app terug op `DATABASE_URL` en werkt alles zoals vroeger (één rol, RLS-policy's laten alles door).
+
+| Naam | Rol | Gebruikt door |
+|---|---|---|
+| `DATABASE_URL_MIGRATIE` | `mijnruimte_migrator` (eigenaar schema `app`) | `dist-server/migrate.mjs` (installeer-app.sh) |
+| `DATABASE_URL_APP` | `mijnruimte_app` (NOBYPASSRLS, alleen DML op `app.records`) | verzoeken van ingelogde gebruikers (`SET LOCAL app.user_id`) |
+| `DATABASE_URL_SYSTEM` | `mijnruimte_system` (BYPASSRLS) | cron, webhooks, aanmelden/sessies, beheerroutes, `backup-maken.sh` |
+
+RLS afdwingen staat in de database (`app.rls_instellingen.afdwingen`), niet in een variabele: de app kan het niet
+zelf uitzetten. Schakelen: `db-rollen-instellen.sh rls-aan|rls-uit`.
+
 ## Google-login en Google Suite (optioneel: zonder deze waarden is Google-login uit)
 
 | Naam | Doel | Genereren / waarde |
