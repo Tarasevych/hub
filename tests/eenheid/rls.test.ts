@@ -23,6 +23,7 @@ export async function main() {
   const sys = getPool('systeem');
   const a = randomUUID(), b = randomUUID(), ws = `ws-${randomUUID()}`;
   const T = 'eenheid_rls_v1';
+  const vorigeStand = ((await getPool('migratie').query("SELECT waarde FROM app.rls_instellingen WHERE sleutel = 'afdwingen'")).rows[0]?.waarde === 'aan' ? 'aan' : 'uit') as 'aan' | 'uit';
   const ids: string[] = [];
   const voeg = async (tbl: string, data: Record<string, unknown>, id = randomUUID()) => { ids.push(id); await sys.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', [tbl, id, data]); return id; };
   try {
@@ -53,6 +54,15 @@ export async function main() {
     const [bZietRuimte] = await als(b, () => db.get(T, [inRuimte]));
     const [bZietA] = await als(b, () => db.get(T, [rijA]));
     check('ruimtelid B ziet rij in de ruimte, maar niet de andere rijen van A', !!bZietRuimte && bZietA === null);
+    const [bZietRuimteRecord] = await als(b, () => db.get('workspaces', [ws]));
+    const [bWijzigtRuimte] = await als(b, () => db.update('workspaces', [{ id: ws, record: { ownerUserId: a, naam: 'gekaapt' } }]));
+    check('ruimtelid B leest het ruimterecord (0005), maar kan het niet wijzigen', !!bZietRuimteRecord && bWijzigtRuimte === false);
+    // Gids (users): opzoeken over accounts heen mag (systeemrol), wijzigen van een ander account niet.
+    await voeg('users', { email: `rls-b-${b}@example.test`, role: 'member', status: 'approved' }, b);
+    const [aZietB] = await als(a, () => db.get('users', [b]));
+    const [aWijzigtB] = await als(a, () => db.update('users', [{ id: b, record: { email: `rls-b-${b}@example.test`, role: 'owner', status: 'approved' } }]));
+    const rolB = (await sys.query("SELECT data->>'role' AS r FROM app.records WHERE tbl='users' AND id=$1", [b])).rows[0]?.r;
+    check('gids users: A kan B opzoeken, maar B niet tot eigenaar maken', !!aZietB && aWijzigtB === false && rolB === 'member');
 
     // 2) Ruwe SQL als mijnruimte_app (zonder db.ts): zonder app.user_id ziet de rol niets.
     const c = await getPool('app').connect();
@@ -86,7 +96,7 @@ export async function main() {
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
-    await stand('uit').catch(() => undefined);
+    await stand(vorigeStand).catch(() => undefined);
     await sys.query('DELETE FROM app.records WHERE id = ANY($1)', [ids]).catch(() => undefined);
     await sys.query("DELETE FROM app.rls_audit WHERE route = 'POST /api/eenheid/rls'").catch(() => undefined);
   }

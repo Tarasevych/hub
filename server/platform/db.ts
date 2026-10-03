@@ -32,8 +32,15 @@ export const SYSTEEM_TABELLEN: ReadonlySet<string> = new Set([
   'owner_revocation_state_v1',
 ]);
 
-async function q(table: string, sql: string, params: unknown[]): Promise<{ rows: any[]; rowCount: number | null }> {
-  const gebruiker = SYSTEEM_TABELLEN.has(table) ? null : gebruikerVanContext();
+/**
+ * Gids: LEZEN via de systeemrol, schrijven onder RLS. Accountrecords worden overal over accounts heen opgezocht
+ * (deelnemer op e-mail, eigenaar voor meldingen, sessie → account, ruimteleden). Wijzigen kan alleen het eigen
+ * record (of via een systeemroute).
+ */
+export const GIDS_TABELLEN: ReadonlySet<string> = new Set(['users']);
+
+async function q(table: string, sql: string, params: unknown[], lezen = false): Promise<{ rows: any[]; rowCount: number | null }> {
+  const gebruiker = SYSTEEM_TABELLEN.has(table) || (lezen && GIDS_TABELLEN.has(table)) ? null : gebruikerVanContext();
   if (!gebruiker || !appRolActief()) return getPool('systeem').query(sql, params);
   const client = await getPool('app').connect();
   try {
@@ -49,10 +56,10 @@ async function q(table: string, sql: string, params: unknown[]): Promise<{ rows:
     client.release();
   }
 }
-const geraakt = (rows: any[]): GeraakteRij[] => rows.map((r) => ({ owner_id: r.owner_id ?? null, ws: r.ws ?? (r.data && typeof r.data === 'object' ? (r.data as Record<string, unknown>).workspaceId as string : null) ?? null }));
+const geraakt = (rows: any[]): GeraakteRij[] => rows.map((r) => ({ id: r.id, owner_id: r.owner_id ?? null, ws: r.ws ?? (r.data && typeof r.data === 'object' ? (r.data as Record<string, unknown>).workspaceId as string : null) ?? null }));
 /** Audit-modus: tellen wat RLS zou weigeren (zie rls-audit.ts); faalt nooit de query zelf. */
 const audit = (tbl: string, actie: 'lezen' | 'toevoegen' | 'wijzigen' | 'verwijderen', rows: any[]) => {
-  if (!gebruikerVanContext() || !rows.length || SYSTEEM_TABELLEN.has(tbl)) return;
+  if (!gebruikerVanContext() || !rows.length || SYSTEEM_TABELLEN.has(tbl) || (actie === 'lezen' && GIDS_TABELLEN.has(tbl))) return;
   void controleerRijen(tbl, actie, geraakt(rows)).catch(() => undefined);
 };
 
@@ -136,7 +143,7 @@ export const db = {
     const wanted = ids.filter(validId);
     const found = new Map<string, T>();
     if (wanted.length) {
-      const result = await q(table, 'SELECT id, data, owner_id FROM app.records WHERE tbl = $1 AND id = ANY($2::text[])', [table, wanted]);
+      const result = await q(table, 'SELECT id, data, owner_id FROM app.records WHERE tbl = $1 AND id = ANY($2::text[])', [table, wanted], true);
       audit(table, 'lezen', result.rows);
       for (const row of result.rows) found.set(row.id, row.data as T);
     }
@@ -158,7 +165,7 @@ export const db = {
       params.push(filter);
       where += ' AND data @> $4::jsonb';
     }
-    const result = await q(table, `SELECT id, seq, data, owner_id FROM app.records WHERE ${where} ORDER BY seq LIMIT $3`, params);
+    const result = await q(table, `SELECT id, seq, data, owner_id FROM app.records WHERE ${where} ORDER BY seq LIMIT $3`, params, true);
     const rows = result.rows.slice(0, limit);
     audit(table, 'lezen', rows);
     const items = rows.map((row) => ({ ...(row.data as object), id: row.id as string })) as Array<Omit<T, 'id'> & { id: string }>;

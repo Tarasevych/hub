@@ -37,7 +37,7 @@ export async function werkruimtesVan(userId: string): Promise<Set<string>> {
   return new Set(rows.map((r) => r.w).filter((w): w is string => !!w));
 }
 
-export type GeraakteRij = { owner_id: string | null; ws?: string | null };
+export type GeraakteRij = { owner_id: string | null; ws?: string | null; id?: string };
 
 /** Zou RLS (afdwingen aan) deze rijen weigeren? Telt overtredingen; blokkeert zelf niets. */
 export async function controleerRijen(tbl: string, actie: 'lezen' | 'toevoegen' | 'wijzigen' | 'verwijderen', rijen: GeraakteRij[]): Promise<number> {
@@ -53,9 +53,11 @@ export async function controleerRijen(tbl: string, actie: 'lezen' | 'toevoegen' 
       tabellen = tabellen || (await gedeeldeTabellen());
       if ((schrijven ? tabellen.schrijven : tabellen.lezen).has(tbl)) continue;
     }
-    if (rij.ws) {
+    // Ruimte: rij met data.workspaceId van een eigen ruimte, of (alleen lezen) het ruimterecord zelf (0005).
+    const ruimte = rij.ws || (!schrijven && tbl === 'workspaces' ? rij.id : null);
+    if (ruimte) {
       c.werkruimtes = c.werkruimtes || werkruimtesVan(userId).catch(() => new Set<string>());
-      if ((await c.werkruimtes).has(rij.ws)) continue;
+      if ((await c.werkruimtes).has(ruimte)) continue;
     }
     mis += 1;
   }
