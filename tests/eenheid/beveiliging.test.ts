@@ -5,6 +5,8 @@ import { createOAuthMaterial, takeOAuthMaterial } from '../../backend/oauth-pkce
 import { pinnedFetch, privateAddress } from '../../backend/veilige-fetch';
 import { clearLoginFailures, lockoutRemaining, openWithEnvKey, pepperedHash, registerLoginFailure, sealWithEnvKey } from '../../server/platform/beveiliging';
 import { closePool } from '../../server/platform/pg';
+import { db } from '../../server/platform/db';
+import { HANDOFF_BINDING_COOKIE, handoffBindingVanBrowser, handoffBindingVoorAanmaken, metBindingCookie } from '../../backend/handoff-binding';
 
 const resultaten: Array<{ naam: string; ok: boolean }> = [];
 const check = (naam: string, ok: boolean, info = '') => { resultaten.push({ naam, ok }); console.log(`${ok ? 'OK  ' : 'FOUT'} ${naam}${info ? ` — ${info}` : ''}`); };
@@ -42,6 +44,26 @@ export async function main() {
   const rest = await lockoutRemaining(subject);
   await clearLoginFailures(subject);
   check('lockout: 4× geen blokkade, 5e → 15 min, 6e → 30 min; wissen heft op', tijden.slice(0, 4).every(x => x === 0) && tijden[4] === 900 && tijden[5] === 1800 && rest > 1700 && (await lockoutRemaining(subject)) === 0, tijden.join(','));
+
+  // Atomisch één waarde uit een array halen (herstelcodes): 8 gelijktijdige pogingen → precies één wint.
+  const tabel = `eenheidstest_array_${Date.now()}`;
+  const [rid] = await db.add(tabel, [{ hashes: ['a', 'b', 'c'], remaining: 3 }]);
+  const winst = await Promise.all(Array.from({ length: 8 }, () => db.takeArrayValue(tabel, rid!, 'hashes', 'b', 'remaining')));
+  const [naRec] = await db.get<{ hashes: string[]; remaining: number }>(tabel, [rid!]);
+  check('takeArrayValue: van 8 gelijktijdige pogingen wint er precies één; rest blijft staan, teller bijgewerkt', winst.filter(Boolean).length === 1 && JSON.stringify(naRec?.hashes) === '["a","c"]' && naRec?.remaining === 2, `${winst.filter(Boolean).length} ${JSON.stringify(naRec)}`);
+  check('takeArrayValue: onbekende waarde of ongeldige veldnaam → false, record ongewijzigd', !(await db.takeArrayValue(tabel, rid!, 'hashes', 'x', 'remaining')) && !(await db.takeArrayValue(tabel, rid!, "hashes'--", 'a')) && (await db.get<{ remaining: number }>(tabel, [rid!]))[0]?.remaining === 2);
+  const [leeg] = await db.add(tabel, [{ hashes: ['z'], remaining: 1 }]);
+  check('takeArrayValue: laatste waarde → lege array (geen null)', (await db.takeArrayValue(tabel, leeg!, 'hashes', 'z', 'remaining')) && JSON.stringify((await db.get<{ hashes: string[] }>(tabel, [leeg!]))[0]?.hashes) === '[]');
+  await db.delete(tabel, [rid!, leeg!]);
+
+  // Handoff-browserbinding.
+  const nieuw = handoffBindingVoorAanmaken({ headers: {} });
+  const waarde = nieuw.setCookie.split(';')[0].split('=')[1];
+  const metCookie = { headers: { cookie: `x=1; ${HANDOFF_BINDING_COOKIE}=${waarde}` } };
+  check('handoff-binding: nieuwe cookie met HttpOnly/Secure/SameSite=Strict, hash = binding van browser', /HttpOnly; Secure; SameSite=Strict/.test(nieuw.setCookie) && handoffBindingVanBrowser(metCookie) === nieuw.bindingHash && /^[a-f0-9]{64}$/.test(nieuw.bindingHash));
+  check('handoff-binding: bestaande cookie wordt hergebruikt; ontbrekende of misvormde → leeg', handoffBindingVoorAanmaken(metCookie).bindingHash === nieuw.bindingHash && handoffBindingVanBrowser({ headers: {} }) === '' && handoffBindingVanBrowser({ headers: { cookie: `${HANDOFF_BINDING_COOKIE}=kort` } }) === '');
+  const samen = metBindingCookie({ statusCode: 200, headers: { 'Set-Cookie': 'a=1; Path=/' } }, nieuw.setCookie) as { headers: Record<string, string> };
+  check('handoff-binding: bestaande Set-Cookie blijft staan', samen.headers['Set-Cookie'].startsWith('a=1; Path=/, ') && samen.headers['Set-Cookie'].includes(`${HANDOFF_BINDING_COOKIE}=`));
 
   await closePool();
   const mis = resultaten.filter(r => !r.ok).length;

@@ -171,4 +171,28 @@ export const db = {
     const row = result.rows[0];
     return row ? ({ ...(row.data as object), id: row.id } as T & { id: string }) : null;
   },
+
+  /**
+   * NIEUW (niet in AppDeploy): verwijder atomisch één tekenreeks `value` uit de array `field` van
+   * record `id`, alleen als die er nog in staat. Eén UPDATE: een gelijktijdige tweede aanroep wacht op
+   * de rijvergrendeling, ziet daarna de nieuwe versie (waarin `value` ontbreekt) en wijzigt niets.
+   * Optioneel wordt `countField` bijgewerkt naar de nieuwe lengte. Geeft true als déze aanroep de
+   * waarde heeft verwijderd (bijv. eenmalige herstelcodes).
+   */
+  async takeArrayValue(table: string, id: string, field: string, value: string, countField?: string): Promise<boolean> {
+    checkTable(table);
+    const veld = /^[A-Za-z_][A-Za-z0-9_]{0,60}$/;
+    if (!validId(id) || !veld.test(field) || (countField !== undefined && !veld.test(countField)) || typeof value !== 'string' || !value) return false;
+    const result = await getPool().query(
+      `UPDATE app.records SET updated_at = now(), data = (
+         SELECT CASE WHEN $5::text IS NULL THEN d ELSE jsonb_set(d, ARRAY[$5::text], to_jsonb(jsonb_array_length(d -> $3::text))) END
+         FROM (SELECT jsonb_set(data, ARRAY[$3::text], COALESCE(
+                 (SELECT jsonb_agg(e) FROM jsonb_array_elements(data -> $3::text) AS e WHERE e <> to_jsonb($4::text)),
+                 '[]'::jsonb)) AS d) AS x)
+       WHERE tbl = $1 AND id = $2 AND jsonb_typeof(data -> $3::text) = 'array' AND (data -> $3::text) @> jsonb_build_array($4::text)
+       RETURNING id`,
+      [table, id, field, value, countField ?? null],
+    );
+    return (result.rowCount ?? 0) === 1;
+  },
 };

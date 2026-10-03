@@ -42,10 +42,15 @@ Alle vijf zijn opgelost (eerst achter vlaggen, in de zelf-gehoste versie zijn de
 
 Daarnaast: `ownerHost` en de handoff-`hostOf` vertrouwen `x-forwarded-host` niet meer (alleen `Host`).
 
+### Fase B, vervolg: de twee resterende theoretische risico's (gesloten)
+
+| # | Punt | Status | Waar | Test |
+|---|---|---|---|---|
+| 14 | Login-CSRF via ondergeschoven `?handoff=`-link | **Opgelost.** Elke handoff wordt gebonden aan de browser die hem aanmaakt: bij het aanmaken krijgt die browser een willekeurige cookie `tsv_handoff_binding` (32 bytes, `HttpOnly; Secure; SameSite=Strict; Domain=.tarasevych.com`, 30 dagen, hergebruikt zodat meerdere tabbladen werken). De handoff-rij bewaart alleen de SHA-256 ervan. Alle vijf aanmaakroutes zetten de cookie; alle vier inwisselroutes (`/api/owner/session/handoff/redeem`, `/api/service-handoff/consume`, `/api/service-handoff/consume-hub`, `/api/ecosystem/handoff/exchange`) eisen hem en nemen de hash op in het atomische `db.takeOne`-filter. Een andere browser (zonder of met een andere cookie) krijgt 401 en verbruikt de code niet. Gekozen boven "same-site navigatie + bevestiging": Sec-Fetch-/Referer-signalen zijn bij een gewone link niet betrouwbaar te onderscheiden en een bevestigingsklik is te omzeilen met social engineering; een cookie die alleen de eigen browser heeft is dat niet. | `backend/handoff-binding.ts`, `backend/owner-session-handoff.ts`, `backend/index.ts` | rooktest B8/B8b, eenheidstest, Playwright Test 9 (vreemde browser 401 + code blijft; eigen browser 200) |
+| 15 | Herstelcode dubbel gebruiken | **Opgelost.** Verbruik is één `UPDATE … WHERE data->'hashes' @> [hash] RETURNING id` (`db.takeArrayValue`): Postgres vergrendelt de rij, een gelijktijdige tweede poging ziet de nieuwe versie zonder de hash en wijzigt niets → `ACCESS_MFA_INVALID`. `remaining` wordt in hetzelfde statement bijgewerkt. | `server/platform/db.ts`, `backend/access-plane.ts` | rooktest B4 (4 gelijktijdige logins → precies 1× 200), eenheidstest (8 gelijktijdig → 1 winnaar) |
+
 ## 4. Nog open / bewust niet gedaan
 - **WebAuthn/passkeys**: echte implementatie (attestation + assertion, bijv. `@simplewebauthn/server`) volgt later; tot dan uit.
-- **Login-CSRF bij een afgemelde browser** via een ondergeschoven `?handoff=`-link blijft theoretisch mogelijk (de aanvaller logt het slachtoffer dan in op het account van de aanvaller). Afgezwakt door de korte levensduur (2 min) en eenmaligheid. Volledig oplossen = handoff binden aan een browsergebonden cookie.
-- **Herstelcode-gebruik** is lezen-dan-bijwerken (geen rij-lock); een gelijktijdige dubbele inwisseling van dezelfde code is theoretisch mogelijk, maar beperkt door rate limit en lockout.
 - `b4-important-free` in `src/mail-sidebar-navigation.css` en `src/mail-thread-editor.css` (l002-audit): komt uit AppDeploy v56, geen beveiligingsprobleem.
 - De legacy popup-flow (`/api/auth/google/start` + `proof`) kan later weg.
 

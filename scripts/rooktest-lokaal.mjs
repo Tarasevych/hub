@@ -210,6 +210,10 @@ try {
     r = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { ...pw, totp: herstel[0] }, vanIp('203.0.113.33'));
     const r2 = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { ...pw, totp: herstel[0] }, vanIp('203.0.113.33'));
     check('herstelcode werkt precies één keer', r.status === 200 && r2.status === 401, `eerste ${r.status}, tweede ${r2.status}`);
+    // Gelijktijdig: dezelfde (nog ongebruikte) herstelcode 4× tegelijk → precies één succes (atomische UPDATE).
+    const tegelijk = await Promise.all([41, 42, 43, 44].map(n => verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { ...pw, totp: herstel[1] }, vanIp(`203.0.113.${n}`))));
+    const recNa = (await pool.query("select data from app.records where tbl='identity_recovery_codes_v1' and data->>'userId'=$1", [eigenaar])).rows[0]?.data || {};
+    check('herstelcode gelijktijdig: van 4 pogingen slaagt er precies één, teller klopt', tegelijk.filter(x => x.status === 200).length === 1 && tegelijk.filter(x => x.status === 401).length === 3 && recNa.remaining === 8 && recNa.hashes?.length === 8, `statussen ${tegelijk.map(x => x.status).join(',')}, over ${recNa.remaining}/${recNa.hashes?.length}`);
     await pool.query("delete from app.login_lockouts where subject = 'wachtwoord:rooktest-eigenaar@example.test'");
   }
 
@@ -230,11 +234,39 @@ try {
   const wa = (snap.data?.factors || []).find(f => f.id === 'webauthn');
   check('passkeys uit: options/register → 503 ACCESS_WEBAUTHN_DISABLED, factor niet actief', r.status === 503 && r.data?.error === 'ACCESS_WEBAUTHN_DISABLED' && rReg.status === 503 && wa && wa.enabled === false, `options ${r.status}, register ${rReg.status}, factor ${JSON.stringify(wa)}`);
 
-  // B8. Sessie-handoff is atomisch eenmalig: twee gelijktijdige inwisselingen → precies één succes.
+  // B8. Sessie-handoff is atomisch eenmalig: drie gelijktijdige inwisselingen → precies één succes.
+  const bindingUit = res => (res.setCookie.map(c => c.split(';')[0]).find(c => c.startsWith('tsv_handoff_binding=')) || '');
   r = await api('hub.tarasevych.com', '/api/owner/session/handoff/create', { service: 'hub', tabContext: tab(), target: 'cloud' }, c1);
   const code = r.data?.url ? new URL(r.data.url).searchParams.get('handoff') : '';
-  const pogingen = await Promise.all([1, 2, 3].map(() => verzoek('POST', 'cloud.tarasevych.com', '/api/owner/session/handoff/redeem', { code, service: 'cloud', tabContext: tab() })));
-  check('handoff-code: van 3 gelijktijdige inwisselingen slaagt er precies één', !!code && pogingen.filter(x => x.status === 200).length === 1, `create ${r.status}, statussen ${pogingen.map(x => x.status).join(',')}`);
+  const binding1 = bindingUit(r);
+  const bindingAttr = r.setCookie.find(c => c.startsWith('tsv_handoff_binding=')) || '';
+  check('handoff-aanmaak zet bindingscookie (HttpOnly, Secure, SameSite=Strict, Domain=.tarasevych.com)', /HttpOnly/.test(bindingAttr) && /Secure/.test(bindingAttr) && /SameSite=Strict/.test(bindingAttr) && /Domain=\.tarasevych\.com/.test(bindingAttr), bindingAttr.replace(/=[^;]+/, '=…'));
+  const pogingen = await Promise.all([1, 2, 3].map(() => verzoek('POST', 'cloud.tarasevych.com', '/api/owner/session/handoff/redeem', { code, service: 'cloud', tabContext: tab() }, { cookie: binding1 })));
+  check('handoff-code: van 3 gelijktijdige inwisselingen slaagt er precies één', !!code && !!binding1 && pogingen.filter(x => x.status === 200).length === 1, `create ${r.status}, statussen ${pogingen.map(x => x.status).join(',')}`);
+  // Hergebruik: een tweede aanmaak in dezelfde browser houdt dezelfde binding (meerdere tabbladen blijven werken).
+  r = await api('hub.tarasevych.com', '/api/owner/session/handoff/create', { service: 'hub', tabContext: tab(), target: 'mail' }, `${c1}; ${binding1}`);
+  check('bindingscookie wordt hergebruikt bij een volgende handoff in dezelfde browser', bindingUit(r) === binding1, `${r.status}`);
+
+  // B8b. Login-CSRF: een code van de aanvaller werkt niet in een andere (afgemelde) browser en wordt daar ook niet verbruikt.
+  const cLid = `${naam}=${encodeURIComponent(await zaaiSessie(lid))}`;
+  r = await api('hub.tarasevych.com', '/api/owner/session/handoff/create', { service: 'hub', tabContext: tab(), target: 'cloud' }, cLid);
+  const codeAanvaller = r.data?.url ? new URL(r.data.url).searchParams.get('handoff') : '';
+  const bindingAanvaller = bindingUit(r);
+  const zonder = await verzoek('POST', 'cloud.tarasevych.com', '/api/owner/session/handoff/redeem', { code: codeAanvaller, service: 'cloud', tabContext: tab() });
+  const anders = await verzoek('POST', 'cloud.tarasevych.com', '/api/owner/session/handoff/redeem', { code: codeAanvaller, service: 'cloud', tabContext: tab() }, { cookie: `tsv_handoff_binding=${randomBytes(32).toString('base64url')}` });
+  const eigen = await verzoek('POST', 'cloud.tarasevych.com', '/api/owner/session/handoff/redeem', { code: codeAanvaller, service: 'cloud', tabContext: tab() }, { cookie: bindingAanvaller });
+  check('login-CSRF: ondergeschoven handoff geweigerd zonder (401) of met andere bindingscookie (401), zonder de code te verbruiken', !!codeAanvaller && zonder.status === 401 && zonder.data?.error === 'OWNER_HANDOFF_BINDING_MISSING' && anders.status === 401 && eigen.status === 200 && !zonder.setCookie.length && !anders.setCookie.length, `zonder ${zonder.status} ${zonder.data?.error || ''}, ander ${anders.status}, eigen browser ${eigen.status}`);
+  // Oudere inwisselroutes (service-handoff/consume, ecosystem/handoff/exchange) eisen dezelfde binding.
+  const legacyBinding = `tsv_handoff_binding=${randomBytes(32).toString('base64url')}`;
+  const legacyHash = createHash('sha256').update(legacyBinding.split('=')[1]).digest('hex');
+  const legacyRij = async (service) => { const c = randomBytes(32).toString('base64url'); await pool.query("insert into app.records (tbl, id, data) values ('service_handoffs', $1, $2)", [randomUUID(), { codeHash: createHash('sha256').update(c).digest('hex'), userId: eigenaar, service, expiresAt: Date.now() + 60000, createdAt: Date.now(), browserGrantId: '', bindingHash: legacyHash }]); return c; };
+  const lc = await legacyRij('cloud');
+  const l1 = await verzoek('POST', 'cloud.tarasevych.com', '/api/service-handoff/consume', { code: lc, service: 'cloud' });
+  const l2 = await verzoek('POST', 'cloud.tarasevych.com', '/api/service-handoff/consume', { code: lc, service: 'cloud' }, { cookie: legacyBinding });
+  const ec = await legacyRij('mail');
+  const e1 = await verzoek('POST', 'mail.tarasevych.com', '/api/ecosystem/handoff/exchange', { code: ec, service: 'mail' }, { cookie: `tsv_handoff_binding=${randomBytes(32).toString('base64url')}` });
+  const e2 = await verzoek('POST', 'mail.tarasevych.com', '/api/ecosystem/handoff/exchange', { code: ec, service: 'mail' }, { cookie: legacyBinding });
+  check('oudere inwisselroutes eisen ook de bindingscookie (consume, exchange)', l1.status === 401 && l2.status === 200 && e1.status === 401 && e2.status === 200, `consume ${l1.status}/${l2.status}, exchange ${e1.status}/${e2.status} ${e2.data?.error || ''}`);
 
   // B9. CSP op de server-gegenereerde callbackpagina: hashes, geen 'unsafe-inline'.
   const cb = await new Promise((resolve, reject) => { const u = new URL(BASE); http.get({ hostname: u.hostname, port: u.port, path: '/api/owner/auth/google/callback?state=x&code=y', headers: { host: 'id.tarasevych.com' } }, rs => { rs.resume(); resolve({ status: rs.statusCode, csp: rs.headers['content-security-policy'] || '', type: rs.headers['content-type'] || '' }); }).on('error', reject); });

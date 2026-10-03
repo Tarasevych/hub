@@ -1,6 +1,7 @@
 import {createHash,randomBytes} from 'node:crypto';
 import {db} from '../server/platform';
 import {COOKIE_SCOPE, ECOSYSTEM_COOKIE} from './deployment-identity';
+import {handoffBindingVanBrowser, handoffBindingVoorAanmaken, metBindingCookie} from './handoff-binding';
 
 const HANDOFF_MS=120000;
 const OWNER_SESSION_TABLE='owner_service_sessions_v1';
@@ -10,7 +11,7 @@ const OWNER_ABSOLUTE_MS=30*24*60*60*1000;
 const SERVICE_ORIGINS={hub:'https://hub.tarasevych.com',identity:'https://id.tarasevych.com',ai:'https://ai.tarasevych.com',mail:'https://mail.tarasevych.com',cloud:'https://cloud.tarasevych.com',github:'https://github.tarasevych.com',huis:'https://huis.tarasevych.com',api:'https://api.tarasevych.com',admin:'https://admin.tarasevych.com'} as const;
 type ServiceId=keyof typeof SERVICE_ORIGINS;
 type SessionAuth={errorCode:string}|{user:{id:string;status:string};session?:{grantId?:string};tabSession?:{grantId?:string}|null};
-type HandoffRecord={id:string;codeHash:string;userId:string;service:string;expiresAt:number;browserGrantId?:string};
+type HandoffRecord={id:string;codeHash:string;userId:string;service:string;expiresAt:number;browserGrantId?:string;bindingHash?:string};
 
 const sha=(value:string)=>createHash('sha256').update(value).digest('hex');
 const headers=(event:Record<string,unknown>)=>{const raw=((event.headers||{})as Record<string,unknown>);const out:Record<string,string>={};for(const[key,value]of Object.entries(raw))out[key.toLowerCase()]=String(value||'');return out};
@@ -38,13 +39,15 @@ export function createOwnerHandoffRoutes(deps:{
       const safeTab=/^[a-z][a-z0-9_-]{0,40}$/.test(tab)?tab:'';
       const code=randomBytes(32).toString('base64url');
       const grantId=auth.session?.grantId||auth.tabSession?.grantId||'';
-      const[id]=await db.add('service_handoffs',[{codeHash:sha(code),userId:auth.user.id,service:target,expiresAt:Date.now()+HANDOFF_MS,createdAt:Date.now(),browserGrantId:grantId}]);
+      // Login-CSRF: de code werkt alleen in de browser die hem aanmaakte (zie handoff-binding.ts).
+      const binding=handoffBindingVoorAanmaken(ctx.event);
+      const[id]=await db.add('service_handoffs',[{codeHash:sha(code),userId:auth.user.id,service:target,expiresAt:Date.now()+HANDOFF_MS,createdAt:Date.now(),browserGrantId:grantId,bindingHash:binding.bindingHash}]);
       if(!id)return deps.fail('Unable to create service handoff',500);
       const url=new URL(SERVICE_ORIGINS[target]);
       url.searchParams.set('handoff',code);
       if(safeTab)url.searchParams.set('tab',safeTab);
       await deps.audit(auth.user.id,'service_handoff_created','success',{service:target});
-      return deps.respond({url:url.toString(),expiresInMs:HANDOFF_MS});
+      return metBindingCookie(deps.respond({url:url.toString(),expiresInMs:HANDOFF_MS}),binding.setCookie);
     }],
     'POST /api/owner/session/handoff/redeem':[async(ctx)=>{
       // De service wordt uitsluitend door de host bepaald; een afwijkende body.service wordt geweigerd.
@@ -54,8 +57,12 @@ export function createOwnerHandoffRoutes(deps:{
       if(claimed&&claimed!==service)return deps.fail('OWNER_SESSION_ORIGIN_INVALID',403);
       const code=String(deps.body(ctx.body).code||'');
       if(!code)return deps.fail('OWNER_HANDOFF_INVALID',400);
+      // Browserbinding (login-CSRF): zonder de bindingscookie van de aanmakende browser geen inwisseling.
+      // De hash zit in het filter, zodat een vreemde browser de code ook niet verbruikt.
+      const bindingHash=handoffBindingVanBrowser(ctx.event);
+      if(!bindingHash){await deps.audit('anonymous','owner.session.handoff.unbound','denied',{service});return deps.fail('OWNER_HANDOFF_BINDING_MISSING',401);}
       // Atomisch eenmalig: DELETE … RETURNING in één statement; een tweede (gelijktijdige) inwisseling vindt niets.
-      const handoff=await db.takeOne<Omit<HandoffRecord,'id'>>('service_handoffs',{codeHash:sha(code),service}) as HandoffRecord|null;
+      const handoff=await db.takeOne<Omit<HandoffRecord,'id'>>('service_handoffs',{codeHash:sha(code),service,bindingHash}) as HandoffRecord|null;
       if(!handoff||handoff.expiresAt<=Date.now())return deps.fail('OWNER_HANDOFF_INVALID',401);
       const existing=await deps.requireSession(ctx.event,ctx.body);
       if(!('errorCode'in existing)&&existing.user.id===handoff.userId){
