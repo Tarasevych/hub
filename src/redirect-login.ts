@@ -1,4 +1,4 @@
-import {api} from '@appdeploy/client';
+import {api} from './platform/client';
 export type PrimaryLoginService='hub'|'ai'|'mail'|'cloud'|'github'|'identity'|'api'|'admin';
 export type PrimaryLoginIntent='login'|'replace-tab';
 export type PrimaryLoginLocale='uk'|'nl';

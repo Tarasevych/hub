@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from 'react';
-import {api} from '@appdeploy/client';
+import {api} from './platform/client';
 import {Eye,EyeOff,KeyRound,LockKeyhole,Plus,RefreshCw,ShieldCheck,Trash2,TriangleAlert,X} from 'lucide-react';
 
 type Lang='uk'|'nl';

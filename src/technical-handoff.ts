@@ -1,4 +1,4 @@
-import {api} from '@appdeploy/client';
+import {api} from './platform/client';
 import {domains, isTechnicalHost} from './canonical-navigation';
 import {resolveCanonicalRoute} from './canonical-service';
 import {ecosystemTabContext, ecosystemSessionLikely, setEcosystemSessionLikely} from './tab-context';

@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {api} from '@appdeploy/client';
+import {api} from './platform/client';
 import {ecosystemTabContext} from './tab-context';
 import './access-plane.css';
 

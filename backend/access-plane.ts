@@ -1,6 +1,6 @@
 import {createHmac,randomBytes,scrypt,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
-import {db} from '@appdeploy/sdk';
+import {db} from '../server/platform';
 import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './google-contour';
 
 const scryptAsync=promisify(scrypt);

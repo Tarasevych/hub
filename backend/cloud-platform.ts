@@ -1,4 +1,4 @@
-import { ai, db, error, json, storage } from '@appdeploy/sdk';
+import { ai, db, error, json, storage } from '../server/platform';
 import { createHash, randomBytes } from 'node:crypto';
 import { cloudGoogleProviderPlatformStatus, cloudGoogleProviderSnapshot, createCloudGoogleRoutes } from './cloud-google-drive';
 import { createGoogleSuiteOnboardingRoutes, googleSuiteOnboardingSnapshot } from './google-suite-onboarding';

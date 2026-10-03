@@ -1,5 +1,5 @@
 import {createHash,randomBytes} from 'node:crypto';
-import {db} from '@appdeploy/sdk';
+import {db} from '../server/platform';
 import {API_COOKIE_PATH, ECOSYSTEM_COOKIE} from './deployment-identity';
 
 const HANDOFF_MS=120000;

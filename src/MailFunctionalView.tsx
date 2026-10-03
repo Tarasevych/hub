@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from 'react';
-import {api} from '@appdeploy/client';
+import {api} from './platform/client';
 import {Bell,Check,Clock3,FileText,Inbox,ListChecks,Mail,Pencil,ShieldCheck,Sparkles,Star,Upload,UserCheck,X} from 'lucide-react';
 import GoogleMailWorkspace from './GoogleMailWorkspace';import{emitCanonicalNotice}from'./canonical-notifications';import {TECH_ORIGIN} from '../backend/deployment-identity';
 

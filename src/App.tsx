@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, BrainCircuit, CalendarDays, Check, ChevronDown, ChevronUp, Copy, ExternalLink, Eye, EyeOff, FileText, FolderOpen, Github, Link2, LogOut, Mail, Maximize2, Minimize2, PanelsTopLeft, Pencil, Plus, RotateCcw, Settings, Share2, Trash2, UserPlus, Users, Workflow, X } from 'lucide-react';
-import { api, image as appImage, invitesClient } from '@appdeploy/client';
+import { api, image as appImage, invitesClient } from './platform/client';
 import './ecosystem-production.css';
 import './hub-functional-blocks.css';
 import HubBlockWidget from './HubBlockWidget';

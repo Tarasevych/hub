@@ -1,5 +1,5 @@
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
-import {db,secrets} from '@appdeploy/sdk';
+import {db,secrets} from '../server/platform';
 import {TECH_ORIGIN} from './deployment-identity';
 
 export const DEFAULT_GOOGLE_CLIENT_ID='488811159106-bnoiul4fhqr2hgqqfkuvq64aqs5va7rc.apps.googleusercontent.com';

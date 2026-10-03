@@ -1,5 +1,5 @@
 import {useEffect,useRef} from 'react';
-import {api} from '@appdeploy/client';
+import {api} from './platform/client';
 import {ecosystemTabContext} from './tab-context';
 import {redirectStartReason,startPrimaryRedirectLogin} from './redirect-login';
 

@@ -1,4 +1,4 @@
-import { db, error, json, secrets } from '@appdeploy/sdk';
+import { db, error, json, secrets } from '../server/platform';
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from 'node:crypto';
 import {TECH_ORIGIN} from './deployment-identity';
 import {resolveGoogleContour} from './google-contour';

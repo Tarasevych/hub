@@ -1,4 +1,4 @@
-import { api } from '@appdeploy/client';
+import { api } from './platform/client';
 import { Archive, Brain, Check, ChevronRight, Cloud, File, FileText, FolderKanban, Inbox, Link2, LoaderCircle, Pause, Play, Plus, Search, ShieldCheck, Sparkles, Unplug, Upload, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import DriveBrowser,{CloudFileWorkbench,loadCloudFilePreview,type CloudRawFile} from './DriveBrowser';import{revokeMailAttachmentPreview,type MailAttachmentPreview}from'./MailAttachmentPreview';

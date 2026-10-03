@@ -1,4 +1,4 @@
-import { db, error, invites, isInviteError, json, router, secrets } from '@appdeploy/sdk';
+import { db, error, invites, isInviteError, json, router, secrets } from '../server/platform';
 import { createHash, createHmac, createPublicKey, randomBytes, verify } from 'node:crypto';
 import {API_COOKIE_PATH, ECOSYSTEM_COOKIE, REDIRECT_COOKIE, TECH_ORIGIN as OWNER_TECH_ORIGIN} from './deployment-identity';
 import {resolveGoogleContour, DEFAULT_GOOGLE_CLIENT_ID} from './google-contour';

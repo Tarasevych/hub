@@ -1,5 +1,5 @@
 import {createHash,randomBytes,timingSafeEqual} from 'node:crypto';
-import {db,error,json} from '@appdeploy/sdk';
+import {db,error,json} from '../server/platform';
 import {apiPlatformContractPayload} from './api-platform-contract';
 import {apiPlatformVaultCount,vaultEncryptionReady} from './api-platform-vault';
 import {apiPlatformConnectionsConfiguredCount} from './api-platform-connections';

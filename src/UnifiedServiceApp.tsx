@@ -1,5 +1,5 @@
 import {lazy,Suspense,useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
-import {api,image as appImage,invitesClient} from '@appdeploy/client';
+import {api,image as appImage,invitesClient} from './platform/client';
 import {KeyRound,LockKeyhole,Mail,ShieldCheck,X} from 'lucide-react';
 import './unified-service-content.css';
 import SettingsCenterView,{type SettingsShareInput,type SettingsWidgetInput} from './SettingsCenterView';

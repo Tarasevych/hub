@@ -1,4 +1,4 @@
-import{api}from'@appdeploy/client';
+import{api}from'./platform/client';
 import{ChevronLeft,Download,File,FileImage,FileText,Folder,Grid2X2,List,LoaderCircle,Pencil,Rows3,Search,Star,Trash2,Upload,X}from'lucide-react';
 import{useEffect,useRef,useState}from'react';
 import{loadCognitiveResume,saveCognitiveResume,ServiceContextBar,type CognitiveDensity,type CognitiveResume}from'./CognitiveContext';import{MailAttachmentPreviewBody,loadMailAttachmentPreviewFromBlob,revokeMailAttachmentPreview,type MailAttachmentPreview}from'./MailAttachmentPreview';import{mailAttachmentEditSemanticsLabel,mailAttachmentViewModeLabel,resolveMailAttachmentWorkbench}from'./mail-attachment-workbench';

@@ -1,4 +1,4 @@
-import {error,json} from '@appdeploy/sdk';
+import {error,json} from '../server/platform';
 import {googleSuiteDriveProviderSnapshot,googleSuitePrincipalAccessToken} from './google-suite-onboarding';
 
 type PlanService='drive';

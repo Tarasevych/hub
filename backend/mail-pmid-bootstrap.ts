@@ -1,4 +1,4 @@
-import { db } from '@appdeploy/sdk';
+import { db } from '../server/platform';
 import { createHash } from 'node:crypto';
 import { writePmidMapForAccount } from './mail-search-durable';
 
