@@ -72,6 +72,14 @@ try {
   const lid = await zaaiGebruiker('rooktest-lid@example.test', 'member');
   const c1 = `${naam}=${encodeURIComponent(await zaaiSessie(eigenaar))}`;
 
+  // 0. Statische bestanden: geen audit-uitvoer of sourcemaps; CSP met 'wasm-unsafe-eval' maar zonder 'unsafe-eval'.
+  let s0 = await verzoek('GET', 'hub.tarasevych.com', '/l002-diagnostic.json');
+  check('l002-diagnostic.json niet gepubliceerd (404)', s0.status === 404, `status ${s0.status}`);
+  s0 = await verzoek('GET', 'hub.tarasevych.com', '/assets/index.js.map');
+  check('sourcemaps niet gepubliceerd (404)', s0.status === 404, `status ${s0.status}`);
+  const kop = await new Promise((resolve, reject) => { const u = new URL(BASE); http.get({ hostname: u.hostname, port: u.port, path: '/', headers: { host: 'hub.tarasevych.com' } }, r => { r.resume(); resolve(r.headers['content-security-policy'] || ''); }).on('error', reject); });
+  check("CSP: script-src 'self' 'wasm-unsafe-eval', geen 'unsafe-eval'/'unsafe-inline' voor scripts", /script-src 'self' 'wasm-unsafe-eval';/.test(kop) && !/script-src[^;]*'unsafe-(eval|inline)'/.test(kop), kop.match(/script-src[^;]*/)?.[0]);
+
   // 1. Zonder cookie: netjes afgemeld.
   let r = await api('hub.tarasevych.com', '/api/owner/session/bootstrap', { service: 'hub', tabContext: tab() });
   check('bootstrap zonder sessie → signed_out', r.status === 200 && r.data?.state === 'signed_out', `status ${r.status}`);
