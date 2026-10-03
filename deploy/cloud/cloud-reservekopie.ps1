@@ -309,6 +309,7 @@ try {
       if ($compleet.ContainsKey($s)) { if ($s -eq $nieuwsteLokaal[0]) { $nieuwsteOk = $true }; continue }
       try {
         $bytes = Upload-Map $lokaal[$s] "$Remote/dagelijks/$s"
+        if ($DryRun) { Schrijf-Log "zou uploaden: dagelijks/$s (bestanden goedgekeurd)"; continue }
         Schrijf-Log ('OK dagelijks/{0} geupload en op Drive gecontroleerd ({1:N1} KB)' -f $s, ($bytes / 1KB))
         if ($s -eq $nieuwsteLokaal[0]) { $nieuwsteOk = $true }
       } catch { Schrijf-Log "FOUT dagelijks/$s : $($_.Exception.Message)"; $fouten++ }
@@ -343,6 +344,7 @@ try {
       if ($remoteG.ContainsKey($g.Name)) { continue }
       try {
         $bytes = Upload-Map $g.FullName "$Remote/geheimen/$($g.Name)"
+        if ($DryRun) { Schrijf-Log "zou uploaden: geheimen/$($g.Name) (bestanden goedgekeurd)"; continue }
         Schrijf-Log ('OK geheimen/{0} geupload en gecontroleerd ({1:N1} KB)' -f $g.Name, ($bytes / 1KB))
       } catch { Schrijf-Log "FOUT geheimen/$($g.Name) : $($_.Exception.Message)"; $fouten++ }
     }
