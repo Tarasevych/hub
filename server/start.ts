@@ -218,22 +218,24 @@ function geheugenLimiet(key: string, limit: number, windowMs: number) {
 }
 setInterval(() => { const now = Date.now(); for (const [k, v] of geheugen) if (now - v.start > 120_000) geheugen.delete(k); }, 60_000).unref();
 
-// [patroon, bucketnaam, max per minuut per IP]
-const STRIKTE_LIMIETEN: Array<[RegExp, string, number]> = [
-  [/^\/api\/(owner\/)?(access|auth)\/password\/login$/, 'wachtwoord', 10],
-  [/^\/api\/owner\/access\/(totp|recovery)\//, 'mfa', 10],
-  [/^\/api\/auth\/google\/start$/, 'google-start', 10],
-  [/^\/api\/owner\/identity\/transactions\/(create|attach)$/, 'login-start', 20],
-  [/^\/api\/(auth|owner\/auth|ecosystem\/auth|owner\/identity|service-handoff|ecosystem\/handoff|owner\/session\/handoff|share\/join)(\/|$)/, 'aanmelden', 120],
+// [patroon, bucketnaam, max per minuut per IP, faalt dicht bij DB-fout]
+// Alle strikte buckets zijn aanmeld-/MFA-paden: bij een databasestoring liever even "probeer later"
+// dan onbeperkt wachtwoorden of codes laten raden (zie rateLimit in platform/beveiliging.ts).
+const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
+  [/^\/api\/(owner\/)?(access|auth)\/password\/login$/, 'wachtwoord', 10, true],
+  [/^\/api\/owner\/access\/(totp|recovery)\//, 'mfa', 10, true],
+  [/^\/api\/auth\/google\/start$/, 'google-start', 10, true],
+  [/^\/api\/owner\/identity\/transactions\/(create|attach)$/, 'login-start', 20, true],
+  [/^\/api\/(auth|owner\/auth|ecosystem\/auth|owner\/identity|service-handoff|ecosystem\/handoff|owner\/session\/handoff|share\/join)(\/|$)/, 'aanmelden', 120, true],
 ];
 
 async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
   const algemeen = geheugenLimiet(`api:${ip}`, API_LIMIT_PER_MIN, 60_000);
   if (!algemeen.ok) return algemeen.retryAfter;
   if (SAFE_METHODS.has(method) && !pathname.includes('/callback')) return 0;
-  for (const [patroon, naam, max] of STRIKTE_LIMIETEN) {
+  for (const [patroon, naam, max, failClosed] of STRIKTE_LIMIETEN) {
     if (!patroon.test(pathname)) continue;
-    const r = await rateLimit(`${naam}:${ip}`, max, 60);
+    const r = await rateLimit(`${naam}:${ip}`, max, 60, { failClosed });
     return r.ok ? 0 : r.retryAfter;
   }
   return 0;
