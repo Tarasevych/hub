@@ -11,7 +11,7 @@ const migrationsDir = () =>
   process.env.MIGRATIONS_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'migrations');
 
 export async function migrate({ statusOnly = false } = {}): Promise<string[]> {
-  const pool = getPool();
+  const pool = getPool('migratie');
   await pool.query('CREATE SCHEMA IF NOT EXISTS app');
   await pool.query('CREATE TABLE IF NOT EXISTS app.schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
   const done = new Set((await pool.query('SELECT version FROM app.schema_migrations')).rows.map((r) => r.version as string));
