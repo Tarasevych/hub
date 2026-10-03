@@ -282,6 +282,25 @@ try {
   const cbEigen = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/google/callback', { state: stD, code: 'rooktest-code' }, { cookie: aanmeldCookie });
   check('login-CSRF: Google-callback zonder/met andere bindingscookie of zonder hash → LOGIN_BINDING_MISMATCH; eigen browser komt voorbij de controle', cbZonder.data?.reasonCode === 'LOGIN_BINDING_MISMATCH' && cbAnder.data?.reasonCode === 'LOGIN_BINDING_MISMATCH' && cbOud.data?.reasonCode === 'LOGIN_BINDING_MISMATCH' && cbEigen.data?.ok === false && !!cbEigen.data?.reasonCode && cbEigen.data.reasonCode !== 'LOGIN_BINDING_MISMATCH', `zonder ${cbZonder.data?.reasonCode}, ander ${cbAnder.data?.reasonCode}, oud ${cbOud.data?.reasonCode}, eigen ${cbEigen.data?.reasonCode}`);
 
+  // B8d. "Overal afmelden" dekt alles: >100 sessies (alle pagina's), onthouden browsers, openstaande
+  // handoff-codes, afgeronde-maar-niet-ingewisselde aanmeldtransacties en verouderde sessierijen.
+  const intrekker = await zaaiGebruiker('rooktest-intrekken@example.test', 'member');
+  const cI = `${naam}=${encodeURIComponent(await zaaiSessie(intrekker))}`;
+  await pool.query("insert into app.records (tbl, id, data) select 'owner_service_sessions_v1', gen_random_uuid()::text, jsonb_build_object('tokenHash', md5(random()::text), 'userId', $1::text, 'service', 'hub', 'idleExpiresAt', $2::bigint, 'absoluteExpiresAt', $2::bigint, 'revocationEpoch', 0, 'scope', 'ecosystem') from generate_series(1, 120)", [intrekker, nu + 864e5]);
+  await voeg('owner_browser_grants_v1', { tokenHash: 'rooktest-grant', userId: intrekker, createdAt: nu, lastUsedAt: nu, expiresAt: nu + 864e5 });
+  await voeg('service_handoffs', { codeHash: 'rooktest-handoff', userId: intrekker, service: 'cloud', expiresAt: nu + 6e4, bindingHash: 'x' });
+  const txI = await voeg('owner_auth_transactions_v1', { transactionHash: 'rooktest-tx', userId: intrekker, status: 'complete', flowMode: 'redirect', redirectTokenHash: 'rooktest-redirect', expiresAt: nu + 6e5 });
+  await voeg('service_sessions', { tokenHash: 'rooktest-oud', userId: intrekker, service: 'mail', expiresAt: nu + 864e5 });
+  r = await api('hub.tarasevych.com', '/api/owner/session/logout-account-everywhere', { service: 'hub', tabContext: tab() }, cI);
+  const telI = async (sql) => (await pool.query(sql, [intrekker])).rows[0].n;
+  const openSessies = await telI("select count(*)::int n from app.records where tbl='owner_service_sessions_v1' and data->>'userId'=$1 and coalesce((data->>'revokedAt')::bigint,0)=0");
+  const openGrants = await telI("select count(*)::int n from app.records where tbl='owner_browser_grants_v1' and data->>'userId'=$1 and coalesce((data->>'revokedAt')::bigint,0)=0");
+  const handoffsI = await telI("select count(*)::int n from app.records where tbl='service_handoffs' and data->>'userId'=$1");
+  const oudI = await telI("select count(*)::int n from app.records where tbl='service_sessions' and data->>'userId'=$1");
+  const txStatus = (await pool.query("select data->>'status' s, data->>'redirectTokenHash' h from app.records where id=$1", [txI])).rows[0];
+  r = await api('hub.tarasevych.com', '/api/owner/session/bootstrap', { service: 'hub', tabContext: tab() }, cI);
+  check('overal afmelden: alle 121 sessies + grant ingetrokken, handoff weg, transactie geannuleerd, oude sessierij weg, cookie ongeldig', openSessies === 0 && openGrants === 0 && handoffsI === 0 && oudI === 0 && txStatus?.s === 'cancelled' && !txStatus?.h && r.data?.state === 'signed_out', `open sessies ${openSessies}, grants ${openGrants}, handoffs ${handoffsI}, oud ${oudI}, tx ${txStatus?.s}, bootstrap ${r.data?.state}`);
+
   // B9. CSP op de server-gegenereerde callbackpagina: hashes, geen 'unsafe-inline'.
   const cb = await new Promise((resolve, reject) => { const u = new URL(BASE); http.get({ hostname: u.hostname, port: u.port, path: '/api/owner/auth/google/callback?state=x&code=y', headers: { host: 'id.tarasevych.com' } }, rs => { rs.resume(); resolve({ status: rs.statusCode, csp: rs.headers['content-security-policy'] || '', type: rs.headers['content-type'] || '' }); }).on('error', reject); });
   check("callbackpagina heeft strikte CSP (sha256, geen 'unsafe-inline')", !/unsafe-inline/.test(cb.csp) && /default-src 'none'/.test(cb.csp) && (!/text\/html/.test(cb.type) || /script-src ('sha256-|'none')/.test(cb.csp)), `status ${cb.status} ${cb.type} csp=${cb.csp.slice(0, 120)}`);
