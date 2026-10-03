@@ -19,7 +19,8 @@
 # <bronmap> is een git-checkout (alleen de GECOMMITTE stand van HEAD wordt gebruikt) of een uitgepakte map
 # (bijv. een `git archive`-tarball; staat daarin een bestand BRON-COMMIT, dan wordt dat de commit van de release).
 # Opties via omgeving: BEWAAR_RELEASES (standaard 5), ZONDER_BACKUP=1 (back-up vóór migratie overslaan),
-#                      NODE (standaard /usr/bin/node), PORT (standaard 8080).
+#                      NODE (standaard /usr/bin/node), PORT (standaard 8080),
+#                      BOUW_GEHEUGEN_MAX (1400M), BOUW_SWAP_MAX (2G), BOUW_HEAP_MB (2048) voor de build.
 set -euo pipefail
 
 APP_ROOT=/srv/mijn-ruimte
@@ -136,9 +137,18 @@ bouwen() {
   local doel="$1"
   chown -R "$GEBRUIKER:$GEBRUIKER" "$doel"
   # Bouwen als onbevoegde gebruiker: npm-scripts van afhankelijkheden draaien nooit als root.
-  runuser -u "$GEBRUIKER" -- env -i PATH="$(dirname "$NODE"):/usr/bin:/bin" HOME="$APP_ROOT/.bouw-home" \
-    npm_config_cache="$APP_ROOT/.npm-cache" npm_config_update_notifier=false NODE_ENV=development \
-    bash -c 'set -euo pipefail; cd "$1"; npm ci --no-audit --no-fund; npm run build; npm prune --omit=dev --no-audit --no-fund' _ "$doel"
+  # In een eigen cgroup met geheugenplafond: de vite-build heeft ~1,5 GB heap nodig. Op een kleine VM
+  # (2 GB RAM) mag de build in swap uitwijken, maar raakt een tekort alleen de build (cgroup-OOM),
+  # nooit Postgres of sshd. Instelbaar: BOUW_GEHEUGEN_MAX, BOUW_SWAP_MAX, BOUW_HEAP_MB.
+  systemd-run --quiet --wait --pipe --collect --unit="mijn-ruimte-bouw-$(basename "$doel")" \
+    -p User="$GEBRUIKER" -p Group="$GEBRUIKER" -p WorkingDirectory="$doel" \
+    -p MemoryMax="${BOUW_GEHEUGEN_MAX:-1400M}" -p MemorySwapMax="${BOUW_SWAP_MAX:-2G}" -p Nice=10 \
+    -p NoNewPrivileges=yes -p PrivateTmp=yes \
+    -E PATH="$(dirname "$NODE"):/usr/bin:/bin" -E HOME="$APP_ROOT/.bouw-home" \
+    -E npm_config_cache="$APP_ROOT/.npm-cache" -E npm_config_update_notifier=false -E NODE_ENV=development \
+    -E NODE_OPTIONS="--max-old-space-size=${BOUW_HEAP_MB:-2048}" \
+    bash -c 'set -euo pipefail; npm ci --no-audit --no-fund; npm run build; npm prune --omit=dev --no-audit --no-fund' \
+    || fout "bouwen mislukt (journalctl -u mijn-ruimte-bouw-$(basename "$doel"))"
   [ -f "$doel/dist/index.html" ] || fout "bouwen mislukt: dist/index.html ontbreekt"
   [ -f "$doel/dist-server/start.mjs" ] || fout "bouwen mislukt: dist-server/start.mjs ontbreekt"
   find "$doel/dist" -name '*.map' -delete
