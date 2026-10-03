@@ -30,11 +30,11 @@ const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 
 // CSP voor de app: gelijk aan het productiebeleid in public/canonical-security.js (meta), zonder
 // AppDeploy-hosts, plus frame-ancestors (werkt alleen als header). Header en meta worden door de
-// browser gecombineerd (doorsnede), dus ze moeten gelijk blijven. 'wasm-unsafe-eval' (voor
-// sql.js / h5wasm / pdf.js-voorbeelden) staat er bewust niet in, net als vandaag: open beslissing.
+// browser gecombineerd (doorsnede), dus ze moeten gelijk blijven. 'wasm-unsafe-eval' staat toe
+// (besluit eigenaar) zodat sql.js / h5wasm / pdf.js-voorbeelden werken; 'unsafe-eval' blijft verboden.
 const APP_CSP = [
   "default-src 'self'", "base-uri 'none'", "object-src 'none'", 'frame-src blob:', "form-action 'self'",
-  "script-src 'self'", "style-src 'self'", "style-src-elem 'self'", "style-src-attr 'unsafe-inline'",
+  "script-src 'self' 'wasm-unsafe-eval'", "style-src 'self'", "style-src-elem 'self'", "style-src-attr 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.googleusercontent.com", "font-src 'self' data:", "connect-src 'self'",
   "worker-src 'self' blob:", "manifest-src 'self'", "media-src 'self' blob: data:", "frame-ancestors 'none'",
   'upgrade-insecure-requests',
@@ -166,8 +166,12 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
   return true;
 }
 
+// Nooit publiceren, ook niet als ze per ongeluk in de build belanden: audit-uitvoer, sourcemaps, dotfiles.
+const VERBORGEN_PAD = /(^|\/)(l002-diagnostic\.json|[^/]*\.map|\.[^/]*)$/i;
+
 async function serveStatic(req: http.IncomingMessage, res: http.ServerResponse, url: URL, root: string, spa: boolean, csp: string) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return sendText(res, 405, 'Method not allowed');
+  if (VERBORGEN_PAD.test(url.pathname)) return sendText(res, 404, 'Niet gevonden');
   const rootStat = await stat(root).catch(() => null);
   if (!rootStat?.isDirectory()) return sendText(res, 404, 'Niet gevonden');
   const file = safeJoin(root, url.pathname.endsWith('/') ? url.pathname + 'index.html' : url.pathname);
