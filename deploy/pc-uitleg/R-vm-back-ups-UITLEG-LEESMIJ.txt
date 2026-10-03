@@ -1,0 +1,76 @@
+UITLEG-LEESMIJ.txt - R:\mijn-ruimte-reservekopie\vm-back-ups\
+(Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
+У цьому файлі НЕМАЄ жодних секретів. / Dit bestand bevat GEEN geheimen.
+
+==============================================================================
+УКРАЇНСЬКА
+==============================================================================
+
+ЩО ЦЕ
+- Сюди скрипт T:\mijn-ruimte\scripts\reservekopie-ophalen.ps1 забирає з сервера
+  найновішу ЗАШИФРОВАНУ нічну резервну копію. Кожна копія - окрема папка
+  <РРРРММДД-ГГХХСС>\ з файлами:
+  * database.dump.age - база даних (pg_dump), зашифрована;
+  * uploads.tar.gz.age - завантажені користувачами файли, зашифровані;
+  * info.txt - час, версія програми, розміри (без секретів);
+  * SHA256SUMS - контрольні суми; KLAAR - позначка "копія повна".
+- ophalen.log - журнал: коли і що було забрано або яка була помилка.
+- Скрипт відмовляється забирати НЕзашифровані копії.
+
+НАВІЩО
+- На сервері копії зберігаються лише 7 днів. Якщо сервер або його диск зламається,
+  дані залишаться тут, на ПК.
+
+ЧИ ПОТРІБНО?  ТАК. Бажано запускати скрипт щодня (заплановане завдання Windows).
+Старі папки можна час від часу видаляти вручну (наприклад, лишати останні 30 днів).
+
+ЯК ЗБЕРІГАТИ БЕЗПЕЧНО
+- Копії зашифровані публічним ключем: прочитати їх можна лише з herstelsleutel-age.txt.
+- Бажано мати ще одну копію цієї папки на іншому носії (зовнішній диск).
+- Не надсилайте і не публікуйте ці файли; не розшифровуйте їх на диск без потреби.
+
+ЯКЩО ВТРАЧЕНО
+- Запустіть скрипт знову: він забере найновішу копію з сервера (якщо сервер живий).
+ЯКЩО ВИКРАДЕНО
+- Без ключа відновлення їх не прочитати. Якщо викрадено і ключ: див. sleutels\UITLEG-LEESMIJ.txt.
+
+ПРИ ВІДНОВЛЕННІ
+- Крок 5 у HERSTEL.md: на ПК розшифрувати database.dump.age та uploads.tar.gz.age
+  ключем відновлення і через SSH одразу передати на новий сервер.
+- Перед цим перевірте контрольні суми (крок 0 у HERSTEL.md).
+
+==============================================================================
+NEDERLANDS
+==============================================================================
+
+WAT IS DIT
+- Hierheen haalt T:\mijn-ruimte\scripts\reservekopie-ophalen.ps1 de nieuwste VERSLEUTELDE
+  nachtelijke back-up van de server. Elke back-up is een eigen map <JJJJMMDD-UUMMSS>\ met:
+  * database.dump.age - database (pg_dump), versleuteld;
+  * uploads.tar.gz.age - door gebruikers geuploade bestanden, versleuteld;
+  * info.txt - tijdstip, release, groottes (geen geheimen);
+  * SHA256SUMS - controlesommen; KLAAR - markering "back-up compleet".
+- ophalen.log - logboek: wanneer wat is opgehaald, of welke fout er was.
+- Het script weigert ONversleutelde back-ups.
+
+WAAROM
+- Op de server blijven back-ups maar 7 dagen staan. Gaat de server of zijn schijf kapot, dan
+  staan de gegevens hier nog op de pc.
+
+NODIG?  JA. Liefst dagelijks laten draaien (geplande taak in Windows).
+Oude mappen kun je af en toe met de hand opruimen (bijv. de laatste 30 dagen bewaren).
+
+VEILIG BEWAREN
+- Versleuteld met de publieke sleutel: alleen leesbaar met herstelsleutel-age.txt.
+- Liefst nog een kopie van deze map op een andere drager (externe schijf).
+- Niet versturen of publiceren; niet zonder reden ontsleuteld op schijf zetten.
+
+KWIJT
+- Draai het script opnieuw: het haalt de nieuwste back-up van de server (als die nog leeft).
+GESTOLEN
+- Zonder herstelsleutel onleesbaar. Sleutel ook gestolen: zie sleutels\UITLEG-LEESMIJ.txt.
+
+BIJ HERSTEL
+- Stap 5 in HERSTEL.md: op de pc database.dump.age en uploads.tar.gz.age met de herstelsleutel
+  ontsleutelen en via SSH direct naar de nieuwe server sturen.
+- Controleer eerst de controlesommen (stap 0 in HERSTEL.md).

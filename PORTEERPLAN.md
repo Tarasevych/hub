@@ -534,8 +534,19 @@ Cloudflare Tunnel: alleen `/etc/cloudflared/config.yml` met plaatshouder; nog ge
 Tunnel `mijn-ruimte` (`a176c08b-29e7-47b0-95d9-9ec9383572f2`), 10 nieuwe CNAME's, gehardende `cloudflared.service`,
 4 verbindingen (ams/bru). Alle tien hosts geven extern 200; `cert.pem` geshred. Credentials-JSON nog zonder back-up.
 
-### 10.9 Nog open
-- Back-up van de tunnel-credentials (versleuteld) — keuze eigenaar; Cloudflare: Always Use HTTPS aanzetten.
+### 10.9 Versleutelde back-ups met age (3 okt 2026, ~12:40)
+Publieke-sleutelmodel: één X25519-sleutelpaar, op de pc gemaakt; de privésleutel staat alleen in
+`R:\mijn-ruimte-reservekopie\sleutels\herstelsleutel-age.txt` (ACL alleen gebruiker t), de VM heeft alleen
+`/etc/mijn-ruimte/backup-ontvanger.age.pub`. `backup-maken.sh` stuurt `pg_dump` en de uploads-tar rechtstreeks door
+`age -R` (release 20261003-123345, commit c4429df); de VM kan zijn back-ups niet ontsleutelen. Versleuteld
+geheimenarchief (`geheimen.env` + tunnel-credentials) op R:\; proefontsleuteling en proefherstel (via een
+`cmd /c`-pijp van de pc naar een tijdelijke database) geslaagd. `deploy/reservekopie-ophalen.ps1` haalt de
+nieuwste back-up op naar R:\; `deploy/HERSTEL.md` is het noodplan. Uitleg per map (Oekraïens + Nederlands):
+`deploy/pc-uitleg/`.
+
+### 10.10 Nog open
+- Offline kopie van de herstelsleutel (USB/papier); geplande taak voor het ophalen; Cloudflare: Always Use HTTPS aanzetten.
+- Oude onversleutelde test-back-ups 20261003-115845/-115908 op de VM (verdwijnen na 7 dagen vanzelf).
 - Nieuwe Google OAuth-client (redirect `https://id.tarasevych.com/`).
 - Echte WebAuthn-implementatie; AI-provider; dashboardintegratie.
 - l002-audit: `b4-important-free` in twee AppDeploy-CSS-bestanden (v56), cosmetisch.
