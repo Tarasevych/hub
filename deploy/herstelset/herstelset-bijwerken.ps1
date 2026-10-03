@@ -60,7 +60,7 @@ function Zoek-Privesleutels([string]$map) {
     # Alleen tekstachtige bestanden doorzoeken (age.exe bevat het voorvoegsel zelf als constante).
     if ($f.Extension -notin @('', '.txt', '.md', '.ps1', '.sh', '.pub', '.json', '.env', '.yml', '.yaml', '.service', '.timer', '.conf') -or $f.Length -gt 5MB) { continue }
     $tekst = [IO.File]::ReadAllText($f.FullName)
-    if ($tekst.Contains('AGE-SECRET-' + 'KEY-1') -or $tekst -match ('-----BEGIN [A-Z ]*' + 'PRIVATE KEY-----')) { $fout += $f.FullName }
+    if ($tekst -cmatch ('AGE-SECRET-' + 'KEY-1[QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L]{50,}') -or $tekst -match ('-----BEGIN [A-Z ]*' + 'PRIVATE KEY-----')) { $fout += $f.FullName }
   }
   return $fout
 }
