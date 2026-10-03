@@ -1,16 +1,13 @@
 // ============================================================================
 // ENIGE BRON voor de identiteit van deze deployment (zelf gehost).
 //
-// APP_ID / TECH_ORIGIN stammen uit de AppDeploy-tijd. De technische host
-// (*.v2.appdeploy.ai) wordt door de zelf-gehoste server NIET meer bediend (die
-// accepteert alleen de hostnamen hieronder), dus alle "technische" codepaden zijn inert.
-// scripts/l002-audit.mjs controleert nog dat '.v2.appdeploy.ai' alleen hier voorkomt.
+// APP_ID stamt uit de AppDeploy-tijd en blijft alleen bestaan als deel van de cookienamen
+// (wijzigen = iedereen opnieuw aanmelden). De technische AppDeploy-host en alle
+// "technische"/QA-codepaden zijn verwijderd; de server bedient alleen de hostnamen hieronder.
 //
 // Dit bestand wordt ook in de frontend gebundeld: geen process.env of Node-API's gebruiken.
 // ============================================================================
 export const APP_ID = 'migrated-bg2v4h';
-
-export const TECH_ORIGIN = `https://${APP_ID}.v2.appdeploy.ai`;
 
 /** Publiek domein waaronder alle diensten draaien. */
 export const PUBLIC_DOMAIN = 'tarasevych.com';

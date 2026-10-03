@@ -19,7 +19,6 @@ type StartInput = {
   sourceOrigin: string;
   locale: PrimaryLoginLocale;
   intent: PrimaryLoginIntent;
-  qaHoldAtAttached?: boolean;
   remember?: boolean;
 };
 
@@ -94,7 +93,6 @@ export async function startPrimaryRedirectLogin(input: StartInput): Promise<Star
       intent: input.intent,
       flowMode: 'redirect',
       returnTo: cleanRedirectReturnTo(),
-      qaHoldAtAttached: input.qaHoldAtAttached === true,
       remember: input.remember !== false,
     });
   } catch (caught) {
@@ -117,7 +115,6 @@ export async function startPrimaryRedirectLogin(input: StartInput): Promise<Star
     throw failure('OWNER_REDIRECT_URI_INVALID');
   }
   if (data.flowMode !== 'redirect') throw failure('OWNER_REDIRECT_MODE_INVALID');
-  if (data.qaHeld === true) return {held: true, reasonCode};
   try {
     location.assign(authUrl);
   } catch {

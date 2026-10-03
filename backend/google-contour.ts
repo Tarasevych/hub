@@ -1,6 +1,5 @@
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
 import {db,secrets} from '../server/platform';
-import {TECH_ORIGIN} from './deployment-identity';
 
 // Zelf gehost: géén hardcoded standaard-client-ID meer. Client-ID en -secret komen alleen uit env
 // (GOOGLE_OAUTH_CLIENT_ID/GOOGLE_SUITE_CLIENT_ID en GOOGLE_OAUTH_CLIENT_SECRET/GOOGLE_SUITE_CLIENT_SECRET).
@@ -101,7 +100,8 @@ const mask=(value:string)=>{
   if(n.length<=6)return '\u2022'.repeat(n.length);
   return '\u2022'.repeat(Math.max(8,n.length-4))+n.slice(-4);
 };
-const REVEAL_ALLOWED_ORIGINS=new Set(['https://admin.tarasevych.com',TECH_ORIGIN,'http://localhost:5173','http://localhost:3000']);
+// Zelf gehost: alleen admin.tarasevych.com (geen AppDeploy-origin, geen localhost-ontwikkelorigins).
+const REVEAL_ALLOWED_ORIGINS=new Set(['https://admin.tarasevych.com']);
 const revealHostAllowed=(event:Record<string,unknown>)=>{
   const headers=(event.headers||{}) as Record<string,string>;
   const origin=String(headers.origin||headers.Origin||'').trim();

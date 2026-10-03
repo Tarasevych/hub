@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import {api} from './platform/client';
 import {Bell,Check,Clock3,FileText,Inbox,ListChecks,Mail,Pencil,ShieldCheck,Sparkles,Star,Upload,UserCheck,X} from 'lucide-react';
-import GoogleMailWorkspace from './GoogleMailWorkspace';import{emitCanonicalNotice}from'./canonical-notifications';import {TECH_ORIGIN} from '../backend/deployment-identity';
+import GoogleMailWorkspace from './GoogleMailWorkspace';import{emitCanonicalNotice}from'./canonical-notifications';
 
 import './mail-functional.css';
 
@@ -24,7 +24,7 @@ type GoogleMailAccount={id:string;principalId:string;email:string;displayName:st
 type GmailPreviewItem={id:string;threadId:string;from:string;subject:string;snippet:string;receivedAt:number;unread:boolean};
 type MailPlatformStatus={architecture:'provider_foundation_v1';runtime:'phase1_manual_only'|'provider_runtime_verified';tokenVault:{algorithm:'AES-256-GCM';keySecret:'server_side_only';configured?:boolean;selfTestPassed:boolean};queue:{table:'mail_jobs_v2';jobTypes:string[];idempotency:string;workersActive:boolean};providers:{google:ProviderReadiness;microsoft:ProviderReadiness};selfTests:Array<{id:string;passed:boolean}>};
 type Bootstrap={items:MailItem[];resume:ResumeState;metrics:Metrics;notificationPreference:NotificationPreference;mailAccounts:MailAccount[];accountPolicy:{autoLinkPrimaryMail:boolean;allowAdditionalMailAccounts:boolean;mailboxAuthorization:'required'};provider:{connected:boolean;manualImport:true;analysis:'deterministic-cited-v1';highRiskSend:false;notificationDelivery:'not_connected'};platform:MailPlatformStatus;googleSuite?:GoogleSuiteStatus;googleMail?:GoogleMailSnapshot};
-type Props={lang:Lang;tab:string;userId:string;sourceOrigin:string;tabContext:string;technical:boolean;homeSignal:number;sessionReady:boolean;onFocusChange:(value:boolean)=>void};
+type Props={lang:Lang;tab:string;userId:string;sourceOrigin:string;tabContext:string;homeSignal:number;sessionReady:boolean;onFocusChange:(value:boolean)=>void};
 
 const emptyMetrics:Metrics={firstImportAt:0,firstActionAt:0,focusViews:0,taskConversions:0,snoozes:0,drafts:0,triageChanges:0};
 const triageValues:Triage[]=['action','waiting','info','later'];
@@ -45,7 +45,7 @@ const replyTemplate=(item:MailItem,style:ReplyStyle,lang:Lang)=>{
  return `Шановний/шановна ${name},\n\nДякую за ваше повідомлення щодо «${item.subject||'цього питання'}». Підтверджую його отримання та надам змістовну відповідь найближчим часом.\n\nЗ повагою`;
 };
 
-export default function MailFunctionalView({lang,tab,userId,sourceOrigin,tabContext,technical,homeSignal,sessionReady,onFocusChange}:Props){
+export default function MailFunctionalView({lang,tab,userId,sourceOrigin,tabContext,homeSignal,sessionReady,onFocusChange}:Props){
  const notify=(message:string,kind:'info'|'success'|'warning'|'error'='info')=>emitCanonicalNotice({text:message,kind,source:'mail'});
  const [data,setData]=useState<Bootstrap>({items:[],resume:null,metrics:emptyMetrics,notificationPreference:{minimum:'action',updatedAt:0},mailAccounts:[],accountPolicy:{autoLinkPrimaryMail:true,allowAdditionalMailAccounts:true,mailboxAuthorization:'required'},provider:{connected:false,manualImport:true,analysis:'deterministic-cited-v1',highRiskSend:false,notificationDelivery:'not_connected'},platform:{architecture:'provider_foundation_v1',runtime:'phase1_manual_only',tokenVault:{algorithm:'AES-256-GCM',keySecret:'server_side_only',selfTestPassed:false},queue:{table:'mail_jobs_v2',jobTypes:[],idempotency:'sha256_owner_account_type_fingerprint',workersActive:false},providers:{google:{provider:'google_gmail',oauthConfigured:false,encryptionConfigured:false,pushConfigured:false,pushEndpointVerified:false,oauthImplemented:false,workersImplemented:false,runtimeEnabled:false,oauthStartAvailable:false,connectEnabled:false,syncEnabled:false,missing:['loading'],scopes:[]},microsoft:{provider:'microsoft_graph',oauthConfigured:false,encryptionConfigured:false,pushConfigured:false,pushEndpointVerified:false,oauthImplemented:false,workersImplemented:false,runtimeEnabled:false,oauthStartAvailable:false,connectEnabled:false,syncEnabled:false,missing:['loading'],scopes:[]}},selfTests:[]}});
  const [loading,setLoading]=useState(true);
@@ -139,11 +139,11 @@ export default function MailFunctionalView({lang,tab,userId,sourceOrigin,tabCont
   }catch{notify(text(lang,'Лист не вдалося додати.','Het bericht kon niet worden toegevoegd.'),'error')}finally{setBusy(false)}
  };
  const startMicrosoftConnection=async(account:MailAccount)=>{const provider=data.platform.providers.microsoft;if(!provider.connectEnabled){notify(text(lang,'Підключення Microsoft тимчасово недоступне. Адміністратор завершує налаштування.','Microsoft koppelen is tijdelijk niet beschikbaar. De beheerder rondt de configuratie af.'),'warning');return}setBusy(true);try{const response=await api.post(`/api/owner/mail/accounts/${account.id}/connect/start`,{...context,locale:lang,returnTo:location.href});const authUrl=String(response.data?.authUrl||'');if(!authUrl)throw new Error('MAIL_OAUTH_URL_MISSING');location.assign(authUrl)}catch{notify(text(lang,'Не вдалося розпочати підключення пошти. Спробуйте ще раз.','De mailkoppeling kon niet worden gestart. Probeer het opnieuw.'),'error')}finally{setBusy(false)}}; const disconnectMicrosoftAccount=async(account:MailAccount)=>{if(account.provider!=='microsoft')return;setBusy(true);try{await api.post(`/api/owner/mail/accounts/${account.id}/disconnect`,{...context,retainLocalData:true});await load();notify(text(lang,'Microsoft пошту відключено. Вхід до екосистеми та локальні дані збережено.','Microsoft-mail is losgekoppeld. De ecosysteemaanmelding en lokale gegevens blijven behouden.'),'success')}catch{notify(text(lang,'Не вдалося відключити цей Microsoft акаунт. Спробуйте ще раз.','Dit Microsoft-account kon niet worden losgekoppeld. Probeer het opnieuw.'),'error')}finally{setBusy(false)}};
- const createFixture=async()=>{setBusy(true);try{await api.post('/api/owner/mail/qa-fixture',context);await load();notify(text(lang,'Тестові листи створено лише в технічній сесії.','Testberichten zijn alleen in de technische sessie gemaakt.'),'success')}catch{notify(text(lang,'Не вдалося створити тестові листи.','De testberichten konden niet worden gemaakt.'),'error')}finally{setBusy(false)}};
+ 
  const linkMailAccount=async()=>{const email=accountForm.email.trim();if(!email)return;setBusy(true);try{await api.post('/api/owner/mail/accounts/link',{...context,provider:accountForm.provider,email});setAccountForm(value=>({...value,email:''}));await load();notify(text(lang,'Акаунт додано. Тепер надайте доступ до пошти.','Het account is toegevoegd. Verleen nu toegang tot de mailbox.'),'success')}catch{notify(text(lang,'Не вдалося додати акаунт або він уже існує.','Het account kon niet worden toegevoegd of bestaat al.'),'error')}finally{setBusy(false)}};
  const saveNotificationLevel=async(value:NotificationLevel)=>{setBusy(true);try{const response=await api.post('/api/owner/mail/notification-preferences/save',{...context,minimum:value});setData(current=>({...current,notificationPreference:response.data.notificationPreference as NotificationPreference,items:current.items.map(item=>({...item,notificationEligible:Boolean((response.data.eligibility||{})[item.id])}))}));notify(text(lang,'Поріг важливості збережено. Зовнішній канал сповіщень ще не підключений.','De belangrijkheidsdrempel is bewaard. Een extern meldingskanaal is nog niet gekoppeld.'),'warning')}catch{notify(text(lang,'Не вдалося зберегти поріг сповіщень.','De meldingsdrempel kon niet worden bewaard.'),'error')}finally{setBusy(false)}};
  const changeEnergy=(value:Energy)=>{setEnergy(value);void saveResume({currentItemId:selectedId,focus,energy:value})};
- const openClassicMail=()=>{try{const url=new URL(location.href);if(url.hostname===new URL(TECH_ORIGIN).hostname){url.pathname='/';url.searchParams.set('service','mail');url.searchParams.set('tab','inbox');url.searchParams.set('lang',lang)}else{url.pathname='/inbox';url.search='';url.hash=''}history.pushState({},'',`${url.pathname}${url.search}${url.hash}`);window.dispatchEvent(new PopStateEvent('popstate'))}catch{}};
+ const openClassicMail=()=>{try{const url=new URL(location.href);url.pathname='/inbox';url.search='';url.hash='';history.pushState({},'',`${url.pathname}${url.search}${url.hash}`);window.dispatchEvent(new PopStateEvent('popstate'))}catch{}};
 
  const onboarding=(
   <section className='mail-onboarding' data-compassionate-onboarding='three-steps'>
@@ -158,7 +158,7 @@ export default function MailFunctionalView({lang,tab,userId,sourceOrigin,tabCont
    <div className='mail-onboarding-actions'>
     <button className='mail-primary' onClick={()=>setImportOpen(true)}><Upload/>{text(lang,'Додати один лист','Eén bericht toevoegen')}</button>
     <button type='button' onClick={openClassicMail}><Inbox/>{text(lang,'Повернутися до звичайної пошти','Terug naar gewone e-mail')}</button>
-    {technical&&<button data-mail-qa-fixture='true' onClick={()=>void createFixture()} disabled={busy}><ShieldCheck/>{text(lang,'Створити тестові листи','Testberichten maken')}</button>}
+    
    </div>
   </section>
  );

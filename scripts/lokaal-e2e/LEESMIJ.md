@@ -12,6 +12,6 @@ cp <repo>/scripts/lokaal-e2e/*.mjs . && node proxy.mjs &
 DATABASE_URL=... node e2e.mjs   # Chrome: --host-resolver-rules=MAP *.tarasevych.com 127.0.0.1:8443
 ```
 
-Dekt `tests/tests.txt` test 1 (afgemelde shell) en test 3 (aangemelde Hub-overzicht), plus één cookie over
+Dekt `tests/tests.txt` test 1 (afgemelde shell) en test 2 (aangemelde Hub-overzicht), plus één cookie over
 subdomeinen en CSP-schendingen. De sessie wordt rechtstreeks in de database gezaaid (Google is nog niet
 geconfigureerd) en na afloop opgeruimd. Nooit tegen productie draaien.

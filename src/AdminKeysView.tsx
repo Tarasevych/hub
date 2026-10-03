@@ -32,7 +32,7 @@ type ContourPublic={
   hasVaultOverride:boolean;
   hasPlatformSecret:boolean;
 };
-type Props={lang:Lang;sourceOrigin:string;tabContext:string;technical:boolean};
+type Props={lang:Lang;sourceOrigin:string;tabContext:string};
 
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='uk'?uk:nl;
 const apiError=(caught:unknown)=>{
