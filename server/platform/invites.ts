@@ -1,6 +1,7 @@
 // Compatibiliteitslaag voor de vroegere AppDeploy `invites`-API (tabel app.invites).
 // Codes zijn 128 bit willekeurig (base64url). Uitnodigingen zijn herbruikbaar tot ze
-// verlopen of ingetrokken zijn, zoals bij AppDeploy.
+// verlopen of ingetrokken zijn, zoals bij AppDeploy — behalve met `eenmalig: true` (fase 3):
+// dan wint precies één aansluiting (voorwaardelijke UPDATE), daarna 'invite_used'.
 import { randomBytes } from 'node:crypto';
 import { getPool } from './pg';
 
@@ -10,6 +11,7 @@ export type InviteErrorCode =
   | 'auth_required'
   | 'invite_expired'
   | 'invite_revoked'
+  | 'invite_used'
   | 'invite_not_revocable';
 
 export class InviteError extends Error {
@@ -41,7 +43,7 @@ async function load(code: string): Promise<InviteRow> {
 const statusOf = (row: InviteRow) => (row.revoked_at ? 'revoked' : row.expires_at && row.expires_at.getTime() <= Date.now() ? 'expired' : 'open');
 
 export const invites = {
-  async create(input: { resourceType: string; authMode: 'required' | 'anonymous'; actor?: Actor; allowList?: string[]; expiresInSec?: number; context?: Record<string, unknown> }): Promise<{ code: string }> {
+  async create(input: { resourceType: string; authMode: 'required' | 'anonymous'; actor?: Actor; allowList?: string[]; expiresInSec?: number; context?: Record<string, unknown>; eenmalig?: boolean }): Promise<{ code: string }> {
     const allowList = (input.allowList || []).map((v) => String(v).trim().toLowerCase()).filter(Boolean);
     if (allowList.length && input.authMode !== 'required') throw new InviteError('invite_not_allowed');
     if (input.authMode === 'required' && !input.actor?.userId) throw new InviteError('auth_required');
@@ -50,7 +52,7 @@ export const invites = {
     await getPool().query(
       `INSERT INTO app.invites (code, resource_type, auth_mode, allow_list, context, created_by, expires_at)
        VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7)`,
-      [code, String(input.resourceType), input.authMode, allowList, JSON.stringify(input.context || {}), input.actor?.userId || null, expires],
+      [code, String(input.resourceType), input.authMode, allowList, JSON.stringify({ ...(input.context || {}), ...(input.eenmalig ? { eenmalig: true } : {}) }), input.actor?.userId || null, expires],
     );
     return { code };
   },
@@ -72,7 +74,12 @@ export const invites = {
         if (!ids.some((id) => row.allow_list.includes(id))) throw new InviteError('invite_not_allowed');
       }
     }
-    await getPool().query('UPDATE app.invites SET join_count = join_count + 1 WHERE code = $1', [row.code]);
+    if (row.context && row.context.eenmalig === true) {
+      const gewonnen = await getPool().query('UPDATE app.invites SET join_count = join_count + 1 WHERE code = $1 AND join_count = 0 AND revoked_at IS NULL', [row.code]);
+      if (gewonnen.rowCount !== 1) throw new InviteError('invite_used');
+    } else {
+      await getPool().query('UPDATE app.invites SET join_count = join_count + 1 WHERE code = $1', [row.code]);
+    }
     return { code: row.code, resourceType: row.resource_type, context: row.context };
   },
 

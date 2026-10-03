@@ -251,6 +251,41 @@ try {
     await pool.query("delete from app.records where tbl='owner_step_up_v1' and data->>'userId'=$1", [eigenaar]);
   }
 
+  // B4c. Fase 3: delen beslist op de werkruimterol; scope gevalideerd; kijker ziet geen e-mailadressen; links eenmalig/e-mailgebonden.
+  {
+    const hub = () => ({ service: 'hub', tabContext: tab() });
+    const kijker = await zaaiGebruiker('rooktest-kijker@example.test', 'member');
+    const derde = await zaaiGebruiker('rooktest-derde@example.test', 'member');
+    const cLidW = `${naam}=${encodeURIComponent(await zaaiSessie(lid))}`, cKijker = `${naam}=${encodeURIComponent(await zaaiSessie(kijker))}`, cDerde = `${naam}=${encodeURIComponent(await zaaiSessie(derde))}`;
+    const wsLid = await voeg('workspaces', { ownerUserId: lid, name: 'Rooktest lid', createdAt: nu, updatedAt: nu }); zaaiIds.push(wsLid);
+    const wsEig = await voeg('workspaces', { ownerUserId: eigenaar, name: 'Rooktest eigenaar', createdAt: nu, updatedAt: nu }); zaaiIds.push(wsEig);
+    const blokEig = await voeg('workspace_blocks', { workspaceId: wsEig, ownerUserId: eigenaar, kind: 'notes', title: 'x', custom: true, createdAt: nu }); zaaiIds.push(blokEig);
+    zaaiIds.push(await voeg('workspace_members', { workspaceId: wsEig, userId: kijker, email: 'rooktest-kijker@example.test', permission: 'viewer', workspaceRole: 'viewer', scopeBlockIds: [], status: 'active', createdAt: nu, updatedAt: nu }));
+    let t = await api('hub.tarasevych.com', '/api/share/email', { ...hub(), workspaceId: wsLid, email: 'rooktest-nieuw@example.test', workspaceRole: 'member' }, cLidW);
+    const t2 = await api('hub.tarasevych.com', '/api/share/email', { ...hub(), workspaceId: wsEig, email: 'rooktest-nieuw@example.test', workspaceRole: 'viewer' }, cKijker);
+    const uitn = (await pool.query("select data from app.records where tbl='workspace_members' and data->>'workspaceId'=$1 and data->>'email'='rooktest-nieuw@example.test'", [wsLid])).rows[0]?.data || {};
+    check('delen: eigenaar van eigen werkruimte (globaal lid) mag delen, uitnodiging verloopt na 7 dagen; kijker in andermans werkruimte 403', t.status === 200 && t.data?.status === 'invited' && uitn.verlooptOp - uitn.createdAt === 7 * 864e5 && t2.status === 403, `${t.status} ${t.data?.error || ''} / ${t2.status}`);
+    t = await api('hub.tarasevych.com', '/api/share/email', { ...hub(), workspaceId: wsEig, email: 'rooktest-derde@example.test', scopeBlockIds: ['bestaat-niet'] }, c1);
+    const t3 = await api('hub.tarasevych.com', '/api/share/email', { ...hub(), workspaceId: wsEig, email: 'rooktest-derde@example.test', scopeBlockIds: [blokEig] }, c1);
+    check('delen: scopeBlockIds van buiten de werkruimte → 400 SCOPE_BLOCKS_INVALID; eigen blok geaccepteerd', t.status === 400 && t.data?.error === 'SCOPE_BLOCKS_INVALID' && t3.status === 200, `${t.status} ${t.data?.error || ''} / ${t3.status}`);
+    t = await api('hub.tarasevych.com', '/api/share/members', { ...hub(), workspaceId: wsEig }, cKijker);
+    const e2 = await api('hub.tarasevych.com', '/api/share/members', { ...hub(), workspaceId: wsEig }, c1);
+    const zichtKijker = (t.data?.members || []).map(m => m.email), zichtEig = (e2.data?.members || []).map(m => m.email);
+    check('ledenlijst: kijker ziet andere e-mailadressen gemaskeerd (eigen adres wel), eigenaar ziet alles', t.status === 200 && zichtKijker.includes('rooktest-kijker@example.test') && zichtKijker.includes('r***@example.test') && !zichtKijker.includes('rooktest-derde@example.test') && zichtEig.includes('rooktest-derde@example.test'), JSON.stringify(zichtKijker));
+    // Eenmalige link: eerste aansluiting wint, tweede 'invite_used'. E-mailgebonden link: ander account 'invite_not_allowed'.
+    await pool.query("delete from app.records where tbl='workspace_members' and data->>'workspaceId'=$1 and data->>'userId'=$2", [wsEig, derde]);
+    t = await api('hub.tarasevych.com', '/api/share/link', { ...hub(), workspaceId: wsEig, workspaceRole: 'viewer' }, c1);
+    const code = t.data?.code;
+    const j1 = await api('hub.tarasevych.com', '/api/share/join', { ...hub(), code }, cDerde);
+    const j2 = await api('hub.tarasevych.com', '/api/share/join', { ...hub(), code }, cLidW);
+    t = await api('hub.tarasevych.com', '/api/share/link', { ...hub(), workspaceId: wsEig, workspaceRole: 'member', email: 'rooktest-lid@example.test' }, c1);
+    const j3 = await api('hub.tarasevych.com', '/api/share/join', { ...hub(), code: t.data?.code }, cDerde);
+    const j4 = await api('hub.tarasevych.com', '/api/share/join', { ...hub(), code: t.data?.code }, cLidW);
+    check('uitnodigingslink eenmalig (2e → invite_used) en e-mailgebonden (ander account → invite_not_allowed, juiste account 200)', !!code && j1.status === 200 && j2.status === 400 && j2.data?.error === 'invite_used' && j3.status === 400 && j3.data?.error === 'invite_not_allowed' && j4.status === 200, `${j1.status} ${j2.status} ${j2.data?.error || ''} ${j3.status} ${j3.data?.error || ''} ${j4.status}`);
+    await pool.query("delete from app.records where tbl='workspace_members' and data->>'workspaceId' = any($1)", [[wsLid, wsEig]]);
+    await pool.query("delete from app.invites where context->>'workspaceId' = any($1)", [[wsLid, wsEig]]);
+  }
+
   // B5. Eigenaar uit OWNER_EMAIL: eigenaar mag admin, lid niet.
   r = await api('admin.tarasevych.com', '/api/owner/admin/bootstrap', { service: 'admin', tabContext: tab() }, c1);
   const rLid = await api('admin.tarasevych.com', '/api/owner/admin/bootstrap', { service: 'admin', tabContext: tab() }, `${naam}=${encodeURIComponent(await zaaiSessie(lid))}`);
