@@ -8,6 +8,7 @@
 // nog een bewuste systeemstap (alsSysteem) nodig hebben.
 import { getPool } from './pg';
 import { huidigeContext } from './context';
+import { registreerPoortMelder } from './auth-poort';
 
 type Gedeeld = { lezen: Set<string>; schrijven: Set<string>; tot: number };
 let gedeeld: Gedeeld = { lezen: new Set(), schrijven: new Set(), tot: 0 };
@@ -62,10 +63,14 @@ export async function controleerRijen(tbl: string, actie: 'lezen' | 'toevoegen' 
   return mis;
 }
 
-function noteer(route: string, tbl: string, actie: string, aantal: number) {
+/** Vangnet van de toegangspoort (auth-poort.ts): anoniem verzoek kreeg 2xx op een niet-publieke route. */
+export function meldAnoniem(patroon: string): void { noteer(patroon, '-', 'anoniem-2xx', 1, true); }
+registreerPoortMelder(meldAnoniem);
+
+function noteer(route: string, tbl: string, actie: string, aantal: number, stil = false) {
   const sleutel = `${route}\u0000${tbl}\u0000${actie}`;
   teller.set(sleutel, (teller.get(sleutel) || 0) + aantal);
-  if (!gemeld.has(sleutel)) {
+  if (!stil && !gemeld.has(sleutel)) {
     gemeld.add(sleutel);
     console.warn(`[rls-audit] zou geweigerd worden: route="${route}" tabel=${tbl} actie=${actie}`);
   }

@@ -1,5 +1,6 @@
 import { db, error, invites, isInviteError, json, ownerEmail, router, secrets } from '../server/platform';
-import { alsSysteem, zetGebruiker } from '../server/platform/context';
+import { alsSysteem, zetGebruiker } from '../server/platform/context'
+import { registreerSessieControle, requireAuth } from '../server/platform/auth-poort';
 import { createHash, createHmac, createPublicKey, randomBytes, verify } from 'node:crypto';
 import {API_COOKIE_PATH, COOKIE_DOMAIN as OWNER_COOKIE_DOMAIN, COOKIE_SCOPE as OWNER_COOKIE_SCOPE, ECOSYSTEM_COOKIE, REDIRECT_COOKIE} from './deployment-identity';
 import {resolveGoogleContour} from './google-contour';
@@ -395,6 +396,8 @@ type AdminRole='super_admin'|'security_admin'|'apps_admin'|'directory_admin'|'su
 // De UI gebruikt ze niet meer (grep op src/); ze antwoorden 410 Gone. Zie docs/ontwerp/.
 const VEROUDERDE_ROUTE_WEG = [async () => ownerResponse({ ok: false, error: 'LEGACY_ROUTE_GONE', reasonCode: 'LEGACY_ROUTE_GONE' }, 410)];
 
+// Centrale toegangspoort (fase 2): requireAuth() gebruikt dezelfde sessiecontrole als de owner-routes.
+registreerSessieControle(async (event, body) => { const a = await ownerRequireSession(event as unknown as Record<string, unknown>, body); return 'errorCode' in a ? { errorCode: a.errorCode, status: a.errorCode.includes('FORBIDDEN') ? 403 : 401 } : { user: a.user, service: a.service } }, (user, perm) => can(user as never, perm as never))
 export const handler = router({
   'GET /api/_healthcheck': [async () => json({ message: 'Success' })],
   ...createApiPlatformRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
