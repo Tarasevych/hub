@@ -11,7 +11,38 @@
 // Verschil (verbetering): bij `list` met `filter` telt `limit` het aantal GEVONDEN items
 // (AppDeploy telde gelezen items en kon matches missen).
 import { randomUUID } from 'node:crypto';
-import { getPool } from './pg';
+import { appRolActief, getPool } from './pg';
+import { gebruikerVanContext } from './context';
+import { controleerRijen, type GeraakteRij } from './rls-audit';
+
+/**
+ * Eén query op app.records. In gebruikerscontext (na een sessiecontrole, zie context.ts) en met
+ * DATABASE_URL_APP: als rol mijnruimte_app in een korte transactie met SET LOCAL app.user_id/app.service,
+ * zodat de RLS-policy's gelden. Anders: systeempool (zoals vroeger).
+ */
+async function q(sql: string, params: unknown[]): Promise<{ rows: any[]; rowCount: number | null }> {
+  const gebruiker = gebruikerVanContext();
+  if (!gebruiker || !appRolActief()) return getPool('systeem').query(sql, params);
+  const client = await getPool('app').connect();
+  try {
+    await client.query('BEGIN');
+    await client.query("SELECT set_config('app.user_id', $1, true), set_config('app.service', $2, true)", [gebruiker.userId, gebruiker.service]);
+    const result = await client.query(sql, params);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+const geraakt = (rows: any[]): GeraakteRij[] => rows.map((r) => ({ owner_id: r.owner_id ?? null, ws: r.ws ?? (r.data && typeof r.data === 'object' ? (r.data as Record<string, unknown>).workspaceId as string : null) ?? null }));
+/** Audit-modus: tellen wat RLS zou weigeren (zie rls-audit.ts); faalt nooit de query zelf. */
+const audit = (tbl: string, actie: 'lezen' | 'toevoegen' | 'wijzigen' | 'verwijderen', rows: any[]) => {
+  if (!gebruikerVanContext() || !rows.length) return;
+  void controleerRijen(tbl, actie, geraakt(rows)).catch(() => undefined);
+};
 
 const MAX_ITEMS_PER_CALL = 500;
 const MAX_CALL_BYTES = 1024 * 1024; // 1 MiB per aanroep
@@ -62,17 +93,20 @@ export const db = {
     const valid = rows.filter((r) => r.ok);
     if (valid.length) {
       try {
-        await getPool().query(
+        const result = await q(
           `INSERT INTO app.records (tbl, id, data)
-           SELECT $1, x.id, x.data FROM jsonb_to_recordset($2::jsonb) AS x(id text, data jsonb)`,
+           SELECT $1, x.id, x.data FROM jsonb_to_recordset($2::jsonb) AS x(id text, data jsonb)
+           RETURNING owner_id, data->>'workspaceId' AS ws`,
           [table, JSON.stringify(valid.map((r) => ({ id: r.id, data: JSON.parse(r.data) })))],
         );
+        audit(table, 'toevoegen', result.rows);
       } catch (err) {
         // Val terug op per-record invoegen, zodat één fout record de rest niet blokkeert.
         console.error('[db.add] batch mislukt, per record opnieuw:', (err as Error).message);
         for (const row of valid) {
           try {
-            await getPool().query('INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3::jsonb)', [table, row.id, row.data]);
+            const result = await q("INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3::jsonb) RETURNING owner_id, data->>'workspaceId' AS ws", [table, row.id, row.data]);
+            audit(table, 'toevoegen', result.rows);
           } catch {
             row.ok = false;
           }
@@ -90,7 +124,8 @@ export const db = {
     const wanted = ids.filter(validId);
     const found = new Map<string, T>();
     if (wanted.length) {
-      const result = await getPool().query('SELECT id, data FROM app.records WHERE tbl = $1 AND id = ANY($2::text[])', [table, wanted]);
+      const result = await q('SELECT id, data, owner_id FROM app.records WHERE tbl = $1 AND id = ANY($2::text[])', [table, wanted]);
+      audit(table, 'lezen', result.rows);
       for (const row of result.rows) found.set(row.id, row.data as T);
     }
     return ids.map((id) => (validId(id) && found.has(id) ? (found.get(id) as T) : null));
@@ -111,8 +146,9 @@ export const db = {
       params.push(filter);
       where += ' AND data @> $4::jsonb';
     }
-    const result = await getPool().query(`SELECT id, seq, data FROM app.records WHERE ${where} ORDER BY seq LIMIT $3`, params);
+    const result = await q(`SELECT id, seq, data, owner_id FROM app.records WHERE ${where} ORDER BY seq LIMIT $3`, params);
     const rows = result.rows.slice(0, limit);
+    audit(table, 'lezen', rows);
     const items = rows.map((row) => ({ ...(row.data as object), id: row.id as string })) as Array<Omit<T, 'id'> & { id: string }>;
     const nextToken = result.rows.length > limit ? encodeToken(String(rows[rows.length - 1].seq)) : undefined;
     return nextToken ? { items, nextToken } : { items };
@@ -131,12 +167,13 @@ export const db = {
     const valid = prepared.filter((p) => p.ok);
     const updated = new Set<string>();
     if (valid.length) {
-      const result = await getPool().query(
+      const result = await q(
         `UPDATE app.records r SET data = u.data, updated_at = now()
          FROM jsonb_to_recordset($2::jsonb) AS u(id text, data jsonb)
-         WHERE r.tbl = $1 AND r.id = u.id RETURNING r.id`,
+         WHERE r.tbl = $1 AND r.id = u.id RETURNING r.id, r.owner_id, r.data->>'workspaceId' AS ws`,
         [table, JSON.stringify(valid.map((p) => ({ id: p.id, data: JSON.parse(p.data) })))],
       );
+      audit(table, 'wijzigen', result.rows);
       for (const row of result.rows) updated.add(row.id);
     }
     return prepared.map((p) => p.ok && updated.has(p.id));
@@ -150,7 +187,8 @@ export const db = {
     const wanted = ids.filter(validId);
     const deleted = new Set<string>();
     if (wanted.length) {
-      const result = await getPool().query('DELETE FROM app.records WHERE tbl = $1 AND id = ANY($2::text[]) RETURNING id', [table, wanted]);
+      const result = await q("DELETE FROM app.records WHERE tbl = $1 AND id = ANY($2::text[]) RETURNING id, owner_id, data->>'workspaceId' AS ws", [table, wanted]);
+      audit(table, 'verwijderen', result.rows);
       for (const row of result.rows) deleted.add(row.id);
     }
     return ids.map((id) => validId(id) && deleted.has(id));
@@ -162,12 +200,13 @@ export const db = {
    */
   async takeOne<T = Record<string, any>>(table: string, filter: Record<string, unknown>): Promise<(T & { id: string }) | null> {
     checkTable(table);
-    const result = await getPool().query(
+    const result = await q(
       `DELETE FROM app.records WHERE (tbl, id) = (
          SELECT tbl, id FROM app.records WHERE tbl = $1 AND data @> $2::jsonb ORDER BY seq LIMIT 1 FOR UPDATE SKIP LOCKED
-       ) RETURNING id, data`,
+       ) RETURNING id, data, owner_id`,
       [table, serialize(filter)],
     );
+    audit(table, 'verwijderen', result.rows);
     const row = result.rows[0];
     return row ? ({ ...(row.data as object), id: row.id } as T & { id: string }) : null;
   },
@@ -183,16 +222,17 @@ export const db = {
     checkTable(table);
     const veld = /^[A-Za-z_][A-Za-z0-9_]{0,60}$/;
     if (!validId(id) || !veld.test(field) || (countField !== undefined && !veld.test(countField)) || typeof value !== 'string' || !value) return false;
-    const result = await getPool().query(
+    const result = await q(
       `UPDATE app.records SET updated_at = now(), data = (
          SELECT CASE WHEN $5::text IS NULL THEN d ELSE jsonb_set(d, ARRAY[$5::text], to_jsonb(jsonb_array_length(d -> $3::text))) END
          FROM (SELECT jsonb_set(data, ARRAY[$3::text], COALESCE(
                  (SELECT jsonb_agg(e) FROM jsonb_array_elements(data -> $3::text) AS e WHERE e <> to_jsonb($4::text)),
                  '[]'::jsonb)) AS d) AS x)
        WHERE tbl = $1 AND id = $2 AND jsonb_typeof(data -> $3::text) = 'array' AND (data -> $3::text) @> jsonb_build_array($4::text)
-       RETURNING id`,
+       RETURNING id, owner_id, data->>'workspaceId' AS ws`,
       [table, id, field, value, countField ?? null],
     );
+    audit(table, 'wijzigen', result.rows);
     return (result.rowCount ?? 0) === 1;
   },
 };

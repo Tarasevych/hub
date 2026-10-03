@@ -26,6 +26,8 @@ export interface RouterContext {
 export type RouterMiddleware = (ctx: RouterContext) => Promise<RouterResponse | void> | RouterResponse | void;
 export type RouterRoutes = Record<string, RouterMiddleware[]>;
 
+import { metVerzoek } from './context';
+
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
 
 /** JSON-succesantwoord (zoals AppDeploy `json`). */
@@ -77,9 +79,10 @@ function parseBody(raw: string): unknown {
 }
 
 /** Maak een handler die requests via de middleware-ketens routeert. */
-export function router(routes: RouterRoutes): (event: LambdaEvent) => Promise<RouterResponse> {
+export type RouterHandler = ((event: LambdaEvent) => Promise<RouterResponse>) & { patronen: string[] };
+export function router(routes: RouterRoutes): RouterHandler {
   const compiled = compile(routes);
-  return async (event: LambdaEvent) => {
+  const handler = async (event: LambdaEvent) => {
     const method = String(event.requestContext?.http?.method || 'GET').toUpperCase();
     const parts = splitPath(event.rawPath || '/');
     let best: { route: CompiledRoute; params: Record<string, string> } | null = null;
@@ -94,15 +97,20 @@ export function router(routes: RouterRoutes): (event: LambdaEvent) => Promise<Ro
     }
     if (!best) return pathMatched ? error('Method not allowed', 405) : error('Not found', 404);
     const ctx: RouterContext = { body: parseBody(event.body), query: event.queryStringParameters || {}, params: best.params, event };
-    try {
-      for (const middleware of best.route.chain) {
-        const result = await middleware(ctx);
-        if (result) return result;
+    const gekozen = best;
+    // Eigen verzoekcontext per route: sessiecontroles zetten daarin het account (RLS, zie context.ts).
+    return metVerzoek(gekozen.route.pattern, async () => {
+      try {
+        for (const middleware of gekozen.route.chain) {
+          const result = await middleware(ctx);
+          if (result) return result;
+        }
+        return error('No response', 500);
+      } catch (err) {
+        console.error(`[router] onverwachte fout in ${gekozen.route.pattern}:`, err);
+        return error('Internal server error', 500);
       }
-      return error('No response', 500);
-    } catch (err) {
-      console.error(`[router] onverwachte fout in ${best.route.pattern}:`, err);
-      return error('Internal server error', 500);
-    }
+    });
   };
+  return Object.assign(handler, { patronen: compiled.map((r) => r.pattern) });
 }
