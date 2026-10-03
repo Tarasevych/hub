@@ -87,9 +87,20 @@ function Controleer-Set([string]$map) {
 function Wissel([string]$nieuw, [string]$doel) {
   $oud = "$doel.oud"
   if (Test-Path -LiteralPath $oud) { Remove-Item -LiteralPath $oud -Recurse -Force }
-  if (Test-Path -LiteralPath $doel) { Rename-Item -LiteralPath $doel -NewName (Split-Path $oud -Leaf) }
+  $hernoemd = $false
+  if (Test-Path -LiteralPath $doel) {
+    try { Rename-Item -LiteralPath $doel -NewName (Split-Path $oud -Leaf); $hernoemd = $true }
+    catch {
+      # Map is in gebruik (bijv. open in Verkenner): inhoud ter plekke vervangen.
+      Write-Warning "$doel is in gebruik; inhoud wordt ter plekke vervangen"
+      Get-ChildItem -LiteralPath $doel -Force | Remove-Item -Recurse -Force
+      Get-ChildItem -LiteralPath $nieuw -Force | Move-Item -Destination $doel
+      Remove-Item -LiteralPath $nieuw -Recurse -Force
+      return
+    }
+  }
   Rename-Item -LiteralPath $nieuw -NewName (Split-Path $doel -Leaf)
-  if (Test-Path -LiteralPath $oud) { Remove-Item -LiteralPath $oud -Recurse -Force }
+  if ($hernoemd) { Remove-Item -LiteralPath $oud -Recurse -Force }
 }
 
 # Doel vooraf controleren (voordat er iets gebouwd wordt).
