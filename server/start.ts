@@ -16,6 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DASHBOARD_HOST, SERVICE_HOSTS } from '../backend/deployment-identity';
 import { handler } from '../backend/index';
+import { verouderdeEigenarenIntrekken } from '../backend/eigenaar-opschonen';
 import { closePool, getPool } from './platform/pg';
 import { ownerEmail, rateLimit } from './platform/beveiliging';
 import type { LambdaEvent, RouterResponse } from './platform/router';
@@ -307,6 +308,8 @@ if (isMain) {
   server.headersTimeout = 30_000;
   server.keepAliveTimeout = 65_000;
   server.listen(PORT, HOST, () => console.log(`[server] luistert op http://${HOST}:${PORT} (dist: ${DIST_DIR})`));
+  // Fase 3: verouderde eigenaarsrollen (adres ≠ OWNER_EMAIL) intrekken; faalt nooit de start.
+  verouderdeEigenarenIntrekken().catch((err) => console.error('[eigenaar] opschonen mislukt:', (err as Error).message));
   const stop = (signal: string) => {
     console.log(`[server] ${signal} ontvangen, stoppen...`);
     server.close(() => { closePool().finally(() => process.exit(0)); });

@@ -4,6 +4,7 @@ import { closePool, getPool } from '../../server/platform/pg';
 import { db } from '../../server/platform/db';
 import { metVerzoek, zetGebruiker } from '../../server/platform/context';
 import { auditControle, auditLijst, auditToevoegen, auditVerwijderen, auditVoorWeergave } from '../../server/platform/audit';
+import { verouderdeEigenarenIntrekken } from '../../backend/eigenaar-opschonen';
 import { googleAanmeldingVastleggen, stapOpGeldig, totpStapOpVastleggen, STAP_OP_TABEL } from '../../backend/stap-op';
 
 const resultaten: Array<{ naam: string; ok: boolean }> = [];
@@ -70,6 +71,20 @@ export async function main() {
     const r = [await db.zetAlsHoger('eenheid_totp_v1', String(tid), 'lastStep', 100), await db.zetAlsHoger('eenheid_totp_v1', String(tid), 'lastStep', 101), await db.zetAlsHoger('eenheid_totp_v1', String(tid), 'lastStep', 101), await db.zetAlsHoger('eenheid_totp_v1', String(tid), 'lastStep', 99)];
     const gelijk = await Promise.all([102, 102, 102].map((v) => db.zetAlsHoger('eenheid_totp_v1', String(tid), 'lastStep', v)));
     check('TOTP-tijdvak eenmalig: gelijk/lager geweigerd, hoger één keer, gelijktijdig precies één winnaar', JSON.stringify(r) === '[false,true,false,false]' && gelijk.filter(Boolean).length === 1, JSON.stringify([r, gelijk]));
+    // ---- verouderde eigenaar ----
+    const vorigeOwner = process.env.OWNER_EMAIL;
+    const echt = randomUUID(), oud = randomUUID();
+    process.env.OWNER_EMAIL = `Echt-${echt}@Example.test`;
+    await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('users',$1,$2),('users',$3,$4)", [echt, { email: `echt-${echt}@example.test`, role: 'owner', status: 'approved' }, oud, { email: `oud-${oud}@example.test`, role: 'owner', status: 'approved' }]);
+    recordIds.push(echt, oud);
+    const weg = await verouderdeEigenarenIntrekken();
+    const rollen = (await sys.query("SELECT id, data->>'role' AS r FROM app.records WHERE tbl='users' AND id = ANY($1)", [[echt, oud]])).rows;
+    const rolVan = (id: string) => rollen.find((x) => x.id === id)?.r;
+    const auditOud = await auditLijst({ ownerId: oud, action: 'owner.role.demoted-stale' });
+    process.env.OWNER_EMAIL = ''; const niets = await verouderdeEigenarenIntrekken();
+    if (vorigeOwner === undefined) delete process.env.OWNER_EMAIL; else process.env.OWNER_EMAIL = vorigeOwner;
+    check('opstarten: verouderde eigenaar (ander adres) → member + audit; echte eigenaar (hoofdletterongevoelig) blijft; zonder OWNER_EMAIL niets',
+      weg.includes(oud) && !weg.includes(echt) && rolVan(oud) === 'member' && rolVan(echt) === 'owner' && auditOud.items.length === 1 && niets.length === 0, JSON.stringify(rollen));
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
