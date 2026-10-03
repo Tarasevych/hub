@@ -1,14 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+// @ts-expect-error -- plain ESM-script zonder typedeclaraties
+import { securityBuildPlugin } from './scripts/security-build.mjs';
 
+// Zelf-gehoste build: output altijd in dist/ (geen APPDEPLOY_*-variabelen meer).
+// SOURCEMAP=hidden maakt sourcemaps zonder verwijzing in de bundel.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), securityBuildPlugin()],
   base: './',
-    build: {
-        cssCodeSplit: true,
-        outDir: process.env.APPDEPLOY_VITE_OUT_DIR || 'dist',
-    sourcemap:
-      process.env.APPDEPLOY_VITE_SOURCEMAP === 'hidden' ? 'hidden' : false,
+  build: {
+    cssCodeSplit: true,
+    outDir: 'dist',
+    emptyOutDir: true,
+    sourcemap: process.env.SOURCEMAP === 'hidden' ? 'hidden' : false,
     rollupOptions: {
       maxParallelFileOps: 128,
     },
