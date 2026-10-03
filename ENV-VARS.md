@@ -36,6 +36,15 @@ variabele, dan valt de app terug op `DATABASE_URL` en werkt alles zoals vroeger 
 RLS afdwingen staat in de database (`app.rls_instellingen.afdwingen`), niet in een variabele: de app kan het niet
 zelf uitzetten. Schakelen: `db-rollen-instellen.sh rls-aan|rls-uit`.
 
+### Beveiliging fase 2/3: schakelaars (optioneel)
+
+| Naam | Standaard | Doel |
+|---|---|---|
+| `AUTH_POORT_AFDWINGEN` | uit | `1` = de vangrail in de router antwoordt **401** op elke anonieme 2xx-respons van een route die niet in `PUBLIEKE_ROUTES` staat (`server/platform/auth-poort.ts`). Zonder: alleen loggen (`[auth-poort]`) en tellen in `app.rls_audit` (actie `anoniem-2xx`). Zie `deploy/RUNBOOK-FASE-2-3.md`. |
+| `STAP_OP_UIT` | uit | Noodschakelaar: `1` zet de step-up-eis (`STEP_UP_REQUIRED`) voor gevoelige acties uit. Alleen tijdelijk gebruiken, bv. als de frontend de step-up nog niet afhandelt en een beheeractie dringend is. |
+| `AUDIT_IP_PEPPER` | `RECOVERY_CODE_PEPPER` | Pepper voor de IP-hash in `app.audit` (`ip_hash`). Wisselen maakt oude en nieuwe hashes onvergelijkbaar (geen gegevensverlies). `openssl rand -base64 48` |
+| `ACCOUNT_DEFINITIEF_WISSEN` | uit | `1` = de opruimjob wist accounts **definitief** (inhoud, identiteiten, bestanden; grafsteen zonder persoonsgegevens) zodra de herstelperiode van 30 dagen voorbij is. Zonder: alleen een droog verslag in het cron-log. **Onomkeerbaar** — pas aanzetten na een geslaagde back-up/hersteltest. |
+
 ## Google-login en Google Suite (optioneel: zonder deze waarden is Google-login uit)
 
 | Naam | Doel | Genereren / waarde |
