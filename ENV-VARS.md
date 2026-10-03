@@ -1,6 +1,6 @@
 # Omgevingsvariabelen en geheimen
 
-Alle waarden staan op de VM in **`/etc/mijn-ruimte/geheimen.env`** (eigenaar `root:mijnruimte`, modus `0640`),
+Alle waarden staan op de VM in **`/etc/mijn-ruimte/geheimen.env`** (`0600 root:root` volstaat: systemd leest het als root; of `root:mijnruimte 0640`),
 geladen door systemd (`EnvironmentFile=` in `deploy/mijn-ruimte.service` en de cron-units).
 Nooit in git, nooit in de build, nooit in logs. **Genereer ALLE geheimen nieuw**: de oude AppDeploy-waarden
 moeten als gelekt worden beschouwd (zie SECURITY-NOTES.md).
@@ -75,6 +75,9 @@ Zonder client-ID antwoordt `POST /api/auth/google/start` met **503 `GOOGLE_NOT_C
 | `SOURCEMAP` | `1` = sourcemaps bouwen (alleen lokaal debuggen; de server serveert `*.map` nooit). |
 
 ## Snel alles genereren (op de VM, als root)
+
+Bestaat `geheimen.env` al (met `DATABASE_URL`), gebruik dan `deploy/geheimen-aanvullen.sh --eigenaar <e-mailadres>`:
+dat voegt alleen ontbrekende sleutels toe en toont geen waarden. Voor een volledig nieuw bestand:
 
 ```bash
 install -d -m 0750 -o root -g mijnruimte /etc/mijn-ruimte
