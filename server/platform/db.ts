@@ -150,22 +150,23 @@ export const db = {
     return ids.map((id) => (validId(id) && found.has(id) ? (found.get(id) as T) : null));
   },
 
-  /** Eén begrensde pagina (invoegvolgorde), optioneel gefilterd op gelijkheid van velden. */
+  /** Eén begrensde pagina (invoegvolgorde, of met `nieuwsteEerst` omgekeerd), optioneel gefilterd op gelijkheid van velden. */
   async list<T = Record<string, any>>(
     table: string,
-    options: { filter?: Record<string, unknown>; nextToken?: string; limit?: number } = {},
+    options: { filter?: Record<string, unknown>; nextToken?: string; limit?: number; nieuwsteEerst?: boolean } = {},
   ): Promise<{ items: Array<Omit<T, 'id'> & { id: string }>; nextToken?: string }> {
     checkTable(table);
     const limit = Math.max(1, Math.min(MAX_LIST_LIMIT, Math.floor(Number(options.limit) || DEFAULT_LIST_LIMIT)));
-    const after = decodeToken(options.nextToken);
+    const omgekeerd = options.nieuwsteEerst === true;
+    const after = options.nextToken ? decodeToken(options.nextToken) : omgekeerd ? '9223372036854775807' : '0';
     const filter = options.filter && typeof options.filter === 'object' ? serialize(options.filter) : null;
     const params: unknown[] = [table, after, limit + 1];
-    let where = 'tbl = $1 AND seq > $2::bigint';
+    let where = omgekeerd ? 'tbl = $1 AND seq < $2::bigint' : 'tbl = $1 AND seq > $2::bigint';
     if (filter && filter !== '{}') {
       params.push(filter);
       where += ' AND data @> $4::jsonb';
     }
-    const result = await q(table, `SELECT id, seq, data, owner_id FROM app.records WHERE ${where} ORDER BY seq LIMIT $3`, params, true);
+    const result = await q(table, `SELECT id, seq, data, owner_id FROM app.records WHERE ${where} ORDER BY seq${omgekeerd ? ' DESC' : ''} LIMIT $3`, params, true);
     const rows = result.rows.slice(0, limit);
     audit(table, 'lezen', rows);
     const items = rows.map((row) => ({ ...(row.data as object), id: row.id as string })) as Array<Omit<T, 'id'> & { id: string }>;

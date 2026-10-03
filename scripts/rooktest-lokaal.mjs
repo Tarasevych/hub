@@ -291,6 +291,17 @@ try {
   const rLid = await api('admin.tarasevych.com', '/api/owner/admin/bootstrap', { service: 'admin', tabContext: tab() }, `${naam}=${encodeURIComponent(await zaaiSessie(lid))}`);
   check('eigenaar komt uit OWNER_EMAIL (admin 200 voor eigenaar, 403 voor lid)', r.status === 200 && rLid.status === 403, `eigenaar ${r.status} ${r.data?.error || ''}, lid ${rLid.status}`);
 
+  // B5b. Fase 3: beheeroverzicht gebruikers nieuwste eerst, gepagineerd.
+  {
+    const p1 = await api('admin.tarasevych.com', '/api/owner/admin/users/pagina', { service: 'admin', tabContext: tab(), limit: 1 }, c1);
+    const p2 = await api('admin.tarasevych.com', '/api/owner/admin/users/pagina', { service: 'admin', tabContext: tab(), limit: 1, nextToken: p1.data?.nextToken }, c1);
+    const seqVan = async id => Number((await pool.query('select seq from app.records where id=$1', [id])).rows[0]?.seq || 0);
+    const [a, b] = [p1.data?.items?.[0]?.id, p2.data?.items?.[0]?.id];
+    const maxSeq = Number((await pool.query("select max(seq) m from app.records where tbl='users'")).rows[0].m);
+    const lidP = await api('admin.tarasevych.com', '/api/owner/admin/users/pagina', { service: 'admin', tabContext: tab() }, `${naam}=${encodeURIComponent(await zaaiSessie(lid))}`);
+    check('admin-gebruikerslijst: nieuwste eerst, pagina 2 ouder dan pagina 1, lid 403', p1.status === 200 && !!p1.data?.nextToken && a && b && a !== b && await seqVan(a) === maxSeq && await seqVan(b) < await seqVan(a) && lidP.status === 403, `${p1.status} ${p2.status} ${lidP.status}`);
+  }
+
   // B6. Vault: onthullen alleen op admin./api.; geen uitzondering voor andere hosts.
   r = await api('hub.tarasevych.com', '/api/owner/api-platform/vault/onbekend/reveal', { service: 'hub', tabContext: tab() }, c1);
   const rApi = await api('api.tarasevych.com', '/api/owner/api-platform/vault/onbekend/reveal', { service: 'api', tabContext: tab() }, c1);
