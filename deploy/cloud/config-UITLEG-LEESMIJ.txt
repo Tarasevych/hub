@@ -1,0 +1,30 @@
+UITLEG-LEESMIJ.txt - C:\Users\t\AppData\Local\mijn-ruimte\rclone\
+(Спочатку українською, далі нідерландською / Eerst Oekraiens, daarna Nederlands)
+Цей файл без секретів, але ПАПКА містить доступ до Google Drive.
+Dit bestand bevat geen geheimen, maar de MAP bevat de toegang tot Google Drive.
+
+УКРАЇНСЬКА
+  rclone.conf               налаштування rclone з доступом до Google (токен, Client ID/secret).
+                            ЗАШИФРОВАНИЙ; без пароля нічого не прочитати.
+  config-wachtwoord.dpapi   випадковий пароль до rclone.conf, захищений Windows DPAPI:
+                            розшифрувати може лише користувач t на цьому ПК.
+  cache\, tmp\              тимчасове для rclone.
+  Права на папку: лише t. Створено скриптом T:\mijn-ruimte\scripts\cloud\cloud-koppelen.ps1.
+  Чому тут, а не на T:\/R:\: rclone мусить сам переписувати rclone.conf (токен оновлюється),
+  а на T:\ і R:\ писати може лише PowerShell. Див. T:\mijn-ruimte\hulpmiddelen\rclone\UITLEG-LEESMIJ.txt.
+  НЕ копіюйте, НЕ надсилайте, НЕ кладіть у хмару і НЕ додавайте до резервних копій -
+  у разі втрати просто знову запустіть cloud-koppelen.ps1.
+  Видалити папку = вимкнути вивантаження в Drive (скрипт напише "NIET GEKOPPELD").
+
+NEDERLANDS
+  rclone.conf               rclone-instellingen met de Google-toegang (token, Client ID/secret).
+                            VERSLEUTELD; zonder wachtwoord onleesbaar.
+  config-wachtwoord.dpapi   willekeurig wachtwoord voor rclone.conf, beschermd met Windows DPAPI:
+                            alleen gebruiker t op deze pc kan het ontsleutelen.
+  cache\, tmp\              tijdelijke bestanden van rclone.
+  Rechten op de map: alleen t. Gemaakt door T:\mijn-ruimte\scripts\cloud\cloud-koppelen.ps1.
+  Waarom hier en niet op T:\/R:\: rclone moet rclone.conf zelf herschrijven (token wordt ververst),
+  en op T:\ en R:\ mag alleen PowerShell schrijven. Zie T:\mijn-ruimte\hulpmiddelen\rclone\UITLEG-LEESMIJ.txt.
+  NIET kopieren, versturen, in de cloud zetten of in back-ups opnemen - kwijt? Gewoon
+  cloud-koppelen.ps1 opnieuw draaien.
+  Map verwijderen = uploaden naar Drive uitzetten (het script meldt dan "NIET GEKOPPELD").

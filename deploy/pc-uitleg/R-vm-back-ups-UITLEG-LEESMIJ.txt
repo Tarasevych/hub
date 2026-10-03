@@ -15,6 +15,8 @@ UITLEG-LEESMIJ.txt - R:\mijn-ruimte-reservekopie\vm-back-ups\
   * info.txt - час, версія програми, розміри (без секретів);
   * SHA256SUMS - контрольні суми; KLAAR - позначка "копія повна".
 - ophalen.log - журнал: коли і що було забрано або яка була помилка.
+- Одразу після забирання ті самі ЗАШИФРОВАНІ файли (.age + SHA256SUMS) копіюються в Google
+  Drive (папка mijn-ruimte-reservekopie\dagelijks\). Див. T:\mijn-ruimte\scripts\cloud\UITLEG-LEESMIJ.txt.
 - Скрипт відмовляється забирати НЕзашифровані копії.
 
 НАВІЩО
@@ -51,6 +53,8 @@ WAT IS DIT
   * info.txt - tijdstip, release, groottes (geen geheimen);
   * SHA256SUMS - controlesommen; KLAAR - markering "back-up compleet".
 - ophalen.log - logboek: wanneer wat is opgehaald, of welke fout er was.
+- Direct na het ophalen gaan dezelfde VERSLEUTELDE bestanden (.age + SHA256SUMS) naar Google
+  Drive (map mijn-ruimte-reservekopie\dagelijks\). Zie T:\mijn-ruimte\scripts\cloud\UITLEG-LEESMIJ.txt.
 - Het script weigert ONversleutelde back-ups.
 
 WAAROM

@@ -16,7 +16,8 @@ SHA256SUMS.txt               controlesommen van alle bestanden
 controleer-herstelset.ps1    controle dat geen bestand beschadigd is
 programmas\age\              age.exe (ontsleutelen), gecontroleerd
 broncode\                    code van de site (tar.gz + git-bundle) en dashboard\
-scripts\                     scripts: VM maken, herstellen, HERSTEL.md
+scripts\                     scripts: VM maken, herstellen, HERSTEL.md;
+                             scripts\cloud\ = dagelijkse kopie naar Google Drive (rclone)
 back-ups\database-en-uploads\<datum>\  VERSLEUTELDE kopie van database en bestanden
 back-ups\geheimen\<datum>\   VERSLEUTELDE servergeheimen (wachtwoorden, tunnelsleutel)
 sleutels\                    alleen uitleg en de PUBLIEKE sleutel. De geheime sleutel
@@ -133,7 +134,7 @@ STAP 13. Database en gebruikersbestanden uit de back-up terugzetten:
     .\scripts\ontsleutel-naar-vm.ps1 -Bestand "$b\database.dump.age" -Sleutel $sl -Stap db-terugzetten
     .\scripts\ontsleutel-naar-vm.ps1 -Bestand "$b\uploads.tar.gz.age" -Sleutel $sl -Stap uploads-terugzetten
   Verwacht: "records: <aantal>" en {"ok":true,"db":true}. Heb je een nieuwere kopie
-  (bijv. uit R:\...\vm-back-ups), gebruik die.
+  (bijv. uit R:\...\vm-back-ups of van Google Drive, hoofdstuk 4), gebruik die.
 
 STAP 14. Cloudflare-tunnel (site bereikbaar vanaf internet).
   VARIANT A (normaal): de oude tunnelsleutel is in stap 10 teruggezet:
@@ -163,22 +164,62 @@ STAP 17. Na het herstel:
   - De server maakt elke nacht een nieuwe VERSLEUTELDE back-up. Ophalen en deze set bijwerken:
     scripts\reservekopie-ophalen.ps1 en scripts\herstelset-bijwerken.ps1 (die gebruiken T:\ en R:\;
     op een nieuwe pc eigen -Project/-Reserve/-Doel opgeven of iemand laten helpen).
-  - Pc GEHACKT: ga ervan uit dat geheimen en herstelsleutel gestolen kunnen zijn. Wijzig de
+  - Google Drive opnieuw koppelen (dagelijkse kopie): scripts\cloud\UITLEG-LEESMIJ.txt -
+    rclone opnieuw installeren en scripts\cloud\cloud-koppelen.ps1 met DEZELFDE Google-OAuth-client
+    (dan ziet rclone de oude bestanden).
+  - Pc GEHACKT: ga ervan uit dat geheimen en herstelsleutel gestolen kunnen zijn.
+    Trek op https://myaccount.google.com/permissions de toegang van de oude rclone-client in,
+    maak in Google Cloud een NIEUWE OAuth-client en hernoem de oude Drive-map naar
+    mijn-ruimte-reservekopie-oud (de nieuwe client ziet hem niet en maakt een nieuwe). Wijzig de
     wachtwoorden van Cloudflare, GitHub en Google; maak een NIEUWE herstelsleutel
     (programmas\age\age\age-keygen.exe) en zet de publieke helft op de server
     (/etc/mijn-ruimte/backup-ontvanger.age.pub); laat een vakman de sleutels in geheimen.env vervangen.
 
 ==============================================================================
-4. DEZE SET BIJWERKEN (wekelijks of maandelijks)
+4. KOPIE OP GOOGLE DRIVE (als deze schijf weg is of daar een nieuwere kopie staat)
+==============================================================================
+Elke dag (na 09:00) zet de pc zelf VERSLEUTELDE kopieen op Google Drive, in de map
+mijn-ruimte-reservekopie (jouw Google-account, https://drive.google.com):
+  dagelijks\<datum>\  database.dump.age, uploads.tar.gz.age, SHA256SUMS
+   (laatste 30 dagen + een per maand, 12 maanden)
+  geheimen\<datum>\   versleutelde servergeheimen
+  herstelset\         herstelset-<datum>.zip.age = DEZE hele set, versleuteld (laatste 4)
+Zonder herstelsleutel zijn die bestanden waardeloos - zo hoort het. De sleutel staat er NIET.
+Is de externe schijf weg:
+  a) Op de nieuwe pc: drive.google.com -> map mijn-ruimte-reservekopie. Download de nieuwste
+   herstelset\herstelset-<datum>.zip.age en herstelset-<datum>.zip.age.sha256, en de nieuwste
+   map dagelijks\<datum>\ (rechtermuisknop -> Downloaden; Drive geeft een zip - uitpakken).
+  b) Programma age: https://github.com/FiloSottile/age/releases -> age-v1.x.x-windows-amd64.zip,
+   uitpakken naar C:\age\ (geeft C:\age\age\age.exe).
+  c) Set controleren en ontsleutelen. Er staan geen geheimen leesbaar in (de back-ups erin
+   blijven versleuteld), dus hier mag ontsleutelen naar een bestand:
+    cd $HOME\Downloads
+    Get-FileHash .\herstelset-<datum>.zip.age
+    Get-Content .\herstelset-<datum>.zip.age.sha256
+    C:\age\age\age.exe -d -i F:\herstelsleutel-age.txt -o C:\herstelset.zip .\herstelset-<datum>.zip.age
+    Expand-Archive C:\herstelset.zip C:\
+   De twee SHA256-getallen moeten gelijk zijn (hoofd-/kleine letters maakt niet uit).
+  d) De set staat nu in C:\mijn-ruimte-herstelset\. Volg hoofdstuk 3 met die map in plaats van
+   E:\mijn-ruimte-herstelset. Zet de nieuwere database-kopie uit dagelijks\ ERNAAST, niet in
+   de set, bijv. C:\drive-kopie\<datum>\, en geef direct na STAP 1:
+    $b = 'C:\drive-kopie\<datum>'
+   (info.txt gaat bewust niet naar Drive - die is niet versleuteld; negeer daar de regel
+   info.txt in SHA256SUMS.)
+Hoe dit is ingericht en waar het logboek staat: scripts\cloud\UITLEG-LEESMIJ.txt.
+
+==============================================================================
+5. DEZE SET BIJWERKEN (wekelijks of maandelijks)
 ==============================================================================
 Sluit de externe schijf aan (bijv. letter E:) en voer in een gewone PowerShell uit:
     powershell -NoProfile -ExecutionPolicy Bypass -File T:\mijn-ruimte\scripts\herstelset-bijwerken.ps1 -HaalEerstOp -Doel E:\
 Het script haalt de nieuwste back-up van de server, ververst de set op R:\, kopieert hem naar
 E:\mijn-ruimte-herstelset en controleert alle controlesommen. Aan het eind:
 "OK: E:\mijn-ruimte-herstelset". Daarna "Hardware veilig verwijderen".
+(De set op R:\ ververst de pc zelf elke week en zet hem versleuteld op Google Drive; de externe
+schijf werk jij bij met deze opdracht.)
 
 ==============================================================================
-5. WOORDENLIJST
+6. WOORDENLIJST
 ==============================================================================
 age     - versleutelprogramma. Versleutelt met de PUBLIEKE sleutel, ontsleutelt alleen met de GEHEIME.
 sleutel - herstelsleutel-age.txt (geheim) of age1... (publiek, niet geheim).
@@ -188,13 +229,18 @@ LUKS    - versleuteling van de VM-schijf. Na elke start is de LUKS-wachtwoordzin
           (tenzij automatisch ontgrendelen via vTPM is ingesteld).
 GitHub  - website waar de code staat (Tarasevych/hub, branch zelf-hosten).
 SSH     - veilig inloggen van de pc op de VM met een sleutel.
+rclone  - programma dat elke dag de versleutelde bestanden naar Google Drive kopieert.
+drive.file - beperkte toegang: rclone ziet op Drive alleen de bestanden die het zelf maakte.
 
 ==============================================================================
-6. WAT JE NIET MOET DOEN
+7. WAT JE NIET MOET DOEN
 ==============================================================================
 - De herstelsleutel (herstelsleutel-age.txt) NIET op of naast deze schijf bewaren.
-- Sleutel, geheimen of back-ups NIET mailen, via chat sturen of in de cloud zetten.
-- Back-ups NIET ontsleutelen naar bestanden op de pc - alleen met ontsleutel-naar-vm.ps1.
+- Sleutel en geheimen NIET mailen of via chat sturen; de sleutel NIET in de cloud zetten.
+  (Op Google Drive staan alleen VERSLEUTELDE kopieen - dat is normaal en zo bedoeld.)
+- Back-ups NIET ontsleutelen naar bestanden op de pc - alleen met ontsleutel-naar-vm.ps1
+  (enige uitzondering: herstelset-*.zip.age uit hoofdstuk 4, daar zitten geen geheimen in).
+- De map mijn-ruimte-reservekopie op Drive NIET zelf aanmaken of hernoemen.
 - De LUKS-wachtwoordzin NIET vergeten of verwijderen.
 - NIET de oude en de nieuwe server tegelijk met dezelfde tunnel laten draaien.
 - Bestanden in de set NIET met de hand wijzigen (de controle meldt dan "BESCHADIGD").

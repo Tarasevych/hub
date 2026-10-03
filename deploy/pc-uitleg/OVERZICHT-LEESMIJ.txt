@@ -1,4 +1,4 @@
-OVERZICHT-LEESMIJ.txt - Mijn Ruimte: wat staat waar (stand 03-10-2026, 13:30)
+OVERZICHT-LEESMIJ.txt - Mijn Ruimte: wat staat waar (stand 03-10-2026, 14:30)
 Цей самий файл лежить у T:\mijn-ruimte\ і в R:\mijn-ruimte-reservekopie\.
 Dit bestand staat zowel in T:\mijn-ruimte\ als in R:\mijn-ruimte-reservekopie\.
 (Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
@@ -22,13 +22,15 @@ Dit bestand staat zowel in T:\mijn-ruimte\ als in R:\mijn-ruimte-reservekopie\.
                        zelf-hosten\<дата-коміт>\ - версії, що ставились на сервер.
 - hulpmiddelen\age\    програма шифрування age + ПУБЛІЧНИЙ ключ резервних копій.
 - hulpmiddelen\ssh\    SSH-ключ для входу на сервер (СЕКРЕТ, доступ лише t). Див. UITLEG-LEESMIJ.txt там.
+- hulpmiddelen\rclone\ rclone (перевірений) для щоденної копії в Google Drive. Див. UITLEG-LEESMIJ.txt там.
 - installatiebestanden\ інсталятор Ubuntu Server 24.04 (для нової VM).
 - schermafbeeldingen\  знімки екрана.
 - scripts\             скрипти: створення VM і мережі (*.ps1), налаштування сервера (*.sh),
                        deploy-<дата-коміт>\ (файли розгортання), uitrol-, tunnel-, age-20261003\
                        (одноразові скрипти цього дня), reservekopie-ophalen.ps1 (забрати копію),
                        herstelset-bijwerken.ps1 (оновити набір відновлення), herstelset\ (джерело
-                       інструкцій набору), vtpm-20261003\ (автоматичне розблокування диска VM).
+                       інструкцій набору), vtpm-20261003\ (автоматичне розблокування диска VM),
+                       cloud\ (щоденна зашифрована копія в Google Drive; UITLEG-LEESMIJ.txt там).
 - virtuele-machine\    конфігурація і диски VM (*.vhdx, *.avhdx = контрольні точки).
                        НЕ видаляйте і не переміщуйте ці файли вручну - керуйте через Hyper-V.
 - HERSTEL.md           план відновлення після втрати сервера.
@@ -42,6 +44,7 @@ Dit bestand staat zowel in T:\mijn-ruimte\ als in R:\mijn-ruimte-reservekopie\.
 - vm-back-ups\  зашифровані нічні резервні копії бази та файлів.
 - herstelset\   НАБІР ВІДНОВЛЕННЯ для зовнішнього диска (без секретного ключа). Почніть з
                 00-BEGIN-HIER-UA.pdf. Оновлення: scripts\herstelset-bijwerken.ps1 -Doel E:\
+- cloud\        журнали копіювання в Google Drive (cloud.log) і останній зашифрований набір.
 - HERSTEL.md    план відновлення.
 
 ЕТАПИ (що вже зроблено)
@@ -52,10 +55,14 @@ Dit bestand staat zowel in T:\mijn-ruimte\ als in R:\mijn-ruimte-reservekopie\.
    ключем. Сам сервер свої копії розшифрувати не може.
 5. Забрати копію на ПК: scripts\reservekopie-ophalen.ps1 -> R:\...\vm-back-ups\.
 6. Відновлення: HERSTEL.md (GitHub + зашифрована копія + ключ відновлення).
+7. Google Drive: щодня після 09:00 ті самі ЗАШИФРОВАНІ копії + набір відновлення йдуть у
+   Google Drive (папка mijn-ruimte-reservekopie, доступ лише drive.file). Доступ Google
+   (зашифрований) лежить поза T:\/R:\: C:\Users\t\AppData\Local\mijn-ruimte\rclone\.
 
 ЩО ВАЖЛИВО ЗРОБИТИ ВАМ
 - Зробити офлайн-копію herstelsleutel-age.txt (флешка в сейфі та/або папір).
-- Вирішити про щоденне заплановане завдання для reservekopie-ophalen.ps1.
+- Щоденне завдання "Mijn Ruimte - reservekopie ophalen" (09:00) вже є; воно ж робить копію в Drive.
+- ОДИН РАЗ підключити Google Drive: scripts\cloud\UITLEG-LEESMIJ.txt (кроки А і Б).
 - Ніколи не надсилати і не завантажувати в хмару вміст папок sleutels\ та SSH-ключ.
 
 ##############################################################################
@@ -76,13 +83,15 @@ SCHIJF T:\mijn-ruimte\
                        zelf-hosten\<datum-commit>\ = versies die op de server zijn gezet.
 - hulpmiddelen\age\    versleutelprogramma age + PUBLIEKE back-upsleutel.
 - hulpmiddelen\ssh\    SSH-sleutel voor de server (GEHEIM, alleen t). Zie de UITLEG-LEESMIJ.txt daar.
+- hulpmiddelen\rclone\ rclone (gecontroleerd) voor de dagelijkse kopie naar Google Drive. Zie UITLEG-LEESMIJ.txt.
 - installatiebestanden\ installatie-image Ubuntu Server 24.04 (voor een nieuwe VM).
 - schermafbeeldingen\  schermafbeeldingen.
 - scripts\             scripts: VM en netwerk maken (*.ps1), server inrichten (*.sh),
                        deploy-<datum-commit>\ (uitrolbestanden), uitrol-, tunnel-, age-20261003\
                        (eenmalige scripts van deze dag), reservekopie-ophalen.ps1 (back-up ophalen),
                        herstelset-bijwerken.ps1 (herstelset verversen), herstelset\ (bron van de
-                       handleidingen), vtpm-20261003\ (automatisch ontgrendelen van de VM-schijf).
+                       handleidingen), vtpm-20261003\ (automatisch ontgrendelen van de VM-schijf),
+                       cloud\ (dagelijkse versleutelde kopie naar Google Drive; UITLEG-LEESMIJ.txt daar).
 - virtuele-machine\    configuratie en schijven van de VM (*.vhdx, *.avhdx = controlepunten).
                        NIET met de hand verwijderen of verplaatsen - beheer via Hyper-V.
 - HERSTEL.md           noodplan bij verlies van de server.
@@ -96,6 +105,7 @@ SCHIJF R:\mijn-ruimte-reservekopie\
 - vm-back-ups\  versleutelde nachtelijke back-ups van database en uploads.
 - herstelset\   HERSTELSET voor een externe schijf (zonder geheime sleutel). Begin bij
                 00-BEGIN-HIER-NL.txt. Bijwerken: scripts\herstelset-bijwerken.ps1 -Doel E:\
+- cloud\        logboeken van de kopie naar Google Drive (cloud.log) en de laatste versleutelde set.
 - HERSTEL.md    noodplan.
 
 FASEN (wat er al is)
@@ -106,8 +116,12 @@ FASEN (wat er al is)
    PUBLIEKE sleutel. De server kan zijn eigen back-ups niet ontsleutelen.
 5. Ophalen naar de pc: scripts\reservekopie-ophalen.ps1 -> R:\...\vm-back-ups\.
 6. Herstel: HERSTEL.md (GitHub + versleutelde back-up + herstelsleutel).
+7. Google Drive: elke dag na 09:00 gaan dezelfde VERSLEUTELDE back-ups + de herstelset naar
+   Google Drive (map mijn-ruimte-reservekopie, alleen drive.file-toegang). De Google-toegang
+   (versleuteld) staat buiten T:\/R:\: C:\Users\t\AppData\Local\mijn-ruimte\rclone\.
 
 WAT JIJ ZELF MOET DOEN
 - Een offline kopie van herstelsleutel-age.txt maken (USB-stick in een kluis en/of papier).
-- Beslissen over een dagelijkse geplande taak voor reservekopie-ophalen.ps1.
+- De dagelijkse taak "Mijn Ruimte - reservekopie ophalen" (09:00) bestaat al en doet ook de Drive-kopie.
+- EENMALIG Google Drive koppelen: scripts\cloud\UITLEG-LEESMIJ.txt (stap A en B).
 - De inhoud van sleutels\ en de SSH-sleutel nooit versturen of in de cloud zetten.

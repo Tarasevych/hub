@@ -36,8 +36,9 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
 | `mijn-ruimte-opruimen.timer` | `opruimen` (verlopen OAuth-states, PKCE, transacties, handoffs, sessies, limietrijen), elk uur. |
 | `mijn-ruimte-backup.service` / `.timer` | Dagelijks 03:30 `backup-maken.sh`. |
 | `backup-maken.sh` | `pg_dump` (custom-formaat) en uploads-tar, rechtstreeks door `age -R` (alleen de publieke sleutel staat op de VM) → `database.dump.age`, `uploads.tar.gz.age` + `info.txt`, `SHA256SUMS`, `KLAAR` in `/srv/backups/mijn-ruimte/<datum>/`; bewaart 7 dagen op de VM. |
-| `reservekopie-ophalen.ps1` | Windows-host: haalt de nieuwste versleutelde back-up via SSH op naar `R:\mijn-ruimte-reservekopie\vm-back-ups\` (weigert onversleutelde). |
+| `reservekopie-ophalen.ps1` | Windows-host: haalt de nieuwste versleutelde back-up via SSH op naar `R:\mijn-ruimte-reservekopie\vm-back-ups\` (weigert onversleutelde) en start daarna `cloud/cloud-reservekopie.ps1` (Google Drive; `-ZonderCloud` slaat dat over). |
 | `HERSTEL.md` | Noodplan: terugzetten vanaf GitHub + versleutelde back-up + age-herstelsleutel. |
+| `cloud/` | Windows-host: `cloud-reservekopie.ps1` zet dagelijks (na het ophalen, zelfde taak 09:00) alleen `.age` + SHA256 naar Google Drive met rclone (scope `drive.file`, map `mijn-ruimte-reservekopie`; 30 dagelijks + 12 maandelijks; herstelset als `herstelset-<stempel>.zip.age`). `cloud-koppelen.ps1` = eenmalige Google-login; `cloud-wachtwoord.ps1` = DPAPI-wachtwoord voor de versleutelde rclone.conf. Zie `cloud/UITLEG-LEESMIJ.txt`. |
 | `herstelset/` | Offline herstelset voor een externe schijf: handleiding (UA/NL), `herstel-vm.sh` (stappen op een nieuwe VM), `ontsleutel-naar-vm.ps1` (age-pijp pc→VM zonder klare tekst op schijf), `nieuwe-vm-maken.ps1`, `controleer-herstelset.ps1`, `herstelset-bijwerken.ps1`. |
 | `vtpm/` | Automatisch LUKS-ontgrendelen via de Hyper-V-vTPM: `stap1-admin.ps1` (host, admin) en `luks-tpm-ontgrendelen.sh` (clevis tpm2, PCR 7; wachtwoordslot blijft). |
 | `cloudflared.service` | Gehardende unit voor de tunnel (`tunnel run` met `/etc/cloudflared/config.yml`). |
