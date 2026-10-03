@@ -3,19 +3,22 @@ import {promisify} from 'node:util';
 import {db,clearLoginFailures,envKey32,lockoutRemaining,openWithEnvKey,pepperedHash,registerLoginFailure,sealWithEnvKey} from '../server/platform';
 import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './google-contour';
 import {stapOpFout,totpStapOpVastleggen,type StapOpAuth} from './stap-op';
+import {meld} from './melder';
 
 const scryptAsync=promisify(scrypt);
 export const METHOD_IDS=['google','password','microsoft','apple','facebook','phone','totp','recovery','webauthn','push'] as const;
 export type MethodId=typeof METHOD_IDS[number];
 export type LoginMethodId='google'|'password'|'microsoft'|'apple'|'facebook'|'phone';
-type Binding={id:string;userId:string;method:LoginMethodId;providerSubject:string;email:string;status:'active'|'disabled'|'pending';lastUsedAt:number;createdAt:number;updatedAt:number};
-type PasswordRecord={id:string;userId:string;algorithm:'scrypt';n:number;r:number;p:number;salt:string;hash:string;mustChange:boolean;createdAt:number;updatedAt:number};
+/** Fase 3: ontkoppeld = uitgeschakeld met ontkoppeldAt/herstelTot (7 dagen terug te zetten), niet verwijderd. */
+type Ontkoppeld={ontkoppeldAt?:number;herstelTot?:number};
+type Binding={id:string;userId:string;method:LoginMethodId;providerSubject:string;email:string;status:'active'|'disabled'|'pending';lastUsedAt:number;createdAt:number;updatedAt:number}&Ontkoppeld;
+type PasswordRecord={id:string;userId:string;algorithm:'scrypt';n:number;r:number;p:number;salt:string;hash:string;mustChange:boolean;createdAt:number;updatedAt:number}&Ontkoppeld;
 type TotpRecord={id:string;userId:string;secret?:string;secretEnc?:string;confirmed:boolean;createdAt:number;updatedAt:number;/** fase 3: laatst gebruikt tijdvak (replaybescherming) */lastStep?:number};
 type RecoveryRecord={id:string;userId:string;hashes:string[];hashVersion?:number;createdAt:number;remaining:number};
-type PhoneRecord={id:string;userId:string;phone:string;verified:boolean;createdAt:number;updatedAt:number};
+type PhoneRecord={id:string;userId:string;phone:string;verified:boolean;createdAt:number;updatedAt:number}&Ontkoppeld;
 type WebauthnRecord={id:string;userId:string;credentialId:string;label:string;createdAt:number};
 type PolicyRecord={id:string;tenantKey:string;enabled:Partial<Record<MethodId,boolean>>;mfa:'optional'|'required';updatedAt:number};
-type GoogleIdentity={id:string;accountId:string;provider:string;subject:string;email:string;status:string;lastUsedAt:number;createdAt:number};
+type GoogleIdentity={id:string;accountId:string;provider:string;subject:string;email:string;status:string;lastUsedAt:number;createdAt:number}&Ontkoppeld;
 type SessionAuth={errorCode:string}|{user:{id:string;email:string;name?:string;role:string;status:string};service:string};
 
 const BINDINGS='identity_method_bindings_v1';
@@ -107,9 +110,15 @@ async function bindingsFor(userId:string){
   const rows=await db.list<Omit<Binding,'id'>>(BINDINGS,{filter:{userId},limit:40});
   return rows.items as Binding[];
 }
-async function passwordFor(userId:string){
+/** Ook een ontkoppeld (uitgeschakeld) wachtwoord: voor overschrijven en terugzetten. */
+async function passwordRecordAny(userId:string){
   const rows=await db.list<Omit<PasswordRecord,'id'>>(PASSWORDS,{filter:{userId},limit:5});
   return(rows.items as PasswordRecord[])[0]||null;
+}
+/** Actief wachtwoord (ontkoppeld telt niet: geen aanmelden, geen aanmeldmethode). */
+async function passwordFor(userId:string){
+  const row=await passwordRecordAny(userId);
+  return row&&!row.ontkoppeldAt?row:null;
 }
 async function totpFor(userId:string){
   const rows=await db.list<Omit<TotpRecord,'id'>>(TOTP,{filter:{userId},limit:5});
@@ -127,36 +136,84 @@ async function recoveryFor(userId:string){
   const rows=await db.list<Omit<RecoveryRecord,'id'>>(RECOVERY,{filter:{userId},limit:5});
   return(rows.items as RecoveryRecord[])[0]||null;
 }
-async function phoneFor(userId:string){
+async function phoneRecordAny(userId:string){
   const rows=await db.list<Omit<PhoneRecord,'id'>>(PHONES,{filter:{userId},limit:5});
   return(rows.items as PhoneRecord[])[0]||null;
+}
+async function phoneFor(userId:string){
+  const row=await phoneRecordAny(userId);
+  return row&&!row.ontkoppeldAt?row:null;
 }
 async function webauthnFor(userId:string){
   const rows=await db.list<Omit<WebauthnRecord,'id'>>(WEBAUTHN,{filter:{userId},limit:20});
   return rows.items as WebauthnRecord[];
 }
-async function googleIdentities(userId:string){
+async function googleIdentitiesAll(userId:string){
   const rows=await db.list<Omit<GoogleIdentity,'id'>>(IDENTITIES,{filter:{accountId:userId},limit:40});
-  return(rows.items as GoogleIdentity[]).filter(item=>item.provider==='google'&&item.status!=='disabled');
+  return(rows.items as GoogleIdentity[]).filter(item=>item.provider==='google');
+}
+async function googleIdentities(userId:string){
+  return(await googleIdentitiesAll(userId)).filter(item=>item.status!=='disabled');
+}
+
+// ---- Fase 3: ontkoppelen = 7 dagen uitschakelen (terug te zetten), melding aan het account ----
+export const HERSTEL_MS=7*24*60*60*1000;
+const zonder=<T extends Record<string,unknown>>(row:T,...velden:string[])=>Object.fromEntries(Object.entries(row).filter(([k])=>k!=='id'&&!velden.includes(k)));
+async function ontkoppelBindingen(rows:Binding[]){
+  const nu=Date.now();
+  if(rows.length)await db.update(BINDINGS,rows.map(row=>({id:row.id,record:{...zonder(row),status:'disabled',ontkoppeldAt:nu,herstelTot:nu+HERSTEL_MS,updatedAt:nu}})));
+}
+async function ontkoppelIdentiteiten(rows:GoogleIdentity[]){
+  const nu=Date.now();
+  if(rows.length)await db.update(IDENTITIES,rows.map(row=>({id:row.id,record:{...zonder(row),status:'disabled',ontkoppeldAt:nu,herstelTot:nu+HERSTEL_MS}})));
+}
+async function ontkoppelEnkel(table:string,row:{id:string}&Record<string,unknown>|null){
+  if(!row)return;
+  const nu=Date.now();
+  await db.update(table,[{id:row.id,record:{...zonder(row),ontkoppeldAt:nu,herstelTot:nu+HERSTEL_MS,updatedAt:nu}}]);
+}
+/** Een hele methode ontkoppelen (bindingen + bijbehorend wachtwoord/telefoon/Google-identiteiten). */
+async function ontkoppelMethode(userId:string,method:LoginMethodId){
+  await ontkoppelBindingen((await bindingsFor(userId)).filter(item=>item.method===method&&item.status!=='disabled'));
+  if(method==='password')await ontkoppelEnkel(PASSWORDS,await passwordFor(userId));
+  if(method==='phone')await ontkoppelEnkel(PHONES,await phoneFor(userId));
+  if(method==='google')await ontkoppelIdentiteiten(await googleIdentities(userId));
+}
+const meldOntkoppeld=(userId:string,method:string,doorBeheer=false)=>meld(userId,'access_method_unlinked',
+  'Спосіб входу від’єднано / Aanmeldmethode ontkoppeld',
+  `${doorBeheer?'Адміністратор від’єднав':'Від’єднано'} спосіб входу «${method}». Протягом 7 днів його можна відновити на сторінці безпеки. Якщо це були не ви — відновіть і змініть доступ. / ${doorBeheer?'Een beheerder heeft':'Er is'} aanmeldmethode "${method}" ontkoppeld. Binnen 7 dagen kunt u die terugzetten op de beveiligingspagina. Was u dit niet: zet hem terug en controleer uw toegang.`);
+/** Wat binnen 7 dagen terug te zetten is. */
+async function herstelbaar(userId:string){
+  const nu=Date.now();
+  const[bindings,identities,password,phone]=await Promise.all([bindingsFor(userId),googleIdentitiesAll(userId),passwordRecordAny(userId),phoneRecordAny(userId)]);
+  const open=(r:Ontkoppeld|null|undefined)=>!!r?.ontkoppeldAt&&Number(r.herstelTot||0)>nu;
+  return[
+    ...bindings.filter(open).map(r=>({id:r.id,soort:'binding' as const,method:r.method,herstelTot:Number(r.herstelTot)})),
+    ...identities.filter(open).map(r=>({id:r.id,soort:'identiteit' as const,method:'google' as const,herstelTot:Number(r.herstelTot)})),
+    ...(password&&open(password)?[{id:password.id,soort:'wachtwoord' as const,method:'password' as const,herstelTot:Number(password.herstelTot)}]:[]),
+    ...(phone&&open(phone)?[{id:phone.id,soort:'telefoon' as const,method:'phone' as const,herstelTot:Number(phone.herstelTot)}]:[])
+  ];
 }
 
 const methodConfigured=(method:LoginMethodId,contour:GoogleContour,password:PasswordRecord|null,phone:PhoneRecord|null)=>{
   if(method==='google')return contour.credentialsConfigured;
   if(method==='password')return Boolean(password);
-  if(method==='phone')return Boolean(phone);
+  // Fase 3: telefoon telt pas na verificatie (tot dan 'pending').
+  if(method==='phone')return Boolean(phone?.verified);
   return false;
 };
 
-export async function upsertLoginBinding(userId:string,method:LoginMethodId,providerSubject:string,email:string){
+export async function upsertLoginBinding(userId:string,method:LoginMethodId,providerSubject:string,email:string,status:'active'|'pending'='active'){
   const existing=(await bindingsFor(userId)).find(item=>item.method===method&&(item.providerSubject===providerSubject||(!providerSubject&&item.email===email)));
   const now=Date.now();
   if(existing){
-    const record={...existing,providerSubject:providerSubject||existing.providerSubject,email:email||existing.email,status:'active' as const,lastUsedAt:now,updatedAt:now};
+    const{ontkoppeldAt:_o,herstelTot:_h,...basis}=existing;
+    const record={...basis,providerSubject:providerSubject||existing.providerSubject,email:email||existing.email,status,lastUsedAt:now,updatedAt:now};
     const{id,...stored}=record;
     await db.update(BINDINGS,[{id,record:stored}]);
     return;
   }
-  await db.add(BINDINGS,[{userId,method,providerSubject,email,status:'active',lastUsedAt:now,createdAt:now,updatedAt:now}]);
+  await db.add(BINDINGS,[{userId,method,providerSubject,email,status,lastUsedAt:now,createdAt:now,updatedAt:now}]);
 }
 
 async function usableLoginMethods(
@@ -183,7 +240,7 @@ async function usableLoginMethods(
       continue;
     }
     if(method==='password'&&nextPassword){usable.push({id:'password',bound:true});continue;}
-    if(method==='phone'&&nextPhone){usable.push({id:'phone',bound:true});continue;}
+    if(method==='phone'){if(nextPhone?.verified)usable.push({id:'phone',bound:true});continue;}
     if(nextBindings.some(item=>item.method===method&&item.status==='active'&&methodConfigured(method,contour,nextPassword,nextPhone)))usable.push({id:method,bound:true});
   }
   return usable;
@@ -209,11 +266,11 @@ export async function accessSnapshot(user:{id:string;email:string;role:string},a
   const usable=await usableLoginMethods(user.id,user.email,contour,policy,password,bindings,phone,identities);
   const googleBound=identities.length>0||usable.some(item=>item.id==='google');
   const catalog=LOGIN_METHODS.map(id=>{
-    const bound=id==='google'?googleBound:id==='password'?Boolean(password):id==='phone'?Boolean(phone):bindings.some(item=>item.method===id&&item.status==='active');
+    const bound=id==='google'?googleBound:id==='password'?Boolean(password):id==='phone'?Boolean(phone?.verified):bindings.some(item=>item.method===id&&item.status==='active');
     const enabled=policy.enabled[id]!==false;
     const configured=methodConfigured(id,contour,password,phone);
     const honest=id==='microsoft'||id==='apple'||id==='facebook'?'needs_provider_contour':id==='phone'&&!phone?'needs_sms_contour':'';
-    return{id,kind:'login' as const,enabled,configured:id==='google'?contour.credentialsConfigured:configured,bound,status:!enabled?'disabled':bound?'active':configured?'ready':'not_configured',honest};
+    return{id,kind:'login' as const,enabled,configured:id==='google'?contour.credentialsConfigured:configured,bound,status:!enabled?'disabled':bound?'active':id==='phone'&&phone&&!phone.verified?'pending':configured?'ready':'not_configured',honest};
   });
   const factors=[
     {id:'totp',enabled:policy.enabled.totp!==false,enrolled:Boolean(totp?.confirmed),status:totp?.confirmed?'active':'not_enrolled'},
@@ -233,7 +290,8 @@ export async function accessSnapshot(user:{id:string;email:string;role:string},a
     usableCount:usable.length,
     lockout:{protected:usable.length<=1,reason:usable.length<=1?'LAST_LOGIN_METHOD_PROTECTED':''},
     password:{configured:Boolean(password),mustChange:Boolean(password?.mustChange)},
-    phone:{configured:Boolean(phone),verified:Boolean(phone?.verified),value:phone?.phone||''},
+    phone:{configured:Boolean(phone),verified:Boolean(phone?.verified),pending:Boolean(phone&&!phone.verified),value:phone?.phone||''},
+    herstelbaar:await herstelbaar(user.id),
     totp:{enrolled:Boolean(totp?.confirmed)},
     admin,
     selfTests:accessPlanePolicySelfTest()
@@ -366,7 +424,7 @@ export function createAccessPlaneRoutes(deps:{
       if(password.length<10)return deps.fail('ACCESS_PASSWORD_TOO_SHORT',400);
       const stap=await stapOp(auth);if(stap)return stap;
       const envelope=await hashPassword(password);
-      const existing=await passwordFor(auth.user.id);
+      const existing=await passwordRecordAny(auth.user.id);
       const now=Date.now();
       const record={userId:auth.user.id,...envelope,mustChange:false,createdAt:existing?.createdAt||now,updatedAt:now};
       if(existing?.id)await db.update(PASSWORDS,[{id:existing.id,record}]);
@@ -381,11 +439,9 @@ export function createAccessPlaneRoutes(deps:{
       const blocked=await assertNotLastMethod(auth.user,{method:'password'});
       if(blocked)return deps.fail(blocked,409);
       const stap=await stapOp(auth);if(stap)return stap;
-      const existing=await passwordFor(auth.user.id);
-      if(existing?.id)await db.delete(PASSWORDS,[existing.id]);
-      const rows=(await bindingsFor(auth.user.id)).filter(item=>item.method==='password');
-      if(rows.length)await db.delete(BINDINGS,rows.map(item=>item.id));
-      await deps.audit(auth.user.id,'access.password.remove','success',{});
+      await ontkoppelMethode(auth.user.id,'password');
+      await deps.audit(auth.user.id,'access.password.remove','success',{herstelbaarTot:Date.now()+HERSTEL_MS});
+      await meldOntkoppeld(auth.user.id,'password');
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
     }],
     'POST /api/owner/access/method/unbind':[async(ctx)=>{
@@ -396,21 +452,9 @@ export function createAccessPlaneRoutes(deps:{
       const blocked=await assertNotLastMethod(auth.user,{method});
       if(blocked)return deps.fail(blocked,409);
       const stap=await stapOp(auth);if(stap)return stap;
-      const rows=(await bindingsFor(auth.user.id)).filter(item=>item.method===method);
-      if(rows.length)await db.delete(BINDINGS,rows.map(item=>item.id));
-      if(method==='password'){
-        const existing=await passwordFor(auth.user.id);
-        if(existing?.id)await db.delete(PASSWORDS,[existing.id]);
-      }
-      if(method==='phone'){
-        const existing=await phoneFor(auth.user.id);
-        if(existing?.id)await db.delete(PHONES,[existing.id]);
-      }
-      if(method==='google'){
-        const identities=await googleIdentities(auth.user.id);
-        if(identities.length)await db.delete(IDENTITIES,identities.map(item=>item.id));
-      }
-      await deps.audit(auth.user.id,'access.method.unbind','success',{method});
+      await ontkoppelMethode(auth.user.id,method);
+      await deps.audit(auth.user.id,'access.method.unbind','success',{method,herstelbaarTot:Date.now()+HERSTEL_MS});
+      await meldOntkoppeld(auth.user.id,method);
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
     }],
     'POST /api/owner/access/binding/unbind':[async(ctx)=>{
@@ -424,10 +468,28 @@ export function createAccessPlaneRoutes(deps:{
       const blocked=await assertNotLastMethod(auth.user,identity?{identityId:id}:{bindingId:id,method:row?.method});
       if(blocked)return deps.fail(blocked,409);
       const stap=await stapOp(auth);if(stap)return stap;
-      if(identity)await db.delete(IDENTITIES,[identity.id]);
-      if(row)await db.delete(BINDINGS,[row.id]);
-      await deps.audit(auth.user.id,'access.binding.unbind','success',{method:identity?'google':row?.method,email:identity?.email||row?.email});
+      if(identity)await ontkoppelIdentiteiten([identity]);
+      if(row){await ontkoppelBindingen([row]);if(row.method==='password'&&!(await bindingsFor(auth.user.id)).some(b=>b.method==='password'&&b.status==='active'))await ontkoppelEnkel(PASSWORDS,await passwordFor(auth.user.id));}
+      await deps.audit(auth.user.id,'access.binding.unbind','success',{method:identity?'google':row?.method,email:identity?.email||row?.email,herstelbaarTot:Date.now()+HERSTEL_MS});
+      await meldOntkoppeld(auth.user.id,identity?'google':String(row?.method||''));
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
+    }],
+    // Fase 3: ontkoppelde methode binnen 7 dagen terugzetten (body.id = één item, anders alles).
+    'POST /api/owner/access/method/herstel':[async(ctx:{event:Record<string,unknown>;body:unknown})=>{
+      const auth=await gate(ctx.event,ctx.body);
+      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
+      const id=String(deps.body(ctx.body).id||'');
+      const items=(await herstelbaar(auth.user.id)).filter(item=>!id||item.id===id);
+      if(!items.length)return deps.fail('ACCESS_RESTORE_NOT_FOUND',404);
+      const nu=Date.now(),telefoon=await phoneRecordAny(auth.user.id);
+      for(const item of items){
+        if(item.soort==='binding'){const[row]=await db.get<Omit<Binding,'id'>>(BINDINGS,[item.id]);if(row)await db.update(BINDINGS,[{id:item.id,record:{...zonder(row as Record<string,unknown>,'ontkoppeldAt','herstelTot'),status:row.method==='phone'&&!telefoon?.verified?'pending':'active',updatedAt:nu}}]);}
+        if(item.soort==='identiteit'){const[row]=await db.get<Omit<GoogleIdentity,'id'>>(IDENTITIES,[item.id]);if(row)await db.update(IDENTITIES,[{id:item.id,record:{...zonder(row as Record<string,unknown>,'ontkoppeldAt','herstelTot'),status:'active'}}]);}
+        if(item.soort==='wachtwoord'||item.soort==='telefoon'){const table=item.soort==='wachtwoord'?PASSWORDS:PHONES;const[row]=await db.get<Record<string,unknown>>(table,[item.id]);if(row)await db.update(table,[{id:item.id,record:{...zonder(row,'ontkoppeldAt','herstelTot'),updatedAt:nu}}]);}
+      }
+      await deps.audit(auth.user.id,'access.method.restore','success',{items:items.map(item=>({soort:item.soort,method:item.method}))});
+      await meld(auth.user.id,'access_method_restored','Спосіб входу відновлено / Aanmeldmethode teruggezet',`Відновлено: ${items.map(item=>item.method).join(', ')}. / Teruggezet: ${items.map(item=>item.method).join(', ')}.`);
+      return deps.respond({ok:true,teruggezet:items.length,...await accessSnapshot(auth.user)});
     }],
     'POST /api/owner/access/phone/save':[async(ctx)=>{
       const auth=await gate(ctx.event,ctx.body);
@@ -435,12 +497,13 @@ export function createAccessPlaneRoutes(deps:{
       const phone=String(deps.body(ctx.body).phone||'').replace(/[^\d+]/g,'').trim();
       if(phone.length<8)return deps.fail('ACCESS_PHONE_INVALID',400);
       const stap=await stapOp(auth);if(stap)return stap;
-      const existing=await phoneFor(auth.user.id);
+      const existing=await phoneRecordAny(auth.user.id);
       const now=Date.now();
       const record={userId:auth.user.id,phone,verified:false,createdAt:existing?.createdAt||now,updatedAt:now};
       if(existing?.id)await db.update(PHONES,[{id:existing.id,record}]);
       else await db.add(PHONES,[record]);
-      await upsertLoginBinding(auth.user.id,'phone',phone,auth.user.email);
+      // Fase 3: onbevestigd nummer = 'pending'; telt niet als aanmeldmethode tot het geverifieerd is.
+      await upsertLoginBinding(auth.user.id,'phone',phone,auth.user.email,'pending');
       await deps.audit(auth.user.id,'access.phone.save','success',{});
       return deps.respond({ok:true,sms:'needs_sms_contour',...await accessSnapshot(auth.user)});
     }],
@@ -553,13 +616,8 @@ export function createAccessPlaneRoutes(deps:{
         const usable=await usableLoginMethods(userId,target.email,contour,policy,password,bindings,phone,identities,{method});
         if(usable.length<1)return deps.fail('LAST_LOGIN_METHOD_PROTECTED',409);
         if(action==='unbind'){
-          const rows=bindings.filter(item=>item.method===method);
-          if(rows.length)await db.delete(BINDINGS,rows.map(item=>item.id));
-          if(method==='password'){
-            const existing=await passwordFor(userId);
-            if(existing?.id)await db.delete(PASSWORDS,[existing.id]);
-          }
-          if(method==='google'&&identities.length)await db.delete(IDENTITIES,identities.map(item=>item.id));
+          await ontkoppelMethode(userId,method);
+          await meldOntkoppeld(userId,method,true);
         }else{
           const row=bindings.find(item=>item.method===method);
           if(row)await db.update(BINDINGS,[{id:row.id,record:{...withoutId(row),status:'disabled',updatedAt:Date.now()}}]);

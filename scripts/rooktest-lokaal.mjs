@@ -227,6 +227,30 @@ try {
     await pool.query("delete from app.login_lockouts where subject = 'wachtwoord:rooktest-eigenaar@example.test'");
   }
 
+  // B4b. Fase 3: step-up, telefoon 'pending', ontkoppelen = 7 dagen terug te zetten, TOTP uitzetten vereist code.
+  {
+    let t = await api('id.tarasevych.com', '/api/owner/access/phone/save', { ...idBody(), phone: '+31 6 12345678' }, c1);
+    check('step-up: telefoon opslaan zonder verse aanmelding → 403 STEP_UP_REQUIRED', t.status === 403 && t.data?.error === 'STEP_UP_REQUIRED', `${t.status} ${t.data?.error || ''}`);
+    const stapFout = await api('id.tarasevych.com', '/api/owner/access/stap-op', { ...idBody(), code: '000000' }, c1);
+    // Verse Google-aanmelding nabootsen (de zaaisessie is net gemaakt).
+    await pool.query("insert into app.records (tbl,id,data) values ('owner_step_up_v1', gen_random_uuid()::text, $1)", [{ userId: eigenaar, googleAt: Date.now(), sessies: {}, updatedAt: Date.now() }]);
+    t = await api('id.tarasevych.com', '/api/owner/access/phone/save', { ...idBody(), phone: '+31 6 12345678' }, c1);
+    const telMethode = (t.data?.methods || []).find(m => m.id === 'phone');
+    check('telefoon na step-up opgeslagen maar "pending" (telt niet als aanmeldmethode); stap-op met foute code 400', t.status === 200 && t.data?.phone?.pending === true && telMethode?.bound === false && (telMethode?.status === 'pending' || telMethode?.enabled === false) && stapFout.status === 400, `${t.status} ${t.data?.error || ''} ${JSON.stringify(telMethode)} stap-op ${stapFout.status}`);
+    const usableVoor = t.data?.usableCount;
+    t = await api('id.tarasevych.com', '/api/owner/access/method/unbind', { ...idBody(), method: 'phone' }, c1);
+    const herstel = t.data?.herstelbaar || [];
+    const telRij = (await pool.query("select data from app.records where tbl='identity_phones_v1' and data->>'userId'=$1", [eigenaar])).rows[0]?.data || {};
+    const melding = (await pool.query("select 1 from app.records where tbl='site_notifications' and data->>'recipientUserId'=$1 and data->>'kind'='access_method_unlinked'", [eigenaar])).rowCount;
+    check('ontkoppelen: niet verwijderd maar uitgeschakeld (herstelTot ~7 dagen), melding aan het account', t.status === 200 && herstel.some(h => h.method === 'phone') && !!telRij.ontkoppeldAt && telRij.herstelTot - telRij.ontkoppeldAt === 7 * 24 * 3600 * 1000 && t.data?.phone?.configured === false && melding >= 1 && t.data?.usableCount === usableVoor, `${t.status} ${t.data?.error || ''} herstel=${herstel.length} melding=${melding}`);
+    t = await api('id.tarasevych.com', '/api/owner/access/method/herstel', { ...idBody() }, c1);
+    check('terugzetten binnen 7 dagen: telefoon weer aanwezig (nog steeds pending), niets meer herstelbaar', t.status === 200 && t.data?.phone?.configured === true && t.data?.phone?.pending === true && (t.data?.herstelbaar || []).length === 0, `${t.status} ${t.data?.error || ''}`);
+    t = await api('id.tarasevych.com', '/api/owner/access/totp/disable', { ...idBody() }, c1);
+    const t2 = await api('id.tarasevych.com', '/api/owner/access/recovery/rotate', { ...idBody(), code: '123456' }, c1);
+    check('TOTP uitzetten zonder code en herstelcodes vernieuwen met foute code geweigerd', t.status === 400 && t.data?.error === 'ACCESS_TOTP_CODE_REQUIRED' && t2.status === 400, `${t.status} ${t.data?.error || ''} / ${t2.status} ${t2.data?.error || ''}`);
+    await pool.query("delete from app.records where tbl='owner_step_up_v1' and data->>'userId'=$1", [eigenaar]);
+  }
+
   // B5. Eigenaar uit OWNER_EMAIL: eigenaar mag admin, lid niet.
   r = await api('admin.tarasevych.com', '/api/owner/admin/bootstrap', { service: 'admin', tabContext: tab() }, c1);
   const rLid = await api('admin.tarasevych.com', '/api/owner/admin/bootstrap', { service: 'admin', tabContext: tab() }, `${naam}=${encodeURIComponent(await zaaiSessie(lid))}`);
