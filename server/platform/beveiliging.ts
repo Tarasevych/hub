@@ -24,10 +24,14 @@ export type RateLimitResult = { ok: boolean; hits: number; limit: number; retryA
 
 /**
  * Tel één hit in `bucket` binnen een vast venster van `windowSeconds`. `ok=false` zodra het aantal
- * hits `limit` overschrijdt. Bij een databasefout wordt het verzoek NIET geblokkeerd (beschikbaarheid),
- * maar wel gelogd; de in-memory limiet in server/start.ts blijft dan de vangrail.
+ * hits `limit` overschrijdt.
+ * Bij een databasefout:
+ *  - standaard ("open"): verzoek doorgelaten (beschikbaarheid), wel gelogd; de in-memory limiet in
+ *    server/start.ts blijft dan de vangrail;
+ *  - met `{ failClosed: true }` (gevoelige aanmeld-buckets: wachtwoord, MFA, login-start, callbacks):
+ *    verzoek geweigerd met een korte Retry-After, zodat een DB-storing geen onbeperkt raden toelaat.
  */
-export async function rateLimit(bucket: string, limit: number, windowSeconds: number): Promise<RateLimitResult> {
+export async function rateLimit(bucket: string, limit: number, windowSeconds: number, opties: { failClosed?: boolean } = {}): Promise<RateLimitResult> {
   const windowMs = windowSeconds * 1000;
   const start = new Date(Math.floor(Date.now() / windowMs) * windowMs);
   try {
@@ -41,6 +45,10 @@ export async function rateLimit(bucket: string, limit: number, windowSeconds: nu
     const retryAfter = Math.max(1, Math.ceil((start.getTime() + windowMs - Date.now()) / 1000));
     return { ok: hits <= limit, hits, limit, retryAfter };
   } catch (err) {
+    if (opties.failClosed) {
+      console.error('[rate-limit] databasefout, gevoelige bucket dus verzoek GEWEIGERD:', (err as Error).message);
+      return { ok: false, hits: 0, limit, retryAfter: 30 };
+    }
     console.error('[rate-limit] databasefout, verzoek doorgelaten:', (err as Error).message);
     return { ok: true, hits: 0, limit, retryAfter: 0 };
   }
