@@ -143,7 +143,7 @@ const ownerStateLocale=(state:string):'uk'|'nl'=>{const structured=ownerStatePar
 const ownerOAuthStateValue=(locale:'uk'|'nl',transactionRecordId:string)=>`v2.${locale}.${Buffer.from(transactionRecordId,'utf8').toString('base64url')}.${randomBytes(24).toString('base64url')}`;
 async function ownerFindOAuthState(state:string){if(!state)return null;const structured=ownerStateParts(state);if(structured){const[txRaw]=await db.get<OwnerTx>(OWNER_TX_TABLE,[structured.transactionRecordId]);if(!txRaw?.oauthStateId)return null;const[stateRaw]=await db.get<OAuthState>('google_oauth_states',[txRaw.oauthStateId]);if(!stateRaw||stateRaw.stateHash!==sha(state)||stateRaw.ownerTransactionRecordId!==structured.transactionRecordId)return null;return withId(txRaw.oauthStateId,stateRaw)}for(const delay of OWNER_CALLBACK_STATE_RETRY_MS){if(delay)await ownerDelay(delay);const found=await listOne<OAuthState>('google_oauth_states',{stateHash:sha(state)});if(found)return found}return null}
 
-async function audit(accountId: string, event: string, details: Record<string, unknown> = {}) { await db.add('security_audit', [{ accountId, event, details, createdAt: Date.now() }]); }
+async function audit(accountId: string, event: string, details: Record<string, unknown> = {}) { /* systeemlog (geen eigenaar-kolom): bewust via de systeemrol, anders weigert RLS de rij */ await alsSysteem(() => db.add('security_audit', [{ accountId, event, details, createdAt: Date.now() }])); }
 
 async function upsertGoogleIdentity(accountId: string, identity: GooglePayload): Promise<Identity> {
   const existing = await listOne<Identity>('account_identities', { provider: 'google', subject: identity.sub });
@@ -576,7 +576,7 @@ export const handler = router({
     try {
       const preview = await invites.resolve({ code }); if (preview.resourceType !== 'workspace_share') return error('Unsupported invitation', 400);
       const pre = preview.context as { workspaceId?: string }; const preWs = String(pre.workspaceId || ''); if (!preWs) return error('Invalid invitation', 400);
-      const [ws] = await db.get<Workspace>('workspaces', [preWs]); if (!ws || Number(ws.archivedAt || 0) > 0) return error('Invalid invitation', 400);
+      const [ws] = await alsSysteem(() => db.get<Workspace>('workspaces', [preWs])); /* de uitnodiging zelf geeft toegang; lid is men pas na join */ if (!ws || Number(ws.archivedAt || 0) > 0) return error('Invalid invitation', 400);
       if (ws.ownerUserId === context.user.id) return json({ ok: true, workspaceId: preWs }); // eigenaar verbruikt de link niet
       const joined = await invites.join({ code, actor: { userId: context.user.id, email: context.user.email } });
       const data = joined.context as { workspaceId?: string; permission?: string; workspaceRole?: string; scopeBlockIds?: string[] }; const workspaceId = String(data.workspaceId || '');
