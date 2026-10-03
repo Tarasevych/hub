@@ -8,6 +8,7 @@
 // - /api/* op de app-hosts → bestaande router (Lambda-achtig event); overige paden → dist/ (SPA).
 // - dashboard.<domein> → statische map DASHBOARD_DIR (404 als die ontbreekt), geen API.
 // - Beveiligingsheaders (CSP als HTTP-header, HSTS, nosniff, ...) op alle antwoorden.
+// - Fase B: CSRF-controle (Origin-allow-list) en rate limiting voor /api/* (zie SECURITY-NOTES.md).
 import http from 'node:http';
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
@@ -16,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { DASHBOARD_HOST, SERVICE_HOSTS } from '../backend/deployment-identity';
 import { handler } from '../backend/index';
 import { closePool, getPool } from './platform/pg';
+import { ownerEmail, rateLimit } from './platform/beveiliging';
 import type { LambdaEvent, RouterResponse } from './platform/router';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -186,6 +188,58 @@ async function serveStatic(req: http.IncomingMessage, res: http.ServerResponse, 
 }
 
 // ---------------------------------------------------------------------------------------------
+// CSRF: Origin-allow-list voor state-wijzigende API-verzoeken
+// ---------------------------------------------------------------------------------------------
+// Toegestaan zijn alleen de eigen app-origins (https://<dienst>.tarasevych.com). Browsers sturen bij elke
+// POST een Origin-header; ontbreekt die, dan is het geen browserverzoek met cookies (webhooks van
+// Google Pub/Sub of Microsoft Graph sturen geen cookies) en mag het alleen zonder Cookie-header door.
+const ALLOWED_ORIGINS = new Set<string>([...APP_HOSTS].map((h) => `https://${h}`));
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+export function csrfAfwijzing(method: string, headers: http.IncomingHttpHeaders): string {
+  if (SAFE_METHODS.has(method)) return '';
+  const origin = String(headers.origin || '').trim().toLowerCase();
+  if (origin) return ALLOWED_ORIGINS.has(origin) ? '' : 'CSRF_ORIGIN_DENIED';
+  return headers.cookie ? 'CSRF_ORIGIN_REQUIRED' : '';
+}
+
+// ---------------------------------------------------------------------------------------------
+// Rate limiting
+// ---------------------------------------------------------------------------------------------
+// 1) Algemeen, in het geheugen (één proces): API_RATE_LIMIT_PER_MIN verzoeken per IP per minuut.
+// 2) Strikt, in Postgres (overleeft herstart): gevoelige paden per IP per minuut.
+const API_LIMIT_PER_MIN = Math.max(10, Number(process.env.API_RATE_LIMIT_PER_MIN || 600));
+const geheugen = new Map<string, { start: number; hits: number }>();
+function geheugenLimiet(key: string, limit: number, windowMs: number) {
+  const now = Date.now();
+  const slot = geheugen.get(key);
+  if (!slot || now - slot.start >= windowMs) { geheugen.set(key, { start: now, hits: 1 }); return { ok: true, retryAfter: 0 }; }
+  slot.hits += 1;
+  return { ok: slot.hits <= limit, retryAfter: Math.max(1, Math.ceil((slot.start + windowMs - now) / 1000)) };
+}
+setInterval(() => { const now = Date.now(); for (const [k, v] of geheugen) if (now - v.start > 120_000) geheugen.delete(k); }, 60_000).unref();
+
+// [patroon, bucketnaam, max per minuut per IP]
+const STRIKTE_LIMIETEN: Array<[RegExp, string, number]> = [
+  [/^\/api\/(owner\/)?(access|auth)\/password\/login$/, 'wachtwoord', 10],
+  [/^\/api\/owner\/access\/(totp|recovery)\//, 'mfa', 10],
+  [/^\/api\/auth\/google\/start$/, 'google-start', 10],
+  [/^\/api\/owner\/identity\/transactions\/(create|attach)$/, 'login-start', 20],
+  [/^\/api\/(auth|owner\/auth|ecosystem\/auth|owner\/identity|service-handoff|ecosystem\/handoff|owner\/session\/handoff|share\/join)(\/|$)/, 'aanmelden', 120],
+];
+
+async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
+  const algemeen = geheugenLimiet(`api:${ip}`, API_LIMIT_PER_MIN, 60_000);
+  if (!algemeen.ok) return algemeen.retryAfter;
+  if (SAFE_METHODS.has(method) && !pathname.includes('/callback')) return 0;
+  for (const [patroon, naam, max] of STRIKTE_LIMIETEN) {
+    if (!patroon.test(pathname)) continue;
+    const r = await rateLimit(`${naam}:${ip}`, max, 60);
+    return r.ok ? 0 : r.retryAfter;
+  }
+  return 0;
+}
+
+// ---------------------------------------------------------------------------------------------
 // Request-afhandeling
 // ---------------------------------------------------------------------------------------------
 async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -208,6 +262,11 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
 
   if (url.pathname.startsWith('/api/')) {
     const ip = clientIp(req);
+    const method = String(req.method || 'GET').toUpperCase();
+    const csrf = csrfAfwijzing(method, req.headers);
+    if (csrf) return sendJson(res, 403, { error: csrf, reasonCode: csrf });
+    const wacht = await rateLimitAfwijzing(method, url.pathname, ip);
+    if (wacht > 0) return send(res, 429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(wacht) }, JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: wacht }));
     let body = '';
     try { body = req.method === 'GET' || req.method === 'HEAD' ? '' : await readBody(req); }
     catch (err) { return sendJson(res, (err as { status?: number }).status || 400, { error: 'BODY_TOO_LARGE' }); }
@@ -235,6 +294,8 @@ export function createServer() {
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 if (isMain) {
   if (!process.env.DATABASE_URL) { console.error('DATABASE_URL ontbreekt'); process.exit(1); }
+  // Zonder eigenaar heeft niemand beheerrechten; starten heeft dan geen zin en verbergt een configuratiefout.
+  if (!ownerEmail()) { console.error('OWNER_EMAIL ontbreekt (zie ENV-VARS.md)'); process.exit(1); }
   const server = createServer();
   server.requestTimeout = 120_000;
   server.headersTimeout = 30_000;

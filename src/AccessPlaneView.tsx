@@ -41,7 +41,7 @@ const blank=():Snapshot=>({
     {id:'recovery',enabled:true,enrolled:false,status:'not_enrolled',remaining:0},
     {id:'sms',enabled:false,enrolled:false,status:'not_configured',honest:'needs_sms_contour'},
     {id:'push',enabled:false,enrolled:false,status:'not_configured',honest:'needs_push_channel'},
-    {id:'webauthn',enabled:true,enrolled:false,status:'not_enrolled',honest:'browser_supported_not_enrolled'}
+    {id:'webauthn',enabled:false,enrolled:false,status:'disabled_until_verified',honest:'webauthn_verification_not_implemented'}
   ],
   bindings:[],
   usableCount:0,
@@ -114,32 +114,7 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
     setBusy(false);
   };
 
-  const enrollPasskey=async()=>{
-    setBusy(true);
-    setNotice('');
-    try{
-      if(!window.PublicKeyCredential){
-        setNotice(t(lang,'t17'));
-        setBusy(false);
-        return;
-      }
-      const options=await api.post('/api/owner/access/webauthn/options',sessionBody());
-      const challenge=Uint8Array.from(atob(String(options.data.challenge).replace(/-/g,'+').replace(/_/g,'/')),char=>char.charCodeAt(0));
-      const userId=new TextEncoder().encode(String(options.data.userId||'user'));
-      const credential=await navigator.credentials.create({publicKey:{
-        challenge,
-        rp:{name:String(options.data.rpName||'Mij Prostir'),id:location.hostname},
-        user:{id:userId,name:String(options.data.userName||''),displayName:String(options.data.userDisplayName||'')},
-        pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-        authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'preferred'},
-        timeout:60000
-      }}) as PublicKeyCredential|null;
-      if(!credential){setBusy(false);return;}
-      await write('/api/owner/access/webauthn/register',{credentialId:credential.id,label:t(lang,'t18')});
-    }catch{
-      setNotice(t(lang,'t19'));
-      setBusy(false);
-    }
-  };
+  // Passkeys zijn verborgen tot de backend echte WebAuthn-verificatie heeft (zie SECURITY-NOTES.md).
+  const enrollPasskey=async()=>{setNotice(t(lang,'t17'));};
   return <AccessPlanePanels tab={tab} lang={lang} mode={mode} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} phone={phone} setPhone={setPhone} clientId={clientId} setClientId={setClientId} clientSecret={clientSecret} setClientSecret={setClientSecret} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} load={load} write={write} enrollPasskey={enrollPasskey} blank={blank}/>;
 }

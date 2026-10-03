@@ -1,10 +1,11 @@
-// Lokale rooktest voor de zelf-gehoste server (fase A).
+// Lokale rooktest voor de zelf-gehoste server (fase A + beveiliging fase B).
 // Gebruik: DATABASE_URL=... UPLOADS_DIR=... BASE=http://127.0.0.1:8080 node scripts/rooktest-lokaal.mjs
 // Zaait een testgebruiker + sessie rechtstreeks in app.records (Google-login is nog niet geconfigureerd)
 // en controleert daarna sessie, cookies, multi-account, DB-roundtrip en upload/download via de echte API.
 // ALLEEN voor een lege lokale testdatabase; ruimt zijn eigen rijen op aan het eind.
 import pg from 'pg';
-import { createHash, randomBytes, randomUUID, scrypt } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomUUID, scrypt } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -50,6 +51,17 @@ function verzoek(method, host, path, body, extraHeaders = {}) {
   });
 }
 const api = (host, path, body, cookie) => verzoek('POST', host, path, body, cookie ? { cookie } : {});
+
+
+// TOTP (RFC 6238) om inschrijving en MFA-login echt te testen.
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+const vanBase32 = v => { let bits = 0, acc = 0; const out = []; for (const ch of v.replace(/=+$/, '').toUpperCase()) { const i = B32.indexOf(ch); if (i < 0) continue; acc = (acc << 5) | i; bits += 5; if (bits >= 8) { out.push((acc >>> (bits - 8)) & 255); bits -= 8; } } return Buffer.from(out); };
+function totp(secret, stap = Math.floor(Date.now() / 30000)) {
+  const buf = Buffer.alloc(8); buf.writeUInt32BE(Math.floor(stap / 0x100000000), 0); buf.writeUInt32BE(stap >>> 0, 4);
+  const h = createHmac('sha1', vanBase32(secret)).update(buf).digest(); const o = h[h.length - 1] & 0xf;
+  return String((((h[o] & 0x7f) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3]) % 1e6).padStart(6, '0');
+}
+const vanIp = (ip, extra = {}) => ({ 'cf-connecting-ip': ip, ...extra });
 
 const nu = Date.now();
 const tab = () => randomBytes(24).toString('hex');
@@ -150,6 +162,96 @@ try {
   check('GET /api/auth/methods zonder Google/Microsoft-env crasht niet', m.status !== 404 && m.status < 500, `status ${m.status} ${JSON.stringify(m.data).slice(0, 200)}`);
   r = await api('id.tarasevych.com', '/api/auth/google/start', { service: 'identity', tabContext: tab() });
   check('Google-start zonder client-ID faalt netjes (geen 500)', r.status !== 404 && (r.status < 500 || r.status === 503), `status ${r.status} ${JSON.stringify(r.data).slice(0, 120)}`);
+
+  // ===== Fase B: beveiliging =====
+  // B1. CSRF: vreemde Origin en ontbrekende Origin met cookie worden geweigerd; zonder cookie (webhook) niet.
+  r = await verzoek('POST', 'hub.tarasevych.com', '/api/owner/session/bootstrap', { service: 'hub', tabContext: tab() }, { cookie: c1, origin: 'https://evil.example' });
+  check('CSRF: vreemde Origin → 403 CSRF_ORIGIN_DENIED', r.status === 403 && r.data?.error === 'CSRF_ORIGIN_DENIED', `status ${r.status} ${r.data?.error || ''}`);
+  r = await verzoek('POST', 'hub.tarasevych.com', '/api/owner/session/bootstrap', { service: 'hub', tabContext: tab() }, { cookie: c1, origin: '' });
+  check('CSRF: cookie zonder Origin → 403 CSRF_ORIGIN_REQUIRED', r.status === 403 && r.data?.error === 'CSRF_ORIGIN_REQUIRED', `status ${r.status} ${r.data?.error || ''}`);
+  r = await verzoek('POST', 'id.tarasevych.com', '/api/owner/access/catalog', {}, { origin: '' });
+  check('CSRF: zonder cookie en zonder Origin (webhook-achtig) toegestaan', r.status === 200, `status ${r.status}`);
+  r = await verzoek('POST', 'hub.tarasevych.com', '/api/owner/session/bootstrap', { service: 'hub', tabContext: tab() }, { cookie: c1, origin: 'https://cloud.tarasevych.com' });
+  check('CSRF: andere eigen dienst-origin toegestaan', r.status === 200, `status ${r.status}`);
+
+  // B2. Google-start zonder client: 503 GOOGLE_NOT_CONFIGURED zonder state-rijen; daarna rate limit (10/min/IP).
+  const statesVoor = (await pool.query("select count(*)::int n from app.records where tbl='google_oauth_states'")).rows[0].n;
+  const gs = [];
+  for (let i = 0; i < 11; i++) gs.push(await verzoek('POST', 'id.tarasevych.com', '/api/auth/google/start', {}, vanIp('203.0.113.21')));
+  const statesNa = (await pool.query("select count(*)::int n from app.records where tbl='google_oauth_states'")).rows[0].n;
+  check('Google-start zonder client → 503 GOOGLE_NOT_CONFIGURED, geen state-rijen', gs[0].status === 503 && gs[0].data?.error === 'GOOGLE_NOT_CONFIGURED' && statesNa === statesVoor, `status ${gs[0].status} ${gs[0].data?.error || ''} states ${statesVoor}→${statesNa}`);
+  check('rate limit: 11e Google-start binnen een minuut → 429 met Retry-After', gs[10].status === 429 && gs[10].data?.error === 'RATE_LIMITED', `statussen ${gs.map(x => x.status).join(',')}`);
+
+  // B3. Lockout: na 5 foute wachtwoorden is het account tijdelijk geblokkeerd, ook voor het juiste wachtwoord.
+  await pool.query("delete from app.login_lockouts where subject = 'wachtwoord:rooktest-eigenaar@example.test'");
+  const lockIp = vanIp('203.0.113.31');
+  const fouten = [];
+  for (let i = 0; i < 5; i++) fouten.push((await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { email: 'rooktest-eigenaar@example.test', password: `fout-${i}` }, lockIp)).status);
+  r = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { email: 'rooktest-eigenaar@example.test', password: 'rooktest-wachtwoord-123' }, vanIp('203.0.113.32'));
+  check('lockout na 5 fouten (429 ACCESS_LOCKED_TEMPORARILY, ook met juist wachtwoord)', fouten.slice(0, 4).every(x => x === 401) && fouten[4] === 429 && r.status === 429 && r.data?.error === 'ACCESS_LOCKED_TEMPORARILY', `fouten ${fouten.join(',')} daarna ${r.status} ${r.data?.error || ''}`);
+  await pool.query("delete from app.login_lockouts where subject = 'wachtwoord:rooktest-eigenaar@example.test'");
+
+  // B4. TOTP: geheim versleuteld opgeslagen, herstelcodes gepepperd; MFA-login met code en herstelcode (eenmalig).
+  const idBody = () => ({ service: 'identity', tabContext: tab() });
+  r = await api('id.tarasevych.com', '/api/owner/access/totp/start', idBody(), c1);
+  const geheim = r.data?.secret;
+  const totpRij = (await pool.query("select data from app.records where tbl='identity_totp_v1' and data->>'userId'=$1", [eigenaar])).rows[0]?.data || {};
+  check('TOTP-geheim versleuteld opgeslagen (secretEnc, geen leesbaar secret)', r.status === 200 && !!geheim && !!totpRij.secretEnc && !('secret' in totpRij) && !String(totpRij.secretEnc).includes(geheim), `status ${r.status} ${r.data?.error || ''} velden=${Object.keys(totpRij).join(',')}`);
+  let herstel = [];
+  if (geheim) {
+    r = await api('id.tarasevych.com', '/api/owner/access/totp/confirm', { ...idBody(), code: totp(geheim) }, c1);
+    herstel = r.data?.recoveryCodes || [];
+    const rec = (await pool.query("select data from app.records where tbl='identity_recovery_codes_v1' and data->>'userId'=$1", [eigenaar])).rows[0]?.data || {};
+    const legacy = herstel[0] ? createHmac('sha256', 'mij-prostir-access-v1').update(herstel[0]).digest('hex') : 'x';
+    check('herstelcodes met pepper gehasht (hashVersion 2, niet de oude vaste sleutel)', r.status === 200 && herstel.length === 10 && rec.hashVersion === 2 && !rec.hashes?.includes(legacy), `status ${r.status} ${r.data?.error || ''}`);
+    const pw = { email: 'rooktest-eigenaar@example.test', password: 'rooktest-wachtwoord-123' };
+    r = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { ...pw, totp: totp(geheim) }, vanIp('203.0.113.33'));
+    check('MFA-login met TOTP-code', r.status === 200 && r.data?.ok === true, `status ${r.status} ${r.data?.error || ''}`);
+    r = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { ...pw, totp: herstel[0] }, vanIp('203.0.113.33'));
+    const r2 = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { ...pw, totp: herstel[0] }, vanIp('203.0.113.33'));
+    check('herstelcode werkt precies één keer', r.status === 200 && r2.status === 401, `eerste ${r.status}, tweede ${r2.status}`);
+    await pool.query("delete from app.login_lockouts where subject = 'wachtwoord:rooktest-eigenaar@example.test'");
+  }
+
+  // B5. Eigenaar uit OWNER_EMAIL: eigenaar mag admin, lid niet.
+  r = await api('admin.tarasevych.com', '/api/owner/admin/bootstrap', { service: 'admin', tabContext: tab() }, c1);
+  const rLid = await api('admin.tarasevych.com', '/api/owner/admin/bootstrap', { service: 'admin', tabContext: tab() }, `${naam}=${encodeURIComponent(await zaaiSessie(lid))}`);
+  check('eigenaar komt uit OWNER_EMAIL (admin 200 voor eigenaar, 403 voor lid)', r.status === 200 && rLid.status === 403, `eigenaar ${r.status} ${r.data?.error || ''}, lid ${rLid.status}`);
+
+  // B6. Vault: onthullen alleen op admin./api.; geen uitzondering voor andere hosts.
+  r = await api('hub.tarasevych.com', '/api/owner/api-platform/vault/onbekend/reveal', { service: 'hub', tabContext: tab() }, c1);
+  const rApi = await api('api.tarasevych.com', '/api/owner/api-platform/vault/onbekend/reveal', { service: 'api', tabContext: tab() }, c1);
+  check('vault-onthulling geweigerd buiten admin./api. (403), niet op api.', r.status === 403 && rApi.data?.error !== 'OWNER_VAULT_REVEAL_HOST_FORBIDDEN', `hub ${r.status} ${r.data?.error || ''}, api ${rApi.status} ${rApi.data?.error || ''}`);
+
+  // B7. Passkeys uitgeschakeld tot echte WebAuthn-verificatie.
+  r = await api('id.tarasevych.com', '/api/owner/access/webauthn/options', idBody(), c1);
+  const rReg = await api('id.tarasevych.com', '/api/owner/access/webauthn/register', { ...idBody(), credentialId: 'x'.repeat(40) }, c1);
+  const snap = await api('id.tarasevych.com', '/api/owner/access/snapshot', idBody(), c1);
+  const wa = (snap.data?.factors || []).find(f => f.id === 'webauthn');
+  check('passkeys uit: options/register → 503 ACCESS_WEBAUTHN_DISABLED, factor niet actief', r.status === 503 && r.data?.error === 'ACCESS_WEBAUTHN_DISABLED' && rReg.status === 503 && wa && wa.enabled === false, `options ${r.status}, register ${rReg.status}, factor ${JSON.stringify(wa)}`);
+
+  // B8. Sessie-handoff is atomisch eenmalig: twee gelijktijdige inwisselingen → precies één succes.
+  r = await api('hub.tarasevych.com', '/api/owner/session/handoff/create', { service: 'hub', tabContext: tab(), target: 'cloud' }, c1);
+  const code = r.data?.url ? new URL(r.data.url).searchParams.get('handoff') : '';
+  const pogingen = await Promise.all([1, 2, 3].map(() => verzoek('POST', 'cloud.tarasevych.com', '/api/owner/session/handoff/redeem', { code, service: 'cloud', tabContext: tab() })));
+  check('handoff-code: van 3 gelijktijdige inwisselingen slaagt er precies één', !!code && pogingen.filter(x => x.status === 200).length === 1, `create ${r.status}, statussen ${pogingen.map(x => x.status).join(',')}`);
+
+  // B9. CSP op de server-gegenereerde callbackpagina: hashes, geen 'unsafe-inline'.
+  const cb = await new Promise((resolve, reject) => { const u = new URL(BASE); http.get({ hostname: u.hostname, port: u.port, path: '/api/owner/auth/google/callback?state=x&code=y', headers: { host: 'id.tarasevych.com' } }, rs => { rs.resume(); resolve({ status: rs.statusCode, csp: rs.headers['content-security-policy'] || '', type: rs.headers['content-type'] || '' }); }).on('error', reject); });
+  check("callbackpagina heeft strikte CSP (sha256, geen 'unsafe-inline')", !/unsafe-inline/.test(cb.csp) && /default-src 'none'/.test(cb.csp) && (!/text\/html/.test(cb.type) || /script-src ('sha256-|'none')/.test(cb.csp)), `status ${cb.status} ${cb.type} csp=${cb.csp.slice(0, 120)}`);
+
+  // B10. Opruimjob (cron-taak "opruimen"): verlopen states/sessies weg, geldige blijven.
+  const oud = nu - 3 * 864e5;
+  const vOud = await voeg('google_oauth_states', { stateHash: 'rooktest-oud', status: 'pending', createdAt: oud, expiresAt: oud });
+  const vNieuw = await voeg('google_oauth_states', { stateHash: 'rooktest-nieuw', status: 'pending', createdAt: nu, expiresAt: nu + 6e5 });
+  const sOud = await voeg('owner_service_sessions_v1', { tokenHash: 'rooktest-oud', userId: eigenaar, idleExpiresAt: oud, absoluteExpiresAt: oud + 1 });
+  await pool.query("insert into app.rate_limits (bucket, window_start, hits) values ('rooktest:oud', now() - interval '3 days', 1) on conflict do nothing");
+  let cronUit = '';
+  try { cronUit = execFileSync(process.execPath, ['dist-server/cron.mjs', 'opruimen'], { env: process.env, encoding: 'utf8', timeout: 60000 }); } catch (e) { cronUit = String(e.stdout || e.message); }
+  const over = (await pool.query('select id from app.records where id = any($1)', [[vOud, vNieuw, sOud]])).rows.map(x => x.id);
+  const rlOver = (await pool.query("select count(*)::int n from app.rate_limits where bucket='rooktest:oud'")).rows[0].n;
+  check('opruimjob verwijdert verlopen state/sessie/rate-limit, houdt geldige state', !over.includes(vOud) && !over.includes(sOud) && over.includes(vNieuw) && rlOver === 0, `${cronUit.trim().split('\n').pop()}`);
+  await pool.query('delete from app.records where id = $1', [vNieuw]);
 } catch (e) {
   check('onverwachte fout', false, String(e?.stack || e));
 } finally {
@@ -160,6 +262,7 @@ try {
     for (const { p } of paden.rows) { await rm(join(UPLOADS, p), { force: true }); await pool.query('delete from app.storage_objects where path=$1', [p]); }
     await pool.query("delete from app.records where id = any($1) or data->>'userId' = any($1) or data->>'ownerUserId' = any($1)", [zaai]);
   }
+  await pool.query("delete from app.login_lockouts where subject like 'wachtwoord:rooktest-%'").catch(() => {});
   await pool.end();
   const fout = resultaten.filter(r => !r.ok).length;
   console.log(`\n${resultaten.length - fout}/${resultaten.length} geslaagd`);

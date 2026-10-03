@@ -14,7 +14,8 @@ type HandoffRecord={id:string;codeHash:string;userId:string;service:string;expir
 
 const sha=(value:string)=>createHash('sha256').update(value).digest('hex');
 const headers=(event:Record<string,unknown>)=>{const raw=((event.headers||{})as Record<string,unknown>);const out:Record<string,string>={};for(const[key,value]of Object.entries(raw))out[key.toLowerCase()]=String(value||'');return out};
-const hostOf=(event:Record<string,unknown>)=>String(headers(event)['x-forwarded-host']||headers(event).host||'').split(':')[0].toLowerCase();
+// Alleen de Host-header (server/start.ts verwijdert x-forwarded-host van de client).
+const hostOf=(event:Record<string,unknown>)=>String(headers(event).host||'').split(':')[0].toLowerCase();
 const asService=(value:unknown):ServiceId|null=>{const candidate=String(value||'') as ServiceId;return candidate in SERVICE_ORIGINS?candidate:null};
 const serviceOfHost=(event:Record<string,unknown>)=>asService((Object.entries(SERVICE_ORIGINS).find(([,origin])=>new URL(origin).hostname===hostOf(event))||[])[0]||'');
 const cookie=(token:string,maxAge:number,sessionId:string)=>`${ECOSYSTEM_COOKIE}=${encodeURIComponent(`${sessionId}.${token}`)}; ${COOKIE_SCOPE}; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
@@ -46,23 +47,27 @@ export function createOwnerHandoffRoutes(deps:{
       return deps.respond({url:url.toString(),expiresInMs:HANDOFF_MS});
     }],
     'POST /api/owner/session/handoff/redeem':[async(ctx)=>{
-      const service=serviceOfHost(ctx.event)||asService(deps.body(ctx.body).service);
+      // De service wordt uitsluitend door de host bepaald; een afwijkende body.service wordt geweigerd.
+      const service=serviceOfHost(ctx.event);
       if(!service)return deps.fail('OWNER_SESSION_CONTEXT_REQUIRED',400);
-      const bound=serviceOfHost(ctx.event);
-      if(bound&&bound!==service)return deps.fail('OWNER_SESSION_ORIGIN_INVALID',403);
+      const claimed=asService(deps.body(ctx.body).service);
+      if(claimed&&claimed!==service)return deps.fail('OWNER_SESSION_ORIGIN_INVALID',403);
       const code=String(deps.body(ctx.body).code||'');
       if(!code)return deps.fail('OWNER_HANDOFF_INVALID',400);
-      const rows=await db.list<Omit<HandoffRecord,'id'>>('service_handoffs',{filter:{codeHash:sha(code),service},limit:5});
-      const handoff=(rows.items as HandoffRecord[])[0];
+      // Atomisch eenmalig: DELETE … RETURNING in één statement; een tweede (gelijktijdige) inwisseling vindt niets.
+      const handoff=await db.takeOne<Omit<HandoffRecord,'id'>>('service_handoffs',{codeHash:sha(code),service}) as HandoffRecord|null;
       if(!handoff||handoff.expiresAt<=Date.now())return deps.fail('OWNER_HANDOFF_INVALID',401);
-      await db.delete('service_handoffs',[handoff.id]);
       const existing=await deps.requireSession(ctx.event,ctx.body);
       if(!('errorCode'in existing)&&existing.user.id===handoff.userId){
         await deps.audit(existing.user.id,'owner.session.handoff.reused','success',{service});
         return deps.respond({ok:true,reused:true,user:existing.user});
       }
+      // Geen stille accountwissel: een browser met een geldige sessie van een ánder account wisselt geen
+      // handoff-code in (beperkt login-CSRF/sessiewissel via een ondergeschoven ?handoff=-link).
+      if(!('errorCode'in existing))return deps.fail('OWNER_HANDOFF_ACCOUNT_MISMATCH',409);
       const[raw]=await db.get<{email:string;name?:string;role:string;status:string}>('users',[handoff.userId]);
       if(!raw)return deps.fail('OWNER_USER_NOT_FOUND',404);
+      if(raw.status==='blocked'||raw.status==='deleted')return deps.fail('OWNER_HANDOFF_INVALID',401);
       const now=Date.now();
       const token=randomBytes(32).toString('base64url');
       const sessionRecord={tokenHash:sha(token),userId:handoff.userId,service,sourceOrigin:SERVICE_ORIGINS[service],tabHash:sha('ecosystem'),grantId:handoff.browserGrantId||'',createdAt:now,authenticatedAt:now,lastSeenAt:now,idleExpiresAt:now+OWNER_IDLE_MS,absoluteExpiresAt:now+OWNER_ABSOLUTE_MS,rotation:0,version:1,revocationEpoch:0,authMethod:'google',scope:'ecosystem' as const};
