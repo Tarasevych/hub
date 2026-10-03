@@ -161,8 +161,8 @@ try {
   check('loginmethoden zonder Google-env: google niet geconfigureerd', r.status === 200 && google && google.configured === false, `status ${r.status} ${JSON.stringify(google)}`);
   const m = await verzoek('GET', 'id.tarasevych.com', '/api/auth/methods');
   check('GET /api/auth/methods zonder Google/Microsoft-env crasht niet', m.status !== 404 && m.status < 500, `status ${m.status} ${JSON.stringify(m.data).slice(0, 200)}`);
-  r = await api('id.tarasevych.com', '/api/auth/google/start', { service: 'identity', tabContext: tab() });
-  check('Google-start zonder client-ID faalt netjes (geen 500)', r.status !== 404 && (r.status < 500 || r.status === 503), `status ${r.status} ${JSON.stringify(r.data).slice(0, 120)}`);
+  r = await api('hub.tarasevych.com', '/api/owner/identity/transactions/create', { service: 'hub', tabContext: tab(), flowMode: 'redirect', returnTo: 'https://hub.tarasevych.com/', locale: 'nl' });
+  check('Google-redirectstart zonder client-secret faalt netjes (OWNER_GOOGLE_SECRET_UNAVAILABLE, geen bindingscookie)', r.data?.reasonCode === 'OWNER_GOOGLE_SECRET_UNAVAILABLE' && !r.setCookie.some(c => c.startsWith('__Secure-tsv_aanmeld_binding=')), `status ${r.status} ${r.data?.reasonCode || ''}`);
 
   // ===== Fase B: beveiliging =====
   // B1. CSRF: vreemde Origin en ontbrekende Origin met cookie worden geweigerd; zonder cookie (webhook) niet.
@@ -175,13 +175,16 @@ try {
   r = await verzoek('POST', 'hub.tarasevych.com', '/api/owner/session/bootstrap', { service: 'hub', tabContext: tab() }, { cookie: c1, origin: 'https://cloud.tarasevych.com' });
   check('CSRF: andere eigen dienst-origin toegestaan', r.status === 200, `status ${r.status}`);
 
-  // B2. Google-start zonder client: 503 GOOGLE_NOT_CONFIGURED zonder state-rijen; daarna rate limit (10/min/IP).
-  const statesVoor = (await pool.query("select count(*)::int n from app.records where tbl='google_oauth_states'")).rows[0].n;
+  // B2. Verouderde aanmeld-/sessieroutes (auth fase 1) antwoorden 410 Gone; rate limit (MFA-bucket, 10/min/IP).
+  const weg = [];
+  for (const [host, pad] of [['id.tarasevych.com', '/api/auth/google'], ['id.tarasevych.com', '/api/auth/google/code'], ['id.tarasevych.com', '/api/auth/google/start'], ['id.tarasevych.com', '/api/auth/broker/request/create'], ['cloud.tarasevych.com', '/api/service-handoff/consume'], ['mail.tarasevych.com', '/api/ecosystem/handoff/exchange'], ['mail.tarasevych.com', '/api/ecosystem/bootstrap'], ['id.tarasevych.com', '/api/identity/admin/overview'], ['id.tarasevych.com', '/api/service/admin/overview'], ['hub.tarasevych.com', '/api/auth/logout']]) {
+    const x = await verzoek('POST', host, pad, {}, vanIp('203.0.113.22'));
+    weg.push(`${pad}=${x.status}${x.data?.reasonCode === 'LEGACY_ROUTE_GONE' ? '' : '!'}`);
+  }
+  check('verouderde routes → 410 LEGACY_ROUTE_GONE', weg.every(x => x.endsWith('=410')), weg.join(' '));
   const gs = [];
-  for (let i = 0; i < 11; i++) gs.push(await verzoek('POST', 'id.tarasevych.com', '/api/auth/google/start', {}, vanIp('203.0.113.21')));
-  const statesNa = (await pool.query("select count(*)::int n from app.records where tbl='google_oauth_states'")).rows[0].n;
-  check('Google-start zonder client → 503 GOOGLE_NOT_CONFIGURED, geen state-rijen', gs[0].status === 503 && gs[0].data?.error === 'GOOGLE_NOT_CONFIGURED' && statesNa === statesVoor, `status ${gs[0].status} ${gs[0].data?.error || ''} states ${statesVoor}→${statesNa}`);
-  check('rate limit: 11e Google-start binnen een minuut → 429 met Retry-After', gs[10].status === 429 && gs[10].data?.error === 'RATE_LIMITED', `statussen ${gs.map(x => x.status).join(',')}`);
+  for (let i = 0; i < 11; i++) gs.push(await verzoek('POST', 'id.tarasevych.com', '/api/owner/access/totp/start', { service: 'identity', tabContext: tab() }, vanIp('203.0.113.21')));
+  check('rate limit: 11e MFA-verzoek binnen een minuut → 429 met Retry-After', gs.slice(0, 10).every(x => x.status !== 429) && gs[10].status === 429 && gs[10].data?.error === 'RATE_LIMITED', `statussen ${gs.map(x => x.status).join(',')}`);
 
   // B3. Lockout: na 5 foute wachtwoorden is het account tijdelijk geblokkeerd, ook voor het juiste wachtwoord.
   await pool.query("delete from app.login_lockouts where subject = 'wachtwoord:rooktest-eigenaar@example.test'");
@@ -257,18 +260,6 @@ try {
   const anders = await verzoek('POST', 'cloud.tarasevych.com', '/api/owner/session/handoff/redeem', { code: codeAanvaller, service: 'cloud', tabContext: tab() }, { cookie: `tsv_handoff_binding=${randomBytes(32).toString('base64url')}` });
   const eigen = await verzoek('POST', 'cloud.tarasevych.com', '/api/owner/session/handoff/redeem', { code: codeAanvaller, service: 'cloud', tabContext: tab() }, { cookie: bindingAanvaller });
   check('login-CSRF: ondergeschoven handoff geweigerd zonder (401) of met andere bindingscookie (401), zonder de code te verbruiken', !!codeAanvaller && zonder.status === 401 && zonder.data?.error === 'OWNER_HANDOFF_BINDING_MISSING' && anders.status === 401 && eigen.status === 200 && !zonder.setCookie.length && !anders.setCookie.length, `zonder ${zonder.status} ${zonder.data?.error || ''}, ander ${anders.status}, eigen browser ${eigen.status}`);
-  // Oudere inwisselroutes (service-handoff/consume, ecosystem/handoff/exchange) eisen dezelfde binding.
-  const legacyBinding = `tsv_handoff_binding=${randomBytes(32).toString('base64url')}`;
-  const legacyHash = createHash('sha256').update(legacyBinding.split('=')[1]).digest('hex');
-  const legacyRij = async (service) => { const c = randomBytes(32).toString('base64url'); await pool.query("insert into app.records (tbl, id, data) values ('service_handoffs', $1, $2)", [randomUUID(), { codeHash: createHash('sha256').update(c).digest('hex'), userId: eigenaar, service, expiresAt: Date.now() + 60000, createdAt: Date.now(), browserGrantId: '', bindingHash: legacyHash }]); return c; };
-  const lc = await legacyRij('cloud');
-  const l1 = await verzoek('POST', 'cloud.tarasevych.com', '/api/service-handoff/consume', { code: lc, service: 'cloud' });
-  const l2 = await verzoek('POST', 'cloud.tarasevych.com', '/api/service-handoff/consume', { code: lc, service: 'cloud' }, { cookie: legacyBinding });
-  const ec = await legacyRij('mail');
-  const e1 = await verzoek('POST', 'mail.tarasevych.com', '/api/ecosystem/handoff/exchange', { code: ec, service: 'mail' }, { cookie: `tsv_handoff_binding=${randomBytes(32).toString('base64url')}` });
-  const e2 = await verzoek('POST', 'mail.tarasevych.com', '/api/ecosystem/handoff/exchange', { code: ec, service: 'mail' }, { cookie: legacyBinding });
-  check('oudere inwisselroutes eisen ook de bindingscookie (consume, exchange)', l1.status === 401 && l2.status === 200 && e1.status === 401 && e2.status === 200, `consume ${l1.status}/${l2.status}, exchange ${e1.status}/${e2.status} ${e2.data?.error || ''}`);
-
   // B8c. Login-CSRF bij de Google-callback: een ondergeschoven state/code (van een aanmelding die in een
   // andere browser startte) wordt geweigerd; dezelfde browser (bindingscookie) komt voorbij de controle.
   const zaaiAanmelding = async (bindingHash) => {
@@ -315,7 +306,7 @@ try {
     const paden = await pool.query("select data->>'storagePath' p from app.records where data->>'ownerUserId' = any($1) and coalesce(data->>'storagePath','') <> ''", [zaai]);
     const { rm } = await import('node:fs/promises');
     for (const { p } of paden.rows) { await rm(join(UPLOADS, p), { force: true }); await pool.query('delete from app.storage_objects where path=$1', [p]); }
-    await pool.query("delete from app.records where id = any($1) or data->>'userId' = any($1) or data->>'ownerUserId' = any($1)", [zaai]);
+    await pool.query("delete from app.records where id = any($1) or data->>'userId' = any($1) or data->>'ownerUserId' = any($1) or data->>'recipientUserId' = any($1)", [zaai]);
   }
   if (zaaiIds.length) await pool.query('delete from app.records where id = any($1)', [zaaiIds]).catch(() => {});
   await pool.query("delete from app.login_lockouts where subject like 'wachtwoord:rooktest-%'").catch(() => {});
