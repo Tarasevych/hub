@@ -1,5 +1,9 @@
 # HERSTEL — Mijn Ruimte terugzetten na verlies van de VM
 
+> Hele pc kwijt? Gebruik de **offline herstelset** (`R:\mijn-ruimte-reservekopie\herstelset\`, kopie op een
+> externe schijf): stap-voor-stapplan `00-BEGIN-HIER-UA.txt/.pdf` en `00-BEGIN-HIER-NL.txt`, met
+> `scripts\herstel-vm.sh` en `scripts\ontsleutel-naar-vm.ps1`. Dit bestand is de korte versie.
+
 Je hebt vier dingen nodig. Zonder de **herstelsleutel** zijn 3 en 4 onbruikbaar.
 
 | # | Wat | Waar |

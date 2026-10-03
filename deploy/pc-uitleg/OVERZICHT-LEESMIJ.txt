@@ -1,4 +1,4 @@
-OVERZICHT-LEESMIJ.txt - Mijn Ruimte: wat staat waar (stand 03-10-2026)
+OVERZICHT-LEESMIJ.txt - Mijn Ruimte: wat staat waar (stand 03-10-2026, 13:30)
 Цей самий файл лежить у T:\mijn-ruimte\ і в R:\mijn-ruimte-reservekopie\.
 Dit bestand staat zowel in T:\mijn-ruimte\ als in R:\mijn-ruimte-reservekopie\.
 (Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
@@ -26,7 +26,9 @@ Dit bestand staat zowel in T:\mijn-ruimte\ als in R:\mijn-ruimte-reservekopie\.
 - schermafbeeldingen\  знімки екрана.
 - scripts\             скрипти: створення VM і мережі (*.ps1), налаштування сервера (*.sh),
                        deploy-<дата-коміт>\ (файли розгортання), uitrol-, tunnel-, age-20261003\
-                       (одноразові скрипти цього дня), reservekopie-ophalen.ps1 (забрати копію).
+                       (одноразові скрипти цього дня), reservekopie-ophalen.ps1 (забрати копію),
+                       herstelset-bijwerken.ps1 (оновити набір відновлення), herstelset\ (джерело
+                       інструкцій набору), vtpm-20261003\ (автоматичне розблокування диска VM).
 - virtuele-machine\    конфігурація і диски VM (*.vhdx, *.avhdx = контрольні точки).
                        НЕ видаляйте і не переміщуйте ці файли вручну - керуйте через Hyper-V.
 - HERSTEL.md           план відновлення після втрати сервера.
@@ -38,6 +40,8 @@ Dit bestand staat zowel in T:\mijn-ruimte\ als in R:\mijn-ruimte-reservekopie\.
 - scripts\      копії скриптів.
 - sleutels\     СЕКРЕТНИЙ ключ відновлення age + копія SSH-ключа. НАЙВАЖЛИВІША ПАПКА.
 - vm-back-ups\  зашифровані нічні резервні копії бази та файлів.
+- herstelset\   НАБІР ВІДНОВЛЕННЯ для зовнішнього диска (без секретного ключа). Почніть з
+                00-BEGIN-HIER-UA.pdf. Оновлення: scripts\herstelset-bijwerken.ps1 -Doel E:\
 - HERSTEL.md    план відновлення.
 
 ЕТАПИ (що вже зроблено)
@@ -76,7 +80,9 @@ SCHIJF T:\mijn-ruimte\
 - schermafbeeldingen\  schermafbeeldingen.
 - scripts\             scripts: VM en netwerk maken (*.ps1), server inrichten (*.sh),
                        deploy-<datum-commit>\ (uitrolbestanden), uitrol-, tunnel-, age-20261003\
-                       (eenmalige scripts van deze dag), reservekopie-ophalen.ps1 (back-up ophalen).
+                       (eenmalige scripts van deze dag), reservekopie-ophalen.ps1 (back-up ophalen),
+                       herstelset-bijwerken.ps1 (herstelset verversen), herstelset\ (bron van de
+                       handleidingen), vtpm-20261003\ (automatisch ontgrendelen van de VM-schijf).
 - virtuele-machine\    configuratie en schijven van de VM (*.vhdx, *.avhdx = controlepunten).
                        NIET met de hand verwijderen of verplaatsen - beheer via Hyper-V.
 - HERSTEL.md           noodplan bij verlies van de server.
@@ -88,6 +94,8 @@ SCHIJF R:\mijn-ruimte-reservekopie\
 - scripts\      kopieen van de scripts.
 - sleutels\     GEHEIME age-herstelsleutel + kopie van de SSH-sleutel. BELANGRIJKSTE MAP.
 - vm-back-ups\  versleutelde nachtelijke back-ups van database en uploads.
+- herstelset\   HERSTELSET voor een externe schijf (zonder geheime sleutel). Begin bij
+                00-BEGIN-HIER-NL.txt. Bijwerken: scripts\herstelset-bijwerken.ps1 -Doel E:\
 - HERSTEL.md    noodplan.
 
 FASEN (wat er al is)
