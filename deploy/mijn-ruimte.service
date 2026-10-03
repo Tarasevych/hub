@@ -1,0 +1,60 @@
+# /etc/systemd/system/mijn-ruimte.service — HTTP-server van Mijn Ruimte (zelf gehost).
+# Luistert alleen op 127.0.0.1:8080; publiek verkeer komt uitsluitend via cloudflared (zie cloudflared-config.yml).
+# Geheimen: /etc/mijn-ruimte/geheimen.env (root:mijnruimte, 0640), zie ENV-VARS.md.
+[Unit]
+Description=Mijn Ruimte (zelf-gehoste app)
+Documentation=file:///srv/mijn-ruimte/current/deploy/LEESMIJ.md
+After=network-online.target postgresql.service
+Wants=network-online.target postgresql.service
+
+[Service]
+Type=simple
+User=mijnruimte
+Group=mijnruimte
+EnvironmentFile=/etc/mijn-ruimte/geheimen.env
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=8080
+Environment=UPLOADS_DIR=/srv/data/uploads
+Environment=DASHBOARD_DIR=/srv/mijn-ruimte/dashboard
+WorkingDirectory=/srv/mijn-ruimte/current
+ExecStart=/usr/bin/node /srv/mijn-ruimte/current/dist-server/start.mjs
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+LimitNOFILE=65536
+UMask=0027
+
+# --- Hardening ---
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/data/uploads
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RemoveIPC=yes
+# Alleen IPv4/IPv6 (Postgres via 127.0.0.1, Google/Microsoft uitgaand) en Unix-sockets.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+SystemCallErrorNumber=EPERM
+# MemoryDenyWriteExecute=yes kan NIET: de V8-JIT van Node heeft schrijf+uitvoer-geheugen nodig.
+MemoryDenyWriteExecute=no
+
+[Install]
+WantedBy=multi-user.target

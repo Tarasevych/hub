@@ -493,28 +493,32 @@ Bekende beperkingen:
 - Inloggen kan nu alleen met een in de database gezaaide sessie of na het instellen van een Google-client.
 - Wachtwoordlogin verifieert wel, maar geeft (zoals in de bestaande code) geen sessie uit.
 
-### 10.2 Fase B: nog te doen
-- **Beveiliging** (zie §5 en `SECURITY-NOTES.md`):
-  - Rate limiting en lockout (tabellen `app.rate_limits`/`app.login_lockouts` bestaan al).
-  - Willekeurige PKCE-verifier en nonce.
-  - CSRF-Origin-allow-list.
-  - TOTP-secret versleutelen en recovery-pepper.
-  - Eigenaar uit env in plaats van hardcoded (`index.ts`, `rbac.ts`).
-  - Vault `revealHostAllowed` zonder localhost.
-  - Passkeys echt verifiëren.
-  - Atomische handoff-redeem (`db.takeOne`).
-  - SSRF-DNS-pinning.
-  - DOMPurify in `MailRichDocumentPreview`.
-  - CSP op de callback-HTML.
-- **Onderhoud en deploy:**
-  - Een `/api/auth/google/start` zonder geconfigureerde client maakt nog steeds een state-rij aan. Hier is een guard (503) plus rate limit nodig.
-  - TTL-opruimtaak voor verlopen rijen (oauth-states, transacties, sessies, en dergelijke).
-  - systemd-units/-timers, cloudflared-config en back-ups (`pg_dump` + `UPLOADS_DIR`).
-- **Typecheck:** de servertypecheck geeft nog 77 bestaande meldingen (37× impliciete `any` voor `ctx`). De frontend heeft ongeveer 219 bestaande meldingen.
-- **Met de eigenaar:** de nieuwe Google OAuth-client, de keuze van de AI-provider en de dashboardintegratie.
+### 10.2 AppDeploy v30–v56 samengevoegd (commit `142f625`)
+- Patch `appdeploy-v31-v56.patch` (basis v29) met `git apply --3way`; `@appdeploy/client` → `./platform/client`.
+- Overgenomen: mail-compose (resizable, concept), relatieve datums, bijlagevoorbeelden, sidebar/topbar,
+  contrast licht thema, fix `use-external-rect`, handoff-wachttijd 12 s met herhaling, redirect-allow-list.
+- **Bewust weggelaten:** alle v54–v56-wijzigingen die Google-login naar de AppDeploy-host
+  (`migrated-bg2v4h.v2.appdeploy.ai`) terugstuurden. Callback blijft `https://id.tarasevych.com/`, doel na login
+  `hub.tarasevych.com`; de AppDeploy-origin staat nergens meer in de allow-list.
 
-### 10.3 Nieuwe open beslissingen
-- `dist/l002-diagnostic.json` (audit-uitvoer) wordt mee gepubliceerd. Vraag: weglaten of afschermen?
-- Cookies met `Domain=.tarasevych.com` zijn zichtbaar voor **elk** subdomein. Elke host onder `tarasevych.com` moet dus vertrouwd zijn. Er mag geen derde partij onder dat domein draaien.
-- `'wasm-unsafe-eval'` staat (net als vandaag) niet in de CSP. WASM-voorbeelden (sql.js, h5wasm, pdf.js) werken daardoor mogelijk niet. Vraag: toestaan?
-- De technische AppDeploy-host en OwnerTestApp-paden zijn inert, maar staan nog in de code (de l002-audit verwacht ze). Vraag: opruimen in fase B?
+### 10.3 Besluiten eigenaar op de open vragen (commits `1287f21`, `cd9712e`)
+1. `l002-diagnostic.json` niet publiceren: audit schrijft naar `rapporten/` (gitignored); server geeft 404 op dat pad, `*.map` en dotfiles.
+2. `Domain=.tarasevych.com` bevestigd (alle subdomeinen zijn van de eigenaar).
+3. `'wasm-unsafe-eval'` toegestaan in `script-src` (header en meta), `'unsafe-eval'` niet.
+4. Technische AppDeploy-host, OwnerTestApp, QA-fixtures en integratielabs verwijderd; l002-audit en `tests/tests.txt` aangepast.
+
+### 10.4 Fase B beveiliging: afgerond (commit `8a2d63f`)
+Alle punten uit §5 zijn opgelost; details en status per punt in `SECURITY-NOTES.md` §3, env-vars in `ENV-VARS.md`.
+Passkeys zijn **uitgeschakeld** (niet geïmplementeerd) tot er echte WebAuthn-verificatie is.
+Tests: rooktest 42/42, eenheidstests 12/12 (`scripts/eenheidstests.mjs`), browsertest 7/7
+(`scripts/lokaal-e2e/test-alles.sh` draait alles). Servertypecheck: 74 bestaande meldingen (was 77), frontend 222 (was 224).
+
+### 10.5 Deploy-artefacten (map `deploy/`, niet uitgerold)
+`mijn-ruimte.service`, `mijn-ruimte-cron@.service` + timers (mail-onderhoud, google-sync, opruimen),
+`mijn-ruimte-backup.service/.timer` + `backup-maken.sh` (pull-model), `cloudflared-config.yml`,
+`installeer-app.sh` (inrichten / installeren met automatische rollback / terugdraaien / lijst). Zie `deploy/LEESMIJ.md`.
+
+### 10.6 Nog open
+- Nieuwe Google OAuth-client (redirect `https://id.tarasevych.com/`) en alle geheimen genereren (ENV-VARS.md).
+- Echte WebAuthn-implementatie; AI-provider; dashboardintegratie.
+- l002-audit: `b4-important-free` in twee AppDeploy-CSS-bestanden (v56), cosmetisch.
