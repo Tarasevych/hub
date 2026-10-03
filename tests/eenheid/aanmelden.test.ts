@@ -6,7 +6,8 @@ import { rateLimit } from '../../server/platform/beveiliging';
 import { closePool, getPool } from '../../server/platform/pg';
 import { db } from '../../server/platform/db';
 import { besluitGoogleKoppeling, magEigenaarZijn } from '../../backend/account-koppeling';
-import { AANMELD_BINDING_COOKIE, aanmeldBindingKlopt, aanmeldBindingVoorAanmaken, aanmeldBindingWissen } from '../../backend/aanmeld-binding';
+import { createHash } from 'node:crypto';
+import { AANMELD_BINDING_PREFIX, aanmeldBindingKlopt, aanmeldBindingVoorAanmaken, aanmeldBindingWissen } from '../../backend/aanmeld-binding';
 
 const resultaten: Array<{ naam: string; ok: boolean }> = [];
 const check = (naam: string, ok: boolean, info = '') => { resultaten.push({ naam, ok }); console.log(`${ok ? 'OK  ' : 'FOUT'} ${naam}${info ? ` — ${info}` : ''}`); };
@@ -24,16 +25,20 @@ export async function main() {
   for (let i = 0; i < 3; i++) normaal.push((await rateLimit(bucket, 2, 60, { failClosed: true })).ok);
   check('rate limit: zonder DB-fout telt failClosed gewoon (2 ok, 3e geweigerd)', normaal.join(',') === 'true,true,false', normaal.join(','));
 
-  // Login-CSRF: browserbinding van de aanmeldtransactie.
-  const nieuw = aanmeldBindingVoorAanmaken({ headers: {} });
-  const waarde = nieuw.setCookie.split(';')[0].split('=')[1];
-  const browser = { headers: { cookie: `a=1; ${AANMELD_BINDING_COOKIE}=${waarde}; b=2` } };
-  check('aanmeld-binding: cookie __Secure-, HttpOnly, Secure, SameSite=Lax, Domain=.tarasevych.com, kort geldig', nieuw.setCookie.startsWith('__Secure-tsv_aanmeld_binding=') && /; HttpOnly; Secure; SameSite=Lax$/.test(nieuw.setCookie) && /Domain=\.tarasevych\.com; Path=\//.test(nieuw.setCookie) && /Max-Age=900;/.test(nieuw.setCookie) && /^[a-f0-9]{64}$/.test(nieuw.bindingHash));
-  check('aanmeld-binding: zelfde browser klopt; bestaande cookie wordt hergebruikt', aanmeldBindingKlopt(browser, nieuw.bindingHash) && aanmeldBindingVoorAanmaken(browser).bindingHash === nieuw.bindingHash);
-  const ander = { headers: { cookie: `${AANMELD_BINDING_COOKIE}=${'A'.repeat(43)}` } };
-  check('aanmeld-binding: andere browser, geen cookie, misvormde cookie → geweigerd', !aanmeldBindingKlopt(ander, nieuw.bindingHash) && !aanmeldBindingKlopt({ headers: {} }, nieuw.bindingHash) && !aanmeldBindingKlopt({ headers: { cookie: `${AANMELD_BINDING_COOKIE}=kort` } }, nieuw.bindingHash));
-  check('aanmeld-binding: transactie zonder (geldige) hash faalt dicht', !aanmeldBindingKlopt(browser, undefined) && !aanmeldBindingKlopt(browser, '') && !aanmeldBindingKlopt(browser, 'x'.repeat(64)));
-  check('aanmeld-binding: wissen = lege waarde met Max-Age=0', aanmeldBindingWissen().startsWith(`${AANMELD_BINDING_COOKIE}=;`) && /Max-Age=0;/.test(aanmeldBindingWissen()));
+  // Login-CSRF: browserbinding van de aanmeldtransactie, één cookie per transactie (parallelle tabbladen).
+  const h = (v: string) => createHash('sha256').update(v).digest('hex');
+  const txA = h('tx-a'), txB = h('tx-b'), tabA = h('tab-a'), tabB = h('tab-b');
+  const nA = aanmeldBindingVoorAanmaken(txA, tabA), nB = aanmeldBindingVoorAanmaken(txB, tabB);
+  const paar = (c: string) => c.split(';')[0];
+  const jar = { headers: { cookie: `a=1; ${paar(nA.setCookie)}; ${paar(nB.setCookie)}; b=2` } };
+  check('aanmeld-binding: cookienaam per transactie (__Secure-tsv_aanmeld_binding_<16 hex>), HttpOnly, Secure, SameSite=Lax, Domain=.tarasevych.com, Max-Age 900', nA.cookieNaam === `${AANMELD_BINDING_PREFIX}${txA.slice(0, 16)}` && nA.cookieNaam !== nB.cookieNaam && nA.setCookie.startsWith(`${nA.cookieNaam}=`) && /; HttpOnly; Secure; SameSite=Lax$/.test(nA.setCookie) && /Domain=\.tarasevych\.com; Path=\//.test(nA.setCookie) && /Max-Age=900;/.test(nA.setCookie) && /^[a-f0-9]{64}$/.test(nA.bindingHash));
+  const recA = { transactionHash: txA, tabHash: tabA, bindingHash: nA.bindingHash }, recB = { transactionHash: txB, tabHash: tabB, bindingHash: nB.bindingHash };
+  check('aanmeld-binding: twee parallelle transacties in één cookiejar kloppen allebei', aanmeldBindingKlopt(jar, recA) && aanmeldBindingKlopt(jar, recB));
+  const waardeA = paar(nA.setCookie).split('=')[1];
+  check('aanmeld-binding: waarde van transactie A onder de naam van B, of A met andere tabhash → geweigerd', !aanmeldBindingKlopt({ headers: { cookie: `${nB.cookieNaam}=${waardeA}` } }, recB) && !aanmeldBindingKlopt(jar, { ...recA, tabHash: tabB }));
+  check('aanmeld-binding: andere browser, geen cookie, misvormde cookie → geweigerd', !aanmeldBindingKlopt({ headers: { cookie: `${nA.cookieNaam}=${'A'.repeat(43)}` } }, recA) && !aanmeldBindingKlopt({ headers: {} }, recA) && !aanmeldBindingKlopt({ headers: { cookie: `${nA.cookieNaam}=kort` } }, recA));
+  check('aanmeld-binding: transactie zonder (geldige) hash of oude v1-binding faalt dicht', !aanmeldBindingKlopt(jar, { ...recA, bindingHash: undefined }) && !aanmeldBindingKlopt(jar, { ...recA, bindingHash: '' }) && !aanmeldBindingKlopt(jar, { ...recA, bindingHash: h(waardeA) }) && !aanmeldBindingKlopt(jar, null));
+  check('aanmeld-binding: wissen raakt alleen de cookie van die transactie (lege waarde, Max-Age=0)', aanmeldBindingWissen(txA).startsWith(`${nA.cookieNaam}=;`) && /Max-Age=0;/.test(aanmeldBindingWissen(txA)) && !aanmeldBindingWissen(txA).includes(nB.cookieNaam));
 
   // Accountkoppeling: alleen (provider, subject); nooit stil op e-mail samenvoegen.
   const basis = { identiteitAccountId: '', subAccountId: '', emailAccountId: '', emailAccountHeeftGoogleIdentiteit: false, email: 'iemand@example.test', eigenaarEmail: 'eigenaar@example.test' };

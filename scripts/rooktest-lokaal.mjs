@@ -262,25 +262,38 @@ try {
   check('login-CSRF: ondergeschoven handoff geweigerd zonder (401) of met andere bindingscookie (401), zonder de code te verbruiken', !!codeAanvaller && zonder.status === 401 && zonder.data?.error === 'OWNER_HANDOFF_BINDING_MISSING' && anders.status === 401 && eigen.status === 200 && !zonder.setCookie.length && !anders.setCookie.length, `zonder ${zonder.status} ${zonder.data?.error || ''}, ander ${anders.status}, eigen browser ${eigen.status}`);
   // B8c. Login-CSRF bij de Google-callback: een ondergeschoven state/code (van een aanmelding die in een
   // andere browser startte) wordt geweigerd; dezelfde browser (bindingscookie) komt voorbij de controle.
-  const zaaiAanmelding = async (bindingHash) => {
-    const txId = randomUUID(), stateId = randomUUID();
+  // Sinds de per-transactie-binding: cookie `__Secure-tsv_aanmeld_binding_<16 hex transactiehash>`,
+  // hash = sha256("tsv-aanmeld-binding-v2|transactiehash|tabhash|waarde").
+  const zaaiAanmelding = async (waarde, { metHash = true, v1 = false } = {}) => {
+    const txId = randomUUID(), stateId = randomUUID(), txHash = sha(randomBytes(8).toString('hex')), tabHash = sha('t');
     const state = `v2.uk.${Buffer.from(txId).toString('base64url')}.${randomBytes(24).toString('base64url')}`;
-    await pool.query('insert into app.records (tbl,id,data) values ($1,$2,$3)', ['owner_auth_transactions_v1', txId, { transactionHash: sha(randomBytes(8).toString('hex')), attachHash: 'x', redeemHash: 'x', ...(bindingHash ? { bindingHash } : {}), sourceOrigin: 'https://hub.tarasevych.com', targetService: 'hub', tabHash: sha('t'), tabContext: 't', intent: 'login', flowMode: 'redirect', returnTo: 'https://hub.tarasevych.com/', status: 'attached', createdAt: Date.now(), expiresAt: Date.now() + 6e5, attachedAt: Date.now(), oauthStateId: stateId, rooktest: true }]);
+    const bindingHash = v1 ? sha(waarde) : sha(`tsv-aanmeld-binding-v2|${txHash}|${tabHash}|${waarde}`);
+    await pool.query('insert into app.records (tbl,id,data) values ($1,$2,$3)', ['owner_auth_transactions_v1', txId, { transactionHash: txHash, attachHash: 'x', redeemHash: 'x', ...(metHash ? { bindingHash } : {}), sourceOrigin: 'https://hub.tarasevych.com', targetService: 'hub', tabHash, tabContext: 't', intent: 'login', flowMode: 'redirect', returnTo: 'https://hub.tarasevych.com/', status: 'attached', createdAt: Date.now(), expiresAt: Date.now() + 6e5, attachedAt: Date.now(), oauthStateId: stateId, rooktest: true }]);
     await pool.query('insert into app.records (tbl,id,data) values ($1,$2,$3)', ['google_oauth_states', stateId, { stateHash: sha(state), nonceHash: 'x', proofHash: 'x', status: 'pending', ownerTransactionRecordId: txId, ownerRedirect: true, remember: false, ownerLocale: 'uk', createdAt: Date.now(), expiresAt: Date.now() + 6e5, rooktest: true }]);
     zaaiIds.push(txId, stateId);
-    return state;
+    return { state, cookie: `__Secure-tsv_aanmeld_binding_${txHash.slice(0, 16)}=${waarde}` };
   };
-  const aanmeldWaarde = randomBytes(32).toString('base64url');
-  const aanmeldCookie = `__Secure-tsv_aanmeld_binding=${aanmeldWaarde}`;
-  const stA = await zaaiAanmelding(sha(aanmeldWaarde));
-  const cbZonder = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/google/callback', { state: stA, code: 'rooktest-code' });
-  const stB = await zaaiAanmelding(sha(aanmeldWaarde));
-  const cbAnder = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/google/callback', { state: stB, code: 'rooktest-code' }, { cookie: `__Secure-tsv_aanmeld_binding=${randomBytes(32).toString('base64url')}` });
-  const stC = await zaaiAanmelding('');
-  const cbOud = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/google/callback', { state: stC, code: 'rooktest-code' }, { cookie: aanmeldCookie });
-  const stD = await zaaiAanmelding(sha(aanmeldWaarde));
-  const cbEigen = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/google/callback', { state: stD, code: 'rooktest-code' }, { cookie: aanmeldCookie });
-  check('login-CSRF: Google-callback zonder/met andere bindingscookie of zonder hash → LOGIN_BINDING_MISMATCH; eigen browser komt voorbij de controle', cbZonder.data?.reasonCode === 'LOGIN_BINDING_MISMATCH' && cbAnder.data?.reasonCode === 'LOGIN_BINDING_MISMATCH' && cbOud.data?.reasonCode === 'LOGIN_BINDING_MISMATCH' && cbEigen.data?.ok === false && !!cbEigen.data?.reasonCode && cbEigen.data.reasonCode !== 'LOGIN_BINDING_MISMATCH', `zonder ${cbZonder.data?.reasonCode}, ander ${cbAnder.data?.reasonCode}, oud ${cbOud.data?.reasonCode}, eigen ${cbEigen.data?.reasonCode}`);
+  const cbVerzoek = (st, cookie) => verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/google/callback', { state: st, code: 'rooktest-code' }, cookie ? { cookie } : {});
+  const w = () => randomBytes(32).toString('base64url');
+  const tA = await zaaiAanmelding(w());
+  const cbZonder = await cbVerzoek(tA.state);
+  const tB = await zaaiAanmelding(w());
+  const cbAnder = await cbVerzoek(tB.state, tB.cookie.replace(/=.*$/, `=${w()}`));
+  const tC = await zaaiAanmelding(w(), { metHash: false });
+  const cbOud = await cbVerzoek(tC.state, tC.cookie);
+  const vw = w(), tV = await zaaiAanmelding(vw, { v1: true });
+  const cbV1 = await cbVerzoek(tV.state, `__Secure-tsv_aanmeld_binding=${vw}; ${tV.cookie}`);
+  const tD = await zaaiAanmelding(w());
+  const cbEigen = await cbVerzoek(tD.state, tD.cookie);
+  const mis = (x) => x.data?.reasonCode === 'LOGIN_BINDING_MISMATCH';
+  const voorbij = (x) => x.data?.ok === false && !!x.data?.reasonCode && !mis(x);
+  check('login-CSRF: Google-callback zonder/met andere bindingscookie, zonder hash of met oude v1-binding → LOGIN_BINDING_MISMATCH; eigen browser komt voorbij de controle', mis(cbZonder) && mis(cbAnder) && mis(cbOud) && mis(cbV1) && voorbij(cbEigen), `zonder ${cbZonder.data?.reasonCode}, ander ${cbAnder.data?.reasonCode}, oud ${cbOud.data?.reasonCode}, v1 ${cbV1.data?.reasonCode}, eigen ${cbEigen.data?.reasonCode}`);
+  // B8c-2. Twee parallelle aanmeldingen (twee tabbladen) in één cookiejar: beide komen voorbij de binding,
+  // en het antwoord wist alleen de eigen bindingscookie.
+  const p1 = await zaaiAanmelding(w()), p2 = await zaaiAanmelding(w());
+  const jarP = `${p1.cookie}; ${p2.cookie}`;
+  const cbP1 = await cbVerzoek(p1.state, jarP), cbP2 = await cbVerzoek(p2.state, jarP);
+  check('login-CSRF: twee parallelle transacties in één cookiejar komen allebei voorbij de bindingscontrole', voorbij(cbP1) && voorbij(cbP2), `1 ${cbP1.data?.reasonCode}, 2 ${cbP2.data?.reasonCode}`);
 
   // B8d. "Overal afmelden" dekt alles: >100 sessies (alle pagina's), onthouden browsers, openstaande
   // handoff-codes, afgeronde-maar-niet-ingewisselde aanmeldtransacties en verouderde sessierijen.
