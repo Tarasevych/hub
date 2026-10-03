@@ -47,7 +47,8 @@ async function run(name: string): Promise<number> {
 const arg = process.argv[2] || '';
 if (!arg || arg === '--lijst') {
   for (const d of definitions) console.log(`${d.name}\t${d.cron}\t${d.handler}\t${JSON.stringify(d.payload || {})}`);
-  process.exitCode = arg ? 0 : 2;
+  // Ook hier expliciet stoppen: backend-modules starten bij import timers (bv. Google-client verversen).
+  process.exit(arg ? 0 : 2);
 } else {
   run(arg)
     .then((code) => { process.exitCode = code; })
