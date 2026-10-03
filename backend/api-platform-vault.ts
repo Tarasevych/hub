@@ -1,5 +1,6 @@
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
 import {db,secrets} from '../server/platform';
+import {stapOpFout,type StapOpAuth} from './stap-op';
 
 export const OWNER_VAULT_TABLE='owner_vault_v1';
 export const OWNER_VAULT_PURPOSES=['home-assistant','telegram','github','webhook','other'] as const;
@@ -194,6 +195,9 @@ export function createApiPlatformVaultRoutes(deps:{
       if(!revealHostAllowed(ctx.event))return deps.fail('OWNER_VAULT_REVEAL_HOST_FORBIDDEN',403);
       const body=deps.body(ctx.body);
       if(String(body.confirm||'')!==REVEAL_CONFIRM)return deps.fail('OWNER_VAULT_REVEAL_CONFIRM_REQUIRED',400);
+      // Fase 3: onthullen alleen met verse step-up (Google < 5 min of TOTP).
+      const stapFout=await stapOpFout(auth as unknown as StapOpAuth);
+      if(stapFout)return deps.fail(stapFout,403);
       const current=await owned(auth.user.id,ctx.params.id);
       if(!current)return deps.fail('OWNER_VAULT_NOT_FOUND',404);
       const resolved=await resolveVaultSecret();

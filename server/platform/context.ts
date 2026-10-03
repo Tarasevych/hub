@@ -9,6 +9,11 @@ export type VerzoekContext = {
   userId?: string;
   service?: string;
   systeem?: boolean;
+  /** Ingelogd account dat het verzoek doet, ook op systeemroutes (voor app.audit actor_id; niet voor RLS). */
+  actor?: string;
+  /** Verzoekgegevens voor de audit (ip wordt alleen gehasht opgeslagen). */
+  ip?: string;
+  ua?: string;
   /** Lui geladen: ruimtes (workspaces) waarvan userId eigenaar of actief lid is (alleen voor audit). */
   werkruimtes?: Promise<Set<string>>;
 };
@@ -35,8 +40,9 @@ const SYSTEEM_ROUTES = [
 export const isSysteemRoute = (route: string): boolean => SYSTEEM_ROUTES.some((r) => r.test(route));
 
 /** Voer een verzoek uit in een eigen context (router doet dit per route). */
-export function metVerzoek<T>(route: string, fn: () => Promise<T>): Promise<T> {
-  return opslag.run(isSysteemRoute(route) ? { route, systeem: true } : { route }, fn);
+export function metVerzoek<T>(route: string, fn: () => Promise<T>, meta: { ip?: string; ua?: string } = {}): Promise<T> {
+  const basis = { route, ip: meta.ip ? String(meta.ip).slice(0, 64) : undefined, ua: meta.ua ? String(meta.ua).slice(0, 300) : undefined };
+  return opslag.run(isSysteemRoute(route) ? { ...basis, systeem: true } : basis, fn);
 }
 
 /**
@@ -45,7 +51,9 @@ export function metVerzoek<T>(route: string, fn: () => Promise<T>): Promise<T> {
  */
 export function zetGebruiker(userId: string, service?: string): void {
   const c = opslag.getStore();
-  if (!c || c.systeem || !ID.test(String(userId || ''))) return;
+  if (!c || !ID.test(String(userId || ''))) return;
+  c.actor = userId;
+  if (c.systeem) return;
   if (c.userId !== userId) c.werkruimtes = undefined;
   c.userId = userId;
   if (service) c.service = String(service).slice(0, 40);

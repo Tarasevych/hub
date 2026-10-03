@@ -111,7 +111,7 @@ export function router(routes: RouterRoutes): RouterHandler {
         console.error(`[router] onverwachte fout in ${gekozen.route.pattern}:`, err);
         return error('Internal server error', 500);
       }
-    });
+    }, { ip: event.requestContext?.http?.sourceIp, ua: event.requestContext?.http?.userAgent });
   };
   return Object.assign(handler, { patronen: compiled.map((r) => r.pattern) });
 }

@@ -2,6 +2,7 @@ import {createHmac,randomBytes,scrypt,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
 import {db,clearLoginFailures,envKey32,lockoutRemaining,openWithEnvKey,pepperedHash,registerLoginFailure,sealWithEnvKey} from '../server/platform';
 import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './google-contour';
+import {stapOpFout,totpStapOpVastleggen,type StapOpAuth} from './stap-op';
 
 const scryptAsync=promisify(scrypt);
 export const METHOD_IDS=['google','password','microsoft','apple','facebook','phone','totp','recovery','webauthn','push'] as const;
@@ -9,7 +10,7 @@ export type MethodId=typeof METHOD_IDS[number];
 export type LoginMethodId='google'|'password'|'microsoft'|'apple'|'facebook'|'phone';
 type Binding={id:string;userId:string;method:LoginMethodId;providerSubject:string;email:string;status:'active'|'disabled'|'pending';lastUsedAt:number;createdAt:number;updatedAt:number};
 type PasswordRecord={id:string;userId:string;algorithm:'scrypt';n:number;r:number;p:number;salt:string;hash:string;mustChange:boolean;createdAt:number;updatedAt:number};
-type TotpRecord={id:string;userId:string;secret?:string;secretEnc?:string;confirmed:boolean;createdAt:number;updatedAt:number};
+type TotpRecord={id:string;userId:string;secret?:string;secretEnc?:string;confirmed:boolean;createdAt:number;updatedAt:number;/** fase 3: laatst gebruikt tijdvak (replaybescherming) */lastStep?:number};
 type RecoveryRecord={id:string;userId:string;hashes:string[];hashVersion?:number;createdAt:number;remaining:number};
 type PhoneRecord={id:string;userId:string;phone:string;verified:boolean;createdAt:number;updatedAt:number};
 type WebauthnRecord={id:string;userId:string;credentialId:string;label:string;createdAt:number};
@@ -59,12 +60,33 @@ function totpCode(secret:Buffer,step=Math.floor(Date.now()/30000)){
   const code=((hmac[offset]&0x7f)<<24|hmac[offset+1]<<16|hmac[offset+2]<<8|hmac[offset+3])%1e6;
   return String(code).padStart(6,'0');
 }
-const totpValid=(secret:Buffer,code:string)=>{
+/** Tijdvak (30 s) waarbij de code hoort (±1 vak speling), of -1. */
+const totpStap=(secret:Buffer,code:string)=>{
   const expected=String(code||'').replace(/\s/g,'');
-  if(!/^\d{6}$/.test(expected))return false;
-  for(const delta of[-1,0,1])if(totpCode(secret,Math.floor(Date.now()/30000)+delta)===expected)return true;
-  return false;
+  if(!/^\d{6}$/.test(expected))return -1;
+  const nu=Math.floor(Date.now()/30000);
+  for(const delta of[-1,0,1])if(totpCode(secret,nu+delta)===expected)return nu+delta;
+  return -1;
 };
+const totpValid=(secret:Buffer,code:string)=>totpStap(secret,code)>=0;
+/**
+ * Fase 3: TOTP-code eenmalig gebruiken. Geldig én tijdvak hoger dan het laatst gebruikte (atomisch in de DB):
+ * dezelfde code (of een oudere) nog eens indienen werkt niet, ook niet gelijktijdig.
+ */
+async function totpGebruiken(row:TotpRecord,code:string):Promise<'ok'|'ongeldig'|'hergebruikt'|'sleutel'>{
+  const secret=totpSecretOf(row);
+  if(!secret)return'sleutel';
+  const stap=totpStap(fromBase32(secret),code);
+  if(stap<0)return'ongeldig';
+  return await db.zetAlsHoger(TOTP,row.id,'lastStep',stap)?'ok':'hergebruikt';
+}
+/** Eenmalige herstelcode verbruiken (atomisch). */
+async function herstelcodeGebruiken(userId:string,code:string){
+  const recovery=await recoveryFor(userId);
+  const hashed=recovery?recoveryMatches(recovery,String(code||'').trim().toUpperCase()):'';
+  if(!recovery||!hashed||!recovery.hashes.includes(hashed))return false;
+  return db.takeArrayValue(RECOVERY,recovery.id,'hashes',hashed,'remaining');
+}
 async function hashPassword(password:string){
   const salt=randomBytes(16);
   const hash=await scryptAsync(password,salt,32,{N:16384,r:8,p:1}) as Buffer;
@@ -244,9 +266,9 @@ export async function verifyPasswordLogin(email:string,password:string,totp=''){
   const totpRow=await totpFor(user.id);
   if(totpRow?.confirmed){
     if(!totp)return{status:'mfa' as const,code:'MFA_REQUIRED',http:200,user:{id:user.id,email:user.email,name:user.name,role:user.role,status:user.status}};
-    const secret=totpSecretOf(totpRow);
-    if(!secret)return{status:'unavailable' as const,code:'ACCESS_TOTP_KEY_MISSING',http:503};
-    if(!totpValid(fromBase32(secret),totp)){
+    const uitkomst=await totpGebruiken(totpRow,totp);
+    if(uitkomst==='sleutel')return{status:'unavailable' as const,code:'ACCESS_TOTP_KEY_MISSING',http:503};
+    if(uitkomst!=='ok'){
       const recovery=await recoveryFor(user.id);
       const hashed=recovery?recoveryMatches(recovery,totp.trim().toUpperCase()):'';
       if(!recovery||!hashed||!recovery.hashes.includes(hashed))return failed('ACCESS_MFA_INVALID');
@@ -295,7 +317,26 @@ export function createAccessPlaneRoutes(deps:{
     if(!auth||auth.user.role!=='owner')return null;
     return auth;
   };
+  // Fase 3: step-up (verse Google-aanmelding of TOTP binnen 5 min) voor gevoelige acties; null = mag door.
+  const stapOp=async(auth:unknown)=>{const fout=await stapOpFout(auth as StapOpAuth);return fout?deps.fail(fout,403):null;};
   return{
+    // Step-up met TOTP: daarna mag deze sessie 5 minuten gevoelige acties doen. Lockout na herhaald falen.
+    'POST /api/owner/access/stap-op':[async(ctx:{event:Record<string,unknown>;body:unknown})=>{
+      const auth=await gate(ctx.event,ctx.body);
+      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
+      const subject=`stap-op:${auth.user.id}`;
+      const locked=await lockoutRemaining(subject);
+      if(locked>0)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
+      const row=await totpFor(auth.user.id);
+      if(!row?.confirmed)return deps.fail('STEP_UP_TOTP_NOT_ENROLLED',400);
+      const uitkomst=await totpGebruiken(row,String(deps.body(ctx.body).code||''));
+      if(uitkomst==='sleutel')return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
+      if(uitkomst!=='ok'){await registerLoginFailure(subject);await deps.audit(auth.user.id,'access.step-up','failure',{reden:uitkomst});return deps.fail(uitkomst==='hergebruikt'?'ACCESS_TOTP_REUSED':'ACCESS_TOTP_INVALID',400);}
+      await clearLoginFailures(subject);
+      await totpStapOpVastleggen(auth as unknown as StapOpAuth);
+      await deps.audit(auth.user.id,'access.step-up','success',{methode:'totp'});
+      return deps.respond({ok:true,stepUp:'totp',maxAgeSeconds:300});
+    }],
     'POST /api/owner/access/catalog':[async()=>{
       const[contour,policy]=await Promise.all([resolveGoogleContour(),policyOf()]);
       return deps.respond({ok:true,methods:LOGIN_METHODS.map(id=>({id,enabled:policy.enabled[id]!==false,configured:id==='google'?contour.credentialsConfigured:id==='password'?policy.enabled.password!==false:false})),mfa:policy.mfa,google:publicGoogleContour(contour)});
@@ -323,6 +364,7 @@ export function createAccessPlaneRoutes(deps:{
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const password=String(deps.body(ctx.body).password||'');
       if(password.length<10)return deps.fail('ACCESS_PASSWORD_TOO_SHORT',400);
+      const stap=await stapOp(auth);if(stap)return stap;
       const envelope=await hashPassword(password);
       const existing=await passwordFor(auth.user.id);
       const now=Date.now();
@@ -338,6 +380,7 @@ export function createAccessPlaneRoutes(deps:{
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const blocked=await assertNotLastMethod(auth.user,{method:'password'});
       if(blocked)return deps.fail(blocked,409);
+      const stap=await stapOp(auth);if(stap)return stap;
       const existing=await passwordFor(auth.user.id);
       if(existing?.id)await db.delete(PASSWORDS,[existing.id]);
       const rows=(await bindingsFor(auth.user.id)).filter(item=>item.method==='password');
@@ -352,6 +395,7 @@ export function createAccessPlaneRoutes(deps:{
       if(!LOGIN_METHODS.includes(method))return deps.fail('ACCESS_METHOD_UNKNOWN',400);
       const blocked=await assertNotLastMethod(auth.user,{method});
       if(blocked)return deps.fail(blocked,409);
+      const stap=await stapOp(auth);if(stap)return stap;
       const rows=(await bindingsFor(auth.user.id)).filter(item=>item.method===method);
       if(rows.length)await db.delete(BINDINGS,rows.map(item=>item.id));
       if(method==='password'){
@@ -379,6 +423,7 @@ export function createAccessPlaneRoutes(deps:{
       if(!identity&&!row)return deps.fail('ACCESS_BINDING_NOT_FOUND',404);
       const blocked=await assertNotLastMethod(auth.user,identity?{identityId:id}:{bindingId:id,method:row?.method});
       if(blocked)return deps.fail(blocked,409);
+      const stap=await stapOp(auth);if(stap)return stap;
       if(identity)await db.delete(IDENTITIES,[identity.id]);
       if(row)await db.delete(BINDINGS,[row.id]);
       await deps.audit(auth.user.id,'access.binding.unbind','success',{method:identity?'google':row?.method,email:identity?.email||row?.email});
@@ -389,6 +434,7 @@ export function createAccessPlaneRoutes(deps:{
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const phone=String(deps.body(ctx.body).phone||'').replace(/[^\d+]/g,'').trim();
       if(phone.length<8)return deps.fail('ACCESS_PHONE_INVALID',400);
+      const stap=await stapOp(auth);if(stap)return stap;
       const existing=await phoneFor(auth.user.id);
       const now=Date.now();
       const record={userId:auth.user.id,phone,verified:false,createdAt:existing?.createdAt||now,updatedAt:now};
@@ -434,9 +480,10 @@ export function createAccessPlaneRoutes(deps:{
       const secret=totpSecretOf(row);
       if(!secret)return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
       if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
-      if(!totpValid(fromBase32(secret),code))return deps.fail('ACCESS_TOTP_INVALID',400);
+      const stapNr=totpStap(fromBase32(secret),code);
+      if(stapNr<0)return deps.fail('ACCESS_TOTP_INVALID',400);
       const{codes,hashes,hashVersion}=newRecoveryCodes();
-      await db.update(TOTP,[{id:row.id,record:{...withoutId(row),confirmed:true,updatedAt:Date.now()}}]);
+      await db.update(TOTP,[{id:row.id,record:{...withoutId(row),confirmed:true,lastStep:stapNr,updatedAt:Date.now()}}]);
       const recovery=await recoveryFor(auth.user.id);
       const rec={userId:auth.user.id,hashes,hashVersion,remaining:codes.length,createdAt:Date.now()};
       if(recovery?.id)await db.update(RECOVERY,[{id:recovery.id,record:rec}]);
@@ -448,6 +495,13 @@ export function createAccessPlaneRoutes(deps:{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const row=await totpFor(auth.user.id);
+      // Fase 3: uitschakelen vereist de huidige TOTP-code (of een ongebruikte herstelcode bij verlies van het toestel).
+      if(row?.confirmed){
+        const code=String(deps.body(ctx.body).code||'');
+        const uitkomst=await totpGebruiken(row,code);
+        if(uitkomst==='sleutel')return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
+        if(uitkomst!=='ok'&&!await herstelcodeGebruiken(auth.user.id,code)){await deps.audit(auth.user.id,'access.totp.disable','failure',{reden:uitkomst});return deps.fail(uitkomst==='hergebruikt'?'ACCESS_TOTP_REUSED':'ACCESS_TOTP_CODE_REQUIRED',400);}
+      }
       if(row?.id)await db.delete(TOTP,[row.id]);
       await deps.audit(auth.user.id,'access.totp.disable','success',{});
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
@@ -456,6 +510,13 @@ export function createAccessPlaneRoutes(deps:{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
+      // Fase 3: nieuwe herstelcodes alleen met de huidige TOTP-code (zonder TOTP: step-up).
+      const totpRij=await totpFor(auth.user.id);
+      if(totpRij?.confirmed){
+        const uitkomst=await totpGebruiken(totpRij,String(deps.body(ctx.body).code||''));
+        if(uitkomst==='sleutel')return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
+        if(uitkomst!=='ok')return deps.fail(uitkomst==='hergebruikt'?'ACCESS_TOTP_REUSED':'ACCESS_TOTP_CODE_REQUIRED',400);
+      }else{const stap=await stapOp(auth);if(stap)return stap;}
       const{codes,hashes,hashVersion}=newRecoveryCodes();
       const recovery=await recoveryFor(auth.user.id);
       const rec={userId:auth.user.id,hashes,hashVersion,remaining:codes.length,createdAt:Date.now()};
@@ -467,6 +528,7 @@ export function createAccessPlaneRoutes(deps:{
     'POST /api/owner/access/policy/save':[async(ctx)=>{
       const auth=await ownerGate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_ACCESS_FORBIDDEN',403);
+      const stap=await stapOp(auth);if(stap)return stap;
       const body=deps.body(ctx.body);
       const enabled=(body.enabled&&typeof body.enabled==='object'?body.enabled:{}) as Partial<Record<MethodId,boolean>>;
       const next=await writePolicy(enabled,body.mfa==='required'?'required':'optional');
@@ -480,6 +542,7 @@ export function createAccessPlaneRoutes(deps:{
       const method=String(body.method||'') as LoginMethodId;
       const action=String(body.action||'');
       if(!LOGIN_METHODS.includes(method))return deps.fail('ACCESS_METHOD_UNKNOWN',400);
+      const stap=await stapOp(auth);if(stap)return stap;
       const userId=ctx.params.id;
       if(action==='disable'||action==='unbind'){
         const[contour,policy,password,bindings,phone,identities,target]=await Promise.all([
@@ -512,6 +575,7 @@ export function createAccessPlaneRoutes(deps:{
     'POST /api/owner/access/user/:id/reset-password':[async(ctx)=>{
       const auth=await ownerGate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_ACCESS_FORBIDDEN',403);
+      const stap=await stapOp(auth);if(stap)return stap;
       const temp=`Tmp-${randomBytes(6).toString('base64url')}!9`;
       const envelope=await hashPassword(temp);
       const existing=await passwordFor(ctx.params.id);
