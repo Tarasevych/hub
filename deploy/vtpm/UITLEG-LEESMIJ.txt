@@ -1,0 +1,87 @@
+UITLEG-LEESMIJ.txt - T:\mijn-ruimte\scripts\vtpm-20261003\
+(Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
+У цьому файлі НЕМАЄ жодних секретів. / Dit bestand bevat GEEN geheimen.
+
+==============================================================================
+УКРАЇНСЬКА
+==============================================================================
+
+ЩО ЦЕ І НАВІЩО
+- Диск сервера (VM) зашифрований (LUKS). Зараз після КОЖНОГО перезапуску треба вручну
+  вводити пароль у консолі VM, інакше сайт не працює.
+- Мета: щоб VM розблоковувалась САМА за допомогою віртуального чипа безпеки (vTPM)
+  у Hyper-V. Ваш пароль при цьому ЗАЛИШАЄТЬСЯ і працює як запасний ключ.
+
+ФАЙЛИ
+- stap1-admin.ps1           - запускаєте ВИ, від імені адміністратора (вмикає vTPM).
+- luks-tpm-ontgrendelen.sh  - скрипт для VM (встановлює clevis, додає ключ TPM).
+
+КРОКИ
+1. PowerShell -> "Запуск від імені адміністратора", потім:
+     powershell.exe -NoProfile -ExecutionPolicy Bypass -File T:\mijn-ruimte\scripts\vtpm-20261003\stap1-admin.ps1
+   Скрипт: вимикає VM, перевіряє Secure Boot, вмикає vTPM, пропонує зберегти
+   сертифікати Hyper-V (див. РИЗИК нижче), запускає VM і відкриває консоль.
+   У консолі введіть пароль LUKS (як завжди).
+2. Після цього асистент встановлює пакети. Потім ще ОДИН раз потрібен ваш пароль:
+   у звичайному PowerShell (не адмін):
+     ssh -t -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver beheer@203.0.113.10 sudo bash /root/uitrol/vtpm/luks-tpm-ontgrendelen.sh binden
+   Введіть пароль LUKS (його не видно на екрані). Скрипт додає НОВИЙ слот з ключем TPM,
+   старий слот з паролем НЕ видаляється.
+3. Тестовий перезапуск - тільки разом з вами, коли ви біля консолі VM. Якщо VM сама
+   розблокується - готово. Якщо ні - просто введіть пароль, як раніше.
+
+РИЗИК (ВАЖЛИВО)
+- Ключ vTPM захищений сертифікатами Hyper-V у сховищі Windows цього ПК
+  ("Shielded VM Local Certificates"). Якщо Windows перевстановити або ПК замінити
+  без копії цих сертифікатів, vTPM буде втрачено. Тоді VM знову проситиме пароль
+  LUKS - тому пароль НІКОЛИ не можна забувати і не можна видаляти.
+- Скрипт stap1 може експортувати ці сертифікати у
+  R:\mijn-ruimte-reservekopie\sleutels\hyperv-vtpm\ (PFX з паролем, який ви вигадаєте).
+  Зробіть ще копію на окрему флешку. Нікому не надсилайте.
+- Ключ прив'язаний до стану Secure Boot (PCR 7). Після оновлення прошивки/Secure Boot
+  VM може знову попросити пароль. Тоді введіть пароль і попросіть асистента
+  виконати "clevis luks regen" (повторна прив'язка).
+- Хто має права адміністратора на цьому ПК, той після автоматичного розблокування
+  може потрапити у VM через консоль. Але такий адміністратор і так контролює ПК.
+  Захищайте свій обліковий запис Windows.
+
+==============================================================================
+NEDERLANDS
+==============================================================================
+
+WAT EN WAAROM
+- De schijf van de server (VM) is versleuteld (LUKS). Nu moet na ELKE herstart de
+  wachtwoordzin in de VM-console getypt worden, anders werkt de site niet.
+- Doel: de VM ontgrendelt ZELF via de virtuele beveiligingschip (vTPM) van Hyper-V.
+  Je wachtwoordzin BLIJFT en werkt als reservesleutel.
+
+BESTANDEN
+- stap1-admin.ps1           - door JOU als administrator te starten (zet de vTPM aan).
+- luks-tpm-ontgrendelen.sh  - script voor de VM (installeert clevis, voegt TPM-sleutel toe).
+
+STAPPEN
+1. PowerShell -> "Als administrator uitvoeren", dan:
+     powershell.exe -NoProfile -ExecutionPolicy Bypass -File T:\mijn-ruimte\scripts\vtpm-20261003\stap1-admin.ps1
+   Het script sluit de VM af, controleert Secure Boot, zet de vTPM aan, biedt aan de
+   Hyper-V-certificaten te bewaren (zie RISICO), start de VM en opent de console.
+   Typ in de console de LUKS-wachtwoordzin (zoals altijd).
+2. Daarna installeert de assistent de pakketten. Dan is je wachtwoordzin nog EEN keer nodig,
+   in een gewone PowerShell (geen admin):
+     ssh -t -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver beheer@203.0.113.10 sudo bash /root/uitrol/vtpm/luks-tpm-ontgrendelen.sh binden
+   Typ de LUKS-wachtwoordzin (onzichtbaar). Het script voegt een NIEUW slot met TPM-sleutel
+   toe; het oude wachtwoordslot wordt NIET verwijderd.
+3. Proefherstart alleen samen met jou, terwijl je bij de VM-console zit. Ontgrendelt de VM
+   vanzelf: klaar. Zo niet: typ gewoon de wachtwoordzin zoals vroeger.
+
+RISICO (BELANGRIJK)
+- De vTPM-sleutel wordt beschermd door Hyper-V-certificaten in het Windows-certificaatarchief
+  van deze pc ("Shielded VM Local Certificates"). Windows opnieuw installeren of de pc vervangen
+  zonder kopie van die certificaten = vTPM weg. De VM vraagt dan weer de LUKS-wachtwoordzin;
+  vergeet die dus NOOIT en verwijder hem nooit.
+- stap1 kan de certificaten exporteren naar R:\mijn-ruimte-reservekopie\sleutels\hyperv-vtpm\
+  (PFX met een zelfgekozen wachtwoord). Zet ook een kopie op een aparte USB-stick. Nooit versturen.
+- De sleutel is gebonden aan de Secure Boot-toestand (PCR 7). Na een firmware-/Secure Boot-update
+  kan de VM weer om de wachtwoordzin vragen. Typ die dan en laat de assistent
+  "clevis luks regen" uitvoeren (opnieuw binden).
+- Wie administrator is op deze pc, kan na automatisch ontgrendelen via de console in de VM komen.
+  Zo iemand beheert de pc echter toch al. Bescherm je Windows-account.

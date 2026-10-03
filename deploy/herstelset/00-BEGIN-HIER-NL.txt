@@ -1,0 +1,201 @@
+BEGIN HIER — DE SITE "MIJN RUIMTE" ZELF TERUGZETTEN
+Herstelset. Versie van 03-10-2026. Dit bestand bevat GEEN wachtwoorden of geheime sleutels.
+(Dezelfde handleiding in het Oekraïens: 00-BEGIN-HIER-UA.txt / .pdf)
+
+Voor wie: voor Pavlo of iemand die helpt, als de pc gehackt of kapot is en de site
+(hub.tarasevych.com enz.) niet meer werkt. Kort: nieuwe pc -> nieuwe virtuele machine ->
+code + versleutelde back-up van deze schijf -> ontsleutelen met JOUW sleutel -> site werkt weer.
+
+==============================================================================
+1. WAT STAAT OP DEZE SCHIJF
+==============================================================================
+00-BEGIN-HIER-UA.txt / .pdf  handleiding in het Oekraïens (pdf om te printen)
+00-BEGIN-HIER-NL.txt         deze handleiding
+VERSIE.txt                   welke codeversie en welke back-up erin zitten
+SHA256SUMS.txt               controlesommen van alle bestanden
+controleer-herstelset.ps1    controle dat geen bestand beschadigd is
+programmas\age\              age.exe (ontsleutelen), gecontroleerd
+broncode\                    code van de site (tar.gz + git-bundle) en dashboard\
+scripts\                     scripts: VM maken, herstellen, HERSTEL.md
+back-ups\database-en-uploads\<datum>\  VERSLEUTELDE kopie van database en bestanden
+back-ups\geheimen\<datum>\   VERSLEUTELDE servergeheimen (wachtwoorden, tunnelsleutel)
+sleutels\                    alleen uitleg en de PUBLIEKE sleutel. De geheime sleutel
+                             staat hier NIET (en zo hoort het).
+
+==============================================================================
+2. WAT JE NODIG HEBT
+==============================================================================
+[ ] Nieuwe pc met Windows 11 Pro (Home heeft geen Hyper-V), 16 GB RAM of meer,
+  150 GB vrij op een interne schijf, internet.
+[ ] Deze externe schijf.
+[ ] Een APARTE USB-stick of papier met de HERSTELSLEUTEL herstelsleutel-age.txt (3 regels;
+  regel 2 begint met "# public key: age1...", regel 3 met "AGE-SECRET-KEY-1...").
+  Zonder die sleutel zijn de back-ups NIET te ontsleutelen. Alleen op papier? Maak in
+  Kladblok een bestand herstelsleutel-age.txt en typ de 3 regels zorgvuldig over.
+[ ] Wachtwoorden die jij kent: Cloudflare-account (tunnel), GitHub (als je de code daar haalt),
+  een nieuwe wachtwoordzin voor de VM-schijf (LUKS) en voor gebruiker beheer
+  (die bedenk je tijdens de installatie).
+
+==============================================================================
+3. STAPPEN (op volgorde; ongeveer 2-3 uur)
+==============================================================================
+Zet de set in een map ZONDER spaties, bijv. E:\mijn-ruimte-herstelset. Hieronder is E: deze
+schijf en F: de USB-stick met de sleutel. Andere letters? Vul je eigen in.
+
+STAP 1. PowerShell openen en variabelen klaarzetten.
+  Start -> typ PowerShell -> Enter. Voer uit (elk NIEUW PowerShell-venster opnieuw):
+    cd E:\mijn-ruimte-herstelset
+    Set-ExecutionPolicy -Scope Process Bypass -Force
+    $sl = 'F:\herstelsleutel-age.txt'
+    $k  = "$HOME\.ssh\mijn-ruimte-webserver"
+    $vm = 'beheer@203.0.113.10'
+    $g  = (Get-ChildItem .\back-ups\geheimen -Recurse -Filter *.tar.age | Sort-Object Name | Select-Object -Last 1).FullName
+    $b  = (Get-ChildItem .\back-ups\database-en-uploads -Directory | Sort-Object Name | Select-Object -Last 1).FullName
+  Set controleren:
+    .\controleer-herstelset.ps1
+  Verwacht: "OK: ... bestanden in orde". Bij "BESCHADIGD": neem een andere kopie.
+
+STAP 2. Sleutel testen (schrijft niets naar schijf).
+    .\scripts\ontsleutel-naar-vm.ps1 -Bestand $g -Sleutel $sl -Stap controle-sleutel
+  Verwacht: "OK: ontsleuteld". Vergelijk de SHA256 met KLARE-TEKST-TAR.sha256 in dezelfde map:
+  die moeten gelijk zijn. Bij "FOUT": verkeerde sleutel.
+
+STAP 3. Hyper-V aanzetten.
+  PowerShell ALS ADMINISTRATOR (rechtsklik -> Als administrator uitvoeren):
+    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+  Pc herstarten.
+
+STAP 4. Ubuntu Server 24.04 LTS downloaden.
+  https://ubuntu.com/download/server -> ubuntu-24.04.x-live-server-amd64.iso, bijv. naar C:\iso\.
+  (Liefst Get-FileHash <bestand> vergelijken met SHA256SUMS op https://releases.ubuntu.com/24.04/.)
+  VARIANT B: staat er naast de set een map E:\mijn-ruimte-vm-export\ (Hyper-V-export van de oude
+  VM, apart door een administrator gemaakt), dan kun je die importeren i.p.v. stap 5-6 (admin):
+    .\scripts\nieuwe-vm-maken.ps1 -AlleenNetwerk
+    Import-VM -Path (Get-ChildItem E:\mijn-ruimte-vm-export -Recurse -Filter *.vmcx | Select-Object -First 1).FullName -Copy -GenerateNewId -VirtualMachinePath C:\mijn-ruimte-vm -VhdDestinationPath C:\mijn-ruimte-vm\schijven
+    Start-VM mijn-ruimte-webserver; vmconnect localhost mijn-ruimte-webserver
+  Typ de OUDE LUKS-wachtwoordzin, log in de console in als beheer. Doe stap 7 (nieuwe sleutel),
+  maar plak de publieke helft in de console: nano ~/.ssh/authorized_keys, in het VM-venster
+  Clipboard -> Type clipboard text, Ctrl+O, Enter, Ctrl+X. Dan stap 8 en meteen stap 13
+  (nieuwste databasekopie), daarna stap 15.
+  (Zet de export NIET in de map van de set: bijwerken van de set overschrijft die map.)
+
+STAP 5. Virtuele machine maken (PowerShell als administrator, in de map van de set):
+    cd E:\mijn-ruimte-herstelset
+    Set-ExecutionPolicy -Scope Process Bypass -Force
+    .\scripts\nieuwe-vm-maken.ps1 -Basis C:\mijn-ruimte-vm -Iso C:\iso\ubuntu-24.04.x-live-server-amd64.iso
+  (Echte ISO-naam invullen.) Het VM-venster gaat open.
+
+STAP 6. Ubuntu installeren in het VM-venster (pijltjes, Enter, spatie = aanvinken):
+  - Language: English. Keyboard: naar keuze. Type: Ubuntu Server.
+  - Network: eth0 -> Edit IPv4 -> Manual:
+      Subnet 203.0.113.0/24   Address 203.0.113.10   Gateway 203.0.113.1   Name servers 1.1.1.1,9.9.9.9
+  - Proxy: leeg. Mirror: laten staan.
+  - Storage: "Use an entire disk", vink "Set up this disk as an LVM group" en
+    "Encrypt the LVM group with LUKS" aan -> bedenk een schijfwachtwoordzin (LUKS).
+    SCHRIJF DIE OP. Zonder start de VM niet.
+  - Profile: Your name beheer; Server name mijn-ruimte-webserver; Username beheer; wachtwoord bedenken en opschrijven.
+  - Ubuntu Pro: Skip. SSH: vink "Install OpenSSH server" aan. Snaps: niets.
+  - Aan het eind "Reboot Now". Vraagt hij de schijf te verwijderen: Media -> DVD Drive -> Eject, dan Enter.
+  - Na de herstart de LUKS-wachtwoordzin typen. Wacht op "mijn-ruimte-webserver login:".
+
+STAP 7. Nieuwe SSH-sleutel op de nieuwe pc (gewone PowerShell; de oude sleutel zit bewust
+  niet in de set - voor een nieuwe pc maak je een nieuwe):
+    ssh-keygen -t ed25519 -f "$HOME\.ssh\mijn-ruimte-webserver"
+  (twee keer Enter: geen wachtwoord). Publieke helft naar de VM:
+    Get-Content "$HOME\.ssh\mijn-ruimte-webserver.pub" | ssh beheer@203.0.113.10 'mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'
+  (Eerste keer yes typen, dan het wachtwoord van beheer.) Controle:
+    ssh -i $k $vm hostname
+  Verwacht: mijn-ruimte-webserver, zonder wachtwoordvraag.
+
+STAP 8. Scripts, code en publieke sleutel naar de VM (in de map van de set):
+    ssh -i $k $vm 'mkdir -p ~/herstel'
+    scp -i $k -r .\scripts .\broncode .\sleutels "${vm}:herstel/"
+
+STAP 9. Basisinrichting van de VM (updates, datavolume, PostgreSQL, Node, cloudflared, age).
+  Duurt 10-20 minuten; vraagt één keer het wachtwoord van beheer:
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh basis
+  Aan het eind: "[herstel] basis klaar".
+
+STAP 10. Servergeheimen terugzetten (ontsleutelen op de pc, direct naar de VM):
+    .\scripts\ontsleutel-naar-vm.ps1 -Bestand $g -Sleutel $sl -Stap geheimen
+  Verwacht: "geheimen.env teruggezet" en "OK: geheimen".
+
+STAP 11. Database (PostgreSQL met hetzelfde wachtwoord als in de geheimen):
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh database
+
+STAP 12. Site installeren (code uit de set; ~5-10 minuten):
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh app
+  Aan het eind: {"ok":true,"db":true}.
+  (Andere bron voor de code: GitHub Tarasevych/hub, branch zelf-hosten - privé, je GitHub-login
+  is nodig. De set heeft dat niet nodig.)
+
+STAP 13. Database en gebruikersbestanden uit de back-up terugzetten:
+    .\scripts\ontsleutel-naar-vm.ps1 -Bestand "$b\database.dump.age" -Sleutel $sl -Stap db-terugzetten
+    .\scripts\ontsleutel-naar-vm.ps1 -Bestand "$b\uploads.tar.gz.age" -Sleutel $sl -Stap uploads-terugzetten
+  Verwacht: "records: <aantal>" en {"ok":true,"db":true}. Heb je een nieuwere kopie
+  (bijv. uit R:\...\vm-back-ups), gebruik die.
+
+STAP 14. Cloudflare-tunnel (site bereikbaar vanaf internet).
+  VARIANT A (normaal): de oude tunnelsleutel is in stap 10 teruggezet:
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh tunnel
+  VARIANT B (nieuwe tunnel; verplicht als de pc GEHACKT is of de oude pc nog kan draaien):
+  verwijder eerst in het Cloudflare-dashboard (Zero Trust -> Networks -> Tunnels) de oude tunnel
+  "mijn-ruimte". Dan:
+    ssh -t -i $k $vm sudo cloudflared tunnel login
+  (open de getoonde link in de browser, log in bij Cloudflare, kies tarasevych.com), daarna:
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh tunnel-nieuw mijn-ruimte-2
+
+STAP 15. Controle:
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh controle
+  Dan in de browser https://hub.tarasevych.com: de site opent en inloggen werkt.
+
+STAP 16. Server afschermen (firewall en SSH alleen met sleutel). Eén voor één; na elke
+  "firewall"/"ssh" in een NIEUW PowerShell-venster "ssh -i $k $vm hostname" testen en pas dan
+  "bevestig-...". Zonder bevestiging draait de wijziging na 5 min vanzelf terug.
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh fail2ban
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh firewall
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh bevestig-firewall
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh ssh
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh bevestig-ssh
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh controle
+
+STAP 17. Na het herstel:
+  - De server maakt elke nacht een nieuwe VERSLEUTELDE back-up. Ophalen en deze set bijwerken:
+    scripts\reservekopie-ophalen.ps1 en scripts\herstelset-bijwerken.ps1 (die gebruiken T:\ en R:\;
+    op een nieuwe pc eigen -Project/-Reserve/-Doel opgeven of iemand laten helpen).
+  - Pc GEHACKT: ga ervan uit dat geheimen en herstelsleutel gestolen kunnen zijn. Wijzig de
+    wachtwoorden van Cloudflare, GitHub en Google; maak een NIEUWE herstelsleutel
+    (programmas\age\age\age-keygen.exe) en zet de publieke helft op de server
+    (/etc/mijn-ruimte/backup-ontvanger.age.pub); laat een vakman de sleutels in geheimen.env vervangen.
+
+==============================================================================
+4. DEZE SET BIJWERKEN (wekelijks of maandelijks)
+==============================================================================
+Sluit de externe schijf aan (bijv. letter E:) en voer in een gewone PowerShell uit:
+    powershell -NoProfile -ExecutionPolicy Bypass -File T:\mijn-ruimte\scripts\herstelset-bijwerken.ps1 -HaalEerstOp -Doel E:\
+Het script haalt de nieuwste back-up van de server, ververst de set op R:\, kopieert hem naar
+E:\mijn-ruimte-herstelset en controleert alle controlesommen. Aan het eind:
+"OK: E:\mijn-ruimte-herstelset". Daarna "Hardware veilig verwijderen".
+
+==============================================================================
+5. WOORDENLIJST
+==============================================================================
+age     - versleutelprogramma. Versleutelt met de PUBLIEKE sleutel, ontsleutelt alleen met de GEHEIME.
+sleutel - herstelsleutel-age.txt (geheim) of age1... (publiek, niet geheim).
+tunnel  - beveiligde Cloudflare-verbinding: de site is bereikbaar zonder open poorten op de pc.
+VM      - virtuele machine: "computer in de computer" (Hyper-V) waarop de site draait.
+LUKS    - versleuteling van de VM-schijf. Na elke start is de LUKS-wachtwoordzin nodig
+          (tenzij automatisch ontgrendelen via vTPM is ingesteld).
+GitHub  - website waar de code staat (Tarasevych/hub, branch zelf-hosten).
+SSH     - veilig inloggen van de pc op de VM met een sleutel.
+
+==============================================================================
+6. WAT JE NIET MOET DOEN
+==============================================================================
+- De herstelsleutel (herstelsleutel-age.txt) NIET op of naast deze schijf bewaren.
+- Sleutel, geheimen of back-ups NIET mailen, via chat sturen of in de cloud zetten.
+- Back-ups NIET ontsleutelen naar bestanden op de pc - alleen met ontsleutel-naar-vm.ps1.
+- De LUKS-wachtwoordzin NIET vergeten of verwijderen.
+- NIET de oude en de nieuwe server tegelijk met dezelfde tunnel laten draaien.
+- Bestanden in de set NIET met de hand wijzigen (de controle meldt dan "BESCHADIGD").
+- GEEN opdrachten van internet uitvoeren die je niet begrijpt; lees eerst deze handleiding.
