@@ -1,6 +1,10 @@
 // Eenheidstests voor beveiligingsbouwstenen die niet via HTTP te testen zijn (PKCE, SSRF, sleutels, lockout).
 // Draaien: DATABASE_URL=... node scripts/eenheidstests.mjs   (bundelt dit bestand met esbuild en voert het uit)
 import { createHash } from 'node:crypto';
+import { spawn } from 'node:child_process';
+import { existsSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { createOAuthMaterial, takeOAuthMaterial } from '../../backend/oauth-pkce';
 import { pinnedFetch, privateAddress } from '../../backend/veilige-fetch';
 import { clearLoginFailures, lockoutRemaining, openWithEnvKey, pepperedHash, registerLoginFailure, sealWithEnvKey } from '../../server/platform/beveiliging';
@@ -64,6 +68,27 @@ export async function main() {
   check('handoff-binding: bestaande cookie wordt hergebruikt; ontbrekende of misvormde → leeg', handoffBindingVoorAanmaken(metCookie).bindingHash === nieuw.bindingHash && handoffBindingVanBrowser({ headers: {} }) === '' && handoffBindingVanBrowser({ headers: { cookie: `${HANDOFF_BINDING_COOKIE}=kort` } }) === '');
   const samen = metBindingCookie({ statusCode: 200, headers: { 'Set-Cookie': 'a=1; Path=/' } }, nieuw.setCookie) as { headers: Record<string, string> };
   check('handoff-binding: bestaande Set-Cookie blijft staan', samen.headers['Set-Cookie'].startsWith('a=1; Path=/, ') && samen.headers['Set-Cookie'].includes(`${HANDOFF_BINDING_COOKIE}=`));
+
+  // Regressie (eerste VM-uitrol): systemd start de server via de symlink current/…; de server moet dan
+  // gewoon luisteren (isMain met realpath) i.p.v. stil niets te doen.
+  const startMjs = path.resolve('dist-server/start.mjs');
+  if (existsSync(startMjs)) {
+    const tmp = mkdtempSync(path.join(os.tmpdir(), 'mr-symlink-'));
+    const link = path.join(tmp, 'current');
+    symlinkSync(path.resolve('.'), link);
+    const poort = 18000 + Math.floor(Math.random() * 1000);
+    const kind = spawn(process.execPath, [path.join(link, 'dist-server/start.mjs')], { env: { ...process.env, PORT: String(poort), HOST: '127.0.0.1', OWNER_EMAIL: process.env.OWNER_EMAIL || 'eigenaar@example.invalid' }, stdio: 'ignore' });
+    let gezond = '';
+    for (let i = 0; i < 50 && !gezond; i++) {
+      await new Promise(r => setTimeout(r, 200));
+      gezond = await fetch(`http://127.0.0.1:${poort}/__gezondheid`).then(r => r.text()).catch(() => '');
+    }
+    kind.kill('SIGTERM');
+    rmSync(tmp, { recursive: true, force: true });
+    check('server gestart via een symlink (zoals /srv/mijn-ruimte/current) luistert en is gezond', gezond.includes('"ok":true') && gezond.includes('"db":true'), gezond);
+  } else {
+    check('server via symlink: dist-server/start.mjs ontbreekt (eerst bouwen)', false);
+  }
 
   await closePool();
   const mis = resultaten.filter(r => !r.ok).length;

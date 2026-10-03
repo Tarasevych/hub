@@ -46,6 +46,10 @@ melding() { echo "[installeer] $*"; }
 waarschuwing() { echo "[installeer] LET OP: $*" >&2; }
 fout() { echo "[installeer] FOUT: $*" >&2; exit 1; }
 
+# Doel van de current-symlink, of leeg als die (nog) niet bestaat. NIET `readlink -f` op een
+# ontbrekend pad: dat geeft het pad zelf terug (bij de eerste installatie gaf dat een symlink naar zichzelf).
+actieve_release() { if [ -L "$HUIDIG" ] && [ -d "$HUIDIG" ]; then readlink -f "$HUIDIG"; fi; }
+
 vereis_root() { [ "$(id -u)" -eq 0 ] || fout "voer dit uit als root (sudo)"; }
 vereis_node() {
   [ -x "$NODE" ] || fout "Node niet gevonden op $NODE (Node 24 vereist)"
@@ -180,7 +184,7 @@ omzetten() {
 
 activeren() {
   local doel="$1" vorige
-  vorige="$(readlink -f "$HUIDIG" 2>/dev/null || true)"
+  vorige="$(actieve_release)"
   omzetten "$doel"
   [ -n "$vorige" ] && [ "$vorige" != "$doel" ] && echo "$vorige" > "$VORIGE_BESTAND"
   systemctl restart "$DIENST"
@@ -200,8 +204,8 @@ activeren() {
 
 releases_opruimen() {
   local actief vorige r
-  actief="$(readlink -f "$HUIDIG" 2>/dev/null || true)"
-  vorige="$(cat "$VORIGE_BESTAND" 2>/dev/null || true)"
+  actief="$(actieve_release)"
+  vorige="$(cat "$VORIGE_BESTAND" 2>/dev/null || true)"; [ -d "$vorige" ] || vorige=""
   # Nieuwste $BEWAAR behouden, plus altijd de actieve en de vorige.
   ls -1d "$RELEASES"/*/ 2>/dev/null | sed 's#/$##' | sort -r | tail -n +"$((BEWAAR + 1))" | while read -r r; do
     [ "$r" = "$actief" ] || [ "$r" = "$vorige" ] && continue
@@ -235,7 +239,7 @@ installeren() {
 terugdraaien() {
   local naam="${1:-}" doel actief
   vereis_root; vergrendel
-  actief="$(readlink -f "$HUIDIG" 2>/dev/null || true)"
+  actief="$(actieve_release)"
   if [ -n "$naam" ]; then
     doel="$RELEASES/$naam"
   elif [ -s "$VORIGE_BESTAND" ]; then
@@ -269,8 +273,8 @@ dashboard() {
 
 lijst() {
   local actief vorige r label
-  actief="$(readlink -f "$HUIDIG" 2>/dev/null || true)"
-  vorige="$(cat "$VORIGE_BESTAND" 2>/dev/null || true)"
+  actief="$(actieve_release)"
+  vorige="$(cat "$VORIGE_BESTAND" 2>/dev/null || true)"; [ -d "$vorige" ] || vorige=""
   for r in $(ls -1d "$RELEASES"/*/ 2>/dev/null | sed 's#/$##' | sort -r); do
     label=""
     [ "$r" = "$actief" ] && label=" (actief)"

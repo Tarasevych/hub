@@ -2,6 +2,7 @@
 // transactie, en registreert ze in app.schema_migrations. Idempotent (al uitgevoerde
 // migraties worden overgeslagen). Gebruik: node dist-server/migrate.mjs [--status]
 import { readdir, readFile } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { closePool, getPool } from './platform/pg';
@@ -40,7 +41,11 @@ export async function migrate({ statusOnly = false } = {}): Promise<string[]> {
   return applied;
 }
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+// Vergelijk echte paden: systemd start via de symlink /srv/mijn-ruimte/current/…, terwijl Node
+// import.meta.url naar het echte releasepad oplost. Zonder realpath start de server dan stil niet.
+const isMain = (() => {
+  try { return !!process.argv[1] && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]); } catch { return false; }
+})();
 if (isMain) {
   const statusOnly = process.argv.includes('--status');
   migrate({ statusOnly })
