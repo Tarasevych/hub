@@ -20,7 +20,7 @@ try {
   await page.screenshot({ path: '/tmp/pw/1-id-afgemeld.png' });
   check('Test 1: id afgemeld toont geen accountgegevens', text.length > 20 && !text.includes('rooktest'), JSON.stringify(text.slice(0, 120)));
 
-  // Test 3: aangemelde hub (sessie gezaaid, want Google is nog niet geconfigureerd).
+  // Test 2: aangemelde hub (sessie gezaaid, want Google is nog niet geconfigureerd).
   uid = randomUUID();
   await pool.query('insert into app.records (tbl,id,data) values ($1,$2,$3)', ['users', uid, { email: 'e2e-eigenaar@example.test', sub: 'e2e', name: 'E2E Eigenaar', picture: '', role: 'owner', status: 'approved', accessLevel: 'full', entitlements: [], createdAt: nu, updatedAt: nu }]);
   const token = randomBytes(32).toString('base64url'); const sid = randomUUID();
@@ -31,7 +31,7 @@ try {
     text = (await page.locator('body').innerText()).trim();
     await page.screenshot({ path: `/tmp/pw/3-${host}-aangemeld.png` });
     const heading = await page.locator('h1, h2').first().innerText().catch(() => '');
-    check(`Test 3: ${host} aangemeld toont kop en inhoud`, !!heading && text.length > 80, `kop=${JSON.stringify(heading.slice(0, 60))} tekst=${text.length} tekens; naam zichtbaar=${text.includes('E2E')}`);
+    check(`Test 2: ${host} aangemeld toont kop en inhoud`, !!heading && text.length > 80, `kop=${JSON.stringify(heading.slice(0, 60))} tekst=${text.length} tekens; naam zichtbaar=${text.includes('E2E')}`);
   }
   const cookies = await ctx.cookies('https://mail.tarasevych.com/');
   check('cookie geldt ook voor mail.tarasevych.com (één aanmelding)', cookies.some(c => c.name.startsWith('__Secure-tsv_ecosystem_')), cookies.map(c => `${c.name}(${c.sameSite},${c.domain})`).join(', '));

@@ -78,7 +78,6 @@ type Props = {
   onSelectAccount?: (grantId: string) => void | Promise<void>;
   onForgetAccount?: (grantId: string) => Promise<AccountMenuSnapshot>;
   onProfilePhotoChange?: (file: File) => Promise<AccountMenuUser | void>;
-  technicalAction?: { label: string; onAction: () => void } | null;
 };
 
 const copy = {
@@ -240,7 +239,6 @@ export default function CanonicalAccountMenu({
   onSelectAccount,
   onForgetAccount,
   onProfilePhotoChange,
-  technicalAction,
 }: Props) {
   const t = copy[lang];
   const root = useRef<HTMLDivElement>(null);
@@ -626,15 +624,6 @@ export default function CanonicalAccountMenu({
                 />
               )}
 
-              {technicalAction && (
-                <IconAction
-                  icon={<ShieldCheck />}
-                  label={technicalAction.label}
-                  onClick={() => { close(); technicalAction.onAction(); }}
-                  className='canonical-menu-action technical'
-                />
-              )}
-
               <div
                 className={`canonical-session-actions ${expanded ? 'expanded' : 'collapsed'}`}
                 data-account-add-placement={expanded ? 'expanded-list' : 'session-row'}
@@ -686,14 +675,6 @@ export default function CanonicalAccountMenu({
                   <span>{model.isFirstLogin ? t.firstLogin : t.add}</span>
                 </button>
               </div>
-              {technicalAction && (
-                <IconAction
-                  icon={<ShieldCheck />}
-                  label={technicalAction.label}
-                  onClick={() => { close(); technicalAction.onAction(); }}
-                  className='canonical-menu-action technical'
-                />
-              )}
             </>
           )}
           {controls}

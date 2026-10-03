@@ -1,6 +1,5 @@
 import { db, error, json, secrets } from '../server/platform';
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from 'node:crypto';
-import {TECH_ORIGIN} from './deployment-identity';
 import {resolveGoogleContour} from './google-contour';
 import {invalidateMailPeriodBounds} from './mail-period-bounds-cache';
 
@@ -66,7 +65,7 @@ const bodyOf = (body: unknown) => body && typeof body === 'object' ? body as Rec
 const rows = async <T extends object>(table: string, filter: Record<string, unknown>) => (await db.list<T>(table, { filter })).items as Array<T & { id: string }>;
 const latest = async <T extends object>(table: string, filter: Record<string, unknown>) => (await rows<T>(table, filter)).sort((a, b) => Number((b as Record<string, unknown>).updatedAt || (b as Record<string, unknown>).createdAt || 0) - Number((a as Record<string, unknown>).updatedAt || (a as Record<string, unknown>).createdAt || 0))[0] || null;
 const cloudAuth = async (authorize: CloudAuthorize, ctx: CloudContext) => { const auth = await authorize(ctx.event, ctx.body); return 'errorCode' in auth || auth.service !== 'cloud' || auth.user.status !== 'approved' ? null : auth; };
-const safeOrigin = (value: unknown) => { const origin = safeText(value, 300); return origin === CLOUD_ORIGIN || origin === MAIL_ORIGIN || origin === TECH_ORIGIN ? origin : ''; };
+const safeOrigin = (value: unknown) => { const origin = safeText(value, 300); return origin === CLOUD_ORIGIN || origin === MAIL_ORIGIN ? origin : ''; };
 const safeReturnTo = (value: unknown, origin: string) => { try { const target = new URL(String(value || origin)); if (target.origin !== origin || target.username || target.password) return ''; for (const key of ['code', 'state', 'token', 'proof', 'transaction', 'redeem', 'error']) target.searchParams.delete(key); target.hash = ''; return target.toString(); } catch { return ''; } };
 const fetchWithTimeout = async (url: string, init: RequestInit, reason: string, timeout = 8000) => { const controller = new AbortController(), timer = setTimeout(() => controller.abort(), timeout); try { return await fetch(url, { ...init, signal: controller.signal }); } catch { throw new Error(reason); } finally { clearTimeout(timer); } };
 const subset = (required: string[], granted: string[]) => required.every(scope => granted.includes(scope));

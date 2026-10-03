@@ -12,28 +12,13 @@ Steps:
 
 Expected: The signed-out visitor sees a real, non-blank shell and account-only areas stay out of reach.
 
-## Test 2 - Technical security and endpoint smoke reaches terminal pass
-Viewport: desktop (1280x800)
-Covers: owner technical diagnostics, endpoint coverage smoke, security summary terminal state
-Description: The owner technical test surface runs its endpoint smoke suite and reaches a terminal pass/fail state instead of hanging.
-
-Setup:
-1. If a button labelled "Створити тестову сесію" or "Testsessie maken" is visible, click it and wait until the signed-in shell appears
-
-Steps:
-1. Open the owner technical test view
-2. Trigger the security and endpoint smoke run
-3. Wait for the security summary and endpoint coverage results to render
-
-Expected: The security summary and endpoint coverage results reach a terminal state (pass or explicit fail), never an indefinite pending state.
-
-## Test 3 - Authorized Hub overview is never a blank workspace
+## Test 2 - Authorized Hub overview is never a blank workspace
 Viewport: desktop (1280x800)
 Covers: authorized hub landing, workspace heading, non-empty overview state
 Description: Once signed in, the Hub overview always renders a real heading and content, never an empty workspace.
 
 Setup:
-1. If signed out, click "Створити тестову сесію" or "Testsessie maken"
+1. If signed out, sign in (locally: seed a session as in scripts/lokaal-e2e/e2e.mjs)
 
 Steps:
 1. Open the Hub overview tab
@@ -42,13 +27,13 @@ Steps:
 
 Expected: The authorized Hub overview shows a visible heading and is never a blank workspace.
 
-## Test 4 - Technical Mail read surface stays capability-honest on mobile
+## Test 3 - Mail read surface stays capability-honest on mobile
 Viewport: mobile (375x667)
 Covers: mail read surface on mobile, capability-honest connected/empty states
 Description: On a mobile viewport, the Mail read surface only claims connection states it actually has.
 
 Setup:
-1. If signed out, create the technical test session
+1. If signed out, sign in (locally: seed a session as in scripts/lokaal-e2e/e2e.mjs)
 
 Steps:
 1. Open Mail on a mobile viewport
@@ -57,7 +42,7 @@ Steps:
 
 Expected: The Mail read surface on mobile shows only honest capability state and stays usable.
 
-## Test 5 - Smart Home remains a truthful responsive canonical service
+## Test 4 - Smart Home remains a truthful responsive canonical service
 Viewport: mobile (375x667)
 Covers: Smart Home service view, responsive layout, honest not-connected state
 Description: The Smart Home service view renders responsively and never claims a connection it does not have.
@@ -69,13 +54,13 @@ Steps:
 
 Expected: Smart Home renders responsively and truthfully, with no fabricated connection status.
 
-## Test 6 - Access Plane methods keep Google and password as real, distinct sign-in options
+## Test 5 - Access Plane methods keep Google and password as real, distinct sign-in options
 Viewport: desktop (1280x800)
 Covers: access catalog and snapshot endpoints, methods tab rendering, honest provider placeholders
 Description: The identity Methods tab shows Google and password as real, independently configured sign-in methods, and never fakes third-party providers as connected.
 
 Setup:
-1. If signed out, create the technical test session
+1. If signed out, sign in (locally: seed a session as in scripts/lokaal-e2e/e2e.mjs)
 
 Steps:
 1. Open Ідентичність → Способи входу (identity, methods tab)
@@ -84,13 +69,13 @@ Steps:
 
 Expected: Methods tab shows real Google/password status and honestly labels unconfigured providers, never a fake "connected" state.
 
-## Test 7 - Access Plane TOTP enrollment issues a one-time secret and recovery codes
+## Test 6 - Access Plane TOTP enrollment issues a one-time secret and recovery codes
 Viewport: desktop (1280x800)
 Covers: totp/start, totp/confirm, recovery code generation, one-time secret display
 Description: Starting TOTP enrollment shows a real one-time secret, and confirming a valid code issues recovery codes shown exactly once.
 
 Setup:
-1. If signed out, create the technical test session
+1. If signed out, sign in (locally: seed a session as in scripts/lokaal-e2e/e2e.mjs)
 2. Open Ідентичність → Безпека (identity, security tab)
 
 Steps:
@@ -100,13 +85,13 @@ Steps:
 
 Expected: Enrollment shows a real secret before confirmation, and a successful confirm displays recovery codes that are not requested again on reload.
 
-## Test 8 - Access Plane blocks removing the last active login method
+## Test 7 - Access Plane blocks removing the last active login method
 Viewport: desktop (1280x800)
 Covers: lockout banner, method/unbind guard, LAST_LOGIN_METHOD_PROTECTED response
 Description: When only one sign-in method is usable, the UI shows the lockout banner and any removal action for that method is blocked or protected.
 
 Setup:
-1. If signed out, create the technical test session
+1. If signed out, sign in (locally: seed a session as in scripts/lokaal-e2e/e2e.mjs)
 
 Steps:
 1. Open Ідентичність → Способи входу
@@ -114,28 +99,28 @@ Steps:
 
 Expected: The account is never left with zero usable sign-in methods; the UI makes the protection visible rather than silently blocking it.
 
-## Test 9 - Access Plane offers a real passkey enrollment path
+## Test 8 - Access Plane hides passkeys until real verification exists
 Viewport: mobile (375x667)
-Covers: webauthn/options endpoint, passkey enrollment control, browser-support honesty
-Description: The Security tab offers passkey enrollment through the real WebAuthn API where supported, and states plainly when the browser does not support it.
+Covers: passkey card hidden, webauthn endpoints disabled, no simulated enrollment
+Description: Passkeys stay hidden and their endpoints answer "disabled" until real WebAuthn attestation/assertion verification is implemented, so the Security tab never offers or simulates a passkey.
 
 Setup:
-1. If signed out, create the technical test session
+1. If signed out, sign in (locally: seed a session as in scripts/lokaal-e2e/e2e.mjs)
 
 Steps:
 1. Open Ідентичність → Безпека on a mobile viewport
-2. Locate the passkey card and its "add passkey" control
-3. Confirm it either starts a real WebAuthn prompt or shows an honest unsupported message, never a fake "added" state
+2. Confirm there is no "add passkey" control and no passkey listed as an active method
+3. Confirm POST /api/owner/access/webauthn/options answers 404/503 ACCESS_WEBAUTHN_DISABLED
 
-Expected: Passkey enrollment is real where the browser supports it, and honestly declined otherwise, never simulated.
+Expected: No passkey enrollment is offered or simulated while verification is not implemented.
 
-## Test 10 - Access Plane recovery codes are shown once and honestly scoped
+## Test 9 - Access Plane recovery codes are shown once and honestly scoped
 Viewport: mobile (375x667)
 Covers: recovery/rotate endpoint, one-time code display, SMS/push honest not-configured state
 Description: The Recovery tab can generate backup codes shown once, and SMS/push remain honestly marked as not connected rather than fake options.
 
 Setup:
-1. If signed out, create the technical test session
+1. If signed out, sign in (locally: seed a session as in scripts/lokaal-e2e/e2e.mjs)
 
 Steps:
 1. Open Ідентичність → Відновлення on a mobile viewport
@@ -144,13 +129,13 @@ Steps:
 
 Expected: Recovery codes are generated and shown once with a clear one-time warning; SMS and push stay honestly unconfigured.
 
-## Test 11 - Account menu primary CTA contrast and Escape
+## Test 10 - Account menu primary CTA contrast and Escape
 Viewport: desktop (1280x800)
 Covers: account menu primary action contrast, Escape closes menu and restores focus
 Description: The primary account-menu action stays readable, and Escape closes the menu and returns focus to the avatar trigger.
 
 Setup:
-1. If signed out, create the technical test session
+1. If signed out, sign in (locally: seed a session as in scripts/lokaal-e2e/e2e.mjs)
 
 Steps:
 1. Open the account menu from the avatar trigger

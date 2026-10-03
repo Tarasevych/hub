@@ -1,6 +1,5 @@
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
 import {db,secrets} from '../server/platform';
-import {TECH_ORIGIN} from './deployment-identity';
 
 export const OWNER_VAULT_TABLE='owner_vault_v1';
 export const OWNER_VAULT_PURPOSES=['home-assistant','telegram','github','webhook','other'] as const;
@@ -66,11 +65,13 @@ const publicItem=(item:OwnerVaultRecord)=>({
 });
 const requestHost=(event:Record<string,unknown>)=>{
   const headers=(event.headers||{}) as Record<string,string>;
-  return String(headers.host||headers.Host||headers['x-forwarded-host']||'').split(',')[0].trim().toLowerCase();
+  // Zelf gehost: alleen de echte Host-header (de server verwijdert x-forwarded-host).
+  return String(headers.host||headers.Host||'').split(',')[0].trim().toLowerCase();
 };
 const revealHostAllowed=(event:Record<string,unknown>)=>{
   const host=requestHost(event);
-  return host==='admin.tarasevych.com'||host==='api.tarasevych.com'||host===new URL(TECH_ORIGIN).hostname||host==='internal.appdeploy.runtime'||host==='localhost'||host.startsWith('127.0.0.1');
+  // Geen localhost-/127.0.0.1-uitzondering meer: onthullen kan alleen via admin.* of api.*.
+  return host==='admin.tarasevych.com'||host==='api.tarasevych.com';
 };
 
 async function resolveVaultSecret(){

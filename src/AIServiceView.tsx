@@ -1,6 +1,6 @@
 import { Bot } from 'lucide-react';
 import ProductEmptyState from './ProductEmptyState';
-import { canonicalNavigationUrl, navigateCanonicalService, routeLang } from './canonical-navigation';
+import { canonicalNavigationUrl, routeLang } from './canonical-navigation';
 
 type Tr = (uk: string, nl: string) => string;
 type Props = { tab: string; tr: Tr; userName: string; workspaceName: string };
@@ -10,7 +10,6 @@ type Props = { tab: string; tr: Tr; userName: string; workspaceName: string };
 // navigation on the production subdomains.
 export const openIntegrations = () => {
   const lang = routeLang();
-  if (navigateCanonicalService('api', 'connections', lang)) return;
   location.assign(canonicalNavigationUrl('api', 'connections', lang));
 };
 

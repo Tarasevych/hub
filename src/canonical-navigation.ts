@@ -1,9 +1,9 @@
-import{canonicalServiceUrl,defaults,domains,isTechnicalHost,publicServiceIds,resolveCanonicalRoute,serviceForHostname,serviceIds,serviceTabs,type CanonicalLang,type CanonicalRoute,type CanonicalService,type PublicService,type ServiceId}from'./canonical-service';
+import{canonicalServiceUrl,defaults,domains,publicServiceIds,resolveCanonicalRoute,serviceForHostname,serviceIds,serviceTabs,type CanonicalLang,type CanonicalRoute,type CanonicalService,type PublicService,type ServiceId}from'./canonical-service';
 import{lastPathForService,rememberedTabForPath,rememberServicePath}from'./shared-preferences';
 export type HubTabId='overview'|'recent'|'tasks'|'calendar'|'notes';
 export type TargetService=CanonicalService;
 export type{CanonicalLang,PublicService,ServiceId};
-export{defaults,domains,isTechnicalHost,publicServiceIds,serviceIds};
+export{defaults,domains,publicServiceIds,serviceIds};
 const hubTabs=serviceTabs.hub as readonly HubTabId[];
 const forbidden=/^(token|code|proof|handoff|transaction|request|auth_broker|oauth_code|oauth_error)$/i;
 const clean=(url:URL)=>{for(const key of[...url.searchParams.keys()])if(forbidden.test(key))url.searchParams.delete(key)};
@@ -13,11 +13,10 @@ export const serviceFromLocation=():ServiceId=>{const service=resolveCanonicalRo
 export const routeLang=():CanonicalLang=>resolveCanonicalRoute().lang;
 export const tabFromLocation=(service:ServiceId)=>{const route=resolveCanonicalRoute();return route.service===service&&serviceTabs[service].includes(route.tab)?route.tab:defaults[service]};
 export const hubTabFromLocation=():HubTabId=>{const route=resolveCanonicalRoute();return route.service==='hub'&&hubTabs.includes(route.tab as HubTabId)?route.tab as HubTabId:'overview'};
-export const normalizeCurrentRoute=(service:ServiceId,tab:string,lang:CanonicalLang)=>{const route=resolveCanonicalRoute();if(isTechnicalHost()){const url=new URL(canonicalServiceUrl(service,tab,lang,true));clean(url);commit(url,'replace');return}if(route.service!==service)return;const url=new URL(location.href);clean(url);url.searchParams.delete('service');url.searchParams.delete('tab');url.searchParams.delete('lang');const validPath=location.pathname==='/'||location.pathname===`/${encodeURIComponent(route.tab)}`;if(!validPath)url.pathname=`/${encodeURIComponent(tab)}`;commit(url,'replace')};
+export const normalizeCurrentRoute=(service:ServiceId,tab:string,_lang?:CanonicalLang)=>{const route=resolveCanonicalRoute();if(route.service!==service)return;const url=new URL(location.href);clean(url);url.searchParams.delete('service');url.searchParams.delete('tab');url.searchParams.delete('lang');const validPath=location.pathname==='/'||location.pathname===`/${encodeURIComponent(route.tab)}`;if(!validPath)url.pathname=`/${encodeURIComponent(tab)}`;commit(url,'replace')};
 export const canonicalNavigationUrl=(target:TargetService,targetTab='',lang:CanonicalLang='uk')=>canonicalServiceUrl(target,targetTab,lang,Boolean(targetTab)&&targetTab!==defaults[target]);
 export const rememberedTabForService=(target:TargetService,fallback='')=>{const path=lastPathForService(target);return path?rememberedTabForPath(target,path):(serviceTabs[target].includes(fallback)?fallback:defaults[target])};
 export const railNavigationUrl=(target:TargetService,fallbackTab='',lang:CanonicalLang='uk')=>{const path=lastPathForService(target);return path?canonicalServiceUrl(target,rememberedTabForPath(target,path),lang,true):canonicalServiceUrl(target,'',lang,false)};
-export const navigateCanonicalService=(target:TargetService,targetTab:string,lang:CanonicalLang,mode:'push'|'replace'='push')=>{if(!isTechnicalHost())return false;const url=new URL(canonicalServiceUrl(target,targetTab,lang,true));const changed=commit(url,mode);if(changed)window.dispatchEvent(new Event('popstate'));return changed};
 export const writeHubTab=(tab:HubTabId,lang:CanonicalLang,mode:'push'|'replace'='push')=>{const url=new URL(canonicalServiceUrl('hub',tab,lang,true));clean(url);rememberServicePath('hub',`/${encodeURIComponent(tab)}`);commit(url,mode)};
 export const writeLocalTab=(service:ServiceId,tab:string,lang:CanonicalLang,mode:'push'|'replace'='push')=>{const resolved=serviceTabs[service].includes(tab)?tab:defaults[service];const url=new URL(canonicalServiceUrl(service,resolved,lang,true));clean(url);rememberServicePath(service,`/${encodeURIComponent(resolved)}`);commit(url,mode)};
 export const canonicalServiceHosts=new Set(serviceIds.filter(id=>id!=='hub').map(id=>domains[id]));

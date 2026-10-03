@@ -1,13 +1,14 @@
 import {api} from './platform/client';
-import {domains, isTechnicalHost} from './canonical-navigation';
+import {domains} from './canonical-navigation';
 import {resolveCanonicalRoute} from './canonical-service';
 import {ecosystemTabContext, ecosystemSessionLikely, setEcosystemSessionLikely} from './tab-context';
 
-let consumedTechnical = false;
 let pendingQueryCode = '';
 let nativeAssign: ((url: string | URL) => void) | null = null;
 let patchTried = false;
 
+// Sessie-overdracht tussen subdomeinen (?handoff=<code>). Sinds v56: ruime timeout (12 s) met één
+// nieuwe poging. De vroegere AppDeploy-variant (#owner_handoff op de technische host) is verwijderd.
 const FINALIZE_TIMEOUT_MS = 12000;
 
 if (typeof location !== 'undefined') {
@@ -38,43 +39,10 @@ const withTimeout = <T,>(promise: Promise<T>, ms: number) =>
     new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error('timeout')), ms))
   ]);
 
-const clearOwnerHandoffHash = () => {
-  try {
-    const url = new URL(location.href);
-    url.hash = '';
-    history.replaceState({}, '', `${url.pathname}${url.search}`);
-  } catch {}
-};
-
-export async function consumeTechnicalHandoff() {
-  try {
-    const queryOk = await consumeQueryHandoff();
-    ensureAssignPatch();
-    if (consumedTechnical || typeof location === 'undefined' || !isTechnicalHost()) return queryOk;
-    const match = /[#&]owner_handoff=([^&]+)/.exec(location.hash || '');
-    if (!match) return queryOk;
-    const handoffToken = decodeURIComponent(match[1] || '');
-    if (!handoffToken) return queryOk;
-    const route = resolveCanonicalRoute();
-    const finalize = () =>
-      api.post('/api/owner/identity/technical/finalize', {
-        service: route.service || 'hub',
-        tabContext: ecosystemTabContext(),
-        sourceOrigin: location.origin,
-        handoffToken
-      });
-    try {
-      await withTimeout(finalize(), FINALIZE_TIMEOUT_MS);
-    } catch {
-      await withTimeout(finalize(), FINALIZE_TIMEOUT_MS);
-    }
-    consumedTechnical = true;
-    clearOwnerHandoffHash();
-    setEcosystemSessionLikely(true);
-    return true;
-  } catch {
-    return false;
-  }
+export async function consumeSessionHandoff() {
+  const ok = await consumeQueryHandoff();
+  ensureAssignPatch();
+  return ok;
 }
 
 export async function consumeQueryHandoff() {
@@ -83,15 +51,21 @@ export async function consumeQueryHandoff() {
   if (!code || typeof location === 'undefined') return false;
   try {
     const route = resolveCanonicalRoute();
-    await withTimeout(
+    const redeem = () =>
       api.post('/api/owner/session/handoff/redeem', {
         service: route.service || 'hub',
         tabContext: ecosystemTabContext(),
         sourceOrigin: location.origin,
         code
-      }),
-      FINALIZE_TIMEOUT_MS
-    );
+      });
+    try {
+      await withTimeout(redeem(), FINALIZE_TIMEOUT_MS);
+    } catch (caught) {
+      // Eén nieuwe poging alleen bij timeout/netwerkfout; een expliciete weigering (4xx) is definitief.
+      const status = (caught as {status?: number})?.status || 0;
+      if (status >= 400 && status < 500) throw caught;
+      await withTimeout(redeem(), FINALIZE_TIMEOUT_MS);
+    }
     setEcosystemSessionLikely(true);
     return true;
   } catch {
@@ -120,10 +94,6 @@ const skipIntercept = (parsed: URL, target: string, current: string) => {
 
 export async function assignCanonicalService(target: string, fallbackUrl: string, authBody: Record<string, unknown>, tab = '') {
   if (typeof location === 'undefined') return;
-  if (isTechnicalHost()) {
-    go(fallbackUrl);
-    return;
-  }
   try {
     const raced = await withTimeout(
       api.post('/api/owner/session/handoff/create', {...authBody, target, tab}),
@@ -152,7 +122,7 @@ function ensureAssignPatch() {
   const patched = (url: string | URL) => {
     const href = String(url);
     try {
-      if (isTechnicalHost() || !ecosystemSessionLikely()) {
+      if (!ecosystemSessionLikely()) {
         go(href);
         return;
       }
