@@ -28,11 +28,13 @@ const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 12 * 1024 * 1024);
 const APP_HOSTS = new Set<string>(Object.values(SERVICE_HOSTS));
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 
-// CSP voor de app (zelfde productiebeleid als public/canonical-security.js, zonder AppDeploy-hosts).
-// 'wasm-unsafe-eval' is nodig voor sql.js / h5wasm / pdf.js in de documentvoorbeelden.
+// CSP voor de app: gelijk aan het productiebeleid in public/canonical-security.js (meta), zonder
+// AppDeploy-hosts, plus frame-ancestors (werkt alleen als header). Header en meta worden door de
+// browser gecombineerd (doorsnede), dus ze moeten gelijk blijven. 'wasm-unsafe-eval' (voor
+// sql.js / h5wasm / pdf.js-voorbeelden) staat er bewust niet in, net als vandaag: open beslissing.
 const APP_CSP = [
   "default-src 'self'", "base-uri 'none'", "object-src 'none'", 'frame-src blob:', "form-action 'self'",
-  "script-src 'self' 'wasm-unsafe-eval'", "style-src 'self'", "style-src-elem 'self'", "style-src-attr 'unsafe-inline'",
+  "script-src 'self'", "style-src 'self'", "style-src-elem 'self'", "style-src-attr 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.googleusercontent.com", "font-src 'self' data:", "connect-src 'self'",
   "worker-src 'self' blob:", "manifest-src 'self'", "media-src 'self' blob: data:", "frame-ancestors 'none'",
   'upgrade-insecure-requests',
