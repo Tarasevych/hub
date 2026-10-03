@@ -8,6 +8,7 @@ import {buildGmailRawMessage,mailCommandPolicySelfTest,mailSendPayloadHash,norma
 import {createOAuthMaterial,requireOAuthMaterial,takeOAuthMaterial} from './oauth-pkce';
 import { handoffBindingVanBrowser, handoffBindingVoorAanmaken, metBindingCookie } from './handoff-binding';
 import { aanmeldBindingKlopt, aanmeldBindingVoorAanmaken, aanmeldBindingWissen } from './aanmeld-binding';
+import { besluitGoogleKoppeling, magEigenaarZijn } from './account-koppeling';
 import {MICROSOFT_GRAPH_SCOPES,mailMicrosoftAuthorizationUrl,mailMicrosoftStateParts,mailMicrosoftStateValue,microsoftDeltaLink,microsoftNextLink,microsoftProviderPolicySelfTest,normalizeMicrosoftMessage,type GraphMessage} from './mail-microsoft';
 import {normalizeMailDisplayText} from './mail-text-normalization';
 import {createCloudRoutes} from './cloud-platform';
@@ -153,27 +154,55 @@ async function upsertGoogleIdentity(accountId: string, identity: GooglePayload):
 
 const activeUserBy = async (filter: Record<string, unknown>) => { const page = await db.list<User>('users', { filter }); return (page.items as User[]).find((item) => !Number(item.retiredAt || 0)) || null; };
 async function retireAccount(user: User) { const now = Date.now(); const next: User = { ...user, retiredAt: now, updatedAt: now }; await db.update('users', [{ id: user.id, record: withoutId(next) }]); const links = await db.list<Identity>('account_identities', { filter: { accountId: user.id } }); if (links.items.length) await db.delete('account_identities', links.items.map((item) => item.id)); await audit(user.id, 'account_retired', { personRef: next.personRef || personRefFor(next.email) }); return next; }
+// Auth fase 1: account alleen via (provider, subject); nooit stil samenvoegen op e-mailadres.
+// Beslisregels in account-koppeling.ts (besluitGoogleKoppeling / magEigenaarZijn).
 async function ensureUser(identity: GooglePayload): Promise<User> {
+  // userinfo kan e-mail/email_verified na verifyGoogle overschrijven: hier opnieuw eisen.
+  if (!identity.sub || !identity.email || (identity.email_verified !== true && identity.email_verified !== 'true')) throw new Error('Unverified identity');
   const email = String(identity.email).toLowerCase();
   const linked = await listOne<Identity>('account_identities', { provider: 'google', subject: identity.sub });
-  let existing: User | null = null;
-  if (linked) { const [raw] = await db.get<User>('users', [linked.accountId]); if (raw && !Number(raw.retiredAt || 0)) existing = withId(linked.accountId, raw); }
-  if (!existing) existing = await activeUserBy({ sub: identity.sub }) || await activeUserBy({ email });
+  let linkedUser: User | null = null;
+  if (linked) { const [raw] = await db.get<User>('users', [linked.accountId]); if (raw && !Number(raw.retiredAt || 0)) linkedUser = withId(linked.accountId, raw); }
+  const subUser = linkedUser ? null : await activeUserBy({ sub: identity.sub });
+  const emailUser = linkedUser || subUser ? null : await activeUserBy({ email });
+  const emailUserGoogle = emailUser ? (await db.list<Identity>('account_identities', { filter: { accountId: emailUser.id, provider: 'google' }, limit: 1 })).items.length > 0 : false;
+  const besluit = besluitGoogleKoppeling({ identiteitAccountId: linkedUser?.id || '', subAccountId: subUser?.id || '', emailAccountId: emailUser?.id || '', emailAccountHeeftGoogleIdentiteit: emailUserGoogle, email, eigenaarEmail: OWNER });
+  let existing: User | null = besluit.soort === 'bestaand' ? (linkedUser || subUser || emailUser) : null;
   if (existing && existing.status === 'deleted' && accountRecoveryExpired(existing)) { await retireAccount(existing); existing = null; }
+  const ownerRow = email === OWNER ? await activeUserBy({ role: 'owner' }) : null;
   const now = Date.now();
   if (existing) {
-    const next: User = { ...existing, email, sub: identity.sub, name: identity.name || existing.name || email, picture: existing.customPicture ? existing.picture : identity.picture || existing.picture || '', role: email === OWNER ? 'owner' : existing.role || 'member', personRef: existing.personRef || personRefFor(email), status: existing.status === 'deleted' ? 'deleted' : email === OWNER ? 'approved' : existing.status, accessLevel: email === OWNER ? 'full' : existing.accessLevel, updatedAt: now }; 
+    const owner = magEigenaarZijn({ email, eigenaarEmail: OWNER, accountId: existing.id, bestaandEigenaarId: ownerRow?.id || '' });
+    const next: User = { ...existing, email, sub: identity.sub, name: identity.name || existing.name || email, picture: existing.customPicture ? existing.picture : identity.picture || existing.picture || '', role: owner ? 'owner' : existing.role || 'member', personRef: existing.personRef || personRefFor(email), status: existing.status === 'deleted' ? 'deleted' : owner ? 'approved' : existing.status, accessLevel: owner ? 'full' : existing.accessLevel, updatedAt: now }; 
     await db.update('users', [{ id: existing.id, record: withoutId(next) }]);
     await upsertGoogleIdentity(existing.id, identity);
-    await audit(existing.id, 'sign_in', { provider: 'google' });
+    await audit(existing.id, besluit.soort === 'bestaand' && besluit.reden === 'eigenaar-eerste-koppeling' ? 'owner_first_google_binding' : 'sign_in', { provider: 'google' });
     return next;
   }
-  const record = { email, sub: identity.sub, name: identity.name || email, picture: identity.picture || '', personRef: personRefFor(email), role: email === OWNER ? 'owner' as const : 'member' as const, status: email === OWNER ? 'approved' as const : 'new' as const, accessLevel: 'full' as const, createdAt: now, updatedAt: now };
+  const owner = magEigenaarZijn({ email, eigenaarEmail: OWNER, accountId: '', bestaandEigenaarId: ownerRow?.id || '' });
+  const record = { email, sub: identity.sub, name: identity.name || email, picture: identity.picture || '', personRef: personRefFor(email), role: owner ? 'owner' as const : 'member' as const, status: owner ? 'approved' as const : 'new' as const, accessLevel: 'full' as const, createdAt: now, updatedAt: now };
   const [id] = await db.add('users', [record]);
   if (!id) throw new Error('Unable to create user');
   await upsertGoogleIdentity(id, identity);
-  await audit(id, 'account_created', { provider: 'google' });
+  await audit(id, 'account_created', { provider: 'google', ...(besluit.soort === 'nieuw' && besluit.emailConflictAccountId ? { emailSharedWithExistingAccount: true } : {}) });
+  if (besluit.soort === 'nieuw' && besluit.emailConflictAccountId) await meldEmailConflict(besluit.emailConflictAccountId, id, email);
   return withId(id, record);
+}
+
+/** Alleen voor tests/eenheid (accountkoppeling met echte database). */
+export const ensureUserVoorTests = (identity: GooglePayload) => ensureUser(identity);
+
+// Een ander Google-account met hetzelfde e-mailadres meldde zich aan en kreeg een APART account.
+// Het bestaande account krijgt een melding (alleen op account-id, niet op e-mail, zodat het nieuwe
+// account hem niet ziet), een audit-regel en een koppelhint voor een latere, door beide kanten
+// bevestigde samenvoeging (fase 5; nooit automatisch).
+async function meldEmailConflict(existingAccountId: string, newAccountId: string, email: string) {
+  try {
+    await db.add('account_email_conflicts_v1', [{ existingAccountId, newAccountId, provider: 'google', emailHash: sha(`email:${email}`), status: 'open', createdAt: Date.now() }]);
+    await notify(existingAccountId, '', 'account_email_conflict', 'Інший Google-акаунт з вашою адресою / Ander Google-account met uw adres', 'Інший Google-акаунт з вашою e-mail-адресою щойно увійшов. Він отримав окремий обліковий запис; ваші дані НЕ об’єднано. Якщо це не ви — зверніться до власника. / Een ander Google-account met uw e-mailadres heeft zich zojuist aangemeld. Het kreeg een apart account; uw gegevens zijn NIET samengevoegd. Was u dit niet, neem dan contact op met de eigenaar.');
+    await audit(existingAccountId, 'email_conflict_signin', { provider: 'google', newAccountId });
+    await ownerAudit(existingAccountId, 'account.email.conflict', 'detected', { provider: 'google', newAccountId });
+  } catch (caught) { console.error('Melding e-mailconflict mislukt', { reason: caught instanceof Error ? caught.message : 'unknown' }); }
 }
 
 const defaults = [
