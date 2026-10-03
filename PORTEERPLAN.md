@@ -530,7 +530,12 @@ vite-build OOM op 2 GB RAM (build nu in een cgroup met geheugenplafond), zelfver
 eerste installatie, en de server die via de symlink `current/` stil niet startte (isMain met realpath).
 Cloudflare Tunnel: alleen `/etc/cloudflared/config.yml` met plaatshouder; nog geen tunnel/DNS (zie `deploy/LEESMIJ.md`).
 
-### 10.8 Nog open
-- Cloudflare Tunnel + DNS (vraagt Cloudflare-login), daarna nieuwe Google OAuth-client (redirect `https://id.tarasevych.com/`).
+### 10.8 Cloudflare Tunnel live (3 okt 2026, ~12:16)
+Tunnel `mijn-ruimte` (`a176c08b-29e7-47b0-95d9-9ec9383572f2`), 10 nieuwe CNAME's, gehardende `cloudflared.service`,
+4 verbindingen (ams/bru). Alle tien hosts geven extern 200; `cert.pem` geshred. Credentials-JSON nog zonder back-up.
+
+### 10.9 Nog open
+- Back-up van de tunnel-credentials (versleuteld) — keuze eigenaar; Cloudflare: Always Use HTTPS aanzetten.
+- Nieuwe Google OAuth-client (redirect `https://id.tarasevych.com/`).
 - Echte WebAuthn-implementatie; AI-provider; dashboardintegratie.
 - l002-audit: `b4-important-free` in twee AppDeploy-CSS-bestanden (v56), cosmetisch.
