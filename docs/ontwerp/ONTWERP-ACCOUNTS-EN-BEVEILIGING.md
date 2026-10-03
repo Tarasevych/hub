@@ -116,14 +116,42 @@ passkey, пароль. Кожна ідентичність — це пара *(�
   (перенесена база) — дозволено одне перше прив’язування, далі прив’язка фіксована. Роль власника
   ніколи не отримує другий акаунт з тим самим e-mail.
 - `email_verified` перевіряється ще раз після userinfo.
-- Login-CSRF: `transactions/create` ставить cookie `__Secure-tsv_aanmeld_binding`
-  (HttpOnly, Secure, SameSite=Lax, 15 хв); у транзакції зберігається лише її SHA-256; callback
-  (POST і старий GET) порівнює у сталий час і очищує cookie.
+- Login-CSRF: `transactions/create` ставить **окремий cookie для кожної транзакції**
+  `__Secure-tsv_aanmeld_binding_<перші 16 hex хешу транзакції>` (HttpOnly, Secure, SameSite=Lax,
+  Max-Age 15 хв). У транзакції зберігається лише SHA-256 від (хеш транзакції, хеш вкладки, значення),
+  тобто cookie прив’язаний до цієї транзакції і вкладки (tab id). Callback (POST і старий GET)
+  порівнює у сталий час і очищує **лише цей** cookie. Паралельні входи в кількох вкладках більше
+  не перезаписують одне одного. Транзакції зі старою прив’язкою (v1) після оновлення не проходять
+  (максимум 10 хв — просто увійти ще раз).
+- Видимість за e-mail: сповіщення (`recipientEmail`) і запрошення до простору (`workspace_members`
+  зі статусом `invited`) бачить/активує **лише оригінальний акаунт** з цією адресою — перший
+  створений запис `users` з цим e-mail, і ніколи акаунт, який записаний як «новий» у
+  `account_email_conflicts_v1`. Другий акаунт з тим самим e-mail (інший Google-subject) їх не бачить;
+  сповіщення за id працюють як раніше. Код: `isEmailEigenaar` / `emailMeldingen` у `backend/index.ts`.
 - Застарілі маршрути → `410 Gone`; міграція `0002` видаляє рядки старих сесій.
 - «Вийти всюди» / «відкликати все»: усі сторінки сесій, вкладок і запам’ятованих браузерів,
   відкриті handoff-коди, незавершені транзакції входу, старі таблиці.
 - Rate limiter для входу/MFA закривається (429) при помилці БД.
 - TODO (наступні фази): сповіщення через e-mail/Telegram (поки лише сайт); кнопка «Це був не я».
+
+### Кілька акаунтів в одному браузері (вкладки)
+- **Кореневий cookie** `__Secure-tsv_ecosystem_<APP_ID>` містить одну *якірну* сесію браузера
+  (перший вхід). Кожна вкладка має власний 48-hex tab id (sessionStorage) і власний **оверлей** у
+  `owner_tab_sessions_v1` (якір + хеш вкладки → акаунт). Bootstrap вкладки бере акаунт з її
+  оверлею; список акаунтів браузера — окремі оверлеї на кожен акаунт.
+- **Знайдена помилка (виправлено):** якщо дві вкладки починали вхід, коли браузер ще не був
+  увійшов (обидві з intent `login`), друга callback створювала НОВУ кореневу сесію і перезаписувала
+  кореневий cookie → перша вкладка (оверлей на старому якорі) переходила на акаунт другої. Так само
+  будь-яка транзакція `login`, що завершувалась після іншої вкладки.
+- **Виправлення (мінімальне):** при завершенні входу (callback і старий `redirect/finalize`), якщо
+  браузер уже має дійсну кореневу сесію, завжди йде шлях `replace-tab`: створюється/оновлюється
+  лише оверлей цієї вкладки, кореневий cookie не змінюється. Нова коренева сесія — лише якщо її ще
+  немає. Тест `tests/eenheid/tabbladen.test.ts` (справжній handler, імітований Google): дві паралельні
+  транзакції в одному cookie jar обидві завершуються; вкладка A лишається на A, B на B, і третій
+  вхід (C) їх не перемикає. Без виправлення тест падає (A переходить на B).
+- Залишкові обмеження (без змін): нова вкладка без власного оверлею показує кореневий акаунт або
+  «вийшли», якщо в браузері є живі вкладки іншого акаунта; вихід з кореневої сесії стосується
+  всіх вкладок браузера.
 
 ---
 
@@ -235,9 +263,19 @@ de code zit, geeft de database geen rijen van anderen terug.
   Google-identiteit (gemigreerde database), dan mag de eerste koppeling eenmalig; daarna ligt die
   vast. Een tweede account met hetzelfde adres krijgt nooit de eigenaarsrol.
 - `email_verified` wordt na userinfo opnieuw geëist.
-- Login-CSRF: `transactions/create` zet de cookie `__Secure-tsv_aanmeld_binding` (HttpOnly,
-  Secure, SameSite=Lax, 15 min); de transactie bewaart alleen de SHA-256; de callback (POST en de
-  oude GET) vergelijkt tijdconstant en wist de cookie. Code: `backend/aanmeld-binding.ts`.
+- Login-CSRF: `transactions/create` zet **per transactie een eigen cookie**
+  `__Secure-tsv_aanmeld_binding_<eerste 16 hex van de transactiehash>` (HttpOnly, Secure,
+  SameSite=Lax, Max-Age 15 min). De transactie bewaart alleen SHA-256 van (transactiehash, tabhash,
+  waarde), dus de cookie hoort bij precies deze transactie en dit tabblad (tab-id). De callback (POST
+  en de oude GET) vergelijkt tijdconstant en wist **alleen die** cookie. Parallelle aanmeldingen in
+  meerdere tabbladen overschrijven elkaar niet meer. Transacties met de oude binding (v1) slagen na
+  de update niet (hooguit 10 min — gewoon opnieuw aanmelden). Code: `backend/aanmeld-binding.ts`.
+- Zichtbaarheid op e-mail: meldingen (`recipientEmail`) en ruimte-uitnodigingen
+  (`workspace_members` met status `invited`) ziet/activeert **alleen het oorspronkelijke account** met
+  dat adres: het eerst aangemaakte `users`-record met dat e-mailadres, en nooit een account dat als
+  "nieuw" in `account_email_conflicts_v1` staat. Een tweede account met hetzelfde adres (ander
+  Google-subject) ziet ze niet; meldingen op id werken zoals voorheen. Code: `isEmailEigenaar` /
+  `emailMeldingen` in `backend/index.ts`.
 - Verouderde routes → `410 Gone` (`VEROUDERDE_ROUTE_WEG`); migratie
   `migrations/0002_verouderde_sessies_opruimen.sql` verwijdert rijen van de oude sessiemodellen.
 - "Overal afmelden" / "alles intrekken": alle pagina's sessies, tabsessies en onthouden browsers,
@@ -246,3 +284,23 @@ de code zit, geeft de database geen rijen van anderen terug.
 - Rate limiter voor aanmelden/MFA faalt dicht (429) bij een databasefout.
 - TODO (volgende fasen): meldingen via e-mail/Telegram (nu alleen op de site); knop "Dit was ik
   niet"; afkoelperiode; 7-dagen-uitgeschakeld bij ontkoppelen.
+
+### Meerdere accounts in één browser (tabbladen)
+- De **rootcookie** `__Secure-tsv_ecosystem_<APP_ID>` bevat één *anker*-sessie voor de browser (de
+  eerste aanmelding). Elk tabblad heeft een eigen tab-id van 48 hex (sessionStorage) en een eigen
+  **overlay** in `owner_tab_sessions_v1` (anker + tabhash → account). Bootstrap van een tabblad neemt
+  het account uit die overlay; de accountlijst van de browser bestaat uit aparte overlays per account.
+- **Gevonden fout (opgelost):** begonnen twee tabbladen een aanmelding terwijl de browser nog niet
+  was aangemeld (allebei intent `login`), dan maakte de tweede callback een NIEUWE root-sessie en
+  overschreef de rootcookie → het eerste tabblad (overlay op het oude anker) schakelde om naar het
+  account van het tweede. Hetzelfde gold voor elke `login`-transactie die na een ander tabblad afrondde.
+- **Oplossing (minimaal):** bij het afronden (callback en de oude `redirect/finalize`) wordt, als de
+  browser al een geldige root-sessie heeft, altijd het `replace-tab`-pad genomen: alleen de overlay
+  van dit tabblad wordt gemaakt/bijgewerkt, de rootcookie blijft ongemoeid. Een nieuwe root-sessie
+  komt er alleen als er nog geen is. Test `tests/eenheid/tabbladen.test.ts` (echte handler,
+  nagebootste Google): twee parallelle transacties in één cookiejar ronden allebei af; tab A blijft A,
+  tab B blijft B, en een derde aanmelding (C) schakelt ze niet om. Zonder de fix faalt de test
+  (A wordt B).
+- Resterende beperkingen (ongewijzigd): een nieuw tabblad zonder eigen overlay toont het
+  root-account, of "afgemeld" als er levende tabbladen van een ander account zijn; afmelden van de
+  root-sessie geldt voor alle tabbladen van de browser.
