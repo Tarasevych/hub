@@ -24,7 +24,7 @@ CREATE INDEX records_updated_idx  ON app.records (updated_at);                  
 
 -- Metadata van bestanden onder UPLOADS_DIR (codering, type, integriteit).
 CREATE TABLE app.storage_objects (
-  path          text PRIMARY KEY CHECK (path ~ '^[A-Za-z0-9/_.-]{1,512}$' AND path !~ '\.\.'),
+  path          text PRIMARY KEY CHECK (length(path) BETWEEN 1 AND 512 AND path ~ '^[A-Za-z0-9/_.-]+$' AND path !~ '\.\.'),
   content_type  text   NOT NULL,
   size_bytes    bigint NOT NULL CHECK (size_bytes >= 0),
   sha256        text   NOT NULL,

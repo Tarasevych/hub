@@ -5,7 +5,7 @@
 // altijd base64). Om bestanden op schijf bruikbaar te houden, decoderen we geldige base64
 // naar ruwe bytes en noteren we de codering in app.storage_objects; `read` codeert weer terug.
 import { createHash, randomBytes } from 'node:crypto';
-import { mkdir, readFile, rename, rm, stat, writeFile, readdir } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, stat, unlink, writeFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { getPool } from './pg';
 
@@ -41,6 +41,8 @@ export const storage = {
   async write(items: Array<{ path: string; content: string; contentType: string }>): Promise<boolean[]> {
     const results: boolean[] = [];
     for (const item of items || []) {
+      let geschreven = '';
+      let tijdelijk = '';
       try {
         const full = resolveStoragePath(item.path);
         const content = String(item.content ?? '');
@@ -49,12 +51,18 @@ export const storage = {
         const bytes = asBase64 ? Buffer.from(content, 'base64') : Buffer.from(content, 'utf8');
         await mkdir(path.dirname(full), { recursive: true, mode: 0o750 });
         const tmp = path.join(path.dirname(full), `.tmp-${randomBytes(8).toString('hex')}`);
+        tijdelijk = tmp;
         await writeFile(tmp, bytes, { mode: 0o640, flag: 'wx' });
         await rename(tmp, full);
+        tijdelijk = '';
+        geschreven = full;
         await saveMeta(item.path, contentType, bytes.length, createHash('sha256').update(bytes).digest('hex'), asBase64 ? 'base64' : 'utf8');
         results.push(true);
       } catch (err) {
         console.error('[storage.write] mislukt:', (err as Error).message);
+        // Geen half werk achterlaten: zonder metadata-rij ook geen bestand.
+        if (tijdelijk) await unlink(tijdelijk).catch(() => undefined);
+        if (geschreven) await unlink(geschreven).catch(() => undefined);
         results.push(false);
       }
     }
