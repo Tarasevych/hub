@@ -26,8 +26,8 @@ Formaat van `geheimen.env`: één `NAAM=waarde` per regel, zonder aanhalingsteke
 
 | Naam | Doel | Genereren / waarde |
 |---|---|---|
-| `GOOGLE_OAUTH_CLIENT_ID` (alias `GOOGLE_SUITE_CLIENT_ID`) | OAuth-client-ID (publiek). | Google Cloud Console → *Credentials* → nieuwe OAuth-client (type *Web*). Toegestane redirect-URI: **`https://id.tarasevych.com/`** (exact, met slash). |
-| `GOOGLE_OAUTH_CLIENT_SECRET` (alias `GOOGLE_SUITE_CLIENT_SECRET`) | OAuth-clientgeheim. | Uit dezelfde client; maak een **nieuwe** client of roteer het geheim. |
+| `GOOGLE_OAUTH_CLIENT_ID` (alias `GOOGLE_SUITE_CLIENT_ID`; staat die er ook, dan wint `GOOGLE_SUITE_CLIENT_ID` — dan moet het dezelfde client zijn) | OAuth-client-ID (publiek). | Google Cloud Console → *Credentials* → nieuwe OAuth-client (type *Web*). Toegestane redirect-URI: **`https://id.tarasevych.com/`** (exact, met slash). |
+| `GOOGLE_OAUTH_CLIENT_SECRET` (alias `GOOGLE_SUITE_CLIENT_SECRET` geldt alleen voor de contour-status; **de login zelf leest uitsluitend `GOOGLE_OAUTH_CLIENT_SECRET`**) | OAuth-clientgeheim. | Uit dezelfde client; maak een **nieuwe** client of roteer het geheim. |
 
 Zonder client-ID antwoordt `POST /api/auth/google/start` met **503 `GOOGLE_NOT_CONFIGURED`** (en maakt geen state-rijen).
 
