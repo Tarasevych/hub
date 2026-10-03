@@ -27,6 +27,7 @@ export type RouterMiddleware = (ctx: RouterContext) => Promise<RouterResponse | 
 export type RouterRoutes = Record<string, RouterMiddleware[]>;
 
 import { metVerzoek } from './context';
+import { poortNaVerzoek } from './auth-poort';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
 
@@ -103,7 +104,7 @@ export function router(routes: RouterRoutes): RouterHandler {
       try {
         for (const middleware of gekozen.route.chain) {
           const result = await middleware(ctx);
-          if (result) return result;
+          if (result) return poortNaVerzoek(gekozen.route.pattern, event, result);
         }
         return error('No response', 500);
       } catch (err) {
