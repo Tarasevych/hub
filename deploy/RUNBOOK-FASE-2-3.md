@@ -51,7 +51,7 @@ dan automatisch terug naar de vorige release.
 Controle:
 ```
 curl -s http://127.0.0.1:8080/__gezondheid
-runuser -u postgres -- psql -d mijnruimte -Atc "select name from app.schema_migrations order by 1"   # t/m 0006
+runuser -u postgres -- psql -d mijnruimte -Atc "select version from app.schema_migrations order by 1"   # t/m 0006
 journalctl -u mijn-ruimte -n 50 | grep -E 'eigenaar|auth-poort|rls-audit|FOUT|Error'
 ```
 Rooktest in de browser: aanmelden met Google op hub/id/admin, een werkruimte openen, mail en cloud openen.
@@ -142,7 +142,7 @@ systemctl restart mijn-ruimte && sleep 2 && curl -s http://127.0.0.1:8080/__gezo
 ## 7. Later, bewust: definitief wissen na 30 dagen
 
 Verwijderde accounts zijn 30 dagen te herstellen. De opruimjob (elk uur) meldt daarna alleen wat hij zou wissen:
-`journalctl -u 'mijn-ruimte-cron@opruimen*' | grep 'verlopen accountverwijderingen'`. Pas na een geslaagde
+`journalctl -u mijn-ruimte-cron@opruimen.service | grep 'verlopen accountverwijderingen'`. Pas na een geslaagde
 hersteltest van een back-up `ACCOUNT_DEFINITIEF_WISSEN=1` in `geheimen.env` zetten (onomkeerbaar: inhoud,
 identiteiten en bestanden van dat account weg, grafsteen zonder persoonsgegevens; audit blijft).
 
