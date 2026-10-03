@@ -1,4 +1,4 @@
-import {db} from '@appdeploy/sdk';
+import {db} from '../server/platform';
 import {apiPlatformVaultItems} from './api-platform-vault';
 import {googleSuiteOnboardingSnapshot} from './google-suite-onboarding';
 import {createGoogleContourRoutes} from './google-contour';

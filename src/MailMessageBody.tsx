@@ -1,4 +1,4 @@
-import{api}from'@appdeploy/client';
+import{api}from'./platform/client';
 import{useEffect,useLayoutEffect,useMemo,useRef,useState}from'react';
 import{loadMailAttachmentBlob}from'./mail-attachment-loader';
 import'./mail-message-body.css';

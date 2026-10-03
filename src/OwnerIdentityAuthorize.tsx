@@ -1,5 +1,5 @@
 import {useEffect,useRef} from 'react';
-import {api} from '@appdeploy/client';
+import {api} from './platform/client';
 import type {OwnerLang} from './owner-test-i18n';import {TECH_ORIGIN} from '../backend/deployment-identity';
 
 type Attach={type:'owner.identity.attach';transactionId:string;attachSecret:string;sourceOrigin:string};

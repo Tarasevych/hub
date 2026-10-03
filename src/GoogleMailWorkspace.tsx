@@ -1,4 +1,4 @@
-import{api}from'@appdeploy/client';
+import{api}from'./platform/client';
 import{Archive,Ban,BellOff,CalendarPlus,ChevronLeft,ChevronRight,Clock3,Copy,Download,ExternalLink,Info,Files,FolderInput,Forward,Inbox,Languages,ListFilter,ListTodo,LoaderCircle,Mail,MailOpen,Minimize2,PenLine,Plus,Printer,RefreshCw,ReplyAll,Save,Scale,Settings,Share2,ShieldAlert,ShieldCheck,Smile,Star,Tag,Tags,Trash2,VolumeX,X,ZoomIn,ZoomOut}from'lucide-react';
 import{lazy,Suspense,type CSSProperties,useEffect,useLayoutEffect,useMemo,useRef,useState}from'react';
 import{retainEqual}from'./stable-state';import {TECH_ORIGIN} from '../backend/deployment-identity';

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Mail, Send, X } from 'lucide-react';
-import { api } from '@appdeploy/client';
+import { api } from './platform/client';
 import MailComposeEditor, { type MailComposeEditorHandle } from './MailComposeEditor';
 import MailInputTools from './MailInputTools';
 import './mail-new-message.css';

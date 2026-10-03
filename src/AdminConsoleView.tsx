@@ -1,5 +1,5 @@
 import{useEffect,useMemo,useState}from'react';
-import{api}from'@appdeploy/client';
+import{api}from'./platform/client';
 import{Activity,FileText,KeyRound,Link2,ListChecks,MonitorSmartphone,Network,RefreshCw,ShieldCheck,TriangleAlert,Users}from'lucide-react';
 import'./admin-console.css';
 import AdminDiagnosticsView from'./AdminDiagnosticsView';

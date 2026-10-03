@@ -1,4 +1,4 @@
-import {db} from '@appdeploy/sdk';
+import {db} from '../server/platform';
 import {googleSuitePrincipalAccessToken} from './google-suite-onboarding';
 
 type DriveAccount={id:string;ownerUserId:string;principalId:string;status:string;email:string};

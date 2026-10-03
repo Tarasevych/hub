@@ -1,4 +1,4 @@
-import {error} from '@appdeploy/sdk';
+import {error} from '../server/platform';
 export type WorkspaceRole='owner'|'admin'|'member'|'viewer';
 export type Permission='workspace.read'|'workspace.write'|'workspace.share'|'mail.read'|'mail.write'|'cloud.read'|'cloud.write'|'calendar.read'|'calendar.write'|'photos.read'|'photos.write'|'admin.read'|'admin.users'|'admin.roles';
 const ALL:Permission[]=['workspace.read','workspace.write','workspace.share','mail.read','mail.write','cloud.read','cloud.write','calendar.read','calendar.write','photos.read','photos.write','admin.read','admin.users','admin.roles'];

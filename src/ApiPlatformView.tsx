@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {api} from '@appdeploy/client';
+import {api} from './platform/client';
 import {API_PLATFORM_VERSION,apiPlatformContractPayload,type ApiPlatformCapability} from './api-platform-contract';
 import {ecosystemTabContext} from './tab-context';
 import './api-platform-view.css';

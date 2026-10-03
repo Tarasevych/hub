@@ -1,4 +1,4 @@
-import{api}from'@appdeploy/client';
+import{api}from'./platform/client';
 import{Clock3,Gauge,RefreshCw,UserRound}from'lucide-react';
 import type{ReactNode}from'react';
 import'./cognitive-context.css';

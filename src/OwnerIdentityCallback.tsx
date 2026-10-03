@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import {api} from '@appdeploy/client';
+import {api} from './platform/client';
 import {TECH_ORIGIN} from '../backend/deployment-identity';
 
 type Lang='uk'|'nl';

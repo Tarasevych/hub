@@ -1,4 +1,4 @@
-import {ai,db,error,json} from '@appdeploy/sdk';
+import {ai,db,error,json} from '../server/platform';
 import {PDFDocument} from 'pdf-lib';
 import {createHash,randomBytes} from 'node:crypto';
 import {lookup} from 'node:dns/promises';

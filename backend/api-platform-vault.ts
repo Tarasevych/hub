@@ -1,5 +1,5 @@
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
-import {db,secrets} from '@appdeploy/sdk';
+import {db,secrets} from '../server/platform';
 import {TECH_ORIGIN} from './deployment-identity';
 
 export const OWNER_VAULT_TABLE='owner_vault_v1';
