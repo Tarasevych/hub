@@ -33,6 +33,19 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
 | `cloudflared-config.yml` | Sjabloon: hub, id, mail, cloud, ai, github, huis, api, admin, dashboard → `http://127.0.0.1:8080`; rest 404. |
 | `installeer-app.sh` | `inrichten`, `installeren`, `terugdraaien [release]`, `lijst`. |
 
+## Opties (omgevingsvariabelen van de scripts)
+Dit zijn geen app-geheimen (die staan in `ENV-VARS.md`), alleen instellingen van de deployscripts:
+
+| Variabele | Script | Standaard | Betekenis |
+|---|---|---|---|
+| `BEWAAR_RELEASES` | `installeer-app.sh` | `5` | Aantal releases dat bewaard blijft (oudere worden verwijderd, de actieve en vorige nooit). |
+| `ZONDER_BACKUP=1` | `installeer-app.sh` | uit | Back-up vóór de migratie overslaan (alleen als er net een verse back-up is). |
+| `NODE` | `installeer-app.sh` | `/usr/bin/node` | Pad naar Node 24. |
+| `PORT` | `installeer-app.sh`, `mijn-ruimte.service` | `8080` | Lokale poort (gezondheidscontrole op `http://127.0.0.1:$PORT/__gezondheid`); houd gelijk aan de unit en `cloudflared-config.yml`. |
+| `UPLOADS_DIR` | `backup-maken.sh`, units | `/srv/data/uploads` | Map met geüploade bestanden. |
+| `BACKUP_DIR` | `backup-maken.sh` | `/srv/backups/mijn-ruimte` | Doelmap van de back-ups op de VM. |
+| `BACKUP_BEWAAR_DAGEN` | `backup-maken.sh` | `7` | Hoeveel dagen back-ups op de VM blijven staan. |
+
 ## Terugdraaien
 `deploy/installeer-app.sh terugdraaien` (vorige release) of `… terugdraaien 20261003-101500`.
 Migraties zijn alleen vooruit: het schema blijft op de nieuwste stand. Houd migraties daarom
