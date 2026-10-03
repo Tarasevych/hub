@@ -66,6 +66,7 @@ const vanIp = (ip, extra = {}) => ({ 'cf-connecting-ip': ip, ...extra });
 const nu = Date.now();
 const tab = () => randomBytes(24).toString('hex');
 const zaai = [];
+const zaaiIds = [];
 
 async function zaaiGebruiker(email, rol) {
   const id = await voeg('users', { email, sub: `lokaal-${randomUUID()}`, name: email.split('@')[0], picture: '', role: rol, status: 'approved', accessLevel: 'full', entitlements: [], createdAt: nu, updatedAt: nu });
@@ -268,6 +269,28 @@ try {
   const e2 = await verzoek('POST', 'mail.tarasevych.com', '/api/ecosystem/handoff/exchange', { code: ec, service: 'mail' }, { cookie: legacyBinding });
   check('oudere inwisselroutes eisen ook de bindingscookie (consume, exchange)', l1.status === 401 && l2.status === 200 && e1.status === 401 && e2.status === 200, `consume ${l1.status}/${l2.status}, exchange ${e1.status}/${e2.status} ${e2.data?.error || ''}`);
 
+  // B8c. Login-CSRF bij de Google-callback: een ondergeschoven state/code (van een aanmelding die in een
+  // andere browser startte) wordt geweigerd; dezelfde browser (bindingscookie) komt voorbij de controle.
+  const zaaiAanmelding = async (bindingHash) => {
+    const txId = randomUUID(), stateId = randomUUID();
+    const state = `v2.uk.${Buffer.from(txId).toString('base64url')}.${randomBytes(24).toString('base64url')}`;
+    await pool.query('insert into app.records (tbl,id,data) values ($1,$2,$3)', ['owner_auth_transactions_v1', txId, { transactionHash: sha(randomBytes(8).toString('hex')), attachHash: 'x', redeemHash: 'x', ...(bindingHash ? { bindingHash } : {}), sourceOrigin: 'https://hub.tarasevych.com', targetService: 'hub', tabHash: sha('t'), tabContext: 't', intent: 'login', flowMode: 'redirect', returnTo: 'https://hub.tarasevych.com/', status: 'attached', createdAt: Date.now(), expiresAt: Date.now() + 6e5, attachedAt: Date.now(), oauthStateId: stateId, rooktest: true }]);
+    await pool.query('insert into app.records (tbl,id,data) values ($1,$2,$3)', ['google_oauth_states', stateId, { stateHash: sha(state), nonceHash: 'x', proofHash: 'x', status: 'pending', ownerTransactionRecordId: txId, ownerRedirect: true, remember: false, ownerLocale: 'uk', createdAt: Date.now(), expiresAt: Date.now() + 6e5, rooktest: true }]);
+    zaaiIds.push(txId, stateId);
+    return state;
+  };
+  const aanmeldWaarde = randomBytes(32).toString('base64url');
+  const aanmeldCookie = `__Secure-tsv_aanmeld_binding=${aanmeldWaarde}`;
+  const stA = await zaaiAanmelding(sha(aanmeldWaarde));
+  const cbZonder = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/google/callback', { state: stA, code: 'rooktest-code' });
+  const stB = await zaaiAanmelding(sha(aanmeldWaarde));
+  const cbAnder = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/google/callback', { state: stB, code: 'rooktest-code' }, { cookie: `__Secure-tsv_aanmeld_binding=${randomBytes(32).toString('base64url')}` });
+  const stC = await zaaiAanmelding('');
+  const cbOud = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/google/callback', { state: stC, code: 'rooktest-code' }, { cookie: aanmeldCookie });
+  const stD = await zaaiAanmelding(sha(aanmeldWaarde));
+  const cbEigen = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/google/callback', { state: stD, code: 'rooktest-code' }, { cookie: aanmeldCookie });
+  check('login-CSRF: Google-callback zonder/met andere bindingscookie of zonder hash → LOGIN_BINDING_MISMATCH; eigen browser komt voorbij de controle', cbZonder.data?.reasonCode === 'LOGIN_BINDING_MISMATCH' && cbAnder.data?.reasonCode === 'LOGIN_BINDING_MISMATCH' && cbOud.data?.reasonCode === 'LOGIN_BINDING_MISMATCH' && cbEigen.data?.ok === false && !!cbEigen.data?.reasonCode && cbEigen.data.reasonCode !== 'LOGIN_BINDING_MISMATCH', `zonder ${cbZonder.data?.reasonCode}, ander ${cbAnder.data?.reasonCode}, oud ${cbOud.data?.reasonCode}, eigen ${cbEigen.data?.reasonCode}`);
+
   // B9. CSP op de server-gegenereerde callbackpagina: hashes, geen 'unsafe-inline'.
   const cb = await new Promise((resolve, reject) => { const u = new URL(BASE); http.get({ hostname: u.hostname, port: u.port, path: '/api/owner/auth/google/callback?state=x&code=y', headers: { host: 'id.tarasevych.com' } }, rs => { rs.resume(); resolve({ status: rs.statusCode, csp: rs.headers['content-security-policy'] || '', type: rs.headers['content-type'] || '' }); }).on('error', reject); });
   check("callbackpagina heeft strikte CSP (sha256, geen 'unsafe-inline')", !/unsafe-inline/.test(cb.csp) && /default-src 'none'/.test(cb.csp) && (!/text\/html/.test(cb.type) || /script-src ('sha256-|'none')/.test(cb.csp)), `status ${cb.status} ${cb.type} csp=${cb.csp.slice(0, 120)}`);
@@ -294,6 +317,7 @@ try {
     for (const { p } of paden.rows) { await rm(join(UPLOADS, p), { force: true }); await pool.query('delete from app.storage_objects where path=$1', [p]); }
     await pool.query("delete from app.records where id = any($1) or data->>'userId' = any($1) or data->>'ownerUserId' = any($1)", [zaai]);
   }
+  if (zaaiIds.length) await pool.query('delete from app.records where id = any($1)', [zaaiIds]).catch(() => {});
   await pool.query("delete from app.login_lockouts where subject like 'wachtwoord:rooktest-%'").catch(() => {});
   await pool.end();
   const fout = resultaten.filter(r => !r.ok).length;
