@@ -1,5 +1,7 @@
 import {Bell,Building2,Check,Copy,Fingerprint,Globe,Info,KeyRound,Lock,LogIn,Plus,RefreshCw,ShieldCheck,Smartphone,Trash2} from 'lucide-react';
 import type {Lang} from './access-plane-copy';
+// Passkeys blijven verborgen tot er echte WebAuthn-verificatie (attestation/assertion) in de backend is.
+const PASSKEYS_ENABLED=false;
 
 type Method={id:string;kind?:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
 type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number};
@@ -101,7 +103,7 @@ export function AccessPlanePanels(p:Props){
   const subtitle=tab==='methods'
     ?tr(lang,'Керуйте тим, як ви входите в обліковий запис.','Beheer hoe u zich bij uw account aanmeldt.')
     :tab==='security'
-    ?tr(lang,'Двофакторна автентифікація та passkey для цього акаунта.','Tweefactorauthenticatie en passkeys voor dit account.')
+    ?tr(lang,'Двофакторна автентифікація для цього акаунта.','Tweefactorauthenticatie voor dit account.')
     :tr(lang,'Коди відновлення на випадок втрати доступу до інших способів.','Herstelcodes voor als u geen toegang meer heeft tot andere methoden.');
 
   return <div className='access-plane'>
@@ -190,7 +192,7 @@ export function AccessPlanePanels(p:Props){
         </div>
       </article>}
 
-      {webauthnFactor&&<article className='access-plane-card' data-access-factor='webauthn'>
+      {PASSKEYS_ENABLED&&webauthnFactor&&<article className='access-plane-card' data-access-factor='webauthn'>
         <Fingerprint/>
         <div>
           <strong>{tr(lang,'Passkey / біометрія пристрою','Passkey / apparaatbiometrie')}</strong>
@@ -200,7 +202,7 @@ export function AccessPlanePanels(p:Props){
         <button type='button' disabled={busy} onClick={()=>void enrollPasskey()}><Plus/>{tr(lang,'Додати passkey','Passkey toevoegen')}</button>
       </article>}
 
-      {(data.webauthn||[]).map(key=><article className='access-plane-card compact' key={key.id}>
+      {PASSKEYS_ENABLED&&(data.webauthn||[]).map(key=><article className='access-plane-card compact' key={key.id}>
         <Fingerprint/><div><strong>{key.label}</strong></div>
         <button type='button' disabled={busy} onClick={()=>void write('/api/owner/access/webauthn/remove',{id:key.id})} aria-label={tr(lang,'Видалити passkey','Passkey verwijderen')}><Trash2/></button>
       </article>)}

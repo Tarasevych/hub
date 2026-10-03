@@ -15,3 +15,10 @@ DATABASE_URL=... node e2e.mjs   # Chrome: --host-resolver-rules=MAP *.tarasevych
 Dekt `tests/tests.txt` test 1 (afgemelde shell) en test 2 (aangemelde Hub-overzicht), plus één cookie over
 subdomeinen en CSP-schendingen. De sessie wordt rechtstreeks in de database gezaaid (Google is nog niet
 geconfigureerd) en na afloop opgeruimd. Nooit tegen productie draaien.
+
+## Alles in één keer
+`scripts/lokaal-e2e/test-alles.sh` herstart server en proxy en draait de rooktest (incl. fase-B-beveiliging),
+de eenheidstests (`scripts/eenheidstests.mjs`: PKCE, SSRF/DNS-pinning, sleutels, lockout) en deze browsertest.
+Nodig in het geheimenbestand (`GEHEIMEN=…`, standaard `/workspace/.lokaal/geheimen.env`): `DATABASE_URL`,
+`TOTP_ENCRYPTION_KEY_V1`, `RECOVERY_CODE_PEPPER` (alleen lokale testwaarden). De proxy haalt `:8443` uit de
+Origin-header, zoals de echte tunnel (poort 443), zodat de CSRF-controle hetzelfde werkt als in productie.

@@ -33,6 +33,13 @@ try {
     const heading = await page.locator('h1, h2').first().innerText().catch(() => '');
     check(`Test 2: ${host} aangemeld toont kop en inhoud`, !!heading && text.length > 80, `kop=${JSON.stringify(heading.slice(0, 60))} tekst=${text.length} tekens; naam zichtbaar=${text.includes('E2E')}`);
   }
+  // Test 8: passkeys verborgen tot echte verificatie; TOTP-kaart wel zichtbaar.
+  await page.goto('https://id.tarasevych.com/security', { waitUntil: 'networkidle' }); await page.waitForTimeout(2500);
+  await page.screenshot({ path: '/tmp/pw/8-id-beveiliging.png' });
+  const passkeyKaart = await page.locator("[data-access-factor='webauthn']").count();
+  const totpKaart = await page.locator("[data-access-factor='totp']").count();
+  const passkeyKnop = await page.getByText(/Passkey toevoegen|Додати passkey/).count();
+  check('Test 8: beveiliging toont geen passkey-kaart of -knop (wel TOTP)', passkeyKaart === 0 && passkeyKnop === 0 && totpKaart > 0, `webauthn=${passkeyKaart} knop=${passkeyKnop} totp=${totpKaart}`);
   const cookies = await ctx.cookies('https://mail.tarasevych.com/');
   check('cookie geldt ook voor mail.tarasevych.com (één aanmelding)', cookies.some(c => c.name.startsWith('__Secure-tsv_ecosystem_')), cookies.map(c => `${c.name}(${c.sameSite},${c.domain})`).join(', '));
   check('geen CSP-schendingen in de console', csp.length === 0, csp.slice(0, 3).join(' | '));

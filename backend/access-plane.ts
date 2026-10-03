@@ -1,6 +1,6 @@
 import {createHmac,randomBytes,scrypt,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
-import {db} from '../server/platform';
+import {db,clearLoginFailures,envKey32,lockoutRemaining,openWithEnvKey,pepperedHash,registerLoginFailure,sealWithEnvKey} from '../server/platform';
 import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './google-contour';
 
 const scryptAsync=promisify(scrypt);
@@ -9,8 +9,8 @@ export type MethodId=typeof METHOD_IDS[number];
 export type LoginMethodId='google'|'password'|'microsoft'|'apple'|'facebook'|'phone';
 type Binding={id:string;userId:string;method:LoginMethodId;providerSubject:string;email:string;status:'active'|'disabled'|'pending';lastUsedAt:number;createdAt:number;updatedAt:number};
 type PasswordRecord={id:string;userId:string;algorithm:'scrypt';n:number;r:number;p:number;salt:string;hash:string;mustChange:boolean;createdAt:number;updatedAt:number};
-type TotpRecord={id:string;userId:string;secret:string;confirmed:boolean;createdAt:number;updatedAt:number};
-type RecoveryRecord={id:string;userId:string;hashes:string[];createdAt:number;remaining:number};
+type TotpRecord={id:string;userId:string;secret?:string;secretEnc?:string;confirmed:boolean;createdAt:number;updatedAt:number};
+type RecoveryRecord={id:string;userId:string;hashes:string[];hashVersion?:number;createdAt:number;remaining:number};
 type PhoneRecord={id:string;userId:string;phone:string;verified:boolean;createdAt:number;updatedAt:number};
 type WebauthnRecord={id:string;userId:string;credentialId:string;label:string;createdAt:number};
 type PolicyRecord={id:string;tenantKey:string;enabled:Partial<Record<MethodId,boolean>>;mfa:'optional'|'required';updatedAt:number};
@@ -26,8 +26,26 @@ const WEBAUTHN='identity_webauthn_v1';
 const POLICY='access_method_policy_v1';
 const IDENTITIES='account_identities';
 const LOGIN_METHODS:LoginMethodId[]=['google','password','microsoft','apple','facebook','phone'];
-const DEFAULT_ENABLED:Partial<Record<MethodId,boolean>>={google:true,password:true,microsoft:false,apple:false,facebook:false,phone:false,totp:true,recovery:true,webauthn:true,push:false};
+const DEFAULT_ENABLED:Partial<Record<MethodId,boolean>>={google:true,password:true,microsoft:false,apple:false,facebook:false,phone:false,totp:true,recovery:true,webauthn:false,push:false};
+// Legacy (AppDeploy): vaste HMAC-sleutel in de broncode; alleen nog om oude herstelcodes te controleren.
 const sha=(value:string)=>createHmac('sha256','mij-prostir-access-v1').update(value).digest('hex');
+// Fase B: TOTP-geheim versleuteld met TOTP_ENCRYPTION_KEY_V1 (AES-256-GCM, gebonden aan userId);
+// herstelcodes gehasht met HMAC-SHA256 en de geheime pepper RECOVERY_CODE_PEPPER.
+const TOTP_KEY='TOTP_ENCRYPTION_KEY_V1',RECOVERY_PEPPER='RECOVERY_CODE_PEPPER';
+const totpAad=(userId:string)=>`identity-totp:v1:${userId}`;
+const totpKeyConfigured=()=>Boolean(envKey32(TOTP_KEY));
+const recoveryPepperConfigured=()=>String(process.env[RECOVERY_PEPPER]||'').trim().length>=32;
+const recoveryHash=(code:string)=>pepperedHash(RECOVERY_PEPPER,`recovery:v2:${code}`);
+const recoveryMatches=(record:RecoveryRecord,code:string)=>record.hashVersion===2?(recoveryPepperConfigured()?recoveryHash(code):''):sha(code);
+/** Ontsleuteld base32-geheim; '' als de sleutel ontbreekt of de envelop niet klopt. */
+const totpSecretOf=(row:TotpRecord)=>{
+  if(row.secretEnc){try{return openWithEnvKey(TOTP_KEY,row.secretEnc,totpAad(row.userId))}catch(err){console.error('[totp] ontsleutelen mislukt:',(err as Error).message);return''}}
+  return String(row.secret||'');
+};
+const newRecoveryCodes=()=>{
+  const codes=Array.from({length:10},()=>randomBytes(8).toString('hex').slice(0,12).toUpperCase());
+  return{codes,hashes:codes.map(item=>recoveryHash(item)),hashVersion:2};
+};
 const withoutId=<T extends{id:string}>({id:_id,...rest}:T)=>rest;
 const b32='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const toBase32=(buf:Buffer)=>{let bits=0,acc=0,out='';for(const byte of buf){acc=acc<<8|byte;bits+=8;while(bits>=5){out+=b32[(acc>>>(bits-5))&31];bits-=5;}}if(bits)out+=b32[(acc<<(5-bits))&31];return out;};
@@ -61,7 +79,7 @@ async function verifyPassword(record:PasswordRecord,password:string){
 async function policyOf(){
   const rows=await db.list<Omit<PolicyRecord,'id'>>(POLICY,{filter:{tenantKey:'global'},limit:5});
   const row=(rows.items as PolicyRecord[])[0];
-  return{enabled:{...DEFAULT_ENABLED,...(row?.enabled||{})},mfa:row?.mfa||'optional' as const,updatedAt:row?.updatedAt||0,id:row?.id||''};
+  return{enabled:{...DEFAULT_ENABLED,...(row?.enabled||{}),webauthn:false},mfa:row?.mfa||'optional' as const,updatedAt:row?.updatedAt||0,id:row?.id||''};
 }
 async function bindingsFor(userId:string){
   const rows=await db.list<Omit<Binding,'id'>>(BINDINGS,{filter:{userId},limit:40});
@@ -73,7 +91,15 @@ async function passwordFor(userId:string){
 }
 async function totpFor(userId:string){
   const rows=await db.list<Omit<TotpRecord,'id'>>(TOTP,{filter:{userId},limit:5});
-  return(rows.items as TotpRecord[])[0]||null;
+  const row=(rows.items as TotpRecord[])[0]||null;
+  // Migratie: een oud record met leesbaar geheim wordt versleuteld zodra de sleutel er is.
+  if(row&&row.secret&&!row.secretEnc&&totpKeyConfigured()){
+    const{secret,...rest}=withoutId(row);
+    const migrated={...rest,secretEnc:sealWithEnvKey(TOTP_KEY,String(secret),totpAad(row.userId)),updatedAt:Date.now()};
+    await db.update(TOTP,[{id:row.id,record:migrated}]);
+    return{...migrated,id:row.id} as TotpRecord;
+  }
+  return row;
 }
 async function recoveryFor(userId:string){
   const rows=await db.list<Omit<RecoveryRecord,'id'>>(RECOVERY,{filter:{userId},limit:5});
@@ -172,7 +198,7 @@ export async function accessSnapshot(user:{id:string;email:string;role:string},a
     {id:'recovery',enabled:true,enrolled:Boolean(recovery&&recovery.remaining>0),status:recovery&&recovery.remaining>0?'active':'not_enrolled',remaining:recovery?.remaining||0},
     {id:'sms',enabled:false,enrolled:Boolean(phone),status:phone?'pending_sms_contour':'not_configured',honest:'needs_sms_contour',phone:phone?.phone||''},
     {id:'push',enabled:false,enrolled:false,status:'not_configured',honest:'needs_push_channel'},
-    {id:'webauthn',enabled:policy.enabled.webauthn!==false,enrolled:keys.length>0,status:keys.length?'active':'not_enrolled',count:keys.length,honest:keys.length?'':'browser_supported_not_enrolled'}
+    {id:'webauthn',enabled:false,enrolled:false,status:'disabled_until_verified',count:0,honest:'webauthn_verification_not_implemented',legacyUnverified:keys.length}
   ];
   return{
     architecture:'access-plane-v1',
@@ -181,7 +207,7 @@ export async function accessSnapshot(user:{id:string;email:string;role:string},a
     methods:catalog,
     factors,
     bindings:publicBindings(bindings,identities),
-    webauthn:keys.map(item=>({id:item.id,label:item.label,createdAt:item.createdAt})),
+    webauthn:[],// passkeys verborgen tot echte verificatie; oude, onverifieerde registraties tellen niet mee
     usableCount:usable.length,
     lockout:{protected:usable.length<=1,reason:usable.length<=1?'LAST_LOGIN_METHOD_PROTECTED':''},
     password:{configured:Boolean(password),mustChange:Boolean(password?.mustChange)},
@@ -205,22 +231,30 @@ export async function verifyPasswordLogin(email:string,password:string,totp=''){
   if(!clean||!password)return{status:'invalid' as const,code:'ACCESS_CREDENTIALS_INVALID',http:400};
   const policy=await policyOf();
   if(policy.enabled.password===false)return{status:'disabled' as const,code:'ACCESS_PASSWORD_DISABLED',http:403};
+  // Lockout per account (ook voor onbekende adressen, zodat het gedrag niets verraadt).
+  const subject=`wachtwoord:${clean}`;
+  const locked=await lockoutRemaining(subject);
+  if(locked>0)return{status:'locked' as const,code:'ACCESS_LOCKED_TEMPORARILY',http:429,retryAfter:locked};
+  const failed=async(code:string)=>{const lock=await registerLoginFailure(subject);return{status:'invalid' as const,code:lock>0?'ACCESS_LOCKED_TEMPORARILY':code,http:lock>0?429:401,retryAfter:lock}};
   const users=await db.list<{id:string;email:string;status:string;role:string;name?:string}>('users',{filter:{email:clean},limit:5});
   const user=users.items[0];
-  if(!user||user.status==='blocked'||user.status==='deleted')return{status:'invalid' as const,code:'ACCESS_CREDENTIALS_INVALID',http:401};
+  if(!user||user.status==='blocked'||user.status==='deleted')return failed('ACCESS_CREDENTIALS_INVALID');
   const record=await passwordFor(user.id);
-  if(!record||!await verifyPassword(record,password))return{status:'invalid' as const,code:'ACCESS_CREDENTIALS_INVALID',http:401};
+  if(!record||!await verifyPassword(record,password))return failed('ACCESS_CREDENTIALS_INVALID');
   const totpRow=await totpFor(user.id);
   if(totpRow?.confirmed){
     if(!totp)return{status:'mfa' as const,code:'MFA_REQUIRED',http:200,user:{id:user.id,email:user.email,name:user.name,role:user.role,status:user.status}};
-    if(!totpValid(fromBase32(totpRow.secret),totp)){
+    const secret=totpSecretOf(totpRow);
+    if(!secret)return{status:'unavailable' as const,code:'ACCESS_TOTP_KEY_MISSING',http:503};
+    if(!totpValid(fromBase32(secret),totp)){
       const recovery=await recoveryFor(user.id);
-      const hashed=sha(totp.trim().toUpperCase());
-      if(!recovery?.hashes.includes(hashed))return{status:'invalid' as const,code:'ACCESS_MFA_INVALID',http:401};
+      const hashed=recovery?recoveryMatches(recovery,totp.trim().toUpperCase()):'';
+      if(!recovery||!hashed||!recovery.hashes.includes(hashed))return failed('ACCESS_MFA_INVALID');
       const next=recovery.hashes.filter(item=>item!==hashed);
       await db.update(RECOVERY,[{id:recovery.id,record:{...withoutId(recovery),hashes:next,remaining:next.length}}]);
     }
   }
+  await clearLoginFailures(subject);
   await upsertLoginBinding(user.id,'password',user.id,user.email);
   return{status:'ok' as const,code:'OK',http:200,user:{id:user.id,email:user.email,name:user.name,role:user.role,status:user.status}};
 }
@@ -228,7 +262,7 @@ export async function verifyPasswordLogin(email:string,password:string,totp=''){
 async function writePolicy(enabled:Partial<Record<MethodId,boolean>>,mfa:'optional'|'required'){
   const current=await policyOf();
   const now=Date.now();
-  const record={tenantKey:'global',enabled:{...DEFAULT_ENABLED,...current.enabled,...enabled},mfa,updatedAt:now};
+  const record={tenantKey:'global',enabled:{...DEFAULT_ENABLED,...current.enabled,...enabled,webauthn:false},mfa,updatedAt:now};
   if(current.id)await db.update(POLICY,[{id:current.id,record}]);
   else await db.add(POLICY,[record]);
   return policyOf();
@@ -363,22 +397,10 @@ export function createAccessPlaneRoutes(deps:{
       await deps.audit(auth.user.id,'access.phone.save','success',{});
       return deps.respond({ok:true,sms:'needs_sms_contour',...await accessSnapshot(auth.user)});
     }],
-    'POST /api/owner/access/webauthn/options':[async(ctx)=>{
-      const auth=await gate(ctx.event,ctx.body);
-      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
-      const challenge=randomBytes(32).toString('base64url');
-      return deps.respond({ok:true,challenge,rpId:'id.tarasevych.com',rpName:'Mij Prostir',userId:auth.user.id,userName:auth.user.email,userDisplayName:auth.user.name||auth.user.email});
-    }],
-    'POST /api/owner/access/webauthn/register':[async(ctx)=>{
-      const auth=await gate(ctx.event,ctx.body);
-      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
-      const credentialId=String(deps.body(ctx.body).credentialId||'').trim();
-      const label=String(deps.body(ctx.body).label||'Passkey').slice(0,80);
-      if(credentialId.length<16)return deps.fail('ACCESS_WEBAUTHN_INVALID',400);
-      await db.add(WEBAUTHN,[{userId:auth.user.id,credentialId,label,createdAt:Date.now()}]);
-      await deps.audit(auth.user.id,'access.webauthn.register','success',{});
-      return deps.respond({ok:true,...await accessSnapshot(auth.user)});
-    }],
+    // Passkeys zijn uitgeschakeld tot er echte WebAuthn-verificatie (attestation/assertion) is.
+    // De oude routes registreerden alleen een credentialId zonder enige cryptografische controle.
+    'POST /api/owner/access/webauthn/options':[async()=>deps.fail('ACCESS_WEBAUTHN_DISABLED',503)],
+    'POST /api/owner/access/webauthn/register':[async()=>deps.fail('ACCESS_WEBAUTHN_DISABLED',503)],
     'POST /api/owner/access/webauthn/remove':[async(ctx)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
@@ -391,10 +413,12 @@ export function createAccessPlaneRoutes(deps:{
     'POST /api/owner/access/totp/start':[async(ctx)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
+      if(!totpKeyConfigured())return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
+      if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
       const secret=randomBytes(20),encoded=toBase32(secret);
       const existing=await totpFor(auth.user.id);
       const now=Date.now();
-      const record={userId:auth.user.id,secret:encoded,confirmed:false,createdAt:existing?.createdAt||now,updatedAt:now};
+      const record={userId:auth.user.id,secretEnc:sealWithEnvKey(TOTP_KEY,encoded,totpAad(auth.user.id)),confirmed:false,createdAt:existing?.createdAt||now,updatedAt:now};
       if(existing?.id)await db.update(TOTP,[{id:existing.id,record}]);
       else await db.add(TOTP,[record]);
       const otpauth=`otpauth://totp/MijProstir:${encodeURIComponent(auth.user.email)}?secret=${encoded}&issuer=MijProstir&algorithm=SHA1&digits=6&period=30`;
@@ -406,12 +430,14 @@ export function createAccessPlaneRoutes(deps:{
       const code=String(deps.body(ctx.body).code||'');
       const row=await totpFor(auth.user.id);
       if(!row)return deps.fail('ACCESS_TOTP_NOT_STARTED',400);
-      if(!totpValid(fromBase32(row.secret),code))return deps.fail('ACCESS_TOTP_INVALID',400);
+      const secret=totpSecretOf(row);
+      if(!secret)return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
+      if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
+      if(!totpValid(fromBase32(secret),code))return deps.fail('ACCESS_TOTP_INVALID',400);
+      const{codes,hashes,hashVersion}=newRecoveryCodes();
       await db.update(TOTP,[{id:row.id,record:{...withoutId(row),confirmed:true,updatedAt:Date.now()}}]);
-      const codes=Array.from({length:10},()=>randomBytes(5).toString('hex').slice(0,10).toUpperCase());
-      const hashes=codes.map(item=>sha(item));
       const recovery=await recoveryFor(auth.user.id);
-      const rec={userId:auth.user.id,hashes,remaining:codes.length,createdAt:Date.now()};
+      const rec={userId:auth.user.id,hashes,hashVersion,remaining:codes.length,createdAt:Date.now()};
       if(recovery?.id)await db.update(RECOVERY,[{id:recovery.id,record:rec}]);
       else await db.add(RECOVERY,[rec]);
       await deps.audit(auth.user.id,'access.totp.enroll','success',{});
@@ -428,10 +454,10 @@ export function createAccessPlaneRoutes(deps:{
     'POST /api/owner/access/recovery/rotate':[async(ctx)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
-      const codes=Array.from({length:10},()=>randomBytes(5).toString('hex').slice(0,10).toUpperCase());
-      const hashes=codes.map(item=>sha(item));
+      if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
+      const{codes,hashes,hashVersion}=newRecoveryCodes();
       const recovery=await recoveryFor(auth.user.id);
-      const rec={userId:auth.user.id,hashes,remaining:codes.length,createdAt:Date.now()};
+      const rec={userId:auth.user.id,hashes,hashVersion,remaining:codes.length,createdAt:Date.now()};
       if(recovery?.id)await db.update(RECOVERY,[{id:recovery.id,record:rec}]);
       else await db.add(RECOVERY,[rec]);
       await deps.audit(auth.user.id,'access.recovery.rotate','success',{});

@@ -1,22 +1,101 @@
-# Secrets / env vars (generate ALL new values; never reuse old ones)
+# Omgevingsvariabelen en geheimen
 
-| Name | Purpose |
+Alle waarden staan op de VM in **`/etc/mijn-ruimte/geheimen.env`** (eigenaar `root:mijnruimte`, modus `0640`),
+geladen door systemd (`EnvironmentFile=` in `deploy/mijn-ruimte.service` en de cron-units).
+Nooit in git, nooit in de build, nooit in logs. **Genereer ALLE geheimen nieuw**: de oude AppDeploy-waarden
+moeten als gelekt worden beschouwd (zie SECURITY-NOTES.md).
+
+Formaat van `geheimen.env`: één `NAAM=waarde` per regel, zonder aanhalingstekens of `export`.
+
+## Verplicht
+
+| Naam | Doel | Genereren / waarde |
+|---|---|---|
+| `DATABASE_URL` | Postgres-verbinding (database `mijnruimte`, rol `mijnruimte`). | `postgres://mijnruimte:<wachtwoord>@127.0.0.1:5432/mijnruimte`; wachtwoord: `openssl rand -base64 32 \| tr -d '/+='` |
+| `OWNER_EMAIL` | E-mailadres van de eigenaar (super-admin). Vervangt het vroeger hardgecodeerde adres. De server start niet zonder. | Het Google-adres van de eigenaar, kleine letters. |
+| `TOTP_ENCRYPTION_KEY_V1` | AES-256-GCM-sleutel voor TOTP-geheimen (gebonden aan de gebruikers-id). Zonder sleutel: TOTP-inschrijving geeft 503. | `openssl rand -base64 32` (32 bytes; base64 of 64 hex-tekens) |
+| `RECOVERY_CODE_PEPPER` | Geheime pepper (HMAC-SHA256) voor herstelcodes. Min. 32 tekens. Zonder pepper: geen nieuwe herstelcodes (503). | `openssl rand -base64 48` |
+| `GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1` | Versleutelt opgeslagen Google-grants en refresh tokens. | `openssl rand -base64 32` |
+| `OWNER_VAULT_ENCRYPTION_KEY_V1` | Versleutelt items in de API-platform-kluis (admin/api). | `openssl rand -base64 32` |
+| `MAIL_TOKEN_ENCRYPTION_KEY_V1` | Versleutelt tokens van mailproviders. Moet exact 32 bytes zijn. | `openssl rand -base64 32` |
+
+> Wissel je een `*_KEY_V1` later, dan kunnen bestaande versleutelde gegevens niet meer worden gelezen.
+> Bewaar de sleutels daarom ook in de offline back-up (wachtwoordmanager), los van de databaseback-up.
+
+## Google-login en Google Suite (optioneel: zonder deze waarden is Google-login uit)
+
+| Naam | Doel | Genereren / waarde |
+|---|---|---|
+| `GOOGLE_OAUTH_CLIENT_ID` (alias `GOOGLE_SUITE_CLIENT_ID`) | OAuth-client-ID (publiek). | Google Cloud Console → *Credentials* → nieuwe OAuth-client (type *Web*). Toegestane redirect-URI: **`https://id.tarasevych.com/`** (exact, met slash). |
+| `GOOGLE_OAUTH_CLIENT_SECRET` (alias `GOOGLE_SUITE_CLIENT_SECRET`) | OAuth-clientgeheim. | Uit dezelfde client; maak een **nieuwe** client of roteer het geheim. |
+
+Zonder client-ID antwoordt `POST /api/auth/google/start` met **503 `GOOGLE_NOT_CONFIGURED`** (en maakt geen state-rijen).
+
+## Microsoft (Outlook-mail, optioneel)
+
+| Naam | Doel | Genereren / waarde |
+|---|---|---|
+| `MICROSOFT_GRAPH_CLIENT_ID` / `MICROSOFT_GRAPH_CLIENT_SECRET` / `MICROSOFT_GRAPH_TENANT_ID` | Azure-app voor Microsoft Graph. | Entra ID → *App registrations*. Redirect-URI `https://id.tarasevych.com/`; tenant meestal `common`. |
+| `MICROSOFT_GRAPH_WEBHOOK_URL` | Endpoint voor change notifications. | `https://mail.tarasevych.com/api/owner/mail/microsoft/webhook` |
+| `MICROSOFT_GRAPH_WEBHOOK_CLIENT_STATE` | Gedeeld geheim dat Graph meestuurt. | `openssl rand -hex 32` |
+
+## Gmail-push via Pub/Sub (optioneel)
+
+| Naam | Doel | Genereren / waarde |
+|---|---|---|
+| `GOOGLE_GMAIL_PUBSUB_TOPIC` | Pub/Sub-topic voor Gmail `watch`. | `projects/<project>/topics/<topic>` |
+| `GOOGLE_GMAIL_PUBSUB_AUDIENCE` | Verwachte `aud` van de push-JWT. | `https://mail.tarasevych.com/api/owner/mail/google/pubsub/push` |
+| `GOOGLE_GMAIL_PUBSUB_SERVICE_ACCOUNT_EMAIL` | Serviceaccount dat de push ondertekent. | Uit de Pub/Sub-subscription. |
+
+## Overig (optioneel)
+
+| Naam | Doel | Genereren / waarde |
+|---|---|---|
+| `SCIM_BEARER_TOKEN` | Inkomende SCIM-provisioning. Leeg = uit. | `openssl rand -base64 48` |
+
+## Runtime (geen geheimen; standaardwaarden zijn goed voor productie)
+
+| Naam | Standaard | Doel |
+|---|---|---|
+| `HOST` | `127.0.0.1` | Luisteradres. **Niet** wijzigen: publiek verkeer komt alleen via cloudflared. |
+| `PORT` | `8080` | Poort; moet gelijk zijn aan `deploy/cloudflared-config.yml`. |
+| `DIST_DIR` | `<release>/dist` | Gebouwde frontend. |
+| `DASHBOARD_DIR` | `/srv/mijn-ruimte/dashboard` | Statisch dashboard voor `dashboard.tarasevych.com`. |
+| `UPLOADS_DIR` | `/srv/data/uploads` | Bestandsopslag (enige schrijfbare map voor de dienst). |
+| `MAX_BODY_BYTES` | `12582912` (12 MiB) | Maximale requestgrootte. |
+| `PG_POOL_MAX` | `10` | Maximaal aantal Postgres-verbindingen. |
+| `MIGRATIONS_DIR` | `<release>/migrations` | Map met SQL-migraties. |
+| `API_RATE_LIMIT_PER_MIN` | `600` | Algemene limiet per IP per minuut voor `/api/*` (in het geheugen). Strengere limieten voor login/MFA/handoff staan vast in `server/start.ts`. |
+| `NODE_ENV` | `production` | Gezet in de systemd-unit. |
+
+## Alleen bij het bouwen
+
+| Naam | Doel |
 |---|---|
-| GOOGLE_OAUTH_CLIENT_SECRET (alias GOOGLE_SUITE_CLIENT_SECRET) | Google OAuth client secret (login and Google Suite). Rotate it in Google Cloud Console, or create a new client. |
-| GOOGLE_OAUTH_CLIENT_ID / GOOGLE_SUITE_CLIENT_ID | Google OAuth client ID (public). A default is hardcoded in google-contour.ts. |
-| GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1 | Encrypts stored Google grants and refresh tokens (≥32 random chars, dedicated). |
-| OWNER_VAULT_ENCRYPTION_KEY_V1 | Encrypts API-platform vault items. Now mandatory. |
-| MAIL_TOKEN_ENCRYPTION_KEY_V1 | Encrypts mail provider tokens. |
-| MICROSOFT_GRAPH_CLIENT_ID / _CLIENT_SECRET / _TENANT_ID | Microsoft (Outlook) mail OAuth app. |
-| MICROSOFT_GRAPH_WEBHOOK_URL / MICROSOFT_GRAPH_WEBHOOK_CLIENT_STATE | Graph change-notification endpoint and shared client state. |
-| GOOGLE_GMAIL_PUBSUB_TOPIC / _AUDIENCE / _SERVICE_ACCOUNT_EMAIL | Gmail push (Pub/Sub) topic and push-JWT verification. |
-| SCIM_BEARER_TOKEN | Inbound SCIM provisioning token (optional). |
-| APPDEPLOY_VITE_OUT_DIR, APPDEPLOY_VITE_SOURCEMAP | Build-time only (not secret). |
+| `SOURCEMAP` | `1` = sourcemaps bouwen (alleen lokaal debuggen; de server serveert `*.map` nooit). |
 
-Also revoke or rotate the following:
-- Every tsv_ API token.
-- Every vault item (Home Assistant, Telegram bot token, GitHub PAT, webhooks).
-- All owner sessions (bump the revocation epoch).
-- All Google and Microsoft refresh tokens stored in the DB. Disconnect them and connect again.
-- AppDeploy account credentials and API keys.
-- Password-login passwords and TOTP for all users.
+## Snel alles genereren (op de VM, als root)
+
+```bash
+install -d -m 0750 -o root -g mijnruimte /etc/mijn-ruimte
+umask 027
+cat > /etc/mijn-ruimte/geheimen.env <<EOT
+DATABASE_URL=postgres://mijnruimte:$(openssl rand -base64 32 | tr -d '/+=')@127.0.0.1:5432/mijnruimte
+OWNER_EMAIL=<eigenaar@gmail.com>
+TOTP_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)
+RECOVERY_CODE_PEPPER=$(openssl rand -base64 48 | tr -d '\n')
+GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)
+OWNER_VAULT_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)
+MAIL_TOKEN_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)
+GOOGLE_OAUTH_CLIENT_ID=
+GOOGLE_OAUTH_CLIENT_SECRET=
+EOT
+chown root:mijnruimte /etc/mijn-ruimte/geheimen.env && chmod 0640 /etc/mijn-ruimte/geheimen.env
+```
+(Het databasewachtwoord daarna ook instellen met `ALTER ROLE mijnruimte PASSWORD '…'`.)
+
+## Ook intrekken of roteren (oude AppDeploy-omgeving)
+- Elk `tsv_`-API-token en elk kluisitem (Home Assistant, Telegram-bot, GitHub-PAT, webhooks).
+- Alle eigenaarssessies (revocation-epoch verhogen) en alle opgeslagen Google-/Microsoft-refresh tokens (ontkoppelen en opnieuw koppelen).
+- AppDeploy-accountgegevens en API-sleutels.
+- Wachtwoorden en TOTP van alle gebruikers (oude TOTP-geheimen stonden leesbaar in de database).
