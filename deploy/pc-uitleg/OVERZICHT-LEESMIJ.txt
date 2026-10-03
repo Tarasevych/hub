@@ -1,0 +1,105 @@
+OVERZICHT-LEESMIJ.txt - Mijn Ruimte: wat staat waar (stand 03-10-2026)
+Цей самий файл лежить у T:\mijn-ruimte\ і в R:\mijn-ruimte-reservekopie\.
+Dit bestand staat zowel in T:\mijn-ruimte\ als in R:\mijn-ruimte-reservekopie\.
+(Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
+У цьому файлі НЕМАЄ жодних секретів. / Dit bestand bevat GEEN geheimen.
+
+##############################################################################
+УКРАЇНСЬКА
+##############################################################################
+
+ЗАГАЛЬНА ІДЕЯ
+- Сайт "Mijn Ruimte" (hub/id/mail/... .tarasevych.com) працює на власному сервері:
+  віртуальна машина (VM) "mijn-ruimte-webserver" у Hyper-V на цьому ПК.
+  Диск VM зашифрований (LUKS): після кожного перезапуску VM треба ввести пароль у консолі VM.
+- Доступ з інтернету йде лише через тунель Cloudflare (на ПК/VM не відкрито вхідних портів).
+- Код програми зберігається в GitHub: репозиторій Tarasevych/hub, гілка zelf-hosten.
+- Диск T:\ = робочий проєкт.  Диск R:\ = запасні копії.
+- Записувати на T:\ і R:\ дозволено лише PowerShell (захист Windows від шифрувальників).
+
+ДИСК T:\mijn-ruimte\
+- broncode\            архіви коду (tar.gz + git bundle + SHA256SUMS) для кожної версії;
+                       zelf-hosten\<дата-коміт>\ - версії, що ставились на сервер.
+- hulpmiddelen\age\    програма шифрування age + ПУБЛІЧНИЙ ключ резервних копій.
+- hulpmiddelen\ssh\    SSH-ключ для входу на сервер (СЕКРЕТ, доступ лише t). Див. UITLEG-LEESMIJ.txt там.
+- installatiebestanden\ інсталятор Ubuntu Server 24.04 (для нової VM).
+- schermafbeeldingen\  знімки екрана.
+- scripts\             скрипти: створення VM і мережі (*.ps1), налаштування сервера (*.sh),
+                       deploy-<дата-коміт>\ (файли розгортання), uitrol-, tunnel-, age-20261003\
+                       (одноразові скрипти цього дня), reservekopie-ophalen.ps1 (забрати копію).
+- virtuele-machine\    конфігурація і диски VM (*.vhdx, *.avhdx = контрольні точки).
+                       НЕ видаляйте і не переміщуйте ці файли вручну - керуйте через Hyper-V.
+- HERSTEL.md           план відновлення після втрати сервера.
+
+ДИСК R:\mijn-ruimte-reservekopie\
+- broncode\     копії архівів коду (як на T:\).
+- database\, momentopnamen\  зарезервовано для ручних дампів/знімків (зараз порожньо).
+- geheimen\     ЗАШИФРОВАНИЙ архів секретів сервера. Див. UITLEG-LEESMIJ.txt там.
+- scripts\      копії скриптів.
+- sleutels\     СЕКРЕТНИЙ ключ відновлення age + копія SSH-ключа. НАЙВАЖЛИВІША ПАПКА.
+- vm-back-ups\  зашифровані нічні резервні копії бази та файлів.
+- HERSTEL.md    план відновлення.
+
+ЕТАПИ (що вже зроблено)
+1. VM створено, диск зашифровано, сервер захищено (брандмауер, тільки SSH з ПК).
+2. Програму встановлено на VM (systemd-служба, база PostgreSQL).
+3. Тунель Cloudflare: 10 адрес *.tarasevych.com працюють.
+4. Резервні копії: щоночі близько 03:30 сервер робить копію і шифрує її ПУБЛІЧНИМ
+   ключем. Сам сервер свої копії розшифрувати не може.
+5. Забрати копію на ПК: scripts\reservekopie-ophalen.ps1 -> R:\...\vm-back-ups\.
+6. Відновлення: HERSTEL.md (GitHub + зашифрована копія + ключ відновлення).
+
+ЩО ВАЖЛИВО ЗРОБИТИ ВАМ
+- Зробити офлайн-копію herstelsleutel-age.txt (флешка в сейфі та/або папір).
+- Вирішити про щоденне заплановане завдання для reservekopie-ophalen.ps1.
+- Ніколи не надсилати і не завантажувати в хмару вміст папок sleutels\ та SSH-ключ.
+
+##############################################################################
+NEDERLANDS
+##############################################################################
+
+HET IDEE
+- De site "Mijn Ruimte" (hub/id/mail/... .tarasevych.com) draait op een eigen server:
+  virtuele machine (VM) "mijn-ruimte-webserver" in Hyper-V op deze pc.
+  De VM-schijf is versleuteld (LUKS): na elke herstart van de VM het wachtwoord in de VM-console typen.
+- Internetverkeer komt alleen via de Cloudflare-tunnel binnen (geen open poorten naar buiten).
+- De code staat in GitHub: repository Tarasevych/hub, branch zelf-hosten.
+- T:\ = werkproject.  R:\ = reservekopieen.
+- Alleen PowerShell mag op T:\ en R:\ schrijven (Windows-bescherming tegen ransomware).
+
+SCHIJF T:\mijn-ruimte\
+- broncode\            codearchieven (tar.gz + git-bundle + SHA256SUMS) per versie;
+                       zelf-hosten\<datum-commit>\ = versies die op de server zijn gezet.
+- hulpmiddelen\age\    versleutelprogramma age + PUBLIEKE back-upsleutel.
+- hulpmiddelen\ssh\    SSH-sleutel voor de server (GEHEIM, alleen t). Zie de UITLEG-LEESMIJ.txt daar.
+- installatiebestanden\ installatie-image Ubuntu Server 24.04 (voor een nieuwe VM).
+- schermafbeeldingen\  schermafbeeldingen.
+- scripts\             scripts: VM en netwerk maken (*.ps1), server inrichten (*.sh),
+                       deploy-<datum-commit>\ (uitrolbestanden), uitrol-, tunnel-, age-20261003\
+                       (eenmalige scripts van deze dag), reservekopie-ophalen.ps1 (back-up ophalen).
+- virtuele-machine\    configuratie en schijven van de VM (*.vhdx, *.avhdx = controlepunten).
+                       NIET met de hand verwijderen of verplaatsen - beheer via Hyper-V.
+- HERSTEL.md           noodplan bij verlies van de server.
+
+SCHIJF R:\mijn-ruimte-reservekopie\
+- broncode\     kopieen van de codearchieven (zoals op T:\).
+- database\, momentopnamen\  gereserveerd voor handmatige dumps/snapshots (nu leeg).
+- geheimen\     VERSLEUTELD archief van de servergeheimen. Zie de UITLEG-LEESMIJ.txt daar.
+- scripts\      kopieen van de scripts.
+- sleutels\     GEHEIME age-herstelsleutel + kopie van de SSH-sleutel. BELANGRIJKSTE MAP.
+- vm-back-ups\  versleutelde nachtelijke back-ups van database en uploads.
+- HERSTEL.md    noodplan.
+
+FASEN (wat er al is)
+1. VM gemaakt, schijf versleuteld, server gehard (firewall, alleen SSH vanaf de pc).
+2. App op de VM geinstalleerd (systemd-dienst, PostgreSQL-database).
+3. Cloudflare-tunnel: 10 adressen *.tarasevych.com werken.
+4. Back-ups: elke nacht rond 03:30 maakt de server een back-up en versleutelt die met de
+   PUBLIEKE sleutel. De server kan zijn eigen back-ups niet ontsleutelen.
+5. Ophalen naar de pc: scripts\reservekopie-ophalen.ps1 -> R:\...\vm-back-ups\.
+6. Herstel: HERSTEL.md (GitHub + versleutelde back-up + herstelsleutel).
+
+WAT JIJ ZELF MOET DOEN
+- Een offline kopie van herstelsleutel-age.txt maken (USB-stick in een kluis en/of papier).
+- Beslissen over een dagelijkse geplande taak voor reservekopie-ophalen.ps1.
+- De inhoud van sleutels\ en de SSH-sleutel nooit versturen of in de cloud zetten.

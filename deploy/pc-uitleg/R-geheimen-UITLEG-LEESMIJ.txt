@@ -1,0 +1,87 @@
+UITLEG-LEESMIJ.txt - R:\mijn-ruimte-reservekopie\geheimen\
+(Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
+У цьому файлі НЕМАЄ жодних секретів. / Dit bestand bevat GEEN geheimen.
+
+==============================================================================
+УКРАЇНСЬКА
+==============================================================================
+
+ЩО ЦЕ
+- Папка geheimen-<дата-час>\ містить ЗАШИФРОВАНИЙ архів секретів сервера:
+  * geheimen-<...>.tar.age - зашифрований архів (age). Всередині два файли сервера:
+    /etc/mijn-ruimte/geheimen.env (паролі бази, ключі шифрування програми тощо) і
+    /etc/cloudflared/<ID>.json (ключ доступу тунелю Cloudflare).
+  * SHA256SUMS і *.sha256 - контрольні суми зашифрованого файлу (перевірка, що він цілий).
+  * KLARE-TEKST-TAR.sha256 - контрольна сума РОЗШИФРОВАНОГО архіву (лише для перевірки
+    після розшифрування; сам секрет з неї не відновити).
+  * INFO.txt - коли зроблено, що всередині, яким публічним ключем зашифровано.
+- Перша копія: 03.10.2026 12:25. Тестове розшифрування на ПК пройшло успішно
+  (контрольні суми збіглися), розшифрований файл одразу знищено.
+
+НАВІЩО
+- Без цих секретів відновлена база даних частково непридатна: 2FA-коди, токени і
+  вміст сейфа в базі зашифровані ключами з geheimen.env. Тунель без ключа не запуститься.
+
+ЧИ ПОТРІБНО?  ТАК. Робіть новий архів після кожної зміни секретів на сервері.
+
+ЯК ЗБЕРІГАТИ БЕЗПЕЧНО
+- Файл зашифрований: без herstelsleutel-age.txt (папка sleutels) його не прочитати.
+  Тому копію .age можна тримати і на іншому диску/флешці.
+- Але все одно НЕ надсилайте його і не кладіть у публічні місця чи GitHub.
+- НІКОЛИ не зберігайте поруч РОЗШИФРОВАНУ версію (geheimen.tar / geheimen.env).
+- Ключ відновлення і цей архів краще зберігати в різних місцях (тоді одна крадіжка
+  не дає доступу до всього).
+
+ЯКЩО ВТРАЧЕНО
+- Поки сервер працює: створіть новий архів на сервері (scripts\age-20261003\age-vm-20261003.sh).
+- Якщо втрачено і сервер, і архів: секрети треба створити заново (deploy/geheimen-aanvullen.sh,
+  новий тунель Cloudflare), а зашифровані поля в старій базі вже не відновити.
+ЯКЩО ВИКРАДЕНО
+- Без ключа відновлення злодій нічого не прочитає. Якщо викрадено І архів, І ключ:
+  змініть усі секрети сервера і створіть новий ключ тунелю.
+
+ПРИ ВІДНОВЛЕННІ
+- Крок 3 у HERSTEL.md: на ПК розшифрувати і через SSH одразу розпакувати на новому сервері.
+  Розшифрований вміст ніколи не записується на диск ПК.
+
+==============================================================================
+NEDERLANDS
+==============================================================================
+
+WAT IS DIT
+- De map geheimen-<datum-tijd>\ bevat een VERSLEUTELD archief van de servergeheimen:
+  * geheimen-<...>.tar.age - versleuteld archief (age). Bevat twee serverbestanden:
+    /etc/mijn-ruimte/geheimen.env (databasewachtwoord, versleutelingssleutels van de app enz.)
+    en /etc/cloudflared/<ID>.json (toegangssleutel van de Cloudflare-tunnel).
+  * SHA256SUMS en *.sha256 - controlesommen van het versleutelde bestand (is het heel?).
+  * KLARE-TEKST-TAR.sha256 - controlesom van het ONTSLEUTELDE archief (alleen om na het
+    ontsleutelen te controleren; het geheim is er niet uit terug te halen).
+  * INFO.txt - wanneer gemaakt, wat erin zit, naar welke publieke sleutel versleuteld.
+- Eerste kopie: 03-10-2026 12:25. Proefontsleuteling op de pc gelukt (controlesommen gelijk);
+  het ontsleutelde bestand is direct vernietigd.
+
+WAAROM
+- Zonder deze geheimen is een teruggezette database deels onbruikbaar: 2FA-geheimen, tokens en
+  kluisitems zijn versleuteld met sleutels uit geheimen.env. De tunnel start niet zonder sleutel.
+
+NODIG?  JA. Maak een nieuw archief na elke wijziging van de geheimen op de server.
+
+VEILIG BEWAREN
+- Versleuteld: zonder herstelsleutel-age.txt (map sleutels) onleesbaar. Een kopie van de .age
+  mag dus ook op een andere schijf/USB-stick.
+- Toch NIET versturen, niet op openbare plekken of in GitHub zetten.
+- NOOIT een ONTSLEUTELDE versie (geheimen.tar / geheimen.env) ernaast bewaren.
+- Bewaar herstelsleutel en archief liefst op verschillende plekken (een diefstal geeft dan
+  niet alles prijs).
+
+KWIJT
+- Zolang de server draait: maak een nieuw archief (scripts\age-20261003\age-vm-20261003.sh).
+- Server en archief allebei kwijt: geheimen opnieuw maken (deploy/geheimen-aanvullen.sh, nieuwe
+  Cloudflare-tunnel); versleutelde velden in de oude database zijn dan niet meer te herstellen.
+GESTOLEN
+- Zonder herstelsleutel kan een dief niets. Archief EN sleutel gestolen: alle servergeheimen
+  vervangen en een nieuwe tunnelsleutel maken.
+
+BIJ HERSTEL
+- Stap 3 in HERSTEL.md: op de pc ontsleutelen en via SSH direct op de nieuwe server uitpakken.
+  De ontsleutelde inhoud komt nooit op de schijf van de pc.
