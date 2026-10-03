@@ -9,14 +9,18 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
    - mappen `/srv/mijn-ruimte/{releases,dashboard}`, `/srv/data/uploads`, `/srv/backups/mijn-ruimte`, `/etc/mijn-ruimte`;
    - systemd-units en timers naar `/etc/systemd/system/` en ingeschakeld.
 3. **Database**: rol en database `mijnruimte` aanmaken (de opdracht wordt door `inrichten` getoond).
-4. **Geheimen**: `/etc/mijn-ruimte/geheimen.env` volgens `ENV-VARS.md` (root:mijnruimte, 0640).
+4. **Geheimen**: `/etc/mijn-ruimte/geheimen.env` met `DATABASE_URL`, daarna de overige verplichte sleutels op de VM
+   laten genereren: `deploy/geheimen-aanvullen.sh --eigenaar <e-mailadres>` (overschrijft niets, toont geen waarden).
+   Modus `0600 root:root` volstaat: systemd leest het bestand als root vóór het starten van de dienst.
 5. **Installeren**: `deploy/installeer-app.sh installeren /pad/naar/checkout`
    bron kopiëren (alleen gecommitte HEAD) → bouwen als `mijnruimte` (`npm ci`, audit, vite, server-bundel,
    `npm prune --omit=dev`) → back-up → migraties → `current`-symlink atomisch omzetten → herstart →
    gezondheidscontrole (`/__gezondheid`); mislukt die, dan automatisch terug naar de vorige release.
-6. **Tunnel**: `deploy/cloudflared-config.yml` invullen (tunnel-ID) als `/etc/cloudflared/config.yml`,
-   DNS-routes maken voor alle tien hostnamen, `systemctl enable --now cloudflared`.
-7. **Controle**: `systemctl status mijn-ruimte`, `systemctl list-timers 'mijn-ruimte-*'`,
+6. **Dashboard**: `deploy/installeer-app.sh dashboard /pad/naar/dashboardmap` (alleen `*.html/*.css/*.js`/afbeeldingen,
+   naar `/srv/mijn-ruimte/dashboard`, `root:mijnruimte`, bestanden 0640: alleen-lezen voor de dienst).
+7. **Tunnel**: zie "Tunnel" hieronder. `inrichten` zet al een `/etc/cloudflared/config.yml` klaar met plaatshouder
+   `TUNNEL-ID-INVULLEN` (niet ingeschakeld).
+8. **Controle**: `systemctl status mijn-ruimte`, `systemctl list-timers 'mijn-ruimte-*'`,
    `journalctl -u mijn-ruimte -f`, `curl -s http://127.0.0.1:8080/__gezondheid`.
 
 ## Bestanden
@@ -31,7 +35,8 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
 | `mijn-ruimte-backup.service` / `.timer` | Dagelijks 03:30 `backup-maken.sh`. |
 | `backup-maken.sh` | `pg_dump` (custom-formaat) + `uploads.tar.gz` + `SHA256SUMS` + `KLAAR` in `/srv/backups/mijn-ruimte/<datum>/`; bewaart 7 dagen op de VM. |
 | `cloudflared-config.yml` | Sjabloon: hub, id, mail, cloud, ai, github, huis, api, admin, dashboard → `http://127.0.0.1:8080`; rest 404. |
-| `installeer-app.sh` | `inrichten`, `installeren`, `terugdraaien [release]`, `lijst`. |
+| `installeer-app.sh` | `inrichten`, `installeren`, `terugdraaien [release]`, `lijst`, `dashboard <map>`. Start na een geslaagde installatie ook de timers. |
+| `geheimen-aanvullen.sh` | Genereert ontbrekende sleutels (`openssl rand`) in `geheimen.env`; bestaande waarden blijven, niets wordt getoond. |
 
 ## Opties (omgevingsvariabelen van de scripts)
 Dit zijn geen app-geheimen (die staan in `ENV-VARS.md`), alleen instellingen van de deployscripts:
@@ -45,6 +50,22 @@ Dit zijn geen app-geheimen (die staan in `ENV-VARS.md`), alleen instellingen van
 | `UPLOADS_DIR` | `backup-maken.sh`, units | `/srv/data/uploads` | Map met geüploade bestanden. |
 | `BACKUP_DIR` | `backup-maken.sh` | `/srv/backups/mijn-ruimte` | Doelmap van de back-ups op de VM. |
 | `BACKUP_BEWAAR_DAGEN` | `backup-maken.sh` | `7` | Hoeveel dagen back-ups op de VM blijven staan. |
+
+## Tunnel (Cloudflare; vraagt een Cloudflare-login, nog niet gedaan)
+Als root op de VM:
+```bash
+cloudflared tunnel login                       # opent een URL: inloggen bij Cloudflare, zone tarasevych.com kiezen
+cloudflared tunnel create mijn-ruimte          # schrijft /root/.cloudflared/<ID>.json en toont het tunnel-ID
+install -m 0600 /root/.cloudflared/<ID>.json /etc/cloudflared/<ID>.json
+sed -i 's/TUNNEL-ID-INVULLEN/<ID>/g' /etc/cloudflared/config.yml
+cloudflared tunnel ingress validate --config /etc/cloudflared/config.yml
+for h in hub id mail cloud ai github huis api admin dashboard; do cloudflared tunnel route dns mijn-ruimte $h.tarasevych.com; done
+cloudflared service install                    # maakt cloudflared.service (leest /etc/cloudflared/config.yml)
+systemctl enable --now cloudflared
+```
+Bestaan er al DNS-records voor deze namen (bijv. van AppDeploy), dan eerst in het Cloudflare-dashboard verwijderen
+of `route dns --overwrite-dns` gebruiken. De tunnel maakt alleen uitgaande verbindingen (poort 7844 naar Cloudflare);
+ufw hoeft niet open. Daarna in Google Cloud de redirect-URI's op `https://id.tarasevych.com/…` zetten (ENV-VARS.md).
 
 ## Terugdraaien
 `deploy/installeer-app.sh terugdraaien` (vorige release) of `… terugdraaien 20261003-101500`.

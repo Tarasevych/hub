@@ -13,8 +13,11 @@
 #   installeer-app.sh installeren <bronmap>   bouwen, back-up, migreren, activeren, gezondheidscontrole
 #   installeer-app.sh terugdraaien [release]  terug naar de vorige (of een genoemde) release
 #   installeer-app.sh lijst                   releases tonen
+#   installeer-app.sh dashboard <map>         statische dashboardpagina's (alleen *.html/*.css/*.js/afbeeldingen)
+#                                             naar /srv/mijn-ruimte/dashboard, alleen-lezen voor de dienst
 #
-# <bronmap> is een git-checkout (alleen de GECOMMITTE stand van HEAD wordt gebruikt) of een uitgepakte map.
+# <bronmap> is een git-checkout (alleen de GECOMMITTE stand van HEAD wordt gebruikt) of een uitgepakte map
+# (bijv. een `git archive`-tarball; staat daarin een bestand BRON-COMMIT, dan wordt dat de commit van de release).
 # Opties via omgeving: BEWAAR_RELEASES (standaard 5), ZONDER_BACKUP=1 (back-up vóór migratie overslaan),
 #                      NODE (standaard /usr/bin/node), PORT (standaard 8080).
 set -euo pipefail
@@ -91,14 +94,18 @@ inrichten() {
   install -d -o "$GEBRUIKER" -g "$BACKUP_GROEP" -m 2750 /srv/backups/mijn-ruimte
   install -d -o root -g "$GEBRUIKER" -m 0750 /etc/mijn-ruimte
   units_installeren "$bron"
-  if [ -d /etc/cloudflared ] && [ ! -e /etc/cloudflared/config.yml ]; then
-    install -m 0640 "$bron/deploy/cloudflared-config.yml" /etc/cloudflared/config.yml.sjabloon
-    melding "cloudflared-sjabloon geplaatst: /etc/cloudflared/config.yml.sjabloon (invullen en hernoemen naar config.yml)"
+  # cloudflared: alleen de configuratie voorbereiden (tunnel-id als plaatshouder); de tunnel zelf wordt
+  # NIET aangemaakt of ingeschakeld (dat vraagt een Cloudflare-login, zie LEESMIJ.md "Tunnel").
+  if command -v cloudflared >/dev/null 2>&1 && [ ! -e /etc/cloudflared/config.yml ]; then
+    install -d -o root -g root -m 0755 /etc/cloudflared
+    sed 's/<TUNNEL-ID>/TUNNEL-ID-INVULLEN/g' "$bron/deploy/cloudflared-config.yml" > /etc/cloudflared/config.yml
+    chown root:root /etc/cloudflared/config.yml; chmod 0644 /etc/cloudflared/config.yml
+    melding "cloudflared-configuratie voorbereid: /etc/cloudflared/config.yml (tunnel-id TUNNEL-ID-INVULLEN, niet ingeschakeld)"
   fi
   systemctl enable "$DIENST" "${TIMERS[@]}" >/dev/null
   melding "dienst en timers ingeschakeld (starten na de eerste installatie)"
   if [ ! -s "$GEHEIMEN" ]; then
-    waarschuwing "$GEHEIMEN ontbreekt nog. Maak hem aan volgens ENV-VARS.md (root:$GEBRUIKER, 0640)."
+    waarschuwing "$GEHEIMEN ontbreekt nog. Maak hem aan volgens ENV-VARS.md (0600 root:root volstaat: systemd leest hem als root)."
   fi
   cat <<EOT
 [installeer] Postgres (eenmalig, als dat nog niet bestaat), bijvoorbeeld:
@@ -120,6 +127,7 @@ bron_kopieren() {
     commit="$(git_bron rev-parse --short HEAD)"
   else
     rsync -a --exclude node_modules --exclude dist --exclude dist-server --exclude .git --exclude rapporten "$bron/" "$doel/"
+    if [ -s "$bron/BRON-COMMIT" ]; then commit="$(head -c 40 "$bron/BRON-COMMIT" | tr -cd '0-9a-f')"; fi
   fi
   echo "$commit" > "$doel/RELEASE-COMMIT"
 }
@@ -208,6 +216,8 @@ installeren() {
   ONVOLTOOID=""   # vanaf hier blijft de release bestaan (ook als activeren mislukt, voor diagnose)
   units_installeren "$doel"
   activeren "$doel"
+  # Timers (cron, opruimen, back-up) starten; `enable` alleen start ze pas na een herstart.
+  systemctl start "${TIMERS[@]}"
   releases_opruimen
   melding "klaar: release $datum (commit $(cat "$doel/RELEASE-COMMIT"))"
 }
@@ -233,6 +243,20 @@ terugdraaien() {
   melding "teruggedraaid naar $(basename "$doel")"
 }
 
+dashboard() {
+  local bron="${1:?map met dashboardpaginas ontbreekt}" doel="$APP_ROOT/dashboard"
+  vereis_root
+  [ -f "$bron/index.html" ] || fout "$bron/index.html ontbreekt"
+  install -d -o root -g "$GEBRUIKER" -m 0750 "$doel"
+  # Alleen sitebestanden op het hoogste niveau; notities, varianten en controlesommen blijven buiten de site.
+  rsync -rt --delete --include='*.html' --include='*.css' --include='*.js' --include='*.svg' --include='*.png' \
+    --include='*.ico' --include='*.webp' --exclude='*' "$bron/" "$doel/"
+  chown -R "root:$GEBRUIKER" "$doel"
+  find "$doel" -type d -exec chmod 0750 {} +
+  find "$doel" -type f -exec chmod 0640 {} +
+  melding "dashboard geplaatst in $doel ($(find "$doel" -type f | wc -l) bestanden, alleen-lezen voor $GEBRUIKER)"
+}
+
 lijst() {
   local actief vorige r label
   actief="$(readlink -f "$HUIDIG" 2>/dev/null || true)"
@@ -251,5 +275,6 @@ case "$opdracht" in
   installeren) installeren "$@" ;;
   terugdraaien) terugdraaien "$@" ;;
   lijst) lijst ;;
-  *) sed -n '2,20p' "$0"; exit 2 ;;
+  dashboard) dashboard "$@" ;;
+  *) sed -n '2,23p' "$0"; exit 2 ;;
 esac

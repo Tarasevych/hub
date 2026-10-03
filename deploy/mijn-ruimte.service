@@ -1,6 +1,6 @@
 # /etc/systemd/system/mijn-ruimte.service — HTTP-server van Mijn Ruimte (zelf gehost).
 # Luistert alleen op 127.0.0.1:8080; publiek verkeer komt uitsluitend via cloudflared (zie cloudflared-config.yml).
-# Geheimen: /etc/mijn-ruimte/geheimen.env (root:mijnruimte, 0640), zie ENV-VARS.md.
+# Geheimen: /etc/mijn-ruimte/geheimen.env (0600 root:root; systemd leest hem als root), zie ENV-VARS.md.
 [Unit]
 Description=Mijn Ruimte (zelf-gehoste app)
 Documentation=file:///srv/mijn-ruimte/current/deploy/LEESMIJ.md
