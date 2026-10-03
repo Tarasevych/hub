@@ -518,7 +518,19 @@ Tests: rooktest 42/42, eenheidstests 12/12 (`scripts/eenheidstests.mjs`), browse
 `mijn-ruimte-backup.service/.timer` + `backup-maken.sh` (pull-model), `cloudflared-config.yml`,
 `installeer-app.sh` (inrichten / installeren met automatische rollback / terugdraaien / lijst). Zie `deploy/LEESMIJ.md`.
 
-### 10.6 Nog open
-- Nieuwe Google OAuth-client (redirect `https://id.tarasevych.com/`) en alle geheimen genereren (ENV-VARS.md).
+### 10.6 Laatste theoretische risico's gesloten (commit `0160a0b`)
+Handoff gebonden aan de aanmakende browser (`tsv_handoff_binding`), herstelcode atomisch verbruikt (`db.takeArrayValue`).
+Zie `SECURITY-NOTES.md` §3 (punten 14 en 15). Tests: rooktest 47/47, eenheidstests 19/19, browsertest 10/10.
+
+### 10.7 Eerste uitrol op de VM (3 okt 2026, commit `0b32ecd`, release `20261003-115704`)
+VM `mijn-ruimte-webserver` (10.77.0.10): `installeer-app.sh inrichten` + `installeren`, geheimen op de VM gegenereerd
+(`geheimen-aanvullen.sh`), dashboard in `/srv/mijn-ruimte/dashboard`, dienst + vier timers actief, back-up getest
+(incl. proefherstel). Alleen `127.0.0.1:8080` nieuw; ufw ongewijzigd. Tijdens de uitrol gevonden en opgelost:
+vite-build OOM op 2 GB RAM (build nu in een cgroup met geheugenplafond), zelfverwijzende `current`-symlink bij de
+eerste installatie, en de server die via de symlink `current/` stil niet startte (isMain met realpath).
+Cloudflare Tunnel: alleen `/etc/cloudflared/config.yml` met plaatshouder; nog geen tunnel/DNS (zie `deploy/LEESMIJ.md`).
+
+### 10.8 Nog open
+- Cloudflare Tunnel + DNS (vraagt Cloudflare-login), daarna nieuwe Google OAuth-client (redirect `https://id.tarasevych.com/`).
 - Echte WebAuthn-implementatie; AI-provider; dashboardintegratie.
 - l002-audit: `b4-important-free` in twee AppDeploy-CSS-bestanden (v56), cosmetisch.
