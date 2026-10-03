@@ -209,8 +209,14 @@ try {
     const legacy = herstel[0] ? createHmac('sha256', 'mij-prostir-access-v1').update(herstel[0]).digest('hex') : 'x';
     check('herstelcodes met pepper gehasht (hashVersion 2, niet de oude vaste sleutel)', r.status === 200 && herstel.length === 10 && rec.hashVersion === 2 && !rec.hashes?.includes(legacy), `status ${r.status} ${r.data?.error || ''}`);
     const pw = { email: 'rooktest-eigenaar@example.test', password: 'rooktest-wachtwoord-123' };
+    // Fase 3: replaybescherming. De code van de inschrijving (zelfde tijdvak) werkt niet nog eens; die van het
+    // volgende tijdvak (binnen de speling) wel, maar ook maar één keer.
     r = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { ...pw, totp: totp(geheim) }, vanIp('203.0.113.33'));
-    check('MFA-login met TOTP-code', r.status === 200 && r.data?.ok === true, `status ${r.status} ${r.data?.error || ''}`);
+    const volgende = totp(geheim, Math.floor(Date.now() / 30000) + 1);
+    const rOk = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { ...pw, totp: volgende }, vanIp('203.0.113.33'));
+    const rNogEens = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { ...pw, totp: volgende }, vanIp('203.0.113.33'));
+    check('MFA-login met TOTP-code; dezelfde code nog eens (replay) geweigerd', r.status === 401 && rOk.status === 200 && rOk.data?.ok === true && rNogEens.status === 401, `inschrijfcode ${r.status}, nieuw ${rOk.status} ${rOk.data?.error || ''}, opnieuw ${rNogEens.status}`);
+    r = rOk;
     r = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { ...pw, totp: herstel[0] }, vanIp('203.0.113.33'));
     const r2 = await verzoek('POST', 'id.tarasevych.com', '/api/owner/auth/password/login', { ...pw, totp: herstel[0] }, vanIp('203.0.113.33'));
     check('herstelcode werkt precies één keer', r.status === 200 && r2.status === 401, `eerste ${r.status}, tweede ${r2.status}`);

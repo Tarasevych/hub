@@ -206,6 +206,22 @@ export const db = {
     return prepared.map((p) => p.ok && updated.has(p.id));
   },
 
+  /**
+   * Zet een numeriek veld alleen als de nieuwe waarde HOGER is dan de huidige (atomisch, één UPDATE).
+   * Voor eenmalig gebruik, bijv. het laatst gebruikte TOTP-tijdvak (replaybescherming). true = gezet.
+   */
+  async zetAlsHoger(table: string, id: string, veld: string, waarde: number): Promise<boolean> {
+    checkTable(table);
+    if (!validId(id) || !/^[A-Za-z_]{1,40}$/.test(veld) || !Number.isSafeInteger(waarde)) return false;
+    const result = await q(table,
+      `UPDATE app.records SET data = jsonb_set(data, ARRAY[$3::text], to_jsonb($4::bigint)), updated_at = now()
+        WHERE tbl = $1 AND id = $2 AND COALESCE((data->>$3)::bigint, -1) < $4::bigint
+        RETURNING id, owner_id, data->>'workspaceId' AS ws`,
+      [table, id, veld, waarde]);
+    audit(table, 'wijzigen', result.rows);
+    return (result.rowCount || 0) > 0;
+  },
+
   /** Verwijder records per id. Geeft per id true/false terug. */
   async delete(table: string, ids: string[]): Promise<boolean[]> {
     checkTable(table);
