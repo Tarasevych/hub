@@ -1,6 +1,7 @@
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
 import {db,isOwnerEmail,secrets} from '../server/platform';
 import {stapOpFout,type StapOpAuth} from './stap-op';
+import {heeftApiRecht} from './api-recht';
 
 export const OWNER_VAULT_TABLE='owner_vault_v1';
 export const OWNER_VAULT_PURPOSES=['home-assistant','telegram','github','webhook','other'] as const;
@@ -116,6 +117,7 @@ export function createApiPlatformVaultRoutes(deps:{
   const ownerGate=async(event:Record<string,unknown>,body:unknown)=>{
     const auth=await deps.requireSession(event,body);
     if('errorCode'in auth||(auth.service!=='api'&&auth.service!=='admin')||auth.user.status!=='approved')return null;
+    if(!heeftApiRecht(auth.user as never))return null;// fase 3: recht 'api-platform' of eigenaar
     return auth;
   };
   const owned=async(ownerUserId:string,id:string)=>{

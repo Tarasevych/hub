@@ -5,6 +5,7 @@ import { db } from '../../server/platform/db';
 import { metVerzoek, zetGebruiker } from '../../server/platform/context';
 import { auditControle, auditLijst, auditToevoegen, auditVerwijderen, auditVoorWeergave } from '../../server/platform/audit';
 import { verouderdeEigenarenIntrekken } from '../../backend/eigenaar-opschonen';
+import { heeftApiRecht } from '../../backend/api-recht';
 import { googleAanmeldingVastleggen, stapOpGeldig, totpStapOpVastleggen, STAP_OP_TABEL } from '../../backend/stap-op';
 
 const resultaten: Array<{ naam: string; ok: boolean }> = [];
@@ -85,6 +86,12 @@ export async function main() {
     if (vorigeOwner === undefined) delete process.env.OWNER_EMAIL; else process.env.OWNER_EMAIL = vorigeOwner;
     check('opstarten: verouderde eigenaar (ander adres) → member + audit; echte eigenaar (hoofdletterongevoelig) blijft; zonder OWNER_EMAIL niets',
       weg.includes(oud) && !weg.includes(echt) && rolVan(oud) === 'member' && rolVan(echt) === 'owner' && auditOud.items.length === 1 && niets.length === 0, JSON.stringify(rollen));
+    {
+      const vorig = process.env.OWNER_EMAIL; process.env.OWNER_EMAIL = 'baas@example.test';
+      const r = [heeftApiRecht({ role: 'owner', email: 'Baas@Example.test' }), heeftApiRecht({ role: 'owner', email: 'ander@example.test' }), heeftApiRecht({ role: 'member', email: 'x@example.test' }), heeftApiRecht({ role: 'member', email: 'x@example.test', entitlements: ['api-platform'] }), heeftApiRecht(null)];
+      if (vorig === undefined) delete process.env.OWNER_EMAIL; else process.env.OWNER_EMAIL = vorig;
+      check('API-platform/kluis: alleen echte eigenaar of recht api-platform', JSON.stringify(r) === '[true,false,false,true,false]', JSON.stringify(r));
+    }
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {

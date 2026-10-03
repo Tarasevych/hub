@@ -56,8 +56,8 @@ type ServiceId = keyof typeof SERVICE_ORIGINS;
 
 type Status = 'new' | 'pending' | 'approved' | 'blocked' | 'deleted';
 type Level = 'full' | 'limited';
-type IdentityEntitlement='plum-theme';
-const IDENTITY_ENTITLEMENTS_V1=['plum-theme'] as const;
+type IdentityEntitlement='plum-theme'|'api-platform';
+const IDENTITY_ENTITLEMENTS_V1=['plum-theme','api-platform'] as const;
 const normalizeIdentityEntitlements=(value:unknown):IdentityEntitlement[]=>Array.isArray(value)?[...new Set(value.map(String).filter((item):item is IdentityEntitlement=>IDENTITY_ENTITLEMENTS_V1.includes(item as IdentityEntitlement)))]:[];
 type User = { id: string; email: string; sub: string; name: string; picture: string; customPicture?: boolean; role: 'owner' | 'admin' | 'member' | 'viewer'; status: Status; accessLevel: Level; entitlements?: IdentityEntitlement[]; createdAt: number; updatedAt: number; deletedAt?: number; deletionSource?: 'self' | 'admin'; personRef?: string; recoverableUntil?: number; retiredAt?: number }; 
 type SessionLocation = { latitude: number; longitude: number; accuracy: number; updatedAt: number };

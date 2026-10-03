@@ -1,4 +1,5 @@
 import {createHash,randomBytes,timingSafeEqual} from 'node:crypto';
+import {heeftApiRecht} from './api-recht';
 import {db,error,json} from '../server/platform';
 import {apiPlatformContractPayload} from './api-platform-contract';
 import {apiPlatformVaultCount,vaultEncryptionReady} from './api-platform-vault';
@@ -39,6 +40,8 @@ export async function resolveApiMachineToken(event:Record<string,unknown>,query:
   const now=Date.now();
   if(record.revokedAt)return{errorCode:'API_TOKEN_REVOKED',status:401} as const;
   if(record.expiresAt<=now)return{errorCode:'API_TOKEN_EXPIRED',status:401} as const;
+  // Fase 3: token werkt alleen zolang de maker nog recht op het API-platform heeft (en niet geblokkeerd is).
+  {const[maker]=await db.get<{role?:string;email?:string;status?:string;entitlements?:unknown}>('users',[record.ownerUserId]);if(!maker||maker.status==='blocked'||maker.status==='deleted'||!heeftApiRecht(maker))return{errorCode:'API_TOKEN_ENTITLEMENT_REVOKED',status:403} as const;}
   const windowStart=record.rateWindowStart&&now-record.rateWindowStart<RATE_WINDOW_MS?record.rateWindowStart:now;
   const rateCount=windowStart===record.rateWindowStart?record.rateCount+1:1;
   if(rateCount>RATE_MAX)return{errorCode:'API_TOKEN_RATE_LIMITED',status:429} as const;
@@ -56,7 +59,7 @@ export async function resolveApiMachineToken(event:Record<string,unknown>,query:
 export function apiPlatformMePayload(token:PatRecord){return{actor:'machine-token',ownerId:token.ownerUserId,scopes:token.scopes,prefix:token.prefix,expiresAt:token.expiresAt,tokenId:token.id}}
 
 export function createApiPlatformRoutes(deps:{requireSession:(event:Record<string,unknown>,body:unknown)=>Promise<SessionAuth>;respond:(data:unknown,status?:number)=>unknown;fail:(message:string,status?:number)=>unknown;audit:(userId:string,action:string,result:string,details?:Record<string,unknown>)=>Promise<unknown>;body:(body:unknown)=>Record<string,unknown>}){
-  const ownerGate=async(event:Record<string,unknown>,body:unknown)=>{const auth=await deps.requireSession(event,body);if('errorCode'in auth||auth.service!=='api'||auth.user.status!=='approved')return null;return auth};
+  const ownerGate=async(event:Record<string,unknown>,body:unknown)=>{const auth=await deps.requireSession(event,body);if('errorCode'in auth||auth.service!=='api'||auth.user.status!=='approved')return null;if(!heeftApiRecht(auth.user as never))return null;return auth};
   return{
     'GET /api/v1/me':[async(ctx)=>{const resolved=await resolveApiMachineToken(ctx.event,ctx.query||{});if('errorCode'in resolved)return error(resolved.errorCode,resolved.status);if(!resolved.token.scopes.includes('identity.me.read'))return error('API_TOKEN_SCOPE_MISSING',403);return json(apiPlatformMePayload(resolved.token))}],
     'POST /api/owner/api-platform/tokens':[async(ctx)=>{const auth=await ownerGate(ctx.event,ctx.body);if(!auth||'errorCode'in auth)return deps.fail('OWNER_API_SESSION_REQUIRED',403);const items=await apiPlatformTokensForOwner(auth.user.id);return deps.respond({items:items.map(publicToken),liveCount:items.filter(item=>!item.revokedAt&&item.expiresAt>Date.now()).length})} ],
