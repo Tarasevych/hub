@@ -250,8 +250,9 @@ export async function verifyPasswordLogin(email:string,password:string,totp=''){
       const recovery=await recoveryFor(user.id);
       const hashed=recovery?recoveryMatches(recovery,totp.trim().toUpperCase()):'';
       if(!recovery||!hashed||!recovery.hashes.includes(hashed))return failed('ACCESS_MFA_INVALID');
-      const next=recovery.hashes.filter(item=>item!==hashed);
-      await db.update(RECOVERY,[{id:recovery.id,record:{...withoutId(recovery),hashes:next,remaining:next.length}}]);
+      // Atomisch eenmalig: één UPDATE haalt de hash alleen weg als die er nog staat; bij gelijktijdig
+      // gebruik van dezelfde code wint precies één verzoek, de rest krijgt ACCESS_MFA_INVALID.
+      if(!await db.takeArrayValue(RECOVERY,recovery.id,'hashes',hashed,'remaining'))return failed('ACCESS_MFA_INVALID');
     }
   }
   await clearLoginFailures(subject);

@@ -40,6 +40,28 @@ try {
   const totpKaart = await page.locator("[data-access-factor='totp']").count();
   const passkeyKnop = await page.getByText(/Passkey toevoegen|Додати passkey/).count();
   check('Test 8: beveiliging toont geen passkey-kaart of -knop (wel TOTP)', passkeyKaart === 0 && passkeyKnop === 0 && totpKaart > 0, `webauthn=${passkeyKaart} knop=${passkeyKnop} totp=${totpKaart}`);
+  // Test 9: handoff-browserbinding in een echte browser (login-CSRF).
+  await page.goto('https://hub.tarasevych.com/', { waitUntil: 'networkidle' });
+  const gemaakt = await page.evaluate(async () => { const r = await fetch('/api/owner/session/handoff/create', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ service: 'hub', target: 'cloud', tabContext: crypto.getRandomValues(new Uint8Array(24)).reduce((a, b) => a + b.toString(16).padStart(2, '0'), '') }) }); return { status: r.status, data: await r.json().catch(() => ({})) }; });
+  const handoffUrl = gemaakt.data?.url || '';
+  const binding = (await ctx.cookies('https://cloud.tarasevych.com/')).find(c => c.name === 'tsv_handoff_binding');
+  check('Test 9: handoff aanmaken zet bindingscookie (HttpOnly, Strict) voor alle subdomeinen', gemaakt.status === 200 && !!handoffUrl && binding?.httpOnly === true && binding?.sameSite === 'Strict' && binding?.domain === '.tarasevych.com', `${gemaakt.status} ${JSON.stringify(binding ? { d: binding.domain, s: binding.sameSite, h: binding.httpOnly } : null)}`);
+  // Vreemde (afgemelde) browser opent de ondergeschoven link: niet aangemeld, code niet verbruikt.
+  const vreemd = await browser.newContext({ ignoreHTTPSErrors: true });
+  const vp = await vreemd.newPage();
+  const vreemdeRedeem = vp.waitForResponse(r => r.url().includes('/api/owner/session/handoff/redeem'), { timeout: 15000 }).catch(() => null);
+  await vp.goto(handoffUrl, { waitUntil: 'networkidle' }); const vr = await vreemdeRedeem; await vp.waitForTimeout(1000);
+  const vreemdSessie = (await vreemd.cookies('https://cloud.tarasevych.com/')).some(c => c.name.startsWith('__Secure-tsv_ecosystem_'));
+  const codeHash = sha(new URL(handoffUrl).searchParams.get('handoff') || '');
+  const nogDa = (await pool.query("select 1 from app.records where tbl='service_handoffs' and data->>'codeHash'=$1", [codeHash])).rowCount;
+  check('Test 9: ondergeschoven handoff-link in een andere browser meldt niet aan en verbruikt de code niet', vr?.status() === 401 && !vreemdSessie && nogDa === 1, `redeem ${vr?.status()} sessie=${vreemdSessie} rij=${nogDa}`);
+  await vreemd.close();
+  // Eigen browser (sessiecookie weg, binding blijft): dezelfde link meldt wél aan.
+  await ctx.clearCookies({ name: '__Secure-tsv_ecosystem_migrated-bg2v4h' });
+  const eigenRedeem = page.waitForResponse(r => r.url().includes('/api/owner/session/handoff/redeem'), { timeout: 15000 }).catch(() => null);
+  await page.goto(handoffUrl, { waitUntil: 'networkidle' }); const er = await eigenRedeem; await page.waitForTimeout(1500);
+  const eigenSessie = (await ctx.cookies('https://cloud.tarasevych.com/')).some(c => c.name.startsWith('__Secure-tsv_ecosystem_'));
+  check('Test 9: dezelfde link in de aanmakende browser meldt aan', er?.status() === 200 && eigenSessie, `redeem ${er?.status()} sessie=${eigenSessie}`);
   const cookies = await ctx.cookies('https://mail.tarasevych.com/');
   check('cookie geldt ook voor mail.tarasevych.com (één aanmelding)', cookies.some(c => c.name.startsWith('__Secure-tsv_ecosystem_')), cookies.map(c => `${c.name}(${c.sameSite},${c.domain})`).join(', '));
   check('geen CSP-schendingen in de console', csp.length === 0, csp.slice(0, 3).join(' | '));
