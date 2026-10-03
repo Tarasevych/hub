@@ -6,6 +6,7 @@ import { metVerzoek, zetGebruiker } from '../../server/platform/context';
 import { auditControle, auditLijst, auditToevoegen, auditVerwijderen, auditVoorWeergave } from '../../server/platform/audit';
 import { verouderdeEigenarenIntrekken } from '../../backend/eigenaar-opschonen';
 import { heeftApiRecht } from '../../backend/api-recht';
+import { verlopenVerwijderingenAfronden, zonderGeheimen } from '../../backend/privacy';
 import { googleAanmeldingVastleggen, stapOpGeldig, totpStapOpVastleggen, STAP_OP_TABEL } from '../../backend/stap-op';
 
 const resultaten: Array<{ naam: string; ok: boolean }> = [];
@@ -91,6 +92,23 @@ export async function main() {
       const r = [heeftApiRecht({ role: 'owner', email: 'Baas@Example.test' }), heeftApiRecht({ role: 'owner', email: 'ander@example.test' }), heeftApiRecht({ role: 'member', email: 'x@example.test' }), heeftApiRecht({ role: 'member', email: 'x@example.test', entitlements: ['api-platform'] }), heeftApiRecht(null)];
       if (vorig === undefined) delete process.env.OWNER_EMAIL; else process.env.OWNER_EMAIL = vorig;
       check('API-platform/kluis: alleen echte eigenaar of recht api-platform', JSON.stringify(r) === '[true,false,false,true,false]', JSON.stringify(r));
+    }
+    {
+      const weg = randomUUID(), blijft = randomUUID(), nu = Date.now();
+      await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('users',$1,$2),('users',$3,$4)", [weg, { email: `weg-${weg}@example.test`, name: 'Weg', role: 'member', status: 'deleted', deletedAt: nu - 31 * 864e5, recoverableUntil: nu - 864e5 }, blijft, { email: `blijft-${blijft}@example.test`, role: 'member', status: 'deleted', deletedAt: nu - 864e5, recoverableUntil: nu + 29 * 864e5 }]);
+      recordIds.push(weg, blijft);
+      await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('workspaces',$1,$2),('account_identities',$3,$4),('workspaces',$5,$6)", [randomUUID(), { ownerUserId: weg, name: 'x' }, randomUUID(), { accountId: weg, provider: 'google' }, randomUUID(), { ownerUserId: blijft, name: 'y' }]);
+      const droog = await verlopenVerwijderingenAfronden(nu, false);
+      const tel = async (id: string) => Number((await sys.query("SELECT count(*)::int n FROM app.records WHERE tbl <> 'users' AND (owner_id = $1 OR data->>'accountId' = $1)", [id])).rows[0].n);
+      const voorDroog = await tel(weg);
+      const echt = await verlopenVerwijderingenAfronden(nu, true);
+      const u = (await sys.query("SELECT data FROM app.records WHERE tbl='users' AND id=$1", [weg])).rows[0]?.data || {};
+      const a = await sys.query("SELECT 1 FROM app.audit WHERE owner_id=$1 AND action='account.definitief_gewist'", [weg]);
+      const ok = droog.uitgevoerd === false && droog.accounts.some((x) => x.id === weg) && !droog.accounts.some((x) => x.id === blijft) && voorDroog === 2
+        && echt.accounts.some((x) => x.id === weg) && (await tel(weg)) === 0 && (await tel(blijft)) === 1 && u.email === `gewist-${weg}@invalid` && !!u.gewistAt && u.name === '' && a.rowCount === 1;
+      await sys.query("DELETE FROM app.records WHERE tbl <> 'users' AND owner_id = $1", [blijft]);
+      check('verwijdering na 30 dagen: droog zonder vlag, met vlag inhoud + identiteiten weg, grafsteen zonder PII, audit; binnen 30 dagen ongemoeid', ok, JSON.stringify({ droog: droog.accounts.length, voorDroog, u: u.email }));
+      check('export laat geheimen weg', JSON.stringify(zonderGeheimen({ a: 1, tokenHash: 'x', nested: { secretValue: 'y', ok: 2, passwordHash: 'z' } })) === '{"a":1,"nested":{"ok":2}}');
     }
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
