@@ -6,6 +6,7 @@ export type PrimaryLoginService =
   | 'mail'
   | 'cloud'
   | 'github'
+  | 'huis'
   | 'identity'
   | 'api'
   | 'admin';
@@ -48,6 +49,7 @@ const LOGIN_SERVICES: PrimaryLoginService[] = [
   'mail',
   'cloud',
   'github',
+  'huis',
   'identity',
   'api',
   'admin',
