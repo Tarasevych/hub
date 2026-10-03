@@ -40,7 +40,7 @@ function verzoek(method, host, path, body, extraHeaders = {}) {
   const payload = body === undefined ? undefined : Buffer.from(JSON.stringify(body));
   return new Promise((resolve, reject) => {
     const req = http.request({ hostname: url.hostname, port: url.port, path: url.pathname + url.search, method,
-      headers: { host, origin: `https://${host}`, 'cf-connecting-ip': '203.0.113.7', ...(payload ? { 'content-type': 'application/json', 'content-length': payload.length } : {}), ...extraHeaders } }, res => {
+      headers: { host, origin: `https://${host}`, 'cf-connecting-ip': '203.0.113.7', 'x-forwarded-for': '1.2.3.4', 'x-real-ip': '1.2.3.4', ...(payload ? { 'content-type': 'application/json', 'content-length': payload.length } : {}), ...extraHeaders } }, res => {
       const delen = []; res.on('data', d => delen.push(d)); res.on('end', () => {
         const text = Buffer.concat(delen).toString('utf8'); let data; try { data = JSON.parse(text); } catch { data = text; }
         const sc = res.headers['set-cookie']; resolve({ status: res.statusCode, data, setCookie: Array.isArray(sc) ? sc : sc ? [sc] : [] });
@@ -62,7 +62,7 @@ async function zaaiGebruiker(email, rol) {
 }
 async function zaaiSessie(userId) {
   const token = randomBytes(32).toString('base64url');
-  const id = await voeg('owner_service_sessions_v1', { tokenHash: sha(token), userId, service: 'hub', sourceOrigin: 'https://hub.tarasevych.com', tabHash: sha('ecosystem'), createdAt: nu, authenticatedAt: nu, lastSeenAt: nu, idleExpiresAt: nu + 864e5, absoluteExpiresAt: nu + 7 * 864e5, rotation: 0, version: 1, revocationEpoch: 0, ip: '203.0.113.7', userAgent: 'rooktest', authMethod: 'google', scope: 'ecosystem' });
+  const id = await voeg('owner_service_sessions_v1', { tokenHash: sha(token), userId, service: 'hub', sourceOrigin: 'https://hub.tarasevych.com', tabHash: sha('ecosystem'), createdAt: nu, authenticatedAt: nu, lastSeenAt: nu, idleExpiresAt: nu + 864e5, absoluteExpiresAt: nu + 7 * 864e5, rotation: 0, version: 1, revocationEpoch: 0, ip: '0.0.0.0', userAgent: 'rooktest', authMethod: 'google', scope: 'ecosystem' });
   return `${id}.${token}`;
 }
 
@@ -85,6 +85,9 @@ try {
     const email = r.data?.user?.email || r.data?.currentUser?.email || JSON.stringify(r.data).match(/rooktest-eigenaar@example\.test/)?.[0];
     check(`sessie geldig op ${svc}.tarasevych.com`, r.status === 200 && email === 'rooktest-eigenaar@example.test', `status ${r.status} ${typeof r.data === 'object' ? (r.data.state || r.data.error || '') : ''}`);
   }
+  // Client-IP komt uit cf-connecting-ip, niet uit (vervalsbare) x-forwarded-for / x-real-ip.
+  const ipRij = await pool.query("select data->>'ip' ip from app.records where tbl='owner_service_sessions_v1' and data->>'userId'=$1", [eigenaar]);
+  check('sessie-IP = cf-connecting-ip (x-forwarded-for genegeerd)', ipRij.rows[0]?.ip === '203.0.113.7', `ip=${ipRij.rows[0]?.ip}`);
   // Verkeerde service voor de host wordt geweigerd (host bepaalt de service).
   r = await api('cloud.tarasevych.com', '/api/owner/session/bootstrap', { service: 'mail', tabContext: tab() }, c1);
   check('service ≠ host wordt geweigerd', (r.status >= 400 && r.status !== 404) || r.data?.state === 'signed_out', `status ${r.status}`);
@@ -144,6 +147,9 @@ try {
 } finally {
   // Opruimen: alle rijen die naar de testgebruikers verwijzen.
   if (zaai.length) {
+    const paden = await pool.query("select data->>'storagePath' p from app.records where data->>'ownerUserId' = any($1) and coalesce(data->>'storagePath','') <> ''", [zaai]);
+    const { rm } = await import('node:fs/promises');
+    for (const { p } of paden.rows) { await rm(join(UPLOADS, p), { force: true }); await pool.query('delete from app.storage_objects where path=$1', [p]); }
     await pool.query("delete from app.records where id = any($1) or data->>'userId' = any($1) or data->>'ownerUserId' = any($1)", [zaai]);
   }
   await pool.end();
