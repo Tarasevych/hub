@@ -60,7 +60,7 @@ export async function main() {
   const tijd = Date.now();
   const eigenaarMail = `eenheid-eigenaar-${tijd}@example.test`, lidMail = `eenheid-lid-${tijd}@example.test`;
   process.env.OWNER_EMAIL = eigenaarMail;
-  const { ensureUserVoorTests } = await import('../../backend/index');
+  const { ensureUserVoorTests, emailZichtbaarheidVoorTests } = await import('../../backend/index');
   const ids: string[] = [];
   try {
     // Gemigreerde DB: eigenaarsaccount zonder identiteit en met een andere (oude) sub.
@@ -76,6 +76,16 @@ export async function main() {
     const meldingen = (await db.list<{ kind: string; recipientEmail: string }>('site_notifications', { filter: { recipientUserId: l1.id, kind: 'account_email_conflict' } })).items;
     const conflict = (await db.list<{ newAccountId: string }>('account_email_conflicts_v1', { filter: { existingAccountId: l1.id } })).items;
     check('DB: zelfde subject → zelfde account; ander subject met zelfde e-mail → nieuw account (status new), melding alleen op id bij het bestaande account + koppelhint', l1b.id === l1.id && l2.id !== l1.id && l2.status === 'new' && meldingen.length === 1 && meldingen[0].recipientEmail === '' && conflict.length === 1 && conflict[0].newAccountId === l2.id, `${l1b.id === l1.id} ${l2.id !== l1.id} meldingen=${meldingen.length} conflict=${conflict.length}`);
+    // E-mailgeadresseerde melding/uitnodiging: alleen het oorspronkelijke account (l1), niet het tweede (l2).
+    const [mId] = await db.add('site_notifications', [{ recipientUserId: '', recipientEmail: lidMail, kind: 'workspace_share', title: 't', message: 'm', read: false, createdAt: Date.now() }]); ids.push(mId!);
+    const [uId] = await db.add('workspace_members', [{ workspaceId: `eenheid-ws-${tijd}`, userId: '', email: lidMail, permission: 'view', status: 'invited', createdAt: Date.now(), updatedAt: Date.now() }]); ids.push(uId!);
+    const z = emailZichtbaarheidVoorTests;
+    const zietL1 = (await z.emailMeldingen(l1)).items.some(x => x.id === mId), zietL2 = (await z.emailMeldingen(l2)).items.some(x => x.id === mId);
+    await z.activateInvites(l2 as never);
+    const naL2 = (await db.get<{ status: string; userId: string }>('workspace_members', [uId!]))[0];
+    await z.activateInvites(l1 as never);
+    const naL1 = (await db.get<{ status: string; userId: string }>('workspace_members', [uId!]))[0];
+    check('DB: e-mailgeadresseerde melding/uitnodiging alleen voor het oorspronkelijke account; tweede account met zelfde e-mail ziet/activeert niets', await z.isEmailEigenaar(l1) && !(await z.isEmailEigenaar(l2)) && zietL1 && !zietL2 && naL2?.status === 'invited' && !naL2?.userId && naL1?.status === 'active' && naL1?.userId === l1.id, `eigenaar l1 ${await z.isEmailEigenaar(l1)}, l2 ${await z.isEmailEigenaar(l2)}, melding l1 ${zietL1} l2 ${zietL2}, uitnodiging na l2 ${naL2?.status}, na l1 ${naL1?.status}`);
     let geweigerd = '';
     try { await ensureUserVoorTests({ ...g('niet-geverifieerd', `x-${tijd}@example.test`), email_verified: false }); } catch (e) { geweigerd = (e as Error).message; }
     check('DB: niet-geverifieerd e-mailadres → geweigerd, geen account', geweigerd === 'Unverified identity' && (await db.list('users', { filter: { email: `x-${tijd}@example.test` } })).items.length === 0);
