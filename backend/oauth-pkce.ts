@@ -3,8 +3,11 @@
 // per start met randomBytes(32) gemaakt en server-side bewaard (tabel oauth_pkce_v1, sleutel = hash van
 // doel + state). Bij de callback worden ze atomisch en eenmalig opgehaald (db.takeOne); daarna bestaan ze
 // niet meer. Verlopen rijen ruimt de opruimjob op (server/cron.ts, taak "opruimen").
+// Audit-fix 11: deze rijen hebben geen eigenaar (sleutel = state-hash) en zijn alleen voor de server; ze lopen
+// daarom altijd via de systeemrol, ook als de start vanuit een ingelogde route komt (anders weigert RLS).
 import {createHash,randomBytes} from 'node:crypto';
 import {db} from '../server/platform';
+import {alsSysteem} from '../server/platform/context';
 
 export const OAUTH_PKCE_TABLE='oauth_pkce_v1';
 const TTL_MS=20*60*1000;
@@ -18,14 +21,14 @@ const challengeOf=(verifier:string)=>createHash('sha256').update(verifier).diges
 /** Maak nieuw materiaal voor `state`, bewaar het server-side en geef het terug. */
 export async function createOAuthMaterial(purpose:OAuthPurpose,state:string):Promise<OAuthMaterial>{
   const verifier=randomBytes(32).toString('base64url'),nonce=randomBytes(32).toString('base64url'),now=Date.now();
-  const[id]=await db.add(OAUTH_PKCE_TABLE,[{stateKey:key(purpose,state),purpose,verifier,nonce,createdAt:now,expiresAt:now+TTL_MS}]);
+  const[id]=await alsSysteem(()=>db.add(OAUTH_PKCE_TABLE,[{stateKey:key(purpose,state),purpose,verifier,nonce,createdAt:now,expiresAt:now+TTL_MS}]));
   if(!id)throw new Error('OAUTH_PKCE_STORE_FAILED');
   return{verifier,challenge:challengeOf(verifier),nonce};
 }
 
 /** Haal het materiaal voor `state` eenmalig op (atomisch verwijderd). null als onbekend of verlopen. */
 export async function takeOAuthMaterial(purpose:OAuthPurpose,state:string):Promise<OAuthMaterial|null>{
-  const row=await db.takeOne<{verifier:string;nonce:string;expiresAt:number}>(OAUTH_PKCE_TABLE,{stateKey:key(purpose,state)});
+  const row=await alsSysteem(()=>db.takeOne<{verifier:string;nonce:string;expiresAt:number}>(OAUTH_PKCE_TABLE,{stateKey:key(purpose,state)}));
   if(!row||!row.verifier||Number(row.expiresAt||0)<=Date.now())return null;
   return{verifier:row.verifier,challenge:challengeOf(row.verifier),nonce:row.nonce};
 }
