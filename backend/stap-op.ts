@@ -1,16 +1,19 @@
 // Step-up (opnieuw bevestigen) voor gevoelige acties (beveiliging fase 3).
-// Een actie mag als binnen 5 minuten:
-//   a) een echte Google-aanmelding van dit account is afgerond (OAuth-callback) EN de huidige sessie daarna
-//      is ontstaan (dus uit die aanmelding komt; een oude, gestolen sessie telt niet), of
-//   b) op deze sessie een geldige TOTP-code is ingevoerd via POST /api/owner/access/stap-op.
+// Een actie mag als binnen 5 minuten op DEZE sessie (sessie-id, tab-overlay of anker):
+//   a) een Google-aanmelding is afgerond waarvan Google zelf bevestigt (auth_time in het id_token) dat de
+//      gebruiker zich minder dan 5 minuten geleden echt heeft aangemeld. Onthouden browser (complete-remembered)
+//      en handoff tellen nooit: daar is geen nieuw id_token. (Audit-fix 5.)
+//   b) een geldige TOTP-code is ingevoerd via POST /api/owner/access/stap-op.
+// Opt-in noodpad: STAP_OP_GOOGLE_ZONDER_AUTH_TIME=1 laat een expliciete step-up-transactie (prompt=login) zonder
+// auth_time-claim tellen als het OAuth-verloop binnen 5 minuten na de start is afgerond. Standaard uit.
 // Noodschakelaar: STAP_OP_UIT=1 (alles mag weer zonder step-up, zoals vóór fase 3).
 // Opslag: één record per account in owner_step_up_v1 (eigen rij → werkt onder RLS).
 import { db } from '../server/platform';
 
 export const STAP_OP_TABEL = 'owner_step_up_v1';
 export const STAP_OP_MS = 5 * 60 * 1000;
-const SPELING_MS = 60 * 1000;
 type StapOpRecord = { id: string; userId: string; googleAt?: number; sessies?: Record<string, number>; updatedAt: number };
+const TOEKOMST_SPELING_MS = 60 * 1000;
 export type StapOpSessie = { id: string; createdAt: number };
 export type StapOpAuth = { user: { id: string }; session?: StapOpSessie | null; tabSession?: StapOpSessie | null };
 
@@ -30,9 +33,20 @@ async function schrijf(userId: string, wijzig: (r: Omit<StapOpRecord, 'id'>) => 
   else await db.add(STAP_OP_TABEL, [volgend]);
 }
 
-/** Aanroepen na een afgeronde Google-aanmelding (transactie compleet). */
-export async function googleAanmeldingVastleggen(userId: string, at = Date.now()): Promise<void> {
-  await schrijf(userId, (r) => ({ ...r, googleAt: at }));
+/** Is een Google auth_time (ms) vers genoeg voor step-up? */
+export function googleAuthTijdVers(authTimeMs: number, nu = Date.now()): boolean {
+  return Number.isFinite(authTimeMs) && authTimeMs > 0 && authTimeMs <= nu + TOEKOMST_SPELING_MS && nu - authTimeMs < STAP_OP_MS;
+}
+/**
+ * Aanroepen nadat een Google-aanmelding sessie(s) heeft opgeleverd. Legt step-up vast voor precies die sessie-id's,
+ * alleen als auth_time vers is. Tijdstip = auth_time (dus de 5 minuten lopen vanaf de echte aanmelding).
+ */
+export async function googleStapOpVastleggen(userId: string, sessieIds: Array<string | null | undefined>, authTimeMs: number): Promise<boolean> {
+  const ids = sessieIds.filter((id): id is string => typeof id === 'string' && id.length > 0);
+  if (!ids.length || !googleAuthTijdVers(authTimeMs)) return false;
+  const at = Math.min(authTimeMs, Date.now());
+  await schrijf(userId, (r) => { const { googleAt: _oud, ...rest } = r; return { ...rest, sessies: { ...(r.sessies || {}), ...Object.fromEntries(ids.map((id) => [id, at])) } }; });
+  return true;
 }
 /** Aanroepen na een geldige TOTP-code op deze sessie. */
 export async function totpStapOpVastleggen(auth: StapOpAuth): Promise<void> {
@@ -48,9 +62,9 @@ export async function stapOpGeldig(auth: StapOpAuth, nu = Date.now()): Promise<b
   if (!s) return false;
   const r = await recordVan(auth.user.id);
   if (!r) return false;
-  const viaGoogle = !!r.googleAt && nu - r.googleAt < STAP_OP_MS && Number(s.createdAt || 0) >= r.googleAt - SPELING_MS;
-  const viaTotp = !!r.sessies?.[s.id] && nu - r.sessies[s.id] < STAP_OP_MS;
-  return viaGoogle || viaTotp;
+  // Alleen per sessie-id (Google met verse auth_time of TOTP). Het oude account-brede googleAt telt niet meer.
+  const at = Number(r.sessies?.[s.id] || 0);
+  return at > 0 && nu - at < STAP_OP_MS;
 }
 
 /** Foutcode als step-up nodig is, anders ''. 403 (geen 401: de sessie zelf is geldig). */

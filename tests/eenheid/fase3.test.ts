@@ -7,7 +7,7 @@ import { auditControle, auditLijst, auditToevoegen, auditVerwijderen, auditVoorW
 import { verouderdeEigenarenIntrekken } from '../../backend/eigenaar-opschonen';
 import { heeftApiRecht } from '../../backend/api-recht';
 import { verlopenVerwijderingenAfronden, zonderGeheimen } from '../../backend/privacy';
-import { googleAanmeldingVastleggen, stapOpGeldig, totpStapOpVastleggen, STAP_OP_TABEL } from '../../backend/stap-op';
+import { googleStapOpVastleggen, stapOpGeldig, totpStapOpVastleggen, STAP_OP_TABEL } from '../../backend/stap-op';
 
 const resultaten: Array<{ naam: string; ok: boolean }> = [];
 const check = (naam: string, ok: boolean, info = '') => { resultaten.push({ naam, ok }); console.log(`${ok ? 'OK  ' : 'FOUT'} ${naam}${info ? ` — ${info}` : ''}`); };
@@ -58,9 +58,13 @@ export async function main() {
     const verse = { user: { id: a }, session: { id: `s-${a}`, createdAt: nu } };
     const oude = { user: { id: a }, session: { id: `o-${a}`, createdAt: nu - 3600_000 } };
     const zonder = await stapOpGeldig(verse);
-    await googleAanmeldingVastleggen(a, nu);
+    // Google-step-up alleen met verse auth_time en alleen voor de genoemde sessie-id's (audit-fix 5).
+    const oudeAuthTime = await googleStapOpVastleggen(a, [`s-${a}`], nu - 10 * 60_000);
+    const naOudeAuthTime = await stapOpGeldig(verse);
+    await googleStapOpVastleggen(a, [`s-${a}`], nu);
     const viaGoogle = await stapOpGeldig(verse), oudViaGoogle = await stapOpGeldig(oude);
     const later = await stapOpGeldig(verse, nu + 6 * 60_000);
+    check('step-up: Google met auth_time ouder dan 5 min telt niet', !oudeAuthTime && !naOudeAuthTime);
     await totpStapOpVastleggen(oude);
     const oudViaTotp = await stapOpGeldig(oude), andereSessie = await stapOpGeldig({ user: { id: a }, session: { id: 'ander', createdAt: nu - 3600_000 } });
     process.env.STAP_OP_UIT = '1'; const nood = await stapOpGeldig({ user: { id: 'x' }, session: null }); delete process.env.STAP_OP_UIT;

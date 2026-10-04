@@ -10,7 +10,8 @@ await mkdir('rapporten', { recursive: true });
 const map = await mkdtemp(join('rapporten', 'eenheid-'));
 let code = 0;
 try {
-  for (const f of (await readdir('tests/eenheid')).filter(n => n.endsWith('.test.ts'))) {
+  const filter = process.argv[2] || '';
+  for (const f of (await readdir('tests/eenheid')).filter(n => n.endsWith('.test.ts') && n.includes(filter))) {
     const uit = join(map, f.replace(/\.ts$/, '.mjs'));
     await build({ entryPoints: [join('tests/eenheid', f)], outfile: uit, bundle: true, platform: 'node', format: 'esm', target: 'node24', packages: 'external', logLevel: 'warning' });
     const mod = await import(pathToFileURL(resolve(uit)).href);
