@@ -11,7 +11,8 @@ export type PrimaryLoginService =
   | 'api'
   | 'admin';
 
-export type PrimaryLoginIntent = 'login' | 'replace-tab';
+// 'step-up': opnieuw aanmelden (prompt=login) voor een gevoelige actie; vereist een bestaande sessie (audit-fix 5).
+export type PrimaryLoginIntent = 'login' | 'replace-tab' | 'step-up';
 export type PrimaryLoginLocale = 'uk' | 'nl';
 
 type StartInput = {
