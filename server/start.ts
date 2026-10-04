@@ -170,6 +170,8 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
   return true;
 }
 
+const JURIDISCHE_PADEN = new Set(['/privacy', '/terms']);
+
 // Nooit publiceren, ook niet als ze per ongeluk in de build belanden: audit-uitvoer, sourcemaps, dotfiles.
 const VERBORGEN_PAD = /(^|\/)(l002-diagnostic\.json|[^/]*\.map|\.[^/]*)$/i;
 
@@ -265,6 +267,15 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     return sendText(res, LOCAL_HOSTS.has(host) ? 404 : 421, 'Onbekende host');
   }
 
+  // Publieke juridische pagina's (backend/juridisch.ts): alleen deze exacte paden, zonder aanmelding, met de app-CSP.
+  if (JURIDISCHE_PADEN.has(url.pathname)) {
+    const method = String(req.method || 'GET').toUpperCase();
+    if (method !== 'GET' && method !== 'HEAD') return sendText(res, 405, 'Method not allowed');
+    const wacht = await rateLimitAfwijzing(method, url.pathname, clientIp(req));
+    if (wacht > 0) return send(res, 429, { 'Content-Type': 'text/plain; charset=utf-8', 'Retry-After': String(wacht) }, 'Too many requests');
+    const response = await handler(buildEvent(req, url, '', clientIp(req)) as never) as RouterResponse;
+    return writeRouterResponse(res, { ...response, headers: { ...response.headers, 'Content-Security-Policy': APP_CSP }, body: method === 'HEAD' ? '' : response.body });
+  }
   if (url.pathname.startsWith('/api/')) {
     // Audit-fix 3: niet-canonieke API-paden (//, afsluitende /, punt-segmenten) → 404 vóór CSRF/rate limit/routering.
     if (!isCanoniekPad(url.pathname)) return sendJson(res, 404, { error: 'Not found', reasonCode: 'PATH_NOT_CANONICAL' });

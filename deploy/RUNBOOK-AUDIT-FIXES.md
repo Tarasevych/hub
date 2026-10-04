@@ -190,3 +190,34 @@ Volgorde is belangrijk: **eerst de omgeving samenvoegen, dan de app.** De vorige
   Daarna opnieuw aanmelden (bestaande sessies zijn bij het blokkeren al ingetrokken).
 - **Tweede eigenaar-account nodig** (bv. ander Google-adres): `OWNER_EMAIL` aanpassen en herstarten; de server
   zet het oude account terug naar `member`. Twee accounts met rol `owner` tegelijk kan niet (unieke index).
+
+## 11. Vervolgrelease: juridische pagina's + A11 (geen migratie, geen omgevingswijziging)
+
+Bovenop de live audit-fixes-release. Geen nieuwe migratie, geen nieuwe variabelen; alleen de app.
+```
+cd /tmp && sha256sum -c mijn-ruimte-beveiliging-fixes-audit-*.tar.gz.sha256
+rm -rf /root/bron-audit-fixes && mkdir -p /root/bron-audit-fixes
+tar -xzf mijn-ruimte-beveiliging-fixes-audit-<stempel>-<sha>.tar.gz -C /root/bron-audit-fixes
+cat /root/bron-audit-fixes/mijn-ruimte/BRON-COMMIT
+/root/bron-audit-fixes/mijn-ruimte/deploy/installeer-app.sh installeren /root/bron-audit-fixes/mijn-ruimte
+```
+Verificatie:
+```
+for h in hub id; do for p in /privacy /terms; do
+  curl -s -o /dev/null -w "$h$p %{http_code} %{content_type}\n" -H "Host: $h.tarasevych.com" http://127.0.0.1:8080$p; done; done   # 200 text/html
+curl -s -H 'Host: hub.tarasevych.com' http://127.0.0.1:8080/privacy | grep -c -E 'Limited Use|Privacybeleid'      # ≥ 2
+curl -s -H 'Host: hub.tarasevych.com' http://127.0.0.1:8080/privacy | grep -ci noindex                            # 0
+curl -s -H 'Host: hub.tarasevych.com' http://127.0.0.1:8080/ | grep -c noindex                                    # 1 (SPA blijft noindex)
+curl -s -H 'Host: hub.tarasevych.com' http://127.0.0.1:8080/robots.txt                                            # Allow /privacy$, /terms$, Disallow /
+curl -sI -H 'Host: hub.tarasevych.com' http://127.0.0.1:8080/privacy | grep -i content-security-policy
+curl -s -o /dev/null -w '%{http_code}\n' https://hub.tarasevych.com/privacy                                       # 200 via Cloudflare
+```
+A11 (RLS-telling voor serverrijen): oude tellingen eerst wissen, daarna mail en API-platform een paar keer gebruiken:
+```
+runuser -u postgres -- psql -d mijnruimte -c "delete from app.rls_audit where tbl in ('provider_endpoint_verifications_v1','oauth_pkce_v1','mail_endpoint_verifications_v1')"
+# … na gebruik (mail openen, Google-account in mail koppelen/starten, API-platform openen):
+runuser -u postgres -- psql -d mijnruimte -c "select route, tbl, actie, aantal, laatst from app.rls_audit order by laatst desc limit 30"
+```
+Verwacht: geen nieuwe rijen voor deze drie tabellen. In de Google Cloud Console (OAuth-merk) als URL's invullen:
+`https://hub.tarasevych.com/privacy` en `https://hub.tarasevych.com/terms`.
+Terug: `installeer-app.sh terugdraaien` (geen omgevings- of schemastap nodig).
