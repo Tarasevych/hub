@@ -1,5 +1,6 @@
 import { db, error, invites, isInviteError, isOwnerEmail, json, ownerEmail, router, secrets } from '../server/platform';
 import { alsSysteem, sessieGeverifieerd, zetGebruiker } from '../server/platform/context'
+import { juridischeRoutes } from './juridisch'
 import { registreerSessieControle, requireAuth } from '../server/platform/auth-poort'
 import { googleStapOpVastleggen, stapOpFout, stapOpUit } from './stap-op'
 import { registreerMelder } from './melder'
@@ -450,6 +451,7 @@ registreerSessieControle(async (event, body) => { const a = await ownerRequireSe
 // of POST /api/owner/access/stap-op met een TOTP-code, daarna de actie herhalen (5 minuten geldig).
 const stapOpVereist=async(_ctx:unknown,auth:{user:{id:string};session?:{id:string;createdAt:number}|null;tabSession?:{id:string;createdAt:number}|null})=>{const fout=await stapOpFout(auth);return fout?ownerResponse({error:fout,reasonCode:fout,methods:['google','totp'],maxAgeSeconds:300},403):null}
 export const handler = router({
+  ...juridischeRoutes,
   'GET /api/_healthcheck': [async () => json({ message: 'Success' })],
   ...createApiPlatformRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformVaultRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
