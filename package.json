@@ -25,7 +25,7 @@
         "lucide-react": "^0.469.0",
         "mdb-reader": "3.2.0",
         "netcdfjs": "4.0.0",
-        "officeparser": "7.5.1",
+        "officeparser": "8.1.0",
         "pdf-lib": "^1.17.1",
         "pdfjs-dist": "^4.10.38",
         "pg": "^8.16.3",
@@ -66,5 +66,10 @@
     "allowScripts": {
         "esbuild@0.25.12": true,
         "tesseract.js": false
+    },
+    "overrides": {
+        "pptxgenjs": {
+            "image-size": "2.0.4"
+        }
     }
 }
