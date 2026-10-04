@@ -83,6 +83,26 @@ export async function registerLoginFailure(subject: string): Promise<number> {
   return seconds;
 }
 
+/**
+ * Audit-fix 7: poging atomisch reserveren VÓÓR de controle. Eén statement: als het onderwerp geblokkeerd is gebeurt er
+ * niets (toegestaan=false); anders telt de poging meteen als mislukt en gaat bij de drempel direct de blokkade in.
+ * Bij succes daarna clearLoginFailures(). Zo kunnen gelijktijdige verzoeken samen nooit meer dan de drempel halen.
+ */
+export async function pogingReserveren(subject: string): Promise<{ toegestaan: boolean; wachtSeconden: number }> {
+  const result = await getPool().query(
+    `INSERT INTO app.login_lockouts AS l (subject, failures, updated_at) VALUES ($1, 1, now())
+     ON CONFLICT (subject) DO UPDATE SET failures = l.failures + 1, updated_at = now(),
+       locked_until = CASE WHEN l.failures + 1 >= $2
+         THEN now() + make_interval(secs => least($4::float8, $3::float8 * power(2, greatest(0, l.failures + 1 - $2))))
+         ELSE l.locked_until END
+     WHERE l.locked_until IS NULL OR l.locked_until <= now()
+     RETURNING failures, locked_until`,
+    [subject, LOCKOUT_THRESHOLD, LOCKOUT_BASE_SECONDS, LOCKOUT_MAX_SECONDS],
+  );
+  if (!result.rows.length) return { toegestaan: false, wachtSeconden: Math.max(1, await lockoutRemaining(subject)) };
+  return { toegestaan: true, wachtSeconden: 0 };
+}
+
 export async function clearLoginFailures(subject: string): Promise<void> {
   await getPool().query('DELETE FROM app.login_lockouts WHERE subject = $1', [subject]);
 }

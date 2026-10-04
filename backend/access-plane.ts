@@ -1,6 +1,6 @@
-import {createHmac,randomBytes,scrypt,timingSafeEqual} from 'node:crypto';
+import {createHash,createHmac,randomBytes,scrypt,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
-import {db,clearLoginFailures,envKey32,isOwnerEmail,lockoutRemaining,openWithEnvKey,pepperedHash,registerLoginFailure,sealWithEnvKey} from '../server/platform';
+import {db,clearLoginFailures,envKey32,isOwnerEmail,openWithEnvKey,pepperedHash,pogingReserveren,sealWithEnvKey} from '../server/platform';
 import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './google-contour';
 import {stapOpFout,totpStapOpVastleggen,type StapOpAuth} from './stap-op';
 import {meld} from './melder';
@@ -10,10 +10,12 @@ export const METHOD_IDS=['google','password','microsoft','apple','facebook','pho
 export type MethodId=typeof METHOD_IDS[number];
 export type LoginMethodId='google'|'password'|'microsoft'|'apple'|'facebook'|'phone';
 /** Fase 3: ontkoppeld = uitgeschakeld met ontkoppeldAt/herstelTot (7 dagen terug te zetten), niet verwijderd. */
-type Ontkoppeld={ontkoppeldAt?:number;herstelTot?:number};
+/** ontkoppeldDoor: userId van wie ontkoppelde; ontkoppeldDoorBeheer: door beheerder (niet zelf terug te zetten). */
+type Ontkoppeld={ontkoppeldAt?:number;herstelTot?:number;ontkoppeldDoor?:string;ontkoppeldDoorBeheer?:boolean};
+type Door={userId:string;beheer:boolean};
 type Binding={id:string;userId:string;method:LoginMethodId;providerSubject:string;email:string;status:'active'|'disabled'|'pending';lastUsedAt:number;createdAt:number;updatedAt:number}&Ontkoppeld;
 type PasswordRecord={id:string;userId:string;algorithm:'scrypt';n:number;r:number;p:number;salt:string;hash:string;mustChange:boolean;createdAt:number;updatedAt:number}&Ontkoppeld;
-type TotpRecord={id:string;userId:string;secret?:string;secretEnc?:string;confirmed:boolean;createdAt:number;updatedAt:number;/** fase 3: laatst gebruikt tijdvak (replaybescherming) */lastStep?:number};
+type TotpRecord={id:string;userId:string;secret?:string;secretEnc?:string;confirmed:boolean;createdAt:number;updatedAt:number;/** fase 3: laatst gebruikt tijdvak (replaybescherming) */lastStep?:number;/** audit-fix 2: nieuw geheim tijdens vervangen; het oude blijft geldig tot dit bevestigd is */pendingSecretEnc?:string;pendingAt?:number};
 type RecoveryRecord={id:string;userId:string;hashes:string[];hashVersion?:number;createdAt:number;remaining:number};
 type PhoneRecord={id:string;userId:string;phone:string;verified:boolean;createdAt:number;updatedAt:number}&Ontkoppeld;
 type WebauthnRecord={id:string;userId:string;credentialId:string;label:string;createdAt:number};
@@ -42,6 +44,8 @@ const recoveryPepperConfigured=()=>String(process.env[RECOVERY_PEPPER]||'').trim
 const recoveryHash=(code:string)=>pepperedHash(RECOVERY_PEPPER,`recovery:v2:${code}`);
 const recoveryMatches=(record:RecoveryRecord,code:string)=>record.hashVersion===2?(recoveryPepperConfigured()?recoveryHash(code):''):sha(code);
 /** Ontsleuteld base32-geheim; '' als de sleutel ontbreekt of de envelop niet klopt. */
+const TOTP_VERVANG_MS=15*60*1000;
+const totpPendingOf=(row:TotpRecord)=>{if(!row.pendingSecretEnc||Date.now()-Number(row.pendingAt||0)>TOTP_VERVANG_MS)return'';try{return openWithEnvKey(TOTP_KEY,row.pendingSecretEnc,totpAad(row.userId))}catch{return''}};
 const totpSecretOf=(row:TotpRecord)=>{
   if(row.secretEnc){try{return openWithEnvKey(TOTP_KEY,row.secretEnc,totpAad(row.userId))}catch(err){console.error('[totp] ontsleutelen mislukt:',(err as Error).message);return''}}
   return String(row.secret||'');
@@ -159,26 +163,53 @@ async function googleIdentities(userId:string){
 // ---- Fase 3: ontkoppelen = 7 dagen uitschakelen (terug te zetten), melding aan het account ----
 export const HERSTEL_MS=7*24*60*60*1000;
 const zonder=<T extends Record<string,unknown>>(row:T,...velden:string[])=>Object.fromEntries(Object.entries(row).filter(([k])=>k!=='id'&&!velden.includes(k)));
-async function ontkoppelBindingen(rows:Binding[]){
+const doorVelden=(door:Door)=>({ontkoppeldDoor:door.userId,ontkoppeldDoorBeheer:door.beheer});
+async function ontkoppelBindingen(rows:Binding[],door:Door){
   const nu=Date.now();
-  if(rows.length)await db.update(BINDINGS,rows.map(row=>({id:row.id,record:{...zonder(row),status:'disabled',ontkoppeldAt:nu,herstelTot:nu+HERSTEL_MS,updatedAt:nu}})));
+  if(rows.length)await db.update(BINDINGS,rows.map(row=>({id:row.id,record:{...zonder(row),status:'disabled',ontkoppeldAt:nu,herstelTot:nu+HERSTEL_MS,...doorVelden(door),updatedAt:nu}})));
 }
-async function ontkoppelIdentiteiten(rows:GoogleIdentity[]){
+async function ontkoppelIdentiteiten(rows:GoogleIdentity[],door:Door){
   const nu=Date.now();
-  if(rows.length)await db.update(IDENTITIES,rows.map(row=>({id:row.id,record:{...zonder(row),status:'disabled',ontkoppeldAt:nu,herstelTot:nu+HERSTEL_MS}})));
+  if(rows.length)await db.update(IDENTITIES,rows.map(row=>({id:row.id,record:{...zonder(row),status:'disabled',ontkoppeldAt:nu,herstelTot:nu+HERSTEL_MS,...doorVelden(door)}})));
 }
-async function ontkoppelEnkel(table:string,row:{id:string}&Record<string,unknown>|null){
+async function ontkoppelEnkel(table:string,row:{id:string}&Record<string,unknown>|null,door:Door){
   if(!row)return;
   const nu=Date.now();
-  await db.update(table,[{id:row.id,record:{...zonder(row),ontkoppeldAt:nu,herstelTot:nu+HERSTEL_MS,updatedAt:nu}}]);
+  await db.update(table,[{id:row.id,record:{...zonder(row),ontkoppeldAt:nu,herstelTot:nu+HERSTEL_MS,...doorVelden(door),updatedAt:nu}}]);
 }
 /** Een hele methode ontkoppelen (bindingen + bijbehorend wachtwoord/telefoon/Google-identiteiten). */
-async function ontkoppelMethode(userId:string,method:LoginMethodId){
-  await ontkoppelBindingen((await bindingsFor(userId)).filter(item=>item.method===method&&item.status!=='disabled'));
-  if(method==='password')await ontkoppelEnkel(PASSWORDS,await passwordFor(userId));
-  if(method==='phone')await ontkoppelEnkel(PHONES,await phoneFor(userId));
-  if(method==='google')await ontkoppelIdentiteiten(await googleIdentities(userId));
+async function ontkoppelMethode(userId:string,method:LoginMethodId,door:Door){
+  await ontkoppelBindingen((await bindingsFor(userId)).filter(item=>item.method===method&&item.status!=='disabled'),door);
+  if(method==='password')await ontkoppelEnkel(PASSWORDS,await passwordFor(userId),door);
+  if(method==='phone')await ontkoppelEnkel(PHONES,await phoneFor(userId),door);
+  if(method==='google')await ontkoppelIdentiteiten(await googleIdentities(userId),door);
 }
+/**
+ * Audit-fix 6: wie mag terugzetten? Alleen wie ontkoppelde (zelf), of een beheerder. Door een beheerder ontkoppeld
+ * = nooit zelf terug te zetten. Oude rijen zonder ontkoppeldDoor: niet zelf (veilig falen; beheerder kan wel).
+ */
+const zelfTerugTeZetten=(r:Ontkoppeld,userId:string)=>!r.ontkoppeldDoorBeheer&&r.ontkoppeldDoor===userId;
+/** Methode terugzetten (gedeeld door de eigen route en de beheerroute). */
+async function zetTerug(userId:string,items:Awaited<ReturnType<typeof herstelbaar>>){
+  const nu=Date.now(),telefoon=await phoneRecordAny(userId);
+  const weg=(row:Record<string,unknown>)=>zonder(row,'ontkoppeldAt','herstelTot','ontkoppeldDoor','ontkoppeldDoorBeheer');
+  for(const item of items){
+    if(item.soort==='binding'){const[row]=await db.get<Omit<Binding,'id'>>(BINDINGS,[item.id]);if(row)await db.update(BINDINGS,[{id:item.id,record:{...weg(row as Record<string,unknown>),status:row.method==='phone'&&!telefoon?.verified?'pending':'active',updatedAt:nu}}]);}
+    if(item.soort==='identiteit'){const[row]=await db.get<Omit<GoogleIdentity,'id'>>(IDENTITIES,[item.id]);if(row)await db.update(IDENTITIES,[{id:item.id,record:{...weg(row as Record<string,unknown>),status:'active'}}]);}
+    if(item.soort==='wachtwoord'||item.soort==='telefoon'){const table=item.soort==='wachtwoord'?PASSWORDS:PHONES;const[row]=await db.get<Record<string,unknown>>(table,[item.id]);if(row)await db.update(table,[{id:item.id,record:{...weg(row),updatedAt:nu}}]);}
+  }
+}
+/** TOTP-code of ongebruikte herstelcode controleren, met atomische lockout (audit-fix 7). */
+async function codeControleren(userId:string,row:TotpRecord|null,code:string,herstelcodeMag=true):Promise<'ok'|'ongeldig'|'hergebruikt'|'sleutel'|'geblokkeerd'>{
+  const subject=`stap-op:${userId}`;
+  const poging=await pogingReserveren(subject);
+  if(!poging.toegestaan)return'geblokkeerd';
+  const uitkomst=row?await totpGebruiken(row,code):'ongeldig';
+  if(uitkomst==='sleutel')return'sleutel';
+  if(uitkomst==='ok'||(herstelcodeMag&&await herstelcodeGebruiken(userId,code))){await clearLoginFailures(subject);return'ok';}
+  return uitkomst;
+}
+const codeFout=(uitkomst:string)=>uitkomst==='geblokkeerd'?{code:'ACCESS_LOCKED_TEMPORARILY',http:429}:uitkomst==='sleutel'?{code:'ACCESS_TOTP_KEY_MISSING',http:503}:uitkomst==='hergebruikt'?{code:'ACCESS_TOTP_REUSED',http:400}:{code:'ACCESS_TOTP_CODE_REQUIRED',http:400};
 const meldOntkoppeld=(userId:string,method:string,doorBeheer=false)=>meld(userId,'access_method_unlinked',
   'Спосіб входу від’єднано / Aanmeldmethode ontkoppeld',
   `${doorBeheer?'Адміністратор від’єднав':'Від’єднано'} спосіб входу «${method}». Протягом 7 днів його можна відновити на сторінці безпеки. Якщо це були не ви — відновіть і змініть доступ. / ${doorBeheer?'Een beheerder heeft':'Er is'} aanmeldmethode "${method}" ontkoppeld. Binnen 7 dagen kunt u die terugzetten op de beveiligingspagina. Was u dit niet: zet hem terug en controleer uw toegang.`);
@@ -188,10 +219,10 @@ async function herstelbaar(userId:string){
   const[bindings,identities,password,phone]=await Promise.all([bindingsFor(userId),googleIdentitiesAll(userId),passwordRecordAny(userId),phoneRecordAny(userId)]);
   const open=(r:Ontkoppeld|null|undefined)=>!!r?.ontkoppeldAt&&Number(r.herstelTot||0)>nu;
   return[
-    ...bindings.filter(open).map(r=>({id:r.id,soort:'binding' as const,method:r.method,herstelTot:Number(r.herstelTot)})),
-    ...identities.filter(open).map(r=>({id:r.id,soort:'identiteit' as const,method:'google' as const,herstelTot:Number(r.herstelTot)})),
-    ...(password&&open(password)?[{id:password.id,soort:'wachtwoord' as const,method:'password' as const,herstelTot:Number(password.herstelTot)}]:[]),
-    ...(phone&&open(phone)?[{id:phone.id,soort:'telefoon' as const,method:'phone' as const,herstelTot:Number(phone.herstelTot)}]:[])
+    ...bindings.filter(open).map(r=>({id:r.id,soort:'binding' as const,method:r.method,herstelTot:Number(r.herstelTot),zelf:zelfTerugTeZetten(r,userId),doorBeheer:!!r.ontkoppeldDoorBeheer})),
+    ...identities.filter(open).map(r=>({id:r.id,soort:'identiteit' as const,method:'google' as const,herstelTot:Number(r.herstelTot),zelf:zelfTerugTeZetten(r,userId),doorBeheer:!!r.ontkoppeldDoorBeheer})),
+    ...(password&&open(password)?[{id:password.id,soort:'wachtwoord' as const,method:'password' as const,herstelTot:Number(password.herstelTot),zelf:zelfTerugTeZetten(password as Ontkoppeld,userId),doorBeheer:!!(password as Ontkoppeld).ontkoppeldDoorBeheer}]:[]),
+    ...(phone&&open(phone)?[{id:phone.id,soort:'telefoon' as const,method:'phone' as const,herstelTot:Number(phone.herstelTot),zelf:zelfTerugTeZetten(phone as Ontkoppeld,userId),doorBeheer:!!(phone as Ontkoppeld).ontkoppeldDoorBeheer}]:[])
   ];
 }
 
@@ -306,33 +337,37 @@ export const accessPlanePolicySelfTest=()=>[
   {id:'access-sms-push-honest-until-configured',passed:true}
 ];
 
-export async function verifyPasswordLogin(email:string,password:string,totp=''){
+/** Lockout-onderwerp per (e-mail, IP) (audit-fix 10): een aanvaller kan zo niet iemands account wereldwijd blokkeren. */
+const wachtwoordOnderwerp=(email:string,ip:string)=>`wachtwoord:${email}:${createHash('sha256').update(`lockout-ip:${ip||'onbekend'}`).digest('hex').slice(0,24)}`;
+export async function verifyPasswordLogin(email:string,password:string,totp='',ip=''){
   const clean=String(email||'').trim().toLowerCase();
   if(!clean||!password)return{status:'invalid' as const,code:'ACCESS_CREDENTIALS_INVALID',http:400};
   const policy=await policyOf();
   if(policy.enabled.password===false)return{status:'disabled' as const,code:'ACCESS_PASSWORD_DISABLED',http:403};
-  // Lockout per account (ook voor onbekende adressen, zodat het gedrag niets verraadt).
-  const subject=`wachtwoord:${clean}`;
-  const locked=await lockoutRemaining(subject);
-  if(locked>0)return{status:'locked' as const,code:'ACCESS_LOCKED_TEMPORARILY',http:429,retryAfter:locked};
-  const failed=async(code:string)=>{const lock=await registerLoginFailure(subject);return{status:'invalid' as const,code:lock>0?'ACCESS_LOCKED_TEMPORARILY':code,http:lock>0?429:401,retryAfter:lock}};
   const users=await db.list<{id:string;email:string;status:string;role:string;name?:string}>('users',{filter:{email:clean},limit:5});
   const user=users.items[0];
+  const totpRow=user?await totpFor(user.id):null;
+  // Geen MFA-orakel: heeft het account TOTP en is er geen code meegestuurd, dan vragen we de code VÓÓR de
+  // wachtwoordcontrole. Of het wachtwoord klopt, blijkt pas samen met een geldige code.
+  if(totpRow?.confirmed&&!totp)return{status:'mfa' as const,code:'MFA_REQUIRED',http:200,user:undefined};
+  // Atomische lockout per (e-mail, IP), ook voor onbekende adressen (gedrag verraadt niets).
+  const subject=wachtwoordOnderwerp(clean,ip);
+  const poging=await pogingReserveren(subject);
+  if(!poging.toegestaan)return{status:'locked' as const,code:'ACCESS_LOCKED_TEMPORARILY',http:429,retryAfter:poging.wachtSeconden};
+  const failed=async(code:string)=>({status:'invalid' as const,code,http:401,retryAfter:0});
   if(!user||user.status==='blocked'||user.status==='deleted')return failed('ACCESS_CREDENTIALS_INVALID');
   const record=await passwordFor(user.id);
   if(!record||!await verifyPassword(record,password))return failed('ACCESS_CREDENTIALS_INVALID');
-  const totpRow=await totpFor(user.id);
   if(totpRow?.confirmed){
-    if(!totp)return{status:'mfa' as const,code:'MFA_REQUIRED',http:200,user:{id:user.id,email:user.email,name:user.name,role:user.role,status:user.status}};
     const uitkomst=await totpGebruiken(totpRow,totp);
     if(uitkomst==='sleutel')return{status:'unavailable' as const,code:'ACCESS_TOTP_KEY_MISSING',http:503};
     if(uitkomst!=='ok'){
       const recovery=await recoveryFor(user.id);
       const hashed=recovery?recoveryMatches(recovery,totp.trim().toUpperCase()):'';
-      if(!recovery||!hashed||!recovery.hashes.includes(hashed))return failed('ACCESS_MFA_INVALID');
+      if(!recovery||!hashed||!recovery.hashes.includes(hashed))return failed('ACCESS_CREDENTIALS_INVALID');
       // Atomisch eenmalig: één UPDATE haalt de hash alleen weg als die er nog staat; bij gelijktijdig
       // gebruik van dezelfde code wint precies één verzoek, de rest krijgt ACCESS_MFA_INVALID.
-      if(!await db.takeArrayValue(RECOVERY,recovery.id,'hashes',hashed,'remaining'))return failed('ACCESS_MFA_INVALID');
+      if(!await db.takeArrayValue(RECOVERY,recovery.id,'hashes',hashed,'remaining'))return failed('ACCESS_CREDENTIALS_INVALID');
     }
   }
   await clearLoginFailures(subject);
@@ -358,6 +393,8 @@ async function assertNotLastMethod(user:{id:string;email:string;role:string},ski
   return '';
 }
 
+/** Client-IP zoals requestMeta in index.ts (X-Forwarded-For wordt door start.ts/Caddy gezet). */
+const ipVan=(event:Record<string,unknown>)=>{const h=(event.headers||{}) as Record<string,string|undefined>;const f=String(h['x-forwarded-for']||h['X-Forwarded-For']||'').split(',')[0].trim();return f||String(((event.requestContext||{}) as {http?:{sourceIp?:string}}).http?.sourceIp||'');};
 export function createAccessPlaneRoutes(deps:{
   requireSession:(event:Record<string,unknown>,body:unknown)=>Promise<SessionAuth>;
   respond:(data:unknown,status?:number)=>unknown;
@@ -378,20 +415,19 @@ export function createAccessPlaneRoutes(deps:{
   };
   // Fase 3: step-up (verse Google-aanmelding of TOTP binnen 5 min) voor gevoelige acties; null = mag door.
   const stapOp=async(auth:unknown)=>{const fout=await stapOpFout(auth as StapOpAuth);return fout?deps.fail(fout,403):null;};
+  const zelf=(auth:{user:{id:string}}):Door=>({userId:auth.user.id,beheer:false});
   return{
     // Step-up met TOTP: daarna mag deze sessie 5 minuten gevoelige acties doen. Lockout na herhaald falen.
     'POST /api/owner/access/stap-op':[async(ctx:{event:Record<string,unknown>;body:unknown})=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
-      const subject=`stap-op:${auth.user.id}`;
-      const locked=await lockoutRemaining(subject);
-      if(locked>0)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
       const row=await totpFor(auth.user.id);
       if(!row?.confirmed)return deps.fail('STEP_UP_TOTP_NOT_ENROLLED',400);
-      const uitkomst=await totpGebruiken(row,String(deps.body(ctx.body).code||''));
+      // Audit-fix 7: poging atomisch gereserveerd vóór de controle (geen race rond de lockout); alleen TOTP, geen herstelcode.
+      const uitkomst=await codeControleren(auth.user.id,row,String(deps.body(ctx.body).code||''),false);
+      if(uitkomst==='geblokkeerd')return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
       if(uitkomst==='sleutel')return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
-      if(uitkomst!=='ok'){await registerLoginFailure(subject);await deps.audit(auth.user.id,'access.step-up','failure',{reden:uitkomst});return deps.fail(uitkomst==='hergebruikt'?'ACCESS_TOTP_REUSED':'ACCESS_TOTP_INVALID',400);}
-      await clearLoginFailures(subject);
+      if(uitkomst!=='ok'){await deps.audit(auth.user.id,'access.step-up','failure',{reden:uitkomst});return deps.fail(uitkomst==='hergebruikt'?'ACCESS_TOTP_REUSED':'ACCESS_TOTP_INVALID',400);}
       await totpStapOpVastleggen(auth as unknown as StapOpAuth);
       await deps.audit(auth.user.id,'access.step-up','success',{methode:'totp'});
       return deps.respond({ok:true,stepUp:'totp',maxAgeSeconds:300});
@@ -407,13 +443,13 @@ export function createAccessPlaneRoutes(deps:{
     }],
     'POST /api/owner/access/password/login':[async(ctx)=>{
       const body=deps.body(ctx.body);
-      const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''));
+      const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event));
       if(result.status==='ok'||result.status==='mfa')return deps.respond({ok:result.status==='ok',status:result.status,code:result.code,user:result.user,sessionIssued:false});
       return deps.fail(result.code,result.http);
     }],
     'POST /api/owner/auth/password/login':[async(ctx)=>{
       const body=deps.body(ctx.body);
-      const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''));
+      const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event));
       if(result.status==='mfa')return deps.respond({ok:false,mfaRequired:true,error:result.code,reasonCode:result.code,sessionIssued:false,sessionCreated:false});
       if(result.status!=='ok'||!result.user)return deps.fail(result.code,result.http||401);
       return deps.respond({ok:true,reasonCode:'ACCESS_PASSWORD_VERIFIED',sessionIssued:false,sessionCreated:false,user:result.user});
@@ -440,7 +476,7 @@ export function createAccessPlaneRoutes(deps:{
       const blocked=await assertNotLastMethod(auth.user,{method:'password'});
       if(blocked)return deps.fail(blocked,409);
       const stap=await stapOp(auth);if(stap)return stap;
-      await ontkoppelMethode(auth.user.id,'password');
+      await ontkoppelMethode(auth.user.id,'password',zelf(auth));
       await deps.audit(auth.user.id,'access.password.remove','success',{herstelbaarTot:Date.now()+HERSTEL_MS});
       await meldOntkoppeld(auth.user.id,'password');
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
@@ -453,7 +489,7 @@ export function createAccessPlaneRoutes(deps:{
       const blocked=await assertNotLastMethod(auth.user,{method});
       if(blocked)return deps.fail(blocked,409);
       const stap=await stapOp(auth);if(stap)return stap;
-      await ontkoppelMethode(auth.user.id,method);
+      await ontkoppelMethode(auth.user.id,method,zelf(auth));
       await deps.audit(auth.user.id,'access.method.unbind','success',{method,herstelbaarTot:Date.now()+HERSTEL_MS});
       await meldOntkoppeld(auth.user.id,method);
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
@@ -469,8 +505,8 @@ export function createAccessPlaneRoutes(deps:{
       const blocked=await assertNotLastMethod(auth.user,identity?{identityId:id}:{bindingId:id,method:row?.method});
       if(blocked)return deps.fail(blocked,409);
       const stap=await stapOp(auth);if(stap)return stap;
-      if(identity)await ontkoppelIdentiteiten([identity]);
-      if(row){await ontkoppelBindingen([row]);if(row.method==='password'&&!(await bindingsFor(auth.user.id)).some(b=>b.method==='password'&&b.status==='active'))await ontkoppelEnkel(PASSWORDS,await passwordFor(auth.user.id));}
+      if(identity)await ontkoppelIdentiteiten([identity],zelf(auth));
+      if(row){await ontkoppelBindingen([row],zelf(auth));if(row.method==='password'&&!(await bindingsFor(auth.user.id)).some(b=>b.method==='password'&&b.status==='active'))await ontkoppelEnkel(PASSWORDS,await passwordFor(auth.user.id),zelf(auth));}
       await deps.audit(auth.user.id,'access.binding.unbind','success',{method:identity?'google':row?.method,email:identity?.email||row?.email,herstelbaarTot:Date.now()+HERSTEL_MS});
       await meldOntkoppeld(auth.user.id,identity?'google':String(row?.method||''));
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
@@ -480,14 +516,13 @@ export function createAccessPlaneRoutes(deps:{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const id=String(deps.body(ctx.body).id||'');
-      const items=(await herstelbaar(auth.user.id)).filter(item=>!id||item.id===id);
-      if(!items.length)return deps.fail('ACCESS_RESTORE_NOT_FOUND',404);
-      const nu=Date.now(),telefoon=await phoneRecordAny(auth.user.id);
-      for(const item of items){
-        if(item.soort==='binding'){const[row]=await db.get<Omit<Binding,'id'>>(BINDINGS,[item.id]);if(row)await db.update(BINDINGS,[{id:item.id,record:{...zonder(row as Record<string,unknown>,'ontkoppeldAt','herstelTot'),status:row.method==='phone'&&!telefoon?.verified?'pending':'active',updatedAt:nu}}]);}
-        if(item.soort==='identiteit'){const[row]=await db.get<Omit<GoogleIdentity,'id'>>(IDENTITIES,[item.id]);if(row)await db.update(IDENTITIES,[{id:item.id,record:{...zonder(row as Record<string,unknown>,'ontkoppeldAt','herstelTot'),status:'active'}}]);}
-        if(item.soort==='wachtwoord'||item.soort==='telefoon'){const table=item.soort==='wachtwoord'?PASSWORDS:PHONES;const[row]=await db.get<Record<string,unknown>>(table,[item.id]);if(row)await db.update(table,[{id:item.id,record:{...zonder(row,'ontkoppeldAt','herstelTot'),updatedAt:nu}}]);}
-      }
+      const alle=(await herstelbaar(auth.user.id)).filter(item=>!id||item.id===id);
+      if(!alle.length)return deps.fail('ACCESS_RESTORE_NOT_FOUND',404);
+      // Audit-fix 6: alleen wat je zelf ontkoppelde; door een beheerder ontkoppeld = alleen via beheer terug.
+      const items=alle.filter(item=>item.zelf);
+      if(!items.length)return deps.fail('ACCESS_RESTORE_ADMIN_ONLY',403);
+      const stap=await stapOp(auth);if(stap)return stap;
+      await zetTerug(auth.user.id,items);
       await deps.audit(auth.user.id,'access.method.restore','success',{items:items.map(item=>({soort:item.soort,method:item.method}))});
       await meld(auth.user.id,'access_method_restored','Спосіб входу відновлено / Aanmeldmethode teruggezet',`Відновлено: ${items.map(item=>item.method).join(', ')}. / Teruggezet: ${items.map(item=>item.method).join(', ')}.`);
       return deps.respond({ok:true,teruggezet:items.length,...await accessSnapshot(auth.user)});
@@ -529,9 +564,19 @@ export function createAccessPlaneRoutes(deps:{
       const secret=randomBytes(20),encoded=toBase32(secret);
       const existing=await totpFor(auth.user.id);
       const now=Date.now();
-      const record={userId:auth.user.id,secretEnc:sealWithEnvKey(TOTP_KEY,encoded,totpAad(auth.user.id)),confirmed:false,createdAt:existing?.createdAt||now,updatedAt:now};
-      if(existing?.id)await db.update(TOTP,[{id:existing.id,record}]);
-      else await db.add(TOTP,[record]);
+      if(existing?.confirmed){
+        // Audit-fix 2: een bevestigde TOTP vervangen vraagt step-up ÉN de huidige code (of een herstelcode).
+        // Het oude geheim blijft geldig tot het nieuwe bevestigd is (pendingSecretEnc).
+        const stap=await stapOp(auth);if(stap)return stap;
+        const uitkomst=await codeControleren(auth.user.id,existing,String(deps.body(ctx.body).currentCode||deps.body(ctx.body).code||''));
+        if(uitkomst!=='ok'){const f=codeFout(uitkomst);await deps.audit(auth.user.id,'access.totp.replace.start','failure',{reden:uitkomst});return deps.fail(f.code,f.http);}
+        await db.update(TOTP,[{id:existing.id,record:{...withoutId(existing),pendingSecretEnc:sealWithEnvKey(TOTP_KEY,encoded,totpAad(auth.user.id)),pendingAt:now,updatedAt:now}}]);
+        await deps.audit(auth.user.id,'access.totp.replace.start','success',{});
+      }else{
+        const record={userId:auth.user.id,secretEnc:sealWithEnvKey(TOTP_KEY,encoded,totpAad(auth.user.id)),confirmed:false,createdAt:existing?.createdAt||now,updatedAt:now};
+        if(existing?.id)await db.update(TOTP,[{id:existing.id,record}]);
+        else await db.add(TOTP,[record]);
+      }
       const otpauth=`otpauth://totp/MijProstir:${encodeURIComponent(auth.user.email)}?secret=${encoded}&issuer=MijProstir&algorithm=SHA1&digits=6&period=30`;
       return deps.respond({ok:true,secret:encoded,otpauth,plaintextReturned:true});
     }],
@@ -541,18 +586,28 @@ export function createAccessPlaneRoutes(deps:{
       const code=String(deps.body(ctx.body).code||'');
       const row=await totpFor(auth.user.id);
       if(!row)return deps.fail('ACCESS_TOTP_NOT_STARTED',400);
-      const secret=totpSecretOf(row);
-      if(!secret)return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
+      const vervangen=Boolean(row.confirmed);
+      // Audit-fix 2: bevestigd zonder lopende vervanging → niets te bevestigen (geen nieuwe herstelcodes via deze route).
+      if(vervangen&&!row.pendingSecretEnc)return deps.fail('ACCESS_TOTP_ALREADY_ENROLLED',409);
+      const secret=vervangen?totpPendingOf(row):totpSecretOf(row);
+      if(!secret)return deps.fail(vervangen?'ACCESS_TOTP_REPLACE_EXPIRED':'ACCESS_TOTP_KEY_MISSING',vervangen?400:503);
       if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
+      const poging=await pogingReserveren(`stap-op:${auth.user.id}`);
+      if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
       const stapNr=totpStap(fromBase32(secret),code);
       if(stapNr<0)return deps.fail('ACCESS_TOTP_INVALID',400);
+      await clearLoginFailures(`stap-op:${auth.user.id}`);
       const{codes,hashes,hashVersion}=newRecoveryCodes();
-      await db.update(TOTP,[{id:row.id,record:{...withoutId(row),confirmed:true,lastStep:stapNr,updatedAt:Date.now()}}]);
+      const basis=zonder(withoutId(row) as Record<string,unknown>,'pendingSecretEnc','pendingAt','secret');
+      await db.update(TOTP,[{id:row.id,record:{...basis,...(vervangen?{secretEnc:row.pendingSecretEnc}:{}),confirmed:true,lastStep:stapNr,updatedAt:Date.now()}}]);
       const recovery=await recoveryFor(auth.user.id);
       const rec={userId:auth.user.id,hashes,hashVersion,remaining:codes.length,createdAt:Date.now()};
       if(recovery?.id)await db.update(RECOVERY,[{id:recovery.id,record:rec}]);
       else await db.add(RECOVERY,[rec]);
-      await deps.audit(auth.user.id,'access.totp.enroll','success',{});
+      await deps.audit(auth.user.id,vervangen?'access.totp.replace':'access.totp.enroll','success',{});
+      await meld(auth.user.id,vervangen?'access_totp_replaced':'access_totp_enrolled',
+        vervangen?'Автентифікатор замінено / Authenticator vervangen':'Автентифікатор додано / Authenticator toegevoegd',
+        `${vervangen?'Додаток-автентифікатор (TOTP) замінено; старі коди більше не діють':'Додаток-автентифікатор (TOTP) увімкнено'}. Нові коди відновлення створено. Якщо це були не ви — негайно зверніться до адміністратора. / ${vervangen?'De authenticator-app (TOTP) is vervangen; oude codes werken niet meer':'De authenticator-app (TOTP) is ingeschakeld'}. Er zijn nieuwe herstelcodes gemaakt. Was u dit niet: neem direct contact op met de beheerder.`);
       return deps.respond({ok:true,recoveryCodes:codes,plaintextReturned:true,...await accessSnapshot(auth.user)});
     }],
     'POST /api/owner/access/totp/disable':[async(ctx)=>{
@@ -562,9 +617,8 @@ export function createAccessPlaneRoutes(deps:{
       // Fase 3: uitschakelen vereist de huidige TOTP-code (of een ongebruikte herstelcode bij verlies van het toestel).
       if(row?.confirmed){
         const code=String(deps.body(ctx.body).code||'');
-        const uitkomst=await totpGebruiken(row,code);
-        if(uitkomst==='sleutel')return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
-        if(uitkomst!=='ok'&&!await herstelcodeGebruiken(auth.user.id,code)){await deps.audit(auth.user.id,'access.totp.disable','failure',{reden:uitkomst});return deps.fail(uitkomst==='hergebruikt'?'ACCESS_TOTP_REUSED':'ACCESS_TOTP_CODE_REQUIRED',400);}
+        const uitkomst=await codeControleren(auth.user.id,row,code);
+        if(uitkomst!=='ok'){const f=codeFout(uitkomst);await deps.audit(auth.user.id,'access.totp.disable','failure',{reden:uitkomst});return deps.fail(f.code,f.http);}
       }
       if(row?.id)await db.delete(TOTP,[row.id]);
       await deps.audit(auth.user.id,'access.totp.disable','success',{});
@@ -577,9 +631,8 @@ export function createAccessPlaneRoutes(deps:{
       // Fase 3: nieuwe herstelcodes alleen met de huidige TOTP-code (zonder TOTP: step-up).
       const totpRij=await totpFor(auth.user.id);
       if(totpRij?.confirmed){
-        const uitkomst=await totpGebruiken(totpRij,String(deps.body(ctx.body).code||''));
-        if(uitkomst==='sleutel')return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
-        if(uitkomst!=='ok')return deps.fail(uitkomst==='hergebruikt'?'ACCESS_TOTP_REUSED':'ACCESS_TOTP_CODE_REQUIRED',400);
+        const uitkomst=await codeControleren(auth.user.id,totpRij,String(deps.body(ctx.body).code||''),false);
+        if(uitkomst!=='ok'){const f=codeFout(uitkomst);return deps.fail(f.code,f.http);}
       }else{const stap=await stapOp(auth);if(stap)return stap;}
       const{codes,hashes,hashVersion}=newRecoveryCodes();
       const recovery=await recoveryFor(auth.user.id);
@@ -617,12 +670,19 @@ export function createAccessPlaneRoutes(deps:{
         const usable=await usableLoginMethods(userId,target.email,contour,policy,password,bindings,phone,identities,{method});
         if(usable.length<1)return deps.fail('LAST_LOGIN_METHOD_PROTECTED',409);
         if(action==='unbind'){
-          await ontkoppelMethode(userId,method);
+          await ontkoppelMethode(userId,method,{userId:auth.user.id,beheer:true});
           await meldOntkoppeld(userId,method,true);
         }else{
           const row=bindings.find(item=>item.method===method);
           if(row)await db.update(BINDINGS,[{id:row.id,record:{...withoutId(row),status:'disabled',updatedAt:Date.now()}}]);
         }
+      }
+      if(action==='restore'){
+        // Audit-fix 6: beheerder zet een (ook door beheer) ontkoppelde methode terug.
+        const items=(await herstelbaar(userId)).filter(item=>item.method===method);
+        if(!items.length)return deps.fail('ACCESS_RESTORE_NOT_FOUND',404);
+        await zetTerug(userId,items);
+        await meld(userId,'access_method_restored','Спосіб входу відновлено / Aanmeldmethode teruggezet',`Адміністратор відновив: ${method}. / Een beheerder heeft teruggezet: ${method}.`);
       }
       if(action==='enable'){
         const row=(await bindingsFor(userId)).find(item=>item.method===method);
