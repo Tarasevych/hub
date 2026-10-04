@@ -12,7 +12,9 @@ import { auditToevoegen } from '../server/platform/audit';
 
 export const PRIVACY_TABEL = 'privacy_voorkeuren_v1';
 export const ANALYTICS_TABEL = 'analytics_tellers_v1';
-const GEHEIM_SLEUTEL = /(token|secret|hash|cookie|proof|nonce|pkce|password|wachtwoord|cipher|encrypted|sealed|salt|verifier|codes?$|seed|privatekey|^iv$|^tag$)/i;
+// Audit-fix 10: ruimer (liever een veld te veel weglaten dan een geheim exporteren): ook sleutels, API-keys,
+// credentials, refresh/access, sessies, OTP/TOTP/herstel, handtekeningen, JWT en versleutelde velden (…Enc).
+const GEHEIM_SLEUTEL = /(token|secret|hash|cookie|proof|nonce|pkce|pass(word|wd|phrase)?$|password|wachtwoord|cipher|encrypt|sealed|salt|verifier|codes?$|seed|private|key$|keys$|api[-_]?key|credential|authoriz|bearer|jwt|signature|otp|totp|recovery|herstel|session|refresh|grant|^iv$|^tag$|enc$|kid$)/i;
 const GEBEURTENIS = /^[a-z0-9][a-z0-9_.-]{0,59}$/;
 const EXPORT_MAX = 20000;
 
@@ -95,10 +97,16 @@ export async function verlopenVerwijderingenAfronden(nu = Date.now(), uitvoeren 
     }
     const paden = (await pool.query('SELECT path FROM app.storage_objects WHERE owner_id = $1', [k.id])).rows.map((r) => String(r.path));
     for (let i = 0; i < paden.length; i += 100) await storage.delete(paden.slice(i, i + 100));
+    // Audit-fix 10: alleen rijen van DIT account (op id). E-mailgeadresseerde rijen zonder account-id (open
+    // uitnodigingen/meldingen) alleen als geen ander account dat adres gebruikt; anders zouden we rijen van een
+    // ander (nieuw) account met hetzelfde adres wissen.
     const weg = await pool.query(
       `DELETE FROM app.records WHERE (owner_id = $1 AND tbl <> 'users')
-          OR (tbl <> 'users' AND data->>'accountId' = $1)
-          OR ($2 <> '' AND tbl IN ('workspace_members', 'site_notifications') AND lower(COALESCE(data->>'email', data->>'recipientEmail', '')) = $2)`,
+          OR (tbl <> 'users' AND (data->>'accountId' = $1 OR data->>'userId' = $1 OR data->>'recipientUserId' = $1))
+          OR ($2 <> '' AND tbl IN ('workspace_members', 'site_notifications')
+              AND COALESCE(data->>'userId', '') = '' AND COALESCE(data->>'recipientUserId', '') = ''
+              AND lower(COALESCE(data->>'email', data->>'recipientEmail', '')) = $2
+              AND NOT EXISTS (SELECT 1 FROM app.records u WHERE u.tbl = 'users' AND u.id <> $1 AND lower(u.data->>'email') = $2))`,
       [k.id, email],
     );
     // Grafsteen: geen persoonsgegevens meer, wel het id (audit-keten en verwijzingen blijven consistent).

@@ -12,7 +12,7 @@
 // (AppDeploy telde gelezen items en kon matches missen).
 import { randomUUID } from 'node:crypto';
 import { appRolActief, getPool } from './pg';
-import { gebruikerVanContext } from './context';
+import { gebruikerVanContext, huidigeContext } from './context';
 import { controleerRijen, type GeraakteRij } from './rls-audit';
 
 /**
@@ -45,7 +45,8 @@ async function q(table: string, sql: string, params: unknown[], lezen = false): 
   const client = await getPool('app').connect();
   try {
     await client.query('BEGIN');
-    await client.query("SELECT set_config('app.user_id', $1, true), set_config('app.service', $2, true)", [gebruiker.userId, gebruiker.service]);
+    // app.route: alleen voor de telling in app.rls_audit door de users-trigger (0007).
+    await client.query("SELECT set_config('app.user_id', $1, true), set_config('app.service', $2, true), set_config('app.route', $3, true)", [gebruiker.userId, gebruiker.service, String(huidigeContext()?.route || '').slice(0, 200)]);
     const result = await client.query(sql, params);
     await client.query('COMMIT');
     return result;
@@ -56,7 +57,13 @@ async function q(table: string, sql: string, params: unknown[], lezen = false): 
     client.release();
   }
 }
-const geraakt = (rows: any[]): GeraakteRij[] => rows.map((r) => ({ id: r.id, owner_id: r.owner_id ?? null, ws: r.ws ?? (r.data && typeof r.data === 'object' ? (r.data as Record<string, unknown>).workspaceId as string : null) ?? null }));
+// Audit-fix 9: bij wijzigen telt ook de OUDE rij (USING), niet alleen de nieuwe (WITH CHECK).
+const geraakt = (rows: any[]): GeraakteRij[] => rows.flatMap((r) => {
+  const nieuw = { id: r.id, owner_id: r.owner_id ?? null, ws: r.ws ?? (r.data && typeof r.data === 'object' ? (r.data as Record<string, unknown>).workspaceId as string : null) ?? null };
+  if (!('oud_owner' in r)) return [nieuw];
+  const oud = { id: r.id, owner_id: r.oud_owner ?? null, ws: r.oud_ws ?? null };
+  return oud.owner_id === nieuw.owner_id && oud.ws === nieuw.ws ? [nieuw] : [oud, nieuw];
+});
 /** Audit-modus: tellen wat RLS zou weigeren (zie rls-audit.ts); faalt nooit de query zelf. */
 const audit = (tbl: string, actie: 'lezen' | 'toevoegen' | 'wijzigen' | 'verwijderen', rows: any[]) => {
   if (!gebruikerVanContext() || !rows.length || SYSTEEM_TABELLEN.has(tbl) || (actie === 'lezen' && GIDS_TABELLEN.has(tbl))) return;
@@ -190,9 +197,12 @@ export const db = {
       let result: { rows: any[] };
       try {
         result = await q(table,
-          `UPDATE app.records r SET data = u.data, updated_at = now()
-           FROM jsonb_to_recordset($2::jsonb) AS u(id text, data jsonb)
-           WHERE r.tbl = $1 AND r.id = u.id RETURNING r.id, r.owner_id, r.data->>'workspaceId' AS ws`,
+          `WITH u AS (SELECT * FROM jsonb_to_recordset($2::jsonb) AS x(id text, data jsonb)),
+                oud AS (SELECT o.id, o.owner_id, o.data->>'workspaceId' AS ws FROM app.records o WHERE o.tbl = $1 AND o.id IN (SELECT id FROM u))
+           UPDATE app.records r SET data = u.data, updated_at = now()
+           FROM u LEFT JOIN oud ON oud.id = u.id
+           WHERE r.tbl = $1 AND r.id = u.id
+           RETURNING r.id, r.owner_id, r.data->>'workspaceId' AS ws, oud.owner_id AS oud_owner, oud.ws AS oud_ws`,
           [table, JSON.stringify(valid.map((p) => ({ id: p.id, data: JSON.parse(p.data) })))],
         );
       } catch (err) {

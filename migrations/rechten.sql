@@ -14,6 +14,8 @@ BEGIN
     GRANT SELECT, INSERT, UPDATE, DELETE ON app.records TO mijnruimte_app;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
+    -- Audit-fix 9: de users-trigger telt (audit-modus) via deze functie; de app kan rls_audit zelf niet schrijven.
+    IF to_regprocedure('app.rls_audit_noteren(text, text, text)') IS NOT NULL THEN GRANT EXECUTE ON FUNCTION app.rls_audit_noteren(text, text, text) TO mijnruimte_app; END IF;
     IF to_regclass('app.audit') IS NOT NULL THEN
       -- Audit-fix 4: geen directe INSERT meer (vervalste rijen met eigen seq/hash braken de keten). Alleen via
       -- app.audit_toevoegen (SECURITY DEFINER); niet lezen, wijzigen of verwijderen.
@@ -42,3 +44,19 @@ BEGIN
   END IF;
 END
 $rechten$;
+
+-- Audit-fix 10: hoogstens één eigenaar-account (role 'owner') — ook bij twee gelijktijdige eerste aanmeldingen.
+-- Staat hier (niet in een genummerde migratie) zodat hij alsnog wordt aangemaakt zodra een dubbele (verouderde)
+-- eigenaar is opgeschoond: de app degradeert die bij het opstarten en bij aanmelden; de volgende migratierun
+-- (of db-rollen-instellen.sh instellen) maakt de index dan aan.
+DO $een_eigenaar$
+BEGIN
+  IF to_regclass('app.records_een_eigenaar') IS NULL AND to_regclass('app.records') IS NOT NULL THEN
+    IF (SELECT count(*) FROM app.records WHERE tbl = 'users' AND data->>'role' = 'owner') <= 1 THEN
+      CREATE UNIQUE INDEX records_een_eigenaar ON app.records ((tbl)) WHERE tbl = 'users' AND data->>'role' = 'owner';
+    ELSE
+      RAISE WARNING 'meer dan één eigenaar-account: unieke index records_een_eigenaar nog niet aangemaakt (zie deploy/RUNBOOK-AUDIT-FIXES.md)';
+    END IF;
+  END IF;
+END
+$een_eigenaar$;
