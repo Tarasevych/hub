@@ -44,6 +44,13 @@ export function error(message: string, status = 400): RouterResponse {
 type CompiledRoute = { method: string; segments: string[]; literalCount: number; order: number; chain: RouterMiddleware[]; pattern: string };
 
 const splitPath = (p: string) => p.split('/').filter((s) => s.length > 0);
+/**
+ * Audit-fix 3: alleen canonieke paden routeren. splitPath() negeert lege segmenten, dus '/api/x/' en '/api//x'
+ * raakten dezelfde route als '/api/x' terwijl padgebonden controles (strikte rate limits in start.ts) ze niet
+ * herkenden. Nu: dubbele of afsluitende slash en punt-segmenten → 404. Zelfde regel in start.ts (vóór de rate limit).
+ * Gecodeerde tekens in :param-segmenten blijven werken (letterlijke segmenten worden nooit gedecodeerd).
+ */
+export const isCanoniekPad = (p: string): boolean => p === '/' || (p.startsWith('/') && !p.includes('//') && !p.endsWith('/') && !/(^|\/)\.{1,2}(\/|$)/.test(p));
 
 function compile(routes: RouterRoutes): CompiledRoute[] {
   return Object.entries(routes).map(([key, chain], order) => {
@@ -85,6 +92,7 @@ export function router(routes: RouterRoutes): RouterHandler {
   const compiled = compile(routes);
   const handler = async (event: LambdaEvent) => {
     const method = String(event.requestContext?.http?.method || 'GET').toUpperCase();
+    if (!isCanoniekPad(event.rawPath || '/')) return error('Not found', 404);
     const parts = splitPath(event.rawPath || '/');
     let best: { route: CompiledRoute; params: Record<string, string> } | null = null;
     let pathMatched = false;
