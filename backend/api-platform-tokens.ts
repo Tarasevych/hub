@@ -1,6 +1,7 @@
 import {createHash,randomBytes,timingSafeEqual} from 'node:crypto';
 import {heeftApiRecht} from './api-recht';
 import {db,error,json} from '../server/platform';
+import {sessieGeverifieerd} from '../server/platform/context';
 import {apiPlatformContractPayload} from './api-platform-contract';
 import {apiPlatformVaultCount,vaultEncryptionReady} from './api-platform-vault';
 import {apiPlatformConnectionsConfiguredCount} from './api-platform-connections';
@@ -53,6 +54,7 @@ export async function resolveApiMachineToken(event:Record<string,unknown>,query:
   const next={...record,lastUsedAt:now,rateWindowStart:windowStart,rateCount};
   const{id,...stored}=next;
   await db.update(API_MACHINE_TOKEN_TABLE,[{id,record:stored}]);
+  sessieGeverifieerd();// audit-fix 8: geldig API-token = gecontroleerde referentie voor het vangnet
   return{token:next} as const;
 }
 

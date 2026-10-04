@@ -16,6 +16,11 @@ export type VerzoekContext = {
   ua?: string;
   /** Lui geladen: ruimtes (workspaces) waarvan userId eigenaar of actief lid is (alleen voor audit). */
   werkruimtes?: Promise<Set<string>>;
+  /**
+   * Audit-fix 8: is er in dit verzoek een échte referentie gecontroleerd (sessie via zetGebruiker /
+   * sessieGeverifieerd, of een API-token)? Gedeeld object, zodat het ook vanuit alsSysteem() doorwerkt.
+   */
+  poort?: { geverifieerd: boolean };
 };
 
 const opslag = new AsyncLocalStorage<VerzoekContext>();
@@ -41,7 +46,7 @@ export const isSysteemRoute = (route: string): boolean => SYSTEEM_ROUTES.some((r
 
 /** Voer een verzoek uit in een eigen context (router doet dit per route). */
 export function metVerzoek<T>(route: string, fn: () => Promise<T>, meta: { ip?: string; ua?: string } = {}): Promise<T> {
-  const basis = { route, ip: meta.ip ? String(meta.ip).slice(0, 64) : undefined, ua: meta.ua ? String(meta.ua).slice(0, 300) : undefined };
+  const basis = { route, ip: meta.ip ? String(meta.ip).slice(0, 64) : undefined, ua: meta.ua ? String(meta.ua).slice(0, 300) : undefined, poort: { geverifieerd: false } };
   return opslag.run(isSysteemRoute(route) ? { ...basis, systeem: true } : basis, fn);
 }
 
@@ -52,12 +57,21 @@ export function metVerzoek<T>(route: string, fn: () => Promise<T>, meta: { ip?: 
 export function zetGebruiker(userId: string, service?: string): void {
   const c = opslag.getStore();
   if (!c || !ID.test(String(userId || ''))) return;
+  if (c.poort) c.poort.geverifieerd = true;
   c.actor = userId;
   if (c.systeem) return;
   if (c.userId !== userId) c.werkruimtes = undefined;
   c.userId = userId;
   if (service) c.service = String(service).slice(0, 40);
 }
+
+/** Markeer dat dit verzoek een gecontroleerde referentie heeft (geldige sessie of API-token), zonder gebruikerscontext. */
+export function sessieGeverifieerd(): void {
+  const c = opslag.getStore();
+  if (c?.poort) c.poort.geverifieerd = true;
+}
+/** Heeft dit verzoek een gecontroleerde referentie? (vangnet in auth-poort.ts) */
+export const isSessieGeverifieerd = (): boolean => Boolean(opslag.getStore()?.poort?.geverifieerd);
 
 /** Voer fn uit als systeem (BYPASSRLS-rol): voor bewuste gebruikersoverstijgende stappen. */
 export function alsSysteem<T>(fn: () => Promise<T>): Promise<T> {

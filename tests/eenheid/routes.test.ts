@@ -4,6 +4,7 @@
 import { closePool } from '../../server/platform/pg';
 import { PUBLIEKE_ROUTES, registreerSessieControle, requireAuth } from '../../server/platform/auth-poort';
 import { json, router } from '../../server/platform/router';
+import { sessieGeverifieerd, zetGebruiker } from '../../server/platform/context';
 
 const resultaten: Array<{ naam: string; ok: boolean }> = [];
 const check = (naam: string, ok: boolean, info = '') => { resultaten.push({ naam, ok }); console.log(`${ok ? 'OK  ' : 'FOUT'} ${naam}${info ? ` — ${info}` : ''}`); };
@@ -35,15 +36,20 @@ export async function main() {
     check('PUBLIEKE_ROUTES noemt alleen bestaande routes', weg.length === 0, weg.join(', '));
 
     // Vangnet in de router: een route die de controle vergeet.
-    const proef = router({ 'POST /api/proef/vergeten': [async () => json({ geheim: 1 })], 'GET /api/_healthcheck': [async () => json({ ok: true })] });
+    const proef = router({ 'POST /api/proef/vergeten': [async () => json({ geheim: 1 })], 'GET /api/_healthcheck': [async () => json({ ok: true })], 'POST /api/proef/met-sessie': [async () => { zetGebruiker('u-proef'); return json({ ok: 1 }); }], 'POST /api/proef/met-token': [async () => { sessieGeverifieerd(); return json({ ok: 1 }); }] });
     delete process.env.AUTH_POORT_AFDWINGEN;
     const melden = await proef(evt('POST', '/api/proef/vergeten') as never);
     process.env.AUTH_POORT_AFDWINGEN = '1';
     const dicht = await proef(evt('POST', '/api/proef/vergeten') as never);
-    const metCookie = await proef(evt('POST', '/api/proef/vergeten', { cookie: 'x=1' }) as never);
+    const metCookie = await proef(evt('POST', '/api/proef/vergeten', { cookie: 'x=1', authorization: 'Bearer nep' }) as never);
+    const metSessie = await proef(evt('POST', '/api/proef/met-sessie') as never);
+    const metToken = await proef(evt('POST', '/api/proef/met-token') as never);
     const publiek = await proef(evt('GET', '/api/_healthcheck') as never);
-    check('vangnet: standaard melden (200 blijft), met AUTH_POORT_AFDWINGEN=1 → 401; met referentie of publiek ongemoeid',
-      melden.statusCode === 200 && dicht.statusCode === 401 && metCookie.statusCode === 200 && publiek.statusCode === 200, `${melden.statusCode}/${dicht.statusCode}/${metCookie.statusCode}/${publiek.statusCode}`);
+    check('vangnet: standaard melden (200 blijft), met AUTH_POORT_AFDWINGEN=1 → 401, ook met willekeurige Cookie/Authorization (audit-fix 8); gecontroleerde sessie/token of publiek ongemoeid',
+      melden.statusCode === 200 && dicht.statusCode === 401 && metCookie.statusCode === 401 && metSessie.statusCode === 200 && metToken.statusCode === 200 && publiek.statusCode === 200, `${melden.statusCode}/${dicht.statusCode}/${metCookie.statusCode}/${metSessie.statusCode}/${metToken.statusCode}/${publiek.statusCode}`);
+    const pad = async (p: string) => (await proef(evt('POST', p) as never)).statusCode;
+    const varianten = [await pad('/api/proef/met-sessie/'), await pad('/api//proef/met-sessie'), await pad('/api/proef/./met-sessie'), await pad('/api/proef/met-sessie')];
+    check('router: niet-canonieke paden (afsluitende /, //, punt-segment) → 404, canoniek pad werkt (audit-fix 3)', JSON.stringify(varianten) === '[404,404,404,200]', JSON.stringify(varianten));
 
     // requireAuth met een nagebootste sessiecontrole.
     const gebruikers: Record<string, any> = { goed: { id: 'u1', status: 'approved', role: 'member' }, wacht: { id: 'u2', status: 'pending', role: 'member' }, beheer: { id: 'u3', status: 'approved', role: 'admin' } };

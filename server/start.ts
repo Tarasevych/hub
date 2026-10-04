@@ -19,7 +19,7 @@ import { handler } from '../backend/index';
 import { verouderdeEigenarenIntrekken } from '../backend/eigenaar-opschonen';
 import { closePool, getPool } from './platform/pg';
 import { ownerEmail, rateLimit } from './platform/beveiliging';
-import type { LambdaEvent, RouterResponse } from './platform/router';
+import { isCanoniekPad, type LambdaEvent, type RouterResponse } from './platform/router';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.HOST || '127.0.0.1';
@@ -224,7 +224,8 @@ setInterval(() => { const now = Date.now(); for (const [k, v] of geheugen) if (n
 // dan onbeperkt wachtwoorden of codes laten raden (zie rateLimit in platform/beveiliging.ts).
 const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
   [/^\/api\/(owner\/)?(access|auth)\/password\/login$/, 'wachtwoord', 10, true],
-  [/^\/api\/owner\/access\/(totp|recovery)\//, 'mfa', 10, true],
+  // Audit-fix 7: stap-op (TOTP-step-up) zit in dezelfde strikte MFA-bucket als totp/recovery.
+  [/^\/api\/owner\/access\/((totp|recovery)\/|stap-op$)/, 'mfa', 10, true],
   [/^\/api\/auth\/google\/start$/, 'google-start', 10, true],
   [/^\/api\/owner\/identity\/transactions\/(create|attach)$/, 'login-start', 20, true],
   [/^\/api\/(auth|owner\/auth|ecosystem\/auth|owner\/identity|service-handoff|ecosystem\/handoff|owner\/session\/handoff|share\/join)(\/|$)/, 'aanmelden', 120, true],
@@ -264,6 +265,8 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   }
 
   if (url.pathname.startsWith('/api/')) {
+    // Audit-fix 3: niet-canonieke API-paden (//, afsluitende /, punt-segmenten) → 404 vóór CSRF/rate limit/routering.
+    if (!isCanoniekPad(url.pathname)) return sendJson(res, 404, { error: 'Not found', reasonCode: 'PATH_NOT_CANONICAL' });
     const ip = clientIp(req);
     const method = String(req.method || 'GET').toUpperCase();
     const csrf = csrfAfwijzing(method, req.headers);
@@ -300,7 +303,11 @@ const isMain = (() => {
   try { return !!process.argv[1] && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]); } catch { return false; }
 })();
 if (isMain) {
-  if (!process.env.DATABASE_URL) { console.error('DATABASE_URL ontbreekt'); process.exit(1); }
+  // Audit-fix 4: de app heeft alleen DATABASE_URL_SYSTEM (+ _APP) nodig; DATABASE_URL (legacy-eigenaar) en
+  // DATABASE_URL_MIGRATIE staan na de env-splitsing in /etc/mijn-ruimte/migratie.env, niet in de app-omgeving.
+  if (!process.env.DATABASE_URL_SYSTEM && !process.env.DATABASE_URL) { console.error('DATABASE_URL_SYSTEM ontbreekt'); process.exit(1); }
+  if (process.env.DATABASE_URL && process.env.DATABASE_URL_SYSTEM) console.warn('[server] DATABASE_URL (legacy-eigenaarsrol) staat in de app-omgeving; verplaats hem naar /etc/mijn-ruimte/migratie.env (deploy/RUNBOOK-AUDIT-FIXES.md)');
+  if (process.env.DATABASE_URL_MIGRATIE) console.warn('[server] DATABASE_URL_MIGRATIE staat in de app-omgeving; verplaats hem naar /etc/mijn-ruimte/migratie.env (deploy/RUNBOOK-AUDIT-FIXES.md)');
   // Zonder eigenaar heeft niemand beheerrechten; starten heeft dan geen zin en verbergt een configuratiefout.
   if (!ownerEmail()) { console.error('OWNER_EMAIL ontbreekt (zie ENV-VARS.md)'); process.exit(1); }
   const server = createServer();

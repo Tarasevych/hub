@@ -3,12 +3,15 @@
 // 1) requireAuth({ service, status, perm }): middleware die een geldige sessie eist (via de sessiecontrole die
 //    backend/index.ts registreert), optioneel status 'approved' en een recht uit backend/rbac.ts. Zet ctx.user.
 // 2) PUBLIEKE_ROUTES: expliciete allowlist van routes die zonder sessie mogen slagen, met reden.
-// 3) Vangnet in de router (poortNaVerzoek): een route buiten de allowlist die een verzoek ZONDER enige
-//    referentie (geen Cookie-, geen Authorization-kop) toch met 2xx beantwoordt, is een vergeten controle.
+// 3) Vangnet in de router (poortNaVerzoek): een route buiten de allowlist die een verzoek ZONDER gecontroleerde
+//    referentie toch met 2xx beantwoordt, is een vergeten controle. Audit-fix 8: "gecontroleerd" = in dit verzoek
+//    heeft een sessiecontrole zetGebruiker()/sessieGeverifieerd() aangeroepen (of een API-token is geldig bevonden);
+//    alleen een Cookie- of Authorization-kop meesturen telt niet meer.
 //    Standaard wordt dat gemeld ([auth-poort] + app.rls_audit, actie 'anoniem-2xx'); met AUTH_POORT_AFDWINGEN=1
 //    wordt het antwoord vervangen door 401. tests/eenheid/routes.test.ts faalt op elke zulke route.
 import type { LambdaEvent, RouterContext, RouterMiddleware, RouterResponse } from './router';
 import { error } from './router';
+import { isSessieGeverifieerd, sessieGeverifieerd } from './context';
 
 /** Routes die zonder sessie mogen slagen (patroon zoals in de routetabel) → reden. */
 export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
@@ -45,7 +48,7 @@ const kop = (event: LambdaEvent, naam: string): string => {
   for (const [k, v] of Object.entries(h)) if (k.toLowerCase() === naam) return String(v ?? '');
   return '';
 };
-/** Heeft het verzoek ÜBERHAUPT een referentie (cookie of Authorization)? Zo niet, dan is het anoniem. */
+/** Stuurt het verzoek een cookie of Authorization mee? (alleen informatief; het vangnet kijkt naar isSessieGeverifieerd) */
 export const heeftReferenties = (event: LambdaEvent): boolean => Boolean(kop(event, 'cookie').trim() || kop(event, 'authorization').trim());
 
 export const poortAfdwingen = (): boolean => process.env.AUTH_POORT_AFDWINGEN === '1';
@@ -56,7 +59,7 @@ export function registreerPoortMelder(fn: (patroon: string) => void): void { mel
 
 /** Vangnet na de routeketen (zie kop). Geeft het (eventueel vervangen) antwoord terug. */
 export function poortNaVerzoek(patroon: string, event: LambdaEvent, antwoord: RouterResponse): RouterResponse {
-  if (antwoord.statusCode < 200 || antwoord.statusCode >= 300 || isPubliek(patroon) || heeftReferenties(event)) return antwoord;
+  if (antwoord.statusCode < 200 || antwoord.statusCode >= 300 || isPubliek(patroon) || isSessieGeverifieerd()) return antwoord;
   if (!gemeld.has(patroon)) {
     gemeld.add(patroon);
     console.warn(`[auth-poort] anoniem verzoek kreeg ${antwoord.statusCode}: ${patroon} (niet in PUBLIEKE_ROUTES)${poortAfdwingen() ? ' → 401' : ''}`);
@@ -86,6 +89,7 @@ export function requireAuth(opties: RequireAuthOpties = {}): RouterMiddleware {
     if (opties.service && uitkomst.service && uitkomst.service !== opties.service) return error('AUTH_SERVICE_MISMATCH', 403);
     if (opties.status === 'approved' && user.status !== 'approved') return error('AUTH_APPROVAL_REQUIRED', 403);
     if (opties.perm && !(rechtControle?.(user, opties.perm) ?? false)) return error('AUTH_PERMISSION_REQUIRED', 403);
+    sessieGeverifieerd();
     ctx.user = { userId: user.id, email: user.email, scope: uitkomst.service || opties.service || '' };
     (ctx as RouterContext & { auth?: unknown }).auth = uitkomst;
     return undefined;
