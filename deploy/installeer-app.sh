@@ -20,7 +20,7 @@
 # (bijv. een `git archive`-tarball; staat daarin een bestand BRON-COMMIT, dan wordt dat de commit van de release).
 # Opties via omgeving: BEWAAR_RELEASES (standaard 5), ZONDER_BACKUP=1 (back-up vóór migratie overslaan),
 #                      NODE (standaard /usr/bin/node), PORT (standaard 8080),
-#                      BOUW_GEHEUGEN_MAX (1400M), BOUW_SWAP_MAX (2G), BOUW_HEAP_MB (2048) voor de build.
+#                      BOUW_GEHEUGEN_MAX (3000M), BOUW_SWAP_MAX (2G), BOUW_HEAP_MB (2560) voor de build.
 set -euo pipefail
 
 APP_ROOT=/srv/mijn-ruimte
