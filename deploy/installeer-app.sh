@@ -154,11 +154,11 @@ bouwen() {
   # nooit Postgres of sshd. Instelbaar: BOUW_GEHEUGEN_MAX, BOUW_SWAP_MAX, BOUW_HEAP_MB.
   systemd-run --quiet --wait --pipe --collect --unit="mijn-ruimte-bouw-$(basename "$doel")" \
     -p User="$GEBRUIKER" -p Group="$GEBRUIKER" -p WorkingDirectory="$doel" \
-    -p MemoryMax="${BOUW_GEHEUGEN_MAX:-1400M}" -p MemorySwapMax="${BOUW_SWAP_MAX:-2G}" -p Nice=10 \
+    -p MemoryMax="${BOUW_GEHEUGEN_MAX:-3000M}" -p MemorySwapMax="${BOUW_SWAP_MAX:-2G}" -p Nice=10 \
     -p NoNewPrivileges=yes -p PrivateTmp=yes \
     -E PATH="$(dirname "$NODE"):/usr/bin:/bin" -E HOME="$APP_ROOT/.bouw-home" \
     -E npm_config_cache="$APP_ROOT/.npm-cache" -E npm_config_update_notifier=false -E NODE_ENV=development \
-    -E NODE_OPTIONS="--max-old-space-size=${BOUW_HEAP_MB:-2048}" \
+    -E NODE_OPTIONS="--max-old-space-size=${BOUW_HEAP_MB:-2560}" \
     bash -c 'set -euo pipefail; npm ci --no-audit --no-fund; npm run build; npm prune --omit=dev --no-audit --no-fund' \
     || fout "bouwen mislukt (journalctl -u mijn-ruimte-bouw-$(basename "$doel"))"
   [ -f "$doel/dist/index.html" ] || fout "bouwen mislukt: dist/index.html ontbreekt"
