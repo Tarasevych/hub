@@ -17,8 +17,9 @@ geheimen kopiëren of tonen. Tijden in de logs zijn UTC tenzij anders vermeld.
       (Debian-standaard). Staat er iets anders (bv. alleen `mijnruimte`), voeg dan vóór stap 3 toe:
       `host mijnruimte mijnruimte_migrator,mijnruimte_app,mijnruimte_system 127.0.0.1/32 scram-sha-256`
       en `systemctl reload postgresql`.
-- [ ] Niet aan zetten bij de uitrol: `AUTH_POORT_AFDWINGEN`, `ACCOUNT_DEFINITIEF_WISSEN`. Niet nodig: `AUDIT_IP_PEPPER`
-      (valt terug op `RECOVERY_CODE_PEPPER`).
+- [ ] Niet aan zetten bij de uitrol: `AUTH_POORT_AFDWINGEN`, `ACCOUNT_DEFINITIEF_WISSEN`.
+      **Let op:** vanaf de audit-fixes (`deploy/RUNBOOK-AUDIT-FIXES.md`) is `AUDIT_IP_PEPPER` wél verplicht
+      (`deploy/geheimen-aanvullen.sh`); die release bevat ook alles van fase 2 + 3.
 
 ## 1. Tarball naar de VM en controleren
 

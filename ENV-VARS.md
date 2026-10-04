@@ -12,6 +12,7 @@ Formaat van `geheimen.env`: één `NAAM=waarde` per regel, zonder aanhalingsteke
 | Naam | Doel | Genereren / waarde |
 |---|---|---|
 | `DATABASE_URL` | Postgres-verbinding (database `mijnruimte`, rol `mijnruimte`). | `postgres://mijnruimte:<wachtwoord>@127.0.0.1:5432/mijnruimte`; wachtwoord: `openssl rand -base64 32 \| tr -d '/+='` |
+| `AUDIT_IP_PEPPER` | Geheime pepper (HMAC-SHA256) voor de IP-hash in `app.audit` (`ip_hash`). Min. 32 tekens. **De server start niet zonder** (audit-fix 10; geen terugval meer op `RECOVERY_CODE_PEPPER`). Wisselen maakt oude en nieuwe hashes onvergelijkbaar (geen gegevensverlies). | `deploy/geheimen-aanvullen.sh` of `openssl rand -base64 48 \| tr -d '\n'` |
 | `OWNER_EMAIL` | E-mailadres van de eigenaar (super-admin). Vervangt het vroeger hardgecodeerde adres. De server start niet zonder. | Het Google-adres van de eigenaar, kleine letters. |
 | `TOTP_ENCRYPTION_KEY_V1` | AES-256-GCM-sleutel voor TOTP-geheimen (gebonden aan de gebruikers-id). Zonder sleutel: TOTP-inschrijving geeft 503. | `openssl rand -base64 32` (32 bytes; base64 of 64 hex-tekens) |
 | `RECOVERY_CODE_PEPPER` | Geheime pepper (HMAC-SHA256) voor herstelcodes. Min. 32 tekens. Zonder pepper: geen nieuwe herstelcodes (503). | `openssl rand -base64 48` |
@@ -26,6 +27,13 @@ Formaat van `geheimen.env`: één `NAAM=waarde` per regel, zonder aanhalingsteke
 ### Databaserollen (beveiliging fase 2, optioneel)
 Worden alleen door `deploy/db-rollen-instellen.sh instellen` geschreven (nooit met de hand nodig). Ontbreekt een
 variabele, dan valt de app terug op `DATABASE_URL` en werkt alles zoals vroeger (één rol, RLS-policy's laten alles door).
+
+**Audit-fix 4: twee bestanden.** Na `db-rollen-instellen.sh env-splitsen` staan de migratie- en legacy-URL's
+(`DATABASE_URL`, `DATABASE_URL_MIGRATIE`) alleen nog in **`/etc/mijn-ruimte/migratie.env`** (0600 root:root). Dat
+bestand wordt alleen door de migratiestap van `installeer-app.sh` en door `db-rollen-instellen.sh` geladen, nooit door
+`mijn-ruimte.service`/`-cron`/`-backup`. In `geheimen.env` blijven `DATABASE_URL_APP` en `DATABASE_URL_SYSTEM`. De app
+waarschuwt bij het starten als een migratie- of legacy-URL toch in de runtime-omgeving staat. Terug: `env-samenvoegen`.
+`migratie.env` hoort in de versleutelde geheimen-back-up (zie `deploy/HERSTEL.md`).
 
 | Naam | Rol | Gebruikt door |
 |---|---|---|
@@ -42,7 +50,7 @@ zelf uitzetten. Schakelen: `db-rollen-instellen.sh rls-aan|rls-uit`.
 |---|---|---|
 | `AUTH_POORT_AFDWINGEN` | uit | `1` = de vangrail in de router antwoordt **401** op elke anonieme 2xx-respons van een route die niet in `PUBLIEKE_ROUTES` staat (`server/platform/auth-poort.ts`). Zonder: alleen loggen (`[auth-poort]`) en tellen in `app.rls_audit` (actie `anoniem-2xx`). Zie `deploy/RUNBOOK-FASE-2-3.md`. |
 | `STAP_OP_UIT` | uit | Noodschakelaar: `1` zet de step-up-eis (`STEP_UP_REQUIRED`) voor gevoelige acties uit. Alleen tijdelijk gebruiken, bv. als de frontend de step-up nog niet afhandelt en een beheeractie dringend is. |
-| `AUDIT_IP_PEPPER` | `RECOVERY_CODE_PEPPER` | Pepper voor de IP-hash in `app.audit` (`ip_hash`). Wisselen maakt oude en nieuwe hashes onvergelijkbaar (geen gegevensverlies). `openssl rand -base64 48` |
+| `STAP_OP_GOOGLE_ZONDER_AUTH_TIME` | uit | Opt-in noodpad (audit-fix 5): `1` = een expliciete step-up-aanmelding bij Google (`prompt=login`, `max_age=0`) telt ook zonder `auth_time`-claim in het id_token, mits het OAuth-verloop binnen 5 minuten na de start is afgerond. Standaard telt Google-step-up alleen met `auth_time` (zet in de Google Cloud Console bij de OAuth-client **"session age claims"** aan). TOTP-step-up werkt altijd. |
 | `ACCOUNT_DEFINITIEF_WISSEN` | uit | `1` = de opruimjob wist accounts **definitief** (inhoud, identiteiten, bestanden; grafsteen zonder persoonsgegevens) zodra de herstelperiode van 30 dagen voorbij is. Zonder: alleen een droog verslag in het cron-log. **Onomkeerbaar** — pas aanzetten na een geslaagde back-up/hersteltest. |
 
 ## Google-login en Google Suite (optioneel: zonder deze waarden is Google-login uit)
@@ -110,6 +118,7 @@ DATABASE_URL=postgres://mijnruimte:$(openssl rand -base64 32 | tr -d '/+=')@127.
 OWNER_EMAIL=<eigenaar@gmail.com>
 TOTP_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)
 RECOVERY_CODE_PEPPER=$(openssl rand -base64 48 | tr -d '\n')
+AUDIT_IP_PEPPER=$(openssl rand -base64 48 | tr -d '\n')
 GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)
 OWNER_VAULT_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)
 MAIL_TOKEN_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)

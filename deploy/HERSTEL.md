@@ -49,7 +49,8 @@ $vm  = 'beheer@10.77.0.10'
 $g   = 'R:\mijn-ruimte-reservekopie\geheimen\geheimen-<stempel>\geheimen-<stempel>.tar.age'
 cmd /c "$age -d -i $sl $g | ssh -i $k $vm sudo -n tar -xpf - -C /"
 ```
-Dit zet `/etc/mijn-ruimte/geheimen.env` en `/etc/cloudflared/<ID>.json` terug (root, 0600). Controleer
+Dit zet `/etc/mijn-ruimte/geheimen.env` en `/etc/cloudflared/<ID>.json` terug (root, 0600); archieven van na
+audit-fix 4 (`env-splitsen`) bevatten ook `/etc/mijn-ruimte/migratie.env` (daar staat dan `DATABASE_URL`). Controleer
 `DATABASE_URL` (wachtwoord van de nieuwe Postgres-rol moet overeenkomen) en zet de publieke sleutel terug:
 `scp herstelsleutel-age.pub.txt` → `sudo install -m 0644 … /etc/mijn-ruimte/backup-ontvanger.age.pub`.
 
