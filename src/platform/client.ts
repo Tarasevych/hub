@@ -2,6 +2,7 @@
 // - api: axios-achtige fetch-client naar de same-origin /api van de huidige host.
 // - image.resizeIfNeeded: verkleint/hercodeert afbeeldingen in de browser.
 // - invitesClient: bouwt en leest uitnodigingslinks (parameter `invite`).
+import { stapOpVragen } from './stap-op';
 
 // ---------------------------------------------------------------------------------------------
 // api
@@ -36,7 +37,7 @@ function withQuery(url: string, data: unknown): string {
   return qs ? `${url}${url.includes('?') ? '&' : '?'}${qs}` : url;
 }
 
-async function request(method: string, url: string, data?: unknown): Promise<ApiResponse> {
+async function request(method: string, url: string, data?: unknown, opnieuw = false): Promise<ApiResponse> {
   const hasBody = method !== 'GET' && method !== 'DELETE';
   const target = hasBody ? url : withQuery(url, data);
   let response: Response;
@@ -54,7 +55,14 @@ async function request(method: string, url: string, data?: unknown): Promise<Api
   const text = await response.text();
   let parsed: any = text;
   if (text) { try { parsed = JSON.parse(text); } catch { parsed = text; } } else parsed = null;
-  if (!response.ok) throw new ApiError(response.status, response.statusText, parsed, text);
+  if (!response.ok) {
+    const fout = new ApiError(response.status, response.statusText, parsed, text);
+    // Audit-fix 5/7: extra bevestiging gevraagd → melding + TOTP-code of opnieuw bij Google; daarna één herhaling.
+    if (response.status === 403 && fout.message === 'STEP_UP_REQUIRED' && hasBody && !opnieuw && !url.includes('/api/owner/access/stap-op')) {
+      if (await stapOpVragen(data, (u, d) => request('POST', u, d, true))) return request(method, url, data, true);
+    }
+    throw fout;
+  }
   return { data: parsed, status: response.status, headers: response.headers };
 }
 
