@@ -19,6 +19,7 @@ import { handler } from '../backend/index';
 import { verouderdeEigenarenIntrekken } from '../backend/eigenaar-opschonen';
 import { closePool, getPool } from './platform/pg';
 import { ownerEmail, rateLimit } from './platform/beveiliging';
+import { auditIpPepperGeldig } from './platform/audit';
 import { isCanoniekPad, type LambdaEvent, type RouterResponse } from './platform/router';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -310,6 +311,8 @@ if (isMain) {
   if (process.env.DATABASE_URL_MIGRATIE) console.warn('[server] DATABASE_URL_MIGRATIE staat in de app-omgeving; verplaats hem naar /etc/mijn-ruimte/migratie.env (deploy/RUNBOOK-AUDIT-FIXES.md)');
   // Zonder eigenaar heeft niemand beheerrechten; starten heeft dan geen zin en verbergt een configuratiefout.
   if (!ownerEmail()) { console.error('OWNER_EMAIL ontbreekt (zie ENV-VARS.md)'); process.exit(1); }
+  // Audit-fix 10: zonder eigen IP-pepper niet starten (vroeger stil terugvallen op RECOVERY_CODE_PEPPER).
+  if (!auditIpPepperGeldig()) { console.error('AUDIT_IP_PEPPER ontbreekt of is korter dan 32 tekens: voer deploy/geheimen-aanvullen.sh uit (zie ENV-VARS.md)'); process.exit(1); }
   const server = createServer();
   server.requestTimeout = 120_000;
   server.headersTimeout = 30_000;

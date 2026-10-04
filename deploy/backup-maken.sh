@@ -30,9 +30,10 @@
 set -euo pipefail
 umask 027
 
-: "${DATABASE_URL:?DATABASE_URL ontbreekt (EnvironmentFile /etc/mijn-ruimte/geheimen.env)}"
 # Fase 2: app.records heeft RLS (FORCE). De dump moet alle rijen zien → systeemrol (BYPASSRLS) als die er is.
-DUMP_URL="${DATABASE_URL_SYSTEM:-$DATABASE_URL}"
+# Audit-fix 4: na env-splitsen staat DATABASE_URL niet meer in geheimen.env; de systeemrol volstaat.
+DUMP_URL="${DATABASE_URL_SYSTEM:-${DATABASE_URL:-}}"
+[ -n "$DUMP_URL" ] || { echo "[backup] DATABASE_URL_SYSTEM ontbreekt (EnvironmentFile /etc/mijn-ruimte/geheimen.env)" >&2; exit 1; }
 UPLOADS_DIR="${UPLOADS_DIR:-/srv/data/uploads}"
 BACKUP_DIR="${BACKUP_DIR:-/srv/backups/mijn-ruimte}"
 BEWAAR_DAGEN="${BACKUP_BEWAAR_DAGEN:-7}"

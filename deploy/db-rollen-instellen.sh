@@ -12,15 +12,27 @@
 #   db-rollen-instellen.sh terugdraaien  de drie variabelen uit geheimen.env halen, eigendom terug naar de oude
 #                                        rol, FORCE RLS en afdwingen uit, herstart (app en back-up werken weer met
 #                                        de oude ene rol; de rollen zelf blijven ongebruikt bestaan)
+#   db-rollen-instellen.sh env-splitsen  (audit-fix 4) DATABASE_URL (legacy-eigenaar) en DATABASE_URL_MIGRATIE
+#                                        van geheimen.env naar migratie.env (0600 root:root); de app-diensten laden
+#                                        alleen geheimen.env, de migratiestap (installeer-app.sh) laadt beide.
+#                                        Herstart + gezondheidscontrole; mislukt die → automatisch terug.
+#   db-rollen-instellen.sh env-samenvoegen  het omgekeerde (terug naar één bestand)
+#   db-rollen-instellen.sh audit-beheerder <e-mail|user-id>      mag app.audit verwijderen (alleen postgres kan dit)
+#   db-rollen-instellen.sh audit-beheerder-weg <e-mail|user-id>
+# Wachtwoorden: hier gemaakt (openssl), naar Postgres gaat alleen de SCRAM-verifier (scram-verifier.mjs).
 # Uitvoer tweetalig (Oekraïens, dan Nederlands). Waarden worden nooit getoond.
 set -euo pipefail
 umask 077
 
 GEHEIMEN="${GEHEIMEN:-/etc/mijn-ruimte/geheimen.env}"
+# Audit-fix 4: migrator- en legacy-URL buiten de app-omgeving (alleen voor migraties/rollenscript).
+MIGRATIE_ENV="${MIGRATIE_ENV:-/etc/mijn-ruimte/migratie.env}"
+NODE="${NODE:-$(command -v node || echo /usr/bin/node)}"
 DIENST="${DIENST:-mijn-ruimte.service}"
 PORT="${PORT:-8080}"
 HIER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROLLEN_SQL="$HIER/db-rollen.sql"
+SCRAM_MJS="$HIER/scram-verifier.mjs"
 RECHTEN_SQL="$HIER/../migrations/rechten.sql"
 TERUG_SQL="$HIER/db-rollen-terug.sql"
 # Voor tests overschrijfbaar; standaard psql als postgres via de lokale socket.
@@ -31,7 +43,11 @@ zeg()  { printf '%s\n  %s\n' "$1" "$2"; }
 fout() { printf 'ПОМИЛКА: %s\n  FOUT: %s\n' "$1" "$2" >&2; exit 1; }
 
 vereis_root() { [ "$(id -u)" -eq 0 ] || [ "${ZONDER_ROOT:-0}" = 1 ] || fout "запустіть від root (sudo)" "voer dit uit als root (sudo)"; }
-waarde_van() { sed -n -E "s/^[[:space:]]*(export[[:space:]]+)?$1=//p" "$GEHEIMEN" | tail -n 1 | sed -E 's/^["'"'"']//; s/["'"'"']$//' | tr -d '\r'; }
+waarde_in() { [ -f "$2" ] || return 0; sed -n -E "s/^[[:space:]]*(export[[:space:]]+)?$1=//p" "$2" | tail -n 1 | sed -E 's/^["'"'"']//; s/["'"'"']$//' | tr -d '\r'; }
+# Waarde uit migratie.env (als die er is en de variabele bevat), anders uit geheimen.env.
+waarde_van() { local w; w="$(waarde_in "$1" "$MIGRATIE_ENV")"; [ -n "$w" ] || w="$(waarde_in "$1" "$GEHEIMEN")"; printf '%s' "$w"; }
+# SCRAM-SHA-256-verifier voor een wachtwoord (stdin; printf is een builtin, dus niet zichtbaar in ps).
+scram() { printf '%s' "$1" | "$NODE" "$SCRAM_MJS"; }
 
 # Onderdelen van DATABASE_URL (postgres://rol:ww@host:poort/db).
 lees_url() {
@@ -61,17 +77,20 @@ gezond() {
   return 1
 }
 
-# geheimen.env herschrijven: regels voor de drie variabelen weg, nieuwe (optioneel) erachter. Eigenaar/rechten blijven.
-herschrijf_geheimen() {
-  local nieuw eigenaar modus
-  eigenaar="$(stat -c '%u:%g' "$GEHEIMEN")"; modus="$(stat -c '%a' "$GEHEIMEN")"
-  nieuw="$(mktemp "$(dirname "$GEHEIMEN")/.geheimen.env.nieuw.XXXXXX")"
-  { grep -Ev '^[[:space:]]*(export[[:space:]]+)?DATABASE_URL_(MIGRATIE|APP|SYSTEM)=' "$GEHEIMEN" || true; } > "$nieuw"
+# Bestand herschrijven: regels die op het patroon (namen, regex) passen weg, nieuwe (optioneel) erachter.
+# Eigenaar/rechten blijven; een nieuw bestand wordt 0600 root:root.
+herschrijf_bestand() {
+  local bestand="$1" namen="$2" nieuw eigenaar=0:0 modus=600; shift 2
+  if [ -f "$bestand" ]; then eigenaar="$(stat -c '%u:%g' "$bestand")"; modus="$(stat -c '%a' "$bestand")"; fi
+  nieuw="$(mktemp "$(dirname "$bestand")/.$(basename "$bestand").nieuw.XXXXXX")" || return 1
+  # Ook binnen 'if !' (waar set -e niet werkt) bij elke fout stoppen en het tijdelijke bestand opruimen.
+  if [ -f "$bestand" ]; then { grep -Ev "^[[:space:]]*(export[[:space:]]+)?($namen)=" "$bestand" || true; } > "$nieuw" || { rm -f -- "$nieuw"; return 1; }; fi
   [ ! -s "$nieuw" ] || [ -z "$(tail -c1 "$nieuw")" ] || printf '\n' >> "$nieuw"
-  if [ "$#" -gt 0 ]; then printf '%s\n' "$@" >> "$nieuw"; fi
-  chown "$eigenaar" "$nieuw"; chmod "$modus" "$nieuw"
-  mv -f -- "$nieuw" "$GEHEIMEN"
+  if [ "$#" -gt 0 ]; then printf '%s\n' "$@" >> "$nieuw" || { rm -f -- "$nieuw"; return 1; }; fi
+  { chown "$eigenaar" "$nieuw" && chmod "$modus" "$nieuw" && mv -f -- "$nieuw" "$bestand"; } || { rm -f -- "$nieuw"; return 1; }
 }
+# geheimen.env: de drie rol-variabelen weg en (optioneel) nieuwe erachter.
+herschrijf_geheimen() { herschrijf_bestand "$GEHEIMEN" 'DATABASE_URL_(MIGRATIE|APP|SYSTEM)' "$@"; }
 
 herstart_en_controleer() {
   [ "$ZONDER_HERSTART" = 1 ] && return 0
@@ -80,25 +99,37 @@ herstart_en_controleer() {
 
 instellen() {
   vereis_root; lees_url
-  [ -f "$ROLLEN_SQL" ] && [ -f "$RECHTEN_SQL" ] || fout "не знайдено db-rollen.sql / rechten.sql поруч зі скриптом" "db-rollen.sql / rechten.sql niet gevonden naast dit script"
+  [ -f "$ROLLEN_SQL" ] && [ -f "$RECHTEN_SQL" ] && [ -f "$SCRAM_MJS" ] || fout "не знайдено db-rollen.sql / rechten.sql / scram-verifier.mjs поруч зі скриптом" "db-rollen.sql / rechten.sql / scram-verifier.mjs niet gevonden naast dit script"
   command -v openssl >/dev/null || fout "немає openssl" "openssl ontbreekt"
-  local ww_m ww_a ww_s backup
+  [ -x "$NODE" ] || fout "немає node ($NODE)" "node ontbreekt ($NODE)"
+  local ww_m ww_a ww_s v_m v_a v_s backup backup_m=""
   ww_m="$(wachtwoord_voor DATABASE_URL_MIGRATIE)"; ww_a="$(wachtwoord_voor DATABASE_URL_APP)"; ww_s="$(wachtwoord_voor DATABASE_URL_SYSTEM)"
-  # Wachtwoorden alleen via stdin (psql-variabelen); printf is een shell-builtin.
-  { printf '\\set legacy_rol %s\n\\set migrator_ww %s\n\\set app_ww %s\n\\set systeem_ww %s\n' "$LEGACY_ROL" "$ww_m" "$ww_a" "$ww_s"; cat "$ROLLEN_SQL" "$RECHTEN_SQL"; } \
+  # Audit-fix 10: naar Postgres gaat alleen de SCRAM-verifier (via stdin als psql-variabele).
+  v_m="$(scram "$ww_m")" && v_a="$(scram "$ww_a")" && v_s="$(scram "$ww_s")" || fout "SCRAM-верифікатор не створено" "SCRAM-verifier maken mislukt"
+  { printf '\\set legacy_rol %s\n\\set migrator_scram %s\n\\set app_scram %s\n\\set systeem_scram %s\n' "$LEGACY_ROL" "$v_m" "$v_a" "$v_s"; cat "$ROLLEN_SQL" "$RECHTEN_SQL"; } \
     | psql_db -f - >/dev/null || fout "налаштування ролей у Postgres не вдалося" "rollen instellen in Postgres mislukt"
+  unset v_m v_a v_s
   zeg "Ролі mijnruimte_migrator / mijnruimte_app / mijnruimte_system налаштовано (власник схеми, права, FORCE RLS)." \
       "Rollen mijnruimte_migrator / mijnruimte_app / mijnruimte_system ingesteld (schema-eigenaar, rechten, FORCE RLS)."
   backup="$(mktemp "$(dirname "$GEHEIMEN")/.geheimen.env.backup.XXXXXX")"; cp -p -- "$GEHEIMEN" "$backup"
   local basis="@$DB_HOST:$DB_PORT/$DB_NAAM"
-  herschrijf_geheimen "DATABASE_URL_MIGRATIE=postgres://mijnruimte_migrator:$ww_m$basis" "DATABASE_URL_APP=postgres://mijnruimte_app:$ww_a$basis" "DATABASE_URL_SYSTEM=postgres://mijnruimte_system:$ww_s$basis"
+  if [ -f "$MIGRATIE_ENV" ]; then
+    # Na env-splitsen: migrator-URL in migratie.env, app/systeem in geheimen.env.
+    backup_m="$(mktemp "$(dirname "$MIGRATIE_ENV")/.migratie.env.backup.XXXXXX")"; cp -p -- "$MIGRATIE_ENV" "$backup_m"
+    herschrijf_bestand "$MIGRATIE_ENV" 'DATABASE_URL_MIGRATIE' "DATABASE_URL_MIGRATIE=postgres://mijnruimte_migrator:$ww_m$basis"
+    herschrijf_geheimen "DATABASE_URL_APP=postgres://mijnruimte_app:$ww_a$basis" "DATABASE_URL_SYSTEM=postgres://mijnruimte_system:$ww_s$basis"
+  else
+    herschrijf_geheimen "DATABASE_URL_MIGRATIE=postgres://mijnruimte_migrator:$ww_m$basis" "DATABASE_URL_APP=postgres://mijnruimte_app:$ww_a$basis" "DATABASE_URL_SYSTEM=postgres://mijnruimte_system:$ww_s$basis"
+  fi
   unset ww_m ww_a ww_s
   if herstart_en_controleer; then
     shred -u -- "$backup" 2>/dev/null || rm -f -- "$backup"
+    [ -z "$backup_m" ] || shred -u -- "$backup_m" 2>/dev/null || rm -f -- "$backup_m"
     zeg "OK: DATABASE_URL_MIGRATIE/_APP/_SYSTEM записано, сервіс працює. RLS у режимі аудиту (див. 'status')." \
         "OK: DATABASE_URL_MIGRATIE/_APP/_SYSTEM geschreven, dienst draait. RLS in audit-modus (zie 'status')."
   else
     herschrijf_geheimen
+    [ -z "$backup_m" ] || { mv -f -- "$backup_m" "$MIGRATIE_ENV"; }
     shred -u -- "$backup" 2>/dev/null || rm -f -- "$backup"
     { printf '\\set legacy_rol %s\n' "$LEGACY_ROL"; cat "$TERUG_SQL"; } | psql_db -f - >/dev/null || true
     systemctl restart "$DIENST" || true
@@ -124,9 +155,14 @@ status() {
   psql_db -At -c "SELECT 'afdwingen=' || waarde FROM app.rls_instellingen WHERE sleutel = 'afdwingen'"
   psql_db -At -c "SELECT 'rollen=' || string_agg(rolname || CASE WHEN rolbypassrls THEN '(bypassrls)' ELSE '' END, ',' ORDER BY rolname) FROM pg_roles WHERE rolname LIKE 'mijnruimte%'"
   psql_db -At -c "SELECT 'force_rls=' || relforcerowsecurity FROM pg_class WHERE oid = 'app.records'::regclass"
-  for v in DATABASE_URL_MIGRATIE DATABASE_URL_APP DATABASE_URL_SYSTEM; do
-    if [ -n "$(waarde_van "$v")" ]; then echo "$v=gezet"; else echo "$v=ontbreekt"; fi
+  for v in DATABASE_URL DATABASE_URL_MIGRATIE DATABASE_URL_APP DATABASE_URL_SYSTEM AUDIT_IP_PEPPER; do
+    local waar=""
+    [ -n "$(waarde_in "$v" "$GEHEIMEN")" ] && waar="geheimen.env"
+    [ -n "$(waarde_in "$v" "$MIGRATIE_ENV")" ] && waar="${waar:+$waar+}migratie.env"
+    echo "$v=${waar:-ontbreekt}"
   done
+  psql_db -At -c "SELECT 'audit_beheerders=' || count(*) FROM app.audit_beheerders" 2>/dev/null || echo "audit_beheerders=(migratie 0008 nog niet uitgevoerd)"
+  psql_db -At -c "SELECT 'audit_insert_app=' || has_table_privilege('mijnruimte_app', 'app.audit', 'INSERT') || ' audit_insert_system=' || has_table_privilege('mijnruimte_system', 'app.audit', 'INSERT')" 2>/dev/null || true
   echo "--- app.rls_audit (wat RLS zou weigeren; leeg = klaar om af te dwingen) ---"
   psql_db -A -F ' | ' -c "SELECT route, tbl, actie, aantal, to_char(laatst, 'YYYY-MM-DD HH24:MI') AS laatst FROM app.rls_audit ORDER BY laatst DESC LIMIT 50"
 }
@@ -134,6 +170,8 @@ status() {
 terugdraaien() {
   vereis_root; lees_url
   [ -f "$TERUG_SQL" ] || fout "не знайдено db-rollen-terug.sql" "db-rollen-terug.sql niet gevonden"
+  # Zonder de nieuwe rollen heeft de app DATABASE_URL zelf nodig: eerst terug naar één bestand.
+  if [ -n "$(waarde_in DATABASE_URL "$MIGRATIE_ENV")" ]; then ZONDER_HERSTART=1 env_samenvoegen; fi
   herschrijf_geheimen
   { printf '\\set legacy_rol %s\n' "$LEGACY_ROL"; cat "$TERUG_SQL"; } | psql_db -f - >/dev/null \
     || fout "повернення власника/FORCE не вдалося (змінні вже прибрано)" "eigendom/FORCE terugzetten mislukt (variabelen zijn al weg)"
@@ -144,11 +182,84 @@ terugdraaien() {
   fi
 }
 
+# ---- Audit-fix 4: migrator/legacy-URL uit de app-omgeving ----
+env_splitsen() {
+  vereis_root
+  [ -n "$(waarde_in DATABASE_URL_SYSTEM "$GEHEIMEN")" ] && [ -n "$(waarde_in DATABASE_URL_APP "$GEHEIMEN")" ] \
+    || fout "спершу 'instellen': DATABASE_URL_APP/_SYSTEM мають бути в $GEHEIMEN" "eerst 'instellen': DATABASE_URL_APP/_SYSTEM moeten in $GEHEIMEN staan"
+  local legacy migr b_g b_m=""
+  legacy="$(waarde_in DATABASE_URL "$GEHEIMEN")"; migr="$(waarde_in DATABASE_URL_MIGRATIE "$GEHEIMEN")"
+  if [ -z "$legacy" ] && [ -z "$migr" ]; then zeg "Нічого переносити (уже розділено)." "Niets te verplaatsen (al gesplitst)."; return 0; fi
+  # Wat al in migratie.env staat (bijv. DATABASE_URL_MIGRATIE na 'instellen') blijft behouden.
+  [ -n "$legacy" ] || legacy="$(waarde_in DATABASE_URL "$MIGRATIE_ENV")"
+  [ -n "$migr" ] || migr="$(waarde_in DATABASE_URL_MIGRATIE "$MIGRATIE_ENV")"
+  b_g="$(mktemp "$(dirname "$GEHEIMEN")/.geheimen.env.backup.XXXXXX")"; cp -p -- "$GEHEIMEN" "$b_g"
+  if [ -f "$MIGRATIE_ENV" ]; then b_m="$(mktemp "$(dirname "$MIGRATIE_ENV")/.migratie.env.backup.XXXXXX")"; cp -p -- "$MIGRATIE_ENV" "$b_m"; fi
+  local regels=()
+  [ -z "$legacy" ] || regels+=("DATABASE_URL=$legacy")
+  [ -z "$migr" ] || regels+=("DATABASE_URL_MIGRATIE=$migr")
+  # Elke stap gecontroleerd: mislukt er één, dan beide bestanden terug zoals ze waren.
+  if ! { herschrijf_bestand "$MIGRATIE_ENV" 'DATABASE_URL|DATABASE_URL_MIGRATIE' "${regels[@]}" \
+         && { [ "${ZONDER_ROOT:-0}" = 1 ] || chown root:root "$MIGRATIE_ENV"; } && chmod 0600 "$MIGRATIE_ENV" \
+         && herschrijf_bestand "$GEHEIMEN" 'DATABASE_URL|DATABASE_URL_MIGRATIE'; }; then
+    mv -f -- "$b_g" "$GEHEIMEN"; if [ -n "$b_m" ]; then mv -f -- "$b_m" "$MIGRATIE_ENV"; else rm -f -- "$MIGRATIE_ENV"; fi
+    fout "не вдалося переписати файли; повернено як було" "bestanden herschrijven mislukt; teruggezet zoals het was"
+  fi
+  unset legacy migr regels
+  if herstart_en_controleer; then
+    shred -u -- "$b_g" 2>/dev/null || rm -f -- "$b_g"; [ -z "$b_m" ] || shred -u -- "$b_m" 2>/dev/null || rm -f -- "$b_m"
+    zeg "OK: DATABASE_URL і DATABASE_URL_MIGRATIE тепер лише в $MIGRATIE_ENV; сервіс працює без них." \
+        "OK: DATABASE_URL en DATABASE_URL_MIGRATIE staan nu alleen in $MIGRATIE_ENV; de dienst draait zonder."
+  else
+    mv -f -- "$b_g" "$GEHEIMEN"; if [ -n "$b_m" ]; then mv -f -- "$b_m" "$MIGRATIE_ENV"; else rm -f -- "$MIGRATIE_ENV"; fi
+    systemctl restart "$DIENST" || true
+    fout "сервіс не запустився без DATABASE_URL; повернено як було (journalctl -u $DIENST -n 50)" \
+         "dienst start niet zonder DATABASE_URL; teruggezet zoals het was (journalctl -u $DIENST -n 50)"
+  fi
+}
+env_samenvoegen() {
+  vereis_root
+  [ -f "$MIGRATIE_ENV" ] || { zeg "migratie.env відсутній — нічого робити." "migratie.env ontbreekt — niets te doen."; return 0; }
+  local legacy migr regels=()
+  legacy="$(waarde_in DATABASE_URL "$MIGRATIE_ENV")"; migr="$(waarde_in DATABASE_URL_MIGRATIE "$MIGRATIE_ENV")"
+  [ -z "$legacy" ] || regels+=("DATABASE_URL=$legacy")
+  [ -z "$migr" ] || regels+=("DATABASE_URL_MIGRATIE=$migr")
+  [ "${#regels[@]}" -eq 0 ] || herschrijf_bestand "$GEHEIMEN" 'DATABASE_URL|DATABASE_URL_MIGRATIE' "${regels[@]}"
+  herschrijf_bestand "$MIGRATIE_ENV" 'DATABASE_URL|DATABASE_URL_MIGRATIE'
+  [ -s "$MIGRATIE_ENV" ] || rm -f -- "$MIGRATIE_ENV"
+  unset legacy migr regels
+  herstart_en_controleer || fout "сервіс не відповідає після перезапуску" "dienst antwoordt niet na de herstart"
+  zeg "OK: змінні знову в $GEHEIMEN." "OK: variabelen staan weer in $GEHEIMEN."
+}
+# Wie mag app.audit verwijderen (app.audit_beheerders; alleen postgres/migrator kan schrijven).
+audit_beheerder() {
+  vereis_root; lees_url
+  local wie="${2:-}" id
+  [ -n "$wie" ] || fout "вкажіть e-mail або user-id" "geef een e-mailadres of user-id op"
+  [[ "$wie" =~ ^[A-Za-z0-9_.@+-]{1,200}$ ]] || fout "неочікуваний формат" "onverwacht formaat"
+  if [[ "$wie" == *@* ]]; then
+    id="$(psql_db -At -c "SELECT id FROM app.records WHERE tbl = 'users' AND lower(data->>'email') = lower('$wie') LIMIT 2")"
+    [ "$(printf '%s\n' "$id" | grep -c .)" = 1 ] || fout "акаунт не знайдено (або їх кілька)" "account niet (of meer dan één keer) gevonden"
+  else id="$wie"; fi
+  if [ "$1" = toevoegen ]; then
+    psql_db -c "INSERT INTO app.audit_beheerders (user_id, notitie) VALUES ('$id', 'db-rollen-instellen.sh') ON CONFLICT (user_id) DO NOTHING" >/dev/null \
+      || fout "не вдалося (міграцію 0008 виконано?)" "mislukt (is migratie 0008 uitgevoerd?)"
+    zeg "OK: акаунт може видаляти журнал аудиту (лише з причиною; дія записується)." "OK: account mag de audit-log opschonen (alleen met reden; wordt zelf gelogd)."
+  else
+    psql_db -c "DELETE FROM app.audit_beheerders WHERE user_id = '$id'" >/dev/null || fout "не вдалося" "mislukt"
+    zeg "OK: право видалення аудиту знято." "OK: recht om audit te verwijderen ingetrokken."
+  fi
+}
+
 case "${1:-}" in
   instellen) instellen ;;
   status) status ;;
   rls-aan) rls_zetten aan ;;
   rls-uit) rls_zetten uit ;;
   terugdraaien) terugdraaien ;;
-  *) sed -n '2,15p' "$0"; exit 2 ;;
+  env-splitsen) env_splitsen ;;
+  env-samenvoegen) env_samenvoegen ;;
+  audit-beheerder) audit_beheerder toevoegen "${2:-}" ;;
+  audit-beheerder-weg) audit_beheerder weg "${2:-}" ;;
+  *) sed -n '2,26p' "$0"; exit 2 ;;
 esac

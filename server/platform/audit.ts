@@ -2,7 +2,7 @@
 // (app.audit_toevoegen); hier: toevoegen met verzoekgegevens uit de context, lezen (nieuwste eerst, filters,
 // cursor), ketencontrole en verwijderen via de beheerfunctie. Alles via de systeemrol: de app-rol mag alleen
 // toevoegen, niet lezen.
-import { createHash } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import { getPool } from './pg';
 import { huidigeContext } from './context';
 
@@ -21,12 +21,22 @@ export type AuditRij = {
   seq: number; prevHash: string; hash: string; createdAt: number;
 };
 
-/** IP nooit leesbaar opslaan: HMAC-achtige hash met een geheime pepper (AUDIT_IP_PEPPER, anders RECOVERY_CODE_PEPPER). */
+/**
+ * Audit-fix 10: eigen, verplichte pepper voor IP-hashes (AUDIT_IP_PEPPER, ≥ 32 tekens). Geen terugval meer op
+ * RECOVERY_CODE_PEPPER (die mag nooit voor iets anders dienen) en zonder pepper geen hash (veilig falen: dan wordt
+ * het IP gewoon niet opgeslagen). start.ts weigert te starten zonder geldige pepper.
+ */
+export const auditIpPepperGeldig = (): boolean => String(process.env.AUDIT_IP_PEPPER || '').length >= 32;
+let pepperGemeld = false;
+/** IP nooit leesbaar opslaan: HMAC-SHA256 met AUDIT_IP_PEPPER. */
 export function ipHash(ip: string | undefined | null): string | null {
   const v = String(ip || '').trim();
   if (!v) return null;
-  const peper = process.env.AUDIT_IP_PEPPER || process.env.RECOVERY_CODE_PEPPER || '';
-  return createHash('sha256').update(`audit-ip\u0000${peper}\u0000${v}`).digest('hex').slice(0, 32);
+  if (!auditIpPepperGeldig()) {
+    if (!pepperGemeld) { pepperGemeld = true; console.error('[audit] AUDIT_IP_PEPPER ontbreekt of is te kort: IP-adressen worden niet gelogd (deploy/geheimen-aanvullen.sh)'); }
+    return null;
+  }
+  return createHmac('sha256', String(process.env.AUDIT_IP_PEPPER)).update(`audit-ip\u0000${v}`).digest('hex').slice(0, 32);
 }
 
 /** Grof apparaatlabel uit de user-agent (browser + systeem), zonder versies of unieke kenmerken. */

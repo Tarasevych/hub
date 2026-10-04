@@ -41,12 +41,15 @@ export async function main() {
     recordIds.push(beheerder, gewoon);
     const rolId = randomUUID(); recordIds.push(rolId);
     await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('admin_role_assignments_v1',$1,$2)", [rolId, { tenantKey: 'global', userId: beheerder, role: 'security_admin', active: true }]);
+    // Audit-fix 4: alleen accounts in app.audit_beheerders (door de app niet te wijzigen; hier via de migratierol).
+    const nietGeregistreerd = await code(() => auditVerwijderen(beheerder, a, Date.now() + 1000, 'test'));
+    await getPool('migratie').query('INSERT INTO app.audit_beheerders (user_id, notitie) VALUES ($1, $2), ($3, $2) ON CONFLICT DO NOTHING', [beheerder, 'eenheidstest', gewoon]);
     const geweigerd = await code(() => auditVerwijderen(gewoon, a, Date.now() + 1000, 'test'));
     const aantal = await auditVerwijderen(beheerder, a, Date.now() + 1000, 'eenheidstest');
     const na = await auditLijst({ ownerId: a });
     const controle = await auditControle(a);
     check('audit: verwijderen alleen voor super/security_admin, logt zichzelf, keten blijft verklaarbaar geldig',
-      (geweigerd === '42501' || geweigerd.includes('AUDIT_VERWIJDEREN_GEWEIGERD')) && aantal === 3 && na.items.length === 1 && na.items[0].action === 'audit.verwijderd' && na.items[0].actorId === beheerder && controle.geldig,
+      nietGeregistreerd === '42501' && (geweigerd === '42501' || geweigerd.includes('AUDIT_VERWIJDEREN_GEWEIGERD')) && aantal === 3 && na.items.length === 1 && na.items[0].action === 'audit.verwijderd' && na.items[0].actorId === beheerder && controle.geldig,
       `${geweigerd} ${aantal} ${JSON.stringify(controle)}`);
     await auditToevoegen({ ownerId: a, action: 'eenheid.na', result: 'success' });
     check('audit: na verwijderen loopt de keten door (seq 5, geldig)', (await auditLijst({ ownerId: a, limit: 1 })).items[0].seq === 5 && (await auditControle(a)).geldig);

@@ -9,6 +9,8 @@ Type=oneshot
 User=mijnruimte
 Group=mijnruimte-backup
 SupplementaryGroups=mijnruimte
+# Audit-fix 4: alleen de runtime-omgeving. migratie.env (DATABASE_URL legacy + DATABASE_URL_MIGRATIE) wordt hier
+# bewust NIET geladen; alleen de migratiestap van installeer-app.sh leest die.
 EnvironmentFile=/etc/mijn-ruimte/geheimen.env
 Environment=UPLOADS_DIR=/srv/data/uploads
 Environment=BACKUP_DIR=/srv/backups/mijn-ruimte
