@@ -14,7 +14,10 @@ const pools = new Map<string, pg.Pool>();
 
 export function poolUrl(soort: PoolSoort = 'systeem'): string {
   const eigen = soort === 'app' ? process.env.DATABASE_URL_APP : soort === 'migratie' ? process.env.DATABASE_URL_MIGRATIE : process.env.DATABASE_URL_SYSTEM;
-  return String(eigen || process.env.DATABASE_URL || '');
+  // Audit-fix 4: na env-splitsen ontbreekt DATABASE_URL in de app-omgeving; app/systeem vallen dan op elkaar terug
+  // (nooit op een migratie-URL). De migratiestap krijgt DATABASE_URL(_MIGRATIE) uit /etc/mijn-ruimte/migratie.env.
+  if (soort === 'migratie') return String(eigen || process.env.DATABASE_URL || '');
+  return String(eigen || process.env.DATABASE_URL || process.env.DATABASE_URL_SYSTEM || '');
 }
 
 /** true als verzoeken van gebruikers via een eigen (RLS-)rol lopen. */

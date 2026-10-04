@@ -37,6 +37,9 @@ for naam in TOTP_ENCRYPTION_KEY_V1 GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1 OWNER_VA
 done
 # Pepper voor herstelcodes: 48 bytes → 64 tekens (minimaal 32 vereist).
 if heeft_waarde RECOVERY_CODE_PEPPER; then echo "[geheimen] RECOVERY_CODE_PEPPER bestaat al (ongewijzigd)"; else toevoegen RECOVERY_CODE_PEPPER "$(openssl rand -base64 48 | tr -d '\n')"; fi
+# Audit-fix 10: eigen pepper voor IP-hashes in app.audit (verplicht; de app start niet zonder). Los van
+# RECOVERY_CODE_PEPPER. Nieuw aanmaken = nieuwe IP-hashes zijn niet meer te koppelen aan oude (dat is prima).
+if heeft_waarde AUDIT_IP_PEPPER; then echo "[geheimen] AUDIT_IP_PEPPER bestaat al (ongewijzigd)"; else toevoegen AUDIT_IP_PEPPER "$(openssl rand -base64 48 | tr -d '\n')"; fi
 
 if [ -n "$EIGENAAR" ]; then
   if heeft_waarde OWNER_EMAIL; then

@@ -1,7 +1,10 @@
 -- db-rollen.sql — drie databaserollen voor Mijn Ruimte (beveiliging fase 2). Uitvoeren als postgres
--- (superuser) in de app-database, via deploy/db-rollen-instellen.sh (dat de wachtwoorden op de VM maakt
--- en via stdin als psql-variabelen meegeeft; ze staan nooit in argumenten of logs).
--- Variabelen: legacy_rol (de rol uit DATABASE_URL, meestal mijnruimte), migrator_ww, app_ww, systeem_ww.
+-- (superuser) in de app-database, via deploy/db-rollen-instellen.sh (dat de wachtwoorden op de VM maakt).
+-- Audit-fix 10: het script berekent zelf de SCRAM-SHA-256-verifier (deploy/scram-verifier.mjs) en geeft
+-- alleen die via stdin als psql-variabele mee; het leesbare wachtwoord bereikt Postgres nooit (ook niet de
+-- serverlogs of pg_stat_statements).
+-- Variabelen: legacy_rol (de rol uit DATABASE_URL, meestal mijnruimte), migrator_scram, app_scram, systeem_scram
+-- (elk 'SCRAM-SHA-256$4096:…').
 -- Idempotent: opnieuw uitvoeren is veilig (zelfde wachtwoorden blijven gelden als het script ze hergebruikt).
 --
 --   mijnruimte_migrator  eigenaar van schema app (migraties, installeer-app.sh)
@@ -17,9 +20,12 @@ SELECT format('CREATE ROLE %I LOGIN', r)
 ALTER ROLE mijnruimte_migrator LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
 ALTER ROLE mijnruimte_app      LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
 ALTER ROLE mijnruimte_system   LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION BYPASSRLS NOINHERIT;
-SELECT format('ALTER ROLE mijnruimte_migrator PASSWORD %L', :'migrator_ww') \gexec
-SELECT format('ALTER ROLE mijnruimte_app PASSWORD %L', :'app_ww') \gexec
-SELECT format('ALTER ROLE mijnruimte_system PASSWORD %L', :'systeem_ww') \gexec
+-- Alleen een kant-en-klare verifier wordt aanvaard (nooit een leesbaar wachtwoord).
+SELECT 'DO $$ BEGIN RAISE EXCEPTION ''db-rollen.sql: verwacht SCRAM-SHA-256-verifiers (migrator_scram/app_scram/systeem_scram)''; END $$'
+ WHERE NOT (:'migrator_scram' LIKE 'SCRAM-SHA-256$%' AND :'app_scram' LIKE 'SCRAM-SHA-256$%' AND :'systeem_scram' LIKE 'SCRAM-SHA-256$%') \gexec
+SELECT format('ALTER ROLE mijnruimte_migrator PASSWORD %L', :'migrator_scram') \gexec
+SELECT format('ALTER ROLE mijnruimte_app PASSWORD %L', :'app_scram') \gexec
+SELECT format('ALTER ROLE mijnruimte_system PASSWORD %L', :'systeem_scram') \gexec
 
 SELECT format('GRANT CONNECT, TEMPORARY ON DATABASE %I TO mijnruimte_migrator, mijnruimte_app, mijnruimte_system', current_database()) \gexec
 SELECT format('GRANT CREATE ON DATABASE %I TO mijnruimte_migrator', current_database()) \gexec

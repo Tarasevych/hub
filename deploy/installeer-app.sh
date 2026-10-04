@@ -28,6 +28,8 @@ RELEASES="$APP_ROOT/releases"
 HUIDIG="$APP_ROOT/current"
 VORIGE_BESTAND="$APP_ROOT/VORIGE"
 GEHEIMEN=/etc/mijn-ruimte/geheimen.env
+# Audit-fix 4: migrator- en legacy-URL (DATABASE_URL_MIGRATIE, DATABASE_URL) alleen voor de migratiestap.
+MIGRATIE_ENV=/etc/mijn-ruimte/migratie.env
 DIENST=mijn-ruimte.service
 GEBRUIKER=mijnruimte
 BACKUP_GROEP=mijnruimte-backup
@@ -176,7 +178,7 @@ migreren() {
   fi
   melding "migraties uitvoeren…"
   systemd-run --quiet --wait --pipe --collect \
-    -p User="$GEBRUIKER" -p Group="$GEBRUIKER" -p EnvironmentFile="$GEHEIMEN" -p WorkingDirectory="$doel" \
+    -p User="$GEBRUIKER" -p Group="$GEBRUIKER" -p EnvironmentFile="$GEHEIMEN" -p EnvironmentFile=-"$MIGRATIE_ENV" -p WorkingDirectory="$doel" \
     -p NoNewPrivileges=yes -p ProtectSystem=strict -p ProtectHome=yes -p PrivateTmp=yes \
     "$NODE" "$doel/dist-server/migrate.mjs" || fout "migratie mislukt; de actieve release is ongewijzigd"
 }
@@ -223,6 +225,8 @@ installeren() {
   local bron="${1:?bronmap ontbreekt}" datum doel
   vereis_root; vereis_node; vergrendel
   [ -s "$GEHEIMEN" ] || fout "$GEHEIMEN ontbreekt (zie ENV-VARS.md)"
+  # Audit-fix 10: de app start niet zonder eigen IP-pepper; liever hier stoppen dan na het omzetten.
+  grep -Eq '^[[:space:]]*AUDIT_IP_PEPPER=.{32,}' "$GEHEIMEN" || fout "AUDIT_IP_PEPPER ontbreekt in $GEHEIMEN: eerst deploy/geheimen-aanvullen.sh (zie deploy/RUNBOOK-AUDIT-FIXES.md)"
   id "$GEBRUIKER" >/dev/null 2>&1 || fout "gebruiker $GEBRUIKER ontbreekt; eerst: $0 inrichten $bron"
   bron="$(readlink -f "$bron")"
   datum="$(date +%Y%m%d-%H%M%S)"

@@ -10,6 +10,8 @@ Wants=network-online.target
 Type=oneshot
 User=mijnruimte
 Group=mijnruimte
+# Audit-fix 4: alleen de runtime-omgeving. migratie.env (DATABASE_URL legacy + DATABASE_URL_MIGRATIE) wordt hier
+# bewust NIET geladen; alleen de migratiestap van installeer-app.sh leest die.
 EnvironmentFile=/etc/mijn-ruimte/geheimen.env
 Environment=NODE_ENV=production
 Environment=UPLOADS_DIR=/srv/data/uploads
