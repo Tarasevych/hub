@@ -83,9 +83,13 @@ export const invites = {
     return { code: row.code, resourceType: row.resource_type, context: row.context };
   },
 
-  async revoke(input: { code: string; actor: Actor }): Promise<{ ok: true }> {
+  /**
+   * Intrekken door de maker, of (beheerdeAan) door wie de route zelf als beheerder van de bron heeft
+   * gecontroleerd. Audit-fix 10: ook anonieme links (vroeger alleen auth_mode 'required').
+   */
+  async revoke(input: { code: string; actor: Actor; beheerder?: boolean }): Promise<{ ok: true }> {
     const row = await load(input.code);
-    if (row.auth_mode !== 'required' || !input.actor?.userId || row.created_by !== input.actor.userId) throw new InviteError('invite_not_revocable');
+    if (!input.actor?.userId || (row.created_by !== input.actor.userId && input.beheerder !== true)) throw new InviteError('invite_not_revocable');
     await getPool().query('UPDATE app.invites SET revoked_at = now() WHERE code = $1 AND revoked_at IS NULL', [row.code]);
     return { ok: true };
   },

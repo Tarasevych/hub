@@ -14,8 +14,8 @@ export type VerzoekContext = {
   /** Verzoekgegevens voor de audit (ip wordt alleen gehasht opgeslagen). */
   ip?: string;
   ua?: string;
-  /** Lui geladen: ruimtes (workspaces) waarvan userId eigenaar of actief lid is (alleen voor audit). */
-  werkruimtes?: Promise<Set<string>>;
+  /** Lui geladen: ruimtes (workspaces) waarvan userId eigenaar of actief lid is, met de rol daarin (alleen voor audit). */
+  werkruimtes?: Promise<Map<string, string>>;
   /**
    * Audit-fix 8: is er in dit verzoek een échte referentie gecontroleerd (sessie via zetGebruiker /
    * sessieGeverifieerd, of een API-token)? Gedeeld object, zodat het ook vanuit alsSysteem() doorwerkt.

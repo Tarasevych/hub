@@ -84,16 +84,20 @@ export async function main() {
     const vorigeOwner = process.env.OWNER_EMAIL;
     const echt = randomUUID(), oud = randomUUID();
     process.env.OWNER_EMAIL = `Echt-${echt}@Example.test`;
-    await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('users',$1,$2),('users',$3,$4)", [echt, { email: `echt-${echt}@example.test`, role: 'owner', status: 'approved' }, oud, { email: `oud-${oud}@example.test`, role: 'owner', status: 'approved' }]);
+    await verouderdeEigenarenIntrekken(); // eigenaars uit eerdere tests (ander OWNER_EMAIL) opruimen
+    await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('users',$1,$2),('users',$3,$4)", [oud, { email: `oud-${oud}@example.test`, role: 'owner', status: 'approved' }, echt, { email: `echt-${echt}@example.test`, role: 'member', status: 'approved' }]);
     recordIds.push(echt, oud);
+    // Audit-fix 10: nooit twee eigenaar-accounts (unieke index records_een_eigenaar).
+    const tweede = await code(() => sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner\"') WHERE tbl='users' AND id=$1", [echt]));
     const weg = await verouderdeEigenarenIntrekken();
+    await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner\"') WHERE tbl='users' AND id=$1", [echt]);
     const rollen = (await sys.query("SELECT id, data->>'role' AS r FROM app.records WHERE tbl='users' AND id = ANY($1)", [[echt, oud]])).rows;
     const rolVan = (id: string) => rollen.find((x) => x.id === id)?.r;
     const auditOud = await auditLijst({ ownerId: oud, action: 'owner.role.demoted-stale' });
     process.env.OWNER_EMAIL = ''; const niets = await verouderdeEigenarenIntrekken();
     if (vorigeOwner === undefined) delete process.env.OWNER_EMAIL; else process.env.OWNER_EMAIL = vorigeOwner;
-    check('opstarten: verouderde eigenaar (ander adres) → member + audit; echte eigenaar (hoofdletterongevoelig) blijft; zonder OWNER_EMAIL niets',
-      weg.includes(oud) && !weg.includes(echt) && rolVan(oud) === 'member' && rolVan(echt) === 'owner' && auditOud.items.length === 1 && niets.length === 0, JSON.stringify(rollen));
+    check('opstarten: tweede eigenaar geweigerd (23505); verouderde eigenaar (ander adres) → member + audit; echte eigenaar (hoofdletterongevoelig) blijft; zonder OWNER_EMAIL niets',
+      tweede === '23505' && weg.includes(oud) && !weg.includes(echt) && rolVan(oud) === 'member' && rolVan(echt) === 'owner' && auditOud.items.length === 1 && niets.length === 0, JSON.stringify(rollen));
     {
       const vorig = process.env.OWNER_EMAIL; process.env.OWNER_EMAIL = 'baas@example.test';
       const r = [heeftApiRecht({ role: 'owner', email: 'Baas@Example.test' }), heeftApiRecht({ role: 'owner', email: 'ander@example.test' }), heeftApiRecht({ role: 'member', email: 'x@example.test' }), heeftApiRecht({ role: 'member', email: 'x@example.test', entitlements: ['api-platform'] }), heeftApiRecht(null)];

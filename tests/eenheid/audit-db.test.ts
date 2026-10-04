@@ -43,7 +43,10 @@ export async function main() {
     check('25 parallelle toevoegingen: seq 1..25 zonder dubbelen, keten geldig', seqs.length === 25 && seqs.every((s, i) => s === i + 1) && (await auditControle(ander)).geldig, seqs.join(','));
 
     // 4) Wie mag verwijderen bepaalt alleen postgres/de migrator.
-    await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('users',$1,$2),('users',$3,$4)", [beheerder, { email: `b-${beheerder}@example.test`, role: 'owner', status: 'approved' }, geblokkeerd, { email: `x-${geblokkeerd}@example.test`, role: 'owner', status: 'blocked' }]);
+    // security_admin (er mag maar één eigenaar-account bestaan: unieke index records_een_eigenaar).
+    const r1 = randomUUID(), r2 = randomUUID(); ids.push(r1, r2);
+    await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('users',$1,$2),('users',$3,$4)", [beheerder, { email: `b-${beheerder}@example.test`, role: 'member', status: 'approved' }, geblokkeerd, { email: `x-${geblokkeerd}@example.test`, role: 'member', status: 'blocked' }]);
+    await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('admin_role_assignments_v1',$1,$2),('admin_role_assignments_v1',$3,$4)", [r1, { tenantKey: 'global', userId: beheerder, role: 'security_admin', active: true }, r2, { tenantKey: 'global', userId: geblokkeerd, role: 'security_admin', active: true }]);
     const sysBeh = await code(() => sys.query('INSERT INTO app.audit_beheerders (user_id) VALUES ($1)', [beheerder]));
     const appBeh = await code(() => app.query('INSERT INTO app.audit_beheerders (user_id) VALUES ($1)', [beheerder]));
     check('systeem- en app-rol kunnen zichzelf geen auditbeheerder maken', sysBeh === '42501' && appBeh === '42501', `${sysBeh}/${appBeh}`);
@@ -53,7 +56,7 @@ export async function main() {
     const zonderReden = await code(() => auditVerwijderen(beheerder, eigenaar, Date.now() + 1000, '  '));
     const aantal = await auditVerwijderen(beheerder, eigenaar, Date.now() + 1000, 'eenheidstest');
     const sysKeten = await sys.query("SELECT 1 FROM app.audit WHERE owner_id IS NULL AND action = 'audit.verwijderd' AND details->>'ownerId' = $1", [eigenaar]);
-    check('verwijderen: zonder registratie geweigerd, geblokkeerde beheerder geweigerd, reden verplicht; geregistreerde eigenaar mag (ook in systeemketen gelogd)',
+    check('verwijderen: zonder registratie geweigerd, geblokkeerde beheerder geweigerd, reden verplicht; geregistreerde security_admin mag (ook in systeemketen gelogd)',
       zonder === '42501' && blok === '42501' && zonderReden === '22023' && aantal >= 2 && sysKeten.rowCount === 1, `${zonder}/${blok}/${zonderReden}/${aantal}/${sysKeten.rowCount}`);
 
     // 5) Audit-fix 10: IP-hash alleen met eigen pepper (≥ 32 tekens), geen terugval op RECOVERY_CODE_PEPPER.
