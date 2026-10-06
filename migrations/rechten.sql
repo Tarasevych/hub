@@ -12,6 +12,9 @@ BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'mijnruimte_app') THEN
     GRANT USAGE ON SCHEMA app TO mijnruimte_app;
     GRANT SELECT, INSERT, UPDATE, DELETE ON app.records TO mijnruimte_app;
+    -- 0009: Local Machine Connector. Onder RLS (policy op user_id); het WebSocket-kanaal en het koppelen van een
+    -- agent lopen via de systeemrol, de eigenaar-UI via deze rol.
+    IF to_regclass('app.agents') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.agents, app.agent_pairing_codes, app.agent_commands TO mijnruimte_app; END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- Audit-fix 9: de users-trigger telt (audit-modus) via deze functie; de app kan rls_audit zelf niet schrijven.

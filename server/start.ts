@@ -16,6 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DASHBOARD_HOST, SERVICE_HOSTS } from '../backend/deployment-identity';
 import { handler } from '../backend/index';
+import { attachAgentGateway } from '../backend/connectors-gateway';
 import { verouderdeEigenarenIntrekken } from '../backend/eigenaar-opschonen';
 import { closePool, getPool } from './platform/pg';
 import { ownerEmail, rateLimit } from './platform/beveiliging';
@@ -245,6 +246,8 @@ const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
   // Audit-fix 7: stap-op (TOTP-step-up) zit in dezelfde strikte MFA-bucket als totp/recovery.
   [/^\/api\/owner\/access\/((totp|recovery)\/|stap-op$)/, 'mfa', 10, true],
   [/^\/api\/auth\/google\/start$/, 'google-start', 10, true],
+  // Agent koppelen: onbeveiligde route met een code als geheim. Strikt per IP (cf-connecting-ip), faalt dicht.
+  [/^\/api\/owner\/agents\/pair$/, 'agent-koppelen', 10, true],
   [/^\/api\/owner\/identity\/transactions\/(create|attach)$/, 'login-start', 20, true],
   [/^\/api\/(auth|owner\/auth|ecosystem\/auth|owner\/identity|service-handoff|ecosystem\/handoff|owner\/session\/handoff|share\/join)(\/|$)/, 'aanmelden', 120, true],
 ];
@@ -340,6 +343,7 @@ if (isMain) {
   // Audit-fix 10: zonder eigen IP-pepper niet starten (vroeger stil terugvallen op RECOVERY_CODE_PEPPER).
   if (!auditIpPepperGeldig()) { console.error('AUDIT_IP_PEPPER ontbreekt of is korter dan 32 tekens: voer deploy/geheimen-aanvullen.sh uit (zie ENV-VARS.md)'); process.exit(1); }
   const server = createServer();
+  attachAgentGateway(server, APP_HOSTS); // Local Machine Connector: WSS /agent/ws (agent belt zelf naar buiten)
   server.requestTimeout = 120_000;
   server.headersTimeout = 30_000;
   server.keepAliveTimeout = 65_000;
