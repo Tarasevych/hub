@@ -1,0 +1,92 @@
+# Конектор Mijn Ruimte для Claude (claude.ai → Customize → Connectors)
+
+Дозволяє підключити **свій акаунт Claude** до сайту: Claude (з хмари Anthropic) отримує інструменти для **ваших власних
+пристроїв** (ПК, ВМ з агентом) і вашого GitHub-токена. Кожен зареєстрований користувач сайту входить своїм акаунтом
+і дає доступ лише до своїх пристроїв.
+
+## Адреса конектора
+
+```
+https://mcp.tarasevych.com/mcp
+```
+
+Сервер MCP: Streamable HTTP (JSON-відповіді). Автентифікація: **OAuth 2.x + PKCE (S256) + динамічна реєстрація клієнта**.
+Статичні ключі в «Request headers» не потрібні (у Claude це бета для обмеженого кола організацій).
+
+## Як додати в Claude
+
+1. Claude → **Customize → Connectors → Add custom connector**.
+2. **Name**: `Mijn Ruimte` (будь-яка). **MCP server URL**: адреса вище. Натисніть **Continue**.
+3. **Authentication**: **Sign in now**. **OAuth client**: **Register automatically** (DCR). Request headers лишіть порожніми. **Add**.
+4. Claude відкриє сайт: увійдіть (потрібне право `api-platform`), перегляньте запит і натисніть **Дозволити**.
+5. У чаті: **+ → Connectors** → увімкніть конектор і напишіть, наприклад: «покажи мої пристрої».
+
+Керування на сайті: `mcp.tarasevych.com` → **Агенти** → «Надані доступи» (список і відкликання).
+
+## Інструменти
+
+| Інструмент | Тип (hint для Claude) | Що робить |
+|---|---|---|
+| `machine_list` | лише читання | Ваші пристрої та їхній статус |
+| `machine_info` | лише читання | ОС, дозволені папки й команди агента |
+| `machine_list_dir` | лише читання | Вміст папки (тільки всередині дозволених папок) |
+| `machine_read_file` | лише читання | Текстовий файл до 2 МБ |
+| `machine_write_file` | запис (destructive) | Записати файл. **Потребує вашого «Дозволити» на сайті** |
+| `machine_exec` | виконання (destructive) | Команда зі списку агента, без shell. **Потребує підтвердження** |
+| `github_get` | лише читання | GET до GitHub API з вашим PAT зі сховища (з'являється, лише якщо PAT є) |
+
+У налаштуваннях конектора в Claude (Tool permissions) запис і виконання можна заблокувати або вимагати підтвердження окремо від читання.
+
+## Як це працює (потік)
+
+1. Claude викликає `POST /mcp` без токена → **401** із `WWW-Authenticate: Bearer realm="mcp", resource_metadata="…/.well-known/oauth-protected-resource/mcp"`.
+2. Claude читає метадані (RFC 9728 → RFC 8414), реєструє клієнта (`POST /oauth2/register`; дозволено лише callback Claude
+   `https://claude.ai/api/mcp/auth_callback` та loopback `/callback` для Claude Code).
+3. Браузер → `GET /oauth2/authorize` → редирект на сайт `…/agents?consent=<id>` → ви входите й натискаєте «Дозволити».
+4. Сайт видає **одноразовий код** (діє 2 хв, прив'язаний до `code_challenge`) → редирект у Claude.
+5. Claude обмінює код на токени: `POST /oauth2/token` (`application/x-www-form-urlencoded`, `code_verifier`).
+   Access-токен 1 година, refresh-токен 30 днів із **ротацією** і виявленням повторного використання (краде́ний токен → вся грант відкликається).
+6. Усі виклики `POST /mcp` несуть `Authorization: Bearer …`; токен прив'язаний до вашого акаунта.
+
+## Адреси (зовнішні → внутрішні)
+
+| Зовнішня адреса | Внутрішній маршрут | Куди йде в тунелі |
+|---|---|---|
+| `POST /mcp` | `/api/mcp-connector/rpc` | основний застосунок :8080 |
+| `/.well-known/oauth-protected-resource/mcp` | `…/prm` | :8080 (окреме правило **вище** за міст) |
+| `/.well-known/oauth-authorization-server/oauth2` | `…/asm` | :8080 (окреме правило **вище** за міст) |
+| `POST /oauth2/register`, `GET /oauth2/authorize`, `POST /oauth2/token`, `POST /oauth2/revoke` | `…/register`, `…/authorize`, `…/token`, `…/revoke` | :8080 (`/oauth2` ≠ `/oauth`, тому міст не перехоплює) |
+
+`/oauth/*`, `/Grok`, `/claude`, `/health` і решта `/.well-known/*` залишаються за мостом (:8091, окремий read-only міст для Grok).
+
+Правило тунелю (має стояти **перед** правилом моста для `mcp.`; перевірте `cloudflared tunnel ingress rule <url>`):
+
+```yaml
+  - hostname: mcp.tarasevych.com
+    path: ^/\.well-known/(oauth-protected-resource/mcp|oauth-authorization-server/oauth2)$
+    service: http://127.0.0.1:8080
+```
+
+## Безпека
+
+- **Ізоляція користувачів:** `userId` береться лише з токена; аргументи моделі його не змінюють. Тест `mcp-connector.test.ts` перевіряє, що A не бачить пристроїв B.
+- **Одноразові коди, PKCE S256 обов'язковий, ротація refresh, відкликання** (UI + `POST /oauth2/revoke`, RFC 7009). Токени в БД лише як sha256.
+- **Тільки Claude:** динамічна реєстрація приймає лише callback Claude / loopback; чужі `redirect_uri` відхиляються. Невідомий `client_id` або `redirect_uri` ніколи не призводять до редиректу.
+- **Prompt injection:** результати інструментів із пристрою позначені як недовірені дані; у `instructions` сервера сказано не виконувати команд із вмісту файлів.
+  Запис і виконання завжди підтверджує користувач на сайті.
+- **Ліміти:** 120 викликів/хв на токен, 20 реєстрацій/хв і 120 обмінів токенів/хв на IP, не більше 10 активних доступів на користувача, не більше 20 запитів на підтвердження одночасно.
+- **CSRF/Origin:** для цих маршрутів Origin не перевіряється (автентифікація — Bearer/PKCE, не cookie); решта API залишається під CSRF-перевіркою.
+
+## Cloudflare: перевірте, що нічого не блокує Anthropic
+
+Запити йдуть із `160.79.104.0/21` (не з браузера). У панелі Cloudflare для `mcp.tarasevych.com`: вимкніть Bot Fight Mode / Browser Integrity Check
+для шляхів `/mcp`, `/oauth2/*`, `/.well-known/*`, або додайте правило Skip для діапазону Anthropic; переконайтеся, що немає WAF-викликів (challenge).
+Симптом: «Couldn't reach the MCP server», а в журналі застосунку немає жодного запиту.
+
+## Діагностика
+
+- **Couldn't reach the MCP server** → тунель/WAF (див. вище); `curl -i -X POST https://mcp.tarasevych.com/mcp` має дати `401` із `WWW-Authenticate`.
+- **Authorization failed** → `curl https://mcp.tarasevych.com/.well-known/oauth-authorization-server/oauth2` має віддати JSON із `registration_endpoint`.
+- **Після «Дозволити» нічого не відбувається** → журнал `journalctl -u mijn-ruimte -n 50`; код живе 2 хв.
+- **Інструментів немає** → у вас немає підключеного агента (`machine_*`) і PAT GitHub у сховищі.
+- Усе стерти: сайт → Агенти → «Надані доступи» → Відкликати, і в Claude видалити конектор.

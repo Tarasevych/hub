@@ -248,9 +248,32 @@ const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
   [/^\/api\/auth\/google\/start$/, 'google-start', 10, true],
   // Agent koppelen: onbeveiligde route met een code als geheim. Strikt per IP (cf-connecting-ip), faalt dicht.
   [/^\/api\/owner\/agents\/pair$/, 'agent-koppelen', 10, true],
+  // MCP-connector: dynamische registratie en tokenuitgifte zijn publiek; begrens per IP (alle Claude-verkeer deelt IP's van Anthropic).
+  [/^\/api\/mcp-connector\/register$/, 'mcp-register', 20, true],
+  [/^\/api\/mcp-connector\/(token|revoke)$/, 'mcp-token', 120, true],
+  [/^\/api\/mcp-connector\/authorize$/, 'mcp-authorize', 60, true],
   [/^\/api\/owner\/identity\/transactions\/(create|attach)$/, 'login-start', 20, true],
   [/^\/api\/(auth|owner\/auth|ecosystem\/auth|owner\/identity|service-handoff|ecosystem\/handoff|owner\/session\/handoff|share\/join)(\/|$)/, 'aanmelden', 120, true],
 ];
+
+// URL's die Claude voor de connector gebruikt (host mcp.*) -> interne API-route. Alles wat hier niet staat, blijft zoals het was
+// (de MCP-brug op poort 8091 houdt /Grok, /claude, /oauth/*, /health en de eigen /.well-known/* via de tunnel).
+const CONNECTOR_PADEN: Record<string, string> = {
+  '/mcp': '/api/mcp-connector/rpc',
+  '/.well-known/oauth-protected-resource/mcp': '/api/mcp-connector/prm',
+  '/.well-known/oauth-authorization-server/oauth2': '/api/mcp-connector/asm',
+  '/oauth2/register': '/api/mcp-connector/register',
+  '/oauth2/authorize': '/api/mcp-connector/authorize',
+  '/oauth2/token': '/api/mcp-connector/token',
+  '/oauth2/revoke': '/api/mcp-connector/revoke',
+};
+function connectorPad(url: URL): URL | null {
+  const intern = CONNECTOR_PADEN[url.pathname];
+  if (!intern) return null;
+  const naar = new URL(url.toString());
+  naar.pathname = intern;
+  return naar;
+}
 
 async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
   const algemeen = geheugenLimiet(`api:${ip}`, API_LIMIT_PER_MIN, 60_000);
@@ -294,19 +317,24 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     const response = await handler(buildEvent(req, url, '', clientIp(req)) as never) as RouterResponse;
     return writeRouterResponse(res, { ...response, headers: { ...response.headers, 'Content-Security-Policy': APP_CSP }, body: method === 'HEAD' ? '' : response.body });
   }
-  if (url.pathname.startsWith('/api/')) {
+  // MCP-connector voor Claude: nette URL's op mcp.* worden onder /api/mcp-connector/* gerouteerd (zie connectorPad).
+  const connector = host === SERVICE_HOSTS.mcp ? connectorPad(url) : null;
+  const apiUrl = connector ?? url;
+  if (apiUrl.pathname.startsWith('/api/')) {
     // Audit-fix 3: niet-canonieke API-paden (//, afsluitende /, punt-segmenten) → 404 vóór CSRF/rate limit/routering.
-    if (!isCanoniekPad(url.pathname)) return sendJson(res, 404, { error: 'Not found', reasonCode: 'PATH_NOT_CANONICAL' });
+    if (!isCanoniekPad(apiUrl.pathname)) return sendJson(res, 404, { error: 'Not found', reasonCode: 'PATH_NOT_CANONICAL' });
     const ip = clientIp(req);
     const method = String(req.method || 'GET').toUpperCase();
-    const csrf = csrfAfwijzing(method, req.headers);
+    // De connector-eindpunten gebruiken geen cookies maar OAuth/PKCE of een Bearer-token. Een Origin-controle zou
+    // verzoeken van Anthropic (server-naar-server) onterecht weigeren; CSRF is hier niet van toepassing.
+    const csrf = connector ? '' : csrfAfwijzing(method, req.headers);
     if (csrf) return sendJson(res, 403, { error: csrf, reasonCode: csrf });
-    const wacht = await rateLimitAfwijzing(method, url.pathname, ip);
+    const wacht = await rateLimitAfwijzing(method, apiUrl.pathname, ip);
     if (wacht > 0) return send(res, 429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(wacht) }, JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: wacht }));
     let body = '';
     try { body = req.method === 'GET' || req.method === 'HEAD' ? '' : await readBody(req); }
     catch (err) { return sendJson(res, (err as { status?: number }).status || 400, { error: 'BODY_TOO_LARGE' }); }
-    const response = await handler(buildEvent(req, url, body, ip) as never);
+    const response = await handler(buildEvent(req, apiUrl, body, ip) as never);
     return writeRouterResponse(res, response as RouterResponse);
   }
   return serveStatic(req, res, url, DIST_DIR, true, APP_CSP);

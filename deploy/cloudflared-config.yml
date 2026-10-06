@@ -46,6 +46,11 @@ ingress:
   #   - de MCP-brug (alleen-lezen, poort 8091): de deuren /grok /claude /chatgpt /gemini /copilot, /oauth/*,
   #     /.well-known/* en /health. De regels worden van boven naar beneden gematcht, dus deze staat EERST.
   #   - al het andere (de schermen /overview /agents ..., /api/*, WSS /agent/ws voor agents): de hoofdapp op 8080.
+  # De MCP-connector voor Claude (backend/mcp-connector.ts) staat in de hoofdapp: /mcp en /oauth2/* vallen al buiten de
+  # brugregel hieronder; alleen deze twee discovery-paden zitten onder /.well-known en moeten VÓÓR de brugregel staan.
+  - hostname: mcp.tarasevych.com
+    path: ^/\.well-known/(oauth-protected-resource/mcp|oauth-authorization-server/oauth2)$
+    service: http://127.0.0.1:8080
   - hostname: mcp.tarasevych.com
     path: ^/((?i:grok|claude|chatgpt|gemini|copilot)|oauth|health|\.well-known)(/|$)
     service: http://127.0.0.1:8091

@@ -1,0 +1,157 @@
+// MCP-connector voor Claude: databasetoegang voor app.mcp_oauth_clients, app.mcp_oauth_auth en app.mcp_oauth_tokens (0010).
+// Alles via de systeemrol: de publieke OAuth-eindpunten hebben geen sessie. Elke query die bij een gebruiker hoort
+// filtert zelf op user_id; RLS (0010) is de tweede laag.
+import { getPool } from '../server/platform/pg';
+
+const q = (sql: string, params: unknown[] = []) => getPool('systeem').query(sql, params);
+
+export const LIMITS = {
+  maxClients: 500,
+  maxActiveGrantsPerUser: 10,
+  authRequestTtlMin: 10,
+  codeTtlSec: 120,
+  accessTtlSec: 3600,
+  refreshTtlDays: 30,
+};
+
+export interface TokenRow {
+  id: string; user_id: string; client_id: string; client_name: string; scope: string;
+  access_expires_at: Date; refresh_expires_at: Date; created_at: Date; last_used_at: Date | null; revoked_at: Date | null;
+}
+export interface AuthRow {
+  id: string; client_id: string; redirect_uri: string; code_challenge: string; state: string | null; scope: string;
+  resource: string | null; status: 'pending' | 'approved' | 'denied' | 'used'; expires_at: Date; user_id: string | null;
+  client_name?: string;
+}
+
+// ---- clients (DCR) ----
+
+export async function countClients(): Promise<number> {
+  return (await q('SELECT count(*)::int AS n FROM app.mcp_oauth_clients')).rows[0].n;
+}
+export async function insertClient(clientId: string, name: string, redirectUris: string[]): Promise<void> {
+  await q('INSERT INTO app.mcp_oauth_clients (client_id, client_name, redirect_uris) VALUES ($1, $2, $3)', [clientId, name, redirectUris]);
+}
+export async function getClient(clientId: string): Promise<{ client_id: string; client_name: string; redirect_uris: string[] } | null> {
+  const { rows } = await q('SELECT client_id, client_name, redirect_uris FROM app.mcp_oauth_clients WHERE client_id = $1', [clientId]);
+  return rows[0] ?? null;
+}
+/** Oude clients zonder tokens opruimen: DCR maakt bij elke nieuwe verbinding een client aan. */
+export async function purgeStale(): Promise<void> {
+  await q(`DELETE FROM app.mcp_oauth_auth WHERE expires_at < now() - interval '1 hour'`);
+  await q(`DELETE FROM app.mcp_oauth_clients c
+            WHERE c.created_at < now() - interval '1 day'
+              AND NOT EXISTS (SELECT 1 FROM app.mcp_oauth_tokens t WHERE t.client_id = c.client_id AND t.revoked_at IS NULL)`);
+}
+
+// ---- autorisatieverzoeken en codes ----
+
+export async function insertAuthRequest(a: {
+  id: string; clientId: string; redirectUri: string; codeChallenge: string; state: string | null; scope: string; resource: string | null;
+}): Promise<void> {
+  await q(
+    `INSERT INTO app.mcp_oauth_auth (id, client_id, redirect_uri, code_challenge, state, scope, resource, expires_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, now() + make_interval(mins => $8))`,
+    [a.id, a.clientId, a.redirectUri, a.codeChallenge, a.state, a.scope, a.resource, LIMITS.authRequestTtlMin]);
+}
+
+export async function getPendingAuth(id: string): Promise<AuthRow | null> {
+  const { rows } = await q(
+    `SELECT a.*, c.client_name FROM app.mcp_oauth_auth a JOIN app.mcp_oauth_clients c USING (client_id)
+      WHERE a.id = $1 AND a.status = 'pending' AND a.expires_at > now()`, [id]);
+  return rows[0] ?? null;
+}
+
+/** Atomair: een verzoek kan maar één keer worden goedgekeurd of geweigerd. */
+export async function decideAuth(id: string, userId: string, approve: boolean, codeHash: string | null): Promise<AuthRow | null> {
+  const { rows } = await q(
+    `UPDATE app.mcp_oauth_auth
+        SET status = $3, user_id = $2, decided_at = now(), code_hash = $4,
+            code_expires_at = CASE WHEN $4::text IS NULL THEN NULL ELSE now() + make_interval(secs => $5) END
+      WHERE id = $1 AND status = 'pending' AND expires_at > now() RETURNING *`,
+    [id, userId, approve ? 'approved' : 'denied', codeHash, LIMITS.codeTtlSec]);
+  return rows[0] ?? null;
+}
+
+/** Atomair: een code wordt hoogstens één keer ingewisseld, en alleen binnen de TTL. */
+export async function consumeCode(codeHash: string): Promise<(AuthRow & { client_name: string }) | null> {
+  const { rows } = await q(
+    `UPDATE app.mcp_oauth_auth a SET status = 'used'
+       FROM app.mcp_oauth_clients c
+      WHERE a.code_hash = $1 AND a.status = 'approved' AND a.code_expires_at > now() AND c.client_id = a.client_id
+      RETURNING a.*, c.client_name`, [codeHash]);
+  return rows[0] ?? null;
+}
+
+// ---- tokens ----
+
+export async function countActiveGrants(userId: string): Promise<number> {
+  return (await q(
+    `SELECT count(*)::int AS n FROM app.mcp_oauth_tokens WHERE user_id = $1 AND revoked_at IS NULL AND refresh_expires_at > now()`,
+    [userId])).rows[0].n;
+}
+
+export async function insertToken(t: {
+  userId: string; clientId: string; clientName: string; scope: string; accessHash: string; refreshHash: string;
+}): Promise<void> {
+  await q(
+    `INSERT INTO app.mcp_oauth_tokens
+       (user_id, client_id, client_name, scope, access_hash, refresh_hash, access_expires_at, refresh_expires_at)
+     VALUES ($1, $2, $3, $4, $5, $6, now() + make_interval(secs => $7), now() + make_interval(days => $8))`,
+    [t.userId, t.clientId, t.clientName, t.scope, t.accessHash, t.refreshHash, LIMITS.accessTtlSec, LIMITS.refreshTtlDays]);
+}
+
+/** Zoekt een actief toegangstoken (niet ingetrokken, niet verlopen) en noteert het gebruik. */
+export async function findByAccessHash(accessHash: string): Promise<TokenRow | null> {
+  const { rows } = await q(
+    `UPDATE app.mcp_oauth_tokens SET last_used_at = now()
+      WHERE access_hash = $1 AND revoked_at IS NULL AND access_expires_at > now() AND refresh_expires_at > now()
+      RETURNING id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at`,
+    [accessHash]);
+  return rows[0] ?? null;
+}
+
+/**
+ * Roteert het refresh-token in dezelfde rij (oud wordt prev_refresh_hash). Geeft null als het token onbekend,
+ * verlopen of ingetrokken is.
+ */
+export async function rotateRefresh(clientId: string, oldHash: string, newRefreshHash: string, newAccessHash: string) {
+  const { rows } = await q(
+    `UPDATE app.mcp_oauth_tokens
+        SET prev_refresh_hash = refresh_hash, refresh_hash = $3, access_hash = $4,
+            access_expires_at = now() + make_interval(secs => $5), refresh_expires_at = now() + make_interval(days => $6),
+            last_used_at = now()
+      WHERE refresh_hash = $2 AND client_id = $1 AND revoked_at IS NULL AND refresh_expires_at > now()
+      RETURNING id, user_id, scope`,
+    [clientId, oldHash, newRefreshHash, newAccessHash, LIMITS.accessTtlSec, LIMITS.refreshTtlDays]);
+  return rows[0] as { id: string; user_id: string; scope: string } | undefined ?? null;
+}
+
+/** Een al geroteerd refresh-token opnieuw gebruiken wijst op diefstal: de hele grant wordt ingetrokken. */
+export async function revokeIfReused(clientId: string, presentedHash: string): Promise<boolean> {
+  const r = await q(
+    `UPDATE app.mcp_oauth_tokens SET revoked_at = now()
+      WHERE prev_refresh_hash = $2 AND client_id = $1 AND revoked_at IS NULL`, [clientId, presentedHash]);
+  return (r.rowCount ?? 0) > 0;
+}
+
+/** RFC 7009: een token (access of refresh) van deze client intrekken. true = er is iets ingetrokken. */
+export async function revokeByToken(clientId: string, tokenHash: string): Promise<boolean> {
+  const r = await q(
+    `UPDATE app.mcp_oauth_tokens SET revoked_at = now()
+      WHERE client_id = $1 AND revoked_at IS NULL AND (access_hash = $2 OR refresh_hash = $2)`, [clientId, tokenHash]);
+  return (r.rowCount ?? 0) > 0;
+}
+
+export async function listGrants(userId: string): Promise<TokenRow[]> {
+  const { rows } = await q(
+    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at
+       FROM app.mcp_oauth_tokens WHERE user_id = $1 AND revoked_at IS NULL AND refresh_expires_at > now()
+      ORDER BY created_at DESC`, [userId]);
+  return rows;
+}
+
+export async function revokeGrant(userId: string, id: string): Promise<boolean> {
+  const r = await q(`UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL`, [id, userId]);
+  return (r.rowCount ?? 0) > 0;
+}
