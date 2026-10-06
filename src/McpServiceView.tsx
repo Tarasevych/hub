@@ -3,6 +3,7 @@ import { api, ApiError } from "./platform/client";
 import { ecosystemTabContext } from "./tab-context";
 import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalog";
 import AgentsPanel from "./AgentsPanel";
+import McpConnectorPanel from "./McpConnectorPanel";
 import "./mcp-estate.css";
 
 type Lang = "uk" | "nl";
@@ -461,6 +462,7 @@ export default function McpServiceView({ lang, tab }: Props) {
               {!row.revokedAt ? <button type="button" disabled={permsReady && !flags.tokens} onClick={() => void run("revoke", async () => { await api.post("/api/mcp/tokens/revoke", { ...ctx(), id: row.id }); await loadTokens(); })}>{t("Відкликати", "Intrekken")}</button> : null}
             </article>
           ))}
+          <McpConnectorPanel tr={t} />
           <AgentsPanel tr={t} service="mcp" />
         </>
       )}
