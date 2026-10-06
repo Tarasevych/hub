@@ -134,3 +134,7 @@ chown root:mijnruimte /etc/mijn-ruimte/geheimen.env && chmod 0640 /etc/mijn-ruim
 - Alle eigenaarssessies (revocation-epoch verhogen) en alle opgeslagen Google-/Microsoft-refresh tokens (ontkoppelen en opnieuw koppelen).
 - AppDeploy-accountgegevens en API-sleutels.
 - Wachtwoorden en TOTP van alle gebruikers (oude TOTP-geheimen stonden leesbaar in de database).
+
+## Optioneel (geen geheim)
+- `CHAT_MODEL` — model voor de chat op ai.* (standaard `claude-sonnet-5-5`). De Anthropic-sleutel zelf staat NIET in de omgeving:
+  elke gebruiker bewaart zijn eigen sleutel in de owner-kluis (purpose `anthropic`, API → Koppelingen → Kluis).

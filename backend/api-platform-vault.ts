@@ -4,7 +4,7 @@ import {stapOpFout,type StapOpAuth} from './stap-op';
 import {heeftApiRecht} from './api-recht';
 
 export const OWNER_VAULT_TABLE='owner_vault_v1';
-export const OWNER_VAULT_PURPOSES=['home-assistant','telegram','github','webhook','other'] as const;
+export const OWNER_VAULT_PURPOSES=['home-assistant','telegram','github','anthropic','webhook','other'] as const;
 const MAX_ITEMS=40;
 const MAX_VALUE=8192;
 // SECURITY: dedicated vault key only. Previously fell back to other encryption keys and even to the
