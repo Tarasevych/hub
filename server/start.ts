@@ -128,13 +128,28 @@ function buildEvent(req: http.IncomingMessage, url: URL, body: string, ip: strin
   };
 }
 
-function writeRouterResponse(res: http.ServerResponse, response: RouterResponse) {
-  const headers: Record<string, string | string[]> = { 'Cache-Control': 'no-store' };
+async function writeRouterResponse(res: http.ServerResponse, response: RouterResponse) {
+  if (response.filePath) {
+    const file = response.filePath;
+    const allowed = file.startsWith("/srv/data/uploads/mcp-archives/");
+    const s = allowed ? await fileStat(file) : null;
+    if (!s) return sendText(res, 404, "NOT_FOUND");
+    const headers: Record<string, string> = {
+      "Cache-Control": "no-store",
+      "Content-Type": response.headers["Content-Type"] || "application/octet-stream",
+      "Content-Disposition": response.headers["Content-Disposition"] || "attachment",
+      "Content-Length": String(s.size),
+    };
+    res.writeHead(response.statusCode || 200, { ...BASE_HEADERS, ...headers });
+    createReadStream(file).on("error", () => res.destroy()).pipe(res);
+    return;
+  }
+  const headers: Record<string, string | string[]> = { "Cache-Control": "no-store" };
   for (const [key, value] of Object.entries(response.headers || {})) {
-    if (key.toLowerCase() === 'set-cookie') headers['Set-Cookie'] = splitSetCookie(String(value));
+    if (key.toLowerCase() === "set-cookie") headers["Set-Cookie"] = splitSetCookie(String(value));
     else headers[key] = String(value);
   }
-  send(res, response.statusCode || 200, headers, response.body ?? '');
+  send(res, response.statusCode || 200, headers, response.body ?? "");
 }
 
 /** Pad binnen een root oplossen; null bij traversal of ongeldige codering. */

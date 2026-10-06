@@ -23,6 +23,7 @@ export const SERVICE_HOSTS = {
   huis: `huis.${PUBLIC_DOMAIN}`,
   api: `api.${PUBLIC_DOMAIN}`,
   admin: `admin.${PUBLIC_DOMAIN}`,
+  mcp: `mcp.${PUBLIC_DOMAIN}`,
 } as const;
 
 /** Losse statische dashboard-site (geen API, geen sessie); wordt later gevuld. */

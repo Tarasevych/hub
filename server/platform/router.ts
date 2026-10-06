@@ -5,6 +5,7 @@ export interface RouterResponse {
   statusCode: number;
   headers: Record<string, string>;
   body: string;
+  filePath?: string;
 }
 // Type-alias i.p.v. interface: de backend geeft events door als Record<string, unknown>.
 export type LambdaEvent = {
@@ -39,6 +40,18 @@ export function json(data: unknown, status = 200): RouterResponse {
 /** JSON-foutantwoord `{ error: message }` (zoals AppDeploy `error`). */
 export function error(message: string, status = 400): RouterResponse {
   return { statusCode: status, headers: { ...JSON_HEADERS }, body: JSON.stringify({ error: message }) };
+}
+
+export function fileDownload(filePath: string, filename: string, contentType = "application/gzip"): RouterResponse {
+  return {
+    statusCode: 200,
+    headers: {
+      "Content-Type": contentType,
+      "Content-Disposition": `attachment; filename="${filename.replace(/["\r\n]/g, "")}"`,
+    },
+    body: "",
+    filePath,
+  };
 }
 
 type CompiledRoute = { method: string; segments: string[]; literalCount: number; order: number; chain: RouterMiddleware[]; pattern: string };

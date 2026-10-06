@@ -21,7 +21,7 @@ const TEKST = {
     'Je gaat nu opnieuw inloggen bij Google. Herhaal daarna de actie.',
 };
 
-const SERVICES = new Set(['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'identity', 'api', 'admin']);
+const SERVICES = new Set(['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'identity', 'api', 'admin', 'mcp']);
 
 /** Leesbare uitleg voor een STEP_UP_REQUIRED-fout (voor meldingen in de app). */
 export const stapOpUitleg = () => TEKST.geenContext;

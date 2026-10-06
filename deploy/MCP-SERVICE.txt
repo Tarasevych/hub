@@ -1,0 +1,4 @@
+mcp.tarasevych.com is a service in the same app as mail and hub.
+Screens: /overview /agents /access /connect /tools
+Agent doors stay on 127.0.0.1:8091 until the tunnel splits paths.
+Do not point the whole hostname at 8080 before that split.

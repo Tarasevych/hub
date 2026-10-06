@@ -1,0 +1,35 @@
+[Unit]
+Description=Mijn Ruimte MCP (read-only, loopback)
+After=network-online.target mijn-ruimte.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mijnruimte
+Group=mijnruimte
+Environment=NODE_ENV=production
+Environment=MCP_PORT=8091
+Environment=MCP_ROOT=/srv/mijn-ruimte/current
+Environment=MCP_TOKEN_FILE=/etc/mijn-ruimte/mcp.token
+Environment=MCP_HEALTH_URL=http://127.0.0.1:8080/__gezondheid
+ExecStart=/usr/bin/node /srv/mijn-ruimte/mcp/server.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+MemoryDenyWriteExecute=no
+
+[Install]
+WantedBy=multi-user.target

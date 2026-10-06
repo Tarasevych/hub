@@ -101,6 +101,8 @@ const copy = {
     light: 'Світла',
     dark: 'Темна',
     device: 'Пристрій',
+    plumLight: 'Сливова світла',
+    plumDark: 'Сливова темна',
     privacy: 'Конфіденційність',
     terms: 'Умови',
     loading: 'Оновлюємо список…',
@@ -133,6 +135,8 @@ const copy = {
     light: 'Licht',
     dark: 'Donker',
     device: 'Apparaat',
+    plumLight: 'Lichte pruim',
+    plumDark: 'Donkere pruim',
     privacy: 'Privacy',
     terms: 'Voorwaarden',
     loading: 'Accountlijst bijwerken…',
@@ -395,9 +399,8 @@ export default function CanonicalAccountMenu({
     }
   };
 
-  const lightTheme: AccountTheme = plumEnabled && theme.startsWith('plum-') ? 'plum-light' : 'light';
-  const darkTheme: AccountTheme = plumEnabled && theme.startsWith('plum-') ? 'plum-dark' : 'dark';
-  const dark = theme === 'dark' || theme === 'plum-dark';
+  const light = theme === 'light';
+  const dark = theme === 'dark';
   const device = theme === 'device';
   const showLogoutAll = Boolean(onLogoutAll) && model.shouldShowLogoutAll;
   const visibleRows = displayUser ? model.visibleExpandedAccounts : model.knownAccounts;
@@ -450,7 +453,7 @@ export default function CanonicalAccountMenu({
   );
 
   const controls = (
-    <div className='canonical-preference-strip'>
+    <div className={`canonical-preference-strip${plumEnabled ? ' with-plum' : ''}`}>
       <div className='canonical-compact-setting' aria-label={t.language} title={t.language}>
         <Languages />
         <div className='canonical-segmented language-switch' role='group' aria-label={t.language}>
@@ -466,15 +469,25 @@ export default function CanonicalAccountMenu({
       <div className='canonical-compact-setting' aria-label={t.theme} title={t.theme}>
         <Palette />
         <div className='canonical-segmented theme-switch' role='group' aria-label={t.theme}>
-          <button type='button' className={!device&&!dark ? 'active' : ''} onClick={() => onTheme(lightTheme)}>
+          <button type='button' className={light ? 'active' : ''} onClick={() => onTheme('light')}>
             <Sun /><b>{t.light}</b>
           </button>
-          <button type='button' className={!device&&dark ? 'active' : ''} onClick={() => onTheme(darkTheme)}>
+          <button type='button' className={dark ? 'active' : ''} onClick={() => onTheme('dark')}>
             <Moon /><b>{t.dark}</b>
           </button>
           <button type='button' className={device ? 'active' : ''} onClick={() => onTheme('device')}>
             <Monitor /><b>{t.device}</b>
           </button>
+          {plumEnabled && (
+            <>
+              <button type='button' className={theme === 'plum-light' ? 'active' : ''} onClick={() => onTheme('plum-light')}>
+                <b>{t.plumLight}</b>
+              </button>
+              <button type='button' className={theme === 'plum-dark' ? 'active' : ''} onClick={() => onTheme('plum-dark')}>
+                <b>{t.plumDark}</b>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

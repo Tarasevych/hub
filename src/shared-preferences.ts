@@ -5,7 +5,7 @@ export type PresentationTheme='light'|'dark'|'plum-light'|'plum-dark';
 export type CachedRouteView='signed-out'|'mail-empty'|'github-empty'|'api-empty';
 export type SharedPreferences={lang?:'uk'|'nl';theme?:SharedTheme;menu?:string[];lastPathByService?:Partial<Record<CanonicalService,string>>;accountKeyByService?:Partial<Record<CanonicalService,string>>;avatarUrl?:string;viewByRoute?:Record<string,CachedRouteView>;notificationSound?:boolean;notificationBellPosition?:{x:number;y:number};revision?:number};
 const COOKIE='tsv_ecosystem_preferences',LOCAL='tsv-ecosystem-presentation-v2';export const HUB_LAYOUTS_STORAGE_KEY='tsv-hub-workspace-layouts-v1';const LEGACY_THEME_KEYS=['pavlo-hub-theme','tarasevych-ecosystem-theme','tsv-ecosystem-theme-v1'] as const,LEGACY_LANGUAGE_KEYS=['pavlo-hub-language','tarasevych-ecosystem-language'] as const,LEGACY_LAYOUT_KEYS=['pavlo-hub-workspace-layouts'] as const;
-const services:CanonicalService[]=['hub','ai','mail','cloud','github','identity','api','admin'];
+const services:CanonicalService[]=['hub','ai','mail','cloud','github','huis','identity','api','admin','mcp'];
 const views:CachedRouteView[]=['signed-out','mail-empty','github-empty','api-empty'];
 const cookieValue=()=>document.cookie.split('; ').find(item=>item.startsWith(`${COOKIE}=`))?.slice(COOKIE.length+1)||'';
 const parse=(value:string):SharedPreferences=>{try{return value?JSON.parse(decodeURIComponent(value))as SharedPreferences:{}}catch{return{}}};
