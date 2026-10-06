@@ -232,6 +232,7 @@ portable Node in `T:\mijn-ruimte\hulpmiddelen\node`).
    Verwacht: `Paired. …` en daarna `[agent] connected as <id>`. In de UI springt het apparaat binnen ~4 s op **Connected**.
    Het configuratiebestand bevat het agenttoken: laat het in `$t`, deel het niet.
 4. **Verbinding testen** → *Laatste actie* wordt `sys.info · succeeded` met hostnaam, platform en uw map (leesopdracht, direct).
+   *Agent 0.2.0:* extra opdrachten `sys.metrics` (direct), `docker.ps` (direct, vereist `--allow docker`) en `docker.manage` (altijd goedkeuring); migratie 0011 breidt het CHECK-type uit.
 5. **Test goedkeuring** → onder *Wachten op uw goedkeuring* verschijnt `fs.write` met pad `hub-agent-test.txt`.
    Eerst **Weigeren** (herhaal stap 5 om opnieuw een verzoek te krijgen): status `rejected`, geen bestand.
    Dan **Toestaan**: status `succeeded` en `T:\mijn-ruimte\ontwikkeling\agent-test\hub-agent-test.txt` bestaat.

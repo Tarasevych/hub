@@ -13,7 +13,7 @@ import { promises as fs, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import os from 'node:os';
 import path from 'node:path';
 
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const CONFIG_PATH = process.env.HUB_AGENT_CONFIG ?? path.join(os.homedir(), '.hub-agent', 'config.json');
 const MAX_READ = 2 * 1024 * 1024;
 const MAX_WRITE = 5 * 1024 * 1024;
@@ -58,7 +58,8 @@ async function pair(args) {
   console.log(`Paired. Конфіг: ${CONFIG_PATH}\nТепер запустіть: node agent.mjs run`);
 }
 
-const capabilities = (roots, allow) => ({ version: VERSION, roots, allowCommands: allow, commands: ['fs.read', 'fs.list', 'fs.write', 'exec', 'sys.info'] });
+// De lijst komt uit de handlers zelf, zodat hij nooit achterloopt op wat de agent kan.
+const capabilities = (roots, allow) => ({ version: VERSION, roots, allowCommands: allow, commands: Object.keys(handlers) });
 
 // ---------- sandbox ----------
 const isWin = process.platform === 'win32';
@@ -84,6 +85,50 @@ async function safePath(cfg, p) {
   throw new Error('path outside allowed roots');
 }
 
+// ---------- vaste programma's (docker, powershell): altijd shell:false, vaste argumenten ----------
+/** Start `file` met een vaste argumentenlijst, met tijdslimiet en uitvoerlimiet. Nooit via een shell. */
+function runFixed(file, argv, { timeout = 30_000, max = MAX_OUTPUT } = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(file, argv, { shell: false, windowsHide: true });
+    let stdout = ''; let stderr = ''; let truncated = false;
+    const add = (buf, which) => {
+      if (stdout.length + stderr.length > max) { truncated = true; return; }
+      which === 'o' ? (stdout += buf.toString()) : (stderr += buf.toString());
+    };
+    child.stdout.on('data', (d) => add(d, 'o'));
+    child.stderr.on('data', (d) => add(d, 'e'));
+    const timer = setTimeout(() => child.kill('SIGKILL'), timeout);
+    child.on('error', (e) => { clearTimeout(timer); reject(e); });
+    child.on('close', (code, signal) => { clearTimeout(timer); resolve({ code, signal, stdout, stderr, truncated }); });
+  });
+}
+
+const CONTAINER_RE = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/;   // geen spaties, geen leidend "-" (geen optie-injectie)
+const DOCKER_ACTIONS = new Set(['start', 'stop', 'restart']);
+const requireDocker = (cfg) => {
+  if (!cfg.allow.includes('docker')) throw new Error('docker is not in the agent allow-list (start the agent with --allow docker)');
+};
+
+// Vast PowerShell-script (geen invoer van buiten): CPU-belasting, geheugen en vaste schijven als JSON.
+const WIN_METRICS_PS = [
+  "$ErrorActionPreference='Stop'",
+  "$cpu = (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average",
+  "$os = Get-CimInstance Win32_OperatingSystem",
+  "$disks = @(Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | ForEach-Object { [pscustomobject]@{ name=$_.DeviceID; totalBytes=[int64]$_.Size; freeBytes=[int64]$_.FreeSpace } })",
+  "[pscustomobject]@{ cpuPercent=$cpu; totalKB=[int64]$os.TotalVisibleMemorySize; freeKB=[int64]$os.FreePhysicalMemory; disks=$disks } | ConvertTo-Json -Compress -Depth 4",
+].join('; ');
+
+const round1 = (n) => Math.round(n * 10) / 10;
+const gb = (bytes) => round1(bytes / 1024 ** 3);
+
+/** CPU-gebruik in procenten uit twee metingen van os.cpus() (os.loadavg() is 0 op Windows). */
+async function sampleCpuPercent(ms = 500) {
+  const take = () => os.cpus().reduce((a, c) => { const t = Object.values(c.times).reduce((x, y) => x + y, 0); return { idle: a.idle + c.times.idle, total: a.total + t }; }, { idle: 0, total: 0 });
+  const a = take(); await new Promise((r) => setTimeout(r, ms)); const b = take();
+  const total = b.total - a.total;
+  return total > 0 ? round1(100 * (1 - (b.idle - a.idle) / total)) : null;
+}
+
 // ---------- command handlers ----------
 const handlers = {
   async 'sys.info'(cfg) {
@@ -107,6 +152,54 @@ const handlers = {
     await fs.mkdir(path.dirname(file), { recursive: true });
     await fs.writeFile(file, content, 'utf8');
     return { path: file, bytes: Buffer.byteLength(content) };
+  },
+  // Docker (alleen met "docker" in --allow). Vaste argumenten; de containernaam is streng gevalideerd.
+  async 'docker.ps'(cfg, { include_stopped } = {}) {
+    requireDocker(cfg);
+    const argv = ['ps', ...(include_stopped === false ? [] : ['-a']), '--no-trunc', '--format', '{{json .}}'];
+    const r = await runFixed('docker', argv, { timeout: 30_000 });
+    if (r.code !== 0) throw new Error(`docker ps failed: ${(r.stderr || r.stdout).trim().slice(0, 300)}`);
+    const containers = r.stdout.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 500).map((line) => {
+      try { const c = JSON.parse(line); return { id: String(c.ID ?? '').slice(0, 12), name: c.Names, image: c.Image, state: c.State, status: c.Status, ports: c.Ports || '' }; }
+      catch { return null; }
+    }).filter(Boolean);
+    return { count: containers.length, containers, truncated: r.truncated };
+  },
+  async 'docker.manage'(cfg, { container, action } = {}) {
+    requireDocker(cfg);
+    if (typeof container !== 'string' || !CONTAINER_RE.test(container)) throw new Error('invalid container name');
+    if (typeof action !== 'string' || !DOCKER_ACTIONS.has(action)) throw new Error('invalid action (start, stop or restart)');
+    const r = await runFixed('docker', [action, container], { timeout: 90_000 });
+    if (r.code !== 0) throw new Error(`docker ${action} failed: ${(r.stderr || r.stdout).trim().slice(0, 300)}`);
+    return { container, action, ok: true, output: r.stdout.trim().slice(0, 200) };
+  },
+  // CPU / geheugen / schijf. Windows: vast PowerShell-script; elders (of als PowerShell faalt) de tellers van het besturingssysteem.
+  async 'sys.metrics'(cfg) {
+    const out = { platform: os.platform(), hostname: os.hostname(), uptimeSeconds: Math.round(os.uptime()), cpu: { cores: os.cpus().length, percent: null }, memory: null, disks: [], source: 'node' };
+    let fromPs = null;
+    if (isWin) {
+      try {
+        const r = await runFixed('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', WIN_METRICS_PS], { timeout: 20_000 });
+        if (r.code === 0) fromPs = JSON.parse(r.stdout.trim());
+        else out.note = `powershell failed: ${r.stderr.trim().slice(0, 200)}`;
+      } catch (e) { out.note = `powershell unavailable: ${e.message}`; }
+    }
+    if (fromPs) {
+      out.source = 'powershell';
+      out.cpu.percent = fromPs.cpuPercent == null ? null : round1(Number(fromPs.cpuPercent));
+      const total = Number(fromPs.totalKB) * 1024, free = Number(fromPs.freeKB) * 1024;
+      out.memory = { totalMB: Math.round(total / 1048576), usedMB: Math.round((total - free) / 1048576), percent: round1(100 * (total - free) / total) };
+      const list = Array.isArray(fromPs.disks) ? fromPs.disks : fromPs.disks ? [fromPs.disks] : [];
+      out.disks = list.filter((d) => Number(d.totalBytes) > 0).map((d) => ({ name: d.name, totalGB: gb(d.totalBytes), freeGB: gb(d.freeBytes), usedPercent: round1(100 * (1 - d.freeBytes / d.totalBytes)) }));
+    } else {
+      out.cpu.percent = await sampleCpuPercent();
+      const total = os.totalmem(), free = os.freemem();
+      out.memory = { totalMB: Math.round(total / 1048576), usedMB: Math.round((total - free) / 1048576), percent: round1(100 * (total - free) / total) };
+      for (const dir of [...new Set(['/', ...cfg.roots])]) {
+        try { const s = await fs.statfs(dir); const totalB = s.bsize * s.blocks, freeB = s.bsize * s.bavail; if (totalB > 0) out.disks.push({ name: dir, totalGB: gb(totalB), freeGB: gb(freeB), usedPercent: round1(100 * (1 - freeB / totalB)) }); } catch { /* map niet leesbaar */ }
+      }
+    }
+    return out;
   },
   // Без shell: команда + масив аргументів, тому ін'єкції через `;` `&&` `|` неможливі.
   async exec(cfg, { command, args = [], cwd = '.' }) {
@@ -174,6 +267,24 @@ async function selftest(args) {
     check('toegestaan commando draait (zonder shell)', ok.code === 0 && ok.stdout.trim() === '42', JSON.stringify([ok.code, ok.stdout.trim()]));
     const meta = await handlers.exec(cfg, { command: 'node', args: ['-e', 'console.log("a;b && c | d")'] });
     check('shell-tekens in argumenten worden letterlijk doorgegeven', meta.stdout.trim() === 'a;b && c | d');
+
+    // ---- docker en metrics: geen docker nodig, alleen de afwijzingen en de vorm van het resultaat ----
+    check('docker.ps zonder "docker" in de allow-list geweigerd', (await geweigerd(() => handlers['docker.ps'](cfg, {}), /allow-list/)) === true);
+    check('docker.manage zonder "docker" in de allow-list geweigerd', (await geweigerd(() => handlers['docker.manage'](cfg, { container: 'web', action: 'restart' }), /allow-list/)) === true);
+    const dcfg = { roots: [work], allow: ['docker'] };
+    const slecht = ['a;b', '-rf', '--all', '../x', 'a b', '', 'x'.repeat(200), 'a$(id)', 'a`id`', 'a&&b', 'naam\nregel'];
+    const afgewezen = [];
+    for (const naam of slecht) afgewezen.push((await geweigerd(() => handlers['docker.manage'](dcfg, { container: naam, action: 'start' }), /invalid container/)) === true);
+    check('docker.manage: gevaarlijke of ongeldige containernamen geweigerd vóór er iets start', afgewezen.every(Boolean), JSON.stringify(slecht.filter((_, i) => !afgewezen[i])));
+    check('docker.manage: onbekende actie geweigerd',
+      (await geweigerd(() => handlers['docker.manage'](dcfg, { container: 'web', action: 'rm' }), /invalid action/)) === true
+      && (await geweigerd(() => handlers['docker.manage'](dcfg, { container: 'web', action: 'kill -9' }), /invalid action/)) === true);
+    const m = await handlers['sys.metrics'](cfg);
+    check('sys.metrics: CPU, geheugen en schijven met de verwachte vorm',
+      m.cpu.cores > 0 && (m.cpu.percent === null || (m.cpu.percent >= 0 && m.cpu.percent <= 100)) && m.memory.totalMB > 0 && m.memory.usedMB <= m.memory.totalMB
+      && Array.isArray(m.disks) && m.disks.length > 0 && m.disks.every((d) => d.totalGB > 0 && d.usedPercent >= 0 && d.usedPercent <= 100),
+      JSON.stringify([m.source, m.cpu, m.memory, m.disks.length]));
+    check('capabilities noemt alle handlers (ook de nieuwe)', ['docker.ps', 'docker.manage', 'sys.metrics'].every((t) => capabilities([work], []).commands.includes(t)));
   } catch (e) {
     check('onverwachte fout', false, e.message);
   } finally {

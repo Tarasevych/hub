@@ -4,6 +4,7 @@ import { ecosystemTabContext } from "./tab-context";
 import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalog";
 import AgentsPanel from "./AgentsPanel";
 import McpConnectorPanel from "./McpConnectorPanel";
+import McpConsentModal from "./McpConsentModal";
 import "./mcp-estate.css";
 
 type Lang = "uk" | "nl";
@@ -272,6 +273,7 @@ export default function McpServiceView({ lang, tab }: Props) {
 
   return (
     <div className="mcp-estate" data-mcp-tab={section}>
+      <McpConsentModal tr={t} />
       {error && error !== "Internal server error" ? <p className="mcp-lead">{error}</p> : null}
       {busy && busy !== "archive" ? <p className="mcp-kicker">{busy}</p> : null}
 

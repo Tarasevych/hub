@@ -6,3 +6,14 @@
 .agents-panel .agents-disconnected{color:#6b7280}
 .agents-panel .agents-params{margin:0;padding:10px;border-radius:10px;background:var(--soft,#eef3f8);overflow:auto;font-size:.85rem;max-height:220px}
 @media(prefers-color-scheme:dark){.agents-panel .agents-connected{color:#4ac26b}.agents-panel .agents-disconnected{color:#9ca3af}}
+.mcp-grants .agents-badge{font-size:.85rem;padding:2px 10px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.mcp-grants .agents-connected{color:#1a7f37}
+.mcp-grants .agents-idle{color:#6b7280}
+.mcp-grants .agents-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mcp-grants .mcp-grant{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.mcp-grants .mcp-grant-main{display:grid;gap:4px;min-width:0}
+.mcp-grants .mcp-grant-last{color:inherit}
+.api-platform .mcp-revoke{background:#b91c1c;color:#fff;min-height:48px;padding:10px 22px;border:2px solid #7f1d1d}
+.api-platform .mcp-revoke:hover:not([disabled]){background:#991b1b}
+.api-platform .mcp-revoke:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+@media(prefers-color-scheme:dark){.mcp-grants .agents-connected{color:#4ac26b}.mcp-grants .agents-idle{color:#9ca3af}}

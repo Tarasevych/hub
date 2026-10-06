@@ -33,6 +33,9 @@ https://mcp.tarasevych.com/mcp
 | `machine_read_file` | лише читання | Текстовий файл до 2 МБ |
 | `machine_write_file` | запис (destructive) | Записати файл. **Потребує вашого «Дозволити» на сайті** |
 | `machine_exec` | виконання (destructive) | Команда зі списку агента, без shell. **Потребує підтвердження** |
+| `docker_list_containers` | читання (read-only) | `docker ps` (параметр `include_stopped`). Потрібен `docker` у `--allow` агента |
+| `docker_manage_container` | виконання (destructive) | `start`/`stop`/`restart` контейнера за іменем. Завжди **потребує підтвердження** |
+| `system_metrics` | читання (read-only) | ЦП, пам'ять, диски (Windows: PowerShell; інакше `os`) |
 | `github_get` | лише читання | GET до GitHub API з вашим PAT зі сховища (з'являється, лише якщо PAT є) |
 
 У налаштуваннях конектора в Claude (Tool permissions) запис і виконання можна заблокувати або вимагати підтвердження окремо від читання.

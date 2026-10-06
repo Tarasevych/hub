@@ -158,8 +158,16 @@ export async function main(): Promise<number> {
     const lijst = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 5, method: 'tools/list' })).result.tools as any[];
     const per = (n: string) => lijst.find((t) => t.name === n);
     check('tools/list: apparaattools met annotaties (lezen = readOnlyHint, schrijven/uitvoeren = destructiveHint) en titel',
-      lijst.length === 6 && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true
+      lijst.length === 9 && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true
       && per('machine_write_file').annotations.readOnlyHint === false && !!per('machine_list').title && !!per('machine_list').inputSchema, lijst.map((t) => t.name).join(','));
+    check('tools/list: Docker en metrics: lezen = readOnlyHint, containers beheren = destructiveHint (niet readOnly, niet idempotent)',
+      per('docker_list_containers').annotations.readOnlyHint === true && per('system_metrics').annotations.readOnlyHint === true
+      && per('docker_manage_container').annotations.destructiveHint === true && per('docker_manage_container').annotations.readOnlyHint === false
+      && per('docker_manage_container').annotations.idempotentHint === false && per('docker_manage_container').annotations.openWorldHint === false);
+    const dockerSchema = per('docker_manage_container').inputSchema;
+    check('tools/list: docker_manage_container: verplichte velden, actie als enum, elke parameter beschreven, geen onbekende velden',
+      dockerSchema.additionalProperties === false && JSON.stringify(dockerSchema.required) === '["container","action"]' && JSON.stringify(dockerSchema.properties.action.enum) === '["start","stop","restart"]'
+      && [per('docker_manage_container'), per('docker_list_containers'), per('system_metrics')].every((t) => Object.values(t.inputSchema.properties as Record<string, any>).every((p) => typeof p.description === 'string' && p.description.length > 10)));
     const schema = per('machine_exec').inputSchema;
     check('tools/list: duidelijke schema\'s: elke parameter beschreven, verplichte velden benoemd, geen onbekende velden toegestaan',
       schema.additionalProperties === false && schema.required[0] === 'command' && Object.values(schema.properties as Record<string, any>).every((p) => typeof p.description === 'string' && p.description.length > 10)
@@ -170,6 +178,14 @@ export async function main(): Promise<number> {
     const geenApp = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 7, method: 'tools/call', params: { name: 'machine_info', arguments: { machine: 'pc-van-B' } } }));
     check('tools/call: een apparaat van een andere gebruiker aanwijzen mislukt (isError), de modelinvoer bepaalt de gebruiker niet',
       geenApp.result.isError === true && !JSON.stringify(geenApp).includes('linux'));
+    const slechteNaam = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 20, method: 'tools/call', params: { name: 'docker_manage_container', arguments: { container: 'a;b', action: 'restart' } } }));
+    const optieNaam = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 21, method: 'tools/call', params: { name: 'docker_manage_container', arguments: { container: '-rf', action: 'stop' } } }));
+    const slechteActie = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 22, method: 'tools/call', params: { name: 'docker_manage_container', arguments: { container: 'web', action: 'rm' } } }));
+    const slechteVlag = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 23, method: 'tools/call', params: { name: 'docker_list_containers', arguments: { include_stopped: 'ja' } } }));
+    check('docker: een ongeldige containernaam, een optie ("-rf"), een onbekende actie of een slechte vlag wordt op de server geweigerd, vóór een apparaat of goedkeuring aan te pas komt',
+      slechteNaam.result.isError === true && /Invalid "container"/.test(slechteNaam.result.content[0].text) && optieNaam.result.isError === true && /Invalid "container"/.test(optieNaam.result.content[0].text)
+      && slechteActie.result.isError === true && /Invalid "action"/.test(slechteActie.result.content[0].text)
+      && slechteVlag.result.isError === true && /include_stopped/.test(slechteVlag.result.content[0].text));
     check('tools/call: onbekend hulpmiddel geeft een foutresultaat, geen crash', body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 8, method: 'tools/call', params: { name: 'rm_rf' } })).result.isError === true);
     const batch = body(await c.rpcPost(`Bearer ${t1.j.access_token}`, JSON.stringify([{ jsonrpc: '2.0', id: 1, method: 'ping' }, { jsonrpc: '2.0', method: 'notifications/initialized' }])));
     check('MCP: een batch beantwoordt alleen de verzoeken met id', Array.isArray(batch) && batch.length === 1 && batch[0].id === 1);
@@ -217,8 +233,10 @@ export async function main(): Promise<number> {
     const t4 = await tokens(cid, A);
     for (let i = 0; i < 20; i++) await agents.createCommand(agentA.id, A, 'fs.write', { path: `x${i}` }, 'pending_approval');
     const teVeelWachtend = body(await rpc(t4.j.access_token, { jsonrpc: '2.0', id: 9, method: 'tools/call', params: { name: 'machine_write_file', arguments: { path: 'a', content: 'b' } } }));
-    check('te veel openstaande goedkeuringen (20): schrijven/uitvoeren wordt direct geweigerd en het model krijgt de opdracht niet opnieuw te proberen',
-      teVeelWachtend.result.isError === true && /Too many actions/.test(teVeelWachtend.result.content[0].text) && /do not retry/.test(teVeelWachtend.result.content[0].text));
+    const teVeelDocker = body(await rpc(t4.j.access_token, { jsonrpc: '2.0', id: 10, method: 'tools/call', params: { name: 'docker_manage_container', arguments: { container: 'web', action: 'restart' } } }));
+    check('te veel openstaande goedkeuringen (20): schrijven, uitvoeren én containers beheren worden direct geweigerd en het model krijgt de opdracht niet opnieuw te proberen',
+      teVeelWachtend.result.isError === true && /Too many actions/.test(teVeelWachtend.result.content[0].text) && /do not retry/.test(teVeelWachtend.result.content[0].text)
+      && teVeelDocker.result.isError === true && /Too many actions/.test(teVeelDocker.result.content[0].text));
 
     // ---- limiet per gebruiker ----
     await sys.query('UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE user_id = $1', [B]);

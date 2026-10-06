@@ -6,22 +6,32 @@ import './agents-panel.css';
 
 type Tr = (uk: string, nl: string) => string;
 type Grant = { id: string; clientName: string; scope: string; createdAt: number; lastUsedAt: number | null; expiresAt: number };
-type Consent = { clientName: string; redirectHost: string; loopback: boolean; scope: string; expiresAt: number };
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 const when = (value: number | null) => (value ? new Date(value).toLocaleString() : '—');
-const consentId = () => new URLSearchParams(location.search).get('consent') || '';
+const IDLE_MS = 24 * 60 * 60 * 1000;
 
-/** Connector voor Claude (claude.ai > Customize > Connectors): URL, toestemmingsscherm en beheer van verleende toegang. */
+/** "5 хв тому" / "5 min geleden"; nooit gebruikt: "nog niet gebruikt". */
+const ago = (value: number | null, tr: Tr): string => {
+  if (!value) return tr('ще не використовувався', 'nog niet gebruikt');
+  const s = Math.max(0, Math.round((Date.now() - value) / 1000));
+  if (s < 60) return tr('щойно', 'zojuist');
+  const m = Math.round(s / 60);
+  if (m < 60) return tr(`${m} хв тому`, `${m} min geleden`);
+  const h = Math.round(m / 60);
+  if (h < 48) return tr(`${h} год тому`, `${h} uur geleden`);
+  const d = Math.round(h / 24);
+  return tr(`${d} дн. тому`, `${d} dagen geleden`);
+};
+
+/** Connector voor Claude (claude.ai > Customize > Connectors): URL en beheer van verleende toegang. Het toestemmingsscherm zelf is McpConsentModal. */
 export default function McpConnectorPanel({ tr }: { tr: Tr }) {
-  const rid = consentId();
   const [grants, setGrants] = useState<Grant[]>([]);
   const [url, setUrl] = useState('https://mcp.tarasevych.com/mcp');
-  const [consent, setConsent] = useState<Consent | null>(null);
-  const [consentGone, setConsentGone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [copied, setCopied] = useState(false);
+  const [, setTick] = useState(0);
 
   const load = useCallback(async () => {
     const res = await api.post('/api/owner/mcp-connector/grants', sessionBody());
@@ -31,32 +41,15 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
 
   useEffect(() => { void load().catch(() => undefined); }, [load]);
 
+  // Relatieve tijden minuutwaarden verversen en na een nieuwe goedkeuring de lijst herladen.
   useEffect(() => {
-    if (!rid) return;
-    api.post('/api/owner/mcp-connector/consent/info', { ...sessionBody(), rid })
-      .then((res) => setConsent(res.data as Consent))
-      .catch(() => setConsentGone(true));
-  }, [rid]);
-
-  const decide = async (approve: boolean) => {
-    if (busy) return;
-    setBusy(true); setNotice('');
-    try {
-      const res = await api.post('/api/owner/mcp-connector/consent', { ...sessionBody(), rid, approve });
-      // Terug naar Claude (of naar de loopback van Claude Code) met de eenmalige code.
-      location.assign(String(res.data.redirect));
-      return;
-    } catch (e) {
-      const code = String((e as Error)?.message || '');
-      setNotice(code.includes('GRANT_LIMIT') ? tr('Ліміт доступів (10). Відкличте непотрібні нижче.', 'Limiet bereikt (10). Trek hieronder oude toegang in.')
-        : tr('Запит застарів. Почніть підключення в Claude знову.', 'Het verzoek is verlopen. Begin de koppeling in Claude opnieuw.'));
-    }
-    setBusy(false);
-  };
+    const timer = window.setInterval(() => setTick((n) => n + 1), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const revoke = async (grant: Grant) => {
     if (!window.confirm(tr(`Відкликати доступ «${grant.clientName}»? Claude більше не зможе користуватися вашими пристроями.`, `Toegang van «${grant.clientName}» intrekken? Claude kan uw apparaten dan niet meer gebruiken.`))) return;
-    setBusy(true);
+    setBusy(true); setNotice('');
     try { await api.post(`/api/owner/mcp-connector/grants/${grant.id}/revoke`, sessionBody()); await load(); } catch { setNotice(tr('Не вдалося відкликати.', 'Intrekken mislukt.')); }
     setBusy(false);
   };
@@ -65,34 +58,6 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
 
   return (
     <section className='api-platform agents-wrap' data-mcp-connector='true'>
-      {rid ? (
-        <article className='api-platform-panel mcp-consent' data-mcp-consent='true'>
-          <strong>{tr('Claude просить доступ', 'Claude vraagt toegang')}</strong>
-          {consent ? (
-            <>
-              <p>
-                {tr('Застосунок', 'Applicatie')}: <b>{consent.clientName}</b> · {tr('повернення на', 'terugkeer naar')}: <b>{consent.redirectHost}</b>
-              </p>
-              <p>{tr('Claude зможе (за вашими підтвердженнями на сайті):', 'Claude kan (met uw goedkeuring op de site):')}</p>
-              <ul>
-                <li>{tr('бачити ваші пристрої та їхній стан', 'uw apparaten en hun status zien')}</li>
-                <li>{tr('читати файли у дозволених папках агента', 'bestanden lezen in de toegestane mappen van de agent')}</li>
-                <li>{tr('записувати файли та виконувати команди лише після вашого «Дозволити»', 'bestanden schrijven en commando\'s uitvoeren, alleen na uw "Toestaan"')}</li>
-              </ul>
-              {consent.loopback ? (
-                <p role='alert'>{tr('Це локальний клієнт (Claude Code на вашому комп’ютері). Дозволяйте, лише якщо ви самі його запустили.', 'Dit is een lokale client (Claude Code op uw computer). Sta alleen toe als u hem zelf hebt gestart.')}</p>
-              ) : null}
-              <div className='api-platform-secret-actions'>
-                <button type='button' disabled={busy} onClick={() => void decide(true)}>{tr('Дозволити', 'Toestaan')}</button>
-                <button type='button' disabled={busy} onClick={() => void decide(false)}>{tr('Відхилити', 'Weigeren')}</button>
-              </div>
-            </>
-          ) : consentGone ? <p>{tr('Запит застарів або недійсний. Почніть підключення в Claude знову.', 'Dit verzoek is verlopen of ongeldig. Begin de koppeling in Claude opnieuw.')}</p>
-            : <p>{tr('Завантаження…', 'Laden…')}</p>}
-          {notice ? <p role='status'>{notice}</p> : null}
-        </article>
-      ) : null}
-
       <article className='api-platform-panel' data-mcp-connector-url='true'>
         <strong>{tr('Конектор для Claude', 'Connector voor Claude')}</strong>
         <p>{tr('Додайте цю адресу в Claude: Customize → Connectors → Add custom connector. Автентифікація: «Sign in now» (OAuth), без заголовків і ключів.', 'Voeg dit adres toe in Claude: Customize → Connectors → Add custom connector. Authenticatie: "Sign in now" (OAuth), zonder headers of sleutels.')}</p>
@@ -104,7 +69,7 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
         </div>
         <ol>
           <li>{tr('У Claude вставте адресу й натисніть Add.', 'Plak het adres in Claude en klik op Add.')}</li>
-          <li>{tr('Claude відкриє цей сайт: увійдіть і натисніть «Дозволити».', 'Claude opent deze site: meld u aan en klik op "Toestaan".')}</li>
+          <li>{tr('Claude відкриє цей сайт: увійдіть, у вікні запиту натисніть «Дозволити».', 'Claude opent deze site: meld u aan en klik in het venster op "Toestaan".')}</li>
           <li>{tr('У чаті ввімкніть конектор (+ → Connectors) і попросіть, наприклад: «покажи мої пристрої».', 'Zet de connector aan in een chat (+ → Connectors) en vraag bijvoorbeeld: "toon mijn apparaten".')}</li>
         </ol>
       </article>
@@ -112,17 +77,29 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
       <article className='api-platform-panel' data-mcp-grants={String(grants.length)}>
         <strong>{tr('Надані доступи', 'Verleende toegang')}</strong>
         {grants.length ? (
-          <ul className='api-platform-connections'>
-            {grants.map((g) => (
-              <li key={g.id}>
-                <div className='agents-row'><b>{g.clientName}</b><span className='agents-badge agents-connected'>{g.scope}</span></div>
-                <small>{tr('надано', 'verleend')}: {when(g.createdAt)} · {tr('востаннє', 'laatst gebruikt')}: {when(g.lastUsedAt)} · {tr('діє до', 'geldig tot')}: {when(g.expiresAt)}</small>
-                <button type='button' disabled={busy} onClick={() => void revoke(g)}>{tr('Відкликати', 'Intrekken')}</button>
-              </li>
-            ))}
+          <ul className='api-platform-connections mcp-grants'>
+            {grants.map((g) => {
+              const idle = !g.lastUsedAt || Date.now() - g.lastUsedAt > IDLE_MS;
+              return (
+                <li key={g.id} className='mcp-grant'>
+                  <div className='mcp-grant-main'>
+                    <div className='agents-row'>
+                      <b>{g.clientName}</b>
+                      <span className={`agents-badge ${idle ? 'agents-idle' : 'agents-connected'}`}>{idle ? tr('простоює', 'inactief') : tr('активний', 'actief')}</span>
+                      <span className='agents-badge'>{g.scope}</span>
+                    </div>
+                    <p className='mcp-grant-last' title={when(g.lastUsedAt)}>
+                      {tr('Востаннє підключався', 'Laatst verbonden')}: <b>{ago(g.lastUsedAt, tr)}</b>
+                    </p>
+                    <small>{tr('надано', 'verleend')}: {when(g.createdAt)} · {tr('діє до', 'geldig tot')}: {when(g.expiresAt)}</small>
+                  </div>
+                  <button type='button' className='mcp-revoke' disabled={busy} onClick={() => void revoke(g)}>{tr('Відкликати', 'Intrekken')}</button>
+                </li>
+              );
+            })}
           </ul>
         ) : <p>{tr('Claude ще не має доступу.', 'Claude heeft nog geen toegang.')}</p>}
-        {!rid && notice ? <p role='status'>{notice}</p> : null}
+        {notice ? <p role='status'>{notice}</p> : null}
       </article>
     </section>
   );
