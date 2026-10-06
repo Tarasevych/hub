@@ -1,12 +1,13 @@
 // Local Machine Connector: routes voor de eigenaar-UI (sessie + recht 'api-platform') en het koppelen van een agent.
 // Alle routes zijn POST met de gebruikelijke sessie-body ({service:'api', ...}), zoals de overige /api/owner/api-platform/*.
-import { error, json } from '../server/platform';
+import { error, json, rateLimit } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
 import { heeftApiRecht } from './api-recht';
 import { approveCommand, rejectCommand, submitCommand } from './connectors-commands';
 import { normalizePairingCode, pairingCode, randomToken, sha256 } from './connectors-crypto';
 import { agentOnline, COMMAND_TYPES, disconnectAgent } from './connectors-gateway';
 import * as store from './connectors-store';
+import { defaultChatDeps, runChat, sanitizeHistory } from './connectors-chat';
 import { callTool, listTools } from './connectors-tools';
 
 type SessionAuth = { errorCode: string } | { user: { id: string; email: string; role: string; status: string }; service: string };
@@ -24,8 +25,8 @@ const MAX_NAME = 80;
 export function createAgentRoutes(deps: Deps) {
   const ownerGate = async (event: Record<string, unknown>, body: unknown) => {
     const auth = await deps.requireSession(event, body);
-    // De UI staat op mcp.* (verbindingen, agenten, tools); 'api' blijft toegestaan voor programmatische clients.
-    if ('errorCode' in auth || !['mcp', 'api'].includes(auth.service) || auth.user.status !== 'approved') return null;
+    // Beheer staat op mcp.* (verbindingen, agenten, tools); de chat op ai.*; 'api' blijft toegestaan voor programmatische clients.
+    if ('errorCode' in auth || !['mcp', 'ai', 'api'].includes(auth.service) || auth.user.status !== 'approved') return null;
     if (!heeftApiRecht(auth.user as never)) return null;
     return auth;
   };
@@ -137,6 +138,34 @@ export function createAgentRoutes(deps: Deps) {
       if (!command) return deps.fail('COMMAND_NOT_PENDING', 409);
       await deps.audit(auth.user.id, 'owner.agent.command.rejected', 'success', { commandId: command.id, type: command.type });
       return deps.respond({ command });
+    }],
+
+    // Chat op ai.*: sleutel (BYOK) uit de kluis, hulpmiddelen voor eigen apparaten. De client stuurt alleen platte tekst.
+    'POST /api/owner/agents/chat/status': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const [key, tools, agents] = await Promise.all([defaultChatDeps.getApiKey(auth.user.id), listTools(auth.user.id), store.listAgents(auth.user.id)]);
+      return deps.respond({
+        hasKey: !!key, tools: tools.map((t) => t.name),
+        machines: { total: agents.length, online: agents.filter((a) => agentOnline(a.id)).length },
+      });
+    }],
+
+    'POST /api/owner/agents/chat': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      // Elk verzoek kost de gebruiker tokens op zijn eigen sleutel; begrens per gebruiker.
+      const limit = await rateLimit(`chat:${auth.user.id}`, 20, 60);
+      if (!limit.ok) return deps.fail('CHAT_RATE_LIMITED', 429);
+      const messages = sanitizeHistory(deps.body(ctx.body).messages);
+      if (!messages.length || messages[messages.length - 1].role !== 'user') return deps.fail('CHAT_LAST_MESSAGE_MUST_BE_USER', 400);
+      const out = await runChat(defaultChatDeps, auth.user.id, messages);
+      if ('error' in out) {
+        await deps.audit(auth.user.id, 'owner.agent.chat', 'failure', { error: out.error });
+        return out.error === 'no_api_key' ? deps.fail('CHAT_NO_API_KEY', 409) : deps.fail(`CHAT_PROVIDER_ERROR_${out.status}`, 502);
+      }
+      await deps.audit(auth.user.id, 'owner.agent.chat', 'success', { steps: out.steps.map((s) => s.tool) });
+      return deps.respond(out);
     }],
 
     // AI-tools (MCP-formaat) van de ingelogde gebruiker. Voor het AI-werkruimtescherm van de site.

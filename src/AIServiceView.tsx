@@ -1,9 +1,15 @@
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Bot } from 'lucide-react';
 import ProductEmptyState from './ProductEmptyState';
+import { api } from './platform/client';
+import { ecosystemTabContext } from './tab-context';
 import { canonicalNavigationUrl, routeLang } from './canonical-navigation';
+
+const ChatPanel = lazy(() => import('./ChatPanel'));
 
 type Tr = (uk: string, nl: string) => string;
 type Props = { tab: string; tr: Tr; userName: string; workspaceName: string };
+type Status = { hasKey: boolean; tools: string[]; machines: { total: number; online: number } };
 
 // An empty screen has to say what the next step is. Both routes go through the
 // existing canonical navigation: an in-app hop on the technical host, a real
@@ -14,16 +20,31 @@ export const openIntegrations = () => {
 };
 
 export default function AIServiceView({ tr }: Props) {
-  return (
-    <ProductEmptyState
-      icon={Bot}
-      title={tr('ШІ Робочий простір', 'AI-werkruimte')}
-      description={tr(
-        'Підключення ШІ ще не налаштовано. Тут з’являться лише реальні агенти та виконання.',
-        'De AI-koppeling is nog niet ingesteld. Hier verschijnen alleen echte agenten en uitvoeringen.',
-      )}
-      actionLabel={tr('Підключити', 'Koppelen')}
-      onAction={openIntegrations}
-    />
-  );
+  // null = nog aan het laden; undefined-status = geen recht of geen sleutel -> de lege staat met de volgende stap.
+  const [status, setStatus] = useState<Status | null | 'none'>(null);
+
+  useEffect(() => {
+    let active = true;
+    api.post('/api/owner/agents/chat/status', { service: 'ai', tabContext: ecosystemTabContext(), sourceOrigin: location.origin })
+      .then((res) => { if (active) setStatus(res.data?.hasKey ? (res.data as Status) : 'none'); })
+      .catch(() => { if (active) setStatus('none'); });
+    return () => { active = false; };
+  }, []);
+
+  if (status === null) return null;
+  if (status === 'none') {
+    return (
+      <ProductEmptyState
+        icon={Bot}
+        title={tr('ШІ Робочий простір', 'AI-werkruimte')}
+        description={tr(
+          'Додайте свій ключ Anthropic у сховищі (API → Підключення), і тут з’явиться чат, який керує вашими пристроями.',
+          'Voeg uw eigen Anthropic-sleutel toe in de kluis (API → Koppelingen); dan verschijnt hier een chat die uw apparaten bedient.',
+        )}
+        actionLabel={tr('Підключити', 'Koppelen')}
+        onAction={openIntegrations}
+      />
+    );
+  }
+  return <Suspense fallback={null}><ChatPanel tr={tr} status={status} /></Suspense>;
 }
