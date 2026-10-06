@@ -44,9 +44,17 @@ export function createAgentRoutes(deps: Deps) {
     'POST /api/owner/agents/list': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
-      const [agents, pending] = await Promise.all([store.listAgents(auth.user.id), store.listPendingCommands(auth.user.id)]);
+      const [agents, pending, last] = await Promise.all([
+        store.listAgents(auth.user.id), store.listPendingCommands(auth.user.id), store.lastCommandPerAgent(auth.user.id),
+      ]);
       return deps.respond({
         agents: agents.map(publicAgent),
+        // Alleen een korte voorvertoning: een resultaat (bijv. fs.read) kan tot 2 MB groot zijn.
+        last: last.map((c: any) => ({
+          id: c.id, agentId: c.agent_id, type: c.type, status: c.status,
+          preview: c.result ? JSON.stringify(c.result).slice(0, 600) : '',
+          createdAt: new Date(c.created_at).getTime(),
+        })),
         pending: pending.map((c: any) => ({ id: c.id, agentId: c.agent_id, agentName: c.agent_name, type: c.type, params: c.params, createdAt: new Date(c.created_at).getTime() })),
         limits: store.AGENT_LIMITS,
       });
