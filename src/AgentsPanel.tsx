@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
+import './api-platform-view.css';
 import './agents-panel.css';
 
 type Tr = (uk: string, nl: string) => string;
@@ -12,12 +13,13 @@ type Pending = { id: string; agentId: string; agentName: string; type: string; p
 type Pairing = { code: string; expiresAt: number };
 
 const POLL_MS = 4000;
-const sessionBody = () => ({ service: 'api', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
+const sessionBody = (service: string) => ({ service, tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 const when = (value: number | null) => (value ? new Date(value).toLocaleString() : '—');
 const preview = (value: unknown) => JSON.stringify(value, null, 2).slice(0, 1200);
 
 /** Local Machine Connector: eigen apparaten koppelen, status volgen en schrijf-/uitvoeracties goedkeuren. */
-export default function AgentsPanel({ tr }: { tr: Tr }) {
+export default function AgentsPanel({ tr, service = 'mcp' }: { tr: Tr; service?: 'mcp' | 'api' }) {
+  const body = () => sessionBody(service);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [pending, setPending] = useState<Pending[]>([]);
   const [pairing, setPairing] = useState<Pairing | null>(null);
@@ -25,7 +27,7 @@ export default function AgentsPanel({ tr }: { tr: Tr }) {
   const [notice, setNotice] = useState('');
 
   const load = useCallback(async () => {
-    const res = await api.post('/api/owner/agents/list', sessionBody());
+    const res = await api.post('/api/owner/agents/list', body());
     setAgents(res.data?.agents ?? []);
     setPending(res.data?.pending ?? []);
   }, []);
@@ -47,18 +49,18 @@ export default function AgentsPanel({ tr }: { tr: Tr }) {
   };
 
   const createCode = () => run(async () => {
-    const res = await api.post('/api/owner/agents/pairing-code', sessionBody());
+    const res = await api.post('/api/owner/agents/pairing-code', body());
     setPairing({ code: String(res.data.code), expiresAt: Number(res.data.expiresAt) });
   }, tr('Не вдалося створити код (ліміт: 5 за 10 хвилин).', 'Code aanmaken mislukt (limiet: 5 per 10 minuten).'));
 
   const revoke = (agent: Agent) => {
     if (!window.confirm(tr(`Відключити «${agent.name}»? Токен буде знецінено.`, `«${agent.name}» ontkoppelen? Het token wordt ongeldig.`))) return;
-    void run(async () => { await api.post(`/api/owner/agents/${agent.id}/revoke`, sessionBody()); },
+    void run(async () => { await api.post(`/api/owner/agents/${agent.id}/revoke`, body()); },
       tr('Не вдалося відкликати.', 'Intrekken mislukt.'));
   };
 
   const decide = (id: string, verdict: 'approve' | 'reject') => run(async () => {
-    await api.post(`/api/owner/agents/commands/${id}/${verdict}`, sessionBody());
+    await api.post(`/api/owner/agents/commands/${id}/${verdict}`, body());
   }, tr('Дія вже недійсна.', 'Deze actie is niet meer geldig.'));
 
   const command = pairing
@@ -66,6 +68,7 @@ export default function AgentsPanel({ tr }: { tr: Tr }) {
     : '';
 
   return (
+    <section className='api-platform agents-wrap'>
     <article className='api-platform-panel agents-panel' data-agents-panel='true'>
       <strong>{tr('Мої пристрої (Local Machine Connector)', 'Mijn apparaten (Local Machine Connector)')}</strong>
       {notice ? <p role='status'>{notice}</p> : null}
@@ -118,5 +121,6 @@ export default function AgentsPanel({ tr }: { tr: Tr }) {
         </ul>
       ) : <p>{tr('Немає дій, що чекають підтвердження.', 'Geen acties die op goedkeuring wachten.')}</p>}
     </article>
+    </section>
   );
 }

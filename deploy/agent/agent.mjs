@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Hub Agent: універсальний Local Machine Connector. Без залежностей, Node >= 22 (вбудований WebSocket).
 //
-//   node agent.mjs pair --server https://api.tarasevych.com --code ABCD2345 --name "My PC" \
+//   node agent.mjs pair --server https://mcp.tarasevych.com --code ABCD2345 --name "My PC" \
 //                       --root C:\projects --root D:\notes --allow git,node,python
 //   node agent.mjs run
 //

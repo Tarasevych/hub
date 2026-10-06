@@ -24,7 +24,8 @@ const MAX_NAME = 80;
 export function createAgentRoutes(deps: Deps) {
   const ownerGate = async (event: Record<string, unknown>, body: unknown) => {
     const auth = await deps.requireSession(event, body);
-    if ('errorCode' in auth || auth.service !== 'api' || auth.user.status !== 'approved') return null;
+    // De UI staat op mcp.* (verbindingen, agenten, tools); 'api' blijft toegestaan voor programmatische clients.
+    if ('errorCode' in auth || !['mcp', 'api'].includes(auth.service) || auth.user.status !== 'approved') return null;
     if (!heeftApiRecht(auth.user as never)) return null;
     return auth;
   };

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AgentsPanel from "./AgentsPanel";
 import "./mcp-bridge.css";
 
 type Lang = "uk" | "nl";
@@ -137,6 +138,7 @@ export default function McpServiceView({ lang, tab }: Props) {
               <article key={name}><h2>{name}</h2><code>{url}</code><small>{t(uk, nl)}</small></article>
             ))}
           </section>
+          <AgentsPanel tr={t} service="mcp" />
         </>
       )}
 
