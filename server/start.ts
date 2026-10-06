@@ -79,6 +79,15 @@ function clientIp(req: http.IncomingMessage): string {
   return String(req.socket.remoteAddress || 'unknown').replace(/^::ffff:/, '');
 }
 
+/** Uitgaand verkeer van Anthropic (Claude-connectors): 160.79.104.0/21 (IPv4). */
+const CONNECTOR_LOG_PATH = /^\/(mcp|oauth2\/|\.well-known\/oauth-)/;
+function isAnthropicIp(ip: string): boolean {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(ip);
+  if (!m) return false;
+  const [a, b, c] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  return a === 160 && b === 79 && c >= 104 && c <= 111;
+}
+
 /** Splits een samengevoegde Set-Cookie-waarde (meerdere cookies) veilig op. */
 const splitSetCookie = (value: string) => value.split(/,\s*(?=[!#$%&'*+\-.^_`|~0-9A-Za-z]+=)/).filter(Boolean);
 
@@ -346,7 +355,9 @@ export function createServer() {
     res.on('finish', () => {
       // Geen querystrings loggen (kunnen codes/tokens bevatten).
       const pathOnly = String(req.url || '').split('?')[0].slice(0, 200);
-      console.log(`${req.method} ${hostOf(req)} ${pathOnly} ${res.statusCode} ${Date.now() - started}ms`);
+      // Alleen voor connector-paden: komt het verzoek uit het Anthropic-bereik? (het IP-adres zelf wordt niet gelogd)
+      const anthropic = CONNECTOR_LOG_PATH.test(pathOnly) ? ` anthropic=${isAnthropicIp(clientIp(req)) ? 'yes' : 'no'}` : '';
+      console.log(`${req.method} ${hostOf(req)} ${pathOnly} ${res.statusCode} ${Date.now() - started}ms${anthropic}`);
     });
     handle(req, res).catch((err) => {
       console.error('[server] onverwachte fout:', err);

@@ -77,6 +77,36 @@ const MACHINE_TOOLS: ToolDef[] = [
       required: ['command'], additionalProperties: false,
     },
   },
+  {
+    name: 'docker_list_containers',
+    description: 'List the Docker containers on a device (running and, by default, stopped ones) with name, image, state and status. Read-only; requires Docker on the device and "docker" in the agent\'s allow-list.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        machine: machineProp,
+        include_stopped: { type: 'boolean', description: 'Also list stopped containers (default true). Set to false to list only running containers.' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'docker_manage_container',
+    description: 'Start, stop or restart ONE Docker container on a device. The user must approve every action on the website, so the call can wait up to a minute; if it reports that approval is pending, tell the user and do not retry. Requires "docker" in the agent\'s allow-list.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        machine: machineProp,
+        container: { type: 'string', description: 'Container name or id as shown by docker_list_containers (letters, digits, "_", ".", "-"; must not start with "-").' },
+        action: { type: 'string', enum: ['start', 'stop', 'restart'], description: 'What to do with the container.' },
+      },
+      required: ['container', 'action'], additionalProperties: false,
+    },
+  },
+  {
+    name: 'system_metrics',
+    description: 'Show current CPU load, memory use and disk space of a device (on Windows measured with a fixed PowerShell script, elsewhere with the operating system\'s own counters). Read-only; takes a few seconds.',
+    inputSchema: { type: 'object', properties: { machine: machineProp }, additionalProperties: false },
+  },
 ];
 
 // Claude groepeert de rechten van een connector op deze hints (lezen / schrijven) en laat de gebruiker ze per hulpmiddel instellen.
@@ -87,6 +117,10 @@ const ANNOTATIONS: Record<string, { title: string } & ToolAnnotations> = {
   machine_read_file: { title: 'Read file', readOnlyHint: true, openWorldHint: false },
   machine_write_file: { title: 'Write file', readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
   machine_exec: { title: 'Run command', readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+  docker_list_containers: { title: 'List Docker containers', readOnlyHint: true, openWorldHint: false },
+  // start/stop zijn idempotent, restart niet: dus geen idempotentHint.
+  docker_manage_container: { title: 'Start, stop or restart a Docker container', readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+  system_metrics: { title: 'System metrics (CPU, memory, disk)', readOnlyHint: true, openWorldHint: false },
   github_get: { title: 'Read from GitHub', readOnlyHint: true, openWorldHint: true },
 };
 const annotate = (t: ToolDef): ToolDef => {
@@ -97,7 +131,23 @@ const annotate = (t: ToolDef): ToolDef => {
 const TOOL_TO_COMMAND: Record<string, string> = {
   machine_info: 'sys.info', machine_list_dir: 'fs.list', machine_read_file: 'fs.read',
   machine_write_file: 'fs.write', machine_exec: 'exec',
+  docker_list_containers: 'docker.ps', docker_manage_container: 'docker.manage', system_metrics: 'sys.metrics',
 };
+
+// Hulpmiddelen die iets wijzigen: wachten op een klik van de gebruiker en tellen mee voor MAX_PENDING.
+const NEEDS_APPROVAL = new Set(['machine_write_file', 'machine_exec', 'docker_manage_container']);
+const CONTAINER_NAME = /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/;
+const DOCKER_ACTIONS = new Set(['start', 'stop', 'restart']);
+
+/** Parameters controleren vóór er een apparaat gekozen wordt; geeft een foutmelding voor het model, of null. */
+function validateParams(name: string, args: any): string | null {
+  if (name === 'docker_manage_container') {
+    if (typeof args.container !== 'string' || !CONTAINER_NAME.test(args.container)) return 'Invalid "container": use the name or id from docker_list_containers (letters, digits, "_", ".", "-"; it must not start with "-").';
+    if (typeof args.action !== 'string' || !DOCKER_ACTIONS.has(args.action)) return 'Invalid "action": use "start", "stop" or "restart".';
+  }
+  if (name === 'docker_list_containers' && args.include_stopped !== undefined && typeof args.include_stopped !== 'boolean') return 'Invalid "include_stopped": use true or false.';
+  return null;
+}
 
 const text = (value: string, isError = false): ToolResult =>
   ({ content: [{ type: 'text', text: value.slice(0, MAX_TEXT) }], ...(isError ? { isError } : {}) });
@@ -146,9 +196,11 @@ export async function callTool(userId: string, name: string, args: any = {}): Pr
 
     if (TOOL_TO_COMMAND[name]) {
       // Schrijven en uitvoeren wachten op een mens: niet meer openstaande verzoeken toestaan dan die kan overzien.
-      if ((name === 'machine_write_file' || name === 'machine_exec') && (await store.listPendingCommands(userId)).length >= MAX_PENDING) {
+      if (NEEDS_APPROVAL.has(name) && (await store.listPendingCommands(userId)).length >= MAX_PENDING) {
         return text(`Too many actions are already waiting for the user's approval (${MAX_PENDING}). Ask the user to handle those first; do not retry now.`, true);
       }
+      const invalid = validateParams(name, args);
+      if (invalid) return text(invalid, true);
       const agents = await store.listAgents(userId); // alleen eigen apparaten van deze gebruiker
       const key = args.machine ? String(args.machine) : null;
       const candidates = key

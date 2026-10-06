@@ -19,7 +19,7 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import { sha256 } from './connectors-crypto';
 import * as store from './connectors-store';
 
-export const COMMAND_TYPES = ['fs.read', 'fs.list', 'fs.write', 'exec', 'sys.info'] as const;
+export const COMMAND_TYPES = ['fs.read', 'fs.list', 'fs.write', 'exec', 'sys.info', 'docker.ps', 'docker.manage', 'sys.metrics'] as const;
 export type CommandType = typeof COMMAND_TYPES[number];
 
 const WS_PATH = '/agent/ws';

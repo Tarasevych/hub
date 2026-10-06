@@ -1,3 +1,4 @@
+import './mcp-consent-store'; // eerst: legt ?consent=<id> van Claude vast vóór het aanmelden en vóór andere modules de URL aanpassen
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';

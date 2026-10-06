@@ -3,6 +3,9 @@
 // atomaire statusovergangen van opdrachten en het intrekken van agents.
 // Draait tegen een wegwerp-PG met de drie rollen (DATABASE_URL_APP/_SYSTEM/_MIGRATIE).
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { COMMAND_TYPES } from '../../backend/connectors-gateway';
 import { metVerzoek, zetGebruiker } from '../../server/platform/context';
 import { appRolActief, closePool, getPool } from '../../server/platform/pg';
 import * as store from '../../backend/connectors-store';
@@ -127,6 +130,37 @@ export async function main(): Promise<number> {
     await store.markAllAgentsDisconnected();
     const na = (await sys.query('SELECT status FROM app.agents WHERE id = $1', [agentB.id])).rows[0];
     check('status Connected met capabilities, na herstart weer Disconnected', verbonden.status === 'connected' && verbonden.capabilities.roots[0] === '/b' && na.status === 'disconnected');
+
+    // ---- 0011: nieuwe opdrachttypes (docker, metrics) en beleid ----
+    const def = (await sys.query(`SELECT pg_get_constraintdef(oid) AS d FROM pg_constraint WHERE conrelid = 'app.agent_commands'::regclass AND conname = 'agent_commands_type_check'`)).rows[0]?.d ?? '';
+    const inDb = [...def.matchAll(/'([^']+)'/g)].map((x) => x[1]).sort();
+    check('CHECK op agent_commands.type komt exact overeen met COMMAND_TYPES in de code (geen drift)', JSON.stringify(inDb) === JSON.stringify([...COMMAND_TYPES].sort()), def.slice(0, 200));
+    const geaccepteerd: boolean[] = [];
+    for (const t of ['docker.ps', 'docker.manage', 'sys.metrics']) {
+      geaccepteerd.push(await sys.query('INSERT INTO app.agent_commands (agent_id, user_id, type) VALUES ($1, $2, $3)', [agentB.id, B, t]).then(() => true, () => false));
+    }
+    check('de database accepteert docker.ps, docker.manage en sys.metrics', geaccepteerd.every(Boolean));
+
+    const nieuw = await store.createAgent(B, 'nieuw-beleid', null, sha256(randomUUID()), {});
+    const standaard: string[] = (await sys.query('SELECT policy FROM app.agents WHERE id = $1', [nieuw.id])).rows[0].policy.autoApprove;
+    check('standaardbeleid van een nieuwe agent: alle leestypes automatisch (ook sys.metrics, docker.ps); schrijven, uitvoeren en docker.manage nooit',
+      ['fs.read', 'fs.list', 'sys.info', 'sys.metrics', 'docker.ps'].every((t) => standaard.includes(t)) && !standaard.some((t) => ['fs.write', 'exec', 'docker.manage'].includes(t)), standaard.join(','));
+
+    // De migratie opnieuw draaien op oude beleidsrijen (zoals bij een bestaande agent) en controleren dat ze netjes wordt aangevuld.
+    const oudA = await store.createAgent(B, 'oud-beleid', null, sha256(randomUUID()), {});
+    const kapot = await store.createAgent(B, 'kapot-beleid', null, sha256(randomUUID()), {});
+    await sys.query(`UPDATE app.agents SET policy = '{"autoApprove": ["fs.read", "fs.list", "sys.info"]}' WHERE id = $1`, [oudA.id]);
+    await sys.query(`UPDATE app.agents SET policy = '{}' WHERE id = $1`, [kapot.id]);
+    const migratie = readFileSync(join(process.cwd(), 'migrations', '0011_agents_docker_metrics.sql'), 'utf8');
+    await mig.query(migratie);
+    const pol = async (id: string): Promise<string[]> => (await sys.query('SELECT policy FROM app.agents WHERE id = $1', [id])).rows[0].policy.autoApprove;
+    const na1 = await pol(oudA.id), na1k = await pol(kapot.id);
+    await mig.query(migratie); // idempotent
+    const na2 = await pol(oudA.id);
+    check('migratie 0011 vult bestaande beleidsrijen aan met de twee leestypes, behoudt de oude, voegt docker.manage nooit toe en repareert een lege lijst',
+      ['fs.read', 'fs.list', 'sys.info', 'sys.metrics', 'docker.ps'].every((t) => na1.includes(t)) && !na1.includes('docker.manage') && na1.length === 5
+      && na1k.includes('sys.metrics') && na1k.includes('docker.ps') && !na1k.includes('docker.manage'), JSON.stringify([na1, na1k]));
+    check('migratie 0011 is idempotent: een tweede keer draaien verandert niets en maakt geen dubbelen', JSON.stringify(na2) === JSON.stringify(na1) && new Set(na2).size === na2.length);
 
     // ---- verwijderen van een agent verwijdert zijn opdrachten ----
     await sys.query('DELETE FROM app.agents WHERE id = $1', [agentB.id]);
