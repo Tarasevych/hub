@@ -9,3 +9,7 @@ public/canonical-boot.css
 public/l002-diagnostic.json
 dist-server/
 rapporten/
+# Pakketmarkeringen en losse fragmenten van de MCP-pijplijn: nooit committen.
+BRON-COMMIT
+RELEASE-COMMIT
+src/_usa-parts/
