@@ -42,5 +42,14 @@ ingress:
     service: http://127.0.0.1:8080
   - hostname: dashboard.tarasevych.com
     service: http://127.0.0.1:8080
+  # mcp.tarasevych.com: één hostnaam, twee diensten (padsplitsing; zie deploy/MCP-SERVICE.txt).
+  #   - de MCP-brug (alleen-lezen, poort 8091): de deuren /grok /claude /chatgpt /gemini /copilot, /oauth/*,
+  #     /.well-known/* en /health. De regels worden van boven naar beneden gematcht, dus deze staat EERST.
+  #   - al het andere (de schermen /overview /agents ..., /api/*, WSS /agent/ws voor agents): de hoofdapp op 8080.
+  - hostname: mcp.tarasevych.com
+    path: ^/((?i:grok|claude|chatgpt|gemini|copilot)|oauth/.*|\.well-known/.*|health)$
+    service: http://127.0.0.1:8091
+  - hostname: mcp.tarasevych.com
+    service: http://127.0.0.1:8080
   # Alles wat niet expliciet hierboven staat: 404 aan de rand, komt nooit bij de app.
   - service: http_status:404

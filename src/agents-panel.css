@@ -1,3 +1,4 @@
+.agents-wrap{padding:0;margin-top:16px}
 .agents-panel .agents-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .agents-panel .agents-badge{font-size:.85rem;padding:2px 10px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
 .agents-panel .agents-connected{color:#1a7f37}
