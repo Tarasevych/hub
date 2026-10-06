@@ -124,6 +124,12 @@ Waarom: de hostnaam `mcp.` heeft de rol "MCP-instellingen, agenten, sleutels en 
 alleen-lezen MCP-brug (poort 8091). Na de splitsing blijven de deuren van de brug daar, en gaat al het andere
 (schermen, `/api/*`, WSS `/agent/ws`) naar de hoofdapp (8080).
 
+> **Stand 2026-10-06:** op de VM is deze splitsing al actief (back-ups: `config.yml.bak-mcp`, `config.yml.bak-mcp-ui`).
+> Een eerste versie matchte `Grok` alleen met een hoofdletter, waardoor `/grok` bij de app (200, SPA) uitkwam in plaats
+> van bij de brug. Dat is om 21:37 hoofdletterongevoelig gemaakt (back-up `config.yml.voor-hoofdletters-20261006-213725`)
+> en na de herstart publiek gecontroleerd: `/Grok` en `/grok` -> 401 (brug), `/agents` -> 200, WSS `/agent/ws` -> 4401.
+> Gebruik dit hoofdstuk daarom vooral om te **controleren** (en bij een nieuwe VM om in te richten).
+
 **Pas dit pas toe nadat §3 groen is, en bekijk eerst uw echte `/etc/cloudflared/config.yml`:** het sjabloon in de
 repo is niet per se gelijk aan de live-configuratie.
 
@@ -137,7 +143,7 @@ vóór de afsluitende `http_status:404`:
 
 ```yaml
   - hostname: mcp.tarasevych.com
-    path: ^/((?i:grok|claude|chatgpt|gemini|copilot)|oauth/.*|\.well-known/.*|health)$
+    path: ^/((?i:grok|claude|chatgpt|gemini|copilot)|oauth|health|\.well-known)(/|$)
     service: http://127.0.0.1:8091
   - hostname: mcp.tarasevych.com
     service: http://127.0.0.1:8080
