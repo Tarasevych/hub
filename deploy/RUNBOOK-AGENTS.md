@@ -33,19 +33,19 @@ $kort  = git rev-parse --short HEAD
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $naam  = "mijn-ruimte-agents-$stamp-$kort.tar.gz"
 $stage = "T:\mijn-ruimte\ontwikkeling\staging\$stamp"
-New-Item -ItemType Directory -Force "$stage\mijn-ruimte" | Out-Null
-git archive --format=tar -o "$stage\bron.tar" HEAD            # naar een bestand, NIET via een PowerShell-pipe (die beschadigt binaire data)
-tar -xf "$stage\bron.tar" -C "$stage\mijn-ruimte"
-Remove-Item -LiteralPath "$stage\bron.tar"
-Set-Content -Path "$stage\mijn-ruimte\BRON-COMMIT" -Value $sha -Encoding ascii -NoNewline
-tar -czf "T:\mijn-ruimte\uitrol\$naam" -C $stage mijn-ruimte
+New-Item -ItemType Directory -Force $stage | Out-Null
+Set-Content -Path "$stage\BRON-COMMIT" -Value $sha -Encoding ascii -NoNewline
+# Eén git archive: bewaart de uitvoerbare bits (.sh) en geeft geen binaire data via een PowerShell-pipe.
+git archive --format=tar.gz --prefix=mijn-ruimte/ --add-file="$stage\BRON-COMMIT" -o "T:\mijn-ruimte\uitrol\$naam" HEAD
 $hash = (Get-FileHash "T:\mijn-ruimte\uitrol\$naam" -Algorithm SHA256).Hash.ToLower()
 "$hash  $naam" | Set-Content "T:\mijn-ruimte\uitrol\$naam.sha256" -Encoding ascii
 $naam
 ```
 
 `BRON-COMMIT` zorgt dat de release het juiste commit-label krijgt (zonder dat bestand wordt het "onbekend").
-`git archive` bewaart de uitvoerbare bits van de `.sh`-bestanden.
+Controle vóór het versturen (optioneel): `tar -tvzf T:\mijn-ruimte\uitrol\$naam | Select-String 'installeer-app.sh$'`
+moet `-rwxr-xr-x`/`-rwxrwxr-x` tonen. Maak het archief **niet** door het uit te pakken en opnieuw in te pakken op Windows:
+dan gaan de uitvoerbare bits verloren.
 
 Naar de VM (zoals bij de vorige uitrol):
 
