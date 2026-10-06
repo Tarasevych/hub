@@ -168,12 +168,14 @@ bouwen() {
   # Code is daarna alleen-lezen voor de dienst (root is eigenaar).
   chown -R "root:$GEBRUIKER" "$doel"
   chmod -R u=rwX,g=rX,o= "$doel"
+  find "$doel/deploy" -type f -name '*.sh' -exec chmod 750 {} +
 }
 
 migreren() {
   local doel="$1"
   if [ "${ZONDER_BACKUP:-0}" != "1" ] && [ -e "$HUIDIG" ] && systemctl cat mijn-ruimte-backup.service >/dev/null 2>&1; then
     melding "back-up vóór migratie…"
+    chmod 750 /srv/mijn-ruimte/current/deploy/backup-maken.sh 2>/dev/null || true
     systemctl start mijn-ruimte-backup.service || fout "back-up mislukt; niets gewijzigd (ZONDER_BACKUP=1 om over te slaan)"
   fi
   melding "migraties uitvoeren…"
@@ -235,11 +237,17 @@ installeren() {
   install -d -o root -g "$GEBRUIKER" -m 0750 "$doel"
   ONVOLTOOID="$doel"
   melding "bron kopiëren naar $doel…"; bron_kopieren "$bron" "$doel"
+  python3 "$doel/deploy/patch-owner-plum.py" "$doel/src/App.tsx"
+  if [ -f "$doel/deploy/patch-backup-copy.py" ]; then python3 "$doel/deploy/patch-backup-copy.py" "$doel" || fout "patch-backup-copy mislukt"; fi
   melding "bouwen (npm ci, audit, vite, server-bundel)…"; bouwen "$doel"
   migreren "$doel"
   ONVOLTOOID=""   # vanaf hier blijft de release bestaan (ook als activeren mislukt, voor diagnose)
   units_installeren "$doel"
   activeren "$doel"
+  if [ -s "$doel/deploy/mcp/mijn-ruimte-mcp-doen" ]; then
+    install -m 0755 -o root -g root "$doel/deploy/mcp/mijn-ruimte-mcp-doen" /usr/local/sbin/mijn-ruimte-mcp-doen
+    melding "mcp-hulp bijgewerkt"
+  fi
   # Timers (cron, opruimen, back-up) starten; `enable` alleen start ze pas na een herstart.
   systemctl start "${TIMERS[@]}"
   releases_opruimen

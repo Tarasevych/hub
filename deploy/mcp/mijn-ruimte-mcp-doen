@@ -1,0 +1,113 @@
+#!/bin/bash
+# Fixed verbs only. No extra arguments are executed.
+set -euo pipefail
+verb="${1:-}"
+PERMS="/srv/data/uploads/mcp-permissions.json"
+STAGING="/srv/mijn-ruimte/mcp-staging"
+WORK="/srv/mijn-ruimte/mcp-work"
+CURRENT="/srv/mijn-ruimte/current"
+
+flag() {
+  python3 - "$1" << 'PY'
+import json, sys
+key = sys.argv[1]
+try:
+    data = json.load(open("/srv/data/uploads/mcp-permissions.json"))
+except Exception:
+    data = {}
+if not data.get(key):
+    raise SystemExit("PERMISSION_OFF:" + key)
+print(key + "=on")
+PY
+}
+
+host_ok() {
+  mkdir -p "$WORK" 2>/dev/null || return 1
+  touch "$WORK/.probe" 2>/dev/null || return 1
+  rm -f "$WORK/.probe"
+  return 0
+}
+
+leave_cage() {
+  [ "${MCP_HOST_NS:-}" = "1" ] && return 0
+  if host_ok; then
+    return 0
+  fi
+  exec systemd-run --wait --pipe --collect --quiet \
+    --setenv=MCP_HOST_NS=1 \
+    /usr/local/sbin/mijn-ruimte-mcp-doen "$verb"
+}
+
+case "$verb" in
+  status)
+    echo "door=4"
+    systemctl is-active mijn-ruimte.service cloudflared mijn-ruimte-mcp.service
+    curl -fsS -m 3 http://127.0.0.1:8080/__gezondheid || echo 'NO_HEALTH'
+    script="/srv/mijn-ruimte/current/deploy/backup-maken.sh"
+    if [ -x "$script" ]; then echo "script=exec"
+    elif [ -f "$script" ]; then
+      if systemd-run --wait --pipe --collect --quiet /bin/chmod 750 "$script"; then echo "script=fixed"
+      else echo "script=chmod-failed"; fi
+    else echo "script=missing"; fi
+    if [ -f "$script" ]; then stat -c 'script-mode=%a' "$script"; fi
+    newest="$(ls -1dt /srv/backups/mijn-ruimte/20*/ 2>/dev/null | head -1 || true)"
+    echo "newest=${newest:-none}"
+    if [ -n "$newest" ] && [ -f "${newest}KLAAR" ]; then echo "klaar=yes"; else echo "klaar=no"; fi
+    if [ -f "$STAGING/door/RUN_BACKUP_ONCE" ]; then
+      rm -f "$STAGING/door/RUN_BACKUP_ONCE"
+      if [ -f "$STAGING/overlay/deploy/patch-installer-backup.py" ]; then
+        systemd-run --wait --pipe --collect --quiet /usr/bin/python3 "$STAGING/overlay/deploy/patch-installer-backup.py" || echo "installer-patch-failed"
+      fi
+      systemctl reset-failed mijn-ruimte-backup.service || true
+      systemctl start --no-block mijn-ruimte-backup.service && echo "backup-start=queued" || echo "backup-start=failed"
+    fi
+    systemctl show mijn-ruimte-backup.service -p ActiveState -p Result -p ExecMainStatus --no-pager || true
+    ;;
+  backup)
+    flag backup
+    systemd-run --wait --pipe --collect --quiet /bin/chmod 750 /srv/mijn-ruimte/current/deploy/backup-maken.sh || true
+    systemctl start mijn-ruimte-backup.service
+    echo "backup-service $(systemctl is-active mijn-ruimte-backup.service || true)"
+    ls -1dt /srv/backups/mijn-ruimte/*/ 2>/dev/null | head -3 || true
+    ;;
+  releases)
+    readlink -f "$CURRENT"
+    ls -1 /srv/mijn-ruimte/releases
+    ;;
+  install)
+    flag install
+    leave_cage
+    src="$(readlink -f "$CURRENT")"
+    rm -rf "$WORK"
+    mkdir -p "$WORK"
+    rsync -a --exclude node_modules --exclude dist --exclude dist-server --exclude .git --exclude rapporten "$src/" "$WORK/"
+    if [ -d "$STAGING/overlay" ]; then
+      rsync -a --exclude node_modules --exclude dist --exclude dist-server --exclude .git "$STAGING/overlay/" "$WORK/"
+    fi
+    find "$WORK" -type f \( -name '*.env' -o -name '*.age' -o -name '*.pem' -o -name 'id_rsa' -o -name 'id_ed25519' \) -delete
+    if flag backup >/dev/null 2>&1; then
+      unset ZONDER_BACKUP || true
+    else
+      export ZONDER_BACKUP=1
+    fi
+    bash "$WORK/deploy/installeer-app.sh" installeren "$WORK"
+    ;;
+  door)
+    flag install
+    leave_cage
+    [ -s "$STAGING/door/server.mjs" ] || { echo "DOOR_SERVER_MISSING" >&2; exit 1; }
+    [ -s "$STAGING/door/mijn-ruimte-mcp-doen" ] || { echo "DOOR_HELPER_MISSING" >&2; exit 1; }
+    install -m 0644 "$STAGING/door/server.mjs" /srv/mijn-ruimte/mcp/server.mjs
+    install -m 0755 "$STAGING/door/mijn-ruimte-mcp-doen" /usr/local/sbin/mijn-ruimte-mcp-doen
+    if systemd-run --collect --on-active=2s /bin/systemctl restart mijn-ruimte-mcp.service >/dev/null; then
+      echo "DOOR_RELOAD_QUEUED"
+    else
+      nohup /bin/bash -c 'sleep 2; /bin/systemctl restart mijn-ruimte-mcp.service' >/dev/null 2>&1 &
+      echo "DOOR_RELOAD_QUEUED_NOHUP"
+    fi
+    ;;
+  *)
+    echo "VERBODEN" >&2
+    exit 2
+    ;;
+esac

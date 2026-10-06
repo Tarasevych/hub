@@ -6,7 +6,7 @@ export type DomainViewEntry<T=unknown>={key:string;signature:string;model:T;time
 type DomainViewStore={version:1;entries:Record<string,DomainViewEntry>};
 const DOMAIN_VIEW_CACHE_KEY='tsv-domain-view-cache-v1';
 const DURABLE_MAX_ENTRIES=64,DURABLE_MAX_BYTES=1200000,TAB_MAX_ENTRIES=24,TAB_MAX_BYTES=220000;
-const services:CanonicalService[]=['hub','ai','mail','cloud','github','identity','api','admin'];
+const services:CanonicalService[]=['hub','ai','mail','cloud','github','huis','identity','api','admin','mcp'];
 const sensitive=/^(accessToken|refreshToken|idToken|token|authorization|cookie|secret|password|nonce|pkce|codeVerifier|proof|sessionToken)$/i;
 const hash=(value:string)=>{let current=2166136261;for(let index=0;index<value.length;index++){current^=value.charCodeAt(index);current=Math.imul(current,16777619)}return(current>>>0).toString(16).padStart(8,'0')};
 export const cacheAccountKey=(value:unknown)=>{const raw=String(value||'').trim();if(!raw||raw==='anon')return'anon';if(/^u-[a-f0-9]{8}$/.test(raw))return raw;return`u-${hash(raw)}`};
