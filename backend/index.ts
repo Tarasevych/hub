@@ -1,6 +1,7 @@
 import { db, error, invites, isInviteError, isOwnerEmail, json, ownerEmail, router, secrets } from '../server/platform';
 import { alsSysteem, sessieGeverifieerd, zetGebruiker } from '../server/platform/context'
 import { juridischeRoutes } from './juridisch'
+import { createAgentRoutes } from './connectors-routes'
 import { registreerSessieControle, requireAuth } from '../server/platform/auth-poort'
 import { googleStapOpVastleggen, stapOpFout, stapOpUit } from './stap-op'
 import { registreerMelder } from './melder'
@@ -456,6 +457,7 @@ export const handler = router({
   ...createApiPlatformRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformVaultRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformConnectionRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
+  ...createAgentRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...wrapFactoryMutations(createCloudRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createGoogleSuiteBrowserRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createGoogleSuiteMailBrowserRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),

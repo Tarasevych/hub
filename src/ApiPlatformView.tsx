@@ -2,6 +2,7 @@ import {useEffect,useState} from 'react';
 import {api} from './platform/client';
 import {API_PLATFORM_VERSION,apiPlatformContractPayload,type ApiPlatformCapability} from './api-platform-contract';
 import {ecosystemTabContext} from './tab-context';
+import AgentsPanel from './AgentsPanel';
 import './api-platform-view.css';
 type Tr=(uk:string,nl:string)=>string;
 type Contract=ReturnType<typeof apiPlatformContractPayload>;
@@ -104,6 +105,7 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
         </div>
       </li>)}</ul>
     </article>:null}
+    {tab==='connections'?<AgentsPanel tr={tr}/>:null}
     {tab==='vault'?<article className='api-platform-panel' data-api-vault-panel='true'>
       <strong>{tr('Encrypted vault власника','Encrypted eigenaarskluis')}</strong>
       <div className='api-platform-meta'>
