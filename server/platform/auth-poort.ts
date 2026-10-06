@@ -39,6 +39,7 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'POST /api/owner/session/bootstrap': 'sessiestatus; zonder sessie alleen {state:signed_out}',
   'POST /api/owner/session/accounts': 'accountkiezer van deze browser; zonder sessie lege lijst',
   'POST /api/owner/browser/accounts': 'accountkiezer van deze browser; zonder sessie lege lijst',
+  'POST /api/owner/agents/pair': 'agent wisselt een eenmalige koppelcode (10 min, gehasht, één gebruiker) in voor een eigen token',
   'POST /api/owner/mail/microsoft/webhook': 'Microsoft Graph-webhook (clientState-controle)',
   'POST /api/owner/mail/google/pubsub/push': 'Google Pub/Sub-push (OIDC-token in Authorization)',
   'POST /api/owner/access/webauthn/options': 'passkey-opties (uitgeschakeld: 503)',
