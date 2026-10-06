@@ -5,11 +5,11 @@ Cloudflare Tunnel); er hoeft geen poort open en geen router te worden ingesteld.
 
 ## Gebruik
 
-1. Site → API → Koppelingen → "Pc / virtuele machine koppelen": toont een code (10 minuten, één keer bruikbaar).
+1. mcp.tarasevych.com → Agenten → "Pc / virtuele machine koppelen": toont een code (10 minuten, één keer bruikbaar).
 2. Op de machine (Node.js 22 of nieuwer, `agent.mjs` erbij):
 
    ```
-   node agent.mjs pair --server https://api.tarasevych.com --code XXXXXXXX --name "Mijn pc" --root D:\projecten --allow git,node
+   node agent.mjs pair --server https://mcp.tarasevych.com --code XXXXXXXX --name "Mijn pc" --root D:\projecten --allow git,node
    node agent.mjs run
    ```
 
@@ -26,7 +26,9 @@ Cloudflare Tunnel); er hoeft geen poort open en geen router te worden ingesteld.
 ## Server
 
 - WebSocket: `wss://<app-host>/agent/ws` (alleen bekende hostnamen uit `SERVICE_HOSTS`), afgehandeld in
-  `backend/connectors-gateway.ts`. Gebruik `api.tarasevych.com`; `mcp.tarasevych.com` (poort 8091) is een apart,
-  alleen-lezen MCP-gebruik voor externe AI-clients en wijst NIET naar de hoofdapp.
+  `backend/connectors-gateway.ts`. Agents gebruiken `mcp.tarasevych.com` (rol van dit domein: MCP-instellingen,
+  agenten, sleutels en tools). Daarvoor splitst de tunnel die hostnaam op pad: de MCP-brug (poort 8091, alleen-lezen)
+  houdt zijn eigen paden, al het andere (schermen, `/api/*`, `wss://…/agent/ws`) gaat naar de hoofdapp op 8080.
+  Zie `deploy/cloudflared-config.yml` en `deploy/MCP-SERVICE.txt`. Eerst testen, daarna pas de live-config vervangen.
 - Verbindingen leven in het geheugen van het proces: draai één app-proces (zoals nu).
 - Migratie `0009_agents.sql` (+ rechten in `rechten.sql`), nieuwe runtime-afhankelijkheid: `ws`.
