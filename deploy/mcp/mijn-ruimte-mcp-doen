@@ -1,0 +1,23 @@
+#!/bin/bash
+# Fixed verbs only. No extra arguments are executed.
+set -euo pipefail
+verb="${1:-}"
+case "$verb" in
+  status)
+    systemctl is-active mijn-ruimte.service cloudflared mijn-ruimte-mcp.service
+    curl -fsS -m 3 http://127.0.0.1:8080/__gezondheid || echo 'NO_HEALTH'
+    ;;
+  backup)
+    systemctl start mijn-ruimte-backup.service
+    echo "backup-service $(systemctl is-active mijn-ruimte-backup.service || true)"
+    ls -1dt /srv/backups/mijn-ruimte/*/ 2>/dev/null | head -3 || true
+    ;;
+  releases)
+    readlink -f /srv/mijn-ruimte/current
+    ls -1 /srv/mijn-ruimte/releases
+    ;;
+  *)
+    echo "VERBODEN" >&2
+    exit 2
+    ;;
+esac

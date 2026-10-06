@@ -1,5 +1,5 @@
-export type CanonicalService='hub'|'ai'|'mail'|'cloud'|'github'|'huis'|'identity'|'api'|'admin';
-export type PublicService='hub'|'ai'|'mail'|'cloud'|'github'|'huis';
+export type CanonicalService='hub'|'ai'|'mail'|'cloud'|'github'|'huis'|'identity'|'api'|'admin'|'mcp';
+export type PublicService='hub'|'ai'|'mail'|'cloud'|'github'|'huis'|'mcp';
 export type ServiceId=Exclude<CanonicalService,'hub'>;
 export type CanonicalLang='uk'|'nl';
 export type CanonicalRoute={service:CanonicalService;tab:string;lang:CanonicalLang;explicitLang?:string;host:string;path:string;pathTab?:string;production:boolean};

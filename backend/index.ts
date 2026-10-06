@@ -53,7 +53,7 @@ const SERVICE_SESSION_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
 const BROWSER_GRANT_MS = 180 * 24 * 60 * 60 * 1000;
 const BROWSER_COOKIE_PREFIX = 'tsv_bg_';
 const BROWSER_POLICY_COOKIE_PREFIX = 'tsv_bp_';
-const SERVICE_ORIGINS = { hub: 'https://hub.tarasevych.com', identity: 'https://id.tarasevych.com', ai: 'https://ai.tarasevych.com', mail: 'https://mail.tarasevych.com', cloud: 'https://cloud.tarasevych.com', github: 'https://github.tarasevych.com', huis: 'https://huis.tarasevych.com', api: 'https://api.tarasevych.com', admin: 'https://admin.tarasevych.com' } as const;
+const SERVICE_ORIGINS = { hub: 'https://hub.tarasevych.com', identity: 'https://id.tarasevych.com', ai: 'https://ai.tarasevych.com', mail: 'https://mail.tarasevych.com', cloud: 'https://cloud.tarasevych.com', github: 'https://github.tarasevych.com', huis: 'https://huis.tarasevych.com', api: 'https://api.tarasevych.com', admin: 'https://admin.tarasevych.com', mcp: 'https://mcp.tarasevych.com' } as const;
 type ServiceId = keyof typeof SERVICE_ORIGINS;
 
 type Status = 'new' | 'pending' | 'approved' | 'blocked' | 'deleted';
