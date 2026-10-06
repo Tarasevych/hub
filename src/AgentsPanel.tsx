@@ -11,6 +11,7 @@ type Agent = {
 };
 type Pending = { id: string; agentId: string; agentName: string; type: string; params: unknown; createdAt: number };
 type Pairing = { code: string; expiresAt: number };
+type LastCommand = { id: string; agentId: string; type: string; status: string; preview: string; createdAt: number };
 
 const POLL_MS = 4000;
 const sessionBody = (service: string) => ({ service, tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
@@ -22,6 +23,7 @@ export default function AgentsPanel({ tr, service = 'mcp' }: { tr: Tr; service?:
   const body = () => sessionBody(service);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [pending, setPending] = useState<Pending[]>([]);
+  const [last, setLast] = useState<Record<string, LastCommand>>({});
   const [pairing, setPairing] = useState<Pairing | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
@@ -30,6 +32,7 @@ export default function AgentsPanel({ tr, service = 'mcp' }: { tr: Tr; service?:
     const res = await api.post('/api/owner/agents/list', body());
     setAgents(res.data?.agents ?? []);
     setPending(res.data?.pending ?? []);
+    setLast(Object.fromEntries(((res.data?.last ?? []) as LastCommand[]).map((c) => [c.agentId, c])));
   }, []);
 
   // Status in (bijna) realtime: pollen zolang het tabblad zichtbaar is.
@@ -59,6 +62,14 @@ export default function AgentsPanel({ tr, service = 'mcp' }: { tr: Tr; service?:
       tr('Не вдалося відкликати.', 'Intrekken mislukt.'));
   };
 
+  // Zelftest: 'sys.info' loopt direct (leesopdracht); 'fs.write' wacht op uw goedkeuring (zie "Wachten op uw goedkeuring").
+  const probe = (agent: Agent, kind: 'verbinding' | 'goedkeuring') => run(async () => {
+    const payload = kind === 'verbinding'
+      ? { type: 'sys.info', params: {} }
+      : { type: 'fs.write', params: { path: 'hub-agent-test.txt', content: `test ${new Date().toISOString()}\n` } };
+    await api.post(`/api/owner/agents/${agent.id}/command`, { ...body(), ...payload });
+  }, tr('Агент не відповідає (офлайн?).', 'Agent reageert niet (offline?).'));
+
   const decide = (id: string, verdict: 'approve' | 'reject') => run(async () => {
     await api.post(`/api/owner/agents/commands/${id}/${verdict}`, body());
   }, tr('Дія вже недійсна.', 'Deze actie is niet meer geldig.'));
@@ -84,7 +95,17 @@ export default function AgentsPanel({ tr, service = 'mcp' }: { tr: Tr; service?:
                 </span>
               </div>
               <small>{[agent.platform, tr('остання активність', 'laatst gezien'), when(agent.lastSeenAt)].filter(Boolean).join(' · ')}</small>
-              <button type='button' disabled={busy} onClick={() => revoke(agent)}>{tr('Відкликати', 'Intrekken')}</button>
+              {last[agent.id] ? (
+                <small data-agent-last={last[agent.id].status}>
+                  {tr('Остання дія', 'Laatste actie')}: {last[agent.id].type} · {last[agent.id].status}
+                  {last[agent.id].preview ? <code className='agents-preview'>{last[agent.id].preview}</code> : null}
+                </small>
+              ) : null}
+              <div className='api-platform-secret-actions'>
+                <button type='button' disabled={busy || agent.status !== 'connected'} onClick={() => void probe(agent, 'verbinding')}>{tr('Перевірити зв\'язок', 'Verbinding testen')}</button>
+                <button type='button' disabled={busy || agent.status !== 'connected'} onClick={() => void probe(agent, 'goedkeuring')}>{tr('Тест підтвердження', 'Test goedkeuring')}</button>
+                <button type='button' disabled={busy} onClick={() => revoke(agent)}>{tr('Відкликати', 'Intrekken')}</button>
+              </div>
             </li>
           ))}
         </ul>
