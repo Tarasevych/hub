@@ -119,6 +119,14 @@ export async function listCommands(userId: string, agentId: string, limit = 30) 
   return rows;
 }
 
+/** Laatste opdracht per agent (voor de statusregel in de UI). */
+export async function lastCommandPerAgent(userId: string) {
+  const { rows } = await gebruiker(
+    `SELECT DISTINCT ON (agent_id) id, agent_id, type, status, result, created_at, finished_at
+       FROM app.agent_commands WHERE user_id = $1 ORDER BY agent_id, created_at DESC`, [userId]);
+  return rows;
+}
+
 export async function listPendingCommands(userId: string) {
   const { rows } = await gebruiker(
     `SELECT c.*, a.name AS agent_name FROM app.agent_commands c

@@ -112,6 +112,12 @@ export async function main(): Promise<number> {
     await als(B, () => store.createCommand(agentB.id, B, 'fs.write', { path: 'y' }, 'pending_approval'));
     check('lijst wachtende opdrachten per gebruiker', wachtend.length === 0 && (await als(B, () => store.listPendingCommands(B))).length === 1 && (await als(A, () => store.listPendingCommands(A))).length === 0);
 
+    const laatsteB = await als(B, () => store.lastCommandPerAgent(B));
+    const laatsteA = await als(A, () => store.lastCommandPerAgent(A));
+    check('laatste opdracht per agent: één rij per agent (de nieuwste), alleen van de eigen gebruiker',
+      laatsteB.length === 1 && laatsteB[0].agent_id === agentB.id && laatsteB[0].status === 'pending_approval' && laatsteA.length === 0,
+      JSON.stringify(laatsteB.map((c: any) => [c.type, c.status])));
+
     check('opdracht met onbekend type wordt door de database geweigerd',
       await sys.query("INSERT INTO app.agent_commands (agent_id, user_id, type) VALUES ($1, $2, 'rm -rf')", [agentB.id, B]).then(() => false, () => true));
 

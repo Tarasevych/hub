@@ -131,6 +131,59 @@ const handlers = {
   },
 };
 
+// ---------- selftest ----------
+// node agent.mjs selftest --root <map>   Controleert de beveiligingsregels van de agent lokaal, zonder server:
+// uitbreken uit de map (.., absoluut pad, naastgelegen map met dezelfde prefix, symlink/junction), allow-list van
+// commando's, grootte-limieten. Werkt alleen in <map>\_selftest* en ruimt zichzelf op. Exitcode 1 bij een FOUT.
+async function selftest(args) {
+  if (!args.root.length) die('usage: selftest --root <DIR>');
+  const base = path.resolve(args.root[0]);
+  const work = path.join(base, '_selftest');
+  const evil = `${work}-evil`;       // zelfde prefix als de toegestane map
+  const buiten = path.join(base, '_selftest-buiten');
+  for (const d of [work, evil, buiten]) { await fs.rm(d, { recursive: true, force: true }); await fs.mkdir(d, { recursive: true }); }
+  await fs.writeFile(path.join(evil, 'x.txt'), 'geheim');
+  await fs.writeFile(path.join(buiten, 'secret.txt'), 'geheim');
+  await fs.writeFile(path.join(base, '_selftest-outside.txt'), 'geheim');
+  const cfg = { roots: [work], allow: ['node'] };
+  let fouten = 0;
+  const check = (naam, ok, info = '') => { console.log(`${ok ? 'OK  ' : 'FOUT'} ${naam}${info ? ` — ${info}` : ''}`); if (!ok) fouten++; };
+  const geweigerd = async (fn, patroon) => { try { await fn(); return 'geen fout'; } catch (e) { return patroon.test(e.message) ? true : e.message; } };
+  const BUITEN = /outside allowed roots/;
+  try {
+    await handlers['fs.write'](cfg, { path: 'a/b.txt', content: 'hoi' });
+    check('schrijven en lezen binnen de map', (await handlers['fs.read'](cfg, { path: 'a/b.txt' })).content === 'hoi');
+    check('map tonen', (await handlers['fs.list'](cfg, { path: 'a' })).some((e) => e.name === 'b.txt'));
+    check('relatief pad met .. buiten de map geweigerd', (await geweigerd(() => handlers['fs.read'](cfg, { path: '../_selftest-outside.txt' }), BUITEN)) === true);
+    check('absoluut pad buiten de map geweigerd', (await geweigerd(() => handlers['fs.read'](cfg, { path: path.join(base, '_selftest-outside.txt') }), BUITEN)) === true);
+    check('naastgelegen map met dezelfde prefix geweigerd', (await geweigerd(() => handlers['fs.read'](cfg, { path: '../_selftest-evil/x.txt' }), BUITEN)) === true);
+    check('schrijven buiten de map geweigerd', (await geweigerd(() => handlers['fs.write'](cfg, { path: '../_selftest-nieuw.txt', content: 'x' }), BUITEN)) === true);
+    try {
+      await fs.symlink(buiten, path.join(work, 'link'), process.platform === 'win32' ? 'junction' : 'dir');
+      check('lezen via symlink/junction naar buiten geweigerd', (await geweigerd(() => handlers['fs.read'](cfg, { path: 'link/secret.txt' }), BUITEN)) === true);
+      check('schrijven via symlink/junction naar buiten geweigerd', (await geweigerd(() => handlers['fs.write'](cfg, { path: 'link/nieuw.txt', content: 'x' }), BUITEN)) === true);
+    } catch (e) { check('symlink-test', false, `kon geen link maken: ${e.code || e.message}`); }
+    check('fs.write met niet-tekst geweigerd', (await geweigerd(() => handlers['fs.write'](cfg, { path: 'n.bin', content: 42 }), /string/)) === true);
+    check('fs.write boven de limiet geweigerd', (await geweigerd(() => handlers['fs.write'](cfg, { path: 'groot.txt', content: 'x'.repeat(MAX_WRITE + 1) }), /too large/)) === true);
+    await fs.writeFile(path.join(work, 'leesgroot.txt'), 'x'.repeat(MAX_READ + 1));
+    check('fs.read boven de limiet geweigerd', (await geweigerd(() => handlers['fs.read'](cfg, { path: 'leesgroot.txt' }), /too large/)) === true);
+    check('commando buiten de allow-list geweigerd', (await geweigerd(() => handlers.exec(cfg, { command: 'git', args: ['--version'] }), /allow-list/)) === true);
+    check('commando met pad geweigerd (alleen programmanaam)', (await geweigerd(() => handlers.exec(cfg, { command: path.join(base, 'node.exe'), args: [] }), /allow-list/)) === true);
+    check('cwd buiten de map geweigerd', (await geweigerd(() => handlers.exec(cfg, { command: 'node', args: ['-v'], cwd: '..' }), BUITEN)) === true);
+    const ok = await handlers.exec(cfg, { command: 'node', args: ['-e', 'console.log(41+1)'] });
+    check('toegestaan commando draait (zonder shell)', ok.code === 0 && ok.stdout.trim() === '42', JSON.stringify([ok.code, ok.stdout.trim()]));
+    const meta = await handlers.exec(cfg, { command: 'node', args: ['-e', 'console.log("a;b && c | d")'] });
+    check('shell-tekens in argumenten worden letterlijk doorgegeven', meta.stdout.trim() === 'a;b && c | d');
+  } catch (e) {
+    check('onverwachte fout', false, e.message);
+  } finally {
+    for (const d of [work, evil, buiten]) await fs.rm(d, { recursive: true, force: true }).catch(() => {});
+    await fs.rm(path.join(base, '_selftest-outside.txt'), { force: true }).catch(() => {});
+  }
+  console.log(fouten ? `\n${fouten} FOUT(EN)` : '\nalles OK');
+  process.exit(fouten ? 1 : 0);
+}
+
 // ---------- run ----------
 function run() {
   let cfg;
@@ -173,4 +226,5 @@ const args = parseArgs(process.argv.slice(2));
 const cmd = args._[0];
 if (cmd === 'pair') await pair(args);
 else if (cmd === 'run') run();
-else die('usage: node agent.mjs <pair|run>');
+else if (cmd === 'selftest') await selftest(args);
+else die('usage: node agent.mjs <pair|run|selftest>');
