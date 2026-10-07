@@ -185,7 +185,7 @@ const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_get_deep_diagnostics',
-    description: `Watch the active Mijn Ruimte tab for a few seconds with the browser's debugger and report console messages, exceptions and every failed or slow request (address without query string, status and timing only; never contents or headers). Optionally reload the page first to capture its loading. Only available if the user has switched it on in the extension. ${APPROVAL_NOTE}`,
+    description: `Watch the active Mijn Ruimte tab for a few seconds with a passive page observer (no browser debugger needed) and report console messages, exceptions and every failed or slow request (address without query string, status and timing only; never contents or headers). Optionally reload the page first to capture its loading. Only available if the user has switched it on in the extension. ${APPROVAL_NOTE}`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -265,7 +265,7 @@ const ANNOTATIONS: Record<string, { title: string } & ToolAnnotations> = {
   browser_select_option: { title: 'Choose an option in a list', readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
   browser_press_key: { title: 'Press a navigation key', readOnlyHint: false, destructiveHint: true, openWorldHint: false },
   browser_screenshot: { title: 'Screenshot of the page', readOnlyHint: true, openWorldHint: false },
-  browser_get_deep_diagnostics: { title: 'Deep page diagnostics (debugger)', readOnlyHint: true, openWorldHint: false },
+  browser_get_deep_diagnostics: { title: 'Deep page diagnostics', readOnlyHint: true, openWorldHint: false },
   browser_open: { title: 'Open a Mijn Ruimte page', readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   browser_invoke_action: { title: 'Run a site action', readOnlyHint: false, destructiveHint: true, openWorldHint: false },
   browser_click: { title: 'Click on the page', readOnlyHint: false, destructiveHint: true, openWorldHint: false },

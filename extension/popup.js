@@ -28,7 +28,6 @@ function render(kind, text, hint, steps, button) {
 
 async function refresh() {
   const s = await chrome.runtime.sendMessage({ op: 'status' }).catch(() => null);
-  const debuggerOn = await chrome.permissions.contains({ permissions: ['debugger'] }).catch(() => false);
   if (!s) {
     forgetEl.hidden = true;
     render('off', 'Не вдалося отримати стан', 'Спробуйте закрити й знову відкрити це вікно.', [], null);
@@ -45,7 +44,6 @@ async function refresh() {
     mk('paired', 'Підключено до вашого облікового запису', paired),
     mk('enabled', 'Увімкнено для ШІ на сайті', enabled),
     mk('active', 'Ви ввійшли на сайті (ШІ активний)', active),
-    { label: debuggerOn ? 'Дозвіл на глибоку діагностику надано' : 'Глибока діагностика: за бажанням', state: debuggerOn ? 'done' : 'later' },
   ];
   if (!paired) {
     render('off', 'Потрібне підключення',

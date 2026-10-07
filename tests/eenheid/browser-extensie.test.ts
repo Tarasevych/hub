@@ -83,12 +83,12 @@ export async function main(): Promise<number> {
     contentHash(inner) === contentHash(extensionEntries(join(process.cwd(), 'extension'), { selfHosted: true })) && innerManifest.update_url === 'https://mcp.tarasevych.com/downloads/updates.xml'
     && !inner.some((e) => /\.pem$|signed\/|crx-info|store-url/.test(e.name)) && !crxFile.includes(Buffer.from('PRIVATE KEY')));
   check('CRX: een gewijzigd pakket valt door de mand (handtekening ongeldig als er een byte verandert)', (() => { const kapot = Buffer.from(crxFile); kapot[kapot.length - 20] ^= 1; return parseCrx3(kapot).valid === false; })());
-  check('manifest: de debugger is een OPTIONEEL recht (de gebruiker geeft het zelf), niet standaard; opties-pagina aanwezig',
-    JSON.stringify(manifest.optional_permissions) === '["debugger"]' && !manifest.permissions.includes('debugger') && manifest.options_ui?.page === 'options.html' && namen.includes('options.html') && namen.includes('options.js'));
+  check('manifest: GEEN debugger-recht (Chrome staat het niet als optioneel toe en toont een alarmerende waarschuwing); diepe diagnose via chrome.scripting (diag-hook.js); opties-pagina aanwezig',
+    !manifest.optional_permissions && !manifest.permissions.includes('debugger') && manifest.permissions.includes('scripting') && namen.includes('diag-hook.js') && manifest.options_ui?.page === 'options.html' && namen.includes('options.html') && namen.includes('options.js'));
   check('manifest: Manifest V3, alleen tarasevych.com, geen brede rechten (geen <all_urls>, geen tabs/cookies/webRequest)',
     manifest.manifest_version === 3 && JSON.stringify(manifest.host_permissions) === '["https://*.tarasevych.com/*"]'
     && manifest.content_scripts.every((c: any) => c.matches.every((m: string) => m === 'https://*.tarasevych.com/*'))
-    && !manifest.permissions.some((p: string) => ['tabs', 'cookies', 'webRequest', 'history', 'downloads', 'nativeMessaging', 'scripting'].includes(p)) && !JSON.stringify(manifest).includes('<all_urls>'));
+    && !manifest.permissions.some((p: string) => ['tabs', 'cookies', 'webRequest', 'history', 'downloads', 'nativeMessaging', 'debugger', 'webNavigation', 'declarativeNetRequest'].includes(p)) && !JSON.stringify(manifest).includes('<all_urls>'));
 
   return einde();
 }
