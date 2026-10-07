@@ -2,7 +2,7 @@ import {lazy,Suspense,useEffect,useLayoutEffect,useMemo,useRef,useState} from 'r
 import {api,image as appImage,invitesClient} from './platform/client';
 import {KeyRound,LockKeyhole,Mail,ShieldCheck,X} from 'lucide-react';
 import './unified-service-content.css';
-import SettingsCenterView,{type SettingsShareInput,type SettingsWidgetInput} from './SettingsCenterView';
+import type {SettingsShareInput,SettingsWidgetInput} from './SettingsCenterView';
 import {ApiServiceView,GitHubServiceView} from './ServiceViews';
 import type {IdentityRequest,IdentityState,IdentityUser,IdentityWorkspace} from './IdentityAdminView';
 
@@ -21,10 +21,12 @@ import CanonicalChrome,{SignedOutCenter,type ShellTheme} from './CanonicalChrome
 
 import {MENU_CATALOG,menuPreferencesForRole,menuPreferencesFromPresentation,normalizeMenuPreferences,type MenuItemId,type MenuPreferenceItem} from './menu-preferences';
 import ProductEmptyState from './ProductEmptyState';
-import MailFunctionalView from './MailFunctionalView';
 import MailSidebarNavigation from './MailSidebarNavigation';
 
-const AIServiceView=lazy(()=>import('./AIServiceView')),CloudFunctionalView=lazy(()=>import('./CloudFunctionalView')),AdminConsoleView=lazy(()=>import('./AdminConsoleView')),SmartHomeView=lazy(()=>import('./SmartHomeView')),IdentityAdminView=lazy(()=>import('./IdentityAdminView')),McpServiceView=lazy(()=>import('./McpServiceView'));
+const AIServiceView=lazy(()=>import('./AIServiceView')),CloudFunctionalView=lazy(()=>import('./CloudFunctionalView')),AdminConsoleView=lazy(()=>import('./AdminConsoleView')),SmartHomeView=lazy(()=>import('./SmartHomeView')),IdentityAdminView=lazy(()=>import('./IdentityAdminView')),McpServiceView=lazy(()=>import('./McpServiceView')),MailFunctionalView=lazy(()=>import('./MailFunctionalView')),SettingsCenterView=lazy(()=>import('./SettingsCenterView'));
+// Het blok van de dienst die nu open is alvast ophalen, parallel aan de eerste weergave (anders volgt het pas na de hoofdbundel).
+// Alleen voor een bekende sessie; anoniem toont alleen het aanmeldscherm.
+const preloadCurrentView=()=>{try{if((window as unknown as {__TSV_PRESENTATION__?:{session?:string}}).__TSV_PRESENTATION__?.session!=='known')return;const s=serviceFromLocation();if(s==='mail')void import('./MailFunctionalView');else if(s==='identity')void import('./SettingsCenterView');else if(s==='ai')void import('./AIServiceView');else if(s==='cloud')void import('./CloudFunctionalView');else if(s==='admin')void import('./AdminConsoleView');else if(s==='mcp')void import('./McpServiceView')}catch{/* voorladen is optioneel */}};preloadCurrentView();
 
 import {redirectStartReason,startPrimaryRedirectLogin} from './redirect-login';
 import {releaseBootShell} from './boot-shell';
