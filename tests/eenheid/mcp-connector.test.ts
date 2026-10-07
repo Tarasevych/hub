@@ -153,14 +153,14 @@ export async function main(): Promise<number> {
 
     // ---- hulpmiddelen en isolatie ----
     const leeg = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 4, method: 'tools/list' }));
-    check('tools/list: zonder apparaat staan alle 15 tools (9 apparaat + 6 browser) er toch (Claude toont zo de lijst en de rechtengroepen); geen GitHub-tool zonder token',
-      leeg.result.tools.length === 15 && !leeg.result.tools.some((t: any) => t.name === 'github_get'), leeg.result.tools.map((t: any) => t.name).join(','));
+    check('tools/list: zonder apparaat staan alle 23 tools (9 apparaat + 14 browser) er toch (Claude toont zo de lijst en de rechtengroepen); geen GitHub-tool zonder token',
+      leeg.result.tools.length === 23 && !leeg.result.tools.some((t: any) => t.name === 'github_get'), leeg.result.tools.map((t: any) => t.name).join(','));
     const zonderPc = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 41, method: 'tools/call', params: { name: 'machine_read_file', arguments: { path: '.' } } }));
     check('tools/call zonder apparaat: duidelijke foutmelding (isError), geen crash', zonderPc.result?.isError === true && /No suitable device/.test(zonderPc.result.content[0].text), JSON.stringify(zonderPc.result).slice(0, 120));
     const overzicht = await describeTools(A);
     const kindOf = (n: string) => overzicht.find((t) => t.name === n);
     check('beheeroverzicht: soort en goedkeuring per hulpmiddel (lezen direct; schrijven en uitvoeren na goedkeuring)',
-      overzicht.length === 15 && kindOf('machine_read_file')?.kind === 'read' && kindOf('machine_read_file')?.needsApproval === false
+      overzicht.length === 23 && kindOf('machine_read_file')?.kind === 'read' && kindOf('machine_read_file')?.needsApproval === false
       && kindOf('machine_write_file')?.kind === 'write' && kindOf('machine_write_file')?.needsApproval === true
       && kindOf('docker_manage_container')?.kind === 'execute' && kindOf('docker_manage_container')?.needsApproval === true
       && kindOf('system_metrics')?.readOnly === true, overzicht.map((t) => `${t.name}:${t.kind}`).join(','));
@@ -169,7 +169,7 @@ export async function main(): Promise<number> {
     const lijst = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 5, method: 'tools/list' })).result.tools as any[];
     const per = (n: string) => lijst.find((t) => t.name === n);
     check('tools/list: apparaattools met annotaties (lezen = readOnlyHint, schrijven/uitvoeren = destructiveHint) en titel',
-      lijst.length === 15 && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true
+      lijst.length === 23 && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true
       && per('machine_write_file').annotations.readOnlyHint === false && !!per('machine_list').title && !!per('machine_list').inputSchema, lijst.map((t) => t.name).join(','));
     check('tools/list: Docker en metrics: lezen = readOnlyHint, containers beheren = destructiveHint (niet readOnly, niet idempotent)',
       per('docker_list_containers').annotations.readOnlyHint === true && per('system_metrics').annotations.readOnlyHint === true
@@ -231,10 +231,20 @@ export async function main(): Promise<number> {
     check('scheiding: een pc-tool kiest nooit een browser, en een browser van een andere gebruiker is niet te bereiken',
       pcAlsBrowser.result.isError === true && /No suitable device/.test(pcAlsBrowser.result.content[0].text)
       && browserVanB.result.isError === true && !JSON.stringify(browserVanB).includes(browserB.id));
+    const nieuw = [
+      await bt('browser_scroll', { direction: 'sideways' }), await bt('browser_scroll', { direction: 'down', pages: 99 }),
+      await bt('browser_wait_for_text', { text: '' }), await bt('browser_wait_for_text', { text: 'ok', timeout_seconds: 60 }),
+      await bt('browser_history', { action: 'sideways' }), await bt('browser_select_option', { name: 'Taal' }),
+      await bt('browser_press_key', { key: 'a' }), await bt('browser_press_key', { key: 'Control+C' }),
+      await bt('browser_get_deep_diagnostics', { seconds: 60 }), await bt('browser_get_deep_diagnostics', { reload: 'ja' }),
+    ];
+    check('nieuwe browsertools: een ongeldige richting, pagina-aantal, wachttijd, actie, optie, toets of waarneemtijd wordt op de server geweigerd (alleen navigatietoetsen zijn toegestaan)',
+      nieuw.every((r) => r.result.isError === true && /Invalid/.test(r.result.content[0].text)), nieuw.map((r) => r.result.content[0].text.slice(0, 40)).join(' | '));
     const bAnn = Object.fromEntries((body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 61, method: 'tools/list' })).result.tools as any[]).map((t) => [t.name, t.annotations]));
     check('browsertools: snapshot = readOnlyHint; open niet destructief; klikken, typen en acties destructiveHint',
       bAnn.browser_snapshot.readOnlyHint === true && bAnn.browser_open.readOnlyHint === false && bAnn.browser_open.destructiveHint === false
-      && bAnn.browser_click.destructiveHint === true && bAnn.browser_type.destructiveHint === true && bAnn.browser_invoke_action.destructiveHint === true);
+      && bAnn.browser_click.destructiveHint === true && bAnn.browser_type.destructiveHint === true && bAnn.browser_invoke_action.destructiveHint === true
+      && bAnn.browser_screenshot.readOnlyHint === true && bAnn.browser_get_deep_diagnostics.readOnlyHint === true && bAnn.browser_press_key.destructiveHint === true && bAnn.browser_select_option.destructiveHint === true && bAnn.browser_scroll.destructiveHint === false);
 
     // ---- per gebruiker in- en uitzetten van hulpmiddelen (server-side) ----
     await agents.setDisabledTools(A, ['machine_exec', 'browser_click']);
@@ -242,11 +252,11 @@ export async function main(): Promise<number> {
     const geweigerd = await bt('machine_exec', { command: 'git' }, 63);
     const infoUit = (await describeTools(A)).filter((t) => !t.enabled).map((t) => t.name).sort().join(',');
     check('hulpmiddelen uitzetten: weg uit tools/list, aanroep geweigerd met uitleg, het beheeroverzicht toont het als uit; een andere gebruiker merkt er niets van',
-      naUit.length === 13 && !naUit.includes('machine_exec') && !naUit.includes('browser_click')
+      naUit.length === 21 && !naUit.includes('machine_exec') && !naUit.includes('browser_click')
       && geweigerd.result.isError === true && /turned off by the user/.test(geweigerd.result.content[0].text)
       && infoUit === 'browser_click,machine_exec' && (await agents.getDisabledTools(B)).length === 0);
     await agents.setDisabledTools(A, []);
-    check('hulpmiddelen weer aanzetten: alles terug in de lijst', (body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 64, method: 'tools/list' })).result.tools as any[]).length === 15);
+    check('hulpmiddelen weer aanzetten: alles terug in de lijst', (body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 64, method: 'tools/list' })).result.tools as any[]).length === 23);
     await agents.setAgentPolicy(A, browserA.id, ['browser.snapshot', 'browser.navigate']);
     check('beleid van een browseragent: alleen van de eigen gebruiker aan te passen',
       JSON.stringify((await agents.getAgent(A, browserA.id))?.policy.autoApprove) === '["browser.navigate","browser.snapshot"]' || JSON.stringify((await agents.getAgent(A, browserA.id))?.policy.autoApprove) === '["browser.snapshot","browser.navigate"]');

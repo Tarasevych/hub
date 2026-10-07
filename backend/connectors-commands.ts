@@ -10,8 +10,9 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * van de gebruiker in de UI. De agent controleert zelf nog eens zijn mappen en toegestane commando's.
  */
 export async function submitCommand(agent: store.AgentRow, userId: string, type: string, params: object) {
-  if (type.startsWith('browser.') && !(await store.browserActive(agent.id))) {
-    throw new Error('BROWSER_NOT_ACTIVE');
+  if (type.startsWith('browser.')) {
+    const gate = await store.browserGate(agent.id, type);
+    if (gate !== 'ok') throw new Error(gate === 'inactive' ? 'BROWSER_NOT_ACTIVE' : 'BROWSER_CAPABILITY_OFF');
   }
   const auto = agent.policy.autoApprove.includes(type);
   const cmd = await store.createCommand(agent.id, userId, type, params, auto ? 'approved' : 'pending_approval');

@@ -42,3 +42,16 @@
 .mcp-tool-toggle{min-height:36px;padding:4px 14px;border-radius:999px;border:2px solid currentColor;background:transparent;font-weight:700}
 .mcp-tool-toggle.on{color:#1a7f37}.mcp-tool-toggle.off{color:#6b7280}
 .api-platform [data-browser-state=on]{color:#1a7f37}.api-platform [data-browser-state=wait]{color:#b45309}.api-platform [data-browser-state=off]{color:#b91c1c}
+.api-platform.mcp-welcome{outline:3px solid #2f6f73;outline-offset:4px;border-radius:18px}
+.mcp-steps{display:grid;gap:4px;padding-left:20px;margin:0}
+.mcp-steps li{color:var(--muted,#64748b)}
+.mcp-steps li.done{color:#1a7f37;font-weight:600}
+.mcp-steps li[aria-current=step]{color:inherit;font-weight:700}
+.api-platform a.mcp-download-secondary{display:inline-flex;align-items:center;min-height:48px;padding:10px 22px;border-radius:12px;border:2px solid var(--line,#b6c2d0);color:inherit;font-weight:700;text-decoration:none}
+.mcp-hint{font-size:.9rem}
+.mcp-presets{display:flex;flex-wrap:wrap;gap:8px}
+.mcp-browser .mcp-grant-main{flex:1 1 100%}
+.mcp-cap-name{display:inline-flex;align-items:center;gap:6px}
+.mcp-cap-controls{display:inline-flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.mcp-switch.mcp-auto{min-height:36px;font-size:.88rem}
+.mcp-tool-group b small{display:block;font-weight:400}

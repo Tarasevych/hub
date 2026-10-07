@@ -9,6 +9,7 @@ import { agentOnline, attachAgentGateway, disconnectAgent } from '../../backend/
 import * as store from '../../backend/connectors-store';
 import { randomToken, sha256 } from '../../backend/connectors-crypto';
 import { callTool } from '../../backend/connectors-tools';
+import { BROWSER_AUTO_APPROVABLE, BROWSER_DEFAULT_AUTO, BROWSER_DEFAULT_ENABLED, BROWSER_TYPES, enabledTypes } from '../../backend/browser-capabilities';
 import { closePool, getPool } from '../../server/platform/pg';
 import { checker } from './hulp/nep-google';
 
@@ -63,6 +64,11 @@ export async function main(): Promise<number> {
       'browser.click': (p) => ({ clicked: p.name }),
       'browser.navigate': (p) => ({ url: p.url, title: 'Mail' }),
       'browser.invoke': (p) => ({ ok: true, action: p.action }),
+      'browser.screenshot': () => ({ image: 'QUJD', mimeType: 'image/jpeg', width: 800, height: 600 }),
+      'browser.tabs': () => ({ tabs: [{ id: 1, title: 'Agenten', url: 'https://mcp.tarasevych.com/agents', active: true }] }),
+      'browser.select': (p) => ({ selected: p.option }),
+      'browser.key': (p) => ({ pressed: p.key }),
+      'browser.scroll': (p) => ({ scrolled: p.direction }),
     });
     check('extensie verbindt met zijn token en staat online', await until(() => agentOnline(agent.id)));
     // Ook met een geldig token en een open kanaal blijft de browser stil zolang de gebruiker hem niet aanzet.
@@ -71,6 +77,22 @@ export async function main(): Promise<number> {
       nogUit.isError === true && /not activated/.test(nogUit.content[0].text) && ext.opdrachten.length === 0, nogUit.content[0].text.slice(0, 90));
     check('een andere gebruiker kan de browser van A niet aanzetten', (await store.setBrowserEnabled(B, agent.id, true)) === false && (await store.getAgent(A, agent.id))?.browser_enabled === false);
     check('aanzetten door de eigen gebruiker lukt', (await store.setBrowserEnabled(A, agent.id, true)) === true && (await store.browserActive(agent.id)) === true);
+
+    // Mogelijkheden per browser: standaard alleen lezen/kijken; al het andere zet de gebruiker zelf aan.
+    check('standaardmogelijkheden: alleen lezen en kijken staan aan, handelen/screenshot/diepe diagnose niet',
+      JSON.stringify([...enabledTypes((await store.getAgent(A, agent.id))!.policy)].sort()) === JSON.stringify([...BROWSER_DEFAULT_ENABLED].sort())
+      && !enabledTypes(null).includes('browser.click') && !enabledTypes(null).includes('browser.screenshot') && !enabledTypes(null).includes('browser.deep_diagnostics'));
+    check('automatisch goedkeuren kan nooit voor handelen, screenshot of diepe diagnose',
+      !BROWSER_AUTO_APPROVABLE.some((t) => ['browser.invoke', 'browser.click', 'browser.type', 'browser.select', 'browser.key', 'browser.screenshot', 'browser.deep_diagnostics'].includes(t))
+      && BROWSER_DEFAULT_AUTO.every((t) => BROWSER_DEFAULT_ENABLED.includes(t)) && BROWSER_TYPES.length === 14);
+    const uitKlik = await callTool(A, 'browser_click', { name: 'Opslaan' });
+    const uitShot = await callTool(A, 'browser_screenshot', {});
+    check('een uitgezette mogelijkheid wordt geweigerd met uitleg en de extensie krijgt niets',
+      uitKlik.isError === true && /switched this capability off/.test(uitKlik.content[0].text) && uitShot.isError === true && /switched this capability off/.test(uitShot.content[0].text) && ext.opdrachten.length === 0);
+    // de gebruiker zet alles aan in het kabinet (autoApprove blijft beperkt tot lezen/kijken)
+    await store.setAgentPolicy(A, agent.id, ['browser.diagnostics', 'browser.scroll', 'browser.snapshot', 'browser.tabs', 'browser.wait'], [...BROWSER_TYPES]);
+    const tabs = await callTool(A, 'browser_list_tabs', {});
+    check('browser_list_tabs: direct uitgevoerd (lezen)', !tabs.isError && /Agenten/.test(tabs.content[0].text) && ext.opdrachten.some((o) => o.type === 'browser.tabs'));
 
     // lezen gaat direct (beleid), het resultaat is gemarkeerd als onbetrouwbare gegevens
     const snap = await callTool(A, 'browser_snapshot', {});
@@ -99,7 +121,7 @@ export async function main(): Promise<number> {
     await approveCommand(A, (await store.listPendingCommands(A))[0].id);
     const nav1Uit = await nav1;
     check('browser_open: standaard met goedkeuring', !nav1Uit.isError && /mail\.tarasevych\.com/.test(nav1Uit.content[0].text));
-    await store.setAgentPolicy(A, agent.id, ['browser.diagnostics', 'browser.navigate', 'browser.snapshot']);
+    await store.setAgentPolicy(A, agent.id, ['browser.diagnostics', 'browser.navigate', 'browser.scroll', 'browser.snapshot', 'browser.tabs', 'browser.wait']);
     const nav2 = await callTool(A, 'browser_open', { url: 'https://mcp.tarasevych.com/agents' });
     check('browser_open: zodra navigatie is toegestaan gaat het direct, zonder klik', !nav2.isError && (await store.listPendingCommands(A)).length === 0, nav2.content[0].text.slice(0, 100));
     const vreemd = await callTool(A, 'browser_open', { url: 'https://evil.com/' });
@@ -111,6 +133,21 @@ export async function main(): Promise<number> {
     await approveCommand(A, (await store.listPendingCommands(A))[0].id);
     const invUit = await inv;
     check('browser_invoke_action: wacht op goedkeuring en geeft het resultaat van de site-actie terug', !invUit.isError && /open_service/.test(invUit.content[0].text));
+
+    // screenshot: altijd met goedkeuring; komt terug als afbeelding (MCP image) plus een korte tekst
+    const shot = callTool(A, 'browser_screenshot', {});
+    await until(async () => (await store.listPendingCommands(A)).length === 1);
+    await approveCommand(A, (await store.listPendingCommands(A))[0].id);
+    const shotUit = await shot;
+    const img = shotUit.content.find((c: any) => c.type === 'image') as any;
+    check('browser_screenshot: wacht op goedkeuring en komt terug als afbeelding met een tekst erbij', !shotUit.isError && img?.data === 'QUJD' && img?.mimeType === 'image/jpeg' && shotUit.content[0].type === 'text');
+    const toets = callTool(A, 'browser_press_key', { key: 'Enter' });
+    await until(async () => (await store.listPendingCommands(A)).length === 1);
+    await approveCommand(A, (await store.listPendingCommands(A))[0].id);
+    const toetsUit = await toets;
+    check('browser_press_key: handelen wacht op goedkeuring en het antwoord komt terug', !toetsUit.isError && /Enter/.test(toetsUit.content[0].text));
+    const scroll = await callTool(A, 'browser_scroll', { direction: 'down' });
+    check('browser_scroll: alleen kijken/verschuiven, direct uitgevoerd omdat de gebruiker dat heeft toegestaan', !scroll.isError && /scrolled/.test(scroll.content[0].text), scroll.content[0].text.slice(0, 80));
 
     // diagnose (alleen lezen) gaat direct
     const diag = await callTool(A, 'browser_get_diagnostics', {});

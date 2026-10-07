@@ -3,6 +3,7 @@
 // Draait na `vite build` (dist/ bestaat dan) en schrijft de pictogrammen ook naar extension/icons/, zodat "Load unpacked"
 // rechtstreeks vanuit de repository werkt.
 import { deflateRawSync, deflateSync, crc32 } from 'node:zlib';
+import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, existsSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -75,11 +76,26 @@ function zip(files) {
   return Buffer.concat([...locals, centralBuf, end]);
 }
 
-const files = walk(extDir);
+// store-url.txt is configuratie voor de site (link naar de Chrome Web Store zodra gepubliceerd), geen deel van het pakket.
+const files = walk(extDir).filter((f) => !f.endsWith('store-url.txt'));
 if (!files.some((f) => f.endsWith('manifest.json'))) throw new Error('extension/manifest.json ontbreekt');
 const manifest = JSON.parse(readFileSync(join(extDir, 'manifest.json'), 'utf8'));
 mkdirSync(outDir, { recursive: true });
 const target = join(outDir, 'mijn-ruimte-extension.zip');
 writeFileSync(target, zip(files));
-writeFileSync(join(outDir, 'extension-version.json'), JSON.stringify({ version: manifest.version, file: 'mijn-ruimte-extension.zip', files: files.length }));
-console.log(`Extensie ${manifest.version}: ${files.length} bestanden -> ${relative(root, target)} (${existsSync(target) ? statSync(target).size : 0} bytes)`);
+const sha256 = createHash('sha256').update(readFileSync(target)).digest('hex');
+const storeUrl = existsSync(join(extDir, 'store-url.txt')) ? readFileSync(join(extDir, 'store-url.txt'), 'utf8').trim() : '';
+
+// Helpers die het installeren zoveel mogelijk automatiseren (Chrome staat stil installeren buiten de Web Store niet toe):
+// downloaden, controlesom controleren, uitpakken op een vaste plek, de extensiepagina openen, het pad op het klembord.
+const installers = [];
+for (const [src, dest] of [['Install-MijnRuimte.cmd', 'Install-MijnRuimte.cmd'], ['install-mijn-ruimte.sh', 'install-mijn-ruimte.sh']]) {
+  const template = join(root, 'scripts', 'installer', src);
+  if (!existsSync(template)) continue;
+  const text = readFileSync(template, 'utf8').replaceAll('@@SHA256@@', sha256).replaceAll('@@VERSION@@', manifest.version);
+  // Windows: CRLF; shell: LF.
+  writeFileSync(join(outDir, dest), dest.endsWith('.cmd') ? text.replace(/\r?\n/g, '\r\n') : text.replace(/\r\n/g, '\n'));
+  installers.push(dest);
+}
+writeFileSync(join(outDir, 'extension-version.json'), JSON.stringify({ version: manifest.version, file: 'mijn-ruimte-extension.zip', sha256, files: files.length, storeUrl, installers }));
+console.log(`Extensie ${manifest.version}: ${files.length} bestanden -> ${relative(root, target)} (${statSync(target).size} bytes, sha256 ${sha256.slice(0, 12)}…, helpers: ${installers.join(', ') || 'geen'})`);

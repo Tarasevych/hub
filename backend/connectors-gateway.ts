@@ -20,7 +20,8 @@ import { sha256 } from './connectors-crypto';
 import * as store from './connectors-store';
 
 export const COMMAND_TYPES = ['fs.read', 'fs.list', 'fs.write', 'exec', 'sys.info', 'docker.ps', 'docker.manage', 'sys.metrics',
-  'browser.snapshot', 'browser.navigate', 'browser.invoke', 'browser.click', 'browser.type', 'browser.diagnostics'] as const;
+  'browser.snapshot', 'browser.navigate', 'browser.invoke', 'browser.click', 'browser.type', 'browser.diagnostics',
+  'browser.screenshot', 'browser.tabs', 'browser.history', 'browser.scroll', 'browser.wait', 'browser.select', 'browser.key', 'browser.deep_diagnostics'] as const;
 export type CommandType = typeof COMMAND_TYPES[number];
 
 const WS_PATH = '/agent/ws';
@@ -47,9 +48,12 @@ export async function dispatchCommand(cmd: { id: string; agent_id: string; type:
   if (!entry) return false;
   // Laatste slot: een browseropdracht gaat alleen weg als de gebruiker de browser heeft aangezet én een ingelogde sessie
   // dat recent heeft bevestigd (zie 0013). Ook een al goedgekeurde opdracht wordt anders niet verstuurd.
-  if (cmd.type.startsWith('browser.') && !(await store.browserActive(cmd.agent_id))) {
-    await store.transitionCommand(cmd.id, ['approved'], 'failed', { error: 'browser is not activated or the user is not signed in on the site' });
-    return false;
+  if (cmd.type.startsWith('browser.')) {
+    const gate = await store.browserGate(cmd.agent_id, cmd.type);
+    if (gate !== 'ok') {
+      await store.transitionCommand(cmd.id, ['approved'], 'failed', { error: gate === 'inactive' ? 'browser is not activated or the user is not signed in on the site' : 'this capability is switched off for this browser' });
+      return false;
+    }
   }
   const sent = await store.transitionCommand(cmd.id, ['approved'], 'sent');
   if (!sent) return false;

@@ -5,7 +5,7 @@
 // Alle verzoeken komen van het achtergrondproces; dat krijgt ze alleen na goedkeuring volgens het beleid van de gebruiker.
 (async () => {
   const shared = await import(chrome.runtime.getURL('shared.js'));
-  const { isSensitiveField, pickByName } = shared;
+  const { isSensitiveField, pickByName, ALLOWED_KEYS } = shared;
   const VERSION = chrome.runtime.getManifest().version;
   const PAIR_HOST = 'mcp.tarasevych.com';
 
@@ -130,9 +130,79 @@
     return { typed: name, length: text.length };
   }
 
+  // ---- kijken en verschuiven (verandert niets aan de gegevens) ----
+  function scroll(params) {
+    const direction = String(params.direction || '');
+    const pages = Math.min(10, Math.max(0.1, Number(params.pages) || 1));
+    const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    if (direction === 'top') window.scrollTo({ top: 0, behavior: 'instant' });
+    else if (direction === 'bottom') window.scrollTo({ top: max, behavior: 'instant' });
+    else if (direction === 'up' || direction === 'down') window.scrollBy({ top: (direction === 'down' ? 1 : -1) * pages * window.innerHeight, behavior: 'instant' });
+    else throw new Error('Invalid direction');
+    return { scrollY: Math.round(window.scrollY), maxScrollY: Math.round(max), atTop: window.scrollY <= 0, atBottom: window.scrollY >= max - 2 };
+  }
+
+  async function waitForText(params) {
+    const wanted = String(params.text || '').trim().toLowerCase();
+    if (!wanted) throw new Error('empty text');
+    const limit = Math.min(15, Math.max(1, Number(params.timeout_seconds) || 10)) * 1000;
+    const start = Date.now();
+    while (Date.now() - start < limit) {
+      if ((document.body.innerText || '').toLowerCase().includes(wanted)) return { found: true, waitedMs: Date.now() - start };
+      await new Promise((r) => setTimeout(r, 300));
+    }
+    return { found: false, waitedMs: Date.now() - start };
+  }
+
+  // ---- handelen (de server laat dit alleen door na goedkeuring van de gebruiker) ----
+  function selectOption(params) {
+    const lists = controls().filter((c) => c.role === 'select');
+    const picked = pickByName(lists, params.name);
+    if (picked.error) throw new Error(picked.error);
+    const { el, name } = picked.item;
+    if (el.disabled) throw new Error(`"${name}" is disabled`);
+    const wanted = String(params.option || '').trim().toLowerCase();
+    const options = [...el.options].map((o) => ({ o, label: (o.label || o.textContent || '').trim(), value: String(o.value) }));
+    let hits = options.filter((x) => x.label.toLowerCase() === wanted || x.value.toLowerCase() === wanted);
+    if (hits.length !== 1) hits = options.filter((x) => x.label.toLowerCase().includes(wanted));
+    if (hits.length !== 1) throw new Error(hits.length ? `ambiguous: ${hits.length} options match "${params.option}"` : `no option "${params.option}" in "${name}"`);
+    el.value = hits[0].value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return { selected: hits[0].label, in: name };
+  }
+
+  function pressKey(params) {
+    const key = String(params.key || '');
+    if (!ALLOWED_KEYS.includes(key)) throw new Error('Key not allowed');
+    const el = document.activeElement && document.activeElement !== document.body ? document.activeElement : document.body;
+    if (isSensitiveField(el)) throw new Error('Refused: the focused field is a password or payment field');
+    const init = { key, code: key, bubbles: true, cancelable: true };
+    el.dispatchEvent(new KeyboardEvent('keydown', init));
+    // Door de pagina gegenereerde toetsen activeren zelf niets; de gebruikelijke gevolgen doen we hier bewust na.
+    if (key === 'Enter') {
+      if (el.tagName === 'BUTTON' || el.tagName === 'A' || el.getAttribute('role') === 'button') el.click();
+      else if (el.form && el.tagName === 'INPUT') el.form.requestSubmit();
+    } else if (key === 'PageDown' || key === 'PageUp') window.scrollBy({ top: (key === 'PageDown' ? 1 : -1) * window.innerHeight, behavior: 'instant' });
+    else if (key === 'Home') window.scrollTo({ top: 0, behavior: 'instant' });
+    else if (key === 'End') window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+    else if (key === 'Tab') {
+      const focusable = [...document.querySelectorAll(SELECTOR)].filter(visible).filter((e) => !e.disabled && e.tabIndex >= 0);
+      const next = focusable[(focusable.indexOf(el) + 1) % Math.max(1, focusable.length)];
+      if (next) next.focus();
+    }
+    el.dispatchEvent(new KeyboardEvent('keyup', init));
+    const now = document.activeElement;
+    return { pressed: key, focused: now && now !== document.body ? nameOf(now).slice(0, 80) : '' };
+  }
+
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     (async () => {
       try {
+        if (message.op === 'scroll') return sendResponse({ ok: true, data: scroll(message) });
+        if (message.op === 'wait') return sendResponse({ ok: true, data: await waitForText(message) });
+        if (message.op === 'select') return sendResponse({ ok: true, data: selectOption(message) });
+        if (message.op === 'key') return sendResponse({ ok: true, data: pressKey(message) });
         if (message.op === 'snapshot') return sendResponse({ ok: true, data: await snapshot() });
         if (message.op === 'invoke') return sendResponse({ ok: true, data: await invoke(message) });
         if (message.op === 'diagnostics') return sendResponse({ ok: true, data: await invoke({ action: 'get_diagnostics' }) });

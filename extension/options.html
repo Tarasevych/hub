@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mijn Ruimte: налаштування розширення</title>
+<link rel="stylesheet" href="popup.css">
+<style>body{width:auto;max-width:640px;margin:0 auto}</style>
+</head>
+<body>
+<main>
+  <h1>Налаштування розширення «Mijn Ruimte»</h1>
+  <p class="hint">Які саме можливості ввімкнені для ШІ, ви обираєте на сайті (mcp.tarasevych.com → Агенти → «Розширення браузера»). Тут лише дозвіл самого браузера, який неможливо дати з сайту.</p>
+
+  <section>
+    <h2>Глибока діагностика (debugger)</h2>
+    <p class="hint">Дозволяє ШІ (після вашого «Дозволити» щоразу) кілька секунд спостерігати вкладку Mijn Ruimte: помилки консолі, винятки, невдалі й повільні запити (лише адреса без параметрів, статус і час, ніколи вміст чи заголовки). Також дає запасний спосіб зробити знімок екрана. Працює лише на tarasevych.com. Chrome показує банер «розширення налагоджує цей браузер», поки йде спостереження.</p>
+    <p id="dbgState" role="status">…</p>
+    <button id="dbgToggle" type="button" class="primary">…</button>
+  </section>
+</main>
+<script src="options.js"></script>
+</body>
+</html>
