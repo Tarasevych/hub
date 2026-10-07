@@ -1,104 +1,129 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Ban, Check, CheckCheck, Clock, Hand, RotateCcw, ShieldCheck, X } from 'lucide-react';
 import { api } from './platform/client';
-import { ecosystemTabContext } from './tab-context';
-import './api-platform-view.css';
-import './agents-panel.css';
+import { emitCanonicalNotice } from './canonical-notifications';
+import { Help, IconButton, Logo, type LogoKind, type Tr } from './mcp-ui';
+import { textOf } from './mcp-texts';
+import { ago, sessionBody, type ToolCall } from './agents-data';
 
-type Tr = (uk: string, nl: string) => string;
 type Mode = 'always' | 'ask' | 'off';
-type Group = 'devices' | 'browser' | 'mail' | 'calendar' | 'drive' | 'site' | 'github';
+export type Group = 'devices' | 'browser' | 'mail' | 'calendar' | 'drive' | 'site' | 'github';
 type Tool = {
   name: string; title: string; description: string; kind: string; group: Group; mode: Mode; defaultMode: Mode;
   risky: boolean; needsApproval: boolean; readOnly: boolean; destructive: boolean; enabled: boolean;
 };
-type Call = { id: string; tool: string; args: Record<string, unknown>; status: string; createdAt: number; preview: string };
+type Source = { logo: LogoKind; uk: string; nl: string; live: boolean };
 
-const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
-const GROUPS: Array<{ id: Group; uk: string; nl: string; hint: [string, string] }> = [
-  { id: 'devices', uk: 'Пристрої й сервер', nl: 'Apparaten en server', hint: ['Файли, команди, Docker і метрики ваших ПК/VM через агента.', 'Bestanden, commando\'s, Docker en metrics van uw pc\'s/VM\'s via de agent.'] },
-  { id: 'browser', uk: 'Браузер (розширення)', nl: 'Browser (extensie)', hint: ['Читання й керування сторінками сайту через розширення. Детальні перемикачі на кожен браузер нижче.', 'Pagina\'s van de site lezen en bedienen via de extensie. Gedetailleerde schakelaars per browser staan hieronder.'] },
-  { id: 'mail', uk: 'Пошта (Gmail)', nl: 'E-mail (Gmail)', hint: ['Пошук, читання й зміна листів у підключеному Gmail.', 'Zoeken, lezen en wijzigen van berichten in het gekoppelde Gmail.'] },
-  { id: 'calendar', uk: 'Календар', nl: 'Agenda', hint: ['Календарі й події Google Calendar.', 'Agenda\'s en afspraken van Google Agenda.'] },
-  { id: 'drive', uk: 'Диск (Google Drive)', nl: 'Schijf (Google Drive)', hint: ['Перегляд папок і читання файлів Google Drive.', 'Mappen bekijken en bestanden lezen op Google Drive.'] },
-  { id: 'site', uk: 'Пошук по сайту', nl: 'Zoeken op de site', hint: ['Єдиний пошук по всьому, що вже проіндексовано в Mijn Ruimte.', 'Eén zoekopdracht over alles wat Mijn Ruimte heeft geïndexeerd.'] },
-  { id: 'github', uk: 'GitHub', nl: 'GitHub', hint: ['Лише читання через ваш токен із сховища.', 'Alleen lezen met uw token uit de kluis.'] },
+/** Bronnen per groep: zo ziet u meteen WELKE dienst achter een hulpmiddel zit (Google, Microsoft of ons eigen systeem) en wat nog niet gekoppeld kan worden. */
+const GROUPS: Array<{ id: Group; logo: LogoKind; uk: string; nl: string; hint: [string, string]; sources: Source[] }> = [
+  { id: 'devices', logo: 'device', uk: 'Пристрої', nl: 'Apparaten', hint: ['Файли, команди, Docker і метрики ваших ПК та віртуальних машин через агента. Межі кожного пристрою задаються в його картці.', 'Bestanden, commando\'s, Docker en metrics van uw pc\'s en virtuele machines via de agent. De grenzen per apparaat stelt u in op de kaart van dat apparaat in.'],
+    sources: [{ logo: 'windows', uk: 'Windows', nl: 'Windows', live: true }, { logo: 'linux', uk: 'Linux', nl: 'Linux', live: true }, { logo: 'macos', uk: 'macOS', nl: 'macOS', live: true }, { logo: 'docker', uk: 'Docker', nl: 'Docker', live: true }] },
+  { id: 'browser', logo: 'chrome', uk: 'Браузер', nl: 'Browser', hint: ['Читання й керування сторінками сайту через розширення. Докладні перемикачі для кожного браузера — у його картці.', 'Pagina\'s van de site lezen en bedienen via de extensie. Gedetailleerde schakelaars per browser staan op de kaart van die browser.'],
+    sources: [{ logo: 'chrome', uk: 'Chrome / Edge', nl: 'Chrome / Edge', live: true }, { logo: 'firefox', uk: 'Firefox', nl: 'Firefox', live: false }] },
+  { id: 'mail', logo: 'mail', uk: 'Пошта', nl: 'E-mail', hint: ['Пошук, читання й зміна листів у підключених поштових акаунтах.', 'Zoeken, lezen en wijzigen van berichten in gekoppelde mailaccounts.'],
+    sources: [{ logo: 'google', uk: 'Gmail (Google)', nl: 'Gmail (Google)', live: true }, { logo: 'microsoft', uk: 'Outlook (Microsoft)', nl: 'Outlook (Microsoft)', live: false }] },
+  { id: 'calendar', logo: 'calendar', uk: 'Календар', nl: 'Agenda', hint: ['Календарі й події.', 'Agenda\'s en afspraken.'],
+    sources: [{ logo: 'google', uk: 'Google Calendar', nl: 'Google Agenda', live: true }, { logo: 'microsoft', uk: 'Outlook Calendar', nl: 'Outlook-agenda', live: false }] },
+  { id: 'drive', logo: 'internal', uk: 'Диск', nl: 'Schijf', hint: ['Перегляд папок і читання файлів. Зараз працює лише з Google Drive; інші диски з’являться, коли їх буде підключено до сайту.', 'Mappen bekijken en bestanden lezen. Nu alleen met Google Drive; andere schijven komen erbij zodra ze aan de site gekoppeld zijn.'],
+    sources: [{ logo: 'google', uk: 'Google Drive', nl: 'Google Drive', live: true }, { logo: 'microsoft', uk: 'OneDrive (Microsoft)', nl: 'OneDrive (Microsoft)', live: false }, { logo: 'internal', uk: 'Внутрішній диск сайту', nl: 'Interne schijf van de site', live: false }] },
+  { id: 'site', logo: 'internal', uk: 'Пошук по сайту', nl: 'Zoeken op de site', hint: ['Єдиний пошук по всьому, що вже проіндексовано в Mijn Ruimte.', 'Eén zoekopdracht over alles wat Mijn Ruimte al heeft geïndexeerd.'],
+    sources: [{ logo: 'internal', uk: 'Mijn Ruimte', nl: 'Mijn Ruimte', live: true }] },
+  { id: 'github', logo: 'github', uk: 'GitHub', nl: 'GitHub', hint: ['Лише читання через ваш токен зі сховища.', 'Alleen lezen met uw token uit de kluis.'],
+    sources: [{ logo: 'github', uk: 'GitHub', nl: 'GitHub', live: true }] },
 ];
 
-function Tip({ text }: { text: string }) {
-  return (
-    <span className='mcp-q' tabIndex={0} aria-label={text}>
-      ?
-      <span className='mcp-tip' role='tooltip'>{text}</span>
-    </span>
-  );
-}
-
-/** Waarschuwing per riskant hulpmiddel: waarom aan- of uitzetten gevaarlijk kan zijn en waartoe het kan leiden. */
-const RISK: Record<string, [string, string]> = {
-  machine_write_file: ['Дозволяє Claude створювати й перезаписувати файли у дозволених папках вашого ПК. Помилка або підміна інструкцій у чужому тексті може затерти важливі дані чи підкинути шкідливий файл. Вимкнено за замовчуванням.', 'Laat Claude bestanden aanmaken en overschrijven in de toegestane mappen van uw pc. Een fout of een ingeslopen instructie in vreemde tekst kan belangrijke gegevens wissen of een schadelijk bestand plaatsen. Standaard uit.'],
-  machine_exec: ['Дозволяє виконувати команди зі списку агента на вашому ПК. Навіть дозволена команда може змінити систему чи видалити дані. Вимкнено за замовчуванням.', 'Voert commando\'s uit de lijst van de agent uit op uw pc. Ook een toegestaan commando kan het systeem wijzigen of gegevens wissen. Standaard uit.'],
-  docker_manage_container: ['Дозволяє запускати, зупиняти й перезапускати контейнери. Зупинка потрібного контейнера зупиняє сервіси та може призвести до простою. Вимкнено за замовчуванням.', 'Start, stopt en herstart containers. Een verkeerde container stoppen legt diensten stil en kan tot downtime leiden. Standaard uit.'],
-  browser_invoke_action: ['Виконує дії сайту (відкрити сервіс тощо) від вашого імені у вашому сеансі. Вимкнено за замовчуванням.', 'Voert acties van de site uit in uw sessie, namens u. Standaard uit.'],
-  browser_click: ['Клікає елементи на сторінці у вашому сеансі: може підтвердити, надіслати чи видалити щось від вашого імені. Вимкнено за замовчуванням.', 'Klikt op elementen in uw sessie: kan namens u iets bevestigen, versturen of verwijderen. Standaard uit.'],
-  browser_type: ['Вводить текст у поля сторінки: може надіслати чи змінити дані від вашого імені. Не для паролів і платіжних полів. Вимкнено за замовчуванням.', 'Typt tekst in velden: kan namens u gegevens versturen of wijzigen. Niet voor wachtwoord- of betaalvelden. Standaard uit.'],
-  browser_select_option: ['Змінює вибір у списках на сторінці: може змінити налаштування чи дані від вашого імені. Вимкнено за замовчуванням.', 'Wijzigt keuzes in lijsten: kan instellingen of gegevens namens u wijzigen. Standaard uit.'],
-  browser_press_key: ['Надсилає натискання клавіш (Enter, Tab…) на сторінці: Enter може відправити форму. Вимкнено за замовчуванням.', 'Stuurt toetsaanslagen (Enter, Tab…): Enter kan een formulier versturen. Standaard uit.'],
-  browser_screenshot: ['Робить знімок видимої вкладки: на ньому можуть бути приватні дані (пошта, платежі), які побачить Claude. Вимкнено за замовчуванням.', 'Maakt een schermafbeelding van het zichtbare tabblad: privégegevens (mail, betalingen) worden voor Claude zichtbaar. Standaard uit.'],
-  browser_get_deep_diagnostics: ['Глибока діагностика через chrome.debugger: читає мережеві запити й консоль сторінки, де можуть бути токени чи приватні дані. Вимкнено за замовчуванням.', 'Diepe diagnose via chrome.debugger: leest netwerkverkeer en console van de pagina, waar tokens of privégegevens in kunnen staan. Standaard uit.'],
+const MODE_META: Record<Mode, { icon: typeof Check; uk: string; nl: string }> = {
+  always: { icon: CheckCheck, uk: 'Завжди', nl: 'Altijd' },
+  ask: { icon: Hand, uk: 'Питати', nl: 'Vragen' },
+  off: { icon: Ban, uk: 'Вимк.', nl: 'Uit' },
 };
 
-/** Drie knoppen: Завжди / Питати / Вимк. Voor riskante hulpmiddelen is "Altijd" mogelijk maar vraagt eerst een bevestiging op de pagina. */
 function ModeSwitch({ value, disabled, onChange, label, tr }: { value: Mode; disabled: boolean; onChange: (m: Mode) => void; label: string; tr: Tr }) {
-  const items: Array<{ mode: Mode; text: string; help: string }> = [
-    { mode: 'always', text: tr('Завжди', 'Altijd'), help: tr('Завжди: Claude викликає без додаткового запиту від сайту. Для пристроїв і браузера діють ще й їхні власні правила (папки, список команд).', 'Altijd: Claude roept het aan zonder extra vraag van de site. Voor apparaten en browsers gelden ook hun eigen grenzen (mappen, lijst met commando\'s).') },
-    { mode: 'ask', text: tr('Питати', 'Vragen'), help: tr('Питати: кожен виклик чекає вашого «Дозволити» на цій сторінці.', 'Vragen: elke aanroep wacht op uw "Toestaan" op deze pagina.') },
-    { mode: 'off', text: tr('Вимк.', 'Uit'), help: tr('Вимкнено: Claude цього інструмента не бачить і викликати не може.', 'Uit: Claude ziet dit hulpmiddel niet en kan het niet aanroepen.') },
-  ];
+  const help: Record<Mode, string> = {
+    always: tr('Завжди: Claude викликає без запиту від сайту. Межі агента (папки, список команд) лишаються.', 'Altijd: Claude roept het aan zonder vraag van de site. De grenzen van de agent (mappen, lijst met commando\'s) blijven gelden.'),
+    ask: tr('Питати: кожен виклик чекає вашого «Дозволити».', 'Vragen: elke aanroep wacht op uw "Toestaan".'),
+    off: tr('Вимкнено: Claude не бачить цього інструмента й не може його викликати.', 'Uit: Claude ziet dit hulpmiddel niet en kan het niet aanroepen.'),
+  };
   return (
-    <span className='mcp-seg' role='radiogroup' aria-label={label}>
-      {items.map((it) => (
-        <button key={it.mode} type='button' role='radio' aria-checked={value === it.mode} data-mode={it.mode} title={it.help}
-          disabled={disabled} onClick={() => value !== it.mode && onChange(it.mode)}>
-          {it.text}
-        </button>
-      ))}
+    <span className='hub-seg' role='radiogroup' aria-label={label}>
+      {(['always', 'ask', 'off'] as Mode[]).map((mode) => {
+        const Icon = MODE_META[mode].icon;
+        return (
+          <button key={mode} type='button' role='radio' aria-checked={value === mode} data-mode={mode} title={help[mode]} disabled={disabled} onClick={() => value !== mode && onChange(mode)}>
+            <Icon aria-hidden='true' /><span>{tr(MODE_META[mode].uk, MODE_META[mode].nl)}</span>
+          </button>
+        );
+      })}
     </span>
   );
 }
 
-/** "Інструменти й дозволи": per hulpmiddel Altijd / Vragen / Uit, "Set all tools", per groep, en de wachtrij voor goedkeuring van hulpmiddelen van de site. */
-export default function McpToolsPanel({ tr }: { tr: Tr }) {
-  const [tools, setTools] = useState<Tool[]>([]);
-  const [calls, setCalls] = useState<Call[]>([]);
+/** Lijst met wachtende aanroepen van site-hulpmiddelen (modus "Vragen"); de gegevens komen van de poller van de pagina (useToolApprovals). */
+export function ToolApprovals({ tr, calls, reload }: { tr: Tr; calls: ToolCall[]; reload: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const lang = tr('uk', 'nl') === 'uk' ? 'uk' : 'nl';
 
-  const loadTools = useCallback(async () => {
+  const decide = async (call: ToolCall, approve: boolean) => {
+    setBusy(true); setNotice('');
+    try { await api.post(`/api/owner/mcp-connector/approvals/${call.id}/${approve ? 'approve' : 'reject'}`, sessionBody()); await reload(); }
+    catch { setNotice(tr('Запит уже недійсний (час вийшов або його вже оброблено).', 'Dit verzoek is niet meer geldig (verlopen of al afgehandeld).')); await reload().catch(() => undefined); }
+    setBusy(false);
+  };
+  const nameOf = (tool: string) => textOf(tool, lang)?.title || tool;
+  const pending = calls.filter((c) => c.status === 'pending_approval');
+  const recent = calls.filter((c) => c.status !== 'pending_approval').slice(0, 6);
+  const statusText = (s: string) => ({ succeeded: tr('виконано', 'uitgevoerd'), failed: tr('помилка', 'mislukt'), rejected: tr('відхилено', 'geweigerd'), timeout: tr('час вийшов', 'verlopen'), approved: tr('схвалено', 'goedgekeurd') } as Record<string, string>)[s] || s;
+  return (
+    <div data-mcp-approvals={String(pending.length)} className='hub-feed'>
+      {pending.length ? pending.map((c) => (
+        <div key={c.id} className='hub-feed-item' data-approval={c.id}>
+          <Clock aria-hidden='true' />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className='hub-row start'><b>{nameOf(c.tool)}</b><span className='hub-pill warn'>Claude</span><small>{ago(c.createdAt, tr)}</small></div>
+            <code className='hub-code'>{JSON.stringify(c.args).slice(0, 240)}</code>
+            <div className='hub-actions' style={{ marginTop: 8 }}>
+              <IconButton tone='primary' icon={<Check />} disabled={busy} onClick={() => void decide(c, true)}>{tr('Дозволити', 'Toestaan')}</IconButton>
+              <IconButton icon={<X />} disabled={busy} onClick={() => void decide(c, false)}>{tr('Відхилити', 'Weigeren')}</IconButton>
+            </div>
+          </div>
+        </div>
+      )) : <div className='hub-empty'><ShieldCheck aria-hidden='true' /><span>{tr('Claude нічого не очікує від вас. Коли він викличе інструмент у режимі «Питати», запит з’явиться тут і в сповіщеннях.', 'Claude wacht op niets van u. Roept hij een hulpmiddel in de modus "Vragen" aan, dan verschijnt het hier en bij de meldingen.')}</span></div>}
+      {recent.length ? <small className='hub-meta'>{tr('Останні', 'Recent')}: {recent.map((c) => `${nameOf(c.tool)}: ${statusText(c.status)}`).join(' · ')}</small> : null}
+      {notice ? <p role='status' className='hub-note warn'>{notice}</p> : null}
+    </div>
+  );
+}
+
+/** "Інструменти й дозволи": per bron een tabblad met logo, per hulpmiddel Altijd / Vragen / Uit en een uitleg die precies zegt wat DIT hulpmiddel doet. */
+export default function McpToolsPanel({ tr }: { tr: Tr }) {
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [tab, setTab] = useState<Group>(() => { try { return (sessionStorage.getItem('mr.mcp.tools.tab') as Group) || 'devices'; } catch { return 'devices'; } });
+  const [riskAsk, setRiskAsk] = useState<string | null>(null);
+  const lang = tr('uk', 'nl') === 'uk' ? 'uk' : 'nl';
+
+  const load = useCallback(async () => {
     const res = await api.post('/api/owner/mcp-connector/tools', sessionBody());
     setTools(res.data?.tools ?? []);
   }, []);
-  const loadCalls = useCallback(async () => {
-    const res = await api.post('/api/owner/mcp-connector/approvals', sessionBody());
-    setCalls(res.data?.calls ?? []);
-  }, []);
+  useEffect(() => { void load().catch(() => undefined); }, [load]);
+  const pick = (g: Group) => { setTab(g); setRiskAsk(null); try { sessionStorage.setItem('mr.mcp.tools.tab', g); } catch { /* geen opslag */ } };
 
-  useEffect(() => { void loadTools().catch(() => undefined); void loadCalls().catch(() => undefined); }, [loadTools, loadCalls]);
-  useEffect(() => {
-    const timer = window.setInterval(() => { void loadCalls().catch(() => undefined); }, 4000);
-    return () => window.clearInterval(timer);
-  }, [loadCalls]);
-
-  const [riskAsk, setRiskAsk] = useState<string | null>(null);
-  // Riskant hulpmiddel op "Altijd": eerst een bevestiging op de pagina (geen window.confirm: ingebedde browsers onderdrukken die).
-  const chooseMode = (tool: Tool, mode: Mode) => {
-    if (tool.risky && mode === 'always') { setRiskAsk(tool.name); return; }
-    setRiskAsk(null); void setMode(tool, mode);
-  };
   const setMode = async (tool: Tool, mode: Mode) => {
     setBusy(true); setNotice('');
-    try { const res = await api.post('/api/owner/mcp-connector/tools/set', { ...sessionBody(), name: tool.name, mode }); setTools(res.data?.tools ?? []); }
-    catch { setNotice(tr('Не вдалося змінити режим інструмента.', 'Modus van het hulpmiddel wijzigen mislukt.')); }
+    try {
+      const res = await api.post('/api/owner/mcp-connector/tools/set', { ...sessionBody(), name: tool.name, mode });
+      setTools(res.data?.tools ?? []);
+      const label = textOf(tool.name, lang)?.title || tool.name;
+      emitCanonicalNotice({ text: tr(`${label}: ${MODE_META[mode].uk}`, `${label}: ${MODE_META[mode].nl}`), kind: mode === 'off' ? 'info' : mode === 'always' && tool.risky ? 'warning' : 'success', source: 'mcp' });
+    } catch { setNotice(tr('Не вдалося змінити режим інструмента.', 'Modus van het hulpmiddel wijzigen mislukt.')); }
     setBusy(false);
+  };
+  const choose = (tool: Tool, mode: Mode) => {
+    if (tool.risky && mode === 'always') { setRiskAsk(tool.name); return; }
+    setRiskAsk(null); void setMode(tool, mode);
   };
   const setAll = async (mode: Mode | 'default', group?: Group) => {
     setBusy(true); setNotice('');
@@ -106,94 +131,78 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
     catch { setNotice(tr('Не вдалося змінити режим.', 'Modus wijzigen mislukt.')); }
     setBusy(false);
   };
-  const decide = async (call: Call, approve: boolean) => {
-    setBusy(true); setNotice('');
-    try {
-      await api.post(`/api/owner/mcp-connector/approvals/${call.id}/${approve ? 'approve' : 'reject'}`, sessionBody());
-      await loadCalls();
-    } catch { setNotice(tr('Запит уже недійсний (час вийшов або його вже оброблено).', 'Dit verzoek is niet meer geldig (verlopen of al afgehandeld).')); await loadCalls().catch(() => undefined); }
-    setBusy(false);
-  };
 
-  const titleOf = (name: string) => tools.find((t) => t.name === name)?.title || name;
-  const pending = calls.filter((c) => c.status === 'pending_approval');
-  const recent = calls.filter((c) => c.status !== 'pending_approval').slice(0, 5);
-  const statusText = (s: string) => ({ succeeded: tr('виконано', 'uitgevoerd'), failed: tr('помилка', 'mislukt'), rejected: tr('відхилено', 'geweigerd'), timeout: tr('час вийшов', 'verlopen'), approved: tr('схвалено', 'goedgekeurd') } as Record<string, string>)[s] || s;
-
+  const current = GROUPS.find((g) => g.id === tab) ?? GROUPS[0];
+  const rows = tools.filter((t) => t.group === current.id);
   return (
-    <section className='api-platform agents-wrap' data-mcp-tools-panel='true'>
-      <article className='api-platform-panel' data-mcp-tools={String(tools.length)}>
-        <strong>{tr('Інструменти й дозволи', 'Hulpmiddelen en rechten')}</strong>
-        <p>{tr('Це той самий список, що бачить Claude. Для кожного інструмента оберіть: «Завжди» (без додаткового запиту від сайту), «Питати» (кожен виклик чекає вашого «Дозволити» тут) або «Вимк.» (Claude його не бачить, а виклик відхиляється на сервері). Інструменти, що змінюють дані чи показують приватне, позначені знаком «!» (наведіть, щоб побачити ризики): за замовчуванням вони вимкнені, але ви можете ввімкнути їх, коли це потрібно для задачі.', 'Dit is dezelfde lijst die Claude ziet. Kies per hulpmiddel: "Altijd" (geen extra vraag van de site), "Vragen" (elke aanroep wacht hier op uw "Toestaan") of "Uit" (Claude ziet het niet en een aanroep wordt op de server geweigerd). Hulpmiddelen die gegevens wijzigen of iets privés tonen hebben een "!" (beweeg erover voor de risico\'s): ze staan standaard uit, maar u kunt ze aanzetten wanneer een taak dat vraagt.')}</p>
+    <div className='hub-tools-wrap' data-mcp-tools-panel='true' data-mcp-tools={String(tools.length)}>
+      <p className='hub-note'>{tr('Це той самий список, що бачить Claude. Для кожного інструмента оберіть: «Завжди» (без запиту від сайту), «Питати» (кожен виклик чекає вашого «Дозволити») або «Вимк.» (Claude його не бачить). Інструменти зі знаком «!» змінюють дані або показують приватне: вони вимкнені за замовчуванням, але ви можете ввімкнути їх, коли це потрібно для задачі.', 'Dit is dezelfde lijst die Claude ziet. Kies per hulpmiddel: "Altijd" (geen vraag van de site), "Vragen" (elke aanroep wacht op uw "Toestaan") of "Uit" (Claude ziet het niet). Hulpmiddelen met een "!" wijzigen gegevens of tonen iets privés: ze staan standaard uit, maar u kunt ze aanzetten wanneer een taak dat vraagt.')}</p>
 
-        <div className='mcp-setall' data-mcp-setall='true'>
-          <span className='mcp-setall-label'>{tr('Усі інструменти', 'Alle hulpmiddelen')} <Tip text={tr('Змінює режим усіх інструментів одразу. «Завжди» і «Питати» не чіпають інструменти зі знаком «!» (їх вмикають окремо). «За замовчуванням»: читання «Завжди», запис на сайті «Питати», небезпечні вимкнено.', 'Wijzigt de modus van alle hulpmiddelen tegelijk. "Altijd" en "Vragen" laten hulpmiddelen met "!" ongemoeid (die zet u apart aan). "Standaard": lezen "Altijd", schrijven op de site "Vragen", riskante uit.')} /></span>
-          <span className='mcp-seg' role='group' aria-label={tr('Усі інструменти', 'Alle hulpmiddelen')}>
-            <button type='button' disabled={busy} onClick={() => void setAll('always')}>{tr('Завжди', 'Altijd')}</button>
-            <button type='button' disabled={busy} onClick={() => void setAll('ask')}>{tr('Питати', 'Vragen')}</button>
-            <button type='button' disabled={busy} onClick={() => void setAll('off')}>{tr('Вимк.', 'Uit')}</button>
-            <button type='button' disabled={busy} onClick={() => void setAll('default')}>{tr('За замовч.', 'Standaard')}</button>
-          </span>
-        </div>
+      <div className='hub-row' data-mcp-setall='true'>
+        <span className='hub-row start'><b>{tr('Усі інструменти', 'Alle hulpmiddelen')}</b>
+          <Help tr={tr} content={{ title: tr('Усі інструменти одразу', 'Alle hulpmiddelen tegelijk'), what: tr('Змінює режим усіх інструментів в усіх вкладках.', 'Wijzigt de modus van alle hulpmiddelen op alle tabbladen.'), touches: tr('Інструменти зі знаком «!» не змінюються кнопками «Завжди» і «Питати»: їх вмикають окремо.', 'Hulpmiddelen met "!" worden door "Altijd" en "Vragen" niet gewijzigd: die zet u apart aan.'), on: tr('«За замовчуванням»: читання «Завжди», запис на сайті «Питати», небезпечні вимкнені.', '"Standaard": lezen "Altijd", schrijven op de site "Vragen", riskante uit.'), off: tr('«Вимк.»: Claude не бачить жодного інструмента, зокрема й безпечних.', '"Uit": Claude ziet geen enkel hulpmiddel, ook de veilige niet.') }} />
+        </span>
+        <span className='hub-seg' role='group' aria-label={tr('Усі інструменти', 'Alle hulpmiddelen')}>
+          <button type='button' disabled={busy} onClick={() => void setAll('always')}><CheckCheck aria-hidden='true' />{tr('Завжди', 'Altijd')}</button>
+          <button type='button' disabled={busy} onClick={() => void setAll('ask')}><Hand aria-hidden='true' />{tr('Питати', 'Vragen')}</button>
+          <button type='button' disabled={busy} onClick={() => void setAll('off')}><Ban aria-hidden='true' />{tr('Вимк.', 'Uit')}</button>
+          <button type='button' disabled={busy} onClick={() => void setAll('default')}><RotateCcw aria-hidden='true' />{tr('За замовч.', 'Standaard')}</button>
+        </span>
+      </div>
 
+      <div className='hub-tabs' role='tablist' aria-label={tr('Джерела інструментів', 'Bronnen van hulpmiddelen')}>
         {GROUPS.map((g) => {
-          const rows = tools.filter((t) => t.group === g.id);
-          if (!rows.length) return null;
-          const active = rows.filter((t) => t.mode !== 'off').length;
+          const list = tools.filter((t) => t.group === g.id);
+          if (!list.length) return null;
+          const active = list.filter((t) => t.mode !== 'off').length;
           return (
-            <div key={g.id} className='mcp-tool-group' data-tool-group={g.id}>
-              <b>{tr(g.uk, g.nl)} <span className='agents-badge'>{active}/{rows.length}</span> <small>{tr(g.hint[0], g.hint[1])}</small></b>
-              <span className='mcp-group-actions'>
-                <button type='button' className='mcp-mini' disabled={busy} onClick={() => void setAll('off', g.id)}>{tr('Вимкнути групу', 'Groep uit')}</button>
-                <button type='button' className='mcp-mini' disabled={busy} onClick={() => void setAll('default', g.id)}>{tr('За замовчуванням', 'Standaard')}</button>
+            <button key={g.id} type='button' role='tab' className='hub-tab' aria-selected={tab === g.id} data-tool-group={g.id} onClick={() => pick(g.id)}>
+              <Logo kind={g.logo} size={20} label={tr(g.uk, g.nl)} />{tr(g.uk, g.nl)}<span className='hub-count'>{active}/{list.length}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className='hub-card'>
+        <div className='hub-source' style={{ flexWrap: 'wrap' }}>
+          {current.sources.map((s) => (
+            <span key={s.uk} className={`hub-pill ${s.live ? 'ok' : 'off'}`} title={s.live ? tr('Працює', 'Werkt') : tr('Ще не підключено до сайту', 'Nog niet aan de site gekoppeld')}>
+              <Logo kind={s.logo} size={16} label={tr(s.uk, s.nl)} />{tr(s.uk, s.nl)}{s.live ? '' : ` · ${tr('скоро', 'binnenkort')}`}
+            </span>
+          ))}
+        </div>
+        <p>{tr(current.hint[0], current.hint[1])}</p>
+        <div className='hub-actions'>
+          <IconButton icon={<Ban />} disabled={busy} onClick={() => void setAll('off', current.id)}>{tr('Вимкнути групу', 'Groep uitzetten')}</IconButton>
+          <IconButton icon={<RotateCcw />} disabled={busy} onClick={() => void setAll('default', current.id)}>{tr('За замовчуванням', 'Standaard')}</IconButton>
+        </div>
+      </div>
+
+      <div className='hub-tools' role='tabpanel'>
+        {rows.map((x) => {
+          const text = textOf(x.name, lang);
+          return (
+            <div key={x.name} className={`hub-tool${x.mode === 'off' ? ' is-off' : ''}`} data-tool={x.name} data-mode={x.mode}>
+              <span className='hub-tool-name'>
+                <b>{text?.title || x.name}</b>
+                {x.risky && text ? <Help tone='warn' tr={tr} content={{ title: text.title, what: text.what, touches: text.touches, on: text.on, off: text.off, risk: text.risk }} />
+                  : text ? <Help tr={tr} content={{ title: text.title, what: text.what, touches: text.touches, on: text.on, off: text.off }} /> : null}
+                <code>{x.name}</code>
               </span>
-              <ul>
-                {rows.map((x) => (
-                  <li key={x.name} className={`mcp-tool-row${x.mode === 'off' ? ' is-off' : ''}`} data-tool={x.name} data-mode={x.mode}>
-                    <span className='mcp-tool-text'>
-                      <code>{x.name}</code> <b>{x.title}</b>
-                      {x.risky && RISK[x.name] ? <span className='mcp-warn' tabIndex={0} aria-label={tr(RISK[x.name][0], RISK[x.name][1])} data-risky='true'>!<span className='mcp-tip' role='tooltip'>{tr(RISK[x.name][0], RISK[x.name][1])}</span></span> : null}
-                      <span className='mcp-tool-desc'>{x.description.split('. ')[0].replace(/\.$/, '')}</span>
-                      {riskAsk === x.name ? (
-                        <span className='mcp-confirm' role='alertdialog' aria-label={tr('Підтвердження', 'Bevestiging')}>
-                          <span>{tr(RISK[x.name]?.[0] ?? '', RISK[x.name]?.[1] ?? '')} {tr('Увімкнути «Завжди» (без запиту на кожен виклик)?', 'Op "Altijd" zetten (zonder vraag per aanroep)?')}</span>
-                          <button type='button' className='mcp-revoke' disabled={busy} onClick={() => { setRiskAsk(null); void setMode(x, 'always'); }}>{tr('Так, завжди', 'Ja, altijd')}</button>
-                          <button type='button' className='mcp-cancel' onClick={() => setRiskAsk(null)}>{tr('Скасувати', 'Annuleren')}</button>
-                        </span>
-                      ) : null}
-                    </span>
-                    <ModeSwitch value={x.mode} disabled={busy} tr={tr} label={`${x.title}`} onChange={(m) => chooseMode(x, m)} />
-                  </li>
-                ))}
-              </ul>
+              <span className='hub-tool-desc'>{text?.what || ''}</span>
+              <ModeSwitch value={x.mode} disabled={busy} tr={tr} label={text?.title || x.name} onChange={(m) => choose(x, m)} />
+              {riskAsk === x.name && text ? (
+                <span className='hub-confirm' role='alertdialog' aria-label={tr('Підтвердження', 'Bevestiging')}>
+                  <span><b>{tr('Увімкнути «Завжди»?', 'Op "Altijd" zetten?')}</b> {text.risk || text.touches} {tr('Claude виконуватиме це без запиту на кожен виклик.', 'Claude voert dit uit zonder vraag per aanroep.')}</span>
+                  <IconButton tone='danger' icon={<CheckCheck />} disabled={busy} onClick={() => { setRiskAsk(null); void setMode(x, 'always'); }}>{tr('Так, завжди', 'Ja, altijd')}</IconButton>
+                  <IconButton icon={<X />} onClick={() => setRiskAsk(null)}>{tr('Скасувати', 'Annuleren')}</IconButton>
+                </span>
+              ) : null}
             </div>
           );
         })}
-        {notice ? <p role='status'>{notice}</p> : null}
-      </article>
-
-      <article className='api-platform-panel' data-mcp-approvals={String(pending.length)}>
-        <strong>{tr('Очікують вашого рішення', 'Wachten op uw beslissing')}</strong>
-        {pending.length ? (
-          <ul className='api-platform-connections mcp-grants'>
-            {pending.map((c) => (
-              <li key={c.id} className='mcp-grant' data-approval={c.id}>
-                <div className='mcp-grant-main'>
-                  <div className='agents-row'><b>{titleOf(c.tool)}</b><code>{c.tool}</code></div>
-                  <small className='mcp-approval-args'>{JSON.stringify(c.args).slice(0, 240)}</small>
-                </div>
-                <span className='mcp-approval-actions'>
-                  <button type='button' className='mcp-reconnect' disabled={busy} onClick={() => void decide(c, true)}>{tr('Дозволити', 'Toestaan')}</button>
-                  <button type='button' className='mcp-cancel' disabled={busy} onClick={() => void decide(c, false)}>{tr('Відхилити', 'Weigeren')}</button>
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : <p>{tr('Немає запитів, що чекають. Коли Claude викличе інструмент у режимі «Питати», запит з’явиться тут.', 'Geen verzoeken in de wacht. Roept Claude een hulpmiddel in de modus "Vragen" aan, dan verschijnt het hier.')}</p>}
-        {recent.length ? (
-          <small className='mcp-approval-recent'>{tr('Останні', 'Recent')}: {recent.map((c) => `${titleOf(c.tool)}: ${statusText(c.status)}`).join(' · ')}</small>
-        ) : null}
-      </article>
-    </section>
+      </div>
+      {notice ? <p role='status' className='hub-note warn'>{notice}</p> : null}
+    </div>
   );
 }

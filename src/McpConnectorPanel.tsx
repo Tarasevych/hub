@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Check, Copy, RefreshCw, Trash2, X } from 'lucide-react';
 import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
-import './api-platform-view.css';
+import { ago } from './agents-data';
+import { Help, IconButton, Logo, StatusDot } from './mcp-ui';
 import './agents-panel.css';
 
 type Tr = (uk: string, nl: string) => string;
@@ -18,19 +20,6 @@ const when = (value: number | null) => {
 const zoneName = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } };
 const IDLE_MS = 24 * 60 * 60 * 1000;
 const CLAUDE_CONNECTORS = 'https://claude.ai/code#customize/connectors';
-
-/** "5 хв тому" / "5 min geleden"; nooit gebruikt: "nog niet gebruikt". */
-const ago = (value: number | null, tr: Tr): string => {
-  if (!value) return tr('ще не використовувався', 'nog niet gebruikt');
-  const s = Math.max(0, Math.round((Date.now() - value) / 1000));
-  if (s < 60) return tr('щойно', 'zojuist');
-  const m = Math.round(s / 60);
-  if (m < 60) return tr(`${m} хв тому`, `${m} min geleden`);
-  const h = Math.round(m / 60);
-  if (h < 48) return tr(`${h} год тому`, `${h} uur geleden`);
-  const d = Math.round(h / 24);
-  return tr(`${d} дн. тому`, `${d} dagen geleden`);
-};
 
 /** Connector voor Claude (claude.ai > Customize > Connectors): URL en beheer van verleende toegang. Het toestemmingsscherm zelf is McpConsentModal. */
 export default function McpConnectorPanel({ tr }: { tr: Tr }) {
@@ -50,7 +39,7 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
 
   useEffect(() => { void load().catch(() => undefined); }, [load]);
 
-  // Relatieve tijden minuutwaarden verversen en na een nieuwe goedkeuring de lijst herladen.
+  // Relatieve tijden verversen.
   useEffect(() => {
     const timer = window.setInterval(() => setTick((n) => n + 1), 30000);
     return () => window.clearInterval(timer);
@@ -89,74 +78,79 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
   }[status];
 
   return (
-    <section className='api-platform agents-wrap' data-mcp-connector='true'>
-      <article className='api-platform-panel' data-mcp-connector-url='true'>
-        <strong>{tr('Конектор для Claude', 'Connector voor Claude')}</strong>
-        <p>{tr('Додайте цю адресу в Claude: Customize → Connectors → Add custom connector. Автентифікація: «Sign in now» (OAuth), без заголовків і ключів.', 'Voeg dit adres toe in Claude: Customize → Connectors → Add custom connector. Authenticatie: "Sign in now" (OAuth), zonder headers of sleutels.')}</p>
-        <div className='api-platform-secret'>
-          <code>{url}</code>
-          <div className='api-platform-secret-actions'>
-            <button type='button' onClick={() => void copy()}>{copied ? tr('Скопійовано', 'Gekopieerd') : tr('Скопіювати адресу', 'Adres kopiëren')}</button>
-          </div>
+    <div data-mcp-connector='true' className='hub-connector'>
+      <div className={`hub-note${status === 'none' ? ' bad' : status === 'idle' ? ' warn' : ''}`} role='status' data-mcp-status={status}>
+        <div className='hub-row start'>
+          <Logo kind='claude' size={30} label='Claude' />
+          <b>{statusText}</b>
         </div>
-        <p className={`mcp-status mcp-status-${status}`} role='status' data-mcp-status={status}>{statusText}</p>
-        <div className='api-platform-secret-actions'>
-          {confirm === 'reconnect' ? (
-            <div className='mcp-confirm' role='alertdialog' aria-label={tr('Підтвердження перепідключення', 'Bevestig opnieuw koppelen')}>
-              <span>{tr('Старий доступ Claude буде відкликано, адресу скопійовано, і відкриється Claude.', 'De oude toegang van Claude wordt ingetrokken, het adres gekopieerd en Claude geopend.')}</span>
-              <button type='button' className='mcp-reconnect' disabled={busy} onClick={() => void reconnect(true)}>{tr('Продовжити', 'Doorgaan')}</button>
-              <button type='button' className='mcp-cancel' onClick={() => setConfirm(null)}>{tr('Скасувати', 'Annuleren')}</button>
-            </div>
-          ) : (
-            <button type='button' className='mcp-reconnect' disabled={busy} onClick={() => void reconnect()}>
+      </div>
+
+      <div className='hub-card' data-mcp-connector-url='true'>
+        <h3>{tr('Адреса конектора', 'Adres van de connector')}
+          <Help tr={tr} content={{ title: tr('Адреса конектора', 'Adres van de connector'), what: tr('Це адреса, яку Claude відкриває, щоб працювати з вашим сайтом. Вставте її в Claude: Customize → Connectors → Add custom connector.', 'Dit is het adres dat Claude opent om met uw site te werken. Plak het in Claude: Customize → Connectors → Add custom connector.'), touches: tr('Лише ваш обліковий запис: Claude бачить тільки те, що ви дозволили нижче.', 'Alleen uw account: Claude ziet alleen wat u hieronder toestaat.'), on: tr('Після «Sign in now» і вашого «Дозволити» Claude отримує доступ.', 'Na "Sign in now" en uw "Toestaan" krijgt Claude toegang.'), off: tr('Без додавання адреси Claude нічого не знає про сайт.', 'Zonder het adres toe te voegen weet Claude niets van de site.') }} />
+        </h3>
+        <code className='hub-code'>{url}</code>
+        <div className='hub-actions'>
+          <IconButton icon={copied ? <Check /> : <Copy />} onClick={() => void copy()}>{copied ? tr('Скопійовано', 'Gekopieerd') : tr('Скопіювати адресу', 'Adres kopiëren')}</IconButton>
+          {confirm === 'reconnect' ? null : (
+            <IconButton tone='primary' icon={<RefreshCw />} disabled={busy} onClick={() => void reconnect()}>
               {status === 'none' ? tr('Підключити Claude', 'Claude koppelen') : tr('Перепідключити Claude', 'Claude opnieuw koppelen')}
-            </button>
+            </IconButton>
           )}
         </div>
-        <ol>
+        {confirm === 'reconnect' ? (
+          <div className='hub-confirm' role='alertdialog' aria-label={tr('Підтвердження перепідключення', 'Bevestig opnieuw koppelen')}>
+            <span>{tr('Старий доступ Claude буде відкликано, адресу скопійовано, і відкриється Claude.', 'De oude toegang van Claude wordt ingetrokken, het adres gekopieerd en Claude geopend.')}</span>
+            <IconButton tone='primary' icon={<RefreshCw />} disabled={busy} onClick={() => void reconnect(true)}>{tr('Продовжити', 'Doorgaan')}</IconButton>
+            <IconButton icon={<X />} onClick={() => setConfirm(null)}>{tr('Скасувати', 'Annuleren')}</IconButton>
+          </div>
+        ) : null}
+        <ol className='hub-steps'>
           <li>{tr('У Claude вставте адресу й натисніть Add.', 'Plak het adres in Claude en klik op Add.')}</li>
           <li>{tr('Claude відкриє цей сайт: увійдіть, у вікні запиту натисніть «Дозволити».', 'Claude opent deze site: meld u aan en klik in het venster op "Toestaan".')}</li>
           <li>{tr('У чаті ввімкніть конектор (+ → Connectors) і попросіть, наприклад: «покажи мої пристрої».', 'Zet de connector aan in een chat (+ → Connectors) en vraag bijvoorbeeld: "toon mijn apparaten".')}</li>
         </ol>
-      </article>
+      </div>
 
-      <article className='api-platform-panel' data-mcp-grants={String(grants.length)}>
-        <strong>{tr('Надані доступи', 'Verleende toegang')}</strong>
-        <small data-mcp-timezone='true'>{tr('Час показано за часовим поясом вашого пристрою', 'Tijden in de tijdzone van uw apparaat')}: {zoneName() || '—'}</small>
+      <div className='hub-card' data-mcp-grants={String(grants.length)}>
+        <h3>{tr('Надані доступи', 'Verleende toegang')}
+          <Help tr={tr} content={{ title: tr('Надані доступи', 'Verleende toegang'), what: tr('Кожен рядок — це одне підключення Claude до вашого облікового запису.', 'Elke regel is één verbinding van Claude met uw account.'), touches: tr('Відкликання діє лише на це підключення, не на інші доступи.', 'Intrekken geldt alleen voor deze verbinding, niet voor andere toegang.'), off: tr('Після відкликання Claude одразу втрачає доступ і має підключитися знову.', 'Na intrekken verliest Claude meteen de toegang en moet opnieuw koppelen.') }} />
+        </h3>
+        <small data-mcp-timezone='true' className='hub-meta'>{tr('Час показано за часовим поясом вашого пристрою', 'Tijden in de tijdzone van uw apparaat')}: {zoneName() || '—'}</small>
         {grants.length ? (
-          <ul className='api-platform-connections mcp-grants'>
+          <div className='hub-feed mcp-grants'>
             {grants.map((g) => {
               const idle = !g.lastUsedAt || Date.now() - g.lastUsedAt > IDLE_MS;
               return (
-                <li key={g.id} className='mcp-grant'>
-                  <div className='mcp-grant-main'>
-                    <div className='agents-row'>
+                <div key={g.id} className='hub-feed-item mcp-grant'>
+                  <Logo kind='claude' size={28} label='Claude' />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className='hub-row start'>
                       <b>{g.clientName}</b>
-                      <span className={`agents-badge ${idle ? 'agents-idle' : 'agents-connected'}`}>{idle ? tr('простоює', 'inactief') : tr('активний', 'actief')}</span>
-                      <span className='agents-badge'>{g.scope}</span>
+                      <span className={`hub-pill ${idle ? 'off' : 'ok'}`}><StatusDot state={idle ? 'off' : 'on'} label={idle ? tr('простоює', 'inactief') : tr('активний', 'actief')} />{idle ? tr('простоює', 'inactief') : tr('активний', 'actief')}</span>
                     </div>
-                    <p className='mcp-grant-last' title={when(g.lastUsedAt)}>
-                      {tr('Востаннє підключався', 'Laatst verbonden')}: <b>{ago(g.lastUsedAt, tr)}</b>
-                    </p>
-                    <small>{tr('надано', 'verleend')}: {when(g.createdAt)} · {tr('діє до', 'geldig tot')}: {when(g.expiresAt)}</small>
+                    <p className='mcp-grant-last' title={when(g.lastUsedAt)} style={{ margin: 0 }}>{tr('Востаннє підключався', 'Laatst verbonden')}: <b>{ago(g.lastUsedAt, tr)}</b></p>
+                    <small className='hub-meta'>{tr('надано', 'verleend')}: {when(g.createdAt)} · {tr('діє до', 'geldig tot')}: {when(g.expiresAt)}</small>
+                    {confirm === g.id ? (
+                      <div className='hub-confirm' role='alertdialog' aria-label={tr('Підтвердження відкликання', 'Bevestig intrekken')} style={{ marginTop: 8 }}>
+                        <span>{tr('Claude більше не зможе користуватися вашими пристроями. Відкликати?', 'Claude kan uw apparaten dan niet meer gebruiken. Intrekken?')}</span>
+                        <IconButton tone='danger' icon={<Trash2 />} disabled={busy} onClick={() => void revoke(g)}>{tr('Так, відкликати', 'Ja, intrekken')}</IconButton>
+                        <IconButton icon={<X />} onClick={() => setConfirm(null)}>{tr('Скасувати', 'Annuleren')}</IconButton>
+                      </div>
+                    ) : (
+                      <div className='hub-actions' style={{ marginTop: 8 }}>
+                        <IconButton tone='danger' icon={<Trash2 />} disabled={busy} onClick={() => setConfirm(g.id)}>{tr('Відкликати', 'Intrekken')}</IconButton>
+                      </div>
+                    )}
                   </div>
-                  {confirm === g.id ? (
-                    <div className='mcp-confirm' role='alertdialog' aria-label={tr('Підтвердження відкликання', 'Bevestig intrekken')}>
-                      <span>{tr('Claude більше не зможе користуватися вашими пристроями. Відкликати?', 'Claude kan uw apparaten dan niet meer gebruiken. Intrekken?')}</span>
-                      <button type='button' className='mcp-revoke' disabled={busy} onClick={() => void revoke(g)}>{tr('Так, відкликати', 'Ja, intrekken')}</button>
-                      <button type='button' className='mcp-cancel' onClick={() => setConfirm(null)}>{tr('Скасувати', 'Annuleren')}</button>
-                    </div>
-                  ) : (
-                    <button type='button' className='mcp-revoke' disabled={busy} onClick={() => setConfirm(g.id)}>{tr('Відкликати', 'Intrekken')}</button>
-                  )}
-                </li>
+                </div>
               );
             })}
-          </ul>
-        ) : <p>{tr('Claude ще не має доступу.', 'Claude heeft nog geen toegang.')}</p>}
-        {notice ? <p role='status'>{notice}</p> : null}
-      </article>
-
-    </section>
+          </div>
+        ) : <div className='hub-empty'><Logo kind='claude' size={34} /><span>{tr('Claude ще не має доступу.', 'Claude heeft nog geen toegang.')}</span></div>}
+        {notice ? <p role='status' className='hub-note'>{notice}</p> : null}
+      </div>
+    </div>
   );
 }
