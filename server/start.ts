@@ -16,7 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DASHBOARD_HOST, SERVICE_HOSTS } from '../backend/deployment-identity';
 import { handler } from '../backend/index';
-import { attachAgentGateway } from '../backend/connectors-gateway';
+import { attachAgentGateway, closeAllAgents } from '../backend/connectors-gateway';
 import { verouderdeEigenarenIntrekken } from '../backend/eigenaar-opschonen';
 import { closePool, getPool } from './platform/pg';
 import { ownerEmail, rateLimit } from './platform/beveiliging';
@@ -393,6 +393,7 @@ if (isMain) {
     console.log(`[server] ${signal} ontvangen, stoppen...`);
     server.close(() => { closePool().finally(() => process.exit(0)); });
     // Keep-alive-verbindingen (bv. pagina's die elke paar seconden pollen) houden server.close() open: rust eerst, daarna geforceerd, zodat een release-wissel geen "exit-code 1" geeft.
+    closeAllAgents();
     server.closeIdleConnections?.();
     setTimeout(() => server.closeAllConnections?.(), 4_000).unref();
     setTimeout(() => process.exit(1), 10_000).unref();

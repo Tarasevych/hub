@@ -37,6 +37,12 @@ let started = false;
 export const agentOnline = (agentId: string): boolean => live.has(agentId);
 export const onlineAgentIds = (): string[] => [...live.keys()];
 
+/** Bij het stoppen van de server: alle agentverbindingen netjes sluiten (WebSocket-sockets vallen buiten server.closeAllConnections en hielden het stoppen 10 s op). Agenten verbinden zelf opnieuw. */
+export function closeAllAgents(): void {
+  for (const entry of live.values()) { try { entry.ws.close(1001, 'server stopping'); } catch { /* al dicht */ } }
+  setTimeout(() => { for (const entry of live.values()) { try { entry.ws.terminate(); } catch { /* al dicht */ } } }, 1500).unref();
+}
+
 /** Sluit de verbinding van een ingetrokken agent meteen. */
 export function disconnectAgent(agentId: string): void {
   live.get(agentId)?.ws.close(4403, 'revoked');
