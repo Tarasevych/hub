@@ -20,7 +20,7 @@ const safeText = (value: unknown, max = 500) => String(value || '').replace(/\u0
 const cloudAuth = async (authorize: CloudAuthorize, ctx: CloudContext) => { const auth = await authorize(ctx.event, ctx.body); return 'errorCode' in auth || auth.service !== 'cloud' || auth.user.status !== 'approved' ? null : auth; };
 
 export const cloudGoogleStateParts = (_state: string) => null;
-export const cloudGoogleCallbackPost = async () => error('CLOUD_GOOGLE_LEGACY_STATE_RETIRED', 410);
+export const cloudGoogleCallbackPost = async (_ctx?: unknown, _body?: unknown) => error('CLOUD_GOOGLE_LEGACY_STATE_RETIRED', 410);
 export const cloudGoogleDriveAccessToken = googleSuiteDriveAccessToken;
 export const cloudGoogleProviderPolicySelfTest = googleSuitePolicySelfTest;
 export const cloudGoogleProviderPlatformStatus = googleSuiteDrivePlatformStatus;

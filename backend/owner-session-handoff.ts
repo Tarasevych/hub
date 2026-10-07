@@ -31,13 +31,13 @@ const cookie=(token:string,maxAge:number,sessionId:string)=>`${ECOSYSTEM_COOKIE}
 
 export function createOwnerHandoffRoutes(deps:{
   requireSession:(event:Record<string,unknown>,body:unknown)=>Promise<SessionAuth>;
-  respond:(data:unknown,status?:number)=>unknown;
-  fail:(message:string,status?:number)=>unknown;
+  respond:(data:unknown,status?:number)=>any;
+  fail:(message:string,status?:number)=>any;
   audit:(userId:string,action:string,result:string,details?:Record<string,unknown>)=>Promise<unknown>;
   body:(body:unknown)=>Record<string,unknown>;
 }){
   return{
-    'POST /api/owner/session/handoff/create':[async(ctx)=>{
+    'POST /api/owner/session/handoff/create':[async(ctx: any)=>{
       const auth=await deps.requireSession(ctx.event,ctx.body);
       if('errorCode'in auth)return deps.fail(auth.errorCode,auth.errorCode.includes('EXPIRED')?410:401);
       const target=asService(deps.body(ctx.body).target);
@@ -57,7 +57,7 @@ export function createOwnerHandoffRoutes(deps:{
       await deps.audit(auth.user.id,'service_handoff_created','success',{service:target});
       return metBindingCookie(deps.respond({url:url.toString(),expiresInMs:HANDOFF_MS}),binding.setCookie);
     }],
-    'POST /api/owner/session/handoff/redeem':[async(ctx)=>{
+    'POST /api/owner/session/handoff/redeem':[async(ctx: any)=>{
       // De service wordt uitsluitend door de host bepaald; een afwijkende body.service wordt geweigerd.
       const service=serviceOfHost(ctx.event);
       if(!service)return deps.fail('OWNER_SESSION_CONTEXT_REQUIRED',400);

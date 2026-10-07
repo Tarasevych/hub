@@ -364,8 +364,8 @@ export async function deleteGoogleContour(force=false){
 
 export function createGoogleContourRoutes(deps:{
   requireSession:(event:Record<string,unknown>,body:unknown)=>Promise<SessionAuth>;
-  respond:(data:unknown,status?:number)=>unknown;
-  fail:(message:string,status?:number)=>unknown;
+  respond:(data:unknown,status?:number)=>any;
+  fail:(message:string,status?:number)=>any;
   audit:(userId:string,action:string,result:string,details?:Record<string,unknown>)=>Promise<unknown>;
   body:(body:unknown)=>Record<string,unknown>;
 }){
@@ -375,21 +375,21 @@ export function createGoogleContourRoutes(deps:{
     return auth;
   };
   return{
-    'POST /api/owner/google-contour':[async(ctx)=>{
+    'POST /api/owner/google-contour':[async(ctx: any)=>{
       const auth=await owner(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_CONTOUR_FORBIDDEN',403);
       const contour=await resolveGoogleContour();
       const keys=await googleContourKeyCards();
       return deps.respond({ok:true,contour:publicGoogleContour(contour),keys,selfTests:googleContourPolicySelfTest(),plaintextReturned:false});
     }],
-    'POST /api/owner/google-contour/keys':[async(ctx)=>{
+    'POST /api/owner/google-contour/keys':[async(ctx: any)=>{
       const auth=await owner(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_CONTOUR_FORBIDDEN',403);
       const contour=await resolveGoogleContour();
       const keys=await googleContourKeyCards();
       return deps.respond({ok:true,contour:publicGoogleContour(contour),keys,plaintextReturned:false});
     }],
-    'POST /api/owner/google-contour/reveal':[async(ctx)=>{
+    'POST /api/owner/google-contour/reveal':[async(ctx: any)=>{
       const auth=await owner(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_CONTOUR_FORBIDDEN',403);
       // SECURITY: never return platform secrets (OAuth client secret, grant-wrapping key) to a browser.
@@ -409,7 +409,7 @@ export function createGoogleContourRoutes(deps:{
         return deps.fail(code,code.includes('UNKNOWN')||code.includes('MISSING')?404:500);
       }
     }],
-    'POST /api/owner/google-contour/save':[async(ctx)=>{
+    'POST /api/owner/google-contour/save':[async(ctx: any)=>{
       const auth=await owner(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_CONTOUR_FORBIDDEN',403);
       const body=deps.body(ctx.body);
@@ -424,7 +424,7 @@ export function createGoogleContourRoutes(deps:{
         return deps.fail(code,code.includes('PROTECTED')||code.includes('REQUIRED')||code.includes('INVALID')?400:500);
       }
     }],
-    'POST /api/owner/google-contour/delete':[async(ctx)=>{
+    'POST /api/owner/google-contour/delete':[async(ctx: any)=>{
       const auth=await owner(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_CONTOUR_FORBIDDEN',403);
       try{

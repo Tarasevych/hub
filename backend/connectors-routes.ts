@@ -14,8 +14,8 @@ import { callTool, listTools } from './connectors-tools';
 type SessionAuth = { errorCode: string } | { user: { id: string; email: string; role: string; status: string }; service: string };
 type Deps = {
   requireSession: (event: Record<string, unknown>, body: unknown) => Promise<SessionAuth>;
-  respond: (data: unknown, status?: number) => unknown;
-  fail: (message: string, status?: number) => unknown;
+  respond: (data: unknown, status?: number) => any;
+  fail: (message: string, status?: number) => any;
   audit: (userId: string, action: string, result: string, details?: Record<string, unknown>) => Promise<unknown>;
   body: (body: unknown) => Record<string, unknown>;
 };
