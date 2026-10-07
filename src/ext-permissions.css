@@ -1,0 +1,16 @@
+.ext-bulk{flex-wrap:wrap}
+.ext-legend{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 8px}
+.ext-legend svg{vertical-align:-2px}
+.ext-group-bulk{display:flex;justify-content:flex-end;margin-bottom:6px}
+.ext-bulk-btn{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:2px 12px;border-radius:99px;border:1px solid var(--line,#cbd5e1);background:transparent;color:inherit;font:inherit;font-size:.8rem;cursor:pointer}
+.ext-bulk-btn:hover{background:var(--soft,rgba(120,140,160,.14))}
+.ext-bulk-btn.is-deny{color:#b91c1c;border-color:color-mix(in srgb,#dc2626 45%,var(--line,#cbd5e1))}
+.ext-tri{display:inline-flex;border:1px solid var(--line,#cbd5e1);border-radius:99px;overflow:hidden;flex:none}
+.ext-tri button{display:inline-grid;place-items:center;width:42px;height:34px;border:0;background:transparent;color:var(--muted,#64748b);cursor:pointer}
+.ext-tri button+button{border-left:1px solid var(--line,#cbd5e1)}
+.ext-tri button:hover:not(:disabled){background:var(--soft,rgba(120,140,160,.14))}
+.ext-tri button:disabled{opacity:.55;cursor:default}
+.ext-tri button.is-on[data-state=off]{background:color-mix(in srgb,#dc2626 16%,transparent);color:#b91c1c}
+.ext-tri button.is-on[data-state=ask]{background:color-mix(in srgb,#f59e0b 20%,transparent);color:#b45309}
+.ext-tri button.is-on[data-state=auto]{background:color-mix(in srgb,#16a34a 18%,transparent);color:#15803d}
+.ext-tri button:focus-visible{outline:2px solid #2f6f73;outline-offset:-2px}

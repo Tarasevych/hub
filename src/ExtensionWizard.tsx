@@ -140,10 +140,10 @@ export default function ExtensionWizard(p: WizardProps) {
     if (!prev.current) { prev.current = now; return; }
     const last = prev.current;
     const link = { href: 'https://mcp.tarasevych.com/agents#extension', label: tr('До майстра встановлення', 'Naar de installatiehulp') };
-    if (!last.present && present) emitCanonicalNotice({ text: tr('Розширення знайдено в цьому браузері. Далі: підключіть його до облікового запису.', 'De extensie is gevonden in deze browser. Volgende stap: koppel hem aan uw account.'), kind: 'success', source: 'mcp', link });
-    if (!last.paired && p.paired && p.hasAgent) emitCanonicalNotice({ text: tr('Розширення підключено до вашого облікового запису. Далі: увімкніть його для ШІ.', 'De extensie is gekoppeld aan uw account. Volgende stap: zet hem aan voor de AI.'), kind: 'success', source: 'mcp', link });
-    if (!last.enabled && p.agentEnabled) emitCanonicalNotice({ text: tr('ШІ дозволено користуватися цим браузером (лише читання, дії зі змінами чекають вашого «Дозволити»).', 'De AI mag deze browser gebruiken (alleen lezen, acties met wijzigingen wachten op uw "Toestaan").'), kind: 'success', source: 'mcp', link });
-    if (!last.armed && p.agentArmed) emitCanonicalNotice({ text: tr('Готово: ШІ активний, поки ви ввійшли на сайті.', 'Klaar: de AI is actief zolang u op de site bent aangemeld.'), kind: 'success', source: 'mcp', link });
+    if (!last.present && present) emitCanonicalNotice({ text: tr('Розширення знайдено в цьому браузері. Далі: підключіть його до облікового запису.', 'De extensie is gevonden in deze browser. Volgende stap: koppel hem aan uw account.'), kind: 'success', source: 'mcp', link, dedupeSeconds: 1800 });
+    if (!last.paired && p.paired && p.hasAgent) emitCanonicalNotice({ text: tr('Розширення підключено до вашого облікового запису. Далі: увімкніть його для ШІ.', 'De extensie is gekoppeld aan uw account. Volgende stap: zet hem aan voor de AI.'), kind: 'success', source: 'mcp', link, dedupeSeconds: 1800 });
+    if (!last.enabled && p.agentEnabled) emitCanonicalNotice({ text: tr('ШІ дозволено користуватися цим браузером (лише читання, дії зі змінами чекають вашого «Дозволити»).', 'De AI mag deze browser gebruiken (alleen lezen, acties met wijzigingen wachten op uw "Toestaan").'), kind: 'success', source: 'mcp', link, dedupeSeconds: 1800 });
+    if (!last.armed && p.agentArmed) emitCanonicalNotice({ text: tr('Готово: ШІ активний, поки ви ввійшли на сайті.', 'Klaar: de AI is actief zolang u op de site bent aangemeld.'), kind: 'success', source: 'mcp', link, dedupeSeconds: 1800 });
     prev.current = { present, paired: p.paired && p.hasAgent, enabled: p.agentEnabled, armed: p.agentArmed };
   }, [present, p.paired, p.hasAgent, p.agentEnabled, p.agentArmed]);
 

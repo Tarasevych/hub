@@ -34,6 +34,8 @@ const SITE_LABELS: Record<string, [string, string]> = {
   'owner.github.issue_create': ['Створено issue на GitHub', 'Issue aangemaakt op GitHub'], 'owner.github.issue_comment': ['Коментар додано на GitHub', 'Reactie geplaatst op GitHub'],
   'owner.mcp.grant.approved': ['Claude отримав доступ', 'Claude kreeg toegang'], 'owner.mcp.grant.denied': ['Доступ для Claude відхилено', 'Toegang voor Claude geweigerd'], 'owner.mcp.grant.revoked': ['Доступ Claude відкликано', 'Toegang van Claude ingetrokken'],
   'owner.browser.grant.created': ['Браузер підключено', 'Browser gekoppeld'], 'owner.browser.grant.revoked': ['Доступ браузера відкликано', 'Browsertoegang ingetrokken'], 'owner.browser.account.logout': ['Вихід у браузері', 'Afgemeld in de browser'],
+  'owner.agent.paired': ['Пристрій або браузер підключено', 'Apparaat of browser gekoppeld'], 'owner.agent.revoked': ['Пристрій або браузер відключено', 'Apparaat of browser losgekoppeld'],
+  'owner.browser.enabled': ['ШІ отримав доступ до браузера', 'AI kreeg toegang tot de browser'], 'owner.browser.disabled': ['Доступ ШІ до браузера вимкнено', 'Toegang van de AI tot de browser uitgeschakeld'],
   'owner.agent.policy': ['Змінено автоматичні дозволи пристрою', 'Automatische rechten van apparaat gewijzigd'],
   'owner.identity.account.delete': ['Обліковий запис позначено на видалення', 'Account gemarkeerd voor verwijdering'], 'owner.identity.workspace.restored': ['Робочий простір відновлено', 'Werkruimte hersteld'],
   'owner.privacy.export': ['Експорт даних створено', 'Gegevensexport gemaakt'], 'owner.privacy.analytics_consent': ['Змінено згоду на аналітику', 'Toestemming voor analyse gewijzigd'], 'owner.profile.photo.updated': ['Фото профілю оновлено', 'Profielfoto bijgewerkt'],
