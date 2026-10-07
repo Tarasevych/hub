@@ -47,3 +47,7 @@
 .cnc-actions svg{width:17px;height:17px}
 .cnc-done{display:inline-grid;place-items:center;width:34px;height:34px;color:#1a7f37}
 .cnc-done svg{width:16px;height:16px}
+
+.cnc-link{justify-self:start;font-size:.82rem;font-weight:700;color:var(--accent,#2f6f73);text-decoration:none}
+.cnc-link:hover{text-decoration:underline}
+.cnc-link:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}

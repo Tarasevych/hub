@@ -11,3 +11,4 @@
     padding-right: min(430px, 40vw);
   }
 }
+.canonical-notification-link{display:inline-block;margin-top:4px;font-size:.82rem;font-weight:700;color:inherit;text-decoration:underline}

@@ -8,12 +8,18 @@
 </head>
 <body>
 <main>
-  <h1>Mijn Ruimte</h1>
-  <p id="state" role="status">…</p>
+  <header class="top">
+    <span class="logo" aria-hidden="true"></span>
+    <div><h1>Mijn Ruimte</h1><p id="state" role="status">…</p></div>
+  </header>
   <p id="hint" class="hint"></p>
+  <ol id="steps" class="steps" aria-label="Етапи налаштування"></ol>
   <button id="primary" type="button" class="primary" hidden></button>
-  <button id="options" type="button">Налаштування розширення</button>
-  <button id="forget" type="button" hidden>Відключити це розширення</button>
+  <div class="row">
+    <button id="site" type="button">Відкрити кабінет</button>
+    <button id="options" type="button">Дозволи браузера</button>
+  </div>
+  <button id="forget" type="button" class="quiet" hidden>Відключити це розширення</button>
   <p class="foot">Працює лише на tarasevych.com. Нічого не читає на інших сайтах.</p>
 </main>
 <script src="popup.js"></script>

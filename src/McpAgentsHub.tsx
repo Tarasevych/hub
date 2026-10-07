@@ -151,7 +151,7 @@ export default function McpAgentsHub({ tr, doors }: { tr: Tr; doors: ReactNode }
 
               {loaded && !agents.length ? (
                 <Section id='ov-first' icon={<PlugZap />} title={tr('Почніть із підключення', 'Begin met koppelen')} tone='ok'>
-                  <PairCard tr={tr} reload={reload} />
+                  <PairCard tr={tr} reload={reload} agents={agents} />
                 </Section>
               ) : null}
             </>
@@ -194,7 +194,7 @@ export default function McpAgentsHub({ tr, doors }: { tr: Tr; doors: ReactNode }
 
           {current === 'pair' ? (
             <Section id='pair' icon={<Plus />} title={tr('Підключити пристрій', 'Apparaat koppelen')} subtitle={tr('ПК чи віртуальна машина через агента; браузер через розширення.', 'Pc of virtuele machine via de agent; browser via de extensie.')}>
-              <PairCard tr={tr} reload={reload} />
+              <PairCard tr={tr} reload={reload} agents={agents} />
               <div className='hub-card'><h3><Globe size={18} aria-hidden='true' />{tr('Браузер?', 'Een browser?')}</h3><p>{tr('Для браузера не потрібен код: встановіть розширення.', 'Voor een browser is geen code nodig: installeer de extensie.')}</p><div className='hub-actions'><button type='button' className='hub-btn' onClick={() => go('extension')}>{tr('До встановлення розширення', 'Naar de installatie van de extensie')}</button></div></div>
             </Section>
           ) : null}
