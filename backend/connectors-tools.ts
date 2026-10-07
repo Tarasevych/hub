@@ -360,11 +360,12 @@ async function githubTokenName(userId: string): Promise<string | null> {
 
 // ---- groepen en modi per hulpmiddel ----
 // De gebruiker kiest per hulpmiddel een modus: "always" (geen extra vraag van ons), "ask" (elke aanroep wacht op een klik op de site) of "off".
-// Standaard: lezen = always; wijzigen, uitvoeren en handelen = ask. Wat hieronder staat kan NOOIT op "always" (server-side begrensd):
-// het wijzigt iets op een pc of in de browser, of toont privégegevens (screenshot); die aanroepen wachten altijd op een klik.
+// Standaard: lezen = always; schrijven op de site = ask; RISKY (wijzigt iets op een pc of in de browser, of toont privégegevens) = off.
+// De gebruiker mag elk hulpmiddel op elke modus zetten, ook RISKY op "always" (zijn keuze, per taak); de UI toont daarbij een waarschuwing.
+// "always" op een RISKY hulpmiddel betekent: geen klik per aanroep (de eigen grenzen van de agent, mappen en toegestane commando's, blijven gelden).
 export type ToolGroup = 'devices' | 'browser' | 'mail' | 'calendar' | 'drive' | 'site' | 'github';
 export type ToolMode = store.ToolMode;
-export const NEVER_ALWAYS = new Set(['machine_write_file', 'machine_exec', 'docker_manage_container', 'browser_invoke_action', 'browser_click', 'browser_type',
+export const RISKY_TOOLS = new Set(['machine_write_file', 'machine_exec', 'docker_manage_container', 'browser_invoke_action', 'browser_click', 'browser_type',
   'browser_select_option', 'browser_press_key', 'browser_screenshot', 'browser_get_deep_diagnostics']);
 
 export function groupOf(name: string): ToolGroup {
@@ -374,17 +375,16 @@ export function groupOf(name: string): ToolGroup {
   if (name === 'github_get') return 'github';
   return 'devices';
 }
-export function defaultMode(name: string): 'always' | 'ask' {
-  if (NEVER_ALWAYS.has(name)) return 'ask';
+export function defaultMode(name: string): ToolMode {
+  if (RISKY_TOOLS.has(name)) return 'off';
   const site = SITE_TOOL_BY_NAME.get(name);
   if (site) return site.write ? 'ask' : 'always';
   // Voor agent-hulpmiddelen betekent "always": geen EXTRA vraag van ons; het beleid van de agent/browser (aparte schakelaars) geldt dan nog.
   return 'always';
 }
-/** De modus die echt geldt: de keuze van de gebruiker (of de standaard), met "always" teruggebracht tot "ask" voor wat nooit automatisch mag. */
+/** De modus die echt geldt: de keuze van de gebruiker, anders de standaard. */
 export function effectiveMode(name: string, stored: ToolMode | undefined): ToolMode {
-  const mode = stored ?? defaultMode(name);
-  return mode === 'always' && NEVER_ALWAYS.has(name) ? 'ask' : mode;
+  return stored ?? defaultMode(name);
 }
 
 /**
@@ -424,7 +424,7 @@ async function allTools(userId: string, opts: { alwaysMachine?: boolean }): Prom
 export type ToolKind = 'read' | 'write' | 'execute' | 'navigate' | 'interact' | 'advanced';
 export type ToolInfo = {
   name: string; title: string; description: string; kind: ToolKind; group: ToolGroup; needsApproval: boolean; readOnly: boolean; destructive: boolean;
-  mode: ToolMode; defaultMode: 'always' | 'ask'; canAlways: boolean; enabled: boolean;
+  mode: ToolMode; defaultMode: ToolMode; risky: boolean; enabled: boolean;
 };
 
 /** Overzicht voor het beheerscherm: wat elk hulpmiddel doet, in welke groep, en welke modus nu geldt. */
@@ -442,9 +442,9 @@ export async function describeTools(userId: string): Promise<ToolInfo[]> {
   return tools.map((t) => {
     const mode = effectiveMode(t.name, modes[t.name]);
     return {
-      name: t.name, title: t.title || t.name, description: t.description, kind: kindOf(t), group: groupOf(t.name), needsApproval: mode === 'ask' || NEEDS_APPROVAL.has(t.name),
+      name: t.name, title: t.title || t.name, description: t.description, kind: kindOf(t), group: groupOf(t.name), needsApproval: mode === 'ask' || (NEEDS_APPROVAL.has(t.name) && !(mode === 'always' && RISKY_TOOLS.has(t.name))),
       readOnly: t.annotations?.readOnlyHint === true, destructive: t.annotations?.destructiveHint === true,
-      mode, defaultMode: defaultMode(t.name), canAlways: !NEVER_ALWAYS.has(t.name), enabled: mode !== 'off',
+      mode, defaultMode: defaultMode(t.name), risky: RISKY_TOOLS.has(t.name), enabled: mode !== 'off',
     };
   });
 }
@@ -500,7 +500,7 @@ export async function callTool(userId: string, name: string, args: any = {}): Pr
         }
       }
       const { machine: _machine, browser: _browser, ...params } = args;
-      const { command } = await submitCommand(agent, userId, TOOL_TO_COMMAND[name], params, { forceApproval: mode === 'ask' });
+      const { command } = await submitCommand(agent, userId, TOOL_TO_COMMAND[name], params, { forceApproval: mode === 'ask', forceAuto: mode === 'always' && RISKY_TOOLS.has(name) });
       const done = (await waitForCommand(userId, command.id, APPROVAL_WAIT_MS)) ?? command;
       if (done.status === 'succeeded') {
         // Een screenshot komt als afbeelding terug (MCP "image"-inhoud) met een korte tekst erbij; al het andere als onbetrouwbare tekst.

@@ -3,7 +3,7 @@
 // De routes voor toestemming en beheer vragen een sessie (service mcp) en het recht 'api-platform'.
 import { heeftApiRecht } from './api-recht';
 import * as c from './mcp-connector';
-import { approveToolCall, describeTools, KNOWN_TOOL_NAMES, NEVER_ALWAYS, rejectToolCall } from './connectors-tools';
+import { approveToolCall, describeTools, KNOWN_TOOL_NAMES, rejectToolCall } from './connectors-tools';
 import * as agentStore from './connectors-store';
 
 type SessionAuth = { errorCode: string } | { user: { id: string; email: string; role: string; status: string }; service: string };
@@ -73,7 +73,7 @@ export function createMcpConnectorRoutes(deps: Deps) {
     }],
 
     // De modus van een hulpmiddel zetten: "always" (geen extra vraag), "ask" (elke aanroep wacht op een klik op de site) of "off" (weg uit
-    // tools/list en geweigerd bij aanroep). Alles wat nooit automatisch mag (NEVER_ALWAYS) wordt nooit "always": de server begrenst dat zelf.
+    // tools/list en geweigerd bij aanroep). Riskante hulpmiddelen (RISKY_TOOLS) staan standaard uit; de gebruiker mag ze zelf op elke modus zetten.
     // Oude vorm {name, enabled: boolean} blijft werken: aan = standaardmodus, uit = off.
     'POST /api/owner/mcp-connector/tools/set': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
@@ -87,7 +87,6 @@ export function createMcpConnectorRoutes(deps: Deps) {
         mode = body.mode === 'default' ? null : (body.mode as 'always' | 'ask' | 'off');
       } else if (typeof body.enabled === 'boolean') mode = body.enabled ? null : 'off';
       else return deps.fail('TOOL_SETTING_INVALID', 400);
-      if (mode === 'always' && NEVER_ALWAYS.has(name)) mode = 'ask'; // nooit "always": zie NEVER_ALWAYS
       await agentStore.setToolModes(auth.user.id, { [name]: mode });
       await deps.audit(auth.user.id, 'owner.mcp.tool.setting', 'success', { tool: name, mode: mode ?? 'default' });
       return deps.respond({ ok: true, tools: await describeTools(auth.user.id) });
@@ -104,7 +103,9 @@ export function createMcpConnectorRoutes(deps: Deps) {
       const changes: Record<string, 'always' | 'ask' | 'off' | null> = {};
       for (const t of all) {
         if (group && t.group !== group) continue;
-        changes[t.name] = body.mode === 'default' ? null : body.mode === 'always' && !t.canAlways ? 'ask' : (body.mode as 'always' | 'ask' | 'off');
+        // Een bulkactie "Altijd"/"Vragen" laat riskante hulpmiddelen ongemoeid: die zet de gebruiker bewust één voor één.
+        if (t.risky && (body.mode === 'always' || body.mode === 'ask')) continue;
+        changes[t.name] = body.mode === 'default' ? null : (body.mode as 'always' | 'ask' | 'off');
       }
       await agentStore.setToolModes(auth.user.id, changes);
       await deps.audit(auth.user.id, 'owner.mcp.tool.setting_all', 'success', { mode: body.mode, group: group || 'all', tools: Object.keys(changes).length });

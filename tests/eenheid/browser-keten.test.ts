@@ -8,7 +8,7 @@ import { approveCommand, rejectCommand } from '../../backend/connectors-commands
 import { agentOnline, attachAgentGateway, disconnectAgent } from '../../backend/connectors-gateway';
 import * as store from '../../backend/connectors-store';
 import { randomToken, sha256 } from '../../backend/connectors-crypto';
-import { callTool } from '../../backend/connectors-tools';
+import { callTool, RISKY_TOOLS } from '../../backend/connectors-tools';
 import { BROWSER_AUTO_APPROVABLE, BROWSER_DEFAULT_AUTO, BROWSER_DEFAULT_ENABLED, BROWSER_TYPES, enabledTypes } from '../../backend/browser-capabilities';
 import { closePool, getPool } from '../../server/platform/pg';
 import { checker } from './hulp/nep-google';
@@ -85,6 +85,8 @@ export async function main(): Promise<number> {
     check('automatisch goedkeuren kan nooit voor handelen, screenshot of diepe diagnose',
       !BROWSER_AUTO_APPROVABLE.some((t) => ['browser.invoke', 'browser.click', 'browser.type', 'browser.select', 'browser.key', 'browser.screenshot', 'browser.deep_diagnostics'].includes(t))
       && BROWSER_DEFAULT_AUTO.every((t) => BROWSER_DEFAULT_ENABLED.includes(t)) && BROWSER_TYPES.length === 14);
+    // Riskante hulpmiddelen staan standaard uit; deze test wil de keten (mogelijkheid per browser + klik) testen, dus de gebruiker zet ze op "ask".
+    await store.setToolModes(A, Object.fromEntries([...RISKY_TOOLS].map((n) => [n, 'ask' as const])));
     const uitKlik = await callTool(A, 'browser_click', { name: 'Opslaan' });
     const uitShot = await callTool(A, 'browser_screenshot', {});
     check('een uitgezette mogelijkheid wordt geweigerd met uitleg en de extensie krijgt niets',
@@ -114,6 +116,13 @@ export async function main(): Promise<number> {
     await rejectCommand(A, (await store.listPendingCommands(A))[0].id);
     const geweigerd = await klik2;
     check('weigeren: de AI hoort dat de gebruiker heeft geweigerd en de extensie krijgt niets', geweigerd.isError === true && /rejected/.test(geweigerd.content[0].text) && !ext.opdrachten.some((o) => /Verwijderen/.test(JSON.stringify(o.params))));
+    // De gebruiker zet browser_click zelf op "Altijd": geen klik per aanroep, de opdracht gaat direct naar de extensie (zijn bewuste keuze).
+    await store.setToolModes(A, { browser_click: 'always' });
+    const aantalVoor = ext.opdrachten.filter((o) => o.type === 'browser.click').length;
+    const altijdKlik = await callTool(A, 'browser_click', { name: 'Direct' });
+    check('modus Altijd op een riskant hulpmiddel: uitgevoerd zonder goedkeuring (niets wacht) en de extensie ontvangt de klik',
+      !altijdKlik.isError && (await store.listPendingCommands(A)).length === 0 && ext.opdrachten.filter((o) => o.type === 'browser.click').length === aantalVoor + 1, altijdKlik.content[0].text.slice(0, 100));
+    await store.setToolModes(A, { browser_click: 'ask' });
 
     // navigeren: eerst met goedkeuring, daarna automatisch zodra de gebruiker dat toestaat
     const nav1 = callTool(A, 'browser_open', { url: 'https://mail.tarasevych.com/' });

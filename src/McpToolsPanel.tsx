@@ -8,8 +8,8 @@ type Tr = (uk: string, nl: string) => string;
 type Mode = 'always' | 'ask' | 'off';
 type Group = 'devices' | 'browser' | 'mail' | 'calendar' | 'drive' | 'site' | 'github';
 type Tool = {
-  name: string; title: string; description: string; kind: string; group: Group; mode: Mode; defaultMode: 'always' | 'ask';
-  canAlways: boolean; needsApproval: boolean; readOnly: boolean; destructive: boolean; enabled: boolean;
+  name: string; title: string; description: string; kind: string; group: Group; mode: Mode; defaultMode: Mode;
+  risky: boolean; needsApproval: boolean; readOnly: boolean; destructive: boolean; enabled: boolean;
 };
 type Call = { id: string; tool: string; args: Record<string, unknown>; status: string; createdAt: number; preview: string };
 
@@ -33,10 +33,24 @@ function Tip({ text }: { text: string }) {
   );
 }
 
-/** Drie knoppen: Завжди / Питати / Вимк. De eerste is uitgeschakeld voor wat nooit automatisch mag (server begrenst dat ook zelf). */
-function ModeSwitch({ value, canAlways, disabled, onChange, label, tr }: { value: Mode; canAlways: boolean; disabled: boolean; onChange: (m: Mode) => void; label: string; tr: Tr }) {
+/** Waarschuwing per riskant hulpmiddel: waarom aan- of uitzetten gevaarlijk kan zijn en waartoe het kan leiden. */
+const RISK: Record<string, [string, string]> = {
+  machine_write_file: ['Дозволяє Claude створювати й перезаписувати файли у дозволених папках вашого ПК. Помилка або підміна інструкцій у чужому тексті може затерти важливі дані чи підкинути шкідливий файл. Вимкнено за замовчуванням.', 'Laat Claude bestanden aanmaken en overschrijven in de toegestane mappen van uw pc. Een fout of een ingeslopen instructie in vreemde tekst kan belangrijke gegevens wissen of een schadelijk bestand plaatsen. Standaard uit.'],
+  machine_exec: ['Дозволяє виконувати команди зі списку агента на вашому ПК. Навіть дозволена команда може змінити систему чи видалити дані. Вимкнено за замовчуванням.', 'Voert commando\'s uit de lijst van de agent uit op uw pc. Ook een toegestaan commando kan het systeem wijzigen of gegevens wissen. Standaard uit.'],
+  docker_manage_container: ['Дозволяє запускати, зупиняти й перезапускати контейнери. Зупинка потрібного контейнера зупиняє сервіси та може призвести до простою. Вимкнено за замовчуванням.', 'Start, stopt en herstart containers. Een verkeerde container stoppen legt diensten stil en kan tot downtime leiden. Standaard uit.'],
+  browser_invoke_action: ['Виконує дії сайту (відкрити сервіс тощо) від вашого імені у вашому сеансі. Вимкнено за замовчуванням.', 'Voert acties van de site uit in uw sessie, namens u. Standaard uit.'],
+  browser_click: ['Клікає елементи на сторінці у вашому сеансі: може підтвердити, надіслати чи видалити щось від вашого імені. Вимкнено за замовчуванням.', 'Klikt op elementen in uw sessie: kan namens u iets bevestigen, versturen of verwijderen. Standaard uit.'],
+  browser_type: ['Вводить текст у поля сторінки: може надіслати чи змінити дані від вашого імені. Не для паролів і платіжних полів. Вимкнено за замовчуванням.', 'Typt tekst in velden: kan namens u gegevens versturen of wijzigen. Niet voor wachtwoord- of betaalvelden. Standaard uit.'],
+  browser_select_option: ['Змінює вибір у списках на сторінці: може змінити налаштування чи дані від вашого імені. Вимкнено за замовчуванням.', 'Wijzigt keuzes in lijsten: kan instellingen of gegevens namens u wijzigen. Standaard uit.'],
+  browser_press_key: ['Надсилає натискання клавіш (Enter, Tab…) на сторінці: Enter може відправити форму. Вимкнено за замовчуванням.', 'Stuurt toetsaanslagen (Enter, Tab…): Enter kan een formulier versturen. Standaard uit.'],
+  browser_screenshot: ['Робить знімок видимої вкладки: на ньому можуть бути приватні дані (пошта, платежі), які побачить Claude. Вимкнено за замовчуванням.', 'Maakt een schermafbeelding van het zichtbare tabblad: privégegevens (mail, betalingen) worden voor Claude zichtbaar. Standaard uit.'],
+  browser_get_deep_diagnostics: ['Глибока діагностика через chrome.debugger: читає мережеві запити й консоль сторінки, де можуть бути токени чи приватні дані. Вимкнено за замовчуванням.', 'Diepe diagnose via chrome.debugger: leest netwerkverkeer en console van de pagina, waar tokens of privégegevens in kunnen staan. Standaard uit.'],
+};
+
+/** Drie knoppen: Завжди / Питати / Вимк. Voor riskante hulpmiddelen is "Altijd" mogelijk maar vraagt eerst een bevestiging op de pagina. */
+function ModeSwitch({ value, disabled, onChange, label, tr }: { value: Mode; disabled: boolean; onChange: (m: Mode) => void; label: string; tr: Tr }) {
   const items: Array<{ mode: Mode; text: string; help: string }> = [
-    { mode: 'always', text: tr('Завжди', 'Altijd'), help: canAlways ? tr('Завжди: Claude викликає без додаткового запиту від сайту. Для пристроїв і браузера діють ще й їхні власні правила («без підтвердження»).', 'Altijd: Claude roept het aan zonder extra vraag van de site. Voor apparaten en browsers gelden ook hun eigen regels ("zonder bevestiging").') : tr('Цей інструмент змінює дані або показує приватне, тому завжди чекає вашого «Дозволити».', 'Dit hulpmiddel wijzigt gegevens of toont iets privés en wacht daarom altijd op uw "Toestaan".') },
+    { mode: 'always', text: tr('Завжди', 'Altijd'), help: tr('Завжди: Claude викликає без додаткового запиту від сайту. Для пристроїв і браузера діють ще й їхні власні правила (папки, список команд).', 'Altijd: Claude roept het aan zonder extra vraag van de site. Voor apparaten en browsers gelden ook hun eigen grenzen (mappen, lijst met commando\'s).') },
     { mode: 'ask', text: tr('Питати', 'Vragen'), help: tr('Питати: кожен виклик чекає вашого «Дозволити» на цій сторінці.', 'Vragen: elke aanroep wacht op uw "Toestaan" op deze pagina.') },
     { mode: 'off', text: tr('Вимк.', 'Uit'), help: tr('Вимкнено: Claude цього інструмента не бачить і викликати не може.', 'Uit: Claude ziet dit hulpmiddel niet en kan het niet aanroepen.') },
   ];
@@ -44,7 +58,7 @@ function ModeSwitch({ value, canAlways, disabled, onChange, label, tr }: { value
     <span className='mcp-seg' role='radiogroup' aria-label={label}>
       {items.map((it) => (
         <button key={it.mode} type='button' role='radio' aria-checked={value === it.mode} data-mode={it.mode} title={it.help}
-          disabled={disabled || (it.mode === 'always' && !canAlways)} onClick={() => value !== it.mode && onChange(it.mode)}>
+          disabled={disabled} onClick={() => value !== it.mode && onChange(it.mode)}>
           {it.text}
         </button>
       ))}
@@ -74,6 +88,12 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
     return () => window.clearInterval(timer);
   }, [loadCalls]);
 
+  const [riskAsk, setRiskAsk] = useState<string | null>(null);
+  // Riskant hulpmiddel op "Altijd": eerst een bevestiging op de pagina (geen window.confirm: ingebedde browsers onderdrukken die).
+  const chooseMode = (tool: Tool, mode: Mode) => {
+    if (tool.risky && mode === 'always') { setRiskAsk(tool.name); return; }
+    setRiskAsk(null); void setMode(tool, mode);
+  };
   const setMode = async (tool: Tool, mode: Mode) => {
     setBusy(true); setNotice('');
     try { const res = await api.post('/api/owner/mcp-connector/tools/set', { ...sessionBody(), name: tool.name, mode }); setTools(res.data?.tools ?? []); }
@@ -104,10 +124,10 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
     <section className='api-platform agents-wrap' data-mcp-tools-panel='true'>
       <article className='api-platform-panel' data-mcp-tools={String(tools.length)}>
         <strong>{tr('Інструменти й дозволи', 'Hulpmiddelen en rechten')}</strong>
-        <p>{tr('Це той самий список, що бачить Claude. Для кожного інструмента оберіть: «Завжди» (без додаткового запиту від сайту), «Питати» (кожен виклик чекає вашого «Дозволити» тут) або «Вимк.» (Claude його не бачить, а виклик відхиляється на сервері). Те, що змінює дані чи показує приватне, завжди лишається на «Питати».', 'Dit is dezelfde lijst die Claude ziet. Kies per hulpmiddel: "Altijd" (geen extra vraag van de site), "Vragen" (elke aanroep wacht hier op uw "Toestaan") of "Uit" (Claude ziet het niet en een aanroep wordt op de server geweigerd). Wat gegevens wijzigt of iets privés toont, blijft altijd op "Vragen".')}</p>
+        <p>{tr('Це той самий список, що бачить Claude. Для кожного інструмента оберіть: «Завжди» (без додаткового запиту від сайту), «Питати» (кожен виклик чекає вашого «Дозволити» тут) або «Вимк.» (Claude його не бачить, а виклик відхиляється на сервері). Інструменти, що змінюють дані чи показують приватне, позначені знаком «!» (наведіть, щоб побачити ризики): за замовчуванням вони вимкнені, але ви можете ввімкнути їх, коли це потрібно для задачі.', 'Dit is dezelfde lijst die Claude ziet. Kies per hulpmiddel: "Altijd" (geen extra vraag van de site), "Vragen" (elke aanroep wacht hier op uw "Toestaan") of "Uit" (Claude ziet het niet en een aanroep wordt op de server geweigerd). Hulpmiddelen die gegevens wijzigen of iets privés tonen hebben een "!" (beweeg erover voor de risico\'s): ze staan standaard uit, maar u kunt ze aanzetten wanneer een taak dat vraagt.')}</p>
 
         <div className='mcp-setall' data-mcp-setall='true'>
-          <span className='mcp-setall-label'>{tr('Усі інструменти', 'Alle hulpmiddelen')} <Tip text={tr('Змінює режим усіх інструментів одразу. «Завжди» не вмикається для тих, що змінюють дані чи показують приватне: вони стають «Питати». «За замовчуванням»: читання «Завжди», зміни «Питати».', 'Wijzigt de modus van alle hulpmiddelen tegelijk. "Altijd" geldt niet voor wat gegevens wijzigt of iets privés toont: dat wordt "Vragen". "Standaard": lezen "Altijd", wijzigen "Vragen".')} /></span>
+          <span className='mcp-setall-label'>{tr('Усі інструменти', 'Alle hulpmiddelen')} <Tip text={tr('Змінює режим усіх інструментів одразу. «Завжди» і «Питати» не чіпають інструменти зі знаком «!» (їх вмикають окремо). «За замовчуванням»: читання «Завжди», запис на сайті «Питати», небезпечні вимкнено.', 'Wijzigt de modus van alle hulpmiddelen tegelijk. "Altijd" en "Vragen" laten hulpmiddelen met "!" ongemoeid (die zet u apart aan). "Standaard": lezen "Altijd", schrijven op de site "Vragen", riskante uit.')} /></span>
           <span className='mcp-seg' role='group' aria-label={tr('Усі інструменти', 'Alle hulpmiddelen')}>
             <button type='button' disabled={busy} onClick={() => void setAll('always')}>{tr('Завжди', 'Altijd')}</button>
             <button type='button' disabled={busy} onClick={() => void setAll('ask')}>{tr('Питати', 'Vragen')}</button>
@@ -132,9 +152,17 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
                   <li key={x.name} className={`mcp-tool-row${x.mode === 'off' ? ' is-off' : ''}`} data-tool={x.name} data-mode={x.mode}>
                     <span className='mcp-tool-text'>
                       <code>{x.name}</code> <b>{x.title}</b>
+                      {x.risky && RISK[x.name] ? <span className='mcp-warn' tabIndex={0} aria-label={tr(RISK[x.name][0], RISK[x.name][1])} data-risky='true'>!<span className='mcp-tip' role='tooltip'>{tr(RISK[x.name][0], RISK[x.name][1])}</span></span> : null}
                       <span className='mcp-tool-desc'>{x.description.split('. ')[0].replace(/\.$/, '')}</span>
+                      {riskAsk === x.name ? (
+                        <span className='mcp-confirm' role='alertdialog' aria-label={tr('Підтвердження', 'Bevestiging')}>
+                          <span>{tr(RISK[x.name]?.[0] ?? '', RISK[x.name]?.[1] ?? '')} {tr('Увімкнути «Завжди» (без запиту на кожен виклик)?', 'Op "Altijd" zetten (zonder vraag per aanroep)?')}</span>
+                          <button type='button' className='mcp-revoke' disabled={busy} onClick={() => { setRiskAsk(null); void setMode(x, 'always'); }}>{tr('Так, завжди', 'Ja, altijd')}</button>
+                          <button type='button' className='mcp-cancel' onClick={() => setRiskAsk(null)}>{tr('Скасувати', 'Annuleren')}</button>
+                        </span>
+                      ) : null}
                     </span>
-                    <ModeSwitch value={x.mode} canAlways={x.canAlways} disabled={busy} tr={tr} label={`${x.title}`} onChange={(m) => void setMode(x, m)} />
+                    <ModeSwitch value={x.mode} disabled={busy} tr={tr} label={`${x.title}`} onChange={(m) => chooseMode(x, m)} />
                   </li>
                 ))}
               </ul>

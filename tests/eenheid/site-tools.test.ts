@@ -4,7 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import { closePool, getPool } from '../../server/platform/pg';
 import * as store from '../../backend/connectors-store';
-import { approveToolCall, callTool, defaultMode, describeTools, effectiveMode, listTools, NEVER_ALWAYS, rejectToolCall } from '../../backend/connectors-tools';
+import { approveToolCall, callTool, defaultMode, describeTools, effectiveMode, listTools, RISKY_TOOLS, rejectToolCall } from '../../backend/connectors-tools';
 import { callSite, gedelegeerdeSessie, TOEGESTANE_ROUTES, zetSiteAanroeper } from '../../backend/site-dispatch';
 import { compact, explainSiteError, SITE_TOOLS } from '../../backend/site-tools';
 import { checker, nepGoogle } from './hulp/nep-google';
@@ -39,10 +39,10 @@ export async function main(): Promise<number> {
       SITE_TOOLS.every((s) => TOEGESTANE_ROUTES.has(s.request(voorbeeld(s.tool.inputSchema)).route)) && [...TOEGESTANE_ROUTES].every((r) => /^POST \/api\/owner\//.test(r)));
     check('catalogus: elke parameter is beschreven en onbekende velden zijn niet toegestaan',
       SITE_TOOLS.every((s) => (s.tool.inputSchema as any).additionalProperties === false && Object.values((s.tool.inputSchema as any).properties as Record<string, any>).every((p) => typeof p.description === 'string' && p.description.length > 10)));
-    check('standaardmodus: lezen = always; wijzigen = ask; wat nooit automatisch mag blijft ask, ook als de gebruiker "always" kiest',
+    check('standaardmodus: lezen = always; schrijven op de site = ask; riskant = off, maar de gebruiker mag het zelf op always zetten',
       defaultMode('mail_search_messages') === 'always' && defaultMode('mail_modify_message') === 'ask' && defaultMode('machine_read_file') === 'always'
-      && defaultMode('machine_exec') === 'ask' && effectiveMode('machine_exec', 'always') === 'ask' && effectiveMode('mail_modify_message', 'always') === 'always'
-      && effectiveMode('browser_click', 'always') === 'ask' && effectiveMode('browser_snapshot', 'off') === 'off' && NEVER_ALWAYS.size === 10);
+      && defaultMode('machine_exec') === 'off' && effectiveMode('machine_exec', 'always') === 'always' && effectiveMode('mail_modify_message', 'always') === 'always'
+      && effectiveMode('browser_click', undefined) === 'off' && effectiveMode('browser_snapshot', 'off') === 'off' && RISKY_TOOLS.size === 10);
     check('inkorten: HTML en andere zware velden verdwijnen, lange teksten en lijsten worden afgekapt',
       JSON.stringify(compact({ a: 'x'.repeat(5000), renderBody: '<b>x</b>', lijst: Array.from({ length: 80 }, (_, i) => i) }))
         .includes('[cut]') && !JSON.stringify(compact({ renderBody: '<b>x</b>' })).includes('<b>') && (compact({ lijst: Array.from({ length: 80 }, (_, i) => i) }) as any).lijst.length === 61);
@@ -107,9 +107,9 @@ export async function main(): Promise<number> {
     const lijst = (await listTools(A, { alwaysMachine: true })).map((t) => t.name);
     const info = await describeTools(A);
     const exec = info.find((t) => t.name === 'machine_exec')!;
-    check('modus off: weg uit de lijst en geweigerd; "always" op machine_exec werkt nooit (begrensd tot ask) en het overzicht zegt dat',
-      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 32
-      && exec.mode === 'ask' && exec.canAlways === false && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 33);
+    check('modus off: weg uit de lijst en geweigerd; riskant staat standaard uit en "always" wordt gehonoreerd (geen begrenzing meer)',
+      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 23 && lijst.includes('machine_exec') && !lijst.includes('browser_click')
+      && exec.mode === 'always' && exec.risky === true && info.find((t) => t.name === 'browser_click')!.mode === 'off' && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 33);
     check('groepen in het overzicht: apparaten, browser, mail, agenda, schijf, zoeken',
       ['devices', 'browser', 'mail', 'calendar', 'drive', 'site'].every((g) => info.some((t) => t.group === g)) && info.filter((t) => t.group === 'mail').length === 5 && info.filter((t) => t.group === 'browser').length === 14);
     await store.setToolModes(A, { mail_search_messages: null, machine_exec: null, mail_modify_message: null });
