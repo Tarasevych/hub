@@ -293,6 +293,23 @@ async function requestKit() {
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, "kit-request"), "go\n", { mode: 0o600 });
 }
+const kitDir = () => path.join(process.env.UPLOADS_DIR || "/srv/data/uploads", "mcp-archives");
+/** Stand van het archief uit kit-status.txt (geschreven door /usr/local/sbin/mijn-ruimte-archief). Herkent een vastgelopen of nooit gestarte bouw. */
+export async function readKitStatus(now = Date.now()): Promise<Record<string, string>> {
+  const dir = kitDir();
+  let lines: Record<string, string> = {};
+  let statusAge = Infinity;
+  try { const st = await stat(path.join(dir, "kit-status.txt")); statusAge = now - st.mtimeMs; lines = parseKit(await readFile(path.join(dir, "kit-status.txt"), "utf8")); } catch { /* nog geen status */ }
+  let requestAge = Infinity;
+  try { requestAge = now - (await stat(path.join(dir, "kit-request"))).mtimeMs; } catch { /* geen openstaand verzoek */ }
+  // Verzoek ligt er nog (het script haalt het weg zodra het start): zonder start binnen 60 s is de service niet actief.
+  if (requestAge < Infinity && requestAge < statusAge) {
+    if (requestAge > 60_000) return { ...lines, state: "failed", error: "NOT_STARTED", detail: "служба архіву не стартувала (mijn-ruimte-archief.path)" };
+    return { state: "building", stage: "1", pct: "0", phase: "queued", detail: "запит надіслано, очікуємо запуск", started: new Date(now - requestAge).toISOString() };
+  }
+  if (lines.state === "building" && statusAge > 10 * 60_000) return { ...lines, state: "failed", error: "STALLED", detail: "збір зупинився без відповіді понад 10 хвилин" };
+  return lines;
+}
 function parseKit(text: string) {
   const lines: Record<string, string> = {};
   for (const row of text.split("\n")) {
@@ -327,8 +344,8 @@ export function backupFile(stamp: string, name: string) {
   if (!BACKUP_STAMP.test(stamp) || !BACKUP_FILES.includes(name)) return "";
   return path.join(backupRoot(), stamp, name);
 }
-function archiveFile(name: string) {
-  if (!/^mijn-ruimte-\d{8}-\d{6}(-kod-baza-fajly-sekrety-instrukcija)?\.tar\.gz$/.test(name)) return "";
+export function archiveFile(name: string) {
+  if (!/^mijn-ruimte-\d{8}-\d{6}(-volledig\.tar|(-kod-baza-fajly-sekrety-instrukcija)?\.tar\.gz)$/.test(name)) return "";
   return path.join(process.env.UPLOADS_DIR || "/srv/data/uploads", "mcp-archives", name);
 }
 type ArchiveRow = { at: string; name: string; bytes: number; kod: number; baza: number; fajly: number; sekrety: number; kept?: boolean };
@@ -365,10 +382,12 @@ function kitPayload(lines: Record<string, string>, history: ArchiveRow[]) {
     phase: lines.phase || "",
     name: lines.name || "",
     bytes: Number(lines.bytes || 0),
+    detail: lines.detail || "",
     kod: Number(lines.kod || 0),
     baza: Number(lines.baza || 0),
     fajly: Number(lines.fajly || 0),
     sekrety: Number(lines.sekrety || 0),
+    systeem: Number(lines.systeem || 0),
     started: lines.started || "",
     finished: lines.finished || "",
     error: lines.error || "",
@@ -486,23 +505,18 @@ export function mcpConsoleRoutes(requireSession: RequireSession): Record<string,
     "POST /api/mcp/archive": [owner(async () => {
       if (!(await readPerms()).read) return error("PERMISSION_OFF:read", 403);
       try {
-        await requestKit();
-        const lines = parseKit(await doorCall("build_restore_kit", {}));
-        const history = await archiveHistory();
-        if (lines.state === "failed") return error(lines.error || "ARCHIVE_FAILED", 500);
-        return json(kitPayload(lines, history));
+        const current = await readKitStatus();
+        if (current.state !== "building") await requestKit();
+        const lines = current.state === "building" ? current : await readKitStatus();
+        return json(kitPayload(lines.state === "ready" || lines.state === "failed" ? { state: "building", stage: "1", pct: "0", phase: "queued", detail: "запит надіслано, очікуємо запуск", started: new Date().toISOString() } : lines, await archiveHistory()));
       } catch (err) {
         return error(err instanceof Error ? err.message : "ARCHIVE_FAILED", 500);
       }
     })],
     "POST /api/mcp/archive/status": [owner(async () => {
       if (!(await readPerms()).read) return error("PERMISSION_OFF:read", 403);
-      try {
-        const lines = parseKit(await doorCall("restore_kit_status", {}));
-        return json(kitPayload(lines, await archiveHistory()));
-      } catch (err) {
-        return error(err instanceof Error ? err.message : "ARCHIVE_FAILED", 500);
-      }
+      try { return json(kitPayload(await readKitStatus(), await archiveHistory())); }
+      catch (err) { return error(err instanceof Error ? err.message : "ARCHIVE_FAILED", 500); }
     })],
     "POST /api/mcp/backups": [owner(async () => {
       if (!(await readPerms()).read) return error("PERMISSION_OFF:read", 403);
@@ -514,7 +528,7 @@ export function mcpConsoleRoutes(requireSession: RequireSession): Record<string,
       const file = backupFile(String(data.stamp || ""), String(data.name || ""));
       if (!file) return error("BACKUP_NAME", 400);
       try { if (!(await stat(file)).isFile()) return error("BACKUP_MISSING", 404); } catch { return error("BACKUP_MISSING", 404); }
-      return fileDownload(file, `${String(data.stamp)}-${path.basename(file)}`);
+      return fileDownload(file, `${String(data.stamp)}-${path.basename(file)}`, "application/octet-stream");
     })],
     "POST /api/mcp/archive/file": [owner(async (ctx) => {
       if (!(await readPerms()).read) return error("PERMISSION_OFF:read", 403);
@@ -524,7 +538,7 @@ export function mcpConsoleRoutes(requireSession: RequireSession): Record<string,
         const info = await stat(file);
         if (!info.isFile()) return error("ARCHIVE_MISSING", 404);
       } catch { return error("ARCHIVE_MISSING", 404); }
-      return fileDownload(file, path.basename(file));
+      return fileDownload(file, path.basename(file), file.endsWith(".tar") ? "application/x-tar" : "application/gzip");
     })],
     "POST /api/mcp/agent": [async (ctx) => {
       if (!(await readPerms()).tokens) return error("PERMISSION_OFF:tokens", 403);

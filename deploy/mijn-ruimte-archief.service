@@ -1,0 +1,15 @@
+[Unit]
+Description=Mijn Ruimte: volledig archief maken (code, database, bestanden, systeem, geheimen versleuteld)
+Documentation=file:///srv/mijn-ruimte/current/deploy/HERSTEL.md
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mijn-ruimte-archief
+TimeoutStartSec=6h
+Nice=10
+IOSchedulingClass=idle
+# Schrijft alleen naar de uitvoermap; leest de rest van het systeem.
+ProtectSystem=strict
+ReadWritePaths=/srv/data/uploads
+ProtectHome=yes
+PrivateTmp=yes

@@ -16,5 +16,7 @@
 .mbk-files small{color:var(--muted,#64748b);word-break:break-all}
 .mbk-error{color:#dc2626;margin:0}
 .mbk-note,.mbk-busy{color:var(--muted,#64748b);font-size:.82rem;margin:0}
+.mcp-live{margin:4px 0;font-size:.86rem;color:#2f6f73;font-weight:600;word-break:break-word}
+.mcp-error{margin:4px 0;font-size:.86rem;color:#b91c1c}
 .mbk-spin{animation:mbk-rot 1s linear infinite}
 @keyframes mbk-rot{to{transform:rotate(360deg)}}
