@@ -53,7 +53,14 @@ export function startGuide(chromeApi, version) {
 
   let message = ''; let messageKind = ''; let busy = false;
 
-  const status = () => chromeApi.runtime.sendMessage({ op: 'status' }).catch(() => null);
+  // Після перевстановлення/оновлення розширення відкрита сторінка лишається з «осиротілим» скриптом: sendMessage кидає помилку синхронно
+  // («Extension context invalidated»). Тоді підказка не має висіти застарілою: прибираємо її (сайт далі показує свій майстер).
+  const alive = () => { try { return !!chromeApi.runtime?.id; } catch { return false; } };
+  const gone = () => { clearInterval(timer); host.remove(); };
+  const status = async () => {
+    if (!alive()) { gone(); return null; }
+    try { return await chromeApi.runtime.sendMessage({ op: 'status' }); } catch { if (!alive()) gone(); return null; }
+  };
   const paint = async () => {
     const s = await status();
     if (!s) return;

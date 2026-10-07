@@ -15,7 +15,7 @@
   window.addEventListener('message', async (event) => {
     if (event.source !== window || event.origin !== location.origin || !event.data) return;
     if (event.data.mrExtPing) {
-      const status = await chrome.runtime.sendMessage({ op: 'status' }).catch(() => null);
+      let status = null; try { status = await chrome.runtime.sendMessage({ op: 'status' }); } catch { status = null; }
       say({ type: 'hello', paired: !!(status && status.paired), connected: !!(status && status.connected), agentId: (status && status.agentId) || '' });
       return;
     }
