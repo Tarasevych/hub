@@ -1,12 +1,16 @@
-// Bouwt het downloadbare pakket van de browserextensie: dist/downloads/mijn-ruimte-extension.zip.
-// Geen externe bibliotheken: een klein ZIP-schrijver (deflate via node:zlib) en een PNG-schrijver voor de pictogrammen.
+// Bouwt de downloads van de browserextensie in dist/downloads/:
+//   mijn-ruimte-extension.zip        voor "Load unpacked" en voor de Chrome Web Store (zonder update_url)
+//   Install-MijnRuimte.cmd / install-mijn-ruimte.sh   helpers die het installeren zoveel mogelijk automatiseren
+//   mijn-ruimte-extension.crx + updates.xml           eigen CRX3 (ondertekend met `node scripts/sign-extension.mjs`), alleen als hij nog actueel is
+//   extension-version.json           versie, controlesom, link naar de winkel, beschikbare helpers en CRX
 // Draait na `vite build` (dist/ bestaat dan) en schrijft de pictogrammen ook naar extension/icons/, zodat "Load unpacked"
 // rechtstreeks vanuit de repository werkt.
-import { deflateRawSync, deflateSync, crc32 } from 'node:zlib';
+import { deflateSync, crc32 } from 'node:zlib';
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, existsSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { CRX_URL, contentHash, extensionEntries, parseCrx3, zip } from './extension-lib.mjs';
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const extDir = join(root, 'extension');
@@ -40,51 +44,35 @@ function png(size) {
 mkdirSync(join(extDir, 'icons'), { recursive: true });
 for (const size of [16, 48, 128]) writeFileSync(join(extDir, 'icons', `icon${size}.png`), png(size));
 
-// ---- ZIP ----
-function walk(dir) {
-  return readdirSync(dir).flatMap((name) => {
-    const full = join(dir, name);
-    return statSync(full).isDirectory() ? walk(full) : [full];
-  }).sort();
-}
-
-function zip(files) {
-  const locals = []; const centrals = []; let offset = 0;
-  for (const file of files) {
-    const name = Buffer.from(relative(extDir, file).split(sep).join('/'), 'utf8');
-    const data = readFileSync(file);
-    const deflated = deflateRawSync(data, { level: 9 });
-    const crc = crc32(data) >>> 0;
-    // vaste datum (1 jan 2026) zodat het pakket reproduceerbaar is
-    const time = 0, date = ((2026 - 1980) << 9) | (1 << 5) | 1;
-    const local = Buffer.alloc(30);
-    local.writeUInt32LE(0x04034b50, 0); local.writeUInt16LE(20, 4); local.writeUInt16LE(0x0800, 6); local.writeUInt16LE(8, 8);
-    local.writeUInt16LE(time, 10); local.writeUInt16LE(date, 12); local.writeUInt32LE(crc, 14);
-    local.writeUInt32LE(deflated.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(name.length, 26); local.writeUInt16LE(0, 28);
-    const central = Buffer.alloc(46);
-    central.writeUInt32LE(0x02014b50, 0); central.writeUInt16LE(20, 4); central.writeUInt16LE(20, 6); central.writeUInt16LE(0x0800, 8); central.writeUInt16LE(8, 10);
-    central.writeUInt16LE(time, 12); central.writeUInt16LE(date, 14); central.writeUInt32LE(crc, 16);
-    central.writeUInt32LE(deflated.length, 20); central.writeUInt32LE(data.length, 24); central.writeUInt16LE(name.length, 28);
-    central.writeUInt32LE(offset, 42);
-    locals.push(local, name, deflated); centrals.push(central, name);
-    offset += local.length + name.length + deflated.length;
-  }
-  const centralBuf = Buffer.concat(centrals);
-  const end = Buffer.alloc(22);
-  end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(files.length, 8); end.writeUInt16LE(files.length, 10);
-  end.writeUInt32LE(centralBuf.length, 12); end.writeUInt32LE(offset, 16);
-  return Buffer.concat([...locals, centralBuf, end]);
-}
-
-// store-url.txt is configuratie voor de site (link naar de Chrome Web Store zodra gepubliceerd), geen deel van het pakket.
-const files = walk(extDir).filter((f) => !f.endsWith('store-url.txt'));
-if (!files.some((f) => f.endsWith('manifest.json'))) throw new Error('extension/manifest.json ontbreekt');
-const manifest = JSON.parse(readFileSync(join(extDir, 'manifest.json'), 'utf8'));
+const entries = extensionEntries(extDir);
+if (!entries.some((e) => e.name === 'manifest.json')) throw new Error('extension/manifest.json ontbreekt');
+const manifest = JSON.parse(entries.find((e) => e.name === 'manifest.json').data.toString('utf8'));
 mkdirSync(outDir, { recursive: true });
 const target = join(outDir, 'mijn-ruimte-extension.zip');
-writeFileSync(target, zip(files));
+writeFileSync(target, zip(entries));
 const sha256 = createHash('sha256').update(readFileSync(target)).digest('hex');
 const storeUrl = existsSync(join(extDir, 'store-url.txt')) ? readFileSync(join(extDir, 'store-url.txt'), 'utf8').trim() : '';
+
+// ---- eigen CRX3: alleen publiceren als hij ondertekend is voor DEZE extensiebestanden en de handtekening klopt ----
+let crx = null;
+const signedDir = join(extDir, 'signed');
+const infoPath = join(signedDir, 'crx-info.json');
+const crxPath = join(signedDir, 'mijn-ruimte-extension.crx');
+let crxNote = 'geen (nog niet ondertekend: node scripts/sign-extension.mjs)';
+if (existsSync(infoPath) && existsSync(crxPath)) {
+  const info = JSON.parse(readFileSync(infoPath, 'utf8'));
+  const parsed = parseCrx3(readFileSync(crxPath));
+  const fresh = info.contentHash === contentHash(extensionEntries(extDir, { selfHosted: true }));
+  if (!parsed.valid || !parsed.crxIdMatchesKey || parsed.extensionId !== info.extensionId) crxNote = 'NIET gepubliceerd: handtekening ongeldig';
+  else if (!fresh || info.version !== manifest.version) crxNote = 'NIET gepubliceerd: verouderd (extensie gewijzigd sinds het ondertekenen; draai node scripts/sign-extension.mjs)';
+  else {
+    copyFileSync(crxPath, join(outDir, 'mijn-ruimte-extension.crx'));
+    writeFileSync(join(outDir, 'updates.xml'),
+      `<?xml version='1.0' encoding='UTF-8'?>\n<gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>\n  <app appid='${info.extensionId}'>\n    <updatecheck codebase='${CRX_URL}' version='${info.version}' />\n  </app>\n</gupdate>\n`);
+    crx = { file: 'mijn-ruimte-extension.crx', extensionId: info.extensionId, version: info.version, sha256: createHash('sha256').update(readFileSync(crxPath)).digest('hex') };
+    crxNote = `gepubliceerd (id ${info.extensionId})`;
+  }
+}
 
 // Helpers die het installeren zoveel mogelijk automatiseren (Chrome staat stil installeren buiten de Web Store niet toe):
 // downloaden, controlesom controleren, uitpakken op een vaste plek, de extensiepagina openen, het pad op het klembord.
@@ -97,5 +85,5 @@ for (const [src, dest] of [['Install-MijnRuimte.cmd', 'Install-MijnRuimte.cmd'],
   writeFileSync(join(outDir, dest), dest.endsWith('.cmd') ? text.replace(/\r?\n/g, '\r\n') : text.replace(/\r\n/g, '\n'));
   installers.push(dest);
 }
-writeFileSync(join(outDir, 'extension-version.json'), JSON.stringify({ version: manifest.version, file: 'mijn-ruimte-extension.zip', sha256, files: files.length, storeUrl, installers }));
-console.log(`Extensie ${manifest.version}: ${files.length} bestanden -> ${relative(root, target)} (${statSync(target).size} bytes, sha256 ${sha256.slice(0, 12)}…, helpers: ${installers.join(', ') || 'geen'})`);
+writeFileSync(join(outDir, 'extension-version.json'), JSON.stringify({ version: manifest.version, file: 'mijn-ruimte-extension.zip', sha256, files: entries.length, storeUrl, installers, crx }));
+console.log(`Extensie ${manifest.version}: ${entries.length} bestanden -> ${relative(root, target)} (${statSync(target).size} bytes, sha256 ${sha256.slice(0, 12)}…, helpers: ${installers.join(', ') || 'geen'}), CRX: ${crxNote}`);
