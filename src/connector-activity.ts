@@ -7,7 +7,7 @@ import { COMMAND_LABELS } from './agents-data';
 import { textOf } from './mcp-texts';
 
 export type ActivityEvent = {
-  id: string; source: 'claude' | 'agent' | 'browser'; kind: 'command' | 'tool' | 'grant'; type: string; subject: string;
+  id: string; source: string; kind: 'command' | 'tool' | 'grant' | 'site'; type: string; subject: string;
   status: string; createdAt: number; finishedAt: number | null; platform?: string;
 };
 type Lang = 'uk' | 'nl';
@@ -27,8 +27,30 @@ export const statusInfo = (status: string, lang: Lang) => {
   return { text: lang === 'uk' ? s.uk : s.nl, group: s.group };
 };
 
+
+/** Namen van sitegebeurtenissen (auditacties) in de taal van de site. Onbekende acties krijgen een nette algemene naam. */
+const SITE_LABELS: Record<string, [string, string]> = {
+  'owner.mail.send.committed': ['Лист надіслано', 'Bericht verzonden'], 'owner.mail.account.disconnected': ['Поштовий акаунт відключено', 'Mailaccount ontkoppeld'], 'owner.mail.labels.modified': ['Мітки листа змінено', 'Labels van bericht gewijzigd'],
+  'owner.github.issue_create': ['Створено issue на GitHub', 'Issue aangemaakt op GitHub'], 'owner.github.issue_comment': ['Коментар додано на GitHub', 'Reactie geplaatst op GitHub'],
+  'owner.mcp.grant.approved': ['Claude отримав доступ', 'Claude kreeg toegang'], 'owner.mcp.grant.denied': ['Доступ для Claude відхилено', 'Toegang voor Claude geweigerd'], 'owner.mcp.grant.revoked': ['Доступ Claude відкликано', 'Toegang van Claude ingetrokken'],
+  'owner.browser.grant.created': ['Браузер підключено', 'Browser gekoppeld'], 'owner.browser.grant.revoked': ['Доступ браузера відкликано', 'Browsertoegang ingetrokken'], 'owner.browser.account.logout': ['Вихід у браузері', 'Afgemeld in de browser'],
+  'owner.agent.policy': ['Змінено автоматичні дозволи пристрою', 'Automatische rechten van apparaat gewijzigd'],
+  'owner.identity.account.delete': ['Обліковий запис позначено на видалення', 'Account gemarkeerd voor verwijdering'], 'owner.identity.workspace.restored': ['Робочий простір відновлено', 'Werkruimte hersteld'],
+  'owner.privacy.export': ['Експорт даних створено', 'Gegevensexport gemaakt'], 'owner.privacy.analytics_consent': ['Змінено згоду на аналітику', 'Toestemming voor analyse gewijzigd'], 'owner.profile.photo.updated': ['Фото профілю оновлено', 'Profielfoto bijgewerkt'],
+  'owner.session.revoked.one': ['Сеанс завершено', 'Sessie beëindigd'], 'owner.auth.transaction.completed': ['Вхід виконано', 'Aanmelding voltooid'], 'owner.step_up.google': ['Додаткове підтвердження через Google', 'Extra bevestiging via Google'],
+  'owner.admin.role.updated': ['Змінено роль користувача', 'Rol van gebruiker gewijzigd'], 'owner.admin.user.updated': ['Користувача змінено', 'Gebruiker gewijzigd'], 'owner.admin.user.deleted': ['Користувача видалено', 'Gebruiker verwijderd'], 'owner.admin.user.recovered': ['Користувача відновлено', 'Gebruiker hersteld'], 'owner.admin.bootstrap': ['Початкове налаштування адміністратора', 'Eerste beheerinstelling'],
+  'owner.access.requested': ['Запит на доступ', 'Toegangsverzoek'],
+};
+const siteTitle = (e: ActivityEvent, lang: Lang): string => {
+  const hit = SITE_LABELS[e.type];
+  if (hit) return lang === 'uk' ? hit[0] : hit[1];
+  const tail = e.type.replace(/^owner\./, '').replace(/[._]/g, ' ');
+  return lang === 'uk' ? `Дія на сайті: ${tail}` : `Actie op de site: ${tail}`;
+};
+
 /** Naam van de actie in de taal van de site (nooit de Engelse beschrijving). */
 export function activityTitle(e: ActivityEvent, lang: Lang): string {
+  if (e.kind === 'site') return siteTitle(e, lang);
   if (e.kind === 'grant') return lang === 'uk' ? `Claude підключено: ${e.subject}` : `Claude verbonden: ${e.subject}`;
   if (e.kind === 'tool') return textOf(e.type, lang)?.title || e.type;
   const label = COMMAND_LABELS[e.type];
@@ -37,6 +59,7 @@ export function activityTitle(e: ActivityEvent, lang: Lang): string {
 /** Waar de gebruiker heen moet om te handelen: een wachtende vraag leidt naar het beslisvenster, de rest naar het overzicht. */
 export function activityLink(e: ActivityEvent, lang: Lang): { href: string; label: string } {
   const pending = e.status === 'pending_approval';
+  if (e.kind === 'site') return { href: '', label: '' };
   return { href: `https://mcp.tarasevych.com/agents#${pending ? 'pending' : 'overview'}`, label: pending ? (lang === 'uk' ? 'Прийняти рішення' : 'Beslissen') : (lang === 'uk' ? 'Відкрити' : 'Openen') };
 }
 export const sourceLabel = (source: string, lang: Lang): string => ({
@@ -89,13 +112,14 @@ export function useConnectorActivity(scope: string, lang: Lang, toast: (notice: 
         for (const e of list) {
           const before = known.current.get(e.id);
           if (before === e.status) continue;
+          if (e.kind === 'site' && e.status !== 'failed') continue;
           const title = activityTitle(e, l);
           const st = statusInfo(e.status, l);
           if (e.status === 'pending_approval') {
             const who = `${sourceLabel(e.source, l)}${e.kind === 'command' ? `, ${e.subject}` : ''}`;
             say({ text: l === 'uk' ? `Очікує вашого рішення: ${title} (${who})` : `Wacht op uw beslissing: ${title} (${who})`, kind: 'warning', source: 'mcp', transient: true, link: activityLink(e, l) });
           } else if (e.kind === 'grant') say({ text: title, kind: 'success', source: 'mcp', transient: true });
-          else if (st.group !== 'active' && st.group !== 'waiting') say({ text: `${title}: ${st.text}`, kind: st.group === 'done' ? 'success' : st.group === 'failed' ? 'error' : 'info', source: 'mcp', transient: true });
+          else if (st.group !== 'active' && st.group !== 'waiting') say({ text: `${title}: ${st.text}`, kind: st.group === 'done' ? 'success' : st.group === 'failed' ? 'error' : 'info', source: e.kind === 'site' ? e.source : 'mcp', transient: true });
         }
       }
       known.current = new Map(list.map((e) => [e.id, e.status]));

@@ -1,7 +1,8 @@
 // Local Machine Connector: routes voor de eigenaar-UI (sessie + recht 'api-platform') en het koppelen van een agent.
 // Alle routes zijn POST met de gebruikelijke sessie-body ({service:'api', ...}), zoals de overige /api/owner/api-platform/*.
 import { error, json, rateLimit } from '../server/platform';
-import { auditToevoegen } from '../server/platform/audit';
+import { auditLijst, auditToevoegen } from '../server/platform/audit';
+import { siteEventsFromAudit } from './site-activity';
 import { heeftApiRecht } from './api-recht';
 import { approveCommand, rejectCommand, submitCommand } from './connectors-commands';
 import { normalizePairingCode, pairingCode, randomToken, sha256 } from './connectors-crypto';
@@ -135,13 +136,14 @@ export function createAgentRoutes(deps: Deps) {
       const auth = await sessionGateAny(ctx.event, ctx.body);
       if (!auth) return denied();
       const userId = auth.user.id;
-      const [commands, toolCalls, grants] = await Promise.all([store.listRecentCommands(userId, 60), store.listToolCalls(userId, 40), listUserGrants(userId)]);
+      const [commands, toolCalls, grants, audit] = await Promise.all([store.listRecentCommands(userId, 60), store.listToolCalls(userId, 40), listUserGrants(userId), auditLijst({ ownerId: userId, van: Date.now() - 3 * 86_400_000, limit: 120 }).then((r) => r.items).catch(() => [])]);
       const ms = (v: unknown) => (v ? new Date(v as string).getTime() : null);
       const events = [
         ...commands.map((r: any) => ({ id: `cmd:${r.id}`, source: r.platform === 'browser' ? 'browser' : 'agent', platform: r.platform || '', kind: 'command', type: r.type, subject: r.agent_name, status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at) })),
         ...toolCalls.map((r: any) => ({ id: `tool:${r.id}`, source: 'claude', kind: 'tool', type: r.tool, subject: 'Claude', status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at) })),
         ...grants.map((g: any) => ({ id: `grant:${g.id}`, source: 'claude', kind: 'grant', type: 'grant', subject: g.clientName, status: 'active', createdAt: g.createdAt, finishedAt: null })),
-      ].sort((x, y) => Number(y.createdAt) - Number(x.createdAt)).slice(0, 100);
+        ...siteEventsFromAudit(audit),
+      ].sort((x, y) => Number(y.createdAt) - Number(x.createdAt)).slice(0, 140);
       return deps.respond({ events, now: Date.now() });
     }],
 

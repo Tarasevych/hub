@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, BookOpen, CheckCircle2, CircleDot, ExternalLink, GitBranch, GitCommit, GitPullRequest, Github, KeyRound, Loader2, MessageSquarePlus, PlayCircle, Plus, RefreshCw, Search, Star, XCircle } from 'lucide-react';
 import { api, ApiError } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
+import { emitCanonicalNotice } from './canonical-notifications';
 import { openIntegrations } from './AIServiceView';
 import './github-view.css';
 
@@ -112,7 +113,7 @@ function IssueComposer({ repo, tr, onDone }: { repo: string; tr: Tr; onDone: () 
   const send = async () => {
     if (!window.confirm(tr(`Створити issue у ${repo} від вашого імені?`, `Issue aanmaken in ${repo} namens u?`))) return;
     setBusy(true); setErr('');
-    try { await call('issue/create', { repo, title, body }); onDone(); } catch (e) { setErr(errorText(e, tr)); } finally { setBusy(false); }
+    try { const made = await call('issue/create', { repo, title, body }); emitCanonicalNotice({ text: tr(`Issue створено в ${repo}`, `Issue aangemaakt in ${repo}`), kind: 'success', source: 'github', retain: true, link: made?.url ? { href: String(made.url), label: tr('Відкрити на GitHub', 'Openen op GitHub') } : undefined }); onDone(); } catch (e) { setErr(errorText(e, tr)); } finally { setBusy(false); }
   };
   return <form className="gh-form" onSubmit={(e) => { e.preventDefault(); void send(); }}>
     <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tr('Заголовок', 'Titel')} maxLength={250} aria-label={tr('Заголовок', 'Titel')} />
