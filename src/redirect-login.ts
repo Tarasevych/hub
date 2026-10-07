@@ -9,7 +9,8 @@ export type PrimaryLoginService =
   | 'huis'
   | 'identity'
   | 'api'
-  | 'admin';
+  | 'admin'
+  | 'mcp';
 
 // 'step-up': opnieuw aanmelden (prompt=login) voor een gevoelige actie; vereist een bestaande sessie (audit-fix 5).
 export type PrimaryLoginIntent = 'login' | 'replace-tab' | 'step-up';
@@ -54,6 +55,7 @@ const LOGIN_SERVICES: PrimaryLoginService[] = [
   'identity',
   'api',
   'admin',
+  'mcp',
 ];
 
 export const redirectStartReason = (caught: unknown) => {
