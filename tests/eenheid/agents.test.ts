@@ -180,6 +180,14 @@ export async function main(): Promise<number> {
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
+    {
+      const o1 = await store.createAgent(A, 'Chrome (Win32)', 'browser', sha256(randomUUID()), {});
+      const o2 = await store.createAgent(A, 'Chrome (Win32)', 'browser', sha256(randomUUID()), {});
+      const o3 = await store.createAgent(A, 'Edge (Win32)', 'browser', sha256(randomUUID()), {});
+      const weg = await store.revokeOlderBrowserAgents(A, 'Chrome (Win32)', o2.id);
+      const rest = (await store.listAgents(A)).map((x) => x.id);
+      check('opnieuw koppelen van dezelfde browser vervangt de oude koppeling (één agent per browsernaam), andere browsers en gebruikers blijven', weg.length === 1 && weg[0] === o1.id && rest.includes(o2.id) && rest.includes(o3.id) && !rest.includes(o1.id));
+    }
     await sys.query('DELETE FROM app.agents WHERE user_id = ANY($1)', [[A, B]]);
     await sys.query('DELETE FROM app.agent_pairing_codes WHERE user_id = ANY($1)', [[A, B]]);
     await stand(vorigeStand);

@@ -106,6 +106,7 @@ export function createAgentRoutes(deps: Deps) {
       // Een browserextensie begint voorzichtig: alleen lezen (snapshot) gaat direct; navigeren en handelen wachten op een klik.
       const policy = platform === 'browser' ? { autoApprove: [...BROWSER_DEFAULT_AUTO].sort() } : undefined;
       const agent = await store.createAgent(userId, name, platform, sha256(token), capabilities, policy);
+      if (platform === 'browser') for (const old of await store.revokeOlderBrowserAgents(userId, name, agent.id)) disconnectAgent(old);
       await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, platform } });
       return json({ agentId: agent.id, token });
     }],

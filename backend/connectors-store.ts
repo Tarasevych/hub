@@ -87,6 +87,14 @@ export async function listAgents(userId: string): Promise<AgentRow[]> {
   return rows as AgentRow[];
 }
 
+/** Een opnieuw gekoppelde browser (zelfde naam) vervangt de oude koppeling: zo blijft er één agent per browser en wijzen site en extensie naar dezelfde. */
+export async function revokeOlderBrowserAgents(userId: string, name: string, keepId: string): Promise<string[]> {
+  const { rows } = await gebruiker(
+    `UPDATE app.agents SET revoked_at = now(), status = 'disconnected'
+      WHERE user_id = $1 AND platform = 'browser' AND name = $2 AND id <> $3 AND revoked_at IS NULL RETURNING id`, [userId, name, keepId]);
+  return rows.map((r: { id: string }) => r.id);
+}
+
 export async function getAgent(userId: string, id: string): Promise<AgentRow | null> {
   const { rows } = await gebruiker(
     `SELECT ${AGENT_COLS} FROM app.agents WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL`, [id, userId]);

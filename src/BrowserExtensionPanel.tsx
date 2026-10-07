@@ -80,7 +80,7 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
   // Bij de installatiehulp (na installeren of na inloggen): naar dit blok scrollen.
   useEffect(() => { if (welcome && part !== 'agent') rootRef.current?.scrollIntoView({ block: 'start' }); }, [welcome, part]);
 
-  const agent = agents[0];
+  const agent = agents[agents.length - 1]; // de nieuwste koppeling: dat is de agent van de extensie in deze browser
   const armed = (a: BrowserAgent) => a.enabled && !!a.armedUntil && a.armedUntil > Date.now();
   const allDone = !!agent && armed(agent);
   useEffect(() => { if (allDone && welcome) { clearWelcome(); } }, [allDone, welcome]);
