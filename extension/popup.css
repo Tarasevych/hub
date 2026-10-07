@@ -9,3 +9,7 @@ p{margin:0;line-height:1.45}
 button{min-height:40px;border-radius:10px;border:2px solid #b6c2d0;background:transparent;color:inherit;font-weight:700;cursor:pointer}
 button:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
 @media(prefers-color-scheme:dark){body{background:#14181d;color:#f3f6f8}.hint,.foot{color:#b7c0c8}#state.ok{color:#4ac26b}#state.wait{color:#fbbf24}#state.off{color:#f87171}button{border-color:#46515c}}
+button.primary{background:#2f6f73;color:#fff;border-color:#2f6f73}
+h2{margin:8px 0 0;font-size:1rem}
+section{display:grid;gap:8px}
+#dbgState.ok{color:#1a7f37}#dbgState.off{color:#b45309}

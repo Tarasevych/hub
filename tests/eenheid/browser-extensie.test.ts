@@ -8,6 +8,8 @@ import { isOwnSiteUrl as serverRegel } from '../../backend/connectors-tools';
 // @ts-expect-error gewone JavaScript-module zonder typen (wordt door de extensie zelf geladen)
 import { ALLOWED_COMMANDS, isOwnSiteUrl, isSensitiveField, pickByName } from '../../extension/shared.js';
 import { COMMAND_TYPES } from '../../backend/connectors-gateway';
+import { BROWSER_AUTO_APPROVABLE, BROWSER_DEFAULT_AUTO, BROWSER_DEFAULT_ENABLED, BROWSER_TYPES } from '../../backend/browser-capabilities';
+import { createHash } from 'node:crypto';
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('browser-extensie');
@@ -15,6 +17,13 @@ export async function main(): Promise<number> {
     'https://eviltarasevych.com/', 'https://u:p@mail.tarasevych.com/', 'javascript:alert(1)', 'data:text/html,x', '', 'niet-een-url', 'https://mail.tarasevych.com/' + 'a'.repeat(600)];
   check('extensie en server hanteren dezelfde adresregel (alle voorbeelden gelijk)', urls.every((u) => isOwnSiteUrl(u) === serverRegel(u)), urls.filter((u) => isOwnSiteUrl(u) !== serverRegel(u)).join(' | '));
   check('adresregel: alleen https op tarasevych.com en subdomeinen', isOwnSiteUrl(urls[0]) && isOwnSiteUrl(urls[1]) && !isOwnSiteUrl(urls[2]) && !isOwnSiteUrl(urls[3]) && !isOwnSiteUrl(urls[4]) && !isOwnSiteUrl(urls[5]) && !isOwnSiteUrl(urls[6]));
+  check('mogelijkheden: de lijst van de server = de browseropdrachten in COMMAND_TYPES = wat de extensie kent (14)',
+    JSON.stringify([...BROWSER_TYPES].sort()) === JSON.stringify((COMMAND_TYPES as readonly string[]).filter((t) => t.startsWith('browser.')).sort()) && BROWSER_TYPES.length === 14
+    && JSON.stringify([...ALLOWED_COMMANDS].sort()) === JSON.stringify([...BROWSER_TYPES].sort()));
+  check('standaarden: alleen lezen/kijken aan en automatisch; automatisch goedkeuren kan nooit voor handelen, screenshot of diepe diagnose',
+    BROWSER_DEFAULT_AUTO.every((t) => BROWSER_DEFAULT_ENABLED.includes(t) && BROWSER_AUTO_APPROVABLE.includes(t))
+    && !BROWSER_DEFAULT_ENABLED.some((t) => ['browser.click', 'browser.type', 'browser.invoke', 'browser.select', 'browser.key', 'browser.screenshot', 'browser.deep_diagnostics', 'browser.navigate'].includes(t))
+    && !BROWSER_AUTO_APPROVABLE.some((t) => ['browser.click', 'browser.type', 'browser.invoke', 'browser.select', 'browser.key', 'browser.screenshot', 'browser.deep_diagnostics'].includes(t)));
   check('opdrachtlijst van de extensie = de browseropdrachten van de server', JSON.stringify([...ALLOWED_COMMANDS].sort()) === JSON.stringify((COMMAND_TYPES as readonly string[]).filter((t) => t.startsWith('browser.')).sort()));
 
   const veld = (type: string, ac = '') => ({ type, getAttribute: (n: string) => (n === 'autocomplete' ? ac : null) });
@@ -46,6 +55,19 @@ export async function main(): Promise<number> {
   check('pakket: geldig ZIP met manifest, achtergrond, content script, popup, gedeelde regels en pictogrammen',
     zip.readUInt32LE(0) === 0x04034b50 && existsSync(zipPad) && statSync(zipPad).size < 200_000
     && ['manifest.json', 'background.js', 'content.js', 'shared.js', 'popup.html', 'popup.js', 'icons/icon16.png', 'icons/icon48.png', 'icons/icon128.png'].every((n) => namen.includes(n)), namen.join(','));
+  // Helpers voor het installeren: controlesom klopt, geen openstaande plaatsaanduidingen, juiste regeleinden.
+  const downloads = join(process.cwd(), 'dist', 'downloads');
+  const versie = JSON.parse(readFileSync(join(downloads, 'extension-version.json'), 'utf8'));
+  const cmd = readFileSync(join(downloads, 'Install-MijnRuimte.cmd'), 'utf8');
+  const sh = readFileSync(join(downloads, 'install-mijn-ruimte.sh'), 'utf8');
+  const zipSha = createHash('sha256').update(zip).digest('hex');
+  check('installatiehulp: controlesom in de helpers = die van het ZIP; geen @@-plaatsaanduidingen; CRLF voor Windows, LF voor shell; ze controleren de som voor ze iets uitpakken',
+    versie.sha256 === zipSha && cmd.includes(zipSha) && sh.includes(zipSha) && !/@@/.test(cmd + sh) && /\r\n/.test(cmd) && !/\r/.test(sh)
+    && cmd.indexOf('Get-FileHash') < cmd.indexOf('Expand-Archive') && sh.indexOf('sha256sum') < sh.indexOf('unzip') && versie.installers.length === 2 && typeof versie.storeUrl === 'string');
+  check('installatiehulp: schrijft alleen naar een eigen map, vraagt geen beheerdersrechten en haalt niets van elders dan de eigen site',
+    !/RunAs|Verb\s+runAs|sudo |HKLM|HKCU|reg add|ExecutionPolicy\s+Unrestricted/i.test(cmd + sh) && (cmd.match(/https?:\/\/[^/'" ]+/g) ?? []).every((u) => u === 'https://mcp.tarasevych.com') && (sh.match(/https?:\/\/[^/'" ]+/g) ?? []).every((u) => u === 'https://mcp.tarasevych.com'));
+  check('manifest: de debugger is een OPTIONEEL recht (de gebruiker geeft het zelf), niet standaard; opties-pagina aanwezig',
+    JSON.stringify(manifest.optional_permissions) === '["debugger"]' && !manifest.permissions.includes('debugger') && manifest.options_ui?.page === 'options.html' && namen.includes('options.html') && namen.includes('options.js'));
   check('manifest: Manifest V3, alleen tarasevych.com, geen brede rechten (geen <all_urls>, geen tabs/cookies/webRequest)',
     manifest.manifest_version === 3 && JSON.stringify(manifest.host_permissions) === '["https://*.tarasevych.com/*"]'
     && manifest.content_scripts.every((c: any) => c.matches.every((m: string) => m === 'https://*.tarasevych.com/*'))

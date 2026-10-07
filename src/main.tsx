@@ -1,3 +1,4 @@
+import './extension-welcome-store'; // eerst: legt ?extension=welcome (na het installeren van de extensie) vast vóór het aanmelden
 import './mcp-consent-store'; // eerst: legt ?consent=<id> van Claude vast vóór het aanmelden en vóór andere modules de URL aanpassen
 import { createRoot } from 'react-dom/client';
 import './ai-site-actions'; // acties voor AI-assistenten via de browserextensie (postMessage) en WebMCP

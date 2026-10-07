@@ -7,6 +7,7 @@
 //     (token-hash), het inwisselen van een koppelcode en het resetten van statussen bij het opstarten.
 // Elke query filtert daarnaast zelf op user_id; RLS is de tweede laag, niet de enige.
 import { appRolActief, getPool } from '../server/platform/pg';
+import { enabledTypes } from './browser-capabilities';
 import { gebruikerVanContext, huidigeContext } from '../server/platform/context';
 
 type QueryResult = { rows: any[]; rowCount: number | null };
@@ -22,7 +23,7 @@ export interface AgentRow {
   status: 'connected' | 'disconnected';
   last_seen_at: Date | null;
   capabilities: Record<string, unknown>;
-  policy: { autoApprove: string[] };
+  policy: { autoApprove: string[]; enabled?: string[] };
   created_at: Date;
   revoked_at: Date | null;
   browser_enabled: boolean;
@@ -163,10 +164,12 @@ export async function createAgent(
 }
 
 /** Beleid van een eigen agent aanpassen (welke opdrachttypes direct mogen). false = agent niet van deze gebruiker. */
-export async function setAgentPolicy(userId: string, id: string, autoApprove: string[]): Promise<boolean> {
+export async function setAgentPolicy(userId: string, id: string, autoApprove: string[], enabled?: string[]): Promise<boolean> {
+  // `enabled` weglaten = de keuze van de gebruiker ongemoeid laten (alleen voor browseragents van belang).
   const { rowCount } = await systeem(
-    `UPDATE app.agents SET policy = jsonb_build_object('autoApprove', $3::jsonb) WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL`,
-    [id, userId, JSON.stringify(autoApprove)]);
+    `UPDATE app.agents SET policy = COALESCE(policy, '{}'::jsonb) || jsonb_build_object('autoApprove', $3::jsonb) || CASE WHEN $4::jsonb IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('enabled', $4::jsonb) END
+      WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL`,
+    [id, userId, JSON.stringify(autoApprove), enabled ? JSON.stringify(enabled) : null]);
   return (rowCount ?? 0) > 0;
 }
 
@@ -199,6 +202,18 @@ export async function browserActive(agentId: string): Promise<boolean> {
     `SELECT (browser_enabled AND armed_until IS NOT NULL AND armed_until > now() AND revoked_at IS NULL) AS actief
        FROM app.agents WHERE id = $1`, [agentId]);
   return rows[0]?.actief === true;
+}
+
+/**
+ * Mag deze browser dit opdrachttype nu krijgen? 'inactive' = niet aangezet of niet recent bevestigd door een ingelogde sessie;
+ * 'disabled' = de gebruiker heeft deze mogelijkheid voor deze browser uitgezet.
+ */
+export async function browserGate(agentId: string, type: string): Promise<'ok' | 'inactive' | 'disabled'> {
+  const { rows } = await systeem(
+    `SELECT (browser_enabled AND armed_until IS NOT NULL AND armed_until > now() AND revoked_at IS NULL) AS actief, policy
+       FROM app.agents WHERE id = $1`, [agentId]);
+  if (rows[0]?.actief !== true) return 'inactive';
+  return enabledTypes(rows[0].policy).includes(type) ? 'ok' : 'disabled';
 }
 
 /** Uitgezette MCP-hulpmiddelen van een gebruiker (namen). */

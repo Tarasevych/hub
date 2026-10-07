@@ -7,6 +7,7 @@ import { approveCommand, rejectCommand, submitCommand } from './connectors-comma
 import { normalizePairingCode, pairingCode, randomToken, sha256 } from './connectors-crypto';
 import { agentOnline, COMMAND_TYPES, disconnectAgent } from './connectors-gateway';
 import * as store from './connectors-store';
+import { BROWSER_AUTO_APPROVABLE, BROWSER_DEFAULT_AUTO, BROWSER_TYPES, enabledTypes } from './browser-capabilities';
 import { defaultChatDeps, runChat, sanitizeHistory } from './connectors-chat';
 import { callTool, listTools } from './connectors-tools';
 
@@ -21,7 +22,7 @@ type Deps = {
 
 const MAX_PARAM_BYTES = 6 * 1024 * 1024;
 export const AUTO_APPROVABLE_MACHINE = ['fs.read', 'fs.list', 'sys.info', 'sys.metrics', 'docker.ps'] as const;
-export const AUTO_APPROVABLE_BROWSER = ['browser.snapshot', 'browser.diagnostics', 'browser.navigate'] as const;
+export const AUTO_APPROVABLE_BROWSER = BROWSER_AUTO_APPROVABLE;
 const MAX_NAME = 80;
 
 export function createAgentRoutes(deps: Deps) {
@@ -47,6 +48,8 @@ export function createAgentRoutes(deps: Deps) {
     status: agentOnline(a.id) ? 'connected' : 'disconnected',
     // Alleen voor browseragents: door de gebruiker aangezet, en tot wanneer een ingelogde sessie dat bevestigd heeft.
     enabled: a.browser_enabled === true,
+    // De mogelijkheden die de gebruiker voor deze browser heeft aangezet (standaard: alleen lezen/kijken).
+    enabledCapabilities: a.platform === 'browser' ? enabledTypes(a.policy) : undefined,
     armedUntil: a.armed_until ? new Date(a.armed_until).getTime() : null,
     lastSeenAt: a.last_seen_at ? new Date(a.last_seen_at).getTime() : null,
     createdAt: new Date(a.created_at).getTime(),
@@ -99,7 +102,7 @@ export function createAgentRoutes(deps: Deps) {
       const platform = body.platform ? String(body.platform).slice(0, 40) : null;
       const capabilities = body.capabilities && typeof body.capabilities === 'object' ? body.capabilities as object : {};
       // Een browserextensie begint voorzichtig: alleen lezen (snapshot) gaat direct; navigeren en handelen wachten op een klik.
-      const policy = platform === 'browser' ? { autoApprove: ['browser.diagnostics', 'browser.snapshot'] } : undefined;
+      const policy = platform === 'browser' ? { autoApprove: [...BROWSER_DEFAULT_AUTO].sort() } : undefined;
       const agent = await store.createAgent(userId, name, platform, sha256(token), capabilities, policy);
       await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, platform } });
       return json({ agentId: agent.id, token });
@@ -132,14 +135,33 @@ export function createAgentRoutes(deps: Deps) {
       if (!auth) return denied();
       const agent = await store.getAgent(auth.user.id, ctx.params.id);
       if (!agent) return deps.fail('AGENT_NOT_FOUND', 404);
-      const asked = deps.body(ctx.body).autoApprove;
-      if (!Array.isArray(asked) || asked.length > 20 || asked.some((v) => typeof v !== 'string')) return deps.fail('POLICY_INVALID', 400);
-      const allowed: readonly string[] = agent.platform === 'browser' ? AUTO_APPROVABLE_BROWSER : AUTO_APPROVABLE_MACHINE;
+      const body = deps.body(ctx.body);
+      const asked = body.autoApprove;
+      if (!Array.isArray(asked) || asked.length > 30 || asked.some((v) => typeof v !== 'string')) return deps.fail('POLICY_INVALID', 400);
+      const browser = agent.platform === 'browser';
+      const allowed: readonly string[] = browser ? AUTO_APPROVABLE_BROWSER : AUTO_APPROVABLE_MACHINE;
       if (asked.some((v: string) => !allowed.includes(v))) return deps.fail('POLICY_TYPE_NOT_ALLOWED', 400);
-      const autoApprove = [...new Set(asked as string[])].sort();
-      await store.setAgentPolicy(auth.user.id, agent.id, autoApprove);
-      await deps.audit(auth.user.id, 'owner.agent.policy', 'success', { agentId: agent.id, autoApprove });
-      return deps.respond({ ok: true, policy: { autoApprove } });
+      // Alleen browseragents: welke mogelijkheden AAN staan. Automatisch goedkeuren kan alleen voor wat ook aan staat.
+      let enabled: string[] | undefined;
+      if (browser && body.enabled !== undefined) {
+        if (!Array.isArray(body.enabled) || body.enabled.length > 30 || body.enabled.some((v) => !(BROWSER_TYPES as readonly string[]).includes(String(v)))) return deps.fail('POLICY_CAPABILITY_UNKNOWN', 400);
+        enabled = [...new Set(body.enabled as string[])].sort();
+      } else if (!browser && body.enabled !== undefined) return deps.fail('POLICY_INVALID', 400);
+      const autoApprove = [...new Set(asked as string[])].filter((t) => !browser || (enabled ?? enabledTypes(agent.policy)).includes(t)).sort();
+      await store.setAgentPolicy(auth.user.id, agent.id, autoApprove, enabled);
+      await deps.audit(auth.user.id, 'owner.agent.policy', 'success', { agentId: agent.id, autoApprove, ...(enabled ? { enabled } : {}) });
+      return deps.respond({ ok: true, policy: { autoApprove, ...(browser ? { enabled: enabled ?? enabledTypes(agent.policy) } : {}) } });
+    }],
+
+    // Publiek (zie PUBLIEKE_ROUTES): de extensie vraagt met haar eigen token wat de gebruiker heeft aangezet, zodat het popupvenster
+    // kan uitleggen wat er nog moet gebeuren (aanzetten, of inloggen op de site). Geeft geen gegevens van de gebruiker terug.
+    'POST /api/owner/agents/self': [async (ctx: any) => {
+      const token = String(deps.body(ctx.body).token ?? '');
+      if (token.length < 20 || token.length > 200) return error('TOKEN_INVALID', 401);
+      const agent = await store.findAgentByTokenHash(sha256(token));
+      if (!agent || agent.platform !== 'browser') return error('TOKEN_INVALID', 401);
+      const armed = agent.browser_enabled === true && !!agent.armed_until && new Date(agent.armed_until).getTime() > Date.now();
+      return json({ name: agent.name, enabled: agent.browser_enabled === true, active: armed, capabilities: enabledTypes(agent.policy) });
     }],
 
     'POST /api/owner/agents/:id/revoke': [async (ctx: any) => {
@@ -162,7 +184,10 @@ export function createAgentRoutes(deps: Deps) {
       const params = body.params && typeof body.params === 'object' ? body.params as object : {};
       if (Buffer.byteLength(JSON.stringify(params)) > MAX_PARAM_BYTES) return deps.fail('COMMAND_PARAMS_TOO_LARGE', 413);
       if (!agentOnline(agent.id)) return deps.fail('AGENT_OFFLINE', 409);
-      if (type.startsWith('browser.') && !(await store.browserActive(agent.id))) return deps.fail('BROWSER_NOT_ACTIVE', 409);
+      if (type.startsWith('browser.')) {
+        const gate = await store.browserGate(agent.id, type);
+        if (gate !== 'ok') return deps.fail(gate === 'inactive' ? 'BROWSER_NOT_ACTIVE' : 'BROWSER_CAPABILITY_OFF', 409);
+      }
       const { command, auto } = await submitCommand(agent, auth.user.id, type, params);
       await deps.audit(auth.user.id, 'owner.agent.command', 'success', { agentId: agent.id, commandId: command.id, type, auto });
       return deps.respond({ command });

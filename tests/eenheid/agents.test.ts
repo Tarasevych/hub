@@ -161,7 +161,7 @@ export async function main(): Promise<number> {
     // alle latere migraties (0012, 0013, ...) opnieuw: ze zijn idempotent en herstellen samen de nieuwste stand
     for (const f of readdirSync(join(process.cwd(), 'migrations')).filter((n) => /^00(1[2-9]|[2-9]d)_.*.sql$/.test(n)).sort()) await mig.query(readFileSync(join(process.cwd(), 'migrations', f), 'utf8'));
     check('na het herhalen van 0011 herstellen de latere migraties de volledige typelijst (zelfde als COMMAND_TYPES)',
-      JSON.stringify(((await sys.query(`SELECT pg_get_constraintdef(oid) AS d FROM pg_constraint WHERE conrelid = 'app.agent_commands'::regclass AND conname = 'agent_commands_type_check'`)).rows[0].d.match(/'([a-z.]+)'::text/g) ?? []).map((m: string) => m.slice(1, m.indexOf("'", 1))).sort())
+      JSON.stringify(((await sys.query(`SELECT pg_get_constraintdef(oid) AS d FROM pg_constraint WHERE conrelid = 'app.agent_commands'::regclass AND conname = 'agent_commands_type_check'`)).rows[0].d.match(/'([a-z_.]+)'::text/g) ?? []).map((m: string) => m.slice(1, m.indexOf("'", 1))).sort())
       === JSON.stringify([...COMMAND_TYPES].sort()));
     check('migratie 0011 vult bestaande beleidsrijen aan met de twee leestypes, behoudt de oude, voegt docker.manage nooit toe en repareert een lege lijst',
       ['fs.read', 'fs.list', 'sys.info', 'sys.metrics', 'docker.ps'].every((t) => na1.includes(t)) && !na1.includes('docker.manage') && na1.length === 5

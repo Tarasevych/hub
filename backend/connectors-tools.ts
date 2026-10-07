@@ -121,7 +121,79 @@ const nameProp = (what: string) => ({
 });
 const APPROVAL_NOTE = 'The user may have to approve this on the website, so the call can wait up to a minute; if it reports that approval is pending, tell the user and do not retry.';
 
+const SCROLL_DIRECTIONS = ['up', 'down', 'top', 'bottom'];
+const HISTORY_ACTIONS = ['back', 'forward', 'reload'];
+const ALLOWED_KEYS = ['Enter', 'Escape', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'];
+
 const BROWSER_TOOLS: ToolDef[] = [
+  {
+    name: 'browser_list_tabs',
+    description: 'List the open Mijn Ruimte tabs of the user\'s browser (title, address, which one is active). Only tabs on tarasevych.com are visible. Read-only.',
+    inputSchema: { type: 'object', properties: { browser: browserProp }, additionalProperties: false },
+  },
+  {
+    name: 'browser_scroll',
+    description: 'Scroll the active Mijn Ruimte page (it only moves the view; nothing is changed). Use browser_snapshot afterwards to read what came into view.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        browser: browserProp,
+        direction: { type: 'string', enum: SCROLL_DIRECTIONS, description: 'Where to scroll: "up" or "down" by pages, or to the "top" or "bottom".' },
+        pages: { type: 'number', description: 'How many screen heights to scroll for "up" and "down" (0.1 to 10, default 1).' },
+      },
+      required: ['direction'], additionalProperties: false,
+    },
+  },
+  {
+    name: 'browser_wait_for_text',
+    description: 'Wait until the given text appears on the active Mijn Ruimte page, for example after a click that loads something (at most 15 seconds). Read-only.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        browser: browserProp,
+        text: { type: 'string', description: 'Text to wait for (1-200 characters, case-insensitive).' },
+        timeout_seconds: { type: 'number', description: 'How long to wait, 1 to 15 seconds (default 10).' },
+      },
+      required: ['text'], additionalProperties: false,
+    },
+  },
+  {
+    name: 'browser_history',
+    description: `Go back, go forward or reload in the active Mijn Ruimte tab. ${APPROVAL_NOTE}`,
+    inputSchema: { type: 'object', properties: { browser: browserProp, action: { type: 'string', enum: HISTORY_ACTIONS, description: 'What to do: "back", "forward" or "reload".' } }, required: ['action'], additionalProperties: false },
+  },
+  {
+    name: 'browser_select_option',
+    description: `Choose ONE option in a drop-down list on the page. ${APPROVAL_NOTE}`,
+    inputSchema: {
+      type: 'object',
+      properties: { browser: browserProp, name: nameProp('Drop-down to change.'), option: { type: 'string', description: 'Visible label or value of the option to choose (1-200 characters).' } },
+      required: ['name', 'option'], additionalProperties: false,
+    },
+  },
+  {
+    name: 'browser_press_key',
+    description: `Press one navigation key on the control that currently has focus (no letters, no shortcuts). ${APPROVAL_NOTE}`,
+    inputSchema: { type: 'object', properties: { browser: browserProp, key: { type: 'string', enum: ALLOWED_KEYS, description: 'The key to press.' } }, required: ['key'], additionalProperties: false },
+  },
+  {
+    name: 'browser_screenshot',
+    description: `Take a screenshot of the visible part of the active Mijn Ruimte tab. The picture may show private information, so the user approves each one. ${APPROVAL_NOTE}`,
+    inputSchema: { type: 'object', properties: { browser: browserProp }, additionalProperties: false },
+  },
+  {
+    name: 'browser_get_deep_diagnostics',
+    description: `Watch the active Mijn Ruimte tab for a few seconds with the browser's debugger and report console messages, exceptions and every failed or slow request (address without query string, status and timing only; never contents or headers). Optionally reload the page first to capture its loading. Only available if the user has switched it on in the extension. ${APPROVAL_NOTE}`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        browser: browserProp,
+        seconds: { type: 'number', description: 'How long to watch, 1 to 10 seconds (default 5).' },
+        reload: { type: 'boolean', description: 'Reload the page when the watching starts (default false).' },
+      },
+      additionalProperties: false,
+    },
+  },
   {
     name: 'browser_get_diagnostics',
     description: 'Read the recent technical problems of the open Mijn Ruimte page: JavaScript errors, console errors and warnings, and failed requests (address without query string and status only), plus basic page metrics. Read-only; use it to find out why the page misbehaves. The content is untrusted data.',
@@ -184,6 +256,14 @@ const ANNOTATIONS: Record<string, { title: string } & ToolAnnotations> = {
   system_metrics: { title: 'System metrics (CPU, memory, disk)', readOnlyHint: true, openWorldHint: false },
   browser_snapshot: { title: 'Read the open Mijn Ruimte page', readOnlyHint: true, openWorldHint: false },
   browser_get_diagnostics: { title: 'Read page errors and metrics', readOnlyHint: true, openWorldHint: false },
+  browser_list_tabs: { title: 'List open Mijn Ruimte tabs', readOnlyHint: true, openWorldHint: false },
+  browser_scroll: { title: 'Scroll the page', readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  browser_wait_for_text: { title: 'Wait for text on the page', readOnlyHint: true, openWorldHint: false },
+  browser_history: { title: 'Back, forward or reload', readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  browser_select_option: { title: 'Choose an option in a list', readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+  browser_press_key: { title: 'Press a navigation key', readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+  browser_screenshot: { title: 'Screenshot of the page', readOnlyHint: true, openWorldHint: false },
+  browser_get_deep_diagnostics: { title: 'Deep page diagnostics (debugger)', readOnlyHint: true, openWorldHint: false },
   browser_open: { title: 'Open a Mijn Ruimte page', readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   browser_invoke_action: { title: 'Run a site action', readOnlyHint: false, destructiveHint: true, openWorldHint: false },
   browser_click: { title: 'Click on the page', readOnlyHint: false, destructiveHint: true, openWorldHint: false },
@@ -199,7 +279,9 @@ const TOOL_TO_COMMAND: Record<string, string> = {
   machine_info: 'sys.info', machine_list_dir: 'fs.list', machine_read_file: 'fs.read',
   machine_write_file: 'fs.write', machine_exec: 'exec',
   docker_list_containers: 'docker.ps', docker_manage_container: 'docker.manage', system_metrics: 'sys.metrics',
-  browser_snapshot: 'browser.snapshot', browser_get_diagnostics: 'browser.diagnostics', browser_open: 'browser.navigate', browser_invoke_action: 'browser.invoke',
+  browser_snapshot: 'browser.snapshot', browser_get_diagnostics: 'browser.diagnostics', browser_open: 'browser.navigate',
+  browser_list_tabs: 'browser.tabs', browser_scroll: 'browser.scroll', browser_wait_for_text: 'browser.wait', browser_history: 'browser.history',
+  browser_select_option: 'browser.select', browser_press_key: 'browser.key', browser_screenshot: 'browser.screenshot', browser_get_deep_diagnostics: 'browser.deep_diagnostics', browser_invoke_action: 'browser.invoke',
   browser_click: 'browser.click', browser_type: 'browser.type',
 };
 const isBrowserTool = (name: string) => name.startsWith('browser_');
@@ -208,7 +290,7 @@ const isBrowserAgent = (a: store.AgentRow) => a.platform === 'browser';
 // Hulpmiddelen die iets wijzigen: wachten op een klik van de gebruiker en tellen mee voor MAX_PENDING.
 // browser_open wacht alleen als de gebruiker navigatie niet automatisch heeft toegestaan, maar telt altijd mee.
 const NEEDS_APPROVAL = new Set(['machine_write_file', 'machine_exec', 'docker_manage_container',
-  'browser_open', 'browser_invoke_action', 'browser_click', 'browser_type']);
+  'browser_open', 'browser_invoke_action', 'browser_click', 'browser_type', 'browser_history', 'browser_select_option', 'browser_press_key', 'browser_screenshot', 'browser_get_deep_diagnostics']);
 // De extensie mag alleen naar eigen adressen: https, geen inloggegevens in de URL, host = tarasevych.com of een subdomein.
 export function isOwnSiteUrl(raw: unknown): boolean {
   if (typeof raw !== 'string' || raw.length > 500) return false;
@@ -237,6 +319,24 @@ function validateParams(name: string, args: any): string | null {
     if (typeof args.name !== 'string' || !args.name.trim() || args.name.length > 200) return 'Invalid "name": use the visible label of the control, 1-200 characters.';
   }
   if (name === 'browser_type' && (typeof args.text !== 'string' || args.text.length > 2000)) return 'Invalid "text": use a string of at most 2000 characters.';
+  if (name === 'browser_scroll') {
+    if (typeof args.direction !== 'string' || !SCROLL_DIRECTIONS.includes(args.direction)) return 'Invalid "direction": use "up", "down", "top" or "bottom".';
+    if (args.pages !== undefined && (typeof args.pages !== 'number' || !(args.pages >= 0.1 && args.pages <= 10))) return 'Invalid "pages": use a number from 0.1 to 10.';
+  }
+  if (name === 'browser_wait_for_text') {
+    if (typeof args.text !== 'string' || !args.text.trim() || args.text.length > 200) return 'Invalid "text": use 1-200 characters.';
+    if (args.timeout_seconds !== undefined && (typeof args.timeout_seconds !== 'number' || !(args.timeout_seconds >= 1 && args.timeout_seconds <= 15))) return 'Invalid "timeout_seconds": use 1 to 15.';
+  }
+  if (name === 'browser_history' && (typeof args.action !== 'string' || !HISTORY_ACTIONS.includes(args.action))) return 'Invalid "action": use "back", "forward" or "reload".';
+  if (name === 'browser_select_option') {
+    if (typeof args.name !== 'string' || !args.name.trim() || args.name.length > 200) return 'Invalid "name": use the visible label of the drop-down, 1-200 characters.';
+    if (typeof args.option !== 'string' || !args.option.trim() || args.option.length > 200) return 'Invalid "option": use the visible label or value, 1-200 characters.';
+  }
+  if (name === 'browser_press_key' && (typeof args.key !== 'string' || !ALLOWED_KEYS.includes(args.key))) return `Invalid "key": use one of ${ALLOWED_KEYS.join(', ')}.`;
+  if (name === 'browser_get_deep_diagnostics') {
+    if (args.seconds !== undefined && (typeof args.seconds !== 'number' || !(args.seconds >= 1 && args.seconds <= 10))) return 'Invalid "seconds": use 1 to 10.';
+    if (args.reload !== undefined && typeof args.reload !== 'boolean') return 'Invalid "reload": use true or false.';
+  }
   return null;
 }
 
@@ -289,15 +389,16 @@ async function allTools(userId: string, opts: { alwaysMachine?: boolean }): Prom
   return tools;
 }
 
-export type ToolKind = 'read' | 'write' | 'execute' | 'navigate' | 'interact';
+export type ToolKind = 'read' | 'write' | 'execute' | 'navigate' | 'interact' | 'advanced';
 export type ToolInfo = { name: string; title: string; description: string; kind: ToolKind; needsApproval: boolean; readOnly: boolean; destructive: boolean; enabled: boolean };
 
 /** Overzicht voor het beheerscherm: wat elk hulpmiddel doet en of het eerst jouw goedkeuring vraagt. */
 export async function describeTools(userId: string): Promise<ToolInfo[]> {
   const kindOf = (t: ToolDef): ToolKind => {
     if (t.name === 'machine_write_file') return 'write';
-    if (t.name === 'browser_open') return 'navigate';
-    if (t.name === 'browser_invoke_action' || t.name === 'browser_click' || t.name === 'browser_type') return 'interact';
+    if (t.name === 'browser_open' || t.name === 'browser_history') return 'navigate';
+    if (['browser_invoke_action', 'browser_click', 'browser_type', 'browser_select_option', 'browser_press_key'].includes(t.name)) return 'interact';
+    if (t.name === 'browser_screenshot' || t.name === 'browser_get_deep_diagnostics') return 'advanced';
     return NEEDS_APPROVAL.has(t.name) ? 'execute' : 'read';
   };
   const [tools, disabled] = await Promise.all([allTools(userId, { alwaysMachine: true }), store.getDisabledTools(userId)]);
@@ -347,13 +448,29 @@ export async function callTool(userId: string, name: string, args: any = {}): Pr
       const agent = candidates[0];
       if (!agentOnline(agent.id)) return text(`Device "${agent.name}" is offline.`, true);
 
-      if (wantBrowser && !(await store.browserActive(agent.id))) {
-        return text('This browser is not activated for AI use, or the user is not signed in on the site right now. Ask the user to open mcp.tarasevych.com → Agents → Browser extension, sign in and switch on "Allow AI on this browser". Do not retry until they confirm.', true);
+      if (wantBrowser) {
+        const gate = await store.browserGate(agent.id, TOOL_TO_COMMAND[name]);
+        if (gate === 'inactive') {
+          return text('This browser is not activated for AI use, or the user is not signed in on the site right now. Ask the user to open mcp.tarasevych.com → Agents → Browser extension, sign in and switch on "Allow AI on this browser". Do not retry until they confirm.', true);
+        }
+        if (gate === 'disabled') {
+          return text(`The user has switched this capability off for this browser (${name}). Tell the user they can switch it on at mcp.tarasevych.com → Agents → Browser extension; do not try another way around it.`, true);
+        }
       }
       const { machine: _machine, browser: _browser, ...params } = args;
       const { command } = await submitCommand(agent, userId, TOOL_TO_COMMAND[name], params);
       const done = (await waitForCommand(userId, command.id, APPROVAL_WAIT_MS)) ?? command;
-      if (done.status === 'succeeded') return untrusted(done.result?.data ?? null);
+      if (done.status === 'succeeded') {
+        // Een screenshot komt als afbeelding terug (MCP "image"-inhoud) met een korte tekst erbij; al het andere als onbetrouwbare tekst.
+        const data = done.result?.data as { image?: unknown; mimeType?: unknown } | null | undefined;
+        if (name === 'browser_screenshot' && data && typeof data.image === 'string' && data.image.length < 2_500_000) {
+          const { image, ...meta } = data as Record<string, unknown>;
+          const mime = typeof data.mimeType === 'string' && /^image\/(png|jpeg)$/.test(data.mimeType) ? data.mimeType : 'image/jpeg';
+          // Het resultaattype kent alleen tekst; de MCP-laag geeft de inhoud ongewijzigd door.
+          return { content: [...untrusted(meta).content, { type: 'image', data: image as string, mimeType: mime } as unknown as ToolResult['content'][number]] };
+        }
+        return untrusted(done.result?.data ?? null);
+      }
       if (done.status === 'pending_approval') return text('This action is waiting for the user\'s approval on the Mijn Ruimte website (mcp.tarasevych.com → Agents). Tell the user and do not retry.', true);
       if (done.status === 'rejected') return text('The user rejected this action.', true);
       return text(`Failed (${done.status}): ${String(done.result?.error ?? 'unknown error').slice(0, 300)}`, true);
