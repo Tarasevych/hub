@@ -80,7 +80,7 @@ async function run(type, params) {
   }
   const tab = await targetTab();
   if (!tab) throw new Error('No Mijn Ruimte tab is open in this browser. Use browser_open first.');
-  const op = { 'browser.snapshot': 'snapshot', 'browser.invoke': 'invoke', 'browser.click': 'click', 'browser.type': 'type' }[type];
+  const op = { 'browser.snapshot': 'snapshot', 'browser.diagnostics': 'diagnostics', 'browser.invoke': 'invoke', 'browser.click': 'click', 'browser.type': 'type' }[type];
   const answer = await askTab(tab.id, { op, ...params });
   if (!answer || answer.ok !== true) throw new Error((answer && answer.error) || 'The page did not answer');
   return answer.data;
@@ -99,7 +99,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     if (message.op === 'status') {
       const st = await state();
-      return sendResponse({ paired: !!st.token, connected: ready, name: st.name || '', server: st.server || '', version: VERSION, error: lastError });
+      return sendResponse({ paired: !!st.token, connected: ready, agentId: st.agentId || '', name: st.name || '', server: st.server || '', version: VERSION, error: lastError });
     }
     if (message.op === 'forget') {
       await chrome.storage.local.remove(['token', 'agentId', 'server', 'name']);

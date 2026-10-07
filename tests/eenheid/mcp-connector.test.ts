@@ -153,14 +153,14 @@ export async function main(): Promise<number> {
 
     // ---- hulpmiddelen en isolatie ----
     const leeg = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 4, method: 'tools/list' }));
-    check('tools/list: zonder apparaat staan alle 14 tools (9 apparaat + 5 browser) er toch (Claude toont zo de lijst en de rechtengroepen); geen GitHub-tool zonder token',
-      leeg.result.tools.length === 14 && !leeg.result.tools.some((t: any) => t.name === 'github_get'), leeg.result.tools.map((t: any) => t.name).join(','));
+    check('tools/list: zonder apparaat staan alle 15 tools (9 apparaat + 6 browser) er toch (Claude toont zo de lijst en de rechtengroepen); geen GitHub-tool zonder token',
+      leeg.result.tools.length === 15 && !leeg.result.tools.some((t: any) => t.name === 'github_get'), leeg.result.tools.map((t: any) => t.name).join(','));
     const zonderPc = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 41, method: 'tools/call', params: { name: 'machine_read_file', arguments: { path: '.' } } }));
     check('tools/call zonder apparaat: duidelijke foutmelding (isError), geen crash', zonderPc.result?.isError === true && /No suitable device/.test(zonderPc.result.content[0].text), JSON.stringify(zonderPc.result).slice(0, 120));
     const overzicht = await describeTools(A);
     const kindOf = (n: string) => overzicht.find((t) => t.name === n);
     check('beheeroverzicht: soort en goedkeuring per hulpmiddel (lezen direct; schrijven en uitvoeren na goedkeuring)',
-      overzicht.length === 14 && kindOf('machine_read_file')?.kind === 'read' && kindOf('machine_read_file')?.needsApproval === false
+      overzicht.length === 15 && kindOf('machine_read_file')?.kind === 'read' && kindOf('machine_read_file')?.needsApproval === false
       && kindOf('machine_write_file')?.kind === 'write' && kindOf('machine_write_file')?.needsApproval === true
       && kindOf('docker_manage_container')?.kind === 'execute' && kindOf('docker_manage_container')?.needsApproval === true
       && kindOf('system_metrics')?.readOnly === true, overzicht.map((t) => `${t.name}:${t.kind}`).join(','));
@@ -169,7 +169,7 @@ export async function main(): Promise<number> {
     const lijst = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 5, method: 'tools/list' })).result.tools as any[];
     const per = (n: string) => lijst.find((t) => t.name === n);
     check('tools/list: apparaattools met annotaties (lezen = readOnlyHint, schrijven/uitvoeren = destructiveHint) en titel',
-      lijst.length === 14 && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true
+      lijst.length === 15 && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true
       && per('machine_write_file').annotations.readOnlyHint === false && !!per('machine_list').title && !!per('machine_list').inputSchema, lijst.map((t) => t.name).join(','));
     check('tools/list: Docker en metrics: lezen = readOnlyHint, containers beheren = destructiveHint (niet readOnly, niet idempotent)',
       per('docker_list_containers').annotations.readOnlyHint === true && per('system_metrics').annotations.readOnlyHint === true
@@ -242,11 +242,11 @@ export async function main(): Promise<number> {
     const geweigerd = await bt('machine_exec', { command: 'git' }, 63);
     const infoUit = (await describeTools(A)).filter((t) => !t.enabled).map((t) => t.name).sort().join(',');
     check('hulpmiddelen uitzetten: weg uit tools/list, aanroep geweigerd met uitleg, het beheeroverzicht toont het als uit; een andere gebruiker merkt er niets van',
-      naUit.length === 12 && !naUit.includes('machine_exec') && !naUit.includes('browser_click')
+      naUit.length === 13 && !naUit.includes('machine_exec') && !naUit.includes('browser_click')
       && geweigerd.result.isError === true && /turned off by the user/.test(geweigerd.result.content[0].text)
       && infoUit === 'browser_click,machine_exec' && (await agents.getDisabledTools(B)).length === 0);
     await agents.setDisabledTools(A, []);
-    check('hulpmiddelen weer aanzetten: alles terug in de lijst', (body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 64, method: 'tools/list' })).result.tools as any[]).length === 14);
+    check('hulpmiddelen weer aanzetten: alles terug in de lijst', (body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 64, method: 'tools/list' })).result.tools as any[]).length === 15);
     await agents.setAgentPolicy(A, browserA.id, ['browser.snapshot', 'browser.navigate']);
     check('beleid van een browseragent: alleen van de eigen gebruiker aan te passen',
       JSON.stringify((await agents.getAgent(A, browserA.id))?.policy.autoApprove) === '["browser.navigate","browser.snapshot"]' || JSON.stringify((await agents.getAgent(A, browserA.id))?.policy.autoApprove) === '["browser.snapshot","browser.navigate"]');

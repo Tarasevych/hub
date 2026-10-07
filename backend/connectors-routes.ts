@@ -21,7 +21,7 @@ type Deps = {
 
 const MAX_PARAM_BYTES = 6 * 1024 * 1024;
 export const AUTO_APPROVABLE_MACHINE = ['fs.read', 'fs.list', 'sys.info', 'sys.metrics', 'docker.ps'] as const;
-export const AUTO_APPROVABLE_BROWSER = ['browser.snapshot', 'browser.navigate'] as const;
+export const AUTO_APPROVABLE_BROWSER = ['browser.snapshot', 'browser.diagnostics', 'browser.navigate'] as const;
 const MAX_NAME = 80;
 
 export function createAgentRoutes(deps: Deps) {
@@ -32,12 +32,22 @@ export function createAgentRoutes(deps: Deps) {
     if (!heeftApiRecht(auth.user as never)) return null;
     return auth;
   };
+  // Voor het bevestigen van een browseragent (heartbeat): een geldige sessie op ELKE dienst van de site (de gebruiker kan op mail.*
+  // zitten), met hetzelfde recht als de rest. Zonder geldige sessie geen bevestiging, dus geen actieve browser.
+  const sessionGateAny = async (event: Record<string, unknown>, body: unknown) => {
+    const auth = await deps.requireSession(event, body);
+    if ('errorCode' in auth || auth.user.status !== 'approved' || !heeftApiRecht(auth.user as never)) return null;
+    return auth;
+  };
   const denied = () => deps.fail('OWNER_API_SESSION_REQUIRED', 403);
 
   const publicAgent = (a: store.AgentRow) => ({
     id: a.id, name: a.name, platform: a.platform, policy: a.policy, capabilities: a.capabilities,
     // De waarheid over "online" is het levende kanaal, niet alleen de kolom in de database.
     status: agentOnline(a.id) ? 'connected' : 'disconnected',
+    // Alleen voor browseragents: door de gebruiker aangezet, en tot wanneer een ingelogde sessie dat bevestigd heeft.
+    enabled: a.browser_enabled === true,
+    armedUntil: a.armed_until ? new Date(a.armed_until).getTime() : null,
     lastSeenAt: a.last_seen_at ? new Date(a.last_seen_at).getTime() : null,
     createdAt: new Date(a.created_at).getTime(),
   });
@@ -89,10 +99,31 @@ export function createAgentRoutes(deps: Deps) {
       const platform = body.platform ? String(body.platform).slice(0, 40) : null;
       const capabilities = body.capabilities && typeof body.capabilities === 'object' ? body.capabilities as object : {};
       // Een browserextensie begint voorzichtig: alleen lezen (snapshot) gaat direct; navigeren en handelen wachten op een klik.
-      const policy = platform === 'browser' ? { autoApprove: ['browser.snapshot'] } : undefined;
+      const policy = platform === 'browser' ? { autoApprove: ['browser.diagnostics', 'browser.snapshot'] } : undefined;
       const agent = await store.createAgent(userId, name, platform, sha256(token), capabilities, policy);
       await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, platform } });
       return json({ agentId: agent.id, token });
+    }],
+
+    // De gebruiker zet een gekoppelde browser aan of uit voor AI-gebruik. Standaard uit na het koppelen.
+    'POST /api/owner/agents/:id/browser-enabled': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const enabled = deps.body(ctx.body).enabled;
+      if (typeof enabled !== 'boolean') return deps.fail('BROWSER_ENABLED_INVALID', 400);
+      const ok = await store.setBrowserEnabled(auth.user.id, ctx.params.id, enabled);
+      if (!ok) return deps.fail('AGENT_NOT_FOUND', 404);
+      await deps.audit(auth.user.id, enabled ? 'owner.browser.enabled' : 'owner.browser.disabled', 'success', { agentId: ctx.params.id });
+      return deps.respond({ ok: true, enabled });
+    }],
+
+    // Elke paar minuten vanuit een ingelogde pagina van de site: houdt een door de gebruiker aangezette browser actief.
+    // Zonder geldige sessie komt hier een 403 en verloopt de activering vanzelf (zie 0013).
+    'POST /api/owner/agents/:id/heartbeat': [async (ctx: any) => {
+      const auth = await sessionGateAny(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const armed = await store.armBrowserAgent(auth.user.id, ctx.params.id);
+      return deps.respond({ ok: true, armed });
     }],
 
     // Welke opdrachttypes direct mogen (zonder klik). Schrijven, uitvoeren, Docker-beheer, klikken en typen kunnen nooit automatisch.
@@ -131,6 +162,7 @@ export function createAgentRoutes(deps: Deps) {
       const params = body.params && typeof body.params === 'object' ? body.params as object : {};
       if (Buffer.byteLength(JSON.stringify(params)) > MAX_PARAM_BYTES) return deps.fail('COMMAND_PARAMS_TOO_LARGE', 413);
       if (!agentOnline(agent.id)) return deps.fail('AGENT_OFFLINE', 409);
+      if (type.startsWith('browser.') && !(await store.browserActive(agent.id))) return deps.fail('BROWSER_NOT_ACTIVE', 409);
       const { command, auto } = await submitCommand(agent, auth.user.id, type, params);
       await deps.audit(auth.user.id, 'owner.agent.command', 'success', { agentId: agent.id, commandId: command.id, type, auto });
       return deps.respond({ command });

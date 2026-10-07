@@ -20,7 +20,7 @@ import { sha256 } from './connectors-crypto';
 import * as store from './connectors-store';
 
 export const COMMAND_TYPES = ['fs.read', 'fs.list', 'fs.write', 'exec', 'sys.info', 'docker.ps', 'docker.manage', 'sys.metrics',
-  'browser.snapshot', 'browser.navigate', 'browser.invoke', 'browser.click', 'browser.type'] as const;
+  'browser.snapshot', 'browser.navigate', 'browser.invoke', 'browser.click', 'browser.type', 'browser.diagnostics'] as const;
 export type CommandType = typeof COMMAND_TYPES[number];
 
 const WS_PATH = '/agent/ws';
@@ -45,6 +45,12 @@ export function disconnectAgent(agentId: string): void {
 export async function dispatchCommand(cmd: { id: string; agent_id: string; type: string; params: unknown }): Promise<boolean> {
   const entry = live.get(cmd.agent_id);
   if (!entry) return false;
+  // Laatste slot: een browseropdracht gaat alleen weg als de gebruiker de browser heeft aangezet én een ingelogde sessie
+  // dat recent heeft bevestigd (zie 0013). Ook een al goedgekeurde opdracht wordt anders niet verstuurd.
+  if (cmd.type.startsWith('browser.') && !(await store.browserActive(cmd.agent_id))) {
+    await store.transitionCommand(cmd.id, ['approved'], 'failed', { error: 'browser is not activated or the user is not signed in on the site' });
+    return false;
+  }
   const sent = await store.transitionCommand(cmd.id, ['approved'], 'sent');
   if (!sent) return false;
   entry.ws.send(JSON.stringify({ t: 'cmd', id: cmd.id, type: cmd.type, params: cmd.params }));
