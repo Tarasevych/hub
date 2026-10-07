@@ -392,6 +392,9 @@ if (isMain) {
   const stop = (signal: string) => {
     console.log(`[server] ${signal} ontvangen, stoppen...`);
     server.close(() => { closePool().finally(() => process.exit(0)); });
+    // Keep-alive-verbindingen (bv. pagina's die elke paar seconden pollen) houden server.close() open: rust eerst, daarna geforceerd, zodat een release-wissel geen "exit-code 1" geeft.
+    server.closeIdleConnections?.();
+    setTimeout(() => server.closeAllConnections?.(), 4_000).unref();
     setTimeout(() => process.exit(1), 10_000).unref();
   };
   process.on('SIGTERM', () => stop('SIGTERM'));
