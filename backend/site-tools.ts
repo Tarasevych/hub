@@ -293,6 +293,7 @@ SITE_TOOLS.push(
   mcpRead('mcp_traffic_recent', 'Recent MCP traffic', 'Show the latest calls that went through the Mijn Ruimte MCP console (method, tool, source, result, duration).', 'POST /api/mcp/traffic', (d) => compact({ log: (d?.log ?? []).slice(0, 40) })),
   mcpRead('mcp_services_health', 'Check Mijn Ruimte services', 'Probe the Mijn Ruimte sites and services and report which answer and how fast.', 'POST /api/mcp/health', (d) => compact(d)),
   mcpRead('mcp_archive_status', 'Site archive status', 'Show the state of the full-site archive on the server (code, database, files) and the list of recent archives with size and date. Does not create or download anything.', 'POST /api/mcp/archive/status', (d) => compact({ state: d?.state, pct: d?.pct, name: d?.name, bytes: d?.bytes, finished: d?.finished, error: d?.error, history: (d?.history ?? []).slice(0, 10) })),
+  mcpRead('mcp_backups_list', 'Nightly server backups', 'List the nightly encrypted server backups (database, uploads, system archive with code, units and tunnel config): when, which release, files and sizes, and whether each backup finished. Does not create or download anything.', 'POST /api/mcp/backups', (d) => compact({ backups: (d?.backups ?? []).slice(0, 14) })),
   {
     group: 'site', service: 'mcp', write: true,
     tool: {

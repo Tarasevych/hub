@@ -301,6 +301,32 @@ function parseKit(text: string) {
   }
   return lines;
 }
+
+// ---- nachtelijke serverback-ups (alleen lezen): lijst en download van de versleutelde bestanden ----
+const BACKUP_STAMP = /^\d{8}-\d{6}$/;
+const BACKUP_FILES = ["database.dump.age", "uploads.tar.gz.age", "systeem.tar.gz.age", "database.dump", "uploads.tar.gz", "systeem.tar.gz", "systeem-info.txt", "info.txt", "SHA256SUMS"];
+const backupRoot = () => process.env.BACKUP_DIR || "/srv/backups/mijn-ruimte";
+export type BackupRow = { stamp: string; at: string; ready: boolean; release: string; encrypted: boolean; migrations: number; files: { name: string; bytes: number }[]; hasSystem: boolean; totalBytes: number };
+export async function listBackups(limit = 14): Promise<BackupRow[]> {
+  let names: string[] = [];
+  try { names = (await readdir(backupRoot())).filter((n) => BACKUP_STAMP.test(n)); } catch { return []; }
+  const rows: BackupRow[] = [];
+  for (const stamp of names.sort().reverse().slice(0, limit)) {
+    const dir = path.join(backupRoot(), stamp);
+    const files: { name: string; bytes: number }[] = [];
+    for (const name of BACKUP_FILES) { try { const info = await stat(path.join(dir, name)); if (info.isFile()) files.push({ name, bytes: info.size }); } catch { /* ontbreekt */ } }
+    let ready = false; let at = "";
+    try { at = (await readFile(path.join(dir, "KLAAR"), "utf8")).trim(); ready = true; } catch { /* nog bezig of mislukt */ }
+    const info: Record<string, string> = {};
+    try { for (const line of (await readFile(path.join(dir, "info.txt"), "utf8")).split("\n")) { const cut = line.indexOf("="); if (cut > 0) info[line.slice(0, cut)] = line.slice(cut + 1).trim(); } } catch { /* geen info */ }
+    rows.push({ stamp, at, ready, release: path.basename(info.release || ""), encrypted: info.versleuteling === "age", migrations: info.migraties ? info.migraties.split(",").length : 0, files, hasSystem: files.some((f) => f.name.startsWith("systeem.tar.gz")), totalBytes: files.reduce((a, f) => a + f.bytes, 0) });
+  }
+  return rows;
+}
+export function backupFile(stamp: string, name: string) {
+  if (!BACKUP_STAMP.test(stamp) || !BACKUP_FILES.includes(name)) return "";
+  return path.join(backupRoot(), stamp, name);
+}
 function archiveFile(name: string) {
   if (!/^mijn-ruimte-\d{8}-\d{6}(-kod-baza-fajly-sekrety-instrukcija)?\.tar\.gz$/.test(name)) return "";
   return path.join(process.env.UPLOADS_DIR || "/srv/data/uploads", "mcp-archives", name);
@@ -477,6 +503,18 @@ export function mcpConsoleRoutes(requireSession: RequireSession): Record<string,
       } catch (err) {
         return error(err instanceof Error ? err.message : "ARCHIVE_FAILED", 500);
       }
+    })],
+    "POST /api/mcp/backups": [owner(async () => {
+      if (!(await readPerms()).read) return error("PERMISSION_OFF:read", 403);
+      return json({ backups: await listBackups() });
+    })],
+    "POST /api/mcp/backups/file": [owner(async (ctx) => {
+      if (!(await readPerms()).read) return error("PERMISSION_OFF:read", 403);
+      const data = bodyOf(ctx.body);
+      const file = backupFile(String(data.stamp || ""), String(data.name || ""));
+      if (!file) return error("BACKUP_NAME", 400);
+      try { if (!(await stat(file)).isFile()) return error("BACKUP_MISSING", 404); } catch { return error("BACKUP_MISSING", 404); }
+      return fileDownload(file, `${String(data.stamp)}-${path.basename(file)}`);
     })],
     "POST /api/mcp/archive/file": [owner(async (ctx) => {
       if (!(await readPerms()).read) return error("PERMISSION_OFF:read", 403);
