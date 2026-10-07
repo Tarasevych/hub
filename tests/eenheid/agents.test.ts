@@ -188,6 +188,18 @@ export async function main(): Promise<number> {
       const rest = (await store.listAgents(A)).map((x) => x.id);
       check('opnieuw koppelen van dezelfde browser vervangt de oude koppeling (één agent per browsernaam), andere browsers en gebruikers blijven', weg.length === 1 && weg[0] === o1.id && rest.includes(o2.id) && rest.includes(o3.id) && !rest.includes(o1.id));
     }
+    {
+      const { createAgentRoutes } = await import('../../backend/connectors-routes');
+      const routes: any = createAgentRoutes({ requireSession: async () => ({ errorCode: 'X' }), respond: (d: unknown, st = 200) => ({ statusCode: st, body: JSON.stringify(d) }), fail: (m: string, st = 400) => ({ statusCode: st, body: JSON.stringify({ error: m }) }), audit: async () => undefined, body: (b: unknown) => (b && typeof b === 'object' ? (b as Record<string, unknown>) : {}) });
+      const tok = randomToken();
+      await store.createAgent(A, 'self-test', 'browser', sha256(tok), {});
+      const viaGet: any = await routes['GET /api/owner/agents/self'][0]({ event: { headers: { Authorization: `Bearer ${tok}` } }, body: null });
+      const viaPost: any = await routes['POST /api/owner/agents/self'][0]({ event: { headers: {} }, body: { token: tok } });
+      const fout: any = await routes['GET /api/owner/agents/self'][0]({ event: { headers: { authorization: 'Bearer ' + 'x'.repeat(40) } }, body: null });
+      const leeg: any = await routes['GET /api/owner/agents/self'][0]({ event: { headers: {} }, body: null });
+      check('extensiestatus via GET met Authorization-header (zonder CSRF-uitzondering) en via POST (oude extensies): zelfde antwoord; onbekend of ontbrekend token = 401',
+        viaGet.statusCode === 200 && JSON.parse(viaGet.body).enabled === false && viaPost.statusCode === 200 && viaPost.body === viaGet.body && fout.statusCode === 401 && leeg.statusCode === 401, JSON.stringify([viaGet, fout, leeg]));
+    }
     await sys.query('DELETE FROM app.agents WHERE user_id = ANY($1)', [[A, B]]);
     await sys.query('DELETE FROM app.agent_pairing_codes WHERE user_id = ANY($1)', [[A, B]]);
     await stand(vorigeStand);
