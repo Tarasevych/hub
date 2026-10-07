@@ -141,7 +141,8 @@ function buildEvent(req: http.IncomingMessage, url: URL, body: string, ip: strin
 async function writeRouterResponse(res: http.ServerResponse, response: RouterResponse) {
   if (response.filePath) {
     const file = response.filePath;
-    const allowed = file.startsWith("/srv/data/uploads/mcp-archives/");
+    // Alleen de archiefmap en de (versleutelde) nachtelijke back-ups; de routes zelf valideren de bestandsnaam en eisen een eigenaarssessie.
+    const allowed = file.startsWith("/srv/data/uploads/mcp-archives/") || file.startsWith("/srv/backups/mijn-ruimte/");
     const s = allowed ? await fileStat(file) : null;
     if (!s) return sendText(res, 404, "NOT_FOUND");
     const headers: Record<string, string> = {

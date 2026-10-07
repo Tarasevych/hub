@@ -68,21 +68,21 @@ function fault(err: unknown) {
 type ArchiveRow = { at: string; name: string; bytes: number; kod: number; baza: number; fajly: number; sekrety: number; kept: boolean };
 type ArchiveState = {
   state: string; stage: number; pct: number; phase: string; name: string; bytes: number;
-  kod: number; baza: number; fajly: number; sekrety: number; started: string; finished: string; error: string;
+  kod: number; baza: number; fajly: number; sekrety: number; systeem: number; detail: string; started: string; finished: string; error: string;
   history: ArchiveRow[];
 };
 const emptyArchive = (): ArchiveState => ({
   state: "idle", stage: 0, pct: 0, phase: "", name: "", bytes: 0,
-  kod: 0, baza: 0, fajly: 0, sekrety: 0, started: "", finished: "", error: "", history: [],
+  kod: 0, baza: 0, fajly: 0, sekrety: 0, systeem: 0, detail: "", started: "", finished: "", error: "", history: [],
 });
 const ARCHIVE_STEPS = [
-  { n: 1, phase: "check", uk: "Перевірка", nl: "Controle", ukd: "Читаю поточний випуск.", nld: "Huidige release lezen." },
-  { n: 2, phase: "database", uk: "База", nl: "Database", ukd: "Знімаю PostgreSQL.", nld: "PostgreSQL-dump maken." },
-  { n: 3, phase: "files", uk: "Файли", nl: "Bestanden", ukd: "Пакую завантаження користувачів.", nld: "Gebruikersbestanden inpakken." },
-  { n: 4, phase: "secrets", uk: "Секрети й інструкція", nl: "Geheimen en instructie", ukd: "Копіюю секрети сервера і пишу JAK-ROZGORNUTY.txt.", nld: "Servergeheimen en JAK-ROZGORNUTY.txt." },
-  { n: 5, phase: "pack", uk: "Пакунок і сума", nl: "Pakket en som", ukd: "Збираю tar.gz і рахую SHA-256.", nld: "tar.gz en SHA-256." },
+  { n: 1, phase: "check", uk: "Код і перевірка", nl: "Code en controle", ukd: "Перевіряю місце на диску, пакую код сайту, міст MCP та історію git.", nld: "Schijfruimte controleren, code, MCP-brug en git-geschiedenis inpakken." },
+  { n: 2, phase: "database", uk: "База даних", nl: "Database", ukd: "Знімаю повну базу PostgreSQL з ролями й шифрую її.", nld: "Volledige PostgreSQL-database met rollen dumpen en versleutelen." },
+  { n: 3, phase: "files", uk: "Файли користувачів", nl: "Bestanden van gebruikers", ukd: "Потоково пакую й шифрую всі завантажені файли.", nld: "Alle geüploade bestanden streamend inpakken en versleutelen." },
+  { n: 4, phase: "secrets", uk: "Система та секрети", nl: "Systeem en geheimen", ukd: "Збираю служби, конфіг тунелю, версії програм; секрети шифрую.", nld: "Diensten, tunnelconfiguratie en versies verzamelen; geheimen versleutelen." },
+  { n: 5, phase: "pack", uk: "Пакунок і суми", nl: "Pakket en sommen", ukd: "Додаю інструкцію й скрипт відновлення, рахую SHA-256, збираю один файл.", nld: "Handleiding en herstelscript toevoegen, SHA-256 berekenen, één bestand maken." },
 ] as const;
-const STEP_BANDS = [0, 12, 48, 74, 88, 100];
+const STEP_BANDS = [0, 24, 50, 72, 88, 100];
 function stepPct(stage: number, overall: number, n: number) {
   if (stage > n) return 100;
   if (stage < n) return 0;
@@ -213,14 +213,31 @@ export default function McpServiceView({ lang, tab }: Props) {
     setCopied(id);
     window.setTimeout(() => setCopied(""), 1500);
   }
+  const [downloaded, setDownloaded] = useState(0);
+  /** Стрімить файл на диск, який ви самі обираєте у вікні системи (File System Access); у браузерах без цього — звичайне завантаження. */
   async function saveBlob(name: string) {
+    setDownloaded(0);
+    const w = window as unknown as { showSaveFilePicker?: (o: object) => Promise<{ createWritable: () => Promise<{ write: (d: Uint8Array) => Promise<void>; close: () => Promise<void> }> }> };
+    let writable: { write: (d: Uint8Array) => Promise<void>; close: () => Promise<void> } | null = null;
+    if (typeof w.showSaveFilePicker === "function") {
+      try { writable = await (await w.showSaveFilePicker({ suggestedName: name })).createWritable(); }
+      catch (err) { if ((err as { name?: string })?.name === "AbortError") return; writable = null; }
+    }
     const response = await fetch("/api/mcp/archive/file", {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...ctx(), name }),
     });
-    if (!response.ok) throw new Error("ARCHIVE_FAILED");
+    if (!response.ok || !response.body) { if (writable) await writable.close().catch(() => undefined); throw new Error("ARCHIVE_FAILED"); }
+    if (writable) {
+      const reader = response.body.getReader();
+      let total = 0;
+      try {
+        for (;;) { const { done, value } = await reader.read(); if (done) break; await writable.write(value); total += value.length; setDownloaded(total); }
+      } finally { await writable.close(); }
+      return;
+    }
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -236,7 +253,7 @@ export default function McpServiceView({ lang, tab }: Props) {
     const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
     let data = (await api.post("/api/mcp/archive", ctx())).data as ArchiveState;
     takeArchive(data);
-    for (let i = 0; i < 240 && data.state !== "ready"; i += 1) {
+    for (let i = 0; i < 4800 && data.state !== "ready"; i += 1) {
       if (data.state === "failed" || data.error) throw new Error(String(data.error || "ARCHIVE_FAILED"));
       await sleep(1500);
       data = (await api.post("/api/mcp/archive/status", ctx())).data as ArchiveState;
@@ -244,7 +261,6 @@ export default function McpServiceView({ lang, tab }: Props) {
     }
     const name = String(data.name || "");
     if (data.state !== "ready" || !name) throw new Error(String(data.error || "ARCHIVE_FAILED"));
-    await saveBlob(name);
   }
   const rememberedToken = (() => { try { return sessionStorage.getItem("mcp-fresh-token") || fresh; } catch { return fresh; } })();
   const connectSample = `{
@@ -268,7 +284,9 @@ export default function McpServiceView({ lang, tab }: Props) {
   useEffect(() => {
     if (archive.state !== "building") return;
     const id = window.setInterval(() => setTick((value) => value + 1), 1000);
-    return () => window.clearInterval(id);
+    // Ook na het herladen van de pagina de voortgang blijven volgen (het bouwen draait op de server door).
+    const poll = window.setInterval(() => { void api.post("/api/mcp/archive/status", ctx()).then((res) => takeArchive(res.data as ArchiveState)).catch(() => undefined); }, 2000);
+    return () => { window.clearInterval(id); window.clearInterval(poll); };
   }, [archive.state]);
 
   return (
@@ -532,7 +550,7 @@ export default function McpServiceView({ lang, tab }: Props) {
         <>
           <header>
             <h1>{t("Архів на ПК", "Archief op de pc")}</h1>
-            <p className="mcp-lead">{t("Один файл на цю секунду: код, база, файли і секрети, які вже лежать на сервері. Теки, яких ще немає, потраплять у наступний архів, коли ви натиснете кнопку знову. node_modules і зібраний dist сюди не входять — їх збирає установщик на новому сервері, тому файл часто менший за сам сайт на диску.", "Eén bestand van dit moment: code, database, bestanden en geheimen die al op de server staan. Mappen die nog niet bestaan, komen in het volgende archief zodra u opnieuw klikt. node_modules en dist zitten er niet in.")}</p>
+            <p className="mcp-lead">{t("Один файл із усім, на чому працює сайт: код і міст MCP, повна база даних із ролями, усі файли користувачів, служби системи, конфіг тунелю та секрети. База, файли й секрети шифруються вашим наявним age-ключем (нового ключа не створюється), тож без вашого herstelsleutel їх не відкрити — навіть якщо файл потрапить до чужих. У файлі лежить скрипт vidnovyty.sh: розгорнути сайт на новій машині (віртуальній чи справжній, x86-64 чи ARM) однією командою. Збір іде потоково: обсяг і різноманітність даних не мають значення, місце на диску перевіряється заздалегідь.", "Eén bestand met alles waarop de site draait: code en MCP-brug, de volledige database met rollen, alle bestanden van gebruikers, systeemdiensten, tunnelconfiguratie en geheimen. Database, bestanden en geheimen zijn versleuteld met uw bestaande age-sleutel (er komt geen nieuwe sleutel bij), dus zonder uw herstelsleutel niet te openen. In het bestand zit het script vidnovyty.sh: de site op een nieuwe machine (virtueel of fysiek, x86-64 of ARM) terugzetten met één opdracht. Het maken verloopt streamend: omvang en soort data maken niet uit, de schijfruimte wordt vooraf gecontroleerd.")}</p>
           </header>
           <form className="mcp-form">
             <button type="button" disabled={Boolean(busy)} onClick={() => void run("archive", downloadArchive)}>{t("Зібрати повний архів", "Volledig archief maken")}</button>
@@ -562,11 +580,14 @@ export default function McpServiceView({ lang, tab }: Props) {
                 );
               })}
             </ol>
-            {archive.state === "ready" && archive.bytes ? <p>{t("Усередині до стиснення", "Voor het inpakken")}: {t("код", "code")} {sizeText(archive.kod)}, {t("база", "database")} {sizeText(archive.baza)}, {t("файли", "bestanden")} {sizeText(archive.fajly)}, {t("секрети", "geheimen")} {sizeText(archive.sekrety)}. {t("Файл у браузері", "Bestand")} {sizeText(archive.bytes)}.</p> : null}
+            {archive.state === "building" && archive.detail ? <p className="mcp-live" role="status" aria-live="polite">▸ {archive.detail}</p> : null}
+            {archive.state === "failed" ? <p className="mcp-error" role="alert">{t("Збір зупинився", "Maken gestopt")}: {archive.error}{archive.detail ? ` — ${archive.detail}` : ""}. {t("Нічого на сайті не змінено. Спробуйте ще раз; якщо повторюється — перегляньте journalctl -u mijn-ruimte-archief на сервері.", "Er is niets op de site gewijzigd. Probeer opnieuw; blijft het gebeuren, kijk dan naar journalctl -u mijn-ruimte-archief op de server.")}</p> : null}
+            {archive.state === "ready" && archive.bytes ? <p>{t("Усередині", "Inhoud")}: {t("код", "code")} {sizeText(archive.kod)}, {t("база (шифр.)", "database (versl.)")} {sizeText(archive.baza)}, {t("файли (шифр.)", "bestanden (versl.)")} {sizeText(archive.fajly)}, {t("секрети (шифр.)", "geheimen (versl.)")} {sizeText(archive.sekrety)}, {t("система", "systeem")} {sizeText(archive.systeem)}. {t("Разом файл", "Totaal")} {sizeText(archive.bytes)}.</p> : null}
             {archive.name ? <p className="mcp-url">{archive.name}</p> : null}
             {archive.name && (archive.state === "ready" || archive.history.some((row) => row.name === archive.name && row.kept)) ? (
               <form className="mcp-form">
-                <button type="button" className="mcp-ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob(archive.name))}>{t("Завантажити ще раз, якщо браузер не зберіг файл", "Opnieuw downloaden als de browser het bestand niet bewaarde")}</button>
+                <button type="button" className="mcp-ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob(archive.name))}>{archive.state === "ready" ? t("Завантажити архів (оберіть диск і папку)", "Archief downloaden (kies schijf en map)") : t("Завантажити ще раз", "Opnieuw downloaden")}</button>
+                {downloaded > 0 ? <small className="mcp-live"> {t("записано", "geschreven")} {sizeText(downloaded)}</small> : null}
               </form>
             ) : null}
           </article>

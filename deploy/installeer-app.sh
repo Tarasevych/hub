@@ -75,7 +75,7 @@ gezond() {
 
 units_installeren() {
   local bron="$1" gewijzigd=0 f
-  for f in "$bron"/deploy/*.service "$bron"/deploy/*.timer; do
+  for f in "$bron"/deploy/*.service "$bron"/deploy/*.timer "$bron"/deploy/*.path; do
     [ -e "$f" ] || continue
     if ! cmp -s "$f" "/etc/systemd/system/$(basename "$f")"; then
       install -m 0644 -o root -g root "$f" /etc/systemd/system/
@@ -247,6 +247,13 @@ installeren() {
   if [ -s "$doel/deploy/mcp/mijn-ruimte-mcp-doen" ]; then
     install -m 0755 -o root -g root "$doel/deploy/mcp/mijn-ruimte-mcp-doen" /usr/local/sbin/mijn-ruimte-mcp-doen
     melding "mcp-hulp bijgewerkt"
+  fi
+  # Volledig archief ("Архів на ПК"): root-script + path-unit die het verzoekbestand van de site bewaakt (de site kan zelf niets als root doen).
+  if [ -s "$doel/deploy/archief-maken.sh" ]; then
+    install -m 0755 -o root -g root "$doel/deploy/archief-maken.sh" /usr/local/sbin/mijn-ruimte-archief
+    install -d -o "$GEBRUIKER" -g "$GEBRUIKER" -m 0750 /srv/data/uploads/mcp-archives
+    systemctl enable --now mijn-ruimte-archief.path >/dev/null 2>&1 || waarschuwing "mijn-ruimte-archief.path kon niet worden gestart"
+    melding "archief-hulp bijgewerkt"
   fi
   # Timers (cron, opruimen, back-up) starten; `enable` alleen start ze pas na een herstart.
   systemctl enable "${TIMERS[@]}" >/dev/null 2>&1 || true   # nieuwe timers moeten ook een herstart overleven
