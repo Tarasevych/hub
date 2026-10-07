@@ -10,8 +10,12 @@ type Grant = { id: string; clientName: string; scope: string; createdAt: number;
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 // Tijden altijd in de tijdzone van het apparaat (verandert mee tijdens reizen), met de zone erbij vermeld.
-const dateFmt = () => new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'medium', timeZoneName: 'short' });
-const when = (value: number | null) => (value ? dateFmt().format(new Date(value)) : '—');
+// Let op: dateStyle/timeStyle mag niet samen met timeZoneName (gooit een TypeError en geeft een wit scherm), dus losse velden.
+const dateFmt = () => new Intl.DateTimeFormat(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' });
+const when = (value: number | null) => {
+  if (!value) return '—';
+  try { return dateFmt().format(new Date(value)); } catch { return new Date(value).toLocaleString(); }
+};
 const zoneName = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } };
 const IDLE_MS = 24 * 60 * 60 * 1000;
 const CLAUDE_CONNECTORS = 'https://claude.ai/code#customize/connectors';
