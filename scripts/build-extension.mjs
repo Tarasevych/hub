@@ -42,7 +42,8 @@ function png(size) {
 }
 
 mkdirSync(join(extDir, 'icons'), { recursive: true });
-for (const size of [16, 48, 128]) writeFileSync(join(extDir, 'icons', `icon${size}.png`), png(size));
+// Bestaande pictogrammen blijven ongemoeid: de CRX-handtekening hangt aan hun bytes, en gecomprimeerde PNG-bytes kunnen per machine verschillen.
+for (const size of [16, 48, 128]) { const f = join(extDir, 'icons', `icon${size}.png`); if (!existsSync(f)) writeFileSync(f, png(size)); }
 
 const entries = extensionEntries(extDir);
 if (!entries.some((e) => e.name === 'manifest.json')) throw new Error('extension/manifest.json ontbreekt');
