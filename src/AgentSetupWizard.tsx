@@ -5,6 +5,7 @@ import { emitCanonicalNotice } from './canonical-notifications';
 import { Logo, type Tr } from './mcp-ui';
 import { sessionBody, type Agent } from './agents-data';
 import { buildAgentCommands, buildRunnerScript, looksLikePlaceholder, type Os, type Shell } from './agent-commands';
+import { guessArch, nodeInstallMethods, type Arch } from './install-commands';
 import './extension-wizard.css';
 
 const ALLOW_CHOICES = ['git', 'node', 'npm', 'python', 'docker'];
@@ -28,11 +29,15 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
   const [copied, setCopied] = useState('');
   const [agentInfo, setAgentInfo] = useState<{ file: string; sha256: string } | null>(null);
   const [open, setOpen] = useState('');
+  const [arch, setArch] = useState<Arch>(() => guessArch(navigator.userAgent, navigator.platform));
+  const [nodeMethod, setNodeMethod] = useState('');
   const baseline = useRef<Set<string> | null>(null);
 
   useEffect(() => { fetch('/downloads/extension-version.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : {})).then((j) => setAgentInfo((j as { agent?: { file: string; sha256: string } }).agent ?? null)).catch(() => undefined); }, []);
   useEffect(() => { const t = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(t); }, []);
 
+  const nodeMethods = useMemo(() => nodeInstallMethods(os, arch), [os, arch]);
+  const activeNode = nodeMethods.find((m) => m.id === nodeMethod) ?? nodeMethods[0];
   const roots = rootsText.split(/\r?\n/).map((r) => r.trim()).filter(Boolean);
   const rootProblem = !roots.length ? tr('Вкажіть хоча б одну папку, до якої агент матиме доступ.', 'Geef minstens één map op waartoe de agent toegang krijgt.')
     : roots.some(looksLikePlaceholder) ? tr('У шляху не повинно бути символів < > " | ? * і слів-підказок. Напишіть справжній шлях, наприклад T:\\ або C:\\Projects.', 'Het pad mag geen tekens < > " | ? * of voorbeeldwoorden bevatten. Schrijf een echt pad, bijvoorbeeld T:\\ of C:\\Projects.') : '';
@@ -100,11 +105,22 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
         ))}
       </div>
       <ol className='wiz-steps'>
-        {section('node', 1, tr('Перевірте Node.js 22 або новіший', 'Controleer Node.js 22 of nieuwer'), false, (
+        {section('node', 1, tr('Встановіть Node.js 22 або новіший', 'Installeer Node.js 22 of nieuwer'), false, (
           <>
-            <p>{tr('Відкрийте термінал і виконайте команду. Якщо видає v22 або більше: усе гаразд. Якщо «не розпізнано» або менше: встановіть Node.js (LTS) з nodejs.org, потім відкрийте термінал заново.', 'Open een terminal en voer het commando uit. Toont het v22 of hoger: prima. Is het "niet herkend" of lager: installeer Node.js (LTS) van nodejs.org en open daarna een nieuwe terminal.')}</p>
+            <p>{tr('Оберіть архітектуру й спосіб, як на nodejs.org: команди й підказки змінюються. Уже встановлено? Перевірте командою нижче: вона має показати v22 або більше.', 'Kies architectuur en methode, zoals op nodejs.org: de commando\'s en tips veranderen mee. Al geïnstalleerd? Controleer met het commando hieronder: het moet v22 of hoger tonen.')}</p>
+            <div className='wiz-os' role='group' aria-label={tr('Архітектура', 'Architectuur')}>
+              {(['x64', 'arm64'] as Arch[]).map((k) => <button key={k} type='button' aria-pressed={arch === k} onClick={() => { setArch(k); setNodeMethod(''); }}>{k === 'x64' ? 'x64 (Intel/AMD)' : 'ARM64'}</button>)}
+            </div>
+            <div className='wiz-tabs' role='tablist' aria-label={tr('Спосіб встановлення Node.js', 'Installatiemethode van Node.js')}>
+              {nodeMethods.map((m) => <button key={m.id} type='button' role='tab' aria-selected={activeNode.id === m.id} onClick={() => setNodeMethod(m.id)}>{m.label}{m.official ? '' : ' *'}</button>)}
+            </div>
+            <p className='wiz-note'>{tr(activeNode.note[0], activeNode.note[1])}</p>
+            {activeNode.commands.map((c, i) => (
+              <div key={i} className='wiz-copy'><b>{i + 1}.</b><code>{c}</code><button type='button' onClick={() => void copy(`n${i}`, c)}>{copied === `n${i}` ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>
+            ))}
+            {activeNode.link ? <a className='wiz-primary' href={activeNode.link.href} target='_blank' rel='noopener noreferrer'><Download aria-hidden='true' />{tr(`Відкрити ${activeNode.link.label}`, `Open ${activeNode.link.label}`)}</a> : null}
             <div className='wiz-copy'><code>node -v</code><button type='button' onClick={() => void copy('nodev', 'node -v')}>{copied === 'nodev' ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>
-            <a className='wiz-link' href='https://nodejs.org/' target='_blank' rel='noopener noreferrer'>{tr('Завантажити Node.js (nodejs.org)', 'Node.js downloaden (nodejs.org)')}</a>
+            <p className='wiz-note'>{tr('* неофіційний спосіб. Після встановлення відкрийте новий термінал.', '* niet-officiële methode. Open na de installatie een nieuwe terminal.')}</p>
           </>
         ))}
         {section('file', 2, tr('Завантажте agent.mjs', 'Download agent.mjs'), false, (
@@ -142,8 +158,8 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
                   <div key={i} className='wiz-copy'><b>{i + 1}.</b><code>{c}</code><button type='button' onClick={() => void copy(`c${i}`, c)}>{copied === `c${i}` ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>
                 ))}
                 <p className='wiz-note'>{tr('Перша команда з’єднує агента з вашим акаунтом, друга запускає його (вікно термінала має лишатися відкритим).', 'Het eerste commando koppelt de agent aan uw account, het tweede start hem (laat het terminalvenster open).')}</p>
-                <button type='button' className='wiz-primary' onClick={download}><FileDown aria-hidden='true' />{tr(`Або завантажте готовий файл запуску (${os === 'windows' ? '.cmd' : '.sh'})`, `Of download een kant-en-klaar startbestand (${os === 'windows' ? '.cmd' : '.sh'})`)}</button>
-                <p className='wiz-note'>{tr(`Покладіть його поруч з agent.mjs і двічі клацніть${os === 'windows' ? '' : ' (спершу: chmod +x mijn-ruimte-agent.sh)'}: файл сам виконає обидві команди.`, `Zet het naast agent.mjs en dubbelklik${os === 'windows' ? '' : ' (eerst: chmod +x mijn-ruimte-agent.sh)'}: het bestand voert beide commando's zelf uit.`)}</p>
+                {os === 'windows' ? <p className='wiz-note' role='status'>{tr('Готовий файл запуску (.cmd) для Windows 11 із «Захистом смарт-програм» блокується без можливості дозволити, тому тут лише команди для вставки в термінал.', 'Een kant-en-klaar startbestand (.cmd) wordt op Windows 11 met "Smart App Control" geblokkeerd zonder optie om het toe te staan; daarom hier alleen commando\'s om in de terminal te plakken.')}</p> : <button type='button' className='wiz-primary' onClick={download}><FileDown aria-hidden='true' />{tr(`Або завантажте готовий файл запуску (.sh)`, `Of download een kant-en-klaar startbestand (.sh)`)}</button>}
+                <p className='wiz-note'>{tr(`Покладіть його поруч з agent.mjs і двічі клацніть' (спершу: chmod +x mijn-ruimte-agent.sh)': файл сам виконає обидві команди.`, `Zet het naast agent.mjs en dubbelklik' (eerst: chmod +x mijn-ruimte-agent.sh)': het bestand voert beide commando's zelf uit.`)}</p>
                 <p className='wiz-wait'><LoaderCircle className='wiz-spin' aria-hidden='true' />{tr('Чекаємо на підключення пристрою… Щойно він зʼявиться, ви побачите сповіщення, а пристрій — у списку зліва.', 'Wachten tot het apparaat verbindt… Zodra het verschijnt, ziet u een melding en staat het apparaat in de lijst links.')}</p>
               </>
             )}
