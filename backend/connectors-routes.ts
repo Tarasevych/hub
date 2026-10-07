@@ -27,6 +27,14 @@ export const AUTO_APPROVABLE_MACHINE = ['fs.read', 'fs.list', 'sys.info', 'sys.m
 export const AUTO_APPROVABLE_BROWSER = BROWSER_AUTO_APPROVABLE;
 const MAX_NAME = 80;
 
+async function agentSelf(token: string) {
+  if (token.length < 20 || token.length > 200) return error('TOKEN_INVALID', 401);
+  const agent = await store.findAgentByTokenHash(sha256(token));
+  if (!agent || agent.platform !== 'browser') return error('TOKEN_INVALID', 401);
+  const armed = agent.browser_enabled === true && !!agent.armed_until && new Date(agent.armed_until).getTime() > Date.now();
+  return json({ name: agent.name, enabled: agent.browser_enabled === true, active: armed, capabilities: enabledTypes(agent.policy) });
+}
+
 export function createAgentRoutes(deps: Deps) {
   const ownerGate = async (event: Record<string, unknown>, body: unknown) => {
     const auth = await deps.requireSession(event, body);
@@ -174,14 +182,15 @@ export function createAgentRoutes(deps: Deps) {
 
     // Publiek (zie PUBLIEKE_ROUTES): de extensie vraagt met haar eigen token wat de gebruiker heeft aangezet, zodat het popupvenster
     // kan uitleggen wat er nog moet gebeuren (aanzetten, of inloggen op de site). Geeft geen gegevens van de gebruiker terug.
-    'POST /api/owner/agents/self': [async (ctx: any) => {
-      const token = String(deps.body(ctx.body).token ?? '');
-      if (token.length < 20 || token.length > 200) return error('TOKEN_INVALID', 401);
-      const agent = await store.findAgentByTokenHash(sha256(token));
-      if (!agent || agent.platform !== 'browser') return error('TOKEN_INVALID', 401);
-      const armed = agent.browser_enabled === true && !!agent.armed_until && new Date(agent.armed_until).getTime() > Date.now();
-      return json({ name: agent.name, enabled: agent.browser_enabled === true, active: armed, capabilities: enabledTypes(agent.policy) });
+    // GET met het token in de Authorization-header: het is een leesactie, dus de CSRF-controle (alleen voor wijzigende methoden) is hier terecht
+    // niet van toepassing, terwijl de service worker van een extensie bij POST altijd een chrome-extension://-Origin meestuurt (zie server/start.ts).
+    // De POST-variant (token in de body) blijft bestaan voor oudere extensies.
+    'GET /api/owner/agents/self': [async (ctx: any) => {
+      const h = (ctx.event?.headers || {}) as Record<string, string>;
+      const raw = Object.entries(h).find(([k]) => k.toLowerCase() === 'authorization')?.[1] ?? '';
+      return agentSelf(String(raw).replace(/^Bearer\s+/i, '').trim());
     }],
+    'POST /api/owner/agents/self': [async (ctx: any) => agentSelf(String(deps.body(ctx.body).token ?? ''))],
 
     'POST /api/owner/agents/:id/revoke': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);

@@ -186,7 +186,8 @@ async function selfStatus() {
   const base = { paired: !!st.token, connected: ready, agentId: st.agentId || '', name: st.name || '', server: st.server || DEFAULT_SITE, version: VERSION, error: lastError };
   if (!st.token) return base;
   try {
-    const res = await fetch(`${st.server}/api/owner/agents/self`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: st.token }) });
+    // GET met het token in de header: een leesactie hoort niet door de CSRF-controle (die voor wijzigende methoden geldt) geblokkeerd te worden.
+    const res = await fetch(`${st.server}/api/owner/agents/self`, { method: 'GET', headers: { Authorization: `Bearer ${st.token}` }, cache: 'no-store' });
     if (res.status === 401) return { ...base, paired: false, error: 'revoked' };
     if (res.ok) { const data = await res.json(); return { ...base, enabled: !!data.enabled, active: !!data.active, capabilities: data.capabilities || [] }; }
   } catch { /* offline: toon wat we lokaal weten */ }

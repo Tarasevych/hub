@@ -51,6 +51,7 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'GET /api/mcp-connector/rpc': 'MCP-eindpunt: altijd 405 (geen SSE-stroom)',
   'DELETE /api/mcp-connector/rpc': 'MCP-eindpunt: altijd 405 (geen sessies)',
   'POST /api/owner/agents/pair':'agent wisselt een eenmalige koppelcode (10 min, gehasht, één gebruiker) in voor een eigen token',
+  'GET /api/owner/agents/self':'zelfde als POST: de browserextensie vraagt met haar eigen token (Authorization-header, leesactie) wat de gebruiker heeft aangezet',
   'POST /api/owner/agents/self':'browserextensie vraagt met haar eigen token (alleen hash-opzoeking) wat de gebruiker heeft aangezet; geen persoonsgegevens',
   'POST /api/owner/mail/microsoft/webhook': 'Microsoft Graph-webhook (clientState-controle)',
   'POST /api/owner/mail/google/pubsub/push': 'Google Pub/Sub-push (OIDC-token in Authorization)',
