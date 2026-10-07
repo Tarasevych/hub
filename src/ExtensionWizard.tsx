@@ -9,7 +9,7 @@ import './extension-wizard.css';
 type BrowserKey = 'chrome' | 'edge' | 'opera' | 'brave' | 'vivaldi' | 'firefox' | 'safari';
 type OsKey = 'windows' | 'macos' | 'linux';
 type Method = 'picker' | 'terminal' | 'helper' | 'zip' | 'crx';
-type Release = { version?: string; sha256?: string; storeUrl?: string; installers?: string[]; crx?: { file: string; extensionId: string; version: string } | null };
+type Release = { version?: string; sha256?: string; storeUrl?: string; installers?: string[]; debug?: { file: string; sha256: string }; crx?: { file: string; extensionId: string; version: string } | null };
 type Presence = 'checking' | 'present' | 'absent';
 
 export type WizardProps = {
@@ -96,13 +96,18 @@ export default function ExtensionWizard(p: WizardProps) {
   const [browser, setBrowser] = useState<BrowserKey>(detectBrowser);
   const [os, setOs] = useState<OsKey>(detectOs);
   const [method, setMethod] = useState<Method>('terminal');
+  const [debugMode, setDebugMode] = useState(false);
   const [folder, setFolder] = useState('');
   const [open, setOpen] = useState<string>('');
   const [downloaded, setDownloaded] = useState(false);
   const [copied, setCopied] = useState(false);
   const info = BROWSERS.find((b) => b.key === browser)!;
   const helperFile = os === 'windows' ? 'Install-MijnRuimte.cmd' : 'install-mijn-ruimte.sh';
-  const hasHelper = (p.release.installers ?? []).includes(helperFile);
+  const hasHelper = (p.release.installers ?? []).includes(helperFile) && !debugMode;
+  // Окремий пакет «з режимом налагодження»: Chrome не дозволяє дозвіл debugger як необов'язковий, тож це свідомий вибір на етапі встановлення.
+  const debugPkg = debugMode && p.release.debug ? p.release.debug : null;
+  const pkgFile = debugPkg ? debugPkg.file : 'mijn-ruimte-extension.zip';
+  const pkgSha = (debugPkg ? debugPkg.sha256 : p.release.sha256) || '';
   const present = p.presence === 'present';
   const [picked, setPicked] = useState<{ folderName: string; files: number } | null>(null);
   const [pickBusy, setPickBusy] = useState<'' | 'download' | 'verify' | 'write'>('');
@@ -110,7 +115,7 @@ export default function ExtensionWizard(p: WizardProps) {
   const pickFolder = async () => {
     setPickError(''); setPickBusy('download');
     try {
-      const out = await installExtensionToPickedFolder({ origin: location.origin, sha256: p.release.sha256 || '', onStage: setPickBusy });
+      const out = await installExtensionToPickedFolder({ origin: location.origin, sha256: pkgSha, file: pkgFile, onStage: setPickBusy });
       setPicked(out); setDownloaded(true); p.onDownloaded();
       emitCanonicalNotice({ text: tr(`Розширення збережено в папку «${out.folderName}/${SUBFOLDER}»`, `Extensie opgeslagen in map "${out.folderName}/${SUBFOLDER}"`), kind: 'success', source: 'browser', retain: true });
     } catch (e) {
@@ -148,8 +153,8 @@ export default function ExtensionWizard(p: WizardProps) {
   }, [present, p.paired, p.hasAgent, p.agentEnabled, p.agentArmed]);
 
   const copy = async (text: string) => { try { await navigator.clipboard?.writeText(text); setCopied(true); window.setTimeout(() => setCopied(false), 1800); } catch { /* geen klembord */ } };
-  const href = method === 'helper' ? `/downloads/${helperFile}` : method === 'crx' && p.release.crx ? `/downloads/${p.release.crx.file}` : '/downloads/mijn-ruimte-extension.zip';
-  const fileName = method === 'helper' ? helperFile : method === 'crx' && p.release.crx ? p.release.crx.file : 'mijn-ruimte-extension.zip';
+  const href = method === 'helper' ? `/downloads/${helperFile}` : method === 'crx' && p.release.crx ? `/downloads/${p.release.crx.file}` : `/downloads/${pkgFile}`;
+  const fileName = method === 'helper' ? helperFile : method === 'crx' && p.release.crx ? p.release.crx.file : pkgFile;
   const browserScheme = info.url.split(':')[0];
 
   const steps: Step[] = useMemo(() => {
@@ -158,12 +163,28 @@ export default function ExtensionWizard(p: WizardProps) {
       id: 'download', title: tr('Завантажте файл', 'Download het bestand'), done: downloaded || present, manual: true,
       body: (
         <>
+          {p.release.debug ? <div className='wiz-debug' data-debug-mode={debugMode ? 'on' : 'off'}>
+            <label className='wiz-debug-head'>
+              <input type='checkbox' checked={debugMode} onChange={(e) => { setDebugMode(e.target.checked); if (e.target.checked && (method === 'helper' || method === 'crx')) setMethod('terminal'); }} />
+              <b>{tr('Режим налагодження (необов’язково, для просунутих)', 'Foutopsporingsmodus (optioneel, voor gevorderden)')}</b>
+            </label>
+            <p>{tr('Дозволяє ШІ на кілька секунд (лише після вашого «Дозволити» щоразу) глибше дивитися вкладку Mijn Ruimte: усі мережеві запити та помилки консолі через вбудований у браузер налагоджувач. Без цього режиму діагностика теж працює, але простіша (збирач помилок усередині сторінки).', 'Laat de AI enkele seconden (alleen na uw "Toestaan", telkens opnieuw) dieper in het Mijn Ruimte-tabblad kijken: alle netwerkverzoeken en consolefouten via de ingebouwde foutopsporing van de browser. Zonder deze modus werkt diagnose ook, maar eenvoudiger (een foutenverzamelaar in de pagina).')}</p>
+            {debugMode ? <div className='wiz-debug-explain' role='note'>
+              <p><b>{tr('Що ви побачите і чому це нормально', 'Wat u ziet en waarom dat normaal is')}</b></p>
+              <ul>
+                <li>{tr('Під час встановлення Chrome покаже, що розширення просить доступ до «налагоджувача сторінок» (debugger). Це потрібне саме для цього режиму; розширення працює лише на *.tarasevych.com.', 'Tijdens de installatie meldt Chrome dat de extensie toegang vraagt tot de "page debugger". Dat is nodig voor deze modus; de extensie werkt alleen op *.tarasevych.com.')}</li>
+                <li>{tr('Коли ШІ справді спостерігає вкладку, Chrome показує жовту смугу «Mijn Ruimte розпочав налагодження цього браузера». Це не збій і не вірус, а стандартне повідомлення Chrome, що налагоджувач під’єднано. Смуга зникає сама за кілька секунд, коли спостереження закінчується; її можна закрити кнопкою «Скасувати».', 'Zodra de AI het tabblad echt observeert, toont Chrome een gele balk "Mijn Ruimte is begonnen met het opsporen van fouten in deze browser". Dat is geen storing of virus, maar de standaardmelding van Chrome dat de foutopsporing is gekoppeld. De balk verdwijnt vanzelf na enkele seconden; u kunt hem sluiten met "Annuleren".')}</li>
+                <li>{tr('Без вашого «Дозволити» щоразу нічого не відбувається, і смуги не буде. Бачите смугу, коли ви самі не просили діагностики, — відключіть браузер на сайті й напишіть нам.', 'Zonder uw "Toestaan" gebeurt er niets en is er geen balk. Ziet u de balk terwijl u geen diagnose vroeg, koppel de browser dan los op de site en laat het ons weten.')}</li>
+                <li>{tr('Передаються лише адреса без параметрів, статус і час запитів та текст помилок; ніколи вміст сторінок, заголовки, паролі чи cookie.', 'Alleen adres zonder parameters, status en tijd van verzoeken en de tekst van fouten worden doorgegeven; nooit pagina-inhoud, headers, wachtwoorden of cookies.')}</li>
+              </ul>
+            </div> : null}
+          </div> : null}
           <div className='wiz-tabs' role='tablist' aria-label={tr('Спосіб встановлення', 'Installatiemethode')}>
             {p.release.sha256 && folderPickerSupported() ? <button type='button' role='tab' aria-selected={method === 'picker'} onClick={() => setMethod('picker')}><FolderOpen aria-hidden='true' />{tr('Кнопка: оберіть папку (рекомендовано)', 'Knop: kies een map (aanbevolen)')}</button> : null}
             {p.release.sha256 ? <button type='button' role='tab' aria-selected={method === 'terminal'} onClick={() => setMethod('terminal')}><Download aria-hidden='true' />{tr('Команда в терміналі (рекомендовано)', 'Commando in de terminal (aanbevolen)')}</button> : null}
             {hasHelper ? <button type='button' role='tab' aria-selected={method === 'helper'} onClick={() => setMethod('helper')}><Download aria-hidden='true' />{tr('Помічник (найпростіше)', 'Installatiehulp (eenvoudigst)')}</button> : null}
             <button type='button' role='tab' aria-selected={method === 'zip'} onClick={() => setMethod('zip')}><FileArchive aria-hidden='true' />{tr('ZIP (вручну)', 'ZIP (handmatig)')}</button>
-            {p.release.crx ? <button type='button' role='tab' aria-selected={method === 'crx'} onClick={() => setMethod('crx')}><Package aria-hidden='true' />CRX</button> : null}
+            {p.release.crx && !debugMode ? <button type='button' role='tab' aria-selected={method === 'crx'} onClick={() => setMethod('crx')}><Package aria-hidden='true' />CRX</button> : null}
           </div>
           <div className='wiz-os' role='group' aria-label={tr('Операційна система', 'Besturingssysteem')}>
             {([['windows', 'Windows'], ['macos', 'macOS'], ['linux', 'Linux']] as Array<[OsKey, string]>).map(([k, label]) => (
@@ -191,7 +212,7 @@ export default function ExtensionWizard(p: WizardProps) {
               <label className='wiz-field'>{tr('Або вставте шлях до своєї папки (будь-який диск, мережева папка, інша система)', 'Of plak het pad naar uw eigen map (elke schijf, netwerkmap, ander systeem)')}<input value={folder} onChange={(e) => setFolder(e.target.value.replace(/["\u201c\u201d]/g, '').trimStart())} spellCheck={false} placeholder={os === 'windows' ? 'D:\\MijnRuimte-extension' : '~/MijnRuimte-extension'} /></label>
               {folder.trim() && !folderOk ? <p className='wiz-note' role='alert'>{os === 'windows' ? tr('Шлях має починатися з літери диска, наприклад D:\\MijnRuimte-extension.', 'Het pad moet met een schijfletter beginnen, bijvoorbeeld D:\\MijnRuimte-extension.') : tr('Шлях має починатися з ~/ або /.', 'Het pad moet met ~/ of / beginnen.')}</p> : null}
               <p><strong>{tr('2. Виконайте команду', '2. Voer het commando uit')}</strong></p>
-              {!folderOk ? <p className='wiz-note' role='status'>{tr('Команда з’явиться, щойно ви оберете папку вище.', 'Het commando verschijnt zodra u hierboven een map kiest.')}</p> : extensionInstallCommands({ os, shell: os === 'windows' ? 'powershell' : 'bash', folder, sha256: p.release.sha256, origin: location.origin }).map((c, i) => <div key={i} className='wiz-copy'><code>{c}</code><button type='button' onClick={() => { void copy(c); setDownloaded(true); p.onDownloaded(); }}>{copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>)}
+              {!folderOk ? <p className='wiz-note' role='status'>{tr('Команда з’явиться, щойно ви оберете папку вище.', 'Het commando verschijnt zodra u hierboven een map kiest.')}</p> : extensionInstallCommands({ os, shell: os === 'windows' ? 'powershell' : 'bash', folder, sha256: pkgSha, origin: location.origin, file: pkgFile }).map((c, i) => <div key={i} className='wiz-copy'><code>{c}</code><button type='button' onClick={() => { void copy(c); setDownloaded(true); p.onDownloaded(); }}>{copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>)}
               <p className='wiz-note'>{os === 'windows' ? tr('Відкрийте PowerShell (Пуск → введіть PowerShell), вставте команду й натисніть Enter.', 'Open PowerShell (Start → typ PowerShell), plak het commando en druk op Enter.') : tr('Відкрийте термінал, вставте команду й натисніть Enter.', 'Open een terminal, plak het commando en druk op Enter.')}</p>
             </>
           ) : null}
@@ -279,7 +300,7 @@ export default function ExtensionWizard(p: WizardProps) {
     });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tr, browser, os, method, folder, picked, pickBusy, pickError, downloaded, present, p.presence, p.paired, p.hasAgent, p.agentEnabled, p.agentArmed, p.busy, copied, p.release, hasHelper, href, fileName, info]);
+  }, [tr, browser, os, method, debugMode, pkgFile, pkgSha, folder, picked, pickBusy, pickError, downloaded, present, p.presence, p.paired, p.hasAgent, p.agentEnabled, p.agentArmed, p.busy, copied, p.release, hasHelper, href, fileName, info]);
 
   const current = steps.find((s) => !s.done)?.id ?? 'ready';
   const done = steps.filter((s) => s.done).length;

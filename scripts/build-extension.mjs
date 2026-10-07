@@ -52,6 +52,13 @@ mkdirSync(outDir, { recursive: true });
 const target = join(outDir, 'mijn-ruimte-extension.zip');
 writeFileSync(target, zip(entries));
 const sha256 = createHash('sha256').update(readFileSync(target)).digest('hex');
+// Uitgave met "modus налагодження": Chrome staat het recht "debugger" NIET als optioneel recht toe, dus bestaat het als aparte uitgave waarvan de gebruiker
+// bewust kiest (met uitleg in de installatiehulp). Zelfde code; alleen manifest.json krijgt het recht en een andere naam.
+const debugManifest = { ...manifest, name: `${manifest.name} (налагодження)`, permissions: [...new Set([...(manifest.permissions || []), 'debugger'])] };
+const debugEntries = entries.map((e) => (e.name === 'manifest.json' ? { ...e, data: Buffer.from(`${JSON.stringify(debugManifest, null, 2)}\n`, 'utf8') } : e));
+const debugTarget = join(outDir, 'mijn-ruimte-extension-debug.zip');
+writeFileSync(debugTarget, zip(debugEntries));
+const debug = { file: 'mijn-ruimte-extension-debug.zip', sha256: createHash('sha256').update(readFileSync(debugTarget)).digest('hex') };
 const storeUrl = existsSync(join(extDir, 'store-url.txt')) ? readFileSync(join(extDir, 'store-url.txt'), 'utf8').trim() : '';
 
 // ---- eigen CRX3: alleen publiceren als hij ondertekend is voor DEZE extensiebestanden en de handtekening klopt ----
@@ -94,5 +101,5 @@ if (existsSync(agentSrc)) {
   writeFileSync(join(outDir, 'agent.mjs'), bytes);
   agent = { file: 'agent.mjs', sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length };
 }
-writeFileSync(join(outDir, 'extension-version.json'), JSON.stringify({ version: manifest.version, file: 'mijn-ruimte-extension.zip', sha256, files: entries.length, storeUrl, installers, crx, agent }));
+writeFileSync(join(outDir, 'extension-version.json'), JSON.stringify({ version: manifest.version, file: 'mijn-ruimte-extension.zip', sha256, files: entries.length, storeUrl, installers, crx, agent, debug }));
 console.log(`Extensie ${manifest.version}: ${entries.length} bestanden -> ${relative(root, target)} (${statSync(target).size} bytes, sha256 ${sha256.slice(0, 12)}…, helpers: ${installers.join(', ') || 'geen'}), CRX: ${crxNote}`);

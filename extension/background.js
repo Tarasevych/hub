@@ -83,7 +83,54 @@ async function askTab(tabId, message) {
 // ---- diepe diagnose zonder het zware recht "debugger" (Chrome staat dat niet als optioneel recht toe en toont een alarmerende waarschuwing) ----
 // Voor enkele seconden plaatsen we een passieve verzamelaar (diag-hook.js) in de pagina zelf via chrome.scripting; hij legt alleen consoletekst, uitzonderingen en
 // adres/status/duur van mislukte of trage verzoeken vast, nooit inhoud of headers. Dit vraagt geen extra toestemming buiten de bestaande site-rechten.
+// Uitgave "з режимом налагодження": het manifest bevat dan het recht "debugger" en chrome.debugger bestaat. De gewone uitgave heeft het niet.
+const hasDebugger = () => typeof chrome.debugger?.attach === 'function';
+const cdp = (target, method, params) => chrome.debugger.sendCommand(target, method, params);
+
+async function deepDiagnosticsCdp(tab, seconds, reload) {
+  if (!isOwnSiteUrl(tab.url || '')) throw new Error('Refused: the tab is not on tarasevych.com');
+  const target = { tabId: tab.id };
+  const secs = Math.min(10, Math.max(1, Number(seconds) || 5));
+  await chrome.debugger.attach(target, '1.3'); // Chrome toont nu de balk "begonnen met opsporen van fouten"; hij verdwijnt na het losmaken
+  const consoleLines = []; const exceptions = []; const failed = []; const slow = []; const pending = new Map();
+  let total = 0;
+  const onEvent = (src, method, p) => {
+    if (src.tabId !== tab.id) return;
+    if (method === 'Runtime.consoleAPICalled' && (p.type === 'error' || p.type === 'warning')) {
+      consoleLines.push({ level: p.type, text: (p.args || []).map((a) => String(a.value ?? a.description ?? '')).join(' ').slice(0, 300) });
+    } else if (method === 'Runtime.exceptionThrown') {
+      const d = p.exceptionDetails || {};
+      exceptions.push(String((d.exception && d.exception.description) || d.text || 'exception').split('\n')[0].slice(0, 300));
+    } else if (method === 'Log.entryAdded' && (p.entry.level === 'error' || p.entry.level === 'warning')) {
+      consoleLines.push({ level: p.entry.level, text: String(p.entry.text || '').slice(0, 300) });
+    } else if (method === 'Network.requestWillBeSent') {
+      total += 1; pending.set(p.requestId, { method: p.request.method, url: noQuery(p.request.url), start: p.timestamp });
+    } else if (method === 'Network.responseReceived') {
+      const r = pending.get(p.requestId); if (r) r.status = p.response.status;
+    } else if (method === 'Network.loadingFinished') {
+      const r = pending.get(p.requestId);
+      if (r) { const ms = Math.round((p.timestamp - r.start) * 1000); if ((r.status || 0) >= 400) failed.push({ ...r, ms }); else if (ms > 1000) slow.push({ method: r.method, url: r.url, status: r.status, ms }); pending.delete(p.requestId); }
+    } else if (method === 'Network.loadingFailed') {
+      const r = pending.get(p.requestId); failed.push({ method: r ? r.method : '', url: r ? r.url : '', error: String(p.errorText || '').slice(0, 80) }); pending.delete(p.requestId);
+    }
+  };
+  chrome.debugger.onEvent.addListener(onEvent);
+  try {
+    await cdp(target, 'Log.enable'); await cdp(target, 'Runtime.enable'); await cdp(target, 'Network.enable');
+    if (reload) await chrome.tabs.reload(tab.id);
+    await sleep(secs * 1000);
+  } finally {
+    chrome.debugger.onEvent.removeListener(onEvent);
+    try { await chrome.debugger.detach(target); } catch { /* al losgekoppeld */ }
+  }
+  return { url: noQuery(tab.url), watchedSeconds: secs, mode: 'debugger', requests: total, console: consoleLines.slice(0, 60), exceptions: exceptions.slice(0, 30), failedRequests: failed.slice(0, 60), slowRequests: slow.slice(0, 30) };
+}
+
 async function deepDiagnostics(tab, seconds, reload) {
+  return hasDebugger() ? deepDiagnosticsCdp(tab, seconds, reload) : deepDiagnosticsHook(tab, seconds, reload);
+}
+
+async function deepDiagnosticsHook(tab, seconds, reload) {
   if (!isOwnSiteUrl(tab.url || '')) throw new Error('Refused: the tab is not on tarasevych.com');
   const secs = Math.min(10, Math.max(1, Number(seconds) || 5));
   const target = { tabId: tab.id };
@@ -109,7 +156,13 @@ async function screenshot(tab) {
   if (!tab.active) throw new Error('The Mijn Ruimte tab is not the visible tab of its window; ask the user to switch to it.');
   let dataUrl;
   try { dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'jpeg', quality: 60 }); }
-  catch (err) { throw new Error('The browser did not allow a screenshot (' + String((err && err.message) || err).slice(0, 120) + '). Make sure the Mijn Ruimte tab is the visible tab of its window.'); }
+  catch (err) {
+    if (!hasDebugger()) throw new Error('The browser did not allow a screenshot (' + String((err && err.message) || err).slice(0, 120) + '). Make sure the Mijn Ruimte tab is the visible tab of its window.');
+    const target = { tabId: tab.id };
+    await chrome.debugger.attach(target, '1.3');
+    try { dataUrl = 'data:image/jpeg;base64,' + (await cdp(target, 'Page.captureScreenshot', { format: 'jpeg', quality: 60 })).data; }
+    finally { try { await chrome.debugger.detach(target); } catch { /* al losgekoppeld */ } }
+  }
   const image = String(dataUrl).replace(/^data:image\/jpeg;base64,/, '');
   if (image.length > 2000000) throw new Error('The screenshot is too large');
   return { image, mimeType: 'image/jpeg', url: noQuery(tab.url), title: tab.title };
