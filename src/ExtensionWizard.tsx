@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Check, ChevronDown, Copy, Download, FileArchive, Link2, LoaderCircle, Package, Power, Puzzle, ShieldCheck } from 'lucide-react';
 import { emitCanonicalNotice } from './canonical-notifications';
 import { Logo, type LogoKind, type Tr } from './mcp-ui';
+import { extensionInstallCommands } from './install-commands';
 import './extension-wizard.css';
 
 type BrowserKey = 'chrome' | 'edge' | 'opera' | 'brave' | 'vivaldi' | 'firefox' | 'safari';
 type OsKey = 'windows' | 'macos' | 'linux';
-type Method = 'helper' | 'zip' | 'crx';
-type Release = { version?: string; storeUrl?: string; installers?: string[]; crx?: { file: string; extensionId: string; version: string } | null };
+type Method = 'terminal' | 'helper' | 'zip' | 'crx';
+type Release = { version?: string; sha256?: string; storeUrl?: string; installers?: string[]; crx?: { file: string; extensionId: string; version: string } | null };
 type Presence = 'checking' | 'present' | 'absent';
 
 export type WizardProps = {
@@ -93,7 +94,8 @@ export default function ExtensionWizard(p: WizardProps) {
   const { tr } = p;
   const [browser, setBrowser] = useState<BrowserKey>(detectBrowser);
   const [os, setOs] = useState<OsKey>(detectOs);
-  const [method, setMethod] = useState<Method>('helper');
+  const [method, setMethod] = useState<Method>('terminal');
+  const [folder, setFolder] = useState(() => (detectOs() === 'windows' ? '%USERPROFILE%\\MijnRuimte-extension' : '~/MijnRuimte-extension'));
   const [open, setOpen] = useState<string>('');
   const [downloaded, setDownloaded] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -126,6 +128,7 @@ export default function ExtensionWizard(p: WizardProps) {
       body: (
         <>
           <div className='wiz-tabs' role='tablist' aria-label={tr('Спосіб встановлення', 'Installatiemethode')}>
+            {p.release.sha256 ? <button type='button' role='tab' aria-selected={method === 'terminal'} onClick={() => setMethod('terminal')}><Download aria-hidden='true' />{tr('Команда в терміналі (рекомендовано)', 'Commando in de terminal (aanbevolen)')}</button> : null}
             {hasHelper ? <button type='button' role='tab' aria-selected={method === 'helper'} onClick={() => setMethod('helper')}><Download aria-hidden='true' />{tr('Помічник (найпростіше)', 'Installatiehulp (eenvoudigst)')}</button> : null}
             <button type='button' role='tab' aria-selected={method === 'zip'} onClick={() => setMethod('zip')}><FileArchive aria-hidden='true' />{tr('ZIP (вручну)', 'ZIP (handmatig)')}</button>
             {p.release.crx ? <button type='button' role='tab' aria-selected={method === 'crx'} onClick={() => setMethod('crx')}><Package aria-hidden='true' />CRX</button> : null}
@@ -135,15 +138,26 @@ export default function ExtensionWizard(p: WizardProps) {
               <button key={k} type='button' aria-pressed={os === k} onClick={() => setOs(k)}><Logo kind={k === 'windows' ? 'windows' : k === 'macos' ? 'macos' : 'linux'} size={18} label={label} />{label}</button>
             ))}
           </div>
-          <p>{method === 'helper' ? tr(`Помічник «${helperFile}» сам завантажить розширення, перевірить контрольну суму SHA-256, розпакує у вашу папку й підкаже останні два кліки в браузері.`, `De hulp "${helperFile}" haalt de extensie zelf op, controleert de SHA-256-som, pakt hem uit in uw map en toont de laatste twee klikken in de browser.`)
+          {method === 'terminal' && p.release.sha256 ? (
+            <>
+              <p>{tr('Без завантаження виконуваних файлів: команда сама завантажує розширення, перевіряє SHA-256 і розпаковує у вказану папку. Це обходить блокування Windows («Захист смарт-програм» блокує .cmd, .ps1, .js).', 'Zonder uitvoerbare bestanden te downloaden: het commando haalt de extensie op, controleert de SHA-256 en pakt hem uit in de opgegeven map. Zo omzeilt u de blokkade van Windows ("Smart App Control" blokkeert .cmd, .ps1, .js).')}</p>
+              <label className='wiz-field'>{tr('Папка для розширення (не видаляйте її)', 'Map voor de extensie (niet verwijderen)')}<input value={folder} onChange={(e) => setFolder(e.target.value)} spellCheck={false} /></label>
+              {extensionInstallCommands({ os, shell: os === 'windows' ? 'powershell' : 'bash', folder, sha256: p.release.sha256, origin: location.origin }).map((c, i) => <div key={i} className='wiz-copy'><code>{c}</code><button type='button' onClick={() => { void copy(c); setDownloaded(true); p.onDownloaded(); }}>{copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>)}
+              <p className='wiz-note'>{os === 'windows' ? tr('Відкрийте PowerShell (Пуск → введіть PowerShell), вставте команду й натисніть Enter.', 'Open PowerShell (Start → typ PowerShell), plak het commando en druk op Enter.') : tr('Відкрийте термінал, вставте команду й натисніть Enter.', 'Open een terminal, plak het commando en druk op Enter.')}</p>
+            </>
+          ) : null}
+          {method === 'helper' && os === 'windows' ? <p className='wiz-note' role='status'>{tr('Увага: Windows 11 із «Захистом смарт-програм» блокує завантажені .cmd без можливості дозволити їх. Тоді користуйтеся командою в терміналі.', 'Let op: Windows 11 met "Smart App Control" blokkeert gedownloade .cmd-bestanden zonder optie om ze toe te staan. Gebruik dan het commando in de terminal.')}</p> : null}
+          <p>{method === 'terminal' ? '' : method === 'helper' ? tr(`Помічник «${helperFile}» сам завантажить розширення, перевірить контрольну суму SHA-256, розпакує у вашу папку й підкаже останні два кліки в браузері.`, `De hulp "${helperFile}" haalt de extensie zelf op, controleert de SHA-256-som, pakt hem uit in uw map en toont de laatste twee klikken in de browser.`)
             : method === 'zip' ? tr('ZIP-архів містить розширення. Його треба розпакувати у власну папку й підключити вручну (кроки нижче).', 'Het ZIP-bestand bevat de extensie. Pak hem uit in een eigen map en laad hem handmatig (stappen hieronder).')
             : tr('CRX підписаний нашим ключем. Chrome на Windows і macOS зазвичай відхиляє пакети поза магазином: тоді використайте помічник або ZIP.', 'Het CRX-bestand is ondertekend met onze sleutel. Chrome op Windows en macOS weigert pakketten buiten de winkel meestal: gebruik dan de hulp of de ZIP.')}</p>
-          <a className='wiz-primary' href={href} download onClick={() => { setDownloaded(true); p.onDownloaded(); setOpen('open'); }}><Download aria-hidden='true' />{tr(`Завантажити ${fileName}`, `Download ${fileName}`)}</a>
+          {method !== 'terminal' ? <a className='wiz-primary' href={href} download onClick={() => { setDownloaded(true); p.onDownloaded(); setOpen('open'); }}><Download aria-hidden='true' />{tr(`Завантажити ${fileName}`, `Download ${fileName}`)}</a> : null}
           {downloaded && !present ? <p className='wiz-ok'>{tr('Файл завантажується. Знайдіть його в списку завантажень браузера (Ctrl+J) або в папці «Завантаження».', 'Het bestand wordt gedownload. Zoek het in de downloadlijst van de browser (Ctrl+J) of in de map "Downloads".')}</p> : null}
         </>
       ),
     });
-    if (method === 'helper') {
+    if (method === 'terminal') {
+      list.push({ id: 'open', title: tr('Виконайте команду', 'Voer het commando uit'), done: present, manual: true, body: <p>{tr('Команда з попереднього кроку створила папку з розширенням. Далі: сторінка розширень браузера.', 'Het commando uit de vorige stap heeft de map met de extensie gemaakt. Daarna: de extensiepagina van de browser.')}</p> });
+    } else if (method === 'helper') {
       list.push({
         id: 'open', title: tr('Запустіть помічник', 'Start de installatiehulp'), done: present, manual: true,
         body: <p>{os === 'windows' ? tr('Двічі клацніть завантажений файл Install-MijnRuimte.cmd. Якщо Windows питає «Захист SmartScreen», натисніть «Докладніше → Все одно виконати»: файл відкритий, його вміст можна переглянути в «Блокноті».', 'Dubbelklik op het gedownloade bestand Install-MijnRuimte.cmd. Vraagt Windows om "SmartScreen", kies dan "Meer informatie → Toch uitvoeren": het bestand is leesbaar en te bekijken in Kladblok.')
@@ -170,7 +184,7 @@ export default function ExtensionWizard(p: WizardProps) {
     });
     list.push({
       id: 'load', title: tr('Додайте розширення', 'Voeg de extensie toe'), done: present, manual: true,
-      body: method === 'helper'
+      body: method === 'helper' || method === 'terminal'
         ? <><p>{tr(`Натисніть ${info.load[0]} і виберіть папку, яку показав помічник (за замовчуванням ${os === 'windows' ? '%USERPROFILE%\\MijnRuimte-extension' : '~/MijnRuimte-extension'}).`, `Kies ${info.load[1]} en selecteer de map die de hulp toonde (standaard ${os === 'windows' ? '%USERPROFILE%\\MijnRuimte-extension' : '~/MijnRuimte-extension'}).`)}</p><Mock kind='load' tr={tr} browser={browserScheme} /></>
         : <><p>{tr(`Натисніть ${info.load[0]} і виберіть розпаковану папку з файлом manifest.json.`, `Kies ${info.load[1]} en selecteer de uitgepakte map met het bestand manifest.json.`)}</p><Mock kind='load' tr={tr} browser={browserScheme} /></>,
     });
@@ -204,7 +218,7 @@ export default function ExtensionWizard(p: WizardProps) {
     });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tr, browser, os, method, downloaded, present, p.presence, p.paired, p.hasAgent, p.agentEnabled, p.agentArmed, p.busy, copied, p.release, hasHelper, href, fileName, info]);
+  }, [tr, browser, os, method, folder, downloaded, present, p.presence, p.paired, p.hasAgent, p.agentEnabled, p.agentArmed, p.busy, copied, p.release, hasHelper, href, fileName, info]);
 
   const current = steps.find((s) => !s.done)?.id ?? 'ready';
   const done = steps.filter((s) => s.done).length;
