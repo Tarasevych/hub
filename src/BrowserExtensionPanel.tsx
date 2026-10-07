@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, Globe, PlugZap, Power, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Check, Globe, Power, Trash2, X, Ban, Hand, ShieldCheck } from 'lucide-react';
+import './ext-permissions.css';
 import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
-import { AUTO_HELP, CAPABILITIES, DEFAULT_ENABLED, GROUPS, type Cap, type CapGroup } from './browser-capabilities-ui';
+import { CAPABILITIES, DEFAULT_ENABLED, GROUPS, type Cap, type CapGroup } from './browser-capabilities-ui';
 import { clearWelcome, welcomePending } from './extension-welcome-store';
 import { agentLogo, Help, IconButton, Logo, Section, StatusDot } from './mcp-ui';
 import ExtensionWizard from './ExtensionWizard';
@@ -119,17 +120,23 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
     catch { setNotice(tr('Не вдалося змінити дозвіл.', 'Recht wijzigen mislukt.')); }
     setBusy(false);
   };
-  const toggleCap = (a: BrowserAgent, cap: Cap, on: boolean) => {
-    const { enabled, auto } = policyOf(a);
-    void savePolicy(a, on ? [...new Set([...enabled, cap.type])] : enabled.filter((t) => t !== cap.type), auto);
-  };
-  const toggleAuto = (a: BrowserAgent, cap: Cap, on: boolean) => {
-    const { enabled, auto } = policyOf(a);
-    void savePolicy(a, enabled, on ? [...new Set([...auto, cap.type])] : auto.filter((t) => t !== cap.type));
-  };
-  const preset = (a: BrowserAgent, kind: 'read' | 'all') => {
+  const AUTO_ABLE = CAPABILITIES.filter((c) => c.auto).map((c) => c.type);
+  // Пресети самі виставляють і «дозволено», і «без підтвердження» (де сервер це допускає): нічого не треба дозбирати галочками.
+  const preset = (a: BrowserAgent, kind: 'read' | 'all' | 'none') => {
+    if (kind === 'none') return void savePolicy(a, [], []);
     const enabled = kind === 'read' ? DEFAULT_ENABLED : CAPABILITIES.map((c) => c.type);
-    void savePolicy(a, enabled, kind === 'read' ? DEFAULT_ENABLED : []);
+    void savePolicy(a, enabled, enabled.filter((t) => AUTO_ABLE.includes(t)));
+  };
+  const setGroup = (a: BrowserAgent, g: CapGroup, on: boolean) => {
+    const { enabled, auto } = policyOf(a);
+    const types = CAPABILITIES.filter((c) => c.group === g).map((c) => c.type);
+    void savePolicy(a, on ? [...new Set([...enabled, ...types])] : enabled.filter((t) => !types.includes(t)), on ? [...new Set([...auto, ...types.filter((t) => AUTO_ABLE.includes(t))])] : auto.filter((t) => !types.includes(t)));
+  };
+  const setCapState = (a: BrowserAgent, cap: Cap, state: 'off' | 'ask' | 'auto') => {
+    const { enabled, auto } = policyOf(a);
+    const nextEnabled = state === 'off' ? enabled.filter((t) => t !== cap.type) : [...new Set([...enabled, cap.type])];
+    const nextAuto = state === 'auto' ? [...new Set([...auto, cap.type])] : auto.filter((t) => t !== cap.type);
+    void savePolicy(a, nextEnabled, nextAuto);
   };
 
   const revoke = async (a: BrowserAgent) => {
@@ -175,39 +182,49 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
           <button type='button' className='hub-toggle' role='switch' aria-checked={a.enabled} aria-label={tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')} disabled={busy} onClick={() => void setEnabled(a, !a.enabled)} />
         </div>
 
-        <div className='hub-actions'>
+        <div className='hub-actions ext-bulk'>
           <IconButton icon={<Check />} disabled={busy} onClick={() => preset(a, 'read')}>{tr('Лише читання (рекомендовано)', 'Alleen lezen (aanbevolen)')}</IconButton>
-          <IconButton icon={<PlugZap />} disabled={busy} onClick={() => preset(a, 'all')}>{tr('Увімкнути всі можливості', 'Alle mogelijkheden aanzetten')}</IconButton>
+          {CAPABILITIES.every((c) => enabled.includes(c.type))
+            ? <IconButton tone='danger' icon={<Ban />} disabled={busy} onClick={() => preset(a, 'none')}>{tr('Зняти всі дозволи', 'Alle rechten intrekken')}</IconButton>
+            : <IconButton icon={<ShieldCheck />} disabled={busy} onClick={() => preset(a, 'all')}>{tr('Надати всі дозволи', 'Alle rechten toekennen')}</IconButton>}
+          {enabled.length > 0 && !CAPABILITIES.every((c) => enabled.includes(c.type)) ? <IconButton tone='danger' icon={<Ban />} disabled={busy} onClick={() => preset(a, 'none')}>{tr('Зняти всі дозволи', 'Alle rechten intrekken')}</IconButton> : null}
         </div>
+        <p className='hub-meta ext-legend'><Ban size={13} /> {tr('заборонено', 'verboden')} · <Hand size={13} /> {tr('дозволено, щоразу питає вас', 'toegestaan, vraagt telkens uw akkoord')} · <ShieldCheck size={13} /> {tr('дозволено без підтвердження', 'toegestaan zonder bevestiging')}</p>
 
-        {GROUP_ORDER.map((g) => (
+        {GROUP_ORDER.map((g) => {
+          const members = CAPABILITIES.filter((c) => c.group === g);
+          const allOn = members.every((c) => enabled.includes(c.type));
+          return (
           <Section key={g} id={`ext-${a.id}-${g}`} icon={<Power />} title={tr(GROUPS[g].uk, GROUPS[g].nl)} subtitle={tr(GROUPS[g].hint[0], GROUPS[g].hint[1])} defaultOpen={g === 'read'} tone={g === 'advanced' || g === 'interact' ? 'warn' : 'default'}
-            badge={<span className='hub-pill off'>{CAPABILITIES.filter((c) => c.group === g && enabled.includes(c.type)).length}/{CAPABILITIES.filter((c) => c.group === g).length}</span>}>
+            badge={<span className='hub-pill off'>{members.filter((c) => enabled.includes(c.type)).length}/{members.length}</span>}>
+            <div className='ext-group-bulk'>
+              <button type='button' className={`ext-bulk-btn${allOn ? ' is-deny' : ''}`} disabled={busy} onClick={() => setGroup(a, g, !allOn)}>{allOn ? <Ban size={14} /> : <Check size={14} />}{allOn ? tr('Заборонити всю групу', 'Hele groep verbieden') : tr('Дозволити всю групу', 'Hele groep toestaan')}</button>
+            </div>
             <div className='hub-switch-list'>
-              {CAPABILITIES.filter((c) => c.group === g).map((c) => {
+              {members.map((c) => {
                 const on = enabled.includes(c.type);
+                const state: 'off' | 'ask' | 'auto' = !on ? 'off' : c.auto && auto.includes(c.type) ? 'auto' : 'ask';
+                const opts: Array<['off' | 'ask' | 'auto', ReactNode, string]> = [['off', <Ban size={15} />, tr('Заборонено', 'Verboden')], ['ask', <Hand size={15} />, c.auto ? tr('Питати щоразу', 'Telkens vragen') : tr('Дозволено (питає щоразу)', 'Toegestaan (vraagt telkens)')]];
+                if (c.auto) opts.push(['auto', <ShieldCheck size={15} />, tr('Без підтвердження', 'Zonder bevestiging')]);
                 return (
                   <div key={c.type} className={`hub-switch${on ? '' : ' is-off'}`} data-capability={c.type}>
                     <span className='hub-switch-text'>
                       <b>{tr(c.uk, c.nl)}
                         <Help tone={g === 'interact' || g === 'advanced' ? 'warn' : 'info'} tr={tr} content={{ title: tr(c.uk, c.nl), touches: tr(`Лише браузер «${a.name}»`, `Alleen de browser «${a.name}»`), on: tr(c.on[0], c.on[1]), off: tr(c.off[0], c.off[1]) }} /></b>
-                      <small>{on ? tr('Увімкнено', 'Aan') : tr('Вимкнено', 'Uit')}{on && c.auto ? ` · ${auto.includes(c.type) ? tr('без підтвердження', 'zonder bevestiging') : tr('з підтвердженням', 'met bevestiging')}` : ''}</small>
+                      <small>{state === 'off' ? tr('Заборонено', 'Verboden') : state === 'auto' ? tr('Дозволено без підтвердження', 'Toegestaan zonder bevestiging') : tr('Дозволено, щоразу питає вас', 'Toegestaan, vraagt telkens uw akkoord')}</small>
                     </span>
-                    <span className='mcp-cap-controls' style={{ display: 'inline-flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                      {c.auto ? (
-                        <label className='hub-meta' title={tr(AUTO_HELP[0], AUTO_HELP[1])} style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                          <input type='checkbox' role='switch' checked={on && auto.includes(c.type)} disabled={busy || !on} onChange={(e) => toggleAuto(a, c, e.target.checked)} />
-                          <span>{tr('без підтвердження', 'zonder bevestiging')}</span>
-                        </label>
-                      ) : null}
-                      <button type='button' className='hub-toggle' role='switch' aria-checked={on} disabled={busy} aria-label={`${tr(c.uk, c.nl)}: ${on ? tr('увімкнено', 'aan') : tr('вимкнено', 'uit')}`} onClick={() => toggleCap(a, c, !on)} />
+                    <span className='ext-tri' role='radiogroup' aria-label={tr(c.uk, c.nl)}>
+                      {opts.map(([value, icon, label]) => (
+                        <button key={value} type='button' role='radio' aria-checked={state === value} aria-label={label} title={label} data-state={value} className={state === value ? 'is-on' : ''} disabled={busy} onClick={() => setCapState(a, c, value)}>{icon}</button>
+                      ))}
                     </span>
                   </div>
                 );
               })}
             </div>
           </Section>
-        ))}
+          );
+        })}
 
         {confirm === a.id ? (
           <div className='hub-confirm' role='alertdialog' aria-label={tr('Підтвердження відключення', 'Bevestig loskoppelen')}>
