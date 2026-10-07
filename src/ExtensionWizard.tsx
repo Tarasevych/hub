@@ -95,7 +95,7 @@ export default function ExtensionWizard(p: WizardProps) {
   const { tr } = p;
   const [browser, setBrowser] = useState<BrowserKey>(detectBrowser);
   const [os, setOs] = useState<OsKey>(detectOs);
-  const [method, setMethod] = useState<Method>(() => (folderPickerSupported() ? 'picker' : 'terminal'));
+  const [method, setMethod] = useState<Method>('terminal');
   const [folder, setFolder] = useState('');
   const [open, setOpen] = useState<string>('');
   const [downloaded, setDownloaded] = useState(false);
@@ -182,6 +182,7 @@ export default function ExtensionWizard(p: WizardProps) {
               <p><strong>{tr('1. Оберіть, куди покласти розширення', '1. Kies waar de extensie komt')}</strong> {tr('— диск і папку вибираєте ви; нічого не створюється, поки ви не оберете. Папку потім не видаляйте: браузер читає розширення саме з неї.', '— u kiest schijf en map; er wordt niets aangemaakt zolang u niet kiest. Verwijder de map daarna niet: de browser leest de extensie uit die map.')}</p>
               <div className='wiz-os' role='group' aria-label={tr('Швидкий вибір', 'Snelle keuze')}>
                 {folderChoices.map(([label, path]) => <button key={label} type='button' aria-pressed={folder === path} onClick={() => setFolder(path)}>{os === 'windows' ? tr(`Диск ${label}`, `Schijf ${label}`) : label}</button>)}
+                {os === 'windows' ? <label className='wiz-field' style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{tr('Інша літера', 'Andere letter')}<input maxLength={1} style={{ width: 40, textAlign: 'center', textTransform: 'uppercase' }} aria-label={tr('Літера диска', 'Schijfletter')} value={/^[A-Za-z]:\\MijnRuimte-extension$/.test(folder) && !['C', 'D', 'E', 'F', 'G', 'H'].includes(folder[0].toUpperCase()) ? folder[0].toUpperCase() : ''} onChange={(e) => { const l = e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase(); if (l) setFolder(`${l}:\\MijnRuimte-extension`); }} /></label> : null}
               </div>
               <label className='wiz-field'>{tr('Повний шлях до папки (можна змінити)', 'Volledig pad naar de map (aanpasbaar)')}<input value={folder} onChange={(e) => setFolder(e.target.value)} spellCheck={false} placeholder={os === 'windows' ? 'D:\\MijnRuimte-extension' : '~/MijnRuimte-extension'} /></label>
               {folder.trim() && !folderOk ? <p className='wiz-note' role='alert'>{os === 'windows' ? tr('Шлях має починатися з літери диска, наприклад D:\\MijnRuimte-extension.', 'Het pad moet met een schijfletter beginnen, bijvoorbeeld D:\\MijnRuimte-extension.') : tr('Шлях має починатися з ~/ або /.', 'Het pad moet met ~/ of / beginnen.')}</p> : null}
