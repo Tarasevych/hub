@@ -249,7 +249,7 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
                   <div key={c.type} className={`hub-switch${on ? '' : ' is-off'}`} data-capability={c.type}>
                     <span className='hub-switch-text'>
                       <b>{tr(c.uk, c.nl)}
-                        <Help tone={g === 'interact' || g === 'advanced' ? 'warn' : 'info'} tr={tr} content={{ title: tr(c.uk, c.nl), what: on ? tr(c.on[0], c.on[1]) : tr(c.off[0], c.off[1]), touches: tr(`Лише браузер «${a.name}»`, `Alleen de browser «${a.name}»`), on: tr(c.on[0], c.on[1]), off: tr(c.off[0], c.off[1]) }} /></b>
+                        <Help tone={g === 'interact' || g === 'advanced' ? 'warn' : 'info'} tr={tr} content={{ title: tr(c.uk, c.nl), touches: tr(`Лише браузер «${a.name}»`, `Alleen de browser «${a.name}»`), on: tr(c.on[0], c.on[1]), off: tr(c.off[0], c.off[1]) }} /></b>
                       <small>{on ? tr('Увімкнено', 'Aan') : tr('Вимкнено', 'Uit')}{on && c.auto ? ` · ${auto.includes(c.type) ? tr('без підтвердження', 'zonder bevestiging') : tr('з підтвердженням', 'met bevestiging')}` : ''}</small>
                     </span>
                     <span className='mcp-cap-controls' style={{ display: 'inline-flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>

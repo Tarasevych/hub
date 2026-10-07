@@ -10,6 +10,7 @@ import * as store from './connectors-store';
 import { BROWSER_AUTO_APPROVABLE, BROWSER_DEFAULT_AUTO, BROWSER_TYPES, enabledTypes } from './browser-capabilities';
 import { defaultChatDeps, runChat, sanitizeHistory } from './connectors-chat';
 import { callTool, listTools } from './connectors-tools';
+import { listUserGrants } from './mcp-connector';
 
 type SessionAuth = { errorCode: string } | { user: { id: string; email: string; role: string; status: string }; service: string };
 type Deps = {
@@ -127,6 +128,21 @@ export function createAgentRoutes(deps: Deps) {
       if (!auth) return denied();
       const armed = await store.armBrowserAgent(auth.user.id, ctx.params.id);
       return deps.respond({ ok: true, armed });
+    }],
+
+    // Alles wat Claude en uw apparaten of browsers recent deden, als één lijst met stand en duur. Voedt het meldingencentrum op elke pagina (daarom een sessie op elke dienst, net als de heartbeat).
+    'POST /api/owner/agents/activity': [async (ctx: any) => {
+      const auth = await sessionGateAny(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const userId = auth.user.id;
+      const [commands, toolCalls, grants] = await Promise.all([store.listRecentCommands(userId, 60), store.listToolCalls(userId, 40), listUserGrants(userId)]);
+      const ms = (v: unknown) => (v ? new Date(v as string).getTime() : null);
+      const events = [
+        ...commands.map((r: any) => ({ id: `cmd:${r.id}`, source: r.platform === 'browser' ? 'browser' : 'agent', kind: 'command', type: r.type, subject: r.agent_name, status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at) })),
+        ...toolCalls.map((r: any) => ({ id: `tool:${r.id}`, source: 'claude', kind: 'tool', type: r.tool, subject: 'Claude', status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at) })),
+        ...grants.map((g: any) => ({ id: `grant:${g.id}`, source: 'claude', kind: 'grant', type: 'grant', subject: g.clientName, status: 'active', createdAt: g.createdAt, finishedAt: null })),
+      ].sort((x, y) => Number(y.createdAt) - Number(x.createdAt)).slice(0, 100);
+      return deps.respond({ events, now: Date.now() });
     }],
 
     // Welke opdrachttypes direct mogen (zonder klik). Schrijven, uitvoeren, Docker-beheer, klikken en typen kunnen nooit automatisch.

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { Activity, Bell, Globe, KeyRound, LayoutDashboard, Plug, PlugZap, Plus, ShieldCheck, SlidersHorizontal, Wrench } from 'lucide-react';
 import { api } from './platform/client';
 import { agentLogo, Logo, Section, type Tr } from './mcp-ui';
-import { textOf } from './mcp-texts';
 import { ago, commandLabel, sessionBody, statusLabel, useAgentsData, useToolApprovals } from './agents-data';
 import { DeviceDetail, PairCard, PendingList } from './DevicesView';
 import McpConnectorPanel from './McpConnectorPanel';
@@ -20,10 +19,8 @@ const IDLE_MS = 24 * 60 * 60 * 1000;
  * Een klik op een apparaat toont alleen dat apparaat; blokken zijn inklapbaar. De oude "deuren"-onderdelen (tokens) staan in een eigen weergave.
  */
 export default function McpAgentsHub({ tr, doors }: { tr: Tr; doors: ReactNode }) {
-  const lang = tr('uk', 'nl') === 'uk' ? 'uk' : 'nl';
   const { agents, pending, last, loaded, reload } = useAgentsData(tr);
-  const titleOf = useCallback((tool: string) => textOf(tool, lang)?.title || tool, [lang]);
-  const { calls, reload: reloadCalls } = useToolApprovals(tr, titleOf);
+  const { calls, reload: reloadCalls } = useToolApprovals();
   const toolPending = calls.filter((c) => c.status === 'pending_approval');
   const waiting = pending.length + toolPending.length;
 

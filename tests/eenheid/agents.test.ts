@@ -121,6 +121,12 @@ export async function main(): Promise<number> {
       laatsteB.length === 1 && laatsteB[0].agent_id === agentB.id && laatsteB[0].status === 'pending_approval' && laatsteA.length === 0,
       JSON.stringify(laatsteB.map((c: any) => [c.type, c.status])));
 
+    const recentB = await als(B, () => store.listRecentCommands(B, 60));
+    const recentA = await als(A, () => store.listRecentCommands(A, 60));
+    check('recente opdrachten (activiteitenoverzicht): alleen de eigen gebruiker, nieuwste eerst, met naam en platform van het apparaat',
+      recentB.length >= 1 && recentB.every((r: any) => r.agent_name === agentB.name) && recentA.every((r: any) => r.agent_id !== agentB.id)
+      && recentB.every((r: any, i: number) => i === 0 || new Date(recentB[i - 1].created_at).getTime() >= new Date(r.created_at).getTime()), JSON.stringify(recentB.map((r: any) => [r.type, r.status, r.platform])));
+
     check('opdracht met onbekend type wordt door de database geweigerd',
       await sys.query("INSERT INTO app.agent_commands (agent_id, user_id, type) VALUES ($1, $2, 'rm -rf')", [agentB.id, B]).then(() => false, () => true));
 

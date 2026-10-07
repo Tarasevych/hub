@@ -72,17 +72,6 @@ export function useAgentsData(tr: Tr) {
           emitCanonicalNotice({ text: a.status === 'connected' ? t(`«${a.name}» підключився`, `«${a.name}» is verbonden`) : t(`«${a.name}» відключився`, `«${a.name}» is losgekoppeld`), kind: a.status === 'connected' ? 'success' : 'warning', source: 'mcp' });
         }
       }
-      for (const p of nextPending) {
-        if (!before.pending.has(p.id)) {
-          emitCanonicalNotice({ text: t(`Очікує вашого рішення: ${commandLabel(p.type, t)} на «${p.agentName}»`, `Wacht op uw beslissing: ${commandLabel(p.type, t)} op «${p.agentName}»`), kind: 'warning', source: 'mcp' });
-        }
-      }
-      for (const c of Object.values(nextLast)) {
-        const was = before.done.get(c.id);
-        if (was && was !== c.status && (c.status === 'succeeded' || c.status === 'failed' || c.status === 'rejected')) {
-          emitCanonicalNotice({ text: t(`${commandLabel(c.type, t)}: ${statusLabel(c.status, t)}`, `${commandLabel(c.type, t)}: ${statusLabel(c.status, t)}`), kind: c.status === 'succeeded' ? 'success' : 'error', source: 'mcp' });
-        }
-      }
     }
     prev.current = { status: new Map(nextAgents.map((a) => [a.id, a.status])), pending: new Set(nextPending.map((p) => p.id)), done: new Map(Object.values(nextLast).map((c) => [c.id, c.status])) };
     setAgents(nextAgents); setPending(nextPending); setLast(nextLast); setLoaded(true);
@@ -103,24 +92,13 @@ export function useAgentsData(tr: Tr) {
 
 export type ToolCall = { id: string; tool: string; args: Record<string, unknown>; status: string; createdAt: number; preview: string };
 
-/** Aanroepen van site-hulpmiddelen in de modus "Vragen": één poller voor de hele pagina; meldt elk nieuw verzoek van Claude. */
-export function useToolApprovals(tr: Tr, titleOf: (tool: string) => string) {
+/** Aanroepen van site-hulpmiddelen in de modus "Vragen": één poller voor de hele pagina. Meldingen komen van het meldingencentrum (connector-activity.ts). */
+export function useToolApprovals() {
   const [calls, setCalls] = useState<ToolCall[]>([]);
-  const known = useRef<Set<string> | null>(null);
-  const ref = useRef({ tr, titleOf });
-  ref.current = { tr, titleOf };
   const reload = useCallback(async () => {
     const res = await api.post('/api/owner/mcp-connector/approvals', sessionBody());
     const list: ToolCall[] = res.data?.calls ?? [];
     setCalls(list);
-    const waiting = list.filter((c) => c.status === 'pending_approval');
-    if (known.current) {
-      for (const c of waiting) if (!known.current.has(c.id)) {
-        const label = ref.current.titleOf(c.tool);
-        emitCanonicalNotice({ text: ref.current.tr(`Claude просить дозволу: ${label}`, `Claude vraagt toestemming: ${label}`), kind: 'warning', source: 'mcp' });
-      }
-    }
-    known.current = new Set(waiting.map((c) => c.id));
   }, []);
   useEffect(() => {
     let active = true;

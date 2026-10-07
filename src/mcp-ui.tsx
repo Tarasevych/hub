@@ -42,7 +42,7 @@ export function Section({ id, icon, title, subtitle, badge, actions, defaultOpen
   );
 }
 
-export type HelpContent = { title: string; what: string; on?: string; off?: string; touches?: string; risk?: string };
+export type HelpContent = { title: string; what?: string; on?: string; off?: string; touches?: string; risk?: string };
 
 /**
  * Hulpbalk bij een vraagteken: wat het is, waaraan het gekoppeld is en wat er gebeurt bij aan en uit. Opent bij aanwijzen, focus of tikken (ook op een telefoon).
@@ -67,7 +67,7 @@ export function Help({ tr, content, tone = 'info' }: { tr: Tr; content: HelpCont
       {open ? (
         <span className='hub-help-pop' role='tooltip'>
           <b>{content.title}</b>
-          <span>{content.what}</span>
+          {content.what ? <span>{content.what}</span> : null}
           {content.touches ? <span className='hub-help-row'><i>{tr('Стосується', 'Betreft')}</i>{content.touches}</span> : null}
           {content.on ? <span className='hub-help-row on'><i>{tr('Якщо ввімкнути', 'Als u aanzet')}</i>{content.on}</span> : null}
           {content.off ? <span className='hub-help-row off'><i>{tr('Якщо вимкнути', 'Als u uitzet')}</i>{content.off}</span> : null}

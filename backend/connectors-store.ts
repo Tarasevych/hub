@@ -130,6 +130,15 @@ export async function lastCommandPerAgent(userId: string) {
   return rows;
 }
 
+/** Recente opdrachten van alle apparaten en browsers (laatste 7 dagen) voor het activiteitenoverzicht en de meldingen. */
+export async function listRecentCommands(userId: string, limit = 60) {
+  const { rows } = await gebruiker(
+    `SELECT c.id, c.agent_id, a.name AS agent_name, a.platform, c.type, c.status, c.created_at, c.finished_at
+       FROM app.agent_commands c JOIN app.agents a ON a.id = c.agent_id
+      WHERE c.user_id = $1 AND c.created_at > now() - interval '7 days' ORDER BY c.created_at DESC LIMIT $2`, [userId, limit]);
+  return rows;
+}
+
 export async function listPendingCommands(userId: string) {
   const { rows } = await gebruiker(
     `SELECT c.*, a.name AS agent_name FROM app.agent_commands c
