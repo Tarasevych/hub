@@ -109,8 +109,8 @@ export async function readOwnerVaultPlaintext(ownerUserId:string,keyName:string,
 
 export function createApiPlatformVaultRoutes(deps:{
   requireSession:(event:Record<string,unknown>,body:unknown)=>Promise<SessionAuth>;
-  respond:(data:unknown,status?:number)=>unknown;
-  fail:(message:string,status?:number)=>unknown;
+  respond:(data:unknown,status?:number)=>any;
+  fail:(message:string,status?:number)=>any;
   audit:(userId:string,action:string,result:string,details?:Record<string,unknown>)=>Promise<unknown>;
   body:(body:unknown)=>Record<string,unknown>;
 }){
@@ -126,14 +126,14 @@ export function createApiPlatformVaultRoutes(deps:{
     return{id,...raw} as OwnerVaultRecord;
   };
   return{
-    'POST /api/owner/api-platform/vault':[async(ctx)=>{
+    'POST /api/owner/api-platform/vault':[async(ctx: any)=>{
       const auth=await ownerGate(ctx.event,ctx.body);
       if(!auth||'errorCode'in auth)return deps.fail('OWNER_API_SESSION_REQUIRED',403);
       const items=await apiPlatformVaultItems(auth.user.id);
       const ready=await vaultEncryptionReady();
       return deps.respond({items:items.map(publicItem),count:items.length,encryptionReady:ready,plaintextReturned:false});
     }],
-    'POST /api/owner/api-platform/vault/save':[async(ctx)=>{
+    'POST /api/owner/api-platform/vault/save':[async(ctx: any)=>{
       const auth=await ownerGate(ctx.event,ctx.body);
       if(!auth||'errorCode'in auth)return deps.fail('OWNER_API_SESSION_REQUIRED',403);
       const body=deps.body(ctx.body);
@@ -166,7 +166,7 @@ export function createApiPlatformVaultRoutes(deps:{
       await deps.audit(auth.user.id,'owner.api.vault.created','success',{vaultId:id,keyName,purpose});
       return deps.respond({ok:true,rotated:false,item:publicItem({id,...record}),plaintextReturned:false});
     }],
-    'POST /api/owner/api-platform/vault/:id/rename':[async(ctx)=>{
+    'POST /api/owner/api-platform/vault/:id/rename':[async(ctx: any)=>{
       const auth=await ownerGate(ctx.event,ctx.body);
       if(!auth||'errorCode'in auth)return deps.fail('OWNER_API_SESSION_REQUIRED',403);
       const current=await owned(auth.user.id,ctx.params.id);
@@ -190,7 +190,7 @@ export function createApiPlatformVaultRoutes(deps:{
       await deps.audit(auth.user.id,'owner.api.vault.renamed','success',{vaultId:id,from:current.keyName,to:nextName});
       return deps.respond({ok:true,item:publicItem(record),plaintextReturned:false});
     }],
-    'POST /api/owner/api-platform/vault/:id/reveal':[async(ctx)=>{
+    'POST /api/owner/api-platform/vault/:id/reveal':[async(ctx: any)=>{
       const auth=await ownerGate(ctx.event,ctx.body);
       if(!auth||'errorCode'in auth)return deps.fail('OWNER_API_SESSION_REQUIRED',403);
       if(auth.user.role!=='owner'||!isOwnerEmail(auth.user.email))return deps.fail('OWNER_VAULT_REVEAL_FORBIDDEN',403);
@@ -213,7 +213,7 @@ export function createApiPlatformVaultRoutes(deps:{
         return deps.fail('OWNER_VAULT_REVEAL_FAILED',500);
       }
     }],
-    'POST /api/owner/api-platform/vault/:id/delete':[async(ctx)=>{
+    'POST /api/owner/api-platform/vault/:id/delete':[async(ctx: any)=>{
       const auth=await ownerGate(ctx.event,ctx.body);
       if(!auth||'errorCode'in auth)return deps.fail('OWNER_API_SESSION_REQUIRED',403);
       const current=await owned(auth.user.id,ctx.params.id);

@@ -5,7 +5,7 @@ import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './goo
 import {stapOpFout,totpStapOpVastleggen,type StapOpAuth} from './stap-op';
 import {meld} from './melder';
 
-const scryptAsync=promisify(scrypt);
+const scryptAsync=promisify(scrypt) as (password:string,salt:Buffer|string,keylen:number,options?:import('node:crypto').ScryptOptions)=>Promise<Buffer>;
 export const METHOD_IDS=['google','password','microsoft','apple','facebook','phone','totp','recovery','webauthn','push'] as const;
 export type MethodId=typeof METHOD_IDS[number];
 export type LoginMethodId='google'|'password'|'microsoft'|'apple'|'facebook'|'phone';
@@ -397,8 +397,8 @@ async function assertNotLastMethod(user:{id:string;email:string;role:string},ski
 const ipVan=(event:Record<string,unknown>)=>{const h=(event.headers||{}) as Record<string,string|undefined>;const f=String(h['x-forwarded-for']||h['X-Forwarded-For']||'').split(',')[0].trim();return f||String(((event.requestContext||{}) as {http?:{sourceIp?:string}}).http?.sourceIp||'');};
 export function createAccessPlaneRoutes(deps:{
   requireSession:(event:Record<string,unknown>,body:unknown)=>Promise<SessionAuth>;
-  respond:(data:unknown,status?:number)=>unknown;
-  fail:(message:string,status?:number)=>unknown;
+  respond:(data:unknown,status?:number)=>any;
+  fail:(message:string,status?:number)=>any;
   audit:(userId:string,action:string,result:string,details?:Record<string,unknown>)=>Promise<unknown>;
   body:(body:unknown)=>Record<string,unknown>;
 }){
@@ -436,25 +436,25 @@ export function createAccessPlaneRoutes(deps:{
       const[contour,policy]=await Promise.all([resolveGoogleContour(),policyOf()]);
       return deps.respond({ok:true,methods:LOGIN_METHODS.map(id=>({id,enabled:policy.enabled[id]!==false,configured:id==='google'?contour.credentialsConfigured:id==='password'?policy.enabled.password!==false:false})),mfa:policy.mfa,google:publicGoogleContour(contour)});
     }],
-    'POST /api/owner/access/snapshot':[async(ctx)=>{
+    'POST /api/owner/access/snapshot':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       return deps.respond(await accessSnapshot(auth.user,auth.user.role==='owner'));
     }],
-    'POST /api/owner/access/password/login':[async(ctx)=>{
+    'POST /api/owner/access/password/login':[async(ctx: any)=>{
       const body=deps.body(ctx.body);
       const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event));
       if(result.status==='ok'||result.status==='mfa')return deps.respond({ok:result.status==='ok',status:result.status,code:result.code,user:result.user,sessionIssued:false});
       return deps.fail(result.code,result.http);
     }],
-    'POST /api/owner/auth/password/login':[async(ctx)=>{
+    'POST /api/owner/auth/password/login':[async(ctx: any)=>{
       const body=deps.body(ctx.body);
       const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event));
       if(result.status==='mfa')return deps.respond({ok:false,mfaRequired:true,error:result.code,reasonCode:result.code,sessionIssued:false,sessionCreated:false});
       if(result.status!=='ok'||!result.user)return deps.fail(result.code,result.http||401);
       return deps.respond({ok:true,reasonCode:'ACCESS_PASSWORD_VERIFIED',sessionIssued:false,sessionCreated:false,user:result.user});
     }],
-    'POST /api/owner/access/password/set':[async(ctx)=>{
+    'POST /api/owner/access/password/set':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const password=String(deps.body(ctx.body).password||'');
@@ -470,7 +470,7 @@ export function createAccessPlaneRoutes(deps:{
       await deps.audit(auth.user.id,'access.password.set','success',{});
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
     }],
-    'POST /api/owner/access/password/remove':[async(ctx)=>{
+    'POST /api/owner/access/password/remove':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const blocked=await assertNotLastMethod(auth.user,{method:'password'});
@@ -481,7 +481,7 @@ export function createAccessPlaneRoutes(deps:{
       await meldOntkoppeld(auth.user.id,'password');
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
     }],
-    'POST /api/owner/access/method/unbind':[async(ctx)=>{
+    'POST /api/owner/access/method/unbind':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const method=String(deps.body(ctx.body).method||'') as LoginMethodId;
@@ -494,7 +494,7 @@ export function createAccessPlaneRoutes(deps:{
       await meldOntkoppeld(auth.user.id,method);
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
     }],
-    'POST /api/owner/access/binding/unbind':[async(ctx)=>{
+    'POST /api/owner/access/binding/unbind':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const id=String(deps.body(ctx.body).id||'');
@@ -527,7 +527,7 @@ export function createAccessPlaneRoutes(deps:{
       await meld(auth.user.id,'access_method_restored','Спосіб входу відновлено / Aanmeldmethode teruggezet',`Відновлено: ${items.map(item=>item.method).join(', ')}. / Teruggezet: ${items.map(item=>item.method).join(', ')}.`);
       return deps.respond({ok:true,teruggezet:items.length,...await accessSnapshot(auth.user)});
     }],
-    'POST /api/owner/access/phone/save':[async(ctx)=>{
+    'POST /api/owner/access/phone/save':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const phone=String(deps.body(ctx.body).phone||'').replace(/[^\d+]/g,'').trim();
@@ -547,7 +547,7 @@ export function createAccessPlaneRoutes(deps:{
     // De oude routes registreerden alleen een credentialId zonder enige cryptografische controle.
     'POST /api/owner/access/webauthn/options':[async()=>deps.fail('ACCESS_WEBAUTHN_DISABLED',503)],
     'POST /api/owner/access/webauthn/register':[async()=>deps.fail('ACCESS_WEBAUTHN_DISABLED',503)],
-    'POST /api/owner/access/webauthn/remove':[async(ctx)=>{
+    'POST /api/owner/access/webauthn/remove':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const id=String(deps.body(ctx.body).id||'');
@@ -556,7 +556,7 @@ export function createAccessPlaneRoutes(deps:{
       await deps.audit(auth.user.id,'access.webauthn.remove','success',{});
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
     }],
-    'POST /api/owner/access/totp/start':[async(ctx)=>{
+    'POST /api/owner/access/totp/start':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       if(!totpKeyConfigured())return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
@@ -580,7 +580,7 @@ export function createAccessPlaneRoutes(deps:{
       const otpauth=`otpauth://totp/MijProstir:${encodeURIComponent(auth.user.email)}?secret=${encoded}&issuer=MijProstir&algorithm=SHA1&digits=6&period=30`;
       return deps.respond({ok:true,secret:encoded,otpauth,plaintextReturned:true});
     }],
-    'POST /api/owner/access/totp/confirm':[async(ctx)=>{
+    'POST /api/owner/access/totp/confirm':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const code=String(deps.body(ctx.body).code||'');
@@ -610,7 +610,7 @@ export function createAccessPlaneRoutes(deps:{
         `${vervangen?'Додаток-автентифікатор (TOTP) замінено; старі коди більше не діють':'Додаток-автентифікатор (TOTP) увімкнено'}. Нові коди відновлення створено. Якщо це були не ви — негайно зверніться до адміністратора. / ${vervangen?'De authenticator-app (TOTP) is vervangen; oude codes werken niet meer':'De authenticator-app (TOTP) is ingeschakeld'}. Er zijn nieuwe herstelcodes gemaakt. Was u dit niet: neem direct contact op met de beheerder.`);
       return deps.respond({ok:true,recoveryCodes:codes,plaintextReturned:true,...await accessSnapshot(auth.user)});
     }],
-    'POST /api/owner/access/totp/disable':[async(ctx)=>{
+    'POST /api/owner/access/totp/disable':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const row=await totpFor(auth.user.id);
@@ -624,7 +624,7 @@ export function createAccessPlaneRoutes(deps:{
       await deps.audit(auth.user.id,'access.totp.disable','success',{});
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
     }],
-    'POST /api/owner/access/recovery/rotate':[async(ctx)=>{
+    'POST /api/owner/access/recovery/rotate':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
@@ -642,7 +642,7 @@ export function createAccessPlaneRoutes(deps:{
       await deps.audit(auth.user.id,'access.recovery.rotate','success',{});
       return deps.respond({ok:true,recoveryCodes:codes,plaintextReturned:true});
     }],
-    'POST /api/owner/access/policy/save':[async(ctx)=>{
+    'POST /api/owner/access/policy/save':[async(ctx: any)=>{
       const auth=await ownerGate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_ACCESS_FORBIDDEN',403);
       const stap=await stapOp(auth);if(stap)return stap;
@@ -650,9 +650,9 @@ export function createAccessPlaneRoutes(deps:{
       const enabled=(body.enabled&&typeof body.enabled==='object'?body.enabled:{}) as Partial<Record<MethodId,boolean>>;
       const next=await writePolicy(enabled,body.mfa==='required'?'required':'optional');
       await deps.audit(auth.user.id,'access.policy.save','success',{mfa:next.mfa});
-      return deps.respond({ok:true,policy:{enabled:next.enabled,mfa:next.mfa},...await accessSnapshot(auth.user,true)});
+      return deps.respond({ok:true,...await accessSnapshot(auth.user,true)}); // de momentopname bevat het beleid al (en overschreef het eerder opgegeven beleid ook al)
     }],
-    'POST /api/owner/access/user/:id/method':[async(ctx)=>{
+    'POST /api/owner/access/user/:id/method':[async(ctx: any)=>{
       const auth=await ownerGate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_ACCESS_FORBIDDEN',403);
       const body=deps.body(ctx.body);
@@ -691,7 +691,7 @@ export function createAccessPlaneRoutes(deps:{
       await deps.audit(auth.user.id,'access.user.method','success',{userId,method,action});
       return deps.respond({ok:true});
     }],
-    'POST /api/owner/access/user/:id/reset-password':[async(ctx)=>{
+    'POST /api/owner/access/user/:id/reset-password':[async(ctx: any)=>{
       const auth=await ownerGate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_ACCESS_FORBIDDEN',403);
       const stap=await stapOp(auth);if(stap)return stap;
