@@ -5,6 +5,7 @@ import { createAgentRoutes } from './connectors-routes'
 import { createMcpConnectorRoutes } from './mcp-connector-routes'
 import { createMailComposeRoutes, runMailQueue } from './mail-compose'
 import { createMailAssistantRoutes } from './ai-mail-assistant'
+import { createGithubRoutes } from './github-platform'
 import { gedelegeerdeSessie } from './site-dispatch'
 import { registreerSessieControle, requireAuth } from '../server/platform/auth-poort'
 import { googleStapOpVastleggen, stapOpFout, stapOpUit } from './stap-op'
@@ -471,6 +472,7 @@ export const handler = router({
   ...createMcpConnectorRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createMailComposeRoutes({requireSession:ownerRequireSession,audit:ownerAudit}),
   ...createMailAssistantRoutes({requireSession:ownerRequireSession,audit:ownerAudit}),
+  ...createGithubRoutes({requireSession:ownerRequireSession,audit:ownerAudit}),
   ...wrapFactoryMutations(createCloudRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createGoogleSuiteBrowserRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createGoogleSuiteMailBrowserRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),

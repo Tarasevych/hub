@@ -27,8 +27,8 @@ export async function main(): Promise<number> {
   try {
     // ---- catalogus ----
     const namen = SITE_TOOLS.map((s) => s.tool.name);
-    check('catalogus: 10 site-hulpmiddelen, unieke namen, elk met titel en annotaties; lezen is readOnly, wijzigen niet',
-      SITE_TOOLS.length === 10 && new Set(namen).size === 10 && SITE_TOOLS.every((s) => !!s.tool.title && !!s.tool.annotations)
+    check('catalogus: 21 site-hulpmiddelen, unieke namen, elk met titel en annotaties; lezen is readOnly, wijzigen niet',
+      SITE_TOOLS.length === 21 && new Set(namen).size === 21 && SITE_TOOLS.every((s) => !!s.tool.title && !!s.tool.annotations)
       && SITE_TOOLS.filter((s) => !s.write).every((s) => s.tool.annotations?.readOnlyHint === true) && SITE_TOOLS.filter((s) => s.write).every((s) => s.tool.annotations?.readOnlyHint === false), namen.join(','));
     const voorbeeld = (schema: any) => {
       const args: Record<string, unknown> = {};
@@ -61,6 +61,15 @@ export async function main(): Promise<number> {
     const slecht = [await callTool(A, 'mail_read_message', { message_id: 'a;b' }), await callTool(A, 'mail_modify_message', { message_id: 'abc123', action: 'delete' }),
       await callTool(A, 'calendar_list_events', { time_min: 'gisteren' }), await callTool(A, 'drive_browse', { folder_id: '../x' }), await callTool(A, 'mail_search_messages', { max_results: 500 })];
     check('ongeldige parameters worden op de server geweigerd, vóór de site wordt aangeroepen', slecht.every((r) => r.isError === true && /Invalid/.test(r.content[0].text as string)) && aanroepen.length === 1);
+    const voorGh = aanroepen.length;
+    antwoord = { status: 200, data: { repos: [{ fullName: 'o/a', stars: 1 }], page: 1 } };
+    const gh = await callTool(A, 'github_list_repos', { query: 'a' });
+    const ghSlecht = [await callTool(A, 'github_list_issues', { repo: '../etc/passwd' }), await callTool(A, 'github_list_issues', { repo: 'o/a', state: 'bogus' }), await callTool(A, 'github_create_issue', { repo: 'o/a', title: 'x' })];
+    check('github-hulpmiddelen: lezen via de github-route met service "github", ongeldige repo/state/titel geweigerd vóór de site, schrijven staat standaard op "vragen"',
+      !gh.isError && aanroepen[voorGh].route === 'POST /api/owner/github/repos' && aanroepen[voorGh].service === 'github' && ghSlecht.every((r) => r.isError === true) && aanroepen.length === voorGh + 1);
+    antwoord = { status: 409, data: { error: 'GITHUB_TOKEN_MISSING' } };
+    const ghGeenToken = await callTool(A, 'github_status', {});
+    check('GitHub zonder token geeft een uitleg met de stappen om te koppelen', ghGeenToken.isError === true && /key vault/.test(ghGeenToken.content[0].text as string));
     antwoord = { status: 409, data: { error: 'GOOGLE_MAIL_ACCOUNT_NOT_CONNECTED' } };
     const nietGekoppeld = await callTool(A, 'mail_list_accounts', {});
     check('een fout van de site wordt een duidelijke melding (isError)', nietGekoppeld.isError === true && /No Google account is connected/.test(nietGekoppeld.content[0].text as string));
@@ -108,8 +117,8 @@ export async function main(): Promise<number> {
     const info = await describeTools(A);
     const exec = info.find((t) => t.name === 'machine_exec')!;
     check('modus off: weg uit de lijst en geweigerd; riskant staat standaard uit en "always" wordt gehonoreerd (geen begrenzing meer)',
-      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 23 && lijst.includes('machine_exec') && !lijst.includes('browser_click')
-      && exec.mode === 'always' && exec.risky === true && info.find((t) => t.name === 'browser_click')!.mode === 'off' && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 33);
+      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 34 && lijst.includes('machine_exec') && !lijst.includes('browser_click')
+      && exec.mode === 'always' && exec.risky === true && info.find((t) => t.name === 'browser_click')!.mode === 'off' && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 44);
     check('groepen in het overzicht: apparaten, browser, mail, agenda, schijf, zoeken',
       ['devices', 'browser', 'mail', 'calendar', 'drive', 'site'].every((g) => info.some((t) => t.group === g)) && info.filter((t) => t.group === 'mail').length === 5 && info.filter((t) => t.group === 'browser').length === 14);
     await store.setToolModes(A, { mail_search_messages: null, machine_exec: null, mail_modify_message: null });
