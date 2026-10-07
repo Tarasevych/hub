@@ -1,6 +1,6 @@
 import type{MailLinguisticsCapability,MailLinguisticsParser}from'./mail-linguistics-capabilities';
 export type LinguisticsRow={kind:string;name:string;value:string;meta:string};
-export type MailLinguisticsContent={metadata:Array<[string,string]>;rows:LinguisticsRow[];warnings:string[];sourceText:string;displaySource:string;sourceEditable:boolean;sourceKind:'xml'|'text'|'binary'|'package'};
+export type MailLinguisticsContent={metadata:string[][];rows:LinguisticsRow[];warnings:string[];sourceText:string;displaySource:string;sourceEditable:boolean;sourceKind:'xml'|'text'|'binary'|'package'};
 type ZipEntry={name:string;compressedSize:number;uncompressedSize:number;method:number;flags:number;localOffset:number};
 type PoEntry={context:string;msgid:string;plural:string;translations:string[];flags:string[]};
 const MAX_SOURCE=3*1024*1024,MAX_BINARY=1024*1024,MAX_PACKAGE=1024*1024,MAX_ROWS=700,decoder=new TextDecoder('utf-8',{fatal:false}),encoder=new TextEncoder();
