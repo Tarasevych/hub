@@ -71,19 +71,19 @@ export default function NotificationPanelBody(p: Props) {
     for (const r of p.server) out.push({ key: `s:${r.id}`, group: groupKeyOf('site', r.title), origin: 'server', kind: /error|fail/i.test(r.kind) ? 'error' : /warn/i.test(r.kind) ? 'warning' : 'info', title: r.title, text: r.message, source: 'site', createdAt: r.createdAt, read: Boolean(r.read), markRead: () => { if (!r.read) void p.onReadServer?.(r.id); } });
     for (const e of p.events) {
       const st = statusInfo(e.status, p.lang);
-      const source = e.source === 'claude' ? 'claude' : e.source === 'browser' ? `browser:${/edge/i.test(e.subject) ? 'edge' : /opera/i.test(e.subject) ? 'opera' : /firefox/i.test(e.subject) ? 'firefox' : 'chrome'}` : `agent:${/win/i.test(e.platform || '') ? 'windows' : /darwin|mac/i.test(e.platform || '') ? 'macos' : 'linux'}`;
+      const source = e.kind === 'site' ? e.source : e.source === 'claude' ? 'claude' : e.source === 'browser' ? `browser:${/edge/i.test(e.subject) ? 'edge' : /opera/i.test(e.subject) ? 'opera' : /firefox/i.test(e.subject) ? 'firefox' : 'chrome'}` : `agent:${/win/i.test(e.platform || '') ? 'windows' : /darwin|mac/i.test(e.platform || '') ? 'macos' : 'linux'}`;
       out.push({
         key: `a:${e.id}`, group: `${source}|${e.kind}|${e.type}|${st.group}`, origin: 'activity', source, createdAt: e.createdAt, read: p.readEvents.has(e.id),
         kind: st.group === 'failed' ? 'error' : st.group === 'waiting' ? 'warning' : st.group === 'done' || e.kind === 'grant' ? 'success' : 'info',
-        title: activityTitle(e, p.lang), status: st, duration: e.kind === 'grant' ? undefined : durationText(e, p.lang),
+        title: activityTitle(e, p.lang), status: st, duration: e.kind === 'grant' || e.kind === 'site' ? undefined : durationText(e, p.lang),
         facts: [
-          [t('Джерело', 'Bron'), `${sourceLabel(e.source, p.lang)}${e.kind === 'command' ? ` → ${e.subject}` : ''}`],
+          [t('Джерело', 'Bron'), e.kind === 'site' ? styleOf(source, p.lang).label : `${sourceLabel(e.source, p.lang)}${e.kind === 'command' ? ` → ${e.subject}` : ''}`],
           [t('Стан', 'Status'), st.text],
           [t('Початок', 'Begin'), new Date(e.createdAt).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE')],
           ...(e.finishedAt ? [[t('Завершення', 'Einde'), new Date(e.finishedAt).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE')] as [string, string]] : []),
-          ...(e.kind !== 'grant' ? [[t('Тривалість', 'Duur'), durationText(e, p.lang)] as [string, string]] : []),
+          ...(e.kind !== 'grant' && e.kind !== 'site' ? [[t('Тривалість', 'Duur'), durationText(e, p.lang)] as [string, string]] : []),
         ],
-        link: activityLink(e, p.lang), markRead: () => p.onReadEvent(e.id),
+        link: activityLink(e, p.lang).href ? activityLink(e, p.lang) : undefined, markRead: () => p.onReadEvent(e.id),
       });
     }
     return out;
