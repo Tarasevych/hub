@@ -8,7 +8,10 @@ type Tr = (uk: string, nl: string) => string;
 type Grant = { id: string; clientName: string; scope: string; createdAt: number; lastUsedAt: number | null; expiresAt: number };
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
-const when = (value: number | null) => (value ? new Date(value).toLocaleString() : '—');
+// Tijden altijd in de tijdzone van het apparaat (verandert mee tijdens reizen), met de zone erbij vermeld.
+const dateFmt = () => new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'medium', timeZoneName: 'short' });
+const when = (value: number | null) => (value ? dateFmt().format(new Date(value)) : '—');
+const zoneName = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } };
 const IDLE_MS = 24 * 60 * 60 * 1000;
 
 /** "5 хв тому" / "5 min geleden"; nooit gebruikt: "nog niet gebruikt". */
@@ -76,6 +79,7 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
 
       <article className='api-platform-panel' data-mcp-grants={String(grants.length)}>
         <strong>{tr('Надані доступи', 'Verleende toegang')}</strong>
+        <small data-mcp-timezone='true'>{tr('Час показано за часовим поясом вашого пристрою', 'Tijden in de tijdzone van uw apparaat')}: {zoneName() || '—'}</small>
         {grants.length ? (
           <ul className='api-platform-connections mcp-grants'>
             {grants.map((g) => {
