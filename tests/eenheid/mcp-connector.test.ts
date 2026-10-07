@@ -7,7 +7,7 @@ import * as c from '../../backend/mcp-connector';
 import * as st from '../../backend/mcp-connector-store';
 import * as agents from '../../backend/connectors-store';
 import { sha256 } from '../../backend/connectors-crypto';
-import { describeTools, isOwnSiteUrl } from '../../backend/connectors-tools';
+import { describeTools, isOwnSiteUrl, listTools, RISKY_TOOLS } from '../../backend/connectors-tools';
 import { checker } from './hulp/nep-google';
 
 const CALLBACK = 'https://claude.ai/api/mcp/auth_callback';
@@ -152,6 +152,10 @@ export async function main(): Promise<number> {
       && body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 3, method: 'bestaat/niet' })).error.code === -32601);
 
     // ---- hulpmiddelen en isolatie ----
+    // Standaard staan riskante hulpmiddelen uit (B heeft niets ingesteld); gebruiker A zet ze zelf op "ask" zodat de rest van deze test ze ziet.
+    check('standaard: riskante hulpmiddelen staan uit en ontbreken in de lijst (23 van 33), de gebruiker kan ze zelf aanzetten',
+      (await listTools(B, { alwaysMachine: true })).length === 23 && RISKY_TOOLS.size === 10);
+    await agents.setToolModes(A, Object.fromEntries([...RISKY_TOOLS].map((n) => [n, 'ask' as const])));
     const leeg = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 4, method: 'tools/list' }));
     check('tools/list: zonder apparaat staan alle 33 tools (9 apparaat + 14 browser + 10 site) er toch (Claude toont zo de lijst en de rechtengroepen); geen GitHub-tool zonder token',
       leeg.result.tools.length === 33 && !leeg.result.tools.some((t: any) => t.name === 'github_get'), leeg.result.tools.map((t: any) => t.name).join(','));
@@ -256,6 +260,7 @@ export async function main(): Promise<number> {
       && geweigerd.result.isError === true && /turned off by the user/.test(geweigerd.result.content[0].text)
       && infoUit === 'browser_click,machine_exec' && (await agents.getDisabledTools(B)).length === 0);
     await agents.setDisabledTools(A, []);
+    await agents.setToolModes(A, Object.fromEntries([...RISKY_TOOLS].map((n) => [n, 'ask' as const]))); // terug naar de standaard maakt riskante hulpmiddelen weer uit; de test wil ze zien
     check('hulpmiddelen weer aanzetten: alles terug in de lijst', (body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 64, method: 'tools/list' })).result.tools as any[]).length === 33);
     await agents.setAgentPolicy(A, browserA.id, ['browser.snapshot', 'browser.navigate']);
     check('beleid van een browseragent: alleen van de eigen gebruiker aan te passen',
