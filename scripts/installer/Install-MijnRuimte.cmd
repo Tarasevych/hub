@@ -1,6 +1,6 @@
 @echo off
 rem Mijn Ruimte: helper voor de browserextensie (Windows). Doet GEEN beheerdersrechten nodig, schrijft alleen naar
-rem %LOCALAPPDATA%\MijnRuimte\extension, controleert het pakket met een SHA-256-controlesom en opent daarna de extensiepagina van de browser.
+rem de map die u zelf kiest in het venster (nooit automatisch een systeemmap), controleert het pakket met een SHA-256-controlesom en opent daarna de extensiepagina van de browser.
 rem Alles wat dit bestand doet staat leesbaar hieronder (na de markeringsregel). Versie @@VERSION@@.
 chcp 65001 >nul
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$f=Get-Content -Raw -Encoding UTF8 '%~f0'; $i=$f.LastIndexOf([Environment]::NewLine+'#'+'PS#'); Invoke-Expression $f.Substring($i+[Environment]::NewLine.Length+4)"
@@ -12,8 +12,15 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 $site = 'https://mcp.tarasevych.com'
 $expected = '@@SHA256@@'
-$dir = Join-Path $env:LOCALAPPDATA 'MijnRuimte\extension'
-$zip = Join-Path $env:TEMP 'mijn-ruimte-extension.zip'
+# Ви самі обираєте диск і папку: нічого не створюється без вашого вибору.
+Add-Type -AssemblyName System.Windows.Forms
+$dlg = New-Object System.Windows.Forms.FolderBrowserDialog
+$dlg.Description = 'Оберіть диск і папку, де зберегти розширення (усередині буде створено підпапку MijnRuimte-extension). Цю папку не видаляйте.'
+$dlg.ShowNewFolderButton = $true
+if ($dlg.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK -or -not $dlg.SelectedPath) { Write-Host 'Папку не обрано: встановлення скасовано, нічого не створено.'; return }
+$dir = Join-Path $dlg.SelectedPath 'MijnRuimte-extension'
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+$zip = Join-Path $dir 'mijn-ruimte-extension.zip'
 
 Write-Host ''
 Write-Host 'Mijn Ruimte: встановлення розширення браузера' -ForegroundColor Cyan
@@ -28,8 +35,6 @@ if ($hash -ne $expected) {
 }
 
 Write-Host '3/4 Розпаковуємо в' $dir
-if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
-New-Item -ItemType Directory -Force -Path $dir | Out-Null
 Expand-Archive -Path $zip -DestinationPath $dir -Force
 Remove-Item $zip -Force
 Set-Clipboard -Value $dir

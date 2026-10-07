@@ -13,5 +13,7 @@ export async function main(): Promise<number> {
     /Invoke-WebRequest 'https:\/\/mcp\.tarasevych\.com\/downloads\/mijn-ruimte-extension\.zip'/.test(ps) && ps.includes("'abcdef0123'") && ps.includes("ExpandEnvironmentVariables('C:\\Mijn map\\ext')") && /Expand-Archive/.test(ps) && !/\.cmd|\.ps1/.test(ps), ps);
   const sh = extensionInstallCommands({ os: 'macos', shell: 'bash', folder: "~/it's", sha256: 'AB12', origin: 'https://mcp.tarasevych.com' })[0];
   check('macOS/Linux-commando: curl + shasum/sha256sum + unzip, tilde wordt "$HOME", enkele quotes veilig', /shasum -a 256 -c/.test(sh) && sh.includes('"$HOME"/\'it\'\\\'\'s\'') && /sha256sum -c/.test(extensionInstallCommands({ os: 'linux', shell: 'bash', folder: '~/x', sha256: 'ab', origin: 'https://a' })[0]), sh);
+  const all = [ps, sh, extensionInstallCommands({ os: 'linux', shell: 'bash', folder: '/data/x', sha256: 'ab', origin: 'https://a' })[0]].join(' ');
+  check('geen tijdelijke bestanden buiten de gekozen map (geen TEMP, geen /tmp, geen %USERPROFILE% als standaard)', !/TEMP|\/tmp|USERPROFILE/.test(all), all);
   return einde();
 }

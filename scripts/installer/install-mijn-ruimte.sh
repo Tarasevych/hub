@@ -4,11 +4,17 @@
 set -eu
 SITE="https://mcp.tarasevych.com"
 EXPECTED="@@SHA256@@"
-case "$(uname -s)" in
-  Darwin) DIR="$HOME/Library/Application Support/MijnRuimte/extension" ;;
-  *) DIR="${XDG_DATA_HOME:-$HOME/.local/share}/MijnRuimte/extension" ;;
-esac
-TMP="$(mktemp -t mijnruimte.XXXXXX)"
+# De map kiest u zelf: als argument (bash install-mijn-ruimte.sh ~/pad) of door het pad te typen. Er wordt niets aangemaakt zonder uw keuze.
+BASE="${1:-}"
+if [ -z "$BASE" ]; then
+  printf 'Куди зберегти розширення? Введіть повний шлях до папки (наприклад ~/MijnRuimte): ' > /dev/tty
+  read -r BASE < /dev/tty
+fi
+[ -n "$BASE" ] || { echo "Папку не обрано: встановлення скасовано, нічого не створено."; exit 1; }
+case "$BASE" in "~") BASE="$HOME" ;; "~/"*) BASE="$HOME/${BASE#\~/}" ;; esac
+DIR="$BASE/MijnRuimte-extension"
+mkdir -p "$DIR"
+TMP="$DIR/mijn-ruimte-extension.zip"
 trap 'rm -f "$TMP"' EXIT
 
 echo "Mijn Ruimte: встановлення розширення браузера"
@@ -20,7 +26,6 @@ if command -v sha256sum >/dev/null 2>&1; then GOT="$(sha256sum "$TMP" | cut -d' 
 if [ "$GOT" != "$EXPECTED" ]; then echo "Контрольна сума не збігається (очікувалась $EXPECTED, отримано $GOT). Встановлення скасовано."; exit 1; fi
 
 echo "3/4 Розпаковуємо в $DIR"
-rm -rf "$DIR"; mkdir -p "$DIR"
 unzip -q -o "$TMP" -d "$DIR"
 if command -v pbcopy >/dev/null 2>&1; then printf '%s' "$DIR" | pbcopy; elif command -v xclip >/dev/null 2>&1; then printf '%s' "$DIR" | xclip -selection clipboard; fi
 
