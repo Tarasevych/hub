@@ -9,7 +9,25 @@ import { closePool, getPool } from './platform/pg';
 
 type CronDefinition = { name: string; cron: string; handler: string; timezone?: string; payload?: Record<string, unknown> };
 const definitions = cronDefinitions as CronDefinition[];
-type CronHandler = (event: Record<string, unknown>) => Promise<{ statusCode?: number } | undefined>;
+type CronHandler = (event: Record<string, unknown>) => Promise<{ statusCode?: number; body?: string } | undefined>;
+
+/** Een taak meldt "gelukt" met statusCode 200, maar het lichaam kan een fout bevatten ({ok:false} of een reden per eigenaar). Dat moet zichtbaar zijn. */
+function summarize(result: { statusCode?: number; body?: string } | undefined): { ok: boolean; text: string } {
+  const code = result?.statusCode ?? 'geen';
+  let ok = (result?.statusCode ?? 200) < 400;
+  let extra = '';
+  try {
+    const body = typeof result?.body === 'string' ? JSON.parse(result.body) : null;
+    if (body && typeof body === 'object') {
+      if (body.ok === false) { ok = false; extra = ` reden=${String(body.reason || 'onbekend')}`; }
+      const failures = Array.isArray(body.results) ? body.results.filter((r: any) => r && typeof r === 'object' && r.reason).map((r: any) => String(r.reason)) : [];
+      if (failures.length) extra += ` eigenaarfouten=${[...new Set(failures)].join(',')}`;
+      const jobs = Array.isArray(body.results) ? body.results.flatMap((r: any) => (Array.isArray(r?.jobs) ? r.jobs : [])) : [];
+      if (jobs.length) extra += ` jobs=${jobs.map((j: any) => String(j?.status || '?')).join(',')}`;
+    }
+  } catch { /* geen JSON-lichaam */ }
+  return { ok, text: `statusCode=${code}${extra}`.slice(0, 480) };
+}
 
 async function run(name: string): Promise<number> {
   const def = definitions.find((d) => d.name === name);
@@ -30,9 +48,9 @@ async function run(name: string): Promise<number> {
     const now = new Date().toISOString();
     const started = Date.now();
     const result = await fn({ type: 'cron', name, invocationId: randomUUID(), payload: def.payload || {}, scheduledTime: now, invokedTime: now });
-    const ok = (result?.statusCode ?? 200) < 400;
-    await client.query('UPDATE app.cron_runs SET finished_at = now(), status = $2, detail = $3 WHERE id = $1', [runId, ok ? 'ok' : 'error', `statusCode=${result?.statusCode ?? 'geen'}`]);
-    console.log(`[cron] ${name}: ${ok ? 'ok' : 'fout'} (statusCode=${result?.statusCode ?? 'geen'}, ${Date.now() - started}ms)`);
+    const { ok, text } = summarize(result);
+    await client.query('UPDATE app.cron_runs SET finished_at = now(), status = $2, detail = $3 WHERE id = $1', [runId, ok ? 'ok' : 'error', text]);
+    console.log(`[cron] ${name}: ${ok ? 'ok' : 'fout'} (${text}, ${Date.now() - started}ms)`);
     return ok ? 0 : 1;
   } catch (err) {
     console.error(`[cron] ${name}: fout:`, err);
