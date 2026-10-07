@@ -1,4 +1,4 @@
-import {Bell,Building2,Check,Copy,Fingerprint,Globe,Info,KeyRound,Lock,LogIn,Plus,RefreshCw,ShieldCheck,Smartphone,Trash2} from 'lucide-react';
+import {Bell,Check,Copy,Fingerprint,Globe,Info,KeyRound,Lock,LogIn,Plus,RefreshCw,ShieldCheck,Smartphone,Trash2} from 'lucide-react';
 import type {Lang} from './access-plane-copy';
 // Passkeys blijven verborgen tot er echte WebAuthn-verificatie (attestation/assertion) in de backend is.
 const PASSKEYS_ENABLED=false;

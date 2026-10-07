@@ -1,4 +1,3 @@
-import{api}from'./platform/client';
 import{loadMailAttachmentBlob,MAIL_ATTACHMENT_PREVIEW_MAX_BYTES}from'./mail-attachment-loader';
 import{Archive,BookOpen,ContactRound,Database,File,FileAudio,FileSpreadsheet,FileText,FileType2,FileVideo,Image as ImageIcon,LoaderCircle,Presentation}from'lucide-react';
 import{Suspense,lazy,useEffect,useRef,useState,type PointerEvent as ReactPointerEvent}from'react';import{createPortal}from'react-dom';
