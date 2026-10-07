@@ -4,6 +4,9 @@
 # Resultaat: $BACKUP_DIR/<JJJJMMDD-UUMMSS>/
 #   database.dump.age    pg_dump --format=custom (alle schema's, zonder eigenaar/rechten), age-versleuteld
 #   uploads.tar.gz.age   inhoud van $UPLOADS_DIR, age-versleuteld
+#   systeem.tar.gz.age   de rest van het systeem waarop de site draait (zonder geheimen): de actieve release (code), de systemd-units en timers,
+#                        de tunnelconfiguratie (zonder inloggegevens), de MCP-brug en zijn overlay en de beheerconfiguratie; age-versleuteld
+#   systeem-info.txt     versies (node, postgres, cloudflared, age, besturingssysteem), draaiende diensten en luisterende poorten (klare tekst, niets geheims)
 #   info.txt             tijdstip, release, migraties, groottes, ontvanger (klare tekst, niets geheims)
 #   SHA256SUMS           controlesommen van de bestanden hierboven (van de versleutelde vorm)
 #   KLAAR                wordt als laatste geschreven: de host haalt alleen mappen met KLAAR op
@@ -68,7 +71,41 @@ else
   tar --create --gzip --file=- --files-from=/dev/null | schrijf "$tmp/uploads.tar.gz$ext"
 fi
 
+# Systeem: alles wat nodig is om de server na een totaalverlies opnieuw op te bouwen, behalve de geheimen (die hebben een eigen age-archief).
+# Elk pad is "best effort": wat de back-upgebruiker niet kan lezen wordt overgeslagen en in systeem-info.txt vermeld.
+echo "[backup] systeem (code, units, tunnelconfig, versies) archiveren…"
 release="$(readlink -f /srv/mijn-ruimte/current 2>/dev/null || echo onbekend)"
+{
+  echo "tijdstip=$(date --iso-8601=seconds)"
+  echo "release=$release"
+  echo "os=$(. /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-onbekend}")"
+  echo "kernel=$(uname -r)"
+  echo "node=$(node --version 2>/dev/null || echo onbekend)"
+  echo "postgres=$(psql --version 2>/dev/null | head -1 || echo onbekend)"
+  echo "cloudflared=$(cloudflared --version 2>/dev/null | head -1 || echo onbekend)"
+  echo "age=$(age --version 2>/dev/null | head -1 || echo onbekend)"
+  echo "--- diensten (mijn-ruimte, cloudflared, postgresql) ---"
+  systemctl list-units --type=service --type=timer --all --no-pager --plain --no-legend 'mijn-ruimte*' 'cloudflared*' 'postgresql*' 2>/dev/null | cut -c1-160 || true
+  echo "--- luisterende poorten ---"
+  ss -ltn 2>/dev/null | awk 'NR>1{print $4}' | sort -u || true
+} > "$tmp/systeem-info.txt" 2>/dev/null || true
+sys_paden=()
+for p in "$release" /srv/mijn-ruimte/mcp /srv/mijn-ruimte/mcp-staging/overlay /etc/cloudflared/config.yml /etc/mijn-ruimte; do
+  if [ -r "$p" ]; then sys_paden+=("${p#/}"); else echo "overgeslagen (niet leesbaar of afwezig): $p" >> "$tmp/systeem-info.txt"; fi
+done
+for p in /etc/systemd/system/mijn-ruimte* /etc/systemd/system/cloudflared.service; do
+  [ -r "$p" ] && sys_paden+=("${p#/}")
+done
+if [ "${#sys_paden[@]}" -gt 0 ]; then
+  # Geheimen blijven eruit: geheimen.env, sleutels, certificaten en tunnel-inloggegevens. tar-code 1 (bestand veranderde) is geen fout.
+  { tar --create --gzip --file=- --directory=/ --ignore-failed-read \
+      --exclude='*geheimen*' --exclude='*.env' --exclude='*.pem' --exclude='*.key' --exclude='*herstelsleutel*' --exclude='*credentials*' --exclude='*.age.txt' \
+      --exclude='*/node_modules' "${sys_paden[@]}" || [ $? -eq 1 ]; } | schrijf "$tmp/systeem.tar.gz$ext"
+else
+  echo "[backup] waarschuwing: geen systeempaden leesbaar; leeg systeemarchief" >&2
+  tar --create --gzip --file=- --files-from=/dev/null | schrijf "$tmp/systeem.tar.gz$ext"
+fi
+
 migraties="$(psql "$DUMP_URL" -Atc "select string_agg(version, ',' order by version) from app.schema_migrations" 2>/dev/null || echo onbekend)"
 {
   echo "tijdstip=$(date --iso-8601=seconds)"
@@ -77,9 +114,10 @@ migraties="$(psql "$DUMP_URL" -Atc "select string_agg(version, ',' order by vers
   if [ -n "$ext" ]; then echo "versleuteling=age"; echo "ontvanger=$(cat "$ONTVANGER")"; else echo "versleuteling=GEEN"; fi
   echo "database_bytes=$(stat -c %s "$tmp/database.dump$ext")"
   echo "uploads_bytes=$(stat -c %s "$tmp/uploads.tar.gz$ext")"
+  echo "systeem_bytes=$(stat -c %s "$tmp/systeem.tar.gz$ext")"
 } > "$tmp/info.txt"
 
-( cd "$tmp" && sha256sum "database.dump$ext" "uploads.tar.gz$ext" info.txt > SHA256SUMS )
+( cd "$tmp" && sha256sum "database.dump$ext" "uploads.tar.gz$ext" "systeem.tar.gz$ext" systeem-info.txt info.txt > SHA256SUMS )
 mv "$tmp" "$doel"
 trap - ERR
 date --iso-8601=seconds > "$doel/KLAAR"

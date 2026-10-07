@@ -76,6 +76,16 @@ sudo systemctl start mijn-ruimte 'mijn-ruimte-*.timer'
 curl -s http://127.0.0.1:8080/__gezondheid
 ```
 
+### 5b. Systeemarchief (code, units, tunnelconfig, MCP-brug)
+Elke back-upmap bevat ook `systeem.tar.gz.age` en `systeem-info.txt` (klare tekst: versies van node/postgres/cloudflared/age, diensten, poorten,
+en welke paden niet leesbaar waren). Het archief bevat de actieve release, de systemd-units en timers, `/etc/cloudflared/config.yml` (zonder
+inloggegevens), de MCP-brug met overlay en `/etc/mijn-ruimte` zonder geheimen. Nodig als de release of een unit verloren is, of om de
+brug (poort 8091) en de tunnelconfiguratie na een totaalverlies exact terug te zetten:
+```powershell
+cmd /c "$age -d -i $sl $b\systeem.tar.gz.age | ssh -i $k $vm sudo -n sh -c 'mkdir -p /var/tmp/systeem-herstel && tar -xzpf - -C /var/tmp/systeem-herstel'"
+```
+Kopieer daarna bewust per onderdeel (units naar `/etc/systemd/system`, `systemctl daemon-reload`); overschrijf nooit blind een draaiende server.
+
 ## 6. Tunnel
 Met de teruggezette credentials: `deploy/cloudflared.service` installeren en `systemctl enable --now cloudflared`
 (zie `deploy/LEESMIJ.md`, "Tunnel"). Geen nieuwe tunnel of DNS nodig zolang het tunnel-ID hetzelfde blijft.

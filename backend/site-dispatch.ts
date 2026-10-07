@@ -46,6 +46,7 @@ export const TOEGESTANE_ROUTES = new Set<string>([
   'POST /api/mcp/traffic',
   'POST /api/mcp/health',
   'POST /api/mcp/archive/status',
+  'POST /api/mcp/backups',
 ]);
 
 const echt: Aanroeper = async (userId, service, route, body) => {
