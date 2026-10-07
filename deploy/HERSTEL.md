@@ -22,6 +22,20 @@ zie `herstelsleutel-age.pub.txt`. De VM kan zijn eigen back-ups **niet** ontsleu
 Zet de privésleutel nooit op de VM, in GitHub of op T:\. Hieronder wordt er alleen op de pc mee ontsleuteld
 en gaat de klare tekst via SSH rechtstreeks de nieuwe VM in.
 
+## Snelste weg: het volledige archief (één bestand, één opdracht)
+Site `mcp.tarasevych.com` → «Архів на ПК» → «Зібрати повний архів» maakt `mijn-ruimte-<stempel>-volledig.tar` (root-script
+`/usr/local/sbin/mijn-ruimte-archief`, gestart door `mijn-ruimte-archief.path`; voortgang in `kit-status.txt`). Inhoud: code, MCP-brug, git-bundels,
+database + rollen, bestanden, systeemunits/tunnelconfig, geheimen (database, bestanden en geheimen **age-versleuteld** met de bestaande publieke sleutel),
+`LEES-MIJ.txt`, `SHA256SUMS` en `vidnovyty.sh`. Op een nieuwe Ubuntu/Debian-machine (virtueel of fysiek, x86-64 of ARM64):
+```bash
+tar -xf mijn-ruimte-<stempel>-volledig.tar && cd mijn-ruimte-<stempel>-volledig
+sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt --proefrun   # eerst alleen tonen
+sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt              # echt uitvoeren
+```
+Het script controleert de sommen, installeert Node/PostgreSQL 17/age/cloudflared, ontsleutelt, herstelt database/bestanden, bouwt de site voor deze
+architectuur (`installeer-app.sh`) en wacht op de gezondheidscontrole. Nog niet op een lege machine volledig doorlopen; de proefrun en het maken zijn
+getest op de productie-VM. De handmatige stappen hieronder blijven de bewezen weg.
+
 ## 0. Controleren (PowerShell op de pc)
 ```powershell
 cd R:\mijn-ruimte-reservekopie\vm-back-ups\<stempel>
