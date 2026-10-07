@@ -8,7 +8,7 @@ import AccessPlaneView from './AccessPlaneView';
 
 type Lang='uk'|'nl';
 type Theme='light'|'dark'|'device'|'plum-light'|'plum-dark';
-export type SettingsUser={id:string;email:string;name:string;picture:string;role:'owner'|'member';status:string;accessLevel:'full'|'limited'};
+export type SettingsUser={id:string;email:string;name:string;picture:string;role:'owner'|'admin'|'member'|'viewer';status:string;accessLevel:'full'|'limited'};
 export type SettingsWorkspace={id:string;name:string;archivedAt?:number};
 export type SettingsWidgetInput={sourceType:'internal'|'external';target:string;title:string;description:string;url:string;size:'small'|'medium'|'wide'|'custom'};
 export type SettingsShareInput={workspaceId:string;email:string;permission:'viewer'|'editor';scopeBlockIds:string[]};
