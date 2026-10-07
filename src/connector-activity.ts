@@ -8,7 +8,7 @@ import { textOf } from './mcp-texts';
 
 export type ActivityEvent = {
   id: string; source: 'claude' | 'agent' | 'browser'; kind: 'command' | 'tool' | 'grant'; type: string; subject: string;
-  status: string; createdAt: number; finishedAt: number | null;
+  status: string; createdAt: number; finishedAt: number | null; platform?: string;
 };
 type Lang = 'uk' | 'nl';
 
