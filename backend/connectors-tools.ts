@@ -165,9 +165,14 @@ async function githubTokenName(userId: string): Promise<string | null> {
   return item ? item.keyName : null;
 }
 
-export async function listTools(userId: string): Promise<ToolDef[]> {
+/**
+ * `alwaysMachine`: voor de MCP-connector van Claude staan de apparaattools er ALTIJD in, ook zonder verbonden agent.
+ * Claude toont de lijst en de rechtengroepen (alleen lezen / schrijven) pas als er tools zijn; zonder apparaat geeft een
+ * aanroep een duidelijke melding (zie callTool). De chat behoudt het oude gedrag (alleen tools als er een agent is).
+ */
+export async function listTools(userId: string, opts: { alwaysMachine?: boolean } = {}): Promise<ToolDef[]> {
   const tools: ToolDef[] = [];
-  if ((await store.listAgents(userId)).length) tools.push(...MACHINE_TOOLS.map(annotate));
+  if (opts.alwaysMachine || (await store.listAgents(userId)).length) tools.push(...MACHINE_TOOLS.map(annotate));
   if (await githubTokenName(userId)) {
     tools.push(annotate({
       name: 'github_get',
@@ -183,6 +188,18 @@ export async function listTools(userId: string): Promise<ToolDef[]> {
     }));
   }
   return tools;
+}
+
+export type ToolKind = 'read' | 'write' | 'execute';
+export type ToolInfo = { name: string; title: string; description: string; kind: ToolKind; needsApproval: boolean; readOnly: boolean; destructive: boolean };
+
+/** Overzicht voor het beheerscherm: wat elk hulpmiddel doet en of het eerst jouw goedkeuring vraagt. */
+export async function describeTools(userId: string): Promise<ToolInfo[]> {
+  const kindOf = (t: ToolDef): ToolKind => (t.name === 'machine_write_file' ? 'write' : NEEDS_APPROVAL.has(t.name) ? 'execute' : 'read');
+  return (await listTools(userId, { alwaysMachine: true })).map((t) => ({
+    name: t.name, title: t.title || t.name, description: t.description, kind: kindOf(t), needsApproval: NEEDS_APPROVAL.has(t.name),
+    readOnly: t.annotations?.readOnlyHint === true, destructive: t.annotations?.destructiveHint === true,
+  }));
 }
 
 export async function callTool(userId: string, name: string, args: any = {}): Promise<ToolResult> {

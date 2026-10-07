@@ -3,6 +3,7 @@
 // De routes voor toestemming en beheer vragen een sessie (service mcp) en het recht 'api-platform'.
 import { heeftApiRecht } from './api-recht';
 import * as c from './mcp-connector';
+import { describeTools } from './connectors-tools';
 
 type SessionAuth = { errorCode: string } | { user: { id: string; email: string; role: string; status: string }; service: string };
 type Deps = {
@@ -62,6 +63,12 @@ export function createMcpConnectorRoutes(deps: Deps) {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
       return deps.respond({ grants: await c.listUserGrants(auth.user.id), url: c.RESOURCE });
+    }],
+
+    'POST /api/owner/mcp-connector/tools': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      return deps.respond({ tools: await describeTools(auth.user.id) });
     }],
 
     'POST /api/owner/mcp-connector/grants/:id/revoke': [async (ctx: any) => {

@@ -282,7 +282,7 @@ async function handleMessage(who: { userId: string; clientName: string }, msg: a
       });
     }
     case 'ping': return rpcResult(id, {});
-    case 'tools/list': return rpcResult(id, { tools: (await listTools(who.userId)).map(toMcpTool) });
+    case 'tools/list': return rpcResult(id, { tools: (await listTools(who.userId, { alwaysMachine: true })).map(toMcpTool) });
     case 'tools/call': {
       const name = msg.params?.name;
       if (typeof name !== 'string' || !name) return rpcError(id, -32602, 'name ontbreekt');
