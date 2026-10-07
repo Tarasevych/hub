@@ -13,6 +13,7 @@ const dateFmt = () => new Intl.DateTimeFormat(undefined, { dateStyle: 'short', t
 const when = (value: number | null) => (value ? dateFmt().format(new Date(value)) : '—');
 const zoneName = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } };
 const IDLE_MS = 24 * 60 * 60 * 1000;
+const CLAUDE_CONNECTORS = 'https://claude.ai/code#customize/connectors';
 
 /** "5 хв тому" / "5 min geleden"; nooit gebruikt: "nog niet gebruikt". */
 const ago = (value: number | null, tr: Tr): string => {
@@ -59,6 +60,29 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
 
   const copy = async () => { try { await navigator.clipboard?.writeText(url); setCopied(true); window.setTimeout(() => setCopied(false), 2000); } catch { /* geen klembord */ } };
 
+  // Opnieuw koppelen: oude toegang van Claude intrekken (als die er is), adres kopiëren en de connectorpagina van Claude openen.
+  const reconnect = async () => {
+    if (busy) return;
+    if (grants.length && !window.confirm(tr('Старий доступ Claude буде відкликано, а адресу конектора скопійовано. Продовжити?', 'De oude toegang van Claude wordt ingetrokken en het connectoradres gekopieerd. Doorgaan?'))) return;
+    setBusy(true); setNotice('');
+    try {
+      for (const g of grants) await api.post(`/api/owner/mcp-connector/grants/${g.id}/revoke`, sessionBody());
+      await load();
+    } catch { setNotice(tr('Не вдалося відкликати старий доступ. Спробуйте ще раз.', 'Oude toegang intrekken mislukt. Probeer opnieuw.')); setBusy(false); return; }
+    await copy();
+    window.open(CLAUDE_CONNECTORS, '_blank', 'noopener,noreferrer');
+    setNotice(tr('Адресу скопійовано. У Claude натисніть Add custom connector і вставте її, далі «Sign in now».', 'Adres gekopieerd. Klik in Claude op Add custom connector, plak het adres en kies "Sign in now".'));
+    setBusy(false);
+  };
+
+  const active = grants.some((g) => g.lastUsedAt && Date.now() - g.lastUsedAt <= IDLE_MS);
+  const status: 'active' | 'idle' | 'none' = !grants.length ? 'none' : active ? 'active' : 'idle';
+  const statusText = {
+    active: tr('Claude підключено й працює.', 'Claude is verbonden en actief.'),
+    idle: tr('Доступ є, але Claude давно не звертався. Якщо не працює, перепідключіть.', 'Toegang bestaat, maar Claude was lang niet actief. Werkt het niet, koppel dan opnieuw.'),
+    none: tr('Claude не підключено (доступ відсутній, відкликаний або закінчився).', 'Claude is niet verbonden (geen, ingetrokken of verlopen toegang).'),
+  }[status];
+
   return (
     <section className='api-platform agents-wrap' data-mcp-connector='true'>
       <article className='api-platform-panel' data-mcp-connector-url='true'>
@@ -69,6 +93,12 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
           <div className='api-platform-secret-actions'>
             <button type='button' onClick={() => void copy()}>{copied ? tr('Скопійовано', 'Gekopieerd') : tr('Скопіювати адресу', 'Adres kopiëren')}</button>
           </div>
+        </div>
+        <p className={`mcp-status mcp-status-${status}`} role='status' data-mcp-status={status}>{statusText}</p>
+        <div className='api-platform-secret-actions'>
+          <button type='button' className='mcp-reconnect' disabled={busy} onClick={() => void reconnect()}>
+            {status === 'none' ? tr('Підключити Claude', 'Claude koppelen') : tr('Перепідключити Claude', 'Claude opnieuw koppelen')}
+          </button>
         </div>
         <ol>
           <li>{tr('У Claude вставте адресу й натисніть Add.', 'Plak het adres in Claude en klik op Add.')}</li>
