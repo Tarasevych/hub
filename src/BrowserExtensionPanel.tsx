@@ -5,7 +5,7 @@ import './api-platform-view.css';
 import './agents-panel.css';
 
 type Tr = (uk: string, nl: string) => string;
-type BrowserAgent = { id: string; name: string; platform: string | null; status: 'connected' | 'disconnected'; lastSeenAt: number | null; policy: { autoApprove: string[] } };
+type BrowserAgent = { id: string; name: string; platform: string | null; status: 'connected' | 'disconnected'; lastSeenAt: number | null; policy: { autoApprove: string[] }; enabled: boolean; armedUntil: number | null };
 type Presence = 'checking' | 'present' | 'absent';
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
@@ -65,7 +65,7 @@ export default function BrowserExtensionPanel({ tr }: { tr: Tr }) {
         pending.current = (ok, reason) => { window.clearTimeout(timer); pending.current = null; resolve({ ok, reason }); };
         window.postMessage({ mrExtPair: true, code, name: browserName() }, location.origin);
       });
-      if (result.ok) { setPaired(true); setNotice(tr('Розширення підключено до вашого облікового запису.', 'De extensie is gekoppeld aan uw account.')); await load(); }
+      if (result.ok) { setPaired(true); setNotice(tr('Розширення підключено до вашого облікового запису, але ще вимкнене для ШІ. Увімкніть його перемикачем нижче.', 'De extensie is gekoppeld aan uw account maar staat nog uit voor AI. Zet hem hieronder aan.')); await load(); }
       else setNotice(tr(`Не вдалося підключити (${result.reason}). Перевірте, що розширення встановлене й увімкнене, і спробуйте ще раз.`, `Koppelen mislukt (${result.reason}). Controleer of de extensie is geïnstalleerd en aan staat en probeer opnieuw.`));
     } catch (e) {
       const code = String((e as Error)?.message || '');
@@ -74,9 +74,17 @@ export default function BrowserExtensionPanel({ tr }: { tr: Tr }) {
     setBusy(false);
   };
 
+  // Activering: een gekoppelde browser doet niets totdat u hem hier aanzet; daarna houdt een ingelogde pagina van de site hem actief.
+  const setEnabled = async (agent: BrowserAgent, on: boolean) => {
+    setBusy(true); setNotice('');
+    try { await api.post(`/api/owner/agents/${agent.id}/browser-enabled`, { ...sessionBody(), enabled: on }); await load(); }
+    catch { setNotice(tr('Не вдалося змінити активацію.', 'Activering wijzigen mislukt.')); }
+    setBusy(false);
+  };
+
   const setNavigation = async (agent: BrowserAgent, on: boolean) => {
     setBusy(true); setNotice('');
-    const next = on ? ['browser.snapshot', 'browser.navigate'] : ['browser.snapshot'];
+    const next = on ? ['browser.diagnostics', 'browser.navigate', 'browser.snapshot'] : ['browser.diagnostics', 'browser.snapshot'];
     try { await api.post(`/api/owner/agents/${agent.id}/policy`, { ...sessionBody(), autoApprove: next }); await load(); }
     catch { setNotice(tr('Не вдалося змінити дозвіл.', 'Recht wijzigen mislukt.')); }
     setBusy(false);
@@ -127,13 +135,23 @@ export default function BrowserExtensionPanel({ tr }: { tr: Tr }) {
           <ul className='api-platform-connections mcp-grants'>
             {agents.map((a) => {
               const nav = a.policy.autoApprove.includes('browser.navigate');
+              const armed = a.enabled && !!a.armedUntil && a.armedUntil > Date.now();
+              const state: 'on' | 'wait' | 'off' = !a.enabled ? 'off' : armed ? 'on' : 'wait';
               return (
                 <li key={a.id} className='mcp-grant'>
                   <div className='mcp-grant-main'>
                     <div className='agents-row'>
                       <b>{a.name}</b>
                       <span className={`agents-badge ${a.status === 'connected' ? 'agents-connected' : 'agents-idle'}`}>{a.status === 'connected' ? tr('підключено', 'verbonden') : tr('не в мережі', 'offline')}</span>
+                      <span className={`agents-badge ${state === 'on' ? 'agents-connected' : 'agents-idle'}`} data-browser-state={state}>
+                        {state === 'on' ? tr('ШІ активний (вхід підтверджено)', 'AI actief (aanmelding bevestigd)') : state === 'wait' ? tr('очікує входу на сайті', 'wacht op aanmelding op de site') : tr('вимкнено для ШІ', 'uit voor AI')}
+                      </span>
                     </div>
+                    <label className='mcp-switch'>
+                      <input type='checkbox' role='switch' checked={a.enabled} disabled={busy} onChange={(e) => void setEnabled(a, e.target.checked)} />
+                      <span><b>{tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')}</b></span>
+                    </label>
+                    <small>{tr('Працює лише поки ви ввійшли на сайті: вихід або закриття сайту вимикає ШІ за кілька хвилин, навіть якщо розширення залишилось.', 'Werkt alleen zolang u op de site bent aangemeld: uitloggen of de site sluiten zet de AI binnen enkele minuten stil, ook als de extensie blijft staan.')}</small>
                     <small>{tr('востаннє', 'laatst gezien')}: {lastSeen(a.lastSeenAt)}</small>
                     <label className='mcp-switch'>
                       <input type='checkbox' role='switch' checked={nav} disabled={busy} onChange={(e) => void setNavigation(a, e.target.checked)} />

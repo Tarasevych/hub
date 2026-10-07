@@ -16,7 +16,7 @@
     if (event.source !== window || event.origin !== location.origin || !event.data) return;
     if (event.data.mrExtPing) {
       const status = await chrome.runtime.sendMessage({ op: 'status' }).catch(() => null);
-      say({ type: 'hello', paired: !!(status && status.paired), connected: !!(status && status.connected) });
+      say({ type: 'hello', paired: !!(status && status.paired), connected: !!(status && status.connected), agentId: (status && status.agentId) || '' });
       return;
     }
     if (event.data.mrExtPair) {
@@ -135,6 +135,7 @@
       try {
         if (message.op === 'snapshot') return sendResponse({ ok: true, data: await snapshot() });
         if (message.op === 'invoke') return sendResponse({ ok: true, data: await invoke(message) });
+        if (message.op === 'diagnostics') return sendResponse({ ok: true, data: await invoke({ action: 'get_diagnostics' }) });
         if (message.op === 'click') return sendResponse({ ok: true, data: click(message) });
         if (message.op === 'type') return sendResponse({ ok: true, data: type(message) });
         return sendResponse({ ok: false, error: 'unknown operation' });

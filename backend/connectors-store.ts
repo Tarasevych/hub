@@ -25,6 +25,8 @@ export interface AgentRow {
   policy: { autoApprove: string[] };
   created_at: Date;
   revoked_at: Date | null;
+  browser_enabled: boolean;
+  armed_until: Date | null;
 }
 
 export const AGENT_LIMITS = {
@@ -33,7 +35,7 @@ export const AGENT_LIMITS = {
   pairingCodeTtlMin: 10,
 };
 
-const AGENT_COLS = 'id, user_id, name, platform, status, last_seen_at, capabilities, policy, created_at, revoked_at';
+const AGENT_COLS = 'id, user_id, name, platform, status, last_seen_at, capabilities, policy, created_at, revoked_at, browser_enabled, armed_until';
 
 const systeem = (sql: string, params: unknown[] = []): Promise<QueryResult> => getPool('systeem').query(sql, params);
 
@@ -166,6 +168,37 @@ export async function setAgentPolicy(userId: string, id: string, autoApprove: st
     `UPDATE app.agents SET policy = jsonb_build_object('autoApprove', $3::jsonb) WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL`,
     [id, userId, JSON.stringify(autoApprove)]);
   return (rowCount ?? 0) > 0;
+}
+
+/**
+ * Browseragent aan- of uitzetten door de eigen gebruiker. Uitzetten legt hem meteen stil; aanzetten geldt pas zodra een
+ * ingelogde sessie hem bevestigt (armBrowserAgent), hier alvast voor ARM_MINUTES omdat de gebruiker nu op de site is.
+ */
+export const ARM_MINUTES = 5;
+export async function setBrowserEnabled(userId: string, id: string, enabled: boolean): Promise<boolean> {
+  const { rowCount } = await systeem(
+    `UPDATE app.agents SET browser_enabled = $3,
+        armed_until = CASE WHEN $3 THEN now() + make_interval(mins => $4) ELSE NULL END
+      WHERE id = $1 AND user_id = $2 AND platform = 'browser' AND revoked_at IS NULL`,
+    [id, userId, enabled, ARM_MINUTES]);
+  return (rowCount ?? 0) > 0;
+}
+
+/** Een ingelogde sessie bevestigt dat de browser actief mag blijven. Alleen als de gebruiker hem heeft aangezet. */
+export async function armBrowserAgent(userId: string, id: string): Promise<boolean> {
+  const { rowCount } = await systeem(
+    `UPDATE app.agents SET armed_until = now() + make_interval(mins => $3)
+      WHERE id = $1 AND user_id = $2 AND platform = 'browser' AND browser_enabled AND revoked_at IS NULL`,
+    [id, userId, ARM_MINUTES]);
+  return (rowCount ?? 0) > 0;
+}
+
+/** Mag deze browser nu opdrachten krijgen? Aangezet door de gebruiker EN recent bevestigd door een ingelogde sessie. */
+export async function browserActive(agentId: string): Promise<boolean> {
+  const { rows } = await systeem(
+    `SELECT (browser_enabled AND armed_until IS NOT NULL AND armed_until > now() AND revoked_at IS NULL) AS actief
+       FROM app.agents WHERE id = $1`, [agentId]);
+  return rows[0]?.actief === true;
 }
 
 /** Uitgezette MCP-hulpmiddelen van een gebruiker (namen). */

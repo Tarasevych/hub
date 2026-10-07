@@ -1,7 +1,7 @@
 // Gedeelde regels van de Mijn Ruimte-extensie (ook getest in tests/eenheid/browser-extensie.test.ts).
 // De server controleert hetzelfde (backend/connectors-tools.ts: isOwnSiteUrl); de extensie vertrouwt er niet op.
 
-export const ALLOWED_COMMANDS = ['browser.snapshot', 'browser.navigate', 'browser.invoke', 'browser.click', 'browser.type'];
+export const ALLOWED_COMMANDS = ['browser.snapshot', 'browser.navigate', 'browser.invoke', 'browser.click', 'browser.type', 'browser.diagnostics'];
 
 /** Alleen https op tarasevych.com en subdomeinen, zonder inloggegevens in de URL. */
 export function isOwnSiteUrl(raw) {

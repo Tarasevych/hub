@@ -41,3 +41,4 @@
 .mcp-tool-row.is-off code,.mcp-tool-row.is-off span{opacity:.5;text-decoration:line-through}
 .mcp-tool-toggle{min-height:36px;padding:4px 14px;border-radius:999px;border:2px solid currentColor;background:transparent;font-weight:700}
 .mcp-tool-toggle.on{color:#1a7f37}.mcp-tool-toggle.off{color:#6b7280}
+.api-platform [data-browser-state=on]{color:#1a7f37}.api-platform [data-browser-state=wait]{color:#b45309}.api-platform [data-browser-state=off]{color:#b91c1c}
