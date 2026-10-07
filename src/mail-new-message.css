@@ -44,3 +44,13 @@ body:has([data-reader-open="true"]) .mail-compose-float{display:none}
 .mail-compose-context-menu{position:fixed;z-index:471;background:#fff;border:1px solid #e2e6ea;border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.25);padding:4px;transform:translate(-50%,8px)}
 .mail-compose-context-menu button{display:block;width:100%;white-space:nowrap;padding:8px 12px;border:none;background:transparent;font-size:13px;text-align:left;cursor:pointer;border-radius:7px;color:#37424b}
 .mail-compose-context-menu button:hover{background:#eef1f3}
+
+.mail-new-message>footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.mail-new-message-sync{display:inline-flex;align-items:center;gap:6px;margin-right:auto;color:var(--muted,#6a7580);font-size:.8rem}
+.mail-new-message-sync svg{width:15px;height:15px}
+.mail-new-message-sync.sync-synced{color:#1a7f37}
+.mail-new-message-sync.sync-error{color:#b45309}
+.mail-new-message-sync.sync-saving svg{animation:mail-sync-spin 1s linear infinite}
+@keyframes mail-sync-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.mail-new-message-sync.sync-saving svg{animation:none}}
+@media(max-width:560px){.mail-new-message>footer{justify-content:stretch}.mail-new-message>footer .primary{flex:1 1 100%;justify-content:center}.mail-new-message-sync{flex:1 1 100%;margin-right:0}}

@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Mail, Send, X } from 'lucide-react';
-import { api } from './platform/client';
+import { CircleAlert, Cloud, CloudOff, LoaderCircle, Mail, Send, X } from 'lucide-react';
+import { emitCanonicalNotice } from './canonical-notifications';
+import MailAiToolbar from './MailAiToolbar';
+import MailScheduleMenu from './MailScheduleMenu';
+import { composeErrorText, deleteDraftRemote, getDraftRemote, saveDraftRemote, scheduleRemote, sendRemote, type DraftSync } from './mail-compose-api';
 import MailComposeEditor, { type MailComposeEditorHandle } from './MailComposeEditor';
 import MailInputTools from './MailInputTools';
 import { registerZone, queueRecompute } from './floating-avoidance';
@@ -25,6 +28,10 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState('');
+  const [draftSync, setDraftSync] = useState<DraftSync>('idle');
+  // Eén aanvraag-id per verzendpoging: een dubbele klik of een herhaling na een time-out maakt nooit twee berichten (idempotent op de server).
+  const requestIdRef = useRef<string>('');
+  const newRequestId = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `req-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const editorRef = useRef<MailComposeEditorHandle | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const dialogRef = useRef<HTMLElement | null>(null);
@@ -235,6 +242,46 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
     };
   }, [to, cc, bcc, subject, body, draftKey]);
 
+  // Concept eerst lokaal in PostgreSQL (de server bewaart het meteen), daarna door de server naar Gmail gesynchroniseerd. 700 ms na de laatste toets.
+  const serverSaveSeq = useRef(0);
+  useEffect(() => {
+    if (!open) return;
+    const hasContent = Boolean(to.trim() || cc.trim() || bcc.trim() || subject.trim() || body.trim());
+    if (!hasContent) return;
+    const seq = ++serverSaveSeq.current;
+    setDraftSync('saving');
+    const timer = window.setTimeout(async () => {
+      const plainText = editorRef.current?.getPlainText() ?? '';
+      try {
+        const out = await saveDraftRemote(context, { to, cc, bcc, subject, html: body, plainText, accountId, localId: localDraftIdRef.current });
+        if (seq === serverSaveSeq.current) setDraftSync(out?.draft?.syncStatus === 'synced' ? 'synced' : out?.draft?.syncStatus === 'error' ? 'error' : 'local');
+      } catch {
+        // De lokale kopie in de browser blijft bestaan (localStorage hierboven); de volgende wijziging probeert het opnieuw.
+        if (seq === serverSaveSeq.current) setDraftSync('error');
+      }
+    }, 700);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [to, cc, bcc, subject, body, accountId, open]);
+
+  // Heeft de browser niets bewaard (bv. andere browser of opgeschoonde opslag) maar de server wel? Dan komt het serverconcept terug.
+  useEffect(() => {
+    if (!open || draftFieldsRef.current.body.trim() || draftFieldsRef.current.to.trim() || draftFieldsRef.current.subject.trim()) return;
+    let alive = true;
+    void getDraftRemote(context, localDraftIdRef.current).then((out) => {
+      const d = out?.draft;
+      if (!alive || !d) return;
+      if (draftFieldsRef.current.body.trim() || draftFieldsRef.current.to.trim() || draftFieldsRef.current.subject.trim()) return;
+      if (d.to) setTo(d.to);
+      if (d.cc) { setCc(d.cc); setShowCc(true); }
+      if (d.bcc) { setBcc(d.bcc); setShowCc(true); }
+      if (d.subject) setSubject(d.subject);
+      if (d.html) setBody(d.html);
+    }).catch(() => undefined);
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   if (!open) return null;
 
   const reset = () => {
@@ -253,40 +300,55 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
     onClose();
   };
 
+  // Na een geslaagde verzending of planning: lokaal alles opruimen en een NIEUW concept-id kiezen voor het volgende bericht.
+  const finishCompose = () => {
+    const finishedId = localDraftIdRef.current;
+    try { localStorage.removeItem(draftKey); localStorage.removeItem('mail-draft-active-id'); } catch {}
+    localDraftIdRef.current = '';
+    void deleteDraftRemote(context, finishedId).catch(() => undefined);
+    requestIdRef.current = '';
+    serverSaveSeq.current++;
+    setDraftSync('idle');
+    reset();
+    onSent();
+    onClose();
+  };
+  const payload = () => ({ to, cc, bcc, subject, html: body, plainText: editorRef.current?.getPlainText().trim() || '', accountId, localId: localDraftIdRef.current });
+
   const send = async () => {
     const plainText = editorRef.current?.getPlainText().trim() || '';
     if (!accountId || sending || !to.trim() || !plainText) return;
     setSending(true);
     setFailure('');
+    if (!requestIdRef.current) requestIdRef.current = newRequestId();
     try {
-      const prepared = await api.post(`/api/owner/mail/accounts/${accountId}/send/prepare`, {
-        ...context,
-        to,
-        cc,
-        bcc,
-        subject,
-        plainText,
-      });
-      await api.post(`/api/owner/mail/accounts/${accountId}/send/confirm`, {
-        ...context,
-        commandId: prepared.data.commandId,
-        confirmationToken: prepared.data.confirmationToken,
-      });
-      try {
-        localStorage.removeItem(draftKey);
-      } catch {}
-      reset();
-      onSent();
-      onClose();
-    } catch {
-      setFailure(
-        t(
-          'Лист зараз не вдалося надіслати. Текст залишився у редакторі.',
-          'Het bericht kon nu niet worden verzonden. De tekst blijft in de editor staan.',
-        ),
-      );
+      // De server verstuurt de HTML-versie én een platte-tekstversie via de Gmail API (users.messages.send).
+      const out = await sendRemote(context, payload(), requestIdRef.current);
+      if (out?.item?.status === 'sent') {
+        emitCanonicalNotice({ text: t('Лист надіслано', 'Bericht verzonden'), kind: 'success', source: 'mail' });
+        finishCompose();
+      } else {
+        setFailure(t('Лист зараз не вдалося надіслати. Текст залишився у редакторі, спробуйте ще раз.', 'Het bericht kon nu niet worden verzonden. De tekst blijft in de editor staan, probeer het opnieuw.'));
+      }
+    } catch (error) {
+      setFailure(composeErrorText(error, t));
     }
     setSending(false);
+  };
+
+  const scheduleSend = async (at: number) => {
+    const plainText = editorRef.current?.getPlainText().trim() || '';
+    if (!accountId || sending || !to.trim() || !plainText) throw new Error('MAIL_RECIPIENT_REQUIRED');
+    setSending(true);
+    setFailure('');
+    try {
+      if (!requestIdRef.current) requestIdRef.current = newRequestId();
+      await scheduleRemote(context, payload(), at, requestIdRef.current);
+      emitCanonicalNotice({ text: t(`Лист заплановано на ${new Date(at).toLocaleString('uk-UA')}`, `Bericht gepland op ${new Date(at).toLocaleString('nl-BE')}`), kind: 'success', source: 'mail' });
+      finishCompose();
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -359,6 +421,24 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
           onBackspace={() => editorRef.current?.backspace()}
         />
         <footer>
+          <MailAiToolbar
+            lang={lang}
+            context={context}
+            getPlain={() => editorRef.current?.getPlainText() ?? ''}
+            getHtml={() => body}
+            onApply={html => setBody(html)}
+            disabled={sending}
+          />
+          <span className={`mail-new-message-sync sync-${draftSync}`} role="status" data-draft-sync={draftSync}
+            title={t('Чернетка зберігається автоматично: спершу на нашому сервері, потім у Gmail.', 'Het concept wordt automatisch bewaard: eerst op onze server, daarna in Gmail.')}>
+            {draftSync === 'saving' ? <LoaderCircle aria-hidden="true" /> : draftSync === 'synced' ? <Cloud aria-hidden="true" /> : draftSync === 'error' ? <CircleAlert aria-hidden="true" /> : <CloudOff aria-hidden="true" />}
+            {draftSync === 'saving' ? t('Зберігаємо…', 'Bewaren…')
+              : draftSync === 'synced' ? t('Чернетку збережено (Gmail)', 'Concept bewaard (Gmail)')
+              : draftSync === 'local' ? t('Збережено на сервері, у Gmail ще ні', 'Op de server bewaard, nog niet in Gmail')
+              : draftSync === 'error' ? t('Лише в цьому браузері', 'Alleen in deze browser')
+              : t('Чернетка', 'Concept')}
+          </span>
+          <MailScheduleMenu lang={lang} context={context} canSchedule={Boolean(accountId && to.trim() && body.trim())} onSchedule={scheduleSend} busy={sending} />
           <button type="button" className="primary" disabled={sending || !to.trim() || !body.trim()} onClick={() => void send()}>
             <Send />
             {sending ? t('Надсилаємо…', 'Verzenden…') : t('Надіслати', 'Verzenden')}
