@@ -29,6 +29,18 @@ export const TOEGESTANE_ROUTES = new Set<string>([
   'POST /api/owner/cloud/google-suite/calendar/events',
   'POST /api/owner/cloud/google-suite/drive/browse',
   'POST /api/owner/cloud/google-suite/drive/file',
+  'POST /api/owner/github/status',
+  'POST /api/owner/github/repos',
+  'POST /api/owner/github/repo',
+  'POST /api/owner/github/issues',
+  'POST /api/owner/github/commits',
+  'POST /api/owner/github/actions',
+  'POST /api/owner/github/readme',
+  'POST /api/owner/github/search',
+  'POST /api/owner/github/projects',
+  'POST /api/owner/github/activity',
+  'POST /api/owner/github/issue/create',
+  'POST /api/owner/github/issue/comment',
 ]);
 
 const echt: Aanroeper = async (userId, service, route, body) => {
