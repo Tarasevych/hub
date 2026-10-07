@@ -5,6 +5,7 @@ import './api-platform-view.css';
 import './agents-panel.css';
 
 type Tr = (uk: string, nl: string) => string;
+type ToolInfo = { name: string; title: string; description: string; kind: 'read' | 'write' | 'execute'; needsApproval: boolean };
 type Grant = { id: string; clientName: string; scope: string; createdAt: number; lastUsedAt: number | null; expiresAt: number };
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
@@ -36,6 +37,8 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
   const [notice, setNotice] = useState('');
   const [copied, setCopied] = useState(false);
   const [, setTick] = useState(0);
+  const [confirm, setConfirm] = useState<string | null>(null);
+  const [tools, setTools] = useState<ToolInfo[]>([]);
 
   const load = useCallback(async () => {
     const res = await api.post('/api/owner/mcp-connector/grants', sessionBody());
@@ -51,20 +54,24 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    api.post('/api/owner/mcp-connector/tools', sessionBody()).then((res) => setTools(res.data?.tools ?? [])).catch(() => undefined);
+  }, []);
+
+  // De bevestiging staat op de pagina zelf (geen window.confirm: sommige ingebedde browsers onderdrukken die stilletjes).
   const revoke = async (grant: Grant) => {
-    if (!window.confirm(tr(`Відкликати доступ «${grant.clientName}»? Claude більше не зможе користуватися вашими пристроями.`, `Toegang van «${grant.clientName}» intrekken? Claude kan uw apparaten dan niet meer gebruiken.`))) return;
-    setBusy(true); setNotice('');
-    try { await api.post(`/api/owner/mcp-connector/grants/${grant.id}/revoke`, sessionBody()); await load(); } catch { setNotice(tr('Не вдалося відкликати.', 'Intrekken mislukt.')); }
+    setConfirm(null); setBusy(true); setNotice('');
+    try { await api.post(`/api/owner/mcp-connector/grants/${grant.id}/revoke`, sessionBody()); await load(); setNotice(tr('Доступ відкликано. Claude побачить це при наступному зверненні.', 'Toegang ingetrokken. Claude merkt dat bij de volgende aanroep.')); } catch { setNotice(tr('Не вдалося відкликати.', 'Intrekken mislukt.')); }
     setBusy(false);
   };
 
   const copy = async () => { try { await navigator.clipboard?.writeText(url); setCopied(true); window.setTimeout(() => setCopied(false), 2000); } catch { /* geen klembord */ } };
 
   // Opnieuw koppelen: oude toegang van Claude intrekken (als die er is), adres kopiëren en de connectorpagina van Claude openen.
-  const reconnect = async () => {
+  const reconnect = async (confirmed = false) => {
     if (busy) return;
-    if (grants.length && !window.confirm(tr('Старий доступ Claude буде відкликано, а адресу конектора скопійовано. Продовжити?', 'De oude toegang van Claude wordt ingetrokken en het connectoradres gekopieerd. Doorgaan?'))) return;
-    setBusy(true); setNotice('');
+    if (grants.length && !confirmed) { setConfirm('reconnect'); return; }
+    setConfirm(null); setBusy(true); setNotice('');
     try {
       for (const g of grants) await api.post(`/api/owner/mcp-connector/grants/${g.id}/revoke`, sessionBody());
       await load();
@@ -96,9 +103,17 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
         </div>
         <p className={`mcp-status mcp-status-${status}`} role='status' data-mcp-status={status}>{statusText}</p>
         <div className='api-platform-secret-actions'>
-          <button type='button' className='mcp-reconnect' disabled={busy} onClick={() => void reconnect()}>
-            {status === 'none' ? tr('Підключити Claude', 'Claude koppelen') : tr('Перепідключити Claude', 'Claude opnieuw koppelen')}
-          </button>
+          {confirm === 'reconnect' ? (
+            <div className='mcp-confirm' role='alertdialog' aria-label={tr('Підтвердження перепідключення', 'Bevestig opnieuw koppelen')}>
+              <span>{tr('Старий доступ Claude буде відкликано, адресу скопійовано, і відкриється Claude.', 'De oude toegang van Claude wordt ingetrokken, het adres gekopieerd en Claude geopend.')}</span>
+              <button type='button' className='mcp-reconnect' disabled={busy} onClick={() => void reconnect(true)}>{tr('Продовжити', 'Doorgaan')}</button>
+              <button type='button' className='mcp-cancel' onClick={() => setConfirm(null)}>{tr('Скасувати', 'Annuleren')}</button>
+            </div>
+          ) : (
+            <button type='button' className='mcp-reconnect' disabled={busy} onClick={() => void reconnect()}>
+              {status === 'none' ? tr('Підключити Claude', 'Claude koppelen') : tr('Перепідключити Claude', 'Claude opnieuw koppelen')}
+            </button>
+          )}
         </div>
         <ol>
           <li>{tr('У Claude вставте адресу й натисніть Add.', 'Plak het adres in Claude en klik op Add.')}</li>
@@ -127,13 +142,39 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
                     </p>
                     <small>{tr('надано', 'verleend')}: {when(g.createdAt)} · {tr('діє до', 'geldig tot')}: {when(g.expiresAt)}</small>
                   </div>
-                  <button type='button' className='mcp-revoke' disabled={busy} onClick={() => void revoke(g)}>{tr('Відкликати', 'Intrekken')}</button>
+                  {confirm === g.id ? (
+                    <div className='mcp-confirm' role='alertdialog' aria-label={tr('Підтвердження відкликання', 'Bevestig intrekken')}>
+                      <span>{tr('Claude більше не зможе користуватися вашими пристроями. Відкликати?', 'Claude kan uw apparaten dan niet meer gebruiken. Intrekken?')}</span>
+                      <button type='button' className='mcp-revoke' disabled={busy} onClick={() => void revoke(g)}>{tr('Так, відкликати', 'Ja, intrekken')}</button>
+                      <button type='button' className='mcp-cancel' onClick={() => setConfirm(null)}>{tr('Скасувати', 'Annuleren')}</button>
+                    </div>
+                  ) : (
+                    <button type='button' className='mcp-revoke' disabled={busy} onClick={() => setConfirm(g.id)}>{tr('Відкликати', 'Intrekken')}</button>
+                  )}
                 </li>
               );
             })}
           </ul>
         ) : <p>{tr('Claude ще не має доступу.', 'Claude heeft nog geen toegang.')}</p>}
         {notice ? <p role='status'>{notice}</p> : null}
+      </article>
+
+      <article className='api-platform-panel' data-mcp-tools={String(tools.length)}>
+        <strong>{tr('Інструменти й дозволи', 'Hulpmiddelen en rechten')}</strong>
+        <p>{tr('Цей самий список бачить Claude. Читання виконується одразу, запис і виконання завжди чекають вашого «Дозволити» на сайті. У Claude кожному інструменту можна додатково задати «Завжди дозволяти», «Потрібне схвалення» або «Заблокувати».', 'Dezelfde lijst ziet Claude. Lezen gebeurt direct; schrijven en uitvoeren wachten altijd op uw "Toestaan" op de site. In Claude kunt u elk hulpmiddel bovendien op "Altijd toestaan", "Goedkeuring nodig" of "Blokkeren" zetten.')}</p>
+        {(['read', 'write', 'execute'] as const).map((kind) => {
+          const rows = tools.filter((x) => x.kind === kind);
+          if (!rows.length) return null;
+          const title = kind === 'read' ? tr('Лише читання', 'Alleen lezen') : kind === 'write' ? tr('Запис', 'Schrijven') : tr('Виконання', 'Uitvoeren');
+          return (
+            <div key={kind} className={`mcp-tool-group mcp-tool-${kind}`}>
+              <b>{title} <span className='agents-badge'>{rows.length}</span> <small>{kind === 'read' ? tr('виконується одразу', 'direct uitgevoerd') : tr('потребує вашого підтвердження', 'vraagt uw goedkeuring')}</small></b>
+              <ul>
+                {rows.map((x) => <li key={x.name}><code>{x.name}</code> <span>{x.description.split('. ')[0].replace(/\.$/, '')}</span></li>)}
+              </ul>
+            </div>
+          );
+        })}
       </article>
     </section>
   );

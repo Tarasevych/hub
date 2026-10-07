@@ -7,6 +7,7 @@ import * as c from '../../backend/mcp-connector';
 import * as st from '../../backend/mcp-connector-store';
 import * as agents from '../../backend/connectors-store';
 import { sha256 } from '../../backend/connectors-crypto';
+import { describeTools } from '../../backend/connectors-tools';
 import { checker } from './hulp/nep-google';
 
 const CALLBACK = 'https://claude.ai/api/mcp/auth_callback';
@@ -152,7 +153,17 @@ export async function main(): Promise<number> {
 
     // ---- hulpmiddelen en isolatie ----
     const leeg = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 4, method: 'tools/list' }));
-    check('tools/list: zonder apparaat of GitHub-token geen hulpmiddelen', leeg.result.tools.length === 0);
+    check('tools/list: zonder apparaat staan de 9 apparaattools er toch (Claude toont zo de lijst en de rechtengroepen); geen GitHub-tool zonder token',
+      leeg.result.tools.length === 9 && !leeg.result.tools.some((t: any) => t.name === 'github_get'), leeg.result.tools.map((t: any) => t.name).join(','));
+    const zonderPc = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 41, method: 'tools/call', params: { name: 'machine_read_file', arguments: { path: '.' } } }));
+    check('tools/call zonder apparaat: duidelijke foutmelding (isError), geen crash', zonderPc.result?.isError === true && /No suitable device/.test(zonderPc.result.content[0].text), JSON.stringify(zonderPc.result).slice(0, 120));
+    const overzicht = await describeTools(A);
+    const kindOf = (n: string) => overzicht.find((t) => t.name === n);
+    check('beheeroverzicht: soort en goedkeuring per hulpmiddel (lezen direct; schrijven en uitvoeren na goedkeuring)',
+      overzicht.length === 9 && kindOf('machine_read_file')?.kind === 'read' && kindOf('machine_read_file')?.needsApproval === false
+      && kindOf('machine_write_file')?.kind === 'write' && kindOf('machine_write_file')?.needsApproval === true
+      && kindOf('docker_manage_container')?.kind === 'execute' && kindOf('docker_manage_container')?.needsApproval === true
+      && kindOf('system_metrics')?.readOnly === true, overzicht.map((t) => `${t.name}:${t.kind}`).join(','));
     const agentA = await agents.createAgent(A, 'pc-van-A', 'win32', sha256(randomUUID()), {});
     const agentB = await agents.createAgent(B, 'pc-van-B', 'linux', sha256(randomUUID()), {});
     const lijst = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 5, method: 'tools/list' })).result.tools as any[];
