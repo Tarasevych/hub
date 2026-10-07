@@ -1,0 +1,49 @@
+/* Meldingencentrum: brede, rustige lijst met zoeken, filters, groepering per dag, stand en duur. Op een telefoon een volle onderlade. */
+.canonical-notification-panel{width:min(480px,calc(100vw - 16px));max-height:min(720px,calc(100dvh - 16px))}
+@media(max-width:560px){.canonical-notification-panel{left:8px!important;right:8px;top:auto!important;bottom:8px;width:auto;max-height:calc(100dvh - 16px)}}
+.cnc-body{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;overflow:hidden}
+.cnc-tools{display:grid;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.cnc-search{display:flex;align-items:center;gap:8px;min-height:38px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface,var(--panel))}
+.cnc-search svg{width:16px;height:16px;color:var(--muted);flex:0 0 auto}
+.cnc-search input{flex:1;min-width:0;border:0;background:transparent;color:inherit;font:inherit;outline:none;min-height:36px}
+.cnc-search:focus-within{outline:2px solid var(--accent,#2f6f73)}
+.cnc-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin}
+.cnc-chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:2px 12px;border-radius:99px;border:1px solid var(--line);background:transparent;color:inherit;font:inherit;font-size:.82rem;cursor:pointer;white-space:nowrap}
+.cnc-chip[aria-pressed=true]{background:var(--accent,#2f6f73);border-color:var(--accent,#2f6f73);color:#fff;font-weight:700}
+.cnc-chip:focus-visible{outline:3px solid #f59e0b;outline-offset:1px}
+.cnc-chip-n{padding:0 6px;border-radius:99px;background:rgba(120,140,160,.25);font-size:.72rem}
+.cnc-chip[aria-pressed=true] .cnc-chip-n{background:rgba(255,255,255,.28)}
+.cnc-selects{display:flex;flex-wrap:wrap;gap:8px 12px}
+.cnc-selects label{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted)}
+.cnc-selects select{min-height:32px;border-radius:8px;border:1px solid var(--line);background:var(--surface,var(--panel));color:var(--text);font:inherit;font-size:.82rem;padding:0 6px}
+.cnc-list{overflow:auto;padding:6px 8px 10px;display:grid;align-content:start;gap:6px;min-height:0}
+.cnc-day{position:sticky;top:0;z-index:1;padding:8px 6px 4px;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--panel)}
+.cnc-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px;border-radius:12px;border:1px solid var(--line);border-left-width:4px;background:var(--surface,var(--panel))}
+.cnc-row.kind-success{border-left-color:#1a7f37}.cnc-row.kind-warning{border-left-color:#b45309}.cnc-row.kind-error{border-left-color:#b91c1c}.cnc-row.kind-info{border-left-color:var(--accent,#2f6f73)}
+.cnc-row.is-read{opacity:.78}
+.cnc-row.is-unread strong{font-weight:750}
+.cnc-icon{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--soft,rgba(47,111,115,.12));color:var(--accent,#2f6f73)}
+.cnc-icon svg{width:18px;height:18px}
+.cnc-main{display:grid;gap:4px;min-width:0}
+.cnc-main strong{font-weight:650;line-height:1.3;overflow-wrap:anywhere}
+.cnc-meta{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:.76rem;color:var(--muted)}
+.cnc-cat{padding:0 8px;border-radius:99px;background:var(--soft,rgba(120,140,160,.16));font-weight:650}
+.cnc-status{display:inline-flex;align-items:center;gap:5px;font-weight:700}
+.cnc-status i{width:8px;height:8px;border-radius:99px;background:currentColor}
+.cnc-status.st-waiting{color:#b45309}.cnc-status.st-active{color:#2563eb}.cnc-status.st-done{color:#1a7f37}.cnc-status.st-failed{color:#b91c1c}.cnc-status.st-rejected{color:#6b7280}.cnc-status.st-expired{color:#6b7280}
+.cnc-status.st-waiting i,.cnc-status.st-active i{animation:cnc-pulse 1.4s ease-in-out infinite}
+@keyframes cnc-pulse{50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.cnc-status i{animation:none!important}}
+@media(prefers-color-scheme:dark){.cnc-status.st-waiting{color:#fbbf24}.cnc-status.st-active{color:#60a5fa}.cnc-status.st-done{color:#4ac26b}.cnc-status.st-failed{color:#f87171}}
+.cnc-details{display:grid;gap:8px;margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--soft,rgba(120,140,160,.12))}
+.cnc-details p{margin:0;color:var(--muted)}
+.cnc-details dl{display:grid;gap:4px;margin:0}
+.cnc-details dl>div{display:flex;justify-content:space-between;gap:12px;font-size:.82rem}
+.cnc-details dt{color:var(--muted)}.cnc-details dd{margin:0;text-align:right;font-weight:600}
+.cnc-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px;max-width:112px}
+.cnc-actions button{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--muted);cursor:pointer}
+.cnc-actions button:hover{background:var(--soft,rgba(120,140,160,.18));color:var(--text)}
+.cnc-actions button:focus-visible{outline:3px solid #f59e0b;outline-offset:1px}
+.cnc-actions svg{width:17px;height:17px}
+.cnc-done{display:inline-grid;place-items:center;width:34px;height:34px;color:#1a7f37}
+.cnc-done svg{width:16px;height:16px}

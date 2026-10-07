@@ -185,8 +185,8 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
             <div key={x.name} className={`hub-tool${x.mode === 'off' ? ' is-off' : ''}`} data-tool={x.name} data-mode={x.mode}>
               <span className='hub-tool-name'>
                 <b>{text?.title || x.name}</b>
-                {x.risky && text ? <Help tone='warn' tr={tr} content={{ title: text.title, what: text.what, touches: text.touches, on: text.on, off: text.off, risk: text.risk }} />
-                  : text ? <Help tr={tr} content={{ title: text.title, what: text.what, touches: text.touches, on: text.on, off: text.off }} /> : null}
+                {x.risky && text ? <Help tone='warn' tr={tr} content={{ title: text.title, touches: text.touches, on: text.on, off: text.off, risk: text.risk }} />
+                  : text ? <Help tr={tr} content={{ title: text.title, touches: text.touches, on: text.on, off: text.off }} /> : null}
                 <code>{x.name}</code>
               </span>
               <span className='hub-tool-desc'>{text?.what || ''}</span>
