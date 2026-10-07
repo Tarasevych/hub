@@ -51,3 +51,29 @@
 .cnc-link{justify-self:start;font-size:.82rem;font-weight:700;color:var(--accent,#2f6f73);text-decoration:none}
 .cnc-link:hover{text-decoration:underline}
 .cnc-link:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+
+/* kleurige sectiepictogrammen met logo van de dienst; lichte toon per soort (geen regenboog: alleen een rand en een zweem achtergrond) */
+.cnc-icon{position:relative;--sec:#2f6f73;background:color-mix(in srgb,var(--sec) 16%,transparent);color:var(--sec)}
+.cnc-provider{position:absolute;right:-5px;bottom:-5px;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--panel,#fff);box-shadow:0 0 0 1px var(--line,#d6dde4)}
+.cnc-provider svg{width:12px;height:12px}
+.cnc-row.sec-mail,.cnc-sec.sec-mail{--sec:#2563eb}.cnc-row.sec-cloud,.cnc-sec.sec-cloud{--sec:#0284c7}.cnc-row.sec-calendar,.cnc-sec.sec-calendar{--sec:#ea580c}
+.cnc-row.sec-ai,.cnc-sec.sec-ai,.cnc-row.sec-claude,.cnc-sec.sec-claude{--sec:#c2603d}.cnc-row.sec-agent,.cnc-sec.sec-agent{--sec:#0f766e}.cnc-row.sec-browser,.cnc-sec.sec-browser{--sec:#7c3aed}
+.cnc-row.sec-github,.cnc-sec.sec-github{--sec:#475569}.cnc-row.sec-mcp,.cnc-sec.sec-mcp{--sec:#0d9488}.cnc-row.sec-hub,.cnc-sec.sec-hub{--sec:#4f46e5}
+.cnc-row.sec-huis,.cnc-sec.sec-huis{--sec:#b45309}.cnc-row.sec-identity,.cnc-sec.sec-identity,.cnc-row.sec-api,.cnc-sec.sec-api{--sec:#be185d}.cnc-row.sec-admin,.cnc-sec.sec-admin{--sec:#dc2626}
+.cnc-row .cnc-icon{--sec:inherit}
+.cnc-row.sec-mail .cnc-icon{--sec:#2563eb}.cnc-row.sec-cloud .cnc-icon{--sec:#0284c7}.cnc-row.sec-calendar .cnc-icon{--sec:#ea580c}.cnc-row.sec-ai .cnc-icon,.cnc-row.sec-claude .cnc-icon{--sec:#c2603d}
+.cnc-row.sec-agent .cnc-icon{--sec:#0f766e}.cnc-row.sec-browser .cnc-icon{--sec:#7c3aed}.cnc-row.sec-github .cnc-icon{--sec:#475569}.cnc-row.sec-mcp .cnc-icon{--sec:#0d9488}.cnc-row.sec-hub .cnc-icon{--sec:#4f46e5}
+.cnc-row.sec-huis .cnc-icon{--sec:#b45309}.cnc-row.sec-identity .cnc-icon,.cnc-row.sec-api .cnc-icon{--sec:#be185d}.cnc-row.sec-admin .cnc-icon{--sec:#dc2626}
+.cnc-row.kind-success{background:color-mix(in srgb,#16a34a 6%,var(--surface,var(--panel)))}
+.cnc-row.kind-warning{background:color-mix(in srgb,#f59e0b 8%,var(--surface,var(--panel)))}
+.cnc-row.kind-error{background:color-mix(in srgb,#dc2626 7%,var(--surface,var(--panel)))}
+.cnc-row.is-nested{margin-left:18px;padding:8px;background:transparent;opacity:.9}
+.cnc-row.is-nested .cnc-icon{width:28px;height:28px}
+.cnc-nested{display:grid;gap:4px;margin-top:4px;padding-left:6px;border-left:2px solid var(--line,#d6dde4)}
+.cnc-more{display:inline-flex;align-items:center;gap:6px;justify-self:start;min-height:28px;padding:2px 10px;border-radius:99px;border:1px dashed var(--line,#cbd5e1);background:transparent;color:var(--muted,#64748b);font:inherit;font-size:.78rem;cursor:pointer}
+.cnc-more:hover{background:var(--soft,rgba(120,140,160,.14))}
+.cnc-more svg{width:14px;height:14px}
+.cnc-sections{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin}
+.cnc-sec{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:2px 10px;border-radius:99px;border:1px solid var(--line,#d6dde4);background:transparent;color:inherit;font:inherit;font-size:.78rem;cursor:pointer;white-space:nowrap}
+.cnc-sec svg{width:14px;height:14px;color:var(--sec,var(--muted))}
+.cnc-sec[aria-pressed=true]{background:color-mix(in srgb,var(--sec,#2f6f73) 16%,transparent);border-color:var(--sec,#2f6f73);font-weight:700}

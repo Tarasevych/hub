@@ -1,21 +1,22 @@
 import { useMemo, useState, type ComponentType } from 'react';
-import { Bell, Bot, Check, ChevronDown, ChevronUp, CircleCheck, Cloud, Globe, Info, Laptop, Mail, Search, Trash2, Undo2 } from 'lucide-react';
+import { Bell, Check, ChevronDown, ChevronUp, CircleCheck, Info, Layers, Search, Trash2, Undo2 } from 'lucide-react';
 import { activityLink, activityTitle, durationText, sourceLabel, statusInfo, type ActivityEvent } from './connector-activity';
+import { Logo } from './mcp-ui';
+import { sectionLabel, styleOf, type Section } from './notification-style';
 import './notification-panel.css';
 
 type Lang = 'uk' | 'nl';
 type Kind = 'info' | 'success' | 'warning' | 'error';
-type Category = 'claude' | 'agent' | 'browser' | 'mail' | 'cloud' | 'site';
 type Detail = { icon: string; label: string; value: string };
-type Section = { title: string; items: Detail[] };
+type SectionBlock = { title: string; items: Detail[] };
 
-export type LocalRow = { id: string; text: string; kind: Kind; createdAt: number; source: string; read: boolean; link?: { href: string; label: string }; details?: Section[]; action?: { label: string; onAction: () => void | Promise<void> } };
+export type LocalRow = { id: string; text: string; kind: Kind; createdAt: number; source: string; read: boolean; link?: { href: string; label: string }; details?: SectionBlock[]; action?: { label: string; onAction: () => void | Promise<void> } };
 export type ServerRow = { id: string; kind: string; title: string; message: string; createdAt: number; read?: boolean };
 
 type Item = {
-  key: string; origin: 'local' | 'server' | 'activity'; kind: Kind; title: string; text?: string; category: Category; createdAt: number; read: boolean;
+  key: string; group: string; origin: 'local' | 'server' | 'activity'; kind: Kind; title: string; text?: string; source: string; createdAt: number; read: boolean;
   status?: { text: string; group: 'waiting' | 'active' | 'done' | 'failed' | 'rejected' | 'expired' }; duration?: string;
-  link?: { href: string; label: string }; details?: Section[]; facts?: Array<[string, string]>; markRead: () => void; remove?: () => void; action?: LocalRow['action'];
+  link?: { href: string; label: string }; details?: SectionBlock[]; facts?: Array<[string, string]>; markRead: () => void; remove?: () => void; action?: LocalRow['action'];
 };
 type Props = {
   lang: Lang; local: LocalRow[]; server: ServerRow[]; events: ActivityEvent[]; readEvents: Set<string>;
@@ -23,12 +24,6 @@ type Props = {
   onReadServer?: (id: string) => void | Promise<void>; onReadEvent: (id: string) => void;
   detailIcons: Record<string, ComponentType<any>>;
 };
-
-const CATEGORY_ICON: Record<Category, ComponentType<any>> = { claude: Bot, agent: Laptop, browser: Globe, mail: Mail, cloud: Cloud, site: Bell };
-const categoryOf = (source: string): Category => (/^mail/.test(source) ? 'mail' : /^(cloud|drive)/.test(source) ? 'cloud' : 'site');
-const categoryName = (c: Category, lang: Lang) => ({
-  claude: 'Claude', agent: lang === 'uk' ? 'Пристрої' : 'Apparaten', browser: lang === 'uk' ? 'Браузер' : 'Browser', mail: lang === 'uk' ? 'Пошта' : 'E-mail', cloud: lang === 'uk' ? 'Хмара' : 'Cloud', site: lang === 'uk' ? 'Сайт' : 'Site',
-} as Record<Category, string>)[c];
 
 function relative(value: number, lang: Lang): string {
   const s = Math.max(0, Math.round((Date.now() - value) / 1000));
@@ -42,37 +37,43 @@ function relative(value: number, lang: Lang): string {
 }
 const dayKey = (value: number) => { const d = new Date(value); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
 function dayLabel(value: number, lang: Lang): string {
-  const today = dayKey(Date.now()), yesterday = dayKey(Date.now() - 86400000);
   const key = dayKey(value);
-  if (key === today) return lang === 'uk' ? 'Сьогодні' : 'Vandaag';
-  if (key === yesterday) return lang === 'uk' ? 'Учора' : 'Gisteren';
+  if (key === dayKey(Date.now())) return lang === 'uk' ? 'Сьогодні' : 'Vandaag';
+  if (key === dayKey(Date.now() - 86400000)) return lang === 'uk' ? 'Учора' : 'Gisteren';
   return new Date(value).toLocaleDateString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { day: 'numeric', month: 'long' });
 }
+/** Ключ групи: однакові за змістом сповіщення (без чисел і лапок) з однієї служби зливаються в одну групу. */
+const groupKeyOf = (source: string, text: string) => `${source}|${text.toLowerCase().replace(/[\d«»"'“”‘’.,:;!?()[\]{}]+/g, '').replace(/\s+/g, ' ').trim().slice(0, 48)}`;
 
 type Filter = 'all' | 'unread' | 'waiting' | 'problems';
 type Sort = 'new' | 'old' | 'unread' | 'status';
+const GROUP_KEY = 'mr.notif.group';
+const readGroupPref = () => { try { return localStorage.getItem(GROUP_KEY) !== '0'; } catch { return true; } };
 
 /**
- * Lijst van het meldingencentrum: meldingen van de site, wat Claude en uw apparaten doen (met stand en duur), met zoeken, filteren op stand en bron,
- * sorteren, groeperen per dag en uitklapbare details. Eén lijst voor alles; de bron staat bij elke regel.
+ * Список центру сповіщень: кожна мітка має колірний значок розділу з логотипом служби (Google, Microsoft, Claude, ОС пристрою…), легкий тон за типом
+ * (успіх, увага, помилка), однакові сповіщення групуються (видно останнє, решта розгортається), пошук, фільтри, сортування, групування за днями.
  */
 export default function NotificationPanelBody(p: Props) {
   const t = (uk: string, nl: string) => (p.lang === 'uk' ? uk : nl);
   const [filter, setFilter] = useState<Filter>('all');
-  const [category, setCategory] = useState<'all' | Category>('all');
+  const [section, setSection] = useState<'all' | Section>('all');
   const [sort, setSort] = useState<Sort>('new');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [grouped, setGrouped] = useState<boolean>(readGroupPref);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const toggleGroupMode = () => { const next = !grouped; setGrouped(next); try { localStorage.setItem(GROUP_KEY, next ? '1' : '0'); } catch { /* geen opslag */ } };
 
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
-    for (const r of p.local) out.push({ key: `l:${r.id}`, origin: 'local', kind: r.kind, title: r.text, category: categoryOf(r.source), createdAt: r.createdAt, read: r.read, details: r.details, link: r.link, markRead: () => p.onReadLocal(r.id), remove: () => p.onRemoveLocal(r.id), action: r.action });
-    for (const r of p.server) out.push({ key: `s:${r.id}`, origin: 'server', kind: /error|fail/i.test(r.kind) ? 'error' : /warn/i.test(r.kind) ? 'warning' : 'info', title: r.title, text: r.message, category: 'site', createdAt: r.createdAt, read: Boolean(r.read), markRead: () => { if (!r.read) void p.onReadServer?.(r.id); } });
+    for (const r of p.local) out.push({ key: `l:${r.id}`, group: groupKeyOf(r.source, r.text), origin: 'local', kind: r.kind, title: r.text, source: r.source, createdAt: r.createdAt, read: r.read, link: r.link, details: r.details, markRead: () => p.onReadLocal(r.id), remove: () => p.onRemoveLocal(r.id), action: r.action });
+    for (const r of p.server) out.push({ key: `s:${r.id}`, group: groupKeyOf('site', r.title), origin: 'server', kind: /error|fail/i.test(r.kind) ? 'error' : /warn/i.test(r.kind) ? 'warning' : 'info', title: r.title, text: r.message, source: 'site', createdAt: r.createdAt, read: Boolean(r.read), markRead: () => { if (!r.read) void p.onReadServer?.(r.id); } });
     for (const e of p.events) {
       const st = statusInfo(e.status, p.lang);
-      const category: Category = e.source === 'claude' ? 'claude' : e.source === 'browser' ? 'browser' : 'agent';
+      const source = e.source === 'claude' ? 'claude' : e.source === 'browser' ? `browser:${/edge/i.test(e.subject) ? 'edge' : /opera/i.test(e.subject) ? 'opera' : /firefox/i.test(e.subject) ? 'firefox' : 'chrome'}` : `agent:${/win/i.test(e.platform || '') ? 'windows' : /darwin|mac/i.test(e.platform || '') ? 'macos' : 'linux'}`;
       out.push({
-        key: `a:${e.id}`, origin: 'activity', category, createdAt: e.createdAt, read: p.readEvents.has(e.id),
+        key: `a:${e.id}`, group: `${source}|${e.kind}|${e.type}|${st.group}`, origin: 'activity', source, createdAt: e.createdAt, read: p.readEvents.has(e.id),
         kind: st.group === 'failed' ? 'error' : st.group === 'waiting' ? 'warning' : st.group === 'done' || e.kind === 'grant' ? 'success' : 'info',
         title: activityTitle(e, p.lang), status: st, duration: e.kind === 'grant' ? undefined : durationText(e, p.lang),
         facts: [
@@ -91,11 +92,11 @@ export default function NotificationPanelBody(p: Props) {
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = items.filter((i) => {
-      if (category !== 'all' && i.category !== category) return false;
+      if (section !== 'all' && styleOf(i.source, p.lang).section !== section) return false;
       if (filter === 'unread' && i.read) return false;
       if (filter === 'waiting' && i.status?.group !== 'waiting') return false;
       if (filter === 'problems' && !(i.kind === 'error' || i.kind === 'warning' || i.status?.group === 'failed' || i.status?.group === 'expired' || i.status?.group === 'rejected')) return false;
-      if (q && !`${i.title} ${i.text || ''} ${categoryName(i.category, p.lang)} ${i.status?.text || ''}`.toLowerCase().includes(q)) return false;
+      if (q && !`${i.title} ${i.text || ''} ${styleOf(i.source, p.lang).label} ${i.status?.text || ''}`.toLowerCase().includes(q)) return false;
       return true;
     });
     const rank: Record<string, number> = { waiting: 0, active: 1, failed: 2, rejected: 3, expired: 4, done: 5 };
@@ -106,18 +107,76 @@ export default function NotificationPanelBody(p: Props) {
       return b.createdAt - a.createdAt;
     });
     return list;
-  }, [items, filter, category, sort, query, p.lang]);
+  }, [items, filter, section, sort, query, p.lang]);
+
+  // Групи: перший (за поточним порядком) елемент групи — «головний»; решта ховається під «ще N».
+  const groups = useMemo(() => {
+    if (!grouped) return shown.map((i) => [i]);
+    const map = new Map<string, Item[]>(); const order: string[] = [];
+    for (const i of shown) { if (!map.has(i.group)) { map.set(i.group, []); order.push(i.group); } map.get(i.group)!.push(i); }
+    return order.map((k) => map.get(k)!);
+  }, [shown, grouped]);
 
   const counts = useMemo(() => ({
     unread: items.filter((i) => !i.read).length,
     waiting: items.filter((i) => i.status?.group === 'waiting').length,
     problems: items.filter((i) => i.kind === 'error' || i.status?.group === 'failed').length,
   }), [items]);
-  const categories = useMemo(() => [...new Set(items.map((i) => i.category))], [items]);
+  const sections = useMemo(() => [...new Set(items.map((i) => styleOf(i.source, p.lang).section))], [items, p.lang]);
 
   const chip = (id: Filter, label: string, n?: number) => (
     <button key={id} type='button' className='cnc-chip' aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}{n ? <span className='cnc-chip-n'>{n}</span> : null}</button>
   );
+
+  const renderRow = (item: Item, opts: { nested?: boolean; extra?: number; groupKey?: string; unread?: number } = {}) => {
+    const style = styleOf(item.source, p.lang);
+    const Icon = style.Icon;
+    const expandable = Boolean(item.details?.length || item.facts?.length || item.text);
+    const isOpen = Boolean(open[item.key]);
+    const groupOpen = opts.groupKey ? Boolean(expandedGroups[opts.groupKey]) : false;
+    return (
+      <article className={`cnc-row sec-${style.section} kind-${item.kind}${item.read ? ' is-read' : ' is-unread'}${item.status ? ` st-${item.status.group}` : ''}${opts.nested ? ' is-nested' : ''}`} data-origin={item.origin} data-section={style.section} onPointerDown={() => { if (!item.read) item.markRead(); }}>
+        <span className='cnc-icon' aria-hidden='true' title={`${style.label}${style.providerLabel ? ` · ${style.providerLabel}` : ''}`}>
+          <Icon aria-hidden='true' />
+          {style.provider ? <span className='cnc-provider'><Logo kind={style.provider} size={14} label={style.providerLabel} /></span> : null}
+        </span>
+        <div className='cnc-main'>
+          <strong>{item.title}</strong>
+          <div className='cnc-meta'>
+            <span className='cnc-cat'>{style.label}{style.providerLabel && style.providerLabel !== style.label ? ` · ${style.providerLabel}` : ''}</span>
+            {item.status ? <span className={`cnc-status st-${item.status.group}`}><i aria-hidden='true' />{item.status.text}</span> : null}
+            <span title={new Date(item.createdAt).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE')}>{relative(item.createdAt, p.lang)}</span>
+            {item.duration ? <span>{item.duration}</span> : null}
+          </div>
+          {item.link ? <a className='cnc-link' href={item.link.href} onClick={() => item.markRead()}>{item.link.label} →</a> : null}
+          {opts.extra ? (
+            <button type='button' className='cnc-more' aria-expanded={groupOpen} onClick={() => setExpandedGroups((c) => ({ ...c, [opts.groupKey!]: !c[opts.groupKey!] }))}>
+              <Layers aria-hidden='true' />{groupOpen ? t('Сховати попередні', 'Eerdere verbergen') : t(`Ще ${opts.extra} схожих`, `Nog ${opts.extra} vergelijkbare`)}
+              {opts.unread ? <span className='cnc-chip-n'>{opts.unread}</span> : null}
+            </button>
+          ) : null}
+          {isOpen ? (
+            <div className='cnc-details'>
+              {item.text ? <p>{item.text}</p> : null}
+              {item.facts ? <dl>{item.facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl> : null}
+              {item.details?.map((block, si) => (
+                <section key={si} className='canonical-notification-detail-section'>
+                  <h4>{block.title}</h4>
+                  <div>{block.items.map((d, di) => { const DIcon = p.detailIcons[d.icon] || Info; return <div key={di} className='canonical-notification-detail-row'><DIcon aria-hidden='true' /><span><small>{d.label}</small><strong className='canonical-notification-detail-value'>{d.value}</strong></span></div>; })}</div>
+                </section>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <div className='cnc-actions'>
+          {item.action ? <button type='button' title={item.action.label} aria-label={item.action.label} onClick={() => void p.onRunAction(item.key.slice(2), item.action!)}><Undo2 /></button> : null}
+          {expandable ? <button type='button' aria-expanded={isOpen} title={isOpen ? t('Згорнути', 'Inklappen') : t('Докладніше', 'Meer details')} aria-label={isOpen ? t('Згорнути', 'Inklappen') : t('Докладніше', 'Meer details')} onClick={() => { item.markRead(); setOpen((c) => ({ ...c, [item.key]: !c[item.key] })); }}>{isOpen ? <ChevronUp /> : <ChevronDown />}</button> : null}
+          {!item.read ? <button type='button' title={t('Позначити прочитаним', 'Als gelezen markeren')} aria-label={t('Позначити прочитаним', 'Als gelezen markeren')} onClick={() => item.markRead()}><CircleCheck /></button> : <span className='cnc-done' title={t('Прочитано', 'Gelezen')}><Check /></span>}
+          {item.remove ? <button type='button' title={t('Видалити з історії', 'Uit geschiedenis verwijderen')} aria-label={t('Видалити з історії', 'Uit geschiedenis verwijderen')} onClick={() => item.remove!()}><Trash2 /></button> : null}
+        </div>
+      </article>
+    );
+  };
 
   let lastDay = '';
   return (
@@ -129,14 +188,13 @@ export default function NotificationPanelBody(p: Props) {
           {chip('unread', t('Непрочитані', 'Ongelezen'), counts.unread)}
           {chip('waiting', t('Очікують', 'Wachtend'), counts.waiting)}
           {chip('problems', t('Проблеми', 'Problemen'), counts.problems)}
+          <button type='button' className='cnc-chip' aria-pressed={grouped} onClick={toggleGroupMode} title={t('Однакові сповіщення зливаються в одну групу: видно останнє, решта розгортається', 'Gelijke meldingen worden samengevoegd: u ziet de laatste, de rest klapt uit')}><Layers aria-hidden='true' style={{ width: 14, height: 14 }} />{t('Групувати', 'Groeperen')}</button>
+        </div>
+        <div className='cnc-sections' role='group' aria-label={t('Розділ', 'Sectie')}>
+          <button type='button' className='cnc-sec' aria-pressed={section === 'all'} onClick={() => setSection('all')}>{t('Усі розділи', 'Alle secties')}</button>
+          {sections.map((s) => { const SIcon = styleOf(s, p.lang).Icon; return <button key={s} type='button' className={`cnc-sec sec-${s}`} aria-pressed={section === s} onClick={() => setSection(s)} title={sectionLabel(s, p.lang)}><SIcon aria-hidden='true' />{sectionLabel(s, p.lang)}</button>; })}
         </div>
         <div className='cnc-selects'>
-          <label>{t('Джерело', 'Bron')}
-            <select value={category} onChange={(e) => setCategory(e.target.value as 'all' | Category)}>
-              <option value='all'>{t('Усі', 'Alle')}</option>
-              {categories.map((c) => <option key={c} value={c}>{categoryName(c, p.lang)}</option>)}
-            </select>
-          </label>
           <label>{t('Порядок', 'Volgorde')}
             <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
               <option value='new'>{t('Спершу нові', 'Nieuwste eerst')}</option>
@@ -149,51 +207,22 @@ export default function NotificationPanelBody(p: Props) {
       </div>
 
       <div className='cnc-list' role='list'>
-        {!shown.length ? (
+        {!groups.length ? (
           <div className='canonical-notification-empty'><Bell /><strong>{items.length ? t('Нічого не знайдено', 'Niets gevonden') : t('Історія сповіщень порожня', 'Meldingsgeschiedenis is leeg')}</strong>
             <span>{items.length ? t('Змініть фільтр або пошук.', 'Pas het filter of de zoekopdracht aan.') : t('Тут з’являтиметься все, що роблять Claude, ваші пристрої, браузер, пошта й сайт.', 'Hier verschijnt alles wat Claude, uw apparaten, de browser, de mail en de site doen.')}</span></div>
         ) : null}
-        {shown.map((item) => {
-          const day = dayKey(item.createdAt);
-          const header = (sort === 'new' || sort === 'old') && day !== lastDay ? dayLabel(item.createdAt, p.lang) : null;
+        {groups.map((group) => {
+          const lead = group[0];
+          const day = dayKey(lead.createdAt);
+          const header = (sort === 'new' || sort === 'old') && day !== lastDay ? dayLabel(lead.createdAt, p.lang) : null;
           lastDay = day;
-          const CatIcon = CATEGORY_ICON[item.category] ?? Info;
-          const expandable = Boolean(item.details?.length || item.facts?.length || item.text);
-          const isOpen = Boolean(open[item.key]);
+          const rest = group.slice(1);
+          const gk = lead.group;
           return (
-            <div key={item.key} role='listitem'>
+            <div key={lead.key} role='listitem' className={rest.length ? 'cnc-group' : undefined}>
               {header ? <div className='cnc-day'>{header}</div> : null}
-              <article className={`cnc-row kind-${item.kind}${item.read ? ' is-read' : ' is-unread'}${item.status ? ` st-${item.status.group}` : ''}`} data-origin={item.origin} onPointerDown={() => { if (!item.read) item.markRead(); }}>
-                <span className='cnc-icon' aria-hidden='true'><CatIcon aria-hidden='true' /></span>
-                <div className='cnc-main'>
-                  <strong>{item.title}</strong>
-                  <div className='cnc-meta'>
-                    <span className='cnc-cat'>{categoryName(item.category, p.lang)}</span>
-                    {item.status ? <span className={`cnc-status st-${item.status.group}`}><i aria-hidden='true' />{item.status.text}</span> : null}
-                    <span title={new Date(item.createdAt).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE')}>{relative(item.createdAt, p.lang)}</span>
-                    {item.duration ? <span>{item.duration}</span> : null}
-                  </div>
-                  {item.link ? <a className='cnc-link' href={item.link.href} onClick={() => item.markRead()}>{item.link.label} →</a> : null}
-                  {isOpen ? (
-                    <div className='cnc-details'>
-                      {item.text ? <p>{item.text}</p> : null}
-                      {item.facts ? <dl>{item.facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl> : null}
-                      {item.details?.map((section, si) => (
-                        <section key={si} className='canonical-notification-detail-section'>
-                          <h4>{section.title}</h4>
-                          <div>{section.items.map((d, di) => { const Icon = p.detailIcons[d.icon] || Info; return <div key={di} className='canonical-notification-detail-row'><Icon aria-hidden='true' /><span><small>{d.label}</small><strong className='canonical-notification-detail-value'>{d.value}</strong></span></div>; })}</div>
-                        </section>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-                <div className='cnc-actions'>
-                  {item.action ? <button type='button' title={item.action.label} aria-label={item.action.label} onClick={() => void p.onRunAction(item.key.slice(2), item.action!)}><Undo2 /></button> : null}
-                  {expandable ? <button type='button' aria-expanded={isOpen} title={isOpen ? t('Згорнути', 'Inklappen') : t('Докладніше', 'Meer details')} aria-label={isOpen ? t('Згорнути', 'Inklappen') : t('Докладніше', 'Meer details')} onClick={() => { item.markRead(); setOpen((c) => ({ ...c, [item.key]: !c[item.key] })); }}>{isOpen ? <ChevronUp /> : <ChevronDown />}</button> : null}
-                  {!item.read ? <button type='button' title={t('Позначити прочитаним', 'Als gelezen markeren')} aria-label={t('Позначити прочитаним', 'Als gelezen markeren')} onClick={() => item.markRead()}><CircleCheck /></button> : <span className='cnc-done' title={t('Прочитано', 'Gelezen')}><Check /></span>}
-                  {item.remove ? <button type='button' title={t('Видалити з історії', 'Uit geschiedenis verwijderen')} aria-label={t('Видалити з історії', 'Uit geschiedenis verwijderen')} onClick={() => item.remove!()}><Trash2 /></button> : null}
-                </div>
-              </article>
+              {renderRow(lead, { extra: rest.length, groupKey: gk, unread: rest.filter((r) => !r.read).length })}
+              {rest.length && expandedGroups[gk] ? <div className='cnc-nested'>{rest.map((r) => <div key={r.key}>{renderRow(r, { nested: true })}</div>)}</div> : null}
             </div>
           );
         })}

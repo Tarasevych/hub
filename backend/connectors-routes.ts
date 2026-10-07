@@ -138,7 +138,7 @@ export function createAgentRoutes(deps: Deps) {
       const [commands, toolCalls, grants] = await Promise.all([store.listRecentCommands(userId, 60), store.listToolCalls(userId, 40), listUserGrants(userId)]);
       const ms = (v: unknown) => (v ? new Date(v as string).getTime() : null);
       const events = [
-        ...commands.map((r: any) => ({ id: `cmd:${r.id}`, source: r.platform === 'browser' ? 'browser' : 'agent', kind: 'command', type: r.type, subject: r.agent_name, status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at) })),
+        ...commands.map((r: any) => ({ id: `cmd:${r.id}`, source: r.platform === 'browser' ? 'browser' : 'agent', platform: r.platform || '', kind: 'command', type: r.type, subject: r.agent_name, status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at) })),
         ...toolCalls.map((r: any) => ({ id: `tool:${r.id}`, source: 'claude', kind: 'tool', type: r.tool, subject: 'Claude', status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at) })),
         ...grants.map((g: any) => ({ id: `grant:${g.id}`, source: 'claude', kind: 'grant', type: 'grant', subject: g.clientName, status: 'active', createdAt: g.createdAt, finishedAt: null })),
       ].sort((x, y) => Number(y.createdAt) - Number(x.createdAt)).slice(0, 100);
