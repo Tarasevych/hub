@@ -26,7 +26,7 @@ function summarize(result: { statusCode?: number; body?: string } | undefined): 
       if (jobs.length) extra += ` jobs=${jobs.map((j: any) => String(j?.status || '?')).join(',')}`;
     }
   } catch { /* geen JSON-lichaam */ }
-  const raw = typeof result?.body === 'string' ? ` body=${result.body.replace(/s+/g, '')}` : '';
+  const raw = typeof result?.body === 'string' ? ` body=${result.body.replace(/\s+/g, '')}` : '';
   return { ok, text: `statusCode=${code}${extra}${raw}`.slice(0, 900) };
 }
 
