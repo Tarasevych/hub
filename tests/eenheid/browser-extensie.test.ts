@@ -54,6 +54,15 @@ export async function main(): Promise<number> {
     o += 46 + len + extra + com;
   }
   const manifest = JSON.parse(readFileSync(join(process.cwd(), 'extension', 'manifest.json'), 'utf8'));
+  {
+    const { unzipSync } = await import('fflate');
+    const info = JSON.parse(readFileSync(join(process.cwd(), 'dist', 'downloads', 'extension-version.json'), 'utf8'));
+    const debugZip = readFileSync(join(process.cwd(), 'dist', 'downloads', info.debug.file));
+    const dm = JSON.parse(Buffer.from(unzipSync(new Uint8Array(debugZip))['manifest.json']).toString('utf8'));
+    const sm = JSON.parse(Buffer.from(unzipSync(new Uint8Array(zip))['manifest.json']).toString('utf8'));
+    check('twee uitgaven: gewoon pakket zonder debugger-recht; apart pakket "налагодження" met het recht en controlesom in extension-version.json (Chrome staat debugger niet als optioneel recht toe)',
+      !sm.permissions.includes('debugger') && dm.permissions.includes('debugger') && /налагодження/.test(dm.name) && dm.version === sm.version && createHash('sha256').update(debugZip).digest('hex') === info.debug.sha256);
+  }
   check('pakket: geldig ZIP met manifest, achtergrond, content script, popup, gedeelde regels en pictogrammen',
     zip.readUInt32LE(0) === 0x04034b50 && existsSync(zipPad) && statSync(zipPad).size < 200_000
     && ['manifest.json', 'background.js', 'content.js', 'shared.js', 'popup.html', 'popup.js', 'icons/icon16.png', 'icons/icon48.png', 'icons/icon128.png'].every((n) => namen.includes(n)), namen.join(','));

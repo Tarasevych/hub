@@ -12,7 +12,7 @@ const hex = (buf: ArrayBuffer) => [...new Uint8Array(buf)].map((b) => b.toString
 const MAX_FILES = 100; const MAX_BYTES = 8 * 1024 * 1024;
 export const SUBFOLDER = 'MijnRuimte-extension';
 
-export async function installExtensionToPickedFolder(opts: { origin: string; sha256: string; onStage?: (stage: 'download' | 'verify' | 'write') => void }): Promise<{ folderName: string; files: number }> {
+export async function installExtensionToPickedFolder(opts: { origin: string; sha256: string; file?: string; onStage?: (stage: 'download' | 'verify' | 'write') => void }): Promise<{ folderName: string; files: number }> {
   if (!folderPickerSupported()) throw new PickerFailure('UNSUPPORTED');
   // Вікно вибору папки мусить відкритися першим, у відповідь на клік користувача.
   let root: Dir;
@@ -24,7 +24,7 @@ export async function installExtensionToPickedFolder(opts: { origin: string; sha
   opts.onStage?.('download');
   let bytes: Uint8Array;
   try {
-    const res = await fetch(`${opts.origin}/downloads/mijn-ruimte-extension.zip`, { credentials: 'omit', cache: 'no-store' });
+    const res = await fetch(`${opts.origin}/downloads/${opts.file || 'mijn-ruimte-extension.zip'}`, { credentials: 'omit', cache: 'no-store' });
     if (!res.ok) throw new Error('http');
     bytes = new Uint8Array(await res.arrayBuffer());
   } catch { throw new PickerFailure('DOWNLOAD'); }

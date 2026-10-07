@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Mijn Ruimte: дозволи браузера</title>
 <link rel="stylesheet" href="popup.css">
-<style>body{width:auto;max-width:680px;margin:0 auto}</style>
+<style>body{width:auto;max-width:680px;margin:0 auto}#edition.ok{color:#1a7f37}#edition.off{color:#b45309}</style>
 </head>
 <body>
 <main>
@@ -15,8 +15,10 @@
   <button type="button" id="open-site" class="primary">Відкрити налаштування на сайті</button>
 
   <section>
-    <h2>Додаткові дозволи браузера не потрібні</h2>
-    <p class="hint">Розширення працює лише на tarasevych.com і не просить жодних додаткових дозволів. Глибока діагностика сторінки (помилки консолі, винятки, невдалі й повільні запити) вмикається на сайті разом з іншими можливостями; вона не потребує ні налагоджувача, ні банера «розширення налагоджує цей браузер».</p>
+    <h2>Режим налагодження</h2>
+    <p id="edition" role="status">…</p>
+    <p id="edition-info" class="hint"></p>
+    <p class="hint">Розширення працює лише на tarasevych.com. Які можливості ввімкнені для ШІ, ви обираєте на сайті.</p>
   </section>
 </main>
 <script src="options.js"></script>

@@ -33,8 +33,8 @@ export function nodeInstallMethods(os: Os, arch: Arch): NodeMethod[] {
 }
 
 /** Команда, що завантажує розширення в папку, перевіряє SHA-256 і розпаковує: усе в терміналі, без завантаження виконуваного файлу (Smart App Control блокує .cmd/.ps1/.js). */
-export function extensionInstallCommands(opts: { os: Os; shell: 'powershell' | 'cmd' | 'bash'; folder: string; sha256: string; origin: string }): string[] {
-  const url = `${opts.origin}/downloads/mijn-ruimte-extension.zip`;
+export function extensionInstallCommands(opts: { os: Os; shell: 'powershell' | 'cmd' | 'bash'; folder: string; sha256: string; origin: string; file?: string }): string[] {
+  const url = `${opts.origin}/downloads/${opts.file || 'mijn-ruimte-extension.zip'}`;
   if (opts.os === 'windows') {
     const folder = opts.folder.replace(/"/g, '').replace(/'/g, "''");
     return [`$d=[Environment]::ExpandEnvironmentVariables('${folder}'); New-Item -ItemType Directory -Force -Path $d | Out-Null; $z=Join-Path $d 'mijn-ruimte-extension.zip'; Invoke-WebRequest '${url}' -OutFile $z; if ((Get-FileHash $z -Algorithm SHA256).Hash.ToLower() -ne '${opts.sha256.toLowerCase()}') { throw 'Контрольна сума не збігається' }; Expand-Archive -Path $z -DestinationPath $d -Force; Remove-Item $z; Write-Host "Готово: $d"`];
