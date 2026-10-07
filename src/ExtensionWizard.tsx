@@ -133,8 +133,11 @@ export default function ExtensionWizard(p: WizardProps) {
     : [['~/MijnRuimte-extension', '~/MijnRuimte-extension'], ['~/Documents/MijnRuimte-extension', '~/Documents/MijnRuimte-extension']];
 
   // Повідомлення про кожен виконаний етап: вони лишаються в панелі сповіщень із посиланням сюди.
-  const prev = useRef({ present: false, paired: false, enabled: false, armed: false });
+  const prev = useRef<{ present: boolean; paired: boolean; enabled: boolean; armed: boolean } | null>(null);
   useEffect(() => {
+    const now = { present, paired: p.paired && p.hasAgent, enabled: p.agentEnabled, armed: p.agentArmed };
+    // Eerste meting na het openen van de pagina is alleen de beginstand: geen meldingen voor wat al eerder gelukt was.
+    if (!prev.current) { prev.current = now; return; }
     const last = prev.current;
     const link = { href: 'https://mcp.tarasevych.com/agents#extension', label: tr('До майстра встановлення', 'Naar de installatiehulp') };
     if (!last.present && present) emitCanonicalNotice({ text: tr('Розширення знайдено в цьому браузері. Далі: підключіть його до облікового запису.', 'De extensie is gevonden in deze browser. Volgende stap: koppel hem aan uw account.'), kind: 'success', source: 'mcp', link });
