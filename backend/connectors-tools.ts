@@ -13,6 +13,8 @@ import { apiPlatformVaultItems, readOwnerVaultPlaintext } from './api-platform-v
 import { submitCommand, waitForCommand } from './connectors-commands';
 import { agentOnline } from './connectors-gateway';
 import * as store from './connectors-store';
+import { callSite } from './site-dispatch';
+import { explainSiteError, SITE_TOOL_BY_NAME, SITE_TOOLS, type SiteTool } from './site-tools';
 
 export type ToolAnnotations = { readOnlyHint?: boolean; destructiveHint?: boolean; idempotentHint?: boolean; openWorldHint?: boolean };
 export type ToolDef = { name: string; title?: string; description: string; inputSchema: Record<string, unknown>; annotations?: ToolAnnotations };
@@ -356,15 +358,44 @@ async function githubTokenName(userId: string): Promise<string | null> {
   return item ? item.keyName : null;
 }
 
+// ---- groepen en modi per hulpmiddel ----
+// De gebruiker kiest per hulpmiddel een modus: "always" (geen extra vraag van ons), "ask" (elke aanroep wacht op een klik op de site) of "off".
+// Standaard: lezen = always; wijzigen, uitvoeren en handelen = ask. Wat hieronder staat kan NOOIT op "always" (server-side begrensd):
+// het wijzigt iets op een pc of in de browser, of toont privégegevens (screenshot); die aanroepen wachten altijd op een klik.
+export type ToolGroup = 'devices' | 'browser' | 'mail' | 'calendar' | 'drive' | 'site' | 'github';
+export type ToolMode = store.ToolMode;
+export const NEVER_ALWAYS = new Set(['machine_write_file', 'machine_exec', 'docker_manage_container', 'browser_invoke_action', 'browser_click', 'browser_type',
+  'browser_select_option', 'browser_press_key', 'browser_screenshot', 'browser_get_deep_diagnostics']);
+
+export function groupOf(name: string): ToolGroup {
+  if (name.startsWith('browser_')) return 'browser';
+  const site = SITE_TOOL_BY_NAME.get(name);
+  if (site) return site.group;
+  if (name === 'github_get') return 'github';
+  return 'devices';
+}
+export function defaultMode(name: string): 'always' | 'ask' {
+  if (NEVER_ALWAYS.has(name)) return 'ask';
+  const site = SITE_TOOL_BY_NAME.get(name);
+  if (site) return site.write ? 'ask' : 'always';
+  // Voor agent-hulpmiddelen betekent "always": geen EXTRA vraag van ons; het beleid van de agent/browser (aparte schakelaars) geldt dan nog.
+  return 'always';
+}
+/** De modus die echt geldt: de keuze van de gebruiker (of de standaard), met "always" teruggebracht tot "ask" voor wat nooit automatisch mag. */
+export function effectiveMode(name: string, stored: ToolMode | undefined): ToolMode {
+  const mode = stored ?? defaultMode(name);
+  return mode === 'always' && NEVER_ALWAYS.has(name) ? 'ask' : mode;
+}
+
 /**
- * `alwaysMachine`: voor de MCP-connector van Claude staan de apparaattools er ALTIJD in, ook zonder verbonden agent.
- * Claude toont de lijst en de rechtengroepen (alleen lezen / schrijven) pas als er tools zijn; zonder apparaat geeft een
- * aanroep een duidelijke melding (zie callTool). De chat behoudt het oude gedrag (alleen tools als er een agent is).
+ * `alwaysMachine`: voor de MCP-connector van Claude staan de apparaattools, de browsertools en de site-hulpmiddelen er ALTIJD in, ook zonder
+ * verbonden agent of account. Claude toont de lijst en de rechtengroepen pas als er tools zijn; zonder apparaat geeft een aanroep een duidelijke
+ * melding (zie callTool). De chat behoudt het oude gedrag (alleen tools als er een agent is).
  */
 export async function listTools(userId: string, opts: { alwaysMachine?: boolean } = {}): Promise<ToolDef[]> {
-  const [tools, disabled] = await Promise.all([allTools(userId, opts), store.getDisabledTools(userId)]);
-  // Een door de gebruiker uitgezet hulpmiddel verdwijnt uit de lijst (en wordt in callTool ook geweigerd).
-  return tools.filter((t) => !disabled.includes(t.name));
+  const [tools, modes] = await Promise.all([allTools(userId, opts), store.getToolModes(userId)]);
+  // Een op "off" gezet hulpmiddel verdwijnt uit de lijst (en wordt in callTool ook geweigerd).
+  return tools.filter((t) => effectiveMode(t.name, modes[t.name]) !== 'off');
 }
 
 async function allTools(userId: string, opts: { alwaysMachine?: boolean }): Promise<ToolDef[]> {
@@ -372,6 +403,7 @@ async function allTools(userId: string, opts: { alwaysMachine?: boolean }): Prom
   const agents = opts.alwaysMachine ? [] : await store.listAgents(userId);
   if (opts.alwaysMachine || agents.some((a) => !isBrowserAgent(a))) tools.push(...MACHINE_TOOLS.map(annotate));
   if (opts.alwaysMachine || agents.some(isBrowserAgent)) tools.push(...BROWSER_TOOLS.map(annotate));
+  if (opts.alwaysMachine) tools.push(...SITE_TOOLS.map((s) => s.tool));
   if (await githubTokenName(userId)) {
     tools.push(annotate({
       name: 'github_get',
@@ -390,30 +422,40 @@ async function allTools(userId: string, opts: { alwaysMachine?: boolean }): Prom
 }
 
 export type ToolKind = 'read' | 'write' | 'execute' | 'navigate' | 'interact' | 'advanced';
-export type ToolInfo = { name: string; title: string; description: string; kind: ToolKind; needsApproval: boolean; readOnly: boolean; destructive: boolean; enabled: boolean };
+export type ToolInfo = {
+  name: string; title: string; description: string; kind: ToolKind; group: ToolGroup; needsApproval: boolean; readOnly: boolean; destructive: boolean;
+  mode: ToolMode; defaultMode: 'always' | 'ask'; canAlways: boolean; enabled: boolean;
+};
 
-/** Overzicht voor het beheerscherm: wat elk hulpmiddel doet en of het eerst jouw goedkeuring vraagt. */
+/** Overzicht voor het beheerscherm: wat elk hulpmiddel doet, in welke groep, en welke modus nu geldt. */
 export async function describeTools(userId: string): Promise<ToolInfo[]> {
   const kindOf = (t: ToolDef): ToolKind => {
     if (t.name === 'machine_write_file') return 'write';
+    const site = SITE_TOOL_BY_NAME.get(t.name);
+    if (site) return site.write ? 'write' : 'read';
     if (t.name === 'browser_open' || t.name === 'browser_history') return 'navigate';
     if (['browser_invoke_action', 'browser_click', 'browser_type', 'browser_select_option', 'browser_press_key'].includes(t.name)) return 'interact';
     if (t.name === 'browser_screenshot' || t.name === 'browser_get_deep_diagnostics') return 'advanced';
     return NEEDS_APPROVAL.has(t.name) ? 'execute' : 'read';
   };
-  const [tools, disabled] = await Promise.all([allTools(userId, { alwaysMachine: true }), store.getDisabledTools(userId)]);
-  return tools.map((t) => ({
-    name: t.name, title: t.title || t.name, description: t.description, kind: kindOf(t), needsApproval: NEEDS_APPROVAL.has(t.name),
-    readOnly: t.annotations?.readOnlyHint === true, destructive: t.annotations?.destructiveHint === true, enabled: !disabled.includes(t.name),
-  }));
+  const [tools, modes] = await Promise.all([allTools(userId, { alwaysMachine: true }), store.getToolModes(userId)]);
+  return tools.map((t) => {
+    const mode = effectiveMode(t.name, modes[t.name]);
+    return {
+      name: t.name, title: t.title || t.name, description: t.description, kind: kindOf(t), group: groupOf(t.name), needsApproval: mode === 'ask' || NEEDS_APPROVAL.has(t.name),
+      readOnly: t.annotations?.readOnlyHint === true, destructive: t.annotations?.destructiveHint === true,
+      mode, defaultMode: defaultMode(t.name), canAlways: !NEVER_ALWAYS.has(t.name), enabled: mode !== 'off',
+    };
+  });
 }
 
-/** Namen van alle bekende hulpmiddelen (voor het in- en uitzetten in het beheerscherm). */
-export const KNOWN_TOOL_NAMES: readonly string[] = [...MACHINE_TOOLS, ...BROWSER_TOOLS, { name: 'github_get' }].map((t) => t.name);
+/** Namen van alle bekende hulpmiddelen (voor het instellen in het beheerscherm). */
+export const KNOWN_TOOL_NAMES: readonly string[] = [...MACHINE_TOOLS, ...BROWSER_TOOLS, ...SITE_TOOLS.map((s) => s.tool), { name: 'github_get' }].map((t) => t.name);
 
 export async function callTool(userId: string, name: string, args: any = {}): Promise<ToolResult> {
   try {
-    if ((await store.getDisabledTools(userId)).includes(name)) {
+    const mode = effectiveMode(name, (await store.getToolModes(userId))[name]);
+    if (mode === 'off') {
       return text('This tool has been turned off by the user in Mijn Ruimte (mcp.tarasevych.com → Agents → Tools and permissions). Do not try to work around it; tell the user.', true);
     }
     if (name === 'machine_list') {
@@ -458,7 +500,7 @@ export async function callTool(userId: string, name: string, args: any = {}): Pr
         }
       }
       const { machine: _machine, browser: _browser, ...params } = args;
-      const { command } = await submitCommand(agent, userId, TOOL_TO_COMMAND[name], params);
+      const { command } = await submitCommand(agent, userId, TOOL_TO_COMMAND[name], params, { forceApproval: mode === 'ask' });
       const done = (await waitForCommand(userId, command.id, APPROVAL_WAIT_MS)) ?? command;
       if (done.status === 'succeeded') {
         // Een screenshot komt als afbeelding terug (MCP "image"-inhoud) met een korte tekst erbij; al het andere als onbetrouwbare tekst.
@@ -474,6 +516,14 @@ export async function callTool(userId: string, name: string, args: any = {}): Pr
       if (done.status === 'pending_approval') return text('This action is waiting for the user\'s approval on the Mijn Ruimte website (mcp.tarasevych.com → Agents). Tell the user and do not retry.', true);
       if (done.status === 'rejected') return text('The user rejected this action.', true);
       return text(`Failed (${done.status}): ${String(done.result?.error ?? 'unknown error').slice(0, 300)}`, true);
+    }
+
+    const siteTool = SITE_TOOL_BY_NAME.get(name);
+    if (siteTool) {
+      const invalid = siteTool.validate(args);
+      if (invalid) return text(invalid, true);
+      // Modus "ask": de aanroep wacht op een klik van de gebruiker op de site (maximaal een minuut); "always": direct.
+      return mode === 'ask' ? await askSite(userId, siteTool, args) : await runSite(userId, siteTool, args);
     }
 
     if (name === 'github_get') {
@@ -500,3 +550,55 @@ export async function callTool(userId: string, name: string, args: any = {}): Pr
     return text(`Error: ${(err as Error).message}`, true);
   }
 }
+
+// ---- hulpmiddelen van de site: uitvoeren, en goedkeuren op de site ----
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Voer een site-hulpmiddel uit via de bestaande route van de site (namens de gebruiker, zie site-dispatch.ts). */
+async function runSite(userId: string, site: SiteTool, args: any): Promise<ToolResult> {
+  const { route, body } = site.request(args);
+  let res;
+  try { res = await callSite(userId, site.service, route, body); }
+  catch (err) { return text(`Mijn Ruimte could not run this internally: ${(err as Error).message}`, true); }
+  if (res.status < 200 || res.status >= 300) return text(explainSiteError(res.status, res.data), true);
+  return untrusted(site.shape(res.data));
+}
+
+/** Modus "ask": zet de aanroep in de wachtrij van de gebruiker en wacht tot hij is goedgekeurd, geweigerd of verlopen. */
+async function askSite(userId: string, site: SiteTool, args: any): Promise<ToolResult> {
+  if ((await store.countPendingToolCalls(userId)) >= MAX_PENDING) {
+    return text(`Too many actions are already waiting for the user's approval (${MAX_PENDING}). Ask the user to handle those first; do not retry now.`, true);
+  }
+  const row = await store.createToolCall(userId, site.tool.name, args);
+  const deadline = Date.now() + APPROVAL_WAIT_MS;
+  for (;;) {
+    const now = await store.getToolCall(userId, row.id);
+    if (!now) return text('The approval request disappeared.', true);
+    if (now.status === 'succeeded' || now.status === 'failed') return (now.result as ToolResult) ?? text('Done.');
+    if (now.status === 'rejected') return text('The user rejected this action.', true);
+    if (now.status === 'timeout') return text('The approval request expired without an answer.', true);
+    if (Date.now() >= deadline) {
+      return text('This action is waiting for the user\'s approval on the Mijn Ruimte website (mcp.tarasevych.com → Agents → Tools and permissions). Tell the user and do not retry.', true);
+    }
+    await sleep(500);
+  }
+}
+
+/** Keur een wachtende aanroep goed: voert hem uit (ook als de AI al niet meer wacht) en bewaart het resultaat. null = niet (meer) in afwachting. */
+export async function approveToolCall(userId: string, id: string) {
+  const claimed = await store.transitionToolCall(id, userId, ['pending_approval'], 'approved');
+  if (!claimed) return null;
+  const site = SITE_TOOL_BY_NAME.get(claimed.tool);
+  const modes = await store.getToolModes(userId);
+  let result: ToolResult;
+  if (!site) result = text('Unknown tool.', true);
+  else if (effectiveMode(claimed.tool, modes[claimed.tool]) === 'off') result = text('This tool was switched off before it could run.', true);
+  else {
+    const invalid = site.validate(claimed.args);
+    result = invalid ? text(invalid, true) : await runSite(userId, site, claimed.args);
+  }
+  await store.transitionToolCall(id, userId, ['approved'], result.isError ? 'failed' : 'succeeded', result);
+  return store.getToolCall(userId, id);
+}
+
+export const rejectToolCall = (userId: string, id: string) => store.transitionToolCall(id, userId, ['pending_approval'], 'rejected');

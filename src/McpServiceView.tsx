@@ -5,6 +5,7 @@ import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalog";
 import AgentsPanel from "./AgentsPanel";
 import McpConnectorPanel from "./McpConnectorPanel";
 import BrowserExtensionPanel from "./BrowserExtensionPanel";
+import McpToolsPanel from "./McpToolsPanel";
 import McpConsentModal from "./McpConsentModal";
 import "./mcp-estate.css";
 
@@ -466,6 +467,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             </article>
           ))}
           <McpConnectorPanel tr={t} />
+          <McpToolsPanel tr={t} />
           <BrowserExtensionPanel tr={t} />
           <AgentsPanel tr={t} service="mcp" />
         </>

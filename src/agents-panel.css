@@ -55,3 +55,21 @@
 .mcp-cap-controls{display:inline-flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
 .mcp-switch.mcp-auto{min-height:36px;font-size:.88rem}
 .mcp-tool-group b small{display:block;font-weight:400}
+
+.mcp-setall{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;padding:10px 12px;border-radius:12px;background:var(--soft,#eef3f8)}
+.mcp-setall-label{font-weight:700;display:inline-flex;align-items:center;gap:6px}
+.mcp-seg{display:inline-flex;flex-wrap:wrap;border:2px solid var(--line,#b6c2d0);border-radius:999px;overflow:hidden;background:var(--panel,#fff)}
+.api-platform .mcp-seg button{min-height:36px;padding:4px 14px;border:0;border-radius:0;background:transparent;color:inherit;font-weight:700;font-size:.88rem}
+.api-platform .mcp-seg button+button{border-left:1px solid var(--line,#b6c2d0)}
+.api-platform .mcp-seg button[aria-checked=true][data-mode=always]{background:#1a7f37;color:#fff}
+.api-platform .mcp-seg button[aria-checked=true][data-mode=ask]{background:#b45309;color:#fff}
+.api-platform .mcp-seg button[aria-checked=true][data-mode=off]{background:#6b7280;color:#fff}
+.api-platform .mcp-seg button:focus-visible{outline:3px solid #f59e0b;outline-offset:-3px}
+.api-platform .mcp-seg button[disabled]{opacity:.45;cursor:not-allowed}
+.mcp-tool-text{display:grid;gap:2px;min-width:0;flex:1 1 260px}
+.mcp-tool-desc{font-size:.85rem;color:var(--muted,#64748b)}
+.mcp-group-actions{display:inline-flex;gap:6px;flex-wrap:wrap}
+.api-platform .mcp-mini{min-height:30px;padding:2px 10px;font-size:.8rem;border-radius:999px;background:transparent;color:inherit;border:1px solid var(--line,#b6c2d0)}
+.mcp-approval-args{overflow-wrap:anywhere}
+.mcp-approval-actions{display:inline-flex;gap:8px;flex-wrap:wrap}
+.mcp-approval-recent{color:var(--muted,#64748b)}

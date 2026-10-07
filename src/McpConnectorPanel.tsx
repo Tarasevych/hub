@@ -5,8 +5,6 @@ import './api-platform-view.css';
 import './agents-panel.css';
 
 type Tr = (uk: string, nl: string) => string;
-type ToolKind = 'read' | 'navigate' | 'interact' | 'write' | 'execute';
-type ToolInfo = { name: string; title: string; description: string; kind: ToolKind; needsApproval: boolean; enabled: boolean };
 type Grant = { id: string; clientName: string; scope: string; createdAt: number; lastUsedAt: number | null; expiresAt: number };
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
@@ -43,7 +41,6 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
   const [copied, setCopied] = useState(false);
   const [, setTick] = useState(0);
   const [confirm, setConfirm] = useState<string | null>(null);
-  const [tools, setTools] = useState<ToolInfo[]>([]);
 
   const load = useCallback(async () => {
     const res = await api.post('/api/owner/mcp-connector/grants', sessionBody());
@@ -58,20 +55,6 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
     const timer = window.setInterval(() => setTick((n) => n + 1), 30000);
     return () => window.clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    api.post('/api/owner/mcp-connector/tools', sessionBody()).then((res) => setTools(res.data?.tools ?? [])).catch(() => undefined);
-  }, []);
-
-  // Een hulpmiddel in- of uitzetten: de server verbergt het dan voor Claude en weigert aanroepen.
-  const setTool = async (tool: ToolInfo, enabled: boolean) => {
-    setBusy(true); setNotice('');
-    try {
-      const res = await api.post('/api/owner/mcp-connector/tools/set', { ...sessionBody(), name: tool.name, enabled });
-      setTools(res.data?.tools ?? []);
-    } catch { setNotice(tr('Не вдалося змінити налаштування інструмента.', 'Instelling van het hulpmiddel wijzigen mislukt.')); }
-    setBusy(false);
-  };
 
   // De bevestiging staat op de pagina zelf (geen window.confirm: sommige ingebedde browsers onderdrukken die stilletjes).
   const revoke = async (grant: Grant) => {
@@ -174,34 +157,6 @@ export default function McpConnectorPanel({ tr }: { tr: Tr }) {
         {notice ? <p role='status'>{notice}</p> : null}
       </article>
 
-      <article className='api-platform-panel' data-mcp-tools={String(tools.length)}>
-        <strong>{tr('Інструменти й дозволи', 'Hulpmiddelen en rechten')}</strong>
-        <p>{tr('Цей самий список бачить Claude. Вимкнений інструмент зникає для Claude, а виклик відхиляється на сервері. Читання виконується одразу, запис, виконання й дії на сторінці чекають вашого «Дозволити». У Claude кожному інструменту можна додатково задати «Завжди дозволяти», «Потрібне схвалення» або «Заблокувати».', 'Dezelfde lijst ziet Claude. Een uitgezet hulpmiddel verdwijnt voor Claude en wordt op de server geweigerd. Lezen gebeurt direct; schrijven, uitvoeren en handelen op de pagina wachten op uw "Toestaan". In Claude kunt u elk hulpmiddel bovendien op "Altijd toestaan", "Goedkeuring nodig" of "Blokkeren" zetten.')}</p>
-        {(['read', 'navigate', 'interact', 'write', 'execute'] as const).map((kind) => {
-          const rows = tools.filter((x) => x.kind === kind);
-          if (!rows.length) return null;
-          const title = kind === 'read' ? tr('Лише читання', 'Alleen lezen') : kind === 'navigate' ? tr('Відкриття сторінок', "Pagina's openen")
-            : kind === 'interact' ? tr('Дії на сторінці', 'Handelen op de pagina') : kind === 'write' ? tr('Запис', 'Schrijven') : tr('Виконання', 'Uitvoeren');
-          const note = kind === 'read' ? tr('виконується одразу', 'direct uitgevoerd')
-            : kind === 'navigate' ? tr('за вашим налаштуванням браузера', 'volgens uw instelling per browser') : tr('потребує вашого підтвердження', 'vraagt uw goedkeuring');
-          return (
-            <div key={kind} className={`mcp-tool-group mcp-tool-${kind}`}>
-              <b>{title} <span className='agents-badge'>{rows.length}</span> <small>{note}</small></b>
-              <ul>
-                {rows.map((x) => (
-                  <li key={x.name} className={`mcp-tool-row${x.enabled ? '' : ' is-off'}`}>
-                    <span><code>{x.name}</code> <span>{x.description.split('. ')[0].replace(/\.$/, '')}</span></span>
-                    <button type='button' className={`mcp-tool-toggle ${x.enabled ? 'on' : 'off'}`} role='switch' aria-checked={x.enabled} disabled={busy}
-                      aria-label={`${x.name}: ${x.enabled ? tr('увімкнено', 'aan') : tr('вимкнено', 'uit')}`} onClick={() => void setTool(x, !x.enabled)}>
-                      {x.enabled ? tr('Увімкнено', 'Aan') : tr('Вимкнено', 'Uit')}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
-      </article>
     </section>
   );
 }

@@ -153,6 +153,17 @@ export async function main(): Promise<number> {
     const diag = await callTool(A, 'browser_get_diagnostics', {});
     check('browser_get_diagnostics: direct uitgevoerd (alleen lezen)', !diag.isError && ext.opdrachten.some((o) => o.type === 'browser.diagnostics'), diag.content[0].text.slice(0, 100));
 
+    // modus "ask" (gekozen door de gebruiker per hulpmiddel) verscherpt het beleid van de browser: ook lezen wacht dan op een klik
+    await store.setToolModes(A, { browser_snapshot: 'ask' });
+    const snapAsk = callTool(A, 'browser_snapshot', {});
+    const snapWacht = await until(async () => (await store.listPendingCommands(A)).length === 1);
+    const voorAsk = ext.opdrachten.length;
+    await approveCommand(A, (await store.listPendingCommands(A))[0].id);
+    const snapAskUit = await snapAsk;
+    check('modus ask op een browserhulpmiddel: ook een leesopdracht wacht op een klik, ondanks het beleid "direct"; na "Toestaan" volgt het antwoord',
+      snapWacht && !snapAskUit.isError && ext.opdrachten.length === voorAsk + 1 && /paginatekst/.test(snapAskUit.content[0].text as string));
+    await store.setToolModes(A, { browser_snapshot: null });
+
     // activering: verloopt zonder bevestiging van een ingelogde sessie, en een al goedgekeurde opdracht gaat dan niet meer weg
     const wachtKlik = callTool(A, 'browser_click', { name: 'Archiveren' });
     await until(async () => (await store.listPendingCommands(A)).length === 1);
