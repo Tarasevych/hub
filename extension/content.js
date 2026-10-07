@@ -37,6 +37,12 @@
   });
   say({ type: 'hello', paired: false, connected: false });
 
+  // Uitleg op de pagina na het installeren: alleen als de site de installatiehulp heeft gevraagd (?extension=welcome of de vlag die de site bewaart).
+  try {
+    const flagged = new URLSearchParams(location.search).get('extension') === 'welcome' || Date.now() - Number(localStorage.getItem('mr.ext.welcome') || 0) < 60 * 60 * 1000;
+    if (flagged && location.hostname === PAIR_HOST) import(chrome.runtime.getURL('guide.js')).then((m) => m.startGuide(chrome, VERSION)).catch(() => undefined);
+  } catch { /* geen opslag */ }
+
   // ---- 2. momentopname ----
   const SELECTOR = 'a[href],button,input,select,textarea,summary,[role=button],[role=link],[role=tab],[role=menuitem],[role=checkbox],[role=switch],[role=option],[contenteditable=""],[contenteditable=true]';
   const visible = (el) => {

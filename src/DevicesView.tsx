@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Clock, Copy, Plug, PlugZap, Plus, RefreshCw, ShieldCheck, Trash2, X } from 'lucide-react';
+import { Check, Clock, PlugZap, RefreshCw, ShieldCheck, Trash2, X } from 'lucide-react';
 import { api } from './platform/client';
 import { agentLogo, Help, IconButton, Logo, Section, StatusDot, type Tr } from './mcp-ui';
 import { ago, commandLabel, sessionBody, statusLabel, type Agent, type LastCommand, type Pending } from './agents-data';
@@ -49,37 +49,7 @@ export function PendingList({ tr, pending, reload, compact = false }: { tr: Tr; 
   );
 }
 
-/** Een pc of virtuele machine koppelen met een code van 10 minuten. */
-export function PairCard({ tr, reload }: { tr: Tr; reload: () => Promise<void> }) {
-  const [pairing, setPairing] = useState<{ code: string; expiresAt: number } | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState('');
-  const create = async () => {
-    setBusy(true); setNotice('');
-    try { const res = await api.post('/api/owner/agents/pairing-code', sessionBody()); setPairing({ code: String(res.data.code), expiresAt: Number(res.data.expiresAt) }); await reload(); }
-    catch { setNotice(tr('Не вдалося створити код (ліміт: 5 за 10 хвилин).', 'Code aanmaken mislukt (limiet: 5 per 10 minuten).')); }
-    setBusy(false);
-  };
-  const command = pairing
-    ? `node agent.mjs pair --server ${location.origin} --code ${pairing.code} --name "${tr('Мій ПК', 'Mijn pc')}" --root <${tr('ДОЗВОЛЕНА_ПАПКА', 'TOEGESTANE_MAP')}> --allow git,node\nnode agent.mjs run`
-    : '';
-  return (
-    <div className='hub-card' data-agents-pairing={pairing ? 'true' : undefined}>
-      <h3><Plug aria-hidden='true' size={18} />{tr('Підключити ПК або віртуальну машину', 'Pc of virtuele machine koppelen')}</h3>
-      <p>{tr('Агент — маленька програма на вашому комп’ютері. Код одноразовий і діє 10 хвилин. Потрібні Node.js 22+ і файл agent.mjs.', 'De agent is een klein programma op uw computer. De code werkt één keer en 10 minuten. Node.js 22+ en het bestand agent.mjs zijn nodig.')}</p>
-      {!pairing ? <div className='hub-actions'><IconButton tone='primary' icon={<Plus />} disabled={busy} onClick={() => void create()}>{tr('Створити код підключення', 'Koppelcode maken')}</IconButton></div> : (
-        <>
-          <code className='hub-code'>{command}</code>
-          <div className='hub-actions'>
-            <IconButton icon={<Copy />} onClick={() => void navigator.clipboard?.writeText(command)}>{tr('Скопіювати', 'Kopiëren')}</IconButton>
-            <IconButton icon={<X />} onClick={() => setPairing(null)}>{tr('Закрити', 'Sluiten')}</IconButton>
-          </div>
-        </>
-      )}
-      {notice ? <p role='status' className='hub-note warn'>{notice}</p> : null}
-    </div>
-  );
-}
+export { PairCard } from './AgentSetupWizard';
 
 /** Eén pc: status, laatste actie, wat zonder klik mag, testen en loskoppelen. */
 export function DeviceDetail({ tr, agent, last, reload }: { tr: Tr; agent: Agent; last?: LastCommand; reload: () => Promise<void> }) {

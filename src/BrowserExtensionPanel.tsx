@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, Download, FileArchive, Globe, Link2, Package, PlugZap, Power, Trash2, X } from 'lucide-react';
+import { Check, Globe, PlugZap, Power, Trash2, X } from 'lucide-react';
 import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 import { AUTO_HELP, CAPABILITIES, DEFAULT_ENABLED, GROUPS, type Cap, type CapGroup } from './browser-capabilities-ui';
 import { clearWelcome, welcomePending } from './extension-welcome-store';
 import { agentLogo, Help, IconButton, Logo, Section, StatusDot } from './mcp-ui';
+import ExtensionWizard from './ExtensionWizard';
 import './agents-panel.css';
 
 type Tr = (uk: string, nl: string) => string;
@@ -16,7 +17,6 @@ type Presence = 'checking' | 'present' | 'absent';
 type Release = { version?: string; storeUrl?: string; installers?: string[]; crx?: { file: string; extensionId: string; version: string } | null };
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
-const DOWNLOAD = '/downloads/mijn-ruimte-extension.zip';
 const GROUP_ORDER: CapGroup[] = ['read', 'navigate', 'interact', 'advanced'];
 
 const browserName = () => {
@@ -24,7 +24,6 @@ const browserName = () => {
   const name = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Chrome\//.test(ua) ? 'Chrome' : 'Browser';
   return `${name} (${navigator.platform || 'pc'})`;
 };
-const osKind = (): 'windows' | 'unix' => (/Win/i.test(navigator.platform || navigator.userAgent) ? 'windows' : 'unix');
 
 /**
  * Browserextensie van Mijn Ruimte. `part` bepaalt wat er getoond wordt:
@@ -40,8 +39,7 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [confirm, setConfirm] = useState<string | null>(null);
-  const [downloaded, setDownloaded] = useState(false);
-  const [crxInfo, setCrxInfo] = useState(false);
+  const [, setDownloaded] = useState(false);
   const [release, setRelease] = useState<Release>({});
   const [welcome, setWelcome] = useState(() => welcomePending());
   const pending = useRef<((ok: boolean, reason: string) => void) | null>(null);
@@ -142,70 +140,13 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
   };
 
   const lastSeen = (ms: number | null) => (ms ? new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', timeZoneName: 'short' }).format(new Date(ms)) : '—');
-  const helper = osKind() === 'windows' ? 'Install-MijnRuimte.cmd' : 'install-mijn-ruimte.sh';
-  const hasHelper = (release.installers ?? []).includes(helper);
-
-  const steps: Array<{ ok: boolean; title: string }> = [
-    { ok: presence === 'present', title: tr('Встановіть розширення', 'Installeer de extensie') },
-    { ok: true, title: tr('Ви ввійшли в акаунт', 'U bent aangemeld') },
-    { ok: presence === 'present' && paired && !!agent, title: tr('Підключіть розширення до акаунта', 'Koppel de extensie aan uw account') },
-    { ok: !!agent && agent.enabled, title: tr('Оберіть, що дозволено, і ввімкніть для ШІ', 'Kies wat mag en zet aan voor de AI') },
-    { ok: allDone, title: tr('Готово: ШІ активний, поки ви на сайті', 'Klaar: de AI is actief zolang u op de site bent') },
-  ];
-
   const installBlock = (
-    <section ref={rootRef} className={`hub-card${welcome ? ' mcp-welcome' : ''}`} data-browser-extension='true' data-welcome={welcome ? 'true' : 'false'}>
-      <h3>{welcome ? tr('Вітаємо! Завершіть налаштування розширення', 'Welkom! Rond de installatie van de extensie af') : tr('Встановлення й підключення', 'Installeren en koppelen')}</h3>
-      <p>{tr('Розширення дозволяє вашому ШІ-помічнику (Claude через наш конектор) читати сторінки цього сайту й виконувати дії в них. Воно працює лише на *.tarasevych.com, лише поки ви ввійшли на сайті, і лише з тим, що ви дозволили.', 'Met de extensie kan uw AI-assistent (Claude via onze connector) pagina\'s van deze site lezen en er acties in uitvoeren. Hij werkt alleen op *.tarasevych.com, alleen zolang u op de site bent aangemeld, en alleen met wat u hebt toegestaan.')}</p>
-
-      <ol className='hub-steps' aria-label={tr('Кроки налаштування', 'Stappen')}>
-        {steps.map((s, i) => <li key={i} className={s.ok ? 'done' : ''} aria-current={!s.ok && steps.slice(0, i).every((p) => p.ok) ? 'step' : undefined}>{s.ok ? '✓ ' : ''}{s.title}</li>)}
-      </ol>
-
-      <p className={`hub-note${presence === 'absent' ? ' warn' : ''}`} role='status' data-ext-presence={presence}>
-        {presence === 'checking' ? tr('Перевіряємо, чи розширення встановлене…', 'Controleren of de extensie is geïnstalleerd…')
-          : presence === 'absent' ? tr('Розширення в цьому браузері не виявлено.', 'De extensie is in deze browser niet gevonden.')
-          : paired ? tr('Розширення встановлене й підключене.', 'De extensie is geïnstalleerd en gekoppeld.')
-          : tr('Розширення встановлене, але ще не підключене.', 'De extensie is geïnstalleerd maar nog niet gekoppeld.')}
-      </p>
-
-      {presence !== 'present' ? (
-        <>
-          <div className='hub-actions'>
-            {release.storeUrl ? <a className='hub-btn tone-primary' href={release.storeUrl} target='_blank' rel='noopener noreferrer'><span className='hub-btn-icon'><Globe /></span>{tr('Встановити з Chrome Web Store', 'Installeren uit de Chrome Web Store')}</a> : null}
-            {hasHelper ? (
-              <a className={`hub-btn${release.storeUrl ? '' : ' tone-primary'}`} href={`/downloads/${helper}`} download onClick={() => setDownloaded(true)}>
-                <span className='hub-btn-icon'><Download /></span>
-                {osKind() === 'windows' ? tr('Помічник встановлення (Windows)', 'Installatiehulp (Windows)') : tr('Помічник встановлення (macOS / Linux)', 'Installatiehulp (macOS / Linux)')}
-              </a>
-            ) : null}
-            <a className='hub-btn' href={DOWNLOAD} download onClick={() => setDownloaded(true)}><span className='hub-btn-icon'><FileArchive /></span>{tr('Лише ZIP (вручну)', 'Alleen ZIP (handmatig)')}</a>
-            {release.crx ? <a className='hub-btn' href={`/downloads/${release.crx.file}`} download data-ext-crx='true' onClick={() => setCrxInfo(true)}><span className='hub-btn-icon'><Package /></span>{tr('Завантажити CRX', 'CRX downloaden')}</a> : null}
-          </div>
-          {crxInfo && release.crx ? (
-            <p className='hub-note' role='status' data-ext-crx-info='true'>{tr(`CRX-файл підписаний нашим ключем (ідентифікатор ${release.crx.extensionId}). Перетягніть його на сторінку chrome://extensions. Chrome на Windows і macOS може відхилити пакети поза магазином; тоді скористайтеся помічником або ZIP.`, `Het CRX-bestand is ondertekend met onze sleutel (id ${release.crx.extensionId}). Sleep het naar de pagina chrome://extensions. Chrome op Windows en macOS kan pakketten buiten de winkel weigeren; gebruik dan de installatiehulp of de ZIP.`)}</p>
-          ) : null}
-          {downloaded ? (
-            <p className='hub-note' role='status' data-ext-downloaded='true'>{tr('Файл завантажується. Відкрийте його з панелі завантажень браузера. Помічник сам завантажить розширення й покаже останні кроки.', 'Het bestand wordt gedownload. Open het in de downloadlijst van de browser. De hulp haalt de extensie zelf op en toont de laatste stappen.')}</p>
-          ) : (
-            <p className='hub-meta'>{tr('Chrome не дозволяє встановлювати розширення поза магазином «в один клік», тому помічник виконує все, крім двох натискань у самому браузері.', 'Chrome staat installatie buiten de winkel niet "met één klik" toe; de hulp doet alles behalve twee klikken in de browser zelf.')}</p>
-          )}
-          <ol className='hub-steps'>
-            <li>{tr('Відкрийте завантажений файл (або розпакуйте ZIP в окрему папку).', 'Open het gedownloade bestand (of pak de ZIP uit in een eigen map).')}</li>
-            <li>{tr('У Chrome або Edge відкрийте chrome://extensions (edge://extensions) і ввімкніть «Режим розробника».', 'Open in Chrome of Edge chrome://extensions (edge://extensions) en zet "Ontwikkelaarsmodus" aan.')}</li>
-            <li>{tr('Натисніть «Завантажити розпаковане» й виберіть папку розширення.', 'Klik op "Uitgepakte extensie laden" en kies de map van de extensie.')}</li>
-          </ol>
-        </>
-      ) : null}
-
-      {presence === 'present' ? <p className='hub-meta' data-ext-pin-tip='true'>{tr('Порада: закріпіть значок розширення (значок «пазл» на панелі Chrome, потім шпилька біля «Mijn Ruimte»), щоб бачити стан одним поглядом.', 'Tip: zet het extensiepictogram vast (puzzelstuk in de Chrome-balk, dan de punaise naast "Mijn Ruimte") om de status in één oogopslag te zien.')}</p> : null}
-      {presence === 'present' && (!paired || !agent) ? (
-        <div className='hub-actions'>
-          <IconButton tone='primary' icon={<Link2 />} disabled={busy} onClick={() => void connect()}>{tr('Підключити до мого облікового запису', 'Koppelen aan mijn account')}</IconButton>
-        </div>
-      ) : null}
-      {welcome && !allDone ? <div className='hub-actions'><IconButton icon={<X />} onClick={() => { clearWelcome(); setWelcome(false); }}>{tr('Закрити підказку', 'Hulp sluiten')}</IconButton></div> : null}
-      {notice ? <p className='hub-note' role='status'>{notice}</p> : null}
+    <section ref={rootRef}>
+      <ExtensionWizard
+        tr={tr} presence={presence} paired={paired} hasAgent={!!agent} agentEnabled={!!agent && agent.enabled} agentArmed={allDone} release={release}
+        busy={busy} notice={notice} welcome={welcome} onConnect={() => void connect()} onEnable={() => { if (agent) void setEnabled(agent, true); }}
+        onDownloaded={() => setDownloaded(true)} onClose={() => { clearWelcome(); setWelcome(false); }}
+      />
     </section>
   );
 

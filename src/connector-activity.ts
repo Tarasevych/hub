@@ -34,6 +34,11 @@ export function activityTitle(e: ActivityEvent, lang: Lang): string {
   const label = COMMAND_LABELS[e.type];
   return label ? (lang === 'uk' ? label[0] : label[1]) : e.type;
 }
+/** Waar de gebruiker heen moet om te handelen: een wachtende vraag leidt naar het beslisvenster, de rest naar het overzicht. */
+export function activityLink(e: ActivityEvent, lang: Lang): { href: string; label: string } {
+  const pending = e.status === 'pending_approval';
+  return { href: `https://mcp.tarasevych.com/agents#${pending ? 'pending' : 'overview'}`, label: pending ? (lang === 'uk' ? 'Прийняти рішення' : 'Beslissen') : (lang === 'uk' ? 'Відкрити' : 'Openen') };
+}
 export const sourceLabel = (source: string, lang: Lang): string => ({
   claude: 'Claude', agent: lang === 'uk' ? 'Пристрій' : 'Apparaat', browser: lang === 'uk' ? 'Браузер' : 'Browser',
 } as Record<string, string>)[source] || source;
@@ -88,7 +93,7 @@ export function useConnectorActivity(scope: string, lang: Lang, toast: (notice: 
           const st = statusInfo(e.status, l);
           if (e.status === 'pending_approval') {
             const who = `${sourceLabel(e.source, l)}${e.kind === 'command' ? `, ${e.subject}` : ''}`;
-            say({ text: l === 'uk' ? `Очікує вашого рішення: ${title} (${who})` : `Wacht op uw beslissing: ${title} (${who})`, kind: 'warning', source: 'mcp', transient: true });
+            say({ text: l === 'uk' ? `Очікує вашого рішення: ${title} (${who})` : `Wacht op uw beslissing: ${title} (${who})`, kind: 'warning', source: 'mcp', transient: true, link: activityLink(e, l) });
           } else if (e.kind === 'grant') say({ text: title, kind: 'success', source: 'mcp', transient: true });
           else if (st.group !== 'active' && st.group !== 'waiting') say({ text: `${title}: ${st.text}`, kind: st.group === 'done' ? 'success' : st.group === 'failed' ? 'error' : 'info', source: 'mcp', transient: true });
         }

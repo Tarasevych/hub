@@ -78,7 +78,7 @@ export function Help({ tr, content, tone = 'info' }: { tr: Tr; content: HelpCont
   );
 }
 
-export type LogoKind = 'windows' | 'linux' | 'macos' | 'chrome' | 'edge' | 'firefox' | 'browser' | 'docker' | 'google' | 'microsoft' | 'internal' | 'claude' | 'github' | 'device' | 'server' | 'search' | 'mail' | 'calendar';
+export type LogoKind = 'windows' | 'linux' | 'macos' | 'chrome' | 'edge' | 'firefox' | 'opera' | 'brave' | 'vivaldi' | 'safari' | 'node' | 'browser' | 'docker' | 'google' | 'microsoft' | 'internal' | 'claude' | 'github' | 'device' | 'server' | 'search' | 'mail' | 'calendar';
 
 /** Eenvoudige herkenbare merktekens (geen officiële bestanden; alleen vormen en kleuren) naast pictogrammen uit de bibliotheek. */
 export function Logo({ kind, size = 28, label }: { kind: LogoKind; size?: number; label?: string }) {
@@ -90,6 +90,11 @@ export function Logo({ kind, size = 28, label }: { kind: LogoKind; size?: number
     case 'chrome': return <svg {...common}><circle cx='16' cy='16' r='12' fill='#ea4335' /><path fill='#34a853' d='M16 28A12 12 0 0 1 5.6 10l5.8 10.1z' /><path fill='#fbbc05' d='M16 28a12 12 0 0 0 10.4-18H14.8z' /><circle cx='16' cy='16' r='5' fill='#fff' /><circle cx='16' cy='16' r='3.6' fill='#4285f4' /></svg>;
     case 'edge': return <svg {...common}><path fill='#0a7ad6' d='M16 4a12 12 0 1 0 11.7 14.7H15.6c0-3 2.6-4.3 4.7-4.3 2.8 0 5 1.2 5 4h2.4C27.6 9.6 22.6 4 16 4z' /></svg>;
     case 'firefox': return <svg {...common}><circle cx='16' cy='17' r='11' fill='#ff7139' /><path fill='#ffbd4f' d='M10 9c2-3 8-4 12 0-3-.5-6 1-8 4z' /><circle cx='16' cy='17' r='5' fill='#6b2fbf' opacity='.75' /></svg>;
+    case 'opera': return <svg {...common}><circle cx='16' cy='16' r='12' fill='#ff1b2d' /><ellipse cx='16' cy='16' rx='4.4' ry='7.6' fill='#fff' /></svg>;
+    case 'brave': return <svg {...common}><path fill='#fb542b' d='M16 3.5 24.5 6l2.5 4.5-1.5 11L16 28.5 6.5 21.5 5 10.5 7.5 6z' /><path fill='#fff' d='m16 10 3.5 2-1.2 5.2h-4.6L12.5 12z' /></svg>;
+    case 'vivaldi': return <svg {...common}><circle cx='16' cy='16' r='12' fill='#ef3939' /><path d='m10 12 6 9 6-9' stroke='#fff' strokeWidth='2.6' fill='none' strokeLinecap='round' strokeLinejoin='round' /></svg>;
+    case 'safari': return <svg {...common}><circle cx='16' cy='16' r='12' fill='#1a8cff' /><path fill='#fff' d='m21 11-3.2 6.8L11 21l3.2-6.8z' /><path fill='#ff3b30' d='m21 11-3.2 6.8-3.6-3.6z' /></svg>;
+    case 'node': return <svg {...common}><path fill='#3c873a' d='M16 3.5 26.5 9.5v13L16 28.5 5.5 22.5v-13z' /><path d='M12.5 21V11l7 10V11' stroke='#fff' strokeWidth='2' fill='none' strokeLinecap='round' strokeLinejoin='round' /></svg>;
     case 'macos': return <svg {...common}><rect x='4' y='5' width='24' height='17' rx='3' fill='#6b7280' /><rect x='11' y='24' width='10' height='2.4' rx='1.2' fill='#6b7280' /><circle cx='16' cy='13.5' r='3.4' fill='#fff' /></svg>;
     case 'linux': return <svg {...common}><rect x='4' y='5' width='24' height='22' rx='4' fill='#1f2937' /><path d='m9 12 5 4-5 4' stroke='#4ade80' strokeWidth='2.4' fill='none' strokeLinecap='round' strokeLinejoin='round' /><path d='M16 21h7' stroke='#4ade80' strokeWidth='2.4' strokeLinecap='round' /></svg>;
     case 'docker': return <svg {...common}><path fill='#1d63ed' d='M3 15h24c.6-2.4-.8-3.6-2.2-4.2-.8 1-2.4 1.2-3.3.4V9h-3V6h-3v3h-3V6h-3v3H9v3H6v3H3zm1 2c.6 6.2 5.6 9 11.7 9 7 0 10.3-3.7 11.3-9z' /></svg>;

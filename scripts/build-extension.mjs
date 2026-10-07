@@ -86,5 +86,13 @@ for (const [src, dest] of [['Install-MijnRuimte.cmd', 'Install-MijnRuimte.cmd'],
   writeFileSync(join(outDir, dest), dest.endsWith('.cmd') ? text.replace(/\r?\n/g, '\r\n') : text.replace(/\r\n/g, '\n'));
   installers.push(dest);
 }
-writeFileSync(join(outDir, 'extension-version.json'), JSON.stringify({ version: manifest.version, file: 'mijn-ruimte-extension.zip', sha256, files: entries.length, storeUrl, installers, crx }));
+// Het pc-/VM-agentprogramma (één bestand zonder afhankelijkheden): zo kan de koppel-wizard op de site het gewoon laten downloaden.
+let agent = null;
+const agentSrc = join(root, 'deploy', 'agent', 'agent.mjs');
+if (existsSync(agentSrc)) {
+  const bytes = readFileSync(agentSrc);
+  writeFileSync(join(outDir, 'agent.mjs'), bytes);
+  agent = { file: 'agent.mjs', sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length };
+}
+writeFileSync(join(outDir, 'extension-version.json'), JSON.stringify({ version: manifest.version, file: 'mijn-ruimte-extension.zip', sha256, files: entries.length, storeUrl, installers, crx, agent }));
 console.log(`Extensie ${manifest.version}: ${entries.length} bestanden -> ${relative(root, target)} (${statSync(target).size} bytes, sha256 ${sha256.slice(0, 12)}…, helpers: ${installers.join(', ') || 'geen'}), CRX: ${crxNote}`);

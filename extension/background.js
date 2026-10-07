@@ -217,7 +217,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Na het installeren opent de extensie zelf de pagina waar de gebruiker inlogt, de browser koppelt en kiest wat AAN mag.
 chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === 'install') chrome.tabs.create({ url: `${DEFAULT_SITE}/agents?extension=welcome` });
+  if (details.reason === 'install') chrome.tabs.create({ url: `${DEFAULT_SITE}/agents?extension=welcome#extension` });
   connect();
 });
 

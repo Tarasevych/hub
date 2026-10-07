@@ -1,6 +1,6 @@
 import { useMemo, useState, type ComponentType } from 'react';
 import { Bell, Bot, Check, ChevronDown, ChevronUp, CircleCheck, Cloud, Globe, Info, Laptop, Mail, Search, Trash2, Undo2 } from 'lucide-react';
-import { activityTitle, durationText, sourceLabel, statusInfo, type ActivityEvent } from './connector-activity';
+import { activityLink, activityTitle, durationText, sourceLabel, statusInfo, type ActivityEvent } from './connector-activity';
 import './notification-panel.css';
 
 type Lang = 'uk' | 'nl';
@@ -9,13 +9,13 @@ type Category = 'claude' | 'agent' | 'browser' | 'mail' | 'cloud' | 'site';
 type Detail = { icon: string; label: string; value: string };
 type Section = { title: string; items: Detail[] };
 
-export type LocalRow = { id: string; text: string; kind: Kind; createdAt: number; source: string; read: boolean; details?: Section[]; action?: { label: string; onAction: () => void | Promise<void> } };
+export type LocalRow = { id: string; text: string; kind: Kind; createdAt: number; source: string; read: boolean; link?: { href: string; label: string }; details?: Section[]; action?: { label: string; onAction: () => void | Promise<void> } };
 export type ServerRow = { id: string; kind: string; title: string; message: string; createdAt: number; read?: boolean };
 
 type Item = {
   key: string; origin: 'local' | 'server' | 'activity'; kind: Kind; title: string; text?: string; category: Category; createdAt: number; read: boolean;
   status?: { text: string; group: 'waiting' | 'active' | 'done' | 'failed' | 'rejected' | 'expired' }; duration?: string;
-  details?: Section[]; facts?: Array<[string, string]>; markRead: () => void; remove?: () => void; action?: LocalRow['action'];
+  link?: { href: string; label: string }; details?: Section[]; facts?: Array<[string, string]>; markRead: () => void; remove?: () => void; action?: LocalRow['action'];
 };
 type Props = {
   lang: Lang; local: LocalRow[]; server: ServerRow[]; events: ActivityEvent[]; readEvents: Set<string>;
@@ -66,7 +66,7 @@ export default function NotificationPanelBody(p: Props) {
 
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
-    for (const r of p.local) out.push({ key: `l:${r.id}`, origin: 'local', kind: r.kind, title: r.text, category: categoryOf(r.source), createdAt: r.createdAt, read: r.read, details: r.details, markRead: () => p.onReadLocal(r.id), remove: () => p.onRemoveLocal(r.id), action: r.action });
+    for (const r of p.local) out.push({ key: `l:${r.id}`, origin: 'local', kind: r.kind, title: r.text, category: categoryOf(r.source), createdAt: r.createdAt, read: r.read, details: r.details, link: r.link, markRead: () => p.onReadLocal(r.id), remove: () => p.onRemoveLocal(r.id), action: r.action });
     for (const r of p.server) out.push({ key: `s:${r.id}`, origin: 'server', kind: /error|fail/i.test(r.kind) ? 'error' : /warn/i.test(r.kind) ? 'warning' : 'info', title: r.title, text: r.message, category: 'site', createdAt: r.createdAt, read: Boolean(r.read), markRead: () => { if (!r.read) void p.onReadServer?.(r.id); } });
     for (const e of p.events) {
       const st = statusInfo(e.status, p.lang);
@@ -82,7 +82,7 @@ export default function NotificationPanelBody(p: Props) {
           ...(e.finishedAt ? [[t('Завершення', 'Einde'), new Date(e.finishedAt).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE')] as [string, string]] : []),
           ...(e.kind !== 'grant' ? [[t('Тривалість', 'Duur'), durationText(e, p.lang)] as [string, string]] : []),
         ],
-        markRead: () => p.onReadEvent(e.id),
+        link: activityLink(e, p.lang), markRead: () => p.onReadEvent(e.id),
       });
     }
     return out;
@@ -173,6 +173,7 @@ export default function NotificationPanelBody(p: Props) {
                     <span title={new Date(item.createdAt).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE')}>{relative(item.createdAt, p.lang)}</span>
                     {item.duration ? <span>{item.duration}</span> : null}
                   </div>
+                  {item.link ? <a className='cnc-link' href={item.link.href} onClick={() => item.markRead()}>{item.link.label} →</a> : null}
                   {isOpen ? (
                     <div className='cnc-details'>
                       {item.text ? <p>{item.text}</p> : null}
