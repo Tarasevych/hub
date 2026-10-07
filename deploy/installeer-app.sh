@@ -37,7 +37,7 @@ NODE="${NODE:-/usr/bin/node}"
 PORT="${PORT:-8080}"
 BEWAAR="${BEWAAR_RELEASES:-5}"
 GEZONDHEID_URL="http://127.0.0.1:${PORT}/__gezondheid"
-TIMERS=(mijn-ruimte-mail-onderhoud.timer mijn-ruimte-google-sync.timer mijn-ruimte-opruimen.timer mijn-ruimte-backup.timer)
+TIMERS=(mijn-ruimte-mail-onderhoud.timer mijn-ruimte-google-sync.timer mijn-ruimte-opruimen.timer mijn-ruimte-backup.timer mijn-ruimte-mail-queue.timer)
 
 ONVOLTOOID=""   # pad van een release die nog niet klaar is; wordt bij een fout verwijderd
 opruimen_bij_afbreken() { if [ -n "$ONVOLTOOID" ] && [ -d "$ONVOLTOOID" ]; then echo "[installeer] onvolledige release $ONVOLTOOID verwijderd" >&2; rm -rf -- "$ONVOLTOOID"; fi; }
@@ -249,6 +249,7 @@ installeren() {
     melding "mcp-hulp bijgewerkt"
   fi
   # Timers (cron, opruimen, back-up) starten; `enable` alleen start ze pas na een herstart.
+  systemctl enable "${TIMERS[@]}" >/dev/null 2>&1 || true   # nieuwe timers moeten ook een herstart overleven
   systemctl start "${TIMERS[@]}"
   releases_opruimen
   melding "klaar: release $datum (commit $(cat "$doel/RELEASE-COMMIT"))"
