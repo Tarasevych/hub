@@ -12,7 +12,7 @@ type BrowserAgent = {
   policy: { autoApprove: string[]; enabled?: string[] }; enabled: boolean; armedUntil: number | null; enabledCapabilities?: string[];
 };
 type Presence = 'checking' | 'present' | 'absent';
-type Release = { version?: string; storeUrl?: string; installers?: string[] };
+type Release = { version?: string; storeUrl?: string; installers?: string[]; crx?: { file: string; extensionId: string; version: string } | null };
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 const DOWNLOAD = '/downloads/mijn-ruimte-extension.zip';
@@ -48,6 +48,7 @@ export default function BrowserExtensionPanel({ tr }: { tr: Tr }) {
   const [notice, setNotice] = useState('');
   const [confirm, setConfirm] = useState<string | null>(null);
   const [downloaded, setDownloaded] = useState(false);
+  const [crxInfo, setCrxInfo] = useState(false);
   const [release, setRelease] = useState<Release>({});
   const [welcome, setWelcome] = useState(() => welcomePending());
   const pending = useRef<((ok: boolean, reason: string) => void) | null>(null);
@@ -184,7 +185,11 @@ export default function BrowserExtensionPanel({ tr }: { tr: Tr }) {
                 </a>
               ) : null}
               <a className='mcp-download-secondary' href={DOWNLOAD} download onClick={() => setDownloaded(true)}>{tr('Лише ZIP (вручну)', 'Alleen ZIP (handmatig)')}</a>
+              {release.crx ? <a className='mcp-download-secondary' href={`/downloads/${release.crx.file}`} download data-ext-crx='true' onClick={() => setCrxInfo(true)}>{tr('Завантажити CRX', 'CRX downloaden')}</a> : null}
             </div>
+            {crxInfo && release.crx ? (
+              <p role='status' data-ext-crx-info='true'>{tr(`CRX-файл підписаний нашим ключем (ідентифікатор ${release.crx.extensionId}). Перетягніть його на сторінку chrome://extensions. Увага: Chrome на Windows і macOS зазвичай відхиляє CRX не з магазину («Пакет недійсний»): це захист Chrome, а не помилка. Такий файл приймають деякі Chromium-браузери, Linux і комп'ютери, де адміністратор дозволив розширення за політикою (тоді розширення ще й саме оновлюється). Якщо Chrome відхилив файл, скористайтеся помічником встановлення вище.`, `Het CRX-bestand is ondertekend met onze sleutel (id ${release.crx.extensionId}). Sleep het naar chrome://extensions. Let op: Chrome op Windows en macOS weigert een CRX van buiten de winkel meestal ("Pakket ongeldig"): dat is een beveiliging van Chrome, geen fout. Sommige Chromium-browsers, Linux en computers waar een beheerder de extensie via beleid toestaat accepteren hem wel (dan werkt hij zichzelf ook bij). Weigert Chrome het bestand, gebruik dan de installatiehulp hierboven.`)}</p>
+            ) : null}
             {downloaded ? (
               <p role='status' data-ext-downloaded='true'>{tr('Файл завантажується. Відкрийте його з панелі завантажень браузера. Помічник сам завантажить розширення, перевірить контрольну суму, розпакує його й відкриє сторінку розширень. Далі лишиться ввімкнути «Режим розробника» і вибрати папку (шлях уже в буфері обміну). Після цього розширення саме поверне вас сюди.', 'Het bestand wordt gedownload. Open het via de downloadbalk van uw browser. De hulp haalt de extensie op, controleert de controlesom, pakt hem uit en opent de extensiepagina. Daarna hoeft u alleen "Ontwikkelaarsmodus" aan te zetten en de map te kiezen (het pad staat op het klembord). Daarna brengt de extensie u hier terug.')}</p>
             ) : (
@@ -198,6 +203,7 @@ export default function BrowserExtensionPanel({ tr }: { tr: Tr }) {
           </>
         ) : null}
 
+        {presence === 'present' ? <p className='mcp-hint' data-ext-pin-tip='true'>{tr('Порада: закріпіть значок розширення (значок «пазл» на панелі Chrome, потім шпилька біля «Mijn Ruimte»), щоб завжди бачити його стан: «ШІ активний» або що саме треба зробити.', 'Tip: zet het pictogram van de extensie vast (puzzelstuk in de werkbalk van Chrome, dan het speldje bij "Mijn Ruimte"), zodat u altijd de status ziet: "AI actief" of wat er nog moet gebeuren.')}</p> : null}
         {presence === 'present' && (!paired || !agent) ? (
           <div className='api-platform-secret-actions'>
             <button type='button' className='mcp-reconnect' disabled={busy} onClick={() => void connect()}>{tr('Підключити до мого облікового запису', 'Koppelen aan mijn account')}</button>

@@ -10,6 +10,8 @@ import { ALLOWED_COMMANDS, isOwnSiteUrl, isSensitiveField, pickByName } from '..
 import { COMMAND_TYPES } from '../../backend/connectors-gateway';
 import { BROWSER_AUTO_APPROVABLE, BROWSER_DEFAULT_AUTO, BROWSER_DEFAULT_ENABLED, BROWSER_TYPES } from '../../backend/browser-capabilities';
 import { createHash } from 'node:crypto';
+// @ts-expect-error gewone JavaScript-module zonder typen (bouwscripts)
+import { contentHash, extensionEntries, parseCrx3, readZipEntries } from '../../scripts/extension-lib.mjs';
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('browser-extensie');
@@ -66,6 +68,21 @@ export async function main(): Promise<number> {
     && cmd.indexOf('Get-FileHash') < cmd.indexOf('Expand-Archive') && sh.indexOf('sha256sum') < sh.indexOf('unzip') && versie.installers.length === 2 && typeof versie.storeUrl === 'string');
   check('installatiehulp: schrijft alleen naar een eigen map, vraagt geen beheerdersrechten en haalt niets van elders dan de eigen site',
     !/RunAs|Verb\s+runAs|sudo |HKLM|HKCU|reg add|ExecutionPolicy\s+Unrestricted/i.test(cmd + sh) && (cmd.match(/https?:\/\/[^/'" ]+/g) ?? []).every((u) => u === 'https://mcp.tarasevych.com') && (sh.match(/https?:\/\/[^/'" ]+/g) ?? []).every((u) => u === 'https://mcp.tarasevych.com'));
+  // Eigen CRX3: handtekening geldig, id hoort bij de sleutel, inhoud = de huidige extensiebestanden (plus update_url), updates.xml klopt.
+  const crxInfo = JSON.parse(readFileSync(join(process.cwd(), 'extension', 'signed', 'crx-info.json'), 'utf8'));
+  const crxFile = readFileSync(join(downloads, 'mijn-ruimte-extension.crx'));
+  const parsed = parseCrx3(crxFile);
+  const inner = readZipEntries(parsed.zip) as Array<{ name: string; data: Buffer }>;
+  const innerManifest = JSON.parse(inner.find((e) => e.name === 'manifest.json')!.data.toString('utf8'));
+  const updatesXml = readFileSync(join(downloads, 'updates.xml'), 'utf8');
+  check('CRX: geldige CRX3-handtekening, extensie-id hoort bij de sleutel en staat in updates.xml en extension-version.json',
+    parsed.valid && parsed.crxIdMatchesKey && parsed.extensionId === crxInfo.extensionId && /^[a-p]{32}$/.test(parsed.extensionId)
+    && updatesXml.includes(`appid='${parsed.extensionId}'`) && updatesXml.includes(`version='${manifest.version}'`) && updatesXml.includes('https://mcp.tarasevych.com/downloads/mijn-ruimte-extension.crx')
+    && versie.crx?.extensionId === parsed.extensionId && versie.crx?.version === manifest.version, parsed.extensionId);
+  check('CRX: de inhoud is actueel (zelfde bestanden als de extensiemap, met update_url naar onze site) en bevat geen privésleutel of ondertekeningsbestanden',
+    contentHash(inner) === contentHash(extensionEntries(join(process.cwd(), 'extension'), { selfHosted: true })) && innerManifest.update_url === 'https://mcp.tarasevych.com/downloads/updates.xml'
+    && !inner.some((e) => /\.pem$|signed\/|crx-info|store-url/.test(e.name)) && !crxFile.includes(Buffer.from('PRIVATE KEY')));
+  check('CRX: een gewijzigd pakket valt door de mand (handtekening ongeldig als er een byte verandert)', (() => { const kapot = Buffer.from(crxFile); kapot[kapot.length - 20] ^= 1; return parseCrx3(kapot).valid === false; })());
   check('manifest: de debugger is een OPTIONEEL recht (de gebruiker geeft het zelf), niet standaard; opties-pagina aanwezig',
     JSON.stringify(manifest.optional_permissions) === '["debugger"]' && !manifest.permissions.includes('debugger') && manifest.options_ui?.page === 'options.html' && namen.includes('options.html') && namen.includes('options.js'));
   check('manifest: Manifest V3, alleen tarasevych.com, geen brede rechten (geen <all_urls>, geen tabs/cookies/webRequest)',
