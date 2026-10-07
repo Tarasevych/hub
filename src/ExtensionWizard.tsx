@@ -95,7 +95,7 @@ export default function ExtensionWizard(p: WizardProps) {
   const [browser, setBrowser] = useState<BrowserKey>(detectBrowser);
   const [os, setOs] = useState<OsKey>(detectOs);
   const [method, setMethod] = useState<Method>('terminal');
-  const [folder, setFolder] = useState(() => (detectOs() === 'windows' ? '%USERPROFILE%\\MijnRuimte-extension' : '~/MijnRuimte-extension'));
+  const [folder, setFolder] = useState('');
   const [open, setOpen] = useState<string>('');
   const [downloaded, setDownloaded] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -103,6 +103,11 @@ export default function ExtensionWizard(p: WizardProps) {
   const helperFile = os === 'windows' ? 'Install-MijnRuimte.cmd' : 'install-mijn-ruimte.sh';
   const hasHelper = (p.release.installers ?? []).includes(helperFile);
   const present = p.presence === 'present';
+  // Папку обирає користувач (на якому диску — його справа); жодного шляху за замовчуванням, нічого не створюється на диску, який він не обрав.
+  const folderOk = os === 'windows' ? /^([A-Za-z]:\\[^<>|?*"]+|\\\\[^\\]+\\[^<>|?*"]+)$/.test(folder.trim()) : /^(~\/|\/)[^\0]{2,}$/.test(folder.trim());
+  const folderChoices: Array<[string, string]> = os === 'windows'
+    ? ['C', 'D', 'E', 'F', 'G', 'H'].map((d) => [`${d}:`, `${d}:\\MijnRuimte-extension`])
+    : [['~/MijnRuimte-extension', '~/MijnRuimte-extension'], ['~/Documents/MijnRuimte-extension', '~/Documents/MijnRuimte-extension']];
 
   // Повідомлення про кожен виконаний етап: вони лишаються в панелі сповіщень із посиланням сюди.
   const prev = useRef({ present: false, paired: false, enabled: false, armed: false });
@@ -141,8 +146,14 @@ export default function ExtensionWizard(p: WizardProps) {
           {method === 'terminal' && p.release.sha256 ? (
             <>
               <p>{tr('Без завантаження виконуваних файлів: команда сама завантажує розширення, перевіряє SHA-256 і розпаковує у вказану папку. Це обходить блокування Windows («Захист смарт-програм» блокує .cmd, .ps1, .js).', 'Zonder uitvoerbare bestanden te downloaden: het commando haalt de extensie op, controleert de SHA-256 en pakt hem uit in de opgegeven map. Zo omzeilt u de blokkade van Windows ("Smart App Control" blokkeert .cmd, .ps1, .js).')}</p>
-              <label className='wiz-field'>{tr('Папка для розширення (не видаляйте її)', 'Map voor de extensie (niet verwijderen)')}<input value={folder} onChange={(e) => setFolder(e.target.value)} spellCheck={false} /></label>
-              {extensionInstallCommands({ os, shell: os === 'windows' ? 'powershell' : 'bash', folder, sha256: p.release.sha256, origin: location.origin }).map((c, i) => <div key={i} className='wiz-copy'><code>{c}</code><button type='button' onClick={() => { void copy(c); setDownloaded(true); p.onDownloaded(); }}>{copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>)}
+              <p><strong>{tr('1. Оберіть, куди покласти розширення', '1. Kies waar de extensie komt')}</strong> {tr('— диск і папку вибираєте ви; нічого не створюється, поки ви не оберете. Папку потім не видаляйте: браузер читає розширення саме з неї.', '— u kiest schijf en map; er wordt niets aangemaakt zolang u niet kiest. Verwijder de map daarna niet: de browser leest de extensie uit die map.')}</p>
+              <div className='wiz-os' role='group' aria-label={tr('Швидкий вибір', 'Snelle keuze')}>
+                {folderChoices.map(([label, path]) => <button key={label} type='button' aria-pressed={folder === path} onClick={() => setFolder(path)}>{os === 'windows' ? tr(`Диск ${label}`, `Schijf ${label}`) : label}</button>)}
+              </div>
+              <label className='wiz-field'>{tr('Повний шлях до папки (можна змінити)', 'Volledig pad naar de map (aanpasbaar)')}<input value={folder} onChange={(e) => setFolder(e.target.value)} spellCheck={false} placeholder={os === 'windows' ? 'D:\\MijnRuimte-extension' : '~/MijnRuimte-extension'} /></label>
+              {folder.trim() && !folderOk ? <p className='wiz-note' role='alert'>{os === 'windows' ? tr('Шлях має починатися з літери диска, наприклад D:\\MijnRuimte-extension.', 'Het pad moet met een schijfletter beginnen, bijvoorbeeld D:\\MijnRuimte-extension.') : tr('Шлях має починатися з ~/ або /.', 'Het pad moet met ~/ of / beginnen.')}</p> : null}
+              <p><strong>{tr('2. Виконайте команду', '2. Voer het commando uit')}</strong></p>
+              {!folderOk ? <p className='wiz-note' role='status'>{tr('Команда з’явиться, щойно ви оберете папку вище.', 'Het commando verschijnt zodra u hierboven een map kiest.')}</p> : extensionInstallCommands({ os, shell: os === 'windows' ? 'powershell' : 'bash', folder, sha256: p.release.sha256, origin: location.origin }).map((c, i) => <div key={i} className='wiz-copy'><code>{c}</code><button type='button' onClick={() => { void copy(c); setDownloaded(true); p.onDownloaded(); }}>{copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>)}
               <p className='wiz-note'>{os === 'windows' ? tr('Відкрийте PowerShell (Пуск → введіть PowerShell), вставте команду й натисніть Enter.', 'Open PowerShell (Start → typ PowerShell), plak het commando en druk op Enter.') : tr('Відкрийте термінал, вставте команду й натисніть Enter.', 'Open een terminal, plak het commando en druk op Enter.')}</p>
             </>
           ) : null}
@@ -156,7 +167,14 @@ export default function ExtensionWizard(p: WizardProps) {
       ),
     });
     if (method === 'terminal') {
-      list.push({ id: 'open', title: tr('Виконайте команду', 'Voer het commando uit'), done: present, manual: true, body: <p>{tr('Команда з попереднього кроку створила папку з розширенням. Далі: сторінка розширень браузера.', 'Het commando uit de vorige stap heeft de map met de extensie gemaakt. Daarna: de extensiepagina van de browser.')}</p> });
+      list.push({
+        id: 'open', title: tr('Перевірте, що папка створена', 'Controleer dat de map is gemaakt'), done: present, manual: true,
+        body: <>
+          <p>{tr('Після команди в терміналі має з’явитися рядок «Готово: …» зі шляхом. Це і є папка розширення; нічого іншого команда не створює (тимчасовий ZIP кладеться в ту саму папку й видаляється).', 'Na het commando verschijnt in de terminal een regel "Готово: …" met het pad. Dat is de map van de extensie; het commando maakt verder niets aan (het tijdelijke ZIP-bestand komt in dezelfde map en wordt verwijderd).')}</p>
+          {folderOk ? <div className='wiz-copy'><code>{folder.trim()}</code><button type='button' onClick={() => void copy(folder.trim())}>{copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати шлях', 'Pad kopiëren')}</button></div> : <p className='wiz-note'>{tr('Спершу оберіть папку в попередньому кроці.', 'Kies eerst een map in de vorige stap.')}</p>}
+          <p className='wiz-note'>{tr('Цей шлях знадобиться за два кроки: його вставляють у вікно «Вибір папки».', 'Dit pad heeft u over twee stappen nodig: u plakt het in het venster "Map kiezen".')}</p>
+        </>,
+      });
     } else if (method === 'helper') {
       list.push({
         id: 'open', title: tr('Запустіть помічник', 'Start de installatiehulp'), done: present, manual: true,
@@ -173,7 +191,7 @@ export default function ExtensionWizard(p: WizardProps) {
       id: 'page', title: tr('Відкрийте сторінку розширень', 'Open de extensiepagina'), done: present, manual: true,
       body: (
         <>
-          <p>{tr(`Скопіюйте адресу, вставте її в адресний рядок ${info.name} і натисніть Enter. (Браузер не дозволяє відкрити цю сторінку з сайту посиланням.)`, `Kopieer het adres, plak het in de adresbalk van ${info.name} en druk op Enter. (De browser staat niet toe dat een site die pagina met een link opent.)`)}</p>
+          <p>{tr(`Скопіюйте адресу, вставте її в адресний рядок ${info.name} і натисніть Enter. (Браузер не дозволяє сайтам відкривати службові сторінки chrome:// чи edge:// — ні посиланням, ні кнопкою, тож це робиться вручну: Ctrl+L, вставити, Enter.)`, `Kopieer het adres, plak het in de adresbalk van ${info.name} en druk op Enter. (Een browser laat sites geen interne pagina's zoals chrome:// of edge:// openen, ook niet met een knop; dus handmatig: Ctrl+L, plakken, Enter.)`)}</p>
           <div className='wiz-copy'><code>{info.url}</code><button type='button' onClick={() => void copy(info.url)}>{copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{copied ? tr('Скопійовано', 'Gekopieerd') : tr('Скопіювати', 'Kopiëren')}</button></div>
         </>
       ),
@@ -185,7 +203,7 @@ export default function ExtensionWizard(p: WizardProps) {
     list.push({
       id: 'load', title: tr('Додайте розширення', 'Voeg de extensie toe'), done: present, manual: true,
       body: method === 'helper' || method === 'terminal'
-        ? <><p>{tr(`Натисніть ${info.load[0]} і виберіть папку, яку показав помічник (за замовчуванням ${os === 'windows' ? '%USERPROFILE%\\MijnRuimte-extension' : '~/MijnRuimte-extension'}).`, `Kies ${info.load[1]} en selecteer de map die de hulp toonde (standaard ${os === 'windows' ? '%USERPROFILE%\\MijnRuimte-extension' : '~/MijnRuimte-extension'}).`)}</p><Mock kind='load' tr={tr} browser={browserScheme} /></>
+        ? <><p>{tr(`Натисніть ${info.load[0]} і виберіть свою папку (${folder.trim() || '…'}).`, `Kies ${info.load[1]} en selecteer de map die de hulp toonde (${folder.trim() || '…'}).`)}</p><Mock kind='load' tr={tr} browser={browserScheme} /></>
         : <><p>{tr(`Натисніть ${info.load[0]} і виберіть розпаковану папку з файлом manifest.json.`, `Kies ${info.load[1]} en selecteer de uitgepakte map met het bestand manifest.json.`)}</p><Mock kind='load' tr={tr} browser={browserScheme} /></>,
     });
     list.push({

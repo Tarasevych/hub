@@ -37,10 +37,10 @@ export function extensionInstallCommands(opts: { os: Os; shell: 'powershell' | '
   const url = `${opts.origin}/downloads/mijn-ruimte-extension.zip`;
   if (opts.os === 'windows') {
     const folder = opts.folder.replace(/"/g, '').replace(/'/g, "''");
-    return [`$d=[Environment]::ExpandEnvironmentVariables('${folder}'); $z=Join-Path $env:TEMP 'mijn-ruimte-extension.zip'; New-Item -ItemType Directory -Force -Path $d | Out-Null; Invoke-WebRequest '${url}' -OutFile $z; if ((Get-FileHash $z -Algorithm SHA256).Hash.ToLower() -ne '${opts.sha256.toLowerCase()}') { throw 'Контрольна сума не збігається' }; Expand-Archive -Path $z -DestinationPath $d -Force; Remove-Item $z; Write-Host "Готово: $d"`];
+    return [`$d=[Environment]::ExpandEnvironmentVariables('${folder}'); New-Item -ItemType Directory -Force -Path $d | Out-Null; $z=Join-Path $d 'mijn-ruimte-extension.zip'; Invoke-WebRequest '${url}' -OutFile $z; if ((Get-FileHash $z -Algorithm SHA256).Hash.ToLower() -ne '${opts.sha256.toLowerCase()}') { throw 'Контрольна сума не збігається' }; Expand-Archive -Path $z -DestinationPath $d -Force; Remove-Item $z; Write-Host "Готово: $d"`];
   }
   // een tilde binnen enkele aanhalingstekens wordt niet uitgebreid: "$HOME" ervoor zetten
   const quote = (v: string) => `'${v.replace(/'/g, `'\\''`)}'`;
   const folder = opts.folder.startsWith('~/') ? `"$HOME"/${quote(opts.folder.slice(2))}` : quote(opts.folder);
-  return [`mkdir -p ${folder} && curl -fsSL ${url} -o /tmp/mijn-ruimte-extension.zip && echo "${opts.sha256.toLowerCase()}  /tmp/mijn-ruimte-extension.zip" | ${opts.os === 'macos' ? 'shasum -a 256 -c -' : 'sha256sum -c -'} && unzip -o /tmp/mijn-ruimte-extension.zip -d ${folder} && rm /tmp/mijn-ruimte-extension.zip`];
+  return [`mkdir -p ${folder} && curl -fsSL ${url} -o ${folder}/mijn-ruimte-extension.zip && cd ${folder} && echo "${opts.sha256.toLowerCase()}  mijn-ruimte-extension.zip" | ${opts.os === 'macos' ? 'shasum -a 256 -c -' : 'sha256sum -c -'} && unzip -o mijn-ruimte-extension.zip && rm mijn-ruimte-extension.zip && echo "Готово: $PWD"`];
 }
