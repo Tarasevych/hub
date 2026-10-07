@@ -3,7 +3,8 @@
 // De routes voor toestemming en beheer vragen een sessie (service mcp) en het recht 'api-platform'.
 import { heeftApiRecht } from './api-recht';
 import * as c from './mcp-connector';
-import { describeTools } from './connectors-tools';
+import { describeTools, KNOWN_TOOL_NAMES } from './connectors-tools';
+import * as agentStore from './connectors-store';
 
 type SessionAuth = { errorCode: string } | { user: { id: string; email: string; role: string; status: string }; service: string };
 type Deps = {
@@ -69,6 +70,20 @@ export function createMcpConnectorRoutes(deps: Deps) {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
       return deps.respond({ tools: await describeTools(auth.user.id) });
+    }],
+
+    // Een hulpmiddel in- of uitzetten. Uitgezet = weg uit tools/list én geweigerd bij aanroep (server-side).
+    'POST /api/owner/mcp-connector/tools/set': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const body = deps.body(ctx.body);
+      const name = String(body.name ?? '');
+      if (!KNOWN_TOOL_NAMES.includes(name) || typeof body.enabled !== 'boolean') return deps.fail('TOOL_SETTING_INVALID', 400);
+      const disabled = new Set(await agentStore.getDisabledTools(auth.user.id));
+      if (body.enabled) disabled.delete(name); else disabled.add(name);
+      await agentStore.setDisabledTools(auth.user.id, [...disabled].sort());
+      await deps.audit(auth.user.id, 'owner.mcp.tool.setting', 'success', { tool: name, enabled: body.enabled });
+      return deps.respond({ ok: true, tools: await describeTools(auth.user.id) });
     }],
 
     'POST /api/owner/mcp-connector/grants/:id/revoke': [async (ctx: any) => {

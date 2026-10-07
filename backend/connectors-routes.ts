@@ -20,6 +20,8 @@ type Deps = {
 };
 
 const MAX_PARAM_BYTES = 6 * 1024 * 1024;
+export const AUTO_APPROVABLE_MACHINE = ['fs.read', 'fs.list', 'sys.info', 'sys.metrics', 'docker.ps'] as const;
+export const AUTO_APPROVABLE_BROWSER = ['browser.snapshot', 'browser.navigate'] as const;
 const MAX_NAME = 80;
 
 export function createAgentRoutes(deps: Deps) {
@@ -86,9 +88,27 @@ export function createAgentRoutes(deps: Deps) {
       const name = String(body.name || 'Mijn apparaat').trim().slice(0, MAX_NAME) || 'Mijn apparaat';
       const platform = body.platform ? String(body.platform).slice(0, 40) : null;
       const capabilities = body.capabilities && typeof body.capabilities === 'object' ? body.capabilities as object : {};
-      const agent = await store.createAgent(userId, name, platform, sha256(token), capabilities);
+      // Een browserextensie begint voorzichtig: alleen lezen (snapshot) gaat direct; navigeren en handelen wachten op een klik.
+      const policy = platform === 'browser' ? { autoApprove: ['browser.snapshot'] } : undefined;
+      const agent = await store.createAgent(userId, name, platform, sha256(token), capabilities, policy);
       await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, platform } });
       return json({ agentId: agent.id, token });
+    }],
+
+    // Welke opdrachttypes direct mogen (zonder klik). Schrijven, uitvoeren, Docker-beheer, klikken en typen kunnen nooit automatisch.
+    'POST /api/owner/agents/:id/policy': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const agent = await store.getAgent(auth.user.id, ctx.params.id);
+      if (!agent) return deps.fail('AGENT_NOT_FOUND', 404);
+      const asked = deps.body(ctx.body).autoApprove;
+      if (!Array.isArray(asked) || asked.length > 20 || asked.some((v) => typeof v !== 'string')) return deps.fail('POLICY_INVALID', 400);
+      const allowed: readonly string[] = agent.platform === 'browser' ? AUTO_APPROVABLE_BROWSER : AUTO_APPROVABLE_MACHINE;
+      if (asked.some((v: string) => !allowed.includes(v))) return deps.fail('POLICY_TYPE_NOT_ALLOWED', 400);
+      const autoApprove = [...new Set(asked as string[])].sort();
+      await store.setAgentPolicy(auth.user.id, agent.id, autoApprove);
+      await deps.audit(auth.user.id, 'owner.agent.policy', 'success', { agentId: agent.id, autoApprove });
+      return deps.respond({ ok: true, policy: { autoApprove } });
     }],
 
     'POST /api/owner/agents/:id/revoke': [async (ctx: any) => {

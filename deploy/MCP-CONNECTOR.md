@@ -36,6 +36,12 @@ https://mcp.tarasevych.com/mcp
 | `docker_list_containers` | читання (read-only) | `docker ps` (параметр `include_stopped`). Потрібен `docker` у `--allow` агента |
 | `docker_manage_container` | виконання (destructive) | `start`/`stop`/`restart` контейнера за іменем. Завжди **потребує підтвердження** |
 | `system_metrics` | читання (read-only) | ЦП, пам'ять, диски (Windows: PowerShell; інакше `os`) |
+| `browser_snapshot` | читання (read-only) | Адреса, текст, елементи керування й дії сайту відкритої сторінки (розширення браузера) |
+| `browser_open` | навігація | Відкрити сторінку `*.tarasevych.com` у вкладці. Без підтвердження лише якщо користувач дозволив для цього браузера |
+| `browser_invoke_action` | дія на сторінці (destructive) | Виконати дію, яку пропонує сам сайт (`open_service`, `list_services`). Завжди **потребує підтвердження** |
+| `browser_click` / `browser_type` | дія на сторінці (destructive) | Клік або введення за назвою елемента; ніколи для полів пароля/оплати. Завжди **потребує підтвердження** |
+
+Кожен інструмент користувач може вимкнути в «Інструменти й дозволи» (сервер ховає його з `tools/list` і відхиляє виклик). Деталі розширення: `deploy/BROWSER-EXTENSIE.md`.
 | `github_get` | лише читання | GET до GitHub API з вашим PAT зі сховища (з'являється, лише якщо PAT є) |
 
 У налаштуваннях конектора в Claude (Tool permissions) запис і виконання можна заблокувати або вимагати підтвердження окремо від читання.

@@ -7,7 +7,7 @@ import * as c from '../../backend/mcp-connector';
 import * as st from '../../backend/mcp-connector-store';
 import * as agents from '../../backend/connectors-store';
 import { sha256 } from '../../backend/connectors-crypto';
-import { describeTools } from '../../backend/connectors-tools';
+import { describeTools, isOwnSiteUrl } from '../../backend/connectors-tools';
 import { checker } from './hulp/nep-google';
 
 const CALLBACK = 'https://claude.ai/api/mcp/auth_callback';
@@ -153,14 +153,14 @@ export async function main(): Promise<number> {
 
     // ---- hulpmiddelen en isolatie ----
     const leeg = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 4, method: 'tools/list' }));
-    check('tools/list: zonder apparaat staan de 9 apparaattools er toch (Claude toont zo de lijst en de rechtengroepen); geen GitHub-tool zonder token',
-      leeg.result.tools.length === 9 && !leeg.result.tools.some((t: any) => t.name === 'github_get'), leeg.result.tools.map((t: any) => t.name).join(','));
+    check('tools/list: zonder apparaat staan alle 14 tools (9 apparaat + 5 browser) er toch (Claude toont zo de lijst en de rechtengroepen); geen GitHub-tool zonder token',
+      leeg.result.tools.length === 14 && !leeg.result.tools.some((t: any) => t.name === 'github_get'), leeg.result.tools.map((t: any) => t.name).join(','));
     const zonderPc = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 41, method: 'tools/call', params: { name: 'machine_read_file', arguments: { path: '.' } } }));
     check('tools/call zonder apparaat: duidelijke foutmelding (isError), geen crash', zonderPc.result?.isError === true && /No suitable device/.test(zonderPc.result.content[0].text), JSON.stringify(zonderPc.result).slice(0, 120));
     const overzicht = await describeTools(A);
     const kindOf = (n: string) => overzicht.find((t) => t.name === n);
     check('beheeroverzicht: soort en goedkeuring per hulpmiddel (lezen direct; schrijven en uitvoeren na goedkeuring)',
-      overzicht.length === 9 && kindOf('machine_read_file')?.kind === 'read' && kindOf('machine_read_file')?.needsApproval === false
+      overzicht.length === 14 && kindOf('machine_read_file')?.kind === 'read' && kindOf('machine_read_file')?.needsApproval === false
       && kindOf('machine_write_file')?.kind === 'write' && kindOf('machine_write_file')?.needsApproval === true
       && kindOf('docker_manage_container')?.kind === 'execute' && kindOf('docker_manage_container')?.needsApproval === true
       && kindOf('system_metrics')?.readOnly === true, overzicht.map((t) => `${t.name}:${t.kind}`).join(','));
@@ -169,7 +169,7 @@ export async function main(): Promise<number> {
     const lijst = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 5, method: 'tools/list' })).result.tools as any[];
     const per = (n: string) => lijst.find((t) => t.name === n);
     check('tools/list: apparaattools met annotaties (lezen = readOnlyHint, schrijven/uitvoeren = destructiveHint) en titel',
-      lijst.length === 9 && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true
+      lijst.length === 14 && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true
       && per('machine_write_file').annotations.readOnlyHint === false && !!per('machine_list').title && !!per('machine_list').inputSchema, lijst.map((t) => t.name).join(','));
     check('tools/list: Docker en metrics: lezen = readOnlyHint, containers beheren = destructiveHint (niet readOnly, niet idempotent)',
       per('docker_list_containers').annotations.readOnlyHint === true && per('system_metrics').annotations.readOnlyHint === true
@@ -200,6 +200,57 @@ export async function main(): Promise<number> {
     check('tools/call: onbekend hulpmiddel geeft een foutresultaat, geen crash', body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 8, method: 'tools/call', params: { name: 'rm_rf' } })).result.isError === true);
     const batch = body(await c.rpcPost(`Bearer ${t1.j.access_token}`, JSON.stringify([{ jsonrpc: '2.0', id: 1, method: 'ping' }, { jsonrpc: '2.0', method: 'notifications/initialized' }])));
     check('MCP: een batch beantwoordt alleen de verzoeken met id', Array.isArray(batch) && batch.length === 1 && batch[0].id === 1);
+
+    // ---- browserextensie: eigen agent met platform "browser", eigen tools, alleen eigen adressen ----
+    const browserA = await agents.createAgent(A, 'browser-van-A', 'browser', sha256(randomUUID()), {}, { autoApprove: ['browser.snapshot'] });
+    const browserB = await agents.createAgent(B, 'browser-van-B', 'browser', sha256(randomUUID()), {}, { autoApprove: ['browser.snapshot'] });
+    check('browseragent: begint voorzichtig (alleen snapshot direct), de database accepteert de browseropdrachten',
+      JSON.stringify((await agents.getAgent(A, browserA.id))?.policy.autoApprove) === '["browser.snapshot"]'
+      && (await sys.query(`INSERT INTO app.agent_commands (agent_id, user_id, type) VALUES ($1, $2, 'browser.click') RETURNING id`, [browserA.id, A])).rowCount === 1);
+    check('isOwnSiteUrl: alleen https op tarasevych.com en subdomeinen; geen http, geen vreemde host, geen lookalike, geen inloggegevens, geen onzin',
+      isOwnSiteUrl('https://mail.tarasevych.com/') && isOwnSiteUrl('https://tarasevych.com/x?y=1') && isOwnSiteUrl('https://mcp.tarasevych.com/agents')
+      && !isOwnSiteUrl('http://mail.tarasevych.com/') && !isOwnSiteUrl('https://evil.com/') && !isOwnSiteUrl('https://tarasevych.com.evil.com/')
+      && !isOwnSiteUrl('https://eviltarasevych.com/') && !isOwnSiteUrl('https://user:pw@mail.tarasevych.com/') && !isOwnSiteUrl('javascript:alert(1)')
+      && !isOwnSiteUrl('') && !isOwnSiteUrl(undefined) && !isOwnSiteUrl('https://mail.tarasevych.com/' + 'a'.repeat(600)));
+    const bt = async (name: string, args: object, id = 60) => body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } }));
+    const vreemd = await bt('browser_open', { url: 'https://evil.com/' });
+    const lookalike = await bt('browser_open', { url: 'https://tarasevych.com.evil.com/' });
+    const slechteActieId = await bt('browser_invoke_action', { action: 'Open-Service' });
+    const zonderNaam = await bt('browser_click', { name: '  ' });
+    const teLang = await bt('browser_type', { name: 'Zoeken', text: 'x'.repeat(2001) });
+    check('browsertools: een vreemd of nagebootst adres, een ongeldige actie-id, een lege naam of een te lange tekst worden op de server geweigerd',
+      [vreemd, lookalike].every((r) => r.result.isError === true && /Invalid "url"/.test(r.result.content[0].text))
+      && slechteActieId.result.isError === true && /Invalid "action"/.test(slechteActieId.result.content[0].text)
+      && zonderNaam.result.isError === true && /Invalid "name"/.test(zonderNaam.result.content[0].text)
+      && teLang.result.isError === true && /Invalid "text"/.test(teLang.result.content[0].text));
+    const geenBrowser = await bt('browser_snapshot', {});
+    check('browsertools: zonder verbonden extensie een duidelijke melding (en nooit een pc als doel)',
+      geenBrowser.result.isError === true && /extension is connected/.test(geenBrowser.result.content[0].text));
+    const pcAlsBrowser = await bt('machine_info', { machine: 'browser-van-A' });
+    const browserVanB = await bt('browser_snapshot', { browser: 'browser-van-B' });
+    check('scheiding: een pc-tool kiest nooit een browser, en een browser van een andere gebruiker is niet te bereiken',
+      pcAlsBrowser.result.isError === true && /No suitable device/.test(pcAlsBrowser.result.content[0].text)
+      && browserVanB.result.isError === true && !JSON.stringify(browserVanB).includes(browserB.id));
+    const bAnn = Object.fromEntries((body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 61, method: 'tools/list' })).result.tools as any[]).map((t) => [t.name, t.annotations]));
+    check('browsertools: snapshot = readOnlyHint; open niet destructief; klikken, typen en acties destructiveHint',
+      bAnn.browser_snapshot.readOnlyHint === true && bAnn.browser_open.readOnlyHint === false && bAnn.browser_open.destructiveHint === false
+      && bAnn.browser_click.destructiveHint === true && bAnn.browser_type.destructiveHint === true && bAnn.browser_invoke_action.destructiveHint === true);
+
+    // ---- per gebruiker in- en uitzetten van hulpmiddelen (server-side) ----
+    await agents.setDisabledTools(A, ['machine_exec', 'browser_click']);
+    const naUit = (body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 62, method: 'tools/list' })).result.tools as any[]).map((t) => t.name);
+    const geweigerd = await bt('machine_exec', { command: 'git' }, 63);
+    const infoUit = (await describeTools(A)).filter((t) => !t.enabled).map((t) => t.name).sort().join(',');
+    check('hulpmiddelen uitzetten: weg uit tools/list, aanroep geweigerd met uitleg, het beheeroverzicht toont het als uit; een andere gebruiker merkt er niets van',
+      naUit.length === 12 && !naUit.includes('machine_exec') && !naUit.includes('browser_click')
+      && geweigerd.result.isError === true && /turned off by the user/.test(geweigerd.result.content[0].text)
+      && infoUit === 'browser_click,machine_exec' && (await agents.getDisabledTools(B)).length === 0);
+    await agents.setDisabledTools(A, []);
+    check('hulpmiddelen weer aanzetten: alles terug in de lijst', (body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 64, method: 'tools/list' })).result.tools as any[]).length === 14);
+    await agents.setAgentPolicy(A, browserA.id, ['browser.snapshot', 'browser.navigate']);
+    check('beleid van een browseragent: alleen van de eigen gebruiker aan te passen',
+      JSON.stringify((await agents.getAgent(A, browserA.id))?.policy.autoApprove) === '["browser.navigate","browser.snapshot"]' || JSON.stringify((await agents.getAgent(A, browserA.id))?.policy.autoApprove) === '["browser.snapshot","browser.navigate"]');
+    check('beleid: een andere gebruiker kan het beleid van A niet wijzigen', (await agents.setAgentPolicy(B, browserA.id, [])) === false);
 
     // ---- refresh met rotatie ----
     const r1 = await c.token(form({ grant_type: 'refresh_token', refresh_token: t1.j.refresh_token, client_id: cid }));
