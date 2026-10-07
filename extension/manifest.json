@@ -1,11 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Mijn Ruimte",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Laat uw eigen AI-assistent (via de Mijn Ruimte-connector) uw Mijn Ruimte-pagina's lezen en bedienen. Werkt uitsluitend op tarasevych.com.",
   "minimum_chrome_version": "116",
-  "permissions": ["storage", "alarms"],
-  "optional_permissions": ["debugger"],
+  "permissions": ["storage", "alarms", "scripting"],
   "host_permissions": ["https://*.tarasevych.com/*"],
   "background": { "service_worker": "background.js", "type": "module" },
   "content_scripts": [

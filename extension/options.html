@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Mijn Ruimte: дозволи браузера</title>
 <link rel="stylesheet" href="popup.css">
-<style>body{width:auto;max-width:680px;margin:0 auto}#dbgNote.ok{color:#1a7f37}#dbgNote.err{color:#b91c1c}</style>
+<style>body{width:auto;max-width:680px;margin:0 auto}</style>
 </head>
 <body>
 <main>
@@ -15,11 +15,8 @@
   <button type="button" id="open-site" class="primary">Відкрити налаштування на сайті</button>
 
   <section>
-    <h2>Глибока діагностика (debugger): за бажанням</h2>
-    <p class="hint">Дозволяє ШІ (після вашого «Дозволити» щоразу) кілька секунд спостерігати вкладку Mijn Ruimte: помилки консолі, винятки, невдалі й повільні запити (лише адреса без параметрів, статус і час, ніколи вміст чи заголовки). Також дає запасний спосіб зробити знімок екрана. Працює лише на tarasevych.com. Браузер показує банер «розширення налагоджує цей браузер», поки йде спостереження.</p>
-    <p id="dbgState" role="status">…</p>
-    <button id="dbgToggle" type="button" class="primary">…</button>
-    <p id="dbgNote" role="status" class="hint"></p>
+    <h2>Додаткові дозволи браузера не потрібні</h2>
+    <p class="hint">Розширення працює лише на tarasevych.com і не просить жодних додаткових дозволів. Глибока діагностика сторінки (помилки консолі, винятки, невдалі й повільні запити) вмикається на сайті разом з іншими можливостями; вона не потребує ні налагоджувача, ні банера «розширення налагоджує цей браузер».</p>
   </section>
 </main>
 <script src="options.js"></script>

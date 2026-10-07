@@ -53,8 +53,8 @@ export const CAPABILITIES: Cap[] = [
   { type: 'browser.screenshot', group: 'advanced', auto: false, uk: 'Знімок екрана', nl: 'Schermafbeelding',
     on: ['ШІ може зробити знімок видимої частини вкладки (там може бути приватна інформація). Кожен знімок чекає вашого «Дозволити».', 'De AI kan een schermafbeelding van het zichtbare deel van het tabblad maken (er kan privé-informatie op staan). Elke keer wacht op uw "Toestaan".'],
     off: ['ШІ не може робити знімки екрана.', 'De AI kan geen schermafbeeldingen maken.'] },
-  { type: 'browser.deep_diagnostics', group: 'advanced', auto: false, uk: 'Глибока діагностика (debugger)', nl: 'Diepe diagnose (debugger)',
-    on: ['ШІ може кілька секунд спостерігати вкладку через debugger браузера: помилки консолі, винятки, невдалі й повільні запити (без вмісту й заголовків). Потрібен ще й окремий дозвіл у налаштуваннях розширення; Chrome покаже банер про налагодження. Кожен раз чекає вашого «Дозволити».', 'De AI kan het tabblad enkele seconden met de debugger van de browser observeren: consolefouten, uitzonderingen, mislukte en trage verzoeken (zonder inhoud of headers). Vereist ook een apart recht in de opties van de extensie; Chrome toont een foutopsporingsbalk. Elke keer wacht op uw "Toestaan".'],
+  { type: 'browser.deep_diagnostics', group: 'advanced', auto: false, uk: 'Глибока діагностика', nl: 'Diepe diagnose',
+    on: ['ШІ може кілька секунд спостерігати вкладку Mijn Ruimte: помилки консолі, винятки, невдалі й повільні запити (лише адреса без параметрів, статус і час; ніколи вміст чи заголовки). Окремих дозволів браузера й банера про налагодження не потрібно. Кожен раз чекає вашого «Дозволити».', 'De AI kan het Mijn Ruimte-tabblad enkele seconden observeren: consolefouten, uitzonderingen, mislukte en trage verzoeken (alleen adres zonder parameters, status en tijd; nooit inhoud of headers). Geen extra browserrechten of foutopsporingsbalk nodig. Elke keer wacht op uw "Toestaan".'],
     off: ['Глибока діагностика недоступна.', 'Diepe diagnose is niet beschikbaar.'] },
 ];
 
