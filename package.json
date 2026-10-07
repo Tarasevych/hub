@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "node scripts/l002-audit.mjs && node scripts/mail-smart-inbox-audit.mjs && vite build && npm run build:server",
+        "build": "node scripts/l002-audit.mjs && node scripts/mail-smart-inbox-audit.mjs && vite build && node scripts/build-extension.mjs && npm run build:server",
         "build:server": "node scripts/build-server.mjs",
         "typecheck:server": "tsc -p tsconfig.server.json",
         "migrate": "node dist-server/migrate.mjs",

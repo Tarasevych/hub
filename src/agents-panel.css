@@ -33,3 +33,11 @@
 .mcp-tool-group li{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-size:.92rem}
 .mcp-tool-group code{font-weight:700}
 .mcp-tool-write{border-color:#b45309}.mcp-tool-execute{border-color:#b91c1c}
+.api-platform a.mcp-download{display:inline-flex;align-items:center;min-height:48px;padding:10px 22px;border-radius:12px;background:var(--accent,#2563eb);color:#fff;font-weight:700;text-decoration:none}
+.api-platform a.mcp-download:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+.mcp-switch{display:flex;gap:10px;align-items:center;min-height:44px;cursor:pointer}
+.mcp-switch input{width:22px;height:22px}
+.mcp-tool-row{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between}
+.mcp-tool-row.is-off code,.mcp-tool-row.is-off span{opacity:.5;text-decoration:line-through}
+.mcp-tool-toggle{min-height:36px;padding:4px 14px;border-radius:999px;border:2px solid currentColor;background:transparent;font-weight:700}
+.mcp-tool-toggle.on{color:#1a7f37}.mcp-tool-toggle.off{color:#6b7280}

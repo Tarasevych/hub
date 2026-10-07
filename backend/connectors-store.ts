@@ -151,12 +151,34 @@ export async function purgeOldPairingCodes(): Promise<void> {
 
 export async function createAgent(
   userId: string, name: string, platform: string | null, tokenHash: string, capabilities: object,
+  policy?: { autoApprove: string[] },
 ): Promise<AgentRow> {
   const { rows } = await systeem(
-    `INSERT INTO app.agents (user_id, name, platform, token_hash, capabilities)
-     VALUES ($1, $2, $3, $4, $5) RETURNING ${AGENT_COLS}`,
-    [userId, name, platform, tokenHash, JSON.stringify(capabilities)]);
+    `INSERT INTO app.agents (user_id, name, platform, token_hash, capabilities, policy)
+     VALUES ($1, $2, $3, $4, $5, COALESCE($6::jsonb, '{"autoApprove": ["fs.read", "fs.list", "sys.info", "sys.metrics", "docker.ps"]}'::jsonb)) RETURNING ${AGENT_COLS}`,
+    [userId, name, platform, tokenHash, JSON.stringify(capabilities), policy ? JSON.stringify(policy) : null]);
   return rows[0] as AgentRow;
+}
+
+/** Beleid van een eigen agent aanpassen (welke opdrachttypes direct mogen). false = agent niet van deze gebruiker. */
+export async function setAgentPolicy(userId: string, id: string, autoApprove: string[]): Promise<boolean> {
+  const { rowCount } = await systeem(
+    `UPDATE app.agents SET policy = jsonb_build_object('autoApprove', $3::jsonb) WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL`,
+    [id, userId, JSON.stringify(autoApprove)]);
+  return (rowCount ?? 0) > 0;
+}
+
+/** Uitgezette MCP-hulpmiddelen van een gebruiker (namen). */
+export async function getDisabledTools(userId: string): Promise<string[]> {
+  const { rows } = await systeem('SELECT disabled FROM app.connector_tool_settings WHERE user_id = $1', [userId]);
+  return (rows[0]?.disabled as string[] | undefined) ?? [];
+}
+
+export async function setDisabledTools(userId: string, disabled: string[]): Promise<void> {
+  await systeem(
+    `INSERT INTO app.connector_tool_settings (user_id, disabled, updated_at) VALUES ($1, $2::text[], now())
+     ON CONFLICT (user_id) DO UPDATE SET disabled = EXCLUDED.disabled, updated_at = now()`,
+    [userId, disabled]);
 }
 
 export async function findAgentByTokenHash(tokenHash: string): Promise<AgentRow | null> {

@@ -1,5 +1,6 @@
 import './mcp-consent-store'; // eerst: legt ?consent=<id> van Claude vast vóór het aanmelden en vóór andere modules de URL aanpassen
 import { createRoot } from 'react-dom/client';
+import './ai-site-actions'; // acties voor AI-assistenten via de browserextensie (postMessage) en WebMCP
 import App from './App';
 import './index.css';
 
