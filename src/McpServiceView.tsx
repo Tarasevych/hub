@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { api, ApiError } from "./platform/client";
 import { ecosystemTabContext } from "./tab-context";
 import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalog";
-import AgentsPanel from "./AgentsPanel";
-import McpConnectorPanel from "./McpConnectorPanel";
-import BrowserExtensionPanel from "./BrowserExtensionPanel";
-import McpToolsPanel from "./McpToolsPanel";
+import McpAgentsHub from "./McpAgentsHub";
 import McpConsentModal from "./McpConsentModal";
 import "./mcp-estate.css";
 
@@ -387,9 +384,10 @@ export default function McpServiceView({ lang, tab }: Props) {
       )}
 
       {section === "agents" && (
+        <McpAgentsHub tr={t} doors={
         <>
           <header>
-            <h1>{t("Агенти", "Agenten")}</h1>
+            <h2>{t("Двері для агентів", "Deuren voor agenten")}</h2>
             <p className="mcp-lead">{t("Перемикач одразу пише дозвіл на сервер. Під ним написано, що зміниться, якщо його ввімкнути і якщо вимкнути.", "De schakelaar schrijft de toestemming meteen op de server. Eronder staat wat aan- en uitzetten verandert.")}</p>
           </header>
           {(["agent", "release"] as const).map((group) => {
@@ -466,11 +464,8 @@ export default function McpServiceView({ lang, tab }: Props) {
               {!row.revokedAt ? <button type="button" disabled={permsReady && !flags.tokens} onClick={() => void run("revoke", async () => { await api.post("/api/mcp/tokens/revoke", { ...ctx(), id: row.id }); await loadTokens(); })}>{t("Відкликати", "Intrekken")}</button> : null}
             </article>
           ))}
-          <McpConnectorPanel tr={t} />
-          <McpToolsPanel tr={t} />
-          <BrowserExtensionPanel tr={t} />
-          <AgentsPanel tr={t} service="mcp" />
         </>
+        } />
       )}
 
       {section === "playground" && (
