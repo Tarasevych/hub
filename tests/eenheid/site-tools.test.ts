@@ -27,8 +27,8 @@ export async function main(): Promise<number> {
   try {
     // ---- catalogus ----
     const namen = SITE_TOOLS.map((s) => s.tool.name);
-    check('catalogus: 21 site-hulpmiddelen, unieke namen, elk met titel en annotaties; lezen is readOnly, wijzigen niet',
-      SITE_TOOLS.length === 21 && new Set(namen).size === 21 && SITE_TOOLS.every((s) => !!s.tool.title && !!s.tool.annotations)
+    check('catalogus: 26 site-hulpmiddelen, unieke namen, elk met titel en annotaties; lezen is readOnly, wijzigen niet',
+      SITE_TOOLS.length === 26 && new Set(namen).size === 26 && SITE_TOOLS.every((s) => !!s.tool.title && !!s.tool.annotations)
       && SITE_TOOLS.filter((s) => !s.write).every((s) => s.tool.annotations?.readOnlyHint === true) && SITE_TOOLS.filter((s) => s.write).every((s) => s.tool.annotations?.readOnlyHint === false), namen.join(','));
     const voorbeeld = (schema: any) => {
       const args: Record<string, unknown> = {};
@@ -36,7 +36,7 @@ export async function main(): Promise<number> {
       return args;
     };
     check('catalogus: elke route van elk hulpmiddel staat in de toegestane lijst (en alleen routes met methode + pad)',
-      SITE_TOOLS.every((s) => TOEGESTANE_ROUTES.has(s.request(voorbeeld(s.tool.inputSchema)).route)) && [...TOEGESTANE_ROUTES].every((r) => /^POST \/api\/owner\//.test(r)));
+      SITE_TOOLS.every((s) => TOEGESTANE_ROUTES.has(s.request(voorbeeld(s.tool.inputSchema)).route)) && [...TOEGESTANE_ROUTES].every((r) => /^POST \/api\/(owner|mcp)\//.test(r)));
     check('catalogus: elke parameter is beschreven en onbekende velden zijn niet toegestaan',
       SITE_TOOLS.every((s) => (s.tool.inputSchema as any).additionalProperties === false && Object.values((s.tool.inputSchema as any).properties as Record<string, any>).every((p) => typeof p.description === 'string' && p.description.length > 10)));
     check('standaardmodus: lezen = always; schrijven op de site = ask; riskant = off, maar de gebruiker mag het zelf op always zetten',
@@ -117,8 +117,8 @@ export async function main(): Promise<number> {
     const info = await describeTools(A);
     const exec = info.find((t) => t.name === 'machine_exec')!;
     check('modus off: weg uit de lijst en geweigerd; riskant staat standaard uit en "always" wordt gehonoreerd (geen begrenzing meer)',
-      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 34 && lijst.includes('machine_exec') && !lijst.includes('browser_click')
-      && exec.mode === 'always' && exec.risky === true && info.find((t) => t.name === 'browser_click')!.mode === 'off' && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 44);
+      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 39 && lijst.includes('machine_exec') && !lijst.includes('browser_click')
+      && exec.mode === 'always' && exec.risky === true && info.find((t) => t.name === 'browser_click')!.mode === 'off' && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 49);
     check('groepen in het overzicht: apparaten, browser, mail, agenda, schijf, zoeken',
       ['devices', 'browser', 'mail', 'calendar', 'drive', 'site'].every((g) => info.some((t) => t.group === g)) && info.filter((t) => t.group === 'mail').length === 5 && info.filter((t) => t.group === 'browser').length === 14);
     await store.setToolModes(A, { mail_search_messages: null, machine_exec: null, mail_modify_message: null });

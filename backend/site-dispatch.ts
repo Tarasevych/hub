@@ -41,6 +41,11 @@ export const TOEGESTANE_ROUTES = new Set<string>([
   'POST /api/owner/github/activity',
   'POST /api/owner/github/issue/create',
   'POST /api/owner/github/issue/comment',
+  'POST /api/mcp/board/list',
+  'POST /api/mcp/board',
+  'POST /api/mcp/traffic',
+  'POST /api/mcp/health',
+  'POST /api/mcp/archive/status',
 ]);
 
 const echt: Aanroeper = async (userId, service, route, body) => {
