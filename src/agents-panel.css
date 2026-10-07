@@ -17,3 +17,9 @@
 .api-platform .mcp-revoke:hover:not([disabled]){background:#991b1b}
 .api-platform .mcp-revoke:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
 @media(prefers-color-scheme:dark){.mcp-grants .agents-connected{color:#4ac26b}.mcp-grants .agents-idle{color:#9ca3af}}
+.api-platform .mcp-status{padding:8px 12px;border-radius:10px;font-weight:600;border:1px solid currentColor}
+.api-platform .mcp-status-active{color:#1a7f37}
+.api-platform .mcp-status-idle{color:#b45309}
+.api-platform .mcp-status-none{color:#b91c1c}
+.api-platform .mcp-reconnect{min-height:48px}
+@media(prefers-color-scheme:dark){.api-platform .mcp-status-active{color:#4ac26b}.api-platform .mcp-status-idle{color:#fbbf24}.api-platform .mcp-status-none{color:#f87171}}
