@@ -233,6 +233,7 @@ export default function ExtensionWizard(p: WizardProps) {
           <span style={{ width: `${Math.round((done / steps.length) * 100)}%` }} /><b>{done}/{steps.length}</b>
         </div>
       </div>
+      {p.hasAgent && p.presence === 'absent' ? <p className='wiz-note' role='status' data-ext-other='true'>{tr('У вашому акаунті вже є підключений браузер (див. список зліва). Цей майстер — для встановлення розширення в ЦЬОМУ браузері; кроки «Увімкнути для ШІ» і «Готово» нижче відображають стан уже підключеного браузера.', 'Er is al een browser aan uw account gekoppeld (zie de lijst links). Deze hulp is voor het installeren in DEZE browser; de stappen "Zet aan voor de AI" en "Klaar" tonen de toestand van de al gekoppelde browser.')}</p> : null}
       <BrowserPicker tr={tr} value={browser} onChange={setBrowser} />
       <ol className='wiz-steps' aria-label={tr('Кроки', 'Stappen')}>
         {steps.map((s, i) => {
