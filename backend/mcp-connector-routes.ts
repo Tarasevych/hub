@@ -3,7 +3,7 @@
 // De routes voor toestemming en beheer vragen een sessie (service mcp) en het recht 'api-platform'.
 import { heeftApiRecht } from './api-recht';
 import * as c from './mcp-connector';
-import { describeTools, KNOWN_TOOL_NAMES } from './connectors-tools';
+import { approveToolCall, describeTools, KNOWN_TOOL_NAMES, NEVER_ALWAYS, rejectToolCall } from './connectors-tools';
 import * as agentStore from './connectors-store';
 
 type SessionAuth = { errorCode: string } | { user: { id: string; email: string; role: string; status: string }; service: string };
@@ -72,18 +72,74 @@ export function createMcpConnectorRoutes(deps: Deps) {
       return deps.respond({ tools: await describeTools(auth.user.id) });
     }],
 
-    // Een hulpmiddel in- of uitzetten. Uitgezet = weg uit tools/list én geweigerd bij aanroep (server-side).
+    // De modus van een hulpmiddel zetten: "always" (geen extra vraag), "ask" (elke aanroep wacht op een klik op de site) of "off" (weg uit
+    // tools/list en geweigerd bij aanroep). Alles wat nooit automatisch mag (NEVER_ALWAYS) wordt nooit "always": de server begrenst dat zelf.
+    // Oude vorm {name, enabled: boolean} blijft werken: aan = standaardmodus, uit = off.
     'POST /api/owner/mcp-connector/tools/set': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
       const body = deps.body(ctx.body);
       const name = String(body.name ?? '');
-      if (!KNOWN_TOOL_NAMES.includes(name) || typeof body.enabled !== 'boolean') return deps.fail('TOOL_SETTING_INVALID', 400);
-      const disabled = new Set(await agentStore.getDisabledTools(auth.user.id));
-      if (body.enabled) disabled.delete(name); else disabled.add(name);
-      await agentStore.setDisabledTools(auth.user.id, [...disabled].sort());
-      await deps.audit(auth.user.id, 'owner.mcp.tool.setting', 'success', { tool: name, enabled: body.enabled });
+      if (!KNOWN_TOOL_NAMES.includes(name)) return deps.fail('TOOL_SETTING_INVALID', 400);
+      let mode: 'always' | 'ask' | 'off' | null;
+      if (typeof body.mode === 'string') {
+        if (!['always', 'ask', 'off', 'default'].includes(body.mode)) return deps.fail('TOOL_SETTING_INVALID', 400);
+        mode = body.mode === 'default' ? null : (body.mode as 'always' | 'ask' | 'off');
+      } else if (typeof body.enabled === 'boolean') mode = body.enabled ? null : 'off';
+      else return deps.fail('TOOL_SETTING_INVALID', 400);
+      if (mode === 'always' && NEVER_ALWAYS.has(name)) mode = 'ask'; // nooit "always": zie NEVER_ALWAYS
+      await agentStore.setToolModes(auth.user.id, { [name]: mode });
+      await deps.audit(auth.user.id, 'owner.mcp.tool.setting', 'success', { tool: name, mode: mode ?? 'default' });
       return deps.respond({ ok: true, tools: await describeTools(auth.user.id) });
+    }],
+
+    // "Set all tools": een modus voor alle hulpmiddelen tegelijk (of een groep). 'default' = terug naar de standaard van elk hulpmiddel.
+    'POST /api/owner/mcp-connector/tools/set-all': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const body = deps.body(ctx.body);
+      if (typeof body.mode !== 'string' || !['always', 'ask', 'off', 'default'].includes(body.mode)) return deps.fail('TOOL_SETTING_INVALID', 400);
+      const group = body.group === undefined ? '' : String(body.group);
+      const all = await describeTools(auth.user.id);
+      const changes: Record<string, 'always' | 'ask' | 'off' | null> = {};
+      for (const t of all) {
+        if (group && t.group !== group) continue;
+        changes[t.name] = body.mode === 'default' ? null : body.mode === 'always' && !t.canAlways ? 'ask' : (body.mode as 'always' | 'ask' | 'off');
+      }
+      await agentStore.setToolModes(auth.user.id, changes);
+      await deps.audit(auth.user.id, 'owner.mcp.tool.setting_all', 'success', { mode: body.mode, group: group || 'all', tools: Object.keys(changes).length });
+      return deps.respond({ ok: true, tools: await describeTools(auth.user.id) });
+    }],
+
+    // Aanroepen van site-hulpmiddelen die op goedkeuring wachten (modus "ask"), plus de laatste uitkomsten.
+    'POST /api/owner/mcp-connector/approvals': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const rows = await agentStore.listToolCalls(auth.user.id, 20);
+      return deps.respond({
+        calls: rows.map((r: any) => ({
+          id: r.id, tool: r.tool, args: r.args, status: r.status, createdAt: new Date(r.created_at).getTime(),
+          preview: r.result?.content?.[0]?.text ? String(r.result.content[0].text).slice(0, 400) : '',
+        })),
+      });
+    }],
+
+    'POST /api/owner/mcp-connector/approvals/:id/approve': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const done = await approveToolCall(auth.user.id, ctx.params.id);
+      if (!done) return deps.fail('TOOL_CALL_NOT_PENDING', 409);
+      await deps.audit(auth.user.id, 'owner.mcp.tool.approved', done.status === 'succeeded' ? 'success' : 'failure', { tool: done.tool, callId: done.id });
+      return deps.respond({ ok: true, status: done.status });
+    }],
+
+    'POST /api/owner/mcp-connector/approvals/:id/reject': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const row = await rejectToolCall(auth.user.id, ctx.params.id);
+      if (!row) return deps.fail('TOOL_CALL_NOT_PENDING', 409);
+      await deps.audit(auth.user.id, 'owner.mcp.tool.rejected', 'success', { tool: row.tool, callId: row.id });
+      return deps.respond({ ok: true });
     }],
 
     'POST /api/owner/mcp-connector/grants/:id/revoke': [async (ctx: any) => {

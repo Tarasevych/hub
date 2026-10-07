@@ -216,17 +216,81 @@ export async function browserGate(agentId: string, type: string): Promise<'ok' |
   return enabledTypes(rows[0].policy).includes(type) ? 'ok' : 'disabled';
 }
 
+export type ToolMode = 'always' | 'ask' | 'off';
+const MODES = new Set(['always', 'ask', 'off']);
+
+/** De door de gebruiker gekozen modus per MCP-hulpmiddel (alleen wat is ingesteld). De oude lijst "uitgezet" (0012) telt als "off". */
+export async function getToolModes(userId: string): Promise<Record<string, ToolMode>> {
+  const { rows } = await systeem('SELECT modes, disabled FROM app.connector_tool_settings WHERE user_id = $1', [userId]);
+  const out: Record<string, ToolMode> = {};
+  for (const t of (rows[0]?.disabled as string[] | undefined) ?? []) out[t] = 'off';
+  const modes = (rows[0]?.modes ?? {}) as Record<string, unknown>;
+  for (const [tool, mode] of Object.entries(modes)) if (MODES.has(String(mode))) out[tool] = mode as ToolMode;
+  return out;
+}
+
+/** Een of meer modi zetten. Een modus van de gebruiker vervangt een eerdere; "disabled" blijft bewust ongemoeid maar wordt genegeerd zodra er een modus is. */
+export async function setToolModes(userId: string, changes: Record<string, ToolMode | null>): Promise<void> {
+  const current = await getToolModes(userId);
+  for (const [tool, mode] of Object.entries(changes)) { if (mode === null) delete current[tool]; else current[tool] = mode; }
+  await systeem(
+    `INSERT INTO app.connector_tool_settings (user_id, disabled, modes, updated_at) VALUES ($1, '{}', $2::jsonb, now())
+     ON CONFLICT (user_id) DO UPDATE SET disabled = '{}', modes = EXCLUDED.modes, updated_at = now()`,
+    [userId, JSON.stringify(current)]);
+}
+
 /** Uitgezette MCP-hulpmiddelen van een gebruiker (namen). */
 export async function getDisabledTools(userId: string): Promise<string[]> {
-  const { rows } = await systeem('SELECT disabled FROM app.connector_tool_settings WHERE user_id = $1', [userId]);
-  return (rows[0]?.disabled as string[] | undefined) ?? [];
+  return Object.entries(await getToolModes(userId)).filter(([, m]) => m === 'off').map(([t]) => t).sort();
 }
 
 export async function setDisabledTools(userId: string, disabled: string[]): Promise<void> {
+  const current = await getToolModes(userId);
+  const changes: Record<string, ToolMode | null> = {};
+  for (const [tool, mode] of Object.entries(current)) if (mode === 'off' && !disabled.includes(tool)) changes[tool] = null;
+  for (const tool of disabled) changes[tool] = 'off';
+  await setToolModes(userId, changes);
+}
+
+// ---- aanroepen van site-hulpmiddelen die op goedkeuring wachten (0015) ----
+export type ToolCallStatus = 'pending_approval' | 'approved' | 'rejected' | 'succeeded' | 'failed' | 'timeout';
+export const TOOL_CALL_TTL_MIN = 10;
+
+export async function createToolCall(userId: string, tool: string, args: object) {
+  const { rows } = await systeem(
+    'INSERT INTO app.connector_tool_calls (user_id, tool, args) VALUES ($1, $2, $3::jsonb) RETURNING *', [userId, tool, JSON.stringify(args)]);
+  return rows[0];
+}
+/** Wachtende aanroepen die te lang liggen vervallen (niemand wacht er nog op). */
+export async function expireToolCalls(userId: string): Promise<void> {
   await systeem(
-    `INSERT INTO app.connector_tool_settings (user_id, disabled, updated_at) VALUES ($1, $2::text[], now())
-     ON CONFLICT (user_id) DO UPDATE SET disabled = EXCLUDED.disabled, updated_at = now()`,
-    [userId, disabled]);
+    `UPDATE app.connector_tool_calls SET status = 'timeout', finished_at = now()
+      WHERE user_id = $1 AND status = 'pending_approval' AND created_at < now() - make_interval(mins => $2)`, [userId, TOOL_CALL_TTL_MIN]);
+}
+export async function getToolCall(userId: string, id: string) {
+  const { rows } = await systeem('SELECT * FROM app.connector_tool_calls WHERE id = $1 AND user_id = $2', [id, userId]);
+  return rows[0] ?? null;
+}
+export async function listToolCalls(userId: string, limit = 20) {
+  await expireToolCalls(userId);
+  const { rows } = await systeem(
+    `SELECT id, tool, args, status, result, created_at, decided_at, finished_at FROM app.connector_tool_calls
+      WHERE user_id = $1 ORDER BY (status = 'pending_approval') DESC, created_at DESC LIMIT $2`, [userId, limit]);
+  return rows;
+}
+export async function countPendingToolCalls(userId: string): Promise<number> {
+  const { rows } = await systeem("SELECT count(*)::int AS n FROM app.connector_tool_calls WHERE user_id = $1 AND status = 'pending_approval'", [userId]);
+  return rows[0]?.n ?? 0;
+}
+/** Statusovergang alleen vanuit een verwachte stand en alleen voor de eigen gebruiker (beschermt tegen dubbel goedkeuren). */
+export async function transitionToolCall(id: string, userId: string, from: ToolCallStatus[], to: ToolCallStatus, result?: unknown) {
+  const { rows } = await systeem(
+    `UPDATE app.connector_tool_calls SET status = $4, result = COALESCE($5::jsonb, result),
+        decided_at = CASE WHEN $4 IN ('approved', 'rejected') THEN now() ELSE decided_at END,
+        finished_at = CASE WHEN $4 IN ('succeeded', 'failed', 'timeout', 'rejected') THEN now() ELSE finished_at END
+      WHERE id = $1 AND user_id = $2 AND status = ANY($3) RETURNING *`,
+    [id, userId, from, to, result === undefined ? null : JSON.stringify(result)]);
+  return rows[0] ?? null;
 }
 
 export async function findAgentByTokenHash(tokenHash: string): Promise<AgentRow | null> {

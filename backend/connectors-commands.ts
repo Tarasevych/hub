@@ -9,12 +9,13 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * Leesopdrachten (beleid `autoApprove`) gaan direct naar de agent; schrijven en uitvoeren wachten op een klik
  * van de gebruiker in de UI. De agent controleert zelf nog eens zijn mappen en toegestane commando's.
  */
-export async function submitCommand(agent: store.AgentRow, userId: string, type: string, params: object) {
+export async function submitCommand(agent: store.AgentRow, userId: string, type: string, params: object, opts: { forceApproval?: boolean } = {}) {
   if (type.startsWith('browser.')) {
     const gate = await store.browserGate(agent.id, type);
     if (gate !== 'ok') throw new Error(gate === 'inactive' ? 'BROWSER_NOT_ACTIVE' : 'BROWSER_CAPABILITY_OFF');
   }
-  const auto = agent.policy.autoApprove.includes(type);
+  // Modus "ask" van het hulpmiddel (door de gebruiker gekozen) verscherpt het beleid van de agent: altijd een klik.
+  const auto = !opts.forceApproval && agent.policy.autoApprove.includes(type);
   const cmd = await store.createCommand(agent.id, userId, type, params, auto ? 'approved' : 'pending_approval');
   if (auto && !(await dispatchCommand(cmd))) {
     await store.transitionCommand(cmd.id, ['approved'], 'failed', { error: 'agent offline' }, userId);
