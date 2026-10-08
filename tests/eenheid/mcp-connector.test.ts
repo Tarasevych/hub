@@ -43,6 +43,9 @@ export async function main(): Promise<number> {
     return { r, j: body(r) };
   }
 
+  // M4: de connector controleert bij elke aanroep de gebruiker (goedgekeurd + recht 'api-platform'); testgebruikers bestaan dus echt.
+  for (const u of [A, B]) await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('users',$1,$2)", [u, { email: `${u}@test.invalid`, role: 'member', status: 'approved', entitlements: ['api-platform'] }]);
+
   try {
     // ---- metadata ----
     const prm = body(c.protectedResourceMetadata()), asm = body(c.authorizationServerMetadata());
@@ -323,11 +326,32 @@ export async function main(): Promise<number> {
     for (let i = 0; i < st.LIMITS.maxActiveGrantsPerUser; i++) await tokens(cid, B);
     const teVeel = await code(cid, B);
     check('limiet: maximaal 10 actieve toegangen per gebruiker; de 11e toestemming wordt geweigerd', 'error' in teVeel.decision && teVeel.decision.error === 'GRANT_LIMIT');
+
+    // ---- M4: status, recht en AI-blokkade bij elke aanroep; blokkeren trekt de tokens in ----
+    await sys.query('UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE user_id = $1', [A]);
+    const m4 = (await tokens(cid, A)).j.access_token as string;
+    const m4Msg = { jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} };
+    const ok1 = (await rpc(m4, m4Msg)).statusCode;
+    await sys.query("UPDATE app.records SET data = data || '{\"status\":\"blocked\"}'::jsonb WHERE tbl = 'users' AND id = $1", [A]);
+    const geblokkeerd = (await rpc(m4, m4Msg)).statusCode;
+    await sys.query("UPDATE app.records SET data = (data || '{\"status\":\"approved\"}'::jsonb) - 'entitlements' WHERE tbl = 'users' AND id = $1", [A]);
+    const zonderRecht = (await rpc(m4, m4Msg)).statusCode;
+    await sys.query("UPDATE app.records SET data = data || '{\"entitlements\":[\"api-platform\"]}'::jsonb WHERE tbl = 'users' AND id = $1", [A]);
+    const terug = (await rpc(m4, m4Msg)).statusCode;
+    const { blockUser, unblockUser } = await import('../../backend/ai-grants');
+    const blok = await blockUser(A, 'test', 'test');
+    const naBlok = (await rpc(m4, m4Msg)).statusCode;
+    const ingetrokken = (await sys.query('SELECT count(*)::int AS n FROM app.mcp_oauth_tokens WHERE user_id = $1 AND revoked_at IS NULL', [A])).rows[0].n;
+    await unblockUser(A, 'test');
+    check('M4: geblokkeerd account of zonder recht api-platform = 401; AI-blokkade trekt de OAuth-tokens in (ook na deblokkeren blijven ze ongeldig)',
+      ok1 === 200 && geblokkeerd === 401 && zonderRecht === 401 && terug === 200 && blok.mcpTokens >= 1 && naBlok === 401 && ingetrokken === 0 && (await rpc(m4, m4Msg)).statusCode === 401);
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
     if (clients.length) await sys.query('DELETE FROM app.mcp_oauth_clients WHERE client_id = ANY($1)', [clients]);
     await sys.query('DELETE FROM app.agents WHERE user_id = ANY($1)', [[A, B]]);
+    await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = ANY($1)", [[A, B]]);
+    await sys.query('DELETE FROM app.user_ai_settings WHERE user_id = ANY($1)', [[A, B]]).catch(() => undefined);
   }
   await closePool();
   return einde();

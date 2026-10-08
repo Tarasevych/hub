@@ -238,7 +238,10 @@ export async function authenticate(authorization: string | undefined) {
   const m = /^Bearer\s+(\S+)$/i.exec(String(authorization || '').trim());
   if (!m || m[1].length > 200) return null;
   const row = await st.findByAccessHash(sha256(m[1]));
-  return row ? { userId: row.user_id, tokenId: row.id, clientName: row.client_name } : null;
+  if (!row) return null;
+  // M4: bij elke aanroep de gebruiker opnieuw controleren: goedgekeurd, niet verwijderd/met pensioen, AI niet geblokkeerd, recht 'api-platform'.
+  if (!(await st.userMayUseConnector(row.user_id))) return null;
+  return { userId: row.user_id, tokenId: row.id, clientName: row.client_name };
 }
 
 /**
