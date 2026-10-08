@@ -9,11 +9,12 @@
 // Обмеження (root-и, allow-list команд) перевіряються ТУТ, незалежно від того, що дозволив сервер.
 
 import { spawn } from 'node:child_process';
+import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { promises as fs, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 const CONFIG_PATH = process.env.HUB_AGENT_CONFIG ?? path.join(os.homedir(), '.hub-agent', 'config.json');
 const MAX_READ = 2 * 1024 * 1024;
 const MAX_WRITE = 5 * 1024 * 1024;
@@ -48,18 +49,63 @@ async function pair(args) {
   const name = args.name ?? os.hostname();
   const server = args.server.replace(/\/$/, '');
 
+  const refused = allow.filter((c) => SHELLS.has(c.toLowerCase().replace(/\.exe$/, '')));
+  if (refused.length) die(`ці програми не можна дозволити (оболонки обходять усі обмеження): ${refused.join(', ')}`);
+  // Одна й та сама установка зберігає pairingId: повторне підключення відкликає попередній токен на сервері.
+  let pairingId = null;
+  try { pairingId = loadConfig().pairingId ?? null; } catch { /* перше підключення */ }
+  pairingId = pairingId || `pc-${randomUUID()}`;
   const res = await fetch(`${server}/api/owner/agents/pair`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code: args.code, name, platform: `${os.platform()}-${os.arch()}`, capabilities: capabilities(roots, allow) }),
+    body: JSON.stringify({ code: args.code, name, platform: `${os.platform()}-${os.arch()}`, pairingId, version: VERSION, capabilities: capabilities(roots, allow) }),
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) die(`pairing failed: ${body.error ?? res.status}`);
-  saveConfig({ server, agentId: body.agentId, token: body.token, roots, allow });
+  if (!body.commandKey) die('сервер не надав ключ підпису команд; оновіть сервер (потрібна версія з підписаними командами)');
+  saveConfig({ server, agentId: body.agentId, token: body.token, commandKey: body.commandKey, tokenExpiresAt: body.tokenExpiresAt ?? null, pairingId, roots, allow });
   console.log(`Paired. Конфіг: ${CONFIG_PATH}\nТепер запустіть: node agent.mjs run`);
 }
 
 // De lijst komt uit de handlers zelf, zodat hij nooit achterloopt op wat de agent kan.
 const capabilities = (roots, allow) => ({ version: VERSION, roots, allowCommands: allow, commands: Object.keys(handlers) });
+
+// ---------- opdrachten: alleen ondertekend, geen code-als-argument (audit H3) ----------
+/** Programma's die nooit op de allow-list mogen: een shell voert alles uit wat in een argument staat. */
+const SHELLS = new Set(['cmd', 'powershell', 'pwsh', 'bash', 'sh', 'zsh', 'fish', 'dash', 'ksh', 'wsl', 'env', 'xargs', 'nohup', 'sudo', 'runas', 'osascript', 'wscript', 'cscript', 'mshta', 'rundll32', 'regsvr32']);
+/** Interpreters en de vlaggen waarmee je code als tekst meegeeft (of een willekeurige module laadt). */
+const CODE_FLAGS = {
+  node: ['-e', '--eval', '-p', '--print', '-r', '--require', '--import', '--loader', '--experimental-loader', '-i', '--interactive'],
+  deno: ['eval', '-e', '--eval'], bun: ['-e', '--eval', '-p', '--print'],
+  python: ['-c', '-m', '-i'], python3: ['-c', '-m', '-i'], py: ['-c', '-m', '-i'], pythonw: ['-c', '-m', '-i'],
+  ruby: ['-e', '-r', '-I'], perl: ['-e', '-E', '-M', '-m', '-I'], php: ['-r', '-B', '-R', '-E', '-a'],
+  lua: ['-e', '-l'], Rscript: ['-e', '--expr'], R: ['-e'], java: ['-jar'], jshell: ['-'], tclsh: ['-c'],
+  git: ['-c', '--config-env', '--exec-path', '--upload-pack', '-u', '--receive-pack'],
+  npx: ['-c', '--call'], npm: ['exec', 'x', 'explore', '--call', '-c'],
+};
+function checkInterpreterArgs(name, args) {
+  const key = Object.keys(CODE_FLAGS).find((k) => k.toLowerCase() === name.toLowerCase());
+  if (SHELLS.has(name.toLowerCase())) throw new Error(`"${name}" is a shell and can never be run by the agent`);
+  if (!key) return;
+  const flags = CODE_FLAGS[key];
+  for (const a of args) {
+    const head = a.split('=')[0];
+    // Ook samengevoegde korte vlaggen: node -pe, python -Sc, perl -we.
+    const short = /^-[A-Za-z]{2,}$/.test(head) ? [...head.slice(1)].map((c) => `-${c}`) : [head];
+    if (short.some((f) => flags.includes(f)) || flags.includes(head)) throw new Error(`argument "${head}" of ${name} runs code from text and is refused`);
+    if (key === 'git' && /^(core\.|alias\.|credential\.|protocol\.)/i.test(a)) throw new Error('git configuration overrides are refused');
+  }
+}
+
+/** HMAC-handtekening van de server controleren (zelfde tekst als backend/connectors-crypto.ts commandSigText). */
+function verifySignature(cfg, msg, now = Date.now()) {
+  if (!cfg.commandKey) return process.env.HUB_AGENT_ALLOW_UNSIGNED === '1';
+  if (typeof msg.sig !== 'string' || typeof msg.exp !== 'number' || msg.exp < now || msg.exp > now + 10 * 60_000) return false;
+  const text = `v1\n${msg.id}\n${msg.type}\n${createHash('sha256').update(JSON.stringify(msg.params ?? {})).digest('hex')}\n${msg.exp}`;
+  const want = createHmac('sha256', Buffer.from(cfg.commandKey, 'base64url')).update(text).digest();
+  const got = Buffer.from(/^[0-9a-f]{64}$/.test(msg.sig) ? msg.sig : '', 'hex');
+  return got.length === want.length && timingSafeEqual(got, want);
+}
+const seenIds = new Set();
 
 // ---------- sandbox ----------
 const isWin = process.platform === 'win32';
@@ -204,8 +250,9 @@ const handlers = {
   // Без shell: команда + масив аргументів, тому ін'єкції через `;` `&&` `|` неможливі.
   async exec(cfg, { command, args = [], cwd = '.' }) {
     if (typeof command !== 'string' || !Array.isArray(args) || args.some((a) => typeof a !== 'string')) throw new Error('bad exec params');
-    const name = path.basename(command).replace(/\.exe$/i, '');
+    const name = path.basename(command).replace(/\.(exe|cmd|bat)$/i, '');
     if (command !== path.basename(command) || !cfg.allow.includes(name)) throw new Error(`command "${command}" is not in the agent allow-list`);
+    checkInterpreterArgs(name, args);
     const dir = await safePath(cfg, cwd);
     return new Promise((resolve, reject) => {
       const child = spawn(command, args, { cwd: dir, shell: false, windowsHide: true });
@@ -263,9 +310,30 @@ async function selftest(args) {
     check('commando buiten de allow-list geweigerd', (await geweigerd(() => handlers.exec(cfg, { command: 'git', args: ['--version'] }), /allow-list/)) === true);
     check('commando met pad geweigerd (alleen programmanaam)', (await geweigerd(() => handlers.exec(cfg, { command: path.join(base, 'node.exe'), args: [] }), /allow-list/)) === true);
     check('cwd buiten de map geweigerd', (await geweigerd(() => handlers.exec(cfg, { command: 'node', args: ['-v'], cwd: '..' }), BUITEN)) === true);
-    const ok = await handlers.exec(cfg, { command: 'node', args: ['-e', 'console.log(41+1)'] });
+    await fs.writeFile(path.join(work, 'som.js'), 'console.log(41+1)');
+    await fs.writeFile(path.join(work, 'meta.js'), 'console.log(process.argv[2])');
+    const ok = await handlers.exec(cfg, { command: 'node', args: ['som.js'] });
     check('toegestaan commando draait (zonder shell)', ok.code === 0 && ok.stdout.trim() === '42', JSON.stringify([ok.code, ok.stdout.trim()]));
-    const meta = await handlers.exec(cfg, { command: 'node', args: ['-e', 'console.log("a;b && c | d")'] });
+    const meta = await handlers.exec(cfg, { command: 'node', args: ['meta.js', 'a;b && c | d'] });
+    const evals = [['-e', 'x'], ['--eval=x'], ['-pe', 'x'], ['-p', 'x'], ['--require', 'x'], ['--import', 'x']];
+    const evalWeg = [];
+    for (const a of evals) evalWeg.push((await geweigerd(() => handlers.exec(cfg, { command: 'node', args: a }), /runs code from text/)) === true);
+    check('node -e / --eval / -p / --require / --import geweigerd (audit H3)', evalWeg.every(Boolean), JSON.stringify(evals.filter((_, i) => !evalWeg[i])));
+    const pcfg = { roots: [work], allow: ['python', 'cmd', 'powershell'] };
+    check('python -c en -m geweigerd', (await geweigerd(() => handlers.exec(pcfg, { command: 'python', args: ['-c', 'print(1)'] }), /runs code/)) === true
+      && (await geweigerd(() => handlers.exec(pcfg, { command: 'python', args: ['-m', 'http.server'] }), /runs code/)) === true);
+    check('shells (cmd, powershell) nooit, ook niet op de allow-list', (await geweigerd(() => handlers.exec(pcfg, { command: 'cmd', args: ['/c', 'dir'] }), /shell/)) === true
+      && (await geweigerd(() => handlers.exec(pcfg, { command: 'powershell', args: ['-Command', 'x'] }), /shell/)) === true);
+    const key = Buffer.alloc(32, 7).toString('base64url');
+    const scfg = { commandKey: key };
+    const exp = Date.now() + 60_000;
+    const sig = createHmac('sha256', Buffer.from(key, 'base64url')).update(`v1\nid1\nfs.read\n${createHash('sha256').update(JSON.stringify({ path: 'a' })).digest('hex')}\n${exp}`).digest('hex');
+    check('handtekening: geldig aanvaard; andere parameters, verlopen of zonder handtekening geweigerd',
+      verifySignature(scfg, { id: 'id1', type: 'fs.read', params: { path: 'a' }, exp, sig }) === true
+      && verifySignature(scfg, { id: 'id1', type: 'fs.read', params: { path: 'b' }, exp, sig }) === false
+      && verifySignature(scfg, { id: 'id1', type: 'fs.read', params: { path: 'a' }, exp: Date.now() - 1, sig }) === false
+      && verifySignature(scfg, { id: 'id1', type: 'fs.read', params: { path: 'a' } }) === false
+      && verifySignature({}, { id: 'id1', type: 'fs.read', params: {} }) === (process.env.HUB_AGENT_ALLOW_UNSIGNED === '1'));
     check('shell-tekens in argumenten worden letterlijk doorgegeven', meta.stdout.trim() === 'a;b && c | d');
 
     // ---- docker en metrics: geen docker nodig, alleen de afwijzingen en de vorm van het resultaat ----
@@ -302,16 +370,37 @@ function run() {
   const wsUrl = cfg.server.replace(/^http/, 'ws') + '/agent/ws';
   let delay = 1000;
 
-  const connect = () => {
+  // Eerst een eenmalig ticket (60 s) met het token in de Authorization-header; het token gaat nooit over het WebSocket-kanaal of in een URL.
+  const ticket = async () => {
+    const res = await fetch(`${cfg.server}/api/owner/agents/ws-ticket`, { headers: { Authorization: `Bearer ${cfg.token}` }, cache: 'no-store' });
+    if (res.status === 401) die('токен відкликано, недійсний або прострочений. Виконайте pair заново.');
+    if (res.status === 404) return null; // oude server zonder tickets
+    if (!res.ok) throw new Error(`ticket ${res.status}`);
+    return (await res.json()).ticket;
+  };
+  if (cfg.tokenExpiresAt && Number(cfg.tokenExpiresAt) < Date.now()) die('термін дії токена минув. Виконайте pair заново.');
+  if (!cfg.commandKey && process.env.HUB_AGENT_ALLOW_UNSIGNED !== '1') console.warn('[agent] увага: немає ключа підпису (старе підключення). Команди буде відхилено; виконайте pair заново.');
+
+  const connect = async () => {
+    let t = null;
+    try { t = await ticket(); } catch (e) { console.log(`[agent] ${e.message}, retry in ${delay / 1000}s`); setTimeout(connect, delay); delay = Math.min(delay * 2, 30_000); return; }
     const ws = new WebSocket(wsUrl);
-    ws.onopen = () => ws.send(JSON.stringify({ t: 'auth', token: cfg.token, version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow) }));
+    let pinger = null;
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ t: 'auth', ...(t ? { ticket: t } : { token: cfg.token }), version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow) }));
+      pinger = setInterval(() => { try { ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow) })); } catch { /* dicht */ } }, 20_000);
+    };
     ws.onmessage = async (ev) => {
       let msg; try { msg = JSON.parse(ev.data); } catch { return; }
       if (msg.t === 'ready') { delay = 1000; console.log(`[agent] connected as ${msg.agentId}`); }
-      else if (msg.t === 'ping') ws.send(JSON.stringify({ t: 'pong' }));
+      else if (msg.t === 'ping') ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow) }));
+      else if (msg.t === 'stop') console.log('[agent] Стоп: усі дозволи відкликано на сайті');
       else if (msg.t === 'cmd') {
         console.log(`[agent] ${msg.type}`, JSON.stringify(msg.params).slice(0, 200));
         try {
+          if (!verifySignature(cfg, msg)) throw new Error('refused: invalid, missing or expired command signature');
+          if (seenIds.has(msg.id)) throw new Error('refused: command already executed');
+          seenIds.add(msg.id); if (seenIds.size > 5000) seenIds.clear();
           const h = handlers[msg.type];
           if (!h) throw new Error(`unsupported command: ${msg.type}`);
           ws.send(JSON.stringify({ t: 'result', id: msg.id, ok: true, data: await h(cfg, msg.params ?? {}) }));
@@ -321,6 +410,7 @@ function run() {
       }
     };
     ws.onclose = (ev) => {
+      clearInterval(pinger);
       if (ev.code === 4403) die('токен відкликано або недійсний. Виконайте pair заново.');
       console.log(`[agent] disconnected (${ev.code}), retry in ${delay / 1000}s`);
       setTimeout(connect, delay);
