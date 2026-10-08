@@ -21,7 +21,7 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
   const [shell, setShell] = useState<Shell>(() => (detectOs() === 'windows' ? 'powershell' : 'bash'));
   const [name, setName] = useState(() => tr('Мій ПК', 'Mijn pc'));
   const [rootsText, setRootsText] = useState('');
-  const [allow, setAllow] = useState<string[]>(['git', 'node']);
+  const [allow, setAllow] = useState<string[]>([]) // audit H3: standaard niets; de gebruiker kiest zelf (node en python mogen nooit code als tekst uitvoeren, zie agent.mjs);
   const [pairing, setPairing] = useState<{ code: string; expiresAt: number } | null>(null);
   const [now, setNow] = useState(Date.now());
   const [busy, setBusy] = useState(false);
