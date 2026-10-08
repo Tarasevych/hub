@@ -139,7 +139,8 @@ export function createAgentRoutes(deps: Deps) {
       // Een nieuwe koppeling start met alleen lezen (30 dagen); meer geeft de gebruiker zelf (presets of per mogelijkheid).
       await grants.applyPreset(userId, 'pairing', agent.id, 'spostericach').catch(() => undefined);
       await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, platform, replaced: replaced.length, pairingId: pairingId ? 'ja' : 'nee' } });
-      return json({ agentId: agent.id, token, commandKey, tokenExpiresAt: agent.token_expires_at ? new Date(agent.token_expires_at).getTime() : null });
+      // userId: voor de accountclaim (<meta name="mjn-account">): de extensie weigert opdrachten op een pagina van een ander account.
+      return json({ agentId: agent.id, userId, token, commandKey, tokenExpiresAt: agent.token_expires_at ? new Date(agent.token_expires_at).getTime() : null });
     }],
 
     // De gebruiker zet een gekoppelde browser aan of uit voor AI-gebruik. Standaard uit na het koppelen.
