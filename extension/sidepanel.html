@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mijn Ruimte</title>
+<link rel="stylesheet" href="popup.css">
+<style>body{width:auto}.nl{color:#6b7280;font-size:12px}.cap{display:flex;justify-content:space-between;border-bottom:1px solid #e5e7eb;padding:4px 0}button.stop{background:#b91c1c;color:#fff;border:0;padding:10px 14px;border-radius:6px;font-weight:600;width:100%}.warn{color:#ca8a04}.ok{color:#1a7f37}.off{color:#6b7280}</style>
+</head>
+<body>
+<main>
+  <h1>Mijn Ruimte</h1>
+  <p id="state" role="status">…</p>
+  <p id="account" class="hint"></p>
+  <section>
+    <h2>Що дозволено ШІ зараз <span class="nl">/ wat de AI nu mag</span></h2>
+    <div id="caps"></div>
+    <p id="nocaps" class="hint" hidden>Нічого не дозволено. <span class="nl">Niets toegestaan.</span></p>
+  </section>
+  <section>
+    <button type="button" class="stop" id="stop">Стоп <span class="nl" style="color:#fee2e2">/ Stop</span></button>
+    <p class="hint">«Стоп» тут одразу зупиняє розширення на цьому комп’ютері (від’єднує налагоджувач, очищає діагностику, розриває з’єднання). Щоб відкликати всі дозволи на сервері, натисніть «Стоп» також на сайті.</p>
+    <p class="nl">"Stop" hier legt de extensie op deze computer meteen stil. Om alle toestemmingen op de server in te trekken: ook "Стоп" op de site.</p>
+    <button type="button" id="site-stop">Стоп на сайті / Stop op de site</button>
+    <button type="button" id="test">Тест / Test</button>
+    <ul id="checks" class="hint"></ul>
+  </section>
+</main>
+<script src="sidepanel.js"></script>
+</body>
+</html>

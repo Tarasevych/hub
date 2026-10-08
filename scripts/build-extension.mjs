@@ -7,7 +7,7 @@
 // rechtstreeks vanuit de repository werkt.
 import { deflateSync, crc32 } from 'node:zlib';
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CRX_URL, contentHash, extensionEntries, parseCrx3, zip } from './extension-lib.mjs';
@@ -52,13 +52,11 @@ mkdirSync(outDir, { recursive: true });
 const target = join(outDir, 'mijn-ruimte-extension.zip');
 writeFileSync(target, zip(entries));
 const sha256 = createHash('sha256').update(readFileSync(target)).digest('hex');
-// Uitgave met "modus налагодження": Chrome staat het recht "debugger" NIET als optioneel recht toe, dus bestaat het als aparte uitgave waarvan de gebruiker
-// bewust kiest (met uitleg in de installatiehulp). Zelfde code; alleen manifest.json krijgt het recht en een andere naam.
-const debugManifest = { ...manifest, name: `${manifest.name} (налагодження)`, permissions: [...new Set([...(manifest.permissions || []), 'debugger'])] };
-const debugEntries = entries.map((e) => (e.name === 'manifest.json' ? { ...e, data: Buffer.from(`${JSON.stringify(debugManifest, null, 2)}\n`, 'utf8') } : e));
-const debugTarget = join(outDir, 'mijn-ruimte-extension-debug.zip');
-writeFileSync(debugTarget, zip(debugEntries));
-const debug = { file: 'mijn-ruimte-extension-debug.zip', sha256: createHash('sha256').update(readFileSync(debugTarget)).digest('hex') };
+// Sinds 0.4.0 staat "debugger" vast in het manifest (de gebruiker zet diepe diagnose zelf aan in de opties: diagOptIn), dus er is
+// geen aparte uitgave "налагодження" meer. Een oud pakket uit een eerdere build wordt opgeruimd; extension-version.json meldt debug: null.
+const debugOud = join(outDir, 'mijn-ruimte-extension-debug.zip');
+if (existsSync(debugOud)) rmSync(debugOud);
+const debug = null;
 const storeUrl = existsSync(join(extDir, 'store-url.txt')) ? readFileSync(join(extDir, 'store-url.txt'), 'utf8').trim() : '';
 
 // ---- eigen CRX3: alleen publiceren als hij ondertekend is voor DEZE extensiebestanden en de handtekening klopt ----
