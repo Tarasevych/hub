@@ -4,9 +4,11 @@ import { error, json, rateLimit } from '../server/platform';
 import { auditLijst, auditToevoegen } from '../server/platform/audit';
 import { siteEventsFromAudit } from './site-activity';
 import { heeftApiRecht } from './api-recht';
-import { approveCommand, rejectCommand, submitCommand } from './connectors-commands';
-import { normalizePairingCode, pairingCode, randomToken, sha256 } from './connectors-crypto';
-import { agentOnline, COMMAND_TYPES, disconnectAgent } from './connectors-gateway';
+import { approveCommand, CommandRefused, rejectCommand, submitCommand } from './connectors-commands';
+import { newCommandKey, normalizePairingCode, pairingCode, randomToken, sealCommandKey, sha256 } from './connectors-crypto';
+import { agentOnline, COMMAND_TYPES, disconnectAgent, issueWsTicket } from './connectors-gateway';
+import * as grants from './ai-grants';
+import { archiveDiagnostics } from './browser-diag-archief';
 import * as store from './connectors-store';
 import { BROWSER_AUTO_APPROVABLE, BROWSER_DEFAULT_AUTO, BROWSER_TYPES, enabledTypes } from './browser-capabilities';
 import { defaultChatDeps, runChat, sanitizeHistory } from './connectors-chat';
@@ -20,12 +22,20 @@ type Deps = {
   fail: (message: string, status?: number) => any;
   audit: (userId: string, action: string, result: string, details?: Record<string, unknown>) => Promise<unknown>;
   body: (body: unknown) => Record<string, unknown>;
+  /** Step-up (audit C2/H4): geeft een 403 STEP_UP_REQUIRED-antwoord terug als de sessie niet recent opnieuw bevestigd is, anders null. */
+  stepUp?: (ctx: unknown, auth: any) => Promise<any | null>;
 };
 
 const MAX_PARAM_BYTES = 6 * 1024 * 1024;
 export const AUTO_APPROVABLE_MACHINE = ['fs.read', 'fs.list', 'sys.info', 'sys.metrics', 'docker.ps'] as const;
 export const AUTO_APPROVABLE_BROWSER = BROWSER_AUTO_APPROVABLE;
 const MAX_NAME = 80;
+
+const bearerOf = (ctx: any) => {
+  const h = (ctx.event?.headers || {}) as Record<string, string>;
+  return String(Object.entries(h).find(([k]) => k.toLowerCase() === 'authorization')?.[1] ?? '').replace(/^Bearer\s+/i, '').trim();
+};
+const PAIRING_ID = /^[A-Za-z0-9_-]{8,80}$/;
 
 async function agentSelf(token: string) {
   if (token.length < 20 || token.length > 200) return error('TOKEN_INVALID', 401);
@@ -51,6 +61,10 @@ export function createAgentRoutes(deps: Deps) {
     return auth;
   };
   const denied = () => deps.fail('OWNER_API_SESSION_REQUIRED', 403);
+  // Zonder step-up-afhankelijkheid (tests, oude aanroepers) weigeren we wat step-up vereist: veilig standaard.
+  const stepUp = async (ctx: unknown, auth: any) => (deps.stepUp ? deps.stepUp(ctx, auth) : deps.fail('STEP_UP_REQUIRED', 403));
+  const isOwner = (auth: any) => auth?.user?.role === 'owner';
+  const refused = (err: unknown) => (err instanceof CommandRefused ? deps.fail(err.code, err.code === 'RATE_LIMITED' ? 429 : 403) : null);
 
   const publicAgent = (a: store.AgentRow) => ({
     id: a.id, name: a.name, platform: a.platform, policy: a.policy, capabilities: a.capabilities,
@@ -111,18 +125,29 @@ export function createAgentRoutes(deps: Deps) {
       const name = String(body.name || 'Mijn apparaat').trim().slice(0, MAX_NAME) || 'Mijn apparaat';
       const platform = body.platform ? String(body.platform).slice(0, 40) : null;
       const capabilities = body.capabilities && typeof body.capabilities === 'object' ? body.capabilities as object : {};
+      const pairingId = typeof body.pairingId === 'string' && PAIRING_ID.test(body.pairingId) ? body.pairingId : null;
+      const version = typeof body.version === 'string' ? body.version.slice(0, 40) : null;
       // Een browserextensie begint voorzichtig: alleen lezen (snapshot) gaat direct; navigeren en handelen wachten op een klik.
       const policy = platform === 'browser' ? { autoApprove: [...BROWSER_DEFAULT_AUTO].sort() } : undefined;
-      const agent = await store.createAgent(userId, name, platform, sha256(token), capabilities, policy);
-      if (platform === 'browser') for (const old of await store.revokeOlderBrowserAgents(userId, name, agent.id)) disconnectAgent(old);
-      await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, platform } });
-      return json({ agentId: agent.id, token });
+      // Opdrachtsleutel (audit H3): de agent krijgt hem één keer; de server bewaart hem alleen verzegeld.
+      const commandKey = newCommandKey();
+      const tokenHash = sha256(token);
+      const agent = await store.createAgent(userId, name, platform, tokenHash, capabilities, policy, { pairingId, commandKeyEnc: sealCommandKey(commandKey, userId, tokenHash), version });
+      // Opnieuw koppelen trekt het vorige token van dezelfde installatie in (pairing_id; oude extensies: zelfde naam).
+      const replaced = await store.revokePreviousPairing(userId, agent.id, pairingId, name, platform);
+      for (const old of replaced) disconnectAgent(old);
+      // Een nieuwe koppeling start met alleen lezen (30 dagen); meer geeft de gebruiker zelf (presets of per mogelijkheid).
+      await grants.applyPreset(userId, 'pairing', agent.id, 'spostericach').catch(() => undefined);
+      await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, platform, replaced: replaced.length, pairingId: pairingId ? 'ja' : 'nee' } });
+      return json({ agentId: agent.id, token, commandKey, tokenExpiresAt: agent.token_expires_at ? new Date(agent.token_expires_at).getTime() : null });
     }],
 
     // De gebruiker zet een gekoppelde browser aan of uit voor AI-gebruik. Standaard uit na het koppelen.
     'POST /api/owner/agents/:id/browser-enabled': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
+      // Aanzetten = AI de browser laten besturen: step-up. Uitzetten kan altijd (veilige richting).
+      if (deps.body(ctx.body).enabled === true) { const su = await stepUp(ctx, auth); if (su) return su; }
       const enabled = deps.body(ctx.body).enabled;
       if (typeof enabled !== 'boolean') return deps.fail('BROWSER_ENABLED_INVALID', 400);
       const ok = await store.setBrowserEnabled(auth.user.id, ctx.params.id, enabled);
@@ -192,6 +217,111 @@ export function createAgentRoutes(deps: Deps) {
     }],
     'POST /api/owner/agents/self': [async (ctx: any) => agentSelf(String(deps.body(ctx.body).token ?? ''))],
 
+    // Publiek (zie PUBLIEKE_ROUTES): eenmalig WebSocket-ticket (60 s) in ruil voor het agenttoken in de Authorization-header.
+    // Zo gaat het langlevende token nooit over het WebSocket-kanaal of in een URL; het ticket werkt één keer.
+    'GET /api/owner/agents/ws-ticket': [async (ctx: any) => {
+      const token = bearerOf(ctx);
+      if (token.length < 20 || token.length > 200) return error('TOKEN_INVALID', 401);
+      const agent = await store.findAgentByTokenHash(sha256(token));
+      if (!agent) return error('TOKEN_INVALID', 401);
+      const limit = await rateLimit(`ws-ticket:${agent.id}`, 30, 60);
+      if (!limit.ok) return error('RATE_LIMITED', 429);
+      return json(issueWsTicket(agent.id));
+    }],
+
+    // Publiek: de extensie levert haar diagnosebuffer (≤ 200 items) aan; versleuteld per gebruiker bewaard, 90 dagen.
+    'POST /api/owner/agents/diagnostics/archive': [async (ctx: any) => {
+      const token = bearerOf(ctx) || String(deps.body(ctx.body).token ?? '');
+      const agent = token.length >= 20 && token.length <= 200 ? await store.findAgentByTokenHash(sha256(token)) : null;
+      if (!agent || agent.platform !== 'browser') return error('TOKEN_INVALID', 401);
+      const limit = await rateLimit(`diag-archief:${agent.id}`, 12, 3600);
+      if (!limit.ok) return error('RATE_LIMITED', 429);
+      const entries = deps.body(ctx.body).entries;
+      if (!Array.isArray(entries) || entries.length > 200) return error('ENTRIES_INVALID', 400);
+      try { return json(await archiveDiagnostics(agent.user_id, agent.id, entries)); }
+      catch (err) { return error((err as Error).message || 'ARCHIVE_FAILED', 400); }
+    }],
+
+    // ---- toestemmingen (grants), presets, 'altijd', noodstop, blokkeren ----
+    'POST /api/owner/ai/grants/list': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const userId = auth.user.id;
+      const [settings, list, agents] = await Promise.all([grants.getSettings(userId), grants.listGrants(userId, { includeInactive: !!deps.body(ctx.body).history }), store.listAgents(userId)]);
+      return deps.respond({
+        settings: { capabilities: settings.capabilities, epoch: settings.epoch, blocked: !!settings.blocked_at },
+        grants: list.map((g) => ({ id: g.id, agentId: g.agent_id, capability: g.capability, domains: g.scope?.domains ?? [], always: g.always, preset: g.preset,
+          grantedAt: new Date(g.granted_at).getTime(), expiresAt: new Date(g.expires_at).getTime(), revokedAt: g.revoked_at ? new Date(g.revoked_at).getTime() : null })),
+        agents: agents.map((a) => ({ id: a.id, name: a.name, platform: a.platform, online: agentOnline(a.id), version: a.agent_version ?? null,
+          lastSeenAt: a.last_seen_at ? new Date(a.last_seen_at).getTime() : null, tokenExpiresAt: a.token_expires_at ? new Date(a.token_expires_at).getTime() : null })),
+        catalog: { capabilities: grants.CAPABILITIES, destructive: [...grants.DESTRUCTIVE], presets: grants.PRESETS, limits: grants.GRANT_LIMITS },
+      });
+    }],
+    'POST /api/owner/ai/grants/add': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const b = deps.body(ctx.body);
+      const list = Array.isArray(b.grants) ? b.grants as any[] : [b];
+      if (!list.length || list.length > 20) return deps.fail('GRANTS_INVALID', 400);
+      const wantsAlways = list.some((g) => g?.always === true);
+      // 'altijd' alleen met step-up (en dan nog met vervaldatum; zie ai-grants). Gewone grants: step-up voor destructieve mogelijkheden.
+      const needsStepUp = wantsAlways || list.some((g) => grants.DESTRUCTIVE.has(g?.capability));
+      if (needsStepUp) { const su = await stepUp(ctx, auth); if (su) return su; }
+      try {
+        const out = await grants.addGrants(auth.user.id, auth.user.id, list.map((g) => ({ agentId: String(g.agentId || ''), capability: g.capability, domains: g.domains, always: g.always === true, minutes: g.minutes == null ? undefined : Number(g.minutes) })), { steppedUp: needsStepUp });
+        return deps.respond({ ok: true, epoch: out.epoch, ids: out.grants.map((g) => g.id) });
+      } catch (err) { return deps.fail((err as Error).message, 400); }
+    }],
+    'POST /api/owner/ai/grants/preset': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const b = deps.body(ctx.body);
+      const preset = String(b.preset || '') as grants.PresetId;
+      if (!grants.PRESETS[preset]) return deps.fail('PRESET_INVALID', 400);
+      // Presets met destructieve mogelijkheden (Помічник, Разово): step-up.
+      const p = grants.PRESETS[preset];
+      if ([...p.browser, ...p.machine].some((c) => grants.DESTRUCTIVE.has(c))) { const su = await stepUp(ctx, auth); if (su) return su; }
+      try {
+        const out = await grants.applyPreset(auth.user.id, auth.user.id, String(b.agentId || ''), preset, { minutes: b.minutes == null ? undefined : Number(b.minutes), domains: b.domains, replace: b.replace !== false });
+        return deps.respond({ ok: true, epoch: out.epoch });
+      } catch (err) { return deps.fail((err as Error).message, 400); }
+    }],
+    'POST /api/owner/ai/grants/revoke': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const b = deps.body(ctx.body);
+      if (!b.grantId && !b.agentId && !b.capability && b.all !== true) return deps.fail('REVOKE_TARGET_REQUIRED', 400);
+      const out = await grants.revokeGrants(auth.user.id, auth.user.id, { grantId: b.grantId ? String(b.grantId) : undefined, agentId: b.agentId ? String(b.agentId) : undefined, capability: grants.isCapability(b.capability) ? b.capability : undefined, reason: 'ui' });
+      return deps.respond({ ok: true, epoch: out.epoch, revoked: out.revoked.length });
+    }],
+    'POST /api/owner/ai/settings': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const changes = deps.body(ctx.body).capabilities;
+      if (!changes || typeof changes !== 'object') return deps.fail('SETTINGS_INVALID', 400);
+      // Iets AANzetten in het plafond = step-up; uitzetten mag altijd.
+      if (Object.values(changes as Record<string, unknown>).some((v) => v === true)) { const su = await stepUp(ctx, auth); if (su) return su; }
+      try { return deps.respond({ ok: true, ...(await grants.setCapabilityCeiling(auth.user.id, auth.user.id, changes as never)) }); }
+      catch (err) { return deps.fail((err as Error).message, 400); }
+    }],
+    // Noodstop 'Стоп': geen step-up (stoppen moet altijd en meteen kunnen).
+    'POST /api/owner/ai/stop': [async (ctx: any) => {
+      const auth = await sessionGateAny(ctx.event, ctx.body);
+      if (!auth) return denied();
+      return deps.respond({ ok: true, ...(await grants.stopAll(auth.user.id, auth.user.id)) });
+    }],
+    // Eigenaar blokkeert de AI-toegang van een account (alle tokens + grants in één transactie, daarna verbindingen dicht).
+    'POST /api/owner/ai/block': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth || !isOwner(auth)) return denied();
+      const su = await stepUp(ctx, auth); if (su) return su;
+      const b = deps.body(ctx.body);
+      const target = String(b.userId || '');
+      if (!target) return deps.fail('USER_REQUIRED', 400);
+      if (b.unblock === true) return deps.respond({ ok: true, ...(await grants.unblockUser(target, auth.user.id)) });
+      return deps.respond({ ok: true, ...(await grants.blockUser(target, auth.user.id, String(b.reason || 'owner'))) });
+    }],
+
     'POST /api/owner/agents/:id/revoke': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
@@ -212,11 +342,10 @@ export function createAgentRoutes(deps: Deps) {
       const params = body.params && typeof body.params === 'object' ? body.params as object : {};
       if (Buffer.byteLength(JSON.stringify(params)) > MAX_PARAM_BYTES) return deps.fail('COMMAND_PARAMS_TOO_LARGE', 413);
       if (!agentOnline(agent.id)) return deps.fail('AGENT_OFFLINE', 409);
-      if (type.startsWith('browser.')) {
-        const gate = await store.browserGate(agent.id, type);
-        if (gate !== 'ok') return deps.fail(gate === 'inactive' ? 'BROWSER_NOT_ACTIVE' : 'BROWSER_CAPABILITY_OFF', 409);
-      }
-      const { command, auto } = await submitCommand(agent, auth.user.id, type, params);
+      if (type.startsWith('browser.') && !(await store.browserActive(agent.id))) return deps.fail('BROWSER_NOT_ACTIVE', 409);
+      let command, auto;
+      try { ({ command, auto } = await submitCommand(agent, auth.user.id, type, params)); }
+      catch (err) { const r = refused(err); if (r) return r; throw err; }
       await deps.audit(auth.user.id, 'owner.agent.command', 'success', { agentId: agent.id, commandId: command.id, type, auto });
       return deps.respond({ command });
     }],
@@ -230,8 +359,11 @@ export function createAgentRoutes(deps: Deps) {
     'POST /api/owner/agents/commands/:id/approve': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
+      // Verse goedkeuring van een (destructieve) opdracht: step-up van ten hoogste 5 minuten oud (audit C2).
+      const su = await stepUp(ctx, auth); if (su) return su;
       const command = await approveCommand(auth.user.id, ctx.params.id);
       if (!command) return deps.fail('COMMAND_NOT_PENDING', 409);
+      if (command.status === 'failed') return deps.respond({ command, error: 'NOT_DISPATCHED' });
       await deps.audit(auth.user.id, 'owner.agent.command.approved', 'success', { commandId: command.id, type: command.type });
       return deps.respond({ command });
     }],

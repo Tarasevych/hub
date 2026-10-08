@@ -468,7 +468,7 @@ export const handler = router({
   ...createApiPlatformRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformVaultRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformConnectionRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
-  ...createAgentRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
+  ...createAgentRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody,stepUp:stapOpVereist}),
   ...createMcpConnectorRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createMailComposeRoutes({requireSession:ownerRequireSession,audit:ownerAudit}),
   ...createMailAssistantRoutes({requireSession:ownerRequireSession,audit:ownerAudit}),
