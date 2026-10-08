@@ -2,6 +2,7 @@
 // Alles via de systeemrol: de publieke OAuth-eindpunten hebben geen sessie. Elke query die bij een gebruiker hoort
 // filtert zelf op user_id; RLS (0010) is de tweede laag.
 import { getPool } from '../server/platform/pg';
+import { heeftApiRecht } from './api-recht';
 
 const q = (sql: string, params: unknown[] = []) => getPool('systeem').query(sql, params);
 
@@ -102,6 +103,18 @@ export async function insertToken(t: {
 }
 
 /** Zoekt een actief toegangstoken (niet ingetrokken, niet verlopen) en noteert het gebruik. */
+/** M4: mag deze gebruiker de connector nog gebruiken? (status, verwijderd/met pensioen, AI geblokkeerd, recht api-platform) */
+export async function userMayUseConnector(userId: string): Promise<boolean> {
+  const { rows } = await q(
+    `SELECT r.data->>'status' AS status, r.data->>'role' AS role, r.data->>'email' AS email, r.data->'entitlements' AS entitlements,
+            COALESCE((r.data->>'retiredAt')::numeric, 0) AS retired, COALESCE((r.data->>'deletedAt')::numeric, 0) AS deleted,
+            EXISTS (SELECT 1 FROM app.user_ai_settings s WHERE s.user_id = r.id AND s.blocked_at IS NOT NULL) AS ai_blocked
+       FROM app.records r WHERE r.tbl = 'users' AND r.id = $1`, [userId]);
+  const u = rows[0];
+  if (!u || u.status !== 'approved' || Number(u.retired) > 0 || Number(u.deleted) > 0 || u.ai_blocked) return false;
+  return heeftApiRecht({ role: u.role, email: u.email, entitlements: u.entitlements });
+}
+
 export async function findByAccessHash(accessHash: string): Promise<TokenRow | null> {
   const { rows } = await q(
     `UPDATE app.mcp_oauth_tokens SET last_used_at = now()

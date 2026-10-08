@@ -64,9 +64,10 @@ export interface Settings { capabilities: Partial<Record<Capability, boolean>>; 
 type Q = (sql: string, params?: unknown[]) => Promise<{ rows: any[]; rowCount: number | null }>;
 
 /** Eén transactie als mijnruimte_app met app.user_id = userId (strikte RLS). Zonder aparte app-rol (lokale ontwikkeling): de enige pool. */
-export async function alsGebruiker<T>(userId: string, fn: (q: Q) => Promise<T>): Promise<T> {
+export async function alsGebruiker<T>(userId: string, fn: (q: Q) => Promise<T>, opts: { systeem?: boolean } = {}): Promise<T> {
   if (!userId) throw new Error('GEEN_GEBRUIKER');
-  const client = await getPool(appRolActief() ? 'app' : 'systeem').connect();
+  // systeem: alleen voor beheerstappen die ook systeemtabellen raken (blokkeren trekt ook MCP-OAuth-tokens in).
+  const client = await getPool(appRolActief() && !opts.systeem ? 'app' : 'systeem').connect();
   try {
     await client.query('BEGIN');
     await client.query("SELECT set_config('app.user_id', $1, true), set_config('app.service', 'ai-grants', true)", [userId]);
@@ -313,11 +314,14 @@ export async function blockUser(userId: string, actorId: string, reason: string)
               WHERE user_id = $1 AND status IN ('pending_approval', 'approved')`, [userId]);
     await q(`INSERT INTO app.user_ai_settings (user_id, blocked_at, blocked_reason) VALUES ($1, now(), $2)
              ON CONFLICT (user_id) DO UPDATE SET blocked_at = now(), blocked_reason = EXCLUDED.blocked_reason`, [userId, reason.slice(0, 200)]);
+    // M4: ook de OAuth-tokens van de MCP-connector (Claude) en de tvh_-tokens van de MCP-console intrekken.
+    const oauth = await q('UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
+    const tvh = await q('UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
     const epoch = await bumpEpoch(q, userId);
-    return { epoch, agents: agents.rows.map((r) => r.id as string), grants: grants.rowCount ?? 0 };
-  });
+    return { epoch, agents: agents.rows.map((r) => r.id as string), grants: grants.rowCount ?? 0, mcpTokens: (oauth.rowCount ?? 0) + (tvh.rowCount ?? 0) };
+  }, { systeem: true });
   pusher.close(userId, null, 4403, 'blocked');
-  await auditToevoegen({ ownerId: userId, actorId, action: 'ai_user_blocked', type: 'ai', result: 'ok', details: { reason, agents: out.agents.length, grants: out.grants } }).catch(() => undefined);
+  await auditToevoegen({ ownerId: userId, actorId, action: 'ai_user_blocked', type: 'ai', result: 'ok', details: { reason, agents: out.agents.length, grants: out.grants, mcpTokens: out.mcpTokens } }).catch(() => undefined);
   return out;
 }
 
