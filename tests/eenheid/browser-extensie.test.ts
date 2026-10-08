@@ -111,9 +111,9 @@ export async function main(): Promise<number> {
   check('background 0.4: geen token in de WebSocket-URL, ticket in het eerste bericht, ticket in storage.session, levensteken 20 s, handtekening en accountclaim gecontroleerd',
     /new WebSocket\(`wss:\/\/\$\{host\}\/agent\/ws`\)/.test(bg) && !/agent\/ws\?/.test(bg) && /t: 'auth', ticket/.test(bg) && /storage\.session\.set\(\{ wsTicket/.test(bg)
     && /PING_MS = 20_000/.test(bg) && /verifyCommand\(/.test(bg) && /accountState\(/.test(bg) && /humanAttach/.test(bg) && !/chrome\.permissions\.request/.test(bg + opts));
-  check('background 0.4: externe berichten alleen PING / OPEN_OPTIONS / PAIR, met oorsprongscontrole; PAIR alleen vanaf mcp.tarasevych.com en eenmalig',
+  check('background 0.4: externe berichten alleen PING / OPEN_OPTIONS / PAIR / SELF_TEST (knop Тест), met oorsprongscontrole; PAIR alleen vanaf mcp.tarasevych.com en eenmalig',
     /onMessageExternal/.test(bg) && /isOwnSiteUrl\(`\$\{origin\}\/`\)/.test(bg) && /hostname !== PAIR_HOST/.test(bg) && /usedPairCodes/.test(bg)
-    && (bg.match(/type === '([A-Z_]+)'/g) ?? []).map((x) => x.slice(10, -1)).sort().join() === 'OPEN_OPTIONS,PAIR,PING');
+    && (bg.match(/type === '([A-Z_]+)'/g) ?? []).map((x) => x.slice(10, -1)).sort().join() === 'OPEN_OPTIONS,PAIR,PING,SELF_TEST');
   const uiTekst = ['options.html', 'sidepanel.html', 'popup.html'].map((f) => readFileSync(join(process.cwd(), 'extension', f), 'utf8')).join('\n');
   check('teksten: alleen Oekraïens en Nederlands (geen Engelse UI-zinnen)', !/\b(Settings|Disconnect|Allow|Connected|Permissions|Open site)\b/.test(uiTekst.replace(/<[^>]+>/g, ' ')));
   {
