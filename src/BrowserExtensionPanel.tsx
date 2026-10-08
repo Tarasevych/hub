@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Check, Globe, Power, Trash2, X, Ban, Hand, ShieldCheck } from 'lucide-react';
+import { Globe, Trash2, X, FlaskConical, Settings2, RefreshCw, Power } from 'lucide-react';
 import './ext-permissions.css';
 import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
-import { CAPABILITIES, DEFAULT_ENABLED, GROUPS, type Cap, type CapGroup } from './browser-capabilities-ui';
+import AiToestemmingen, { AiStopKnop } from './AiToestemmingen';
+import { deriveExtState, EXT_TEXT, EXTENSION_ID_RE, sendToExtension, type ExtAction } from './extensie-toestand';
 import { clearWelcome, welcomePending } from './extension-welcome-store';
-import { agentLogo, Help, IconButton, Logo, Section, StatusDot } from './mcp-ui';
+import { agentLogo, Help, IconButton, Logo, StatusDot } from './mcp-ui';
 import ExtensionWizard from './ExtensionWizard';
 import './agents-panel.css';
 
@@ -18,7 +19,16 @@ type Presence = 'checking' | 'present' | 'absent';
 type Release = { version?: string; storeUrl?: string; installers?: string[]; crx?: { file: string; extensionId: string; version: string } | null };
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
-const GROUP_ORDER: CapGroup[] = ['read', 'navigate', 'interact', 'advanced'];
+const MIN_VERSION = '0.4.0';
+const FALLBACK_EXTENSION_ID = 'ofpffonakgjioahgfejmiblfmbkobmmi';
+type Ping = { ok: boolean; version?: string; paired?: boolean; connected?: boolean; account?: 'ok' | 'mismatch' | 'unknown'; agentId?: string; caps?: number; blocked?: boolean };
+type SelfTest = { ok: boolean; version?: string; checks?: Array<{ id: string; ok: boolean; detail: string }> };
+const CHECK_TEXT: Record<string, [string, string]> = {
+  paired: ['підключено до облікового запису', 'gekoppeld aan het account'], command_key: ['ключ підпису команд', 'sleutel voor ondertekende opdrachten'],
+  connected: ['з’єднання із сервером', 'verbinding met de server'], settings: ['дозволи отримано', 'toestemmingen ontvangen'],
+  debugger_permission: ['дозвіл debugger', 'debugger-recht'], diag_opt_in: ['діагностика ввімкнена (необов’язково)', 'diagnose aan (optioneel)'],
+  site_tab: ['відкрита вкладка сайту', 'open tabblad van de site'], bridge: ['зв’язок зі сторінкою', 'verbinding met de pagina'], account: ['той самий обліковий запис', 'hetzelfde account'],
+};
 
 const browserName = () => {
   const ua = navigator.userAgent;
@@ -43,7 +53,10 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
   const [, setDownloaded] = useState(false);
   const [release, setRelease] = useState<Release>({});
   const [welcome, setWelcome] = useState(() => welcomePending());
-  const pending = useRef<((ok: boolean, reason: string) => void) | null>(null);
+  const [extensionId, setExtensionId] = useState('');
+  const [ping, setPing] = useState<Ping | null>(null);
+  const [grantInfo, setGrantInfo] = useState<{ active: number; blocked: boolean }>({ active: -1, blocked: false });
+  const [test, setTest] = useState<SelfTest | null>(null);
   const rootRef = useRef<HTMLElement | null>(null);
 
   const load = useCallback(async () => {
@@ -66,9 +79,10 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
     if (part === 'agent') return;
     const onMessage = (event: MessageEvent) => {
       if (event.source !== window || event.origin !== location.origin || !event.data || event.data.mrExt !== true) return;
-      if (event.data.type === 'hello') { setPresence('present'); setPaired(!!event.data.paired); }
-      if (event.data.type === 'paired') pending.current?.(true, '');
-      if (event.data.type === 'pair-failed') pending.current?.(false, String(event.data.reason || ''));
+      if (event.data.type === 'hello') {
+        setPresence('present'); setPaired(!!event.data.paired);
+        if (typeof event.data.extensionId === 'string' && EXTENSION_ID_RE.test(event.data.extensionId)) setExtensionId(event.data.extensionId);
+      }
     };
     window.addEventListener('message', onMessage);
     const ping = () => window.postMessage({ mrExtPing: true }, location.origin);
@@ -77,6 +91,20 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
     const giveUp = window.setTimeout(() => setPresence((p) => (p === 'checking' ? 'absent' : p)), 2500);
     return () => { window.removeEventListener('message', onMessage); window.clearInterval(retry); window.clearTimeout(giveUp); };
   }, [part]);
+
+  // Versie, account en verbinding rechtstreeks bij de extensie (externally_connectable); id uit de "hello", anders uit de release.
+  const extId = extensionId || (release.crx?.extensionId && EXTENSION_ID_RE.test(release.crx.extensionId) ? release.crx.extensionId : FALLBACK_EXTENSION_ID);
+  const refreshPing = useCallback(async () => {
+    const res = await sendToExtension<Ping>(extId, { type: 'PING' }, 4000);
+    setPing(res && res.ok ? res : null);
+    if (res && res.ok) { setPresence('present'); setPaired(!!res.paired); }
+    return res;
+  }, [extId]);
+  useEffect(() => {
+    void refreshPing();
+    const timer = window.setInterval(() => { if (!document.hidden) void refreshPing(); }, 15000);
+    return () => window.clearInterval(timer);
+  }, [refreshPing]);
 
   // Bij de installatiehulp (na installeren of na inloggen): naar dit blok scrollen.
   useEffect(() => { if (welcome && part !== 'agent') rootRef.current?.scrollIntoView({ block: 'start' }); }, [welcome, part]);
@@ -92,11 +120,11 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
     try {
       const res = await api.post('/api/owner/agents/pairing-code', sessionBody());
       const code = String(res.data?.code || '');
-      const result = await new Promise<{ ok: boolean; reason: string }>((resolve) => {
-        const timer = window.setTimeout(() => { pending.current = null; resolve({ ok: false, reason: 'TIMEOUT' }); }, 10000);
-        pending.current = (ok, reason) => { window.clearTimeout(timer); pending.current = null; resolve({ ok, reason }); };
-        window.postMessage({ mrExtPair: true, code, name: browserName() }, location.origin);
-      });
+      // Koppelen gebeurt in de service worker van de extensie (externally_connectable, alleen vanaf mcp.tarasevych.com):
+      // het token komt nooit in deze pagina. De code is eenmalig en 5 minuten geldig.
+      const answer = await sendToExtension<{ ok: boolean; reason?: string; error?: string }>(extId, { type: 'PAIR', code, name: browserName() }, 15000);
+      const result = { ok: !!answer?.ok, reason: answer ? String(answer.reason || answer.error || '') : 'NO_EXTENSION' };
+      void refreshPing();
       if (result.ok) { setPaired(true); setNotice(tr('Розширення підключено до вашого облікового запису. Оберіть, що йому дозволено, і ввімкніть його для ШІ у картці браузера.', 'De extensie is gekoppeld aan uw account. Kies op de kaart van de browser wat hij mag en zet hem aan voor de AI.')); await load(); }
       else setNotice(tr(`Не вдалося підключити (${result.reason}). Перевірте, що розширення встановлене й увімкнене, і спробуйте ще раз.`, `Koppelen mislukt (${result.reason}). Controleer of de extensie is geïnstalleerd en aan staat en probeer opnieuw.`));
     } catch (e) {
@@ -113,31 +141,16 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
     setBusy(false);
   };
 
-  const policyOf = (a: BrowserAgent) => ({ enabled: a.policy.enabled ?? a.enabledCapabilities ?? DEFAULT_ENABLED, auto: a.policy.autoApprove ?? [] });
-  const savePolicy = async (a: BrowserAgent, enabled: string[], auto: string[]) => {
-    setBusy(true); setNotice('');
-    try { await api.post(`/api/owner/agents/${a.id}/policy`, { ...sessionBody(), enabled, autoApprove: auto.filter((t) => enabled.includes(t)) }); await load(); }
-    catch { setNotice(tr('Не вдалося змінити дозвіл.', 'Recht wijzigen mislukt.')); }
+  // Knop 'Тест': zelftest in de extensie + wat de server ziet. Resultaat per controle, in gewone taal.
+  const runTest = async () => {
+    setBusy(true); setNotice(''); setTest(null);
+    const res = await sendToExtension<SelfTest>(extId, { type: 'SELF_TEST' }, 10000);
+    await load().catch(() => undefined);
+    await refreshPing();
+    setTest(res && res.checks ? res : { ok: false, checks: [{ id: 'extension', ok: false, detail: tr('розширення не відповідає', 'de extensie antwoordt niet') }] });
     setBusy(false);
   };
-  const AUTO_ABLE = CAPABILITIES.filter((c) => c.auto).map((c) => c.type);
-  // Пресети самі виставляють і «дозволено», і «без підтвердження» (де сервер це допускає): нічого не треба дозбирати галочками.
-  const preset = (a: BrowserAgent, kind: 'read' | 'all' | 'none') => {
-    if (kind === 'none') return void savePolicy(a, [], []);
-    const enabled = kind === 'read' ? DEFAULT_ENABLED : CAPABILITIES.map((c) => c.type);
-    void savePolicy(a, enabled, enabled.filter((t) => AUTO_ABLE.includes(t)));
-  };
-  const setGroup = (a: BrowserAgent, g: CapGroup, on: boolean) => {
-    const { enabled, auto } = policyOf(a);
-    const types = CAPABILITIES.filter((c) => c.group === g).map((c) => c.type);
-    void savePolicy(a, on ? [...new Set([...enabled, ...types])] : enabled.filter((t) => !types.includes(t)), on ? [...new Set([...auto, ...types.filter((t) => AUTO_ABLE.includes(t))])] : auto.filter((t) => !types.includes(t)));
-  };
-  const setCapState = (a: BrowserAgent, cap: Cap, state: 'off' | 'ask' | 'auto') => {
-    const { enabled, auto } = policyOf(a);
-    const nextEnabled = state === 'off' ? enabled.filter((t) => t !== cap.type) : [...new Set([...enabled, cap.type])];
-    const nextAuto = state === 'auto' ? [...new Set([...auto, cap.type])] : auto.filter((t) => t !== cap.type);
-    void savePolicy(a, nextEnabled, nextAuto);
-  };
+  const openOptions = () => { void sendToExtension(extId, { type: 'OPEN_OPTIONS' }); };
 
   const revoke = async (a: BrowserAgent) => {
     setConfirm(null); setBusy(true); setNotice('');
@@ -158,7 +171,6 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
   );
 
   const agentBlock = (a: BrowserAgent) => {
-    const { enabled, auto } = policyOf(a);
     const state: 'on' | 'wait' | 'off' = !a.enabled ? 'off' : armed(a) ? 'on' : 'wait';
     const stateText = state === 'on' ? tr('ШІ активний (вхід підтверджено)', 'AI actief (aanmelding bevestigd)') : state === 'wait' ? tr('очікує входу на сайті', 'wacht op aanmelding op de site') : tr('ШІ вимкнено', 'AI uit');
     return (
@@ -182,49 +194,36 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
           <button type='button' className='hub-toggle' role='switch' aria-checked={a.enabled} aria-label={tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')} disabled={busy} onClick={() => void setEnabled(a, !a.enabled)} />
         </div>
 
-        <div className='hub-actions ext-bulk'>
-          <IconButton icon={<Check />} disabled={busy} onClick={() => preset(a, 'read')}>{tr('Лише читання (рекомендовано)', 'Alleen lezen (aanbevolen)')}</IconButton>
-          {CAPABILITIES.every((c) => enabled.includes(c.type))
-            ? <IconButton tone='danger' icon={<Ban />} disabled={busy} onClick={() => preset(a, 'none')}>{tr('Зняти всі дозволи', 'Alle rechten intrekken')}</IconButton>
-            : <IconButton icon={<ShieldCheck />} disabled={busy} onClick={() => preset(a, 'all')}>{tr('Надати всі дозволи', 'Alle rechten toekennen')}</IconButton>}
-          {enabled.length > 0 && !CAPABILITIES.every((c) => enabled.includes(c.type)) ? <IconButton tone='danger' icon={<Ban />} disabled={busy} onClick={() => preset(a, 'none')}>{tr('Зняти всі дозволи', 'Alle rechten intrekken')}</IconButton> : null}
-        </div>
-        <p className='hub-meta ext-legend'><Ban size={13} /> {tr('заборонено', 'verboden')} · <Hand size={13} /> {tr('дозволено, щоразу питає вас', 'toegestaan, vraagt telkens uw akkoord')} · <ShieldCheck size={13} /> {tr('дозволено без підтвердження', 'toegestaan zonder bevestiging')}</p>
-
-        {GROUP_ORDER.map((g) => {
-          const members = CAPABILITIES.filter((c) => c.group === g);
-          const allOn = members.every((c) => enabled.includes(c.type));
+        {(() => {
+          // Toestand alleen met extensiegegevens als de extensie in DEZE browser bij deze agent hoort.
+          const local = !!ping && ping.agentId === a.id;
+          const view = deriveExtState({
+            presence: 'present', version: local ? ping?.version : MIN_VERSION, minVersion: MIN_VERSION,
+            paired: true, online: a.status === 'connected', account: local ? (ping?.account ?? 'unknown') : 'ok', blocked: grantInfo.blocked,
+            activeGrants: grantInfo.active < 0 ? 1 : grantInfo.active, browserEnabled: a.enabled, armed: armed(a),
+          });
+          const btn: Partial<Record<ExtAction, ReactNode>> = {
+            test: <IconButton key='test' icon={<FlaskConical />} disabled={busy || !local} title={local ? '' : tr('Тест працює в тому браузері, де встановлено це розширення', 'De test werkt in de browser waarin deze extensie zit')} onClick={() => void runTest()}>{tr('Тест', 'Test')}</IconButton>,
+            stop: <AiStopKnop key='stop' tr={tr} onDone={() => void load()} />,
+            enable: <IconButton key='enable' icon={<Power />} disabled={busy} onClick={() => void setEnabled(a, true)}>{tr('Увімкнути браузер', 'Browser aanzetten')}</IconButton>,
+            repair: <IconButton key='repair' icon={<RefreshCw />} disabled={busy} onClick={() => void connect()}>{tr('Підключити знову', 'Opnieuw koppelen')}</IconButton>,
+            relogin: <IconButton key='relogin' icon={<RefreshCw />} onClick={() => location.reload()}>{tr('Оновити сторінку після входу', 'Pagina verversen na aanmelden')}</IconButton>,
+            options: local ? <IconButton key='options' icon={<Settings2 />} onClick={openOptions}>{tr('Налаштування розширення', 'Instellingen van de extensie')}</IconButton> : undefined,
+          };
           return (
-          <Section key={g} id={`ext-${a.id}-${g}`} icon={<Power />} title={tr(GROUPS[g].uk, GROUPS[g].nl)} subtitle={tr(GROUPS[g].hint[0], GROUPS[g].hint[1])} defaultOpen={g === 'read'} tone={g === 'advanced' || g === 'interact' ? 'warn' : 'default'}
-            badge={<span className='hub-pill off'>{members.filter((c) => enabled.includes(c.type)).length}/{members.length}</span>}>
-            <div className='ext-group-bulk'>
-              <button type='button' className={`ext-bulk-btn${allOn ? ' is-deny' : ''}`} disabled={busy} onClick={() => setGroup(a, g, !allOn)}>{allOn ? <Ban size={14} /> : <Check size={14} />}{allOn ? tr('Заборонити всю групу', 'Hele groep verbieden') : tr('Дозволити всю групу', 'Hele groep toestaan')}</button>
+            <div className='ext-state' data-ext-state={view.state} data-ext-reason={view.reason || ''}>
+              <p className={`hub-note${view.state === 'enabled' ? '' : ' is-warn'}`} role='status'>{tr(...EXT_TEXT[view.reason ?? view.state])}</p>
+              <div className='hub-actions'>{view.actions.map((x) => btn[x]).filter(Boolean)}</div>
+              {test ? (
+                <ul className='ext-test' aria-label={tr('Результат тесту', 'Testresultaat')}>
+                  <li><b>{test.ok ? tr('Тест пройдено', 'Test geslaagd') : tr('Тест не пройдено', 'Test niet geslaagd')}</b>{test.version ? ` · ${test.version}` : ''}</li>
+                  {(test.checks ?? []).map((c) => <li key={c.id} className={c.ok ? 'ok' : 'bad'}>{c.ok ? '✓' : '✗'} {CHECK_TEXT[c.id] ? tr(...CHECK_TEXT[c.id]) : c.id}{c.detail ? ` — ${c.detail}` : ''}</li>)}
+                </ul>
+              ) : null}
             </div>
-            <div className='hub-switch-list'>
-              {members.map((c) => {
-                const on = enabled.includes(c.type);
-                const state: 'off' | 'ask' | 'auto' = !on ? 'off' : c.auto && auto.includes(c.type) ? 'auto' : 'ask';
-                const opts: Array<['off' | 'ask' | 'auto', ReactNode, string]> = [['off', <Ban size={15} />, tr('Заборонено', 'Verboden')], ['ask', <Hand size={15} />, c.auto ? tr('Питати щоразу', 'Telkens vragen') : tr('Дозволено (питає щоразу)', 'Toegestaan (vraagt telkens)')]];
-                if (c.auto) opts.push(['auto', <ShieldCheck size={15} />, tr('Без підтвердження', 'Zonder bevestiging')]);
-                return (
-                  <div key={c.type} className={`hub-switch${on ? '' : ' is-off'}`} data-capability={c.type}>
-                    <span className='hub-switch-text'>
-                      <b>{tr(c.uk, c.nl)}
-                        <Help tone={g === 'interact' || g === 'advanced' ? 'warn' : 'info'} tr={tr} content={{ title: tr(c.uk, c.nl), touches: tr(`Лише браузер «${a.name}»`, `Alleen de browser «${a.name}»`), on: tr(c.on[0], c.on[1]), off: tr(c.off[0], c.off[1]) }} /></b>
-                      <small>{state === 'off' ? tr('Заборонено', 'Verboden') : state === 'auto' ? tr('Дозволено без підтвердження', 'Toegestaan zonder bevestiging') : tr('Дозволено, щоразу питає вас', 'Toegestaan, vraagt telkens uw akkoord')}</small>
-                    </span>
-                    <span className='ext-tri' role='radiogroup' aria-label={tr(c.uk, c.nl)}>
-                      {opts.map(([value, icon, label]) => (
-                        <button key={value} type='button' role='radio' aria-checked={state === value} aria-label={label} title={label} data-state={value} className={state === value ? 'is-on' : ''} disabled={busy} onClick={() => setCapState(a, c, value)}>{icon}</button>
-                      ))}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </Section>
           );
-        })}
+        })()}
+        <AiToestemmingen tr={tr} agentId={a.id} platform='browser' onChange={(active, blocked) => setGrantInfo({ active, blocked })} />
 
         {confirm === a.id ? (
           <div className='hub-confirm' role='alertdialog' aria-label={tr('Підтвердження відключення', 'Bevestig loskoppelen')}>
