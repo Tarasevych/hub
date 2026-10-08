@@ -1,0 +1,9 @@
+# NOODOPLOSSING, NIET STANDAARD GEÏNSTALLEERD. Alleen gebruiken als polkit op de VM ontbreekt (zie RUNBOOK-VEILIGE-UITROL.md §9).
+# Nadeel: sudo werkt niet onder NoNewPrivileges=yes; de app-dienst zou dan NoNewPrivileges=no nodig hebben. Daarom kiest
+# deze repository voor polkit + mijn-ruimte-opdracht@.service en installeert installeer-app.sh dit bestand NIET.
+# Handmatig: install -m 0440 -o root -g root mijn-ruimte-opdracht.sudoers /etc/sudoers.d/mijn-ruimte-opdracht && visudo -c
+Defaults!/usr/local/sbin/mijn-ruimte-opdracht env_reset
+Defaults!/usr/local/sbin/mijn-ruimte-opdracht !setenv
+Defaults:mijnruimte secure_path="/usr/sbin:/usr/bin:/sbin:/bin"
+Cmnd_Alias MIJN_RUIMTE_OPDRACHT = /usr/local/sbin/mijn-ruimte-opdracht status, /usr/local/sbin/mijn-ruimte-opdracht releases, /usr/local/sbin/mijn-ruimte-opdracht backup, /usr/local/sbin/mijn-ruimte-opdracht uitrol-nu, /usr/local/sbin/mijn-ruimte-opdracht terugdraaien
+mijnruimte ALL=(root) NOPASSWD: MIJN_RUIMTE_OPDRACHT

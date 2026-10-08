@@ -1,0 +1,15 @@
+# Methode 3 (gepantserde opdracht, root): één werkwoord uit een vaste lijst (status, releases, backup, uitrol-nu, terugdraaien).
+# De app start dit met `systemctl start mijn-ruimte-opdracht@<werkwoord>.service`; de polkit-regel
+# /etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules staat dat alleen toe voor gebruiker mijnruimte en precies die vijf namen.
+# Het script controleert het werkwoord nogmaals en leest geen enkel bestand dat de app kan schrijven.
+[Unit]
+Description=Mijn Ruimte: beheeropdracht %i (vaste lijst)
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mijn-ruimte-opdracht %i
+StandardInput=null
+PrivateTmp=yes
+ProtectHome=yes
+TimeoutStartSec=15min
