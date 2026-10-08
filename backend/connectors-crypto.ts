@@ -16,3 +16,26 @@ export function pairingCode(length = 8): string {
 /** Normaliseer invoer van een gebruiker (spaties, streepjes, kleine letters). */
 export const normalizePairingCode = (value: unknown): string =>
   String(value ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+// ---- opdrachten ondertekenen (audit H3) ----
+// Bij het koppelen krijgt de agent één keer een eigen sleutel (naast zijn token). De server bewaart die alleen verzegeld
+// (AES-256-GCM, gebonden aan gebruiker + token-hash) en ondertekent elke opdracht met HMAC-SHA256. De agent voert alleen
+// opdrachten uit met een geldige, niet-verlopen handtekening; een gestolen WebSocket of een server-imitatie zonder sleutel kan
+// dus niets laten uitvoeren.
+import { createHmac } from 'node:crypto';
+import { envKey32, openWithEnvKey, sealWithEnvKey } from '../server/platform/beveiliging';
+
+export const COMMAND_SIG_TTL_MS = 120_000;
+const keyName = () => (envKey32('AGENT_SLEUTEL_V1') ? 'AGENT_SLEUTEL_V1' : 'TOTP_ENCRYPTION_KEY_V1');
+export const newCommandKey = (): string => randomBytes(32).toString('base64url');
+export const sealCommandKey = (key: string, userId: string, tokenHash: string): string | null => {
+  try { return sealWithEnvKey(keyName(), key, `agent-cmd-key:${userId}:${tokenHash}`); } catch { return null; }
+};
+export const openCommandKey = (sealed: string, userId: string, tokenHash: string): string | null => {
+  try { return openWithEnvKey(keyName(), sealed, `agent-cmd-key:${userId}:${tokenHash}`); } catch { return null; }
+};
+/** Canonieke tekst die wordt ondertekend: versie, id, type, hash van de parameters, vervaltijd. */
+export const commandSigText = (id: string, type: string, params: unknown, exp: number): string =>
+  `v1\n${id}\n${type}\n${sha256(JSON.stringify(params ?? {}))}\n${exp}`;
+export const signCommand = (key: string, id: string, type: string, params: unknown, exp: number): string =>
+  createHmac('sha256', Buffer.from(key, 'base64url')).update(commandSigText(id, type, params, exp)).digest('hex');
