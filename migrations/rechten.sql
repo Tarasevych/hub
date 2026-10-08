@@ -15,6 +15,18 @@ BEGIN
     -- 0009: Local Machine Connector. Onder RLS (policy op user_id); het WebSocket-kanaal en het koppelen van een
     -- agent lopen via de systeemrol, de eigenaar-UI via deze rol.
     IF to_regclass('app.agents') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.agents, app.agent_pairing_codes, app.agent_commands TO mijnruimte_app; END IF;
+    -- 0017-0020 (veilig-agenten-0.4): toestemmingen, AI-instellingen, MCP-bord/tokens/log en diagnose-archief. Alleen via de app-rol
+    -- met app.user_id (strikte RLS: altijd eigen rijen). Geen DELETE op grants: intrekken = revoked_at (spoor blijft).
+    IF to_regclass('app.ai_grants') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE ON app.user_ai_settings, app.ai_grants TO mijnruimte_app;
+      REVOKE DELETE ON app.ai_grants FROM mijnruimte_app;
+    END IF;
+    IF to_regclass('app.mcp_console_items') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.mcp_console_items TO mijnruimte_app;
+      GRANT SELECT, INSERT, UPDATE ON app.mcp_console_tokens TO mijnruimte_app;
+      GRANT SELECT, INSERT, DELETE ON app.mcp_console_log TO mijnruimte_app;
+    END IF;
+    IF to_regclass('app.browser_diag_archive') IS NOT NULL THEN GRANT SELECT, INSERT, DELETE ON app.browser_diag_archive TO mijnruimte_app; END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- Audit-fix 9: de users-trigger telt (audit-modus) via deze functie; de app kan rls_audit zelf niet schrijven.
