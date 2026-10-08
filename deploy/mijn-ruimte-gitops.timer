@@ -1,0 +1,13 @@
+# Elke 5 minuten kijken of er een nieuwe ONDERTEKENDE uitrol-tag is (doet niets als GitOps uit staat).
+[Unit]
+Description=Mijn Ruimte: GitOps-controle elke 5 minuten
+
+[Timer]
+OnBootSec=3min
+OnActiveSec=1min
+OnUnitInactiveSec=5min
+RandomizedDelaySec=30s
+Unit=mijn-ruimte-gitops.service
+
+[Install]
+WantedBy=timers.target
