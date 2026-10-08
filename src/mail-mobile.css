@@ -41,7 +41,7 @@
   html body .google-mail-workspace .google-mail-row .mail-row-actions-more svg{width:22px;height:22px}
   html body .google-mail-workspace .google-mail-row .mail-row-actions-more [role='tooltip']{display:none}
   html body .google-mail-workspace .google-mail-row.mail-row-swiping .mail-row-hover-actions,html body .google-mail-workspace .google-mail-row.mail-row-swipe-open .mail-row-hover-actions{opacity:0!important;pointer-events:none!important}
-  html body .google-mail-workspace .mail-row-action-popover{position:fixed!important;left:8px!important;right:8px!important;bottom:8px!important;top:auto!important;max-height:72vh;overflow:auto;z-index:620;border-radius:16px;box-shadow:0 -6px 30px rgba(15,23,42,.28)}
+  html body .google-mail-workspace .mail-row-action-popover{position:fixed!important;right:auto;bottom:auto;z-index:620;border-radius:16px;box-shadow:0 8px 28px rgba(15,23,42,.28);max-width:calc(100vw - 16px)}
   html body .google-mail-workspace .mail-row-action-popover .mail-row-action-menu-item{min-height:52px;font-size:15px}
 
   /* свайп вліво: кнопки дій під листом */
