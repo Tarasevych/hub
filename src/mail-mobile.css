@@ -54,8 +54,15 @@
   html body .google-mail-workspace .mail-row-swipe-actions .trash{background:#dc2626}
   html body .google-mail-workspace .mail-row-swipe-actions button:disabled{opacity:.6}
 
-  /* зручні для пальця розміри верхньої панелі та пагінації */
-  html body .mail-top-command-bar{min-height:52px;top:4px}
+  /* відкритий лист — на весь екран (раніше зліва лишалась смужка списку під панеллю меню) */
+  html body .google-mail-reader-backdrop{left:0!important;right:0!important;width:100%!important;max-width:100%!important}
+  html body .google-mail-reader{width:100%!important;max-width:100%!important;margin:0!important;border-radius:0!important}
+
+  /* верхня панель: аватар акаунта впритул до правого краю, пошук займає весь вільний простір */
+  html body .mail-top-command-bar{right:6px!important;min-height:52px;top:4px}
+  html body .mail-top-command-bar>:first-child{flex:1 1 0!important;min-width:0!important}
+  html body .mail-top-search-shell{width:100%;min-width:0}
+  html body .mail-top-interface-actions{flex:none;margin-left:auto}
   html body .mail-top-search-shell{min-height:46px;grid-template-columns:44px minmax(0,1fr) auto auto}
   html body .mail-top-search-shell input{font-size:16px}
   html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{width:44px;height:44px}
