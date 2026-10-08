@@ -31,6 +31,9 @@ UMask=0027
 NoNewPrivileges=yes
 ProtectSystem=strict
 ReadWritePaths=/srv/data/uploads
+# Goedkeuren met een passkey: de app legt hier een goedgekeurd pakket of een sleutelverzoek neer; root controleert alles zelf
+# (deploy/RUNBOOK-VEILIGE-UITROL.md §13). "-" = geen fout als de map (nog) niet bestaat.
+ReadWritePaths=-/srv/mijn-ruimte/goedkeur-inbox
 ProtectHome=yes
 PrivateTmp=yes
 PrivateDevices=yes

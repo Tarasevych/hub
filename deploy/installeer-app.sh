@@ -120,7 +120,7 @@ veilige_uitrol_inrichten() {
   # De eerste uitrol via de inbox moet nieuwer zijn dan wat nu draait.
   [ -s /var/lib/mijn-ruimte-uitrol/laatste-versie ] || date +%Y%m%d-%H%M%S > /var/lib/mijn-ruimte-uitrol/laatste-versie
   if [ ! -e /etc/mijn-ruimte/mcp-rechten.json ]; then
-    printf '%s\n' '{"read": true, "uitrol": false, "gitops": false, "opdracht": {"status": true, "releases": true, "backup": true, "uitrol-nu": true, "terugdraaien": false}}' > /etc/mijn-ruimte/mcp-rechten.json
+    printf '%s\n' '{"read": true, "uitrol": false, "gitops": false, "passkey-goedkeuring": false, "opdracht": {"status": true, "releases": true, "backup": true, "uitrol-nu": true, "terugdraaien": false}}' > /etc/mijn-ruimte/mcp-rechten.json
     chown root:"$GEBRUIKER" /etc/mijn-ruimte/mcp-rechten.json; chmod 0640 /etc/mijn-ruimte/mcp-rechten.json
   fi
   if [ -s "$doel/deploy/mcp/server.mjs" ]; then
@@ -186,6 +186,29 @@ beheer_inrichten() {
   fi
   systemctl enable mijn-ruimte-gitops.timer >/dev/null 2>&1 || waarschuwing "mijn-ruimte-gitops.timer kon niet worden ingeschakeld"
   melding "beheer op afstand ingericht (GitOps: $(python3 -c 'import json;print("aan" if json.load(open("/etc/mijn-ruimte/mcp-rechten.json")).get("gitops") is True else "uit")' 2>/dev/null || echo uit))"
+}
+
+# Goedkeuren van updates met de passkey van de eigenaar (RUNBOOK-VEILIGE-UITROL.md §13): root-hulp (node, alleen ingebouwde
+# modules) + kern, wrapper /usr/local/sbin/mijn-ruimte-passkey, root-map voor nonces/tellers, de inbox van de app en twee path-units.
+# Het sleutelbestand /etc/mijn-ruimte/goedkeur-passkeys.json wordt alleen aangemaakt (leeg) als het ontbreekt; sleutels komen er
+# uitsluitend in via `mijn-ruimte-passkey toevoegen` (SSH) of met een assertie van een al bekende sleutel. Schakelaar
+# "passkey-goedkeuring" in mcp-rechten.json: ontbreekt = uit.
+goedkeur_inbox_maken() { install -d -o "$GEBRUIKER" -g "$GEBRUIKER" -m 0750 "$APP_ROOT/goedkeur-inbox"; }
+goedkeuring_inrichten() {
+  local doel="$1"
+  [ -s "$doel/deploy/goedkeuring/goedkeur-hulp.mjs" ] || return 0
+  install -d -o root -g root -m 0755 /usr/local/lib/mijn-ruimte /usr/local/lib/mijn-ruimte/goedkeuring
+  install -m 0644 -o root -g root "$doel/deploy/goedkeuring/webauthn-kern.mjs" "$doel/deploy/goedkeuring/goedkeur-hulp.mjs" /usr/local/lib/mijn-ruimte/goedkeuring/
+  install -m 0755 -o root -g root "$doel/deploy/goedkeuring/mijn-ruimte-passkey.sh" /usr/local/sbin/mijn-ruimte-passkey
+  install -d -o root -g root -m 0755 /var/lib/mijn-ruimte
+  install -d -o root -g root -m 0700 /var/lib/mijn-ruimte/goedkeuring
+  goedkeur_inbox_maken
+  if [ ! -e /etc/mijn-ruimte/goedkeur-passkeys.json ]; then
+    printf '%s\n' '{"versie": 1, "rpId": "admin.tarasevych.com", "origins": ["https://admin.tarasevych.com"], "sleutels": []}' > /etc/mijn-ruimte/goedkeur-passkeys.json
+  fi
+  chown root:"$GEBRUIKER" /etc/mijn-ruimte/goedkeur-passkeys.json; chmod 0640 /etc/mijn-ruimte/goedkeur-passkeys.json
+  systemctl enable --now mijn-ruimte-goedkeuring.path mijn-ruimte-goedkeur-sleutels.path >/dev/null 2>&1 || waarschuwing "path-units voor de passkey-goedkeuring konden niet worden gestart"
+  melding "passkey-goedkeuring ingericht ($(/usr/local/sbin/mijn-ruimte-passkey lijst 2>/dev/null | head -1 || echo 'stand onbekend'))"
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -346,11 +369,13 @@ installeren() {
   deploy_herstellen "$bron" "$doel"
   migreren "$doel"
   ONVOLTOOID=""   # vanaf hier blijft de release bestaan (ook als activeren mislukt, voor diagnose)
+  goedkeur_inbox_maken   # vóór het herstarten: de app-unit noemt deze map in ReadWritePaths
   units_installeren "$doel"
   activeren "$doel"
   oude_deur_opruimen
   veilige_uitrol_inrichten "$doel"
   beheer_inrichten "$doel"
+  goedkeuring_inrichten "$doel"
   # Volledig archief ("Архів на ПК"): root-script + path-unit die het verzoekbestand van de site bewaakt (de site kan zelf niets als root
   # doen). Uitvoer in een root-map (uitgifte root:mijnruimte 0750, werkmap 0700), het hele archief age-versleuteld.
   if [ -s "$doel/deploy/archief-maken.sh" ]; then

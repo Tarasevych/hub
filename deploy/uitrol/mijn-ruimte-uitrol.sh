@@ -17,15 +17,28 @@
 #   6. Pas dan: installeer-app.sh installeren <uitgepakte bron> (bouwen, back-up, migreren, activeren, gezondheidscontrole).
 # Uitkomst in /var/lib/mijn-ruimte-uitrol-status/status.json (root:mijnruimte 0640), zodat de app/MCP de stand kan tonen.
 # Tweetalige meldingen staan in de status (Oekraïens + Nederlands); het logboek (journal) is Nederlands.
+#
+# Tweede modus `mijn-ruimte-uitrol --goedkeuring` (mijn-ruimte-goedkeuring.path; zie RUNBOOK-VEILIGE-UITROL.md §13):
+#   andere inbox (/srv/mijn-ruimte/goedkeur-inbox, schrijfbaar voor de app) en in plaats van een .sig een
+#   mijn-ruimte-<versie>.tar.gz.goedkeuring.json met een WebAuthn-assertie van de passkey van de eigenaar. Stap 3 wordt dan
+#   `mijn-ruimte-passkey verifieer-goedkeuring` (root controleert zelf: sleutel uit /etc/mijn-ruimte/goedkeur-passkeys.json,
+#   challenge = hash van sha256 van DEZE kopie + versie + voorstel-id + nonce + vervaltijd, rpId, origin, UV, teller, nonce eenmalig).
+#   Stappen 4–6 (inhoud, versie, installeren) zijn voor beide modi gelijk. Een .sig in de goedkeur-inbox telt niet, en een
+#   goedkeuring in de gewone inbox ook niet: de twee wegen blijven gescheiden.
 set -euo pipefail
+MODUS=handtekening
+if [ "${1:-}" = "--goedkeuring" ]; then MODUS=passkey; fi
 umask 077
 export LC_ALL=C
 
 # Overschrijven van paden kan alleen in tests (niet als root): de root-dienst gebruikt altijd de vaste paden.
 if [ "$(id -u)" -eq 0 ]; then
-  unset UITROL_INBOX UITROL_WERK UITROL_STATUS_DIR UITROL_ONDERTEKENAARS UITROL_INSTALLEER UITROL_LOCK UITROL_MAX_BYTES UITROL_GROEP 2>/dev/null || true
+  unset UITROL_INBOX UITROL_WERK UITROL_STATUS_DIR UITROL_ONDERTEKENAARS UITROL_INSTALLEER UITROL_LOCK UITROL_MAX_BYTES UITROL_GROEP \
+        UITROL_GOEDKEUR_INBOX UITROL_GOEDKEUR_HULP 2>/dev/null || true
 fi
-INBOX="${UITROL_INBOX:-/srv/mijn-ruimte/uitrol-inbox}"
+if [ "$MODUS" = passkey ]; then INBOX="${UITROL_GOEDKEUR_INBOX:-/srv/mijn-ruimte/goedkeur-inbox}"; else INBOX="${UITROL_INBOX:-/srv/mijn-ruimte/uitrol-inbox}"; fi
+# Root: altijd de vaste hulp (wist de omgeving, neemt de vergrendeling). Tests: "node <pad>/goedkeur-hulp.mjs".
+GOEDKEUR_HULP="${UITROL_GOEDKEUR_HULP:-/usr/local/sbin/mijn-ruimte-passkey}"
 WERK_ROOT="${UITROL_WERK:-/var/lib/mijn-ruimte-uitrol}"
 STATUS_DIR="${UITROL_STATUS_DIR:-/var/lib/mijn-ruimte-uitrol-status}"
 ONDERTEKENAARS="${UITROL_ONDERTEKENAARS:-/etc/mijn-ruimte/uitrol-ondertekenaars}"
@@ -43,15 +56,38 @@ chmod 0700 "$WERK_ROOT"
 
 status() { # status <staat> <code> <uk> <nl> [versie]
   local tmp; tmp="$(mktemp "$STATUS_DIR/.status.XXXXXX")"
-  python3 - "$tmp" "$1" "$2" "$3" "$4" "${5:-}" <<'PY'
+  python3 - "$tmp" "$1" "$2" "$3" "$4" "${5:-}" "$MODUS" <<'PY'
 import json, sys, datetime
-path, staat, code, uk, nl, versie = sys.argv[1:7]
-json.dump({"staat": staat, "code": code, "uk": uk, "nl": nl, "versie": versie,
+path, staat, code, uk, nl, versie, methode = sys.argv[1:8]
+json.dump({"staat": staat, "code": code, "uk": uk, "nl": nl, "versie": versie, "methode": methode,
            "tijd": datetime.datetime.now(datetime.timezone.utc).isoformat()}, open(path, "w"), ensure_ascii=False)
 PY
   chgrp "$GROEP" "$tmp" 2>/dev/null || true
   chmod 0640 "$tmp"
   mv -f "$tmp" "$STATUS_DIR/status.json"
+}
+
+gebeurtenis() { # gebeurtenis <code> <niveau> <uk> <nl>  (zelfde vorm als gitops; de app neemt ze op in de audit)
+  (
+    flock 7
+    tmp="$(mktemp "$STATUS_DIR/.gebeurtenis.XXXXXX")"
+    python3 - "$STATUS_DIR/gebeurtenissen.jsonl" "$tmp" uitrol "$1" "$2" "$3" "$4" "${VERSIE:-}" <<'PY'
+import json, sys, datetime, secrets
+pad, tmp, bron, code, niveau, uk, nl, tag = sys.argv[1:9]
+nu = datetime.datetime.now(datetime.timezone.utc)
+regel = json.dumps({"id": nu.strftime("%Y%m%dT%H%M%S%fZ") + "-" + secrets.token_hex(4), "tijd": nu.isoformat(), "bron": bron,
+                    "code": code, "niveau": niveau, "uk": uk, "nl": nl, "tag": tag}, ensure_ascii=False)
+try:
+    oud = open(pad, encoding="utf-8").read().splitlines()[-499:]
+except FileNotFoundError:
+    oud = []
+with open(tmp, "w", encoding="utf-8") as f:
+    f.write("\n".join(oud + [regel]) + "\n")
+PY
+    chgrp "$GROEP" "$tmp" 2>/dev/null || true
+    chmod 0640 "$tmp"
+    mv -f "$tmp" "$STATUS_DIR/gebeurtenissen.jsonl"
+  ) 7>"$STATUS_DIR/.gebeurtenissen.lock"
 }
 
 exec 8>"$LOCK"
@@ -64,8 +100,9 @@ trap opruimen EXIT
 weiger() { # weiger <code> <uk> <nl>
   log "GEWEIGERD: $1 — $3"
   status geweigerd "$1" "$2" "$3" "${VERSIE:-}"
+  [ "$MODUS" = passkey ] && gebeurtenis "$1" waarschuwing "$2" "$3"
   # Het geweigerde pakket uit de inbox halen (rm volgt geen symlinks), anders blijft de path-unit afgaan.
-  [ -n "${NAAM:-}" ] && rm -f -- "$INBOX/$NAAM" "$INBOX/$NAAM.sig"
+  [ -n "${NAAM:-}" ] && rm -f -- "$INBOX/$NAAM" "$INBOX/$NAAM.sig" "$INBOX/$NAAM.goedkeuring.json"
   exit 2
 }
 
@@ -76,14 +113,43 @@ while IFS= read -r kandidaat; do
   if [[ "$kandidaat" =~ $PATROON ]]; then NAAM="$kandidaat"; VERSIE="${BASH_REMATCH[1]}"; fi
 done < <(find "$INBOX" -maxdepth 1 -mindepth 1 -type f -printf '%f\n' | LC_ALL=C sort)
 if [ -z "$NAAM" ]; then log "geen pakket in de inbox"; exit 0; fi
-[ -f "$INBOX/$NAAM.sig" ] && [ ! -L "$INBOX/$NAAM.sig" ] || weiger SIG_ONTBREEKT "Немає файлу підпису (.sig)." "Het handtekeningbestand (.sig) ontbreekt."
+if [ "$MODUS" = passkey ]; then
+  [ -f "$INBOX/$NAAM.goedkeuring.json" ] && [ ! -L "$INBOX/$NAAM.goedkeuring.json" ] || weiger GOEDKEURING_ONTBREEKT "Немає файлу схвалення passkey." "Het goedkeuringsbestand (passkey) ontbreekt."
+else
+  [ -f "$INBOX/$NAAM.sig" ] && [ ! -L "$INBOX/$NAAM.sig" ] || weiger SIG_ONTBREEKT "Немає файлу підпису (.sig)." "Het handtekeningbestand (.sig) ontbreekt."
+fi
 [ ! -L "$INBOX/$NAAM" ] || weiger SYMLINK "Пакет є символьним посиланням." "Het pakket is een symlink."
 status bezig CONTROLE "Перевіряю пакет $VERSIE." "Pakket $VERSIE wordt gecontroleerd." "$VERSIE"
 
 # ---- 2. kopie naar de eigen root-map; vanaf hier telt alleen de kopie ----
 timeout 120 head -c "$((MAX_BYTES + 1))" < "$INBOX/$NAAM" > "$WERK/pakket.tar.gz" || weiger KOPIE "Не вдалося скопіювати пакет." "Kopiëren van het pakket mislukt."
-timeout 10 head -c 8193 < "$INBOX/$NAAM.sig" > "$WERK/pakket.tar.gz.sig" || weiger KOPIE "Не вдалося скопіювати підпис." "Kopiëren van de handtekening mislukt."
 [ "$(stat -c %s "$WERK/pakket.tar.gz")" -le "$MAX_BYTES" ] || weiger TE_GROOT "Пакет завеликий." "Het pakket is te groot."
+if [ "$MODUS" = passkey ]; then
+  timeout 10 head -c 65537 < "$INBOX/$NAAM.goedkeuring.json" > "$WERK/goedkeuring.json" || weiger KOPIE "Не вдалося скопіювати схвалення." "Kopiëren van de goedkeuring mislukt."
+  [ "$(stat -c %s "$WERK/goedkeuring.json")" -le 65536 ] || weiger GOEDKEURING_ONGELDIG "Файл схвалення завеликий." "Het goedkeuringsbestand is te groot."
+
+  # ---- 3p. passkey-goedkeuring (root controleert zelf; de app kan niets goedkeuren) ----
+  read -r -a hulp <<< "$GOEDKEUR_HULP"
+  set +e
+  uitslag="$("${hulp[@]}" verifieer-goedkeuring "$WERK/pakket.tar.gz" "$WERK/goedkeuring.json" "$VERSIE" 2>"$WERK/goedkeuring.log")"
+  rc=$?
+  set -e
+  if [ "$rc" -ne 0 ]; then
+    mapfile -t melding < <(python3 -c 'import json, sys
+try:
+    d = json.loads(sys.argv[1] or "{}")
+except Exception:
+    d = {}
+schoon = lambda v, n: " ".join(str(v).split())[:n]
+print("".join(ch for ch in str(d.get("code", "")) if ch.isalnum() or ch == "_")[:40] or "GOEDKEURING_ONGELDIG")
+print(schoon(d.get("uk") or "Схвалення passkey відхилено.", 300))
+print(schoon(d.get("nl") or "De passkey-goedkeuring is geweigerd.", 300))' "$uitslag" 2>/dev/null || true)
+    weiger "${melding[0]:-GOEDKEURING_ONGELDIG}" "${melding[1]:-Схвалення passkey відхилено.}" "${melding[2]:-De passkey-goedkeuring is geweigerd.}"
+  fi
+  log "passkey-goedkeuring geldig voor $NAAM"
+  gebeurtenis GOEDGEKEURD info "Пакет $VERSIE схвалено passkey власника; починаю перевірку вмісту." "Pakket $VERSIE goedgekeurd met de passkey van de eigenaar; inhoud wordt gecontroleerd."
+else
+timeout 10 head -c 8193 < "$INBOX/$NAAM.sig" > "$WERK/pakket.tar.gz.sig" || weiger KOPIE "Не вдалося скопіювати підпис." "Kopiëren van de handtekening mislukt."
 [ "$(stat -c %s "$WERK/pakket.tar.gz.sig")" -le 8192 ] || weiger SIG_ONGELDIG "Підпис має неправильний розмір." "De handtekening heeft een onjuiste grootte."
 
 # ---- 3. handtekening ----
@@ -98,6 +164,7 @@ if ! ssh-keygen -Y verify -f "$ONDERTEKENAARS" -I "$IDENTITEIT" -n "$NAAMRUIMTE"
   weiger HANDTEKENING_ONGELDIG "Підпис недійсний: пакет змінено або підписано чужим ключем." "Ongeldige handtekening: het pakket is gewijzigd of met een andere sleutel ondertekend."
 fi
 log "handtekening geldig voor $NAAM"
+fi
 
 # ---- 4. inhoud: alleen gewone bestanden en mappen; daarna uitpakken met het 'data'-filter ----
 mkdir "$WERK/bron"
@@ -136,17 +203,19 @@ LAATSTE="$(cat "$WERK_ROOT/laatste-versie" 2>/dev/null || echo 00000000-000000)"
 [ -f "$BRON/deploy/installeer-app.sh" ] || weiger GEEN_INSTALLER "У пакеті немає deploy/installeer-app.sh." "deploy/installeer-app.sh ontbreekt in het pakket."
 
 # ---- 5. installeren (alleen ondertekende code) ----
-rm -f -- "$INBOX/$NAAM" "$INBOX/$NAAM.sig"
+rm -f -- "$INBOX/$NAAM" "$INBOX/$NAAM.sig" "$INBOX/$NAAM.goedkeuring.json"
 status bezig INSTALLEREN "Встановлюю випуск $VERSIE." "Release $VERSIE wordt geïnstalleerd." "$VERSIE"
 if [ -n "$INSTALLEER" ]; then cmd=( "$INSTALLEER" installeren "$BRON" ); else cmd=( bash "$BRON/deploy/installeer-app.sh" installeren "$BRON" ); fi
 if "${cmd[@]}" > "$WERK/installeer.log" 2>&1; then
   printf '%s\n' "$VERSIE" > "$WERK_ROOT/laatste-versie"
   # Oudere (nooit meer installeerbare) pakketten uit de inbox halen.
-  find "$INBOX" -maxdepth 1 -type f \( -name 'mijn-ruimte-*.tar.gz' -o -name 'mijn-ruimte-*.tar.gz.sig' \) -delete 2>/dev/null || true
+  find "$INBOX" -maxdepth 1 -type f \( -name 'mijn-ruimte-*.tar.gz' -o -name 'mijn-ruimte-*.tar.gz.sig' -o -name 'mijn-ruimte-*.tar.gz.goedkeuring.json' \) -delete 2>/dev/null || true
   status klaar OK "Випуск $VERSIE встановлено." "Release $VERSIE is geïnstalleerd." "$VERSIE"
+  [ "$MODUS" = passkey ] && gebeurtenis OK info "Випуск $VERSIE встановлено (схвалено passkey)." "Release $VERSIE is geïnstalleerd (goedgekeurd met passkey)."
   log "klaar: $VERSIE"
 else
   tail -n 40 "$WERK/installeer.log" >&2 || true
   status mislukt INSTALLATIE_MISLUKT "Встановлення не вдалося; попередній випуск лишився активним." "Installeren mislukt; de vorige release blijft actief." "$VERSIE"
+  [ "$MODUS" = passkey ] && gebeurtenis INSTALLATIE_MISLUKT fout "Встановлення $VERSIE не вдалося; попередній випуск лишився активним." "Installeren van $VERSIE mislukt; de vorige release blijft actief."
   exit 1
 fi
