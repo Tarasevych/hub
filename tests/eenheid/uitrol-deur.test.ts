@@ -275,7 +275,10 @@ function plafond(check: (n: string, ok: boolean, i?: string) => void) {
   check('plafond: geen runpy/exec(compile) in deploy/', !alles.some(([, t]) => /\brunpy\b|exec\(compile\(/.test(t)), alles.filter(([, t]) => /\brunpy\b/.test(t)).map(([f]) => f).join(','));
   check('plafond: geen NoNewPrivileges=no in deploy/', !alles.some(([, t]) => /^\s*NoNewPrivileges\s*=\s*(no|false)/mi.test(t)));
   // (herstel-vm.sh geeft de menselijke beheerder 'beheer' sudo; dat is geen app-pad. De app-gebruiker mijnruimte krijgt nergens sudo.)
-  check('plafond: geen sudo-regel voor de app-gebruiker in deploy/', !alles.some(([, t]) => /^[^#\n]*\bmijnruimte\b[^\n]*ALL\s*=/m.test(zonderCommentaar(t)) || /^[^#\n]*\$GEBRUIKER[^\n]*ALL\s*=\s*\(/m.test(zonderCommentaar(t))));
+  // Uitzondering: deploy/opdracht/mijn-ruimte-opdracht.sudoers is de gedocumenteerde, NIET geïnstalleerde noodoplossing voor methode 3
+  // (exact vijf vaste commando's; zie server-beheer.test.ts). De installer mag dat bestand nooit installeren.
+  check('plafond: sudo-noodoplossing wordt niet door de installer gebruikt', !/mijn-ruimte-opdracht\.sudoers/.test(lees('deploy/installeer-app.sh')));
+  check('plafond: geen sudo-regel voor de app-gebruiker in deploy/', !alles.filter(([f]) => f !== 'deploy/opdracht/mijn-ruimte-opdracht.sudoers').some(([, t]) => /^[^#\n]*\bmijnruimte\b[^\n]*ALL\s*=/m.test(zonderCommentaar(t)) || /^[^#\n]*\$GEBRUIKER[^\n]*ALL\s*=\s*\(/m.test(zonderCommentaar(t))));
   const inst = lees('deploy/installeer-app.sh');
   check('plafond: installer installeert geen root-hulp of patch meer', !/install[^\n]*mcp-doen|python3 "\$doel\/deploy\/patch-/.test(inst));
   check('plafond: installer schrijft niets naar /etc/sudoers.d', !/>\s*\/etc\/sudoers\.d|install[^\n]*\/etc\/sudoers\.d/.test(inst));
