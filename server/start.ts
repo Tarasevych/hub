@@ -18,6 +18,7 @@ import { DASHBOARD_HOST, SERVICE_HOSTS } from '../backend/deployment-identity';
 import { handler } from '../backend/index';
 import { attachAgentGateway, closeAllAgents } from '../backend/connectors-gateway';
 import { verouderdeEigenarenIntrekken } from '../backend/eigenaar-opschonen';
+import { purgeExpiredDiagnostics } from '../backend/browser-diag-archief';
 import { closePool, getPool } from './platform/pg';
 import { ownerEmail, rateLimit } from './platform/beveiliging';
 import { auditIpPepperGeldig } from './platform/audit';
@@ -394,6 +395,10 @@ if (isMain) {
   server.listen(PORT, HOST, () => console.log(`[server] luistert op http://${HOST}:${PORT} (dist: ${DIST_DIR})`));
   // Fase 3: verouderde eigenaarsrollen (adres ≠ OWNER_EMAIL) intrekken; faalt nooit de start.
   verouderdeEigenarenIntrekken().catch((err) => console.error('[eigenaar] opschonen mislukt:', (err as Error).message));
+  // Diagnose-archief: verlopen archieven (90 dagen) bij de start en daarna elke 6 uur verwijderen; faalt nooit de start.
+  const diagOpruimen = () => purgeExpiredDiagnostics((sql) => getPool('systeem').query(sql)).catch((err) => console.error('[diagnose] opruimen mislukt:', (err as Error).message));
+  diagOpruimen();
+  setInterval(diagOpruimen, 6 * 3600_000).unref();
   const stop = (signal: string) => {
     console.log(`[server] ${signal} ontvangen, stoppen...`);
     server.close(() => { closePool().finally(() => process.exit(0)); });
