@@ -1,0 +1,70 @@
+/* Мобільний вигляд списку листів (як у сервісів Google): велике фото ліворуч на всю висоту блоку, ім'я й час у першому рядку (час праворуч, біля краю),
+   тема й уривок нижче, три крапки з діями праворуч унизу, свайп вліво відкриває кнопки дій. Правила навмисно специфічні й з !important там, де
+   старіші файли (mail-thread-editor, google-mail-workspace, mail-reader-enhancements) задають власну розкладку. Наприкінці: повна ширина й зручні для пальця розміри. */
+.mail-row-swipe-actions{display:none}
+
+@media (max-width:720px){
+  html body .canonical-chrome.sidebar-drawer-mode:has(.mail-functional.google-workspace-active) .canonical-workspace{padding-left:0!important;padding-right:0!important}
+  html body .google-mail-workspace{width:100%;max-width:100%;margin:0}
+
+  html body .google-mail-workspace .google-mail-row.mail-row-semantic-order{position:relative;display:block;overflow:hidden;touch-action:pan-y;min-height:76px;border-bottom:1px solid var(--line,#e3e7eb);-webkit-tap-highlight-color:transparent}
+  html body .google-mail-workspace .google-mail-row.mail-row-semantic-order .mail-row-block-stream{
+    display:grid!important;grid-template-columns:48px minmax(0,1fr) auto!important;
+    grid-template-areas:"avatar sender date" "avatar subject subject" "avatar snippet snippet" "avatar attach attach"!important;
+    column-gap:12px!important;row-gap:2px!important;align-items:center!important;flex-wrap:nowrap!important;
+    padding:10px 46px 10px 12px!important;background:inherit;transform:translateX(var(--swipe-x,0px));transition:transform .18s ease;will-change:transform}
+  html body .google-mail-workspace .google-mail-row.mail-row-swiping .mail-row-block-stream{transition:none}
+  html body .google-mail-workspace .google-mail-row.mail-row-semantic-order .mail-row-block-stream>.mail-row-block{min-width:0;margin:0!important;flex:none!important}
+
+  html body .google-mail-workspace .mail-row-block-stream>[data-mail-density-block='avatar']{grid-area:avatar;grid-row:1 / span 4;align-self:start;justify-self:start;margin-top:2px!important}
+  html body .google-mail-workspace .mail-row-block-stream .mail-row-avatar{width:48px!important;height:48px!important;min-width:48px;font-size:16px}
+  html body .google-mail-workspace .mail-row-block-stream .mail-row-avatar img,html body .google-mail-workspace .mail-row-block-stream .mail-row-avatar svg{width:100%;height:100%}
+  html body .google-mail-workspace .mail-row-block-stream>[data-mail-density-block='sender']{grid-area:sender;align-self:center}
+  html body .google-mail-workspace .mail-row-block-stream>[data-mail-density-block='date']{grid-area:date;justify-self:end;align-self:center;padding:0!important;width:auto!important;position:static!important}
+  html body .google-mail-workspace .mail-row-block-stream>[data-mail-density-block='subject']{grid-area:subject;flex-basis:auto!important}
+  html body .google-mail-workspace .mail-row-block-stream>[data-mail-density-block='snippet']{grid-area:snippet;flex-basis:auto!important}
+  html body .google-mail-workspace .mail-row-block-stream>[data-mail-density-block='attachments']{grid-area:attach;margin-top:4px!important}
+  /* на дотик :hover «залипає» після торкання — час не має зникати */
+  html body .google-mail-workspace .google-mail-row:hover .mail-row-right-meta time,html body .google-mail-workspace .google-mail-row:focus-within .mail-row-right-meta time{opacity:1!important}
+
+  html body .google-mail-workspace .mail-row-block-stream .mail-row-sender-copy strong{display:block;font-size:15px!important;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html body .google-mail-workspace .mail-row-block-stream .mail-row-sender-copy small,html body .google-mail-workspace .mail-row-block-stream .mail-row-account{display:none}
+  html body .google-mail-workspace .mail-row-block-stream .mail-row-subject-block strong{display:block;font-size:14.5px!important;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html body .google-mail-workspace .mail-row-block-stream .mail-row-snippet-block small{display:block;font-size:13.5px!important;line-height:1.3;color:var(--muted,#64748b);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html body .google-mail-workspace .mail-row-block-stream .mail-row-date-block time{font-size:12px!important;white-space:nowrap}
+
+  /* три крапки: єдина кнопка дій праворуч унизу; меню — «шторка» знизу екрана */
+  html body .google-mail-workspace .google-mail-row .mail-row-hover-actions{position:absolute!important;right:4px!important;bottom:4px!important;top:auto!important;left:auto!important;display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto;background:transparent!important;box-shadow:none!important;padding:0!important;gap:0!important;transition:opacity .12s ease}
+  html body .google-mail-workspace .google-mail-row .mail-row-hover-actions>button{display:none!important}
+  html body .google-mail-workspace .google-mail-row .mail-row-actions-overflow{display:grid}
+  html body .google-mail-workspace .google-mail-row .mail-row-actions-more{display:grid!important;place-items:center;width:44px;height:44px;border-radius:50%;color:var(--muted,#64748b)}
+  html body .google-mail-workspace .google-mail-row .mail-row-actions-more svg{width:22px;height:22px}
+  html body .google-mail-workspace .google-mail-row .mail-row-actions-more [role='tooltip']{display:none}
+  html body .google-mail-workspace .google-mail-row.mail-row-swiping .mail-row-hover-actions,html body .google-mail-workspace .google-mail-row.mail-row-swipe-open .mail-row-hover-actions{opacity:0!important;pointer-events:none!important}
+  html body .google-mail-workspace .mail-row-action-popover{position:fixed!important;left:8px!important;right:8px!important;bottom:8px!important;top:auto!important;max-height:72vh;overflow:auto;z-index:620;border-radius:16px;box-shadow:0 -6px 30px rgba(15,23,42,.28)}
+  html body .google-mail-workspace .mail-row-action-popover .mail-row-action-menu-item{min-height:52px;font-size:15px}
+
+  /* свайп вліво: кнопки дій під листом */
+  html body .google-mail-workspace .mail-row-swipe-actions{position:absolute;top:0;right:0;bottom:0;width:216px;display:flex;z-index:0;visibility:hidden}
+  html body .google-mail-workspace .google-mail-row.mail-row-swiping .mail-row-swipe-actions,html body .google-mail-workspace .google-mail-row.mail-row-swipe-open .mail-row-swipe-actions{visibility:visible}
+  html body .google-mail-workspace .mail-row-swipe-actions button{flex:1 1 0;display:grid;place-content:center;justify-items:center;gap:4px;border:0;border-radius:0;color:#fff;font-family:inherit;font-weight:600;font-size:12px;line-height:1.1;cursor:pointer;min-width:0;padding:0 4px}
+  html body .google-mail-workspace .mail-row-swipe-actions button svg{width:24px;height:24px}
+  html body .google-mail-workspace .mail-row-swipe-actions .archive{background:#2f6f73}
+  html body .google-mail-workspace .mail-row-swipe-actions .read{background:#475569}
+  html body .google-mail-workspace .mail-row-swipe-actions .trash{background:#dc2626}
+  html body .google-mail-workspace .mail-row-swipe-actions button:disabled{opacity:.6}
+
+  /* зручні для пальця розміри верхньої панелі та пагінації */
+  html body .mail-top-command-bar{min-height:52px;top:4px}
+  html body .mail-top-search-shell{min-height:46px;grid-template-columns:44px minmax(0,1fr) auto auto}
+  html body .mail-top-search-shell input{font-size:16px}
+  html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{width:44px;height:44px}
+  html body .mail-top-interface-actions{gap:0}
+  html body .google-mail-workspace .mail-category-pager button{min-width:44px;min-height:40px}
+  html body .google-mail-workspace>h1.mail-workspace-heading{font-size:20px;padding:14px 16px 8px}
+  html body .mail-reader-icon-action{min-width:44px;min-height:44px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  html body .google-mail-workspace .google-mail-row.mail-row-semantic-order .mail-row-block-stream{transition:none}
+}
