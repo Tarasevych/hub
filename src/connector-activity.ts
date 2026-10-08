@@ -135,7 +135,8 @@ export function useConnectorActivity(scope: string, lang: Lang, toast: (notice: 
     let alive = true;
     const tick = () => { if (alive && !document.hidden) void poll(); };
     tick();
-    const timer = window.setInterval(tick, 8000);
+    // Op de MCP-pagina (waar de gebruiker op beslissingen wacht) elke 8 s; elders (bijv. de mail op een telefoon) zeldzamer: minder netwerk, batterij en CPU.
+    const timer = window.setInterval(tick, serviceFromLocation() === 'mcp' ? 8000 : 30000);
     const visible = () => { if (!document.hidden) tick(); };
     document.addEventListener('visibilitychange', visible);
     return () => { alive = false; window.clearInterval(timer); document.removeEventListener('visibilitychange', visible); };

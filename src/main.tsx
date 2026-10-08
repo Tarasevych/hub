@@ -5,6 +5,7 @@ import './ai-site-actions'; // acties voor AI-assistenten via de browserextensie
 import './browser-agent-heartbeat'; // bevestigt vanuit een ingelogde pagina dat de aangezette browserextensie actief mag blijven
 import App from './App';
 import './index.css';
+import './mobile-ux.css';
 
 createRoot(document.getElementById('root')!).render(<App />);
 

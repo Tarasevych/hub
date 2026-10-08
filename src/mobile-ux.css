@@ -1,0 +1,10 @@
+/* Загальні мобільні покращення оболонки. */
+.canonical-checking-spinner{display:block;width:30px;height:30px;margin:auto;border:3px solid var(--line,#dce1e6);border-top-color:var(--accent,#2f6f73);border-radius:50%;animation:canonical-checking-rot .8s linear infinite}
+.canonical-signed-out.checking{display:grid;place-items:center;min-height:60vh}
+@keyframes canonical-checking-rot{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.canonical-checking-spinner{animation-duration:2.4s}}
+@media (max-width:700px){
+  /* бокове меню: затемнення клікабельне, елементи меню достатньо великі */
+  .canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-sidebar-scrim.drawer{cursor:pointer}
+  .canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-sidebar button,.canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-sidebar a{min-height:44px}
+}
