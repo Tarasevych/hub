@@ -32,6 +32,8 @@ export const DOOR_TOOLS: Array<{ name: string; uk: string; nl: string; args: Rec
   { name: "list_releases", uk: "Назви випусків на диску.", nl: "Namen van de releases op schijf.", args: {} },
   { name: "list_dir", uk: "Список одного каталогу випуску.", nl: "Lijst van één map in de release.", args: { path: "src" } },
   { name: "read_file", uk: "Текст одного файлу випуску. Секрети відмовляються.", nl: "Tekst van één releasebestand. Geheimen worden geweigerd.", args: { path: "package.json" } },
+  { name: "server_status", uk: "Стан сервера через броньовану команду (лише читання).", nl: "Serverstatus via de gepantserde opdracht (alleen lezen).", args: {} },
+  { name: "server_releases", uk: "Випуски на сервері з комітами (лише читання).", nl: "Releases op de server met commits (alleen lezen).", args: {} },
   { name: "permission_flags", uk: "Які перемикачі зараз увімкнені (задає власник у файлі на сервері).", nl: "Welke schakelaars nu aan staan (de eigenaar zet ze in een bestand op de server).", args: {} },
 ];
 

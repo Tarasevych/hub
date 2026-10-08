@@ -19,6 +19,7 @@ import { handler } from '../backend/index';
 import { attachAgentGateway, closeAllAgents } from '../backend/connectors-gateway';
 import { verouderdeEigenarenIntrekken } from '../backend/eigenaar-opschonen';
 import { purgeExpiredDiagnostics } from '../backend/browser-diag-archief';
+import { neemRootGebeurtenissenOp } from '../backend/server-beheer';
 import { closePool, getPool } from './platform/pg';
 import { ownerEmail, rateLimit } from './platform/beveiliging';
 import { auditIpPepperGeldig } from './platform/audit';
@@ -399,6 +400,10 @@ if (isMain) {
   const diagOpruimen = () => purgeExpiredDiagnostics((sql) => getPool('systeem').query(sql)).catch((err) => console.error('[diagnose] opruimen mislukt:', (err as Error).message));
   diagOpruimen();
   setInterval(diagOpruimen, 6 * 3600_000).unref();
+  // Root-gebeurtenissen (GitOps, gepantserde opdracht) uit het root-statusbestand in de audit opnemen; alleen lezen.
+  const rootAudit = () => neemRootGebeurtenissenOp().catch((err) => console.error('[beheer] audit opnemen mislukt:', (err as Error).message));
+  rootAudit();
+  setInterval(rootAudit, 5 * 60_000).unref();
   const stop = (signal: string) => {
     console.log(`[server] ${signal} ontvangen, stoppen...`);
     server.close(() => { closePool().finally(() => process.exit(0)); });

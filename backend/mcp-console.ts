@@ -18,6 +18,7 @@ import { auditToevoegen } from "../server/platform/audit";
 import { getPool } from "../server/platform/pg";
 import type { RouterMiddleware } from "../server/platform/router";
 import { alsGebruiker } from "./ai-grants";
+import { OPDRACHT_STANDAARD, OPDRACHT_WERKWOORDEN, isWerkwoord, leesOpdrachtResultaat, voerOpdrachtUit, type Werkwoord } from "./server-beheer";
 
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
 type SessionFail = { errorCode: string };
@@ -50,6 +51,12 @@ const PERMISSIONS = [
   { id: "board", group: "agent", uk: "Писати дошку", nl: "Bord schrijven", detailUk: "Ваші задачі й нотатки (кожен користувач має свою дошку).", detailNl: "Uw taken en notities (elke gebruiker heeft een eigen bord).", def: true },
   { id: "tokens", group: "agent", uk: "Випускати токени агентів", nl: "Agenttokens uitgeven", detailUk: "Токен показується один раз і діє 30 днів. Потрібне повторне підтвердження входу.", detailNl: "Het token verschijnt één keer en geldt 30 dagen. Vraagt een nieuwe bevestiging van de aanmelding.", def: true },
   { id: "uitrol", group: "release", uk: "Викладати підписаний випуск", nl: "Ondertekende release plaatsen", detailUk: "Лише підписаний пакет через двері; ввімкнення — тільки у файлі /etc/mijn-ruimte/mcp-rechten.json на сервері.", detailNl: "Alleen een ondertekend pakket via de deur; aanzetten alleen in /etc/mijn-ruimte/mcp-rechten.json op de server.", def: false },
+  { id: "gitops", group: "release", uk: "GitOps: підписані теги з GitHub", nl: "GitOps: ondertekende tags uit GitHub", detailUk: "Сервер сам забирає теги uitrol-… і встановлює лише підписані вашим ключем.", detailNl: "De server haalt zelf uitrol-…-tags op en installeert alleen tags met uw handtekening.", def: false },
+  { id: "opdracht.status", group: "server", uk: "Стан сервера", nl: "Serverstatus", detailUk: "Лише читання.", detailNl: "Alleen lezen.", def: OPDRACHT_STANDAARD.status },
+  { id: "opdracht.releases", group: "server", uk: "Список випусків", nl: "Lijst van releases", detailUk: "Лише читання.", detailNl: "Alleen lezen.", def: OPDRACHT_STANDAARD.releases },
+  { id: "opdracht.backup", group: "server", uk: "Резервна копія на запит", nl: "Back-up op verzoek", detailUk: "Запускає звичайну резервну копію.", detailNl: "Start de gewone back-up.", def: OPDRACHT_STANDAARD.backup },
+  { id: "opdracht.uitrol-nu", group: "server", uk: "Перевірити випуски зараз", nl: "Nu op releases controleren", detailUk: "Запускає GitOps і перевірку пакета; встановлюється лише підписане. Потрібне підтвердження входу.", detailNl: "Start GitOps en de pakketcontrole; alleen ondertekende code wordt geïnstalleerd. Vraagt een bevestiging van de aanmelding.", def: OPDRACHT_STANDAARD["uitrol-nu"] },
+  { id: "opdracht.terugdraaien", group: "server", uk: "Відкат до попереднього випуску", nl: "Terug naar de vorige release", detailUk: "Не частіше ніж раз на 10 хв, з підтвердженням входу.", detailNl: "Hooguit één keer per 10 minuten, met bevestiging van de aanmelding.", def: OPDRACHT_STANDAARD.terugdraaien },
 ] as const;
 type PermissionId = (typeof PERMISSIONS)[number]["id"];
 const permPath = () => process.env.MCP_RECHTEN_PAD || "/etc/mijn-ruimte/mcp-rechten.json";
@@ -59,6 +66,9 @@ async function readPerms(): Promise<Record<PermissionId, boolean>> {
     const data = JSON.parse(await readFile(permPath(), "utf8")) as Record<string, unknown>;
     if (typeof data.read === "boolean") base.read = data.read;
     if (typeof data.uitrol === "boolean") base.uitrol = data.uitrol;
+    if (typeof data.gitops === "boolean") base.gitops = data.gitops;
+    const op = data.opdracht && typeof data.opdracht === "object" ? (data.opdracht as Record<string, unknown>) : {};
+    for (const w of OPDRACHT_WERKWOORDEN) if (typeof op[w] === "boolean") base[`opdracht.${w}`] = op[w] as boolean;
   } catch { /* standaard */ }
   return base;
 }
@@ -146,12 +156,15 @@ export async function importLegacyConsole(ownerId: string): Promise<{ tasks: num
 }
 
 // ---------------------------------------------------------------- hulpmiddelen (console en agenttokens)
-const OWNER_TOOLS = new Set(["list_services", "hub_overview", "health_check", "get_service", "site_health", "release_info", "list_dir", "read_file", "host_status", "list_releases", "permission_flags", "get_architecture", "get_roadmap", "agent_handshake", "admin_list_access", "dashboard_usage"]);
+const OWNER_TOOLS = new Set(["list_services", "hub_overview", "health_check", "get_service", "site_health", "release_info", "list_dir", "read_file", "host_status", "list_releases", "permission_flags", "get_architecture", "get_roadmap", "agent_handshake", "admin_list_access", "dashboard_usage", "server_status", "server_releases"]);
+/** Schrijvende serveropdrachten: alleen via de site (eigenaar + step-up), nooit via een agenttoken of de console-aanroep. */
+const SITE_ONLY_TOOLS = new Set(["server_backup", "server_uitrol_nu", "server_terugdraaien"]);
 const BOARD_TOOLS = new Set(["list_tasks", "list_notes", "estate_search", "upsert_task", "upsert_note"]);
 const REMOVED_TOOLS = new Set(["write_staging", "list_staging", "read_staging", "install_release", "update_door", "start_backup"]);
 
 async function runTool(userId: string, owner: boolean, name: string, args: Record<string, unknown>, author: string) {
   if (REMOVED_TOOLS.has(name)) throw new Error("TOOL_REMOVED: uitrollen alleen met een ondertekend pakket (RUNBOOK-VEILIGE-UITROL.md)");
+  if (SITE_ONLY_TOOLS.has(name)) throw new Error("STEP_UP_REQUIRED: alleen op de site (eigenaar + bevestiging van de aanmelding)");
   const flags = await readPerms();
   if (BOARD_TOOLS.has(name)) {
     if (name === "upsert_task" || name === "upsert_note") {
@@ -206,6 +219,13 @@ async function runTool(userId: string, owner: boolean, name: string, args: Recor
     return { dir, releases: (await readdir(dir)).filter((row) => /^\d{8}-\d{6}$/.test(row)).sort() };
   }
   if (name === "permission_flags") return flags;
+  if (name === "server_status" || name === "server_releases") {
+    const w: Werkwoord = name === "server_status" ? "status" : "releases";
+    if (!flags[`opdracht.${w}`]) throw new Error(`PERMISSION_OFF:opdracht.${w}`);
+    const r = await voerOpdrachtUit(w);
+    if (!r.ok) throw new Error(r.code);
+    return r.resultaat?.gegevens ?? {};
+  }
   throw new Error("TOOL_NOT_ON_DOOR");
 }
 
@@ -329,6 +349,16 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       return run(ctx, auth);
     }) as RouterMiddleware;
   const who = (auth: SessionOk) => auth.user.email || auth.user.id;
+  const opdrachtAntwoord = async (auth: SessionOk, w: Werkwoord) => {
+    if (!(await readPerms())[`opdracht.${w}`]) return error(`PERMISSION_OFF:opdracht.${w}`, 403);
+    const started = Date.now();
+    const r = await voerOpdrachtUit(w);
+    await logCall(auth.user.id, { method: "server.opdracht", detail: `${w} ${r.code}`, transport: "console", agent: who(auth), ok: r.ok, ms: Date.now() - started });
+    if (w !== "status" && w !== "releases") {
+      await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: `mcp_server_opdracht_${w.replace("-", "_")}`, type: "beveiliging", result: r.ok ? "ok" : "failure", details: { werkwoord: w, code: r.code } }).catch(() => undefined);
+    }
+    return json({ ok: r.ok, code: r.code, gestart: !!r.gestart, resultaat: r.resultaat ?? null }, r.ok ? 200 : r.code === "UIT" ? 403 : 502);
+  };
 
   return {
     "POST /api/mcp/health": [gate("owner", {}, async (_ctx, auth) => {
@@ -443,6 +473,25 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       if (!row) return error("DOWNLOAD_ID_INVALID", 403);
       try { if (!(await stat(row.file)).isFile()) return error("BACKUP_MISSING", 404); } catch { return error("BACKUP_MISSING", 404); }
       return fileDownload(row.file, row.filename, "application/octet-stream");
+    })],
+    // Methode 3 (gepantserde opdracht): vaste werkwoorden, root controleert alles opnieuw. Zie backend/server-beheer.ts.
+    "POST /api/mcp/server/lezen": [gate("owner", {}, async (ctx, auth) => {
+      const w = String(bodyOf(ctx.body).werkwoord || "");
+      if (w !== "status" && w !== "releases") return error("OPDRACHT_ONBEKEND", 400);
+      return opdrachtAntwoord(auth, w);
+    })],
+    "POST /api/mcp/server/backup": [gate("owner", {}, async (_ctx, auth) => opdrachtAntwoord(auth, "backup"))],
+    "POST /api/mcp/server/uitrol-nu": [gate("owner", { stepUp: true }, async (_ctx, auth) => opdrachtAntwoord(auth, "uitrol-nu"))],
+    "POST /api/mcp/server/terugdraaien": [gate("owner", { stepUp: true }, async (ctx, auth) => {
+      if (bodyOf(ctx.body).bevestig !== "TERUGDRAAIEN") return error("BEVESTIGING_VEREIST", 400);
+      const limit = await rateLimit("mcp-opdracht:terugdraaien", 1, 600);
+      if (!limit.ok) return error("RATE_LIMITED", 429);
+      return opdrachtAntwoord(auth, "terugdraaien");
+    })],
+    "POST /api/mcp/server/resultaat": [gate("owner", {}, async (ctx) => {
+      const w = String(bodyOf(ctx.body).werkwoord || "");
+      if (!isWerkwoord(w)) return error("OPDRACHT_ONBEKEND", 400);
+      return json({ resultaat: await leesOpdrachtResultaat(w) });
     })],
     // Agenttoken (tvh_…): per gebruiker, met vervaldatum; serverbrede hulpmiddelen alleen als de eigenaar van het token de eigenaar is.
     "POST /api/mcp/agent": [async (raw) => {
