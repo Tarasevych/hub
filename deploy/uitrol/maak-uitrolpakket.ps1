@@ -3,7 +3,7 @@
   Створює й підписує пакет випуску на ПК власника.
 
   Gebruik / Використання:
-    powershell -ExecutionPolicy Bypass -File deploy\uitrol\maak-uitrolpakket.ps1 [-Bron C:\pad\naar\repo] [-Sleutel T:\mijn-ruimte-uitrol\uitrolsleutel] [-Uit $env:USERPROFILE\Desktop]
+    powershell -ExecutionPolicy Bypass -File deploy\uitrol\maak-uitrolpakket.ps1 [-Bron C:\pad\naar\repo] [-Sleutel T:\mijn-ruimte\geheim\uitrol-sleutel] [-Uit $env:USERPROFILE\Desktop]
 
   Resultaat / Результат:
     mijn-ruimte-<JJJJMMDD-UUMMSS>.tar.gz       (git archive van HEAD + UITROL-VERSIE)
@@ -15,7 +15,7 @@
 #>
 param(
   [string]$Bron = (Get-Location).Path,
-  [string]$Sleutel = 'T:\mijn-ruimte-uitrol\uitrolsleutel',
+  [string]$Sleutel = 'T:\mijn-ruimte\geheim\uitrol-sleutel',
   [string]$Uit = (Get-Location).Path
 )
 $ErrorActionPreference = 'Stop'
@@ -41,7 +41,7 @@ if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$doel.sig")) { Stop-Met "Підпи
 # Zelfcontrole met de publieke sleutel (zelfde controle als op de server).
 $pub = (Get-Content "$Sleutel.pub" -Raw).Trim()
 $ond = Join-Path $env:TEMP "uitrol-ondertekenaars-$versie"
-Set-Content -Path $ond -Value "uitrol@mijn-ruimte namespaces=`"mijn-ruimte-uitrol`" $pub" -Encoding ascii
+Set-Content -Path $ond -Value "uitrol@mijn-ruimte namespaces=`"mijn-ruimte-uitrol,git`" $pub" -Encoding ascii
 cmd /c "ssh-keygen -Y verify -f `"$ond`" -I uitrol@mijn-ruimte -n mijn-ruimte-uitrol -s `"$doel.sig`" < `"$doel`""
 $ok = $LASTEXITCODE; Remove-Item $ond -Force
 if ($ok -ne 0) { Stop-Met "Перевірка підпису не пройшла." "Controle van de handtekening mislukt." }
