@@ -3,6 +3,7 @@
 // users.drafts.create/update/delete en users.messages.send. Geen IMAP/SMTP.
 import { error, json } from '../server/platform';
 import { rateLimit } from '../server/platform/beveiliging';
+import { denyMutation } from './rbac';
 import { getPool } from '../server/platform/pg';
 import { googleSuiteMailProviderSnapshot, googleSuitePrincipalAccessToken } from './google-suite-onboarding';
 import { mailHtmlToPlainText, normalizeOutboundMailHtml } from './mail-compose-html';
@@ -274,37 +275,39 @@ const MESSAGE_FOR: Record<string, number> = {
 };
 
 export function createMailComposeRoutes(deps: Deps) {
-  const gate = async (ctx: { event: Record<string, unknown>; body: unknown }) => {
+  // M2: schrijvende routes (opslaan, verwijderen, versturen, inplannen, annuleren) vragen ook het recht mail.write;
+  // een kijker (viewer/beperkt) mag alleen lijsten en lezen.
+  const gateOf = async (ctx: { event: Record<string, unknown>; body: unknown }, write: boolean) => {
     const auth = await deps.requireSession(ctx.event, ctx.body);
-    if ('errorCode' in auth || auth.service !== 'mail' || auth.user.status !== 'approved') return null;
-    return auth;
+    if ('errorCode' in auth || auth.service !== 'mail' || auth.user.status !== 'approved') return { deny: error('OWNER_MAIL_SESSION_REQUIRED', 403) } as const;
+    const nee = write ? denyMutation(auth.user as never, 'mail.write') : undefined;
+    return nee ? ({ deny: nee } as const) : ({ auth } as const);
   };
-  const denied = () => error('OWNER_MAIL_SESSION_REQUIRED', 403);
   const limited = async (userId: string, kind: string, max: number) => (await rateLimit(`mail-compose:${kind}:${userId}`, max, 600, { failClosed: true })).ok;
 
   return {
     'POST /api/owner/mail/compose/draft/save': [async (ctx: any) => {
-      const auth = await gate(ctx); if (!auth) return denied();
+      const g = await gateOf(ctx, true); if ('deny' in g) return g.deny; const auth = g.auth;
       if (!(await limited(auth.user.id, 'draft', 600))) return error('RATE_LIMITED', 429);
       const out = await saveDraft(auth.user.id, bodyOf(ctx.body) as ComposeInput);
       if ('error' in out) return error(out.error, MESSAGE_FOR[out.error] ?? 400);
       return json({ ok: true, draft: { ...out.draft, html: undefined, plainText: undefined } });
     }],
     'POST /api/owner/mail/compose/draft/list': [async (ctx: any) => {
-      const auth = await gate(ctx); if (!auth) return denied();
+      const g = await gateOf(ctx, false); if ('deny' in g) return g.deny; const auth = g.auth;
       return json({ ok: true, drafts: (await listDrafts(auth.user.id)).map((d) => ({ ...d, html: undefined })) });
     }],
     'POST /api/owner/mail/compose/draft/get': [async (ctx: any) => {
-      const auth = await gate(ctx); if (!auth) return denied();
+      const g = await gateOf(ctx, false); if ('deny' in g) return g.deny; const auth = g.auth;
       const draft = await getDraft(auth.user.id, String(bodyOf(ctx.body).localId ?? ''));
       return draft ? json({ ok: true, draft }) : error('MAIL_DRAFT_NOT_FOUND', 404);
     }],
     'POST /api/owner/mail/compose/draft/delete': [async (ctx: any) => {
-      const auth = await gate(ctx); if (!auth) return denied();
+      const g = await gateOf(ctx, true); if ('deny' in g) return g.deny; const auth = g.auth;
       return (await deleteDraft(auth.user.id, String(bodyOf(ctx.body).localId ?? ''))) ? json({ ok: true }) : error('MAIL_DRAFT_NOT_FOUND', 404);
     }],
     'POST /api/owner/mail/compose/send': [async (ctx: any) => {
-      const auth = await gate(ctx); if (!auth) return denied();
+      const g = await gateOf(ctx, true); if ('deny' in g) return g.deny; const auth = g.auth;
       if (!(await limited(auth.user.id, 'send', 60))) return error('RATE_LIMITED', 429);
       const body = bodyOf(ctx.body);
       const requestId = String(body.requestId ?? '').trim();
@@ -315,7 +318,7 @@ export function createMailComposeRoutes(deps: Deps) {
       return json({ ok: out.item.status === 'sent', item: out.item });
     }],
     'POST /api/owner/mail/compose/schedule': [async (ctx: any) => {
-      const auth = await gate(ctx); if (!auth) return denied();
+      const g = await gateOf(ctx, true); if ('deny' in g) return g.deny; const auth = g.auth;
       if (!(await limited(auth.user.id, 'schedule', 60))) return error('RATE_LIMITED', 429);
       const body = bodyOf(ctx.body);
       const requestId = String(body.requestId ?? '').trim();
@@ -328,12 +331,14 @@ export function createMailComposeRoutes(deps: Deps) {
       return json({ ok: true, item: out.item });
     }],
     'POST /api/owner/mail/compose/scheduled/list': [async (ctx: any) => {
-      const auth = await gate(ctx); if (!auth) return denied();
+      const g = await gateOf(ctx, false); if ('deny' in g) return g.deny; const auth = g.auth;
       return json({ ok: true, items: await listScheduled(auth.user.id, bodyOf(ctx.body).includeFinished !== false) });
     }],
     'POST /api/owner/mail/compose/scheduled/cancel': [async (ctx: any) => {
-      const auth = await gate(ctx); if (!auth) return denied();
-      const ok = await cancelScheduled(auth.user.id, String(bodyOf(ctx.body).id ?? ''));
+      const g = await gateOf(ctx, true); if ('deny' in g) return g.deny; const auth = g.auth;
+      const queueId = String(bodyOf(ctx.body).id ?? '');
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queueId)) return error('MAIL_SCHEDULED_NOT_CANCELLABLE', 409);
+      const ok = await cancelScheduled(auth.user.id, queueId);
       if (ok) await deps.audit(auth.user.id, 'owner.mail.compose.cancelled', 'success', { queueId: String(bodyOf(ctx.body).id ?? '') });
       return ok ? json({ ok: true }) : error('MAIL_SCHEDULED_NOT_CANCELLABLE', 409);
     }],
