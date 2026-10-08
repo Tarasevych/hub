@@ -38,6 +38,11 @@ per 10 minuten terug naar de vorige, al geïnstalleerde release. Dat is hooguit 
 code als root**. Daarom staat `terugdraaien` standaard uit. polkit kan de app en de MCP-deur niet uit elkaar houden (beide draaien als
 `mijnruimte`); de deur gebruikt de opdrachten niet, maar de grens is dezelfde.
 
+**Aanvulling (branch `passkey-schvalennya`): methode 2b, goedkeuren met de passkey van de eigenaar.** Naast methode 2 (pakket ondertekend
+op de PC) kan een voorbereider (agent of account met een tijdelijke grant) een **onondertekend** pakket uploaden; het wordt pas geïnstalleerd
+als de eigenaar het op zijn telefoon met een passkey goedkeurt, en root controleert die passkey-handtekening zelf. Zie §13. Schakelaar
+`"passkey-goedkeuring"` (standaard `false`). Methode 2 blijft ongewijzigd werken.
+
 ## 1. Wat er veranderd is ten opzichte van de oude deur (en waarom)
 
 | Vroeger (audit C1/C3/C4) | Nu |
@@ -272,6 +277,7 @@ Alles in `/etc/mijn-ruimte/mcp-rechten.json` (root:mijnruimte 0640). Volledig vo
   "read": true,
   "uitrol": false,
   "gitops": false,
+  "passkey-goedkeuring": false,
   "opdracht": { "status": true, "releases": true, "backup": true, "uitrol-nu": true, "terugdraaien": false }
 }
 ```
@@ -350,3 +356,102 @@ ls -l /etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules /usr/local/sbin/mijn-r
 
 Zie `deploy/pc-uitleg/T-geheim-uitrol-sleutel-UITLEG-LEESMIJ.txt` (eerst Oekraïens, daarna Nederlands). Kopieer dat bestand als
 `UITLEG-LEESMIJ.txt` naast de sleutel.
+
+## 13. Updates goedkeuren met een passkey op de telefoon (methode 2b)
+
+### 13.1 Hoe het werkt
+
+```
+Voorbereider (agent tvh_…, MCP-koppeling of account met grant «Кому дозволено», ≤ 30 dagen, intrekbaar)
+  └─ deploy/uitrol/maak-voorstelpakket.sh → MCP uitrol_voorstel_begin/stuk/klaar (of POST /api/uitrol/voorstel/*)
+       → /srv/data/uploads/uitrol-voorstellen/<id>.tar.gz, status 'wacht-op-goedkeuring' (installeert NIETS)
+Eigenaar: admin.tarasevych.com → «Оновлення» / «Updates» → «Схвалити й встановити»
+  └─ challenge = sha256("mijn-ruimte-goedkeuring/v1", "goedkeuren", voorstel-id, versie, sha256, nonce, vervaltijd ≤ 5 min), eenmalig
+  └─ navigator.credentials.get(userVerification: required) → telefoon: vingerafdruk/gezicht/pincode
+  └─ app controleert vooraf (snelle melding) en legt pakket + .goedkeuring.json in /srv/mijn-ruimte/goedkeur-inbox, tikt `aanvraag` aan
+mijn-ruimte-goedkeuring.path (root) → mijn-ruimte-uitrol --goedkeuring
+  └─ kopie van het pakket naar de root-werkmap → mijn-ruimte-passkey verifieer-goedkeuring (root, omgeving gewist):
+       sleutel uit /etc/mijn-ruimte/goedkeur-passkeys.json (root), sha256 van root's EIGEN kopie, rpId, origin, UV, vervaltijd,
+       nonce nooit eerder gezien (/var/lib/mijn-ruimte/goedkeuring/staat.json, 0600), signCount
+  └─ daarna precies dezelfde stappen als methode 2: inhoudscontrole, uitpakken, installeer-app.sh, gezondheid, rollback
+```
+
+* **Root vertrouwt de app niet.** Alles wat de app schrijft (pakket, `.goedkeuring.json`, aanmeldingen) is invoer. De sha256 komt uit root's
+  eigen kopie, de publieke sleutels uit het root-bestand, de replay-opslag staat in een root-map. Een gecompromitteerde app kan dus geen
+  pakket laten installeren (geen passkey-handtekening over díe sha256) en geen sleutel toevoegen (het root-bestand is alleen-lezen voor de app;
+  een nieuwe sleutel vraagt een assertie van een bestaande sleutel of SSH). Wat ze wél kan: verzoeken weggooien of weigeren (hinder).
+* **Eenmalig en gebonden.** De challenge bevat voorstel-id, versie, sha256, nonce en vervaltijd (≤ 5 min, CHECK in de database). De app
+  verbruikt de challenge atomisch; root registreert de nonce vóór de installatie. Dezelfde assertie werkt nooit twee keer, ook niet na een
+  mislukte installatie.
+* **Alleen de eigenaar.** Routes vereisen sessie op admin.tarasevych.com + rol owner + OWNER_EMAIL; registreren en grants geven vragen
+  step-up. Agents (MCP-console `/api/mcp/agent` en de MCP-connector) zien alleen `uitrol_voorstel_begin|stuk|klaar|status|annuleren`, en
+  alleen met een geldige grant; elke naam die op goedkeuren lijkt, wordt geweigerd (`ALLEEN_EIGENAAR_MET_PASSKEY`).
+* **rpId = `admin.tarasevych.com`** (de pagina «Оновлення» staat in Admin). Instelbaar in het root-bestand (`rpId`, `origins`); een passkey
+  is aan zijn rpId gebonden, dus na een wijziging opnieuw aanmelden.
+* Attestation = `none`: het type authenticator wordt niet gecontroleerd; het vertrouwen komt uit de bevestiging via SSH (eerste sleutel) of
+  een bestaande sleutel. Gesynchroniseerde passkeys (iCloud/Google) geven vaak signCount 0; dat is toegestaan (0/0).
+
+### 13.2 Eenmalig: installeren en de eerste passkey (bootstrap)
+
+```bash
+ssh beheer@10.77.0.10
+sudo git clone --branch passkey-schvalennya https://github.com/Tarasevych/hub.git /root/hub-passkey && cd /root/hub-passkey && git log -1
+sudo bash deploy/installeer-app.sh installeren /root/hub-passkey        # migratie 0022, units, hulp, leeg sleutelbestand
+systemctl status mijn-ruimte-goedkeuring.path mijn-ruimte-goedkeur-sleutels.path --no-pager
+sudo mijn-ruimte-passkey lijst                                          # rpId admin.tarasevych.com, schakelaar uit, (geen sleutels)
+```
+
+Daarna op de **telefoon** (ingelogd als eigenaar): `admin.tarasevych.com` → «Оновлення» → «Мої passkey» → naam invullen → «Додати passkey»
+(step-up: TOTP of opnieuw Google) → passkey maken met vingerafdruk/gezicht. De pagina toont een **vingerafdruk** (`ab12 cd34 …`) en de
+SSH-opdracht. Op de VM:
+
+```bash
+sudo mijn-ruimte-passkey wachtend                    # root rekent de vingerafdruk zelf uit uit de publieke sleutel
+sudo mijn-ruimte-passkey toevoegen ab12cd34ef56…     # ≥ 16 hex-tekens, ZOALS OP DE TELEFOON; alleen bij exact één treffer
+sudo nano /etc/mijn-ruimte/mcp-rechten.json          # "passkey-goedkeuring": true
+```
+
+Vergelijk de vingerafdruk op de telefoon met die van `wachtend`. **Beperking:** tijdens deze ene stap vertrouw je erop dat de pagina op de
+telefoon echt is (een al gecompromitteerde app zou een eigen sleutel met een eigen vingerafdruk kunnen tonen). Doe de bootstrap dus direct
+na een installatie uit een gereviewde commit, of controleer met `wachtend` dat er precies één aanmelding is met het label dat je net invoerde.
+
+Volgende passkeys (tweede telefoon, laptop): «Додати passkey» en dan «Підтвердити наявним passkey» — geen SSH meer nodig; root voegt hem
+toe na een assertie van een al bekende sleutel (`mijn-ruimte-goedkeur-sleutels.path`). Advies: registreer minstens twee passkeys.
+
+### 13.3 Voorbereiders toestaan of intrekken
+
+Admin → «Оновлення» → «Кому дозволено готувати оновлення»: soort (акаунт / токен агента / MCP-підключення), wie, aantal dagen (1–30),
+«Дозволити» (step-up). «Відкликати» trekt meteen in en breekt lopende uploads af. Alles staat in de audit (`uitrol_voorbereider_*`). Een
+grant vervalt ook als het account geblokkeerd of met pensioen is of als AI voor dat account geblokkeerd is.
+
+Voor een agent: pakket maken met `deploy/uitrol/maak-voorstelpakket.sh` (geen sleutel nodig), dan `uitrol_voorstel_begin` met de inhoud
+van `.voorstel.json`, `uitrol_voorstel_stuk` (base64, ≤ 512 KiB per stuk, offset = ontvangen bytes) en `uitrol_voorstel_klaar`.
+Grenzen: 300 MB, 3 open voorstellen per grant, uploads verlopen na 24 uur, wachtende voorstellen na 7 dagen.
+
+### 13.4 Intrekken en telefoon kwijt
+
+* **Eén passkey weghalen (je hebt nog een andere):** «Мої passkey» → «Видалити» en bevestigen met een andere passkey.
+* **Telefoon kwijt (en geen andere passkey):** via SSH:
+  ```bash
+  sudo mijn-ruimte-passkey lijst
+  sudo mijn-ruimte-passkey verwijderen <≥16 hex-tekens van de vingerafdruk>
+  sudo mijn-ruimte-passkey alles-intrekken             # alles weg; daarna opnieuw §13.2
+  ```
+  Goedkeuren is daarna onmogelijk tot er weer een sleutel is; methode 2 (PC-ondertekening) blijft werken.
+* **Alles uit:** `"passkey-goedkeuring": false` in `mcp-rechten.json` (meteen), of
+  `systemctl disable --now mijn-ruimte-goedkeuring.path mijn-ruimte-goedkeur-sleutels.path`.
+
+### 13.5 Bestanden
+
+| Pad | Eigenaar / modus | Wie schrijft |
+|---|---|---|
+| `/etc/mijn-ruimte/goedkeur-passkeys.json` | root:mijnruimte 0640 | alleen root (`mijn-ruimte-passkey`) |
+| `/var/lib/mijn-ruimte/goedkeuring/staat.json` | root 0600 (map 0700) | alleen root (nonces 24 u, tellers) |
+| `/srv/mijn-ruimte/goedkeur-inbox/` | mijnruimte 0750 | de app (onbetrouwbaar voor root) |
+| `/srv/data/uploads/uitrol-voorstellen/` | mijnruimte | de app (uploads van voorbereiders) |
+| `/usr/local/lib/mijn-ruimte/goedkeuring/{webauthn-kern,goedkeur-hulp}.mjs` | root 0644 | installer |
+| `/usr/local/sbin/mijn-ruimte-passkey` | root 0755 | installer |
+| `/var/lib/mijn-ruimte-uitrol-status/{status.json,goedkeur-sleutels.json,gebeurtenissen.jsonl}` | root:mijnruimte 0640 | root |
+
+Uitleg voor op de PC (geen geheimen): `deploy/pc-uitleg/passkey-goedkeuring-UITLEG-LEESMIJ.txt`.
+
