@@ -464,7 +464,7 @@ const stapOpVereist=async(_ctx:unknown,auth:{user:{id:string};session?:{id:strin
 export const handler = router({
   ...juridischeRoutes,
   'GET /api/_healthcheck': [async () => json({ message: 'Success' })],
-  ...mcpConsoleRoutes(ownerRequireSession),
+  ...mcpConsoleRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
   ...createApiPlatformRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformVaultRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformConnectionRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),

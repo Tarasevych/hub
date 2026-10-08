@@ -141,8 +141,8 @@ function buildEvent(req: http.IncomingMessage, url: URL, body: string, ip: strin
 async function writeRouterResponse(res: http.ServerResponse, response: RouterResponse) {
   if (response.filePath) {
     const file = response.filePath;
-    // Alleen de archiefmap en de (versleutelde) nachtelijke back-ups; de routes zelf valideren de bestandsnaam en eisen een eigenaarssessie.
-    const allowed = file.startsWith("/srv/data/uploads/mcp-archives/") || file.startsWith("/srv/backups/mijn-ruimte/");
+    // Alleen het age-archief (vaste naam in de root-uitgiftemap) en de (versleutelde) nachtelijke back-ups; de routes eisen eigenaar + eenmalige downloadId.
+    const allowed = file === "/var/lib/mijn-ruimte-archief/uitgifte/archief-laatste.tar.age" || file.startsWith("/srv/backups/mijn-ruimte/");
     const s = allowed ? await fileStat(file) : null;
     if (!s) return sendText(res, 404, "NOT_FOUND");
     const headers: Record<string, string> = {
