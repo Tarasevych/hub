@@ -1,0 +1,23 @@
+/* Аватар поштового акаунта з логотипом сервісу: лише на вузьких екранах. */
+.mail-account-badge{display:none}
+@media (max-width:720px){
+  .mail-account-badge{display:block;position:relative;flex:none}
+  .mail-account-badge-trigger{position:relative;display:block;width:46px;height:46px;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer}
+  .mail-account-badge-photo{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;overflow:hidden;background:#dbe9ea;color:#2f6f73;font-weight:700;font-size:15px;box-shadow:0 0 0 1px var(--line,#d6dde4)}
+  .mail-account-badge-photo img{width:100%;height:100%;object-fit:cover}
+  .mail-account-badge-logo{position:absolute;right:-3px;bottom:-3px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--panel,#fff);box-shadow:0 0 0 1.5px var(--panel,#fff),0 0 0 2.5px var(--line,#d6dde4)}
+  .mail-account-badge-logo svg{width:14px;height:14px}
+  .mail-account-badge-photo.small{position:relative;width:40px;height:40px;flex:none;overflow:visible;background:transparent;box-shadow:none}
+  .mail-account-badge-photo.small>img,.mail-account-badge-photo.small>span:first-child,.mail-account-badge-initial{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;overflow:hidden;background:#dbe9ea;color:#2f6f73;font-weight:700}
+  .mail-account-badge-menu{position:fixed;right:8px;z-index:640;width:min(340px,calc(100vw - 16px));display:grid;grid-template-rows:auto minmax(0,1fr) auto;border:1px solid var(--line,#d6dde4);border-radius:16px;background:var(--panel,#fff);box-shadow:0 12px 36px rgba(15,23,42,.28);overflow:hidden}
+  .mail-account-badge-menu header{display:grid;gap:2px;padding:12px 14px 8px}
+  .mail-account-badge-menu header small{color:var(--muted,#64748b);font-size:.78rem}
+  .mail-account-badge-list{display:grid;overflow:auto}
+  .mail-account-badge-menu button{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 14px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+  .mail-account-badge-menu button:active,.mail-account-badge-menu button.active{background:color-mix(in srgb,#2f6f73 10%,transparent)}
+  .mail-account-badge-menu button>span:nth-child(2){display:grid;min-width:0;flex:1}
+  .mail-account-badge-menu button strong,.mail-account-badge-menu button small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mail-account-badge-menu button small{color:var(--muted,#64748b);font-size:.78rem}
+  .mail-account-badge-menu footer{border-top:1px solid var(--line,#d6dde4)}
+  .mail-account-badge-menu footer button{min-height:52px;color:#2f6f73;font-weight:600}
+}
