@@ -1,0 +1,36 @@
+/* Admin → «Оновлення» / «Updates» (passkey-goedkeuring) */
+.admin-uitrol{display:grid;gap:16px}
+.admin-uitrol .admin-section>header{position:relative}
+.admin-uitrol-ververs{position:absolute;right:0;top:0;background:none;border:0;cursor:pointer;color:inherit;opacity:.7}
+.admin-uitrol-ververs svg{width:18px;height:18px}
+.admin-uitrol-stand{list-style:none;margin:8px 0;padding:0;display:grid;gap:6px}
+.admin-uitrol-stand li{display:flex;gap:8px;align-items:center}
+.admin-uitrol-stand li svg{width:16px;height:16px;flex:none}
+.admin-uitrol-stand li[data-ok="true"] svg{color:#1f7a4a}
+.admin-uitrol-stand li[data-ok="false"] svg{color:#b3261e}
+.admin-uitrol .admin-notice[data-ok="false"]{border-color:#b3261e}
+.admin-uitrol-voorstel{border:1px solid rgba(127,127,127,.3);border-radius:10px;padding:12px 14px;margin:10px 0}
+.admin-uitrol-voorstel h3{margin:0 0 8px}
+.admin-uitrol-voorstel dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:0 0 8px}
+.admin-uitrol-voorstel dt{opacity:.7}
+.admin-uitrol-voorstel dd{margin:0;overflow-wrap:anywhere}
+.admin-uitrol-voorstel dd[data-ok="false"]{color:#b3261e}
+.admin-uitrol-voorstel pre{white-space:pre-wrap;max-height:320px;overflow:auto;font-size:.85em;background:rgba(127,127,127,.08);padding:8px;border-radius:6px}
+.admin-uitrol-sha{font-size:.8em;word-break:break-all}
+.admin-uitrol-knoppen{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.admin-uitrol button{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;cursor:pointer;font:inherit}
+.admin-uitrol button svg{width:16px;height:16px}
+.admin-uitrol button:disabled{opacity:.5;cursor:not-allowed}
+.admin-uitrol .admin-uitrol-ja{background:#1f6b4a;border-color:#1f6b4a;color:#fff;font-weight:600}
+.admin-uitrol .admin-uitrol-nee{border-color:#b3261e;color:#b3261e}
+.admin-uitrol-hint{opacity:.8;font-size:.9em}
+.admin-uitrol-lijst{list-style:none;margin:8px 0;padding:0;display:grid;gap:6px}
+.admin-uitrol-lijst li{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border-radius:8px;background:rgba(127,127,127,.06)}
+.admin-uitrol-lijst li[data-status="ingetrokken"],.admin-uitrol-lijst li[data-status="verlopen"]{opacity:.6}
+.admin-uitrol-leeg{opacity:.7}
+.admin-uitrol-ssh{user-select:all;word-break:break-all}
+.admin-uitrol-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.admin-uitrol-form input,.admin-uitrol-form select{padding:7px 9px;border-radius:8px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;font:inherit;min-width:0}
+.admin-uitrol-form input[type=number]{width:70px}
+@media (max-width:640px){.admin-uitrol-voorstel dl{grid-template-columns:1fr}.admin-uitrol-knoppen button{flex:1 1 100%;justify-content:center}}
+.admin-uitrol-melding{position:sticky;top:8px;z-index:2;background:var(--surface,Canvas);border-radius:8px}
