@@ -6,6 +6,7 @@ export const ALLOWED_COMMANDS = [
   'browser.navigate', 'browser.history',
   'browser.invoke', 'browser.click', 'browser.type', 'browser.select', 'browser.key',
   'browser.screenshot', 'browser.deep_diagnostics',
+  'browser.console', 'browser.network', 'browser.self_test', 'browser.pages', 'browser.hover', 'browser.fill_form',
 ];
 
 /** Toetsen die de extensie mag indrukken (alleen navigatie, geen letters of sneltoetsen). */
