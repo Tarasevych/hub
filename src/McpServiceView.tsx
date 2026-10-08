@@ -5,6 +5,7 @@ import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalog";
 import McpAgentsHub from "./McpAgentsHub";
 import McpConsentModal from "./McpConsentModal";
 import McpBackupsCard from "./McpBackupsCard";
+import McpServerBeheerCard from "./McpServerBeheerCard";
 import "./mcp-estate.css";
 
 type Lang = "uk" | "nl";
@@ -575,6 +576,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             ) : null}
           </article>
           <McpBackupsCard tr={t} />
+          <McpServerBeheerCard tr={t} />
           <article className="mcp-card">
             <h2>{t("Історія", "Geschiedenis")}</h2>
             <p>{t("Кожен рядок — окремий збір. На сервері лишається лише останній файл, щоб старі копії з секретами не накопичувались. Старі рядки лишаються як запис: коли і якого розміру.", "Elke rij is één keer maken. Op de server blijft alleen het laatste bestand, zodat oude kopieën met geheimen niet blijven liggen. Oudere rijen blijven als notitie: wanneer en hoe groot.")}</p>
