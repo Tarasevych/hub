@@ -37,7 +37,7 @@ STATUS="$UIT/kit-status.txt"
 GESCHIEDENIS="$UIT/history.json"
 
 mkdir -p "$UIT"
-exec 8>"$UIT/.archief.lock"
+exec 8>"${ARCHIEF_LOCK:-/run/lock/mijn-ruimte-archief.lock}"
 flock -n 8 || { echo "er loopt al een archief" >&2; exit 0; }
 rm -f "$UIT/kit-request"
 
