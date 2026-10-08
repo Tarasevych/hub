@@ -65,6 +65,10 @@ export async function main(): Promise<number> {
     const agentDeur = await call('POST /api/mcp/agent', '', { name: 'install_release', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
     check('agenttoken van U: eigen bord ja, serverhulpmiddelen nee (OWNER_ONLY), deur-hulpmiddelen bestaan niet meer',
       agentBord.status === 200 && /Taak van U/.test(agentBord.data.result) && agentServer.status === 400 && agentServer.data.error === 'OWNER_ONLY' && /TOOL_REMOVED/.test(agentDeur.data.error));
+    const agentGoedkeur = await call('POST /api/mcp/agent', '', { name: 'uitrol_voorstel_goedkeuren', arguments: { id: randomUUID() } }, { headers: { authorization: `Bearer ${raw}` } });
+    const agentUitrol = await call('POST /api/mcp/agent', '', { name: 'uitrol_voorstel_status', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
+    check('agenttoken: updates goedkeuren kan nooit (ALLEEN_EIGENAAR_MET_PASSKEY); voorbereiden alleen met grant',
+      agentGoedkeur.status === 400 && /ALLEEN_EIGENAAR_MET_PASSKEY/.test(agentGoedkeur.data.error) && agentUitrol.status === 400 && agentUitrol.data.error === 'GEEN_VOORBEREIDER_GRANT', JSON.stringify([agentGoedkeur.data, agentUitrol.data]));
     await sys.query("UPDATE app.mcp_console_tokens SET expires_at = now() - interval '1 second' WHERE user_id = $1", [USER]);
     check('verlopen token: 401', (await call('POST /api/mcp/agent', '', { name: 'list_tasks' }, { headers: { authorization: `Bearer ${raw}` } })).status === 401);
 

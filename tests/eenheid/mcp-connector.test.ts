@@ -165,6 +165,18 @@ export async function main(): Promise<number> {
       leeg.result.tools.length === 57 && leeg.result.tools.some((t: any) => t.name === 'take_snapshot') && !leeg.result.tools.some((t: any) => t.name === 'browser_snapshot') && !leeg.result.tools.some((t: any) => t.name === 'github_get'), leeg.result.tools.map((t: any) => t.name).join(','));
     const zonderPc = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 41, method: 'tools/call', params: { name: 'machine_read_file', arguments: { path: '.' } } }));
     check('tools/call zonder apparaat: duidelijke foutmelding (isError), geen crash', zonderPc.result?.isError === true && /No suitable device/.test(zonderPc.result.content[0].text), JSON.stringify(zonderPc.result).slice(0, 120));
+    // Updates voorbereiden (passkey-goedkeuring): alleen zichtbaar met een grant voor déze koppeling; goedkeuren kan nooit.
+    const koppeling = await st.findByAccessHash(sha256(t1.j.access_token));
+    check('uitrol: zonder grant geen uitrol_voorstel_*-hulpmiddelen', !leeg.result.tools.some((t: any) => String(t.name).startsWith('uitrol_')));
+    const grantRij = (await sys.query(`INSERT INTO app.uitrol_voorbereiders (soort, onderwerp, account_id, label, gegeven_door, verloopt_op) VALUES ('mcp-koppeling', $1, $2, 'test', 'test', now() + interval '1 day') RETURNING id`, [String(koppeling!.id), A])).rows[0].id;
+    const metGrant = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 42, method: 'tools/list' })).result.tools as any[];
+    const uitrolNamen = metGrant.filter((t) => String(t.name).startsWith('uitrol_')).map((t) => t.name).sort();
+    check('uitrol: met grant 5 hulpmiddelen (voorbereiden + status), geen goedkeuren', uitrolNamen.join(',') === 'uitrol_voorstel_annuleren,uitrol_voorstel_begin,uitrol_voorstel_klaar,uitrol_voorstel_status,uitrol_voorstel_stuk', uitrolNamen.join(','));
+    const uitrolStatus = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 43, method: 'tools/call', params: { name: 'uitrol_voorstel_status', arguments: {} } }));
+    check('uitrol: status via MCP met grant', uitrolStatus.result?.isError !== true && Array.isArray(JSON.parse(uitrolStatus.result.content[0].text).voorstellen), JSON.stringify(uitrolStatus).slice(0, 200));
+    const goedkeur = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 44, method: 'tools/call', params: { name: 'uitrol_voorstel_goedkeuren', arguments: { id: randomUUID() } } }));
+    check('uitrol: goedkeuren via MCP altijd geweigerd (ALLEEN_EIGENAAR_MET_PASSKEY)', goedkeur.result?.isError === true && goedkeur.result.content[0].text === 'ALLEEN_EIGENAAR_MET_PASSKEY');
+    await sys.query('DELETE FROM app.uitrol_voorbereiders WHERE id = $1', [grantRij]);
     const overzicht = await describeTools(A);
     const kindOf = (n: string) => overzicht.find((t) => t.name === n);
     check('beheeroverzicht: soort en goedkeuring per hulpmiddel (lezen direct; schrijven en uitvoeren na goedkeuring)',
