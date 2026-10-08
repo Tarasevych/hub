@@ -31,9 +31,11 @@ export async function main(): Promise<number> {
     // ---- volledig archief: voortgang uit kit-status.txt ----
     const { readKitStatus, archiveFile } = await import('../../backend/mcp-console');
     const { utimes, writeFile: wf, rm } = await import('node:fs/promises');
-    const uploads = path.join(dir, 'uploads'); const kit = path.join(uploads, 'mcp-archives');
-    await mkdir(kit, { recursive: true });
+    // 0.4: de status en het archief staan in de root-uitgiftemap (ARCHIEF_UIT); het verzoek blijft in uploads/mcp-archives.
+    const uploads = path.join(dir, 'uploads'); const verzoek = path.join(uploads, 'mcp-archives'); const kit = path.join(dir, 'uitgifte');
+    await mkdir(verzoek, { recursive: true }); await mkdir(kit, { recursive: true });
     const vorigeUploads = process.env.UPLOADS_DIR; process.env.UPLOADS_DIR = uploads;
+    const vorigeUit = process.env.ARCHIEF_UIT; process.env.ARCHIEF_UIT = kit;
     const veroud = (file: string, msAgo: number) => utimes(file, new Date(Date.now() - msAgo), new Date(Date.now() - msAgo));
     try {
       check('geen status en geen verzoek: leeg (idle)', Object.keys(await readKitStatus()).length === 0);
@@ -43,17 +45,23 @@ export async function main(): Promise<number> {
       await veroud(path.join(kit, 'kit-status.txt'), 11 * 60_000);
       const vast = await readKitStatus();
       check('status die >10 min niet meer verandert = STALLED (geen eeuwig draaiend scherm)', vast.state === 'failed' && vast.error === 'STALLED');
-      await wf(path.join(kit, 'kit-request'), 'go\n');
+      await wf(path.join(verzoek, 'kit-request'), 'go\n');
       const wacht = await readKitStatus();
       check('net aangevraagd: "in de rij" (building/queued), geen oude uitkomst', wacht.state === 'building' && wacht.phase === 'queued');
-      await veroud(path.join(kit, 'kit-request'), 90_000);
+      await veroud(path.join(verzoek, 'kit-request'), 90_000);
       const nooit = await readKitStatus();
       check('verzoek >60 s onbehandeld = NOT_STARTED (de service draait niet)', nooit.state === 'failed' && nooit.error === 'NOT_STARTED');
-      await rm(path.join(kit, 'kit-request'));
+      await rm(path.join(verzoek, 'kit-request'));
       await wf(path.join(kit, 'kit-status.txt'), 'state=ready\nstage=5\npct=100\nname=mijn-ruimte-20261007-200000-volledig.tar\nbytes=123\n');
       check('klaar: naam en grootte', (await readKitStatus()).state === 'ready' && (await readKitStatus()).bytes === '123');
-      check('bestandsnamen: nieuw formaat en oud formaat toegestaan, rest niet', archiveFile('mijn-ruimte-20261007-200000-volledig.tar').endsWith('-volledig.tar') && archiveFile('mijn-ruimte-20261006-125448-kod-baza-fajly-sekrety-instrukcija.tar.gz') !== '' && archiveFile('../x.tar') === '' && archiveFile('mijn-ruimte-1-volledig.tar') === '' && archiveFile('mijn-ruimte-20261007-200000-volledig.tar.sh') === '');
-    } finally { if (vorigeUploads === undefined) delete process.env.UPLOADS_DIR; else process.env.UPLOADS_DIR = vorigeUploads; }
+      check('archief: alleen het ene age-bestand met vaste naam in de uitgiftemap; oude onversleutelde namen en padtrucs niet',
+        archiveFile() === path.join(kit, 'archief-laatste.tar.age') && archiveFile('archief-laatste.tar.age') === path.join(kit, 'archief-laatste.tar.age')
+        && archiveFile('mijn-ruimte-20261007-200000-volledig.tar') === '' && archiveFile('mijn-ruimte-20261006-125448-kod-baza-fajly-sekrety-instrukcija.tar.gz') === '' && archiveFile('../x.tar') === '');
+      check('back-ups: onversleutelde namen zijn niet meer te downloaden', backupFile('20261006-030000', 'database.dump') === '' && backupFile('20261006-030000', 'uploads.tar.gz') === '' && backupFile('20261006-030000', 'systeem.tar.gz') === '');
+    } finally {
+      if (vorigeUploads === undefined) delete process.env.UPLOADS_DIR; else process.env.UPLOADS_DIR = vorigeUploads;
+      if (vorigeUit === undefined) delete process.env.ARCHIEF_UIT; else process.env.ARCHIEF_UIT = vorigeUit;
+    }
   } finally {
     if (vorige === undefined) delete process.env.BACKUP_DIR; else process.env.BACKUP_DIR = vorige;
   }
