@@ -68,7 +68,7 @@ export function parseRootGebeurtenissen(raw: string): RootGebeurtenis[] {
     if (!regel.trim()) continue;
     try {
       const d = JSON.parse(regel) as Record<string, unknown>;
-      if (!ID.test(String(d.id)) || !["gitops", "opdracht", "uitrol"].includes(String(d.bron))) continue;
+      if (!ID.test(String(d.id)) || !["gitops", "opdracht", "uitrol", "goedkeuring"].includes(String(d.bron))) continue;
       uit.push({ id: String(d.id), tijd: tekst(d.tijd, 40), bron: String(d.bron), code: tekst(d.code, 40).replace(/[^A-Z0-9_]/g, ""), niveau: tekst(d.niveau, 20), uk: tekst(d.uk, 300), nl: tekst(d.nl, 300), tag: tekst(d.tag, 40) });
     } catch { /* kapotte regel overslaan */ }
   }
