@@ -29,7 +29,7 @@ UITLEG-LEESMIJ.txt - T:\mijn-ruimte\geheim\  (sleutel uitrol-sleutel)
 - не знімайте з нього пароль.
 
 ЯКЩО КЛЮЧ ЗАГУБЛЕНО АБО ВІН МІГ ПОТРАПИТИ ДО ЧУЖИХ РУК
-- Створіть новий ключ (deploy/RUNBOOK-VEILIGE-UITROL.md, розділ 2) і замініть публічний ключ на сервері (розділ 7).
+- Створіть новий ключ (deploy/RUNBOOK-VEILIGE-UITROL.md, розділ 2) і замініть публічний ключ на сервері (розділи 3 і 10).
 - До того часу вимкніть GitOps ("gitops": false у /etc/mijn-ruimte/mcp-rechten.json).
 
 КОПІЯ
@@ -63,7 +63,7 @@ NOOIT
 - de wachtwoordzin eraf halen.
 
 ALS DE SLEUTEL KWIJT IS OF IN VERKEERDE HANDEN KAN ZIJN
-- Maak een nieuwe sleutel (deploy/RUNBOOK-VEILIGE-UITROL.md, §2) en vervang de publieke sleutel op de server (§7).
+- Maak een nieuwe sleutel (deploy/RUNBOOK-VEILIGE-UITROL.md, §2) en vervang de publieke sleutel op de server (§3 en §10).
 - Zet tot dan GitOps uit ("gitops": false in /etc/mijn-ruimte/mcp-rechten.json).
 
 KOPIE
