@@ -360,7 +360,13 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     try { origin = new URL(sender.origin || sender.url || '').origin; } catch { origin = ''; }
     if (!origin || !isOwnSiteUrl(`${origin}/`)) return sendResponse({ ok: false, reason: 'ORIGIN' });
     const type = message && message.type;
-    if (type === 'PING') { const s = await selfStatus(); return sendResponse({ ok: true, version: VERSION, paired: s.paired, connected: s.connected, account: s.account, epoch: s.epoch }); }
+    if (type === 'PING') {
+      const s = await selfStatus();
+      return sendResponse({ ok: true, version: VERSION, paired: s.paired, connected: s.connected, account: s.account, epoch: s.epoch,
+        agentId: s.agentId, caps: Array.isArray(s.caps) ? s.caps.length : 0, blocked: !!s.blocked, diagOptIn: s.diagOptIn });
+    }
+    // Knop 'Тест' op de site: dezelfde zelftest als in de opties (geen geheimen in het antwoord).
+    if (type === 'SELF_TEST') return sendResponse({ ok: true, ...(await selfTest()) });
     if (type === 'OPEN_OPTIONS') { await chrome.runtime.openOptionsPage(); return sendResponse({ ok: true }); }
     if (type === 'PAIR') {
       if (new URL(origin).hostname !== PAIR_HOST) return sendResponse({ ok: false, reason: 'WRONG_HOST' });
