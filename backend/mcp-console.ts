@@ -19,6 +19,7 @@ import { getPool } from "../server/platform/pg";
 import type { RouterMiddleware } from "../server/platform/router";
 import { alsGebruiker } from "./ai-grants";
 import { OPDRACHT_STANDAARD, OPDRACHT_WERKWOORDEN, isWerkwoord, leesOpdrachtResultaat, voerOpdrachtUit, type Werkwoord } from "./server-beheer";
+import { UITROL_TOOL_NAMEN, UitrolFout, isGoedkeurPoging, voerUitrolToolUit, type Onderwerp } from "./uitrol-goedkeuring";
 
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
 type SessionFail = { errorCode: string };
@@ -162,7 +163,15 @@ const SITE_ONLY_TOOLS = new Set(["server_backup", "server_uitrol_nu", "server_te
 const BOARD_TOOLS = new Set(["list_tasks", "list_notes", "estate_search", "upsert_task", "upsert_note"]);
 const REMOVED_TOOLS = new Set(["write_staging", "list_staging", "read_staging", "install_release", "update_door", "start_backup"]);
 
-async function runTool(userId: string, owner: boolean, name: string, args: Record<string, unknown>, author: string) {
+async function runTool(userId: string, owner: boolean, name: string, args: Record<string, unknown>, author: string, agentTokenId?: string) {
+  // Updates voorbereiden (passkey-goedkeuring, RUNBOOK-VEILIGE-UITROL.md §13): alleen met een grant uit "Кому дозволено"; goedkeuren
+  // kan een agent of de console nooit (alleen de eigenaar op de site met zijn passkey).
+  if (isGoedkeurPoging(name)) throw new Error("ALLEEN_EIGENAAR_MET_PASSKEY: goedkeuren kan alleen de eigenaar op de site met zijn passkey");
+  if (UITROL_TOOL_NAMEN.has(name)) {
+    const onderwerpen: Onderwerp[] = [...(agentTokenId ? [{ soort: "agenttoken" as const, id: agentTokenId, accountId: userId }] : []), { soort: "account", id: userId, accountId: userId }];
+    try { return await voerUitrolToolUit(onderwerpen, name, args); }
+    catch (err) { throw new Error(err instanceof UitrolFout ? err.code : "UITROL_FOUT"); }
+  }
   if (REMOVED_TOOLS.has(name)) throw new Error("TOOL_REMOVED: uitrollen alleen met een ondertekend pakket (RUNBOOK-VEILIGE-UITROL.md)");
   if (SITE_ONLY_TOOLS.has(name)) throw new Error("STEP_UP_REQUIRED: alleen op de site (eigenaar + bevestiging van de aanmelding)");
   const flags = await readPerms();
@@ -515,7 +524,7 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       const args = (data.arguments && typeof data.arguments === "object" ? data.arguments : {}) as Record<string, unknown>;
       const started = Date.now();
       try {
-        const result = await runTool(tok.user_id, tok.role === "owner", name, args, `agent:${tok.name}`);
+        const result = await runTool(tok.user_id, tok.role === "owner", name, args, `agent:${tok.name}`, String(tok.id));
         await logCall(tok.user_id, { method: "tools/call", detail: name, transport: "agent", agent: tok.name, ok: true, ms: Date.now() - started });
         return json({ ok: true, result: text(result) });
       } catch (err) {

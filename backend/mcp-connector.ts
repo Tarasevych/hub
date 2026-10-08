@@ -13,6 +13,7 @@ import { randomToken, sha256 } from './connectors-crypto';
 import { callTool, listTools, type ToolDef } from './connectors-tools';
 import { SERVICE_HOSTS } from './deployment-identity';
 import * as st from './mcp-connector-store';
+import { UITROL_TOOLS, UITROL_TOOL_NAMEN, UitrolFout, heeftVoorbereiderGrant, isGoedkeurPoging, voerUitrolToolUit, type Onderwerp } from './uitrol-goedkeuring';
 
 export const BASE = `https://${SERVICE_HOSTS.mcp}`;
 export const RESOURCE = `${BASE}/mcp`;
@@ -270,7 +271,13 @@ const toMcpTool = (t: ToolDef) => ({
   ...(t.annotations ? { annotations: t.annotations } : {}),
 });
 
-async function handleMessage(who: { userId: string; clientName: string }, msg: any): Promise<unknown | null> {
+/** Onderwerpen voor de grant "updates voorbereiden": eerst deze MCP-koppeling, dan het account. */
+const uitrolOnderwerpen = (who: { userId: string; tokenId?: string }): Onderwerp[] => [
+  ...(who.tokenId ? [{ soort: 'mcp-koppeling' as const, id: String(who.tokenId), accountId: who.userId }] : []),
+  { soort: 'account', id: who.userId, accountId: who.userId },
+];
+
+async function handleMessage(who: { userId: string; clientName: string; tokenId?: string }, msg: any): Promise<unknown | null> {
   if (!msg || typeof msg !== 'object' || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return rpcError(msg?.id, -32600, 'Invalid Request');
   const id = msg.id;
   if (id === undefined) return null; // notificatie (bijv. notifications/initialized): geen antwoord
@@ -286,10 +293,22 @@ async function handleMessage(who: { userId: string; clientName: string }, msg: a
       });
     }
     case 'ping': return rpcResult(id, {});
-    case 'tools/list': return rpcResult(id, { tools: (await listTools(who.userId, { alwaysMachine: true })).map(toMcpTool) });
+    case 'tools/list': {
+      const tools = (await listTools(who.userId, { alwaysMachine: true })).map(toMcpTool);
+      // Updates voorbereiden alleen zichtbaar met een grant van de eigenaar; goedkeuren bestaat hier niet.
+      if (await heeftVoorbereiderGrant(uitrolOnderwerpen(who))) tools.push(...UITROL_TOOLS.map((t) => toMcpTool(t as unknown as ToolDef)));
+      return rpcResult(id, { tools });
+    }
     case 'tools/call': {
       const name = msg.params?.name;
       if (typeof name !== 'string' || !name) return rpcError(id, -32602, 'name ontbreekt');
+      if (UITROL_TOOL_NAMEN.has(name) || isGoedkeurPoging(name)) {
+        let uit: { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
+        try { uit = { content: [{ type: 'text', text: JSON.stringify(await voerUitrolToolUit(uitrolOnderwerpen(who), name, msg.params?.arguments && typeof msg.params.arguments === 'object' ? msg.params.arguments : {})) }] }; }
+        catch (err) { uit = { content: [{ type: 'text', text: err instanceof UitrolFout ? err.code : 'UITROL_FOUT' }], isError: true }; }
+        try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: uit.isError ? 'failure' : 'success', details: { tool: name, client: who.clientName } }); } catch { /* audit mag niet breken */ }
+        return rpcResult(id, uit);
+      }
       const result = await callTool(who.userId, name, msg.params?.arguments && typeof msg.params.arguments === 'object' ? msg.params.arguments : {});
       try {
         await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: result.isError ? 'failure' : 'success', details: { tool: name, client: who.clientName } });
