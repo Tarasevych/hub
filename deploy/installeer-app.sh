@@ -37,7 +37,7 @@ NODE="${NODE:-/usr/bin/node}"
 PORT="${PORT:-8080}"
 BEWAAR="${BEWAAR_RELEASES:-5}"
 GEZONDHEID_URL="http://127.0.0.1:${PORT}/__gezondheid"
-TIMERS=(mijn-ruimte-mail-onderhoud.timer mijn-ruimte-google-sync.timer mijn-ruimte-opruimen.timer mijn-ruimte-backup.timer mijn-ruimte-mail-queue.timer)
+TIMERS=(mijn-ruimte-mail-onderhoud.timer mijn-ruimte-google-sync.timer mijn-ruimte-opruimen.timer mijn-ruimte-backup.timer mijn-ruimte-mail-queue.timer mijn-ruimte-gitops.timer)
 
 ONVOLTOOID=""   # pad van een release die nog niet klaar is; wordt bij een fout verwijderd
 opruimen_bij_afbreken() { if [ -n "$ONVOLTOOID" ] && [ -d "$ONVOLTOOID" ]; then echo "[installeer] onvolledige release $ONVOLTOOID verwijderd" >&2; rm -rf -- "$ONVOLTOOID"; fi; }
@@ -120,7 +120,7 @@ veilige_uitrol_inrichten() {
   # De eerste uitrol via de inbox moet nieuwer zijn dan wat nu draait.
   [ -s /var/lib/mijn-ruimte-uitrol/laatste-versie ] || date +%Y%m%d-%H%M%S > /var/lib/mijn-ruimte-uitrol/laatste-versie
   if [ ! -e /etc/mijn-ruimte/mcp-rechten.json ]; then
-    printf '%s\n' '{"read": true, "uitrol": false}' > /etc/mijn-ruimte/mcp-rechten.json
+    printf '%s\n' '{"read": true, "uitrol": false, "gitops": false, "opdracht": {"status": true, "releases": true, "backup": true, "uitrol-nu": true, "terugdraaien": false}}' > /etc/mijn-ruimte/mcp-rechten.json
     chown root:"$GEBRUIKER" /etc/mijn-ruimte/mcp-rechten.json; chmod 0640 /etc/mijn-ruimte/mcp-rechten.json
   fi
   if [ -s "$doel/deploy/mcp/server.mjs" ]; then
@@ -138,6 +138,54 @@ veilige_uitrol_inrichten() {
     waarschuwing "/etc/mijn-ruimte/uitrol-ondertekenaars ontbreekt: uitrol via mcp.tarasevych.com staat uit tot de publieke sleutel er staat (zie deploy/RUNBOOK-VEILIGE-UITROL.md)."
   fi
   melding "veilige uitrol ingericht"
+}
+
+# De map deploy/ van een release is tijdens `npm ci`/build schrijfbaar voor mijnruimte (scripts van afhankelijkheden). Alles wat
+# daarna als root wordt geïnstalleerd (units, root-scripts, polkit-regel) moet uit de ONGEWIJZIGDE bron komen: daarom deploy/ na
+# het bouwen opnieuw uit de bron halen (git: HEAD; uitgepakte map: die map zelf, die alleen root kan schrijven).
+deploy_herstellen() {
+  local bron="$1" doel="$2"
+  rm -rf -- "$doel/deploy"
+  BRON_GIT="$bron"
+  if git_bron rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git_bron archive --format=tar HEAD deploy | tar -x -C "$doel"
+  else
+    rsync -a --no-links "$bron/deploy/" "$doel/deploy/"
+  fi
+  chown -R "root:$GEBRUIKER" "$doel/deploy"
+  chmod -R u=rwX,g=rX,o= "$doel/deploy"
+  find "$doel/deploy" -type f -name '*.sh' -exec chmod 750 {} +
+  if find "$doel/deploy" -type l | grep -q .; then fout "symlink in deploy/ van $doel"; fi
+}
+
+# Beheer op afstand zonder root-pad voor de app (methode 1 GitOps-pull, methode 3 gepantserde opdracht; zie RUNBOOK-VEILIGE-UITROL.md).
+beheer_inrichten() {
+  local doel="$1"
+  [ -s "$doel/deploy/opdracht/mijn-ruimte-opdracht.sh" ] || return 0
+  install -d -o root -g root -m 0755 /var/lib/mijn-ruimte
+  install -d -o root -g root -m 0700 /var/lib/mijn-ruimte/gitops /var/lib/mijn-ruimte/opdracht
+  install -d -o root -g "$GEBRUIKER" -m 0750 /var/lib/mijn-ruimte-uitrol-status
+  # Root-kopie van de installer: `terugdraaien` via methode 3 voert nooit iets uit /srv/mijn-ruimte/…/deploy uit.
+  install -m 0755 -o root -g root "$doel/deploy/installeer-app.sh" /usr/local/sbin/mijn-ruimte-installeer
+  install -m 0755 -o root -g root "$doel/deploy/gitops/gitops-ophalen.sh" /usr/local/sbin/mijn-ruimte-gitops
+  install -m 0755 -o root -g root "$doel/deploy/opdracht/mijn-ruimte-opdracht.sh" /usr/local/sbin/mijn-ruimte-opdracht
+  [ -e /etc/mijn-ruimte/gitops-known_hosts ] || install -m 0644 -o root -g root "$doel/deploy/gitops/github-known_hosts" /etc/mijn-ruimte/gitops-known_hosts
+  # Eerste GitOps-uitrol moet nieuwer zijn dan wat nu draait (tags in UTC).
+  [ -s /var/lib/mijn-ruimte/gitops/laatste-tag ] || echo "uitrol-$(date -u +%Y%m%d-%H%M)" > /var/lib/mijn-ruimte/gitops/laatste-tag
+  if [ -e /etc/mijn-ruimte/gitops.env ]; then
+    chown root:root /etc/mijn-ruimte/gitops.env; chmod 0600 /etc/mijn-ruimte/gitops.env
+  fi
+  # polkit (JavaScript-regels, >= 0.106): de app mag alleen mijn-ruimte-opdracht@<vast werkwoord>.service starten.
+  if [ -d /etc/polkit-1/rules.d ] && command -v pkaction >/dev/null 2>&1; then
+    if ! cmp -s "$doel/deploy/opdracht/50-mijn-ruimte-opdracht.rules" /etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules; then
+      install -m 0644 -o root -g root "$doel/deploy/opdracht/50-mijn-ruimte-opdracht.rules" /etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules
+      melding "polkit-regel voor mijn-ruimte-opdracht@ geïnstalleerd"
+    fi
+  else
+    waarschuwing "polkit (polkitd, JavaScript-regels) ontbreekt: methode 3 werkt pas na 'apt install polkitd' en opnieuw installeren. Geen sudo-terugval (zie RUNBOOK-VEILIGE-UITROL.md §9)."
+  fi
+  systemctl enable mijn-ruimte-gitops.timer >/dev/null 2>&1 || waarschuwing "mijn-ruimte-gitops.timer kon niet worden ingeschakeld"
+  melding "beheer op afstand ingericht (GitOps: $(python3 -c 'import json;print("aan" if json.load(open("/etc/mijn-ruimte/mcp-rechten.json")).get("gitops") is True else "uit")' 2>/dev/null || echo uit))"
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -295,12 +343,14 @@ installeren() {
   # Geen patch-scripts meer tijdens het installeren (vroeger o.a. een base64-blob die als root werd uitgevoerd): wat in de bron
   # staat, is wat er gebouwd wordt. Zie deploy/RUNBOOK-VEILIGE-UITROL.md.
   melding "bouwen (npm ci, audit, vite, server-bundel)…"; bouwen "$doel"
+  deploy_herstellen "$bron" "$doel"
   migreren "$doel"
   ONVOLTOOID=""   # vanaf hier blijft de release bestaan (ook als activeren mislukt, voor diagnose)
   units_installeren "$doel"
   activeren "$doel"
   oude_deur_opruimen
   veilige_uitrol_inrichten "$doel"
+  beheer_inrichten "$doel"
   # Volledig archief ("Архів на ПК"): root-script + path-unit die het verzoekbestand van de site bewaakt (de site kan zelf niets als root
   # doen). Uitvoer in een root-map (uitgifte root:mijnruimte 0750, werkmap 0700), het hele archief age-versleuteld.
   if [ -s "$doel/deploy/archief-maken.sh" ]; then
