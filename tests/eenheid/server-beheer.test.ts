@@ -160,7 +160,7 @@ function opdrachtTests(check: (n: string, ok: boolean, i?: string) => void) {
     run('backup');
     check('opdracht: backup start alleen mijn-ruimte-backup.service', JSON.stringify(sysLog()) === JSON.stringify(['start --no-block mijn-ruimte-backup.service']));
     run('uitrol-nu');
-    check('opdracht: uitrol-nu start alleen de GitOps- en de pakketunit', JSON.stringify(sysLog().slice(1)) === JSON.stringify(['start --no-block mijn-ruimte-gitops.service', 'start --no-block mijn-ruimte-uitrol.service']));
+    check('opdracht: uitrol-nu start alleen de GitOps-, de pakket- en de goedkeuringsunit', JSON.stringify(sysLog().slice(1)) === JSON.stringify(['start --no-block mijn-ruimte-gitops.service', 'start --no-block mijn-ruimte-uitrol.service', 'start --no-block mijn-ruimte-goedkeuring.service']));
 
     r = run('terugdraaien');
     check('opdracht: terugdraaien staat standaard UIT (3)', r.status === 3 && res('terugdraaien')?.code === 'UIT' && !existsSync(join(T, 'installeer.log')));
@@ -170,7 +170,7 @@ function opdrachtTests(check: (n: string, ok: boolean, i?: string) => void) {
     r = run('terugdraaien');
     check('opdracht: tweede terugdraaien binnen 10 minuten geweigerd (4)', r.status === 4 && res('terugdraaien')?.code === 'TE_SNEL' && lees(join(T, 'installeer.log')).trim().split('\n').length === 1);
     r = run('backup');
-    check('opdracht: schakelaar backup=false → geweigerd (3)', r.status === 3 && sysLog().length === 3);
+    check('opdracht: schakelaar backup=false → geweigerd (3)', r.status === 3 && sysLog().length === 4); // backup + uitrol-nu (gitops, uitrol, goedkeuring)
     writeFileSync(rechten, '{kapot');
     check('opdracht: onleesbaar rechtenbestand → alleen lezen (status ja, backup nee)', run('status').status === 0 && run('backup').status === 3);
     const ev = lees(join(T, 'status/gebeurtenissen.jsonl')).trim().split('\n').map((l) => JSON.parse(l));

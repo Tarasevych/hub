@@ -1,0 +1,335 @@
+#!/usr/bin/env node
+// Root-hulp voor de goedkeuring van updates met een passkey (Mijn Ruimte). Geïnstalleerd als
+// /usr/local/lib/mijn-ruimte/goedkeuring/goedkeur-hulp.mjs (root 0644) naast webauthn-kern.mjs; aangeroepen via
+// /usr/local/sbin/mijn-ruimte-passkey (wist de omgeving, neemt de vergrendeling). Zie deploy/RUNBOOK-VEILIGE-UITROL.md §13.
+//
+// Vertrouwensmodel: ALLES wat de app (gebruiker mijnruimte) schrijft, is onbetrouwbaar. Root installeert alleen als een assertie
+// van een passkey uit het ROOT-bestand /etc/mijn-ruimte/goedkeur-passkeys.json geldig is voor precies dit pakket (sha256 uit de
+// eigen kopie), met juiste rpId/origin, UV, een niet-verlopen challenge (≤ 5 min) en een nonce die root nog nooit zag.
+// Een nieuwe sleutel komt alleen in het root-bestand via SSH (`toevoegen <vingerafdruk>`, de allereerste) of met een assertie van
+// een sleutel die er al in staat (`verwerk`, aangestuurd door mijn-ruimte-goedkeur-sleutels.path).
+//
+// Opdrachten:
+//   verifieer-goedkeuring <pakket> <goedkeuring.json> <versie>   (door mijn-ruimte-uitrol --goedkeuring)  → exit 0 ok, 2 geweigerd
+//   verwerk                                                       sleutelverzoeken uit de inbox (path-unit)
+//   wachtend | lijst                                              tonen (SSH)
+//   toevoegen <vingerafdruk (≥ 16 hex-tekens)>                    wachtende aanmelding bevestigen (SSH; eerste sleutel)
+//   verwijderen <vingerafdruk (≥ 16 hex-tekens)>                  sleutel weghalen (SSH)
+//   alles-intrekken                                               alle sleutels weghalen (SSH; telefoon kwijt)
+import { createHash, randomBytes } from "node:crypto";
+import { closeSync, constants as FS, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, renameSync, chownSync, unlinkSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { normaliseerSleutelbestand, tellerOk, uitdagingVoor, verifieerAssertie, verlooptGeldig, vingerafdruk, vingerafdrukKort } from "./webauthn-kern.mjs";
+
+const IS_ROOT = typeof process.getuid === "function" && process.getuid() === 0;
+// Overschrijven kan alleen in tests (niet als root).
+const omg = (naam, standaard) => (!IS_ROOT && process.env[naam]) || standaard;
+const SLEUTELS = omg("GOEDKEUR_SLEUTELS", "/etc/mijn-ruimte/goedkeur-passkeys.json");
+const RECHTEN = omg("GOEDKEUR_RECHTEN", "/etc/mijn-ruimte/mcp-rechten.json");
+const STAAT = omg("GOEDKEUR_STAAT", "/var/lib/mijn-ruimte/goedkeuring");
+const INBOX = omg("GOEDKEUR_INBOX", "/srv/mijn-ruimte/goedkeur-inbox");
+const STATUS_DIR = omg("GOEDKEUR_STATUS_DIR", "/var/lib/mijn-ruimte-uitrol-status");
+const GROEP = omg("GOEDKEUR_GROEP", "mijnruimte");
+const MAX_JSON = 64 * 1024;
+const MAX_SLEUTELS = 10;
+const ZELF = fileURLToPath(import.meta.url);
+
+const sha256Hex = (b) => createHash("sha256").update(b).digest("hex");
+const nuMs = () => Date.now();
+/** sha256 van een (groot) bestand in stukken, zonder symlinks te volgen. */
+function sha256Bestand(p) {
+  const fd = openSync(p, FS.O_RDONLY | FS.O_NOFOLLOW);
+  try {
+    if (!fstatSync(fd).isFile()) throw new Error("GEEN_GEWOON_BESTAND");
+    const h = createHash("sha256"); const buf = Buffer.alloc(1 << 20);
+    for (;;) { const n = readSync(fd, buf, 0, buf.length, null); if (n <= 0) break; h.update(buf.subarray(0, n)); }
+    return h.digest("hex");
+  } finally { closeSync(fd); }
+}
+const log = (s) => process.stderr.write(`[goedkeuring] ${s}\n`);
+
+// ------------------------------------------------------------------------------------------------ bestanden
+function groepId() {
+  try {
+    for (const regel of readFileSync("/etc/group", "utf8").split("\n")) { const d = regel.split(":"); if (d[0] === GROEP) return Number(d[2]); }
+  } catch { /* geen /etc/group */ }
+  return -1;
+}
+/** Root-bestand: geen symlink, gewoon bestand, eigendom van root en niet schrijfbaar voor groep/anderen (alleen gecontroleerd als root). */
+function rootBestandOk(p) {
+  let st; try { st = lstatSync(p); } catch { return false; }
+  if (!st.isFile() || st.isSymbolicLink()) return false;
+  if (!IS_ROOT) return true;
+  return st.uid === 0 && (st.mode & 0o022) === 0;
+}
+/** Leest een (mogelijk door de app geschreven) bestand veilig: geen symlinks (O_NOFOLLOW), alleen een gewoon bestand, begrensd. */
+function leesBegrensd(p, max = MAX_JSON) {
+  const fd = openSync(p, FS.O_RDONLY | FS.O_NOFOLLOW | (FS.O_NONBLOCK || 0));
+  try {
+    const st = fstatSync(fd);
+    if (!st.isFile()) throw new Error("GEEN_GEWOON_BESTAND");
+    if (st.size > max) throw new Error("TE_GROOT");
+    const buf = Buffer.alloc(st.size);
+    let gelezen = 0;
+    while (gelezen < st.size) { const n = readSync(fd, buf, gelezen, st.size - gelezen, gelezen); if (n <= 0) break; gelezen += n; }
+    return buf.subarray(0, gelezen);
+  } finally { closeSync(fd); }
+}
+function schrijfAtomisch(p, inhoud, modus, groepLeesbaar) {
+  mkdirSync(path.dirname(p), { recursive: true });
+  const tmp = `${p}.${process.pid}.${randomBytes(4).toString("hex")}`;
+  writeFileSync(tmp, inhoud, { mode: modus });
+  if (IS_ROOT) { const g = groepLeesbaar ? groepId() : 0; chownSync(tmp, 0, g >= 0 ? g : 0); }
+  renameSync(tmp, p);
+}
+function leesSleutelbestand() {
+  if (!existsSync(SLEUTELS)) return normaliseerSleutelbestand({});
+  if (!rootBestandOk(SLEUTELS)) throw Object.assign(new Error("SLEUTELBESTAND_RECHTEN"), { uk: "Файл ключів passkey не належить root або доступний для запису іншим.", nl: "Het passkey-sleutelbestand is niet van root of is schrijfbaar voor anderen." });
+  return normaliseerSleutelbestand(JSON.parse(leesBegrensd(SLEUTELS, 256 * 1024).toString("utf8")));
+}
+function schrijfSleutelbestand(d) {
+  schrijfAtomisch(SLEUTELS, JSON.stringify({ versie: 1, rpId: d.rpId, origins: d.origins, sleutels: d.sleutels }, null, 2) + "\n", 0o640, true);
+}
+function schakelaarAan() {
+  if (!rootBestandOk(RECHTEN)) return false;
+  try { return JSON.parse(leesBegrensd(RECHTEN).toString("utf8"))["passkey-goedkeuring"] === true; } catch { return false; }
+}
+
+// ------------------------------------------------------------------------------------------------ toestand (nonces, tellers)
+function leesStaat() {
+  mkdirSync(STAAT, { recursive: true, mode: 0o700 });
+  let d = {};
+  try { d = JSON.parse(readFileSync(path.join(STAAT, "staat.json"), "utf8")); } catch { d = {}; }
+  const nonces = d.nonces && typeof d.nonces === "object" ? d.nonces : {};
+  const tellers = d.tellers && typeof d.tellers === "object" ? d.tellers : {};
+  const grens = nuMs() - 24 * 3600_000; // een verlopen nonce kan nooit meer slagen (verloopt-controle); na 24 uur opruimen
+  for (const [k, v] of Object.entries(nonces)) if (Number(v) < grens) delete nonces[k];
+  return { nonces, tellers };
+}
+const schrijfStaat = (s) => schrijfAtomisch(path.join(STAAT, "staat.json"), JSON.stringify(s) + "\n", 0o600, false);
+
+/** Gemeenschappelijke controle van een assertie + verbruik van de nonce + teller. Geeft {ok,...} of {ok:false, code}. */
+function controleerEnVerbruik(doel, velden, assertie, bestand) {
+  const tijd = verlooptGeldig(Number(velden.verloopt));
+  if (tijd) return { ok: false, code: tijd };
+  let uitdaging;
+  try { uitdaging = uitdagingVoor(doel, velden); } catch (err) { return { ok: false, code: String(err.message) }; }
+  if (!bestand.sleutels.length) return { ok: false, code: "GEEN_SLEUTELS" };
+  const staat = leesStaat();
+  const nonceHash = sha256Hex(String(velden.nonce));
+  if (staat.nonces[nonceHash]) return { ok: false, code: "HERGEBRUIKT" };
+  const r = verifieerAssertie({ assertie, verwachteUitdaging: uitdaging, rpId: bestand.rpId, origins: bestand.origins, sleutels: bestand.sleutels });
+  if (!r.ok) return r;
+  if (!tellerOk(staat.tellers[r.credentialId], r.signCount)) return { ok: false, code: "TELLER_TERUG" };
+  // Eerst verbruiken, dan pas handelen: ook als de installatie straks mislukt, werkt deze assertie nooit meer.
+  staat.nonces[nonceHash] = Number(velden.verloopt);
+  staat.tellers[r.credentialId] = r.signCount;
+  schrijfStaat(staat);
+  return r;
+}
+
+// ------------------------------------------------------------------------------------------------ meldingen
+const TEKSTEN = {
+  OK: ["Підтвердження passkey дійсне.", "De passkey-bevestiging is geldig."],
+  UIT: ["Схвалення через passkey вимкнено на сервері.", "Goedkeuren met een passkey staat uit op de server."],
+  GEEN_SLEUTELS: ["На сервері немає жодного підтвердженого passkey власника.", "Er staat nog geen bevestigde passkey van de eigenaar op de server."],
+  SLEUTEL_ONBEKEND: ["Цей passkey не зареєстрований на сервері як ключ власника.", "Deze passkey staat niet als sleutel van de eigenaar op de server."],
+  HANDTEKENING_ONGELDIG: ["Підпис passkey недійсний.", "De handtekening van de passkey is ongeldig."],
+  UITDAGING_ONJUIST: ["Підтвердження стосується іншого пакета або іншого запиту.", "De bevestiging hoort bij een ander pakket of een ander verzoek."],
+  PAKKET_GEWIJZIGD: ["Пакет змінено після схвалення.", "Het pakket is na de goedkeuring gewijzigd."],
+  VERLOPEN: ["Час підтвердження минув (5 хв). Схваліть ще раз.", "De bevestiging is verlopen (5 min). Keur opnieuw goed."],
+  VERLOOPT_TE_LAAT: ["Термін дії підтвердження задовгий.", "De geldigheid van de bevestiging is te lang."],
+  HERGEBRUIKT: ["Це підтвердження вже використано.", "Deze bevestiging is al gebruikt."],
+  TELLER_TERUG: ["Лічильник passkey пішов назад (можлива копія ключа).", "De teller van de passkey ging terug (mogelijk een gekopieerde sleutel)."],
+  RPID_ONJUIST: ["Passkey призначений для іншого сайту.", "De passkey hoort bij een andere site."],
+  ORIGIN_ONJUIST: ["Підтвердження надійшло з іншої адреси.", "De bevestiging kwam van een ander adres."],
+  GEEN_VERIFICATIE: ["Пристрій не перевірив вас (відбиток, обличчя або PIN).", "Het apparaat heeft u niet geverifieerd (vingerafdruk, gezicht of pincode)."],
+  VERSIE_VERSCHILT: ["Версія в підтвердженні не збігається з пакетом.", "De versie in de bevestiging wijkt af van het pakket."],
+  GOEDKEURING_ONGELDIG: ["Файл схвалення пошкоджений.", "Het goedkeuringsbestand is beschadigd."],
+  SLEUTELBESTAND_RECHTEN: ["Файл ключів passkey не належить root або доступний для запису іншим.", "Het passkey-sleutelbestand is niet van root of is schrijfbaar voor anderen."],
+  EERSTE_SLEUTEL_VIA_SSH: ["Перший passkey підтверджується лише через SSH.", "De eerste passkey wordt alleen via SSH bevestigd."],
+  TE_VEEL_SLEUTELS: ["Забагато ключів passkey.", "Te veel passkey-sleutels."],
+  BESTAAT_AL: ["Цей passkey вже додано.", "Deze passkey is al toegevoegd."],
+  NIET_GEVONDEN: ["Ключ не знайдено.", "Sleutel niet gevonden."],
+};
+const tekst = (code) => TEKSTEN[code] || [`Відхилено (${code}).`, `Geweigerd (${code}).`];
+
+function gebeurtenis(code, niveau, uk, nl) {
+  // Zelfde vorm als gitops/opdracht (zie backend/server-beheer.ts parseRootGebeurtenissen); onder de gedeelde vergrendeling.
+  const nu = new Date();
+  const p = (n, l = 2) => String(n).padStart(l, "0");
+  const id = `${nu.getUTCFullYear()}${p(nu.getUTCMonth() + 1)}${p(nu.getUTCDate())}T${p(nu.getUTCHours())}${p(nu.getUTCMinutes())}${p(nu.getUTCSeconds())}${p(nu.getUTCMilliseconds(), 3)}000Z-${randomBytes(4).toString("hex")}`;
+  const regel = JSON.stringify({ id, tijd: nu.toISOString(), bron: "goedkeuring", code, niveau, uk, nl, tag: "" });
+  try {
+    mkdirSync(STATUS_DIR, { recursive: true });
+    const lock = path.join(STATUS_DIR, ".gebeurtenissen.lock");
+    const r = spawnSync("flock", ["-x", lock, process.execPath, ZELF, "__gebeurtenis", regel], { stdio: ["ignore", "ignore", "inherit"], env: { ...process.env, PATH: "/usr/bin:/bin" } });
+    if (r.status !== 0) schrijfGebeurtenis(regel);
+  } catch { /* melden mag nooit de hoofdtaak breken */ }
+}
+function schrijfGebeurtenis(regel) {
+  const pad = path.join(STATUS_DIR, "gebeurtenissen.jsonl");
+  let oud = [];
+  try { oud = readFileSync(pad, "utf8").split("\n").filter(Boolean).slice(-499); } catch { oud = []; }
+  schrijfAtomisch(pad, [...oud, regel].join("\n") + "\n", 0o640, true);
+}
+function sleutelStatus(uitkomst, code, extra = {}) {
+  const [uk, nl] = tekst(code);
+  schrijfAtomisch(path.join(STATUS_DIR, "goedkeur-sleutels.json"), JSON.stringify({ uitkomst, code, uk, nl, tijd: new Date().toISOString(), ...extra }) + "\n", 0o640, true);
+}
+
+// ------------------------------------------------------------------------------------------------ opdrachten
+function verifieerGoedkeuring(pakket, goedkeuringPad, versie) {
+  const uit = (code, extra = {}) => { const [uk, nl] = tekst(code); process.stdout.write(JSON.stringify({ ok: code === "OK", code, uk, nl, ...extra }) + "\n"); return code === "OK" ? 0 : 2; };
+  if (!schakelaarAan()) return uit("UIT");
+  let g;
+  try { g = JSON.parse(leesBegrensd(goedkeuringPad).toString("utf8")); } catch { return uit("GOEDKEURING_ONGELDIG"); }
+  if (!g || typeof g !== "object" || g.doel !== "goedkeuren" || !g.assertie || typeof g.assertie !== "object") return uit("GOEDKEURING_ONGELDIG");
+  if (String(g.versie) !== String(versie)) return uit("VERSIE_VERSCHILT");
+  // De sha256 komt NIET uit het bestand van de app, maar uit root's eigen kopie van het pakket.
+  let eigen;
+  try { eigen = sha256Bestand(pakket); } catch { return uit("GOEDKEURING_ONGELDIG"); }
+  if (String(g.sha256) !== eigen) return uit("PAKKET_GEWIJZIGD");
+  let bestand;
+  try { bestand = leesSleutelbestand(); } catch (err) { return uit(err.message === "SLEUTELBESTAND_RECHTEN" ? "SLEUTELBESTAND_RECHTEN" : "GEEN_SLEUTELS"); }
+  const r = controleerEnVerbruik("goedkeuren", { voorstelId: String(g.voorstelId || ""), versie: String(versie), sha256: eigen, nonce: g.nonce, verloopt: Number(g.verloopt) }, g.assertie, bestand);
+  if (!r.ok) return uit(r.code);
+  return uit("OK", { label: r.label || "", vingerafdruk: r.vingerafdruk, voorstelId: String(g.voorstelId) });
+}
+
+const VERZOEK = /^sleutel-(toevoegen|verwijderen)-[0-9a-f]{16,64}\.json$/;
+function verwerk() {
+  let namen = [];
+  try { namen = readdirSync(INBOX).filter((n) => VERZOEK.test(n)).sort(); } catch { log(`inbox ${INBOX} ontbreekt`); return 0; }
+  let laatste = 0;
+  for (const naam of namen.slice(0, 20)) {
+    const p = path.join(INBOX, naam);
+    let req = null;
+    try { req = JSON.parse(leesBegrensd(p).toString("utf8")); } catch { req = null; }
+    try { unlinkSync(p); } catch { /* al weg */ }
+    const code = verwerkEen(naam.startsWith("sleutel-toevoegen-") ? "sleutel-toevoegen" : "sleutel-verwijderen", req);
+    laatste = code === "OK" ? laatste : 2;
+  }
+  return laatste;
+}
+function verwerkEen(doel, req) {
+  const weiger = (code, extra = {}) => { const [uk, nl] = tekst(code); log(`${doel} geweigerd: ${code}`); sleutelStatus("geweigerd", code, { doel, ...extra }); gebeurtenis(code, "waarschuwing", uk, nl); return code; };
+  if (!req || typeof req !== "object" || req.doel !== doel || !req.assertie) return weiger("GOEDKEURING_ONGELDIG");
+  let bestand;
+  try { bestand = leesSleutelbestand(); } catch (err) { return weiger(String(err.message)); }
+  if (doel === "sleutel-toevoegen") {
+    if (!bestand.sleutels.length) return weiger("EERSTE_SLEUTEL_VIA_SSH");
+    const n = req.nieuw || {};
+    let fp;
+    try { fp = vingerafdruk({ alg: n.alg, jwk: n.jwk }); } catch { return weiger("GOEDKEURING_ONGELDIG"); }
+    if (typeof n.credentialId !== "string" || !/^[A-Za-z0-9_-]{16,1400}$/.test(n.credentialId)) return weiger("GOEDKEURING_ONGELDIG");
+    if (bestand.sleutels.some((s) => s.credentialId === n.credentialId || s.vingerafdruk === fp)) return weiger("BESTAAT_AL");
+    if (bestand.sleutels.length >= MAX_SLEUTELS) return weiger("TE_VEEL_SLEUTELS");
+    const r = controleerEnVerbruik(doel, { vingerafdruk: fp, nonce: req.nonce, verloopt: Number(req.verloopt) }, req.assertie, bestand);
+    if (!r.ok) return weiger(r.code, { vingerafdruk: fp });
+    bestand.sleutels.push({ credentialId: n.credentialId, alg: n.alg, jwk: n.jwk, label: String(n.label || "passkey").slice(0, 60), vingerafdruk: fp, toegevoegd: new Date().toISOString(), door: `passkey:${r.vingerafdruk.slice(0, 16)}` });
+    schrijfSleutelbestand(bestand);
+    sleutelStatus("klaar", "OK", { doel, vingerafdruk: fp });
+    gebeurtenis("PASSKEY_TOEGEVOEGD", "info", `Додано passkey ${vingerafdrukKort(fp)} (підтверджено ключем ${vingerafdrukKort(r.vingerafdruk)}).`, `Passkey ${vingerafdrukKort(fp)} toegevoegd (bevestigd met sleutel ${vingerafdrukKort(r.vingerafdruk)}).`);
+    return "OK";
+  }
+  const doelFp = String(req.vingerafdruk || "");
+  if (!/^[0-9a-f]{64}$/.test(doelFp)) return weiger("GOEDKEURING_ONGELDIG");
+  if (!bestand.sleutels.some((s) => s.vingerafdruk === doelFp)) return weiger("NIET_GEVONDEN");
+  const r = controleerEnVerbruik(doel, { vingerafdruk: doelFp, nonce: req.nonce, verloopt: Number(req.verloopt) }, req.assertie, bestand);
+  if (!r.ok) return weiger(r.code, { vingerafdruk: doelFp });
+  bestand.sleutels = bestand.sleutels.filter((s) => s.vingerafdruk !== doelFp);
+  schrijfSleutelbestand(bestand);
+  sleutelStatus("klaar", "OK", { doel, vingerafdruk: doelFp });
+  gebeurtenis("PASSKEY_VERWIJDERD", "info", `Passkey ${vingerafdrukKort(doelFp)} видалено.`, `Passkey ${vingerafdrukKort(doelFp)} verwijderd.`);
+  return "OK";
+}
+
+const AANMELDING = /^sleutel-aanmelding-[0-9a-f]{64}\.json$/;
+function wachtend() {
+  const uit = [];
+  let namen = [];
+  try { namen = readdirSync(INBOX).filter((n) => AANMELDING.test(n)).sort(); } catch { return uit; }
+  for (const naam of namen.slice(0, 20)) {
+    try {
+      const d = JSON.parse(leesBegrensd(path.join(INBOX, naam)).toString("utf8"));
+      const fp = vingerafdruk({ alg: d.alg, jwk: d.jwk }); // zelf uitrekenen, nooit de vingerafdruk van de app overnemen
+      if (typeof d.credentialId !== "string" || !/^[A-Za-z0-9_-]{16,1400}$/.test(d.credentialId)) continue;
+      uit.push({ bestand: naam, vingerafdruk: fp, credentialId: d.credentialId, alg: d.alg, jwk: d.jwk, label: String(d.label || "passkey").slice(0, 60), aangemaakt: String(d.aangemaakt || "") });
+    } catch { /* ongeldig overslaan */ }
+  }
+  return uit;
+}
+const prefixOk = (s) => /^[0-9a-f]{16,64}$/.test(String(s || "").replace(/\s+/g, "").toLowerCase());
+const schoonPrefix = (s) => String(s || "").replace(/\s+/g, "").toLowerCase();
+
+function toevoegenViaSsh(prefix) {
+  if (!prefixOk(prefix)) { log("geef minstens 16 hex-tekens van de vingerafdruk (zoals op de telefoon)"); return 1; }
+  const p = schoonPrefix(prefix);
+  const treffers = wachtend().filter((w) => w.vingerafdruk.startsWith(p));
+  if (treffers.length !== 1) { log(treffers.length ? "meer dan één wachtende aanmelding past; geef meer tekens" : "geen wachtende aanmelding met deze vingerafdruk (zie: mijn-ruimte-passkey wachtend)"); return 1; }
+  const w = treffers[0];
+  const bestand = leesSleutelbestand();
+  if (bestand.sleutels.some((s) => s.credentialId === w.credentialId || s.vingerafdruk === w.vingerafdruk)) { log("deze passkey staat er al in"); return 1; }
+  if (bestand.sleutels.length >= MAX_SLEUTELS) { log("te veel sleutels"); return 1; }
+  bestand.sleutels.push({ credentialId: w.credentialId, alg: w.alg, jwk: w.jwk, label: w.label, vingerafdruk: w.vingerafdruk, toegevoegd: new Date().toISOString(), door: "ssh" });
+  schrijfSleutelbestand(bestand);
+  try { unlinkSync(path.join(INBOX, w.bestand)); } catch { /* app ruimt op */ }
+  gebeurtenis("PASSKEY_TOEGEVOEGD", "info", `Додано passkey ${vingerafdrukKort(w.vingerafdruk)} через SSH.`, `Passkey ${vingerafdrukKort(w.vingerafdruk)} toegevoegd via SSH.`);
+  process.stdout.write(`toegevoegd: ${w.label}  ${vingerafdrukKort(w.vingerafdruk)}\n  volledige vingerafdruk: ${w.vingerafdruk}\n  bestand: ${SLEUTELS}\n`);
+  if (!schakelaarAan()) process.stdout.write(`let op: "passkey-goedkeuring" staat nog uit in ${RECHTEN}\n`);
+  return 0;
+}
+function verwijderenViaSsh(prefix) {
+  if (!prefixOk(prefix)) { log("geef minstens 16 hex-tekens van de vingerafdruk"); return 1; }
+  const p = schoonPrefix(prefix);
+  const bestand = leesSleutelbestand();
+  const treffers = bestand.sleutels.filter((s) => s.vingerafdruk.startsWith(p));
+  if (treffers.length !== 1) { log(treffers.length ? "meer dan één sleutel past" : "geen sleutel met deze vingerafdruk"); return 1; }
+  bestand.sleutels = bestand.sleutels.filter((s) => s !== treffers[0]);
+  schrijfSleutelbestand(bestand);
+  gebeurtenis("PASSKEY_VERWIJDERD", "info", `Passkey ${vingerafdrukKort(treffers[0].vingerafdruk)} видалено через SSH.`, `Passkey ${vingerafdrukKort(treffers[0].vingerafdruk)} verwijderd via SSH.`);
+  process.stdout.write(`verwijderd: ${treffers[0].label}  ${vingerafdrukKort(treffers[0].vingerafdruk)}\n`);
+  return 0;
+}
+function allesIntrekken() {
+  const bestand = leesSleutelbestand();
+  const n = bestand.sleutels.length;
+  bestand.sleutels = [];
+  schrijfSleutelbestand(bestand);
+  gebeurtenis("PASSKEYS_INGETROKKEN", "waarschuwing", `Усі passkey (${n}) відкликано через SSH.`, `Alle passkeys (${n}) ingetrokken via SSH.`);
+  process.stdout.write(`alle ${n} sleutel(s) ingetrokken; goedkeuren met een passkey kan pas weer na een nieuwe aanmelding + 'toevoegen'\n`);
+  return 0;
+}
+
+// ------------------------------------------------------------------------------------------------ hoofdprogramma
+function hoofd(argv) {
+  const [opdracht, ...args] = argv;
+  try {
+    switch (opdracht) {
+      case "__gebeurtenis": schrijfGebeurtenis(String(args[0] || "")); return 0;
+      case "verifieer-goedkeuring": return args.length === 3 ? verifieerGoedkeuring(args[0], args[1], args[2]) : 64;
+      case "verwerk": return verwerk();
+      case "wachtend": for (const w of wachtend()) process.stdout.write(`${vingerafdrukKort(w.vingerafdruk)}  ${w.label}  ${w.aangemaakt}\n  ${w.vingerafdruk}\n`); return 0;
+      case "lijst": {
+        const b = leesSleutelbestand();
+        process.stdout.write(`rpId ${b.rpId}  origins ${b.origins.join(", ")}  schakelaar ${schakelaarAan() ? "aan" : "uit"}\n`);
+        for (const s of b.sleutels) process.stdout.write(`${vingerafdrukKort(s.vingerafdruk)}  ${s.label}  toegevoegd ${s.toegevoegd} (${s.door})\n`);
+        if (!b.sleutels.length) process.stdout.write("(geen sleutels)\n");
+        return 0;
+      }
+      case "toevoegen": return toevoegenViaSsh(args.join(""));
+      case "verwijderen": return verwijderenViaSsh(args.join(""));
+      case "alles-intrekken": return allesIntrekken();
+      default:
+        process.stderr.write("gebruik: mijn-ruimte-passkey wachtend | lijst | toevoegen <vingerafdruk> | verwijderen <vingerafdruk> | alles-intrekken\n");
+        return 64;
+    }
+  } catch (err) {
+    log(`fout: ${err?.message || err}`);
+    return 1;
+  }
+}
+process.exitCode = hoofd(process.argv.slice(2));

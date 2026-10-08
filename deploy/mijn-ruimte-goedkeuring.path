@@ -1,0 +1,12 @@
+# Start mijn-ruimte-goedkeuring.service zodra de app een met een passkey goedgekeurd pakket in de goedkeur-inbox zet.
+# De inbox is schrijfbaar voor de app, maar root installeert alleen als de assertie van een passkey uit het root-bestand
+# /etc/mijn-ruimte/goedkeur-passkeys.json geldig is voor precies dit pakket (zie deploy/RUNBOOK-VEILIGE-UITROL.md §13).
+[Unit]
+Description=Mijn Ruimte: inbox voor met een passkey goedgekeurde updates bewaken
+
+[Path]
+PathChanged=/srv/mijn-ruimte/goedkeur-inbox/aanvraag
+Unit=mijn-ruimte-goedkeuring.service
+
+[Install]
+WantedBy=paths.target

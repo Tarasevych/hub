@@ -11,7 +11,8 @@
 #     /var/lib/mijn-ruimte-uitrol{,-status}, /var/lib/mijn-ruimte/{gitops,opdracht}.
 #   - elk werkwoord heeft een schakelaar in mcp-rechten.json → "opdracht": {"status": true, ...}; ontbreekt die, dan geldt de standaard
 #     (status/releases/backup/uitrol-nu aan, terugdraaien UIT).
-#   - uitrol-nu start alleen mijn-ruimte-gitops.service en mijn-ruimte-uitrol.service (die installeren uitsluitend ONDERTEKENDE code).
+#   - uitrol-nu start alleen mijn-ruimte-gitops.service, mijn-ruimte-uitrol.service en mijn-ruimte-goedkeuring.service (die installeren
+#     uitsluitend ONDERTEKENDE of met de passkey van de eigenaar GOEDGEKEURDE code; root controleert dat zelf).
 #   - terugdraaien roept de root-kopie /usr/local/sbin/mijn-ruimte-installeer terugdraaien aan (nooit iets uit /srv/…/deploy),
 #     hooguit één keer per 10 minuten (root-stempel), en wordt gemeld in de audit.
 #   - backup start mijn-ruimte-backup.service (die draait als mijnruimte, niet als root).
@@ -195,6 +196,7 @@ PY
   uitrol-nu)
     "$SYSTEMCTL" start --no-block mijn-ruimte-gitops.service
     "$SYSTEMCTL" start --no-block mijn-ruimte-uitrol.service
+    "$SYSTEMCTL" start --no-block mijn-ruimte-goedkeuring.service
     resultaat ok GESTART "Перевірку підписаних випусків запущено (GitOps і пакет)." "Controle op ondertekende releases gestart (GitOps en pakket)."
     gebeurtenis UITROL_NU info "Запущено перевірку підписаних випусків." "Controle op ondertekende releases gestart." uitrol-nu ;;
 
