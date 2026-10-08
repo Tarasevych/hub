@@ -9,6 +9,8 @@ export const BROWSER_TYPES = [
   'browser.navigate', 'browser.history',
   'browser.invoke', 'browser.click', 'browser.type', 'browser.select', 'browser.key',
   'browser.screenshot', 'browser.deep_diagnostics',
+  // 0.4 (0021): naar het voorbeeld van chrome-devtools-mcp; welke mogen, bepalen de grants (ai-grants.ts).
+  'browser.console', 'browser.network', 'browser.self_test', 'browser.pages', 'browser.hover', 'browser.fill_form',
 ] as const;
 export type BrowserType = typeof BROWSER_TYPES[number];
 
