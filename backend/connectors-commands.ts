@@ -1,35 +1,46 @@
-// Opdrachten voor een agent: aanmaken volgens het beleid van de agent, goedkeuren, en wachten op het resultaat.
+// Opdrachten voor een agent: aanmaken volgens de toestemmingen (grants) van de gebruiker, goedkeuren, en wachten op het resultaat.
 import { agentOnline, dispatchCommand } from './connectors-gateway';
 import * as store from './connectors-store';
+import * as grants from './ai-grants';
 
 const TERMINAL = new Set(['succeeded', 'failed', 'rejected', 'timeout']);
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/**
- * Leesopdrachten (beleid `autoApprove`) gaan direct naar de agent; schrijven en uitvoeren wachten op een klik
- * van de gebruiker in de UI. De agent controleert zelf nog eens zijn mappen en toegestane commando's.
- */
-export async function submitCommand(agent: store.AgentRow, userId: string, type: string, params: object, opts: { forceApproval?: boolean; forceAuto?: boolean } = {}) {
-  if (type.startsWith('browser.')) {
-    const gate = await store.browserGate(agent.id, type);
-    if (gate !== 'ok') throw new Error(gate === 'inactive' ? 'BROWSER_NOT_ACTIVE' : 'BROWSER_CAPABILITY_OFF');
-  }
-  // Modus "ask" van het hulpmiddel (door de gebruiker gekozen) verscherpt het beleid van de agent: altijd een klik.
-  // "Altijd" op een riskant hulpmiddel is een uitdrukkelijke keuze van de gebruiker en gaat vóór het beleid van de agent (geen klik per aanroep).
-  const auto = !opts.forceApproval && (!!opts.forceAuto || agent.policy.autoApprove.includes(type));
-  const cmd = await store.createCommand(agent.id, userId, type, params, auto ? 'approved' : 'pending_approval');
-  if (auto && !(await dispatchCommand(cmd))) {
-    await store.transitionCommand(cmd.id, ['approved'], 'failed', { error: 'agent offline' }, userId);
-  }
-  return { command: (await store.getCommand(userId, cmd.id)) ?? cmd, auto };
+export class CommandRefused extends Error {
+  constructor(public code: string) { super(code); }
 }
 
-/** Keur een wachtende opdracht goed en verstuur hem. null = niet (meer) in afwachting. */
+/**
+ * Een opdracht aanmaken:
+ *   - zonder geldige grant (of buiten de domeinen, of geblokkeerd, of te veel opdrachten) → CommandRefused (geen rij, niets verstuurd);
+ *   - niet-destructief met grant → direct (tenzij de gebruiker voor het hulpmiddel 'vragen' koos: forceApproval);
+ *   - destructief → requireFreshApproval (wachten op een klik binnen GRANT_LIMITS.freshApprovalMinutes), behalve met een geldige
+ *     'altijd'-grant die de eigenaar met step-up heeft aangezet. Er is GEEN impliciete 'altijd' meer (audit H2: forceAuto is weg).
+ * De agent controleert daarna zelf nog eens zijn mappen, toegestane commando's en de handtekening van de opdracht.
+ */
+export async function submitCommand(agent: store.AgentRow, userId: string, type: string, params: object, opts: { forceApproval?: boolean } = {}) {
+  if (agent.user_id && agent.user_id !== userId) throw new CommandRefused('AGENT_NOT_FOUND');
+  if (type.startsWith('browser.') && !(await store.browserActive(agent.id))) throw new CommandRefused('BROWSER_NOT_ACTIVE');
+  const check = await grants.checkCommand({ id: agent.id, user_id: userId }, type, params, 'create');
+  if (!check.ok) throw new CommandRefused(check.code);
+  const auto = !opts.forceApproval && !check.needsFreshApproval;
+  const cmd = await store.createCommand(agent.id, userId, type, params, auto ? 'approved' : 'pending_approval', check.grantId);
+  if (auto && !(await dispatchCommand(cmd))) {
+    await store.transitionCommand(cmd.id, ['approved'], 'failed', { error: 'agent offline or not allowed' }, userId);
+  }
+  return { command: (await store.getCommand(userId, cmd.id)) ?? cmd, auto, freshApproval: !auto };
+}
+
+/** Verse goedkeuring: een wachtende opdracht kan alleen binnen een paar minuten na aanmaken worden goedgekeurd. */
+export const requireFreshApproval = (userId: string) => store.expireStalePending(userId, grants.GRANT_LIMITS.freshApprovalMinutes);
+
+/** Keur een wachtende opdracht goed en verstuur hem. null = niet (meer) in afwachting (of te oud). */
 export async function approveCommand(userId: string, id: string) {
+  await requireFreshApproval(userId);
   const approved = await store.transitionCommand(id, ['pending_approval'], 'approved', undefined, userId);
   if (!approved) return null;
   if (!agentOnline(approved.agent_id) || !(await dispatchCommand(approved))) {
-    await store.transitionCommand(id, ['approved'], 'failed', { error: 'agent offline' }, userId);
+    await store.transitionCommand(id, ['approved'], 'failed', { error: 'agent offline or not allowed' }, userId);
   }
   return store.getCommand(userId, id);
 }

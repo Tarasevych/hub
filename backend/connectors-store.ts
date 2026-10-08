@@ -28,15 +28,21 @@ export interface AgentRow {
   revoked_at: Date | null;
   browser_enabled: boolean;
   armed_until: Date | null;
+  token_expires_at?: Date | null;
+  pairing_id?: string | null;
+  agent_version?: string | null;
 }
 
 export const AGENT_LIMITS = {
   agentsPerUser: 10,
   pairingCodesPer10Min: 5,
-  pairingCodeTtlMin: 10,
+  /** Eenmalige koppelcode (ook het PAIR-bericht van de site naar de extensie): 5 minuten. */
+  pairingCodeTtlMin: 5,
+  /** Agenttokens vervallen na 30 dagen (0018); daarna opnieuw koppelen. */
+  tokenTtlDays: 30,
 };
 
-const AGENT_COLS = 'id, user_id, name, platform, status, last_seen_at, capabilities, policy, created_at, revoked_at, browser_enabled, armed_until';
+const AGENT_COLS = 'id, user_id, name, platform, status, last_seen_at, capabilities, policy, created_at, revoked_at, browser_enabled, armed_until, token_expires_at, pairing_id, agent_version';
 
 const systeem = (sql: string, params: unknown[] = []): Promise<QueryResult> => getPool('systeem').query(sql, params);
 
@@ -109,12 +115,12 @@ export async function revokeAgent(userId: string, id: string): Promise<boolean> 
 }
 
 export async function createCommand(
-  agentId: string, userId: string, type: string, params: object, status: CommandStatus,
+  agentId: string, userId: string, type: string, params: object, status: CommandStatus, grantId: string | null = null,
 ) {
   const { rows } = await gebruiker(
-    `INSERT INTO app.agent_commands (agent_id, user_id, type, params, status, decided_at)
-     VALUES ($1, $2, $3, $4, $5, CASE WHEN $5 = 'approved' THEN now() END) RETURNING *`,
-    [agentId, userId, type, JSON.stringify(params), status]);
+    `INSERT INTO app.agent_commands (agent_id, user_id, type, params, status, decided_at, grant_id)
+     VALUES ($1, $2, $3, $4, $5, CASE WHEN $5 = 'approved' THEN now() END, $6) RETURNING *`,
+    [agentId, userId, type, JSON.stringify(params), status, grantId]);
   return rows[0];
 }
 
@@ -171,13 +177,34 @@ export async function purgeOldPairingCodes(): Promise<void> {
 
 export async function createAgent(
   userId: string, name: string, platform: string | null, tokenHash: string, capabilities: object,
-  policy?: { autoApprove: string[] },
+  policy?: { autoApprove: string[] }, extra: { pairingId?: string | null; commandKeyEnc?: string | null; version?: string | null } = {},
 ): Promise<AgentRow> {
   const { rows } = await systeem(
-    `INSERT INTO app.agents (user_id, name, platform, token_hash, capabilities, policy)
-     VALUES ($1, $2, $3, $4, $5, COALESCE($6::jsonb, '{"autoApprove": ["fs.read", "fs.list", "sys.info", "sys.metrics", "docker.ps"]}'::jsonb)) RETURNING ${AGENT_COLS}`,
-    [userId, name, platform, tokenHash, JSON.stringify(capabilities), policy ? JSON.stringify(policy) : null]);
+    `INSERT INTO app.agents (user_id, name, platform, token_hash, capabilities, policy, pairing_id, command_key_enc, agent_version, token_expires_at)
+     VALUES ($1, $2, $3, $4, $5, COALESCE($6::jsonb, '{"autoApprove": ["fs.read", "fs.list", "sys.info", "sys.metrics", "docker.ps"]}'::jsonb), $7, $8, $9, now() + make_interval(days => $10)) RETURNING ${AGENT_COLS}`,
+    [userId, name, platform, tokenHash, JSON.stringify(capabilities), policy ? JSON.stringify(policy) : null,
+     extra.pairingId ?? null, extra.commandKeyEnc ?? null, extra.version ?? null, AGENT_LIMITS.tokenTtlDays]);
   return rows[0] as AgentRow;
+}
+
+/**
+ * Opnieuw koppelen: het vorige token van DEZELFDE installatie (pairing_id) wordt ingetrokken. Zonder pairing_id (oude extensies)
+ * valt dit terug op dezelfde naam bij een browser (vroegere regel). Geeft de ingetrokken agent-id's terug.
+ */
+export async function revokePreviousPairing(userId: string, keepId: string, pairingId: string | null, name: string, platform: string | null): Promise<string[]> {
+  const { rows } = await gebruiker(
+    `UPDATE app.agents SET revoked_at = now(), status = 'disconnected', revoke_reason = 'repaired'
+      WHERE user_id = $1 AND id <> $2 AND revoked_at IS NULL
+        AND (($3::text IS NOT NULL AND pairing_id = $3) OR ($3::text IS NULL AND $5 = 'browser' AND platform = 'browser' AND name = $4))
+      RETURNING id`, [userId, keepId, pairingId, name, platform ?? '']);
+  return rows.map((r: { id: string }) => r.id);
+}
+
+/** Verzegelde opdrachtsleutel van een agent (0018) of null (oude agent zonder sleutel). */
+export async function getCommandKeyEnc(agentId: string): Promise<{ sealed: string; userId: string; tokenHash: string } | null> {
+  const { rows } = await systeem('SELECT command_key_enc, user_id, token_hash FROM app.agents WHERE id = $1 AND revoked_at IS NULL', [agentId]);
+  const r = rows[0];
+  return r?.command_key_enc ? { sealed: r.command_key_enc, userId: r.user_id, tokenHash: r.token_hash } : null;
 }
 
 /** Beleid van een eigen agent aanpassen (welke opdrachttypes direct mogen). false = agent niet van deze gebruiker. */
@@ -310,20 +337,36 @@ export async function transitionToolCall(id: string, userId: string, from: ToolC
   return rows[0] ?? null;
 }
 
+/**
+ * Agent bij token-hash (WebSocket, /self, ws-ticket). Alleen een geldig token: niet ingetrokken, niet verlopen (0018), de gebruiker
+ * niet geblokkeerd voor AI (0017) en het account zelf niet geblokkeerd of opgeheven (audit M4).
+ */
 export async function findAgentByTokenHash(tokenHash: string): Promise<AgentRow | null> {
   const { rows } = await systeem(
-    `SELECT ${AGENT_COLS} FROM app.agents WHERE token_hash = $1 AND revoked_at IS NULL`, [tokenHash]);
+    `SELECT ${AGENT_COLS.split(', ').map((c) => `a.${c}`).join(', ')} FROM app.agents a
+      WHERE a.token_hash = $1 AND a.revoked_at IS NULL AND a.token_expires_at > now()
+        AND NOT EXISTS (SELECT 1 FROM app.user_ai_settings s WHERE s.user_id = a.user_id AND s.blocked_at IS NOT NULL)
+        AND NOT EXISTS (SELECT 1 FROM app.records r WHERE r.tbl = 'users' AND r.id = a.user_id
+                          AND (r.data->>'status' IN ('blocked', 'rejected', 'deleted') OR COALESCE((r.data->>'retiredAt')::numeric, 0) > 0))`, [tokenHash]);
   return (rows[0] as AgentRow | undefined) ?? null;
 }
 
-export async function setAgentStatus(id: string, status: 'connected' | 'disconnected', capabilities?: object) {
-  await systeem(
-    `UPDATE app.agents SET status = $2, last_seen_at = now(), capabilities = COALESCE($3::jsonb, capabilities)
-      WHERE id = $1`, [id, status, capabilities ? JSON.stringify(capabilities) : null]);
+/** Agent bij id met dezelfde geldigheidsregels als findAgentByTokenHash (voor een ingewisseld WebSocket-ticket). */
+export async function findAgentById(id: string): Promise<AgentRow | null> {
+  const { rows } = await systeem('SELECT token_hash FROM app.agents WHERE id = $1 AND revoked_at IS NULL', [id]);
+  return rows[0] ? findAgentByTokenHash(rows[0].token_hash) : null;
 }
 
-export async function touchAgent(id: string) {
-  await systeem('UPDATE app.agents SET last_seen_at = now() WHERE id = $1', [id]);
+export async function setAgentStatus(id: string, status: 'connected' | 'disconnected', capabilities?: object, version?: string) {
+  await systeem(
+    `UPDATE app.agents SET status = $2, last_seen_at = now(), capabilities = COALESCE($3::jsonb, capabilities), agent_version = COALESCE($4, agent_version)
+      WHERE id = $1`, [id, status, capabilities ? JSON.stringify(capabilities) : null, version ? version.slice(0, 40) : null]);
+}
+
+export async function touchAgent(id: string, capabilities?: object, version?: string) {
+  await systeem(
+    `UPDATE app.agents SET last_seen_at = now(), capabilities = COALESCE($2::jsonb, capabilities), agent_version = COALESCE($3, agent_version)
+      WHERE id = $1`, [id, capabilities ? JSON.stringify(capabilities) : null, version ? version.slice(0, 40) : null]);
 }
 
 /** Na een herstart van de server is nog geen agent opnieuw verbonden. */
@@ -336,13 +379,22 @@ export async function markAllAgentsDisconnected() {
  * resultaat dat na een timeout binnenkomt. `userId` meegeven als de overgang namens een gebruiker gaat.
  */
 export async function transitionCommand(
-  id: string, from: CommandStatus[], to: CommandStatus, result?: unknown, userId?: string,
+  id: string, from: CommandStatus[], to: CommandStatus, result?: unknown, userId?: string, agentId?: string,
 ) {
+  // agentId (audit M3): een resultaat via de WebSocket sluit alleen een opdracht af die naar DEZE agent ging.
   const { rows } = await systeem(
     `UPDATE app.agent_commands SET status = $3, result = COALESCE($4::jsonb, result),
         decided_at = CASE WHEN $3 IN ('approved', 'rejected') THEN now() ELSE decided_at END,
         finished_at = CASE WHEN $3 IN ('succeeded', 'failed', 'timeout') THEN now() ELSE finished_at END
-      WHERE id = $1 AND status = ANY($2) AND ($5::text IS NULL OR user_id = $5) RETURNING *`,
-    [id, from, to, result === undefined ? null : JSON.stringify(result), userId ?? null]);
+      WHERE id = $1 AND status = ANY($2) AND ($5::text IS NULL OR user_id = $5) AND ($6::uuid IS NULL OR agent_id = $6) RETURNING *`,
+    [id, from, to, result === undefined ? null : JSON.stringify(result), userId ?? null, agentId ?? null]);
   return rows[0] ?? null;
+}
+
+/** Een wachtende opdracht die ouder is dan `minutes` kan niet meer worden goedgekeurd (verse goedkeuring). */
+export async function expireStalePending(userId: string, minutes: number): Promise<number> {
+  const r = await systeem(
+    `UPDATE app.agent_commands SET status = 'timeout', finished_at = now(), result = '{"error":"approval expired"}'::jsonb
+      WHERE user_id = $1 AND status = 'pending_approval' AND created_at < now() - make_interval(mins => $2)`, [userId, minutes]);
+  return r.rowCount ?? 0;
 }
