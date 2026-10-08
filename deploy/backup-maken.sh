@@ -65,7 +65,8 @@ pg_dump --dbname="$DUMP_URL" --format=custom --compress=6 --no-owner --no-privil
 
 echo "[backup] uploads archiveren…"
 if [ -d "$UPLOADS_DIR" ]; then
-  tar --create --gzip --file=- --directory="$(dirname "$UPLOADS_DIR")" "$(basename "$UPLOADS_DIR")" | schrijf "$tmp/uploads.tar.gz$ext"
+  # mcp-archives (volledige archieven voor de pc, zie archief-maken.sh) en het brugtoken horen niet in de nachtelijke kopie: ze zijn zelf een kopie.
+  tar --create --gzip --file=- --directory="$(dirname "$UPLOADS_DIR")" --exclude="$(basename "$UPLOADS_DIR")/mcp-archives" --exclude="$(basename "$UPLOADS_DIR")/mcp-bridge.token" "$(basename "$UPLOADS_DIR")" | schrijf "$tmp/uploads.tar.gz$ext"
 else
   echo "[backup] waarschuwing: $UPLOADS_DIR bestaat niet; leeg archief" >&2
   tar --create --gzip --file=- --files-from=/dev/null | schrijf "$tmp/uploads.tar.gz$ext"
