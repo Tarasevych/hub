@@ -23,12 +23,15 @@ Zet de privésleutel nooit op de VM, in GitHub of op T:\. Hieronder wordt er all
 en gaat de klare tekst via SSH rechtstreeks de nieuwe VM in.
 
 ## Snelste weg: het volledige archief (één bestand, één opdracht)
-Site `mcp.tarasevych.com` → «Архів на ПК» → «Зібрати повний архів» maakt `mijn-ruimte-<stempel>-volledig.tar` (root-script
-`/usr/local/sbin/mijn-ruimte-archief`, gestart door `mijn-ruimte-archief.path`; voortgang in `kit-status.txt`). Inhoud: code, MCP-brug, git-bundels,
-database + rollen, bestanden, systeemunits/tunnelconfig, geheimen (database, bestanden en geheimen **age-versleuteld** met de bestaande publieke sleutel),
+Site `mcp.tarasevych.com` → «Архів на ПК» → «Зібрати повний архів» maakt `mijn-ruimte-<stempel>-volledig.tar.age` (root-script
+`/usr/local/sbin/mijn-ruimte-archief`, gestart door `mijn-ruimte-archief.path`; voortgang in `kit-status.txt`; uitvoer in de root-map
+`/var/lib/mijn-ruimte-archief/uitgifte` onder de vaste naam `archief-laatste.tar.age`). Downloaden kan alleen de eigenaar, na step-up, via een
+eenmalige download-id. Het **hele archief** is met age versleuteld voor de bestaande publieke sleutel (sinds 2026-10; daarvoor waren alleen database,
+bestanden en geheimen versleuteld). Inhoud: code, MCP-deur, git-bundels, database + rollen, bestanden, systeemunits/tunnelconfig (geen sudoers), geheimen,
 `LEES-MIJ.txt`, `SHA256SUMS` en `vidnovyty.sh`. Op een nieuwe Ubuntu/Debian-machine (virtueel of fysiek, x86-64 of ARM64):
 ```bash
-tar -xf mijn-ruimte-<stempel>-volledig.tar && cd mijn-ruimte-<stempel>-volledig
+age -d -i /pad/naar/herstelsleutel-age.txt mijn-ruimte-<stempel>-volledig.tar.age | tar -x && cd mijn-ruimte-<stempel>-volledig
+# (Windows: & "$env:ProgramFiles\age\age.exe" -d -i T:\herstelsleutel-age.txt -o archief.tar mijn-ruimte-…-volledig.tar.age; daarna tar -xf archief.tar)
 sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt --proefrun   # eerst alleen tonen
 sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt              # echt uitvoeren
 ```

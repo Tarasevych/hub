@@ -91,7 +91,7 @@ release="$(readlink -f /srv/mijn-ruimte/current 2>/dev/null || echo onbekend)"
   ss -ltn 2>/dev/null | awk 'NR>1{print $4}' | sort -u || true
 } > "$tmp/systeem-info.txt" 2>/dev/null || true
 sys_paden=()
-for p in "$release" /srv/mijn-ruimte/mcp /srv/mijn-ruimte/mcp-staging/overlay /etc/cloudflared/config.yml /etc/mijn-ruimte; do
+for p in "$release" /srv/mijn-ruimte/mcp /etc/cloudflared/config.yml /etc/mijn-ruimte; do
   if [ -r "$p" ]; then sys_paden+=("${p#/}"); else echo "overgeslagen (niet leesbaar of afwezig): $p" >> "$tmp/systeem-info.txt"; fi
 done
 for p in /etc/systemd/system/mijn-ruimte* /etc/systemd/system/cloudflared.service; do
@@ -100,7 +100,7 @@ done
 if [ "${#sys_paden[@]}" -gt 0 ]; then
   # Geheimen blijven eruit: geheimen.env, sleutels, certificaten en tunnel-inloggegevens. tar-code 1 (bestand veranderde) is geen fout.
   { tar --create --gzip --file=- --directory=/ --ignore-failed-read \
-      --exclude='*geheimen*' --exclude='*.env' --exclude='*.pem' --exclude='*.key' --exclude='*herstelsleutel*' --exclude='*credentials*' --exclude='*.age.txt' \
+      --exclude='*geheimen*' --exclude='*.env' --exclude='*.pem' --exclude='*.key' --exclude='*herstelsleutel*' --exclude='*credentials*' --exclude='*.age.txt' --exclude='*.token' --exclude='*.secret' --exclude='mcp-state' --exclude='uitrol-inbox' \
       --exclude='*/node_modules' "${sys_paden[@]}" || [ $? -eq 1 ]; } | schrijf "$tmp/systeem.tar.gz$ext"
 else
   echo "[backup] waarschuwing: geen systeempaden leesbaar; leeg systeemarchief" >&2
