@@ -4,6 +4,7 @@
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { WebSocket } from 'ws';
+import * as grants from '../../backend/ai-grants';
 import { approveCommand, rejectCommand } from '../../backend/connectors-commands';
 import { agentOnline, attachAgentGateway, disconnectAgent } from '../../backend/connectors-gateway';
 import * as store from '../../backend/connectors-store';
@@ -84,15 +85,20 @@ export async function main(): Promise<number> {
       && !enabledTypes(null).includes('browser.click') && !enabledTypes(null).includes('browser.screenshot') && !enabledTypes(null).includes('browser.deep_diagnostics'));
     check('automatisch goedkeuren kan nooit voor handelen, screenshot of diepe diagnose',
       !BROWSER_AUTO_APPROVABLE.some((t) => ['browser.invoke', 'browser.click', 'browser.type', 'browser.select', 'browser.key', 'browser.screenshot', 'browser.deep_diagnostics'].includes(t))
-      && BROWSER_DEFAULT_AUTO.every((t) => BROWSER_DEFAULT_ENABLED.includes(t)) && BROWSER_TYPES.length === 14);
+      && BROWSER_DEFAULT_AUTO.every((t) => BROWSER_DEFAULT_ENABLED.includes(t)) && BROWSER_TYPES.length === 20);
     // Riskante hulpmiddelen staan standaard uit; deze test wil de keten (mogelijkheid per browser + klik) testen, dus de gebruiker zet ze op "ask".
     await store.setToolModes(A, Object.fromEntries([...RISKY_TOOLS].map((n) => [n, 'ask' as const])));
     const uitKlik = await callTool(A, 'browser_click', { name: 'Opslaan' });
     const uitShot = await callTool(A, 'browser_screenshot', {});
-    check('een uitgezette mogelijkheid wordt geweigerd met uitleg en de extensie krijgt niets',
-      uitKlik.isError === true && /switched this capability off/.test(uitKlik.content[0].text) && uitShot.isError === true && /switched this capability off/.test(uitShot.content[0].text) && ext.opdrachten.length === 0);
-    // de gebruiker zet alles aan in het kabinet (autoApprove blijft beperkt tot lezen/kijken)
-    await store.setAgentPolicy(A, agent.id, ['browser.diagnostics', 'browser.scroll', 'browser.snapshot', 'browser.tabs', 'browser.wait'], [...BROWSER_TYPES]);
+    check('zonder toestemming (grant) wordt een opdracht geweigerd met uitleg en de extensie krijgt niets',
+      uitKlik.isError === true && /not given permission/.test(uitKlik.content[0].text) && uitShot.isError === true && /not given permission/.test(uitShot.content[0].text) && ext.opdrachten.length === 0, uitKlik.content[0].text.slice(0, 80));
+    // de gebruiker geeft toestemming: lezen, navigeren (alleen mail.* en mcp.*), handelen en screenshots — zonder 'altijd'
+    await grants.addGrants(A, A, [
+      { agentId: agent.id, capability: 'browser.read' },
+      { agentId: agent.id, capability: 'browser.navigate', domains: ['mail.tarasevych.com', 'mcp.tarasevych.com'] },
+      { agentId: agent.id, capability: 'browser.interact' },
+      { agentId: agent.id, capability: 'browser.screenshot' },
+    ], { steppedUp: false });
     const tabs = await callTool(A, 'browser_list_tabs', {});
     check('browser_list_tabs: direct uitgevoerd (lezen)', !tabs.isError && /Agenten/.test(tabs.content[0].text) && ext.opdrachten.some((o) => o.type === 'browser.tabs'));
 
@@ -116,23 +122,32 @@ export async function main(): Promise<number> {
     await rejectCommand(A, (await store.listPendingCommands(A))[0].id);
     const geweigerd = await klik2;
     check('weigeren: de AI hoort dat de gebruiker heeft geweigerd en de extensie krijgt niets', geweigerd.isError === true && /rejected/.test(geweigerd.content[0].text) && !ext.opdrachten.some((o) => /Verwijderen/.test(JSON.stringify(o.params))));
-    // De gebruiker zet browser_click zelf op "Altijd": geen klik per aanroep, de opdracht gaat direct naar de extensie (zijn bewuste keuze).
+    // Audit H2: modus "Altijd" op een riskant hulpmiddel geeft GEEN automatische goedkeuring meer; dat kan alleen een 'altijd'-grant (step-up).
     await store.setToolModes(A, { browser_click: 'always' });
     const aantalVoor = ext.opdrachten.filter((o) => o.type === 'browser.click').length;
+    const modusAltijd = callTool(A, 'browser_click', { name: 'Direct' });
+    check('modus Altijd zonder altijd-grant: de klik wacht nog steeds op een verse goedkeuring (geen impliciete altijd)',
+      await until(async () => (await store.listPendingCommands(A)).length === 1) && ext.opdrachten.filter((o) => o.type === 'browser.click').length === aantalVoor);
+    await rejectCommand(A, (await store.listPendingCommands(A))[0].id);
+    await modusAltijd;
+    let zonderStapOp = '';
+    try { await grants.addGrants(A, A, [{ agentId: agent.id, capability: 'browser.interact', always: true }], { steppedUp: false }); } catch (e) { zonderStapOp = (e as Error).message; }
+    check("'altijd'-grant zonder step-up wordt geweigerd (niet stilletjes opgeslagen)", zonderStapOp === 'STEP_UP_REQUIRED' && (await grants.listAlwaysGrants(A)).length === 0);
+    await grants.addGrants(A, A, [{ agentId: agent.id, capability: 'browser.interact', always: true, minutes: 60 }], { steppedUp: true });
     const altijdKlik = await callTool(A, 'browser_click', { name: 'Direct' });
-    check('modus Altijd op een riskant hulpmiddel: uitgevoerd zonder goedkeuring (niets wacht) en de extensie ontvangt de klik',
+    check("met een 'altijd'-grant (step-up, vervalt) gaat de klik zonder klik per opdracht naar de extensie",
       !altijdKlik.isError && (await store.listPendingCommands(A)).length === 0 && ext.opdrachten.filter((o) => o.type === 'browser.click').length === aantalVoor + 1, altijdKlik.content[0].text.slice(0, 100));
+    await grants.revokeGrants(A, A, { capability: 'browser.interact' });
+    await grants.addGrants(A, A, [{ agentId: agent.id, capability: 'browser.interact' }], { steppedUp: false });
     await store.setToolModes(A, { browser_click: 'ask' });
 
-    // navigeren: eerst met goedkeuring, daarna automatisch zodra de gebruiker dat toestaat
-    const nav1 = callTool(A, 'browser_open', { url: 'https://mail.tarasevych.com/' });
-    await until(async () => (await store.listPendingCommands(A)).length === 1);
-    await approveCommand(A, (await store.listPendingCommands(A))[0].id);
-    const nav1Uit = await nav1;
-    check('browser_open: standaard met goedkeuring', !nav1Uit.isError && /mail\.tarasevych\.com/.test(nav1Uit.content[0].text));
-    await store.setAgentPolicy(A, agent.id, ['browser.diagnostics', 'browser.navigate', 'browser.scroll', 'browser.snapshot', 'browser.tabs', 'browser.wait']);
+    // navigeren: met een grant direct (niet destructief), maar alleen binnen de domeinen van de grant
+    const nav1Uit = await callTool(A, 'navigate_page', { url: 'https://mail.tarasevych.com/' });
+    check('navigate_page (alias van browser_open): met grant direct binnen het domein', !nav1Uit.isError && /mail\.tarasevych\.com/.test(nav1Uit.content[0].text) && (await store.listPendingCommands(A)).length === 0, nav1Uit.content[0].text.slice(0, 100));
     const nav2 = await callTool(A, 'browser_open', { url: 'https://mcp.tarasevych.com/agents' });
-    check('browser_open: zodra navigatie is toegestaan gaat het direct, zonder klik', !nav2.isError && (await store.listPendingCommands(A)).length === 0, nav2.content[0].text.slice(0, 100));
+    check('browser_open: tweede toegestaan domein gaat ook direct', !nav2.isError && (await store.listPendingCommands(A)).length === 0, nav2.content[0].text.slice(0, 100));
+    const buitenScope = await callTool(A, 'browser_open', { url: 'https://cloud.tarasevych.com/' });
+    check('browser_open: eigen site maar buiten de domeinen van de grant wordt geweigerd', buitenScope.isError === true && /outside the domains/.test(buitenScope.content[0].text) && !ext.opdrachten.some((o) => /cloud\.tarasevych/.test(JSON.stringify(o.params))));
     const vreemd = await callTool(A, 'browser_open', { url: 'https://evil.com/' });
     check('browser_open: een vreemd adres bereikt de extensie nooit', vreemd.isError === true && !ext.opdrachten.some((o) => /evil\.com/.test(JSON.stringify(o.params))));
 
@@ -198,7 +213,8 @@ export async function main(): Promise<number> {
     check('een andere gebruiker bereikt de browser van A niet', alsB.isError === true && /No Mijn Ruimte browser extension/.test(alsB.content[0].text) && !JSON.stringify(alsB).includes(agent.id));
     await store.revokeAgent(A, agent.id);
     disconnectAgent(agent.id);
-    check('intrekken: het kanaal wordt gesloten met 4403 en de agent is offline', (await Promise.race([ext.gesloten, sleep(3000).then(() => -1)])) === 4403 && !agentOnline(agent.id));
+    const sluitcode = await Promise.race([ext.gesloten, sleep(3000).then(() => -1)]);
+    check('intrekken: het kanaal wordt gesloten met 4403 en de agent is offline', sluitcode === 4403 && await until(() => !agentOnline(agent.id)), String(sluitcode));
     const naIntrekken = await callTool(A, 'browser_snapshot', {});
     check('na intrekken: er is geen browser meer beschikbaar', naIntrekken.isError === true);
 
