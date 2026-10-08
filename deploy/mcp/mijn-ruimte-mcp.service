@@ -1,5 +1,5 @@
 [Unit]
-Description=Mijn Ruimte MCP (read-only, loopback)
+Description=Mijn Ruimte MCP (alleen lezen + ondertekende pakketten in de inbox leggen, loopback)
 After=network-online.target mijn-ruimte.service
 Wants=network-online.target
 
@@ -12,6 +12,9 @@ Environment=MCP_PORT=8091
 Environment=MCP_ROOT=/srv/mijn-ruimte/current
 Environment=MCP_TOKEN_FILE=/etc/mijn-ruimte/mcp.token
 Environment=MCP_HEALTH_URL=http://127.0.0.1:8080/__gezondheid
+Environment=MCP_RECHTEN_FILE=/etc/mijn-ruimte/mcp-rechten.json
+Environment=MCP_STATE_FILE=/srv/mijn-ruimte/mcp-state/sessions.json
+Environment=MCP_UITROL_INBOX=/srv/mijn-ruimte/uitrol-inbox
 ExecStart=/usr/bin/node /srv/mijn-ruimte/mcp/server.mjs
 Restart=on-failure
 RestartSec=3
@@ -19,6 +22,12 @@ NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
+# Alleen deze twee mappen zijn schrijfbaar. GEEN drop-in met NoNewPrivileges=no of extra ReadWritePaths (zie RUNBOOK-VEILIGE-UITROL.md):
+# de dienst heeft geen sudo-recht meer en hoeft nooit iets als root te doen.
+ReadWritePaths=/srv/mijn-ruimte/mcp-state /srv/mijn-ruimte/uitrol-inbox
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictNamespaces=yes
 PrivateDevices=yes
 ProtectKernelTunables=yes
 ProtectKernelModules=yes

@@ -86,6 +86,61 @@ units_installeren() {
 }
 
 # ---------------------------------------------------------------------------------------------
+# Oude MCP-deur met root-pad uitschakelen (audit 2026-10-08, C1/C3): de sudo-regel, de root-hulp die gestagede code uitvoerde,
+# de "povnyj-arkhiv"-lader, de drop-in die NoNewPrivileges uitzette en de app-schrijfbare schakelaars. Idempotent.
+oude_deur_opruimen() {
+  local p weg=0 q
+  # Niet wissen maar in quarantaine (root 0700): de inhoud is bewijsmateriaal voor het onderzoek naar de oude deur (audit §6).
+  q="/var/lib/mijn-ruimte-quarantaine/$(date +%Y%m%d-%H%M%S)"
+  for p in /etc/sudoers.d/mijn-ruimte-mcp /usr/local/sbin/mijn-ruimte-mcp-doen /usr/local/sbin/mijn-ruimte-povnyj-arkhiv \
+           /etc/systemd/system/mijn-ruimte-mcp.service.d/write.conf "$APP_ROOT/mcp-staging" \
+           /srv/data/uploads/mcp-permissions.json /srv/data/uploads/mcp-bridge.token; do
+    if [ -e "$p" ] || [ -L "$p" ]; then
+      install -d -o root -g root -m 0700 "$q"
+      mv -- "$p" "$q/$(echo "${p#/}" | tr '/' '_')"
+      melding "naar quarantaine ($q): $p"; weg=1
+    fi
+  done
+  rmdir /etc/systemd/system/mijn-ruimte-mcp.service.d 2>/dev/null || true
+  if [ "$weg" -eq 1 ]; then chmod -R go-rwx "$q"; systemctl daemon-reload; fi
+  # Controle: geen enkele sudo-regel mag de app-gebruiker nog iets als root laten doen.
+  if grep -rqsE "^[^#]*\b$GEBRUIKER\b.*NOPASSWD" /etc/sudoers /etc/sudoers.d/ 2>/dev/null; then
+    waarschuwing "er staat nog een NOPASSWD-regel voor $GEBRUIKER in /etc/sudoers(.d): verwijder die met de hand (visudo)."
+  fi
+}
+
+# Veilige uitrol (ondertekende pakketten): root-script, units, mappen, standaard-schakelaars van de MCP-deur.
+veilige_uitrol_inrichten() {
+  local doel="$1"
+  [ -s "$doel/deploy/uitrol/mijn-ruimte-uitrol.sh" ] || return 0
+  install -m 0755 -o root -g root "$doel/deploy/uitrol/mijn-ruimte-uitrol.sh" /usr/local/sbin/mijn-ruimte-uitrol
+  install -d -o "$GEBRUIKER" -g "$GEBRUIKER" -m 0750 "$APP_ROOT/uitrol-inbox" "$APP_ROOT/mcp-state"
+  install -d -o root -g root -m 0700 /var/lib/mijn-ruimte-uitrol
+  install -d -o root -g "$GEBRUIKER" -m 0750 /var/lib/mijn-ruimte-uitrol-status
+  # De eerste uitrol via de inbox moet nieuwer zijn dan wat nu draait.
+  [ -s /var/lib/mijn-ruimte-uitrol/laatste-versie ] || date +%Y%m%d-%H%M%S > /var/lib/mijn-ruimte-uitrol/laatste-versie
+  if [ ! -e /etc/mijn-ruimte/mcp-rechten.json ]; then
+    printf '%s\n' '{"read": true, "uitrol": false}' > /etc/mijn-ruimte/mcp-rechten.json
+    chown root:"$GEBRUIKER" /etc/mijn-ruimte/mcp-rechten.json; chmod 0640 /etc/mijn-ruimte/mcp-rechten.json
+  fi
+  if [ -s "$doel/deploy/mcp/server.mjs" ]; then
+    install -d -o root -g root -m 0755 "$APP_ROOT/mcp"
+    install -m 0644 -o root -g root "$doel/deploy/mcp/server.mjs" "$APP_ROOT/mcp/server.mjs"
+    if ! cmp -s "$doel/deploy/mcp/mijn-ruimte-mcp.service" /etc/systemd/system/mijn-ruimte-mcp.service; then
+      install -m 0644 -o root -g root "$doel/deploy/mcp/mijn-ruimte-mcp.service" /etc/systemd/system/mijn-ruimte-mcp.service
+      systemctl daemon-reload
+    fi
+    systemctl try-restart mijn-ruimte-mcp.service >/dev/null 2>&1 || true
+  fi
+  if [ -s /etc/mijn-ruimte/uitrol-ondertekenaars ]; then
+    systemctl enable --now mijn-ruimte-uitrol.path >/dev/null 2>&1 || waarschuwing "mijn-ruimte-uitrol.path kon niet worden gestart"
+  else
+    waarschuwing "/etc/mijn-ruimte/uitrol-ondertekenaars ontbreekt: uitrol via mcp.tarasevych.com staat uit tot de publieke sleutel er staat (zie deploy/RUNBOOK-VEILIGE-UITROL.md)."
+  fi
+  melding "veilige uitrol ingericht"
+}
+
+# ---------------------------------------------------------------------------------------------
 inrichten() {
   local bron="${1:?bronmap ontbreekt}"
   vereis_root
@@ -237,21 +292,25 @@ installeren() {
   install -d -o root -g "$GEBRUIKER" -m 0750 "$doel"
   ONVOLTOOID="$doel"
   melding "bron kopiëren naar $doel…"; bron_kopieren "$bron" "$doel"
-  python3 "$doel/deploy/patch-owner-plum.py" "$doel/src/App.tsx"
-  if [ -f "$doel/deploy/patch-backup-copy.py" ]; then python3 "$doel/deploy/patch-backup-copy.py" "$doel" || fout "patch-backup-copy mislukt"; fi
+  # Geen patch-scripts meer tijdens het installeren (vroeger o.a. een base64-blob die als root werd uitgevoerd): wat in de bron
+  # staat, is wat er gebouwd wordt. Zie deploy/RUNBOOK-VEILIGE-UITROL.md.
   melding "bouwen (npm ci, audit, vite, server-bundel)…"; bouwen "$doel"
   migreren "$doel"
   ONVOLTOOID=""   # vanaf hier blijft de release bestaan (ook als activeren mislukt, voor diagnose)
   units_installeren "$doel"
   activeren "$doel"
-  if [ -s "$doel/deploy/mcp/mijn-ruimte-mcp-doen" ]; then
-    install -m 0755 -o root -g root "$doel/deploy/mcp/mijn-ruimte-mcp-doen" /usr/local/sbin/mijn-ruimte-mcp-doen
-    melding "mcp-hulp bijgewerkt"
-  fi
-  # Volledig archief ("Архів на ПК"): root-script + path-unit die het verzoekbestand van de site bewaakt (de site kan zelf niets als root doen).
+  oude_deur_opruimen
+  veilige_uitrol_inrichten "$doel"
+  # Volledig archief ("Архів на ПК"): root-script + path-unit die het verzoekbestand van de site bewaakt (de site kan zelf niets als root
+  # doen). Uitvoer in een root-map (uitgifte root:mijnruimte 0750, werkmap 0700), het hele archief age-versleuteld.
   if [ -s "$doel/deploy/archief-maken.sh" ]; then
     install -m 0755 -o root -g root "$doel/deploy/archief-maken.sh" /usr/local/sbin/mijn-ruimte-archief
     install -d -o "$GEBRUIKER" -g "$GEBRUIKER" -m 0750 /srv/data/uploads/mcp-archives
+    install -d -o root -g root -m 0711 /var/lib/mijn-ruimte-archief
+    install -d -o root -g root -m 0700 /var/lib/mijn-ruimte-archief/werk
+    install -d -o root -g "$GEBRUIKER" -m 0750 /var/lib/mijn-ruimte-archief/uitgifte
+    # Oude, deels onversleutelde archieven in de app-map weghalen (bevatten broncode, units en sudoers in leesbare vorm).
+    find /srv/data/uploads/mcp-archives -maxdepth 1 -type f \( -name 'mijn-ruimte-*-volledig.tar' -o -name 'mijn-ruimte-*.tar.gz' -o -name 'kit-status.txt' -o -name 'history.json' \) -delete 2>/dev/null || true
     systemctl enable --now mijn-ruimte-archief.path >/dev/null 2>&1 || waarschuwing "mijn-ruimte-archief.path kon niet worden gestart"
     melding "archief-hulp bijgewerkt"
   fi
