@@ -7,6 +7,7 @@ import { DeviceDetail, PairCard, PendingList } from './DevicesView';
 import McpConnectorPanel from './McpConnectorPanel';
 import McpToolsPanel, { ToolApprovals } from './McpToolsPanel';
 import BrowserExtensionPanel from './BrowserExtensionPanel';
+import AiToestemmingen, { AiStopKnop } from './AiToestemmingen';
 import { welcomePending } from './extension-welcome-store';
 
 type View = string; // 'overview' | 'claude' | 'tools' | 'pending' | 'extension' | 'doors' | 'pair' | `dev:${id}`
@@ -207,6 +208,9 @@ export default function McpAgentsHub({ tr, doors }: { tr: Tr; doors: ReactNode }
                   <div className='hub-section'><div className='hub-section-body' style={{ paddingTop: 16 }}>
                     <DeviceDetail tr={tr} agent={selectedAgent} last={last[selectedAgent.id]} reload={reload} />
                   </div></div>
+                  <Section id={`dev-${selectedAgent.id}-grants`} icon={<ShieldCheck />} title={tr('Що ШІ дозволено на цьому пристрої', 'Wat de AI op dit apparaat mag')} subtitle={tr('Набори, строк дії, «завжди» з повторним входом і кнопка «Стоп».', 'Sets, geldigheid, "altijd" met nieuwe aanmelding en de knop "Stop".')} actions={<AiStopKnop tr={tr} onDone={reload} />}>
+                    <AiToestemmingen tr={tr} agentId={selectedAgent.id} platform='machine' />
+                  </Section>
                   {pending.some((p) => p.agentId === selectedAgent.id) ? (
                     <Section id={`dev-${selectedAgent.id}-pending`} icon={<ShieldCheck />} title={tr('Очікують рішення на цьому пристрої', 'Wachten op beslissing op dit apparaat')} tone='warn'>
                       <PendingList tr={tr} pending={pending.filter((p) => p.agentId === selectedAgent.id)} reload={reload} />
