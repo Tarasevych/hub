@@ -214,8 +214,8 @@ export default function McpServiceView({ lang, tab }: Props) {
   async function saveBlob() {
     setDownloaded(0);
     // Stap 1 (na step-up, die client.ts zelf vraagt): eenmalige downloadId, 5 minuten geldig. Stap 2: het bestand zelf.
-    const link = (await api.post("/api/mcp/archive/link", ctx())).data as { downloadId: string; name: string; bytes: number };
-    const name = String(link.name || "archief-laatste.tar.age");
+    const dl = (await api.post("/api/mcp/archive/link", ctx())).data as { downloadId: string; name: string; bytes: number };
+    const name = String(dl.name || "archief-laatste.tar.age");
     const w = window as unknown as { showSaveFilePicker?: (o: object) => Promise<{ createWritable: () => Promise<{ write: (d: Uint8Array) => Promise<void>; close: () => Promise<void> }> }> };
     let writable: { write: (d: Uint8Array) => Promise<void>; close: () => Promise<void> } | null = null;
     if (typeof w.showSaveFilePicker === "function") {
@@ -226,7 +226,7 @@ export default function McpServiceView({ lang, tab }: Props) {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...ctx(), downloadId: link.downloadId }),
+      body: JSON.stringify({ ...ctx(), downloadId: dl.downloadId }),
     });
     if (!response.ok || !response.body) { if (writable) await writable.close().catch(() => undefined); throw new Error("ARCHIVE_FAILED"); }
     if (writable) {
