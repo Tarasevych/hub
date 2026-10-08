@@ -32,13 +32,7 @@ export const DOOR_TOOLS: Array<{ name: string; uk: string; nl: string; args: Rec
   { name: "list_releases", uk: "Назви випусків на диску.", nl: "Namen van de releases op schijf.", args: {} },
   { name: "list_dir", uk: "Список одного каталогу випуску.", nl: "Lijst van één map in de release.", args: { path: "src" } },
   { name: "read_file", uk: "Текст одного файлу випуску. Секрети відмовляються.", nl: "Tekst van één releasebestand. Geheimen worden geweigerd.", args: { path: "package.json" } },
-  { name: "list_staging", uk: "Список чернетки.", nl: "Lijst van het klad.", args: { path: "." } },
-  { name: "read_staging", uk: "Читає один файл чернетки.", nl: "Leest één kladbestand.", args: { path: "overlay/src/mcp-catalog.ts" } },
-  { name: "write_staging", uk: "Кладе файл у чернетку. Живий сайт не змінюється.", nl: "Zet een bestand in het klad. De live site verandert niet.", args: { path: "overlay/src/note.txt", content: "чернетка" } },
-  { name: "install_release", uk: "Збирає чернетку в новий випуск. Потрібен перемикач викладання.", nl: "Maakt van het klad een release. De plaats-schakelaar moet aan staan.", args: {} },
-  { name: "update_door", uk: "Оновлює двері з чернетки door/. Потрібен перемикач викладання.", nl: "Vernieuwt de deur vanuit klad door/. De plaats-schakelaar moet aan staan.", args: {} },
-  { name: "start_backup", uk: "Запускає службу резервної копії. Потрібен її перемикач.", nl: "Start de reservekopiedienst. Die schakelaar moet aan staan.", args: {} },
-  { name: "permission_flags", uk: "Які перемикачі зараз увімкнені.", nl: "Welke schakelaars nu aan staan.", args: {} },
+  { name: "permission_flags", uk: "Які перемикачі зараз увімкнені (задає власник у файлі на сервері).", nl: "Welke schakelaars nu aan staan (de eigenaar zet ze in een bestand op de server).", args: {} },
 ];
 
 export const TOOL_HELP: Array<[string, string, string]> = [

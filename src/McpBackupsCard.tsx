@@ -24,17 +24,19 @@ export default function McpBackupsCard({ tr }: { tr: Tr }) {
   const [busy, setBusy] = useState('');
   const load = useCallback(async () => {
     setError('');
-    try { setRows(((await api.post('/api/mcp/backups', ctx())).data.backups ?? []) as Row[]); } catch { setError(tr('Не вдалося отримати список копій. Перевірте, що дозвіл «Читати сайт і код» увімкнено.', 'De lijst met kopieën kon niet worden opgehaald. Controleer of het recht "Site en code lezen" aan staat.')); }
+    try { setRows(((await api.post('/api/mcp/backups', ctx())).data.backups ?? []) as Row[]); } catch { setError(tr('Не вдалося отримати список копій. Список бачить лише власник сервера, і дозвіл «Читати сайт і код» має бути увімкнений.', 'De lijst met kopieën kon niet worden opgehaald. Alleen de eigenaar van de server ziet de lijst, en het recht "Site en code lezen" moet aan staan.')); }
   }, [tr]);
   useEffect(() => { void load(); }, [load]);
   const save = async (stamp: string, name: string) => {
     setBusy(`${stamp}/${name}`); setError('');
     try {
-      const res = await fetch('/api/mcp/backups/file', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...ctx(), stamp, name }) });
+      // Eerst een eenmalige downloadId (alleen de eigenaar, na step-up die client.ts zelf vraagt), dan het bestand.
+      const link = (await api.post('/api/mcp/backups/link', { ...ctx(), stamp, name })).data as { downloadId: string };
+      const res = await fetch('/api/mcp/backups/file', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...ctx(), downloadId: link.downloadId }) });
       if (!res.ok) throw new Error('x');
       const url = URL.createObjectURL(await res.blob());
       const a = document.createElement('a'); a.href = url; a.download = `${stamp}-${name}`; a.click(); URL.revokeObjectURL(url);
-    } catch { setError(tr('Файл не вдалося завантажити.', 'Het bestand kon niet worden gedownload.')); } finally { setBusy(''); }
+    } catch { setError(tr('Файл не вдалося завантажити (потрібне повторне підтвердження входу; посилання діє 5 хвилин).', 'Het bestand kon niet worden gedownload (een nieuwe bevestiging van de aanmelding is nodig; de link geldt 5 minuten).')); } finally { setBusy(''); }
   };
   return <article className="mcp-card mbk">
     <header className="mbk-head"><h2><ServerCog size={18} />{tr('Нічні копії сервера', 'Nachtelijke serverkopieën')}</h2>

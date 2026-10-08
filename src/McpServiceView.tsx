@@ -20,13 +20,12 @@ const effect = (onUk: string, offUk: string, onNl: string, offNl: string) => ({
   detailUk: `Увімкнено: ${onUk}\nВимкнено: ${offUk}`,
   detailNl: `Aan: ${onNl}\nUit: ${offNl}`,
 });
+// De schakelaars staan in /etc/mijn-ruimte/mcp-rechten.json op de server (alleen de eigenaar met root wijzigt ze); de site toont ze alleen.
 const SWITCHES: Perm[] = [
   { id: "read", group: "agent", uk: "Читати сайт і код", nl: "Site en code lezen", ...effect("агент бачить випуск, здоров’я сайту і файли.", "двері відмовляють читати. Список і здоров’я недоступні.", "de agent ziet de release, de gezondheid en de bestanden.", "de deur weigert lezen. Lijst en gezondheid zijn dicht.") },
-  { id: "board", group: "agent", uk: "Писати дошку", nl: "Bord schrijven", ...effect("задачі й нотатки записуються на сервер і лишаються.", "нові записи й переміщення відмовляються. Старе на дошці не зникає.", "taken en notities worden op de server bewaard.", "nieuwe regels en verplaatsingen worden geweigerd. Het oude bord blijft.") },
-  { id: "tokens", group: "agent", uk: "Випускати токени агентів", nl: "Agenttokens uitgeven", ...effect("можна створити або відкликати ключ агента. Сам ключ видно один раз.", "випуск і відкликання ключа з дверей відмовляються.", "een agentsleutel maken of intrekken. De sleutel zelf verschijnt één keer.", "uitgeven en intrekken via de deur worden geweigerd.") },
-  { id: "staging", group: "agent", uk: "Писати в чернетку", nl: "Klad schrijven", ...effect("агент кладе файли в чернетку. Живий сайт не змінюється.", "запис у чернетку відмовляється. Уже покладені файли лишаються.", "de agent zet bestanden in het klad. De live site verandert niet.", "schrijven naar het klad wordt geweigerd. Wat er al staat, blijft.") },
-  { id: "install", group: "release", uk: "Викладати випуск", nl: "Release plaatsen", ...effect("агент може зібрати чернетку в новий живий випуск.", "двері відмовляють викладати. Поточний сайт лишається як є.", "de agent mag het klad tot een live release maken.", "de deur weigert plaatsen. De huidige site blijft.") },
-  { id: "backup", group: "release", uk: "Запускати резервну копію", nl: "Reservekopie starten", ...effect("перед випуском запускається копія. Якщо вона падає, випуск зупиняється.", "випуск іде без копії.", "vóór een release start de kopie. Faalt die, dan stopt de release.", "de release gaat zonder kopie.") },
+  { id: "board", group: "agent", uk: "Писати дошку", nl: "Bord schrijven", ...effect("ваші задачі й нотатки (у кожного своя дошка).", "нові записи й переміщення відмовляються.", "uw taken en notities (iedereen heeft een eigen bord).", "nieuwe regels en verplaatsingen worden geweigerd.") },
+  { id: "tokens", group: "agent", uk: "Випускати токени агентів", nl: "Agenttokens uitgeven", ...effect("ключ видно один раз, діє 30 днів, потрібне повторне підтвердження входу.", "випуск ключа відмовляється.", "de sleutel verschijnt één keer, geldt 30 dagen en vraagt een nieuwe bevestiging van de aanmelding.", "uitgeven wordt geweigerd.") },
+  { id: "uitrol", group: "release", uk: "Викладати підписаний випуск", nl: "Ondertekende release plaatsen", ...effect("двері приймають лише пакет, підписаний вашим ключем на ПК; встановлює його root-служба.", "двері відмовляють приймати пакет. Поточний сайт лишається.", "de deur neemt alleen een pakket aan dat met uw sleutel op de pc is ondertekend; een root-dienst installeert het.", "de deur weigert pakketten. De huidige site blijft.") },
 ];
 
 const statuses = ["backlog", "doing", "blocked", "done"] as const;
@@ -148,6 +147,7 @@ export default function McpServiceView({ lang, tab }: Props) {
   const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [catalog, setCatalog] = useState<Perm[]>([]);
   const [permsReady, setPermsReady] = useState(false);
+  const [permsFile, setPermsFile] = useState("/etc/mijn-ruimte/mcp-rechten.json");
   const [archive, setArchive] = useState<ArchiveState>(emptyArchive);
   const [tick, setTick] = useState(0);
 
@@ -165,6 +165,7 @@ export default function McpServiceView({ lang, tab }: Props) {
     const perms = await api.post("/api/mcp/permissions", ctx());
     setFlags(perms.data.permissions || {});
     setCatalog(perms.data.catalog || []);
+    if (perms.data.file) setPermsFile(String(perms.data.file));
     setPermsReady(true);
     const res = await api.post("/api/mcp/tokens/list", ctx());
     setTokens(res.data.tokens || []);
@@ -189,11 +190,6 @@ export default function McpServiceView({ lang, tab }: Props) {
       };
     });
   }
-  function confirmOn(id: string) {
-    if (id === "install") return window.confirm(t("Увімкнути викладання? Агент зможе зібрати чернетку в живий випуск.", "Plaatsen aanzetten? De agent kan een klad tot een live release maken."));
-    if (id === "backup") return window.confirm(t("Увімкнути резервну копію? Перед випуском запуститься копія. Якщо вона не вдасться, випуск зупиниться.", "Reservekopie aanzetten? Vóór de release start de kopie. Lukt die niet, dan stopt de release."));
-    return true;
-  }
   function chooseTool(name: string) {
     if (!DOOR_TOOLS.some((item) => item.name === name)) return;
     setTool(name);
@@ -215,8 +211,11 @@ export default function McpServiceView({ lang, tab }: Props) {
   }
   const [downloaded, setDownloaded] = useState(0);
   /** Стрімить файл на диск, який ви самі обираєте у вікні системи (File System Access); у браузерах без цього — звичайне завантаження. */
-  async function saveBlob(name: string) {
+  async function saveBlob() {
     setDownloaded(0);
+    // Stap 1 (na step-up, die client.ts zelf vraagt): eenmalige downloadId, 5 minuten geldig. Stap 2: het bestand zelf.
+    const link = (await api.post("/api/mcp/archive/link", ctx())).data as { downloadId: string; name: string; bytes: number };
+    const name = String(link.name || "archief-laatste.tar.age");
     const w = window as unknown as { showSaveFilePicker?: (o: object) => Promise<{ createWritable: () => Promise<{ write: (d: Uint8Array) => Promise<void>; close: () => Promise<void> }> }> };
     let writable: { write: (d: Uint8Array) => Promise<void>; close: () => Promise<void> } | null = null;
     if (typeof w.showSaveFilePicker === "function") {
@@ -227,7 +226,7 @@ export default function McpServiceView({ lang, tab }: Props) {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...ctx(), name }),
+      body: JSON.stringify({ ...ctx(), downloadId: link.downloadId }),
     });
     if (!response.ok || !response.body) { if (writable) await writable.close().catch(() => undefined); throw new Error("ARCHIVE_FAILED"); }
     if (writable) {
@@ -375,7 +374,7 @@ export default function McpServiceView({ lang, tab }: Props) {
 
       {section === "board" && (
         <>
-          <header><h1>{t("Дошка", "Bord")}</h1><p className="mcp-lead">{permsReady && !flags.board ? t("Перемикач «Писати дошку» вимкнено. Нові записи й переміщення відмовляються.", "De schakelaar Bord schrijven staat uit. Nieuwe regels en verplaatsingen worden geweigerd.") : t("Задачі й нотатки пишуться у файл на сервері і лишаються після оновлення сторінки.", "Taken en notities worden in een bestand op de server geschreven en blijven staan na verversen.")}</p></header>
+          <header><h1>{t("Дошка", "Bord")}</h1><p className="mcp-lead">{permsReady && !flags.board ? t("Перемикач «Писати дошку» вимкнено. Нові записи й переміщення відмовляються.", "De schakelaar Bord schrijven staat uit. Nieuwe regels en verplaatsingen worden geweigerd.") : t("Ваші власні задачі й нотатки. Вони зберігаються в базі даних і видні лише вам.", "Uw eigen taken en notities. Ze staan in de database en alleen u ziet ze.")}</p></header>
           <form className="mcp-form" onSubmit={(event) => { event.preventDefault(); if (permsReady && !flags.board) return; void run("save", async () => { await api.post("/api/mcp/board", { ...ctx(), kind, title, body }); setTitle(""); setBody(""); await loadBoard(); }); }}>
             <button type="button" className={kind === "task" ? "on" : ""} onClick={() => setKind("task")}>{t("Задача", "Taak")}</button>
             <button type="button" className={kind === "note" ? "on" : ""} onClick={() => setKind("note")}>{t("Нотатка", "Notitie")}</button>
@@ -407,7 +406,7 @@ export default function McpServiceView({ lang, tab }: Props) {
         <>
           <header>
             <h2>{t("Двері для агентів", "Deuren voor agenten")}</h2>
-            <p className="mcp-lead">{t("Перемикач одразу пише дозвіл на сервер. Під ним написано, що зміниться, якщо його ввімкнути і якщо вимкнути.", "De schakelaar schrijft de toestemming meteen op de server. Eronder staat wat aan- en uitzetten verandert.")}</p>
+            <p className="mcp-lead">{t("Перемикачі лише показуються. Змінити їх може тільки власник сервера у файлі", "De schakelaars worden alleen getoond. Alleen de eigenaar van de server wijzigt ze in het bestand")} <code>{permsFile}</code>{t(" (root). Сайт і агенти записати їх не можуть.", " (root). De site en agenten kunnen ze niet schrijven.")}</p>
           </header>
           {(["agent", "release"] as const).map((group) => {
             const items = permRows().filter((item) => item.group === group);
@@ -427,23 +426,7 @@ export default function McpServiceView({ lang, tab }: Props) {
                           </h3>
                           <p>{t(item.detailUk, item.detailNl)}</p>
                         </div>
-                        <button
-                          type="button"
-                          className="mcp-toggle"
-                          role="switch"
-                          aria-checked={on}
-                          aria-label={t(item.uk, item.nl)}
-                          disabled={Boolean(busy) || !permsReady}
-                          onClick={() => void run(item.id, async () => {
-                            const enabled = !on;
-                            if (enabled && !confirmOn(item.id)) return;
-                            const res = await api.post("/api/mcp/permissions", { ...ctx(), id: item.id, enabled });
-                            setFlags(res.data.permissions || {});
-                            setCatalog(res.data.catalog || []);
-                          })}
-                        >
-                          <i />
-                        </button>
+                        <span className={on ? "mcp-badge" : "mcp-badge wait"} aria-label={t(item.uk, item.nl)}>{on ? t("увімкнено", "aan") : t("вимкнено", "uit")}</span>
                       </div>
                     );
                   })}
@@ -454,7 +437,7 @@ export default function McpServiceView({ lang, tab }: Props) {
           {permsReady ? (
             <p className="mcp-now">
               <b>{t("Зараз увімкнено", "Nu aan")}</b>
-              <Tip text={t("Це не кнопка і не окремий дозвіл. Рядок лише перелічує те, що зараз увімкнене. Змінюється перемикачами вище.", "Dit is geen knop en geen aparte toestemming. De regel somt alleen op wat nu aan staat. De schakelaars erboven wijzigen dat.")} />
+              <Tip text={t("Це не кнопка і не окремий дозвіл. Рядок лише перелічує те, що зараз увімкнене у файлі на сервері.", "Dit is geen knop en geen aparte toestemming. De regel somt alleen op wat nu aan staat in het bestand op de server.")} />
               {permRows().filter((item) => flags[item.id]).map((item) => (
                 <span key={item.id} className="mcp-now-item">
                   {t(item.uk, item.nl)}
@@ -467,7 +450,7 @@ export default function McpServiceView({ lang, tab }: Props) {
           <section className="mcp-card">
             <h2>
               {t("Токен агента", "Agenttoken")}
-              <Tip text={t("Окремо від перемикачів. Створює ключ для агента з іменем у полі. Ключ показується один раз і не викладає сайт.", "Los van de schakelaars. Maakt een sleutel voor de agent in het veld. De sleutel verschijnt één keer en plaatst de site niet.")} />
+              <Tip text={t("Створює ключ для агента з іменем у полі. Ключ показується один раз, діє 30 днів і дає доступ лише до вашої дошки (власнику — ще й до читання сайту). Спершу сайт попросить підтвердити вхід.", "Maakt een sleutel voor de agent in het veld. De sleutel verschijnt één keer, geldt 30 dagen en geeft alleen toegang tot uw bord (de eigenaar ook lezen van de site). Eerst vraagt de site een bevestiging van de aanmelding.")} />
             </h2>
             <p>{t("Це не викладання сайту. Кнопка створює ключ, яким агент стукає в двері. Сам ключ видно лише одразу після випуску.", "Dit plaatst de site niet. De knop maakt de sleutel waarmee een agent aan de deur klopt. De sleutel zelf is alleen meteen daarna zichtbaar.")}</p>
             <form className="mcp-form" onSubmit={(event) => { event.preventDefault(); void run("issue", async () => { const res = await api.post("/api/mcp/tokens", { ...ctx(), name: agentName }); const issued = String(res.data.token.token || ""); setFresh(issued); try { sessionStorage.setItem("mcp-fresh-token", issued); } catch { /* private mode */ } await loadTokens(); }); }}>
@@ -550,7 +533,7 @@ export default function McpServiceView({ lang, tab }: Props) {
         <>
           <header>
             <h1>{t("Архів на ПК", "Archief op de pc")}</h1>
-            <p className="mcp-lead">{t("Один файл із усім, на чому працює сайт: код і міст MCP, повна база даних із ролями, усі файли користувачів, служби системи, конфіг тунелю та секрети. База, файли й секрети шифруються вашим наявним age-ключем (нового ключа не створюється), тож без вашого herstelsleutel їх не відкрити — навіть якщо файл потрапить до чужих. У файлі лежить скрипт vidnovyty.sh: розгорнути сайт на новій машині (віртуальній чи справжній, x86-64 чи ARM) однією командою. Збір іде потоково: обсяг і різноманітність даних не мають значення, місце на диску перевіряється заздалегідь.", "Eén bestand met alles waarop de site draait: code en MCP-brug, de volledige database met rollen, alle bestanden van gebruikers, systeemdiensten, tunnelconfiguratie en geheimen. Database, bestanden en geheimen zijn versleuteld met uw bestaande age-sleutel (er komt geen nieuwe sleutel bij), dus zonder uw herstelsleutel niet te openen. In het bestand zit het script vidnovyty.sh: de site op een nieuwe machine (virtueel of fysiek, x86-64 of ARM) terugzetten met één opdracht. Het maken verloopt streamend: omvang en soort data maken niet uit, de schijfruimte wordt vooraf gecontroleerd.")}</p>
+            <p className="mcp-lead">{t("Один файл із усім, на чому працює сайт: код і міст MCP, повна база даних із ролями, усі файли користувачів, служби системи, конфіг тунелю та секрети. Увесь файл цілком шифрується вашим наявним age-ключем (нового ключа не створюється): без вашого herstelsleutel його не відкрити, навіть якщо він потрапить до чужих. Після розшифрування всередині лежить скрипт vidnovyty.sh, щоб розгорнути сайт на новій машині однією командою. Завантаження — лише власнику, після повторного підтвердження входу, через одноразове посилання на 5 хвилин.", "Eén bestand met alles waarop de site draait: code en MCP-brug, de volledige database met rollen, alle bestanden van gebruikers, systeemdiensten, tunnelconfiguratie en geheimen. Het hele bestand is versleuteld met uw bestaande age-sleutel (er komt geen nieuwe sleutel bij): zonder uw herstelsleutel is het niet te openen, ook niet als het in verkeerde handen valt. Na ontsleutelen zit het script vidnovyty.sh erin om de site op een nieuwe machine met één opdracht terug te zetten. Downloaden kan alleen de eigenaar, na een nieuwe bevestiging van de aanmelding, via een eenmalige link van 5 minuten.")}</p>
           </header>
           <form className="mcp-form">
             <button type="button" disabled={Boolean(busy)} onClick={() => void run("archive", downloadArchive)}>{t("Зібрати повний архів", "Volledig archief maken")}</button>
@@ -586,7 +569,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             {archive.name ? <p className="mcp-url">{archive.name}</p> : null}
             {archive.name && (archive.state === "ready" || archive.history.some((row) => row.name === archive.name && row.kept)) ? (
               <form className="mcp-form">
-                <button type="button" className="mcp-ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob(archive.name))}>{archive.state === "ready" ? t("Завантажити архів (оберіть диск і папку)", "Archief downloaden (kies schijf en map)") : t("Завантажити ще раз", "Opnieuw downloaden")}</button>
+                <button type="button" className="mcp-ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob())}>{archive.state === "ready" ? t("Завантажити архів (оберіть диск і папку)", "Archief downloaden (kies schijf en map)") : t("Завантажити ще раз", "Opnieuw downloaden")}</button>
                 {downloaded > 0 ? <small className="mcp-live"> {t("записано", "geschreven")} {sizeText(downloaded)}</small> : null}
               </form>
             ) : null}
@@ -600,7 +583,7 @@ export default function McpServiceView({ lang, tab }: Props) {
                 {archive.history.map((row) => (
                   <li key={`${row.at}-${row.name}`}>
                     <span><b>{whenText(row.at)}</b><small>{sizeText(row.bytes)}{row.kod ? ` · ${t("код", "code")} ${sizeText(row.kod)} · ${t("база", "database")} ${sizeText(row.baza)} · ${t("файли", "bestanden")} ${sizeText(row.fajly)}` : ""}</small></span>
-                    {row.kept ? <button type="button" className="mcp-ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob(row.name))}>{t("Завантажити", "Downloaden")}</button> : <small>{t("файл уже замінено", "bestand vervangen")}</small>}
+                    {row.kept ? <button type="button" className="mcp-ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob())}>{t("Завантажити", "Downloaden")}</button> : <small>{t("файл уже замінено", "bestand vervangen")}</small>}
                   </li>
                 ))}
               </ul>
