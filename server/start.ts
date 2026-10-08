@@ -225,9 +225,13 @@ async function serveStatic(req: http.IncomingMessage, res: http.ServerResponse, 
 // Google Pub/Sub of Microsoft Graph sturen geen cookies) en mag het alleen zonder Cookie-header door.
 const ALLOWED_ORIGINS = new Set<string>([...APP_HOSTS].map((h) => `https://${h}`));
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
-export function csrfAfwijzing(method: string, headers: http.IncomingHttpHeaders): string {
+// De service worker van de extensie (0.4) stuurt bij POST altijd Origin chrome-extension://<id>. Alleen voor deze eindpunten,
+// die met een eenmalige koppelcode of het agenttoken werken (geen cookie, dus geen CSRF-risico), en alleen ZONDER Cookie-header.
+const EXTENSIE_PADEN = new Set(['/api/owner/agents/pair', '/api/owner/agents/diagnostics/archive']);
+export function csrfAfwijzing(method: string, headers: http.IncomingHttpHeaders, pad = ''): string {
   if (SAFE_METHODS.has(method)) return '';
   const origin = String(headers.origin || '').trim().toLowerCase();
+  if (origin && /^chrome-extension:\/\/[a-p]{32}$/.test(origin) && EXTENSIE_PADEN.has(pad) && !headers.cookie) return '';
   if (origin) return ALLOWED_ORIGINS.has(origin) ? '' : 'CSRF_ORIGIN_DENIED';
   return headers.cookie ? 'CSRF_ORIGIN_REQUIRED' : '';
 }
@@ -337,7 +341,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     const method = String(req.method || 'GET').toUpperCase();
     // De connector-eindpunten gebruiken geen cookies maar OAuth/PKCE of een Bearer-token. Een Origin-controle zou
     // verzoeken van Anthropic (server-naar-server) onterecht weigeren; CSRF is hier niet van toepassing.
-    const csrf = connector ? '' : csrfAfwijzing(method, req.headers);
+    const csrf = connector ? '' : csrfAfwijzing(method, req.headers, apiUrl.pathname);
     if (csrf) return sendJson(res, 403, { error: csrf, reasonCode: csrf });
     const wacht = await rateLimitAfwijzing(method, apiUrl.pathname, ip);
     if (wacht > 0) return send(res, 429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(wacht) }, JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: wacht }));
