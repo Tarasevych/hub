@@ -147,7 +147,7 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
           <>
             {!pairing || expired ? (
               <>
-                <p>{expired ? tr('Код прострочено. Створіть новий.', 'De code is verlopen. Maak een nieuwe.') : tr('Код одноразовий і діє 10 хвилин. Створюйте його, коли вже готові вставити команди.', 'De code werkt één keer en 10 minuten. Maak hem pas als u klaar bent om de commando\'s te plakken.')}</p>
+                <p>{expired ? tr('Код прострочено. Створіть новий.', 'De code is verlopen. Maak een nieuwe.') : tr('Код одноразовий і діє 5 хвилин. Створюйте його, коли вже готові вставити команди.', 'De code werkt één keer en 5 minuten. Maak hem pas als u klaar bent om de commando\'s te plakken.')}</p>
                 <button type='button' className='wiz-primary' disabled={busy || !!rootProblem} onClick={() => void createCode()}><Plug aria-hidden='true' />{tr('Створити код підключення', 'Koppelcode maken')}</button>
                 {rootProblem ? <p className='wiz-note'>{tr('Спершу заповніть крок 3.', 'Vul eerst stap 3 in.')}</p> : null}
               </>

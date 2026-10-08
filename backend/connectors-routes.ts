@@ -100,7 +100,7 @@ export function createAgentRoutes(deps: Deps) {
       });
     }],
 
-    // Eenmalige koppelcode (10 min). Maximaal 5 per 10 minuten en 10 apparaten per gebruiker.
+    // Eenmalige koppelcode (5 min, AGENT_LIMITS.pairingCodeTtlMin). Maximaal 5 per 10 minuten en 10 apparaten per gebruiker.
     'POST /api/owner/agents/pairing-code': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
