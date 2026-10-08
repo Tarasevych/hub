@@ -117,7 +117,7 @@ export default function AgentsPanel({ tr, service = 'mcp' }: { tr: Tr; service?:
 
       {pairing ? (
         <div className='api-platform-secret' data-agents-pairing='true'>
-          <span>{tr('Код дійсний 10 хвилин і спрацьовує один раз. Node.js 22+ та agent.mjs мають бути на машині.', 'De code is 10 minuten geldig en werkt één keer. Node.js 22+ en agent.mjs moeten op de machine staan.')}</span>
+          <span>{tr('Код дійсний 5 хвилин і спрацьовує один раз. Node.js 22+ та agent.mjs мають бути на машині.', 'De code is 5 minuten geldig en werkt één keer. Node.js 22+ en agent.mjs moeten op de machine staan.')}</span>
           <code>{command}</code>
           <div className='api-platform-secret-actions'>
             <button type='button' onClick={() => void navigator.clipboard?.writeText(command)}>{tr('Скопіювати', 'Kopiëren')}</button>
