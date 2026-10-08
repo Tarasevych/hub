@@ -35,8 +35,9 @@ async function refresh() {
   }
   forgetEl.hidden = !s.paired;
   const paired = !!s.paired;
-  const enabled = paired && s.enabled !== false && !!s.enabled;
-  const active = !!s.active;
+  // 0.4: "увімкнено" = є чинні дозволи (grants) від сервера і браузер не вимкнено на сайті.
+  const enabled = paired && !!s.enabled && Array.isArray(s.caps) && s.caps.length > 0;
+  const active = !!s.active && !!s.connected;
   const first = !paired ? 'paired' : !enabled ? 'enabled' : !active ? 'active' : '';
   const mk = (id, label, done) => ({ label, state: done ? 'done' : id === first ? 'now' : 'later' });
   const steps = [
@@ -45,6 +46,12 @@ async function refresh() {
     mk('enabled', 'Увімкнено для ШІ на сайті', enabled),
     mk('active', 'Ви ввійшли на сайті (ШІ активний)', active),
   ];
+  if (paired && s.account === 'mismatch') {
+    render('wait', 'Інший обліковий запис на сторінці / Ander account op de pagina',
+      'Розширення підключено до іншого облікового запису, ніж той, що зараз на сайті. Команди ШІ відхиляються, доки ви не ввійдете тим самим обліковим записом. / De pagina is van een ander account; AI-opdrachten worden geweigerd.',
+      steps, { label: 'Відкрити сайт / Site openen', run: () => open('/agents') });
+    return;
+  }
   if (!paired) {
     render('off', 'Потрібне підключення',
       s.error === 'revoked' ? 'Доступ було відкликано на сайті. Підключіть розширення знову.' : 'Відкрийте сайт, увійдіть через Google і підключіть розширення: на сайті все підкаже.',
@@ -56,13 +63,18 @@ async function refresh() {
     render('wait', 'Очікує входу на сайті', 'Розширення працює лише поки ви ввійшли на сайті. Відкрийте сайт і увійдіть: ШІ відновиться за хвилину.',
       steps, { label: 'Увійти на сайті', run: () => open('/agents') });
   } else {
-    render('ok', 'ШІ активний', `Увімкнено можливостей: ${(s.capabilities || []).length}. Дії зі змінами завжди чекають вашого «Дозволити» на сайті.`,
+    render('ok', 'ШІ активний', `Дозволів: ${(s.caps || []).length} (епоха ${s.epoch}). Дії зі змінами чекають вашого «Дозволити», якщо ви не ввімкнули «завжди». / Toestemmingen: ${(s.caps || []).length}.`,
       steps, { label: 'Налаштувати доступи', run: () => open('/agents#extension') });
   }
 }
 
 document.getElementById('site').addEventListener('click', () => open('/agents'));
 document.getElementById('options').addEventListener('click', () => chrome.runtime.openOptionsPage());
+document.getElementById('panel').addEventListener('click', async () => {
+  const win = await chrome.windows.getCurrent().catch(() => null);
+  try { if (win) await chrome.sidePanel.open({ windowId: win.id }); } catch { /* niet ondersteund */ }
+  window.close();
+});
 forgetEl.addEventListener('click', async () => { await chrome.runtime.sendMessage({ op: 'forget' }); refresh(); });
 refresh();
 setInterval(refresh, 3000);

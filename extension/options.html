@@ -3,25 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mijn Ruimte: дозволи браузера</title>
+<title>Mijn Ruimte: налаштування розширення / instellingen van de extensie</title>
 <link rel="stylesheet" href="popup.css">
-<style>body{width:auto;max-width:680px;margin:0 auto}#edition.ok{color:#1a7f37}#edition.off{color:#b45309}</style>
+<style>body{width:auto;max-width:680px;margin:0 auto}.nl{color:#6b7280;font-size:12px;margin-top:2px}.ok{color:#1a7f37}.off{color:#b45309}ul.checks{list-style:none;padding:0}ul.checks li{margin:4px 0}label.toggle{display:flex;gap:8px;align-items:flex-start}</style>
 </head>
 <body>
 <main>
-  <h1>Дозволи розширення «Mijn Ruimte»</h1>
+  <h1>Розширення «Mijn Ruimte»</h1>
+  <p class="nl">Extensie "Mijn Ruimte"</p>
   <p class="hint" id="version"></p>
-  <p class="hint">Які саме можливості ввімкнені для ШІ, ви обираєте на сайті: <b>mcp.tarasevych.com → Агенти → Розширення браузера</b>. Тут лише дозвіл самого браузера, який неможливо дати з сайту.</p>
-  <button type="button" id="open-site" class="primary">Відкрити налаштування на сайті</button>
+  <p class="hint">Що саме дозволено ШІ (і на який термін), ви обираєте на сайті: <b>mcp.tarasevych.com → Агенти → Розширення браузера</b>.</p>
+  <p class="nl">Wat de AI mag (en hoe lang) kiest u op de site: mcp.tarasevych.com → Agenten → Browserextensie.</p>
+  <button type="button" id="open-site" class="primary">Відкрити налаштування на сайті / Instellingen op de site</button>
 
   <section>
-    <h2>Режим налагодження</h2>
-    <p id="edition" role="status">…</p>
-    <p id="edition-info" class="hint"></p>
-    <p class="hint">Розширення працює лише на tarasevych.com. Які можливості ввімкнені для ШІ, ви обираєте на сайті.</p>
+    <h2>Діагностика / Diagnose</h2>
+    <label class="toggle"><input type="checkbox" id="diag">
+      <span>Дозволити збирати діагностику сторінок Mijn Ruimte (помилки консолі, адреси запитів без параметрів, час) і глибоку діагностику через налагоджувач Chrome.
+        <span class="nl" style="display:block">Diagnose van Mijn Ruimte-pagina's toestaan (consolefouten, adressen zonder parameters, tijd) en diepe diagnose via de Chrome-debugger.</span></span></label>
+    <p class="hint">Вимкнено = нічого не зберігається, налагоджувач ніколи не під’єднується. Під час глибокої діагностики Chrome показує жовту смугу «розпочав налагодження», а на значку розширення з’являється «DBG».</p>
+    <p class="nl">Uit = er wordt niets bewaard en de debugger koppelt nooit aan. Tijdens diepe diagnose toont Chrome een gele balk en het pictogram "DBG".</p>
+  </section>
+
+  <section>
+    <h2>Самоперевірка / Zelftest</h2>
+    <button type="button" id="self-test">Тест / Test</button>
+    <p id="self-test-result" role="status"></p>
+    <ul class="checks" id="checks"></ul>
   </section>
 </main>
 <script src="options.js"></script>
-<script src="options-links.js"></script>
 </body>
 </html>

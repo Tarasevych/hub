@@ -104,13 +104,9 @@ export function startGuide(chromeApi, version) {
       const code = await post('/api/owner/agents/pairing-code', {});
       if (!code.ok) { message = code.status === 401 || code.status === 403 ? 'Спершу увійдіть на сайті (кнопка входу на сторінці), потім натисніть ще раз.' : 'Не вдалося отримати код підключення. Спробуйте за хвилину.'; messageKind = 'note'; }
       else {
-        const res = await fetch('/api/owner/agents/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: String(code.data.code || ''), name: browserName(), platform: 'browser', capabilities: { kind: 'browser', version } }) });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.token) { message = `Не вдалося підключити (${data.error || data.reasonCode || res.status}).`; messageKind = 'err'; }
-        else {
-          const ok = await chromeApi.runtime.sendMessage({ op: 'paired', token: data.token, agentId: data.agentId, server: location.origin, name: browserName() });
-          message = ok && ok.ok ? 'Підключено! Тепер увімкніть для ШІ.' : 'Не вдалося зберегти підключення в браузері.'; messageKind = ok && ok.ok ? '' : 'err';
-        }
+        // 0.4: het koppelen zelf doet het achtergrondproces; het token komt nooit in de pagina.
+        const ok = await chromeApi.runtime.sendMessage({ op: 'pair-code', code: String(code.data.code || ''), name: browserName() });
+        message = ok && ok.ok ? 'Підключено! Тепер оберіть, що дозволити ШІ. / Gekoppeld! Kies nu wat de AI mag.' : `Не вдалося підключити (${(ok && ok.reason) || '?'}).`; messageKind = ok && ok.ok ? '' : 'err';
       }
     } catch { message = 'Немає з’єднання із сайтом.'; messageKind = 'err'; }
     busy = false; await paint();
@@ -121,7 +117,7 @@ export function startGuide(chromeApi, version) {
     busy = true; message = ''; await paint();
     try {
       const r = await post(`/api/owner/agents/${s.agentId}/browser-enabled`, { enabled: true });
-      message = r.ok ? 'Увімкнено. Залишилося, щоб сторінка була відкрита і ви були вхідним.' : 'Не вдалося увімкнути: увійдіть на сайті й спробуйте ще раз.'; messageKind = r.ok ? '' : 'note';
+      message = r.ok ? 'Увімкнено. Залишилося, щоб сторінка була відкрита і ви були вхідним.' : r.status === 403 ? 'Підтвердіть вхід (повторна перевірка) на сайті й спробуйте ще раз. / Bevestig uw aanmelding opnieuw op de site.' : 'Не вдалося увімкнути: увійдіть на сайті й спробуйте ще раз.'; messageKind = r.ok ? '' : 'note';
     } catch { message = 'Немає з’єднання із сайтом.'; messageKind = 'err'; }
     busy = false; await paint();
   };
