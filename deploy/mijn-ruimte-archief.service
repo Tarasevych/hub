@@ -10,6 +10,6 @@ Nice=10
 IOSchedulingClass=idle
 # Schrijft alleen naar de uitvoermap; leest de rest van het systeem.
 ProtectSystem=strict
-ReadWritePaths=/srv/data/uploads
+ReadWritePaths=/srv/data/uploads /run/lock
 ProtectHome=yes
 PrivateTmp=yes
