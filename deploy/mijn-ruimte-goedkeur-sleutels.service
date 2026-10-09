@@ -1,4 +1,4 @@
-# Verwerkt verzoeken om een passkey van de eigenaar toe te voegen of te verwijderen (root). Alleen met een geldige assertie van
+# Verwerkt verzoeken om een passkey van de eigenaar toe te voegen of te verwijderen, en nieuwe versies van het AI-beleid (root). Alleen met een geldige assertie van
 # een passkey die al in /etc/mijn-ruimte/goedkeur-passkeys.json staat. Geen netwerk, alleen deze mappen schrijfbaar.
 [Unit]
 Description=Mijn Ruimte: passkeys van de eigenaar toevoegen of verwijderen (met bevestiging door een bekende passkey)
@@ -13,7 +13,7 @@ PrivateTmp=yes
 PrivateDevices=yes
 ProtectHome=yes
 ProtectSystem=strict
-ReadWritePaths=/etc/mijn-ruimte /var/lib/mijn-ruimte/goedkeuring /var/lib/mijn-ruimte-uitrol-status /srv/mijn-ruimte/goedkeur-inbox
+ReadWritePaths=/etc/mijn-ruimte /var/lib/mijn-ruimte/goedkeuring /var/lib/mijn-ruimte/ai-beleid /var/lib/mijn-ruimte-uitrol-status /srv/mijn-ruimte/goedkeur-inbox
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectControlGroups=yes

@@ -199,9 +199,12 @@ goedkeuring_inrichten() {
   [ -s "$doel/deploy/goedkeuring/goedkeur-hulp.mjs" ] || return 0
   install -d -o root -g root -m 0755 /usr/local/lib/mijn-ruimte /usr/local/lib/mijn-ruimte/goedkeuring
   install -m 0644 -o root -g root "$doel/deploy/goedkeuring/webauthn-kern.mjs" "$doel/deploy/goedkeuring/goedkeur-hulp.mjs" /usr/local/lib/mijn-ruimte/goedkeuring/
+  # AI-beleid (§13.12): kern naast de hulp; keten leesbaar voor de app, schrijfbaar alleen voor root.
+  [ -s "$doel/deploy/goedkeuring/ai-beleid-kern.mjs" ] && install -m 0644 -o root -g root "$doel/deploy/goedkeuring/ai-beleid-kern.mjs" /usr/local/lib/mijn-ruimte/goedkeuring/
   install -m 0755 -o root -g root "$doel/deploy/goedkeuring/mijn-ruimte-passkey.sh" /usr/local/sbin/mijn-ruimte-passkey
   install -d -o root -g root -m 0755 /var/lib/mijn-ruimte
   install -d -o root -g root -m 0700 /var/lib/mijn-ruimte/goedkeuring
+  install -d -o root -g root -m 0755 /var/lib/mijn-ruimte/ai-beleid
   goedkeur_inbox_maken
   if [ ! -e /etc/mijn-ruimte/goedkeur-passkeys.json ]; then
     printf '%s\n' '{"versie": 1, "rpId": "tarasevych.com", "origins": ["https://admin.tarasevych.com", "https://id.tarasevych.com"], "sleutels": []}' > /etc/mijn-ruimte/goedkeur-passkeys.json

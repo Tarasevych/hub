@@ -16,7 +16,7 @@ export const UITDAGING_MAX_MS = 5 * 60 * 1000;   // challenge hooguit 5 minuten 
 export const KLOK_SPELING_MS = 60 * 1000;          // speling tussen app- en rootklok
 export const ALGORITMEN = Object.freeze({ ES256: -7, EdDSA: -8, RS256: -257 });
 const TOEGESTANE_ALG = new Set([-7, -8, -257]);
-const DOELEN = new Set(["goedkeuren", "sleutel-toevoegen", "sleutel-verwijderen"]);
+const DOELEN = new Set(["goedkeuren", "sleutel-toevoegen", "sleutel-verwijderen", "ai-beleid"]);
 const B64U = /^[A-Za-z0-9_-]+$/;
 
 export const b64u = (buf) => Buffer.from(buf).toString("base64url");
@@ -146,6 +146,7 @@ export const vingerafdrukKort = (hex) => String(hex).slice(0, 32).replace(/(.{4}
  *   goedkeuren:          voorstel-id, versie, sha256 van het pakket, nonce, verloopt (ms)
  *   sleutel-toevoegen:   vingerafdruk van de nieuwe sleutel, nonce, verloopt
  *   sleutel-verwijderen: vingerafdruk van de te verwijderen sleutel, nonce, verloopt
+ *   ai-beleid:           sha256 van de canonieke nieuwe versie van het AI-beleid, nonce, verloopt
  * Root rekent hem zelf uit (de sha256 van het pakket uit zijn eigen kopie) en vergelijkt met clientDataJSON.challenge.
  */
 export function uitdagingVoor(doel, velden) {
@@ -155,7 +156,11 @@ export function uitdagingVoor(doel, velden) {
   if (!/^[A-Za-z0-9_-]{22,128}$/.test(nonce)) throw new Error("NONCE_ONGELDIG");
   if (!Number.isSafeInteger(verloopt) || verloopt <= 0) throw new Error("VERLOOPT_ONGELDIG");
   let delen;
-  if (doel === "goedkeuren") {
+  if (doel === "ai-beleid") {
+    // Het AI-beleid: de hash van precies de versie die de eigenaar op het scherm zag (ai-beleid-kern.mjs, beleidHash).
+    if (!/^[0-9a-f]{64}$/.test(String(v.beleidHash || ""))) throw new Error("BELEIDHASH_ONGELDIG");
+    delen = [v.beleidHash];
+  } else if (doel === "goedkeuren") {
     if (!/^[0-9a-f-]{36}$/.test(String(v.voorstelId || ""))) throw new Error("VOORSTEL_ONGELDIG");
     if (!/^[0-9]{8}-[0-9]{6}$/.test(String(v.versie || ""))) throw new Error("VERSIE_ONGELDIG");
     if (!/^[0-9a-f]{64}$/.test(String(v.sha256 || ""))) throw new Error("SHA256_ONGELDIG");

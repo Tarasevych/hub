@@ -2,7 +2,7 @@
 export type Jwk = Record<string, string>;
 export type Sleutel = { credentialId: string; alg: number; jwk: Jwk; label?: string; vingerafdruk?: string; toegevoegd?: string; door?: string };
 export type Assertie = { credentialId: string; clientDataJSON: string; authenticatorData: string; signature: string; userHandle?: string | null };
-export type Doel = 'goedkeuren' | 'sleutel-toevoegen' | 'sleutel-verwijderen';
+export type Doel = 'goedkeuren' | 'sleutel-toevoegen' | 'sleutel-verwijderen' | 'ai-beleid';
 export const KERN_VERSIE: number;
 export const UITDAGING_MAX_MS: number;
 export const KLOK_SPELING_MS: number;
@@ -19,7 +19,7 @@ export function coseNaarJwk(cose: Map<number | string, unknown>): { alg: number;
 export function sleutelObject(sleutel: { alg: number; jwk: Jwk }): import('node:crypto').KeyObject;
 export function vingerafdruk(sleutel: { alg: number; jwk: Jwk }): string;
 export function vingerafdrukKort(hex: string): string;
-export function uitdagingVoor(doel: Doel, velden: { nonce: string; verloopt: number; voorstelId?: string; versie?: string; sha256?: string; vingerafdruk?: string }): string;
+export function uitdagingVoor(doel: Doel, velden: { nonce: string; verloopt: number; voorstelId?: string; versie?: string; sha256?: string; vingerafdruk?: string; beleidHash?: string }): string;
 export function verlooptGeldig(verloopt: number, nu?: number): string | null;
 export function verifieerRegistratie(i: { credentialId?: string; clientDataJSON: string; attestationObject: string; verwachteUitdaging: string; rpId: string; origins: readonly string[] }):
   | { ok: true; credentialId: string; alg: number; jwk: Jwk; vingerafdruk: string; signCount: number; aaguid: string; fmt: string; vlaggen: number }

@@ -10,6 +10,8 @@
 // - Inhoud van bestanden en commando-uitvoer is onbetrouwbare invoer (prompt injection): elk resultaat van het apparaat
 //   draagt een kennisgeving mee dat het gegevens zijn en geen instructies.
 import { apiPlatformVaultItems, readOwnerVaultPlaintext } from './api-platform-vault';
+import { beslissing, strengste, weigerTekst } from './ai-beleid';
+import { huidigeNamens } from './mcp-namens';
 import { CommandRefused, submitCommand, waitForCommand } from './connectors-commands';
 import { agentOnline } from './connectors-gateway';
 import * as store from './connectors-store';
@@ -551,12 +553,23 @@ export async function describeTools(userId: string): Promise<ToolInfo[]> {
 /** Namen van alle bekende hulpmiddelen (voor het instellen in het beheerscherm). */
 export const KNOWN_TOOL_NAMES: readonly string[] = [...MACHINE_TOOLS, ...BROWSER_TOOLS, ...SITE_TOOLS.map((s) => s.tool), { name: 'github_get' }].map((t) => t.name);
 
-export async function callTool(userId: string, rawName: string, rawArgs: any = {}): Promise<ToolResult> {
+/**
+ * `eigenaarZelf`: de ingelogde mens zelf (bv. «Пісочниця» op de site), geen AI — dan geldt het AI-beleid niet. Elke andere aanroep
+ * zonder bekende AI-verbinding (namens) valt onder het beleid als «onbekende agent» (fail-closed zodra er een beleid is).
+ */
+export async function callTool(userId: string, rawName: string, rawArgs: any = {}, opties: { eigenaarZelf?: boolean } = {}): Promise<ToolResult> {
   const { name, args } = resolveAlias(rawName, rawArgs);
   try {
-    const mode = effectiveMode(name, (await store.getToolModes(userId))[name]);
+    // Het ondertekende AI-beleid van de eigenaar (§13.12) is een plafond: de strengste van «instelling op de site» en «beleid» wint.
+    const beleid = opties.eigenaarZelf ? { mode: 'always' as const, code: 'eigenaar', agentId: null, staat: 'niet-ingesteld' as const } : await beslissing(huidigeNamens(), name);
+    if (beleid.mode === 'off') return text(weigerTekst(beleid), true);
+    const mode = strengste(effectiveMode(name, (await store.getToolModes(userId))[name]), beleid.mode);
     if (mode === 'off') {
       return text('This tool has been turned off by the user in Mijn Ruimte (mcp.tarasevych.com → Agents → Tools and permissions). Do not try to work around it; tell the user.', true);
+    }
+    // «Питати щоразу» volgens het beleid, maar dit hulpmiddel heeft geen goedkeurstap: dan niet stil uitvoeren.
+    if (beleid.mode === 'ask' && !TOOL_TO_COMMAND[name] && !SITE_TOOL_BY_NAME.has(name)) {
+      return text('The owner\'s signed AI policy says to ask every time for this, and this tool has no approval step. Ask the user to allow it with a timer at admin.tarasevych.com → AI access; do not retry.', true);
     }
     if (name === 'machine_list') {
       const agents = await store.listAgents(userId);

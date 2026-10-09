@@ -527,7 +527,8 @@ export function createAgentRoutes(deps: Deps) {
       if (!auth) return denied();
       const body = deps.body(ctx.body);
       const name = String(body.name ?? '');
-      const result = await callTool(auth.user.id, name, body.arguments && typeof body.arguments === 'object' ? body.arguments : {});
+      // De ingelogde mens zelf (geen AI): het AI-beleid geldt hier niet, de gewone instellingen wel.
+      const result = await callTool(auth.user.id, name, body.arguments && typeof body.arguments === 'object' ? body.arguments : {}, { eigenaarZelf: true });
       await deps.audit(auth.user.id, 'owner.agent.tool', result.isError ? 'failure' : 'success', { tool: name });
       return deps.respond(result);
     }],

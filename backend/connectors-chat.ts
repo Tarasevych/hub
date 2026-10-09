@@ -2,6 +2,7 @@
 // uit connectors-tools.ts. De sleutel komt uit de owner-kluis (purpose 'anthropic') en bestaat alleen in het
 // geheugen tijdens het verzoek. Schrijven en commando's uitvoeren wachten op goedkeuring van de gebruiker.
 import { apiPlatformVaultItems, readOwnerVaultPlaintext } from './api-platform-vault';
+import { CHAT_KLANT, metNamens } from './mcp-namens';
 import { callTool, listTools, type ToolDef, type ToolResult } from './connectors-tools';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
@@ -99,5 +100,6 @@ export const defaultChatDeps: ChatDeps = {
     try { return await readOwnerVaultPlaintext(userId, item.keyName, 'anthropic'); } catch { return null; }
   },
   listTools,
-  callTool,
+  // Het chatvenster op ai.tarasevych.com is ook een AI: het AI-beleid kent het als «Чат ШІ (ai.tarasevych.com)».
+  callTool: (userId, name, args) => metNamens({ client: CHAT_KLANT }, () => callTool(userId, name, args)),
 };

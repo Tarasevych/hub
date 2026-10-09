@@ -306,7 +306,7 @@ export async function synchroniseer() {
 }
 
 // ------------------------------------------------------------------------------------------------ challenges
-async function uitdagingMaken(userId: string, doel: 'registreren' | kern.Doel, onderwerp: string, velden: Record<string, unknown> = {}) {
+export async function uitdagingMaken(userId: string, doel: 'registreren' | kern.Doel, onderwerp: string, velden: Record<string, unknown> = {}) {
   const nonce = nonceNieuw();
   const verloopt = Date.now() + UITROL_LIMIETEN.uitdagingMs - 2000;
   const uitdaging = doel === 'registreren' ? nonce : kern.uitdagingVoor(doel, { ...velden, nonce, verloopt } as never);
@@ -315,7 +315,7 @@ async function uitdagingMaken(userId: string, doel: 'registreren' | kern.Doel, o
   return { id: String(rows[0].id), nonce, verloopt, uitdaging };
 }
 /** Eenmalig verbruiken (atomisch). Ook bij een fout daarna is de challenge op. */
-async function uitdagingVerbruiken(userId: string, id: unknown, doel: string) {
+export async function uitdagingVerbruiken(userId: string, id: unknown, doel: string) {
   if (!UUID.test(String(id || ''))) fout('UITDAGING_ONGELDIG', 403);
   const { rows } = await sys().query(`UPDATE app.goedkeur_uitdagingen SET gebruikt_op = now()
     WHERE id = $1 AND user_id = $2 AND doel = $3 AND gebruikt_op IS NULL AND verloopt_ms > (extract(epoch FROM now()) * 1000)::bigint
@@ -323,12 +323,12 @@ async function uitdagingVerbruiken(userId: string, id: unknown, doel: string) {
   if (!rows[0]) fout('UITDAGING_ONGELDIG', 403);
   return { onderwerp: String(rows[0].onderwerp), nonce: String(rows[0].nonce), uitdaging: String(rows[0].uitdaging), verloopt: Number(rows[0].verloopt_ms) };
 }
-function assertieUit(v: unknown): kern.Assertie {
+export function assertieUit(v: unknown): kern.Assertie {
   const a = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
   const s = (x: unknown, n: number) => { const t = String(x ?? ''); if (!t || t.length > n || !/^[A-Za-z0-9_-]+$/.test(t)) fout('ASSERTIE_ONGELDIG'); return t; };
   return { credentialId: s(a.credentialId, 1400), clientDataJSON: s(a.clientDataJSON, 8192), authenticatorData: s(a.authenticatorData, 8192), signature: s(a.signature, 2048) };
 }
-const assertieOpties = (uitdaging: string, b: Awaited<ReturnType<typeof leesSleutels>>) => ({
+export const assertieOpties = (uitdaging: string, b: Awaited<ReturnType<typeof leesSleutels>>) => ({
   challenge: uitdaging, rpId: b.rpId, timeout: 120000, userVerification: 'required',
   allowCredentials: b.sleutels.map((s) => ({ type: 'public-key', id: s.credentialId })),
 });

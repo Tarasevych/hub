@@ -18,6 +18,9 @@
 //   toevoegen <vingerafdruk (≥ 16 hex-tekens)>                    wachtende aanmelding bevestigen (SSH; eerste sleutel)
 //   verwijderen <vingerafdruk (≥ 16 hex-tekens)>                  sleutel weghalen (SSH)
 //   alles-intrekken                                               alle sleutels weghalen (SSH; telefoon kwijt)
+//   beleid-start <genesis.signed.json> <vingerafdruk ≥ 16 hex>    eerste AI-beleid (offline ondertekend met de herstelsleutel; SSH)
+//   beleid-toon                                                   huidige versie van het AI-beleid (SSH)
+//   (verwerk ook: ai-beleid-*.json — nieuwe versie met een assertie van een root-passkey of een Ed25519-handtekening)
 //   rp-bijwerken                                                  leeg sleutelbestand met de oude rpId (admin.tarasevych.com)
 //                                                                 → rpId tarasevych.com + origins admin/id (installer, idempotent)
 import { createHash, randomBytes } from "node:crypto";
@@ -26,6 +29,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { OUDE_RP_ID, STANDAARD_RP, normaliseerSleutelbestand, tellerOk, uitdagingVoor, verifieerAssertie, verlooptGeldig, vingerafdruk, vingerafdrukKort } from "./webauthn-kern.mjs";
+import { beleidFout, beleidHash, controleerEd25519, ketenFout, sleutelVingerafdruk, volgendeFout } from "./ai-beleid-kern.mjs";
 
 const IS_ROOT = typeof process.getuid === "function" && process.getuid() === 0;
 // Overschrijven kan alleen in tests (niet als root).
@@ -35,6 +39,8 @@ const RECHTEN = omg("GOEDKEUR_RECHTEN", "/etc/mijn-ruimte/mcp-rechten.json");
 const STAAT = omg("GOEDKEUR_STAAT", "/var/lib/mijn-ruimte/goedkeuring");
 const INBOX = omg("GOEDKEUR_INBOX", "/srv/mijn-ruimte/goedkeur-inbox");
 const STATUS_DIR = omg("GOEDKEUR_STATUS_DIR", "/var/lib/mijn-ruimte-uitrol-status");
+// AI-beleid (§13.12): de keten van door de eigenaar ondertekende versies. Root schrijft, de app leest (0755/0644).
+const BELEID_DIR = omg("AI_BELEID_DIR", "/var/lib/mijn-ruimte/ai-beleid");
 const GROEP = omg("GOEDKEUR_GROEP", "mijnruimte");
 const MAX_JSON = 64 * 1024;
 const MAX_SLEUTELS = 10;
@@ -161,6 +167,12 @@ const TEKSTEN = {
   NIET_GEVONDEN: ["Ключ не знайдено.", "Sleutel niet gevonden."],
   OPNIEUW_VIA_SSH: ["Право цього ключа відкликано через застосунок; повернути його можна лише через SSH.", "Het recht van deze sleutel is via de app ingetrokken; terugzetten kan alleen via SSH."],
   REDEN_ONGELDIG: ["Для відкликання потрібна причина.", "Voor het intrekken is een reden nodig."],
+  BELEID_NIET_GESTART: ["Політику доступу ШІ ще не встановлено (перша версія — через SSH: beleid-start).", "Het AI-beleid is nog niet geïnstalleerd (eerste versie via SSH: beleid-start)."],
+  BELEID_KETEN_ONGELDIG: ["Ланцюжок версій політики пошкоджено.", "De keten van beleidsversies is beschadigd."],
+  VERSIE_VERSCHILT_BELEID: ["Політику вже змінено іншим підписом. Відкрийте сторінку заново.", "Het beleid is intussen met een andere handtekening gewijzigd. Open de pagina opnieuw."],
+  ONTWERP_VERLOPEN: ["Чернетка застаріла. Підготуйте зміну ще раз.", "Het ontwerp is verouderd. Bereid de wijziging opnieuw voor."],
+  BELEID_ONGELDIG: ["Чернетка політики недійсна.", "Het beleidsontwerp is ongeldig."],
+  BELEID_EIGENAAR_ALLEEN: ["Право змінювати дозволи не можна видати агентові.", "Het recht om toestemmingen te wijzigen kan niet aan een agent worden gegeven."],
 };
 const tekst = (code) => TEKSTEN[code] || [`Відхилено (${code}).`, `Geweigerd (${code}).`];
 
@@ -210,15 +222,18 @@ function verifieerGoedkeuring(pakket, goedkeuringPad, versie) {
 // sleutel-intrekken (§13.10): de app vraagt ZONDER assertie om het recht van één sleutel in te trekken. Dat kan alleen rechten
 // weghalen (de veilige richting); root onthoudt de vingerafdruk en neemt die sleutel daarna alleen nog via SSH terug.
 const VERZOEK = /^sleutel-(toevoegen|verwijderen|intrekken)-[0-9a-f]{16,64}\.json$/;
+const BELEID_VERZOEK = /^ai-beleid-([0-9a-f]{16,64})\.json$/;
 function verwerk() {
   let namen = [];
-  try { namen = readdirSync(INBOX).filter((n) => VERZOEK.test(n)).sort(); } catch { log(`inbox ${INBOX} ontbreekt`); return 0; }
+  try { namen = readdirSync(INBOX).filter((n) => VERZOEK.test(n) || BELEID_VERZOEK.test(n)).sort(); } catch { log(`inbox ${INBOX} ontbreekt`); return 0; }
   let laatste = 0;
   for (const naam of namen.slice(0, 20)) {
     const p = path.join(INBOX, naam);
     let req = null;
-    try { req = JSON.parse(leesBegrensd(p).toString("utf8")); } catch { req = null; }
+    try { req = JSON.parse(leesBegrensd(p, 512 * 1024).toString("utf8")); } catch { req = null; }
     try { unlinkSync(p); } catch { /* al weg */ }
+    const beleid = BELEID_VERZOEK.exec(naam);
+    if (beleid) { const code = verwerkBeleid(beleid[1], req); laatste = code === "OK" ? laatste : 2; continue; }
     const doel = naam.startsWith("sleutel-toevoegen-") ? "sleutel-toevoegen" : naam.startsWith("sleutel-intrekken-") ? "sleutel-intrekken" : "sleutel-verwijderen";
     const code = doel === "sleutel-intrekken" ? intrekkenEen(req) : verwerkEen(doel, req);
     laatste = code === "OK" ? laatste : 2;
@@ -281,6 +296,93 @@ function intrekkenEen(req) {
   sleutelStatus("klaar", "OK", { doel, vingerafdruk: fp });
   gebeurtenis("PASSKEY_INGETROKKEN", "waarschuwing", `Право схвалення ключа ${vingerafdrukKort(fp)} («${sleutel.label}») відкликано через застосунок (${door}). Причина: ${reden}`, `Goedkeurrecht van sleutel ${vingerafdrukKort(fp)} («${sleutel.label}») ingetrokken via de app (${door}). Reden: ${reden}`);
   return "OK";
+}
+
+// ------------------------------------------------------------------------------------------------ AI-beleid (§13.12)
+// Keten in BELEID_DIR/keten.json: { versie:1, versies:[{ beleid, hash, ondertekend, op }] }; per versie ook versie-NNNNNN.json.
+// Alleen root schrijft. Een versie komt er alleen bij met een geldige handtekening van de eigenaar over PRECIES die inhoud:
+//  - een assertie van een passkey uit het root-bestand (dezelfde sleutels als voor het goedkeuren van updates), of
+//  - een Ed25519-handtekening van een herstelsleutel uit de vorige versie (offline, scripts/ceremony.ts).
+// De app (en dus een agent) kan alleen een verzoek neerleggen; zonder handtekening weigert root.
+const ketenPad = () => path.join(BELEID_DIR, "keten.json");
+function leesKeten() {
+  if (!existsSync(ketenPad())) return null;
+  if (!rootBestandOk(ketenPad())) throw new Error("BELEID_KETEN_ONGELDIG");
+  const d = JSON.parse(leesBegrensd(ketenPad(), 16 * 1024 * 1024).toString("utf8"));
+  const k = ketenFout(d && d.versies);
+  if (!k.ok) throw new Error("BELEID_KETEN_ONGELDIG");
+  return { versies: d.versies, laatste: k.laatste, hash: k.hash };
+}
+function schrijfKeten(versies, nieuw) {
+  mkdirSync(BELEID_DIR, { recursive: true, mode: 0o755 });
+  const nr = String(nieuw.beleid.seq).padStart(6, "0");
+  // Eerst de losse versie (alleen nieuw aanmaken), dan de keten atomisch vervangen.
+  const los = path.join(BELEID_DIR, `versie-${nr}.json`);
+  if (existsSync(los)) throw new Error("VERSIE_VERSCHILT_BELEID");
+  schrijfAtomisch(los, JSON.stringify(nieuw, null, 2) + "\n", 0o644, false);
+  schrijfAtomisch(ketenPad(), JSON.stringify({ versie: 1, versies: [...versies, nieuw] }) + "\n", 0o644, false);
+}
+function beleidStatus(id, uitkomst, code, extra = {}) {
+  const [uk, nl] = tekst(code);
+  schrijfAtomisch(path.join(STATUS_DIR, `ai-beleid-${id}.json`), JSON.stringify({ uitkomst, code, uk, nl, tijd: new Date().toISOString(), ...extra }) + "\n", 0o640, true);
+}
+function verwerkBeleid(id, req) {
+  const weiger = (code, extra = {}) => { const [uk, nl] = tekst(code); log(`ai-beleid geweigerd: ${code}`); beleidStatus(id, "geweigerd", code, extra); gebeurtenis(`AI_BELEID_${code}`, "waarschuwing", `Зміну політики ШІ відхилено: ${uk}`, `Wijziging van het AI-beleid geweigerd: ${nl}`); return code; };
+  if (!req || typeof req !== "object" || req.doel !== "ai-beleid" || !req.ontwerp) return weiger("GOEDKEURING_ONGELDIG");
+  let keten;
+  try { keten = leesKeten(); } catch { return weiger("BELEID_KETEN_ONGELDIG"); }
+  if (!keten) return weiger("BELEID_NIET_GESTART");
+  const f = volgendeFout(keten.laatste, req.ontwerp);
+  if (f) return weiger(f === "VERSIE_VERSCHILT" ? "VERSIE_VERSCHILT_BELEID" : f);
+  const hash = beleidHash(req.ontwerp);
+  let ondertekend;
+  if (req.assertie) {
+    let bestand;
+    try { bestand = leesSleutelbestand(); } catch (err) { return weiger(String(err.message)); }
+    const r = controleerEnVerbruik("ai-beleid", { beleidHash: hash, nonce: req.nonce, verloopt: Number(req.verloopt) }, req.assertie, bestand);
+    if (!r.ok) return weiger(r.code);
+    ondertekend = { soort: "passkey", vingerafdruk: r.vingerafdruk, label: String(r.label || "passkey").slice(0, 60) };
+  } else if (req.ed25519) {
+    const r = controleerEd25519(req.ontwerp, req.ed25519, keten.laatste.ownerKeys);
+    if (!r.ok) return weiger(r.code);
+    ondertekend = { soort: "ed25519", keyId: r.keyId, vingerafdruk: r.vingerafdruk };
+  } else return weiger("GOEDKEURING_ONGELDIG");
+  try { schrijfKeten(keten.versies, { beleid: req.ontwerp, hash, ondertekend, op: new Date().toISOString() }); }
+  catch (err) { return weiger(String(err.message) === "VERSIE_VERSCHILT_BELEID" ? "VERSIE_VERSCHILT_BELEID" : "BELEID_KETEN_ONGELDIG"); }
+  beleidStatus(id, "klaar", "OK", { seq: req.ontwerp.seq, hash });
+  gebeurtenis("AI_BELEID_GEWIJZIGD", "info", `Політику ШІ змінено: версія ${req.ontwerp.seq} (підпис ${ondertekend.soort === "passkey" ? `passkey ${vingerafdrukKort(ondertekend.vingerafdruk)}` : `ключ ${ondertekend.keyId}`}).`,
+    `AI-beleid gewijzigd: versie ${req.ontwerp.seq} (handtekening ${ondertekend.soort === "passkey" ? `passkey ${vingerafdrukKort(ondertekend.vingerafdruk)}` : `sleutel ${ondertekend.keyId}`}).`);
+  return "OK";
+}
+/** Eerste versie via SSH: genesis.signed.json uit de ceremonie, met de vingerafdruk van de herstelsleutel die de eigenaar zelf intypt. */
+function beleidStart(bestandPad, prefix) {
+  if (!prefixOk(prefix)) { log("geef minstens 16 hex-tekens van de vingerafdruk van de herstelsleutel (ceremony.ts fingerprint)"); return 1; }
+  if (leesKeten()) { log("er is al een AI-beleid; wijzigingen gaan alleen met een handtekening (site of ceremony.ts draft/sign)"); return 1; }
+  let g;
+  try { g = JSON.parse(leesBegrensd(bestandPad, 512 * 1024).toString("utf8")); } catch { log("genesis-bestand onleesbaar"); return 1; }
+  const beleid = g && g.policy, sig = g && g.signature;
+  const fout = beleidFout(beleid);
+  if (fout) { log(`ongeldig beleid: ${fout}`); return 1; }
+  if (beleid.seq !== 0 || beleid.prevHash !== null) { log("dit is geen eerste versie (seq 0)"); return 1; }
+  if (!sig || sig.type !== "ed25519") { log("de eerste versie moet met de herstelsleutel (Ed25519) ondertekend zijn"); return 1; }
+  const sleutel = beleid.ownerKeys.find((k) => k.type === "ed25519" && k.id === sig.keyId);
+  if (!sleutel) { log("de ondertekenende sleutel staat niet in het beleid"); return 1; }
+  const fp = sleutelVingerafdruk(sleutel.publicKey);
+  if (!fp.startsWith(schoonPrefix(prefix))) { log(`vingerafdruk past niet: in het bestand ${vingerafdrukKort(fp)}`); return 1; }
+  const r = controleerEd25519(beleid, sig, beleid.ownerKeys);
+  if (!r.ok) { log(`handtekening ongeldig: ${r.code}`); return 1; }
+  const hash = beleidHash(beleid);
+  schrijfKeten([], { beleid, hash, ondertekend: { soort: "ed25519", keyId: r.keyId, vingerafdruk: fp }, op: new Date().toISOString() });
+  gebeurtenis("AI_BELEID_GESTART", "info", `Політику ШІ встановлено: агентів ${Object.keys(beleid.agents).length}, ключ ${vingerafdrukKort(fp)}.`, `AI-beleid geïnstalleerd: ${Object.keys(beleid.agents).length} agents, sleutel ${vingerafdrukKort(fp)}.`);
+  process.stdout.write(`AI-beleid geïnstalleerd: versie 0, ${Object.keys(beleid.agents).length} agents, hash ${hash.slice(0, 16)}…\n  keten: ${ketenPad()}\n`);
+  return 0;
+}
+function beleidToon() {
+  const k = leesKeten();
+  if (!k) { process.stdout.write("(nog geen AI-beleid; zie beleid-start)\n"); return 0; }
+  const laatste = k.versies[k.versies.length - 1];
+  process.stdout.write(`versie ${k.laatste.seq}  hash ${k.hash.slice(0, 16)}…  agents ${Object.keys(k.laatste.agents).length}  ondertekend ${laatste.ondertekend?.soort || "?"} ${laatste.ondertekend?.label || laatste.ondertekend?.keyId || ""}  op ${laatste.op || ""}\n`);
+  return 0;
 }
 
 const AANMELDING = /^sleutel-aanmelding-[0-9a-f]{64}\.json$/;
@@ -380,8 +482,10 @@ function hoofd(argv) {
       case "verwijderen": return verwijderenViaSsh(args.join(""));
       case "alles-intrekken": return allesIntrekken();
       case "rp-bijwerken": return rpBijwerken();
+      case "beleid-start": return args.length >= 2 ? beleidStart(args[0], args.slice(1).join("")) : 64;
+      case "beleid-toon": return beleidToon();
       default:
-        process.stderr.write("gebruik: mijn-ruimte-passkey wachtend | lijst | toevoegen <vingerafdruk> | verwijderen <vingerafdruk> | alles-intrekken | rp-bijwerken\n");
+        process.stderr.write("gebruik: mijn-ruimte-passkey wachtend | lijst | toevoegen <vingerafdruk> | verwijderen <vingerafdruk> | alles-intrekken | rp-bijwerken | beleid-start <genesis.signed.json> <vingerafdruk> | beleid-toon\n");
         return 64;
     }
   } catch (err) {
