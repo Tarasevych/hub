@@ -1,0 +1,209 @@
+// Wat een AI via MCP deed, in gewone taal (uk/nl), zonder gevoelige waarden — en het groeperen van die acties tot «werksessies».
+//
+// Server (backend/mcp-connector.ts): bij elke tools/call komt in app.audit `owner.mcp.tool` met { tool, client, grantId, soort, doel }.
+//   `doel` is alleen een veilige aanduiding (map/bestandspad, host+pad zonder query, repo, commando zonder geheimen) — nooit
+//   inhoud van bestanden, zoektermen, ingevulde velden of brieven.
+// Journaal (src/agenten/Journaal.tsx): opeenvolgende acties van dezelfde AI-verbinding met minder dan 10 minuten ertussen worden één
+//   sessie («Claude працював 14:02–14:20: 12 дій»), herhalingen worden samengevoegd («×3»).
+// Puur (geen DOM/Node): getest in tests/eenheid/mcp-acties.test.ts.
+
+export type ActieSoort =
+  | 'bekijken' | 'screenshot' | 'diagnose' | 'navigeren' | 'invoer'
+  | 'lezen' | 'schrijven' | 'commando' | 'docker' | 'meten'
+  | 'mail' | 'agenda' | 'schijf' | 'github' | 'bord' | 'server' | 'zoeken' | 'uitrol' | 'onbekend';
+
+type Vormen = { uk: readonly [string, string, string]; nl: readonly [string, string] };
+/** Lucide-icoonnaam per soort + meervoudsvormen (uk: 1 / 2–4 / 5+, nl: 1 / meer). */
+export const SOORT_INFO: Readonly<Record<ActieSoort, { icoon: string } & Vormen>> = {
+  bekijken: { icoon: 'eye', uk: ['перегляд', 'перегляди', 'переглядів'], nl: ['keer bekeken', 'keer bekeken'] },
+  screenshot: { icoon: 'camera', uk: ['знімок екрана', 'знімки екрана', 'знімків екрана'], nl: ['schermafdruk', 'schermafdrukken'] },
+  diagnose: { icoon: 'stethoscope', uk: ['діагностика', 'діагностики', 'діагностик'], nl: ['diagnose', 'diagnoses'] },
+  navigeren: { icoon: 'compass', uk: ['перехід', 'переходи', 'переходів'], nl: ['navigatie', 'navigaties'] },
+  invoer: { icoon: 'mouse-pointer-click', uk: ['дія на сторінці', 'дії на сторінці', 'дій на сторінці'], nl: ['actie op de pagina', 'acties op de pagina'] },
+  lezen: { icoon: 'file-text', uk: ['читання файлу чи теки', 'читання файлів чи тек', 'читань файлів чи тек'], nl: ['bestand of map gelezen', 'bestanden of mappen gelezen'] },
+  schrijven: { icoon: 'file-pen', uk: ['запис файлу', 'записи файлів', 'записів файлів'], nl: ['bestand geschreven', 'bestanden geschreven'] },
+  commando: { icoon: 'terminal', uk: ['команда', 'команди', 'команд'], nl: ['commando', "commando's"] },
+  docker: { icoon: 'container', uk: ['дія з контейнером', 'дії з контейнерами', 'дій з контейнерами'], nl: ['containeractie', 'containeracties'] },
+  meten: { icoon: 'gauge', uk: ['перевірка стану', 'перевірки стану', 'перевірок стану'], nl: ['statuscontrole', 'statuscontroles'] },
+  mail: { icoon: 'mail', uk: ['дія з поштою', 'дії з поштою', 'дій з поштою'], nl: ['mailactie', 'mailacties'] },
+  agenda: { icoon: 'calendar', uk: ['запит до календаря', 'запити до календаря', 'запитів до календаря'], nl: ['agendavraag', 'agendavragen'] },
+  schijf: { icoon: 'hard-drive', uk: ['запит до Диска', 'запити до Диска', 'запитів до Диска'], nl: ['Drive-vraag', 'Drive-vragen'] },
+  github: { icoon: 'git-branch', uk: ['дія в GitHub', 'дії в GitHub', 'дій у GitHub'], nl: ['GitHub-actie', 'GitHub-acties'] },
+  bord: { icoon: 'kanban', uk: ['дія на дошці', 'дії на дошці', 'дій на дошці'], nl: ['bordactie', 'bordacties'] },
+  server: { icoon: 'server', uk: ['перевірка сервера', 'перевірки сервера', 'перевірок сервера'], nl: ['servercontrole', 'servercontroles'] },
+  zoeken: { icoon: 'search', uk: ['пошук', 'пошуки', 'пошуків'], nl: ['zoekopdracht', 'zoekopdrachten'] },
+  uitrol: { icoon: 'rocket', uk: ['дія з оновленням', 'дії з оновленням', 'дій з оновленням'], nl: ['update-actie', 'update-acties'] },
+  onbekend: { icoon: 'circle-help', uk: ['інша дія', 'інші дії', 'інших дій'], nl: ['andere actie', 'andere acties'] },
+};
+
+/** Zowel de DevTools-namen (click, take_snapshot) als de interne namen (browser_click, browser_snapshot) en de site-hulpmiddelen. */
+const TOOL_SOORT: Readonly<Record<string, ActieSoort>> = {
+  take_snapshot: 'bekijken', browser_snapshot: 'bekijken', list_pages: 'bekijken', browser_pages: 'bekijken', browser_list_tabs: 'bekijken',
+  list_console_messages: 'bekijken', browser_console: 'bekijken', list_network_requests: 'bekijken', browser_network: 'bekijken',
+  browser_history: 'navigeren', wait_for: 'bekijken', browser_wait_for_text: 'bekijken', select_page: 'navigeren',
+  take_screenshot: 'screenshot', browser_screenshot: 'screenshot',
+  browser_get_diagnostics: 'diagnose', browser_get_deep_diagnostics: 'diagnose',
+  new_page: 'navigeren', browser_open: 'navigeren', navigate_page: 'navigeren', close_page: 'navigeren', browser_scroll: 'navigeren', hover: 'navigeren', browser_hover: 'navigeren',
+  click: 'invoer', browser_click: 'invoer', fill: 'invoer', browser_type: 'invoer', fill_form: 'invoer', browser_fill_form: 'invoer',
+  press_key: 'invoer', browser_press_key: 'invoer', browser_select_option: 'invoer', browser_invoke_action: 'invoer',
+  machine_info: 'meten', system_metrics: 'meten', machine_list: 'meten',
+  machine_list_dir: 'lezen', machine_read_file: 'lezen', machine_write_file: 'schrijven', machine_exec: 'commando',
+  docker_list_containers: 'docker', docker_manage_container: 'docker',
+  mail_list_accounts: 'mail', mail_list_labels: 'mail', mail_read_message: 'mail', mail_search_messages: 'mail', mail_modify_message: 'mail',
+  calendar_list_calendars: 'agenda', calendar_list_events: 'agenda', drive_browse: 'schijf', drive_read_file: 'schijf',
+  github_ci_status: 'github', github_list_commits: 'github', github_list_issues: 'github', github_list_repos: 'github', github_my_activity: 'github',
+  github_read_readme: 'github', github_repo_overview: 'github', github_search: 'github', github_status: 'github', github_comment_issue: 'github',
+  github_create_issue: 'github', github_get: 'github',
+  mcp_board_list: 'bord', mcp_board_add: 'bord',
+  mcp_archive_status: 'server', mcp_backups_list: 'server', mcp_services_health: 'server', mcp_traffic_recent: 'server',
+  site_search: 'zoeken', global_search: 'zoeken',
+  uitrol_voorstel_begin: 'uitrol', uitrol_voorstel_stuk: 'uitrol', uitrol_voorstel_klaar: 'uitrol', uitrol_voorstel_status: 'uitrol', uitrol_voorstel_annuleren: 'uitrol',
+};
+const zonderPrefix = (t: string) => String(t || '').replace(/^mcp__[^_]+(?:_[^_]+)*?__/, '');
+export const actieSoort = (tool: string): ActieSoort => TOOL_SOORT[zonderPrefix(tool)] ?? 'onbekend';
+
+// ---------------------------------------------------------------- veilige aanduiding (doel)
+const AUTH = /\b(authorization)\b\s*[=:]\s*(?:(?:bearer|basic|token)\s+)?[^\s"']+/gi;
+const DRAGER = /\b(bearer|basic)\s+[A-Za-z0-9._~+/=-]{8,}/gi;
+const PAAR = /\b(token|secret|password|passwd|pwd|api[_-]?key|apikey|cookie|wachtwoord|пароль)\b(\s*[=:]\s*|\s+)("[^"]*"|'[^']*'|\S+)/gi;
+const TOKENACHTIG = /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{16,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{5,}|[A-Fa-f0-9]{32,}|[A-Za-z0-9_-]{40,})\b/g;
+/** Haalt alles wat op een geheim lijkt uit een tekst: het journaal mag zelf geen lek worden. */
+export const verberg = (t: string) => t.replace(AUTH, '$1=…').replace(DRAGER, '$1 …').replace(PAAR, '$1=…').replace(TOKENACHTIG, '…');
+const kort = (t: string, n: number) => (t.length <= n ? t : `${t.slice(0, n - 1)}…`);
+const tekst = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim().replace(/[\u0000-\u001f\u007f]/g, ' ') : undefined);
+/** Alleen host + pad, zonder query en fragment (daar staan vaak codes en zoektermen). */
+export function veiligeUrl(raw: unknown): string | undefined {
+  const s = tekst(raw); if (!s) return undefined;
+  try { const u = new URL(s); if (!/^https?:$/.test(u.protocol)) return undefined; return kort(`${u.host}${u.pathname === '/' ? '' : u.pathname}`, 80); } catch { return undefined; }
+}
+
+/** Wat werd aangeraakt, voor het journaal (max. 100 tekens), of undefined. Nooit inhoud, zoektermen of ingevulde waarden. */
+export function actieDoel(tool: string, args: unknown): string | undefined {
+  const a = (args && typeof args === 'object' ? args : {}) as Record<string, unknown>;
+  const naam = zonderPrefix(tool);
+  const pad = tekst(a.path) ?? tekst(a.file) ?? tekst(a.dir) ?? tekst(a.directory);
+  switch (naam) {
+    case 'machine_list_dir': case 'machine_read_file': case 'machine_write_file': return pad ? kort(verberg(pad), 100) : undefined;
+    case 'machine_exec': {
+      const cmd = tekst(a.command) ?? tekst(a.cmd);
+      const rest = Array.isArray(a.args) ? (a.args as unknown[]).filter((x): x is string => typeof x === 'string').join(' ') : '';
+      const volledig = [cmd, rest].filter(Boolean).join(' ');
+      return volledig ? kort(verberg(volledig), 100) : undefined;
+    }
+    case 'new_page': case 'navigate_page': case 'browser_open': return veiligeUrl(a.url);
+    case 'docker_manage_container': { const c = tekst(a.container) ?? tekst(a.name); const act = tekst(a.action); return c ? kort(`${act ? `${act} ` : ''}${c}`, 60) : undefined; }
+    case 'browser_invoke_action': { const x = tekst(a.action) ?? tekst(a.name); return x ? kort(verberg(x), 50) : undefined; }
+    default: {
+      const repo = tekst(a.repo) ?? tekst(a.repository);
+      return repo && /^[\w.-]+\/[\w.-]+$/.test(repo) ? repo : undefined;
+    }
+  }
+}
+
+// ---------------------------------------------------------------- zin per actie
+type Taal = 'uk' | 'nl';
+const Z: Readonly<Record<string, [string, string]>> = {
+  bekijken: ['Переглянув сторінку', 'Bekeek de pagina'], take_snapshot: ['Подивився структуру сторінки', 'Bekeek de opbouw van de pagina'],
+  list_pages: ['Переглянув відкриті вкладки', 'Bekeek de open tabbladen'], list_console_messages: ['Прочитав консоль сторінки', 'Las de console van de pagina'],
+  list_network_requests: ['Переглянув мережеві запити', 'Bekeek de netwerkverzoeken'], browser_history: ['Перейшов назад/вперед в історії', 'Ging terug/vooruit in de geschiedenis'],
+  wait_for: ['Чекав появи тексту на сторінці', 'Wachtte op tekst op de pagina'], select_page: ['Перемкнувся на іншу вкладку', 'Schakelde naar een ander tabblad'],
+  take_screenshot: ['Зробив знімок екрана', 'Maakte een schermafdruk'], browser_get_diagnostics: ['Зібрав діагностику сторінки', 'Verzamelde diagnose van de pagina'],
+  browser_get_deep_diagnostics: ['Зібрав глибоку діагностику сторінки', 'Verzamelde diepe diagnose van de pagina'],
+  new_page: ['Відкрив нову вкладку', 'Opende een nieuw tabblad'], navigate_page: ['Перейшов на сторінку', 'Ging naar een pagina'], close_page: ['Закрив вкладку', 'Sloot een tabblad'],
+  browser_scroll: ['Прокрутив сторінку', 'Scrolde de pagina'], hover: ['Навів курсор на елемент', 'Hield de muis boven een element'],
+  click: ['Натиснув елемент на сторінці', 'Klikte op een element'], fill: ['Заповнив поле', 'Vulde een veld in'], fill_form: ['Заповнив форму', 'Vulde een formulier in'],
+  press_key: ['Натиснув клавішу', 'Drukte op een toets'], browser_select_option: ['Вибрав варіант у списку', 'Koos een optie in een lijst'], browser_invoke_action: ['Виконав дію сайту', 'Voerde een site-actie uit'],
+  machine_info: ['Подивився відомості про ПК', 'Bekeek de gegevens van de pc'], system_metrics: ['Перевірив навантаження ПК', 'Controleerde de belasting van de pc'],
+  machine_list: ['Переглянув підключені пристрої', 'Bekeek de gekoppelde apparaten'], machine_list_dir: ['Переглянув теку', 'Bekeek een map'],
+  machine_read_file: ['Прочитав файл', 'Las een bestand'], machine_write_file: ['Записав файл', 'Schreef een bestand'], machine_exec: ['Виконав команду', 'Voerde een commando uit'],
+  docker_list_containers: ['Переглянув контейнери', 'Bekeek de containers'], docker_manage_container: ['Змінив стан контейнера', 'Wijzigde de status van een container'],
+  mail_list_accounts: ['Переглянув поштові скриньки', 'Bekeek de mailaccounts'], mail_list_labels: ['Переглянув мітки пошти', 'Bekeek de maillabels'],
+  mail_search_messages: ['Шукав листи', 'Zocht in de mail'], mail_read_message: ['Прочитав лист', 'Las een bericht'], mail_modify_message: ['Змінив лист (мітки чи стан)', 'Wijzigde een bericht (labels of status)'],
+  calendar_list_calendars: ['Переглянув календарі', 'Bekeek de agenda\'s'], calendar_list_events: ['Переглянув події календаря', 'Bekeek afspraken in de agenda'],
+  drive_browse: ['Переглянув теки на Диску', 'Bekeek mappen op Drive'], drive_read_file: ['Прочитав файл на Диску', 'Las een bestand op Drive'],
+  github_status: ['Перевірив підключення GitHub', 'Controleerde de GitHub-koppeling'], github_list_repos: ['Переглянув репозиторії', 'Bekeek de repository\'s'],
+  github_repo_overview: ['Переглянув огляд репозиторію', 'Bekeek een repository'], github_read_readme: ['Прочитав README', 'Las een README'],
+  github_list_commits: ['Переглянув коміти', 'Bekeek commits'], github_list_issues: ['Переглянув задачі', 'Bekeek issues'], github_ci_status: ['Перевірив CI', 'Controleerde CI'],
+  github_search: ['Шукав у GitHub', 'Zocht in GitHub'], github_my_activity: ['Переглянув вашу активність у GitHub', 'Bekeek uw GitHub-activiteit'],
+  github_create_issue: ['Створив задачу в GitHub', 'Maakte een issue in GitHub'], github_comment_issue: ['Прокоментував задачу в GitHub', 'Reageerde op een issue in GitHub'],
+  mcp_board_list: ['Переглянув дошку завдань', 'Bekeek het takenbord'], mcp_board_add: ['Додав завдання на дошку', 'Voegde een taak toe aan het bord'],
+  mcp_services_health: ['Перевірив стан сервісів сайту', 'Controleerde de diensten van de site'], mcp_backups_list: ['Переглянув резервні копії', 'Bekeek de back-ups'],
+  mcp_archive_status: ['Перевірив стан архіву', 'Controleerde het archief'], mcp_traffic_recent: ['Переглянув трафік конектора', 'Bekeek het verkeer van de connector'],
+  site_search: ['Шукав на сайті', 'Zocht op de site'],
+  uitrol_voorstel_begin: ['Почав готувати оновлення сайту', 'Begon een update van de site voor te bereiden'], uitrol_voorstel_stuk: ['Надіслав частину пакета оновлення', 'Stuurde een deel van een updatepakket'],
+  uitrol_voorstel_klaar: ['Підготував оновлення (чекає вашого схвалення)', 'Bereidde een update voor (wacht op uw goedkeuring)'],
+  uitrol_voorstel_status: ['Перевірив стан оновлення', 'Controleerde de status van een update'], uitrol_voorstel_annuleren: ['Скасував підготовлене оновлення', 'Annuleerde een voorbereide update'],
+};
+const SYNONIEM: Readonly<Record<string, string>> = {
+  browser_snapshot: 'take_snapshot', browser_pages: 'list_pages', browser_list_tabs: 'list_pages', browser_console: 'list_console_messages', browser_network: 'list_network_requests',
+  browser_wait_for_text: 'wait_for', browser_screenshot: 'take_screenshot', browser_open: 'new_page', browser_hover: 'hover', browser_click: 'click', browser_type: 'fill',
+  browser_fill_form: 'fill_form', browser_press_key: 'press_key', github_get: 'github_repo_overview', global_search: 'site_search',
+};
+
+/** Eén zin, bv. «Прочитав файл T:\notes\a.md». Onbekend hulpmiddel: eerlijk de naam, nooit het algemene «mcp tool». */
+export function actieZin(tool: string, doel: string | undefined, taal: Taal): string {
+  const naam = SYNONIEM[zonderPrefix(tool)] ?? zonderPrefix(tool);
+  const z = Z[naam];
+  const basis = z ? z[taal === 'nl' ? 1 : 0] : (taal === 'nl' ? `Hulpmiddel «${kort(naam, 60)}» gebruikt` : `Викликав інструмент «${kort(naam, 60)}»`);
+  return doel ? `${basis}: ${doel}` : basis;
+}
+
+/** «3 читання файлів чи тек» / «3 bestanden of mappen gelezen». */
+export function telling(n: number, soort: ActieSoort, taal: Taal): string {
+  const f = SOORT_INFO[soort] ?? SOORT_INFO.onbekend;
+  if (taal === 'nl') return `${n} ${n === 1 ? f.nl[0] : f.nl[1]}`;
+  const m10 = n % 10, m100 = n % 100;
+  const vorm = m10 === 1 && m100 !== 11 ? f.uk[0] : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? f.uk[1] : f.uk[2];
+  return `${n} ${vorm}`;
+}
+
+// ---------------------------------------------------------------- werksessies
+export type JournaalAchtig = { id: string; at: number; actie: string; details: Record<string, unknown> };
+export type WerkSessie<T extends JournaalAchtig> = {
+  soort: 'sessie'; id: string; sleutel: string; klant: string; van: number; tot: number; items: T[];
+  /** Per soort het aantal, grootste eerst. */
+  tellingen: Array<{ soort: ActieSoort; aantal: number }>;
+  /** Opeenvolgende gelijke acties (zelfde hulpmiddel en doel) samengevoegd: { item, keer }. */
+  stappen: Array<{ item: T; keer: number }>;
+  mislukt: number;
+};
+export type JournaalRegel<T extends JournaalAchtig> = { soort: 'los'; item: T } | WerkSessie<T>;
+
+const s = (v: unknown) => (typeof v === 'string' ? v : '');
+export const isWerkActie = (e: JournaalAchtig) => e.actie === 'owner.mcp.tool';
+const sleutelVan = (e: JournaalAchtig) => s(e.details.grantId) || `klant:${s(e.details.client) || '?'}`;
+
+/**
+ * Zet een journaal (nieuwste eerst) om in regels: losse gebeurtenissen blijven los; MCP-acties van dezelfde AI-verbinding met
+ * hoogstens `pauze` ms ertussen vormen één sessie — ook als een andere AI er tussendoor werkte. De volgorde blijft nieuwste eerst
+ * (een sessie staat op de plek van haar nieuwste actie).
+ */
+export function groepeerWerk<T extends JournaalAchtig>(items: readonly T[], pauze = 10 * 60_000): Array<JournaalRegel<T>> {
+  const regels: Array<JournaalRegel<T>> = [];
+  const open = new Map<string, WerkSessie<T>>();
+  for (const e of [...items].sort((x, y) => y.at - x.at)) {
+    if (!isWerkActie(e)) { regels.push({ soort: 'los', item: e }); continue; }
+    const k = sleutelVan(e);
+    const huidig = open.get(k);
+    if (huidig && huidig.van - e.at <= pauze) { huidig.items.push(e); huidig.van = e.at; continue; }
+    const nieuw: WerkSessie<T> = { soort: 'sessie', id: `sessie:${e.id}`, sleutel: k, klant: s(e.details.client), van: e.at, tot: e.at, items: [e], tellingen: [], stappen: [], mislukt: 0 };
+    open.set(k, nieuw);
+    regels.push(nieuw);
+  }
+  for (const r of regels) {
+    if (r.soort !== 'sessie') continue;
+    const per = new Map<ActieSoort, number>();
+    // Stappen in tijdsvolgorde (oudste eerst): zo leest een sessie als een verhaal.
+    const chrono = [...r.items].sort((x, y) => x.at - y.at);
+    for (const e of chrono) {
+      const so = (s(e.details.soort) as ActieSoort) in SOORT_INFO ? s(e.details.soort) as ActieSoort : actieSoort(s(e.details.tool));
+      per.set(so, (per.get(so) ?? 0) + 1);
+      const laatste = r.stappen[r.stappen.length - 1];
+      if (laatste && s(laatste.item.details.tool) === s(e.details.tool) && s(laatste.item.details.doel) === s(e.details.doel)) laatste.keer++;
+      else r.stappen.push({ item: e, keer: 1 });
+      if ((e as unknown as { resultaat?: string }).resultaat === 'failure') r.mislukt++;
+    }
+    r.tellingen = [...per.entries()].map(([soort, aantal]) => ({ soort, aantal })).sort((x, y) => y.aantal - x.aantal);
+  }
+  return regels;
+}

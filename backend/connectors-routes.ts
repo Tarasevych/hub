@@ -16,10 +16,12 @@ import { callTool, listTools } from './connectors-tools';
 import { listUserGrantHistory, listUserGrants, RESOURCE as MCP_URL } from './mcp-connector';
 
 // ---- journaal (/agents → Журнал) ----
-export const JOURNAAL_SOORTEN = ['ai', 'token', 'apparaat', 'browser', 'toestemming', 'noodstop', 'hulpmiddelen', 'toegang'] as const;
+export const JOURNAAL_SOORTEN = ['werk', 'ai', 'token', 'apparaat', 'browser', 'toestemming', 'noodstop', 'hulpmiddelen', 'toegang'] as const;
 export type JournaalSoort = typeof JOURNAAL_SOORTEN[number];
 /** Welke auditacties in het journaal komen, met hun soort. Alles wat hier niet staat (mail, inloggen, …) blijft buiten deze pagina. */
 export const JOURNAAL_ACTIES: Record<string, JournaalSoort> = {
+  // Elke aanroep van een MCP-hulpmiddel door een AI (Claude, Grok, …): wie (verbinding), wat (hulpmiddel, soort, veilig doel).
+  'owner.mcp.tool': 'werk',
   'owner.mcp.grant.approved': 'ai', 'owner.mcp.grant.denied': 'ai', 'owner.mcp.grant.connected': 'ai', 'owner.mcp.grant.revoked': 'ai',
   mcp_console_token_issued: 'token', mcp_console_token_revoked: 'token',
   'owner.agent.paired': 'apparaat', 'owner.agent.revoked': 'apparaat', 'owner.agent.updated': 'apparaat', 'owner.agent.policy': 'apparaat', 'owner.agent.pairing_code': 'apparaat',
@@ -47,7 +49,7 @@ export function journaalItem(r: { id: string; action: string; result: string; cr
   const s = (v: unknown) => (typeof v === 'string' ? v : '');
   let onderwerp: JournaalItem['onderwerp'] = null;
   if (s(d.agentId)) { const a = namen.agents.get(s(d.agentId)); onderwerp = { id: s(d.agentId), naam: a?.name || s(d.name), soort: 'apparaat', platform: a?.platform ?? (s(d.platform) || null) }; }
-  else if (r.action.startsWith('owner.mcp.grant.') && s(d.grantId)) onderwerp = { id: s(d.grantId), naam: namen.oauth.get(s(d.grantId)) || s(d.clientName), soort: 'ai', platform: null };
+  else if ((r.action.startsWith('owner.mcp.grant.') || r.action === 'owner.mcp.tool') && s(d.grantId)) onderwerp = { id: s(d.grantId), naam: namen.oauth.get(s(d.grantId)) || s(d.clientName) || s(d.client), soort: 'ai', platform: null };
   else if (r.action.startsWith('mcp_console_token_') && s(d.tokenId)) onderwerp = { id: s(d.tokenId), naam: namen.tokens.get(s(d.tokenId)) || s(d.name), soort: 'token', platform: null };
   const details = Object.fromEntries(Object.entries(d).filter(([k]) => !GEHEIM.test(k)));
   return { id: `audit:${r.id}`, at: r.createdAt, actie: r.action, soort: JOURNAAL_ACTIES[r.action] ?? 'apparaat', resultaat: r.result, onderwerp, details, ipHash: r.ipHash ? String(r.ipHash).slice(0, 12) : null, apparaat: r.device ?? null, dienst: r.service ?? null };

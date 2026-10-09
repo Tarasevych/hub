@@ -50,7 +50,7 @@ export function useJournaal(filter: { soort: string; onderwerp: string; limit?: 
   const laad = useCallback(async (voor?: string) => {
     setBezig(true);
     try {
-      const r = await api.post('/api/owner/agents/journaal', { ...sessionBody(), soort: filter.soort, onderwerp: filter.onderwerp, limit: filter.limit ?? 50, ...(voor ? { voor } : {}) });
+      const r = await api.post('/api/owner/agents/journaal', { ...sessionBody(), soort: filter.soort, onderwerp: filter.onderwerp, limit: filter.limit ?? 100, ...(voor ? { voor } : {}) });
       const lijst = (r.data?.items ?? []) as JournaalItem[];
       setItems((oud) => (voor && oud ? [...oud, ...lijst.filter((x) => !oud.some((o) => o.id === x.id))] : lijst));
       setVolgende(r.data?.nextCursor ?? null); setFout(null);

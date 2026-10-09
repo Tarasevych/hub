@@ -9,6 +9,8 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { rateLimit, type RouterResponse } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
+import { actieDoel, actieSoort } from '../shared/mcp-acties';
+import { metNamens } from './mcp-namens';
 import { randomToken, sha256 } from './connectors-crypto';
 import { callTool, listTools, type ToolDef } from './connectors-tools';
 import { SERVICE_HOSTS } from './deployment-identity';
@@ -280,6 +282,16 @@ const toMcpTool = (t: ToolDef) => ({
   ...(t.annotations ? { annotations: t.annotations } : {}),
 });
 
+/**
+ * Auditdetails van één MCP-actie: welke AI-verbinding (client + grantId = app.mcp_oauth_tokens.id), welk hulpmiddel, soort en een
+ * veilige aanduiding van het doel (shared/mcp-acties.ts: pad, host+pad, repo, commando zonder geheimen — nooit inhoud).
+ * Zonder deze velden zou het journaal alleen «eigenaar deed iets» kunnen tonen; nu «Claude → eigenaar: Прочитав файл …».
+ */
+const werkDetails = (who: { clientName: string; tokenId?: string }, name: string, args: Record<string, unknown>) => {
+  const doel = actieDoel(name, args);
+  return { tool: name.slice(0, 80), client: String(who.clientName || '').slice(0, 80), ...(who.tokenId ? { grantId: String(who.tokenId) } : {}), soort: actieSoort(name), ...(doel ? { doel } : {}) };
+};
+
 /** Onderwerpen voor de grant "updates voorbereiden": eerst deze MCP-koppeling, dan het account. */
 const uitrolOnderwerpen = (who: { userId: string; tokenId?: string }): Onderwerp[] => [
   ...(who.tokenId ? [{ soort: 'mcp-koppeling' as const, id: String(who.tokenId), accountId: who.userId }] : []),
@@ -311,16 +323,17 @@ async function handleMessage(who: { userId: string; clientName: string; tokenId?
     case 'tools/call': {
       const name = msg.params?.name;
       if (typeof name !== 'string' || !name) return rpcError(id, -32602, 'name ontbreekt');
+      const args: Record<string, unknown> = msg.params?.arguments && typeof msg.params.arguments === 'object' ? msg.params.arguments : {};
       if (UITROL_TOOL_NAMEN.has(name) || isGoedkeurPoging(name)) {
         let uit: { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
-        try { uit = { content: [{ type: 'text', text: JSON.stringify(await voerUitrolToolUit(uitrolOnderwerpen(who), name, msg.params?.arguments && typeof msg.params.arguments === 'object' ? msg.params.arguments : {})) }] }; }
+        try { uit = { content: [{ type: 'text', text: JSON.stringify(await metNamens({ client: who.clientName, grantId: who.tokenId }, async () => voerUitrolToolUit(uitrolOnderwerpen(who), name, args))) }] }; }
         catch (err) { uit = { content: [{ type: 'text', text: err instanceof UitrolFout ? err.code : 'UITROL_FOUT' }], isError: true }; }
-        try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: uit.isError ? 'failure' : 'success', details: { tool: name, client: who.clientName } }); } catch { /* audit mag niet breken */ }
+        try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: uit.isError ? 'failure' : 'success', details: werkDetails(who, name, args) }); } catch { /* audit mag niet breken */ }
         return rpcResult(id, uit);
       }
-      const result = await callTool(who.userId, name, msg.params?.arguments && typeof msg.params.arguments === 'object' ? msg.params.arguments : {});
+      const result = await metNamens({ client: who.clientName, grantId: who.tokenId }, () => callTool(who.userId, name, args));
       try {
-        await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: result.isError ? 'failure' : 'success', details: { tool: name, client: who.clientName } });
+        await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: result.isError ? 'failure' : 'success', details: werkDetails(who, name, args) });
       } catch { /* auditfout mag het hulpmiddel niet breken */ }
       return rpcResult(id, result);
     }
