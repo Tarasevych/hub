@@ -2,6 +2,7 @@ import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypt
 import {db,isOwnerEmail,secrets} from '../server/platform';
 import {stapOpFout,type StapOpAuth} from './stap-op';
 import {heeftApiRecht} from './api-recht';
+import {leegMeta,metaUitRecord,normaliseerVaultMeta,staatTekst,vandaag,vaultStaat,type VaultMeta,type VaultStaat} from '../shared/vault-meta';
 
 export const OWNER_VAULT_TABLE='owner_vault_v1';
 export const OWNER_VAULT_PURPOSES=['home-assistant','telegram','github','anthropic','webhook','other'] as const;
@@ -11,9 +12,17 @@ const MAX_VALUE=8192;
 // Google OAuth client secrets (key reuse; the client secret is also sent to Google on every token call).
 const KEY_CANDIDATES=['OWNER_VAULT_ENCRYPTION_KEY_V1'] as const;
 const REVEAL_CONFIRM='REVEAL_SECRET';
+/** Laatste termijncontrole per eigenaar (meldingen); een wijziging in de kluis zet hem terug, zodat een melding meteen kan komen. */
+const laatsteControle=new Map<string,number>();
 
 export type OwnerVaultPurpose=typeof OWNER_VAULT_PURPOSES[number];
-export type OwnerVaultRecord={id:string;ownerUserId:string;keyName:string;purpose:OwnerVaultPurpose;usedBy:string;algorithm:'AES-256-GCM';keyVersion:number;keySource:string;ciphertext:string;iv:string;authTag:string;createdAt:number;updatedAt:number};
+export type OwnerVaultRecord={id:string;ownerUserId:string;keyName:string;purpose:OwnerVaultPurpose;usedBy:string;algorithm:'AES-256-GCM';keyVersion:number;keySource:string;ciphertext:string;iv:string;authTag:string;createdAt:number;updatedAt:number;
+  /** Termijn, eigenaar (dienst/AI/apparaat/persoon), verantwoordelijke — nooit de waarde. Oude records: ontbreekt. */
+  meta?:VaultMeta;
+  /** Voor welke staat al een melding is gemaakt (bijna/verlopen), zodat die niet terugkomt. */
+  gemeld?:Partial<Record<VaultStaat,string>>;
+  /** Laatste vervanging van de waarde (rotatie). */
+  rotatedAt?:number};
 type SessionAuth={errorCode:string}|{user:{id:string;email:string;role:string;status:string};service:string};
 
 const aad=(ownerUserId:string,keyName:string)=>`owner-vault-v1|${ownerUserId}|${keyName}`;
@@ -63,7 +72,10 @@ const publicItem=(item:OwnerVaultRecord)=>({
   editable:true,
   deletable:true,
   locked:false,
-  source:'vault'
+  source:'vault',
+  meta:metaUitRecord(item.meta),
+  ...vaultStaat(metaUitRecord(item.meta)),
+  rotatedAt:item.rotatedAt||item.createdAt
 });
 const requestHost=(event:Record<string,unknown>)=>{
   const headers=(event.headers||{}) as Record<string,string>;
@@ -142,6 +154,7 @@ export function createApiPlatformVaultRoutes(deps:{
       const purpose=normalizePurpose(body.purpose||body.usedBy);
       const usedBy=String(body.usedBy||purpose).trim().slice(0,80)||purpose;
       const value=String(body.value||body.secret||'');
+      const metaIn=body.meta;
       if(!value||value.length>MAX_VALUE)return deps.fail(value?'OWNER_VAULT_VALUE_TOO_LARGE':'OWNER_VAULT_VALUE_EMPTY',400);
       const resolved=await resolveVaultSecret();
       if(!resolved.ready)return deps.fail('OWNER_VAULT_ENCRYPTION_UNAVAILABLE',503);
@@ -152,17 +165,22 @@ export function createApiPlatformVaultRoutes(deps:{
       let envelope;
       try{envelope=encryptValue(value,resolved.secret,auth.user.id,keyName);}catch(caught){return deps.fail(caught instanceof Error?caught.message:'OWNER_VAULT_ENCRYPT_FAILED',500);}
       const now=Date.now();
+      const metaUit=normaliseerVaultMeta(metaIn,existing?metaUitRecord(existing.meta):{...leegMeta(),geldigVan:vandaag(now)});
+      if('fout'in metaUit)return deps.fail(metaUit.fout,400);
       if(existing){
-        const record={...existing,keyName,purpose,usedBy,...envelope,keySource:resolved.keySource,updatedAt:now};
+        // Nieuwe waarde = rotatie: meldingen over de oude termijn vervallen.
+        const record={...existing,keyName,purpose,usedBy,...envelope,keySource:resolved.keySource,meta:metaUit.meta,gemeld:{},rotatedAt:now,updatedAt:now};
         const{id,...stored}=record;
         const[ok]=await db.update(OWNER_VAULT_TABLE,[{id,record:stored}]);
         if(!ok)return deps.fail('OWNER_VAULT_WRITE_FAILED',500);
+        laatsteControle.delete(auth.user.id);
         await deps.audit(auth.user.id,'owner.api.vault.updated','success',{vaultId:id,keyName,purpose});
         return deps.respond({ok:true,rotated:true,item:publicItem(record),plaintextReturned:false});
       }
-      const record={ownerUserId:auth.user.id,keyName,purpose,usedBy,...envelope,keySource:resolved.keySource,createdAt:now,updatedAt:now};
+      const record={ownerUserId:auth.user.id,keyName,purpose,usedBy,...envelope,keySource:resolved.keySource,meta:metaUit.meta,gemeld:{},createdAt:now,updatedAt:now,rotatedAt:now};
       const[id]=await db.add(OWNER_VAULT_TABLE,[record]);
       if(!id)return deps.fail('OWNER_VAULT_WRITE_FAILED',500);
+      laatsteControle.delete(auth.user.id);
       await deps.audit(auth.user.id,'owner.api.vault.created','success',{vaultId:id,keyName,purpose});
       return deps.respond({ok:true,rotated:false,item:publicItem({id,...record}),plaintextReturned:false});
     }],
@@ -188,6 +206,27 @@ export function createApiPlatformVaultRoutes(deps:{
       const[ok]=await db.update(OWNER_VAULT_TABLE,[{id,record:stored}]);
       if(!ok)return deps.fail('OWNER_VAULT_WRITE_FAILED',500);
       await deps.audit(auth.user.id,'owner.api.vault.renamed','success',{vaultId:id,from:current.keyName,to:nextName});
+      return deps.respond({ok:true,item:publicItem(record),plaintextReturned:false});
+    }],
+    'POST /api/owner/api-platform/vault/:id/meta':[async(ctx: any)=>{
+      // Alleen metadata (termijn, van wie, verantwoordelijke): de waarde wordt niet ontsleuteld of aangeraakt.
+      const auth=await ownerGate(ctx.event,ctx.body);
+      if(!auth||'errorCode'in auth)return deps.fail('OWNER_API_SESSION_REQUIRED',403);
+      const current=await owned(auth.user.id,ctx.params.id);
+      if(!current)return deps.fail('OWNER_VAULT_NOT_FOUND',404);
+      const oud=metaUitRecord(current.meta);
+      const uit=normaliseerVaultMeta(deps.body(ctx.body).meta,oud);
+      if('fout'in uit)return deps.fail(uit.fout,400);
+      const velden=(Object.keys(uit.meta) as Array<keyof VaultMeta>).filter(k=>uit.meta[k]!==oud[k]);
+      if(!velden.length)return deps.respond({ok:true,item:publicItem(current),plaintextReturned:false});
+      // Andere einddatum → opnieuw mogen melden.
+      const gemeld=uit.meta.geldigTot!==oud.geldigTot?{}:current.gemeld||{};
+      const record={...current,meta:uit.meta,gemeld,updatedAt:Date.now()};
+      const{id,...stored}=record;
+      const[ok]=await db.update(OWNER_VAULT_TABLE,[{id,record:stored}]);
+      if(!ok)return deps.fail('OWNER_VAULT_WRITE_FAILED',500);
+      laatsteControle.delete(auth.user.id);
+      await deps.audit(auth.user.id,'owner.api.vault.meta','success',{vaultId:id,keyName:current.keyName,velden,geldigTot:uit.meta.geldigTot||null,soort:uit.meta.soort||null,van:uit.meta.van||null});
       return deps.respond({ok:true,item:publicItem(record),plaintextReturned:false});
     }],
     'POST /api/owner/api-platform/vault/:id/reveal':[async(ctx: any)=>{
@@ -223,4 +262,27 @@ export function createApiPlatformVaultRoutes(deps:{
       return deps.respond({ok:true,deletedId:current.id,plaintextReturned:false});
     }]
   };
+}
+
+/**
+ * Meldingen voor sleutels die bijna aflopen of verlopen zijn: één keer per sleutel en staat (bijna → verlopen is een nieuwe melding;
+ * een nieuwe waarde of een andere einddatum zet het terug). Hoogstens elke 10 minuten per eigenaar, goedkoop (≤ 40 records).
+ */
+export async function vaultTermijnMeldingen(user:{id:string;email:string},notify:(kind:string,title:string,message:string,link:string)=>Promise<unknown>,nu=Date.now()){
+  if(nu-(laatsteControle.get(user.id)||0)<10*60_000)return 0;
+  laatsteControle.set(user.id,nu);
+  let n=0;
+  for(const item of await apiPlatformVaultItems(user.id)){
+    const meta=metaUitRecord(item.meta);
+    const{staat}=vaultStaat(meta,nu);
+    if(staat!=='bijna'&&staat!=='verlopen')continue;
+    if(item.gemeld?.[staat])continue;
+    const titel=staat==='verlopen'?`Строк ключа «${item.keyName}» вийшов`:`Ключ «${item.keyName}» скоро закінчиться`;
+    const wie=[meta.van,meta.verantwoordelijke?`відповідальний: ${meta.verantwoordelijke}`:''].filter(Boolean).join(' · ');
+    await notify(staat==='verlopen'?'vault_key_expired':'vault_key_expiring',titel,`${staatTekst(meta,'uk',nu)}${wie?` · ${wie}`:''}. Замініть значення в «Сховищі секретів».`,'https://api.tarasevych.com/vault');
+    const{id,...stored}={...item,gemeld:{...(item.gemeld||{}),[staat]:new Date(nu).toISOString()}};
+    await db.update(OWNER_VAULT_TABLE,[{id,record:stored}]);
+    n++;
+  }
+  return n;
 }

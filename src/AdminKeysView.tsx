@@ -1,6 +1,8 @@
 import {useEffect,useMemo,useState} from 'react';
 import {api} from './platform/client';
 import {Eye,EyeOff,KeyRound,LockKeyhole,Plus,RefreshCw,ShieldCheck,Trash2,TriangleAlert,X} from 'lucide-react';
+import {VaultMetaBewerker,VaultMetaRegel,VaultMetaVelden} from './VaultMeta';
+import {leegMeta,vandaag,type VaultMeta,type VaultStaat} from '../shared/vault-meta';
 
 type Lang='uk'|'nl';
 type KeyCard={
@@ -19,6 +21,8 @@ type KeyCard={
   noteUk?:string;
   noteNl?:string;
   purpose?:string;
+  meta?:VaultMeta;
+  staat?:VaultStaat;
 };
 type ContourPublic={
   clientId:string;
@@ -50,8 +54,9 @@ export default function AdminKeysView({lang,sourceOrigin,tabContext}:Props){
   const[keys,setKeys]=useState<KeyCard[]>([]);
   const[vaultReady,setVaultReady]=useState(true);
   const[reveal,setReveal]=useState<{id:string;name:string;value:string}|null>(null);
-  const[editor,setEditor]=useState<{id:string;name:string;kind:'google-id'|'google-secret'|'vault';value:string}|null>(null);
+  const[editor,setEditor]=useState<{id:string;name:string;kind:'google-id'|'google-secret'|'vault';value:string;purpose?:string}|null>(null);
   const[adder,setAdder]=useState({name:'',purpose:'other',value:''});
+  const[adderMeta,setAdderMeta]=useState<VaultMeta>(()=>({...leegMeta(),geldigVan:vandaag()}));
 
   const load=async()=>{
     setLoading(true);
@@ -78,6 +83,8 @@ export default function AdminKeysView({lang,sourceOrigin,tabContext}:Props){
         deletable:true,
         locked:false,
         purpose:String(item.purpose||'other'),
+        meta:item.meta as VaultMeta|undefined,
+        staat:item.staat as VaultStaat|undefined,
         noteUk:'Користувацький секрет у зашифрованому owner vault.',
         noteNl:'Aangepast geheim in de versleutelde owner-kluis.'
       }));
@@ -126,7 +133,7 @@ export default function AdminKeysView({lang,sourceOrigin,tabContext}:Props){
     setBusy('save');
     try{
       if(editor.kind==='vault'){
-        await api.post('/api/owner/api-platform/vault/save',{...context,id:editor.id,name:editor.name,value:editor.value,purpose:'other'});
+        await api.post('/api/owner/api-platform/vault/save',{...context,id:editor.id,name:editor.name,value:editor.value,purpose:editor.purpose||'other'});
       }else{
         await api.post('/api/owner/google-contour/save',{
           ...context,
@@ -169,8 +176,9 @@ export default function AdminKeysView({lang,sourceOrigin,tabContext}:Props){
     if(!confirmWrite())return;
     setBusy('add');
     try{
-      await api.post('/api/owner/api-platform/vault/save',{...context,name:adder.name.trim(),purpose:adder.purpose,usedBy:adder.purpose,value:adder.value});
+      await api.post('/api/owner/api-platform/vault/save',{...context,name:adder.name.trim(),purpose:adder.purpose,usedBy:adder.purpose,value:adder.value,meta:adderMeta});
       setAdder({name:'',purpose:'other',value:''});
+      setAdderMeta({...leegMeta(),geldigVan:vandaag()});
       await load();
       setNotice(tr(lang,'Новий ключ додано й зашифровано.','Nieuwe sleutel toegevoegd en versleuteld.'));
     }catch(caught){
@@ -181,7 +189,7 @@ export default function AdminKeysView({lang,sourceOrigin,tabContext}:Props){
 
   const startEdit=(item:KeyCard)=>{
     if(!item.editable)return;
-    if(item.group==='vault')setEditor({id:item.id,name:item.name,kind:'vault',value:''});
+    if(item.group==='vault')setEditor({id:item.id,name:item.name,kind:'vault',value:'',purpose:item.purpose});
     else if(item.id==='google-client-id'||item.name==='GOOGLE_SUITE_CLIENT_ID')setEditor({id:item.id,name:item.name,kind:'google-id',value:contour?.clientId||''});
     else setEditor({id:item.id,name:item.name,kind:'google-secret',value:''});
   };
@@ -203,6 +211,8 @@ export default function AdminKeysView({lang,sourceOrigin,tabContext}:Props){
         {item.aliases?.length?<small>{item.aliases.join(' · ')}</small>:null}
         <code className={`admin-key-mask${isRevealed?' is-revealed':''}`}>{isRevealed?reveal!.value:(item.masked||'—')}</code>
         <small>{lang==='uk'?item.noteUk:item.noteNl}</small>
+        {item.group==='vault'?<VaultMetaRegel lang={lang} meta={item.meta} staat={item.staat}/>:null}
+        {item.group==='vault'?<VaultMetaBewerker lang={lang} id={item.id} meta={item.meta} context={context} onOpgeslagen={load}/>:null}
       </div>
       <div className='admin-key-actions'>
         {item.revealable?<button type='button' data-admin-key-reveal={item.name} disabled={Boolean(busy)||(!item.configured&&!isRevealed)} onClick={()=>void openReveal(item)}>{isRevealed?<EyeOff/>:<Eye/>}{isRevealed?tr(lang,'Сховати','Verbergen'):tr(lang,'Показати','Tonen')}</button>:null}
@@ -254,6 +264,7 @@ export default function AdminKeysView({lang,sourceOrigin,tabContext}:Props){
         <label>{tr(lang,'Назва','Naam')}<input value={adder.name} onChange={event=>setAdder(current=>({...current,name:event.target.value}))} autoComplete='off' placeholder='HOME_ASSISTANT_TOKEN'/></label>
         <label>{tr(lang,'Призначення','Doel')}<select value={adder.purpose} onChange={event=>setAdder(current=>({...current,purpose:event.target.value}))}><option value='other'>{tr(lang,'Інше','Overig')}</option><option value='home-assistant'>Home Assistant</option><option value='telegram'>Telegram</option><option value='github'>GitHub</option><option value='anthropic'>Anthropic</option><option value='webhook'>Webhook</option></select></label>
         <label>{tr(lang,'Значення','Waarde')}<input type='password' value={adder.value} onChange={event=>setAdder(current=>({...current,value:event.target.value}))} autoComplete='new-password'/></label>
+        <VaultMetaVelden lang={lang} waarde={adderMeta} onChange={setAdderMeta}/>
         <button type='submit' disabled={Boolean(busy)||!vaultReady}>{tr(lang,'Зберегти зашифровано','Versleuteld opslaan')}</button>
       </form>
 
