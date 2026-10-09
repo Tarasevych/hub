@@ -3,7 +3,8 @@
 //   a) een Google-aanmelding is afgerond waarvan Google zelf bevestigt (auth_time in het id_token) dat de
 //      gebruiker zich minder dan 5 minuten geleden echt heeft aangemeld. Onthouden browser (complete-remembered)
 //      en handoff tellen nooit: daar is geen nieuw id_token. (Audit-fix 5.)
-//   b) een geldige TOTP-code is ingevoerd via POST /api/owner/access/stap-op.
+//   b) een geldige TOTP-code is ingevoerd via POST /api/owner/access/stap-op (of, met methode 'herstelcode', een ongebruikte
+//      herstelcode: eenmalig verbruikt, zelfde lockout als TOTP, en de gebruiker krijgt een melding).
 //   c) een geldige passkey-assertie (UV) van een eigen passkey via POST /api/owner/access/stap-op/passkey (backend/passkeys.ts).
 // Opt-in noodpad: STAP_OP_GOOGLE_ZONDER_AUTH_TIME=1 laat een expliciete step-up-transactie (prompt=login) zonder
 // auth_time-claim tellen als het OAuth-verloop binnen 5 minuten na de start is afgerond. Standaard uit.
@@ -85,6 +86,15 @@ export async function stapOpGeldig(auth: StapOpAuth, nu = Date.now()): Promise<b
   // Alleen per sessie-id (Google met verse auth_time of TOTP). Het oude account-brede googleAt telt niet meer.
   const at = Number(r.sessies?.[s.id] || 0);
   return at > 0 && nu - at < STAP_OP_MS;
+}
+
+/** Tot wanneer (ms) de step-up op deze sessie nog geldt; 0 = niet bevestigd. Alleen voor de uitleg in het venster «Підтвердіть доступ». */
+export async function stapOpGeldigTot(auth: StapOpAuth, nu = Date.now()): Promise<number> {
+  const s = sessieVan(auth);
+  if (!s) return 0;
+  const r = await recordVan(auth.user.id);
+  const at = Number(r?.sessies?.[s.id] || 0);
+  return at > 0 && nu - at < STAP_OP_MS ? at + STAP_OP_MS : 0;
 }
 
 /** Foutcode als step-up nodig is, anders ''. 403 (geen 401: de sessie zelf is geldig). */

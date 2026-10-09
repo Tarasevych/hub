@@ -52,6 +52,27 @@ export const AAGUID_NAMEN: Readonly<Record<string, string>> = {
 };
 export const aaguidNaam = (aaguid: string) => AAGUID_NAMEN[String(aaguid || '').toLowerCase()] || '';
 
+/** Soort passkey voor de lijst (zoals GitHub): wachtwoordbeheerder, telefoon (via QR/hybrid), beveiligingssleutel of dit apparaat. */
+export type PasskeySoort = 'wachtwoordbeheerder' | 'telefoon' | 'beveiligingssleutel' | 'apparaat' | 'onbekend';
+const BEHEERDERS = new Set(['Google Password Manager', 'iCloud Keychain', '1Password', 'Bitwarden', 'Samsung Pass', 'Chrome (macOS)']);
+export function passkeySoort(aaguid: string, transports: string[] = [], synchroniseerbaar = false): PasskeySoort {
+  const naam = aaguidNaam(aaguid);
+  const t = new Set(transports);
+  if (BEHEERDERS.has(naam)) return 'wachtwoordbeheerder';
+  if (/^YubiKey/.test(naam)) return 'beveiligingssleutel';
+  if (naam === 'Windows Hello') return 'apparaat';
+  if (t.has('hybrid') && !t.has('internal')) return 'telefoon';
+  if (!t.has('internal') && (t.has('usb') || t.has('nfc') || t.has('ble') || t.has('smart-card'))) return 'beveiligingssleutel';
+  if (t.has('internal')) return synchroniseerbaar ? 'wachtwoordbeheerder' : 'apparaat';
+  if (t.has('hybrid')) return 'telefoon';
+  return 'onbekend';
+}
+/**
+ * transports voor allowCredentials: de opgeslagen lijst plus 'hybrid', zodat de browser ook «телефон або планшет» (QR + Bluetooth)
+ * aanbiedt, bv. op Windows voor een passkey die op de Android-telefoon staat. Geen opgeslagen lijst = niets beperken (veld weglaten).
+ */
+export const transportsVoorGet = (opgeslagen: string[] | null | undefined) => (opgeslagen?.length ? [...new Set([...opgeslagen, 'hybrid'])] : undefined);
+
 export class PasskeyFout extends Error { constructor(public code: string, public status = 400) { super(code); } }
 function fout(code: string, status = 400): never { throw new PasskeyFout(code, status); }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -91,6 +112,7 @@ function rijUit(r: Rij, goedkeuring?: { status: Goedkeuring; sshOpdracht?: strin
   return {
     id: String(r.id), naam: r.naam, aanbieder: aaguidNaam(r.aaguid), aaguid: r.aaguid,
     synchroniseerbaar: !!r.backup_eligible, gesynchroniseerd: !!r.backup_state, transports: r.transports || [],
+    soort: passkeySoort(r.aaguid, r.transports || [], !!r.backup_eligible), viaTelefoon: (r.transports || []).includes('hybrid'),
     aangemaaktOp: new Date(r.aangemaakt_op).toISOString(), laatstGebruiktOp: r.laatst_gebruikt_op ? new Date(r.laatst_gebruikt_op).toISOString() : null,
     vingerafdrukKort: kern.vingerafdrukKort(r.vingerafdruk),
     ...(goedkeuring ? { goedkeuring: goedkeuring.status, ...(goedkeuring.sshOpdracht ? { sshOpdracht: goedkeuring.sshOpdracht } : {}) } : {}),
@@ -161,7 +183,10 @@ export async function registratieOpties(auth: PasskeyAuth) {
       user: { id: gebruikerHandle(auth.user.id), name: naam, displayName: tekst(auth.user.name || naam, 64) || naam },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -8 }, { type: 'public-key', alg: -257 }],
       timeout: 120000, attestation: 'none',
+      // Geen authenticatorAttachment: zo kan de browser ook «Використовувати телефон або планшет» (QR + Bluetooth, hybrid) tonen,
+      // net als bij GitHub. hints (WebAuthn L3): eerst dit apparaat, dan de telefoon; browsers zonder hints negeren het veld.
       authenticatorSelection: { residentKey: 'preferred', requireResidentKey: false, userVerification: 'required' },
+      hints: ['client-device', 'hybrid'],
       excludeCredentials: rijen.map((r) => ({ type: 'public-key', id: r.credential_id, ...(r.transports?.length ? { transports: r.transports } : {}) })),
     },
   };
@@ -230,7 +255,7 @@ export async function stapOpOpties(auth: PasskeyAuth) {
     uitdagingId,
     publicKey: {
       challenge: uitdaging, rpId: passkeyRp().rpId, timeout: 120000, userVerification: 'required',
-      allowCredentials: rijen.map((r) => ({ type: 'public-key', id: r.credential_id, ...(r.transports?.length ? { transports: r.transports } : {}) })),
+      allowCredentials: rijen.map((r) => { const t = transportsVoorGet(r.transports); return { type: 'public-key', id: r.credential_id, ...(t ? { transports: t } : {}) }; }),
     },
   };
 }

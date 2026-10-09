@@ -61,6 +61,22 @@ export async function main(): Promise<number> {
     const rpTest = pkm.passkeyRp();
     delete process.env.PASSKEY_ORIGINS;
     check('app: PASSKEY_ORIGINS buiten het rpId-domein of zonder https vallen weg', rpTest.origins.length === 1 && rpTest.origins[0] === 'https://id.tarasevych.com');
+    check('app: passkeySoort (telefoon via hybrid, beveiligingssleutel, apparaat, wachtwoordbeheerder)', pkm.passkeySoort('', ['hybrid']) === 'telefoon' && pkm.passkeySoort('', ['usb', 'nfc']) === 'beveiligingssleutel'
+      && pkm.passkeySoort('', ['internal']) === 'apparaat' && pkm.passkeySoort('', ['internal', 'hybrid'], true) === 'wachtwoordbeheerder' && pkm.passkeySoort(GOOGLE_AAGUID.replace(/-/g, ''), ['hybrid', 'internal']) === 'wachtwoordbeheerder'
+      && pkm.passkeySoort('cb69481e8ff7403993ec0a2729a154a8', ['usb']) === 'beveiligingssleutel' && pkm.passkeySoort('', []) === 'onbekend');
+    check('app: transportsVoorGet voegt hybrid toe, leeg = niet beperken', JSON.stringify(pkm.transportsVoorGet(['internal'])) === '["internal","hybrid"]' && JSON.stringify(pkm.transportsVoorGet(['hybrid', 'internal'])) === '["hybrid","internal"]' && pkm.transportsVoorGet([]) === undefined && pkm.transportsVoorGet(null) === undefined);
+    {
+      // Gesynchroniseerde passkeys (Google/iCloud, ook via QR van de telefoon) hebben BE/BS-vlaggen en teller 0: kern (ook root) moet ze aannemen.
+      const sync = nieuwePasskey('es256', 0);
+      const reg = kern.verifieerRegistratie({ ...registreer(sync, 'c1', { be: true, bs: true, aaguid: GOOGLE_AAGUID, origin: 'https://id.tarasevych.com' }), verwachteUitdaging: 'c1', rpId: 'tarasevych.com', origins: ['https://id.tarasevych.com'] });
+      const sl = reg.ok ? [{ credentialId: reg.credentialId, alg: reg.alg, jwk: reg.jwk, label: 'telefoon' }] : [];
+      const as1 = kern.verifieerAssertie({ assertie: bevestig(sync, 'c2', { be: true, bs: true, origin: 'https://admin.tarasevych.com' }), verwachteUitdaging: 'c2', rpId: 'tarasevych.com', origins: [...kern.STANDAARD_RP.origins], sleutels: sl });
+      const as2 = kern.verifieerAssertie({ assertie: bevestig(sync, 'c3', { be: true, bs: false, origin: 'https://admin.tarasevych.com' }), verwachteUitdaging: 'c3', rpId: 'tarasevych.com', origins: [...kern.STANDAARD_RP.origins], sleutels: sl });
+      const zonderUv = kern.verifieerAssertie({ assertie: bevestig(sync, 'c4', { be: true, bs: true, uv: false, origin: 'https://admin.tarasevych.com' }), verwachteUitdaging: 'c4', rpId: 'tarasevych.com', origins: [...kern.STANDAARD_RP.origins], sleutels: sl });
+      check('kern/root: BE+BS-vlaggen breken registratie en assertie niet; teller 0 → 0 blijft geldig; UV blijft verplicht',
+        reg.ok && (reg.vlaggen & kern.VLAG.BE) !== 0 && (reg.vlaggen & kern.VLAG.BS) !== 0 && as1.ok && as2.ok && (as1 as { vlaggen: number }).vlaggen === (0x01 | 0x04 | 0x08 | 0x10)
+        && kern.tellerOk(0, 0) && !zonderUv.ok && (zonderUv as { code: string }).code === 'GEEN_VERIFICATIE', JSON.stringify([reg.ok, as1, as2, zonderUv]).slice(0, 300));
+    }
     const rp = pkm.passkeyRp();
     check('app: standaard rpId tarasevych.com met origins id/admin/hub', rp.rpId === 'tarasevych.com' && ['id', 'admin', 'hub'].every((h) => rp.origins.includes(`https://${h}.tarasevych.com`)) && rp.origins.length === 3);
 
@@ -97,6 +113,7 @@ export async function main(): Promise<number> {
     const pkOpt = opt.data.publicKey || {};
     check('registratie-opties: rpId tarasevych.com, UV required, resident key preferred, attestation none, user.id ≠ account-id', opt.status === 200 && pkOpt.rp?.id === 'tarasevych.com' && pkOpt.authenticatorSelection?.userVerification === 'required' && pkOpt.authenticatorSelection?.residentKey === 'preferred' && pkOpt.attestation === 'none' && pkOpt.user?.id && pkOpt.user.id !== aId && !String(pkOpt.user.id).includes(aId), JSON.stringify(pkOpt).slice(0, 200));
 
+    check('registratie-opties: geen authenticatorAttachment (telefoon via QR/hybrid mogelijk), hints client-device + hybrid', opt.status === 200 && !('authenticatorAttachment' in (pkOpt.authenticatorSelection || {})) && Array.isArray(pkOpt.hints) && pkOpt.hints.includes('hybrid') && pkOpt.hints.includes('client-device'), JSON.stringify(pkOpt.authenticatorSelection) + JSON.stringify(pkOpt.hints));
     // origins: alleen id/admin/hub
     const geweigerd: string[] = [];
     for (const origin of ['https://evil.example', 'http://id.tarasevych.com', 'https://id.tarasevych.com:8443', 'https://tarasevych.com.evil.example', 'https://mail.tarasevych.com']) {
@@ -115,6 +132,7 @@ export async function main(): Promise<number> {
     check('registratie vanaf id, hub en admin geaccepteerd', rA1.reg.status === 200 && rA2.reg.status === 200 && rB1.reg.status === 200, `${rA1.reg.body.slice(0, 80)} | ${rA2.reg.body.slice(0, 80)} | ${rB1.reg.body.slice(0, 80)}`);
     const pA1 = rA1.reg.data.passkey || {}, pA2 = rA2.reg.data.passkey || {}, pB1 = rB1.reg.data.passkey || {};
     check('registratie: AAGUID-hint, BE/BS (gesynchroniseerd) en standaardnaam', pA1.aanbieder === 'Google Password Manager' && pA1.naam === 'Google Password Manager' && pA1.synchroniseerbaar === true && pA1.gesynchroniseerd === true && pA2.gesynchroniseerd === false && pA2.naam === 'Laptop', JSON.stringify(pA1));
+    check('registratie: soort en viaTelefoon per passkey (Google Менеджер паролів = wachtwoordbeheerder)', pA1.soort === 'wachtwoordbeheerder' && pA1.viaTelefoon === true && Array.isArray(pA1.transports) && !pA1.transports.includes('vreemd'), JSON.stringify(pA1));
     check('registratie: gewone gebruiker krijgt geen goedkeur-status', !('goedkeuring' in pA1) && !('goedkeuring' in pB1));
     const dubbel = await id(A, `${P}/registreren`, { uitdagingId: rA1.opt.data.uitdagingId, ...registreer(a1, rA1.opt.data.publicKey.challenge) });
     check('registratie: challenge is eenmalig', dubbel.data.error === 'UITDAGING_ONGELDIG');
@@ -132,6 +150,7 @@ export async function main(): Promise<number> {
     check('isolatie: B kan de passkey van A niet hernoemen of verwijderen', (await id(Bb, `${P}/hernoemen`, { id: pA1.id, naam: 'van B' })).status === 404 && (await id(Bb, `${P}/verwijderen`, { id: pA1.id })).status === 404);
     const optB = await id(Bb, '/api/owner/access/stap-op/passkey/opties');
     check('isolatie: step-up-opties van B noemen alleen de passkey van B', optB.data.publicKey.allowCredentials.length === 1);
+    check('step-up-opties: transports niet beperkt — opgeslagen lijst plus hybrid (QR met telefoon)', (optB.data.publicKey.allowCredentials[0].transports || []).includes('hybrid') && (optB.data.publicKey.allowCredentials[0].transports || []).includes('internal'), JSON.stringify(optB.data.publicKey.allowCredentials[0]));
     const metAvoorB = await id(Bb, '/api/owner/access/stap-op/passkey', { uitdagingId: optB.data.uitdagingId, assertie: bevestig(a2, optB.data.publicKey.challenge) });
     check('isolatie: B kan geen step-up doen met de passkey van A', metAvoorB.data.error === 'PASSKEY_SLEUTEL_ONBEKEND', metAvoorB.body.slice(0, 100));
     const { alsGebruiker } = await import('../../backend/ai-grants');
@@ -183,6 +202,32 @@ export async function main(): Promise<number> {
     const rec2 = ((await id(A4, '/api/owner/access/snapshot')).data.factors || []).find((f: { id: string }) => f.id === 'recovery');
     check('herstel: na passkey-bevestiging nieuwe codes (eenmalig getoond), bewaard-status opnieuw leeg', rot.status === 200 && rot.data.recoveryCodes?.length === 10 && rot.data.recoveryCodes[0] !== tc.data.recoveryCodes[0] && !rec2?.bekekenOp, `${rot.status} ${rot.body.slice(0, 80)}`);
 
+    // venster «Підтвердіть доступ»: methoden + herstelcode als step-up
+    const A5 = G.browser(); await A5.aanmelden(`sub-a-${T}`, aMail, { authTime: oud });
+    const m5 = await id(A5, '/api/owner/access/stap-op/methoden');
+    check('methoden: e-mail en alleen ja/nee per manier (passkey, app, herstelcode, Google), nog niet bevestigd', m5.status === 200 && m5.data.email === aMail && m5.data.methoden?.passkey === true && m5.data.methoden?.totp === true && m5.data.methoden?.herstelcode === true && m5.data.methoden?.google === true && m5.data.geldigTot === 0 && m5.data.maxAgeSeconds === 300 && !/secret|hash|code"/i.test(m5.body.replace(/herstelcode/g, '')), m5.body.slice(0, 200));
+    const mB = await id(Bb, '/api/owner/access/stap-op/methoden');
+    check('methoden: gebruiker zonder app en codes → alleen Google (en passkey als die er is)', mB.status === 200 && mB.data.methoden?.totp === false && mB.data.methoden?.herstelcode === false && mB.data.methoden?.google === true, mB.body.slice(0, 200));
+    check('methoden: zonder sessie 401', (await G.browser().verzoek('id.tarasevych.com', '/api/owner/access/stap-op/methoden', { service: 'identity', tabContext: 'x'.repeat(48) })).status === 401);
+    check('herstelcode-step-up: foute code geweigerd', (await id(A5, '/api/owner/access/stap-op', { methode: 'herstelcode', code: 'ABCDEF123456' })).data.error === 'ACCESS_RECOVERY_INVALID');
+    check('herstelcode-step-up: zonder codes → STEP_UP_RECOVERY_NOT_ENROLLED', (await id(Bb, '/api/owner/access/stap-op', { methode: 'herstelcode', code: 'ABCDEF123456' })).data.error === 'STEP_UP_RECOVERY_NOT_ENROLLED');
+    const hc = await id(A5, '/api/owner/access/stap-op', { methode: 'herstelcode', code: ` ${String(rot.data.recoveryCodes?.[0] || '').toLowerCase()} ` });
+    check('herstelcode-step-up: geldige code → bevestigd, één code minder', hc.status === 200 && hc.data.stepUp === 'herstelcode' && hc.data.resterend === 9, hc.body.slice(0, 120));
+    check('herstelcode-step-up: daarna 5 min geldig op die sessie (methoden.geldigTot, passkey toevoegen mag)', (await id(A5, '/api/owner/access/stap-op/methoden')).data.geldigTot > Date.now() && (await id(A5, `${P}/registreren/opties`)).status === 200);
+    const A6 = G.browser(); await A6.aanmelden(`sub-a-${T}`, aMail, { authTime: oud });
+    check('herstelcode-step-up: dezelfde code werkt geen tweede keer', (await id(A6, '/api/owner/access/stap-op', { methode: 'herstelcode', code: rot.data.recoveryCodes?.[0] })).data.error === 'ACCESS_RECOVERY_INVALID');
+    check('herstelcode-step-up: geldt alleen voor die sessie', (await id(A6, `${P}/registreren/opties`)).data.error === 'STEP_UP_REQUIRED');
+    check('geen verzwakking: met TOTP vraagt «nieuwe herstelcodes» nog steeds de TOTP-code of een passkey (herstelcode-step-up telt niet)', !(await id(A5, '/api/owner/access/recovery/rotate', {})).data.recoveryCodes);
+    check('geen verzwakking: TOTP-step-up zonder methode accepteert geen herstelcode', (await id(A6, '/api/owner/access/stap-op', { code: rot.data.recoveryCodes?.[1] })).data.error === 'ACCESS_TOTP_INVALID');
+    // Google-step-up vanaf id.tarasevych.com komt terug op dezelfde pagina (hervatten); een gewone aanmelding op id → hub.
+    const terug = await A6.aanmelden(`sub-a-${T}`, aMail, { intent: 'step-up', service: 'identity', returnTo: 'https://id.tarasevych.com/methods?lang=uk' });
+    check('Google-step-up op id: returnTo = dezelfde pagina (/methods)', terug.cb.data.returnTo === 'https://id.tarasevych.com/methods?lang=uk' && terug.authUrl.searchParams.get('prompt') === 'login' && terug.authUrl.searchParams.get('max_age') === '0', `${terug.cb.status} ${terug.cb.body.slice(0, 200)}`);
+    check('Google-step-up op id: daarna bevestigd voor die sessie', (await id(A6, `${P}/registreren/opties`)).status === 200);
+    const vreemd = await A6.aanmelden(`sub-a-${T}`, aMail, { intent: 'step-up', service: 'identity', returnTo: 'https://evil.example/methods' });
+    check('Google-step-up op id: returnTo naar een andere origin geweigerd', vreemd.start.data.error === 'OWNER_TRANSACTION_RETURN_TO_INVALID' || vreemd.start.status >= 400, vreemd.start.body.slice(0, 120));
+    const gewoon = await G.browser().aanmelden(`sub-a-${T}`, aMail, { intent: 'login', service: 'identity', returnTo: 'https://id.tarasevych.com/methods' });
+    check('gewone aanmelding op id: nog steeds naar hub', gewoon.cb.data.returnTo === 'https://hub.tarasevych.com', `${gewoon.cb.status} ${gewoon.cb.body.slice(0, 200)}`);
+
     // eigenaar-only recht
     const nietEig = await Promise.all(['goedkeuring/aanvragen', 'goedkeuring/annuleren', 'goedkeuring/bevestigen/opties', 'goedkeuring/intrekken/opties', 'goedkeuring/bevestigen', 'goedkeuring/intrekken'].map((r) => id(A, `${P}/${r}`, { id: pA1.id })));
     check('niet-eigenaar: alle goedkeur-routes 403 OWNER_REQUIRED, niets in de inbox', nietEig.every((r) => r.status === 403 && r.data.error === 'OWNER_REQUIRED') && readdirSync(inbox).length === 0, nietEig.map((r) => r.data.error).join(','));
@@ -224,6 +269,13 @@ export async function main(): Promise<number> {
     const labels = readFileSync('src/service-tab-labels.ts', 'utf8');
     const ui = readFileSync('src/access-plane-panels.tsx', 'utf8') + readFileSync('src/PasskeysSection.tsx', 'utf8');
     check('ui: menu «Способи входу» / «Aanmeldmethoden»; geen sms-kaart; eigenaar-schakelaar aanwezig', /methods: \['Способи входу', 'Aanmeldmethoden'\]/.test(labels) && !/data-access-factor='sms'/.test(ui) && /Може схвалювати оновлення сервера/.test(ui));
+    const stapUi = ['src/platform/stap-op.ts', 'src/platform/bevestig-toegang.tsx', 'src/PasskeysSection.tsx', 'src/access-plane-panels.tsx', 'src/AccessPlaneView.tsx'].map((f) => readFileSync(f, 'utf8'));
+    check('ui: geen window.prompt/confirm/alert meer in step-up en «Способи входу»', stapUi.every((t) => !/\b(window\.)?(prompt|confirm|alert)\(/.test(t.replace(/\/\/.*$/gm, ''))));
+    const venster = stapUi[1];
+    check('ui: venster «Підтвердіть доступ» / «Toegang bevestigen», één taal per keer (taal van de pagina)', /'Підтвердіть доступ', 'Toegang bevestigen'/.test(venster) && /paginaTaal\(\)/.test(venster) && /lang === 'nl' \? 1 : 0/.test(venster) && !/\\n\\n/.test(stapUi[0]));
+    check('ui: code-invoer autofocus, inputmode numeric, autocomplete one-time-code; «Виникли проблеми?»; 5-minutentip', /autoFocus inputMode='numeric' autoComplete='one-time-code'/.test(venster) && /Виникли проблеми\?/.test(venster) && /протягом 5 хвилин/.test(venster));
+    check('ui: hervatten na Google bewaart alleen actie + naam (geen codes) en passkey toevoegen hervat', /actie:'passkey-toevoegen',gegevens:\{naam\}/.test(stapUi[2]) && /neemHervat\('passkey-toevoegen'\)/.test(stapUi[2]) && !/gegevens:\{[^}]*code/.test(stapUi.join('')));
+    check('ui: hint «Використовувати телефон або планшет» + QR bij passkey toevoegen; Синхронізовано-badge', /виберіть «Використовувати телефон або планшет» і відскануйте QR-код камерою телефону \(Bluetooth має бути увімкнено\)/.test(stapUi[2]) && /'Синхронізовано','Gesynchroniseerd'/.test(stapUi[2]));
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {

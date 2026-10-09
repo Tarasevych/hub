@@ -2,7 +2,7 @@ import {createHash,createHmac,randomBytes,scrypt,timingSafeEqual} from 'node:cry
 import {promisify} from 'node:util';
 import {db,clearLoginFailures,envKey32,isOwnerEmail,openWithEnvKey,pepperedHash,pogingReserveren,sealWithEnvKey} from '../server/platform';
 import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './google-contour';
-import {passkeyStapOpGeldig,stapOpFout,totpStapOpVastleggen,type StapOpAuth} from './stap-op';
+import {STAP_OP_MS,passkeyStapOpGeldig,stapOpFout,stapOpGeldigTot,totpStapOpVastleggen,type StapOpAuth} from './stap-op';
 import {passkeyAantal} from './passkeys';
 import {meld} from './melder';
 
@@ -425,16 +425,44 @@ export function createAccessPlaneRoutes(deps:{
     'POST /api/owner/access/stap-op':[async(ctx:{event:Record<string,unknown>;body:unknown})=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
+      const body=deps.body(ctx.body);
+      // Venster «Підтвердіть доступ»: methode 'herstelcode' = een ongebruikte herstelcode (eenmalig, zelfde lockout, melding).
+      if(body.methode==='herstelcode'){
+        const herstel=await recoveryFor(auth.user.id);
+        if(!herstel||herstel.remaining<=0)return deps.fail('STEP_UP_RECOVERY_NOT_ENROLLED',400);
+        if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
+        const poging=await pogingReserveren(`stap-op:${auth.user.id}`);
+        if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
+        if(!await herstelcodeGebruiken(auth.user.id,String(body.code||''))){await deps.audit(auth.user.id,'access.step-up','failure',{methode:'herstelcode'});return deps.fail('ACCESS_RECOVERY_INVALID',400);}
+        await clearLoginFailures(`stap-op:${auth.user.id}`);
+        await totpStapOpVastleggen(auth as unknown as StapOpAuth);
+        await deps.audit(auth.user.id,'access.step-up','success',{methode:'herstelcode'});
+        const over=Math.max(0,(await recoveryFor(auth.user.id))?.remaining||0);
+        await meld(auth.user.id,'access_recovery_code_used','Використано код відновлення / Herstelcode gebruikt',
+          `Для підтвердження дії використано код відновлення. Залишилось кодів: ${over}. Якщо це були не ви — негайно створіть нові коди. / Er is een herstelcode gebruikt om een actie te bevestigen. Resterende codes: ${over}. Was u dit niet: maak direct nieuwe codes.`);
+        return deps.respond({ok:true,stepUp:'herstelcode',maxAgeSeconds:300,resterend:over});
+      }
       const row=await totpFor(auth.user.id);
       if(!row?.confirmed)return deps.fail('STEP_UP_TOTP_NOT_ENROLLED',400);
       // Audit-fix 7: poging atomisch gereserveerd vóór de controle (geen race rond de lockout); alleen TOTP, geen herstelcode.
-      const uitkomst=await codeControleren(auth.user.id,row,String(deps.body(ctx.body).code||''),false);
+      const uitkomst=await codeControleren(auth.user.id,row,String(body.code||''),false);
       if(uitkomst==='geblokkeerd')return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
       if(uitkomst==='sleutel')return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
       if(uitkomst!=='ok'){await deps.audit(auth.user.id,'access.step-up','failure',{reden:uitkomst});return deps.fail(uitkomst==='hergebruikt'?'ACCESS_TOTP_REUSED':'ACCESS_TOTP_INVALID',400);}
       await totpStapOpVastleggen(auth as unknown as StapOpAuth);
       await deps.audit(auth.user.id,'access.step-up','success',{methode:'totp'});
       return deps.respond({ok:true,stepUp:'totp',maxAgeSeconds:300});
+    }],
+    // Venster «Підтвердіть доступ»: wie is aangemeld en welke manieren deze gebruiker echt heeft (geen geheimen, alleen ja/nee/aantal).
+    'POST /api/owner/access/stap-op/methoden':[async(ctx:{event:Record<string,unknown>;body:unknown})=>{
+      const auth=await gate(ctx.event,ctx.body);
+      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
+      const[totp,herstel,passkeys,geldigTot]=await Promise.all([totpFor(auth.user.id),recoveryFor(auth.user.id),passkeyAantal(auth.user.id),stapOpGeldigTot(auth as unknown as StapOpAuth)]);
+      const u=auth.user as {email:string;name?:string;picture?:string};
+      const foto=typeof u.picture==='string'&&/^https:\/\/[a-z0-9.-]*\.googleusercontent\.com\//i.test(u.picture)?u.picture.slice(0,2048):'';
+      return deps.respond({ok:true,email:auth.user.email,naam:String(u.name||'').slice(0,120),foto,
+        methoden:{passkey:passkeys>0,totp:Boolean(totp?.confirmed),herstelcode:Boolean(herstel&&herstel.remaining>0),google:true},
+        geldigTot,maxAgeSeconds:STAP_OP_MS/1000});
     }],
     'POST /api/owner/access/catalog':[async()=>{
       const[contour,policy]=await Promise.all([resolveGoogleContour(),policyOf()]);

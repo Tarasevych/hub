@@ -2,7 +2,10 @@
 // - api: axios-achtige fetch-client naar de same-origin /api van de huidige host.
 // - image.resizeIfNeeded: verkleint/hercodeert afbeeldingen in de browser.
 // - invitesClient: bouwt en leest uitnodigingslinks (parameter `invite`).
-import { stapOpVragen } from './stap-op';
+import { neemAlgemeneHervat, stapOpVragen } from './stap-op';
+
+// Terug van «Підтвердити повторним входом через Google» zonder bekende actie: korte melding «повторіть дію».
+if (typeof window !== 'undefined') window.setTimeout(() => { if (neemAlgemeneHervat()) void import('./bevestig-toegang').then((m) => m.toonHervatMelding()).catch(() => undefined); }, 400);
 
 // ---------------------------------------------------------------------------------------------
 // api
@@ -57,7 +60,7 @@ async function request(method: string, url: string, data?: unknown, opnieuw = fa
   if (text) { try { parsed = JSON.parse(text); } catch { parsed = text; } } else parsed = null;
   if (!response.ok) {
     const fout = new ApiError(response.status, response.statusText, parsed, text);
-    // Audit-fix 5/7: extra bevestiging gevraagd → melding + TOTP-code of opnieuw bij Google; daarna één herhaling.
+    // Audit-fix 5/7: extra bevestiging gevraagd → venster «Підтвердіть доступ» (passkey, app-code, herstelcode of Google); daarna één herhaling.
     if (response.status === 403 && fout.message === 'STEP_UP_REQUIRED' && hasBody && !opnieuw && !url.includes('/api/owner/access/stap-op')) {
       if (await stapOpVragen(data, (u, d) => request('POST', u, d, true))) return request(method, url, data, true);
     }

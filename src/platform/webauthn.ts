@@ -4,7 +4,7 @@ export type AssertieOpties = { challenge: string; rpId: string; timeout: number;
 export type RegistratieOpties = {
   challenge: string; rp: { id: string; name: string }; user: { id: string; name: string; displayName: string };
   pubKeyCredParams: Array<{ type: string; alg: number }>; timeout: number; attestation?: string;
-  authenticatorSelection?: Record<string, unknown>; excludeCredentials?: Array<{ type: string; id: string; transports?: string[] }>;
+  authenticatorSelection?: Record<string, unknown>; hints?: string[]; excludeCredentials?: Array<{ type: string; id: string; transports?: string[] }>;
 };
 
 export const naarBuf = (s: string) => {
@@ -43,7 +43,8 @@ export async function passkeyBevestigen(pk: AssertieOpties) {
   return { credentialId: naarB64u(cred.rawId), clientDataJSON: naarB64u(r.clientDataJSON), authenticatorData: naarB64u(r.authenticatorData), signature: naarB64u(r.signature) };
 }
 
-/** navigator.credentials.create → registratie in base64url (attestation 'none'; de server controleert rpId, origin, UV). */
+/** navigator.credentials.create → registratie in base64url (attestation 'none'; de server controleert rpId, origin, UV). Geen
+ * authenticatorAttachment: de browser biedt ook «телефон або планшет» (QR + Bluetooth) aan; hints komen ongewijzigd van de server. */
 export async function passkeyAanmaken(pk: RegistratieOpties) {
   const cred = await navigator.credentials.create({ publicKey: {
     ...pk, challenge: naarBuf(pk.challenge), user: { ...pk.user, id: naarBuf(pk.user.id) },
