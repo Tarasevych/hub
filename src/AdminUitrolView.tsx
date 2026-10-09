@@ -84,7 +84,9 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
     return tr(lang,`Схвалено. Сервер сам перевіряє підпис і встановлює версію ${v.versie}; стан з’явиться тут за кілька хвилин.`,`Goedgekeurd. De server controleert de handtekening zelf en installeert versie ${v.versie}; de status verschijnt hier binnen enkele minuten.`);
     });
   });
-  const afwijzen=(v:Voorstel)=>{const reden=window.prompt(tr(lang,'Причина відхилення (необов’язково):','Reden van afwijzen (optioneel):'),'');if(reden===null)return;void doe(`nee-${v.id}`,async()=>{await api.post('/api/owner/uitrol/voorstel/afwijzen',{...context,id:v.id,reden});return tr(lang,'Відхилено.','Afgewezen.');});};
+  // Afwijzen met een inline redenformulier (geen window.prompt meer; reden optioneel, max. 500 tekens).
+  const[afwijs,setAfwijs]=useState<{id:string;reden:string}|null>(null);
+  const afwijzen=(v:Voorstel)=>{if(!afwijs||afwijs.id!==v.id)return;const reden=afwijs.reden.trim().slice(0,500);void doe(`nee-${v.id}`,async()=>{await api.post('/api/owner/uitrol/voorstel/afwijzen',{...context,id:v.id,reden});setAfwijs(null);return tr(lang,'Відхилено.','Afgewezen.');});};
 
   const grantGeven=()=>doe('grant',async()=>{
     await api.post('/api/owner/uitrol/voorbereiders/toevoegen',{...context,...grant});setGrant(g=>({...g,onderwerp:'',label:''}));
@@ -131,8 +133,16 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
         {v.diffSamenvatting&&<details><summary>{tr(lang,'Зміни у файлах','Gewijzigde bestanden')}</summary><pre>{v.diffSamenvatting}</pre></details>}
         <div className='admin-uitrol-knoppen'>
           <button type='button' className='admin-uitrol-ja' disabled={!klaar||!!busy} onClick={()=>void goedkeuren(v)}><Fingerprint/>{busy===`ok-${v.id}`?tr(lang,'Підтвердіть на телефоні…','Bevestig op uw telefoon…'):tr(lang,'Схвалити й встановити','Goedkeuren en installeren')}</button>
-          <button type='button' className='admin-uitrol-nee' disabled={!!busy} onClick={()=>afwijzen(v)}><X/>{tr(lang,'Відхилити','Afwijzen')}</button>
+          {afwijs?.id!==v.id&&<button type='button' className='admin-uitrol-nee' disabled={!!busy} onClick={()=>setAfwijs({id:v.id,reden:''})}><X/>{tr(lang,'Відхилити','Afwijzen')}</button>}
         </div>
+        {afwijs?.id===v.id&&<div className='admin-uitrol-intrek' role='group' data-afwijzen-voorstel={v.id}>
+          <label htmlFor={`afwijs-${v.id}`}>{tr(lang,'Причина відхилення (необов’язково)','Reden van afwijzen (optioneel)')}</label>
+          <textarea id={`afwijs-${v.id}`} rows={2} maxLength={500} value={afwijs.reden} onChange={e=>setAfwijs({id:v.id,reden:e.target.value})} disabled={!!busy}/>
+          <div className='admin-uitrol-knoppen'>
+            <button type='button' className='admin-uitrol-nee' disabled={!!busy} onClick={()=>afwijzen(v)}><X/>{tr(lang,'Відхилити версію','Versie afwijzen')}</button>
+            <button type='button' disabled={!!busy} onClick={()=>setAfwijs(null)}>{tr(lang,'Скасувати','Annuleren')}</button>
+          </div>
+        </div>}
         {!klaar&&<p className='admin-uitrol-hint'>{!data.schakelaar?foutTekst(lang,'PASSKEY_GOEDKEURING_UIT'):!data.passkeys.length?foutTekst(lang,'GEEN_PASSKEY'):tr(lang,'Відкрийте цю сторінку в браузері з підтримкою passkey.','Open deze pagina in een browser die passkeys ondersteunt.')}</p>}
       </article>)}
     </section>

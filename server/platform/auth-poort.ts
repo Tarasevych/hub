@@ -57,6 +57,10 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'POST /api/owner/agents/diagnostics/archive':'browserextensie levert met haar eigen token (Authorization-header) een diagnosebuffer aan; versleuteld per gebruiker opgeslagen, 90 dagen',
   'POST /api/owner/mail/microsoft/webhook': 'Microsoft Graph-webhook (clientState-controle)',
   'POST /api/owner/mail/google/pubsub/push': 'Google Pub/Sub-push (OIDC-token in Authorization)',
+  // Toegangscodes voor anderen (§13.11): inwisselen heeft (nog) geen sessie; de code zelf is de referentie (alleen hash-opzoeking,
+  // strikt per IP begrensd + blokkade). Uitloggen is idempotent. De overige /api/gast/*-routes eisen de gastcookie.
+  'POST /api/gast/inwisselen': 'toegangscode inwisselen voor een beperkte gastsessie (code in de body, gehasht opgezocht)',
+  'POST /api/gast/uitloggen': 'gastsessie beëindigen (idempotent; zonder sessie niets te doen)',
   'POST /api/owner/access/webauthn/options': 'passkey-opties (uitgeschakeld: 503)',
   'POST /api/owner/access/webauthn/register': 'passkey registreren (uitgeschakeld: 503)',
 };

@@ -8,6 +8,8 @@ import { nepGoogle } from '../eenheid/hulp/nep-google';
 
 export async function startE2eServer(o: { ownerEmail: string; poort: number; tls: string }) {
   process.env.DIST_DIR = resolve(process.env.E2E_DIST || 'dist');
+  // Alle browsertests delen 127.0.0.1: strikte per-IP-limieten (o.a. stap-op) ×20, alleen hier (server/start.ts strikteFactor).
+  process.env.E2E_LOKALE_LIMIETEN = '1';
   const G = await nepGoogle({ ownerEmail: o.ownerEmail });
   const { createServer } = await import('../../server/start');
   const http = createServer();

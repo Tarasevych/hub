@@ -737,3 +737,56 @@ altijd in de bel; e-mail wordt (nog) niet verstuurd.
 Tests: `tests/eenheid/toegang-context.test.ts`, `uitrol-goedkeuring`, `passkeys`; e2e `tests/e2e/toegang-context.e2e.ts`
 (screenshots `notities-*.png`, `intrekken-*.png`). Let op: de step-up-limiet is per IP — draai de e2e-bestanden met een
 pauze (≥ 2 min) of los, anders 429 op `/api/owner/access/stap-op`.
+
+### 13.11 Коди доступу для інших / toegangscodes, gastsessies en «Сесії» (migratie 0025)
+
+**Wat.** Op `id.tarasevych.com/methods` staat de sectie «Коди доступу для інших» (alleen de eigenaar; anderen krijgen
+`OWNER_REQUIRED` en zien de sectie niet). «Створити код доступу» vraagt naam, privénotitie, wat de gast mag bekijken,
+geldigheid (безстроково / 1 uur / 1 dag / 7 dagen / 30 dagen / eigen datum + tijd, ≥ 5 min en ≤ 366 dagen) en eenmalig of
+herbruikbaar (optioneel max. 1–1000×). Aanmaken vraagt een **sterke** step-up (passkey, app-code of herstelcode; een verse
+Google-step-up volstaat niet → `STEP_UP_STRONG_REQUIRED`). Maximaal 50 codes per eigenaar, 20 aanmaakpogingen per uur.
+
+**Scopes (allowlist in `backend/toegangscodes.ts`, alleen lezen, standaard weigeren):**
+`profiel.lezen` (naam + Google-foto, nooit e-mail), `apparaten.lezen` (naam, platform, laatst gezien, actief),
+`journaal.lezen` (agentjournaal **zonder** regels over rechten/sleutels/codes/tokens). Bij het laden van de module wordt
+gecontroleerd dat elke scope op `.lezen` eindigt en niets uit de lijst «nooit» raakt: aanmeldmethoden, passkeys,
+goedkeurrechten, beheer/admin, tokens, root/updates, account verwijderen/exporteren. Een onbekende scope → `SCOPE_NIET_TOEGESTAAN`.
+
+**Code.** 80 bits (Crockford base32, `XXXX-XXXX-XXXX-XXXX`; O→0, I/L→1, spaties/kleine letters toegestaan). Eén keer getoond
+met kopiëren / QR / delen; de deellink is `https://id.tarasevych.com/toegang#code=…` (fragment → komt nooit in serverlogs; de
+pagina haalt het meteen uit de adresbalk). In de database alleen `sha256('mijn-ruimte-toegangscode\0'+code)` + 4 tekens hint.
+
+**Gastsessie (isolatie).** `/api/gast/inwisselen` geeft een aparte cookie `tsv_gast` (HttpOnly, Secure, SameSite=Strict,
+**Path=/api/gast**, alleen host `id.tarasevych.com`; Origin moet `https://id.tarasevych.com` zijn). Het is nooit de sessie
+van de eigenaar: geen enkele `/api/owner/*`-route leest deze cookie (getest: 401). Elk gastverzoek controleert opnieuw sessie,
+code (ingetrokken? verlopen?) en eigenaar (geblokkeerd?) → intrekken/verkorten/verlopen werkt meteen. Een gastsessie duurt
+hoogstens tot het verloop van de code en nooit langer dan **24 uur** per inwisseling. Elke gastactie (bekeken / geweigerd)
+staat in `app.toegangscode_log` en in de audit met actor `gast:<code-id>`; het journaal op /agents toont ze onder «Права й ключі».
+Bij het **eerste** gebruik van een code krijgt de eigenaar een melding in de bel (link naar de code). Er is **geen e-mail**
+(geen systeem-mailer, zie §13.10).
+
+**Raden/limieten.** Per IP strikte bucket `gast-inwisselen` 10/min (Postgres) + blokkade na 5 mislukte pogingen
+(`gast-inwisselen:<ip-hash>`, 15 min, verdubbelend) → 429 `GAST_GEBLOKKEERD`, ook met een geldige code. Foutmelding is altijd
+algemeen (`CODE_ONGELDIG`); pogingen op een bestaande code worden bij die code gelogd als «geweigerd».
+
+**Beheer.** Lijst met status Діє / Використано / Закінчився / Відкликано, gebruik (x з max), laatste gebruik (tijd, apparaat,
+IP-hash) en een uitklapbare geschiedenis. «Відкликати» vraagt een reden (≥ 10 tekens, geen step-up: veilige richting) en
+beëindigt alle gastsessies van die code meteen. «Змінити строк»: inkorten mag zonder step-up (lopende gastsessies worden ook
+korter), verlengen of безстроково vraagt een sterke step-up.
+
+**«Сесії та пристрої»** (`id.tarasevych.com/sessions`, geen nieuw menu-item): eigen sessies tonen nu de echte aanmeldmethode
+(`authMethod`; tot passkey-aanmelden bestaat is dat meestal Google) en de duur; daaronder «Гостьові сесії» (code-naam, apparaat,
+gestart, laatst actief, duur, IP-hash) met per sessie «Завершити гостьову сесію». «Завершити всі інші» →
+`POST /api/owner/identity/security/revoke-others {gast:true}`: alle andere eigen sessies, tabbladen buiten deze sessie,
+onthouden browsers en alle levende gastsessies; deze aanmelding blijft.
+
+**Ook.** «Відхилити» bij een updatevoorstel (admin «Оновлення») gebruikt nu een inline redenveld i.p.v. `window.prompt`.
+Nieuwe afhankelijkheid: `qrcode-generator@2.0.4` (MIT, zonder afhankelijkheden) voor de QR (SVG-paden, geen innerHTML).
+
+**Database (0025).** `app.toegangscodes`, `app.gast_sessies`, `app.toegangscode_log`, met RLS `user_id = app.huidige_gebruiker()`
+voor `mijnruimte_app`; de app-rol heeft alleen SELECT (schrijven via de systeemrol). Uitrol: `migreer` vóór de herstart.
+
+**Tests.** `tests/eenheid/toegangscodes.test.ts`; e2e `tests/e2e/gast-toegang.e2e.ts` (screenshots `gast-*.png`).
+De e2e-server zet `E2E_LOKALE_LIMIETEN=1` (alleen `tests/e2e/server.ts`): dan zijn de strikte per-IP-buckets ×20, zodat
+e2e-bestanden achter elkaar kunnen draaien zonder 429 op `/api/owner/access/stap-op`. De server logt een waarschuwing als dit
+aan staat; **nooit** in productie zetten (`/etc/mijn-ruimte/*.env` bevat het niet).

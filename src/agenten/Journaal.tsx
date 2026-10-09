@@ -21,6 +21,8 @@ const REDEN: Record<string, [string, string]> = {
   repaired: ['перевстановлення (новий токен)', 'herinstallatie (nieuw token)'], blocked: ['блокування доступу ШІ', 'blokkade van AI-toegang'], ui: ['вами', 'door u'],
 };
 
+// Gastscopes (§13.11) leesbaar in het journaal.
+const GAST_SCOPE: Record<string, [string, string]> = { 'profiel.lezen': ['профіль', 'profiel'], 'apparaten.lezen': ['пристрої та агенти', 'apparaten en agents'], 'journaal.lezen': ['журнал агентів', 'journaal van agents'] };
 /** Eén zin in gewone taal voor een journaalregel. */
 export function zin(e: JournaalItem, tr: Tr): string {
   const d = e.details, n = e.onderwerp?.naam || s(d.name) || s(d.clientName) || '—';
@@ -60,6 +62,14 @@ export function zin(e: JournaalItem, tr: Tr): string {
     case 'uitrol_passkey_intrekken_gevraagd': return tr('Серверу передано запит відкликати ключ', 'Verzoek om een sleutel in te trekken aan de server doorgegeven');
     case 'uitrol_voorbereider_gegeven': return tr(`Надано право готувати оновлення: «${s(d.label) || s(d.onderwerp)}»`, `Recht om updates voor te bereiden gegeven: «${s(d.label) || s(d.onderwerp)}»`);
     case 'uitrol_voorbereider_ingetrokken': return tr(`Відкликано право готувати оновлення: «${s(d.label) || s(d.onderwerp)}»`, `Recht om updates voor te bereiden ingetrokken: «${s(d.label) || s(d.onderwerp)}»`) + (s(d.reden) ? tr(` — причина: ${s(d.reden)}`, ` — reden: ${s(d.reden)}`) : '');
+    // §13.11 toegangscodes voor anderen en gastsessies
+    case 'toegangscode_aangemaakt': return tr(`Створено код доступу «${s(d.naam)}»`, `Toegangscode «${s(d.naam)}» aangemaakt`);
+    case 'toegangscode_ingewisseld': return tr(`Код доступу «${s(d.naam)}» використано для гостьового входу`, `Toegangscode «${s(d.naam)}» gebruikt voor gasttoegang`) + (Number(d.gebruik) > 0 ? tr(` (${Number(d.gebruik)}-й раз)`, ` (${Number(d.gebruik)}e keer)`) : '');
+    case 'toegangscode_gewijzigd': return tr(`Змінено строк коду доступу «${s(d.naam)}»${d.verlenging ? ' (продовжено)' : ' (скорочено)'}`, `Looptijd van toegangscode «${s(d.naam)}» gewijzigd${d.verlenging ? ' (verlengd)' : ' (ingekort)'}`);
+    case 'toegangscode_ingetrokken': return tr(`Відкликано код доступу «${s(d.naam)}»`, `Toegangscode «${s(d.naam)}» ingetrokken`) + (s(d.reden) ? tr(` — причина: ${s(d.reden)}`, ` — reden: ${s(d.reden)}`) : '') + (Number(d.sessies) > 0 ? tr(`; завершено гостьових сесій: ${Number(d.sessies)}`, `; gastsessies beëindigd: ${Number(d.sessies)}`) : '');
+    case 'gast_sessie_ingetrokken': return tr(`Завершено гостьових сесій: ${Number(d.aantal) || 1}`, `Gastsessies beëindigd: ${Number(d.aantal) || 1}`);
+    case 'gast_actie': return tr(`Гість за кодом «${s(d.naam)}» переглянув: ${GAST_SCOPE[s(d.scope)]?.[0] || s(d.scope)}`, `Gast met code «${s(d.naam)}» bekeek: ${GAST_SCOPE[s(d.scope)]?.[1] || s(d.scope)}`);
+    case 'gast_geweigerd': return tr(`Гостю за кодом «${s(d.naam)}» відмовлено: ${GAST_SCOPE[s(d.wat)]?.[0] || s(d.wat)}`, `Gast met code «${s(d.naam)}» geweigerd: ${GAST_SCOPE[s(d.wat)]?.[1] || s(d.wat)}`);
     case 'toegang_wijziging_ongedaan': return tr(`«Це був не я»: зміну скасовано (${s(d.recht) === 'behouden' ? 'право збережено' : s(d.recht) === 'ssh-nodig' ? 'право — лише через SSH' : 'право не відновлено'})`, `«Dit was ik niet»: wijziging teruggedraaid (${s(d.recht) === 'behouden' ? 'recht behouden' : s(d.recht) === 'ssh-nodig' ? 'recht alleen via SSH' : 'recht niet teruggezet'})`);
     default: return e.actie;
   }

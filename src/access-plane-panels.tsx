@@ -14,6 +14,7 @@ import type {Lang} from './access-plane-copy';
 import {PasskeysSection} from './PasskeysSection';
 import {HerstelcodesSectie} from './HerstelcodesSectie';
 import {ToegangWijziging,wijzigingUitUrl} from './ToegangWijziging';
+import {Toegangscodes} from './Toegangscodes';
 
 type Method={id:string;kind?:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
 type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number;createdAt?:number;bekekenOp?:number};
@@ -153,6 +154,7 @@ export function AccessPlanePanels(p:Props){
     </section>
 
     <HerstelcodesSectie lang={lang} context={p.context} codes={recovery} busy={busy} nieuweHerstelcodes={p.nieuweHerstelcodes} recoverySaved={p.recoverySaved} onChange={()=>void p.load()}/>
+    <Toegangscodes lang={lang} context={p.context}/>
     {p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes'><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}
   </div>;
 }
