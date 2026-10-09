@@ -28,7 +28,7 @@
 .access-plane-card>button:disabled{opacity:.5;cursor:default}
 .access-plane-inline-form{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .access-plane-inline-form input{flex:1 1 160px;min-width:0;padding:8px 10px;border-radius:9px;border:1px solid var(--boot-line,#dce1e6)}
-.access-plane-inline-form button{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:9px;border:1px solid var(--boot-accent,#2f6f73);background:var(--boot-accent,#2f6f73);color:#fff;font-size:.86rem;cursor:pointer}
+.access-plane-inline-form button{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:9px;border:1px solid var(--boot-accent,#2f6f73);background:var(--boot-accent,#2f6f73);color:var(--ap-op-accent,#fff);font-size:.86rem;cursor:pointer}
 .access-plane-inline-form button:disabled{opacity:.5;cursor:default}
 .access-plane-inline-form button svg{width:14px;height:14px}
 .access-plane-totp-setup,.access-plane-recovery-codes{flex-direction:column;align-items:stretch}
@@ -37,7 +37,7 @@
 .access-plane-code-list li{padding:6px 8px;border-radius:7px;background:rgba(0,0,0,.05);text-align:center}
 /* Aanmeldmethoden: één pagina met secties (GitHub-stijl), ook op de telefoon bruikbaar. */
 .access-plane-section{display:flex;flex-direction:column;gap:10px;padding-top:14px;border-top:1px solid var(--boot-line,#dce1e6);scroll-margin-top:72px}
-.access-plane-section-head{display:flex;align-items:flex-start;gap:10px}
+.access-plane-section-head{display:flex;align-items:center;gap:8px}
 .access-plane-section-head>svg{flex:0 0 auto;width:18px;height:18px;margin-top:3px;color:var(--boot-accent,#2f6f73)}
 .access-plane-section-head h2{margin:0;font-size:1.08rem}
 .access-plane-section-head p{margin:3px 0 0;color:var(--boot-muted,#6a7580);font-size:.9rem}
@@ -54,7 +54,7 @@
 .access-plane-switch input{width:18px;height:18px}
 .access-plane-ssh{display:block;margin-top:4px;padding:6px 8px;border-radius:7px;background:rgba(0,0,0,.05);user-select:all;word-break:break-all}
 .access-plane-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.access-plane-row button,.access-plane-actions button,.access-plane-owner button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:7px 11px;border-radius:9px;border:1px solid var(--boot-accent,#2f6f73);background:var(--boot-accent,#2f6f73);color:#fff;font-size:.85rem;cursor:pointer}
+.access-plane-row button,.access-plane-actions button,.access-plane-owner button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:7px 11px;border-radius:9px;border:1px solid var(--boot-accent,#2f6f73);background:var(--boot-accent,#2f6f73);color:var(--ap-op-accent,#fff);font-size:.85rem;cursor:pointer}
 .access-plane button.secondary{background:var(--boot-panel,#fff);color:inherit;border-color:var(--boot-line,#dce1e6)}
 .access-plane-row button svg,.access-plane-actions button svg,.access-plane-owner button svg{width:14px;height:14px}
 .access-plane-row button:disabled,.access-plane-actions button:disabled,.access-plane-owner button:disabled{opacity:.5;cursor:default}
@@ -88,3 +88,31 @@ p.access-plane-notice.access-plane-subrow,p.access-plane-lockout.access-plane-su
   .access-plane-inline-form button,.access-plane-owner button{flex:1 1 auto;justify-content:center}
   .access-plane-code-list{grid-template-columns:1fr 1fr}
 }
+
+/* (?) uitleg naast titels — InfoTip.tsx */
+.info-tip{position:relative;display:inline-flex;align-items:center}
+.info-tip-knop{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid var(--boot-line,rgba(127,127,127,.45));background:transparent;color:var(--boot-muted,#6a7580);font-size:.72rem;font-weight:700;line-height:1;cursor:help}
+.info-tip-knop:hover,.info-tip[data-open] .info-tip-knop{color:var(--boot-text,inherit);border-color:var(--boot-muted,#6a7580)}
+.info-tip-knop:focus-visible{outline:2px solid #7fd1c9;outline-offset:2px}
+.info-tip-tekst{position:fixed;z-index:900;width:max-content;max-width:320px;padding:10px 12px;border-radius:10px;border:1px solid var(--boot-line,rgba(127,127,127,.35));background:var(--boot-panel,#fff);color:var(--boot-text,#17212b);box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:.84rem;font-weight:400;line-height:1.45;text-align:left;white-space:normal}
+.info-tip-tekst[hidden]{display:none}
+.info-tip-tekst p{margin:0}
+.info-tip-tekst p+p{margin-top:6px}
+.access-plane-hint-line{margin:0;color:var(--boot-muted,#6a7580);font-size:.84rem;display:flex;align-items:center;gap:6px}
+.access-plane-hint-line svg{width:14px;height:14px;flex:0 0 auto}
+.access-plane-pending{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0;font-size:.86rem}
+.access-plane-pending .access-plane-spinner{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:access-plane-draai .8s linear infinite}
+@keyframes access-plane-draai{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.access-plane-pending .access-plane-spinner{animation:none}}
+
+/* Tekst op accentknoppen: in de donkere thema's is --boot-accent licht (#8dbab7 / #d8a4c7); witte tekst daarop was bijna
+   onleesbaar en de knop «Продовжити» leek uitgeschakeld. Daar donkere tekst. */
+html.theme-dark,html.theme-plum-dark{--ap-op-accent:#10201f}
+html.theme-plum-dark{--ap-op-accent:#2a1024}
+
+/* (?) in een rij mag de knopstijl van .access-plane-row button niet erven (anders een hoge accent-pil). */
+.access-plane .info-tip .info-tip-knop{display:inline-flex;min-height:0;width:18px;height:18px;padding:0;gap:0;border-radius:50%;border:1px solid var(--boot-line,rgba(127,127,127,.45));background:transparent;color:var(--boot-muted,#6a7580);font-size:.72rem;font-weight:700;line-height:1;cursor:help;flex:0 0 auto}
+.access-plane .info-tip[data-open] .info-tip-knop,.access-plane .info-tip .info-tip-knop:hover{color:var(--boot-text,inherit);border-color:var(--boot-muted,#6a7580)}
+/* Eigenaarsschakelaar: vakje en tekst op één regel. */
+.access-plane .access-plane-switch{display:inline-flex;flex-direction:row;align-items:center;gap:8px;width:auto}
+.access-plane .access-plane-switch input{flex:0 0 auto;width:18px;height:18px;margin:0}

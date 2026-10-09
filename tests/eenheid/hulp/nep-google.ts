@@ -90,5 +90,9 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
     return { jar, verzoek, aanmelden, tab, ctxBody };
   };
   const herstel = () => { globalThis.fetch = echteFetch; };
-  return { handler, browser, herstel, laatsteAuthUrls };
+  /** Voor e2e: een eenmalige Google-code voor een echte browser (de authUrl levert state en nonce). */
+  const codeVoor = (sub: string, email: string, nonce: string, authTime: number | null = Math.floor(Date.now() / 1000)) => {
+    const code = `code-${randomBytes(6).toString('hex')}`; codes.set(code, { sub, email, nonce, authTime }); return code;
+  };
+  return { handler, browser, herstel, laatsteAuthUrls, codeVoor };
 }

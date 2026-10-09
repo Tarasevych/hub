@@ -3,10 +3,14 @@
 // aanmelding bij root neer; root beslist (eerste sleutel via SSH, volgende met een passkey die root al vertrouwt).
 // Weergave zoals GitHub «Sign in methods»: één rij «Passkeys» met rechts «Додати passkey»; de naam vragen we pas na die klik.
 // Per passkey: soort (Google Менеджер паролів, Телефон або планшет, Ключ безпеки…), «Синхронізовано», Додано / Останнє використання.
+// Uitleg (wat is een passkey, QR-hint) staat in de (?) naast de titel (InfoTip); elke rij: titel + één statusregel + knop.
+// Nooit stil falen: tijdens «Продовжити» staat er een statusregel met «Скасувати» (AbortController), na 25 s een hint als er
+// geen venster verscheen, en elke fout komt als melding in de sectie (en in de console).
 // Geen window.confirm: verwijderen en intrekken bevestig je in de rij zelf. Step-up gaat via het venster «Підтвердіть доступ»;
 // kies je daar Google, dan wordt «passkey toevoegen» (met de naam) na terugkeer automatisch hervat (stap-op.ts, metHervat/neemHervat).
 import {useEffect,useRef,useState} from 'react';
 import {Check,Cloud,Fingerprint,KeyRound,Laptop,Pencil,Plus,ShieldCheck,Smartphone,Trash2,TriangleAlert,X} from 'lucide-react';
+import {InfoTip} from './InfoTip';
 import {api} from './platform/client';
 import {metHervat,neemHervat} from './platform/stap-op';
 import {foutCode,kanPasskey,passkeyAanmaken,passkeyBevestigen,type AssertieOpties,type RegistratieOpties} from './platform/webauthn';
@@ -38,6 +42,10 @@ export const soortTekst=(lang:Lang,p:Pick<Passkey,'soort'|'aanbieder'>)=>{
 };
 const SoortIcoon=({soort}:{soort?:Soort})=>soort==='telefoon'?<Smartphone/>:soort==='beveiligingssleutel'?<KeyRound/>:soort==='wachtwoordbeheerder'?<Cloud/>:soort==='apparaat'?<Laptop/>:<Fingerprint/>;
 const FOUTEN:Record<string,[string,string]>={
+  AbortError:['Додавання passkey скасовано.','Passkey toevoegen geannuleerd.'],
+  TimeoutError:['Час на підтвердження passkey вийшов. Спробуйте ще раз.','De tijd om de passkey te bevestigen is verstreken. Probeer het opnieuw.'],
+  NotSupportedError:['Цей браузер або пристрій не може створити passkey.','Deze browser of dit apparaat kan geen passkey maken.'],
+  STAP_OP_VENSTER_FOUT:['Не вдалося відкрити вікно «Підтвердіть доступ». Оновіть сторінку й спробуйте ще раз.','Het venster «Toegang bevestigen» kon niet openen. Vernieuw de pagina en probeer het opnieuw.'],
   NotAllowedError:['Підтвердження passkey скасовано або час вийшов.','Passkey-bevestiging geannuleerd of de tijd is verstreken.'],
   InvalidStateError:['Цей passkey уже додано.','Deze passkey is al toegevoegd.'],
   SecurityError:['Браузер не дозволив passkey на цій адресі.','De browser staat de passkey op dit adres niet toe.'],
@@ -54,6 +62,7 @@ const FOUTEN:Record<string,[string,string]>={
   NAAM_ONGELDIG:['Вкажіть назву.','Geef een naam op.'],
 };
 const foutTekst=(lang:Lang,code:string)=>{const t=FOUTEN[code];return t?tr(lang,t[0],t[1]):tr(lang,'Не вдалося. ','Mislukt. ')+(code||tr(lang,'Немає зв’язку.','Geen verbinding.'));};
+export const QR_HINT:[string,string]=['Щоб зберегти passkey на телефоні, виберіть «Використовувати телефон або планшет» і відскануйте QR-код камерою телефону (Bluetooth має бути увімкнено).','Om de passkey op je telefoon op te slaan, kies je «Een telefoon of tablet gebruiken» en scan je de QR-code met de camera van je telefoon (Bluetooth moet aan staan).'];
 const STATUS:Record<Status,[string,string,string]>={
   'alleen-aanmelden':['Лише вхід','Alleen aanmelden','muted'],
   wacht:['Чекає підтвердження сервером','Wacht op bevestiging door de server','warn'],
@@ -71,6 +80,9 @@ export function PasskeysSection({lang,context,onChange}:Props){
   const[herhaal,setHerhaal]=useState<null|(()=>Promise<string|void>)>(null);
   const ondersteund=kanPasskey();
   const hervat=useRef(false);
+  const afbreken=useRef<AbortController|null>(null);
+  // Wacht op het passkey-venster van browser/Windows: 'venster'; na 25 s zonder antwoord: 'traag' (extra hint).
+  const[wacht,setWacht]=useState<''|'venster'|'traag'>('');
 
   const laden=async()=>{
     try{setData((await api.post('/api/owner/access/passkeys/lijst',context)).data as Lijst);}
@@ -81,13 +93,16 @@ export function PasskeysSection({lang,context,onChange}:Props){
   const doe=async(sleutel:string,run:()=>Promise<string|void>)=>{
     setBusy(sleutel);setNotice(null);setHerhaal(null);
     try{const ok=await run();if(ok)setNotice({ok:true,text:ok});await laden();onChange?.();}
-    catch(c){const code=foutCode(c);if(code==='NotAllowedError')setHerhaal(()=>run);setNotice({ok:false,text:foutTekst(lang,code)});}
-    finally{setBusy('');}
+    catch(c){const code=foutCode(c);(code==='AbortError'?console.info:console.error)('[passkeys]',sleutel,code,c);if(code==='NotAllowedError')setHerhaal(()=>run);setNotice({ok:false,text:foutTekst(lang,code)});}
+    finally{setBusy('');setWacht('');afbreken.current=null;}
   };
 
   const toevoegenMet=(naam:string)=>doe('nieuw',()=>metHervat({actie:'passkey-toevoegen',gegevens:{naam}},async()=>{
     const o=(await api.post('/api/owner/access/passkeys/registreren/opties',context)).data as {uitdagingId:string;publicKey:RegistratieOpties};
-    const cred=await passkeyAanmaken(o.publicKey);
+    const ac=new AbortController();afbreken.current=ac;setWacht('venster');
+    const traag=window.setTimeout(()=>setWacht(w=>w==='venster'?'traag':w),25_000);
+    let cred;
+    try{cred=await passkeyAanmaken(o.publicKey,ac.signal);}finally{window.clearTimeout(traag);setWacht('');}
     await api.post('/api/owner/access/passkeys/registreren',{...context,uitdagingId:o.uitdagingId,naam:naam.trim(),...cred});
     setNieuw(null);
     return tr(lang,'Passkey додано.','Passkey toegevoegd.');
@@ -122,8 +137,12 @@ export function PasskeysSection({lang,context,onChange}:Props){
     <div className='access-plane-row'>
       <Fingerprint className='access-plane-row-icon'/>
       <div className='access-plane-row-main'>
-        <strong>{tr(lang,'Passkeys','Passkeys')}</strong>
-        <small>{!data?tr(lang,'Завантаження…','Laden…'):aantal?tr(lang,`Додано: ${aantal}`,`Toegevoegd: ${aantal}`):tr(lang,'Не додано. Passkey — це ключ на телефоні чи комп’ютері, який розблоковується відбитком, обличчям або PIN; ним можна підтверджувати важливі дії.','Niet toegevoegd. Een passkey is een sleutel op je telefoon of computer die je ontgrendelt met vingerafdruk, gezicht of pincode; je bevestigt er belangrijke acties mee.')}</small>
+        <span className='access-plane-row-title'><strong>{tr(lang,'Passkeys','Passkeys')}</strong>
+          <InfoTip label={tr(lang,'Що таке passkey?','Wat is een passkey?')}>
+            <p>{tr(lang,'Passkey — це ключ на телефоні чи комп’ютері, який розблоковується відбитком, обличчям або PIN. Ним підтверджують важливі дії замість пароля.','Een passkey is een sleutel op je telefoon of computer die je ontgrendelt met vingerafdruk, gezicht of pincode. Je bevestigt er belangrijke acties mee zonder wachtwoord.')}</p>
+            <p data-qr-hint>{tr(lang,QR_HINT[0],QR_HINT[1])}</p>
+          </InfoTip></span>
+        <small>{!data?tr(lang,'Завантаження…','Laden…'):aantal?tr(lang,`Додано: ${aantal}`,`Toegevoegd: ${aantal}`):tr(lang,'Ще не додано','Nog niet toegevoegd')}</small>
       </div>
       <div className='access-plane-row-actions'>
         {!nieuw&&<button type='button' className='secondary' disabled={!!busy||!ondersteund||vol||!data} onClick={()=>{setNotice(null);setNieuw({naam:''});}}><Plus/>{tr(lang,'Додати passkey','Passkey toevoegen')}</button>}
@@ -133,12 +152,14 @@ export function PasskeysSection({lang,context,onChange}:Props){
     {nieuw&&<div className='access-plane-subrow access-plane-nieuw'>
       <label htmlFor='passkey-naam'>{tr(lang,'Назва passkey','Naam van de passkey')}</label>
       <div className='access-plane-inline-form'>
-        <input id='passkey-naam' autoFocus value={nieuw.naam} maxLength={60} onChange={e=>setNieuw({naam:e.target.value})} onKeyDown={e=>{if(e.key==='Enter'&&!busy)void toevoegenMet(nieuw.naam);if(e.key==='Escape')setNieuw(null);}} placeholder={tr(lang,'Наприклад: Мій телефон','Bijvoorbeeld: Mijn telefoon')}/>
-        <button type='button' disabled={!!busy} onClick={()=>void toevoegenMet(nieuw.naam)}><Fingerprint/>{busy==='nieuw'?tr(lang,'Підтвердіть на пристрої…','Bevestig op je apparaat…'):tr(lang,'Продовжити','Doorgaan')}</button>
-        <button type='button' className='secondary' disabled={busy==='nieuw'} onClick={()=>setNieuw(null)}><X/>{tr(lang,'Скасувати','Annuleren')}</button>
+        <input id='passkey-naam' autoFocus value={nieuw.naam} maxLength={60} disabled={busy==='nieuw'} onChange={e=>setNieuw({naam:e.target.value})} onKeyDown={e=>{if(e.key==='Enter'&&!busy)void toevoegenMet(nieuw.naam);if(e.key==='Escape'&&!busy)setNieuw(null);}} placeholder={tr(lang,'Наприклад: Мій телефон (необов’язково)','Bijvoorbeeld: Mijn telefoon (optioneel)')}/>
+        {busy!=='nieuw'&&<button type='button' disabled={!!busy} onClick={()=>void toevoegenMet(nieuw.naam)}><Fingerprint/>{tr(lang,'Продовжити','Doorgaan')}</button>}
+        <button type='button' className='secondary' onClick={()=>{if(afbreken.current)afbreken.current.abort();else if(!busy)setNieuw(null);}} disabled={busy==='nieuw'&&!wacht}><X/>{tr(lang,'Скасувати','Annuleren')}</button>
       </div>
-      <small>{tr(lang,'Можна залишити порожнім — назву підставимо автоматично.','Mag leeg blijven — dan vullen we automatisch een naam in.')}</small>
-      <small className='access-plane-hint'><Smartphone/>{tr(lang,'Щоб зберегти passkey на телефоні, виберіть «Використовувати телефон або планшет» і відскануйте QR-код камерою телефону (Bluetooth має бути увімкнено).','Om de passkey op je telefoon op te slaan, kies je «Een telefoon of tablet gebruiken» en scan je de QR-code met de camera van je telefoon (Bluetooth moet aan staan).')}</small>
+      {busy==='nieuw'&&<p className='access-plane-pending' role='status' aria-live='polite' data-passkey-wacht={wacht||'server'}><span className='access-plane-spinner' aria-hidden='true'/>{
+        wacht==='traag'?tr(lang,'Вікно passkey не з’явилося? Перевірте, чи воно не сховане за браузером, або натисніть «Скасувати» й спробуйте ще раз.','Geen passkey-venster te zien? Kijk of het achter de browser staat, of klik op «Annuleren» en probeer het opnieuw.')
+        :wacht==='venster'?tr(lang,'Відкрито вікно passkey браузера або Windows. Підтвердіть відбитком, обличчям, PIN або телефоном.','Het passkey-venster van de browser of Windows is open. Bevestig met vingerafdruk, gezicht, pincode of telefoon.')
+        :tr(lang,'Готуємо запит…','Verzoek wordt voorbereid…')}</p>}
     </div>}
 
     {notice&&<p className='access-plane-notice access-plane-subrow' data-ok={notice.ok} role='status'>{notice.text}</p>}
@@ -155,9 +176,8 @@ export function PasskeysSection({lang,context,onChange}:Props){
             ?<div className='access-plane-inline-form'><input value={hernoem.naam} maxLength={60} autoFocus onChange={e=>setHernoem({id:p.id,naam:e.target.value})} onKeyDown={e=>{if(e.key==='Enter')opslaanNaam();if(e.key==='Escape')setHernoem(null);}}/>
               <button type='button' disabled={!!busy||!hernoem.naam.trim()} onClick={opslaanNaam}><Check/>{tr(lang,'Зберегти','Opslaan')}</button>
               <button type='button' className='secondary' onClick={()=>setHernoem(null)}><X/>{tr(lang,'Скасувати','Annuleren')}</button></div>
-            :<span className='access-plane-row-title'><strong>{p.naam}</strong>{p.gesynchroniseerd&&<span className='access-plane-badge tone-info'>{tr(lang,'Синхронізовано','Gesynchroniseerd')}</span>}</span>}
-          <small>{soortTekst(lang,p)}{!p.synchroniseerbaar&&p.soort!=='telefoon'?` · ${tr(lang,'лише на цьому пристрої','alleen op dit apparaat')}`:''}</small>
-          <small>{tr(lang,'Додано ','Toegevoegd op ')}{datum(lang,p.aangemaaktOp)} · {p.laatstGebruiktOp?tr(lang,'Останнє використання ','Laatst gebruikt op ')+datum(lang,p.laatstGebruiktOp):tr(lang,'Ще не використовувався','Nog niet gebruikt')}</small>
+            :<span className='access-plane-row-title'><strong>{p.naam}</strong>{p.gesynchroniseerd&&<span className='access-plane-badge tone-info'>{tr(lang,'Синхронізовано','Gesynchroniseerd')}</span>}{!p.synchroniseerbaar&&p.soort!=='telefoon'&&<span className='access-plane-badge tone-muted'>{tr(lang,'Лише на цьому пристрої','Alleen op dit apparaat')}</span>}</span>}
+          <small>{soortTekst(lang,p)} · {tr(lang,'Додано ','Toegevoegd op ')}{datum(lang,p.aangemaaktOp)} · {p.laatstGebruiktOp?tr(lang,'Останнє використання ','Laatst gebruikt op ')+datum(lang,p.laatstGebruiktOp):tr(lang,'Ще не використовувався','Nog niet gebruikt')}</small>
           {bevestig?.id===p.id&&<div className='access-plane-confirm' role='group'>
             <span>{bevestig.wat==='verwijderen'
               ?tr(lang,`Видалити passkey «${p.naam}»? Ним більше не можна буде підтверджувати дії.`,`Passkey «${p.naam}» verwijderen? Je kunt er dan geen acties meer mee bevestigen.`)

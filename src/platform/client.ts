@@ -62,7 +62,11 @@ async function request(method: string, url: string, data?: unknown, opnieuw = fa
     const fout = new ApiError(response.status, response.statusText, parsed, text);
     // Audit-fix 5/7: extra bevestiging gevraagd → venster «Підтвердіть доступ» (passkey, app-code, herstelcode of Google); daarna één herhaling.
     if (response.status === 403 && fout.message === 'STEP_UP_REQUIRED' && hasBody && !opnieuw && !url.includes('/api/owner/access/stap-op')) {
-      if (await stapOpVragen(data, (u, d) => request('POST', u, d, true))) return request(method, url, data, true);
+      // Kan het venster niet openen (chunk niet geladen na een nieuwe release, renderfout…): nooit stil falen maar een eigen code.
+      let bevestigd = false;
+      try { bevestigd = await stapOpVragen(data, (u, d) => request('POST', u, d, true)); }
+      catch (err) { console.error('[stap-op] venster «Підтвердіть доступ» kon niet openen', err); throw new ApiError(0, 'STAP_OP_VENSTER_FOUT', { error: 'STAP_OP_VENSTER_FOUT' }, ''); }
+      if (bevestigd) return request(method, url, data, true);
     }
     throw fout;
   }

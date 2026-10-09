@@ -29,6 +29,8 @@ export const foutCode = (caught: unknown) => {
   if (api) return String(api);
   if (typeof DOMException !== 'undefined' && caught instanceof DOMException) return String(caught.name);
   if (v?.name === 'NotAllowedError') return 'NotAllowedError';
+  if (v?.name === 'AbortError') return 'AbortError';
+  if (v?.name === 'TimeoutError') return 'TimeoutError';
   return String(v?.message || '');
 };
 const geweigerd = () => Object.assign(new Error('NotAllowedError'), { name: 'NotAllowedError' });
@@ -36,17 +38,18 @@ const sleutels = (lijst: Array<{ id: string; transports?: string[] }> = []) =>
   lijst.map((c) => ({ type: 'public-key' as const, id: naarBuf(c.id), ...(c.transports?.length ? { transports: c.transports as AuthenticatorTransport[] } : {}) }));
 
 /** navigator.credentials.get → assertie in base64url. */
-export async function passkeyBevestigen(pk: AssertieOpties) {
-  const cred = await navigator.credentials.get({ publicKey: { challenge: naarBuf(pk.challenge), rpId: pk.rpId, timeout: pk.timeout, userVerification: 'required', allowCredentials: sleutels(pk.allowCredentials) } }) as PublicKeyCredential | null;
+export async function passkeyBevestigen(pk: AssertieOpties, signal?: AbortSignal) {
+  const cred = await navigator.credentials.get({ ...(signal ? { signal } : {}), publicKey: { challenge: naarBuf(pk.challenge), rpId: pk.rpId, timeout: pk.timeout, userVerification: 'required', allowCredentials: sleutels(pk.allowCredentials) } }) as PublicKeyCredential | null;
   if (!cred) throw geweigerd();
   const r = cred.response as AuthenticatorAssertionResponse;
   return { credentialId: naarB64u(cred.rawId), clientDataJSON: naarB64u(r.clientDataJSON), authenticatorData: naarB64u(r.authenticatorData), signature: naarB64u(r.signature) };
 }
 
 /** navigator.credentials.create → registratie in base64url (attestation 'none'; de server controleert rpId, origin, UV). Geen
- * authenticatorAttachment: de browser biedt ook «телефон або планшет» (QR + Bluetooth) aan; hints komen ongewijzigd van de server. */
-export async function passkeyAanmaken(pk: RegistratieOpties) {
-  const cred = await navigator.credentials.create({ publicKey: {
+ * authenticatorAttachment: de browser biedt ook «телефон або планшет» (QR + Bluetooth) aan; hints komen ongewijzigd van de server.
+ * signal: «Скасувати» in de pagina breekt een hangend venster af (AbortError). */
+export async function passkeyAanmaken(pk: RegistratieOpties, signal?: AbortSignal) {
+  const cred = await navigator.credentials.create({ ...(signal ? { signal } : {}), publicKey: {
     ...pk, challenge: naarBuf(pk.challenge), user: { ...pk.user, id: naarBuf(pk.user.id) },
     pubKeyCredParams: pk.pubKeyCredParams.map((p) => ({ type: 'public-key' as const, alg: p.alg })),
     excludeCredentials: sleutels(pk.excludeCredentials),
