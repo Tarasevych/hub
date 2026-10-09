@@ -115,6 +115,16 @@ async function verbindingen(userId: string, beleid: Policy | null) {
   return [...uit.values(), { naam: CHAT_KLANT, soort: 'chat' as const, actief: true, agentId: beleid ? agentVoor(beleid, CHAT_KLANT) : null, laatst: null }];
 }
 
+/**
+ * Uitrol-hulpmiddelen via MCP (voorstel voorbereiden, status): een voorstel zet nog niets live — elk voorstel keurt de eigenaar
+ * apart goed met de passkey. Daarom telt hier alleen «uit» (de schakelaar «Розгортання для всіх агентів» of per agent).
+ * Geeft de weigertekst of null.
+ */
+export async function uitrolWeigering(namens: Namens | undefined, tool: string, nu = Date.now()): Promise<string | null> {
+  const b = await beslissing(namens, tool, nu);
+  return b.mode === 'off' ? weigerTekst(b) : null;
+}
+
 export async function overzicht(eigenaar: Eigenaar) {
   const s = await leesStand();
   const nu = Date.now();

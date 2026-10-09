@@ -11,7 +11,8 @@ import * as bk from '../../deploy/goedkeuring/ai-beleid-kern.mjs';
 import * as kern from '../../deploy/goedkeuring/webauthn-kern.mjs';
 import { checker } from './hulp/nep-google';
 import { bevestig, nieuwePasskey, registreer } from './hulp/nep-passkey';
-import { agentVoor, beslissing, leesStand, ondertekenen, strengste, vergeetCache, voorstel } from '../../backend/ai-beleid';
+import { agentVoor, beslissing, leesStand, ondertekenen, strengste, uitrolWeigering, vergeetCache, voorstel } from '../../backend/ai-beleid';
+import { buildDraft } from '../../shared/ai-beleid/model';
 import { metNamens } from '../../backend/mcp-namens';
 import { callTool } from '../../backend/connectors-tools';
 import { closePool, getPool } from '../../server/platform/pg';
@@ -135,6 +136,21 @@ export async function main(): Promise<number> {
     const geweigerdTool = await metNamens({ client: 'Claude' }, () => callTool(EIGENAAR, 'machine_list', {}));
     const eigenaarZelf = await callTool(EIGENAAR, 'machine_list', {}, { eigenaarZelf: true });
     check('callTool: Claude uitgeschakeld in het beleid → weigering met uitleg; de eigenaar zelf (Пісочниця) niet', geweigerdTool.isError === true && /signed AI policy/.test(geweigerdTool.content[0].text) && !eigenaarZelf.isError, `${geweigerdTool.content[0].text.slice(0, 120)} | ${eigenaarZelf.content[0].text.slice(0, 80)}`);
+
+    // ------------------------------------------------------------------ schakelaar «Розгортання для всіх агентів»
+    check('uitrol: Grok (standaard питати) mag een voorstel voorbereiden (de passkey van de eigenaar beslist); Claude (uit) niet',
+      (await uitrolWeigering({ client: 'Grok' }, 'uitrol_voorstel_begin')) === null && /signed AI policy/.test(String(await uitrolWeigering({ client: 'Claude' }, 'uitrol_voorstel_begin'))));
+    const s3 = (await leesStand()) as Extract<Awaited<ReturnType<typeof leesStand>>, { staat: 'geldig' }>;
+    const allesUit = buildDraft(s3.beleid, s3.hash, [{ op: 'grant', agent: '*', capabilities: ['deploy.release'], spec: { type: 'off' } }], Date.now());
+    const id5 = randomBytes(8).toString('hex');
+    writeFileSync(join(dirs.inbox, `ai-beleid-${id5}.json`), JSON.stringify({ doel: 'ai-beleid', ontwerp: allesUit, ed25519: { keyId: 'recovery-1', signature: sign(null, bk.ed25519Bericht(allesUit), privateKey).toString('base64url') } }));
+    hulp('verwerk');
+    vergeetCache();
+    const grokUitrol = await uitrolWeigering({ client: 'Grok' }, 'uitrol_voorstel_begin');
+    const grokStatus = await uitrolWeigering({ client: 'Grok' }, 'uitrol_voorstel_status');
+    const grokLees = await beslissing({ client: 'Grok' }, 'machine_list');
+    check('uitrol: «Вимкнути всім» (agent *, deploy.release) → Grok kan niets meer voorbereiden; status bekijken en andere rechten blijven',
+      (await leesStand() as any).beleid.seq === 3 && /signed AI policy/.test(String(grokUitrol)) && grokStatus === null && grokLees.mode === 'ask', JSON.stringify([grokUitrol?.slice(0, 80), grokStatus, grokLees.code]));
 
     // ------------------------------------------------------------------ geknoeid in de keten → alles dicht
     const ketenPad = join(dirs.beleid, 'keten.json');
