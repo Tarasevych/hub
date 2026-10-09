@@ -828,6 +828,40 @@ Controle na uitrol: `/menu` openen → «Кольоровий» kiezen → in ee
 
 Controle na uitrol: Ctrl+F5 → menu «Завжди згорнута» → Пошта: alle subitems als cirkels met icoon; «Налаштування → Меню» → Кольоровий.
 
+### 14.2 Fase B3 + B2 (9-10-2026) — ⚙ in de werkbalk, «levend» menu (badges + sms-bellen)
+
+**Geen migratie.** Nieuwe recordtabel `menu_tellers_v1` (generieke RLS op `data.userId`, zoals migratie 0007), twee nieuwe routes:
+- `POST /api/owner/menu/tellers` — eigen tellers lezen; alleen goedgekeurde sessie (anders 403 `OWNER_APPROVED_SESSION_REQUIRED`).
+- `POST /api/owner/menu/tellers/zet` — `{bron:'mail', ongelezen:<geheel getal 0…99999>}`; alleen goedgekeurd, alleen vanaf
+  mail.tarasevych.com (de dienst wordt aan de host gebonden door `ownerService`), anders 400 `MENU_TELLER_BRON_ONGELDIG` /
+  `MENU_TELLER_WAARDE_ONGELDIG`. Er wordt ALLEEN een getal opgeslagen (geen onderwerpen, afzenders of inhoud); één rij per gebruiker,
+  alleen geschreven bij een wijziging (E-mail bundelt 1,2 s).
+
+B3 — ⚙ (`Settings2`) als 4e knop in de werkbalk (breed én in het smalle paneel), een echte link naar
+`https://id.tarasevych.com/menu#menu-meldingen` (op id.* zelf: binnen de pagina naar de sectie). Налаштування → Меню kreeg de sectie
+«Сповіщення в меню»: aan/uit, getal of gekleurde stip, bellen bij aanwijzen, «aandacht voor nieuw» (puls), herinneren (nooit/15/30/60/120
+min), stille uren (geen puls/herinnering, badges blijven), per soort aan/uit (Пошта, Безпека, Доступ і запити, Спільний доступ, ШІ та
+агенти, Система). Opgeslagen in het bestaande `sidebar`-veld (`meldingen`, strikt genormaliseerd op browser én server).
+
+B2 — bronnen: de bestaande bel-meldingen (`site_notifications`, alleen ongelezen) + de e-mailteller. Soort → menu-item en kleur
+(`shared/menu-meldingen.ts`): access_request → Адмін › Доступ (oranje), account_email_conflict → Налаштування › Акаунт (rood),
+workspace_share → Мій простір › Огляд (groen), google_login_config → Адмін › Контур (grijs), ongelezen e-mail → Пошта › Вхідні (blauw).
+Een badge op een pagina telt ook op het hoofditem. Aanwijzen/focus → bellen (max. 5, nieuwste eerst; tekst via React, geen HTML);
+× bij een servermelding = «gelezen» via de bestaande route `notifications/read` (met id, nooit «alles»); × bij de e-mailteller =
+verbergen in deze browser tot er MEER ongelezen zijn. Links in bellen alleen https op *.tarasevych.com of een relatief pad.
+Toetsenbord: Tab op een item opent de bellen, → gaat erin, Esc terug. `prefers-reduced-motion` zet alle animaties uit.
+
+Afscherming: badges/bellen alleen bij een goedgekeurde sessie (`zijbalkServerDienst() !== ''`); aria-label bevat alleen het aantal;
+gasten (toegangscodes, `/toegang`, cookie `tsv_gast`) hebben geen menu en geen `/api/owner`-toegang en krijgen dus niets
+(e2e gast-toegang blijft groen). Beperkingen: de e-mailteller wordt alleen bijgewerkt wanneer E-mail open is geweest; in de mobiele
+lade staat geen werkbalk en dus geen ⚙ (Налаштування → Меню blijft bereikbaar via het menu).
+
+Tests: `tests/eenheid/menu-meldingen.test.ts` (35: normalisatie, stille uren, doel/links, badges, routes incl. weigeringen en isolatie),
+`tests/e2e/menu-v2-meldingen.e2e.ts` (30; screenshots menu-20…menu-24). Opruimen op exact e-mailadres.
+
+Controle na uitrol: Ctrl+F5 → werkbalk: ⚙ zichtbaar → klik → «Сповіщення в меню». E-mail openen → badge op Пошта met het aantal
+ongelezen; op een andere dienst aanwijzen → bel «Непрочитані листи: N» → × → badge weg.
+
 Stage 2 (nog geen UI): `shared/menu-model.ts` — stabiele ids `svc:<dienst>` / `pg:<dienst>/<pagina>`, standaardplaatsing uit
 `MENU_PAGINAS` (gelijk aan `canonical-service.js`, door een test bewaakt), overrides per item (`zichtbaar`, `volgorde`, `plaats`,
 `ouder`, `icoon`), kopieën (`k-…` → `zijbalk`/`snelbalk`/`start`), dock (`links|rechts|boven|onder`, transparantie 0–60, vergroting),
