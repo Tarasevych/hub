@@ -21,7 +21,7 @@ export const MENU_PAGINAS: Record<string, readonly string[]> = {
   huis: ['overview'],
   identity: ['personalization', 'menu', 'themes', 'languages', 'widgets', 'sharing', 'identity', 'account', 'sessions', 'methods', 'security', 'recovery'],
   api: ['connections', 'vault', 'oauth', 'access', 'webhooks', 'events', 'logs', 'import', 'reconciliation'],
-  admin: ['overview', 'access', 'contour', 'updates', 'apps', 'devices', 'sso', 'directories', 'roles', 'diagnostics', 'audit'],
+  admin: ['overview', 'access', 'contour', 'updates', 'ai', 'apps', 'devices', 'sso', 'directories', 'roles', 'diagnostics', 'audit'],
   mcp: ['overview', 'services', 'tools', 'board', 'agents', 'playground', 'traffic', 'connect', 'roadmap', 'download'],
 };
 

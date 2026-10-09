@@ -1,7 +1,7 @@
 // mcp.*/agents in de stijl van GitHub Settings → Applications: tabbladen Огляд | Підключені ШІ | Пристрої й браузери |
 // Токени й двері | Журнал. Adresseerbaar via de hash (#ai, #apparaten/dev:<id>, …); oude adressen (#claude, #doors, #dev:<id>,
 // #extension, …) worden omgezet. Eén poller voor apparaten/wachtende acties; de rest bij openen, na een actie en rustig.
-import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import { Activity, ArrowRight, Globe, KeyRound, LayoutDashboard, Monitor, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAgentsData, useToolApprovals } from '../agents-data';
 import type { Tr } from '../mcp-ui';
@@ -15,11 +15,15 @@ import TabAi from './TabAi';
 import TabApparaten from './TabApparaten';
 import TabTokens from './TabTokens';
 import { foutTekst } from './fouten';
+import { ecosystemTabContext } from '../tab-context';
 import '../mcp-hub.css';
 import './agenten.css';
 
-export type TabId = 'overzicht' | 'ai' | 'apparaten' | 'tokens' | 'journaal';
-const TABS: TabId[] = ['overzicht', 'ai', 'apparaten', 'tokens', 'journaal'];
+// Ondertekend AI-beleid (§13.12): hier alleen-lezen; wijzigen kan alleen in Beheer → Доступ ШІ met de passkey.
+const AiBeleid = lazy(() => import('../AdminAiBeleidView'));
+
+export type TabId = 'overzicht' | 'ai' | 'beleid' | 'apparaten' | 'tokens' | 'journaal';
+const TABS: TabId[] = ['overzicht', 'ai', 'beleid', 'apparaten', 'tokens', 'journaal'];
 /** Oude hashes (zijbalk van vóór 2026-10) → nieuw tabblad[/item]. */
 export const OUDE_HASH: Record<string, string> = { overview: 'overzicht', claude: 'ai', tools: 'ai/hulpmiddelen', pending: 'overzicht', extension: 'apparaten/extensie', doors: 'tokens', pair: 'apparaten/koppelen' };
 export function leesHash(hash: string): { tab: TabId; item: string; oud: boolean } {
@@ -78,6 +82,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   const tabInfo: Record<TabId, { uk: string; nl: string; icoon: ReactElement; teller?: number }> = {
     overzicht: { uk: 'Огляд', nl: 'Overzicht', icoon: <LayoutDashboard />, teller: wachten || undefined },
     ai: { uk: 'Підключені ШІ', nl: 'Verbonden AI', icoon: <Sparkles />, teller: oauthActief + tokensActief },
+    beleid: { uk: 'Дозволи за підписом', nl: 'Toegang met handtekening', icoon: <ShieldCheck /> },
     apparaten: { uk: 'Пристрої й браузери', nl: 'Apparaten en browsers', icoon: <Monitor />, teller: agents.length },
     tokens: { uk: 'Токени й двері', nl: 'Tokens en deuren', icoon: <KeyRound />, teller: tokensActief },
     journaal: { uk: 'Журнал', nl: 'Logboek', icoon: <Activity /> },
@@ -114,6 +119,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
             leeg={loaded && !agents.length && !oauthActief ? <PairCard tr={tr} reload={naActie} agents={agents} /> : null} />
         ) : null}
         {plek.tab === 'ai' ? <TabAi tr={tr} overzicht={ov.data} tokens={tok.data?.tokens ?? null} naActie={naActie} item={plek.item} kies={kies} calls={calls} reloadCalls={reloadCalls} /> : null}
+        {plek.tab === 'beleid' ? <Suspense fallback={<p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p>}><AiBeleid lang={tr('uk', 'nl') === 'uk' ? 'uk' : 'nl'} sourceOrigin={location.origin} tabContext={ecosystemTabContext()} alleenLezen /></Suspense> : null}
         {plek.tab === 'apparaten' ? <TabApparaten tr={tr} agents={agents} pending={pending} last={last} overzicht={ov.data} naActie={naActie} reload={reload} item={plek.item} kies={kies} versie={versie} /> : null}
         {plek.tab === 'tokens' ? <TabTokens tr={tr} data={tok.data} naActie={naActie} item={plek.item} kies={kies} /> : null}
         {plek.tab === 'journaal' ? <Journaal tr={tr} onderwerpen={onderwerpen} versie={versie} actief /> : null}

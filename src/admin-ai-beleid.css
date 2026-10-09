@@ -1,0 +1,126 @@
+/* Beheer → «Доступ ШІ» (§13.12) en alleen-lezen op mcp/agents#beleid. Zelfstandig: werkt ook buiten admin-console.css.
+   Kleuren met eigen tokens (contrast ≥ 4.5:1 voor tekst, ≥ 3:1 voor randen/iconen in licht én donker). */
+.aib{
+  --aib-ok:#166534;--aib-ok-bg:rgba(22,101,52,.09);
+  --aib-ask:#8a4b06;--aib-ask-bg:rgba(180,83,9,.10);
+  --aib-off:#b42318;--aib-off-bg:rgba(180,35,24,.08);
+  --aib-hoofd:#1d4ed8;--aib-hoofd-tekst:#fff;
+  --aib-rand:var(--line,#d7dee8);--aib-zacht:#4b5563;--aib-vlak:var(--surface,#f8fafc);--aib-paneel:var(--panel,#fff);
+  display:grid;gap:14px;padding:18px;border:1px solid var(--aib-rand);border-radius:16px;background:var(--aib-paneel);color:var(--text,inherit);min-width:0
+}
+.theme-dark .aib,.theme-plum-dark .aib{
+  --aib-ok:#4ade80;--aib-ok-bg:rgba(74,222,128,.10);
+  --aib-ask:#fbbf24;--aib-ask-bg:rgba(251,191,36,.10);
+  --aib-off:#fca5a5;--aib-off-bg:rgba(252,165,165,.09);
+  --aib-hoofd:#93c5fd;--aib-hoofd-tekst:#0b1220;--aib-zacht:#c3cbd5
+}
+.aib svg{width:17px;height:17px;flex:none}
+.aib h2{display:flex;align-items:center;gap:8px;margin:0;font-size:1.15rem}
+.aib h2 svg{width:22px;height:22px;color:var(--aib-ok)}
+.aib h3{margin:0 0 6px;font-size:.95rem;color:var(--aib-zacht);font-weight:700}
+.aib p{margin:0}
+.aib code{overflow-wrap:anywhere}
+.aib button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 13px;border:1px solid var(--aib-rand);border-radius:11px;background:var(--aib-paneel);color:inherit;font:inherit;font-weight:650;cursor:pointer}
+.aib button:hover{background:var(--aib-vlak)}
+.aib button:focus-visible,.aib input:focus-visible,.aib select:focus-visible,.aib a:focus-visible{outline:3px solid var(--aib-hoofd);outline-offset:2px}
+.aib button:disabled{opacity:.55;cursor:not-allowed}
+.aib .aib-hoofd{background:var(--aib-hoofd);border-color:var(--aib-hoofd);color:var(--aib-hoofd-tekst)}
+.aib .aib-hoofd:hover{filter:brightness(1.08);background:var(--aib-hoofd)}
+.aib .aib-klein{min-height:34px;padding:5px 10px;font-size:.88rem}
+.aib input,.aib select{min-height:38px;padding:6px 9px;border-radius:9px;border:1px solid var(--aib-rand);background:var(--aib-paneel);color:inherit;font:inherit;min-width:0}
+.aib input[type=number]{width:84px}
+
+.aib-kop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.aib-kop p{color:var(--aib-zacht);margin-top:4px;max-width:70ch}
+.aib .aib-icoonknop{min-height:40px;min-width:40px;padding:0}
+
+.aib-stand,.aib-waarschuwing{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid var(--aib-rand);background:var(--aib-vlak)}
+.aib-stand>svg,.aib-waarschuwing>svg{width:20px;height:20px;margin-top:2px}
+.aib-stand p{color:var(--aib-zacht);margin-top:3px}
+.aib-stand[data-ok="true"]>svg{color:var(--aib-ok)}
+.aib-stand[data-ok="false"]{border-color:var(--aib-off);background:var(--aib-off-bg)}
+.aib-stand[data-ok="false"]>svg{color:var(--aib-off)}
+.aib-stand[data-ok="onbekend"]>svg{color:var(--aib-ask)}
+.aib-ssh{display:block;margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--aib-paneel);border:1px dashed var(--aib-rand);user-select:all;font-size:.88rem}
+.aib-waarschuwing{border-color:var(--aib-ask);background:var(--aib-ask-bg)}
+.aib-waarschuwing>svg{color:var(--aib-ask)}
+.aib-waarschuwing ul{margin:6px 0 0;padding-left:18px;display:grid;gap:6px}
+.aib-waarschuwing li{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+
+.aib-melding{padding:10px 12px;border-radius:10px;border:1px solid var(--aib-ok);background:var(--aib-ok-bg)}
+.aib-melding[data-ok="false"]{border-color:var(--aib-off);background:var(--aib-off-bg)}
+
+/* agents als tabs (horizontaal scrollbaar op smal scherm, zonder zichtbare balk die inhoud verbergt) */
+.aib-agenten{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.aib .aib-agent{flex:none;border-radius:999px;font-weight:600}
+.aib .aib-agent.is-gekozen{border-color:var(--aib-hoofd);box-shadow:inset 0 0 0 1px var(--aib-hoofd)}
+.aib .aib-agent.is-uit{opacity:.75}
+.aib-teller{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:999px;background:var(--aib-ok-bg);color:var(--aib-ok);font-size:.8rem}
+.aib-teller svg{width:13px;height:13px}
+.aib-uit{font-size:.8rem;color:var(--aib-off)}
+
+.aib-agentpaneel{display:grid;gap:14px}
+.aib-agentkop{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+.aib-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.aib-groep{display:grid;gap:4px}
+.aib-rijen{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.aib-rij{display:grid;gap:8px;padding:10px 12px;border:1px solid var(--aib-rand);border-radius:12px;background:var(--aib-paneel)}
+.aib-rij-kop{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px}
+.aib-geerfd{color:var(--aib-zacht)}
+.aib-status{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:.85rem;font-weight:650;white-space:nowrap}
+.aib-status svg{width:14px;height:14px}
+.aib-status.is-allow{color:var(--aib-ok);background:var(--aib-ok-bg)}
+.aib-status.is-ask{color:var(--aib-ask);background:var(--aib-ask-bg)}
+.aib-status.is-deny{color:var(--aib-off);background:var(--aib-off-bg)}
+.aib-inrij{font-size:.88rem;color:var(--aib-ask)}
+
+/* timer: смужка + Встановлено / Минуло / Залишилось */
+.aib-timer{display:grid;gap:6px}
+.aib-balk{height:6px;border-radius:999px;background:var(--aib-vlak);border:1px solid var(--aib-rand);overflow:hidden}
+.aib-balk span{display:block;height:100%;background:var(--aib-ok);transition:width .9s linear}
+.aib-timer.is-bijna .aib-balk span{background:var(--aib-ask)}
+.aib-timer.is-op .aib-balk span{background:var(--aib-off)}
+.aib-timer dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 14px;margin:0}
+.aib-timer dt{font-size:.8rem;color:var(--aib-zacht)}
+.aib-timer dd{margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.aib-timer.is-bijna dt:last-of-type,.aib-timer.is-bijna dd:last-of-type{color:var(--aib-ask);font-weight:650}
+.aib-timer.is-op dd:last-of-type{color:var(--aib-off)}
+@media (prefers-reduced-motion:reduce){.aib-balk span{transition:none}}
+
+/* keuze */
+.aib-keuze{display:grid;gap:10px;padding:12px;border:1px solid var(--aib-hoofd);border-radius:12px;background:var(--aib-vlak)}
+.aib-keuze fieldset{margin:0;padding:0;border:0;display:grid;gap:6px}
+.aib-keuze legend{padding:0;margin-bottom:4px;font-size:.85rem;color:var(--aib-zacht);font-weight:650}
+.aib-keuze-rij{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.aib-keuze-rij label{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding-right:8px}
+.aib-keuze-rij label input{min-height:auto;width:18px;height:18px}
+.aib .aib-chip{min-height:36px;padding:5px 12px;border-radius:999px;font-weight:600}
+.aib-rechts{justify-content:flex-end}
+.aib-fout{color:var(--aib-off);font-weight:600}
+
+.aib-allen{display:grid;gap:8px;padding:12px;border:1px dashed var(--aib-rand);border-radius:12px}
+.aib-link a{display:inline-flex;align-items:center;gap:5px;font-weight:650;color:var(--aib-hoofd)}
+
+/* wachtrij: blijft zichtbaar onderaan */
+.aib-wachtrij{position:sticky;bottom:8px;z-index:3;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--aib-ask);border-radius:12px;background:var(--aib-paneel);box-shadow:0 6px 22px var(--shadow,rgba(15,23,42,.14))}
+.aib-wachtrij>span{font-weight:650}
+
+/* venster «Перевірити й підписати» */
+.aib-venster-achter{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:16px;background:rgba(2,6,23,.55)}
+.aib-venster{width:min(640px,100%);max-height:calc(100dvh - 32px);overflow:auto;display:grid;gap:12px;padding:18px;border-radius:16px;background:var(--aib-paneel);color:var(--text,inherit);border:1px solid var(--aib-rand)}
+.aib-diff{margin:0;padding-left:20px;display:grid;gap:8px}
+.aib-diff li{display:grid;gap:2px}
+.aib-van-naar{color:var(--aib-zacht);overflow-wrap:anywhere}
+.aib-van-naar>span:last-child{color:var(--text,inherit);font-weight:650}
+.aib .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.aib-klein-tekst{font-size:.85rem;color:var(--aib-zacht)}
+
+@media (max-width:640px){
+  .aib{padding:12px;border-radius:12px}
+  .aib-rij-kop{grid-template-columns:minmax(0,1fr) auto}
+  .aib-rij-kop>.aib-klein{grid-column:1/-1;justify-self:start}
+  .aib-timer dl{grid-template-columns:1fr}
+  .aib-wachtrij .aib-knoppen,.aib-venster .aib-knoppen{width:100%}
+  .aib-wachtrij .aib-knoppen button,.aib-venster .aib-knoppen button{flex:1 1 100%}
+}
+@media (forced-colors:active){.aib-status,.aib-teller{border:1px solid CanvasText}.aib-balk span{background:Highlight}}
