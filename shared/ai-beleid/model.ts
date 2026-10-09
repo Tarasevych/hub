@@ -214,7 +214,7 @@ export function evaluate(
   }
 
   const label = capabilityInfo(capability)?.label ?? capability;
-  const mode = Object.hasOwn(agent.capabilities, capability) ? agent.capabilities[capability]! : agent.defaultMode;
+  const mode = Object.prototype.hasOwnProperty.call(agent.capabilities, capability) ? agent.capabilities[capability]! : agent.defaultMode;
 
   switch (mode.kind) {
     case 'always':
@@ -353,7 +353,7 @@ export function listGrants(policy: Policy, now: number, tz: string = DEFAULT_TZ)
   for (const [agentId, agent] of Object.entries(policy.agents)) {
     for (const cap of expandCapabilities('*')) {
       const info = capabilityInfo(cap)!;
-      const own = Object.hasOwn(agent.capabilities, cap);
+      const own = Object.prototype.hasOwnProperty.call(agent.capabilities, cap);
       const mode = own ? agent.capabilities[cap]! : agent.defaultMode;
       const eff = effectiveMode(mode, now);
       const c = countdown(mode, now);

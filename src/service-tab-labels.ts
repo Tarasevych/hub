@@ -17,7 +17,7 @@ const LABELS: Record<string, Pair> = {
   security: ['Безпека', 'Beveiliging'], recovery: ['Відновлення', 'Herstel'],
   vault: ['Сховище', 'Kluis'], oauth: ['OAuth', 'OAuth'], access: ['Доступ', 'Toegang'], webhooks: ['Webhooks', 'Webhooks'], events: ['Події', 'Gebeurtenissen'], logs: ['Журнали', 'Logboeken'],
   import: ['Імпорт', 'Import'], reconciliation: ['Звірка', 'Afstemming'],
-  contour: ['Контур', 'Contour'], updates: ['Оновлення', 'Updates'], apps: ['Застосунки', 'Apps'], devices: ['Пристрої', 'Apparaten'], sso: ['SSO', 'SSO'], directories: ['Каталоги', 'Mappen'], roles: ['Ролі', 'Rollen'],
+  contour: ['Контур', 'Contour'], updates: ['Оновлення', 'Updates'], ai: ['Доступ ШІ', 'AI-toegang'], apps: ['Застосунки', 'Apps'], devices: ['Пристрої', 'Apparaten'], sso: ['SSO', 'SSO'], directories: ['Каталоги', 'Mappen'], roles: ['Ролі', 'Rollen'],
   diagnostics: ['Діагностика', 'Diagnostiek'], audit: ['Аудит', 'Audit'],
   services: ['Сервіси', 'Diensten'], tools: ['Інструменти', 'Hulpmiddelen'], board: ['Дошка', 'Bord'], playground: ['Пісочниця', 'Zandbak'], traffic: ['Трафік', 'Verkeer'],
   connect: ['Підключення', 'Koppelen'], roadmap: ['Дорожня карта', 'Roadmap'], download: ['Завантаження', 'Download'],
