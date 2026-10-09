@@ -11,6 +11,7 @@ import { rateLimit, type RouterResponse } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
 import { actieDoel, actieSoort } from '../shared/mcp-acties';
 import { metNamens } from './mcp-namens';
+import { uitrolWeigering } from './ai-beleid';
 import { randomToken, sha256 } from './connectors-crypto';
 import { callTool, listTools, type ToolDef } from './connectors-tools';
 import { SERVICE_HOSTS } from './deployment-identity';
@@ -326,7 +327,10 @@ async function handleMessage(who: { userId: string; clientName: string; tokenId?
       const args: Record<string, unknown> = msg.params?.arguments && typeof msg.params.arguments === 'object' ? msg.params.arguments : {};
       if (UITROL_TOOL_NAMEN.has(name) || isGoedkeurPoging(name)) {
         let uit: { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
-        try { uit = { content: [{ type: 'text', text: JSON.stringify(await metNamens({ client: who.clientName, grantId: who.tokenId }, async () => voerUitrolToolUit(uitrolOnderwerpen(who), name, args))) }] }; }
+        // Ondertekend AI-beleid: «Розгортати сайт» uit voor deze AI → niets voorbereiden (goedkeuren kan hier nooit).
+        const weigering = UITROL_TOOL_NAMEN.has(name) ? await uitrolWeigering({ client: who.clientName, grantId: who.tokenId }, name) : null;
+        if (weigering) uit = { content: [{ type: 'text', text: weigering }], isError: true };
+        else try { uit = { content: [{ type: 'text', text: JSON.stringify(await metNamens({ client: who.clientName, grantId: who.tokenId }, async () => voerUitrolToolUit(uitrolOnderwerpen(who), name, args))) }] }; }
         catch (err) { uit = { content: [{ type: 'text', text: err instanceof UitrolFout ? err.code : 'UITROL_FOUT' }], isError: true }; }
         try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: uit.isError ? 'failure' : 'success', details: werkDetails(who, name, args) }); } catch { /* audit mag niet breken */ }
         return rpcResult(id, uit);
