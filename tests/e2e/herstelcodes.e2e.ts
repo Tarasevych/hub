@@ -10,7 +10,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { checker } from '../eenheid/hulp/nep-google';
 import { getPool } from '../../server/platform/pg';
-import { startE2eServer } from './server';
+import { startE2eServer, chromeArgs } from './server';
 
 const PW = process.env.PLAYWRIGHT_CORE || '/workspace/e2e-tools/node_modules/playwright-core';
 const TLS = process.env.E2E_TLS || '/workspace/e2e-tools/tls';
@@ -31,7 +31,7 @@ export async function main(): Promise<number> {
   const { G, stop } = await startE2eServer({ ownerEmail: eigenaar, poort: POORT, tls: TLS });
   const pool = getPool();
   mkdirSync(UIT, { recursive: true });
-  const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: [`--host-resolver-rules=MAP *.tarasevych.com:443 127.0.0.1:${POORT}, MAP tarasevych.com:443 127.0.0.1:${POORT}`] });
+  const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: chromeArgs(POORT) });
   const oud = Math.floor(Date.now() / 1000) - 3600;
   try {
     // Google-stub: wat «Google» teruggeeft per scenario.

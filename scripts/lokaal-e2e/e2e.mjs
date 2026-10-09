@@ -2,7 +2,7 @@ import { chromium } from 'playwright-core'; import pg from 'pg'; import { create
 const sha = v => createHash('sha256').update(v).digest('hex');
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const out = []; const check = (n, ok, i = '') => { out.push(ok); console.log(`${ok ? 'OK  ' : 'FOUT'} ${n}${i ? ' — ' + i : ''}`); };
-const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--host-resolver-rules=MAP *.tarasevych.com 127.0.0.1:8443', '--no-sandbox'] });
+const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--host-resolver-rules=MAP *.tarasevych.com 127.0.0.1:8443, MAP tarasevych.com 127.0.0.1:8443, MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1', '--no-sandbox'] });
 const ctx = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 800 } });
 const csp = []; const errors = [];
 ctx.on('console', m => { const t = m.text(); if (/Content Security Policy|Refused to/.test(t)) csp.push(t.slice(0, 200)); else if (m.type() === 'error') errors.push(t.slice(0, 200)); });

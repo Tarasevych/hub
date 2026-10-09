@@ -917,7 +917,37 @@ Controle na uitrol:
    loads) staat mail.tarasevych.com als prefetch; daarna openen = direct en aangemeld.
 5. Concepten blijven uit tot ze in de instellingen worden aangezet.
 
-Stage 2 (nog geen UI): `shared/menu-model.ts` — stabiele ids `svc:<dienst>` / `pg:<dienst>/<pagina>`, standaardplaatsing uit
+### 14.4 Stage 2 (9-10-2026) — indeling van het menu, dock rechts/boven/onder, bewerkmodus
+
+Wat er is:
+- **Plaatsen**: «Швидкий доступ» (snelbalk, boven in het menu), het hoofdmenu, de secties (submenu per onderdeel) en «Стартова
+  сторінка» (snelkoppelingen op Мій простір → Огляд). Onderdelen (`svc:`) alleen op het bovenste niveau; pagina's (`pg:`) overal.
+  Alleen onderdelen waartoe de gebruiker toegang heeft verschijnen (ook kopieën). Logica: `shared/menu-indeling.ts` (puur, getest).
+- **Bewerkmodus** (✎ in de werkbalk, in de lade op mobiel, of Налаштування → Меню → «Редагувати меню»): slepen met de muis,
+  op aanraakschermen lang indrukken (450 ms); Alt/Ctrl/⌘ tijdens slepen = kopie (geest toont «+»), Esc = annuleren.
+  Klik/Enter op een item = actiemenu (Вище/Нижче, «Перемістити до…», «Дублювати до…», kopie verwijderen, terugzetten);
+  Alt+pijltjes = verplaatsen, Ctrl/⌘+Z = ongedaan maken. Elke wijziging: melding met «Скасувати» + schermlezerstatus.
+- **Kopieën** houden de kleur van hun herkomst-onderdeel (`itemAccent`) en tonen de herkomst als label.
+- **Terugzetten**: per item (override + alle kopieën weg) in het actiemenu en in Налаштування → Меню («Змінені пункти»);
+  «Скинути все» zet ook de positie/het dock terug. Beide met «Скасувати».
+- **Positie** (Налаштування → Меню → «Розташування й порядок меню»): Ліворуч / Праворуч (gespiegeld) / Вгорі / Внизу.
+  Boven/onder = zwevend dock (iconen) met transparantie 0–60 % (met vervaging) en optionele vergroting zoals macOS
+  (alleen muis; niet bij «minder beweging», niet tijdens bewerken). Klik op het actieve onderdeel opent een paneel met de
+  pagina's. Op een telefoon (≤ 700 px) blijft het altijd de lade links.
+- Bewaard in `owner_ui_preferences_v1.sidebar` (`items`, `kopieen`, `dock`), genormaliseerd op server en browser; de server wint.
+
+E2E alleen lokaal (eis Pavlo): `scripts/e2e-lokaal.mjs` weigert e2e-bestanden met Playwright-API-verzoeken vanuit Node
+(`ctx.request`/`page.request`/`request.newContext`) of zonder `chromeArgs()`, en blokkeert in het testproces elke socket/DNS
+buiten loopback. Chrome krijgt `chromeArgs()` uit `tests/e2e/server.ts`: `*.tarasevych.com` (alle poorten) → 127.0.0.1:<poort>,
+al het andere `~NOTFOUND`. De nieuwe test controleert daarnaast dat elk paginaverzoek naar *.tarasevych.com (= lokaal) gaat.
+
+Na de uitrol controleren:
+1. Налаштування → Меню: blok «Розташування й порядок меню»; kies «Внизу» → dock onderaan; schuif transparantie; vergroting aan.
+2. ✎ → sleep een item; melding «Скасувати» werkt; Ctrl+slepen van een pagina naar «Швидкий доступ» = kopie in de kleur van
+   het onderdeel; «Скинути все» → standaard.
+3. Op de telefoon: lade, ✎ in de kop, lang indrukken + slepen; lade sluiten = bewerkmodus uit.
+
+Datamodel stage 2: `shared/menu-model.ts` — stabiele ids `svc:<dienst>` / `pg:<dienst>/<pagina>`, standaardplaatsing uit
 `MENU_PAGINAS` (gelijk aan `canonical-service.js`, door een test bewaakt), overrides per item (`zichtbaar`, `volgorde`, `plaats`,
 `ouder`, `icoon`), kopieën (`k-…` → `zijbalk`/`snelbalk`/`start`), dock (`links|rechts|boven|onder`, transparantie 0–60, vergroting),
 `itemTerugzetten`, `allesTerugzetten`, `menuSamenstellen`.
