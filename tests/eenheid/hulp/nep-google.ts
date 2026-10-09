@@ -33,7 +33,7 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
   process.env.OWNER_EMAIL = opties.ownerEmail;
   const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
   const kid = `eenheid-${Date.now()}-${randomBytes(3).toString('hex')}`;
-  const codes = new Map<string, { sub: string; email: string; nonce: string; authTime: number | null }>();
+  const codes = new Map<string, { sub: string; email: string; nonce: string; authTime: number | null; iat?: number }>();
   const laatsteAuthUrls: string[] = [];
   const echteFetch = globalThis.fetch;
   globalThis.fetch = (async (input: unknown, init?: RequestInit) => {
@@ -43,7 +43,7 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
       const c = codes.get(p.get('code') || '');
       if (!c || p.get('client_id') !== CLIENT) return new Response(JSON.stringify({ error: 'invalid_grant' }), { status: 400 });
       const kop = b64({ alg: 'RS256', kid }), nu = Math.floor(Date.now() / 1000);
-      const inhoud = b64({ iss: 'https://accounts.google.com', aud: CLIENT, sub: c.sub, email: c.email, email_verified: true, name: c.email, iat: nu, exp: nu + 600, nonce: c.nonce, ...(c.authTime === null ? {} : { auth_time: c.authTime }) });
+      const inhoud = b64({ iss: 'https://accounts.google.com', aud: CLIENT, sub: c.sub, email: c.email, email_verified: true, name: c.email, iat: c.iat ?? nu, exp: nu + 600, nonce: c.nonce, ...(c.authTime === null ? {} : { auth_time: c.authTime }) });
       const handtekening = createSign('RSA-SHA256').update(`${kop}.${inhoud}`).sign(privateKey).toString('base64url');
       return new Response(JSON.stringify({ id_token: `${kop}.${inhoud}.${handtekening}`, access_token: 'eenheid' }), { status: 200 });
     }
@@ -76,13 +76,13 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
     };
     const tab = randomBytes(24).toString('hex');
     /** Aanmelden via de redirect-flow (zoals productie). intent 'step-up' vraagt opnieuw om het wachtwoord. */
-    const aanmelden = async (sub: string, email: string, o: { intent?: 'login' | 'replace-tab' | 'step-up'; authTime?: number | null; remember?: boolean; service?: string; tabContext?: string; returnTo?: string } = {}) => {
+    const aanmelden = async (sub: string, email: string, o: { intent?: 'login' | 'replace-tab' | 'step-up'; authTime?: number | null; iat?: number; remember?: boolean; service?: string; tabContext?: string; returnTo?: string } = {}) => {
       const service = o.service || 'hub', host = `${service === 'identity' ? 'id' : service}.tarasevych.com`;
       const start = await verzoek(host, '/api/owner/identity/transactions/create', { service, tabContext: o.tabContext || tab, flowMode: 'redirect', returnTo: o.returnTo || `https://${host}/`, locale: 'nl', intent: o.intent || 'replace-tab', remember: o.remember ?? false });
       const authUrl = String(start.data.authUrl || 'https://x.invalid/'); laatsteAuthUrls.push(authUrl);
       const u = new URL(authUrl);
       const code = `code-${randomBytes(6).toString('hex')}`;
-      codes.set(code, { sub, email, nonce: u.searchParams.get('nonce') || '', authTime: o.authTime === undefined ? Math.floor(Date.now() / 1000) : o.authTime });
+      codes.set(code, { sub, email, nonce: u.searchParams.get('nonce') || '', authTime: o.authTime === undefined ? Math.floor(Date.now() / 1000) : o.authTime, ...(o.iat === undefined ? {} : { iat: o.iat }) });
       const cb = await verzoek('id.tarasevych.com', '/api/owner/auth/google/callback', { state: u.searchParams.get('state'), code });
       return { start, cb, authUrl: u };
     };
@@ -91,8 +91,8 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
   };
   const herstel = () => { globalThis.fetch = echteFetch; };
   /** Voor e2e: een eenmalige Google-code voor een echte browser (de authUrl levert state en nonce). */
-  const codeVoor = (sub: string, email: string, nonce: string, authTime: number | null = Math.floor(Date.now() / 1000)) => {
-    const code = `code-${randomBytes(6).toString('hex')}`; codes.set(code, { sub, email, nonce, authTime }); return code;
+  const codeVoor = (sub: string, email: string, nonce: string, authTime: number | null = Math.floor(Date.now() / 1000), iat?: number) => {
+    const code = `code-${randomBytes(6).toString('hex')}`; codes.set(code, { sub, email, nonce, authTime, ...(iat === undefined ? {} : { iat }) }); return code;
   };
   return { handler, browser, herstel, laatsteAuthUrls, codeVoor };
 }

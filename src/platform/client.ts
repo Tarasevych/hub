@@ -2,10 +2,11 @@
 // - api: axios-achtige fetch-client naar de same-origin /api van de huidige host.
 // - image.resizeIfNeeded: verkleint/hercodeert afbeeldingen in de browser.
 // - invitesClient: bouwt en leest uitnodigingslinks (parameter `invite`).
-import { neemAlgemeneHervat, stapOpVragen } from './stap-op';
+import { neemAlgemeneHervat, neemStapOpFout, stapOpVragen } from './stap-op';
 
 // Terug van «Підтвердити повторним входом через Google» zonder bekende actie: korte melding «повторіть дію».
-if (typeof window !== 'undefined') window.setTimeout(() => { if (neemAlgemeneHervat()) void import('./bevestig-toegang').then((m) => m.toonHervatMelding()).catch(() => undefined); }, 400);
+// Mislukte Google-step-up zonder bekende actie: dezelfde melding, maar met de reden (nooit «підтверджено» als het niet zo is).
+if (typeof window !== 'undefined') window.setTimeout(() => { if (neemAlgemeneHervat()) { const fout = neemStapOpFout(); void import('./bevestig-toegang').then((m) => m.toonHervatMelding(fout)).catch(() => undefined); } }, 400);
 
 // ---------------------------------------------------------------------------------------------
 // api

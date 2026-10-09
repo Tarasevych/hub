@@ -7,11 +7,12 @@
 // passkeys ook als bevestiging tellen. De paginakop zelf komt van SettingsCenterView (geen tweede kop hier).
 // Bevestigen (step-up) gebeurt in het venster «Підтвердіть доступ» (src/platform/bevestig-toegang.tsx), nooit met prompt/alert.
 import {useEffect} from 'react';
-import {Check,Copy,ExternalLink,Fingerprint,KeyRound,Mail,Pencil,Plus,RefreshCw,Smartphone,Trash2,X} from 'lucide-react';
+import {Check,ExternalLink,Fingerprint,KeyRound,Mail,Pencil,Plus,Smartphone,Trash2,X} from 'lucide-react';
 import {InfoTip} from './InfoTip';
 import {useState} from 'react';
 import type {Lang} from './access-plane-copy';
 import {PasskeysSection} from './PasskeysSection';
+import {HerstelcodesSectie} from './HerstelcodesSectie';
 
 type Method={id:string;kind?:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
 type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number;createdAt?:number;bekekenOp?:number};
@@ -53,7 +54,6 @@ type Props={
 };
 
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='nl'?nl:uk;
-const datum=(lang:Lang,ms?:number)=>ms?new Date(ms).toLocaleDateString(lang==='uk'?'uk-UA':'nl-BE',{dateStyle:'medium'}):'';
 const statusTone=(status:string)=>status==='loading'?'muted':status==='active'?'good':status==='ready'?'info':status==='disabled'||status==='not_configured'?'muted':'warn';
 const statusLabel=(lang:Lang,status:string)=>({
   loading:tr(lang,'Завантаження…','Laden…'),
@@ -70,7 +70,6 @@ export function AccessPlanePanels(p:Props){
   const {tab,lang,data,busy,notice,password,setPassword,code,setCode,recovery,write}=p;
   const[wachtwoordOpen,setWachtwoordOpen]=useState(false);
   const totp=data.factors.find(item=>item.id==='totp');
-  const recoveryFactor=data.factors.find(item=>item.id==='recovery');
   const passwordMethod=data.methods.find(item=>item.id==='password');
   const googleMethod=data.methods.find(item=>item.id==='google');
   const googleBinding=data.bindings.find(item=>item.method==='google');
@@ -148,32 +147,7 @@ export function AccessPlanePanels(p:Props){
       </div>
     </section>
 
-    <section className='access-plane-section' id='aanmeldmethoden-herstel' data-access-section='recovery'>
-      <header className='access-plane-section-head'><h2>{tr(lang,'Коди відновлення','Herstelcodes')}</h2>
-        <InfoTip label={tr(lang,'Про коди відновлення','Over herstelcodes')}><p>{tr(lang,'Одноразові коди на випадок, якщо ви втратите телефон. Зберігайте їх окремо (папір, менеджер паролів).','Eenmalige codes voor als je je telefoon kwijt bent. Bewaar ze apart (papier, wachtwoordmanager).')}</p><p>{tr(lang,'Нові коди замінюють старі. Для цього потрібне підтвердження.','Nieuwe codes vervangen de oude. Daarvoor is een bevestiging nodig.')}</p></InfoTip></header>
-      <div className='access-plane-box'>
-        {recoveryFactor&&<div className='access-plane-row' data-access-factor='recovery'>
-          <RefreshCw className='access-plane-row-icon'/>
-          <div className='access-plane-row-main'>
-            <span className='access-plane-row-title'><strong>{recoveryFactor.enrolled?tr(lang,`Залишилось кодів: ${recoveryFactor.remaining||0}`,`Resterende codes: ${recoveryFactor.remaining||0}`):tr(lang,'Кодів ще немає','Nog geen codes')}</strong>
-              {recoveryFactor.enrolled&&<span className={`access-plane-badge tone-${recoveryFactor.bekekenOp?'good':'warn'}`}>{recoveryFactor.bekekenOp?tr(lang,'Збережено ','Bewaard ')+datum(lang,recoveryFactor.bekekenOp):tr(lang,'Не позначено як збережені','Niet als bewaard gemarkeerd')}</span>}</span>
-            <small>{recoveryFactor.createdAt?`${tr(lang,'Створено ','Gemaakt ')}${datum(lang,recoveryFactor.createdAt)}`:tr(lang,'Резерв, якщо втратите телефон','Reserve voor als je je telefoon kwijt bent')}</small>
-          </div>
-          <div className='access-plane-row-actions'>
-            <button type='button' className='secondary' disabled={busy||laden} onClick={()=>void p.nieuweHerstelcodes()}><RefreshCw/>{recoveryFactor.enrolled?tr(lang,'Створити нові','Nieuwe maken'):tr(lang,'Створити коди','Codes maken')}</button>
-          </div>
-        </div>}
-        {recovery.length>0&&<div className='access-plane-subrow access-plane-recovery-codes'>
-          <strong>{tr(lang,'Нові коди відновлення — збережіть їх зараз','Nieuwe herstelcodes — bewaar ze nu')}</strong>
-          <small>{tr(lang,'Показано лише один раз. Кожен код діє один раз.','Wordt maar één keer getoond. Elke code werkt één keer.')}</small>
-          <ul className='access-plane-code-list'>{recovery.map(item=><li key={item} className='access-plane-mono'>{item}</li>)}</ul>
-          <div className='access-plane-actions'>
-            <button type='button' className='secondary' onClick={()=>void navigator.clipboard?.writeText(recovery.join('\n'))}><Copy/>{tr(lang,'Копіювати всі','Alles kopiëren')}</button>
-            <button type='button' disabled={busy} onClick={()=>void p.recoverySaved()}><Check/>{tr(lang,'Я зберіг коди','Ik heb de codes bewaard')}</button>
-          </div>
-        </div>}
-        {p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes'><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}
-      </div>
-    </section>
+    <HerstelcodesSectie lang={lang} context={p.context} codes={recovery} busy={busy} nieuweHerstelcodes={p.nieuweHerstelcodes} recoverySaved={p.recoverySaved} onChange={()=>void p.load()}/>
+    {p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes'><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}
   </div>;
 }

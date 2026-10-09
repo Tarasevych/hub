@@ -58,6 +58,9 @@ export async function main() {
   check('takeArrayValue: onbekende waarde of ongeldige veldnaam → false, record ongewijzigd', !(await db.takeArrayValue(tabel, rid!, 'hashes', 'x', 'remaining')) && !(await db.takeArrayValue(tabel, rid!, "hashes'--", 'a')) && (await db.get<{ remaining: number }>(tabel, [rid!]))[0]?.remaining === 2);
   const [leeg] = await db.add(tabel, [{ hashes: ['z'], remaining: 1 }]);
   check('takeArrayValue: laatste waarde → lege array (geen null)', (await db.takeArrayValue(tabel, leeg!, 'hashes', 'z', 'remaining')) && JSON.stringify((await db.get<{ hashes: string[] }>(tabel, [leeg!]))[0]?.hashes) === '[]');
+  const zet = await Promise.all(Array.from({ length: 5 }, (_, i) => db.zetEenmaligInMap(tabel, rid!, 'gebruikt', 'b', 1000 + i)));
+  const [naZet] = await db.get<{ hashes: string[]; gebruikt: Record<string, number>; remaining: number }>(tabel, [rid!]);
+  check('zetEenmaligInMap: 5 gelijktijdig → precies één zet de datum; hashes en teller blijven ongemoeid; ongeldige sleutel → false', zet.filter(Boolean).length === 1 && Object.keys(naZet?.gebruikt || {}).join() === 'b' && JSON.stringify(naZet?.hashes) === '["a","c"]' && naZet?.remaining === 2 && !(await db.zetEenmaligInMap(tabel, rid!, 'gebruikt', "x'--", 1)), JSON.stringify(naZet));
   await db.delete(tabel, [rid!, leeg!]);
 
   // Handoff-browserbinding.

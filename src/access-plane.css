@@ -116,3 +116,25 @@ html.theme-plum-dark{--ap-op-accent:#2a1024}
 /* Eigenaarsschakelaar: vakje en tekst op één regel. */
 .access-plane .access-plane-switch{display:inline-flex;flex-direction:row;align-items:center;gap:8px;width:auto}
 .access-plane .access-plane-switch input{flex:0 0 auto;width:18px;height:18px;margin:0}
+
+/* Herstelcodes (HerstelcodesSectie.tsx) */
+.herstel-nieuw{display:flex;flex-direction:column;gap:10px}
+.herstel-raster{list-style:none;margin:0;padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 24px;border:1px dashed var(--boot-line,#dce1e6);border-radius:10px;font-size:.95rem;letter-spacing:.04em}
+.herstel-klaar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.herstel-klaar button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:7px 11px;border-radius:9px;border:1px solid var(--boot-accent,#2f6f73);background:var(--boot-accent,#2f6f73);color:var(--ap-op-accent,#fff);font-size:.85rem;cursor:pointer}
+.herstel-klaar button:disabled{opacity:.5;cursor:default}
+.herstel-klaar button svg{width:14px;height:14px}
+.herstel-lijst{list-style:none;margin:0;padding:6px 14px 10px 44px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px 24px}
+.herstel-code{white-space:nowrap}
+.herstel-lijst small{white-space:nowrap}
+.herstel-lijst li{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid rgba(127,127,127,.15)}
+.herstel-lijst small{color:var(--boot-muted,#6a7580);font-size:.78rem}
+.herstel-lijst li[data-status=gebruikt] .herstel-code,.herstel-lijst li[data-status=ingetrokken] .herstel-code{text-decoration:line-through;opacity:.55}
+.herstel-lijst li[data-status=ingetrokken] small{color:#b06a12}
+@media (max-width:640px){.herstel-raster{grid-template-columns:1fr}.herstel-lijst{padding-left:14px}}
+@media print{
+  body.herstel-afdruk *{visibility:hidden!important}
+  body.herstel-afdruk .herstel-nieuw,body.herstel-afdruk .herstel-nieuw *{visibility:visible!important}
+  body.herstel-afdruk .herstel-nieuw{position:fixed;inset:0;padding:24px;background:#fff;color:#000}
+  body.herstel-afdruk .herstel-knoppen,body.herstel-afdruk .herstel-klaar{display:none!important}
+}

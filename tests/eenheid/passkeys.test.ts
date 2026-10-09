@@ -219,9 +219,27 @@ export async function main(): Promise<number> {
     check('herstelcode-step-up: geldt alleen voor die sessie', (await id(A6, `${P}/registreren/opties`)).data.error === 'STEP_UP_REQUIRED');
     check('geen verzwakking: met TOTP vraagt «nieuwe herstelcodes» nog steeds de TOTP-code of een passkey (herstelcode-step-up telt niet)', !(await id(A5, '/api/owner/access/recovery/rotate', {})).data.recoveryCodes);
     check('geen verzwakking: TOTP-step-up zonder methode accepteert geen herstelcode', (await id(A6, '/api/owner/access/stap-op', { code: rot.data.recoveryCodes?.[1] })).data.error === 'ACCESS_TOTP_INVALID');
+    // herstelcodes: gemaskeerd overzicht, gebruikte code doorgestreept met datum, invoer met streepjes, «Відкликати всі»
+    const codes0 = (rot.data.recoveryCodes || []) as string[];
+    const ov1 = await id(A5, '/api/owner/access/recovery/overzicht');
+    const r0 = (ov1.data.codes || []).find((c: { nr: number }) => c.nr === 1);
+    check('herstel-overzicht: 10 regels, gebruikte code «gebruikt» met datum, «Залишилося 9 з 10», alleen hint (2 tekens), geen hashes of codes',
+      ov1.status === 200 && ov1.data.codes?.length === 10 && r0?.status === 'gebruikt' && r0.gebruiktOp > 0 && ov1.data.resterend === 9 && ov1.data.totaal === 10 && r0.hint === codes0[0].slice(-2)
+      && (ov1.data.codes || []).every((c: { hint: string }) => c.hint.length === 2) && !/hash/i.test(ov1.body) && !codes0.some((c) => ov1.body.includes(c)), ov1.body.slice(0, 300));
+    const A7 = G.browser(); await A7.aanmelden(`sub-a-${T}`, aMail, { authTime: oud });
+    const metStreep = await id(A7, '/api/owner/access/stap-op', { methode: 'herstelcode', code: codes0[2].match(/.{4}/g)!.join('-').toLowerCase() });
+    check('herstelcode: invoer «abcd-efgh-ijkl» (streepjes, kleine letters) werkt ook', metStreep.status === 200 && metStreep.data.resterend === 8, metStreep.body.slice(0, 120));
+    const A8 = G.browser(); await A8.aanmelden(`sub-a-${T}`, aMail, { authTime: oud });
+    const intrekZonder = await id(A8, '/api/owner/access/recovery/intrekken');
+    check('«Відкликати всі» zonder step-up → 403 STEP_UP_REQUIRED, codes blijven', intrekZonder.status === 403 && intrekZonder.data.error === 'STEP_UP_REQUIRED' && (await id(A5, '/api/owner/access/recovery/overzicht')).data.resterend === 8);
+    const intrek = await id(A7, '/api/owner/access/recovery/intrekken');
+    const st = (intrek.data.codes || []).map((c: { status: string }) => c.status);
+    check('«Відкликати всі» met step-up: resterend 0, ongebruikte → «ingetrokken», gebruikte blijven «gebruikt»', intrek.status === 200 && intrek.data.resterend === 0 && intrek.data.ingetrokkenOp > 0 && st.filter((x: string) => x === 'ingetrokken').length === 8 && st.filter((x: string) => x === 'gebruikt').length === 2, intrek.body.slice(0, 200));
+    const naIntrek = await id(A8, '/api/owner/access/stap-op', { methode: 'herstelcode', code: codes0[4] });
+    check('na intrekken: een eerder geldige code werkt niet meer', naIntrek.status >= 400 && naIntrek.data.stepUp !== 'herstelcode', naIntrek.body.slice(0, 120));
     // Google-step-up vanaf id.tarasevych.com komt terug op dezelfde pagina (hervatten); een gewone aanmelding op id → hub.
     const terug = await A6.aanmelden(`sub-a-${T}`, aMail, { intent: 'step-up', service: 'identity', returnTo: 'https://id.tarasevych.com/methods?lang=uk' });
-    check('Google-step-up op id: returnTo = dezelfde pagina (/methods)', terug.cb.data.returnTo === 'https://id.tarasevych.com/methods?lang=uk' && terug.authUrl.searchParams.get('prompt') === 'login' && terug.authUrl.searchParams.get('max_age') === '0', `${terug.cb.status} ${terug.cb.body.slice(0, 200)}`);
+    check('Google-step-up op id: returnTo = dezelfde pagina (/methods)', terug.cb.data.returnTo === 'https://id.tarasevych.com/methods?lang=uk' && terug.authUrl.searchParams.get('prompt') === 'select_account' && terug.authUrl.searchParams.get('max_age') === '0', `${terug.cb.status} ${terug.cb.body.slice(0, 200)}`);
     check('Google-step-up op id: daarna bevestigd voor die sessie', (await id(A6, `${P}/registreren/opties`)).status === 200);
     const vreemd = await A6.aanmelden(`sub-a-${T}`, aMail, { intent: 'step-up', service: 'identity', returnTo: 'https://evil.example/methods' });
     check('Google-step-up op id: returnTo naar een andere origin geweigerd', vreemd.start.data.error === 'OWNER_TRANSACTION_RETURN_TO_INVALID' || vreemd.start.status >= 400, vreemd.start.body.slice(0, 120));

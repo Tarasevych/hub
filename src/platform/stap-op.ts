@@ -2,7 +2,7 @@
 // (passkey toevoegen, herstelcodes, beheeracties, export…). client.ts vraagt dan hier om bevestiging; daarna wordt het verzoek
 // één keer herhaald. Geen window.prompt/confirm/alert meer: een eigen venster zoals GitHub «Confirm access» (sudo mode), in één
 // taal (de taal van de pagina), met alleen de manieren die deze gebruiker echt heeft: passkey, code uit de authenticator-app,
-// herstelcode en altijd opnieuw inloggen bij Google (prompt=login, max_age=0). Na een geslaagde bevestiging geldt die 5 minuten
+// herstelcode en altijd opnieuw inloggen bij Google (prompt=select_account, max_age=0; RUNBOOK §13.8). Na een geslaagde bevestiging geldt die 5 minuten
 // voor deze sessie (backend/stap-op.ts).
 //
 // Hervatten na Google: Google verlaat de pagina. Vóór het doorsturen bewaren we in sessionStorage alleen WAT de gebruiker wilde
@@ -27,6 +27,32 @@ export const paginaTaal = (): 'uk' | 'nl' => (typeof document !== 'undefined' &&
 export const stapOpUitleg = () => (paginaTaal() === 'nl'
   ? 'Voor deze actie is een bevestiging nodig. Probeer het opnieuw.'
   : 'Для цієї дії потрібне підтвердження. Спробуйте ще раз.');
+
+// ------------------------------------------------------------------------------------------------ uitkomst na Google
+// Mislukt de Google-step-up (ander account, geen verse bevestiging…), dan zet de callback-pagina de reden hier neer en
+// stuurt terug naar de pagina. Het venster toont die reden dan meteen, in plaats van stil opnieuw te openen.
+export const STAP_OP_FOUT_SLEUTEL = 'mijn-ruimte-stap-op-fout';
+const REDEN = /^[A-Z][A-Z0-9_]{2,60}$/;
+export function bewaarStapOpFout(reden: string) {
+  try { sessionStorage.setItem(STAP_OP_FOUT_SLEUTEL, JSON.stringify({ reden: REDEN.test(reden) ? reden : 'GOOGLE_CALLBACK_FAILED', at: Date.now() })); } catch { /* negeren */ }
+}
+export function neemStapOpFout(): string {
+  try {
+    const raw = sessionStorage.getItem(STAP_OP_FOUT_SLEUTEL);
+    if (!raw) return '';
+    sessionStorage.removeItem(STAP_OP_FOUT_SLEUTEL);
+    const r = JSON.parse(raw) as { reden?: string; at?: number };
+    return r && typeof r.at === 'number' && Date.now() - r.at < HERVAT_MAX_MS && REDEN.test(String(r.reden || '')) ? String(r.reden) : '';
+  } catch { return ''; }
+}
+let terugVanGoogle = false;
+/** Voor het venster: waarom vragen we opnieuw? Eenmalig: de bewaarde reden, of — als we net van Google terug zijn en de
+ * server tóch opnieuw om bevestiging vraagt — STEP_UP_GOOGLE_NIET_BEVESTIGD. '' = gewoon openen. */
+export function neemTerugMelding(): string {
+  const f = neemStapOpFout();
+  const terug = terugVanGoogle; terugVanGoogle = false;
+  return f || (terug ? 'STEP_UP_GOOGLE_NIET_BEVESTIGD' : '');
+}
 
 // ------------------------------------------------------------------------------------------------ hervatten
 let lopende: HervatIntentie | null = null;
@@ -60,6 +86,7 @@ export function neemHervat(actie: string): HervatIntentie | null {
   const r = leesHervat();
   if (!r || r.actie !== actie || r.pad.split('?')[0] !== location.pathname) return null;
   try { sessionStorage.removeItem(HERVAT_SLEUTEL); } catch { /* negeren */ }
+  terugVanGoogle = true;
   return { actie: r.actie, gegevens: r.gegevens || {} };
 }
 /** Algemene terugkeer (geen bekende actie): eenmalig een korte melding «Доступ підтверджено — повторіть дію». */
