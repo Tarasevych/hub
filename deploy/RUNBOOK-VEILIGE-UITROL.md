@@ -809,6 +809,25 @@ Wat verandert voor de gebruiker:
 
 Controle na uitrol: `/menu` openen → «Кольоровий» kiezen → in een tweede browser hetzelfde account → kleur staat er ook.
 
+### 14.1 Fase A (na review van Pavlo, 9-10-2026) — cirkels, e-mailsubmenu, kleuren per onderdeel
+
+**Geen migratie, geen serverwijziging** (alleen CSS/TS in de frontend + tests).
+- Smal: ELK item is een cirkel zonder tekst — ook het actieve subitem en «Написати лист» (36 px, gevuld in de kleur van E-mail;
+  de animatie envelop → pen bij aanwijzen blijft). Oorzaak van de oude «pil met afgekapte tekst»: de e-mailknop had geen smalle stand.
+- Smal: de iconen van het e-mailsubmenu waren verborgen (CSS verborg elk kind behalve `.canonical-menu-icon-slot`) en stonden
+  verschoven (de 119 px brede knop maakte de kolom breder). Nu: alleen tekst/tellers verborgen, icoon gecentreerd in de strook.
+- Kleuren per onderdeel (conventies): Мій простір teal, ШІ violet, Пошта blauw, Хмара hemelsblauw, GitHub grafiet (donker: lichtgrijs),
+  Розумний будинок oranje, MCP groen, Налаштування grijs, API roze, Адміністрування rood (+ taken limoen, agenda indigo, notities oker).
+  Bron: `ACCENT_KLEUREN` in `shared/menu-model.ts` (= palet in `src/menu-v2.css`, test bewaakt), `--a` hoofd, `--a2` sub (lichtere tint).
+  Класичний: kleur alleen bij aanwijzen en actief; Кольоровий: altijd. Kleur hoort bij de HERKOMST (`itemAccent(id)`), dus kopieën
+  en verplaatste items houden in fase 2 hun oorspronkelijke kleur.
+- Breed: de verbindingslijn van submenu's is 2 px in een tint van het onderdeel, nu ook bij E-mail.
+- Tests: `tests/eenheid/menu-v2.test.ts` (contrast ≥ 3:1 licht/donker, CIEDE2000 ≥ 12 tussen hoofdonderdelen en ≥ 7 tussen alle,
+  zelfde kleurtoon sub/hoofd, herkomst), `tests/e2e/menu-v2-kleuren.e2e.ts` (cirkels ≤ 44 px binnen de rail, iconen zichtbaar en
+  gecentreerd, geen tekst, kleuren uit het model; screenshots menu-12…menu-18).
+
+Controle na uitrol: Ctrl+F5 → menu «Завжди згорнута» → Пошта: alle subitems als cirkels met icoon; «Налаштування → Меню» → Кольоровий.
+
 Stage 2 (nog geen UI): `shared/menu-model.ts` — stabiele ids `svc:<dienst>` / `pg:<dienst>/<pagina>`, standaardplaatsing uit
 `MENU_PAGINAS` (gelijk aan `canonical-service.js`, door een test bewaakt), overrides per item (`zichtbaar`, `volgorde`, `plaats`,
 `ouder`, `icoon`), kopieën (`k-…` → `zijbalk`/`snelbalk`/`start`), dock (`links|rechts|boven|onder`, transparantie 0–60, vergroting),
