@@ -211,6 +211,32 @@ export async function main(): Promise<number> {
     await page.locator('[data-zijbalk-paneel] [data-zijbalk-modus="auto"]').click();
     await page.waitForTimeout(800);
     check('terug naar «auto»: aanwijzen klapt weer open', await (async () => { await page.mouse.move(400, 300); await page.waitForTimeout(200); await page.mouse.move(28, 300); await page.waitForTimeout(700); return await page.locator('main.canonical-chrome').getAttribute('data-sidebar-state') === 'hover-expanded'; })());
+
+    // ---------------------------------------------------------------- 9. «Сесії» en «Налаштувати меню»: knoppen en kop in de sitestijl
+    await open(page, '/sessions');
+    const ov = page.locator('[data-sessies-overzicht]');
+    await ov.waitFor({ timeout: 15000 });
+    await page.waitForTimeout(400);
+    const stijl = await page.evaluate(() => {
+      const css = (e: Element | null) => e ? getComputedStyle(e) : null;
+      // inline-flex binnen een flexcontainer wordt «flex» (blockificatie); het gaat om flex-rij met icoon naast de tekst.
+      const rij = (b: HTMLElement | null) => { if (!b) return null; const s = b.querySelector('svg')!.getBoundingClientRect(), r = b.getBoundingClientRect(), c = css(b)!; return { display: c.display, richting: c.flexDirection, radius: c.borderRadius, hoogte: r.height, svgNaastTekst: s.top >= r.top && s.bottom <= r.bottom && r.height < 52 }; };
+      const sum = document.querySelector('.sessies-overzicht .security-session-summary')!;
+      const st = sum.querySelector('strong')!.getBoundingClientRect(), sm = sum.querySelector('small')!.getBoundingClientRect();
+      return { gevaar: rij(document.querySelector<HTMLElement>('[data-sessies-alle-andere]')), vernieuw: rij(sum.querySelector<HTMLElement>(':scope>button')), titelOnder: sm.top >= st.bottom - 1, h1: css(document.querySelector('.settings-center>header h1'))!.fontFamily, sub: document.querySelector('[data-settings-subtitle]')?.textContent || '', titel: document.querySelector('.settings-center>header h1')?.textContent || '' };
+    });
+    check('«Завершити всі інші»: echte knop (flex-rij, icoon naast tekst, afgerond)', /flex$/.test(stijl.gevaar?.display || '') && stijl.gevaar.richting === 'row' && stijl.gevaar.svgNaastTekst && stijl.gevaar.radius === '12px', JSON.stringify(stijl.gevaar));
+    check('«Оновити»: secundaire knop (flex-rij, icoon naast tekst, rand)', /flex$/.test(stijl.vernieuw?.display || '') && stijl.vernieuw.richting === 'row' && stijl.vernieuw.svgNaastTekst && stijl.vernieuw.radius === '12px', JSON.stringify(stijl.vernieuw));
+    check('«Керування входами й пристроями»: uitleg op een eigen regel eronder', stijl.titelOnder);
+    check('kop «Сесії та пристрої»: schreefloos en paginaspecifieke ondertitel', stijl.titel === 'Сесії та пристрої' && !/Georgia|Times/.test(stijl.h1) && /Де й коли виконано вхід/.test(stijl.sub) && !/Налаштування поточного облікового запису/.test(stijl.sub), `${stijl.h1} | ${stijl.sub}`);
+    await page.mouse.move(640, 400);
+    await page.screenshot({ path: `${UIT}/menu-10-sessies-knoppen.png` });
+    await open(page, '/menu');
+    await page.locator('[data-icoon-stijl-keuze]').waitFor({ timeout: 15000 });
+    await page.mouse.move(640, 400); await page.waitForTimeout(400);
+    const menuKop = await page.evaluate(() => ({ h1: getComputedStyle(document.querySelector('.settings-center>header h1')!).fontFamily, titel: document.querySelector('.settings-center>header h1')?.textContent || '', sub: document.querySelector('[data-settings-subtitle]')?.textContent || '' }));
+    check('kop «Налаштувати меню»: schreefloos en paginaspecifieke ondertitel', menuKop.titel === 'Налаштувати меню' && !/Georgia|Times/.test(menuKop.h1) && /Вигляд і поведінка бічної панелі/.test(menuKop.sub), JSON.stringify(menuKop));
+    await page.screenshot({ path: `${UIT}/menu-11-menu-instellingen.png` });
     check('geen consolefouten', fouten.length === 0, fouten.slice(0, 6).join(' | '));
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));

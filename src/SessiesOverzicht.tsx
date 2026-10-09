@@ -32,7 +32,7 @@ export default function SessiesOverzicht(p:Props){
       {!bevestig?<button type='button' className='identity-danger' data-sessies-alle-andere onClick={()=>setBevestig(true)} disabled={bezig||p.busy}><LogOut/>{tr('Завершити всі інші','Alle andere beëindigen')}</button>
       :<div className='sessies-bevestig' data-bevestig='alle-andere'><p>{tr('Завершити всі інші входи (інші браузери, вкладки, запам’ятовані пристрої) і всі гостьові сесії? Цей вхід залишиться.','Alle andere aanmeldingen (andere browsers, tabbladen, onthouden apparaten) en alle gastsessies beëindigen? Deze aanmelding blijft.')}</p>
         <button type='button' className='identity-danger' onClick={()=>void alleAndere()} disabled={bezig}><LogOut/>{tr('Так, завершити','Ja, beëindigen')}</button>
-        <button type='button' onClick={()=>setBevestig(false)} disabled={bezig}>{tr('Скасувати','Annuleren')}</button></div>}
+        <button type='button' className='sessies-secundair' onClick={()=>setBevestig(false)} disabled={bezig}>{tr('Скасувати','Annuleren')}</button></div>}
       {melding&&<p className='sessies-melding' role='status'>{melding}</p>}
     </section>
     <SecuritySessionsPanel tr={tr} sessions={p.sessions} loading={p.loading} busy={p.busy||bezig} onRefresh={vernieuw} onRevoke={p.onRevoke} onRevokeAll={p.onRevokeAll} onShareLocation={()=>{}}/>
