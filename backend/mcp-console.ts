@@ -18,6 +18,8 @@ import { auditToevoegen } from "../server/platform/audit";
 import { getPool } from "../server/platform/pg";
 import type { RouterMiddleware } from "../server/platform/router";
 import { alsGebruiker } from "./ai-grants";
+import { huidigeNamens } from "./mcp-namens";
+import { gedelegeerdeSessie } from "./site-dispatch";
 import { OPDRACHT_STANDAARD, OPDRACHT_WERKWOORDEN, isWerkwoord, leesOpdrachtResultaat, voerOpdrachtUit, type Werkwoord } from "./server-beheer";
 import { UITROL_TOOL_NAMEN, UitrolFout, isGoedkeurPoging, voerUitrolToolUit, type Onderwerp } from "./uitrol-goedkeuring";
 
@@ -357,12 +359,22 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       if (isOwner(auth.user) && !imported.has(auth.user.id)) { imported.add(auth.user.id); await importLegacyConsole(auth.user.id).catch(() => null); }
       return run(ctx, auth);
     }) as RouterMiddleware;
-  const who = (auth: SessionOk) => auth.user.email || auth.user.id;
+  /**
+   * Wie deed het? Via MCP (Claude, Grok, …) staat de AI-verbinding voorop, de eigenaar erachter; anders de console zelf.
+   * «Kan niet bepalen wie» bestaat niet meer: een gedelegeerde aanroep zonder namens heet expliciet «mcp · onbekende klant».
+   */
+  const wie = (ctx: Ctx | null, auth: SessionOk): { transport: string; agent: string } => {
+    const email = auth.user.email || auth.user.id;
+    const n = huidigeNamens();
+    if (n) return { transport: "mcp", agent: `${n.client}${n.grantId ? ` #${n.grantId.slice(0, 8)}` : ""} → ${email}` };
+    if (ctx && gedelegeerdeSessie(ctx.event)) return { transport: "mcp", agent: `onbekende MCP-klant → ${email}` };
+    return { transport: "console", agent: email };
+  };
   const opdrachtAntwoord = async (auth: SessionOk, w: Werkwoord) => {
     if (!(await readPerms())[`opdracht.${w}`]) return error(`PERMISSION_OFF:opdracht.${w}`, 403);
     const started = Date.now();
     const r = await voerOpdrachtUit(w);
-    await logCall(auth.user.id, { method: "server.opdracht", detail: `${w} ${r.code}`, transport: "console", agent: who(auth), ok: r.ok, ms: Date.now() - started });
+    await logCall(auth.user.id, { method: "server.opdracht", detail: `${w} ${r.code}`, ...wie(null, auth), ok: r.ok, ms: Date.now() - started });
     if (w !== "status" && w !== "releases") {
       await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: `mcp_server_opdracht_${w.replace("-", "_")}`, type: "beveiliging", result: r.ok ? "ok" : "failure", details: { werkwoord: w, code: r.code } }).catch(() => undefined);
     }
@@ -370,11 +382,11 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
   };
 
   return {
-    "POST /api/mcp/health": [gate("owner", {}, async (_ctx, auth) => {
+    "POST /api/mcp/health": [gate("owner", {}, async (ctx, auth) => {
       if (!(await readPerms()).read) return error("PERMISSION_OFF:read", 403);
       const started = Date.now();
       const probes = await Promise.all(HOSTS.map(([name, url]) => probeOne(name, url)));
-      await logCall(auth.user.id, { method: "probe", detail: String(probes.filter((r) => r.ok).length), transport: "console", agent: who(auth), ok: true, ms: Date.now() - started });
+      await logCall(auth.user.id, { method: "probe", detail: String(probes.filter((r) => r.ok).length), ...wie(ctx, auth), ok: true, ms: Date.now() - started });
       return json({ probes });
     })],
     "POST /api/mcp/board": [gate("member", {}, async (ctx, auth) => {
@@ -401,7 +413,7 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
           [auth.user.id, name, raw.slice(0, 12), sha(raw)])).rows[0];
       });
       if (!row) return error("TOKEN_LIMIT_REACHED", 409);
-      await logCall(auth.user.id, { method: "token.issue", detail: name, transport: "console", agent: who(auth), ok: true, ms: 0 });
+      await logCall(auth.user.id, { method: "token.issue", detail: name, ...wie(ctx, auth), ok: true, ms: 0 });
       await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_issued", type: "ai", result: "ok", details: { tokenId: row.id, name } }).catch(() => undefined);
       return json({ token: { ...tokenOut(row), token: raw } });
     })],
@@ -418,11 +430,11 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       const started = Date.now();
       try {
         const result = await runTool(auth.user.id, isOwner(auth.user), name, args, "operator");
-        await logCall(auth.user.id, { method: "tools/call", detail: name, transport: "console", agent: who(auth), ok: true, ms: Date.now() - started });
+        await logCall(auth.user.id, { method: "tools/call", detail: name, ...wie(ctx, auth), ok: true, ms: Date.now() - started });
         return json({ ok: true, result });
       } catch (err) {
         const message = err instanceof Error ? err.message : "TOOL_FAILED";
-        await logCall(auth.user.id, { method: "tools/call", detail: `${name} ${message}`, transport: "console", agent: who(auth), ok: false, ms: Date.now() - started });
+        await logCall(auth.user.id, { method: "tools/call", detail: `${name} ${message}`, ...wie(ctx, auth), ok: false, ms: Date.now() - started });
         return json({ ok: false, error: message }, 400);
       }
     })],

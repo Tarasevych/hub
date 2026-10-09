@@ -1,7 +1,8 @@
 // Журнал: één tijdlijn van alles rond agents (tokens, apparaten, extensie, toestemmingen, AI aan/uit, noodstop), uit app.audit.
 // Dicht: één zin + onderwerp + relatieve tijd (exacte tijd bij aanwijzen). Open: actiecode, id's, ip-hash, apparaat, ruwe details.
 import { useMemo, useState, type ReactElement } from 'react';
-import { Fingerprint, Globe, KeyRound, Monitor, OctagonX, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
+import { Bot, Calendar, Camera, CircleHelp, Compass, Container, Eye, FilePen, FileText, Fingerprint, Gauge, GitBranch, Globe, HardDrive, Kanban, KeyRound, Mail, Monitor, MousePointerClick, OctagonX, Rocket, Search, Server, ShieldCheck, Sparkles, Stethoscope, Terminal, Wrench } from 'lucide-react';
+import { SOORT_INFO, actieSoort, actieZin, groepeerWerk, telling, type ActieSoort, type WerkSessie } from '../../shared/mcp-acties';
 import type { Tr } from '../mcp-ui';
 import { CAP_TEXT } from '../AiToestemmingen';
 import { datum, Knop, Rij, Tech, Tijd, exact } from './ui';
@@ -9,12 +10,19 @@ import { foutTekst } from './fouten';
 import { useJournaal, type JournaalItem } from './data';
 
 export const SOORTEN: Array<[string, string, string]> = [
-  ['', 'Усі події', 'Alle gebeurtenissen'], ['ai', 'Підключення ШІ', 'AI-verbindingen'], ['token', 'Токени', 'Tokens'], ['apparaat', 'Пристрої', 'Apparaten'],
+  ['', 'Усі події', 'Alle gebeurtenissen'], ['werk', 'Дії ШІ (що робив агент)', 'Acties van AI (wat de agent deed)'], ['ai', 'Підключення ШІ', 'AI-verbindingen'], ['token', 'Токени', 'Tokens'], ['apparaat', 'Пристрої', 'Apparaten'],
   ['browser', 'Браузер (ШІ увімк./вимк.)', 'Browser (AI aan/uit)'], ['toestemming', 'Дозволи', 'Toestemmingen'], ['noodstop', 'Стоп і блокування', 'Stop en blokkeren'], ['hulpmiddelen', 'Інструменти', 'Hulpmiddelen'],
   ['toegang', 'Права й ключі', 'Rechten en sleutels'],
 ];
-const ICOON: Record<string, ReactElement> = { ai: <Sparkles />, token: <KeyRound />, apparaat: <Monitor />, browser: <Globe />, toestemming: <ShieldCheck />, noodstop: <OctagonX />, hulpmiddelen: <Wrench />, toegang: <Fingerprint /> };
+const ICOON: Record<string, ReactElement> = { werk: <Bot />, ai: <Sparkles />, token: <KeyRound />, apparaat: <Monitor />, browser: <Globe />, toestemming: <ShieldCheck />, noodstop: <OctagonX />, hulpmiddelen: <Wrench />, toegang: <Fingerprint /> };
 const s = (v: unknown) => (typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '');
+/** Icoon per soort actie van een AI (zelfde soorten als shared/mcp-acties.ts). */
+const ACTIE_ICOON: Record<ActieSoort, ReactElement> = {
+  bekijken: <Eye />, screenshot: <Camera />, diagnose: <Stethoscope />, navigeren: <Compass />, invoer: <MousePointerClick />, lezen: <FileText />, schrijven: <FilePen />,
+  commando: <Terminal />, docker: <Container />, meten: <Gauge />, mail: <Mail />, agenda: <Calendar />, schijf: <HardDrive />, github: <GitBranch />, bord: <Kanban />,
+  server: <Server />, zoeken: <Search />, uitrol: <Rocket />, onbekend: <CircleHelp />,
+};
+const soortVan = (d: Record<string, unknown>): ActieSoort => (s(d.soort) in SOORT_INFO ? s(d.soort) as ActieSoort : actieSoort(s(d.tool)));
 const capNaam = (c: unknown, tr: Tr) => { const t = CAP_TEXT[s(c) as keyof typeof CAP_TEXT]; return t ? tr(t[0], t[1]) : s(c); };
 const REDEN: Record<string, [string, string]> = {
   user: ['вами', 'door u'], client: ['самим клієнтом', 'door de client zelf'], refresh_reuse: ['автоматично: повторне використання токена (можлива крадіжка)', 'automatisch: hergebruik van een token (mogelijke diefstal)'],
@@ -28,6 +36,7 @@ export function zin(e: JournaalItem, tr: Tr): string {
   const d = e.details, n = e.onderwerp?.naam || s(d.name) || s(d.clientName) || '—';
   const reden = (r: unknown) => { const x = REDEN[s(r)] ?? (s(r).startsWith('preset:') ? ['замінено набором', 'vervangen door een set'] as [string, string] : null); return x ? ` (${tr(x[0], x[1])})` : ''; };
   switch (e.actie) {
+    case 'owner.mcp.tool': return `«${n}»: ${actieZin(s(d.tool), s(d.doel) || undefined, tr('uk', 'nl') as 'uk' | 'nl')}`;
     case 'owner.mcp.grant.approved': return tr('Ви дозволили ШІ-клієнту підключитися', 'U stond een AI-client toe te verbinden');
     case 'owner.mcp.grant.denied': return tr('Ви відхилили запит ШІ на підключення', 'U weigerde een verzoek van een AI om te verbinden');
     case 'owner.mcp.grant.connected': return tr(`Підключено ШІ «${n}» (OAuth)`, `AI «${n}» verbonden (OAuth)`);
@@ -74,16 +83,50 @@ export function zin(e: JournaalItem, tr: Tr): string {
     default: return e.actie;
   }
 }
+/** Eén werksessie van een AI: «Claude працював: 12 дій — 6 читань файлів чи тек · 3 перевірки стану». */
+function sessieTitel(r: WerkSessie<JournaalItem>, tr: Tr): string {
+  const taal = tr('uk', 'nl') as 'uk' | 'nl';
+  const naam = r.items[0]?.onderwerp?.naam || r.klant || '—';
+  const n = r.items.length;
+  const kop = tr(`«${naam}» працював: ${n} ${n % 10 === 1 && n % 100 !== 11 ? 'дія' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'дії' : 'дій'}`, `«${naam}» werkte: ${n} ${n === 1 ? 'actie' : 'acties'}`);
+  const delen = r.tellingen.slice(0, 4).map((t) => telling(t.aantal, t.soort, taal));
+  const rest = r.tellingen.length > 4 ? tr(` та ще ${r.tellingen.length - 4} види`, ` en nog ${r.tellingen.length - 4} soorten`) : '';
+  return `${kop} — ${delen.join(' · ')}${rest}${r.mislukt ? tr(` · невдалих: ${r.mislukt}`, ` · mislukt: ${r.mislukt}`) : ''}`;
+}
+const tijdKort = (ms: number) => { try { return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(ms)); } catch { return new Date(ms).toISOString().slice(11, 16); } };
+
 const toon = (e: JournaalItem) => (/revoked|stop_all|blocked|expired|disabled|denied|ingetrokken|verwijderd/.test(e.actie) ? 'bad' : /paired|connected|issued|enabled|added|approved|updated/.test(e.actie) ? 'ok' : 'info');
 
 export function JournaalLijst({ tr, items, compact = false }: { tr: Tr; items: JournaalItem[]; compact?: boolean }) {
   const [open, setOpen] = useState('');
+  const regels = useMemo(() => groepeerWerk(items), [items]);
   if (!items.length) return <p className='ag-leeg'>{tr('Поки що подій немає.', 'Nog geen gebeurtenissen.')}</p>;
+  const taal = tr('uk', 'nl') as 'uk' | 'nl';
   return (
     <ul className={`ag-lijst ag-journaal${compact ? ' is-compact' : ''}`} data-journaal={items.length}>
-      {items.map((e) => (
+      {regels.map((r) => r.soort === 'sessie' && r.items.length > 1 ? (
+        <Rij key={r.id} id={r.id} open={open === r.id} onToggle={() => setOpen(open === r.id ? '' : r.id)} data={{ actie: 'werksessie', soort: 'werk', toon: r.mislukt ? 'bad' : 'info', acties: String(r.items.length) }}
+          logo={<span className='ag-journaal-icoon ag-info'><Bot /></span>}
+          titel={sessieTitel(r, tr)}
+          status={<><span className='ag-chip' title={tr('Підключення ШІ, від імені якого виконано дії', 'AI-verbinding namens welke de acties liepen')}>{r.items[0]?.onderwerp?.naam || r.klant}</span><time className='ag-tijd' dateTime={new Date(r.tot).toISOString()} title={`${exact(r.van)} — ${exact(r.tot)}`}>{tijdKort(r.van)}–{tijdKort(r.tot)}</time></>}>
+          <ol className='ag-werkstappen' aria-label={tr('Дії по черзі', 'Acties op volgorde')}>
+            {r.stappen.map(({ item, keer }) => (
+              <li key={item.id} className={item.resultaat === 'failure' ? 'is-mislukt' : ''} data-tool={s(item.details.tool)}>
+                <span className='ag-werkstap-icoon' aria-hidden='true'>{ACTIE_ICOON[soortVan(item.details)]}</span>
+                <span className='ag-werkstap-tekst'>{actieZin(s(item.details.tool), s(item.details.doel) || undefined, taal)}{keer > 1 ? <b className='ag-werkstap-keer'> ×{keer}</b> : null}{item.resultaat === 'failure' ? <em className='ag-werkstap-fout'>{tr(' — не вдалося', ' — mislukt')}</em> : null}</span>
+                <time className='ag-tijd' dateTime={new Date(item.at).toISOString()} title={exact(item.at)}>{tijdKort(item.at)}</time>
+              </li>
+            ))}
+          </ol>
+          <Tech rijen={[
+            [tr('Підключення ШІ', 'AI-verbinding'), <><code>{s(r.items[0]?.details.grantId) || '—'}</code>{r.klant ? ` · ${r.klant}` : ''}</>],
+            [tr('Проміжок', 'Periode'), `${exact(r.van)} — ${exact(r.tot)}`],
+            [tr('Записів журналу', 'Logregels'), String(r.items.length)],
+          ]} />
+        </Rij>
+      ) : (() => { const e = r.soort === 'sessie' ? r.items[0] : r.item; return (
         <Rij key={e.id} id={e.id} open={open === e.id} onToggle={() => setOpen(open === e.id ? '' : e.id)} data={{ actie: e.actie, soort: e.soort, toon: toon(e) }}
-          logo={<span className={`ag-journaal-icoon ag-${toon(e)}`}>{ICOON[e.soort] ?? <Monitor />}</span>}
+          logo={<span className={`ag-journaal-icoon ag-${toon(e)}`}>{e.actie === 'owner.mcp.tool' ? ACTIE_ICOON[soortVan(e.details)] : ICOON[e.soort] ?? <Monitor />}</span>}
           titel={zin(e, tr)}
           status={<>{e.onderwerp ? <span className='ag-chip'>{e.onderwerp.naam || e.onderwerp.id.slice(0, 8)}</span> : null}<Tijd ms={e.at} tr={tr} /></>}>
           <Tech rijen={[
@@ -98,7 +141,7 @@ export function JournaalLijst({ tr, items, compact = false }: { tr: Tr; items: J
           ]} />
           {Object.keys(e.details).length ? <pre className='ag-ruw' aria-label={tr('Технічні дані', 'Technische gegevens')}>{JSON.stringify(e.details, null, 2)}</pre> : null}
         </Rij>
-      ))}
+      ); })())}
     </ul>
   );
 }

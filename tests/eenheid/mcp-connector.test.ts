@@ -219,6 +219,17 @@ export async function main(): Promise<number> {
       && slechteActie.result.isError === true && /Invalid "action"/.test(slechteActie.result.content[0].text)
       && slechteVlag.result.isError === true && /include_stopped/.test(slechteVlag.result.content[0].text));
     check('tools/call: onbekend hulpmiddel geeft een foutresultaat, geen crash', body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 8, method: 'tools/call', params: { name: 'rm_rf' } })).result.isError === true);
+    // Wie deed wat: elke aanroep staat in app.audit met de AI-verbinding (client + grantId), soort en een veilig doel.
+    await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 45, method: 'tools/call', params: { name: 'machine_read_file', arguments: { path: 'T:\\notes\\token=ghp_abcdefghijklmnopqrstuvwxyz0123456789AB.txt' } } });
+    const laatste = async (tool: string) => (await sys.query(`SELECT details, result FROM app.audit WHERE owner_id = $1 AND action = 'owner.mcp.tool' AND details->>'tool' = $2 ORDER BY seq DESC LIMIT 1`, [A, tool])).rows[0];
+    const lees = await laatste('machine_read_file');
+    check('audit owner.mcp.tool: wie (client + grantId van deze verbinding), soort en veilig doel; geen token in het doel',
+      lees?.details.client === 'Claude' && typeof lees?.details.grantId === 'string' && lees.details.grantId.length > 8 && lees.details.soort === 'lezen'
+      && /notes/.test(lees.details.doel) && !/ghp_/.test(lees.details.doel) && lees.result === 'failure', JSON.stringify(lees));
+    const auditOnbekend = await laatste('rm_rf');
+    check('audit owner.mcp.tool: onbekend hulpmiddel eerlijk bij naam, soort «onbekend», geen doel', auditOnbekend?.details.soort === 'onbekend' && !('doel' in auditOnbekend.details), JSON.stringify(auditOnbekend));
+    const auditLijstRij = await laatste('machine_list');
+    check('audit owner.mcp.tool: geslaagde aanroep zonder argumenten heeft soort «meten» en resultaat success', auditLijstRij?.details.soort === 'meten' && auditLijstRij.result === 'success', JSON.stringify(auditLijstRij));
     const batch = body(await c.rpcPost(`Bearer ${t1.j.access_token}`, JSON.stringify([{ jsonrpc: '2.0', id: 1, method: 'ping' }, { jsonrpc: '2.0', method: 'notifications/initialized' }])));
     check('MCP: een batch beantwoordt alleen de verzoeken met id', Array.isArray(batch) && batch.length === 1 && batch[0].id === 1);
 

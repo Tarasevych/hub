@@ -4,6 +4,7 @@ import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { mcpConsoleRoutes } from '../../backend/mcp-console';
+import { metNamens } from '../../backend/mcp-namens';
 import { closePool, getPool } from '../../server/platform/pg';
 import { checker } from './hulp/nep-google';
 
@@ -94,6 +95,17 @@ export async function main(): Promise<number> {
     const zonderId = await call('POST /api/mcp/archive/file', OWNER, { name: 'archief-laatste.tar.age' });
     check('downloadId: werkt één keer, levert alleen het vaste age-bestand; zonder id geen download',
       eerst.status === 200 && eerst.filePath === path.join(uit, 'archief-laatste.tar.age') && nogmaals.status === 403 && zonderId.status === 403);
+    // Wie staat er in het verkeerslog? Via MCP: de AI-verbinding vóór het account (transport mcp); rechtstreeks: de console.
+    steppedUp = true;
+    await metNamens({ client: 'Claude', grantId: '1234567890abcdef' }, () => call('POST /api/mcp/tokens', USER, { name: 'via-mcp' }));
+    await call('POST /api/mcp/tokens', USER, { name: 'rechtstreeks' });
+    steppedUp = false;
+    const log = ((await call('POST /api/mcp/traffic', USER)).data?.log ?? []) as Array<{ method: string; detail: string; transport: string; agent: string }>;
+    const viaMcp = log.find((r) => r.method === 'token.issue' && r.detail === 'via-mcp'), direct = log.find((r) => r.method === 'token.issue' && r.detail === 'rechtstreeks');
+    check('verkeerslog: actie via MCP staat op naam van de AI («Claude #12345678 → u@x», transport mcp); rechtstreeks op de console',
+      viaMcp?.transport === 'mcp' && viaMcp.agent === 'Claude #12345678 → u@x' && direct?.transport === 'console' && direct.agent === 'u@x', JSON.stringify([viaMcp, direct]));
+    const gedelegeerd = await call('POST /api/mcp/tokens', USER, { name: 'zonder-namens' });
+    check('(controle) zonder step-up blijft de route geweigerd, ook binnen dezelfde test', gedelegeerd.status === 403);
   } catch (err) {
     check('onverwachte fout', false, String((err as Error)?.stack || err).slice(0, 400));
   } finally {
