@@ -2,7 +2,8 @@ import {createHash,createHmac,randomBytes,scrypt,timingSafeEqual} from 'node:cry
 import {promisify} from 'node:util';
 import {db,clearLoginFailures,envKey32,isOwnerEmail,openWithEnvKey,pepperedHash,pogingReserveren,sealWithEnvKey} from '../server/platform';
 import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './google-contour';
-import {stapOpFout,totpStapOpVastleggen,type StapOpAuth} from './stap-op';
+import {passkeyStapOpGeldig,stapOpFout,totpStapOpVastleggen,type StapOpAuth} from './stap-op';
+import {passkeyAantal} from './passkeys';
 import {meld} from './melder';
 
 const scryptAsync=promisify(scrypt) as (password:string,salt:Buffer|string,keylen:number,options?:import('node:crypto').ScryptOptions)=>Promise<Buffer>;
@@ -16,7 +17,8 @@ type Door={userId:string;beheer:boolean};
 type Binding={id:string;userId:string;method:LoginMethodId;providerSubject:string;email:string;status:'active'|'disabled'|'pending';lastUsedAt:number;createdAt:number;updatedAt:number}&Ontkoppeld;
 type PasswordRecord={id:string;userId:string;algorithm:'scrypt';n:number;r:number;p:number;salt:string;hash:string;mustChange:boolean;createdAt:number;updatedAt:number}&Ontkoppeld;
 type TotpRecord={id:string;userId:string;secret?:string;secretEnc?:string;confirmed:boolean;createdAt:number;updatedAt:number;/** fase 3: laatst gebruikt tijdvak (replaybescherming) */lastStep?:number;/** audit-fix 2: nieuw geheim tijdens vervangen; het oude blijft geldig tot dit bevestigd is */pendingSecretEnc?:string;pendingAt?:number};
-type RecoveryRecord={id:string;userId:string;hashes:string[];hashVersion?:number;createdAt:number;remaining:number};
+/** bekekenOp: de gebruiker bevestigde «Я зберіг коди» (de codes zelf worden maar één keer getoond). */
+type RecoveryRecord={id:string;userId:string;hashes:string[];hashVersion?:number;createdAt:number;remaining:number;bekekenOp?:number};
 type PhoneRecord={id:string;userId:string;phone:string;verified:boolean;createdAt:number;updatedAt:number}&Ontkoppeld;
 type WebauthnRecord={id:string;userId:string;credentialId:string;label:string;createdAt:number};
 type PolicyRecord={id:string;tenantKey:string;enabled:Partial<Record<MethodId,boolean>>;mfa:'optional'|'required';updatedAt:number};
@@ -295,6 +297,7 @@ export async function accessSnapshot(user:{id:string;email:string;role:string},a
     resolveGoogleContour(),policyOf(),bindingsFor(user.id),passwordFor(user.id),totpFor(user.id),recoveryFor(user.id),phoneFor(user.id),webauthnFor(user.id),googleIdentities(user.id)
   ]);
   const usable=await usableLoginMethods(user.id,user.email,contour,policy,password,bindings,phone,identities);
+  const passkeys=await passkeyAantal(user.id);
   const googleBound=identities.length>0||usable.some(item=>item.id==='google');
   const catalog=LOGIN_METHODS.map(id=>{
     const bound=id==='google'?googleBound:id==='password'?Boolean(password):id==='phone'?Boolean(phone?.verified):bindings.some(item=>item.method===id&&item.status==='active');
@@ -305,7 +308,8 @@ export async function accessSnapshot(user:{id:string;email:string;role:string},a
   });
   const factors=[
     {id:'totp',enabled:policy.enabled.totp!==false,enrolled:Boolean(totp?.confirmed),status:totp?.confirmed?'active':'not_enrolled'},
-    {id:'recovery',enabled:true,enrolled:Boolean(recovery&&recovery.remaining>0),status:recovery&&recovery.remaining>0?'active':'not_enrolled',remaining:recovery?.remaining||0},
+    {id:'recovery',enabled:true,enrolled:Boolean(recovery&&recovery.remaining>0),status:recovery&&recovery.remaining>0?'active':'not_enrolled',remaining:recovery?.remaining||0,createdAt:recovery?.createdAt||0,bekekenOp:recovery?.bekekenOp||0},
+    {id:'passkey',enabled:true,enrolled:passkeys>0,status:passkeys>0?'active':'not_enrolled',count:passkeys},
     {id:'sms',enabled:false,enrolled:Boolean(phone),status:phone?'pending_sms_contour':'not_configured',honest:'needs_sms_contour',phone:phone?.phone||''},
     {id:'push',enabled:false,enrolled:false,status:'not_configured',honest:'needs_push_channel'},
     {id:'webauthn',enabled:false,enrolled:false,status:'disabled_until_verified',count:0,honest:'webauthn_verification_not_implemented',legacyUnverified:keys.length}
@@ -630,9 +634,13 @@ export function createAccessPlaneRoutes(deps:{
       if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
       // Fase 3: nieuwe herstelcodes alleen met de huidige TOTP-code (zonder TOTP: step-up).
       const totpRij=await totpFor(auth.user.id);
+      // Met TOTP: de huidige code, of een verse step-up met een eigen passkey (Способи входу).
       if(totpRij?.confirmed){
-        const uitkomst=await codeControleren(auth.user.id,totpRij,String(deps.body(ctx.body).code||''),false);
-        if(uitkomst!=='ok'){const f=codeFout(uitkomst);return deps.fail(f.code,f.http);}
+        const metPasskey=!String(deps.body(ctx.body).code||'')&&await passkeyStapOpGeldig(auth as unknown as StapOpAuth);
+        if(!metPasskey){
+          const uitkomst=await codeControleren(auth.user.id,totpRij,String(deps.body(ctx.body).code||''),false);
+          if(uitkomst!=='ok'){const f=codeFout(uitkomst);return deps.fail(f.code,f.http);}
+        }
       }else{const stap=await stapOp(auth);if(stap)return stap;}
       const{codes,hashes,hashVersion}=newRecoveryCodes();
       const recovery=await recoveryFor(auth.user.id);
@@ -641,6 +649,15 @@ export function createAccessPlaneRoutes(deps:{
       else await db.add(RECOVERY,[rec]);
       await deps.audit(auth.user.id,'access.recovery.rotate','success',{});
       return deps.respond({ok:true,recoveryCodes:codes,plaintextReturned:true});
+    }],
+    'POST /api/owner/access/recovery/bekeken':[async(ctx: any)=>{
+      const auth=await gate(ctx.event,ctx.body);
+      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
+      const recovery=await recoveryFor(auth.user.id);
+      if(!recovery?.id)return deps.fail('ACCESS_RECOVERY_NOT_ENROLLED',404);
+      if(!recovery.bekekenOp)await db.update(RECOVERY,[{id:recovery.id,record:{...withoutId(recovery),bekekenOp:Date.now()}}]);
+      await deps.audit(auth.user.id,'access.recovery.bekeken','success',{});
+      return deps.respond({ok:true,...await accessSnapshot(auth.user)});
     }],
     'POST /api/owner/access/policy/save':[async(ctx: any)=>{
       const auth=await ownerGate(ctx.event,ctx.body);

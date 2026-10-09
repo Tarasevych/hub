@@ -29,6 +29,8 @@ BEGIN
     IF to_regclass('app.browser_diag_archive') IS NOT NULL THEN GRANT SELECT, INSERT, DELETE ON app.browser_diag_archive TO mijnruimte_app; END IF;
     -- 0022: goedkeuren van updates (voorbereiders, voorstellen, WebAuthn-challenges): alleen de systeemrol, nooit de app-rol.
     IF to_regclass('app.uitrol_voorstellen') IS NOT NULL THEN REVOKE ALL ON app.uitrol_voorbereiders, app.uitrol_voorstellen, app.goedkeur_uitdagingen FROM mijnruimte_app; END IF;
+    -- 0023: passkeys per gebruiker (Aanmeldmethoden). Onder strikte RLS (altijd eigen rijen, app.user_id).
+    IF to_regclass('app.passkeys') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.passkeys, app.passkey_uitdagingen TO mijnruimte_app; END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- Audit-fix 9: de users-trigger telt (audit-modus) via deze functie; de app kan rls_audit zelf niet schrijven.

@@ -211,7 +211,7 @@ export function verifieerRegistratie({ credentialId, clientDataJSON, attestation
     const { alg, jwk } = coseNaarJwk(ad.cose);
     const ab = att.get("authData");
     return { ok: true, credentialId: b64u(ad.credentialId), alg, jwk, vingerafdruk: vingerafdruk({ alg, jwk }), signCount: ad.signCount,
-      aaguid: ab.length >= 53 ? ab.subarray(37, 53).toString("hex") : "", fmt: att.get("fmt") };
+      aaguid: ab.length >= 53 ? ab.subarray(37, 53).toString("hex") : "", fmt: att.get("fmt"), vlaggen: ad.vlaggen };
   } catch (err) {
     return { ok: false, code: String(err?.message || "REGISTRATIE_ONGELDIG").replace(/[^A-Z0-9_]/g, "") || "REGISTRATIE_ONGELDIG" };
   }
@@ -257,15 +257,28 @@ export function tellerOk(opgeslagen, nieuw) {
   return (o === 0 && n === 0) || n > o;
 }
 
-/** Standaard relying party (kan in het root-bestand worden overschreven). */
-export const STANDAARD_RP = Object.freeze({ rpId: "admin.tarasevych.com", origins: Object.freeze(["https://admin.tarasevych.com"]) });
+/**
+ * Standaard relying party (kan in het root-bestand worden overschreven). rpId = het hoofddomein, zodat één passkey op id-, admin- en
+ * hub.tarasevych.com werkt (de app accepteert die drie voor step-up). Root accepteert bewust alleen admin (goedkeuren) en id
+ * (sleutels beheren in «Способи входу»): hub draait veel meer code en hoeft nooit iets bij root te bevestigen.
+ */
+export const STANDAARD_RP = Object.freeze({ rpId: "tarasevych.com", origins: Object.freeze(["https://admin.tarasevych.com", "https://id.tarasevych.com"]) });
+/** rpId van vóór 2026-10-09 (alleen admin). Een leeg root-bestand met deze waarde mag automatisch naar STANDAARD_RP. */
+export const OUDE_RP_ID = "admin.tarasevych.com";
+
+/** Hoort deze origin bij deze rpId (https, host = rpId of een subdomein ervan)? */
+export function originHoortBijRp(origin, rpId) {
+  let u; try { u = new URL(String(origin)); } catch { return false; }
+  if (u.protocol !== "https:" || u.port || u.pathname !== "/" || `https://${u.hostname}` !== String(origin)) return false;
+  return u.hostname === rpId || u.hostname.endsWith(`.${rpId}`);
+}
 
 /** Leest de inhoud van goedkeur-passkeys.json (al geparsed) en geeft een schone lijst + rp-instellingen. Onbekende velden vallen weg. */
 export function normaliseerSleutelbestand(data) {
   const d = data && typeof data === "object" ? data : {};
   const rpId = typeof d.rpId === "string" && /^[a-z0-9.-]{3,253}$/.test(d.rpId) ? d.rpId : STANDAARD_RP.rpId;
-  const origins = Array.isArray(d.origins) && d.origins.every((o) => typeof o === "string" && /^https:\/\/[a-z0-9.-]+$/.test(o)) && d.origins.length
-    ? d.origins.slice(0, 5) : [...STANDAARD_RP.origins];
+  const origins = Array.isArray(d.origins) && d.origins.every((o) => typeof o === "string" && /^https:\/\/[a-z0-9.-]+$/.test(o) && originHoortBijRp(o, rpId)) && d.origins.length
+    ? d.origins.slice(0, 5) : STANDAARD_RP.origins.filter((o) => originHoortBijRp(o, rpId));
   const sleutels = [];
   for (const s of Array.isArray(d.sleutels) ? d.sleutels.slice(0, 20) : []) {
     try {

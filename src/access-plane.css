@@ -35,3 +35,32 @@
 .access-plane-secret{display:inline-block;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.05);letter-spacing:.05em;width:fit-content}
 .access-plane-code-list{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .access-plane-code-list li{padding:6px 8px;border-radius:7px;background:rgba(0,0,0,.05);text-align:center}
+/* Aanmeldmethoden: één pagina met secties (GitHub-stijl), ook op de telefoon bruikbaar. */
+.access-plane-section{display:flex;flex-direction:column;gap:10px;padding-top:14px;border-top:1px solid var(--boot-line,#dce1e6);scroll-margin-top:72px}
+.access-plane-section-head{display:flex;align-items:flex-start;gap:10px}
+.access-plane-section-head>svg{flex:0 0 auto;width:18px;height:18px;margin-top:3px;color:var(--boot-accent,#2f6f73)}
+.access-plane-section-head h2{margin:0;font-size:1.08rem}
+.access-plane-section-head p{margin:3px 0 0;color:var(--boot-muted,#6a7580);font-size:.9rem}
+.access-plane-notice[data-ok="true"]{background:rgba(30,140,90,.08);border-color:rgba(30,140,90,.3)}
+.access-plane-list{list-style:none;margin:0;padding:0;border:1px solid var(--boot-line,#dce1e6);border-radius:14px;background:var(--boot-panel,#fff);overflow:hidden}
+.access-plane-row{display:flex;gap:10px;align-items:flex-start;padding:12px 14px}
+.access-plane-row+.access-plane-row{border-top:1px solid var(--boot-line,#dce1e6)}
+.access-plane-row-main{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.access-plane-row-main small{color:var(--boot-muted,#6a7580);font-size:.82rem;word-break:break-word}
+.access-plane-row-actions{display:flex;gap:6px;flex:0 0 auto}
+.access-plane-empty{padding:12px 14px;color:var(--boot-muted,#6a7580);font-size:.9rem}
+.access-plane-owner{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px}
+.access-plane-switch{display:inline-flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;min-height:36px}
+.access-plane-switch input{width:18px;height:18px}
+.access-plane-ssh{display:block;margin-top:4px;padding:6px 8px;border-radius:7px;background:rgba(0,0,0,.05);user-select:all;word-break:break-all}
+.access-plane-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.access-plane-row button,.access-plane-actions button,.access-plane-owner button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:7px 11px;border-radius:9px;border:1px solid var(--boot-accent,#2f6f73);background:var(--boot-accent,#2f6f73);color:#fff;font-size:.85rem;cursor:pointer}
+.access-plane button.secondary{background:var(--boot-panel,#fff);color:inherit;border-color:var(--boot-line,#dce1e6)}
+.access-plane-row button svg,.access-plane-actions button svg,.access-plane-owner button svg{width:14px;height:14px}
+.access-plane-row button:disabled,.access-plane-actions button:disabled,.access-plane-owner button:disabled{opacity:.5;cursor:default}
+@media (max-width:560px){
+  .access-plane-row{flex-direction:column}
+  .access-plane-row-actions{align-self:flex-end}
+  .access-plane-inline-form button,.access-plane-owner button{flex:1 1 auto;justify-content:center}
+  .access-plane-code-list{grid-template-columns:1fr 1fr}
+}

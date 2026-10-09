@@ -9,8 +9,10 @@
 //     en tikt `aanvraag` aan. Root (mijn-ruimte-goedkeuring.path) controleert ALLES opnieuw tegen de root-sleutels
 //     /etc/mijn-ruimte/goedkeur-passkeys.json en de eigen sha256 van zijn kopie; pas dan installeer-app.sh (gezondheid + rollback).
 //     Een gecompromitteerde app kan dus niets goedkeuren: zonder de passkey van de eigenaar weigert root.
-//  4. Passkeys: registreren alleen door de eigenaar (+ step-up). De allereerste wordt via SSH bevestigd
-//     (`mijn-ruimte-passkey toevoegen <vingerafdruk>`); volgende met een assertie van een al bekende passkey; verwijderen idem.
+//  4. Passkeys: elke gebruiker registreert ze zelf in Instellingen → «Способи входу» (backend/passkeys.ts, rpId tarasevych.com).
+//     Alleen de eigenaar kan bij een eigen passkey «Може схвалювати оновлення сервера» aanvragen: dan schrijft de app een
+//     aanmelding in de goedkeur-inbox. De allereerste wordt via SSH bevestigd (`mijn-ruimte-passkey toevoegen <vingerafdruk>`);
+//     volgende met een assertie van een al bekende passkey; intrekken idem. Root beslist, de app vraagt alleen.
 // Een agent kan voorbereiden en de stand lezen, NOOIT goedkeuren.
 import { createHash, randomBytes } from 'node:crypto';
 import { createReadStream } from 'node:fs';
@@ -375,7 +377,7 @@ export async function afwijzen(eigenaar: Eigenaar, id: unknown, reden: unknown) 
 // ------------------------------------------------------------------------------------------------ passkeys van de eigenaar
 type Aanmelding = { bestand: string; vingerafdruk: string; credentialId: string; alg: number; jwk: kern.Jwk; label: string; aangemaakt: string };
 const AANMELDING = /^sleutel-aanmelding-[0-9a-f]{64}\.json$/;
-async function wachtendeAanmeldingen(): Promise<Aanmelding[]> {
+export async function wachtendeAanmeldingen(): Promise<Aanmelding[]> {
   let namen: string[] = [];
   try { namen = (await readdir(goedkeurInbox())).filter((n) => AANMELDING.test(n)).sort(); } catch { return []; }
   const uit: Aanmelding[] = [];
@@ -388,39 +390,26 @@ async function wachtendeAanmeldingen(): Promise<Aanmelding[]> {
   return uit;
 }
 
-export async function registratieOpties(eigenaar: Eigenaar) {
+/**
+ * Aanmelding van een (al door de app geverifieerde) passkey van de eigenaar voor root: `sleutel-aanmelding-<vingerafdruk>.json`
+ * in de goedkeur-inbox. Root rekent de vingerafdruk zelf uit en voegt hem alleen toe via SSH (eerste) of met een assertie van een
+ * sleutel die al in het root-bestand staat. Hoogstens UITROL_LIMIETEN.wachtendeAanmeldingen tegelijk (oudste valt weg).
+ */
+export async function aanmeldingSchrijven(eigenaar: Eigenaar, sleutel: { credentialId: string; alg: number; jwk: kern.Jwk; label: string; aaguid?: string }) {
+  const fp = kern.vingerafdruk({ alg: sleutel.alg, jwk: sleutel.jwk });
   const b = await leesSleutels();
-  const wachtend = await wachtendeAanmeldingen();
-  const u = await uitdagingMaken(eigenaar.id, 'registreren', '');
-  return {
-    uitdagingId: u.id, verloopt: u.verloopt,
-    publicKey: {
-      challenge: u.uitdaging, rp: { id: b.rpId, name: 'Mijn Ruimte' },
-      user: { id: kern.b64u(createHash('sha256').update(`mijn-ruimte-eigenaar:${eigenaar.id}`).digest()), name: eigenaar.email || 'eigenaar', displayName: 'Mijn Ruimte' },
-      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -8 }, { type: 'public-key', alg: -257 }],
-      authenticatorSelection: { residentKey: 'preferred', userVerification: 'required' }, attestation: 'none', timeout: 120000,
-      excludeCredentials: [...b.sleutels.map((s) => s.credentialId), ...wachtend.map((w) => w.credentialId)].map((id) => ({ type: 'public-key', id })),
-    },
-  };
-}
-
-export async function registreren(eigenaar: Eigenaar, input: { uitdagingId?: unknown; credentialId?: unknown; clientDataJSON?: unknown; attestationObject?: unknown; label?: unknown }) {
-  const u = await uitdagingVerbruiken(eigenaar.id, input.uitdagingId, 'registreren');
-  const b = await leesSleutels();
-  const r = kern.verifieerRegistratie({ credentialId: String(input.credentialId || ''), clientDataJSON: String(input.clientDataJSON || ''), attestationObject: String(input.attestationObject || ''), verwachteUitdaging: u.uitdaging, rpId: b.rpId, origins: b.origins });
-  if (!r.ok) { await auditeer(eigenaar.id, eigenaar.id, 'uitrol_passkey_registratie_geweigerd', 'denied', { code: r.code }); fout(`PASSKEY_${r.code}`, 400); }
-  const ok = r as Extract<typeof r, { ok: true }>;
-  if (b.sleutels.some((s) => s.credentialId === ok.credentialId)) fout('PASSKEY_BESTAAT_AL', 409);
-  const label = tekst(input.label, 60).trim() || 'passkey';
+  if (b.sleutels.some((s) => s.vingerafdruk === fp || s.credentialId === sleutel.credentialId)) fout('PASSKEY_BESTAAT_AL', 409);
   const inbox = goedkeurInbox();
-  const oud = await wachtendeAanmeldingen();
+  const oud = (await wachtendeAanmeldingen()).filter((w) => w.vingerafdruk !== fp);
   for (const w of oud.slice(0, Math.max(0, oud.length - (UITROL_LIMIETEN.wachtendeAanmeldingen - 1)))) await rm(path.join(inbox, w.bestand), { force: true });
-  await writeFile(path.join(inbox, `sleutel-aanmelding-${ok.vingerafdruk}.json`), JSON.stringify({
-    credentialId: ok.credentialId, alg: ok.alg, jwk: ok.jwk, label, aangemaakt: new Date().toISOString(), aaguid: ok.aaguid, vingerafdruk: ok.vingerafdruk,
+  const label = tekst(sleutel.label, 60).trim() || 'passkey';
+  await writeFile(path.join(inbox, `sleutel-aanmelding-${fp}.json`), JSON.stringify({
+    credentialId: sleutel.credentialId, alg: sleutel.alg, jwk: sleutel.jwk, label, aangemaakt: new Date().toISOString(), aaguid: sleutel.aaguid || '', vingerafdruk: fp,
   }) + '\n', { mode: 0o640 });
-  await auditeer(eigenaar.id, eigenaar.id, 'uitrol_passkey_aangemeld', 'success', { vingerafdruk: ok.vingerafdruk, label, eerste: b.sleutels.length === 0 });
-  return { vingerafdruk: ok.vingerafdruk, kort: kern.vingerafdrukKort(ok.vingerafdruk), label, eerste: b.sleutels.length === 0, sshOpdracht: `sudo mijn-ruimte-passkey toevoegen ${ok.vingerafdruk.slice(0, 32)}` };
+  await auditeer(eigenaar.id, eigenaar.id, 'uitrol_passkey_aangemeld', 'success', { vingerafdruk: fp, label, eerste: b.sleutels.length === 0 });
+  return { vingerafdruk: fp, kort: kern.vingerafdrukKort(fp), label, eerste: b.sleutels.length === 0, sshOpdracht: sshOpdracht(fp) };
 }
+export const sshOpdracht = (fp: string) => `sudo mijn-ruimte-passkey toevoegen ${fp.slice(0, 32)}`;
 
 export async function aanmeldingIntrekken(eigenaar: Eigenaar, fp: unknown) {
   const v = String(fp || '');
@@ -473,7 +462,7 @@ export async function overzicht() {
   return {
     schakelaar: await schakelaarAan(), rpId: b.rpId, origins: b.origins,
     passkeys: b.sleutels.map((s) => ({ vingerafdruk: s.vingerafdruk, kort: kern.vingerafdrukKort(s.vingerafdruk), label: s.label, toegevoegd: s.toegevoegd, door: s.door })),
-    wachtend: (await wachtendeAanmeldingen()).map((w) => ({ vingerafdruk: w.vingerafdruk, kort: kern.vingerafdrukKort(w.vingerafdruk), label: w.label, aangemaakt: w.aangemaakt, sshOpdracht: `sudo mijn-ruimte-passkey toevoegen ${w.vingerafdruk.slice(0, 32)}` })),
+    wachtend: (await wachtendeAanmeldingen()).map((w) => ({ vingerafdruk: w.vingerafdruk, kort: kern.vingerafdrukKort(w.vingerafdruk), label: w.label, aangemaakt: w.aangemaakt, sshOpdracht: sshOpdracht(w.vingerafdruk) })),
     voorstellen, voorbereiders: await grantsLijst(), kandidaten: await kandidaten(), rootStatus, sleutelStatus, limieten: UITROL_LIMIETEN,
   };
 }
@@ -556,13 +545,7 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
       return goedkeuren(wie(auth), body(ctx.body));
     })],
     'POST /api/owner/uitrol/voorstel/afwijzen': [eigenaar({}, async (ctx, auth) => afwijzen(wie(auth), body(ctx.body).id, body(ctx.body).reden))],
-    'POST /api/owner/uitrol/passkey/registreren/opties': [eigenaar({ stepUp: true }, async (_ctx, auth) => registratieOpties(wie(auth)))],
-    'POST /api/owner/uitrol/passkey/registreren': [eigenaar({}, async (ctx, auth) => registreren(wie(auth), body(ctx.body)))],
-    'POST /api/owner/uitrol/passkey/aanmelding/intrekken': [eigenaar({}, async (ctx, auth) => aanmeldingIntrekken(wie(auth), body(ctx.body).vingerafdruk))],
-    'POST /api/owner/uitrol/passkey/toevoegen/opties': [eigenaar({}, async (ctx, auth) => sleutelUitdaging(wie(auth), 'sleutel-toevoegen', body(ctx.body).vingerafdruk))],
-    'POST /api/owner/uitrol/passkey/toevoegen': [eigenaar({}, async (ctx, auth) => sleutelVerzoek(wie(auth), 'sleutel-toevoegen', body(ctx.body)))],
-    'POST /api/owner/uitrol/passkey/verwijderen/opties': [eigenaar({}, async (ctx, auth) => sleutelUitdaging(wie(auth), 'sleutel-verwijderen', body(ctx.body).vingerafdruk))],
-    'POST /api/owner/uitrol/passkey/verwijderen': [eigenaar({}, async (ctx, auth) => sleutelVerzoek(wie(auth), 'sleutel-verwijderen', body(ctx.body)))],
+    // Passkeys (registreren, «Може схвалювати оновлення сервера», intrekken): backend/passkeys.ts → Instellingen → «Способи входу».
     // Voorbereiden met een gewone sessie (account-grant). Agents gebruiken de MCP-hulpmiddelen hierboven.
     'POST /api/uitrol/voorstel/begin': [voorbereider(voorstelBegin)],
     'POST /api/uitrol/voorstel/stuk': [voorbereider(voorstelStuk)],

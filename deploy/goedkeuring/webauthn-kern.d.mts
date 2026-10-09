@@ -9,6 +9,8 @@ export const KLOK_SPELING_MS: number;
 export const ALGORITMEN: Readonly<{ ES256: -7; EdDSA: -8; RS256: -257 }>;
 export const VLAG: Readonly<{ UP: number; UV: number; BE: number; BS: number; AT: number; ED: number }>;
 export const STANDAARD_RP: Readonly<{ rpId: string; origins: readonly string[] }>;
+export const OUDE_RP_ID: string;
+export function originHoortBijRp(origin: string, rpId: string): boolean;
 export function b64u(buf: Uint8Array | ArrayBuffer | string): string;
 export function vanB64u(s: string, max?: number): Buffer;
 export function cborLees(buf: Buffer, pos?: number, diepte?: number): { waarde: unknown; pos: number };
@@ -20,7 +22,7 @@ export function vingerafdrukKort(hex: string): string;
 export function uitdagingVoor(doel: Doel, velden: { nonce: string; verloopt: number; voorstelId?: string; versie?: string; sha256?: string; vingerafdruk?: string }): string;
 export function verlooptGeldig(verloopt: number, nu?: number): string | null;
 export function verifieerRegistratie(i: { credentialId?: string; clientDataJSON: string; attestationObject: string; verwachteUitdaging: string; rpId: string; origins: readonly string[] }):
-  | { ok: true; credentialId: string; alg: number; jwk: Jwk; vingerafdruk: string; signCount: number; aaguid: string; fmt: string }
+  | { ok: true; credentialId: string; alg: number; jwk: Jwk; vingerafdruk: string; signCount: number; aaguid: string; fmt: string; vlaggen: number }
   | { ok: false; code: string };
 export function verifieerAssertie(i: { assertie: Assertie; verwachteUitdaging: string; rpId: string; origins: readonly string[]; sleutels: readonly Sleutel[] }):
   | { ok: true; credentialId: string; vingerafdruk: string; signCount: number; vlaggen: number; label?: string }

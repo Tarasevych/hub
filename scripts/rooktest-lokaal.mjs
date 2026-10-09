@@ -331,12 +331,12 @@ try {
   const rApi = await api('api.tarasevych.com', '/api/owner/api-platform/vault/onbekend/reveal', { service: 'api', tabContext: tab() }, c1);
   check('vault-onthulling geweigerd buiten admin./api. (403), niet op api.', r.status === 403 && rApi.data?.error !== 'OWNER_VAULT_REVEAL_HOST_FORBIDDEN', `hub ${r.status} ${r.data?.error || ''}, api ${rApi.status} ${rApi.data?.error || ''}`);
 
-  // B7. Passkeys uitgeschakeld tot echte WebAuthn-verificatie.
+  // B7. De oude, onverifieerde WebAuthn-routes blijven uit (503); echte passkeys lopen via /api/owner/access/passkeys/* (backend/passkeys.ts).
   r = await api('id.tarasevych.com', '/api/owner/access/webauthn/options', idBody(), c1);
   const rReg = await api('id.tarasevych.com', '/api/owner/access/webauthn/register', { ...idBody(), credentialId: 'x'.repeat(40) }, c1);
   const snap = await api('id.tarasevych.com', '/api/owner/access/snapshot', idBody(), c1);
   const wa = (snap.data?.factors || []).find(f => f.id === 'webauthn');
-  check('passkeys uit: options/register → 503 ACCESS_WEBAUTHN_DISABLED, factor niet actief', r.status === 503 && r.data?.error === 'ACCESS_WEBAUTHN_DISABLED' && rReg.status === 503 && wa && wa.enabled === false, `options ${r.status}, register ${rReg.status}, factor ${JSON.stringify(wa)}`);
+  check('oude webauthn-routes uit: options/register → 503 ACCESS_WEBAUTHN_DISABLED, factor niet actief', r.status === 503 && r.data?.error === 'ACCESS_WEBAUTHN_DISABLED' && rReg.status === 503 && wa && wa.enabled === false, `options ${r.status}, register ${rReg.status}, factor ${JSON.stringify(wa)}`);
 
   // B8. Sessie-handoff is atomisch eenmalig: drie gelijktijdige inwisselingen → precies één succes.
   const bindingUit = res => (res.setCookie.map(c => c.split(';')[0]).find(c => c.startsWith('tsv_handoff_binding=')) || '');

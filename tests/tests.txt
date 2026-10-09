@@ -99,20 +99,20 @@ Steps:
 
 Expected: The account is never left with zero usable sign-in methods; the UI makes the protection visible rather than silently blocking it.
 
-## Test 8 - Access Plane hides passkeys until real verification exists
+## Test 8 - Sign-in methods page («Способи входу») with real passkeys
 Viewport: mobile (375x667)
-Covers: passkey card hidden, webauthn endpoints disabled, no simulated enrollment
-Description: Passkeys stay hidden and their endpoints answer "disabled" until real WebAuthn attestation/assertion verification is implemented, so the Security tab never offers or simulates a passkey.
+Covers: one page with Google, passkeys, TOTP and recovery codes; no SMS; legacy webauthn endpoints still disabled
+Description: Settings → «Способи входу» shows the passkey section (add/rename/delete, verified server-side with rpId tarasevych.com), the authenticator app and recovery codes. The tabs «Безпека» and «Відновлення» scroll to their section. Only the owner sees «Може схвалювати оновлення сервера» per passkey.
 
 Setup:
 1. If signed out, sign in (locally: seed a session as in scripts/lokaal-e2e/e2e.mjs)
 
 Steps:
 1. Open Ідентичність → Безпека on a mobile viewport
-2. Confirm there is no "add passkey" control and no passkey listed as an active method
-3. Confirm POST /api/owner/access/webauthn/options answers 404/503 ACCESS_WEBAUTHN_DISABLED
+2. Confirm the passkey section and the TOTP card are visible and there is no SMS card
+3. Confirm POST /api/owner/access/webauthn/options (legacy) still answers 503 ACCESS_WEBAUTHN_DISABLED
 
-Expected: No passkey enrollment is offered or simulated while verification is not implemented.
+Expected: Passkeys are offered only through the verified flow; no SMS factor is shown.
 
 ## Test 9 - Access Plane recovery codes are shown once and honestly scoped
 Viewport: mobile (375x667)

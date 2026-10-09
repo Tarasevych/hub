@@ -16,12 +16,14 @@
 //   toevoegen <vingerafdruk (≥ 16 hex-tekens)>                    wachtende aanmelding bevestigen (SSH; eerste sleutel)
 //   verwijderen <vingerafdruk (≥ 16 hex-tekens)>                  sleutel weghalen (SSH)
 //   alles-intrekken                                               alle sleutels weghalen (SSH; telefoon kwijt)
+//   rp-bijwerken                                                  leeg sleutelbestand met de oude rpId (admin.tarasevych.com)
+//                                                                 → rpId tarasevych.com + origins admin/id (installer, idempotent)
 import { createHash, randomBytes } from "node:crypto";
 import { closeSync, constants as FS, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, renameSync, chownSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { normaliseerSleutelbestand, tellerOk, uitdagingVoor, verifieerAssertie, verlooptGeldig, vingerafdruk, vingerafdrukKort } from "./webauthn-kern.mjs";
+import { OUDE_RP_ID, STANDAARD_RP, normaliseerSleutelbestand, tellerOk, uitdagingVoor, verifieerAssertie, verlooptGeldig, vingerafdruk, vingerafdrukKort } from "./webauthn-kern.mjs";
 
 const IS_ROOT = typeof process.getuid === "function" && process.getuid() === 0;
 // Overschrijven kan alleen in tests (niet als root).
@@ -294,6 +296,24 @@ function verwijderenViaSsh(prefix) {
   process.stdout.write(`verwijderd: ${treffers[0].label}  ${vingerafdrukKort(treffers[0].vingerafdruk)}\n`);
   return 0;
 }
+/**
+ * rpId naar het hoofddomein (tarasevych.com) zodat dezelfde passkey uit «Способи входу» ook updates kan goedkeuren. Alleen als er
+ * nog GEEN sleutels zijn: een bestaande sleutel is aan zijn rpId gebonden en zou met een andere rpId nooit meer werken.
+ */
+function rpBijwerken() {
+  const bestand = leesSleutelbestand();
+  const zelfde = bestand.rpId === STANDAARD_RP.rpId && bestand.origins.length === STANDAARD_RP.origins.length && STANDAARD_RP.origins.every((o) => bestand.origins.includes(o));
+  if (zelfde) { process.stdout.write(`rpId ${bestand.rpId} is al actueel\n`); return 0; }
+  if (bestand.sleutels.length) {
+    log(`rpId blijft ${bestand.rpId}: er staan al ${bestand.sleutels.length} sleutel(s) in (die horen bij deze rpId). Eerst 'alles-intrekken' als u echt wilt wisselen.`);
+    return 1;
+  }
+  if (bestand.rpId !== OUDE_RP_ID && bestand.rpId !== STANDAARD_RP.rpId) { log(`rpId ${bestand.rpId} is met de hand gezet; niets gewijzigd`); return 1; }
+  schrijfSleutelbestand({ ...bestand, rpId: STANDAARD_RP.rpId, origins: [...STANDAARD_RP.origins] });
+  gebeurtenis("PASSKEY_RP_BIJGEWERKT", "info", `Passkey: rpId ${STANDAARD_RP.rpId} (${STANDAARD_RP.origins.join(", ")}).`, `Passkey: rpId ${STANDAARD_RP.rpId} (${STANDAARD_RP.origins.join(", ")}).`);
+  process.stdout.write(`rpId ${bestand.rpId} -> ${STANDAARD_RP.rpId}; origins ${STANDAARD_RP.origins.join(", ")}\n`);
+  return 0;
+}
 function allesIntrekken() {
   const bestand = leesSleutelbestand();
   const n = bestand.sleutels.length;
@@ -323,8 +343,9 @@ function hoofd(argv) {
       case "toevoegen": return toevoegenViaSsh(args.join(""));
       case "verwijderen": return verwijderenViaSsh(args.join(""));
       case "alles-intrekken": return allesIntrekken();
+      case "rp-bijwerken": return rpBijwerken();
       default:
-        process.stderr.write("gebruik: mijn-ruimte-passkey wachtend | lijst | toevoegen <vingerafdruk> | verwijderen <vingerafdruk> | alles-intrekken\n");
+        process.stderr.write("gebruik: mijn-ruimte-passkey wachtend | lijst | toevoegen <vingerafdruk> | verwijderen <vingerafdruk> | alles-intrekken | rp-bijwerken\n");
         return 64;
     }
   } catch (err) {

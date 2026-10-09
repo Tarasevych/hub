@@ -204,9 +204,12 @@ goedkeuring_inrichten() {
   install -d -o root -g root -m 0700 /var/lib/mijn-ruimte/goedkeuring
   goedkeur_inbox_maken
   if [ ! -e /etc/mijn-ruimte/goedkeur-passkeys.json ]; then
-    printf '%s\n' '{"versie": 1, "rpId": "admin.tarasevych.com", "origins": ["https://admin.tarasevych.com"], "sleutels": []}' > /etc/mijn-ruimte/goedkeur-passkeys.json
+    printf '%s\n' '{"versie": 1, "rpId": "tarasevych.com", "origins": ["https://admin.tarasevych.com", "https://id.tarasevych.com"], "sleutels": []}' > /etc/mijn-ruimte/goedkeur-passkeys.json
   fi
   chown root:"$GEBRUIKER" /etc/mijn-ruimte/goedkeur-passkeys.json; chmod 0640 /etc/mijn-ruimte/goedkeur-passkeys.json
+  # Sinds «Способи входу»: rpId tarasevych.com (één passkey voor id/admin/hub). Alleen een LEEG bestand met de oude rpId wordt
+  # omgezet; met sleutels blijft alles zoals het is (melding in het log).
+  /usr/local/sbin/mijn-ruimte-passkey rp-bijwerken >/dev/null 2>&1 || waarschuwing "passkey-rpId niet bijgewerkt (er staan al sleutels in of de rpId is met de hand gezet): zie 'mijn-ruimte-passkey lijst'"
   systemctl enable --now mijn-ruimte-goedkeuring.path mijn-ruimte-goedkeur-sleutels.path >/dev/null 2>&1 || waarschuwing "path-units voor de passkey-goedkeuring konden niet worden gestart"
   melding "passkey-goedkeuring ingericht ($(/usr/local/sbin/mijn-ruimte-passkey lijst 2>/dev/null | head -1 || echo 'stand onbekend'))"
 }

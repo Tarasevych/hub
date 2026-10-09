@@ -383,11 +383,15 @@ mijn-ruimte-goedkeuring.path (root) → mijn-ruimte-uitrol --goedkeuring
 * **Eenmalig en gebonden.** De challenge bevat voorstel-id, versie, sha256, nonce en vervaltijd (≤ 5 min, CHECK in de database). De app
   verbruikt de challenge atomisch; root registreert de nonce vóór de installatie. Dezelfde assertie werkt nooit twee keer, ook niet na een
   mislukte installatie.
-* **Alleen de eigenaar.** Routes vereisen sessie op admin.tarasevych.com + rol owner + OWNER_EMAIL; registreren en grants geven vragen
-  step-up. Agents (MCP-console `/api/mcp/agent` en de MCP-connector) zien alleen `uitrol_voorstel_begin|stuk|klaar|status|annuleren`, en
+* **Alleen de eigenaar.** Goedkeuren: sessie op admin.tarasevych.com + rol owner + OWNER_EMAIL. Passkeys registreert elke gebruiker
+  zelf in Instellingen → «Способи входу» (§13.6, step-up); alleen de eigenaar ziet daar per passkey «Може схвалювати оновлення сервера»
+  (alleen op id./admin.). Grants geven vraagt step-up. Agents (MCP-console `/api/mcp/agent` en de MCP-connector) zien alleen `uitrol_voorstel_begin|stuk|klaar|status|annuleren`, en
   alleen met een geldige grant; elke naam die op goedkeuren lijkt, wordt geweigerd (`ALLEEN_EIGENAAR_MET_PASSKEY`).
-* **rpId = `admin.tarasevych.com`** (de pagina «Оновлення» staat in Admin). Instelbaar in het root-bestand (`rpId`, `origins`); een passkey
-  is aan zijn rpId gebonden, dus na een wijziging opnieuw aanmelden.
+* **rpId = `tarasevych.com`** (sinds branch `aanmeldmethoden`; daarvoor `admin.tarasevych.com`). Eén passkey werkt zo op
+  id.tarasevych.com («Способи входу») én admin.tarasevych.com («Оновлення»). De app accepteert origins id/admin/hub; **root accepteert alleen
+  `https://admin.tarasevych.com` en `https://id.tarasevych.com`** (hub hoeft nooit iets bij root te bevestigen: kleiner oppervlak). Instelbaar
+  in het root-bestand (`rpId`, `origins`; origins buiten het rpId-domein, met poort of zonder https worden genegeerd). Een passkey is aan
+  zijn rpId gebonden: sleutels van de oude rpId werken niet meer (zie §13.6 voor de overgang).
 * Attestation = `none`: het type authenticator wordt niet gecontroleerd; het vertrouwen komt uit de bevestiging via SSH (eerste sleutel) of
   een bestaande sleutel. Gesynchroniseerde passkeys (iCloud/Google) geven vaak signCount 0; dat is toegestaan (0/0).
 
@@ -395,15 +399,16 @@ mijn-ruimte-goedkeuring.path (root) → mijn-ruimte-uitrol --goedkeuring
 
 ```bash
 ssh beheer@203.0.113.10
-sudo git clone --branch passkey-schvalennya https://github.com/Tarasevych/hub.git /root/hub-passkey && cd /root/hub-passkey && git log -1
-sudo bash deploy/installeer-app.sh installeren /root/hub-passkey        # migratie 0022, units, hulp, leeg sleutelbestand
+sudo git clone --branch aanmeldmethoden https://github.com/Tarasevych/hub.git /root/hub-passkey && cd /root/hub-passkey && git log -1
+sudo bash deploy/installeer-app.sh installeren /root/hub-passkey        # migraties 0022-0023, units, hulp, leeg sleutelbestand (rpId tarasevych.com)
 systemctl status mijn-ruimte-goedkeuring.path mijn-ruimte-goedkeur-sleutels.path --no-pager
-sudo mijn-ruimte-passkey lijst                                          # rpId admin.tarasevych.com, schakelaar uit, (geen sleutels)
+sudo mijn-ruimte-passkey lijst                                          # rpId tarasevych.com, schakelaar uit, (geen sleutels)
 ```
 
-Daarna op de **telefoon** (ingelogd als eigenaar): `admin.tarasevych.com` → «Оновлення» → «Мої passkey» → naam invullen → «Додати passkey»
-(step-up: TOTP of opnieuw Google) → passkey maken met vingerafdruk/gezicht. De pagina toont een **vingerafdruk** (`ab12 cd34 …`) en de
-SSH-opdracht. Op de VM:
+Daarna op de **telefoon** (ingelogd als eigenaar): `id.tarasevych.com/methods` = **«Налаштування → Способи входу»** → «Passkeys» → naam
+invullen → «Додати passkey» (step-up: TOTP of opnieuw Google) → passkey maken met vingerafdruk/gezicht. De passkey staat dan als «Лише вхід».
+Vink bij die passkey «Може схвалювати оновлення сервера» aan (step-up): status «Чекає підтвердження сервером», met de **vingerafdruk**
+(`ab12 cd34 …`) en de SSH-opdracht. Op de VM:
 
 ```bash
 sudo mijn-ruimte-passkey wachtend                    # root rekent de vingerafdruk zelf uit uit de publieke sleutel
@@ -415,8 +420,9 @@ Vergelijk de vingerafdruk op de telefoon met die van `wachtend`. **Beperking:** 
 telefoon echt is (een al gecompromitteerde app zou een eigen sleutel met een eigen vingerafdruk kunnen tonen). Doe de bootstrap dus direct
 na een installatie uit een gereviewde commit, of controleer met `wachtend` dat er precies één aanmelding is met het label dat je net invoerde.
 
-Volgende passkeys (tweede telefoon, laptop): «Додати passkey» en dan «Підтвердити наявним passkey» — geen SSH meer nodig; root voegt hem
-toe na een assertie van een al bekende sleutel (`mijn-ruimte-goedkeur-sleutels.path`). Advies: registreer minstens twee passkeys.
+Daarna toont «Способи входу» bij die passkey «Може схвалювати оновлення». Volgende passkeys (tweede telefoon, laptop): «Додати passkey»,
+vinkje «Може схвалювати оновлення сервера», dan «Підтвердити ключем, що вже може схвалювати» — geen SSH meer nodig; root voegt hem toe na
+een assertie van een al bekende sleutel (`mijn-ruimte-goedkeur-sleutels.path`). Advies: minstens twee passkeys met dit recht.
 
 ### 13.3 Voorbereiders toestaan of intrekken
 
@@ -430,7 +436,8 @@ Grenzen: 300 MB, 3 open voorstellen per grant, uploads verlopen na 24 uur, wacht
 
 ### 13.4 Intrekken en telefoon kwijt
 
-* **Eén passkey weghalen (je hebt nog een andere):** «Мої passkey» → «Видалити» en bevestigen met een andere passkey.
+* **Recht intrekken (je hebt nog een andere):** «Способи входу» → bij de passkey «Забрати право схвалювати» en bevestigen met een
+  passkey die het recht heeft; root verwerkt het. Pas daarna kan «Видалити» (de app weigert een passkey te verwijderen die root nog vertrouwt).
 * **Telefoon kwijt (en geen andere passkey):** via SSH:
   ```bash
   sudo mijn-ruimte-passkey lijst
@@ -453,5 +460,34 @@ Grenzen: 300 MB, 3 open voorstellen per grant, uploads verlopen na 24 uur, wacht
 | `/usr/local/sbin/mijn-ruimte-passkey` | root 0755 | installer |
 | `/var/lib/mijn-ruimte-uitrol-status/{status.json,goedkeur-sleutels.json,gebeurtenissen.jsonl}` | root:mijnruimte 0640 | root |
 
+Database (migratie 0023, RLS per gebruiker): `app.passkeys` (publieke sleutel, naam, AAGUID, BE/BS, teller, laatst gebruikt) en
+`app.passkey_uitdagingen` (≤ 5 min, eenmalig, per gebruiker én sessie). Deze tabellen bepalen **niet** wie mag goedkeuren; dat doet alleen
+het root-bestand.
+
 Uitleg voor op de PC (geen geheimen): `deploy/pc-uitleg/passkey-goedkeuring-UITLEG-LEESMIJ.txt`.
+
+### 13.6 «Способи входу» / «Aanmeldmethoden» en de overgang naar rpId tarasevych.com
+
+**Pagina.** Ідентичність → «Способи входу» (`id.tarasevych.com/methods`; menu «Налаштування → Способи входу»). Eén pagina zoals bij GitHub:
+e-mail en Google (alleen lezen), passkeys (toevoegen met `residentKey: preferred` + UV verplicht, hernoemen, verwijderen met step-up; per
+passkey aanbieder (AAGUID-hint), «синхронізується» (BE/BS), toegevoegd, laatst gebruikt), tweefactor (TOTP instellen/uitschakelen; geen
+sms) en herstelcodes (status «збережено», nieuwe codes met TOTP-code of een verse passkey-bevestiging, eenmalig getoond). De tabbladen
+«Безпека» en «Відновлення» tonen dezelfde pagina, gescrold naar hun sectie. Admin «Оновлення» toont alleen nog de stand en een link.
+
+**Step-up met passkey.** Elke gevoelige actie die 403 `STEP_UP_REQUIRED` geeft, vraagt eerst een passkey (als de gebruiker er een heeft);
+lukt dat niet, dan zoals vroeger TOTP of opnieuw Google. De bevestiging geldt 5 minuten en alleen voor die sessie.
+
+**Inloggen met alleen een passkey: (nog) niet.** Bewust: de sessie-opbouw (tabbladen, overdracht, login-CSRF-binding) is complex en niet op
+echte toestellen te testen, en minder vaak een passkey aanraken verkleint de kans dat een gekaapte pagina een goedkeur-challenge in een
+gewone aanmelding verstopt. Passkeys dienen nu voor bevestigen en voor updates goedkeuren; Google blijft de aanmelding.
+
+**Overgang op de VM (eenmalig, als root):**
+```bash
+sudo mijn-ruimte-passkey lijst          # staat er nog rpId admin.tarasevych.com?
+sudo mijn-ruimte-passkey rp-bijwerken   # leeg bestand → rpId tarasevych.com + origins admin/id (de installer doet dit ook)
+```
+`rp-bijwerken` weigert (exit 1) als er al sleutels voor de oude rpId in staan: die werken met de nieuwe pagina niet meer. Dan eerst
+`sudo mijn-ruimte-passkey alles-intrekken` (of `verwijderen <vingerafdruk>` per sleutel), daarna `rp-bijwerken`, en §13.2 opnieuw vanaf
+«Способи входу». Tot dan toont de pagina bij de eigenaar een waarschuwing dat root nog op de oude rpId staat.
+
 

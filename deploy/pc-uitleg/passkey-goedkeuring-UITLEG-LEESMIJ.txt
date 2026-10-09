@@ -25,22 +25,35 @@ UITLEG-LEESMIJ.txt - Mijn Ruimte: оновлення сервера схвалю
    помилки сервер сам повертає попередню версію).
 Не впевнені -> «Відхилити».
 
-ПЕРШИЙ PASSKEY (один раз)
-1. «Оновлення» -> «Мої passkey для схвалення» -> назва (наприклад «Телефон») -> «Додати passkey».
+ДЕ КЕРУВАТИ PASSKEY
+Усі passkey тепер на одній сторінці: id.tarasevych.com -> «Налаштування -> Способи входу».
+Там же: Google, застосунок-автентифікатор і коди відновлення. Passkey підходить і для
+підтвердження важливих дій замість коду. Вхід на сайт, як і раніше, через Google.
+
+ПЕРШИЙ PASSKEY ДЛЯ СХВАЛЕННЯ (один раз)
+1. «Способи входу» -> «Passkeys» -> назва (наприклад «Телефон») -> «Додати passkey».
    Сайт попросить додаткове підтвердження (код з автентифікатора або повторний вхід Google).
-2. Сторінка покаже ВІДБИТОК (групи по 4 символи) і команду для SSH.
+   Новий passkey має стан «Лише вхід».
+2. Біля нього поставте позначку «Може схвалювати оновлення сервера». Стан стане «Чекає
+   підтвердження сервером», сторінка покаже ВІДБИТОК (групи по 4 символи) і команду для SSH.
 3. На сервері через SSH: sudo mijn-ruimte-passkey wachtend  - звірте відбиток з телефоном;
    потім: sudo mijn-ruimte-passkey toevoegen <перші 16 або більше символів відбитка>.
+   Стан стане «Може схвалювати оновлення».
 4. Увімкнути: у /etc/mijn-ruimte/mcp-rechten.json поставити "passkey-goedkeuring": true.
-Наступні passkey (другий телефон, ноутбук) підтверджуються вже доданим passkey, без SSH.
-Порада: майте щонайменше два passkey.
+Наступні passkey (другий телефон, ноутбук): позначка «Може схвалювати оновлення сервера», потім
+«Підтвердити ключем, що вже може схвалювати» - без SSH.
+Порада: майте щонайменше два passkey з цим правом.
+Якщо сторінка попереджає, що сервер ще налаштований на admin.tarasevych.com: адміністратор
+виконує на сервері  sudo mijn-ruimte-passkey rp-bijwerken  (старі passkey для admin.tarasevych.com
+після цього більше не діють; їх прибирають командою alles-intrekken і додають заново).
 
 КОМУ ДОЗВОЛЕНО ГОТУВАТИ
 «Оновлення» -> «Кому дозволено готувати оновлення»: акаунт, токен агента або MCP-підключення,
 на 1-30 днів. «Відкликати» діє одразу. Схвалити не може ніхто, крім вас.
 
 ЯКЩО ТЕЛЕФОН ВТРАЧЕНО
-- Є інший passkey: «Мої passkey» -> «Видалити» біля втраченого, підтвердити іншим passkey.
+- Є інший passkey: «Способи входу» -> біля втраченого «Забрати право схвалювати», підтвердити
+  іншим passkey; потім «Видалити».
 - Іншого немає: через SSH  sudo mijn-ruimte-passkey lijst,  потім
   sudo mijn-ruimte-passkey verwijderen <відбиток>   або   sudo mijn-ruimte-passkey alles-intrekken.
 - Вимкнути все: "passkey-goedkeuring": false у /etc/mijn-ruimte/mcp-rechten.json.
@@ -72,23 +85,36 @@ EEN UPDATE GOEDKEUREN
    een fout zet de server zelf de vorige versie terug).
 Twijfel -> «Afwijzen».
 
-DE EERSTE PASSKEY (eenmalig)
-1. «Updates» -> «Mijn passkeys voor goedkeuring» -> naam (bijvoorbeeld «Telefoon») -> «Passkey
-   toevoegen». De site vraagt extra bevestiging (code uit de authenticator-app of opnieuw Google).
-2. De pagina toont een VINGERAFDRUK (groepjes van 4 tekens) en de SSH-opdracht.
+WAAR U PASSKEYS BEHEERT
+Alle passkeys staan nu op één pagina: id.tarasevych.com -> «Instellingen -> Aanmeldmethoden»
+(Oekraïens: «Налаштування -> Способи входу»). Daar ook: Google, de authenticator-app en
+herstelcodes. Een passkey bevestigt ook belangrijke acties in plaats van een code. Aanmelden bij
+de site gaat zoals voorheen via Google.
+
+DE EERSTE PASSKEY VOOR GOEDKEUREN (eenmalig)
+1. «Aanmeldmethoden» -> «Passkeys» -> naam (bijvoorbeeld «Telefoon») -> «Passkey toevoegen».
+   De site vraagt extra bevestiging (code uit de authenticator-app of opnieuw Google).
+   De nieuwe passkey heeft de status «Alleen aanmelden».
+2. Vink bij die passkey «Mag serverupdates goedkeuren» aan. De status wordt «Wacht op bevestiging
+   door de server»; de pagina toont een VINGERAFDRUK (groepjes van 4 tekens) en de SSH-opdracht.
 3. Op de server via SSH: sudo mijn-ruimte-passkey wachtend  - vergelijk de vingerafdruk met de
    telefoon; daarna: sudo mijn-ruimte-passkey toevoegen <eerste 16 of meer tekens>.
+   De status wordt «Mag updates goedkeuren».
 4. Aanzetten: in /etc/mijn-ruimte/mcp-rechten.json "passkey-goedkeuring": true zetten.
-Volgende passkeys (tweede telefoon, laptop) bevestigt u met een bestaande passkey, zonder SSH.
-Advies: zorg voor minstens twee passkeys.
+Volgende passkeys (tweede telefoon, laptop): vinkje «Mag serverupdates goedkeuren», dan
+«Bevestigen met een sleutel die al mag goedkeuren» - zonder SSH.
+Advies: zorg voor minstens twee passkeys met dit recht.
+Waarschuwt de pagina dat de server nog op admin.tarasevych.com staat: de beheerder voert op de
+server  sudo mijn-ruimte-passkey rp-bijwerken  uit (oude passkeys voor admin.tarasevych.com werken
+daarna niet meer; die ruimt u op met alles-intrekken en voegt u opnieuw toe).
 
 WIE MAG VOORBEREIDEN
 «Updates» -> «Wie mag updates voorbereiden»: account, agenttoken of MCP-koppeling, voor 1-30
 dagen. «Intrekken» werkt meteen. Goedkeuren kan niemand behalve u.
 
 TELEFOON KWIJT
-- Nog een andere passkey: «Mijn passkeys» -> «Verwijderen» bij de verloren passkey, bevestigen
-  met de andere passkey.
+- Nog een andere passkey: «Aanmeldmethoden» -> bij de verloren passkey «Recht om goed te keuren
+  intrekken», bevestigen met de andere passkey; daarna «Verwijderen».
 - Geen andere: via SSH  sudo mijn-ruimte-passkey lijst,  daarna
   sudo mijn-ruimte-passkey verwijderen <vingerafdruk>   of   sudo mijn-ruimte-passkey alles-intrekken.
 - Alles uit: "passkey-goedkeuring": false in /etc/mijn-ruimte/mcp-rechten.json.

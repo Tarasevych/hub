@@ -5,8 +5,9 @@ import './access-plane.css';
 
 import {t,type Lang} from './access-plane-copy';
 import {AccessPlanePanels} from './access-plane-panels';
+import {passkeyStapOp} from './platform/stap-op';
 type Method={id:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
-type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number};
+type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number;createdAt?:number;bekekenOp?:number};
 type Binding={id:string;method:string;email:string;status:string;providerSubject?:string};
 type Snapshot={
   architecture:string;
@@ -39,6 +40,7 @@ const blank=():Snapshot=>({
   factors:[
     {id:'totp',enabled:true,enrolled:false,status:'not_enrolled'},
     {id:'recovery',enabled:true,enrolled:false,status:'not_enrolled',remaining:0},
+    {id:'passkey',enabled:true,enrolled:false,status:'not_enrolled',count:0},
     {id:'sms',enabled:false,enrolled:false,status:'not_configured',honest:'needs_sms_contour'},
     {id:'push',enabled:false,enrolled:false,status:'not_configured',honest:'needs_push_channel'},
     {id:'webauthn',enabled:false,enrolled:false,status:'disabled_until_verified',honest:'webauthn_verification_not_implemented'}
@@ -63,14 +65,11 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
   const[notice,setNotice]=useState('');
   const[busy,setBusy]=useState(false);
   const[password,setPassword]=useState('');
-  const[clientId,setClientId]=useState('');
-  const[clientSecret,setClientSecret]=useState('');
   const[otpauth,setOtpauth]=useState('');
   const[secret,setSecret]=useState('');
   const[code,setCode]=useState('');
   const[recovery,setRecovery]=useState<string[]>([]);
   const[tempPassword,setTempPassword]=useState('');
-  const[phone,setPhone]=useState('');
 
   const load=async()=>{
     try{
@@ -79,8 +78,6 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
         mode==='admin'?api.post('/api/owner/google-contour',sessionBody()).catch(()=>null):Promise.resolve(null)
       ]);
       if(snap?.data)setData({...blank(),...snap.data,contour:contour?.data?.contour||snap.data.contour});
-      if(contour?.data?.contour?.clientId)setClientId(contour.data.contour.clientId);
-      if(snap?.data?.phone?.value)setPhone(snap.data.phone.value);
       setNotice('');
     }catch{
       setData(current=>current.methods.some(item=>item.status==='loading')?blank():current);
@@ -101,20 +98,27 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
       if(response?.data?.methods||response?.data?.contour)setData(current=>({...current,...response.data,contour:response.data.contour||current.contour}));
       await load();
       setPassword('');
-      setClientSecret('');
       setCode('');
     }catch(caught){
       const message=String((caught as{response?:{data?:{error?:string}}})?.response?.data?.error||'');
       setNotice(
         message==='LAST_LOGIN_METHOD_PROTECTED'?t(lang,'t14'):
         message==='GOOGLE_CONTOUR_LAST_SECRET_PROTECTED'?t(lang,'t15'):
+        /TOTP|CODE/.test(message)?t(lang,'t20'):
+        message==='RATE_LIMITED'||message==='LOGIN_RATE_LIMITED'?t(lang,'t21'):
         t(lang,'t16')
       );
     }
     setBusy(false);
   };
 
-  // Passkeys zijn verborgen tot de backend echte WebAuthn-verificatie heeft (zie SECURITY-NOTES.md).
-  const enrollPasskey=async()=>{setNotice(t(lang,'t17'));};
-  return <AccessPlanePanels tab={tab} lang={lang} mode={mode} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} phone={phone} setPhone={setPhone} clientId={clientId} setClientId={setClientId} clientSecret={clientSecret} setClientSecret={setClientSecret} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} load={load} write={write} enrollPasskey={enrollPasskey} blank={blank}/>;
+  // Nieuwe herstelcodes met een verse passkey-bevestiging in plaats van de TOTP-code (de server controleert dat zelf).
+  const rotateWithPasskey=async()=>{
+    setNotice('');
+    const ok=await passkeyStapOp(String(sessionBody().service),sessionBody().tabContext,(url,body)=>api.post(url,body));
+    if(!ok){setNotice(t(lang,'t19'));return;}
+    await write('/api/owner/access/recovery/rotate',{});
+  };
+  const recoverySaved=async()=>{await write('/api/owner/access/recovery/bekeken');setRecovery([]);};
+  return <AccessPlanePanels tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={sessionBody()} load={load} write={write} rotateWithPasskey={rotateWithPasskey} recoverySaved={recoverySaved}/>;
 }
