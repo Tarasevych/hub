@@ -1,7 +1,7 @@
 // Venster «Підтвердіть доступ» / «Toegang bevestigen» (zoals GitHub «Confirm access», sudo mode). Wordt lui geladen door
 // stap-op.ts. Eén taal tegelijk: de taal van de pagina (<html lang>), live bijgewerkt als de gebruiker de taal omschakelt.
 // Toont alleen manieren die deze gebruiker heeft (POST /api/owner/access/stap-op/methoden); fouten in het venster, geen alerts.
-import { useEffect, useRef, useState } from 'react';
+import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { Fingerprint, KeyRound, LifeBuoy, LogIn, ShieldCheck, X } from 'lucide-react';
 import { kanPasskey } from './webauthn';
@@ -206,6 +206,14 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
   </div>;
 }
 
+/** Renderfout in het venster: nooit een onzichtbaar, hangend verzoek — de aanroeper krijgt een fout die de pagina toont. */
+class Grens extends Component<{ klaar: (u: StapOpUitkomst) => void; children: ReactNode }, { fout: boolean }> {
+  state = { fout: false };
+  static getDerivedStateFromError() { return { fout: true }; }
+  componentDidCatch(err: unknown) { console.error('[stap-op] venster «Підтвердіть доступ»: renderfout', err); this.props.klaar({ ok: false, reden: 'VENSTER_FOUT' }); }
+  render() { return this.state.fout ? null : this.props.children; }
+}
+
 // ------------------------------------------------------------------------------------------------ imperatief openen
 let wortel: Root | null = null;
 let rij: Promise<unknown> = Promise.resolve();
@@ -225,7 +233,7 @@ export function toonBevestigVenster(opties: BevestigOpties): Promise<StapOpUitko
     let klaarGezet = false;
     const klaar = (u: StapOpUitkomst) => { if (klaarGezet) return; klaarGezet = true; r.render(null); document.body.classList.remove('bevestig-toegang-open'); try { terug?.focus?.(); } catch { /* negeren */ } resolve(u); };
     document.body.classList.add('bevestig-toegang-open');
-    r.render(<Venster key={Date.now()} opties={opties} klaar={klaar} />);
+    r.render(<Grens key={Date.now()} klaar={klaar}><Venster opties={opties} klaar={klaar} /></Grens>);
   }));
   rij = volgende.catch(() => undefined);
   return volgende;

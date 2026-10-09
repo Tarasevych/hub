@@ -183,10 +183,10 @@ export async function registratieOpties(auth: PasskeyAuth) {
       user: { id: gebruikerHandle(auth.user.id), name: naam, displayName: tekst(auth.user.name || naam, 64) || naam },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -8 }, { type: 'public-key', alg: -257 }],
       timeout: 120000, attestation: 'none',
-      // Geen authenticatorAttachment: zo kan de browser ook «Використовувати телефон або планшет» (QR + Bluetooth, hybrid) tonen,
-      // net als bij GitHub. hints (WebAuthn L3): eerst dit apparaat, dan de telefoon; browsers zonder hints negeren het veld.
+      // Geen authenticatorAttachment en geen hints: de browser toont zijn volledige keuze (dit apparaat, «Використовувати телефон
+      // або планшет» met QR + Bluetooth, beveiligingssleutel), net als bij GitHub. hints ['client-device', …] liet Chrome op Windows
+      // meteen naar Windows Hello gaan; dat willen we niet afdwingen.
       authenticatorSelection: { residentKey: 'preferred', requireResidentKey: false, userVerification: 'required' },
-      hints: ['client-device', 'hybrid'],
       excludeCredentials: rijen.map((r) => ({ type: 'public-key', id: r.credential_id, ...(r.transports?.length ? { transports: r.transports } : {}) })),
     },
   };

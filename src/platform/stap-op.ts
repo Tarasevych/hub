@@ -111,5 +111,6 @@ export async function stapOpVragen(body: unknown, post: Post): Promise<boolean> 
   const service = String(b.service || ''), tabContext = String(b.tabContext || '');
   if (!SERVICES.has(service) || !tabContext) return false;
   const uit = await bevestigToegang({ service, tabContext, post, hervat: lopende });
+  if (!uit.ok && uit.reden === 'VENSTER_FOUT') throw new Error('VENSTER_FOUT');
   return uit.ok;
 }

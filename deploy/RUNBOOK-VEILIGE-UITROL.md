@@ -508,3 +508,36 @@ sudo mijn-ruimte-passkey rp-bijwerken   # leeg bestand → rpId tarasevych.com +
 «Способи входу». Tot dan toont de pagina bij de eigenaar een waarschuwing dat root nog op de oude rpId staat.
 
 
+
+### 13.7 «Додати passkey» → «Продовжити» deed niets (release 20261009-052551) en de e2e-test
+
+**Oorzaak.** Na «Продовжити» haalt de pagina de registratie-opties op en roept `navigator.credentials.create()` aan. Was de
+step-up nog geldig (verse Google-aanmelding < 5 min, bv. direct na de uitrol), dan verschijnt er terecht geen venster
+«Підтвердіть доступ» en wacht de pagina op het passkey-venster van de browser/Windows. Verscheen dat venster niet (of hing
+het; de registratie-opties droegen `hints: ['client-device','hybrid']`), dan bleef de pagina zonder melding, zonder
+«Скасувати» en zonder tijdslimiet op die belofte wachten: de knop was `disabled` en in het donkere thema (lichte
+`--boot-accent` #8dbab7 met witte tekst) zag hij er al bleek/uitgeschakeld uit. Elke fout in het laden van het venster zelf
+(chunk na een nieuwe release, renderfout) werd bovendien stil `false`.
+
+**Herstel.**
+- Tijdens het wachten staat er een statusregel («Готуємо запит…» → «Відкрито вікно passkey браузера або Windows…», na 25 s
+  een hint) met een werkende «Скасувати» (AbortController → «Додавання passkey скасовано.»). Elke fout komt als melding in
+  de sectie en in de console.
+- Kan «Підтвердіть доступ» niet openen, dan geeft `client.ts` de fout `STAP_OP_VENSTER_FOUT` («оновіть сторінку»); een
+  renderfout in het venster wordt opgevangen (error boundary) en niet stil geslikt.
+- Geen `hints` meer in de registratie-opties: de browser toont zijn volledige keuze (dit apparaat, telefoon via QR,
+  beveiligingssleutel).
+- Accentknoppen hebben in de donkere thema's donkere tekst (`--ap-op-accent`).
+- `deploy/installeer-app.sh` bouwt nu met `NODE_ENV=production` (alleen `npm ci` draait met development). Tot en met
+  20261009-052551 bevatte productie de ontwikkelversie van React.
+
+**Indeling.** Passkeys staan op één plek (onder «Вхід»), met per passkey de eigenaarsschakelaar «Може схвалювати
+оновлення сервера». Onder 2FA staan alleen de authenticator-app en een regel dat passkeys ook tellen; de herstelcodes
+hebben een eigen sectie. Uitleg en de QR-hint staan in een (?) naast de titel (`src/InfoTip.tsx`, popover met
+role=tooltip/aria-describedby, hover/focus/tik, Esc).
+
+**E2E.** `npx vite build && node scripts/e2e-lokaal.mjs` met dezelfde omgeving als de eenheidstests, plus
+playwright-core (`PLAYWRIGHT_CORE`), Chrome (`CHROME`) en een test-CA in `$HOME/.pki/nssdb` met een certificaat voor
+`*.tarasevych.com` (`E2E_TLS`: srv.key/srv.crt). Echte Chrome headless, `--host-resolver-rules` naar de lokale server, CDP
+virtual authenticator (internal, usb, hybrid/cable), Google gestubd via `page.route`. Screenshots naar `E2E_SCREENSHOTS`.
+De test ruimt zijn gebruikers op (de unieke index `records_een_eigenaar`).

@@ -113,7 +113,7 @@ export async function main(): Promise<number> {
     const pkOpt = opt.data.publicKey || {};
     check('registratie-opties: rpId tarasevych.com, UV required, resident key preferred, attestation none, user.id ≠ account-id', opt.status === 200 && pkOpt.rp?.id === 'tarasevych.com' && pkOpt.authenticatorSelection?.userVerification === 'required' && pkOpt.authenticatorSelection?.residentKey === 'preferred' && pkOpt.attestation === 'none' && pkOpt.user?.id && pkOpt.user.id !== aId && !String(pkOpt.user.id).includes(aId), JSON.stringify(pkOpt).slice(0, 200));
 
-    check('registratie-opties: geen authenticatorAttachment (telefoon via QR/hybrid mogelijk), hints client-device + hybrid', opt.status === 200 && !('authenticatorAttachment' in (pkOpt.authenticatorSelection || {})) && Array.isArray(pkOpt.hints) && pkOpt.hints.includes('hybrid') && pkOpt.hints.includes('client-device'), JSON.stringify(pkOpt.authenticatorSelection) + JSON.stringify(pkOpt.hints));
+    check('registratie-opties: geen authenticatorAttachment en geen hints (browser toont alle keuzes, ook telefoon via QR)', opt.status === 200 && !('authenticatorAttachment' in (pkOpt.authenticatorSelection || {})) && !('hints' in pkOpt), JSON.stringify(pkOpt.authenticatorSelection) + JSON.stringify(pkOpt.hints));
     // origins: alleen id/admin/hub
     const geweigerd: string[] = [];
     for (const origin of ['https://evil.example', 'http://id.tarasevych.com', 'https://id.tarasevych.com:8443', 'https://tarasevych.com.evil.example', 'https://mail.tarasevych.com']) {

@@ -20,7 +20,10 @@ body.bevestig-toegang-open{overflow:hidden}
 .bevestig-toegang-kaart label{font-weight:600;font-size:.9rem}
 .bevestig-toegang-kaart input{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:9px;border:1px solid var(--boot-line,var(--line,#dce1e6));background:var(--boot-panel,var(--panel,#fff));color:inherit;font-size:1.05rem;letter-spacing:.12em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .bevestig-toegang-uitleg{margin:0;color:var(--boot-muted,#6a7580);font-size:.86rem;line-height:1.4}
-.bevestig-toegang-primair{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:42px;padding:9px 14px;border-radius:10px;border:1px solid var(--boot-accent,#2f6f73);background:var(--boot-accent,#2f6f73);color:#fff;font-weight:600}
+/* Tekstkleur op de accentknop volgt --ap-op-accent (donker in de donkere thema's, zie access-plane.css). */
+.bevestig-toegang-primair{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:42px;padding:9px 14px;border-radius:10px;border:1px solid var(--boot-accent,#2f6f73);background:var(--boot-accent,#2f6f73);color:var(--ap-op-accent,#fff);font-weight:600}
+.bevestig-toegang-primair:hover:not(:disabled){filter:brightness(1.08)}
+.bevestig-toegang-primair:focus-visible{outline:2px solid #7fd1c9;outline-offset:2px}
 .bevestig-toegang-primair svg{width:18px;height:18px}
 .bevestig-toegang-fout{margin:0;padding:8px 10px;border-radius:8px;background:rgba(200,60,40,.09);border:1px solid rgba(200,60,40,.3);font-size:.86rem}
 .bevestig-toegang-alt h3{margin:0 0 6px;font-size:.92rem;font-weight:600}
@@ -33,3 +36,6 @@ body.bevestig-toegang-open{overflow:hidden}
 .bevestig-toegang-annuleer{padding:7px 12px;border-radius:9px;border:1px solid var(--boot-line,var(--line,#dce1e6));background:transparent;color:inherit;font-size:.86rem}
 .bevestig-toegang-melding{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:1001;max-width:calc(100% - 32px);padding:10px 14px;border-radius:10px;background:#1d6b4a;color:#fff;font-size:.9rem;box-shadow:0 10px 30px rgba(0,0,0,.25)}
 @media (max-width:480px){.bevestig-toegang-achter{align-items:end;padding:0}.bevestig-toegang{width:100%;border-radius:16px 16px 0 0}}
+
+html.theme-dark{--ap-op-accent:#10201f}
+html.theme-plum-dark{--ap-op-accent:#2a1024}
