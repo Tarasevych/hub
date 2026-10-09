@@ -11,6 +11,7 @@ import { getPool } from '../../server/platform/pg';
 import * as store from '../../backend/connectors-store';
 import { auditToevoegen } from '../../server/platform/audit';
 import { startE2eServer, chromeArgs } from './server';
+import { actieSoort } from '../../shared/mcp-acties';
 
 const PW = process.env.PLAYWRIGHT_CORE || '/workspace/e2e-tools/node_modules/playwright-core';
 const TLS = process.env.E2E_TLS || '/workspace/e2e-tools/tls';
@@ -204,6 +205,24 @@ export async function main(): Promise<number> {
     await licht(); await page.waitForTimeout(200);
     await page.screenshot({ path: `${UIT}/agenten-11-journaal-licht.png`, fullPage: true });
     await donker();
+
+    // ---------------------------------------------------------------- 6b. werksessie van een AI (wat deed Claude, op volgorde)
+    for (const [tool, doel] of [['machine_list', ''], ['machine_read_file', 'T:\\notes\\a.md'], ['machine_read_file', 'T:\\notes\\a.md'], ['machine_exec', 'git status']]) {
+      await auditToevoegen({ ownerId: uid, actorId: uid, action: 'owner.mcp.tool', type: 'ai', result: 'success', details: { tool, client: 'Claude', grantId: grant, soort: actieSoort(tool), ...(doel ? { doel } : {}) } });
+    }
+    await page.locator('[data-filter="soort"]').selectOption('werk');
+    const sessie = jl.locator('[data-actie="werksessie"]').first();
+    await sessie.waitFor({ timeout: 10000 }).catch(() => undefined);
+    const sessieTekst = await sessie.innerText().catch(() => '');
+    check('journaal: 4 acties van Claude vormen één werksessie met samenvatting per soort',
+      /«Claude» працював: 4 дії — 2 читання файлів чи тек · 1 перевірка стану · 1 команда/.test(sessieTekst) && (await jl.locator('[data-rij]').count()) === 1, sessieTekst.slice(0, 300));
+    await sessie.locator('.ag-rij-toggle').click();
+    const stappen = await sessie.locator('.ag-werkstappen li').allInnerTexts();
+    check('werksessie uitklappen: stappen op volgorde, herhaling ×2, doel zichtbaar, icoon per stap',
+      stappen.length === 3 && /Переглянув підключені пристрої/.test(stappen[0]) && /Прочитав файл: T:\\notes\\a\.md ×2/.test(stappen[1]) && /Виконав команду: git status/.test(stappen[2])
+      && (await sessie.locator('.ag-werkstap-icoon svg').count()) === 3, JSON.stringify(stappen));
+    await page.screenshot({ path: `${UIT}/agenten-12-werksessie-donker.png`, fullPage: true });
+    await page.locator('[data-filter="soort"]').selectOption('');
 
     // ---------------------------------------------------------------- 7. overzicht + nagebootste 429: vriendelijke tekst, geen code
     await page.route('**/api/owner/agents/overzicht', (route) => route.fulfill({ status: 429, contentType: 'application/json', body: JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: 30 }) }));
