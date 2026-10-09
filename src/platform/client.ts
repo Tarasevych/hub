@@ -41,12 +41,29 @@ function withQuery(url: string, data: unknown): string {
   return qs ? `${url}${url.includes('?') ? '&' : '?'}${qs}` : url;
 }
 
-async function request(method: string, url: string, data?: unknown, opnieuw = false): Promise<ApiResponse> {
+// Menu v2 fase B1: aantal lopende API-verzoeken (voor de voortgangsbalk: klaar als het stil is) en optioneel afbreken
+// (alleen voor LEZENDE verzoeken die door een nieuwe navigatie overbodig zijn geworden — nooit voor schrijvende acties).
+export type ApiOpties = { signal?: AbortSignal };
+let lopend = 0;
+const activiteitLuisteraars = new Set<(n: number) => void>();
+const meldActiviteit = (d: number) => { lopend = Math.max(0, lopend + d); for (const f of activiteitLuisteraars) { try { f(lopend); } catch { /* luisteraar mag de client niet breken */ } } };
+export const apiLopend = () => lopend;
+export function opApiActiviteit(f: (n: number) => void) { activiteitLuisteraars.add(f); return () => { activiteitLuisteraars.delete(f); }; }
+export const isAfgebroken = (e: unknown) => e instanceof ApiError && e.message === 'ABORTED';
+
+async function request(method: string, url: string, data?: unknown, opnieuw = false, opties: ApiOpties = {}): Promise<ApiResponse> {
+  meldActiviteit(1);
+  try { return await requestKern(method, url, data, opnieuw, opties); } finally { meldActiviteit(-1); }
+}
+
+async function requestKern(method: string, url: string, data: unknown, opnieuw: boolean, opties: ApiOpties): Promise<ApiResponse> {
   const hasBody = method !== 'GET' && method !== 'DELETE';
   const target = hasBody ? url : withQuery(url, data);
+  if (opties.signal?.aborted) throw new ApiError(0, 'ABORTED', { error: 'ABORTED' }, '');
   let response: Response;
   try {
     response = await fetch(target, {
+      signal: opties.signal,
       method,
       credentials: 'same-origin',
       cache: 'no-store',
@@ -54,9 +71,11 @@ async function request(method: string, url: string, data?: unknown, opnieuw = fa
       body: hasBody ? JSON.stringify(data ?? {}) : undefined,
     });
   } catch {
+    if (opties.signal?.aborted) throw new ApiError(0, 'ABORTED', { error: 'ABORTED' }, '');
     throw new ApiError(0, 'NETWORK_ERROR', { error: 'NETWORK_ERROR' }, '');
   }
-  const text = await response.text();
+  let text: string;
+  try { text = await response.text(); } catch { throw new ApiError(0, opties.signal?.aborted ? 'ABORTED' : 'NETWORK_ERROR', { error: opties.signal?.aborted ? 'ABORTED' : 'NETWORK_ERROR' }, ''); }
   let parsed: any = text;
   if (text) { try { parsed = JSON.parse(text); } catch { parsed = text; } } else parsed = null;
   if (!response.ok) {
@@ -77,7 +96,7 @@ async function request(method: string, url: string, data?: unknown, opnieuw = fa
 
 export const api = {
   get: (url: string, data?: any) => request('GET', url, data),
-  post: (url: string, data?: any) => request('POST', url, data),
+  post: (url: string, data?: any, opties?: ApiOpties) => request('POST', url, data, false, opties),
   put: (url: string, data?: any) => request('PUT', url, data),
   delete: (url: string, data?: any) => request('DELETE', url, data),
 };

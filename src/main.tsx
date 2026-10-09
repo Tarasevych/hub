@@ -7,12 +7,21 @@ import App from './App';
 import './index.css';
 import './mobile-ux.css';
 
+// Menu v2 fase B1: als deze pagina vooraf wordt voorbereid (Speculation Rules «prerender», alleen als de eigenaar dat aanzet),
+// start de app — en dus elk API-verzoek, sessie- of tabbladwerk — pas wanneer de gebruiker de pagina echt opent (activering).
+const naActivering = (doe: () => void) => {
+  const d = document as Document & { prerendering?: boolean };
+  if (d.prerendering) document.addEventListener('prerenderingchange', () => doe(), { once: true }); else doe();
+};
+
 // Gastpagina (toegangscode inwisselen, §13.11): eigen, losse weergave zonder de app-shell en zonder eigenaarssessie.
 const gastPagina = location.pathname === '/toegang' && (location.hostname === 'id.tarasevych.com' || location.hostname === 'localhost');
-if (gastPagina) {
-  document.getElementById('boot-shell')?.remove();
-  document.documentElement.classList.remove('boot-active');
-  void import('./GastToegang').then(({ default: GastToegang }) => createRoot(document.getElementById('root')!).render(<GastToegang />));
-} else createRoot(document.getElementById('root')!).render(<App />);
+naActivering(() => {
+  if (gastPagina) {
+    document.getElementById('boot-shell')?.remove();
+    document.documentElement.classList.remove('boot-active');
+    void import('./GastToegang').then(({ default: GastToegang }) => createRoot(document.getElementById('root')!).render(<GastToegang />));
+  } else createRoot(document.getElementById('root')!).render(<App />);
+});
 
 const callbackQuery=/[?&](?:code|state|token|proof|transaction|redeem|handoff)=/i.test(location.search);if('serviceWorker'in navigator&&location.protocol==='https:'&&!callbackQuery){window.addEventListener('load',()=>{const script=new URL('./service-worker.js',location.href);void navigator.serviceWorker.register(script,{scope:'./',updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>undefined)},{once:true})}

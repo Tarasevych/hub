@@ -192,7 +192,7 @@ export default function MailFunctionalView({lang,tab,userId,sourceOrigin,tabCont
   <section className='mail-action-panel' data-high-risk-send='disabled'>
    <header><h2>{text(lang,'Чернетка без тиску','Concept zonder druk')}</h2><button onClick={()=>setPanel('')}><X/></button></header>
    <div className='mail-reply-styles'>{(['short','warm','formal'] as ReplyStyle[]).map(style=><button key={style} aria-pressed={draftStyle===style} onClick={()=>selectReplyStyle(style)}>{style==='short'?text(lang,'Одним реченням','Eén zin'):style==='warm'?text(lang,'Тепло','Warm'):text(lang,'Формально','Formeel')}</button>)}</div>
-   <textarea value={draftBody} onChange={event=>setDraftBody(event.target.value)} rows={8}/>
+   <textarea data-concept='mail-antwoord' value={draftBody} onChange={event=>setDraftBody(event.target.value)} rows={8}/>
    <label className='mail-send-later'><input type='checkbox' checked={sendLater} onChange={event=>setSendLater(event.target.checked)}/><span>{text(lang,'Повернутися до чернетки завтра о 09:00','Morgen om 09:00 naar dit concept terugkeren')}</span></label>
    <p className='mail-risk-boundary'><ShieldCheck/>{text(lang,'Фактичне надсилання вимкнене до підключення поштового провайдера.','Werkelijk verzenden is uitgeschakeld tot een mailprovider is gekoppeld.')}</p>
    <button className='mail-primary' disabled={busy||!draftBody.trim()} onClick={()=>void saveDraft()}><Check/>{text(lang,'Зберегти чернетку','Concept bewaren')}</button>

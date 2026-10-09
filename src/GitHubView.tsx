@@ -117,7 +117,7 @@ function IssueComposer({ repo, tr, onDone }: { repo: string; tr: Tr; onDone: () 
   };
   return <form className="gh-form" onSubmit={(e) => { e.preventDefault(); void send(); }}>
     <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tr('Заголовок', 'Titel')} maxLength={250} aria-label={tr('Заголовок', 'Titel')} />
-    <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder={tr('Опис (необов’язково)', 'Beschrijving (optioneel)')} rows={4} aria-label={tr('Опис', 'Beschrijving')} />
+    <textarea data-concept='github-issue' value={body} onChange={(e) => setBody(e.target.value)} placeholder={tr('Опис (необов’язково)', 'Beschrijving (optioneel)')} rows={4} aria-label={tr('Опис', 'Beschrijving')} />
     {err && <Notice kind="error">{err}</Notice>}
     <button className="gh-btn gh-primary" disabled={busy || title.trim().length < 3}>{busy ? <Loader2 size={14} className="gh-spin" /> : <MessageSquarePlus size={14} />}{tr('Створити issue', 'Issue aanmaken')}</button>
   </form>;

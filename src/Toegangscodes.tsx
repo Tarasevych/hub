@@ -7,6 +7,7 @@ import {useEffect,useMemo,useState} from 'react';
 import {Check,ChevronDown,ChevronRight,Clock,Copy,History,KeyRound,Link2,Plus,Share2,Ticket,Users,X} from 'lucide-react';
 import qrcode from 'qrcode-generator';
 import {api} from './platform/client';
+import {swrPost} from './lees-cache';
 import {foutCode} from './platform/webauthn';
 import {InfoTip} from './InfoTip';
 import {NotitieVeld,RedenVeld,apparaatTekst,redenOk,tijdTekst,useNotities} from './ToegangContext';
@@ -72,8 +73,9 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
   const[getoond,setGetoond]=useState<null|{code:string;link:string;naam:string}>(null);
   const[melding,setMelding]=useState('');
   const notities=useNotities(context);
-  const laden=async()=>{try{const d=(await api.post('/api/owner/access/toegangscodes/lijst',context)).data as Lijst&{beschikbaar?:boolean};if(d.beschikbaar===false){setGeenToegang(true);return;}setData(d);}catch(c){if(foutCode(c)==='OWNER_REQUIRED')setGeenToegang(true);else setFout(foutTekst(lang,foutCode(c)));}};
-  useEffect(()=>{void laden();},[]);// eslint-disable-line react-hooks/exhaustive-deps
+  // Fase B1: bewaarde lijst meteen tonen, dan vers ophalen (alleen geheugen, per account); afbreken als de pagina verdwijnt.
+  const laden=async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{try{await swrPost<Lijst&{beschikbaar?:boolean}>('/api/owner/access/toegangscodes/lijst',context,d=>{if(d.beschikbaar===false){setGeenToegang(true);return;}setData(d);},o);}catch(c){if(foutCode(c)==='OWNER_REQUIRED')setGeenToegang(true);else setFout(foutTekst(lang,foutCode(c)));}};
+  useEffect(()=>{const a=new AbortController();void laden({signal:a.signal});return()=>a.abort();},[]);// eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{if(location.hash==='#toegangscodes'&&data)window.setTimeout(()=>document.getElementById('toegangscodes')?.scrollIntoView({block:'start'}),80);},[!!data]);// eslint-disable-line react-hooks/exhaustive-deps
   if(geenToegang)return null;
   const maken=async()=>{
@@ -120,7 +122,7 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
         <label htmlFor='toegangscode-naam'>{tr(lang,'Назва','Naam')}</label>
         <input id='toegangscode-naam' autoFocus maxLength={80} value={nieuw.naam} placeholder={tr(lang,'Наприклад: Для Олени','Bijvoorbeeld: Voor Olena')} onChange={e=>setNieuw({...nieuw,naam:e.target.value})}/>
         <label htmlFor='toegangscode-notitie'>{tr(lang,'Приватна нотатка (бачите лише ви)','Privénotitie (alleen u ziet dit)')}</label>
-        <textarea id='toegangscode-notitie' rows={2} maxLength={500} value={nieuw.notitie} onChange={e=>setNieuw({...nieuw,notitie:e.target.value})}/>
+        <textarea id='toegangscode-notitie' data-concept='toegangscode-notitie' rows={2} maxLength={500} value={nieuw.notitie} onChange={e=>setNieuw({...nieuw,notitie:e.target.value})}/>
         <fieldset><legend>{tr(lang,'Що людина зможе переглядати','Wat de persoon mag bekijken')}</legend>
           {data.scopes.map(s=><label key={s.id} className='toegangscode-scope'><input type='checkbox' data-scope={s.id} checked={nieuw.scopes.includes(s.id)} onChange={e=>setNieuw({...nieuw,scopes:e.target.checked?[...nieuw.scopes,s.id]:nieuw.scopes.filter(x=>x!==s.id)})}/>{tr(lang,s.uk,s.nl)}</label>)}
           <small className='toegangscode-nooit'><strong>{tr(lang,'Ніколи не доступно гостю:','Nooit beschikbaar voor een gast:')}</strong> {data.nooit.map(n=>tr(lang,n.uk,n.nl)).join(' · ')}</small>
@@ -137,7 +139,7 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
           <button type='button' className='secondary' onClick={()=>setNieuw(null)}><X/>{tr(lang,'Скасувати','Annuleren')}</button>
         </div>
       </form>}
-      {data?.codes.map(c=><CodeRij key={c.id} lang={lang} c={c} scopes={data.scopes} presets={data.presets} context={context} notities={notities} onChange={laden}/>)}
+      {data?.codes.map(c=><CodeRij key={c.id} lang={lang} c={c} scopes={data.scopes} presets={data.presets} context={context} notities={notities} onChange={()=>laden()}/>)}
       {data&&!data.codes.length&&!nieuw&&!getoond&&<p className='access-plane-hint-line'>{tr(lang,'Ще немає кодів доступу.','Nog geen toegangscodes.')}</p>}
     </div>
   </section>;

@@ -111,7 +111,7 @@ export default function ChatPanel({ tr, status }: { tr: Tr; status: Status }) {
 
       <form className='chat-form' onSubmit={(event) => { event.preventDefault(); void send(); }}>
         <textarea
-          value={input} rows={2} disabled={busy}
+          value={input} rows={2} disabled={busy} data-concept='ai-chat'
           placeholder={tr('Повідомлення…', 'Bericht…')}
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send(); } }}

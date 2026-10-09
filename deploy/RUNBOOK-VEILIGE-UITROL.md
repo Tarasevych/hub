@@ -862,6 +862,61 @@ Tests: `tests/eenheid/menu-meldingen.test.ts` (35: normalisatie, stille uren, do
 Controle na uitrol: Ctrl+F5 → werkbalk: ⚙ zichtbaar → klik → «Сповіщення в меню». E-mail openen → badge op Пошта met het aantal
 ongelezen; op een andere dienst aanwijzen → bel «Непрочитані листи: N» → × → badge weg.
 
+### 14.3 Fase B1 (9-10-2026) — snelle overgangen, leescache, vooruitladen, versleutelde concepten
+
+Wat er verandert:
+
+- **Voortgangsbalk** (`src/navigatie-snel.ts`, `#tsv-voortgang`): dunne balk bovenaan in de kleur van het onderdeel
+  waar je heen gaat (lichte/donkere tint). Start via de Navigation API (`navigate`-event) of bij een klik in het menu;
+  wordt pas na 120 ms zichtbaar (geen geflikker); binnen een onderdeel klaar zodra er ≥ 220 ms geen API-verzoek meer
+  loopt; bij een wissel naar een ander subdomein blijft hij lopen tot de pagina wisselt (max. 12 s).
+- **Overgangen binnen een onderdeel**: `document.startViewTransition` alleen op de werkruimte
+  (`view-transition-name: tsv-werkruimte`), niet bij «minder beweging». Tussen subdomeinen kan dat niet (andere origin);
+  daar voorkomen `html{background:var(--boot-bg)}` en vooruitladen de witte flits.
+- **Leescache + afbreken** (`src/lees-cache.ts`, `src/platform/client.ts`): stale-while-revalidate, alleen in het
+  geheugen, per account (wisselt het account, dan wordt de cache gewist), max. 40 items / 10 min, alleen
+  `/api/owner/...`-leesroutes. Toegangscodes, passkeys en sessies tonen direct de vorige stand en verversen op de
+  achtergrond; bij het verlaten van een pagina wordt het lopende verzoek afgebroken (`AbortController`).
+- **Vooruitladen tussen subdomeinen**: HTTP-header `Speculation-Rules: "/speculatie.json"` op HTML-antwoorden
+  (géén inline-script, dus de CSP blijft exact `script-src 'self' 'wasm-unsafe-eval'`). De regels werken alleen op
+  onzichtbare links met `data-tsv-vooruit` in `#tsv-vooruit`; die maakt de app bij aanwijzen (90 ms) of focus van een
+  menu-item. Alleen `https`, alleen eigen hosts, nooit links met `code/state/token/proof/transaction/redeem/handoff/
+  auth_broker/oauth_*/consent/invite`. HTML krijgt ook `Supports-Loading-Mode: credentialed-prerender`
+  (nodig voor prerender over subdomeinen). API-antwoorden krijgen deze headers niet.
+- **Service worker v10**: bij installatie worden de JS/CSS-ingangsbestanden uit de start-HTML in de cache gezet
+  (max. 24). Oude caches (v9 enz.) worden bij activeren opgeruimd zoals voorheen.
+- **Versleutelde concepten** (`src/concepten.ts`): alleen velden met `data-concept` (AI-chat, mailantwoord,
+  GitHub-issue, MCP-bord, notitie bij toegangscode); nooit wachtwoord- of eenmalige-codevelden. AES-GCM 256 met een
+  **niet-exporteerbare** sleutel in IndexedDB `tsv-concepten`, per account (rij-id = eerste 32 hex van
+  SHA-256(`tsv-concept|<id>`), dus geen e-mail/id in de opslag), AAD = rij-id, IV 12 bytes, 7 dagen geldig,
+  max. 50 concepten / 20 000 tekens. Herstel na herladen met melding «Чернетку відновлено» en knop «Відкинути».
+  Uitzetten wist alle concepten én sleutels. Niets gaat naar de server.
+
+Instellingen (Налаштування → Меню → «Швидкість переходів і чернетки», `#menu-snelheid`, opgeslagen in de zijbalk-
+voorkeur `snelheid`):
+
+| Schakelaar | Standaard |
+|---|---|
+| Смужка завантаження (voortgang) | aan |
+| Плавна зміна сторінок (overgangen) | aan |
+| Підвантажувати розділ при наведенні (vooruitladen) | aan |
+| Повністю готувати розділ заздалегідь (prerender) — experimenteel | **uit** |
+| Зберігати чернетки (зашифровано) (concepten) — experimenteel | **uit** |
+
+Beperkingen: geen View Transition tussen subdomeinen; vooruitladen kan in oudere Chrome-versies vervallen als de doelpagina
+een service worker heeft; concepten alleen voor de 5 gemarkeerde velden (niet de Gmail-editor) en per subdomein
+(IndexedDB is per origin); Firefox/Safari zonder Speculation Rules laden gewoon zonder vooruitladen.
+
+Controle na uitrol:
+
+1. `curl -sI https://id.tarasevych.com/menu | grep -i -E 'speculation-rules|supports-loading-mode|content-security'` →
+   `"/speculatie.json"`, `credentialed-prerender`, CSP ongewijzigd.
+2. `curl -sI https://id.tarasevych.com/speculatie.json` → `application/speculationrules+json`.
+3. `curl -s https://id.tarasevych.com/service-worker.js | grep "VERSION='v10'"`.
+4. In de browser: klik Налаштування → Мови: balk in grijs; aanwijzen Пошта → in DevTools (Application → Speculative
+   loads) staat mail.tarasevych.com als prefetch; daarna openen = direct en aangemeld.
+5. Concepten blijven uit tot ze in de instellingen worden aangezet.
+
 Stage 2 (nog geen UI): `shared/menu-model.ts` — stabiele ids `svc:<dienst>` / `pg:<dienst>/<pagina>`, standaardplaatsing uit
 `MENU_PAGINAS` (gelijk aan `canonical-service.js`, door een test bewaakt), overrides per item (`zichtbaar`, `volgorde`, `plaats`,
 `ouder`, `icoon`), kopieën (`k-…` → `zijbalk`/`snelbalk`/`start`), dock (`links|rechts|boven|onder`, transparantie 0–60, vergroting),

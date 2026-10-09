@@ -1,7 +1,8 @@
 // Instellingen → Меню: «Стиль іконок» (Класичний / Кольоровий) en de modus van de bijbalk (auto / altijd open / altijd smal).
 // Dezelfde winkel als de werkbalk boven in de zijbalk (zijbalk-voorkeuren.ts): wijzigingen zijn meteen overal zichtbaar.
 import {useEffect,type ReactElement} from 'react';
-import {BellRing,MousePointer2,PanelLeftClose,PanelLeftOpen} from 'lucide-react';
+import {BellRing,Gauge,MousePointer2,PanelLeftClose,PanelLeftOpen} from 'lucide-react';
+import type {SnelheidVoorkeuren} from '../shared/menu-snelheid';
 import {CATEGORIE_TEKST,HERINNER_MINUTEN,MELDING_CATEGORIEEN,type MeldingVoorkeuren} from '../shared/menu-meldingen-voorkeuren';
 import {DIENST_ACCENT,type IcoonStijl,type ZijbalkModus} from '../shared/menu-model';
 import {MenuGlyph} from './menu-preferences';
@@ -12,8 +13,9 @@ const VOORBEELD=[['hub','home'],['mail','mail'],['cloud','cloud'],['identity','s
 
 export default function ZijbalkInstellingen({tr}:{tr:Tr}){
   const v=useZijbalkVoorkeuren(),m=v.meldingen;
+  const sn=v.snelheid,zetS=(patch:Partial<SnelheidVoorkeuren>)=>zetZijbalk(cur=>({...cur,snelheid:{...cur.snelheid,...patch}}));
   const zetM=(patch:Partial<MeldingVoorkeuren>)=>zetZijbalk(cur=>({...cur,meldingen:{...cur.meldingen,...patch}}));
-  useEffect(()=>{if(location.hash==='#menu-meldingen')window.setTimeout(()=>document.getElementById('menu-meldingen')?.scrollIntoView({block:'start'}),150)},[]);
+  useEffect(()=>{const h=location.hash;if(h==='#menu-meldingen'||h==='#menu-snelheid')window.setTimeout(()=>document.getElementById(h.slice(1))?.scrollIntoView({block:'start'}),150)},[]);
   const schakel=(id:string,aan:boolean,naam:string,uitleg:string,doe:(x:boolean)=>void,uit=false)=><label className={`zijbalk-schakel${uit?' uit':''}`} data-meld-schakel={id}><input type='checkbox' role='switch' checked={aan} disabled={uit} onChange={e=>doe(e.target.checked)}/><span className='zijbalk-schakel-spoor' aria-hidden='true'><i/></span><span><strong>{naam}</strong>{uitleg&&<small>{uitleg}</small>}</span></label>;
   const stijlen:Array<[IcoonStijl,string,string]>=[['klassiek',tr('Класичний','Klassiek'),tr('Спокійні монохромні іконки; колір розділу з’являється при наведенні та в активного пункту.','Rustige monochrome iconen; de kleur van het onderdeel verschijnt bij aanwijzen en bij het actieve item.')],['kleur',tr('Кольоровий','Kleurrijk'),tr('Кожен розділ завжди у своєму кольорі (пошта — синя, ШІ — фіолетовий, хмара — блакитна…); підпункти — світлішим відтінком того ж кольору.','Elk onderdeel altijd in zijn eigen kleur (e-mail blauw, AI violet, cloud hemelsblauw…); subitems in een lichtere tint van dezelfde kleur.')]];
   const modi:Array<[ZijbalkModus,string,ReactElement]>=[['auto',tr('Автоматично: розгортається при наведенні','Automatisch: klapt open bij aanwijzen'),<MousePointer2 key='a'/>],['open',tr('Завжди розгорнута','Altijd uitgeklapt'),<PanelLeftOpen key='o'/>],['dicht',tr('Завжди згорнута','Altijd ingeklapt'),<PanelLeftClose key='d'/>]];
@@ -57,6 +59,18 @@ export default function ZijbalkInstellingen({tr}:{tr:Tr}){
           <legend>{tr('Типи сповіщень','Soorten meldingen')}</legend>
           {MELDING_CATEGORIEEN.map(c=><label key={c} className='zijbalk-cat' data-meld-categorie={c}><input type='checkbox' checked={m.categorieen[c]} disabled={!m.aan} onChange={e=>zetM({categorieen:{...m.categorieen,[c]:e.target.checked}})}/><span className='menu-badge punt' data-categorie={c} aria-hidden='true'/>{tr(...CATEGORIE_TEKST[c])}</label>)}
         </fieldset>
+      </div>
+    </fieldset>
+    <fieldset className='zijbalk-meldingen zijbalk-snelheid' id='menu-snelheid' data-menu-snelheid-instellingen>
+      <legend><Gauge aria-hidden='true'/>{tr('Швидкість переходів і чернетки','Snelheid van overgangen en concepten')}</legend>
+      <p className='zijbalk-meldingen-uitleg'>{tr('Тонка смужка вгорі показує, що сторінка вантажиться (у кольорі розділу, куди ви переходите). Розділи можна підвантажувати заздалегідь, коли ви наводите на них у меню.','Een dunne balk bovenaan laat zien dat een pagina laadt (in de kleur van het onderdeel waar je heen gaat). Onderdelen kunnen alvast worden opgehaald als je ze in het menu aanwijst.')}</p>
+      {schakel('voortgang',sn.voortgang,tr('Смужка завантаження','Laadbalk'),tr('У кольорі розділу, куди ви переходите.','In de kleur van het onderdeel waar je heen gaat.'),x=>zetS({voortgang:x}))}
+      {schakel('overgangen',sn.overgangen,tr('Плавна зміна сторінок','Vloeiende paginawissel'),tr('Лише робоча область; вимикається, якщо в системі «менше анімації».','Alleen het werkgebied; uit bij «minder beweging» in het systeem.'),x=>zetS({overgangen:x}))}
+      {schakel('vooruitladen',sn.vooruitladen,tr('Підвантажувати розділ при наведенні','Onderdeel ophalen bij aanwijzen'),tr('Лише сторінки цього сайту; не працює в режимі економії трафіку.','Alleen pagina’s van deze site; niet bij databesparing.'),x=>zetS({vooruitladen:x}))}
+      <div className='zijbalk-risico' role='group' aria-label={tr('Експериментальні функції','Experimentele functies')}>
+        <p className='zijbalk-risico-kop'><strong>{tr('Експериментально','Experimenteel')}</strong> {tr('— вимкнено за замовчуванням','— standaard uit')}</p>
+        {schakel('prerender',sn.prerender,tr('Повністю готувати розділ заздалегідь','Onderdeel volledig voorbereiden'),tr('Ще швидше, але браузер відкриває сторінку у фоні. Застосунок стартує лише коли ви її справді відкриєте.','Nog sneller, maar de browser opent de pagina op de achtergrond. De app start pas als je hem echt opent.'),x=>zetS({prerender:x}),!sn.vooruitladen)}
+        {schakel('concepten',sn.concepten,tr('Зберігати чернетки (зашифровано)','Concepten bewaren (versleuteld)'),tr('Незавершений текст у полях (чат ШІ, відповіді, нотатки) зберігається зашифрованим лише в цьому браузері до 7 днів і відновлюється після перезавантаження. Вимкнення видаляє всі чернетки.','Onafgemaakte tekst in velden (AI-chat, antwoorden, notities) wordt versleuteld alleen in deze browser bewaard (max. 7 dagen) en na herladen teruggezet. Uitzetten wist alle concepten.'),x=>zetS({concepten:x}))}
       </div>
     </fieldset>
   </section>;
