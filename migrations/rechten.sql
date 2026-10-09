@@ -38,6 +38,11 @@ BEGIN
       GRANT SELECT ON app.toegang_wijzigingen TO mijnruimte_app;
       REVOKE INSERT, UPDATE, DELETE ON app.toegang_wijzigingen FROM mijnruimte_app;
     END IF;
+    -- 0025: toegangscodes voor anderen: de app-rol leest alleen (eigen rijen, RLS); schrijven doet de systeemrol.
+    IF to_regclass('app.toegangscodes') IS NOT NULL THEN
+      GRANT SELECT ON app.toegangscodes, app.gast_sessies, app.toegangscode_log TO mijnruimte_app;
+      REVOKE INSERT, UPDATE, DELETE ON app.toegangscodes, app.gast_sessies, app.toegangscode_log FROM mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- Audit-fix 9: de users-trigger telt (audit-modus) via deze functie; de app kan rls_audit zelf niet schrijven.

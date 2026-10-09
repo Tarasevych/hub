@@ -265,6 +265,9 @@ const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
   [/^\/api\/auth\/google\/start$/, 'google-start', 10, true],
   // Agent koppelen: onbeveiligde route met een code als geheim. Strikt per IP (cf-connecting-ip), faalt dicht.
   [/^\/api\/owner\/agents\/pair$/, 'agent-koppelen', 10, true],
+  // Toegangscode inwisselen (id.tarasevych.com/toegang): publieke route met een code als geheim. Strikt per IP, faalt dicht; daarbovenop
+  // een blokkade na 5 mislukte pogingen (backend/toegangscodes-routes.ts).
+  [/^\/api\/gast\/inwisselen$/, 'gast-inwisselen', 10, true],
   // MCP-connector: dynamische registratie en tokenuitgifte zijn publiek; begrens per IP (alle Claude-verkeer deelt IP's van Anthropic).
   [/^\/api\/mcp-connector\/register$/, 'mcp-register', 20, true],
   [/^\/api\/mcp-connector\/(token|revoke)$/, 'mcp-token', 120, true],
@@ -292,13 +295,23 @@ function connectorPad(url: URL): URL | null {
   return naar;
 }
 
+/**
+ * Alleen voor de lokale e2e-tests (tests/e2e/server.ts zet E2E_LOKALE_LIMIETEN=1): alle browsertests komen van 127.0.0.1 en delen dus
+ * één IP-bucket. Dan ×20. In productie staat deze variabele nooit (deploy/ zet hem niet) en is de factor 1.
+ */
+let factorGemeld = false;
+function strikteFactor(): number {
+  if (process.env.E2E_LOKALE_LIMIETEN !== '1') return 1;
+  if (!factorGemeld) { factorGemeld = true; console.warn('[rate-limit] E2E_LOKALE_LIMIETEN=1: strikte limieten ×20 (alleen lokale e2e-tests)'); }
+  return 20;
+}
 async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
   const algemeen = geheugenLimiet(`api:${ip}`, API_LIMIT_PER_MIN, 60_000);
   if (!algemeen.ok) return algemeen.retryAfter;
   if (SAFE_METHODS.has(method) && !pathname.includes('/callback')) return 0;
   for (const [patroon, naam, max, failClosed] of STRIKTE_LIMIETEN) {
     if (!patroon.test(pathname)) continue;
-    const r = await rateLimit(`${naam}:${ip}`, max, 60, { failClosed });
+    const r = await rateLimit(`${naam}:${ip}`, max * strikteFactor(), 60, { failClosed });
     return r.ok ? 0 : r.retryAfter;
   }
   return 0;

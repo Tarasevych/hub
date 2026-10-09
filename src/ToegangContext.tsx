@@ -25,6 +25,8 @@ export const ACTIE_TEKST:Record<string,[string,string]>={
   'goedkeur-recht-bevestigen':['Надання права схвалювати оновлення','Recht om updates goed te keuren bevestigen'],
   'goedkeur-recht-intrekken':['Відкликання права схвалювати оновлення','Recht om updates goed te keuren intrekken'],
   'wijziging-terugdraaien':['Скасування зміни («Це був не я»)','Wijziging terugdraaien («Dit was ik niet»)'],
+  'toegangscode-maken':['Створення коду доступу для іншої людини','Toegangscode voor iemand anders maken'],
+  'toegangscode-verlengen':['Продовження коду доступу','Toegangscode verlengen'],
   'uitrol-goedkeuren':['Схвалення оновлення','Update goedkeuren'],
   voorbereider:['Право готувати оновлення','Recht om updates voor te bereiden'],
   'totp-wijzigen':['Зміна застосунку-автентифікатора','Authenticator-app wijzigen'],

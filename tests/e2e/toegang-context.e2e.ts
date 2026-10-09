@@ -253,7 +253,7 @@ export async function main(): Promise<number> {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
     await browser.close().catch(() => undefined);
-    const ids = (await pool.query("select id from app.records where tbl='users' and data->>'email' like $1", [`e2e-tc-%-${T}@example.test`]).catch(() => ({ rows: [] as Array<{ id: string }> }))).rows.map((x: { id: string }) => x.id);
+    const ids = (await pool.query("select id from app.records where tbl='users' and data->>'email' = $1", [eigenaar]).catch(() => ({ rows: [] as Array<{ id: string }> }))).rows.map((x: { id: string }) => x.id);
     if (ids.length) {
       for (const t of ['passkeys', 'passkey_uitdagingen', 'toegang_gebruik', 'toegang_notities', 'toegang_wijzigingen']) await pool.query(`delete from app.${t} where user_id = any($1)`, [ids]).catch(() => undefined);
       await pool.query("delete from app.records where id = any($1) or data->>'accountId' = any($1) or data->>'recipientUserId' = any($1) or data->>'userId' = any($1) or data->>'ownerUserId' = any($1)", [ids]).catch((e: unknown) => console.error('[e2e] opruimen', e));

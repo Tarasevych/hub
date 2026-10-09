@@ -30,6 +30,9 @@ export const JOURNAAL_ACTIES: Record<string, JournaalSoort> = {
   // §13.10: rechten om updates goed te keuren / voor te bereiden (wie, wanneer, waarom, welke sleutel) en «Це був не я».
   goedkeur_recht_ingetrokken: 'toegang', goedkeur_passkey_verwijderd: 'toegang', uitrol_passkey_intrekken_gevraagd: 'toegang',
   uitrol_voorbereider_gegeven: 'toegang', uitrol_voorbereider_ingetrokken: 'toegang', toegang_wijziging_ongedaan: 'toegang',
+  // §13.11: toegangscodes voor anderen (aanmaken, eerste en volgende keren inwisselen, verloop wijzigen, intrekken) en gastsessies beëindigen.
+  toegangscode_aangemaakt: 'toegang', toegangscode_ingewisseld: 'toegang', toegangscode_gewijzigd: 'toegang', toegangscode_ingetrokken: 'toegang', gast_sessie_ingetrokken: 'toegang',
+  gast_actie: 'toegang', gast_geweigerd: 'toegang',
 };
 export type JournaalItem = {
   id: string; at: number; actie: string; soort: JournaalSoort; resultaat: string;

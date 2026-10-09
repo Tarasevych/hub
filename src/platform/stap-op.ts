@@ -104,6 +104,7 @@ const ACTIE_PER_PAD: Array<[RegExp, string]> = [
   [/\/passkeys\/registreren/, 'passkey-toevoegen'], [/\/passkeys\/verwijderen/, 'passkey-verwijderen'],
   [/\/passkeys\/goedkeuring\/recht-intrekken/, 'goedkeur-recht-intrekken'], [/\/passkeys\/goedkeuring\/(aanvragen|bevestigen)/, 'goedkeur-recht-aanvragen'],
   [/\/recovery\/rotate/, 'herstelcodes-nieuw'], [/\/recovery\/intrekken/, 'herstelcodes-intrekken'],
+  [/\/toegangscodes\/maken/, 'toegangscode-maken'], [/\/toegangscodes\/wijzigen/, 'toegangscode-verlengen'],
   [/\/toegang\/wijziging\/terugdraaien/, 'wijziging-terugdraaien'], [/\/uitrol\/voorbereiders/, 'voorbereider'], [/\/uitrol\//, 'uitrol-goedkeuren'],
   [/\/totp\/(disable|uitschakelen)/, 'totp-uitschakelen'], [/\/totp\//, 'totp-wijzigen'], [/\/password/, 'wachtwoord'],
   [/export/, 'export'], [/(account|user)s?\/(delete|verwijder)/, 'account-verwijderen'], [/\/(agents|connectors|mcp)\b/, 'agenten'], [/\/admin\b|\/beheer\b/, 'beheer'],

@@ -193,3 +193,28 @@ html.theme-plum-dark{--ap-op-accent:#2a1024}
 .toegang-wijziging{padding:4px 12px 8px}
 .toegang-wijziging .toegang-sluit{width:32px;height:32px;min-height:0;padding:0;display:inline-grid;place-items:center;flex:0 0 auto;align-self:center}
 .toegang-wijziging .toegang-sluit svg{width:16px;height:16px}
+/* §13.11 Коди доступу для інших */
+.toegangscode-form{display:grid;gap:10px}
+.toegangscode-form label{display:grid;gap:4px;font-size:.88rem}
+.toegangscode-form input[type=text],.toegangscode-form textarea,.toegangscode-form input[type=datetime-local],.toegangscode-form input[type=number]{padding:8px 10px;border-radius:9px;border:1px solid var(--boot-line,#dce1e6);background:var(--boot-panel,#fff);color:inherit;font:inherit;min-width:0}
+.toegangscode-form fieldset{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0;padding:8px 10px;border:1px solid var(--boot-line,#dce1e6);border-radius:10px;min-width:0}
+.toegangscode-form legend{font-size:.82rem;color:var(--boot-muted,#6a7580);padding:0 4px}
+.toegangscode-form fieldset>label,.toegangscode-scope,.toegangscode-verloop label{display:inline-flex!important;align-items:center;gap:6px}
+.toegangscode-verloop{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.toegangscode-nooit{flex-basis:100%;display:block;margin:0;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,#c0392b 7%,transparent);font-size:.8rem;color:var(--boot-muted,#6a7580)}
+.toegangscode-max{display:inline-flex!important;align-items:center;gap:6px}
+.toegangscode-max input{width:90px}
+.toegangscode-getoond{border:2px solid var(--boot-accent,#2f6f73);border-radius:12px;padding:12px}
+.toegangscode-getoond-inhoud{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.toegangscode-qr{width:168px;height:168px;flex:0 0 auto;background:#fff;border-radius:8px;padding:6px}
+.toegangscode-code{font-size:1.25rem;letter-spacing:.06em;user-select:all;word-break:break-all}
+.toegangscode-rij{flex-wrap:wrap}
+/* «Сесії та пристрої»: gastsessies en «Завершити всі інші» */
+.sessies-overzicht{display:grid;gap:14px}
+.sessies-acties{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sessies-bevestig{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px;border:1px solid var(--line,#dce1e6);border-radius:10px}
+.sessies-bevestig p{flex-basis:100%;margin:0}
+.sessies-melding{margin:0;flex-basis:100%}
+.sessies-gasten h3{display:flex;align-items:center;gap:8px;margin:0 0 6px}
+.sessies-gasten h3 svg{width:18px;height:18px}
+.toegangscode-rij small svg{display:inline-block;width:13px;height:13px;vertical-align:-2px;margin-right:3px}
