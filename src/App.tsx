@@ -9,6 +9,7 @@ import UnifiedServiceApp from './UnifiedServiceApp';
 import OwnerIdentityAuthorize from './OwnerIdentityAuthorize';
 import OwnerIdentityCallback from './OwnerIdentityCallback';
 import useCanonicalHubAuth,{hubAuthBody} from './useCanonicalHubAuth';
+import {zijbalkVanServer} from './zijbalk-voorkeuren';
 import {applyDocumentPresentationTheme,clearCachedAvatar,HUB_LAYOUTS_STORAGE_KEY,migrateLegacyPresentationStorage,presentationThemeFromValue,readSharedPreferences,rememberAvatarUrl,themePreferenceFromValue,watchSharedPreferences,writeSharedPreferences,type ThemePreference} from './shared-preferences';
 import {chooseExplicitLanguage,persistBrowserLanguage,resolveAccountLanguage,resolveInitialLanguage} from './language-controller';
 import {canonicalNavigationUrl,hubTabFromLocation,railNavigationUrl,writeHubTab} from './canonical-navigation';
@@ -68,7 +69,7 @@ const loadLayouts = (): Layouts => { try {migrateLegacyPresentationStorage();con
 type HubBootstrapViewModel={state:State;user:User|null;spaces:Space[];notifications:number;notificationItems:CanonicalServerNotification[];menu:MenuPreferenceItem[];language?:Lang;sessionStartedAt:number;viewKind:'hub'|'signed-out'};
 type HubWorkspaceViewModel={blocks:Block[];permission:'owner'|'viewer'|'editor'};
 const hubStateForUser=(user:User|null):State=>!user?'signed_out':user.status==='new'?'new':user.status==='pending'?'pending':user.status==='blocked'?'blocked':user.status==='deleted'?'recoverable':'authorized';
-const normalizeHubViewModel=(data:Record<string,unknown>):HubBootstrapViewModel=>{const user=(data.user||null)as User|null,ui=(data.uiPreferences||{})as{menu?:unknown;language?:Lang},effective=(data.activeTabSession||data.session||{})as{createdAt?:number;authenticatedAt?:number};return{state:hubStateForUser(user),user,spaces:(data.workspaces||[])as Space[],notifications:user?.status==='approved'?Number(data.notifications||0):0,notificationItems:user?.status==='approved'?(data.notificationItems||[])as CanonicalServerNotification[]:[],menu:menuPreferencesForRole(normalizeMenuPreferences(user?.status==='approved'?ui.menu:null),user?.role),language:ui.language,sessionStartedAt:Number(effective.authenticatedAt||effective.createdAt||0),viewKind:user?'hub':'signed-out'}};
+const normalizeHubViewModel=(data:Record<string,unknown>):HubBootstrapViewModel=>{const user=(data.user||null)as User|null,ui=(data.uiPreferences||{})as{menu?:unknown;language?:Lang},effective=(data.activeTabSession||data.session||{})as{createdAt?:number;authenticatedAt?:number};zijbalkVanServer((ui as {sidebar?:unknown}).sidebar,user?.status==='approved'?{service:'hub'}:null);return{state:hubStateForUser(user),user,spaces:(data.workspaces||[])as Space[],notifications:user?.status==='approved'?Number(data.notifications||0):0,notificationItems:user?.status==='approved'?(data.notificationItems||[])as CanonicalServerNotification[]:[],menu:menuPreferencesForRole(normalizeMenuPreferences(user?.status==='approved'?ui.menu:null),user?.role),language:ui.language,sessionStartedAt:Number(effective.authenticatedAt||effective.createdAt||0),viewKind:user?'hub':'signed-out'}};
 
 function HubApp({active=true}:{active?:boolean}) {
   const initialSessionHint=ecosystemSessionHint();

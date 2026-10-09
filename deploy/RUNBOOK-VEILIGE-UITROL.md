@@ -790,3 +790,26 @@ voor `mijnruimte_app`; de app-rol heeft alleen SELECT (schrijven via de systeemr
 De e2e-server zet `E2E_LOKALE_LIMIETEN=1` (alleen `tests/e2e/server.ts`): dan zijn de strikte per-IP-buckets ×20, zodat
 e2e-bestanden achter elkaar kunnen draaien zonder 429 op `/api/owner/access/stap-op`. De server logt een waarschuwing als dit
 aan staat; **nooit** in productie zetten (`/etc/mijn-ruimte/*.env` bevat het niet).
+
+## 14. Menu v2 (branch `menu-v2`) — zijbalk stage 1 + datamodel stage 2
+
+**Geen migratie.** De voorkeuren staan als JSON-veld `sidebar` in de bestaande rij van `owner_ui_preferences_v1`
+(bootstrap → `uiPreferences.sidebar`; opslaan via `POST /api/owner/ui/sidebar/save`, alleen goedgekeurde sessie,
+max. 20 000 tekens → anders `413 SIDEBAR_TOO_LARGE`; de server normaliseert alles met `normaliseerZijbalk`).
+Zonder goedgekeurd account: alleen `localStorage` (`tsv-zijbalk-v2`).
+
+Wat verandert voor de gebruiker:
+- Werkbalk bovenin de zijbalk: **Завжди розгорнута** / **Завжди згорнута** (nieuw: nooit openklappen bij aanwijzen) / **Автоматично**.
+  Smal: één knop die een paneeltje opent. Mobiel (≤ 700 px) blijft de hamburger + lade.
+- Scrollpijlen ▲/▼ met vervaging, alleen als er meer is; klik = vloeiend een stuk, ingedrukt houden = doorlopend.
+- Smalle rail 60 px, zonder zichtbare scrollbalk (de pijlen zijn de aanwijzing); cirkels als markering; brede stand: pil om icoon+tekst.
+- Site-tooltips (rechts) op elk item in de smalle stand, ook bij toetsenbordfocus; geen native `title`.
+- Instellingen → Меню: **Стиль іконок** (Класичний / Кольоровий) en de zijbalkmodus.
+- Nieuwe standaardiconen (Налаштування = tandwiel, MCP = kabel); een bewust gekozen icoon blijft.
+
+Controle na uitrol: `/menu` openen → «Кольоровий» kiezen → in een tweede browser hetzelfde account → kleur staat er ook.
+
+Stage 2 (nog geen UI): `shared/menu-model.ts` — stabiele ids `svc:<dienst>` / `pg:<dienst>/<pagina>`, standaardplaatsing uit
+`MENU_PAGINAS` (gelijk aan `canonical-service.js`, door een test bewaakt), overrides per item (`zichtbaar`, `volgorde`, `plaats`,
+`ouder`, `icoon`), kopieën (`k-…` → `zijbalk`/`snelbalk`/`start`), dock (`links|rechts|boven|onder`, transparantie 0–60, vergroting),
+`itemTerugzetten`, `allesTerugzetten`, `menuSamenstellen`.
