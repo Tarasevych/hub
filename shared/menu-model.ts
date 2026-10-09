@@ -5,6 +5,8 @@
 // het formaat, de normalisatie en het samenstellen (menuSamenstellen) bestaan al en zijn getest.
 // Geen React, geen DOM: dit bestand draait ook op de server (normalisatie van wat de browser opslaat).
 
+import { normaliseerMeldingen, standaardMeldingen, type MeldingVoorkeuren } from './menu-meldingen-voorkeuren';
+
 export const DIENST_IDS = ['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'mcp', 'tasks', 'calendar', 'notes', 'identity', 'api', 'admin', 'social'] as const;
 export type DienstId = typeof DIENST_IDS[number];
 
@@ -97,9 +99,11 @@ export type ZijbalkVoorkeuren = {
   dock: { positie: DockPositie; transparantie: number; vergroting: boolean };
   items: Record<string, ItemOverride>;
   kopieen: ItemKopie[];
+  /** Fase B3: meldingen in het menu (badges, bellen, herinneringen, stille uren). */
+  meldingen: MeldingVoorkeuren;
 };
 export const MAX_OVERRIDES = 200, MAX_KOPIEEN = 50, MAX_TRANSPARANTIE = 60;
-export const standaardZijbalk = (): ZijbalkVoorkeuren => ({ versie: 1, modus: 'auto', icoonStijl: 'klassiek', dock: { positie: 'links', transparantie: 0, vergroting: false }, items: {}, kopieen: [] });
+export const standaardZijbalk = (): ZijbalkVoorkeuren => ({ versie: 1, modus: 'auto', icoonStijl: 'klassiek', dock: { positie: 'links', transparantie: 0, vergroting: false }, items: {}, kopieen: [], meldingen: standaardMeldingen() });
 
 const een = <T extends string>(lijst: readonly T[], v: unknown, std: T): T => (lijst as readonly string[]).includes(String(v)) ? v as T : std;
 const geheel = (v: unknown, min: number, max: number, std: number) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : std; };
@@ -136,6 +140,7 @@ export function normaliseerZijbalk(raw: unknown): ZijbalkVoorkeuren {
     icoonStijl: een(ICOON_STIJLEN, r.icoonStijl, std.icoonStijl),
     dock: { positie: een(DOCK_POSITIES, d.positie, 'links'), transparantie: geheel(d.transparantie, 0, MAX_TRANSPARANTIE, 0), vergroting: d.vergroting === true },
     items, kopieen,
+    meldingen: normaliseerMeldingen(r.meldingen),
   };
 }
 
@@ -144,10 +149,10 @@ export function itemTerugzetten(v: ZijbalkVoorkeuren, id: string): ZijbalkVoorke
   const items = { ...v.items }; delete items[id];
   return { ...v, items, kopieen: v.kopieen.filter((k) => k.item !== id) };
 }
-/** Fase 2: alles terug (indeling, kopieën, dock); de gekozen modus en icoonstijl blijven. */
+/** Fase 2: alles terug (indeling, kopieën, dock); de gekozen modus, icoonstijl en meldingsinstellingen blijven. */
 export function allesTerugzetten(v: ZijbalkVoorkeuren): ZijbalkVoorkeuren {
   const std = standaardZijbalk();
-  return { ...std, modus: v.modus, icoonStijl: v.icoonStijl };
+  return { ...std, modus: v.modus, icoonStijl: v.icoonStijl, meldingen: v.meldingen };
 }
 
 export type GeplaatstItem = { id: string; node: MenuNode; plaats: MenuPlaats; ouder: string | null; volgorde: number; kopie?: string };

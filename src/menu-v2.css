@@ -163,3 +163,89 @@
 .zijbalk-modus-icoon{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--surface);color:var(--muted)}
 .zijbalk-modus-icoon svg{width:18px;height:18px}
 .zijbalk-keuze label.actief .zijbalk-modus-icoon{color:var(--accent)}
+/* ── Fase B2/B3: «levend» menu — badges, sms-bellen, ⚙ in de werkbalk ─────────────────────────────────────────────── */
+.canonical-chrome{--mb-post:#1a5fd6;--mb-beveiliging:#dc2626;--mb-toegang:#c2570c;--mb-delen:#15803d;--mb-ai:#9333ea;--mb-systeem:#6b7280;--mb-tekst:#fff;--mb-ring:var(--panel,#fff)}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark){--mb-post:#7aa7ff;--mb-beveiliging:#fca5a5;--mb-toegang:#fdba74;--mb-delen:#4ade80;--mb-ai:#d8b4fe;--mb-systeem:#a1a1aa;--mb-tekst:#0d1117}
+.menu-badge{--mb:var(--mb-systeem)}
+.menu-badge[data-categorie='post'],.menu-bel[data-categorie='post']{--mb:var(--mb-post)}
+.menu-badge[data-categorie='beveiliging'],.menu-bel[data-categorie='beveiliging']{--mb:var(--mb-beveiliging)}
+.menu-badge[data-categorie='toegang'],.menu-bel[data-categorie='toegang']{--mb:var(--mb-toegang)}
+.menu-badge[data-categorie='delen'],.menu-bel[data-categorie='delen']{--mb:var(--mb-delen)}
+.menu-badge[data-categorie='ai'],.menu-bel[data-categorie='ai']{--mb:var(--mb-ai)}
+.menu-badge[data-categorie='systeem'],.menu-bel[data-categorie='systeem']{--mb:var(--mb-systeem)}
+.canonical-chrome .canonical-menu-icon-slot{position:relative}
+.menu-badge{position:absolute;z-index:2;top:-5px;right:-7px;box-sizing:border-box;pointer-events:none;background:var(--mb);color:var(--mb-tekst);box-shadow:0 0 0 2px var(--mb-ring);font:700 10px/1 system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:0}
+.menu-badge.getal{display:grid;place-items:center;min-width:17px;height:17px;padding:0 4px;border-radius:999px}
+.menu-badge.punt{top:-3px;right:-3px;width:10px;height:10px;border-radius:50%}
+.menu-badge.voorbeeld,.zijbalk-cat .menu-badge{position:static;flex:none;box-shadow:none}
+.menu-badge[data-knipper='ja']{animation:menu-badge-puls 1.1s ease-in-out 3}
+.menu-badge[data-herinner='ja']{animation:menu-badge-herinner 1.4s ease-out 2}
+@keyframes menu-badge-puls{0%,100%{transform:scale(1)}40%{transform:scale(1.28);box-shadow:0 0 0 2px var(--mb-ring),0 0 0 6px color-mix(in srgb,var(--mb) 35%,transparent)}}
+@keyframes menu-badge-herinner{0%{box-shadow:0 0 0 2px var(--mb-ring),0 0 0 0 color-mix(in srgb,var(--mb) 60%,transparent)}100%{box-shadow:0 0 0 2px var(--mb-ring),0 0 0 10px transparent}}
+/* ingeklapt: badge op de rand van de cirkel */
+.canonical-chrome:not(.sidebar-expanded) .menu-badge.getal{top:-9px;right:-11px}
+.canonical-chrome:not(.sidebar-expanded) .menu-badge.punt{top:-6px;right:-6px}
+.menu-bellen{position:fixed;z-index:780;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-height:min(420px,calc(100vh - 16px));overflow:auto;padding:8px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 12px 32px var(--shadow,rgba(0,0,0,.18));animation:menu-bellen-in .16s ease-out}
+.menu-bellen-kop{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 6px 8px;font-size:.82rem}
+.menu-bellen-kop span{color:var(--muted);font-size:.74rem}
+.menu-bellen ul{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.menu-bel{--mb:var(--mb-systeem);position:relative;display:grid;grid-template-columns:8px 1fr 26px;gap:8px;align-items:start;padding:8px 6px 8px 10px;border-radius:14px 14px 14px 4px;background:color-mix(in srgb,var(--mb) 11%,var(--panel));border:1px solid color-mix(in srgb,var(--mb) 28%,transparent);animation:menu-bel-in .2s ease-out both}
+.menu-bel-stip{width:8px;height:8px;margin-top:5px;border-radius:50%;background:var(--mb)}
+.menu-bel-tekst{min-width:0}
+.menu-bel-tekst small{display:block;color:var(--muted);font-size:.7rem}
+.menu-bel-tekst p{margin:2px 0 0;color:var(--muted);font-size:.78rem;line-height:1.35;overflow-wrap:anywhere}
+.menu-bel-titel{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:0;border:0;background:none;color:var(--text);font:600 .84rem/1.3 inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere}
+.menu-bel-titel svg{flex:none;width:12px;height:12px;opacity:.6}
+.menu-bel-titel:hover{text-decoration:underline}
+.menu-bel-weg{display:grid;place-items:center;width:26px;height:26px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.menu-bel-weg svg{width:15px;height:15px}
+.menu-bel-weg:hover,.menu-bel-weg:focus-visible{background:color-mix(in srgb,var(--mb) 20%,transparent);color:var(--text)}
+.menu-bellen button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.menu-bellen-alles{display:block;width:100%;margin-top:8px;padding:6px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:600 .76rem inherit;cursor:pointer}
+.menu-bellen-alles:hover{background:var(--zb-hover,rgba(0,0,0,.05));color:var(--text)}
+@keyframes menu-bellen-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+@keyframes menu-bel-in{from{opacity:0;transform:translateY(4px) scale(.98)}to{opacity:1;transform:none}}
+/* ⚙ in de werkbalk */
+.zijbalk-werkbalk-scheiding{align-self:center;width:1px;height:18px;margin:0 2px;background:color-mix(in srgb,var(--line) 80%,transparent)}
+.zijbalk-werkbalk-instellingen{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;color:var(--muted);text-decoration:none}
+.zijbalk-werkbalk-instellingen svg{width:18px;height:18px;stroke-width:1.9}
+.zijbalk-werkbalk-instellingen:hover,.zijbalk-werkbalk-instellingen:focus-visible{background:var(--zb-hover);color:var(--text)}
+.zijbalk-werkbalk-instellingen:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* Instellingen → Меню → meldingen */
+.zijbalk-meldingen{display:grid;gap:12px;margin:18px 0 0;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--panel);scroll-margin-top:16px}
+.zijbalk-meldingen>legend{display:flex;align-items:center;gap:8px;padding:0 6px;font-weight:700}
+.zijbalk-meldingen>legend svg{width:18px;height:18px;color:var(--accent)}
+.zijbalk-meldingen-uitleg{margin:0;color:var(--muted);font-size:.84rem;line-height:1.45}
+.zijbalk-meldingen-groep{display:grid;gap:12px}
+.zijbalk-meldingen-groep[aria-disabled='true']{opacity:.55}
+.zijbalk-schakel{display:flex;align-items:flex-start;gap:12px;cursor:pointer}
+.zijbalk-schakel.uit{cursor:default}
+.zijbalk-schakel input{position:absolute;opacity:0;pointer-events:none}
+.zijbalk-schakel-spoor{position:relative;flex:none;width:38px;height:22px;margin-top:1px;border-radius:999px;background:color-mix(in srgb,var(--muted) 45%,transparent);transition:background .15s}
+.zijbalk-schakel-spoor i{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .15s}
+.zijbalk-schakel input:checked+.zijbalk-schakel-spoor{background:var(--accent)}
+.zijbalk-schakel input:checked+.zijbalk-schakel-spoor i{transform:translateX(16px)}
+.zijbalk-schakel input:focus-visible+.zijbalk-schakel-spoor{outline:2px solid var(--accent);outline-offset:2px}
+.zijbalk-schakel strong,.zijbalk-meldingen-rij strong{display:block;font-size:.9rem}
+.zijbalk-schakel small,.zijbalk-meldingen-rij small{display:block;color:var(--muted);font-size:.78rem}
+.zijbalk-meldingen-rij{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.zijbalk-meldingen-rij select,.zijbalk-meldingen-tijden input{padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit}
+.zijbalk-meldingen-stil{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.zijbalk-meldingen-tijden{display:inline-flex;align-items:center;gap:6px}
+.zijbalk-meldingen-cat{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;border:0}
+.zijbalk-meldingen-cat legend{margin-bottom:8px;font-weight:700;font-size:.9rem}
+.zijbalk-cat{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 10px;border:1px solid var(--line);border-radius:999px;cursor:pointer;font-size:.85rem}
+.zijbalk-cat:has(input:checked){border-color:color-mix(in srgb,var(--accent) 60%,var(--line))}
+.zijbalk-cat:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.zijbalk-badge-stijl label{gap:10px}
+@media(prefers-reduced-motion:reduce){.menu-badge[data-knipper='ja'],.menu-badge[data-herinner='ja'],.menu-bellen,.menu-bel{animation:none}.zijbalk-schakel-spoor,.zijbalk-schakel-spoor i{transition:none}}
+/* Instellingen-pagina: .settings-center zet label{display:grid} en input{width:100%;min-height:44px} — hier specifieker terugzetten. */
+.zijbalk-meldingen label.zijbalk-schakel{display:flex;align-items:flex-start;gap:12px;font-weight:400}
+.zijbalk-meldingen .zijbalk-keuze label{display:flex;align-items:center;gap:10px;font-weight:400}
+.zijbalk-meldingen label.zijbalk-meldingen-rij{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:400}
+.zijbalk-meldingen label.zijbalk-cat{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.zijbalk-meldingen input[type='checkbox'],.zijbalk-meldingen input[type='radio']{width:16px;height:16px;min-height:0;padding:0;margin:0;flex:none;border-radius:4px;accent-color:var(--accent)}
+.zijbalk-meldingen .zijbalk-schakel input,.zijbalk-meldingen .zijbalk-keuze input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.zijbalk-meldingen label.zijbalk-meldingen-rij select{width:auto;min-width:160px;min-height:38px;padding:6px 10px}
+.zijbalk-meldingen .zijbalk-meldingen-tijden input[type='time']{width:auto;min-height:38px;padding:6px 8px}
+.zijbalk-meldingen .menu-badge.voorbeeld.getal{display:inline-grid;width:auto;flex:none}

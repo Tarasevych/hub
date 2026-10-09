@@ -6,6 +6,7 @@ import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { checker } from '../eenheid/hulp/nep-google';
+import { getPool } from '../../server/platform/pg';
 import { deltaE2000 } from '../eenheid/hulp/kleur';
 import { ACCENT_KLEUREN, DIENST_ACCENT, type DienstId, type IcoonStijl, type ZijbalkModus } from '../../shared/menu-model';
 import { startE2eServer } from './server';
@@ -173,7 +174,11 @@ export async function main(): Promise<number> {
 
     check('geen consolefouten / onverwachte HTTP-fouten', fouten.length === 0, fouten.slice(0, 6).join(' | '));
   } finally {
-    await browser.close();
+    await browser.close().catch(() => undefined);
+    // Opruimen op EXACT e-mailadres van deze run (nooit op patroon): gebruiker + alles wat aan zijn id hangt.
+    const pool = getPool();
+    const ids = (await pool.query("select id from app.records where tbl='users' and data->>'email' = $1", [eigenaar]).catch(() => ({ rows: [] as Array<{ id: string }> }))).rows.map((x: { id: string }) => x.id);
+    if (ids.length) await pool.query("delete from app.records where id = any($1) or data->>'accountId' = any($1) or data->>'recipientUserId' = any($1) or data->>'userId' = any($1) or data->>'ownerUserId' = any($1)", [ids]).catch((e: unknown) => console.error('[e2e] opruimen', e));
     await stop();
   }
   return einde();

@@ -20,6 +20,8 @@ function schrijfLokaal(v: ZijbalkVoorkeuren) { try { localStorage.setItem(SLEUTE
 function melden() { for (const f of luisteraars) f(); }
 
 export const zijbalkVoorkeuren = () => huidig;
+/** Dienst van de goedgekeurde accountsessie (null = niet aangemeld/goedgekeurd: dan geen serveraanroepen voor het menu). */
+export const zijbalkServerDienst = () => server?.service || '';
 /** Heeft deze browser (of de server) al ooit een keuze opgeslagen? Anders volgt de modus het oude per-tabblad-vastzetten. */
 export const zijbalkKeuzeBekend = () => lokaalGezet || laatsteServer !== '';
 export function abonneerZijbalk(f: () => void) { luisteraars.add(f); return () => { luisteraars.delete(f); }; }
@@ -27,7 +29,9 @@ export function useZijbalkVoorkeuren() { return useSyncExternalStore(abonneerZij
 
 /** Uit de bootstrap (uiPreferences.sidebar). `ctx` alleen bij een goedgekeurd account: dan worden wijzigingen ook op de server bewaard. */
 export function zijbalkVanServer(raw: unknown, ctx: Server) {
+  const wasGoedgekeurd = server?.service || '';
   server = ctx;
+  if ((ctx?.service || '') !== wasGoedgekeurd) melden(); // o.a. het «levende» menu haalt pas tellers op bij een goedgekeurd account
   if (!ctx || raw === undefined || raw === null) return;
   const v = normaliseerZijbalk(raw), s = JSON.stringify(v);
   if (s === laatsteServer) return;
