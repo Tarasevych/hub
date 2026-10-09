@@ -28,6 +28,7 @@ import {normalizeMailDisplayText} from './mail-text-normalization';
 import {createCloudRoutes} from './cloud-platform';
 import { mcpConsoleRoutes } from './mcp-console';
 import { uitrolGoedkeuringRoutes } from './uitrol-goedkeuring';
+import { aiBeleidRoutes } from './ai-beleid';
 import { passkeyRoutes } from './passkeys';
 import { toegangRoutes } from './toegang-routes';
 import { toegangscodeRoutes } from './toegangscodes-routes';
@@ -480,6 +481,7 @@ export const handler = router({
   'GET /api/_healthcheck': [async () => json({ message: 'Success' })],
   ...mcpConsoleRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
   ...uitrolGoedkeuringRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
+  ...aiBeleidRoutes({ requireSession: ownerRequireSession as never }),
   ...passkeyRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
   ...toegangRoutes({ requireSession: ownerRequireSession as never, sterkeStapOp: sterkeStapOpVereist as never }),
   ...toegangscodeRoutes({ requireSession: ownerRequireSession as never, sterkeStapOp: sterkeStapOpVereist as never }),

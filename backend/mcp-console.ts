@@ -18,7 +18,8 @@ import { auditToevoegen } from "../server/platform/audit";
 import { getPool } from "../server/platform/pg";
 import type { RouterMiddleware } from "../server/platform/router";
 import { alsGebruiker } from "./ai-grants";
-import { huidigeNamens } from "./mcp-namens";
+import { huidigeNamens, metNamens } from "./mcp-namens";
+import { beslissing, weigerTekst } from "./ai-beleid";
 import { gedelegeerdeSessie } from "./site-dispatch";
 import { OPDRACHT_STANDAARD, OPDRACHT_WERKWOORDEN, isWerkwoord, leesOpdrachtResultaat, voerOpdrachtUit, type Werkwoord } from "./server-beheer";
 import { UITROL_TOOL_NAMEN, UitrolFout, isGoedkeurPoging, voerUitrolToolUit, type Onderwerp } from "./uitrol-goedkeuring";
@@ -535,8 +536,14 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       const name = String(data.name || "");
       const args = (data.arguments && typeof data.arguments === "object" ? data.arguments : {}) as Record<string, unknown>;
       const started = Date.now();
+      // Ondertekend AI-beleid van de eigenaar (§13.12): deze deur heeft geen goedkeurstap, dus alleen «дозволено» gaat door.
+      const beleid = await beslissing({ client: String(tok.name) }, name);
+      if (beleid.mode !== "always") {
+        await logCall(tok.user_id, { method: "tools/call", detail: `${name} AI_BELEID:${beleid.code}`, transport: "agent", agent: tok.name, ok: false, ms: Date.now() - started });
+        return json({ ok: false, error: `AI_BELEID:${beleid.code}`, message: weigerTekst(beleid) }, 403);
+      }
       try {
-        const result = await runTool(tok.user_id, tok.role === "owner", name, args, `agent:${tok.name}`, String(tok.id));
+        const result = await metNamens({ client: String(tok.name), grantId: `token:${tok.id}` }, () => runTool(tok.user_id, tok.role === "owner", name, args, `agent:${tok.name}`, String(tok.id)));
         await logCall(tok.user_id, { method: "tools/call", detail: name, transport: "agent", agent: tok.name, ok: true, ms: Date.now() - started });
         return json({ ok: true, result: text(result) });
       } catch (err) {

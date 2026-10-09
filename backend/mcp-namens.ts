@@ -9,3 +9,6 @@ const opslag = new AsyncLocalStorage<Namens>();
 
 export const metNamens = <T>(namens: Namens, fn: () => Promise<T>): Promise<T> => opslag.run({ client: String(namens.client || '?').slice(0, 80), ...(namens.grantId ? { grantId: String(namens.grantId) } : {}) }, fn);
 export const huidigeNamens = (): Namens | undefined => opslag.getStore();
+
+/** Naam waaronder het chatvenster van de site (ai.tarasevych.com, eigen API-sleutel) in het AI-beleid en het journaal staat. */
+export const CHAT_KLANT = 'Чат ШІ (ai.tarasevych.com)';

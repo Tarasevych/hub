@@ -487,7 +487,10 @@ function plafondTests(check: Check) {
   const inst = readFileSync('deploy/installeer-app.sh', 'utf8');
   check('plafond: de app schrijft het root-sleutelbestand nooit (alleen lezen)', /readFile\(sleutelsPad\(\)/.test(app) && !/(writeFile|rename|copyFile|rm|unlink)\(sleutelsPad\(\)/.test(app));
   check('plafond: de app heeft geen goedkeur-tool voor agents', !/name: 'uitrol_[a-z_]*goedkeur/.test(app));
-  check('plafond: root-hulp gebruikt alleen node-ingebouwde modules + de kern', [...hulpSrc.matchAll(/from "([^"]+)"/g)].every((x) => x[1].startsWith('node:') || x[1] === './webauthn-kern.mjs'));
+  check('plafond: root-hulp gebruikt alleen node-ingebouwde modules + de kernen (WebAuthn, AI-beleid)', [...hulpSrc.matchAll(/from "([^"]+)"/g)].every((x) => x[1].startsWith('node:') || x[1] === './webauthn-kern.mjs' || x[1] === './ai-beleid-kern.mjs'));
+  const beleidKern = readFileSync('deploy/goedkeuring/ai-beleid-kern.mjs', 'utf8');
+  check('plafond: de AI-beleidkern zelf gebruikt alleen node-ingebouwde modules', [...beleidKern.matchAll(/from "([^"]+)"/g)].every((x) => x[1].startsWith('node:')));
+  check('plafond: installer zet de AI-beleidkern naast de hulp en maakt de keten-map (root, leesbaar)', /ai-beleid-kern\.mjs/.test(inst) && /\/var\/lib\/mijn-ruimte\/ai-beleid/.test(inst));
   check('plafond: root-hulp neemt paden uit de omgeving alleen over als niet-root', /const omg = \(naam, standaard\) => \(!IS_ROOT && process\.env\[naam\]\)/.test(hulpSrc));
   check('plafond: uitrol --goedkeuring controleert de passkey vóór het uitpakken/installeren', uitrol.indexOf('verifieer-goedkeuring') > 0 && uitrol.lastIndexOf('verifieer-goedkeuring') < uitrol.indexOf('tarfile.open') && uitrol.lastIndexOf('verifieer-goedkeuring') < uitrol.indexOf('cmd=( "$INSTALLEER"') && /unset [^\n]*UITROL_GOEDKEUR_HULP/.test(uitrol.replace(/\\\n\s*/g, ' ')));
   check('plafond: installer zet de root-hulp uit het pakket ($doel), root-eigendom, en maakt de schakelaar standaard uit', /install -m 0644 -o root -g root "\$doel\/deploy\/goedkeuring\/webauthn-kern\.mjs"/.test(inst) && /"passkey-goedkeuring": false/.test(inst));
