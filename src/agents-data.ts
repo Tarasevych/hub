@@ -7,6 +7,8 @@ export type Agent = {
   id: string; name: string; platform: string | null; status: 'connected' | 'disconnected';
   lastSeenAt: number | null; createdAt: number; policy: { autoApprove: string[]; enabled?: string[] };
   enabled?: boolean; armedUntil?: number | null;
+  /** Technisch (uitklapbare rij op /agents). */
+  version?: string | null; tokenExpiresAt?: number | null; pairingId?: string | null; capabilities?: Record<string, unknown>; enabledCapabilities?: string[];
 };
 export type Pending = { id: string; agentId: string; agentName: string; type: string; params: unknown; createdAt: number };
 export type LastCommand = { id: string; agentId: string; type: string; status: string; preview: string; createdAt: number };
@@ -81,7 +83,7 @@ export function useAgentsData(tr: Tr) {
     let active = true;
     const tick = () => { if (active && !document.hidden) void reload().catch(() => undefined); };
     tick();
-    const timer = window.setInterval(tick, 4000);
+    const timer = window.setInterval(tick, 5000);
     const visible = () => { if (!document.hidden) tick(); };
     document.addEventListener('visibilitychange', visible);
     return () => { active = false; window.clearInterval(timer); document.removeEventListener('visibilitychange', visible); };
@@ -104,7 +106,7 @@ export function useToolApprovals() {
     let active = true;
     const tick = () => { if (active && !document.hidden) void reload().catch(() => undefined); };
     tick();
-    const timer = window.setInterval(tick, 4000);
+    const timer = window.setInterval(tick, 5000);
     return () => { active = false; window.clearInterval(timer); };
   }, [reload]);
   return { calls, reload };

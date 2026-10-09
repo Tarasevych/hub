@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { ChevronDown, CircleHelp, Container, Globe, HardDrive, Laptop, Mail, Monitor, Puzzle, Search, Server, Github, Terminal, Calendar, Sparkles } from 'lucide-react';
+import { ChevronDown, CircleHelp, Container, KeyRound, Globe, HardDrive, Laptop, Mail, Monitor, Puzzle, Search, Server, Github, Terminal, Calendar, Sparkles } from 'lucide-react';
 import './mcp-hub.css';
 
 export type Tr = (uk: string, nl: string) => string;
@@ -78,7 +78,7 @@ export function Help({ tr, content, tone = 'info' }: { tr: Tr; content: HelpCont
   );
 }
 
-export type LogoKind = 'windows' | 'linux' | 'macos' | 'chrome' | 'edge' | 'firefox' | 'opera' | 'brave' | 'vivaldi' | 'safari' | 'node' | 'browser' | 'docker' | 'google' | 'microsoft' | 'internal' | 'claude' | 'github' | 'device' | 'server' | 'search' | 'mail' | 'calendar';
+export type LogoKind = 'windows' | 'linux' | 'macos' | 'chrome' | 'edge' | 'firefox' | 'opera' | 'brave' | 'vivaldi' | 'safari' | 'node' | 'browser' | 'docker' | 'google' | 'microsoft' | 'internal' | 'claude' | 'github' | 'device' | 'server' | 'search' | 'mail' | 'calendar' | 'grok' | 'cursor' | 'openai' | 'aiclient' | 'key';
 
 /** Eenvoudige herkenbare merktekens (geen officiële bestanden; alleen vormen en kleuren) naast pictogrammen uit de bibliotheek. */
 export function Logo({ kind, size = 28, label }: { kind: LogoKind; size?: number; label?: string }) {
@@ -99,6 +99,11 @@ export function Logo({ kind, size = 28, label }: { kind: LogoKind; size?: number
     case 'linux': return <svg {...common}><rect x='4' y='5' width='24' height='22' rx='4' fill='#1f2937' /><path d='m9 12 5 4-5 4' stroke='#4ade80' strokeWidth='2.4' fill='none' strokeLinecap='round' strokeLinejoin='round' /><path d='M16 21h7' stroke='#4ade80' strokeWidth='2.4' strokeLinecap='round' /></svg>;
     case 'docker': return <svg {...common}><path fill='#1d63ed' d='M3 15h24c.6-2.4-.8-3.6-2.2-4.2-.8 1-2.4 1.2-3.3.4V9h-3V6h-3v3h-3V6h-3v3H9v3H6v3H3zm1 2c.6 6.2 5.6 9 11.7 9 7 0 10.3-3.7 11.3-9z' /></svg>;
     case 'claude': return <svg {...common}><g fill='#d97757'><rect x='14.6' y='3' width='2.8' height='26' rx='1.4' /><rect x='14.6' y='3' width='2.8' height='26' rx='1.4' transform='rotate(60 16 16)' /><rect x='14.6' y='3' width='2.8' height='26' rx='1.4' transform='rotate(120 16 16)' /></g></svg>;
+    case 'grok': return <svg {...common}><rect x='3' y='3' width='26' height='26' rx='7' fill='#111' /><path d='M9 23 21.5 8.5M12 9.5h-.01M11 13.5a5.5 5.5 0 0 0 8.4 6.4M23 9v14' stroke='#fff' strokeWidth='2.2' fill='none' strokeLinecap='round' /></svg>;
+    case 'cursor': return <svg {...common}><rect x='3' y='3' width='26' height='26' rx='7' fill='#14120b' /><path fill='#f3f1ea' d='M16 7.5 23.5 12v8.5L16 25l-7.5-4.5V12z' opacity='.25' /><path fill='#f3f1ea' d='M16 7.5 23.5 12 16 16.3 8.5 12zM16 16.3 23.5 12v8.5z' /></svg>;
+    case 'openai': return <svg {...common}><rect x='3' y='3' width='26' height='26' rx='7' fill='#10a37f' /><circle cx='16' cy='16' r='6.5' stroke='#fff' strokeWidth='2.2' fill='none' /><path d='M16 9.5v13M10.4 12.8l11.2 6.4M10.4 19.2l11.2-6.4' stroke='#fff' strokeWidth='1.6' /></svg>;
+    case 'aiclient': return <Sparkles width={size} height={size} aria-label={label} className='hub-logo hub-logo-aiclient' />;
+    case 'key': return <KeyRound width={size} height={size} aria-label={label} className='hub-logo hub-logo-key' />;
     case 'github': return <Github width={size} height={size} aria-label={label} className='hub-logo hub-logo-github' />;
     case 'internal': return <svg {...common}><rect x='4' y='4' width='24' height='24' rx='7' fill='#2f6f73' /><path d='M10 21V11l6 6 6-6v10' stroke='#fff' strokeWidth='2.4' fill='none' strokeLinecap='round' strokeLinejoin='round' /></svg>;
     case 'server': return <Server width={size} height={size} aria-label={label} className='hub-logo hub-logo-server' />;

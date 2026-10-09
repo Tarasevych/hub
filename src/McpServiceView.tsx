@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { api, ApiError } from "./platform/client";
+import { api } from "./platform/client";
 import { ecosystemTabContext } from "./tab-context";
 import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalog";
 import McpAgentsHub from "./McpAgentsHub";
+import { foutTekst } from "./agenten/fouten";
 import McpConsentModal from "./McpConsentModal";
 import McpBackupsCard from "./McpBackupsCard";
 import McpServerBeheerCard from "./McpServerBeheerCard";
@@ -13,21 +14,7 @@ type Props = { lang: Lang; tab: string };
 type Probe = { id: string; url: string; ok: boolean; status: number; ms: number; error?: string };
 type Task = { id: string; title: string; body: string; status: string };
 type Note = { id: string; title: string; body: string; author: string; updatedAt: string };
-type Token = { id: string; name: string; prefix: string; revokedAt: string; calls: number; token?: string };
 type LogRow = { id: string; at: string; method: string; detail: string; transport: string; agent: string; ok: boolean; ms: number };
-type Perm = { id: string; uk: string; nl: string; detailUk?: string; detailNl?: string; group?: string };
-
-const effect = (onUk: string, offUk: string, onNl: string, offNl: string) => ({
-  detailUk: `Увімкнено: ${onUk}\nВимкнено: ${offUk}`,
-  detailNl: `Aan: ${onNl}\nUit: ${offNl}`,
-});
-// De schakelaars staan in /etc/mijn-ruimte/mcp-rechten.json op de server (alleen de eigenaar met root wijzigt ze); de site toont ze alleen.
-const SWITCHES: Perm[] = [
-  { id: "read", group: "agent", uk: "Читати сайт і код", nl: "Site en code lezen", ...effect("агент бачить випуск, здоров’я сайту і файли.", "двері відмовляють читати. Список і здоров’я недоступні.", "de agent ziet de release, de gezondheid en de bestanden.", "de deur weigert lezen. Lijst en gezondheid zijn dicht.") },
-  { id: "board", group: "agent", uk: "Писати дошку", nl: "Bord schrijven", ...effect("ваші задачі й нотатки (у кожного своя дошка).", "нові записи й переміщення відмовляються.", "uw taken en notities (iedereen heeft een eigen bord).", "nieuwe regels en verplaatsingen worden geweigerd.") },
-  { id: "tokens", group: "agent", uk: "Випускати токени агентів", nl: "Agenttokens uitgeven", ...effect("ключ видно один раз, діє 30 днів, потрібне повторне підтвердження входу.", "випуск ключа відмовляється.", "de sleutel verschijnt één keer, geldt 30 dagen en vraagt een nieuwe bevestiging van de aanmelding.", "uitgeven wordt geweigerd.") },
-  { id: "uitrol", group: "release", uk: "Викладати підписаний випуск", nl: "Ondertekende release plaatsen", ...effect("двері приймають лише пакет, підписаний вашим ключем на ПК; встановлює його root-служба.", "двері відмовляють приймати пакет. Поточний сайт лишається.", "de deur neemt alleen een pakket aan dat met uw sleutel op de pc is ondertekend; een root-dienst installeert het.", "de deur weigert pakketten. De huidige site blijft.") },
-];
 
 const statuses = ["backlog", "doing", "blocked", "done"] as const;
 function initialTool() {
@@ -51,19 +38,8 @@ function toolGate(name: string) {
 function ctx() {
   return { service: "mcp" as const, tabContext: ecosystemTabContext(), sourceOrigin: location.origin };
 }
-function Tip({ text }: { text: string }) {
-  if (!text) return null;
-  return (
-    <span className="mcp-q" tabIndex={0} aria-label={text}>
-      ?
-      <span className="mcp-tip" role="tooltip">{text}</span>
-    </span>
-  );
-}
-function fault(err: unknown) {
-  if (err instanceof ApiError) return String(err.response.data?.error || err.message);
-  return err instanceof Error ? err.message : "ERROR";
-}
+/** Nooit een kale code (RATE_LIMITED, …) tonen: vriendelijke UA/NL-tekst met de code klein erachter (RUNBOOK §13.9). */
+const fault = (err: unknown, t: (uk: string, nl: string) => string) => foutTekst(err, t);
 
 type ArchiveRow = { at: string; name: string; bytes: number; kod: number; baza: number; fajly: number; sekrety: number; kept: boolean };
 type ArchiveState = {
@@ -137,25 +113,21 @@ export default function McpServiceView({ lang, tab }: Props) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [kind, setKind] = useState<"task" | "note">("task");
-  const [tokens, setTokens] = useState<Token[]>([]);
-  const [agentName, setAgentName] = useState("grok");
-  const [fresh, setFresh] = useState("");
+  const [fresh] = useState("");
   const [tool, setTool] = useState(initialTool);
   const [args, setArgs] = useState(() => argsFor(initialTool()));
   const [copied, setCopied] = useState("");
   const [out, setOut] = useState("");
   const [rows, setRows] = useState<LogRow[]>([]);
   const [flags, setFlags] = useState<Record<string, boolean>>({});
-  const [catalog, setCatalog] = useState<Perm[]>([]);
   const [permsReady, setPermsReady] = useState(false);
-  const [permsFile, setPermsFile] = useState("/etc/mijn-ruimte/mcp-rechten.json");
   const [archive, setArchive] = useState<ArchiveState>(emptyArchive);
   const [tick, setTick] = useState(0);
 
   async function run(label: string, job: () => Promise<void>) {
     setBusy(label);
     setError("");
-    try { await job(); } catch (err) { setError(fault(err)); } finally { setBusy(""); }
+    try { await job(); } catch (err) { setError(fault(err, t)); } finally { setBusy(""); }
   }
   async function loadBoard() {
     const res = await api.post("/api/mcp/board/list", ctx());
@@ -165,31 +137,11 @@ export default function McpServiceView({ lang, tab }: Props) {
   async function loadTokens() {
     const perms = await api.post("/api/mcp/permissions", ctx());
     setFlags(perms.data.permissions || {});
-    setCatalog(perms.data.catalog || []);
-    if (perms.data.file) setPermsFile(String(perms.data.file));
     setPermsReady(true);
-    const res = await api.post("/api/mcp/tokens/list", ctx());
-    setTokens(res.data.tokens || []);
   }
   async function loadTraffic() {
     const res = await api.post("/api/mcp/traffic", ctx());
     setRows(res.data.log || []);
-  }
-  function permRows() {
-    const remote = new Map(catalog.map((item) => [item.id, item]));
-    const order = [...SWITCHES.map((item) => item.id), ...catalog.map((item) => item.id).filter((id) => !SWITCHES.some((item) => item.id === id))];
-    return order.map((id) => {
-      const local = SWITCHES.find((item) => item.id === id);
-      const got = remote.get(id);
-      return {
-        id,
-        uk: got?.uk || local?.uk || id,
-        nl: got?.nl || local?.nl || id,
-        detailUk: local?.detailUk || got?.detailUk || "",
-        detailNl: local?.detailNl || got?.detailNl || "",
-        group: got?.group || local?.group || "agent",
-      };
-    });
   }
   function chooseTool(name: string) {
     if (!DOOR_TOOLS.some((item) => item.name === name)) return;
@@ -274,7 +226,8 @@ export default function McpServiceView({ lang, tab }: Props) {
 
   useEffect(() => {
     if (section === "board") void run("board", async () => { await loadTokens(); await loadBoard(); });
-    if (section === "agents" || section === "playground") void run(section, loadTokens);
+    // De agentenpagina laadt haar eigen gegevens (tokens via useDeurTokens); hier niet nog eens.
+    if (section === "playground") void run(section, loadTokens);
     if (section === "traffic") void run("traffic", loadTraffic);
     if (section === "services") void run("probe", loadProbes);
     if (section === "download") {
@@ -292,8 +245,8 @@ export default function McpServiceView({ lang, tab }: Props) {
   return (
     <div className="mcp-estate" data-mcp-tab={section}>
       <McpConsentModal tr={t} />
-      {error && error !== "Internal server error" ? <p className="mcp-lead">{error}</p> : null}
-      {busy && busy !== "archive" ? <p className="mcp-kicker">{busy}</p> : null}
+      {error && section !== "agents" ? <p className="mcp-lead mcp-error" role="alert">{error}</p> : null}
+      {busy && busy !== "archive" && section !== "agents" ? <p className="mcp-kicker">{busy}</p> : null}
 
       {section === "overview" && (
         <>
@@ -403,72 +356,7 @@ export default function McpServiceView({ lang, tab }: Props) {
       )}
 
       {section === "agents" && (
-        <McpAgentsHub tr={t} doors={
-        <>
-          <header>
-            <h2>{t("Двері для агентів", "Deuren voor agenten")}</h2>
-            <p className="mcp-lead">{t("Перемикачі лише показуються. Змінити їх може тільки власник сервера у файлі", "De schakelaars worden alleen getoond. Alleen de eigenaar van de server wijzigt ze in het bestand")} <code>{permsFile}</code>{t(" (root). Сайт і агенти записати їх не можуть.", " (root). De site en agenten kunnen ze niet schrijven.")}</p>
-          </header>
-          {(["agent", "release"] as const).map((group) => {
-            const items = permRows().filter((item) => item.group === group);
-            if (!items.length) return null;
-            return (
-              <section key={group} className="mcp-card">
-                <h2>{group === "agent" ? t("Агенту можна", "De agent mag") : t("Випуск", "Release")}</h2>
-                <div className="mcp-switches">
-                  {items.map((item) => {
-                    const on = Boolean(flags[item.id]);
-                    return (
-                      <div key={item.id} className="mcp-switch">
-                        <div>
-                          <h3>
-                            {t(item.uk, item.nl)}
-                            <Tip text={t(item.detailUk, item.detailNl)} />
-                          </h3>
-                          <p>{t(item.detailUk, item.detailNl)}</p>
-                        </div>
-                        <span className={on ? "mcp-badge" : "mcp-badge wait"} aria-label={t(item.uk, item.nl)}>{on ? t("увімкнено", "aan") : t("вимкнено", "uit")}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
-          {permsReady ? (
-            <p className="mcp-now">
-              <b>{t("Зараз увімкнено", "Nu aan")}</b>
-              <Tip text={t("Це не кнопка і не окремий дозвіл. Рядок лише перелічує те, що зараз увімкнене у файлі на сервері.", "Dit is geen knop en geen aparte toestemming. De regel somt alleen op wat nu aan staat in het bestand op de server.")} />
-              {permRows().filter((item) => flags[item.id]).map((item) => (
-                <span key={item.id} className="mcp-now-item">
-                  {t(item.uk, item.nl)}
-                  <Tip text={t(item.detailUk, item.detailNl)} />
-                </span>
-              ))}
-              {!permRows().some((item) => flags[item.id]) ? <span>{t("нічого", "niets")}</span> : null}
-            </p>
-          ) : null}
-          <section className="mcp-card">
-            <h2>
-              {t("Токен агента", "Agenttoken")}
-              <Tip text={t("Створює ключ для агента з іменем у полі. Ключ показується один раз, діє 30 днів і дає доступ лише до вашої дошки (власнику — ще й до читання сайту). Спершу сайт попросить підтвердити вхід.", "Maakt een sleutel voor de agent in het veld. De sleutel verschijnt één keer, geldt 30 dagen en geeft alleen toegang tot uw bord (de eigenaar ook lezen van de site). Eerst vraagt de site een bevestiging van de aanmelding.")} />
-            </h2>
-            <p>{t("Це не викладання сайту. Кнопка створює ключ, яким агент стукає в двері. Сам ключ видно лише одразу після випуску.", "Dit plaatst de site niet. De knop maakt de sleutel waarmee een agent aan de deur klopt. De sleutel zelf is alleen meteen daarna zichtbaar.")}</p>
-            <form className="mcp-form" onSubmit={(event) => { event.preventDefault(); void run("issue", async () => { const res = await api.post("/api/mcp/tokens", { ...ctx(), name: agentName }); const issued = String(res.data.token.token || ""); setFresh(issued); try { sessionStorage.setItem("mcp-fresh-token", issued); } catch { /* private mode */ } await loadTokens(); }); }}>
-              <input value={agentName} onChange={(event) => setAgentName(event.target.value)} placeholder={t("Ім’я агента", "Naam van de agent")} disabled={permsReady && !flags.tokens} />
-              <button type="submit" disabled={permsReady && !flags.tokens}>{t("Випустити токен", "Token uitgeven")}</button>
-            </form>
-          </section>
-          {fresh ? <article className="mcp-card"><p className="mcp-url">{fresh}</p></article> : null}
-          {tokens.map((row) => (
-            <article key={row.id} className="mcp-card">
-              <div className="mcp-row"><h2>{row.name}</h2><span className={row.revokedAt ? "mcp-badge wait" : "mcp-badge"}>{row.revokedAt ? t("відкликано", "ingetrokken") : t("дійсний", "geldig")}</span></div>
-              <p className="mcp-url">{row.prefix}… · {row.calls}</p>
-              {!row.revokedAt ? <button type="button" disabled={permsReady && !flags.tokens} onClick={() => void run("revoke", async () => { await api.post("/api/mcp/tokens/revoke", { ...ctx(), id: row.id }); await loadTokens(); })}>{t("Відкликати", "Intrekken")}</button> : null}
-            </article>
-          ))}
-        </>
-        } />
+        <McpAgentsHub tr={t} />
       )}
 
       {section === "playground" && (

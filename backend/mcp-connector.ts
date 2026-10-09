@@ -176,7 +176,9 @@ const tokenError = (status: number, error: string, description: string) => respo
 async function issue(userId: string, clientId: string, clientName: string, scope: string) {
   const access = `mcpa_${randomToken(32)}`;
   const refresh = `mcpr_${randomToken(32)}`;
-  await st.insertToken({ userId, clientId, clientName, scope, accessHash: sha256(access), refreshHash: sha256(refresh) });
+  const grantId = await st.insertToken({ userId, clientId, clientName, scope, accessHash: sha256(access), refreshHash: sha256(refresh) });
+  // Journaal op /agents: «ШІ підключено» met clientnaam en scope (de toestemming zelf staat al als owner.mcp.grant.approved).
+  await auditToevoegen({ ownerId: userId, actorId: userId, action: 'owner.mcp.grant.connected', type: 'ai', result: 'success', details: { grantId, clientId, clientName, scope } }).catch(() => undefined);
   return tokenResponse(access, refresh, scope);
 }
 
@@ -212,7 +214,10 @@ export async function token(rawBody: string): Promise<RouterResponse> {
     const access = `mcpa_${randomToken(32)}`, newRefresh = `mcpr_${randomToken(32)}`;
     const rotated = await st.rotateRefresh(client.client_id, sha256(refresh), sha256(newRefresh), sha256(access));
     if (!rotated) {
-      await st.revokeIfReused(client.client_id, sha256(refresh)); // hergebruik van een geroteerd token: grant intrekken
+      // Hergebruik van een geroteerd token: grant intrekken (en in het journaal, met reden).
+      for (const r of await st.revokeIfReused(client.client_id, sha256(refresh))) {
+        await auditToevoegen({ ownerId: r.user_id, actorId: null, action: 'owner.mcp.grant.revoked', type: 'ai', result: 'success', details: { grantId: r.id, clientName: r.client_name, reason: 'refresh_reuse' } }).catch(() => undefined);
+      }
       return tokenError(400, 'invalid_grant', 'Refresh-token ongeldig of ingetrokken');
     }
     return tokenResponse(access, newRefresh, rotated.scope);
@@ -229,7 +234,11 @@ export async function revoke(rawBody: string): Promise<RouterResponse> {
   const client = p.get('client_id') ? await st.getClient(p.get('client_id') as string) : null;
   if (!client) return tokenError(401, 'invalid_client', 'Onbekende client');
   const value = p.get('token') || '';
-  if (value && value.length <= 200) await st.revokeByToken(client.client_id, sha256(value));
+  if (value && value.length <= 200) {
+    for (const r of await st.revokeByToken(client.client_id, sha256(value))) {
+      await auditToevoegen({ ownerId: r.user_id, actorId: null, action: 'owner.mcp.grant.revoked', type: 'ai', result: 'success', details: { grantId: r.id, clientName: r.client_name, reason: 'client' } }).catch(() => undefined);
+    }
+  }
   return respond(200, {});
 }
 
@@ -349,3 +358,17 @@ export async function listUserGrants(userId: string) {
   }));
 }
 export const revokeUserGrant = (userId: string, id: string) => st.revokeGrant(userId, id);
+
+/** Geschiedenis (90 dagen): ook ingetrokken en verlopen verbindingen, met stand. Nooit tokens of hashes. */
+export async function listUserGrantHistory(userId: string) {
+  const now = Date.now();
+  return (await st.listGrantHistory(userId)).map((g) => {
+    const revokedAt = g.revoked_at ? new Date(g.revoked_at).getTime() : null;
+    const expiresAt = new Date(g.refresh_expires_at).getTime();
+    return {
+      id: g.id, clientId: g.client_id, clientName: g.client_name, scope: g.scope, createdAt: new Date(g.created_at).getTime(),
+      lastUsedAt: g.last_used_at ? new Date(g.last_used_at).getTime() : null, expiresAt, accessExpiresAt: new Date(g.access_expires_at).getTime(), revokedAt,
+      status: revokedAt ? 'revoked' as const : expiresAt <= now ? 'expired' as const : 'active' as const,
+    };
+  });
+}
