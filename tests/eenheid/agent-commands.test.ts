@@ -1,4 +1,9 @@
 // Koppelopdrachten voor de agent: correct gequoot per shell, geen punthaken, drive-root met backslash, startbestanden.
+// Plus de zelftest van agent.mjs zelf (mappen, geheime plekken, alleen-lezen roots, commando's) in een wegwerpmap.
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { buildAgentCommands, buildRunnerScript, looksLikePlaceholder, posixQuote, winQuote } from '../../src/agent-commands';
 import { checker } from './hulp/nep-google';
 
@@ -17,5 +22,13 @@ export async function main(): Promise<number> {
   const unix = buildRunnerScript('linux', sh);
   check('startbestand Windows: CRLF, UTF-8-codepagina, gaat naar zijn eigen map, voert beide regels uit en pauzeert', cmd.file === 'Mijn-Ruimte-agent.cmd' && cmd.text.includes('\r\ncd /d "%~dp0"\r\n') && cmd.text.includes(ps[0]) && cmd.text.includes('node agent.mjs run') && cmd.text.trimEnd().endsWith('pause'));
   check('startbestand macOS/Linux: shebang, gaat naar de eigen map, LF', unix.file === 'mijn-ruimte-agent.sh' && unix.text.startsWith('#!/bin/sh\ncd "$(dirname "$0")"') && !unix.text.includes('\r'));
+  const ro = buildAgentCommands({ shell: 'powershell', server: 'https://mcp.tarasevych.com', code: 'GMH4NF3H', name: 'Мій ПК', roots: ['T:\\'], readonlyRoots: ['R:\\'], allow: [] });
+  check('alleen-lezen roots: --readonly-root na de gewone roots, ook met de verdubbelde backslash', ro[0] === 'node agent.mjs pair --server https://mcp.tarasevych.com --code GMH4NF3H --name "Мій ПК" --root "T:\\\\" --readonly-root "R:\\\\"', ro[0]);
+  const map = mkdtempSync(join(tmpdir(), 'agent-zelftest-'));
+  try {
+    const r = spawnSync(process.execPath, ['deploy/agent/agent.mjs', 'selftest', '--root', map], { encoding: 'utf8', timeout: 120_000 });
+    const fouten = (r.stdout || '').split('\n').filter((l) => l.startsWith('FOUT'));
+    check('agent.mjs selftest: alles OK (schijfwortel, geheime plekken, alleen-lezen, commando\'s, handtekening)', r.status === 0 && /alles OK/.test(r.stdout || ''), fouten.join(' | ') || (r.stderr || '').slice(0, 300));
+  } finally { rmSync(map, { recursive: true, force: true }); }
   return einde();
 }

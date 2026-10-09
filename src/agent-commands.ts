@@ -8,9 +8,10 @@ export const posixQuote = (value: string) => `'${value.replace(/'/g, `'\\''`)}'`
 /** Typische fout: in de uitleg stond "<TOEGESTANE_MAP>" en de gebruiker liet de punthaken staan (in PowerShell is "<" gereserveerd). */
 export const looksLikePlaceholder = (value: string) => /[<>"|?*]/.test(value) || /ДОЗВОЛЕНА|TOEGESTANE|ПАПКА|FOLDER/i.test(value);
 
-export function buildAgentCommands(opts: { shell: Shell; server: string; code: string; name: string; roots: string[]; allow: string[] }): string[] {
+/** `readonlyRoots`: mappen die de agent alleen mag lezen en tonen (agent 0.3.1+, `--readonly-root`), bv. back-ups op R:\. */
+export function buildAgentCommands(opts: { shell: Shell; server: string; code: string; name: string; roots: string[]; readonlyRoots?: string[]; allow: string[] }): string[] {
   const q = opts.shell === 'bash' ? posixQuote : winQuote;
-  const roots = opts.roots.map((r) => `--root ${q(r)}`).join(' ');
+  const roots = [...opts.roots.map((r) => `--root ${q(r)}`), ...(opts.readonlyRoots ?? []).map((r) => `--readonly-root ${q(r)}`)].join(' ');
   const allow = opts.allow.length ? ` --allow ${opts.allow.join(',')}` : '';
   return [`node agent.mjs pair --server ${opts.server} --code ${opts.code} --name ${q(opts.name)} ${roots}${allow}`, 'node agent.mjs run'];
 }
