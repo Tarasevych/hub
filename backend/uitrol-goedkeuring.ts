@@ -24,6 +24,8 @@ import { auditToevoegen } from '../server/platform/audit';
 import { rateLimit } from '../server/platform/beveiliging';
 import { getPool } from '../server/platform/pg';
 import type { RouterMiddleware } from '../server/platform/router';
+import { meld } from './melder';
+import { ToegangFout, gebruikVastleggen, redenVan, viaAppIngetrokken, wijzigingVastleggen } from './toegang-context';
 
 export const UITROL_LIMIETEN = Object.freeze({
   maxBytes: 300 * 1024 * 1024,
@@ -126,13 +128,27 @@ export async function grantGeven(door: { id: string; email?: string }, input: { 
   await auditeer(door.id, door.id, 'uitrol_voorbereider_gegeven', 'success', { soort, onderwerp: o.id, account: o.accountId, label, dagen });
   return grantUit(rows[0]);
 }
-export async function grantIntrekken(door: { id: string; email?: string }, id: unknown) {
+/**
+ * Recht «updates voorbereiden» intrekken (§13.10): altijd met een reden (≥ 10 tekens) en — via de route — een sterke step-up.
+ * Nooit stil: het getroffen account krijgt een melding «Це були ви?»-stijl met een link naar de wijziging, en de wijziging
+ * (wie, sessie, apparaat, IP-hash, waarom) staat in zijn geschiedenis en journaal (audit met ownerId = dat account).
+ */
+export async function grantIntrekken(door: { id: string; email?: string }, id: unknown, meta: { reden?: unknown; auth?: Parameters<typeof wijzigingVastleggen>[0]['auth'] } = {}) {
   if (!UUID.test(String(id || ''))) fout('NIET_GEVONDEN', 404);
+  let reden: string;
+  try { reden = redenVan(meta.reden); } catch (e) { fout((e as ToegangFout).code || 'REDEN_TE_KORT'); }
   const { rows } = await sys().query(`UPDATE app.uitrol_voorbereiders SET ingetrokken_op = now(), ingetrokken_door = $2 WHERE id = $1 AND ingetrokken_op IS NULL RETURNING *`, [String(id), door.email || door.id]);
   if (!rows[0]) fout('NIET_GEVONDEN', 404);
   // Lopende uploads van deze voorbereider stoppen; wat al wacht, blijft zichtbaar voor de eigenaar (die kan afwijzen).
   await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'afgebroken', bijgewerkt_op = now() WHERE voorbereider_id = $1 AND status = 'uploaden'`, [String(id)]);
-  await auditeer(door.id, door.id, 'uitrol_voorbereider_ingetrokken', 'success', { id: String(id), soort: rows[0].soort, onderwerp: rows[0].onderwerp });
+  const getroffen = String(rows[0].account_id);
+  const wijziging = await wijzigingVastleggen({ userId: getroffen, actor: door, soort: 'voorbereider-ingetrokken', sleutel: String(id), label: String(rows[0].label || ''), reden: reden!, auth: meta.auth });
+  const details = { id: String(id), soort: rows[0].soort, onderwerp: rows[0].onderwerp, label: String(rows[0].label || ''), reden: reden!, wijziging, door: door.email || door.id };
+  await auditeer(door.id, door.id, 'uitrol_voorbereider_ingetrokken', 'success', details);
+  if (getroffen !== door.id) await auditeer(getroffen, door.id, 'uitrol_voorbereider_ingetrokken', 'success', details);
+  await meld(getroffen, 'security_warning', 'Право готувати оновлення відкликано / Recht om updates voor te bereiden ingetrokken',
+    `${door.email || 'Власник'} відкликав право «${String(rows[0].label || '')}». Причина: «${reden!}». Якщо це несподівано — перегляньте зміну. / ${door.email || 'De eigenaar'} heeft het recht «${String(rows[0].label || '')}» ingetrokken. Reden: «${reden!}». Onverwacht? Bekijk de wijziging.`,
+    `https://id.tarasevych.com/methods?wijziging=${wijziging}`);
   return grantUit(rows[0]);
 }
 export async function grantsLijst() {
@@ -361,6 +377,7 @@ export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitd
   await writeFile(path.join(inbox, 'aanvraag'), `${new Date().toISOString()} ${v.versie}\n`, { mode: 0o640 });
   await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'goedgekeurd', beslist_op = now(), beslist_door = $2, bijgewerkt_op = now() WHERE id = $1`, [String(v.id), eigenaar.email || eigenaar.id]);
   await auditeer(eigenaar.id, eigenaar.id, 'uitrol_voorstel_goedgekeurd', 'success', { voorstel: String(v.id), versie: String(v.versie), sha256: String(v.sha256), passkey: r.vingerafdruk.slice(0, 16), voorbereider: String(v.voorbereider_label) });
+  await passkeyGebruikVoorVingerafdruk(eigenaar.id, r.vingerafdruk, 'uitrol-goedkeuren', 'admin');
   return { id: String(v.id), versie: String(v.versie), status: 'goedgekeurd' };
 }
 
@@ -433,6 +450,8 @@ export async function sleutelUitdaging(eigenaar: Eigenaar, doel: 'sleutel-toevoe
 export async function sleutelVerzoek(eigenaar: Eigenaar, doel: 'sleutel-toevoegen' | 'sleutel-verwijderen', input: { uitdagingId?: unknown; assertie?: unknown }) {
   const assertie = assertieUit(input.assertie);
   const u = await uitdagingVerbruiken(eigenaar.id, input.uitdagingId, doel);
+  // Via de app ingetrokken: root neemt die sleutel alleen nog via SSH terug (OPNIEUW_VIA_SSH); niet doen alsof het zo kan.
+  if (doel === 'sleutel-toevoegen' && (await viaAppIngetrokken(eigenaar.id)).has(u.onderwerp)) fout('OPNIEUW_VIA_SSH', 409);
   const b = await leesSleutels();
   const verwacht = kern.uitdagingVoor(doel, { vingerafdruk: u.onderwerp, nonce: u.nonce, verloopt: u.verloopt });
   const r = kern.verifieerAssertie({ assertie, verwachteUitdaging: verwacht, rpId: b.rpId, origins: b.origins, sleutels: b.sleutels });
@@ -448,7 +467,41 @@ export async function sleutelVerzoek(eigenaar: Eigenaar, doel: 'sleutel-toevoege
   if (doel === 'sleutel-toevoegen') await unlink(path.join(inbox, `sleutel-aanmelding-${u.onderwerp}.json`)).catch(() => undefined);
   await writeFile(path.join(inbox, 'sleutel-aanvraag'), `${new Date().toISOString()} ${doel}\n`, { mode: 0o640 });
   await auditeer(eigenaar.id, eigenaar.id, doel === 'sleutel-toevoegen' ? 'uitrol_passkey_toevoegen_gevraagd' : 'uitrol_passkey_verwijderen_gevraagd', 'success', { vingerafdruk: u.onderwerp, bevestigdMet: r.vingerafdruk.slice(0, 16) });
+  await passkeyGebruikVoorVingerafdruk(eigenaar.id, r.vingerafdruk, doel === 'sleutel-toevoegen' ? 'goedkeur-recht-bevestigen' : 'goedkeur-recht-intrekken');
   return { ok: true, vingerafdruk: u.onderwerp };
+}
+
+/** Gebruik van een root-sleutel ook bij de eigen passkey (zelfde vingerafdruk) in «Способи входу» tonen. */
+async function passkeyGebruikVoorVingerafdruk(userId: string, fp: string, actie: string, dienst?: string) {
+  try {
+    const { rows } = await sys().query('UPDATE app.passkeys SET laatst_gebruikt_op = now() WHERE user_id = $1 AND vingerafdruk = $2 RETURNING id', [userId, fp]);
+    if (rows[0]) await gebruikVastleggen(userId, 'passkey', String(rows[0].id), actie, dienst ? { dienst } : {});
+  } catch (err) { console.error('[uitrol-goedkeuring] gebruik vastleggen:', (err as Error).message); }
+}
+
+/**
+ * Recht «Може схвалювати оновлення» intrekken zonder root-assertie (§13.10): rechten afnemen is de veilige richting. De app legt
+ * `sleutel-intrekken-<vingerafdruk>.json` in de inbox (met reden, wie en sessie) en tikt `sleutel-aanvraag` aan; root haalt de
+ * sleutel uit /etc/mijn-ruimte/goedkeur-passkeys.json en onthoudt de vingerafdruk: OPNIEUW toevoegen kan daarna alleen via SSH.
+ */
+export async function sleutelIntrekkenAanvragen(eigenaar: Eigenaar, fp: string, meta: { reden: string; sessie: string; wijziging: string }) {
+  if (!SHA.test(fp)) fout('NIET_GEVONDEN', 404);
+  const inbox = goedkeurInbox();
+  await writeFile(path.join(inbox, `sleutel-intrekken-${fp.slice(0, 32)}.json`), JSON.stringify({
+    doel: 'sleutel-intrekken', vingerafdruk: fp, reden: tekst(meta.reden, 500), door: tekst(eigenaar.email || eigenaar.id, 200), sessie: tekst(meta.sessie, 80).slice(0, 8), wijziging: tekst(meta.wijziging, 40), tijd: new Date().toISOString(),
+  }) + '\n', { mode: 0o640 });
+  await writeFile(path.join(inbox, 'sleutel-aanvraag'), `${new Date().toISOString()} sleutel-intrekken\n`, { mode: 0o640 });
+  await auditeer(eigenaar.id, eigenaar.id, 'uitrol_passkey_intrekken_gevraagd', 'success', { vingerafdruk: fp.slice(0, 16), wijziging: meta.wijziging });
+}
+/** Ligt er nog een intrekverzoek dat root niet verwerkt heeft? */
+export async function intrekkenLopend(fp: string): Promise<boolean> {
+  if (!SHA.test(fp)) return false;
+  try { await stat(path.join(goedkeurInbox(), `sleutel-intrekken-${fp.slice(0, 32)}.json`)); return true; } catch { return false; }
+}
+/** Nog niet verwerkt intrekverzoek weghalen («Це був не я» vóór root). true = het lag er nog (recht blijft dus). */
+export async function intrekkenAnnuleren(fp: string): Promise<boolean> {
+  if (!(await intrekkenLopend(fp))) return false;
+  try { await unlink(path.join(goedkeurInbox(), `sleutel-intrekken-${fp.slice(0, 32)}.json`)); return true; } catch { return false; }
 }
 
 // ------------------------------------------------------------------------------------------------ overzicht (eigenaar)
@@ -497,7 +550,7 @@ type SessionOk = { user: { id: string; email?: string; role?: string; status?: s
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
 type Ctx = { event: Record<string, unknown>; body: unknown };
 type Resp = ReturnType<typeof json>;
-export type UitrolRouteDeps = { requireSession: RequireSession; stepUp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null> };
+export type UitrolRouteDeps = { requireSession: RequireSession; stepUp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null>; sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null> };
 const body = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
 export const isEigenaar = (u: SessionOk['user']) => u.role === 'owner' && isOwnerEmail(u.email);
 
@@ -511,13 +564,19 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
     }
   };
   /** Eigenaar op admin.tarasevych.com; stepUp: recente herbevestiging (registreren, grants geven). */
-  const eigenaar = (opts: { stepUp?: boolean }, run: (ctx: Ctx, auth: SessionOk) => Promise<unknown>) => (async (raw) => {
+  const eigenaar = (opts: { stepUp?: boolean; sterk?: boolean; reden?: boolean }, run: (ctx: Ctx, auth: SessionOk) => Promise<unknown>) => (async (raw) => {
     const ctx = raw as unknown as Ctx;
     const auth = await deps.requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
     if (auth.service !== 'admin') return error('ADMIN_SERVICE_REQUIRED', 403);
     if (!isEigenaar(auth.user)) return error('OWNER_REQUIRED', 403);
-    if (opts.stepUp) {
+    // Eerst de reden (anders eerst een bevestigingsvenster en daarna pas «reden te kort»).
+    if (opts.reden) { try { redenVan(body(ctx.body).reden); } catch (e) { return error((e as ToegangFout).code || 'REDEN_TE_KORT', 400); } }
+    if (opts.sterk) {
+      if (!deps.sterkeStapOp) return error('STEP_UP_STRONG_REQUIRED', 403);
+      const su = await deps.sterkeStapOp(ctx, auth);
+      if (su) return su;
+    } else if (opts.stepUp) {
       if (!deps.stepUp) return error('STEP_UP_REQUIRED', 403);
       const su = await deps.stepUp(ctx, auth);
       if (su) return su;
@@ -537,7 +596,7 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
   return {
     'POST /api/owner/uitrol/overzicht': [eigenaar({}, async () => overzicht())],
     'POST /api/owner/uitrol/voorbereiders/toevoegen': [eigenaar({ stepUp: true }, async (ctx, auth) => ({ voorbereider: await grantGeven(wie(auth), body(ctx.body)) }))],
-    'POST /api/owner/uitrol/voorbereiders/intrekken': [eigenaar({}, async (ctx, auth) => ({ voorbereider: await grantIntrekken(wie(auth), body(ctx.body).id) }))],
+    'POST /api/owner/uitrol/voorbereiders/intrekken': [eigenaar({ sterk: true, reden: true }, async (ctx, auth) => ({ voorbereider: await grantIntrekken(wie(auth), body(ctx.body).id, { reden: body(ctx.body).reden, auth: auth as never }) }))],
     'POST /api/owner/uitrol/voorstel/uitdaging': [eigenaar({}, async (ctx, auth) => goedkeurUitdaging(wie(auth), body(ctx.body).id))],
     'POST /api/owner/uitrol/voorstel/goedkeuren': [eigenaar({}, async (ctx, auth) => {
       const limiet = await rateLimit(`uitrol-goedkeuren:${auth.user.id}`, 10, 600);

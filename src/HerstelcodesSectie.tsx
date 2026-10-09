@@ -2,16 +2,18 @@
 // Друкувати en «Я зберіг коди». Daarna alleen een gemaskeerde lijst (••••-••••-••ab): gebruikte codes doorgestreept met
 // datum, «Залишилося N з 10», «Відкликати всі» (step-up; alles onbruikbaar, getoond als «Відкликано») en «Створити нові»
 // (vervangt de oude set). De server bewaart de codes alleen gehasht (backend/access-plane.ts, herstelOverzicht).
+// §13.10: per gebruikte code WAARVOOR (actie), waar, apparaat en IP-hash; privénotities per set en per code (potloodje).
 import {useEffect,useRef,useState} from 'react';
 import {Check,Copy,Download,Printer,RefreshCw,ShieldOff,X} from 'lucide-react';
 import {api} from './platform/client';
 import {metHervat,neemHervat,stapOpUitleg} from './platform/stap-op';
 import {foutCode} from './platform/webauthn';
 import {InfoTip} from './InfoTip';
+import {GebruikLijst,NotitieVeld,useNotities,type Gebruik} from './ToegangContext';
 import type {Lang} from './access-plane-copy';
 
-type Regel={nr:number;hint:string;status:'ongebruikt'|'gebruikt'|'ingetrokken';gebruiktOp:number};
-type Overzicht={codes:Regel[];resterend:number;totaal:number;createdAt:number;bekekenOp:number;ingetrokkenOp:number};
+type Regel={nr:number;hint:string;sleutel?:string;status:'ongebruikt'|'gebruikt'|'ingetrokken';gebruiktOp:number;gebruik?:Gebruik[]};
+type Overzicht={codes:Regel[];resterend:number;totaal:number;createdAt:number;setSleutel?:string;bekekenOp:number;ingetrokkenOp:number};
 type Props={lang:Lang;context:Record<string,unknown>;codes:string[];busy:boolean;nieuweHerstelcodes:()=>Promise<void>;recoverySaved:()=>Promise<void>;onChange?:()=>void};
 
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='nl'?nl:uk;
@@ -34,6 +36,7 @@ export function HerstelcodesSectie({lang,context,codes,busy,nieuweHerstelcodes,r
   const[bewaard,setBewaard]=useState(false);
   const[intrekVraag,setIntrekVraag]=useState(false);
   const hervat=useRef(false);
+  const notities=useNotities(context);
 
   const laden=async()=>{try{setO((await api.post('/api/owner/access/recovery/overzicht',context)).data as Overzicht);}catch(c){setMelding({ok:false,tekst:foutTekst(lang,foutCode(c))});}};
   useEffect(()=>{void laden();setBewaard(false);},[codes.length]);// eslint-disable-line react-hooks/exhaustive-deps
@@ -85,6 +88,7 @@ export function HerstelcodesSectie({lang,context,codes,busy,nieuweHerstelcodes,r
           <button type='button' className='secondary' disabled={busy||!!bezig} onClick={()=>{setMelding(null);void nieuweHerstelcodes();}}><RefreshCw/>{heeft?tr(lang,'Створити нові','Nieuwe maken'):tr(lang,'Створити коди','Codes maken')}</button>
         </div>
       </div>
+      {heeft&&o!.setSleutel&&!nieuw&&<div className='access-plane-subrow' data-herstel-set-notitie><NotitieVeld lang={lang} soort='herstelset' sleutel={o!.setSleutel} notities={notities}/></div>}
       {intrekVraag&&<div className='access-plane-subrow access-plane-confirm' role='group'>
         <span>{tr(lang,'Відкликати всі коди відновлення? Жоден із них більше не діятиме.','Alle herstelcodes intrekken? Geen enkele werkt daarna nog.')}</span>
         <div className='access-plane-actions'>
@@ -110,9 +114,11 @@ export function HerstelcodesSectie({lang,context,codes,busy,nieuweHerstelcodes,r
       </div>}
 
       {!nieuw&&heeft&&(o!.codes.length>0
-        ?<ul className='herstel-lijst' data-herstel-lijst>{o!.codes.map(r=><li key={r.nr} data-status={r.status}>
+        ?<ul className='herstel-lijst' data-herstel-lijst>{o!.codes.map(r=><li key={r.nr} data-status={r.status} data-herstel-nr={r.nr}>
           <span className='access-plane-mono herstel-code'>{masker(r.hint)}</span>
           <small>{r.status==='ongebruikt'?tr(lang,'Не використано','Ongebruikt'):r.status==='gebruikt'?`${tr(lang,'Використано','Gebruikt')}${r.gebruiktOp?` ${datum(lang,r.gebruiktOp)}`:''}`:tr(lang,'Відкликано','Ingetrokken')}</small>
+          {r.sleutel&&<NotitieVeld lang={lang} soort='herstelcode' sleutel={r.sleutel} notities={notities} compact/>}
+          {r.sleutel&&r.gebruik&&r.gebruik.length>0&&<GebruikLijst lang={lang} gebruik={r.gebruik} id={r.sleutel}/>}
         </li>)}</ul>
         :<p className='access-plane-hint-line access-plane-subrow'>{tr(lang,'Це старий набір кодів без окремого списку. Створіть нові, щоб бачити стан кожного коду.','Dit is een oudere set zonder lijst per code. Maak nieuwe codes om de status van elke code te zien.')}</p>)}
     </div>

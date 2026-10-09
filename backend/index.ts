@@ -10,7 +10,7 @@ import { createGithubRoutes } from './github-platform'
 import { gedelegeerdeSessie } from './site-dispatch'
 import { registreerSessieControle, requireAuth } from '../server/platform/auth-poort'
 import { googleAuthTijdVers, googleStapOpVastleggen, googleUitgifteVoorStapOpVers, stapOpFout, stapOpUit } from './stap-op'
-import { registreerMelder } from './melder'
+import { meldLink, registreerMelder } from './melder'
 import { auditControle, auditToevoegen, auditVoorWeergave, auditVerwijderen, ipHash as auditIpHash } from '../server/platform/audit';
 import { createHash, createHmac, createPublicKey, randomBytes, verify } from 'node:crypto';
 import {API_COOKIE_PATH, COOKIE_DOMAIN as OWNER_COOKIE_DOMAIN, COOKIE_SCOPE as OWNER_COOKIE_SCOPE, ECOSYSTEM_COOKIE, REDIRECT_COOKIE} from './deployment-identity';
@@ -29,6 +29,8 @@ import {createCloudRoutes} from './cloud-platform';
 import { mcpConsoleRoutes } from './mcp-console';
 import { uitrolGoedkeuringRoutes } from './uitrol-goedkeuring';
 import { passkeyRoutes } from './passkeys';
+import { toegangRoutes } from './toegang-routes';
+import { sterkeStapOpFout } from './toegang-context';
 import {cloudGoogleCallbackPost,cloudGoogleStateParts} from './cloud-google-drive';
 import {googleSuiteCallbackPost,googleSuiteMailPreview,googleSuiteMailProviderSnapshot,googleSuiteOnboardingSnapshot,googleSuitePrincipalAccessToken,googleSuiteStartMailConsent,googleSuiteStateParts} from './google-suite-onboarding';
 import {createGoogleSuiteBrowserRoutes} from './google-suite-browser';
@@ -269,7 +271,7 @@ async function workspaceAccess(user: User, workspaceId: string) {
   const member = await activeMembership(user.id, workspaceId);
   return member ? { workspace, permission: member.permission, workspaceRole: member.workspaceRole, scopeBlockIds: member.scopeBlockIds || [] } : null;
 }
-async function notify(recipientUserId: string, recipientEmail: string, kind: string, title: string, message: string) { /* melding voor (mogelijk) een ander account: bewuste systeemstap (RLS) */ await alsSysteem(() => db.add('site_notifications', [{ recipientUserId, recipientEmail, kind, title, message, read: false, createdAt: Date.now() }])); }async function siteNotificationOverview(user:User){const byId=await db.list<Record<string,unknown>>('site_notifications',{filter:{recipientUserId:user.id},limit:100}),byEmail=await emailMeldingen(user,{},100),unique=new Map([...byId.items,...byEmail.items].map(item=>[item.id,item])),values=[...unique.values()],notificationItems=values.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)).slice(0,100).map(item=>({id:item.id,kind:String(item.kind||'info').slice(0,80),title:String(item.title||'').slice(0,220),message:String(item.message||'').slice(0,1200),createdAt:Number(item.createdAt||0),read:Boolean(item.read),readAt:Number(item.readAt||0)||undefined}));return{notifications:values.filter(item=>item.read!==true).length,notificationItems}}
+async function notify(recipientUserId: string, recipientEmail: string, kind: string, title: string, message: string, link?: string) { /* melding voor (mogelijk) een ander account: bewuste systeemstap (RLS); link alleen na meldLink() */ await alsSysteem(() => db.add('site_notifications', [{ recipientUserId, recipientEmail, kind, title, message, ...(meldLink(link) ? { link: meldLink(link) } : {}), read: false, createdAt: Date.now() }])); }async function siteNotificationOverview(user:User){const byId=await db.list<Record<string,unknown>>('site_notifications',{filter:{recipientUserId:user.id},limit:100}),byEmail=await emailMeldingen(user,{},100),unique=new Map([...byId.items,...byEmail.items].map(item=>[item.id,item])),values=[...unique.values()],notificationItems=values.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)).slice(0,100).map(item=>({id:item.id,kind:String(item.kind||'info').slice(0,80),title:String(item.title||'').slice(0,220),message:String(item.message||'').slice(0,1200),createdAt:Number(item.createdAt||0),read:Boolean(item.read),readAt:Number(item.readAt||0)||undefined,...(meldLink(item.link)?{link:meldLink(item.link)}:{})}));return{notifications:values.filter(item=>item.read!==true).length,notificationItems}}
 /**
  * E-mailgeadresseerde uitnodigingen en meldingen (recipientEmail / workspace_members.email) zijn alleen
  * zichtbaar voor het OORSPRONKELIJKE account met dat e-mailadres: het eerst aangemaakte users-record
@@ -462,18 +464,21 @@ type AdminRole='super_admin'|'security_admin'|'apps_admin'|'directory_admin'|'su
 // De UI gebruikt ze niet meer (grep op src/); ze antwoorden 410 Gone. Zie docs/ontwerp/.
 const VEROUDERDE_ROUTE_WEG = [async () => ownerResponse({ ok: false, error: 'LEGACY_ROUTE_GONE', reasonCode: 'LEGACY_ROUTE_GONE' }, 410)];
 
-registreerMelder((u, e, k, t, m) => notify(u, e, k, t, m))
+registreerMelder((u, e, k, t, m, l) => notify(u, e, k, t, m, l))
 // Centrale toegangspoort (fase 2): requireAuth() gebruikt dezelfde sessiecontrole als de owner-routes.
 registreerSessieControle(async (event, body) => { const a = await ownerRequireSession(event as unknown as Record<string, unknown>, body); return 'errorCode' in a ? { errorCode: a.errorCode, status: a.errorCode.includes('FORBIDDEN') ? 403 : 401 } : { user: a.user, service: a.service } }, (user, perm) => can(user as never, perm as never))
 // Fase 3: step-up voor gevoelige acties (backend/stap-op.ts). 403 STEP_UP_REQUIRED: opnieuw met Google aanmelden
 // of POST /api/owner/access/stap-op met een TOTP-code, daarna de actie herhalen (5 minuten geldig).
 const stapOpVereist=async(_ctx:unknown,auth:{user:{id:string};session?:{id:string;createdAt:number}|null;tabSession?:{id:string;createdAt:number}|null})=>{const fout=await stapOpFout(auth);return fout?ownerResponse({error:fout,reasonCode:fout,methods:['google','totp'],maxAgeSeconds:300},403):null}
+// §13.10: «sterke» step-up voor het intrekken van rechten: passkey, TOTP of herstelcode (Google alleen telt niet als er iets sterkers is).
+const sterkeStapOpVereist=async(_ctx:unknown,auth:{user:{id:string};session?:{id:string;createdAt:number}|null;tabSession?:{id:string;createdAt:number}|null})=>{const fout=await sterkeStapOpFout(auth);return fout?ownerResponse({error:fout,reasonCode:fout,methods:fout==='STEP_UP_STRONG_REQUIRED'?['passkey','totp','herstelcode']:['google','totp'],maxAgeSeconds:300},403):null}
 export const handler = router({
   ...juridischeRoutes,
   'GET /api/_healthcheck': [async () => json({ message: 'Success' })],
   ...mcpConsoleRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
-  ...uitrolGoedkeuringRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never }),
-  ...passkeyRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never }),
+  ...uitrolGoedkeuringRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
+  ...passkeyRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
+  ...toegangRoutes({ requireSession: ownerRequireSession as never, sterkeStapOp: sterkeStapOpVereist as never }),
   ...createApiPlatformRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformVaultRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformConnectionRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),

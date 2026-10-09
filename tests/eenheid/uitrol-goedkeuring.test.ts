@@ -152,6 +152,30 @@ function rootTests(basis: string, check: Check) {
   check('root: sleutel toevoegen met assertie van de bestaande sleutel', verzoek('sleutel-toevoegen', s2.vingerafdruk, eigenaar, { nieuw: s2 }) === 'OK' && leesSleutels(o).length === 2 && leesSleutels(o)[1].door.startsWith('passkey:'));
   check('root: verzoekbestanden worden na verwerking verwijderd', !readdirSync(o.inbox).some((n) => n.startsWith('sleutel-toevoegen-')));
   check('root: verloren telefoon: verwijderen met de andere passkey', verzoek('sleutel-verwijderen', eerste.vingerafdruk, tweede, { vingerafdruk: eerste.vingerafdruk }) === 'OK' && leesSleutels(o).length === 1 && leesSleutels(o)[0].vingerafdruk === s2.vingerafdruk);
+  // §13.10: recht intrekken via de app (zonder assertie, met reden) → root onthoudt het; terug alleen via SSH.
+  const intrek = (fp: string, extra: Record<string, unknown> = {}) => {
+    writeFileSync(join(o.inbox, `sleutel-intrekken-${fp.slice(0, 32)}.json`), JSON.stringify({ doel: 'sleutel-intrekken', vingerafdruk: fp, reden: 'Telefoon verloren in de trein', door: 'eigenaar@test', sessie: 'abcd1234', wijziging: '00000000-0000-4000-8000-000000000001', ...extra }));
+    hulp(o, 'verwerk');
+    return JSON.parse(readFileSync(join(o.statusDir, 'goedkeur-sleutels.json'), 'utf8')).code as string;
+  };
+  const s1 = { ...eerste, label: 'telefoon' } as typeof s2;
+  check('root: sleutel weer toevoegen met assertie (nooit via de app ingetrokken) mag', verzoek('sleutel-toevoegen', s1.vingerafdruk, tweede, { nieuw: s1 }) === 'OK' && leesSleutels(o).length === 2);
+  check('root: intrekken zonder (lange genoeg) reden geweigerd', intrek(s1.vingerafdruk, { reden: 'kort' }) === 'REDEN_ONGELDIG' && leesSleutels(o).length === 2);
+  check('root: intrekken van een onbekende sleutel → NIET_GEVONDEN', intrek(nepFp) === 'NIET_GEVONDEN' && leesSleutels(o).length === 2);
+  const gebeurtenissenVoor = readFileSync(join(o.statusDir, 'gebeurtenissen.jsonl'), 'utf8').split('\n').filter(Boolean).length;
+  check('root: intrekken via de app (zonder assertie) haalt precies die sleutel weg', intrek(s1.vingerafdruk) === 'OK' && leesSleutels(o).length === 1 && leesSleutels(o)[0].vingerafdruk === s2.vingerafdruk);
+  const staat1 = JSON.parse(readFileSync(join(o.env.GOEDKEUR_STAAT!, 'staat.json'), 'utf8'));
+  check('root: onthoudt wie/waarom (staat.ingetrokken) en meldt PASSKEY_INGETROKKEN', staat1.ingetrokken?.[s1.vingerafdruk]?.reden === 'Telefoon verloren in de trein' && staat1.ingetrokken[s1.vingerafdruk].sessie === 'abcd1234'
+    && readFileSync(join(o.statusDir, 'gebeurtenissen.jsonl'), 'utf8').split('\n').filter(Boolean).slice(gebeurtenissenVoor).some((l) => JSON.parse(l).code === 'PASSKEY_INGETROKKEN'));
+  check('root: via de app ingetrokken sleutel komt NIET terug met een assertie (OPNIEUW_VIA_SSH)', verzoek('sleutel-toevoegen', s1.vingerafdruk, tweede, { nieuw: s1 }) === 'OPNIEUW_VIA_SSH' && leesSleutels(o).length === 1);
+  check('root: intrekverzoek wordt na verwerking verwijderd', !readdirSync(o.inbox).some((n) => n.startsWith('sleutel-intrekken-')));
+  check('root: SSH «toevoegen» zet hem terug en wist de markering', (() => {
+    writeFileSync(join(o.inbox, `sleutel-aanmelding-${s1.vingerafdruk}.json`), JSON.stringify({ credentialId: s1.credentialId, alg: s1.alg, jwk: s1.jwk, label: 'telefoon', aangemaakt: new Date().toISOString() }));
+    const ok = hulp(o, 'toevoegen', s1.vingerafdruk.slice(0, 20)).status === 0 && leesSleutels(o).length === 2;
+    const st = JSON.parse(readFileSync(join(o.env.GOEDKEUR_STAAT!, 'staat.json'), 'utf8'));
+    return ok && !st.ingetrokken?.[s1.vingerafdruk];
+  })());
+  check('root: (opruimen) telefoon weer weg met de andere passkey', verzoek('sleutel-verwijderen', s1.vingerafdruk, tweede, { vingerafdruk: s1.vingerafdruk }) === 'OK' && leesSleutels(o).length === 1);
   check('root: verwijderde sleutel kan niet meer goedkeuren', hulp(o, 'verifieer-goedkeuring', pakket, goedkeuringBestand(o, eigenaar, pakket, versie), versie).uit?.code === 'SLEUTEL_ONBEKEND');
   check('root: alles-intrekken via SSH', hulp(o, 'alles-intrekken').status === 0 && leesSleutels(o).length === 0 && hulp(o, 'verifieer-goedkeuring', pakket, goedkeuringBestand(o, tweede, pakket, versie), versie).uit?.code === 'GEEN_SLEUTELS');
   check('root: verwijderen via SSH', (() => { zetSleutels(o, [s2]); return hulp(o, 'verwijderen', s2.vingerafdruk.slice(0, 20)).status === 0 && leesSleutels(o).length === 0; })());
@@ -227,10 +251,13 @@ async function appTests(basis: string, check: Check) {
   };
   for (const u of Object.values(users)) await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('users',$1,$2)", [u.id, { email: u.role === 'owner' ? `${u.id}@example.test` : u.email, role: u.role === 'owner' ? 'member' : u.role, status: u.status }]); // één eigenaar per database (records_een_eigenaar) en OWNER_EMAIL niet bezetten (aanmelden-test); de sessie-mock geeft rol + e-mail
   let stepUp = false;
+  let sterk = false; // «sterke» step-up (passkey/TOTP/herstelcode) — §13.10
+  const sterkMock = async () => (sterk ? null : { statusCode: 403, headers: {}, body: JSON.stringify({ error: stepUp ? 'STEP_UP_STRONG_REQUIRED' : 'STEP_UP_REQUIRED' }) } as any);
   let pcall: (route: string, who: string, body?: Record<string, unknown>, extra?: Record<string, unknown>) => Promise<{ status: number; data: any; fout: string }> = async () => ({ status: 0, data: null, fout: '' });
   let passkeyId = '';
+  let tcall: typeof pcall = async () => ({ status: 0, data: null, fout: '' });
   const routes = m.uitrolGoedkeuringRoutes({ requireSession: async (event: any) => ({ user: users[event.who], service: event.service ?? 'admin' }) as any,
-    stepUp: async () => (stepUp ? null : { statusCode: 403, headers: {}, body: JSON.stringify({ error: 'STEP_UP_REQUIRED' }) } as any) });
+    stepUp: async () => (stepUp ? null : { statusCode: 403, headers: {}, body: JSON.stringify({ error: 'STEP_UP_REQUIRED' }) } as any), sterkeStapOp: sterkMock });
   const call = async (route: string, who: string, body: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) => {
     const res: any = await routes[route][0]({ event: { who, headers: {}, ...extra }, body } as any);
     let data: any = null; try { data = JSON.parse(res.body); } catch { data = null; }
@@ -249,7 +276,8 @@ async function appTests(basis: string, check: Check) {
     check('app: niet-eigenaar ziet het overzicht niet', (await call('POST /api/owner/uitrol/overzicht', HELPER)).status === 403);
     check('app: rol owner met een ander e-mailadres is geen eigenaar', (await call('POST /api/owner/uitrol/overzicht', NEPEIGENAAR)).fout === 'OWNER_REQUIRED');
     check('app: eigenaar buiten admin.tarasevych.com geweigerd', (await call('POST /api/owner/uitrol/overzicht', OWNER, {}, { service: 'mcp' })).fout === 'ADMIN_SERVICE_REQUIRED');
-    check('app: grant geven vraagt step-up', (await call('POST /api/owner/uitrol/voorbereiders/toevoegen', OWNER, { soort: 'account', onderwerp: HELPER, dagen: 3 })).fout === 'STEP_UP_REQUIRED');
+    const gs = await call('POST /api/owner/uitrol/voorbereiders/toevoegen', OWNER, { soort: 'account', onderwerp: HELPER, dagen: 3 });
+    check('app: grant geven vraagt step-up', gs.fout === 'STEP_UP_REQUIRED', JSON.stringify(gs));
     stepUp = true;
     check('app: grant langer dan 30 dagen geweigerd', (await call('POST /api/owner/uitrol/voorbereiders/toevoegen', OWNER, { soort: 'account', onderwerp: HELPER, dagen: 31 })).fout === 'DUUR_ONGELDIG');
     const g = await call('POST /api/owner/uitrol/voorbereiders/toevoegen', OWNER, { soort: 'account', onderwerp: HELPER, dagen: 3 });
@@ -275,8 +303,15 @@ async function appTests(basis: string, check: Check) {
 
     // Passkey toevoegen in «Способи входу» (backend/passkeys.ts), dan «Може схвалювати оновлення сервера» → aanmelding → root via SSH.
     const pkm = await import('../../backend/passkeys');
-    const pr = pkm.passkeyRoutes({ requireSession: async (event: any) => ({ user: users[event.who], service: event.service ?? 'identity', session: { id: `sessie-${event.who}`, createdAt: Date.now() } }) as any,
-      stepUp: async () => (stepUp ? null : { statusCode: 403, headers: {}, body: JSON.stringify({ error: 'STEP_UP_REQUIRED' }) } as any) });
+    const sessieMock = async (event: any) => ({ user: users[event.who], service: event.service ?? 'identity', session: { id: event.sessie ?? `sessie-${event.who}`, createdAt: Date.now() } }) as any;
+    const pr = pkm.passkeyRoutes({ requireSession: sessieMock,
+      stepUp: async () => (stepUp ? null : { statusCode: 403, headers: {}, body: JSON.stringify({ error: 'STEP_UP_REQUIRED' }) } as any), sterkeStapOp: sterkMock });
+    const tr = (await import('../../backend/toegang-routes')).toegangRoutes({ requireSession: sessieMock, sterkeStapOp: sterkMock });
+    tcall = async (route: string, who: string, body: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) => {
+      const res: any = await tr[route][0]({ event: { who, headers: {}, ...extra }, body } as any);
+      let data: any = null; try { data = JSON.parse(res.body); } catch { data = null; }
+      return { status: res.statusCode as number, data, fout: String(data?.error || data?.reasonCode || '') };
+    };
     pcall = async (route: string, who: string, body: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) => {
       const res: any = await pr[route][0]({ event: { who, headers: {}, ...extra }, body } as any);
       let data: any = null; try { data = JSON.parse(res.body); } catch { data = null; }
@@ -355,8 +390,16 @@ async function appTests(basis: string, check: Check) {
 
     // Intrekken en verlopen
     const loopt = await call('POST /api/uitrol/voorstel/begin', HELPER, { version: '20261008-150004', bytes: 100, sha256: 'c'.repeat(64) });
-    check('app: grant intrekken (audit) stopt lopende uploads', (await call('POST /api/owner/uitrol/voorbereiders/intrekken', OWNER, { id: g.data.voorbereider.id })).data?.voorbereider?.status === 'ingetrokken'
+    stepUp = true;
+    check('app: grant intrekken zonder reden geweigerd (≥ 10 tekens)', (await call('POST /api/owner/uitrol/voorbereiders/intrekken', OWNER, { id: g.data.voorbereider.id, reden: 'kort' })).fout === 'REDEN_TE_KORT');
+    check('app: grant intrekken met alleen Google-step-up geweigerd (sterke methode nodig)', (await call('POST /api/owner/uitrol/voorbereiders/intrekken', OWNER, { id: g.data.voorbereider.id, reden: 'Project afgerond, geen uploads meer' })).fout === 'STEP_UP_STRONG_REQUIRED');
+    sterk = true;
+    check('app: grant intrekken (audit) stopt lopende uploads', (await call('POST /api/owner/uitrol/voorbereiders/intrekken', OWNER, { id: g.data.voorbereider.id, reden: 'Project afgerond, geen uploads meer' })).data?.voorbereider?.status === 'ingetrokken'
       && (await sys.query('SELECT status FROM app.uitrol_voorstellen WHERE id = $1', [loopt.data.id])).rows[0].status === 'afgebroken');
+    sterk = false; stepUp = false;
+    const wv = (await sys.query("SELECT * FROM app.toegang_wijzigingen WHERE user_id = $1 AND soort = 'voorbereider-ingetrokken'", [HELPER])).rows[0];
+    check('app: getroffen gebruiker heeft de wijziging (wie, waarom) in de eigen geschiedenis', wv && wv.actor_id === OWNER && wv.reden === 'Project afgerond, geen uploads meer'
+      && (await sys.query("SELECT 1 FROM app.audit WHERE owner_id = $1 AND action = 'uitrol_voorbereider_ingetrokken'", [HELPER]).catch(() => ({ rows: [] }))).rows.length === 1);
     check('app: ingetrokken grant → voorbereiden geweigerd', (await call('POST /api/uitrol/voorstel/begin', HELPER, { version: '20261008-150005', bytes: 10, sha256: 'd'.repeat(64) })).fout === 'GEEN_VOORBEREIDER_GRANT');
     stepUp = true;
     const g2 = await call('POST /api/owner/uitrol/voorbereiders/toevoegen', OWNER, { soort: 'account', onderwerp: HELPER, dagen: 1 });
@@ -364,17 +407,55 @@ async function appTests(basis: string, check: Check) {
     await sys.query("UPDATE app.uitrol_voorbereiders SET gegeven_op = now() - interval '2 days', verloopt_op = now() - interval '1 second' WHERE id = $1", [g2.data.voorbereider.id]);
     check('app: verlopen grant → voorbereiden geweigerd', (await call('POST /api/uitrol/voorstel/begin', HELPER, { version: '20261008-150006', bytes: 10, sha256: 'e'.repeat(64) })).fout === 'GEEN_VOORBEREIDER_GRANT');
 
-    // Recht intrekken met een passkey (eigenaar); root doet het pas bij verwerk. Daarna pas verwijderen.
+    // §13.10 Recht intrekken: eigenaar, reden ≥ 10 tekens, verse STERKE step-up; root haalt de sleutel pas bij verwerk weg.
+    const sleutelsN = () => JSON.parse(readFileSync(o.sleutels, 'utf8')).sleutels.length as number;
+    const intrekBestand = () => readdirSync(o.inbox).some((f) => f.startsWith('sleutel-intrekken-'));
+    const REDEN = 'Telefoon verloren in de trein';
     stepUp = true;
-    check('app: passkey die mag goedkeuren kan niet verwijderd worden vóór intrekken bij root', (await pcall('POST /api/owner/access/passkeys/verwijderen', OWNER, { id: passkeyId })).fout === 'PASSKEY_KAN_GOEDKEUREN');
-    stepUp = false;
-    const vo = await pcall('POST /api/owner/access/passkeys/goedkeuring/intrekken/opties', OWNER, { id: passkeyId });
-    const vz = await pcall('POST /api/owner/access/passkeys/goedkeuring/intrekken', OWNER, { uitdagingId: vo.data.uitdagingId, assertie: bevestig(telefoon, vo.data.publicKey.challenge) });
-    check('app: intrekverzoek met passkey → alleen een verzoek in de inbox (root beslist)', vz.status === 200 && JSON.parse(readFileSync(o.sleutels, 'utf8')).sleutels.length === 1 && existsSync(join(o.inbox, 'sleutel-aanvraag')), JSON.stringify(vz.data));
+    check('app: passkey die mag goedkeuren kan niet zonder reden verwijderd worden', (await pcall('POST /api/owner/access/passkeys/verwijderen', OWNER, { id: passkeyId })).fout === 'PASSKEY_KAN_GOEDKEUREN');
+    check('app: recht intrekken zonder reden geweigerd', (await pcall('POST /api/owner/access/passkeys/goedkeuring/recht-intrekken', OWNER, { id: passkeyId, reden: '   kort   ' })).fout === 'REDEN_TE_KORT');
+    check('app: recht intrekken met alleen Google-step-up geweigerd (passkey/TOTP/herstelcode nodig)', (await pcall('POST /api/owner/access/passkeys/goedkeuring/recht-intrekken', OWNER, { id: passkeyId, reden: REDEN })).fout === 'STEP_UP_STRONG_REQUIRED' && !intrekBestand());
+    check('app: niet-eigenaar kan geen recht intrekken', (await pcall('POST /api/owner/access/passkeys/goedkeuring/recht-intrekken', HELPER, { id: passkeyId, reden: REDEN })).fout === 'OWNER_REQUIRED');
+    sterk = true;
+    const ri = await pcall('POST /api/owner/access/passkeys/goedkeuring/recht-intrekken', OWNER, { id: passkeyId, reden: REDEN }, { sessie: 'aanvaller-sessie-1' });
+    check('app: recht intrekken → alleen een intrekverzoek in de inbox (root beslist), sleutel nog in root', ri.status === 200 && sleutelsN() === 1 && intrekBestand() && existsSync(join(o.inbox, 'sleutel-aanvraag')), JSON.stringify(ri.data));
+    const w1 = (await sys.query("SELECT * FROM app.toegang_wijzigingen WHERE user_id = $1 AND soort = 'goedkeur-recht-ingetrokken' ORDER BY op DESC LIMIT 1", [OWNER])).rows[0];
+    check('app: wijziging vastgelegd: wie, sessie, reden, welke sleutel, methode', w1 && w1.actor_id === OWNER && w1.reden === REDEN && w1.sessie_id === 'aanvaller-sessie-1' && w1.vingerafdruk === fp && w1.host === 'id.tarasevych.com', JSON.stringify(w1 || {}));
+    check('app: tweede intrekverzoek terwijl het eerste loopt → INTREKKEN_LOOPT_AL', (await pcall('POST /api/owner/access/passkeys/goedkeuring/recht-intrekken', OWNER, { id: passkeyId, reden: REDEN })).fout === 'INTREKKEN_LOOPT_AL');
+    const lw = await pcall('POST /api/owner/access/passkeys/lijst', OWNER);
+    const pw = lw.data.passkeys.find((p: any) => p.id === passkeyId);
+    check('app: status «wordt ingetrokken» + geschiedenis met reden', pw?.goedkeuring === 'wordt-ingetrokken' && pw.geschiedenis.some((g: any) => g.soort === 'goedkeur-recht-ingetrokken' && g.wijziging?.reden === REDEN), JSON.stringify(pw));
+    // «Це був не я» vóór root: verzoek weghalen → recht blijft; de sessie van de wijziging wordt ingetrokken (niet de huidige).
+    const tv = await tcall('POST /api/owner/access/toegang/wijziging', OWNER, { id: w1.id });
+    check('app: wijziging bekijken (link uit de melding)', tv.status === 200 && tv.data.wijziging.reden === REDEN && tv.data.stand.recht === 'wordt-ingetrokken' && tv.data.kanTerugdraaien === true, JSON.stringify(tv.data));
+    check('app: wijziging van een ander account niet zichtbaar', (await tcall('POST /api/owner/access/toegang/wijziging', HELPER, { id: w1.id })).status === 404);
+    sterk = false;
+    check('app: terugdraaien vraagt ook een sterke step-up', (await tcall('POST /api/owner/access/toegang/wijziging/terugdraaien', OWNER, { id: w1.id })).fout === 'STEP_UP_STRONG_REQUIRED');
+    sterk = true;
+    const td = await tcall('POST /api/owner/access/toegang/wijziging/terugdraaien', OWNER, { id: w1.id }, { sessie: 'eigenaar-sessie-2' });
+    check('app: terugdraaien vóór root → recht behouden, intrekverzoek weg', td.status === 200 && td.data.uitkomst.recht === 'behouden' && !intrekBestand() && td.data.stand.recht === 'kan-goedkeuren', JSON.stringify(td.data));
+    check('app: terugdraaien legt vast (ongedaan door, uitkomst) en kan maar één keer', !!td.data.wijziging.ongedaanOp && (await tcall('POST /api/owner/access/toegang/wijziging/terugdraaien', OWNER, { id: w1.id }, { sessie: 'eigenaar-sessie-2' })).fout === 'AL_TERUGGEDRAAID');
+    check('app: terugdraaien staat in de audit', (await sys.query("SELECT 1 FROM app.audit WHERE owner_id = $1 AND action = 'toegang_wijziging_ongedaan' AND details->>'wijziging' = $2", [OWNER, w1.id]).catch(() => ({ rows: [] }))).rows.length === 1);
+    // Nu echt intrekken en root laten verwerken.
+    const ri2 = await pcall('POST /api/owner/access/passkeys/goedkeuring/recht-intrekken', OWNER, { id: passkeyId, reden: REDEN }, { sessie: 'aanvaller-sessie-3' });
     hulp(o, 'verwerk');
-    check('root: verwerkt het intrekverzoek van de app', JSON.parse(readFileSync(o.sleutels, 'utf8')).sleutels.length === 0);
-    stepUp = true;
-    check('app: daarna kan de passkey weg', (await pcall('POST /api/owner/access/passkeys/verwijderen', OWNER, { id: passkeyId })).status === 200);
+    check('root: verwerkt het intrekverzoek van de app (zonder assertie)', ri2.status === 200 && sleutelsN() === 0 && !intrekBestand());
+    const w2 = (await sys.query("SELECT id FROM app.toegang_wijzigingen WHERE user_id = $1 AND soort = 'goedkeur-recht-ingetrokken' AND ongedaan_op IS NULL ORDER BY op DESC LIMIT 1", [OWNER])).rows[0];
+    const td2 = await tcall('POST /api/owner/access/toegang/wijziging/terugdraaien', OWNER, { id: w2.id }, { sessie: 'eigenaar-sessie-2' });
+    check('app: terugdraaien ná root → eerlijk: alleen via SSH (aanmelding + SSH-opdracht)', td2.status === 200 && td2.data.uitkomst.recht === 'ssh-nodig' && String(td2.data.uitkomst.sshOpdracht).startsWith('sudo mijn-ruimte-passkey toevoegen ') && existsSync(join(o.inbox, `sleutel-aanmelding-${fp}.json`)), JSON.stringify(td2.data));
+    check('app: opnieuw aanvragen via de app ná intrekken → SSH (OPNIEUW_VIA_SSH of eerste sleutel)', (await (async () => { const l = await pcall('POST /api/owner/access/passkeys/lijst', OWNER); return String(l.data.passkeys.find((p: any) => p.id === passkeyId)?.sshOpdracht || ''); })()).startsWith('sudo mijn-ruimte-passkey toevoegen '));
+    check('root: SSH zet het recht terug', hulp(o, 'toevoegen', fp.slice(0, 20)).status === 0 && sleutelsN() === 1);
+    // Verwijderen van een goedkeur-passkey: met reden + sterke step-up; terugdraaien vóór root zet de passkey terug.
+    const vw = await pcall('POST /api/owner/access/passkeys/verwijderen', OWNER, { id: passkeyId, reden: 'Oude telefoon weggegeven' }, { sessie: 'aanvaller-sessie-4' });
+    check('app: goedkeur-passkey verwijderen met reden → rij weg + intrekverzoek', vw.status === 200 && intrekBestand() && (await sys.query('SELECT 1 FROM app.passkeys WHERE id = $1', [passkeyId])).rows.length === 0, JSON.stringify(vw.data));
+    const w3 = (await sys.query("SELECT id FROM app.toegang_wijzigingen WHERE user_id = $1 AND soort = 'goedkeur-passkey-verwijderd' ORDER BY op DESC LIMIT 1", [OWNER])).rows[0];
+    const td3 = await tcall('POST /api/owner/access/toegang/wijziging/terugdraaien', OWNER, { id: w3.id }, { sessie: 'eigenaar-sessie-2' });
+    check('app: terugdraaien zet de passkey terug en het recht blijft (vóór root)', td3.status === 200 && td3.data.uitkomst.passkeyTerug === true && td3.data.uitkomst.recht === 'behouden' && (await sys.query('SELECT 1 FROM app.passkeys WHERE id = $1', [passkeyId])).rows.length === 1 && sleutelsN() === 1, JSON.stringify(td3.data));
+    // Opruimen zoals vroeger: intrekken, root verwerkt, daarna gewoon verwijderen.
+    await pcall('POST /api/owner/access/passkeys/goedkeuring/recht-intrekken', OWNER, { id: passkeyId, reden: REDEN });
+    hulp(o, 'verwerk');
+    sterk = false;
+    check('app: daarna kan de passkey weg (gewone step-up)', (await pcall('POST /api/owner/access/passkeys/verwijderen', OWNER, { id: passkeyId })).status === 200 && sleutelsN() === 0);
     stepUp = false;
 
     // Database: de app-rol kan niet bij de nieuwe tabellen.
@@ -391,6 +472,7 @@ async function appTests(basis: string, check: Check) {
     await sys.query('DELETE FROM app.passkeys WHERE user_id = ANY($1)', [Object.keys(users)]).catch(() => undefined);
     await sys.query('DELETE FROM app.passkey_uitdagingen WHERE user_id = ANY($1)', [Object.keys(users)]).catch(() => undefined);
     await sys.query('DELETE FROM app.mcp_console_tokens WHERE user_id = ANY($1)', [Object.keys(users)]);
+    for (const t of ['toegang_wijzigingen', 'toegang_gebruik', 'toegang_notities']) await sys.query(`DELETE FROM app.${t} WHERE user_id = ANY($1)`, [Object.keys(users)]).catch(() => undefined);
     await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = ANY($1)", [Object.keys(users)]);
     const herstel = (k: string, v?: string) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
     herstel('UITROL_VOORSTEL_DIR', oud.a); herstel('GOEDKEUR_INBOX', oud.b); herstel('GOEDKEUR_SLEUTELS', oud.c); herstel('MCP_RECHTEN_PAD', oud.d); herstel('OPDRACHT_STATUS_DIR', oud.e);

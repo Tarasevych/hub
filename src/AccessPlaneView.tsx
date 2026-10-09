@@ -120,7 +120,7 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
     setNotice('');
     const ctx=sessionBody();
     if(data.totp?.enrolled||data.factors.find(item=>item.id==='totp')?.enrolled){
-      const uit=await bevestigToegang({service:ctx.service,tabContext:ctx.tabContext,post:(url,body)=>api.post(url,body),toegestaan:['passkey','totp'],codeTerug:true});
+      const uit=await bevestigToegang({service:ctx.service,tabContext:ctx.tabContext,post:(url,body)=>api.post(url,body),toegestaan:['passkey','totp'],codeTerug:true,actie:'herstelcodes-nieuw'});
       if(!uit.ok)return;
       await write('/api/owner/access/recovery/rotate',uit.methode==='totp'&&uit.code?{code:uit.code}:{});
       return;
@@ -131,7 +131,7 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
   const totpUitschakelen=async()=>{
     setNotice('');
     const ctx=sessionBody();
-    const uit=await bevestigToegang({service:ctx.service,tabContext:ctx.tabContext,post:(url,body)=>api.post(url,body),toegestaan:['totp','herstelcode'],codeTerug:true});
+    const uit=await bevestigToegang({service:ctx.service,tabContext:ctx.tabContext,post:(url,body)=>api.post(url,body),toegestaan:['totp','herstelcode'],codeTerug:true,actie:'totp-uitschakelen'});
     if(uit.ok&&uit.code)await write('/api/owner/access/totp/disable',{code:uit.code});
   };
   const hervat=useRef(false);

@@ -21,7 +21,8 @@ import type { RouterMiddleware } from '../server/platform/router';
 import { alsGebruiker } from './ai-grants';
 import { meld } from './melder';
 import { passkeyStapOpVastleggen, stapOpSessieId, type StapOpAuth } from './stap-op';
-import { UitrolFout, aanmeldingIntrekken, aanmeldingSchrijven, leesSleutels, schakelaarAan, sleutelUitdaging, sleutelVerzoek, sshOpdracht, wachtendeAanmeldingen } from './uitrol-goedkeuring';
+import { ToegangFout, gebruikVastleggen, gebruikVoor, redenVan, sessieInfo, sterkeStapOpFout, viaAppIngetrokken, wijzigingVastleggen, wijzigingenVoor, type Gebruik, type WijzigingRij } from './toegang-context';
+import { UitrolFout, aanmeldingIntrekken, aanmeldingSchrijven, intrekkenLopend, leesSleutels, schakelaarAan, sleutelIntrekkenAanvragen, sleutelUitdaging, sleutelVerzoek, sshOpdracht, wachtendeAanmeldingen } from './uitrol-goedkeuring';
 
 export const PASSKEY_LIMIETEN = { perGebruiker: 10, uitdagingMs: 5 * 60 * 1000, naam: 60 } as const;
 const STANDAARD_ORIGINS = ['https://id.tarasevych.com', 'https://admin.tarasevych.com', 'https://hub.tarasevych.com'];
@@ -107,9 +108,13 @@ export async function passkeyAantal(userId: string): Promise<number> {
   catch { return 0; }
 }
 
-type Goedkeuring = 'alleen-aanmelden' | 'wacht' | 'kan-goedkeuren';
-function rijUit(r: Rij, goedkeuring?: { status: Goedkeuring; sshOpdracht?: string }) {
+type Goedkeuring = 'alleen-aanmelden' | 'wacht' | 'kan-goedkeuren' | 'wordt-ingetrokken';
+type Extra = { gebruik?: Gebruik[]; geschiedenis?: Geschiedenis[] };
+/** Eén regel in «Історія» van een passkey: een wijziging (wie/wanneer/waarom) of een gebeurtenis bij root. */
+type Geschiedenis = { soort: string; op: string; wijziging?: WijzigingRij; door?: string };
+function rijUit(r: Rij, goedkeuring?: { status: Goedkeuring; sshOpdracht?: string }, extra: Extra = {}) {
   return {
+    gebruik: extra.gebruik || [], ...(extra.geschiedenis ? { geschiedenis: extra.geschiedenis } : {}),
     id: String(r.id), naam: r.naam, aanbieder: aaguidNaam(r.aaguid), aaguid: r.aaguid,
     synchroniseerbaar: !!r.backup_eligible, gesynchroniseerd: !!r.backup_state, transports: r.transports || [],
     soort: passkeySoort(r.aaguid, r.transports || [], !!r.backup_eligible), viaTelefoon: (r.transports || []).includes('hybrid'),
@@ -123,15 +128,27 @@ function rijUit(r: Rij, goedkeuring?: { status: Goedkeuring; sshOpdracht?: strin
 export async function lijst(auth: PasskeyAuth) {
   const rijen = await eigenRijen(auth.user.id);
   const rp = passkeyRp();
-  if (!isEigenaarGebruiker(auth.user)) return { rpId: rp.rpId, passkeys: rijen.map((r) => rijUit(r)), limiet: PASSKEY_LIMIETEN.perGebruiker };
+  const gebruik = await gebruikVoor(auth.user.id, 'passkey', rijen.map((r) => String(r.id)));
+  if (!isEigenaarGebruiker(auth.user)) return { rpId: rp.rpId, passkeys: rijen.map((r) => rijUit(r, undefined, { gebruik: gebruik.get(String(r.id)) })), limiet: PASSKEY_LIMIETEN.perGebruiker };
   const b = await leesSleutels();
   const wacht = new Set((await wachtendeAanmeldingen()).map((w) => w.vingerafdruk));
-  const inRoot = new Set(b.sleutels.map((s) => s.vingerafdruk));
+  const inRoot = new Map(b.sleutels.map((s) => [s.vingerafdruk, s]));
   const eersteViaSsh = b.sleutels.length === 0;
+  const wijzigingen = await wijzigingenVoor(auth.user.id, { vingerafdrukken: rijen.map((r) => r.vingerafdruk) });
+  const ingetrokken = new Set(wijzigingen.filter((w) => w.soort === 'goedkeur-recht-ingetrokken' || w.soort === 'goedkeur-passkey-verwijderd').map((w) => w.vingerafdruk));
+  const lopend = new Set<string>();
+  for (const r of rijen) if (inRoot.has(r.vingerafdruk) && await intrekkenLopend(r.vingerafdruk)) lopend.add(r.vingerafdruk);
+  const geschiedenis = (r: Rij): Geschiedenis[] => {
+    const uit: Geschiedenis[] = wijzigingen.filter((w) => w.vingerafdruk === r.vingerafdruk).map((w) => ({ soort: w.soort, op: w.op, wijziging: w }));
+    const s = inRoot.get(r.vingerafdruk) as { toegevoegd?: string; door?: string } | undefined;
+    if (s?.toegevoegd) uit.push({ soort: 'root-toegevoegd', op: String(s.toegevoegd), door: String(s.door || '') });
+    return uit.sort((a, c) => Date.parse(c.op) - Date.parse(a.op));
+  };
   return {
     rpId: rp.rpId, limiet: PASSKEY_LIMIETEN.perGebruiker,
-    passkeys: rijen.map((r) => rijUit(r, inRoot.has(r.vingerafdruk) ? { status: 'kan-goedkeuren' }
-      : wacht.has(r.vingerafdruk) ? { status: 'wacht', ...(eersteViaSsh ? { sshOpdracht: sshOpdracht(r.vingerafdruk) } : {}) } : { status: 'alleen-aanmelden' })),
+    passkeys: rijen.map((r) => rijUit(r, lopend.has(r.vingerafdruk) ? { status: 'wordt-ingetrokken' } : inRoot.has(r.vingerafdruk) ? { status: 'kan-goedkeuren' }
+      : wacht.has(r.vingerafdruk) ? { status: 'wacht', ...(eersteViaSsh || ingetrokken.has(r.vingerafdruk) ? { sshOpdracht: sshOpdracht(r.vingerafdruk) } : {}) } : { status: 'alleen-aanmelden' },
+    { gebruik: gebruik.get(String(r.id)), geschiedenis: geschiedenis(r) })),
     goedkeuring: {
       schakelaar: await schakelaarAan(), rootRpId: b.rpId, rpKlopt: b.rpId === rp.rpId, aantalBijRoot: b.sleutels.length,
       // Sleutels die root vertrouwt maar die hier niet (meer) staan, bv. nog van admin.tarasevych.com: alleen intrekken kan.
@@ -232,18 +249,82 @@ export async function hernoemen(auth: PasskeyAuth, input: Record<string, unknown
   return { ok: true, id: rij.id, naam };
 }
 
+/** Mag deze passkey updates goedkeuren (staat hij in het root-bestand)? Dan is verwijderen ook een recht intrekken (§13.10). */
+export async function isGoedkeurSleutel(auth: PasskeyAuth, id: unknown): Promise<boolean> {
+  if (!isEigenaarGebruiker(auth.user) || !UUID.test(String(id || ''))) return false;
+  const rij = await alsGebruiker(auth.user.id, async (q) => (await q('SELECT vingerafdruk FROM app.passkeys WHERE id = $1 AND user_id = $2', [String(id), auth.user.id])).rows[0] as { vingerafdruk: string } | undefined);
+  return !!rij && (await leesSleutels()).sleutels.some((s) => s.vingerafdruk === rij.vingerafdruk);
+}
+/** Publieke gegevens om een verwijderde passkey bij «Це був не я» terug te zetten (geen geheimen: een passkey heeft hier alleen een publieke sleutel). */
+const herstelVan = (r: Rij) => ({ id: String(r.id), credentialId: r.credential_id, alg: r.alg, jwk: r.jwk, vingerafdruk: r.vingerafdruk, naam: r.naam, aaguid: r.aaguid,
+  transports: r.transports || [], backupEligible: !!r.backup_eligible, backupState: !!r.backup_state, signCount: Number(r.sign_count) || 0, aangemaaktOp: new Date(r.aangemaakt_op).toISOString() });
+const linkWijziging = (id: string) => `https://id.tarasevych.com/methods?wijziging=${id}`;
+
 export async function verwijderen(auth: PasskeyAuth, input: Record<string, unknown>) {
   const rij = await eigenRij(auth.user.id, input.id);
+  let wijziging = '';
   if (isEigenaarGebruiker(auth.user)) {
-    // Eerst bij root intrekken: anders blijft een sleutel updates goedkeuren die hier niet meer zichtbaar is.
-    if ((await leesSleutels()).sleutels.some((s) => s.vingerafdruk === rij.vingerafdruk)) fout('PASSKEY_KAN_GOEDKEUREN', 409);
+    // Een sleutel die updates mag goedkeuren: alleen met een reden (de route eist dan ook een sterke step-up). Root krijgt eerst
+    // het intrekverzoek; anders blijft een sleutel goedkeuren die hier niet meer zichtbaar is.
+    if ((await leesSleutels()).sleutels.some((s) => s.vingerafdruk === rij.vingerafdruk)) {
+      if (input.reden === undefined || input.reden === null || input.reden === '') fout('PASSKEY_KAN_GOEDKEUREN', 409);
+      const reden = redenUit(input.reden);
+      wijziging = await wijzigingVastleggen({ userId: auth.user.id, actor: auth.user, soort: 'goedkeur-passkey-verwijderd', sleutel: String(rij.id), vingerafdruk: rij.vingerafdruk, label: rij.naam, reden, auth, herstel: herstelVan(rij) });
+      await sleutelIntrekkenAanvragen({ id: auth.user.id, email: auth.user.email }, rij.vingerafdruk, { reden, sessie: sessieInfo(auth).sessieId, wijziging });
+    }
     await aanmeldingIntrekken({ id: auth.user.id, email: auth.user.email }, rij.vingerafdruk).catch(() => undefined);
   }
   await alsGebruiker(auth.user.id, (q) => q('DELETE FROM app.passkeys WHERE id = $1 AND user_id = $2', [rij.id, auth.user.id]));
-  await auditeer(auth.user.id, 'passkey_verwijderd', 'success', { vingerafdruk: rij.vingerafdruk.slice(0, 16) }, auth.service);
-  await meld(auth.user.id, 'security', 'Passkey видалено / Passkey verwijderd', `«${rij.naam}» більше не є способом входу. / «${rij.naam}» is geen aanmeldmethode meer.`);
-  return { ok: true, id: rij.id };
+  await auditeer(auth.user.id, wijziging ? 'goedkeur_passkey_verwijderd' : 'passkey_verwijderd', 'success', { vingerafdruk: rij.vingerafdruk.slice(0, 16), label: rij.naam, ...(wijziging ? { wijziging, reden: String(input.reden || '').slice(0, 500), sessie: sessieInfo(auth).sessieId.slice(0, 8) } : {}) }, auth.service);
+  if (wijziging) await meldWasDitU(auth, wijziging, rij.naam, 'verwijderd');
+  else await meld(auth.user.id, 'security', 'Passkey видалено / Passkey verwijderd', `«${rij.naam}» більше не є способом входу. / «${rij.naam}» is geen aanmeldmethode meer.`);
+  return { ok: true, id: rij.id, ...(wijziging ? { wijziging } : {}) };
 }
+
+const redenUit = (v: unknown) => { try { return redenVan(v); } catch (e) { return fout((e as ToegangFout).code || 'REDEN_TE_KORT', 400); } };
+/** Melding in Google-stijl «Це були ви?» met een link naar de wijziging en de knop «Це був не я». */
+async function meldWasDitU(auth: PasskeyAuth, wijziging: string, naam: string, wat: 'ingetrokken' | 'verwijderd') {
+  const s = sessieInfo(auth);
+  const tijd = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+  await meld(auth.user.id, 'security_warning',
+    wat === 'verwijderd' ? 'Це були ви? Passkey для схвалення оновлень видалено / Was u dit? Goedkeur-passkey verwijderd' : 'Це були ви? Право схвалювати оновлення відкликано / Was u dit? Recht om updates goed te keuren ingetrokken',
+    `«${naam}» · ${tijd} · сесія ${s.sessieId.slice(0, 8)}. Якщо це були не ви — відкрийте зміну й натисніть «Це був не я». / «${naam}» · ${tijd} · sessie ${s.sessieId.slice(0, 8)}. Was u dit niet? Open de wijziging en kies «Dit was ik niet».`,
+    linkWijziging(wijziging));
+}
+
+/**
+ * Recht «Може схвалювати оновлення» intrekken (§13.10). Alleen de eigenaar, met een reden (≥ 10 tekens) en een sterke step-up
+ * (passkey, TOTP of herstelcode; Google alleen telt niet als er iets sterkers is) — dat eist de route. Root krijgt een verzoek
+ * zonder assertie (intrekken is de veilige richting) en laat dezelfde sleutel daarna alleen nog via SSH terug toe.
+ */
+export async function rechtIntrekken(auth: PasskeyAuth, input: Record<string, unknown>) {
+  const reden = redenUit(input.reden);
+  const rij = await eigenRij(auth.user.id, input.id);
+  if (!(await leesSleutels()).sleutels.some((s) => s.vingerafdruk === rij.vingerafdruk)) fout('NIET_GEVONDEN', 404);
+  if (await intrekkenLopend(rij.vingerafdruk)) fout('INTREKKEN_LOOPT_AL', 409);
+  const wijziging = await wijzigingVastleggen({ userId: auth.user.id, actor: auth.user, soort: 'goedkeur-recht-ingetrokken', sleutel: String(rij.id), vingerafdruk: rij.vingerafdruk, label: rij.naam, reden, auth });
+  await sleutelIntrekkenAanvragen({ id: auth.user.id, email: auth.user.email }, rij.vingerafdruk, { reden, sessie: sessieInfo(auth).sessieId, wijziging });
+  await auditeer(auth.user.id, 'goedkeur_recht_ingetrokken', 'success', { vingerafdruk: rij.vingerafdruk.slice(0, 16), label: rij.naam, reden, wijziging, sessie: sessieInfo(auth).sessieId.slice(0, 8) }, auth.service);
+  await meldWasDitU(auth, wijziging, rij.naam, 'ingetrokken');
+  return { ok: true, id: rij.id, status: 'wordt-ingetrokken' as const, wijziging };
+}
+
+/** «Це був не я»: een verwijderde passkey terugzetten uit de bewaarde publieke gegevens (alleen als hij er nog niet is). */
+export async function passkeyHerstellen(userId: string, h: Record<string, unknown>): Promise<boolean> {
+  const id = String(h.id || '');
+  if (!UUID.test(id) || !/^[0-9a-f]{64}$/.test(String(h.vingerafdruk || ''))) return false;
+  try {
+    return await alsGebruiker(userId, async (q) => {
+      const r = await q(`INSERT INTO app.passkeys (id, user_id, credential_id, alg, jwk, vingerafdruk, naam, aaguid, transports, backup_eligible, backup_state, sign_count, aangemaakt_op)
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT DO NOTHING RETURNING id`,
+      [id, userId, String(h.credentialId), Number(h.alg), JSON.stringify(h.jwk), String(h.vingerafdruk), String(h.naam || 'Passkey').slice(0, 60), String(h.aaguid || ''),
+        Array.isArray(h.transports) ? h.transports.map(String).filter((t) => TRANSPORTS.has(t)) : [], !!h.backupEligible, !!h.backupState, Math.max(0, Number(h.signCount) || 0), String(h.aangemaaktOp || new Date().toISOString())]);
+      return (r.rowCount || 0) > 0;
+    });
+  } catch (err) { console.error('[passkeys] herstellen mislukt:', (err as Error).message); return false; }
+}
+/** Rij voor een aanmelding bij root (opnieuw aanvragen na «Це був не я»). */
+export async function rijVoorAanmelding(userId: string, id: string) { return eigenRij(userId, id); }
 
 // ------------------------------------------------------------------------------------------------ step-up met passkey
 export async function stapOpOpties(auth: PasskeyAuth) {
@@ -284,6 +365,8 @@ export async function stapOp(auth: PasskeyAuth, input: Record<string, unknown>) 
     [rij.id, auth.user.id, Math.max(0, ok.signCount), (ok.vlaggen & kern.VLAG.BS) !== 0]));
   if (!(await passkeyStapOpVastleggen(auth))) fout('SESSIE_VEREIST', 403);
   await auditeer(auth.user.id, 'passkey_stap_op', 'success', { vingerafdruk: rij.vingerafdruk.slice(0, 16) }, auth.service);
+  // Waarvoor (label uit de vaste lijst; onbekend → 'onbekend'), waar (dienst van de sessie), apparaat en IP-hash.
+  await gebruikVastleggen(auth.user.id, 'passkey', String(rij.id), input.actie, { dienst: auth.service });
   return { ok: true, geldigMs: 5 * 60 * 1000 };
 }
 
@@ -291,7 +374,10 @@ export async function stapOp(auth: PasskeyAuth, input: Record<string, unknown>) 
 export async function goedkeuringAanvragen(auth: PasskeyAuth, input: Record<string, unknown>) {
   const rij = await eigenRij(auth.user.id, input.id);
   const uit = await aanmeldingSchrijven({ id: auth.user.id, email: auth.user.email }, { credentialId: rij.credential_id, alg: rij.alg, jwk: rij.jwk, label: rij.naam, aaguid: rij.aaguid });
-  return { ok: true, id: rij.id, status: 'wacht' as const, eerste: uit.eerste, ...(uit.eerste ? { sshOpdracht: uit.sshOpdracht } : {}) };
+  await wijzigingVastleggen({ userId: auth.user.id, actor: auth.user, soort: 'goedkeur-recht-aangevraagd', sleutel: String(rij.id), vingerafdruk: rij.vingerafdruk, label: rij.naam, auth }).catch(() => '');
+  // Eerder via de app ingetrokken: root neemt hem alleen nog via SSH terug.
+  const viaSsh = uit.eerste || (await viaAppIngetrokken(auth.user.id)).has(rij.vingerafdruk);
+  return { ok: true, id: rij.id, status: 'wacht' as const, eerste: uit.eerste, viaSsh, ...(viaSsh ? { sshOpdracht: uit.sshOpdracht } : {}) };
 }
 export async function goedkeuringAnnuleren(auth: PasskeyAuth, input: Record<string, unknown>) {
   const rij = await eigenRij(auth.user.id, input.id);
@@ -314,28 +400,38 @@ type SessionOk = PasskeyAuth;
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
 type Ctx = { event: Record<string, unknown>; body: unknown };
 type Resp = ReturnType<typeof json>;
-export type PasskeyRouteDeps = { requireSession: RequireSession; stepUp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null> };
+export type PasskeyRouteDeps = { requireSession: RequireSession; stepUp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null>; sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null> };
+/** Standaard sterke step-up (STEP_UP_STRONG_REQUIRED als er een passkey/TOTP/herstelcode is). */
+export const sterkeStapOpStandaard = async (_ctx: unknown, auth: SessionOk): Promise<Resp | null> => { const f = await sterkeStapOpFout(auth); return f ? error(f, 403) : null; };
 const lichaam = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
 /** Diensten waarop de pagina «Способи входу» draait; de eigenaarsroutes alleen op id en admin (zelfde origins als root). */
 const DIENSTEN = new Set(['identity', 'admin', 'hub']);
 const EIGENAAR_DIENSTEN = new Set(['identity', 'admin']);
 
 export function passkeyRoutes(deps: PasskeyRouteDeps): Record<string, RouterMiddleware[]> {
-  const route = (opts: { stepUp?: boolean; eigenaar?: boolean }, run: (auth: SessionOk, b: Record<string, unknown>) => Promise<unknown>) => (async (raw) => {
+  const route = (opts: { stepUp?: boolean; eigenaar?: boolean; reden?: boolean; sterkAls?: (auth: SessionOk, b: Record<string, unknown>) => Promise<boolean> }, run: (auth: SessionOk, b: Record<string, unknown>) => Promise<unknown>) => (async (raw) => {
     const ctx = raw as unknown as Ctx;
     const auth = await deps.requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
     if (auth.user.status !== 'approved' && auth.user.role !== 'owner') return error('ACCOUNT_NOT_APPROVED', 403);
     if (!DIENSTEN.has(auth.service)) return error('SERVICE_NOT_ALLOWED', 403);
     if (opts.eigenaar && (!isEigenaarGebruiker(auth.user) || !EIGENAAR_DIENSTEN.has(auth.service))) return error('OWNER_REQUIRED', 403);
-    if (opts.stepUp) {
+    // Eerst de reden (geen bevestigingsvenster voor een verzoek dat toch geweigerd wordt).
+    if (opts.reden) { try { redenVan(lichaam(ctx.body).reden); } catch (e) { return error((e as ToegangFout).code || 'REDEN_TE_KORT', 400); } }
+    // Sterke step-up (rechten intrekken): passkey/TOTP/herstelcode; Google alleen telt niet als er iets sterkers is.
+    let sterk = false;
+    try { sterk = !!opts.sterkAls && await opts.sterkAls(auth, lichaam(ctx.body)); } catch { sterk = false; }
+    if (sterk) {
+      const su = await (deps.sterkeStapOp || sterkeStapOpStandaard)(ctx, auth);
+      if (su) return su;
+    } else if (opts.stepUp) {
       if (!deps.stepUp) return error('STEP_UP_REQUIRED', 403);
       const su = await deps.stepUp(ctx, auth);
       if (su) return su;
     }
     try { return json(await run(auth, lichaam(ctx.body))); }
     catch (err) {
-      if (err instanceof PasskeyFout || err instanceof UitrolFout) return error(err.code, err.status);
+      if (err instanceof PasskeyFout || err instanceof UitrolFout || err instanceof ToegangFout) return error(err.code, err.status);
       console.error('[passkeys]', (err as Error).message);
       return error('PASSKEY_FOUT', 500);
     }
@@ -346,7 +442,8 @@ export function passkeyRoutes(deps: PasskeyRouteDeps): Record<string, RouterMidd
     [`POST ${P}/registreren/opties`]: [route({ stepUp: true }, (a) => registratieOpties(a))],
     [`POST ${P}/registreren`]: [route({}, (a, b) => registreren(a, b))],
     [`POST ${P}/hernoemen`]: [route({}, (a, b) => hernoemen(a, b))],
-    [`POST ${P}/verwijderen`]: [route({ stepUp: true }, (a, b) => verwijderen(a, b))],
+    // Een goedkeur-passkey verwijderen = een recht intrekken: met reden (anders PASSKEY_KAN_GOEDKEUREN) en sterke step-up.
+    [`POST ${P}/verwijderen`]: [route({ stepUp: true, sterkAls: async (a, b) => !!b.reden && await isGoedkeurSleutel(a, b.id) }, (a, b) => verwijderen(a, b))],
     // Step-up met een passkey: onder /stap-op/ zodat de client bij een 403 niet opnieuw om step-up vraagt.
     'POST /api/owner/access/stap-op/passkey/opties': [route({}, (a) => stapOpOpties(a))],
     'POST /api/owner/access/stap-op/passkey': [route({}, (a, b) => stapOp(a, b))],
@@ -355,7 +452,7 @@ export function passkeyRoutes(deps: PasskeyRouteDeps): Record<string, RouterMidd
     [`POST ${P}/goedkeuring/annuleren`]: [route({ eigenaar: true }, (a, b) => goedkeuringAnnuleren(a, b))],
     [`POST ${P}/goedkeuring/bevestigen/opties`]: [route({ eigenaar: true }, (a, b) => goedkeuringUitdaging(a, b, 'sleutel-toevoegen'))],
     [`POST ${P}/goedkeuring/bevestigen`]: [route({ eigenaar: true }, (a, b) => goedkeuringVerzoek(a, b, 'sleutel-toevoegen'))],
-    [`POST ${P}/goedkeuring/intrekken/opties`]: [route({ eigenaar: true }, (a, b) => goedkeuringUitdaging(a, b, 'sleutel-verwijderen'))],
-    [`POST ${P}/goedkeuring/intrekken`]: [route({ eigenaar: true }, (a, b) => goedkeuringVerzoek(a, b, 'sleutel-verwijderen'))],
+    // Intrekken: met reden + sterke step-up, zonder assertie van een root-sleutel (afnemen is de veilige richting; §13.10).
+    [`POST ${P}/goedkeuring/recht-intrekken`]: [route({ eigenaar: true, reden: true, sterkAls: async () => true }, (a, b) => rechtIntrekken(a, b))],
   };
 }

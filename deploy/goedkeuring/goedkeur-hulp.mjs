@@ -8,6 +8,8 @@
 // eigen kopie), met juiste rpId/origin, UV, een niet-verlopen challenge (≤ 5 min) en een nonce die root nog nooit zag.
 // Een nieuwe sleutel komt alleen in het root-bestand via SSH (`toevoegen <vingerafdruk>`, de allereerste) of met een assertie van
 // een sleutel die er al in staat (`verwerk`, aangestuurd door mijn-ruimte-goedkeur-sleutels.path).
+// Recht INTREKKEN kan de app zonder assertie vragen (sleutel-intrekken-*.json met reden; alleen weghalen = veilige richting). Root
+// onthoudt die vingerafdruk in staat.json (ingetrokken) en neemt hem daarna alleen nog via SSH (`toevoegen`) terug.
 //
 // Opdrachten:
 //   verifieer-goedkeuring <pakket> <goedkeuring.json> <versie>   (door mijn-ruimte-uitrol --goedkeuring)  → exit 0 ok, 2 geweigerd
@@ -108,7 +110,9 @@ function leesStaat() {
   const tellers = d.tellers && typeof d.tellers === "object" ? d.tellers : {};
   const grens = nuMs() - 24 * 3600_000; // een verlopen nonce kan nooit meer slagen (verloopt-controle); na 24 uur opruimen
   for (const [k, v] of Object.entries(nonces)) if (Number(v) < grens) delete nonces[k];
-  return { nonces, tellers };
+  // Vingerafdrukken die via de app (zonder assertie) zijn ingetrokken: die komen alleen via SSH terug (§13.10).
+  const ingetrokken = d.ingetrokken && typeof d.ingetrokken === "object" ? d.ingetrokken : {};
+  return { nonces, tellers, ingetrokken };
 }
 const schrijfStaat = (s) => schrijfAtomisch(path.join(STAAT, "staat.json"), JSON.stringify(s) + "\n", 0o600, false);
 
@@ -155,6 +159,8 @@ const TEKSTEN = {
   TE_VEEL_SLEUTELS: ["Забагато ключів passkey.", "Te veel passkey-sleutels."],
   BESTAAT_AL: ["Цей passkey вже додано.", "Deze passkey is al toegevoegd."],
   NIET_GEVONDEN: ["Ключ не знайдено.", "Sleutel niet gevonden."],
+  OPNIEUW_VIA_SSH: ["Право цього ключа відкликано через застосунок; повернути його можна лише через SSH.", "Het recht van deze sleutel is via de app ingetrokken; terugzetten kan alleen via SSH."],
+  REDEN_ONGELDIG: ["Для відкликання потрібна причина.", "Voor het intrekken is een reden nodig."],
 };
 const tekst = (code) => TEKSTEN[code] || [`Відхилено (${code}).`, `Geweigerd (${code}).`];
 
@@ -201,7 +207,9 @@ function verifieerGoedkeuring(pakket, goedkeuringPad, versie) {
   return uit("OK", { label: r.label || "", vingerafdruk: r.vingerafdruk, voorstelId: String(g.voorstelId) });
 }
 
-const VERZOEK = /^sleutel-(toevoegen|verwijderen)-[0-9a-f]{16,64}\.json$/;
+// sleutel-intrekken (§13.10): de app vraagt ZONDER assertie om het recht van één sleutel in te trekken. Dat kan alleen rechten
+// weghalen (de veilige richting); root onthoudt de vingerafdruk en neemt die sleutel daarna alleen nog via SSH terug.
+const VERZOEK = /^sleutel-(toevoegen|verwijderen|intrekken)-[0-9a-f]{16,64}\.json$/;
 function verwerk() {
   let namen = [];
   try { namen = readdirSync(INBOX).filter((n) => VERZOEK.test(n)).sort(); } catch { log(`inbox ${INBOX} ontbreekt`); return 0; }
@@ -211,7 +219,8 @@ function verwerk() {
     let req = null;
     try { req = JSON.parse(leesBegrensd(p).toString("utf8")); } catch { req = null; }
     try { unlinkSync(p); } catch { /* al weg */ }
-    const code = verwerkEen(naam.startsWith("sleutel-toevoegen-") ? "sleutel-toevoegen" : "sleutel-verwijderen", req);
+    const doel = naam.startsWith("sleutel-toevoegen-") ? "sleutel-toevoegen" : naam.startsWith("sleutel-intrekken-") ? "sleutel-intrekken" : "sleutel-verwijderen";
+    const code = doel === "sleutel-intrekken" ? intrekkenEen(req) : verwerkEen(doel, req);
     laatste = code === "OK" ? laatste : 2;
   }
   return laatste;
@@ -229,6 +238,7 @@ function verwerkEen(doel, req) {
     if (typeof n.credentialId !== "string" || !/^[A-Za-z0-9_-]{16,1400}$/.test(n.credentialId)) return weiger("GOEDKEURING_ONGELDIG");
     if (bestand.sleutels.some((s) => s.credentialId === n.credentialId || s.vingerafdruk === fp)) return weiger("BESTAAT_AL");
     if (bestand.sleutels.length >= MAX_SLEUTELS) return weiger("TE_VEEL_SLEUTELS");
+    if (leesStaat().ingetrokken[fp]) return weiger("OPNIEUW_VIA_SSH", { vingerafdruk: fp });
     const r = controleerEnVerbruik(doel, { vingerafdruk: fp, nonce: req.nonce, verloopt: Number(req.verloopt) }, req.assertie, bestand);
     if (!r.ok) return weiger(r.code, { vingerafdruk: fp });
     bestand.sleutels.push({ credentialId: n.credentialId, alg: n.alg, jwk: n.jwk, label: String(n.label || "passkey").slice(0, 60), vingerafdruk: fp, toegevoegd: new Date().toISOString(), door: `passkey:${r.vingerafdruk.slice(0, 16)}` });
@@ -246,6 +256,30 @@ function verwerkEen(doel, req) {
   schrijfSleutelbestand(bestand);
   sleutelStatus("klaar", "OK", { doel, vingerafdruk: doelFp });
   gebeurtenis("PASSKEY_VERWIJDERD", "info", `Passkey ${vingerafdrukKort(doelFp)} видалено.`, `Passkey ${vingerafdrukKort(doelFp)} verwijderd.`);
+  return "OK";
+}
+
+/** Recht van één sleutel intrekken op verzoek van de app (geen assertie nodig: alleen weghalen). */
+function intrekkenEen(req) {
+  const doel = "sleutel-intrekken";
+  const weiger = (code, extra = {}) => { const [uk, nl] = tekst(code); log(`${doel} geweigerd: ${code}`); sleutelStatus("geweigerd", code, { doel, ...extra }); gebeurtenis(code, "waarschuwing", uk, nl); return code; };
+  if (!req || typeof req !== "object" || req.doel !== doel) return weiger("GOEDKEURING_ONGELDIG");
+  const fp = String(req.vingerafdruk || "");
+  if (!/^[0-9a-f]{64}$/.test(fp)) return weiger("GOEDKEURING_ONGELDIG");
+  const reden = String(req.reden || "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, 500);
+  if (reden.length < 10) return weiger("REDEN_ONGELDIG", { vingerafdruk: fp });
+  let bestand;
+  try { bestand = leesSleutelbestand(); } catch (err) { return weiger(String(err.message)); }
+  const sleutel = bestand.sleutels.find((s) => s.vingerafdruk === fp);
+  if (!sleutel) return weiger("NIET_GEVONDEN", { vingerafdruk: fp });
+  const door = String(req.door || "").slice(0, 200), sessie = String(req.sessie || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 8);
+  const staat = leesStaat();
+  staat.ingetrokken[fp] = { op: new Date().toISOString(), door, sessie, wijziging: String(req.wijziging || "").replace(/[^0-9a-f-]/g, "").slice(0, 40), reden };
+  schrijfStaat(staat); // eerst onthouden (opnieuw toevoegen via de app blijft dicht), dan pas weghalen
+  bestand.sleutels = bestand.sleutels.filter((s) => s.vingerafdruk !== fp);
+  schrijfSleutelbestand(bestand);
+  sleutelStatus("klaar", "OK", { doel, vingerafdruk: fp });
+  gebeurtenis("PASSKEY_INGETROKKEN", "waarschuwing", `Право схвалення ключа ${vingerafdrukKort(fp)} («${sleutel.label}») відкликано через застосунок (${door}). Причина: ${reden}`, `Goedkeurrecht van sleutel ${vingerafdrukKort(fp)} («${sleutel.label}») ingetrokken via de app (${door}). Reden: ${reden}`);
   return "OK";
 }
 
@@ -278,6 +312,8 @@ function toevoegenViaSsh(prefix) {
   if (bestand.sleutels.length >= MAX_SLEUTELS) { log("te veel sleutels"); return 1; }
   bestand.sleutels.push({ credentialId: w.credentialId, alg: w.alg, jwk: w.jwk, label: w.label, vingerafdruk: w.vingerafdruk, toegevoegd: new Date().toISOString(), door: "ssh" });
   schrijfSleutelbestand(bestand);
+  const staat = leesStaat();
+  if (staat.ingetrokken[w.vingerafdruk]) { delete staat.ingetrokken[w.vingerafdruk]; schrijfStaat(staat); } // root zelf heeft het teruggezet
   try { unlinkSync(path.join(INBOX, w.bestand)); } catch { /* app ruimt op */ }
   gebeurtenis("PASSKEY_TOEGEVOEGD", "info", `Додано passkey ${vingerafdrukKort(w.vingerafdruk)} через SSH.`, `Passkey ${vingerafdrukKort(w.vingerafdruk)} toegevoegd via SSH.`);
   process.stdout.write(`toegevoegd: ${w.label}  ${vingerafdrukKort(w.vingerafdruk)}\n  volledige vingerafdruk: ${w.vingerafdruk}\n  bestand: ${SLEUTELS}\n`);

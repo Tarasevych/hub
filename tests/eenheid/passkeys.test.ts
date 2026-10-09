@@ -211,7 +211,7 @@ export async function main(): Promise<number> {
     check('methoden: zonder sessie 401', (await G.browser().verzoek('id.tarasevych.com', '/api/owner/access/stap-op/methoden', { service: 'identity', tabContext: 'x'.repeat(48) })).status === 401);
     check('herstelcode-step-up: foute code geweigerd', (await id(A5, '/api/owner/access/stap-op', { methode: 'herstelcode', code: 'ABCDEF123456' })).data.error === 'ACCESS_RECOVERY_INVALID');
     check('herstelcode-step-up: zonder codes → STEP_UP_RECOVERY_NOT_ENROLLED', (await id(Bb, '/api/owner/access/stap-op', { methode: 'herstelcode', code: 'ABCDEF123456' })).data.error === 'STEP_UP_RECOVERY_NOT_ENROLLED');
-    const hc = await id(A5, '/api/owner/access/stap-op', { methode: 'herstelcode', code: ` ${String(rot.data.recoveryCodes?.[0] || '').toLowerCase()} ` });
+    const hc = await id(A5, '/api/owner/access/stap-op', { methode: 'herstelcode', actie: 'herstelcodes-nieuw', code: ` ${String(rot.data.recoveryCodes?.[0] || '').toLowerCase()} ` });
     check('herstelcode-step-up: geldige code → bevestigd, één code minder', hc.status === 200 && hc.data.stepUp === 'herstelcode' && hc.data.resterend === 9, hc.body.slice(0, 120));
     check('herstelcode-step-up: daarna 5 min geldig op die sessie (methoden.geldigTot, passkey toevoegen mag)', (await id(A5, '/api/owner/access/stap-op/methoden')).data.geldigTot > Date.now() && (await id(A5, `${P}/registreren/opties`)).status === 200);
     const A6 = G.browser(); await A6.aanmelden(`sub-a-${T}`, aMail, { authTime: oud });
@@ -226,6 +226,8 @@ export async function main(): Promise<number> {
     check('herstel-overzicht: 10 regels, gebruikte code «gebruikt» met datum, «Залишилося 9 з 10», alleen hint (2 tekens), geen hashes of codes',
       ov1.status === 200 && ov1.data.codes?.length === 10 && r0?.status === 'gebruikt' && r0.gebruiktOp > 0 && ov1.data.resterend === 9 && ov1.data.totaal === 10 && r0.hint === codes0[0].slice(-2)
       && (ov1.data.codes || []).every((c: { hint: string }) => c.hint.length === 2) && !/hash/i.test(ov1.body) && !codes0.some((c) => ov1.body.includes(c)), ov1.body.slice(0, 300));
+    const g0 = r0?.gebruik?.[0];
+    check('herstel-overzicht: gebruikte code toont waarvoor (actie uit de lijst), host, apparaat en een korte IP-hash', g0?.actie === 'herstelcodes-nieuw' && g0.host === 'id.tarasevych.com' && typeof g0.apparaat === 'string' && /^[0-9a-f]{12}$/.test(String(g0.ipKort)) && String(r0.sleutel).endsWith(':1') && ov1.data.setSleutel === String(ov1.data.createdAt), JSON.stringify(r0));
     const A7 = G.browser(); await A7.aanmelden(`sub-a-${T}`, aMail, { authTime: oud });
     const metStreep = await id(A7, '/api/owner/access/stap-op', { methode: 'herstelcode', code: codes0[2].match(/.{4}/g)!.join('-').toLowerCase() });
     check('herstelcode: invoer «abcd-efgh-ijkl» (streepjes, kleine letters) werkt ook', metStreep.status === 200 && metStreep.data.resterend === 8, metStreep.body.slice(0, 120));
@@ -247,7 +249,7 @@ export async function main(): Promise<number> {
     check('gewone aanmelding op id: nog steeds naar hub', gewoon.cb.data.returnTo === 'https://hub.tarasevych.com', `${gewoon.cb.status} ${gewoon.cb.body.slice(0, 200)}`);
 
     // eigenaar-only recht
-    const nietEig = await Promise.all(['goedkeuring/aanvragen', 'goedkeuring/annuleren', 'goedkeuring/bevestigen/opties', 'goedkeuring/intrekken/opties', 'goedkeuring/bevestigen', 'goedkeuring/intrekken'].map((r) => id(A, `${P}/${r}`, { id: pA1.id })));
+    const nietEig = await Promise.all(['goedkeuring/aanvragen', 'goedkeuring/annuleren', 'goedkeuring/bevestigen/opties', 'goedkeuring/bevestigen', 'goedkeuring/recht-intrekken'].map((r) => id(A, `${P}/${r}`, { id: pA1.id, reden: 'Een reden die lang genoeg is' })));
     check('niet-eigenaar: alle goedkeur-routes 403 OWNER_REQUIRED, niets in de inbox', nietEig.every((r) => r.status === 403 && r.data.error === 'OWNER_REQUIRED') && readdirSync(inbox).length === 0, nietEig.map((r) => r.data.error).join(','));
     await O.aanmelden(`sub-o-${T}`, eigenaar, { intent: 'step-up' });
     const o1 = nieuwePasskey('es256', 1);

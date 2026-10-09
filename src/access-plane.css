@@ -138,3 +138,58 @@ html.theme-plum-dark{--ap-op-accent:#2a1024}
   body.herstel-afdruk .herstel-nieuw{position:fixed;inset:0;padding:24px;background:#fff;color:#000}
   body.herstel-afdruk .herstel-knoppen,body.herstel-afdruk .herstel-klaar{display:none!important}
 }
+
+/* §13.10 «Способи входу» in context: gebruik, notities, geschiedenis, reden, «Це були ви?» (beide thema's via currentColor/var) */
+.herstel-lijst li{flex-wrap:wrap}
+.herstel-lijst li>.toegang-gebruik,.herstel-lijst li>.toegang-notitie.bewerk{flex-basis:100%}
+.toegang-gebruik,.toegang-geschiedenis{margin-top:6px;font-size:.8rem}
+.toegang-gebruik-laatste{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:baseline}
+.toegang-gebruik-regel{display:inline-flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline}
+.toegang-gebruik-regel>*+*::before{content:'·';margin-right:8px;opacity:.5}
+.toegang-gebruik-regel strong{font-weight:600}
+.toegang-gebruik-regel time,.toegang-gebruik-regel span{color:var(--boot-muted,#6a7580)}
+.toegang-uitklap{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;margin-top:4px;border:0;background:none;color:inherit;font-size:.8rem;cursor:pointer;border-radius:6px}
+.toegang-uitklap:hover{background:rgba(127,127,127,.12)}
+.toegang-uitklap svg{width:14px;height:14px}
+.toegang-gebruik-lijst,.toegang-geschiedenis-lijst{margin:4px 0 0;padding-left:20px;display:grid;gap:6px}
+.toegang-geschiedenis-lijst li{padding:6px 8px;border-left:2px solid rgba(127,127,127,.35);list-style:none;margin-left:-20px}
+.toegang-geschiedenis-lijst li[data-soort$=ingetrokken],.toegang-geschiedenis-lijst li[data-soort$=verwijderd]{border-left-color:#c2410c}
+.toegang-geschiedenis-lijst li[data-soort=root-toegevoegd]{border-left-color:#15803d}
+.toegang-wijziging-details{display:grid;grid-template-columns:max-content 1fr;gap:2px 12px;margin:4px 0 0;font-size:.8rem}
+.toegang-wijziging-details dt{color:var(--boot-muted,#6a7580)}
+.toegang-wijziging-details dd{margin:0;overflow-wrap:anywhere}
+.toegang-link{font-size:.8rem;display:inline-block;margin-top:4px}
+.toegang-notitie{display:flex;align-items:flex-start;gap:6px;margin-top:4px;font-size:.82rem}
+.toegang-notitie-tekst{display:flex;gap:6px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;opacity:.9}
+.toegang-notitie-tekst svg{width:14px;height:14px;flex:none;margin-top:2px;opacity:.7}
+.toegang-potlood{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border:1px solid transparent;background:none;color:inherit;opacity:.7;cursor:pointer;border-radius:6px;font-size:.78rem}
+.toegang-potlood:hover,.toegang-potlood:focus-visible{opacity:1;border-color:rgba(127,127,127,.35)}
+.toegang-potlood svg{width:13px;height:13px}
+.toegang-notitie.bewerk{flex-direction:column;align-items:stretch;width:100%}
+.toegang-notitie textarea,.toegang-reden textarea{width:100%;box-sizing:border-box;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;resize:vertical}
+.toegang-notitie-voet{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.toegang-notitie-voet small{margin-right:auto;color:var(--boot-muted,#6a7580)}
+[data-teller=te-lang],[data-teller=te-kort]{color:#b45309!important}
+.toegang-fout{color:#b91c1c}
+.toegang-reden{display:grid;gap:4px;margin:8px 0;width:100%}
+.toegang-reden label{font-size:.8rem;font-weight:600}
+.toegang-reden small{font-size:.75rem;color:var(--boot-muted,#6a7580)}
+.toegang-wijziging{border:1px solid rgba(194,65,12,.45);border-radius:12px;padding:4px 0}
+.toegang-wijziging .access-plane-section-head{display:flex;align-items:center;justify-content:space-between}
+.toegang-wijziging h2{display:flex;align-items:center;gap:8px}
+.toegang-wijziging h2 svg{width:20px;height:20px;color:#c2410c}
+.toegang-wijziging-wat{display:flex;gap:8px;align-items:center;margin:0 0 4px}
+.toegang-wijziging-stand{margin:8px 0 0;font-size:.85rem}
+.toegang-wijziging-stand[data-stand=ingetrokken]{color:#b45309}
+.toegang-uitkomst p{display:flex;gap:6px;align-items:flex-start;margin:4px 0}
+.toegang-uitkomst svg,.toegang-niet-ik svg{width:16px;height:16px;flex:none;margin-top:2px}
+.toegang-niet-ik .access-plane-hint-line{display:flex;gap:6px}
+.toegang-sluit{padding:4px!important}
+.toegang-sluit svg{width:16px;height:16px}
+.toegang-geschiedenis-lijst li>strong{margin-right:8px}
+.toegang-geschiedenis-lijst li>.access-plane-badge{vertical-align:1px}
+.toegang-geschiedenis-lijst li>small{margin-left:0;display:inline-block}
+.toegang-geschiedenis-lijst li>strong+small{margin-left:0}
+.toegang-wijziging{padding:4px 12px 8px}
+.toegang-wijziging .toegang-sluit{width:32px;height:32px;min-height:0;padding:0;display:inline-grid;place-items:center;flex:0 0 auto;align-self:center}
+.toegang-wijziging .toegang-sluit svg{width:16px;height:16px}

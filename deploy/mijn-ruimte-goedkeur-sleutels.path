@@ -1,6 +1,7 @@
 # Start mijn-ruimte-goedkeur-sleutels.service zodra de app een verzoek om een passkey toe te voegen of te verwijderen neerlegt.
 # Een verzoek telt alleen met een geldige assertie van een passkey die al in het root-bestand staat; de eerste passkey kan
-# alleen via SSH (`mijn-ruimte-passkey toevoegen <vingerafdruk>`). Zie deploy/RUNBOOK-VEILIGE-UITROL.md §13.
+# alleen via SSH (`mijn-ruimte-passkey toevoegen <vingerafdruk>`). Een verzoek om het recht van een sleutel IN TE TREKKEN
+# (sleutel-intrekken-*.json, met reden) heeft geen assertie nodig; zo'n sleutel komt daarna alleen via SSH terug. Zie §13 / §13.10.
 [Unit]
 Description=Mijn Ruimte: verzoeken voor passkeys van de eigenaar bewaken
 

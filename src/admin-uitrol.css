@@ -36,3 +36,11 @@
 .admin-uitrol-melding{position:sticky;top:8px;z-index:2;background:var(--surface,Canvas);border-radius:8px}
 .admin-uitrol-link{display:inline-flex;align-items:center;gap:4px;margin-left:4px}
 .admin-uitrol-link svg{width:14px;height:14px}
+/* §13.10: intrekken met verplichte reden in de rij zelf */
+.admin-uitrol-intrek{flex-basis:100%;display:grid;gap:6px;margin-top:6px;padding:8px 10px;border:1px solid rgba(194,65,12,.4);border-radius:10px}
+.admin-uitrol-lijst li:has(.admin-uitrol-intrek){flex-wrap:wrap}
+.admin-uitrol-intrek .toegang-reden{display:grid;gap:4px}
+.admin-uitrol-intrek .toegang-reden label{font-size:.8rem;font-weight:600}
+.admin-uitrol-intrek .toegang-reden small{font-size:.75rem;opacity:.75}
+.admin-uitrol-intrek textarea{width:100%;box-sizing:border-box;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;resize:vertical}
+.admin-uitrol-intrek [data-teller=te-kort]{color:#b45309}

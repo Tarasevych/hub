@@ -13,6 +13,7 @@ import {useState} from 'react';
 import type {Lang} from './access-plane-copy';
 import {PasskeysSection} from './PasskeysSection';
 import {HerstelcodesSectie} from './HerstelcodesSectie';
+import {ToegangWijziging,wijzigingUitUrl} from './ToegangWijziging';
 
 type Method={id:string;kind?:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
 type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number;createdAt?:number;bekekenOp?:number};
@@ -74,6 +75,9 @@ export function AccessPlanePanels(p:Props){
   const googleMethod=data.methods.find(item=>item.id==='google');
   const googleBinding=data.bindings.find(item=>item.method==='google');
   const laden=totp?.status==='loading';
+  // Link uit de melding «Це були ви?»: ?wijziging=<id> → paneel bovenaan (§13.10). Na terugdraaien de passkeys opnieuw laden.
+  const[wijziging]=useState(wijzigingUitUrl);
+  const[vernieuw,setVernieuw]=useState(0);
 
   useEffect(()=>{const id=SECTIE[tab];if(id)window.setTimeout(()=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'}),60);},[tab]);
 
@@ -81,6 +85,7 @@ export function AccessPlanePanels(p:Props){
 
   return <div className='access-plane'>
     {notice&&<p className='access-plane-notice'>{notice}</p>}
+    {wijziging&&<ToegangWijziging lang={lang} context={p.context} id={wijziging} onChange={()=>{setVernieuw(v=>v+1);void p.load();}}/>}
 
     <section className='access-plane-section' id='aanmeldmethoden-google' data-access-section='google'>
       <header className='access-plane-section-head'><h2>{tr(lang,'Вхід','Aanmelden')}</h2>
@@ -114,7 +119,7 @@ export function AccessPlanePanels(p:Props){
             <button type='button' className='secondary' onClick={()=>setWachtwoordOpen(v=>!v)}>{wachtwoordOpen?<X/>:<Pencil/>}{wachtwoordOpen?tr(lang,'Закрити','Sluiten'):tr(lang,'Керувати','Beheren')}</button>
           </div>
         </div>}
-        <PasskeysSection lang={lang} context={p.context} onChange={()=>void p.load()}/>
+        <PasskeysSection key={vernieuw} lang={lang} context={p.context} onChange={()=>void p.load()}/>
       </div>
     </section>
 
