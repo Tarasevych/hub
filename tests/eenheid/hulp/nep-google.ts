@@ -76,9 +76,9 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
     };
     const tab = randomBytes(24).toString('hex');
     /** Aanmelden via de redirect-flow (zoals productie). intent 'step-up' vraagt opnieuw om het wachtwoord. */
-    const aanmelden = async (sub: string, email: string, o: { intent?: 'login' | 'replace-tab' | 'step-up'; authTime?: number | null; remember?: boolean; service?: string; tabContext?: string } = {}) => {
+    const aanmelden = async (sub: string, email: string, o: { intent?: 'login' | 'replace-tab' | 'step-up'; authTime?: number | null; remember?: boolean; service?: string; tabContext?: string; returnTo?: string } = {}) => {
       const service = o.service || 'hub', host = `${service === 'identity' ? 'id' : service}.tarasevych.com`;
-      const start = await verzoek(host, '/api/owner/identity/transactions/create', { service, tabContext: o.tabContext || tab, flowMode: 'redirect', returnTo: `https://${host}/`, locale: 'nl', intent: o.intent || 'replace-tab', remember: o.remember ?? false });
+      const start = await verzoek(host, '/api/owner/identity/transactions/create', { service, tabContext: o.tabContext || tab, flowMode: 'redirect', returnTo: o.returnTo || `https://${host}/`, locale: 'nl', intent: o.intent || 'replace-tab', remember: o.remember ?? false });
       const authUrl = String(start.data.authUrl || 'https://x.invalid/'); laatsteAuthUrls.push(authUrl);
       const u = new URL(authUrl);
       const code = `code-${randomBytes(6).toString('hex')}`;

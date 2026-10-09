@@ -58,7 +58,31 @@
 .access-plane button.secondary{background:var(--boot-panel,#fff);color:inherit;border-color:var(--boot-line,#dce1e6)}
 .access-plane-row button svg,.access-plane-actions button svg,.access-plane-owner button svg{width:14px;height:14px}
 .access-plane-row button:disabled,.access-plane-actions button:disabled,.access-plane-owner button:disabled{opacity:.5;cursor:default}
+/* GitHub-stijl: één kader per sectie, elke methode een rij met icoon, titel, statusregel en rechts één knop. */
+.access-plane-box{border:1px solid var(--boot-line,#dce1e6);border-radius:12px;background:var(--boot-panel,#fff);overflow:hidden}
+.access-plane-box>*+*,.access-plane-group>*+*{border-top:1px solid var(--boot-line,#dce1e6)}
+.access-plane-row{align-items:center}
+.access-plane-row-icon{flex:0 0 auto;display:inline-grid;place-items:center;width:20px;height:20px;color:var(--boot-muted,#6a7580)}
+.access-plane-row-icon svg{width:20px;height:20px}
+.access-plane-row-title{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.access-plane-row-title .access-plane-badge{align-self:center}
+.access-plane-subrow{display:flex;flex-direction:column;gap:6px;margin:0;padding:12px 14px 12px 44px;border-radius:0}
+.access-plane-subrow small{color:var(--boot-muted,#6a7580);font-size:.82rem}
+.access-plane-subrow label{font-weight:600;font-size:.88rem}
+p.access-plane-notice.access-plane-subrow,p.access-plane-lockout.access-plane-subrow{border:0;border-radius:0}
+.access-plane-sublist{list-style:none;margin:0;padding:0 0 0 30px;background:rgba(127,127,127,.03)}
+.access-plane-sublist>.access-plane-row+.access-plane-row{border-top:1px solid var(--boot-line,#dce1e6)}
+.access-plane-hint{display:flex;align-items:flex-start;gap:6px}
+.access-plane-hint svg{flex:0 0 auto;width:14px;height:14px;margin-top:2px}
+.access-plane-soft{display:flex;align-items:flex-start;gap:8px;margin:0;padding:8px 12px;border-radius:10px;background:rgba(190,120,20,.07);border:1px solid rgba(190,120,20,.22);color:var(--boot-muted,#6a7580);font-size:.86rem}
+.access-plane-soft svg{flex:0 0 auto;width:15px;height:15px;margin-top:2px;color:#a0650f}
+.access-plane-confirm{display:flex;flex-direction:column;gap:4px;margin-top:6px;padding:8px 10px;border-radius:9px;background:rgba(200,60,40,.06);border:1px solid rgba(200,60,40,.25);font-size:.86rem}
+.access-plane button.danger{background:#b3261e;border-color:#b3261e;color:#fff}
+.access-plane-button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:7px 11px;border-radius:9px;border:1px solid var(--boot-line,#dce1e6);background:var(--boot-panel,#fff);color:inherit;font-size:.85rem;text-decoration:none;cursor:pointer}
+.access-plane-button svg{width:14px;height:14px}
 @media (max-width:560px){
+  .access-plane-subrow{padding-left:14px}
+  .access-plane-sublist{padding-left:0}
   .access-plane-row{flex-direction:column}
   .access-plane-row-actions{align-self:flex-end}
   .access-plane-inline-form button,.access-plane-owner button{flex:1 1 auto;justify-content:center}

@@ -1,11 +1,11 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {api} from './platform/client';
 import {ecosystemTabContext} from './tab-context';
 import './access-plane.css';
 
 import {t,type Lang} from './access-plane-copy';
 import {AccessPlanePanels} from './access-plane-panels';
-import {passkeyStapOp} from './platform/stap-op';
+import {bevestigToegang,metHervat,neemHervat,stapOpUitleg} from './platform/stap-op';
 type Method={id:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
 type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number;createdAt?:number;bekekenOp?:number};
 type Binding={id:string;method:string;email:string;status:string;providerSubject?:string};
@@ -106,19 +106,40 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
         message==='GOOGLE_CONTOUR_LAST_SECRET_PROTECTED'?t(lang,'t15'):
         /TOTP|CODE/.test(message)?t(lang,'t20'):
         message==='RATE_LIMITED'||message==='LOGIN_RATE_LIMITED'?t(lang,'t21'):
+        message==='STEP_UP_REQUIRED'?stapOpUitleg():
         t(lang,'t16')
       );
     }
     setBusy(false);
   };
 
-  // Nieuwe herstelcodes met een verse passkey-bevestiging in plaats van de TOTP-code (de server controleert dat zelf).
-  const rotateWithPasskey=async()=>{
+  // Nieuwe herstelcodes. Met TOTP: venster «Підтвердіть доступ» met alleen passkey of de huidige TOTP-code (de server eist dat
+  // zelf: Google of een herstelcode tellen hier niet). Zonder TOTP: gewone step-up via client.ts; kiest de gebruiker Google,
+  // dan wordt «herstelcodes maken» na terugkeer automatisch hervat.
+  const nieuweHerstelcodes=async()=>{
     setNotice('');
-    const ok=await passkeyStapOp(String(sessionBody().service),sessionBody().tabContext,(url,body)=>api.post(url,body));
-    if(!ok){setNotice(t(lang,'t19'));return;}
-    await write('/api/owner/access/recovery/rotate',{});
+    const ctx=sessionBody();
+    if(data.totp?.enrolled||data.factors.find(item=>item.id==='totp')?.enrolled){
+      const uit=await bevestigToegang({service:ctx.service,tabContext:ctx.tabContext,post:(url,body)=>api.post(url,body),toegestaan:['passkey','totp'],codeTerug:true});
+      if(!uit.ok)return;
+      await write('/api/owner/access/recovery/rotate',uit.methode==='totp'&&uit.code?{code:uit.code}:{});
+      return;
+    }
+    await metHervat({actie:'herstelcodes-maken'},()=>write('/api/owner/access/recovery/rotate',{}));
   };
+  // TOTP uitschakelen: de server eist de huidige TOTP-code of een ongebruikte herstelcode (geen passkey, geen Google).
+  const totpUitschakelen=async()=>{
+    setNotice('');
+    const ctx=sessionBody();
+    const uit=await bevestigToegang({service:ctx.service,tabContext:ctx.tabContext,post:(url,body)=>api.post(url,body),toegestaan:['totp','herstelcode'],codeTerug:true});
+    if(uit.ok&&uit.code)await write('/api/owner/access/totp/disable',{code:uit.code});
+  };
+  const hervat=useRef(false);
+  useEffect(()=>{
+    if(hervat.current||data.factors.some(item=>item.status==='loading'))return;
+    hervat.current=true;
+    if(neemHervat('herstelcodes-maken'))void nieuweHerstelcodes();
+  },[data]);// eslint-disable-line react-hooks/exhaustive-deps
   const recoverySaved=async()=>{await write('/api/owner/access/recovery/bekeken');setRecovery([]);};
-  return <AccessPlanePanels tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={sessionBody()} load={load} write={write} rotateWithPasskey={rotateWithPasskey} recoverySaved={recoverySaved}/>;
+  return <AccessPlanePanels tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={sessionBody()} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved}/>;
 }

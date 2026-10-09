@@ -474,8 +474,25 @@ passkey aanbieder (AAGUID-hint), «синхронізується» (BE/BS), toe
 sms) en herstelcodes (status «збережено», nieuwe codes met TOTP-code of een verse passkey-bevestiging, eenmalig getoond). De tabbladen
 «Безпека» en «Відновлення» tonen dezelfde pagina, gescrold naar hun sectie. Admin «Оновлення» toont alleen nog de stand en een link.
 
-**Step-up met passkey.** Elke gevoelige actie die 403 `STEP_UP_REQUIRED` geeft, vraagt eerst een passkey (als de gebruiker er een heeft);
-lukt dat niet, dan zoals vroeger TOTP of opnieuw Google. De bevestiging geldt 5 minuten en alleen voor die sessie.
+**Step-up: venster «Підтвердіть доступ» / «Toegang bevestigen».** Elke gevoelige actie die 403 `STEP_UP_REQUIRED` geeft, opent een eigen
+venster (zoals GitHub «Confirm access»), nooit meer `window.prompt/alert/confirm`. Eén taal tegelijk (de taal van de pagina), met
+«Ви ввійшли як <e-mail>» en alleen de manieren die de gebruiker heeft (`POST /api/owner/access/stap-op/methoden`, alleen ja/nee):
+passkey (grote knop), code uit de authenticator-app, herstelcode (`POST /api/owner/access/stap-op` met `methode: 'herstelcode'`:
+eenmalig verbruikt, zelfde lockout als TOTP, melding naar de gebruiker) en altijd «Підтвердити повторним входом через Google»
+(`prompt=login`, `max_age=0`, auth_time verplicht). Wie alleen Google heeft, krijgt meteen de Google-knop met uitleg. De bevestiging
+geldt 5 minuten en alleen voor die sessie. Niet verzwakt: herstelcodes vervangen met TOTP vraagt nog steeds de TOTP-code of een verse
+passkey; TOTP uitschakelen vraagt de TOTP-code of een herstelcode.
+
+**Hervatten na Google.** Vóór het doorsturen bewaart de pagina in `sessionStorage` alleen de actie (bv. `passkey-toevoegen` met de
+gekozen naam, `herstelcodes-maken`), nooit codes of wachtwoorden; 10 minuten geldig, alleen op hetzelfde pad. Een step-up vanaf
+`id.tarasevych.com` komt terug op dezelfde pagina (vroeger: hub); de server controleert dat het dezelfde origin is. Na terugkeer voert
+de pagina de actie zelf opnieuw uit. Andere acties: korte melding «Доступ підтверджено — повторіть дію».
+
+**Passkeys op de telefoon (QR / hybrid).** Registratie zonder `authenticatorAttachment`, `residentKey: preferred`,
+`hints: ['client-device','hybrid']`; bij bevestigen krijgt elke sleutel zijn opgeslagen transports plus `hybrid`, zodat Windows/Chrome
+«Використовувати телефон або планшет» met een QR-code toont (Bluetooth aan). Per passkey: soort (wachtwoordbeheerder, telefoon,
+beveiligingssleutel, apparaat), «Синхронізовано» (BE/BS), toegevoegd, laatst gebruikt. De kern (ook root) leest BE/BS alleen als
+informatie; UP en UV blijven verplicht, teller 0 → 0 (gesynchroniseerde passkeys) is geldig.
 
 **Inloggen met alleen een passkey: (nog) niet.** Bewust: de sessie-opbouw (tabbladen, overdracht, login-CSRF-binding) is complex en niet op
 echte toestellen te testen, en minder vaak een passkey aanraken verkleint de kans dat een gekaapte pagina een goedkeur-challenge in een
