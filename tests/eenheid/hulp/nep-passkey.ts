@@ -32,25 +32,30 @@ export function nieuwePasskey(soort: 'es256' | 'ed25519' = 'es256', teller = 0):
   return { credentialId: randomBytes(32), prive: privateKey, alg: -7, teller, cose: cbor(new Map<number, unknown>([[1, 2], [3, -7], [-1, 1], [-2, Buffer.from(jwk.x, 'base64url')], [-3, Buffer.from(jwk.y, 'base64url')]])) };
 }
 
-type Opties = { rpId?: string; origin?: string; uv?: boolean; up?: boolean; type?: string; crossOrigin?: boolean };
+type Opties = { rpId?: string; origin?: string; uv?: boolean; up?: boolean; type?: string; crossOrigin?: boolean; be?: boolean; bs?: boolean; aaguid?: string };
+/** Standaard zoals in productie: rpId tarasevych.com, aangeroepen vanaf admin.tarasevych.com. */
+export const NEP_RP = 'tarasevych.com';
+const standaardOrigin = (rpId: string) => (rpId === NEP_RP ? 'https://admin.tarasevych.com' : `https://${rpId}`);
+const bevlaggen = (o: Opties) => (o.be ? 0x08 : 0) | (o.bs ? 0x10 : 0);
 const teller4 = (n: number) => { const b = Buffer.alloc(4); b.writeUInt32BE(n >>> 0); return b; };
 
 /** Als navigator.credentials.create (attestation "none"). */
 export function registreer(pk: NepPasskey, challenge: string, o: Opties = {}) {
-  const rpId = o.rpId ?? 'admin.tarasevych.com';
-  const cdj = Buffer.from(JSON.stringify({ type: o.type ?? 'webauthn.create', challenge, origin: o.origin ?? `https://${rpId}`, crossOrigin: o.crossOrigin ?? false }));
-  const vlaggen = (o.up === false ? 0 : 1) | (o.uv === false ? 0 : 4) | 0x40;
+  const rpId = o.rpId ?? NEP_RP;
+  const cdj = Buffer.from(JSON.stringify({ type: o.type ?? 'webauthn.create', challenge, origin: o.origin ?? standaardOrigin(rpId), crossOrigin: o.crossOrigin ?? false }));
+  const vlaggen = (o.up === false ? 0 : 1) | (o.uv === false ? 0 : 4) | bevlaggen(o) | 0x40;
   const len = Buffer.alloc(2); len.writeUInt16BE(pk.credentialId.length);
-  const authData = Buffer.concat([sha(rpId), Buffer.from([vlaggen]), teller4(pk.teller), Buffer.alloc(16), len, pk.credentialId, pk.cose]);
+  const aaguid = o.aaguid ? Buffer.from(o.aaguid.replace(/-/g, ''), 'hex') : Buffer.alloc(16);
+  const authData = Buffer.concat([sha(rpId), Buffer.from([vlaggen]), teller4(pk.teller), aaguid, len, pk.credentialId, pk.cose]);
   const att = cbor(new Map<string, unknown>([['fmt', 'none'], ['attStmt', new Map()], ['authData', authData]]));
   return { credentialId: b64u(pk.credentialId), clientDataJSON: b64u(cdj), attestationObject: b64u(att) };
 }
 
 /** Als navigator.credentials.get; teller loopt op tenzij `teller` vast is gegeven. */
 export function bevestig(pk: NepPasskey, challenge: string, o: Opties & { teller?: number; credentialId?: Buffer } = {}) {
-  const rpId = o.rpId ?? 'admin.tarasevych.com';
-  const cdj = Buffer.from(JSON.stringify({ type: o.type ?? 'webauthn.get', challenge, origin: o.origin ?? `https://${rpId}`, crossOrigin: o.crossOrigin ?? false }));
-  const vlaggen = (o.up === false ? 0 : 1) | (o.uv === false ? 0 : 4);
+  const rpId = o.rpId ?? NEP_RP;
+  const cdj = Buffer.from(JSON.stringify({ type: o.type ?? 'webauthn.get', challenge, origin: o.origin ?? standaardOrigin(rpId), crossOrigin: o.crossOrigin ?? false }));
+  const vlaggen = (o.up === false ? 0 : 1) | (o.uv === false ? 0 : 4) | bevlaggen(o);
   if (o.teller === undefined && pk.teller > 0) pk.teller += 1;
   const authData = Buffer.concat([sha(rpId), Buffer.from([vlaggen]), teller4(o.teller ?? pk.teller)]);
   const data = Buffer.concat([authData, sha(cdj)]);

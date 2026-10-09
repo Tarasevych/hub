@@ -28,8 +28,16 @@ const COPY: Record<string, Row> = {
     nl: 'Passkey'
   },
   t19: {
-    uk: 'Не вдалося додати passkey.',
-    nl: 'Passkey toevoegen is mislukt.'
+    uk: 'Passkey не підтверджено. Спробуйте ще раз або введіть код.',
+    nl: 'Passkey niet bevestigd. Probeer opnieuw of voer de code in.'
+  },
+  t20: {
+    uk: 'Код не підходить. Перевірте застосунок-автентифікатор і спробуйте ще раз.',
+    nl: 'De code klopt niet. Controleer de authenticator-app en probeer opnieuw.'
+  },
+  t21: {
+    uk: 'Забагато спроб. Зачекайте кілька хвилин.',
+    nl: 'Te veel pogingen. Wacht een paar minuten.'
   }
 };
 

@@ -2,6 +2,9 @@
 // verwijderen, TOTP vervangen, methode herstellen, beheeracties, export). Zonder eigen dialoog vragen we hier
 // met een eenvoudige, tweetalige melding (Oekraïens, dan Nederlands) om een TOTP-code; leeg laten = opnieuw
 // aanmelden bij Google (prompt=login). Na een geslaagde TOTP-bevestiging herhaalt client.ts het verzoek één keer.
+// Aanmeldmethoden: heeft de gebruiker een passkey (Instellingen → «Способи входу»), dan vragen we die eerst; lukt dat niet
+// (geannuleerd, Safari zonder tik), dan blijft de oude weg (TOTP-code of Google) beschikbaar.
+import { foutCode, kanPasskey, passkeyBevestigen, type AssertieOpties } from './webauthn';
 
 const TEKST = {
   vraag:
@@ -16,6 +19,9 @@ const TEKST = {
   geenContext:
     'Для цієї дії потрібне додаткове підтвердження. Оновіть сторінку й спробуйте ще раз.\n' +
     'Voor deze actie is extra bevestiging nodig. Vernieuw de pagina en probeer het opnieuw.',
+  passkeyOpnieuw:
+    'Passkey не підтверджено. Спробувати passkey ще раз? (Скасувати — інший спосіб.)\n' +
+    'Passkey niet bevestigd. Passkey opnieuw proberen? (Annuleren — andere manier.)',
   google:
     'Зараз відкриється вхід у Google. Після повернення повторіть дію.\n' +
     'Je gaat nu opnieuw inloggen bij Google. Herhaal daarna de actie.',
@@ -35,6 +41,8 @@ export async function stapOpVragen(body: unknown, post: (url: string, data: unkn
   const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
   const service = String(b.service || ''), tabContext = String(b.tabContext || '');
   if (!SERVICES.has(service) || !tabContext) { window.alert(TEKST.geenContext); return false; }
+  const metPasskey = await passkeyStapOp(service, tabContext, post);
+  if (metPasskey) return true;
   const invoer = window.prompt(TEKST.vraag, '');
   if (invoer === null) return false;
   const code = invoer.replace(/\s+/g, '');
@@ -47,5 +55,24 @@ export async function stapOpVragen(body: unknown, post: (url: string, data: unkn
     const { startPrimaryRedirectLogin } = await import('../redirect-login');
     await startPrimaryRedirectLogin({ service: service as never, tabContext, sourceOrigin: location.origin, locale: 'uk', intent: 'step-up', remember: false });
   } catch { window.alert(TEKST.fout); }
+  return false;
+}
+
+/** Step-up met een eigen passkey. true = bevestigd; false = geen passkey of niet gelukt (dan TOTP/Google). */
+export async function passkeyStapOp(service: string, tabContext: string, post: (url: string, data: unknown) => Promise<unknown>): Promise<boolean> {
+  if (!kanPasskey()) return false;
+  for (let poging = 0; poging < 2; poging++) {
+    let opties: { uitdagingId: string; publicKey: AssertieOpties };
+    try { opties = ((await post('/api/owner/access/stap-op/passkey/opties', { service, tabContext })) as { data: typeof opties }).data; }
+    catch { return false; } // GEEN_PASSKEY of geen verbinding
+    try {
+      const assertie = await passkeyBevestigen(opties.publicKey);
+      await post('/api/owner/access/stap-op/passkey', { service, tabContext, uitdagingId: opties.uitdagingId, assertie });
+      return true;
+    } catch (caught) {
+      // Safari staat WebAuthn soms alleen direct na een tik toe: de bevestigingsknop telt als nieuwe tik.
+      if (foutCode(caught) !== 'NotAllowedError' || poging > 0 || !window.confirm(TEKST.passkeyOpnieuw)) return false;
+    }
+  }
   return false;
 }

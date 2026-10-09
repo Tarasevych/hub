@@ -1,8 +1,11 @@
 // Admin → «Оновлення» / «Updates»: voorstellen goedkeuren met de passkey van de eigenaar (RUNBOOK-VEILIGE-UITROL.md §13).
+// Passkeys zelf beheer je in Instellingen → «Способи входу» (id.tarasevych.com/methods); hier alleen de stand en een link.
 // De browser maakt alleen de WebAuthn-assertie; de server en daarna root controleren alles opnieuw. Teksten: Oekraïens en Nederlands.
 import {useEffect,useMemo,useState} from 'react';
 import {api} from './platform/client';
-import {Check,Fingerprint,PackageCheck,RefreshCw,ShieldCheck,Trash2,TriangleAlert,UserCheck,X} from 'lucide-react';
+import {Check,ExternalLink,Fingerprint,PackageCheck,RefreshCw,ShieldCheck,Trash2,TriangleAlert,UserCheck,X} from 'lucide-react';
+import {canonicalNavigationUrl} from './canonical-navigation';
+import {foutCode,kanPasskey as passkeyMogelijk,passkeyBevestigen} from './platform/webauthn';
 import './admin-uitrol.css';
 
 type Lang='uk'|'nl';
@@ -15,10 +18,6 @@ type Keuze={id:string;label:string};
 type Overzicht={schakelaar:boolean;rpId:string;origins:string[];passkeys:Passkey[];wachtend:Wachtend[];voorstellen:Voorstel[];voorbereiders:Grant[];kandidaten:{accounts:Keuze[];agenttokens:Keuze[];koppelingen:Keuze[]};rootStatus:{staat?:string;versie?:string;code?:string;uk?:string;nl?:string;tijd?:string;methode?:string}|null;limieten:{voorbereiderMaxDagen:number}};
 
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='uk'?uk:nl;
-const foutCode=(caught:unknown)=>{const v=caught as{response?:{data?:{error?:unknown;reasonCode?:unknown}};message?:unknown;name?:unknown};const api=v?.response?.data?.error||v?.response?.data?.reasonCode;if(api)return String(api);if(typeof DOMException!=='undefined'&&caught instanceof DOMException)return String(caught.name);return String(v?.message||'');};
-// base64url <-> ArrayBuffer voor navigator.credentials
-const naarBuf=(s:string)=>{const b=atob(s.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((s.length+3)%4));const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u.buffer;};
-const naarB64u=(buf:ArrayBuffer|null|undefined)=>{if(!buf)return '';const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const datum=(lang:Lang,v?:string)=>v?new Date(v).toLocaleString(lang==='uk'?'uk-UA':'nl-BE',{dateStyle:'short',timeStyle:'short'}):'—';
 const mb=(n:number)=>`${(n/1048576).toFixed(1)} MB`;
 
@@ -30,7 +29,7 @@ const STATUS:Record<string,[string,string]>={
 const SOORT:Record<Grant['soort'],[string,string]>={account:['Акаунт','Account'],agenttoken:['Токен агента','Agenttoken'],'mcp-koppeling':['MCP-підключення','MCP-koppeling']};
 const FOUTEN:Record<string,[string,string]>={
   PASSKEY_GOEDKEURING_UIT:['Схвалення через passkey вимкнено на сервері (перемикач «passkey-goedkeuring»).','Goedkeuren met een passkey staat op de server uit (schakelaar «passkey-goedkeuring»).'],
-  GEEN_PASSKEY:['На сервері ще немає підтвердженого passkey. Спершу додайте passkey нижче.','Er is op de server nog geen bevestigde passkey. Voeg hieronder eerst een passkey toe.'],
+  GEEN_PASSKEY:['На сервері ще немає passkey, що може схвалювати. Додайте його в «Налаштування → Способи входу».','Er is op de server nog geen passkey die mag goedkeuren. Voeg er een toe via «Instellingen → Aanmeldmethoden».'],
   EERSTE_VIA_SSH:['Перший passkey підтверджується лише через SSH-команду.','De eerste passkey wordt alleen met de SSH-opdracht bevestigd.'],
   UITDAGING_ONGELDIG:['Запит застарів або вже використаний. Спробуйте ще раз.','Het verzoek is verlopen of al gebruikt. Probeer het opnieuw.'],
   STATUS_ONGELDIG:['Стан оновлення змінився. Оновіть сторінку.','De status van de update is gewijzigd. Vernieuw de pagina.'],
@@ -44,26 +43,16 @@ const FOUTEN:Record<string,[string,string]>={
 };
 const foutTekst=(lang:Lang,code:string)=>{const t=FOUTEN[code];return t?tr(lang,t[0],t[1]):tr(lang,'Помилка: ','Fout: ')+(code||tr(lang,'немає зв’язку','geen verbinding'));};
 
-/** navigator.credentials.get met de opties van de server; geeft de assertie in base64url terug. */
-async function passkeyBevestigen(pk:{challenge:string;rpId:string;timeout:number;allowCredentials:Array<{type:string;id:string}>}){
-  const cred=await navigator.credentials.get({publicKey:{challenge:naarBuf(pk.challenge),rpId:pk.rpId,timeout:pk.timeout,userVerification:'required',allowCredentials:pk.allowCredentials.map(c=>({type:'public-key' as const,id:naarBuf(c.id)}))}}) as PublicKeyCredential|null;
-  if(!cred)throw Object.assign(new Error('NotAllowedError'),{name:'NotAllowedError'});
-  const r=cred.response as AuthenticatorAssertionResponse;
-  return{credentialId:naarB64u(cred.rawId),clientDataJSON:naarB64u(r.clientDataJSON),authenticatorData:naarB64u(r.authenticatorData),signature:naarB64u(r.signature)};
-}
-
 export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
   const context=useMemo(()=>({service:'admin',tabContext,sourceOrigin}),[tabContext,sourceOrigin]);
   const[data,setData]=useState<Overzicht|null>(null);
   const[busy,setBusy]=useState('');
   const[notice,setNotice]=useState<{ok:boolean;text:string}|null>(null);
-  const[label,setLabel]=useState('');
-  const[nieuw,setNieuw]=useState<{kort:string;sshOpdracht:string;eerste:boolean}|null>(null);
   const[grant,setGrant]=useState<{soort:Grant['soort'];onderwerp:string;dagen:number;label:string}>({soort:'agenttoken',onderwerp:'',dagen:7,label:''});
   // Sommige browsers (Safari) staan WebAuthn alleen direct na een tik toe; na het ophalen van de challenge kan dat verlopen zijn.
   // Dan bewaren we de (nog geldige, ≤ 5 min) challenge en tonen een knop die de passkey meteen bij de volgende tik vraagt.
   const[herhaal,setHerhaal]=useState<null|(()=>Promise<string|void>)>(null);
-  const kanPasskey=typeof window!=='undefined'&&!!window.PublicKeyCredential&&!!navigator.credentials;
+  const kanPasskey=passkeyMogelijk();
 
   const laden=async()=>{
     try{const r=await api.post('/api/owner/uitrol/overzicht',context);setData(r.data as Overzicht);}
@@ -91,27 +80,6 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
   });
   const afwijzen=(v:Voorstel)=>{const reden=window.prompt(tr(lang,'Причина відхилення (необов’язково):','Reden van afwijzen (optioneel):'),'');if(reden===null)return;void doe(`nee-${v.id}`,async()=>{await api.post('/api/owner/uitrol/voorstel/afwijzen',{...context,id:v.id,reden});return tr(lang,'Відхилено.','Afgewezen.');});};
 
-  const registreren=()=>doe('reg',async()=>{
-    const o=(await api.post('/api/owner/uitrol/passkey/registreren/opties',context)).data as {uitdagingId:string;publicKey:any};
-    const pk=o.publicKey;
-    return metPasskey(async()=>{const cred=await navigator.credentials.create({publicKey:{...pk,challenge:naarBuf(pk.challenge),user:{...pk.user,id:naarBuf(pk.user.id)},excludeCredentials:(pk.excludeCredentials||[]).map((c:{id:string})=>({type:'public-key' as const,id:naarBuf(c.id)}))}}) as PublicKeyCredential|null;
-    if(!cred)throw Object.assign(new Error('NotAllowedError'),{name:'NotAllowedError'});
-    return cred;},async(cred)=>{
-    const r=cred.response as AuthenticatorAttestationResponse;
-    const uit=(await api.post('/api/owner/uitrol/passkey/registreren',{...context,uitdagingId:o.uitdagingId,label:label.trim(),credentialId:naarB64u(cred.rawId),clientDataJSON:naarB64u(r.clientDataJSON),attestationObject:naarB64u(r.attestationObject)})).data as {kort:string;sshOpdracht:string;eerste:boolean};
-    setNieuw(uit);setLabel('');
-    return uit.eerste?tr(lang,'Passkey створено. Тепер підтвердьте його на сервері SSH-командою нижче.','Passkey gemaakt. Bevestig hem nu op de server met de SSH-opdracht hieronder.'):tr(lang,'Passkey створено. Підтвердьте його наявним passkey.','Passkey gemaakt. Bevestig hem met een bestaande passkey.');
-    });
-  });
-  const sleutelActie=(doel:'toevoegen'|'verwijderen',fp:string)=>doe(`${doel}-${fp}`,async()=>{
-    if(doel==='verwijderen'&&!window.confirm(tr(lang,'Видалити цей passkey із сервера?','Deze passkey van de server verwijderen?')))return;
-    const u=(await api.post(`/api/owner/uitrol/passkey/${doel}/opties`,{...context,vingerafdruk:fp})).data as {uitdagingId:string;publicKey:{challenge:string;rpId:string;timeout:number;allowCredentials:Array<{type:string;id:string}>}};
-    return metPasskey(()=>passkeyBevestigen(u.publicKey),async(assertie)=>{
-    await api.post(`/api/owner/uitrol/passkey/${doel}`,{...context,uitdagingId:u.uitdagingId,assertie});
-    return tr(lang,'Запит передано серверу; він перевірить підпис сам. Оновлення списку — за кілька секунд.','Verzoek doorgegeven aan de server; die controleert de handtekening zelf. De lijst wordt binnen enkele seconden bijgewerkt.');
-    });
-  });
-  const aanmeldingWeg=(fp:string)=>doe(`weg-${fp}`,async()=>{await api.post('/api/owner/uitrol/passkey/aanmelding/intrekken',{...context,vingerafdruk:fp});});
   const grantGeven=()=>doe('grant',async()=>{
     await api.post('/api/owner/uitrol/voorbereiders/toevoegen',{...context,...grant});setGrant(g=>({...g,onderwerp:'',label:''}));
     return tr(lang,'Дозвіл надано.','Toestemming gegeven.');
@@ -132,7 +100,8 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
         <button type='button' className='admin-uitrol-ververs' onClick={()=>void laden()} title={tr(lang,'Оновити','Vernieuwen')}><RefreshCw/></button></header>
       <ul className='admin-uitrol-stand'>
         <li data-ok={data.schakelaar}>{data.schakelaar?<Check/>:<X/>}{data.schakelaar?tr(lang,'Схвалення через passkey увімкнено на сервері','Goedkeuren met passkey staat aan op de server'):tr(lang,'Схвалення через passkey вимкнено (вмикає лише root у mcp-rechten.json)','Goedkeuren met passkey staat uit (alleen root zet het aan in mcp-rechten.json)')}</li>
-        <li data-ok={data.passkeys.length>0}>{data.passkeys.length>0?<Check/>:<X/>}{tr(lang,`Підтверджених passkey: ${data.passkeys.length}`,`Bevestigde passkeys: ${data.passkeys.length}`)}</li>
+        <li data-ok={data.passkeys.length>0}>{data.passkeys.length>0?<Check/>:<X/>}{tr(lang,`Passkey, що можуть схвалювати: ${data.passkeys.length}`,`Passkeys die mogen goedkeuren: ${data.passkeys.length}`)}{data.wachtend.length>0?tr(lang,` · чекають підтвердження: ${data.wachtend.length}`,` · wachten op bevestiging: ${data.wachtend.length}`):''}
+          {' '}<a className='admin-uitrol-link' href={canonicalNavigationUrl('identity','methods',lang)}><ExternalLink/>{tr(lang,'Керувати в «Способи входу»','Beheren in «Aanmeldmethoden»')}</a></li>
         {!kanPasskey&&<li data-ok={false}><X/>{tr(lang,'Цей браузер не підтримує passkey','Deze browser ondersteunt geen passkeys')}</li>}
         {data.rootStatus?.versie&&<li data-ok={data.rootStatus.staat==='klaar'}>{data.rootStatus.staat==='klaar'?<Check/>:<TriangleAlert/>}{tr(lang,'Останнє розгортання: ','Laatste uitrol: ')}{data.rootStatus.versie} · {lang==='uk'?data.rootStatus.uk:data.rootStatus.nl} · {datum(lang,data.rootStatus.tijd)}</li>}
       </ul>
@@ -160,27 +129,6 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
         </div>
         {!klaar&&<p className='admin-uitrol-hint'>{!data.schakelaar?foutTekst(lang,'PASSKEY_GOEDKEURING_UIT'):!data.passkeys.length?foutTekst(lang,'GEEN_PASSKEY'):tr(lang,'Відкрийте цю сторінку в браузері з підтримкою passkey.','Open deze pagina in een browser die passkeys ondersteunt.')}</p>}
       </article>)}
-    </section>
-
-    <section className='admin-section'>
-      <header><Fingerprint/><div><h2>{tr(lang,'Мої passkey для схвалення','Mijn passkeys voor goedkeuring')}</h2><p>{tr(lang,'Лише ваші passkey можуть схвалювати оновлення. Перший підтверджується SSH-командою на сервері (звірте відбиток), наступні — вже підтвердженим passkey.','Alleen uw passkeys kunnen updates goedkeuren. De eerste wordt met een SSH-opdracht op de server bevestigd (vergelijk de vingerafdruk), volgende met een al bevestigde passkey.')}</p></div></header>
-      <ul className='admin-uitrol-lijst'>
-        {data.passkeys.map(p=><li key={p.vingerafdruk}><span><b>{p.label||'passkey'}</b> <code>{p.kort}</code> · {datum(lang,p.toegevoegd)}</span>
-          <button type='button' disabled={!!busy||!kanPasskey} onClick={()=>void sleutelActie('verwijderen',p.vingerafdruk)}><Trash2/>{tr(lang,'Видалити','Verwijderen')}</button></li>)}
-        {data.passkeys.length===0&&<li className='admin-uitrol-leeg'>{tr(lang,'Ще немає підтверджених passkey.','Nog geen bevestigde passkeys.')}</li>}
-      </ul>
-      {data.wachtend.length>0&&<><h3>{tr(lang,'Очікують підтвердження','Wachten op bevestiging')}</h3><ul className='admin-uitrol-lijst'>
-        {data.wachtend.map(w=><li key={w.vingerafdruk}><span><b>{w.label}</b> <code>{w.kort}</code> · {datum(lang,w.aangemaakt)}
-          {data.passkeys.length===0&&<><br/>{tr(lang,'Виконайте на сервері через SSH:','Voer op de server via SSH uit:')} <code className='admin-uitrol-ssh'>{w.sshOpdracht}</code></>}</span>
-          <span className='admin-uitrol-knoppen'>
-            {data.passkeys.length>0&&<button type='button' disabled={!!busy||!kanPasskey} onClick={()=>void sleutelActie('toevoegen',w.vingerafdruk)}><Fingerprint/>{tr(lang,'Підтвердити наявним passkey','Bevestigen met bestaande passkey')}</button>}
-            <button type='button' disabled={!!busy} onClick={()=>void aanmeldingWeg(w.vingerafdruk)}><X/>{tr(lang,'Скасувати','Annuleren')}</button></span></li>)}
-      </ul></>}
-      {nieuw&&<p className='admin-notice' data-ok>{tr(lang,'Відбиток нового passkey: ','Vingerafdruk van de nieuwe passkey: ')}<code>{nieuw.kort}</code>{nieuw.eerste&&<><br/>{tr(lang,'Команда для SSH: ','SSH-opdracht: ')}<code className='admin-uitrol-ssh'>{nieuw.sshOpdracht}</code><br/>{tr(lang,'Сервер покаже той самий відбиток — підтверджуйте, лише якщо він збігається.','De server toont dezelfde vingerafdruk — bevestig alleen als die overeenkomt.')}</>}</p>}
-      <div className='admin-uitrol-form'>
-        <input value={label} maxLength={60} onChange={e=>setLabel(e.target.value)} placeholder={tr(lang,'Назва (наприклад, «Телефон»)','Naam (bijvoorbeeld «Telefoon»)')}/>
-        <button type='button' disabled={!!busy||!kanPasskey} onClick={()=>void registreren()}><Fingerprint/>{tr(lang,'Додати passkey','Passkey toevoegen')}</button>
-      </div>
     </section>
 
     <section className='admin-section'>

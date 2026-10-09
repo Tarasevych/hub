@@ -33,13 +33,14 @@ try {
     const heading = await page.locator('h1, h2').first().innerText().catch(() => '');
     check(`Test 2: ${host} aangemeld toont kop en inhoud`, !!heading && text.length > 80, `kop=${JSON.stringify(heading.slice(0, 60))} tekst=${text.length} tekens; naam zichtbaar=${text.includes('E2E')}`);
   }
-  // Test 8: passkeys verborgen tot echte verificatie; TOTP-kaart wel zichtbaar.
+  // Test 8: «Способи входу» is één pagina met passkeys (echt geverifieerd), TOTP en herstelcodes; geen sms.
   await page.goto('https://id.tarasevych.com/security', { waitUntil: 'networkidle' }); await page.waitForTimeout(2500);
   await page.screenshot({ path: '/tmp/pw/8-id-beveiliging.png' });
-  const passkeyKaart = await page.locator("[data-access-factor='webauthn']").count();
+  const oudeKaart = await page.locator("[data-access-factor='webauthn']").count();
+  const sms = await page.locator("[data-access-factor='sms']").count();
   const totpKaart = await page.locator("[data-access-factor='totp']").count();
-  const passkeyKnop = await page.getByText(/Passkey toevoegen|Додати passkey/).count();
-  check('Test 8: beveiliging toont geen passkey-kaart of -knop (wel TOTP)', passkeyKaart === 0 && passkeyKnop === 0 && totpKaart > 0, `webauthn=${passkeyKaart} knop=${passkeyKnop} totp=${totpKaart}`);
+  const passkeySectie = await page.locator("[data-access-section='passkeys']").count();
+  check('Test 8: aanmeldmethoden tonen passkeys + TOTP, geen oude passkey-kaart en geen sms', oudeKaart === 0 && sms === 0 && totpKaart > 0 && passkeySectie === 1, `webauthn=${oudeKaart} sms=${sms} totp=${totpKaart} passkeys=${passkeySectie}`);
   // Test 9: handoff-browserbinding in een echte browser (login-CSRF).
   await page.goto('https://hub.tarasevych.com/', { waitUntil: 'networkidle' });
   const gemaakt = await page.evaluate(async () => { const r = await fetch('/api/owner/session/handoff/create', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ service: 'hub', target: 'cloud', tabContext: crypto.getRandomValues(new Uint8Array(24)).reduce((a, b) => a + b.toString(16).padStart(2, '0'), '') }) }); return { status: r.status, data: await r.json().catch(() => ({})) }; });

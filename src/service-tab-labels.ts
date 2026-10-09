@@ -13,7 +13,7 @@ const LABELS: Record<string, Pair> = {
   onedrive: ['OneDrive', 'OneDrive'], dropbox: ['Dropbox', 'Dropbox'],
   repositories: ['Репозиторії', 'Repositories'], projects: ['Проєкти', 'Projecten'], documentation: ['Документація', 'Documentatie'], research: ['Дослідження', 'Onderzoek'], activity: ['Активність', 'Activiteit'],
   personalization: ['Персоналізація', 'Personalisatie'], menu: ['Меню', 'Menu'], themes: ['Теми', "Thema's"], languages: ['Мови', 'Talen'], widgets: ['Віджети', 'Widgets'],
-  sharing: ['Спільний доступ', 'Delen'], identity: ['Ідентичність', 'Identiteit'], account: ['Обліковий запис', 'Account'], sessions: ['Сесії', 'Sessies'], methods: ['Методи входу', 'Inlogmethoden'],
+  sharing: ['Спільний доступ', 'Delen'], identity: ['Ідентичність', 'Identiteit'], account: ['Обліковий запис', 'Account'], sessions: ['Сесії', 'Sessies'], methods: ['Способи входу', 'Aanmeldmethoden'],
   security: ['Безпека', 'Beveiliging'], recovery: ['Відновлення', 'Herstel'],
   vault: ['Сховище', 'Kluis'], oauth: ['OAuth', 'OAuth'], access: ['Доступ', 'Toegang'], webhooks: ['Webhooks', 'Webhooks'], events: ['Події', 'Gebeurtenissen'], logs: ['Журнали', 'Logboeken'],
   import: ['Імпорт', 'Import'], reconciliation: ['Звірка', 'Afstemming'],

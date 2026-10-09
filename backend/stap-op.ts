@@ -4,6 +4,7 @@
 //      gebruiker zich minder dan 5 minuten geleden echt heeft aangemeld. Onthouden browser (complete-remembered)
 //      en handoff tellen nooit: daar is geen nieuw id_token. (Audit-fix 5.)
 //   b) een geldige TOTP-code is ingevoerd via POST /api/owner/access/stap-op.
+//   c) een geldige passkey-assertie (UV) van een eigen passkey via POST /api/owner/access/stap-op/passkey (backend/passkeys.ts).
 // Opt-in noodpad: STAP_OP_GOOGLE_ZONDER_AUTH_TIME=1 laat een expliciete step-up-transactie (prompt=login) zonder
 // auth_time-claim tellen als het OAuth-verloop binnen 5 minuten na de start is afgerond. Standaard uit.
 // Noodschakelaar: STAP_OP_UIT=1 (alles mag weer zonder step-up, zoals vóór fase 3).
@@ -12,7 +13,7 @@ import { db } from '../server/platform';
 
 export const STAP_OP_TABEL = 'owner_step_up_v1';
 export const STAP_OP_MS = 5 * 60 * 1000;
-type StapOpRecord = { id: string; userId: string; googleAt?: number; sessies?: Record<string, number>; updatedAt: number };
+type StapOpRecord = { id: string; userId: string; googleAt?: number; sessies?: Record<string, number>; passkeySessies?: Record<string, number>; updatedAt: number };
 const TOEKOMST_SPELING_MS = 60 * 1000;
 export type StapOpSessie = { id: string; createdAt: number };
 export type StapOpAuth = { user: { id: string }; session?: StapOpSessie | null; tabSession?: StapOpSessie | null };
@@ -28,7 +29,8 @@ async function schrijf(userId: string, wijzig: (r: Omit<StapOpRecord, 'id'>) => 
   const bestaand = await recordVan(userId);
   const nu = Date.now();
   const basis: Omit<StapOpRecord, 'id'> = bestaand ? (({ id: _id, ...rest }) => rest)(bestaand) : { userId, sessies: {}, updatedAt: nu };
-  const volgend = wijzig({ ...basis, sessies: Object.fromEntries(Object.entries(basis.sessies || {}).filter(([, at]) => nu - at < STAP_OP_MS)), updatedAt: nu });
+  const vers = (m?: Record<string, number>) => Object.fromEntries(Object.entries(m || {}).filter(([, at]) => nu - at < STAP_OP_MS));
+  const volgend = wijzig({ ...basis, sessies: vers(basis.sessies), passkeySessies: vers(basis.passkeySessies), updatedAt: nu });
   if (bestaand) await db.update(STAP_OP_TABEL, [{ id: bestaand.id, record: volgend }]);
   else await db.add(STAP_OP_TABEL, [volgend]);
 }
@@ -54,6 +56,24 @@ export async function totpStapOpVastleggen(auth: StapOpAuth): Promise<void> {
   if (!s) return;
   await schrijf(auth.user.id, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [s.id]: Date.now() } }));
 }
+
+/** Aanroepen na een geldige passkey-assertie op deze sessie. Telt als gewone step-up én apart als passkey-step-up. */
+export async function passkeyStapOpVastleggen(auth: StapOpAuth): Promise<boolean> {
+  const s = sessieVan(auth);
+  if (!s) return false;
+  const nu = Date.now();
+  await schrijf(auth.user.id, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [s.id]: nu }, passkeySessies: { ...(r.passkeySessies || {}), [s.id]: nu } }));
+  return true;
+}
+/** Is er op deze sessie binnen 5 minuten met een passkey bevestigd? (Strenger dan stapOpGeldig: Google telt hier niet.) */
+export async function passkeyStapOpGeldig(auth: StapOpAuth, nu = Date.now()): Promise<boolean> {
+  const s = sessieVan(auth);
+  if (!s) return false;
+  const r = await recordVan(auth.user.id);
+  const at = Number(r?.passkeySessies?.[s.id] || 0);
+  return at > 0 && nu - at < STAP_OP_MS;
+}
+export const stapOpSessieId = (auth: StapOpAuth): string => sessieVan(auth)?.id || '';
 
 /** Is de step-up voor deze sessie nog vers? */
 export async function stapOpGeldig(auth: StapOpAuth, nu = Date.now()): Promise<boolean> {

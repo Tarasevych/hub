@@ -3,6 +3,7 @@
 #   mijn-ruimte-passkey wachtend                    aanmeldingen die op bevestiging wachten (vingerafdruk zoals op de telefoon)
 #   mijn-ruimte-passkey toevoegen <vingerafdruk>    eerste (of extra) passkey bevestigen; minstens 16 hex-tekens
 #   mijn-ruimte-passkey lijst | verwijderen <vingerafdruk> | alles-intrekken
+#   mijn-ruimte-passkey rp-bijwerken               leeg bestand: rpId admin.tarasevych.com -> tarasevych.com (installer doet dit zelf)
 # Intern ook: verifieer-goedkeuring (mijn-ruimte-uitrol --goedkeuring) en verwerk (mijn-ruimte-goedkeur-sleutels.service).
 # Lege omgeving (geen NODE_OPTIONS e.d.), vaste node, één vergrendeling voor de toestand (nonces, tellers, sleutelbestand).
 set -euo pipefail

@@ -34,3 +34,5 @@
 .admin-uitrol-form input[type=number]{width:70px}
 @media (max-width:640px){.admin-uitrol-voorstel dl{grid-template-columns:1fr}.admin-uitrol-knoppen button{flex:1 1 100%;justify-content:center}}
 .admin-uitrol-melding{position:sticky;top:8px;z-index:2;background:var(--surface,Canvas);border-radius:8px}
+.admin-uitrol-link{display:inline-flex;align-items:center;gap:4px;margin-left:4px}
+.admin-uitrol-link svg{width:14px;height:14px}

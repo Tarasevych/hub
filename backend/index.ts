@@ -28,6 +28,7 @@ import {normalizeMailDisplayText} from './mail-text-normalization';
 import {createCloudRoutes} from './cloud-platform';
 import { mcpConsoleRoutes } from './mcp-console';
 import { uitrolGoedkeuringRoutes } from './uitrol-goedkeuring';
+import { passkeyRoutes } from './passkeys';
 import {cloudGoogleCallbackPost,cloudGoogleStateParts} from './cloud-google-drive';
 import {googleSuiteCallbackPost,googleSuiteMailPreview,googleSuiteMailProviderSnapshot,googleSuiteOnboardingSnapshot,googleSuitePrincipalAccessToken,googleSuiteStartMailConsent,googleSuiteStateParts} from './google-suite-onboarding';
 import {createGoogleSuiteBrowserRoutes} from './google-suite-browser';
@@ -468,6 +469,7 @@ export const handler = router({
   'GET /api/_healthcheck': [async () => json({ message: 'Success' })],
   ...mcpConsoleRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
   ...uitrolGoedkeuringRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never }),
+  ...passkeyRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never }),
   ...createApiPlatformRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformVaultRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformConnectionRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),

@@ -13,7 +13,7 @@ import { checker } from './hulp/nep-google';
 
 const HULP = resolve('deploy/goedkeuring/goedkeur-hulp.mjs');
 const UITROL = resolve('deploy/uitrol/mijn-ruimte-uitrol.sh');
-const RP = 'admin.tarasevych.com'; const ORIGIN = `https://${RP}`;
+const RP = 'tarasevych.com'; const ORIGIN = 'https://admin.tarasevych.com';
 const shaHex = (b: Buffer | string) => createHash('sha256').update(b).digest('hex');
 const nonce = () => randomBytes(32).toString('base64url');
 type Check = (n: string, ok: boolean, i?: string) => void;
@@ -227,6 +227,8 @@ async function appTests(basis: string, check: Check) {
   };
   for (const u of Object.values(users)) await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('users',$1,$2)", [u.id, { email: u.role === 'owner' ? `${u.id}@example.test` : u.email, role: u.role === 'owner' ? 'member' : u.role, status: u.status }]); // één eigenaar per database (records_een_eigenaar) en OWNER_EMAIL niet bezetten (aanmelden-test); de sessie-mock geeft rol + e-mail
   let stepUp = false;
+  let pcall: (route: string, who: string, body?: Record<string, unknown>, extra?: Record<string, unknown>) => Promise<{ status: number; data: any; fout: string }> = async () => ({ status: 0, data: null, fout: '' });
+  let passkeyId = '';
   const routes = m.uitrolGoedkeuringRoutes({ requireSession: async (event: any) => ({ user: users[event.who], service: event.service ?? 'admin' }) as any,
     stepUp: async () => (stepUp ? null : { statusCode: 403, headers: {}, body: JSON.stringify({ error: 'STEP_UP_REQUIRED' }) } as any) });
   const call = async (route: string, who: string, body: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) => {
@@ -271,20 +273,36 @@ async function appTests(basis: string, check: Check) {
     writeFileSync(o.rechten, JSON.stringify({ 'passkey-goedkeuring': true }));
     check('app: nog geen root-passkey → geen challenge', (await call('POST /api/owner/uitrol/voorstel/uitdaging', OWNER, { id: u1.id })).fout === 'GEEN_PASSKEY');
 
-    // Passkey registreren (eigenaar, step-up) → aanmelding in de inbox → root bevestigt via SSH.
-    check('app: passkey registreren vraagt step-up', (await call('POST /api/owner/uitrol/passkey/registreren/opties', OWNER)).fout === 'STEP_UP_REQUIRED');
-    check('app: niet-eigenaar kan geen passkey registreren', (await call('POST /api/owner/uitrol/passkey/registreren/opties', HELPER)).status === 403);
+    // Passkey toevoegen in «Способи входу» (backend/passkeys.ts), dan «Може схвалювати оновлення сервера» → aanmelding → root via SSH.
+    const pkm = await import('../../backend/passkeys');
+    const pr = pkm.passkeyRoutes({ requireSession: async (event: any) => ({ user: users[event.who], service: event.service ?? 'identity', session: { id: `sessie-${event.who}`, createdAt: Date.now() } }) as any,
+      stepUp: async () => (stepUp ? null : { statusCode: 403, headers: {}, body: JSON.stringify({ error: 'STEP_UP_REQUIRED' }) } as any) });
+    pcall = async (route: string, who: string, body: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) => {
+      const res: any = await pr[route][0]({ event: { who, headers: {}, ...extra }, body } as any);
+      let data: any = null; try { data = JSON.parse(res.body); } catch { data = null; }
+      return { status: res.statusCode as number, data, fout: String(data?.error || data?.reasonCode || '') };
+    };
+    check('app: passkey toevoegen vraagt step-up', (await pcall('POST /api/owner/access/passkeys/registreren/opties', OWNER)).fout === 'STEP_UP_REQUIRED');
     stepUp = true;
-    const opt = await call('POST /api/owner/uitrol/passkey/registreren/opties', OWNER);
-    stepUp = false;
-    check('app: registratie-opties: UV required, attestation none, rpId admin', opt.data.publicKey.authenticatorSelection.userVerification === 'required' && opt.data.publicKey.attestation === 'none' && opt.data.publicKey.rp.id === RP);
+    const opt = await pcall('POST /api/owner/access/passkeys/registreren/opties', OWNER);
     const telefoon = nieuwePasskey('es256', 7);
-    const reg = await call('POST /api/owner/uitrol/passkey/registreren', OWNER, { uitdagingId: opt.data.uitdagingId, label: 'Telefoon', ...registreer(telefoon, opt.data.publicKey.challenge) });
-    check('app: registratie levert vingerafdruk + SSH-opdracht, schrijft alleen een aanmelding (niet het root-bestand)', reg.status === 200 && reg.data.eerste === true && reg.data.sshOpdracht.startsWith('sudo mijn-ruimte-passkey toevoegen ') && JSON.parse(readFileSync(o.sleutels, 'utf8')).sleutels.length === 0 && existsSync(join(o.inbox, `sleutel-aanmelding-${reg.data.vingerafdruk}.json`)));
-    check('app: registratie-challenge is eenmalig', (await call('POST /api/owner/uitrol/passkey/registreren', OWNER, { uitdagingId: opt.data.uitdagingId, ...registreer(telefoon, opt.data.publicKey.challenge) })).fout === 'UITDAGING_ONGELDIG');
-    check('app: eerste passkey bevestigen met een passkey kan niet (alleen SSH)', (await call('POST /api/owner/uitrol/passkey/toevoegen/opties', OWNER, { vingerafdruk: reg.data.vingerafdruk })).fout === 'EERSTE_VIA_SSH');
-    const ssh = hulp(o, 'toevoegen', reg.data.sshOpdracht.split(' ').pop());
+    const reg = await pcall('POST /api/owner/access/passkeys/registreren', OWNER, { uitdagingId: opt.data.uitdagingId, naam: 'Telefoon', ...registreer(telefoon, opt.data.publicKey.challenge) });
+    passkeyId = String(reg.data?.passkey?.id || '');
+    check('app: registratie-opties: UV required, attestation none, rpId tarasevych.com', opt.data.publicKey.authenticatorSelection.userVerification === 'required' && opt.data.publicKey.attestation === 'none' && opt.data.publicKey.rp.id === RP);
+    check('app: nieuwe passkey van de eigenaar is eerst «Лише вхід» (geen aanmelding bij root)', reg.status === 200 && reg.data.passkey.goedkeuring === 'alleen-aanmelden' && !readdirSync(o.inbox).some((f) => f.startsWith('sleutel-aanmelding-')), JSON.stringify(reg.data));
+    check('app: niet-eigenaar kan het recht om goed te keuren niet aanvragen', (await pcall('POST /api/owner/access/passkeys/goedkeuring/aanvragen', HELPER, { id: passkeyId })).fout === 'OWNER_REQUIRED');
+    check('app: eigenaar op hub mag het recht niet aanvragen (alleen id/admin)', (await pcall('POST /api/owner/access/passkeys/goedkeuring/aanvragen', OWNER, { id: passkeyId }, { service: 'hub' })).fout === 'OWNER_REQUIRED');
+    const aan = await pcall('POST /api/owner/access/passkeys/goedkeuring/aanvragen', OWNER, { id: passkeyId });
+    stepUp = false;
+    const aanmelding = readdirSync(o.inbox).find((f) => f.startsWith('sleutel-aanmelding-')) || '';
+    const fp = aanmelding.replace(/^sleutel-aanmelding-|\.json$/g, '');
+    check('app: aanvragen schrijft alleen een aanmelding + SSH-opdracht (niet het root-bestand)', aan.status === 200 && aan.data.eerste === true && String(aan.data.sshOpdracht).startsWith('sudo mijn-ruimte-passkey toevoegen ') && JSON.parse(readFileSync(o.sleutels, 'utf8')).sleutels.length === 0 && /^[0-9a-f]{64}$/.test(fp), JSON.stringify(aan.data));
+    const l1 = await pcall('POST /api/owner/access/passkeys/lijst', OWNER);
+    check('app: status «Чекає підтвердження сервером» met SSH-opdracht', l1.data.passkeys[0]?.goedkeuring === 'wacht' && !!l1.data.passkeys[0]?.sshOpdracht && l1.data.goedkeuring.rpKlopt === true);
+    check('app: eerste passkey bevestigen met een passkey kan niet (alleen SSH)', (await pcall('POST /api/owner/access/passkeys/goedkeuring/bevestigen/opties', OWNER, { id: passkeyId })).fout === 'EERSTE_VIA_SSH');
+    const ssh = hulp(o, 'toevoegen', aan.data.sshOpdracht.split(' ').pop());
     check('bootstrap: root bevestigt de aanmelding met de SSH-opdracht uit de app', ssh.status === 0 && JSON.parse(readFileSync(o.sleutels, 'utf8')).sleutels.length === 1, ssh.stderr);
+    check('app: status daarna «Може схвалювати оновлення»', (await pcall('POST /api/owner/access/passkeys/lijst', OWNER)).data.passkeys[0]?.goedkeuring === 'kan-goedkeuren');
 
     // Goedkeuren
     const uit = await call('POST /api/owner/uitrol/voorstel/uitdaging', OWNER, { id: u1.id });
@@ -346,12 +364,18 @@ async function appTests(basis: string, check: Check) {
     await sys.query("UPDATE app.uitrol_voorbereiders SET gegeven_op = now() - interval '2 days', verloopt_op = now() - interval '1 second' WHERE id = $1", [g2.data.voorbereider.id]);
     check('app: verlopen grant → voorbereiden geweigerd', (await call('POST /api/uitrol/voorstel/begin', HELPER, { version: '20261008-150006', bytes: 10, sha256: 'e'.repeat(64) })).fout === 'GEEN_VOORBEREIDER_GRANT');
 
-    // Passkey verwijderen met een passkey (eigenaar); root doet het pas bij verwerk.
-    const vo = await call('POST /api/owner/uitrol/passkey/verwijderen/opties', OWNER, { vingerafdruk: reg.data.vingerafdruk });
-    const vz = await call('POST /api/owner/uitrol/passkey/verwijderen', OWNER, { uitdagingId: vo.data.uitdagingId, assertie: bevestig(telefoon, vo.data.publicKey.challenge) });
-    check('app: verwijderverzoek met passkey → alleen een verzoek in de inbox (root beslist)', vz.status === 200 && JSON.parse(readFileSync(o.sleutels, 'utf8')).sleutels.length === 1 && existsSync(join(o.inbox, 'sleutel-aanvraag')));
+    // Recht intrekken met een passkey (eigenaar); root doet het pas bij verwerk. Daarna pas verwijderen.
+    stepUp = true;
+    check('app: passkey die mag goedkeuren kan niet verwijderd worden vóór intrekken bij root', (await pcall('POST /api/owner/access/passkeys/verwijderen', OWNER, { id: passkeyId })).fout === 'PASSKEY_KAN_GOEDKEUREN');
+    stepUp = false;
+    const vo = await pcall('POST /api/owner/access/passkeys/goedkeuring/intrekken/opties', OWNER, { id: passkeyId });
+    const vz = await pcall('POST /api/owner/access/passkeys/goedkeuring/intrekken', OWNER, { uitdagingId: vo.data.uitdagingId, assertie: bevestig(telefoon, vo.data.publicKey.challenge) });
+    check('app: intrekverzoek met passkey → alleen een verzoek in de inbox (root beslist)', vz.status === 200 && JSON.parse(readFileSync(o.sleutels, 'utf8')).sleutels.length === 1 && existsSync(join(o.inbox, 'sleutel-aanvraag')), JSON.stringify(vz.data));
     hulp(o, 'verwerk');
-    check('root: verwerkt het verwijderverzoek van de app', JSON.parse(readFileSync(o.sleutels, 'utf8')).sleutels.length === 0);
+    check('root: verwerkt het intrekverzoek van de app', JSON.parse(readFileSync(o.sleutels, 'utf8')).sleutels.length === 0);
+    stepUp = true;
+    check('app: daarna kan de passkey weg', (await pcall('POST /api/owner/access/passkeys/verwijderen', OWNER, { id: passkeyId })).status === 200);
+    stepUp = false;
 
     // Database: de app-rol kan niet bij de nieuwe tabellen.
     let appRol = 'open';
@@ -364,6 +388,8 @@ async function appTests(basis: string, check: Check) {
     await sys.query("DELETE FROM app.uitrol_voorstellen WHERE versie LIKE '20261008-15%'");
     await sys.query('DELETE FROM app.uitrol_voorbereiders WHERE account_id = ANY($1)', [Object.keys(users)]);
     await sys.query('DELETE FROM app.goedkeur_uitdagingen WHERE user_id = ANY($1)', [Object.keys(users)]);
+    await sys.query('DELETE FROM app.passkeys WHERE user_id = ANY($1)', [Object.keys(users)]).catch(() => undefined);
+    await sys.query('DELETE FROM app.passkey_uitdagingen WHERE user_id = ANY($1)', [Object.keys(users)]).catch(() => undefined);
     await sys.query('DELETE FROM app.mcp_console_tokens WHERE user_id = ANY($1)', [Object.keys(users)]);
     await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = ANY($1)", [Object.keys(users)]);
     const herstel = (k: string, v?: string) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
@@ -384,8 +410,10 @@ function plafondTests(check: Check) {
   check('plafond: uitrol --goedkeuring controleert de passkey vóór het uitpakken/installeren', uitrol.indexOf('verifieer-goedkeuring') > 0 && uitrol.lastIndexOf('verifieer-goedkeuring') < uitrol.indexOf('tarfile.open') && uitrol.lastIndexOf('verifieer-goedkeuring') < uitrol.indexOf('cmd=( "$INSTALLEER"') && /unset [^\n]*UITROL_GOEDKEUR_HULP/.test(uitrol.replace(/\\\n\s*/g, ' ')));
   check('plafond: installer zet de root-hulp uit het pakket ($doel), root-eigendom, en maakt de schakelaar standaard uit', /install -m 0644 -o root -g root "\$doel\/deploy\/goedkeuring\/webauthn-kern\.mjs"/.test(inst) && /"passkey-goedkeuring": false/.test(inst));
   check('plafond: wrapper wist de omgeving en vergrendelt', /env -i PATH=\/usr\/bin:\/bin/.test(readFileSync('deploy/goedkeuring/mijn-ruimte-passkey.sh', 'utf8')) && /flock/.test(readFileSync('deploy/goedkeuring/mijn-ruimte-passkey.sh', 'utf8')));
-  const ui = readFileSync('src/AdminUitrolView.tsx', 'utf8');
-  check('ui: tekstpaar per melding (tr(lang, uk, nl)) en userVerification required', /userVerification:'required'/.test(ui) && (ui.match(/tr\(lang,/g) || []).length > 40);
+  const ui = readFileSync('src/AdminUitrolView.tsx', 'utf8') + readFileSync('src/PasskeysSection.tsx', 'utf8');
+  const wa = readFileSync('src/platform/webauthn.ts', 'utf8');
+  check('ui: tekstpaar per melding (tr(lang, uk, nl)) en userVerification required', /userVerification: 'required'/.test(wa) && (ui.match(/tr\(lang,/g) || []).length > 40);
+  check('ui: admin «Оновлення» registreert zelf geen passkeys meer (alleen een link naar «Способи входу»)', !/credentials\.create|passkeyAanmaken/.test(readFileSync('src/AdminUitrolView.tsx', 'utf8')) && /canonicalNavigationUrl\('identity','methods'/.test(ui));
 }
 
 export async function main(): Promise<number> {
