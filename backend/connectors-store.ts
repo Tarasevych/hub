@@ -109,10 +109,35 @@ export async function getAgent(userId: string, id: string): Promise<AgentRow | n
 
 export async function revokeAgent(userId: string, id: string): Promise<boolean> {
   const r = await gebruiker(
-    `UPDATE app.agents SET revoked_at = now(), status = 'disconnected'
+    `UPDATE app.agents SET revoked_at = now(), status = 'disconnected', revoke_reason = COALESCE(revoke_reason, 'user')
       WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL`, [id, userId]);
   return (r.rowCount ?? 0) > 0;
 }
+
+/** Ingetrokken/losgekoppelde apparaten en browsers van de laatste `dagen` (geschiedenis op /agents; nooit het token). */
+export type RevokedAgentRow = { id: string; name: string; platform: string | null; agent_version: string | null; created_at: Date; revoked_at: Date; last_seen_at: Date | null; revoke_reason: string | null; pairing_id: string | null };
+export async function listRevokedAgents(userId: string, dagen = 90): Promise<RevokedAgentRow[]> {
+  const { rows } = await gebruiker(
+    `SELECT id, name, platform, agent_version, created_at, revoked_at, last_seen_at, revoke_reason, pairing_id FROM app.agents
+      WHERE user_id = $1 AND revoked_at IS NOT NULL AND revoked_at > now() - make_interval(days => $2)
+      ORDER BY revoked_at DESC LIMIT 50`, [userId, dagen]);
+  return rows as RevokedAgentRow[];
+}
+
+/** Namen voor het journaal: alle apparaten (ook ingetrokken), agenttokens (deuren) en OAuth-verbindingen van één gebruiker. */
+export async function journaalNamen(userId: string): Promise<{ agents: Map<string, { name: string; platform: string | null }>; tokens: Map<string, string>; oauth: Map<string, string> }> {
+  const [a, t, o] = await Promise.all([
+    systeem('SELECT id, name, platform FROM app.agents WHERE user_id = $1 ORDER BY created_at DESC LIMIT 500', [userId]),
+    systeem('SELECT id::text AS id, name FROM app.mcp_console_tokens WHERE user_id = $1 ORDER BY created_at DESC LIMIT 500', [userId]).catch(() => ({ rows: [] as any[], rowCount: 0 })),
+    systeem('SELECT id::text AS id, client_name FROM app.mcp_oauth_tokens WHERE user_id = $1 ORDER BY created_at DESC LIMIT 500', [userId]).catch(() => ({ rows: [] as any[], rowCount: 0 })),
+  ]);
+  return {
+    agents: new Map(a.rows.map((r: any) => [String(r.id), { name: String(r.name), platform: r.platform ?? null }])),
+    tokens: new Map(t.rows.map((r: any) => [String(r.id), String(r.name)])),
+    oauth: new Map(o.rows.map((r: any) => [String(r.id), String(r.client_name)])),
+  };
+}
+
 
 export async function createCommand(
   agentId: string, userId: string, type: string, params: object, status: CommandStatus, grantId: string | null = null,

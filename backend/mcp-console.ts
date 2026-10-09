@@ -406,9 +406,9 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       return json({ token: { ...tokenOut(row), token: raw } });
     })],
     "POST /api/mcp/tokens/revoke": [gate("member", {}, async (ctx, auth) => {
-      const ok = await alsGebruiker(auth.user.id, async (q) => (await q("UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE id::text = $2 AND user_id = $1 AND revoked_at IS NULL", [auth.user.id, String(bodyOf(ctx.body).id || "")])).rowCount);
-      if (!ok) return error("TOKEN_NOT_FOUND", 404);
-      await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_revoked", type: "ai", result: "ok", details: { tokenId: String(bodyOf(ctx.body).id || "") } }).catch(() => undefined);
+      const weg = await alsGebruiker(auth.user.id, async (q) => (await q("UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE id::text = $2 AND user_id = $1 AND revoked_at IS NULL RETURNING name, prefix", [auth.user.id, String(bodyOf(ctx.body).id || "")])).rows[0]);
+      if (!weg) return error("TOKEN_NOT_FOUND", 404);
+      await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_revoked", type: "ai", result: "ok", details: { tokenId: String(bodyOf(ctx.body).id || ""), name: String(weg.name || ""), prefix: String(weg.prefix || "") } }).catch(() => undefined);
       return json({ ok: true });
     })],
     "POST /api/mcp/call": [gate("member", {}, async (ctx, auth) => {

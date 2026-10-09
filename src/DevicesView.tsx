@@ -3,6 +3,7 @@ import { Check, Clock, PlugZap, RefreshCw, ShieldCheck, Trash2, X } from 'lucide
 import { api } from './platform/client';
 import { agentLogo, Help, IconButton, Logo, Section, StatusDot, type Tr } from './mcp-ui';
 import { ago, commandLabel, sessionBody, statusLabel, type Agent, type LastCommand, type Pending } from './agents-data';
+import { foutTekst } from './agenten/fouten';
 
 /** Welke opdrachten van een pc zonder klik mogen (de rest wacht altijd op uw "Toestaan"). */
 const MACHINE_AUTO: Array<{ type: string; uk: [string, string]; nl: [string, string]; help: { what: [string, string]; on: [string, string]; off: [string, string] } }> = [
@@ -21,8 +22,8 @@ export function PendingList({ tr, pending, reload, compact = false }: { tr: Tr; 
   const [notice, setNotice] = useState('');
   const decide = async (id: string, verdict: 'approve' | 'reject') => {
     setBusy(true); setNotice('');
-    try { await api.post(`/api/owner/agents/commands/${id}/${verdict}`, sessionBody()); await reload(); }
-    catch { setNotice(tr('Дія вже недійсна.', 'Deze actie is niet meer geldig.')); await reload().catch(() => undefined); }
+    try { await api.post(`/api/owner/agents/commands/${id}/${verdict}`, sessionBody()); await reload(); setNotice(verdict === 'approve' ? tr('Дозволено: дію надіслано на пристрій.', 'Toegestaan: de actie is naar het apparaat gestuurd.') : tr('Відхилено: дію не буде виконано.', 'Geweigerd: de actie wordt niet uitgevoerd.')); }
+    catch (e) { setNotice(foutTekst(e, tr, ['Дія вже недійсна', 'Deze actie is niet meer geldig'])); await reload().catch(() => undefined); }
     setBusy(false);
   };
   if (!pending.length) return (
@@ -52,36 +53,37 @@ export function PendingList({ tr, pending, reload, compact = false }: { tr: Tr; 
 export { PairCard } from './AgentSetupWizard';
 
 /** Eén pc: status, laatste actie, wat zonder klik mag, testen en loskoppelen. */
-export function DeviceDetail({ tr, agent, last, reload }: { tr: Tr; agent: Agent; last?: LastCommand; reload: () => Promise<void> }) {
+export function DeviceDetail({ tr, agent, last, reload, compact = false }: { tr: Tr; agent: Agent; last?: LastCommand; reload: () => Promise<void>; compact?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [confirm, setConfirm] = useState(false);
-  const run = async (action: () => Promise<void>, failure: string) => {
-    setBusy(true); setNotice('');
-    try { await action(); await reload(); } catch { setNotice(failure); }
+  const [ok, setOk] = useState('');
+  const run = async (action: () => Promise<void>, failure: string, gelukt = '') => {
+    setBusy(true); setNotice(''); setOk('');
+    try { await action(); await reload(); setOk(gelukt); } catch (e) { setNotice(`${failure} ${foutTekst(e, tr)}`); }
     setBusy(false);
   };
   const auto = agent.policy?.autoApprove ?? [];
   const toggle = (type: string, on: boolean) => run(async () => {
     const next = on ? [...new Set([...auto, type])] : auto.filter((t) => t !== type);
     await api.post(`/api/owner/agents/${agent.id}/policy`, { ...sessionBody(), autoApprove: next });
-  }, tr('Не вдалося змінити.', 'Wijzigen mislukt.'));
+  }, tr('Не вдалося змінити.', 'Wijzigen mislukt.'), on ? tr('Тепер виконується без кліку.', 'Wordt nu zonder klik uitgevoerd.') : tr('Тепер чекає вашого «Дозволити».', 'Wacht nu op uw "Toestaan".'));
   const probe = (kind: 'verbinding' | 'goedkeuring') => run(async () => {
     const payload = kind === 'verbinding' ? { type: 'sys.info', params: {} } : { type: 'fs.write', params: { path: 'hub-agent-test.txt', content: `test ${new Date().toISOString()}\n` } };
     await api.post(`/api/owner/agents/${agent.id}/command`, { ...sessionBody(), ...payload });
-  }, tr('Агент не відповідає (офлайн?).', 'Agent reageert niet (offline?).'));
+  }, tr('Агент не відповідає (офлайн?).', 'Agent reageert niet (offline?).'), kind === 'verbinding' ? tr('Запит надіслано: результат з’явиться в «Остання дія» та в журналі.', 'Aanvraag verstuurd: het resultaat verschijnt bij "Laatste actie" en in het logboek.') : tr('Тестовий запис чекає вашого рішення — див. «Очікують рішення».', 'De testschrijfactie wacht op uw beslissing — zie "Wachten op beslissing".'));
   const revoke = () => run(async () => { setConfirm(false); await api.post(`/api/owner/agents/${agent.id}/revoke`, sessionBody()); }, tr('Не вдалося відключити.', 'Loskoppelen mislukt.'));
   const online = agent.status === 'connected';
   return (
-    <article className='hub-agent' data-agent-status={agent.status} data-device={agent.id}>
-      <div className='hub-agent-head'>
+    <article className={`hub-agent${compact ? ' is-compact' : ''}`} data-agent-status={agent.status} data-device={agent.id}>
+      {compact ? null : <div className='hub-agent-head'>
         <Logo kind={agentLogo(agent)} size={40} label={agent.platform || 'pc'} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2>{agent.name}</h2>
           <span className='hub-meta'>{[agent.platform, `${tr('остання активність', 'laatst gezien')}: ${ago(agent.lastSeenAt, tr)}`].filter(Boolean).join(' · ')}</span>
         </div>
         <span className={`hub-pill ${online ? 'ok' : 'off'}`}><StatusDot state={online ? 'on' : 'off'} label={online ? tr('в мережі', 'online') : tr('не в мережі', 'offline')} />{online ? tr('в мережі', 'online') : tr('не в мережі', 'offline')}</span>
-      </div>
+      </div>}
 
       {last ? (
         <div className='hub-note' data-agent-last={last.status}>
@@ -110,7 +112,7 @@ export function DeviceDetail({ tr, agent, last, reload }: { tr: Tr; agent: Agent
       <div className='hub-actions'>
         <IconButton icon={<RefreshCw />} disabled={busy || !online} onClick={() => void probe('verbinding')} title={tr('Надсилає безпечний запит «інформація про пристрій»', 'Stuurt een veilige aanvraag "apparaatinformatie"')}>{tr('Перевірити зв’язок', 'Verbinding testen')}</IconButton>
         <IconButton icon={<ShieldCheck />} disabled={busy || !online} onClick={() => void probe('goedkeuring')} title={tr('Створює тестовий запис файлу, що має чекати вашого рішення', 'Maakt een test-schrijfactie die op uw beslissing moet wachten')}>{tr('Тест підтвердження', 'Test goedkeuring')}</IconButton>
-        {confirm ? null : <IconButton tone='danger' icon={<Trash2 />} disabled={busy} onClick={() => setConfirm(true)}>{tr('Відключити', 'Loskoppelen')}</IconButton>}
+        {confirm || compact ? null : <IconButton tone='danger' icon={<Trash2 />} disabled={busy} onClick={() => setConfirm(true)}>{tr('Відключити', 'Loskoppelen')}</IconButton>}
       </div>
       {confirm ? (
         <div className='hub-confirm' role='alertdialog' aria-label={tr('Підтвердження відключення', 'Bevestig loskoppelen')}>
@@ -119,7 +121,8 @@ export function DeviceDetail({ tr, agent, last, reload }: { tr: Tr; agent: Agent
           <IconButton icon={<X />} onClick={() => setConfirm(false)}>{tr('Скасувати', 'Annuleren')}</IconButton>
         </div>
       ) : null}
-      {notice ? <p role='status' className='hub-note warn'>{notice}</p> : null}
+      {ok ? <p role='status' className='ag-melding ag-melding-ok'>{ok}</p> : null}
+      {notice ? <p role='alert' className='ag-melding ag-melding-fout'>{notice}</p> : null}
     </article>
   );
 }

@@ -1,0 +1,174 @@
+/* /agents in GitHub-stijl (Settings → Applications). Alleen themavariabelen (--panel --surface --line --text --muted --accent
+   --accent-soft): licht en donker volgen vanzelf. Statuskleuren apart per thema. */
+.ag{--ag-ok:#1a7f37;--ag-warn:#9a6700;--ag-bad:#cf222e;--ag-off:#6e7781;--ag-info:#0969da;--ag-r:10px;display:grid;gap:16px;color:var(--text);min-width:0;max-width:1100px}
+.theme-dark .ag,.theme-plum-dark .ag{--ag-ok:#3fb950;--ag-warn:#d29922;--ag-bad:#f85149;--ag-off:#8b949e;--ag-info:#58a6ff}
+.ag :is(h1,h2,h3,h4){margin:0}
+.ag code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;overflow-wrap:anywhere}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Kop en tabbladen */
+.ag-kop{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
+.ag-kop h1{font-size:1.6rem;line-height:1.2}
+.ag-kop p{margin:4px 0 0;color:var(--muted);max-width:64ch;line-height:1.45}
+.ag-tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.ag-tab-knop{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--muted);text-decoration:none;white-space:nowrap;font-weight:600;font-size:.92rem;border-radius:6px 6px 0 0}
+.ag-tab-knop svg{width:16px;height:16px}
+.ag-tab-knop:hover{color:var(--text);background:var(--surface)}
+.ag-tab-knop[aria-selected=true]{color:var(--text);border-bottom-color:var(--accent)}
+.ag-tab-knop:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ag-teller{display:inline-block;min-width:20px;padding:0 6px;border-radius:99px;background:var(--surface2,var(--surface));color:var(--text);font-size:.75rem;font-weight:700;line-height:20px;text-align:center}
+.ag-teller.is-warn{background:var(--ag-warn);color:#fff}
+.ag-paneel,.ag-tab{display:grid;gap:14px;min-width:0}
+
+/* Lijstkop: «Ви надали доступ N застосункам» · sorteren · alles intrekken */
+.ag-lijstkop,.ag-werkbalk{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}
+.ag-lijstkop-tekst{margin:0 auto 0 0;font-weight:600;align-self:center}
+.ag-werkbalk-info{flex-basis:100%}
+.ag-veld{display:grid;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+.ag-veld-inline{display:flex;align-items:center;gap:6px}
+.ag-veld-breed{flex:1 1 260px}
+.ag :is(input,select,textarea){font:inherit;font-size:.9rem;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 8px;min-height:32px;min-width:0;box-sizing:border-box}
+.ag :is(input,select,textarea):focus-visible{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+
+/* Rijen */
+.ag-lijst{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);overflow:hidden}
+.ag-rij{border-top:1px solid var(--line)}
+.ag-rij:first-child{border-top:0}
+.ag-rij.is-gedimd .ag-rij-kop{opacity:.78}
+.ag-rij-kop{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;min-width:0}
+.ag-rij-toggle{flex:1 1 auto;display:flex;align-items:center;gap:12px;min-width:0;padding:10px 8px;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ag-rij-toggle:hover{background:var(--surface)}
+.ag-rij-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ag-rij-logo{flex:0 0 auto;display:grid;place-items:center}
+.ag-rij-tekst{display:grid;gap:2px;min-width:0}
+.ag-rij-titel{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+.ag-rij-titel b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.ag-rij-status{color:var(--muted);font-size:.82rem;line-height:1.4;overflow-wrap:anywhere}
+.ag-chevron{flex:0 0 auto;width:16px;height:16px;color:var(--muted);transition:transform .15s;margin-left:auto}
+.ag-rij.is-open>.ag-rij-kop .ag-chevron,.ag-groep[open]>summary .ag-chevron{transform:rotate(180deg)}
+.ag-rij-acties{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;max-width:60%}
+.ag-rij-details{display:grid;gap:12px;padding:4px 16px 16px 58px;min-width:0}
+.ag-journaal .ag-rij-details{padding-left:52px}
+
+/* Technische gegevens */
+.ag-tech{display:grid;grid-template-columns:minmax(120px,max-content) minmax(0,1fr);gap:0;margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:.84rem}
+.ag-tech-rij{display:contents}
+.ag-tech dt,.ag-tech dd{margin:0;padding:6px 10px;border-top:1px solid var(--line);min-width:0}
+.ag-tech-rij:first-child dt,.ag-tech-rij:first-child dd{border-top:0}
+.ag-tech dt{color:var(--muted);background:var(--surface)}
+.ag-tech dd{overflow-wrap:anywhere}
+.ag-ruw{margin:6px 0 0;padding:8px;max-height:260px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px;font-size:.78rem;white-space:pre-wrap;word-break:break-all}
+
+/* Badges, chips */
+.ag-badge{display:inline-flex;align-items:center;gap:4px;padding:0 7px;border:1px solid currentColor;border-radius:99px;font-size:.72rem;font-weight:600;line-height:18px;white-space:nowrap}
+.ag-badge .hub-dot,.ag-badge [class*=dot]{margin:0}
+.ag-ok{color:var(--ag-ok)}.ag-warn{color:var(--ag-warn)}.ag-bad{color:var(--ag-bad)}.ag-off{color:var(--ag-off)}.ag-info{color:var(--ag-info)}
+.ag-chip{display:inline-block;margin-right:6px;padding:0 6px;border-radius:6px;background:var(--surface);border:1px solid var(--line);color:var(--text);font-size:.75rem}
+.ag-tijd{white-space:nowrap}
+.ag-link{display:inline-flex;align-items:center;gap:4px;color:var(--accent);font-weight:600;text-decoration:none}
+.ag-link:hover{text-decoration:underline}
+
+/* Knoppen */
+.ag-knop{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:30px;padding:4px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--text);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.ag-knop:hover:not(:disabled){background:var(--surface2,var(--panel));border-color:var(--muted)}
+.ag-knop:disabled{opacity:.55;cursor:not-allowed}
+.ag-knop:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.ag-knop svg{width:15px;height:15px}
+.ag-knop-icoon{display:inline-grid}
+.ag-knop-primary{background:var(--accent);border-color:var(--accent);color:var(--accentText,#fff)}
+.ag-knop-primary:hover:not(:disabled){background:var(--accent);filter:brightness(1.08)}
+.ag-knop-danger{color:var(--ag-bad)}
+.ag-knop-danger:hover:not(:disabled){background:var(--ag-bad);border-color:var(--ag-bad);color:#fff}
+.ag-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.ag-spin{animation:ag-spin .8s linear infinite}
+@keyframes ag-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.ag-spin{animation-duration:2.4s}.ag-chevron{transition:none}}
+
+/* Bevestiging op de pagina */
+.ag-bevestig{display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;padding:6px 8px;border:1px solid var(--ag-bad);border-radius:8px;background:color-mix(in srgb,var(--ag-bad) 8%,var(--panel))}
+.ag-bevestig-vraag{font-size:.82rem;max-width:42ch;line-height:1.35}
+.ag-bevestig.is-klein .ag-bevestig-vraag{flex-basis:100%;text-align:right}
+
+/* Meldingen */
+.ag-melding{display:flex;align-items:flex-start;gap:8px;margin:0;padding:9px 12px;border:1px solid var(--line);border-left-width:4px;border-radius:8px;background:var(--panel);font-size:.88rem;line-height:1.45}
+.ag-melding>svg{flex:0 0 auto;width:16px;height:16px;margin-top:2px}
+.ag-melding>span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.ag-melding-ok{border-left-color:var(--ag-ok);background:color-mix(in srgb,var(--ag-ok) 8%,var(--panel))}
+.ag-melding-ok>svg{color:var(--ag-ok)}
+.ag-melding-fout{border-left-color:var(--ag-bad);background:color-mix(in srgb,var(--ag-bad) 8%,var(--panel))}
+.ag-melding-fout>svg{color:var(--ag-bad)}
+small.ag-melding{display:block}
+.ag-melding-x{flex:0 0 auto;display:grid;place-items:center;width:24px;height:24px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer}
+.ag-melding-x:hover{background:var(--surface)}
+.ag-melding-x svg{width:14px;height:14px}
+
+/* Kaarten, groepen, overzicht */
+.ag-kaart{display:grid;gap:10px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);min-width:0}
+.ag-kaart h3{font-size:1rem}.ag-kaart h4{font-size:.9rem}
+.ag-kaart-kop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.ag-waarschuwing{border-color:var(--ag-warn);box-shadow:inset 4px 0 0 var(--ag-warn)}
+.ag-vers{border-color:var(--ag-ok)}
+.ag-vers code{display:block;padding:8px;border-radius:6px;background:var(--surface);word-break:break-all}
+.ag-groep{border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel)}
+.ag-groep>summary{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;list-style:none;color:var(--muted);font-weight:600;font-size:.9rem}
+.ag-groep>summary::-webkit-details-marker{display:none}
+.ag-groep>summary .ag-chevron{margin:0}
+.ag-groep>.ag-lijst{border:0;border-top:1px solid var(--line);border-radius:0 0 var(--ag-r) var(--ag-r)}
+.ag-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.ag-stat{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ag-stat:hover{border-color:var(--accent)}
+.ag-stat-icoon{grid-row:1/3;display:grid;place-items:center;width:36px;height:36px;border-radius:8px;background:var(--accent-soft,var(--surface));color:var(--accent)}
+.ag-stat-icoon svg{width:18px;height:18px}
+.ag-stat strong{font-size:1.35rem;line-height:1.1}
+.ag-stat span:last-child{color:var(--muted);font-size:.82rem}
+.ag-leeg{margin:0;padding:18px;color:var(--muted);text-align:center;border:1px dashed var(--line);border-radius:var(--ag-r)}
+.ag-meer{display:flex;justify-content:center}
+.ag-voet{display:flex;align-items:center;gap:6px;margin:0}
+.ag-verbinden{display:grid;gap:8px}
+.ag-formrij{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel)}
+.ag-formrij-uitleg{flex-basis:100%}
+
+/* Journaal */
+.ag-journaal-icoon{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--surface);border:1px solid var(--line)}
+.ag-journaal-icoon svg{width:15px;height:15px}
+.ag-journaal.is-compact .ag-rij-toggle{padding:7px 8px}
+.ag-journaal-wrap{display:grid;gap:12px}
+
+/* Gesegmenteerde keuze (presets) */
+.ag-segment{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface);max-width:100%}
+.ag-segment-optie{display:inline-flex;align-items:center;gap:2px;padding-right:6px;border-left:1px solid var(--line)}
+.ag-segment-optie:first-child{border-left:0}
+.ag-segment button[role=radio]{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:0;background:transparent;color:var(--text);font:inherit;font-size:.86rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.ag-segment button[role=radio] svg{width:15px;height:15px}
+.ag-segment button[role=radio][aria-checked=true]{background:var(--accent);color:var(--accentText,#fff);border-radius:6px}
+.ag-segment button[role=radio]:disabled{opacity:.55;cursor:not-allowed}
+.ag-segment .hub-help-btn{width:22px;height:22px}
+
+/* Toestemmingen-editor */
+.ai-grants{display:grid;gap:14px;min-width:0}
+.ai-blok{display:grid;gap:8px;min-width:0}
+.ai-blok-kop{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 12px}
+.ai-tabel{width:100%;border-collapse:collapse;font-size:.85rem;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.ai-tabel th{text-align:left;font-weight:600;color:var(--muted);background:var(--surface);padding:6px 10px;font-size:.78rem}
+.ai-tabel td{padding:6px 10px;border-top:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere}
+.ai-tabel td .ag-badge{margin-left:6px}
+.ai-tabel-actie{text-align:right;white-space:nowrap;width:1%}
+.ai-grant-form{display:grid;grid-template-columns:minmax(170px,1.3fr) minmax(130px,1fr) auto;align-items:end;gap:8px 10px}
+.ai-veld{display:grid;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+.ai-veld :is(select,input){width:100%}
+.ai-veld-breed{grid-column:1/-2}
+.ai-veld-knop{grid-column:-2/-1;grid-row:1}
+.ai-veld-uitleg,.ai-always{grid-column:1/-1}
+.ai-always{display:flex;align-items:center;gap:6px;font-size:.84rem}
+.ai-stop{display:inline-grid;justify-items:end;gap:6px;max-width:100%}
+
+@media(max-width:720px){
+  .ag-rij-kop{flex-wrap:wrap;padding:4px 8px 8px 4px}
+  .ag-rij-acties{max-width:100%;width:100%;justify-content:flex-start;padding-left:50px}
+  .ag-rij-details{padding:4px 10px 14px}
+  .ag-tech{grid-template-columns:1fr}
+  .ag-tech dd{border-top:0;padding-top:0}
+  .ai-grant-form{grid-template-columns:1fr}
+  .ai-veld-breed,.ai-veld-knop{grid-column:auto;grid-row:auto}
+  .ag-tab-knop span:not(.ag-teller){font-size:.85rem}
+}

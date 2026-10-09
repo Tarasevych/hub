@@ -94,12 +94,13 @@ export async function countActiveGrants(userId: string): Promise<number> {
 
 export async function insertToken(t: {
   userId: string; clientId: string; clientName: string; scope: string; accessHash: string; refreshHash: string;
-}): Promise<void> {
-  await q(
+}): Promise<string> {
+  const r = await q(
     `INSERT INTO app.mcp_oauth_tokens
        (user_id, client_id, client_name, scope, access_hash, refresh_hash, access_expires_at, refresh_expires_at)
-     VALUES ($1, $2, $3, $4, $5, $6, now() + make_interval(secs => $7), now() + make_interval(days => $8))`,
+     VALUES ($1, $2, $3, $4, $5, $6, now() + make_interval(secs => $7), now() + make_interval(days => $8)) RETURNING id`,
     [t.userId, t.clientId, t.clientName, t.scope, t.accessHash, t.refreshHash, LIMITS.accessTtlSec, LIMITS.refreshTtlDays]);
+  return String(r.rows[0]?.id ?? '');
 }
 
 /** Zoekt een actief toegangstoken (niet ingetrokken, niet verlopen) en noteert het gebruik. */
@@ -141,19 +142,19 @@ export async function rotateRefresh(clientId: string, oldHash: string, newRefres
 }
 
 /** Een al geroteerd refresh-token opnieuw gebruiken wijst op diefstal: de hele grant wordt ingetrokken. */
-export async function revokeIfReused(clientId: string, presentedHash: string): Promise<boolean> {
+export async function revokeIfReused(clientId: string, presentedHash: string): Promise<Array<{ id: string; user_id: string; client_name: string }>> {
   const r = await q(
     `UPDATE app.mcp_oauth_tokens SET revoked_at = now()
-      WHERE prev_refresh_hash = $2 AND client_id = $1 AND revoked_at IS NULL`, [clientId, presentedHash]);
-  return (r.rowCount ?? 0) > 0;
+      WHERE prev_refresh_hash = $2 AND client_id = $1 AND revoked_at IS NULL RETURNING id, user_id, client_name`, [clientId, presentedHash]);
+  return r.rows;
 }
 
 /** RFC 7009: een token (access of refresh) van deze client intrekken. true = er is iets ingetrokken. */
-export async function revokeByToken(clientId: string, tokenHash: string): Promise<boolean> {
+export async function revokeByToken(clientId: string, tokenHash: string): Promise<Array<{ id: string; user_id: string; client_name: string }>> {
   const r = await q(
     `UPDATE app.mcp_oauth_tokens SET revoked_at = now()
-      WHERE client_id = $1 AND revoked_at IS NULL AND (access_hash = $2 OR refresh_hash = $2)`, [clientId, tokenHash]);
-  return (r.rowCount ?? 0) > 0;
+      WHERE client_id = $1 AND revoked_at IS NULL AND (access_hash = $2 OR refresh_hash = $2) RETURNING id, user_id, client_name`, [clientId, tokenHash]);
+  return r.rows;
 }
 
 export async function listGrants(userId: string): Promise<TokenRow[]> {
@@ -161,6 +162,16 @@ export async function listGrants(userId: string): Promise<TokenRow[]> {
     `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at
        FROM app.mcp_oauth_tokens WHERE user_id = $1 AND revoked_at IS NULL AND refresh_expires_at > now()
       ORDER BY created_at DESC`, [userId]);
+  return rows;
+}
+
+/** Alle verbindingen van de laatste `dagen`, ook ingetrokken of verlopen (geschiedenis op /agents). */
+export async function listGrantHistory(userId: string, dagen = 90): Promise<TokenRow[]> {
+  const { rows } = await q(
+    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at
+       FROM app.mcp_oauth_tokens WHERE user_id = $1 AND (revoked_at IS NULL OR revoked_at > now() - make_interval(days => $2))
+        AND (refresh_expires_at > now() - make_interval(days => $2))
+      ORDER BY created_at DESC LIMIT 100`, [userId, dagen]);
   return rows;
 }
 

@@ -7,6 +7,7 @@ import AiToestemmingen, { AiStopKnop } from './AiToestemmingen';
 import { deriveExtState, EXT_TEXT, EXTENSION_ID_RE, sendToExtension, type ExtAction } from './extensie-toestand';
 import { clearWelcome, welcomePending } from './extension-welcome-store';
 import { agentLogo, Help, IconButton, Logo, StatusDot } from './mcp-ui';
+import { foutTekst } from './agenten/fouten';
 import ExtensionWizard from './ExtensionWizard';
 import './agents-panel.css';
 
@@ -43,8 +44,13 @@ const browserName = () => {
  *  - 'all': beide (oude gedrag).
  * Na het installeren opent de extensie de pagina zelf (?extension=welcome) en loopt de gebruiker stap voor stap door de activering heen.
  */
-export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { tr: Tr; part?: 'install' | 'agent' | 'all'; agentId?: string }) {
-  const [agents, setAgents] = useState<BrowserAgent[]>([]);
+export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agentsExtern, reloadExtern, compact = false, versie = 0 }: {
+  tr: Tr; part?: 'install' | 'agent' | 'all'; agentId?: string;
+  /** Op /agents levert de pagina de agents (één poller voor de hele pagina) en herlaadt zelf; dan geen eigen polling hier. */
+  agentsExtern?: BrowserAgent[]; reloadExtern?: () => Promise<void>; compact?: boolean; versie?: number;
+}) {
+  const [eigenAgents, setAgents] = useState<BrowserAgent[]>([]);
+  const agents = agentsExtern ? agentsExtern.filter((a) => a.platform === 'browser') : eigenAgents;
   const [presence, setPresence] = useState<Presence>('checking');
   const [paired, setPaired] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -59,16 +65,21 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
   const [test, setTest] = useState<SelfTest | null>(null);
   const rootRef = useRef<HTMLElement | null>(null);
 
+  const extern = !!agentsExtern;
+  const reloadRef = useRef(reloadExtern); reloadRef.current = reloadExtern;
   const load = useCallback(async () => {
+    if (extern) { await reloadRef.current?.(); return; }
     const res = await api.post('/api/owner/agents/list', sessionBody());
     setAgents(((res.data?.agents ?? []) as BrowserAgent[]).filter((a) => a.platform === 'browser'));
-  }, []);
+  }, [extern]);
 
-  useEffect(() => { void load().catch(() => undefined); }, [load]);
+  useEffect(() => { if (!extern) void load().catch(() => undefined); }, [load, extern]);
   useEffect(() => {
+    if (extern) return;
     const timer = window.setInterval(() => { if (!document.hidden) void load().catch(() => undefined); }, 10000);
     return () => window.clearInterval(timer);
-  }, [load]);
+  }, [load, extern]);
+  const onGrants = useCallback((active: number, blocked: boolean) => setGrantInfo((g) => (g.active === active && g.blocked === blocked ? g : { active, blocked })), []);
   useEffect(() => {
     if (part === 'agent') return;
     fetch('/downloads/extension-version.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : {})).then((j) => setRelease(j as Release)).catch(() => undefined);
@@ -136,8 +147,11 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
 
   const setEnabled = async (a: BrowserAgent, on: boolean) => {
     setBusy(true); setNotice('');
-    try { await api.post(`/api/owner/agents/${a.id}/browser-enabled`, { ...sessionBody(), enabled: on }); await load(); }
-    catch { setNotice(tr('Не вдалося змінити активацію.', 'Activering wijzigen mislukt.')); }
+    try {
+      await api.post(`/api/owner/agents/${a.id}/browser-enabled`, { ...sessionBody(), enabled: on }); await load();
+      setNotice(on ? tr(`ШІ може користуватися браузером «${a.name}» (поки ви ввійшли на сайті).`, `De AI mag browser «${a.name}» gebruiken (zolang u op de site bent aangemeld).`) : tr(`ШІ більше не користується браузером «${a.name}».`, `De AI gebruikt browser «${a.name}» niet meer.`));
+    }
+    catch (e) { setNotice(foutTekst(e, tr, ['Не вдалося змінити активацію', 'Activering wijzigen mislukt'])); }
     setBusy(false);
   };
 
@@ -155,7 +169,7 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
   const revoke = async (a: BrowserAgent) => {
     setConfirm(null); setBusy(true); setNotice('');
     try { await api.post(`/api/owner/agents/${a.id}/revoke`, sessionBody()); await load(); setNotice(tr('Браузер відключено. Розширення покаже «Не підключено».', 'Browser losgekoppeld. De extensie toont "Niet verbonden".')); }
-    catch { setNotice(tr('Не вдалося відкликати.', 'Intrekken mislukt.')); }
+    catch (e) { setNotice(foutTekst(e, tr, ['Не вдалося відкликати', 'Intrekken mislukt'])); }
     setBusy(false);
   };
 
@@ -174,8 +188,8 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
     const state: 'on' | 'wait' | 'off' = !a.enabled ? 'off' : armed(a) ? 'on' : 'wait';
     const stateText = state === 'on' ? tr('ШІ активний (вхід підтверджено)', 'AI actief (aanmelding bevestigd)') : state === 'wait' ? tr('очікує входу на сайті', 'wacht op aanmelding op de site') : tr('ШІ вимкнено', 'AI uit');
     return (
-      <article key={a.id} className='hub-agent mcp-browser' data-browser-agents='1' data-device={a.id}>
-        <div className='hub-agent-head'>
+      <article key={a.id} className={`hub-agent mcp-browser${compact ? ' is-compact' : ''}`} data-browser-agents='1' data-device={a.id}>
+        {compact ? null : <div className='hub-agent-head'>
           <Logo kind={agentLogo(a)} size={40} label={a.name} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2>{a.name}</h2>
@@ -183,7 +197,7 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
           </div>
           <span className={`hub-pill ${a.status === 'connected' ? 'ok' : 'off'}`}><StatusDot state={a.status === 'connected' ? 'on' : 'off'} label={a.status === 'connected' ? tr('підключено', 'verbonden') : tr('не в мережі', 'offline')} />{a.status === 'connected' ? tr('підключено', 'verbonden') : tr('не в мережі', 'offline')}</span>
           <span className={`hub-pill ${state === 'on' ? 'ok' : state === 'wait' ? 'warn' : 'off'}`} data-browser-state={state}>{stateText}</span>
-        </div>
+        </div>}
 
         <div className='hub-switch'>
           <span className='hub-switch-text'>
@@ -223,9 +237,9 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
             </div>
           );
         })()}
-        <AiToestemmingen tr={tr} agentId={a.id} platform='browser' onChange={(active, blocked) => setGrantInfo({ active, blocked })} />
+        <AiToestemmingen tr={tr} agentId={a.id} platform='browser' onChange={onGrants} versie={versie} />
 
-        {confirm === a.id ? (
+        {compact ? null : confirm === a.id ? (
           <div className='hub-confirm' role='alertdialog' aria-label={tr('Підтвердження відключення', 'Bevestig loskoppelen')}>
             <span>{tr('Відключити цей браузер? ШІ більше не бачитиме ваші сторінки.', 'Deze browser loskoppelen? De AI ziet uw pagina\'s dan niet meer.')}</span>
             <IconButton tone='danger' icon={<Trash2 />} disabled={busy} onClick={() => void revoke(a)}>{tr('Так, відключити', 'Ja, loskoppelen')}</IconButton>
@@ -234,7 +248,7 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId }: { t
         ) : (
           <div className='hub-actions'><IconButton tone='danger' icon={<Trash2 />} disabled={busy} onClick={() => setConfirm(a.id)}>{tr('Відключити браузер', 'Browser loskoppelen')}</IconButton></div>
         )}
-        {notice ? <p className='hub-note' role='status'>{notice}</p> : null}
+        {notice ? <p className='hub-note' role='status' data-ext-notice='1'>{notice}</p> : null}
       </article>
     );
   };

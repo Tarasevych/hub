@@ -606,3 +606,99 @@ step-up).
 **E2E.** `tests/e2e/herstelcodes.e2e.ts`: step-up met oude `auth_time` maar vers `iat` → codes gemaakt; downloaden,
 kopiëren, afdrukken, bevestigen; code gebruiken in het venster (andere sessie) → doorgestreept, teller 9; intrekken →
 onbruikbaar; ander account → melding in het venster; oud `iat` → melding.
+
+### 13.9 mcp.*/agents opnieuw opgezet (GitHub-stijl) en de losse «RATE_LIMITED» boven de titel
+
+**Oorzaak van «RATE_LIMITED».** Een renderlus op de oude agentenpagina. `AiToestemmingen` laadde
+`/api/owner/ai/grants/list` in een `useEffect` met `onChange` als afhankelijkheid. De ouder
+(`BrowserExtensionPanel`/`McpAgentsHub`) gaf bij elke render een nieuwe `onChange` mee en zette daarin state. Dat gaf
+een nieuwe render, een nieuwe `onChange` en een nieuwe aanvraag, zonder einde: met een browseragent open waren dat
+honderden aanvragen per minuut. De algemene limiet (`API_RATE_LIMIT_PER_MIN`, 600/min per IP) gaf daarna 429
+`{error:'RATE_LIMITED'}` op álle `/api/*` van die browser, ook op `/api/mcp/tokens/list` en `/api/mcp/permissions`.
+Die twee werden geladen door `McpServiceView` (`run('agents', loadTokens)`). Die toonde de kale foutcode in
+`<p class="mcp-lead">{error}</p>` boven de titel.
+
+**Herstel.**
+- `onChange` loopt via een ref. Laden hangt alleen af van `agentId`/`versie`, en state verandert alleen als de waarde
+  echt verandert.
+- `BrowserExtensionPanel.onGrants` is een stabiele `useCallback`.
+- Er is nog één poller (apparaten en wachtende acties, 5 s). De rest laadt bij openen, na een actie en daarna rustig
+  (60 s, alleen een zichtbaar tabblad). Het journaal ververst elke 30 s, alleen op het open tabblad.
+- `McpServiceView` laadt voor «agents» niets meer zelf en toont fouten via `foutTekst()` (`src/agenten/fouten.ts`).
+  Bij een 429 staat er een zin met de wachttijd, zonder code. Voor andere fouten staat de code klein erachter.
+- De e2e-test meet dit: met een apparaat open komen er in 8 s hoogstens 3 aanvragen naar `grants/list`.
+
+**De pagina** (`src/agenten/`, de ingang `src/McpAgentsHub.tsx` blijft) heeft deze tabbladen, adresseerbaar via de
+hash:
+
+| Hash | Tabblad |
+|---|---|
+| `#overzicht` | Огляд / Overzicht |
+| `#ai` | Підключені ШІ / Verbonden AI |
+| `#apparaten` | Пристрої й браузери / Apparaten en browsers |
+| `#tokens` | Токени й двері / Tokens en deuren |
+| `#journaal` | Журнал / Logboek |
+
+- Een open rij staat ook in de hash, bijvoorbeeld `#apparaten/dev:<id>` of `#ai/oauth:<id>`.
+- Oude adressen worden omgezet:
+
+  | Oud adres | Nieuw adres |
+  |---|---|
+  | `#overview`, `#pending` | `#overzicht` |
+  | `#claude` | `#ai` |
+  | `#tools` | `#ai/hulpmiddelen` |
+  | `#extension` | `#apparaten/extensie` |
+  | `#doors` | `#tokens` |
+  | `#pair` | `#apparaten/koppelen` |
+  | `#dev:<id>` | `#apparaten/dev:<id>` |
+
+- `?extension=welcome` blijft werken.
+- Rijen zijn standaard dicht: titel, één statusregel en een knop rechts. Open zie je alle technische gegevens.
+- Acties die iets weghalen, vragen eerst om een bevestiging op de pagina (geen `window.confirm`). Daarna volgen een
+  spinner en een melding met wat er veranderde en hoe laat.
+- Ingetrokken of losgekoppelde items blijven zichtbaar in een dichte groep «Відкликані / Відключені» (90 dagen).
+
+**Nieuwe server-endpoints** (eigenaar, `ownerGate`):
+- `POST /api/owner/agents/overzicht` geeft:
+  - OAuth-verbindingen met hun status (`active`/`revoked`/`expired`);
+  - losgekoppelde agents van de laatste 90 dagen, met hun reden (`user`/`repaired`/`blocked`);
+  - het aantal toestemmingen per agent;
+  - de MCP-URL.
+- `POST /api/owner/agents/journaal` met body `{soort, onderwerp, voor, limit}` geeft één tijdlijn uit `app.audit`.
+  - De regels gaan door `JOURNAAL_ACTIES` en `journaalItem()`: velden die op een geheim lijken (token, hash, cookie,
+    nonce, code, key…) vallen weg, en het IP staat er alleen als een hash van 12 tekens.
+  - Verlopen toestemmingen en verlopen OAuth-verbindingen zijn **afgeleid**, niet opgeslagen. Ze staan alleen op de
+    eerste pagina (90 dagen).
+- `auditLijst()` kent nu een filter `acties: string[]`.
+- `POST /api/owner/agents/:id/revoke` geeft nu `revokedAt` terug.
+
+**Nieuwe of aangevulde auditregels:**
+
+| Actie | Wanneer of wat |
+|---|---|
+| `owner.mcp.grant.connected` | Een OAuth-client krijgt tokens. |
+| `owner.mcp.grant.revoked` | Nu met de clientnaam en een reden: `user`, `client` (de client trok zelf in) of `refresh_reuse` (automatisch, bij hergebruik van een refresh-token). |
+| `owner.agent.updated` | Een pc-agent of extensie meldt een andere versie bij het verbinden (`from` → `to`). |
+| `owner.agent.paired` | Nu met naam, versie en `replacedIds`: een herinstallatie is zichtbaar als «Перевстановлено». |
+| `owner.agent.revoked` | Nu met naam, platform, versie en `reason: 'user'`. In de tabel staat nu ook `revoke_reason = 'user'`. |
+| `mcp_console_token_revoked` | Nu met naam en prefix. |
+
+**Beperkingen.**
+- Het verwijderen van de browserextensie ziet de server niet. Je merkt het pas als het token wordt ingetrokken of
+  geweigerd, of als de extensie offline blijft.
+- Het land wordt niet opgeslagen, alleen de IP-hash.
+- «Відкликати всі» trekt de items één voor één in via de bestaande endpoints (er is geen endpoint dat alles in één
+  keer doet). Lukt er één niet, dan stopt het daar. De lijst wordt bijgewerkt, en wat al was ingetrokken staat bij
+  «Відкликані».
+
+**Tests.**
+- Eenheidstest: `tests/eenheid/agenten-journaal.test.ts`. Die toetst het weglaten van geheimen, de onderwerpen, het
+  `acties`-filter, de geschiedenis met reden, de foutteksten en de broncontrole tegen de lus.
+- E2E: `tests/e2e/agenten.e2e.ts`. Die toetst:
+  - tabbladen en oude deep links;
+  - dichte rijen en uitklappen;
+  - intrekken (bevestigen, spinner, melding, groep «Відкликані», zonder herladen);
+  - loskoppelen met de geschiedenis «Перевстановлено»;
+  - het journaal met filters;
+  - een nagebootste 429 (vriendelijke tekst, nergens `RATE_LIMITED`);
+  - 390 px zonder overloop, en licht en donker.

@@ -15,6 +15,7 @@
 // Het token of ticket staat nooit in de URL (URL's komen in logs van proxies terecht).
 //
 // Let op: de verbindingen leven in het geheugen van dit proces (één app-proces; zie RUNBOOK).
+import { auditToevoegen } from '../server/platform/audit';
 import type { IncomingMessage, Server } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { WebSocketServer, type WebSocket } from 'ws';
@@ -185,6 +186,11 @@ export function onConnection(ws: WebSocket): void {
       live.get(agentId)?.ws.close(4409, 'replaced by new connection');
       live.set(agentId, { ws, userId: agent.user_id, alive: true });
       const caps = msg.capabilities && typeof msg.capabilities === 'object' ? msg.capabilities : undefined;
+      const nieuweVersie = typeof msg.version === 'string' ? msg.version.slice(0, 40) : '';
+      // Journaal op /agents: «оновлено з x до y» wanneer de agent of extensie met een andere versie terugkomt.
+      if (nieuweVersie && agent.agent_version && agent.agent_version !== nieuweVersie) {
+        auditToevoegen({ ownerId: agent.user_id, actorId: null, action: 'owner.agent.updated', type: 'ai', result: 'success', details: { agentId: agent.id, name: agent.name, platform: agent.platform, from: agent.agent_version, to: nieuweVersie } }).catch(() => undefined);
+      }
       await store.setAgentStatus(agentId, 'connected', caps, typeof msg.version === 'string' ? msg.version : undefined);
       const eff = await grants.effectiveCaps(agent.user_id, agent.id).catch(() => ({ epoch: 0, blocked: false, caps: [] }));
       ws.send(JSON.stringify({ t: 'ready', agentId, epoch: eff.epoch }));

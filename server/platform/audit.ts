@@ -65,6 +65,7 @@ export async function auditToevoegen(g: AuditGebeurtenis): Promise<{ id: string;
 
 export type AuditFilter = {
   ownerId?: string; actorId?: string; type?: string; action?: string; ipHash?: string; device?: string; service?: string;
+  /** exacte acties (één van) */ acties?: string[];
   van?: number; tot?: number; /** cursor: id van de laatst getoonde rij (ouder ophalen) */ voor?: string; limit?: number;
 };
 
@@ -77,6 +78,7 @@ export async function auditLijst(f: AuditFilter = {}): Promise<{ items: AuditRij
   if (f.actorId) voeg('actor_id = ?', f.actorId);
   if (f.type) voeg('type = ?', f.type);
   if (f.action) { if (f.action.endsWith('*')) voeg('action LIKE ?', `${f.action.slice(0, -1).replace(/[%_\\]/g, '\\$&')}%`); else voeg('action = ?', f.action); }
+  if (f.acties?.length) voeg('action = ANY(?::text[])', f.acties.map((a) => tekst(a, 120)));
   if (f.ipHash) voeg('ip_hash = ?', f.ipHash);
   if (f.device) voeg('device = ?', f.device);
   if (f.service) voeg('service = ?', f.service);

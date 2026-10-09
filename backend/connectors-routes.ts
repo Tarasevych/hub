@@ -13,7 +13,39 @@ import * as store from './connectors-store';
 import { BROWSER_AUTO_APPROVABLE, BROWSER_DEFAULT_AUTO, BROWSER_TYPES, enabledTypes } from './browser-capabilities';
 import { defaultChatDeps, runChat, sanitizeHistory } from './connectors-chat';
 import { callTool, listTools } from './connectors-tools';
-import { listUserGrants } from './mcp-connector';
+import { listUserGrantHistory, listUserGrants, RESOURCE as MCP_URL } from './mcp-connector';
+
+// ---- journaal (/agents → Журнал) ----
+export const JOURNAAL_SOORTEN = ['ai', 'token', 'apparaat', 'browser', 'toestemming', 'noodstop', 'hulpmiddelen'] as const;
+export type JournaalSoort = typeof JOURNAAL_SOORTEN[number];
+/** Welke auditacties in het journaal komen, met hun soort. Alles wat hier niet staat (mail, inloggen, …) blijft buiten deze pagina. */
+export const JOURNAAL_ACTIES: Record<string, JournaalSoort> = {
+  'owner.mcp.grant.approved': 'ai', 'owner.mcp.grant.denied': 'ai', 'owner.mcp.grant.connected': 'ai', 'owner.mcp.grant.revoked': 'ai',
+  mcp_console_token_issued: 'token', mcp_console_token_revoked: 'token',
+  'owner.agent.paired': 'apparaat', 'owner.agent.revoked': 'apparaat', 'owner.agent.updated': 'apparaat', 'owner.agent.policy': 'apparaat', 'owner.agent.pairing_code': 'apparaat',
+  'owner.browser.enabled': 'browser', 'owner.browser.disabled': 'browser',
+  ai_grant_added: 'toestemming', ai_grant_always_enabled: 'toestemming', ai_grants_revoked: 'toestemming', ai_capabilities_changed: 'toestemming',
+  ai_stop_all: 'noodstop', ai_user_blocked: 'noodstop', ai_user_unblocked: 'noodstop',
+  'owner.mcp.tool.setting': 'hulpmiddelen', 'owner.mcp.tool.setting_all': 'hulpmiddelen',
+};
+export type JournaalItem = {
+  id: string; at: number; actie: string; soort: JournaalSoort; resultaat: string;
+  onderwerp: { id: string; naam: string; soort: 'apparaat' | 'ai' | 'token'; platform: string | null } | null;
+  details: Record<string, unknown>; ipHash: string | null; apparaat: string | null; dienst: string | null;
+};
+const GEHEIM = /(token(?!Id)|secret|cookie|proof|nonce|pkce|authorization|password|hash|code(?!s)|key)/i;
+/** Eén auditregel → journaalregel met leesbaar onderwerp. Geheim-achtige velden gaan er nooit uit; ip alleen als korte hash. */
+export function journaalItem(r: { id: string; action: string; result: string; createdAt: number; details?: Record<string, unknown>; ipHash?: string | null; device?: string | null; service?: string | null },
+  namen: { agents: Map<string, { name: string; platform: string | null }>; tokens: Map<string, string>; oauth: Map<string, string> }): JournaalItem {
+  const d = (r.details || {}) as Record<string, unknown>;
+  const s = (v: unknown) => (typeof v === 'string' ? v : '');
+  let onderwerp: JournaalItem['onderwerp'] = null;
+  if (s(d.agentId)) { const a = namen.agents.get(s(d.agentId)); onderwerp = { id: s(d.agentId), naam: a?.name || s(d.name), soort: 'apparaat', platform: a?.platform ?? (s(d.platform) || null) }; }
+  else if (r.action.startsWith('owner.mcp.grant.') && s(d.grantId)) onderwerp = { id: s(d.grantId), naam: namen.oauth.get(s(d.grantId)) || s(d.clientName), soort: 'ai', platform: null };
+  else if (r.action.startsWith('mcp_console_token_') && s(d.tokenId)) onderwerp = { id: s(d.tokenId), naam: namen.tokens.get(s(d.tokenId)) || s(d.name), soort: 'token', platform: null };
+  const details = Object.fromEntries(Object.entries(d).filter(([k]) => !GEHEIM.test(k)));
+  return { id: `audit:${r.id}`, at: r.createdAt, actie: r.action, soort: JOURNAAL_ACTIES[r.action] ?? 'apparaat', resultaat: r.result, onderwerp, details, ipHash: r.ipHash ? String(r.ipHash).slice(0, 12) : null, apparaat: r.device ?? null, dienst: r.service ?? null };
+}
 
 type SessionAuth = { errorCode: string } | { user: { id: string; email: string; role: string; status: string }; service: string };
 type Deps = {
@@ -77,6 +109,10 @@ export function createAgentRoutes(deps: Deps) {
     armedUntil: a.armed_until ? new Date(a.armed_until).getTime() : null,
     lastSeenAt: a.last_seen_at ? new Date(a.last_seen_at).getTime() : null,
     createdAt: new Date(a.created_at).getTime(),
+    // Technische details voor /agents (uitklapbare rij): versie, tokentermijn en een ingekorte installatie-id (nooit het token).
+    version: a.agent_version ?? null,
+    tokenExpiresAt: a.token_expires_at ? new Date(a.token_expires_at).getTime() : null,
+    pairingId: a.pairing_id ? `${String(a.pairing_id).slice(0, 6)}…` : null,
   });
 
   return {
@@ -138,7 +174,7 @@ export function createAgentRoutes(deps: Deps) {
       for (const old of replaced) disconnectAgent(old);
       // Een nieuwe koppeling start met alleen lezen (30 dagen); meer geeft de gebruiker zelf (presets of per mogelijkheid).
       await grants.applyPreset(userId, 'pairing', agent.id, 'spostericach').catch(() => undefined);
-      await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, platform, replaced: replaced.length, pairingId: pairingId ? 'ja' : 'nee' } });
+      await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, name, platform, version, replaced: replaced.length, replacedIds: replaced, pairingId: pairingId ? 'ja' : 'nee' } });
       // userId: voor de accountclaim (<meta name="mjn-account">): de extensie weigert opdrachten op een pagina van een ander account.
       return json({ agentId: agent.id, userId, token, commandKey, tokenExpiresAt: agent.token_expires_at ? new Date(agent.token_expires_at).getTime() : null });
     }],
@@ -180,6 +216,70 @@ export function createAgentRoutes(deps: Deps) {
         ...siteEventsFromAudit(audit),
       ].sort((x, y) => Number(y.createdAt) - Number(x.createdAt)).slice(0, 140);
       return deps.respond({ events, now: Date.now() });
+    }],
+
+    // Pagina /agents: alles wat niet al in agents/list zit, in één verzoek: OAuth-verbindingen (ook ingetrokken/verlopen, 90 dagen),
+    // losgekoppelde apparaten (90 dagen) en per apparaat de geldige toestemmingen. Alleen bij openen en na een actie, niet in een lus.
+    'POST /api/owner/agents/overzicht': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const userId = auth.user.id;
+      const [oauth, weg, lijst] = await Promise.all([listUserGrantHistory(userId), store.listRevokedAgents(userId), grants.listGrants(userId)]);
+      const ms = (v: Date | null | undefined) => (v ? new Date(v).getTime() : null);
+      const nu = Date.now();
+      const tellers: Record<string, { actief: number; altijd: number; eersteEinde: number | null }> = {};
+      for (const g of lijst) {
+        const eind = new Date(g.expires_at).getTime();
+        if (g.revoked_at || eind <= nu) continue;
+        const t = (tellers[g.agent_id] ??= { actief: 0, altijd: 0, eersteEinde: null });
+        t.actief += 1; if (g.always) t.altijd += 1;
+        t.eersteEinde = t.eersteEinde === null ? eind : Math.min(t.eersteEinde, eind);
+      }
+      return deps.respond({
+        oauth,
+        losgekoppeld: weg.map((a) => ({ id: a.id, name: a.name, platform: a.platform, version: a.agent_version, createdAt: ms(a.created_at), revokedAt: ms(a.revoked_at), lastSeenAt: ms(a.last_seen_at), reason: a.revoke_reason || 'user', pairingId: a.pairing_id ? `${String(a.pairing_id).slice(0, 6)}…` : null })),
+        toestemmingen: tellers,
+        mcpUrl: MCP_URL,
+        now: nu,
+      });
+    }],
+
+    // Journaal op /agents: één tijdlijn uit app.audit met alleen gebeurtenissen rond agents (tokens, apparaten, extensie, toestemmingen,
+    // AI aan/uit, noodstop), plus verlopen toestemmingen/verbindingen (die schrijven zelf geen auditregel). Filters: soort en onderwerp.
+    'POST /api/owner/agents/journaal': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const userId = auth.user.id;
+      const b = deps.body(ctx.body);
+      const soort = typeof b.soort === 'string' && JOURNAAL_SOORTEN.includes(b.soort as JournaalSoort) ? b.soort as JournaalSoort : '';
+      const onderwerp = typeof b.onderwerp === 'string' ? b.onderwerp.slice(0, 80) : '';
+      const voor = typeof b.voor === 'string' && /^\d{1,19}$/.test(b.voor) ? b.voor : undefined;
+      const limit = Math.max(5, Math.min(100, Number(b.limit) || 50));
+      const acties = Object.keys(JOURNAAL_ACTIES).filter((a) => !soort || JOURNAAL_ACTIES[a] === soort);
+      const [audit, namen, alle, oauth] = await Promise.all([
+        auditLijst({ ownerId: userId, acties, voor, limit: onderwerp ? 300 : limit }),
+        store.journaalNamen(userId),
+        voor || (soort && soort !== 'toestemming') ? Promise.resolve([]) : grants.listGrants(userId, { includeInactive: true }),
+        voor || (soort && soort !== 'ai') ? Promise.resolve([]) : listUserGrantHistory(userId),
+      ]);
+      const nu = Date.now();
+      let items = audit.items.map((r) => journaalItem(r, namen));
+      if (!voor) {
+        // Verlopen (niet ingetrokken) in de laatste 90 dagen: als gebeurtenis op het moment van verlopen.
+        for (const g of alle) {
+          const eind = new Date(g.expires_at).getTime();
+          if (g.revoked_at || eind > nu || eind < nu - 90 * 86_400_000) continue;
+          const a = namen.agents.get(g.agent_id);
+          items.push({ id: `verlopen:${g.id}`, at: eind, actie: 'ai_grant_expired', soort: 'toestemming', resultaat: 'ok', onderwerp: { id: g.agent_id, naam: a?.name ?? '', soort: 'apparaat', platform: a?.platform ?? null }, details: { grantId: g.id, capability: g.capability, always: g.always, preset: g.preset }, ipHash: null, apparaat: null, dienst: null });
+        }
+        for (const g of oauth) {
+          if (g.status !== 'expired' || g.expiresAt < nu - 90 * 86_400_000) continue;
+          items.push({ id: `verlopen-oauth:${g.id}`, at: g.expiresAt, actie: 'owner.mcp.grant.expired', soort: 'ai', resultaat: 'ok', onderwerp: { id: g.id, naam: g.clientName, soort: 'ai', platform: null }, details: { grantId: g.id, clientName: g.clientName, scope: g.scope }, ipHash: null, apparaat: null, dienst: null });
+        }
+      }
+      if (onderwerp) items = items.filter((x) => x.onderwerp?.id === onderwerp);
+      items.sort((x, y) => y.at - x.at);
+      return deps.respond({ items: items.slice(0, limit), nextCursor: audit.nextCursor ?? null, soorten: JOURNAAL_SOORTEN, now: nu });
     }],
 
     // Welke opdrachttypes direct mogen (zonder klik). Schrijven, uitvoeren, Docker-beheer, klikken en typen kunnen nooit automatisch.
@@ -326,9 +426,10 @@ export function createAgentRoutes(deps: Deps) {
     'POST /api/owner/agents/:id/revoke': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
+      const agent = await store.getAgent(auth.user.id, ctx.params.id);
       const ok = await store.revokeAgent(auth.user.id, ctx.params.id);
-      if (ok) { disconnectAgent(ctx.params.id); await deps.audit(auth.user.id, 'owner.agent.revoked', 'success', { agentId: ctx.params.id }); }
-      return deps.respond({ ok });
+      if (ok) { disconnectAgent(ctx.params.id); await deps.audit(auth.user.id, 'owner.agent.revoked', 'success', { agentId: ctx.params.id, name: agent?.name ?? '', platform: agent?.platform ?? null, version: agent?.agent_version ?? null, reason: 'user' }); }
+      return deps.respond({ ok, revokedAt: ok ? Date.now() : null });
     }],
 
     // Opdracht voor een agent (bijv. vanuit de UI of een ander onderdeel van de app).

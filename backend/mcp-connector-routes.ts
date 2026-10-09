@@ -155,8 +155,9 @@ export function createMcpConnectorRoutes(deps: Deps) {
     'POST /api/owner/mcp-connector/grants/:id/revoke': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
+      const naam = (await c.listUserGrants(auth.user.id)).find((g) => g.id === ctx.params.id)?.clientName ?? '';
       const ok = await c.revokeUserGrant(auth.user.id, ctx.params.id);
-      if (ok) await deps.audit(auth.user.id, 'owner.mcp.grant.revoked', 'success', { grantId: ctx.params.id });
+      if (ok) await deps.audit(auth.user.id, 'owner.mcp.grant.revoked', 'success', { grantId: ctx.params.id, clientName: naam, reason: 'user' });
       return deps.respond({ ok });
     }],
   };
