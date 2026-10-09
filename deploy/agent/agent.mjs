@@ -14,7 +14,7 @@ import { promises as fs, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import os from 'node:os';
 import path from 'node:path';
 
-const VERSION = '0.3.0';
+const VERSION = '0.3.1';
 const CONFIG_PATH = process.env.HUB_AGENT_CONFIG ?? path.join(os.homedir(), '.hub-agent', 'config.json');
 const MAX_READ = 2 * 1024 * 1024;
 const MAX_WRITE = 5 * 1024 * 1024;
@@ -29,13 +29,13 @@ function saveConfig(cfg) {
 }
 
 function parseArgs(argv) {
-  const out = { _: [], root: [] };
+  const out = { _: [], root: [], 'readonly-root': [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (!a.startsWith('--')) { out._.push(a); continue; }
     const key = a.slice(2);
     const val = argv[++i];
-    if (key === 'root') out.root.push(val); else out[key] = val;
+    if (key === 'root' || key === 'readonly-root') out[key].push(val); else out[key] = val;
   }
   return out;
 }
@@ -43,8 +43,10 @@ function parseArgs(argv) {
 // ---------- pair ----------
 async function pair(args) {
   if (!args.server || !args.code) die('usage: pair --server <url> --code <CODE> [--name N] [--root DIR]... [--allow cmd1,cmd2]');
-  const roots = args.root.map((r) => path.resolve(r));
-  if (!roots.length) die('вкажіть хоча б одну дозволену папку: --root <DIR>');
+  // --readonly-root: ook een root, maar alleen lezen/tonen (bv. de back-ups op R:\ — een agent mag ze nooit wijzigen).
+  const readonlyRoots = args['readonly-root'].map((r) => path.resolve(r));
+  const roots = [...args.root.map((r) => path.resolve(r)), ...readonlyRoots];
+  if (!roots.length) die('вкажіть хоча б одну дозволену папку: --root <DIR> (або --readonly-root <DIR>)');
   const allow = (args.allow ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const name = args.name ?? os.hostname();
   const server = args.server.replace(/\/$/, '');
@@ -57,17 +59,17 @@ async function pair(args) {
   pairingId = pairingId || `pc-${randomUUID()}`;
   const res = await fetch(`${server}/api/owner/agents/pair`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code: args.code, name, platform: `${os.platform()}-${os.arch()}`, pairingId, version: VERSION, capabilities: capabilities(roots, allow) }),
+    body: JSON.stringify({ code: args.code, name, platform: `${os.platform()}-${os.arch()}`, pairingId, version: VERSION, capabilities: capabilities(roots, allow, readonlyRoots) }),
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) die(`pairing failed: ${body.error ?? res.status}`);
   if (!body.commandKey) die('сервер не надав ключ підпису команд; оновіть сервер (потрібна версія з підписаними командами)');
-  saveConfig({ server, agentId: body.agentId, token: body.token, commandKey: body.commandKey, tokenExpiresAt: body.tokenExpiresAt ?? null, pairingId, roots, allow });
+  saveConfig({ server, agentId: body.agentId, token: body.token, commandKey: body.commandKey, tokenExpiresAt: body.tokenExpiresAt ?? null, pairingId, roots, readonlyRoots, allow });
   console.log(`Paired. Конфіг: ${CONFIG_PATH}\nТепер запустіть: node agent.mjs run`);
 }
 
 // De lijst komt uit de handlers zelf, zodat hij nooit achterloopt op wat de agent kan.
-const capabilities = (roots, allow) => ({ version: VERSION, roots, allowCommands: allow, commands: Object.keys(handlers) });
+const capabilities = (roots, allow, readonlyRoots = []) => ({ version: VERSION, roots, readonlyRoots, allowCommands: allow, commands: Object.keys(handlers) });
 
 // ---------- opdrachten: alleen ondertekend, geen code-als-argument (audit H3) ----------
 /** Programma's die nooit op de allow-list mogen: een shell voert alles uit wat in een argument staat. */
@@ -110,9 +112,37 @@ const seenIds = new Set();
 // ---------- sandbox ----------
 const isWin = process.platform === 'win32';
 const norm = (p) => (isWin ? p.toLowerCase() : p);
+/** Eén afsluitend scheidingsteken. Een schijfwortel als `T:\` of `/` heeft er al één: `T:\` + `\` = `T:\\`,
+ *  waarop geen enkel pad begint. Dat was de oorzaak van «path outside allowed roots» voor elke submap van T:\. */
+const metSep = (p) => (p.endsWith(path.sep) ? p : p + path.sep);
+const binnen = (pad, root) => norm(metSep(pad)) === norm(metSep(root)) || norm(pad).startsWith(norm(metSep(root)));
 
-/** Шлях має лежати всередині root; symlink/`..` не дозволяють вийти назовні (перевіряється realpath). */
-async function safePath(cfg, p) {
+/**
+ * Plekken met sleutels en geheimen: nooit lezen, schrijven, tonen als inhoud of als werkmap, ook niet binnen een
+ * toegestane root (bv. T:\mijn-ruimte\geheim met de uitrolsleutel). Mappen gelden met alles eronder.
+ */
+const GEHEIME_MAPPEN = new Set(['geheim', 'geheimen', 'secrets', '.ssh', '.gnupg', '.hub-agent', '.aws', '.azure', '.kube', '.docker']);
+const GEHEIME_BESTANDEN = [
+  /\.(pem|key|p12|pfx|ppk|kdbx|jks|keystore|asc|gpg)$/i,
+  /^\.env(\..+)?$/i, /^geheimen\.env$/i, /^migratie\.env$/i,
+  /^id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$/i, /^known_hosts$/i, /^authorized_keys$/i,
+  /^uitrol-sleutel/i, /^recovery\.key/i, /^access-seal\.key$/i,
+  /^credentials(\.json)?$/i, /^config\.json$/i,
+];
+/** `config.json` alleen in `.hub-agent` geheim (daar staat het agenttoken); elders gewone projectbestanden. */
+function isGeheim(real) {
+  const delen = real.split(/[\\/]+/).filter(Boolean);
+  const naam = delen[delen.length - 1] || '';
+  const mappen = delen.slice(0, -1).map((d) => d.toLowerCase());
+  if (delen.some((d) => GEHEIME_MAPPEN.has(d.toLowerCase()))) return true;
+  return GEHEIME_BESTANDEN.some((re) => re.test(naam) && (re.source !== '^config\\.json$' || mappen.includes('.hub-agent')));
+}
+
+/**
+ * Шлях має лежати всередині root; symlink/`..` не дозволяють вийти назовні (перевіряється realpath).
+ * `schrijven`: alleen in roots die niet als alleen-lezen zijn gekoppeld (`--readonly-root`, bv. de back-ups op R:\).
+ */
+async function safePath(cfg, p, { schrijven = false } = {}) {
   if (typeof p !== 'string' || !p) throw new Error('path required');
   const abs = path.resolve(cfg.roots[0], p);
   let existing = abs;
@@ -124,9 +154,14 @@ async function safePath(cfg, p) {
     existing = parent;
   }
   const real = path.join(await fs.realpath(existing), ...tail);
+  if (isGeheim(real)) throw new Error('path is a protected secret location (keys, .env, geheim) and is never available to agents');
   for (const root of cfg.roots) {
     const rr = await fs.realpath(root).catch(() => root);
-    if (norm(real) === norm(rr) || norm(real).startsWith(norm(rr) + path.sep)) return real;
+    if (!binnen(real, rr)) continue;
+    if (schrijven && (cfg.readonlyRoots ?? []).some((ro) => norm(metSep(ro)) === norm(metSep(root)))) {
+      throw new Error('path is in a read-only root (the owner allowed reading only)');
+    }
+    return real;
   }
   throw new Error('path outside allowed roots');
 }
@@ -178,12 +213,13 @@ async function sampleCpuPercent(ms = 500) {
 // ---------- command handlers ----------
 const handlers = {
   async 'sys.info'(cfg) {
-    return { hostname: os.hostname(), platform: os.platform(), arch: os.arch(), uptime: os.uptime(), roots: cfg.roots, allowCommands: cfg.allow };
+    return { hostname: os.hostname(), platform: os.platform(), arch: os.arch(), uptime: os.uptime(), roots: cfg.roots, readonlyRoots: cfg.readonlyRoots ?? [], allowCommands: cfg.allow };
   },
   async 'fs.list'(cfg, { path: p = '.' }) {
     const dir = await safePath(cfg, p);
     const entries = await fs.readdir(dir, { withFileTypes: true });
-    return entries.slice(0, 2000).map((e) => ({ name: e.name, type: e.isDirectory() ? 'dir' : 'file' }));
+    // Geheime plekken blijven zichtbaar als naam (zodat de eigenaar ziet dat ze er zijn), maar met protected: true.
+    return entries.slice(0, 2000).map((e) => ({ name: e.name, type: e.isDirectory() ? 'dir' : 'file', ...(isGeheim(path.join(dir, e.name)) ? { protected: true } : {}) }));
   },
   async 'fs.read'(cfg, { path: p }) {
     const file = await safePath(cfg, p);
@@ -194,7 +230,7 @@ const handlers = {
   async 'fs.write'(cfg, { path: p, content }) {
     if (typeof content !== 'string') throw new Error('content must be a string');
     if (Buffer.byteLength(content) > MAX_WRITE) throw new Error('content too large');
-    const file = await safePath(cfg, p);
+    const file = await safePath(cfg, p, { schrijven: true });
     await fs.mkdir(path.dirname(file), { recursive: true });
     await fs.writeFile(file, content, 'utf8');
     return { path: file, bytes: Buffer.byteLength(content) };
@@ -253,7 +289,12 @@ const handlers = {
     const name = path.basename(command).replace(/\.(exe|cmd|bat)$/i, '');
     if (command !== path.basename(command) || !cfg.allow.includes(name)) throw new Error(`command "${command}" is not in the agent allow-list`);
     checkInterpreterArgs(name, args);
-    const dir = await safePath(cfg, cwd);
+    const dir = await safePath(cfg, cwd, { schrijven: true });
+    // Argumenten die naar een geheime plek wijzen (bv. `git -C T:\mijn-ruimte\geheim …`, `node x.js ..\.env`) weigeren.
+    for (const a of args) {
+      const waarde = a.includes('=') && a.startsWith('-') ? a.slice(a.indexOf('=') + 1) : a;
+      if (/[\\/]|^\.|\.[a-z0-9]{2,8}$/i.test(waarde) && isGeheim(path.resolve(dir, waarde))) throw new Error(`argument "${a}" points to a protected secret location`);
+    }
     return new Promise((resolve, reject) => {
       const child = spawn(command, args, { cwd: dir, shell: false, windowsHide: true });
       let out = ''; let err = ''; let truncated = false;
@@ -353,6 +394,47 @@ async function selftest(args) {
       && Array.isArray(m.disks) && m.disks.length > 0 && m.disks.every((d) => d.totalGB > 0 && d.usedPercent >= 0 && d.usedPercent <= 100),
       JSON.stringify([m.source, m.cpu, m.memory, m.disks.length]));
     check('capabilities noemt alle handlers (ook de nieuwe)', ['docker.ps', 'docker.manage', 'sys.metrics'].every((t) => capabilities([work], []).commands.includes(t)));
+
+    // ---- 0.3.1: schijfwortel als root (T:\ of /) en geheime plekken ----
+    const schijf = path.parse(work).root;   // 'T:\' op Windows, '/' elders: eindigt al op een scheidingsteken
+    const wcfg = { roots: [schijf], allow: [] };
+    check('root = schijfwortel: submap lezen en tonen werkt (was «path outside allowed roots»)',
+      (await handlers['fs.read'](wcfg, { path: path.join(work, 'a', 'b.txt') })).content === 'hoi'
+      && (await handlers['fs.list'](wcfg, { path: path.join(work, 'a') })).some((e) => e.name === 'b.txt'));
+    await fs.mkdir(path.join(work, 'geheim'), { recursive: true });
+    await fs.writeFile(path.join(work, 'geheim', 'uitrol-sleutel.txt'), 'x');
+    await fs.writeFile(path.join(work, 'sleutel.pem'), 'x');
+    await fs.writeFile(path.join(work, '.env'), 'X=1');
+    await fs.writeFile(path.join(work, 'recovery.key.pem'), 'x');
+    const GEHEIM = /protected secret/;
+    const weg = [];
+    for (const p of ['geheim/uitrol-sleutel.txt', 'geheim', 'sleutel.pem', '.env', 'recovery.key.pem', path.join(work, 'GEHEIM', 'uitrol-sleutel.txt')]) {
+      weg.push((await geweigerd(() => (p === 'geheim' ? handlers['fs.list'](cfg, { path: p }) : handlers['fs.read'](cfg, { path: p })), GEHEIM)) === true);
+    }
+    check('geheime plekken (map geheim, *.pem, .env, recovery.key*) nooit lezen of tonen, ook niet via de schijfwortel', weg.every(Boolean)
+      && (await geweigerd(() => handlers['fs.read'](wcfg, { path: path.join(work, 'sleutel.pem') }), GEHEIM)) === true, JSON.stringify(weg));
+    check('schrijven in een geheime plek geweigerd', (await geweigerd(() => handlers['fs.write'](cfg, { path: 'geheim/nieuw.txt', content: 'x' }), GEHEIM)) === true
+      && (await geweigerd(() => handlers['fs.write'](cfg, { path: '.env.local', content: 'x' }), GEHEIM)) === true);
+    const lijst = await handlers['fs.list'](cfg, { path: '.' });
+    check('fs.list: geheime namen gemarkeerd als protected, gewone niet',
+      lijst.find((e) => e.name === 'geheim')?.protected === true && lijst.find((e) => e.name === 'sleutel.pem')?.protected === true && !lijst.find((e) => e.name === 'som.js')?.protected);
+    check('exec: werkmap in geheim en argument naar een sleutel geweigerd',
+      (await geweigerd(() => handlers.exec(cfg, { command: 'node', args: ['som.js'], cwd: 'geheim' }), GEHEIM)) === true
+      && (await geweigerd(() => handlers.exec(cfg, { command: 'node', args: ['meta.js', './sleutel.pem'] }), /protected secret/)) === true
+      && (await geweigerd(() => handlers.exec(cfg, { command: 'node', args: ['meta.js', '--in=.env'] }), /protected secret/)) === true);
+    check('exec: gewone argumenten blijven werken', (await handlers.exec(cfg, { command: 'node', args: ['meta.js', 'notities.txt'] })).stdout.trim() === 'notities.txt');
+
+    // ---- 0.3.1: alleen-lezen root (--readonly-root) ----
+    const ro = buiten;
+    const rcfg = { roots: [work, ro], readonlyRoots: [ro], allow: ['node'] };
+    const RO = /read-only root/;
+    check('alleen-lezen root: lezen en tonen werkt', (await handlers['fs.read'](rcfg, { path: path.join(ro, 'secret.txt') })).content === 'geheim'
+      && (await handlers['fs.list'](rcfg, { path: ro })).some((e) => e.name === 'secret.txt'));
+    check('alleen-lezen root: schrijven en exec met die werkmap geweigerd',
+      (await geweigerd(() => handlers['fs.write'](rcfg, { path: path.join(ro, 'secret.txt'), content: 'weg' }), RO)) === true
+      && (await geweigerd(() => handlers.exec(rcfg, { command: 'node', args: ['-v'], cwd: ro }), RO)) === true
+      && (await fs.readFile(path.join(ro, 'secret.txt'), 'utf8')) === 'geheim');
+    check('alleen-lezen root: schrijven in de gewone root blijft werken', (await handlers['fs.write'](rcfg, { path: 'c.txt', content: 'ok' })).bytes === 2);
   } catch (e) {
     check('onverwachte fout', false, e.message);
   } finally {
@@ -387,13 +469,13 @@ function run() {
     const ws = new WebSocket(wsUrl);
     let pinger = null;
     ws.onopen = () => {
-      ws.send(JSON.stringify({ t: 'auth', ...(t ? { ticket: t } : { token: cfg.token }), version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow) }));
-      pinger = setInterval(() => { try { ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow) })); } catch { /* dicht */ } }, 20_000);
+      ws.send(JSON.stringify({ t: 'auth', ...(t ? { ticket: t } : { token: cfg.token }), version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots) }));
+      pinger = setInterval(() => { try { ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots) })); } catch { /* dicht */ } }, 20_000);
     };
     ws.onmessage = async (ev) => {
       let msg; try { msg = JSON.parse(ev.data); } catch { return; }
       if (msg.t === 'ready') { delay = 1000; console.log(`[agent] connected as ${msg.agentId}`); }
-      else if (msg.t === 'ping') ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow) }));
+      else if (msg.t === 'ping') ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots) }));
       else if (msg.t === 'stop') console.log('[agent] Стоп: усі дозволи відкликано на сайті');
       else if (msg.t === 'cmd') {
         console.log(`[agent] ${msg.type}`, JSON.stringify(msg.params).slice(0, 200));

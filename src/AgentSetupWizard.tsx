@@ -21,6 +21,7 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
   const [shell, setShell] = useState<Shell>(() => (detectOs() === 'windows' ? 'powershell' : 'bash'));
   const [name, setName] = useState(() => tr('Мій ПК', 'Mijn pc'));
   const [rootsText, setRootsText] = useState('');
+  const [readonlyText, setReadonlyText] = useState('');
   const [allow, setAllow] = useState<string[]>([]); // audit H3: standaard niets; de gebruiker kiest zelf (node en python mogen nooit code als tekst uitvoeren, zie agent.mjs)
   const [pairing, setPairing] = useState<{ code: string; expiresAt: number } | null>(null);
   const [now, setNow] = useState(Date.now());
@@ -39,13 +40,14 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
   const nodeMethods = useMemo(() => nodeInstallMethods(os, arch), [os, arch]);
   const activeNode = nodeMethods.find((m) => m.id === nodeMethod) ?? nodeMethods[0];
   const roots = rootsText.split(/\r?\n/).map((r) => r.trim()).filter(Boolean);
-  const rootProblem = !roots.length ? tr('Вкажіть хоча б одну папку, до якої агент матиме доступ.', 'Geef minstens één map op waartoe de agent toegang krijgt.')
-    : roots.some(looksLikePlaceholder) ? tr('У шляху не повинно бути символів < > " | ? * і слів-підказок. Напишіть справжній шлях, наприклад T:\\ або C:\\Projects.', 'Het pad mag geen tekens < > " | ? * of voorbeeldwoorden bevatten. Schrijf een echt pad, bijvoorbeeld T:\\ of C:\\Projects.') : '';
+  const readonlyRoots = readonlyText.split(/\r?\n/).map((r) => r.trim()).filter(Boolean);
+  const rootProblem = !roots.length && !readonlyRoots.length ? tr('Вкажіть хоча б одну папку, до якої агент матиме доступ.', 'Geef minstens één map op waartoe de agent toegang krijgt.')
+    : [...roots, ...readonlyRoots].some(looksLikePlaceholder) ? tr('У шляху не повинно бути символів < > " | ? * і слів-підказок. Напишіть справжній шлях, наприклад T:\\ або C:\\Projects.', 'Het pad mag geen tekens < > " | ? * of voorbeeldwoorden bevatten. Schrijf een echt pad, bijvoorbeeld T:\\ of C:\\Projects.') : '';
   const cleanName = name.replace(/["\r\n]/g, '').trim().slice(0, 60) || tr('Мій ПК', 'Mijn pc');
   const left = pairing ? Math.max(0, Math.round((pairing.expiresAt - now) / 1000)) : 0;
   const expired = !!pairing && left === 0;
 
-  const commands = useMemo(() => (pairing && !rootProblem ? buildAgentCommands({ shell, server: location.origin, code: pairing.code, name: cleanName, roots, allow }) : []), [pairing, rootProblem, shell, cleanName, rootsText, allow]);
+  const commands = useMemo(() => (pairing && !rootProblem ? buildAgentCommands({ shell, server: location.origin, code: pairing.code, name: cleanName, roots, readonlyRoots, allow }) : []), [pairing, rootProblem, shell, cleanName, rootsText, readonlyText, allow]);
 
   // Справжній стан: щойно в списку з’являється новий агент у мережі, повідомляємо про успіх.
   useEffect(() => {
@@ -136,7 +138,11 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
             <label className='wiz-field'>{tr('Папки, до яких агент матиме доступ (по одній у рядок)', 'Mappen waartoe de agent toegang krijgt (één per regel)')}
               <textarea rows={3} value={rootsText} onChange={(e) => setRootsText(e.target.value)} placeholder={os === 'windows' ? 'T:\\\nC:\\Projects' : '/home/ik/projecten'} spellCheck={false} />
             </label>
-            {rootProblem && rootsText ? <p className='wiz-note' role='alert' style={{ color: '#b45309' }}>{rootProblem}</p> : null}
+            <label className='wiz-field'>{tr('Папки лише для читання (за бажанням, по одній у рядок): агент бачить і читає, але не може змінити чи видалити — наприклад резервні копії', 'Mappen alleen-lezen (optioneel, één per regel): de agent ziet en leest, maar kan niets wijzigen of wissen — bijvoorbeeld back-ups')}
+              <textarea rows={2} value={readonlyText} onChange={(e) => setReadonlyText(e.target.value)} placeholder={os === 'windows' ? 'R:\\' : '/mnt/back-ups'} spellCheck={false} />
+            </label>
+            {rootProblem && (rootsText || readonlyText) ? <p className='wiz-note' role='alert' style={{ color: '#b45309' }}>{rootProblem}</p> : null}
+            <p className='wiz-note'>{tr('Місця з ключами й секретами (папка «geheim», файли .pem, .key, .env, uitrol-sleutel, recovery.key) агент ніколи не читає й не змінює, навіть усередині дозволених папок.', 'Plekken met sleutels en geheimen (map «geheim», bestanden .pem, .key, .env, uitrol-sleutel, recovery.key) leest of wijzigt de agent nooit, ook niet binnen toegestane mappen.')}</p>
             <fieldset className='wiz-allow'><legend>{tr('Команди, які агент може запускати (без оболонки, лише ці програми)', 'Commando\'s die de agent mag starten (zonder shell, alleen deze programma\'s)')}</legend>
               {ALLOW_CHOICES.map((c) => <label key={c}><input type='checkbox' checked={allow.includes(c)} onChange={(e) => setAllow(e.target.checked ? [...allow, c] : allow.filter((x) => x !== c))} />{c}</label>)}
             </fieldset>
