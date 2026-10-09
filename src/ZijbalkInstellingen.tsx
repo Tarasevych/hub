@@ -7,6 +7,7 @@ import {CATEGORIE_TEKST,HERINNER_MINUTEN,MELDING_CATEGORIEEN,type MeldingVoorkeu
 import {DIENST_ACCENT,type IcoonStijl,type ZijbalkModus} from '../shared/menu-model';
 import {MenuGlyph} from './menu-preferences';
 import {useZijbalkVoorkeuren,zetZijbalk} from './zijbalk-voorkeuren';
+import MenuIndelingInstellingen from './MenuIndelingInstellingen';
 
 type Tr=(uk:string,nl:string)=>string;
 const VOORBEELD=[['hub','home'],['mail','mail'],['cloud','cloud'],['identity','settings']] as const;
@@ -15,7 +16,7 @@ export default function ZijbalkInstellingen({tr}:{tr:Tr}){
   const v=useZijbalkVoorkeuren(),m=v.meldingen;
   const sn=v.snelheid,zetS=(patch:Partial<SnelheidVoorkeuren>)=>zetZijbalk(cur=>({...cur,snelheid:{...cur.snelheid,...patch}}));
   const zetM=(patch:Partial<MeldingVoorkeuren>)=>zetZijbalk(cur=>({...cur,meldingen:{...cur.meldingen,...patch}}));
-  useEffect(()=>{const h=location.hash;if(h==='#menu-meldingen'||h==='#menu-snelheid')window.setTimeout(()=>document.getElementById(h.slice(1))?.scrollIntoView({block:'start'}),150)},[]);
+  useEffect(()=>{const h=location.hash;if(h==='#menu-meldingen'||h==='#menu-snelheid'||h==='#menu-indeling')window.setTimeout(()=>document.getElementById(h.slice(1))?.scrollIntoView({block:'start'}),150)},[]);
   const schakel=(id:string,aan:boolean,naam:string,uitleg:string,doe:(x:boolean)=>void,uit=false)=><label className={`zijbalk-schakel${uit?' uit':''}`} data-meld-schakel={id}><input type='checkbox' role='switch' checked={aan} disabled={uit} onChange={e=>doe(e.target.checked)}/><span className='zijbalk-schakel-spoor' aria-hidden='true'><i/></span><span><strong>{naam}</strong>{uitleg&&<small>{uitleg}</small>}</span></label>;
   const stijlen:Array<[IcoonStijl,string,string]>=[['klassiek',tr('Класичний','Klassiek'),tr('Спокійні монохромні іконки; колір розділу з’являється при наведенні та в активного пункту.','Rustige monochrome iconen; de kleur van het onderdeel verschijnt bij aanwijzen en bij het actieve item.')],['kleur',tr('Кольоровий','Kleurrijk'),tr('Кожен розділ завжди у своєму кольорі (пошта — синя, ШІ — фіолетовий, хмара — блакитна…); підпункти — світлішим відтінком того ж кольору.','Elk onderdeel altijd in zijn eigen kleur (e-mail blauw, AI violet, cloud hemelsblauw…); subitems in een lichtere tint van dezelfde kleur.')]];
   const modi:Array<[ZijbalkModus,string,ReactElement]>=[['auto',tr('Автоматично: розгортається при наведенні','Automatisch: klapt open bij aanwijzen'),<MousePointer2 key='a'/>],['open',tr('Завжди розгорнута','Altijd uitgeklapt'),<PanelLeftOpen key='o'/>],['dicht',tr('Завжди згорнута','Altijd ingeklapt'),<PanelLeftClose key='d'/>]];
@@ -35,6 +36,7 @@ export default function ZijbalkInstellingen({tr}:{tr:Tr}){
         <span className='zijbalk-modus-icoon' aria-hidden='true'>{icoon}</span><span><strong>{naam}</strong></span>
       </label>)}
     </fieldset>
+    <MenuIndelingInstellingen tr={tr}/>
     <fieldset className='zijbalk-meldingen' id='menu-meldingen' data-menu-meldingen-instellingen>
       <legend><BellRing aria-hidden='true'/>{tr('Сповіщення в меню','Meldingen in het menu')}</legend>
       <p className='zijbalk-meldingen-uitleg'>{tr('Пункти меню показують мітку, коли там є щось нове (наприклад, непрочитані листи чи запит на доступ). Наведіть на пункт — побачите список, кожне можна прибрати хрестиком. Бачите лише ви: гості та інші акаунти цього не отримують.','Menu-items tonen een badge als er iets nieuws is (bijv. ongelezen e-mail of een toegangsverzoek). Wijs een item aan voor de lijst; elk bericht kun je met het kruisje verbergen. Alleen jij ziet dit: gasten en andere accounts niet.')}</p>

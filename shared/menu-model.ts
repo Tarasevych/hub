@@ -1,8 +1,8 @@
 // Menumodel v2 (RUNBOOK §14): data-gedreven beschrijving van het zijmenu, gedeeld door frontend en backend.
 // Elk item heeft een STABIELE id ('svc:<dienst>' of 'pg:<dienst>/<pagina>'), een standaardplaats en een accentkleur.
 // Gebruikersvoorkeuren (ZijbalkVoorkeuren) zijn alleen OVERRIDES daarop: fase 2 (dock links/rechts/boven/onder, transparantie,
-// vergroting, bewerkmodus met slepen, kopieën van items op andere plaatsen, reset per item / alles) voegt alleen UI toe;
-// het formaat, de normalisatie en het samenstellen (menuSamenstellen) bestaan al en zijn getest.
+// vergroting, bewerkmodus met slepen, kopieën van items op andere plaatsen, reset per item / alles) staat in
+// shared/menu-indeling.ts (weergave + bewerkingen, puur) en de UI; dit bestand blijft het formaat en de normalisatie.
 // Geen React, geen DOM: dit bestand draait ook op de server (normalisatie van wat de browser opslaat).
 
 import { normaliseerMeldingen, standaardMeldingen, type MeldingVoorkeuren } from './menu-meldingen-voorkeuren';
@@ -92,7 +92,8 @@ export const MENU_PLAATSEN = ['zijbalk', 'snelbalk', 'start'] as const;
 export type MenuPlaats = typeof MENU_PLAATSEN[number];
 
 export type ItemOverride = { zichtbaar?: boolean; volgorde?: number; plaats?: MenuPlaats; ouder?: string | null; icoon?: string };
-export type ItemKopie = { id: string; item: string; plaats: MenuPlaats; volgorde: number };
+/** Kopie van een item op een andere plek. `ouder` (fase 2, optioneel): alleen voor pagina-kopieën in een sectie van de zijbalk. */
+export type ItemKopie = { id: string; item: string; plaats: MenuPlaats; volgorde: number; ouder?: string };
 export type ZijbalkVoorkeuren = {
   versie: 1;
   modus: ZijbalkModus;
@@ -135,7 +136,10 @@ export function normaliseerZijbalk(raw: unknown): ZijbalkVoorkeuren {
     if (kopieen.length >= MAX_KOPIEEN || !KOPIE_ID.test(String(o.id)) || gezien.has(String(o.id)) || !isMenuItemId(o.item)) continue;
     if (!(MENU_PLAATSEN as readonly string[]).includes(String(o.plaats))) continue;
     gezien.add(String(o.id));
-    kopieen.push({ id: String(o.id), item: String(o.item), plaats: o.plaats as MenuPlaats, volgorde: geheel(o.volgorde, 0, 999, 0) });
+    const kopie: ItemKopie = { id: String(o.id), item: String(o.item), plaats: o.plaats as MenuPlaats, volgorde: geheel(o.volgorde, 0, 999, 0) };
+    // sectie alleen voor pagina's, alleen in de zijbalk, alleen een dienst als ouder
+    if (o.plaats === 'zijbalk' && String(o.item).startsWith('pg:') && isMenuItemId(o.ouder) && String(o.ouder).startsWith('svc:')) kopie.ouder = String(o.ouder);
+    kopieen.push(kopie);
   }
   return {
     versie: 1,
@@ -171,7 +175,7 @@ export function menuSamenstellen(v: ZijbalkVoorkeuren, nodes: MenuNode[] = menuN
     if (ouder && v.items[ouder]?.zichtbaar === false) continue;
     uit[o.plaats || 'zijbalk'].push({ id: n.id, node: n, plaats: o.plaats || 'zijbalk', ouder: ouder && perId.has(ouder) ? ouder : null, volgorde: o.volgorde ?? n.standaardVolgorde });
   }
-  for (const k of v.kopieen) { const n = perId.get(k.item); if (n) uit[k.plaats].push({ id: `${k.id}:${n.id}`, node: n, plaats: k.plaats, ouder: null, volgorde: k.volgorde, kopie: k.id }); }
+  for (const k of v.kopieen) { const n = perId.get(k.item); if (n) uit[k.plaats].push({ id: `${k.id}:${n.id}`, node: n, plaats: k.plaats, ouder: k.ouder && perId.has(k.ouder) ? k.ouder : null, volgorde: k.volgorde, kopie: k.id }); }
   for (const p of MENU_PLAATSEN) uit[p].sort((a, b) => a.volgorde - b.volgorde || a.id.localeCompare(b.id));
   return uit;
 }

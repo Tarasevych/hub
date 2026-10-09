@@ -17,3 +17,9 @@ export async function startE2eServer(o: { ownerEmail: string; poort: number; tls
   await new Promise<void>((r) => s.listen(o.poort, '127.0.0.1', () => r()));
   return { G, stop: () => new Promise<void>((r) => { s.closeAllConnections?.(); s.close(() => r()); }) };
 }
+
+// Chrome-argumenten voor alle e2e-tests: *.tarasevych.com (alle poorten) → de lokale testserver; elke andere hostnaam
+// bestaat niet (~NOTFOUND). Zo kan geen enkele test per ongeluk productie of een andere externe dienst raken.
+export function chromeArgs(poort: number): string[] {
+  return [`--host-resolver-rules=MAP *.tarasevych.com 127.0.0.1:${poort}, MAP tarasevych.com 127.0.0.1:${poort}, MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1`, '--no-proxy-server'];
+}
