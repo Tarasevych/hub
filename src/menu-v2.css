@@ -2,20 +2,39 @@
 .canonical-chrome{--zijbalk-rail:60px;--canonical-command-inline-start:var(--zijbalk-rail);--zijbalk-bg:var(--bg);--zb-hover:var(--nav-hover,color-mix(in srgb,var(--surface) 78%,transparent));--zb-actief:var(--nav-active,color-mix(in srgb,var(--surface2) 88%,transparent))}
 .canonical-chrome.sidebar-expanded{--zijbalk-bg:var(--panel)}
 
+/* accentpalet — GELIJK aan ACCENT_KLEUREN in shared/menu-model.ts (eenheidstest). --a = hoofditem, --a2 = subitem (zelfde tint).
+   --a-op = tekst/icoon op een vlak in --a (licht: wit, donker: bijna zwart). */
+.canonical-chrome{--a-op:#fff}:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark){--a-op:#0d1117}
 /* accentpalet (licht) */
-.canonical-chrome [data-accent='teal']{--a:#1f7a72}.canonical-chrome [data-accent='violet']{--a:#7b4bc4}.canonical-chrome [data-accent='blauw']{--a:#2563c9}
-.canonical-chrome [data-accent='hemel']{--a:#0a7fb0}.canonical-chrome [data-accent='grafiet']{--a:#4b5563}.canonical-chrome [data-accent='amber']{--a:#b5620b}
-.canonical-chrome [data-accent='indigo']{--a:#4f52cf}.canonical-chrome [data-accent='groen']{--a:#2e8049}.canonical-chrome [data-accent='koraal']{--a:#c4432f}
-.canonical-chrome [data-accent='oker']{--a:#93700a}.canonical-chrome [data-accent='pruim']{--a:#8a3f7a}.canonical-chrome [data-accent='framboos']{--a:#b4235b}
-.canonical-chrome [data-accent='roest']{--a:#a8471a}.canonical-chrome [data-accent='leisteen']{--a:#5b6b7a}
+.canonical-chrome [data-accent='teal'],.zijbalk-voorbeeld [data-accent='teal']{--a:#0f766e;--a2:#3a8f88}
+.canonical-chrome [data-accent='violet'],.zijbalk-voorbeeld [data-accent='violet']{--a:#9333ea;--a2:#a95cee}
+.canonical-chrome [data-accent='blauw'],.zijbalk-voorbeeld [data-accent='blauw']{--a:#1a5fd6;--a2:#4c82df}
+.canonical-chrome [data-accent='hemel'],.zijbalk-voorbeeld [data-accent='hemel']{--a:#027fbd;--a2:#1b8cc4}
+.canonical-chrome [data-accent='grafiet'],.zijbalk-voorbeeld [data-accent='grafiet']{--a:#24292f;--a2:#808386}
+.canonical-chrome [data-accent='oranje'],.zijbalk-voorbeeld [data-accent='oranje']{--a:#c2570c;--a2:#c96b29}
+.canonical-chrome [data-accent='groen'],.zijbalk-voorbeeld [data-accent='groen']{--a:#15803d;--a2:#3a945c}
+.canonical-chrome [data-accent='limoen'],.zijbalk-voorbeeld [data-accent='limoen']{--a:#4d7c0f;--a2:#668e31}
+.canonical-chrome [data-accent='indigo'],.zijbalk-voorbeeld [data-accent='indigo']{--a:#4f46e5;--a2:#7972eb}
+.canonical-chrome [data-accent='oker'],.zijbalk-voorbeeld [data-accent='oker']{--a:#a16207;--a2:#ae782a}
+.canonical-chrome [data-accent='grijs'],.zijbalk-voorbeeld [data-accent='grijs']{--a:#6b7280;--a2:#7d838f}
+.canonical-chrome [data-accent='roze'],.zijbalk-voorbeeld [data-accent='roze']{--a:#be185d;--a2:#d0598a}
+.canonical-chrome [data-accent='rood'],.zijbalk-voorbeeld [data-accent='rood']{--a:#dc2626;--a2:#e35151}
+.canonical-chrome [data-accent='bruin'],.zijbalk-voorbeeld [data-accent='bruin']{--a:#8b5a2b;--a2:#a27b55}
 /* accentpalet (donker) */
-:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='teal']{--a:#7fcfc4}:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='violet']{--a:#bea2f2}
-:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='blauw']{--a:#93b8f5}:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='hemel']{--a:#7fcbec}
-:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='grafiet']{--a:#c4cbd3}:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='amber']{--a:#f2b366}
-:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='indigo']{--a:#a9abf7}:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='groen']{--a:#8fd3a3}
-:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='koraal']{--a:#f5a293}:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='oker']{--a:#e3c35f}
-:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='pruim']{--a:#dba3cf}:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='framboos']{--a:#f39bbd}
-:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='roest']{--a:#f1ab84}:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='leisteen']{--a:#b3c0cc}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='teal']{--a:#5eead4;--a2:#4db3a5}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='violet']{--a:#d8b4fe;--a2:#a48cc3}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='blauw']{--a:#7aa7ff;--a2:#6183c4}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='hemel']{--a:#67e8f9;--a2:#53b2c0}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='grafiet']{--a:#e6edf3;--a2:#afb5bc}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='oranje']{--a:#fdba74;--a2:#bf9160}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='groen']{--a:#4ade80;--a2:#3eaa69}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='limoen']{--a:#bef264;--a2:#92b955}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='indigo']{--a:#a5b4fc;--a2:#808cc2}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='oker']{--a:#fde047;--a2:#bfac40}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='grijs']{--a:#a1a1aa;--a2:#7d7f87}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='roze']{--a:#f9a8d4;--a2:#bc84a5}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='rood']{--a:#fca5a5;--a2:#be8183}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='bruin']{--a:#d6b48f;--a2:#a38c74}
 
 /* --------------------------------------------------------------- rail: breed genoeg, geen scrollbalk over iconen */
 @media(min-width:701px){
@@ -70,40 +89,59 @@
 .canonical-chrome .canonical-service-button:hover .canonical-service-label,.canonical-chrome .canonical-service-button:focus-visible .canonical-service-label{color:var(--text)}
 .canonical-chrome .canonical-local-page-button:hover .canonical-local-label,.canonical-chrome .canonical-local-page-button:focus-visible .canonical-local-label{color:var(--text)}
 
-/* klassiek: rustig monochroom; hover komt tot leven; actief = themakleur en iets groter */
-.canonical-chrome .canonical-service-button:hover .menu-lucide-glyph,.canonical-chrome .canonical-service-button:focus-visible .menu-lucide-glyph,.canonical-chrome .canonical-local-page-button:hover .menu-lucide-glyph,.canonical-chrome .canonical-local-page-button:focus-visible .menu-lucide-glyph{color:var(--text)}
-.canonical-chrome .canonical-service-group.active>.canonical-service-main-row>.canonical-service-button .menu-lucide-glyph,.canonical-chrome .canonical-local-page-button.active .menu-lucide-glyph{color:var(--accent);stroke-width:2.15;transform:scale(1.12)}
-.canonical-chrome .canonical-service-group.active>.canonical-service-main-row>.canonical-service-button,.canonical-chrome .canonical-local-page-button.active{background:color-mix(in srgb,var(--accent) 13%,transparent)}
+/* Kleur volgt de HERKOMST van een item (data-accent op de groep, fase 2 ook op kopieën): --a hoofditem, --a2 subitem.
+   klassiek: rustig monochroom; bij aanwijzen en voor het actieve item verschijnt de kleur van het onderdeel (actief iets groter). */
+.canonical-chrome .canonical-local-pages{--a-item:var(--a2,var(--a,var(--accent)))}
+.canonical-chrome .canonical-service-button:hover .menu-lucide-glyph,.canonical-chrome .canonical-service-button:focus-visible .menu-lucide-glyph{color:var(--a,var(--accent))}
+.canonical-chrome .canonical-local-page-button:hover :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.lucide),.canonical-chrome .canonical-local-page-button:focus-visible :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.lucide){color:var(--a-item)}
+.canonical-chrome .canonical-service-button:hover,.canonical-chrome .canonical-local-page-button:hover{background:color-mix(in srgb,var(--a,var(--accent)) 8%,var(--zb-hover))}
+.canonical-chrome .canonical-service-group.active>.canonical-service-main-row>.canonical-service-button .menu-lucide-glyph{color:var(--a,var(--accent));stroke-width:2.15;transform:scale(1.12)}
+.canonical-chrome .canonical-local-page-button.active :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg){color:var(--a-item);stroke-width:2.15;transform:scale(1.12)}
+.canonical-chrome .canonical-service-group.active>.canonical-service-main-row>.canonical-service-button{background:color-mix(in srgb,var(--a,var(--accent)) 14%,transparent)}
+.canonical-chrome .canonical-local-page-button.active{background:color-mix(in srgb,var(--a-item) 16%,transparent)}
 .canonical-chrome .canonical-service-group.active>.canonical-service-main-row>.canonical-service-button .canonical-service-label{color:var(--text)}
+.canonical-chrome .mail-sidebar-icon-state svg{transition:color .18s ease,transform .18s ease}
 
-/* kleurrijk: elk onderdeel een eigen kleur (icoon + markering); subitems in een zachtere tint van dezelfde kleur */
-.canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button .menu-lucide-glyph{color:color-mix(in srgb,var(--a,var(--accent)) 78%,var(--muted))}
-.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button .menu-lucide-glyph{color:color-mix(in srgb,var(--a,var(--accent)) 55%,var(--faint))}
-.canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button:hover .menu-lucide-glyph,.canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button:focus-visible .menu-lucide-glyph,.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button:hover .menu-lucide-glyph,.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button:focus-visible .menu-lucide-glyph{color:var(--a,var(--accent))}
-.canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-group.active>.canonical-service-main-row>.canonical-service-button .menu-lucide-glyph,.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button.active .menu-lucide-glyph{color:var(--a,var(--accent))}
-.canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-group.active>.canonical-service-main-row>.canonical-service-button,.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button.active{background:color-mix(in srgb,var(--a,var(--accent)) 16%,transparent)}
-.canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button:hover,.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button:hover{background:color-mix(in srgb,var(--a,var(--accent)) 9%,var(--zb-hover))}
+/* kleurrijk: elk onderdeel ALTIJD in zijn eigen kleur (icoon); subitems in de zachtere tint van dezelfde kleur */
+.canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button .menu-lucide-glyph{color:var(--a,var(--accent))}
+.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.lucide){color:var(--a-item)}
+.canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button:hover,.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button:hover{background:color-mix(in srgb,var(--a,var(--accent)) 12%,var(--zb-hover))}
 
-/* --------------------------------------------------------------- smal: cirkel om het icoon */
+/* --------------------------------------------------------------- smal: ALLES een cirkel zonder tekst (ook actief, ook e-mail) */
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-group{justify-items:center}
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-main-row{justify-items:center;width:100%}
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-button{grid-template-columns:1fr;justify-items:center;width:44px;height:44px;min-height:44px;margin-inline:auto;padding:0;border-radius:50%}
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-label,.canonical-chrome:not(.sidebar-expanded) .canonical-local-label,.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages small{display:none}
 .canonical-chrome .canonical-menu-icon-slot{display:grid;place-items:center}
-.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages{justify-items:center;width:44px;margin:0 auto 6px;padding:3px 0;border-radius:22px;background:color-mix(in srgb,var(--surface) 60%,transparent)}
-.canonical-chrome:not(.sidebar-expanded) .canonical-local-page-button{grid-template-columns:1fr;justify-items:center;width:36px;height:36px;min-height:36px;margin-inline:auto;padding:0;border-radius:50%}
-.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages .menu-lucide-glyph{width:17px;height:17px;min-width:17px}
-.canonical-chrome:not(.sidebar-expanded) .canonical-local-page-button>:not(.canonical-menu-icon-slot):not(.menu-lucide-glyph):not(.menu-brand-glyph){display:none}
+/* het submenu: een verticale strook (de «verbindingslijn») in een heel lichte tint van het onderdeel */
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages{justify-items:center;box-sizing:border-box;width:44px;min-width:0;margin:2px auto 6px;padding:4px 0;border-radius:22px;background:color-mix(in srgb,var(--a,var(--accent)) 7%,color-mix(in srgb,var(--surface) 70%,transparent));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--a,var(--accent)) 14%,transparent)}
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages .canonical-local-page-button{display:grid;grid-template-columns:1fr;place-items:center;box-sizing:border-box;width:36px;min-width:36px;max-width:36px;height:36px;min-height:36px;margin:1px auto;padding:0;border-radius:50%;overflow:hidden}
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.canonical-local-page-button>svg){width:17px;height:17px;min-width:17px}
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages :is(.canonical-menu-icon-slot,.mail-sidebar-icon-state){display:grid;place-items:center;width:20px;height:20px;margin:0}
+/* alleen tekst/tellers verbergen — het icoon (ook de eigen e-mailiconen) blijft */
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-page-button>:not(.canonical-menu-icon-slot):not(.mail-sidebar-icon-state):not(svg):not(.menu-brand-glyph){display:none}
+/* e-mail levert een eigen submenu: zelfde cirkels, gecentreerd in de strook */
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-navigation-slot .mail-sidebar-navigation{justify-items:center;width:100%;gap:1px}
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-navigation-slot :is(.mail-sidebar-divider,.mail-sidebar-status){display:none}
+.canonical-chrome:not(.sidebar-expanded) .mail-sidebar-edit-menu{border:1px dashed color-mix(in srgb,var(--a-item) 40%,var(--line))}
+/* «Написати лист»: smal een gevulde cirkel (kleur van E-mail) zonder tekst; de animatie (envelop → pen) blijft */
+.canonical-chrome .mail-compose-pill{background:var(--a,#2d6a6d);color:var(--a-op,#fff);transition:background-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.canonical-chrome .mail-compose-pill:hover:not(:disabled),.canonical-chrome .mail-compose-pill:focus-visible{box-shadow:0 3px 10px color-mix(in srgb,var(--a,#2d6a6d) 40%,transparent)}
+.canonical-chrome:not(.sidebar-expanded) .mail-compose-pill{justify-content:center;box-sizing:border-box;width:36px;min-width:36px;height:36px;margin:1px auto 4px;padding:0;gap:0;border-radius:50%;font-size:0;line-height:0;overflow:hidden}
+.canonical-chrome:not(.sidebar-expanded) .mail-compose-pill:hover:not(:disabled){transform:scale(1.06)}
+.canonical-chrome:not(.sidebar-expanded) .mail-compose-pill-icon{width:17px;height:17px}
 
 /* breed: een pil die alleen icoon + tekst omvat */
+/* breed: ook het eigen submenu van E-mail krijgt de getinte verbindingslijn (zoals de andere submenu's) */
+.canonical-chrome.sidebar-expanded .canonical-local-navigation-slot{margin:0 0 6px 22px;padding-left:6px;border-left:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
 .canonical-chrome.sidebar-expanded .canonical-service-button{justify-self:start;width:fit-content;max-width:100%;padding-right:16px;border-radius:999px}
-.canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot){margin:0 0 6px 22px;padding-left:8px;border-left:1px solid color-mix(in srgb,var(--line) 80%,transparent)}
+.canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot){margin:0 0 6px 22px;padding-left:8px;border-left:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
 .canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot)>.canonical-local-page-button{grid-template-columns:32px minmax(0,1fr) auto;justify-self:start;width:fit-content;max-width:100%;min-height:34px;padding:0 12px 0 2px;border-radius:999px}
 .canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot) .canonical-local-label{padding-right:2px}
 .canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot) small{margin-right:0;margin-left:6px}
 .canonical-chrome .canonical-service-button:focus-visible,.canonical-chrome .canonical-local-page-button:focus-visible{outline:2px solid color-mix(in srgb,var(--a,var(--accent)) 70%,transparent);outline-offset:1px}
 
-@media(prefers-reduced-motion:reduce){.zijbalk-pijl,.canonical-chrome .menu-lucide-glyph{transition:none}.canonical-chrome .canonical-service-group.active .menu-lucide-glyph{transform:none}}
+@media(prefers-reduced-motion:reduce){.zijbalk-pijl,.canonical-chrome .menu-lucide-glyph,.canonical-chrome .mail-compose-pill{transition:none}.canonical-chrome .canonical-service-group.active .menu-lucide-glyph,.canonical-chrome .canonical-local-page-button.active svg,.canonical-chrome .mail-compose-pill:hover{transform:none}}
 
 /* --------------------------------------------------------------- Instellingen → Меню */
 .zijbalk-instellingen{display:grid;gap:14px;margin:0 0 18px}
@@ -119,8 +157,8 @@
 .zijbalk-voorbeeld{display:flex;gap:4px;flex:none}
 .zijbalk-voorbeeld>span{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;color:var(--muted)}
 .zijbalk-voorbeeld>span .menu-lucide-glyph{width:17px;height:17px}
-.zijbalk-voorbeeld>span.actief{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
-.zijbalk-voorbeeld[data-icoon-stijl='kleur']>span{color:color-mix(in srgb,var(--a) 78%,var(--muted))}
+.zijbalk-voorbeeld>span.actief{background:color-mix(in srgb,var(--a,var(--accent)) 14%,transparent);color:var(--a,var(--accent))}
+.zijbalk-voorbeeld[data-icoon-stijl='kleur']>span{color:var(--a)}
 .zijbalk-voorbeeld[data-icoon-stijl='kleur']>span.actief{background:color-mix(in srgb,var(--a) 16%,transparent);color:var(--a)}
 .zijbalk-modus-icoon{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--surface);color:var(--muted)}
 .zijbalk-modus-icoon svg{width:18px;height:18px}

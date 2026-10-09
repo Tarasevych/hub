@@ -22,13 +22,41 @@ export const MENU_PAGINAS: Record<string, readonly string[]> = {
   mcp: ['overview', 'services', 'tools', 'board', 'agents', 'playground', 'traffic', 'connect', 'roadmap', 'download'],
 };
 
-/** Accentkleuren (palet in menu-v2.css, licht + donker). Pagina's erven het accent van hun dienst. */
-export const ACCENTEN = ['teal', 'violet', 'blauw', 'hemel', 'grafiet', 'amber', 'indigo', 'groen', 'koraal', 'oker', 'pruim', 'framboos', 'roest', 'leisteen'] as const;
+/** Accentkleuren per onderdeel, gekozen naar gangbare conventies (e-mail blauw, AI violet, cloud hemelsblauw, GitHub grafiet,
+ *  slim huis oranje, MCP groen, instellingen neutraal grijs, beheer rood, Mijn ruimte merk-teal …). Elk item krijgt de kleur van
+ *  zijn HERKOMST (dienst), ook als het later (fase 2) verplaatst of gekopieerd wordt: zo zie je aan de kleur waar het vandaan komt.
+ *  `hoofd` = hoofditem, `sub` = pagina's in het submenu (zelfde tint, licht: lichter / donker: zachter). Eenheidstest bewaakt:
+ *  contrast ≥ 3:1 (WCAG 1.4.11, licht én donker), onderlinge afstand (CIEDE2000) en gelijkheid met het palet in src/menu-v2.css. */
+export const ACCENTEN = ['teal', 'violet', 'blauw', 'hemel', 'grafiet', 'oranje', 'groen', 'limoen', 'indigo', 'oker', 'grijs', 'roze', 'rood', 'bruin'] as const;
 export type Accent = typeof ACCENTEN[number];
 export const DIENST_ACCENT: Record<DienstId, Accent> = {
-  hub: 'teal', ai: 'violet', mail: 'blauw', cloud: 'hemel', github: 'grafiet', huis: 'amber', mcp: 'indigo',
-  tasks: 'groen', calendar: 'koraal', notes: 'oker', identity: 'pruim', api: 'framboos', admin: 'roest', social: 'leisteen',
+  hub: 'teal', ai: 'violet', mail: 'blauw', cloud: 'hemel', github: 'grafiet', huis: 'oranje', mcp: 'groen', tasks: 'limoen', calendar: 'indigo', notes: 'oker', identity: 'grijs', api: 'roze', admin: 'rood', social: 'bruin',
 };
+export type AccentKleur = { hoofd: string; sub: string };
+export const ACCENT_KLEUREN: Record<Accent, { licht: AccentKleur; donker: AccentKleur }> = {
+  teal: { licht: { hoofd: '#0f766e', sub: '#3a8f88' }, donker: { hoofd: '#5eead4', sub: '#4db3a5' } },
+  violet: { licht: { hoofd: '#9333ea', sub: '#a95cee' }, donker: { hoofd: '#d8b4fe', sub: '#a48cc3' } },
+  blauw: { licht: { hoofd: '#1a5fd6', sub: '#4c82df' }, donker: { hoofd: '#7aa7ff', sub: '#6183c4' } },
+  hemel: { licht: { hoofd: '#027fbd', sub: '#1b8cc4' }, donker: { hoofd: '#67e8f9', sub: '#53b2c0' } },
+  grafiet: { licht: { hoofd: '#24292f', sub: '#808386' }, donker: { hoofd: '#e6edf3', sub: '#afb5bc' } },
+  oranje: { licht: { hoofd: '#c2570c', sub: '#c96b29' }, donker: { hoofd: '#fdba74', sub: '#bf9160' } },
+  groen: { licht: { hoofd: '#15803d', sub: '#3a945c' }, donker: { hoofd: '#4ade80', sub: '#3eaa69' } },
+  limoen: { licht: { hoofd: '#4d7c0f', sub: '#668e31' }, donker: { hoofd: '#bef264', sub: '#92b955' } },
+  indigo: { licht: { hoofd: '#4f46e5', sub: '#7972eb' }, donker: { hoofd: '#a5b4fc', sub: '#808cc2' } },
+  oker: { licht: { hoofd: '#a16207', sub: '#ae782a' }, donker: { hoofd: '#fde047', sub: '#bfac40' } },
+  grijs: { licht: { hoofd: '#6b7280', sub: '#7d838f' }, donker: { hoofd: '#a1a1aa', sub: '#7d7f87' } },
+  roze: { licht: { hoofd: '#be185d', sub: '#d0598a' }, donker: { hoofd: '#f9a8d4', sub: '#bc84a5' } },
+  rood: { licht: { hoofd: '#dc2626', sub: '#e35151' }, donker: { hoofd: '#fca5a5', sub: '#be8183' } },
+  bruin: { licht: { hoofd: '#8b5a2b', sub: '#a27b55' }, donker: { hoofd: '#d6b48f', sub: '#a38c74' } },
+};
+/** Diensten die standaard (of voor de eigenaar altijd) in het menu staan: hun kleuren moeten het duidelijkst verschillen. */
+export const HOOFD_DIENSTEN: readonly DienstId[] = ['hub', 'ai', 'mail', 'cloud', 'github', 'huis', 'mcp', 'identity', 'api', 'admin'];
+/** Accent van een item-id (ook van een kopie 'k-…:svc:mail'): altijd dat van de dienst waar het item vandaan komt. */
+export function itemAccent(id: string): Accent | undefined {
+  const m = /(?:^|:)(?:svc:([a-z]{2,12})|pg:([a-z]{2,12})\/[a-z-]{2,24})$/.exec(String(id));
+  const d = (m?.[1] || m?.[2]) as DienstId | undefined;
+  return d && (DIENST_IDS as readonly string[]).includes(d) ? DIENST_ACCENT[d] : undefined;
+}
 
 export type MenuItemSoort = 'dienst' | 'pagina';
 export type MenuNode = { id: string; soort: MenuItemSoort; dienst: string; pagina?: string; ouder?: string; accent: Accent; standaardVolgorde: number };

@@ -11,7 +11,7 @@ const VOORBEELD=[['hub','home'],['mail','mail'],['cloud','cloud'],['identity','s
 
 export default function ZijbalkInstellingen({tr}:{tr:Tr}){
   const v=useZijbalkVoorkeuren();
-  const stijlen:Array<[IcoonStijl,string,string]>=[['klassiek',tr('Класичний','Klassiek'),tr('Спокійні монохромні іконки; активний пункт — кольором теми.','Rustige monochrome iconen; het actieve item in de themakleur.')],['kleur',tr('Кольоровий','Kleurrijk'),tr('Кожен розділ має свій колір: іконка й підсвітка активного пункту.','Elk onderdeel heeft een eigen kleur: icoon en markering van het actieve item.')]];
+  const stijlen:Array<[IcoonStijl,string,string]>=[['klassiek',tr('Класичний','Klassiek'),tr('Спокійні монохромні іконки; колір розділу з’являється при наведенні та в активного пункту.','Rustige monochrome iconen; de kleur van het onderdeel verschijnt bij aanwijzen en bij het actieve item.')],['kleur',tr('Кольоровий','Kleurrijk'),tr('Кожен розділ завжди у своєму кольорі (пошта — синя, ШІ — фіолетовий, хмара — блакитна…); підпункти — світлішим відтінком того ж кольору.','Elk onderdeel altijd in zijn eigen kleur (e-mail blauw, AI violet, cloud hemelsblauw…); subitems in een lichtere tint van dezelfde kleur.')]];
   const modi:Array<[ZijbalkModus,string,ReactElement]>=[['auto',tr('Автоматично: розгортається при наведенні','Automatisch: klapt open bij aanwijzen'),<MousePointer2 key='a'/>],['open',tr('Завжди розгорнута','Altijd uitgeklapt'),<PanelLeftOpen key='o'/>],['dicht',tr('Завжди згорнута','Altijd ingeklapt'),<PanelLeftClose key='d'/>]];
   return <section className='zijbalk-instellingen' data-zijbalk-instellingen>
     <fieldset className='zijbalk-keuze' data-icoon-stijl-keuze>

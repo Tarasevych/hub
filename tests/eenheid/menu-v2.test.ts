@@ -3,9 +3,10 @@
 import { readFileSync } from 'node:fs';
 import { checker } from './hulp/nep-google';
 import {
-  MENU_PAGINAS, DIENST_IDS, DIENST_ACCENT, ACCENTEN, MAX_OVERRIDES, menuNodes, normaliseerZijbalk, standaardZijbalk,
+  MENU_PAGINAS, DIENST_IDS, DIENST_ACCENT, ACCENTEN, ACCENT_KLEUREN, HOOFD_DIENSTEN, itemAccent, MAX_OVERRIDES, menuNodes, normaliseerZijbalk, standaardZijbalk,
   itemTerugzetten, allesTerugzetten, menuSamenstellen, isMenuItemId,
 } from '../../shared/menu-model';
+import { ACHTERGROND, contrast, deltaE2000, lch } from './hulp/kleur';
 import { scrollRichtingen } from '../../src/zijbalk-scroll';
 import { MENU_CATALOG, defaultMenuPreferences, localTabIcon, menuIconComponent, normalizeMenuPreferences } from '../../src/menu-preferences';
 
@@ -73,6 +74,39 @@ export async function main(): Promise<number> {
   // ---- migratie oude standaardiconen
   const mig = normalizeMenuPreferences([{ id: 'identity', visible: true, order: 0, icon: 'key' }, { id: 'mcp', visible: true, order: 1, icon: 'network' }, { id: 'admin', visible: true, order: 2, icon: 'key' }]);
   check('migratie: onaangeroerde oude standaard (identity key, mcp network) → nieuw; bewuste keuze blijft', mig.find((x) => x.id === 'identity')?.icon === 'settings' && mig.find((x) => x.id === 'mcp')?.icon === 'cable' && mig.find((x) => x.id === 'admin')?.icon === 'key', JSON.stringify(mig.map((x) => `${x.id}:${x.icon}`)));
+
+  // ---- kleuren per onderdeel (menu v2, fase A): duidelijk verschillend, leesbaar, gebonden aan de herkomst
+  const css = readFileSync('src/menu-v2.css', 'utf8');
+  check('ACCENT_KLEUREN heeft precies de accenten uit ACCENTEN', JSON.stringify(Object.keys(ACCENT_KLEUREN)) === JSON.stringify([...ACCENTEN]));
+  const cssFout: string[] = [];
+  for (const a of ACCENTEN) {
+    const l = new RegExp(`\\.canonical-chrome \\[data-accent='${a}'\\][^{]*\\{--a:(#[0-9a-f]{6});--a2:(#[0-9a-f]{6})\\}`).exec(css);
+    const d = new RegExp(`theme-plum-dark\\) \\[data-accent='${a}'\\]\\{--a:(#[0-9a-f]{6});--a2:(#[0-9a-f]{6})\\}`).exec(css);
+    const k = ACCENT_KLEUREN[a];
+    if (!l || !d || l[1] !== k.licht.hoofd || l[2] !== k.licht.sub || d[1] !== k.donker.hoofd || d[2] !== k.donker.sub) cssFout.push(a);
+  }
+  check('palet in src/menu-v2.css (licht + donker) is gelijk aan ACCENT_KLEUREN', cssFout.length === 0, cssFout.join(','));
+  for (const thema of ['licht', 'donker'] as const) {
+    const laag: string[] = [];
+    for (const a of ACCENTEN) for (const soort of ['hoofd', 'sub'] as const) {
+      const min = Math.min(...ACHTERGROND[thema].map((b) => contrast(ACCENT_KLEUREN[a][thema][soort], b)));
+      if (min < 3) laag.push(`${a}.${soort}=${min.toFixed(2)}`);
+    }
+    check(`${thema}: elk hoofd- en subicoon ≥ 3:1 contrast op alle achtergronden (WCAG 1.4.11)`, laag.length === 0, laag.join(' '));
+    const afstand = (lijst: readonly string[]) => { let min = 999, paar = ''; for (let i = 0; i < lijst.length; i++) for (let j = i + 1; j < lijst.length; j++) { const d = deltaE2000(ACCENT_KLEUREN[DIENST_ACCENT[lijst[i] as keyof typeof DIENST_ACCENT]][thema].hoofd, ACCENT_KLEUREN[DIENST_ACCENT[lijst[j] as keyof typeof DIENST_ACCENT]][thema].hoofd); if (d < min) { min = d; paar = `${lijst[i]}/${lijst[j]}`; } } return { min, paar }; };
+    const h = afstand(HOOFD_DIENSTEN), alle = afstand(DIENST_IDS);
+    check(`${thema}: hoofdonderdelen duidelijk verschillend (CIEDE2000 ≥ 12)`, h.min >= 12, `${h.min.toFixed(1)} ${h.paar}`);
+    check(`${thema}: alle 14 onderdelen onderscheidbaar (CIEDE2000 ≥ 7)`, alle.min >= 7, `${alle.min.toFixed(1)} ${alle.paar}`);
+    const tint: string[] = [];
+    for (const a of ACCENTEN) { const k = ACCENT_KLEUREN[a][thema], x = lch(k.hoofd), y = lch(k.sub), dh = Math.min(Math.abs(x.h - y.h), 360 - Math.abs(x.h - y.h)); if (k.hoofd === k.sub || deltaE2000(k.hoofd, k.sub) < 4 || (x.c > 12 && dh > 15)) tint.push(`${a}:${dh.toFixed(0)}°/${deltaE2000(k.hoofd, k.sub).toFixed(1)}`); }
+    check(`${thema}: subitem = zelfde kleurtoon (≤ 15°) maar zichtbaar anders (ΔE ≥ 4)`, tint.length === 0, tint.join(' '));
+  }
+  check('conventies: e-mail blauw, AI violet, cloud hemelsblauw, slim huis oranje, MCP groen, instellingen grijs', (() => { const t = (d: keyof typeof DIENST_ACCENT) => lch(ACCENT_KLEUREN[DIENST_ACCENT[d]].licht.hoofd); return t('mail').h > 270 && t('mail').h < 310 && t('ai').h > 300 && t('ai').h < 330 && t('cloud').h > 240 && t('cloud').h < 275 && t('huis').h > 40 && t('huis').h < 70 && t('mcp').h > 120 && t('mcp').h < 160 && t('identity').c < 12 && t('github').c < 8; })(),
+    JSON.stringify(Object.fromEntries((['mail', 'ai', 'cloud', 'huis', 'mcp', 'identity', 'github'] as const).map((d) => [d, Math.round(lch(ACCENT_KLEUREN[DIENST_ACCENT[d]].licht.hoofd).h)]))));
+  check('herkomst: itemAccent geeft de kleur van de dienst, ook voor pagina\'s en kopieën', itemAccent('svc:mail') === 'blauw' && itemAccent('pg:mail/sent') === 'blauw' && itemAccent('k-abcd:pg:cloud/photos') === 'hemel' && itemAccent('k-x1y2:svc:github') === 'grafiet' && itemAccent('svc:onbekend') === undefined && itemAccent('rommel') === undefined && nodes.every((n) => itemAccent(n.id) === n.accent));
+  const verplaatst = menuSamenstellen(normaliseerZijbalk({ items: { 'pg:mail/sent': { ouder: 'svc:cloud' } }, kopieen: [{ id: 'k-kopi', item: 'pg:mail/inbox', plaats: 'start', volgorde: 0 }] }), nodes);
+  check('verplaatst of gekopieerd item houdt zijn eigen kleur (niet die van de nieuwe ouder)', verplaatst.zijbalk.find((x) => x.id === 'pg:mail/sent')?.node.accent === 'blauw' && verplaatst.start[0]?.node.accent === 'blauw' && itemAccent(verplaatst.start[0].id) === 'blauw');
+  check('smal: CSS verbergt alleen tekst/tellers van subitems, nooit het icoon (ook e-mailiconen)', /\.canonical-chrome:not\(\.sidebar-expanded\) \.canonical-local-page-button>:not\(\.canonical-menu-icon-slot\):not\(\.mail-sidebar-icon-state\):not\(svg\)/.test(css) && /:not\(\.sidebar-expanded\) \.mail-compose-pill\{[^}]*border-radius:50%[^}]*font-size:0/.test(css));
 
   return einde();
 }
