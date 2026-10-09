@@ -1,7 +1,7 @@
 // Журнал: één tijdlijn van alles rond agents (tokens, apparaten, extensie, toestemmingen, AI aan/uit, noodstop), uit app.audit.
 // Dicht: één zin + onderwerp + relatieve tijd (exacte tijd bij aanwijzen). Open: actiecode, id's, ip-hash, apparaat, ruwe details.
 import { useMemo, useState, type ReactElement } from 'react';
-import { Globe, KeyRound, Monitor, OctagonX, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
+import { Fingerprint, Globe, KeyRound, Monitor, OctagonX, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
 import type { Tr } from '../mcp-ui';
 import { CAP_TEXT } from '../AiToestemmingen';
 import { datum, Knop, Rij, Tech, Tijd, exact } from './ui';
@@ -11,8 +11,9 @@ import { useJournaal, type JournaalItem } from './data';
 export const SOORTEN: Array<[string, string, string]> = [
   ['', 'Усі події', 'Alle gebeurtenissen'], ['ai', 'Підключення ШІ', 'AI-verbindingen'], ['token', 'Токени', 'Tokens'], ['apparaat', 'Пристрої', 'Apparaten'],
   ['browser', 'Браузер (ШІ увімк./вимк.)', 'Browser (AI aan/uit)'], ['toestemming', 'Дозволи', 'Toestemmingen'], ['noodstop', 'Стоп і блокування', 'Stop en blokkeren'], ['hulpmiddelen', 'Інструменти', 'Hulpmiddelen'],
+  ['toegang', 'Права й ключі', 'Rechten en sleutels'],
 ];
-const ICOON: Record<string, ReactElement> = { ai: <Sparkles />, token: <KeyRound />, apparaat: <Monitor />, browser: <Globe />, toestemming: <ShieldCheck />, noodstop: <OctagonX />, hulpmiddelen: <Wrench /> };
+const ICOON: Record<string, ReactElement> = { ai: <Sparkles />, token: <KeyRound />, apparaat: <Monitor />, browser: <Globe />, toestemming: <ShieldCheck />, noodstop: <OctagonX />, hulpmiddelen: <Wrench />, toegang: <Fingerprint /> };
 const s = (v: unknown) => (typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '');
 const capNaam = (c: unknown, tr: Tr) => { const t = CAP_TEXT[s(c) as keyof typeof CAP_TEXT]; return t ? tr(t[0], t[1]) : s(c); };
 const REDEN: Record<string, [string, string]> = {
@@ -53,10 +54,17 @@ export function zin(e: JournaalItem, tr: Tr): string {
     case 'ai_user_unblocked': return tr('Доступ ШІ розблоковано', 'AI-toegang gedeblokkeerd');
     case 'owner.mcp.tool.setting': return tr(`Інструмент «${s(d.tool)}»: ${s(d.mode)}`, `Hulpmiddel «${s(d.tool)}»: ${s(d.mode)}`);
     case 'owner.mcp.tool.setting_all': return tr(`Усі інструменти (${s(d.group)}): ${s(d.mode)}`, `Alle hulpmiddelen (${s(d.group)}): ${s(d.mode)}`);
+    // §13.10: rechten om updates goed te keuren / voor te bereiden — welke sleutel, waarom (reden), en «Це був не я».
+    case 'goedkeur_recht_ingetrokken': return tr(`Відкликано право схвалювати оновлення в ключа «${s(d.label)}»`, `Recht om updates goed te keuren ingetrokken voor sleutel «${s(d.label)}»`) + (s(d.reden) ? tr(` — причина: ${s(d.reden)}`, ` — reden: ${s(d.reden)}`) : '');
+    case 'goedkeur_passkey_verwijderd': return tr(`Видалено passkey «${s(d.label)}», що міг схвалювати оновлення`, `Passkey «${s(d.label)}» verwijderd die updates mocht goedkeuren`) + (s(d.reden) ? tr(` — причина: ${s(d.reden)}`, ` — reden: ${s(d.reden)}`) : '');
+    case 'uitrol_passkey_intrekken_gevraagd': return tr('Серверу передано запит відкликати ключ', 'Verzoek om een sleutel in te trekken aan de server doorgegeven');
+    case 'uitrol_voorbereider_gegeven': return tr(`Надано право готувати оновлення: «${s(d.label) || s(d.onderwerp)}»`, `Recht om updates voor te bereiden gegeven: «${s(d.label) || s(d.onderwerp)}»`);
+    case 'uitrol_voorbereider_ingetrokken': return tr(`Відкликано право готувати оновлення: «${s(d.label) || s(d.onderwerp)}»`, `Recht om updates voor te bereiden ingetrokken: «${s(d.label) || s(d.onderwerp)}»`) + (s(d.reden) ? tr(` — причина: ${s(d.reden)}`, ` — reden: ${s(d.reden)}`) : '');
+    case 'toegang_wijziging_ongedaan': return tr(`«Це був не я»: зміну скасовано (${s(d.recht) === 'behouden' ? 'право збережено' : s(d.recht) === 'ssh-nodig' ? 'право — лише через SSH' : 'право не відновлено'})`, `«Dit was ik niet»: wijziging teruggedraaid (${s(d.recht) === 'behouden' ? 'recht behouden' : s(d.recht) === 'ssh-nodig' ? 'recht alleen via SSH' : 'recht niet teruggezet'})`);
     default: return e.actie;
   }
 }
-const toon = (e: JournaalItem) => (/revoked|stop_all|blocked|expired|disabled|denied/.test(e.actie) ? 'bad' : /paired|connected|issued|enabled|added|approved|updated/.test(e.actie) ? 'ok' : 'info');
+const toon = (e: JournaalItem) => (/revoked|stop_all|blocked|expired|disabled|denied|ingetrokken|verwijderd/.test(e.actie) ? 'bad' : /paired|connected|issued|enabled|added|approved|updated/.test(e.actie) ? 'ok' : 'info');
 
 export function JournaalLijst({ tr, items, compact = false }: { tr: Tr; items: JournaalItem[]; compact?: boolean }) {
   const [open, setOpen] = useState('');

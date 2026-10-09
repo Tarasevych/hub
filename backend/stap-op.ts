@@ -15,7 +15,7 @@ import { db } from '../server/platform';
 
 export const STAP_OP_TABEL = 'owner_step_up_v1';
 export const STAP_OP_MS = 5 * 60 * 1000;
-type StapOpRecord = { id: string; userId: string; googleAt?: number; sessies?: Record<string, number>; passkeySessies?: Record<string, number>; updatedAt: number };
+type StapOpRecord = { id: string; userId: string; googleAt?: number; sessies?: Record<string, number>; passkeySessies?: Record<string, number>; sterkSessies?: Record<string, number>; methodes?: Record<string, string>; updatedAt: number };
 const TOEKOMST_SPELING_MS = 60 * 1000;
 export type StapOpSessie = { id: string; createdAt: number };
 export type StapOpAuth = { user: { id: string }; session?: StapOpSessie | null; tabSession?: StapOpSessie | null };
@@ -32,7 +32,8 @@ async function schrijf(userId: string, wijzig: (r: Omit<StapOpRecord, 'id'>) => 
   const nu = Date.now();
   const basis: Omit<StapOpRecord, 'id'> = bestaand ? (({ id: _id, ...rest }) => rest)(bestaand) : { userId, sessies: {}, updatedAt: nu };
   const vers = (m?: Record<string, number>) => Object.fromEntries(Object.entries(m || {}).filter(([, at]) => nu - at < STAP_OP_MS));
-  const volgend = wijzig({ ...basis, sessies: vers(basis.sessies), passkeySessies: vers(basis.passkeySessies), updatedAt: nu });
+  const volgend = wijzig({ ...basis, sessies: vers(basis.sessies), passkeySessies: vers(basis.passkeySessies), sterkSessies: vers(basis.sterkSessies),
+    methodes: Object.fromEntries(Object.entries(basis.methodes || {}).filter(([id]) => (basis.sessies || {})[id] && nu - Number((basis.sessies || {})[id]) < STAP_OP_MS)), updatedAt: nu });
   if (bestaand) await db.update(STAP_OP_TABEL, [{ id: bestaand.id, record: volgend }]);
   else await db.add(STAP_OP_TABEL, [volgend]);
 }
@@ -60,14 +61,15 @@ export async function googleStapOpVastleggen(userId: string, sessieIds: Array<st
   const ids = sessieIds.filter((id): id is string => typeof id === 'string' && id.length > 0);
   if (!ids.length || !googleAuthTijdVers(authTimeMs)) return false;
   const at = Math.min(authTimeMs, Date.now());
-  await schrijf(userId, (r) => { const { googleAt: _oud, ...rest } = r; return { ...rest, sessies: { ...(r.sessies || {}), ...Object.fromEntries(ids.map((id) => [id, at])) } }; });
+  await schrijf(userId, (r) => { const { googleAt: _oud, ...rest } = r; return { ...rest, sessies: { ...(r.sessies || {}), ...Object.fromEntries(ids.map((id) => [id, at])) }, methodes: { ...(r.methodes || {}), ...Object.fromEntries(ids.map((id) => [id, 'google'])) } }; });
   return true;
 }
-/** Aanroepen na een geldige TOTP-code op deze sessie. */
-export async function totpStapOpVastleggen(auth: StapOpAuth): Promise<void> {
+/** Aanroepen na een geldige TOTP-code (of herstelcode, methode 'herstelcode') op deze sessie. Telt ook als «sterke» step-up. */
+export async function totpStapOpVastleggen(auth: StapOpAuth, methode: 'totp' | 'herstelcode' = 'totp'): Promise<void> {
   const s = sessieVan(auth);
   if (!s) return;
-  await schrijf(auth.user.id, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [s.id]: Date.now() } }));
+  const nu = Date.now();
+  await schrijf(auth.user.id, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [s.id]: nu }, sterkSessies: { ...(r.sterkSessies || {}), [s.id]: nu }, methodes: { ...(r.methodes || {}), [s.id]: methode } }));
 }
 
 /** Aanroepen na een geldige passkey-assertie op deze sessie. Telt als gewone step-up én apart als passkey-step-up. */
@@ -75,7 +77,7 @@ export async function passkeyStapOpVastleggen(auth: StapOpAuth): Promise<boolean
   const s = sessieVan(auth);
   if (!s) return false;
   const nu = Date.now();
-  await schrijf(auth.user.id, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [s.id]: nu }, passkeySessies: { ...(r.passkeySessies || {}), [s.id]: nu } }));
+  await schrijf(auth.user.id, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [s.id]: nu }, passkeySessies: { ...(r.passkeySessies || {}), [s.id]: nu }, sterkSessies: { ...(r.sterkSessies || {}), [s.id]: nu }, methodes: { ...(r.methodes || {}), [s.id]: 'passkey' } }));
   return true;
 }
 /** Is er op deze sessie binnen 5 minuten met een passkey bevestigd? (Strenger dan stapOpGeldig: Google telt hier niet.) */
@@ -87,6 +89,27 @@ export async function passkeyStapOpGeldig(auth: StapOpAuth, nu = Date.now()): Pr
   return at > 0 && nu - at < STAP_OP_MS;
 }
 export const stapOpSessieId = (auth: StapOpAuth): string => sessieVan(auth)?.id || '';
+
+/**
+ * «Sterke» step-up (§13.10): binnen 5 minuten op DEZE sessie bevestigd met een passkey, TOTP-code of herstelcode — opnieuw
+ * inloggen bij Google telt hier niet. Voor het intrekken van rechten (bv. «Може схвалювати оновлення») en «Це був не я».
+ */
+export async function sterkeStapOpGeldig(auth: StapOpAuth, nu = Date.now()): Promise<boolean> {
+  if (stapOpUit()) return true;
+  const s = sessieVan(auth);
+  if (!s) return false;
+  const r = await recordVan(auth.user.id);
+  const at = Number(r?.sterkSessies?.[s.id] || 0);
+  return at > 0 && nu - at < STAP_OP_MS;
+}
+/** Waarmee is deze sessie het laatst bevestigd ('passkey' | 'totp' | 'herstelcode' | 'google' | '')? Alleen voor de audit. */
+export async function stapOpMethode(auth: StapOpAuth): Promise<string> {
+  const s = sessieVan(auth);
+  if (!s) return '';
+  const r = await recordVan(auth.user.id);
+  if (!r?.sessies?.[s.id]) return '';
+  return String(r.methodes?.[s.id] || 'google');
+}
 
 /** Is de step-up voor deze sessie nog vers? */
 export async function stapOpGeldig(auth: StapOpAuth, nu = Date.now()): Promise<boolean> {

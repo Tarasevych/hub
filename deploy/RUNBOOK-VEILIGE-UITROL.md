@@ -702,3 +702,38 @@ hash:
   - het journaal met filters;
   - een nagebootste 429 (vriendelijke tekst, nergens `RATE_LIMITED`);
   - 390 px zonder overloop, en licht en donker.
+
+### 13.10 Toegang in context: gebruik, notities, intrekken met reden, «Це був не я» (migratie 0024)
+
+**Gebruik.** Elke herstelcode en elk passkey-gebruik wordt vastgelegd in `app.toegang_gebruik` (RLS: alleen de eigen rijen):
+actie (vaste lijst `ACTIES` in `backend/toegang-context.ts`, onbekend → `bevestigen`), host, apparaat (browser · OS uit de
+User-Agent), korte IP-hash (`AUDIT_IP_PEPPER`, nooit het IP zelf). De step-up stuurt een actielabel mee (`actieVoorUrl` in
+`src/platform/stap-op.ts`); de server accepteert alleen labels uit de allowlist. Per sleutel de laatste 20, uitklapbaar.
+
+**Notities.** Privé, ≤ 500 tekens, `app.toegang_notities` (RLS), voor passkeys, codesets, losse codes en (later) toegangscodes.
+Route `POST /api/owner/access/notities/{lijst,opslaan}`.
+
+**Recht intrekken / goedkeur-passkey verwijderen.** Alleen de eigenaar. Reden ≥ 10 tekens verplicht en een *sterke* step-up
+(passkey, TOTP of herstelcode); Google alleen volstaat niet zodra de gebruiker iets sterkers heeft (403
+`STEP_UP_STRONG_REQUIRED`, het venster toont dan geen Google-knop). Vastgelegd in `app.toegang_wijzigingen` + audit: wie,
+sessie, apparaat, IP-hash, wanneer, reden, sleutel, hoe bevestigd. Melding in de bel («Це були ви?», link
+`/methods?wijziging=<id>`), op /agents → Журнал onder «Права й ключі». Voorbereiders (admin → Uitrol) volgen dezelfde regel;
+de betrokken gebruiker krijgt een melding en geschiedenis.
+
+**Hoe het intrekken bij root komt.** De app schrijft `sleutel-intrekken-<fp32>.json` in de inbox (geen assertion nodig:
+verwijderen is de veilige richting). `mijn-ruimte-goedkeur-sleutels.path` ziet het bestand en start `goedkeur-hulp.mjs verwerk`
+als root: die controleert reden en vingerafdruk, noteert `staat.ingetrokken[fp] = {op, door, sessie, wijziging, reden}`,
+haalt de sleutel uit `/etc/mijn-ruimte/goedkeur-passkeys.json`, schrijft de status en de gebeurtenis `PASSKEY_INGETROKKEN`.
+Een eenmaal ingetrokken vingerafdruk kan **niet** via de app (assertion) terugkomen (`OPNIEUW_VIA_SSH`), alleen met
+`sudo mijn-ruimte-passkey toevoegen <fp>` — dat wist de markering.
+
+**«Це був не я — скасувати та захистити акаунт».** Sterke step-up. Ligt het verzoek nog in de inbox: verzoek weg, recht
+blijft. Heeft root al verwerkt: nieuwe aanmelding + de UI toont eerlijk de SSH-opdracht. Een verwijderde passkey wordt in de
+app hersteld. De sessie die de wijziging deed wordt beëindigd (tenzij het de huidige is). Alles in audit + geschiedenis.
+
+**E-mail.** Er is geen systeem-mailer: mail kan alleen via de eigen Gmail-koppeling van een gebruiker. De melding staat dus
+altijd in de bel; e-mail wordt (nog) niet verstuurd.
+
+Tests: `tests/eenheid/toegang-context.test.ts`, `uitrol-goedkeuring`, `passkeys`; e2e `tests/e2e/toegang-context.e2e.ts`
+(screenshots `notities-*.png`, `intrekken-*.png`). Let op: de step-up-limiet is per IP — draai de e2e-bestanden met een
+pauze (≥ 2 min) of los, anders 429 op `/api/owner/access/stap-op`.

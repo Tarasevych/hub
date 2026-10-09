@@ -11,7 +11,7 @@ type Detail = { icon: string; label: string; value: string };
 type SectionBlock = { title: string; items: Detail[] };
 
 export type LocalRow = { id: string; text: string; kind: Kind; createdAt: number; source: string; read: boolean; link?: { href: string; label: string }; details?: SectionBlock[]; action?: { label: string; onAction: () => void | Promise<void> } };
-export type ServerRow = { id: string; kind: string; title: string; message: string; createdAt: number; read?: boolean };
+export type ServerRow = { id: string; kind: string; title: string; message: string; createdAt: number; read?: boolean; link?: string };
 
 type Item = {
   key: string; group: string; origin: 'local' | 'server' | 'activity'; kind: Kind; title: string; text?: string; source: string; createdAt: number; read: boolean;
@@ -56,6 +56,8 @@ const readGroupPref = () => { try { return localStorage.getItem(GROUP_KEY) !== '
  */
 export default function NotificationPanelBody(p: Props) {
   const t = (uk: string, nl: string) => (p.lang === 'uk' ? uk : nl);
+  /** Link van de server alleen als eigen pad of https *.tarasevych.com (de server controleert dat ook, backend/melder.ts meldLink). */
+  const serverLink = (v?: string) => { const h = String(v || ''); if (!h || /[\\\s]/.test(h)) return ''; if (h.startsWith('/') && !h.startsWith('//')) return h; try { const u = new URL(h); return u.protocol === 'https:' && !u.username && !u.password && (u.hostname === 'tarasevych.com' || u.hostname.endsWith('.tarasevych.com')) ? u.toString() : ''; } catch { return ''; } };
   const [filter, setFilter] = useState<Filter>('all');
   const [section, setSection] = useState<'all' | Section>('all');
   const [sort, setSort] = useState<Sort>('new');
@@ -68,7 +70,7 @@ export default function NotificationPanelBody(p: Props) {
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
     for (const r of p.local) out.push({ key: `l:${r.id}`, group: groupKeyOf(r.source, r.text), origin: 'local', kind: r.kind, title: r.text, source: r.source, createdAt: r.createdAt, read: r.read, link: r.link, details: r.details, markRead: () => p.onReadLocal(r.id), remove: () => p.onRemoveLocal(r.id), action: r.action });
-    for (const r of p.server) out.push({ key: `s:${r.id}`, group: groupKeyOf('site', r.title), origin: 'server', kind: /error|fail/i.test(r.kind) ? 'error' : /warn/i.test(r.kind) ? 'warning' : 'info', title: r.title, text: r.message, source: 'site', createdAt: r.createdAt, read: Boolean(r.read), markRead: () => { if (!r.read) void p.onReadServer?.(r.id); } });
+    for (const r of p.server) out.push({ key: `s:${r.id}`, group: groupKeyOf('site', r.title), origin: 'server', kind: /error|fail/i.test(r.kind) ? 'error' : /warn/i.test(r.kind) ? 'warning' : 'info', title: r.title, text: r.message, source: 'site', createdAt: r.createdAt, read: Boolean(r.read), link: serverLink(r.link) ? { href: serverLink(r.link), label: /wijziging=/.test(String(r.link)) ? t('Переглянути зміну', 'Wijziging bekijken') : t('Відкрити', 'Openen') } : undefined, markRead: () => { if (!r.read) void p.onReadServer?.(r.id); } });
     for (const e of p.events) {
       const st = statusInfo(e.status, p.lang);
       const source = e.kind === 'site' ? e.source : e.source === 'claude' ? 'claude' : e.source === 'browser' ? `browser:${/edge/i.test(e.subject) ? 'edge' : /opera/i.test(e.subject) ? 'opera' : /firefox/i.test(e.subject) ? 'firefox' : 'chrome'}` : `agent:${/win/i.test(e.platform || '') ? 'windows' : /darwin|mac/i.test(e.platform || '') ? 'macos' : 'linux'}`;

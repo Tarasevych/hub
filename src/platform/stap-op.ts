@@ -97,16 +97,36 @@ export function neemAlgemeneHervat(): boolean {
   return true;
 }
 
+// ------------------------------------------------------------------------------------------------ actie-label (§13.10)
+// Bij elke step-up sturen we mee WAARVOOR (een label uit de vaste lijst van de server, backend/toegang-context.ts ACTIES). De
+// server neemt alleen labels uit die lijst over (anders «onbekend»); host, apparaat en IP-hash bepaalt de server zelf.
+const ACTIE_PER_PAD: Array<[RegExp, string]> = [
+  [/\/passkeys\/registreren/, 'passkey-toevoegen'], [/\/passkeys\/verwijderen/, 'passkey-verwijderen'],
+  [/\/passkeys\/goedkeuring\/recht-intrekken/, 'goedkeur-recht-intrekken'], [/\/passkeys\/goedkeuring\/(aanvragen|bevestigen)/, 'goedkeur-recht-aanvragen'],
+  [/\/recovery\/rotate/, 'herstelcodes-nieuw'], [/\/recovery\/intrekken/, 'herstelcodes-intrekken'],
+  [/\/toegang\/wijziging\/terugdraaien/, 'wijziging-terugdraaien'], [/\/uitrol\/voorbereiders/, 'voorbereider'], [/\/uitrol\//, 'uitrol-goedkeuren'],
+  [/\/totp\/(disable|uitschakelen)/, 'totp-uitschakelen'], [/\/totp\//, 'totp-wijzigen'], [/\/password/, 'wachtwoord'],
+  [/export/, 'export'], [/(account|user)s?\/(delete|verwijder)/, 'account-verwijderen'], [/\/(agents|connectors|mcp)\b/, 'agenten'], [/\/admin\b|\/beheer\b/, 'beheer'],
+];
+/** Label voor een verzoek-URL (voor step-ups die client.ts automatisch vraagt). */
+export function actieVoorUrl(url: string): string {
+  const pad = String(url || '').split('?')[0];
+  for (const [re, actie] of ACTIE_PER_PAD) if (re.test(pad)) return actie;
+  return 'bevestigen';
+}
+const ACTIE_RE = /^[a-z][a-z0-9-]{1,40}$/;
+const actieOf = (a?: string) => (a && ACTIE_RE.test(a) ? a : 'bevestigen');
+
 // ------------------------------------------------------------------------------------------------ passkey
 /** Step-up met een eigen passkey. Geeft '' bij succes, anders een foutcode (NotAllowedError, GEEN_PASSKEY, PASSKEY_…). */
-export async function passkeyStapOpCode(service: string, tabContext: string, post: Post): Promise<string> {
+export async function passkeyStapOpCode(service: string, tabContext: string, post: Post, actie?: string): Promise<string> {
   if (!kanPasskey()) return 'GEEN_WEBAUTHN';
   let opties: { uitdagingId: string; publicKey: AssertieOpties };
-  try { opties = ((await post('/api/owner/access/stap-op/passkey/opties', { service, tabContext })) as { data: typeof opties }).data; }
+  try { opties = ((await post('/api/owner/access/stap-op/passkey/opties', { service, tabContext, actie: actieOf(actie) })) as { data: typeof opties }).data; }
   catch (c) { return foutCode(c) || 'NETWORK_ERROR'; }
   try {
     const assertie = await passkeyBevestigen(opties.publicKey);
-    await post('/api/owner/access/stap-op/passkey', { service, tabContext, uitdagingId: opties.uitdagingId, assertie });
+    await post('/api/owner/access/stap-op/passkey', { service, tabContext, uitdagingId: opties.uitdagingId, assertie, actie: actieOf(actie) });
     return '';
   } catch (c) { return foutCode(c) || 'PASSKEY_FOUT'; }
 }
@@ -123,6 +143,10 @@ export type BevestigOpties = {
   /** true: een TOTP-/herstelcode niet naar /stap-op sturen maar teruggeven (de actie zelf controleert de code). */
   codeTerug?: boolean;
   hervat?: HervatIntentie | null;
+  /** Waarvoor (label uit de vaste lijst van de server); komt in het gebruik van de passkey/herstelcode. */
+  actie?: string;
+  /** true: Google alleen telt niet (intrekken van rechten, «Це був не я»): alleen passkey, app-code of herstelcode. */
+  sterk?: boolean;
 };
 /** Toon «Підтвердіть доступ». Kiest de gebruiker Google, dan verlaat de pagina zich en is de uitkomst {ok:false, reden:'google'}. */
 export async function bevestigToegang(opties: BevestigOpties): Promise<StapOpUitkomst> {
@@ -131,13 +155,13 @@ export async function bevestigToegang(opties: BevestigOpties): Promise<StapOpUit
   return toonBevestigVenster(opties);
 }
 
-/** Door client.ts bij 403 STEP_UP_REQUIRED. true = bevestigd (verzoek mag één keer opnieuw). */
-export async function stapOpVragen(body: unknown, post: Post): Promise<boolean> {
+/** Door client.ts bij 403 STEP_UP_REQUIRED / STEP_UP_STRONG_REQUIRED. true = bevestigd (verzoek mag één keer opnieuw). */
+export async function stapOpVragen(body: unknown, post: Post, url = '', sterk = false): Promise<boolean> {
   if (typeof window === 'undefined') return false;
   const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
   const service = String(b.service || ''), tabContext = String(b.tabContext || '');
   if (!SERVICES.has(service) || !tabContext) return false;
-  const uit = await bevestigToegang({ service, tabContext, post, hervat: lopende });
+  const uit = await bevestigToegang({ service, tabContext, post, hervat: lopende, actie: actieVoorUrl(url), sterk });
   if (!uit.ok && uit.reden === 'VENSTER_FOUT') throw new Error('VENSTER_FOUT');
   return uit.ok;
 }

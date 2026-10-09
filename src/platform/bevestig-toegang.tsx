@@ -38,6 +38,7 @@ const T = {
   sluiten: ['Закрити', 'Sluiten'],
   geenMethode: ['Для цієї дії немає доступного способу підтвердження. Налаштуйте застосунок-автентифікатор або passkey на сторінці «Способи входу».', 'Voor deze actie is geen bevestigingsmethode beschikbaar. Stel een authenticator-app of passkey in op de pagina «Aanmeldmethoden».'],
   doorsturen: ['Перехід до Google…', 'Doorsturen naar Google…'],
+  sterk: ['Для цієї дії потрібен надійніший спосіб: passkey, код із застосунку-автентифікатора або код відновлення. Повторного входу через Google недостатньо.', 'Voor deze actie is een sterkere manier nodig: passkey, code uit de authenticator-app of een herstelcode. Opnieuw inloggen bij Google is niet genoeg.'],
 } as const;
 const FOUT: Record<string, readonly [string, string]> = {
   NotAllowedError: ['Підтвердження passkey скасовано або час вийшов. Спробуйте ще раз або виберіть інший спосіб.', 'Passkey-bevestiging geannuleerd of de tijd is verstreken. Probeer opnieuw of kies een andere manier.'],
@@ -63,6 +64,7 @@ const FOUT: Record<string, readonly [string, string]> = {
   LOGIN_BINDING_MISMATCH: ['Вхід через Google почато в іншій вкладці чи браузері. Спробуйте ще раз тут.', 'De Google-aanmelding is in een ander tabblad of andere browser gestart. Probeer het hier opnieuw.'],
   access_denied: ['Вхід через Google скасовано.', 'Aanmelden bij Google geannuleerd.'],
   NETWORK_ERROR: ['Немає зв’язку із сервером. Спробуйте ще раз.', 'Geen verbinding met de server. Probeer het opnieuw.'],
+  STEP_UP_STRONG_REQUIRED: ['Потрібне підтвердження passkey, кодом із застосунку або кодом відновлення.', 'Bevestiging met passkey, app-code of herstelcode is nodig.'],
 };
 const foutTekst = (lang: Lang, code: string) => {
   const f = FOUT[code];
@@ -104,7 +106,9 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
   const [fout, setFout] = useState(() => { const r = neemTerugMelding(); return r ? foutTekst(paginaTaal(), r) : ''; });
   const eersteWeergave = useRef(true);
   const invoer = useRef<HTMLInputElement | null>(null);
-  const toegestaan = opties.toegestaan?.length ? opties.toegestaan : ALLE;
+  // Sterk (§13.10): Google valt weg zodra de gebruiker iets sterkers heeft (de server weigert het anders toch).
+  const basisToegestaan = opties.toegestaan?.length ? opties.toegestaan : ALLE;
+  const toegestaan = opties.sterk ? basisToegestaan.filter((m) => m !== 'google') : basisToegestaan;
 
   useEffect(() => {
     let weg = false;
@@ -130,7 +134,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
 
   const metPasskey = async () => {
     setBezig('passkey'); setFout('');
-    const f = await passkeyStapOpCode(opties.service, opties.tabContext, opties.post);
+    const f = await passkeyStapOpCode(opties.service, opties.tabContext, opties.post, opties.actie);
     setBezig('');
     if (!f) klaar({ ok: true, methode: 'passkey' }); else setFout(foutTekst(lang, f));
   };
@@ -140,7 +144,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
     if (opties.codeTerug) { klaar({ ok: true, methode, code: c }); return; }
     setBezig(methode); setFout('');
     try {
-      await opties.post('/api/owner/access/stap-op', { service: opties.service, tabContext: opties.tabContext, code: c, ...(methode === 'herstelcode' ? { methode: 'herstelcode' } : {}) });
+      await opties.post('/api/owner/access/stap-op', { service: opties.service, tabContext: opties.tabContext, code: c, actie: opties.actie || 'bevestigen', ...(methode === 'herstelcode' ? { methode: 'herstelcode' } : {}) });
       klaar({ ok: true, methode });
     } catch (e) { setFout(foutTekst(lang, foutVan(e))); setCode(''); invoer.current?.focus(); }
     finally { setBezig(''); }
@@ -178,6 +182,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
 
       <div className='bevestig-toegang-kaart'>
         {!info && <p className='bevestig-toegang-uitleg'>{t('laden')}</p>}
+        {info && opties.sterk && <p className='bevestig-toegang-uitleg' data-sterk='1'>{t('sterk')}</p>}
         {info && !weergave && <p className='bevestig-toegang-fout' role='alert'>{t('geenMethode')}</p>}
 
         {weergave === 'passkey' && <>

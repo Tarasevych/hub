@@ -6,6 +6,7 @@ import {api} from './platform/client';
 import {Check,ExternalLink,Fingerprint,PackageCheck,RefreshCw,ShieldCheck,Trash2,TriangleAlert,UserCheck,X} from 'lucide-react';
 import {canonicalNavigationUrl} from './canonical-navigation';
 import {foutCode,kanPasskey as passkeyMogelijk,passkeyBevestigen} from './platform/webauthn';
+import {RedenVeld,redenOk} from './ToegangContext';
 import './admin-uitrol.css';
 
 type Lang='uk'|'nl';
@@ -28,6 +29,9 @@ const STATUS:Record<string,[string,string]>={
 };
 const SOORT:Record<Grant['soort'],[string,string]>={account:['Акаунт','Account'],agenttoken:['Токен агента','Agenttoken'],'mcp-koppeling':['MCP-підключення','MCP-koppeling']};
 const FOUTEN:Record<string,[string,string]>={
+  REDEN_TE_KORT:['Вкажіть причину (щонайменше 10 символів).','Geef een reden op (minstens 10 tekens).'],
+  REDEN_TE_LANG:['Причина задовга (максимум 500 символів).','De reden is te lang (maximaal 500 tekens).'],
+  STEP_UP_STRONG_REQUIRED:['Потрібне підтвердження passkey, кодом із застосунку або кодом відновлення (повторного входу Google недостатньо).','Bevestiging met passkey, app-code of herstelcode is nodig (opnieuw inloggen bij Google is niet genoeg).'],
   PASSKEY_GOEDKEURING_UIT:['Схвалення через passkey вимкнено на сервері (перемикач «passkey-goedkeuring»).','Goedkeuren met een passkey staat op de server uit (schakelaar «passkey-goedkeuring»).'],
   GEEN_PASSKEY:['На сервері ще немає passkey, що може схвалювати. Додайте його в «Налаштування → Способи входу».','Er is op de server nog geen passkey die mag goedkeuren. Voeg er een toe via «Instellingen → Aanmeldmethoden».'],
   EERSTE_VIA_SSH:['Перший passkey підтверджується лише через SSH-команду.','De eerste passkey wordt alleen met de SSH-opdracht bevestigd.'],
@@ -52,6 +56,8 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
   // Sommige browsers (Safari) staan WebAuthn alleen direct na een tik toe; na het ophalen van de challenge kan dat verlopen zijn.
   // Dan bewaren we de (nog geldige, ≤ 5 min) challenge en tonen een knop die de passkey meteen bij de volgende tik vraagt.
   const[herhaal,setHerhaal]=useState<null|(()=>Promise<string|void>)>(null);
+  // Intrekken in de rij zelf (geen window.confirm): verplichte reden; de server vraagt een sterke bevestiging (§13.10).
+  const[intrek,setIntrek]=useState<{id:string;reden:string}|null>(null);
   const kanPasskey=passkeyMogelijk();
 
   const laden=async()=>{
@@ -84,7 +90,7 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
     await api.post('/api/owner/uitrol/voorbereiders/toevoegen',{...context,...grant});setGrant(g=>({...g,onderwerp:'',label:''}));
     return tr(lang,'Дозвіл надано.','Toestemming gegeven.');
   });
-  const grantIntrekken=(g:Grant)=>{if(!window.confirm(tr(lang,`Відкликати дозвіл для «${g.label}»?`,`Toestemming voor «${g.label}» intrekken?`)))return;void doe(`in-${g.id}`,async()=>{await api.post('/api/owner/uitrol/voorbereiders/intrekken',{...context,id:g.id});return tr(lang,'Дозвіл відкликано.','Toestemming ingetrokken.');});};
+  const grantIntrekken=(g:Grant)=>{if(!intrek||intrek.id!==g.id)return;const reden=intrek.reden.trim();void doe(`in-${g.id}`,async()=>{await api.post('/api/owner/uitrol/voorbereiders/intrekken',{...context,id:g.id,reden});setIntrek(null);return tr(lang,'Дозвіл відкликано. Користувач отримав сповіщення з причиною.','Toestemming ingetrokken. De gebruiker kreeg een melding met de reden.');});};
 
   if(!data)return <section className='admin-section' data-admin-uitrol><header><PackageCheck/><div><h2>{tr(lang,'Оновлення сервера','Serverupdates')}</h2><p>{notice?.text||tr(lang,'Завантаження…','Laden…')}</p></div></header></section>;
 
@@ -135,7 +141,15 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
       <header><UserCheck/><div><h2>{tr(lang,'Кому дозволено готувати оновлення','Wie mag updates voorbereiden')}</h2><p>{tr(lang,'Дозвіл лише на підготовку й завантаження пакета, з терміном дії. Схвалити не може ніхто, крім вас.','Toestemming alleen om een pakket voor te bereiden en te uploaden, met een vervaldatum. Goedkeuren kan niemand behalve u.')}</p></div></header>
       <ul className='admin-uitrol-lijst'>
         {data.voorbereiders.map(g=><li key={g.id} data-status={g.status}><span><b>{g.label}</b> · {tr(lang,SOORT[g.soort][0],SOORT[g.soort][1])} · {g.status==='actief'?tr(lang,'до ','tot ')+datum(lang,g.verlooptOp):g.status==='verlopen'?tr(lang,'термін минув','verlopen'):tr(lang,'відкликано ','ingetrokken ')+datum(lang,g.ingetrokkenOp)}</span>
-          {g.status==='actief'&&<button type='button' disabled={!!busy} onClick={()=>grantIntrekken(g)}><Trash2/>{tr(lang,'Відкликати','Intrekken')}</button>}</li>)}
+          {g.status==='actief'&&intrek?.id!==g.id&&<button type='button' disabled={!!busy} onClick={()=>setIntrek({id:g.id,reden:''})}><Trash2/>{tr(lang,'Відкликати','Intrekken')}</button>}
+          {intrek?.id===g.id&&<div className='admin-uitrol-intrek' role='group' data-intrek-grant={g.id}>
+            <span>{tr(lang,`Відкликати дозвіл для «${g.label}»? Користувач побачить, хто і чому це зробив.`,`Toestemming voor «${g.label}» intrekken? De gebruiker ziet wie het deed en waarom.`)}</span>
+            <RedenVeld lang={lang} id={`reden-grant-${g.id}`} waarde={intrek.reden} zet={(v)=>setIntrek({id:g.id,reden:v})} disabled={!!busy}/>
+            <div className='admin-uitrol-knoppen'>
+              <button type='button' className='admin-uitrol-nee' disabled={!!busy||!redenOk(intrek.reden)} onClick={()=>grantIntrekken(g)}><Trash2/>{tr(lang,'Відкликати','Intrekken')}</button>
+              <button type='button' disabled={!!busy} onClick={()=>setIntrek(null)}><X/>{tr(lang,'Скасувати','Annuleren')}</button>
+            </div>
+          </div>}</li>)}
         {data.voorbereiders.length===0&&<li className='admin-uitrol-leeg'>{tr(lang,'Нікому не дозволено.','Niemand heeft toestemming.')}</li>}
       </ul>
       <div className='admin-uitrol-form'>

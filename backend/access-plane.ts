@@ -5,6 +5,7 @@ import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './goo
 import {STAP_OP_MS,passkeyStapOpGeldig,stapOpFout,stapOpGeldigTot,totpStapOpVastleggen,type StapOpAuth} from './stap-op';
 import {passkeyAantal} from './passkeys';
 import {meld} from './melder';
+import {actieVan,gebruikVastleggen,gebruikVoor,registreerMethodenBron} from './toegang-context';
 
 const scryptAsync=promisify(scrypt) as (password:string,salt:Buffer|string,keylen:number,options?:import('node:crypto').ScryptOptions)=>Promise<Buffer>;
 export const METHOD_IDS=['google','password','microsoft','apple','facebook','phone','totp','recovery','webauthn','push'] as const;
@@ -71,8 +72,14 @@ const herstelNorm=(code:string)=>String(code||'').replace(/[\s-]/g,'').toUpperCa
 export function herstelOverzicht(r:RecoveryRecord|null){
   if(!r)return{codes:[],resterend:0,totaal:0,createdAt:0,bekekenOp:0,ingetrokkenOp:0};
   const open=new Set(r.hashes||[]);
-  const codes=(r.overzicht||[]).map(x=>({nr:x.nr,hint:x.hint,status:open.has(x.hash)?'ongebruikt':r.gebruikt?.[x.hash]?'gebruikt':r.ingetrokkenOp?'ingetrokken':'gebruikt',gebruiktOp:Number(r.gebruikt?.[x.hash]||0)}));
-  return{codes,resterend:Math.max(0,r.remaining||0),totaal:r.totaal||r.overzicht?.length||Math.max(0,r.remaining||0),createdAt:r.createdAt||0,bekekenOp:r.bekekenOp||0,ingetrokkenOp:r.ingetrokkenOp||0};
+  const codes=(r.overzicht||[]).map(x=>({nr:x.nr,hint:x.hint,sleutel:herstelCodeSleutel(r,x.nr),status:open.has(x.hash)?'ongebruikt':r.gebruikt?.[x.hash]?'gebruikt':r.ingetrokkenOp?'ingetrokken':'gebruikt',gebruiktOp:Number(r.gebruikt?.[x.hash]||0)}));
+  return{codes,resterend:Math.max(0,r.remaining||0),totaal:r.totaal||r.overzicht?.length||Math.max(0,r.remaining||0),createdAt:r.createdAt||0,setSleutel:herstelSetSleutel(r),bekekenOp:r.bekekenOp||0,ingetrokkenOp:r.ingetrokkenOp||0};
+}
+/** Overzicht + per code de laatste N keer gebruik (waarvoor, waar, apparaat, IP-hash) — §13.10. */
+async function herstelOverzichtVol(userId:string,r:RecoveryRecord|null){
+  const o=herstelOverzicht(r);
+  const gebruik=await gebruikVoor(userId,'herstelcode',o.codes.map(c=>c.sleutel));
+  return{...o,codes:o.codes.map(c=>({...c,gebruik:gebruik.get(c.sleutel)||[]}))};
 }
 const withoutId=<T extends{id:string}>({id:_id,...rest}:T)=>rest;
 const b32='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -107,15 +114,24 @@ async function totpGebruiken(row:TotpRecord,code:string):Promise<'ok'|'ongeldig'
   if(stap<0)return'ongeldig';
   return await db.zetAlsHoger(TOTP,row.id,'lastStep',stap)?'ok':'hergebruikt';
 }
-/** Eenmalige herstelcode verbruiken (atomisch). */
-async function herstelcodeGebruiken(userId:string,code:string){
+/** Sleutel van een herstelcodeset (createdAt blijft per set gelijk; het record zelf wordt bij «Створити нові» hergebruikt). */
+export const herstelSetSleutel=(r:{createdAt?:number}|null)=>String(Number(r?.createdAt||0));
+const herstelCodeSleutel=(r:{createdAt?:number}|null,nr:number)=>`${herstelSetSleutel(r)}:${nr}`;
+/**
+ * Eenmalige herstelcode verbruiken (atomisch). Legt daarna vast WAARVOOR (actie uit de vaste lijst), waar, apparaat en IP-hash
+ * (backend/toegang-context.ts). Geeft de sleutel van de code («<set>:<nr>») of '' als hij niet (meer) geldt.
+ */
+async function herstelcodeGebruiken(userId:string,code:string,actie:unknown='bevestigen',dienst?:string):Promise<string>{
   const recovery=await recoveryFor(userId);
   const hashed=recovery&&!recovery.ingetrokkenOp?recoveryMatches(recovery,herstelNorm(code)):'';
-  if(!recovery||!hashed||!recovery.hashes.includes(hashed))return false;
-  if(!await db.takeArrayValue(RECOVERY,recovery.id,'hashes',hashed,'remaining'))return false;
+  if(!recovery||!hashed||!recovery.hashes.includes(hashed))return'';
+  if(!await db.takeArrayValue(RECOVERY,recovery.id,'hashes',hashed,'remaining'))return'';
   // Alleen voor het overzicht (doorgestreept + datum); atomisch en los van de hashes.
   await db.zetEenmaligInMap(RECOVERY,recovery.id,'gebruikt',hashed,Date.now()).catch(()=>false);
-  return true;
+  const nr=(recovery.overzicht||[]).find(x=>x.hash===hashed)?.nr||0;
+  const sleutel=nr?herstelCodeSleutel(recovery,nr):`${herstelSetSleutel(recovery)}:0`;
+  await gebruikVastleggen(userId,'herstelcode',sleutel,actie,dienst?{dienst}:{});
+  return sleutel;
 }
 async function hashPassword(password:string){
   const salt=randomBytes(16);
@@ -163,6 +179,11 @@ async function recoveryFor(userId:string){
   const rows=await db.list<Omit<RecoveryRecord,'id'>>(RECOVERY,{filter:{userId},limit:5});
   return(rows.items as RecoveryRecord[])[0]||null;
 }
+// §13.10: welke «sterke» methoden heeft iemand? Dan telt Google alleen niet als step-up voor het intrekken van rechten.
+registreerMethodenBron(async(userId)=>{
+  const[p,t,h]=await Promise.all([passkeyAantal(userId).catch(()=>0),totpFor(userId),recoveryFor(userId)]);
+  return{passkey:p>0,totp:!!t?.confirmed,herstelcode:!!h&&!h.ingetrokkenOp&&(h.remaining||0)>0};
+});
 async function phoneRecordAny(userId:string){
   const rows=await db.list<Omit<PhoneRecord,'id'>>(PHONES,{filter:{userId},limit:5});
   return(rows.items as PhoneRecord[])[0]||null;
@@ -223,13 +244,13 @@ async function zetTerug(userId:string,items:Awaited<ReturnType<typeof herstelbaa
   }
 }
 /** TOTP-code of ongebruikte herstelcode controleren, met atomische lockout (audit-fix 7). */
-async function codeControleren(userId:string,row:TotpRecord|null,code:string,herstelcodeMag=true):Promise<'ok'|'ongeldig'|'hergebruikt'|'sleutel'|'geblokkeerd'>{
+async function codeControleren(userId:string,row:TotpRecord|null,code:string,herstelcodeActie:string|false='bevestigen'):Promise<'ok'|'ongeldig'|'hergebruikt'|'sleutel'|'geblokkeerd'>{
   const subject=`stap-op:${userId}`;
   const poging=await pogingReserveren(subject);
   if(!poging.toegestaan)return'geblokkeerd';
   const uitkomst=row?await totpGebruiken(row,code):'ongeldig';
   if(uitkomst==='sleutel')return'sleutel';
-  if(uitkomst==='ok'||(herstelcodeMag&&await herstelcodeGebruiken(userId,code))){await clearLoginFailures(subject);return'ok';}
+  if(uitkomst==='ok'||(herstelcodeActie!==false&&await herstelcodeGebruiken(userId,code,herstelcodeActie))){await clearLoginFailures(subject);return'ok';}
   return uitkomst;
 }
 const codeFout=(uitkomst:string)=>uitkomst==='geblokkeerd'?{code:'ACCESS_LOCKED_TEMPORARILY',http:429}:uitkomst==='sleutel'?{code:'ACCESS_TOTP_KEY_MISSING',http:503}:uitkomst==='hergebruikt'?{code:'ACCESS_TOTP_REUSED',http:400}:{code:'ACCESS_TOTP_CODE_REQUIRED',http:400};
@@ -364,7 +385,7 @@ export const accessPlanePolicySelfTest=()=>[
 
 /** Lockout-onderwerp per (e-mail, IP) (audit-fix 10): een aanvaller kan zo niet iemands account wereldwijd blokkeren. */
 const wachtwoordOnderwerp=(email:string,ip:string)=>`wachtwoord:${email}:${createHash('sha256').update(`lockout-ip:${ip||'onbekend'}`).digest('hex').slice(0,24)}`;
-export async function verifyPasswordLogin(email:string,password:string,totp='',ip=''){
+export async function verifyPasswordLogin(email:string,password:string,totp='',ip='',dienst=''){
   const clean=String(email||'').trim().toLowerCase();
   if(!clean||!password)return{status:'invalid' as const,code:'ACCESS_CREDENTIALS_INVALID',http:400};
   const policy=await policyOf();
@@ -389,7 +410,7 @@ export async function verifyPasswordLogin(email:string,password:string,totp='',i
     if(uitkomst!=='ok'){
       // Atomisch eenmalig (herstelcodeGebruiken → takeArrayValue): bij gelijktijdig gebruik van dezelfde code wint precies
       // één verzoek, de rest krijgt ACCESS_CREDENTIALS_INVALID. Ingetrokken sets tellen niet.
-      if(!await herstelcodeGebruiken(user.id,totp))return failed('ACCESS_CREDENTIALS_INVALID');
+      if(!await herstelcodeGebruiken(user.id,totp,'inloggen',dienst||undefined))return failed('ACCESS_CREDENTIALS_INVALID');
     }
   }
   await clearLoginFailures(subject);
@@ -451,10 +472,13 @@ export function createAccessPlaneRoutes(deps:{
         if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
         const poging=await pogingReserveren(`stap-op:${auth.user.id}`);
         if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
-        if(!await herstelcodeGebruiken(auth.user.id,String(body.code||''))){await deps.audit(auth.user.id,'access.step-up','failure',{methode:'herstelcode'});return deps.fail('ACCESS_RECOVERY_INVALID',400);}
+        // actie: label uit de vaste lijst (toegang-context ACTIES); onbekend → 'onbekend'. Host = dienst van de sessie.
+        const actie=actieVan(body.actie);
+        const sleutel=await herstelcodeGebruiken(auth.user.id,String(body.code||''),actie,auth.service);
+        if(!sleutel){await deps.audit(auth.user.id,'access.step-up','failure',{methode:'herstelcode'});return deps.fail('ACCESS_RECOVERY_INVALID',400);}
         await clearLoginFailures(`stap-op:${auth.user.id}`);
-        await totpStapOpVastleggen(auth as unknown as StapOpAuth);
-        await deps.audit(auth.user.id,'access.step-up','success',{methode:'herstelcode'});
+        await totpStapOpVastleggen(auth as unknown as StapOpAuth,'herstelcode');
+        await deps.audit(auth.user.id,'access.step-up','success',{methode:'herstelcode',actie,herstelnr:sleutel.split(':')[1]});
         const over=Math.max(0,(await recoveryFor(auth.user.id))?.remaining||0);
         await meld(auth.user.id,'access_recovery_code_used','Використано код відновлення / Herstelcode gebruikt',
           `Для підтвердження дії використано код відновлення. Залишилось кодів: ${over}. Якщо це були не ви — негайно створіть нові коди. / Er is een herstelcode gebruikt om een actie te bevestigen. Resterende codes: ${over}. Was u dit niet: maak direct nieuwe codes.`);
@@ -493,13 +517,13 @@ export function createAccessPlaneRoutes(deps:{
     }],
     'POST /api/owner/access/password/login':[async(ctx: any)=>{
       const body=deps.body(ctx.body);
-      const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event));
+      const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event),String(body.service||''));
       if(result.status==='ok'||result.status==='mfa')return deps.respond({ok:result.status==='ok',status:result.status,code:result.code,user:result.user,sessionIssued:false});
       return deps.fail(result.code,result.http);
     }],
     'POST /api/owner/auth/password/login':[async(ctx: any)=>{
       const body=deps.body(ctx.body);
-      const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event));
+      const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event),String(body.service||''));
       if(result.status==='mfa')return deps.respond({ok:false,mfaRequired:true,error:result.code,reasonCode:result.code,sessionIssued:false,sessionCreated:false});
       if(result.status!=='ok'||!result.user)return deps.fail(result.code,result.http||401);
       return deps.respond({ok:true,reasonCode:'ACCESS_PASSWORD_VERIFIED',sessionIssued:false,sessionCreated:false,user:result.user});
@@ -618,7 +642,7 @@ export function createAccessPlaneRoutes(deps:{
         // Audit-fix 2: een bevestigde TOTP vervangen vraagt step-up ÉN de huidige code (of een herstelcode).
         // Het oude geheim blijft geldig tot het nieuwe bevestigd is (pendingSecretEnc).
         const stap=await stapOp(auth);if(stap)return stap;
-        const uitkomst=await codeControleren(auth.user.id,existing,String(deps.body(ctx.body).currentCode||deps.body(ctx.body).code||''));
+        const uitkomst=await codeControleren(auth.user.id,existing,String(deps.body(ctx.body).currentCode||deps.body(ctx.body).code||''),'totp-wijzigen');
         if(uitkomst!=='ok'){const f=codeFout(uitkomst);await deps.audit(auth.user.id,'access.totp.replace.start','failure',{reden:uitkomst});return deps.fail(f.code,f.http);}
         await db.update(TOTP,[{id:existing.id,record:{...withoutId(existing),pendingSecretEnc:sealWithEnvKey(TOTP_KEY,encoded,totpAad(auth.user.id)),pendingAt:now,updatedAt:now}}]);
         await deps.audit(auth.user.id,'access.totp.replace.start','success',{});
@@ -666,7 +690,7 @@ export function createAccessPlaneRoutes(deps:{
       // Fase 3: uitschakelen vereist de huidige TOTP-code (of een ongebruikte herstelcode bij verlies van het toestel).
       if(row?.confirmed){
         const code=String(deps.body(ctx.body).code||'');
-        const uitkomst=await codeControleren(auth.user.id,row,code);
+        const uitkomst=await codeControleren(auth.user.id,row,code,'totp-uitschakelen');
         if(uitkomst!=='ok'){const f=codeFout(uitkomst);await deps.audit(auth.user.id,'access.totp.disable','failure',{reden:uitkomst});return deps.fail(f.code,f.http);}
       }
       if(row?.id)await db.delete(TOTP,[row.id]);
@@ -701,7 +725,7 @@ export function createAccessPlaneRoutes(deps:{
     'POST /api/owner/access/recovery/overzicht':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
-      return deps.respond({ok:true,...herstelOverzicht(await recoveryFor(auth.user.id))});
+      return deps.respond({ok:true,...await herstelOverzichtVol(auth.user.id,await recoveryFor(auth.user.id))});
     }],
     // «Відкликати всі»: alle nog ongebruikte codes onbruikbaar (step-up vereist), lijst blijft zichtbaar als «Відкликано».
     'POST /api/owner/access/recovery/intrekken':[async(ctx: any)=>{
@@ -715,7 +739,7 @@ export function createAccessPlaneRoutes(deps:{
       await deps.audit(auth.user.id,'access.recovery.revoke','success',{});
       await meld(auth.user.id,'access_recovery_revoked','Коди відновлення відкликано / Herstelcodes ingetrokken',
         'Усі коди відновлення відкликано; жоден більше не діє. Якщо це були не ви — негайно зверніться до адміністратора. / Alle herstelcodes zijn ingetrokken; geen enkele werkt nog. Was u dit niet: neem direct contact op met de beheerder.');
-      return deps.respond({ok:true,...herstelOverzicht(await recoveryFor(auth.user.id)),snapshot:await accessSnapshot(auth.user)});
+      return deps.respond({ok:true,...await herstelOverzichtVol(auth.user.id,await recoveryFor(auth.user.id)),snapshot:await accessSnapshot(auth.user)});
     }],
     'POST /api/owner/access/recovery/bekeken':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);

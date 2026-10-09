@@ -16,7 +16,7 @@ import { callTool, listTools } from './connectors-tools';
 import { listUserGrantHistory, listUserGrants, RESOURCE as MCP_URL } from './mcp-connector';
 
 // ---- journaal (/agents → Журнал) ----
-export const JOURNAAL_SOORTEN = ['ai', 'token', 'apparaat', 'browser', 'toestemming', 'noodstop', 'hulpmiddelen'] as const;
+export const JOURNAAL_SOORTEN = ['ai', 'token', 'apparaat', 'browser', 'toestemming', 'noodstop', 'hulpmiddelen', 'toegang'] as const;
 export type JournaalSoort = typeof JOURNAAL_SOORTEN[number];
 /** Welke auditacties in het journaal komen, met hun soort. Alles wat hier niet staat (mail, inloggen, …) blijft buiten deze pagina. */
 export const JOURNAAL_ACTIES: Record<string, JournaalSoort> = {
@@ -27,6 +27,9 @@ export const JOURNAAL_ACTIES: Record<string, JournaalSoort> = {
   ai_grant_added: 'toestemming', ai_grant_always_enabled: 'toestemming', ai_grants_revoked: 'toestemming', ai_capabilities_changed: 'toestemming',
   ai_stop_all: 'noodstop', ai_user_blocked: 'noodstop', ai_user_unblocked: 'noodstop',
   'owner.mcp.tool.setting': 'hulpmiddelen', 'owner.mcp.tool.setting_all': 'hulpmiddelen',
+  // §13.10: rechten om updates goed te keuren / voor te bereiden (wie, wanneer, waarom, welke sleutel) en «Це був не я».
+  goedkeur_recht_ingetrokken: 'toegang', goedkeur_passkey_verwijderd: 'toegang', uitrol_passkey_intrekken_gevraagd: 'toegang',
+  uitrol_voorbereider_gegeven: 'toegang', uitrol_voorbereider_ingetrokken: 'toegang', toegang_wijziging_ongedaan: 'toegang',
 };
 export type JournaalItem = {
   id: string; at: number; actie: string; soort: JournaalSoort; resultaat: string;
