@@ -18,7 +18,10 @@ type Binding={id:string;userId:string;method:LoginMethodId;providerSubject:strin
 type PasswordRecord={id:string;userId:string;algorithm:'scrypt';n:number;r:number;p:number;salt:string;hash:string;mustChange:boolean;createdAt:number;updatedAt:number}&Ontkoppeld;
 type TotpRecord={id:string;userId:string;secret?:string;secretEnc?:string;confirmed:boolean;createdAt:number;updatedAt:number;/** fase 3: laatst gebruikt tijdvak (replaybescherming) */lastStep?:number;/** audit-fix 2: nieuw geheim tijdens vervangen; het oude blijft geldig tot dit bevestigd is */pendingSecretEnc?:string;pendingAt?:number};
 /** bekekenOp: de gebruiker bevestigde «Я зберіг коди» (de codes zelf worden maar één keer getoond). */
-type RecoveryRecord={id:string;userId:string;hashes:string[];hashVersion?:number;createdAt:number;remaining:number;bekekenOp?:number};
+// Herstelcodes (GitHub-achtig): de codes zelf alleen gehasht (HMAC + pepper). Voor het overzicht per code: volgnummer en de
+// laatste 2 tekens (hint, 8 bits van 48: raden blijft 2^40 per code, met lockout), wanneer gebruikt, en of de set is ingetrokken.
+type HerstelRegel={nr:number;hint:string;hash:string};
+type RecoveryRecord={id:string;userId:string;hashes:string[];hashVersion?:number;createdAt:number;remaining:number;bekekenOp?:number;totaal?:number;overzicht?:HerstelRegel[];gebruikt?:Record<string,number>;ingetrokkenOp?:number};
 type PhoneRecord={id:string;userId:string;phone:string;verified:boolean;createdAt:number;updatedAt:number}&Ontkoppeld;
 type WebauthnRecord={id:string;userId:string;credentialId:string;label:string;createdAt:number};
 type PolicyRecord={id:string;tenantKey:string;enabled:Partial<Record<MethodId,boolean>>;mfa:'optional'|'required';updatedAt:number};
@@ -56,6 +59,21 @@ const newRecoveryCodes=()=>{
   const codes=Array.from({length:10},()=>randomBytes(8).toString('hex').slice(0,12).toUpperCase());
   return{codes,hashes:codes.map(item=>recoveryHash(item)),hashVersion:2};
 };
+/** Nieuwe set herstelcodes als record (met overzicht voor de lijst); de klare codes gaan één keer terug naar de gebruiker. */
+const nieuweHerstelSet=(userId:string)=>{
+  const{codes,hashes,hashVersion}=newRecoveryCodes();
+  const rec:Omit<RecoveryRecord,'id'>={userId,hashes,hashVersion,remaining:codes.length,totaal:codes.length,createdAt:Date.now(),overzicht:codes.map((c,i)=>({nr:i+1,hint:c.slice(-2),hash:hashes[i]})),gebruikt:{}};
+  return{codes,rec};
+};
+/** Invoer zoals de gebruiker hem typt of plakt: «A1B2-C3D4-E5F6», met spaties, kleine letters. */
+const herstelNorm=(code:string)=>String(code||'').replace(/[\s-]/g,'').toUpperCase();
+/** Overzicht voor «Коди відновлення»: alleen gemaskeerd, nooit hashes. */
+export function herstelOverzicht(r:RecoveryRecord|null){
+  if(!r)return{codes:[],resterend:0,totaal:0,createdAt:0,bekekenOp:0,ingetrokkenOp:0};
+  const open=new Set(r.hashes||[]);
+  const codes=(r.overzicht||[]).map(x=>({nr:x.nr,hint:x.hint,status:open.has(x.hash)?'ongebruikt':r.gebruikt?.[x.hash]?'gebruikt':r.ingetrokkenOp?'ingetrokken':'gebruikt',gebruiktOp:Number(r.gebruikt?.[x.hash]||0)}));
+  return{codes,resterend:Math.max(0,r.remaining||0),totaal:r.totaal||r.overzicht?.length||Math.max(0,r.remaining||0),createdAt:r.createdAt||0,bekekenOp:r.bekekenOp||0,ingetrokkenOp:r.ingetrokkenOp||0};
+}
 const withoutId=<T extends{id:string}>({id:_id,...rest}:T)=>rest;
 const b32='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const toBase32=(buf:Buffer)=>{let bits=0,acc=0,out='';for(const byte of buf){acc=acc<<8|byte;bits+=8;while(bits>=5){out+=b32[(acc>>>(bits-5))&31];bits-=5;}}if(bits)out+=b32[(acc<<(5-bits))&31];return out;};
@@ -92,9 +110,12 @@ async function totpGebruiken(row:TotpRecord,code:string):Promise<'ok'|'ongeldig'
 /** Eenmalige herstelcode verbruiken (atomisch). */
 async function herstelcodeGebruiken(userId:string,code:string){
   const recovery=await recoveryFor(userId);
-  const hashed=recovery?recoveryMatches(recovery,String(code||'').trim().toUpperCase()):'';
+  const hashed=recovery&&!recovery.ingetrokkenOp?recoveryMatches(recovery,herstelNorm(code)):'';
   if(!recovery||!hashed||!recovery.hashes.includes(hashed))return false;
-  return db.takeArrayValue(RECOVERY,recovery.id,'hashes',hashed,'remaining');
+  if(!await db.takeArrayValue(RECOVERY,recovery.id,'hashes',hashed,'remaining'))return false;
+  // Alleen voor het overzicht (doorgestreept + datum); atomisch en los van de hashes.
+  await db.zetEenmaligInMap(RECOVERY,recovery.id,'gebruikt',hashed,Date.now()).catch(()=>false);
+  return true;
 }
 async function hashPassword(password:string){
   const salt=randomBytes(16);
@@ -366,12 +387,9 @@ export async function verifyPasswordLogin(email:string,password:string,totp='',i
     const uitkomst=await totpGebruiken(totpRow,totp);
     if(uitkomst==='sleutel')return{status:'unavailable' as const,code:'ACCESS_TOTP_KEY_MISSING',http:503};
     if(uitkomst!=='ok'){
-      const recovery=await recoveryFor(user.id);
-      const hashed=recovery?recoveryMatches(recovery,totp.trim().toUpperCase()):'';
-      if(!recovery||!hashed||!recovery.hashes.includes(hashed))return failed('ACCESS_CREDENTIALS_INVALID');
-      // Atomisch eenmalig: één UPDATE haalt de hash alleen weg als die er nog staat; bij gelijktijdig
-      // gebruik van dezelfde code wint precies één verzoek, de rest krijgt ACCESS_MFA_INVALID.
-      if(!await db.takeArrayValue(RECOVERY,recovery.id,'hashes',hashed,'remaining'))return failed('ACCESS_CREDENTIALS_INVALID');
+      // Atomisch eenmalig (herstelcodeGebruiken → takeArrayValue): bij gelijktijdig gebruik van dezelfde code wint precies
+      // één verzoek, de rest krijgt ACCESS_CREDENTIALS_INVALID. Ingetrokken sets tellen niet.
+      if(!await herstelcodeGebruiken(user.id,totp))return failed('ACCESS_CREDENTIALS_INVALID');
     }
   }
   await clearLoginFailures(subject);
@@ -629,11 +647,10 @@ export function createAccessPlaneRoutes(deps:{
       const stapNr=totpStap(fromBase32(secret),code);
       if(stapNr<0)return deps.fail('ACCESS_TOTP_INVALID',400);
       await clearLoginFailures(`stap-op:${auth.user.id}`);
-      const{codes,hashes,hashVersion}=newRecoveryCodes();
+      const{codes,rec}=nieuweHerstelSet(auth.user.id);
       const basis=zonder(withoutId(row) as Record<string,unknown>,'pendingSecretEnc','pendingAt','secret');
       await db.update(TOTP,[{id:row.id,record:{...basis,...(vervangen?{secretEnc:row.pendingSecretEnc}:{}),confirmed:true,lastStep:stapNr,updatedAt:Date.now()}}]);
       const recovery=await recoveryFor(auth.user.id);
-      const rec={userId:auth.user.id,hashes,hashVersion,remaining:codes.length,createdAt:Date.now()};
       if(recovery?.id)await db.update(RECOVERY,[{id:recovery.id,record:rec}]);
       else await db.add(RECOVERY,[rec]);
       await deps.audit(auth.user.id,vervangen?'access.totp.replace':'access.totp.enroll','success',{});
@@ -670,13 +687,35 @@ export function createAccessPlaneRoutes(deps:{
           if(uitkomst!=='ok'){const f=codeFout(uitkomst);return deps.fail(f.code,f.http);}
         }
       }else{const stap=await stapOp(auth);if(stap)return stap;}
-      const{codes,hashes,hashVersion}=newRecoveryCodes();
+      // «Створити нові»: de oude set vervalt meteen (het record wordt vervangen).
+      const{codes,rec}=nieuweHerstelSet(auth.user.id);
       const recovery=await recoveryFor(auth.user.id);
-      const rec={userId:auth.user.id,hashes,hashVersion,remaining:codes.length,createdAt:Date.now()};
       if(recovery?.id)await db.update(RECOVERY,[{id:recovery.id,record:rec}]);
       else await db.add(RECOVERY,[rec]);
       await deps.audit(auth.user.id,'access.recovery.rotate','success',{});
-      return deps.respond({ok:true,recoveryCodes:codes,plaintextReturned:true});
+      if(recovery?.id&&(recovery.remaining||0)>0)await meld(auth.user.id,'access_recovery_rotated','Коди відновлення замінено / Herstelcodes vervangen',
+        'Створено нові коди відновлення; старі більше не діють. Якщо це були не ви — негайно зверніться до адміністратора. / Er zijn nieuwe herstelcodes gemaakt; de oude werken niet meer. Was u dit niet: neem direct contact op met de beheerder.');
+      return deps.respond({ok:true,recoveryCodes:codes,plaintextReturned:true,overzicht:herstelOverzicht({...rec,id:recovery?.id||''})});
+    }],
+    // Lijst «Коди відновлення»: gemaskeerd (••••-••••-••ab), met status en datum van gebruik. Geen step-up: er komt niets geheims uit.
+    'POST /api/owner/access/recovery/overzicht':[async(ctx: any)=>{
+      const auth=await gate(ctx.event,ctx.body);
+      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
+      return deps.respond({ok:true,...herstelOverzicht(await recoveryFor(auth.user.id))});
+    }],
+    // «Відкликати всі»: alle nog ongebruikte codes onbruikbaar (step-up vereist), lijst blijft zichtbaar als «Відкликано».
+    'POST /api/owner/access/recovery/intrekken':[async(ctx: any)=>{
+      const auth=await gate(ctx.event,ctx.body);
+      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
+      const stap=await stapOp(auth);if(stap)return stap;
+      const recovery=await recoveryFor(auth.user.id);
+      if(!recovery?.id)return deps.fail('ACCESS_RECOVERY_NOT_ENROLLED',404);
+      const nu=Date.now();
+      if(!recovery.ingetrokkenOp)await db.update(RECOVERY,[{id:recovery.id,record:{...withoutId(recovery),hashes:[],remaining:0,ingetrokkenOp:nu}}]);
+      await deps.audit(auth.user.id,'access.recovery.revoke','success',{});
+      await meld(auth.user.id,'access_recovery_revoked','Коди відновлення відкликано / Herstelcodes ingetrokken',
+        'Усі коди відновлення відкликано; жоден більше не діє. Якщо це були не ви — негайно зверніться до адміністратора. / Alle herstelcodes zijn ingetrokken; geen enkele werkt nog. Was u dit niet: neem direct contact op met de beheerder.');
+      return deps.respond({ok:true,...herstelOverzicht(await recoveryFor(auth.user.id)),snapshot:await accessSnapshot(auth.user)});
     }],
     'POST /api/owner/access/recovery/bekeken':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);

@@ -5,7 +5,7 @@ import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { Fingerprint, KeyRound, LifeBuoy, LogIn, ShieldCheck, X } from 'lucide-react';
 import { kanPasskey } from './webauthn';
-import { bewaarHervat, paginaTaal, passkeyStapOpCode, type BevestigOpties, type StapOpMethode, type StapOpUitkomst } from './stap-op';
+import { bewaarHervat, neemTerugMelding, paginaTaal, passkeyStapOpCode, type BevestigOpties, type StapOpMethode, type StapOpUitkomst } from './stap-op';
 import './bevestig-toegang.css';
 
 type Lang = 'uk' | 'nl';
@@ -55,6 +55,13 @@ const FOUT: Record<string, readonly [string, string]> = {
   RATE_LIMITED: ['Забагато спроб. Зачекайте кілька хвилин.', 'Te veel pogingen. Wacht een paar minuten.'],
   STEP_UP_TOTP_NOT_ENROLLED: ['Застосунок-автентифікатор не налаштовано.', 'De authenticator-app is niet ingesteld.'],
   STEP_UP_RECOVERY_NOT_ENROLLED: ['Кодів відновлення немає.', 'Er zijn geen herstelcodes.'],
+  STEP_UP_ACCOUNT_MISMATCH: ['Ви вибрали інший акаунт Google. Підтвердьте тим самим акаунтом, з яким ви ввійшли сюди.', 'Je koos een ander Google-account. Bevestig met hetzelfde account waarmee je hier bent aangemeld.'],
+  STEP_UP_NOT_FRESH: ['Google не підтвердив новий вхід. Спробуйте ще раз або виберіть інший спосіб.', 'Google bevestigde geen nieuwe aanmelding. Probeer opnieuw of kies een andere manier.'],
+  STEP_UP_GOOGLE_NIET_BEVESTIGD: ['Повторний вхід через Google не підтвердив доступ. Спробуйте ще раз або виберіть інший спосіб.', 'Opnieuw inloggen bij Google heeft de toegang niet bevestigd. Probeer opnieuw of kies een andere manier.'],
+  GOOGLE_INVALID_GRANT: ['Google-вхід застарів. Спробуйте ще раз.', 'De Google-aanmelding is verlopen. Probeer het opnieuw.'],
+  OWNER_OAUTH_EXPIRED: ['Спроба входу через Google застаріла. Спробуйте ще раз.', 'De Google-aanmeldpoging is verlopen. Probeer het opnieuw.'],
+  LOGIN_BINDING_MISMATCH: ['Вхід через Google почато в іншій вкладці чи браузері. Спробуйте ще раз тут.', 'De Google-aanmelding is in een ander tabblad of andere browser gestart. Probeer het hier opnieuw.'],
+  access_denied: ['Вхід через Google скасовано.', 'Aanmelden bij Google geannuleerd.'],
   NETWORK_ERROR: ['Немає зв’язку із сервером. Спробуйте ще раз.', 'Geen verbinding met de server. Probeer het opnieuw.'],
 };
 const foutTekst = (lang: Lang, code: string) => {
@@ -93,7 +100,9 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
   const [weergave, setWeergave] = useState<StapOpMethode | null>(null);
   const [code, setCode] = useState('');
   const [bezig, setBezig] = useState('');
-  const [fout, setFout] = useState('');
+  // Terug van Google maar nog niet bevestigd: meteen de reden tonen (geen stille lus).
+  const [fout, setFout] = useState(() => { const r = neemTerugMelding(); return r ? foutTekst(paginaTaal(), r) : ''; });
+  const eersteWeergave = useRef(true);
   const invoer = useRef<HTMLInputElement | null>(null);
   const toegestaan = opties.toegestaan?.length ? opties.toegestaan : ALLE;
 
@@ -114,7 +123,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   }, [bezig, klaar]);
-  useEffect(() => { setCode(''); setFout(''); if (weergave === 'totp' || weergave === 'herstelcode') window.setTimeout(() => invoer.current?.focus(), 30); }, [weergave]);
+  useEffect(() => { setCode(''); if (eersteWeergave.current) { if (weergave) eersteWeergave.current = false; } else setFout(''); if (weergave === 'totp' || weergave === 'herstelcode') window.setTimeout(() => invoer.current?.focus(), 30); }, [weergave]);
 
   const beschikbaar = info ? beschikbareMethoden(info.methoden, toegestaan, kanPasskey()) : [];
   const alleenGoogle = beschikbaar.length === 1 && beschikbaar[0] === 'google';
@@ -181,7 +190,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
           {weergave === 'totp'
             ? <input id='bevestig-toegang-code' ref={invoer} autoFocus inputMode='numeric' autoComplete='one-time-code' pattern='[0-9 ]*' maxLength={7} placeholder='123456' value={code}
               onChange={(e) => { const v = e.target.value.replace(/[^\d ]/g, ''); setCode(v); if (v.replace(/\D/g, '').length === 6 && !bezig) window.setTimeout(() => (e.target.form as HTMLFormElement | null)?.requestSubmit(), 0); }} />
-            : <input id='bevestig-toegang-code' ref={invoer} autoFocus autoComplete='off' autoCapitalize='characters' spellCheck={false} maxLength={20} placeholder='XXXXXXXXXXXX' value={code} onChange={(e) => setCode(e.target.value)} />}
+            : <input id='bevestig-toegang-code' ref={invoer} autoFocus autoComplete='off' autoCapitalize='characters' spellCheck={false} maxLength={20} placeholder='XXXX-XXXX-XXXX' value={code} onChange={(e) => setCode(e.target.value)} />}
           <p className='bevestig-toegang-uitleg'>{weergave === 'totp' ? t('totpUitleg') : t('herstelUitleg')}</p>
           <button type='submit' className='bevestig-toegang-primair' disabled={!!bezig || (weergave === 'totp' ? code.replace(/\D/g, '').length !== 6 : code.replace(/[\s-]/g, '').length < 8)}><KeyRound />{t('bevestigen')}</button>
         </form>}
@@ -240,12 +249,13 @@ export function toonBevestigVenster(opties: BevestigOpties): Promise<StapOpUitko
 }
 
 /** Korte melding na terugkeer van Google zonder bekende actie: «Доступ підтверджено — повторіть дію». */
-export function toonHervatMelding() {
+export function toonHervatMelding(fout = '') {
   const lang = paginaTaal();
   const el = document.createElement('div');
   el.className = 'bevestig-toegang-melding';
   el.setAttribute('role', 'status');
-  el.textContent = lang === 'nl' ? 'Toegang bevestigd. Voer de actie nu opnieuw uit (5 minuten geldig).' : 'Доступ підтверджено. Тепер повторіть дію (діє 5 хвилин).';
+  if (fout) el.dataset.fout = '1';
+  el.textContent = fout ? foutTekst(lang, fout) : lang === 'nl' ? 'Toegang bevestigd. Voer de actie nu opnieuw uit (5 minuten geldig).' : 'Доступ підтверджено. Тепер повторіть дію (діє 5 хвилин).';
   document.body.appendChild(el);
   window.setTimeout(() => el.remove(), 8000);
 }

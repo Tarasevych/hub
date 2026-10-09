@@ -3,6 +3,7 @@
 import { randomBytes } from 'node:crypto';
 import { closePool, getPool } from '../../server/platform/pg';
 import { checker, nepGoogle } from './hulp/nep-google';
+import { googleUitgifteVoorStapOpVers } from '../../backend/stap-op';
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('audit-account');
@@ -35,12 +36,29 @@ export async function main(): Promise<number> {
     check('verse aanmelding in een ANDERE browser geeft deze sessie geen step-up (gebonden aan sessie-id)', nogSteeds.status === 403 && nogSteeds.data.error === 'STEP_UP_REQUIRED');
     const zonderSessie = await G.browser().verzoek('hub.tarasevych.com', '/api/owner/identity/transactions/create', { service: 'hub', tabContext: randomBytes(24).toString('hex'), flowMode: 'redirect', returnTo: 'https://hub.tarasevych.com/', locale: 'nl', intent: 'step-up' });
     check('step-up-transactie zonder sessie geweigerd', zonderSessie.data.ok === false && zonderSessie.data.reasonCode === 'OWNER_STEP_UP_SESSION_REQUIRED', JSON.stringify(zonderSessie.data).slice(0, 160));
-    const stapOud = await O.aanmelden(`sub-o-${T}`, eigenaar, { service: 'admin', intent: 'step-up', authTime: oud });
-    check('step-up-URL vraagt opnieuw om aanmelding (prompt=login, max_age=0, claims auth_time)', stapOud.authUrl.searchParams.get('prompt') === 'login' && stapOud.authUrl.searchParams.get('max_age') === '0' && String(stapOud.authUrl.searchParams.get('claims')).includes('auth_time'));
+    const oudIat = Math.floor(Date.now() / 1000) - 600;
+    const stapOud = await O.aanmelden(`sub-o-${T}`, eigenaar, { service: 'admin', intent: 'step-up', authTime: oud, iat: oudIat });
+    check('step-up-URL: prompt=select_account (Google kent prompt=login niet), max_age=0, claims auth_time', stapOud.authUrl.searchParams.get('prompt') === 'select_account' && stapOud.authUrl.searchParams.get('max_age') === '0' && String(stapOud.authUrl.searchParams.get('claims')).includes('auth_time'));
     const naOud = await adminPost(O, `/api/owner/admin/users/${(await rij(A.email))!.id}`, { status: 'new' });
-    const stapZonder = await O.aanmelden(`sub-o-${T}`, eigenaar, { service: 'admin', intent: 'step-up', authTime: null });
+    const stapZonder = await O.aanmelden(`sub-o-${T}`, eigenaar, { service: 'admin', intent: 'step-up', authTime: null, iat: oudIat });
     const naZonder = await adminPost(O, `/api/owner/admin/users/${(await rij(A.email))!.id}`, { status: 'new' });
-    check('step-up met auth_time > 5 min of zonder auth_time telt niet', stapOud.cb.data.ok === true && naOud.status === 403 && stapZonder.cb.data.ok === true && naZonder.status === 403, `${naOud.status} ${naZonder.status}`);
+    check('step-up met oude auth_time (of zonder) én oud id_token (iat 10 min) telt niet en meldt STEP_UP_NOT_FRESH (geen stille lus)', stapOud.cb.data.ok === false && stapOud.cb.data.reasonCode === 'STEP_UP_NOT_FRESH' && stapOud.cb.data.stepUp === true && naOud.status === 403 && stapZonder.cb.data.reasonCode === 'STEP_UP_NOT_FRESH' && naZonder.status === 403, `${JSON.stringify(stapOud.cb.data).slice(0, 200)} ${naOud.status} ${naZonder.status}`);
+    const sessieVoor = (await O.verzoek('admin.tarasevych.com', '/api/owner/session/bootstrap', O.ctxBody('admin'))).data.user?.id;
+    const stapAnder = await O.aanmelden(`sub-ander-${T}`, eigenaar, { service: 'admin', intent: 'step-up' });
+    const sessieNa = (await O.verzoek('admin.tarasevych.com', '/api/owner/session/bootstrap', O.ctxBody('admin'))).data.user?.id;
+    const anderRij = await getPool().query("select count(*)::int n from app.records where tbl='users' and data->>'sub'=$1", [`sub-ander-${T}`]);
+    const naAnder = await adminPost(O, `/api/owner/admin/users/${(await rij(A.email))!.id}`, { status: 'new' });
+    check('step-up met een ANDER Google-account → STEP_UP_ACCOUNT_MISMATCH, geen nieuw account, sessie ongewijzigd, nog steeds 403', stapAnder.cb.data.ok === false && stapAnder.cb.data.reasonCode === 'STEP_UP_ACCOUNT_MISMATCH' && anderRij.rows[0].n === 0 && !!sessieVoor && sessieVoor === sessieNa && naAnder.status === 403, `${JSON.stringify(stapAnder.cb.data).slice(0, 200)} ${anderRij.rows[0].n} ${sessieVoor} ${sessieNa} ${naAnder.status}`);
+    const stapIat = await O.aanmelden(`sub-o-${T}`, eigenaar, { service: 'admin', intent: 'step-up', authTime: oud });
+    const naIat = await adminPost(O, `/api/owner/admin/users/${(await rij(A.email))!.id}`, { status: 'new' });
+    check('step-up met OUDE auth_time maar net uitgegeven id_token (iat, nonce van deze transactie, zelfde sub) → telt', stapIat.cb.data.ok === true && naIat.status === 200, `${JSON.stringify(stapIat.cb.data).slice(0, 160)} ${naIat.status}`);
+    { const nu = Date.now(), start = nu - 30_000;
+      check('googleUitgifteVoorStapOpVers: vers (na de klik, ≤ 2 min) ja; te oud, vóór de klik, toekomst, transactie > 10 min, 0 → nee',
+        googleUitgifteVoorStapOpVers(nu - 5_000, start, nu) && !googleUitgifteVoorStapOpVers(nu - 3 * 60_000, start, nu) && !googleUitgifteVoorStapOpVers(start - 2 * 60_000, start, nu)
+        && !googleUitgifteVoorStapOpVers(nu + 5 * 60_000, start, nu) && !googleUitgifteVoorStapOpVers(nu - 5_000, nu - 11 * 60_000, nu) && !googleUitgifteVoorStapOpVers(0, start, nu)); }
+    const gewoonIat = G.browser(); await gewoonIat.aanmelden(`sub-o-${T}`, eigenaar, { service: 'admin', authTime: oud });
+    const naGewoon = await adminPost(gewoonIat, `/api/owner/admin/users/${(await rij(A.email))!.id}`, { status: 'new' });
+    check('gewone aanmelding (geen step-up-transactie) met vers iat maar oude auth_time telt NIET als step-up', naGewoon.status === 403, `${naGewoon.status}`);
     const stapVers = await O.aanmelden(`sub-o-${T}`, eigenaar, { service: 'admin', intent: 'step-up' });
     const naVers = await adminPost(O, `/api/owner/admin/users/${(await rij(A.email))!.id}`, { status: 'new' });
     check('step-up met verse auth_time (redirect-flow) → admin-actie mag', stapVers.cb.data.ok === true && naVers.status === 200, `${naVers.status} ${naVers.body.slice(0, 160)}`);

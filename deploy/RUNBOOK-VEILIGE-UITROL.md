@@ -541,3 +541,68 @@ playwright-core (`PLAYWRIGHT_CORE`), Chrome (`CHROME`) en een test-CA in `$HOME/
 `*.tarasevych.com` (`E2E_TLS`: srv.key/srv.crt). Echte Chrome headless, `--host-resolver-rules` naar de lokale server, CDP
 virtual authenticator (internal, usb, hybrid/cable), Google gestubd via `page.route`. Screenshots naar `E2E_SCREENSHOTS`.
 De test ruimt zijn gebruikers op (de unieke index `records_een_eigenaar`).
+
+### 13.8 Google-step-up: lus «Підтвердіть доступ» na terugkeer (release 20261009-055320) en herstelcodes
+
+**Oorzaak van de lus.** De step-up-URL vroeg `prompt=login` + `max_age=0` + een claims-verzoek om `auth_time`. Google
+kent `prompt=login` niet en dwingt geen nieuw wachtwoord af: met een bestaande Google-sessie toont het alleen de
+accountkiezer en levert het een id_token met de **oude** `auth_time` (of zonder `auth_time` als «session age claims» in de
+OAuth-client uitstaan). De server telde de step-up alleen bij een `auth_time` jonger dan 5 minuten en sloeg hem anders
+**stil** niet op; de callback meldde gewoon «aangemeld». Terug op `/methods` hervatte de pagina de actie, kreeg weer
+`403 STEP_UP_REQUIRED` en opende hetzelfde venster: eindeloze lus zonder melding.
+
+**Nieuwe regel (backend/index.ts `ownerStapOpAuthTijd`, backend/stap-op.ts `googleUitgifteVoorStapOpVers`).** Een
+Google-step-up telt als:
+1. `auth_time` uit het ondertekende id_token jonger is dan 5 minuten (zoals voorheen; blijft de sterkste vorm), **of**
+2. het om een **expliciete step-up-transactie** gaat (gestart vanuit het venster, `intent: step-up`, alleen met een
+   levende sessie) én:
+   - het id_token **net is uitgegeven**: `iat` ≤ 2 minuten oud, niet vóór de klik (start van de transactie, 60 s
+     klokspeling) en de transactie zelf < 10 minuten oud;
+   - de **nonce** klopt met de nonce die bij de klik voor déze transactie is gemaakt en server-side bewaard
+     (`takeOAuthMaterial`, eenmalig), samen met de eenmalige `state`, PKCE-verifier en de aanmeld-binding-cookie (zelfde
+     browser);
+   - het Google-**subject** (`sub`) hoort bij het account dat de step-up startte (`account_identities`, anders `users.sub`);
+   - `email_verified` waar is (verifyGoogle/ensureUser eisen dat al).
+
+De step-up geldt dan 5 minuten vanaf het afronden, alleen voor die sessie (tab-overlay/anker), zoals TOTP en passkey.
+
+**Waarom dit verantwoord is.** Google biedt geen manier om opnieuw het wachtwoord af te dwingen; ook GitHub e.d. kunnen bij
+een externe IdP niet meer bewijzen dan «de gebruiker heeft nu, in deze browser, actief dit Google-account gekozen». Dat
+bewijzen punt 2a–d: zonder klik in de accountkiezer komt er geen code terug; een oude code of een id_token uit een andere
+transactie faalt op state/nonce/PKCE/iat; een ander Google-account faalt op `sub`. Wat het níet bewijst is dat de persoon
+het Google-wachtwoord kent als Google al aangemeld was — dezelfde grens als bij de gewone aanmelding. Voor acties waar dat
+te zwak is blijven de strengere paden: passkey-step-up (`passkeyStapOpGeldig`, root-goedkeuring), TOTP-code bij herstelcodes
+vervangen en TOTP uitschakelen (die accepteren Google bewust niet). Een gewone aanmelding (geen step-up-transactie) met een
+vers `iat` telt nog steeds **niet** (alleen `auth_time`). Noodpad `STAP_OP_GOOGLE_ZONDER_AUTH_TIME=1` blijft bestaan maar is
+niet meer nodig. De autorisatie-URL gebruikt nu altijd `prompt=select_account` (+ `max_age=0` en het claims-verzoek bij
+step-up).
+
+**Nooit stil.**
+- Ander Google-account: `STEP_UP_ACCOUNT_MISMATCH` vóór `ensureUser` — geen nieuw account, geen sessiewissel, audit
+  `owner.step_up.google rejected`. Geen verse bevestiging: `STEP_UP_NOT_FRESH`.
+- De callback-antwoorden van een step-up dragen `stepUp: true`; bij een fout zet `OwnerIdentityCallback` de reden in
+  `sessionStorage` (`mijn-ruimte-stap-op-fout`, alleen een foutcode) en stuurt terug naar de pagina. Het venster toont de
+  reden («Ви вибрали інший акаунт Google…», «Google не підтвердив новий вхід…»). Opent het venster opnieuw direct na een
+  hervatting zonder bewaarde reden, dan toont het «Повторний вхід через Google не підтвердив доступ…».
+
+**Herstelcodes (GitHub-achtig).**
+- Na het maken één keer de codes (`XXXX-XXXX-XXXX`) met Завантажити (.txt), Копіювати, Друкувати en «Я зберіг коди» →
+  «Готово» (zet `bekekenOp`).
+- Daarna alleen `POST /api/owner/access/recovery/overzicht`: per code volgnummer, de laatste 2 tekens (hint), status
+  (`ongebruikt` / `gebruikt` + datum / `ingetrokken`), «Залишилося N з 10». De codes zelf blijven alleen als HMAC met pepper
+  bewaard; de hint verkleint de zoekruimte van 2^48 naar 2^40 per code, met lockout ruim voldoende. Nooit hashes in een
+  antwoord.
+- «Відкликати всі»: `POST /api/owner/access/recovery/intrekken` (step-up vereist) → `hashes: []`, `remaining: 0`,
+  `ingetrokkenOp`; alle wegen (aanmelden met wachtwoord+code, step-up, TOTP uitschakelen) gebruiken `herstelcodeGebruiken`,
+  dat ingetrokken sets weigert. Melding aan de gebruiker.
+- «Створити нові» vervangt de set (oude vervallen meteen; melding als er nog ongebruikte waren).
+- Gebruik wordt atomisch vastgelegd: `takeArrayValue` (hash weg, teller) en daarna `zetEenmaligInMap` (`gebruikt[hash] = tijd`),
+  zonder de rest van het record te overschrijven.
+- Invoer mag streepjes, spaties en kleine letters bevatten.
+- Geen migratie nodig: alles staat in het bestaande jsonb-record `identity_recovery_codes_v1`. Oude sets (zonder
+  `overzicht`) tonen alleen de teller met de hint «створіть нові, щоб бачити стан кожного коду».
+- `/recovery/overzicht` valt niet onder de strikte MFA-limiet (10/min per IP); de andere herstelcode-routes wel.
+
+**E2E.** `tests/e2e/herstelcodes.e2e.ts`: step-up met oude `auth_time` maar vers `iat` → codes gemaakt; downloaden,
+kopiëren, afdrukken, bevestigen; code gebruiken in het venster (andere sessie) → doorgestreept, teller 9; intrekken →
+onbruikbaar; ander account → melding in het venster; oud `iat` → melding.

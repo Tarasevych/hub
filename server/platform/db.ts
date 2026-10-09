@@ -233,6 +233,22 @@ export const db = {
     return (result.rowCount || 0) > 0;
   },
 
+  /**
+   * Zet atomisch `data[veld][sleutel] = waarde` (getal), alleen als die sleutel er nog niet staat (eenmalig, bijv. «herstelcode
+   * gebruikt op»). Raakt de rest van het record niet aan, dus geen verloren gelijktijdige wijzigingen. true = gezet.
+   */
+  async zetEenmaligInMap(table: string, id: string, veld: string, sleutel: string, waarde: number): Promise<boolean> {
+    checkTable(table);
+    if (!validId(id) || !/^[A-Za-z_]{1,40}$/.test(veld) || !/^[A-Za-z0-9_:.-]{1,128}$/.test(sleutel) || !Number.isSafeInteger(waarde)) return false;
+    const result = await q(table,
+      `UPDATE app.records SET data = jsonb_set(data, ARRAY[$3::text], CASE WHEN jsonb_typeof(data -> $3::text) = 'object' THEN data -> $3::text ELSE '{}'::jsonb END || jsonb_build_object($4::text, to_jsonb($5::bigint))), updated_at = now()
+        WHERE tbl = $1 AND id = $2 AND NOT (CASE WHEN jsonb_typeof(data -> $3::text) = 'object' THEN data -> $3::text ELSE '{}'::jsonb END ? $4::text)
+        RETURNING id, owner_id, data->>'workspaceId' AS ws`,
+      [table, id, veld, sleutel, waarde]);
+    audit(table, 'wijzigen', result.rows);
+    return (result.rowCount || 0) > 0;
+  },
+
   /** Verwijder records per id. Geeft per id true/false terug. */
   async delete(table: string, ids: string[]): Promise<boolean[]> {
     checkTable(table);

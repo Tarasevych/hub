@@ -1,7 +1,8 @@
 // Step-up (opnieuw bevestigen) voor gevoelige acties (beveiliging fase 3).
 // Een actie mag als binnen 5 minuten op DEZE sessie (sessie-id, tab-overlay of anker):
 //   a) een Google-aanmelding is afgerond waarvan Google zelf bevestigt (auth_time in het id_token) dat de
-//      gebruiker zich minder dan 5 minuten geleden echt heeft aangemeld. Onthouden browser (complete-remembered)
+//      gebruiker zich minder dan 5 minuten geleden echt heeft aangemeld, óf een expliciete step-up-transactie
+//      (venster «Підтвердіть доступ») met een net uitgegeven id_token voor hetzelfde Google-account (googleUitgifteVoorStapOpVers). Onthouden browser (complete-remembered)
 //      en handoff tellen nooit: daar is geen nieuw id_token. (Audit-fix 5.)
 //   b) een geldige TOTP-code is ingevoerd via POST /api/owner/access/stap-op (of, met methode 'herstelcode', een ongebruikte
 //      herstelcode: eenmalig verbruikt, zelfde lockout als TOTP, en de gebruiker krijgt een melding).
@@ -39,6 +40,17 @@ async function schrijf(userId: string, wijzig: (r: Omit<StapOpRecord, 'id'>) => 
 /** Is een Google auth_time (ms) vers genoeg voor step-up? */
 export function googleAuthTijdVers(authTimeMs: number, nu = Date.now()): boolean {
   return Number.isFinite(authTimeMs) && authTimeMs > 0 && authTimeMs <= nu + TOEKOMST_SPELING_MS && nu - authTimeMs < STAP_OP_MS;
+}
+/** Google negeert prompt=login/max_age vaak: auth_time blijft dan oud. Een step-up-transactie telt daarom ook als het
+ * ondertekende id_token NET is uitgegeven: iat hoogstens 2 min oud (60 s klokspeling), niet vóór de klik (start van de
+ * transactie, 60 s speling) en de transactie zelf jonger dan 10 min. Nonce, state, PKCE, binding en hetzelfde
+ * Google-subject controleert backend/index.ts (ownerGoogleUserFromCode). RUNBOOK-VEILIGE-UITROL.md §13.8. */
+export const STAP_OP_IAT_MS = 2 * 60 * 1000;
+export function googleUitgifteVoorStapOpVers(iatMs: number, txStartMs: number, nu = Date.now()): boolean {
+  if (!Number.isFinite(iatMs) || iatMs <= 0 || !Number.isFinite(txStartMs) || txStartMs <= 0) return false;
+  if (iatMs > nu + TOEKOMST_SPELING_MS || nu - iatMs > STAP_OP_IAT_MS) return false;
+  if (iatMs < txStartMs - TOEKOMST_SPELING_MS) return false;
+  return nu - txStartMs < 10 * 60 * 1000;
 }
 /**
  * Aanroepen nadat een Google-aanmelding sessie(s) heeft opgeleverd. Legt step-up vast voor precies die sessie-id's,

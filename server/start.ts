@@ -260,7 +260,8 @@ setInterval(() => { const now = Date.now(); for (const [k, v] of geheugen) if (n
 const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
   [/^\/api\/(owner\/)?(access|auth)\/password\/login$/, 'wachtwoord', 10, true],
   // Audit-fix 7: stap-op (TOTP-step-up) zit in dezelfde strikte MFA-bucket als totp/recovery.
-  [/^\/api\/owner\/access\/((totp|recovery)\/|stap-op$)/, 'mfa', 10, true],
+  // Het gemaskeerde overzicht van herstelcodes is geen MFA-poging (alleen lezen); dat telt niet mee.
+  [/^\/api\/owner\/access\/((totp|recovery)\/(?!overzicht$)|stap-op$)/, 'mfa', 10, true],
   [/^\/api\/auth\/google\/start$/, 'google-start', 10, true],
   // Agent koppelen: onbeveiligde route met een code als geheim. Strikt per IP (cf-connecting-ip), faalt dicht.
   [/^\/api\/owner\/agents\/pair$/, 'agent-koppelen', 10, true],
