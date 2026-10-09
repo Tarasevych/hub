@@ -333,7 +333,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             <button type="button" className={kind === "task" ? "on" : ""} onClick={() => setKind("task")}>{t("Задача", "Taak")}</button>
             <button type="button" className={kind === "note" ? "on" : ""} onClick={() => setKind("note")}>{t("Нотатка", "Notitie")}</button>
             <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t("Назва", "Naam")} disabled={permsReady && !flags.board} />
-            <textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder={t("Текст", "Tekst")} disabled={permsReady && !flags.board} />
+            <textarea data-concept="mcp-bord" value={body} onChange={(event) => setBody(event.target.value)} placeholder={t("Текст", "Tekst")} disabled={permsReady && !flags.board} />
             <button type="submit" disabled={permsReady && !flags.board}>{t("Записати", "Opslaan")}</button>
           </form>
           <section className="mcp-board">

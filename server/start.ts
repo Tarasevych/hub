@@ -188,7 +188,16 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
     'Cache-Control': immutable ? 'public, max-age=31536000, immutable' : 'no-cache',
     ETag: etag,
   };
-  if (ext === '.html') headers['Content-Security-Policy'] = csp;
+  if (ext === '.html') {
+    headers['Content-Security-Policy'] = csp;
+    // Menu v2 fase B1: vooruitladen tussen de eigen onderdelen. De regels staan in een apart bestand (geen inline script, de CSP
+    // blijft script-src 'self'); ze gelden alleen voor <a data-tsv-vooruit> die de app zelf plaatst. `credentialed-prerender`
+    // staat toe dat een ander onderdeel van hetzelfde domein deze pagina voorbereidt (alleen bij «prerender» in de instellingen;
+    // de app start pas bij activering, zie src/main.tsx).
+    headers['Speculation-Rules'] = '"/speculatie.json"';
+    headers['Supports-Loading-Mode'] = 'credentialed-prerender';
+  }
+  if (path.basename(file) === 'speculatie.json') headers['Content-Type'] = 'application/speculationrules+json';
   if (path.basename(file) === 'service-worker.js') headers['Service-Worker-Allowed'] = '/';
   if (req.headers['if-none-match'] === etag) { send(res, 304, headers); return true; }
   headers['Content-Length'] = String(s.size);

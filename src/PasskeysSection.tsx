@@ -15,6 +15,7 @@ import {useEffect,useRef,useState} from 'react';
 import {Check,Cloud,Fingerprint,KeyRound,Laptop,Pencil,Plus,ShieldCheck,Smartphone,Trash2,TriangleAlert,X} from 'lucide-react';
 import {InfoTip} from './InfoTip';
 import {api} from './platform/client';
+import {swrPost} from './lees-cache';
 import {metHervat,neemHervat} from './platform/stap-op';
 import {GebruikLijst,GeschiedenisLijst,NotitieVeld,RedenVeld,redenOk,useNotities,type Gebruik,type GeschiedenisItem} from './ToegangContext';
 import {foutCode,kanPasskey,passkeyAanmaken,passkeyBevestigen,type AssertieOpties,type RegistratieOpties} from './platform/webauthn';
@@ -99,11 +100,12 @@ export function PasskeysSection({lang,context,onChange}:Props){
   // Wacht op het passkey-venster van browser/Windows: 'venster'; na 25 s zonder antwoord: 'traag' (extra hint).
   const[wacht,setWacht]=useState<''|'venster'|'traag'>('');
 
-  const laden=async()=>{
-    try{setData((await api.post('/api/owner/access/passkeys/lijst',context)).data as Lijst);}
+  // Fase B1: bewaarde lijst meteen, dan vers (alleen geheugen, per account); afbreken als de pagina verdwijnt.
+  const laden=async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{
+    try{await swrPost<Lijst>('/api/owner/access/passkeys/lijst',context,d=>setData(d),o);}
     catch(c){setNotice({ok:false,text:foutTekst(lang,foutCode(c))});}
   };
-  useEffect(()=>{void laden();},[lang]);// eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(()=>{const a=new AbortController();void laden({signal:a.signal});return()=>a.abort();},[lang]);// eslint-disable-line react-hooks/exhaustive-deps
 
   const doe=async(sleutel:string,run:()=>Promise<string|void>)=>{
     setBusy(sleutel);setNotice(null);setHerhaal(null);
