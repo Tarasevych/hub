@@ -2,11 +2,13 @@ import {useEffect,useState} from 'react';
 import {api} from './platform/client';
 import {API_PLATFORM_VERSION,apiPlatformContractPayload,type ApiPlatformCapability} from './api-platform-contract';
 import {ecosystemTabContext} from './tab-context';
+import {VaultMetaBewerker,VaultMetaRegel,VaultMetaVelden} from './VaultMeta';
+import {leegMeta,vandaag,type VaultMeta,type VaultStaat} from '../shared/vault-meta';
 import './api-platform-view.css';
 type Tr=(uk:string,nl:string)=>string;
 type Contract=ReturnType<typeof apiPlatformContractPayload>;
 type TokenItem={id:string;prefix:string;display:string;scopes:string[];label:string;createdAt:number;expiresAt:number;lastUsedAt:number|null;revokedAt:number|null;status:'active'|'expired'|'revoked'};
-type VaultItem={id:string;name:string;purpose:string;usedBy:string;updatedAt:number;createdAt:number;hasValue:boolean};
+type VaultItem={id:string;name:string;purpose:string;usedBy:string;updatedAt:number;createdAt:number;hasValue:boolean;meta?:VaultMeta;staat?:VaultStaat};
 type ConnectionItem={id:string;kind:'google-link'|'vault-secret';labelUk:string;labelNl:string;noteUk:string;noteNl:string;status:'not_connected'|'configured'|'error'|'revoked';source:string;hasVaultSecret:boolean;vaultName:string;lastError:string;nextStep:{href:string;labelUk:string;labelNl:string};canMarkStatus:boolean;oauthSecondPass:boolean};
 const fallback=():Contract=>apiPlatformContractPayload({id:'',email:'',role:''});
 const sessionBody=()=>({service:'api',tabContext:ecosystemTabContext(),sourceOrigin:location.origin});
@@ -24,6 +26,8 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
   const[vaultName,setVaultName]=useState('ha-long-lived');
   const[vaultPurpose,setVaultPurpose]=useState('home-assistant');
   const[vaultValue,setVaultValue]=useState('');
+  const[vaultMeta,setVaultMeta]=useState<VaultMeta>(()=>({...leegMeta(),geldigVan:vandaag()}));
+  const lang=tr('uk','nl')==='uk'?'uk' as const:'nl' as const;
   const[renameDraft,setRenameDraft]=useState<Record<string,string>>({});
   const[busy,setBusy]=useState(false);
   const[notice,setNotice]=useState('');
@@ -47,7 +51,7 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
   const create=async()=>{if(busy)return;setBusy(true);setNotice('');try{const response=await api.post('/api/owner/api-platform/tokens/create',{...sessionBody(),label:tr('Ключ API','API-sleutel'),scopes:['identity.me.read'],expiresInDays:90});const key=String(response?.data?.plaintext||'');if(!key)throw new Error('empty');setPlaintext(key);setNotice(tr('Ключ показано один раз. Скопіюйте зараз. Backend зберіг лише hash.','Sleutel één keer getoond. Kopieer nu. Backend bewaart alleen de hash.'));await load();}catch{setNotice(tr('Не вдалося створити ключ.','Sleutel aanmaken mislukt.'))}setBusy(false);};
   const revoke=async(id:string)=>{if(busy||!window.confirm(tr('Відкликати ключ одразу?','Sleutel nu intrekken?')))return;setBusy(true);try{await api.post(`/api/owner/api-platform/tokens/${id}/revoke`,sessionBody());if(plaintext)setPlaintext('');await load();setNotice(tr('Ключ відкликано. GET /api/v1/me більше не прийме.','Sleutel ingetrokken. GET /api/v1/me weigert hem nu.'))}catch{setNotice(tr('Не вдалося відкликати.','Intrekken mislukt.'))}setBusy(false);};
   const verify=async()=>{if(!plaintext||busy)return;setBusy(true);try{const response=await api.post('/api/owner/api-platform/tokens/verify',{...sessionBody(),plaintext});setNotice(tr(`Перевірка успішна. owner id: ${response.data.ownerId}. scopes: ${(response.data.scopes||[]).join(', ')}`,`Controle geslaagd. owner-id: ${response.data.ownerId}. scopes: ${(response.data.scopes||[]).join(', ')}`));}catch{setNotice(tr('Ключ недійсний, прострочений або відкликаний.','Sleutel ongeldig, verlopen of ingetrokken.'))}setBusy(false);};
-  const saveVault=async()=>{if(busy)return;setBusy(true);setNotice('');try{const response=await api.post('/api/owner/api-platform/vault/save',{...sessionBody(),name:vaultName,purpose:vaultPurpose,usedBy:vaultPurpose,value:vaultValue});if(response?.data?.plaintext||response?.data?.value||response?.data?.secret)throw new Error('leak');setVaultValue('');await load();setNotice(tr('Секрет збережено зашифровано. Значення в UI більше не показується.','Geheim versleuteld opgeslagen. De waarde wordt niet meer in de UI getoond.'));}catch{setNotice(tr('Не вдалося зберегти секрет. Перевірте назву і що поле значення не порожнє.','Geheim opslaan mislukt. Controleer de naam en of de waarde niet leeg is.'))}setBusy(false);};
+  const saveVault=async()=>{if(busy)return;setBusy(true);setNotice('');try{const response=await api.post('/api/owner/api-platform/vault/save',{...sessionBody(),name:vaultName,purpose:vaultPurpose,usedBy:vaultPurpose,value:vaultValue,meta:vaultMeta});if(response?.data?.plaintext||response?.data?.value||response?.data?.secret)throw new Error('leak');setVaultValue('');setVaultMeta({...leegMeta(),geldigVan:vandaag()});await load();setNotice(tr('Секрет збережено зашифровано. Значення в UI більше не показується.','Geheim versleuteld opgeslagen. De waarde wordt niet meer in de UI getoond.'));}catch{setNotice(tr('Не вдалося зберегти секрет. Перевірте назву і що поле значення не порожнє.','Geheim opslaan mislukt. Controleer de naam en of de waarde niet leeg is.'))}setBusy(false);};
   const renameVault=async(id:string)=>{const name=String(renameDraft[id]||'').trim();if(busy||!name)return;setBusy(true);try{const response=await api.post(`/api/owner/api-platform/vault/${id}/rename`,{...sessionBody(),name});if(response?.data?.plaintext||response?.data?.value)throw new Error('leak');await load();setNotice(tr('Назву оновлено. Значення лишилось зашифрованим.','Naam bijgewerkt. De waarde blijft versleuteld.'));}catch{setNotice(tr('Не вдалося перейменувати.','Hernoemen mislukt.'))}setBusy(false);};
   const deleteVault=async(id:string,name:string)=>{if(busy||!window.confirm(tr(`Видалити секрет «${name}» без відновлення?`,`Geheim «${name}» definitief verwijderen?`)))return;setBusy(true);try{await api.post(`/api/owner/api-platform/vault/${id}/delete`,sessionBody());await load();setNotice(tr('Секрет видалено.','Geheim verwijderd.'));}catch{setNotice(tr('Не вдалося видалити.','Verwijderen mislukt.'))}setBusy(false);};
   const markConnection=async(id:string,status:ConnectionItem['status'])=>{if(busy)return;setBusy(true);try{await api.post(`/api/owner/api-platform/connections/${id}/status`,{...sessionBody(),status});await load();setNotice(tr('Статус підключення оновлено.','Koppelingsstatus bijgewerkt.'));}catch{setNotice(tr('Не вдалося оновити статус.','Status bijwerken mislukt.'))}setBusy(false);};
@@ -115,11 +119,12 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
         <label>{tr('Назва','Naam')}<input name='vault-name' autoComplete='off' value={vaultName} onChange={event=>setVaultName(event.target.value)} placeholder='ha-long-lived' /></label>
         <label>{tr('Призначення','Doel')}<select value={vaultPurpose} onChange={event=>setVaultPurpose(event.target.value)}>{PURPOSES.map(item=><option key={item.id} value={item.id}>{tr(item.uk,item.nl)}</option>)}</select></label>
         <label>{tr('Значення (один раз)','Waarde (één keer)')}<input name='vault-value' type='password' autoComplete='new-password' value={vaultValue} onChange={event=>setVaultValue(event.target.value)} placeholder={tr('Вставте секрет і збережіть','Plak het geheim en sla op')} /></label>
+        <VaultMetaVelden lang={lang} waarde={vaultMeta} onChange={setVaultMeta}/>
         <button type='submit' disabled={busy||!vaultValue||!vaultReady}>{tr('Зберегти зашифровано','Versleuteld opslaan')}</button>
       </form>
       <small>{tr('Після збереження поле очищується. Показати секрет неможливо. Google/Microsoft platform secrets сюди не входять.','Na opslaan wordt het veld leeggemaakt. Het geheim kan niet getoond worden. Google-/Microsoft-platformgeheimen horen hier niet.')}</small>
       <ul className='api-platform-tokens' data-api-vault-list='true'>{vault.map(item=><li key={item.id} data-api-vault-id={item.id} data-api-vault-name={item.name}>
-        <div><code>{item.name}</code> · {item.usedBy||item.purpose} · {tr('оновлено','bijgewerkt')} {when(item.updatedAt)}</div>
+        <div><code>{item.name}</code> · {item.usedBy||item.purpose} · {tr('оновлено','bijgewerkt')} {when(item.updatedAt)}<VaultMetaRegel lang={lang} meta={item.meta} staat={item.staat}/><VaultMetaBewerker lang={lang} id={item.id} meta={item.meta} context={sessionBody()} onOpgeslagen={load}/></div>
         <div className='api-platform-secret-actions'>
           <input aria-label={tr('Нова назва','Nieuwe naam')} value={renameDraft[item.id]??item.name} onChange={event=>setRenameDraft(current=>({...current,[item.id]:event.target.value}))} />
           <button type='button' onClick={()=>void renameVault(item.id)} disabled={busy}>{tr('Перейменувати','Hernoemen')}</button>
