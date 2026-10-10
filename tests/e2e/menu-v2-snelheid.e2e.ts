@@ -121,6 +121,12 @@ export async function main(): Promise<number> {
     // Vastgelegd via exposeFunction, dus ook de toestanden van vlak vóór het paginawissel (de oude pagina is dan weg).
     const sB = B.log.filter((x) => x.startsWith('id.tarasevych.com|')).map((x) => x.slice('id.tarasevych.com|'.length));
     check('naar ander onderdeel: balk in E-mailblauw, loopt door tot de pagina wisselt (geen «klaar» op de oude pagina)', sB.some((x) => x === `wacht|mail|${kleur('mail', 'licht')}` || x === `bezig|mail|${kleur('mail', 'licht')}`) && !sB.some((x) => x.startsWith('klaar')), JSON.stringify(sB.slice(-4)));
+    // punt 5: de balk komt MEE naar mail.* (opstartscript tekent hem meteen in E-mailblauw) en de app maakt hem daar af
+    await B.page.waitForFunction(() => ['uit', 'klaar'].includes(document.getElementById('tsv-voortgang')?.dataset.staat || ''), undefined, { timeout: 15000 }).catch(() => undefined);
+    const sM = B.log.filter((x) => x.startsWith('mail.tarasevych.com|')).map((x) => x.slice('mail.tarasevych.com|'.length));
+    check('andere host: balk direct zichtbaar op de nieuwe pagina in E-mailblauw (geen «val»), daarna afgemaakt', sM[0] === `bezig|mail|${kleur('mail', 'licht')}` && sM.some((x) => /^(klaar|uit)\|/.test(x)), JSON.stringify(sM.slice(0, 5)));
+    check('de app op mail.* nam de balk over (en maakte hem zelf af)', await B.page.evaluate(() => document.getElementById('tsv-voortgang')?.dataset.overgenomen === '1'));
+    check('overdrachtskoekje opgeruimd (eenmalig)', !(await B.page.evaluate(() => document.cookie.includes('tsv_voortgang='))));
     check('vooruitladen uit: geen vooruit-links', await B.page.evaluate(() => document.querySelectorAll('#tsv-vooruit a').length) === 0);
     await B.ctx.close();
 
