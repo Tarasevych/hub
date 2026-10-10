@@ -200,6 +200,10 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
     // de app start pas bij activering, zie src/main.tsx).
     headers['Speculation-Rules'] = '"/speculatie.json"';
     headers['Supports-Loading-Mode'] = 'credentialed-prerender';
+    // Thema «Авто — коли надворі темно»: alleen op id.* (Налаштування → Теми) mag de pagina na een klik van de gebruiker de
+    // browser om de locatie vragen (de browser vraagt zelf toestemming; opgeslagen wordt alleen lat/lon afgerond op 0,1°).
+    // Overal elders blijft geolocation=() — geen enkele andere pagina kan de locatie opvragen.
+    if (String(req.headers.host || '').split(':')[0].toLowerCase() === SERVICE_HOSTS.identity) headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=(self), payment=(), usb=()';
   }
   if (path.basename(file) === 'speculatie.json') headers['Content-Type'] = 'application/speculationrules+json';
   if (path.basename(file) === 'service-worker.js') headers['Service-Worker-Allowed'] = '/';

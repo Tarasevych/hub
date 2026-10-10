@@ -22,11 +22,13 @@ import {
   Settings,
   ShieldCheck,
   Sun,
+  SunMoon,
   UserRound,
   Users,
   X,
 } from 'lucide-react';
 import StableAvatar from './StableAvatar';
+import { hervatAuto, pauzeerAuto, useAutoStatus } from './thema/useThema';
 import {
   forgetAccountPreviewHistory,
   readAccountPreviewHistory,
@@ -57,11 +59,12 @@ export {
   type RememberedAccount,
 } from './canonical-account-menu-model';
 
-export type AccountTheme = 'light' | 'dark' | 'device' | 'plum-light' | 'plum-dark';
+export type AccountTheme = 'light' | 'dark' | 'device' | 'auto' | 'plum-light' | 'plum-dark';
 
 type Props = {
   lang: 'uk' | 'nl';
   theme: AccountTheme;
+  /** Niet meer gebruikt in dit menu (violet is nu een palet in Налаштування → Теми); blijft voor compatibiliteit. */
   plumEnabled?: boolean;
   user: AccountMenuUser | null;
   busy?: boolean;
@@ -69,6 +72,8 @@ type Props = {
   sessionStartedAt?: number;
   onManage?: () => void;
   onSettings?: () => void;
+  /** Opent Налаштування → Теми (paletten, automatisch schakelen). */
+  onThemeColors?: () => void;
   onAddAccount: () => void;
   onLogout?: () => void;
   onLogoutAll?: () => void;
@@ -101,8 +106,11 @@ const copy = {
     light: 'Світла',
     dark: 'Темна',
     device: 'Пристрій',
-    plumLight: 'Сливова світла',
-    plumDark: 'Сливова темна',
+    auto: 'Авто',
+    autoHint: 'Автоматично: темна, коли надворі темно (або за вашим розкладом)',
+    pauze: 'Скасувати автоперемикання на сьогодні',
+    hervat: 'Повернути автоперемикання',
+    kleuren: 'Кольори теми…',
     privacy: 'Конфіденційність',
     terms: 'Умови',
     loading: 'Оновлюємо список…',
@@ -135,8 +143,11 @@ const copy = {
     light: 'Licht',
     dark: 'Donker',
     device: 'Apparaat',
-    plumLight: 'Lichte pruim',
-    plumDark: 'Donkere pruim',
+    auto: 'Auto',
+    autoHint: 'Automatisch: donker wanneer het buiten donker is (of volgens uw schema)',
+    pauze: 'Automatisch wisselen vandaag annuleren',
+    hervat: 'Automatisch wisselen hervatten',
+    kleuren: 'Themakleuren…',
     privacy: 'Privacy',
     terms: 'Voorwaarden',
     loading: 'Accountlijst bijwerken…',
@@ -227,13 +238,13 @@ function IconAction({
 export default function CanonicalAccountMenu({
   lang,
   theme,
-  plumEnabled = false,
   user,
   busy = false,
   openRequest = 0,
   sessionStartedAt = 0,
   onManage,
   onSettings,
+  onThemeColors,
   onAddAccount,
   onLogout,
   onLogoutAll,
@@ -402,6 +413,8 @@ export default function CanonicalAccountMenu({
   const light = theme === 'light';
   const dark = theme === 'dark';
   const device = theme === 'device';
+  const auto = theme === 'auto';
+  const autoStatus = useAutoStatus(theme);
   const showLogoutAll = Boolean(onLogoutAll) && model.shouldShowLogoutAll;
   const visibleRows = displayUser ? model.visibleExpandedAccounts : model.knownAccounts;
 
@@ -453,7 +466,7 @@ export default function CanonicalAccountMenu({
   );
 
   const controls = (
-    <div className={`canonical-preference-strip${plumEnabled ? ' with-plum' : ''}`}>
+    <div className='canonical-preference-strip with-plum'>
       <div className='canonical-compact-setting' aria-label={t.language} title={t.language}>
         <Languages />
         <div className='canonical-segmented language-switch' role='group' aria-label={t.language}>
@@ -478,17 +491,20 @@ export default function CanonicalAccountMenu({
           <button type='button' className={device ? 'active' : ''} onClick={() => onTheme('device')}>
             <Monitor /><b>{t.device}</b>
           </button>
-          {plumEnabled && (
-            <>
-              <button type='button' className={theme === 'plum-light' ? 'active' : ''} onClick={() => onTheme('plum-light')}>
-                <b>{t.plumLight}</b>
-              </button>
-              <button type='button' className={theme === 'plum-dark' ? 'active' : ''} onClick={() => onTheme('plum-dark')}>
-                <b>{t.plumDark}</b>
-              </button>
-            </>
-          )}
+          <button type='button' className={auto ? 'active' : ''} onClick={() => onTheme('auto')} title={t.autoHint} data-thema-auto>
+            <SunMoon /><b>{t.auto}</b>
+          </button>
         </div>
+      </div>
+      {auto && (
+        <div className='canonical-thema-auto' data-thema-auto-status={autoStatus.gepauzeerd ? 'gepauzeerd' : 'actief'}>
+          <button type='button' className='canonical-thema-pauze' onClick={() => (autoStatus.gepauzeerd ? hervatAuto() : pauzeerAuto())} data-thema-pauze>
+            {autoStatus.gepauzeerd ? t.hervat : t.pauze}
+          </button>
+        </div>
+      )}
+      <div className='canonical-thema-kleuren-link'>
+        <button type='button' onClick={() => { close(); onThemeColors?.(); }} data-thema-kleuren>{t.kleuren}</button>
       </div>
     </div>
   );

@@ -90,6 +90,15 @@ export async function main(): Promise<number> {
     const slecht = await Promise.all([-1, 1.5, 100000, '7', null].map((v) => zet(b, 'mail.tarasevych.com', 'mail', { bron: 'mail', ongelezen: v })));
     check('ongeldige waarden (-1, 1.5, 100000, "7", null): 400 MENU_TELLER_WAARDE_ONGELDIG', slecht.every((r) => r.status === 400 && r.body.includes('MENU_TELLER_WAARDE_ONGELDIG')), slecht.map((r) => r.status).join(','));
     check('na geweigerde verzoeken: teller nog 12', (await lees(b)).data.tellers?.mail?.ongelezen === 12);
+    // «закрите не воскресає»: × op mail.* geldt ook op id.* (andere oorsprong, ander localStorage) en blijft na F5
+    const weg = await b.verzoek('mail.tarasevych.com', '/api/owner/menu/tellers/weg', b.ctxBody('mail', { bron: 'mail', aantal: 12 }));
+    check('weggeklikt op mail.*: 200, weg.mail 12', weg.status === 200 && weg.data.weg?.mail === 12, weg.body.slice(0, 160));
+    check('weggeklikt aantal leesbaar vanaf id.* (geen andere subdomein-«opstanding»)', (await lees(b)).data.weg?.mail === 12);
+    const wegSlecht = await b.verzoek('id.tarasevych.com', '/api/owner/menu/tellers/weg', b.ctxBody('identity', { bron: 'mail', aantal: -3 }));
+    check('weg: ongeldige waarde → 400', wegSlecht.status === 400);
+    check('weg zonder sessie → 401/403', [401, 403].includes((await leeg.verzoek('id.tarasevych.com', '/api/owner/menu/tellers/weg', leeg.ctxBody('identity', { bron: 'mail', aantal: 1 }))).status));
+    await zet(b, 'mail.tarasevych.com', 'mail', { bron: 'mail', ongelezen: 5 });
+    check('minder ongelezen (5) dan weggeklikt (12): grens zakt mee naar 5', (await lees(b)).data.weg?.mail === 5);
     await zet(b, 'mail.tarasevych.com', 'mail', { bron: 'mail', ongelezen: 0 });
     check('teller naar 0', (await lees(b)).data.tellers?.mail?.ongelezen === 0);
     await zet(b, 'mail.tarasevych.com', 'mail', { bron: 'mail', ongelezen: 0 });
