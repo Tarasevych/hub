@@ -1,0 +1,46 @@
+/* Vensterbeheer (vensters.tsx): één laag voor alle vensters, titelbalk met slepen, grootte, minimaliseren, dok rechtsonder.
+   Kleuren uit het thema (canonical-chrome / index.css), met vaste terugvallers; tekst ≥ 4.5:1. */
+.venster-achter{position:fixed;inset:0;background:rgba(10,14,20,.55);backdrop-filter:blur(3px)}
+.venster{
+  position:fixed;display:flex;flex-direction:column;min-width:0;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);
+  border-radius:16px;border:1px solid var(--line,#d7dee8);background:var(--panel,#fff);color:var(--text,#0f172a);
+  box-shadow:0 24px 70px rgba(0,0,0,.35);outline:none;overflow:hidden
+}
+.venster.is-boven{box-shadow:0 28px 80px rgba(0,0,0,.45),0 0 0 2px var(--venster-actief,#2563eb)}
+.venster:not(.is-boven){filter:saturate(.85)}
+.venster[hidden]{display:none}
+.venster.is-max{inset:8px!important;left:8px!important;top:8px!important;width:auto!important;height:auto!important;max-height:none}
+.venster-kop{display:flex;align-items:center;gap:6px;min-height:40px;padding:4px 6px 4px 12px;border-bottom:1px solid var(--line,#d7dee8);background:var(--surface,#f8fafc);cursor:grab;user-select:none;touch-action:none}
+.venster.is-max .venster-kop{cursor:default}
+.venster-kop:active{cursor:grabbing}
+.venster-greep{flex:1;min-width:0;padding:6px 4px;border-radius:8px}
+.venster-greep:focus-visible{outline:3px solid var(--venster-actief,#2563eb);outline-offset:1px}
+.venster-titel{display:block;font-weight:650;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.venster-knoppen{display:flex;gap:2px;flex:none}
+.venster-knoppen button{display:inline-grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:9px;background:transparent;color:inherit;cursor:pointer}
+.venster-knoppen button:hover{background:rgba(127,127,127,.16)}
+.venster-knoppen button:focus-visible{outline:3px solid var(--venster-actief,#2563eb);outline-offset:-2px}
+.venster-knoppen button:disabled{opacity:.4;cursor:not-allowed}
+.venster-knoppen svg{width:18px;height:18px}
+.venster-inhoud{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
+.venster-grootte{position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 50%,rgba(127,127,127,.55) 50%,rgba(127,127,127,.55) 60%,transparent 60%,transparent 70%,rgba(127,127,127,.55) 70%,rgba(127,127,127,.55) 80%,transparent 80%)}
+@media (max-width:559px){.venster{left:8px!important;right:8px;top:auto!important;bottom:8px;width:auto!important}}
+
+/* dok: geminimaliseerde en alle open vensters, rechtsonder (zoals geminimaliseerde brieven in Пошта) */
+.venster-dok{position:fixed;right:12px;bottom:12px;display:grid;gap:6px;justify-items:end;max-width:min(360px,calc(100vw - 24px));font:inherit}
+.venster-dok button{font:inherit;cursor:pointer}
+.venster-dok-kop{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 12px;border-radius:999px;border:1px solid var(--line,#d7dee8);background:var(--panel,#fff);color:var(--text,#0f172a);box-shadow:0 6px 22px rgba(0,0,0,.2);font-weight:650}
+.venster-dok-kop svg{width:16px;height:16px}
+.venster-dok ul{list-style:none;margin:0;padding:6px;display:grid;gap:4px;border-radius:14px;border:1px solid var(--line,#d7dee8);background:var(--panel,#fff);box-shadow:0 10px 30px rgba(0,0,0,.25);max-height:50dvh;overflow:auto}
+.venster-dok-item{display:grid;gap:1px;width:100%;min-height:40px;padding:6px 12px;text-align:left;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--text,#0f172a)}
+.venster-dok-item:hover{background:rgba(127,127,127,.12)}
+.venster-dok-item:focus-visible{outline:3px solid var(--venster-actief,#2563eb);outline-offset:1px}
+.venster-dok-item.is-actief{border-color:var(--venster-actief,#2563eb)}
+.venster-dok-item.is-klein{opacity:.92}
+.venster-dok-item.is-kritiek small{color:var(--venster-kritiek,#b42318);font-weight:650}
+.venster-dok-item small{font-size:.78rem;color:var(--muted,#4b5563)}
+.venster-dok-titel{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.theme-dark .venster-dok-item.is-kritiek small,.theme-plum-dark .venster-dok-item.is-kritiek small{color:#fca5a5}
+.theme-dark,.theme-plum-dark{--venster-actief:#93c5fd}
+@media (prefers-reduced-motion:no-preference){.venster{transition:box-shadow .15s ease,filter .15s ease}}
+@media (forced-colors:active){.venster{border:2px solid CanvasText}.venster.is-boven{outline:3px solid Highlight}}

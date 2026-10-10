@@ -106,7 +106,6 @@
 .aib-wachtrij>span{font-weight:650}
 
 /* venster «Перевірити й підписати» */
-.aib-venster-achter{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:16px;background:rgba(2,6,23,.55)}
 .aib-venster{width:min(640px,100%);max-height:calc(100dvh - 32px);overflow:auto;display:grid;gap:12px;padding:18px;border-radius:16px;background:var(--aib-paneel);color:var(--text,inherit);border:1px solid var(--aib-rand)}
 .aib-diff{margin:0;padding-left:20px;display:grid;gap:8px}
 .aib-diff li{display:grid;gap:2px}
@@ -124,3 +123,6 @@
   .aib-wachtrij .aib-knoppen button,.aib-venster .aib-knoppen button{flex:1 1 100%}
 }
 @media (forced-colors:active){.aib-status,.aib-teller{border:1px solid CanvasText}.aib-balk span{background:Highlight}}
+
+/* Tekenvenster in het gezamenlijke vensterbeheer: geen eigen rand of laag. */
+.aib-venster-laag .aib.aib-venster{width:100%;max-height:none;border:0;border-radius:0;box-shadow:none;padding:16px 18px}

@@ -3,9 +3,10 @@
 // Toont alleen manieren die deze gebruiker heeft (POST /api/owner/access/stap-op/methoden); fouten in het venster, geen alerts.
 import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Fingerprint, KeyRound, LifeBuoy, LogIn, ShieldCheck, X } from 'lucide-react';
+import { Fingerprint, KeyRound, LifeBuoy, LogIn, ShieldCheck } from 'lucide-react';
 import { kanPasskey } from './webauthn';
 import { bewaarHervat, neemTerugMelding, paginaTaal, passkeyStapOpCode, type BevestigOpties, type StapOpMethode, type StapOpUitkomst } from './stap-op';
+import { Venster as VensterLaag } from './vensters';
 import './bevestig-toegang.css';
 
 type Lang = 'uk' | 'nl';
@@ -35,7 +36,6 @@ const T = {
   altGoogle: ['Увійти повторно через Google', 'Opnieuw inloggen bij Google'],
   tip: ['Порада: після підтвердження протягом 5 хвилин важливі дії в цьому вікні не вимагатимуть повторного підтвердження.', 'Tip: na de bevestiging vragen we 5 minuten lang in dit venster niet opnieuw om bevestiging voor belangrijke acties.'],
   annuleren: ['Скасувати', 'Annuleren'],
-  sluiten: ['Закрити', 'Sluiten'],
   geenMethode: ['Для цієї дії немає доступного способу підтвердження. Налаштуйте застосунок-автентифікатор або passkey на сторінці «Способи входу».', 'Voor deze actie is geen bevestigingsmethode beschikbaar. Stel een authenticator-app of passkey in op de pagina «Aanmeldmethoden».'],
   doorsturen: ['Перехід до Google…', 'Doorsturen naar Google…'],
   sterk: ['Для цієї дії потрібен надійніший спосіб: passkey, код із застосунку-автентифікатора або код відновлення. Повторного входу через Google недостатньо.', 'Voor deze actie is een sterkere manier nodig: passkey, code uit de authenticator-app of een herstelcode. Opnieuw inloggen bij Google is niet genoeg.'],
@@ -122,11 +122,6 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
     })();
     return () => { weg = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape' && !bezig) klaar({ ok: false, reden: 'geannuleerd' }); };
-    window.addEventListener('keydown', esc);
-    return () => window.removeEventListener('keydown', esc);
-  }, [bezig, klaar]);
   useEffect(() => { setCode(''); if (eersteWeergave.current) { if (weergave) eersteWeergave.current = false; } else setFout(''); if (weergave === 'totp' || weergave === 'herstelcode') window.setTimeout(() => invoer.current?.focus(), 30); }, [weergave]);
 
   const beschikbaar = info ? beschikbareMethoden(info.methoden, toegestaan, kanPasskey()) : [];
@@ -165,9 +160,9 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
   const ALT: Record<StapOpMethode, [keyof typeof T, typeof Fingerprint]> = { passkey: ['altPasskey', Fingerprint], totp: ['altTotp', KeyRound], herstelcode: ['altHerstel', LifeBuoy], google: ['altGoogle', LogIn] };
   const alternatieven = beschikbaar.filter((m) => m !== weergave);
 
-  return <div className='bevestig-toegang-achter' role='presentation' onMouseDown={(e) => { if (e.target === e.currentTarget && !bezig) klaar({ ok: false, reden: 'geannuleerd' }); }}>
-    <div className='bevestig-toegang' role='dialog' aria-modal='true' aria-labelledby='bevestig-toegang-titel' lang={lang}>
-      <button type='button' className='bevestig-toegang-sluit' aria-label={t('sluiten')} disabled={!!bezig} onClick={() => klaar({ ok: false, reden: 'geannuleerd' })}><X /></button>
+  // Kritiek venster in de gezamenlijke laag: altijd boven elk ander venster (ook boven het venster dat erom vroeg).
+  return <VensterLaag id='bevestig-toegang' titel={t('titel')} prioriteit='kritiek' breedte={400} onSluit={() => klaar({ ok: false, reden: 'geannuleerd' })} sluitenUit={!!bezig} labelledBy='bevestig-toegang-titel' lang={lang} className='bevestig-toegang-venster'>
+    <div className='bevestig-toegang'>
       <div className='bevestig-toegang-kop'>
         <ShieldCheck className='bevestig-toegang-logo' />
         <h2 id='bevestig-toegang-titel'>{t('titel')}</h2>
@@ -217,7 +212,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
       <p className='bevestig-toegang-tip'>{t('tip')}</p>
       <div className='bevestig-toegang-voet'><button type='button' className='bevestig-toegang-annuleer' disabled={!!bezig} onClick={() => klaar({ ok: false, reden: 'geannuleerd' })}>{t('annuleren')}</button></div>
     </div>
-  </div>;
+  </VensterLaag>;
 }
 
 /** Renderfout in het venster: nooit een onzichtbaar, hangend verzoek — de aanroeper krijgt een fout die de pagina toont. */

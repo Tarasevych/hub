@@ -18,6 +18,7 @@ import { error, isOwnerEmail, json } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
 import { rateLimit } from '../server/platform/beveiliging';
 import type { RouterMiddleware } from '../server/platform/router';
+import { SERVICE_HOSTS } from './deployment-identity';
 import { alsGebruiker } from './ai-grants';
 import { meld } from './melder';
 import { passkeyStapOpVastleggen, stapOpSessieId, type StapOpAuth } from './stap-op';
@@ -33,6 +34,16 @@ export function passkeyRp(): { rpId: string; origins: string[] } {
   const lijst = String(process.env.PASSKEY_ORIGINS || '').split(',').map((o) => o.trim()).filter(Boolean);
   const origins = (lijst.length ? lijst : STANDAARD_ORIGINS).filter((o) => kern.originHoortBijRp(o, rpId));
   return { rpId, origins };
+}
+/**
+ * Step-up («Підтвердіть доступ») kan op elke dienst nodig zijn (bijv. toestemming voor Claude op mcp.*). De passkey zelf is
+ * gebonden aan rpId tarasevych.com; als extra origin telt alleen die van de dienst van DEZE sessie (niet alle diensten).
+ */
+export function stapOpOrigins(service: string): string[] {
+  const rp = passkeyRp();
+  const host = (SERVICE_HOSTS as Record<string, string>)[service];
+  const eigen = host ? `https://${host}` : '';
+  return [...new Set([...rp.origins, ...(eigen && kern.originHoortBijRp(eigen, rp.rpId) ? [eigen] : [])])];
 }
 
 /** Bekende AAGUID's → leesbare naam van de passkey-aanbieder (alleen een hint; de attestatie wordt niet gecontroleerd). */
@@ -352,7 +363,7 @@ export async function stapOp(auth: PasskeyAuth, input: Record<string, unknown>) 
   };
   const rijen = await eigenRijen(auth.user.id);
   const rp = passkeyRp();
-  const r = kern.verifieerAssertie({ assertie, verwachteUitdaging: uitdaging, rpId: rp.rpId, origins: rp.origins,
+  const r = kern.verifieerAssertie({ assertie, verwachteUitdaging: uitdaging, rpId: rp.rpId, origins: stapOpOrigins(auth.service),
     sleutels: rijen.map((x) => ({ credentialId: x.credential_id, alg: x.alg, jwk: x.jwk, label: x.naam, vingerafdruk: x.vingerafdruk })) });
   if (!r.ok) { await auditeer(auth.user.id, 'passkey_stap_op_geweigerd', 'denied', { code: r.code }, auth.service); fout(`PASSKEY_${r.code}`, 403); }
   const ok = r as Extract<typeof r, { ok: true }>;
@@ -409,12 +420,12 @@ const DIENSTEN = new Set(['identity', 'admin', 'hub']);
 const EIGENAAR_DIENSTEN = new Set(['identity', 'admin']);
 
 export function passkeyRoutes(deps: PasskeyRouteDeps): Record<string, RouterMiddleware[]> {
-  const route = (opts: { stepUp?: boolean; eigenaar?: boolean; reden?: boolean; sterkAls?: (auth: SessionOk, b: Record<string, unknown>) => Promise<boolean> }, run: (auth: SessionOk, b: Record<string, unknown>) => Promise<unknown>) => (async (raw) => {
+  const route = (opts: { stepUp?: boolean; eigenaar?: boolean; reden?: boolean; elkeDienst?: boolean; sterkAls?: (auth: SessionOk, b: Record<string, unknown>) => Promise<boolean> }, run: (auth: SessionOk, b: Record<string, unknown>) => Promise<unknown>) => (async (raw) => {
     const ctx = raw as unknown as Ctx;
     const auth = await deps.requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
     if (auth.user.status !== 'approved' && auth.user.role !== 'owner') return error('ACCOUNT_NOT_APPROVED', 403);
-    if (!DIENSTEN.has(auth.service)) return error('SERVICE_NOT_ALLOWED', 403);
+    if (!opts.elkeDienst && !DIENSTEN.has(auth.service)) return error('SERVICE_NOT_ALLOWED', 403);
     if (opts.eigenaar && (!isEigenaarGebruiker(auth.user) || !EIGENAAR_DIENSTEN.has(auth.service))) return error('OWNER_REQUIRED', 403);
     // Eerst de reden (geen bevestigingsvenster voor een verzoek dat toch geweigerd wordt).
     if (opts.reden) { try { redenVan(lichaam(ctx.body).reden); } catch (e) { return error((e as ToegangFout).code || 'REDEN_TE_KORT', 400); } }
@@ -445,8 +456,9 @@ export function passkeyRoutes(deps: PasskeyRouteDeps): Record<string, RouterMidd
     // Een goedkeur-passkey verwijderen = een recht intrekken: met reden (anders PASSKEY_KAN_GOEDKEUREN) en sterke step-up.
     [`POST ${P}/verwijderen`]: [route({ stepUp: true, sterkAls: async (a, b) => !!b.reden && await isGoedkeurSleutel(a, b.id) }, (a, b) => verwijderen(a, b))],
     // Step-up met een passkey: onder /stap-op/ zodat de client bij een 403 niet opnieuw om step-up vraagt.
-    'POST /api/owner/access/stap-op/passkey/opties': [route({}, (a) => stapOpOpties(a))],
-    'POST /api/owner/access/stap-op/passkey': [route({}, (a, b) => stapOp(a, b))],
+    // Op elke dienst: het venster verschijnt waar de beveiligde actie gebeurt (mcp, api, mail …), niet alleen op id/admin/hub.
+    'POST /api/owner/access/stap-op/passkey/opties': [route({ elkeDienst: true }, (a) => stapOpOpties(a))],
+    'POST /api/owner/access/stap-op/passkey': [route({ elkeDienst: true }, (a, b) => stapOp(a, b))],
     // Alleen eigenaar: «Може схвалювати оновлення сервера» (root beslist).
     [`POST ${P}/goedkeuring/aanvragen`]: [route({ eigenaar: true, stepUp: true }, (a, b) => goedkeuringAanvragen(a, b))],
     [`POST ${P}/goedkeuring/annuleren`]: [route({ eigenaar: true }, (a, b) => goedkeuringAnnuleren(a, b))],

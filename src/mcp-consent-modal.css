@@ -24,3 +24,6 @@
 .mcp-consent-actions button[disabled]{opacity:.5;cursor:progress}
 @media(max-width:520px){.mcp-consent-dialog{padding:16px;border-radius:16px}.mcp-consent-actions{flex-direction:column-reverse}.mcp-consent-actions button{width:100%}}
 @media(prefers-color-scheme:dark){.mcp-consent-dialog{background:var(--panel,#0f172a);color:var(--text,#e5edf7)}.mcp-consent-group-icon{background:#1e293b}.mcp-consent-warn{background:#422006;color:#fde68a}}
+
+/* In het gezamenlijke venster (platform/vensters.tsx): rand, schaduw en laag komen van het venster. */
+.mcp-consent-venster .mcp-consent-dialog{width:100%;max-width:none;max-height:none;border:0;border-radius:0;box-shadow:none;margin:0}
