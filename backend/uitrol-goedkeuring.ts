@@ -594,7 +594,8 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
   const wie = (auth: SessionOk): Eigenaar => ({ id: auth.user.id, email: auth.user.email });
 
   return {
-    'POST /api/owner/uitrol/overzicht': [eigenaar({}, async () => overzicht())],
+    // `ik`: wie de pagina bekijkt (voor «Розгорнути з цього пристрою»: de eigenaar als voorbereider van zijn eigen pakket).
+    'POST /api/owner/uitrol/overzicht': [eigenaar({}, async (_ctx, auth) => ({ ...(await overzicht()), ik: { id: auth.user.id, email: auth.user.email || '' } }))],
     'POST /api/owner/uitrol/voorbereiders/toevoegen': [eigenaar({ stepUp: true }, async (ctx, auth) => ({ voorbereider: await grantGeven(wie(auth), body(ctx.body)) }))],
     'POST /api/owner/uitrol/voorbereiders/intrekken': [eigenaar({ sterk: true, reden: true }, async (ctx, auth) => ({ voorbereider: await grantIntrekken(wie(auth), body(ctx.body).id, { reden: body(ctx.body).reden, auth: auth as never }) }))],
     'POST /api/owner/uitrol/voorstel/uitdaging': [eigenaar({}, async (ctx, auth) => goedkeurUitdaging(wie(auth), body(ctx.body).id))],

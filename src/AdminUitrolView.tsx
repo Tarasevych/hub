@@ -7,6 +7,7 @@ import {Check,ExternalLink,Fingerprint,PackageCheck,RefreshCw,ShieldCheck,Trash2
 import {canonicalNavigationUrl} from './canonical-navigation';
 import {foutCode,kanPasskey as passkeyMogelijk,passkeyBevestigen} from './platform/webauthn';
 import {RedenVeld,redenOk} from './ToegangContext';
+import UitrolMeester from './UitrolMeester';
 import './admin-uitrol.css';
 
 type Lang='uk'|'nl';
@@ -16,7 +17,7 @@ type Grant={id:string;soort:'account'|'agenttoken'|'mcp-koppeling';onderwerp:str
 type Passkey={vingerafdruk:string;kort:string;label:string;toegevoegd?:string;door?:string};
 type Wachtend={vingerafdruk:string;kort:string;label:string;aangemaakt:string;sshOpdracht:string};
 type Keuze={id:string;label:string};
-type Overzicht={schakelaar:boolean;rpId:string;origins:string[];passkeys:Passkey[];wachtend:Wachtend[];voorstellen:Voorstel[];voorbereiders:Grant[];kandidaten:{accounts:Keuze[];agenttokens:Keuze[];koppelingen:Keuze[]};rootStatus:{staat?:string;versie?:string;code?:string;uk?:string;nl?:string;tijd?:string;methode?:string}|null;limieten:{voorbereiderMaxDagen:number}};
+type Overzicht={schakelaar:boolean;rpId:string;origins:string[];passkeys:Passkey[];wachtend:Wachtend[];voorstellen:Voorstel[];voorbereiders:Grant[];kandidaten:{accounts:Keuze[];agenttokens:Keuze[];koppelingen:Keuze[]};rootStatus:{staat?:string;versie?:string;code?:string;uk?:string;nl?:string;tijd?:string;methode?:string}|null;limieten:{voorbereiderMaxDagen:number;maxBytes?:number;maxStuk?:number};ik?:{id:string;email:string}};
 
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='uk'?uk:nl;
 const datum=(lang:Lang,v?:string)=>v?new Date(v).toLocaleString(lang==='uk'?'uk-UA':'nl-BE',{dateStyle:'short',timeStyle:'short'}):'—';
@@ -116,6 +117,9 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
       {(notice||herhaal)&&<div className='admin-uitrol-melding'>{notice&&<p className='admin-notice' data-ok={notice.ok} role='status'>{notice.text}</p>}
       {herhaal&&<div className='admin-uitrol-knoppen'><button type='button' className='admin-uitrol-ja' disabled={!!busy} onClick={()=>{const run=herhaal;void doe('herhaal',run);}}><Fingerprint/>{tr(lang,'Підтвердити passkey ще раз','Passkey opnieuw bevestigen')}</button></div>}</div>}
     </section>
+
+    <UitrolMeester lang={lang} context={context} sourceOrigin={sourceOrigin} tabContext={tabContext} data={data} busy={busy} doe={doe} laden={laden}
+      goedkeurenId={(id)=>{const v=data.voorstellen.find(x=>x.id===id);if(v)void goedkeuren(v);}}/>
 
     <section className='admin-section'>
       <header><ShieldCheck/><div><h2>{tr(lang,'Чекають схвалення','Wachten op goedkeuring')}</h2><p>{tr(lang,'Перевірте, хто підготував, що змінено і чи пройшли тести. Схвалення діє лише для цього пакета (його sha256) і лише 5 хвилин.','Controleer wie het voorbereidde, wat er verandert en of de tests slaagden. Een goedkeuring geldt alleen voor dit pakket (de sha256) en maar 5 minuten.')}</p></div></header>

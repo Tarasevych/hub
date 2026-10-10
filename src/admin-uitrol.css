@@ -44,3 +44,36 @@
 .admin-uitrol-intrek .toegang-reden small{font-size:.75rem;opacity:.75}
 .admin-uitrol-intrek textarea{width:100%;box-sizing:border-box;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;resize:vertical}
 .admin-uitrol-intrek [data-teller=te-kort]{color:#b45309}
+/* Майстер «Розгортання з телефона» (UitrolMeester.tsx) */
+.uitrol-meester{display:grid;gap:10px}
+.uitrol-meester-stap{border:1px solid rgba(127,127,127,.3);border-radius:12px;overflow:hidden}
+.uitrol-meester-stap[data-stand="ok"]{border-color:rgba(31,122,74,.45)}
+.uitrol-meester-stap[data-stand="todo"]{border-color:rgba(180,83,9,.55)}
+.admin-uitrol .uitrol-meester-kop{display:flex;width:100%;align-items:center;gap:10px;text-align:left;border:0;border-radius:0;padding:12px 14px;background:transparent}
+.admin-uitrol .uitrol-meester-kop:hover{background:rgba(127,127,127,.07)}
+.admin-uitrol .uitrol-meester-kop:focus-visible{outline:2px solid currentColor;outline-offset:-3px}
+.uitrol-meester-nr{flex:none;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;font-weight:700;font-size:.9rem;background:rgba(127,127,127,.15)}
+.uitrol-meester-stap[data-stand="ok"] .uitrol-meester-nr{background:#1f7a4a;color:#fff}
+.uitrol-meester-stap[data-stand="todo"] .uitrol-meester-nr{background:#b45309;color:#fff}
+.uitrol-meester-titel{flex:1;display:grid;gap:2px;min-width:0}
+.uitrol-meester-titel small{opacity:.78;font-size:.85rem;overflow-wrap:anywhere}
+.uitrol-meester-stand{flex:none;font-size:.78rem;font-weight:600;padding:3px 8px;border-radius:999px;background:rgba(127,127,127,.12)}
+.uitrol-meester-stap[data-stand="ok"] .uitrol-meester-stand{color:#14532d}
+.uitrol-meester-stap[data-stand="todo"] .uitrol-meester-stand{color:#7c2d12}
+.uitrol-meester-inhoud{padding:4px 14px 14px;display:grid;gap:8px}
+.uitrol-meester-inhoud h3{margin:8px 0 0;font-size:.95rem}
+.uitrol-meester-inhoud p{margin:0}
+.uitrol-meester-uitleg{margin:0;padding-left:20px;display:grid;gap:4px}
+.uitrol-meester-opdracht{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.uitrol-meester-opdracht code{flex:1 1 260px;min-width:0;padding:8px 10px;border-radius:8px;background:rgba(127,127,127,.12);user-select:all;word-break:break-all;font-size:.85rem}
+.uitrol-meester-bestand,.uitrol-meester-wijzigingen{display:grid;gap:4px}
+.uitrol-meester-bestand span,.uitrol-meester-wijzigingen span{font-weight:600;font-size:.9rem}
+.uitrol-meester-bestand input{max-width:100%}
+.uitrol-meester-wijzigingen textarea{width:100%;box-sizing:border-box;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit}
+.uitrol-meester-problemen{margin:0;padding-left:20px;color:#b3261e}
+.uitrol-meester-punt{width:10px;height:10px;margin-right:6px;vertical-align:middle}
+.uitrol-meester progress{width:min(320px,70%);vertical-align:middle}
+html.theme-dark .uitrol-meester-stap[data-stand="ok"] .uitrol-meester-stand{color:#4ade80}
+html.theme-dark .uitrol-meester-stap[data-stand="todo"] .uitrol-meester-stand{color:#fbbf24}
+html.theme-dark .uitrol-meester-problemen{color:#fca5a5}
+@media (max-width:640px){.uitrol-meester-stand{display:none}.uitrol-meester-inhoud{padding:4px 10px 12px}}
