@@ -116,8 +116,14 @@ export async function main(): Promise<number> {
     await B.page.locator('[data-menu-badge="svc:admin"], [data-menu-badge="svc:hub"]').first().waitFor({ timeout: 15000 });
     const bB = await badges(B.page);
     check('stip-stijl: geen getal, kleine stip', Object.values(bB).length > 0 && Object.values(bB).every((x) => x.tekst === '' && x.w <= 12), JSON.stringify(bB));
-    const tandwiel = B.page.locator('.zijbalk-werkbalk.breed [data-zijbalk-instellingen-knop]');
-    check('breed: ⚙ in de werkbalk naast de drie modusknoppen', await tandwiel.isVisible() && (await B.page.locator('.zijbalk-werkbalk.breed button[data-zijbalk-modus]').count()) === 3);
+    // punt 4: ⚙ en ✎ samen in één knop «Налаштувати меню» → venster met tabbladen; de link staat in het tabblad «Сповіщення й швидкість»
+    const vensterKnop = B.page.locator('.zijbalk-werkbalk.breed [data-menu-venster-knop]');
+    check('breed: één knop «Налаштувати меню» naast de drie modusknoppen (geen losse ⚙ en ✎ meer)', await vensterKnop.isVisible() && (await B.page.locator('.zijbalk-werkbalk.breed button[data-zijbalk-modus]').count()) === 3 && (await B.page.locator('.zijbalk-werkbalk [data-zijbalk-instellingen-knop], .zijbalk-werkbalk [data-menu-bewerken-knop]').count()) === 0);
+    await vensterKnop.click();
+    await B.page.locator('[data-menu-instellingen-venster]').waitFor({ timeout: 5000 });
+    check('venster «Налаштувати меню»: tabbladen Редагування / Вигляд / Сповіщення й швидкість', (await B.page.locator('[data-menu-instellingen-venster] [role="tab"]').allInnerTexts()).join('|') === 'Редагування|Вигляд|Сповіщення й швидкість');
+    await B.page.locator('[data-miv-tab="meer"]').click();
+    const tandwiel = B.page.locator('[data-menu-instellingen-venster] [data-zijbalk-instellingen-knop]');
     check('⚙: echte link naar Налаштування → Меню#menu-meldingen', /^https:\/\/id\.tarasevych\.com\/menu.*#menu-meldingen$/.test(String(await tandwiel.getAttribute('href'))), String(await tandwiel.getAttribute('href')));
     await B.page.screenshot({ path: `${UIT}/menu-22-breed-donker-stippen-tandwiel.png` });
     await tandwiel.click();
@@ -149,11 +155,12 @@ export async function main(): Promise<number> {
     const breedDicht = C.page.locator('.zijbalk-werkbalk.breed button[data-zijbalk-modus="dicht"]');
     if (await breedDicht.isVisible().catch(() => false)) { await breedDicht.click(); await C.page.mouse.move(900, 400); await C.page.waitForTimeout(700); }
     await C.page.locator('.zijbalk-modus-huidig').click();
-    const tw2 = C.page.locator('.zijbalk-werkbalk-paneel [data-zijbalk-instellingen-knop]');
-    check('smal: ⚙ ook in het uitgeklapte werkbalkpaneel', await tw2.isVisible());
+    const tw2 = C.page.locator('.zijbalk-werkbalk-paneel [data-menu-venster-knop]');
+    check('smal: knop «Налаштувати меню» ook in het uitgeklapte werkbalkpaneel', await tw2.isVisible());
     await tw2.hover(); await C.page.waitForTimeout(500);
     const tipTekst = await C.page.locator('.canonical-viewport-tooltip').allInnerTexts();
-    check('smal: ⚙ heeft een tooltip «Налаштування меню…»', tipTekst.some((x) => /Налаштування меню/.test(x)), JSON.stringify(tipTekst));
+    check('smal: tooltip «Налаштувати меню…»', tipTekst.some((x) => /Налаштувати меню/.test(x)), JSON.stringify(tipTekst));
+    await C.page.keyboard.press('Escape');
     await C.page.locator('#menu-meldingen').waitFor({ timeout: 15000 }); await C.page.waitForTimeout(400);
     const vorm = await C.page.locator('#menu-meldingen [data-meld-categorie="post"] input').evaluate((e) => ({ w: (e as HTMLElement).offsetWidth, h: (e as HTMLElement).offsetHeight }));
     const schakelRij = await C.page.locator('#menu-meldingen [data-meld-schakel="bellen"]').evaluate((e) => getComputedStyle(e).display);

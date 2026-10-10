@@ -1,26 +1,30 @@
 // Instellingen → Меню: «Стиль іконок» (Класичний / Кольоровий) en de modus van de bijbalk (auto / altijd open / altijd smal).
 // Dezelfde winkel als de werkbalk boven in de zijbalk (zijbalk-voorkeuren.ts): wijzigingen zijn meteen overal zichtbaar.
-import {useEffect,type ReactElement} from 'react';
-import {BellRing,Gauge,MousePointer2,PanelLeftClose,PanelLeftOpen} from 'lucide-react';
+import {type ReactElement,type ReactNode} from 'react';
+import {BellRing,ChevronDown,Eye,Gauge,Move,MousePointer2,Palette,PanelLeftClose,PanelLeftOpen} from 'lucide-react';
 import type {SnelheidVoorkeuren} from '../shared/menu-snelheid';
 import {CATEGORIE_TEKST,HERINNER_MINUTEN,MELDING_CATEGORIEEN,type MeldingVoorkeuren} from '../shared/menu-meldingen-voorkeuren';
 import {DIENST_ACCENT,type IcoonStijl,type ZijbalkModus} from '../shared/menu-model';
 import {MenuGlyph} from './menu-preferences';
 import {useZijbalkVoorkeuren,zetZijbalk} from './zijbalk-voorkeuren';
 import MenuIndelingInstellingen from './MenuIndelingInstellingen';
+import './zijbalk-blokken.css';
+
+/** Uitklapblok (accordeon op de pagina id-host /menu): <details id> — onthouden en #anker-gedrag regelt src/platform/uitklap.ts voor de hele site. */
+const Blok=({id,icoon,titel,uitleg,children}:{id:string;icoon:ReactElement;titel:string;uitleg:string;children:ReactNode})=><details id={id} className='zijbalk-blok' data-zijbalk-blok={id}><summary><span className='zijbalk-blok-icoon' aria-hidden='true'>{icoon}</span><span className='zijbalk-blok-tekst'><strong>{titel}</strong><small>{uitleg}</small></span><ChevronDown className='zijbalk-blok-pijl' aria-hidden='true'/></summary><div className='zijbalk-blok-inhoud'>{children}</div></details>;
 
 type Tr=(uk:string,nl:string)=>string;
 const VOORBEELD=[['hub','home'],['mail','mail'],['cloud','cloud'],['identity','settings']] as const;
 
-export default function ZijbalkInstellingen({tr}:{tr:Tr}){
+export default function ZijbalkInstellingen({tr,zichtbaarheid}:{tr:Tr;zichtbaarheid?:ReactNode}){
   const v=useZijbalkVoorkeuren(),m=v.meldingen;
   const sn=v.snelheid,zetS=(patch:Partial<SnelheidVoorkeuren>)=>zetZijbalk(cur=>({...cur,snelheid:{...cur.snelheid,...patch}}));
   const zetM=(patch:Partial<MeldingVoorkeuren>)=>zetZijbalk(cur=>({...cur,meldingen:{...cur.meldingen,...patch}}));
-  useEffect(()=>{const h=location.hash;if(h==='#menu-meldingen'||h==='#menu-snelheid'||h==='#menu-indeling')window.setTimeout(()=>document.getElementById(h.slice(1))?.scrollIntoView({block:'start'}),150)},[]);
   const schakel=(id:string,aan:boolean,naam:string,uitleg:string,doe:(x:boolean)=>void,uit=false)=><label className={`zijbalk-schakel${uit?' uit':''}`} data-meld-schakel={id}><input type='checkbox' role='switch' checked={aan} disabled={uit} onChange={e=>doe(e.target.checked)}/><span className='zijbalk-schakel-spoor' aria-hidden='true'><i/></span><span><strong>{naam}</strong>{uitleg&&<small>{uitleg}</small>}</span></label>;
   const stijlen:Array<[IcoonStijl,string,string]>=[['klassiek',tr('Класичний','Klassiek'),tr('Спокійні монохромні іконки; колір розділу з’являється при наведенні та в активного пункту.','Rustige monochrome iconen; de kleur van het onderdeel verschijnt bij aanwijzen en bij het actieve item.')],['kleur',tr('Кольоровий','Kleurrijk'),tr('Кожен розділ завжди у своєму кольорі (пошта — синя, ШІ — фіолетовий, хмара — блакитна…); підпункти — світлішим відтінком того ж кольору.','Elk onderdeel altijd in zijn eigen kleur (e-mail blauw, AI violet, cloud hemelsblauw…); subitems in een lichtere tint van dezelfde kleur.')]];
-  const modi:Array<[ZijbalkModus,string,ReactElement]>=[['auto',tr('Автоматично: розгортається при наведенні','Automatisch: klapt open bij aanwijzen'),<MousePointer2 key='a'/>],['open',tr('Завжди розгорнута','Altijd uitgeklapt'),<PanelLeftOpen key='o'/>],['dicht',tr('Завжди згорнута','Altijd ingeklapt'),<PanelLeftClose key='d'/>]];
-  return <section className='zijbalk-instellingen' data-zijbalk-instellingen>
+  const modi:Array<[ZijbalkModus,string,ReactElement]>=[['auto',tr('Автоматично','Automatisch'),<MousePointer2 key='a'/>],['open',tr('Розгорнута','Uitgeklapt'),<PanelLeftOpen key='o'/>],['dicht',tr('Згорнута','Ingeklapt'),<PanelLeftClose key='d'/>]];
+  return <section className='zijbalk-instellingen' data-zijbalk-instellingen data-accordeon>
+    <Blok id='menu-stijl' icoon={<Palette/>} titel={tr('Стиль іконок','Icoonstijl')} uitleg={tr('Класичні чи кольорові іконки розділів','Klassieke of kleurrijke iconen van de onderdelen')}>
     <fieldset className='zijbalk-keuze' data-icoon-stijl-keuze>
       <legend>{tr('Стиль іконок','Icoonstijl')}</legend>
       {stijlen.map(([id,naam,uitleg])=><label key={id} className={v.icoonStijl===id?'actief':''}>
@@ -29,15 +33,21 @@ export default function ZijbalkInstellingen({tr}:{tr:Tr}){
         <span><strong>{naam}</strong><small>{uitleg}</small></span>
       </label>)}
     </fieldset>
-    <fieldset className='zijbalk-keuze compact' data-zijbalk-modus-keuze>
+    </Blok>
+    <Blok id='menu-modus' icoon={<PanelLeftOpen/>} titel={tr('Бічна панель','Zijbalk')} uitleg={tr('Автоматично, завжди розгорнута або завжди згорнута','Automatisch, altijd uitgeklapt of altijd ingeklapt')}>
+    <fieldset className='zijbalk-keuze compact zijbalk-modus-segmenten' data-zijbalk-modus-keuze>
       <legend>{tr('Бічна панель','Zijbalk')}</legend>
       {modi.map(([id,naam,icoon])=><label key={id} className={v.modus===id?'actief':''}>
         <input type='radio' name='zijbalk-modus' value={id} checked={v.modus===id} onChange={()=>zetZijbalk({modus:id})}/>
         <span className='zijbalk-modus-icoon' aria-hidden='true'>{icoon}</span><span><strong>{naam}</strong></span>
       </label>)}
     </fieldset>
+    </Blok>
+    <Blok id='menu-indeling' icoon={<Move/>} titel={tr('Розташування й порядок меню','Plaats en indeling van het menu')} uitleg={tr('Збоку чи док, порядок, редагування, скидання','Zijkant of dock, volgorde, bewerken, terugzetten')}>
     <MenuIndelingInstellingen tr={tr}/>
-    <fieldset className='zijbalk-meldingen' id='menu-meldingen' data-menu-meldingen-instellingen>
+    </Blok>
+    <Blok id='menu-meldingen' icoon={<BellRing/>} titel={tr('Сповіщення в меню','Meldingen in het menu')} uitleg={tr('Мітки, бульбашки, нагадування, тихі години','Badges, bellen, herinneringen, stille uren')}>
+    <fieldset className='zijbalk-meldingen' data-menu-meldingen-instellingen>
       <legend><BellRing aria-hidden='true'/>{tr('Сповіщення в меню','Meldingen in het menu')}</legend>
       <p className='zijbalk-meldingen-uitleg'>{tr('Пункти меню показують мітку, коли там є щось нове (наприклад, непрочитані листи чи запит на доступ). Наведіть на пункт — побачите список, кожне можна прибрати хрестиком. Бачите лише ви: гості та інші акаунти цього не отримують.','Menu-items tonen een badge als er iets nieuws is (bijv. ongelezen e-mail of een toegangsverzoek). Wijs een item aan voor de lijst; elk bericht kun je met het kruisje verbergen. Alleen jij ziet dit: gasten en andere accounts niet.')}</p>
       {schakel('aan',m.aan,tr('Показувати мітки сповіщень','Badges tonen'),'',x=>zetM({aan:x}))}
@@ -63,7 +73,9 @@ export default function ZijbalkInstellingen({tr}:{tr:Tr}){
         </fieldset>
       </div>
     </fieldset>
-    <fieldset className='zijbalk-meldingen zijbalk-snelheid' id='menu-snelheid' data-menu-snelheid-instellingen>
+    </Blok>
+    <Blok id='menu-snelheid' icoon={<Gauge/>} titel={tr('Швидкість переходів і чернетки','Snelheid van overgangen en concepten')} uitleg={tr('Смужка завантаження, плавні переходи, підвантаження','Laadbalk, vloeiende overgangen, vooraf laden')}>
+    <fieldset className='zijbalk-meldingen zijbalk-snelheid' data-menu-snelheid-instellingen>
       <legend><Gauge aria-hidden='true'/>{tr('Швидкість переходів і чернетки','Snelheid van overgangen en concepten')}</legend>
       <p className='zijbalk-meldingen-uitleg'>{tr('Тонка смужка вгорі показує, що сторінка вантажиться (у кольорі розділу, куди ви переходите). Розділи можна підвантажувати заздалегідь, коли ви наводите на них у меню.','Een dunne balk bovenaan laat zien dat een pagina laadt (in de kleur van het onderdeel waar je heen gaat). Onderdelen kunnen alvast worden opgehaald als je ze in het menu aanwijst.')}</p>
       {schakel('voortgang',sn.voortgang,tr('Смужка завантаження','Laadbalk'),tr('У кольорі розділу, куди ви переходите.','In de kleur van het onderdeel waar je heen gaat.'),x=>zetS({voortgang:x}))}
@@ -75,5 +87,7 @@ export default function ZijbalkInstellingen({tr}:{tr:Tr}){
         {schakel('concepten',sn.concepten,tr('Зберігати чернетки (зашифровано)','Concepten bewaren (versleuteld)'),tr('Незавершений текст у полях (чат ШІ, відповіді, нотатки) зберігається зашифрованим лише в цьому браузері до 7 днів і відновлюється після перезавантаження. Вимкнення видаляє всі чернетки.','Onafgemaakte tekst in velden (AI-chat, antwoorden, notities) wordt versleuteld alleen in deze browser bewaard (max. 7 dagen) en na herladen teruggezet. Uitzetten wist alle concepten.'),x=>zetS({concepten:x}))}
       </div>
     </fieldset>
+    </Blok>
+    {zichtbaarheid&&<Blok id='menu-zichtbaarheid' icoon={<Eye/>} titel={tr('Видимість та іконки пунктів','Zichtbaarheid en iconen van de items')} uitleg={tr('Показати чи приховати розділ, вибрати іконку','Een onderdeel tonen of verbergen, een icoon kiezen')}>{zichtbaarheid}</Blok>}
   </section>;
 }

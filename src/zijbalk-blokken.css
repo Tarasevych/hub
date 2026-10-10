@@ -1,0 +1,26 @@
+/* Налаштування → Меню als accordeon (punt 4): elk blok klapt open/dicht, één tegelijk; de stand wordt onthouden. */
+.zijbalk-blok{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+.zijbalk-blok>summary{display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;cursor:pointer;list-style:none}
+.zijbalk-blok>summary::-webkit-details-marker{display:none}
+.zijbalk-blok>summary:hover{background:var(--surface)}
+.zijbalk-blok>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.zijbalk-blok-icoon{display:grid;place-items:center;flex:none;width:2.3rem;height:2.3rem;border-radius:10px;background:var(--accent-soft);color:var(--accent)}
+.zijbalk-blok-icoon svg{width:1.15rem;height:1.15rem}
+.zijbalk-blok-tekst{display:grid;gap:.1rem;flex:1;min-width:0}
+.zijbalk-blok-tekst strong{font-size:1rem}
+.zijbalk-blok-tekst small{color:var(--muted);font-size:.86rem;font-weight:400}
+.zijbalk-blok-pijl{flex:none;width:1.2rem;height:1.2rem;color:var(--muted);transition:transform .18s ease}
+.zijbalk-blok[open]>summary .zijbalk-blok-pijl{transform:rotate(180deg)}
+.zijbalk-blok-inhoud{padding:.25rem 1rem 1rem}
+/* de koptekst staat al in de samenvatting: de legend blijft voor schermlezers, maar niet dubbel in beeld */
+.zijbalk-blok-inhoud>fieldset{border:0;margin:0;padding:0}
+.zijbalk-blok-inhoud>fieldset>legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* Бічна панель: compacte segmentknoppen met icoon (zoals een moderne schakelaar) */
+.zijbalk-modus-segmenten{display:flex!important;flex-wrap:wrap;gap:4px!important;padding:4px!important;border-radius:14px;background:var(--surface)}
+.zijbalk-modus-segmenten>label{flex:1 1 8rem;display:flex!important;align-items:center;justify-content:center;gap:.45rem;min-height:2.75rem;padding:.4rem .7rem!important;border:0!important;border-radius:10px!important;background:transparent!important;cursor:pointer}
+.zijbalk-modus-segmenten>label.actief{background:var(--panel)!important;box-shadow:0 1px 3px rgba(0,0,0,.18);color:var(--accent)}
+.zijbalk-modus-segmenten>label:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.zijbalk-modus-segmenten input{position:absolute;opacity:0;width:1px;height:1px}
+.zijbalk-modus-segmenten .zijbalk-modus-icoon svg{width:1.15rem;height:1.15rem}
+@media (prefers-reduced-motion:reduce){.zijbalk-blok-pijl{transition:none}}
+.zijbalk-modus-segmenten .zijbalk-modus-icoon{background:none!important;width:auto!important;height:auto!important;padding:0!important}

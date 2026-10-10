@@ -167,6 +167,7 @@ export async function main(): Promise<number> {
     await F.page.screenshot({ path: `${UIT}/menu-17-breed-donker-instellingen-klassiek.png` });
     await F.ctx.close();
     const H = await sessie('light', 'open', 'kleur', MENU);
+    await H.page.evaluate(() => { const d = document.getElementById('menu-stijl') as HTMLDetailsElement | null; if (d) d.open = true; }); // punt 4: /menu is een accordeon
     await H.page.locator('[data-icoon-stijl-keuze]').waitFor({ timeout: 15000 });
     check('Instellingen → Меню: uitleg noemt de kleuren per onderdeel', /пошта — синя/.test(await H.page.locator('[data-icoon-stijl-keuze]').innerText()));
     await H.page.screenshot({ path: `${UIT}/menu-18-breed-licht-menu-instellingen.png` });
