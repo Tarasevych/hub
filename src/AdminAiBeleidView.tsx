@@ -13,7 +13,7 @@ import { Venster } from './platform/vensters';
 import './admin-ai-beleid.css';
 
 type Lang = 'uk' | 'nl';
-type Props = { lang: Lang; sourceOrigin: string; tabContext: string; alleenLezen?: boolean };
+type Props = { lang: Lang; sourceOrigin: string; tabContext: string; alleenLezen?: boolean; dienst?: 'admin' | 'mcp' };
 type Verbinding = { naam: string; soort: 'oauth' | 'token' | 'chat'; actief: boolean; agentId: string | null; laatst: number | null };
 type Versie = { seq: number; hash: string; op: string; ondertekend: { soort?: string; label?: string; keyId?: string; vingerafdruk?: string } };
 type Overzicht = {
@@ -150,8 +150,8 @@ function Keuze({ lang, tz, nu, onKies, onSluit }: { lang: Lang; tz: string; nu: 
 }
 
 // ------------------------------------------------------------------ hoofdweergave
-export default function AdminAiBeleidView({ lang, sourceOrigin, tabContext, alleenLezen = false }: Props) {
-  const context = useMemo(() => ({ service: alleenLezen ? 'mcp' : 'admin', tabContext, sourceOrigin }), [alleenLezen, tabContext, sourceOrigin]);
+export default function AdminAiBeleidView({ lang, sourceOrigin, tabContext, alleenLezen = false, dienst = 'admin' }: Props) {
+  const context = useMemo(() => ({ service: dienst, tabContext, sourceOrigin }), [dienst, tabContext, sourceOrigin]);
   const [data, setData] = useState<Overzicht | null>(null);
   const [agent, setAgent] = useState('');
   const [open, setOpen] = useState('');

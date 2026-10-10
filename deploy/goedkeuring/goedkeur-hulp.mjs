@@ -28,7 +28,7 @@ import { closeSync, constants as FS, existsSync, fstatSync, lstatSync, mkdirSync
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { OUDE_RP_ID, STANDAARD_RP, normaliseerSleutelbestand, tellerOk, uitdagingVoor, verifieerAssertie, verlooptGeldig, vingerafdruk, vingerafdrukKort } from "./webauthn-kern.mjs";
+import { OUDE_RP_ID, STANDAARD_RP, normaliseerSleutelbestand, originHoortBijRp, tellerOk, uitdagingVoor, verifieerAssertie, verlooptGeldig, vingerafdruk, vingerafdrukKort } from "./webauthn-kern.mjs";
 import { beleidFout, beleidHash, controleerEd25519, ketenFout, sleutelVingerafdruk, volgendeFout } from "./ai-beleid-kern.mjs";
 
 const IS_ROOT = typeof process.getuid === "function" && process.getuid() === 0;
@@ -123,6 +123,8 @@ function leesStaat() {
 const schrijfStaat = (s) => schrijfAtomisch(path.join(STAAT, "staat.json"), JSON.stringify(s) + "\n", 0o600, false);
 
 /** Gemeenschappelijke controle van een assertie + verbruik van de nonce + teller. Geeft {ok,...} of {ok:false, code}. */
+/** Extra origin alleen voor het AI-beleid (zie controleerEnVerbruik). */
+const BELEID_EXTRA_ORIGINS = Object.freeze(["https://mcp.tarasevych.com"]);
 function controleerEnVerbruik(doel, velden, assertie, bestand) {
   const tijd = verlooptGeldig(Number(velden.verloopt));
   if (tijd) return { ok: false, code: tijd };
@@ -132,7 +134,10 @@ function controleerEnVerbruik(doel, velden, assertie, bestand) {
   const staat = leesStaat();
   const nonceHash = sha256Hex(String(velden.nonce));
   if (staat.nonces[nonceHash]) return { ok: false, code: "HERGEBRUIKT" };
-  const r = verifieerAssertie({ assertie, verwachteUitdaging: uitdaging, rpId: bestand.rpId, origins: bestand.origins, sleutels: bestand.sleutels });
+  // Het AI-beleid wordt beheerd waar de AI-verbindingen staan (mcp.*/agents): alleen voor DIT doel telt mcp.* als extra origin.
+  // Serverupdates en sleutelbeheer blijven bij de origins uit het sleutelbestand (admin/id).
+  const origins = doel === "ai-beleid" ? [...new Set([...bestand.origins, ...BELEID_EXTRA_ORIGINS.filter((o) => originHoortBijRp(o, bestand.rpId))])] : bestand.origins;
+  const r = verifieerAssertie({ assertie, verwachteUitdaging: uitdaging, rpId: bestand.rpId, origins, sleutels: bestand.sleutels });
   if (!r.ok) return r;
   if (!tellerOk(staat.tellers[r.credentialId], r.signCount)) return { ok: false, code: "TELLER_TERUG" };
   // Eerst verbruiken, dan pas handelen: ook als de installatie straks mislukt, werkt deze assertie nooit meer.

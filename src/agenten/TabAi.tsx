@@ -1,5 +1,5 @@
 // «Підключені ШІ»: OAuth-verbindingen (Claude, Grok, Cursor, elke MCP/OAuth-client) en agenttokens (MCP-token), als GitHub-rijen.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Check, Copy, ExternalLink, KeyRound, SlidersHorizontal, Trash2, Wrench } from 'lucide-react';
 import { api } from '../platform/client';
 import { sessionBody, type ToolCall } from '../agents-data';
@@ -15,6 +15,9 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
   tr: Tr; overzicht: Overzicht | null; tokens: DeurToken[] | null; naActie: () => Promise<void>; item: string; kies: (id: string) => void; calls: ToolCall[]; reloadCalls: () => Promise<void>;
 }) {
   const acties = useActies(tr);
+  // Is het ondertekende AI-beleid actief? Dan is dat de enige plek voor rechten (zie hieronder).
+  const [beleidActief, setBeleidActief] = useState(false);
+  useEffect(() => { let weg = false; api.post('/api/owner/ai-beleid/overzicht', sessionBody()).then((r) => { if (!weg) setBeleidActief((r.data as { staat?: string })?.staat === 'geldig'); }).catch(() => undefined); return () => { weg = true; }; }, []);
   const [sorteer, setSorteer] = useState<'gebruik' | 'naam' | 'datum'>('gebruik');
   const [gekopieerd, setGekopieerd] = useState(false);
   const alle: Item[] = useMemo(() => [
@@ -141,9 +144,17 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
           </ol>
         </div>
       </Section>
-      <Section id='ag-ai-hulpmiddelen' icon={<SlidersHorizontal />} title={tr('Що ШІ може робити на сайті', 'Wat de AI op de site mag')} subtitle={tr('Кожен інструмент: завжди, питати або вимкнено. Діє для всіх підключених ШІ.', 'Elk hulpmiddel: altijd, vragen of uit. Geldt voor alle verbonden AI\'s.')} defaultOpen={item === 'hulpmiddelen'}>
-        <McpToolsPanel tr={tr} />
-      </Section>
+      {beleidActief ? (
+        // Eén plek: met een ondertekend beleid beslist alleen dat beleid; geen tweede set schakelaars die ermee botst.
+        <section className='ag-kaart' id='ag-ai-hulpmiddelen' data-beleid-actief='1'>
+          <div className='ag-kaart-kop'><h3>{tr('Що ШІ може робити', 'Wat de AI mag')}</h3><a href='#beleid' className='ag-link'>{tr('Доступ ШІ за підписом', 'AI-toegang met handtekening')} <ExternalLink size={14} aria-hidden='true' /></a></div>
+          <p className='ag-leeg'>{tr('Дозволи кожного ШІ (з таймерами) керуються лише у вкладці «Доступ ШІ за підписом» і змінюються тільки з вашим passkey. Окремих перемикачів тут більше немає, щоб нічого не суперечило.', 'De rechten van elke AI (met timers) staan alleen op het tabblad «AI-toegang met handtekening» en veranderen alleen met uw passkey. Hier zijn geen aparte schakelaars meer, zodat niets elkaar tegenspreekt.')}</p>
+        </section>
+      ) : (
+        <Section id='ag-ai-hulpmiddelen' icon={<SlidersHorizontal />} title={tr('Що ШІ може робити на сайті', 'Wat de AI op de site mag')} subtitle={tr('Кожен інструмент: завжди, питати або вимкнено. Діє, доки не встановлено підписану політику доступу ШІ.', 'Elk hulpmiddel: altijd, vragen of uit. Geldt tot het ondertekende AI-beleid is geïnstalleerd.')} defaultOpen={item === 'hulpmiddelen'}>
+          <McpToolsPanel tr={tr} />
+        </Section>
+      )}
       {!toolPending.length ? <p className='hub-meta ag-voet'><Wrench size={14} aria-hidden='true' /> {tr('Запити ШІ в режимі «питати» з’являються вгорі цієї вкладки та в «Огляді».', 'Verzoeken van de AI in de modus "vragen" verschijnen bovenaan dit tabblad en in "Overzicht".')}</p> : null}
     </div>
   );

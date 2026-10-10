@@ -563,7 +563,9 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
     // Het ondertekende AI-beleid van de eigenaar (§13.12) is een plafond: de strengste van «instelling op de site» en «beleid» wint.
     const beleid = opties.eigenaarZelf ? { mode: 'always' as const, code: 'eigenaar', agentId: null, staat: 'niet-ingesteld' as const } : await beslissing(huidigeNamens(), name);
     if (beleid.mode === 'off') return text(weigerTekst(beleid), true);
-    const mode = strengste(effectiveMode(name, (await store.getToolModes(userId))[name]), beleid.mode);
+    // Eén plek voor toegang (mcp.*/agents#beleid): met een geldig ondertekend beleid beslist ALLEEN dat beleid; de oude
+    // schakelaars per hulpmiddel gelden alleen zolang er geen beleid is (en voor de eigenaar zelf in de Пісочниця).
+    const mode = beleid.staat === 'geldig' ? beleid.mode : strengste(effectiveMode(name, (await store.getToolModes(userId))[name]), beleid.mode);
     if (mode === 'off') {
       return text('This tool has been turned off by the user in Mijn Ruimte (mcp.tarasevych.com → Agents → Tools and permissions). Do not try to work around it; tell the user.', true);
     }

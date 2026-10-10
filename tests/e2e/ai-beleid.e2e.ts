@@ -1,12 +1,14 @@
 // E2E §13.12 «Доступ ШІ за вашим підписом» met een echte Chrome tegen de lokale build (opzet zoals toegang-context.e2e.ts).
-// 1. Zonder keten: admin.*/ai toont «ще не встановлено» met de SSH-opdracht (beleid-start).
+// Eén plek: mcp.*/agents#beleid (bij de AI-verbindingen); admin.*/ai bestaat niet meer.
+// 1. Zonder keten: mcp.*/agents#beleid toont «ще не встановлено» met de SSH-opdracht (beleid-start).
 // 2. Root installeert genesis.signed.json (herstelsleutel, Ed25519) via beleid-start; de pagina toont versie 0, agents als tabs,
 //    een lopende timer van Grok die bijna voorbij is («Скоро закінчиться»).
 // 3. De eigenaar zet «Claude · Читати файли й стан ПК» op 2 uur (daarna питати) → wachtrij → «Перевірити й підписати» → venster
 //    met precies de wijziging → passkey (virtuele authenticator met de root-sleutel) → root (goedkeur-hulp als nobody) schrijft
 //    versie 1 → de timer loopt (Встановлено / Минуло / Залишилось telt af) en de server laat Claude toe; machine_exec blijft «ask».
 // 4. Een gemanipuleerd voorstel (ander ontwerp dan de challenge) wordt door de browser zelf geweigerd: geen venster, niets getekend.
-// 5. mcp.*/agents#beleid toont hetzelfde alleen-lezen (geen «Змінити»), met een link naar Beheer.
+// 5. Op #ai zijn de oude schakelaars per hulpmiddel weg zodra het beleid actief is (geen tweede plek die ermee botst);
+//    tekenen op mcp.* werkt terwijl root alleen admin/id als origin in zijn sleutelbestand heeft (extra origin alleen voor het AI-beleid).
 // 6. Licht/donker, 360 px zonder horizontaal scrollen, axe (WCAG 2 A/AA) op het onderdeel, geen consolefouten.
 import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
@@ -67,7 +69,7 @@ export async function main(): Promise<number> {
   try {
     const tab = randomBytes(24).toString('hex');
     const b = G.browser();
-    await b.aanmelden(sub, eigenaar, { service: 'identity', tabContext: tab, intent: 'login', authTime: Math.floor(Date.now() / 1000) });
+    await b.aanmelden(sub, eigenaar, { service: 'mcp', tabContext: tab, intent: 'login', authTime: Math.floor(Date.now() / 1000) });
     // Passkey van de eigenaar: één P-256-sleutel in de virtuele authenticator én (publiek) in het root-bestand.
     const { privateKey, publicKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
     const credId = randomBytes(32);
@@ -78,7 +80,7 @@ export async function main(): Promise<number> {
 
     const context = async (scheme: 'dark' | 'light', breedte = 1280) => {
       const ctx = await browser.newContext({ colorScheme: scheme, locale: 'uk-UA', viewport: { width: breedte, height: 900 }, timezoneId: 'Europe/Brussels', serviceWorkers: 'block' });
-      await ctx.addCookies([...b.jar].flatMap(([name, value]) => [ID, MCP, ADMIN].map((url) => ({ name, value, url: `${url}/`, secure: true, httpOnly: true, sameSite: 'Lax' as const }))));
+      await ctx.addCookies([...b.jar].flatMap(([name, value]) => [ID, MCP].map((url) => ({ name, value, url: `${url}/`, secure: true, httpOnly: true, sameSite: 'Lax' as const }))));
       await ctx.addInitScript((t) => { if (!sessionStorage.getItem('tsv-canonical-tab-v1')) sessionStorage.setItem('tsv-canonical-tab-v1', t); }, tab);
       const page = await ctx.newPage();
       const cdp = await ctx.newCDPSession(page);
@@ -90,10 +92,12 @@ export async function main(): Promise<number> {
     const volg = (page: Page, lijst: string[]) => {
       page.on('console', (m) => { if (m.type() === 'error' && !/^Failed to load resource/.test(m.text())) lijst.push(`console: ${m.text()}`); });
       page.on('pageerror', (e) => lijst.push(`pageerror: ${e.message}`));
+      page.on('response', async (q) => { if (/session\/bootstrap|ai-beleid/.test(q.url())) boot.push(`${q.status()} ${q.url().replace(/^https:\/\/[^/]+/, '')} ${(await q.text().catch(() => '')).slice(0, 120)}`); });
       page.on('response', (q) => { const k = `${q.status()} ${q.url()}`; if (q.status() >= 400 && !VERWACHT.some((v) => v.test(k))) lijst.push(`http ${k}`); });
     };
+    const boot: string[] = [];
     const aib = (page: Page) => page.locator('section.aib');
-    const openAdmin = async (page: Page) => { await page.goto(`${ADMIN}/ai?lang=uk`, { waitUntil: 'networkidle' }); await page.locator('[data-aib-staat]').waitFor({ timeout: 20000 }); await page.waitForTimeout(300); };
+    const openAdmin = async (page: Page) => { await page.goto(`${MCP}/agents?lang=uk#beleid`, { waitUntil: 'networkidle' }); await page.locator('[data-aib-staat]').waitFor({ timeout: 20000 }).catch(async (e) => { await page.screenshot({ path: `${UIT}/aib-debug.png` }); throw new Error(`${page.url()} ${(await page.locator('body').innerText()).slice(0, 120)} | ${boot.join(' ; ')}`); }); await page.waitForTimeout(300); };
     const axe = async (page: Page) => {
       if (!existsSync(AXE)) return ['axe-core ontbreekt'];
       // Via DevTools (zoals de console), niet als <script>: de CSP van de site (script-src 'self') blijft zo ongewijzigd.
@@ -113,7 +117,7 @@ export async function main(): Promise<number> {
     const staat0 = await A.page.locator('[data-aib-staat]').getAttribute('data-aib-staat');
     const ssh = await A.page.locator('.aib-ssh').innerText().catch(() => '');
     check('zonder keten: «ще не встановлено» + SSH-opdracht beleid-start', staat0 === 'niet-ingesteld' && /sudo mijn-ruimte-passkey beleid-start/.test(ssh), `${staat0} ${ssh}`);
-    check('menu: pagina «Доступ ШІ» in Beheer (zijmenu)', await A.page.getByText('Доступ ШІ', { exact: true }).count() > 0);
+    check('mcp/agents: tabblad «Доступ ШІ за підписом» actief; in Beheer bestaat geen tweede pagina', await A.page.locator('#ag-tab-beleid[aria-selected="true"]').count() === 1);
     await A.page.screenshot({ path: `${UIT}/aib-0-niet-ingesteld.png`, fullPage: true });
 
     // ---------------------------------------------------------------- 2. genesis via root (herstelsleutel)
@@ -210,16 +214,14 @@ export async function main(): Promise<number> {
     await S.page.screenshot({ path: `${UIT}/aib-5-360-licht.png`, fullPage: true });
     await S.ctx.close();
 
-    // ---------------------------------------------------------------- 5. mcp/agents#beleid: alleen-lezen
+    // ---------------------------------------------------------------- 5. #ai: geen tweede set schakelaars
     const M = await context('dark');
     volg(M.page, fouten);
-    await M.page.goto(`${MCP}/agents?lang=uk#beleid`, { waitUntil: 'networkidle' });
-    await M.page.locator('[data-aib-staat]').waitFor({ timeout: 20000 }).catch(() => undefined);
-    const ro = aib(M.page);
-    check('mcp: zelfde beleid alleen-lezen (versie 1, timer), geen «Змінити», link naar Beheer',
-      await ro.getAttribute('data-aib-staat').catch(() => '') === 'geldig' && /Версія 1/.test(await ro.innerText().catch(() => '')) && await ro.getByRole('button', { name: 'Змінити' }).count() === 0
-      && await ro.locator('a[href="https://admin.tarasevych.com/ai"]').count() === 1 && await ro.locator('[data-cap="device.read"] .aib-timer').count() === 1);
-    await M.page.screenshot({ path: `${UIT}/aib-6-mcp-alleen-lezen.png`, fullPage: true });
+    await M.page.goto(`${MCP}/agents?lang=uk#ai`, { waitUntil: 'networkidle' });
+    await M.page.locator('[data-beleid-actief="1"]').waitFor({ timeout: 20000 }).catch(() => undefined);
+    check('#ai: met actief beleid geen oude schakelaars per hulpmiddel, wel verwijzing naar «Доступ ШІ за підписом»',
+      await M.page.locator('[data-beleid-actief="1"]').count() === 1 && await M.page.locator('#ag-ai-hulpmiddelen a[href="#beleid"]').count() === 1);
+    await M.page.screenshot({ path: `${UIT}/aib-6-mcp-een-plek.png`, fullPage: true });
 
     check('geen consolefouten of onverwachte HTTP-fouten', fouten.length === 0, fouten.slice(0, 8).join('\n'));
     await A.ctx.close(); await M.ctx.close();
