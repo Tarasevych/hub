@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { CircleAlert, Cloud, CloudOff, LoaderCircle, Mail, Send, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { CircleAlert, Cloud, CloudOff, LoaderCircle, Mail, Send, Trash2, X } from 'lucide-react';
 import { emitCanonicalNotice } from './canonical-notifications';
 import MailAiToolbar from './MailAiToolbar';
 import MailScheduleMenu from './MailScheduleMenu';
-import { composeErrorText, deleteDraftRemote, getDraftRemote, saveDraftRemote, scheduleRemote, sendRemote, type DraftSync } from './mail-compose-api';
+import { composeErrorText, deleteDraftRemote, getDraftRemote, listDraftsRemote, saveDraftRemote, scheduleRemote, sendRemote, type DraftSync } from './mail-compose-api';
+import './mail-concepten.css';
 import MailComposeEditor, { type MailComposeEditorHandle } from './MailComposeEditor';
 import MailInputTools from './MailInputTools';
 import { registerZone, queueRecompute } from './floating-avoidance';
@@ -16,9 +18,11 @@ type Props = {
   context: { service: string; tabContext: string; sourceOrigin: string };
   onClose: () => void;
   onSent: () => void;
+  /** Opent het venster opnieuw (vanuit de plashka «Чернетка» rechtsonder). */
+  onOpen?: () => void;
 };
 
-export default function MailNewMessageDialog({ lang, open, accountId, context, onClose, onSent }: Props) {
+export default function MailNewMessageDialog({ lang, open, accountId, context, onClose, onSent, onOpen }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const [to, setTo] = useState('');
   const [cc, setCc] = useState('');
@@ -29,6 +33,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState('');
   const [draftSync, setDraftSync] = useState<DraftSync>('idle');
+  const [weggooiVraag, setWeggooiVraag] = useState(false);
   // Eén aanvraag-id per verzendpoging: een dubbele klik of een herhaling na een time-out maakt nooit twee berichten (idempotent op de server).
   const requestIdRef = useRef<string>('');
   const newRequestId = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `req-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -282,7 +287,53 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  if (!open) return null;
+  // Begonnen op de pc, verder op de telefoon: is hier niets, maar staat er op de server een recent nieuw-berichtconcept (geen
+  // antwoord), dan neemt dit toestel dat over — zelfde veld, zelfde concept-id, dus geen dubbel concept in Gmail.
+  useEffect(() => {
+    if (!accountId) return;
+    const leeg = () => { const f = draftFieldsRef.current; return !(f.to.trim() || f.cc.trim() || f.bcc.trim() || f.subject.trim() || f.body.replace(/<[^>]*>/g, '').trim()); };
+    if (!leeg()) return;
+    let alive = true;
+    void listDraftsRemote(context).then(async (out) => {
+      const kandidaat = (out?.drafts || []).filter((d) => !(d as { threadId?: string }).threadId && !String(d.localId).startsWith('antw-') && Date.now() - Number(d.updatedAt || 0) < 30 * 864e5).sort((a, b) => b.updatedAt - a.updatedAt)[0];
+      if (!alive || !kandidaat || !leeg()) return;
+      const r = await getDraftRemote(context, kandidaat.localId).catch(() => null);
+      const d = r?.draft;
+      if (!alive || !d || !leeg()) return;
+      localDraftIdRef.current = kandidaat.localId;
+      try { localStorage.setItem('mail-draft-active-id', kandidaat.localId); } catch { /* geen opslag */ }
+      setTo(d.to || ''); if (d.cc || d.bcc) { setCc(d.cc || ''); setBcc(d.bcc || ''); setShowCc(true); } setSubject(d.subject || ''); setBody(d.html || '');
+    }).catch(() => undefined);
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountId]);
+
+  const heeftInhoud = Boolean(to.trim() || cc.trim() || bcc.trim() || subject.trim() || body.replace(/<[^>]*>/g, '').trim());
+  // Concept weggooien vanaf de plashka: lokaal, op de server en in Gmail; volgende brief krijgt een nieuw concept-id.
+  const gooiWeg = () => {
+    const id = localDraftIdRef.current;
+    try { localStorage.removeItem(`mail-draft-${id}`); localStorage.removeItem('mail-draft-active-id'); } catch { /* geen opslag */ }
+    localDraftIdRef.current = '';
+    serverSaveSeq.current++;
+    void deleteDraftRemote(context, id).catch(() => undefined);
+    setTo(''); setCc(''); setBcc(''); setShowCc(false); setSubject(''); setBody(''); setFailure(''); setDraftSync('idle'); setWeggooiVraag(false);
+  };
+  if (!open) {
+    // Ingeklapt: de brief verdwijnt niet, hij blijft als plashka rechtsonder (zoals in Gmail) en staat ook in «Чернетки».
+    if (!heeftInhoud || !onOpen) return null;
+    return createPortal(
+      <div className="mail-concept-dok" role="region" aria-label={t('Чернетка листа', 'Concept-bericht')} data-concept-dok>
+        <button type="button" onClick={() => { setWeggooiVraag(false); onOpen(); }}>
+          <Mail aria-hidden="true" />
+          <span><strong>{subject.trim() || t('Новий лист (без теми)', 'Nieuw bericht (zonder onderwerp)')}</strong><small>{to.trim() ? `${t('Кому', 'Aan')}: ${to}` : t('Чернетка збережена', 'Concept bewaard')}</small></span>
+        </button>
+        {!weggooiVraag
+          ? <button type="button" className="mail-concept-weg" aria-label={t('Видалити чернетку', 'Concept verwijderen')} title={t('Видалити чернетку', 'Concept verwijderen')} onClick={() => setWeggooiVraag(true)}><Trash2 aria-hidden="true" /></button>
+          : <button type="button" className="mail-concept-weg" onClick={gooiWeg} data-concept-weg-bevestig><Trash2 aria-hidden="true" />{t('Так, видалити', 'Ja, verwijderen')}</button>}
+      </div>,
+      document.body,
+    );
+  }
 
   const reset = () => {
     setTo('');
@@ -376,7 +427,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
         <header>
           <Mail aria-hidden="true" />
           <strong>{t('Новий лист', 'Nieuw bericht')}</strong>
-          <button type="button" aria-label={t('Закрити', 'Sluiten')} onClick={close}>
+          <button type="button" aria-label={t('Згорнути — чернетка залишиться', 'Inklappen — het concept blijft')} title={t('Згорнути — чернетка залишиться', 'Inklappen — het concept blijft')} onClick={close}>
             <X />
           </button>
         </header>

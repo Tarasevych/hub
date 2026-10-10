@@ -33,6 +33,7 @@ export async function main(): Promise<number> {
   check('MIME: concept zonder ontvanger krijgt geen To-kop; Gmail-raw is base64url zonder padding', !/^To:/m.test(buildMime({ to: [], subject: 'x', html: '', plainText: 'y' })) && !/[+/=]/.test(toGmailRaw(mime)));
 
   // ---------- nagebootste Gmail ----------
+  const draftThreads = new Map<string, string>();
   const log = { sent: [] as Array<{ raw: string }>, drafts: new Map<string, string>(), deleted: [] as string[] };
   let failDrafts = false; let failSend: 'no' | 'transient' | 'permanent' = 'no'; let sendDelay = 0; let draftCounter = 0;
   const fake: MailTransport = {
@@ -43,11 +44,17 @@ export async function main(): Promise<number> {
       if (failSend === 'permanent') throw new ProviderError('GMAIL_SEND_400', 400, true);
       log.sent.push({ raw: decodeRaw(toGmailRaw(raw)) }); return { id: `msg-${log.sent.length}`, threadId: 't-1' };
     },
-    async draftUpsert(_u, _a, id, raw) { if (failDrafts) throw new Error('GMAIL_DRAFT_CREATE_503'); const useId = id || `d-${++draftCounter}`; log.drafts.set(useId, raw); return { id: useId }; },
+    async draftUpsert(_u, _a, id, raw, threadId) { if (failDrafts) throw new Error('GMAIL_DRAFT_CREATE_503'); const useId = id || `d-${++draftCounter}`; log.drafts.set(useId, raw); if (threadId) draftThreads.set(useId, threadId); return { id: useId }; },
+    async replyHeaders(_u, _a, messageId) { return messageId === 'orig123456' ? { messageIdHeader: '<orig@gmail.com>', references: '<eerder@gmail.com>', subject: 'Offerte', from: 'Jan <jan@example.nl>', replyTo: '', to: 'ik@example.nl, piet@example.nl', cc: '' } : null; },
     async draftDelete(_u, _a, id) { log.deleted.push(id); log.drafts.delete(id); },
   };
   setMailTransport(fake);
   try {
+    // ---------- antwoordconcept: in Gmail in dezelfde conversatie ----------
+    const antw = await saveDraft(A, { localId: `antw-${randomUUID().slice(0, 10)}`, html: '<p>Dank, prima.</p>', accountId: 'acc-1', threadId: 'thr-9', replyToMessageId: 'orig123456' }) as any;
+    const antwRaw = decodeRaw(toGmailRaw(log.drafts.get(antw.draft.gmailDraftId) || ''));
+    check('antwoordconcept: Gmail-concept in dezelfde conversatie met Re:-onderwerp, In-Reply-To/References en de afzender als ontvanger', antw.draft.syncStatus === 'synced' && draftThreads.get(antw.draft.gmailDraftId) === 'thr-9' && /Subject: Re: Offerte/.test(antwRaw) && /In-Reply-To: <orig@gmail.com>/.test(antwRaw) && /References: <eerder@gmail.com> <orig@gmail.com>/.test(antwRaw) && /To: "Jan" <jan@example.nl>/.test(antwRaw), antwRaw.split('\r\n').slice(0, 9).join(' | '));
+    check('antwoordconcept na verzenden/wissen: lokaal en in Gmail weg', (await deleteDraft(A, antw.draft.localId)) === true && log.deleted.includes(antw.draft.gmailDraftId));
     // ---------- concepten ----------
     const lid = `lokaal-${randomUUID().slice(0, 12)}`;
     failDrafts = true;
