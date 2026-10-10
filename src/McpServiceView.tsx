@@ -104,7 +104,7 @@ function Ring({ pct, done, n }: { pct: number; done: boolean; n: number }) {
 
 export default function McpServiceView({ lang, tab }: Props) {
   const t = (uk: string, nl: string) => (lang === "uk" ? uk : nl);
-  const section = ["overview", "services", "tools", "board", "agents", "playground", "traffic", "connect", "roadmap", "download"].includes(tab) ? tab : "overview";
+  const section = ["overview", "dashboard", "services", "tools", "board", "agents", "playground", "traffic", "connect", "roadmap", "download"].includes(tab) ? tab : "overview";
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [probes, setProbes] = useState<Probe[]>([]);
@@ -229,7 +229,7 @@ export default function McpServiceView({ lang, tab }: Props) {
     // De agentenpagina laadt haar eigen gegevens (tokens via useDeurTokens); hier niet nog eens.
     if (section === "playground") void run(section, loadTokens);
     if (section === "traffic") void run("traffic", loadTraffic);
-    if (section === "services") void run("probe", loadProbes);
+    if (section === "services" || section === "dashboard") void run("probe", loadProbes);
     if (section === "download") {
       void api.post("/api/mcp/archive/status", ctx()).then((res) => takeArchive(res.data as ArchiveState)).catch(() => undefined);
     }
@@ -282,6 +282,27 @@ export default function McpServiceView({ lang, tab }: Props) {
             <button type="submit" disabled={Boolean(busy)}>{t("Перевірити хости", "Hosts controleren")}</button>
           </form>
           {probes.map((row) => <article key={row.id} className="mcp-card"><div className="mcp-row"><h2>{row.id}</h2><span className={row.ok ? "mcp-badge" : "mcp-badge wait"}>HTTP {row.status || "—"}</span></div><p className="mcp-url">{row.url}</p></article>)}
+        </>
+      )}
+
+      {section === "dashboard" && (
+        <>
+          <header>
+            <h1>{t("Панель розгортання", "Deploy-dashboard")}</h1>
+            <p className="mcp-lead">{t("Стан сервера, історія випусків і відкат однією кнопкою. Дії, що щось змінюють, вимагають підтвердження passkey. Сервер встановлює лише випуски, підписані вашим ключем.", "Serverstatus, releasegeschiedenis en terugdraaien met één knop. Acties die iets wijzigen vragen een passkey-bevestiging. De server installeert alleen releases die met uw sleutel zijn ondertekend.")}</p>
+            <form className="mcp-form" onSubmit={(event) => { event.preventDefault(); void run("probe", loadProbes); }}>
+              <button type="submit" disabled={Boolean(busy)}>{t("Перевірити хости", "Hosts controleren")}</button>
+            </form>
+          </header>
+          <McpServerBeheerCard tr={t} />
+          <article className="mcp-card">
+            <div className="mcp-row"><h2>{t("Здоров’я сервісів", "Gezondheid van de diensten")}</h2><span className="mcp-kicker">{probes.length ? `${probes.filter((p) => p.ok).length}/${probes.length}` : t("перевіряю…", "controleren…")}</span></div>
+            <ul className="mbk-files">
+              {ESTATE.map((row) => { const probe = probes.find((item) => item.id === row.id); return (
+                <li key={row.id}><span className={probe?.ok ? "mcp-badge" : "mcp-badge wait"}>{probe ? `HTTP ${probe.status || "—"}` : "—"}</span><span><b>{t(row.uk, row.nl)}</b><small><a href={row.url} target="_blank" rel="noreferrer">{row.url}</a></small></span></li>
+              ); })}
+            </ul>
+          </article>
         </>
       )}
 
