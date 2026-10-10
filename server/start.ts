@@ -6,8 +6,8 @@
 // - Client-IP komt alleen uit cf-connecting-ip (door Cloudflare gezet); x-forwarded-for e.d. van
 //   de client worden overschreven, zodat app-code ze niet kan vertrouwen.
 // - /api/* op de app-hosts → bestaande router (Lambda-achtig event); overige paden → dist/ (SPA).
-// - dashboard.<domein> → standaard 302 naar Beheer → Діагностика (met aanmelding). De oude, open Ops-pagina (geen API, scripts
-//   door de CSP geblokkeerd, knoppen zonder werking) blijft op schijf en komt terug met DASHBOARD_MODE=static.
+// - dashboard.<domein> → standaard 302 naar het Deploy-dashboard in MCP (met aanmelding): releasegeschiedenis, serverstatus,
+//   terugdraaien met passkey. De oude, open statische Ops-pagina blijft op schijf en komt terug met DASHBOARD_MODE=static.
 // - Beveiligingsheaders (CSP als HTTP-header, HSTS, nosniff, ...) op alle antwoorden.
 // - Fase B: CSRF-controle (Origin-allow-list) en rate limiting voor /api/* (zie SECURITY-NOTES.md).
 import http from 'node:http';
@@ -33,7 +33,7 @@ const DIST_DIR = path.resolve(process.env.DIST_DIR || path.join(here, '..', 'dis
 const DASHBOARD_DIR = path.resolve(process.env.DASHBOARD_DIR || '/srv/mijn-ruimte/dashboard');
 /** 'beheer' (standaard): doorsturen naar admin-host /diagnostics; 'static': de oude losse pagina's tonen. */
 const DASHBOARD_MODE = process.env.DASHBOARD_MODE === 'static' ? 'static' : 'beheer';
-const DASHBOARD_NAAR = `https://${SERVICE_HOSTS.admin}/diagnostics`;
+const DASHBOARD_NAAR = `https://${SERVICE_HOSTS.mcp}/dashboard`;
 const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 12 * 1024 * 1024);
 
 const APP_HOSTS = new Set<string>(Object.values(SERVICE_HOSTS));

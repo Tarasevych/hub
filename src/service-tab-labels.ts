@@ -19,7 +19,7 @@ const LABELS: Record<string, Pair> = {
   import: ['Імпорт', 'Import'], reconciliation: ['Звірка', 'Afstemming'],
   contour: ['Контур', 'Contour'], updates: ['Оновлення', 'Updates'], ai: ['Доступ ШІ', 'AI-toegang'], apps: ['Застосунки', 'Apps'], devices: ['Пристрої', 'Apparaten'], sso: ['SSO', 'SSO'], directories: ['Каталоги', 'Mappen'], roles: ['Ролі', 'Rollen'],
   diagnostics: ['Діагностика', 'Diagnostiek'], audit: ['Аудит', 'Audit'],
-  services: ['Сервіси', 'Diensten'], tools: ['Інструменти', 'Hulpmiddelen'], board: ['Дошка', 'Bord'], playground: ['Пісочниця', 'Zandbak'], traffic: ['Трафік', 'Verkeer'],
+  dashboard: ['Панель розгортання', 'Deploy-dashboard'], services: ['Сервіси', 'Diensten'], tools: ['Інструменти', 'Hulpmiddelen'], board: ['Дошка', 'Bord'], playground: ['Пісочниця', 'Zandbak'], traffic: ['Трафік', 'Verkeer'],
   connect: ['Підключення', 'Koppelen'], roadmap: ['Дорожня карта', 'Roadmap'], download: ['Завантаження', 'Download'],
 };
 

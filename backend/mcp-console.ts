@@ -38,7 +38,7 @@ const HOSTS = [
   ["id", "https://id.tarasevych.com/personalization"],
   ["admin", "https://admin.tarasevych.com/access"],
   ["api", "https://api.tarasevych.com/access"],
-  ["dashboard", "https://dashboard.tarasevych.com/releases.html"],
+  ["dashboard", "https://dashboard.tarasevych.com/"],
   ["ai", "https://ai.tarasevych.com/"],
   ["mail", "https://mail.tarasevych.com/inbox"],
   ["cloud", "https://cloud.tarasevych.com/calendar"],
