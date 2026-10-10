@@ -44,3 +44,7 @@
 .theme-dark,.theme-plum-dark{--venster-actief:#93c5fd}
 @media (prefers-reduced-motion:no-preference){.venster{transition:box-shadow .15s ease,filter .15s ease}}
 @media (forced-colors:active){.venster{border:2px solid CanvasText}.venster.is-boven{outline:3px solid Highlight}}
+/* 10.10: dezelfde vorm als de stapel «Згорнуті» van Пошта (één stijl voor alle geminimaliseerde vensters) en niet over de bel. */
+.venster-dok-kop{min-height:48px;padding:8px 14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--accent,#2f6f73) 42%,var(--line,#d7dee8));background:color-mix(in srgb,var(--panel,#fff) 96%,var(--surface,#f1f3f5));box-shadow:0 16px 44px var(--shadow,rgba(0,0,0,.2))}
+.venster-dok ul{border:1px solid color-mix(in srgb,var(--accent,#2f6f73) 42%,var(--line,#d7dee8))}
+@media (min-width:701px){.venster-dok{right:76px}}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CircleAlert, Cloud, CloudOff, LoaderCircle, Mail, Send, Trash2, X } from 'lucide-react';
+import { ChevronsUpDown, CircleAlert, Cloud, CloudOff, Keyboard, LoaderCircle, Mail, Maximize2, Minimize2, Minus, Send, Trash2, X } from 'lucide-react';
+import { registreerZwevend, useZwevendHouder, verwijderZwevend } from './mail-zwevend';
 import { emitCanonicalNotice } from './canonical-notifications';
 import MailAiToolbar from './MailAiToolbar';
 import MailScheduleMenu from './MailScheduleMenu';
@@ -34,6 +35,14 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
   const [failure, setFailure] = useState('');
   const [draftSync, setDraftSync] = useState<DraftSync>('idle');
   const [weggooiVraag, setWeggooiVraag] = useState(false);
+  // Vensterstanden (zoals in Windows/Gmail): gemaximaliseerd, «hele tekst» (de editor groeit met de tekst, het venster scrolt)
+  // en de invoerhulpen (UA/NL, translit, klavier, handschrift) in- of uitgeklapt. Onthouden in deze browser.
+  const leesVlag = (k: string, std: boolean) => { try { const v = localStorage.getItem(k); return v === null ? std : v === '1'; } catch { return std; } };
+  const zetVlag = (k: string, v: boolean) => { try { localStorage.setItem(k, v ? '1' : '0'); } catch { /* geen opslag */ } };
+  const [groot, setGroot] = useState(() => leesVlag('mail-nm-groot', false));
+  const [heelTekst, setHeelTekst] = useState(() => leesVlag('mail-nm-heel-tekst', false));
+  const [hulpen, setHulpen] = useState(() => leesVlag('mail-nm-hulpen', false));
+  const [verborgen, setVerborgen] = useState(false);
   // Eén aanvraag-id per verzendpoging: een dubbele klik of een herhaling na een time-out maakt nooit twee berichten (idempotent op de server).
   const requestIdRef = useRef<string>('');
   const newRequestId = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `req-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -309,6 +318,14 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
   }, [accountId]);
 
   const heeftInhoud = Boolean(to.trim() || cc.trim() || bcc.trim() || subject.trim() || body.replace(/<[^>]*>/g, '').trim());
+  const zwevendHeeftHouder = useZwevendHouder();
+  useEffect(() => {
+    const id = 'concept-nieuw';
+    if (open || !heeftInhoud || !onOpen || verborgen) { verwijderZwevend(id); return; }
+    registreerZwevend({ id, titel: subject.trim() || t('Новий лист (без теми)', 'Nieuw bericht (zonder onderwerp)'), sub: to.trim() ? `${t('Кому', 'Aan')}: ${to}` : t('Чернетка збережена', 'Concept bewaard'), open: () => { setVerborgen(false); onOpen(); }, sluit: () => setVerborgen(true) });
+    return () => verwijderZwevend(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, heeftInhoud, subject, to, verborgen]);
   // Concept weggooien vanaf de plashka: lokaal, op de server en in Gmail; volgende brief krijgt een nieuw concept-id.
   const gooiWeg = () => {
     const id = localDraftIdRef.current;
@@ -319,8 +336,11 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
     setTo(''); setCc(''); setBcc(''); setShowCc(false); setSubject(''); setBody(''); setFailure(''); setDraftSync('idle'); setWeggooiVraag(false);
   };
   if (!open) {
-    // Ingeklapt: de brief verdwijnt niet, hij blijft als plashka rechtsonder (zoals in Gmail) en staat ook in «Чернетки».
-    if (!heeftInhoud || !onOpen) return null;
+    // Ingeklapt: de brief verdwijnt niet. Hij staat (via mail-zwevend) in de gezamenlijke stapel «Згорнуті» van Пошта — samen met
+    // de geminimaliseerde brieven en bijlagen, zodat u elk geminimaliseerd venster kunt terughalen. Is die stapel er niet
+    // (een ander scherm van Пошта), dan een eigen plashka rechtsonder. En hij staat in «Чернетки».
+    if (!heeftInhoud || !onOpen || verborgen) return null;
+    if (zwevendHeeftHouder) return null;
     return createPortal(
       <div className="mail-concept-dok" role="region" aria-label={t('Чернетка листа', 'Concept-bericht')} data-concept-dok>
         <button type="button" onClick={() => { setWeggooiVraag(false); onOpen(); }}>
@@ -345,10 +365,12 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
     setFailure('');
   };
 
-  const close = () => {
-    // Closing must not destroy what was typed. The draft stays in state, so
-    // reopening the window brings the text back; only a successful send clears it.
-    onClose();
+  // _ = згорнути (лишається у стопці «Згорнуті» та в «Чернетках»); × = закрити (чернетка лишається в «Чернетках», без плашки).
+  // Нічого з написаного не зникає: лише успішне надсилання очищає чернетку.
+  const close = () => { setVerborgen(false); onClose(); };
+  const sluitHelemaal = () => {
+    if (heeftInhoud) emitCanonicalNotice({ text: t('Чернетку збережено в «Чернетках»', 'Concept bewaard in «Concepten»'), kind: 'success', source: 'mail' });
+    setVerborgen(true); onClose();
   };
 
   // Na een geslaagde verzending of planning: lokaal alles opruimen en een NIEUW concept-id kiezen voor het volgende bericht.
@@ -405,12 +427,13 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
   return (
     <div className="mail-new-message-backdrop" onClick={close}>
       <section
-        className="mail-new-message"
+        className={`mail-new-message${groot ? ' groot' : ''}${heelTekst ? ' heel-tekst' : ''}`}
         role="dialog"
         aria-modal="true"
+        aria-label={t('Новий лист', 'Nieuw bericht')}
         ref={dialogRef}
         style={
-          rect && typeof window !== 'undefined' && window.innerWidth > 560
+          !groot && rect && typeof window !== 'undefined' && window.innerWidth > 560
             ? { position: 'fixed', top: rect.top, left: rect.left, width: rect.width, height: rect.height, maxHeight: rect.height, margin: 0 }
             : undefined
         }
@@ -427,20 +450,18 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
         <header>
           <Mail aria-hidden="true" />
           <strong>{t('Новий лист', 'Nieuw bericht')}</strong>
-          <button type="button" aria-label={t('Згорнути — чернетка залишиться', 'Inklappen — het concept blijft')} title={t('Згорнути — чернетка залишиться', 'Inklappen — het concept blijft')} onClick={close}>
-            <X />
-          </button>
+          <span className="mail-nm-venster-knoppen">
+            <button type="button" aria-label={t('Згорнути (лишиться внизу й у «Чернетках»)', 'Minimaliseren (blijft onderaan en in «Concepten»)')} title={t('Згорнути', 'Minimaliseren')} onClick={close} data-nm-minimaliseer><Minus /></button>
+            <button type="button" aria-pressed={groot} aria-label={groot ? t('Відновити розмір', 'Vorige grootte') : t('На весь екран', 'Volledig scherm')} title={groot ? t('Відновити розмір', 'Vorige grootte') : t('На весь екран', 'Volledig scherm')} onClick={() => { setGroot(v => { zetVlag('mail-nm-groot', !v); return !v; }); }} data-nm-maximaliseer>{groot ? <Minimize2 /> : <Maximize2 />}</button>
+            <button type="button" aria-label={t('Закрити (чернетка лишиться в «Чернетках»)', 'Sluiten (concept blijft in «Concepten»)')} title={t('Закрити', 'Sluiten')} onClick={sluitHelemaal} data-nm-sluit><X /></button>
+          </span>
         </header>
-        <label className="mail-new-message-field">
-          <span>{t('Кому', 'Aan')}</span>
-          <input value={to} onChange={event => setTo(event.target.value)} placeholder="name@example.com" autoFocus />
-        </label>
-        {!showCc && (
-          <button type="button" className="mail-new-message-cc-toggle" onClick={() => setShowCc(true)}>
-            {t('Копія, прихована копія', 'Cc, Bcc')}
-          </button>
-        )}
-        {showCc && (
+        <div className="mail-new-message-field mail-nm-aan">
+          <label htmlFor="mail-nm-aan">{t('Кому', 'Aan')}</label>
+          <input id="mail-nm-aan" value={to} onChange={event => setTo(event.target.value)} placeholder="name@example.com" autoFocus />
+          {!(showCc || cc.trim() || bcc.trim()) && <button type="button" className="mail-new-message-cc-toggle" onClick={() => setShowCc(true)} data-nm-kopie>{t('Копія / прихована', 'Cc / Bcc')}</button>}
+        </div>
+        {(showCc || cc.trim() || bcc.trim()) && (
           <>
             <label className="mail-new-message-field">
               <span>Cc</span>
@@ -456,6 +477,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
           <span>{t('Тема', 'Onderwerp')}</span>
           <input value={subject} onChange={event => setSubject(event.target.value)} />
         </label>
+        <div className="mail-nm-editor">
         <MailComposeEditor
           ref={editorRef}
           lang={lang}
@@ -464,13 +486,16 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
           placeholder={t('Напишіть лист…', 'Schrijf een bericht…')}
           onRequestImage={() => imageInputRef.current?.click()}
         />
+        {/* кнопка в куті редактора: увесь текст одразу (вікно росте й прокручується) ↔ прокрутка всередині редактора */}
+        <button type="button" className="mail-nm-hoek" aria-pressed={heelTekst} title={heelTekst ? t('Прокрутка всередині редактора', 'Scrollen in de editor') : t('Показати весь текст', 'Hele tekst tonen')} aria-label={heelTekst ? t('Прокрутка всередині редактора', 'Scrollen in de editor') : t('Показати весь текст', 'Hele tekst tonen')} onClick={() => setHeelTekst(v => { zetVlag('mail-nm-heel-tekst', !v); return !v; })} data-nm-heel-tekst><ChevronsUpDown /></button>
+        </div>
         <input ref={imageInputRef} type="file" accept="image/*" hidden />
-        <MailInputTools
+        {hulpen && <MailInputTools
           lang={lang}
           context={context}
           onInsert={value => editorRef.current?.insertText(value)}
           onBackspace={() => editorRef.current?.backspace()}
-        />
+        />}
         <footer>
           <MailAiToolbar
             lang={lang}
@@ -480,6 +505,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
             onApply={html => setBody(html)}
             disabled={sending}
           />
+          <button type="button" className="mail-nm-hulpen" aria-expanded={hulpen} title={t('Інструменти введення: UA/NL, трансліт, клавіатура, рукопис', 'Invoerhulpen: UA/NL, translit, toetsenbord, handschrift')} onClick={() => setHulpen(v => { zetVlag('mail-nm-hulpen', !v); return !v; })} data-nm-hulpen><Keyboard aria-hidden="true" /><span>{t('Введення', 'Invoer')}</span></button>
           <span className={`mail-new-message-sync sync-${draftSync}`} role="status" data-draft-sync={draftSync}
             title={t('Чернетка зберігається автоматично: спершу на нашому сервері, потім у Gmail.', 'Het concept wordt automatisch bewaard: eerst op onze server, daarna in Gmail.')}>
             {draftSync === 'saving' ? <LoaderCircle aria-hidden="true" /> : draftSync === 'synced' ? <Cloud aria-hidden="true" /> : draftSync === 'error' ? <CircleAlert aria-hidden="true" /> : <CloudOff aria-hidden="true" />}

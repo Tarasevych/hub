@@ -54,3 +54,32 @@ body:has([data-reader-open="true"]) .mail-compose-float{display:none}
 @keyframes mail-sync-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.mail-new-message-sync.sync-saving svg{animation:none}}
 @media(max-width:560px){.mail-new-message>footer{justify-content:stretch}.mail-new-message>footer .primary{flex:1 1 100%;justify-content:center}.mail-new-message-sync{flex:1 1 100%;margin-right:0}}
+/* 10.10: віконні кнопки (_ □ ×), компактні поля, кнопка «увесь текст» у куті редактора, згортувані інструменти введення. */
+.mail-new-message>header{gap:8px}
+.mail-nm-venster-knoppen{display:inline-flex;gap:4px;margin-left:auto}
+.mail-nm-venster-knoppen button{display:inline-grid;place-items:center;width:34px;height:34px;padding:0!important;border:0!important;border-radius:8px!important;background:transparent;color:var(--text,#17212b);cursor:pointer}
+.mail-nm-venster-knoppen button:hover{background:var(--surface,#f1f3f5)}
+.mail-nm-venster-knoppen button[data-nm-sluit]:hover{background:#c42b1c;color:#fff}
+.mail-nm-venster-knoppen button:focus-visible{outline:2px solid var(--accent,#2f6f73);outline-offset:1px}
+.mail-nm-venster-knoppen svg{width:17px;height:17px}
+.mail-new-message{gap:8px}
+.mail-new-message-field{grid-template-columns:auto 1fr;gap:12px;padding-bottom:4px}
+.mail-new-message-field>span,.mail-new-message-field>label{min-width:4.5em;color:var(--muted,#6a7580);font-size:.85rem}
+.mail-nm-aan{grid-template-columns:auto 1fr auto}
+.mail-nm-aan .mail-new-message-cc-toggle{white-space:nowrap}
+.mail-nm-editor{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.mail-nm-editor>.mail-compose-editor{flex:1 1 auto}
+.mail-nm-hoek{position:absolute;right:10px;bottom:10px;z-index:3;display:inline-grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid var(--line,#dce1e6);border-radius:8px;background:var(--panel,#fff);color:var(--muted,#4b5563);box-shadow:0 2px 6px rgba(0,0,0,.12);cursor:pointer}
+.mail-nm-hoek[aria-pressed="true"]{color:var(--accent,#2f6f73);border-color:var(--accent,#2f6f73)}
+.mail-nm-hoek svg{width:16px;height:16px}
+.mail-nm-hulpen{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 10px;border:1px solid var(--line,#dce1e6);border-radius:10px;background:transparent;color:var(--text,#17212b);font:inherit;font-size:.85rem;cursor:pointer}
+.mail-nm-hulpen[aria-expanded="true"]{background:var(--accent-soft,#e4f0ef);color:var(--accent,#2f6f73)}
+.mail-nm-hulpen svg{width:16px;height:16px}
+/* На весь екран */
+.mail-new-message.groot{position:fixed!important;inset:12px!important;width:auto!important;height:auto!important;max-height:none!important;margin:0!important}
+.mail-new-message.groot~.mail-new-message-resize,.mail-new-message.groot>.mail-new-message-resize{display:none}
+/* Увесь текст: редактор росте разом із текстом, прокручується вікно */
+.mail-new-message.heel-tekst{overflow-y:auto}
+.mail-new-message.heel-tekst .mail-nm-editor,.mail-new-message.heel-tekst .mail-nm-editor>.mail-compose-editor{flex:none;min-height:auto;overflow:visible}
+.mail-new-message.heel-tekst .mail-compose-canvas{flex:none!important;overflow:visible!important}
+@media(max-width:560px){.mail-nm-venster-knoppen button[data-nm-maximaliseer]{display:none}}
