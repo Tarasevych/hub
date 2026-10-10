@@ -12,7 +12,7 @@ import './access-plane.css';
 
 type Tr=(uk:string,nl:string)=>string;
 type GastSessie={id:string;codeId:string;codeNaam:string;gestartOp:string;laatstActiefOp:string;verlooptOp:string;apparaat:string|null;ipKort:string|null;actief:boolean};
-type Props={tr:Tr;lang:'uk'|'nl';sessions:SecuritySession[];loading:boolean;busy:boolean;onRefresh:()=>void;onRevoke:(s:SecuritySession)=>void;onRevokeAll:()=>void};
+type Props={tr:Tr;lang:'uk'|'nl';sessions:SecuritySession[];loading:boolean;busy:boolean;onRefresh:()=>void;onRevoke:(s:SecuritySession)=>void|Promise<void>;onRevokeAll:()=>void};
 const context=()=>({service:'identity',tabContext:ecosystemTabContext(),sourceOrigin:location.origin});
 export const duurTekst=(tr:Tr,ms:number)=>{const m=Math.max(0,Math.round(ms/60000));if(m<60)return tr(`${m} хв`,`${m} min`);const u=Math.floor(m/60);if(u<48)return tr(`${u} год ${m%60} хв`,`${u} u ${m%60} min`);const d=Math.floor(u/24);return tr(`${d} дн ${u%24} год`,`${d} d ${u%24} u`);};
 

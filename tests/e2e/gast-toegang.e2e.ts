@@ -222,7 +222,7 @@ export async function main(): Promise<number> {
     const ov = page.locator('[data-sessies-overzicht]');
     await ov.locator('[data-gast-sessie]').first().waitFor({ timeout: 20000 }).catch(() => undefined);
     const ovt = await ov.innerText().catch(() => '');
-    check('«Сесії»: eigen sessie (Вхід через Google, тривалість) + 2 gastsessies «Вхід за кодом доступу «Для Олени»»', await ov.locator('[data-gast-sessie]').count() === 2 && /Вхід через Google/.test(ovt) && /Тривалість/.test(ovt) && /Вхід за кодом доступу «Для Олени»/.test(ovt) && /Гостьові сесії/.test(ovt), ovt.slice(0, 500));
+    check('«Сесії»: eigen sessie (bejdzj «Google SSO», тривалість) + 2 gastsessies «Вхід за кодом доступу «Для Олени»»', await ov.locator('[data-gast-sessie]').count() === 2 && /Google SSO/.test(ovt) && /Тривалість/.test(ovt) && /Вхід за кодом доступу «Для Олени»/.test(ovt) && /Гостьові сесії/.test(ovt), ovt.slice(0, 500));
     await ov.locator('[data-gast-sessies]').scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${UIT}/gast-11-sessies.png`, fullPage: true });
     await ov.locator(`[data-gast-sessie="${s2}"]`).getByRole('button', { name: 'Завершити гостьову сесію' }).click();
