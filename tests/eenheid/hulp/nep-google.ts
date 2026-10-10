@@ -64,9 +64,9 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
         if (/Max-Age=0\b/i.test(c) || !waarde) jar.delete(naam); else jar.set(naam, waarde);
       }
     };
-    const verzoek = async (host: string, path: string, body: unknown = {}, extra: { ip?: string; methode?: string; query?: Record<string, string> } = {}) => {
+    const verzoek = async (host: string, path: string, body: unknown = {}, extra: { ip?: string; methode?: string; query?: Record<string, string>; ua?: string; kop?: Record<string, string> } = {}) => {
       const ip = extra.ip || '203.0.113.9';
-      const headers: Record<string, string> = { host, origin: `https://${host}`, 'content-type': 'application/json', 'user-agent': 'eenheidstest', 'x-forwarded-for': ip };
+      const headers: Record<string, string> = { host, origin: `https://${host}`, 'content-type': 'application/json', 'user-agent': extra.ua || 'eenheidstest', 'x-forwarded-for': ip, ...(extra.kop || {}) };
       if (jar.size) headers.cookie = [...jar].map(([k, v]) => `${k}=${v}`).join('; ');
       const methode = extra.methode || 'POST';
       const r = await handler({ headers, body: methode === 'GET' ? '' : JSON.stringify(body), isBase64Encoded: false, rawPath: path, rawQueryString: '', queryStringParameters: extra.query || {}, requestContext: { http: { method: methode, path, sourceIp: ip, userAgent: 'eenheidstest' } } } as never) as { statusCode: number; headers: Record<string, string>; body: string };
@@ -76,14 +76,15 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
     };
     const tab = randomBytes(24).toString('hex');
     /** Aanmelden via de redirect-flow (zoals productie). intent 'step-up' vraagt opnieuw om het wachtwoord. */
-    const aanmelden = async (sub: string, email: string, o: { intent?: 'login' | 'replace-tab' | 'step-up'; authTime?: number | null; iat?: number; remember?: boolean; service?: string; tabContext?: string; returnTo?: string } = {}) => {
+    const aanmelden = async (sub: string, email: string, o: { intent?: 'login' | 'replace-tab' | 'step-up'; authTime?: number | null; iat?: number; remember?: boolean; service?: string; tabContext?: string; returnTo?: string; ip?: string; ua?: string; kop?: Record<string, string> } = {}) => {
+      const net = { ip: o.ip, ua: o.ua, kop: o.kop };
       const service = o.service || 'hub', host = `${service === 'identity' ? 'id' : service}.tarasevych.com`;
-      const start = await verzoek(host, '/api/owner/identity/transactions/create', { service, tabContext: o.tabContext || tab, flowMode: 'redirect', returnTo: o.returnTo || `https://${host}/`, locale: 'nl', intent: o.intent || 'replace-tab', remember: o.remember ?? false });
+      const start = await verzoek(host, '/api/owner/identity/transactions/create', { service, tabContext: o.tabContext || tab, flowMode: 'redirect', returnTo: o.returnTo || `https://${host}/`, locale: 'nl', intent: o.intent || 'replace-tab', remember: o.remember ?? false }, net);
       const authUrl = String(start.data.authUrl || 'https://x.invalid/'); laatsteAuthUrls.push(authUrl);
       const u = new URL(authUrl);
       const code = `code-${randomBytes(6).toString('hex')}`;
       codes.set(code, { sub, email, nonce: u.searchParams.get('nonce') || '', authTime: o.authTime === undefined ? Math.floor(Date.now() / 1000) : o.authTime, ...(o.iat === undefined ? {} : { iat: o.iat }) });
-      const cb = await verzoek('id.tarasevych.com', '/api/owner/auth/google/callback', { state: u.searchParams.get('state'), code });
+      const cb = await verzoek('id.tarasevych.com', '/api/owner/auth/google/callback', { state: u.searchParams.get('state'), code }, net);
       return { start, cb, authUrl: u };
     };
     const ctxBody = (service = 'hub', extra: Record<string, unknown> = {}) => ({ service, tabContext: tab, ...extra });
