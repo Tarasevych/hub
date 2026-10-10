@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import './ai-site-actions'; // acties voor AI-assistenten via de browserextensie (postMessage) en WebMCP
 import './browser-agent-heartbeat'; // bevestigt vanuit een ingelogde pagina dat de aangezette browserextensie actief mag blijven
 import App from './App';
+import { installeerUitklapGeheugen } from './platform/uitklap'; // punt 4: uitklapblokken onthouden + #anker opent het juiste blok
 import './index.css';
 import './mobile-ux.css';
 
@@ -21,7 +22,7 @@ naActivering(() => {
     document.getElementById('boot-shell')?.remove();
     document.documentElement.classList.remove('boot-active');
     void import('./GastToegang').then(({ default: GastToegang }) => createRoot(document.getElementById('root')!).render(<GastToegang />));
-  } else createRoot(document.getElementById('root')!).render(<App />);
+  } else { createRoot(document.getElementById('root')!).render(<App />); installeerUitklapGeheugen(); }
 });
 
 const callbackQuery=/[?&](?:code|state|token|proof|transaction|redeem|handoff)=/i.test(location.search);if('serviceWorker'in navigator&&location.protocol==='https:'&&!callbackQuery){window.addEventListener('load',()=>{const script=new URL('./service-worker.js',location.href);void navigator.serviceWorker.register(script,{scope:'./',updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>undefined)},{once:true})}

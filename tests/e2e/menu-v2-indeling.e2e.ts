@@ -92,7 +92,8 @@ export async function main(): Promise<number> {
     const A = await sessie({ url: SESSIES, viewport: { width: 1280, height: 1100 } });
     const standaard = await lijst(A.page, 'zijbalk|');
     check('standaard: hoofdmenu met diensten, geen snelbalk buiten de bewerkmodus', standaard.length >= 4 && standaard.every((s) => s.startsWith('svc:')) && (await A.page.locator('.menu-snelbalk').count()) === 0, standaard.join(','));
-    await A.page.locator('.zijbalk-werkbalk [data-menu-bewerken-knop]').click();
+    await A.page.locator('.zijbalk-werkbalk [data-menu-venster-knop]').click();
+    await A.page.locator('[data-menu-instellingen-venster] [data-menu-bewerken-knop]').click();
     await A.page.locator('[data-menu-bewerkbalk]').waitFor({ timeout: 5000 });
     check('✎: bewerkmodus aan (balk met uitleg, ongedaan, alles terug, klaar; lege snelbalk als doel)', (await A.page.locator('main[data-menu-bewerken="ja"]').count()) === 1 && await A.page.locator('[data-menu-bewerkbalk] [data-menu-ongedaan]').isVisible() && await A.page.locator('[data-menu-bewerkbalk] [data-menu-alles-terug]').isVisible() && await A.page.locator('[data-menu-bewerken-klaar]').isVisible() && await A.page.locator('.menu-snelbalk .menu-leeg').isVisible());
     await A.page.screenshot({ path: `${UIT}/menu-40-bewerkmodus-links.png` });
@@ -235,7 +236,8 @@ export async function main(): Promise<number> {
     await D.page.keyboard.press('Escape'); await D.page.waitForTimeout(200);
     check('Esc sluit het dockpaneel', (await D.page.locator('[data-dock-paneel]').count()) === 0);
     // startpagina: dupliceren via het actiemenu (ook in het dock)
-    await D.page.locator('.zijbalk-werkbalk.dock [data-menu-bewerken-knop]').click();
+    await D.page.locator('.zijbalk-werkbalk.dock [data-menu-venster-knop]').click();
+    await D.page.locator('[data-menu-instellingen-venster] [data-menu-bewerken-knop]').click();
     await D.page.locator('[data-menu-bewerkbalk]').waitFor({ timeout: 4000 });
     check('dock onder: bewerkbalk zwevend bovenaan (vrij van dock en meldingen)', await D.page.evaluate(() => { const b = document.querySelector('[data-menu-bewerkbalk]')!.getBoundingClientRect(), s = document.querySelector('.canonical-sidebar')!.getBoundingClientRect(); return b.top < 40 && b.bottom < s.top; }));
     await D.page.locator(knop('svc:mail')).click();

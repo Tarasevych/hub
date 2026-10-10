@@ -1,0 +1,9 @@
+/* «Завжди розгорнута» = naadloos (punt 4, zoals het linkermenu van Google): geen eigen vlak, rand of schaduw — dezelfde achtergrond
+   als de pagina — en geen zichtbare schuifbalk of ▲▼-pijlen: scrollen gaat met het wieltje, vegen of het toetsenbord.
+   Alleen op brede schermen met het menu aan de zijkant; de lade (mobiel), zwevende modus en het dok blijven zoals ze waren. */
+@media (min-width:701px){
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar{background:var(--bg)!important;border-right-color:transparent!important;border-left-color:transparent!important;box-shadow:none!important}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-service-list{scrollbar-width:none}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-service-list::-webkit-scrollbar{display:none}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) [data-zijbalk-pijl]{display:none!important}
+}

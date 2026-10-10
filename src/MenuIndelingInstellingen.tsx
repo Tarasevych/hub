@@ -39,7 +39,7 @@ export default function MenuIndelingInstellingen({ tr }: { tr: Tr }) {
     zetMenuBewerken(true);
     window.setTimeout(() => document.querySelector<HTMLElement>('.menu-bewerkbalk button, [data-menu-sleutel] button, [data-menu-sleutel]')?.focus(), 120);
   };
-  return <fieldset className='zijbalk-meldingen menu-indeling' id='menu-indeling' data-menu-indeling-instellingen>
+  return <fieldset className='zijbalk-meldingen menu-indeling' data-menu-indeling-instellingen>
     <legend><Move aria-hidden='true' />{tr('Розташування й порядок меню', 'Plaats en indeling van het menu')}</legend>
     <div className='zijbalk-keuze compact menu-positie-keuze' role='radiogroup' aria-label={tr('Де розташоване меню', 'Waar het menu staat')}>
       {posities.map(([id, naam, uitleg, icoon]) => <label key={id} className={dock.positie === id ? 'actief' : ''} data-dock-positie={id}>

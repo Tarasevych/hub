@@ -174,6 +174,7 @@ export async function main(): Promise<number> {
 
     // ---------------------------------------------------------------- 7. Instellingen → Меню: «Стиль іконок»
     await open(page, '/menu');
+    await page.evaluate(() => { const d = document.getElementById('menu-stijl') as HTMLDetailsElement | null; if (d) d.open = true; }); // punt 4: /menu is een accordeon
     const keuze = page.locator('[data-icoon-stijl-keuze]');
     await keuze.waitFor({ timeout: 15000 });
     check('Instellingen → Меню: «Стиль іконок» met Класичний (gekozen) en Кольоровий', /Стиль іконок/.test(await keuze.innerText()) && await keuze.locator('input[value="klassiek"]').isChecked());
@@ -232,6 +233,7 @@ export async function main(): Promise<number> {
     await page.mouse.move(640, 400);
     await page.screenshot({ path: `${UIT}/menu-10-sessies-knoppen.png` });
     await open(page, '/menu');
+    await page.evaluate(() => { const d = document.getElementById('menu-stijl') as HTMLDetailsElement | null; if (d) d.open = true; }); // punt 4: /menu is een accordeon
     await page.locator('[data-icoon-stijl-keuze]').waitFor({ timeout: 15000 });
     await page.mouse.move(640, 400); await page.waitForTimeout(400);
     const menuKop = await page.evaluate(() => ({ h1: getComputedStyle(document.querySelector('.settings-center>header h1')!).fontFamily, titel: document.querySelector('.settings-center>header h1')?.textContent || '', sub: document.querySelector('[data-settings-subtitle]')?.textContent || '' }));
