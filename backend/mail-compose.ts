@@ -14,6 +14,8 @@ const systeem = (sql: string, params: unknown[] = []) => getPool('systeem').quer
 // ---------------------------------------------------------------- types
 export type ComposeInput = {
   to?: string; cc?: string; bcc?: string; subject?: string; html?: string; plainText?: string; accountId?: string; threadId?: string; localId?: string;
+  /** Antwoordconcept: id van het Gmail-bericht waarop geantwoord wordt (dan komt het concept in Gmail in dezelfde conversatie). */
+  replyToMessageId?: string; replyAll?: boolean;
 };
 export type DraftRow = {
   id: string; localId: string; accountId: string; threadId: string; to: string; cc: string; bcc: string; subject: string; html: string; plainText: string;
@@ -29,9 +31,13 @@ type Payload = { to: string[]; cc: string[]; bcc: string[]; subject: string; htm
 export interface MailTransport {
   resolve(userId: string, accountId: string): Promise<{ accountId: string; email: string; displayName: string } | null>;
   send(userId: string, accountId: string, rawMime: string, threadId?: string): Promise<{ id: string; threadId: string }>;
-  draftUpsert(userId: string, accountId: string, gmailDraftId: string, rawMime: string): Promise<{ id: string }>;
+  draftUpsert(userId: string, accountId: string, gmailDraftId: string, rawMime: string, threadId?: string): Promise<{ id: string }>;
+  /** Kopregels van het bericht waarop geantwoord wordt (optioneel; zonder: het concept staat los in Gmail). */
+  replyHeaders?(userId: string, accountId: string, messageId: string): Promise<ReplyKop | null>;
   draftDelete(userId: string, accountId: string, gmailDraftId: string): Promise<void>;
 }
+
+export type ReplyKop = { messageIdHeader: string; references: string; subject: string; from: string; replyTo: string; to: string; cc: string };
 
 export class ProviderError extends Error {
   constructor(message: string, readonly status = 0, readonly permanent = false) { super(message); }
@@ -56,9 +62,18 @@ export const gmailTransport: MailTransport = {
     if (!res.ok) throw new ProviderError(`GMAIL_SEND_${res.status}`, res.status, res.status >= 400 && res.status < 500 && res.status !== 429);
     return { id: String(body.id || ''), threadId: String(body.threadId || '') };
   },
-  async draftUpsert(userId, accountId, gmailDraftId, rawMime) {
+  async replyHeaders(userId, accountId, messageId) {
     const token = await tokenFor(userId, accountId);
-    const message = { raw: toGmailRaw(rawMime) };
+    const namen = ['Message-ID', 'References', 'Subject', 'From', 'Reply-To', 'To', 'Cc'];
+    const res = await gmail(token, `/messages/${encodeURIComponent(messageId)}?format=metadata&${namen.map((n) => `metadataHeaders=${encodeURIComponent(n)}`).join('&')}`);
+    if (!res.ok) return null;
+    const body: any = await res.json().catch(() => ({}));
+    const kop = (n: string) => String((body?.payload?.headers || []).find((h: any) => String(h?.name || '').toLowerCase() === n.toLowerCase())?.value || '');
+    return { messageIdHeader: kop('Message-ID'), references: kop('References'), subject: kop('Subject'), from: kop('From'), replyTo: kop('Reply-To'), to: kop('To'), cc: kop('Cc') };
+  },
+  async draftUpsert(userId, accountId, gmailDraftId, rawMime, threadId) {
+    const token = await tokenFor(userId, accountId);
+    const message = { raw: toGmailRaw(rawMime), ...(threadId ? { threadId } : {}) };
     if (gmailDraftId) {
       const res = await gmail(token, `/drafts/${encodeURIComponent(gmailDraftId)}`, { method: 'PUT', body: JSON.stringify({ message }) });
       if (res.ok) return { id: gmailDraftId };
@@ -117,6 +132,17 @@ const draftOf = (r: any): DraftRow => ({
   gmailDraftId: r.gmail_draft_id, syncStatus: r.sync_status, syncError: r.sync_error, version: r.version, updatedAt: new Date(r.updated_at).getTime(),
 });
 
+// Kopregels van het originele bericht: 10 min in het geheugen (een concept wordt tijdens het typen vaak bewaard).
+const kopCache = new Map<string, { op: number; kop: ReplyKop | null }>();
+async function antwoordKop(userId: string, accountId: string, messageId: string): Promise<ReplyKop | null> {
+  const sleutel = `${userId}|${accountId}|${messageId}`, nu = Date.now(), c = kopCache.get(sleutel);
+  if (c && nu - c.op < 600_000) return c.kop;
+  const kop = await transport.replyHeaders!(userId, accountId, messageId).catch(() => null);
+  if (kopCache.size > 500) kopCache.clear();
+  kopCache.set(sleutel, { op: nu, kop });
+  return kop;
+}
+
 /**
  * Concept bewaren: EERST in PostgreSQL (nooit verloren), daarna naar Gmail. Een fout bij Gmail laat het lokale concept intact en zet
  * sync_status op "error"; de volgende keer bewaren (of een nieuwe poging) probeert het opnieuw.
@@ -142,9 +168,23 @@ export async function saveDraft(userId: string, input: ComposeInput): Promise<{ 
       const account = await transport.resolve(userId, accountId);
       if (!account) throw new ProviderError('MAIL_ACCOUNT_NOT_CONNECTED', 409);
       const version = row.version;
-      const to = parseAddressList(String(input.to ?? '')).valid; // een concept mag zonder (geldige) ontvanger
-      const raw = buildMime({ from: fromHeader(account), to, cc: p.cc, bcc: p.bcc, subject: p.subject, html: p.html, plainText: p.plainText });
-      const synced = await transport.draftUpsert(userId, account.accountId, row.gmail_draft_id, raw);
+      let to = parseAddressList(String(input.to ?? '')).valid; // een concept mag zonder (geldige) ontvanger
+      let cc = p.cc, subject = p.subject, inReplyTo = '', references = '';
+      // Antwoordconcept: in Gmail in DEZELFDE conversatie (map «Чернетки» toont het bij de juiste brief) — Re:-onderwerp,
+      // In-Reply-To/References en de geadresseerde(n) van het originele bericht.
+      const replyId = String(input.replyToMessageId ?? '');
+      if (p.threadId && /^[A-Za-z0-9_-]{6,120}$/.test(replyId) && transport.replyHeaders) {
+        const kop = await antwoordKop(userId, account.accountId, replyId);
+        if (kop) {
+          inReplyTo = kop.messageIdHeader; references = [kop.references, kop.messageIdHeader].filter(Boolean).join(' ').slice(-1900);
+          if (!subject) subject = /^re:/i.test(kop.subject.trim()) ? kop.subject : `Re: ${kop.subject}`.slice(0, MAX_SUBJECT);
+          const eigen = account.email.toLowerCase();
+          if (!to.length) to = parseAddressList(kop.replyTo || kop.from).valid;
+          if (input.replyAll && !cc.length) cc = parseAddressList([kop.to, kop.cc].filter(Boolean).join(', ')).valid.filter((a) => !a.toLowerCase().includes(eigen) && !to.includes(a));
+        }
+      }
+      const raw = buildMime({ from: fromHeader(account), to, cc, bcc: p.bcc, subject, html: p.html, plainText: p.plainText, ...(inReplyTo ? { inReplyTo, references } : {}) });
+      const synced = await transport.draftUpsert(userId, account.accountId, row.gmail_draft_id, raw, p.threadId || undefined);
       // alleen bijwerken als er intussen geen nieuwere versie is opgeslagen (twee snelle opslagen mogen elkaar niet overschrijven)
       const upd = await systeem(`UPDATE app.mail_drafts SET gmail_draft_id=$3, sync_status='synced', sync_error='' WHERE user_id=$1 AND local_id=$2 AND version=$4 RETURNING *`, [userId, localId, synced.id, version]);
       row = upd.rows[0] ?? (await systeem('SELECT * FROM app.mail_drafts WHERE user_id=$1 AND local_id=$2', [userId, localId])).rows[0];
