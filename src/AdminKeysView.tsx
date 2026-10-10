@@ -1,7 +1,8 @@
 import {useEffect,useMemo,useState} from 'react';
 import {api} from './platform/client';
-import {Eye,EyeOff,KeyRound,LockKeyhole,Plus,RefreshCw,ShieldCheck,Trash2,TriangleAlert,X} from 'lucide-react';
+import {Eye,EyeOff,KeyRound,LockKeyhole,Plus,RefreshCw,ShieldCheck,Trash2,TriangleAlert} from 'lucide-react';
 import {VaultMetaBewerker,VaultMetaRegel,VaultMetaVelden} from './VaultMeta';
+import {Venster} from './platform/vensters';
 import {leegMeta,vandaag,type VaultMeta,type VaultStaat} from '../shared/vault-meta';
 
 type Lang='uk'|'nl';
@@ -268,9 +269,8 @@ export default function AdminKeysView({lang,sourceOrigin,tabContext}:Props){
         <button type='submit' disabled={Boolean(busy)||!vaultReady}>{tr(lang,'Зберегти зашифровано','Versleuteld opslaan')}</button>
       </form>
 
-      {editor?<div className='admin-key-dialog' role='dialog' aria-modal='true' data-admin-key-editor={editor.name}>
+      {editor?<Venster id='admin-sleutel-vervangen' titel={`${tr(lang,'Замінити ключ','Sleutel vervangen')}: ${editor.name}`} breedte={520} onSluit={()=>setEditor(null)} className='admin-key-venster'><div className='admin-key-dialog-inhoud' data-admin-key-editor={editor.name}>
         <article>
-          <header><h3>{tr(lang,'Замінити ключ','Sleutel vervangen')}</h3><button type='button' onClick={()=>setEditor(null)} aria-label={tr(lang,'Закрити','Sluiten')}><X/></button></header>
           <p><code>{editor.name}</code></p>
           <label>{tr(lang,'Нове значення','Nieuwe waarde')}<textarea value={editor.value} onChange={event=>setEditor(current=>current?{...current,value:event.target.value}:current)} rows={4}/></label>
           <div className='admin-key-actions'>
@@ -278,7 +278,7 @@ export default function AdminKeysView({lang,sourceOrigin,tabContext}:Props){
             <button type='button' onClick={()=>setEditor(null)}>{tr(lang,'Скасувати','Annuleren')}</button>
           </div>
         </article>
-      </div>:null}
+      </div></Venster>:null}
 
     </section>
   );

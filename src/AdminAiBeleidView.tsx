@@ -9,6 +9,7 @@ import { foutCode, kanPasskey, passkeyBevestigen, type AssertieOpties } from './
 import { canonicalize } from '../shared/ai-beleid/canonical';
 import { diffPolicy, listGrants, type GrantRow, type Op, type Policy } from '../shared/ai-beleid/model';
 import { PRESETS, countdown, formatClock, formatDuration, resolveGrant, zonedToUtc, type After, type GrantSpec, type Mode } from '../shared/ai-beleid/time';
+import { Venster } from './platform/vensters';
 import './admin-ai-beleid.css';
 
 type Lang = 'uk' | 'nl';
@@ -326,8 +327,8 @@ export default function AdminAiBeleidView({ lang, sourceOrigin, tabContext, alle
       ) : null}
 
       {venster ? (
-        <div className='aib-venster-achter' role='presentation'>
-          <div className='aib-venster' role='dialog' aria-modal='true' aria-labelledby='aib-venster-titel' onKeyDown={(e) => { if (e.key === 'Escape') setVenster(null); }}>
+        <Venster id='ai-beleid-tekenen' titel={tr(lang, 'Підпис зміни доступу ШІ', 'Wijziging AI-toegang tekenen')} prioriteit='kritiek' breedte={640} onSluit={() => setVenster(null)} sluitenUit={bezig === 'teken'} labelledBy='aib-venster-titel' className='aib-venster-laag'>
+          <div className='aib aib-venster'>
             <h2 id='aib-venster-titel'>{tr(lang, 'Підтвердіть зміну доступу ШІ', 'Bevestig de wijziging van de AI-toegang')}</h2>
             <p>{tr(lang, `Нова версія ${venster.ontwerp.seq}. Ось точно те, що ви підписуєте (сторінка сама перевірила, що запит на підпис відповідає цьому списку):`, `Nieuwe versie ${venster.ontwerp.seq}. Dit is precies wat u tekent (de pagina controleerde zelf dat het tekenverzoek bij deze lijst hoort):`)}</p>
             <ul className='aib-diff'>{diffPolicy(beleid, venster.ontwerp, nu, tz).map((l, i) => <li key={i}><strong>{l.text}</strong>{l.kind === 'key' ? null : <span className='aib-van-naar'><span>{l.from}</span><span aria-hidden='true'> → </span><span className='sr-only'>{tr(lang, ' стане ', ' wordt ')}</span><span>{l.to}</span></span>}</li>)}</ul>
@@ -337,7 +338,7 @@ export default function AdminAiBeleidView({ lang, sourceOrigin, tabContext, alle
               <button type='button' className='aib-hoofd' autoFocus disabled={!!bezig} onClick={() => void bevestigen()}><Fingerprint aria-hidden='true' />{bezig === 'teken' ? tr(lang, 'Чекаю passkey…', 'Wacht op passkey…') : tr(lang, 'Підтвердити passkey', 'Bevestigen met passkey')}</button>
             </div>
           </div>
-        </div>
+        </Venster>
       ) : null}
     </section>
   );

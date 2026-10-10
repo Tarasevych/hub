@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useState } from 'react';
 import { Clock, Eye, Pencil, ShieldCheck, Terminal, TriangleAlert } from 'lucide-react';
 import { api } from './platform/client';
 import { clearPendingConsent, getPendingConsent } from './mcp-consent-store';
 import { ecosystemTabContext } from './tab-context';
+import { Venster, vensterBeheer } from './platform/vensters';
 import './mcp-consent-modal.css';
 
 type Tr = (uk: string, nl: string) => string;
@@ -26,7 +26,7 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
   const [info, setInfo] = useState<Info | null>(null);
   const [left, setLeft] = useState(0);
   const [dismissed, setDismissed] = useState(false);
-  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const [melding, setMelding] = useState('');
 
   // Een nieuw ?consent= (bijv. een tweede verzoek in dezelfde sessie) oppikken bij terug/vooruit-navigatie.
   useEffect(() => {
@@ -60,27 +60,12 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
 
   const open = !!rid && !dismissed;
 
-  // Achtergrond niet laten scrollen, focus in het venster en Tab binnen het venster houden.
-  useEffect(() => {
-    if (!open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    dialogRef.current?.focus();
-    return () => { document.body.style.overflow = previous; };
-  }, [open]);
-
-  const onKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key !== 'Tab') return; // Escape beslist bewust niets: toestemming vraagt een keuze
-    const items = dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]');
-    if (!items || !items.length) return;
-    const first = items[0], last = items[items.length - 1];
-    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-  };
-
   const decide = useCallback(async (approve: boolean) => {
     if (!rid || phase !== 'ready') return;
-    setPhase('deciding');
+    setPhase('deciding'); setMelding('');
+    // Kan een venster «Підтвердіть доступ» openen (vers aanmelden is nodig om toegang te geven): dat staat dan BOVEN dit venster
+    // (vensterbeheer, prioriteit kritiek) en het dok toont dat dit venster erop wacht.
+    vensterBeheer.wacht('mcp-toestemming', true);
     try {
       const res = await api.post('/api/owner/mcp-connector/consent', { ...sessionBody(), rid, approve });
       setPhase('redirecting');
@@ -88,11 +73,18 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
       location.assign(String(res.data.redirect)); // terug naar Claude (of de loopback van Claude Code) met de code
     } catch (e) {
       const status = statusOf(e);
-      if (status === 409 || codeOf(e).includes('GRANT_LIMIT')) setPhase('limit');
+      const code = codeOf(e);
+      if (status === 409 || code.includes('GRANT_LIMIT')) setPhase('limit');
       else if (status === 404) { clearPendingConsent(); setPhase('gone'); }
-      else setPhase('ready');
-    }
-  }, [rid, phase]);
+      else {
+        // Nooit stil terug naar «klaar»: zeggen wat er gebeurde.
+        setMelding(code.startsWith('STEP_UP') || code === 'STAP_OP_VENSTER_FOUT'
+          ? tr('Доступ не видано: вхід не підтверджено (вікно «Підтвердіть доступ» закрито або не вдалося). Натисніть «Дозволити» ще раз.', 'Geen toegang gegeven: de aanmelding is niet bevestigd (venster «Toegang bevestigen» gesloten of mislukt). Klik nogmaals op «Toestaan».')
+          : tr(`Не вдалося зберегти рішення (${code || status || 'немає зв’язку'}). Спробуйте ще раз.`, `De beslissing kon niet worden opgeslagen (${code || status || 'geen verbinding'}). Probeer het opnieuw.`));
+        setPhase('ready');
+      }
+    } finally { vensterBeheer.wacht('mcp-toestemming', false); }
+  }, [rid, phase, tr]);
 
   const close = () => { setDismissed(true); };
   const done = () => { clearPendingConsent(); setRid(null); };
@@ -117,12 +109,9 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
     ] },
   ];
 
-  return createPortal(
-    <div className='mcp-consent-backdrop' role='presentation' data-mcp-consent-modal='true'>
-      <div
-        ref={dialogRef} className='mcp-consent-dialog' role='dialog' aria-modal='true'
-        aria-labelledby='mcp-consent-title' aria-describedby='mcp-consent-desc' tabIndex={-1} onKeyDown={onKeyDown}
-      >
+  return (
+    <Venster id='mcp-toestemming' titel={tr(`Доступ для ${name}`, `Toegang voor ${name}`)} breedte={560} labelledBy='mcp-consent-title' describedBy='mcp-consent-desc' className='mcp-consent-venster'>
+      <div className='mcp-consent-dialog' data-mcp-consent-modal='true'>
         <div className='mcp-consent-head'>
           <span className='mcp-consent-icon' aria-hidden='true'><ShieldCheck size={26} /></span>
           <div>
@@ -195,6 +184,8 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
               {' · '}{tr('Доступ можна відкликати будь-коли в розділі «Агенти».', 'U kunt de toegang altijd intrekken onder "Agenten".')}
             </p>
 
+            {melding ? <p className='mcp-consent-warn' role='alert'><TriangleAlert size={16} aria-hidden='true' /> {melding}</p> : null}
+            {phase === 'deciding' ? <p className='mcp-consent-meta' role='status'>{tr('Якщо з’явилося вікно «Підтвердіть доступ» — підтвердіть там; воно завжди поверх цього вікна.', 'Verschijnt het venster «Toegang bevestigen», bevestig daar; het staat altijd boven dit venster.')}</p> : null}
             <div className='mcp-consent-actions'>
               <button type='button' className='mcp-consent-secondary' disabled={busy} onClick={() => void decide(false)}>{tr('Заборонити', 'Weigeren')}</button>
               <button type='button' className='mcp-consent-primary' disabled={busy} onClick={() => void decide(true)}>
@@ -204,7 +195,6 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
           </>
         ) : null}
       </div>
-    </div>,
-    document.body,
+    </Venster>
   );
 }

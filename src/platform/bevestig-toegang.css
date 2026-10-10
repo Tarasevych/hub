@@ -40,3 +40,7 @@ body.bevestig-toegang-open{overflow:hidden}
 html.theme-dark{--ap-op-accent:#10201f}
 html.theme-plum-dark{--ap-op-accent:#2a1024}
 .bevestig-toegang-melding[data-fout]{background:#8a2c22}
+
+/* In het gezamenlijke venster (vensters.tsx): geen eigen rand/schaduw; breedte van het venster. */
+.bevestig-toegang-venster .bevestig-toegang{width:100%;border:0;border-radius:0;box-shadow:none;background:transparent}
+.bevestig-toegang-melding{z-index:200000}
