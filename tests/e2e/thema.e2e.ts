@@ -101,7 +101,11 @@ export async function main(): Promise<number> {
     // zon-modus: tekst met tijden
     await page.locator('.thema-soort input').nth(0).check(); await page.waitForTimeout(300);
     check('«Коли надворі темно»: toont vandaag licht van … tot …', /Сьогодні світла з \d{2}:\d{2} до \d{2}:\d{2}/.test(await page.locator('[data-thema-zon]').innerText()));
-    // Accountmenu: knop «Авто» actief
+    // Permissions-Policy: locatie alleen op id.* (na een klik, de browser vraagt toestemming); elders blijft het verboden
+    const ppId = await page.evaluate(async () => (await fetch('/themes', { cache: 'no-store' })).headers.get('permissions-policy') || '');
+    await open(`${MAIL}/?lang=uk`);
+    const ppMail = await page.evaluate(async () => (await fetch('/', { cache: 'no-store' })).headers.get('permissions-policy') || '');
+    check('Permissions-Policy: geolocation=(self) alleen op id.*, op mail.* geolocation=()', /geolocation=\(self\)/.test(ppId) && /geolocation=\(\)/.test(ppMail) && /camera=\(\)/.test(ppId), `${ppId} | ${ppMail}`);
     check('geen onverwachte console-/HTTP-fouten', fouten.length === 0, fouten.slice(0, 6).join('\n'));
     await ctx.close();
   } catch (e) {
