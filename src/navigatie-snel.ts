@@ -34,6 +34,8 @@ let generatie = 0, trickle: number | undefined, toon: number | undefined, stilSi
 
 function zorgBalk() {
   if (balk && balk.isConnected) return balk;
+  const bestaand = document.getElementById('tsv-voortgang');
+  if (bestaand instanceof HTMLDivElement) { balk = bestaand; if (!balk.firstElementChild) balk.appendChild(document.createElement('i')); return balk; }
   balk = document.createElement('div');
   balk.id = 'tsv-voortgang'; balk.setAttribute('aria-hidden', 'true'); balk.dataset.staat = 'uit';
   balk.appendChild(document.createElement('i'));
@@ -44,7 +46,7 @@ function zetBreedte(w: number) { if (!staat) return; staat.breedte = w; if (balk
 function opruimen() { window.clearInterval(trickle); window.clearTimeout(toon); window.clearTimeout(maxTimer); uitApi?.(); uitApi = undefined; trickle = toon = maxTimer = undefined; }
 
 /** Start (of herstart) de balk. `dienst` bepaalt de kleur; `extern` = de pagina gaat weg (andere host). */
-export function voortgangStart(dienst: string, opties: { extern?: boolean } = {}) {
+export function voortgangStart(dienst: string, opties: { extern?: boolean; vanaf?: number; direct?: boolean } = {}) {
   if (typeof document === 'undefined' || !instellingen().voortgang) return;
   // Wissel naar een ander onderdeel loopt eerst via de sessie-overdracht (API) en daarna via navigate: niet opnieuw starten.
   if (staat?.extern && opties.extern && balk?.dataset.dienst === (dienst || '')) return;
@@ -55,9 +57,10 @@ export function voortgangStart(dienst: string, opties: { extern?: boolean } = {}
   if (kleur) b.style.setProperty('--tsv-voortgang-kleur', kleur); else b.style.removeProperty('--tsv-voortgang-kleur');
   b.dataset.dienst = dienst || '';
   staat = { extern: !!opties.extern, start: Date.now(), breedte: 0, zichtbaar: false, generatie: g };
-  b.dataset.staat = 'wacht';
-  zetBreedte(6);
-  toon = window.setTimeout(() => { if (staat?.generatie !== g) return; staat.zichtbaar = true; b.dataset.staat = 'bezig'; }, 120);
+  if (opties.direct) { staat.zichtbaar = true; b.dataset.staat = 'bezig'; } else b.dataset.staat = 'wacht';
+  zetBreedte(opties.vanaf ?? 6);
+  if (opties.extern) overdrachtSchrijven(dienst, kleur);
+  if (!opties.direct) toon = window.setTimeout(() => { if (staat?.generatie !== g) return; staat.zichtbaar = true; b.dataset.staat = 'bezig'; }, 120);
   trickle = window.setInterval(() => { if (!staat || staat.generatie !== g) return; const doel = staat.extern ? 92 : 85; zetBreedte(staat.breedte + (doel - staat.breedte) * (minderBeweging() ? 0.25 : 0.07)); }, 180);
   if (!staat.extern) {
     stilSinds = apiLopend() === 0 ? Date.now() : 0;
@@ -77,6 +80,27 @@ export function voortgangKlaar() {
   window.setTimeout(() => { if (generatie === g) b.dataset.staat = 'uit'; }, 420);
 }
 export const voortgangStaat = () => (balk?.dataset.staat || 'uit');
+
+// ------------------------------------------------------------------------------------------------ overdracht tussen subdomeinen
+// Naar een ander subdomein = een nieuwe pagina: de balk zou verdwijnen en de pagina leek te «vallen». Daarom gaat de balk mee:
+// een kort koekje (20 s, alleen dienst + kleur + tijd, niets persoonlijks) voor *.tarasevych.com; het opstartscript van de nieuwe
+// pagina (index.html, canonical-boot) tekent de balk meteen in dezelfde kleur, en de app maakt hem af zodra ze klaar is.
+const OVERDRACHT = 'tsv_voortgang';
+function overdrachtSchrijven(dienst: string, kleur: string) {
+  if (!/(^|\.)tarasevych\.com$/.test(location.hostname)) return;
+  const waarde = encodeURIComponent(JSON.stringify({ d: dienst || '', k: /^#[0-9a-f]{6}$/i.test(kleur) ? kleur : '', t: Date.now() }));
+  document.cookie = `${OVERDRACHT}=${waarde}; Path=/; Max-Age=20; SameSite=Lax; Secure; Domain=.tarasevych.com`;
+}
+/** Door de app bij het starten: een door het opstartscript getekende balk overnemen en afmaken als de pagina klaar is. */
+export function voortgangOvernemen() {
+  const el = document.getElementById('tsv-voortgang');
+  if (!(el instanceof HTMLDivElement) || el.dataset.overdracht !== '1') return false;
+  delete el.dataset.overdracht;
+  el.dataset.overgenomen = '1';
+  balk = el;
+  voortgangStart(el.dataset.dienst || '', { vanaf: 70, direct: true });
+  return true;
+}
 
 // ------------------------------------------------------------------------------------------------ overgang binnen een onderdeel
 type VTDocument = Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
@@ -125,6 +149,7 @@ export function installeerNavigatieSnel() {
     const dienst = dienstVanUrl(url); if (!dienst && extern) return; // externe sites (Google enz.): geen balk
     voortgangStart(dienst, { extern });
   });
+  voortgangOvernemen();
   // Terug via bfcache of een geannuleerde navigatie: balk weg.
   window.addEventListener('pageshow', () => { if (staat) { opruimen(); staat = null; if (balk) balk.dataset.staat = 'uit'; } });
 }
