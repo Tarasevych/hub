@@ -84,7 +84,7 @@ export async function main(): Promise<number> {
     await page.evaluate(() => { (window as unknown as { __zelfde: number }).__zelfde = 42; });
     check('oude link #claude → tab «Підключені ШІ», hash #ai', await tabSel(page) === 'ai' && new URL(page.url()).hash === '#ai', `${await tabSel(page)} ${page.url()}`);
     const tabs = await page.locator('[role=tab]').allInnerTexts();
-    check('tabbladen: Огляд | Підключені ШІ | Дозволи за підписом | Пристрої й браузери | Токени й двері | Журнал', ['Огляд', 'Підключені ШІ', 'Дозволи за підписом', 'Пристрої й браузери', 'Токени й двері', 'Журнал'].every((n, i) => (tabs[i] || '').includes(n)), tabs.join(' | '));
+    check('tabbladen: Огляд | Підключені ШІ | Доступ ШІ за підписом | Пристрої й браузери | Токени й двері | Журнал', ['Огляд', 'Підключені ШІ', 'Доступ ШІ за підписом', 'Пристрої й браузери', 'Токени й двері', 'Журнал'].every((n, i) => (tabs[i] || '').includes(n)), tabs.join(' | '));
     const aiRijen = page.locator('[data-lijst="ai"] > [data-rij]');
     check('«Підключені ШІ»: Claude (OAuth) en grok (MCP-токен), kop «Ви надали доступ 2 …»', await aiRijen.count() === 2 && /Claude/.test(await aiRijen.allInnerTexts().then((x) => x.join(' '))) && /grok/.test(await aiRijen.allInnerTexts().then((x) => x.join(' '))) && /2/.test(await page.locator('.ag-lijstkop-tekst').first().innerText()), await page.locator('[data-tab-inhoud="ai"]').innerText().catch(() => ''));
     check('rijen standaard dicht (geen details, aria-expanded=false)', await page.locator('.ag-rij-details').count() === 0 && (await page.locator('[data-lijst="ai"] .ag-rij-toggle').evaluateAll((els) => els.map((e) => e.getAttribute('aria-expanded')))).every((x) => x === 'false'));

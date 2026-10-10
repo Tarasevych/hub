@@ -169,7 +169,7 @@ export async function ondertekenen(eigenaar: Eigenaar, input: { uitdagingId?: un
   // Vooraf controleren (snelle, duidelijke melding); root controleert straks alles opnieuw met zijn eigen sleutels.
   const b = await leesSleutels();
   const verwacht = kern.uitdagingVoor('ai-beleid', { beleidHash: hash, nonce: u.nonce, verloopt: u.verloopt });
-  const r = kern.verifieerAssertie({ assertie, verwachteUitdaging: verwacht, rpId: b.rpId, origins: b.origins, sleutels: b.sleutels });
+  const r = kern.verifieerAssertie({ assertie, verwachteUitdaging: verwacht, rpId: b.rpId, origins: [...new Set([...b.origins, ...(kern.originHoortBijRp('https://mcp.tarasevych.com', b.rpId) ? ['https://mcp.tarasevych.com'] : [])])], sleutels: b.sleutels });
   if (!r.ok) {
     await auditToevoegen({ ownerId: eigenaar.id, actorId: eigenaar.id, action: 'ai_beleid_geweigerd', type: 'beveiliging', result: 'denied', details: { seq: ontwerp.seq, code: r.code } }).catch(() => undefined);
     fout(`PASSKEY_${r.code}`, 403);
@@ -201,8 +201,8 @@ const lichaam = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<
 
 export function aiBeleidRoutes(deps: { requireSession: RequireSession }): Record<string, RouterMiddleware[]> {
   /**
-   * Alleen de eigenaar. Lezen mag op admin en mcp (timers op /agents); wijzigen en tekenen alleen op admin.tarasevych.com:
-   * daar staat de origin die root in zijn sleutelbestand accepteert.
+   * Alleen de eigenaar. Beheer op mcp-host /agents (waar de AI-verbindingen staan) en gespiegeld op admin-host /ai; root accepteert
+   * voor het AI-beleid (alleen dit doel) ook de origin van mcp-host (goedkeur-hulp.mjs BELEID_EXTRA_ORIGINS).
    */
   const eigenaar = (diensten: readonly string[], run: (ctx: Ctx, e: Eigenaar) => Promise<unknown>) => (async (raw) => {
     const ctx = raw as unknown as Ctx;
@@ -219,7 +219,7 @@ export function aiBeleidRoutes(deps: { requireSession: RequireSession }): Record
   }) as RouterMiddleware;
   return {
     'POST /api/owner/ai-beleid/overzicht': [eigenaar(['admin', 'mcp'], async (_ctx, e) => overzicht(e))],
-    'POST /api/owner/ai-beleid/voorstel': [eigenaar(['admin'], async (ctx, e) => voorstel(e, lichaam(ctx.body).ops))],
-    'POST /api/owner/ai-beleid/ondertekenen': [eigenaar(['admin'], async (ctx, e) => ondertekenen(e, lichaam(ctx.body)))],
+    'POST /api/owner/ai-beleid/voorstel': [eigenaar(['admin', 'mcp'], async (ctx, e) => voorstel(e, lichaam(ctx.body).ops))],
+    'POST /api/owner/ai-beleid/ondertekenen': [eigenaar(['admin', 'mcp'], async (ctx, e) => ondertekenen(e, lichaam(ctx.body)))],
   };
 }

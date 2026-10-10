@@ -19,7 +19,7 @@ import { ecosystemTabContext } from '../tab-context';
 import '../mcp-hub.css';
 import './agenten.css';
 
-// Ondertekend AI-beleid (§13.12): hier alleen-lezen; wijzigen kan alleen in Beheer → Доступ ШІ met de passkey.
+// Ondertekend AI-beleid (§13.12): hier de hoofdplek (bij de AI-verbindingen); Beheer → Доступ ШІ toont hetzelfde.
 const AiBeleid = lazy(() => import('../AdminAiBeleidView'));
 
 export type TabId = 'overzicht' | 'ai' | 'beleid' | 'apparaten' | 'tokens' | 'journaal';
@@ -82,7 +82,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   const tabInfo: Record<TabId, { uk: string; nl: string; icoon: ReactElement; teller?: number }> = {
     overzicht: { uk: 'Огляд', nl: 'Overzicht', icoon: <LayoutDashboard />, teller: wachten || undefined },
     ai: { uk: 'Підключені ШІ', nl: 'Verbonden AI', icoon: <Sparkles />, teller: oauthActief + tokensActief },
-    beleid: { uk: 'Дозволи за підписом', nl: 'Toegang met handtekening', icoon: <ShieldCheck /> },
+    beleid: { uk: 'Доступ ШІ за підписом', nl: 'AI-toegang met handtekening', icoon: <ShieldCheck /> },
     apparaten: { uk: 'Пристрої й браузери', nl: 'Apparaten en browsers', icoon: <Monitor />, teller: agents.length },
     tokens: { uk: 'Токени й двері', nl: 'Tokens en deuren', icoon: <KeyRound />, teller: tokensActief },
     journaal: { uk: 'Журнал', nl: 'Logboek', icoon: <Activity /> },
@@ -119,7 +119,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
             leeg={loaded && !agents.length && !oauthActief ? <PairCard tr={tr} reload={naActie} agents={agents} /> : null} />
         ) : null}
         {plek.tab === 'ai' ? <TabAi tr={tr} overzicht={ov.data} tokens={tok.data?.tokens ?? null} naActie={naActie} item={plek.item} kies={kies} calls={calls} reloadCalls={reloadCalls} /> : null}
-        {plek.tab === 'beleid' ? <Suspense fallback={<p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p>}><AiBeleid lang={tr('uk', 'nl') === 'uk' ? 'uk' : 'nl'} sourceOrigin={location.origin} tabContext={ecosystemTabContext()} alleenLezen /></Suspense> : null}
+        {plek.tab === 'beleid' ? <Suspense fallback={<p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p>}><AiBeleid lang={tr('uk', 'nl') === 'uk' ? 'uk' : 'nl'} sourceOrigin={location.origin} tabContext={ecosystemTabContext()} dienst='mcp' /></Suspense> : null}
         {plek.tab === 'apparaten' ? <TabApparaten tr={tr} agents={agents} pending={pending} last={last} overzicht={ov.data} naActie={naActie} reload={reload} item={plek.item} kies={kies} versie={versie} /> : null}
         {plek.tab === 'tokens' ? <TabTokens tr={tr} data={tok.data} naActie={naActie} item={plek.item} kies={kies} /> : null}
         {plek.tab === 'journaal' ? <Journaal tr={tr} onderwerpen={onderwerpen} versie={versie} actief /> : null}
@@ -144,6 +144,10 @@ function Overzicht({ tr, ga, versie, cijfers, wacht, leeg }: { tr: Tr; ga: (t: T
         {kaart('tokens', <KeyRound />, String(cijfers.tokens), 'активних токенів', 'actieve tokens', 'tokens')}
         {kaart('overzicht', <ShieldCheck />, String(cijfers.wachten), 'чекають рішення', 'wachten op beslissing', 'wachten')}
       </div>
+      <section className='ag-kaart' data-beleid-kaart='1'>
+        <div className='ag-kaart-kop'><h3>{tr('Доступ ШІ за вашим підписом', 'AI-toegang met uw handtekening')}</h3><a href='#beleid' className='ag-link' onClick={(e) => { e.preventDefault(); ga('beleid'); }}>{tr('Відкрити', 'Openen')} <ArrowRight size={14} aria-hidden='true' /></a></div>
+        <p className='ag-leeg'>{tr('Що може кожен ШІ і як довго: таймери, черга змін, підпис passkey.', 'Wat elke AI mag en hoe lang: timers, wachtrij, ondertekenen met passkey.')}</p>
+      </section>
       {wacht ? <section className='ag-kaart ag-waarschuwing' data-wacht={cijfers.wachten}><h3>{tr('Потрібне ваше рішення', 'Uw beslissing is nodig')}</h3>{wacht}</section> : null}
       {leeg ? <section className='ag-kaart'><h3>{tr('Почніть із підключення', 'Begin met koppelen')}</h3>{leeg}</section> : null}
       <section className='ag-kaart' data-recent='1'>
