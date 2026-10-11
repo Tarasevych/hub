@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { nepGoogle } from '../eenheid/hulp/nep-google';
 
-export async function startE2eServer(o: { ownerEmail: string; poort: number; tls: string }) {
+export async function startE2eServer(o: { ownerEmail: string; poort: number; tls: string; agentGateway?: boolean }) {
   process.env.DIST_DIR = resolve(process.env.E2E_DIST || 'dist');
   // Alle browsertests delen 127.0.0.1: strikte per-IP-limieten (o.a. stap-op) ×20, alleen hier (server/start.ts strikteFactor).
   process.env.E2E_LOKALE_LIMIETEN = '1';
@@ -14,6 +14,12 @@ export async function startE2eServer(o: { ownerEmail: string; poort: number; tls
   const { createServer } = await import('../../server/start');
   const http = createServer();
   const s = https.createServer({ key: readFileSync(`${o.tls}/srv.key`), cert: readFileSync(`${o.tls}/srv.crt`) }, (req, res) => { http.emit('request', req, res); });
+  // Optioneel: het WSS-kanaal voor echte agents (agent.mjs als apart proces), zoals server/start.ts het aan de HTTP-server hangt.
+  if (o.agentGateway) {
+    const { attachAgentGateway } = await import('../../backend/connectors-gateway');
+    const { SERVICE_HOSTS } = await import('../../backend/deployment-identity');
+    attachAgentGateway(s as never, new Set<string>(Object.values(SERVICE_HOSTS)));
+  }
   await new Promise<void>((r) => s.listen(o.poort, '127.0.0.1', () => r()));
   return { G, stop: () => new Promise<void>((r) => { s.closeAllConnections?.(); s.close(() => r()); }) };
 }

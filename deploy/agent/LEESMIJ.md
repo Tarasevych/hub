@@ -19,6 +19,29 @@ Cloudflare Tunnel); er hoeft geen poort open en geen router te worden ingesteld.
    Voor Docker-gereedschap (`docker_list_containers`, `docker_manage_container`) voegt u `docker` toe aan `--allow` (bijv. `--allow git,node,docker`). `system_metrics` heeft geen extra rechten nodig; containers starten/stoppen vraagt altijd uw goedkeuring op de site.
 3. Status verschijnt als Connected in de UI. Schrijven en commando's uitvoeren wachten op uw goedkeuring op de site.
 
+## Apps (0.5+, «Додатки», BYOS)
+
+Optioneel: de agent kan webapps bouwen en draaien op dit apparaat, voor een AI die de eigenaar daarvoor toestemming gaf
+(MCP-hulpmiddelen `app_*`, standaard uit). Alles blijft op de eigen hardware; er is geen externe hosting.
+
+```
+node agent.mjs apps-config --apps-root ./apps --runtime podman [--domain "{app}.apps.example.com"] [--caddy-admin unix:/run/caddy/admin.sock] [--caddy-server srv0] [--memory 512m]
+node agent.mjs apps-config --disable
+```
+
+- Containers: rootless Podman (aanbevolen; de docker-groep staat gelijk aan root), `--cap-drop ALL`, `no-new-privileges`,
+  geheugen- en proceslimiet, poort alleen op `127.0.0.1` (20000–20999).
+- Elke uitrol: snapshot (tar.gz) + image per versie, laatste 5 bewaard; start de nieuwe versie niet binnen 30 s, dan komt de
+  vorige automatisch terug. `apps.rollback` zet een eerdere versie terug zonder te bouwen.
+- Bestanden van een uitrol en waarden van geheimen staan nooit in de opdracht (die bewaart de server): de agent haalt ze één
+  keer op met zijn eigen token (`POST /api/owner/agents/overdracht`, eenmalig ticket, 10 min, alleen voor deze agent).
+- Geheimen: `<apps-root>/secrets/<app>.env` (0600), als omgevingsvariabelen aan de container; waarden worden in logboeken
+  gemaskeerd (`***`) en nooit teruggegeven. De eigenaar typt ze zelf op `mcp.*/apps?geheim=…`.
+- Caddy (optioneel): routes via de admin-API (unix-socket of lokaal), vooraan ingevoegd, na een herstart van Caddy elke
+  5 minuten teruggezet. Zonder Caddy blijft een app alleen lokaal bereikbaar.
+- Op de server van «Mijn Ruimte» richt de installer dit in: `sudo /usr/local/sbin/mijn-ruimte-installeer apps-inrichten
+  /srv/mijn-ruimte/current --caddy tunnel` en daarna `... apps-koppelen <KOPPELCODE> --domein '{app}.apps.<domein>'`.
+
 ## Veiligheid
 
 - Agenttoken: alleen de sha256-hash staat in de database; het token zelf in `~/.hub-agent/config.json` (modus 0600).

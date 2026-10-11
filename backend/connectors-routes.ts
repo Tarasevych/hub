@@ -4,7 +4,8 @@ import { error, json, rateLimit } from '../server/platform';
 import { auditLijst, auditToevoegen } from '../server/platform/audit';
 import { siteEventsFromAudit } from './site-activity';
 import { heeftApiRecht } from './api-recht';
-import { approveCommand, CommandRefused, rejectCommand, submitCommand } from './connectors-commands';
+import { approveCommand, CommandRefused, rejectCommand, submitCommand, waitForCommand } from './connectors-commands';
+import { geheimVerzoek, geheimVerzoekenVan, haalTicket, maakTicket, vergeetTicket, verzoekPubliek } from './apps-overdracht';
 import { newCommandKey, normalizePairingCode, pairingCode, randomToken, sealCommandKey, sha256 } from './connectors-crypto';
 import { agentOnline, COMMAND_TYPES, disconnectAgent, issueWsTicket } from './connectors-gateway';
 import * as grants from './ai-grants';
@@ -24,6 +25,7 @@ export const JOURNAAL_ACTIES: Record<string, JournaalSoort> = {
   'owner.mcp.tool': 'werk',
   'owner.mcp.grant.approved': 'ai', 'owner.mcp.grant.denied': 'ai', 'owner.mcp.grant.connected': 'ai', 'owner.mcp.grant.revoked': 'ai',
   mcp_console_token_issued: 'token', mcp_console_token_revoked: 'token',
+  'owner.app.geheim': 'apparaat',
   'owner.agent.paired': 'apparaat', 'owner.agent.revoked': 'apparaat', 'owner.agent.updated': 'apparaat', 'owner.agent.policy': 'apparaat', 'owner.agent.pairing_code': 'apparaat',
   'owner.browser.enabled': 'browser', 'owner.browser.disabled': 'browser',
   ai_grant_added: 'toestemming', ai_grant_always_enabled: 'toestemming', ai_grants_revoked: 'toestemming', ai_capabilities_changed: 'toestemming',
@@ -67,7 +69,7 @@ type Deps = {
 };
 
 const MAX_PARAM_BYTES = 6 * 1024 * 1024;
-export const AUTO_APPROVABLE_MACHINE = ['fs.read', 'fs.list', 'sys.info', 'sys.metrics', 'docker.ps'] as const;
+export const AUTO_APPROVABLE_MACHINE = ['fs.read', 'fs.list', 'sys.info', 'sys.metrics', 'docker.ps', 'apps.list', 'apps.status', 'apps.logs', 'apps.versions', 'apps.secret.list'] as const;
 export const AUTO_APPROVABLE_BROWSER = BROWSER_AUTO_APPROVABLE;
 const MAX_NAME = 80;
 
@@ -338,6 +340,58 @@ export function createAgentRoutes(deps: Deps) {
       return json(issueWsTicket(agent.id));
     }],
 
+    // Publiek (zie PUBLIEKE_ROUTES): «Додатки» — de agent haalt met zijn eigen token EENMAAL de inhoud van een ticket op (bestanden van
+    // een uitrol, of een geheim dat de eigenaar typte). Alleen een ticket dat voor precies deze agent gemaakt is; daarna is het weg.
+    'POST /api/owner/agents/overdracht': [async (ctx: any) => {
+      const token = bearerOf(ctx);
+      if (token.length < 20 || token.length > 200) return error('TOKEN_INVALID', 401);
+      const agent = await store.findAgentByTokenHash(sha256(token));
+      if (!agent || agent.platform === 'browser') return error('TOKEN_INVALID', 401);
+      const limit = await rateLimit(`overdracht:${agent.id}`, 60, 60);
+      if (!limit.ok) return error('RATE_LIMITED', 429);
+      const inhoud = haalTicket(agent.id, String(deps.body(ctx.body).ticket ?? ''));
+      if (!inhoud) return error('TICKET_ONGELDIG', 404);
+      return json(inhoud);
+    }],
+
+    // «Додатки»: geheimen die een AI vroeg (app_secret_request). De eigenaar ziet ze hier en typt de waarde zelf; die gaat via een
+    // eenmalig ticket rechtstreeks naar het apparaat en komt nooit in de database, het journaal of de chat.
+    'POST /api/owner/apps/geheimen': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      return deps.respond({ verzoeken: geheimVerzoekenVan(auth.user.id).map(verzoekPubliek) });
+    }],
+    'POST /api/owner/apps/geheimen/:id': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const v = geheimVerzoek(auth.user.id, String(ctx.params.id));
+      return v ? deps.respond({ verzoek: verzoekPubliek(v) }) : deps.fail('VERZOEK_ONBEKEND', 404);
+    }],
+    'POST /api/owner/apps/geheimen/:id/invullen': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const v = geheimVerzoek(auth.user.id, String(ctx.params.id));
+      if (!v) return deps.fail('VERZOEK_ONBEKEND', 404);
+      if (v.status !== 'open') return deps.fail(v.status === 'verlopen' ? 'VERZOEK_VERLOPEN' : 'VERZOEK_AL_INGEVULD', 409);
+      const waarde = deps.body(ctx.body).waarde;
+      if (typeof waarde !== 'string' || !waarde || waarde.length > 8192 || /[\r\n\0]/.test(waarde)) return deps.fail('WAARDE_ONGELDIG', 400);
+      // Een geheim naar een apparaat sturen is een gevoelige handeling: recente bevestiging (step-up) zoals bij goedkeuren.
+      const su = await stepUp(ctx, auth); if (su) return su;
+      const agent = await store.getAgent(auth.user.id, v.agentId);
+      if (!agent || !agentOnline(agent.id)) return deps.fail('AGENT_OFFLINE', 409);
+      const ticket = maakTicket(agent.id, auth.user.id, 'geheim', { key: v.sleutel, value: waarde });
+      let command;
+      try {
+        ({ command } = await submitCommand(agent, auth.user.id, 'apps.secret.set', { name: v.app, key: v.sleutel, ticket }));
+      } catch (err) { vergeetTicket(ticket); const r = refused(err); if (r) return r; throw err; }
+      // De eigenaar typte de waarde zelf en bevestigde met step-up: dat IS de goedkeuring van deze ene opdracht.
+      if (command.status === 'pending_approval') command = (await approveCommand(auth.user.id, command.id)) ?? command;
+      const klaar = (await waitForCommand(auth.user.id, command.id, 20_000)) ?? command;
+      if (klaar.status === 'succeeded') { v.status = 'ingevuld'; v.commandId = command.id; }
+      await deps.audit(auth.user.id, 'owner.app.geheim', klaar.status === 'succeeded' ? 'success' : 'failure', { agentId: agent.id, app: v.app, variabele: v.sleutel, commandId: command.id });
+      return deps.respond({ status: klaar.status, verzoek: verzoekPubliek(v), fout: klaar.status === 'succeeded' ? null : String(klaar.result?.error ?? klaar.status).slice(0, 300) });
+    }],
+
     // Publiek: de extensie levert haar diagnosebuffer (≤ 200 items) aan; versleuteld per gebruiker bewaard, 90 dagen.
     'POST /api/owner/agents/diagnostics/archive': [async (ctx: any) => {
       const token = bearerOf(ctx) || String(deps.body(ctx.body).token ?? '');
@@ -451,6 +505,9 @@ export function createAgentRoutes(deps: Deps) {
       if (!(COMMAND_TYPES as readonly string[]).includes(type)) return deps.fail('COMMAND_TYPE_UNKNOWN', 400);
       const params = body.params && typeof body.params === 'object' ? body.params as object : {};
       if (Buffer.byteLength(JSON.stringify(params)) > MAX_PARAM_BYTES) return deps.fail('COMMAND_PARAMS_TOO_LARGE', 413);
+      // «Додатки»: een geheime waarde of de bestanden van een uitrol horen nooit in een bewaarde opdracht (alleen via een eenmalig ticket).
+      // Daarom kunnen apps.secret.set (formulier «Додатки») en apps.deploy (hulpmiddel app_deploy) hier niet.
+      if (type === 'apps.secret.set' || type === 'apps.deploy') return deps.fail('ALLEEN_VIA_EIGEN_ROUTE', 400);
       if (!agentOnline(agent.id)) return deps.fail('AGENT_OFFLINE', 409);
       if (type.startsWith('browser.') && !(await store.browserActive(agent.id))) return deps.fail('BROWSER_NOT_ACTIVE', 409);
       let command, auto;

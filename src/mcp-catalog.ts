@@ -4,6 +4,7 @@ export const MCP_TABS = [
   ["tools", "Інструменти", "Hulpmiddelen"],
   ["board", "Дошка", "Bord"],
   ["agents", "Агенти", "Agenten"],
+  ["apps", "Додатки", "Apps"],
   ["playground", "Пісочниця", "Zandbak"],
   ["traffic", "Трафік", "Verkeer"],
   ["connect", "Підключити", "Verbinden"],

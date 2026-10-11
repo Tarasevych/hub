@@ -54,6 +54,7 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'GET /api/owner/agents/self':'zelfde als POST: de browserextensie vraagt met haar eigen token (Authorization-header, leesactie) wat de gebruiker heeft aangezet',
   'POST /api/owner/agents/self':'browserextensie vraagt met haar eigen token (alleen hash-opzoeking) wat de gebruiker heeft aangezet; geen persoonsgegevens',
   'GET /api/owner/agents/ws-ticket':'agent ruilt zijn token (Authorization-header, hash-opzoeking) voor een eenmalig WebSocket-ticket van 60 s; geen persoonsgegevens',
+  'POST /api/owner/agents/overdracht':'agent haalt met zijn eigen token (Authorization-header) eenmaal de inhoud van een ticket op dat voor hem gemaakt is (uitrol van een app, geheim van de eigenaar); geen sessie',
   'POST /api/owner/agents/diagnostics/archive':'browserextensie levert met haar eigen token (Authorization-header) een diagnosebuffer aan; versleuteld per gebruiker opgeslagen, 90 dagen',
   'POST /api/owner/mail/microsoft/webhook': 'Microsoft Graph-webhook (clientState-controle)',
   'POST /api/owner/mail/google/pubsub/push': 'Google Pub/Sub-push (OIDC-token in Authorization)',

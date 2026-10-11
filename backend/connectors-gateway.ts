@@ -26,7 +26,9 @@ import * as grants from './ai-grants';
 export const COMMAND_TYPES = ['fs.read', 'fs.list', 'fs.write', 'exec', 'sys.info', 'docker.ps', 'docker.manage', 'sys.metrics',
   'browser.snapshot', 'browser.navigate', 'browser.invoke', 'browser.click', 'browser.type', 'browser.diagnostics',
   'browser.screenshot', 'browser.tabs', 'browser.history', 'browser.scroll', 'browser.wait', 'browser.select', 'browser.key', 'browser.deep_diagnostics',
-  'browser.console', 'browser.network', 'browser.hover', 'browser.fill_form', 'browser.pages', 'browser.self_test'] as const;
+  'browser.console', 'browser.network', 'browser.hover', 'browser.fill_form', 'browser.pages', 'browser.self_test',
+  'apps.deploy', 'apps.status', 'apps.list', 'apps.logs', 'apps.versions', 'apps.rollback', 'apps.control',
+  'apps.route', 'apps.secret.list', 'apps.secret.set', 'apps.secret.delete'] as const;
 export type CommandType = typeof COMMAND_TYPES[number];
 
 const WS_PATH = '/agent/ws';

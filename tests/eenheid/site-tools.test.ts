@@ -42,7 +42,7 @@ export async function main(): Promise<number> {
     check('standaardmodus: lezen = always; schrijven op de site = ask; riskant = off, maar de gebruiker mag het zelf op always zetten',
       defaultMode('mail_search_messages') === 'always' && defaultMode('mail_modify_message') === 'ask' && defaultMode('machine_read_file') === 'always'
       && defaultMode('machine_exec') === 'off' && effectiveMode('machine_exec', 'always') === 'always' && effectiveMode('mail_modify_message', 'always') === 'always'
-      && effectiveMode('browser_click', undefined) === 'off' && effectiveMode('browser_snapshot', 'off') === 'off' && RISKY_TOOLS.size === 12);
+      && effectiveMode('browser_click', undefined) === 'off' && effectiveMode('browser_snapshot', 'off') === 'off' && RISKY_TOOLS.size === 17 && defaultMode('app_deploy') === 'off' && defaultMode('app_list') === 'always');
     check('inkorten: HTML en andere zware velden verdwijnen, lange teksten en lijsten worden afgekapt',
       JSON.stringify(compact({ a: 'x'.repeat(5000), renderBody: '<b>x</b>', lijst: Array.from({ length: 80 }, (_, i) => i) }))
         .includes('[cut]') && !JSON.stringify(compact({ renderBody: '<b>x</b>' })).includes('<b>') && (compact({ lijst: Array.from({ length: 80 }, (_, i) => i) }) as any).lijst.length === 61);
@@ -117,8 +117,8 @@ export async function main(): Promise<number> {
     const info = await describeTools(A);
     const exec = info.find((t) => t.name === 'machine_exec')!;
     check('modus off: weg uit de lijst en geweigerd; riskant staat standaard uit en "always" wordt gehonoreerd (geen begrenzing meer)',
-      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 45 && lijst.includes('machine_exec') && !lijst.includes('click') && !lijst.includes('browser_click')
-      && exec.mode === 'always' && exec.risky === true && info.find((t) => t.name === 'browser_click')!.mode === 'off' && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 55);
+      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 51 && lijst.includes('machine_exec') && !lijst.includes('click') && !lijst.includes('browser_click')
+      && exec.mode === 'always' && exec.risky === true && info.find((t) => t.name === 'browser_click')!.mode === 'off' && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 66);
     check('groepen in het overzicht: apparaten, browser, mail, agenda, schijf, zoeken',
       ['devices', 'browser', 'mail', 'calendar', 'drive', 'site'].every((g) => info.some((t) => t.group === g)) && info.filter((t) => t.group === 'mail').length === 5 && info.filter((t) => t.group === 'browser').length === 19);
     await store.setToolModes(A, { mail_search_messages: null, machine_exec: null, mail_modify_message: null });
