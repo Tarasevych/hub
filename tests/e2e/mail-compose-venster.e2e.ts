@@ -126,6 +126,15 @@ export async function main(): Promise<number> {
     const laatste = opgeslagen2[opgeslagen2.length - 1] || '';
     check('na een wijziging weer bewaard mét blokmarkeringen en inline opmaak (zoals Gmail het nodig heeft)', /data-mail-block=\\"callout\\"/.test(laatste) && /data-mail-block=\\"header\\"/.test(laatste) && /border-radius:9px/.test(laatste), laatste.slice(0, 300));
     await p2.screenshot({ path: `${UIT}/mail-compose-4-heropend.png` });
+    // 1.7: 10 шаблонів, кожен вставляється як справжні блоки
+    const meer = p2.locator('section.mail-new-message .mail-compose-more > button');
+    await meer.click(); await p2.waitForTimeout(200);
+    const namen = await p2.locator('.mail-compose-more-menu .mail-sjabloon-item span').allInnerTexts();
+    check('1.7: 10 шаблонів з описом', namen.length === 10, namen.join(', '));
+    await p2.locator('.mail-compose-more-menu .mail-sjabloon-item', { hasText: 'Пропозиція співпраці' }).click(); await p2.waitForTimeout(300);
+    const sj = await ed.evaluate((e) => ({ kop: e.querySelectorAll('header.mail-pm-email-header').length, kol: e.querySelectorAll('.mail-pm-columns').length, knop: e.querySelectorAll('a[data-mail-block=button]').length, a: [...e.querySelectorAll('a')].map((x) => x.outerHTML.slice(0, 120) + ' @' + (x.parentElement?.closest('[class]')?.className || '')) }));
+    check('1.7: шаблон «Пропозиція співпраці» — шапка, колонки, кнопка як блоки', sj.kol >= 1 && sj.knop >= 2, JSON.stringify(sj));
+    await p2.screenshot({ path: `${UIT}/mail-compose-5-sjabloon.png` });
     await ctx2.close();
   } catch (e) {
     check('e2e liep zonder uitzondering', false, String((e as Error)?.stack || e).slice(0, 800));
