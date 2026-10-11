@@ -79,6 +79,33 @@ export async function main(): Promise<number> {
       check(`6.1: щільність «${modus}» — список не порожній`, n >= 5, `${n} ${fouten.filter((f) => /hook|component|Error/i.test(f)).slice(-4).join(' | ').slice(0, 5000)}`);
       await page.screenshot({ path: `${UIT}/mail-lijst-dichtheid-${modus}.png` });
     }
+    // 6.2: «Керований фронт» ↔ «Звичайна пошта» кілька разів поспіль
+    for (let ronde = 1; ronde <= 3; ronde++) {
+      if (!(await page.getByRole('button', { name: 'Керований фронт', exact: true }).first().isVisible().catch(() => false))) await page.locator('button[data-tooltip="Швидкі налаштування"]').first().click({ timeout: 8000 }).catch(() => undefined);
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${UIT}/mail-front-voor-${ronde}.png` });
+      await page.getByRole('button', { name: 'Керований фронт', exact: true }).first().click({ timeout: 8000 });
+      await page.waitForTimeout(1200);
+      const front = /Керований фронт|Почнімо з одного листа/.test(await page.locator('body').innerText());
+      await page.screenshot({ path: `${UIT}/mail-front-${ronde}.png` });
+      check(`6.2: раунд ${ronde} — «Керований фронт» відкрився`, front, page.url());
+      await page.getByRole('button', { name: /звичайн(а|ої) пошт/i }).first().click({ timeout: 8000 }).catch(() => undefined);
+      await page.waitForTimeout(1500);
+      const lijst = await page.locator('article').filter({ hasText: 'Тема листа номер' }).count();
+      await page.screenshot({ path: `${UIT}/mail-front-terug-${ronde}.png` });
+      check(`6.2: раунд ${ronde} — назад у «Звичайна пошта», список на місці`, lijst >= 5 && !(await page.locator('.mail-front-header').isVisible().catch(() => false)), `${lijst} ${page.url()}`);
+    }
+    // 6.2: вихід із фронту через бічне меню («Вхідні») і через «назад» браузера
+    await page.locator('button[data-tooltip="Швидкі налаштування"]').first().click({ timeout: 8000 }); await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'Керований фронт', exact: true }).first().click({ timeout: 8000 }); await page.waitForTimeout(1000);
+    await page.locator('.canonical-sidebar a[href*="inbox"], .canonical-sidebar [data-vooruit*="inbox"]').first().click({ timeout: 8000 }).catch(async () => { await page.goBack(); });
+    await page.waitForTimeout(1500);
+    check('6.2: з фронту через меню «Вхідні» — список на місці', await page.locator('article').filter({ hasText: 'Тема листа номер' }).count() >= 5, page.url());
+    await page.goBack(); await page.waitForTimeout(1500);
+    const terugFront = /Керований фронт|Почнімо з одного листа/.test(await page.locator('body').innerText());
+    await page.goForward(); await page.waitForTimeout(1500);
+    check('6.2: «назад»/«вперед» браузера між фронтом і поштою працюють', terugFront && await page.locator('article').filter({ hasText: 'Тема листа номер' }).count() >= 5, page.url());
+    await page.screenshot({ path: `${UIT}/mail-front-heen-terug.png` });
     check('geen paginafouten', fouten.filter((f) => !/Failed to load resource/.test(f)).length === 0, fouten.join('\n'));
     await ctx.close();
   } catch (e) {

@@ -10,7 +10,7 @@
 import { decode } from 'html-entities';
 
 const ALLOWED = new Set(['p', 'div', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'code', 'span', 'a', 'blockquote', 'ul', 'ol', 'li',
-  'h1', 'h2', 'h3', 'h4', 'table', 'tbody', 'thead', 'tr', 'td', 'th', 'img', 'hr']);
+  'h1', 'h2', 'h3', 'h4', 'pre', 'table', 'tbody', 'thead', 'tr', 'td', 'th', 'img', 'hr']);
 const VOID = new Set(['br', 'img', 'hr']);
 
 const KLEUR = /^(?:#[0-9a-f]{3}|#[0-9a-f]{6}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)|transparent)$/i;
@@ -39,6 +39,7 @@ const STIJL: Record<string, (v: string) => boolean> = {
   'border-radius': (v) => MATEN.test(v), 'border-collapse': (v) => /^(?:collapse|separate)$/.test(v),
   width: (v) => EEN_MAAT.test(v), 'max-width': (v) => EEN_MAAT.test(v), height: (v) => EEN_MAAT.test(v), 'min-height': (v) => EEN_MAAT.test(v),
   'box-sizing': (v) => /^(?:border-box|content-box)$/.test(v),
+  'white-space': (v) => /^(?:pre|pre-wrap|pre-line|normal|nowrap)$/.test(v),
 };
 
 const escapeText = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
