@@ -6,3 +6,7 @@
 @media(prefers-reduced-motion:reduce){.mail-compose-ribbon *,.mail-compose-canvas{scroll-behavior:auto!important;transition:none!important}}
 /* Kop/voet in de editor: de algemene site-regel voor <footer> (flex, kleine letters, rand bovenaan, 80rem breed) mag hier niet gelden. */
 .mail-compose-editor footer.mail-pm-email-footer,.mail-compose-editor header.mail-pm-email-header{position:static;z-index:auto;display:block;width:auto;margin:12px 0;padding:14px 18px;border:0;color:inherit;font-size:inherit;justify-content:normal;align-items:normal;gap:0}
+/* 1.7 шаблони: назва + короткий опис */
+.mail-compose-more-menu .mail-sjabloon-item{display:grid!important;gap:1px;text-align:left;align-items:start}
+.mail-compose-more-menu .mail-sjabloon-item small{font-size:.74rem;opacity:.72;font-weight:400;white-space:normal}
+.mail-compose-more-menu .mail-sjabloon-item,.mail-compose-more-menu .mail-sjabloon-item span{text-align:left;justify-items:start}
