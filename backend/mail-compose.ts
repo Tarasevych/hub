@@ -16,6 +16,8 @@ export type ComposeInput = {
   to?: string; cc?: string; bcc?: string; subject?: string; html?: string; plainText?: string; accountId?: string; threadId?: string; localId?: string;
   /** Antwoordconcept: id van het Gmail-bericht waarop geantwoord wordt (dan komt het concept in Gmail in dezelfde conversatie). */
   replyToMessageId?: string; replyAll?: boolean;
+  /** Bijlagen bij verzenden/plannen (base64). Concepten in Gmail krijgen ze niet mee. */
+  attachments?: Array<{ filename?: string; contentType?: string; data?: string }>;
 };
 export type DraftRow = {
   id: string; localId: string; accountId: string; threadId: string; to: string; cc: string; bcc: string; subject: string; html: string; plainText: string;
@@ -25,7 +27,9 @@ export type QueueRow = {
   id: string; accountId: string; sendAt: number; status: 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled'; attempts: number; lastError: string;
   sentAt: number | null; to: string; subject: string; preview: string;
 };
-type Payload = { to: string[]; cc: string[]; bcc: string[]; subject: string; html: string; plainText: string; draftLocalId?: string; threadId?: string };
+type Bijlage = { filename: string; contentType: string; dataBase64: string };
+type Payload = { to: string[]; cc: string[]; bcc: string[]; subject: string; html: string; plainText: string; draftLocalId?: string; threadId?: string; attachments?: Bijlage[] };
+const MAX_BIJLAGEN = 20, MAX_BIJLAGE_BYTES = 8 * 1024 * 1024;
 
 /** Verbinding met de provider; vervangbaar in tests. */
 export interface MailTransport {
@@ -119,10 +123,21 @@ function normalizePayload(input: ComposeInput, requireRecipient: boolean): { ok:
   const plainInput = String(input.plainText ?? '').replace(/\u0000/g, '').slice(0, 100_000);
   const plainText = plainInput.trim() ? plainInput : mailHtmlToPlainText(html);
   if (requireRecipient && !plainText.trim()) return { ok: false, code: 'MAIL_BODY_REQUIRED' };
-  return { ok: true, payload: { to: to.valid, cc: cc.valid, bcc: bcc.valid, subject: headerSafe(String(input.subject ?? ''), MAX_SUBJECT), html, plainText, ...(input.threadId ? { threadId: String(input.threadId).slice(0, 300) } : {}) } };
+  const ruw = Array.isArray(input.attachments) ? input.attachments : [];
+  if (ruw.length > MAX_BIJLAGEN) return { ok: false, code: 'MAIL_TOO_MANY_ATTACHMENTS' };
+  const attachments: Bijlage[] = [];
+  let totaal = 0;
+  for (const a of ruw) {
+    const data = String(a?.data ?? '');
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(data) || !data) return { ok: false, code: 'MAIL_ATTACHMENT_INVALID' };
+    totaal += Math.floor(data.length * 3 / 4);
+    if (totaal > MAX_BIJLAGE_BYTES) return { ok: false, code: 'MAIL_ATTACHMENTS_TOO_LARGE' };
+    attachments.push({ filename: headerSafe(String(a?.filename ?? 'bijlage'), 200) || 'bijlage', contentType: String(a?.contentType ?? '').slice(0, 120), dataBase64: data });
+  }
+  return { ok: true, payload: { to: to.valid, cc: cc.valid, bcc: bcc.valid, subject: headerSafe(String(input.subject ?? ''), MAX_SUBJECT), html, plainText, ...(input.threadId ? { threadId: String(input.threadId).slice(0, 300) } : {}), ...(attachments.length ? { attachments } : {}) } };
 }
 
-const mimeOf = (payload: Payload, from?: string) => buildMime({ ...(from ? { from } : {}), to: payload.to, cc: payload.cc, bcc: payload.bcc, subject: payload.subject, html: payload.html, plainText: payload.plainText });
+const mimeOf = (payload: Payload, from?: string) => buildMime({ ...(from ? { from } : {}), to: payload.to, cc: payload.cc, bcc: payload.bcc, subject: payload.subject, html: payload.html, plainText: payload.plainText, ...(payload.attachments?.length ? { attachments: payload.attachments } : {}) });
 const fromHeader = (a: { email: string; displayName: string }) => (a.displayName ? `${encodeWord(a.displayName)} <${a.email}>` : a.email);
 const errorCode = (e: unknown) => (e instanceof ProviderError || e instanceof Error ? String(e.message).slice(0, 120) : 'UNKNOWN');
 

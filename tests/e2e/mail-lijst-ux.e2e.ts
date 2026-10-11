@@ -45,6 +45,9 @@ export async function main(): Promise<number> {
     const rij = page.locator('article').filter({ hasText: 'Тема листа номер 3' }).first();
     await rij.waitFor({ timeout: 20000 });
     await page.screenshot({ path: `${UIT}/mail-lijst-1.png` });
+    const fabRechtsOnder = async () => { await page.waitForTimeout(500); const r = await page.locator('.mail-compose-float').boundingBox(); return !!r && r.x > 1100 && r.y > 700 ? '' : JSON.stringify(r); };
+    const f1 = await fabRechtsOnder();
+    check('кнопка «+» (новий лист) праворуч унизу, не вгорі зліва', f1 === '', f1);
     // 5.2: кнопки дій у межах картки (наведення)
     await rij.hover(); await page.waitForTimeout(300);
     const buiten = await rij.evaluate((a) => { const r = a.getBoundingClientRect(); return [...a.querySelectorAll('button')].filter((b) => { const q = b.getBoundingClientRect(); return q.width > 0 && getComputedStyle(b).visibility !== 'hidden' && (q.right > r.right + 1 || q.left < r.left - 1 || q.top < r.top - 1 || q.bottom > r.bottom + 1); }).map((b) => b.getAttribute('aria-label') || b.className); });
@@ -93,6 +96,8 @@ export async function main(): Promise<number> {
       check(`6.1: щільність «${modus}» — список не порожній`, n >= 5, `${n} ${fouten.filter((f) => /hook|component|Error/i.test(f)).slice(-4).join(' | ').slice(0, 5000)}`);
       await page.screenshot({ path: `${UIT}/mail-lijst-dichtheid-${modus}.png` });
     }
+    const f2 = await fabRechtsOnder();
+    check('кнопка «+» лишається праворуч унизу після зміни режимів', f2 === '', f2);
     // 6.2: «Керований фронт» ↔ «Звичайна пошта» кілька разів поспіль
     for (let ronde = 1; ronde <= 3; ronde++) {
       if (!(await page.getByRole('button', { name: 'Керований фронт', exact: true }).first().isVisible().catch(() => false))) await page.locator('button[data-tooltip="Швидкі налаштування"]').first().click({ timeout: 8000 }).catch(() => undefined);

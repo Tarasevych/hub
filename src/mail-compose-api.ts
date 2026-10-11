@@ -8,7 +8,8 @@ export type ScheduledItem = {
   sentAt: number | null; to: string; subject: string; preview: string;
 };
 export type DraftSummary = { localId: string; to: string; subject: string; plainText?: string; syncStatus: 'local' | 'synced' | 'error'; updatedAt: number };
-export type Compose = { to: string; cc: string; bcc: string; subject: string; html: string; plainText: string; accountId: string; localId: string };
+export type Compose = {
+  attachments?: Array<{ filename: string; contentType: string; data: string }>; to: string; cc: string; bcc: string; subject: string; html: string; plainText: string; accountId: string; localId: string };
 
 /** Foutcodes van de server -> uitleg in de taal van de site (nooit de ruwe code of Engelse tekst). */
 export function composeErrorText(error: unknown, t: (uk: string, nl: string) => string): string {
