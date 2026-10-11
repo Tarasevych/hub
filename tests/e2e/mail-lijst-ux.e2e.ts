@@ -60,6 +60,16 @@ export async function main(): Promise<number> {
     const open = await page.evaluate(() => document.querySelector('[data-reader-open="true"]') !== null || /Текст листа/.test(document.body.innerText));
     check('5.1: клік по порожньому місцю картки (поза текстом) відкриває лист', open, JSON.stringify({ doel, url: page.url() }));
     await page.screenshot({ path: `${UIT}/mail-lijst-3-open.png` });
+    // 2.6: меню «Додаткові дії» закривається кліком поза ним
+    const meer = page.locator('.mail-reader-toolbar details').first();
+    if (await meer.count()) {
+      await meer.locator('summary').click(); await page.waitForTimeout(200);
+      const was = await meer.evaluate((d) => (d as HTMLDetailsElement).open);
+      const groepen = await page.locator('.mail-reader-overflow-groep').count();
+      check('5.4: «Додаткові дії» згруповані', groepen >= 3, String(groepen));
+      await page.mouse.click(700, 600); await page.waitForTimeout(200);
+      check('2.6: меню закрилося кліком поза ним', was && !(await meer.evaluate((d) => (d as HTMLDetailsElement).open)));
+    }
     // 2.1: «Зменшити вікно» — лист у вільному вікні, список поруч доступний, вікно перетягується
     await page.locator('.mail-reader-venster').click({ timeout: 8000 }); await page.waitForTimeout(400);
     const r1 = await page.locator('.google-mail-reader').boundingBox();
@@ -125,6 +135,12 @@ export async function main(): Promise<number> {
     await page.goForward(); await page.waitForTimeout(1500);
     check('6.2: «назад»/«вперед» браузера між фронтом і поштою працюють', terugFront && await page.locator('article').filter({ hasText: 'Тема листа номер' }).count() >= 5, page.url());
     await page.screenshot({ path: `${UIT}/mail-front-heen-terug.png` });
+    // 3.2: вкладення в окремому вікні (можна відкрити два поруч)
+    await page.evaluate(async () => { const c = document.createElement('canvas'); c.width = 400; c.height = 300; const g = c.getContext('2d')!; g.fillStyle = '#3b82f6'; g.fillRect(0, 0, 400, 300); const b: Blob = await new Promise((r) => c.toBlob((x) => r(x!), 'image/png')); window.dispatchEvent(new CustomEvent('mail:bijlage-venster', { detail: { blob: b, filename: 'foto.png', contentType: 'image/png' } })); window.dispatchEvent(new CustomEvent('mail:bijlage-venster', { detail: { blob: new Blob(['рядок 1\nрядок 2'], { type: 'text/plain' }), filename: 'notitie.txt', contentType: 'text/plain' } })); });
+    await page.waitForTimeout(600);
+    const vensters = page.locator('[data-bijlage-venster]');
+    check('3.2: два вкладення відкрито в окремих вікнах', await vensters.count() === 2 && await page.locator('[data-bijlage-venster] img.mail-bv-beeld').count() === 1 && /рядок 2/.test(await vensters.nth(1).innerText()));
+    await page.screenshot({ path: `${UIT}/mail-lijst-5-bijlagevensters.png` });
     check('geen paginafouten', fouten.filter((f) => !/Failed to load resource/.test(f)).length === 0, fouten.join('\n'));
     await ctx.close();
   } catch (e) {
