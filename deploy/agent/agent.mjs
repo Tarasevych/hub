@@ -600,7 +600,7 @@ async function appsConfig(args) {
   if (args.off === 'true' || args.disable !== undefined) { cfg.apps = { ...appsDefaults(cfg.apps), enabled: false }; saveConfig(cfg); console.log('Додатки вимкнено.'); return; }
   if (!args['apps-root']) die('usage: apps-config --apps-root <DIR> [--runtime podman|docker] [--domain "{app}.apps.example.com"] [--caddy-admin unix:/run/caddy/admin.sock] [--caddy-server NAME] [--memory 512m] | apps-config --disable');
   const root = path.resolve(args['apps-root']);
-  if (args.domain && !/^\{app\}\.[a-z0-9.-]+$/i.test(args.domain)) die('--domain має бути шаблоном на кшталт "{app}.apps.example.com" або "{app}.10.77.0.10.nip.io"');
+  if (args.domain && !/^[a-z0-9-]{0,20}\{app\}[a-z0-9-]{0,20}(\.[a-z0-9-]{1,63})+$/i.test(args.domain)) die('--domain має бути шаблоном на кшталт "{app}.apps.example.com", "{app}-app.example.com" або "{app}.10.77.0.10.nip.io"');
   if (args.runtime && !['podman', 'docker'].includes(args.runtime)) die('--runtime: podman або docker');
   if (args.memory && !/^\d{2,5}[mg]$/.test(args.memory)) die('--memory: напр. 512m або 2g');
   await fs.mkdir(root, { recursive: true, mode: 0o700 });
