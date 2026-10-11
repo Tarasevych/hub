@@ -49,3 +49,9 @@ html.theme-dark .mail-selection-actions button[aria-label*="важлив"]{color
 .mail-new-message.klavier-open>footer :is(.mail-new-message-sync,.mail-nm-wis span,.mail-nm-hulpen span,.mail-schedule-menu span){display:none}
 .mail-new-message.klavier-open .mail-compose-toolbar{overflow-x:auto;flex-wrap:nowrap}
 .mail-new-message.klavier-open .mail-nm-editor{min-height:0}
+/* 3.4: розгорнуте прев’ю фото — усе зображення, плавно */
+.mail-attachment-hover-preview{transition:width .18s ease,max-height .18s ease,top .18s ease}
+.mail-attachment-hover-preview[data-groot="ja"]{max-height:calc(100dvh - 16px)}
+.mail-attachment-hover-preview[data-groot="ja"]>section{height:auto;max-height:calc(100dvh - 64px)}
+.mail-attachment-hover-preview[data-groot="ja"] img{width:100%;height:auto;max-height:calc(100dvh - 64px);object-fit:contain}
+@media (prefers-reduced-motion:reduce){.mail-attachment-hover-preview{transition:none}}
