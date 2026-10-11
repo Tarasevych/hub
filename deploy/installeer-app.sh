@@ -18,7 +18,7 @@
 #   installeer-app.sh apps-inrichten <bronmap> [--caddy tunnel|publiek|geen] [--caddy-poort 8090]
 #                                             «Додатки»: rootless Podman, gebruiker mr-apps (geen root, geen sudo),
 #                                             agent als systemd-dienst, optioneel Caddy (admin alleen via unix-socket)
-#   installeer-app.sh apps-koppelen <KOPPELCODE> [--domein '{app}.apps.voorbeeld.nl'] [--naam N] [--geheugen 512m] [--server URL]
+#   installeer-app.sh apps-koppelen <KOPPELCODE> [--domein '{app}-app.voorbeeld.nl'] [--naam N] [--geheugen 512m] [--server URL]
 #                                             agent van mr-apps koppelen (code van mcp.* → Agenten) en starten
 #   installeer-app.sh apps-status             stand van de apps-agent, Caddy en de containers
 #
@@ -582,7 +582,7 @@ EOT
   melding "apps ingericht: gebruiker $APPS_GEBRUIKER, map $APPS_WERK, dienst $APPS_UNIT (start na het koppelen)"
   cat <<EOT
 [installeer] Volgende stap: haal een koppelcode op mcp.* → Agenten → «Пристрій» en voer uit:
-  sudo $0 apps-koppelen <KOPPELCODE> --domein '{app}.apps.<uw-domein>'
+  sudo $0 apps-koppelen <KOPPELCODE> --domein '{app}-app.<uw-domein>'
 EOT
 }
 
@@ -602,7 +602,7 @@ apps_koppelen() {
   vereis_root
   id "$APPS_GEBRUIKER" >/dev/null 2>&1 && [ -s "$APPS_AGENT_DIR/agent.mjs" ] || fout "eerst: $0 apps-inrichten <bronmap>"
   [[ "$code" =~ ^[A-Za-z0-9-]{4,40}$ ]] || fout "ongeldige koppelcode"
-  [ -z "$domein" ] || [[ "$domein" =~ ^\{app\}\.[a-z0-9.-]+$ ]] || fout "--domein: sjabloon zoals '{app}.apps.voorbeeld.nl'"
+  [ -z "$domein" ] || [[ "$domein" =~ ^[a-z0-9-]{0,20}\{app\}[a-z0-9-]{0,20}(\.[a-z0-9-]{1,63})+$ ]] || fout "--domein: sjabloon zoals '{app}.apps.voorbeeld.nl' of '{app}-app.voorbeeld.nl'"
   [[ "$geheugen" =~ ^[0-9]{2,5}[mg]$ ]] || fout "--geheugen: bv. 512m of 1g"
   [[ "$caddy_server" =~ ^[A-Za-z0-9_-]{1,40}$ ]] || fout "--caddy-server: naam van de Caddy-server (standaard srv0)"
   naam="${naam:-$(hostname -s)-apps}"

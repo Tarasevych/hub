@@ -195,7 +195,8 @@ export default function McpAppsView({ lang }: { lang: Lang }) {
               <span className='mapps-hint'>{tr('«tunnel» — HTTP лише на 127.0.0.1:8090 за вашим тунелем; «publiek» — Caddy сам на 80/443 з HTTPS; «geen» — без доменів, лише локально.', '"tunnel" — HTTP alleen op 127.0.0.1:8090 achter uw tunnel; "publiek" — Caddy zelf op 80/443 met HTTPS; "geen" — geen domeinen, alleen lokaal.')}</span></li>
             <li>{tr('На сторінці «Агенти» → «Пристрої» отримайте код підключення.', 'Haal op «Agenten» → «Apparaten» een koppelcode.')}</li>
             <li>{tr('Підключіть агента додатків:', 'Koppel de apps-agent:')}
-              <pre><code>{`sudo /usr/local/sbin/mijn-ruimte-installeer apps-koppelen <КОД> --domein '{app}.apps.${domein}'`}</code></pre></li>
+              <pre><code>{`sudo /usr/local/sbin/mijn-ruimte-installeer apps-koppelen <КОД> --domein '{app}-app.${domein}'`}</code></pre>
+              <span className='mapps-hint'>{tr(`З тунелем: у конфігурації тунелю перед останнім правилом додайте «*.${domein}» → http://127.0.0.1:8090 (відомі адреси сайту мають пріоритет). Тоді додаток «notes» відкривається на notes-app.${domein}.`, `Met een tunnel: zet in de tunnelconfiguratie vóór de laatste regel «*.${domein}» → http://127.0.0.1:8090 (de bekende adressen van de site gaan voor). Dan opent app «notes» op notes-app.${domein}.`)}</span></li>
             <li>{tr('На «Агенти» дайте новому пристрою дозволи («Читати», «Керувати контейнерами») і, якщо хочете, увімкніть інструменти app_* для ШІ. Вимкнути можна будь-коли.', 'Geef op «Agenten» het nieuwe apparaat toestemmingen («Lezen», «Containers beheren») en zet, als u wilt, de hulpmiddelen app_* aan voor de AI. Uitzetten kan altijd.')}</li>
           </ol>
         </details>
