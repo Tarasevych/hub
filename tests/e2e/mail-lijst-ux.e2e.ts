@@ -57,6 +57,20 @@ export async function main(): Promise<number> {
     const open = await page.evaluate(() => document.querySelector('[data-reader-open="true"]') !== null || /Текст листа/.test(document.body.innerText));
     check('5.1: клік по порожньому місцю картки (поза текстом) відкриває лист', open, JSON.stringify({ doel, url: page.url() }));
     await page.screenshot({ path: `${UIT}/mail-lijst-3-open.png` });
+    // 2.1: «Зменшити вікно» — лист у вільному вікні, список поруч доступний, вікно перетягується
+    await page.locator('.mail-reader-venster').click({ timeout: 8000 }); await page.waitForTimeout(400);
+    const r1 = await page.locator('.google-mail-reader').boundingBox();
+    check('2.1: вікно листа зменшене (не на весь екран)', !!r1 && r1.width < 1300 && r1.height < 880, JSON.stringify(r1));
+    const lijstZichtbaar = await page.locator('article').filter({ hasText: 'Тема листа номер 0' }).first().isVisible();
+    check('2.1: список листів видно й доступний поруч', lijstZichtbaar);
+    const balk = await page.locator('.mail-reader-toolbar').boundingBox();
+    if (balk && r1) { const x = r1.x + r1.width * 0.4, y = r1.y + 30; await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x - 200, y + 60, { steps: 6 }); await page.mouse.up(); }
+    const r2 = await page.locator('.google-mail-reader').boundingBox();
+    check('2.1: вікно перетягується за верхню панель', !!r1 && !!r2 && Math.abs(r2.x - r1.x) > 100, JSON.stringify({ r1, r2 }));
+    await page.screenshot({ path: `${UIT}/mail-lijst-4-venster.png` });
+    await page.locator('.mail-reader-venster').click(); await page.waitForTimeout(300);
+    const r3 = await page.locator('.google-mail-reader').boundingBox();
+    check('2.1: «Розгорнути» повертає на весь екран', !!r3 && r3.width > 1300, JSON.stringify(r3));
     for (const [naam, tekst] of [['тема', 'Тема листа номер 5'], ['короткий зміст', 'Короткий зміст листа 5']] as const) {
       await page.goto(`${MAIL}/inbox?lang=uk`, { waitUntil: 'networkidle' });
       const el = page.getByText(tekst, { exact: false }).first();
