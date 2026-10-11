@@ -84,7 +84,7 @@ export async function main(): Promise<number> {
     await (inStapel ? stapel : dok.locator('button').first()).click(); await page.waitForTimeout(300);
     if (inStapel && !(await dlg.isVisible())) await stapel.locator('button[aria-label="Розгорнути перегляд"]').click().catch(() => undefined);
     await dlg.waitFor({ timeout: 4000 });
-    check('terughalen: venster weer open met dezelfde tekst', /Тест вікна/.test(await dlg.locator('.mail-new-message-field input').last().inputValue()));
+    check('terughalen: venster weer open met dezelfde tekst', /Тест вікна/.test(await dlg.locator('[data-nm-kop-kort]').innerText().catch(() => '') || await dlg.locator('.mail-new-message-field input').last().inputValue().catch(() => '')));
     await dlg.locator('[data-nm-sluit]').click(); await page.waitForTimeout(400);
     check('× = sluiten zonder plashka (concept blijft in «Чернетки»)', await page.locator('[data-concept-dok]').count() === 0 && !(await page.locator('.mail-minimized-viewer').innerText().catch(() => '')).includes('Тест вікна'));
     await ctx.close();
@@ -106,11 +106,16 @@ export async function main(): Promise<number> {
     await p2.route('**/api/owner/mail/compose/draft/save', (r) => { opgeslagen2.push(r.request().postData() || ''); return r.fulfill(json({ ok: true, draft: { localId: 'concept-van-pc-01', syncStatus: 'synced' } })); });
     await p2.goto(`${MAIL}/inbox?lang=uk`, { waitUntil: 'networkidle' });
     await p2.mouse.move(900, 500); await p2.waitForTimeout(800);
-    const stapel2 = p2.locator('.mail-minimized-viewer, [data-concept-dok]').first();
-    await stapel2.waitFor({ timeout: 10000 });
-    check('concept van een ander toestel: meteen zichtbaar als «Тест 1» in de stapel', /Тест 1/.test(await stapel2.innerText()));
-    await stapel2.click(); await p2.waitForTimeout(300);
-    if (!(await p2.locator('section.mail-new-message').isVisible())) await p2.locator('.mail-minimized-viewer button[aria-label="Розгорнути перегляд"]').click().catch(() => undefined);
+    // 1.6: «Написати лист» = завжди чистий лист, навіть коли на сервері є свіжа чернетка
+    await p2.waitForFunction(() => !(document.querySelector('.mail-compose-pill') as HTMLButtonElement)?.disabled, null, { timeout: 15000 });
+    await p2.locator('.mail-compose-pill').click();
+    const dlg2 = p2.locator('section.mail-new-message');
+    await dlg2.waitFor({ timeout: 8000 });
+    await p2.waitForTimeout(1200);
+    check('«Написати лист» відкриває чистий лист (не останню чернетку)', (await dlg2.locator('#mail-nm-aan').inputValue()) === '' && !/Tarasevych Mail/.test(await dlg2.locator('.ProseMirror').innerText()));
+    await dlg2.locator('[data-nm-sluit]').click(); await p2.waitForTimeout(300);
+    // чернетку відкривають явно (з «Чернеток»)
+    await p2.evaluate(() => window.dispatchEvent(new CustomEvent('mail:open-concept', { detail: { localId: 'concept-van-pc-01' } })));
     const ed = p2.locator('section.mail-new-message .ProseMirror');
     await ed.waitFor({ timeout: 5000 });
     const blokken = await ed.evaluate((e) => ({ kop: !!e.querySelector('header.mail-pm-email-header'), accent: !!e.querySelector('.mail-pm-callout'), knop: !!e.querySelector('a[data-mail-block=button]'), voet: !!e.querySelector('footer.mail-pm-email-footer'), tabellen: e.querySelectorAll('table').length }));

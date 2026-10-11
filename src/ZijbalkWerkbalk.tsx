@@ -10,6 +10,7 @@ import {MousePointer2,PanelLeftClose,PanelLeftOpen,PencilRuler,Settings2} from '
 import type {ZijbalkModus} from '../shared/menu-model';
 import MenuInstellingenVenster from './MenuInstellingenVenster';
 import './menu-naadloos.css';
+import './ui-golf-11.css';
 
 const TEKST:Record<ZijbalkModus,[string,string]>={
   open:['Завжди розгорнута','Altijd uitgeklapt'],

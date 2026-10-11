@@ -5,7 +5,7 @@ import { registreerZwevend, useZwevendHouder, verwijderZwevend } from './mail-zw
 import { emitCanonicalNotice } from './canonical-notifications';
 import MailAiToolbar from './MailAiToolbar';
 import MailScheduleMenu from './MailScheduleMenu';
-import { composeErrorText, deleteDraftRemote, getDraftRemote, listDraftsRemote, saveDraftRemote, scheduleRemote, sendRemote, type DraftSync } from './mail-compose-api';
+import { composeErrorText, deleteDraftRemote, getDraftRemote, saveDraftRemote, scheduleRemote, sendRemote, type DraftSync } from './mail-compose-api';
 import './mail-concepten.css';
 import MailComposeEditor, { type MailComposeEditorHandle } from './MailComposeEditor';
 import MailInputTools from './MailInputTools';
@@ -278,51 +278,63 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [to, cc, bcc, subject, body, accountId, open]);
 
-  // Heeft de browser niets bewaard (bv. andere browser of opgeschoonde opslag) maar de server wel? Dan komt het serverconcept terug.
+  // Чернетку відкривають явно (з «Чернеток» чи іншого місця): window 'mail:open-concept' {localId}. «Написати лист» сам чернеток не підтягує (1.6).
   useEffect(() => {
-    if (!open || draftFieldsRef.current.body.trim() || draftFieldsRef.current.to.trim() || draftFieldsRef.current.subject.trim()) return;
-    let alive = true;
-    void getDraftRemote(context, localDraftIdRef.current).then((out) => {
-      const d = out?.draft;
-      if (!alive || !d) return;
-      if (draftFieldsRef.current.body.trim() || draftFieldsRef.current.to.trim() || draftFieldsRef.current.subject.trim()) return;
-      if (d.to) setTo(d.to);
-      if (d.cc) { setCc(d.cc); setShowCc(true); }
-      if (d.bcc) { setBcc(d.bcc); setShowCc(true); }
-      if (d.subject) setSubject(d.subject);
-      if (d.html) setBody(d.html);
-    }).catch(() => undefined);
-    return () => { alive = false; };
+    const opener = (e: Event) => {
+      const id = String((e as CustomEvent<{ localId?: string }>).detail?.localId || '');
+      if (!/^[A-Za-z0-9_-]{1,120}$/.test(id)) return;
+      void getDraftRemote(context, id).then((out) => {
+        const d = out?.draft; if (!d) return;
+        localDraftIdRef.current = id;
+        try { localStorage.setItem('mail-draft-active-id', id); } catch { /* geen opslag */ }
+        setTo(d.to || ''); setCc(d.cc || ''); setBcc(d.bcc || ''); setShowCc(Boolean(d.cc || d.bcc)); setSubject(d.subject || ''); setBody(d.html || '');
+        herstelRef.current = true; setVerborgen(false); onOpen?.();
+      }).catch(() => undefined);
+    };
+    window.addEventListener('mail:open-concept', opener);
+    return () => window.removeEventListener('mail:open-concept', opener);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
-  // Begonnen op de pc, verder op de telefoon: is hier niets, maar staat er op de server een recent nieuw-berichtconcept (geen
-  // antwoord), dan neemt dit toestel dat over — zelfde veld, zelfde concept-id, dus geen dubbel concept in Gmail.
-  useEffect(() => {
-    if (!accountId) return;
-    const leeg = () => { const f = draftFieldsRef.current; return !(f.to.trim() || f.cc.trim() || f.bcc.trim() || f.subject.trim() || f.body.replace(/<[^>]*>/g, '').trim()); };
-    if (!leeg()) return;
-    let alive = true;
-    void listDraftsRemote(context).then(async (out) => {
-      const kandidaat = (out?.drafts || []).filter((d) => !(d as { threadId?: string }).threadId && !String(d.localId).startsWith('antw-') && Date.now() - Number(d.updatedAt || 0) < 30 * 864e5).sort((a, b) => b.updatedAt - a.updatedAt)[0];
-      if (!alive || !kandidaat || !leeg()) return;
-      const r = await getDraftRemote(context, kandidaat.localId).catch(() => null);
-      const d = r?.draft;
-      if (!alive || !d || !leeg()) return;
-      localDraftIdRef.current = kandidaat.localId;
-      try { localStorage.setItem('mail-draft-active-id', kandidaat.localId); } catch { /* geen opslag */ }
-      setTo(d.to || ''); if (d.cc || d.bcc) { setCc(d.cc || ''); setBcc(d.bcc || ''); setShowCc(true); } setSubject(d.subject || ''); setBody(d.html || '');
-    }).catch(() => undefined);
-    return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountId]);
+  }, []);
 
   const heeftInhoud = Boolean(to.trim() || cc.trim() || bcc.trim() || subject.trim() || body.replace(/<[^>]*>/g, '').trim());
   const zwevendHeeftHouder = useZwevendHouder();
+  // «Написати лист» = завжди чистий лист (1.6). Відкрили не зі стопки «Згорнуті», а в редакторі лишився попередній текст? Тоді
+  // попередній лист уже збережено як чернетку (сервер + Gmail) — відокремлюємо його й починаємо новий з новим id.
+  // 2.7: перехід в інший розділ (посилання поза вікном, «назад») — порожнє вікно закривається, з текстом іде в «Згорнуті» й «Чернетки».
+  useEffect(() => {
+    if (!open) return;
+    const weg = () => onClose();
+    const klik = (e: MouseEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (!el || dialogRef.current?.contains(el)) return;
+      if (el.closest('a[href], [data-nav-item], nav button, .mail-sidebar-navigation button')) weg();
+    };
+    document.addEventListener('click', klik, true);
+    window.addEventListener('popstate', weg);
+    return () => { document.removeEventListener('click', klik, true); window.removeEventListener('popstate', weg); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+  const herstelRef = useRef(false);
+  const [wisVraag, setWisVraag] = useState(false);
+  const [kopOpen, setKopOpen] = useState(true);
+  const vorigOpen = useRef(open);
+  useEffect(() => {
+    const was = vorigOpen.current; vorigOpen.current = open;
+    if (!open || was) return;
+    const herstel = herstelRef.current; herstelRef.current = false;
+    if (herstel || !heeftInhoud) return;
+    const oudId = localDraftIdRef.current;
+    void saveDraftRemote(context, { to, cc, bcc, subject, html: body, plainText: editorRef.current?.getPlainText() ?? '', accountId, localId: oudId }).catch(() => undefined);
+    try { localStorage.removeItem(`mail-draft-${oudId}`); localStorage.removeItem('mail-draft-active-id'); } catch { /* geen opslag */ }
+    localDraftIdRef.current = '';
+    serverSaveSeq.current++;
+    setTo(''); setCc(''); setBcc(''); setShowCc(false); setSubject(''); setBody(''); setFailure(''); setDraftSync('idle'); setVerborgen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   useEffect(() => {
     const id = 'concept-nieuw';
     if (open || !heeftInhoud || !onOpen || verborgen) { verwijderZwevend(id); return; }
-    registreerZwevend({ id, titel: subject.trim() || t('Новий лист (без теми)', 'Nieuw bericht (zonder onderwerp)'), sub: to.trim() ? `${t('Кому', 'Aan')}: ${to}` : t('Чернетка збережена', 'Concept bewaard'), open: () => { setVerborgen(false); onOpen(); }, sluit: () => setVerborgen(true) });
+    registreerZwevend({ id, titel: subject.trim() || t('Новий лист (без теми)', 'Nieuw bericht (zonder onderwerp)'), sub: to.trim() ? `${t('Кому', 'Aan')}: ${to}` : t('Чернетка збережена', 'Concept bewaard'), open: () => { herstelRef.current = true; setVerborgen(false); onOpen(); }, sluit: () => setVerborgen(true) });
     return () => verwijderZwevend(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, heeftInhoud, subject, to, verborgen]);
@@ -369,8 +381,11 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
   // Нічого з написаного не зникає: лише успішне надсилання очищає чернетку.
   const close = () => { setVerborgen(false); onClose(); };
   const sluitHelemaal = () => {
-    if (heeftInhoud) emitCanonicalNotice({ text: t('Чернетку збережено в «Чернетках»', 'Concept bewaard in «Concepten»'), kind: 'success', source: 'mail' });
+    if (heeftInhoud) emitCanonicalNotice({ text: t('Чернетку збережено в «Чернетках»', 'Concept bewaard in «Concepten»'), kind: 'success', source: 'mail',
+      action: { label: t('Відкрити знову', 'Opnieuw openen'), onAction: () => { herstelRef.current = true; setVerborgen(false); onOpen?.(); } }, actionExpiresAt: Date.now() + 30000 });
     setVerborgen(true); onClose();
+  };
+  const verwijderConcept = () => { gooiWeg(); setWisVraag(false); emitCanonicalNotice({ text: t('Чернетку видалено', 'Concept verwijderd'), kind: 'info', source: 'mail' }); onClose();
   };
 
   // Na een geslaagde verzending of planning: lokaal alles opruimen en een NIEUW concept-id kiezen voor het volgende bericht.
@@ -456,9 +471,15 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
             <button type="button" aria-label={t('Закрити (чернетка лишиться в «Чернетках»)', 'Sluiten (concept blijft in «Concepten»)')} title={t('Закрити', 'Sluiten')} onClick={sluitHelemaal} data-nm-sluit><X /></button>
           </span>
         </header>
+        {/* 1.2: після введення шапка згортається в один рядок; клік або Tab — знову всі поля */}
+        {!kopOpen && to.trim() ? <button type="button" className="mail-nm-kop-kort" onClick={() => setKopOpen(true)} onFocus={() => setKopOpen(true)} data-nm-kop-kort aria-label={t('Змінити отримувачів і тему', 'Ontvangers en onderwerp wijzigen')}>
+          <span><b>{t('Кому', 'Aan')}:</b> {to}{cc.trim() ? ` · Cc: ${cc}` : ''}{bcc.trim() ? ` · Bcc: ${bcc}` : ''}</span>
+          <span><b>{t('Тема', 'Onderwerp')}:</b> {subject.trim() || t('(без теми)', '(geen onderwerp)')}</span>
+        </button>
+        : <div className="mail-nm-kop" data-nm-kop onBlur={(e) => { if (to.trim() && !e.currentTarget.contains(e.relatedTarget as Node | null)) setKopOpen(false); }}>
         <div className="mail-new-message-field mail-nm-aan">
           <label htmlFor="mail-nm-aan">{t('Кому', 'Aan')}</label>
-          <input id="mail-nm-aan" value={to} onChange={event => setTo(event.target.value)} placeholder="name@example.com" autoFocus />
+          <input id="mail-nm-aan" value={to} onChange={event => setTo(event.target.value)} placeholder="name@example.com" autoFocus={kopOpen && !to} />
           {!(showCc || cc.trim() || bcc.trim()) && <button type="button" className="mail-new-message-cc-toggle" onClick={() => setShowCc(true)} data-nm-kopie>{t('Копія / прихована', 'Cc / Bcc')}</button>}
         </div>
         {(showCc || cc.trim() || bcc.trim()) && (
@@ -477,6 +498,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
           <span>{t('Тема', 'Onderwerp')}</span>
           <input value={subject} onChange={event => setSubject(event.target.value)} />
         </label>
+        </div>}
         <div className="mail-nm-editor">
         <MailComposeEditor
           ref={editorRef}
@@ -515,6 +537,12 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
               : draftSync === 'error' ? t('Лише в цьому браузері', 'Alleen in deze browser')
               : t('Чернетка', 'Concept')}
           </span>
+          {heeftInhoud && !wisVraag && <button type="button" className="mail-nm-wis" onClick={() => setWisVraag(true)} data-nm-wis title={t('Очистити або видалити чернетку', 'Wissen of concept verwijderen')}><Trash2 aria-hidden="true" /><span>{t('Видалити', 'Verwijderen')}</span></button>}
+          {wisVraag && <span className="mail-nm-wis-vraag" role="group" aria-label={t('Видалити чернетку?', 'Concept verwijderen?')}>
+            <button type="button" className="gevaar" onClick={verwijderConcept} data-nm-wis-bevestig><Trash2 aria-hidden="true" />{t('Видалити чернетку', 'Concept verwijderen')}</button>
+            <button type="button" onClick={() => { gooiWeg(); setWisVraag(false); }} data-nm-leeg>{t('Лише очистити', 'Alleen wissen')}</button>
+            <button type="button" onClick={() => setWisVraag(false)}>{t('Скасувати', 'Annuleren')}</button>
+          </span>}
           <MailScheduleMenu lang={lang} context={context} canSchedule={Boolean(accountId && to.trim() && body.trim())} onSchedule={scheduleSend} busy={sending} />
           <button type="button" className="primary" disabled={sending || !to.trim() || !body.trim()} onClick={() => void send()}>
             <Send />
