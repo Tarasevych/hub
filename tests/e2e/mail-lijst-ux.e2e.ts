@@ -39,7 +39,7 @@ export async function main(): Promise<number> {
     let geopend = '';
     await page.route('**/api/owner/mail/google-suite/accounts', (r) => r.fulfill(json({ activeAccountId: 'acc-1', accounts: [{ id: 'acc-1', email: 'ik@example.test', status: 'connected' }] })));
     await page.route('**/api/owner/mail/google-suite/messages', (r) => r.fulfill(json({ source: 'live_on_demand', persisted: false, account: { id: 'acc-1', email: 'ik@example.test' }, labelId: 'INBOX', query: '', maxResults: 25, messages: berichten, nextPageToken: '', resultSizeEstimate: berichten.length, observedAt: nu })));
-    await page.route('**/api/owner/mail/google-suite/thread', (r) => { geopend = 'thread'; return r.fulfill(json({ ok: true, thread: { id: 't3', messages: [{ ...berichten[3], html: '<p>Текст листа</p>', text: 'Текст листа', attachments: [] }] } })); });
+    await page.route('**/api/owner/mail/google-suite/thread', (r) => { geopend = 'thread'; return r.fulfill(json({ ok: true, thread: { id: 't3', messages: [{ ...berichten[3], html: '<p>Текст листа</p>', text: 'Текст листа', attachments: [{ providerAttachmentId: 'att-1', filename: 'rahunok.pdf', mimeType: 'application/pdf', sizeBytes: 12000 }] }] } })); });
     await page.route('**/api/owner/mail/google-suite/message', (r) => { geopend = geopend || 'message'; return r.fulfill(json({ ok: true, message: { ...berichten[3], html: '<p>Текст листа</p>', text: 'Текст листа', attachments: [] } })); });
     await page.goto(`${MAIL}/inbox?lang=uk`, { waitUntil: 'networkidle' });
     const rij = page.locator('article').filter({ hasText: 'Тема листа номер 3' }).first();
