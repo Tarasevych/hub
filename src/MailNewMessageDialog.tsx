@@ -559,7 +559,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
         <input ref={bestandRef} type="file" multiple hidden onChange={(e) => { const f = [...(e.target.files || [])]; e.target.value = ''; void voegBijlagenToe(f.map((x) => ({ blob: x, filename: x.name, contentType: x.type }))); }} />
         <footer>
           <button type="button" className="mail-nm-bijlage-knop" onClick={() => bestandRef.current?.click()} data-nm-bijlage title={t('Додати файл', 'Bestand toevoegen')} aria-label={t('Додати файл', 'Bestand toevoegen')}><Paperclip aria-hidden="true" /></button>
-          <MailDiskKnop lang={lang} context={context} onInsert={(html) => editorRef.current?.insertHtml(html)} />
+          <MailDiskKnop lang={lang} context={context} onInsert={(html) => editorRef.current?.insertHtml(html)} onAttach={(f) => setBijlagen((o) => { const alles = [...o, { id: `disk-${Date.now()}`, ...f }]; if (alles.reduce((n, b) => n + b.bytes, 0) > 8 * 1024 * 1024) { setFailure(t('Вкладення разом більші за 8 МБ — вставте посилання на файл.', 'Bijlagen samen groter dan 8 MB — voeg een link in.')); return o; } return alles; })} />
           <MailAiToolbar
             lang={lang}
             context={context}

@@ -152,6 +152,10 @@ export async function main(): Promise<number> {
     await p2.locator('[data-nm-disk]').click(); await p2.waitForTimeout(300);
     await p2.locator('.mail-disk-paneel button', { hasText: 'Кошторис.xlsx' }).click(); await p2.waitForTimeout(300);
     check('3.1: у лист вставлено посилання на файл Диска', await p2.locator('section.mail-new-message .ProseMirror a[href*="drive.google.com/open?id=f1"]').count() === 1);
+    await p2.route('**/api/owner/cloud/google-suite/drive/file', (r) => r.fulfill(json({ name: 'Кошторис.xlsx', mimeType: 'application/vnd.ms-excel', sizeBytes: 4, data: 'dGVzdA==' })));
+    await p2.locator('[data-nm-disk]').click(); await p2.waitForTimeout(300);
+    await p2.locator('.mail-disk-paneel [data-disk-vk]').first().click(); await p2.waitForTimeout(500);
+    check('3.1: 📎 вкладає сам файл із Диска', /Кошторис\.xlsx/.test(await p2.locator('section.mail-new-message .mail-nm-bijlagen').innerText().catch(() => '')));
     // 3.2: «Переслати це вкладення» → новий лист із файлом; вкладення йде разом із листом
     const verzonden: string[] = [];
     await p2.route('**/api/owner/mail/compose/send', (r) => { verzonden.push(r.request().postData() || ''); return r.fulfill(json({ item: { id: 'q1', status: 'sent' } })); });

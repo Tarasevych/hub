@@ -7,10 +7,10 @@ import { api } from './platform/client';
 import { canonicalNavigationUrl } from './canonical-navigation';
 
 type Bestand = { id: string; name: string; mimeType: string; folder: boolean; modifiedAt: number };
-type Props = { lang: 'uk' | 'nl'; context: Record<string, string>; onInsert: (html: string) => void };
+type Props = { lang: 'uk' | 'nl'; context: Record<string, string>; onInsert: (html: string) => void; onAttach?: (f: { filename: string; contentType: string; data: string; bytes: number }) => void };
 const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-export default function MailDiskKnop({ lang, context, onInsert }: Props) {
+export default function MailDiskKnop({ lang, context, onInsert, onAttach }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const [stand, setStand] = useState<'onbekend' | 'ok' | 'niet'>('onbekend');
   const [open, setOpen] = useState(false);
@@ -28,6 +28,14 @@ export default function MailDiskKnop({ lang, context, onInsert }: Props) {
   useEffect(() => { void laad('root', ''); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
   useEffect(() => { if (!open) return; const weg = (e: PointerEvent) => { if (root.current && !root.current.contains(e.target as Node)) setOpen(false); }; const esc2 = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); }; document.addEventListener('pointerdown', weg, true); document.addEventListener('keydown', esc2); return () => { document.removeEventListener('pointerdown', weg, true); document.removeEventListener('keydown', esc2); }; }, [open]);
   useEffect(() => { if (!open || stand !== 'ok') return; const h = window.setTimeout(() => void laad(zoek.trim() ? 'root' : map[map.length - 1].id, zoek.trim()), zoek ? 300 : 0); return () => window.clearTimeout(h); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [zoek, map, open]);
+  const [fout, setFout] = useState('');
+  const vergrendel = useRef(false);
+  const vk = async (b: Bestand) => {
+    if (!onAttach || vergrendel.current) return; vergrendel.current = true; setBezig(true); setFout('');
+    try { const r = (await api.post('/api/owner/cloud/google-suite/drive/file', { ...context, accountId: '', fileId: b.id })).data as { name: string; mimeType: string; sizeBytes: number; data: string }; onAttach({ filename: r.name || b.name, contentType: r.mimeType || 'application/octet-stream', data: r.data, bytes: r.sizeBytes }); setOpen(false); }
+    catch { setFout(t('Файл не вдалося вкласти (завеликий або недоступний). Вставте посилання.', 'Bestand kon niet worden bijgevoegd (te groot of niet beschikbaar). Voeg een link in.')); }
+    finally { vergrendel.current = false; setBezig(false); }
+  };
   const kies = (b: Bestand) => {
     if (b.folder) { setZoek(''); setMap((m) => [...m, { id: b.id, naam: b.name }]); return; }
     onInsert(`<a href="https://drive.google.com/open?id=${encodeURIComponent(b.id)}">📎 ${esc(b.name)}</a>&nbsp;`);
@@ -43,8 +51,9 @@ export default function MailDiskKnop({ lang, context, onInsert }: Props) {
       <header><strong>{map.map((m) => m.naam).join(' / ')}</strong><button type='button' aria-label={t('Закрити', 'Sluiten')} onClick={() => setOpen(false)}><X aria-hidden='true' /></button></header>
       <label className='mail-disk-zoek'><Search aria-hidden='true' /><input value={zoek} onChange={(e) => setZoek(e.target.value)} placeholder={t('Пошук на Диску', 'Zoeken in Drive')} aria-label={t('Пошук на Диску', 'Zoeken in Drive')} /></label>
       {map.length > 1 && !zoek && <button type='button' className='mail-disk-terug' onClick={() => setMap((m) => m.slice(0, -1))}>← {t('Назад', 'Terug')}</button>}
-      <ul>{bezig ? <li className='leeg'><LoaderCircle className='spin' aria-hidden='true' /></li> : lijst.length ? lijst.map((b) => <li key={b.id}><button type='button' onClick={() => kies(b)}><span aria-hidden='true'>{b.folder ? '📁' : '📄'}</span><span>{b.name}</span></button></li>) : <li className='leeg'>{t('Нічого не знайдено', 'Niets gevonden')}</li>}</ul>
-      <small>{t('У лист вставляється посилання; доступ — за налаштуваннями файла на Диску.', 'Er wordt een link ingevoegd; toegang volgens de deelinstellingen in Drive.')}</small>
+      <ul>{bezig ? <li className='leeg'><LoaderCircle className='spin' aria-hidden='true' /></li> : lijst.length ? lijst.map((b) => <li key={b.id} className='mail-disk-rij'><button type='button' onClick={() => kies(b)} title={b.folder ? t('Відкрити папку', 'Map openen') : t('Вставити посилання', 'Link invoegen')}><span aria-hidden='true'>{b.folder ? '📁' : '📄'}</span><span>{b.name}</span></button>{!b.folder && onAttach && <button type='button' className='mail-disk-vk' onClick={() => void vk(b)} aria-label={t(`Вкласти файл ${b.name}`, `Bestand ${b.name} bijvoegen`)} title={t('Вкласти сам файл', 'Bestand zelf bijvoegen')} data-disk-vk>📎</button>}</li>) : <li className='leeg'>{t('Нічого не знайдено', 'Niets gevonden')}</li>}</ul>
+      {fout && <p className='mail-disk-fout' role='alert'>{fout}</p>}
+      <small>{t('Клік по назві — посилання (доступ за налаштуваннями Диска); 📎 — вкласти сам файл.', 'Klik op de naam — link (toegang volgens Drive); 📎 — bestand zelf bijvoegen.')}</small>
     </div>}
   </div>;
 }
