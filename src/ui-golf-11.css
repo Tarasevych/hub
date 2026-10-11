@@ -37,3 +37,15 @@ html.theme-dark .mail-selection-actions button[aria-label*="важлив"]{color
 /* 4.3: вікно «Перемістити» — ширина за текстом і екраном, без горизонтального скролу */
 .mail-selection-popover,.mail-move-popover,[class*="mail-move"][role="dialog"],[class*="mail-move-menu"]{width:max-content;min-width:min(240px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:min(70dvh,560px);overflow-x:hidden!important;overflow-y:auto}
 .mail-selection-popover :is(button,li,span),[class*="mail-move-menu"] :is(button,li,span){white-space:normal;overflow-wrap:anywhere}
+/* нижній рядок вікна листа — один рядок: статус чернетки стискається, у вузькому вікні лишаються іконки */
+.mail-new-message>footer{flex-wrap:nowrap!important;gap:6px;align-items:center;min-width:0}
+.mail-new-message>footer .mail-new-message-sync{min-width:0;flex:1 1 auto;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+@container (max-width:720px){.mail-new-message>footer :is(.mail-nm-wis,.mail-nm-hulpen) span{display:none}}
+.mail-new-message{container-type:inline-size}
+@media (max-width:720px){.mail-new-message>footer :is(.mail-nm-wis,.mail-nm-hulpen) span{display:none}}
+/* 4.1: при відкритій клавіатурі — лише текст листа і один компактний рядок кнопок */
+.mail-new-message.klavier-open>header{padding-block:4px}
+.mail-new-message.klavier-open>footer{padding-block:4px}
+.mail-new-message.klavier-open>footer :is(.mail-new-message-sync,.mail-nm-wis span,.mail-nm-hulpen span,.mail-schedule-menu span){display:none}
+.mail-new-message.klavier-open .mail-compose-toolbar{overflow-x:auto;flex-wrap:nowrap}
+.mail-new-message.klavier-open .mail-nm-editor{min-height:0}

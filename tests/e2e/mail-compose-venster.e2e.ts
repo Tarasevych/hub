@@ -135,6 +135,13 @@ export async function main(): Promise<number> {
     const sj = await ed.evaluate((e) => ({ kop: e.querySelectorAll('header.mail-pm-email-header').length, kol: e.querySelectorAll('.mail-pm-columns').length, knop: e.querySelectorAll('a[data-mail-block=button]').length, a: [...e.querySelectorAll('a')].map((x) => x.outerHTML.slice(0, 120) + ' @' + (x.parentElement?.closest('[class]')?.className || '')) }));
     check('1.7: шаблон «Пропозиція співпраці» — шапка, колонки, кнопка як блоки', sj.kol >= 1 && sj.knop >= 2, JSON.stringify(sj));
     await p2.screenshot({ path: `${UIT}/mail-compose-5-sjabloon.png` });
+    // 1.3: вставка з вебсторінки зберігає таблицю, код і цитату
+    await ed.click(); await p2.keyboard.press('Control+End');
+    await ed.evaluate((e) => { const dt = new DataTransfer(); dt.setData('text/html', '<h2>Звіт</h2><table><thead><tr><th>Назва</th><th>Сума</th></tr></thead><tbody><tr><td>Хостинг</td><td>12 €</td></tr><tr><td>Домен</td><td>9 €</td></tr></tbody></table><pre><code>npm run build\n  echo ok</code></pre><blockquote><p>Цитата з сайту</p></blockquote><ul><li>пункт 1</li><li>пункт 2</li></ul>'); dt.setData('text/plain', 'Звіт'); e.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })); });
+    await p2.waitForTimeout(400);
+    const plak = await ed.evaluate((e) => ({ tabel: e.querySelectorAll('table td, table th').length, code: e.querySelector('pre')?.textContent || '', quote: !!e.querySelector('blockquote, .mail-pm-callout'), lijst: e.querySelectorAll('li').length }));
+    check('1.3: вставлений HTML — таблиця з комірками, код зі збереженими рядками, цитата, список', plak.tabel >= 6 && /npm run build\n {2}echo ok/.test(plak.code) && plak.quote && plak.lijst >= 2, JSON.stringify(plak));
+    await p2.screenshot({ path: `${UIT}/mail-compose-6-plakken.png` });
     await ctx2.close();
   } catch (e) {
     check('e2e liep zonder uitzondering', false, String((e as Error)?.stack || e).slice(0, 800));

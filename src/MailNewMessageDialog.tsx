@@ -314,6 +314,15 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
     return () => { document.removeEventListener('click', klik, true); window.removeEventListener('popstate', weg); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+  // 4.1: відкрита екранна клавіатура телефона — вікно займає лише видиму частину, шапка й нижній рядок компактні
+  const [klavier, setKlavier] = useState(0);
+  useEffect(() => {
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (!open || !vv) return;
+    const meet = () => { const verschil = window.innerHeight - vv.height; setKlavier(verschil > 140 ? Math.round(vv.height) : 0); };
+    meet(); vv.addEventListener('resize', meet);
+    return () => vv.removeEventListener('resize', meet);
+  }, [open]);
   const herstelRef = useRef(false);
   const [wisVraag, setWisVraag] = useState(false);
   const [kopOpen, setKopOpen] = useState(true);
@@ -442,13 +451,15 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
   return (
     <div className="mail-new-message-backdrop" onClick={close}>
       <section
-        className={`mail-new-message${groot ? ' groot' : ''}${heelTekst ? ' heel-tekst' : ''}`}
+        className={`mail-new-message${groot ? ' groot' : ''}${heelTekst ? ' heel-tekst' : ''}${klavier ? ' klavier-open' : ''}`}
+        data-klavier={klavier ? 'open' : undefined}
         role="dialog"
         aria-modal="true"
         aria-label={t('Новий лист', 'Nieuw bericht')}
         ref={dialogRef}
         style={
-          !groot && rect && typeof window !== 'undefined' && window.innerWidth > 560
+          klavier ? { position: 'fixed', top: (window.visualViewport?.offsetTop || 0), left: 0, right: 0, width: '100vw', height: klavier, maxHeight: klavier, margin: 0, borderRadius: 0 }
+          : !groot && rect && typeof window !== 'undefined' && window.innerWidth > 560
             ? { position: 'fixed', top: rect.top, left: rect.left, width: rect.width, height: rect.height, maxHeight: rect.height, margin: 0 }
             : undefined
         }
@@ -472,7 +483,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
           </span>
         </header>
         {/* 1.2: після введення шапка згортається в один рядок; клік або Tab — знову всі поля */}
-        {!kopOpen && to.trim() ? <button type="button" className="mail-nm-kop-kort" onClick={() => setKopOpen(true)} onFocus={() => setKopOpen(true)} data-nm-kop-kort aria-label={t('Змінити отримувачів і тему', 'Ontvangers en onderwerp wijzigen')}>
+        {(!kopOpen || (klavier && !document.activeElement?.closest('[data-nm-kop]'))) && to.trim() ? <button type="button" className="mail-nm-kop-kort" onClick={() => setKopOpen(true)} onFocus={() => setKopOpen(true)} data-nm-kop-kort aria-label={t('Змінити отримувачів і тему', 'Ontvangers en onderwerp wijzigen')}>
           <span><b>{t('Кому', 'Aan')}:</b> {to}{cc.trim() ? ` · Cc: ${cc}` : ''}{bcc.trim() ? ` · Bcc: ${bcc}` : ''}</span>
           <span><b>{t('Тема', 'Onderwerp')}:</b> {subject.trim() || t('(без теми)', '(geen onderwerp)')}</span>
         </button>
