@@ -3,6 +3,7 @@ import { api } from "./platform/client";
 import { ecosystemTabContext } from "./tab-context";
 import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalog";
 import McpAgentsHub from "./McpAgentsHub";
+import McpAppsView from "./McpAppsView";
 import { foutTekst } from "./agenten/fouten";
 import McpConsentModal from "./McpConsentModal";
 import McpBackupsCard from "./McpBackupsCard";
@@ -104,7 +105,7 @@ function Ring({ pct, done, n }: { pct: number; done: boolean; n: number }) {
 
 export default function McpServiceView({ lang, tab }: Props) {
   const t = (uk: string, nl: string) => (lang === "uk" ? uk : nl);
-  const section = ["overview", "dashboard", "services", "tools", "board", "agents", "playground", "traffic", "connect", "roadmap", "download"].includes(tab) ? tab : "overview";
+  const section = ["overview", "dashboard", "services", "tools", "board", "agents", "apps", "playground", "traffic", "connect", "roadmap", "download"].includes(tab) ? tab : "overview";
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [probes, setProbes] = useState<Probe[]>([]);
@@ -245,8 +246,8 @@ export default function McpServiceView({ lang, tab }: Props) {
   return (
     <div className="mcp-estate" data-mcp-tab={section}>
       <McpConsentModal tr={t} />
-      {error && section !== "agents" ? <p className="mcp-lead mcp-error" role="alert">{error}</p> : null}
-      {busy && busy !== "archive" && section !== "agents" ? <p className="mcp-kicker">{busy}</p> : null}
+      {error && section !== "agents" && section !== "apps" ? <p className="mcp-lead mcp-error" role="alert">{error}</p> : null}
+      {busy && busy !== "archive" && section !== "agents" && section !== "apps" ? <p className="mcp-kicker">{busy}</p> : null}
 
       {section === "overview" && (
         <>
@@ -379,6 +380,8 @@ export default function McpServiceView({ lang, tab }: Props) {
       {section === "agents" && (
         <McpAgentsHub tr={t} />
       )}
+
+      {section === "apps" && <McpAppsView lang={lang} />}
 
       {section === "playground" && (
         <>

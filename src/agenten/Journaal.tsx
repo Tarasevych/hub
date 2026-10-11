@@ -1,7 +1,7 @@
 // Журнал: één tijdlijn van alles rond agents (tokens, apparaten, extensie, toestemmingen, AI aan/uit, noodstop), uit app.audit.
 // Dicht: één zin + onderwerp + relatieve tijd (exacte tijd bij aanwijzen). Open: actiecode, id's, ip-hash, apparaat, ruwe details.
 import { useMemo, useState, type ReactElement } from 'react';
-import { Bot, Calendar, Camera, CircleHelp, Compass, Container, Eye, FilePen, FileText, Fingerprint, Gauge, GitBranch, Globe, HardDrive, Kanban, KeyRound, Mail, Monitor, MousePointerClick, OctagonX, Rocket, Search, Server, ShieldCheck, Sparkles, Stethoscope, Terminal, Wrench } from 'lucide-react';
+import { Bot, Boxes, Calendar, Camera, CircleHelp, Compass, Container, Eye, FilePen, FileText, Fingerprint, Gauge, GitBranch, Globe, HardDrive, Kanban, KeyRound, Mail, Monitor, MousePointerClick, OctagonX, Rocket, Search, Server, ShieldCheck, Sparkles, Stethoscope, Terminal, Wrench } from 'lucide-react';
 import { SOORT_INFO, actieSoort, actieZin, groepeerWerk, telling, type ActieSoort, type WerkSessie } from '../../shared/mcp-acties';
 import type { Tr } from '../mcp-ui';
 import { CAP_TEXT } from '../AiToestemmingen';
@@ -19,7 +19,7 @@ const s = (v: unknown) => (typeof v === 'string' ? v : typeof v === 'number' ? S
 /** Icoon per soort actie van een AI (zelfde soorten als shared/mcp-acties.ts). */
 const ACTIE_ICOON: Record<ActieSoort, ReactElement> = {
   bekijken: <Eye />, screenshot: <Camera />, diagnose: <Stethoscope />, navigeren: <Compass />, invoer: <MousePointerClick />, lezen: <FileText />, schrijven: <FilePen />,
-  commando: <Terminal />, docker: <Container />, meten: <Gauge />, mail: <Mail />, agenda: <Calendar />, schijf: <HardDrive />, github: <GitBranch />, bord: <Kanban />,
+  commando: <Terminal />, docker: <Container />, apps: <Boxes />, meten: <Gauge />, mail: <Mail />, agenda: <Calendar />, schijf: <HardDrive />, github: <GitBranch />, bord: <Kanban />,
   server: <Server />, zoeken: <Search />, uitrol: <Rocket />, onbekend: <CircleHelp />,
 };
 const soortVan = (d: Record<string, unknown>): ActieSoort => (s(d.soort) in SOORT_INFO ? s(d.soort) as ActieSoort : actieSoort(s(d.tool)));

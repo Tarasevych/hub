@@ -33,6 +33,10 @@ export const CAPABILITIES: readonly CapabilityInfo[] = [
   { id: 'device.exec', group: 'Пристрої', label: 'Виконувати команди на ПК', hint: 'git, node, python, docker, npm у дозволених теках', risk: 'dangerous' },
   { id: 'docker.manage', group: 'Пристрої', label: 'Керувати контейнерами', hint: 'Запуск, зупинка, перезапуск контейнерів', risk: 'dangerous' },
 
+  { id: 'apps.read', group: 'Додатки', label: 'Бачити додатки', hint: 'Список, стан, журнали (секрети замасковано), версії, назви секретів', risk: 'read' },
+  { id: 'apps.deploy', group: 'Додатки', label: 'Розгортати додатки', hint: 'Збірка й запуск у контейнері на вашому ПК, відкат, зупинка, видалення, домен', risk: 'dangerous' },
+  { id: 'apps.secrets', group: 'Додатки', label: 'Секрети додатків', hint: 'Посилання, де ви самі вводите ключ (ШІ значення не бачить); видалення секрету', risk: 'write' },
+
   { id: 'mail.read', group: 'Пошта й Google', label: 'Читати пошту', hint: 'Список скриньок, мітки, пошук, читання листів', risk: 'sensitive' },
   { id: 'mail.modify', group: 'Пошта й Google', label: 'Змінювати листи', hint: 'Мітки, прочитано, архів, кошик', risk: 'write' },
   { id: 'calendar.read', group: 'Пошта й Google', label: 'Читати календар', hint: 'Календарі та події', risk: 'sensitive' },
@@ -131,6 +135,10 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   machine_write_file: 'device.write',
   machine_exec: 'device.exec',
   docker_manage_container: 'docker.manage',
+  // додатки (BYOS: на власному ПК користувача)
+  app_list: 'apps.read', app_deploy_status: 'apps.read', app_logs: 'apps.read', app_versions: 'apps.read', app_secret_list: 'apps.read',
+  app_deploy: 'apps.deploy', app_rollback: 'apps.deploy', app_control: 'apps.deploy', app_route: 'apps.deploy',
+  app_secret_request: 'apps.secrets', app_secret_delete: 'apps.secrets',
   // пошта і Google
   mail_list_accounts: 'mail.read',
   mail_list_labels: 'mail.read',

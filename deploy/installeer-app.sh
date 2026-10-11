@@ -15,6 +15,12 @@
 #   installeer-app.sh lijst                   releases tonen
 #   installeer-app.sh dashboard <map>         statische dashboardpagina's (alleen *.html/*.css/*.js/afbeeldingen)
 #                                             naar /srv/mijn-ruimte/dashboard, alleen-lezen voor de dienst
+#   installeer-app.sh apps-inrichten <bronmap> [--caddy tunnel|publiek|geen] [--caddy-poort 8090]
+#                                             «Додатки»: rootless Podman, gebruiker mr-apps (geen root, geen sudo),
+#                                             agent als systemd-dienst, optioneel Caddy (admin alleen via unix-socket)
+#   installeer-app.sh apps-koppelen <KOPPELCODE> [--domein '{app}.apps.voorbeeld.nl'] [--naam N] [--geheugen 512m] [--server URL]
+#                                             agent van mr-apps koppelen (code van mcp.* → Agenten) en starten
+#   installeer-app.sh apps-status             stand van de apps-agent, Caddy en de containers
 #
 # <bronmap> is een git-checkout (alleen de GECOMMITTE stand van HEAD wordt gebruikt) of een uitgepakte map
 # (bijv. een `git archive`-tarball; staat daarin een bestand BRON-COMMIT, dan wordt dat de commit van de release).
@@ -439,6 +445,194 @@ dashboard() {
   melding "dashboard geplaatst in $doel ($(find "$doel" -type f | wc -l) bestanden, alleen-lezen voor $GEBRUIKER)"
 }
 
+# ---------------------------------------------------------------------------------------------
+# «Додатки» (BYOS-PaaS): apps die een AI met toestemming van de eigenaar uitrolt, draaien als rootless containers van een
+# eigen systeemgebruiker. Die gebruiker heeft geen sudo en geen docker-groep (docker-groep = root); Caddy is alleen via een
+# unix-socket te bedienen (groep caddy), nooit via een open TCP-poort. Alles blijft op deze machine.
+APPS_GEBRUIKER=mr-apps
+APPS_HOME=/srv/apps
+APPS_WERK="$APPS_HOME/werk"
+APPS_AGENT_DIR=/usr/local/lib/mijn-ruimte/agent
+APPS_UNIT=mijn-ruimte-apps-agent.service
+APPS_CADDY_SOCK=/run/caddy/admin.sock
+
+als_apps() { runuser -u "$APPS_GEBRUIKER" -- env HOME="$APPS_HOME" HUB_AGENT_CONFIG="$APPS_HOME/.hub-agent/config.json" XDG_RUNTIME_DIR="/run/user/$(id -u "$APPS_GEBRUIKER")" "$@"; }
+# Eerste vrije sub-id na alle bestaande bereiken (zodat er niets overlapt).
+vrij_subid() { awk -F: 'BEGIN{m=100000} NF>=3 {e=$2+$3; if (e>m) m=e} END{print m}' "$1" 2>/dev/null || echo 100000; }
+
+apps_inrichten() {
+  local bron="${1:?bronmap ontbreekt}"; shift
+  local caddy=geen poort=8090
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --caddy) caddy="${2:?}"; shift 2 ;;
+      --caddy-poort) poort="${2:?}"; shift 2 ;;
+      *) fout "onbekende optie: $1" ;;
+    esac
+  done
+  case "$caddy" in tunnel|publiek|geen) ;; *) fout "--caddy: tunnel, publiek of geen" ;; esac
+  [[ "$poort" =~ ^[0-9]{2,5}$ ]] && [ "$poort" -ge 1024 ] && [ "$poort" -le 65535 ] || fout "--caddy-poort: 1024-65535"
+  vereis_root
+  [ -s "$bron/deploy/agent/agent.mjs" ] || fout "$bron/deploy/agent/agent.mjs ontbreekt (is dit een uitgepakte release?)"
+  [ -x "$NODE" ] || fout "Node niet gevonden op $NODE"
+
+  local nodig=()
+  command -v podman >/dev/null 2>&1 || nodig+=(podman)
+  command -v newuidmap >/dev/null 2>&1 || nodig+=(uidmap)
+  if [ "$caddy" != geen ] && ! command -v caddy >/dev/null 2>&1; then nodig+=(caddy); fi
+  if [ ${#nodig[@]} -gt 0 ]; then
+    command -v apt-get >/dev/null 2>&1 || fout "installeer eerst met de pakketbeheerder van dit systeem: ${nodig[*]} (daarna dit commando opnieuw)"
+    melding "pakketten installeren: ${nodig[*]}"
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${nodig[@]}" slirp4netns >/dev/null || fout "apt-get install ${nodig[*]} mislukt"
+  fi
+
+  if ! id "$APPS_GEBRUIKER" >/dev/null 2>&1; then
+    useradd --system --user-group --home-dir "$APPS_HOME" --shell /usr/sbin/nologin "$APPS_GEBRUIKER"
+    melding "systeemgebruiker $APPS_GEBRUIKER aangemaakt (geen sudo, geen docker-groep)"
+  fi
+  id -nG "$APPS_GEBRUIKER" | tr ' ' '\n' | grep -qxE 'sudo|wheel|docker|adm' && fout "$APPS_GEBRUIKER zit in een beheergroep (sudo/wheel/docker/adm): haal hem daar eerst uit"
+  install -d -o "$APPS_GEBRUIKER" -g "$APPS_GEBRUIKER" -m 0750 "$APPS_HOME" "$APPS_WERK"
+  install -d -o "$APPS_GEBRUIKER" -g "$APPS_GEBRUIKER" -m 0700 "$APPS_HOME/.hub-agent"
+  local start
+  if ! grep -q "^$APPS_GEBRUIKER:" /etc/subuid 2>/dev/null; then start="$(vrij_subid /etc/subuid)"; usermod --add-subuids "$start-$((start + 65535))" "$APPS_GEBRUIKER"; fi
+  if ! grep -q "^$APPS_GEBRUIKER:" /etc/subgid 2>/dev/null; then start="$(vrij_subid /etc/subgid)"; usermod --add-subgids "$start-$((start + 65535))" "$APPS_GEBRUIKER"; fi
+  # Linger: eigen /run/user/<uid> en gebruikersdiensten, ook zonder aanmelding (nodig voor rootless Podman).
+  loginctl enable-linger "$APPS_GEBRUIKER"
+
+  install -d -o root -g root -m 0755 "$APPS_AGENT_DIR"
+  install -m 0644 -o root -g root "$bron/deploy/agent/agent.mjs" "$APPS_AGENT_DIR/agent.mjs"
+  local uid; uid="$(id -u "$APPS_GEBRUIKER")"
+  cat > "/etc/systemd/system/$APPS_UNIT" <<EOT
+# Beheerd door mijn-ruimte-installeer apps-inrichten. Agent van «Додатки»: rootless containers als $APPS_GEBRUIKER.
+[Unit]
+Description=Mijn Ruimte agent voor apps (rootless containers)
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=$APPS_HOME/.hub-agent/config.json
+
+[Service]
+User=$APPS_GEBRUIKER
+Group=$APPS_GEBRUIKER
+Environment=HOME=$APPS_HOME
+Environment=HUB_AGENT_CONFIG=$APPS_HOME/.hub-agent/config.json
+Environment=XDG_RUNTIME_DIR=/run/user/$uid
+ExecStart=$NODE $APPS_AGENT_DIR/agent.mjs run
+Restart=always
+RestartSec=10
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+# Geen NoNewPrivileges: rootless Podman heeft newuidmap/newgidmap (setuid) nodig. De containers zelf draaien met
+# --cap-drop ALL en no-new-privileges (deploy/agent/agent.mjs).
+
+[Install]
+WantedBy=multi-user.target
+EOT
+  chmod 0644 "/etc/systemd/system/$APPS_UNIT"
+
+  if [ "$caddy" != geen ]; then
+    getent group caddy >/dev/null || fout "groep caddy ontbreekt (is Caddy als pakket geïnstalleerd?)"
+    usermod -aG caddy "$APPS_GEBRUIKER"
+    install -d -m 0755 /etc/systemd/system/caddy.service.d
+    cat > /etc/systemd/system/caddy.service.d/mijn-ruimte-apps.conf <<'EOT'
+# Beheerd door mijn-ruimte-installeer apps-inrichten: admin-API alleen via /run/caddy/admin.sock (0660, groep caddy).
+[Service]
+RuntimeDirectory=caddy
+RuntimeDirectoryMode=0750
+UMask=0007
+EOT
+    local cf=/etc/caddy/Caddyfile
+    if [ -s "$cf" ] && ! grep -q 'Beheerd door mijn-ruimte-installeer' "$cf" && ! grep -q '/usr/share/caddy' "$cf"; then
+      waarschuwing "$cf is al aangepast: niet overschreven. Zet zelf in de globale opties 'admin unix/$APPS_CADDY_SOCK' en geef --caddy-server door bij apps-koppelen."
+    else
+      [ -s "$cf" ] && cp -a "$cf" "$cf.voor-mijn-ruimte.$(date +%Y%m%d%H%M%S)"
+      if [ "$caddy" = tunnel ]; then
+        cat > "$cf" <<EOT
+# Beheerd door mijn-ruimte-installeer apps-inrichten (modus tunnel): HTTP alleen op 127.0.0.1:$poort; TLS doet de tunnel.
+# Routes per app zet de apps-agent via de admin-socket; dit is alleen het vangnet.
+{
+	admin unix/$APPS_CADDY_SOCK
+	auto_https off
+}
+http://:$poort {
+	bind 127.0.0.1
+	respond "Geen app op dit adres" 404
+}
+EOT
+      else
+        cat > "$cf" <<EOT
+# Beheerd door mijn-ruimte-installeer apps-inrichten (modus publiek): Caddy op 80/443 met automatische HTTPS per app-domein.
+{
+	admin unix/$APPS_CADDY_SOCK
+}
+:443 {
+	respond "Geen app op dit adres" 404
+}
+EOT
+      fi
+      chmod 0644 "$cf"
+    fi
+    systemctl daemon-reload
+    systemctl enable caddy >/dev/null 2>&1 || true
+    systemctl restart caddy || fout "Caddy start niet: journalctl -u caddy -n 50"
+    melding "Caddy draait (modus $caddy); admin alleen via $APPS_CADDY_SOCK"
+  else
+    systemctl daemon-reload
+  fi
+  melding "apps ingericht: gebruiker $APPS_GEBRUIKER, map $APPS_WERK, dienst $APPS_UNIT (start na het koppelen)"
+  cat <<EOT
+[installeer] Volgende stap: haal een koppelcode op mcp.* → Agenten → «Пристрій» en voer uit:
+  sudo $0 apps-koppelen <KOPPELCODE> --domein '{app}.apps.<uw-domein>'
+EOT
+}
+
+apps_koppelen() {
+  local code="${1:?koppelcode ontbreekt}"; shift
+  local domein="" naam="" geheugen="512m" server="" caddy_server="srv0"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --domein) domein="${2:?}"; shift 2 ;;
+      --naam) naam="${2:?}"; shift 2 ;;
+      --geheugen) geheugen="${2:?}"; shift 2 ;;
+      --server) server="${2:?}"; shift 2 ;;
+      --caddy-server) caddy_server="${2:?}"; shift 2 ;;
+      *) fout "onbekende optie: $1" ;;
+    esac
+  done
+  vereis_root
+  id "$APPS_GEBRUIKER" >/dev/null 2>&1 && [ -s "$APPS_AGENT_DIR/agent.mjs" ] || fout "eerst: $0 apps-inrichten <bronmap>"
+  [[ "$code" =~ ^[A-Za-z0-9-]{4,40}$ ]] || fout "ongeldige koppelcode"
+  [ -z "$domein" ] || [[ "$domein" =~ ^\{app\}\.[a-z0-9.-]+$ ]] || fout "--domein: sjabloon zoals '{app}.apps.voorbeeld.nl'"
+  [[ "$geheugen" =~ ^[0-9]{2,5}[mg]$ ]] || fout "--geheugen: bv. 512m of 1g"
+  [[ "$caddy_server" =~ ^[A-Za-z0-9_-]{1,40}$ ]] || fout "--caddy-server: naam van de Caddy-server (standaard srv0)"
+  naam="${naam:-$(hostname -s)-apps}"
+  [[ "$naam" =~ ^[A-Za-z0-9._-]{1,60}$ ]] || fout "--naam: letters, cijfers, . _ -"
+  if [ -z "$server" ]; then
+    local domeinnaam
+    domeinnaam="$(sed -n "s/^export const PUBLIC_DOMAIN = '\([a-z0-9.-]*\)';.*/\1/p" "$HUIDIG/backend/deployment-identity.ts" 2>/dev/null | head -1)"
+    [ -n "$domeinnaam" ] || fout "domein van de site niet gevonden; geef --server https://mcp.<uw-domein>"
+    server="https://mcp.$domeinnaam"
+  fi
+  [[ "$server" =~ ^https://[a-z0-9.-]+$ ]] || fout "--server: https://<host> zonder pad"
+  als_apps "$NODE" "$APPS_AGENT_DIR/agent.mjs" pair --server "$server" --code "$code" --name "$naam" --root "$APPS_WERK" || fout "koppelen mislukt (code verlopen? nieuwe code halen)"
+  local extra=()
+  [ -n "$domein" ] && extra+=(--domain "$domein")
+  [ -S "$APPS_CADDY_SOCK" ] && extra+=(--caddy-admin "unix:$APPS_CADDY_SOCK" --caddy-server "$caddy_server")
+  als_apps "$NODE" "$APPS_AGENT_DIR/agent.mjs" apps-config --apps-root "$APPS_WERK" --runtime podman --memory "$geheugen" "${extra[@]}"
+  systemctl daemon-reload
+  systemctl enable --now "$APPS_UNIT" >/dev/null
+  systemctl restart "$APPS_UNIT"
+  melding "apps-agent «$naam» gekoppeld en gestart. Zet op de site (mcp.* → Агенти) de toestemmingen voor dit apparaat en de hulpmiddelen app_* aan."
+}
+
+apps_status() {
+  systemctl --no-pager --lines=5 status "$APPS_UNIT" 2>/dev/null | head -12 || echo "$APPS_UNIT: niet ingericht"
+  if systemctl is-active --quiet caddy 2>/dev/null; then echo "caddy: actief"; else echo "caddy: niet actief of niet ingericht"; fi
+  if id "$APPS_GEBRUIKER" >/dev/null 2>&1; then
+    (cd / && als_apps podman ps -a --filter label=mijn-ruimte.app --format '{{.Names}}  {{.Status}}  {{.Ports}}') 2>/dev/null || echo "podman: geen containers of niet bereikbaar"
+  fi
+}
+
 lijst() {
   local actief vorige r label
   actief="$(actieve_release)"
@@ -458,5 +652,8 @@ case "$opdracht" in
   terugdraaien) terugdraaien "$@" ;;
   lijst) lijst ;;
   dashboard) dashboard "$@" ;;
-  *) sed -n '2,23p' "$0"; exit 2 ;;
+  apps-inrichten) apps_inrichten "$@" ;;
+  apps-koppelen) apps_koppelen "$@" ;;
+  apps-status) vereis_root; apps_status ;;
+  *) sed -n '2,29p' "$0"; exit 2 ;;
 esac

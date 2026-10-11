@@ -13,8 +13,11 @@ import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto
 import { promises as fs, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import net from 'node:net';
+import http from 'node:http';
+import { fileURLToPath } from 'node:url';
 
-const VERSION = '0.3.1';
+const VERSION = '0.5.0';
 const CONFIG_PATH = process.env.HUB_AGENT_CONFIG ?? path.join(os.homedir(), '.hub-agent', 'config.json');
 const MAX_READ = 2 * 1024 * 1024;
 const MAX_WRITE = 5 * 1024 * 1024;
@@ -69,7 +72,7 @@ async function pair(args) {
 }
 
 // De lijst komt uit de handlers zelf, zodat hij nooit achterloopt op wat de agent kan.
-const capabilities = (roots, allow, readonlyRoots = []) => ({ version: VERSION, roots, readonlyRoots, allowCommands: allow, commands: Object.keys(handlers) });
+const capabilities = (roots, allow, readonlyRoots = [], apps = null) => ({ version: VERSION, roots, readonlyRoots, allowCommands: allow, apps: Boolean(apps?.enabled), commands: Object.keys(handlers).filter((k) => !k.startsWith('apps.') || apps?.enabled) });
 
 // ---------- opdrachten: alleen ondertekend, geen code-als-argument (audit H3) ----------
 /** Programma's die nooit op de allow-list mogen: een shell voert alles uit wat in een argument staat. */
@@ -210,6 +213,403 @@ async function sampleCpuPercent(ms = 500) {
   return total > 0 ? round1(100 * (1 - (b.idle - a.idle) / total)) : null;
 }
 
+// ---------- Додатки (PaaS на власному залізі, BYOS) ----------
+// Вмикається лише явно: `node agent.mjs apps-config --apps-root DIR [--runtime podman|docker] [--domain "{app}.apps.example.com"]
+// [--caddy-admin unix:/run/caddy/admin.sock | http://127.0.0.1:2019] [--caddy-server mijn-ruimte-apps] [--memory 512m]`.
+// Кожен додаток — контейнер (rootless Podman за замовчуванням; Docker — якщо так налаштовано), без capabilities, no-new-privileges,
+// з лімітами пам'яті/процесів, порт лише на 127.0.0.1; назовні — через Caddy (маршрут за доменом). Код ШІ ніколи не виконується
+// на хості: лише всередині контейнера. Перед кожним розгортанням — знімок (tar.gz) і окремий образ; 5 останніх версій для відкату.
+// Секрети: <apps-root>/secrets/<app>.env (0600), значення ніколи не повертаються; у журналах вони замінюються на «***».
+
+export const APP_NAME_RE = /^[a-z][a-z0-9-]{1,30}[a-z0-9]$/;
+const SECRET_KEY_RE = /^[A-Z_][A-Z0-9_]{0,63}$/;
+const HOST_RE = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
+const FILE_RE = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._@+\- /]{1,240}$/;
+const APP_MAX_FILES = 800;
+const APP_MAX_BYTES = 8 * 1024 * 1024;
+const APP_KEEP_VERSIONS = 5;
+const APP_PORT_MIN = 20000, APP_PORT_MAX = 20999;
+
+const appsDefaults = (a = {}) => ({
+  enabled: Boolean(a.enabled), root: a.root ?? '', runtime: a.runtime === 'docker' ? 'docker' : (a.runtime || 'podman'),
+  domain: a.domain ?? '', caddyAdmin: a.caddyAdmin ?? '', caddyServer: a.caddyServer || 'mijn-ruimte-apps', memory: a.memory || '512m',
+});
+export const requireApps = (cfg) => {
+  const a = appsDefaults(cfg.apps);
+  if (!a.enabled || !a.root) throw new Error('apps are not enabled on this device (owner: node agent.mjs apps-config --apps-root <DIR>)');
+  return a;
+};
+const appName = (name) => { if (typeof name !== 'string' || !APP_NAME_RE.test(name)) throw new Error('invalid app name (3-32 chars: a-z, 0-9, "-", starts with a letter)'); return name; };
+const ctr = (name) => `mr-app-${name}`;
+const img = (name, ver) => `localhost/mr-app-${name}:${ver}`;
+const verNu = () => new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+
+// één tegelijk per app (en het register) — eenvoudige promise-keten
+const ketens = new Map();
+const opRij = (key, fn) => { const vorige = ketens.get(key) ?? Promise.resolve(); const p = vorige.catch(() => {}).then(fn); const staart2 = p.finally(() => { if (ketens.get(key) === staart2) ketens.delete(key); }).catch(() => {}); ketens.set(key, staart2); return p; };
+
+async function leesRegister(a) {
+  try { return JSON.parse(await fs.readFile(path.join(a.root, 'registry.json'), 'utf8')); } catch { return { apps: {} }; }
+}
+async function schrijfRegister(a, reg) {
+  await fs.mkdir(a.root, { recursive: true });
+  const tmp = path.join(a.root, `.registry.${process.pid}.tmp`);
+  await fs.writeFile(tmp, JSON.stringify(reg, null, 2), { mode: 0o600 });
+  await fs.rename(tmp, path.join(a.root, 'registry.json'));
+}
+const secretsPad = (a, name) => path.join(a.root, 'secrets', `${name}.env`);
+async function leesSecrets(a, name) {
+  try { const t = await fs.readFile(secretsPad(a, name), 'utf8'); return Object.fromEntries(t.split('\n').filter((l) => l.includes('=')).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)])); } catch { return {}; }
+}
+async function schrijfSecrets(a, name, obj) {
+  await fs.mkdir(path.join(a.root, 'secrets'), { recursive: true, mode: 0o700 });
+  await fs.writeFile(secretsPad(a, name), Object.entries(obj).map(([k, v]) => `${k}=${v}`).join('\n') + (Object.keys(obj).length ? '\n' : ''), { mode: 0o600 });
+}
+const verberg = (tekst, secrets) => { let t = String(tekst ?? ''); for (const v of Object.values(secrets)) if (v && v.length >= 4) t = t.split(v).join('***'); return t; };
+const staart = (t, n = 40) => String(t ?? '').split('\n').slice(-n).join('\n').slice(-6000);
+
+async function rt(a, argv, opts) {
+  const r = await runFixed(a.runtime, argv, opts);
+  return r;
+}
+const vrijePoort = (gebruikt) => new Promise((resolve, reject) => {
+  const probeer = (p) => {
+    if (p > APP_PORT_MAX) return reject(new Error('no free port in 20000-20999'));
+    if (gebruikt.has(p)) return probeer(p + 1);
+    const s = net.createServer(); s.unref();
+    s.once('error', () => probeer(p + 1));
+    s.listen(p, '127.0.0.1', () => s.close(() => resolve(p)));
+  };
+  probeer(APP_PORT_MIN);
+});
+const wachtOpPoort = (port, ms) => new Promise((resolve) => {
+  const tot = Date.now() + ms;
+  const een = () => { const s = net.connect(port, '127.0.0.1'); s.once('connect', () => { s.destroy(); resolve(true); }); s.once('error', () => { s.destroy(); if (Date.now() > tot) resolve(false); else setTimeout(een, 500); }); };
+  een();
+});
+
+/** Dockerfile en poort bepalen als de code er zelf geen heeft. */
+export function autoDockerfile(files, port) {
+  const has = (p) => files.some((f) => f.path === p);
+  const pkg = files.find((f) => f.path === 'package.json');
+  if (pkg) {
+    let start = true;
+    try { const j = JSON.parse(pkg.encoding === 'base64' ? Buffer.from(pkg.content, 'base64').toString('utf8') : pkg.content); start = Boolean(j?.scripts?.start); } catch { start = false; }
+    const main = has('server.js') ? 'server.js' : has('index.js') ? 'index.js' : has('app.js') ? 'app.js' : '';
+    if (!start && !main) throw new Error('package.json has no "start" script and there is no server.js/index.js/app.js — add one or a Dockerfile');
+    const p = port || 3000;
+    return { port: p, dockerfile: ['FROM docker.io/library/node:22-alpine', 'WORKDIR /app', 'COPY package*.json ./', 'RUN npm ci --omit=dev --no-audit --no-fund || npm install --omit=dev --no-audit --no-fund', 'COPY . .', `ENV PORT=${p} NODE_ENV=production`, 'USER node', `EXPOSE ${p}`, start ? 'CMD ["npm","start"]' : `CMD ["node","${main}"]`].join('\n') + '\n' };
+  }
+  if (has('requirements.txt')) {
+    const main = has('main.py') ? 'main.py' : has('app.py') ? 'app.py' : '';
+    if (!main) throw new Error('requirements.txt found but no main.py/app.py — add one or a Dockerfile');
+    const p = port || 8000;
+    return { port: p, dockerfile: ['FROM docker.io/library/python:3.12-slim', 'WORKDIR /app', 'COPY requirements.txt .', 'RUN pip install --no-cache-dir -r requirements.txt', 'COPY . .', `ENV PORT=${p} PYTHONUNBUFFERED=1`, 'RUN useradd -r -u 10001 app && chown -R app /app', 'USER app', `EXPOSE ${p}`, `CMD ["python","${main}"]`].join('\n') + '\n' };
+  }
+  if (has('index.html')) {
+    return { port: 8080, dockerfile: ['FROM docker.io/nginxinc/nginx-unprivileged:alpine', 'COPY . /usr/share/nginx/html', 'EXPOSE 8080'].join('\n') + '\n' };
+  }
+  throw new Error('cannot detect the app type: add a Dockerfile, a package.json, a requirements.txt or an index.html');
+}
+
+function caddyRequest(a, method, pad, body) {
+  return new Promise((resolve, reject) => {
+    const data = body === undefined ? undefined : Buffer.from(JSON.stringify(body));
+    const opts = { method, path: pad, headers: { 'Content-Type': 'application/json', ...(data ? { 'Content-Length': data.length } : {}) }, timeout: 10_000 };
+    if (a.caddyAdmin.startsWith('unix:')) opts.socketPath = a.caddyAdmin.slice(5);
+    else { const u = new URL(a.caddyAdmin); if (!['127.0.0.1', 'localhost', '[::1]'].includes(u.hostname)) return reject(new Error('caddy admin must be local')); opts.host = u.hostname; opts.port = u.port || 2019; }
+    opts.headers.Host = 'localhost';
+    const req = http.request(opts, (res) => { let t = ''; res.on('data', (d) => { t += d; }); res.on('end', () => resolve({ status: res.statusCode, body: t })); });
+    req.on('error', reject); req.on('timeout', () => req.destroy(new Error('caddy timeout')));
+    if (data) req.write(data); req.end();
+  });
+}
+const domeinVoor = (a, name, eigen) => (eigen || (a.domain ? a.domain.replace('{app}', name) : ''));
+async function routeZetten(a, name, host, hostPort) {
+  if (!a.caddyAdmin || !host) return { routed: false };
+  const id = `mr-app-${name}`;
+  await caddyRequest(a, 'DELETE', `/id/${id}`).catch(() => {});
+  const route = { '@id': id, match: [{ host: [host] }], handle: [{ handler: 'reverse_proxy', upstreams: [{ dial: `127.0.0.1:${hostPort}` }] }], terminal: true };
+  // Vooraan invoegen (PUT op index 0): zo gaat de route vóór een eventuele vangnet-route uit de Caddyfile.
+  let r = await caddyRequest(a, 'PUT', `/config/apps/http/servers/${encodeURIComponent(a.caddyServer)}/routes/0`, route);
+  if (r.status >= 300) r = await caddyRequest(a, 'POST', `/config/apps/http/servers/${encodeURIComponent(a.caddyServer)}/routes`, route);
+  if (r.status >= 300) throw new Error(`caddy route failed (${r.status}): ${r.body.slice(0, 200)}`);
+  return { routed: true };
+}
+async function routeWeg(a, name) { if (a.caddyAdmin) await caddyRequest(a, 'DELETE', `/id/mr-app-${name}`).catch(() => {}); }
+
+/** Caddy vergeet routes die via de admin-API kwamen zodra hij met zijn Caddyfile herstart: daarom zet de agent ze bij het starten
+ *  en daarna elke 5 minuten terug (alleen wat ontbreekt). Fouten blijven stil: de apps zelf draaien gewoon door. */
+export async function routesHerstellen(cfg) {
+  const a = appsDefaults(cfg.apps);
+  if (!a.enabled || !a.root || !a.caddyAdmin) return 0;
+  let n = 0;
+  for (const app of Object.values((await leesRegister(a)).apps)) {
+    const host = domeinVoor(a, app.name, app.domain);
+    if (!host || !app.current || !app.hostPort) continue;
+    const bestaat = await caddyRequest(a, 'GET', `/id/mr-app-${app.name}`).then((r) => r.status < 300).catch(() => false);
+    if (!bestaat) { await opRij(`app:${app.name}`, () => routeZetten(a, app.name, host, app.hostPort)).then(() => { n += 1; }, () => {}); }
+  }
+  return n;
+}
+
+async function containerStarten(a, name, app, versie) {
+  const secrets = await leesSecrets(a, name);
+  await rt(a, ['rm', '-f', ctr(name)], { timeout: 60_000 });
+  const env = Object.entries(app.env || {}).flatMap(([k, v]) => ['-e', `${k}=${v}`]);
+  const argv = ['run', '-d', '--name', ctr(name), '--label', `mijn-ruimte.app=${name}`, '--label', `mijn-ruimte.version=${versie}`,
+    '--restart', 'unless-stopped', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--memory', a.memory, '--pids-limit', '256',
+    '-p', `127.0.0.1:${app.hostPort}:${app.port}`, ...(Object.keys(secrets).length ? ['--env-file', secretsPad(a, name)] : []), ...env, img(name, versie)];
+  const r = await rt(a, argv, { timeout: 120_000 });
+  if (r.code !== 0) throw new Error(`run failed: ${verberg((r.stderr || r.stdout).trim(), secrets).slice(0, 500)}`);
+  return secrets;
+}
+
+const jobs = new Map(); // name -> {state, version, error, log, startedAt, finishedAt, url}
+
+async function deployUitvoeren(cfg, a, input) {
+  const name = input.name;
+  const job = jobs.get(name);
+  const reg = await leesRegister(a);
+  const oud = reg.apps[name];
+  const versie = verNu();
+  const bouwDir = path.join(a.root, 'builds', name, versie);
+  await fs.mkdir(bouwDir, { recursive: true });
+  for (const f of input.files) {
+    const doel = path.join(bouwDir, f.path);
+    if (!doel.startsWith(bouwDir + path.sep)) throw new Error(`invalid file path ${f.path}`);
+    await fs.mkdir(path.dirname(doel), { recursive: true });
+    await fs.writeFile(doel, f.encoding === 'base64' ? Buffer.from(f.content, 'base64') : f.content);
+  }
+  let port = input.port || oud?.port || 0;
+  if (!input.files.some((f) => f.path === 'Dockerfile')) {
+    const auto = autoDockerfile(input.files, input.port || 0);
+    port = auto.port;
+    await fs.writeFile(path.join(bouwDir, 'Dockerfile'), auto.dockerfile);
+    job.log += `[mijn-ruimte] Dockerfile generated (port ${port})\n`;
+  }
+  if (!port) throw new Error('set "port": the port your app listens on inside the container');
+  // знімок (вихідний код цієї версії) — для відкату й перегляду
+  await fs.mkdir(path.join(a.root, 'snapshots', name), { recursive: true });
+  const snap = path.join(a.root, 'snapshots', name, `${versie}.tar.gz`);
+  const t = await runFixed('tar', ['-czf', snap, '-C', bouwDir, '.'], { timeout: 120_000 });
+  if (t.code !== 0) job.log += `[mijn-ruimte] snapshot warning: ${(t.stderr || '').slice(0, 200)}\n`;
+  job.state = 'building';
+  const b = await rt(a, ['build', '--pull=missing', '-t', img(name, versie), bouwDir], { timeout: 15 * 60_000 });
+  const secrets = await leesSecrets(a, name);
+  job.log += verberg(staart(b.stdout + b.stderr, 60), secrets);
+  if (b.code !== 0) throw new Error('build failed (see log)');
+  const gebruikt = new Set(Object.values(reg.apps).filter((x) => x !== oud).map((x) => x.hostPort));
+  const hostPort = oud?.hostPort || await vrijePoort(gebruikt);
+  const app = { ...(oud || {}), name, port, hostPort, env: input.env || oud?.env || {}, domain: oud?.domain || '', createdAt: oud?.createdAt || Date.now(), versions: [...(oud?.versions || [])] };
+  job.state = 'starting';
+  await containerStarten(a, name, app, versie);
+  const ok = await wachtOpPoort(hostPort, 30_000);
+  if (!ok) {
+    const l = await rt(a, ['logs', '--tail', '60', ctr(name)], { timeout: 20_000 });
+    job.log += '\n--- container log ---\n' + verberg(staart(l.stdout + l.stderr, 60), secrets);
+    // автоматичний відкат на попередню робочу версію
+    if (oud?.current) { try { await containerStarten(a, name, oud, oud.current); job.log += `\n[mijn-ruimte] rolled back to ${oud.current}\n`; } catch { /* лишається зупиненим */ } }
+    else await rt(a, ['rm', '-f', ctr(name)], { timeout: 60_000 });
+    throw new Error(`app did not start listening on port ${port} within 30 s (see log)${oud?.current ? `; previous version ${oud.current} restored` : ''}`);
+  }
+  app.versions.push({ version: versie, at: Date.now(), snapshot: path.basename(snap) });
+  app.current = versie;
+  // старі версії прибрати (образи й знімки), 5 останніх лишаються
+  while (app.versions.length > APP_KEEP_VERSIONS) {
+    const weg = app.versions.shift();
+    await rt(a, ['rmi', '-f', img(name, weg.version)], { timeout: 60_000 }).catch(() => {});
+    await fs.rm(path.join(a.root, 'snapshots', name, `${weg.version}.tar.gz`), { force: true }).catch(() => {});
+  }
+  await fs.rm(path.join(a.root, 'builds', name), { recursive: true, force: true }).catch(() => {});
+  const host = domeinVoor(a, name, app.domain);
+  let routed = false;
+  try { routed = (await routeZetten(a, name, host, hostPort)).routed; } catch (e) { job.log += `\n[mijn-ruimte] route warning: ${e.message}\n`; }
+  const reg2 = await leesRegister(a); reg2.apps[name] = app; await schrijfRegister(a, reg2);
+  job.url = routed ? `https://${host}` : `http://127.0.0.1:${hostPort}`;
+  return { version: versie, url: job.url, localUrl: `http://127.0.0.1:${hostPort}`, routed };
+}
+
+// Grote of geheime inhoud (bestanden van een uitrol, de waarde van een geheim) staat nooit in de opdracht zelf (die bewaart de server):
+// alleen een eenmalig ticket. De agent haalt de inhoud één keer op met zijn eigen token; de server geeft het alleen aan deze agent.
+const TICKET_RE = /^[A-Za-z0-9_-]{40,64}$/;
+async function overdrachtHalen(cfg, ticket, soort) {
+  if (typeof ticket !== 'string' || !TICKET_RE.test(ticket)) throw new Error('invalid ticket');
+  if (!cfg.server || !cfg.token) throw new Error('agent is not paired');
+  const res = await fetch(`${cfg.server}/api/owner/agents/overdracht`, {
+    method: 'POST', headers: { Authorization: `Bearer ${cfg.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ ticket }), cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`ticket could not be fetched (${res.status}); it is valid once and for 10 minutes`);
+  const body = await res.json();
+  if (body?.soort !== soort || !body.payload || typeof body.payload !== 'object') throw new Error('unexpected ticket content');
+  return body.payload;
+}
+
+export const appHandlers = {
+  async 'apps.deploy'(cfg, input = {}) {
+    const a = requireApps(cfg);
+    const name = appName(input.name);
+    const bezig = () => jobs.get(name)?.state && !['done', 'failed'].includes(jobs.get(name).state);
+    if (bezig()) throw new Error('a deployment of this app is already running — check apps.status');
+    if (input.bundle !== undefined) {
+      const p = await overdrachtHalen(cfg, input.bundle, 'bundel');
+      input = { ...input, files: p.files, env: p.env ?? {} };
+    }
+    const files = Array.isArray(input.files) ? input.files : [];
+    if (!files.length || files.length > APP_MAX_FILES) throw new Error(`files: 1-${APP_MAX_FILES} items of {path, content, encoding?}`);
+    let total = 0;
+    for (const f of files) {
+      if (!f || typeof f.path !== 'string' || !FILE_RE.test(f.path) || typeof f.content !== 'string') throw new Error(`invalid file entry ${String(f?.path).slice(0, 60)}`);
+      if (f.encoding && !['utf8', 'base64'].includes(f.encoding)) throw new Error('encoding must be utf8 or base64');
+      total += f.encoding === 'base64' ? Math.floor(f.content.length * 3 / 4) : Buffer.byteLength(f.content);
+    }
+    if (total > APP_MAX_BYTES) throw new Error('files too large (8 MB max)');
+    const env = input.env ?? {};
+    if (typeof env !== 'object' || Array.isArray(env) || Object.keys(env).length > 50) throw new Error('env: object with at most 50 variables');
+    for (const [k, v] of Object.entries(env)) if (!SECRET_KEY_RE.test(k) || typeof v !== 'string' || v.length > 4096 || /[\r\n]/.test(v)) throw new Error(`invalid env variable ${k}`);
+    if (input.port !== undefined && !(Number.isInteger(input.port) && input.port > 0 && input.port < 65536)) throw new Error('invalid port');
+    if (bezig()) throw new Error('a deployment of this app is already running — check apps.status');
+    const job = { state: 'queued', version: '', error: '', log: '', startedAt: Date.now(), finishedAt: 0, url: '' };
+    jobs.set(name, job);
+    const klaar = opRij(`app:${name}`, () => deployUitvoeren(cfg, a, { ...input, name, files, env }))
+      .then((r) => { Object.assign(job, { state: 'done', version: r.version, url: r.url, finishedAt: Date.now() }); return r; })
+      .catch((e) => { Object.assign(job, { state: 'failed', error: e.message, finishedAt: Date.now() }); throw e; });
+    klaar.catch(() => {}); // de uitkomst wordt in job bewaard; geen onafgehandelde weigering als niemand meer wacht
+    const wacht = Number.isInteger(input.wait_seconds) ? Math.min(75, Math.max(0, input.wait_seconds)) : 70;
+    const uitkomst = await Promise.race([klaar.then((r) => ({ klaar: true, r }), (e) => ({ klaar: true, e })), new Promise((r) => setTimeout(() => r({ klaar: false }), wacht * 1000))]);
+    if (!uitkomst.klaar) return { name, state: job.state, note: 'still running — call apps.status (app_deploy_status) in a moment', logTail: staart(job.log, 15) };
+    if (uitkomst.e) return { name, state: 'failed', error: uitkomst.e.message, logTail: staart(job.log, 40) };
+    return { name, state: 'done', ...uitkomst.r, logTail: staart(job.log, 15) };
+  },
+  async 'apps.status'(cfg, { name } = {}) {
+    requireApps(cfg); appName(name);
+    const j = jobs.get(name);
+    return j ? { name, state: j.state, version: j.version, url: j.url, error: j.error, startedAt: j.startedAt, finishedAt: j.finishedAt, logTail: staart(j.log, 40) } : { name, state: 'none' };
+  },
+  async 'apps.list'(cfg) {
+    const a = requireApps(cfg);
+    const reg = await leesRegister(a);
+    const ps = await rt(a, ['ps', '-a', '--filter', 'label=mijn-ruimte.app', '--format', '{{json .}}'], { timeout: 30_000 });
+    const st = await rt(a, ['stats', '--no-stream', '--format', '{{json .}}'], { timeout: 30_000 }).catch(() => ({ stdout: '' }));
+    const regels = (t) => String(t || '').split('\n').map((l) => l.trim()).filter(Boolean).flatMap((l) => { try { const v = JSON.parse(l); return Array.isArray(v) ? v : [v]; } catch { return []; } });
+    const containers = regels(ps.stdout), stats = regels(st.stdout);
+    const naamVan = (c) => String(Array.isArray(c.Names) ? c.Names[0] : c.Names ?? c.Name ?? '').replace(/^\//, '');
+    return { apps: Object.values(reg.apps).map((app) => {
+      const c = containers.find((x) => naamVan(x) === ctr(app.name));
+      const s = stats.find((x) => String(x.Name ?? x.name ?? '').replace(/^\//, '') === ctr(app.name));
+      const loopt = c && /running|^up/i.test(String(c.State ?? c.Status ?? ''));
+      return { name: app.name, status: c ? (loopt ? 'running' : 'stopped') : 'missing', version: app.current, versions: app.versions.length,
+        url: domeinVoor(a, app.name, app.domain) && a.caddyAdmin ? `https://${domeinVoor(a, app.name, app.domain)}` : `http://127.0.0.1:${app.hostPort}`, memory: s ? String(s.MemUsage ?? s.mem_usage ?? '') : '', cpu: s ? String(s.CPUPerc ?? s.cpu_percent ?? '') : '', deploy: jobs.get(app.name)?.state || '' };
+    }) };
+  },
+  async 'apps.logs'(cfg, { name, lines } = {}) {
+    const a = requireApps(cfg); appName(name);
+    const n = Number.isInteger(lines) ? Math.min(500, Math.max(1, lines)) : 100;
+    const r = await rt(a, ['logs', '--tail', String(n), ctr(name)], { timeout: 30_000 });
+    if (r.code !== 0) throw new Error(`logs failed: ${(r.stderr || '').trim().slice(0, 200)}`);
+    const secrets = await leesSecrets(a, name);
+    return { name, lines: n, log: verberg(staart(r.stdout + (r.stderr ? `\n${r.stderr}` : ''), n), secrets) };
+  },
+  async 'apps.versions'(cfg, { name } = {}) {
+    const a = requireApps(cfg); appName(name);
+    const app = (await leesRegister(a)).apps[name];
+    if (!app) throw new Error('unknown app');
+    return { name, current: app.current, versions: app.versions.map((v) => ({ version: v.version, at: v.at, current: v.version === app.current })) };
+  },
+  async 'apps.rollback'(cfg, { name, version } = {}) {
+    const a = requireApps(cfg); appName(name);
+    return opRij(`app:${name}`, async () => {
+      const reg = await leesRegister(a); const app = reg.apps[name];
+      if (!app) throw new Error('unknown app');
+      const idx = app.versions.findIndex((v) => v.version === app.current);
+      const doel = version ? app.versions.find((v) => v.version === version) : app.versions[idx - 1];
+      if (!doel) throw new Error(version ? 'unknown version' : 'there is no earlier version');
+      await containerStarten(a, name, app, doel.version);
+      const ok = await wachtOpPoort(app.hostPort, 30_000);
+      app.current = doel.version; reg.apps[name] = app; await schrijfRegister(a, reg);
+      return { name, current: doel.version, listening: ok };
+    });
+  },
+  async 'apps.control'(cfg, { name, action } = {}) {
+    const a = requireApps(cfg); appName(name);
+    if (!['start', 'stop', 'restart', 'remove'].includes(action)) throw new Error('action: start, stop, restart or remove');
+    return opRij(`app:${name}`, async () => {
+      const reg = await leesRegister(a); const app = reg.apps[name];
+      if (!app) throw new Error('unknown app');
+      if (action === 'remove') {
+        await rt(a, ['rm', '-f', ctr(name)], { timeout: 60_000 });
+        for (const v of app.versions) await rt(a, ['rmi', '-f', img(name, v.version)], { timeout: 60_000 }).catch(() => {});
+        await routeWeg(a, name);
+        // знімки лишаються (можна відновити вручну); реєстр і секрети — геть
+        delete reg.apps[name]; await schrijfRegister(a, reg);
+        await fs.rm(secretsPad(a, name), { force: true });
+        return { name, removed: true, snapshotsKept: path.join(a.root, 'snapshots', name) };
+      }
+      const r = await rt(a, [action, ctr(name)], { timeout: 90_000 });
+      if (r.code !== 0) throw new Error(`${action} failed: ${(r.stderr || r.stdout).trim().slice(0, 200)}`);
+      return { name, action, ok: true };
+    });
+  },
+  async 'apps.route'(cfg, { name, domain } = {}) {
+    const a = requireApps(cfg); appName(name);
+    if (domain !== '' && (typeof domain !== 'string' || !HOST_RE.test(domain))) throw new Error('invalid domain');
+    return opRij(`app:${name}`, async () => {
+      const reg = await leesRegister(a); const app = reg.apps[name];
+      if (!app) throw new Error('unknown app');
+      app.domain = domain; reg.apps[name] = app; await schrijfRegister(a, reg);
+      await routeWeg(a, name);
+      const host = domeinVoor(a, name, domain);
+      const r = await routeZetten(a, name, host, app.hostPort);
+      return { name, domain: host, routed: r.routed, url: r.routed ? `https://${host}` : `http://127.0.0.1:${app.hostPort}`, note: r.routed ? 'point the DNS record (or tunnel hostname) of this domain to this server' : 'no Caddy configured on this device: app is local only' };
+    });
+  },
+  async 'apps.secret.list'(cfg, { name } = {}) {
+    const a = requireApps(cfg); appName(name);
+    return { name, keys: Object.keys(await leesSecrets(a, name)).sort() };
+  },
+  async 'apps.secret.set'(cfg, { name, key, value, ticket, restart } = {}) {
+    const a = requireApps(cfg); appName(name);
+    if (typeof key !== 'string' || !SECRET_KEY_RE.test(key)) throw new Error('invalid key (A-Z, 0-9, "_")');
+    if (ticket !== undefined) {
+      const p = await overdrachtHalen(cfg, ticket, 'geheim');
+      if (p.key !== key) throw new Error('ticket is for another key');
+      value = p.value;
+    }
+    if (typeof value !== 'string' || !value || value.length > 8192 || /[\r\n\0]/.test(value)) throw new Error('invalid value (1-8192 chars, one line)');
+    return opRij(`app:${name}`, async () => {
+      const s = await leesSecrets(a, name); s[key] = value; await schrijfSecrets(a, name, s);
+      const app = (await leesRegister(a)).apps[name];
+      if (restart !== false && app?.current) await containerStarten(a, name, app, app.current);
+      return { name, key, stored: true, restarted: Boolean(restart !== false && app?.current) };
+    });
+  },
+  async 'apps.secret.delete'(cfg, { name, key } = {}) {
+    const a = requireApps(cfg); appName(name);
+    if (typeof key !== 'string' || !SECRET_KEY_RE.test(key)) throw new Error('invalid key');
+    return opRij(`app:${name}`, async () => {
+      const s = await leesSecrets(a, name); const had = key in s; delete s[key]; await schrijfSecrets(a, name, s);
+      const app = (await leesRegister(a)).apps[name];
+      if (had && app?.current) await containerStarten(a, name, app, app.current);
+      return { name, key, deleted: had };
+    });
+  },
+};
+
+async function appsConfig(args) {
+  let cfg; try { cfg = loadConfig(); } catch { die('спершу pair'); }
+  if (args.off === 'true' || args.disable !== undefined) { cfg.apps = { ...appsDefaults(cfg.apps), enabled: false }; saveConfig(cfg); console.log('Додатки вимкнено.'); return; }
+  if (!args['apps-root']) die('usage: apps-config --apps-root <DIR> [--runtime podman|docker] [--domain "{app}.apps.example.com"] [--caddy-admin unix:/run/caddy/admin.sock] [--caddy-server NAME] [--memory 512m] | apps-config --disable');
+  const root = path.resolve(args['apps-root']);
+  if (args.domain && !/^\{app\}\.[a-z0-9.-]+$/i.test(args.domain)) die('--domain має бути шаблоном на кшталт "{app}.apps.example.com" або "{app}.10.77.0.10.nip.io"');
+  if (args.runtime && !['podman', 'docker'].includes(args.runtime)) die('--runtime: podman або docker');
+  if (args.memory && !/^\d{2,5}[mg]$/.test(args.memory)) die('--memory: напр. 512m або 2g');
+  await fs.mkdir(root, { recursive: true, mode: 0o700 });
+  cfg.apps = appsDefaults({ enabled: true, root, runtime: args.runtime, domain: args.domain, caddyAdmin: args['caddy-admin'], caddyServer: args['caddy-server'], memory: args.memory });
+  const versie = await runFixed(cfg.apps.runtime, ['--version'], { timeout: 15_000 }).catch(() => null);
+  saveConfig(cfg);
+  console.log(`Додатки увімкнено: ${root}\nСередовище: ${cfg.apps.runtime} ${versie?.code === 0 ? versie.stdout.trim() : '(НЕ ЗНАЙДЕНО — встановіть його)'}${cfg.apps.runtime === 'docker' ? '\nУВАГА: група docker = фактично root на цьому комп\'ютері. Безпечніше — rootless podman.' : ''}\nДомен: ${cfg.apps.domain || '(немає — додатки лише локально 127.0.0.1)'}\nCaddy: ${cfg.apps.caddyAdmin || '(немає)'}\nПерезапустіть агента (node agent.mjs run).`);
+}
+
 // ---------- command handlers ----------
 const handlers = {
   async 'sys.info'(cfg) {
@@ -311,6 +711,8 @@ const handlers = {
     });
   },
 };
+Object.assign(handlers, appHandlers);
+export { handlers, autoDockerfile as _autoDockerfile };
 
 // ---------- selftest ----------
 // node agent.mjs selftest --root <map>   Controleert de beveiligingsregels van de agent lokaal, zonder server:
@@ -449,6 +851,10 @@ async function selftest(args) {
 function run() {
   let cfg;
   try { cfg = loadConfig(); } catch { die(`немає конфігу ${CONFIG_PATH}. Спершу: node agent.mjs pair ...`); }
+  if (cfg.apps?.enabled && cfg.apps?.caddyAdmin) {
+    const herstel = () => routesHerstellen(cfg).then((n) => { if (n) console.log(`[apps] ${n} Caddy-route(s) hersteld`); }, () => {});
+    setTimeout(herstel, 5_000).unref?.(); setInterval(herstel, 5 * 60_000).unref?.();
+  }
   const wsUrl = cfg.server.replace(/^http/, 'ws') + '/agent/ws';
   let delay = 1000;
 
@@ -469,13 +875,13 @@ function run() {
     const ws = new WebSocket(wsUrl);
     let pinger = null;
     ws.onopen = () => {
-      ws.send(JSON.stringify({ t: 'auth', ...(t ? { ticket: t } : { token: cfg.token }), version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots) }));
-      pinger = setInterval(() => { try { ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots) })); } catch { /* dicht */ } }, 20_000);
+      ws.send(JSON.stringify({ t: 'auth', ...(t ? { ticket: t } : { token: cfg.token }), version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps) }));
+      pinger = setInterval(() => { try { ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps) })); } catch { /* dicht */ } }, 20_000);
     };
     ws.onmessage = async (ev) => {
       let msg; try { msg = JSON.parse(ev.data); } catch { return; }
       if (msg.t === 'ready') { delay = 1000; console.log(`[agent] connected as ${msg.agentId}`); }
-      else if (msg.t === 'ping') ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots) }));
+      else if (msg.t === 'ping') ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps) }));
       else if (msg.t === 'stop') console.log('[agent] Стоп: усі дозволи відкликано на сайті');
       else if (msg.t === 'cmd') {
         console.log(`[agent] ${msg.type}`, JSON.stringify(msg.params).slice(0, 200));
@@ -505,9 +911,13 @@ function run() {
 
 function die(msg) { console.error(msg); process.exit(1); }
 
-const args = parseArgs(process.argv.slice(2));
-const cmd = args._[0];
-if (cmd === 'pair') await pair(args);
-else if (cmd === 'run') run();
-else if (cmd === 'selftest') await selftest(args);
-else die('usage: node agent.mjs <pair|run|selftest>');
+// Alleen als programma starten (niet bij import in tests).
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const args = parseArgs(process.argv.slice(2));
+  const cmd = args._[0];
+  if (cmd === 'pair') await pair(args);
+  else if (cmd === 'run') run();
+  else if (cmd === 'selftest') await selftest(args);
+  else if (cmd === 'apps-config') await appsConfig(args);
+  else die('usage: node agent.mjs <pair|run|selftest|apps-config>');
+}

@@ -9,7 +9,7 @@
 
 export type ActieSoort =
   | 'bekijken' | 'screenshot' | 'diagnose' | 'navigeren' | 'invoer'
-  | 'lezen' | 'schrijven' | 'commando' | 'docker' | 'meten'
+  | 'lezen' | 'schrijven' | 'commando' | 'docker' | 'meten' | 'apps'
   | 'mail' | 'agenda' | 'schijf' | 'github' | 'bord' | 'server' | 'zoeken' | 'uitrol' | 'onbekend';
 
 type Vormen = { uk: readonly [string, string, string]; nl: readonly [string, string] };
@@ -24,6 +24,7 @@ export const SOORT_INFO: Readonly<Record<ActieSoort, { icoon: string } & Vormen>
   schrijven: { icoon: 'file-pen', uk: ['запис файлу', 'записи файлів', 'записів файлів'], nl: ['bestand geschreven', 'bestanden geschreven'] },
   commando: { icoon: 'terminal', uk: ['команда', 'команди', 'команд'], nl: ['commando', "commando's"] },
   docker: { icoon: 'container', uk: ['дія з контейнером', 'дії з контейнерами', 'дій з контейнерами'], nl: ['containeractie', 'containeracties'] },
+  apps: { icoon: 'boxes', uk: ['дія з додатком', 'дії з додатками', 'дій з додатками'], nl: ['app-actie', 'app-acties'] },
   meten: { icoon: 'gauge', uk: ['перевірка стану', 'перевірки стану', 'перевірок стану'], nl: ['statuscontrole', 'statuscontroles'] },
   mail: { icoon: 'mail', uk: ['дія з поштою', 'дії з поштою', 'дій з поштою'], nl: ['mailactie', 'mailacties'] },
   agenda: { icoon: 'calendar', uk: ['запит до календаря', 'запити до календаря', 'запитів до календаря'], nl: ['agendavraag', 'agendavragen'] },
@@ -49,6 +50,8 @@ const TOOL_SOORT: Readonly<Record<string, ActieSoort>> = {
   machine_info: 'meten', system_metrics: 'meten', machine_list: 'meten',
   machine_list_dir: 'lezen', machine_read_file: 'lezen', machine_write_file: 'schrijven', machine_exec: 'commando',
   docker_list_containers: 'docker', docker_manage_container: 'docker',
+  app_deploy: 'apps', app_deploy_status: 'apps', app_list: 'apps', app_logs: 'apps', app_versions: 'apps', app_rollback: 'apps',
+  app_control: 'apps', app_route: 'apps', app_secret_request: 'apps', app_secret_list: 'apps', app_secret_delete: 'apps',
   mail_list_accounts: 'mail', mail_list_labels: 'mail', mail_read_message: 'mail', mail_search_messages: 'mail', mail_modify_message: 'mail',
   calendar_list_calendars: 'agenda', calendar_list_events: 'agenda', drive_browse: 'schijf', drive_read_file: 'schijf',
   github_ci_status: 'github', github_list_commits: 'github', github_list_issues: 'github', github_list_repos: 'github', github_my_activity: 'github',
@@ -91,6 +94,13 @@ export function actieDoel(tool: string, args: unknown): string | undefined {
       return volledig ? kort(verberg(volledig), 100) : undefined;
     }
     case 'new_page': case 'navigate_page': case 'browser_open': return veiligeUrl(a.url);
+    // «Додатки»: alleen de naam van de app (en actie/domein/naam van het geheim) — nooit bestanden, env of waarden.
+    case 'app_deploy': case 'app_deploy_status': case 'app_logs': case 'app_versions': case 'app_rollback': {
+      const n = tekst(a.name); return n && /^[a-z][a-z0-9-]{1,31}$/.test(n) ? n : undefined;
+    }
+    case 'app_control': { const n = tekst(a.name); const act = tekst(a.action); return n && /^[a-z][a-z0-9-]{1,31}$/.test(n) ? kort(`${act && /^[a-z]{3,8}$/.test(act) ? `${act} ` : ''}${n}`, 60) : undefined; }
+    case 'app_route': { const n = tekst(a.name); const d = tekst(a.domain); return n && /^[a-z][a-z0-9-]{1,31}$/.test(n) ? kort(`${n}${d && /^[a-z0-9.-]{1,253}$/i.test(d) ? ` → ${d}` : ''}`, 100) : undefined; }
+    case 'app_secret_request': case 'app_secret_delete': { const n = tekst(a.name); const k = tekst(a.key); return n && /^[a-z][a-z0-9-]{1,31}$/.test(n) ? kort(`${n}${k && /^[A-Z_][A-Z0-9_]{0,63}$/.test(k) ? ` · ${k}` : ''}`, 100) : undefined; }
     case 'docker_manage_container': { const c = tekst(a.container) ?? tekst(a.name); const act = tekst(a.action); return c ? kort(`${act ? `${act} ` : ''}${c}`, 60) : undefined; }
     case 'browser_invoke_action': { const x = tekst(a.action) ?? tekst(a.name); return x ? kort(verberg(x), 50) : undefined; }
     default: {
@@ -116,6 +126,12 @@ const Z: Readonly<Record<string, [string, string]>> = {
   machine_info: ['Подивився відомості про ПК', 'Bekeek de gegevens van de pc'], system_metrics: ['Перевірив навантаження ПК', 'Controleerde de belasting van de pc'],
   machine_list: ['Переглянув підключені пристрої', 'Bekeek de gekoppelde apparaten'], machine_list_dir: ['Переглянув теку', 'Bekeek een map'],
   machine_read_file: ['Прочитав файл', 'Las een bestand'], machine_write_file: ['Записав файл', 'Schreef een bestand'], machine_exec: ['Виконав команду', 'Voerde een commando uit'],
+  app_deploy: ['Розгорнув додаток на вашому ПК', 'Rolde een app uit op uw pc'], app_deploy_status: ['Перевірив хід розгортання', 'Bekeek de voortgang van een uitrol'],
+  app_list: ['Переглянув розгорнуті додатки', 'Bekeek de uitgerolde apps'], app_logs: ['Прочитав журнал додатка', 'Las het logboek van een app'],
+  app_versions: ['Переглянув версії додатка', 'Bekeek de versies van een app'], app_rollback: ['Повернув попередню версію додатка', 'Zette een eerdere versie van een app terug'],
+  app_control: ['Змінив стан додатка', 'Wijzigde de status van een app'], app_route: ['Налаштував домен додатка', 'Stelde het domein van een app in'],
+  app_secret_request: ['Попросив вас ввести секрет', 'Vroeg u een geheim in te voeren'], app_secret_list: ['Переглянув назви секретів', 'Bekeek de namen van geheimen'],
+  app_secret_delete: ['Видалив секрет додатка', 'Verwijderde een geheim van een app'],
   docker_list_containers: ['Переглянув контейнери', 'Bekeek de containers'], docker_manage_container: ['Змінив стан контейнера', 'Wijzigde de status van een container'],
   mail_list_accounts: ['Переглянув поштові скриньки', 'Bekeek de mailaccounts'], mail_list_labels: ['Переглянув мітки пошти', 'Bekeek de maillabels'],
   mail_search_messages: ['Шукав листи', 'Zocht in de mail'], mail_read_message: ['Прочитав лист', 'Las een bericht'], mail_modify_message: ['Змінив лист (мітки чи стан)', 'Wijzigde een bericht (labels of status)'],

@@ -36,6 +36,10 @@ https://mcp.tarasevych.com/mcp
 | `docker_list_containers` | читання (read-only) | `docker ps` (параметр `include_stopped`). Потрібен `docker` у `--allow` агента |
 | `docker_manage_container` | виконання (destructive) | `start`/`stop`/`restart` контейнера за іменем. Завжди **потребує підтвердження** |
 | `system_metrics` | читання (read-only) | ЦП, пам'ять, диски (Windows: PowerShell; інакше `os`) |
+| `app_deploy` | виконання (destructive, типово вимкнено) | Зібрати й запустити вебдодаток на **власному** пристрої в rootless-контейнері; файли йдуть через одноразовий квиток, не в БД. Знімок кожної версії, автоматичне повернення попередньої |
+| `app_deploy_status` / `app_list` / `app_logs` / `app_versions` / `app_secret_list` | читання | Хід розгортання, список додатків (стан, памʼять), останні рядки журналу (секрети замасковано), версії, **назви** секретів |
+| `app_rollback` / `app_control` / `app_route` / `app_secret_delete` | виконання (destructive, типово вимкнено) | Відкат, start/stop/restart/remove, домен через локальний Caddy, видалення секрету |
+| `app_secret_request` | запис | Одноразове посилання `mcp.*/apps?geheim=…`, де **власник** сам вводить значення; ШІ його ніколи не бачить |
 | `browser_snapshot` | читання (read-only) | Адреса, текст, елементи керування й дії сайту відкритої сторінки (розширення браузера) |
 | `browser_open` | навігація | Відкрити сторінку `*.tarasevych.com` у вкладці. Без підтвердження лише якщо користувач дозволив для цього браузера |
 | `browser_invoke_action` | дія на сторінці (destructive) | Виконати дію, яку пропонує сам сайт (`open_service`, `list_services`). Завжди **потребує підтвердження** |
