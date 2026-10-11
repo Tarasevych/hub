@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronsUpDown, CircleAlert, Cloud, CloudOff, Keyboard, LoaderCircle, Mail, Maximize2, Minimize2, Minus, Send, Trash2, X } from 'lucide-react';
+import { ChevronsUpDown, CircleAlert, Cloud, CloudOff, Keyboard, LoaderCircle, Mail, Maximize2, Minimize2, Minus, Paperclip, Send, Trash2, X } from 'lucide-react';
 import { registreerZwevend, useZwevendHouder, verwijderZwevend } from './mail-zwevend';
 import { emitCanonicalNotice } from './canonical-notifications';
 import MailAiToolbar from './MailAiToolbar';
+import MailDiskKnop from './MailDiskKnop';
 import MailScheduleMenu from './MailScheduleMenu';
 import { composeErrorText, deleteDraftRemote, getDraftRemote, saveDraftRemote, scheduleRemote, sendRemote, type DraftSync } from './mail-compose-api';
 import './mail-concepten.css';
@@ -323,6 +324,30 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
     meet(); vv.addEventListener('resize', meet);
     return () => vv.removeEventListener('resize', meet);
   }, [open]);
+  // Вкладення нового листа (надсилаються разом із листом; у чернетці Gmail їх немає)
+  const [bijlagen, setBijlagen] = useState<Array<{ id: string; filename: string; contentType: string; data: string; bytes: number }>>([]);
+  const bestandRef = useRef<HTMLInputElement | null>(null);
+  const naarB64 = (blob: Blob) => new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result || '').split(',')[1] || ''); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+  const voegBijlagenToe = async (items: Array<{ blob: Blob; filename: string; contentType?: string }>) => {
+    const nieuw = [] as typeof bijlagen;
+    for (const it of items) nieuw.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, filename: it.filename, contentType: it.contentType || it.blob.type || 'application/octet-stream', data: await naarB64(it.blob), bytes: it.blob.size });
+    setBijlagen((oud) => { const alles = [...oud, ...nieuw]; const totaal = alles.reduce((n, b) => n + b.bytes, 0); if (totaal > 8 * 1024 * 1024) { setFailure(t('Вкладення разом більші за 8 МБ — додайте посилання на файл у хмарі.', 'Bijlagen samen groter dan 8 MB — voeg een link naar het bestand in de cloud toe.')); return oud; } return alles; });
+  };
+  // «Переслати саме це вкладення» (3.2): новий чистий лист із цим файлом
+  useEffect(() => {
+    const op = (e: Event) => {
+      const d = (e as CustomEvent<{ blob?: Blob; filename?: string; contentType?: string; subject?: string }>).detail;
+      if (!d?.blob) return;
+      herstelRef.current = true;
+      setTo(''); setCc(''); setBcc(''); setShowCc(false); setBody(''); setSubject(d.subject ? `Fwd: ${d.subject}` : `Fwd: ${d.filename || ''}`); setBijlagen([]);
+      localDraftIdRef.current = '';
+      void voegBijlagenToe([{ blob: d.blob, filename: d.filename || 'bijlage', contentType: d.contentType }]);
+      setVerborgen(false); onOpen?.();
+    };
+    window.addEventListener('mail:compose-with-attachment', op);
+    return () => window.removeEventListener('mail:compose-with-attachment', op);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const herstelRef = useRef(false);
   const [wisVraag, setWisVraag] = useState(false);
   const [kopOpen, setKopOpen] = useState(true);
@@ -407,10 +432,11 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
     serverSaveSeq.current++;
     setDraftSync('idle');
     reset();
+    setBijlagen([]);
     onSent();
     onClose();
   };
-  const payload = () => ({ to, cc, bcc, subject, html: body, plainText: editorRef.current?.getPlainText().trim() || '', accountId, localId: localDraftIdRef.current });
+  const payload = () => ({ to, cc, bcc, subject, html: body, plainText: editorRef.current?.getPlainText().trim() || '', accountId, localId: localDraftIdRef.current, ...(bijlagen.length ? { attachments: bijlagen.map(({ filename, contentType, data }) => ({ filename, contentType, data })) } : {}) });
 
   const send = async () => {
     const plainText = editorRef.current?.getPlainText().trim() || '';
@@ -529,7 +555,11 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
           onInsert={value => editorRef.current?.insertText(value)}
           onBackspace={() => editorRef.current?.backspace()}
         />}
+        {bijlagen.length > 0 && <ul className="mail-nm-bijlagen" aria-label={t('Вкладення', 'Bijlagen')}>{bijlagen.map((b) => <li key={b.id}><Paperclip aria-hidden="true" /><span>{b.filename}</span><small>{b.bytes > 1048576 ? `${(b.bytes / 1048576).toFixed(1)} МБ` : `${Math.max(1, Math.round(b.bytes / 1024))} КБ`}</small><button type="button" aria-label={t(`Прибрати ${b.filename}`, `${b.filename} verwijderen`)} onClick={() => setBijlagen((o) => o.filter((x) => x.id !== b.id))}><X aria-hidden="true" /></button></li>)}</ul>}
+        <input ref={bestandRef} type="file" multiple hidden onChange={(e) => { const f = [...(e.target.files || [])]; e.target.value = ''; void voegBijlagenToe(f.map((x) => ({ blob: x, filename: x.name, contentType: x.type }))); }} />
         <footer>
+          <button type="button" className="mail-nm-bijlage-knop" onClick={() => bestandRef.current?.click()} data-nm-bijlage title={t('Додати файл', 'Bestand toevoegen')} aria-label={t('Додати файл', 'Bestand toevoegen')}><Paperclip aria-hidden="true" /></button>
+          <MailDiskKnop lang={lang} context={context} onInsert={(html) => editorRef.current?.insertHtml(html)} />
           <MailAiToolbar
             lang={lang}
             context={context}

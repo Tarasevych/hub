@@ -11,8 +11,7 @@
 .mail-new-message.groot{top:64px!important}
 @media (max-width:700px){.mail-new-message.groot{top:56px!important;inset-inline:4px!important;bottom:4px!important}}
 /* 2.3: згорнуті вікна стоять над рядком кнопок (лист «+», дзвіночок), не під ними й не за краєм екрана */
-.mail-minimized-viewer{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important;right:16px!important;max-height:calc(100dvh - 160px)}
-@media (max-width:700px){.mail-minimized-viewer{bottom:calc(72px + env(safe-area-inset-bottom,0px))!important;right:8px!important}}
+.mail-minimized-viewer{bottom:calc(16px + env(safe-area-inset-bottom,0px))!important;max-height:calc(100dvh - 96px)}
 .venster-dok,.vensters-dok,[data-venster-dok]{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}
 /* 5.4: групи в «Додаткові дії» */
 .mail-reader-overflow-groep{display:grid;gap:1px;padding:4px 0}
@@ -62,3 +61,30 @@ html.theme-dark .mail-selection-actions button[aria-label*="важлив"]{color
 .google-mail-reader-backdrop[data-reader-venster="zwevend"] .mail-reader-toolbar :is(button,a,details){cursor:pointer}
 .mail-new-message-backdrop{pointer-events:none}.mail-new-message-backdrop>.mail-new-message{pointer-events:auto}
 .google-mail-reader-backdrop[data-reader-venster="zwevend"] .google-mail-reader>:first-child{cursor:move}
+.mail-nm-bijlagen{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.mail-nm-bijlagen li{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 6px 4px 10px;border:1px solid var(--line);border-radius:999px;font-size:.82rem;background:var(--surface)}
+.mail-nm-bijlagen li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.mail-nm-bijlagen li small{opacity:.7}
+.mail-nm-bijlagen svg{width:14px;height:14px}
+.mail-nm-bijlagen button{border:0;background:transparent;color:inherit;cursor:pointer;display:grid;place-items:center;border-radius:50%;width:24px;height:24px}
+.mail-nm-bijlagen button:hover{background:rgba(127,127,127,.15)}
+.mail-nm-bijlage-knop{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid rgba(127,127,127,.35);background:transparent;color:inherit;cursor:pointer}
+.mail-nm-bijlage-knop svg{width:17px;height:17px}
+/* 3.1 Google Диск у листі */
+.mail-disk{position:relative}
+.mail-disk-knop{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid rgba(127,127,127,.35);background:transparent;color:#1a73e8;cursor:pointer}
+.mail-disk-knop.grijs{color:var(--muted);filter:grayscale(1);opacity:.75}
+.mail-disk-knop svg{width:17px;height:17px}
+.mail-disk-paneel{position:absolute;bottom:calc(100% + 8px);left:0;z-index:20;display:grid;gap:6px;width:min(360px,calc(100vw - 24px));max-height:min(60dvh,440px);padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);box-shadow:0 14px 40px rgba(0,0,0,.22)}
+.mail-disk-paneel header{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.88rem}
+.mail-disk-paneel header strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mail-disk-paneel header button,.mail-disk-terug{border:0;background:transparent;color:inherit;cursor:pointer;justify-self:start}
+.mail-disk-zoek{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.mail-disk-zoek svg{width:15px;height:15px;opacity:.7}
+.mail-disk-zoek input{flex:1;border:0;background:transparent;color:inherit;font:inherit;outline:none;min-width:0}
+.mail-disk-paneel ul{list-style:none;margin:0;padding:0;overflow:auto;display:grid;gap:1px}
+.mail-disk-paneel li button{display:flex;gap:8px;width:100%;text-align:left;border:0;background:transparent;color:inherit;padding:7px 8px;border-radius:8px;cursor:pointer;font:inherit;font-size:.88rem}
+.mail-disk-paneel li button:hover,.mail-disk-paneel li button:focus-visible{background:rgba(127,127,127,.12)}
+.mail-disk-paneel li button span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mail-disk-paneel .leeg{padding:12px;opacity:.7;text-align:center}
+.mail-disk-paneel small{opacity:.7;font-size:.74rem}

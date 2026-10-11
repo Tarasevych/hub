@@ -6,6 +6,8 @@ import { randomBytes } from 'node:crypto';
 export type MimeInput = {
   from?: string; to: string[]; cc?: string[]; bcc?: string[]; subject: string; html: string; plainText: string;
   inReplyTo?: string; references?: string;
+  /** Bijlagen (base64-inhoud). Met bijlagen wordt het bericht multipart/mixed rond het multipart/alternative-deel. */
+  attachments?: Array<{ filename: string; contentType: string; dataBase64: string }>;
 };
 
 const CRLF = '\r\n';
@@ -76,7 +78,9 @@ export function buildMime(input: MimeInput): string {
   if (input.inReplyTo) headers.push(`In-Reply-To: ${headerSafe(input.inReplyTo, 300)}`);
   if (input.references) headers.push(`References: ${headerSafe(input.references, 2000)}`);
   headers.push('MIME-Version: 1.0');
-  headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
+  const bijlagen = (input.attachments || []).filter((a) => a && a.dataBase64);
+  const gemengd = bijlagen.length ? `mx_${randomBytes(12).toString('hex')}` : '';
+  headers.push(gemengd ? `Content-Type: multipart/mixed; boundary="${gemengd}"` : `Content-Type: multipart/alternative; boundary="${boundary}"`);
   const plain = input.plainText || '';
   const html = input.html || `<div>${plain.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>`;
   const body = [
@@ -84,7 +88,15 @@ export function buildMime(input: MimeInput): string {
     `--${boundary}`, 'Content-Type: text/html; charset="UTF-8"', 'Content-Transfer-Encoding: base64', '', encodedBody(html), '',
     `--${boundary}--`, '',
   ].join(CRLF);
-  return headers.join(CRLF) + CRLF + CRLF + body;
+  if (!gemengd) return headers.join(CRLF) + CRLF + CRLF + body;
+  const naam = (n: string) => { const v = headerSafe(n, 200).replace(/["\\]/g, '_') || 'bijlage'; return isAscii(v) ? `"${v}"` : `"${encodeWord(v)}"`; };
+  const delen = [`--${gemengd}`, `Content-Type: multipart/alternative; boundary="${boundary}"`, '', body];
+  for (const a of bijlagen) {
+    const type = /^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i.test(a.contentType) ? a.contentType : 'application/octet-stream';
+    delen.push(`--${gemengd}`, `Content-Type: ${type}; name=${naam(a.filename)}`, `Content-Disposition: attachment; filename=${naam(a.filename)}`, 'Content-Transfer-Encoding: base64', '', fold(a.dataBase64.replace(/[^A-Za-z0-9+/=]/g, '')), '');
+  }
+  delen.push(`--${gemengd}--`, '');
+  return headers.join(CRLF) + CRLF + CRLF + delen.join(CRLF);
 }
 
 /** Gmail verwacht `raw` als base64url zonder padding. */

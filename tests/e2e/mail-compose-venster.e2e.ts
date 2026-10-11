@@ -47,7 +47,7 @@ export async function main(): Promise<number> {
     const dlg = page.locator('section.mail-new-message');
     await dlg.waitFor({ timeout: 5000 });
     check('kop: drie vensterknoppen _ □ × (zoals Windows)', await dlg.locator('[data-nm-minimaliseer]').count() === 1 && await dlg.locator('[data-nm-maximaliseer]').count() === 1 && await dlg.locator('[data-nm-sluit]').count() === 1);
-    check('compact: geen Cc/Bcc-regels; «Копія / прихована» op de regel «Кому»', await dlg.locator('input').evaluateAll((els) => els.length) <= 3 && await dlg.locator('.mail-nm-aan [data-nm-kopie]').isVisible());
+    check('compact: geen Cc/Bcc-regels; «Копія / прихована» op de regel «Кому»', await dlg.locator('input:not([type=file])').evaluateAll((els) => els.length) <= 3 && await dlg.locator('.mail-nm-aan [data-nm-kopie]').isVisible());
     check('invoerhulpen (UA/NL, трансліт…) standaard ingeklapt; knop «Введення» klapt ze uit', !(await dlg.getByText('Трансліт').isVisible().catch(() => false)));
     await dlg.locator('[data-nm-hulpen]').click();
     check('… en weer zichtbaar na de knop', await dlg.getByText('Трансліт').isVisible());
@@ -142,6 +142,28 @@ export async function main(): Promise<number> {
     const plak = await ed.evaluate((e) => ({ tabel: e.querySelectorAll('table td, table th').length, code: e.querySelector('pre')?.textContent || '', quote: !!e.querySelector('blockquote, .mail-pm-callout'), lijst: e.querySelectorAll('li').length }));
     check('1.3: вставлений HTML — таблиця з комірками, код зі збереженими рядками, цитата, список', plak.tabel >= 6 && /npm run build\n {2}echo ok/.test(plak.code) && plak.quote && plak.lijst >= 2, JSON.stringify(plak));
     await p2.screenshot({ path: `${UIT}/mail-compose-6-plakken.png` });
+    // 3.1: Google Диск — список файлів, клік вставляє посилання
+    await p2.route('**/api/owner/cloud/google-suite/drive/browse', (r) => r.fulfill(json({ files: [{ id: 'f1', name: 'Кошторис.xlsx', mimeType: 'application/vnd.ms-excel', folder: false, modifiedAt: 0 }, { id: 'd1', name: 'Проєкти', mimeType: 'application/vnd.google-apps.folder', folder: true, modifiedAt: 0 }] })));
+    await p2.reload({ waitUntil: 'networkidle' });
+    await p2.evaluate(() => window.dispatchEvent(new CustomEvent('mail:open-concept', { detail: { localId: 'concept-van-pc-01' } })));
+    await p2.locator('section.mail-new-message [data-nm-disk]').waitFor({ timeout: 8000 });
+    await p2.waitForTimeout(500);
+    check('3.1: кнопка Диска активна (Диск підключено)', (await p2.locator('.mail-disk').getAttribute('data-disk-stand')) === 'ok');
+    await p2.locator('[data-nm-disk]').click(); await p2.waitForTimeout(300);
+    await p2.locator('.mail-disk-paneel button', { hasText: 'Кошторис.xlsx' }).click(); await p2.waitForTimeout(300);
+    check('3.1: у лист вставлено посилання на файл Диска', await p2.locator('section.mail-new-message .ProseMirror a[href*="drive.google.com/open?id=f1"]').count() === 1);
+    // 3.2: «Переслати це вкладення» → новий лист із файлом; вкладення йде разом із листом
+    const verzonden: string[] = [];
+    await p2.route('**/api/owner/mail/compose/send', (r) => { verzonden.push(r.request().postData() || ''); return r.fulfill(json({ item: { id: 'q1', status: 'sent' } })); });
+    await p2.evaluate(() => window.dispatchEvent(new CustomEvent('mail:compose-with-attachment', { detail: { blob: new Blob(['%PDF-1.4 test'], { type: 'application/pdf' }), filename: 'rahunok.pdf', contentType: 'application/pdf', subject: 'Рахунок' } })));
+    await p2.waitForTimeout(600);
+    const dlg3 = p2.locator('section.mail-new-message');
+    check('3.2: новий лист із вкладенням «rahunok.pdf» і темою «Fwd: Рахунок»', /rahunok\.pdf/.test(await dlg3.locator('.mail-nm-bijlagen').innerText().catch(() => '')) && /Fwd: Рахунок/.test((await dlg3.innerText()) + (await dlg3.locator('input').evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value).join(' ')))), (await dlg3.innerText().catch(() => 'geen venster')).slice(0, 300));
+    if (await dlg3.locator('[data-nm-kop-kort]').count()) await dlg3.locator('[data-nm-kop-kort]').click();
+    await dlg3.locator('#mail-nm-aan').fill('jan@example.test');
+    await dlg3.locator('.ProseMirror').click(); await p2.keyboard.insertText('Пересилаю рахунок.');
+    await dlg3.locator('footer button.primary').click(); await p2.waitForTimeout(800);
+    check('3.2: вкладення надіслано разом із листом (base64 у запиті)', verzonden.length > 0 && /"attachments":\[\{"filename":"rahunok.pdf","contentType":"application\/pdf","data":"JVBERi0xLjQgdGVzdA=="/.test(verzonden[0]), verzonden[0]?.slice(0, 300));
     await ctx2.close();
   } catch (e) {
     check('e2e liep zonder uitzondering', false, String((e as Error)?.stack || e).slice(0, 800));
