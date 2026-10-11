@@ -1,0 +1,39 @@
+/* Хвиля 11.10 (UI/UX): меню й вікна. */
+@media (min-width:701px){
+  /* 5.3: розгорнуте меню не перекриває рядок пошуку — пошук починається за меню */
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']):not([data-dock='rechts']){--canonical-command-inline-start:calc(min(286px,calc(100vw - var(--zijbalk-rail,60px))) + 12px)}
+  /* безшовне «Завжди розгорнута»: меню без власного тла — тло сторінки під ним і під робочою областю одне */
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']){background:var(--bg)}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar{border-color:transparent!important}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar :is(header,.zijbalk-kop,.canonical-sidebar-head){border-bottom-color:transparent!important;background:transparent!important}
+}
+/* 2.2: на весь екран кнопки вікна не ховаються під аватаром акаунта */
+.mail-new-message.groot{top:64px!important}
+@media (max-width:700px){.mail-new-message.groot{top:56px!important;inset-inline:4px!important;bottom:4px!important}}
+/* 2.3: згорнуті вікна стоять над рядком кнопок (лист «+», дзвіночок), не під ними й не за краєм екрана */
+.mail-minimized-viewer{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important;right:16px!important;max-height:calc(100dvh - 160px)}
+@media (max-width:700px){.mail-minimized-viewer{bottom:calc(72px + env(safe-area-inset-bottom,0px))!important;right:8px!important}}
+.venster-dok,.vensters-dok,[data-venster-dok]{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}
+/* 5.4: групи в «Додаткові дії» */
+.mail-reader-overflow-groep{display:grid;gap:1px;padding:4px 0}
+.mail-reader-overflow-groep+.mail-reader-overflow-groep{border-top:1px solid var(--line)}
+.mail-reader-overflow-groep-kop{padding:4px 12px 2px;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.mail-reader-overflow-groep[data-groep="veilig"] :is(button,[role=menuitem]) svg{color:#b45309}
+.mail-reader-overflow-groep[data-groep="wissen"] :is(button,[role=menuitem]),.mail-reader-overflow-panel .danger{color:#b3261e}
+.mail-reader-overflow-groep[data-groep="ordenen"] :is(button,[role=menuitem]) svg{color:var(--accent)}
+html.theme-dark .mail-reader-overflow-groep[data-groep="wissen"] :is(button,[role=menuitem]),html.theme-dark .mail-reader-overflow-panel .danger{color:#fca5a5}
+html.theme-dark .mail-reader-overflow-groep[data-groep="veilig"] :is(button,[role=menuitem]) svg{color:#fbbf24}
+/* 5.5: масові дії — колір за змістом: видалення червоне, архів/переміщення синє, мітки фіолетові, важливість бурштинова; групи розділені */
+.mail-selection-actions button[aria-label^="Перемістити до кошика"],.mail-selection-actions button[aria-label^="Naar prullenbak"],.mail-selection-actions button[aria-label*="кошик"]{color:#b3261e}
+.mail-selection-actions button[aria-label*="кошик"]:hover{background:color-mix(in srgb,#b3261e 12%,transparent)}
+.mail-selection-actions button:is([aria-label^="Архівувати"],[aria-label^="Archiveren"],[aria-label^="Перемістити"]:not([aria-label*="кошик"]),[aria-label^="Verplaatsen"]){color:#1d4ed8}
+.mail-selection-actions button:is([aria-label^="Мітки"],[aria-label^="Labels"]){color:#7c3aed}
+.mail-selection-actions button[aria-label*="важлив"],.mail-selection-actions .mail-selection-attention button{color:#b45309}
+.mail-selection-actions .mail-selection-classify{border-inline:1px solid var(--line);padding-inline:4px}
+html.theme-dark .mail-selection-actions button[aria-label*="кошик"]{color:#fca5a5}
+html.theme-dark .mail-selection-actions button:is([aria-label^="Архівувати"],[aria-label^="Перемістити"]:not([aria-label*="кошик"])){color:#93c5fd}
+html.theme-dark .mail-selection-actions button[aria-label^="Мітки"]{color:#c4b5fd}
+html.theme-dark .mail-selection-actions button[aria-label*="важлив"]{color:#fcd34d}
+/* 4.3: вікно «Перемістити» — ширина за текстом і екраном, без горизонтального скролу */
+.mail-selection-popover,.mail-move-popover,[class*="mail-move"][role="dialog"],[class*="mail-move-menu"]{width:max-content;min-width:min(240px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:min(70dvh,560px);overflow-x:hidden!important;overflow-y:auto}
+.mail-selection-popover :is(button,li,span),[class*="mail-move-menu"] :is(button,li,span){white-space:normal;overflow-wrap:anywhere}

@@ -83,3 +83,18 @@ body:has([data-reader-open="true"]) .mail-compose-float{display:none}
 .mail-new-message.heel-tekst .mail-nm-editor,.mail-new-message.heel-tekst .mail-nm-editor>.mail-compose-editor{flex:none;min-height:auto;overflow:visible}
 .mail-new-message.heel-tekst .mail-compose-canvas{flex:none!important;overflow:visible!important}
 @media(max-width:560px){.mail-nm-venster-knoppen button[data-nm-maximaliseer]{display:none}}
+/* 1.2 компактна шапка */
+.mail-nm-kop-kort{display:grid;gap:2px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--mail-line,rgba(127,127,127,.25));background:transparent;color:inherit;font:inherit;font-size:.86rem;padding:6px 2px;cursor:pointer}
+.mail-nm-kop-kort span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mail-nm-kop-kort b{font-weight:600;opacity:.75}
+.mail-nm-kop-kort:hover,.mail-nm-kop-kort:focus-visible{background:rgba(127,127,127,.08)}
+.mail-new-message .mail-new-message-field{min-height:34px}
+/* 1.4 видалити / очистити */
+.mail-nm-wis,.mail-nm-wis-vraag button{display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(127,127,127,.35);background:transparent;color:inherit;padding:6px 10px;font:inherit;font-size:.82rem;cursor:pointer}
+.mail-nm-wis:hover{color:#b3261e;border-color:#b3261e}
+.mail-nm-wis svg,.mail-nm-wis-vraag svg{width:15px;height:15px}
+.mail-nm-wis-vraag{display:inline-flex;gap:6px;flex-wrap:wrap}
+.mail-nm-wis-vraag .gevaar{background:#b3261e;border-color:#b3261e;color:#fff}
+/* 1.5 інструменти введення не перекривають текст */
+.mail-new-message .mail-input-tools,.mail-new-message [class*="mail-input-tools"]{max-height:38vh;overflow:auto;flex:0 1 auto}
+.mail-new-message .mail-nm-editor{min-height:160px;flex:1 1 auto}
