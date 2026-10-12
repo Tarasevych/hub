@@ -15,8 +15,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 let agentId = '';
 let beatTimer: number | undefined;
 
+// Ook als de tab op de achtergrond staat (de gebruiker werkt in Claude of een ander venster): een open, ingelogde tab is genoeg.
+// Chrome beperkt timers in verborgen tabs tot ±1 per minuut; elke 2 minuten valt daar ruim binnen (activering geldt 10 minuten).
 async function beat() {
-  if (!agentId || document.visibilityState === 'hidden') return;
+  if (!agentId) return;
   try {
     await api.post(`/api/owner/agents/${agentId}/heartbeat`, { service: serviceFromLocation(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
   } catch { /* geen sessie of geen rechten: de server laat de activering dan verlopen */ }

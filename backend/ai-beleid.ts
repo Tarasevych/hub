@@ -21,7 +21,7 @@ import { auditToevoegen } from '../server/platform/audit';
 import type { RouterMiddleware } from '../server/platform/router';
 import { getPool } from '../server/platform/pg';
 import { assertPolicy, buildDraft, diffPolicy, evaluate, listGrants, type Decision, type Op, type Policy } from '../shared/ai-beleid/model';
-import { CAPABILITIES } from '../shared/ai-beleid/catalog';
+import { CAPABILITIES, capabilityForTool } from '../shared/ai-beleid/catalog';
 import { DEFAULT_TZ } from '../shared/ai-beleid/time';
 import { CHAT_KLANT, type Namens } from './mcp-namens';
 import { assertieOpties, assertieUit, leesSleutels, uitdagingMaken, uitdagingVerbruiken, UitrolFout } from './uitrol-goedkeuring';
@@ -125,12 +125,27 @@ export async function uitrolWeigering(namens: Namens | undefined, tool: string, 
   return b.mode === 'off' ? weigerTekst(b) : null;
 }
 
+/**
+ * Catalogus voor het scherm, LEVEND opgebouwd uit de hulpmiddelen die deze server echt aanbiedt: per mogelijkheid de
+ * hulpmiddelen die eronder vallen, en apart de hulpmiddelen zonder mogelijkheid (die vragen altijd de eigenaar). Zo
+ * verschijnt een nieuwe groep (bv. «Додатки») vanzelf, zonder dat de pagina iets hoeft te weten.
+ */
+export async function catalogus() {
+  const { publiekeToolNamen } = await import('./connectors-tools');
+  const { UITROL_TOOL_NAMEN } = await import('./uitrol-goedkeuring');
+  const namen = [...new Set([...publiekeToolNamen(), ...UITROL_TOOL_NAMEN])].sort();
+  const perCap = new Map<string, string[]>();
+  const zonderGroep: string[] = [];
+  for (const n of namen) { const c = capabilityForTool(n); if (!c) zonderGroep.push(n); else perCap.set(c, [...(perCap.get(c) ?? []), n]); }
+  return { mogelijkheden: CAPABILITIES.map((c) => ({ ...c, tools: perCap.get(c.id) ?? [] })), zonderGroep };
+}
+
 export async function overzicht(eigenaar: Eigenaar) {
   const s = await leesStand();
   const nu = Date.now();
   const b = await leesSleutels();
   const sleutels = b.sleutels.map((k) => ({ label: k.label, vingerafdruk: k.vingerafdruk.slice(0, 16) }));
-  const basis = { serverNow: nu, tz: TZ(), mogelijkheden: CAPABILITIES, sleutels, rpId: b.rpId, origins: b.origins };
+  const basis = { serverNow: nu, tz: TZ(), ...(await catalogus()), sleutels, rpId: b.rpId, origins: b.origins };
   if (s.staat !== 'geldig') return { ...basis, staat: s.staat, code: s.staat === 'ongeldig' ? s.code : undefined, verbindingen: await verbindingen(eigenaar.id, null) };
   return { ...basis, staat: s.staat, beleid: s.beleid, hash: s.hash, versies: s.versies.slice(-20).reverse(), rijen: listGrants(s.beleid, nu, TZ()), verbindingen: await verbindingen(eigenaar.id, s.beleid) };
 }

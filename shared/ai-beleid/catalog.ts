@@ -17,6 +17,10 @@ export interface CapabilityInfo {
   hint: string;
   /** Лише для підпису в інтерфейсі. НЕ є забороною. */
   risk: Risk;
+  /** Дата (YYYY-MM-DD), коли можливість зʼявилася: екран позначає її «Нове», якщо політику підписано раніше. */
+  sinds?: string;
+  /** Назва групи нідерландською (інакше бере екран зі свого словника). */
+  groupNl?: string;
   /** true → жоден агент не може отримати це в принципі (лише власник зі своїм підписом). */
   ownerOnly?: boolean;
 }
@@ -33,9 +37,9 @@ export const CAPABILITIES: readonly CapabilityInfo[] = [
   { id: 'device.exec', group: 'Пристрої', label: 'Виконувати команди на ПК', hint: 'git, node, python, docker, npm у дозволених теках', risk: 'dangerous' },
   { id: 'docker.manage', group: 'Пристрої', label: 'Керувати контейнерами', hint: 'Запуск, зупинка, перезапуск контейнерів', risk: 'dangerous' },
 
-  { id: 'apps.read', group: 'Додатки', label: 'Бачити додатки', hint: 'Список, стан, журнали (секрети замасковано), версії, назви секретів', risk: 'read' },
-  { id: 'apps.deploy', group: 'Додатки', label: 'Розгортати додатки', hint: 'Збірка й запуск у контейнері на вашому ПК, відкат, зупинка, видалення, домен', risk: 'dangerous' },
-  { id: 'apps.secrets', group: 'Додатки', label: 'Секрети додатків', hint: 'Посилання, де ви самі вводите ключ (ШІ значення не бачить); видалення секрету', risk: 'write' },
+  { id: 'apps.read', group: 'Додатки', groupNl: 'Apps', sinds: '2026-10-11', label: 'Бачити додатки', hint: 'Список, стан, журнали (секрети замасковано), версії, назви секретів', risk: 'read' },
+  { id: 'apps.deploy', group: 'Додатки', groupNl: 'Apps', sinds: '2026-10-11', label: 'Розгортати додатки', hint: 'Збірка й запуск у контейнері на вашому ПК, відкат, зупинка, видалення, домен', risk: 'dangerous' },
+  { id: 'apps.secrets', group: 'Додатки', groupNl: 'Apps', sinds: '2026-10-11', label: 'Секрети додатків', hint: 'Посилання, де ви самі вводите ключ (ШІ значення не бачить); видалення секрету', risk: 'write' },
 
   { id: 'mail.read', group: 'Пошта й Google', label: 'Читати пошту', hint: 'Список скриньок, мітки, пошук, читання листів', risk: 'sensitive' },
   { id: 'mail.modify', group: 'Пошта й Google', label: 'Змінювати листи', hint: 'Мітки, прочитано, архів, кошик', risk: 'write' },

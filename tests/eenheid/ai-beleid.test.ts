@@ -14,7 +14,7 @@ import { bevestig, nieuwePasskey, registreer } from './hulp/nep-passkey';
 import { agentVoor, beslissing, leesStand, ondertekenen, strengste, uitrolWeigering, vergeetCache, voorstel } from '../../backend/ai-beleid';
 import { buildDraft } from '../../shared/ai-beleid/model';
 import { metNamens } from '../../backend/mcp-namens';
-import { callTool } from '../../backend/connectors-tools';
+import { callTool, listTools } from '../../backend/connectors-tools';
 import { closePool, getPool } from '../../server/platform/pg';
 import type { Policy } from '../../shared/ai-beleid/model';
 
@@ -107,6 +107,11 @@ export async function main(): Promise<number> {
     const bNa = await beslissing({ client: 'Claude' }, 'machine_read_file', nu + 2 * 3_600_000 + 1000);
     check('timer: binnen 2 uur «дозволено» (met resterende tijd), andere mogelijkheid blijft «питати»; daarna «питати» (after: ask)',
       b1.mode === 'always' && (b1.besluit?.remainingMs ?? 0) > 7_000_000 && bExec.mode === 'ask' && bNa.mode === 'ask' && bNa.code === 'expired_ask', JSON.stringify([b1.code, bExec.code, bNa.code]));
+    // tools/list met een geldig beleid: het BELEID bepaalt wat de AI ziet (niet de oude schakelaars, waar app_deploy standaard «uit» staat).
+    const lijstClaude = (await metNamens({ client: 'Claude' }, () => listTools(randomUUID(), { alwaysMachine: true }))).map((t) => t.name);
+    const lijstOnbekend = (await metNamens({ client: 'Gemini' }, () => listTools(randomUUID(), { alwaysMachine: true }))).map((t) => t.name);
+    check('tools/list volgt het ondertekende beleid: Claude («питати») ziet ook app_deploy en machine_exec; een AI buiten het beleid ziet niets',
+      lijstClaude.includes('app_deploy') && lijstClaude.includes('machine_exec') && lijstClaude.includes('app_secret_request') && lijstOnbekend.length === 0, `${lijstClaude.length}/${lijstOnbekend.length}`);
     // Hergebruik van dezelfde assertie (opnieuw in de inbox): root weigert.
     writeFileSync(join(dirs.inbox, `ai-beleid-${randomBytes(8).toString('hex')}.json`), JSON.stringify({ doel: 'ai-beleid', ontwerp: v2.ontwerp, nonce: v2.nonce, verloopt: v2.verloopt, assertie }));
     hulp('verwerk');

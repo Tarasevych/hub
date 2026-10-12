@@ -42,6 +42,14 @@ export async function main(): Promise<number> {
     actieSoort('app_deploy') === 'apps' && actieDoel('app_deploy', { name: 'notes', files: [{ path: 'x', content: 'GEHEIM' }], env: { A: 'GEHEIM' } }) === 'notes'
     && actieDoel('app_secret_request', { name: 'notes', key: 'API_KEY', value: 'GEHEIM' }) === 'notes · API_KEY' && actieDoel('app_route', { name: 'notes', domain: 'n.example.com' }) === 'notes → n.example.com');
 
+  const { catalogus } = await import('../../backend/ai-beleid');
+  const cat = await catalogus();
+  const tools = (id: string) => cat.mogelijkheden.find((m) => m.id === id)?.tools ?? [];
+  check('levende catalogus: elk hulpmiddel van de connector valt onder een mogelijkheid (geen «zonder groep»)', cat.zonderGroep.length === 0, cat.zonderGroep.join(','));
+  check('levende catalogus: «Додатки» met de juiste hulpmiddelen, publieke namen (take_snapshot, niet browser_snapshot)',
+    tools('apps.deploy').join() === 'app_control,app_deploy,app_rollback,app_route' && tools('apps.secrets').join() === 'app_secret_delete,app_secret_request'
+    && tools('apps.read').length === 5 && tools('browser.read').includes('take_snapshot') && !tools('browser.read').includes('browser_snapshot')
+    && tools('deploy.release').includes('uitrol_voorstel_begin') && cat.mogelijkheden.find((m) => m.id === 'apps.deploy')?.sinds === '2026-10-11', JSON.stringify(cat.mogelijkheden.map((m) => [m.id, m.tools.length])));
   if (!process.env.DATABASE_URL_SYSTEM && !process.env.DATABASE_URL) { console.log('OVERGESLAGEN db-deel: geen database'); return einde(); }
   const sys = getPool('systeem');
   const A = `apps-a-${randomUUID()}`;

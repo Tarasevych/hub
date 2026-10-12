@@ -111,7 +111,9 @@ export function createMcpConnectorRoutes(deps: Deps) {
       for (const t of all) {
         if (group && t.group !== group) continue;
         // Een bulkactie "Altijd"/"Vragen" laat riskante hulpmiddelen ongemoeid: die zet de gebruiker bewust één voor één.
-        if (t.risky && (body.mode === 'always' || body.mode === 'ask')) continue;
+        // Uitzondering: «Питати щоразу» voor één groep met inclusiefRiskant (bv. «Додатки» aanzetten): elke aanroep wacht dan nog op een klik.
+        if (t.risky && body.mode === 'always') continue;
+        if (t.risky && body.mode === 'ask' && !(group && body.inclusiefRiskant === true)) continue;
         changes[t.name] = body.mode === 'default' ? null : (body.mode as 'always' | 'ask' | 'off');
       }
       await agentStore.setToolModes(auth.user.id, changes);

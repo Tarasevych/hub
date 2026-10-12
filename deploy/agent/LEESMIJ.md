@@ -42,6 +42,19 @@ node agent.mjs apps-config --disable
 - Op de server van «Mijn Ruimte» richt de installer dit in: `sudo /usr/local/sbin/mijn-ruimte-installeer apps-inrichten
   /srv/mijn-ruimte/current --caddy tunnel` en daarna `... apps-koppelen <KOPPELCODE> --domein '{app}.apps.<domein>'`.
 
+## Deze server als apparaat (0.5.1+)
+
+Op de site: mcp.* → «Додатки» of «Агенти → Пристрої → Цей сервер» maakt de koppelcodes en ÉÉN commando, bv.:
+
+```
+sudo /usr/local/sbin/mijn-ruimte-installeer beheer-koppelen <CODE> --gebruiker beheer --root '/home/beheer' --readonly-root /srv/mijn-ruimte/current --allow git
+```
+
+De agent draait dan als `beheer` (systemd `mijn-ruimte-agent-beheer.service`) met `NoNewPrivileges=yes` (geen sudo, ook niet via
+node/python), `ProtectSystem=strict` en schrijven alleen in de gekozen mappen. De eerste koppeling gebeurt bewust in de
+console: de site geeft zichzelf geen toegang tot haar eigen host. Daarna regelt de eigenaar alles op de site. Bij elke
+release (`installeren`) werkt de installer de agent op de server bij en herstart hem (`agenten_bijwerken`).
+
 ## Veiligheid
 
 - Agenttoken: alleen de sha256-hash staat in de database; het token zelf in `~/.hub-agent/config.json` (modus 0600).

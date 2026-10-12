@@ -83,5 +83,13 @@ export const verzoekPubliek = (v: GeheimVerzoek) => ({
   id: v.id, app: v.app, sleutel: v.sleutel, uitleg: v.uitleg, apparaat: v.agentNaam, status: v.status, verloopt: v.verloopt, aangemaakt: v.aangemaakt, commandId: v.commandId ?? null,
 });
 
+/** Melding op de site (bel + badge op «Додатки») wanneer een AI om een geheim vraagt; backend/index.ts zet de echte melder. */
+type Melder = (userId: string, titel: string, tekst: string, link: string) => Promise<void>;
+let melder: Melder = async () => undefined;
+export function zetGeheimMelder(fn: Melder) { melder = fn; }
+export function meldGeheimVerzoek(v: GeheimVerzoek, link: string) {
+  melder(v.userId, `ШІ просить ввести секрет ${v.sleutel}`, `Додаток «${v.app}» на «${v.agentNaam}»${v.uitleg ? `: ${v.uitleg}` : ''}. Значення вводите лише ви; ШІ його не бачить.`, link).catch(() => undefined);
+}
+
 /** Alleen voor tests. */
 export function _reset() { tickets.clear(); verzoeken.clear(); }

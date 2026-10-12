@@ -48,7 +48,7 @@ export async function main(): Promise<number> {
     const v = await h['apps.versions'](cfg, { name: 'site' });
     check('deploy v2: twee versies, v2 actueel, zelfde poort', r2.state === 'done' && v.versions.length === 2 && v.current === r2.version && r2.url === r1.url, JSON.stringify(v));
     const lijst = await h['apps.list'](cfg, {});
-    check('lijst: running, versie, geheugen', lijst.apps.length === 1 && lijst.apps[0].status === 'running' && lijst.apps[0].memory.includes('MiB'), JSON.stringify(lijst));
+    check('lijst: running, versie, geheugen, poort, luistert (bewaking), uptime', lijst.apps.length === 1 && lijst.apps[0].status === 'running' && lijst.apps[0].memory.includes('MiB') && lijst.apps[0].listening === true && /^20\d{3}$/.test(String(lijst.apps[0].hostPort)) && lijst.apps[0].port === 8080 && typeof lijst.apps[0].uptime === 'string', JSON.stringify(lijst));
     const rb = await h['apps.rollback'](cfg, { name: 'site' });
     check('rollback → v1 en luistert', rb.current === r1.version && rb.listening === true, JSON.stringify(rb));
 

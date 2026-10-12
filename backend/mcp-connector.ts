@@ -316,7 +316,7 @@ async function handleMessage(who: { userId: string; clientName: string; tokenId?
     }
     case 'ping': return rpcResult(id, {});
     case 'tools/list': {
-      const tools = (await listTools(who.userId, { alwaysMachine: true })).map(toMcpTool);
+      const tools = (await metNamens({ client: who.clientName, grantId: who.tokenId }, () => listTools(who.userId, { alwaysMachine: true }))).map(toMcpTool);
       // Updates voorbereiden alleen zichtbaar met een grant van de eigenaar; goedkeuren bestaat hier niet.
       if (await heeftVoorbereiderGrant(uitrolOnderwerpen(who))) tools.push(...UITROL_TOOLS.map((t) => toMcpTool(t as unknown as ToolDef)));
       return rpcResult(id, { tools });

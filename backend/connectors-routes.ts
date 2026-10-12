@@ -197,10 +197,16 @@ export function createAgentRoutes(deps: Deps) {
       if (deps.body(ctx.body).enabled === true) { const su = await stepUp(ctx, auth); if (su) return su; }
       const enabled = deps.body(ctx.body).enabled;
       if (typeof enabled !== 'boolean') return deps.fail('BROWSER_ENABLED_INVALID', 400);
-      const ok = await store.setBrowserEnabled(auth.user.id, ctx.params.id, enabled);
+      // Duur kiest de eigenaar: null = tot hij zelf uitzet (standaard), een aantal minuten = vaste termijn,
+      // 'sessie' = alleen zolang er een ingelogde pagina van de site open is (oude, strengste stand).
+      const raw = deps.body(ctx.body).duur;
+      const duur: store.BrowserDuur = raw === undefined || raw === null ? null : raw === 'sessie' ? 'sessie'
+        : (typeof raw === 'number' && Number.isInteger(raw) && raw >= 10 && raw <= store.BROWSER_MAX_MINUTEN) ? raw : 'ongeldig' as never;
+      if ((duur as unknown) === 'ongeldig') return deps.fail('BROWSER_DUUR_INVALID', 400);
+      const ok = await store.setBrowserEnabled(auth.user.id, ctx.params.id, enabled, duur);
       if (!ok) return deps.fail('AGENT_NOT_FOUND', 404);
-      await deps.audit(auth.user.id, enabled ? 'owner.browser.enabled' : 'owner.browser.disabled', 'success', { agentId: ctx.params.id });
-      return deps.respond({ ok: true, enabled });
+      await deps.audit(auth.user.id, enabled ? 'owner.browser.enabled' : 'owner.browser.disabled', 'success', { agentId: ctx.params.id, ...(enabled ? { duur: duur ?? 'tot-uitzetten' } : {}) });
+      return deps.respond({ ok: true, enabled, duur });
     }],
 
     // Elke paar minuten vanuit een ingelogde pagina van de site: houdt een door de gebruiker aangezette browser actief.
@@ -356,6 +362,28 @@ export function createAgentRoutes(deps: Deps) {
 
     // «Додатки»: geheimen die een AI vroeg (app_secret_request). De eigenaar ziet ze hier en typt de waarde zelf; die gaat via een
     // eenmalig ticket rechtstreeks naar het apparaat en komt nooit in de database, het journaal of de chat.
+    // «Додатки»: één overzicht van alle apparaten met apps (parallel), voor de pagina mcp.*/apps. Per apparaat de apps of een
+    // foutcode (NO_GRANT → de pagina toont een knop om toestemming te geven). Leest alleen; niets wordt gewijzigd.
+    'POST /api/owner/apps/overzicht': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const limit = await rateLimit(`apps-overzicht:${auth.user.id}`, 30, 60);
+      if (!limit.ok) return deps.fail('RATE_LIMITED', 429);
+      const lijst = (await store.listAgents(auth.user.id)).filter((a) => a.platform !== 'browser');
+      const apparaten = await Promise.all(lijst.map(async (a) => {
+        const caps = (a.capabilities ?? {}) as { apps?: unknown; version?: unknown };
+        const basis = { id: a.id, name: a.name, platform: a.platform, online: agentOnline(a.id), apps: caps.apps === true, version: a.agent_version ?? (typeof caps.version === 'string' ? caps.version : null) };
+        if (!basis.apps || !basis.online) return basis;
+        try {
+          const { command } = await submitCommand(a, auth.user.id, 'apps.list', {});
+          const klaar = (await waitForCommand(auth.user.id, command.id, 20_000)) ?? command;
+          if (klaar.status === 'succeeded') return { ...basis, lijst: ((klaar.result?.data as { apps?: unknown[] } | undefined)?.apps ?? []) };
+          return { ...basis, fout: klaar.status === 'pending_approval' ? 'WACHT_OP_GOEDKEURING' : String(klaar.result?.error ?? klaar.status).slice(0, 200) };
+        } catch (err) { if (err instanceof CommandRefused) return { ...basis, fout: err.code }; throw err; }
+      }));
+      return deps.respond({ apparaten, at: Date.now() });
+    }],
+
     'POST /api/owner/apps/geheimen': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();

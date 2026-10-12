@@ -21,6 +21,9 @@
 #   installeer-app.sh apps-koppelen <KOPPELCODE> [--domein '{app}-app.voorbeeld.nl'] [--naam N] [--geheugen 512m] [--server URL]
 #                                             agent van mr-apps koppelen (code van mcp.* → Agenten) en starten
 #   installeer-app.sh apps-status             stand van de apps-agent, Caddy en de containers
+#   installeer-app.sh beheer-koppelen <KOPPELCODE> [--gebruiker beheer] [--root DIR]... [--readonly-root DIR]... [--allow git,node]
+#                                             deze server als apparaat op de site (agent als die gebruiker, NoNewPrivileges:
+#                                             geen sudo); daarna alles via mcp.* (toestemmingen, hulpmiddelen, journaal)
 #
 # <bronmap> is een git-checkout (alleen de GECOMMITTE stand van HEAD wordt gebruikt) of een uitgepakte map
 # (bijv. een `git archive`-tarball; staat daarin een bestand BRON-COMMIT, dan wordt dat de commit van de release).
@@ -406,6 +409,7 @@ installeren() {
   # Timers (cron, opruimen, back-up) starten; `enable` alleen start ze pas na een herstart.
   systemctl enable "${TIMERS[@]}" >/dev/null 2>&1 || true   # nieuwe timers moeten ook een herstart overleven
   systemctl start "${TIMERS[@]}"
+  agenten_bijwerken "$doel"
   releases_opruimen
   melding "klaar: release $datum (commit $(cat "$doel/RELEASE-COMMIT"))"
 }
@@ -625,6 +629,111 @@ apps_koppelen() {
   melding "apps-agent «$naam» gekoppeld en gestart. Zet op de site (mcp.* → Агенти) de toestemmingen voor dit apparaat en de hulpmiddelen app_* aan."
 }
 
+# ---------------------------------------------------------------------------------------------
+# Deze server als apparaat («Мій сервер»): een agent die als een gewone gebruiker draait (standaard beheer), met alleen de
+# mappen en programma's die de eigenaar hier kiest. NoNewPrivileges=yes: zelfs met node/python op de lijst kan de agent geen
+# sudo of setuid gebruiken. De eerste koppeling gebeurt bewust hier (console): de site mag zichzelf nooit toegang tot haar
+# eigen host geven. Daarna regelt de eigenaar alles op de site.
+agent_unit_naam() { echo "mijn-ruimte-agent-$1.service"; }
+
+beheer_koppelen() {
+  local code="${1:?koppelcode ontbreekt}"; shift
+  local gebruiker=beheer naam="" server="" allow="" roots=() ro=()
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --gebruiker) gebruiker="${2:?}"; shift 2 ;;
+      --root) roots+=("${2:?}"); shift 2 ;;
+      --readonly-root) ro+=("${2:?}"); shift 2 ;;
+      --allow) allow="${2:?}"; shift 2 ;;
+      --naam) naam="${2:?}"; shift 2 ;;
+      --server) server="${2:?}"; shift 2 ;;
+      *) fout "onbekende optie: $1" ;;
+    esac
+  done
+  vereis_root
+  [[ "$code" =~ ^[A-Za-z0-9-]{4,40}$ ]] || fout "ongeldige koppelcode"
+  [[ "$gebruiker" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] || fout "--gebruiker: ongeldige naam"
+  id "$gebruiker" >/dev/null 2>&1 || fout "gebruiker $gebruiker bestaat niet"
+  local uid home; uid="$(id -u "$gebruiker")"; home="$(getent passwd "$gebruiker" | cut -d: -f6)"
+  [ "$uid" -ge 1000 ] || fout "$gebruiker is een systeemgebruiker of root: kies een gewone gebruiker (bijv. beheer)"
+  [ "$gebruiker" != "$GEBRUIKER" ] || fout "de app-gebruiker $GEBRUIKER mag geen agent zijn"
+  [ -d "$home" ] || fout "thuismap van $gebruiker ontbreekt"
+  [ ${#roots[@]} -gt 0 ] || roots=("$home")
+  [[ -z "$allow" || "$allow" =~ ^[a-z0-9._-]+(,[a-z0-9._-]+)*$ ]] || fout "--allow: komma-lijst van programmanamen"
+  local r schrijf=() args=()
+  for r in "${roots[@]}" "${ro[@]}"; do
+    [[ "$r" = /* && "$r" != *..* ]] || fout "map moet absoluut zijn zonder ..: $r"
+    [ -d "$r" ] || fout "map bestaat niet: $r"
+    case "$(readlink -f "$r")" in /|/root|/root/*|/etc|/etc/*|/boot*|/proc*|/sys*|/dev*|/usr|/usr/*|/var/lib/mijn-ruimte*) fout "map niet toegestaan als agent-root: $r" ;; esac
+  done
+  for r in "${roots[@]}"; do schrijf+=("$(readlink -f "$r")"); args+=(--root "$r"); done
+  for r in "${ro[@]}"; do args+=(--readonly-root "$r"); done
+  [ -n "$allow" ] && args+=(--allow "$allow")
+  naam="${naam:-$(hostname -s) ($gebruiker)}"
+  local naam_re='^[A-Za-z0-9._() -]{1,60}$'
+  [[ "$naam" =~ $naam_re ]] || fout "--naam: letters, cijfers, spatie, . _ - ( )"
+  if [ -z "$server" ]; then
+    local domeinnaam
+    domeinnaam="$(sed -n "s/^export const PUBLIC_DOMAIN = '\([a-z0-9.-]*\)';.*/\1/p" "$HUIDIG/backend/deployment-identity.ts" 2>/dev/null | head -1)"
+    [ -n "$domeinnaam" ] || fout "domein van de site niet gevonden; geef --server https://mcp.<uw-domein>"
+    server="https://mcp.$domeinnaam"
+  fi
+  [[ "$server" =~ ^https://[a-z0-9.-]+$ ]] || fout "--server: https://<host> zonder pad"
+  [ -x "$NODE" ] || fout "Node niet gevonden op $NODE"
+  [ -s "$HUIDIG/deploy/agent/agent.mjs" ] || fout "geen actieve release met deploy/agent/agent.mjs"
+  install -d -o root -g root -m 0755 "$APPS_AGENT_DIR"
+  install -m 0644 -o root -g root "$HUIDIG/deploy/agent/agent.mjs" "$APPS_AGENT_DIR/agent.mjs"
+  install -d -o "$gebruiker" -g "$(id -gn "$gebruiker")" -m 0700 "$home/.hub-agent"
+  runuser -u "$gebruiker" -- env HOME="$home" HUB_AGENT_CONFIG="$home/.hub-agent/config.json" "$NODE" "$APPS_AGENT_DIR/agent.mjs" pair --server "$server" --code "$code" --name "$naam" "${args[@]}" \
+    || fout "koppelen mislukt (code verlopen? haal een nieuwe op mcp.* → Агенти)"
+  local unit; unit="$(agent_unit_naam "$gebruiker")"
+  cat > "/etc/systemd/system/$unit" <<EOT
+# Beheerd door mijn-ruimte-installeer beheer-koppelen. Deze server als apparaat op de site, als $gebruiker.
+[Unit]
+Description=Mijn Ruimte agent ($gebruiker)
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=$home/.hub-agent/config.json
+
+[Service]
+User=$gebruiker
+Environment=HOME=$home
+Environment=HUB_AGENT_CONFIG=$home/.hub-agent/config.json
+ExecStart=$NODE $APPS_AGENT_DIR/agent.mjs run
+Restart=always
+RestartSec=10
+# Geen sudo/setuid voor de agent en alles wat hij start; schrijven alleen in de gekozen mappen.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=$home/.hub-agent ${schrijf[*]}
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
+EOT
+  chmod 0644 "/etc/systemd/system/$unit"
+  systemctl daemon-reload
+  systemctl enable --now "$unit" >/dev/null
+  systemctl restart "$unit"
+  melding "«$naam» gekoppeld en gestart ($unit). Geef op de site (mcp.* → Агенти → Пристрої) de toestemmingen die u wilt."
+}
+
+# Bij elke release: de agent van deze server (apps en/of beheer) bijwerken en herstarten, zodat hij nooit achterloopt.
+agenten_bijwerken() {
+  local doel="$1" u
+  [ -d "$APPS_AGENT_DIR" ] && [ -s "$doel/deploy/agent/agent.mjs" ] || return 0
+  install -m 0644 -o root -g root "$doel/deploy/agent/agent.mjs" "$APPS_AGENT_DIR/agent.mjs"
+  for u in $(systemctl list-unit-files --no-legend 'mijn-ruimte-agent-*.service' "$APPS_UNIT" 2>/dev/null | awk '{print $1}'); do
+    systemctl try-restart "$u" >/dev/null 2>&1 || waarschuwing "$u herstart niet"
+  done
+  melding "agent op deze server bijgewerkt ($(sed -n "s/^const VERSION = '\([0-9.]*\)'.*/\1/p" "$APPS_AGENT_DIR/agent.mjs" | head -1))"
+}
+
 apps_status() {
   systemctl --no-pager --lines=5 status "$APPS_UNIT" 2>/dev/null | head -12 || echo "$APPS_UNIT: niet ingericht"
   if systemctl is-active --quiet caddy 2>/dev/null; then echo "caddy: actief"; else echo "caddy: niet actief of niet ingericht"; fi
@@ -655,5 +764,6 @@ case "$opdracht" in
   apps-inrichten) apps_inrichten "$@" ;;
   apps-koppelen) apps_koppelen "$@" ;;
   apps-status) vereis_root; apps_status ;;
-  *) sed -n '2,29p' "$0"; exit 2 ;;
+  beheer-koppelen) beheer_koppelen "$@" ;;
+  *) sed -n '/^set -euo/q;2,$p' "$0"; exit 2 ;;
 esac

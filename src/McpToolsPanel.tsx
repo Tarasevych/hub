@@ -7,7 +7,8 @@ import { textOf } from './mcp-texts';
 import { ago, sessionBody, type ToolCall } from './agents-data';
 
 type Mode = 'always' | 'ask' | 'off';
-export type Group = 'devices' | 'browser' | 'mail' | 'calendar' | 'drive' | 'site' | 'github';
+// Een groep die de server kent maar deze pagina nog niet (nieuwe hulpmiddelen) krijgt automatisch een eigen tabblad (zie groepMeta).
+export type Group = 'devices' | 'apps' | 'browser' | 'mail' | 'calendar' | 'drive' | 'site' | 'github' | (string & {});
 type Tool = {
   name: string; title: string; description: string; kind: string; group: Group; mode: Mode; defaultMode: Mode;
   risky: boolean; needsApproval: boolean; readOnly: boolean; destructive: boolean; enabled: boolean;
@@ -18,6 +19,8 @@ type Source = { logo: LogoKind; uk: string; nl: string; live: boolean };
 const GROUPS: Array<{ id: Group; logo: LogoKind; uk: string; nl: string; hint: [string, string]; sources: Source[] }> = [
   { id: 'devices', logo: 'device', uk: 'Пристрої', nl: 'Apparaten', hint: ['Файли, команди, Docker і метрики ваших ПК та віртуальних машин через агента. Межі кожного пристрою задаються в його картці.', 'Bestanden, commando\'s, Docker en metrics van uw pc\'s en virtuele machines via de agent. De grenzen per apparaat stelt u in op de kaart van dat apparaat in.'],
     sources: [{ logo: 'windows', uk: 'Windows', nl: 'Windows', live: true }, { logo: 'linux', uk: 'Linux', nl: 'Linux', live: true }, { logo: 'macos', uk: 'macOS', nl: 'macOS', live: true }, { logo: 'docker', uk: 'Docker', nl: 'Docker', live: true }] },
+  { id: 'apps', logo: 'docker', uk: 'Додатки', nl: 'Apps', hint: ['Вебдодатки, які ШІ збирає й запускає на ВАШОМУ пристрої в ізольованому контейнері (без root), зі знімками й відкатом. Секрети вводите лише ви на сторінці «Додатки». Розгортання, відкат, зупинка й домен типово вимкнені.', 'Webapps die de AI op UW apparaat bouwt en start in een geïsoleerde container (zonder root), met snapshots en terugdraaien. Geheimen voert alleen u in op de pagina «Apps». Uitrollen, terugdraaien, stoppen en domein staan standaard uit.'],
+    sources: [{ logo: 'docker', uk: 'Podman / Docker', nl: 'Podman / Docker', live: true }, { logo: 'server', uk: 'Caddy (домени)', nl: 'Caddy (domeinen)', live: true }] },
   { id: 'browser', logo: 'chrome', uk: 'Браузер', nl: 'Browser', hint: ['Читання й керування сторінками сайту через розширення. Докладні перемикачі для кожного браузера — у його картці.', 'Pagina\'s van de site lezen en bedienen via de extensie. Gedetailleerde schakelaars per browser staan op de kaart van die browser.'],
     sources: [{ logo: 'chrome', uk: 'Chrome / Edge', nl: 'Chrome / Edge', live: true }, { logo: 'firefox', uk: 'Firefox', nl: 'Firefox', live: false }] },
   { id: 'mail', logo: 'mail', uk: 'Пошта', nl: 'E-mail', hint: ['Пошук, читання й зміна листів у підключених поштових акаунтах.', 'Zoeken, lezen en wijzigen van berichten in gekoppelde mailaccounts.'],
@@ -125,14 +128,17 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
     if (tool.risky && mode === 'always') { setRiskAsk(tool.name); return; }
     setRiskAsk(null); void setMode(tool, mode);
   };
-  const setAll = async (mode: Mode | 'default', group?: Group) => {
+  const setAll = async (mode: Mode | 'default', group?: Group, inclusiefRiskant = false) => {
     setBusy(true); setNotice('');
-    try { const res = await api.post('/api/owner/mcp-connector/tools/set-all', { ...sessionBody(), mode, ...(group ? { group } : {}) }); setTools(res.data?.tools ?? []); }
+    try { const res = await api.post('/api/owner/mcp-connector/tools/set-all', { ...sessionBody(), mode, ...(group ? { group } : {}), ...(inclusiefRiskant ? { inclusiefRiskant: true } : {}) }); setTools(res.data?.tools ?? []); }
     catch { setNotice(tr('Не вдалося змінити режим.', 'Modus wijzigen mislukt.')); }
     setBusy(false);
   };
 
-  const current = GROUPS.find((g) => g.id === tab) ?? GROUPS[0];
+  // Alle groepen die de server stuurt, ook nieuwe: bekende met hun eigen uitleg, onbekende met een algemene.
+  const groepMeta = (id: string) => GROUPS.find((g) => g.id === id) ?? { id, logo: 'internal' as LogoKind, uk: id, nl: id, hint: ['Нова група інструментів. Перевірте опис кожного інструмента нижче.', 'Nieuwe groep hulpmiddelen. Bekijk de uitleg bij elk hulpmiddel hieronder.'] as [string, string], sources: [] as Source[] };
+  const alleGroepen = [...GROUPS.map((g) => g.id), ...new Set(tools.map((t) => t.group).filter((g) => !GROUPS.some((x) => x.id === g)))].map(groepMeta);
+  const current = alleGroepen.find((g) => g.id === tab && tools.some((t) => t.group === g.id)) ?? alleGroepen.find((g) => tools.some((t) => t.group === g.id)) ?? alleGroepen[0];
   const rows = tools.filter((t) => t.group === current.id);
   return (
     <div className='hub-tools-wrap' data-mcp-tools-panel='true' data-mcp-tools={String(tools.length)}>
@@ -151,12 +157,12 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
       </div>
 
       <div className='hub-tabs' role='tablist' aria-label={tr('Джерела інструментів', 'Bronnen van hulpmiddelen')}>
-        {GROUPS.map((g) => {
+        {alleGroepen.map((g) => {
           const list = tools.filter((t) => t.group === g.id);
           if (!list.length) return null;
           const active = list.filter((t) => t.mode !== 'off').length;
           return (
-            <button key={g.id} type='button' role='tab' className='hub-tab' aria-selected={tab === g.id} data-tool-group={g.id} onClick={() => pick(g.id)}>
+            <button key={g.id} type='button' role='tab' className='hub-tab' aria-selected={current.id === g.id} data-tool-group={g.id} onClick={() => pick(g.id)}>
               <Logo kind={g.logo} size={20} label={tr(g.uk, g.nl)} />{tr(g.uk, g.nl)}<span className='hub-count'>{active}/{list.length}</span>
             </button>
           );
@@ -173,6 +179,7 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
         </div>
         <p>{tr(current.hint[0], current.hint[1])}</p>
         <div className='hub-actions'>
+          <IconButton icon={<Hand />} disabled={busy} onClick={() => void setAll('ask', current.id, true)}>{tr('Увімкнути групу: питати щоразу', 'Groep aanzetten: elke keer vragen')}</IconButton>
           <IconButton icon={<Ban />} disabled={busy} onClick={() => void setAll('off', current.id)}>{tr('Вимкнути групу', 'Groep uitzetten')}</IconButton>
           <IconButton icon={<RotateCcw />} disabled={busy} onClick={() => void setAll('default', current.id)}>{tr('За замовчуванням', 'Standaard')}</IconButton>
         </div>
