@@ -74,6 +74,7 @@ export async function main(): Promise<number> {
     for (let i = 1; i <= 7; i++) gm.nieuw({ subject: `Звичайний лист ${i}`, from: `Контакт ${i} <c${i}@example.test>`, labelIds: i % 2 ? ['INBOX', 'UNREAD'] : ['INBOX'] });
     gm.nieuw({ subject: 'Старий архівний лист', labelIds: ['IMPORTANT'] });
     gm.nieuw({ subject: 'Видалений раніше лист', labelIds: ['TRASH'] });
+    gm.nieuw({ subject: 'Лист собі в архіві', from: 'Тестовий власник <ik@example.test>', to: 'ik@example.test', labelIds: ['SENT'] });
     gm.nieuw({ subject: 'Мій надісланий лист', from: 'Тестовий власник <ik@example.test>', to: 'olena@example.test', labelIds: ['SENT'] });
     (globalThis as any).__nepGmail = gm;
 
@@ -117,6 +118,8 @@ export async function main(): Promise<number> {
       const pad = `${map}/${String(n).padStart(2, '0')}-${s.naam}.png`;
       await page.screenshot({ path: pad });
       const m = await page.evaluate(METEN);
+      // MAIL_STRIKT=1: elke stap moet lukken (gebruikt voor de QA-regressie van 12.10.2026, zie tests/e2e/hulp/mail-qa-stappen-*.json).
+      if (process.env.MAIL_STRIKT === '1') check(`stap ${n}. ${s.naam}`, !fout, fout);
       verslag.push(`## ${n}. ${s.naam}${fout ? `\nACTIE MISLUKT: ${fout}` : ''}\nurl: ${page.url()}\nproblemen (${m.problemen.length}):\n${m.problemen.map((p) => `  - ${p}`).join('\n')}\nbediening (${m.lijst.length}):\n${m.lijst.map((p) => `  ${p}`).join('\n')}\nfouten: ${fouten.splice(0).join(' | ') || '—'}\nacties nep-gmail: ${gm.acties.splice(0).join(', ') || '—'}\nonbekend: ${[...new Set(gm.onbekend.splice(0))].join(', ') || '—'}\n`);
     }
     check('verkenning gelopen', true);

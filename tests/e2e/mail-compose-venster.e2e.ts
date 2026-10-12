@@ -148,8 +148,10 @@ export async function main(): Promise<number> {
     await p2.evaluate(() => window.dispatchEvent(new CustomEvent('mail:open-concept', { detail: { localId: 'concept-van-pc-01' } })));
     await p2.locator('section.mail-new-message [data-nm-disk]').waitFor({ timeout: 8000 });
     await p2.waitForTimeout(500);
-    check('3.1: кнопка Диска активна (Диск підключено)', (await p2.locator('.mail-disk').getAttribute('data-disk-stand')) === 'ok');
-    await p2.locator('[data-nm-disk]').click(); await p2.waitForTimeout(300);
+    // QA 12.10 №17: Диск перевіряється лише після натискання (не при кожному відкритті вікна) — до того стан «onbekend»
+    check('3.1: до натискання Диск ще не запитано', (await p2.locator('.mail-disk').getAttribute('data-disk-stand')) === 'onbekend');
+    await p2.locator('[data-nm-disk]').click(); await p2.waitForTimeout(400);
+    check('3.1: після натискання кнопка Диска активна (Диск підключено)', (await p2.locator('.mail-disk').getAttribute('data-disk-stand')) === 'ok');
     await p2.locator('.mail-disk-paneel button', { hasText: 'Кошторис.xlsx' }).click(); await p2.waitForTimeout(300);
     check('3.1: у лист вставлено посилання на файл Диска', await p2.locator('section.mail-new-message .ProseMirror a[href*="drive.google.com/open?id=f1"]').count() === 1);
     await p2.route('**/api/owner/cloud/google-suite/drive/file', (r) => r.fulfill(json({ name: 'Кошторис.xlsx', mimeType: 'application/vnd.ms-excel', sizeBytes: 4, data: 'dGVzdA==' })));

@@ -23,6 +23,7 @@ export function installeerEenMenu() {
   }, true);
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    for (const d of Array.from(document.querySelectorAll<HTMLDetailsElement>('details[open]'))) if (isZwevend(d) && d.contains(document.activeElement)) { d.open = false; d.querySelector('summary')?.focus(); }
+    // Esc sluit alleen het open menu: preventDefault, zodat andere Esc-luisteraars (bv. «lees-venster sluiten») weten dat Esc al gebruikt is.
+    for (const d of Array.from(document.querySelectorAll<HTMLDetailsElement>('details[open]'))) if (isZwevend(d) && d.contains(document.activeElement)) { d.open = false; d.querySelector('summary')?.focus(); e.preventDefault(); }
   });
 }

@@ -4,7 +4,9 @@ const SLEUTEL = 'mail-reader-venster-v1';
 type Stand = { zwevend: boolean; x: number; y: number; w: number; h: number };
 const lees = (): Stand => { try { const v = JSON.parse(localStorage.getItem(SLEUTEL) || 'null'); if (v && typeof v.x === 'number') return v; } catch { /* geen opslag */ } return { zwevend: false, x: Math.max(60, innerWidth - 760), y: 70, w: Math.min(720, innerWidth - 80), h: Math.min(760, innerHeight - 100) }; };
 const bewaar = (s: Stand) => { try { localStorage.setItem(SLEUTEL, JSON.stringify(s)); } catch { /* geen opslag */ } };
-const binnen = (s: Stand): Stand => { const w = Math.max(360, Math.min(s.w, innerWidth - 16)), h = Math.max(280, Math.min(s.h, innerHeight - 16)); return { ...s, w, h, x: Math.max(8, Math.min(s.x, innerWidth - w - 8)), y: Math.max(8, Math.min(s.y, innerHeight - h - 8)) }; };
+// QA 12.10 №5: вікно листа не менше 520×420 (у межах екрана) — менше вікно давало горизонтальну прокрутку й непридатну шапку.
+const MIN_W = 520, MIN_H = 420;
+const binnen = (s: Stand): Stand => { const w = Math.min(innerWidth - 16, Math.max(MIN_W, Math.min(s.w, innerWidth - 16))), h = Math.min(innerHeight - 16, Math.max(MIN_H, Math.min(s.h, innerHeight - 16))); return { ...s, w, h, x: Math.max(8, Math.min(s.x, innerWidth - w - 8)), y: Math.max(8, Math.min(s.y, innerHeight - h - 8)) }; };
 
 export const readerZwevend = () => lees().zwevend && typeof innerWidth !== 'undefined' && innerWidth > 760;
 
