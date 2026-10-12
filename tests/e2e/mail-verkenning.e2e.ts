@@ -2,7 +2,7 @@
 // schrijft per stap een schermafdruk + een lijst van zichtbare bedieningselementen en lay-outproblemen naar E2E_SCREENSHOTS.
 // Stappen komen uit MAIL_STAPPEN (JSON) zodat een tester de verkenning kan sturen; standaard: alleen Inbox.
 import { createRequire } from 'node:module';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { checker } from '../eenheid/hulp/nep-google';
 import { startE2eServer, chromeArgs } from './server';
@@ -54,9 +54,10 @@ export async function main(): Promise<number> {
   const T = `${Date.now()}-${randomBytes(2).toString('hex')}`;
   const eigenaar = `e2e-mv-${T}@example.test`, sub = `sub-e2e-mv-${T}`;
   const { G, stop } = await startE2eServer({ ownerEmail: eigenaar, poort: POORT, tls: TLS });
-  const map = `${UIT}/mail-verkenning`; mkdirSync(map, { recursive: true });
+  const map = `${UIT}/${process.env.MAIL_MAP || 'mail-verkenning'}`; mkdirSync(map, { recursive: true });
   const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: chromeArgs(POORT) });
-  const stappen: Stap[] = process.env.MAIL_STAPPEN ? JSON.parse(process.env.MAIL_STAPPEN) : [{ naam: 'inbox' }];
+  const bron = process.env.MAIL_STAPPEN_BESTAND ? readFileSync(process.env.MAIL_STAPPEN_BESTAND, 'utf8') : process.env.MAIL_STAPPEN;
+  const stappen: Stap[] = bron ? JSON.parse(bron) : [{ naam: 'inbox' }];
   const verslag: string[] = [];
   try {
     const tab = randomBytes(24).toString('hex');
@@ -76,7 +77,12 @@ export async function main(): Promise<number> {
     gm.nieuw({ subject: 'Мій надісланий лист', from: 'Тестовий власник <ik@example.test>', to: 'olena@example.test', labelIds: ['SENT'] });
     (globalThis as any).__nepGmail = gm;
 
-    const ctx = await browser.newContext({ colorScheme: 'light', locale: 'uk-UA', viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
+    // MAIL_MOBIEL=1: telefoon (390×844, aanraken, mobiele user-agent) in plaats van een desktopvenster.
+    const mobiel = process.env.MAIL_MOBIEL === '1';
+    const ctx = await browser.newContext(mobiel
+      ? { colorScheme: 'light', locale: 'uk-UA', viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, serviceWorkers: 'block',
+          userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36' }
+      : { colorScheme: 'light', locale: 'uk-UA', viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
     await ctx.addCookies([...b.jar].flatMap(([name, value]) => [ID, MAIL].map((url) => ({ name, value, url: `${url}/`, secure: true, httpOnly: true, sameSite: 'Lax' as const }))));
     await ctx.addInitScript((t) => { if (!sessionStorage.getItem('tsv-canonical-tab-v1')) sessionStorage.setItem('tsv-canonical-tab-v1', t); }, tab);
     const page = await ctx.newPage();
@@ -94,7 +100,17 @@ export async function main(): Promise<number> {
       if (s.donker !== undefined) { await page.emulateMedia({ colorScheme: s.donker ? 'dark' : 'light' }); }
       let fout = '';
       if (s.doe) {
-        try { await new Function('page', 'gm', `return (async () => { ${s.doe} })()`)(page, gm); }
+        // hulp.tik(locator) = korte aanraking, hulp.lang(locator) = lang indrukken (700 ms) via echte aanraakgebeurtenissen.
+        const aanraak = async (loc: import('playwright-core').Locator, ms: number) => {
+          const box = await loc.first().boundingBox({ timeout: 4000 }); if (!box) throw new Error('element niet zichtbaar');
+          const x = box.x + box.width / 2, y = box.y + box.height / 2, cdp = await page.context().newCDPSession(page);
+          await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+          await page.waitForTimeout(ms);
+          await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+          await cdp.detach();
+        };
+        const hulp = { tik: (l: import('playwright-core').Locator) => aanraak(l, 60), lang: (l: import('playwright-core').Locator) => aanraak(l, 750) };
+        try { await new Function('page', 'gm', 'hulp', `return (async () => { ${s.doe} })()`)(page, gm, hulp); }
         catch (e) { fout = String((e as Error).message).split('\n')[0].slice(0, 300); }
       }
       await page.waitForTimeout(900);
