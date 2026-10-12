@@ -59,13 +59,15 @@ export function nepGmail(eigenAdres = 'ik@example.test') {
     if (/is:unread/.test(q) && !l.includes('UNREAD')) return false;
     if (/is:read/.test(q) && l.includes('UNREAD')) return false;
     if (/is:starred/.test(q) && !l.includes('STARRED')) return false;
-    if (/-in:inbox/.test(q) && l.includes('INBOX')) return false;
-    if (/-label:sent/.test(q) && l.includes('SENT')) return false;
+    if (/-(?:in|label):inbox/.test(q) && l.includes('INBOX')) return false;
+    // Gmail-groep {-label:sent to:me cc:me}: niet verzonden, óf aan mezelf gericht (zoals in het echte «Архів»).
+    if (/\{-label:sent to:me cc:me\}/.test(q)) { if (l.includes('SENT') && !String(m.to || '').toLowerCase().includes(eigenAdres.toLowerCase())) return false; }
+    else if (/-label:sent/.test(q) && l.includes('SENT')) return false;
     if (/-label:trash/.test(q) && l.includes('TRASH')) return false;
     if (/-label:spam/.test(q) && l.includes('SPAM')) return false;
     if (/-label:drafts/.test(q) && l.includes('DRAFT')) return false;
     if (/in:snoozed/.test(q)) return false;
-    const vrij = q.replace(/-?(?:is|in|label|from|to|subject|category|has):\S+/g, '').trim().toLowerCase();
+    const vrij = q.replace(/\{[^}]*\}/g, '').replace(/-?(?:is|in|label|from|to|cc|subject|category|has):\S+/g, '').trim().toLowerCase();
     if (vrij && !`${m.subject} ${m.snippet} ${m.from}`.toLowerCase().includes(vrij)) return false;
     return true;
   }).sort((a, b) => b.receivedAt - a.receivedAt);

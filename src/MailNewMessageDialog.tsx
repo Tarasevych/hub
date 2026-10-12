@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { adressenGeldig } from './mail-adressen';
 import { createPortal } from 'react-dom';
 import { ChevronsUpDown, CircleAlert, Cloud, CloudOff, Keyboard, LoaderCircle, Mail, Maximize2, Minimize2, Minus, Paperclip, Send, Trash2, X } from 'lucide-react';
 import { registreerZwevend, useZwevendHouder, verwijderZwevend } from './mail-zwevend';
@@ -23,6 +24,8 @@ type Props = {
   /** Opent het venster opnieuw (vanuit de plashka «Чернетка» rechtsonder). */
   onOpen?: () => void;
 };
+
+const handtekening = (v: { to: string; cc: string; bcc: string; subject: string; body: string }) => JSON.stringify([v.to.trim(), v.cc.trim(), v.bcc.trim(), v.subject.trim(), v.body]);
 
 export default function MailNewMessageDialog({ lang, open, accountId, context, onClose, onSent, onOpen }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
@@ -76,6 +79,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
     }
   }
   const draftKey = `mail-draft-${localDraftIdRef.current}`;
+  const bewaardRef = useRef('');
   const draftFieldsRef = useRef({ to, cc, bcc, subject, body });
   useEffect(() => {
     draftFieldsRef.current = { to, cc, bcc, subject, body };
@@ -269,7 +273,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
       const plainText = editorRef.current?.getPlainText() ?? '';
       try {
         const out = await saveDraftRemote(context, { to, cc, bcc, subject, html: body, plainText, accountId, localId: localDraftIdRef.current });
-        if (seq === serverSaveSeq.current) setDraftSync(out?.draft?.syncStatus === 'synced' ? 'synced' : out?.draft?.syncStatus === 'error' ? 'error' : 'local');
+        if (seq === serverSaveSeq.current) { setDraftSync(out?.draft?.syncStatus === 'synced' ? 'synced' : out?.draft?.syncStatus === 'error' ? 'error' : 'local'); bewaardRef.current = handtekening({ to, cc, bcc, subject, body }); }
       } catch {
         // De lokale kopie in de browser blijft bestaan (localStorage hierboven); de volgende wijziging probeert het opnieuw.
         if (seq === serverSaveSeq.current) setDraftSync('error');
@@ -351,14 +355,19 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
   const herstelRef = useRef(false);
   const [wisVraag, setWisVraag] = useState(false);
   const [kopOpen, setKopOpen] = useState(true);
-  const vorigOpen = useRef(open);
+  const [aanVerlaten, setAanVerlaten] = useState(false);
+  // QA 12.10 №4: ook de allereerste opening telt als «nieuw openen» — anders verscheen de oude lokale tekst in «Написати лист».
+  const vorigOpen = useRef(false);
   useEffect(() => {
     const was = vorigOpen.current; vorigOpen.current = open;
     if (!open || was) return;
+    // QA 12.10 №3: кожне відкриття починається з розгорнутої шапки — інакше перший символ у «Кому» згортав її й решта тексту губилася.
+    setKopOpen(true);
     const herstel = herstelRef.current; herstelRef.current = false;
     if (herstel || !heeftInhoud) return;
     const oudId = localDraftIdRef.current;
-    void saveDraftRemote(context, { to, cc, bcc, subject, html: body, plainText: editorRef.current?.getPlainText() ?? '', accountId, localId: oudId }).catch(() => undefined);
+    // Вже збережено на сервері саме в такому вигляді? Тоді не зберігати вдруге (інакше в «Чернетках» з'являлися дублікати).
+    if (bewaardRef.current !== handtekening({ to, cc, bcc, subject, body })) void saveDraftRemote(context, { to, cc, bcc, subject, html: body, plainText: editorRef.current?.getPlainText() ?? '', accountId, localId: oudId }).catch(() => undefined);
     try { localStorage.removeItem(`mail-draft-${oudId}`); localStorage.removeItem('mail-draft-active-id'); } catch { /* geen opslag */ }
     localDraftIdRef.current = '';
     serverSaveSeq.current++;
@@ -402,6 +411,8 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
   }
 
   const reset = () => {
+    setKopOpen(true);
+    bewaardRef.current = '';
     setTo('');
     setCc('');
     setBcc('');
@@ -440,7 +451,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
 
   const send = async () => {
     const plainText = editorRef.current?.getPlainText().trim() || '';
-    if (!accountId || sending || !to.trim() || !plainText) return;
+    if (!accountId || sending || !adressenGeldig(to) || !plainText) return;
     setSending(true);
     setFailure('');
     if (!requestIdRef.current) requestIdRef.current = newRequestId();
@@ -513,10 +524,11 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
           <span><b>{t('Кому', 'Aan')}:</b> {to}{cc.trim() ? ` · Cc: ${cc}` : ''}{bcc.trim() ? ` · Bcc: ${bcc}` : ''}</span>
           <span><b>{t('Тема', 'Onderwerp')}:</b> {subject.trim() || t('(без теми)', '(geen onderwerp)')}</span>
         </button>
-        : <div className="mail-nm-kop" data-nm-kop onBlur={(e) => { if (to.trim() && !e.currentTarget.contains(e.relatedTarget as Node | null)) setKopOpen(false); }}>
+        : <div className="mail-nm-kop" data-nm-kop onBlur={(e) => { const naar = e.relatedTarget as Node | null; /* згортати лише коли фокус перейшов на інший елемент цього вікна (текст листа, кнопки), а не зник через перемальовування */ if (adressenGeldig(to) && naar && dialogRef.current?.contains(naar) && !e.currentTarget.contains(naar)) setKopOpen(false); }}>
         <div className="mail-new-message-field mail-nm-aan">
           <label htmlFor="mail-nm-aan">{t('Кому', 'Aan')}</label>
-          <input id="mail-nm-aan" value={to} onChange={event => setTo(event.target.value)} placeholder="name@example.com" autoFocus={kopOpen && !to} />
+          <input id="mail-nm-aan" type="text" inputMode="email" autoComplete="email" value={to} onChange={event => setTo(event.target.value)} placeholder="name@example.com" autoFocus={kopOpen && !to} onFocus={() => setAanVerlaten(false)} onBlurCapture={() => setAanVerlaten(true)} aria-invalid={aanVerlaten && to.trim() !== '' && !adressenGeldig(to) ? true : undefined} aria-describedby={aanVerlaten && to.trim() !== '' && !adressenGeldig(to) ? 'mail-nm-aan-fout' : undefined} />
+          {aanVerlaten && to.trim() !== '' && !adressenGeldig(to) && <small id="mail-nm-aan-fout" className="mail-nm-aan-fout" role="status">{t('Неповна адреса — приклад: name@example.com', 'Onvolledig adres — bijvoorbeeld: name@example.com')}</small>}
           {!(showCc || cc.trim() || bcc.trim()) && <button type="button" className="mail-new-message-cc-toggle" onClick={() => setShowCc(true)} data-nm-kopie>{t('Копія / прихована', 'Cc / Bcc')}</button>}
         </div>
         {(showCc || cc.trim() || bcc.trim()) && (
@@ -533,7 +545,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
         )}
         <label className="mail-new-message-field">
           <span>{t('Тема', 'Onderwerp')}</span>
-          <input value={subject} onChange={event => setSubject(event.target.value)} />
+          <input value={subject} onChange={event => setSubject(event.target.value)} onKeyDown={event => { /* №12: Tab із «Тема» — одразу в текст листа, а не через 10 кнопок форматування */ if (event.key === 'Tab' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) { event.preventDefault(); editorRef.current?.focus(); } }} />
         </label>
         </div>}
         <div className="mail-nm-editor">
@@ -575,7 +587,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
             {draftSync === 'saving' ? t('Зберігаємо…', 'Bewaren…')
               : draftSync === 'synced' ? t('Чернетку збережено (Gmail)', 'Concept bewaard (Gmail)')
               : draftSync === 'local' ? t('Збережено на сервері, у Gmail ще ні', 'Op de server bewaard, nog niet in Gmail')
-              : draftSync === 'error' ? t('Лише в цьому браузері', 'Alleen in deze browser')
+              : draftSync === 'error' ? t('Збережено тут; у Gmail збережемо, щойно вийде', 'Hier bewaard; in Gmail zodra het lukt')
               : t('Чернетка', 'Concept')}
           </span>
           {heeftInhoud && !wisVraag && <button type="button" className="mail-nm-wis" onClick={() => setWisVraag(true)} data-nm-wis title={t('Очистити або видалити чернетку', 'Wissen of concept verwijderen')}><Trash2 aria-hidden="true" /><span>{t('Видалити', 'Verwijderen')}</span></button>}
@@ -585,7 +597,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
             <button type="button" onClick={() => setWisVraag(false)}>{t('Скасувати', 'Annuleren')}</button>
           </span>}
           <MailScheduleMenu lang={lang} context={context} canSchedule={Boolean(accountId && to.trim() && body.trim())} onSchedule={scheduleSend} busy={sending} />
-          <button type="button" className="primary" disabled={sending || !to.trim() || !body.trim()} onClick={() => void send()}>
+          <button type="button" className="primary" disabled={sending || !adressenGeldig(to) || (cc.trim() !== '' && !adressenGeldig(cc)) || (bcc.trim() !== '' && !adressenGeldig(bcc)) || !body.trim()} title={to.trim() && !adressenGeldig(to) ? t('Перевірте адресу в полі «Кому»', 'Controleer het adres bij «Aan»') : undefined} onClick={() => void send()}>
             <Send />
             {sending ? t('Надсилаємо…', 'Verzenden…') : t('Надіслати', 'Verzenden')}
           </button>

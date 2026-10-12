@@ -77,7 +77,7 @@ export async function main(): Promise<number> {
     const lijstZichtbaar = await page.locator('article').filter({ hasText: 'Тема листа номер 0' }).first().isVisible();
     check('2.1: список листів видно й доступний поруч', lijstZichtbaar);
     const balk = await page.locator('.mail-reader-toolbar').boundingBox();
-    if (balk && r1) { const x = r1.x + r1.width * 0.4, y = r1.y + 30; await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x - 200, y + 60, { steps: 6 }); await page.mouse.up(); }
+    if (balk && r1) { const x = r1.x + 150, y = r1.y + 30; /* порожнє місце панелі між «Назад/Пошук» і кнопками дій (кнопок стало більше: «До кошика») */ await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x - 200, y + 60, { steps: 6 }); await page.mouse.up(); }
     const r2 = await page.locator('.google-mail-reader').boundingBox();
     check('2.1: вікно перетягується за верхню панель', !!r1 && !!r2 && Math.abs(r2.x - r1.x) > 100, JSON.stringify({ r1, r2 }));
     await page.screenshot({ path: `${UIT}/mail-lijst-4-venster.png` });
