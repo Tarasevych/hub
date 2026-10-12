@@ -246,23 +246,44 @@ export async function setAgentPolicy(userId: string, id: string, autoApprove: st
  * Browseragent aan- of uitzetten door de eigen gebruiker. Uitzetten legt hem meteen stil; aanzetten geldt pas zodra een
  * ingelogde sessie hem bevestigt (armBrowserAgent), hier alvast voor ARM_MINUTES omdat de gebruiker nu op de site is.
  */
-export const ARM_MINUTES = 5;
-export async function setBrowserEnabled(userId: string, id: string, enabled: boolean): Promise<boolean> {
+export const ARM_MINUTES = 10;
+/** Duur van «AI mag deze browser gebruiken», gekozen door de eigenaar: null = tot hij zelf uitzet; minuten = vaste termijn; 'sessie' = alleen
+ *  zolang een ingelogde pagina van de site open is (elke 2 min bevestigd, vervalt 10 min na de laatste). */
+export type BrowserDuur = null | number | 'sessie';
+export const BROWSER_MAX_MINUTEN = 366 * 24 * 60;
+/** «Tot u uitzet» wordt opgeslagen als een datum ver in de toekomst (geen 'infinity': die kent JavaScript niet). */
+export const TOT_UITZETTEN_JAAR = 2999;
+export const isTotUitzetten = (ms: number | null | undefined) => !!ms && new Date(ms).getUTCFullYear() >= TOT_UITZETTEN_JAAR;
+export async function setBrowserEnabled(userId: string, id: string, enabled: boolean, duur: BrowserDuur = null): Promise<boolean> {
+  const minuten = duur === 'sessie' ? ARM_MINUTES : typeof duur === 'number' ? duur : null;
   const { rowCount } = await systeem(
     `UPDATE app.agents SET browser_enabled = $3,
-        armed_until = CASE WHEN $3 THEN now() + make_interval(mins => $4) ELSE NULL END
+        armed_until = CASE WHEN NOT $3 THEN NULL
+                           WHEN $4::int IS NULL THEN make_timestamptz(${TOT_UITZETTEN_JAAR}, 1, 1, 0, 0, 0, 'UTC')
+                           ELSE now() + make_interval(mins => $4::int) END,
+        policy = jsonb_set(coalesce(policy, '{}'::jsonb), '{activatie}', to_jsonb($5::text))
       WHERE id = $1 AND user_id = $2 AND platform = 'browser' AND revoked_at IS NULL`,
-    [id, userId, enabled, ARM_MINUTES]);
+    [id, userId, enabled, minuten, duur === 'sessie' ? 'sessie' : 'vast']);
   return (rowCount ?? 0) > 0;
 }
 
-/** Een ingelogde sessie bevestigt dat de browser actief mag blijven. Alleen als de gebruiker hem heeft aangezet. */
+/** Een ingelogde sessie bevestigt dat de browser actief mag blijven — ALLEEN in de stand 'sessie' (of oude agents zonder stand).
+ *  Een vaste termijn of «tot ik uitzet» raakt de hartslag nooit: niet verkorten en na afloop ook niet stilletjes verlengen. */
 export async function armBrowserAgent(userId: string, id: string): Promise<boolean> {
   const { rowCount } = await systeem(
     `UPDATE app.agents SET armed_until = now() + make_interval(mins => $3)
-      WHERE id = $1 AND user_id = $2 AND platform = 'browser' AND browser_enabled AND revoked_at IS NULL`,
+      WHERE id = $1 AND user_id = $2 AND platform = 'browser' AND browser_enabled AND revoked_at IS NULL
+        AND coalesce(policy->>'activatie', 'sessie') = 'sessie'`,
     [id, userId, ARM_MINUTES]);
   return (rowCount ?? 0) > 0;
+}
+
+/** Waarom een browser niet actief is (voor een duidelijke melding aan de AI en de gebruiker). */
+export async function browserStand(agentId: string): Promise<{ enabled: boolean; armedUntil: number | null; lastSeen: number | null; version: string | null } | null> {
+  const { rows } = await systeem('SELECT browser_enabled, armed_until, last_seen_at, agent_version FROM app.agents WHERE id = $1 AND revoked_at IS NULL', [agentId]);
+  const r = rows[0]; if (!r) return null;
+  const t = (v: unknown) => (v ? new Date(v as string).getTime() : null);
+  return { enabled: r.browser_enabled === true, armedUntil: t(r.armed_until), lastSeen: t(r.last_seen_at), version: r.agent_version ?? null };
 }
 
 /** Mag deze browser nu opdrachten krijgen? Aangezet door de gebruiker EN recent bevestigd door een ingelogde sessie. */

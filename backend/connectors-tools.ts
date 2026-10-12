@@ -14,7 +14,7 @@ import { beslissing, strengste, weigerTekst } from './ai-beleid';
 import { huidigeNamens } from './mcp-namens';
 import { CommandRefused, submitCommand, waitForCommand } from './connectors-commands';
 import { agentOnline } from './connectors-gateway';
-import { maakGeheimVerzoek, maakTicket, vergeetTicket } from './apps-overdracht';
+import { maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, vergeetTicket } from './apps-overdracht';
 import { SERVICE_HOSTS } from './deployment-identity';
 import * as store from './connectors-store';
 import { callSite } from './site-dispatch';
@@ -514,7 +514,7 @@ const APP_MAX_BYTES = 5 * 1024 * 1024;
 
 /** «Додатки»: dezelfde regels als de agent (deploy/agent/agent.mjs), vooraf, zodat het model meteen een duidelijke fout krijgt. */
 function validateApp(name: string, args: any): string | null {
-  if (typeof args.name !== 'string' || !APP_NAME.test(args.name)) return 'Invalid "name": 3-32 characters, lowercase letters, digits and "-", starting with a letter and not ending with "-".';
+  if (name !== 'app_list' && (typeof args.name !== 'string' || !APP_NAME.test(args.name))) return 'Invalid "name": 3-32 characters, lowercase letters, digits and "-", starting with a letter and not ending with "-".';
   if (name === 'app_deploy') {
     if (!Array.isArray(args.files) || !args.files.length || args.files.length > 800) return 'Invalid "files": 1 to 800 items of {path, content, encoding?}.';
     let bytes = 0;
@@ -608,7 +608,7 @@ async function githubTokenName(userId: string): Promise<string | null> {
 // Standaard: lezen = always; schrijven op de site = ask; RISKY (wijzigt iets op een pc of in de browser, of toont privégegevens) = off.
 // De gebruiker mag elk hulpmiddel op elke modus zetten, ook RISKY op "always" (zijn keuze, per taak); de UI toont daarbij een waarschuwing.
 // "always" op een RISKY hulpmiddel betekent: geen klik per aanroep (de eigen grenzen van de agent, mappen en toegestane commando's, blijven gelden).
-export type ToolGroup = 'devices' | 'browser' | 'mail' | 'calendar' | 'drive' | 'site' | 'github';
+export type ToolGroup = 'devices' | 'apps' | 'browser' | 'mail' | 'calendar' | 'drive' | 'site' | 'github';
 export type ToolMode = store.ToolMode;
 export const RISKY_TOOLS = new Set(['machine_write_file', 'machine_exec', 'docker_manage_container', 'browser_invoke_action', 'browser_click', 'browser_type',
   'browser_select_option', 'browser_press_key', 'browser_screenshot', 'browser_get_deep_diagnostics', 'browser_hover', 'browser_fill_form',
@@ -616,6 +616,7 @@ export const RISKY_TOOLS = new Set(['machine_write_file', 'machine_exec', 'docke
   'app_deploy', 'app_rollback', 'app_control', 'app_route', 'app_secret_delete']);
 
 export function groupOf(name: string): ToolGroup {
+  if (name.startsWith('app_')) return 'apps';
   if (name.startsWith('browser_')) return 'browser';
   const site = SITE_TOOL_BY_NAME.get(name);
   if (site) return site.group;
@@ -641,8 +642,17 @@ export function effectiveMode(name: string, stored: ToolMode | undefined): ToolM
  */
 export async function listTools(userId: string, opts: { alwaysMachine?: boolean } = {}): Promise<ToolDef[]> {
   const [tools, modes] = await Promise.all([allTools(userId, opts), store.getToolModes(userId)]);
-  // Een op "off" gezet hulpmiddel verdwijnt uit de lijst (en wordt in callTool ook geweigerd).
-  const visible = tools.filter((t) => effectiveMode(t.name, modes[t.name]) !== 'off');
+  // Met een geldig ondertekend AI-beleid beslist ALLEEN dat beleid (zoals in callTool) — ook over wat de AI te zien krijgt.
+  // Anders bleven nieuwe of riskante hulpmiddelen (bv. app_deploy) onzichtbaar door de oude schakelaars, die de eigenaar
+  // met een beleid niet eens meer ziet. Zonder beleid: de schakelaars op de site.
+  const namens = huidigeNamens();
+  const proef = namens ? await beslissing(namens, '__lijst__') : null;
+  const zichtbaar = new Set<string>();
+  for (const t of tools) {
+    const zien = proef?.staat === 'geldig' ? (await beslissing(namens, t.name)).mode !== 'off' : effectiveMode(t.name, modes[t.name]) !== 'off';
+    if (zien) zichtbaar.add(t.name);
+  }
+  const visible = tools.filter((t) => zichtbaar.has(t.name));
   // Browser: de MCP-client ziet de namen van chrome-devtools-mcp (T7); de oude browser_*-namen blijven aanroepbaar als alias.
   const names = new Set(visible.map((t) => t.name));
   const out = visible.filter((t) => !isBrowserTool(t.name) || !Object.values(DEVTOOLS_ALIASES).some((a) => a.target === t.name));
@@ -724,15 +734,24 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       return text('This tool has been turned off by the user in Mijn Ruimte (mcp.tarasevych.com → Agents → Tools and permissions). Do not try to work around it; tell the user.', true);
     }
     // «Питати щоразу» volgens het beleid, maar dit hulpmiddel heeft geen goedkeurstap: dan niet stil uitvoeren.
-    if (beleid.mode === 'ask' && !TOOL_TO_COMMAND[name] && !SITE_TOOL_BY_NAME.has(name)) {
+    // (app_secret_request maakt alleen een link waarop de eigenaar zelf iets moet doen: dat ís de vraag.)
+    if (beleid.mode === 'ask' && !TOOL_TO_COMMAND[name] && !SITE_TOOL_BY_NAME.has(name) && name !== 'app_secret_request') {
       return text('The owner\'s signed AI policy says to ask every time for this, and this tool has no approval step. Ask the user to allow it with a timer at admin.tarasevych.com → AI access; do not retry.', true);
     }
     if (name === 'machine_list') {
       const agents = await store.listAgents(userId);
       // Namen komen van het apparaat/de extensie zelf (bij het koppelen): onbetrouwbaar.
-      return untrusted(agents.map((a) => ({
-        id: a.id, name: a.name, platform: a.platform, status: agentOnline(a.id) ? 'connected' : 'disconnected',
-      })));
+      // Diagnose zonder te gissen: voor een browser of AI aan staat en tot wanneer een ingelogde tab het bevestigde;
+      // voor een pc/server welke versie en of «Додатки» aan staan.
+      return untrusted(agents.map((a) => {
+        const browser = isBrowserAgent(a);
+        return {
+          id: a.id, name: a.name, platform: a.platform, status: agentOnline(a.id) ? 'connected' : 'disconnected', version: a.agent_version ?? null,
+          ...(browser
+            ? { aiEnabled: a.browser_enabled === true, aiActiveUntil: a.armed_until ? new Date(a.armed_until).toISOString() : null, aiActiveNow: a.browser_enabled === true && !!a.armed_until && new Date(a.armed_until).getTime() > Date.now() }
+            : { apps: appsAan(a) }),
+        };
+      }));
     }
 
     if (name === 'app_secret_request') return await appSecretRequest(userId, args);
@@ -762,9 +781,7 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       const agent = candidates[0];
       if (!agentOnline(agent.id)) return text(`Device "${agent.name}" is offline.`, true);
 
-      if (wantBrowser && !(await store.browserActive(agent.id))) {
-        return text('This browser is not activated for AI use, or the user is not signed in on the site right now. Ask the user to open mcp.tarasevych.com → Agents → Browser extension, sign in and switch on "Allow AI on this browser". Do not retry until they confirm.', true);
-      }
+      if (wantBrowser && !(await store.browserActive(agent.id))) return text(await browserNietActief(agent.id), true);
       const { machine: _machine, browser: _browser, ...ruw } = args;
       if (name.startsWith('app_') && !appsAan(agent)) return text(APPS_UIT(agent.name), true);
       // «Додатки»: bestanden en env van een uitrol gaan via een eenmalig ticket, nooit in de bewaarde opdracht (zie apps-overdracht.ts).
@@ -848,6 +865,16 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
 }
 
 /** Uitleg voor het model bij een geweigerde opdracht (geen grant, buiten domein, geblokkeerd, te veel). */
+/** Precieze reden waarom een browser niet mag (uit, of geen recente bevestiging door een open, ingelogde tab). */
+async function browserNietActief(agentId: string): Promise<string> {
+  const st = await store.browserStand(agentId);
+  if (!st?.enabled) return 'This browser is switched off for AI use. Ask the user to open mcp.tarasevych.com → Agents → Devices → this browser and switch on "Allow AI on this browser". Do not retry until they confirm.';
+  const tot = st.armedUntil ? new Date(st.armedUntil).toISOString() : 'never';
+  return `This browser is switched on, but its AI access period ended at ${tot}${st.version ? ` (extension version ${st.version})` : ''}. `
+    + 'Either the period the user chose has passed, or it is set to "only while a Mijn Ruimte page is open" and no such page is open. '
+    + 'Ask the user to switch it on again at mcp.tarasevych.com → Agents → Devices → this browser (choose "until I switch it off" for no time limit). Do not retry until they confirm.';
+}
+
 // ---- «Додатки» ----
 const appsAan = (a: store.AgentRow) => (a.capabilities as { apps?: unknown } | null)?.apps === true;
 const APPS_UIT = (device: string) => `Apps are not enabled on device "${device}". The owner enables them once on that device with the Mijn Ruimte agent (version 0.5 or newer): `
@@ -867,6 +894,7 @@ async function appSecretRequest(userId: string, args: any): Promise<ToolResult> 
   let v;
   try { v = maakGeheimVerzoek({ userId, agentId: agent.id, agentNaam: agent.name, app: args.name, sleutel: args.key, uitleg: typeof args.reason === 'string' ? args.reason.trim().slice(0, 200) : '' }); }
   catch { return text('Too many secret requests are open. Ask the user to finish or let them expire first.', true); }
+  meldGeheimVerzoek(v, `${SITE_MCP}/apps?geheim=${v.id}`);
   return text(JSON.stringify({
     link: `${SITE_MCP}/apps?geheim=${v.id}`, app: v.app, key: v.sleutel, device: agent.name, expiresInMinutes: 30,
     next: 'Give this link to the user. They sign in and type the value there; it goes straight to the device. Check with app_secret_list; never ask for the value in the chat.',
@@ -936,3 +964,9 @@ export async function approveToolCall(userId: string, id: string) {
 }
 
 export const rejectToolCall = (userId: string, id: string) => store.transitionToolCall(id, userId, ['pending_approval'], 'rejected');
+
+/** Namen zoals een AI ze ziet (browserhulpmiddelen onder hun devtools-naam), voor de catalogus van het AI-beleid. */
+export function publiekeToolNamen(): string[] {
+  const doelen = new Set(Object.values(DEVTOOLS_ALIASES).map((a) => a.target));
+  return [...KNOWN_TOOL_NAMES.filter((n) => !doelen.has(n)), ...Object.keys(DEVTOOLS_ALIASES)];
+}

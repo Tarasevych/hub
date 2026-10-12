@@ -2,6 +2,9 @@ import { db, error, invites, isInviteError, isOwnerEmail, json, ownerEmail, rout
 import { alsSysteem, sessieGeverifieerd, zetGebruiker } from '../server/platform/context'
 import { juridischeRoutes } from './juridisch'
 import { createAgentRoutes } from './connectors-routes'
+import { zetGeheimMelder } from './apps-overdracht'
+// «Додатки»: een AI vraagt om een geheim → melding (bel + badge op mcp/apps) met de link naar het invulvenster. notify() is hoisted.
+zetGeheimMelder((userId, titel, tekst, link) => notify(userId, '', 'mcp_app_secret', titel, tekst, link))
 import { createMcpConnectorRoutes } from './mcp-connector-routes'
 import * as aiGrants from './ai-grants'
 import { createMailComposeRoutes, runMailQueue } from './mail-compose'

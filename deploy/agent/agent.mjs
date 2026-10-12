@@ -17,7 +17,7 @@ import net from 'node:net';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 
-const VERSION = '0.5.0';
+const VERSION = '0.5.1';
 const CONFIG_PATH = process.env.HUB_AGENT_CONFIG ?? path.join(os.homedir(), '.hub-agent', 'config.json');
 const MAX_READ = 2 * 1024 * 1024;
 const MAX_WRITE = 5 * 1024 * 1024;
@@ -494,13 +494,19 @@ export const appHandlers = {
     const regels = (t) => String(t || '').split('\n').map((l) => l.trim()).filter(Boolean).flatMap((l) => { try { const v = JSON.parse(l); return Array.isArray(v) ? v : [v]; } catch { return []; } });
     const containers = regels(ps.stdout), stats = regels(st.stdout);
     const naamVan = (c) => String(Array.isArray(c.Names) ? c.Names[0] : c.Names ?? c.Name ?? '').replace(/^\//, '');
-    return { apps: Object.values(reg.apps).map((app) => {
+    // Bewaking: luistert de app echt op haar poort (zelfde controle als na een uitrol, maar één poging van max. 1,5 s)?
+    const luistert = (port) => new Promise((resolve) => { if (!port) return resolve(false); const k = net.connect(port, '127.0.0.1'); const t = setTimeout(() => { k.destroy(); resolve(false); }, 1500); k.once('connect', () => { clearTimeout(t); k.destroy(); resolve(true); }); k.once('error', () => { clearTimeout(t); k.destroy(); resolve(false); }); });
+    return { apps: await Promise.all(Object.values(reg.apps).map(async (app) => {
       const c = containers.find((x) => naamVan(x) === ctr(app.name));
       const s = stats.find((x) => String(x.Name ?? x.name ?? '').replace(/^\//, '') === ctr(app.name));
       const loopt = c && /running|^up/i.test(String(c.State ?? c.Status ?? ''));
+      const domein = domeinVoor(a, app.name, app.domain);
       return { name: app.name, status: c ? (loopt ? 'running' : 'stopped') : 'missing', version: app.current, versions: app.versions.length,
-        url: domeinVoor(a, app.name, app.domain) && a.caddyAdmin ? `https://${domeinVoor(a, app.name, app.domain)}` : `http://127.0.0.1:${app.hostPort}`, memory: s ? String(s.MemUsage ?? s.mem_usage ?? '') : '', cpu: s ? String(s.CPUPerc ?? s.cpu_percent ?? '') : '', deploy: jobs.get(app.name)?.state || '' };
-    }) };
+        url: domein && a.caddyAdmin ? `https://${domein}` : `http://127.0.0.1:${app.hostPort}`, localUrl: `http://127.0.0.1:${app.hostPort}`,
+        domain: domein && a.caddyAdmin ? domein : '', hostPort: app.hostPort, port: app.port, listening: loopt ? await luistert(app.hostPort) : false,
+        uptime: c ? String(c.Status ?? c.status ?? '').slice(0, 60) : '', image: c ? String(c.Image ?? '').slice(0, 120) : '',
+        memory: s ? String(s.MemUsage ?? s.mem_usage ?? '') : '', cpu: s ? String(s.CPUPerc ?? s.cpu_percent ?? '') : '', deploy: jobs.get(app.name)?.state || '' };
+    })) };
   },
   async 'apps.logs'(cfg, { name, lines } = {}) {
     const a = requireApps(cfg); appName(name);

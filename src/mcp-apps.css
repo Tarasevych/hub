@@ -48,3 +48,49 @@
 .mapps-regels{margin:12px 0 0;padding-left:20px;display:grid;gap:6px;color:var(--muted);line-height:1.5}
 .mapps-status{margin:0;font-weight:600}
 @media (max-width:640px){.mapps-kaart{padding:14px}.mapps button{flex:1 1 auto;justify-content:center}}
+/* Panel: meta per app, bewaking, bevestiging verwijderen */
+.mapps-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 14px;margin:2px 0 4px}
+.mapps-meta div{display:grid;gap:1px;min-width:0}
+.mapps-meta dt{font-size:.74rem;color:var(--muted)}
+.mapps-meta dd{margin:0;overflow-wrap:anywhere;font-size:.9rem}
+.mapps-gezond{display:inline-flex;align-items:center;gap:4px;font-size:.8rem;font-weight:600;padding:2px 8px;border-radius:999px}
+.mapps-gezond svg{width:14px;height:14px}
+.mapps-gezond.ok{background:color-mix(in srgb,#15803d 16%,transparent);color:var(--text)}
+.mapps-gezond.nee{background:color-mix(in srgb,#dc2626 16%,transparent);color:var(--text)}
+.mapps-bevestig{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,#dc2626 10%,var(--panel));font-size:.9rem}
+.mapps .mapps-gevaar{background:#b91c1c;color:#fff;border:0}
+.mapps-melding{display:grid;gap:8px}
+.mapps-geheim{display:grid;gap:10px}
+.mapps-geheim-kop{display:flex;align-items:center;gap:8px;margin:0;font-weight:700;font-size:1.05rem}
+.mapps-geheim form{display:grid;gap:8px}
+.mapps-geheim input[type=password]{min-height:44px;padding:10px 12px;border-radius:10px;border:1px solid var(--line, rgba(100,116,139,.32));background:var(--surface);color:var(--text);font:inherit}
+.mapps-geheim button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:8px 14px;border-radius:10px;font:inherit;cursor:pointer}
+/* «Підключити цей сервер» */
+.mapps-server{display:grid;gap:12px}
+.mapps-server h2{margin:0}
+.mapps-server p{margin:0;line-height:1.5}
+.mapps-keuze{border:1px solid var(--line, rgba(100,116,139,.32));border-radius:12px;padding:10px 14px;display:grid;gap:10px;margin:0}
+.mapps-keuze legend{font-weight:700;padding:0 6px}
+.mapps-vink{display:flex;gap:10px;align-items:flex-start;line-height:1.45;font-weight:400}
+.mapps-vink input{margin-top:4px;width:18px;height:18px;flex:0 0 auto}
+.mapps-sub{display:grid;gap:8px;margin-left:28px}
+.mapps-sub label{display:grid;gap:4px;font-weight:600;font-size:.9rem}
+.mapps-sub label.mapps-vink{display:flex;font-weight:400}
+.mapps-sub input:not([type=checkbox]),.mapps-sub select{min-height:40px;padding:8px 10px;border-radius:10px;border:1px solid var(--line, rgba(100,116,139,.32));background:var(--surface);color:var(--text);font:inherit;max-width:460px}
+.mapps-sub input[aria-invalid=true]{border-color:#dc2626;box-shadow:0 0 0 1px #dc2626}
+.mapps-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mapps-chips button{min-height:34px;padding:4px 12px;border-radius:999px;border:1px solid var(--line, rgba(100,116,139,.32));background:transparent;color:var(--text);font:inherit;cursor:pointer}
+.mapps-chips button.is-aan{background:color-mix(in srgb,var(--accent) 22%,transparent);border-color:var(--accent);font-weight:700}
+.mapps-waarschuwing{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,#a16207 14%,var(--panel));line-height:1.45}
+.mapps-waarschuwing svg{flex:0 0 auto;width:18px;height:18px;margin-top:2px}
+.mapps-commando{display:grid;gap:8px}
+.mapps-commando pre{margin:0;padding:10px 12px;border-radius:10px;background:#0b0f14;color:#e6edf3;overflow-x:auto;font:13px/1.5 ui-monospace,Consolas,monospace;white-space:pre}
+.mapps-server button,.mapps-commando button{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:8px 14px;border-radius:10px;font:inherit;cursor:pointer}
+.mapps-server svg{width:18px;height:18px}
+.mapps-server .mapps-chips svg{display:none}
+/* Venster «Секрет для додатка»: eigen binnenruimte en een duidelijke hoofdknop */
+.mapps-geheim{padding:14px 18px 18px}
+.mapps-geheim .mapps-feiten{margin:0}
+.mapps-geheim button[type=submit]{background:var(--accent,#15803d);color:var(--accentText,#fff);border:0;font-weight:700}
+.mapps-geheim button[type=submit][disabled]{opacity:.55}
+.mapps-geheim label{font-weight:600}

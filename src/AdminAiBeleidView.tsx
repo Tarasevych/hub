@@ -10,6 +10,7 @@ import { canonicalize } from '../shared/ai-beleid/canonical';
 import { diffPolicy, listGrants, type GrantRow, type Op, type Policy } from '../shared/ai-beleid/model';
 import { PRESETS, countdown, formatClock, formatDuration, resolveGrant, zonedToUtc, type After, type GrantSpec, type Mode } from '../shared/ai-beleid/time';
 import { Venster } from './platform/vensters';
+import { textOf } from './mcp-texts';
 import './admin-ai-beleid.css';
 
 type Lang = 'uk' | 'nl';
@@ -19,6 +20,9 @@ type Versie = { seq: number; hash: string; op: string; ondertekend: { soort?: st
 type Overzicht = {
   staat: 'niet-ingesteld' | 'ongeldig' | 'geldig'; code?: string; serverNow: number; tz: string;
   beleid?: Policy; hash?: string; versies?: Versie[]; verbindingen: Verbinding[]; sleutels: Array<{ label: string; vingerafdruk: string }>;
+  /** Levend van de server: welke hulpmiddelen onder elke mogelijkheid vallen, en welke (nieuwe) nog nergens onder vallen. */
+  mogelijkheden?: Array<{ id: string; group: string; groupNl?: string; label: string; sinds?: string; tools: string[] }>;
+  zonderGroep?: string[];
 };
 type Staged = { id: string; op: Op; uk: string; nl: string };
 type Voorstel = { uitdagingId: string; verloopt: number; nonce: string; beleidHash: string; ontwerp: Policy; publicKey: AssertieOpties };
@@ -242,6 +246,12 @@ export default function AdminAiBeleidView({ lang, sourceOrigin, tabContext, alle
   const laatste = data.versies?.[0];
   const mijnRijen = rijen.filter((r) => r.agentId === agent);
   const groepen = [...new Set(mijnRijen.map((r) => r.group))];
+  const capInfo = new Map((data.mogelijkheden ?? []).map((m) => [m.id, m]));
+  // «Нове»: de mogelijkheid bestaat pas sinds na de laatste ondertekende versie — de eigenaar heeft er nog niet over beslist.
+  const getekendOp = (() => { try { return laatste?.op ? new Date(laatste.op).toISOString().slice(0, 10) : ''; } catch { return ''; } })();
+  const isNieuw = (cap: string) => { const s = capInfo.get(cap)?.sinds; return !!s && (!getekendOp || getekendOp < s); };
+  const toolNaam = (n: string) => textOf(n, lang)?.title || n;
+  const groepNl = (g: string) => [...capInfo.values()].find((m) => m.group === g)?.groupNl ?? GROEP_NL[g] ?? g;
   const geselecteerd = beleid.agents[agent];
   const zonderAgent = data.verbindingen.filter((v) => !v.agentId);
 
@@ -252,6 +262,13 @@ export default function AdminAiBeleidView({ lang, sourceOrigin, tabContext, alle
         <p>{laatste ? tr(lang, `Підписано: ${laatste.ondertekend.soort === 'passkey' ? `passkey «${laatste.ondertekend.label ?? ''}»` : `офлайн-ключ ${laatste.ondertekend.keyId ?? ''}`} · ${laatste.op ? new Date(laatste.op).toLocaleString('uk-UA') : ''}`, `Getekend: ${laatste.ondertekend.soort === 'passkey' ? `passkey «${laatste.ondertekend.label ?? ''}»` : `offline sleutel ${laatste.ondertekend.keyId ?? ''}`} · ${laatste.op ? new Date(laatste.op).toLocaleString('nl-BE') : ''}`) : null}</p>
       </div></div>
       {melding ? <p className='aib-melding' data-ok={String(melding.ok)} role={melding.ok ? 'status' : 'alert'}>{melding.tekst}</p> : null}
+
+      {data.zonderGroep?.length ? (
+        <div className='aib-waarschuwing' data-zonder-groep=''><TriangleAlert aria-hidden='true' /><div>
+          <strong>{tr(lang, 'Нові інструменти без групи в політиці — ШІ питатиме вас щоразу:', 'Nieuwe hulpmiddelen zonder groep in het beleid — de AI vraagt u elke keer:')}</strong>
+          <p>{data.zonderGroep.map(toolNaam).join(', ')}</p>
+        </div></div>
+      ) : null}
 
       {zonderAgent.length ? (
         <div className='aib-waarschuwing'><TriangleAlert aria-hidden='true' /><div>
@@ -282,14 +299,15 @@ export default function AdminAiBeleidView({ lang, sourceOrigin, tabContext, alle
           {open === '__standaard' ? <Keuze lang={lang} tz={tz} nu={nu} onSluit={() => setOpen('')} onKies={(spec) => zetInRij({ op: 'default', agent, spec }, `«${geselecteerd.name}» · за замовчуванням: ${specTekst('uk', spec, tz, nu)}`, `«${geselecteerd.name}» · standaard: ${specTekst('nl', spec, tz, nu)}`)} /> : null}
           {groepen.map((g) => (
             <div key={g} className='aib-groep'>
-              <h3>{tr(lang, g, GROEP_NL[g] ?? g)}</h3>
+              <h3>{tr(lang, g, groepNl(g))}{mijnRijen.some((r) => r.group === g && isNieuw(r.capability)) ? <span className='aib-nieuw' data-nieuw-groep={g}>{tr(lang, 'Нове', 'Nieuw')}</span> : null}</h3>
               <ul className='aib-rijen'>
                 {mijnRijen.filter((r) => r.group === g).map((r) => {
                   const inRij = wachtrij.filter((w) => w.op.op === 'grant' && w.op.agent === agent && Array.isArray(w.op.capabilities) && w.op.capabilities.includes(r.capability));
                   return (
                     <li key={r.capability} className='aib-rij' data-cap={r.capability} data-effect={r.effect}>
                       <div className='aib-rij-kop'>
-                        <div><strong>{r.label}</strong>{r.inherited ? <small className='aib-geerfd'>{tr(lang, ' · як за замовчуванням', ' · zoals standaard')}</small> : null}</div>
+                        <div><strong>{r.label}</strong>{isNieuw(r.capability) ? <span className='aib-nieuw'>{tr(lang, 'Нове', 'Nieuw')}</span> : null}{r.inherited ? <small className='aib-geerfd'>{tr(lang, ' · як за замовчуванням', ' · zoals standaard')}</small> : null}
+                          {capInfo.get(r.capability)?.tools.length ? <small className='aib-tools' data-tools={r.capability}>{tr(lang, 'Інструменти: ', 'Hulpmiddelen: ')}{capInfo.get(r.capability)!.tools.map((n) => <span key={n} title={n}>{toolNaam(n)}</span>)}</small> : null}</div>
                         <span className={`aib-status is-${r.effect}`}>{r.effect === 'allow' ? <><Check aria-hidden='true' />{tr(lang, 'Дозволено', 'Toegestaan')}</> : r.effect === 'ask' ? <><Fingerprint aria-hidden='true' />{tr(lang, 'Питати щоразу', 'Elke keer vragen')}</> : <><X aria-hidden='true' />{tr(lang, 'Вимкнено', 'Uit')}</>}</span>
                         {!alleenLezen ? <button type='button' className='aib-klein' aria-haspopup='dialog' aria-expanded={open === r.capability} onClick={() => setOpen(open === r.capability ? '' : r.capability)}><Timer aria-hidden='true' />{tr(lang, 'Змінити', 'Wijzigen')}</button> : null}
                       </div>

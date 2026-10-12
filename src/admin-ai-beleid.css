@@ -126,3 +126,7 @@
 
 /* Tekenvenster in het gezamenlijke vensterbeheer: geen eigen rand of laag. */
 .aib-venster-laag .aib.aib-venster{width:100%;max-height:none;border:0;border-radius:0;box-shadow:none;padding:16px 18px}
+/* Нове / інструменти під кожною можливістю (каталог живий із сервера). */
+.aib-nieuw{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.72rem;font-weight:700;vertical-align:middle;background:color-mix(in srgb,#a16207 22%,transparent);color:var(--text)}
+.aib-tools{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:4px;color:var(--muted);font-size:.8rem}
+.aib-tools span{padding:1px 7px;border-radius:7px;background:var(--surface,rgba(120,140,160,.12));color:var(--text)}

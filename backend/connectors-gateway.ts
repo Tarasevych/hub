@@ -109,7 +109,7 @@ export async function dispatchCommand(cmd: { id: string; agent_id: string; user_
   // Browser: ook nog aangezet door de gebruiker en recent bevestigd door een ingelogde sessie (0013). Welke mogelijkheden mogen,
   // bepalen sinds 0017 de grants (policy.enabled is alleen nog weergave voor oude UI's).
   if (cmd.type.startsWith('browser.') && !(await store.browserActive(cmd.agent_id))) {
-    await store.transitionCommand(cmd.id, ['approved'], 'failed', { error: 'browser is not activated or the user is not signed in on the site' });
+    await store.transitionCommand(cmd.id, ['approved'], 'failed', { error: 'browser AI access is switched off or its period ended (owner: mcp.tarasevych.com → Agents → Devices)' });
     return false;
   }
   const check = await grants.checkCommand({ id: cmd.agent_id, user_id: entry.userId }, cmd.type, cmd.params, 'dispatch');

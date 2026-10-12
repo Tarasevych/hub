@@ -21,6 +21,11 @@ type Release = { version?: string; storeUrl?: string; installers?: string[]; crx
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 const MIN_VERSION = '0.4.0';
+/** Keuzes voor «Як довго»: waarde (minuten, 'tot' of 'sessie'), uk, nl. Standaard: tot de eigenaar het zelf uitzet. */
+const DUREN: Array<[string, string, string]> = [
+  ['tot', 'доки я не вимкну', 'tot ik het uitzet'], ['60', '1 годину', '1 uur'], ['480', '8 годин', '8 uur'], ['1440', '1 день', '1 dag'],
+  ['10080', '7 днів', '7 dagen'], ['43200', '30 днів', '30 dagen'], ['sessie', 'лише поки відкрита сторінка сайту', 'alleen zolang een pagina van de site open is'],
+];
 const FALLBACK_EXTENSION_ID = 'ofpffonakgjioahgfejmiblfmbkobmmi';
 type Ping = { ok: boolean; version?: string; paired?: boolean; connected?: boolean; account?: 'ok' | 'mismatch' | 'unknown'; agentId?: string; caps?: number; blocked?: boolean };
 type SelfTest = { ok: boolean; version?: string; checks?: Array<{ id: string; ok: boolean; detail: string }> };
@@ -145,11 +150,15 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
     setBusy(false);
   };
 
-  const setEnabled = async (a: BrowserAgent, on: boolean) => {
+  // Hoe lang «AI mag deze browser gebruiken» geldt, kiest de eigenaar: standaard tot hij het zelf uitzet.
+  const [duur, setDuur] = useState<string>('tot');
+  const duurWaarde = (d: string): number | 'sessie' | null => (d === 'tot' ? null : d === 'sessie' ? 'sessie' : Number(d));
+  const setEnabled = async (a: BrowserAgent, on: boolean, keuze = duur) => {
     setBusy(true); setNotice('');
     try {
-      await api.post(`/api/owner/agents/${a.id}/browser-enabled`, { ...sessionBody(), enabled: on }); await load();
-      setNotice(on ? tr(`ШІ може користуватися браузером «${a.name}» (поки ви ввійшли на сайті).`, `De AI mag browser «${a.name}» gebruiken (zolang u op de site bent aangemeld).`) : tr(`ШІ більше не користується браузером «${a.name}».`, `De AI gebruikt browser «${a.name}» niet meer.`));
+      await api.post(`/api/owner/agents/${a.id}/browser-enabled`, { ...sessionBody(), enabled: on, ...(on ? { duur: duurWaarde(keuze) } : {}) }); await load();
+      const hoeLang = keuze === 'tot' ? tr('доки ви самі не вимкнете', 'tot u het zelf uitzet') : keuze === 'sessie' ? tr('поки в цьому браузері відкрита сторінка сайту', 'zolang er in deze browser een pagina van de site open is') : tr(`на ${DUREN.find((x) => x[0] === keuze)?.[1] ?? keuze}`, `voor ${DUREN.find((x) => x[0] === keuze)?.[2] ?? keuze}`);
+      setNotice(on ? tr(`ШІ може користуватися браузером «${a.name}» ${hoeLang}.`, `De AI mag browser «${a.name}» gebruiken ${hoeLang}.`) : tr(`ШІ більше не користується браузером «${a.name}».`, `De AI gebruikt browser «${a.name}» niet meer.`));
     }
     catch (e) { setNotice(foutTekst(e, tr, ['Не вдалося змінити активацію', 'Activering wijzigen mislukt'])); }
     setBusy(false);
@@ -186,7 +195,10 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
 
   const agentBlock = (a: BrowserAgent) => {
     const state: 'on' | 'wait' | 'off' = !a.enabled ? 'off' : armed(a) ? 'on' : 'wait';
-    const stateText = state === 'on' ? tr('ШІ активний (вхід підтверджено)', 'AI actief (aanmelding bevestigd)') : state === 'wait' ? tr('очікує входу на сайті', 'wacht op aanmelding op de site') : tr('ШІ вимкнено', 'AI uit');
+    const tot = a.armedUntil ? new Date(a.armedUntil).toLocaleTimeString(tr('uk-UA', 'nl-NL'), { hour: '2-digit', minute: '2-digit' }) : '';
+    const totUit = !!a.armedUntil && new Date(a.armedUntil).getUTCFullYear() >= 2999;
+    const stateText = state === 'on' ? (totUit ? tr('ШІ активний — доки ви не вимкнете', 'AI actief — tot u het uitzet') : tr(`ШІ активний до ${tot}`, `AI actief tot ${tot}`))
+      : state === 'wait' ? tr('не активний: термін минув або (у режимі «лише поки відкрита сторінка») немає відкритої сторінки сайту в цьому браузері', 'niet actief: termijn verlopen of (in de stand «alleen zolang een pagina open is») geen open pagina van de site in deze browser') : tr('ШІ вимкнено', 'AI uit');
     return (
       <article key={a.id} className={`hub-agent mcp-browser${compact ? ' is-compact' : ''}`} data-browser-agents='1' data-device={a.id}>
         {compact ? null : <div className='hub-agent-head'>
@@ -202,11 +214,18 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
         <div className='hub-switch'>
           <span className='hub-switch-text'>
             <b>{tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')}
-              <Help tr={tr} content={{ title: tr('Головний вимикач браузера', 'Hoofdschakelaar van de browser'), what: tr('Вмикає або вимикає весь доступ ШІ до цього браузера.', 'Zet alle toegang van de AI tot deze browser aan of uit.'), touches: tr(`Лише браузер «${a.name}», не інші браузери й не пристрої.`, `Alleen de browser «${a.name}», niet andere browsers of apparaten.`), on: tr('ШІ може лише те, що ви дозволили нижче, і лише поки ви ввійшли на сайті (перевірка кожні 2 хв).', 'De AI kan alleen wat u hieronder toestaat, en alleen zolang u op de site bent aangemeld (controle elke 2 min).'), off: tr('Розширення нічого не виконує, навіть якщо окремі можливості нижче ввімкнені.', 'De extensie voert niets uit, ook niet als losse mogelijkheden hieronder aan staan.') }} /></b>
-            <small>{tr('Вихід із сайту або закриття вкладки вимикає ШІ за кілька хвилин, навіть якщо розширення залишається в браузері.', 'Afmelden of de site sluiten zet de AI binnen enkele minuten uit, ook als de extensie in de browser blijft.')}</small>
+              <Help tr={tr} content={{ title: tr('Головний вимикач браузера', 'Hoofdschakelaar van de browser'), what: tr('Вмикає або вимикає весь доступ ШІ до цього браузера.', 'Zet alle toegang van de AI tot deze browser aan of uit.'), touches: tr(`Лише браузер «${a.name}», не інші браузери й не пристрої.`, `Alleen de browser «${a.name}», niet andere browsers of apparaten.`), on: tr('ШІ може лише те, що ви дозволили нижче, і стільки часу, скільки ви обрали в «Як довго».', 'De AI kan alleen wat u hieronder toestaat, en zo lang als u bij «Hoe lang» kiest.'), off: tr('Розширення нічого не виконує, навіть якщо окремі можливості нижче ввімкнені.', 'De extensie voert niets uit, ook niet als losse mogelijkheden hieronder aan staan.') }} /></b>
+            <small>{tr('Діє стільки, скільки ви оберете нижче (типово — доки ви самі не вимкнете). Вимкнути можна будь-коли тут або кнопкою «Стоп».', 'Geldt zo lang als u hieronder kiest (standaard tot u het zelf uitzet). Uitzetten kan altijd hier of met de knop «Stop».')}</small>
           </span>
           <button type='button' className='hub-toggle' role='switch' aria-checked={a.enabled} aria-label={tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')} disabled={busy} onClick={() => void setEnabled(a, !a.enabled)} />
         </div>
+        <label className='hub-row start' style={{ gap: 8, flexWrap: 'wrap' }} data-browser-duur=''>
+          <span>{tr('Як довго:', 'Hoe lang:')}</span>
+          <select value={duur} disabled={busy} onChange={(e) => { setDuur(e.target.value); if (a.enabled) void setEnabled(a, true, e.target.value); }}>
+            {DUREN.map(([v, uk, nl]) => <option key={v} value={v}>{tr(uk, nl)}</option>)}
+          </select>
+          {a.enabled && a.armedUntil ? <small>{a.armedUntil > Date.now() ? (new Date(a.armedUntil).getUTCFullYear() >= 2999 ? tr('діє, доки ви не вимкнете', 'geldt tot u het uitzet') : tr(`діє до ${new Date(a.armedUntil).toLocaleString('uk-UA')}`, `geldt tot ${new Date(a.armedUntil).toLocaleString('nl-NL')}`)) : tr('термін минув — увімкніть знову', 'termijn verlopen — zet opnieuw aan')}</small> : null}
+        </label>
 
         {(() => {
           // Toestand alleen met extensiegegevens als de extensie in DEZE browser bij deze agent hoort.

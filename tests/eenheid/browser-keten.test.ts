@@ -75,7 +75,7 @@ export async function main(): Promise<number> {
     // Ook met een geldig token en een open kanaal blijft de browser stil zolang de gebruiker hem niet aanzet.
     const nogUit = await callTool(A, 'browser_snapshot', {});
     check('verbonden maar niet aangezet: de AI krijgt een uitleg (activeren in het kabinet) en de extensie ontvangt niets',
-      nogUit.isError === true && /not activated/.test(nogUit.content[0].text) && ext.opdrachten.length === 0, nogUit.content[0].text.slice(0, 90));
+      nogUit.isError === true && /switched off for AI use/.test(nogUit.content[0].text) && ext.opdrachten.length === 0, nogUit.content[0].text.slice(0, 90));
     check('een andere gebruiker kan de browser van A niet aanzetten', (await store.setBrowserEnabled(B, agent.id, true)) === false && (await store.getAgent(A, agent.id))?.browser_enabled === false);
     check('aanzetten door de eigen gebruiker lukt', (await store.setBrowserEnabled(A, agent.id, true)) === true && (await store.browserActive(agent.id)) === true);
 
@@ -188,6 +188,18 @@ export async function main(): Promise<number> {
       snapWacht && !snapAskUit.isError && ext.opdrachten.length === voorAsk + 1 && /paginatekst/.test(snapAskUit.content[0].text as string));
     await store.setToolModes(A, { browser_snapshot: null });
 
+    // Stand van de eigenaar: «tot ik uitzet» (standaard) = ver in de toekomst; de hartslag verkort dat nooit.
+    const tot = (await store.browserStand(agent.id))!.armedUntil!;
+    check('standaard: actief tot de eigenaar uitzet (geen automatisch verlopen)', store.isTotUitzetten(tot), new Date(tot).toISOString());
+    await store.armBrowserAgent(A, agent.id);
+    check('hartslag verkort «tot ik uitzet» niet', store.isTotUitzetten((await store.browserStand(agent.id))!.armedUntil));
+    await store.setBrowserEnabled(A, agent.id, true, 60);
+    const uur = (await store.browserStand(agent.id))!.armedUntil! - Date.now();
+    check('vaste termijn (60 min) van de eigenaar', uur > 59 * 60_000 && uur <= 60 * 60_000 + 5000, String(uur));
+    await sys.query(`UPDATE app.agents SET armed_until = now() - interval '1 minute' WHERE id = $1`, [agent.id]);
+    check('na afloop van een vaste termijn verlengt een hartslag NIET stilletjes', (await store.armBrowserAgent(A, agent.id)) === false && (await store.browserActive(agent.id)) === false);
+    // Stand «alleen zolang een pagina open is»: de oude, strengste stand.
+    await store.setBrowserEnabled(A, agent.id, true, 'sessie');
     // activering: verloopt zonder bevestiging van een ingelogde sessie, en een al goedgekeurde opdracht gaat dan niet meer weg
     const wachtKlik = callTool(A, 'browser_click', { name: 'Archiveren' });
     await until(async () => (await store.listPendingCommands(A)).length === 1);
@@ -195,9 +207,9 @@ export async function main(): Promise<number> {
     await approveCommand(A, (await store.listPendingCommands(A))[0].id);
     const teLaat = await wachtKlik;
     check('verlopen bevestiging: een al wachtende opdracht wordt na goedkeuren NIET meer naar de extensie gestuurd',
-      teLaat.isError === true && !ext.opdrachten.some((o) => /Archiveren/.test(JSON.stringify(o.params))) && /not activated|not signed in/.test(teLaat.content[0].text), teLaat.content[0].text.slice(0, 140));
+      teLaat.isError === true && !ext.opdrachten.some((o) => /Archiveren/.test(JSON.stringify(o.params))) && /period ended/.test(teLaat.content[0].text), teLaat.content[0].text.slice(0, 140));
     const zonderBevestiging = await callTool(A, 'browser_snapshot', {});
-    check('verlopen bevestiging: ook lezen wordt geweigerd tot de gebruiker weer is ingelogd', zonderBevestiging.isError === true && /not activated|not signed in/.test(zonderBevestiging.content[0].text));
+    check('verlopen bevestiging: ook lezen wordt geweigerd tot de gebruiker weer is ingelogd', zonderBevestiging.isError === true && /period ended/.test(zonderBevestiging.content[0].text));
     let direct = '';
     try { await (await import('../../backend/connectors-commands')).submitCommand((await store.getAgent(A, agent.id))!, A, 'browser.snapshot', {}); } catch (e) { direct = (e as Error).message; }
     check('omweg via submitCommand wordt ook geblokkeerd', direct === 'BROWSER_NOT_ACTIVE', direct);
