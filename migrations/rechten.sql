@@ -55,6 +55,11 @@ BEGIN
     END IF;
     -- 0034: tellers van de beleidsdienst (schaduw): niets voor de app-rol.
     IF to_regclass('app.beleid_schaduw') IS NOT NULL THEN REVOKE ALL ON app.beleid_schaduw FROM mijnruimte_app; END IF;
+    -- 0035: ondersteuning met toestemming: de app-rol leest alleen eigen rijen (als aanvrager of doel); schrijven doet de systeemrol.
+    IF to_regclass('app.ondersteuning_verzoeken') IS NOT NULL THEN
+      GRANT SELECT ON app.ondersteuning_verzoeken TO mijnruimte_app;
+      REVOKE INSERT, UPDATE, DELETE ON app.ondersteuning_verzoeken FROM mijnruimte_app;
+    END IF;
     -- 0031: weergave (простий/розширений): de app-rol leest alleen de eigen rij; schrijven doet de systeemrol.
     IF to_regclass('app.ui_weergave') IS NOT NULL THEN
       GRANT SELECT ON app.ui_weergave TO mijnruimte_app;

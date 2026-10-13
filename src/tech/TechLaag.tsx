@@ -2,7 +2,7 @@
 // «Колір смуги» en «Технічні профілі». Eigen React-root (main.tsx), los van de dienst die eronder draait, zodat de band op elke
 // pagina van elk subdomein hetzelfde is.
 import { useEffect, useMemo, useState } from 'react';
-import { Clock, LogOut, Palette, ShieldCheck, Timer, Users } from 'lucide-react';
+import { Clock, LifeBuoy, LogOut, Palette, ShieldCheck, Timer, Users } from 'lucide-react';
 import { Venster } from '../platform/vensters';
 import { api } from '../platform/client';
 import { routeLang } from '../canonical-navigation';
@@ -10,6 +10,7 @@ import { HELP_TECH, contrast, maxMinutenVoor, rolInfo, type BandKleur, type Band
 import { openTechVenster, startTech, techActief, techActiveren, techBand, techBeeindigen, techBody, techMag, useTech, type TechStatus, type TechVenster } from './tech-store';
 import Vraag from './Vraag';
 import DiagnoseLaag from '../diagnose/Diagnose';
+import { OndersteuningVenster, ToestemmingLaag } from '../ondersteuning/Ondersteuning';
 import './tech.css';
 
 const fout = (e: unknown) => String((e as Error)?.message || 'FOUT');
@@ -76,6 +77,7 @@ export default function TechLaag() {
           <span className='tech-band-reden' title={t.activatie.reden}>{t.activatie.reden}</span>
           <span className='tech-band-knoppen'>
             <button type='button' onClick={() => setVenster('activeren')} data-tech-knop='verlengen'><Clock aria-hidden='true' /><span>{uk ? 'Подовжити' : 'Verlengen'}</span></button>
+            {techMag('impersonatie.aanvragen', t) ? <button type='button' onClick={() => setVenster('ondersteuning')} data-tech-knop='ondersteuning'><LifeBuoy aria-hidden='true' /><span>{uk ? 'Підтримка' : 'Ondersteuning'}</span></button> : null}
             {techMag('roles.delegate', t) ? <button type='button' onClick={() => setVenster('profielen')} data-tech-knop='profielen'><Users aria-hidden='true' /><span>{uk ? 'Профілі' : 'Profielen'}</span></button> : null}
             <button type='button' onClick={() => setVenster('band')} data-tech-knop='band' aria-label={uk ? 'Колір смуги' : 'Kleur van de band'}><Palette aria-hidden='true' /></button>
             <button type='button' className='is-uit' onClick={() => void techBeeindigen()} data-tech-knop='uit'><LogOut aria-hidden='true' /><span>{uk ? 'Вийти з технічного' : 'Technisch verlaten'}</span></button>
@@ -85,7 +87,9 @@ export default function TechLaag() {
       {venster === 'activeren' ? <Activeren uk={uk} t={t} sluit={() => setVenster('')} /> : null}
       {venster === 'band' ? <BandKeuze uk={uk} t={t} sluit={() => setVenster('')} /> : null}
       {venster === 'profielen' ? <Profielen uk={uk} t={t} sluit={() => setVenster('')} /> : null}
+      {venster === 'ondersteuning' ? <OndersteuningVenster sluit={() => setVenster('')} /> : null}
       <DiagnoseLaag />
+      <ToestemmingLaag />
     </>
   );
 }
