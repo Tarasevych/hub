@@ -1,0 +1,26 @@
+/* Richting (ai.* / mcp.*) en «Простий / Розширений». Gebruikt de themavariabelen van de site (--panel, --line, --text, --muted, --accent). */
+.weergave-richting{display:grid;gap:8px;padding:14px 16px;border-radius:16px;background:var(--panel);box-shadow:0 0 0 1px var(--line);color:var(--text);border-left:5px solid var(--accent)}
+.weergave-richting.is-mcp{border-left-style:double;border-left-width:7px}
+.weergave-richting p{margin:0}
+.weergave-richting-kop{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.weergave-richting-naam{font-weight:800;font-size:1.05rem;letter-spacing:-.01em}
+.weergave-pijl{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}
+.weergave-pijl li{display:inline-flex;align-items:center;gap:6px}
+.weergave-pijl li span{padding:4px 10px;border-radius:999px;background:var(--surface);font-weight:600;font-size:.9rem}
+.weergave-pijl svg{width:16px;height:16px;flex:none;color:var(--accent)}
+.weergave-richting-kort{color:var(--muted);line-height:1.5;max-width:760px}
+.weergave-richting-ander{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.9rem;color:var(--muted)}
+.weergave-richting-ander svg{width:15px;height:15px;flex:none}
+.weergave-richting-ander a{color:var(--accent);font-weight:650;text-underline-offset:3px}
+.weergave-modus{display:inline-flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap}
+.weergave-modus-groep{display:inline-flex;padding:3px;border-radius:999px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
+.weergave-modus-groep button{min-height:34px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:var(--text);font:inherit;font-weight:650;font-size:.9rem;cursor:pointer}
+.weergave-modus-groep button[aria-checked=true]{background:var(--accent);color:var(--accentText,#fff)}
+.weergave-modus-groep button:focus-visible,.weergave-expert button:focus-visible,.weergave-richting-ander a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.weergave-fout{color:var(--danger,#b42318);font-size:.85rem}
+.weergave-expert{display:grid;gap:10px;justify-items:start;padding:16px 18px;border-radius:16px;background:var(--panel);box-shadow:0 0 0 1px var(--line);color:var(--text)}
+.weergave-expert p{margin:0;line-height:1.5}
+.weergave-expert button{min-height:40px;padding:0 16px;border:0;border-radius:10px;background:var(--accent);color:var(--accentText,#fff);font:inherit;font-weight:650;cursor:pointer}
+@media (max-width:640px){.weergave-modus{margin-left:0;width:100%}.weergave-pijl li span{font-size:.85rem}}
+@media (forced-colors:active){.weergave-modus-groep button[aria-checked=true]{outline:2px solid CanvasText}}
+.ai-richting{margin:0 0 14px}

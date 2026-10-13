@@ -65,7 +65,7 @@ export default function ChatPanel({ tr, status }: { tr: Tr; status: Status }) {
   return (
     <section className='chat-panel' data-chat-panel='true'>
       <header className='chat-head'>
-        <h1>{tr('ШІ Робочий простір', 'AI-werkruimte')}</h1>
+        <h1>{tr('ШІ для вас', 'AI voor u')}</h1>
         <p className='chat-meta'>
           {tr('Пристроїв онлайн', 'Apparaten online')}: {status.machines.online}/{status.machines.total}
           {' · '}{tr('Інструменти', 'Hulpmiddelen')}: {status.tools.length ? status.tools.join(', ') : tr('немає (підключіть пристрій)', 'geen (koppel een apparaat)')}

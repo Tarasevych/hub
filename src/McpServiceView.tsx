@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { api } from "./platform/client";
 import { ecosystemTabContext } from "./tab-context";
 import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalog";
+import { ExpertMelding, RichtingBand } from "./weergave/Weergave";
+import { useWeergave } from "./weergave/weergave-store";
+import { isExpertTab } from "../shared/weergave";
 import McpAgentsHub from "./McpAgentsHub";
 import McpAppsView from "./McpAppsView";
 import { foutTekst } from "./agenten/fouten";
@@ -124,6 +127,7 @@ export default function McpServiceView({ lang, tab }: Props) {
   const [permsReady, setPermsReady] = useState(false);
   const [archive, setArchive] = useState<ArchiveState>(emptyArchive);
   const [tick, setTick] = useState(0);
+  const weergave = useWeergave();
 
   async function run(label: string, job: () => Promise<void>) {
     setBusy(label);
@@ -243,16 +247,20 @@ export default function McpServiceView({ lang, tab }: Props) {
     return () => { window.clearInterval(id); window.clearInterval(poll); };
   }, [archive.state]);
 
+  // Etap 3: «простий/розширений» (alleen weergave). Een onderdeel uit «розширений» via een link: uitleg + één klik, geen inhoud.
+  const verborgen = weergave.modus === "eenvoudig" && isExpertTab("mcp", section);
   return (
-    <div className="mcp-estate" data-mcp-tab={section}>
+    <div className="mcp-estate" data-mcp-tab={section} data-weergave-modus={weergave.modus ?? "onbekend"}>
       <McpConsentModal tr={t} />
+      {section === "overview" || verborgen ? <RichtingBand richting="mcp" uk={lang === "uk"} metModus /> : null}
+      {verborgen ? <ExpertMelding uk={lang === "uk"} /> : <>
       {error && section !== "agents" && section !== "apps" ? <p className="mcp-lead mcp-error" role="alert">{error}</p> : null}
       {busy && busy !== "archive" && section !== "agents" && section !== "apps" ? <p className="mcp-kicker">{busy}</p> : null}
 
       {section === "overview" && (
         <>
           <header>
-            <p className="mcp-kicker">Tarasevych MCP · {t("міст до ШІ", "brug naar AI")}</p>
+            <p className="mcp-kicker">Tarasevych MCP · {t("міст ШІ → сайт", "brug AI → site")}</p>
             <h1>{t("Будь-який агент заходить сюди. Не в браузер.", "Elke agent komt hier binnen. Niet via de browser.")}</h1>
             <p className="mcp-lead">{t("Маєток tarasevych.com уже живий на домашньому вузлі, але за брамою ідентичності. ШІ не може увійти як людина. Цей MCP-міст — машинний контракт: інструменти, ресурси, спільна дошка.", "Het domein leeft al op de thuisknoop, achter de identiteitspoort. Een agent kan niet als mens inloggen. Deze brug is het machinecontract.")}</p>
           </header>
@@ -505,6 +513,7 @@ export default function McpServiceView({ lang, tab }: Props) {
           </article>
         </>
       )}
+      </>}
     </div>
   );
 }

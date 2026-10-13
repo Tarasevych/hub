@@ -4,6 +4,7 @@ import ProductEmptyState from './ProductEmptyState';
 import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 import { canonicalNavigationUrl, routeLang } from './canonical-navigation';
+import { RichtingBand } from './weergave/Weergave';
 
 const ChatPanel = lazy(() => import('./ChatPanel'));
 
@@ -32,19 +33,21 @@ export default function AIServiceView({ tr }: Props) {
   }, []);
 
   if (status === null) return null;
+  // Etap 3: altijd zichtbaar in welke richting deze dienst werkt (site → AI), met een verwijzing naar de brug AI → site.
+  const band = <div className='ai-richting'><RichtingBand richting='ai' uk={routeLang() !== 'nl'} /></div>;
   if (status === 'none') {
     return (
-      <ProductEmptyState
+      <>{band}<ProductEmptyState
         icon={Bot}
-        title={tr('ШІ Робочий простір', 'AI-werkruimte')}
+        title={tr('ШІ для вас', 'AI voor u')}
         description={tr(
           'Додайте свій ключ Anthropic у сховищі (API → Підключення), і тут з’явиться чат, який керує вашими пристроями.',
           'Voeg uw eigen Anthropic-sleutel toe in de kluis (API → Koppelingen); dan verschijnt hier een chat die uw apparaten bedient.',
         )}
         actionLabel={tr('Підключити', 'Koppelen')}
         onAction={openIntegrations}
-      />
+      /></>
     );
   }
-  return <Suspense fallback={null}><ChatPanel tr={tr} status={status} /></Suspense>;
+  return <>{band}<Suspense fallback={null}><ChatPanel tr={tr} status={status} /></Suspense></>;
 }
