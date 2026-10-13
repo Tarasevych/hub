@@ -128,6 +128,25 @@ export function diagnoseRoutes(requireSession: RequireSession): Record<string, R
       await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: 'owner.diagnose.gelezen', type: 'beveiliging', result: 'success', details: { aantal: rows.length } }).catch(() => undefined);
       return json({ meldingen: rows.map((r) => ({ id: r.id, dienst: r.dienst, oordeel: r.oordeel, uitslagen: r.uitslagen, beschrijving: r.beschrijving, browser: r.browser, email: r.email, op: new Date(r.aangemaakt_op).getTime(), gelezen: !!r.gelezen_op })) });
     })],
+    // Etap 5: ізоляція даних (RLS) per groep — ALLEEN LEZEN. Schakelen kan alleen root met db-rollen-instellen.sh (de site heeft
+    // daar bewust geen schrijfrecht voor: rechten.sql ontneemt de systeemrol INSERT/UPDATE op app.rls_groepen).
+    'POST /api/beheer/rls/groepen': [gate(async (_ctx, auth, b) => {
+      const tab = String(b.tabContext || '');
+      if (!TAB_RE.test(tab) || !(await heeftTechMogelijkheid(auth.user.id, tab, 'diensten.beheren'))) return error('TECH_BEHEER_VEREIST', 403);
+      const globaal = String((await sys().query("SELECT waarde FROM app.rls_instellingen WHERE sleutel = 'afdwingen'")).rows[0]?.waarde || 'uit');
+      const groepen = (await sys().query(`SELECT g.groep, g.volgorde, g.tabellen, g.afdwingen, g.toelichting, g.bijgewerkt,
+          COALESCE((SELECT sum(a.aantal) FROM app.rls_audit a WHERE a.tbl = ANY (g.tabellen)), 0)::bigint AS overtredingen,
+          (SELECT max(a.laatst) FROM app.rls_audit a WHERE a.tbl = ANY (g.tabellen)) AS laatst,
+          COALESCE((SELECT jsonb_agg(x ORDER BY x.aantal DESC) FROM (SELECT a.route, a.tbl, a.actie, a.aantal FROM app.rls_audit a WHERE a.tbl = ANY (g.tabellen) ORDER BY a.aantal DESC LIMIT 5) x), '[]'::jsonb) AS routes
+        FROM app.rls_groepen g ORDER BY g.volgorde`)).rows;
+      const auditSinds = (await sys().query('SELECT min(eerst) AS sinds FROM app.rls_audit')).rows[0]?.sinds;
+      return json({
+        globaal, auditSinds: auditSinds ? new Date(auditSinds).getTime() : null,
+        script: '/srv/mijn-ruimte/current/deploy/db-rollen-instellen.sh',
+        groepen: groepen.map((g) => ({ groep: g.groep, volgorde: g.volgorde, tabellen: g.tabellen, afdwingen: g.afdwingen, toelichting: g.toelichting, bijgewerkt: new Date(g.bijgewerkt).getTime(),
+          overtredingen: Number(g.overtredingen), laatst: g.laatst ? new Date(g.laatst).getTime() : null, routes: g.routes, gereed: globaal === 'aan' || Number(g.overtredingen) === 0 })),
+      });
+    })],
     'POST /api/diagnose/gelezen': [gate(async (_ctx, auth, b) => {
       const tab = String(b.tabContext || '');
       if (!TAB_RE.test(tab) || !(await heeftTechMogelijkheid(auth.user.id, tab, 'diagnose.lezen'))) return error('TECH_DIAGNOSE_VEREIST', 403);

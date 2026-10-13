@@ -9,6 +9,11 @@
 #   db-rollen-instellen.sh status        RLS-stand + samenvatting van app.rls_audit (geen id's of inhoud)
 #   db-rollen-instellen.sh rls-aan       RLS afdwingen (alleen voor mijnruimte_app)
 #   db-rollen-instellen.sh rls-uit       terug naar audit-modus
+#   db-rollen-instellen.sh rls-groepen   stand per groep van tabellen (migratie 0033) + wat de audit voor die tabellen telde
+#   db-rollen-instellen.sh rls-groep <groep> aan|uit
+#                                        RLS afdwingen voor ALLEEN die groep (van laag naar hoog risico; zie 0033).
+#                                        Weigert 'aan' als app.rls_audit voor die tabellen nog overtredingen heeft,
+#                                        tenzij FORCEER=1 (dan wordt dat gemeld). Alleen root; de site kan dit niet.
 #   db-rollen-instellen.sh terugdraaien  de drie variabelen uit geheimen.env halen, eigendom terug naar de oude
 #                                        rol, FORCE RLS en afdwingen uit, herstart (app en back-up werken weer met
 #                                        de oude ene rol; de rollen zelf blijven ongebruikt bestaan)
@@ -150,6 +155,41 @@ rls_zetten() {
   fi
 }
 
+rls_groepen() {
+  vereis_root; lees_url
+  psql_db -At -c "SELECT 'globaal=' || waarde FROM app.rls_instellingen WHERE sleutel = 'afdwingen'"
+  psql_db -A -F ' | ' -c "SELECT g.volgorde AS nr, g.groep, g.afdwingen, COALESCE((SELECT sum(a.aantal) FROM app.rls_audit a WHERE a.tbl = ANY (g.tabellen)), 0) AS overtredingen, array_to_string(g.tabellen, ',') AS tabellen FROM app.rls_groepen g ORDER BY g.volgorde" \
+    || fout "немає таблиці app.rls_groepen (міграцію 0033 виконано?)" "app.rls_groepen ontbreekt (is migratie 0033 uitgevoerd?)"
+}
+
+rls_groep_zetten() {
+  vereis_root; lees_url
+  local groep="${1:-}" stand="${2:-}"
+  [[ "$groep" =~ ^[a-z]{3,20}$ ]] || fout "назва групи: лише малі латинські літери (3–20)" "groepsnaam: alleen kleine letters (3–20)"
+  [[ "$stand" == aan || "$stand" == uit ]] || fout "стан: aan або uit" "stand: aan of uit"
+  local bestaat
+  bestaat="$(psql_db -At -c "SELECT count(*) FROM app.rls_groepen WHERE groep = '$groep'")" || fout "немає таблиці app.rls_groepen (міграція 0033?)" "app.rls_groepen ontbreekt (migratie 0033?)"
+  [ "$bestaat" = 1 ] || fout "невідома група: $groep (див. rls-groepen)" "onbekende groep: $groep (zie rls-groepen)"
+  if [ "$stand" = aan ]; then
+    local mis
+    mis="$(psql_db -At -c "SELECT COALESCE(sum(a.aantal), 0) FROM app.rls_audit a, app.rls_groepen g WHERE g.groep = '$groep' AND a.tbl = ANY (g.tabellen)")"
+    if [ "${mis:-0}" != 0 ]; then
+      if [ "${FORCEER:-0}" = 1 ]; then
+        zeg "УВАГА: аудит для групи $groep має $mis порушень — вмикаю, бо FORCEER=1." "LET OP: audit voor groep $groep heeft $mis overtredingen — toch aan (FORCEER=1)." >&2
+      else
+        fout "аудит для групи $groep ще має $mis порушень: спершу виправте маршрути (rls-groepen / status). Примусово: FORCEER=1" \
+             "audit voor groep $groep heeft nog $mis overtredingen: eerst de routes oplossen (rls-groepen / status). Forceren: FORCEER=1"
+      fi
+    fi
+  fi
+  psql_db -c "UPDATE app.rls_groepen SET afdwingen = '$stand', bijgewerkt = now() WHERE groep = '$groep'" >/dev/null || fout "не вдалося змінити групу" "groep wijzigen mislukt"
+  if [ "$stand" = aan ]; then
+    zeg "RLS ВВІМКНЕНО для групи $groep (діє одразу). Назад: rls-groep $groep uit" "RLS AFGEDWONGEN voor groep $groep (direct). Terug: rls-groep $groep uit"
+  else
+    zeg "Група $groep знову в режимі аудиту." "Groep $groep weer in audit-modus."
+  fi
+}
+
 status() {
   vereis_root; lees_url
   psql_db -At -c "SELECT 'afdwingen=' || waarde FROM app.rls_instellingen WHERE sleutel = 'afdwingen'"
@@ -256,10 +296,12 @@ case "${1:-}" in
   status) status ;;
   rls-aan) rls_zetten aan ;;
   rls-uit) rls_zetten uit ;;
+  rls-groepen) rls_groepen ;;
+  rls-groep) rls_groep_zetten "${2:-}" "${3:-}" ;;
   terugdraaien) terugdraaien ;;
   env-splitsen) env_splitsen ;;
   env-samenvoegen) env_samenvoegen ;;
   audit-beheerder) audit_beheerder toevoegen "${2:-}" ;;
   audit-beheerder-weg) audit_beheerder weg "${2:-}" ;;
-  *) sed -n '2,26p' "$0"; exit 2 ;;
+  *) sed -n '2,31p' "$0"; exit 2 ;;
 esac

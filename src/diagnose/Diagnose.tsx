@@ -10,6 +10,7 @@ import Vraag from '../tech/Vraag';
 import { techMag, useTech } from '../tech/tech-store';
 import { CONTROLES, HELP_DIAGNOSE, OORDEEL_TEKST, oordeel, type Oordeel, type Stand, type Uitslag } from '../../shared/diagnose';
 import { browserNaam, diagnoseBody, diagnoseUitvoeren } from './diagnose-client';
+import { HELP_RLS, RLS_GROEP_NAAM } from '../../shared/rls-groepen';
 import './diagnose.css';
 
 
@@ -27,7 +28,8 @@ function DiagnoseVenster({ sluit }: { sluit: () => void }) {
   const tx = (p: readonly [string, string]) => (uk ? p[0] : p[1]);
   const t = useTech();
   const magLezen = techMag('diagnose.lezen', t);
-  const [blad, setBlad] = useState<'ik' | 'verslagen'>('ik');
+  const magBeheer = techMag('diensten.beheren', t);
+  const [blad, setBlad] = useState<'ik' | 'verslagen' | 'isolatie'>('ik');
   const [bezig, setBezig] = useState(false);
   const [uitslagen, setUitslagen] = useState<Uitslag[] | null>(null);
   const [beschrijving, setBeschrijving] = useState('');
@@ -65,13 +67,14 @@ function DiagnoseVenster({ sluit }: { sluit: () => void }) {
   return (
     <Venster id='diagnose' titel={uk ? 'Щось не працює? Перевірка' : 'Werkt iets niet? Controle'} breedte={620} onSluit={sluit}>
       <div className='diag' data-diagnose='1'>
-        {magLezen ? (
+        {magLezen || magBeheer ? (
           <div className='diag-bladen' role='tablist' aria-label={uk ? 'Розділи' : 'Onderdelen'}>
             <button type='button' role='tab' aria-selected={blad === 'ik'} onClick={() => setBlad('ik')} data-diag-blad='ik'>{uk ? 'Мій пристрій' : 'Mijn apparaat'}</button>
-            <button type='button' role='tab' aria-selected={blad === 'verslagen'} onClick={() => setBlad('verslagen')} data-diag-blad='verslagen'>{uk ? 'Звіти користувачів' : 'Verslagen van gebruikers'}</button>
+            {magLezen ? <button type='button' role='tab' aria-selected={blad === 'verslagen'} onClick={() => setBlad('verslagen')} data-diag-blad='verslagen'>{uk ? 'Звіти користувачів' : 'Verslagen van gebruikers'}</button> : null}
+            {magBeheer ? <button type='button' role='tab' aria-selected={blad === 'isolatie'} onClick={() => setBlad('isolatie')} data-diag-blad='isolatie'>{uk ? 'Ізоляція даних' : 'Isolatie'}</button> : null}
           </div>
         ) : null}
-        {blad === 'verslagen' && magLezen ? <Verslagen uk={uk} /> : (
+        {blad === 'isolatie' && magBeheer ? <Isolatie uk={uk} /> : blad === 'verslagen' && magLezen ? <Verslagen uk={uk} /> : (
           <>
             <p className='diag-lead'>{uk ? 'Перевіряємо сервер (однаковий для всіх) і цей браузер (лише ваш).' : 'We controleren de server (voor iedereen gelijk) en deze browser (alleen van u).'} <Vraag help={HELP_DIAGNOSE} uk={uk} label={uk ? 'Як працює перевірка' : 'Hoe de controle werkt'} /></p>
             {!uitslagen ? <p className='diag-bezig' aria-busy='true'><RefreshCw className='spin' aria-hidden='true' />{uk ? 'Перевіряємо…' : 'Bezig met controleren…'}</p> : (
@@ -146,5 +149,44 @@ function Verslagen({ uk }: { uk: boolean }) {
         {!v.gelezen ? <button type='button' onClick={() => void api.post('/api/diagnose/gelezen', { ...diagnoseBody(), id: v.id }).then(laad)} data-diag-knop={`gelezen:${v.id}`}>{uk ? 'Позначити переглянутим' : 'Als bekeken markeren'}</button> : <span className='diag-meta'>{uk ? 'переглянуто' : 'bekeken'}</span>}
       </li>
     ))}</ul>
+  );
+}
+
+type RlsGroep = { groep: string; volgorde: number; tabellen: string[]; afdwingen: 'uit' | 'aan'; toelichting: string; overtredingen: number; laatst: number | null; routes: Array<{ route: string; tbl: string; actie: string; aantal: number }>; gereed: boolean };
+type RlsStand = { globaal: string; auditSinds: number | null; script: string; groepen: RlsGroep[] };
+export function Isolatie({ uk }: { uk: boolean }) {
+  const tx = (p: readonly [string, string]) => (uk ? p[0] : p[1]);
+  const [s, setS] = useState<RlsStand | null>(null);
+  const [fout, setFout] = useState('');
+  const [gekopieerd, setGekopieerd] = useState('');
+  useEffect(() => { void api.post('/api/beheer/rls/groepen', diagnoseBody()).then((r) => setS(r.data as RlsStand), (e) => setFout(String(e?.message || 'FOUT'))); }, []);
+  if (fout) return <p className='diag-melding' role='alert'>{fout === 'TECH_BEHEER_VEREIST' ? (uk ? 'Потрібен активний технічний профіль адміністратора або власника.' : 'Een actief technisch profiel van beheerder of eigenaar is nodig.') : fout}</p>;
+  if (!s) return <p className='diag-bezig' aria-busy='true'><RefreshCw className='spin' aria-hidden='true' />{uk ? 'Завантаження…' : 'Laden…'}</p>;
+  const volgende = s.globaal === 'aan' ? null : s.groepen.find((g) => g.afdwingen === 'uit');
+  const kopieer = (cmd: string) => { void navigator.clipboard?.writeText(cmd).then(() => setGekopieerd(cmd), () => undefined); };
+  return (
+    <div className='diag-rls' data-diag-rls='1'>
+      <p className='diag-lead'>{uk ? 'Ізоляція даних у базі (RLS) — по групах, від найменшого ризику. Сайт лише показує стан; вмикає тільки власник сервера командою.' : 'Isolatie in de database (RLS) — per groep, van laag naar hoog risico. De site toont alleen; aanzetten doet de servereigenaar met een opdracht.'} <Vraag help={HELP_RLS} uk={uk} label={uk ? 'Ізоляція даних' : 'Isolatie'} /></p>
+      <p className='diag-meta'>{uk ? 'Загальний перемикач' : 'Algemene schakelaar'}: <b>{s.globaal === 'aan' ? (uk ? 'увімкнено для всього' : 'aan voor alles') : (uk ? 'аудит' : 'audit')}</b>{s.auditSinds ? ` · ${uk ? 'аудит рахує з' : 'audit telt sinds'} ${new Date(s.auditSinds).toLocaleDateString()}` : ` · ${uk ? 'порушень ще не зафіксовано' : 'nog geen overtredingen geteld'}`}</p>
+      <ol className='diag-rls-lijst'>{s.groepen.map((g) => {
+        const cmd = `sudo bash ${s.script} rls-groep ${g.groep} ${g.afdwingen === 'aan' ? 'uit' : 'aan'}`;
+        return (
+          <li key={g.groep} className={`is-${g.afdwingen}${volgende?.groep === g.groep ? ' is-volgende' : ''}`} data-rls-groep={g.groep} data-rls-stand={g.afdwingen} data-rls-gereed={g.gereed ? '1' : '0'}>
+            <div className='diag-rls-kop'><b>{g.volgorde}. {tx(RLS_GROEP_NAAM[g.groep] ?? [g.groep, g.groep])}</b>
+              <span className='diag-rls-stand'>{g.afdwingen === 'aan' || s.globaal === 'aan' ? (uk ? 'увімкнено' : 'afgedwongen') : (uk ? 'аудит' : 'audit')}</span>
+              {volgende?.groep === g.groep ? <span className='diag-rls-volgende'>{uk ? 'наступна за порядком' : 'volgende in de rij'}</span> : null}</div>
+            <p className='diag-meta'>{g.tabellen.join(', ')}</p>
+            {g.afdwingen === 'uit' && s.globaal !== 'aan' ? (g.overtredingen === 0
+              ? <p className='diag-rls-oordeel is-ok'>{uk ? 'Порушень не зафіксовано — можна вмикати.' : 'Geen overtredingen — kan aan.'}</p>
+              : <><p className='diag-rls-oordeel is-let-op'>{uk ? `Ще є порушення: ${g.overtredingen} (останнє ${g.laatst ? new Date(g.laatst).toLocaleString() : '—'}). Спершу виправити маршрути:` : `Nog overtredingen: ${g.overtredingen} (laatste ${g.laatst ? new Date(g.laatst).toLocaleString() : '—'}). Eerst de routes oplossen:`}</p>
+                <ul className='diag-rls-routes'>{g.routes.map((r) => <li key={`${r.route}|${r.tbl}|${r.actie}`}><code>{r.route}</code> · {r.tbl} · {r.actie} · {r.aantal}×</li>)}</ul></>)
+              : null}
+            {s.globaal !== 'aan' && (g.afdwingen === 'aan' || g.gereed) ? (
+              <div className='diag-rls-cmd'><code>{cmd}</code><button type='button' onClick={() => kopieer(cmd)} data-rls-kopieer={g.groep}>{gekopieerd === cmd ? (uk ? 'Скопійовано' : 'Gekopieerd') : (uk ? 'Копіювати' : 'Kopiëren')}</button></div>
+            ) : null}
+          </li>
+        );
+      })}</ol>
+    </div>
   );
 }
