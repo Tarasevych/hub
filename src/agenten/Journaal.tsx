@@ -51,6 +51,12 @@ export function zin(e: JournaalItem, tr: Tr): string {
     case 'owner.tech.beeindigd': return tr('Технічний профіль вимкнено', 'Technisch profiel uitgezet');
     case 'owner.tech.toegekend': return s(d.aan) ? tr(`Видано технічний профіль ${s(d.aan)}`, `Technisch profiel gegeven aan ${s(d.aan)}`) : tr(`Отримано технічний профіль${s(d.door) ? ` від ${s(d.door)}` : ''}`, `Technisch profiel ontvangen${s(d.door) ? ` van ${s(d.door)}` : ''}`);
     case 'owner.tech.ingetrokken': return s(d.van) ? tr(`Відкликано технічний профіль ${s(d.van)}`, `Technisch profiel van ${s(d.van)} ingetrokken`) : tr('Ваш технічний профіль відкликано', 'Uw technisch profiel is ingetrokken');
+    case 'owner.ondersteuning.gevraagd': return s(d.aan) ? tr(`Запит на підтримку надіслано ${s(d.aan)} (${s(d.minuten)} хв)`, `Verzoek om ondersteuning naar ${s(d.aan)} (${s(d.minuten)} min)`) : tr(`${s(d.door)} просить дозволу переглянути ваш простір: ${s(d.reden)}`, `${s(d.door)} vraagt uw ruimte te bekijken: ${s(d.reden)}`);
+    case 'owner.ondersteuning.nood': return s(d.aan) ? tr(`Термінова підтримка: ${s(d.aan)}`, `Noodtoegang: ${s(d.aan)}`) : tr(`Термінова підтримка від ${s(d.door)}: ${s(d.reden)}`, `Noodtoegang door ${s(d.door)}: ${s(d.reden)}`);
+    case 'owner.ondersteuning.toegestaan': return s(d.aan) ? tr(`Ви дозволили підтримці ${s(d.aan)} перегляд на ${s(d.minuten)} хв`, `U gaf ${s(d.aan)} ${s(d.minuten)} min toegang`) : tr(`${s(d.door)} дозволив перегляд`, `${s(d.door)} gaf toestemming`);
+    case 'owner.ondersteuning.geweigerd': return s(d.aan) ? tr(`Ви відхилили запит ${s(d.aan)}`, `U weigerde ${s(d.aan)}`) : tr(`${s(d.door)} відхилив запит`, `${s(d.door)} weigerde`);
+    case 'owner.ondersteuning.beeindigd': return tr('Доступ підтримки завершено', 'Toegang van ondersteuning beëindigd');
+    case 'owner.ondersteuning.bekeken': return tr(`${s(d.door)} переглянув огляд вашого облікового запису`, `${s(d.door)} bekeek het overzicht van uw account`);
     case 'owner.diagnose.gemeld': return tr(`Надіслано звіт перевірки «Щось не працює?» (${s(d.dienst)})`, `Controleverslag «Werkt iets niet?» verstuurd (${s(d.dienst)})`);
     case 'owner.diagnose.gelezen': return tr(`Переглянуто звіти користувачів (${s(d.aantal)})`, `Verslagen van gebruikers bekeken (${s(d.aantal)})`);
     case 'owner.tech.band': return tr('Змінено колір технічної смуги', 'Kleur van de technische band gewijzigd');

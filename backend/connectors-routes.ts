@@ -30,6 +30,8 @@ export const JOURNAAL_ACTIES: Record<string, JournaalSoort> = {
   'owner.tech.toegekend': 'toegang', 'owner.tech.geactiveerd': 'toegang', 'owner.tech.beeindigd': 'toegang', 'owner.tech.ingetrokken': 'toegang', 'owner.tech.band': 'toegang',
   // Diagnose (etap 4): verslag verstuurd; verslagen van gebruikers gelezen (alleen in een technisch profiel).
   'owner.diagnose.gemeld': 'toegang', 'owner.diagnose.gelezen': 'toegang',
+  // «Підтримка від імені» (etap 7): bij de gebruiker én de ondersteuner.
+  'owner.ondersteuning.gevraagd': 'toegang', 'owner.ondersteuning.nood': 'toegang', 'owner.ondersteuning.toegestaan': 'toegang', 'owner.ondersteuning.geweigerd': 'toegang', 'owner.ondersteuning.beeindigd': 'toegang', 'owner.ondersteuning.bekeken': 'toegang',
   mcp_console_token_issued: 'token', mcp_console_token_revoked: 'token',
   'owner.app.geheim': 'apparaat',
   'owner.agent.paired': 'apparaat', 'owner.agent.revoked': 'apparaat', 'owner.agent.updated': 'apparaat', 'owner.agent.policy': 'apparaat', 'owner.agent.pairing_code': 'apparaat',
