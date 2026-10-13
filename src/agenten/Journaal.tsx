@@ -47,6 +47,11 @@ export function zin(e: JournaalItem, tr: Tr): string {
     case 'owner.mcp.deur.denied': return tr(`Ви відхилили запит «${s(d.klant) || n}» до дверей сервера`, `U weigerde «${s(d.klant) || n}» toegang tot de serverdeur`);
     case 'owner.mcp.deur.revoked': return tr(`Відкликано доступ «${s(d.klant) || n}» до дверей ${s(d.deur) ? `/${s(d.deur)}` : 'сервера'}`, `Toegang van «${s(d.klant) || n}» tot de deur ${s(d.deur) ? `/${s(d.deur)}` : 'van de server'} ingetrokken`);
     case 'owner.mcp.duur.setting': return tr(`Термін доступу для ${s(d.klant)}: ${duurTekst(s(d.duur), tr)}`, `Toegangsduur voor ${s(d.klant)}: ${duurTekst(s(d.duur), tr)}`);
+    case 'owner.tech.geactiveerd': return tr(`Увімкнено технічний профіль на ${s(d.minuten)} хв: ${s(d.reden)}`, `Technisch profiel aangezet voor ${s(d.minuten)} min: ${s(d.reden)}`);
+    case 'owner.tech.beeindigd': return tr('Технічний профіль вимкнено', 'Technisch profiel uitgezet');
+    case 'owner.tech.toegekend': return s(d.aan) ? tr(`Видано технічний профіль ${s(d.aan)}`, `Technisch profiel gegeven aan ${s(d.aan)}`) : tr(`Отримано технічний профіль${s(d.door) ? ` від ${s(d.door)}` : ''}`, `Technisch profiel ontvangen${s(d.door) ? ` van ${s(d.door)}` : ''}`);
+    case 'owner.tech.ingetrokken': return s(d.van) ? tr(`Відкликано технічний профіль ${s(d.van)}`, `Technisch profiel van ${s(d.van)} ingetrokken`) : tr('Ваш технічний профіль відкликано', 'Uw technisch profiel is ingetrokken');
+    case 'owner.tech.band': return tr('Змінено колір технічної смуги', 'Kleur van de technische band gewijzigd');
     case 'owner.mcp.grant.expired': return tr(`Закінчився строк доступу «${n}»`, `Toegang van «${n}» verlopen`);
     case 'mcp_console_token_issued': return tr(`Випущено токен «${n}»`, `Token «${n}» uitgegeven`);
     case 'mcp_console_token_revoked': return tr(`Відкликано токен «${n}»`, `Token «${n}» ingetrokken`);

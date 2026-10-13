@@ -26,6 +26,8 @@ export const JOURNAAL_ACTIES: Record<string, JournaalSoort> = {
   'owner.mcp.grant.approved': 'ai', 'owner.mcp.grant.denied': 'ai', 'owner.mcp.grant.connected': 'ai', 'owner.mcp.grant.revoked': 'ai',
   // MCP-deur (/Grok, /claude, …) «в один клік» via het venster van de site, en de duur per AI (13.10.2026).
   'owner.mcp.deur.approved': 'ai', 'owner.mcp.deur.denied': 'ai', 'owner.mcp.deur.revoked': 'ai', 'owner.mcp.duur.setting': 'ai',
+  // Technisch profiel (tweede identiteit in hetzelfde account): toekennen, aanzetten, uitzetten, intrekken, kleur van de band.
+  'owner.tech.toegekend': 'toegang', 'owner.tech.geactiveerd': 'toegang', 'owner.tech.beeindigd': 'toegang', 'owner.tech.ingetrokken': 'toegang', 'owner.tech.band': 'toegang',
   mcp_console_token_issued: 'token', mcp_console_token_revoked: 'token',
   'owner.app.geheim': 'apparaat',
   'owner.agent.paired': 'apparaat', 'owner.agent.revoked': 'apparaat', 'owner.agent.updated': 'apparaat', 'owner.agent.policy': 'apparaat', 'owner.agent.pairing_code': 'apparaat',
