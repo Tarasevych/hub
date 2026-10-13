@@ -150,6 +150,14 @@ export async function main(): Promise<number> {
     await page.waitForTimeout(400);
     const tel = await page.evaluate(() => { const b = document.querySelector('[data-tech-band]')!; return { band: b.scrollWidth <= b.clientWidth + 1, pagina: document.documentElement.scrollWidth <= window.innerWidth + 1, uit: !!document.querySelector('[data-tech-knop="uit"]') }; });
     check('telefoon: band past, geen horizontaal scrollen, «вийти» bereikbaar', tel.band && tel.pagina && tel.uit, JSON.stringify(tel));
+    await page.locator('[data-tech-knop="meer"]').click();
+    const menu = await page.evaluate(() => {
+      const el = document.getElementById('tech-band-extra');
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { display: getComputedStyle(el).display, inView: r.width > 0 && r.right <= window.innerWidth + 1 && r.left >= -1 && r.bottom <= window.innerHeight + 1 };
+    });
+    check('telefoon: «meer» toont de extra knoppen binnen het scherm', menu?.display === 'flex' && menu.inView, JSON.stringify(menu));
     await page.screenshot({ path: `${UIT}/tech-6-telefoon.png` });
     await page.setViewportSize({ width: 1280, height: 900 });
 

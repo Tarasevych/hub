@@ -55,6 +55,13 @@ node/python), `ProtectSystem=strict` en schrijven alleen in de gekozen mappen. D
 console: de site geeft zichzelf geen toegang tot haar eigen host. Daarna regelt de eigenaar alles op de site. Bij elke
 release (`installeren`) werkt de installer de agent op de server bij en herstart hem (`agenten_bijwerken`).
 
+## Terminal in de browser (0.6.0)
+
+Een shell draait nooit op het apparaat zelf. `node agent.mjs terminal-config on` zet een wegwerpcontainer aan (podman, geen netwerk,
+`--cap-drop ALL`, `no-new-privileges`, alleen-lezen, geheime plekken afgedekt). De site opent die alleen met een ondertekende `term.open`
+vanuit een actief technisch profiel. Op de server van «Mijn Ruimte»: `sudo /usr/local/sbin/mijn-ruimte-installeer apps-terminal on`
+(uit: `off`). Zonder die opdracht blijft de knop «Термінал» leeg.
+
 ## Veiligheid
 
 - Agenttoken: alleen de sha256-hash staat in de database; het token zelf in `~/.hub-agent/config.json` (modus 0600).

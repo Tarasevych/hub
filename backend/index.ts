@@ -33,6 +33,9 @@ import { mcpConsoleRoutes } from './mcp-console';
 import { techRoutes } from './tech-routes';
 import { weergaveRoutes } from './weergave';
 import { diagnoseRoutes } from './diagnose';
+import { terminalRoutes } from './terminal-routes';
+import { koppelTerminal } from './terminal';
+koppelTerminal();
 import { schaduwAdmin } from './beleid';
 import { ondersteuningRoutes } from './ondersteuning-routes';
 import { uitrolGoedkeuringRoutes } from './uitrol-goedkeuring';
@@ -494,6 +497,8 @@ export const handler = router({
   ...weergaveRoutes(ownerRequireSession as never),
   // Diagnose «для всіх чи лише для мене» (etap 4): servercontroles, verslagen, lezen in technisch profiel.
   ...diagnoseRoutes(ownerRequireSession as never),
+  // Термінали в браузері (etap C): контейнер на власному пристрої, лише з активного технічного профілю.
+  ...terminalRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
   // «Підтримка від імені» met toestemming (etap 7): alleen-lezen overzicht, nooit een sessie van de gebruiker.
   ...ondersteuningRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never, meld: (id, email, kind, titel, tekst) => notify(id, email, kind, titel, tekst) }),
   ...uitrolGoedkeuringRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),

@@ -32,6 +32,23 @@ export const COMMAND_TYPES = ['fs.read', 'fs.list', 'fs.write', 'exec', 'sys.inf
 export type CommandType = typeof COMMAND_TYPES[number];
 
 const WS_PATH = '/agent/ws';
+export const TERMINAL_WS_PATH = '/terminal/ws';
+type TerminalHooks = { vanAgent: (agentId: string, msg: any) => boolean; upgrade: (req: IncomingMessage, socket: Duplex, head: Buffer) => void };
+let terminalHooks: TerminalHooks | null = null;
+export function registreerTerminal(h: TerminalHooks): void { terminalHooks = h; }
+/** Bericht naar een verbonden agent (term.in / term.close van een sessie die bij die agent hoort). */
+export function stuurNaarAgent(agentId: string, obj: Record<string, unknown>): boolean {
+  const e = live.get(agentId); if (!e) return false;
+  try { e.ws.send(JSON.stringify(obj)); return true; } catch { return false; }
+}
+/** Ondertekende 'term.open'. Niet via de opdrachtwachtrij: een AI-grant kan een terminal niet openen. */
+export async function stuurTerminalOpen(agentId: string, userId: string, sid: string, params: Record<string, unknown>): Promise<boolean> {
+  const e = live.get(agentId);
+  if (!e || e.userId !== userId) return false;
+  const signed = await commandSignature(agentId, sid, 'term.open', params);
+  e.ws.send(JSON.stringify({ t: 'cmd', id: sid, type: 'term.open', params, scope: { capability: 'terminal' }, ...(signed ?? {}) }));
+  return true;
+}
 const HEARTBEAT_MS = 20_000;
 const AUTH_TIMEOUT_MS = 5_000;
 const COMMAND_TIMEOUT_MS = 90_000;
@@ -140,6 +157,10 @@ export function attachAgentGateway(server: Server, allowedHosts: ReadonlySet<str
     const host = String(req.headers.host || '').toLowerCase().replace(/:\d+$/, '');
     const url = new URL(req.url || '/', 'http://intern.invalid');
     // Een token of ticket in de URL wordt geweigerd (komt in logs terecht); zo valt een verkeerd gebouwde client meteen op.
+    if (url.pathname === TERMINAL_WS_PATH && terminalHooks && allowedHosts.has(host) && !url.searchParams.has('ticket') && !url.searchParams.has('token')) {
+      terminalHooks.upgrade(req, socket, head);
+      return;
+    }
     if (url.pathname !== WS_PATH || !allowedHosts.has(host) || url.searchParams.has('token') || url.searchParams.has('ticket')) {
       socket.write('HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n');
       socket.destroy();
@@ -203,6 +224,7 @@ export function onConnection(ws: WebSocket): void {
     const entry = live.get(agentId);
     if (!entry || entry.ws !== ws) return;
     entry.alive = true;
+    if (terminalHooks?.vanAgent(agentId, msg)) return;
     if (msg?.t === 'pong') {
       const caps = msg.capabilities && typeof msg.capabilities === 'object' ? msg.capabilities : undefined;
       if (caps || typeof msg.version === 'string') store.touchAgent(agentId, caps, typeof msg.version === 'string' ? msg.version : undefined).catch(() => undefined);
