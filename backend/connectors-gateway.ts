@@ -65,6 +65,25 @@ function redeemWsTicket(ticket: string): string | null {
   return row && row.exp > Date.now() ? row.agentId : null;
 }
 
+// ---- terminals (backend/terminal.ts): eigen WS-pad voor de browser + doorgeven van term.* berichten van de agent ----
+type TerminalHooks = { vanAgent: (agentId: string, msg: any) => boolean; upgrade: (req: IncomingMessage, socket: Duplex, head: Buffer) => void };
+let terminalHooks: TerminalHooks | null = null;
+export const TERMINAL_WS_PATH = '/terminal/ws';
+export function registreerTerminal(h: TerminalHooks): void { terminalHooks = h; }
+/** Bericht naar een verbonden agent (alleen voor term.in / term.close van een sessie die bij die agent hoort). */
+export function stuurNaarAgent(agentId: string, obj: Record<string, unknown>): boolean {
+  const e = live.get(agentId); if (!e) return false;
+  try { e.ws.send(JSON.stringify(obj)); return true; } catch { return false; }
+}
+/** Ondertekende 'term.open' (zelfde HMAC als elke opdracht; NIET via grants: terminals zijn voor mensen, nooit voor een AI). */
+export async function stuurTerminalOpen(agentId: string, userId: string, sid: string, params: Record<string, unknown>): Promise<boolean> {
+  const e = live.get(agentId);
+  if (!e || e.userId !== userId) return false;
+  const signed = await commandSignature(agentId, sid, 'term.open', params);
+  e.ws.send(JSON.stringify({ t: 'cmd', id: sid, type: 'term.open', params, scope: { capability: 'terminal' }, ...(signed ?? {}) }));
+  return true;
+}
+
 /** Bij het stoppen van de server: alle agentverbindingen netjes sluiten. Agenten verbinden zelf opnieuw. */
 export function closeAllAgents(): void {
   for (const entry of live.values()) { try { entry.ws.close(1001, 'server stopping'); } catch { /* al dicht */ } }
@@ -140,6 +159,7 @@ export function attachAgentGateway(server: Server, allowedHosts: ReadonlySet<str
     const host = String(req.headers.host || '').toLowerCase().replace(/:\d+$/, '');
     const url = new URL(req.url || '/', 'http://intern.invalid');
     // Een token of ticket in de URL wordt geweigerd (komt in logs terecht); zo valt een verkeerd gebouwde client meteen op.
+    if (url.pathname === TERMINAL_WS_PATH && terminalHooks && allowedHosts.has(host) && !url.searchParams.has('ticket') && !url.searchParams.has('token')) { terminalHooks.upgrade(req, socket, head); return; }
     if (url.pathname !== WS_PATH || !allowedHosts.has(host) || url.searchParams.has('token') || url.searchParams.has('ticket')) {
       socket.write('HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n');
       socket.destroy();
@@ -208,6 +228,7 @@ export function onConnection(ws: WebSocket): void {
       if (caps || typeof msg.version === 'string') store.touchAgent(agentId, caps, typeof msg.version === 'string' ? msg.version : undefined).catch(() => undefined);
       return;
     }
+    if ((msg?.t === 'term.out' || msg?.t === 'term.exit' || msg?.t === 'result') && terminalHooks?.vanAgent(agentId, msg)) return;
     if (msg?.t === 'result' && typeof msg.id === 'string') {
       // Alleen een opdracht van DEZE gebruiker, naar DEZE agent en in stand 'sent' wordt afgesloten (audit M3).
       await store.transitionCommand(

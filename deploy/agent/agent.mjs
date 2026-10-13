@@ -17,7 +17,7 @@ import net from 'node:net';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 
-const VERSION = '0.5.1';
+const VERSION = '0.6.0';
 const CONFIG_PATH = process.env.HUB_AGENT_CONFIG ?? path.join(os.homedir(), '.hub-agent', 'config.json');
 const MAX_READ = 2 * 1024 * 1024;
 const MAX_WRITE = 5 * 1024 * 1024;
@@ -72,7 +72,7 @@ async function pair(args) {
 }
 
 // De lijst komt uit de handlers zelf, zodat hij nooit achterloopt op wat de agent kan.
-const capabilities = (roots, allow, readonlyRoots = [], apps = null) => ({ version: VERSION, roots, readonlyRoots, allowCommands: allow, apps: Boolean(apps?.enabled), commands: Object.keys(handlers).filter((k) => !k.startsWith('apps.') || apps?.enabled) });
+const capabilities = (roots, allow, readonlyRoots = [], apps = null, terminal = null) => ({ version: VERSION, roots, readonlyRoots, allowCommands: allow, apps: Boolean(apps?.enabled), terminal: terminal?.enabled ? { enabled: true, image: terminal.image, maxMinuten: terminal.maxMinuten } : { enabled: false }, commands: Object.keys(handlers).filter((k) => (!k.startsWith('apps.') || apps?.enabled) && (k !== 'term.open' || terminal?.enabled)) });
 
 // ---------- opdrachten: alleen ondertekend, geen code-als-argument (audit H3) ----------
 /** Programma's die nooit op de allow-list mogen: een shell voert alles uit wat in een argument staat. */
@@ -616,6 +616,103 @@ async function appsConfig(args) {
   console.log(`Додатки увімкнено: ${root}\nСередовище: ${cfg.apps.runtime} ${versie?.code === 0 ? versie.stdout.trim() : '(НЕ ЗНАЙДЕНО — встановіть його)'}${cfg.apps.runtime === 'docker' ? '\nУВАГА: група docker = фактично root на цьому комп\'ютері. Безпечніше — rootless podman.' : ''}\nДомен: ${cfg.apps.domain || '(немає — додатки лише локально 127.0.0.1)'}\nCaddy: ${cfg.apps.caddyAdmin || '(немає)'}\nПерезапустіть агента (node agent.mjs run).`);
 }
 
+
+// ---------- terminal (etap «термінали», 13.10.2026) ----------
+// Een interactieve shell draait NOOIT op dit apparaat zelf (shells blijven verboden, zie SHELLS), alleen in een wegwerpcontainer:
+// rootless podman (of docker), geen netwerk, geen capabilities, no-new-privileges, alleen-lezen systeem, limieten voor geheugen/processen,
+// één toegestane root gekoppeld op /werk (standaard alleen-lezen), geheime plekken binnen die root afgedekt (tmpfs / /dev/null).
+// Aan te zetten alleen HIER: node agent.mjs terminal-config on [--image …] [--runtime podman|docker] [--max-minuten 60] (uit: off).
+// Openen kan alleen via een ONDERTEKENDE opdracht 'term.open' van de site; daarna stroomt in- en uitvoer over hetzelfde WSS-kanaal.
+const TERM_IMAGE = 'docker.io/library/debian:12-slim';
+const terminalDefaults = (t = {}) => ({ enabled: !!t.enabled, runtime: ['podman', 'docker'].includes(t.runtime) ? t.runtime : 'podman', image: typeof t.image === 'string' && /^[a-z0-9][a-z0-9./_:@-]{2,200}$/i.test(t.image) ? t.image : TERM_IMAGE, maxMinuten: Math.min(240, Math.max(5, Number(t.maxMinuten) || 60)) });
+const termSessies = new Map(); // sid -> { child, naam, timer }
+let termKanaal = null; // huidige WebSocket (gezet in run)
+const termStuur = (obj) => { try { termKanaal?.send(JSON.stringify(obj)); } catch { /* kanaal dicht: sessie sluit vanzelf */ } };
+
+/** Geheime plekken binnen een root (begrensd: diepte 4, 5000 items), relatief pad + soort, om af te dekken in de container. */
+async function geheimeAfdekking(root) {
+  const uit = []; let teller = 0;
+  async function loop(dir, diepte) {
+    if (diepte > 4 || teller > 5000) return;
+    let items; try { items = await fs.readdir(dir, { withFileTypes: true }); } catch { return; }
+    for (const it of items) {
+      if (++teller > 5000) return;
+      const vol = path.join(dir, it.name);
+      if (it.isSymbolicLink()) continue;
+      if (isGeheim(vol)) { uit.push({ rel: path.relative(root, vol).split(path.sep).join('/'), map: it.isDirectory() }); continue; }
+      if (it.isDirectory()) await loop(vol, diepte + 1);
+    }
+  }
+  await loop(root, 1);
+  return uit;
+}
+
+/** Argumenten voor de container (los te testen). */
+export async function termArgs(cfg, { sid, root, schrijven, cols, rows }) {
+  const t = terminalDefaults(cfg.terminal);
+  const roots = (cfg.roots ?? []).map((r) => path.resolve(r));
+  const ro = (cfg.readonlyRoots ?? []).map((r) => path.resolve(r));
+  const gevraagd = path.resolve(String(root || ''));
+  if (!roots.some((r) => norm(r) === norm(gevraagd))) throw new Error('refused: root is not one of the allowed roots');
+  if (isGeheim(gevraagd)) throw new Error('refused: protected secret location');
+  if (schrijven && ro.some((r) => norm(r) === norm(gevraagd))) throw new Error('refused: this root is read-only');
+  const c = Math.min(300, Math.max(20, Number(cols) || 100)), r = Math.min(120, Math.max(5, Number(rows) || 30));
+  const naam = `mr-term-${String(sid).replace(/[^a-f0-9]/gi, '').slice(0, 12)}`;
+  const args = ['run', '--rm', '-i', '--name', naam, '--network', 'none', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
+    '--pids-limit', '128', '--memory', '512m', '--cpus', '1', '--read-only', '--tmpfs', '/tmp:rw,size=64m', '--tmpfs', '/home/werk:rw,size=16m',
+    '-e', 'HOME=/home/werk', '-e', 'TERM=xterm-256color', '-e', `COLUMNS=${c}`, '-e', `LINES=${r}`,
+    '-v', `${gevraagd}:/werk:${schrijven ? 'rw' : 'ro'}`];
+  for (const g of await geheimeAfdekking(gevraagd)) {
+    if (g.map) args.push('--tmpfs', `/werk/${g.rel}:ro,size=1k`); else args.push('-v', `/dev/null:/werk/${g.rel}:ro`);
+  }
+  args.push('-w', '/werk', t.image, 'script', '-qfec', `stty cols ${c} rows ${r} 2>/dev/null; exec bash -l 2>/dev/null || exec sh -l`, '/dev/null');
+  return { runtime: t.runtime, args, naam };
+}
+
+async function termOpen(cfg, p) {
+  const t = terminalDefaults(cfg.terminal);
+  if (!t.enabled) throw new Error('refused: terminal is switched off on this device (node agent.mjs terminal-config on)');
+  const sid = String(p.sid || '');
+  if (!/^[0-9a-f-]{36}$/.test(sid)) throw new Error('invalid session id');
+  if (termSessies.has(sid)) throw new Error('session already open');
+  if (termSessies.size >= 3) throw new Error('refused: too many open terminals on this device (max 3)');
+  const minuten = Math.min(t.maxMinuten, Math.max(1, Number(p.minuten) || 30));
+  const { runtime, args, naam } = await termArgs(cfg, { sid, root: p.root, schrijven: p.schrijven === true, cols: p.cols, rows: p.rows });
+  const child = spawn(runtime, args, { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+  const sluit = (code, reden) => {
+    const s = termSessies.get(sid); if (!s) return;
+    termSessies.delete(sid); clearTimeout(s.timer);
+    try { child.kill('SIGKILL'); } catch { /* al weg */ }
+    runFixed(runtime, ['rm', '-f', naam], { timeout: 15_000 }).catch(() => {});
+    termStuur({ t: 'term.exit', sid, code, reden });
+  };
+  const timer = setTimeout(() => sluit(null, 'tijd'), minuten * 60_000); timer.unref?.();
+  termSessies.set(sid, { child, naam, timer, runtime, sluit });
+  const uit = (d) => termStuur({ t: 'term.out', sid, d: Buffer.from(d).toString('base64') });
+  child.stdout.on('data', uit); child.stderr.on('data', uit);
+  child.on('error', (e) => { termStuur({ t: 'term.out', sid, d: Buffer.from(`\r\n[agent] ${e.message}\r\n`).toString('base64') }); sluit(null, 'fout'); });
+  child.on('close', (code) => sluit(code, 'einde'));
+  return { sid, naam, minuten, runtime, image: t.image, alleenLezen: p.schrijven !== true };
+}
+function termBericht(msg) {
+  const s = termSessies.get(String(msg.sid || ''));
+  if (!s) return;
+  if (msg.t === 'term.in' && typeof msg.d === 'string' && msg.d.length <= 64 * 1024) { try { s.child.stdin.write(Buffer.from(msg.d, 'base64')); } catch { /* dicht */ } }
+  else if (msg.t === 'term.close') s.sluit(null, 'gesloten');
+}
+function termAllesSluiten(reden) { for (const s of [...termSessies.values()]) s.sluit(null, reden); }
+
+async function terminalConfig(args) {
+  let cfg; try { cfg = loadConfig(); } catch { die('спершу pair'); }
+  const stand = args._[1];
+  if (stand === 'off') { cfg.terminal = { ...terminalDefaults(cfg.terminal), enabled: false }; saveConfig(cfg); console.log('Термінал вимкнено.'); return; }
+  if (stand !== 'on') die('usage: terminal-config on [--runtime podman|docker] [--image debian:12-slim] [--max-minuten 60] | terminal-config off');
+  if (args.runtime && !['podman', 'docker'].includes(args.runtime)) die('--runtime: podman або docker');
+  cfg.terminal = terminalDefaults({ enabled: true, runtime: args.runtime ?? cfg.apps?.runtime, image: args.image, maxMinuten: args['max-minuten'] });
+  const versie = await runFixed(cfg.terminal.runtime, ['--version'], { timeout: 15_000 }).catch(() => null);
+  saveConfig(cfg);
+  console.log(`Термінал увімкнено: контейнер ${cfg.terminal.image} (${cfg.terminal.runtime} ${versie?.code === 0 ? versie.stdout.trim() : '— НЕ ЗНАЙДЕНО, встановіть його'}), без мережі, до ${cfg.terminal.maxMinuten} хв.${cfg.terminal.runtime === 'docker' ? '\nУВАГА: група docker = фактично root. Безпечніше — rootless podman.' : ''}\nПерезапустіть агента (node agent.mjs run).`);
+}
 // ---------- command handlers ----------
 const handlers = {
   async 'sys.info'(cfg) {
@@ -718,7 +815,9 @@ const handlers = {
   },
 };
 Object.assign(handlers, appHandlers);
-export { handlers, autoDockerfile as _autoDockerfile };
+handlers['term.open'] = termOpen;
+export { handlers, autoDockerfile as _autoDockerfile, termBericht as _termBericht, termSessies as _termSessies };
+export const _termKanaal = (ws) => { termKanaal = ws; };
 
 // ---------- selftest ----------
 // node agent.mjs selftest --root <map>   Controleert de beveiligingsregels van de agent lokaal, zonder server:
@@ -879,16 +978,18 @@ function run() {
     let t = null;
     try { t = await ticket(); } catch (e) { console.log(`[agent] ${e.message}, retry in ${delay / 1000}s`); setTimeout(connect, delay); delay = Math.min(delay * 2, 30_000); return; }
     const ws = new WebSocket(wsUrl);
+    termKanaal = ws;
     let pinger = null;
     ws.onopen = () => {
-      ws.send(JSON.stringify({ t: 'auth', ...(t ? { ticket: t } : { token: cfg.token }), version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps) }));
-      pinger = setInterval(() => { try { ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps) })); } catch { /* dicht */ } }, 20_000);
+      ws.send(JSON.stringify({ t: 'auth', ...(t ? { ticket: t } : { token: cfg.token }), version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps, cfg.terminal) }));
+      pinger = setInterval(() => { try { ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps, cfg.terminal) })); } catch { /* dicht */ } }, 20_000);
     };
     ws.onmessage = async (ev) => {
       let msg; try { msg = JSON.parse(ev.data); } catch { return; }
       if (msg.t === 'ready') { delay = 1000; console.log(`[agent] connected as ${msg.agentId}`); }
-      else if (msg.t === 'ping') ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps) }));
-      else if (msg.t === 'stop') console.log('[agent] Стоп: усі дозволи відкликано на сайті');
+      else if (msg.t === 'ping') ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps, cfg.terminal) }));
+      else if (msg.t === 'stop') { console.log('[agent] Стоп: усі дозволи відкликано на сайті'); termAllesSluiten('noodstop'); }
+      else if (msg.t === 'term.in' || msg.t === 'term.close') termBericht(msg);
       else if (msg.t === 'cmd') {
         console.log(`[agent] ${msg.type}`, JSON.stringify(msg.params).slice(0, 200));
         try {
@@ -905,6 +1006,7 @@ function run() {
     };
     ws.onclose = (ev) => {
       clearInterval(pinger);
+      termAllesSluiten('verbinding');
       if (ev.code === 4403) die('токен відкликано або недійсний. Виконайте pair заново.');
       console.log(`[agent] disconnected (${ev.code}), retry in ${delay / 1000}s`);
       setTimeout(connect, delay);
@@ -925,5 +1027,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   else if (cmd === 'run') run();
   else if (cmd === 'selftest') await selftest(args);
   else if (cmd === 'apps-config') await appsConfig(args);
-  else die('usage: node agent.mjs <pair|run|selftest|apps-config>');
+  else if (cmd === 'terminal-config') await terminalConfig(args);
+  else die('usage: node agent.mjs <pair|run|selftest|apps-config|terminal-config>');
 }

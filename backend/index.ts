@@ -35,6 +35,7 @@ import { weergaveRoutes } from './weergave';
 import { diagnoseRoutes } from './diagnose';
 import { schaduwAdmin } from './beleid';
 import { ondersteuningRoutes } from './ondersteuning-routes';
+import { terminalRoutes } from './terminal-routes';
 import { uitrolGoedkeuringRoutes } from './uitrol-goedkeuring';
 import { aiBeleidRoutes } from './ai-beleid';
 import { passkeyRoutes } from './passkeys';
@@ -496,6 +497,8 @@ export const handler = router({
   ...diagnoseRoutes(ownerRequireSession as never),
   // «Підтримка від імені» met toestemming (etap 7): alleen-lezen overzicht, nooit een sessie van de gebruiker.
   ...ondersteuningRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never, meld: (id, email, kind, titel, tekst) => notify(id, email, kind, titel, tekst) }),
+  // Terminals in de browser (wegwerpcontainer op een eigen apparaat, opname van de uitvoer).
+  ...terminalRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
   ...uitrolGoedkeuringRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
   ...aiBeleidRoutes({ requireSession: ownerRequireSession as never }),
   ...passkeyRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),

@@ -21,6 +21,8 @@
 #   installeer-app.sh apps-koppelen <KOPPELCODE> [--domein '{app}-app.voorbeeld.nl'] [--naam N] [--geheugen 512m] [--server URL]
 #                                             agent van mr-apps koppelen (code van mcp.* → Agenten) en starten
 #   installeer-app.sh apps-status             stand van de apps-agent, Caddy en de containers
+#   installeer-app.sh apps-terminal on|off    terminal in de browser via de apps-agent (wegwerpcontainer zonder netwerk,
+#                                             rootless podman als mr-apps; openen alleen vanuit een technisch profiel)
 #   installeer-app.sh beheer-koppelen <KOPPELCODE> [--gebruiker beheer] [--root DIR]... [--readonly-root DIR]... [--allow git,node]
 #                                             deze server als apparaat op de site (agent als die gebruiker, NoNewPrivileges:
 #                                             geen sudo); daarna alles via mcp.* (toestemmingen, hulpmiddelen, journaal)
@@ -763,6 +765,15 @@ agenten_bijwerken() {
   melding "agent op deze server bijgewerkt ($(sed -n "s/^const VERSION = '\([0-9.]*\)'.*/\1/p" "$APPS_AGENT_DIR/agent.mjs" | head -1))"
 }
 
+apps_terminal() {
+  local stand="${1:-}"
+  [[ "$stand" == on || "$stand" == off ]] || fout "gebruik: $0 apps-terminal on|off"
+  id "$APPS_GEBRUIKER" >/dev/null 2>&1 && [ -s "$APPS_AGENT_DIR/agent.mjs" ] || fout "eerst: $0 apps-inrichten <bronmap> en apps-koppelen <code>"
+  (cd / && als_apps "$NODE" "$APPS_AGENT_DIR/agent.mjs" terminal-config "$stand" --runtime podman) || fout "terminal-config mislukt"
+  systemctl restart "$APPS_UNIT" || waarschuwing "$APPS_UNIT kon niet herstarten"
+  melding "terminal via de apps-agent: $stand"
+}
+
 apps_status() {
   systemctl --no-pager --lines=5 status "$APPS_UNIT" 2>/dev/null | head -12 || echo "$APPS_UNIT: niet ingericht"
   if systemctl is-active --quiet caddy 2>/dev/null; then echo "caddy: actief"; else echo "caddy: niet actief of niet ingericht"; fi
@@ -793,6 +804,7 @@ case "$opdracht" in
   apps-inrichten) apps_inrichten "$@" ;;
   apps-koppelen) apps_koppelen "$@" ;;
   apps-status) vereis_root; apps_status ;;
+  apps-terminal) vereis_root; vereis_node; apps_terminal "$@" ;;
   beheer-koppelen) beheer_koppelen "$@" ;;
   *) sed -n '/^set -euo/q;2,$p' "$0"; exit 2 ;;
 esac

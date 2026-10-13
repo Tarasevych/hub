@@ -55,6 +55,21 @@ node/python), `ProtectSystem=strict` en schrijven alleen in de gekozen mappen. D
 console: de site geeft zichzelf geen toegang tot haar eigen host. Daarna regelt de eigenaar alles op de site. Bij elke
 release (`installeren`) werkt de installer de agent op de server bij en herstart hem (`agenten_bijwerken`).
 
+## Terminal in de browser (0.6.0+)
+
+Een shell draait NOOIT op het apparaat zelf (shells blijven verboden op de allow-list), alleen in een wegwerpcontainer:
+rootless podman (of docker), `--network none`, `--cap-drop ALL`, `no-new-privileges`, `--read-only`, limieten (512 MB, 128 processen),
+één toegestane root op `/werk` (standaard alleen-lezen), geheime plekken binnen die root afgedekt (tmpfs of `/dev/null`).
+Uitvoer wordt op de site opgenomen (asciicast), invoer niet. Openen alleen vanuit een technisch profiel met terminalrecht, met reden
+en verse bevestiging van de aanmelding, en alleen op EIGEN apparaten; een AI kan geen terminal openen.
+
+```
+node agent.mjs terminal-config on [--runtime podman|docker] [--image docker.io/library/debian:12-slim] [--max-minuten 60]
+node agent.mjs terminal-config off
+```
+
+Op de server van «Mijn Ruimte» (apps-agent als `mr-apps`): `sudo /usr/local/sbin/mijn-ruimte-installeer apps-terminal on|off`.
+
 ## Veiligheid
 
 - Agenttoken: alleen de sha256-hash staat in de database; het token zelf in `~/.hub-agent/config.json` (modus 0600).

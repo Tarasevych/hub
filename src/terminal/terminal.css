@@ -1,0 +1,9 @@
+.term-sessie{display:grid;grid-template-rows:auto auto 1fr;gap:8px;padding:10px 12px 12px;height:100%;box-sizing:border-box;color:var(--text,#1b1f24)}
+.term-kop{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.88rem}
+.term-kop svg{width:16px;height:16px}
+.term-kop button{margin-left:auto;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.term-rec{color:#b42318;font-weight:700}
+.term-doos{min-height:320px;background:#0d1117;border-radius:8px;padding:6px;overflow:hidden}
+.term-doos.is-afspelen{min-height:240px;margin-top:8px}
+mr-xterm-stijl{display:none}
+[data-term-venster] button{display:inline-flex;align-items:center;gap:6px}[data-term-venster] button svg{width:16px;height:16px}

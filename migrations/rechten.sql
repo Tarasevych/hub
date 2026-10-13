@@ -60,6 +60,11 @@ BEGIN
       GRANT SELECT ON app.ondersteuning_verzoeken TO mijnruimte_app;
       REVOKE INSERT, UPDATE, DELETE ON app.ondersteuning_verzoeken FROM mijnruimte_app;
     END IF;
+    -- 0036: terminalsessies: de app-rol leest alleen eigen rijen (zonder opname-inhoud via routes); schrijven doet de systeemrol.
+    IF to_regclass('app.terminal_sessies') IS NOT NULL THEN
+      GRANT SELECT ON app.terminal_sessies TO mijnruimte_app;
+      REVOKE INSERT, UPDATE, DELETE ON app.terminal_sessies FROM mijnruimte_app;
+    END IF;
     -- 0031: weergave (простий/розширений): de app-rol leest alleen de eigen rij; schrijven doet de systeemrol.
     IF to_regclass('app.ui_weergave') IS NOT NULL THEN
       GRANT SELECT ON app.ui_weergave TO mijnruimte_app;

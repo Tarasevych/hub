@@ -151,6 +151,11 @@ export async function main(): Promise<number> {
     const tel = await page.evaluate(() => { const b = document.querySelector('[data-tech-band]')!; return { band: b.scrollWidth <= b.clientWidth + 1, pagina: document.documentElement.scrollWidth <= window.innerWidth + 1, uit: !!document.querySelector('[data-tech-knop="uit"]') }; });
     check('telefoon: band past, geen horizontaal scrollen, «вийти» bereikbaar', tel.band && tel.pagina && tel.uit, JSON.stringify(tel));
     await page.screenshot({ path: `${UIT}/tech-6-telefoon.png` });
+    await band.locator('[data-tech-knop="meer"]').click();
+    const extra = await page.evaluate(() => ({ open: getComputedStyle(document.querySelector('#tech-band-extra')!).display === 'flex', verlengen: !!(document.querySelector('[data-tech-knop="verlengen"]') as HTMLElement)?.offsetParent, binnen: document.querySelector('#tech-band-extra')!.getBoundingClientRect().right <= innerWidth }));
+    check('telefoon: «⋯» opent de overige knoppen (Подовжити, Профілі, колір) binnen het scherm', extra.open && extra.verlengen && extra.binnen, JSON.stringify(extra));
+    await page.screenshot({ path: `${UIT}/tech-6b-telefoon-meer.png` });
+    await band.locator('[data-tech-knop="meer"]').click();
     await page.setViewportSize({ width: 1280, height: 900 });
 
     // ---------------------------------------------------------------- 7. uitzetten
