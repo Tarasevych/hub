@@ -28,6 +28,8 @@ export const JOURNAAL_ACTIES: Record<string, JournaalSoort> = {
   'owner.mcp.deur.approved': 'ai', 'owner.mcp.deur.denied': 'ai', 'owner.mcp.deur.revoked': 'ai', 'owner.mcp.duur.setting': 'ai',
   // Technisch profiel (tweede identiteit in hetzelfde account): toekennen, aanzetten, uitzetten, intrekken, kleur van de band.
   'owner.tech.toegekend': 'toegang', 'owner.tech.geactiveerd': 'toegang', 'owner.tech.beeindigd': 'toegang', 'owner.tech.ingetrokken': 'toegang', 'owner.tech.band': 'toegang',
+  // Diagnose (etap 4): verslag verstuurd; verslagen van gebruikers gelezen (alleen in een technisch profiel).
+  'owner.diagnose.gemeld': 'toegang', 'owner.diagnose.gelezen': 'toegang',
   mcp_console_token_issued: 'token', mcp_console_token_revoked: 'token',
   'owner.app.geheim': 'apparaat',
   'owner.agent.paired': 'apparaat', 'owner.agent.revoked': 'apparaat', 'owner.agent.updated': 'apparaat', 'owner.agent.policy': 'apparaat', 'owner.agent.pairing_code': 'apparaat',

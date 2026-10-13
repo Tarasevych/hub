@@ -13,6 +13,7 @@ import {
   ChevronUp,
   FileText,
   KeyRound,
+  LifeBuoy,
   Languages,
   LogOut,
   Moon,
@@ -30,6 +31,7 @@ import {
 import StableAvatar from './StableAvatar';
 import { openTechVenster, techActief, techGebruiker, useTech } from './tech/tech-store';
 import { weergaveGebruiker } from './weergave/weergave-store';
+import { openDiagnose } from './diagnose/open';
 import { hervatAuto, pauzeerAuto, useAutoStatus } from './thema/useThema';
 import {
   forgetAccountPreviewHistory,
@@ -649,6 +651,14 @@ export default function CanonicalAccountMenu({
                 </section>
               )}
 
+              {user ? (
+                <IconAction
+                  icon={<LifeBuoy />}
+                  label={lang === 'uk' ? 'Щось не працює? Перевірка' : 'Werkt iets niet? Controle'}
+                  onClick={() => { close(); openDiagnose(); }}
+                  className='canonical-menu-action'
+                />
+              ) : null}
               {tech.profiel ? (
                 <IconAction
                   icon={<ShieldCheck />}
