@@ -182,3 +182,30 @@ small.ag-melding{display:block}
   .ai-veld-breed,.ai-veld-knop{grid-column:auto;grid-row:auto}
   .ag-tab-knop span:not(.ag-teller){font-size:.85rem}
 }
+
+/* «Підключити ШІ» (AiVerbinden.tsx): keuze van de AI, doel en duur, dan twee duidelijke wegen. */
+.ag-verbind{display:flex;flex-direction:column;gap:14px}
+.ag-verbind-klanten{display:flex;flex-wrap:wrap;gap:8px}
+.ag-verbind-klant{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:inherit;font:inherit;cursor:pointer}
+.ag-verbind-klant[aria-checked='true']{border-color:var(--accent,#1f5fbf);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#1f5fbf) 30%,transparent);font-weight:600}
+.ag-verbind-klant:focus-visible,.ag-verbind-weg:focus-visible{outline:2px solid var(--accent,#1f5fbf);outline-offset:2px}
+.ag-verbind-rij{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 20px}
+.ag-verbind-rij .ag-veld select{min-height:40px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:inherit;font:inherit;max-width:100%}
+.ag-verbind-wegen{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:12px}
+.ag-verbind-weg{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:4px 12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ag-verbind-weg>svg{grid-row:span 2;width:24px;height:24px;color:var(--accent,#1f5fbf)}
+.ag-verbind-weg small{color:var(--muted);line-height:1.4}
+.ag-verbind-weg.is-aan{border-color:var(--accent,#1f5fbf);background:color-mix(in srgb,var(--accent,#1f5fbf) 8%,var(--panel))}
+.ag-verbind-paneel{display:flex;flex-direction:column;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--surface)}
+.ag-verbind-stappen{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:10px;line-height:1.5}
+.ag-verbind-stappen li{display:flex;flex-direction:column;gap:6px}
+.ag-verbind-adres{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ag-verbind-adres code{flex:1 1 16rem;min-width:0;padding:8px 10px;border-radius:8px;background:var(--panel);word-break:break-all;font-size:13px}
+.ag-verbind-let{display:flex;gap:8px;align-items:flex-start;margin:0;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--ag-warn,#b45309) 12%,transparent);font-size:13px;line-height:1.45}
+.ag-verbind-snippet summary{cursor:pointer;font-weight:600;padding:4px 0}
+.ag-verbind-snippet pre{margin:8px 0;padding:10px;border-radius:8px;background:var(--surface);overflow:auto;max-width:100%;font-size:12px}
+.ag-deur-verbindingen{margin-top:8px}
+@media(max-width:560px){.ag-verbind-weg{padding:12px}.ag-verbind-rij{flex-direction:column;align-items:stretch}.ag-verbind-rij .ag-veld,.ag-verbind-rij select{width:100%}}
+/* Keuze deur/connector: op een smal scherm twee volle rijen, tekst mag afbreken (niets buiten de kaart). */
+.ag-verbind .ag-segment button[role=radio]{min-height:40px;white-space:normal;text-align:left}
+@media(max-width:560px){.ag-verbind .ag-segment{display:grid;width:100%}.ag-verbind .ag-segment-optie{border-left:0;border-top:1px solid var(--line);padding-right:0}.ag-verbind .ag-segment-optie:first-child{border-top:0}.ag-verbind .ag-segment button[role=radio]{width:100%}}

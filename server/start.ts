@@ -425,7 +425,8 @@ if (isMain) {
   attachAgentGateway(server, APP_HOSTS); // Local Machine Connector: WSS /agent/ws (agent belt zelf naar buiten)
   server.requestTimeout = 120_000;
   server.headersTimeout = 30_000;
-  server.keepAliveTimeout = 65_000;
+  // > originRequest.keepAliveTimeout van cloudflared (90 s): anders hergebruikt de tunnel soms een net door Node gesloten verbinding → 502.
+  server.keepAliveTimeout = 100_000;
   server.listen(PORT, HOST, () => console.log(`[server] luistert op http://${HOST}:${PORT} (dist: ${DIST_DIR})`));
   // Fase 3: verouderde eigenaarsrollen (adres ≠ OWNER_EMAIL) intrekken; faalt nooit de start.
   verouderdeEigenarenIntrekken().catch((err) => console.error('[eigenaar] opschonen mislukt:', (err as Error).message));

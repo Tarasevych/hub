@@ -1,6 +1,7 @@
 import './extension-welcome-store'; // eerst: legt ?extension=welcome (na het installeren van de extensie) vast vóór het aanmelden
 import './mcp-consent-store'; // eerst: legt ?consent=<id> van Claude vast vóór het aanmelden en vóór andere modules de URL aanpassen
 import { createRoot } from 'react-dom/client';
+import { isOAuthTerug, verwerkOAuthTerug } from './oauth-terug';
 import './ai-site-actions'; // acties voor AI-assistenten via de browserextensie (postMessage) en WebMCP
 import './browser-agent-heartbeat'; // bevestigt vanuit een ingelogde pagina dat de aangezette browserextensie actief mag blijven
 import App from './App';
@@ -19,6 +20,8 @@ const naActivering = (doe: () => void) => {
 // Gastpagina (toegangscode inwisselen, §13.11): eigen, losse weergave zonder de app-shell en zonder eigenaarssessie.
 const gastPagina = location.pathname === '/toegang' && (location.hostname === 'id.tarasevych.com' || location.hostname === 'localhost');
 naActivering(() => {
+  // «Підключити автоматично»: terugkeer van OAuth in het popupvenster — geen app-shell, alleen de code doorgeven aan de opener.
+  if (isOAuthTerug()) { verwerkOAuthTerug(); return; }
   if (gastPagina) {
     document.getElementById('boot-shell')?.remove();
     document.documentElement.classList.remove('boot-active');

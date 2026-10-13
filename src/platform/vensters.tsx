@@ -112,6 +112,26 @@ export function Venster({ id, titel, kop, prioriteit = 'normaal', modaal = true,
     const basis: Geometrie = { b: b0, h: h0, x: (window.innerWidth - b0) / 2, y: Math.max(RAND, (window.innerHeight - h0) / 2), max: false };
     setGeo(binnenScherm(bewaard && Number.isFinite(bewaard.x) ? { ...basis, ...bewaard, h: bewaard.h ?? h0 } as Geometrie : basis));
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Groeit de inhoud na het openen (eerst «Завантаження…», dan het hele venster), dan omhoog schuiven zodat de onderkant (de knoppen)
+  // binnen het scherm blijft — ook in een klein popupvenster van een AI-klant. Niet als de gebruiker zelf de grootte vastzette.
+  useEffect(() => {
+    const el = frame.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    // Natuurlijke hoogte = titelbalk + volledige inhoud (ook als max-height de rest nu laat scrollen).
+    const natuurlijk = () => (el.querySelector<HTMLElement>('.venster-kop')?.offsetHeight ?? 0) + (el.querySelector<HTMLElement>('.venster-inhoud')?.scrollHeight ?? el.offsetHeight) + 2;
+    const ro = new ResizeObserver(() => {
+      if (sleep.current) return;
+      setGeo((g) => {
+        if (!g || g.max || g.vast) return g;
+        const onder = window.innerHeight - RAND, h = natuurlijk();
+        return g.y + h <= onder || g.y <= RAND ? g : { ...g, y: Math.max(RAND, onder - h) };
+      });
+    });
+    ro.observe(el);
+    const inhoud = el.querySelector('.venster-inhoud');
+    if (inhoud?.firstElementChild) ro.observe(inhoud.firstElementChild);
+    return () => ro.disconnect();
+  }, []);
   useEffect(() => {
     const opnieuw = () => setGeo((g) => (g ? binnenScherm(g) : g));
     window.addEventListener('resize', opnieuw);
@@ -171,7 +191,8 @@ export function Venster({ id, titel, kop, prioriteit = 'normaal', modaal = true,
     else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
   };
 
-  const stijl = geo && !geo.max && !smal ? { left: geo.x, top: geo.y, width: geo.b, ...(geo.vast || hoogte ? { height: geo.h } : {}) } : undefined;
+  // max-height vanaf de eigen bovenkant: wat niet past, scrolt binnen het venster (de knoppen blijven bereikbaar).
+  const stijl = geo && !geo.max && !smal ? { left: geo.x, top: geo.y, width: geo.b, maxHeight: `calc(100dvh - ${Math.round(geo.y) + RAND}px)`, ...(geo.vast || hoogte ? { height: geo.h } : {}) } : undefined;
   return createPortal(
     <>
       {modaal && !klein ? <div className='venster-achter' style={{ zIndex: z - 1 }} aria-hidden='true' onPointerDown={() => vensterBeheer.naarVoren(id)} /> : null}

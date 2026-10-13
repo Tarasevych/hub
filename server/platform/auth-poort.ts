@@ -50,6 +50,7 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'POST /api/mcp-connector/rpc':'MCP-eindpunt: Bearer-token (OAuth) verplicht, anders 401 met WWW-Authenticate',
   'GET /api/mcp-connector/rpc': 'MCP-eindpunt: altijd 405 (geen SSE-stroom)',
   'DELETE /api/mcp-connector/rpc': 'MCP-eindpunt: altijd 405 (geen sessies)',
+  'POST /api/mcp/deur/token-check': 'intern: alleen de MCP-deur op loopback met haar sleutel (mcp-state/intern.sleutel), anders 404; antwoordt alleen ok/id/naam van een agenttoken van de eigenaar',
   'POST /api/owner/agents/pair':'agent wisselt een eenmalige koppelcode (5 min, gehasht, één gebruiker) in voor een eigen token',
   'GET /api/owner/agents/self':'zelfde als POST: de browserextensie vraagt met haar eigen token (Authorization-header, leesactie) wat de gebruiker heeft aangezet',
   'POST /api/owner/agents/self':'browserextensie vraagt met haar eigen token (alleen hash-opzoeking) wat de gebruiker heeft aangezet; geen persoonsgegevens',

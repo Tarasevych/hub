@@ -27,3 +27,8 @@
 
 /* In het gezamenlijke venster (platform/vensters.tsx): rand, schaduw en laag komen van het venster. */
 .mcp-consent-venster .mcp-consent-dialog{width:100%;max-width:none;max-height:none;border:0;border-radius:0;box-shadow:none;margin:0}
+
+/* Termijn van de toegang (shared/ai-verbinding.ts): standaard uit de instelling per AI, hier per keer aan te passen. */
+.mcp-consent-duur{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:12px 0 4px;font-size:14px}
+.mcp-consent-duur>span{font-weight:600}
+.mcp-consent-duur select{flex:1 1 16rem;min-height:40px;padding:6px 10px;border:1px solid var(--line,#cbd5e1);border-radius:10px;background:var(--surface,#fff);color:inherit;font:inherit}

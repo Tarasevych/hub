@@ -5,6 +5,10 @@ import { heeftApiRecht } from './api-recht';
 import * as c from './mcp-connector';
 import { approveToolCall, describeTools, KNOWN_TOOL_NAMES, rejectToolCall, RISKY_TOOLS } from './connectors-tools';
 import * as agentStore from './connectors-store';
+import { DeurFout, deurBesluit, deurIntrekken, deurVerbindingen, deurVerzoek, internSleutel, isDeurRid, vanDeur } from './mcp-deur-brug';
+import { leesDuren, zetDuur } from './ai-verbinding-instellingen';
+import { DUREN, KLANTEN, duur as duurVan, isDuurId, klantVan, type KlantId } from '../shared/ai-verbinding';
+import { sessieGeverifieerd } from '../server/platform/context';
 
 type SessionAuth = { errorCode: string } | { user: { id: string; email: string; role: string; status: string }; service: string };
 type Deps = {
@@ -30,6 +34,14 @@ export function createMcpConnectorRoutes(deps: Deps) {
     return auth;
   };
   const denied = () => deps.fail('OWNER_API_SESSION_REQUIRED', 403);
+  // De MCP-deur (/Grok, /claude, …) geeft serverbrede hulpmiddelen (release, uitrol): alleen de eigenaar van de server.
+  const eigenaarGate = async (event: Record<string, unknown>, body: unknown) => {
+    const auth = await ownerGate(event, body);
+    return auth && auth.user.role === 'owner' ? auth : null;
+  };
+  const deurFout = (err: unknown) => err instanceof DeurFout
+    ? deps.fail(err.code, err.status)
+    : deps.fail('DEUR_FOUT', 502);
   const ridOf = (ctx: any) => String(deps.body(ctx.body).rid ?? '').slice(0, 100);
   // Zonder step-up-functie weigeren (nooit stilletjes doorlaten).
   const stepUp = async (ctx: unknown, auth: any) => (deps.stepUp ? deps.stepUp(ctx, auth) : deps.fail('STEP_UP_REQUIRED', 403));
@@ -50,20 +62,96 @@ export function createMcpConnectorRoutes(deps: Deps) {
     'POST /api/owner/mcp-connector/consent/info': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
-      const info = await c.consentInfo(ridOf(ctx));
+      const rid = ridOf(ctx);
+      if (isDeurRid(rid)) {
+        if (auth.user.role !== 'owner') return deps.fail('OWNER_REQUIRED', 403);
+        try {
+          const v = await deurVerzoek(rid);
+          if (!v) return deps.fail('CONSENT_EXPIRED', 404);
+          const klant = klantVan(v.clientName);
+          return deps.respond({ ...v, soort: 'deur', klant, loopback: v.redirectSoort === 'loopback', duur: (await leesDuren(auth.user.id))[klant], handmatigUrl: `${c.BASE}/oauth/authorize?verzoek=${encodeURIComponent(rid)}` });
+        } catch (err) { return deurFout(err); }
+      }
+      const info = await c.consentInfo(rid, auth.user.id);
       return info ? deps.respond(info) : deps.fail('CONSENT_EXPIRED', 404);
     }],
 
     'POST /api/owner/mcp-connector/consent': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
-      const approve = deps.body(ctx.body).approve === true;
+      const body = deps.body(ctx.body);
+      const approve = body.approve === true;
+      const gekozen = isDuurId(body.duur) ? body.duur : null;
+      const rid = ridOf(ctx);
+      if (isDeurRid(rid) && auth.user.role !== 'owner') return deps.fail('OWNER_REQUIRED', 403);
       // H4: toestemming geven (niet weigeren) vraagt een verse aanmelding: tegen consent-phishing met een door een aanvaller gestarte flow.
       if (approve) { const su = await stepUp(ctx, auth); if (su) return su; }
-      const out = await c.consentDecide(auth.user.id, ridOf(ctx), approve);
+      if (isDeurRid(rid)) {
+        try {
+          const v = await deurVerzoek(rid);
+          if (!v) return deps.fail('CONSENT_EXPIRED', 404);
+          const duur = gekozen ?? (await leesDuren(auth.user.id))[klantVan(v.clientName)];
+          const out = await deurBesluit(rid, approve, duur, { id: auth.user.id, email: auth.user.email });
+          if (!out) return deps.fail('CONSENT_EXPIRED', 404);
+          await deps.audit(auth.user.id, approve ? 'owner.mcp.deur.approved' : 'owner.mcp.deur.denied', 'success', { deur: v.deur || 'alle', klant: v.clientName, redirectHost: v.redirectHost, redirectSoort: v.redirectSoort, ...(approve ? { duur } : {}) });
+          return deps.respond(out);
+        } catch (err) { return deurFout(err); }
+      }
+      const out = await c.consentDecide(auth.user.id, rid, approve, gekozen);
       if ('error' in out) return deps.fail(out.error === 'GRANT_LIMIT' ? 'MCP_GRANT_LIMIT_REACHED' : 'CONSENT_EXPIRED', out.error === 'GRANT_LIMIT' ? 409 : 404);
-      await deps.audit(auth.user.id, approve ? 'owner.mcp.grant.approved' : 'owner.mcp.grant.denied', 'success');
+      await deps.audit(auth.user.id, approve ? 'owner.mcp.grant.approved' : 'owner.mcp.grant.denied', 'success', approve && gekozen ? { duur: gekozen } : {});
       return deps.respond(out);
+    }],
+
+    // Hoe lang de toegang van elke AI-klant geldt (standaard bij «Дозволити»; in het venster per keer aan te passen).
+    'POST /api/owner/mcp-connector/duren': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      // deuren: de eigenaar, en alleen als de deur op deze server draait (zij zet bij elke start haar sleutel neer).
+      return deps.respond({ duren: await leesDuren(auth.user.id), opties: DUREN, klanten: KLANTEN, deuren: auth.user.role === 'owner' && !!(await internSleutel()) });
+    }],
+    'POST /api/owner/mcp-connector/duren/zet': [async (ctx: any) => {
+      const auth = await ownerGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const body = deps.body(ctx.body);
+      const klant = String(body.klant ?? '') as KlantId;
+      if (!KLANTEN.some((k) => k.id === klant) || !isDuurId(body.duur)) return deps.fail('DUUR_ONGELDIG', 400);
+      // Lange of onbeperkte toegang: verse aanmelding (zoals «Altijd» voor riskante hulpmiddelen).
+      if (duurVan(body.duur).lang) { const su = await stepUp(ctx, auth); if (su) return su; }
+      await zetDuur(auth.user.id, klant, body.duur);
+      await deps.audit(auth.user.id, 'owner.mcp.duur.setting', 'success', { klant, duur: body.duur });
+      return deps.respond({ ok: true, duren: await leesDuren(auth.user.id) });
+    }],
+
+    // Verbindingen via de MCP-deur (OAuth van de deur zelf): lijst en intrekken. Alleen de eigenaar van de server.
+    'POST /api/owner/mcp-connector/deur/verbindingen': [async (ctx: any) => {
+      const auth = await eigenaarGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      // Geen deur op deze server (niet geïnstalleerd of gestopt): geen fout, gewoon «niet beschikbaar» (BYOS: de deur is optioneel).
+      try { return deps.respond({ verbindingen: await deurVerbindingen(), beschikbaar: true }); }
+      catch (err) { return err instanceof DeurFout && err.code === 'DEUR_ONBEREIKBAAR' ? deps.respond({ verbindingen: [], beschikbaar: false }) : deurFout(err); }
+    }],
+    'POST /api/owner/mcp-connector/deur/intrekken': [async (ctx: any) => {
+      const auth = await eigenaarGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const id = String(deps.body(ctx.body).id ?? '').slice(0, 40);
+      try {
+        const lijst = await deurVerbindingen();
+        const v = lijst.find((x) => x.id === id);
+        if (!v || !(await deurIntrekken(id))) return deps.fail('VERBINDING_NIET_GEVONDEN', 404);
+        await deps.audit(auth.user.id, 'owner.mcp.deur.revoked', 'success', { verbinding: id, deur: v.deur || 'alle', klant: v.klant });
+        return deps.respond({ ok: true });
+      } catch (err) { return deurFout(err); }
+    }],
+
+    // Intern (zie PUBLIEKE_ROUTES): de MCP-deur vraagt of een agenttoken tvh_… geldig is. Alleen loopback met de sleutel van de deur;
+    // alleen tokens van de eigenaar (de deur geeft serverbrede hulpmiddelen). Antwoord zonder persoonsgegevens.
+    'POST /api/mcp/deur/token-check': [async (ctx: any) => {
+      if (!(await vanDeur(ctx.event?.headers || {}))) return deps.fail('NOT_FOUND', 404);
+      sessieGeverifieerd();
+      const tok = await c.agentToken(String(deps.body(ctx.body).token ?? ''));
+      if (!tok || tok.role !== 'owner') return deps.respond({ ok: false });
+      return deps.respond({ ok: true, id: tok.id, naam: tok.name });
     }],
 
     'POST /api/owner/mcp-connector/grants': [async (ctx: any) => {

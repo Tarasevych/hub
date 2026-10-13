@@ -4,9 +4,12 @@
 //   Hulpmiddelen:     machine_* (eigen apparaten) en github_get uit connectors-tools.ts, altijd van de ingelogde gebruiker
 //
 // Eisen van Claude (zie deploy/MCP-CONNECTOR.md): 401 + WWW-Authenticate met resource_metadata, `resource` gelijk aan
-// de MCP-URL, S256 PKCE, redirect exact https://claude.ai/api/mcp/auth_callback (Claude Code: loopback zonder poort),
+// de MCP-URL, S256 PKCE, redirect van een bekende AI-klant / loopback / app-schema (shared/ai-verbinding.ts; loopback zonder poort),
 // token-eindpunt met application/x-www-form-urlencoded, refresh-tokens roteren, discovery/registratie/token < 10 s.
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { getPool } from '../server/platform/pg';
+import { isDuurId, klantVan, redirectPast, redirectSoort, SITE_TERUG_PAD, type DuurId } from '../shared/ai-verbinding';
+import { extraRedirects, leesDuren } from './ai-verbinding-instellingen';
 import { rateLimit, type RouterResponse } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
 import { actieDoel, actieSoort } from '../shared/mcp-acties';
@@ -25,7 +28,6 @@ export const PRM_URL = `${BASE}/.well-known/oauth-protected-resource/mcp`;
 export const SCOPE = 'machines';
 export const PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26'];
 
-const CLAUDE_CALLBACK = 'https://claude.ai/api/mcp/auth_callback';
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 const RPC_PER_MINUTE = 120;
 const MAX_RPC_BYTES = 6 * 1024 * 1024;
@@ -44,20 +46,15 @@ const plain = (status: number, text: string): RouterResponse => ({
 const parseUrl = (value: string): URL | null => { try { return new URL(value); } catch { return null; } };
 const isLoopback = (u: URL) => u.protocol === 'http:' && LOOPBACK.has(u.hostname);
 
-/** Alleen Claude zelf: de vaste callback van de gehoste apps, of een loopback-callback van Claude Code. */
-export function redirectUriAllowed(uri: string): boolean {
-  if (uri === CLAUDE_CALLBACK) return true;
-  const u = parseUrl(uri);
-  return !!u && isLoopback(u) && u.pathname === '/callback' && !u.username && !u.password && !u.hash && !u.search;
-}
+/**
+ * Veilige terugkeeradressen (RFC 8252, shared/ai-verbinding.ts): https van bekende AI-klanten (claude.ai, grok.com, chatgpt.com, …),
+ * loopback (Claude Code, Cursor, VS Code: http://127.0.0.1|localhost:<poort>/…), app-schema's (cursor://, vscode://, windsurf://),
+ * het eigen terugkeeradres van de site (in-browser PKCE op /agents) en wat de eigenaar toevoegt in mcp-rechten.json.
+ */
+export const redirectUriAllowed = (uri: string): boolean => redirectSoort(uri, [`${BASE}${SITE_TERUG_PAD}`, ...extraRedirects()]) !== null;
 
 /** Exacte overeenkomst, behalve bij loopback: daar telt de (steeds wisselende) poort niet mee (RFC 8252 §7.3). */
-export function redirectMatches(registered: string[], requested: string): boolean {
-  if (registered.includes(requested)) return true;
-  const r = parseUrl(requested);
-  if (!r || !isLoopback(r)) return false;
-  return registered.some((x) => { const g = parseUrl(x); return !!g && isLoopback(g) && g.hostname === r.hostname && g.pathname === r.pathname; });
-}
+export const redirectMatches = (registered: string[], requested: string): boolean => redirectPast(registered, requested) && redirectUriAllowed(requested);
 
 export function pkceMatches(verifier: string, challenge: string): boolean {
   if (!/^[A-Za-z0-9\-._~]{43,128}$/.test(verifier)) return false;
@@ -100,7 +97,7 @@ export async function registerClient(rawBody: string): Promise<RouterResponse> {
   try { body = JSON.parse(rawBody || '{}'); } catch { return respond(400, { error: 'invalid_client_metadata', error_description: 'JSON verwacht' }); }
   const uris: unknown = body?.redirect_uris;
   if (!Array.isArray(uris) || !uris.length || uris.length > 5 || !uris.every((u) => typeof u === 'string' && redirectUriAllowed(u))) {
-    return respond(400, { error: 'invalid_redirect_uri', error_description: 'Alleen de callback van Claude (claude.ai) of een loopback-callback is toegestaan' });
+    return respond(400, { error: 'invalid_redirect_uri', error_description: 'Alleen bekende AI-klanten (claude.ai, grok.com, chatgpt.com, …), loopback (localhost) en app-schema\'s (cursor://, vscode://); meer via oauthRedirects in mcp-rechten.json' });
   }
   const method = body?.token_endpoint_auth_method;
   if (method !== undefined && method !== 'none') return respond(400, { error: 'invalid_client_metadata', error_description: 'Alleen token_endpoint_auth_method "none"' });
@@ -147,19 +144,22 @@ export async function authorize(query: Record<string, string>): Promise<RouterRe
 
 // ---------------- toestemming (door de ingelogde gebruiker, via de UI) ----------------
 
-export async function consentInfo(rid: string) {
+export async function consentInfo(rid: string, userId?: string) {
   const a = await st.getPendingAuth(rid);
   if (!a) return null;
   const u = parseUrl(a.redirect_uri);
+  const klant = klantVan(a.client_name);
   return {
-    clientName: a.client_name ?? 'Claude', redirectHost: u?.host ?? '', loopback: !!u && isLoopback(u),
-    scope: a.scope, expiresAt: new Date(a.expires_at).getTime(),
+    clientName: a.client_name ?? 'Claude', redirectHost: u ? (u.host || u.protocol) : '', loopback: !!u && isLoopback(u),
+    redirectSoort: redirectSoort(a.redirect_uri, [`${BASE}${SITE_TERUG_PAD}`, ...extraRedirects()]),
+    scope: a.scope, expiresAt: new Date(a.expires_at).getTime(), soort: 'connector' as const, klant,
+    duur: userId ? (await leesDuren(userId))[klant] : '1u',
   };
 }
 
 export type ConsentResult = { redirect: string } | { error: 'EXPIRED' | 'GRANT_LIMIT' };
 
-export async function consentDecide(userId: string, rid: string, approve: boolean): Promise<ConsentResult> {
+export async function consentDecide(userId: string, rid: string, approve: boolean, duur: DuurId | null = null): Promise<ConsentResult> {
   const a = await st.getPendingAuth(rid);
   if (!a) return { error: 'EXPIRED' };
   if (!approve) {
@@ -168,7 +168,9 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
   }
   if ((await st.countActiveGrants(userId)) >= st.LIMITS.maxActiveGrantsPerUser) return { error: 'GRANT_LIMIT' };
   const code = randomToken(32);
-  const done = await st.decideAuth(rid, userId, true, sha256(code));
+  // Duur: de keuze in het venster, anders de instelling van de gebruiker voor deze AI-klant (standaard 1 uur).
+  const gekozen = isDuurId(duur) ? duur : (await leesDuren(userId))[klantVan(a.client_name)];
+  const done = await st.decideAuth(rid, userId, true, sha256(code), gekozen);
   return done ? { redirect: withRedirect(a.redirect_uri, { code, state: a.state }) } : { error: 'EXPIRED' };
 }
 
@@ -176,17 +178,18 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
 
 const tokenError = (status: number, error: string, description: string) => respond(status, { error, error_description: description }, { Pragma: 'no-cache' });
 
-async function issue(userId: string, clientId: string, clientName: string, scope: string) {
+async function issue(userId: string, clientId: string, clientName: string, scope: string, duur: string | null | undefined) {
   const access = `mcpa_${randomToken(32)}`;
   const refresh = `mcpr_${randomToken(32)}`;
-  const grantId = await st.insertToken({ userId, clientId, clientName, scope, accessHash: sha256(access), refreshHash: sha256(refresh) });
-  // Journaal op /agents: «ШІ підключено» met clientnaam en scope (de toestemming zelf staat al als owner.mcp.grant.approved).
-  await auditToevoegen({ ownerId: userId, actorId: userId, action: 'owner.mcp.grant.connected', type: 'ai', result: 'success', details: { grantId, clientId, clientName, scope } }).catch(() => undefined);
-  return tokenResponse(access, refresh, scope);
+  const d = isDuurId(duur) ? duur : null;
+  const grantId = await st.insertToken({ userId, clientId, clientName, scope, accessHash: sha256(access), refreshHash: sha256(refresh), duur: d });
+  // Journaal op /agents: «ШІ підключено» met clientnaam, scope en duur (de toestemming zelf staat al als owner.mcp.grant.approved).
+  await auditToevoegen({ ownerId: userId, actorId: userId, action: 'owner.mcp.grant.connected', type: 'ai', result: 'success', details: { grantId, clientId, clientName, scope, duur: d ?? 'standaard' } }).catch(() => undefined);
+  return tokenResponse(access, refresh, scope, d);
 }
 
-const tokenResponse = (access: string, refresh: string, scope: string) => respond(200, {
-  access_token: access, token_type: 'Bearer', expires_in: st.LIMITS.accessTtlSec, refresh_token: refresh, scope,
+const tokenResponse = (access: string, refresh: string, scope: string, duur: string | null | undefined) => respond(200, {
+  access_token: access, token_type: 'Bearer', expires_in: st.levensduur(duur).accessSec, refresh_token: refresh, scope,
 }, { Pragma: 'no-cache' });
 
 export async function token(rawBody: string): Promise<RouterResponse> {
@@ -208,7 +211,7 @@ export async function token(rawBody: string): Promise<RouterResponse> {
     if (!row || row.user_id === null || row.client_id !== client.client_id || row.redirect_uri !== redirectUri || !pkceMatches(verifier, row.code_challenge)) {
       return tokenError(400, 'invalid_grant', 'Code ongeldig, verlopen of al gebruikt');
     }
-    return issue(row.user_id, client.client_id, client.client_name, row.scope);
+    return issue(row.user_id, client.client_id, client.client_name, row.scope, row.duur);
   }
 
   if (grant === 'refresh_token') {
@@ -223,7 +226,7 @@ export async function token(rawBody: string): Promise<RouterResponse> {
       }
       return tokenError(400, 'invalid_grant', 'Refresh-token ongeldig of ingetrokken');
     }
-    return tokenResponse(access, newRefresh, rotated.scope);
+    return tokenResponse(access, newRefresh, rotated.scope, rotated.duur);
   }
 
   return tokenError(400, 'unsupported_grant_type', 'authorization_code of refresh_token verwacht');
@@ -247,14 +250,33 @@ export async function revoke(rawBody: string): Promise<RouterResponse> {
 
 // ---------------- toegangscontrole voor /mcp ----------------
 
-export async function authenticate(authorization: string | undefined) {
+export async function authenticate(authorization: string | undefined): Promise<Wie & { limietSleutel: string } | null> {
   const m = /^Bearer\s+(\S+)$/i.exec(String(authorization || '').trim());
   if (!m || m[1].length > 200) return null;
+  // «Підключити вручну»: agenttoken van de site (tvh_…, 30 dagen) als vaste Bearer voor klanten zonder OAuth in de browser.
+  if (m[1].startsWith('tvh_')) {
+    const tok = await agentToken(m[1]);
+    if (!tok || !(await st.userMayUseConnector(tok.user_id))) return null;
+    return { userId: tok.user_id, clientName: tok.name, grantId: `token:${tok.id}`, agentTokenId: tok.id, limietSleutel: `tvh:${tok.id}` };
+  }
   const row = await st.findByAccessHash(sha256(m[1]));
   if (!row) return null;
   // M4: bij elke aanroep de gebruiker opnieuw controleren: goedgekeurd, niet verwijderd/met pensioen, AI niet geblokkeerd, recht 'api-platform'.
   if (!(await st.userMayUseConnector(row.user_id))) return null;
-  return { userId: row.user_id, tokenId: row.id, clientName: row.client_name };
+  return { userId: row.user_id, tokenId: row.id, clientName: row.client_name, limietSleutel: row.id };
+}
+
+/** Agenttoken tvh_… (app.mcp_console_tokens, alleen hash): niet ingetrokken, niet verlopen; noteert het gebruik. */
+export async function agentToken(token: string): Promise<{ id: string; user_id: string; name: string; role: string } | null> {
+  if (!/^tvh_[A-Za-z0-9_-]{20,64}$/.test(token)) return null;
+  const { rows } = await getPool('systeem').query(
+    `UPDATE app.mcp_console_tokens t SET calls = calls + 1, last_seen_at = now()
+       FROM app.records r
+      WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now() AND r.tbl = 'users' AND r.id = t.user_id
+        AND COALESCE(r.data->>'status', '') NOT IN ('blocked', 'rejected', 'deleted') AND COALESCE((r.data->>'retiredAt')::numeric, 0) = 0
+        AND NOT EXISTS (SELECT 1 FROM app.user_ai_settings s WHERE s.user_id = t.user_id AND s.blocked_at IS NOT NULL)
+      RETURNING t.id::text AS id, t.user_id, t.name, COALESCE(r.data->>'role', '') AS role`, [sha256(token)]);
+  return rows[0] ?? null;
 }
 
 /**
@@ -288,18 +310,23 @@ const toMcpTool = (t: ToolDef) => ({
  * veilige aanduiding van het doel (shared/mcp-acties.ts: pad, host+pad, repo, commando zonder geheimen — nooit inhoud).
  * Zonder deze velden zou het journaal alleen «eigenaar deed iets» kunnen tonen; nu «Claude → eigenaar: Прочитав файл …».
  */
-const werkDetails = (who: { clientName: string; tokenId?: string }, name: string, args: Record<string, unknown>) => {
+/** Wie roept /mcp aan: een OAuth-grant (tokenId) of een agenttoken van de site (agentTokenId, grantId = token:<id>). */
+type Wie = { userId: string; clientName: string; tokenId?: string; agentTokenId?: string; grantId?: string };
+const grantVan = (who: Wie) => who.grantId ?? who.tokenId;
+const werkDetails = (who: Wie, name: string, args: Record<string, unknown>) => {
   const doel = actieDoel(name, args);
-  return { tool: name.slice(0, 80), client: String(who.clientName || '').slice(0, 80), ...(who.tokenId ? { grantId: String(who.tokenId) } : {}), soort: actieSoort(name), ...(doel ? { doel } : {}) };
+  const grantId = grantVan(who);
+  return { tool: name.slice(0, 80), client: String(who.clientName || '').slice(0, 80), ...(grantId ? { grantId: String(grantId) } : {}), soort: actieSoort(name), ...(doel ? { doel } : {}) };
 };
 
 /** Onderwerpen voor de grant "updates voorbereiden": eerst deze MCP-koppeling, dan het account. */
-const uitrolOnderwerpen = (who: { userId: string; tokenId?: string }): Onderwerp[] => [
+const uitrolOnderwerpen = (who: Wie): Onderwerp[] => [
   ...(who.tokenId ? [{ soort: 'mcp-koppeling' as const, id: String(who.tokenId), accountId: who.userId }] : []),
+  ...(who.agentTokenId ? [{ soort: 'agenttoken' as const, id: String(who.agentTokenId), accountId: who.userId }] : []),
   { soort: 'account', id: who.userId, accountId: who.userId },
 ];
 
-async function handleMessage(who: { userId: string; clientName: string; tokenId?: string }, msg: any): Promise<unknown | null> {
+async function handleMessage(who: Wie, msg: any): Promise<unknown | null> {
   if (!msg || typeof msg !== 'object' || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return rpcError(msg?.id, -32600, 'Invalid Request');
   const id = msg.id;
   if (id === undefined) return null; // notificatie (bijv. notifications/initialized): geen antwoord
@@ -316,7 +343,7 @@ async function handleMessage(who: { userId: string; clientName: string; tokenId?
     }
     case 'ping': return rpcResult(id, {});
     case 'tools/list': {
-      const tools = (await metNamens({ client: who.clientName, grantId: who.tokenId }, () => listTools(who.userId, { alwaysMachine: true }))).map(toMcpTool);
+      const tools = (await metNamens({ client: who.clientName, grantId: grantVan(who) }, () => listTools(who.userId, { alwaysMachine: true }))).map(toMcpTool);
       // Updates voorbereiden alleen zichtbaar met een grant van de eigenaar; goedkeuren bestaat hier niet.
       if (await heeftVoorbereiderGrant(uitrolOnderwerpen(who))) tools.push(...UITROL_TOOLS.map((t) => toMcpTool(t as unknown as ToolDef)));
       return rpcResult(id, { tools });
@@ -328,14 +355,14 @@ async function handleMessage(who: { userId: string; clientName: string; tokenId?
       if (UITROL_TOOL_NAMEN.has(name) || isGoedkeurPoging(name)) {
         let uit: { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
         // Ondertekend AI-beleid: «Розгортати сайт» uit voor deze AI → niets voorbereiden (goedkeuren kan hier nooit).
-        const weigering = UITROL_TOOL_NAMEN.has(name) ? await uitrolWeigering({ client: who.clientName, grantId: who.tokenId }, name) : null;
+        const weigering = UITROL_TOOL_NAMEN.has(name) ? await uitrolWeigering({ client: who.clientName, grantId: grantVan(who) }, name) : null;
         if (weigering) uit = { content: [{ type: 'text', text: weigering }], isError: true };
-        else try { uit = { content: [{ type: 'text', text: JSON.stringify(await metNamens({ client: who.clientName, grantId: who.tokenId }, async () => voerUitrolToolUit(uitrolOnderwerpen(who), name, args))) }] }; }
+        else try { uit = { content: [{ type: 'text', text: JSON.stringify(await metNamens({ client: who.clientName, grantId: grantVan(who) }, async () => voerUitrolToolUit(uitrolOnderwerpen(who), name, args))) }] }; }
         catch (err) { uit = { content: [{ type: 'text', text: err instanceof UitrolFout ? err.code : 'UITROL_FOUT' }], isError: true }; }
         try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: uit.isError ? 'failure' : 'success', details: werkDetails(who, name, args) }); } catch { /* audit mag niet breken */ }
         return rpcResult(id, uit);
       }
-      const result = await metNamens({ client: who.clientName, grantId: who.tokenId }, () => callTool(who.userId, name, args));
+      const result = await metNamens({ client: who.clientName, grantId: grantVan(who) }, () => callTool(who.userId, name, args));
       try {
         await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: result.isError ? 'failure' : 'success', details: werkDetails(who, name, args) });
       } catch { /* auditfout mag het hulpmiddel niet breken */ }
@@ -348,7 +375,7 @@ async function handleMessage(who: { userId: string; clientName: string; tokenId?
 export async function rpcPost(authorization: string | undefined, rawBody: string): Promise<RouterResponse> {
   const who = await authenticate(authorization);
   if (!who) return unauthorized(!!String(authorization || '').trim());
-  const limit = await rateLimit(`mcp-rpc:${who.tokenId}`, RPC_PER_MINUTE, 60);
+  const limit = await rateLimit(`mcp-rpc:${who.limietSleutel}`, RPC_PER_MINUTE, 60);
   if (!limit.ok) return respond(429, rpcError(null, -32000, 'Te veel verzoeken'), { 'Retry-After': String(limit.retryAfter) });
   if (Buffer.byteLength(rawBody) > MAX_RPC_BYTES) return respond(413, rpcError(null, -32600, 'Request too large'));
 
@@ -370,7 +397,7 @@ export const rpcNotAllowed = (): RouterResponse => respond(405, { error: 'method
 
 export async function listUserGrants(userId: string) {
   return (await st.listGrants(userId)).map((g) => ({
-    id: g.id, clientName: g.client_name, scope: g.scope, createdAt: new Date(g.created_at).getTime(),
+    id: g.id, clientName: g.client_name, scope: g.scope, createdAt: new Date(g.created_at).getTime(), duur: g.duur ?? null,
     lastUsedAt: g.last_used_at ? new Date(g.last_used_at).getTime() : null, expiresAt: new Date(g.refresh_expires_at).getTime(),
   }));
 }
@@ -383,7 +410,7 @@ export async function listUserGrantHistory(userId: string) {
     const revokedAt = g.revoked_at ? new Date(g.revoked_at).getTime() : null;
     const expiresAt = new Date(g.refresh_expires_at).getTime();
     return {
-      id: g.id, clientId: g.client_id, clientName: g.client_name, scope: g.scope, createdAt: new Date(g.created_at).getTime(),
+      id: g.id, clientId: g.client_id, clientName: g.client_name, scope: g.scope, createdAt: new Date(g.created_at).getTime(), duur: g.duur ?? null,
       lastUsedAt: g.last_used_at ? new Date(g.last_used_at).getTime() : null, expiresAt, accessExpiresAt: new Date(g.access_expires_at).getTime(), revokedAt,
       status: revokedAt ? 'revoked' as const : expiresAt <= now ? 'expired' as const : 'active' as const,
     };
