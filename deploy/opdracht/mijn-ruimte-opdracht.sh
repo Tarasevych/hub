@@ -214,7 +214,7 @@ PY
     touch "$stempel"
     van="$(actief)"
     gebeurtenis TERUGDRAAIEN waarschuwing "Відкат з випуску $van розпочато." "Terugdraaien vanaf release $van gestart." terugdraaien
-    if [ -x "$INSTALLEER" ] && "$INSTALLEER" terugdraaien > "$STAAT/terugdraaien.log" 2>&1; then
+    if [ -x "$INSTALLEER" ] && MIJN_RUIMTE_UITROL_MODUS=opdracht "$INSTALLEER" terugdraaien > "$STAAT/terugdraaien.log" 2>&1; then
       resultaat ok OK "Повернено до випуску $(actief)." "Teruggedraaid naar release $(actief)."
       gebeurtenis TERUGGEDRAAID info "Повернено з $van до $(actief)." "Teruggedraaid van $van naar $(actief)." terugdraaien
     else

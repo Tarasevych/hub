@@ -223,7 +223,7 @@ function uitrolTests(basis: string, check: Check) {
   leg('20261008-140002', ondertekend);
   r = draai();
   check('uitrol --goedkeuring: geldige passkey-goedkeuring → installer draait met precies deze versie', status().staat === 'klaar' && status().methode === 'passkey' && spoorN() === 2 && readFileSync(spoor, 'utf8').includes('20261008-140002'), JSON.stringify(status()) + r.stderr.slice(-400));
-  check('uitrol --goedkeuring: gebeurtenissen GOEDGEKEURD + OK (bron uitrol)', (() => { const l = readFileSync(join(statusMap, 'gebeurtenissen.jsonl'), 'utf8').split('\n').filter(Boolean).map((x) => JSON.parse(x)); return l.some((e) => e.code === 'GOEDGEKEURD') && l.some((e) => e.bron === 'uitrol' && e.code === 'OK'); })());
+  check('uitrol --goedkeuring: gebeurtenissen GOEDGEKEURD + OK (bron uitrol, herkomst passkey)', (() => { const l = readFileSync(join(statusMap, 'gebeurtenissen.jsonl'), 'utf8').split('\n').filter(Boolean).map((x) => JSON.parse(x)); return l.some((e) => e.code === 'GOEDGEKEURD' && e.herkomst === 'passkey') && l.some((e) => e.bron === 'uitrol' && e.code === 'OK' && e.herkomst === 'passkey'); })());
   // Replay over runs heen: dezelfde goedkeuring + pakket opnieuw (nieuwere naam kan niet: versie zit in de challenge).
   const p3 = pakketMaken(bron, '20261008-140003'); const g3 = goedkeuringBestand(o, eigenaar, p3, '20261008-140003');
   for (let i = 0; i < 2; i++) { writeFileSync(join(o.inbox, 'mijn-ruimte-20261008-140003.tar.gz'), readFileSync(p3)); writeFileSync(join(o.inbox, 'mijn-ruimte-20261008-140003.tar.gz.goedkeuring.json'), readFileSync(g3)); draai(); if (i === 0) check('uitrol --goedkeuring: tweede geldige versie geïnstalleerd', status().staat === 'klaar' && spoorN() === 4); }
@@ -367,8 +367,18 @@ async function appTests(basis: string, check: Check) {
 
     // Root meldt de uitkomst → de app neemt de status over.
     writeFileSync(join(o.statusDir, 'status.json'), JSON.stringify({ staat: 'klaar', code: 'OK', versie: '20261008-150001', methode: 'passkey', uk: 'Встановлено', nl: 'Geïnstalleerd', tijd: new Date().toISOString() }));
+    writeFileSync(join(o.statusDir, 'gebeurtenissen.jsonl'), [
+      { id: '20261013T190000123456Z-aaaa1111', tijd: '2026-10-13T19:00:00.000Z', bron: 'uitrol', code: 'OK', niveau: 'info', uk: 'підпис', nl: 'handtekening', tag: '20261008-150001', herkomst: 'handtekening' },
+      { id: '20261013T190100123456Z-bbbb2222', tijd: '2026-10-13T19:01:00.000Z', bron: 'uitrol', code: 'SSH_OK', niveau: 'info', uk: 'з SSH', nl: 'via SSH', tag: '20261013-220754', herkomst: 'ssh', wie: 'beheer', pakket: '20261008-150001', release: '20261013-220754', commit: 'abcdef1234567890', adres: '203.0.113.5' },
+      { id: '20261013T190200123456Z-cccc3333', tijd: '2026-10-13T19:02:00.000Z', bron: 'uitrol', code: 'OK', niveau: 'info', uk: 'passkey', nl: 'passkey', tag: '20261008-150001', herkomst: 'passkey' },
+      { id: 'slecht', bron: 'uitrol', code: 'SSH_OK' },
+    ].map((e) => JSON.stringify(e)).join('\n') + '\n');
     const ov = await call('POST /api/owner/uitrol/overzicht', OWNER);
     check('app: overzicht neemt de root-uitkomst over (geinstalleerd)', ov.data.voorstellen.find((v: any) => v.id === u1.id)?.status === 'geinstalleerd' && ov.data.schakelaar === true && ov.data.passkeys.length === 1);
+    check('app: SSH-regel staat in de geschiedenis; passkey en al geïnstalleerde handtekening niet dubbel', ov.data.installaties?.length === 1 && ov.data.installaties[0].code === 'SSH_OK' && ov.data.installaties[0].wie === 'beheer' && ov.data.installaties[0].release === '20261013-220754' && ov.data.installaties[0].adres === '203.0.113.5');
+    writeFileSync(join(o.statusDir, 'status.json'), JSON.stringify({ staat: 'klaar', code: 'SSH_OK', versie: '20261008-150003', methode: 'ssh', uk: 'з SSH', nl: 'via SSH', tijd: new Date().toISOString() }));
+    const ovSsh = await call('POST /api/owner/uitrol/overzicht', OWNER);
+    check('app: status.json met methode ssh installeert geen wachtend voorstel', ovSsh.data.voorstellen.find((v: any) => v.id === u2.id)?.status === 'wacht-op-goedkeuring' && ovSsh.data.voorstellen.find((v: any) => v.id === u1.id)?.status === 'geinstalleerd');
     check('app: afwijzen door de eigenaar', (await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id, reden: 'nee' })).data?.status === 'afgewezen');
 
     // Agents: alleen voorbereiden en status.

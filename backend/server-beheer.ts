@@ -57,10 +57,19 @@ export async function voerOpdrachtUit(w: Werkwoord): Promise<{ ok: boolean; code
 }
 
 // ---------------------------------------------------------------- root-gebeurtenissen → audit
-export type RootGebeurtenis = { id: string; tijd: string; bron: string; code: string; niveau: string; uk: string; nl: string; tag?: string };
+export type RootGebeurtenis = {
+  id: string; tijd: string; bron: string; code: string; niveau: string; uk: string; nl: string; tag?: string;
+  herkomst?: string; wie?: string; pakket?: string; release?: string; commit?: string; adres?: string;
+};
 const ID = /^\d{8}T\d{12}Z-[0-9a-f]{8}$/;
-const cursorPad = () => path.join(process.env.UPLOADS_DIR || "/srv/data/uploads", ".root-gebeurtenissen.cursor");
+const HERKOMST = /^(?:ssh|passkey|handtekening|gitops|opdracht)$/;
+const WIE = /^[A-Za-z_][A-Za-z0-9_.-]{0,31}$/;
+const RELEASE = /^\d{8}-\d{6}$/;
+const COMMIT = /^[0-9a-f]{7,40}$/;
+const ADRES = /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
 const tekst = (v: unknown, n: number) => String(v ?? "").slice(0, n);
+const veld = (v: unknown, re: RegExp, n: number) => { const s = tekst(v, n); return re.test(s) ? s : undefined; };
+const cursorPad = () => path.join(process.env.UPLOADS_DIR || "/srv/data/uploads", ".root-gebeurtenissen.cursor");
 
 export function parseRootGebeurtenissen(raw: string): RootGebeurtenis[] {
   const uit: RootGebeurtenis[] = [];
@@ -69,10 +78,34 @@ export function parseRootGebeurtenissen(raw: string): RootGebeurtenis[] {
     try {
       const d = JSON.parse(regel) as Record<string, unknown>;
       if (!ID.test(String(d.id)) || !["gitops", "opdracht", "uitrol", "goedkeuring"].includes(String(d.bron))) continue;
-      uit.push({ id: String(d.id), tijd: tekst(d.tijd, 40), bron: String(d.bron), code: tekst(d.code, 40).replace(/[^A-Z0-9_]/g, ""), niveau: tekst(d.niveau, 20), uk: tekst(d.uk, 300), nl: tekst(d.nl, 300), tag: tekst(d.tag, 40) });
+      const g: RootGebeurtenis = { id: String(d.id), tijd: tekst(d.tijd, 40), bron: String(d.bron), code: tekst(d.code, 40).replace(/[^A-Z0-9_]/g, ""), niveau: tekst(d.niveau, 20), uk: tekst(d.uk, 300), nl: tekst(d.nl, 300), tag: tekst(d.tag, 40) };
+      const herkomst = veld(d.herkomst, HERKOMST, 20), wie = veld(d.wie, WIE, 32), pakket = veld(d.pakket, RELEASE, 15), release = veld(d.release, RELEASE, 15), commit = veld(d.commit, COMMIT, 40), adres = veld(d.adres, ADRES, 15);
+      if (herkomst) g.herkomst = herkomst;
+      if (wie) g.wie = wie;
+      if (pakket) g.pakket = pakket;
+      if (release) g.release = release;
+      if (commit) g.commit = commit;
+      if (adres) g.adres = adres;
+      uit.push(g);
     } catch { /* kapotte regel overslaan */ }
   }
   return uit.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+/**
+ * Wat de geschiedenis op «Оновлення» extra toont, naast de voorstellen.
+ * SSH altijd (ook als er een onafgemaakte upload met hetzelfde pakketnummer ligt).
+ * Een geslaagde of mislukte installatie met de uitrolsleutel alleen als dat versienummer nog niet als «geïnstalleerd» voorstel staat.
+ * Passkey- en GitOps-regels blijven bij hun eigen kanaal: het voorstel, respectievelijk de audit.
+ */
+export function toonbareInstallaties(events: RootGebeurtenis[], alGeinstalleerd: readonly string[]): RootGebeurtenis[] {
+  const gezien = new Set(alGeinstalleerd);
+  return events.filter((g) => {
+    if (g.bron !== "uitrol") return false;
+    if (g.code === "SSH_OK" || g.code === "SSH_TERUG") return true;
+    if (g.herkomst === "handtekening" && (g.code === "OK" || g.code === "INSTALLATIE_MISLUKT")) return !gezien.has(g.pakket || g.tag || "");
+    return false;
+  });
 }
 
 let eigenaarCache: { id: string | null; t: number } | null = null;
@@ -101,7 +134,11 @@ export async function neemRootGebeurtenissenOp(opties: { ownerId?: string | null
     await auditToevoegen({
       ownerId, actorId: null, action: `server.${g.bron}.${g.code.toLowerCase() || "melding"}`, type: "beveiliging",
       result: g.niveau === "info" ? "success" : g.niveau === "fout" ? "failure" : "denied",
-      details: { bron: g.bron, code: g.code, tag: g.tag, uk: g.uk, nl: g.nl, tijd: g.tijd, id: g.id }, service: "systeem",
+      details: {
+        bron: g.bron, code: g.code, tag: g.tag, uk: g.uk, nl: g.nl, tijd: g.tijd, id: g.id,
+        ...(g.herkomst ? { herkomst: g.herkomst } : {}), ...(g.wie ? { wie: g.wie } : {}), ...(g.pakket ? { pakket: g.pakket } : {}),
+        ...(g.release ? { release: g.release } : {}), ...(g.commit ? { commit: g.commit } : {}), ...(g.adres ? { adres: g.adres } : {}),
+      }, service: "systeem",
     });
     cursor = g.id; n++;
   }
