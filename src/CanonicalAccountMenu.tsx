@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import StableAvatar from './StableAvatar';
 import { openTechVenster, techActief, techGebruiker, useTech } from './tech/tech-store';
+import { weergaveGebruiker } from './weergave/weergave-store';
 import { hervatAuto, pauzeerAuto, useAutoStatus } from './thema/useThema';
 import {
   forgetAccountPreviewHistory,
@@ -259,7 +260,7 @@ export default function CanonicalAccountMenu({
   const t = copy[lang];
   const tech = useTech();
   const techUid = user?.id;
-  useEffect(() => { if (techUid !== undefined) techGebruiker(techUid); }, [techUid]);
+  useEffect(() => { if (techUid !== undefined) { techGebruiker(techUid); weergaveGebruiker(techUid); } }, [techUid]);
   const root = useRef<HTMLDivElement>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);

@@ -9,6 +9,7 @@ import{installeerSlepen}from'./menu-slepen';
 import MenuItemActies,{type ActieDoel}from'./MenuItemActies';
 import{bewerkTekst}from'./ZijbalkWerkbalk';
 import{emitCanonicalNotice}from'./canonical-notifications';import{badgesBouwen,isStil,vanServer,vanTellers,type MenuMelding,type ServerMelding}from'../shared/menu-meldingen';import{tellerWegklikken,tellersOphalen,tellersScope,useMenuTellers}from'./menu-meldingen-store';import{MeldingBellen,MenuBadge,badgeLabel}from'./MenuMeldingen';import{zijbalkServerDienst}from'./zijbalk-voorkeuren';import{installeerConcepten}from'./concepten';import{heeftNavigationApi,installeerNavigatieSnel,metOvergang,voortgangStart,vooruitladen}from'./navigatie-snel';
+import{huidigeModus,useWeergave}from'./weergave/weergave-store';import{zichtbaar}from'../shared/weergave';
 import'./canonical-chrome.css';import'./menu-v2.css';
 export type ShellTheme='light'|'dark'|'plum-light'|'plum-dark';
 export type ShellTab={id:string;label:string;count?:number;icon?:AnyMenuIconId};
@@ -101,7 +102,9 @@ export default function CanonicalChrome({lang,theme,current,items,tabs,activeTab
  type Entry=typeof entries[number];
  const tr2=(uk:string,nl:string)=>lang==='uk'?uk:nl;
  const toegestaan=useMemo(()=>Array.from(new Set([...entries.map(e=>e.id as string),...normalizeMenuPreferences(items).filter(p=>{const c=MENU_CATALOG.find(e=>e.id===p.id);return !!c&&!c.planned}).map(p=>p.id as string)])),[entries,items]);
- const weergave=useMemo(()=>menuWeergave(zijbalk,{diensten:entries.map(e=>e.id),toegestaan}),[zijbalk,entries,toegestaan]);
+ // Etap 3: in «простий» staan de onderdelen van «розширений» (mcp.*) niet in het menu; eigen kopieën blijven (zelf geplaatst).
+ const wModus=huidigeModus(useWeergave());
+ const weergave=useMemo(()=>{const w=menuWeergave(zijbalk,{diensten:entries.map(e=>e.id),toegestaan});if(!wModus)return w;return{...w,secties:Object.fromEntries(Object.entries(w.secties).map(([d,rs])=>[d,rs.filter(r=>r.kopie||zichtbaar(r.dienst,r.pagina||'',wModus))]))}},[zijbalk,entries,toegestaan,wModus]);
  const dienstLabel=(d:string)=>MENU_CATALOG.find(e=>e.id===d)?.[lang]||d;
  const entryVoor=(d:string):Entry=>entries.find(e=>e.id===d)||(()=>{const c=MENU_CATALOG.find(e=>e.id===d);return{id:d as MenuItemId,label:c?.[lang]||d,icon:(c?.icon||'overview')as MenuIconId,order:0,active:false,hasSubmenu:parentIds.has(d as MenuItemId),tab:c?.tab||''}})();
  const rijLabel=(r:Rij)=>r.pagina?`${serviceTabLabel(r.pagina,lang)} (${dienstLabel(r.dienst)})`:dienstLabel(r.dienst);

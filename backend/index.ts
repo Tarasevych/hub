@@ -31,6 +31,7 @@ import {normalizeMailDisplayText} from './mail-text-normalization';
 import {createCloudRoutes} from './cloud-platform';
 import { mcpConsoleRoutes } from './mcp-console';
 import { techRoutes } from './tech-routes';
+import { weergaveRoutes } from './weergave';
 import { uitrolGoedkeuringRoutes } from './uitrol-goedkeuring';
 import { aiBeleidRoutes } from './ai-beleid';
 import { passkeyRoutes } from './passkeys';
@@ -486,6 +487,8 @@ export const handler = router({
   ...mcpConsoleRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
   // Technisch profiel (architectuur 13.10.2026): toekennen, op tijd activeren per tabblad, band.
   ...techRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
+  // Weergave «простий/розширений» (etap 3): alleen wat zichtbaar is, nooit rechten.
+  ...weergaveRoutes(ownerRequireSession as never),
   ...uitrolGoedkeuringRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
   ...aiBeleidRoutes({ requireSession: ownerRequireSession as never }),
   ...passkeyRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),

@@ -3,7 +3,8 @@
 // zolang de activering loopt. De server is de baas: verloopt de tijd, dan zegt de volgende status «niet actief» en verdwijnt de band.
 import { useSyncExternalStore } from 'react';
 import { api } from '../platform/client';
-import { ecosystemSessionLikely, ecosystemTabContext } from '../tab-context';
+import { ecosystemTabContext } from '../tab-context';
+import { abonneerZijbalk, zijbalkServerDienst } from '../zijbalk-voorkeuren';
 import { serviceFromLocation } from '../canonical-navigation';
 import type { BandKleur, BandPatroon, TechMogelijkheid, TechRol, Tekst } from '../../shared/tech-rollen';
 
@@ -18,7 +19,7 @@ const zet = (t: Partial<TechStatus>) => { toestand = { ...toestand, ...t }; luis
 export const techToestand = () => toestand;
 export const useTech = () => useSyncExternalStore((f) => { luisteraars.add(f); return () => luisteraars.delete(f); }, () => toestand, () => toestand);
 
-export const techBody = () => ({ service: serviceFromLocation(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
+export const techBody = () => ({ service: zijbalkServerDienst() || serviceFromLocation(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 const neem = (data: any) => zet({ geladen: true, profiel: data?.profiel ?? null, activatie: data?.activatie ?? null, catalogus: data?.catalogus ?? toestand.catalogus, scheef: data?.nu ? Number(data.nu) - Date.now() : 0 });
 
 export async function techVernieuwen(): Promise<void> {
@@ -35,20 +36,25 @@ export const techMag = (m: TechMogelijkheid, t: TechStatus = toestand) => techAc
 export type TechVenster = 'activeren' | 'band' | 'profielen';
 export const openTechVenster = (v: TechVenster) => window.dispatchEvent(new CustomEvent('mr-tech-venster', { detail: v }));
 
-// De app kent de aangemelde gebruiker (accountmenu): bij een nieuwe/andere gebruiker de status (opnieuw) vragen; afgemeld → leeg.
-let bekendeGebruiker = '';
-export function techGebruiker(userId: string | null | undefined): void {
-  const id = String(userId || '');
-  if (id === bekendeGebruiker) return;
-  bekendeGebruiker = id;
-  if (id) void techVernieuwen(); else zet({ geladen: true, profiel: null, activatie: null });
+// Wanneer vragen: pas als er een GOEDGEKEURDE accountsessie is voor deze host (zelfde bron als het menu: zijbalkServerDienst) én de
+// gebruiker bekend is (accountmenu). Zo geen 401/403 op pagina's zonder sessie of met een account dat nog wacht op goedkeuring.
+let gebruiker = '';
+let sleutel = '';
+function herbeoordeel(): void {
+  const dienst = zijbalkServerDienst();
+  const k = gebruiker && dienst ? `${gebruiker}|${dienst}` : '';
+  if (k === sleutel) return;
+  sleutel = k;
+  if (k) void techVernieuwen(); else zet({ geladen: true, profiel: null, activatie: null });
 }
+export function techGebruiker(userId: string | null | undefined): void { gebruiker = String(userId || ''); herbeoordeel(); }
 
 let gestart = false;
 export function startTech(): void {
   if (gestart) return;
   gestart = true;
-  if (ecosystemSessionLikely()) void techVernieuwen(); else zet({ geladen: true });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && (toestand.profiel || ecosystemSessionLikely())) void techVernieuwen(); });
-  window.setInterval(() => { if (!document.hidden && toestand.activatie) void techVernieuwen(); }, 60_000);
+  abonneerZijbalk(herbeoordeel);
+  herbeoordeel();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && sleutel) void techVernieuwen(); });
+  window.setInterval(() => { if (!document.hidden && sleutel && toestand.activatie) void techVernieuwen(); }, 60_000);
 }

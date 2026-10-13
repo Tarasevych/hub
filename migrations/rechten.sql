@@ -48,6 +48,11 @@ BEGIN
       GRANT SELECT ON app.tech_profielen, app.tech_activaties TO mijnruimte_app;
       REVOKE INSERT, UPDATE, DELETE ON app.tech_profielen, app.tech_activaties FROM mijnruimte_app;
     END IF;
+    -- 0031: weergave (простий/розширений): de app-rol leest alleen de eigen rij; schrijven doet de systeemrol.
+    IF to_regclass('app.ui_weergave') IS NOT NULL THEN
+      GRANT SELECT ON app.ui_weergave TO mijnruimte_app;
+      REVOKE INSERT, UPDATE, DELETE ON app.ui_weergave FROM mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- Audit-fix 9: de users-trigger telt (audit-modus) via deze functie; de app kan rls_audit zelf niet schrijven.
