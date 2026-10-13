@@ -115,6 +115,21 @@ export async function main(): Promise<number> {
     check('«позначити переглянутим» werkt', !!(await sys.query('SELECT gelezen_op FROM app.diagnose_meldingen WHERE user_id=$1 ORDER BY aangemaakt_op DESC LIMIT 1', [uid])).rows[0]?.gelezen_op);
     const acties = (await sys.query(`SELECT action FROM app.audit WHERE owner_id=$1 AND action LIKE 'owner.diagnose.%'`, [uid])).rows.map((x) => x.action);
     check('logboek: gemeld en gelezen', acties.includes('owner.diagnose.gemeld') && acties.includes('owner.diagnose.gelezen'), acties.join(','));
+
+    // ---------------------------------------------------------------- 5b. ізоляція даних (RLS per groep), alleen lezen
+    await sys.query(`INSERT INTO app.rls_audit (route, tbl, actie, aantal) VALUES ('POST /api/e2e/mail', 'mail_items_v1', 'lezen', 3) ON CONFLICT (route, tbl, actie) DO UPDATE SET aantal = 3`);
+    await venster.locator('[data-diag-blad="isolatie"]').click();
+    const rls = venster.locator('[data-diag-rls]');
+    await rls.waitFor({ timeout: 10000 });
+    const groepen = await rls.locator('[data-rls-groep]').evaluateAll((els) => els.map((e) => `${e.getAttribute('data-rls-groep')}:${e.getAttribute('data-rls-stand')}:${e.getAttribute('data-rls-gereed')}`));
+    check('ізоляція: 6 groepen in volgorde, alle in audit', groepen.length === 6 && groepen[0].startsWith('voorkeuren:uit') && groepen[5].startsWith('identiteit:uit'), groepen.join(','));
+    check('«наступна за порядком» = voorkeuren, gereed, met rootopdracht om te kopiëren', /наступна/.test(await rls.locator('[data-rls-groep="voorkeuren"]').innerText()) && /rls-groep voorkeuren aan/.test(await rls.locator('[data-rls-groep="voorkeuren"] code').innerText()));
+    check('mail: niet gereed, toont de route met overtredingen en GEEN opdracht', groepen.includes('mail:uit:0') && /POST \/api\/e2e\/mail/.test(await rls.locator('[data-rls-groep="mail"]').innerText()) && await rls.locator('[data-rls-groep="mail"] [data-rls-kopieer]').count() === 0);
+    check('site kan niets schakelen (geen knop «увімкнути»)', await rls.locator('button', { hasText: /Увімкнути|Aanzetten/ }).count() === 0);
+    await rls.locator('[data-rls-kopieer="voorkeuren"]').click();
+    check('opdracht gekopieerd', /sudo bash .*db-rollen-instellen\.sh rls-groep voorkeuren aan/.test(await page.evaluate(() => navigator.clipboard.readText()).catch(() => '')));
+    await page.screenshot({ path: `${UIT}/diagnose-6-isolatie.png` });
+    await sys.query(`DELETE FROM app.rls_audit WHERE route = 'POST /api/e2e/mail'`);
     await page.locator('[data-venster-knop="sluit"]').last().click();
 
     // ---------------------------------------------------------------- 6. telefoon

@@ -60,6 +60,8 @@ BEGIN
     END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
+    -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).
+    IF to_regclass('app.rls_groepen') IS NOT NULL THEN GRANT SELECT ON app.rls_groepen TO mijnruimte_app; REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON app.rls_groepen FROM mijnruimte_app; END IF;
     -- Audit-fix 9: de users-trigger telt (audit-modus) via deze functie; de app kan rls_audit zelf niet schrijven.
     IF to_regprocedure('app.rls_audit_noteren(text, text, text)') IS NOT NULL THEN GRANT EXECUTE ON FUNCTION app.rls_audit_noteren(text, text, text) TO mijnruimte_app; END IF;
     IF to_regclass('app.audit') IS NOT NULL THEN
@@ -79,6 +81,8 @@ BEGIN
     REVOKE INSERT, UPDATE, DELETE ON app.schema_migrations FROM mijnruimte_system;
     -- De RLS-stand en de allowlist wijzigt alleen het rollenscript (postgres/migrator), nooit de app zelf.
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON app.rls_instellingen, app.rls_gedeelde_tabellen FROM mijnruimte_system; END IF;
+    -- 0033: ook de systeemrol (dus de site) kan RLS-groepen niet schakelen; alleen lezen voor het overzicht.
+    IF to_regclass('app.rls_groepen') IS NOT NULL THEN REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON app.rls_groepen FROM mijnruimte_system; GRANT SELECT ON app.rls_groepen TO mijnruimte_system; END IF;
     IF to_regclass('app.audit') IS NOT NULL THEN
       REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON app.audit FROM mijnruimte_system;
       IF to_regclass('app.audit_kop') IS NOT NULL THEN REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON app.audit_kop FROM mijnruimte_system; END IF;
