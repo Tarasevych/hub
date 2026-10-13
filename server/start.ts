@@ -30,6 +30,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT || 8080);
 const DIST_DIR = path.resolve(process.env.DIST_DIR || path.join(here, '..', 'dist'));
+// Ook voor de diagnose (backend/diagnose.ts: «versie van de pagina» vergelijkt de hoofdbundel met dist/index.html).
+process.env.DIST_DIR = DIST_DIR;
 const DASHBOARD_DIR = path.resolve(process.env.DASHBOARD_DIR || '/srv/mijn-ruimte/dashboard');
 /** 'beheer' (standaard): doorsturen naar admin-host /diagnostics; 'static': de oude losse pagina's tonen. */
 const DASHBOARD_MODE = process.env.DASHBOARD_MODE === 'static' ? 'static' : 'beheer';

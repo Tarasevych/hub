@@ -9,6 +9,7 @@ import { routeLang } from '../canonical-navigation';
 import { HELP_TECH, contrast, maxMinutenVoor, rolInfo, type BandKleur, type BandPatroon, type TechRol } from '../../shared/tech-rollen';
 import { openTechVenster, startTech, techActief, techActiveren, techBand, techBeeindigen, techBody, techMag, useTech, type TechStatus, type TechVenster } from './tech-store';
 import Vraag from './Vraag';
+import DiagnoseLaag from '../diagnose/Diagnose';
 import './tech.css';
 
 const fout = (e: unknown) => String((e as Error)?.message || 'FOUT');
@@ -84,6 +85,7 @@ export default function TechLaag() {
       {venster === 'activeren' ? <Activeren uk={uk} t={t} sluit={() => setVenster('')} /> : null}
       {venster === 'band' ? <BandKeuze uk={uk} t={t} sluit={() => setVenster('')} /> : null}
       {venster === 'profielen' ? <Profielen uk={uk} t={t} sluit={() => setVenster('')} /> : null}
+      <DiagnoseLaag />
     </>
   );
 }

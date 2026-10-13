@@ -51,6 +51,8 @@ export function zin(e: JournaalItem, tr: Tr): string {
     case 'owner.tech.beeindigd': return tr('Технічний профіль вимкнено', 'Technisch profiel uitgezet');
     case 'owner.tech.toegekend': return s(d.aan) ? tr(`Видано технічний профіль ${s(d.aan)}`, `Technisch profiel gegeven aan ${s(d.aan)}`) : tr(`Отримано технічний профіль${s(d.door) ? ` від ${s(d.door)}` : ''}`, `Technisch profiel ontvangen${s(d.door) ? ` van ${s(d.door)}` : ''}`);
     case 'owner.tech.ingetrokken': return s(d.van) ? tr(`Відкликано технічний профіль ${s(d.van)}`, `Technisch profiel van ${s(d.van)} ingetrokken`) : tr('Ваш технічний профіль відкликано', 'Uw technisch profiel is ingetrokken');
+    case 'owner.diagnose.gemeld': return tr(`Надіслано звіт перевірки «Щось не працює?» (${s(d.dienst)})`, `Controleverslag «Werkt iets niet?» verstuurd (${s(d.dienst)})`);
+    case 'owner.diagnose.gelezen': return tr(`Переглянуто звіти користувачів (${s(d.aantal)})`, `Verslagen van gebruikers bekeken (${s(d.aantal)})`);
     case 'owner.tech.band': return tr('Змінено колір технічної смуги', 'Kleur van de technische band gewijzigd');
     case 'owner.mcp.grant.expired': return tr(`Закінчився строк доступу «${n}»`, `Toegang van «${n}» verlopen`);
     case 'mcp_console_token_issued': return tr(`Випущено токен «${n}»`, `Token «${n}» uitgegeven`);
