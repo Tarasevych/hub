@@ -65,3 +65,10 @@
 .diag-rls-cmd code{flex:1 1 260px;padding:6px 8px;border-radius:6px;background:var(--surface,#eef1f4);font-size:.78rem;overflow-wrap:anywhere}
 html.theme-dark .diag-rls-oordeel.is-ok{color:#6ce9a6}
 html.theme-dark .diag-rls-oordeel.is-let-op{color:#fdb022}
+.diag-beleid{display:grid;gap:10px}
+.diag-beleid-tabel{width:100%;border-collapse:collapse;font-size:.88rem}
+.diag-beleid-tabel th,.diag-beleid-tabel td{padding:6px 8px;border-bottom:1px solid var(--line,#d0d7de);text-align:right}
+.diag-beleid-tabel th[scope=row],.diag-beleid-tabel thead th:first-child{text-align:left;font-weight:600}
+.diag-beleid-tabel thead th{font-size:.78rem;color:var(--muted,#57606a);font-weight:650}
+.diag-beleid-tabel td.is-fout{color:#b42318;font-weight:750}
+@media (max-width:560px){.diag-beleid-tabel{font-size:.8rem}.diag-beleid-tabel th,.diag-beleid-tabel td{padding:5px 4px}}

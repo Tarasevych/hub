@@ -53,6 +53,8 @@ BEGIN
       GRANT SELECT ON app.diagnose_meldingen TO mijnruimte_app;
       REVOKE INSERT, UPDATE, DELETE ON app.diagnose_meldingen FROM mijnruimte_app;
     END IF;
+    -- 0034: tellers van de beleidsdienst (schaduw): niets voor de app-rol.
+    IF to_regclass('app.beleid_schaduw') IS NOT NULL THEN REVOKE ALL ON app.beleid_schaduw FROM mijnruimte_app; END IF;
     -- 0031: weergave (простий/розширений): de app-rol leest alleen de eigen rij; schrijven doet de systeemrol.
     IF to_regclass('app.ui_weergave') IS NOT NULL THEN
       GRANT SELECT ON app.ui_weergave TO mijnruimte_app;

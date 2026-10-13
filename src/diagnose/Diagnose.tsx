@@ -11,6 +11,7 @@ import { techMag, useTech } from '../tech/tech-store';
 import { CONTROLES, HELP_DIAGNOSE, OORDEEL_TEKST, oordeel, type Oordeel, type Stand, type Uitslag } from '../../shared/diagnose';
 import { browserNaam, diagnoseBody, diagnoseUitvoeren } from './diagnose-client';
 import { HELP_RLS, RLS_GROEP_NAAM } from '../../shared/rls-groepen';
+import { BEHEER_ACTIE_NAAM, HELP_BELEID } from '../../shared/beleid';
 import './diagnose.css';
 
 
@@ -29,7 +30,7 @@ function DiagnoseVenster({ sluit }: { sluit: () => void }) {
   const t = useTech();
   const magLezen = techMag('diagnose.lezen', t);
   const magBeheer = techMag('diensten.beheren', t);
-  const [blad, setBlad] = useState<'ik' | 'verslagen' | 'isolatie'>('ik');
+  const [blad, setBlad] = useState<'ik' | 'verslagen' | 'isolatie' | 'beleid'>('ik');
   const [bezig, setBezig] = useState(false);
   const [uitslagen, setUitslagen] = useState<Uitslag[] | null>(null);
   const [beschrijving, setBeschrijving] = useState('');
@@ -72,9 +73,10 @@ function DiagnoseVenster({ sluit }: { sluit: () => void }) {
             <button type='button' role='tab' aria-selected={blad === 'ik'} onClick={() => setBlad('ik')} data-diag-blad='ik'>{uk ? 'Мій пристрій' : 'Mijn apparaat'}</button>
             {magLezen ? <button type='button' role='tab' aria-selected={blad === 'verslagen'} onClick={() => setBlad('verslagen')} data-diag-blad='verslagen'>{uk ? 'Звіти користувачів' : 'Verslagen van gebruikers'}</button> : null}
             {magBeheer ? <button type='button' role='tab' aria-selected={blad === 'isolatie'} onClick={() => setBlad('isolatie')} data-diag-blad='isolatie'>{uk ? 'Ізоляція даних' : 'Isolatie'}</button> : null}
+            {magBeheer ? <button type='button' role='tab' aria-selected={blad === 'beleid'} onClick={() => setBlad('beleid')} data-diag-blad='beleid'>{uk ? 'Правила (OPA)' : 'Regels (OPA)'}</button> : null}
           </div>
         ) : null}
-        {blad === 'isolatie' && magBeheer ? <Isolatie uk={uk} /> : blad === 'verslagen' && magLezen ? <Verslagen uk={uk} /> : (
+        {blad === 'beleid' && magBeheer ? <Beleid uk={uk} /> : blad === 'isolatie' && magBeheer ? <Isolatie uk={uk} /> : blad === 'verslagen' && magLezen ? <Verslagen uk={uk} /> : (
           <>
             <p className='diag-lead'>{uk ? 'Перевіряємо сервер (однаковий для всіх) і цей браузер (лише ваш).' : 'We controleren de server (voor iedereen gelijk) en deze browser (alleen van u).'} <Vraag help={HELP_DIAGNOSE} uk={uk} label={uk ? 'Як працює перевірка' : 'Hoe de controle werkt'} /></p>
             {!uitslagen ? <p className='diag-bezig' aria-busy='true'><RefreshCw className='spin' aria-hidden='true' />{uk ? 'Перевіряємо…' : 'Bezig met controleren…'}</p> : (
@@ -187,6 +189,46 @@ export function Isolatie({ uk }: { uk: boolean }) {
           </li>
         );
       })}</ol>
+    </div>
+  );
+}
+
+type BeleidRij = { actie: string; uitkomst: 'gelijk' | 'verschil' | 'doel-weigert' | 'onbereikbaar'; reden: string; aantal: number; laatst: number };
+type BeleidStand = { gezond: boolean; ms: number; aan: boolean; rijen: BeleidRij[] };
+export function Beleid({ uk }: { uk: boolean }) {
+  const tx = (p: readonly [string, string]) => (uk ? p[0] : p[1]);
+  const [s, setS] = useState<BeleidStand | null>(null);
+  const [fout, setFout] = useState('');
+  const laad = () => api.post('/api/beheer/beleid/stand', diagnoseBody()).then((r) => setS(r.data as BeleidStand), (e) => setFout(String(e?.message || 'FOUT')));
+  useEffect(() => { void laad(); }, []);
+  if (fout) return <p className='diag-melding' role='alert'>{fout === 'TECH_BEHEER_VEREIST' ? (uk ? 'Потрібен активний технічний профіль адміністратора або власника.' : 'Een actief technisch profiel van beheerder of eigenaar is nodig.') : fout}</p>;
+  if (!s) return <p className='diag-bezig' aria-busy='true'><RefreshCw className='spin' aria-hidden='true' />{uk ? 'Завантаження…' : 'Laden…'}</p>;
+  const acties = [...new Set(s.rijen.map((r) => r.actie))];
+  const som = (u: BeleidRij['uitkomst'], actie?: string) => s.rijen.filter((r) => r.uitkomst === u && (!actie || r.actie === actie)).reduce((a, r) => a + r.aantal, 0);
+  const verschil = som('verschil'), doel = som('doel-weigert');
+  return (
+    <div className='diag-beleid' data-diag-beleid='1'>
+      <p className='diag-lead'>{uk ? 'Служба правил (OPA) у тіньовому режимі: перевіряє кожну адмін-дію паралельно із сайтом, нічого не блокує.' : 'Regeldienst (OPA) in schaduw: controleert elke beheeractie naast de site, blokkeert niets.'} <Vraag help={HELP_BELEID} uk={uk} label='OPA' /></p>
+      <p className={`diag-rls-oordeel ${s.gezond ? 'is-ok' : 'is-let-op'}`} data-beleid-gezond={s.gezond ? '1' : '0'}>{s.gezond ? (uk ? `Служба працює (${s.ms} мс).` : `Dienst werkt (${s.ms} ms).`) : (uk ? 'Служба недоступна — сайт працює як завжди; перевірте mijn-ruimte-opa.service на сервері.' : 'Dienst onbereikbaar — de site werkt zoals altijd; controleer mijn-ruimte-opa.service.')}{!s.aan ? (uk ? ' Тіньовий режим вимкнено (OPA_SCHADUW=uit).' : ' Schaduw uit (OPA_SCHADUW=uit).') : ''}</p>
+      <section className={`diag-oordeel ${verschil ? 'is-iedereen' : doel ? 'is-alleen-ik' : 'is-alles-ok'}`} data-beleid-oordeel={verschil ? 'verschil' : doel ? 'doel' : 'ok'}>
+        <h3>{verschil ? (uk ? 'Правила й сайт розходяться' : 'Regels en site wijken af') : doel ? (uk ? 'Майбутній перемикач заблокував би частину дій' : 'De toekomstige schakelaar zou acties weigeren') : (uk ? 'Розбіжностей немає' : 'Geen afwijkingen')}</h3>
+        <p>{verschil ? (uk ? `${verschil} разів OPA вирішив інакше, ніж сайт. Нічого не вмикати, доки це не 0.` : `${verschil}× besliste OPA anders dan de site. Niets afdwingen tot dit 0 is.`)
+          : doel ? (uk ? `${doel} адмін-дій виконано без активного технічного профілю. Перш ніж вмикати «адмін-права лише в технічному профілі», звикніть вмикати профіль перед адмін-роботою.` : `${doel} beheeracties zonder actief technisch profiel. Wen eraan het profiel aan te zetten vóór beheerwerk.`)
+          : (s.rijen.length ? (uk ? 'Усі рішення збігаються.' : 'Alle besluiten komen overeen.') : (uk ? 'Ще немає даних: відкрийте адмін-консоль, і тут з’являться підрахунки.' : 'Nog geen gegevens: open de beheerconsole.'))}</p>
+      </section>
+      {acties.length ? (
+        <table className='diag-beleid-tabel'>
+          <thead><tr><th>{uk ? 'Дія' : 'Actie'}</th><th>{uk ? 'Збіг' : 'Gelijk'}</th><th>{uk ? 'Розбіжність' : 'Verschil'}</th><th>{uk ? 'Без тех. профілю' : 'Zonder tech'}</th><th>{uk ? 'Недоступна' : 'Onbereikbaar'}</th></tr></thead>
+          <tbody>{acties.map((a) => (
+            <tr key={a} data-beleid-actie={a}>
+              <th scope='row'>{tx(BEHEER_ACTIE_NAAM[a] ?? [a, a])}</th>
+              <td>{som('gelijk', a)}</td><td className={som('verschil', a) ? 'is-fout' : ''}>{som('verschil', a)}</td>
+              <td title={s.rijen.filter((r) => r.actie === a && r.uitkomst === 'doel-weigert').map((r) => r.reden).join(', ')}>{som('doel-weigert', a)}</td><td>{som('onbereikbaar', a)}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+      ) : null}
+      <div className='diag-knoppen'><button type='button' onClick={() => void laad()} data-beleid-knop='vernieuwen'><RefreshCw aria-hidden='true' />{uk ? 'Оновити' : 'Vernieuwen'}</button></div>
     </div>
   );
 }

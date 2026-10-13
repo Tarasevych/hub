@@ -366,6 +366,34 @@ releases_opruimen() {
   done
 }
 
+# Beleidsdienst OPA (architectuur 13.10.2026, etap 6; eerst «schaduw»: de app vraagt, niets wordt geblokkeerd). Alleen 127.0.0.1:8181.
+# Binaire: vastgezette versie + SHA-256 (deploy/opa/versie.env) via deploy/opa/opa-ophalen.sh. Beleid: alleen toegang.rego + data.json,
+# root-eigen en alleen-lezen. Mislukt iets, dan alleen een waarschuwing: de site werkt zonder OPA precies zoals ervoor.
+# Uitzetten: /etc/mijn-ruimte/opa.uit aanmaken (dan wordt de dienst gestopt en niet bijgewerkt).
+opa_inrichten() {
+  local bron="$1" map=/usr/local/lib/mijn-ruimte/opa gewijzigd=0 f
+  [ -s "$bron/deploy/opa/opa-ophalen.sh" ] || return 0
+  if [ -e /etc/mijn-ruimte/opa.uit ]; then
+    systemctl disable --now mijn-ruimte-opa.service >/dev/null 2>&1 || true
+    melding "beleidsdienst OPA uitgezet (/etc/mijn-ruimte/opa.uit)"; return 0
+  fi
+  install -d -o root -g root -m 0755 /usr/local/lib/mijn-ruimte "$map" "$map/beleid"
+  if ! bash "$bron/deploy/opa/opa-ophalen.sh" "$map/opa"; then waarschuwing "OPA niet geïnstalleerd (zie hierboven); de site werkt zonder"; return 0; fi
+  for f in toegang.rego data.json; do
+    if ! cmp -s "$bron/deploy/opa/beleid/$f" "$map/beleid/$f"; then install -m 0644 -o root -g root "$bron/deploy/opa/beleid/$f" "$map/beleid/$f"; gewijzigd=1; fi
+  done
+  find "$map/beleid" -mindepth 1 -maxdepth 1 ! -name toegang.rego ! -name data.json -exec rm -rf -- {} + 2>/dev/null || true
+  if ! "$map/opa" check --strict "$map/beleid" >/dev/null 2>&1; then waarschuwing "beleid van OPA ongeldig; dienst niet (her)gestart"; return 0; fi
+  if ! cmp -s "$bron/deploy/opa/mijn-ruimte-opa.service" /etc/systemd/system/mijn-ruimte-opa.service; then
+    install -m 0644 -o root -g root "$bron/deploy/opa/mijn-ruimte-opa.service" /etc/systemd/system/mijn-ruimte-opa.service
+    systemctl daemon-reload; gewijzigd=1
+  fi
+  systemctl enable mijn-ruimte-opa.service >/dev/null 2>&1 || true
+  if [ "$gewijzigd" -eq 1 ]; then systemctl restart mijn-ruimte-opa.service >/dev/null 2>&1 || waarschuwing "mijn-ruimte-opa.service kon niet starten"
+  else systemctl start mijn-ruimte-opa.service >/dev/null 2>&1 || waarschuwing "mijn-ruimte-opa.service kon niet starten"; fi
+  melding "beleidsdienst OPA op 127.0.0.1:8181 (schaduwmodus)"
+}
+
 installeren() {
   local bron="${1:?bronmap ontbreekt}" datum doel
   vereis_root; vereis_node; vergrendel
@@ -393,6 +421,7 @@ installeren() {
   veilige_uitrol_inrichten "$doel"
   beheer_inrichten "$doel"
   goedkeuring_inrichten "$doel"
+  opa_inrichten "$doel"
   # Volledig archief ("Архів на ПК"): root-script + path-unit die het verzoekbestand van de site bewaakt (de site kan zelf niets als root
   # doen). Uitvoer in een root-map (uitgifte root:mijnruimte 0750, werkmap 0700), het hele archief age-versleuteld.
   if [ -s "$doel/deploy/archief-maken.sh" ]; then

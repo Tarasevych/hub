@@ -7,6 +7,10 @@ import { randomBytes } from 'node:crypto';
 import { checker } from '../eenheid/hulp/nep-google';
 import { getPool } from '../../server/platform/pg';
 import { startE2eServer, chromeArgs } from './server';
+import { spawn } from 'node:child_process';
+import { copyFileSync, existsSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 const PW = process.env.PLAYWRIGHT_CORE || '/workspace/e2e-tools/node_modules/playwright-core';
 const TLS = process.env.E2E_TLS || '/workspace/e2e-tools/tls';
@@ -20,7 +24,19 @@ export async function main(): Promise<number> {
   const { chromium } = createRequire(import.meta.url)(PW) as typeof import('playwright-core');
   const T = `${Date.now()}-${randomBytes(2).toString('hex')}`;
   const eigenaar = `e2e-dg-${T}@example.test`, sub = `sub-e2e-dg-${T}`;
+  // Beleidsdienst OPA als apart proces (zoals mijn-ruimte-opa.service), op een vrije poort.
+  const OPA = [process.env.OPA_BIN, '/home/claude/e2e-tools/opa'].find((p) => p && existsSync(p));
+  const beleidMap = mkdtempSync(join(tmpdir(), 'e2e-opa-'));
+  for (const f of ['toegang.rego', 'data.json']) copyFileSync(resolve('deploy/opa/beleid', f), join(beleidMap, f));
+  const opaPoort = 30000 + Math.floor(Math.random() * 20000);
+  const opa = OPA ? spawn(OPA, ['run', '--server', `--addr=127.0.0.1:${opaPoort}`, '--disable-telemetry', '--log-level=error', beleidMap], { stdio: 'ignore' }) : null;
+  process.env.OPA_URL = `http://127.0.0.1:${opaPoort}`;
+  for (let i = 0; opa && i < 50; i++) { try { if ((await fetch(`${process.env.OPA_URL}/health`)).ok) break; } catch { /* nog niet */ } await new Promise((r) => setTimeout(r, 100)); }
+  const echteFetch = globalThis.fetch;
   const { G, stop } = await startE2eServer({ ownerEmail: eigenaar, poort: POORT, tls: TLS });
+  // nepGoogle onderschept fetch (alles buiten Google → 599); loopback naar OPA mag wel, zoals op de server.
+  const nepFetch = globalThis.fetch;
+  globalThis.fetch = ((input: unknown, init?: RequestInit) => (String(input instanceof URL ? input.href : input).startsWith('http://127.0.0.1:') ? echteFetch(input as never, init) : nepFetch(input as never, init))) as typeof fetch;
   const pool = getPool(), sys = getPool('systeem');
   mkdirSync(UIT, { recursive: true });
   const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: chromeArgs(POORT) });
@@ -130,6 +146,17 @@ export async function main(): Promise<number> {
     check('opdracht gekopieerd', /sudo bash .*db-rollen-instellen\.sh rls-groep voorkeuren aan/.test(await page.evaluate(() => navigator.clipboard.readText()).catch(() => '')));
     await page.screenshot({ path: `${UIT}/diagnose-6-isolatie.png` });
     await sys.query(`DELETE FROM app.rls_audit WHERE route = 'POST /api/e2e/mail'`);
+
+    // ---------------------------------------------------------------- 5c. Правила (OPA) in schaduw, alleen lezen
+    await sys.query(`INSERT INTO app.beleid_schaduw (actie, uitkomst, reden, aantal) VALUES ('admin:users.manage', 'gelijk', '', 5), ('admin:users.manage', 'doel-weigert', 'tech-niet-actief', 2) ON CONFLICT (actie, uitkomst, reden) DO UPDATE SET aantal = EXCLUDED.aantal`);
+    await venster.locator('[data-diag-blad="beleid"]').click();
+    const bl = venster.locator('[data-diag-beleid]');
+    await bl.waitFor({ timeout: 10000 });
+    check('OPA: dienst werkt (apart proces op 127.0.0.1)', OPA ? await bl.locator('[data-beleid-gezond="1"]').count() === 1 : true);
+    check('OPA: oordeel «майбутній перемикач заблокував би» met 2 acties zonder tech-profiel', await bl.locator('[data-beleid-oordeel="doel"]').count() === 1 && /2 адмін-дій/.test(await bl.innerText()));
+    check('OPA: tabel per actie met leesbare naam', /Керування користувачами/.test(await bl.locator('[data-beleid-actie="admin:users.manage"]').innerText()));
+    await page.screenshot({ path: `${UIT}/diagnose-7-opa.png` });
+    await sys.query(`DELETE FROM app.beleid_schaduw WHERE actie = 'admin:users.manage'`);
     await page.locator('[data-venster-knop="sluit"]').last().click();
 
     // ---------------------------------------------------------------- 6. telefoon
@@ -153,6 +180,7 @@ export async function main(): Promise<number> {
     }
     await browser.close().catch(() => undefined);
     await stop();
+    opa?.kill('SIGKILL');
   }
   return einde();
 }

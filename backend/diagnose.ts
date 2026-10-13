@@ -9,6 +9,7 @@ import { getPool } from '../server/platform/pg';
 import { auditToevoegen } from '../server/platform/audit';
 import { CONTROLES, GRENS, oordeel, type ControleId, type Stand, type Uitslag } from '../shared/diagnose';
 import { heeftTechMogelijkheid, isEigenaar, TAB_RE } from './tech-profiel';
+import { schaduwStand } from './beleid';
 
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
@@ -146,6 +147,12 @@ export function diagnoseRoutes(requireSession: RequireSession): Record<string, R
         groepen: groepen.map((g) => ({ groep: g.groep, volgorde: g.volgorde, tabellen: g.tabellen, afdwingen: g.afdwingen, toelichting: g.toelichting, bijgewerkt: new Date(g.bijgewerkt).getTime(),
           overtredingen: Number(g.overtredingen), laatst: g.laatst ? new Date(g.laatst).getTime() : null, routes: g.routes, gereed: globaal === 'aan' || Number(g.overtredingen) === 0 })),
       });
+    })],
+    // Etap 6: beleidsdienst OPA in schaduw — ALLEEN LEZEN: is OPA bereikbaar, en per actie: gelijk / verschil / doel-weigert.
+    'POST /api/beheer/beleid/stand': [gate(async (_ctx, auth, b) => {
+      const tab = String(b.tabContext || '');
+      if (!TAB_RE.test(tab) || !(await heeftTechMogelijkheid(auth.user.id, tab, 'diensten.beheren'))) return error('TECH_BEHEER_VEREIST', 403);
+      return json(await schaduwStand());
     })],
     'POST /api/diagnose/gelezen': [gate(async (_ctx, auth, b) => {
       const tab = String(b.tabContext || '');
