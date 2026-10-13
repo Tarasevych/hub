@@ -55,6 +55,29 @@ node/python), `ProtectSystem=strict` en schrijven alleen in de gekozen mappen. D
 console: de site geeft zichzelf geen toegang tot haar eigen host. Daarna regelt de eigenaar alles op de site. Bij elke
 release (`installeren`) werkt de installer de agent op de server bij en herstart hem (`agenten_bijwerken`).
 
+## Rechten per opdracht (0.7.0)
+
+Elke opdracht die de agent kan uitvoeren, kunt u apart aan- of uitzetten. Zo houdt u alleen over wat u wilt.
+
+```
+node agent.mjs rechten                       # overzicht: aan / uit per opdracht
+node agent.mjs rechten set exec off          # zet één opdracht uit
+node agent.mjs rechten set exec on
+```
+
+- Bestand: `~/.hub-agent/rechten.json` (0600). Voorbeeld met alle sleutels: `deploy/agent/rechten-voorbeeld.json`.
+- Een ontbrekende sleutel = aan (zoals vóór 0.7.0). `false` = uit: de opdracht verdwijnt uit de lijst van de agent en wordt geweigerd.
+- De agent leest het bestand bij elke verbinding; na een wijziging herstart u de agent (`node agent.mjs run`).
+- Sleutels: `sys.info`, `sys.metrics`, `fs.list`, `fs.stat`, `fs.search`, `fs.read`, `fs.write`, `exec`, `docker.ps`, `docker.manage`.
+  De apps- en terminalopdrachten hebben hun eigen aan/uit (`apps-config`, `terminal-config`).
+- Nieuw in 0.7.0 (alleen lezen): `fs.stat` (grootte, datum, type van één pad) en `fs.search` (zoeken op naam, optioneel in tekst;
+  max. 200 treffers, 5000 items, diepte 8, tekstbestanden tot 256 KB; geen symlinks, geheime plekken overgeslagen).
+
+Bewust NIET toegevoegd (ook niet met rechten.json aan te zetten):
+- Shells (`cmd`, `powershell`, `bash`, `sudo`, `runas`, …) en interpreters met code-vlaggen (`node -e`, `python -c`): daarmee kan elk pad om de mapgrenzen heen.
+- Bestanden verwijderen of hernoemen: geen opdracht ervoor. Een verwijderopdracht zou eerst een verse goedkeuring op de site vragen.
+- Het wijzigen van de agent, zijn rechten of zijn toegangsbeleid vanaf de site: dat blijft bij de eigenaar op het apparaat.
+
 ## Terminal in de browser (0.6.0+)
 
 Een shell draait NOOIT op het apparaat zelf (shells blijven verboden op de allow-list), alleen in een wegwerpcontainer:

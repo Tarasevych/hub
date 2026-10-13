@@ -61,6 +61,16 @@ const MACHINE_TOOLS: ToolDef[] = [
     inputSchema: { type: 'object', properties: { machine: machineProp, path: pathProp('File to read.') }, required: ['path'], additionalProperties: false },
   },
   {
+    name: 'machine_file_info',
+    description: 'Show the type, size and last-modified time of one file or folder on a device, without reading its contents. Only works inside the folders the agent allows.',
+    inputSchema: { type: 'object', properties: { machine: machineProp, path: pathProp('File or folder to inspect.') }, required: ['path'], additionalProperties: false },
+  },
+  {
+    name: 'machine_search_files',
+    description: 'Search for files and folders by name inside an allowed folder on a device, optionally also inside the text of small text files (up to 256 KB). Returns at most 200 matches; secret locations are skipped and symbolic links are not followed.',
+    inputSchema: { type: 'object', properties: { machine: machineProp, path: pathProp('Folder to search in, for example ".".'), query: { type: 'string', minLength: 2, maxLength: 200, description: 'Text to look for (case-insensitive, 2 to 200 characters).' }, in_content: { type: 'boolean', description: 'Also search inside text files. Default false.' } }, required: ['path', 'query'], additionalProperties: false },
+  },
+  {
     name: 'machine_write_file',
     description: 'Create or overwrite a text file (up to 5 MB) on a device. The user must approve every write on the website, so the call can wait up to a minute; if it reports that approval is pending, tell the user and do not retry.',
     inputSchema: {
@@ -431,6 +441,8 @@ const ANNOTATIONS: Record<string, { title: string } & ToolAnnotations> = {
   machine_info: { title: 'Device info', readOnlyHint: true, openWorldHint: false },
   machine_list_dir: { title: 'List directory', readOnlyHint: true, openWorldHint: false },
   machine_read_file: { title: 'Read file', readOnlyHint: true, openWorldHint: false },
+  machine_file_info: { title: 'File info (size, date, type)', readOnlyHint: true, openWorldHint: false },
+  machine_search_files: { title: 'Search files by name or text', readOnlyHint: true, openWorldHint: false },
   machine_write_file: { title: 'Write file', readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
   machine_exec: { title: 'Run command', readOnlyHint: false, destructiveHint: true, openWorldHint: false },
   docker_list_containers: { title: 'List Docker containers', readOnlyHint: true, openWorldHint: false },
@@ -476,6 +488,7 @@ const annotate = (t: ToolDef): ToolDef => {
 
 const TOOL_TO_COMMAND: Record<string, string> = {
   machine_info: 'sys.info', machine_list_dir: 'fs.list', machine_read_file: 'fs.read',
+  machine_file_info: 'fs.stat', machine_search_files: 'fs.search',
   machine_write_file: 'fs.write', machine_exec: 'exec',
   docker_list_containers: 'docker.ps', docker_manage_container: 'docker.manage', system_metrics: 'sys.metrics',
   browser_snapshot: 'browser.snapshot', browser_get_diagnostics: 'browser.diagnostics', browser_open: 'browser.navigate',

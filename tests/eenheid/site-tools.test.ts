@@ -117,8 +117,8 @@ export async function main(): Promise<number> {
     const info = await describeTools(A);
     const exec = info.find((t) => t.name === 'machine_exec')!;
     check('modus off: weg uit de lijst en geweigerd; riskant staat standaard uit en "always" wordt gehonoreerd (geen begrenzing meer)',
-      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 51 && lijst.includes('machine_exec') && !lijst.includes('click') && !lijst.includes('browser_click')
-      && exec.mode === 'always' && exec.risky === true && info.find((t) => t.name === 'browser_click')!.mode === 'off' && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 66);
+      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 53 && lijst.includes('machine_exec') && !lijst.includes('click') && !lijst.includes('browser_click')
+      && exec.mode === 'always' && exec.risky === true && info.find((t) => t.name === 'browser_click')!.mode === 'off' && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 68);
     check('groepen in het overzicht: apparaten, browser, mail, agenda, schijf, zoeken',
       ['devices', 'browser', 'mail', 'calendar', 'drive', 'site'].every((g) => info.some((t) => t.group === g)) && info.filter((t) => t.group === 'mail').length === 5 && info.filter((t) => t.group === 'browser').length === 19);
     await store.setToolModes(A, { mail_search_messages: null, machine_exec: null, mail_modify_message: null });

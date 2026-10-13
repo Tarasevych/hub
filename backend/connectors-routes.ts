@@ -78,7 +78,7 @@ type Deps = {
 };
 
 const MAX_PARAM_BYTES = 6 * 1024 * 1024;
-export const AUTO_APPROVABLE_MACHINE = ['fs.read', 'fs.list', 'sys.info', 'sys.metrics', 'docker.ps', 'apps.list', 'apps.status', 'apps.logs', 'apps.versions', 'apps.secret.list'] as const;
+export const AUTO_APPROVABLE_MACHINE = ['fs.read', 'fs.list', 'fs.stat', 'fs.search', 'sys.info', 'sys.metrics', 'docker.ps', 'apps.list', 'apps.status', 'apps.logs', 'apps.versions', 'apps.secret.list'] as const;
 export const AUTO_APPROVABLE_BROWSER = BROWSER_AUTO_APPROVABLE;
 const MAX_NAME = 80;
 

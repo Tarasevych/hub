@@ -134,6 +134,8 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   machine_list: 'device.read',
   machine_list_dir: 'device.read',
   machine_read_file: 'device.read',
+  machine_file_info: 'device.read',
+  machine_search_files: 'device.read',
   system_metrics: 'device.read',
   docker_list_containers: 'device.read',
   machine_write_file: 'device.write',

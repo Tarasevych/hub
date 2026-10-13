@@ -33,7 +33,7 @@ export const TYPE_CAPABILITY: Readonly<Record<string, Capability>> = Object.free
   'browser.invoke': 'browser.interact', 'browser.click': 'browser.interact', 'browser.type': 'browser.interact', 'browser.select': 'browser.interact',
   'browser.key': 'browser.interact', 'browser.hover': 'browser.interact', 'browser.fill_form': 'browser.interact',
   'browser.screenshot': 'browser.screenshot', 'browser.deep_diagnostics': 'browser.debug',
-  'fs.read': 'machine.read', 'fs.list': 'machine.read', 'sys.info': 'machine.read', 'sys.metrics': 'machine.read', 'docker.ps': 'machine.read',
+  'fs.read': 'machine.read', 'fs.list': 'machine.read', 'fs.stat': 'machine.read', 'fs.search': 'machine.read', 'sys.info': 'machine.read', 'sys.metrics': 'machine.read', 'docker.ps': 'machine.read',
   'fs.write': 'machine.write', 'exec': 'machine.exec', 'docker.manage': 'machine.docker',
   // «Додатки»: bekijken = lezen; uitrollen, terugdraaien, stoppen, route en geheimen = containerbeheer (destructief, verse goedkeuring).
   'apps.list': 'machine.read', 'apps.status': 'machine.read', 'apps.logs': 'machine.read', 'apps.versions': 'machine.read', 'apps.secret.list': 'machine.read',

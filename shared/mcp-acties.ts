@@ -48,7 +48,7 @@ const TOOL_SOORT: Readonly<Record<string, ActieSoort>> = {
   click: 'invoer', browser_click: 'invoer', fill: 'invoer', browser_type: 'invoer', fill_form: 'invoer', browser_fill_form: 'invoer',
   press_key: 'invoer', browser_press_key: 'invoer', browser_select_option: 'invoer', browser_invoke_action: 'invoer',
   machine_info: 'meten', system_metrics: 'meten', machine_list: 'meten',
-  machine_list_dir: 'lezen', machine_read_file: 'lezen', machine_write_file: 'schrijven', machine_exec: 'commando',
+  machine_list_dir: 'lezen', machine_read_file: 'lezen', machine_file_info: 'lezen', machine_search_files: 'lezen', machine_write_file: 'schrijven', machine_exec: 'commando',
   docker_list_containers: 'docker', docker_manage_container: 'docker',
   app_deploy: 'apps', app_deploy_status: 'apps', app_list: 'apps', app_logs: 'apps', app_versions: 'apps', app_rollback: 'apps',
   app_control: 'apps', app_route: 'apps', app_secret_request: 'apps', app_secret_list: 'apps', app_secret_delete: 'apps',
@@ -86,7 +86,7 @@ export function actieDoel(tool: string, args: unknown): string | undefined {
   const naam = zonderPrefix(tool);
   const pad = tekst(a.path) ?? tekst(a.file) ?? tekst(a.dir) ?? tekst(a.directory);
   switch (naam) {
-    case 'machine_list_dir': case 'machine_read_file': case 'machine_write_file': return pad ? kort(verberg(pad), 100) : undefined;
+    case 'machine_list_dir': case 'machine_read_file': case 'machine_write_file': case 'machine_file_info': case 'machine_search_files': return pad ? kort(verberg(pad), 100) : undefined;
     case 'machine_exec': {
       const cmd = tekst(a.command) ?? tekst(a.cmd);
       const rest = Array.isArray(a.args) ? (a.args as unknown[]).filter((x): x is string => typeof x === 'string').join(' ') : '';
@@ -125,7 +125,7 @@ const Z: Readonly<Record<string, [string, string]>> = {
   press_key: ['Натиснув клавішу', 'Drukte op een toets'], browser_select_option: ['Вибрав варіант у списку', 'Koos een optie in een lijst'], browser_invoke_action: ['Виконав дію сайту', 'Voerde een site-actie uit'],
   machine_info: ['Подивився відомості про ПК', 'Bekeek de gegevens van de pc'], system_metrics: ['Перевірив навантаження ПК', 'Controleerde de belasting van de pc'],
   machine_list: ['Переглянув підключені пристрої', 'Bekeek de gekoppelde apparaten'], machine_list_dir: ['Переглянув теку', 'Bekeek een map'],
-  machine_read_file: ['Прочитав файл', 'Las een bestand'], machine_write_file: ['Записав файл', 'Schreef een bestand'], machine_exec: ['Виконав команду', 'Voerde een commando uit'],
+  machine_read_file: ['Прочитав файл', 'Las een bestand'], machine_file_info: ['Перевірив файл або теку', 'Bekeek een bestand of map'], machine_search_files: ['Шукав файли на пристрої', 'Zocht bestanden op het apparaat'], machine_write_file: ['Записав файл', 'Schreef een bestand'], machine_exec: ['Виконав команду', 'Voerde een commando uit'],
   app_deploy: ['Розгорнув додаток на вашому ПК', 'Rolde een app uit op uw pc'], app_deploy_status: ['Перевірив хід розгортання', 'Bekeek de voortgang van een uitrol'],
   app_list: ['Переглянув розгорнуті додатки', 'Bekeek de uitgerolde apps'], app_logs: ['Прочитав журнал додатка', 'Las het logboek van een app'],
   app_versions: ['Переглянув версії додатка', 'Bekeek de versies van een app'], app_rollback: ['Повернув попередню версію додатка', 'Zette een eerdere versie van een app terug'],

@@ -1,0 +1,13 @@
+{
+  "_uitleg": "Kopieer naar ~/.hub-agent/rechten.json (of gebruik: node agent.mjs rechten set <opdracht> on|off). Ontbrekende sleutel = aan. false = uit: de opdracht verdwijnt uit de lijst van de agent en wordt geweigerd. Alleen de sleutels hieronder tellen; shells, sudo en het wijzigen van de agent zelf kunnen nooit worden aangezet.",
+  "sys.info": true,
+  "sys.metrics": true,
+  "fs.list": true,
+  "fs.stat": true,
+  "fs.search": true,
+  "fs.read": true,
+  "fs.write": true,
+  "exec": true,
+  "docker.ps": true,
+  "docker.manage": true
+}

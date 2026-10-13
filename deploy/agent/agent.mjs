@@ -17,8 +17,9 @@ import net from 'node:net';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 const CONFIG_PATH = process.env.HUB_AGENT_CONFIG ?? path.join(os.homedir(), '.hub-agent', 'config.json');
+const RECHTEN_PATH = path.join(path.dirname(CONFIG_PATH), 'rechten.json');
 const MAX_READ = 2 * 1024 * 1024;
 const MAX_WRITE = 5 * 1024 * 1024;
 const MAX_OUTPUT = 1024 * 1024;
@@ -72,7 +73,7 @@ async function pair(args) {
 }
 
 // De lijst komt uit de handlers zelf, zodat hij nooit achterloopt op wat de agent kan.
-const capabilities = (roots, allow, readonlyRoots = [], apps = null, terminal = null) => ({ version: VERSION, roots, readonlyRoots, allowCommands: allow, apps: Boolean(apps?.enabled), terminal: terminal?.enabled ? { enabled: true, image: terminal.image, maxMinuten: terminal.maxMinuten } : { enabled: false }, commands: Object.keys(handlers).filter((k) => (!k.startsWith('apps.') || apps?.enabled) && (k !== 'term.open' || terminal?.enabled)) });
+const capabilities = (roots, allow, readonlyRoots = [], apps = null, terminal = null) => ({ version: VERSION, roots, readonlyRoots, allowCommands: allow, apps: Boolean(apps?.enabled), terminal: terminal?.enabled ? { enabled: true, image: terminal.image, maxMinuten: terminal.maxMinuten } : { enabled: false }, commands: Object.keys(handlers).filter((k) => (!k.startsWith('apps.') || apps?.enabled) && (k !== 'term.open' || terminal?.enabled) && rechtAan(k)) });
 
 // ---------- opdrachten: alleen ondertekend, geen code-als-argument (audit H3) ----------
 /** Programma's die nooit op de allow-list mogen: een shell voert alles uit wat in een argument staat. */
@@ -100,6 +101,21 @@ function checkInterpreterArgs(name, args) {
     if (key === 'git' && /^(core\.|alias\.|credential\.|protocol\.)/i.test(a)) throw new Error('git configuration overrides are refused');
   }
 }
+
+// ---------- rechten per opdracht (0.7.0) ----------
+/** Alle opdrachten die je met rechten.json per stuk aan of uit kunt zetten. Een ontbrekende sleutel = aan (zoals vóór 0.7.0).
+ *  Nooit aanzetbaar, ook niet met rechten.json: shells, sudo en het wijzigen van de dienst zelf (zie SHELLS en de agent-regels). */
+const RECHT_SLEUTELS = ['sys.info', 'sys.metrics', 'fs.list', 'fs.stat', 'fs.search', 'fs.read', 'fs.write', 'exec', 'docker.ps', 'docker.manage'];
+let REC = {};
+/** Leest rechten.json naast de config. Geen bestand of kapot bestand = alles zoals voorheen; een ongeldige sleutel wordt genegeerd. */
+function laadRechten() {
+  try {
+    const raw = JSON.parse(readFileSync(RECHTEN_PATH, 'utf8'));
+    REC = Object.fromEntries(Object.entries(raw ?? {}).filter(([k, v]) => RECHT_SLEUTELS.includes(k) && typeof v === 'boolean'));
+  } catch { REC = {}; }
+  return REC;
+}
+const rechtAan = (type) => REC[type] !== false;
 
 /** HMAC-handtekening van de server controleren (zelfde tekst als backend/connectors-crypto.ts commandSigText). */
 function verifySignature(cfg, msg, now = Date.now()) {
@@ -738,6 +754,49 @@ const handlers = {
     await fs.writeFile(file, content, 'utf8');
     return { path: file, bytes: Buffer.byteLength(content) };
   },
+  // 0.7.0: alleen lezen. Grootte, datum en type van één pad (zelfde padcontrole als fs.read).
+  async 'fs.stat'(cfg, { path: p }) {
+    const file = await safePath(cfg, p);
+    const st = await fs.stat(file);
+    return { path: file, type: st.isDirectory() ? 'dir' : st.isFile() ? 'file' : 'other', size: st.size, modified: st.mtime.toISOString() };
+  },
+  // 0.7.0: zoeken op naam (en optioneel in tekstinhoud) binnen een toegestane map. Begrensd: diepte 8, 5000 items,
+  // 200 treffers, tekstbestanden tot 256 KB. Symlinks worden niet gevolgd; geheime plekken worden overgeslagen.
+  async 'fs.search'(cfg, { path: p = '.', query, in_content: inhoud = false } = {}) {
+    if (typeof query !== 'string' || query.length < 2 || query.length > 200) throw new Error('query must be 2-200 characters');
+    const start = await safePath(cfg, p);
+    const q = query.toLowerCase();
+    const treffers = [];
+    let bezocht = 0;
+    const MAX_TREFFERS = 200, MAX_BEZOCHT = 5000, MAX_DIEPTE = 8, MAX_INHOUD = 256 * 1024;
+    const vol = () => treffers.length >= MAX_TREFFERS || bezocht >= MAX_BEZOCHT;
+    async function loop(dir, diepte, rel) {
+      if (diepte > MAX_DIEPTE || vol()) return;
+      let entries;
+      try { entries = await fs.readdir(dir, { withFileTypes: true }); } catch { return; }
+      for (const e of entries) {
+        if (vol()) return;
+        bezocht++;
+        if (e.isSymbolicLink()) continue;
+        const full = path.join(dir, e.name);
+        if (isGeheim(full)) continue;
+        const relPad = rel ? `${rel}/${e.name}` : e.name;
+        if (e.isDirectory()) {
+          if (e.name.toLowerCase().includes(q)) treffers.push({ path: relPad, type: 'dir' });
+          await loop(full, diepte + 1, relPad);
+        } else if (e.isFile()) {
+          if (e.name.toLowerCase().includes(q)) { treffers.push({ path: relPad, type: 'file' }); continue; }
+          if (!inhoud) continue;
+          const st = await fs.stat(full).catch(() => null);
+          if (!st || st.size > MAX_INHOUD) continue;
+          const tekst = await fs.readFile(full, 'utf8').catch(() => '');
+          if (!tekst.includes('\0') && tekst.toLowerCase().includes(q)) treffers.push({ path: relPad, type: 'file', match: 'inhoud' });
+        }
+      }
+    }
+    await loop(start, 0, '');
+    return { query, results: treffers, scanned: bezocht, truncated: vol() };
+  },
   // Docker (alleen met "docker" in --allow). Vaste argumenten; de containernaam is streng gevalideerd.
   async 'docker.ps'(cfg, { include_stopped } = {}) {
     requireDocker(cfg);
@@ -942,6 +1001,26 @@ async function selftest(args) {
       && (await geweigerd(() => handlers.exec(rcfg, { command: 'node', args: ['-v'], cwd: ro }), RO)) === true
       && (await fs.readFile(path.join(ro, 'secret.txt'), 'utf8')) === 'geheim');
     check('alleen-lezen root: schrijven in de gewone root blijft werken', (await handlers['fs.write'](rcfg, { path: 'c.txt', content: 'ok' })).bytes === 2);
+    // ---- 0.7.0: fs.stat, fs.search, rechten.json ----
+    const st = await handlers['fs.stat'](cfg, { path: 'a/b.txt' });
+    check('fs.stat: type, grootte en datum van een bestand', st.type === 'file' && st.size === 3 && !Number.isNaN(Date.parse(st.modified)));
+    check('fs.stat buiten de map geweigerd', (await geweigerd(() => handlers['fs.stat'](cfg, { path: '../_selftest-outside.txt' }), BUITEN)) === true);
+    await fs.mkdir(path.join(work, 'geheim'), { recursive: true });
+    await fs.writeFile(path.join(work, 'geheim', 'notities.txt'), 'zoekwoord-verborgen');
+    await fs.writeFile(path.join(work, 'a', 'zoekwoord-naam.md'), 'niets bijzonders');
+    await fs.writeFile(path.join(work, 'a', 'gewoon.txt'), 'hier staat ZOEKWOORD-inhoud');
+    const zoek = await handlers['fs.search'](cfg, { path: '.', query: 'zoekwoord', in_content: true });
+    const namen = zoek.results.map((r) => r.path);
+    check('fs.search: vindt naam en inhoud (hoofdletterongevoelig)', namen.includes('a/zoekwoord-naam.md') && namen.includes('a/gewoon.txt'), JSON.stringify(namen));
+    check('fs.search: geheime map wordt overgeslagen', !namen.some((n) => n.includes('geheim')), JSON.stringify(namen));
+    check('fs.search: zonder in_content alleen namen', !(await handlers['fs.search'](cfg, { path: '.', query: 'ZOEKWOORD' })).results.some((r) => r.path === 'a/gewoon.txt'));
+    check('fs.search: te korte zoekterm geweigerd', (await geweigerd(() => handlers['fs.search'](cfg, { path: '.', query: 'a' }), /2-200/)) === true);
+    REC = {}; // zonder rechten.json (ontbrekende sleutel = aan), los van het bestand op deze machine
+    check('rechten: ontbrekende sleutel staat aan', rechtAan('exec') && rechtAan('fs.search'));
+    REC = { exec: false, 'fs.search': false };
+    check('rechten: uitgezette opdracht is uit, andere blijven aan', !rechtAan('exec') && !rechtAan('fs.search') && rechtAan('fs.read'));
+    check('rechten: uitgezette opdracht komt niet in capabilities', !capabilities([work], []).commands.includes('exec') && capabilities([work], []).commands.includes('fs.stat'));
+    REC = {};
   } catch (e) {
     check('onverwachte fout', false, e.message);
   } finally {
@@ -975,6 +1054,7 @@ function run() {
   if (!cfg.commandKey && process.env.HUB_AGENT_ALLOW_UNSIGNED !== '1') console.warn('[agent] увага: немає ключа підпису (старе підключення). Команди буде відхилено; виконайте pair заново.');
 
   const connect = async () => {
+    laadRechten();
     let t = null;
     try { t = await ticket(); } catch (e) { console.log(`[agent] ${e.message}, retry in ${delay / 1000}s`); setTimeout(connect, delay); delay = Math.min(delay * 2, 30_000); return; }
     const ws = new WebSocket(wsUrl);
@@ -998,6 +1078,7 @@ function run() {
           seenIds.add(msg.id); if (seenIds.size > 5000) seenIds.clear();
           const h = handlers[msg.type];
           if (!h) throw new Error(`unsupported command: ${msg.type}`);
+          if (!rechtAan(msg.type)) throw new Error(`refused: "${msg.type}" is switched off on this device (rechten.json)`);
           ws.send(JSON.stringify({ t: 'result', id: msg.id, ok: true, data: await h(cfg, msg.params ?? {}) }));
         } catch (e) {
           ws.send(JSON.stringify({ t: 'result', id: msg.id, ok: false, error: e.message }));
@@ -1017,6 +1098,27 @@ function run() {
   connect();
 }
 
+/** node agent.mjs rechten            → toont per opdracht aan/uit
+ *  node agent.mjs rechten set <opdracht> on|off  → schrijft rechten.json (0600); de agent leest het bij het volgende verbinden. */
+function rechtenCmd(args) {
+  laadRechten();
+  const [, sub, sleutel, stand] = args._;
+  if (!sub) {
+    console.log(`Bestand: ${RECHTEN_PATH}${existsSync(RECHTEN_PATH) ? '' : ' (bestaat nog niet: alles aan)'}`);
+    for (const s of RECHT_SLEUTELS) console.log(`${rechtAan(s) ? 'aan ' : 'uit '} ${s}`);
+    console.log('\nAanzetten/uitzetten: node agent.mjs rechten set <opdracht> on|off');
+    return;
+  }
+  if (sub !== 'set' || !RECHT_SLEUTELS.includes(sleutel) || !['on', 'off'].includes(stand)) {
+    die(`usage: rechten | rechten set <opdracht> on|off\nopdrachten: ${RECHT_SLEUTELS.join(', ')}`);
+  }
+  const huidig = existsSync(RECHTEN_PATH) ? JSON.parse(readFileSync(RECHTEN_PATH, 'utf8')) : {};
+  huidig[sleutel] = stand === 'on';
+  mkdirSync(path.dirname(RECHTEN_PATH), { recursive: true });
+  writeFileSync(RECHTEN_PATH, JSON.stringify(huidig, null, 2) + '\n', { mode: 0o600 });
+  console.log(`${sleutel}: ${stand === 'on' ? 'aan' : 'uit'}. Herstart de agent (node agent.mjs run) om het door te voeren.`);
+}
+
 function die(msg) { console.error(msg); process.exit(1); }
 
 // Alleen als programma starten (niet bij import in tests).
@@ -1028,5 +1130,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   else if (cmd === 'selftest') await selftest(args);
   else if (cmd === 'apps-config') await appsConfig(args);
   else if (cmd === 'terminal-config') await terminalConfig(args);
-  else die('usage: node agent.mjs <pair|run|selftest|apps-config|terminal-config>');
+  else if (cmd === 'rechten') rechtenCmd(args);
+  else die('usage: node agent.mjs <pair|run|selftest|apps-config|terminal-config|rechten>');
 }
