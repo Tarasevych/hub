@@ -60,6 +60,9 @@ export function zin(e: JournaalItem, tr: Tr): string {
     case 'owner.diagnose.gemeld': return tr(`Надіслано звіт перевірки «Щось не працює?» (${s(d.dienst)})`, `Controleverslag «Werkt iets niet?» verstuurd (${s(d.dienst)})`);
     case 'owner.diagnose.gelezen': return tr(`Переглянуто звіти користувачів (${s(d.aantal)})`, `Verslagen van gebruikers bekeken (${s(d.aantal)})`);
     case 'owner.tech.band': return tr('Змінено колір технічної смуги', 'Kleur van de technische band gewijzigd');
+    case 'owner.terminal.geopend': return tr(`Відкрито термінал «${s(d.agent)}» (${s(d.minuten)} хв): ${s(d.reden)}`, `Terminal «${s(d.agent)}» geopend (${s(d.minuten)} min): ${s(d.reden)}`);
+    case 'owner.terminal.gesloten': return tr('Термінал закрито', 'Terminal gesloten');
+    case 'owner.terminal.opname.bekeken': return tr('Переглянуто запис термінала', 'Terminalopname bekeken');
     case 'owner.mcp.grant.expired': return tr(`Закінчився строк доступу «${n}»`, `Toegang van «${n}» verlopen`);
     case 'mcp_console_token_issued': return tr(`Випущено токен «${n}»`, `Token «${n}» uitgegeven`);
     case 'mcp_console_token_revoked': return tr(`Відкликано токен «${n}»`, `Token «${n}» ingetrokken`);
