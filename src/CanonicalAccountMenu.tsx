@@ -28,6 +28,7 @@ import {
   X,
 } from 'lucide-react';
 import StableAvatar from './StableAvatar';
+import { openTechVenster, techActief, techGebruiker, useTech } from './tech/tech-store';
 import { hervatAuto, pauzeerAuto, useAutoStatus } from './thema/useThema';
 import {
   forgetAccountPreviewHistory,
@@ -256,6 +257,9 @@ export default function CanonicalAccountMenu({
   onProfilePhotoChange,
 }: Props) {
   const t = copy[lang];
+  const tech = useTech();
+  const techUid = user?.id;
+  useEffect(() => { if (techUid !== undefined) techGebruiker(techUid); }, [techUid]);
   const root = useRef<HTMLDivElement>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -644,6 +648,14 @@ export default function CanonicalAccountMenu({
                 </section>
               )}
 
+              {tech.profiel ? (
+                <IconAction
+                  icon={<ShieldCheck />}
+                  label={`${lang === 'uk' ? 'Технічний профіль' : 'Technisch profiel'} · ${techActief(tech) ? (lang === 'uk' ? 'увімкнено' : 'aan') : (lang === 'uk' ? 'вимкнено' : 'uit')}`}
+                  onClick={() => { close(); openTechVenster('activeren'); }}
+                  className='canonical-menu-action'
+                />
+              ) : null}
               {onSettings && (
                 <IconAction
                   icon={<Settings />}

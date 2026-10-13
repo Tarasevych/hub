@@ -1,0 +1,96 @@
+/* Technisch profiel: band bovenaan, «?»-uitleg en de vensters (TechLaag.tsx, Vraag.tsx).
+   Waarom zo: de band is een eigen vaste strook; de hele app (#root) schuift eronder door #root zelf het «containing block» van zijn
+   vaste elementen te maken (transform). Zo hoeven we niet elk vast paneel (zijbalk, accountknop, meldingen…) apart te verschuiven en
+   kan geen enkel venster van de dienst de band bedekken. Vensters van het platform (portal naar body, z-index 100000+) blijven erboven. */
+:root{--tech-band-h:40px;--tech-band-bg:#f5b400;--tech-band-fg:#1a1200}
+html[data-tech=aan] #root{position:fixed;top:var(--tech-band-h);left:0;right:0;bottom:0;width:auto;height:auto;min-height:0;transform:translateZ(0);overflow:hidden}
+html[data-tech=aan] #root .canonical-sidebar{height:100%;max-height:100%}
+
+.tech-band{position:fixed;top:0;left:0;right:0;height:var(--tech-band-h);z-index:99000;display:flex;align-items:center;gap:12px;padding:0 10px 0 12px;box-sizing:border-box;
+  background-color:var(--tech-band-bg);color:var(--tech-band-fg);font:600 14px/1.2 Inter,ui-sans-serif,system-ui,sans-serif;border-bottom:3px solid var(--tech-band-fg);overflow:hidden}
+html[data-tech-patroon=strepen] .tech-band{background-image:repeating-linear-gradient(135deg,transparent 0 14px,rgba(0,0,0,.10) 14px 28px)}
+html[data-tech-patroon=stippen] .tech-band{background-image:radial-gradient(rgba(0,0,0,.14) 1.5px,transparent 1.6px);background-size:10px 10px}
+.tech-band svg{width:16px;height:16px;flex:none}
+.tech-band-merk{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:6px;background:var(--tech-band-fg);color:var(--tech-band-bg);letter-spacing:.06em;font-weight:800;flex:none}
+.tech-band-id{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:28ch}
+.tech-band-tijd{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-variant-numeric:tabular-nums;flex:none}
+.tech-band-tijd.is-bijna{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.tech-band-reden{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;opacity:.92}
+.tech-band-knoppen{display:flex;gap:6px;margin-left:auto;flex:none}
+.tech-band-knoppen button{display:inline-flex;align-items:center;gap:5px;min-height:30px;min-width:30px;padding:0 10px;border-radius:7px;border:1.5px solid var(--tech-band-fg);
+  background:transparent;color:var(--tech-band-fg);font:inherit;font-weight:600;cursor:pointer}
+.tech-band-knoppen button:hover{background:rgba(0,0,0,.08)}
+.tech-band-knoppen button.is-uit{background:var(--tech-band-fg);color:var(--tech-band-bg)}
+.tech-band-knoppen button:focus-visible,.tech-vraag-knop:focus-visible,.tech-venster :is(button,input,select):focus-visible{outline:3px solid #1d4ed8;outline-offset:2px}
+@media (max-width:760px){
+  :root{--tech-band-h:44px}
+  .tech-band{gap:6px;padding:0 6px 0 8px;font-size:13px}
+  .tech-band-knoppen{gap:4px}
+  .tech-band-reden,.tech-band-id,.tech-band-nog{display:none}
+  .tech-band-merk{padding:3px 6px;letter-spacing:.02em;font-size:12px}
+  .tech-band-merk svg{display:none}
+  .tech-band-knoppen button span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .tech-band-knoppen button{padding:0 8px;min-height:34px;min-width:34px}
+}
+@media (prefers-reduced-motion:no-preference){.tech-band{animation:tech-in .18s ease-out}}
+@keyframes tech-in{from{transform:translateY(-100%)}to{transform:none}}
+@media (forced-colors:active){.tech-band{border-bottom:3px solid CanvasText}.tech-band-merk{border:1px solid CanvasText}}
+
+/* «?» */
+.tech-vraag{position:relative;display:inline-flex;vertical-align:middle;margin-left:4px}
+.tech-vraag-knop{width:22px;height:22px;min-width:22px;padding:0;border-radius:50%;border:1.5px solid currentColor;background:transparent;color:inherit;font:700 13px/1 Inter,system-ui,sans-serif;cursor:help;opacity:.8}
+.tech-vraag-knop:hover,.tech-vraag-knop[aria-expanded=true]{opacity:1}
+.tech-vraag-uitleg{position:fixed;z-index:2147483000;width:min(340px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:auto;box-sizing:border-box;display:grid;gap:8px;padding:12px 14px;border-radius:10px;
+  background:#fff;color:#1b1f24;border:1px solid #c4ccd4;box-shadow:0 12px 32px rgba(0,0,0,.22);font:400 13.5px/1.45 Inter,system-ui,sans-serif;text-align:left;white-space:normal}
+.tech-vraag-laag{display:grid;gap:2px}
+.tech-vraag-laag b{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;opacity:.75}
+.tech-vraag-laag.is-risico b{color:#b42318;opacity:1}
+.tech-vraag-laag.is-dev{padding-top:8px;border-top:1px dashed var(--line,#d0d7de)}
+.tech-vraag-laag.is-dev b{color:#5b21b6;opacity:1}
+html.theme-dark .tech-vraag-uitleg{background:#1d232a;color:#e6edf3;border-color:#3a434d}
+html.theme-dark .tech-vraag-laag.is-risico b{color:#ff8a80}
+html.theme-dark .tech-vraag-laag.is-dev b{color:#c4b5fd}
+
+/* Vensters */
+.tech-venster{display:grid;gap:14px;padding:14px 16px 16px;font-size:14.5px}
+.tech-venster p{margin:0}
+.tech-lead{opacity:.85}
+.tech-veld{display:grid;gap:5px}
+.tech-veld > span,.tech-label{font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.tech-veld :is(input,select),.tech-geven :is(input,select){min-height:40px;padding:0 10px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;box-sizing:border-box;width:100%}
+.tech-rollen,.tech-rolkeuze{display:flex;flex-wrap:wrap;gap:6px 14px}
+.tech-rolkeuze label,.tech-rollen > *{display:inline-flex;align-items:center;gap:6px;min-height:32px}
+.tech-rolkeuze input[type=checkbox]{width:18px;height:18px}
+.tech-meta{font-size:13px;opacity:.8}
+.tech-rij{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.tech-knoppen{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tech-venster button{min-height:38px;padding:0 14px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.tech-venster button.is-hoofd{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.tech-venster button.is-gevaar{border-color:#b42318;color:#b42318}
+.tech-venster button:disabled{opacity:.55;cursor:not-allowed}
+.tech-melding{margin:0;padding:8px 10px;border-radius:8px;background:#fdecea;color:#7a1610}
+.tech-melding.is-ok{background:#e7f6ec;color:#11552b}
+.tech-kleuren{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tech-venster button.tech-kleur{min-height:44px;padding:0 6px;font-size:13px;border:2px solid transparent}
+.tech-venster button.tech-kleur[aria-checked=true]{outline:3px solid currentColor;outline-offset:2px}
+.tech-patronen{display:flex;flex-wrap:wrap;gap:8px}
+.tech-patronen button[aria-checked=true]{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.tech-band-voorbeeld{background-color:var(--tech-band-bg);color:var(--tech-band-fg);display:flex;align-items:center;gap:8px;min-height:40px;padding:0 12px;border-radius:8px;font-weight:700;border-bottom:3px solid currentColor}
+.tech-band-voorbeeld[data-patroon=strepen]{background-image:repeating-linear-gradient(135deg,transparent 0 14px,rgba(0,0,0,.10) 14px 28px)}
+.tech-band-voorbeeld[data-patroon=stippen]{background-image:radial-gradient(rgba(0,0,0,.14) 1.5px,transparent 1.6px);background-size:10px 10px}
+.tech-geven{display:grid;gap:10px;padding:12px;border:1px solid var(--line,#d0d7de);border-radius:10px}
+.tech-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.tech-lijst li{display:grid;gap:4px;padding:10px 12px;border:1px solid var(--line,#d0d7de);border-radius:10px}
+.tech-lijst li.is-weg{opacity:.6}
+.tech-lijst-wie{font-weight:700;overflow-wrap:anywhere}
+.tech-lijst-rollen,.tech-lijst-stand{font-size:13px}
+@media (max-width:520px){.tech-kleuren{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tech-band-voorbeeld svg{width:16px;height:16px}
+/* «?» binnen vensters: rond houden (de algemene knopstijl van .tech-venster niet overnemen). */
+.tech-venster .tech-vraag-knop,.tech-band .tech-vraag-knop{width:22px;height:22px;min-width:22px;min-height:22px;padding:0;border-radius:50%;border:1.5px solid currentColor;background:transparent;font:700 13px/1 Inter,system-ui,sans-serif}
+.tech-venster :is(h3,legend){margin:0;font:700 15px/1.3 Inter,ui-sans-serif,system-ui,sans-serif;display:flex;align-items:center;gap:4px}
+.tech-venster fieldset{border:0;margin:0;padding:0;min-width:0}
+.tech-venster legend{margin-bottom:6px;font-weight:600;font-size:14px}
+.tech-lijst-wie{display:grid;gap:2px}
+.tech-lijst-wie small{font-weight:400;font-size:12.5px;opacity:.8;overflow-wrap:anywhere}
+.tech-rolkeuze label{gap:4px;margin-right:6px}

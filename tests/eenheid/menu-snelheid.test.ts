@@ -92,7 +92,9 @@ export async function main(): Promise<number> {
 
   // ---------------------------------------------------------------- prerender: app start pas na activering
   const main = readFileSync('src/main.tsx', 'utf8');
-  check('main.tsx: createRoot pas na activering (prerenderingchange)', /prerenderingchange/.test(main) && /naActivering\(\(\) => \{[\s\S]*createRoot\(document\.getElementById\('root'\)!\)\.render\(<App \/>\)[\s\S]*\}\);/.test(main) && (main.match(/createRoot\(/g) || []).length === 2);
+  check('main.tsx: createRoot pas na activering (prerenderingchange)', /prerenderingchange/.test(main) && /naActivering\(\(\) => \{[\s\S]*createRoot\(document\.getElementById\('root'\)!\)\.render\(<App \/>\)[\s\S]*\}\);/.test(main) && (main.match(/createRoot\(/g) || []).length === 3);
+  // Derde root = laag van het technisch profiel (13.10.2026): ook binnen naActivering, na de app.
+  check('main.tsx: technische laag start pas na activering en na de app', /naActivering\(\(\) => \{[\s\S]*render\(<App \/>\)[\s\S]*import\('\.\/tech\/TechLaag'\)[\s\S]*\}\);/.test(main));
 
   // ---------------------------------------------------------------- concept-velden: nooit op wachtwoord/code/geheim
   const bestanden = readdirSync('src').filter((f) => f.endsWith('.tsx'));

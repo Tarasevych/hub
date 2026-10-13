@@ -30,6 +30,7 @@ import {MICROSOFT_GRAPH_SCOPES,mailMicrosoftAuthorizationUrl,mailMicrosoftStateP
 import {normalizeMailDisplayText} from './mail-text-normalization';
 import {createCloudRoutes} from './cloud-platform';
 import { mcpConsoleRoutes } from './mcp-console';
+import { techRoutes } from './tech-routes';
 import { uitrolGoedkeuringRoutes } from './uitrol-goedkeuring';
 import { aiBeleidRoutes } from './ai-beleid';
 import { passkeyRoutes } from './passkeys';
@@ -483,6 +484,8 @@ export const handler = router({
   ...juridischeRoutes,
   'GET /api/_healthcheck': [async () => json({ message: 'Success' })],
   ...mcpConsoleRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
+  // Technisch profiel (architectuur 13.10.2026): toekennen, op tijd activeren per tabblad, band.
+  ...techRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
   ...uitrolGoedkeuringRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
   ...aiBeleidRoutes({ requireSession: ownerRequireSession as never }),
   ...passkeyRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
