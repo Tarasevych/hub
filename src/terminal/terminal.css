@@ -1,0 +1,7 @@
+[data-term-venster] label{display:flex;flex-direction:column;gap:4px;font-size:13px;margin:8px 0}
+[data-term-venster] select,[data-term-venster] input[type=text],[data-term-venster] input[type=number]{font:inherit;padding:6px 8px;border-radius:6px;border:1px solid #94a3b8;background:#fff;color:#0f172a}
+[data-term-venster] .term-scherm{height:min(420px,50vh);background:#0d1117;border-radius:8px;padding:6px;margin-top:8px}
+[data-term-venster] button{display:inline-flex;align-items:center;gap:6px}
+[data-term-venster] button svg{width:16px;height:16px}
+[data-term-venster] .term-rij{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+[data-term-venster] .term-let{font-size:13px;color:#7f1d1d}
