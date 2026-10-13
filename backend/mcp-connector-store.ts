@@ -3,6 +3,7 @@
 // filtert zelf op user_id; RLS (0010) is de tweede laag.
 import { getPool } from '../server/platform/pg';
 import { heeftApiRecht } from './api-recht';
+import { accessSeconden, duur as duurVan, isDuurId, refreshSeconden, type DuurId } from '../shared/ai-verbinding';
 
 const q = (sql: string, params: unknown[] = []) => getPool('systeem').query(sql, params);
 
@@ -18,11 +19,12 @@ export const LIMITS = {
 export interface TokenRow {
   id: string; user_id: string; client_id: string; client_name: string; scope: string;
   access_expires_at: Date; refresh_expires_at: Date; created_at: Date; last_used_at: Date | null; revoked_at: Date | null;
+  duur?: string | null;
 }
 export interface AuthRow {
   id: string; client_id: string; redirect_uri: string; code_challenge: string; state: string | null; scope: string;
   resource: string | null; status: 'pending' | 'approved' | 'denied' | 'used'; expires_at: Date; user_id: string | null;
-  client_name?: string;
+  client_name?: string; duur?: string | null;
 }
 
 // ---- clients (DCR) ----
@@ -64,13 +66,13 @@ export async function getPendingAuth(id: string): Promise<AuthRow | null> {
 }
 
 /** Atomair: een verzoek kan maar één keer worden goedgekeurd of geweigerd. */
-export async function decideAuth(id: string, userId: string, approve: boolean, codeHash: string | null): Promise<AuthRow | null> {
+export async function decideAuth(id: string, userId: string, approve: boolean, codeHash: string | null, duur: DuurId | null = null): Promise<AuthRow | null> {
   const { rows } = await q(
     `UPDATE app.mcp_oauth_auth
         SET status = $3, user_id = $2, decided_at = now(), code_hash = $4,
-            code_expires_at = CASE WHEN $4::text IS NULL THEN NULL ELSE now() + make_interval(secs => $5) END
+            code_expires_at = CASE WHEN $4::text IS NULL THEN NULL ELSE now() + make_interval(secs => $5) END, duur = $6
       WHERE id = $1 AND status = 'pending' AND expires_at > now() RETURNING *`,
-    [id, userId, approve ? 'approved' : 'denied', codeHash, LIMITS.codeTtlSec]);
+    [id, userId, approve ? 'approved' : 'denied', codeHash, LIMITS.codeTtlSec, duur]);
   return rows[0] ?? null;
 }
 
@@ -92,14 +94,22 @@ export async function countActiveGrants(userId: string): Promise<number> {
     [userId])).rows[0].n;
 }
 
+/** Levensduur in seconden: gekozen duur (shared/ai-verbinding.ts), of de oude vaste waarden voor grants zonder keuze (NULL). */
+export function levensduur(duur: string | null | undefined): { accessSec: number; refreshSec: number } {
+  if (!isDuurId(duur)) return { accessSec: LIMITS.accessTtlSec, refreshSec: LIMITS.refreshTtlDays * 86400 };
+  const d = duurVan(duur);
+  return { accessSec: accessSeconden(d), refreshSec: refreshSeconden(d) };
+}
+
 export async function insertToken(t: {
-  userId: string; clientId: string; clientName: string; scope: string; accessHash: string; refreshHash: string;
+  userId: string; clientId: string; clientName: string; scope: string; accessHash: string; refreshHash: string; duur?: DuurId | null;
 }): Promise<string> {
+  const l = levensduur(t.duur);
   const r = await q(
     `INSERT INTO app.mcp_oauth_tokens
-       (user_id, client_id, client_name, scope, access_hash, refresh_hash, access_expires_at, refresh_expires_at)
-     VALUES ($1, $2, $3, $4, $5, $6, now() + make_interval(secs => $7), now() + make_interval(days => $8)) RETURNING id`,
-    [t.userId, t.clientId, t.clientName, t.scope, t.accessHash, t.refreshHash, LIMITS.accessTtlSec, LIMITS.refreshTtlDays]);
+       (user_id, client_id, client_name, scope, access_hash, refresh_hash, access_expires_at, refresh_expires_at, duur)
+     VALUES ($1, $2, $3, $4, $5, $6, now() + make_interval(secs => $7), now() + make_interval(secs => $8), $9) RETURNING id`,
+    [t.userId, t.clientId, t.clientName, t.scope, t.accessHash, t.refreshHash, l.accessSec, l.refreshSec, isDuurId(t.duur) ? t.duur : null]);
   return String(r.rows[0]?.id ?? '');
 }
 
@@ -130,15 +140,18 @@ export async function findByAccessHash(accessHash: string): Promise<TokenRow | n
  * verlopen of ingetrokken is.
  */
 export async function rotateRefresh(clientId: string, oldHash: string, newRefreshHash: string, newAccessHash: string) {
+  // De duur blijft die van de grant (keuze bij «Дозволити»); het UPDATE-criterium blijft de atomaire controle.
+  const huidig = (await q('SELECT duur FROM app.mcp_oauth_tokens WHERE refresh_hash = $1 AND client_id = $2', [oldHash, clientId])).rows[0];
+  const l = levensduur(huidig?.duur);
   const { rows } = await q(
     `UPDATE app.mcp_oauth_tokens
         SET prev_refresh_hash = refresh_hash, refresh_hash = $3, access_hash = $4,
-            access_expires_at = now() + make_interval(secs => $5), refresh_expires_at = now() + make_interval(days => $6),
+            access_expires_at = now() + make_interval(secs => $5), refresh_expires_at = now() + make_interval(secs => $6),
             last_used_at = now()
       WHERE refresh_hash = $2 AND client_id = $1 AND revoked_at IS NULL AND refresh_expires_at > now()
-      RETURNING id, user_id, scope`,
-    [clientId, oldHash, newRefreshHash, newAccessHash, LIMITS.accessTtlSec, LIMITS.refreshTtlDays]);
-  return rows[0] as { id: string; user_id: string; scope: string } | undefined ?? null;
+      RETURNING id, user_id, scope, duur`,
+    [clientId, oldHash, newRefreshHash, newAccessHash, l.accessSec, l.refreshSec]);
+  return rows[0] as { id: string; user_id: string; scope: string; duur: string | null } | undefined ?? null;
 }
 
 /** Een al geroteerd refresh-token opnieuw gebruiken wijst op diefstal: de hele grant wordt ingetrokken. */
@@ -159,7 +172,7 @@ export async function revokeByToken(clientId: string, tokenHash: string): Promis
 
 export async function listGrants(userId: string): Promise<TokenRow[]> {
   const { rows } = await q(
-    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at
+    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, duur
        FROM app.mcp_oauth_tokens WHERE user_id = $1 AND revoked_at IS NULL AND refresh_expires_at > now()
       ORDER BY created_at DESC`, [userId]);
   return rows;
@@ -168,7 +181,7 @@ export async function listGrants(userId: string): Promise<TokenRow[]> {
 /** Alle verbindingen van de laatste `dagen`, ook ingetrokken of verlopen (geschiedenis op /agents). */
 export async function listGrantHistory(userId: string, dagen = 90): Promise<TokenRow[]> {
   const { rows } = await q(
-    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at
+    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, duur
        FROM app.mcp_oauth_tokens WHERE user_id = $1 AND (revoked_at IS NULL OR revoked_at > now() - make_interval(days => $2))
         AND (refresh_expires_at > now() - make_interval(days => $2))
       ORDER BY created_at DESC LIMIT 100`, [userId, dagen]);

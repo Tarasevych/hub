@@ -1,5 +1,6 @@
 // Журнал: één tijdlijn van alles rond agents (tokens, apparaten, extensie, toestemmingen, AI aan/uit, noodstop), uit app.audit.
 // Dicht: één zin + onderwerp + relatieve tijd (exacte tijd bij aanwijzen). Open: actiecode, id's, ip-hash, apparaat, ruwe details.
+import { duur as duurVan } from '../../shared/ai-verbinding';
 import { useMemo, useState, type ReactElement } from 'react';
 import { Bot, Boxes, Calendar, Camera, CircleHelp, Compass, Container, Eye, FilePen, FileText, Fingerprint, Gauge, GitBranch, Globe, HardDrive, Kanban, KeyRound, Mail, Monitor, MousePointerClick, OctagonX, Rocket, Search, Server, ShieldCheck, Sparkles, Stethoscope, Terminal, Wrench } from 'lucide-react';
 import { SOORT_INFO, actieSoort, actieZin, groepeerWerk, telling, type ActieSoort, type WerkSessie } from '../../shared/mcp-acties';
@@ -31,6 +32,7 @@ const REDEN: Record<string, [string, string]> = {
 
 // Gastscopes (§13.11) leesbaar in het journaal.
 const GAST_SCOPE: Record<string, [string, string]> = { 'profiel.lezen': ['профіль', 'profiel'], 'apparaten.lezen': ['пристрої та агенти', 'apparaten en agents'], 'journaal.lezen': ['журнал агентів', 'journaal van agents'] };
+const duurTekst = (id: string, tr: Tr) => { const x = duurVan(id); return tr(x.uk, x.nl); };
 /** Eén zin in gewone taal voor een journaalregel. */
 export function zin(e: JournaalItem, tr: Tr): string {
   const d = e.details, n = e.onderwerp?.naam || s(d.name) || s(d.clientName) || '—';
@@ -41,6 +43,10 @@ export function zin(e: JournaalItem, tr: Tr): string {
     case 'owner.mcp.grant.denied': return tr('Ви відхилили запит ШІ на підключення', 'U weigerde een verzoek van een AI om te verbinden');
     case 'owner.mcp.grant.connected': return tr(`Підключено ШІ «${n}» (OAuth)`, `AI «${n}» verbonden (OAuth)`);
     case 'owner.mcp.grant.revoked': return tr(`Відкликано доступ «${n}»`, `Toegang van «${n}» ingetrokken`) + reden(d.reason);
+    case 'owner.mcp.deur.approved': return tr(`Ви дозволили «${s(d.klant) || n}» двері ${s(d.deur) ? `/${s(d.deur)}` : 'сервера'}${s(d.duur) ? ` (${duurTekst(s(d.duur), tr)})` : ''}`, `U gaf «${s(d.klant) || n}» toegang tot de deur ${s(d.deur) ? `/${s(d.deur)}` : 'van de server'}${s(d.duur) ? ` (${duurTekst(s(d.duur), tr)})` : ''}`);
+    case 'owner.mcp.deur.denied': return tr(`Ви відхилили запит «${s(d.klant) || n}» до дверей сервера`, `U weigerde «${s(d.klant) || n}» toegang tot de serverdeur`);
+    case 'owner.mcp.deur.revoked': return tr(`Відкликано доступ «${s(d.klant) || n}» до дверей ${s(d.deur) ? `/${s(d.deur)}` : 'сервера'}`, `Toegang van «${s(d.klant) || n}» tot de deur ${s(d.deur) ? `/${s(d.deur)}` : 'van de server'} ingetrokken`);
+    case 'owner.mcp.duur.setting': return tr(`Термін доступу для ${s(d.klant)}: ${duurTekst(s(d.duur), tr)}`, `Toegangsduur voor ${s(d.klant)}: ${duurTekst(s(d.duur), tr)}`);
     case 'owner.mcp.grant.expired': return tr(`Закінчився строк доступу «${n}»`, `Toegang van «${n}» verlopen`);
     case 'mcp_console_token_issued': return tr(`Випущено токен «${n}»`, `Token «${n}» uitgegeven`);
     case 'mcp_console_token_revoked': return tr(`Відкликано токен «${n}»`, `Token «${n}» ingetrokken`);

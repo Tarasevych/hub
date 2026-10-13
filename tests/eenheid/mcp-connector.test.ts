@@ -57,9 +57,13 @@ export async function main(): Promise<number> {
       && asm.revocation_endpoint === `${c.ISSUER}/revoke`);
 
     // ---- redirect-regels ----
-    const ok = [CALLBACK, 'http://localhost:3118/callback', 'http://127.0.0.1:8080/callback', 'http://localhost/callback'];
-    const nee = ['https://evil.example/cb', 'https://claude.ai/api/mcp/auth_callback?x=1', 'https://claude.ai.evil.com/api/mcp/auth_callback', 'http://localhost/other', 'http://evil.com:80/callback', 'https://localhost/callback', 'javascript:alert(1)', ''];
-    check('redirect-URI: alleen de callback van Claude en loopback /callback', ok.every(c.redirectUriAllowed) && nee.every((u) => !c.redirectUriAllowed(u)),
+    // Sinds 13.10 (één klik voor alle AI-klanten, shared/ai-verbinding.ts): bekende AI-hosts, loopback (elke poort/pad), app-schema's
+    // van desktopklanten en het eigen terugkeeradres van de site. Nog steeds nooit: vreemde hosts, look-alikes, http buiten loopback.
+    const ok = [CALLBACK, 'http://localhost:3118/callback', 'http://127.0.0.1:8080/callback', 'http://localhost/callback', 'http://localhost:8787/other',
+      'https://grok.com/oauth/callback', 'cursor://anysphere.cursor-mcp/oauth/callback', 'https://vscode.dev/redirect', `${c.BASE}/oauth-terug`];
+    const nee = ['https://evil.example/cb', 'https://claude.ai.evil.com/api/mcp/auth_callback', 'https://evilclaude.ai/cb', 'http://evil.com:80/callback', 'https://localhost/callback',
+      'javascript:alert(1)', 'data:text/html,x', 'myapp://x/cb', 'cursor:', 'https://claude.ai/cb#frag', 'http://user:pw@127.0.0.1/cb', `${c.BASE}/agents`, ''];
+    check('redirect-URI: bekende AI-klanten, loopback, app-schema\'s en het eigen terugkeeradres; niets anders', ok.every(c.redirectUriAllowed) && nee.every((u) => !c.redirectUriAllowed(u)),
       JSON.stringify([ok.filter((u) => !c.redirectUriAllowed(u)), nee.filter(c.redirectUriAllowed)]));
     check('loopback: poort telt niet mee (Claude Code), host en pad wel',
       c.redirectMatches(['http://localhost/callback'], 'http://localhost:51234/callback') && !c.redirectMatches(['http://localhost/callback'], 'http://127.0.0.1:51234/callback')

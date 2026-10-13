@@ -7,10 +7,19 @@
 //   - Uitrollen: alleen een releasepakket + losse handtekening in de inbox leggen. De root-dienst mijn-ruimte-uitrol controleert de
 //     handtekening met de publieke sleutel van de eigenaar (privésleutel alleen op zijn pc) en installeert pas daarna.
 //   - Schakelaars (read / uitrol) staan in /etc/mijn-ruimte/mcp-rechten.json: root-eigendom, voor deze dienst alleen leesbaar.
-//   - OAuth 2.1: echte dynamische registratie (eigen client_id per registratie, alleen https-redirects op grok.com/x.ai), PKCE S256
-//     (tijdconstant vergeleken), toegangstokens 1 uur, verversingstokens 14 dagen met rotatie en hergebruikdetectie (hele familie
-//     ingetrokken). Tokens staan alleen als sha256-hash op schijf. Intrekken: /oauth/revoke, of alles tegelijk via het root-bestand
-//     /etc/mijn-ruimte/mcp-intrekken (tijdstempel in ms: alles wat daarvóór is uitgegeven, vervalt).
+//   - OAuth 2.1: echte dynamische registratie (eigen client_id per registratie), PKCE S256 (tijdconstant vergeleken), refresh met
+//     rotatie en hergebruikdetectie (hele familie ingetrokken). Tokens staan alleen als sha256-hash op schijf. Intrekken:
+//     /oauth/revoke, «Агенти → Токени й двері» op de site, of alles tegelijk via het root-bestand /etc/mijn-ruimte/mcp-intrekken
+//     (tijdstempel in ms: alles wat daarvóór is uitgegeven, vervalt).
+//   - Terugkeeradressen (RFC 8252): https van bekende AI-klanten (grok.com, x.ai, claude.ai, chatgpt.com, openai.com, vscode.dev),
+//     loopback (http://127.0.0.1|localhost|[::1], elke poort), eigen app-schema's (cursor://, vscode://, windsurf://) en wat de
+//     eigenaar zelf toevoegt in mcp-rechten.json («oauthRedirects»). Zelfde regels als shared/ai-verbinding.ts.
+//   - Toestemming «in één klik»: GET /oauth/authorize stuurt de browser naar het venster «Дозволити» van de site (bestaande
+//     aanmelding van de eigenaar, verse bevestiging). De site praat met deze deur via /intern/* (alleen loopback, niet in de
+//     tunnelregel, plus een willekeurige sleutel die deze dienst bij elke start in mcp-state/intern.sleutel zet). De oude weg met het
+//     deurtoken (formulier) blijft: /oauth/authorize?…&methode=token.
+//   - Duur per AI (keuze van de eigenaar): 1 uur … onbeperkt; het toegangstoken is aan de deur gebonden (/Grok ≠ /claude).
+//   - Agenttokens van de site (tvh_…, «Підключити вручну») werken ook als Bearer: de site bevestigt ze (alleen van de eigenaar).
 import { createServer, request as httpRequest } from "node:http";
 import { createHash, timingSafeEqual, randomBytes } from "node:crypto";
 import { readFile, readdir, realpath, stat, open, rename, unlink, mkdir } from "node:fs/promises";
@@ -29,6 +38,15 @@ const UITROL_STATUS = process.env.MCP_UITROL_STATUS || "/var/lib/mijn-ruimte-uit
 const RELEASES_DIR = process.env.MCP_RELEASES_DIR || "/srv/mijn-ruimte/releases";
 const HEALTH_URL = process.env.MCP_HEALTH_URL || "http://127.0.0.1:8080/__gezondheid";
 const ISSUER = process.env.MCP_ISSUER || "https://mcp.tarasevych.com";
+const ISSUER_HOST = new URL(ISSUER).host;
+const APP_URL = process.env.MCP_APP_URL || "http://127.0.0.1:8080";
+const INTERN_FILE = process.env.MCP_INTERN_SLEUTEL || path.join(path.dirname(STATE_FILE), "intern.sleutel");
+/** Deuren (pad zonder hoofdlettergevoeligheid → naam zoals in de tunnelregel). */
+const DEUREN = new Map([["grok", "Grok"], ["claude", "claude"], ["chatgpt", "chatgpt"], ["gemini", "gemini"], ["copilot", "copilot"]]);
+/** Duur per verbinding [toegang s, refresh dagen]; 0 = tot intrekken. Zelfde ids als shared/ai-verbinding.ts. */
+const DUREN = Object.freeze({ "1u": [3600, 14], "8u": [8 * 3600, 30], "1d": [86400, 30], "7d": [7 * 86400, 90], "30d": [30 * 86400, 180], altijd: [0, 0] });
+const NOOIT_MS = 100 * 365 * 86_400_000;
+const duurMs = (id) => { const [a, r] = DUREN[id] || DUREN["1u"]; return { access: a ? a * 1000 : NOOIT_MS, refresh: r ? r * 86_400_000 : NOOIT_MS }; };
 
 export const LIMIETEN = Object.freeze({
   MAX_BODY: 1024 * 1024,
@@ -47,7 +65,11 @@ const BLOCK = /(^|\/)(\.env|geheimen\.env|.*\.(age|pem|key|token|secret)|id_rsa|
 
 // ---------------------------------------------------------------------------------------------- toestand (alleen hashes)
 const codes = new Map();
-let state = { clients: {}, access: {}, refresh: {}, families: {} };
+/** Openstaande autorisatieverzoeken (rid = mrd_…), 10 minuten: wachten op «Дозволити» op de site of op het deurtoken. */
+const verzoeken = new Map();
+const VERZOEK_TTL = 10 * 60 * 1000;
+// grants: per familie (één toestemming) klant, deur, duur, wie toestond en laatst gebruikt — nooit tokens.
+let state = { clients: {}, access: {}, refresh: {}, families: {}, grants: {} };
 const sha = (value) => createHash("sha256").update(String(value)).digest("hex");
 const b64url = (buf) => Buffer.from(buf).toString("base64url");
 const s256 = (verifier) => createHash("sha256").update(verifier).digest("base64url");
@@ -82,11 +104,11 @@ function loadState() {
       const fam = b64url(randomBytes(9));
       refresh[sha(token)] = { exp: Math.min(row.exp, now + 30 * 86_400_000), clientId: "legacy-grok", fam, iat: now };
     }
-    state = { clients: { "legacy-grok": { redirects: [], createdAt: now, legacy: true } }, access: {}, refresh, families: {} };
+    state = { clients: { "legacy-grok": { redirects: [], createdAt: now, legacy: true } }, access: {}, refresh, families: {}, grants: {} };
     saveState();
     return;
   }
-  state = { clients: data.clients || {}, access: data.access || {}, refresh: data.refresh || {}, families: data.families || {} };
+  state = { clients: data.clients || {}, access: data.access || {}, refresh: data.refresh || {}, families: data.families || {}, grants: data.grants || {} };
 }
 function revokedBefore() {
   try { const n = Number(readFileSync(INTREKKEN_FILE, "utf8").trim()); return Number.isFinite(n) ? n : 0; } catch { return 0; }
@@ -95,6 +117,10 @@ function prune() {
   const now = Date.now();
   for (const bag of [state.access, state.refresh]) for (const [k, v] of Object.entries(bag)) if (!(v.exp > now)) delete bag[k];
   for (const [k, v] of codes) if (!(v.exp > now)) codes.delete(k);
+  for (const [k, v] of verzoeken) if (!(v.exp > now)) verzoeken.delete(k);
+  // grantgegevens zonder enig levend token zijn klaar
+  const levend = new Set([...Object.values(state.access), ...Object.values(state.refresh)].map((t) => t.fam));
+  for (const fam of Object.keys(state.grants)) if (!levend.has(fam)) delete state.grants[fam];
 }
 function tokenValid(row) {
   if (!row || !(row.exp > Date.now())) return false;
@@ -111,6 +137,12 @@ export function rechten() {
     for (const key of Object.keys(out)) if (typeof data[key] === "boolean") out[key] = data[key];
   } catch { /* ontbreekt: standaard (lezen aan, uitrol uit) */ }
   return out;
+}
+/** Extra terugkeeradressen die de eigenaar zelf toestaat («oauthRedirects» in het root-bestand; exacte URI of voorvoegsel op «/»). */
+function extraRedirects() {
+  let lijst = [];
+  try { const data = JSON.parse(readFileSync(RECHTEN_FILE, "utf8")); if (Array.isArray(data.oauthRedirects)) lijst = data.oauthRedirects.filter((x) => typeof x === "string" && x.length <= 300).slice(0, 20); } catch { /* geen bestand */ }
+  return [...lijst, `${ISSUER}/oauth-terug`];
 }
 
 // ---------------------------------------------------------------------------------------------- hulpfuncties
@@ -131,18 +163,95 @@ async function fileTokenOk(got) {
   try { return sameText((await readFile(TOKEN_FILE, "utf8")).trim(), got); } catch { return false; }
 }
 const bearer = (header) => String(header || "").replace(/^Bearer\s+/i, "").trim();
-function resolveAuth(header) {
+let laatsteBewaring = 0;
+/** Toegang voor deze deur: een OAuth-token van deze deur (of van vóór de deurbinding), of een agenttoken tvh_ van de eigenaar. */
+async function resolveAuth(header, deur) {
   const got = bearer(header);
   if (!got || got.length > 200) return null;
+  if (got.startsWith("tvh_")) return paneelToken(got, deur);
   const row = state.access[sha(got)];
-  return tokenValid(row) ? { clientId: row.clientId } : null;
+  if (!tokenValid(row)) return null;
+  if (row.door && row.door !== deur) return null;
+  const g = state.grants[row.fam];
+  if (g) { g.lastUsedAt = Date.now(); if (Date.now() - laatsteBewaring > 60_000) { laatsteBewaring = Date.now(); saveState(); } }
+  return { clientId: row.clientId, naam: g?.clientName || state.clients[row.clientId]?.name || row.clientId };
 }
-function redirectOk(uri) {
-  let u;
-  try { u = new URL(uri); } catch { return false; }
-  if (u.protocol !== "https:" || u.username || u.password || u.hash) return false;
-  const host = u.hostname;
-  return host === "grok.com" || host === "x.ai" || host.endsWith(".grok.com") || host.endsWith(".x.ai");
+
+// Agenttokens van de site (tvh_…): de site controleert ze (hash, vervaldatum, eigenaar, AI niet geblokkeerd). 60 s in het geheugen.
+const paneelCache = new Map();
+async function paneelToken(token, deur) {
+  const key = sha(token); const now = Date.now();
+  const hit = paneelCache.get(key);
+  if (hit && hit.exp > now) return hit.ok ? { clientId: `tvh:${hit.id}`, naam: hit.naam } : null;
+  let ok = false, id = "", naam = "";
+  try {
+    const res = await appPost("/api/mcp/deur/token-check", { token, deur });
+    if (res.status === 200) { const d = JSON.parse(res.body); ok = d.ok === true; id = String(d.id || "").slice(0, 60); naam = String(d.naam || "agent").slice(0, 80); }
+  } catch { ok = false; }
+  if (paneelCache.size > 500) paneelCache.clear();
+  paneelCache.set(key, { ok, id, naam, exp: now + (ok ? 60_000 : 15_000) });
+  return ok ? { clientId: `tvh:${id}`, naam } : null;
+}
+
+// ---------------------------------------------------------------------------------------------- terugkeeradressen (RFC 8252)
+const WEB_HOSTS = ["claude.ai", "grok.com", "x.ai", "chatgpt.com", "openai.com", "vscode.dev"];
+const APP_SCHEMAS = ["cursor", "vscode", "vscode-insiders", "windsurf"];
+const LOOPBACK = new Set(["127.0.0.1", "localhost", "[::1]"]);
+/** 'web' | 'loopback' | 'app' | null — gelijk aan redirectSoort() in shared/ai-verbinding.ts (zelfde test). */
+export function redirectSoort(uri, extra = []) {
+  if (typeof uri !== "string" || uri.length > 2000 || /[\s<>"]/.test(uri)) return null;
+  let u; try { u = new URL(uri); } catch { return null; }
+  if (u.username || u.password || u.hash || uri.includes("#")) return null;
+  const schema = u.protocol.replace(/:$/, "");
+  for (const e of extra) {
+    if (!e || typeof e !== "string") continue;
+    if (uri === e || (e.endsWith("/") && uri.startsWith(e))) return schema === "https" ? "web" : schema === "http" ? (LOOPBACK.has(u.hostname) ? "loopback" : null) : APP_SCHEMAS.includes(schema) ? "app" : null;
+  }
+  if (schema === "https") { const host = u.hostname.toLowerCase(); return WEB_HOSTS.some((h) => host === h || host.endsWith(`.${h}`)) ? "web" : null; }
+  if (schema === "http") return LOOPBACK.has(u.hostname) ? "loopback" : null;
+  if (APP_SCHEMAS.includes(schema)) return u.host ? "app" : null;
+  return null;
+}
+const redirectOk = (uri) => redirectSoort(uri, extraRedirects()) !== null;
+/** Exact, behalve loopback: daar telt de poort niet mee (RFC 8252 §7.3). */
+function redirectPast(geregistreerd, gevraagd) {
+  if (geregistreerd.includes(gevraagd)) return true;
+  let r; try { r = new URL(gevraagd); } catch { return false; }
+  if (r.protocol !== "http:" || !LOOPBACK.has(r.hostname)) return false;
+  return geregistreerd.some((x) => { try { const g = new URL(x); return g.protocol === "http:" && LOOPBACK.has(g.hostname) && g.hostname === r.hostname && g.pathname === r.pathname && g.search === r.search; } catch { return false; } });
+}
+
+// ---------------------------------------------------------------------------------------------- site (hoofdapp) via loopback
+let internSleutel = "";
+function internSleutelMaken() {
+  internSleutel = b64url(randomBytes(32));
+  try {
+    mkdirSync(path.dirname(INTERN_FILE), { recursive: true, mode: 0o700 });
+    const tmp = `${INTERN_FILE}.${process.pid}.tmp`;
+    writeFileSync(tmp, `${internSleutel}\n`, { mode: 0o640 });
+    renameSync(tmp, INTERN_FILE);
+  } catch (err) { internSleutel = ""; process.stderr.write(`intern-sleutel ${err instanceof Error ? err.message : "error"} (toestemming via de site staat uit)\n`); }
+}
+function appPost(pad, data) {
+  return new Promise((resolve, reject) => {
+    if (!internSleutel) { reject(new Error("GEEN_SLEUTEL")); return; }
+    const body = JSON.stringify(data);
+    const req = httpRequest(new URL(pad, APP_URL), { method: "POST", timeout: 4000, headers: { host: ISSUER_HOST, "content-type": "application/json", "content-length": Buffer.byteLength(body), "x-mijn-ruimte-intern": internSleutel } }, (res) => {
+      const chunks = []; res.on("data", (c) => chunks.push(c));
+      res.on("end", () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString("utf8").slice(0, 8000) }));
+    });
+    req.on("error", reject);
+    req.on("timeout", () => req.destroy(new Error("TIMEOUT")));
+    req.end(body);
+  });
+}
+/** /intern/* alleen van de site zelf: geen verkeer via de tunnel (cf-koppen) en de juiste sleutel. */
+function internOk(req) {
+  if (!internSleutel) return false;
+  if (req.headers["cf-connecting-ip"] || req.headers["cf-ray"] || req.headers["x-forwarded-for"]) return false;
+  const addr = String(req.socket.remoteAddress || "");
+  if (addr !== "127.0.0.1" && addr !== "::1" && addr !== "::ffff:127.0.0.1") return false;
+  return sameText(internSleutel, String(req.headers["x-mijn-ruimte-intern"] || ""));
 }
 function esc(value) {
   return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\"", "&quot;").replaceAll("'", "&#39;");
@@ -287,8 +396,9 @@ async function handleRpc(msg) {
   const method = String(msg.method || "");
   if (id === null) return null;
   if (method === "initialize") {
-    const offered = msg.params?.protocolVersion;
-    return rpcResult(id, { protocolVersion: offered === "2024-11-05" ? offered : "2025-03-26", capabilities: { tools: { listChanged: false } }, serverInfo: { name: "mijn-ruimte", version: "2" } });
+    const offered = String(msg.params?.protocolVersion || "");
+    const versies = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
+    return rpcResult(id, { protocolVersion: versies.includes(offered) ? offered : "2025-03-26", capabilities: { tools: { listChanged: false } }, serverInfo: { name: "mijn-ruimte", version: "3" } });
   }
   if (method === "ping") return rpcResult(id, {});
   if (method === "tools/list") return rpcResult(id, { tools: TOOLS });
@@ -311,48 +421,85 @@ function metadata() {
     grant_types_supported: ["authorization_code", "refresh_token"],
     code_challenge_methods_supported: ["S256"],
     token_endpoint_auth_methods_supported: ["none"],
+    revocation_endpoint_auth_methods_supported: ["none"],
     scopes_supported: ["read"],
   };
 }
-function authorizePage(q, error) {
-  const client = state.clients[q.get("client_id") || ""];
-  const fields = ["response_type", "client_id", "redirect_uri", "state", "scope", "code_challenge", "code_challenge_method"].map((name) =>
-    `<input type="hidden" name="${name}" value="${esc(q.get(name) || "")}">`).join("");
-  let host = ""; try { host = new URL(q.get("redirect_uri") || "").hostname; } catch { host = "?"; }
-  return `<!doctype html><html lang="uk"><meta charset="utf-8"><title>Доступ до Mijn Ruimte / Toegang tot Mijn Ruimte</title>
-<body style="font-family:sans-serif;max-width:36rem;margin:3rem auto">
-<h1>Дозволити доступ «${esc(client?.name || "клієнт")}»?</h1>
-<p>Після дозволу ви повернетеся на <b>${esc(host)}</b>. Клієнт отримає лише читання поточного випуску і стан сайту (а якщо ви ввімкнули це на сервері — завантаження підписаного пакета). База даних і секрети сервера йому не віддаються. Доступ діє 1 годину й поновлюється до 14 днів; відкликати можна будь-коли.</p>
-<p lang="nl">Na toestemming gaat u terug naar <b>${esc(host)}</b>. De client krijgt alleen leestoegang tot de actieve release en de stand van de site (en, als u dat op de server hebt aangezet, het uploaden van een ondertekend pakket). Database en geheimen van de server krijgt hij niet. Toegang geldt 1 uur en wordt tot 14 dagen vernieuwd; intrekken kan altijd.</p>
-${error ? `<p style="color:#8a1f1f">${esc(error)}</p>` : ""}
+/** Deurnaam uit een padsegment (hoofdletters vrij), of null. */
+const deurVan = (segment) => (DEUREN.has(String(segment || "").toLowerCase()) ? String(segment).toLowerCase() : null);
+/** RFC 9728: `resource` is precies de URL die de klant gebruikt (zelfde hoofdletters als in het pad). */
+const resourceVoor = (segment) => `${ISSUER}/${segment}`;
+const prmVoor = (segment) => ({ resource: resourceVoor(segment), authorization_servers: [ISSUER], scopes_supported: ["read"], bearer_methods_supported: ["header"], resource_name: `Mijn Ruimte — ${DEUREN.get(segment.toLowerCase()) || segment}` });
+/** RFC 8707: alleen een resource van deze host met een bekende deur; geeft de deur terug, "" zonder resource, null bij fout. */
+function deurUitResource(resource) {
+  if (!resource) return "";
+  let u; try { u = new URL(resource); } catch { return null; }
+  if (`${u.protocol}//${u.host}` !== ISSUER || u.search || u.hash) return null;
+  const delen = u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+  return delen.length === 1 ? deurVan(delen[0]) : null;
+}
+const PKCE = /^[A-Za-z0-9_-]{43,128}$/;
+const SOORT_TEKST = { web: ["вебсайт", "website"], loopback: ["програма на цьому комп'ютері (localhost)", "programma op deze computer (localhost)"], app: ["застосунок на комп'ютері", "app op de computer"] };
+
+function handmatigePagina(v, rid, error) {
+  let host = ""; try { const u = new URL(v.redirect); host = u.host || u.protocol; } catch { host = "?"; }
+  const soort = SOORT_TEKST[v.soort] || ["?", "?"];
+  const deur = v.door ? (DEUREN.get(v.door) || v.door) : "усі двері / alle deuren";
+  return `<!doctype html><html lang="uk"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Доступ до Mijn Ruimte / Toegang tot Mijn Ruimte</title>
+<body style="font-family:system-ui,sans-serif;max-width:38rem;margin:2rem auto;padding:0 1rem;line-height:1.5">
+<h1 style="font-size:1.4rem">Дозволити доступ «${esc(v.clientName)}» до дверей ${esc(deur)}?</h1>
+<p>Після дозволу ви повернетеся на <b>${esc(host)}</b> (${esc(soort[0])}). Клієнт отримає лише читання поточного випуску і стан сайту (а якщо ви ввімкнули це на сервері — завантаження підписаного пакета). База даних і секрети сервера йому не віддаються. Доступ діє 1 годину й поновлюється до 14 днів; відкликати можна будь-коли.</p>
+<p lang="nl">Na toestemming gaat u terug naar <b>${esc(host)}</b> (${esc(soort[1])}). De client krijgt alleen leestoegang tot de actieve release en de stand van de site. Toegang geldt 1 uur en wordt tot 14 dagen vernieuwd; intrekken kan altijd.</p>
+<p><a href="${esc(`${ISSUER}/agents?consent=${rid}`)}" style="display:inline-block;padding:.6rem 1rem;border-radius:.5rem;background:#1f5fbf;color:#fff;text-decoration:none">Підтвердити на сайті в один клік / Op de site bevestigen</a></p>
+${error ? `<p role="alert" style="color:#8a1f1f">${esc(error)}</p>` : ""}
 <form method="post" action="/oauth/authorize">
-${fields}
-<label>Токен дверей / Deurtoken<br><input name="bridge_token" type="password" autocomplete="off" required style="width:100%"></label>
+<input type="hidden" name="verzoek" value="${esc(rid)}">
+<label>Або токен дверей вручну / Of het deurtoken handmatig<br><input name="bridge_token" type="password" autocomplete="off" required style="width:100%;padding:.4rem"></label>
 <p><button type="submit">Дозволити / Toestaan</button></p>
 </form></body></html>`;
 }
-function issuePair(clientId, fam) {
+/** CSP voor de handmatige pagina: form-action moet ook het terugkeeradres toelaten (Chrome controleert de redirect na POST). */
+function cspVoor(redirect) {
+  let doel = "";
+  try { const u = new URL(redirect); doel = u.protocol === "http:" || u.protocol === "https:" ? `${u.protocol}//${u.host}` : u.protocol; } catch { doel = ""; }
+  return `default-src 'none'; style-src 'unsafe-inline'; form-action 'self' ${doel}; frame-ancestors 'none'; base-uri 'none'`;
+}
+
+function issuePair(clientId, fam, duurId, door) {
   const access = b64url(randomBytes(32));
   const refresh = b64url(randomBytes(32));
   const now = Date.now();
   const family = fam || b64url(randomBytes(9));
-  state.access[sha(access)] = { exp: now + LIMIETEN.ACCESS_TTL, clientId, fam: family, iat: now };
-  state.refresh[sha(refresh)] = { exp: now + LIMIETEN.REFRESH_TTL, clientId, fam: family, iat: now };
+  const d = duurMs(duurId);
+  state.access[sha(access)] = { exp: now + d.access, clientId, fam: family, iat: now, ...(door ? { door } : {}) };
+  state.refresh[sha(refresh)] = { exp: now + d.refresh, clientId, fam: family, iat: now, ...(door ? { door } : {}) };
   prune(); saveState();
-  return { access_token: access, token_type: "Bearer", expires_in: LIMIETEN.ACCESS_TTL / 1000, refresh_token: refresh, scope: "read" };
+  return { access_token: access, token_type: "Bearer", expires_in: Math.floor(d.access / 1000), refresh_token: refresh, scope: "read" };
 }
 function revokeFamily(fam) {
   if (!fam) return;
   state.families[fam] = Date.now();
   for (const bag of [state.access, state.refresh]) for (const [k, v] of Object.entries(bag)) if (v.fam === fam) delete bag[k];
-  // familielijst begrenzen (oud genoeg = alle tokens ervan zijn toch verlopen)
-  for (const [k, at] of Object.entries(state.families)) if (Date.now() - at > LIMIETEN.REFRESH_TTL) delete state.families[k];
+  delete state.grants[fam];
+  // familielijst begrenzen (oud genoeg = alle tokens ervan zijn toch verlopen; onbeperkte families staan hier niet meer in)
+  for (const [k, at] of Object.entries(state.families)) if (Date.now() - at > 400 * 86_400_000) delete state.families[k];
   saveState();
 }
+/** Nieuwe eenmalige code voor een verzoek (na «Дозволити» op de site of na het deurtoken). */
+function codeVoor(v, duurId, wie) {
+  const code = b64url(randomBytes(32));
+  codes.set(sha(code), { challenge: v.challenge, redirect: v.redirect, exp: Date.now() + LIMIETEN.CODE_TTL, clientId: v.clientId, door: v.door || "", duur: DUREN[duurId] ? duurId : "1u", wie: wie || null });
+  const dest = new URL(v.redirect);
+  dest.searchParams.set("code", code);
+  if (v.state) dest.searchParams.set("state", v.state);
+  dest.searchParams.set("iss", ISSUER); // RFC 9207
+  return dest.toString();
+}
+const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization, content-type, mcp-protocol-version, mcp-session-id", "access-control-allow-methods": "GET, POST, DELETE, OPTIONS", "access-control-expose-headers": "mcp-session-id, www-authenticate", "access-control-max-age": "600" };
 function send(res, status, body, extra = {}) {
   const raw = typeof body === "string" ? body : JSON.stringify(body);
   const type = typeof body === "string" && body.startsWith("<!") ? "text/html; charset=utf-8" : "application/json; charset=utf-8";
-  const html = type.startsWith("text/html") ? { "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'", "x-frame-options": "DENY" } : {};
+  const html = type.startsWith("text/html") ? { "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'", "x-frame-options": "DENY" } : CORS;
   res.writeHead(status, { "content-type": type, "cache-control": "no-store", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer", ...html, ...extra });
   res.end(raw);
 }
@@ -368,8 +515,25 @@ function limited(req, key, max, windowMs) {
   const ip = String(req.headers["cf-connecting-ip"] || req.socket.remoteAddress || "?");
   const k = `${key}:${ip}`; const now = Date.now();
   const row = hits.get(k);
-  if (!row || now - row.start > windowMs) { hits.set(k, { start: now, n: 1 }); return false; }
+  if (!row || now - row.start > windowMs) { hits.set(k, { start: now, n: 1, windowMs }); return false; }
   row.n += 1; return row.n > max;
+}
+setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (now - v.start > v.windowMs) hits.delete(k); prune(); }, 60_000).unref();
+
+/** Grants (één per toestemming) voor de site: klant, deur, duur, wie, data — nooit tokens. */
+function verbindingen() {
+  prune();
+  const per = new Map();
+  for (const bag of [state.access, state.refresh]) for (const t of Object.values(bag)) {
+    if (!tokenValid(t)) continue;
+    const r = per.get(t.fam) || { accessTot: 0, refreshTot: 0, clientId: t.clientId, door: t.door || "" };
+    if (bag === state.access) r.accessTot = Math.max(r.accessTot, t.exp); else if (!t.used) r.refreshTot = Math.max(r.refreshTot, t.exp);
+    per.set(t.fam, r);
+  }
+  return [...per.entries()].map(([fam, r]) => {
+    const g = state.grants[fam] || {};
+    return { id: fam, klant: g.clientName || state.clients[r.clientId]?.name || "MCP-client", deur: r.door ? (DEUREN.get(r.door) || r.door) : "", duur: g.duur || "1u", aangemaakt: g.createdAt || 0, laatst: g.lastUsedAt || 0, accessTot: r.accessTot, refreshTot: r.refreshTot, wie: g.wie || null, via: g.via || "token" };
+  }).sort((a, b) => b.aangemaakt - a.aangemaakt).slice(0, 200);
 }
 
 const sessions = new Set();
@@ -377,17 +541,60 @@ export const server = createServer(async (req, res) => {
   const url = new URL(req.url || "/", "http://127.0.0.1");
   const pathName = url.pathname;
   try {
-    if (req.method === "GET" && (pathName === "/.well-known/oauth-authorization-server" || pathName === "/.well-known/openid-configuration")) { send(res, 200, metadata()); return; }
-    if (req.method === "GET" && pathName === "/.well-known/oauth-protected-resource") {
-      send(res, 200, { resource: `${ISSUER}/Grok`, authorization_servers: [ISSUER], scopes_supported: ["read"], bearer_methods_supported: ["header"] }); return;
+    // ---- intern: alleen de site zelf (loopback + sleutel), nooit via de tunnel
+    if (pathName.startsWith("/intern/")) {
+      if (!internOk(req)) { send(res, 404, { error: "NOT_FOUND" }); return; }
+      if (pathName === "/intern/verzoek" && req.method === "GET") {
+        const v = verzoeken.get(url.searchParams.get("rid") || "");
+        if (!v || v.exp <= Date.now()) { send(res, 404, { error: "VERZOEK_VERLOPEN" }); return; }
+        let host = ""; try { const u = new URL(v.redirect); host = u.host || u.protocol; } catch { host = ""; }
+        send(res, 200, { clientName: v.clientName, redirectHost: host, redirectSoort: v.soort, deur: v.door ? (DEUREN.get(v.door) || v.door) : "", resource: v.door ? resourceVoor(DEUREN.get(v.door) || v.door) : "", expiresAt: v.exp, scope: "read" }); return;
+      }
+      if (pathName === "/intern/besluit" && req.method === "POST") {
+        const d = JSON.parse(await readBody(req) || "{}");
+        const rid = String(d.rid || "");
+        const v = verzoeken.get(rid);
+        if (!v || v.exp <= Date.now()) { send(res, 404, { error: "VERZOEK_VERLOPEN" }); return; }
+        verzoeken.delete(rid);
+        const wie = d.wie && typeof d.wie === "object" ? { id: String(d.wie.id || "").slice(0, 80), email: String(d.wie.email || "").slice(0, 200) } : null;
+        if (d.approve !== true) {
+          const dest = new URL(v.redirect); dest.searchParams.set("error", "access_denied"); if (v.state) dest.searchParams.set("state", v.state);
+          process.stdout.write(`oauth geweigerd op de site client=${v.clientId} deur=${v.door || "-"}\n`);
+          send(res, 200, { redirect: dest.toString() }); return;
+        }
+        const duurId = DUREN[d.duur] ? String(d.duur) : "1u";
+        process.stdout.write(`oauth toegestaan op de site client=${v.clientId} deur=${v.door || "-"} duur=${duurId}\n`);
+        send(res, 200, { redirect: codeVoor({ ...v, via: "site" }, duurId, wie ? { ...wie, via: "site" } : { via: "site" }) }); return;
+      }
+      if (pathName === "/intern/verbindingen" && req.method === "GET") { send(res, 200, { verbindingen: verbindingen() }); return; }
+      if (pathName === "/intern/intrekken" && req.method === "POST") {
+        const d = JSON.parse(await readBody(req) || "{}");
+        const fam = String(d.id || "");
+        const bestond = verbindingen().some((x) => x.id === fam);
+        if (bestond) revokeFamily(fam);
+        send(res, bestond ? 200 : 404, { ok: bestond }); return;
+      }
+      send(res, 404, { error: "NOT_FOUND" }); return;
     }
+
+    if (req.method === "OPTIONS") { res.writeHead(204, { ...CORS, "cache-control": "no-store" }); res.end(); return; }
+
+    // ---- metadata (RFC 8414 / RFC 9728), ook met de deur in het pad (beide varianten die klanten proberen)
+    if (req.method === "GET" && (pathName === "/.well-known/oauth-authorization-server" || pathName === "/.well-known/openid-configuration")) { send(res, 200, metadata()); return; }
+    let m = /^\/\.well-known\/(oauth-authorization-server|openid-configuration)\/([^/]+)\/?$/.exec(pathName) || /^\/([^/]+)\/\.well-known\/(oauth-authorization-server|openid-configuration)\/?$/.exec(pathName);
+    if (req.method === "GET" && m) { send(res, deurVan(m[2]) || deurVan(m[1]) ? 200 : 404, deurVan(m[2]) || deurVan(m[1]) ? metadata() : { error: "NOT_FOUND" }); return; }
+    if (req.method === "GET" && pathName === "/.well-known/oauth-protected-resource") { send(res, 200, prmVoor("Grok")); return; }
+    m = /^\/\.well-known\/oauth-protected-resource\/([^/]+)\/?$/.exec(pathName) || /^\/([^/]+)\/\.well-known\/oauth-protected-resource\/?$/.exec(pathName);
+    if (req.method === "GET" && m) { if (!deurVan(m[1])) { send(res, 404, { error: "NOT_FOUND" }); return; } send(res, 200, prmVoor(m[1])); return; }
+
     if (pathName === "/oauth/register" && req.method === "POST") {
       if (limited(req, "register", 10, 3600_000)) { send(res, 429, { error: "slow_down" }); return; }
       const raw = await readBody(req);
-      const body = raw.trim().startsWith("{") ? JSON.parse(raw || "{}") : formBody(raw);
+      let body; try { body = raw.trim().startsWith("{") ? JSON.parse(raw || "{}") : formBody(raw); } catch { send(res, 400, { error: "invalid_client_metadata" }); return; }
       const asked = [].concat(body.redirect_uris || []);
       const redirects = asked.filter(redirectOk).slice(0, 5);
-      if (!redirects.length || redirects.length !== asked.length) { send(res, 400, { error: "invalid_redirect_uri" }); return; }
+      if (!redirects.length || redirects.length !== asked.length) { send(res, 400, { error: "invalid_redirect_uri", error_description: "Alleen bekende AI-klanten, loopback (localhost) en app-schema's (cursor://, vscode://); meer via oauthRedirects in mcp-rechten.json" }); return; }
+      if (body.token_endpoint_auth_method !== undefined && body.token_endpoint_auth_method !== "none") { send(res, 400, { error: "invalid_client_metadata", error_description: "token_endpoint_auth_method none" }); return; }
       prune();
       const ids = Object.keys(state.clients).filter((k) => !state.clients[k].legacy);
       if (ids.length >= LIMIETEN.MAX_CLIENTS) {
@@ -398,37 +605,63 @@ export const server = createServer(async (req, res) => {
         delete state.clients[victim];
       }
       const clientId = `mr_${b64url(randomBytes(18))}`;
-      const name = String(body.client_name || "MCP-client").replace(/[^\p{L}\p{N} ._-]/gu, "").slice(0, 60) || "MCP-client";
+      const name = String(body.client_name || "MCP-client").replace(/[^\p{L}\p{N} ()._-]/gu, "").slice(0, 60) || "MCP-client";
       state.clients[clientId] = { redirects, createdAt: Date.now(), name };
       saveState();
       send(res, 201, { client_id: clientId, client_id_issued_at: Math.floor(Date.now() / 1000), client_name: name, redirect_uris: redirects, token_endpoint_auth_method: "none", grant_types: ["authorization_code", "refresh_token"], response_types: ["code"], scope: "read" });
       return;
     }
-    const clientRedirectOk = (clientId, redirect) => { const c = state.clients[clientId]; return Boolean(c && !c.legacy && c.redirects.includes(redirect) && redirectOk(redirect)); };
+    const clientRedirectOk = (clientId, redirect) => { const c = state.clients[clientId]; return Boolean(c && !c.legacy && redirectPast(c.redirects, redirect) && redirectOk(redirect)); };
     if (pathName === "/oauth/authorize" && req.method === "GET") {
       const q = url.searchParams;
-      if (q.get("response_type") !== "code" || !clientRedirectOk(q.get("client_id") || "", q.get("redirect_uri") || "") || q.get("code_challenge_method") !== "S256" || !/^[A-Za-z0-9_-]{43,128}$/.test(q.get("code_challenge") || "")) {
-        send(res, 400, "<!doctype html><title>Помилка / Fout</title><p>Неповний або чужий запит входу. / Onvolledig of onbekend aanmeldverzoek.</p>"); return;
-      }
-      send(res, 200, authorizePage(q, "")); return;
+      // terug naar een bestaand verzoek (bv. «токен дверей вручну» vanaf de site)
+      const bestaand = verzoeken.get(q.get("verzoek") || "");
+      if (bestaand && bestaand.exp > Date.now()) { send(res, 200, handmatigePagina(bestaand, q.get("verzoek"), ""), { "content-security-policy": cspVoor(bestaand.redirect) }); return; }
+      if (q.get("verzoek")) { send(res, 400, "<!doctype html><title>Помилка / Fout</title><p>Запит застарів. Почніть підключення в клієнті ШІ знову. / Verzoek verlopen; begin opnieuw in de AI-client.</p>"); return; }
+      const clientId = q.get("client_id") || ""; const redirect = q.get("redirect_uri") || "";
+      // Bij een onbekende client of ongeldige redirect nooit redirecten (geen open redirect).
+      if (!clientRedirectOk(clientId, redirect)) { send(res, 400, "<!doctype html><title>Помилка / Fout</title><p>Неповний або чужий запит входу. / Onvolledig of onbekend aanmeldverzoek.</p>"); return; }
+      const terug = (error) => { const d = new URL(redirect); d.searchParams.set("error", error); if (q.get("state")) d.searchParams.set("state", q.get("state")); res.writeHead(302, { location: d.toString(), "cache-control": "no-store" }); res.end(); };
+      if (q.get("response_type") !== "code") { terug("unsupported_response_type"); return; }
+      if (q.get("code_challenge_method") !== "S256" || !PKCE.test(q.get("code_challenge") || "")) { terug("invalid_request"); return; }
+      const door = deurUitResource(q.get("resource") || "");
+      if (door === null) { terug("invalid_target"); return; }
+      if (verzoeken.size >= 50) { prune(); if (verzoeken.size >= 50) { send(res, 429, "<!doctype html><p>Забагато відкритих запитів. / Te veel openstaande verzoeken.</p>"); return; } }
+      const rid = `mrd_${b64url(randomBytes(24))}`;
+      const c = state.clients[clientId];
+      const v = { clientId, clientName: c.name || "MCP-client", redirect, soort: redirectSoort(redirect, extraRedirects()), challenge: q.get("code_challenge"), state: (q.get("state") || "").slice(0, 512), door, exp: Date.now() + VERZOEK_TTL };
+      verzoeken.set(rid, v);
+      if (q.get("methode") === "token") { send(res, 200, handmatigePagina(v, rid, ""), { "content-security-policy": cspVoor(redirect) }); return; }
+      // Eén klik: het venster «Дозволити» van de site (bestaande aanmelding van de eigenaar).
+      res.writeHead(302, { location: `${ISSUER}/agents?consent=${rid}`, "cache-control": "no-store" }); res.end(); return;
     }
     if (pathName === "/oauth/authorize" && req.method === "POST") {
       if (limited(req, "authorize", 10, 15 * 60_000)) { send(res, 429, "<!doctype html><p>Забагато спроб. / Te veel pogingen.</p>"); return; }
       const q = new URLSearchParams(await readBody(req));
-      const back = q.get("redirect_uri") || "";
-      const clientId = q.get("client_id") || "";
-      if (!clientRedirectOk(clientId, back) || q.get("code_challenge_method") !== "S256" || !/^[A-Za-z0-9_-]{43,128}$/.test(q.get("code_challenge") || "")) { send(res, 400, { error: "invalid_request" }); return; }
-      if (!(await fileTokenOk(q.get("bridge_token") || ""))) { send(res, 401, authorizePage(q, "Токен не підійшов. / Token klopt niet.")); return; }
-      const code = b64url(randomBytes(32));
-      codes.set(sha(code), { challenge: q.get("code_challenge"), redirect: back, exp: Date.now() + LIMIETEN.CODE_TTL, clientId });
-      const dest = new URL(back);
-      dest.searchParams.set("code", code);
-      if (q.get("state")) dest.searchParams.set("state", q.get("state"));
-      res.writeHead(302, { location: dest.toString(), "cache-control": "no-store" }); res.end(); return;
+      const rid = q.get("verzoek") || "";
+      let v = rid ? verzoeken.get(rid) : null;
+      if (rid && (!v || v.exp <= Date.now())) { send(res, 400, "<!doctype html><p>Запит застарів. / Verzoek verlopen.</p>"); return; }
+      if (!v) {
+        // oude vorm: alle parameters in het formulier
+        const clientId = q.get("client_id") || ""; const back = q.get("redirect_uri") || "";
+        if (!clientRedirectOk(clientId, back) || q.get("code_challenge_method") !== "S256" || !PKCE.test(q.get("code_challenge") || "")) { send(res, 400, { error: "invalid_request" }); return; }
+        const door = deurUitResource(q.get("resource") || "");
+        if (door === null) { send(res, 400, { error: "invalid_target" }); return; }
+        v = { clientId, clientName: state.clients[clientId].name || "MCP-client", redirect: back, soort: redirectSoort(back, extraRedirects()), challenge: q.get("code_challenge"), state: q.get("state") || "", door, exp: Date.now() + VERZOEK_TTL };
+      }
+      if (!(await fileTokenOk(q.get("bridge_token") || ""))) {
+        const nieuw = rid || `mrd_${b64url(randomBytes(24))}`;
+        if (!rid) verzoeken.set(nieuw, v);
+        send(res, 401, handmatigePagina(v, nieuw, "Токен не підійшов. / Token klopt niet."), { "content-security-policy": cspVoor(v.redirect) }); return;
+      }
+      if (rid) verzoeken.delete(rid);
+      process.stdout.write(`oauth toegestaan met deurtoken client=${v.clientId} deur=${v.door || "-"}\n`);
+      res.writeHead(302, { location: codeVoor(v, "1u", { via: "deurtoken" }), "cache-control": "no-store" }); res.end(); return;
     }
     if (pathName === "/oauth/token" && req.method === "POST") {
       if (limited(req, "token", 60, 15 * 60_000)) { send(res, 429, { error: "slow_down" }); return; }
-      const body = formBody(await readBody(req));
+      const raw = await readBody(req);
+      let body; try { body = raw.trim().startsWith("{") ? Object.fromEntries(Object.entries(JSON.parse(raw)).map(([k, v]) => [k, String(v)])) : formBody(raw); } catch { send(res, 400, { error: "invalid_request" }); return; }
       const id = String(body.client_id || "");
       if (!state.clients[id]) { send(res, 401, { error: "invalid_client" }); return; }
       if (body.grant_type === "refresh_token") {
@@ -443,7 +676,7 @@ export const server = createServer(async (req, res) => {
         if (row.used) { revokeFamily(row.fam); send(res, 400, { error: "invalid_grant" }); return; }
         // verbruikte tokens onthouden (als "used") zodat een tweede gebruik de familie intrekt
         state.refresh[key] = { ...row, used: true };
-        send(res, 200, issuePair(id, row.fam)); return;
+        send(res, 200, issuePair(id, row.fam, state.grants[row.fam]?.duur || "1u", row.door || "")); return;
       }
       if (body.grant_type !== "authorization_code") { send(res, 400, { error: "unsupported_grant_type" }); return; }
       const ckey = sha(body.code || "");
@@ -452,7 +685,9 @@ export const server = createServer(async (req, res) => {
       if (!row || row.exp <= Date.now() || row.redirect !== body.redirect_uri || row.clientId !== id || !body.code_verifier || !sameText(s256(String(body.code_verifier)), row.challenge)) {
         send(res, 400, { error: "invalid_grant" }); return;
       }
-      send(res, 200, issuePair(id)); return;
+      const fam = b64url(randomBytes(9));
+      state.grants[fam] = { clientId: id, clientName: state.clients[id]?.name || "MCP-client", door: row.door || "", duur: row.duur, createdAt: Date.now(), lastUsedAt: 0, wie: row.wie && (row.wie.id || row.wie.email) ? { id: row.wie.id || "", email: row.wie.email || "" } : null, via: row.wie?.via || "deurtoken" };
+      send(res, 200, issuePair(id, fam, row.duur, row.door || "")); return;
     }
     if (pathName === "/oauth/revoke" && req.method === "POST") {
       const body = formBody(await readBody(req));
@@ -461,32 +696,52 @@ export const server = createServer(async (req, res) => {
       if (row) revokeFamily(row.fam);
       send(res, 200, {}); return;
     }
-    if (req.method === "GET" && pathName === "/health") { send(res, 200, { ok: true, service: "mijn-ruimte-mcp", version: 2 }); return; }
-    const door = pathName.toLowerCase();
-    if (!new Set(["/grok", "/claude", "/chatgpt", "/gemini", "/copilot"]).has(door)) { send(res, 404, { error: "NOT_FOUND" }); return; }
-    const auth = resolveAuth(req.headers.authorization);
+    if (req.method === "GET" && pathName === "/health") { send(res, 200, { ok: true, service: "mijn-ruimte-mcp", version: 3, siteToestemming: Boolean(internSleutel) }); return; }
+
+    // ---- de deuren zelf (Streamable HTTP, JSON-antwoorden)
+    const segment = pathName.replace(/^\/+|\/+$/g, "");
+    const door = segment.includes("/") ? null : deurVan(segment);
+    if (!door) { send(res, 404, { error: "NOT_FOUND" }); return; }
+    const auth = await resolveAuth(req.headers.authorization, door);
     if (!auth) {
-      send(res, 401, { error: "UNAUTHORIZED" }, { "www-authenticate": `Bearer realm="mijn-ruimte", resource_metadata="${ISSUER}/.well-known/oauth-protected-resource"` }); return;
+      const metToken = Boolean(bearer(req.headers.authorization));
+      send(res, 401, { error: metToken ? "invalid_token" : "UNAUTHORIZED" }, { "www-authenticate": `Bearer realm="mijn-ruimte"${metToken ? ", error=\"invalid_token\"" : ""}, resource_metadata="${ISSUER}/.well-known/oauth-protected-resource/${segment}", scope="read"` }); return;
     }
-    if (req.method === "DELETE") { res.writeHead(204); res.end(); return; }
-    if (req.method !== "POST") { send(res, 405, { error: "POST_ONLY" }); return; }
+    if (req.method === "DELETE") { res.writeHead(204, CORS); res.end(); return; }
+    if (req.method !== "POST") { send(res, 405, { error: "POST_ONLY" }, { allow: "POST, DELETE" }); return; }
     let msg;
     try { msg = JSON.parse(await readBody(req) || "{}"); }
     catch (err) {
       if (err instanceof Error && err.message === "TOO_LARGE") { send(res, 413, { error: "TOO_LARGE" }); return; }
       send(res, 400, rpcError(null, -32700, "PARSE_ERROR")); return;
     }
-    if (msg && msg.method && msg.id === undefined) { res.writeHead(202); res.end(); return; }
-    const sid = String(req.headers["mcp-session-id"] || "");
     const extra = {};
-    if (msg.method === "initialize") { const sidNew = randomBytes(16).toString("hex"); sessions.add(sidNew); if (sessions.size > 1000) sessions.delete(sessions.values().next().value); extra["mcp-session-id"] = sidNew; }
-    else if (sid && !sessions.has(sid)) { send(res, 404, rpcError(msg.id ?? null, -32001, "SESSION_NOT_FOUND")); return; }
-    const result = await handleRpc(msg);
-    if (msg.method === "tools/call") process.stdout.write(`tools/call ${String(msg.params?.name || "").slice(0, 60)} client=${auth.clientId} ${result?.result?.isError ? "fout" : "ok"}\n`);
-    send(res, 200, result, extra);
+    // Sessies dragen hier geen toestand: een onbekende sessie-id (bv. na een herstart) gewoon opnieuw opnemen in plaats van 404,
+    // zodat klanten die parallel initialiseren of na een herstart doorgaan niet afbreken.
+    const sid = String(req.headers["mcp-session-id"] || "");
+    const berichten = Array.isArray(msg) ? msg.slice(0, 50) : [msg];
+    if (berichten.some((b) => b && b.method === "initialize")) { const sidNew = randomBytes(16).toString("hex"); sessions.add(sidNew); extra["mcp-session-id"] = sidNew; }
+    else if (/^[a-f0-9]{32}$/.test(sid)) sessions.add(sid);
+    while (sessions.size > 1000) sessions.delete(sessions.values().next().value);
+    const uit = [];
+    for (const b of berichten) {
+      if (!b || typeof b !== "object") { uit.push(rpcError(null, -32600, "INVALID_REQUEST")); continue; }
+      const r = await handleRpc(b);
+      if (b.method === "tools/call") process.stdout.write(`tools/call ${String(b.params?.name || "").slice(0, 60)} deur=${door} client=${auth.clientId} ${r?.result?.isError ? "fout" : "ok"}\n`);
+      if (r) uit.push(r);
+    }
+    if (!uit.length) { res.writeHead(202, { ...CORS, ...extra }); res.end(); return; }
+    send(res, 200, Array.isArray(msg) ? uit : uit[0], extra);
   } catch (err) {
     if (!res.headersSent) send(res, err instanceof Error && err.message === "TOO_LARGE" ? 413 : 500, { error: "SERVER_ERROR" });
   }
 });
+// 502 via de tunnel voorkomen: cloudflared houdt verbindingen 90 s open (originRequest.keepAliveTimeout). Sluit Node een rustige
+// verbinding eerder (standaard 5 s), dan stuurt cloudflared soms een verzoek over een net gesloten verbinding → 502. Dus langer.
+server.keepAliveTimeout = 120_000;
+server.headersTimeout = 125_000;
+server.requestTimeout = 300_000;
+server.on("clientError", (err, socket) => { if (socket.writable) socket.end("HTTP/1.1 400 Bad Request\r\nconnection: close\r\n\r\n"); else socket.destroy(); });
 loadState();
+internSleutelMaken();
 server.listen(PORT, HOST, () => { process.stdout.write(`mijn-ruimte-mcp ${HOST}:${PORT}\n`); });
