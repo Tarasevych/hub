@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Copy, ExternalLink, KeyRound, SlidersHorizontal, Trash2, Wrench } from 'lucide-react';
 import { api } from '../platform/client';
+import { canonicalNavigationUrl } from '../canonical-navigation';
 import { sessionBody, type ToolCall } from '../agents-data';
 import { Logo, Section, type Tr } from '../mcp-ui';
 import McpToolsPanel, { ToolApprovals } from '../McpToolsPanel';
@@ -147,8 +148,8 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
       {beleidActief ? (
         // Eén plek: met een ondertekend beleid beslist alleen dat beleid; geen tweede set schakelaars die ermee botst.
         <section className='ag-kaart' id='ag-ai-hulpmiddelen' data-beleid-actief='1'>
-          <div className='ag-kaart-kop'><h3>{tr('Що ШІ може робити', 'Wat de AI mag')}</h3><a href='#beleid' className='ag-link'>{tr('Доступ ШІ за підписом', 'AI-toegang met handtekening')} <ExternalLink size={14} aria-hidden='true' /></a></div>
-          <p className='ag-leeg'>{tr('Дозволи кожного ШІ (з таймерами) керуються лише у вкладці «Доступ ШІ за підписом» і змінюються тільки з вашим passkey. Окремих перемикачів тут більше немає, щоб нічого не суперечило.', 'De rechten van elke AI (met timers) staan alleen op het tabblad «AI-toegang met handtekening» en veranderen alleen met uw passkey. Hier zijn geen aparte schakelaars meer, zodat niets elkaar tegenspreekt.')}</p>
+          <div className='ag-kaart-kop'><h3>{tr('Що ШІ може робити', 'Wat de AI mag')}</h3><a href={canonicalNavigationUrl('admin', 'ai', tr('uk', 'nl') === 'uk' ? 'uk' : 'nl')} className='ag-link' data-beleid-link='admin'>{tr('Доступ ШІ за підписом (технічний профіль)', 'AI-toegang met handtekening (technisch profiel)')} <ExternalLink size={14} aria-hidden='true' /></a></div>
+          <p className='ag-leeg'>{tr('Дозволи кожного ШІ (з таймерами) керуються лише в Адміністрування → «Доступ ШІ» (технічний профіль) і змінюються тільки з вашим passkey. Окремих перемикачів тут більше немає, щоб нічого не суперечило.', 'De rechten van elke AI (met timers) staan alleen in Beheer → «AI-toegang» (technisch profiel) en veranderen alleen met uw passkey. Hier zijn geen aparte schakelaars meer, zodat niets elkaar tegenspreekt.')}</p>
         </section>
       ) : (
         <Section id='ag-ai-hulpmiddelen' icon={<SlidersHorizontal />} title={tr('Що ШІ може робити на сайті', 'Wat de AI op de site mag')} subtitle={tr('Кожен інструмент: завжди, питати або вимкнено. Діє, доки не встановлено підписану політику доступу ШІ.', 'Elk hulpmiddel: altijd, vragen of uit. Geldt tot het ondertekende AI-beleid is geïnstalleerd.')} defaultOpen={item === 'hulpmiddelen'}>

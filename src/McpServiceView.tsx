@@ -5,12 +5,14 @@ import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalog";
 import { ExpertMelding, RichtingBand } from "./weergave/Weergave";
 import { useWeergave } from "./weergave/weergave-store";
 import { isExpertTab } from "../shared/weergave";
+import { isBeheerPagina } from "../shared/beheer-paginas";
 import McpAgentsHub from "./McpAgentsHub";
 import McpAppsView from "./McpAppsView";
 import { foutTekst } from "./agenten/fouten";
 import McpConsentModal from "./McpConsentModal";
 import McpBackupsCard from "./McpBackupsCard";
 import McpServerBeheerCard from "./McpServerBeheerCard";
+import DeurSchakelaars from "./agenten/DeurSchakelaars";
 import "./mcp-estate.css";
 
 type Lang = "uk" | "nl";
@@ -248,7 +250,8 @@ export default function McpServiceView({ lang, tab }: Props) {
   }, [archive.state]);
 
   // Etap 3: «простий/розширений» (alleen weergave). Een onderdeel uit «розширений» via een link: uitleg + één klik, geen inhoud.
-  const verborgen = weergave.modus === "eenvoudig" && isExpertTab("mcp", section);
+  // Beheerpagina's (technische ruimte) volgen de modus простий/розширений niet: die modus is van de accountruimte.
+  const verborgen = weergave.modus === "eenvoudig" && isExpertTab("mcp", section) && !isBeheerPagina("mcp", section);
   return (
     <div className="mcp-estate" data-mcp-tab={section} data-weergave-modus={weergave.modus ?? "onbekend"}>
       <McpConsentModal tr={t} />
@@ -304,6 +307,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             </form>
           </header>
           <McpServerBeheerCard tr={t} />
+          <DeurSchakelaars tr={t} />
           <article className="mcp-card">
             <div className="mcp-row"><h2>{t("Здоров’я сервісів", "Gezondheid van de diensten")}</h2><span className="mcp-kicker">{probes.length ? `${probes.filter((p) => p.ok).length}/${probes.length}` : t("перевіряю…", "controleren…")}</span></div>
             <ul className="mbk-files">

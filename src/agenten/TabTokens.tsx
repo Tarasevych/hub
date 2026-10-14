@@ -1,12 +1,12 @@
 // «Токени й двері»: AI koppelen (automatisch in één klik of handmatig met een token, zie AiVerbinden.tsx), agenttokens als rijen,
-// verbindingen via de MCP-deur (OAuth van de deur, intrekbaar) en de schakelaars van de deur (alleen lezen: root-bestand op de server).
+// verbindingen via de MCP-deur (OAuth van de deur, intrekbaar). De schakelaars van de deur (root-bestand op de server) zijn sitebeheer:
+// zie DeurSchakelaars op mcp.*/dashboard (technisch profiel), niet hier in de accountruimte.
 import { useCallback, useEffect, useState } from 'react';
-import { DoorOpen, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { api } from '../platform/client';
 import { sessionBody } from '../agents-data';
-import { Help, Logo, Section, type Tr } from '../mcp-ui';
+import { Logo, type Tr } from '../mcp-ui';
 import { aiLogo, isoMs, type DeurToken } from './data';
-import { SWITCHES } from './deur';
 import { Badge, datum, exact, gebruiktBinnen, GevaarKnop, Groep, Melding, Rij, Tech, useActies } from './ui';
 import AiVerbinden from './AiVerbinden';
 import { duur as duurVan } from '../../shared/ai-verbinding';
@@ -15,7 +15,7 @@ type DeurVerbinding = { id: string; klant: string; deur: string; duur: string; a
 
 type Data = { tokens: DeurToken[]; rechten: Record<string, boolean>; catalogus: Array<{ id: string; uk: string; nl: string; group?: string }>; bestand: string };
 
-export default function TabTokens({ tr, beheer = false, data, naActie, item, kies }: { tr: Tr; beheer?: boolean; data: Data | null; naActie: () => Promise<void>; item: string; kies: (id: string) => void }) {
+export default function TabTokens({ tr, data, naActie, item, kies }: { tr: Tr; data: Data | null; naActie: () => Promise<void>; item: string; kies: (id: string) => void }) {
   const acties = useActies(tr);
   const mag = !data || data.rechten.tokens !== false;
   // Verbindingen via de MCP-deur (alleen de eigenaar van de server ziet ze; anderen krijgen 403 en zien de lijst niet).
@@ -95,15 +95,6 @@ export default function TabTokens({ tr, beheer = false, data, naActie, item, kie
         </div>
       ) : null}
 
-      {beheer ? <Section id='ag-deuren' icon={<DoorOpen />} title={tr('Двері: що дозволено агентам', 'Deur: wat agenten mogen')} subtitle={tr('Лише показ. Змінює тільки власник сервера у файлі (root).', 'Alleen weergave. Alleen de eigenaar van de server wijzigt dit in het bestand (root).')} defaultOpen={false}>
-        {data ? (
-          <table className='ai-tabel ag-deuren'>
-            <thead><tr><th scope='col'>{tr('Перемикач', 'Schakelaar')}</th><th scope='col'>{tr('Стан', 'Stand')}</th></tr></thead>
-            <tbody>{[...SWITCHES.map((s) => s.id), ...data.catalogus.map((p) => p.id).filter((id) => !SWITCHES.some((s) => s.id === id))].map((id) => { const l = SWITCHES.find((s) => s.id === id); const r = data.catalogus.find((p) => p.id === id); const p = { id, uk: r?.uk || l?.uk || id, nl: r?.nl || l?.nl || id, uitleg: l ? { title: tr(l.uk, l.nl), on: tr(l.onUk, l.onNl), off: tr(l.offUk, l.offNl) } : null }; return <tr key={p.id} data-deur={p.id}><td>{tr(p.uk, p.nl)} {p.uitleg ? <Help tr={tr} content={p.uitleg} /> : null} <code className='hub-meta'>{p.id}</code></td><td><Badge toon={data.rechten[p.id] ? 'ok' : 'off'}>{data.rechten[p.id] ? tr('увімкнено', 'aan') : tr('вимкнено', 'uit')}</Badge></td></tr>; })}</tbody>
-          </table>
-        ) : null}
-        {data?.bestand ? <p className='hub-meta'>{tr('Файл', 'Bestand')}: <code>{data.bestand}</code></p> : null}
-      </Section> : null}
     </div>
   );
 }
