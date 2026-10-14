@@ -9,6 +9,8 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { getPool } from '../server/platform/pg';
 import { isDuurId, klantVan, redirectPast, redirectSoort, SITE_TERUG_PAD, type DuurId } from '../shared/ai-verbinding';
+import { connectGeweigerd, toolGeweigerd, type WeigerCode } from '../shared/ai-agent-bord';
+import { leesGebruikerCaps, leesStaat } from './ai-site-schakelaars';
 import { extraRedirects, leesDuren } from './ai-verbinding-instellingen';
 import { rateLimit, type RouterResponse } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
@@ -161,7 +163,7 @@ export async function consentInfo(rid: string, userId?: string) {
   };
 }
 
-export type ConsentResult = { redirect: string } | { error: 'EXPIRED' | 'GRANT_LIMIT' };
+export type ConsentResult = { redirect: string } | { error: 'EXPIRED' | 'GRANT_LIMIT' | WeigerCode };
 
 /**
  * `ruimte` (shared/ai-ruimte.ts): in welke webruimte de mens «Дозволити» drukte. 'technisch' mag de route alleen doorgeven voor de
@@ -173,6 +175,11 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
   if (!approve) {
     const done = await st.decideAuth(rid, userId, false, null);
     return done ? { redirect: withRedirect(a.redirect_uri, { error: 'access_denied', state: a.state }) } : { error: 'EXPIRED' };
+  }
+  // Стеля сайту (0043): вимкнений агент або спосіб MCP не отримує приватний дозвіл. Технічний простір цим не ріжеться.
+  if (ruimteOf(ruimte) === 'prive') {
+    const w = connectGeweigerd(await leesStaat(), { ruimte: 'prive', klant: klantVan(a.client_name), methode: 'mcp' });
+    if (w) return { error: w.code };
   }
   if ((await st.countActiveGrants(userId)) >= st.LIMITS.maxActiveGrantsPerUser) return { error: 'GRANT_LIMIT' };
   const code = randomToken(32);
@@ -349,7 +356,15 @@ async function handleMessage(who: Wie, msg: any): Promise<unknown | null> {
     case 'ping': return rpcResult(id, {});
     case 'tools/list': {
       // Alleen de hulpmiddelen van de eigen ruimte (shared/ai-ruimte.ts); apparaattools filteren verder op de ruimte van het apparaat.
-      const tools = (await metNamens(namensVan(who), () => listTools(who.userId, { alwaysMachine: true }))).filter((t) => toolInRuimte(t.name, who.ruimte)).map(toMcpTool);
+      // Приватне підключення додатково втрачає те, що адміністратор або сам користувач вимкнув (shared/ai-agent-bord.ts).
+      let listed = (await metNamens(namensVan(who), () => listTools(who.userId, { alwaysMachine: true }))).filter((t) => toolInRuimte(t.name, who.ruimte));
+      if (who.ruimte === 'prive') {
+        const staat = await leesStaat();
+        const klant = klantVan(who.clientName);
+        const gebruiker = klant === 'overig' ? undefined : (await leesGebruikerCaps(who.userId))[klant];
+        listed = listed.filter((t) => !toolGeweigerd(staat, { ruimte: 'prive', tool: t.name, klant, gebruiker }));
+      }
+      const tools = listed.map(toMcpTool);
       // Updates voorbereiden: alleen in de technische ruimte én met een grant van de eigenaar; goedkeuren bestaat hier niet.
       if (who.ruimte === 'technisch' && (await heeftVoorbereiderGrant(uitrolOnderwerpen(who)))) tools.push(...UITROL_TOOLS.map((t) => toMcpTool(t as unknown as ToolDef)));
       return rpcResult(id, { tools });
@@ -364,6 +379,17 @@ async function handleMessage(who: Wie, msg: any): Promise<unknown | null> {
         const uit = { content: [{ type: 'text' as const, text: RUIMTE_GESCHEIDEN(who.ruimte, name.slice(0, 80)) }], isError: true };
         try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { ...werkDetails(who, name, args), reden: 'ruimte' } }); } catch { /* audit mag niet breken */ }
         return rpcResult(id, uit);
+      }
+      if (who.ruimte === 'prive') {
+        const staat = await leesStaat();
+        const klant = klantVan(who.clientName);
+        const gebruiker = klant === 'overig' ? undefined : (await leesGebruikerCaps(who.userId))[klant];
+        const w = toolGeweigerd(staat, { ruimte: 'prive', tool: name, klant, gebruiker });
+        if (w) {
+          const tekst = `SITE_CAP: ${w.code}. This private connection cannot use "${name.slice(0, 80)}". An administrator switch or this user's own setting blocks it. Do not try another way.`;
+          try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { ...werkDetails(who, name, args), reden: w.code } }); } catch { /* audit mag niet breken */ }
+          return rpcResult(id, { content: [{ type: 'text' as const, text: tekst }], isError: true });
+        }
       }
       if (UITROL_TOOL_NAMEN.has(name) || isGoedkeurPoging(name)) {
         let uit: { content: Array<{ type: 'text'; text: string }>; isError?: boolean };

@@ -20,6 +20,8 @@ import type { RouterMiddleware } from "../server/platform/router";
 import { alsGebruiker } from "./ai-grants";
 import { huidigeNamens, metNamens } from "./mcp-namens";
 import { ruimteUitVerzoek } from "./ai-ruimte-poort";
+import { leesStaat } from "./ai-site-schakelaars";
+import { connectGeweigerd, klantUit } from "../shared/ai-agent-bord";
 import { RUIMTE_GESCHEIDEN, ruimteOf, toolInRuimte } from "../shared/ai-ruimte";
 import { beslissing, weigerTekst } from "./ai-beleid";
 import { gedelegeerdeSessie } from "./site-dispatch";
@@ -134,6 +136,19 @@ const iso = (v: unknown) => (v ? new Date(v as string).toISOString() : "");
 const taskOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, status: r.status, tags: r.tags || [], service: "mcp", author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at) });
 const noteOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, tags: r.tags || [], author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at) });
 const tokenOut = (r: any) => ({ id: r.id, name: r.name, prefix: r.prefix, scopes: r.scopes, createdAt: iso(r.created_at), expiresAt: iso(r.expires_at), revokedAt: iso(r.revoked_at), calls: Number(r.calls || 0), lastSeenAt: iso(r.last_seen_at), ruimte: ruimteOf(r.ruimte) });
+
+/** Приватний токен з дошки ШІ. Завжди ruimte=prive. Секрет повертається один раз; списки його не містять. */
+export async function issuePriveToken(userId: string, name: string) {
+  const raw = `tvh_${randomBytes(24).toString("base64url")}`;
+  const row = await alsGebruiker(userId, async (q) => {
+    const active = Number((await q("SELECT count(*)::int AS n FROM app.mcp_console_tokens WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > now()", [userId])).rows[0].n);
+    if (active >= MCP_CONSOLE_LIMITS.tokensPerUser) return null;
+    return (await q(`INSERT INTO app.mcp_console_tokens (user_id, name, prefix, token_hash, expires_at, ruimte) VALUES ($1, $2, $3, $4, now() + interval '${MCP_CONSOLE_LIMITS.tokenDays} days', 'prive') RETURNING *`,
+      [userId, name.slice(0, 80), raw.slice(0, 12), sha(raw)])).rows[0];
+  });
+  if (!row) throw new Error("TOKEN_LIMIT_REACHED");
+  return { ...tokenOut(row), token: raw };
+}
 
 async function board(userId: string) {
   return alsGebruiker(userId, async (q) => {
@@ -599,6 +614,11 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       // Ruimte van het token (0042): 'prive' (eigen ruimte) of 'technisch' (alleen eigenaar met actief technisch profiel). De AI kiest dit nooit zelf.
       const poort = await ruimteUitVerzoek(auth.user, bodyOf(ctx.body));
       if ("fout" in poort) return error(poort.fout, poort.status);
+      // Приватний токен: стеля сайту й каталог способів. Технічний токен тут не ріжеться.
+      if (poort.ruimte === "prive") {
+        const w = connectGeweigerd(await leesStaat(), { ruimte: "prive", klant: klantUit(bodyOf(ctx.body).klant, name), methode: "token" });
+        if (w) return error(w.code, 403);
+      }
       const raw = `tvh_${randomBytes(24).toString("base64url")}`;
       const row = await alsGebruiker(auth.user.id, async (q) => {
         const active = Number((await q("SELECT count(*)::int AS n FROM app.mcp_console_tokens WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > now()", [auth.user.id])).rows[0].n);
