@@ -196,7 +196,7 @@ export function Isolatie({ uk }: { uk: boolean }) {
 }
 
 type BeleidRij = { actie: string; uitkomst: 'gelijk' | 'verschil' | 'doel-weigert' | 'onbereikbaar'; reden: string; aantal: number; laatst: number };
-type BeleidStand = { gezond: boolean; ms: number; aan: boolean; rijen: BeleidRij[] };
+type BeleidStand = { gezond: boolean; ms: number; aan: boolean; afdwingen?: boolean; rijen: BeleidRij[] };
 export function Beleid({ uk }: { uk: boolean }) {
   const tx = (p: readonly [string, string]) => (uk ? p[0] : p[1]);
   const [s, setS] = useState<BeleidStand | null>(null);
@@ -212,6 +212,9 @@ export function Beleid({ uk }: { uk: boolean }) {
     <div className='diag-beleid' data-diag-beleid='1'>
       <p className='diag-lead'>{uk ? 'Служба правил (OPA) у тіньовому режимі: перевіряє кожну адмін-дію паралельно із сайтом, нічого не блокує.' : 'Regeldienst (OPA) in schaduw: controleert elke beheeractie naast de site, blokkeert niets.'} <Vraag help={HELP_BELEID} uk={uk} label='OPA' /></p>
       <p className={`diag-rls-oordeel ${s.gezond ? 'is-ok' : 'is-let-op'}`} data-beleid-gezond={s.gezond ? '1' : '0'}>{s.gezond ? (uk ? `Служба працює (${s.ms} мс).` : `Dienst werkt (${s.ms} ms).`) : (uk ? 'Служба недоступна — сайт працює як завжди; перевірте mijn-ruimte-opa.service на сервері.' : 'Dienst onbereikbaar — de site werkt zoals altijd; controleer mijn-ruimte-opa.service.')}{!s.aan ? (uk ? ' Тіньовий режим вимкнено (OPA_SCHADUW=uit).' : ' Schaduw uit (OPA_SCHADUW=uit).') : ''}</p>
+      <p className={`diag-rls-oordeel ${s.afdwingen ? 'is-ok' : ''}`} data-beleid-afdwingen={s.afdwingen ? '1' : '0'}>{s.afdwingen
+        ? (uk ? 'Перемикач «адмін-права лише в технічному профілі» УВІМКНЕНО: без активного профілю з потрібним правом адмін-дії відхиляються; якщо OPA недоступна — теж (fail-closed).' : 'Schakelaar «beheerrechten alleen in een technisch profiel» AAN: zonder actief profiel met het juiste recht worden beheeracties geweigerd; ook als OPA onbereikbaar is (fail-closed).')
+        : (uk ? 'Перемикач «адмін-права лише в технічному профілі» вимкнено (лише тінь). Увімкнути, коли «Розбіжність» і «Без тех. профілю» довго 0: root у /etc/mijn-ruimte/mcp-rechten.json — "beheer-alleen-tech": true.' : 'Schakelaar «beheerrechten alleen in een technisch profiel» uit (alleen schaduw). Aanzetten als «Verschil» en «Zonder tech» lang 0 zijn: root in /etc/mijn-ruimte/mcp-rechten.json — "beheer-alleen-tech": true.')}</p>
       <section className={`diag-oordeel ${verschil ? 'is-iedereen' : doel ? 'is-alleen-ik' : 'is-alles-ok'}`} data-beleid-oordeel={verschil ? 'verschil' : doel ? 'doel' : 'ok'}>
         <h3>{verschil ? (uk ? 'Правила й сайт розходяться' : 'Regels en site wijken af') : doel ? (uk ? 'Майбутній перемикач заблокував би частину дій' : 'De toekomstige schakelaar zou acties weigeren') : (uk ? 'Розбіжностей немає' : 'Geen afwijkingen')}</h3>
         <p>{verschil ? (uk ? `${verschil} разів OPA вирішив інакше, ніж сайт. Нічого не вмикати, доки це не 0.` : `${verschil}× besliste OPA anders dan de site. Niets afdwingen tot dit 0 is.`)

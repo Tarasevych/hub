@@ -31,6 +31,7 @@ export const JOURNAAL_ACTIES: Record<string, JournaalSoort> = {
   // Diagnose (etap 4): verslag verstuurd; verslagen van gebruikers gelezen (alleen in een technisch profiel).
   'owner.diagnose.gemeld': 'toegang', 'owner.diagnose.gelezen': 'toegang',
   // «Підтримка від імені» (etap 7): bij de gebruiker én de ondersteuner.
+  'owner.beleid.geweigerd': 'toegang',
   'owner.ssh-ca.uitgegeven': 'toegang', 'owner.ssh-ca.geweigerd': 'toegang',
   'owner.flags.gewijzigd': 'toegang', 'owner.flags.verwijderd': 'toegang', 'owner.flags.getest': 'toegang',
   'owner.terminal.geopend': 'toegang', 'owner.terminal.gesloten': 'toegang', 'owner.terminal.opname.bekeken': 'toegang',
