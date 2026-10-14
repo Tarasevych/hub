@@ -1,0 +1,13 @@
+{
+  "version": "20261015-023954",
+  "bytes": 3246278,
+  "sha256": "59c5c6f7e94a4505c04f2b9c8b4d16ca60c65aa7fb7ae84ac127aae442cfa609",
+  "commit": "fe6d727ea27506afb2ced7ac44b97476127e87a7",
+  "changelog": "- fe6d727 Інтерфейс: дошка підключення ШІ на ai і перемикачі на технічній поверхні.\n- 942ed1c Дошка ШІ: каталог способів і стеля сайту для приватного простору.",
+  "tests": {
+    "passed": 84,
+    "failed": 0,
+    "summary": "npx tsc --noEmit; ai-agent-bord 20/20; ai-ruimte 16/16; menu-oppervlak 14/14; menu-v2 34/34"
+  },
+  "diff_summary": " backend/ai-site-schakelaars.ts          |  66 ++++++++++\n backend/mcp-connector-routes.ts         | 103 ++++++++++++++-\n backend/mcp-connector.ts                |  30 ++++-\n backend/mcp-console.ts                  |  20 +++\n migrations/0043_ai_site_schakelaars.sql |  32 +++++\n shared/ai-agent-bord.ts                 | 203 ++++++++++++++++++++++++++++++\n shared/ai-ruimte.ts                     |   2 +-\n src/AIServiceView.tsx                   |   4 +-\n src/McpServiceView.tsx                  |  13 ++\n src/UnifiedServiceApp.tsx               |   2 +-\n src/agenten/AgentBord.tsx               | 216 ++++++++++++++++++++++++++++++++\n src/agenten/SiteSchakelaars.tsx         |  70 +++++++++++\n src/agenten/TechVerbindingen.tsx        |   3 +\n src/agenten/agenten.css                 |  32 +++++\n src/agenten/fouten.ts                   |   8 +-\n src/menu-preferences.tsx                |   4 +-\n src/service-tab-labels.ts               |   2 +-\n tests/eenheid/ai-agent-bord.test.ts     |  58 +++++++++\n tests/eenheid/ai-ruimte.test.ts         |   2 +-\n tests/eenheid/menu-oppervlak.test.ts    |   4 +-\n 20 files changed, 861 insertions(+), 13 deletions(-)"
+}
