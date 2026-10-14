@@ -21,6 +21,12 @@ export type VerzoekContext = {
    * sessieGeverifieerd, of een API-token)? Gedeeld object, zodat het ook vanuit alsSysteem() doorwerkt.
    */
   poort?: { geverifieerd: boolean };
+  /** Tabbladcontext van de sessie (48 hex): bindt een actief technisch profiel aan dit verzoek (journaalveld «профіль», etap E). */
+  tab?: string;
+  /** Id van een toegestaan ondersteuningsverzoek als dit verzoek «van naam van» iemand gebeurt (journaalveld «від імені»). */
+  namens?: string;
+  /** Lui: context voor de audit (één opzoeking per verzoek). */
+  auditCtx?: Promise<Record<string, string>>;
 };
 
 const opslag = new AsyncLocalStorage<VerzoekContext>();
@@ -54,15 +60,25 @@ export function metVerzoek<T>(route: string, fn: () => Promise<T>, meta: { ip?: 
  * Markeer het lopende verzoek als "van gebruiker userId" (na een geslaagde sessiecontrole). Vanaf hier
  * lopen db-queries van dit verzoek in gebruikerscontext. Ongeldige id's en systeemcontext: genegeerd.
  */
-export function zetGebruiker(userId: string, service?: string): void {
+export function zetGebruiker(userId: string, service?: string, tab?: string): void {
   const c = opslag.getStore();
   if (!c || !ID.test(String(userId || ''))) return;
   if (c.poort) c.poort.geverifieerd = true;
+  if (c.actor !== userId) c.auditCtx = undefined;
   c.actor = userId;
+  // Ook op systeemroutes (beheer): juist daar telt welk technisch profiel de actie deed.
+  if (tab && /^[a-f0-9]{48}$/.test(tab) && c.tab !== tab) { c.tab = tab; c.auditCtx = undefined; }
   if (c.systeem) return;
   if (c.userId !== userId) c.werkruimtes = undefined;
   c.userId = userId;
   if (service) c.service = String(service).slice(0, 40);
+}
+
+/** Dit verzoek gebeurt namens iemand anders (ondersteuning met toestemming): komt in het journaalveld «від імені». */
+export function zetNamens(verzoekId: string): void {
+  const c = opslag.getStore();
+  if (!c || !/^[0-9a-f-]{36}$/i.test(String(verzoekId || ''))) return;
+  c.namens = verzoekId; c.auditCtx = undefined;
 }
 
 /** Markeer dat dit verzoek een gecontroleerde referentie heeft (geldige sessie of API-token), zonder gebruikerscontext. */

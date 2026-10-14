@@ -30,7 +30,8 @@ function DiagnoseVenster({ sluit }: { sluit: () => void }) {
   const t = useTech();
   const magLezen = techMag('diagnose.lezen', t);
   const magBeheer = techMag('diensten.beheren', t);
-  const [blad, setBlad] = useState<'ik' | 'verslagen' | 'isolatie' | 'beleid'>('ik');
+  const magJournaal = techMag('journaal.lezen', t);
+  const [blad, setBlad] = useState<'ik' | 'verslagen' | 'isolatie' | 'beleid' | 'siem'>('ik');
   const [bezig, setBezig] = useState(false);
   const [uitslagen, setUitslagen] = useState<Uitslag[] | null>(null);
   const [beschrijving, setBeschrijving] = useState('');
@@ -68,15 +69,16 @@ function DiagnoseVenster({ sluit }: { sluit: () => void }) {
   return (
     <Venster id='diagnose' titel={uk ? 'Щось не працює? Перевірка' : 'Werkt iets niet? Controle'} breedte={620} onSluit={sluit}>
       <div className='diag' data-diagnose='1'>
-        {magLezen || magBeheer ? (
+        {magLezen || magBeheer || magJournaal ? (
           <div className='diag-bladen' role='tablist' aria-label={uk ? 'Розділи' : 'Onderdelen'}>
             <button type='button' role='tab' aria-selected={blad === 'ik'} onClick={() => setBlad('ik')} data-diag-blad='ik'>{uk ? 'Мій пристрій' : 'Mijn apparaat'}</button>
             {magLezen ? <button type='button' role='tab' aria-selected={blad === 'verslagen'} onClick={() => setBlad('verslagen')} data-diag-blad='verslagen'>{uk ? 'Звіти користувачів' : 'Verslagen van gebruikers'}</button> : null}
             {magBeheer ? <button type='button' role='tab' aria-selected={blad === 'isolatie'} onClick={() => setBlad('isolatie')} data-diag-blad='isolatie'>{uk ? 'Ізоляція даних' : 'Isolatie'}</button> : null}
             {magBeheer ? <button type='button' role='tab' aria-selected={blad === 'beleid'} onClick={() => setBlad('beleid')} data-diag-blad='beleid'>{uk ? 'Правила (OPA)' : 'Regels (OPA)'}</button> : null}
+            {magJournaal ? <button type='button' role='tab' aria-selected={blad === 'siem'} onClick={() => setBlad('siem')} data-diag-blad='siem'>{uk ? 'Журнал і SIEM' : 'Logboek en SIEM'}</button> : null}
           </div>
         ) : null}
-        {blad === 'beleid' && magBeheer ? <Beleid uk={uk} /> : blad === 'isolatie' && magBeheer ? <Isolatie uk={uk} /> : blad === 'verslagen' && magLezen ? <Verslagen uk={uk} /> : (
+        {blad === 'siem' && magJournaal ? <Siem uk={uk} /> : blad === 'beleid' && magBeheer ? <Beleid uk={uk} /> : blad === 'isolatie' && magBeheer ? <Isolatie uk={uk} /> : blad === 'verslagen' && magLezen ? <Verslagen uk={uk} /> : (
           <>
             <p className='diag-lead'>{uk ? 'Перевіряємо сервер (однаковий для всіх) і цей браузер (лише ваш).' : 'We controleren de server (voor iedereen gelijk) en deze browser (alleen van u).'} <Vraag help={HELP_DIAGNOSE} uk={uk} label={uk ? 'Як працює перевірка' : 'Hoe de controle werkt'} /></p>
             {!uitslagen ? <p className='diag-bezig' aria-busy='true'><RefreshCw className='spin' aria-hidden='true' />{uk ? 'Перевіряємо…' : 'Bezig met controleren…'}</p> : (
@@ -229,6 +231,45 @@ export function Beleid({ uk }: { uk: boolean }) {
         </table>
       ) : null}
       <div className='diag-knoppen'><button type='button' onClick={() => void laad()} data-beleid-knop='vernieuwen'><RefreshCw aria-hidden='true' />{uk ? 'Оновити' : 'Vernieuwen'}</button></div>
+    </div>
+  );
+}
+
+type SiemDoel = { ingesteld: boolean; doel: string; gestart: boolean; achterstand: number | null; geexporteerd: number; fouten: number; laatsteFout: string | null; laatsteFoutOp: number | null; bijgewerkt: number | null };
+type SiemStand = { aan: boolean; lokiGeweigerd: boolean; intervalS: number; bestand: SiemDoel; loki: SiemDoel };
+/** Etap E: export van het journaal naar de eigen SIEM — alleen de stand (aan/uit, achterstand, laatste fout). Aanzetten doet root. */
+export function Siem({ uk }: { uk: boolean }) {
+  const [s, setS] = useState<SiemStand | null>(null);
+  const [fout, setFout] = useState('');
+  const laad = () => api.post('/api/beheer/siem/stand', diagnoseBody()).then((r) => setS(r.data as SiemStand), (e) => setFout(String(e?.message || 'FOUT')));
+  useEffect(() => { void laad(); }, []);
+  if (fout) return <p className='diag-melding' role='alert'>{fout === 'TECH_JOURNAAL_VEREIST' ? (uk ? 'Потрібен активний технічний профіль із правом читати журнал (Адміністратор, Аудитор, Власник).' : 'Een actief technisch profiel met logboekrecht is nodig.') : fout}</p>;
+  if (!s) return <p className='diag-bezig' aria-busy='true'><RefreshCw className='spin' aria-hidden='true' />{uk ? 'Завантаження…' : 'Laden…'}</p>;
+  const rij = (naam: string, d: SiemDoel) => !d.ingesteld ? null : (
+    <tr key={naam} data-siem-doel={naam} data-siem-fouten={d.fouten}>
+      <th scope='row'>{naam}<br /><small><code>{d.doel}</code></small></th>
+      <td>{d.gestart ? d.geexporteerd : '—'}</td>
+      <td className={(d.achterstand ?? 0) > 500 ? 'is-fout' : ''}>{d.achterstand ?? '—'}</td>
+      <td className={d.fouten ? 'is-fout' : ''} title={d.laatsteFout ?? ''}>{d.fouten ? `${d.fouten} · ${d.laatsteFout ?? ''}` : '0'}</td>
+    </tr>
+  );
+  const problemen = [s.bestand, s.loki].some((d) => d.ingesteld && (d.fouten > 0 || (d.achterstand ?? 0) > 500));
+  return (
+    <div className='diag-beleid' data-diag-siem='1'>
+      <p className='diag-lead'>{uk ? 'Кожен запис журналу має поля «профіль», «від імені» і «простір» та може копіюватися у вашу систему SIEM на цьому ж сервері: файл NDJSON (Wazuh, Promtail, Vector) і/або Loki на 127.0.0.1. Назовні — нічого.' : 'Elke logregel heeft de velden «profiel», «namens» en «werkruimte» en kan naar uw eigen SIEM op deze server: NDJSON-bestand (Wazuh, Promtail, Vector) en/of Loki op 127.0.0.1. Niets naar buiten.'}</p>
+      {s.lokiGeweigerd ? <p className='diag-melding' role='alert'>{uk ? 'Адресу Loki відхилено: дозволено лише http://127.0.0.1, localhost або [::1].' : 'Loki-adres geweigerd: alleen http://127.0.0.1, localhost of [::1].'}</p> : null}
+      <section className={`diag-oordeel ${!s.aan ? 'is-alleen-ik' : problemen ? 'is-iedereen' : 'is-alles-ok'}`} data-siem-oordeel={!s.aan ? 'uit' : problemen ? 'let-op' : 'ok'}>
+        <h3>{!s.aan ? (uk ? 'Експорт вимкнено' : 'Export uit') : problemen ? (uk ? 'Експорт відстає або має помилки' : 'Export loopt achter of heeft fouten') : (uk ? 'Експорт працює' : 'Export werkt')}</h3>
+        <p>{!s.aan ? (uk ? 'Увімкнути (на сервері, як beheer): sudo /usr/local/sbin/mijn-ruimte-installeer siem aan --bestand  (або --loki http://127.0.0.1:3100). Інструкція: deploy/SIEM.md.' : 'Aanzetten (op de server, als beheer): sudo /usr/local/sbin/mijn-ruimte-installeer siem aan --bestand  (of --loki http://127.0.0.1:3100). Zie deploy/SIEM.md.')
+          : (uk ? `Кожні ${s.intervalS} с нові записи йдуть у вибрані напрямки. Після збою — повтор із того ж місця.` : `Elke ${s.intervalS} s gaan nieuwe regels naar de gekozen bestemmingen. Na een storing: opnieuw vanaf dezelfde plek.`)}</p>
+      </section>
+      {s.aan ? (
+        <table className='diag-beleid-tabel'>
+          <thead><tr><th>{uk ? 'Куди' : 'Waarheen'}</th><th>{uk ? 'Надіслано' : 'Verstuurd'}</th><th>{uk ? 'Чекає' : 'Wacht'}</th><th>{uk ? 'Помилки' : 'Fouten'}</th></tr></thead>
+          <tbody>{rij(uk ? 'Файл' : 'Bestand', s.bestand)}{rij('Loki', s.loki)}</tbody>
+        </table>
+      ) : null}
+      <div className='diag-knoppen'><button type='button' onClick={() => void laad()} data-siem-knop='vernieuwen'><RefreshCw aria-hidden='true' />{uk ? 'Оновити' : 'Vernieuwen'}</button></div>
     </div>
   );
 }

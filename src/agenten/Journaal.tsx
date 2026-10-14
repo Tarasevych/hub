@@ -122,6 +122,9 @@ const tijdKort = (ms: number) => { try { return new Intl.DateTimeFormat(undefine
 
 const toon = (e: JournaalItem) => (/revoked|stop_all|blocked|expired|disabled|denied|ingetrokken|verwijderd/.test(e.actie) ? 'bad' : /paired|connected|issued|enabled|added|approved|updated/.test(e.actie) ? 'ok' : 'info');
 
+/** Etap E: context van de regel (details._ctx, onder de hashketen). */
+const ctxVan = (e: JournaalItem): { profiel?: string; namens?: string; ruimte?: string } => { const c = (e.details as Record<string, unknown>)._ctx; return c && typeof c === 'object' ? c as { profiel?: string; namens?: string; ruimte?: string } : {}; };
+
 export function JournaalLijst({ tr, items, compact = false }: { tr: Tr; items: JournaalItem[]; compact?: boolean }) {
   const [open, setOpen] = useState('');
   const regels = useMemo(() => groepeerWerk(items), [items]);
@@ -153,7 +156,7 @@ export function JournaalLijst({ tr, items, compact = false }: { tr: Tr; items: J
         <Rij key={e.id} id={e.id} open={open === e.id} onToggle={() => setOpen(open === e.id ? '' : e.id)} data={{ actie: e.actie, soort: e.soort, toon: toon(e) }}
           logo={<span className={`ag-journaal-icoon ag-${toon(e)}`}>{e.actie === 'owner.mcp.tool' ? ACTIE_ICOON[soortVan(e.details)] : ICOON[e.soort] ?? <Monitor />}</span>}
           titel={zin(e, tr)}
-          status={<>{e.onderwerp ? <span className='ag-chip'>{e.onderwerp.naam || e.onderwerp.id.slice(0, 8)}</span> : null}<Tijd ms={e.at} tr={tr} /></>}>
+          status={<>{ctxVan(e).profiel ? <span className='ag-chip ag-chip-tech' title={tr(`Дію виконано з технічного профілю ${ctxVan(e).profiel}`, `Actie vanuit technisch profiel ${ctxVan(e).profiel}`)} data-journaal-ctx='profiel'>{tr('ТЕХ', 'TECH')}</span> : null}{ctxVan(e).namens ? <span className='ag-chip ag-chip-namens' title={tr('Переглянуто від імені користувача (підтримка за згодою)', 'Bekeken namens de gebruiker (ondersteuning met toestemming)')} data-journaal-ctx='namens'>{tr('від імені', 'namens')}</span> : null}{e.onderwerp ? <span className='ag-chip'>{e.onderwerp.naam || e.onderwerp.id.slice(0, 8)}</span> : null}<Tijd ms={e.at} tr={tr} /></>}>
           <Tech rijen={[
             [tr('Подія', 'Gebeurtenis'), <code>{e.actie}</code>],
             [tr('Час', 'Tijd'), exact(e.at)],
@@ -162,6 +165,9 @@ export function JournaalLijst({ tr, items, compact = false }: { tr: Tr; items: J
             e.ipHash ? [tr('IP (хеш)', 'IP (hash)'), <code>{e.ipHash}</code>] : null,
             e.apparaat ? [tr('Пристрій входу', 'Apparaat van aanmelding'), e.apparaat] : null,
             e.dienst ? [tr('Сервіс', 'Dienst'), e.dienst] : null,
+            ctxVan(e).profiel ? [tr('Технічний профіль', 'Technisch profiel'), <code>{ctxVan(e).profiel}</code>] : null,
+            ctxVan(e).namens ? [tr('Від імені (запит підтримки)', 'Namens (ondersteuningsverzoek)'), <code>{ctxVan(e).namens}</code>] : null,
+            ctxVan(e).ruimte ? [tr('Простір', 'Werkruimte'), <code>{ctxVan(e).ruimte}</code>] : null,
             [tr('Запис журналу', 'Logregel'), <code>{e.id}</code>],
           ]} />
           {Object.keys(e.details).length ? <pre className='ag-ruw' aria-label={tr('Технічні дані', 'Technische gegevens')}>{JSON.stringify(e.details, null, 2)}</pre> : null}

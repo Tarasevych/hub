@@ -21,6 +21,7 @@ import { attachAgentGateway, closeAllAgents } from '../backend/connectors-gatewa
 import { verouderdeEigenarenIntrekken } from '../backend/eigenaar-opschonen';
 import { purgeExpiredDiagnostics } from '../backend/browser-diag-archief';
 import { neemRootGebeurtenissenOp } from '../backend/server-beheer';
+import { siemConfig, siemRonde } from '../backend/siem';
 import { closePool, getPool } from './platform/pg';
 import { ownerEmail, rateLimit } from './platform/beveiliging';
 import { auditIpPepperGeldig } from './platform/audit';
@@ -440,6 +441,15 @@ if (isMain) {
   const rootAudit = () => neemRootGebeurtenissenOp().catch((err) => console.error('[beheer] audit opnemen mislukt:', (err as Error).message));
   rootAudit();
   setInterval(rootAudit, 5 * 60_000).unref();
+  // Etap E: journaal naar uw eigen SIEM (bestand en/of Loki op loopback). Uit tenzij /etc/mijn-ruimte/siem.env het aanzet.
+  const siem = siemConfig();
+  if (siem.lokiGeweigerd) console.error('[siem] SIEM_LOKI_URL geweigerd: alleen http://127.0.0.1, localhost of [::1] (deploy/SIEM.md)');
+  if (siem.aan) {
+    console.log(`[siem] export aan: ${[siem.bestand && 'bestand', siem.loki && 'loki'].filter(Boolean).join(' + ')}, elke ${siem.intervalS} s`);
+    const ronde = () => { void siemRonde(siem); };
+    setTimeout(ronde, 5_000).unref();
+    setInterval(ronde, siem.intervalS * 1000).unref();
+  }
   const stop = (signal: string) => {
     console.log(`[server] ${signal} ontvangen, stoppen...`);
     server.close(() => { closePool().finally(() => process.exit(0)); });

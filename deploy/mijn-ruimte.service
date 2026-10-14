@@ -14,6 +14,8 @@ Group=mijnruimte
 # Audit-fix 4: alleen de runtime-omgeving. migratie.env (DATABASE_URL legacy + DATABASE_URL_MIGRATIE) wordt hier
 # bewust NIET geladen; alleen de migratiestap van installeer-app.sh leest die.
 EnvironmentFile=/etc/mijn-ruimte/geheimen.env
+# Etap E: journaal naar uw eigen SIEM. Alleen SIEM_-regels; bestaat niet = export uit (installeer-app.sh siem aan|uit, deploy/SIEM.md).
+EnvironmentFile=-/etc/mijn-ruimte/siem.env
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=8080
@@ -34,6 +36,8 @@ ReadWritePaths=/srv/data/uploads
 # Goedkeuren met een passkey: de app legt hier een goedgekeurd pakket of een sleutelverzoek neer; root controleert alles zelf
 # (deploy/RUNBOOK-VEILIGE-UITROL.md §13). "-" = geen fout als de map (nog) niet bestaat.
 ReadWritePaths=-/srv/mijn-ruimte/goedkeur-inbox
+# Etap E: NDJSON-export van het journaal (alleen als siem.env SIEM_BESTAND zet). "-" = geen fout zonder de map.
+ReadWritePaths=-/var/log/mijn-ruimte
 ProtectHome=yes
 PrivateTmp=yes
 PrivateDevices=yes

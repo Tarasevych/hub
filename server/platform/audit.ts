@@ -4,7 +4,7 @@
 // toevoegen, niet lezen.
 import { createHmac } from 'node:crypto';
 import { getPool } from './pg';
-import { huidigeContext } from './context';
+import { huidigeContext, type VerzoekContext } from './context';
 
 export type AuditGebeurtenis = {
   ownerId: string | null;
@@ -19,7 +19,39 @@ export type AuditRij = {
   id: string; ownerId: string | null; actorId: string | null; action: string; type: string; result: string;
   details: Record<string, unknown>; ipHash: string | null; device: string | null; service: string | null;
   seq: number; prevHash: string; hash: string; createdAt: number;
+  /** Etap E: «профіль» (technisch profiel), «активація», «від імені» (ondersteuningsverzoek), «простір» (werkruimte). */
+  context: AuditContextVelden;
 };
+
+// ---- Etap E: context in elke regel ----------------------------------------------------------------------------
+// Opgeslagen in details._ctx, dus BINNEN de hashketen (wijzigen breekt de keten, net als de rest van details); migratie 0039 maakt
+// er afgeleide kolommen van om op te filteren. Waarom niet als echte nieuwe kolommen in de hash: dan verandert app.audit_hash en
+// moet elke bestaande keten opnieuw worden uitgelegd; zo blijft oud en nieuw met dezelfde functie controleerbaar.
+export type AuditContextVelden = { profiel?: string; activatie?: string; namens?: string; ruimte?: string };
+const CTX_VELD: Record<keyof AuditContextVelden, RegExp> = {
+  profiel: /^tech-[a-z0-9]{6,40}$/, activatie: /^[0-9a-f-]{36}$/i, namens: /^[0-9a-f-]{36}$/i, ruimte: /^[A-Za-z0-9_.:-]{1,80}$/,
+};
+const ctxSchoon = (v: unknown): AuditContextVelden => {
+  const uit: AuditContextVelden = {};
+  if (!v || typeof v !== 'object') return uit;
+  for (const k of Object.keys(CTX_VELD) as Array<keyof AuditContextVelden>) {
+    const w = (v as Record<string, unknown>)[k];
+    if (typeof w === 'string' && CTX_VELD[k].test(w)) uit[k] = w;
+  }
+  return uit;
+};
+type ContextBron = (c: VerzoekContext & { tab: string; actor: string }) => Promise<AuditContextVelden>;
+let contextBron: ContextBron | null = null;
+/** De backend levert het actieve technisch profiel van (actor, tabblad); platform kent backend/tech-profiel niet. */
+export function zetAuditContextBron(f: ContextBron | null): void { contextBron = f; }
+async function contextVoor(c: VerzoekContext | undefined, actor: string | null): Promise<AuditContextVelden> {
+  if (!c) return {};
+  const vast: AuditContextVelden = c.namens ? { namens: c.namens } : {};
+  if (!contextBron || !c.tab || !actor || actor !== c.actor) return vast;
+  // Één opzoeking per verzoek; een fout in de bron mag een auditregel nooit tegenhouden.
+  c.auditCtx ??= contextBron({ ...c, tab: c.tab, actor }).then((x) => ctxSchoon(x) as Record<string, string>, () => ({}));
+  return { ...ctxSchoon(await c.auditCtx), ...vast };
+}
 
 /**
  * Audit-fix 10: eigen, verplichte pepper voor IP-hashes (AUDIT_IP_PEPPER, ≥ 32 tekens). Geen terugval meer op
@@ -54,10 +86,14 @@ const tekst = (v: unknown, max: number) => String(v ?? '').slice(0, max);
 export async function auditToevoegen(g: AuditGebeurtenis): Promise<{ id: string; seq: number; hash: string }> {
   const c = huidigeContext();
   const actor = g.actorId ?? c?.actor ?? c?.userId ?? g.ownerId ?? null;
+  const details: Record<string, unknown> = { ...(g.details || {}) };
+  const ruimte = typeof details.workspaceId === 'string' ? details.workspaceId : typeof details.ruimte === 'string' ? details.ruimte : undefined;
+  const ctx = { ...(ruimte ? ctxSchoon({ ruimte }) : {}), ...(await contextVoor(c, actor)), ...ctxSchoon(details._ctx) };
+  if (Object.keys(ctx).length) details._ctx = ctx; else delete details._ctx;
   const r = await getPool('systeem').query(
     'SELECT id, seq, hash FROM app.audit_toevoegen($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)',
     [g.ownerId || null, actor, tekst(g.action, 120), tekst(g.type || 'beveiliging', 40), tekst(g.result ?? '', 40),
-      JSON.stringify(g.details || {}), ipHash(c?.ip), apparaat(c?.ua), tekst(g.service ?? c?.service ?? '', 40) || null],
+      JSON.stringify(details), ipHash(c?.ip), apparaat(c?.ua), tekst(g.service ?? c?.service ?? '', 40) || null],
   );
   const rij = r.rows[0];
   return { id: String(rij.id), seq: Number(rij.seq), hash: String(rij.hash) };
@@ -65,6 +101,8 @@ export async function auditToevoegen(g: AuditGebeurtenis): Promise<{ id: string;
 
 export type AuditFilter = {
   ownerId?: string; actorId?: string; type?: string; action?: string; ipHash?: string; device?: string; service?: string;
+  /** Etap E: alleen regels uit een technisch profiel / namens iemand / in een werkruimte (exacte waarde, of '*' = «heeft er een»). */
+  profiel?: string; namens?: string; ruimte?: string;
   /** exacte acties (één van) */ acties?: string[];
   van?: number; tot?: number; /** cursor: id van de laatst getoonde rij (ouder ophalen) */ voor?: string; limit?: number;
 };
@@ -82,6 +120,10 @@ export async function auditLijst(f: AuditFilter = {}): Promise<{ items: AuditRij
   if (f.ipHash) voeg('ip_hash = ?', f.ipHash);
   if (f.device) voeg('device = ?', f.device);
   if (f.service) voeg('service = ?', f.service);
+  for (const [veld, kol] of [['profiel', 'ctx_profiel'], ['namens', 'ctx_namens'], ['ruimte', 'ctx_ruimte']] as const) {
+    const w = f[veld];
+    if (w === '*') waar.push(`${kol} IS NOT NULL`); else if (w && CTX_VELD[veld].test(w)) voeg(`${kol} = ?`, w);
+  }
   if (f.van) voeg("created_at >= to_timestamp(?::double precision / 1000)", f.van);
   if (f.tot) voeg("created_at < to_timestamp(?::double precision / 1000)", f.tot);
   if (f.voor && /^\d{1,19}$/.test(f.voor)) voeg('id < ?::bigint', f.voor);
@@ -96,6 +138,7 @@ export async function auditLijst(f: AuditFilter = {}): Promise<{ items: AuditRij
   const items: AuditRij[] = rows.slice(0, limit).map((r) => ({
     id: String(r.id), ownerId: r.owner_id, actorId: r.actor_id, action: r.action, type: r.type, result: r.result, details: r.details || {},
     ipHash: r.ip_hash, device: r.device, service: r.service, seq: Number(r.seq), prevHash: r.prev_hash, hash: r.hash, createdAt: Number(r.ms),
+    context: ctxSchoon((r.details || {})._ctx),
   }));
   return rows.length > limit ? { items, nextCursor: items[items.length - 1].id } : { items };
 }
@@ -128,6 +171,7 @@ export async function oudeAudit(ownerId: string | null, limit = 500): Promise<Ou
 export const alsOwnerAudit = (r: AuditRij) => ({
   id: `audit:${r.id}`, userId: r.ownerId || '', actorId: r.actorId || '', action: r.action, result: r.result, details: r.details,
   createdAt: r.createdAt, previousHash: r.prevHash, eventHash: r.hash, type: r.type, device: r.device, ipHash: r.ipHash, service: r.service, seq: r.seq,
+  context: r.context,
 });
 /** Nieuwste eerst: eerst app.audit, aangevuld met de oude log tot `limit`. */
 export async function auditVoorWeergave(f: AuditFilter & { limit?: number }): Promise<{ items: Array<ReturnType<typeof alsOwnerAudit> | OudeAudit>; nextCursor?: string; oud: OudeAudit[] }> {
@@ -135,7 +179,7 @@ export async function auditVoorWeergave(f: AuditFilter & { limit?: number }): Pr
   const nieuw = await auditLijst({ ...f, limit });
   const items: Array<ReturnType<typeof alsOwnerAudit> | OudeAudit> = nieuw.items.map(alsOwnerAudit);
   // Oude log alleen zonder nieuwe-veldfilters (type/ip/apparaat/actor bestonden daar niet) en op de eerste pagina.
-  const oudPast = !f.voor && !f.type && !f.ipHash && !f.device && !f.actorId && !f.service;
+  const oudPast = !f.voor && !f.type && !f.ipHash && !f.device && !f.actorId && !f.service && !f.profiel && !f.namens && !f.ruimte;
   let oud: OudeAudit[] = [];
   if (oudPast) {
     oud = await oudeAudit(f.ownerId || null, 5000);

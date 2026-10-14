@@ -64,6 +64,8 @@
 .ag-badge .hub-dot,.ag-badge [class*=dot]{margin:0}
 .ag-ok{color:var(--ag-ok)}.ag-warn{color:var(--ag-warn)}.ag-bad{color:var(--ag-bad)}.ag-off{color:var(--ag-off)}.ag-info{color:var(--ag-info)}
 .ag-chip{display:inline-block;margin-right:6px;padding:0 6px;border-radius:6px;background:var(--surface);border:1px solid var(--line);color:var(--text);font-size:.75rem}
+.ag-chip-tech{background:#f5b400;border-color:#1a1200;color:#1a1200;font-weight:700;letter-spacing:.03em}
+.ag-chip-namens{background:#b42318;border-color:#7a1610;color:#fff;font-weight:600}
 .ag-tijd{white-space:nowrap}
 .ag-link{display:inline-flex;align-items:center;gap:4px;color:var(--accent);font-weight:600;text-decoration:none}
 .ag-link:hover{text-decoration:underline}

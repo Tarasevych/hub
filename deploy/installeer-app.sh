@@ -23,6 +23,9 @@
 #   installeer-app.sh apps-status             stand van de apps-agent, Caddy en de containers
 #   installeer-app.sh apps-terminal on|off    terminal in de browser via de apps-agent (wegwerpcontainer zonder netwerk,
 #                                             rootless podman als mr-apps; openen alleen vanuit een technisch profiel)
+#   installeer-app.sh siem aan [--bestand] [--loki http://127.0.0.1:3100] [--vanaf-begin] | siem uit
+#                                             journaal naar uw eigen SIEM op DEZE server (NDJSON in /var/log/mijn-ruimte
+#                                             en/of Loki op loopback); schrijft alleen SIEM_-regels in /etc/mijn-ruimte/siem.env
 #   installeer-app.sh beheer-koppelen <KOPPELCODE> [--gebruiker beheer] [--root DIR]... [--readonly-root DIR]... [--allow git,node]
 #                                             deze server als apparaat op de site (agent als die gebruiker, NoNewPrivileges:
 #                                             geen sudo); daarna alles via mcp.* (toestemmingen, hulpmiddelen, journaal)
@@ -844,6 +847,58 @@ agenten_bijwerken() {
   melding "agent op deze server bijgewerkt ($(sed -n "s/^const VERSION = '\([0-9.]*\)'.*/\1/p" "$APPS_AGENT_DIR/agent.mjs" | head -1))"
 }
 
+# Etap E: journaal → eigen SIEM. Alleen SIEM_-regels in siem.env (de dienst leest die naast geheimen.env); Loki alleen op loopback
+# (ook de app controleert dat). Het bestand: /var/log/mijn-ruimte/audit.ndjson, map 2750 (groep adm als die bestaat, zodat een
+# Wazuh-agent of Promtail in die groep kan lezen), logrotate dagelijks 30 dagen. Uitzetten: siem uit (verwijdert alleen siem.env).
+siem_instellen() {
+  local stand="${1:-}"; shift || true
+  local bestand=0 loki="" begin=0 groep="$GEBRUIKER" tmp
+  case "$stand" in
+    uit) rm -f /etc/mijn-ruimte/siem.env; systemctl restart "$DIENST"; melding "SIEM-export uit (bestaande bestanden in /var/log/mijn-ruimte blijven staan)"; return 0 ;;
+    aan) ;;
+    *) fout "gebruik: $0 siem aan [--bestand] [--loki http://127.0.0.1:3100] [--vanaf-begin] | $0 siem uit" ;;
+  esac
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --bestand) bestand=1; shift ;;
+      --loki) loki="${2:-}"; shift 2 || fout "--loki vraagt een adres" ;;
+      --vanaf-begin) begin=1; shift ;;
+      *) fout "onbekende optie: $1" ;;
+    esac
+  done
+  [ "$bestand" -eq 1 ] || [ -n "$loki" ] || fout "kies --bestand en/of --loki <url>"
+  if [ -n "$loki" ] && ! [[ "$loki" =~ ^http://(127\.0\.0\.1|localhost|\[::1\])(:[0-9]{1,5})?(/[A-Za-z0-9._~/-]*)?$ ]]; then
+    fout "Loki alleen op deze machine (http://127.0.0.1:<poort>): het journaal gaat nooit rechtstreeks naar buiten"
+  fi
+  grep -q '/etc/mijn-ruimte/siem.env' /etc/systemd/system/"$DIENST" 2>/dev/null || fout "de dienst kent siem.env nog niet: installeer eerst deze release (installeren), dan siem aan"
+  getent group adm >/dev/null && groep=adm
+  install -d -m 2750 -o "$GEBRUIKER" -g "$groep" /var/log/mijn-ruimte
+  tmp="$(mktemp /etc/mijn-ruimte/.siem.XXXXXX)"
+  {
+    echo "# Gemaakt door mijn-ruimte-installeer siem ($(date -u +%Y-%m-%dT%H:%M:%SZ)). Alleen SIEM_-regels; zie deploy/SIEM.md."
+    [ "$bestand" -eq 1 ] && echo "SIEM_BESTAND=/var/log/mijn-ruimte/audit.ndjson"
+    [ -n "$loki" ] && echo "SIEM_LOKI_URL=$loki"
+    [ "$begin" -eq 1 ] && echo "SIEM_VANAF=begin"
+    true
+  } > "$tmp"
+  chown root:"$GEBRUIKER" "$tmp"; chmod 0640 "$tmp"; mv -f "$tmp" /etc/mijn-ruimte/siem.env
+  cat > /etc/logrotate.d/mijn-ruimte-siem <<LR
+/var/log/mijn-ruimte/audit.ndjson {
+  daily
+  rotate 30
+  compress
+  delaycompress
+  missingok
+  notifempty
+  copytruncate
+  su $GEBRUIKER $groep
+}
+LR
+  chmod 0644 /etc/logrotate.d/mijn-ruimte-siem
+  systemctl restart "$DIENST"
+  melding "SIEM-export aan:$([ "$bestand" -eq 1 ] && echo ' /var/log/mijn-ruimte/audit.ndjson')$([ -n "$loki" ] && echo " Loki $loki") — stand: technisch profiel → «Щось не працює? Перевірка» → «Журнал і SIEM»"
+}
+
 apps_terminal() {
   local stand="${1:-}"
   [[ "$stand" == on || "$stand" == off ]] || fout "gebruik: $0 apps-terminal on|off"
@@ -884,6 +939,7 @@ case "$opdracht" in
   apps-koppelen) apps_koppelen "$@" ;;
   apps-status) vereis_root; apps_status ;;
   apps-terminal) vereis_root; vereis_node; apps_terminal "$@" ;;
+  siem) vereis_root; siem_instellen "$@" ;;
   beheer-koppelen) beheer_koppelen "$@" ;;
   noteer-proef) [ "$(id -u)" -ne 0 ] && [ "${INSTALLEER_NOTEER_PROEF:-}" = 1 ] || fout "alleen in een test"; noteer_ssh "$@" ;;
   *) sed -n '/^set -euo/q;2,$p' "$0"; exit 2 ;;

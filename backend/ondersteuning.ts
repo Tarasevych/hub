@@ -140,7 +140,7 @@ export async function overzicht(u: Gebruiker, tab: string, id: string) {
     sys().query(`SELECT rollen FROM app.tech_profielen WHERE user_id = $1 AND ingetrokken_op IS NULL`, [d]),
   ]);
   const a = acc.rows[0] || {};
-  await audit(d, u.id, 'owner.ondersteuning.bekeken', { verzoek: id, door: u.email || u.id });
+  await audit(d, u.id, 'owner.ondersteuning.bekeken', { verzoek: id, door: u.email || u.id, _ctx: { namens: id } });
   return {
     verzoek: uit(v),
     account: { email: String(a.email || ''), naam: String(a.naam || ''), status: String(a.status || ''), rol: String(a.rol || ''), aangemaakt: a.aangemaakt ? Number(a.aangemaakt) : null },

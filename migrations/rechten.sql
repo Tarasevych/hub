@@ -53,6 +53,8 @@ BEGIN
       GRANT SELECT ON app.diagnose_meldingen TO mijnruimte_app;
       REVOKE INSERT, UPDATE, DELETE ON app.diagnose_meldingen FROM mijnruimte_app;
     END IF;
+    -- 0040: cursor van de SIEM-export: niets voor de app-rol.
+    IF to_regclass('app.siem_export') IS NOT NULL THEN REVOKE ALL ON app.siem_export FROM mijnruimte_app; END IF;
     -- 0038: feature flags en tests van testers: niets voor de app-rol (lezen en schrijven via de systeemrol, backend/flags.ts).
     IF to_regclass('app.feature_flags') IS NOT NULL THEN REVOKE ALL ON app.feature_flags, app.feature_flag_tests FROM mijnruimte_app; END IF;
     -- 0034: tellers van de beleidsdienst (schaduw): niets voor de app-rol.
