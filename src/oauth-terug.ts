@@ -23,6 +23,6 @@ export function verwerkOAuthTerug(): void {
     return;
   }
   toon(bericht.error
-    ? (uk ? 'Доступ не надано. Закрийте це вікно й почніть підключення знову на сторінці «Агенти → Токени й двері».' : 'Geen toegang gegeven. Sluit dit venster en begin opnieuw onder «Agenten → Tokens en deuren».')
-    : (uk ? 'Вікно, яке почало підключення, закрито. Почніть знову на сторінці «Агенти → Токени й двері».' : 'Het venster dat de koppeling startte, is gesloten. Begin opnieuw onder «Agenten → Tokens en deuren».'));
+    ? (uk ? 'Доступ не надано. Закрийте це вікно й почніть підключення знову на сторінці «Агенти → Токени» або «Технічні підключення».' : 'Geen toegang gegeven. Sluit dit venster en begin opnieuw onder «Agenten → Tokens» of «Technische verbindingen».')
+    : (uk ? 'Вікно, яке почало підключення, закрито. Почніть знову на сторінці «Агенти → Токени» або «Технічні підключення».' : 'Het venster dat de koppeling startte, is gesloten. Begin opnieuw onder «Agenten → Tokens» of «Technische verbindingen».'));
 }
