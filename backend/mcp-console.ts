@@ -237,7 +237,9 @@ const REMOVED_TOOLS = new Set(["write_staging", "list_staging", "read_staging", 
 async function runTool(userId: string, owner: boolean, name: string, args: Record<string, unknown>, author: string, agentTokenId?: string, ruimte: AiRuimte = 'prive') {
   // Gedetailleerde toegang per agenttoken (0043, shared/ai-toegang.ts): default-deny per scope, vóór uitvoering.
   // Zonder tokenId belt de mens zelf via de console — dan geldt dit niet (wel het AI-beleid en de vlaggen).
-  if (agentTokenId) {
+  // Alleen instrumenten uit de catalogus vallen onder scopes; de rest houdt zijn eigen poorten
+  // (ruimte, eigenaar, step-up) met hun eigen foutcodes (bv. SPACE_SEPARATED, OWNER_ONLY).
+  if (agentTokenId && scopeVoorTool(name) !== undefined) {
     try {
       const toegang = await magTool({ soort: 'agenttoken', id: agentTokenId }, name, ruimteOf(ruimte));
       if (!toegang.ok) throw new Error(`TOEGANG_GESCHEIDEN:${toegang.scope ?? 'onbekend'}`);

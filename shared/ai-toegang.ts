@@ -173,7 +173,7 @@ for (const s of AI_TOEGANG_SCOPES) for (const t of s.tools) if (!TOOL_SCOPE.has(
 
 export const isToegangScope = (v: unknown): v is string => typeof v === 'string' && SCOPE_MAP.has(v);
 export const toegangScope = (id: string): AiToegangScope | undefined => SCOPE_MAP.get(id);
-/** Який скоуп відкриває інструмент; undefined = інструмент не в каталозі (шлюз відмовляє — default-deny). */
+/** Який скоуп відкриває інструмент; undefined = інструмент не в каталозі (серверні/технічні тримають свої ворота — кімната, власник, step-up — тож шар скоупів їх пропускає). */
 export const scopeVoorTool = (tool: string): string | undefined => TOOL_SCOPE.get(tool);
 /** Скоупи за замовчуванням для нового підключення: нечутливі й підтримувані бодай кимось. */
 export const STANDAARD_SCOPES: readonly string[] = AI_TOEGANG_SCOPES.filter((s) => s.standaardAan && s.agents.length > 0).map((s) => s.id);

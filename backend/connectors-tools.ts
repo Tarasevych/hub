@@ -766,9 +766,11 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
     if (beleid.mode === 'off') return text(weigerTekst(beleid), true);
     // Gedetailleerde toegang per verbinding (shared/ai-toegang.ts, backend/ai-toegang.ts): default-deny per scope,
     // vóór uitvoering. De eigenaar zelf (Пісочниця) en aanroepen zonder verbinding (chat) vallen hierbuiten.
+    // Alleen instrumenten uit de catalogus vallen onder scopes; server/opdracht/uitrol/deur-instrumenten staan er
+    // bewust niet in en houden hun eigen poorten (ruimte, eigenaar, beleid) met hun eigen foutcodes.
     const namens = huidigeNamens();
     const onderwerp = !opties.eigenaarZelf ? onderwerpVanGrantId(namens?.grantId) : null;
-    if (onderwerp) {
+    if (onderwerp && scopeVoorTool(name) !== undefined) {
       try {
         const toegang = await magTool(onderwerp, name, huidigeRuimte());
         if (!toegang.ok) return text(TOEGANG_GESCHEIDEN(namens?.client ?? '?', name, toegang.scope ?? 'onbekend'), true);

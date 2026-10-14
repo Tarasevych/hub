@@ -90,5 +90,10 @@ export async function main(): Promise<number> {
     /^TOEGANG_GESCHEIDEN: /.test(tekst) && /mail_read_message/.test(tekst) && /mail\.read/.test(tekst)
     && /Доступ ШІ/.test(tekst) && /Do not try another way/.test(tekst));
 
+  check('grens: server/kamer-instrumenten staan niet in de catalogus (eigen poorten houden hun foutcodes)',
+    scopeVoorTool('server_backup') === undefined && scopeVoorTool('server_status') === undefined
+    && scopeVoorTool('uitrol_voorstel_status') === undefined && scopeVoorTool('install_release') === undefined
+    && scopeVoorTool('list_tasks') === 'board.read');
+
   return einde();
 }
