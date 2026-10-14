@@ -36,6 +36,8 @@ ReadWritePaths=/srv/data/uploads
 # Goedkeuren met een passkey: de app legt hier een goedgekeurd pakket of een sleutelverzoek neer; root controleert alles zelf
 # (deploy/RUNBOOK-VEILIGE-UITROL.md §13). "-" = geen fout als de map (nog) niet bestaat.
 ReadWritePaths=-/srv/mijn-ruimte/goedkeur-inbox
+# SSH-certificaat: de app legt hier alleen het verzoek (publieke sleutel). Root tekent in een eigen map.
+ReadWritePaths=-/srv/mijn-ruimte/ssh-ca-inbox
 # Etap E: NDJSON-export van het journaal (alleen als siem.env SIEM_BESTAND zet). "-" = geen fout zonder de map.
 ReadWritePaths=-/var/log/mijn-ruimte
 ProtectHome=yes

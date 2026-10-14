@@ -58,6 +58,7 @@ html.theme-dark .tech-vraag-laag.is-dev b{color:#c4b5fd}
 .tech-veld{display:grid;gap:5px}
 .tech-veld > span,.tech-label{font-weight:600;display:inline-flex;align-items:center;gap:4px}
 .tech-veld :is(input,select),.tech-geven :is(input,select){min-height:40px;padding:0 10px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;box-sizing:border-box;width:100%}
+.tech-veld textarea{min-height:72px;padding:8px 10px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:13px/1.45 ui-monospace,monospace;box-sizing:border-box;width:100%;resize:vertical}
 .tech-rollen,.tech-rolkeuze{display:flex;flex-wrap:wrap;gap:6px 14px}
 .tech-rolkeuze label,.tech-rollen > *{display:inline-flex;align-items:center;gap:6px;min-height:32px}
 .tech-rolkeuze input[type=checkbox]{width:18px;height:18px}

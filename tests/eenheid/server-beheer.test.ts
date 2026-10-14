@@ -191,6 +191,7 @@ function polkitTests(check: (n: string, ok: boolean, i?: string) => void) {
   const M = 'org.freedesktop.systemd1.manage-units';
   check('polkit(c): precies één regel', regels.length === 1);
   check('polkit(c): mijnruimte mag de vijf opdrachtunits starten', WERKWOORDEN.every((w) => besluit('mijnruimte', M, `mijn-ruimte-opdracht@${w}.service`) === 'yes'));
+  check('polkit(c): SSH-CA is één vaste unit (geen sjabloon)', besluit('mijnruimte', M, 'mijn-ruimte-ssh-ca.service') === 'yes' && besluit('mijnruimte', M, 'mijn-ruimte-ssh-ca@.service') === 'no' && besluit('mijnruimte', M, 'mijn-ruimte-ssh-ca@abc.service') === 'no' && besluit('mijnruimte', M, 'mijn-ruimte-ssh-ca.service', 'stop') === 'no');
   check('polkit(c): geen andere werkwoorden of units', ['rm', 'shell', 'status;id', 'install', ''].every((w) => besluit('mijnruimte', M, `mijn-ruimte-opdracht@${w}.service`) === 'no')
     && ['mijn-ruimte.service', 'mijn-ruimte-uitrol.service', 'mijn-ruimte-gitops.service', 'ssh.service', 'mijn-ruimte-opdracht@.service', 'mijn-ruimte-opdracht@status.socket'].every((u) => besluit('mijnruimte', M, u) === 'no'));
   check('polkit(c): alleen "start" (niet stop/restart/reload/enable)', ['stop', 'restart', 'reload', 'try-restart', 'reload-or-restart', 'enable', 'kill'].every((v) => besluit('mijnruimte', M, 'mijn-ruimte-opdracht@status.service', v) === 'no'));
@@ -214,7 +215,7 @@ function polkitTests(check: (n: string, ok: boolean, i?: string) => void) {
 
 function plafond(check: (n: string, ok: boolean, i?: string) => void) {
   const zonderCommentaar = (t: string) => t.replace(/^\s*(#|\/\/).*$/gm, '');
-  const rootScripts = [GITOPS, OPDRACHT, 'deploy/uitrol/mijn-ruimte-uitrol.sh', POLKIT, 'deploy/mijn-ruimte-gitops.service', 'deploy/mijn-ruimte-gitops.timer', 'deploy/mijn-ruimte-opdracht@.service', 'deploy/mijn-ruimte-uitrol.service'];
+  const rootScripts = [GITOPS, OPDRACHT, 'deploy/uitrol/mijn-ruimte-uitrol.sh', POLKIT, 'deploy/mijn-ruimte-gitops.service', 'deploy/mijn-ruimte-gitops.timer', 'deploy/mijn-ruimte-opdracht@.service', 'deploy/mijn-ruimte-uitrol.service', 'deploy/ssh-ca/mijn-ruimte-ssh-ca.sh', 'deploy/mijn-ruimte-ssh-ca.service', 'deploy/mijn-ruimte-ssh-ca.path'];
   for (const f of rootScripts) check(`plafond(d): ${f} leest niet uit /srv/data/uploads of mcp-staging`, existsSync(f) && !/\/srv\/data\/uploads|mcp-staging|UPLOADS_DIR/.test(zonderCommentaar(lees(f))));
   const inst = zonderCommentaar(lees('deploy/installeer-app.sh'));
   check('plafond(d): installer voert niets uit uploads of mcp-staging uit (alleen mappen maken/quarantaine/oude archieven wissen)',
@@ -329,7 +330,7 @@ function sshNoteerTests(check: (n: string, ok: boolean, i?: string) => void) {
     check('SSH-installatie schrijft audit + status (methode ssh)', ok.status === 0 && regels.length === 1 && regels[0].herkomst === 'ssh' && regels[0].wie === 'beheer' && regels[0].pakket === '20261013-173658' && regels[0].release === '20261013-220754' && regels[0].adres === '203.0.113.5' && status.methode === 'ssh' && status.versie === '20261013-220754' && /beheer/.test(regels[0].uk) && gelezen.length === 1 && gelezen[0].wie === 'beheer' && gelezen[0].pakket === '20261013-173658', `${ok.status} ${ok.stderr} ${JSON.stringify(regels[0] || {})}`);
     const vuilWie = run(['SSH_TERUG', '20261013-173926', '../etc/passwd', 'niet-een-commit'], { SUDO_USER: 'beheer;id', SSH_CONNECTION: '999.1.1.1 1 2 3' });
     const na = readFileSync(join(dir, 'gebeurtenissen.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
-    check('SSH-regel zuivert gebruiker, adres en pakket', vuilWie.status === 0 && na.length === 2 && na[1].code === 'SSH_TERUG' && na[1].wie === 'root' && !na[1].adres && !na[1].pakket && !/beheer;id|\.\.\/etc/.test(na[1].uk), JSON.stringify(na[1]));
+    check('SSH-regel zuivert gebruiker, adres en pakket', vuilWie.status === 0 && na.length === 2 && na[1].code === 'SSH_TERUG' && na[1].wie === 'onbekend' && !na[1].adres && !na[1].pakket && !/beheer;id|\.\.\/etc/.test(na[1].uk), JSON.stringify(na[1]));
     const stil = run(['SSH_OK', '20261013-220755', '', ''], { MIJN_RUIMTE_UITROL_MODUS: 'passkey' });
     check('passkey-modus schrijft geen SSH-regel', stil.status === 0 && readFileSync(join(dir, 'gebeurtenissen.jsonl'), 'utf8').trim().split('\n').length === 2);
     rmSync(dir, { recursive: true, force: true });

@@ -1,0 +1,22 @@
+# Eén SSH-certificaat tekenen (root). De app start dit hoogstens via polkit (alleen «start» van deze vaste naam)
+# of de path-unit doet het. Het script tekent pas als ssh-ca in mcp-rechten.json exact true is.
+# sshd_config staat niet in ReadWritePaths: deze dienst kan de SSH-daemon niet herschrijven.
+[Unit]
+Description=Mijn Ruimte: SSH-certificaat van 60 minuten tekenen
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mijn-ruimte-ssh-ca verwerk
+StandardInput=null
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+NoNewPrivileges=yes
+UMask=0077
+ReadWritePaths=-/etc/mijn-ruimte/ssh-ca
+ReadWritePaths=-/var/lib/mijn-ruimte/ssh-ca
+ReadWritePaths=-/var/lib/mijn-ruimte/ssh-ca-uit
+ReadWritePaths=-/var/lib/mijn-ruimte-uitrol-status
+ReadWritePaths=-/srv/mijn-ruimte/ssh-ca-inbox
+TimeoutStartSec=30

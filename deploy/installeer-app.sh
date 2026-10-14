@@ -211,7 +211,7 @@ veilige_uitrol_inrichten() {
   # De eerste uitrol via de inbox moet nieuwer zijn dan wat nu draait.
   [ -s /var/lib/mijn-ruimte-uitrol/laatste-versie ] || date +%Y%m%d-%H%M%S > /var/lib/mijn-ruimte-uitrol/laatste-versie
   if [ ! -e /etc/mijn-ruimte/mcp-rechten.json ]; then
-    printf '%s\n' '{"read": true, "uitrol": false, "gitops": false, "passkey-goedkeuring": false, "opdracht": {"status": true, "releases": true, "backup": true, "uitrol-nu": true, "terugdraaien": false}}' > /etc/mijn-ruimte/mcp-rechten.json
+    printf '%s\n' '{"read": true, "uitrol": false, "gitops": false, "passkey-goedkeuring": false, "ssh-ca": false, "opdracht": {"status": true, "releases": true, "backup": true, "uitrol-nu": true, "terugdraaien": false}}' > /etc/mijn-ruimte/mcp-rechten.json
     chown root:"$GEBRUIKER" /etc/mijn-ruimte/mcp-rechten.json; chmod 0640 /etc/mijn-ruimte/mcp-rechten.json
   fi
   if [ -s "$doel/deploy/mcp/server.mjs" ]; then
@@ -306,6 +306,23 @@ goedkeuring_inrichten() {
   /usr/local/sbin/mijn-ruimte-passkey rp-bijwerken >/dev/null 2>&1 || waarschuwing "passkey-rpId niet bijgewerkt (er staan al sleutels in of de rpId is met de hand gezet): zie 'mijn-ruimte-passkey lijst'"
   systemctl enable --now mijn-ruimte-goedkeuring.path mijn-ruimte-goedkeur-sleutels.path >/dev/null 2>&1 || waarschuwing "path-units voor de passkey-goedkeuring konden niet worden gestart"
   melding "passkey-goedkeuring ingericht ($(/usr/local/sbin/mijn-ruimte-passkey lijst 2>/dev/null | head -1 || echo 'stand onbekend'))"
+}
+
+# SSH-CA (etap C, deel 2): script, mappen en de polkit-naam. Geen sleutel, geen schakelaar aan, geen wijziging van sshd,
+# en de path-unit wordt niet ingeschakeld. De eigenaar doet dat zelf na `mijn-ruimte-ssh-ca inrichten` en `publiek`.
+ssh_ca_inrichten() {
+  local doel="$1"
+  [ -s "$doel/deploy/ssh-ca/mijn-ruimte-ssh-ca.sh" ] || return 0
+  install -m 0755 -o root -g root "$doel/deploy/ssh-ca/mijn-ruimte-ssh-ca.sh" /usr/local/sbin/mijn-ruimte-ssh-ca
+  install -d -o "$GEBRUIKER" -g "$GEBRUIKER" -m 0750 "$APP_ROOT/ssh-ca-inbox"
+  install -d -o root -g root -m 0700 /var/lib/mijn-ruimte/ssh-ca
+  install -d -o root -g "$GEBRUIKER" -m 0750 /var/lib/mijn-ruimte/ssh-ca-uit
+  if [ -d /etc/polkit-1/rules.d ] && [ -s "$doel/deploy/opdracht/50-mijn-ruimte-opdracht.rules" ]; then
+    if ! cmp -s "$doel/deploy/opdracht/50-mijn-ruimte-opdracht.rules" /etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules; then
+      install -m 0644 -o root -g root "$doel/deploy/opdracht/50-mijn-ruimte-opdracht.rules" /etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules
+    fi
+  fi
+  melding "SSH-CA geïnstalleerd (uit: geen sleutel, schakelaar ssh-ca uit, sshd ongewijzigd; zie mijn-ruimte-ssh-ca publiek)"
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -503,6 +520,7 @@ installeren() {
   veilige_uitrol_inrichten "$doel"
   beheer_inrichten "$doel"
   goedkeuring_inrichten "$doel"
+  ssh_ca_inrichten "$doel"
   opa_inrichten "$doel"
   # Volledig archief ("Архів на ПК"): root-script + path-unit die het verzoekbestand van de site bewaakt (de site kan zelf niets als root
   # doen). Uitvoer in een root-map (uitgifte root:mijnruimte 0750, werkmap 0700), het hele archief age-versleuteld.

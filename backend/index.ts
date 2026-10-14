@@ -41,6 +41,7 @@ import { actieveActivatie as techActieveActivatie } from './tech-profiel';
 // Journaalveld «профіль» (etap E): actief technisch profiel van de handelende gebruiker in DIT tabblad, één opzoeking per verzoek.
 zetAuditContextBron(async (c) => { const a = await techActieveActivatie(c.actor, c.tab); return a ? { profiel: a.profielId, activatie: a.id } : {}; });
 import { terminalRoutes } from './terminal-routes';
+import { sshCaRoutes } from './ssh-ca-routes';
 import { uitrolGoedkeuringRoutes } from './uitrol-goedkeuring';
 import { aiBeleidRoutes } from './ai-beleid';
 import { passkeyRoutes } from './passkeys';
@@ -508,6 +509,8 @@ export const handler = router({
   ...ondersteuningRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never, meld: (id, email, kind, titel, tekst) => notify(id, email, kind, titel, tekst) }),
   // Terminals in de browser (wegwerpcontainer op een eigen apparaat, opname van de uitvoer).
   ...terminalRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
+  // SSH-certificaat van één uur (etap C, deel 2): de knop is een vlag; het recht is terminal.servers. Root tekent alleen als ssh-ca aan staat.
+  ...sshCaRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
   ...uitrolGoedkeuringRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
   ...aiBeleidRoutes({ requireSession: ownerRequireSession as never }),
   ...passkeyRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
