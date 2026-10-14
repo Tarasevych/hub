@@ -4,7 +4,7 @@ type Pair = readonly [string, string];
 
 const LABELS: Record<string, Pair> = {
   overview: ['Огляд', 'Overzicht'], recent: ['Останні', 'Recent'], tasks: ['Завдання', 'Taken'], calendar: ['Календар', 'Agenda'], notes: ['Нотатки', 'Notities'],
-  workspace: ['Робочий простір', 'Werkruimte'], agents: ['Агенти', 'Agenten'], runs: ['Запуски', 'Runs'], workflows: ['Процеси', 'Workflows'], connections: ['Підключення', 'Verbindingen'],
+  workspace: ['Робочий простір', 'Werkruimte'], agents: ['Агенти', 'Agenten'], runs: ['Запуски', 'Runs'], workflows: ['Процеси', 'Workflows'], connections: ['Підключення ШІ', 'AI-koppelingen'],
   inbox: ['Вхідні', 'Postvak IN'], starred: ['З зірочкою', 'Met ster'], snoozed: ['Відкладені', 'Gesnoozed'], sent: ['Надіслані', 'Verzonden'], drafts: ['Чернетки', 'Concepten'],
   archive: ['Архів', 'Archief'], labels: ['Мітки', 'Labels'], accounts: ['Облікові записи', 'Accounts'], local: ['Локальні', 'Lokaal'], unread: ['Непрочитані', 'Ongelezen'],
   all: ['Усі', 'Alle'], important: ['Важливі', 'Belangrijk'], spam: ['Спам', 'Spam'], trash: ['Кошик', 'Prullenbak'], subscriptions: ['Підписки', 'Abonnementen'],

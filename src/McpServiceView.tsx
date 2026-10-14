@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "./platform/client";
+import { canonicalNavigationUrl } from "./canonical-navigation";
+import { techActief, useTech } from "./tech/tech-store";
+import { mcpIngang } from "../shared/ai-agent-bord";
 import { ecosystemTabContext } from "./tab-context";
 import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalog";
 import { ExpertMelding, RichtingBand } from "./weergave/Weergave";
@@ -112,6 +115,15 @@ function Ring({ pct, done, n }: { pct: number; done: boolean; n: number }) {
 export default function McpServiceView({ lang, tab }: Props) {
   const t = (uk: string, nl: string) => (lang === "uk" ? uk : nl);
   const section = ["overview", "dashboard", "services", "tools", "board", "agents", "apps", "playground", "traffic", "connect", "roadmap", "download", "verbindingen"].includes(tab) ? tab : "overview";
+  const tech = useTech();
+  const consent = typeof location !== "undefined" && new URLSearchParams(location.search).has("consent");
+  const ingang = tech.geladen ? mcpIngang(section, techActief(tech), consent) : null;
+  const ingangSleutel = ingang ? `${ingang.service}/${ingang.tab}` : "";
+  useEffect(() => {
+    if (!ingangSleutel) return;
+    const [doel, doelTab] = ingangSleutel.split("/") as ["ai" | "mcp", string];
+    location.replace(canonicalNavigationUrl(doel, doelTab, lang === "nl" ? "nl" : "uk"));
+  }, [ingangSleutel, lang]);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [probes, setProbes] = useState<Probe[]>([]);
@@ -253,6 +265,7 @@ export default function McpServiceView({ lang, tab }: Props) {
   // Etap 3: «простий/розширений» (alleen weergave). Een onderdeel uit «розширений» via een link: uitleg + één klik, geen inhoud.
   // Beheerpagina's (technische ruimte) volgen de modus простий/розширений niet: die modus is van de accountruimte.
   const verborgen = weergave.modus === "eenvoudig" && isExpertTab("mcp", section) && !isBeheerPagina("mcp", section);
+  if (ingang) return <p className="mcp-lead">{t("Переходимо до підключень ШІ…", "Door naar de AI-koppelingen…")}</p>;
   return (
     <div className="mcp-estate" data-mcp-tab={section} data-weergave-modus={weergave.modus ?? "onbekend"}>
       {/* Het toestemmingsvenster krijgt de ruimte van de pagina: beheerpagina's (technisch profiel) = technisch, de rest = privé. */}

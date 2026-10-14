@@ -221,3 +221,35 @@ small.ag-melding{display:block}
 /* Keuze deur/connector: op een smal scherm twee volle rijen, tekst mag afbreken (niets buiten de kaart). */
 .ag-verbind .ag-segment button[role=radio]{min-height:40px;white-space:normal;text-align:left}
 @media(max-width:560px){.ag-verbind .ag-segment{display:grid;width:100%}.ag-verbind .ag-segment-optie{border-left:0;border-top:1px solid var(--line);padding-right:0}.ag-verbind .ag-segment-optie:first-child{border-top:0}.ag-verbind .ag-segment button[role=radio]{width:100%}}
+
+/* Дошка підключення ШІ: картки й панель на всю ширину рядка, вкладки як у браузері. */
+.ag-bord-wrap{max-width:1100px}
+.ag-bord{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;align-items:stretch}
+.ag-bord-kaart{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:148px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);text-align:left;cursor:pointer;font:inherit}
+.ag-bord-kaart:hover:not(:disabled){border-color:var(--accent);box-shadow:0 8px 24px color-mix(in srgb,var(--text) 6%,transparent)}
+.ag-bord-kaart.is-open{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--panel))}
+.ag-bord-kaart.is-uit,.ag-bord-kaart:disabled{cursor:not-allowed;opacity:.72}
+.ag-bord-kaart:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ag-bord-naam{font-size:1.15rem;font-weight:700}
+.ag-bord-sub{color:var(--muted);font-size:.85rem}
+.ag-bord-paneel{grid-column:1 / -1;display:grid;gap:12px;padding:12px 14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);min-width:0}
+.ag-bord-tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.ag-bord-tab{flex:0 0 auto;padding:8px 14px;border:1px solid transparent;border-bottom:0;border-radius:10px 10px 0 0;background:transparent;color:var(--muted);font:inherit;font-weight:650;cursor:pointer}
+.ag-bord-tab[aria-selected=true]{color:var(--text);background:var(--panel);border-color:var(--line);box-shadow:inset 0 -2px 0 var(--accent)}
+.ag-bord-tab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ag-bord-blad{display:grid;gap:10px;min-width:0}
+.ag-bord-blad p,.ag-bord-blad li{margin:0;line-height:1.5}
+.ag-bord-eerlijk{padding:10px 12px;border-radius:10px;background:var(--panel)}
+.ag-bord-url{min-width:0}
+.ag-bord-url code{display:block;overflow-wrap:anywhere;padding:8px 10px;border-radius:8px;background:var(--panel)}
+.ag-bord-groep{border:1px solid var(--line);border-radius:12px;padding:8px 12px 12px;display:grid;gap:8px;min-width:0}
+.ag-bord-groep legend{padding:0 6px;font-weight:700}
+.ag-bord-cap{display:flex;gap:10px;align-items:flex-start}
+.ag-bord-cap small{display:block;color:var(--muted);font-size:.8rem}
+.ag-site-regel{margin:0;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,var(--panel));font-weight:650}
+a.ag-knop{text-decoration:none}
+@media(max-width:640px){
+  .ag-bord{grid-template-columns:1fr}
+  .ag-bord-kaart{min-height:0}
+  .ag-bord-tab{padding:8px 10px}
+}

@@ -11,13 +11,13 @@ export async function main(): Promise<number> {
   const owner = menuPreferencesForRole(allesAan, 'owner');
   const account = menuVoorOppervlak(owner, 'account');
   check('обліковий запис не містить api та admin, навіть якщо їх увімкнено', !account.some((item) => item.id === 'api' || item.id === 'admin'));
-  check('налаштування і міст лишаються в обліковому меню', account.some((item) => item.id === 'identity' && item.visible) && account.some((item) => item.id === 'mcp' && item.visible));
+  check('налаштування лишаються в обліковому меню, міст mcp — лише в технічному', account.some((item) => item.id === 'identity' && item.visible) && !account.some((item) => item.id === 'mcp'));
   check('для власника заблоковано лише налаштування', ownerLockedMenuItem('identity') && !ownerLockedMenuItem('api') && !ownerLockedMenuItem('admin'));
   const verborgen = defaultMenuPreferences().map((item) => (item.id === 'api' || item.id === 'admin' ? { ...item, visible: false } : item));
   const tech = menuVoorOppervlak(verborgen, 'technisch');
   check('технічний розділ — адміністрування, API і «Сервер і розгортання», усі видимі, без користувацьких служб', tech.length === 3 && tech.every((item) => item.visible) && tech.map((item) => item.id).join() === 'admin,api,mcp' && TECH_NAAM.uk.mcp === 'Сервер і розгортання');
   const ids = accountMenuIds(owner);
-  check('спільне меню вкладок не несе управління', !ids.includes('api') && !ids.includes('admin') && ids.includes('mcp'));
+  check('спільне меню вкладок не несе управління і не відкриває mcp як службу облікового запису', !ids.includes('api') && !ids.includes('admin') && !ids.includes('mcp'));
   const voorkeur = normaliseerZijbalk({ kopieen: [{ id: 'k-ad01', item: 'pg:admin/updates', plaats: 'zijbalk', ouder: 'svc:hub', volgorde: 0 }, { id: 'k-hb01', item: 'pg:hub/tasks', plaats: 'zijbalk', ouder: null, volgorde: 1 }] });
   const accountWeergave = menuWeergave(voorkeur, { diensten: account.filter((item) => item.visible).map((item) => item.id), toegestaan: account.map((item) => item.id) });
   const techWeergave = menuWeergave(voorkeur, { diensten: tech.map((item) => item.id), toegestaan: tech.map((item) => item.id) });
