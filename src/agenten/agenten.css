@@ -207,6 +207,16 @@ small.ag-melding{display:block}
 .ag-verbind-snippet summary{cursor:pointer;font-weight:600;padding:4px 0}
 .ag-verbind-snippet pre{margin:8px 0;padding:10px;border-radius:8px;background:var(--surface);overflow:auto;max-width:100%;font-size:12px}
 .ag-deur-verbindingen{margin-top:8px}
+/* Ruimte van de verbinding (shared/ai-ruimte.ts): privé = kalm, technisch = de kleur van de technische band. */
+.ag-verbind-ruimte{display:flex;gap:8px;align-items:flex-start;margin:0;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--accent,#1f5fbf) 8%,transparent);font-size:13px;line-height:1.45}
+.ag-verbind-ruimte[data-ruimte-uitleg=technisch]{background:color-mix(in srgb,var(--tech-kleur,#b45309) 10%,transparent)}
+.ag-tech{display:flex;flex-direction:column;gap:16px}
+.ag-tech-kop{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
+.ag-tech-kop h1{margin:0;font-size:22px}
+.ag-tech-kop p{margin:0;color:var(--muted,#667);line-height:1.5}
+.ag-tech-regels{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.ag-tech-regels li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:var(--ag-r,12px);background:var(--surface);font-size:13px;line-height:1.45}
+.ag-tech-regels li svg{flex:none;margin-top:2px}
 @media(max-width:560px){.ag-verbind-weg{padding:12px}.ag-verbind-rij{flex-direction:column;align-items:stretch}.ag-verbind-rij .ag-veld,.ag-verbind-rij select{width:100%}}
 /* Keuze deur/connector: op een smal scherm twee volle rijen, tekst mag afbreken (niets buiten de kaart). */
 .ag-verbind .ag-segment button[role=radio]{min-height:40px;white-space:normal;text-align:left}

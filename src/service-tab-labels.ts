@@ -20,7 +20,7 @@ const LABELS: Record<string, Pair> = {
   contour: ['Контур', 'Contour'], updates: ['Оновлення', 'Updates'], ai: ['Доступ ШІ', 'AI-toegang'], apps: ['Застосунки', 'Apps'], devices: ['Пристрої', 'Apparaten'], sso: ['SSO', 'SSO'], directories: ['Каталоги', 'Mappen'], roles: ['Ролі', 'Rollen'],
   diagnostics: ['Діагностика', 'Diagnostiek'], audit: ['Аудит', 'Audit'],
   dashboard: ['Панель розгортання', 'Deploy-dashboard'], services: ['Сервіси', 'Diensten'], tools: ['Інструменти', 'Hulpmiddelen'], board: ['Дошка', 'Bord'], playground: ['Пісочниця', 'Zandbak'], traffic: ['Трафік', 'Verkeer'],
-  connect: ['Підключення', 'Koppelen'], roadmap: ['Дорожня карта', 'Roadmap'], download: ['Завантаження', 'Download'],
+  connect: ['Підключення', 'Koppelen'], roadmap: ['Дорожня карта', 'Roadmap'], download: ['Завантаження', 'Download'], verbindingen: ['Технічні підключення', 'Technische verbindingen'],
 };
 
 const titleCase = (id: string) => id.charAt(0).toUpperCase() + id.slice(1).replace(/[-_]+/g, ' ');

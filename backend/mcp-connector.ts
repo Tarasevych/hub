@@ -139,8 +139,11 @@ export async function authorize(query: Record<string, string>): Promise<RouterRe
     state: query.state ? query.state.slice(0, 512) : null, scope: SCOPE, resource: query.resource || null,
   });
   if (Math.random() < 0.05) st.purgeStale().catch(() => undefined);
-  // De toestemming gebeurt in de site (bestaande aanmelding): scherm Agenten op mcp.*.
-  return redirect(`${BASE}/agents?consent=${encodeURIComponent(id)}`);
+  // De toestemming gebeurt in de site (bestaande aanmelding): scherm Agenten op mcp.* (privéruimte). Begon de eigenaar de koppeling
+  // zelf op «Технічні підключення» (ruimte=technisch in de query, alleen een routeringshint), dan opent het venster dáár; welke
+  // ruimte de verbinding echt krijgt, beslist de consent-route op de server (eigenaar + actief technisch profiel), nooit deze query.
+  const scherm = query.ruimte === 'technisch' ? 'verbindingen' : 'agents';
+  return redirect(`${BASE}/${scherm}?consent=${encodeURIComponent(id)}`);
 }
 
 // ---------------- toestemming (door de ingelogde gebruiker, via de UI) ----------------

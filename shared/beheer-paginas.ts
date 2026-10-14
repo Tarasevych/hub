@@ -8,7 +8,8 @@
 //    het menu en toont de pagina de poort «Управління сайтом». De rechten blijven op de server (eigenaarsroutes, beleid).
 //  - Eén lijst, gedeeld door zijbalk (CanonicalChrome), tabbladen (UnifiedServiceApp) en de inhoud: anders raken ze uit de pas.
 export const BEHEER_PAGINAS: Readonly<Record<string, readonly string[]>> = {
-  mcp: ['dashboard', 'apps', 'download'],
+  // verbindingen (14.10.2026): AI-verbindingen van de TECHNISCHE ruimte (serverdeur, technische connector, agenttokens, agenten op de server).
+  mcp: ['dashboard', 'apps', 'download', 'verbindingen'],
 };
 
 /** Een pagina van een gebruikersdienst die sitebeheer is (alleen in het technisch profiel). */

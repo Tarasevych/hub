@@ -16,8 +16,12 @@
 .mcp-consent-group ul{margin:6px 0 0;padding-left:18px;font-size:.92rem;line-height:1.45}
 .mcp-consent-warn{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:12px;background:#fef3c7;color:#78350f;font-size:.9rem}
 .mcp-consent-warn svg{flex:none;margin-top:2px}
+/* Ruimte van de verbinding (shared/ai-ruimte.ts): privé kalm, technisch in de kleur van de technische band. */
+.mcp-consent-ruimte{margin:0;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--accent,#2563eb) 8%,transparent);font-size:.9rem;line-height:1.45}
+.mcp-consent-ruimte.is-technisch{background:color-mix(in srgb,var(--tech-kleur,#b45309) 12%,transparent)}
+.mcp-consent-ruimte a{display:inline-block;margin-top:4px;font-weight:600}
 .mcp-consent-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px}
-.mcp-consent-actions button{min-height:48px;min-width:140px;padding:10px 22px;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;border:2px solid transparent}
+.mcp-consent-actions button,.mcp-consent-actions a.mcp-consent-primary{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;min-width:140px;padding:10px 22px;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;border:2px solid transparent;text-decoration:none}
 .mcp-consent-primary{background:var(--accent,#2563eb);color:#fff}
 .mcp-consent-secondary{background:transparent;color:inherit;border-color:var(--line,#b6c2d0)!important}
 .mcp-consent-actions button:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}

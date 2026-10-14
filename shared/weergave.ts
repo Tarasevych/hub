@@ -18,7 +18,7 @@ export const standaardModus = (eigenaar: boolean): Modus => (eigenaar ? 'expert'
 
 /** Tabbladen van mcp.* die in «простий» zichtbaar zijn; de rest alleen in «розширений». */
 export const MCP_EENVOUDIG = ['overview', 'agents', 'connect', 'apps'] as const;
-export const MCP_EXPERT = ['dashboard', 'services', 'tools', 'board', 'playground', 'traffic', 'roadmap', 'download'] as const;
+export const MCP_EXPERT = ['dashboard', 'services', 'tools', 'board', 'playground', 'traffic', 'roadmap', 'download', 'verbindingen'] as const;
 export const isExpertTab = (service: string, tab: string) => service === 'mcp' && (MCP_EXPERT as readonly string[]).includes(tab);
 export const zichtbaar = (service: string, tab: string, modus: Modus) => modus === 'expert' || !isExpertTab(service, tab);
 

@@ -21,7 +21,7 @@ const TECHNISCHE_SOORTEN = new Set([
 const TECHNISCH_PREFIX = /^(tech[._]|uitrol[._]|beheer[._]|deur[._]|server[._]|release[._]|siem[._]|vault_)/;
 const BEHEER_HOST = /^(admin|api)\.tarasevych\.com$/;
 
-/** Ruimte uit de link: admin.*/api.* en beheerpagina's van mcp.* zijn technisch; al het andere zegt niets (undefined). */
+/** Ruimte uit de link: admin.* en api.* en beheerpagina's van mcp.* zijn technisch; al het andere zegt niets (undefined). */
 export function ruimteVanLink(link: unknown): MeldingRuimte | undefined {
   if (typeof link !== 'string' || !link) return undefined;
   let u: URL; try { u = new URL(link, 'https://hub.tarasevych.com'); } catch { return undefined; }

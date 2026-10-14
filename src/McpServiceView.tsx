@@ -7,6 +7,7 @@ import { useWeergave } from "./weergave/weergave-store";
 import { isExpertTab } from "../shared/weergave";
 import { isBeheerPagina } from "../shared/beheer-paginas";
 import McpAgentsHub from "./McpAgentsHub";
+import TechVerbindingen from "./agenten/TechVerbindingen";
 import McpAppsView from "./McpAppsView";
 import { foutTekst } from "./agenten/fouten";
 import McpConsentModal from "./McpConsentModal";
@@ -110,7 +111,7 @@ function Ring({ pct, done, n }: { pct: number; done: boolean; n: number }) {
 
 export default function McpServiceView({ lang, tab }: Props) {
   const t = (uk: string, nl: string) => (lang === "uk" ? uk : nl);
-  const section = ["overview", "dashboard", "services", "tools", "board", "agents", "apps", "playground", "traffic", "connect", "roadmap", "download"].includes(tab) ? tab : "overview";
+  const section = ["overview", "dashboard", "services", "tools", "board", "agents", "apps", "playground", "traffic", "connect", "roadmap", "download", "verbindingen"].includes(tab) ? tab : "overview";
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [probes, setProbes] = useState<Probe[]>([]);
@@ -254,7 +255,8 @@ export default function McpServiceView({ lang, tab }: Props) {
   const verborgen = weergave.modus === "eenvoudig" && isExpertTab("mcp", section) && !isBeheerPagina("mcp", section);
   return (
     <div className="mcp-estate" data-mcp-tab={section} data-weergave-modus={weergave.modus ?? "onbekend"}>
-      <McpConsentModal tr={t} />
+      {/* Het toestemmingsvenster krijgt de ruimte van de pagina: beheerpagina's (technisch profiel) = technisch, de rest = privé. */}
+      <McpConsentModal tr={t} ruimte={isBeheerPagina("mcp", section) ? "technisch" : "prive"} />
       {section === "overview" || verborgen ? <RichtingBand richting="mcp" uk={lang === "uk"} metModus /> : null}
       {verborgen ? <ExpertMelding uk={lang === "uk"} /> : <>
       {error && section !== "agents" && section !== "apps" ? <p className="mcp-lead mcp-error" role="alert">{error}</p> : null}
@@ -394,6 +396,8 @@ export default function McpServiceView({ lang, tab }: Props) {
       )}
 
       {section === "apps" && <McpAppsView lang={lang} />}
+
+      {section === "verbindingen" && <TechVerbindingen tr={t} />}
 
       {section === "playground" && (
         <>

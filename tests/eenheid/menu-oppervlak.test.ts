@@ -26,7 +26,7 @@ export async function main(): Promise<number> {
   check('технічний розділ не показує сторінки облікового запису', !plat(techWeergave).includes('hub') && plat(techWeergave).includes('admin'));
   const techMcp = (techWeergave.secties.mcp || []).filter((r) => r.pagina && isBeheerPagina(r.dienst, r.pagina));
   const techRuimte = (rs: typeof techWeergave.snelbalk) => rs.filter((r) => r.dienst === 'api' || r.dienst === 'admin' || (!!r.pagina && isBeheerPagina(r.dienst, r.pagina)));
-  check('у технічній частині mcp показує лише dashboard/apps/download', techMcp.map((r) => r.pagina).sort().join() === 'apps,dashboard,download' && techRuimte(techWeergave.secties.mcp || []).length === 3);
+  check('у технічній частині mcp показує лише dashboard/apps/download/verbindingen', techMcp.map((r) => r.pagina).sort().join() === 'apps,dashboard,download,verbindingen' && techRuimte(techWeergave.secties.mcp || []).length === 4);
 
   // Аудит 14.10: сторінки управління всередині користувацької служби (mcp) — лише в технічному профілі.
   check('панель розгортання, додатки на сервері та архів — сторінки управління', ['dashboard', 'apps', 'download'].every((tab) => isBeheerPagina('mcp', tab)));

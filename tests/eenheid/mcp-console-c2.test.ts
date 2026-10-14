@@ -64,12 +64,24 @@ export async function main(): Promise<number> {
     const agentBord = await call('POST /api/mcp/agent', '', { name: 'list_tasks', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
     const agentServer = await call('POST /api/mcp/agent', '', { name: 'release_info', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
     const agentDeur = await call('POST /api/mcp/agent', '', { name: 'install_release', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
-    check('agenttoken van U: eigen bord ja, serverhulpmiddelen nee (OWNER_ONLY), deur-hulpmiddelen bestaan niet meer',
-      agentBord.status === 200 && /Taak van U/.test(agentBord.data.result) && agentServer.status === 400 && agentServer.data.error === 'OWNER_ONLY' && /TOOL_REMOVED/.test(agentDeur.data.error));
+    // Ruimte (0042): een token van de PRIVÉRUIMTE (standaard) krijgt voor elke servertool SPACE_SEPARATED (403), vóór OWNER_ONLY of een grant aan bod komt.
+    check('agenttoken van U (privéruimte): eigen bord ja, servertools nooit (SPACE_SEPARATED), ook de verwijderde deur-hulpmiddelen niet',
+      agentBord.status === 200 && /Taak van U/.test(agentBord.data.result) && agentServer.status === 403 && agentServer.data.error === 'SPACE_SEPARATED' && /private/.test(agentServer.data.message) && agentDeur.status === 403 && agentDeur.data.error === 'SPACE_SEPARATED', JSON.stringify([agentServer.data, agentDeur.data]));
     const agentGoedkeur = await call('POST /api/mcp/agent', '', { name: 'uitrol_voorstel_goedkeuren', arguments: { id: randomUUID() } }, { headers: { authorization: `Bearer ${raw}` } });
+    const agentUitrolPrive = await call('POST /api/mcp/agent', '', { name: 'uitrol_voorstel_status', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
+    // Hetzelfde token in de TECHNISCHE ruimte (zo geeft de eigenaar het uit op «Технічні підключення»): servertools volgen de oude regels, het bord van de gebruiker is weg.
+    await sys.query(`UPDATE app.mcp_console_tokens SET ruimte = 'technisch' WHERE user_id = $1`, [USER]);
+    const techServer = await call('POST /api/mcp/agent', '', { name: 'release_info', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
+    const techDeur = await call('POST /api/mcp/agent', '', { name: 'install_release', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
+    const techBord = await call('POST /api/mcp/agent', '', { name: 'list_tasks', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
     const agentUitrol = await call('POST /api/mcp/agent', '', { name: 'uitrol_voorstel_status', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
-    check('agenttoken: updates goedkeuren kan nooit (ALLEEN_EIGENAAR_MET_PASSKEY); voorbereiden alleen met grant',
-      agentGoedkeur.status === 400 && /ALLEEN_EIGENAAR_MET_PASSKEY/.test(agentGoedkeur.data.error) && agentUitrol.status === 400 && agentUitrol.data.error === 'GEEN_VOORBEREIDER_GRANT', JSON.stringify([agentGoedkeur.data, agentUitrol.data]));
+    check('agenttoken van U (technische ruimte): servertools nee (OWNER_ONLY), deur-hulpmiddelen bestaan niet meer, eigen bord onbereikbaar (SPACE_SEPARATED)',
+      techServer.status === 400 && techServer.data.error === 'OWNER_ONLY' && /TOOL_REMOVED/.test(techDeur.data.error) && techBord.status === 403 && techBord.data.error === 'SPACE_SEPARATED' && /technical/.test(techBord.data.message), JSON.stringify([techServer.data, techDeur.data, techBord.data]));
+    check('agenttoken: updates goedkeuren kan nooit (ALLEEN_EIGENAAR_MET_PASSKEY); voorbereiden alleen met grant én alleen in de technische ruimte',
+      agentGoedkeur.status === 400 && /ALLEEN_EIGENAAR_MET_PASSKEY/.test(agentGoedkeur.data.error) && agentUitrolPrive.status === 403 && agentUitrolPrive.data.error === 'SPACE_SEPARATED'
+      && agentUitrol.status === 400 && agentUitrol.data.error === 'GEEN_VOORBEREIDER_GRANT', JSON.stringify([agentGoedkeur.data, agentUitrolPrive.data, agentUitrol.data]));
+    const lijstRuimte = (await call('POST /api/mcp/tokens/list', USER)).data.tokens as any[];
+    check('tokenlijst toont de ruimte per token', lijstRuimte.length === 1 && lijstRuimte[0].ruimte === 'technisch');
     await sys.query("UPDATE app.mcp_console_tokens SET expires_at = now() - interval '1 second' WHERE user_id = $1", [USER]);
     check('verlopen token: 401', (await call('POST /api/mcp/agent', '', { name: 'list_tasks' }, { headers: { authorization: `Bearer ${raw}` } })).status === 401);
 

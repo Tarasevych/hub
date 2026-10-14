@@ -1,5 +1,5 @@
 // E2E etap 3 (13.10.2026) met een echte Chrome: mcp.* toont de richting «Міст ШІ → сайт» met «?» en de schakelaar
-// «Простий / Розширений»; eigenaar standaard «розширений» (9 pagina's in het menu: 12 min de 3 beheerpagina's die alleen in het technisch profiel staan); «простий» → 3 pagina's, bewaard op de server
+// «Простий / Розширений»; eigenaar standaard «розширений» (9 pagina's in het menu: 13 min de 4 beheerpagina's die alleen in het technisch profiel staan); «простий» → 3 pagina's, bewaard op de server
 // en na herladen; een onderdeel uit «розширений» via een link → uitleg + één klik terug; ai.* toont «ШІ для вас» met een verwijzing
 // naar mcp.*; telefoonbreedte; geen consolefouten.
 import { createRequire } from 'node:module';
@@ -56,7 +56,7 @@ export async function main(): Promise<number> {
     check('eigenaar: standaard «Розширений»', await page.locator('[data-modus="expert"]').getAttribute('aria-checked') === 'true');
     await page.locator('#canonical-submenu-mcp').waitFor({ timeout: 10000 }).catch(() => undefined);
     const vol = await paginas();
-    check('menu: 9 pagina\'s van mcp.* (12 min dashboard/apps/download: sitebeheer, alleen in het technisch profiel)', vol === 9, String(vol));
+    check('menu: 9 pagina\'s van mcp.* (13 min dashboard/apps/download/verbindingen: sitebeheer, alleen in het technisch profiel)', vol === 9, String(vol));
     await band.locator('.tech-vraag-knop').first().hover();
     const uitleg = page.locator('[data-tech-vraag]').first();
     await uitleg.waitFor({ timeout: 5000 });

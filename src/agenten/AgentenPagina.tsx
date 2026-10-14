@@ -1,6 +1,7 @@
 // mcp.*/agents in de stijl van GitHub Settings → Applications: tabbladen Огляд | Підключені ШІ | Пристрої й браузери |
-// Токени й двері | Журнал. Accountruimte: alleen wat van de gebruiker is. Het ondertekende AI-beleid (sitebeheer) staat op
-// admin → Доступ ШІ in het technisch profiel; het oude adres #beleid stuurt daarheen. Adresseerbaar via de hash (#ai, #apparaten/dev:<id>, …); oude adressen (#claude, #doors, #dev:<id>,
+// Токени | Журнал. Accountruimte = PRIVÉRUIMTE (shared/ai-ruimte.ts): alleen verbindingen, tokens en apparaten met ruimte 'prive'.
+// Alles van de technische ruimte (serverdeur, technische connector, agenten op de server) staat op mcp.*/verbindingen (technisch
+// profiel). Het ondertekende AI-beleid (sitebeheer) staat op admin → Доступ ШІ; het oude adres #beleid stuurt daarheen. Adresseerbaar via de hash (#ai, #apparaten/dev:<id>, …); oude adressen (#claude, #doors, #dev:<id>,
 // #extension, …) worden omgezet. Eén poller voor apparaten/wachtende acties; de rest bij openen, na een actie en rustig.
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import { Activity, ArrowRight, Globe, KeyRound, LayoutDashboard, Monitor, ShieldCheck, Sparkles } from 'lucide-react';
@@ -10,7 +11,7 @@ import { PairCard, PendingList } from '../DevicesView';
 import { ToolApprovals } from '../McpToolsPanel';
 import { AiStopKnop } from '../AiToestemmingen';
 import { welcomePending } from '../extension-welcome-store';
-import { isoMs, useDeurTokens, useJournaal, useOverzicht } from './data';
+import { inRuimte, isoMs, useDeurTokens, useJournaal, useOverzicht } from './data';
 import Journaal, { JournaalLijst } from './Journaal';
 import TabAi from './TabAi';
 import TabApparaten from './TabApparaten';
@@ -39,10 +40,15 @@ const schrijf = (tab: TabId, item: string, push: boolean) => {
 };
 
 export default function AgentenPagina({ tr }: { tr: Tr }) {
-  const { agents, pending, last, loaded, reload } = useAgentsData(tr);
+  const { agents: alleAgents, pending: allePending, last, loaded, reload } = useAgentsData(tr);
   const { calls, reload: reloadCalls } = useToolApprovals();
   const ov = useOverzicht();
   const tok = useDeurTokens();
+  // Privéruimte: technische apparaten (server), verbindingen en tokens horen hier niet; ze staan op «Технічні підключення».
+  const agents = useMemo(() => inRuimte(alleAgents, 'prive'), [alleAgents]);
+  const pending = useMemo(() => allePending.filter((p) => agents.some((a) => a.id === p.agentId)), [allePending, agents]);
+  const overzicht = useMemo(() => (ov.data ? { ...ov.data, oauth: inRuimte(ov.data.oauth, 'prive') } : null), [ov.data]);
+  const tokens = useMemo(() => (tok.data ? inRuimte(tok.data.tokens, 'prive') : null), [tok.data]);
   const [versie, setVersie] = useState(0);
   const [plek, setPlek] = useState(() => {
     if (welcomePending()) return { tab: 'apparaten' as TabId, item: 'extensie' };
@@ -66,24 +72,24 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   }, [reload, ov.laad, tok.laad, reloadCalls]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nu = Date.now();
-  const oauthActief = (ov.data?.oauth ?? []).filter((g) => g.status === 'active').length;
-  const tokensActief = (tok.data?.tokens ?? []).filter((t) => !t.revokedAt && (isoMs(t.expiresAt) ?? 0) > nu).length;
+  const oauthActief = (overzicht?.oauth ?? []).filter((g) => g.status === 'active').length;
+  const tokensActief = (tokens ?? []).filter((t) => !t.revokedAt && (isoMs(t.expiresAt) ?? 0) > nu).length;
   const online = agents.filter((a) => a.status === 'connected').length;
   const toolPending = calls.filter((c) => c.status === 'pending_approval');
   const wachten = pending.length + toolPending.length;
 
   const onderwerpen = useMemo(() => [
     ...agents.map((a) => ({ id: a.id, naam: a.name, groep: tr('Пристрої й браузери', 'Apparaten en browsers') })),
-    ...(ov.data?.losgekoppeld ?? []).map((a) => ({ id: a.id, naam: `${a.name} (${tr('відключено', 'losgekoppeld')} ${a.revokedAt ? new Date(a.revokedAt).toLocaleDateString() : ''})`, groep: tr('Пристрої й браузери', 'Apparaten en browsers') })),
-    ...(ov.data?.oauth ?? []).map((g) => ({ id: g.id, naam: `${g.clientName} · ${new Date(g.createdAt).toLocaleDateString()}`, groep: tr('Підключені ШІ', 'Verbonden AI') })),
-    ...(tok.data?.tokens ?? []).map((t) => ({ id: t.id, naam: `${t.name} (${t.prefix}…)`, groep: tr('Токени', 'Tokens') })),
-  ], [agents, ov.data, tok.data, tr]);
+    ...(overzicht?.losgekoppeld ?? []).map((a) => ({ id: a.id, naam: `${a.name} (${tr('відключено', 'losgekoppeld')} ${a.revokedAt ? new Date(a.revokedAt).toLocaleDateString() : ''})`, groep: tr('Пристрої й браузери', 'Apparaten en browsers') })),
+    ...(overzicht?.oauth ?? []).map((g) => ({ id: g.id, naam: `${g.clientName} · ${new Date(g.createdAt).toLocaleDateString()}`, groep: tr('Підключені ШІ', 'Verbonden AI') })),
+    ...(tokens ?? []).map((t) => ({ id: t.id, naam: `${t.name} (${t.prefix}…)`, groep: tr('Токени', 'Tokens') })),
+  ], [agents, overzicht, tokens, tr]);
 
   const tabInfo: Record<TabId, { uk: string; nl: string; icoon: ReactElement; teller?: number }> = {
     overzicht: { uk: 'Огляд', nl: 'Overzicht', icoon: <LayoutDashboard />, teller: wachten || undefined },
     ai: { uk: 'Підключені ШІ', nl: 'Verbonden AI', icoon: <Sparkles />, teller: oauthActief + tokensActief },
     apparaten: { uk: 'Пристрої й браузери', nl: 'Apparaten en browsers', icoon: <Monitor />, teller: agents.length },
-    tokens: { uk: 'Токени й двері', nl: 'Tokens en deuren', icoon: <KeyRound />, teller: tokensActief },
+    tokens: { uk: 'Токени', nl: 'Tokens', icoon: <KeyRound />, teller: tokensActief },
     journaal: { uk: 'Журнал', nl: 'Logboek', icoon: <Activity /> },
   };
   const laadFout = ov.fout || tok.fout;
@@ -93,7 +99,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
       <header className='ag-kop'>
         <div>
           <h1>{tr('Агенти', 'Agenten')}</h1>
-          <p>{tr('Хто має доступ до вашого сайту: ШІ, пристрої, браузери й токени. Усе можна відкликати; історія лишається в журналі.', 'Wie toegang heeft tot uw site: AI, apparaten, browsers en tokens. Alles is in te trekken; de geschiedenis blijft in het logboek.')}</p>
+          <p>{tr('Хто має доступ до вашого простору: ШІ, пристрої, браузери й токени. Жоден із них не керує сайтом — лише вашим. Усе можна відкликати; історія лишається в журналі.', 'Wie toegang heeft tot uw ruimte: AI, apparaten, browsers en tokens. Geen van hen beheert de site — alleen het uwe. Alles is in te trekken; de geschiedenis blijft in het logboek.')}</p>
         </div>
         <AiStopKnop tr={tr} onDone={() => void naActie()} />
       </header>
@@ -117,9 +123,9 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
             </> : null}
             leeg={loaded && !agents.length && !oauthActief ? <PairCard tr={tr} reload={naActie} agents={agents} /> : null} />
         ) : null}
-        {plek.tab === 'ai' ? <TabAi tr={tr} overzicht={ov.data} tokens={tok.data?.tokens ?? null} naActie={naActie} item={plek.item} kies={kies} calls={calls} reloadCalls={reloadCalls} /> : null}
-        {plek.tab === 'apparaten' ? <TabApparaten tr={tr} agents={agents} pending={pending} last={last} overzicht={ov.data} naActie={naActie} reload={reload} item={plek.item} kies={kies} versie={versie} /> : null}
-        {plek.tab === 'tokens' ? <TabTokens tr={tr} data={tok.data} naActie={naActie} item={plek.item} kies={kies} /> : null}
+        {plek.tab === 'ai' ? <TabAi tr={tr} overzicht={overzicht} tokens={tokens} naActie={naActie} item={plek.item} kies={kies} calls={calls} reloadCalls={reloadCalls} /> : null}
+        {plek.tab === 'apparaten' ? <TabApparaten tr={tr} agents={agents} pending={pending} last={last} overzicht={overzicht} naActie={naActie} reload={reload} item={plek.item} kies={kies} versie={versie} /> : null}
+        {plek.tab === 'tokens' ? <TabTokens tr={tr} data={tok.data ? { ...tok.data, tokens: tokens ?? [] } : null} naActie={naActie} item={plek.item} kies={kies} /> : null}
         {plek.tab === 'journaal' ? <Journaal tr={tr} onderwerpen={onderwerpen} versie={versie} actief /> : null}
       </section>
     </div>
