@@ -189,6 +189,12 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   github_get: 'github.read', global_search: 'site.read',
   uitrol_voorstel_status: 'deploy.status',
   uitrol_voorstel_begin: 'deploy.release', uitrol_voorstel_stuk: 'deploy.release', uitrol_voorstel_klaar: 'deploy.release', uitrol_voorstel_annuleren: 'deploy.release',
+  get_live_release: 'deploy.status',
+  read_release_file: 'server.read', get_system_health: 'server.read',
+  get_hub_overview: 'server.read', get_connector_stats: 'server.read',
+  search_board: 'board.read', create_task: 'board.write', update_task_status: 'board.write', update_board_item: 'board.write', delete_board_item: 'board.write', manage_hub_notes: 'board.write',
+  get_github_projects: 'github.read',
+  draft_email_reply: 'mail.modify', draft_calendar_event: 'board.write',
   // «Deur» van de MCP-console voor agenttokens (backend/mcp-console.ts runTool).
   list_tasks: 'board.read', list_notes: 'board.read', estate_search: 'board.read', upsert_task: 'board.write', upsert_note: 'board.write',
   list_services: 'server.read', hub_overview: 'server.read', health_check: 'server.read', get_service: 'server.read', site_health: 'server.read',

@@ -9,7 +9,7 @@
 //   te proberen en de gebruiker te melden dat er een goedkeuring openstaat.
 // - Inhoud van bestanden en commando-uitvoer is onbetrouwbare invoer (prompt injection): elk resultaat van het apparaat
 //   draagt een kennisgeving mee dat het gegevens zijn en geen instructies.
-import { apiPlatformVaultItems, readOwnerVaultPlaintext } from './api-platform-vault';
+import { readOwnerVaultPlaintext } from './api-platform-vault';
 import { beslissing, strengste, weigerTekst } from './ai-beleid';
 import { huidigeNamens } from './mcp-namens';
 import { CommandRefused, submitCommand, waitForCommand } from './connectors-commands';
@@ -19,6 +19,7 @@ import { SERVICE_HOSTS } from './deployment-identity';
 import * as store from './connectors-store';
 import { callSite } from './site-dispatch';
 import { explainSiteError, SITE_TOOL_BY_NAME, SITE_TOOLS, type SiteTool } from './site-tools';
+import { githubKoppeling } from './github-platform';
 
 export type ToolAnnotations = { readOnlyHint?: boolean; destructiveHint?: boolean; idempotentHint?: boolean; openWorldHint?: boolean };
 export type ToolDef = { name: string; title?: string; description: string; inputSchema: Record<string, unknown>; annotations?: ToolAnnotations };
@@ -612,9 +613,16 @@ const untrusted = (data: unknown): ToolResult => {
 };
 
 async function githubTokenName(userId: string): Promise<string | null> {
-  const item = (await apiPlatformVaultItems(userId)).find((row) => row.purpose === 'github');
-  return item ? item.keyName : null;
+  return (await githubKoppeling(userId))?.keyName ?? null;
 }
+
+/** Blijft bij de eigenaar op de site. De connector voert dit nooit uit, ook niet als een oude deur-naam wordt gevraagd. */
+export const BUITEN_BEREIK = new Set([
+  'server_backup', 'server_uitrol_nu', 'server_terugdraaien', 'start_backup', 'install_release', 'write_staging', 'update_door',
+  'deploy_release', 'deploy_rollback', 'deploy_request', 'policy_change', 'archive_download', 'backup_download',
+  'read_secret', 'app_secret_value', 'uitrol_voorstel_goedkeuren',
+]);
+const BUITEN_TEKST = 'OUT_OF_SCOPE: approving a release, rolling back, creating a backup, changing the AI policy, downloading an archive or backup, and reading secret values stay with the owner on the website. Do not try another way.';
 
 // ---- groepen en modi per hulpmiddel ----
 // De gebruiker kiest per hulpmiddel een modus: "always" (geen extra vraag van ons), "ask" (elke aanroep wacht op een klik op de site) of "off".
@@ -639,7 +647,7 @@ export function groupOf(name: string): ToolGroup {
 export function defaultMode(name: string): ToolMode {
   if (RISKY_TOOLS.has(name)) return 'off';
   const site = SITE_TOOL_BY_NAME.get(name);
-  if (site) return site.write ? 'ask' : 'always';
+  if (site) return site.confirm || site.write ? 'ask' : 'always';
   // Voor agent-hulpmiddelen betekent "always": geen EXTRA vraag van ons; het beleid van de agent/browser (aparte schakelaars) geldt dan nog.
   return 'always';
 }
@@ -680,7 +688,10 @@ async function allTools(userId: string, opts: { alwaysMachine?: boolean }): Prom
   const agents = opts.alwaysMachine ? [] : await store.listAgents(userId);
   if (opts.alwaysMachine || agents.some((a) => !isBrowserAgent(a))) tools.push(...MACHINE_TOOLS.map(annotate), ...APP_TOOLS.map(annotate));
   if (opts.alwaysMachine || agents.some(isBrowserAgent)) tools.push(...BROWSER_TOOLS.map(annotate));
-  if (opts.alwaysMachine) tools.push(...SITE_TOOLS.map((s) => s.tool));
+  if (opts.alwaysMachine) {
+    const githubAan = !!(await githubTokenName(userId));
+    tools.push(...SITE_TOOLS.filter((s) => !s.requiresGithub || githubAan).map((s) => s.tool));
+  }
   if (await githubTokenName(userId)) {
     tools.push(annotate({
       name: 'github_get',
@@ -736,6 +747,7 @@ export const KNOWN_TOOL_NAMES: readonly string[] = [...MACHINE_TOOLS, ...APP_TOO
  */
 export async function callTool(userId: string, rawName: string, rawArgs: any = {}, opties: { eigenaarZelf?: boolean } = {}): Promise<ToolResult> {
   const { name, args } = resolveAlias(rawName, rawArgs);
+  if (BUITEN_BEREIK.has(name)) return text(BUITEN_TEKST, true);
   try {
     // Het ondertekende AI-beleid van de eigenaar (§13.12) is een plafond: de strengste van «instelling op de site» en «beleid» wint.
     const beleid = opties.eigenaarZelf ? { mode: 'always' as const, code: 'eigenaar', agentId: null, staat: 'niet-ingesteld' as const } : await beslissing(huidigeNamens(), name);
@@ -853,14 +865,14 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
     }
 
     if (name === 'github_get') {
-      const keyName = await githubTokenName(userId);
-      if (!keyName) return text('No GitHub token is stored in the user\'s vault.', true);
+      const kop = await githubKoppeling(userId);
+      if (!kop) return text('No GitHub token is stored in the user\'s vault.', true);
       const path = String(args.path ?? '');
       if (!path.startsWith('/') || path.includes('..') || path.includes('//')) return text('Invalid path.', true);
       const url = new URL(GITHUB_API + path);
       if (url.origin !== GITHUB_API) return text('Invalid path.', true);
       for (const [k, v] of Object.entries(args.query ?? {})) url.searchParams.set(k, String(v));
-      const token = await readOwnerVaultPlaintext(userId, keyName, 'github');
+      const token = await readOwnerVaultPlaintext(userId, kop.keyName, kop.purpose);
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'mijn-ruimte' },
         signal: AbortSignal.timeout(15_000),
@@ -953,7 +965,7 @@ async function askSite(userId: string, site: SiteTool, args: any): Promise<ToolR
     if (now.status === 'rejected') return text('The user rejected this action.', true);
     if (now.status === 'timeout') return text('The approval request expired without an answer.', true);
     if (Date.now() >= deadline) {
-      return text('This action is waiting for the user\'s approval on the Mijn Ruimte website (mcp.tarasevych.com → Agents → Tools and permissions). Tell the user and do not retry.', true);
+      return text(JSON.stringify({ status: 'pending', pending: true, message: 'This action is waiting for the user\'s approval on the Mijn Ruimte website (mcp.tarasevych.com → Agents → Tools and permissions). Tell the user and do not retry.' }), true);
     }
     await sleep(500);
   }

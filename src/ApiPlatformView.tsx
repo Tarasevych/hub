@@ -15,7 +15,7 @@ const sessionBody=()=>({service:'api',tabContext:ecosystemTabContext(),sourceOri
 const statusLabel=(status:ApiPlatformCapability['status'],tr:Tr)=>status==='published'?tr('Опубліковано','Gepubliceerd'):status==='planned'?tr('Заплановано','Gepland'):tr('Заборонено','Verboden');
 const connectionStatusLabel=(status:ConnectionItem['status'],tr:Tr)=>status==='configured'?tr('Налаштовано','Geconfigureerd'):status==='error'?tr('Помилка','Fout'):status==='revoked'?tr('Відкликано','Ingetrokken'):tr('Не підключено','Niet gekoppeld');
 const when=(value:number|null)=>value?new Date(value).toLocaleString():'—';
-const PURPOSES=[{id:'anthropic',uk:'Anthropic (Claude API)',nl:'Anthropic (Claude-API)'},{id:'home-assistant',uk:'Home Assistant',nl:'Home Assistant'},{id:'telegram',uk:'Telegram bot',nl:'Telegram-bot'},{id:'github',uk:'GitHub PAT',nl:'GitHub PAT'},{id:'webhook',uk:'Webhook signing',nl:'Webhook-ondertekening'},{id:'other',uk:'Інше',nl:'Overig'}];
+const PURPOSES=[{id:'anthropic',uk:'Anthropic (Claude API)',nl:'Anthropic (Claude-API)'},{id:'home-assistant',uk:'Home Assistant',nl:'Home Assistant'},{id:'telegram',uk:'Telegram bot',nl:'Telegram-bot'},{id:'github',uk:'GitHub PAT',nl:'GitHub PAT'},{id:'github-app',uk:'GitHub (альтернативне підключення)',nl:'GitHub (alternatieve koppeling)'},{id:'webhook',uk:'Webhook signing',nl:'Webhook-ondertekening'},{id:'other',uk:'Інше',nl:'Overig'}];
 export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
   const[contract,setContract]=useState<Contract>(fallback);
   const[tokens,setTokens]=useState<TokenItem[]>([]);

@@ -57,7 +57,11 @@ const TOOL_SOORT: Readonly<Record<string, ActieSoort>> = {
   github_ci_status: 'github', github_list_commits: 'github', github_list_issues: 'github', github_list_repos: 'github', github_my_activity: 'github',
   github_read_readme: 'github', github_repo_overview: 'github', github_search: 'github', github_status: 'github', github_comment_issue: 'github',
   github_create_issue: 'github', github_get: 'github',
-  mcp_board_list: 'bord', mcp_board_add: 'bord',
+  mcp_board_list: 'bord', mcp_board_add: 'bord', search_board: 'bord', create_task: 'bord', update_task_status: 'bord',
+  update_board_item: 'bord', delete_board_item: 'bord', manage_hub_notes: 'bord', draft_calendar_event: 'agenda',
+  get_live_release: 'uitrol', list_releases: 'uitrol', read_release_file: 'server', get_system_health: 'server',
+  list_services: 'server', get_service: 'server', get_hub_overview: 'server', get_connector_stats: 'server',
+  get_github_projects: 'github', draft_email_reply: 'mail',
   mcp_archive_status: 'server', mcp_backups_list: 'server', mcp_services_health: 'server', mcp_traffic_recent: 'server',
   site_search: 'zoeken', global_search: 'zoeken',
   uitrol_voorstel_begin: 'uitrol', uitrol_voorstel_stuk: 'uitrol', uitrol_voorstel_klaar: 'uitrol', uitrol_voorstel_status: 'uitrol', uitrol_voorstel_annuleren: 'uitrol',
@@ -102,6 +106,9 @@ export function actieDoel(tool: string, args: unknown): string | undefined {
     case 'app_route': { const n = tekst(a.name); const d = tekst(a.domain); return n && /^[a-z][a-z0-9-]{1,31}$/.test(n) ? kort(`${n}${d && /^[a-z0-9.-]{1,253}$/i.test(d) ? ` → ${d}` : ''}`, 100) : undefined; }
     case 'app_secret_request': case 'app_secret_delete': { const n = tekst(a.name); const k = tekst(a.key); return n && /^[a-z][a-z0-9-]{1,31}$/.test(n) ? kort(`${n}${k && /^[A-Z_][A-Z0-9_]{0,63}$/.test(k) ? ` · ${k}` : ''}`, 100) : undefined; }
     case 'docker_manage_container': { const c = tekst(a.container) ?? tekst(a.name); const act = tekst(a.action); return c ? kort(`${act ? `${act} ` : ''}${c}`, 60) : undefined; }
+    case 'read_release_file': return pad ? kort(verberg(pad), 100) : undefined;
+    case 'get_service': { const id = tekst(a.id); return id && /^[a-z]{2,12}$/.test(id) ? id : undefined; }
+    case 'update_task_status': { const id = tekst(a.id); const st = tekst(a.status); return id ? kort(`${st && /^(backlog|doing|blocked|done)$/.test(st) ? `${st} ` : ''}${id}`, 80) : undefined; }
     case 'browser_invoke_action': { const x = tekst(a.action) ?? tekst(a.name); return x ? kort(verberg(x), 50) : undefined; }
     default: {
       const repo = tekst(a.repo) ?? tekst(a.repository);
@@ -143,6 +150,15 @@ const Z: Readonly<Record<string, [string, string]>> = {
   github_search: ['Шукав у GitHub', 'Zocht in GitHub'], github_my_activity: ['Переглянув вашу активність у GitHub', 'Bekeek uw GitHub-activiteit'],
   github_create_issue: ['Створив задачу в GitHub', 'Maakte een issue in GitHub'], github_comment_issue: ['Прокоментував задачу в GitHub', 'Reageerde op een issue in GitHub'],
   mcp_board_list: ['Переглянув дошку завдань', 'Bekeek het takenbord'], mcp_board_add: ['Додав завдання на дошку', 'Voegde een taak toe aan het bord'],
+  search_board: ['Шукав на дошці', 'Zocht op het bord'], create_task: ['Створив завдання', 'Maakte een taak'],
+  update_task_status: ['Змінив статус завдання', 'Wijzigde de status van een taak'], update_board_item: ['Виправив запис на дошці', 'Corrigeerde een borditem'],
+  delete_board_item: ['Видалив запис з дошки', 'Verwijderde een borditem'], manage_hub_notes: ['Працював з нотатками хаба', 'Werkte met hubnotities'],
+  get_live_release: ['Перевірив живий випуск', 'Controleerde de live release'], list_releases: ['Переглянув список випусків', 'Bekeek de lijst van releases'],
+  read_release_file: ['Прочитав файл випуску', 'Las een releasebestand'], get_system_health: ['Перевірив стан сайту і дверей', 'Controleerde site en deur'],
+  list_services: ['Переглянув карту сервісів', 'Bekeek de kaart van diensten'], get_service: ['Переглянув один сервіс', 'Bekeek één dienst'],
+  get_hub_overview: ['Переглянув огляд хаба', 'Bekeek het hub-overzicht'], get_connector_stats: ['Переглянув лічильник конектора', 'Bekeek de teller van de connector'],
+  get_github_projects: ['Переглянув дошки GitHub Projects', 'Bekeek GitHub Projects'], draft_email_reply: ['Підготував чернетку листа', 'Maakte een conceptmail'],
+  draft_calendar_event: ['Підготував чернетку події', 'Maakte een conceptafspraak'],
   mcp_services_health: ['Перевірив стан сервісів сайту', 'Controleerde de diensten van de site'], mcp_backups_list: ['Переглянув резервні копії', 'Bekeek de back-ups'],
   mcp_archive_status: ['Перевірив стан архіву', 'Controleerde het archief'], mcp_traffic_recent: ['Переглянув трафік конектора', 'Bekeek het verkeer van de connector'],
   site_search: ['Шукав на сайті', 'Zocht op de site'],
