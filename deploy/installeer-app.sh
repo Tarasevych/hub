@@ -44,6 +44,11 @@ MIGRATIE_ENV=/etc/mijn-ruimte/migratie.env
 DIENST=mijn-ruimte.service
 GEBRUIKER=mijnruimte
 BACKUP_GROEP=mijnruimte-backup
+# Audit van een handmatige installatie. GitOps, de ondertekende inbox en de site-opdracht «terugdraaien»
+# zetten MIJN_RUIMTE_UITROL_MODUS en schrijven zelf; als root nooit een ander statuspad (tests wel).
+if [ "$(id -u)" -eq 0 ]; then unset MIJN_RUIMTE_STATUS_DIR MIJN_RUIMTE_STATUS_GROEP; fi
+STATUS_GEBEURTENISSEN="${MIJN_RUIMTE_STATUS_DIR:-/var/lib/mijn-ruimte-uitrol-status}"
+STATUS_GROEP="${MIJN_RUIMTE_STATUS_GROEP:-$GEBRUIKER}"
 NODE="${NODE:-/usr/bin/node}"
 PORT="${PORT:-8080}"
 BEWAAR="${BEWAAR_RELEASES:-5}"
@@ -58,6 +63,78 @@ git_bron() { git -c safe.directory="$BRON_GIT" -C "$BRON_GIT" "$@"; }
 melding() { echo "[installeer] $*"; }
 waarschuwing() { echo "[installeer] LET OP: $*" >&2; }
 fout() { echo "[installeer] FOUT: $*" >&2; exit 1; }
+
+pakket_versie() {
+  local v=""
+  [ -f "$1/UITROL-VERSIE" ] && v="$(head -c 32 "$1/UITROL-VERSIE" | tr -d '\r\n[:space:]')"
+  [[ "$v" =~ ^[0-9]{8}-[0-9]{6}$ ]] && printf '%s' "$v"
+}
+commit_van() {
+  local c=""
+  [ -f "$1/RELEASE-COMMIT" ] && c="$(head -c 64 "$1/RELEASE-COMMIT" | tr -d '\r\n[:space:]')"
+  c="${c:0:40}"
+  [[ "$c" =~ ^[0-9a-f]{7,40}$ ]] && printf '%s' "$c"
+}
+
+# Handmatige SSH-installatie of -terugdraaiing. Schrijft status.json (methode ssh, de app zet daarmee
+# geen voorstel op «geïnstalleerd») en een regel in gebeurtenissen.jsonl. Een andere modus schrijft niets.
+noteer_ssh() { # noteer_ssh <SSH_OK|SSH_TERUG> <release> <pakket> <commit>
+  case "${MIJN_RUIMTE_UITROL_MODUS:-ssh}" in
+    passkey|handtekening|gitops|opdracht) return 0 ;;
+  esac
+  case "$1" in SSH_OK|SSH_TERUG) ;; *) return 0 ;; esac
+  mkdir -p "$STATUS_GEBEURTENISSEN" || return 1
+  (
+    flock 7
+    tmp="$(mktemp "$STATUS_GEBEURTENISSEN/.gebeurtenis.XXXXXX")"
+    st="$(mktemp "$STATUS_GEBEURTENISSEN/.status.XXXXXX")"
+    python3 - "$STATUS_GEBEURTENISSEN/gebeurtenissen.jsonl" "$tmp" "$st" "$1" "$2" "$3" "$4" "${SUDO_USER:-}" "${SSH_CONNECTION:-}" <<'PY' || { rm -f -- "$tmp" "$st"; exit 1; }
+import json, sys, datetime, secrets, re
+pad, tmp, st, code, release, pakket, commit, wie, verbinding = sys.argv[1:10]
+def schoon(v, pat):
+    v = str(v or "").strip()
+    return v if re.fullmatch(pat, v) else ""
+release = schoon(release, r"[0-9]{8}-[0-9]{6}")
+if not release:
+    sys.exit(2)
+pakket = schoon(pakket, r"[0-9]{8}-[0-9]{6}")
+commit = schoon(commit, r"[0-9a-f]{7,40}")
+wie = (schoon(wie, r"[A-Za-z_][A-Za-z0-9_.-]{0,31}") or "onbekend") if str(wie or "").strip() else "root"
+adres = schoon(str(verbinding).split()[0] if str(verbinding).split() else "", r"(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)")
+if code == "SSH_OK":
+    uk, nl = f"Випуск {release} встановлено з SSH", f"Release {release} geïnstalleerd via SSH"
+else:
+    uk, nl = f"Повернуто на випуск {release} з SSH", f"Teruggedraaid naar release {release} via SSH"
+if pakket:
+    uk += f" (пакет {pakket})"; nl += f" (pakket {pakket})"
+uk += f", користувач {wie}"; nl += f", gebruiker {wie}"
+if adres:
+    uk += f", з {adres}"; nl += f", vanaf {adres}"
+if commit:
+    uk += f", коміт {commit[:12]}"; nl += f", commit {commit[:12]}"
+uk += "."; nl += "."
+nu = datetime.datetime.now(datetime.timezone.utc)
+regel = {"id": nu.strftime("%Y%m%dT%H%M%S%fZ") + "-" + secrets.token_hex(4), "tijd": nu.isoformat(),
+         "bron": "uitrol", "code": code, "niveau": "info", "uk": uk, "nl": nl, "tag": release,
+         "herkomst": "ssh", "wie": wie, "release": release}
+if pakket: regel["pakket"] = pakket
+if commit: regel["commit"] = commit
+if adres: regel["adres"] = adres
+try:
+    oud = open(pad, encoding="utf-8").read().splitlines()[-499:]
+except FileNotFoundError:
+    oud = []
+with open(tmp, "w", encoding="utf-8") as f:
+    f.write("\n".join(oud + [json.dumps(regel, ensure_ascii=False)]) + "\n")
+json.dump({"staat": "klaar", "code": code, "uk": uk, "nl": nl, "versie": release, "methode": "ssh", "tijd": nu.isoformat()},
+          open(st, "w"), ensure_ascii=False)
+PY
+    chgrp "$STATUS_GROEP" "$tmp" "$st" 2>/dev/null || true
+    chmod 0640 "$tmp" "$st"
+    mv -f "$tmp" "$STATUS_GEBEURTENISSEN/gebeurtenissen.jsonl"
+    mv -f "$st" "$STATUS_GEBEURTENISSEN/status.json"
+  ) 7>"$STATUS_GEBEURTENISSEN/.gebeurtenissen.lock"
+}
 
 # Doel van de current-symlink, of leeg als die (nog) niet bestaat. NIET `readlink -f` op een
 # ontbrekend pad: dat geeft het pad zelf terug (bij de eerste installatie gaf dat een symlink naar zichzelf).
@@ -443,6 +520,7 @@ installeren() {
   agenten_bijwerken "$doel"
   releases_opruimen
   melding "klaar: release $datum (commit $(cat "$doel/RELEASE-COMMIT"))"
+  noteer_ssh SSH_OK "$datum" "$(pakket_versie "$doel")" "$(commit_van "$doel")" || waarschuwing "auditregel voor deze installatie niet geschreven"
 }
 
 terugdraaien() {
@@ -464,6 +542,7 @@ terugdraaien() {
   systemctl restart "$DIENST"
   gezond || fout "release $doel start niet gezond; journalctl -u $DIENST -n 50"
   melding "teruggedraaid naar $(basename "$doel")"
+  noteer_ssh SSH_TERUG "$(basename "$doel")" "$(pakket_versie "$doel")" "$(commit_van "$doel")" || waarschuwing "auditregel voor dit terugdraaien niet geschreven"
 }
 
 dashboard() {
@@ -806,5 +885,6 @@ case "$opdracht" in
   apps-status) vereis_root; apps_status ;;
   apps-terminal) vereis_root; vereis_node; apps_terminal "$@" ;;
   beheer-koppelen) beheer_koppelen "$@" ;;
+  noteer-proef) [ "$(id -u)" -ne 0 ] && [ "${INSTALLEER_NOTEER_PROEF:-}" = 1 ] || fout "alleen in een test"; noteer_ssh "$@" ;;
   *) sed -n '/^set -euo/q;2,$p' "$0"; exit 2 ;;
 esac

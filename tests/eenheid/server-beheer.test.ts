@@ -304,12 +304,45 @@ async function appTests(check: (n: string, ok: boolean, i?: string) => void) {
   }
 }
 
+function sshNoteerTests(check: (n: string, ok: boolean, i?: string) => void) {
+  const regel = (extra: Record<string, unknown>) => JSON.stringify({ id: '20261013T190100123456Z-bbbb2222', tijd: '2026-10-13T19:01:00.000Z', bron: 'uitrol', code: 'SSH_OK', niveau: 'info', uk: 'у', nl: 'n', tag: '20261013-220754', ...extra });
+  return import('../../backend/server-beheer').then((beheer) => {
+    const vuil = beheer.parseRootGebeurtenissen([
+      regel({ herkomst: 'ssh', wie: 'beheer;id', pakket: '../etc', release: '20261013-220754', commit: 'abcdef1234567890', adres: '203.0.113.5' }),
+      JSON.stringify({ id: '20261013T190200123456Z-cccc3333', bron: 'app', code: 'SSH_OK', herkomst: 'ssh' }),
+      regel({ herkomst: 'handtekening', code: 'OK', tag: '20261008-150001' }).replace('"code":"SSH_OK"', '"code":"OK"'),
+    ].join('\n'));
+    const ssh = vuil.find((g) => g.code === 'SSH_OK');
+    check('parse: SSH-regel houdt release, commit en adres; vieze wie en pakket vallen weg', !!ssh && ssh.herkomst === 'ssh' && ssh.release === '20261013-220754' && ssh.commit === 'abcdef1234567890' && ssh.adres === '203.0.113.5' && !ssh.wie && !ssh.pakket && vuil.length === 2, JSON.stringify(vuil));
+    const tonen = beheer.toonbareInstallaties(vuil, ['20261008-150001']);
+    check('geschiedenis: SSH blijft zichtbaar, geïnstalleerde handtekening niet dubbel', tonen.length === 1 && tonen[0].code === 'SSH_OK');
+    check('geschiedenis: handtekening zonder voorstel wel', beheer.toonbareInstallaties(vuil, []).some((g) => g.herkomst === 'handtekening'));
+    if (process.getuid?.() === 0) { check('noteer-proef: overgeslagen als root', true); return; }
+    const dir = mkdtempSync(join(tmpdir(), 'ssh-noteer-'));
+    const run = (args: string[], env: Record<string, string>) => spawnSync('bash', ['deploy/installeer-app.sh', 'noteer-proef', ...args], { encoding: 'utf8', env: { ...process.env, INSTALLEER_NOTEER_PROEF: '1', MIJN_RUIMTE_STATUS_DIR: dir, MIJN_RUIMTE_STATUS_GROEP: 'nogroup', ...env } });
+    const dicht = spawnSync('bash', ['deploy/installeer-app.sh', 'noteer-proef', 'SSH_OK', '20261013-220754', '', ''], { encoding: 'utf8' });
+    check('noteer-proef zonder testvlag geweigerd', dicht.status !== 0);
+    const ok = run(['SSH_OK', '20261013-220754', '20261013-173658', '9a76e52123357ce8c1126124338e01cb996c763c'], { SUDO_USER: 'beheer', SSH_CONNECTION: '203.0.113.5 54321 203.0.113.10 22' });
+    const regels = existsSync(join(dir, 'gebeurtenissen.jsonl')) ? readFileSync(join(dir, 'gebeurtenissen.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l)) : [];
+    const status = existsSync(join(dir, 'status.json')) ? JSON.parse(readFileSync(join(dir, 'status.json'), 'utf8')) : {};
+    const gelezen = beheer.parseRootGebeurtenissen(readFileSync(join(dir, 'gebeurtenissen.jsonl'), 'utf8'));
+    check('SSH-installatie schrijft audit + status (methode ssh)', ok.status === 0 && regels.length === 1 && regels[0].herkomst === 'ssh' && regels[0].wie === 'beheer' && regels[0].pakket === '20261013-173658' && regels[0].release === '20261013-220754' && regels[0].adres === '203.0.113.5' && status.methode === 'ssh' && status.versie === '20261013-220754' && /beheer/.test(regels[0].uk) && gelezen.length === 1 && gelezen[0].wie === 'beheer' && gelezen[0].pakket === '20261013-173658', `${ok.status} ${ok.stderr} ${JSON.stringify(regels[0] || {})}`);
+    const vuilWie = run(['SSH_TERUG', '20261013-173926', '../etc/passwd', 'niet-een-commit'], { SUDO_USER: 'beheer;id', SSH_CONNECTION: '999.1.1.1 1 2 3' });
+    const na = readFileSync(join(dir, 'gebeurtenissen.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    check('SSH-regel zuivert gebruiker, adres en pakket', vuilWie.status === 0 && na.length === 2 && na[1].code === 'SSH_TERUG' && na[1].wie === 'root' && !na[1].adres && !na[1].pakket && !/beheer;id|\.\.\/etc/.test(na[1].uk), JSON.stringify(na[1]));
+    const stil = run(['SSH_OK', '20261013-220755', '', ''], { MIJN_RUIMTE_UITROL_MODUS: 'passkey' });
+    check('passkey-modus schrijft geen SSH-regel', stil.status === 0 && readFileSync(join(dir, 'gebeurtenissen.jsonl'), 'utf8').trim().split('\n').length === 2);
+    rmSync(dir, { recursive: true, force: true });
+  });
+}
+
 export async function main(): Promise<number> {
   const { check, einde } = checker('server-beheer');
   gitopsTests(check);
   opdrachtTests(check);
   polkitTests(check);
   plafond(check);
+  await sshNoteerTests(check);
   await appTests(check);
   return einde();
 }

@@ -53,7 +53,8 @@ export async function main(): Promise<number> {
     writeFileSync(ondertekenaars, `uitrol@mijn-ruimte namespaces="mijn-ruimte-uitrol" ${readFileSync(`${goed}.pub`, 'utf8').trim()}\n`);
     const spoor = join(basis, 'installer-spoor');
     const stub = join(basis, 'stub-installer.sh');
-    writeFileSync(stub, `#!/bin/bash\necho "$1 $2" >> "${spoor}"\ncat "$2/UITROL-VERSIE" >> "${spoor}"\n`); chmodSync(stub, 0o755);
+    const modusBestand = join(basis, 'modus');
+    writeFileSync(stub, `#!/bin/bash\necho "$1 $2" >> "${spoor}"\ncat "$2/UITROL-VERSIE" >> "${spoor}"\nprintf '%s\\n' "\${MIJN_RUIMTE_UITROL_MODUS:-}" > "${modusBestand}"\n`); chmodSync(stub, 0o755);
     const env = { ...process.env, UITROL_INBOX: inbox, UITROL_WERK: werk, UITROL_STATUS_DIR: statusMap, UITROL_ONDERTEKENAARS: ondertekenaars, UITROL_INSTALLEER: stub, UITROL_LOCK: join(basis, 'lock'), UITROL_GROEP: 'nogroup' };
     const draai = () => spawnSync('bash', [SCRIPT], { env, encoding: 'utf8' });
     const status = () => { try { return JSON.parse(readFileSync(join(statusMap, 'status.json'), 'utf8')); } catch { return {}; } };
@@ -114,6 +115,10 @@ export async function main(): Promise<number> {
     r = draai();
     const regels = spoorRegels();
     check('geldig ondertekend pakket geïnstalleerd (klaar)', r.status === 0 && status().staat === 'klaar', `${r.status} ${JSON.stringify(status())} ${r.stderr.slice(-300)}`);
+    const audit = () => existsSync(join(statusMap, 'gebeurtenissen.jsonl')) ? readFileSync(join(statusMap, 'gebeurtenissen.jsonl'), 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)) : [];
+    check('ondertekende uitrol schrijft auditregel met herkomst handtekening', audit().some((e) => e.bron === 'uitrol' && e.code === 'OK' && e.herkomst === 'handtekening' && e.tag === '20261008-110000'));
+    check('weigering zonder handtekening staat in dezelfde audit', audit().some((e) => e.code === 'SIG_ONTBREEKT' && e.herkomst === 'handtekening'));
+    check('installer erft modus handtekening', (existsSync(modusBestand) ? readFileSync(modusBestand, 'utf8').trim() : '') === 'handtekening');
     check('installer kreeg de kopie in de werkmap (niet de inbox)', regels.length === 2 && regels[0].startsWith(`installeren ${werk}/`) && regels[1] === '20261008-110000', regels.join(' | '));
     check('laatste-versie bijgewerkt', readFileSync(join(werk, 'laatste-versie'), 'utf8').trim() === '20261008-110000');
     check('inbox leeg na installatie', readdirSync(inbox).filter(n => n !== 'aanvraag').length === 0);

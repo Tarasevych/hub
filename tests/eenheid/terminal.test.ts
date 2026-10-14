@@ -70,5 +70,24 @@ export async function main(): Promise<number> {
   check('agent-capabilities melden de terminal alleen als die aan staat', JSON.stringify(agent.handlers ? Object.keys(agent.handlers) : []).includes('term.open'));
   const tb = readFileSync('backend/terminal.ts', 'utf8');
   check('server: alleen eigen apparaten, stap-op, ticket eenmalig, invoer niet opgenomen', /store\.getAgent\(u\.id, agentId\)/.test(tb) && /x\.ticketHash = ''/.test(tb) && !/'i', /.test(tb) && /stepUp: true/.test(readFileSync('backend/terminal-routes.ts', 'utf8')));
+
+  // ---------------------------------------------------------------- 14.10: testmachines (--test) en vlaggen zonder waarde
+  const { magApparaat } = await import(resolve('shared/terminal.ts'));
+  const server = { terminal: { enabled: true } }, testm = { terminal: { enabled: true, test: true } };
+  check('terminal.servers opent server én testmachine', magApparaat(['terminal.servers'], server) && magApparaat(['terminal.servers'], testm));
+  check('terminal.test opent ALLEEN een testmachine (niet de server)', magApparaat(['terminal.test'], testm) && !magApparaat(['terminal.test'], server));
+  check('zonder terminalrecht: niets', !magApparaat(['diagnose.lezen'], testm) && !magApparaat([], server));
+  check('openen controleert dezelfde regel op de server', /if \(!magApparaat\(act\.mogelijkheden, c\)\) fout\('TERMINAL_ALLEEN_TESTMACHINE', 403\)/.test(readFileSync('backend/terminal.ts', 'utf8')));
+  const { execFileSync } = await import('node:child_process');
+  const cfgPad = join(werk, 'agent-config.json');
+  writeFileSync(cfgPad, JSON.stringify({ server: 'https://x.invalid', roots: [root], allow: [], apps: { enabled: true, runtime: 'podman' } }));
+  const cli = (...a: string[]) => execFileSync(process.execPath, [resolve('deploy/agent/agent.mjs'), ...a], { env: { ...process.env, HUB_AGENT_CONFIG: cfgPad }, encoding: 'utf8' });
+  cli('terminal-config', 'on', '--test', '--runtime', 'podman');
+  const naTest = JSON.parse(readFileSync(cfgPad, 'utf8'));
+  check('terminal-config on --test --runtime podman: test aan én runtime niet opgegeten', naTest.terminal?.enabled === true && naTest.terminal?.test === true && naTest.terminal?.runtime === 'podman', JSON.stringify(naTest.terminal));
+  cli('terminal-config', 'on', '--runtime', 'podman');
+  check('terminal-config on zonder --test: geen testmachine', JSON.parse(readFileSync(cfgPad, 'utf8')).terminal?.test === false);
+  cli('apps-config', '--disable');
+  check('apps-config --disable zet de apps echt uit (was een fout vóór 0.7.1)', JSON.parse(readFileSync(cfgPad, 'utf8')).apps?.enabled === false);
   return einde();
 }

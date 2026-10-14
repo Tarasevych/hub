@@ -25,6 +25,7 @@ import { rateLimit } from '../server/platform/beveiliging';
 import { getPool } from '../server/platform/pg';
 import type { RouterMiddleware } from '../server/platform/router';
 import { meld } from './melder';
+import { parseRootGebeurtenissen, toonbareInstallaties } from './server-beheer';
 import { ToegangFout, gebruikVastleggen, redenVan, viaAppIngetrokken, wijzigingVastleggen } from './toegang-context';
 
 export const UITROL_LIMIETEN = Object.freeze({
@@ -509,14 +510,20 @@ export async function overzicht() {
   await synchroniseer();
   const b = await leesSleutels();
   const voorstellen = (await sys().query('SELECT * FROM app.uitrol_voorstellen ORDER BY aangemaakt_op DESC LIMIT 50')).rows.map(voorstelUit);
-  let rootStatus: unknown = null; let sleutelStatus: unknown = null;
+  let rootStatus: unknown = null; let sleutelStatus: unknown = null; let ruw = '';
   try { rootStatus = JSON.parse(await readFile(path.join(statusDir(), 'status.json'), 'utf8')); } catch { rootStatus = null; }
   try { sleutelStatus = JSON.parse(await readFile(path.join(statusDir(), 'goedkeur-sleutels.json'), 'utf8')); } catch { sleutelStatus = null; }
+  try { ruw = await readFile(path.join(statusDir(), 'gebeurtenissen.jsonl'), 'utf8'); } catch { ruw = ''; }
+  const gezet = voorstellen.filter((v) => v.status === 'geinstalleerd').map((v) => v.versie);
+  const installaties = toonbareInstallaties(parseRootGebeurtenissen(ruw), gezet).slice(-50).reverse().map((g) => ({
+    id: g.id, tijd: g.tijd, code: g.code, herkomst: g.herkomst || '', wie: g.wie || '', pakket: g.pakket || '', release: g.release || g.tag || '',
+    commit: g.commit || '', adres: g.adres || '', uk: g.uk, nl: g.nl,
+  }));
   return {
     schakelaar: await schakelaarAan(), rpId: b.rpId, origins: b.origins,
     passkeys: b.sleutels.map((s) => ({ vingerafdruk: s.vingerafdruk, kort: kern.vingerafdrukKort(s.vingerafdruk), label: s.label, toegevoegd: s.toegevoegd, door: s.door })),
     wachtend: (await wachtendeAanmeldingen()).map((w) => ({ vingerafdruk: w.vingerafdruk, kort: kern.vingerafdrukKort(w.vingerafdruk), label: w.label, aangemaakt: w.aangemaakt, sshOpdracht: sshOpdracht(w.vingerafdruk) })),
-    voorstellen, voorbereiders: await grantsLijst(), kandidaten: await kandidaten(), rootStatus, sleutelStatus, limieten: UITROL_LIMIETEN,
+    voorstellen, installaties, voorbereiders: await grantsLijst(), kandidaten: await kandidaten(), rootStatus, sleutelStatus, limieten: UITROL_LIMIETEN,
   };
 }
 

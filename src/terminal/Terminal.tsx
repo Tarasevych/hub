@@ -14,11 +14,12 @@ import '@xterm/xterm/css/xterm.css';
 import './terminal.css';
 
 const body = () => ({ service: zijbalkServerDienst() || serviceFromLocation(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
-type Apparaat = { id: string; naam: string; platform: string; online: boolean; terminal: boolean; image: string; maxMinuten: number; roots: Array<{ pad: string; alleenLezen: boolean }> };
+type Apparaat = { id: string; naam: string; platform: string; online: boolean; terminal: boolean; test?: boolean; toegestaan?: boolean; image: string; maxMinuten: number; roots: Array<{ pad: string; alleenLezen: boolean }> };
 type Open = { sid: string; ticket: string; eind: number; minuten: number; apparaat: string; root: string; schrijven: boolean };
 const FOUTEN: Record<string, [string, string]> = {
   TECH_TERMINAL_VEREIST: ['Потрібен активний технічний профіль із правом термінала (Розробник, Адміністратор, Власник).', 'Een actief technisch profiel met terminalrecht is nodig.'],
   APPARAAT_OFFLINE: ['Пристрій не на зв’язку.', 'Apparaat niet verbonden.'],
+  TERMINAL_ALLEEN_TESTMACHINE: ['Ваша роль відкриває лише тестові машини (позначені --test). Сервери — роль «Адміністратор» або «Власник».', 'Uw rol opent alleen testmachines (gemarkeerd met --test). Servers: rol «Адміністратор» of «Власник».'],
   TERMINAL_UIT_OP_APPARAAT: ['На пристрої термінал вимкнено: node agent.mjs terminal-config on', 'Terminal staat uit op het apparaat: node agent.mjs terminal-config on'],
   DUUR_ONGELDIG: ['Такий термін недоступний (не довше, ніж лишилося технічному профілю й дозволяє пристрій).', 'Deze duur kan niet (niet langer dan het technisch profiel en het apparaat toelaten).'],
   REDEN_ONGELDIG: ['Вкажіть причину (від 3 символів).', 'Geef een reden (minstens 3 tekens).'],
@@ -78,7 +79,7 @@ export function TerminalOpenen({ sluit }: { sluit: () => void }) {
     void api.post('/api/terminal/apparaten', body()).then((r) => {
       const l = (r.data?.apparaten ?? []) as Apparaat[];
       setLijst(l);
-      const eerste = l.find((a) => a.online && a.terminal);
+      const eerste = l.find((a) => a.online && a.terminal && a.toegestaan !== false);
       if (eerste) { setAgentId(eerste.id); setRoot(eerste.roots[0]?.pad ?? ''); }
     }, (e) => setMelding(foutTekst(e, uk)));
   }, []);
@@ -103,7 +104,7 @@ export function TerminalOpenen({ sluit }: { sluit: () => void }) {
           <>
             <label className='tech-veld'><span>{uk ? 'Пристрій' : 'Apparaat'}</span>
               <select value={agentId} onChange={(e) => { setAgentId(e.target.value); const a = lijst.find((x) => x.id === e.target.value); setRoot(a?.roots[0]?.pad ?? ''); }} data-term-apparaat='1'>
-                {lijst.filter((a) => a.terminal).map((a) => <option key={a.id} value={a.id} disabled={!a.online}>{a.naam}{a.online ? '' : (uk ? ' (не на зв’язку)' : ' (offline)')}</option>)}
+                {lijst.filter((a) => a.terminal).map((a) => <option key={a.id} value={a.id} disabled={!a.online || a.toegestaan === false}>{a.naam}{a.test ? (uk ? ' · тестова' : ' · test') : ''}{a.online ? '' : (uk ? ' (не на зв’язку)' : ' (offline)')}{a.toegestaan === false ? (uk ? ' (лише для ролі з доступом до серверів)' : ' (alleen voor een rol met servertoegang)') : ''}</option>)}
               </select></label>
             <label className='tech-veld'><span>{uk ? 'Тека (стане /werk)' : 'Map (wordt /werk)'}</span>
               <select value={root} onChange={(e) => setRoot(e.target.value)} data-term-root='1'>{(ap?.roots ?? []).map((r) => <option key={r.pad} value={r.pad}>{r.pad}{r.alleenLezen ? (uk ? ' — лише читання' : ' — alleen lezen') : ''}</option>)}</select></label>

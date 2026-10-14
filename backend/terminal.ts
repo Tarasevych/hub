@@ -1,7 +1,7 @@
 // Terminals in de browser (architectuur 13.10.2026). De browser praat via WSS /terminal/ws met DEZE server; de server praat via het
 // bestaande agentkanaal met de agent op een EIGEN apparaat; de agent draait een wegwerpcontainer (agent.mjs termArgs: geen netwerk,
 // geen capabilities, alleen-lezen systeem, root op /werk standaard alleen-lezen, geheime plekken afgedekt).
-// Regels (hier, op de server): actief technisch profiel met terminal.test of terminal.servers; ALLEEN eigen apparaten; verse
+// Regels (hier, op de server): actief technisch profiel met terminal.servers (elk eigen apparaat) of terminal.test (alleen testmachines); ALLEEN eigen apparaten; verse
 // bevestiging van de aanmelding; reden; duur ≤ min(60, plafond van het apparaat, rest van het technisch profiel); eenmalig
 // browserticket (30 s); uitvoer opgenomen (asciicast v2, invoer NIET: wachtwoorden). Een AI kan geen terminal openen (geen MCP-tool,
 // geen grant): 'term.open' gaat niet via de opdrachtenwachtrij van AI's.
@@ -16,6 +16,7 @@ import { randomToken, sha256 } from './connectors-crypto';
 import * as store from './connectors-store';
 import { agentOnline, registreerTerminal, stuurNaarAgent, stuurTerminalOpen } from './connectors-gateway';
 import { actieveActivatie, TAB_RE, TechFout, type Gebruiker } from './tech-profiel';
+import { magApparaat } from '../shared/terminal';
 
 const sys = () => getPool('systeem');
 const fout = (code: string, status = 400): never => { throw new TechFout(code, status); };
@@ -40,14 +41,14 @@ async function vereisTech(u: Gebruiker, tab: string) {
   return a!;
 }
 
-type Caps = { roots?: string[]; readonlyRoots?: string[]; terminal?: { enabled?: boolean; image?: string; maxMinuten?: number } };
+type Caps = { roots?: string[]; readonlyRoots?: string[]; terminal?: { enabled?: boolean; image?: string; maxMinuten?: number; test?: boolean } };
 /** Eigen apparaten met terminal aan (alleen niet-ingetrokken, met hun roots). */
 export async function apparaten(u: Gebruiker, tab: string) {
-  await vereisTech(u, tab);
+  const act = await vereisTech(u, tab);
   const lijst = await store.listAgents(u.id);
   return lijst.filter((a) => !a.revoked_at).map((a) => {
     const c = (a.capabilities ?? {}) as Caps;
-    return { id: a.id, naam: a.name, platform: a.platform ?? '', online: agentOnline(a.id), terminal: !!c.terminal?.enabled, image: c.terminal?.image ?? '', maxMinuten: Number(c.terminal?.maxMinuten ?? 60),
+    return { id: a.id, naam: a.name, platform: a.platform ?? '', online: agentOnline(a.id), terminal: !!c.terminal?.enabled, test: c.terminal?.test === true, toegestaan: magApparaat(act.mogelijkheden, c), image: c.terminal?.image ?? '', maxMinuten: Number(c.terminal?.maxMinuten ?? 60),
       roots: (c.roots ?? []).map((r) => ({ pad: r, alleenLezen: (c.readonlyRoots ?? []).includes(r) })) };
   });
 }
@@ -73,6 +74,7 @@ export async function openen(u: Gebruiker, tab: string, input: { agentId: unknow
   if (!agentOnline(agentId)) fout('APPARAAT_OFFLINE', 409);
   const c = (agent!.capabilities ?? {}) as Caps;
   if (!c.terminal?.enabled) fout('TERMINAL_UIT_OP_APPARAAT', 409);
+  if (!magApparaat(act.mogelijkheden, c)) fout('TERMINAL_ALLEEN_TESTMACHINE', 403);
   const root = String(input.root || '');
   if (!(c.roots ?? []).includes(root)) fout('ROOT_ONGELDIG');
   const schrijven = input.schrijven === true;

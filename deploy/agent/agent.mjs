@@ -17,7 +17,7 @@ import net from 'node:net';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 
-const VERSION = '0.7.0';
+const VERSION = '0.7.1';
 const CONFIG_PATH = process.env.HUB_AGENT_CONFIG ?? path.join(os.homedir(), '.hub-agent', 'config.json');
 const RECHTEN_PATH = path.join(path.dirname(CONFIG_PATH), 'rechten.json');
 const MAX_READ = 2 * 1024 * 1024;
@@ -32,12 +32,16 @@ function saveConfig(cfg) {
   writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2), { mode: 0o600 });
 }
 
+/** Vlaggen zonder waarde. Vóór 0.7.1 nam elke vlag het volgende woord als waarde: `apps-config --disable` zette niets uit
+ *  (waarde undefined) en `--test --runtime podman` zou `--runtime` als waarde opeten. */
+const AAN_UIT_VLAGGEN = new Set(['disable', 'test']);
 function parseArgs(argv) {
   const out = { _: [], root: [], 'readonly-root': [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (!a.startsWith('--')) { out._.push(a); continue; }
     const key = a.slice(2);
+    if (AAN_UIT_VLAGGEN.has(key)) { out[key] = true; continue; }
     const val = argv[++i];
     if (key === 'root' || key === 'readonly-root') out[key].push(val); else out[key] = val;
   }
@@ -73,7 +77,7 @@ async function pair(args) {
 }
 
 // De lijst komt uit de handlers zelf, zodat hij nooit achterloopt op wat de agent kan.
-const capabilities = (roots, allow, readonlyRoots = [], apps = null, terminal = null) => ({ version: VERSION, roots, readonlyRoots, allowCommands: allow, apps: Boolean(apps?.enabled), terminal: terminal?.enabled ? { enabled: true, image: terminal.image, maxMinuten: terminal.maxMinuten } : { enabled: false }, commands: Object.keys(handlers).filter((k) => (!k.startsWith('apps.') || apps?.enabled) && (k !== 'term.open' || terminal?.enabled) && rechtAan(k)) });
+const capabilities = (roots, allow, readonlyRoots = [], apps = null, terminal = null) => ({ version: VERSION, roots, readonlyRoots, allowCommands: allow, apps: Boolean(apps?.enabled), terminal: terminal?.enabled ? { enabled: true, image: terminal.image, maxMinuten: terminal.maxMinuten, test: terminal.test === true } : { enabled: false }, commands: Object.keys(handlers).filter((k) => (!k.startsWith('apps.') || apps?.enabled) && (k !== 'term.open' || terminal?.enabled) && rechtAan(k)) });
 
 // ---------- opdrachten: alleen ondertekend, geen code-als-argument (audit H3) ----------
 /** Programma's die nooit op de allow-list mogen: een shell voert alles uit wat in een argument staat. */
@@ -619,7 +623,7 @@ export const appHandlers = {
 
 async function appsConfig(args) {
   let cfg; try { cfg = loadConfig(); } catch { die('спершу pair'); }
-  if (args.off === 'true' || args.disable !== undefined) { cfg.apps = { ...appsDefaults(cfg.apps), enabled: false }; saveConfig(cfg); console.log('Додатки вимкнено.'); return; }
+  if (args.off === 'true' || args.disable === true) { cfg.apps = { ...appsDefaults(cfg.apps), enabled: false }; saveConfig(cfg); console.log('Додатки вимкнено.'); return; }
   if (!args['apps-root']) die('usage: apps-config --apps-root <DIR> [--runtime podman|docker] [--domain "{app}.apps.example.com"] [--caddy-admin unix:/run/caddy/admin.sock] [--caddy-server NAME] [--memory 512m] | apps-config --disable');
   const root = path.resolve(args['apps-root']);
   if (args.domain && !/^[a-z0-9-]{0,20}\{app\}[a-z0-9-]{0,20}(\.[a-z0-9-]{1,63})+$/i.test(args.domain)) die('--domain має бути шаблоном на кшталт "{app}.apps.example.com", "{app}-app.example.com" або "{app}.203.0.113.10.nip.io"');
@@ -637,10 +641,10 @@ async function appsConfig(args) {
 // Een interactieve shell draait NOOIT op dit apparaat zelf (shells blijven verboden, zie SHELLS), alleen in een wegwerpcontainer:
 // rootless podman (of docker), geen netwerk, geen capabilities, no-new-privileges, alleen-lezen systeem, limieten voor geheugen/processen,
 // één toegestane root gekoppeld op /werk (standaard alleen-lezen), geheime plekken binnen die root afgedekt (tmpfs / /dev/null).
-// Aan te zetten alleen HIER: node agent.mjs terminal-config on [--image …] [--runtime podman|docker] [--max-minuten 60] (uit: off).
+// Aan te zetten alleen HIER: node agent.mjs terminal-config on [--image …] [--runtime podman|docker] [--max-minuten 60] [--test] (uit: off). --test = testmachine: alleen terminal.test (Розробник) of terminal.servers opent haar.
 // Openen kan alleen via een ONDERTEKENDE opdracht 'term.open' van de site; daarna stroomt in- en uitvoer over hetzelfde WSS-kanaal.
 const TERM_IMAGE = 'docker.io/library/debian:12-slim';
-const terminalDefaults = (t = {}) => ({ enabled: !!t.enabled, runtime: ['podman', 'docker'].includes(t.runtime) ? t.runtime : 'podman', image: typeof t.image === 'string' && /^[a-z0-9][a-z0-9./_:@-]{2,200}$/i.test(t.image) ? t.image : TERM_IMAGE, maxMinuten: Math.min(240, Math.max(5, Number(t.maxMinuten) || 60)) });
+const terminalDefaults = (t = {}) => ({ enabled: !!t.enabled, runtime: ['podman', 'docker'].includes(t.runtime) ? t.runtime : 'podman', image: typeof t.image === 'string' && /^[a-z0-9][a-z0-9./_:@-]{2,200}$/i.test(t.image) ? t.image : TERM_IMAGE, maxMinuten: Math.min(240, Math.max(5, Number(t.maxMinuten) || 60)), test: t.test === true });
 const termSessies = new Map(); // sid -> { child, naam, timer }
 let termKanaal = null; // huidige WebSocket (gezet in run)
 const termStuur = (obj) => { try { termKanaal?.send(JSON.stringify(obj)); } catch { /* kanaal dicht: sessie sluit vanzelf */ } };
@@ -722,12 +726,12 @@ async function terminalConfig(args) {
   let cfg; try { cfg = loadConfig(); } catch { die('спершу pair'); }
   const stand = args._[1];
   if (stand === 'off') { cfg.terminal = { ...terminalDefaults(cfg.terminal), enabled: false }; saveConfig(cfg); console.log('Термінал вимкнено.'); return; }
-  if (stand !== 'on') die('usage: terminal-config on [--runtime podman|docker] [--image debian:12-slim] [--max-minuten 60] | terminal-config off');
+  if (stand !== 'on') die('usage: terminal-config on [--runtime podman|docker] [--image debian:12-slim] [--max-minuten 60] [--test] | terminal-config off');
   if (args.runtime && !['podman', 'docker'].includes(args.runtime)) die('--runtime: podman або docker');
-  cfg.terminal = terminalDefaults({ enabled: true, runtime: args.runtime ?? cfg.apps?.runtime, image: args.image, maxMinuten: args['max-minuten'] });
+  cfg.terminal = terminalDefaults({ enabled: true, runtime: args.runtime ?? cfg.apps?.runtime, image: args.image, maxMinuten: args['max-minuten'], test: args.test === true });
   const versie = await runFixed(cfg.terminal.runtime, ['--version'], { timeout: 15_000 }).catch(() => null);
   saveConfig(cfg);
-  console.log(`Термінал увімкнено: контейнер ${cfg.terminal.image} (${cfg.terminal.runtime} ${versie?.code === 0 ? versie.stdout.trim() : '— НЕ ЗНАЙДЕНО, встановіть його'}), без мережі, до ${cfg.terminal.maxMinuten} хв.${cfg.terminal.runtime === 'docker' ? '\nУВАГА: група docker = фактично root. Безпечніше — rootless podman.' : ''}\nПерезапустіть агента (node agent.mjs run).`);
+  console.log(`Термінал увімкнено: контейнер ${cfg.terminal.image} (${cfg.terminal.runtime} ${versie?.code === 0 ? versie.stdout.trim() : '— НЕ ЗНАЙДЕНО, встановіть його'}), без мережі, до ${cfg.terminal.maxMinuten} хв.${cfg.terminal.test ? '\nЦе ТЕСТОВА машина: її відкриває роль з terminal.test (Розробник).' : '\nЦе сервер: його відкриває лише роль з terminal.servers (Адміністратор, Власник). Тестова машина: додайте --test.'}${cfg.terminal.runtime === 'docker' ? '\nУВАГА: група docker = фактично root. Безпечніше — rootless podman.' : ''}\nПерезапустіть агента (node agent.mjs run).`);
 }
 // ---------- command handlers ----------
 const handlers = {

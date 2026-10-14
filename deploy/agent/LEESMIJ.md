@@ -87,9 +87,16 @@ Uitvoer wordt op de site opgenomen (asciicast), invoer niet. Openen alleen vanui
 en verse bevestiging van de aanmelding, en alleen op EIGEN apparaten; een AI kan geen terminal openen.
 
 ```
-node agent.mjs terminal-config on [--runtime podman|docker] [--image docker.io/library/debian:12-slim] [--max-minuten 60]
+node agent.mjs terminal-config on [--runtime podman|docker] [--image docker.io/library/debian:12-slim] [--max-minuten 60] [--test]
 node agent.mjs terminal-config off
 ```
+
+`--test` (0.7.1) markeert het apparaat als testmachine. Wie mag openen:
+- rol met `terminal.servers` (Адміністратор, Власник): elk eigen apparaat;
+- rol met alleen `terminal.test` (Розробник): alleen testmachines. Zonder `--test` is het apparaat een server.
+
+Vlaggen zonder waarde (`--test`, `--disable`) nemen sinds 0.7.1 het volgende woord niet meer als waarde. Daardoor werkt
+`apps-config --disable` nu echt (daarvoor bleven de apps aan).
 
 Op de server van «Mijn Ruimte» (apps-agent als `mr-apps`): `sudo /usr/local/sbin/mijn-ruimte-installeer apps-terminal on|off`.
 
