@@ -1,5 +1,5 @@
 // E2E etap 3 (13.10.2026) met een echte Chrome: mcp.* toont de richting «Міст ШІ → сайт» met «?» en de schakelaar
-// «Простий / Розширений»; eigenaar standaard «розширений» (12 pagina's in het menu); «простий» → 4 pagina's, bewaard op de server
+// «Простий / Розширений»; eigenaar standaard «розширений» (9 pagina's in het menu: 12 min de 3 beheerpagina's die alleen in het technisch profiel staan); «простий» → 3 pagina's, bewaard op de server
 // en na herladen; een onderdeel uit «розширений» via een link → uitleg + één klik terug; ai.* toont «ШІ для вас» met een verwijzing
 // naar mcp.*; telefoonbreedte; geen consolefouten.
 import { createRequire } from 'node:module';
@@ -56,7 +56,7 @@ export async function main(): Promise<number> {
     check('eigenaar: standaard «Розширений»', await page.locator('[data-modus="expert"]').getAttribute('aria-checked') === 'true');
     await page.locator('#canonical-submenu-mcp').waitFor({ timeout: 10000 }).catch(() => undefined);
     const vol = await paginas();
-    check('menu: alle 12 pagina\'s van mcp.*', vol === 12, String(vol));
+    check('menu: 9 pagina\'s van mcp.* (12 min dashboard/apps/download: sitebeheer, alleen in het technisch profiel)', vol === 9, String(vol));
     await band.locator('.tech-vraag-knop').first().hover();
     const uitleg = page.locator('[data-tech-vraag]').first();
     await uitleg.waitFor({ timeout: 5000 });
@@ -68,9 +68,10 @@ export async function main(): Promise<number> {
     const w2 = wachtWeergave();
     await page.locator('[data-modus="eenvoudig"]').click();
     await w2;
-    await page.waitForFunction(() => document.querySelectorAll('#canonical-submenu-mcp [data-local-tab]').length === 4, null, { timeout: 10000 }).catch(() => undefined);
+    // «Додатки» is sitebeheer (audit 14.10) en staat zonder technisch profiel in geen enkele modus in het menu.
+    await page.waitForFunction(() => document.querySelectorAll('#canonical-submenu-mcp [data-local-tab]').length === 3, null, { timeout: 10000 }).catch(() => undefined);
     const ids = await page.locator('#canonical-submenu-mcp [data-local-tab]').evaluateAll((els) => els.map((e) => `mcp/${e.getAttribute('data-local-tab')}`));
-    check('простий: menu toont alleen огляд, агенти, підключити, додатки', ids.length === 4 && ['mcp/overview', 'mcp/agents', 'mcp/connect', 'mcp/apps'].every((x) => ids.includes(x)), ids.join(','));
+    check('простий: menu toont alleen огляд, агенти, підключити', ids.length === 3 && ['mcp/overview', 'mcp/agents', 'mcp/connect'].every((x) => ids.includes(x)), ids.join(','));
     check('keuze bewaard op de server', (await sys.query('SELECT modus FROM app.ui_weergave WHERE user_id=$1', [uid])).rows[0]?.modus === 'eenvoudig');
     await page.screenshot({ path: `${UIT}/weergave-2-mcp-eenvoudig.png` });
     const w3 = wachtWeergave();
@@ -78,7 +79,7 @@ export async function main(): Promise<number> {
     await page.locator('[data-richting="mcp"]').waitFor({ timeout: 20000 });
     const metKopie = await paginas();
     await w3;
-    check('na herladen: meteen простий (kopie, geen flikkeren) en nog steeds 4', metKopie === 4 && await paginas() === 4, String(metKopie));
+    check('na herladen: meteen простий (kopie, geen flikkeren) en nog steeds 3', metKopie === 3 && await paginas() === 3, String(metKopie));
 
     // ---------------------------------------------------------------- 3. onderdeel uit розширений via een link
     await page.goto(`${MCP}/dashboard`, { waitUntil: 'domcontentloaded' });
@@ -89,8 +90,8 @@ export async function main(): Promise<number> {
     await melding.locator('[data-modus-naar="expert"]').click();
     await page.locator('.mcp-estate h1', { hasText: 'Панель розгортання' }).waitFor({ timeout: 10000 }).catch(() => undefined);
     check('één klik → розширений en de inhoud verschijnt', await page.locator('.mcp-estate h1', { hasText: 'Панель розгортання' }).count() === 1 && await melding.count() === 0);
-    await page.waitForFunction(() => document.querySelectorAll('#canonical-submenu-mcp [data-local-tab]').length === 12, null, { timeout: 10000 }).catch(() => undefined);
-    check('menu weer 12 pagina\'s', await paginas() === 12);
+    await page.waitForFunction(() => document.querySelectorAll('#canonical-submenu-mcp [data-local-tab]').length === 9, null, { timeout: 10000 }).catch(() => undefined);
+    check('menu weer 9 pagina\'s', await paginas() === 9);
 
     // ---------------------------------------------------------------- 4. ai.*
     await page.goto(`${AI}/`, { waitUntil: 'domcontentloaded' });

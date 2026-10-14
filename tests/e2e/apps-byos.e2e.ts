@@ -14,6 +14,7 @@ import * as grants from '../../backend/ai-grants';
 import * as store from '../../backend/connectors-store';
 import { callTool } from '../../backend/connectors-tools';
 import { startE2eServer, chromeArgs } from './server';
+import { techAan } from './hulp/tech';
 
 const PW = process.env.PLAYWRIGHT_CORE || '/workspace/e2e-tools/node_modules/playwright-core';
 const TLS = process.env.E2E_TLS || '/workspace/e2e-tools/tls';
@@ -68,6 +69,8 @@ export async function main(): Promise<number> {
     page.on('response', (q) => { if (q.status() === 403 && /\/api\/owner\/agents\/[0-9a-f-]+\/command$/.test(q.url()) && verwacht403++ === 0) return; if (q.status() >= 400) fouten.push(`http ${q.status()} ${q.url()}`); });
 
     // ---------------------------------------------------------------- 1. koppelen (echte agent) en apps aanzetten
+    // Apps op de server zijn sitebeheer (audit 14.10): eerst het technisch profiel aan, anders toont /apps de poort.
+    check('technisch profiel aangezet', await techAan(page, { url: MCP, tab, service: 'mcp', reden: 'E2E apps' }) === 200);
     await page.goto(`${MCP}/apps`, { waitUntil: 'networkidle' });
     await page.locator('[data-apps-pagina]').waitFor({ timeout: 20000 });
     check('pagina mcp.*/apps: kop en uitleg; zonder apparaat met apps: instructies open', /Додатки на вашому залізі/.test(await page.locator('h1').innerText())

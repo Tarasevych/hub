@@ -2,6 +2,7 @@
 import { checker } from './hulp/nep-google';
 import { menuWeergave } from '../../shared/menu-indeling';
 import { normaliseerZijbalk } from '../../shared/menu-model';
+import { isBeheerPagina, paginaZichtbaar } from '../../shared/beheer-paginas';
 import { accountMenuIds, defaultMenuPreferences, menuPreferencesForRole, menuVoorOppervlak, ownerLockedMenuItem } from '../../src/menu-preferences';
 
 export async function main(): Promise<number> {
@@ -23,5 +24,16 @@ export async function main(): Promise<number> {
   const plat = (w: typeof accountWeergave) => JSON.stringify(w);
   check('копія сторінки адміністрування не лишається в обліковому меню', !plat(accountWeergave).includes('admin'));
   check('технічний розділ не показує сторінки облікового запису', !plat(techWeergave).includes('hub') && plat(techWeergave).includes('admin'));
+
+  // Аудит 14.10: сторінки управління всередині користувацької служби (mcp) — лише в технічному профілі.
+  check('панель розгортання, додатки на сервері та архів — сторінки управління', ['dashboard', 'apps', 'download'].every((tab) => isBeheerPagina('mcp', tab)));
+  check('огляд, агенти, підключення, дошка — користувацькі', ['overview', 'agents', 'connect', 'board', 'services', 'tools'].every((tab) => !isBeheerPagina('mcp', tab)));
+  check('в інших службах немає сторінок управління', !isBeheerPagina('identity', 'methods') && !isBeheerPagina('hub', 'overview') && !isBeheerPagina('mail', 'inbox'));
+  check('без технічного профілю сторінка управління невидима, з ним — видима', !paginaZichtbaar('mcp', 'dashboard', false) && paginaZichtbaar('mcp', 'dashboard', true) && paginaZichtbaar('mcp', 'agents', false));
+  const mcpVoorkeur = normaliseerZijbalk({ kopieen: [{ id: 'k-mc01', item: 'pg:mcp/download', plaats: 'snelbalk', ouder: null, volgorde: 0 }] });
+  const mcpWeergave = menuWeergave(mcpVoorkeur, { diensten: ['hub', 'mcp'], toegestaan: ['hub', 'mcp'] });
+  const zonderBeheer = (rs: typeof mcpWeergave.snelbalk) => rs.filter((r) => !r.pagina || paginaZichtbaar(r.dienst, r.pagina, false));
+  check('копія сторінки управління зникає зі швидкого доступу без технічного профілю', mcpWeergave.snelbalk.some((r) => r.pagina === 'download') && !zonderBeheer(mcpWeergave.snelbalk).some((r) => r.pagina === 'download'));
+  check('підменю mcp без технічного профілю не має dashboard/apps/download, але має agents', (() => { const rs = zonderBeheer(mcpWeergave.secties.mcp || []); return rs.some((r) => r.pagina === 'agents') && !rs.some((r) => r.pagina && isBeheerPagina('mcp', r.pagina)); })());
   return einde();
 }

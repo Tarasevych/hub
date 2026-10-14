@@ -2,7 +2,7 @@
 // «Колір смуги» en «Технічні профілі». Eigen React-root (main.tsx), los van de dienst die eronder draait, zodat de band op elke
 // pagina van elk subdomein hetzelfde is.
 import { useEffect, useMemo, useState } from 'react';
-import { Clock, Flag, Home, KeyRound, LifeBuoy, LogOut, MoreHorizontal, Network, Palette, ShieldCheck, SquareTerminal, Timer, Users } from 'lucide-react';
+import { Clock, Flag, Home, KeyRound, LifeBuoy, LogOut, MoreHorizontal, Network, Palette, Rocket, ShieldCheck, SquareTerminal, Timer, Users } from 'lucide-react';
 import { Venster } from '../platform/vensters';
 import { api } from '../platform/client';
 import { canonicalNavigationUrl, routeLang } from '../canonical-navigation';
@@ -82,7 +82,7 @@ export default function TechLaag() {
 
   const rest = resterend(t, nu);
   const lang = uk ? 'uk' : 'nl';
-  const naar = (dienst: 'admin' | 'api' | 'hub', tab: string) => { setMeer(false); location.assign(canonicalNavigationUrl(dienst, tab, lang)); };
+  const naar = (dienst: 'admin' | 'api' | 'mcp' | 'hub', tab: string) => { setMeer(false); location.assign(canonicalNavigationUrl(dienst, tab, lang)); };
   return (
     <>
       {actief && t.activatie ? (
@@ -95,6 +95,7 @@ export default function TechLaag() {
             <span className={`tech-band-extra${meer ? ' is-open' : ''}`} id='tech-band-extra'>
               <button type='button' onClick={() => naar('admin', 'overview')} data-tech-knop='beheer'><ShieldCheck aria-hidden='true' /><span>{uk ? 'Адміністрування' : 'Beheer'}</span></button>
               <button type='button' onClick={() => naar('api', 'access')} data-tech-knop='api'><Network aria-hidden='true' /><span>API</span></button>
+              <button type='button' onClick={() => naar('mcp', 'dashboard')} data-tech-knop='uitrol'><Rocket aria-hidden='true' /><span>{uk ? 'Розгортання' : 'Uitrol'}</span></button>
               <button type='button' onClick={() => naar('hub', 'overview')} data-tech-knop='account'><Home aria-hidden='true' /><span>{uk ? 'Обліковий запис' : 'Account'}</span></button>
               <button type='button' onClick={() => kies('activeren')} data-tech-knop='verlengen'><Clock aria-hidden='true' /><span>{uk ? 'Подовжити' : 'Verlengen'}</span></button>
               {techMag('terminal.test', t) || techMag('terminal.servers', t) ? <button type='button' onClick={() => kies('terminal')} data-tech-knop='terminal'><SquareTerminal aria-hidden='true' /><span>{uk ? 'Термінал' : 'Terminal'}</span></button> : null}

@@ -15,7 +15,7 @@ type DeurVerbinding = { id: string; klant: string; deur: string; duur: string; a
 
 type Data = { tokens: DeurToken[]; rechten: Record<string, boolean>; catalogus: Array<{ id: string; uk: string; nl: string; group?: string }>; bestand: string };
 
-export default function TabTokens({ tr, data, naActie, item, kies }: { tr: Tr; data: Data | null; naActie: () => Promise<void>; item: string; kies: (id: string) => void }) {
+export default function TabTokens({ tr, beheer = false, data, naActie, item, kies }: { tr: Tr; beheer?: boolean; data: Data | null; naActie: () => Promise<void>; item: string; kies: (id: string) => void }) {
   const acties = useActies(tr);
   const mag = !data || data.rechten.tokens !== false;
   // Verbindingen via de MCP-deur (alleen de eigenaar van de server ziet ze; anderen krijgen 403 en zien de lijst niet).
@@ -95,7 +95,7 @@ export default function TabTokens({ tr, data, naActie, item, kies }: { tr: Tr; d
         </div>
       ) : null}
 
-      <Section id='ag-deuren' icon={<DoorOpen />} title={tr('Двері: що дозволено агентам', 'Deur: wat agenten mogen')} subtitle={tr('Лише показ. Змінює тільки власник сервера у файлі (root).', 'Alleen weergave. Alleen de eigenaar van de server wijzigt dit in het bestand (root).')} defaultOpen={false}>
+      {beheer ? <Section id='ag-deuren' icon={<DoorOpen />} title={tr('Двері: що дозволено агентам', 'Deur: wat agenten mogen')} subtitle={tr('Лише показ. Змінює тільки власник сервера у файлі (root).', 'Alleen weergave. Alleen de eigenaar van de server wijzigt dit in het bestand (root).')} defaultOpen={false}>
         {data ? (
           <table className='ai-tabel ag-deuren'>
             <thead><tr><th scope='col'>{tr('Перемикач', 'Schakelaar')}</th><th scope='col'>{tr('Стан', 'Stand')}</th></tr></thead>
@@ -103,7 +103,7 @@ export default function TabTokens({ tr, data, naActie, item, kies }: { tr: Tr; d
           </table>
         ) : null}
         {data?.bestand ? <p className='hub-meta'>{tr('Файл', 'Bestand')}: <code>{data.bestand}</code></p> : null}
-      </Section>
+      </Section> : null}
     </div>
   );
 }

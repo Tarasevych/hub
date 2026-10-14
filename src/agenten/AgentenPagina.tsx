@@ -16,14 +16,19 @@ import TabApparaten from './TabApparaten';
 import TabTokens from './TabTokens';
 import { foutTekst } from './fouten';
 import { ecosystemTabContext } from '../tab-context';
+import { techActief, useTech } from '../tech/tech-store';
+import TechPoort from '../tech/TechPoort';
 import '../mcp-hub.css';
 import './agenten.css';
 
-// Ondertekend AI-beleid (§13.12): hier de hoofdplek (bij de AI-verbindingen); Beheer → Доступ ШІ toont hetzelfde.
+// Ondertekend AI-beleid (§13.12): sitebeheer. Zonder actief technisch profiel verdwijnt het tabblad en toont het adres de poort;
+// Beheer → Доступ ШІ toont hetzelfde. De serverkoppeling (apparaten) en de deurschakelaars (tokens) volgen dezelfde regel.
 const AiBeleid = lazy(() => import('../AdminAiBeleidView'));
 
 export type TabId = 'overzicht' | 'ai' | 'beleid' | 'apparaten' | 'tokens' | 'journaal';
 const TABS: TabId[] = ['overzicht', 'ai', 'beleid', 'apparaten', 'tokens', 'journaal'];
+/** Tabbladen die sitebeheer zijn: alleen met actief technisch profiel. */
+export const BEHEER_TABS: readonly TabId[] = ['beleid'];
 /** Oude hashes (zijbalk van vóór 2026-10) → nieuw tabblad[/item]. */
 export const OUDE_HASH: Record<string, string> = { overview: 'overzicht', claude: 'ai', tools: 'ai/hulpmiddelen', pending: 'overzicht', extension: 'apparaten/extensie', doors: 'tokens', pair: 'apparaten/koppelen' };
 export function leesHash(hash: string): { tab: TabId; item: string; oud: boolean } {
@@ -43,6 +48,8 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   const { calls, reload: reloadCalls } = useToolApprovals();
   const ov = useOverzicht();
   const tok = useDeurTokens();
+  const tech = useTech();
+  const beheer = techActief(tech);
   const [versie, setVersie] = useState(0);
   const [plek, setPlek] = useState(() => {
     if (welcomePending()) return { tab: 'apparaten' as TabId, item: 'extensie' };
@@ -100,7 +107,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
       </header>
 
       <nav className='ag-tabs' role='tablist' aria-label={tr('Розділи', 'Onderdelen')}>
-        {TABS.map((t) => (
+        {TABS.filter((t) => beheer || !BEHEER_TABS.includes(t)).map((t) => (
           <a key={t} role='tab' href={`#${t}`} id={`ag-tab-${t}`} aria-selected={plek.tab === t} aria-controls='ag-paneel' data-tab={t} className='ag-tab-knop'
             onClick={(e) => { e.preventDefault(); ga(t); }}>
             {tabInfo[t].icoon}<span>{tr(tabInfo[t].uk, tabInfo[t].nl)}</span>{tabInfo[t].teller ? <span className={`ag-teller${t === 'overzicht' ? ' is-warn' : ''}`}>{tabInfo[t].teller}</span> : null}
@@ -111,7 +118,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
       <section id='ag-paneel' role='tabpanel' aria-labelledby={`ag-tab-${plek.tab}`} className='ag-paneel'>
         {laadFout ? <p className='ag-melding ag-melding-fout' role='alert' data-ag-melding='laden'>{foutTekst(laadFout, tr, ['Не всі дані вдалося завантажити', 'Niet alle gegevens konden worden geladen'])}</p> : null}
         {plek.tab === 'overzicht' ? (
-          <Overzicht tr={tr} ga={ga} versie={versie} cijfers={{ ai: oauthActief + tokensActief, online, totaal: agents.length, tokens: tokensActief, wachten }}
+          <Overzicht tr={tr} ga={ga} beheer={beheer} versie={versie} cijfers={{ ai: oauthActief + tokensActief, online, totaal: agents.length, tokens: tokensActief, wachten }}
             wacht={wachten ? <>
               {pending.length ? <PendingList tr={tr} pending={pending} reload={naActie} compact /> : null}
               {toolPending.length ? <ToolApprovals tr={tr} calls={calls} reload={reloadCalls} /> : null}
@@ -119,16 +126,16 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
             leeg={loaded && !agents.length && !oauthActief ? <PairCard tr={tr} reload={naActie} agents={agents} /> : null} />
         ) : null}
         {plek.tab === 'ai' ? <TabAi tr={tr} overzicht={ov.data} tokens={tok.data?.tokens ?? null} naActie={naActie} item={plek.item} kies={kies} calls={calls} reloadCalls={reloadCalls} /> : null}
-        {plek.tab === 'beleid' ? <Suspense fallback={<p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p>}><AiBeleid lang={tr('uk', 'nl') === 'uk' ? 'uk' : 'nl'} sourceOrigin={location.origin} tabContext={ecosystemTabContext()} dienst='mcp' /></Suspense> : null}
-        {plek.tab === 'apparaten' ? <TabApparaten tr={tr} agents={agents} pending={pending} last={last} overzicht={ov.data} naActie={naActie} reload={reload} item={plek.item} kies={kies} versie={versie} /> : null}
-        {plek.tab === 'tokens' ? <TabTokens tr={tr} data={tok.data} naActie={naActie} item={plek.item} kies={kies} /> : null}
+        {plek.tab === 'beleid' ? !tech.geladen ? <p className='ag-leeg' aria-busy='true'>{tr('Перевіряємо технічний профіль…', 'Technisch profiel controleren…')}</p> : !beheer ? <TechPoort lang={tr('uk', 'nl') === 'uk' ? 'uk' : 'nl'} onAccount={() => ga('overzicht')} /> : <Suspense fallback={<p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p>}><AiBeleid lang={tr('uk', 'nl') === 'uk' ? 'uk' : 'nl'} sourceOrigin={location.origin} tabContext={ecosystemTabContext()} dienst='mcp' /></Suspense> : null}
+        {plek.tab === 'apparaten' ? <TabApparaten tr={tr} beheer={beheer} agents={agents} pending={pending} last={last} overzicht={ov.data} naActie={naActie} reload={reload} item={plek.item} kies={kies} versie={versie} /> : null}
+        {plek.tab === 'tokens' ? <TabTokens tr={tr} beheer={beheer} data={tok.data} naActie={naActie} item={plek.item} kies={kies} /> : null}
         {plek.tab === 'journaal' ? <Journaal tr={tr} onderwerpen={onderwerpen} versie={versie} actief /> : null}
       </section>
     </div>
   );
 }
 
-function Overzicht({ tr, ga, versie, cijfers, wacht, leeg }: { tr: Tr; ga: (t: TabId, item?: string) => void; versie: number; cijfers: { ai: number; online: number; totaal: number; tokens: number; wachten: number }; wacht: ReactElement | null; leeg: ReactElement | null }) {
+function Overzicht({ tr, ga, beheer, versie, cijfers, wacht, leeg }: { tr: Tr; ga: (t: TabId, item?: string) => void; beheer: boolean; versie: number; cijfers: { ai: number; online: number; totaal: number; tokens: number; wachten: number }; wacht: ReactElement | null; leeg: ReactElement | null }) {
   const filter = useMemo(() => ({ soort: '', onderwerp: '', limit: 10 }), []);
   const j = useJournaal(filter, true, versie);
   const kaart = (tab: TabId, icoon: ReactElement, getal: string, uk: string, nl: string, data: string) => (
@@ -144,10 +151,10 @@ function Overzicht({ tr, ga, versie, cijfers, wacht, leeg }: { tr: Tr; ga: (t: T
         {kaart('tokens', <KeyRound />, String(cijfers.tokens), 'активних токенів', 'actieve tokens', 'tokens')}
         {kaart('overzicht', <ShieldCheck />, String(cijfers.wachten), 'чекають рішення', 'wachten op beslissing', 'wachten')}
       </div>
-      <section className='ag-kaart' data-beleid-kaart='1'>
+      {beheer ? <section className='ag-kaart' data-beleid-kaart='1'>
         <div className='ag-kaart-kop'><h3>{tr('Доступ ШІ за вашим підписом', 'AI-toegang met uw handtekening')}</h3><a href='#beleid' className='ag-link' onClick={(e) => { e.preventDefault(); ga('beleid'); }}>{tr('Відкрити', 'Openen')} <ArrowRight size={14} aria-hidden='true' /></a></div>
         <p className='ag-leeg'>{tr('Що може кожен ШІ і як довго: таймери, черга змін, підпис passkey.', 'Wat elke AI mag en hoe lang: timers, wachtrij, ondertekenen met passkey.')}</p>
-      </section>
+      </section> : null}
       {wacht ? <section className='ag-kaart ag-waarschuwing' data-wacht={cijfers.wachten}><h3>{tr('Потрібне ваше рішення', 'Uw beslissing is nodig')}</h3>{wacht}</section> : null}
       {leeg ? <section className='ag-kaart'><h3>{tr('Почніть із підключення', 'Begin met koppelen')}</h3>{leeg}</section> : null}
       <section className='ag-kaart' data-recent='1'>

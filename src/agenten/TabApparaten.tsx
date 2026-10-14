@@ -25,8 +25,8 @@ const opServer = (a: Agent) => /^linux/.test(a.platform ?? '') && ((a.capabiliti
 
 const REDEN: Record<string, [string, string]> = { user: ['Відключено', 'Losgekoppeld'], repaired: ['Перевстановлено', 'Opnieuw geïnstalleerd'], blocked: ['Заблоковано', 'Geblokkeerd'] };
 
-export default function TabApparaten({ tr, agents, pending, last, overzicht, naActie, reload, item, kies, versie }: {
-  tr: Tr; agents: Agent[]; pending: Pending[]; last: Record<string, LastCommand>; overzicht: Overzicht | null; naActie: () => Promise<void>; reload: () => Promise<void>;
+export default function TabApparaten({ tr, beheer = false, agents, pending, last, overzicht, naActie, reload, item, kies, versie }: {
+  tr: Tr; beheer?: boolean; agents: Agent[]; pending: Pending[]; last: Record<string, LastCommand>; overzicht: Overzicht | null; naActie: () => Promise<void>; reload: () => Promise<void>;
   item: string; kies: (id: string) => void; versie: number;
 }) {
   const acties = useActies(tr);
@@ -152,11 +152,11 @@ export default function TabApparaten({ tr, agents, pending, last, overzicht, naA
           </select>
         </label>
         <Knop icoon={<Plus />} toon={item === 'koppelen' ? 'primary' : 'default'} onClick={() => kies(item === 'koppelen' ? '' : 'koppelen')} data='koppelen'>{tr('Підключити ПК', 'Pc koppelen')}</Knop>
-        <Knop icoon={<Server />} toon={item === 'server' ? 'primary' : 'default'} onClick={() => kies(item === 'server' ? '' : 'server')} data='server'>{tr('Цей сервер', 'Deze server')}</Knop>
+        {beheer ? <Knop icoon={<Server />} toon={item === 'server' ? 'primary' : 'default'} onClick={() => kies(item === 'server' ? '' : 'server')} data='server'>{tr('Цей сервер', 'Deze server')}</Knop> : null}
         <Knop icoon={<Globe />} toon={item === 'extensie' ? 'primary' : 'default'} onClick={() => kies(item === 'extensie' ? '' : 'extensie')} data='extensie'>{tr('Розширення браузера', 'Browserextensie')}</Knop>
       </div>
       {item === 'koppelen' ? <div className='ag-kaart' data-paneel='koppelen'><PairCard tr={tr} reload={naActie} agents={agents} /></div> : null}
-      {item === 'server' ? <div className='ag-kaart' data-paneel='server'><ServerKoppelen lang={tr('uk', 'nl') === 'uk' ? 'uk' : 'nl'} apparaten={agents.filter((x) => x.platform !== 'browser').map((x) => ({ id: x.id, name: x.name, online: x.status === 'connected', apps: (x.capabilities as { apps?: unknown } | null)?.apps === true }))} onGekoppeld={() => void reload()} /></div> : null}
+      {item === 'server' && beheer ? <div className='ag-kaart' data-paneel='server'><ServerKoppelen lang={tr('uk', 'nl') === 'uk' ? 'uk' : 'nl'} apparaten={agents.filter((x) => x.platform !== 'browser').map((x) => ({ id: x.id, name: x.name, online: x.status === 'connected', apps: (x.capabilities as { apps?: unknown } | null)?.apps === true }))} onGekoppeld={() => void reload()} /></div> : null}
       {item === 'extensie' ? <div className='ag-kaart' data-paneel='extensie'><BrowserExtensionPanel tr={tr} part='install' agentsExtern={agents as unknown as Parameters<typeof BrowserExtensionPanel>[0]['agentsExtern']} reloadExtern={naActie} /></div> : null}
       <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
       {lijst.length ? <ul className='ag-lijst' data-lijst='apparaten'>{lijst.map(rij)}</ul> : null}

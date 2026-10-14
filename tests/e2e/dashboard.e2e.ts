@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { checker } from '../eenheid/hulp/nep-google';
 import { getPool } from '../../server/platform/pg';
 import { startE2eServer, chromeArgs } from './server';
+import { techAan, techPoort } from './hulp/tech';
 
 const PW = process.env.PLAYWRIGHT_CORE || '/workspace/e2e-tools/node_modules/playwright-core';
 const TLS = process.env.E2E_TLS || '/workspace/e2e-tools/tls';
@@ -44,6 +45,12 @@ export async function main(): Promise<number> {
     // dashboard.* → 302 naar mcp/dashboard (geen aparte, open statische pagina meer). Via navigatie: Chrome volgt de 302.
     await page.goto(`${DASH}/`, { waitUntil: 'domcontentloaded' });
     check('dashboard.tarasevych.com leidt naar mcp/dashboard', page.url() === `${MCP}/dashboard`, page.url());
+    // Audit 14.10: zonder technisch profiel is de Deploy-dashboard sitebeheer achter de poort, en staat hij niet in het menu.
+    await techPoort(page).waitFor({ timeout: 20000 });
+    check('zonder technisch profiel: poort «Управління сайтом» i.p.v. de panel', /Управління сайтом/.test(await techPoort(page).innerText()));
+    check('zonder technisch profiel: «Панель розгортання» niet in het menu', await page.locator('#canonical-submenu-mcp [data-local-tab="dashboard"]').count() === 0);
+    const act = await techAan(page, { url: MCP, tab, service: 'mcp', reden: 'E2E dashboard' });
+    check('technisch profiel aangezet (15 хв)', act === 200, String(act));
 
     // De pagina zelf in de site
     await page.goto(`${MCP}/dashboard?lang=uk`, { waitUntil: 'domcontentloaded' });

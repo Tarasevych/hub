@@ -21,6 +21,7 @@ import * as bk from '../../deploy/goedkeuring/ai-beleid-kern.mjs';
 import * as kern from '../../deploy/goedkeuring/webauthn-kern.mjs';
 import { beslissing, vergeetCache } from '../../backend/ai-beleid';
 import { startE2eServer, chromeArgs } from './server';
+import { techAan } from './hulp/tech';
 import type { Policy } from '../../shared/ai-beleid/model';
 
 const PW = process.env.PLAYWRIGHT_CORE || '/workspace/e2e-tools/node_modules/playwright-core';
@@ -97,7 +98,8 @@ export async function main(): Promise<number> {
     };
     const boot: string[] = [];
     const aib = (page: Page) => page.locator('section.aib');
-    const openAdmin = async (page: Page) => { await page.goto(`${MCP}/agents?lang=uk#beleid`, { waitUntil: 'networkidle' }); await page.locator('[data-aib-staat]').waitFor({ timeout: 20000 }).catch(async (e) => { await page.screenshot({ path: `${UIT}/aib-debug.png` }); throw new Error(`${page.url()} ${(await page.locator('body').innerText()).slice(0, 120)} | ${boot.join(' ; ')}`); }); await page.waitForTimeout(300); };
+    // Ondertekend AI-beleid is sitebeheer (audit 14.10): zonder technisch profiel toont #beleid de poort en ontbreekt het tabblad.
+    const openAdmin = async (page: Page) => { await techAan(page, { url: MCP, tab, service: 'mcp', reden: 'E2E ai-beleid' }); await page.goto(`${MCP}/agents?lang=uk#beleid`, { waitUntil: 'networkidle' }); await page.locator('[data-aib-staat]').waitFor({ timeout: 20000 }).catch(async (e) => { await page.screenshot({ path: `${UIT}/aib-debug.png` }); throw new Error(`${page.url()} ${(await page.locator('body').innerText()).slice(0, 120)} | ${boot.join(' ; ')}`); }); await page.waitForTimeout(300); };
     const axe = async (page: Page) => {
       if (!existsSync(AXE)) return ['axe-core ontbreekt'];
       // Via DevTools (zoals de console), niet als <script>: de CSP van de site (script-src 'self') blijft zo ongewijzigd.

@@ -25,7 +25,8 @@ type Status='alleen-aanmelden'|'wacht'|'kan-goedkeuren'|'wordt-ingetrokken';
 type Soort='wachtwoordbeheerder'|'telefoon'|'beveiligingssleutel'|'apparaat'|'onbekend';
 type Passkey={id:string;naam:string;aanbieder:string;soort?:Soort;viaTelefoon?:boolean;transports?:string[];synchroniseerbaar:boolean;gesynchroniseerd:boolean;aangemaaktOp:string;laatstGebruiktOp:string|null;vingerafdrukKort:string;goedkeuring?:Status;sshOpdracht?:string;gebruik?:Gebruik[];geschiedenis?:GeschiedenisItem[]};
 type Lijst={rpId:string;limiet:number;passkeys:Passkey[];goedkeuring?:{schakelaar:boolean;rootRpId:string;rpKlopt:boolean;aantalBijRoot:number;onbekendBijRoot:Array<{vingerafdrukKort:string;label:string}>}};
-type Props={lang:Lang;context:Record<string,unknown>;onChange?:()=>void};
+/** beheer: toon ook het recht «mag serverupdates goedkeuren» per passkey (sitebeheer; alleen vanuit het technisch profiel, Beheer → Оновлення). */
+type Props={lang:Lang;context:Record<string,unknown>;onChange?:()=>void;beheer?:boolean};
 
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='nl'?nl:uk;
 const datum=(lang:Lang,v?:string|null)=>v?new Date(v).toLocaleDateString(lang==='uk'?'uk-UA':'nl-BE',{day:'numeric',month:'short',year:'numeric'}):'';
@@ -83,7 +84,7 @@ const STATUS:Record<Status,[string,string,string]>={
 };
 const kanGoedkeuren=(p:Passkey)=>p.goedkeuring==='kan-goedkeuren'||p.goedkeuring==='wordt-ingetrokken';
 
-export function PasskeysSection({lang,context,onChange}:Props){
+export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
   const[data,setData]=useState<Lijst|null>(null);
   const[busy,setBusy]=useState('');
   const[notice,setNotice]=useState<{ok:boolean;text:string}|null>(null);
@@ -160,7 +161,7 @@ export function PasskeysSection({lang,context,onChange}:Props){
     return tr(lang,'Запит передано серверу; він сам перевірить підпис. Стан оновиться за кілька секунд.','Verzoek doorgegeven aan de server; die controleert de handtekening zelf. De status wordt binnen enkele seconden bijgewerkt.');
   });};
 
-  const g=data?.goedkeuring;
+  const g=beheer?data?.goedkeuring:undefined;
   const aantal=data?.passkeys.length||0;
   const vol=!!data&&aantal>=data.limiet;
   return <div className='access-plane-group' id='aanmeldmethoden-passkeys' data-access-section='passkeys'>
@@ -196,6 +197,7 @@ export function PasskeysSection({lang,context,onChange}:Props){
     {herhaal&&<div className='access-plane-actions access-plane-subrow'><button type='button' className='primary' disabled={!!busy} onClick={()=>{const run=herhaal;void doe('herhaal',run);}}><Fingerprint/>{tr(lang,'Підтвердити passkey ще раз','Passkey opnieuw bevestigen')}</button></div>}
     {!ondersteund&&<p className='access-plane-notice access-plane-subrow'>{tr(lang,'Цей браузер не підтримує passkey.','Deze browser ondersteunt geen passkeys.')}</p>}
     {g&&!g.rpKlopt&&<p className='access-plane-lockout access-plane-subrow'><TriangleAlert/>{tr(lang,`Сервер ще налаштований на passkey для ${g.rootRpId}. Поки адміністратор не виконає на сервері «sudo mijn-ruimte-passkey rp-bijwerken», нові passkey не зможуть схвалювати оновлення.`,`De server staat nog ingesteld op passkeys voor ${g.rootRpId}. Zolang de beheerder op de server niet «sudo mijn-ruimte-passkey rp-bijwerken» uitvoert, kunnen nieuwe passkeys geen updates goedkeuren.`)}</p>}
+    {!beheer&&data?.goedkeuring&&aantal>0&&<p className='access-plane-hint-line access-plane-subrow' data-passkey-beheer-hint>{tr(lang,'Яка passkey може схвалювати оновлення сервера — це управління сайтом: технічний профіль → Адміністрування → Оновлення.','Welke passkey serverupdates mag goedkeuren is sitebeheer: technisch profiel → Beheer → Updates.')}</p>}
     {g&&!g.schakelaar&&aantal>0&&<p className='access-plane-notice access-plane-subrow'>{tr(lang,'Схвалення оновлень через passkey зараз вимкнено на сервері (перемикач «passkey-goedkeuring»). Ключі можна підготувати заздалегідь.','Updates goedkeuren met een passkey staat nu uit op de server (schakelaar «passkey-goedkeuring»). Je kunt de sleutels al voorbereiden.')}</p>}
 
     {aantal>0&&<ul className='access-plane-sublist'>
@@ -222,7 +224,7 @@ export function PasskeysSection({lang,context,onChange}:Props){
               <button type='button' className='secondary' onClick={()=>{setBevestig(null);setReden('');}}><X/>{tr(lang,'Скасувати','Annuleren')}</button>
             </div>
           </div>;})()}
-          {p.goedkeuring&&<div className='access-plane-owner'>
+          {beheer&&p.goedkeuring&&<div className='access-plane-owner'>
             <span className={`access-plane-badge tone-${STATUS[p.goedkeuring][2]}`}>{tr(lang,STATUS[p.goedkeuring][0],STATUS[p.goedkeuring][1])}</span>
             {p.goedkeuring==='alleen-aanmelden'&&<label className='access-plane-switch'><input type='checkbox' checked={false} disabled={!!busy} onChange={()=>void aanvragen(p)}/>{tr(lang,'Може схвалювати оновлення сервера','Mag serverupdates goedkeuren')}</label>}
             {p.goedkeuring==='wacht'&&<>
