@@ -16,6 +16,7 @@ import { actieDoel, actieSoort } from '../shared/mcp-acties';
 import { metNamens } from './mcp-namens';
 import { uitrolWeigering } from './ai-beleid';
 import { randomToken, sha256 } from './connectors-crypto';
+import { geefStandaard } from './ai-toegang';
 import { callTool, listTools, type ToolDef } from './connectors-tools';
 import { SERVICE_HOSTS } from './deployment-identity';
 import * as st from './mcp-connector-store';
@@ -192,6 +193,9 @@ async function issue(userId: string, clientId: string, clientName: string, scope
   const d = isDuurId(duur) ? duur : null;
   const r = ruimteOf(ruimte);
   const grantId = await st.insertToken({ userId, clientId, clientName, scope, accessHash: sha256(access), refreshHash: sha256(refresh), duur: d, ruimte: r });
+  // Gedetailleerde toegang (0043, shared/ai-toegang.ts): een nieuwe verbinding krijgt de niet-gevoelige
+  // standaardscopes; gevoelig (mail, foto's) zet de mens zelf aan op de site (tabblad «Доступ ШІ»).
+  await geefStandaard(userId, { soort: 'mcp-koppeling', id: grantId }, r).catch(() => undefined);
   // Journaal op /agents: «ШІ підключено» met clientnaam, scope, duur en ruimte (de toestemming zelf staat al als owner.mcp.grant.approved).
   await auditToevoegen({ ownerId: userId, actorId: userId, action: 'owner.mcp.grant.connected', type: 'ai', result: 'success', details: { grantId, clientId, clientName, scope, duur: d ?? 'standaard', ruimte: r } }).catch(() => undefined);
   return tokenResponse(access, refresh, scope, d);

@@ -11,6 +11,8 @@
 //   draagt een kennisgeving mee dat het gegevens zijn en geen instructies.
 import { readOwnerVaultPlaintext } from './api-platform-vault';
 import { beslissing, strengste, weigerTekst } from './ai-beleid';
+import { isOntbrekendeTabel, magTool, onderwerpVanGrantId } from './ai-toegang';
+import { TOEGANG_GESCHEIDEN, scopeVoorTool } from '../shared/ai-toegang';
 import { huidigeNamens, huidigeRuimte } from './mcp-namens';
 import { apparaatInRuimte } from '../shared/ai-ruimte';
 import { CommandRefused, submitCommand, waitForCommand } from './connectors-commands';
@@ -762,6 +764,19 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
     // Het ondertekende AI-beleid van de eigenaar (§13.12) is een plafond: de strengste van «instelling op de site» en «beleid» wint.
     const beleid = opties.eigenaarZelf ? { mode: 'always' as const, code: 'eigenaar', agentId: null, staat: 'niet-ingesteld' as const } : await beslissing(huidigeNamens(), name);
     if (beleid.mode === 'off') return text(weigerTekst(beleid), true);
+    // Gedetailleerde toegang per verbinding (shared/ai-toegang.ts, backend/ai-toegang.ts): default-deny per scope,
+    // vóór uitvoering. De eigenaar zelf (Пісочниця) en aanroepen zonder verbinding (chat) vallen hierbuiten.
+    const namens = huidigeNamens();
+    const onderwerp = !opties.eigenaarZelf ? onderwerpVanGrantId(namens?.grantId) : null;
+    if (onderwerp) {
+      try {
+        const toegang = await magTool(onderwerp, name, huidigeRuimte());
+        if (!toegang.ok) return text(TOEGANG_GESCHEIDEN(namens?.client ?? '?', name, toegang.scope ?? 'onbekend'), true);
+      } catch (err) {
+        // Tabel 0043 ontbreekt (migratie nog niet gedraaid): oud gedrag; elke andere DB-fout = weigeren.
+        if (!isOntbrekendeTabel(err)) return text(TOEGANG_GESCHEIDEN(namens?.client ?? '?', name, scopeVoorTool(name) ?? 'onbekend'), true);
+      }
+    }
     // Eén plek voor toegang (mcp.*/agents#beleid): met een geldig ondertekend beleid beslist ALLEEN dat beleid; de oude
     // schakelaars per hulpmiddel gelden alleen zolang er geen beleid is (en voor de eigenaar zelf in de Пісочниця).
     const mode = beleid.staat === 'geldig' ? beleid.mode : strengste(effectiveMode(name, (await store.getToolModes(userId))[name]), beleid.mode);

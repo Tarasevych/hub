@@ -193,5 +193,10 @@ export async function listGrantHistory(userId: string, dagen = 90): Promise<Toke
 
 export async function revokeGrant(userId: string, id: string): Promise<boolean> {
   const r = await q(`UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL`, [id, userId]);
-  return (r.rowCount ?? 0) > 0;
+  if ((r.rowCount ?? 0) > 0) {
+    // Gedetailleerde toegang (0043): de rij opruimen; een ingetrokken verbinding komt toch nooit meer door de deur.
+    await q(`DELETE FROM app.ai_toegang WHERE soort = 'mcp-koppeling' AND onderwerp_id = $1`, [id]).catch(() => undefined);
+    return true;
+  }
+  return false;
 }
