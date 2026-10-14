@@ -2,7 +2,7 @@
 // «Колір смуги» en «Технічні профілі». Eigen React-root (main.tsx), los van de dienst die eronder draait, zodat de band op elke
 // pagina van elk subdomein hetzelfde is.
 import { useEffect, useMemo, useState } from 'react';
-import { Clock, LifeBuoy, LogOut, MoreHorizontal, Palette, ShieldCheck, SquareTerminal, Timer, Users } from 'lucide-react';
+import { Clock, Flag, LifeBuoy, LogOut, MoreHorizontal, Palette, ShieldCheck, SquareTerminal, Timer, Users } from 'lucide-react';
 import { Venster } from '../platform/vensters';
 import { api } from '../platform/client';
 import { routeLang } from '../canonical-navigation';
@@ -13,6 +13,7 @@ import DiagnoseLaag from '../diagnose/Diagnose';
 import { OndersteuningVenster, ToestemmingLaag } from '../ondersteuning/Ondersteuning';
 import { lazy, Suspense } from 'react';
 const TerminalOpenen = lazy(() => import('../terminal/Terminal').then((m) => ({ default: m.TerminalOpenen })));
+const VlaggenVenster = lazy(() => import('../flags/Vlaggen'));
 import './tech.css';
 
 const fout = (e: unknown) => String((e as Error)?.message || 'FOUT');
@@ -83,6 +84,7 @@ export default function TechLaag() {
             <span className={`tech-band-extra${meer ? ' is-open' : ''}`} id='tech-band-extra'>
               <button type='button' onClick={() => kies('activeren')} data-tech-knop='verlengen'><Clock aria-hidden='true' /><span>{uk ? 'Подовжити' : 'Verlengen'}</span></button>
               {techMag('terminal.test', t) || techMag('terminal.servers', t) ? <button type='button' onClick={() => kies('terminal')} data-tech-knop='terminal'><SquareTerminal aria-hidden='true' /><span>{uk ? 'Термінал' : 'Terminal'}</span></button> : null}
+              {techMag('flags.test', t) || techMag('diensten.beheren', t) ? <button type='button' onClick={() => kies('vlaggen')} data-tech-knop='vlaggen'><Flag aria-hidden='true' /><span>{uk ? 'Прапорці' : 'Vlaggen'}</span></button> : null}
               {techMag('impersonatie.aanvragen', t) ? <button type='button' onClick={() => kies('ondersteuning')} data-tech-knop='ondersteuning'><LifeBuoy aria-hidden='true' /><span>{uk ? 'Підтримка' : 'Ondersteuning'}</span></button> : null}
               {techMag('roles.delegate', t) ? <button type='button' onClick={() => kies('profielen')} data-tech-knop='profielen'><Users aria-hidden='true' /><span>{uk ? 'Профілі' : 'Profielen'}</span></button> : null}
               <button type='button' onClick={() => kies('band')} data-tech-knop='band' aria-label={uk ? 'Колір смуги' : 'Kleur van de band'}><Palette aria-hidden='true' /><span className='tech-alleen-mobiel'>{uk ? 'Колір смуги' : 'Kleur van de band'}</span></button>
@@ -97,6 +99,7 @@ export default function TechLaag() {
       {venster === 'profielen' ? <Profielen uk={uk} t={t} sluit={() => setVenster('')} /> : null}
       {venster === 'ondersteuning' ? <OndersteuningVenster sluit={() => setVenster('')} /> : null}
       {venster === 'terminal' ? <Suspense fallback={null}><TerminalOpenen sluit={() => setVenster('')} /></Suspense> : null}
+      {venster === 'vlaggen' ? <Suspense fallback={null}><VlaggenVenster sluit={() => setVenster('')} /></Suspense> : null}
       <DiagnoseLaag />
       <ToestemmingLaag />
     </>

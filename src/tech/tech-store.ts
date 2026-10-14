@@ -33,7 +33,7 @@ export const techActief = (t: TechStatus = toestand) => !!t.activatie && t.activ
 export const techMag = (m: TechMogelijkheid, t: TechStatus = toestand) => techActief(t) && !!t.activatie?.mogelijkheden.includes(m);
 
 // Vensters openen vanuit elk scherm (accountmenu, band): één gebeurtenis, de laag (TechLaag) luistert.
-export type TechVenster = 'activeren' | 'band' | 'profielen' | 'ondersteuning' | 'terminal';
+export type TechVenster = 'activeren' | 'band' | 'profielen' | 'ondersteuning' | 'terminal' | 'vlaggen';
 export const openTechVenster = (v: TechVenster) => window.dispatchEvent(new CustomEvent('mr-tech-venster', { detail: v }));
 
 // Wanneer vragen: pas als er een GOEDGEKEURDE accountsessie is voor deze host (zelfde bron als het menu: zijbalkServerDienst) én de

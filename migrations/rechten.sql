@@ -53,6 +53,8 @@ BEGIN
       GRANT SELECT ON app.diagnose_meldingen TO mijnruimte_app;
       REVOKE INSERT, UPDATE, DELETE ON app.diagnose_meldingen FROM mijnruimte_app;
     END IF;
+    -- 0038: feature flags en tests van testers: niets voor de app-rol (lezen en schrijven via de systeemrol, backend/flags.ts).
+    IF to_regclass('app.feature_flags') IS NOT NULL THEN REVOKE ALL ON app.feature_flags, app.feature_flag_tests FROM mijnruimte_app; END IF;
     -- 0034: tellers van de beleidsdienst (schaduw): niets voor de app-rol.
     IF to_regclass('app.beleid_schaduw') IS NOT NULL THEN REVOKE ALL ON app.beleid_schaduw FROM mijnruimte_app; END IF;
     -- 0035: ondersteuning met toestemming: de app-rol leest alleen eigen rijen (als aanvrager of doel); schrijven doet de systeemrol.

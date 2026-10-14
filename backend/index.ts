@@ -35,6 +35,7 @@ import { weergaveRoutes } from './weergave';
 import { diagnoseRoutes } from './diagnose';
 import { schaduwAdmin } from './beleid';
 import { ondersteuningRoutes } from './ondersteuning-routes';
+import { flagsRoutes } from './flags';
 import { terminalRoutes } from './terminal-routes';
 import { uitrolGoedkeuringRoutes } from './uitrol-goedkeuring';
 import { aiBeleidRoutes } from './ai-beleid';
@@ -496,6 +497,8 @@ export const handler = router({
   // Diagnose «для всіх чи лише для мене» (etap 4): servercontroles, verslagen, lezen in technisch profiel.
   ...diagnoseRoutes(ownerRequireSession as never),
   // «Підтримка від імені» met toestemming (etap 7): alleen-lezen overzicht, nooit een sessie van de gebruiker.
+  // Feature flags (etap F): berekenen voor zichzelf; beheren/testen alleen in een actief technisch profiel. Nooit een recht.
+  ...flagsRoutes(ownerRequireSession as never),
   ...ondersteuningRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never, meld: (id, email, kind, titel, tekst) => notify(id, email, kind, titel, tekst) }),
   // Terminals in de browser (wegwerpcontainer op een eigen apparaat, opname van de uitvoer).
   ...terminalRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
