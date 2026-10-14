@@ -9,6 +9,7 @@ import { DeurFout, deurBesluit, deurIntrekken, deurVerbindingen, deurVerzoek, in
 import { leesDuren, zetDuur } from './ai-verbinding-instellingen';
 import { DUREN, KLANTEN, duur as duurVan, isDuurId, klantVan, type KlantId } from '../shared/ai-verbinding';
 import { sessieGeverifieerd } from '../server/platform/context';
+import { ruimteUitVerzoek, technischeRuimte } from './ai-ruimte-poort';
 
 type SessionAuth = { errorCode: string } | { user: { id: string; email: string; role: string; status: string }; service: string };
 type Deps = {
@@ -69,7 +70,8 @@ export function createMcpConnectorRoutes(deps: Deps) {
           const v = await deurVerzoek(rid);
           if (!v) return deps.fail('CONSENT_EXPIRED', 404);
           const klant = klantVan(v.clientName);
-          return deps.respond({ ...v, soort: 'deur', klant, loopback: v.redirectSoort === 'loopback', duur: (await leesDuren(auth.user.id))[klant], handmatigUrl: `${c.BASE}/oauth/authorize?verzoek=${encodeURIComponent(rid)}` });
+          // De serverdeur is technisch: het venster toont dat, en «Дозволити» werkt alleen vanuit de technische ruimte (zie consent).
+          return deps.respond({ ...v, soort: 'deur', ruimte: 'technisch', klant, loopback: v.redirectSoort === 'loopback', duur: (await leesDuren(auth.user.id))[klant], handmatigUrl: `${c.BASE}/oauth/authorize?verzoek=${encodeURIComponent(rid)}` });
         } catch (err) { return deurFout(err); }
       }
       const info = await c.consentInfo(rid, auth.user.id);
@@ -84,6 +86,10 @@ export function createMcpConnectorRoutes(deps: Deps) {
       const gekozen = isDuurId(body.duur) ? body.duur : null;
       const rid = ridOf(ctx);
       if (isDeurRid(rid) && auth.user.role !== 'owner') return deps.fail('OWNER_REQUIRED', 403);
+      // Ruimte van de verbinding (shared/ai-ruimte.ts): de keuze van de mens op de site. 'technisch' alleen voor de eigenaar met actief
+      // technisch profiel in dit tabblad; de serverdeur is altijd technisch. Weigeren mag altijd (veilige richting).
+      const poort = approve ? await (isDeurRid(rid) ? technischeRuimte(auth.user, body) : ruimteUitVerzoek(auth.user, body)) : { ruimte: 'prive' as const };
+      if ('fout' in poort) return deps.fail(poort.fout, poort.status);
       // H4: toestemming geven (niet weigeren) vraagt een verse aanmelding: tegen consent-phishing met een door een aanvaller gestarte flow.
       if (approve) { const su = await stepUp(ctx, auth); if (su) return su; }
       if (isDeurRid(rid)) {
@@ -97,9 +103,9 @@ export function createMcpConnectorRoutes(deps: Deps) {
           return deps.respond(out);
         } catch (err) { return deurFout(err); }
       }
-      const out = await c.consentDecide(auth.user.id, rid, approve, gekozen);
+      const out = await c.consentDecide(auth.user.id, rid, approve, gekozen, poort.ruimte);
       if ('error' in out) return deps.fail(out.error === 'GRANT_LIMIT' ? 'MCP_GRANT_LIMIT_REACHED' : 'CONSENT_EXPIRED', out.error === 'GRANT_LIMIT' ? 409 : 404);
-      await deps.audit(auth.user.id, approve ? 'owner.mcp.grant.approved' : 'owner.mcp.grant.denied', 'success', approve && gekozen ? { duur: gekozen } : {});
+      await deps.audit(auth.user.id, approve ? 'owner.mcp.grant.approved' : 'owner.mcp.grant.denied', 'success', approve ? { ruimte: poort.ruimte, ...(gekozen ? { duur: gekozen } : {}) } : {});
       return deps.respond(out);
     }],
 
@@ -127,6 +133,8 @@ export function createMcpConnectorRoutes(deps: Deps) {
     'POST /api/owner/mcp-connector/deur/verbindingen': [async (ctx: any) => {
       const auth = await eigenaarGate(ctx.event, ctx.body);
       if (!auth) return denied();
+      const poort = await technischeRuimte(auth.user, deps.body(ctx.body));
+      if ('fout' in poort) return deps.fail(poort.fout, poort.status);
       // Geen deur op deze server (niet geïnstalleerd of gestopt): geen fout, gewoon «niet beschikbaar» (BYOS: de deur is optioneel).
       try { return deps.respond({ verbindingen: await deurVerbindingen(), beschikbaar: true }); }
       catch (err) { return err instanceof DeurFout && err.code === 'DEUR_ONBEREIKBAAR' ? deps.respond({ verbindingen: [], beschikbaar: false }) : deurFout(err); }
@@ -134,6 +142,8 @@ export function createMcpConnectorRoutes(deps: Deps) {
     'POST /api/owner/mcp-connector/deur/intrekken': [async (ctx: any) => {
       const auth = await eigenaarGate(ctx.event, ctx.body);
       if (!auth) return denied();
+      const poort = await technischeRuimte(auth.user, deps.body(ctx.body));
+      if ('fout' in poort) return deps.fail(poort.fout, poort.status);
       const id = String(deps.body(ctx.body).id ?? '').slice(0, 40);
       try {
         const lijst = await deurVerbindingen();

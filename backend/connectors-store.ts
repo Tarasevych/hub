@@ -9,6 +9,7 @@
 import { appRolActief, getPool } from '../server/platform/pg';
 import { enabledTypes } from './browser-capabilities';
 import { gebruikerVanContext, huidigeContext } from '../server/platform/context';
+import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 
 type QueryResult = { rows: any[]; rowCount: number | null };
 
@@ -31,6 +32,8 @@ export interface AgentRow {
   token_expires_at?: Date | null;
   pairing_id?: string | null;
   agent_version?: string | null;
+  /** Ruimte van het apparaat: 'prive' (eigen apparaten) of 'technisch' (server/beheer) — gezet bij het koppelen, nooit door de AI. */
+  ruimte?: AiRuimte;
 }
 
 export const AGENT_LIMITS = {
@@ -42,7 +45,7 @@ export const AGENT_LIMITS = {
   tokenTtlDays: 30,
 };
 
-const AGENT_COLS = 'id, user_id, name, platform, status, last_seen_at, capabilities, policy, created_at, revoked_at, browser_enabled, armed_until, token_expires_at, pairing_id, agent_version';
+const AGENT_COLS = 'id, user_id, name, platform, status, last_seen_at, capabilities, policy, created_at, revoked_at, browser_enabled, armed_until, token_expires_at, pairing_id, agent_version, ruimte';
 
 const systeem = (sql: string, params: unknown[] = []): Promise<QueryResult> => getPool('systeem').query(sql, params);
 
@@ -69,15 +72,15 @@ async function gebruiker(sql: string, params: unknown[] = []): Promise<QueryResu
 
 // ---- Eigenaar-UI (gebruikerscontext) ----
 
-export async function createPairingCode(userId: string, codeHash: string): Promise<Date | null> {
+export async function createPairingCode(userId: string, codeHash: string, ruimte: AiRuimte = 'prive'): Promise<Date | null> {
   const count = await gebruiker(
     `SELECT count(*)::int AS n FROM app.agent_pairing_codes
       WHERE user_id = $1 AND created_at > now() - interval '10 minutes'`, [userId]);
   if (count.rows[0].n >= AGENT_LIMITS.pairingCodesPer10Min) return null;
   const { rows } = await gebruiker(
-    `INSERT INTO app.agent_pairing_codes (code_hash, user_id, expires_at)
-     VALUES ($1, $2, now() + make_interval(mins => $3)) RETURNING expires_at`,
-    [codeHash, userId, AGENT_LIMITS.pairingCodeTtlMin]);
+    `INSERT INTO app.agent_pairing_codes (code_hash, user_id, expires_at, ruimte)
+     VALUES ($1, $2, now() + make_interval(mins => $3), $4) RETURNING expires_at`,
+    [codeHash, userId, AGENT_LIMITS.pairingCodeTtlMin, ruimteOf(ruimte)]);
   return rows[0].expires_at as Date;
 }
 
@@ -188,12 +191,12 @@ export async function listPendingCommands(userId: string) {
 
 // ---- Zonder sessie (systeemrol) ----
 
-/** Atomair: een koppelcode kan maar één keer worden ingewisseld. Geeft de eigenaar van de code terug. */
-export async function consumePairingCode(codeHash: string): Promise<string | null> {
+/** Atomair: een koppelcode kan maar één keer worden ingewisseld. Geeft de eigenaar én de ruimte van de code terug. */
+export async function consumePairingCode(codeHash: string): Promise<{ userId: string; ruimte: AiRuimte } | null> {
   const { rows } = await systeem(
     `UPDATE app.agent_pairing_codes SET used_at = now()
-      WHERE code_hash = $1 AND used_at IS NULL AND expires_at > now() RETURNING user_id`, [codeHash]);
-  return rows[0]?.user_id ?? null;
+      WHERE code_hash = $1 AND used_at IS NULL AND expires_at > now() RETURNING user_id, ruimte`, [codeHash]);
+  return rows[0] ? { userId: rows[0].user_id as string, ruimte: ruimteOf(rows[0].ruimte) } : null;
 }
 
 export async function purgeOldPairingCodes(): Promise<void> {
@@ -202,13 +205,13 @@ export async function purgeOldPairingCodes(): Promise<void> {
 
 export async function createAgent(
   userId: string, name: string, platform: string | null, tokenHash: string, capabilities: object,
-  policy?: { autoApprove: string[] }, extra: { pairingId?: string | null; commandKeyEnc?: string | null; version?: string | null } = {},
+  policy?: { autoApprove: string[] }, extra: { pairingId?: string | null; commandKeyEnc?: string | null; version?: string | null; ruimte?: AiRuimte } = {},
 ): Promise<AgentRow> {
   const { rows } = await systeem(
-    `INSERT INTO app.agents (user_id, name, platform, token_hash, capabilities, policy, pairing_id, command_key_enc, agent_version, token_expires_at)
-     VALUES ($1, $2, $3, $4, $5, COALESCE($6::jsonb, '{"autoApprove": ["fs.read", "fs.list", "sys.info", "sys.metrics", "docker.ps"]}'::jsonb), $7, $8, $9, now() + make_interval(days => $10)) RETURNING ${AGENT_COLS}`,
+    `INSERT INTO app.agents (user_id, name, platform, token_hash, capabilities, policy, pairing_id, command_key_enc, agent_version, token_expires_at, ruimte)
+     VALUES ($1, $2, $3, $4, $5, COALESCE($6::jsonb, '{"autoApprove": ["fs.read", "fs.list", "sys.info", "sys.metrics", "docker.ps"]}'::jsonb), $7, $8, $9, now() + make_interval(days => $10), $11) RETURNING ${AGENT_COLS}`,
     [userId, name, platform, tokenHash, JSON.stringify(capabilities), policy ? JSON.stringify(policy) : null,
-     extra.pairingId ?? null, extra.commandKeyEnc ?? null, extra.version ?? null, AGENT_LIMITS.tokenTtlDays]);
+     extra.pairingId ?? null, extra.commandKeyEnc ?? null, extra.version ?? null, AGENT_LIMITS.tokenTtlDays, ruimteOf(extra.ruimte)]);
   return rows[0] as AgentRow;
 }
 

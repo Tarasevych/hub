@@ -11,7 +11,8 @@
 //   draagt een kennisgeving mee dat het gegevens zijn en geen instructies.
 import { readOwnerVaultPlaintext } from './api-platform-vault';
 import { beslissing, strengste, weigerTekst } from './ai-beleid';
-import { huidigeNamens } from './mcp-namens';
+import { huidigeNamens, huidigeRuimte } from './mcp-namens';
+import { apparaatInRuimte } from '../shared/ai-ruimte';
 import { CommandRefused, submitCommand, waitForCommand } from './connectors-commands';
 import { agentOnline } from './connectors-gateway';
 import { maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, vergeetTicket } from './apps-overdracht';
@@ -20,6 +21,15 @@ import * as store from './connectors-store';
 import { callSite } from './site-dispatch';
 import { explainSiteError, SITE_TOOL_BY_NAME, SITE_TOOLS, type SiteTool } from './site-tools';
 import { githubKoppeling } from './github-platform';
+
+/**
+ * Alleen de apparaten van de ruimte waarin de AI verbonden is (0042): een privéverbinding ziet nooit de server of een beheerapparaat,
+ * een technische verbinding nooit de eigen pc of browser van de gebruiker. Zonder MCP-context (chat op de site) geldt 'prive'.
+ */
+async function apparatenInRuimte(userId: string): Promise<store.AgentRow[]> {
+  const ruimte = huidigeRuimte();
+  return (await store.listAgents(userId)).filter((a) => apparaatInRuimte(a, ruimte));
+}
 
 export type ToolAnnotations = { readOnlyHint?: boolean; destructiveHint?: boolean; idempotentHint?: boolean; openWorldHint?: boolean };
 export type ToolDef = { name: string; title?: string; description: string; inputSchema: Record<string, unknown>; annotations?: ToolAnnotations };
@@ -685,7 +695,7 @@ export async function listTools(userId: string, opts: { alwaysMachine?: boolean 
 
 async function allTools(userId: string, opts: { alwaysMachine?: boolean }): Promise<ToolDef[]> {
   const tools: ToolDef[] = [];
-  const agents = opts.alwaysMachine ? [] : await store.listAgents(userId);
+  const agents = opts.alwaysMachine ? [] : await apparatenInRuimte(userId);
   if (opts.alwaysMachine || agents.some((a) => !isBrowserAgent(a))) tools.push(...MACHINE_TOOLS.map(annotate), ...APP_TOOLS.map(annotate));
   if (opts.alwaysMachine || agents.some(isBrowserAgent)) tools.push(...BROWSER_TOOLS.map(annotate));
   if (opts.alwaysMachine) {
@@ -764,7 +774,7 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       return text('The owner\'s signed AI policy says to ask every time for this, and this tool has no approval step. Ask the user to allow it with a timer at admin.tarasevych.com → AI access; do not retry.', true);
     }
     if (name === 'machine_list') {
-      const agents = await store.listAgents(userId);
+      const agents = await apparatenInRuimte(userId);
       // Namen komen van het apparaat/de extensie zelf (bij het koppelen): onbetrouwbaar.
       // Diagnose zonder te gissen: voor een browser of AI aan staat en tot wanneer een ingelogde tab het bevestigde;
       // voor een pc/server welke versie en of «Додатки» aan staan.
@@ -790,7 +800,7 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       if (invalid) return text(invalid, true);
       // Alleen eigen apparaten van deze gebruiker; browsers en pc's blijven gescheiden (een browsertool kiest nooit een pc).
       const wantBrowser = isBrowserTool(name);
-      const agents = (await store.listAgents(userId)).filter((a) => isBrowserAgent(a) === wantBrowser);
+      const agents = (await apparatenInRuimte(userId)).filter((a) => isBrowserAgent(a) === wantBrowser);
       const keyRaw = wantBrowser ? args.browser : args.machine;
       const key = keyRaw ? String(keyRaw) : null;
       const candidates = key
@@ -910,7 +920,7 @@ const SITE_MCP = `https://${SERVICE_HOSTS.mcp}`;
 async function appSecretRequest(userId: string, args: any): Promise<ToolResult> {
   const invalid = validateApp('app_secret_request', args);
   if (invalid) return text(invalid, true);
-  const agents = (await store.listAgents(userId)).filter((a) => !isBrowserAgent(a));
+  const agents = (await apparatenInRuimte(userId)).filter((a) => !isBrowserAgent(a));
   const key = args.machine ? String(args.machine) : null;
   const candidates = key ? agents.filter((a) => a.id === key || a.name.toLowerCase() === key.toLowerCase()) : agents.filter((a) => agentOnline(a.id) && appsAan(a));
   if (candidates.length !== 1) return text(candidates.length ? 'Several devices match: pass "machine" with the name or id (see machine_list).' : 'No device with apps enabled is online. Use machine_list and app_list.', true);

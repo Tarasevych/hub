@@ -4,6 +4,7 @@
 import { getPool } from '../server/platform/pg';
 import { heeftApiRecht } from './api-recht';
 import { accessSeconden, duur as duurVan, isDuurId, refreshSeconden, type DuurId } from '../shared/ai-verbinding';
+import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 
 const q = (sql: string, params: unknown[] = []) => getPool('systeem').query(sql, params);
 
@@ -20,11 +21,13 @@ export interface TokenRow {
   id: string; user_id: string; client_id: string; client_name: string; scope: string;
   access_expires_at: Date; refresh_expires_at: Date; created_at: Date; last_used_at: Date | null; revoked_at: Date | null;
   duur?: string | null;
+  /** Ruimte van de verbinding (0042, shared/ai-ruimte.ts): 'prive' of 'technisch'; oud = prive. */
+  ruimte?: string | null;
 }
 export interface AuthRow {
   id: string; client_id: string; redirect_uri: string; code_challenge: string; state: string | null; scope: string;
   resource: string | null; status: 'pending' | 'approved' | 'denied' | 'used'; expires_at: Date; user_id: string | null;
-  client_name?: string; duur?: string | null;
+  client_name?: string; duur?: string | null; ruimte?: string | null;
 }
 
 // ---- clients (DCR) ----
@@ -65,14 +68,14 @@ export async function getPendingAuth(id: string): Promise<AuthRow | null> {
   return rows[0] ?? null;
 }
 
-/** Atomair: een verzoek kan maar één keer worden goedgekeurd of geweigerd. */
-export async function decideAuth(id: string, userId: string, approve: boolean, codeHash: string | null, duur: DuurId | null = null): Promise<AuthRow | null> {
+/** Atomair: een verzoek kan maar één keer worden goedgekeurd of geweigerd. De ruimte is de keuze van de mens op de site (nooit van de klant). */
+export async function decideAuth(id: string, userId: string, approve: boolean, codeHash: string | null, duur: DuurId | null = null, ruimte: AiRuimte = 'prive'): Promise<AuthRow | null> {
   const { rows } = await q(
     `UPDATE app.mcp_oauth_auth
         SET status = $3, user_id = $2, decided_at = now(), code_hash = $4,
-            code_expires_at = CASE WHEN $4::text IS NULL THEN NULL ELSE now() + make_interval(secs => $5) END, duur = $6
+            code_expires_at = CASE WHEN $4::text IS NULL THEN NULL ELSE now() + make_interval(secs => $5) END, duur = $6, ruimte = $7
       WHERE id = $1 AND status = 'pending' AND expires_at > now() RETURNING *`,
-    [id, userId, approve ? 'approved' : 'denied', codeHash, LIMITS.codeTtlSec, duur]);
+    [id, userId, approve ? 'approved' : 'denied', codeHash, LIMITS.codeTtlSec, duur, ruimteOf(ruimte)]);
   return rows[0] ?? null;
 }
 
@@ -102,14 +105,14 @@ export function levensduur(duur: string | null | undefined): { accessSec: number
 }
 
 export async function insertToken(t: {
-  userId: string; clientId: string; clientName: string; scope: string; accessHash: string; refreshHash: string; duur?: DuurId | null;
+  userId: string; clientId: string; clientName: string; scope: string; accessHash: string; refreshHash: string; duur?: DuurId | null; ruimte?: AiRuimte | null;
 }): Promise<string> {
   const l = levensduur(t.duur);
   const r = await q(
     `INSERT INTO app.mcp_oauth_tokens
-       (user_id, client_id, client_name, scope, access_hash, refresh_hash, access_expires_at, refresh_expires_at, duur)
-     VALUES ($1, $2, $3, $4, $5, $6, now() + make_interval(secs => $7), now() + make_interval(secs => $8), $9) RETURNING id`,
-    [t.userId, t.clientId, t.clientName, t.scope, t.accessHash, t.refreshHash, l.accessSec, l.refreshSec, isDuurId(t.duur) ? t.duur : null]);
+       (user_id, client_id, client_name, scope, access_hash, refresh_hash, access_expires_at, refresh_expires_at, duur, ruimte)
+     VALUES ($1, $2, $3, $4, $5, $6, now() + make_interval(secs => $7), now() + make_interval(secs => $8), $9, $10) RETURNING id`,
+    [t.userId, t.clientId, t.clientName, t.scope, t.accessHash, t.refreshHash, l.accessSec, l.refreshSec, isDuurId(t.duur) ? t.duur : null, ruimteOf(t.ruimte)]);
   return String(r.rows[0]?.id ?? '');
 }
 
@@ -130,7 +133,7 @@ export async function findByAccessHash(accessHash: string): Promise<TokenRow | n
   const { rows } = await q(
     `UPDATE app.mcp_oauth_tokens SET last_used_at = now()
       WHERE access_hash = $1 AND revoked_at IS NULL AND access_expires_at > now() AND refresh_expires_at > now()
-      RETURNING id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at`,
+      RETURNING id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, ruimte`,
     [accessHash]);
   return rows[0] ?? null;
 }
@@ -172,7 +175,7 @@ export async function revokeByToken(clientId: string, tokenHash: string): Promis
 
 export async function listGrants(userId: string): Promise<TokenRow[]> {
   const { rows } = await q(
-    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, duur
+    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, duur, ruimte
        FROM app.mcp_oauth_tokens WHERE user_id = $1 AND revoked_at IS NULL AND refresh_expires_at > now()
       ORDER BY created_at DESC`, [userId]);
   return rows;
@@ -181,7 +184,7 @@ export async function listGrants(userId: string): Promise<TokenRow[]> {
 /** Alle verbindingen van de laatste `dagen`, ook ingetrokken of verlopen (geschiedenis op /agents). */
 export async function listGrantHistory(userId: string, dagen = 90): Promise<TokenRow[]> {
   const { rows } = await q(
-    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, duur
+    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, duur, ruimte
        FROM app.mcp_oauth_tokens WHERE user_id = $1 AND (revoked_at IS NULL OR revoked_at > now() - make_interval(days => $2))
         AND (refresh_expires_at > now() - make_interval(days => $2))
       ORDER BY created_at DESC LIMIT 100`, [userId, dagen]);

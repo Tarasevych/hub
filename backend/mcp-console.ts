@@ -19,6 +19,8 @@ import { getPool } from "../server/platform/pg";
 import type { RouterMiddleware } from "../server/platform/router";
 import { alsGebruiker } from "./ai-grants";
 import { huidigeNamens, metNamens } from "./mcp-namens";
+import { ruimteUitVerzoek } from "./ai-ruimte-poort";
+import { RUIMTE_GESCHEIDEN, ruimteOf, toolInRuimte } from "../shared/ai-ruimte";
 import { beslissing, weigerTekst } from "./ai-beleid";
 import { gedelegeerdeSessie } from "./site-dispatch";
 import { OPDRACHT_STANDAARD, OPDRACHT_WERKWOORDEN, isWerkwoord, leesOpdrachtResultaat, voerOpdrachtUit, type Werkwoord } from "./server-beheer";
@@ -131,7 +133,7 @@ async function logCall(userId: string, row: { method: string; detail: string; tr
 const iso = (v: unknown) => (v ? new Date(v as string).toISOString() : "");
 const taskOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, status: r.status, tags: r.tags || [], service: "mcp", author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at) });
 const noteOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, tags: r.tags || [], author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at) });
-const tokenOut = (r: any) => ({ id: r.id, name: r.name, prefix: r.prefix, scopes: r.scopes, createdAt: iso(r.created_at), expiresAt: iso(r.expires_at), revokedAt: iso(r.revoked_at), calls: Number(r.calls || 0), lastSeenAt: iso(r.last_seen_at) });
+const tokenOut = (r: any) => ({ id: r.id, name: r.name, prefix: r.prefix, scopes: r.scopes, createdAt: iso(r.created_at), expiresAt: iso(r.expires_at), revokedAt: iso(r.revoked_at), calls: Number(r.calls || 0), lastSeenAt: iso(r.last_seen_at), ruimte: ruimteOf(r.ruimte) });
 
 async function board(userId: string) {
   return alsGebruiker(userId, async (q) => {
@@ -594,16 +596,19 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       json({ tokens: await alsGebruiker(auth.user.id, async (q) => (await q("SELECT * FROM app.mcp_console_tokens WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100", [auth.user.id])).rows.map(tokenOut)) }))],
     "POST /api/mcp/tokens": [gate("member", { stepUp: true }, async (ctx, auth) => {
       const name = String(bodyOf(ctx.body).name || "Agent").slice(0, 80);
+      // Ruimte van het token (0042): 'prive' (eigen ruimte) of 'technisch' (alleen eigenaar met actief technisch profiel). De AI kiest dit nooit zelf.
+      const poort = await ruimteUitVerzoek(auth.user, bodyOf(ctx.body));
+      if ("fout" in poort) return error(poort.fout, poort.status);
       const raw = `tvh_${randomBytes(24).toString("base64url")}`;
       const row = await alsGebruiker(auth.user.id, async (q) => {
         const active = Number((await q("SELECT count(*)::int AS n FROM app.mcp_console_tokens WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > now()", [auth.user.id])).rows[0].n);
         if (active >= MCP_CONSOLE_LIMITS.tokensPerUser) return null;
-        return (await q(`INSERT INTO app.mcp_console_tokens (user_id, name, prefix, token_hash, expires_at) VALUES ($1, $2, $3, $4, now() + interval '${MCP_CONSOLE_LIMITS.tokenDays} days') RETURNING *`,
-          [auth.user.id, name, raw.slice(0, 12), sha(raw)])).rows[0];
+        return (await q(`INSERT INTO app.mcp_console_tokens (user_id, name, prefix, token_hash, expires_at, ruimte) VALUES ($1, $2, $3, $4, now() + interval '${MCP_CONSOLE_LIMITS.tokenDays} days', $5) RETURNING *`,
+          [auth.user.id, name, raw.slice(0, 12), sha(raw), poort.ruimte])).rows[0];
       });
       if (!row) return error("TOKEN_LIMIT_REACHED", 409);
       await logCall(auth.user.id, { method: "token.issue", detail: name, ...wie(ctx, auth), ok: true, ms: 0 });
-      await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_issued", type: "ai", result: "ok", details: { tokenId: row.id, name } }).catch(() => undefined);
+      await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_issued", type: "ai", result: "ok", details: { tokenId: row.id, name, ruimte: poort.ruimte } }).catch(() => undefined);
       return json({ token: { ...tokenOut(row), token: raw } });
     })],
     "POST /api/mcp/tokens/revoke": [gate("member", {}, async (ctx, auth) => {
@@ -710,7 +715,7 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       if (!/^tvh_[A-Za-z0-9_-]{20,64}$/.test(got)) return error("TOKEN_INVALID", 401);
       const sys = getPool("systeem");
       const { rows } = await sys.query(
-        `SELECT t.id, t.user_id, t.name, r.data->>'role' AS role FROM app.mcp_console_tokens t
+        `SELECT t.id, t.user_id, t.name, t.ruimte, r.data->>'role' AS role FROM app.mcp_console_tokens t
            LEFT JOIN app.records r ON r.tbl = 'users' AND r.id = t.user_id
           WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now()
             AND COALESCE(r.data->>'status', '') NOT IN ('blocked', 'rejected', 'deleted') AND COALESCE((r.data->>'retiredAt')::numeric, 0) = 0
@@ -724,6 +729,12 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       const name = String(data.name || "");
       const args = (data.arguments && typeof data.arguments === "object" ? data.arguments : {}) as Record<string, unknown>;
       const started = Date.now();
+      // Ruimte van het token (0042) vóór alles: een privétoken raakt nooit de server, een technisch token nooit de privé-inhoud.
+      const ruimte = ruimteOf(tok.ruimte);
+      if (!toolInRuimte(name, ruimte) && !isGoedkeurPoging(name)) {
+        await logCall(tok.user_id, { method: "tools/call", detail: `${name} SPACE_SEPARATED:${ruimte}`, transport: "agent", agent: tok.name, ok: false, ms: Date.now() - started });
+        return json({ ok: false, error: "SPACE_SEPARATED", message: RUIMTE_GESCHEIDEN(ruimte, name.slice(0, 80)) }, 403);
+      }
       // Ondertekend AI-beleid van de eigenaar (§13.12): deze deur heeft geen goedkeurstap, dus alleen «дозволено» gaat door.
       const beleid = await beslissing({ client: String(tok.name) }, name);
       if (beleid.mode !== "always") {
@@ -731,7 +742,7 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
         return json({ ok: false, error: `AI_BELEID:${beleid.code}`, message: weigerTekst(beleid) }, 403);
       }
       try {
-        const result = await metNamens({ client: String(tok.name), grantId: `token:${tok.id}` }, () => runTool(tok.user_id, tok.role === "owner", name, args, `agent:${tok.name}`, String(tok.id)));
+        const result = await metNamens({ client: String(tok.name), grantId: `token:${tok.id}`, ruimte }, () => runTool(tok.user_id, tok.role === "owner", name, args, `agent:${tok.name}`, String(tok.id)));
         await logCall(tok.user_id, { method: "tools/call", detail: name, transport: "agent", agent: tok.name, ok: true, ms: Date.now() - started });
         return json({ ok: true, result: text(result) });
       } catch (err) {

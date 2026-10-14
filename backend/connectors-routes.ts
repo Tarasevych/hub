@@ -15,6 +15,8 @@ import { BROWSER_AUTO_APPROVABLE, BROWSER_DEFAULT_AUTO, BROWSER_TYPES, enabledTy
 import { defaultChatDeps, runChat, sanitizeHistory } from './connectors-chat';
 import { callTool, listTools } from './connectors-tools';
 import { listUserGrantHistory, listUserGrants, RESOURCE as MCP_URL } from './mcp-connector';
+import { ruimteUitVerzoek } from './ai-ruimte-poort';
+import { ruimteOf } from '../shared/ai-ruimte';
 
 // ---- journaal (/agents → Журнал) ----
 export const JOURNAAL_SOORTEN = ['werk', 'ai', 'token', 'apparaat', 'browser', 'toestemming', 'noodstop', 'hulpmiddelen', 'toegang'] as const;
@@ -135,6 +137,8 @@ export function createAgentRoutes(deps: Deps) {
     version: a.agent_version ?? null,
     tokenExpiresAt: a.token_expires_at ? new Date(a.token_expires_at).getTime() : null,
     pairingId: a.pairing_id ? `${String(a.pairing_id).slice(0, 6)}…` : null,
+    // Ruimte van het apparaat (0042): 'prive' hoort bij de accountruimte, 'technisch' bij de technische ruimte (server/beheer).
+    ruimte: ruimteOf(a.ruimte),
   });
 
   return {
@@ -163,12 +167,15 @@ export function createAgentRoutes(deps: Deps) {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth) return denied();
       if ((await store.countAgents(auth.user.id)) >= store.AGENT_LIMITS.agentsPerUser) return deps.fail('AGENT_LIMIT_REACHED', 409);
+      // De ruimte van het nieuwe apparaat kiest de mens hier; 'technisch' (server/beheer) kan alleen de eigenaar met een actief technisch profiel.
+      const poort = await ruimteUitVerzoek(auth.user, deps.body(ctx.body));
+      if ('fout' in poort) return deps.fail(poort.fout, poort.status);
       const code = pairingCode();
-      const expiresAt = await store.createPairingCode(auth.user.id, sha256(code));
+      const expiresAt = await store.createPairingCode(auth.user.id, sha256(code), poort.ruimte);
       if (!expiresAt) return deps.fail('PAIRING_CODE_RATE_LIMITED', 429);
       store.purgeOldPairingCodes().catch(() => undefined);
-      await deps.audit(auth.user.id, 'owner.agent.pairing_code', 'success');
-      return deps.respond({ code, expiresAt: new Date(expiresAt).getTime() });
+      await deps.audit(auth.user.id, 'owner.agent.pairing_code', 'success', { ruimte: poort.ruimte });
+      return deps.respond({ code, expiresAt: new Date(expiresAt).getTime(), ruimte: poort.ruimte });
     }],
 
     // Publiek (zie PUBLIEKE_ROUTES): de agent wisselt de koppelcode in voor een eigen token.
@@ -176,8 +183,9 @@ export function createAgentRoutes(deps: Deps) {
     'POST /api/owner/agents/pair': [async (ctx: any) => {
       const body = deps.body(ctx.body);
       const code = normalizePairingCode(body.code);
-      const userId = code.length === 8 ? await store.consumePairingCode(sha256(code)) : null;
-      if (!userId) return error('PAIRING_CODE_INVALID', 400);
+      const ingewisseld = code.length === 8 ? await store.consumePairingCode(sha256(code)) : null;
+      if (!ingewisseld) return error('PAIRING_CODE_INVALID', 400);
+      const { userId, ruimte } = ingewisseld;
       if ((await store.countAgents(userId)) >= store.AGENT_LIMITS.agentsPerUser) return error('AGENT_LIMIT_REACHED', 409);
       const token = randomToken(32);
       const name = String(body.name || 'Mijn apparaat').trim().slice(0, MAX_NAME) || 'Mijn apparaat';
@@ -190,13 +198,14 @@ export function createAgentRoutes(deps: Deps) {
       // Opdrachtsleutel (audit H3): de agent krijgt hem één keer; de server bewaart hem alleen verzegeld.
       const commandKey = newCommandKey();
       const tokenHash = sha256(token);
-      const agent = await store.createAgent(userId, name, platform, tokenHash, capabilities, policy, { pairingId, commandKeyEnc: sealCommandKey(commandKey, userId, tokenHash), version });
+      // De ruimte komt van de koppelcode (door de mens gekozen op de site), nooit van het apparaat zelf.
+      const agent = await store.createAgent(userId, name, platform, tokenHash, capabilities, policy, { pairingId, commandKeyEnc: sealCommandKey(commandKey, userId, tokenHash), version, ruimte });
       // Opnieuw koppelen trekt het vorige token van dezelfde installatie in (pairing_id; oude extensies: zelfde naam).
       const replaced = await store.revokePreviousPairing(userId, agent.id, pairingId, name, platform);
       for (const old of replaced) disconnectAgent(old);
       // Een nieuwe koppeling start met alleen lezen (30 dagen); meer geeft de gebruiker zelf (presets of per mogelijkheid).
       await grants.applyPreset(userId, 'pairing', agent.id, 'spostericach').catch(() => undefined);
-      await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, name, platform, version, replaced: replaced.length, replacedIds: replaced, pairingId: pairingId ? 'ja' : 'nee' } });
+      await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, name, platform, version, ruimte, replaced: replaced.length, replacedIds: replaced, pairingId: pairingId ? 'ja' : 'nee' } });
       // userId: voor de accountclaim (<meta name="mjn-account">): de extensie weigert opdrachten op een pagina van een ander account.
       return json({ agentId: agent.id, userId, token, commandKey, tokenExpiresAt: agent.token_expires_at ? new Date(agent.token_expires_at).getTime() : null });
     }],
