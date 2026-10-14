@@ -1,5 +1,6 @@
 // SSH-certificaat van één uur (etap C, deel 2). Deze module geeft geen recht en leest geen vlag:
-// terminal.servers in een lopende activering is de poort; de root-schakelaar ssh-ca (exact true) is de handtekening.
+// ssh.host (alleen rol Власник) in een lopende activering is de poort — terminal.servers alleen is NIET genoeg (14.10: een
+// SSH-sessie als beheer is toegang tot de host zelf, meer dan een terminal in een container zonder netwerk); de root-schakelaar ssh-ca (exact true) is de handtekening.
 // De principal, de duur en de opties kiest het root-script, niet dit verzoek.
 import { randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
@@ -50,11 +51,11 @@ const slaap = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Vraag een certificaat. `activatie` komt van de server (actieveActivatie), nooit uit de body.
- * De vlag speelt hier geen rol: zonder terminal.servers weigert de server ook als de knop zichtbaar zou zijn.
+ * De vlag speelt hier geen rol: zonder ssh.host (Власник) weigert de server ook als de knop zichtbaar zou zijn.
  */
 export async function uitgeven(u: Gebruiker, tab: string, publiekIn: unknown, io: SshIo, activatie: ActivatieKort, opties: { wachtMs?: number; slaapMs?: number } = {}): Promise<Uitgifte> {
   if (!TAB_RE.test(tab)) throw new TechFout('TAB_ONGELDIG');
-  if (!activatie?.mogelijkheden.includes('terminal.servers')) throw new TechFout('TECH_SSH_CA_VEREIST', 403);
+  if (!activatie?.mogelijkheden.includes('ssh.host')) throw new TechFout('TECH_SSH_CA_VEREIST', 403);
   const publiek = publiekeSleutel(publiekIn);
   if (!publiek) throw new TechFout('SSH_CA_SLEUTEL');
   if (!(await io.schakelaar())) throw new TechFout('SSH_CA_UIT', 409);

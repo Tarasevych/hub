@@ -11,7 +11,7 @@ import { HELP_SSH, publiekeSleutel } from '../../shared/ssh-ca';
 
 const body = () => ({ service: zijbalkServerDienst() || serviceFromLocation(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 const FOUTEN: Record<string, [string, string]> = {
-  TECH_SSH_CA_VEREIST: ['Потрібне активне технічне профіль із правом термінала серверів (Адміністратор або Власник).', 'Een actief technisch profiel met het recht voor serverterminals is nodig (Beheerder of Eigenaar).'],
+  TECH_SSH_CA_VEREIST: ['Сертифікат SSH на сервер видається лише з активного технічного профілю Власника.', 'Een SSH-certificaat voor de server krijgt alleen een actief technisch profiel van de eigenaar.'],
   SSH_CA_SLEUTEL: ['Вставте один публічний ключ ssh-ed25519, без коментаря й без налаштувань.', 'Plak één publieke ssh-ed25519-sleutel, zonder commentaar en zonder opties.'],
   SSH_CA_UIT: ['Підпис на сервері вимкнено. Root вмикає перемикач ssh-ca після inrichten і рядка в sshd.', 'Ondertekenen staat uit op de server. Root zet schakelaar ssh-ca aan na inrichten en een regel in sshd.'],
   SSH_CA_NIET_GEREED: ['CA ще немає. На сервері: sudo mijn-ruimte-ssh-ca inrichten', 'De CA bestaat nog niet. Op de server: sudo mijn-ruimte-ssh-ca inrichten'],
@@ -59,8 +59,8 @@ export default function SshCertificaat({ sluit }: { sluit: () => void }) {
               <button type='button' onClick={sluit}>{uk ? 'Закрити' : 'Sluiten'}</button>
             </div>
             <p className='tech-meta'>{uk
-              ? 'На комп’ютері: ssh-keygen -s не потрібен. Збережіть рядок як файл і вкажіть його в CertificateFile поруч зі своїм ключем.'
-              : 'Op de computer is ssh-keygen -s niet nodig. Bewaar de regel als bestand en noem het in CertificateFile naast uw eigen sleutel.'}</p>
+              ? 'На своєму комп’ютері збережіть цей рядок як ~/.ssh/id_ed25519-cert.pub (поруч із приватним ключем id_ed25519) і підключіться: ssh beheer@<сервер>. SSH підхопить сертифікат сам; через годину він перестане діяти.'
+              : 'Bewaar deze regel op uw computer als ~/.ssh/id_ed25519-cert.pub (naast de privésleutel id_ed25519) en maak verbinding: ssh beheer@<server>. SSH neemt het certificaat zelf mee; na een uur werkt het niet meer.'}</p>
           </>
         ) : (
           <>
@@ -71,7 +71,7 @@ export default function SshCertificaat({ sluit }: { sluit: () => void }) {
             </div>
           </>
         )}
-        {melding ? <p className='tech-melding' data-ssh-melding='1'>{melding}</p> : null}
+        {melding ? <p className='tech-melding' role='alert' data-ssh-melding='1'>{melding}</p> : null}
       </form>
     </Venster>
   );

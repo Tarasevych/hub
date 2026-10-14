@@ -2,12 +2,14 @@
 // alleen permit-pty, hoogstens ~65 minuten. De site weigert zonder terminal.servers; een vlag verbergt de knop en is geen recht.
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, utimesSync, writeFileSync, chownSync, statSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { checker } from './hulp/nep-google';
 
 const SCRIPT = 'deploy/ssh-ca/mijn-ruimte-ssh-ca.sh';
+const ALS_ROOT = process.getuid?.() === 0;
+const NIEMAND = 65534;
 const TAB = 'a'.repeat(48);
 
 function sleutel(map: string, naam: string, soort: 'ed25519' | 'rsa') {
@@ -22,12 +24,14 @@ function omg(limiet = '12') {
   const wortel = mkdtempSync(join(tmpdir(), 'ssh-ca-'));
   const p = { ca: join(wortel, 'ca'), inbox: join(wortel, 'inbox'), werk: join(wortel, 'werk'), uit: join(wortel, 'uit'), status: join(wortel, 'status'), rechten: join(wortel, 'rechten.json'), wortel };
   for (const d of [p.ca, p.inbox, p.werk, p.uit, p.status]) mkdirSync(d);
+  // Als root negeert het script testpaden (bewust: dan geldt alleen /etc/mijn-ruimte). Daarom draait de test het dan als nobody.
+  if (ALS_ROOT) for (const d of [wortel, p.ca, p.inbox, p.werk, p.uit, p.status]) chownSync(d, NIEMAND, NIEMAND);
   const env = {
     ...process.env, MIJN_RUIMTE_SSH_CA_DIR: p.ca, MIJN_RUIMTE_SSH_CA_INBOX: p.inbox, MIJN_RUIMTE_SSH_CA_WERK: p.werk,
     MIJN_RUIMTE_SSH_CA_UIT: p.uit, MIJN_RUIMTE_SSH_CA_STATUS: p.status, MIJN_RUIMTE_SSH_CA_RECHTEN: p.rechten,
     MIJN_RUIMTE_SSH_CA_GROEP: 'nogroup', MIJN_RUIMTE_SSH_CA_LIMIET: limiet,
   };
-  const run = (args: string[]) => spawnSync('bash', [SCRIPT, ...args], { encoding: 'utf8', env });
+  const run = (args: string[]) => spawnSync('bash', [SCRIPT, ...args], { encoding: 'utf8', env, ...(ALS_ROOT ? { uid: NIEMAND, gid: NIEMAND } : {}) });
   return { p, env, run };
 }
 
@@ -79,9 +83,17 @@ export async function main(): Promise<number> {
     const van = /Valid: from (\S+) to (\S+)/.exec(L);
     const delta = van ? (Date.parse(van[2]) - Date.parse(van[1])) / 1000 : 0;
     check('aan: certificaat, alleen beheer, alleen permit-pty, ongeveer een uur', getekend.status === 0 && res.ok === true && res.principal === 'beheer' && /user certificate/.test(L) && /Key ID: "mijn-ruimte"/.test(L) && /^\s+beheer$/m.test(L) && !/permit-port-forwarding|permit-agent-forwarding|permit-X11|permit-user-rc/.test(L) && /permit-pty/.test(L) && /Critical Options: \(none\)/.test(L) && delta >= 64 * 60 && delta <= 66 * 60 && !existsSync(join(w.p.werk, `${id}-cert.pub`)), `${getekend.stderr}\n${L}`);
+    check('echte uitvoer van root komt door de controle van de site (alleen type + sleutel, geen serverpad)', res.cert.split(' ').length === 2 && !res.cert.includes(w.p.werk) && parseUitgifte(JSON.stringify(res)).ok === true, res.cert.slice(-60));
     const gebeurtenissen = parseRootGebeurtenissen(readFileSync(join(w.p.status, 'gebeurtenissen.jsonl'), 'utf8'));
     const okRegel = gebeurtenissen.find((g) => g.code === 'SSH_CA_OK');
     check('journaal: bron ssh-ca en vingerafdruk, geen certificaat in de regel', !!okRegel && okRegel.bron === 'ssh-ca' && okRegel.vinger === res.vinger && !/ssh-ed25519-cert/.test(JSON.stringify(okRegel)), JSON.stringify(okRegel));
+    // 14.10: auditbestand in dezelfde vorm als uitrol/gitops (0640, onder slot herschreven), en alle verzoeken in één ronde.
+    const auditMode = statSync(join(w.p.status, 'gebeurtenissen.jsonl')).mode & 0o777;
+    check('auditbestand 0640 (de app moet het kunnen lezen), niet 0600', auditMode === 0o640, auditMode.toString(8));
+    const twee = [verzoek(w.p.inbox, pub), verzoek(w.p.inbox, pub)];
+    w.run(['verwerk']);
+    check('verwerk tekent alle verzoeken in de inbox in één ronde', twee.every((x) => existsSync(join(w.p.uit, `${x}.json`)) && JSON.parse(readFileSync(join(w.p.uit, `${x}.json`), 'utf8')).ok === true)
+      && readdirSync(w.p.inbox).filter((n) => n.endsWith('.json')).length === 0);
 
     const rsa = sleutel(w.p.wortel, 'rsa', 'rsa');
     const idRsa = verzoek(w.p.inbox, rsa);
@@ -121,7 +133,8 @@ export async function main(): Promise<number> {
   } finally { rmSync(w.p.wortel, { recursive: true, force: true }); }
 
   // ---------------------------------------------------------------- de site
-  const servers = { id: 'act-1', mogelijkheden: ['terminal.servers'] as const };
+  const servers = { id: 'act-1', mogelijkheden: ['terminal.servers', 'ssh.host'] as const };
+  const beheerder = { id: 'act-3', mogelijkheden: ['terminal.servers'] as const };
   const dev = { id: 'act-2', mogelijkheden: ['terminal.test'] as const };
   const pubVast = 'ssh-ed25519 ' + 'A'.repeat(68);
   check('synthetische sleutel telt alleen als de lengte klopt', publiekeSleutel(pubVast) === pubVast);
@@ -141,7 +154,11 @@ export async function main(): Promise<number> {
   const okIo = ioVan(true, JSON.stringify({ ok: true, code: 'SSH_CA_OK', cert, geldigTot: '2026-10-14T10:00:00', vinger, principal: 'beheer' }));
   const uit = await uitgeven({ id: 'u1', email: 'pavlo@example.com' }, TAB, pubVast, okIo, servers, { wachtMs: 500, slaapMs: 10 });
   const lichaam = JSON.parse(okIo.gezien[0]);
-  check('beheerder krijgt een certificaat; het verzoek kiest geen principal of duur', uit.principal === 'beheer' && uit.minuten === 60 && lichaam.identiteit === 'pavlo' && lichaam.publiek === pubVast && !('principal' in lichaam) && !('ttl' in lichaam) && okIo.gezien.includes('start'));
+  check('eigenaar (ssh.host) krijgt een certificaat; het verzoek kiest geen principal of duur', uit.principal === 'beheer' && uit.minuten === 60 && lichaam.identiteit === 'pavlo' && lichaam.publiek === pubVast && !('principal' in lichaam) && !('ttl' in lichaam) && okIo.gezien.includes('start'));
+  const behIo = ioVan(true, null);
+  let behCode = '';
+  try { await uitgeven({ id: 'u3', email: 'beh@example.com' }, TAB, pubVast, behIo, beheerder, { wachtMs: 200, slaapMs: 10 }); } catch (e) { behCode = e instanceof TechFout ? e.code : 'ANDERS'; }
+  check('beheerder (alleen terminal.servers, geen ssh.host) krijgt niets: SSH als beheer is toegang tot de host', behCode === 'TECH_SSH_CA_VEREIST' && behIo.gezien.length === 0);
   const devIo = ioVan(true, null);
   let devCode = '';
   try { await uitgeven({ id: 'u2', email: 'dev@example.com' }, TAB, pubVast, devIo, dev, { wachtMs: 200, slaapMs: 10 }); } catch (e) { devCode = e instanceof TechFout ? e.code : 'ANDERS'; }
@@ -169,8 +186,8 @@ export async function main(): Promise<number> {
   const bron = readFileSync(SCRIPT, 'utf8');
   const unit = readFileSync('deploy/mijn-ruimte-ssh-ca.service', 'utf8');
   check('de site importeert geen vlaggen (een vlag is geen recht)', !/from ['"].*flags['"]/.test(site) && !/evalueer\(/.test(site));
-  check('uitgifte vraagt stap-op en terminal.servers', /stepUp: true/.test(routes) && /terminal\.servers/.test(site) && /vinger: r\.vinger/.test(site) && !/cert: r\.cert/.test(site));
-  check('knop: vlag én terminal.servers, met «?»', /sshZichtbaar && techMag\('terminal\.servers'/.test(laag) && /SSH_CA_VLAG/.test(laag) && /HELP_SSH/.test(venster) && /<Vraag /.test(venster));
+  check('uitgifte vraagt stap-op en ssh.host', /stepUp: true/.test(routes) && /includes\('ssh\.host'\)/.test(site) && /vinger: r\.vinger/.test(site) && !/cert: r\.cert/.test(site));
+  check('knop: vlag én ssh.host, met «?»', /sshZichtbaar && techMag\('ssh\.host'/.test(laag) && /SSH_CA_VLAG/.test(laag) && /HELP_SSH/.test(venster) && /<Vraag /.test(venster));
   check('installer zet ssh-ca niet aan en start de path-unit niet', /"ssh-ca": false/.test(inst) && !/"ssh-ca": true/.test(inst) && !/systemctl enable[^\n]*mijn-ruimte-ssh-ca/.test(inst) && /ssh_ca_inrichten "\$doel"/.test(inst) && !/ssh-keygen/.test(inst));
   check('script wist padoverschrijvingen als root, vóór het lezen', bron.indexOf('unset MIJN_RUIMTE_SSH_CA_DIR') < bron.indexOf('CA_DIR="${MIJN_RUIMTE_SSH_CA_DIR'));
   const unitCode = unit.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');

@@ -10,7 +10,9 @@ export type TechRol = 'ondersteuning' | 'tester' | 'ontwikkelaar' | 'beheerder' 
 export type TechMogelijkheid =
   | 'diagnose.lezen' | 'journaal.metadata' | 'journaal.lezen' | 'opnames.bekijken' | 'impersonatie.aanvragen'
   | 'flags.test' | 'testruimtes' | 'uitrol.voorbereiden' | 'logboeken.diensten' | 'terminal.test' | 'terminal.servers'
-  | 'diensten.beheren' | 'users.manage' | 'roles.delegate';
+  | 'diensten.beheren' | 'users.manage' | 'roles.delegate'
+  /** SSH op de host zelf (certificaat van een uur, principal beheer). Alleen Власник: meer dan een terminal in een container. */
+  | 'ssh.host';
 
 export type RolInfo = { id: TechRol; naam: Tekst; kort: Tekst; mogelijkheden: readonly TechMogelijkheid[]; plafondMinuten: number; help: HelpLagen };
 
@@ -43,7 +45,7 @@ export const TECH_ROLLEN: readonly RolInfo[] = Object.freeze([
       gevolg: ['Кожен перегляд запису сам потрапляє в журнал.', 'Elk bekijken van een opname komt zelf in het logboek.'],
       dev: ['Окрема роль, щоб контролер не міг сам себе перевіряти (розділення обов\'язків).', 'Aparte rol zodat de controleur zichzelf niet controleert (functiescheiding).'] } },
   { id: 'eigenaar', naam: ['Власник сервера', 'Eigenaar van de server'], kort: ['усе + делегування', 'alles + delegeren'],
-    mogelijkheden: ['diagnose.lezen', 'journaal.lezen', 'opnames.bekijken', 'impersonatie.aanvragen', 'flags.test', 'testruimtes', 'uitrol.voorbereiden', 'logboeken.diensten', 'terminal.test', 'terminal.servers', 'diensten.beheren', 'users.manage', 'roles.delegate'], plafondMinuten: 120,
+    mogelijkheden: ['diagnose.lezen', 'journaal.lezen', 'opnames.bekijken', 'impersonatie.aanvragen', 'flags.test', 'testruimtes', 'uitrol.voorbereiden', 'logboeken.diensten', 'terminal.test', 'terminal.servers', 'diensten.beheren', 'users.manage', 'roles.delegate', 'ssh.host'], plafondMinuten: 120,
     help: { wat: ['Власник сервера (OWNER_EMAIL). Профіль створюється сам і не може бути відкликаний через сайт.', 'Eigenaar van de server (OWNER_EMAIL). Het profiel ontstaat vanzelf en kan niet via de site worden ingetrokken.'],
       gevolg: ['Root-дії все одно лише через підпис на вашому ПК.', 'Root-acties blijven alleen via een handtekening op uw pc.'],
       dev: ['Власник теж активує профіль на час: викрадена клієнтська сесія не дає адмін-прав навіть йому.', 'Ook de eigenaar activeert op tijd: een gestolen klantsessie geeft zelfs hem geen beheerrechten.'] } },

@@ -51,7 +51,7 @@ export default function TechLaag() {
 
   useEffect(() => { startTech(); }, []);
   useEffect(() => {
-    if (!techMag('terminal.servers', t)) { setSshZichtbaar(false); return; }
+    if (!techMag('ssh.host', t)) { setSshZichtbaar(false); return; }
     let stop = false;
     api.post(`/api/ofrep/v1/evaluate/flags/${SSH_CA_VLAG}`, techBody()).then((r) => { if (!stop) setSshZichtbaar(r.data?.value === true); }).catch(() => { if (!stop) setSshZichtbaar(false); });
     return () => { stop = true; };
@@ -93,7 +93,7 @@ export default function TechLaag() {
             <span className={`tech-band-extra${meer ? ' is-open' : ''}`} id='tech-band-extra'>
               <button type='button' onClick={() => kies('activeren')} data-tech-knop='verlengen'><Clock aria-hidden='true' /><span>{uk ? 'Подовжити' : 'Verlengen'}</span></button>
               {techMag('terminal.test', t) || techMag('terminal.servers', t) ? <button type='button' onClick={() => kies('terminal')} data-tech-knop='terminal'><SquareTerminal aria-hidden='true' /><span>{uk ? 'Термінал' : 'Terminal'}</span></button> : null}
-              {sshZichtbaar && techMag('terminal.servers', t) ? <button type='button' onClick={() => kies('ssh')} data-tech-knop='ssh'><KeyRound aria-hidden='true' /><span>{uk ? 'Сертифікат SSH' : 'SSH-certificaat'}</span></button> : null}
+              {sshZichtbaar && techMag('ssh.host', t) ? <button type='button' onClick={() => kies('ssh')} data-tech-knop='ssh'><KeyRound aria-hidden='true' /><span>{uk ? 'Сертифікат SSH' : 'SSH-certificaat'}</span></button> : null}
               {techMag('flags.test', t) || techMag('diensten.beheren', t) ? <button type='button' onClick={() => kies('vlaggen')} data-tech-knop='vlaggen'><Flag aria-hidden='true' /><span>{uk ? 'Прапорці' : 'Vlaggen'}</span></button> : null}
               {techMag('impersonatie.aanvragen', t) ? <button type='button' onClick={() => kies('ondersteuning')} data-tech-knop='ondersteuning'><LifeBuoy aria-hidden='true' /><span>{uk ? 'Підтримка' : 'Ondersteuning'}</span></button> : null}
               {techMag('roles.delegate', t) ? <button type='button' onClick={() => kies('profielen')} data-tech-knop='profielen'><Users aria-hidden='true' /><span>{uk ? 'Профілі' : 'Profielen'}</span></button> : null}

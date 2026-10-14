@@ -54,6 +54,8 @@ export function zin(e: JournaalItem, tr: Tr): string {
     case 'owner.terminal.geopend': return tr(`Відкрито термінал на «${s(d.apparaat)}» (${d.schrijven ? 'запис' : 'лише читання'}, ${s(d.minuten)} хв): ${s(d.reden)}`, `Terminal geopend op «${s(d.apparaat)}» (${d.schrijven ? 'schrijven' : 'alleen lezen'}, ${s(d.minuten)} min): ${s(d.reden)}`);
     case 'owner.terminal.gesloten': return tr(`Термінал закрито (${s(d.seconden)} с)`, `Terminal gesloten (${s(d.seconden)} s)`);
     case 'owner.terminal.opname.bekeken': return tr('Переглянуто запис термінала', 'Terminalopname bekeken');
+    case 'owner.ssh-ca.uitgegeven': return tr(`Видано сертифікат SSH на ${s(d.minuten)} хв (вхід як ${s(d.principal)}), відбиток ${s(d.vinger).slice(0, 19)}…`, `SSH-certificaat uitgegeven voor ${s(d.minuten)} min (aanmelden als ${s(d.principal)}), vingerafdruk ${s(d.vinger).slice(0, 19)}…`);
+    case 'owner.ssh-ca.geweigerd': return tr(`Сертифікат SSH не видано (${s(d.code)})`, `SSH-certificaat niet uitgegeven (${s(d.code)})`);
     case 'owner.flags.gewijzigd': return tr(`Прапорець «${s(d.sleutel)}» ${d.nieuw ? 'створено' : 'змінено'}: ${d.aan ? 'увімкнено' : 'вимкнено'}${Number(d.percentage) ? `, ${s(d.percentage)}%` : ''}`, `Vlag «${s(d.sleutel)}» ${d.nieuw ? 'aangemaakt' : 'gewijzigd'}: ${d.aan ? 'aan' : 'uit'}${Number(d.percentage) ? `, ${s(d.percentage)}%` : ''}`);
     case 'owner.flags.verwijderd': return tr(`Прапорець «${s(d.sleutel)}» видалено`, `Vlag «${s(d.sleutel)}» verwijderd`);
     case 'owner.flags.getest': return tr(`Тест прапорця «${s(d.sleutel)}» для себе: ${d.waarde === null ? 'знято' : d.waarde ? 'увімкнено' : 'вимкнено'}`, `Test van vlag «${s(d.sleutel)}» voor uzelf: ${d.waarde === null ? 'weg' : d.waarde ? 'aan' : 'uit'}`);

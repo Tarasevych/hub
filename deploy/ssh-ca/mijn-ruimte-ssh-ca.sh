@@ -102,8 +102,26 @@ def noteer(code, niveau, uk, nl, vinger=""):
         }
         if vinger and re.fullmatch(r"SHA256:[A-Za-z0-9+/]{43}", vinger):
             regel["vinger"] = vinger
-        with open(os.path.join(status, "gebeurtenissen.jsonl"), "a", encoding="utf-8") as f:
-            f.write(json.dumps(regel, ensure_ascii=False) + "\n")
+        # Zelfde slot en dezelfde vorm als uitrol/gitops/opdracht (14.10): die herschrijven het bestand onder flock; een losse
+        # append zonder slot kon tussen hun lezen en vervangen verdwijnen, en een nieuw bestand kreeg 0600 root (app leest het niet).
+        import fcntl
+        pad = os.path.join(status, "gebeurtenissen.jsonl")
+        with open(os.path.join(status, ".gebeurtenissen.lock"), "a") as slot:
+            fcntl.flock(slot, fcntl.LOCK_EX)
+            try:
+                oud = open(pad, encoding="utf-8").read().splitlines()[-499:]
+            except FileNotFoundError:
+                oud = []
+            tmp = pad + ".ssh-ca.tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write("\n".join(oud + [json.dumps(regel, ensure_ascii=False)]) + "\n")
+            os.chmod(tmp, 0o640)
+            if os.geteuid() == 0:
+                try:
+                    os.chown(tmp, 0, grp.getgrnam(groep).gr_gid)
+                except Exception:
+                    pass
+            os.replace(tmp, pad)
     except Exception:
         return
 
@@ -209,6 +227,12 @@ try:
     cert = open(certpad, encoding="utf-8").read().strip()
     if "\n" in cert or not cert.startswith("ssh-ed25519-cert-v01@openssh.com "):
         raise RuntimeError("cert-regel")
+    # Alleen type + sleutel (14.10): zonder commentaar zet ssh-keygen het PAD van het invoerbestand achter het certificaat
+    # (/var/lib/mijn-ruimte/ssh-ca/<id>.pub). Dat lekte een serverpad naar de browser en de site weigerde de regel (SSH_CA_CONTROLE).
+    delen = cert.split()
+    if len(delen) < 2 or not re.fullmatch(r"[A-Za-z0-9+/=]{20,2000}", delen[1]):
+        raise RuntimeError("cert-regel")
+    cert = delen[0] + " " + delen[1]
     tijden.append(nu)
     with open(uitgiften, "w", encoding="utf-8") as f:
         f.write("\n".join(str(t) for t in tijden) + "\n")
@@ -246,18 +270,25 @@ tekenen_een() {
   ) 9>"$WERK/.lock"
 }
 
+# Alle verzoeken in de inbox (oudste eerst, hoogstens 20 per ronde): de path-unit vuurt niet opnieuw voor een bestand dat
+# binnenkwam terwijl deze dienst al liep, dus één per ronde liet een tweede verzoek liggen tot het «te oud» was.
 verwerk() {
   mkdir -p -- "$INBOX" "$WERK" "$UIT"
-  local regel base id
-  regel="$(find "$INBOX" -maxdepth 1 -type f -name '*.json' -printf '%T@ %f\n' 2>/dev/null | sort -n | head -1 || true)"
-  [ -n "$regel" ] || return 0
-  base="${regel#* }"
-  id="${base%.json}"
-  if [[ ! "$id" =~ $ID_RE ]] || [ "$base" != "$id.json" ]; then
-    rm -f -- "$INBOX/$base"
-    return 0
-  fi
-  tekenen_een "$id" "$INBOX/$base"
+  local regel base id n=0
+  while [ "$n" -lt 20 ]; do
+    regel="$(find "$INBOX" -maxdepth 1 -type f -name '*.json' -printf '%T@ %f\n' 2>/dev/null | sort -n | head -1 || true)"
+    [ -n "$regel" ] || return 0
+    base="${regel#* }"
+    id="${base%.json}"
+    n=$((n + 1))
+    if [[ ! "$id" =~ $ID_RE ]] || [ "$base" != "$id.json" ]; then
+      rm -f -- "$INBOX/$base"
+      continue
+    fi
+    tekenen_een "$id" "$INBOX/$base"
+    # Lag het bestand er nog (bv. symlink-weigering zonder verwijderen), dan niet eindeloos herhalen.
+    [ -e "$INBOX/$base" ] && rm -f -- "$INBOX/$base"
+  done
 }
 
 cmd="${1:-}"

@@ -1,6 +1,6 @@
 // SSH-certificaat voor één uur (architectuur 14.10.2026, etap C deel 2).
 // De site vraagt alleen; root (deploy/ssh-ca/mijn-ruimte-ssh-ca.sh) tekent. Een vlag verbergt de knop en geeft nooit dit recht:
-// dat blijft terminal.servers in een actief technisch profiel, plus de schakelaar ssh-ca die standaard uit staat.
+// dat blijft ssh.host (alleen Власник) in een actief technisch profiel, plus de schakelaar ssh-ca die standaard uit staat.
 import type { HelpLagen } from './tech-rollen';
 
 export const SSH_CA_MINUTEN = 60;
@@ -34,6 +34,6 @@ export const HELP_SSH: HelpLagen = {
     'Het certificaat dooft zelf na een uur. Er komt geen vaste sleutel op de server. Alleen een terminal (permit-pty), zonder poort-, agent- of schermdoorsturing.'],
   risico: ['Поки сертифікат дійсний, ним можна відкрити сеанс SSH як beheer. Підпис відбувається лише якщо root увімкнув перемикач ssh-ca і довірив CA в sshd вручну.',
     'Zolang het certificaat geldig is, opent het een SSH-sessie als beheer. Ondertekenen gebeurt alleen als root de schakelaar ssh-ca aanzette en de CA met de hand in sshd vertrouwde.'],
-  dev: ['Root-служба mijn-ruimte-ssh-ca. Прапорець ssh-certificaat лише ховає кнопку. Право — terminal.servers в активному технічному профілі та підтвердження входу. Скрипт не змінює sshd_config і не вмикає перемикач. Принципал лише beheer, -O clear -O permit-pty, -V -5m:+60m. Запит не обирає принципал, термін чи опції.',
-    'Root-dienst mijn-ruimte-ssh-ca. De vlag ssh-certificaat verbergt alleen de knop. Het recht is terminal.servers in een actief technisch profiel plus bevestiging van de aanmelding. Het script wijzigt sshd_config niet en zet de schakelaar niet aan. Principal alleen beheer, -O clear -O permit-pty, -V -5m:+60m. Het verzoek kiest geen principal, duur of opties.'],
+  dev: ['Root-служба mijn-ruimte-ssh-ca. Прапорець ssh-certificaat лише ховає кнопку. Право — ssh.host (лише Власник) в активному технічному профілі та підтвердження входу; terminal.servers (Адміністратор) для цього замало. Скрипт не змінює sshd_config і не вмикає перемикач. Принципал лише beheer, -O clear -O permit-pty, -V -5m:+60m. Запит не обирає принципал, термін чи опції.',
+    'Root-dienst mijn-ruimte-ssh-ca. De vlag ssh-certificaat verbergt alleen de knop. Het recht is ssh.host (alleen eigenaar) in een actief technisch profiel plus bevestiging van de aanmelding; terminal.servers (beheerder) is daarvoor niet genoeg. Het script wijzigt sshd_config niet en zet de schakelaar niet aan. Principal alleen beheer, -O clear -O permit-pty, -V -5m:+60m. Het verzoek kiest geen principal, duur of opties.'],
 };
