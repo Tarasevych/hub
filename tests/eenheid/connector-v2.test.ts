@@ -5,13 +5,16 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { checker } from './hulp/nep-google';
 import { V2_AGENTEN, agentUrl, redirectPastBijAgent, slugUitPad, slugUitResource, type AgentSlug } from '../../shared/connector-v2/agenten';
 import { V2_GROEPEN, V2_OPTIES, v2Optie } from '../../shared/connector-v2/catalogus';
-import { MAX_NAAM, NAAM_RE, alleNamen, ontleed, toolNaam } from '../../shared/connector-v2/namen';
+import { MAX_NAAM, NAAM_RE, alleNamen, idVanNaam, ontleed, toolNaam } from '../../shared/connector-v2/namen';
 import { MODI, STANDAARD, modusStaatToe, modusVan, pasModusToe, schoon, verschil, breidtUit, hoogsteRisico } from '../../shared/connector-v2/rechten';
 import { STATISCHE_TOOLNAMEN } from '../../backend/connectors-tools';
 import { SITE_TOOLS } from '../../backend/site-tools';
 import { UITROL_TOOL_NAMEN } from '../../backend/uitrol-goedkeuring';
 import { scopeVoorTool } from '../../shared/ai-toegang';
 import { closePool, getPool } from '../../server/platform/pg';
+import { setToolModes } from '../../backend/connectors-store';
+import { zetSiteAanroeper } from '../../backend/site-dispatch';
+import { vergeetStaat } from '../../backend/ai-site-schakelaars';
 import * as c from '../../backend/mcp-connector';
 import * as v2 from '../../backend/connector-v2';
 import * as v2st from '../../backend/connector-v2-store';
@@ -35,16 +38,17 @@ export async function main(): Promise<number> {
   const o = v2Optie('mail_read_message:gebruiker')!;
   check('naam: volgorde essentie_agent_subdomein_dienst_tarasevych_com_kant', toolNaam(o, 'grok') === 'lezen_bericht_grok_mail_gmail_tarasevych_com_gebruiker', toolNaam(o, 'grok'));
   check('naam: dienst valt weg als hij gelijk is aan het subdomein (GitHub)', toolNaam(v2Optie('github_create_issue:gebruiker')!, 'gpt') === 'creeren_nieuw_issue_gpt_github_tarasevych_com_gebruiker');
-  check('naam: zelfde hulpmiddel bestaat in twee kanten met verschillende naam (eigen pc ↔ server)',
-    toolNaam(v2Optie('machine_exec:gebruiker')!, 'claude') === 'uitvoeren_opdracht_claude_mcp_tarasevych_com_gebruiker'
-    && toolNaam(v2Optie('machine_exec:beheer')!, 'claude') === 'uitvoeren_opdracht_claude_mcp_tarasevych_com_beheer');
+  check('naam: zelfde hulpmiddel bestaat in twee kanten met verschillende naam (eigen pc ↔ server); zonder externe dienst komt bron `site`',
+    toolNaam(v2Optie('machine_exec:gebruiker')!, 'claude') === 'uitvoeren_opdracht_claude_mcp_site_tarasevych_com_gebruiker'
+    && toolNaam(v2Optie('machine_exec:beheer')!, 'claude') === 'uitvoeren_opdracht_claude_mcp_site_tarasevych_com_beheer');
   check('naam: essentie hoogstens 5 woorden', V2_OPTIES.every((x) => x.essentie.split('_').length <= 5));
   const andere = ontleed(toolNaam(o, 'grok'), 'gpt');
   check('ontleed: naam van een andere agent wordt herkend en geweigerd (ANDERE_AGENT)', !andere.ok && andere.reden === 'ANDERE_AGENT' && andere.agent === 'grok');
   check('ontleed: eigen naam → optie; onbekend en oud formaat → ONBEKEND', ontleed(toolNaam(o, 'gpt'), 'gpt').ok && !ontleed('mail_read_message', 'gpt').ok
     && (ontleed('mail_read_message', 'gpt') as { reden: string }).reden === 'ONBEKEND');
   const dev = V2_OPTIES.find((x) => x.status === 'in-ontwikkeling')!;
-  check('ontleed: een hulpmiddel «in ontwikkeling» werkt nooit (ook niet met de juiste naam)', !ontleed(toolNaam(dev, 'claude'), 'claude').ok);
+  const devOntleed = ontleed(toolNaam(dev, 'claude'), 'claude');
+  check('ontleed: een hulpmiddel «in ontwikkeling» werkt nooit (IN_ONTWIKKELING, ook niet met de juiste naam)', !devOntleed.ok && devOntleed.reden === 'IN_ONTWIKKELING' && idVanNaam(toolNaam(dev, 'claude'), 'claude') === dev.key);
 
   // ------------------------------------------------------------ catalogus dekt alle echte hulpmiddelen
   const echt = new Set([...STATISCHE_TOOLNAMEN(), ...SITE_TOOLS.map((t) => t.tool.name), ...UITROL_TOOL_NAMEN]);
@@ -76,11 +80,14 @@ export async function main(): Promise<number> {
   const vs = verschil(['a:gebruiker', 'b:gebruiker'], ['b:gebruiker', 'c:gebruiker']);
   check('verschil (herverbinden): toegevoegd / behouden / vervalt', vs.toegevoegd.join() === 'c:gebruiker' && vs.behouden.join() === 'b:gebruiker' && vs.vervalt.join() === 'a:gebruiker');
   check('breidtUit en hoogsteRisico', breidtUit(['a'], ['a', 'b']) && !breidtUit(['a', 'b'], ['a']) && hoogsteRisico(['machine_exec:gebruiker', 'search_board:gebruiker']) === 'kritiek');
+  const mailAlles = pasModusToe([], 'alles', ['gebruiker'], { groep: 'mail' });
+  check('modus «alles» zet gevoelige mail (lezen én versturen) niet stil aan', !mailAlles.includes('mail_read_message:gebruiker') && !mailAlles.includes('mail_send_message:gebruiker'));
 
   // ------------------------------------------------------------ adressen en terugkeeradressen per agent
-  check('adres per agent: /ai/<agent>, en terug te lezen uit pad en resource', agentUrl('grok') === 'https://mcp.tarasevych.com/ai/grok' && slugUitPad('/ai/gpt') === 'gpt'
-    && slugUitPad('/ai/onbekend') === null && slugUitResource('https://mcp.tarasevych.com/ai/claude/') === 'claude' && slugUitResource('https://mcp.tarasevych.com/mcp') === null
-    && slugUitResource('https://evil.example/ai/claude') === null);
+  check('adres per agent: canoniek /mcp/<agent> (deuren /claude en /Grok blijven vrij); /ai/<agent> is de alias van etappe 1', agentUrl('grok') === 'https://mcp.tarasevych.com/mcp/grok' && slugUitPad('/mcp/gpt') === 'gpt' && slugUitPad('/ai/gpt') === 'gpt'
+    && slugUitPad('/claude') === null && slugUitPad('/Grok') === null && slugUitPad('/mcp') === null && slugUitPad('/ai/onbekend') === null
+    && slugUitResource('https://mcp.tarasevych.com/mcp/claude/') === 'claude' && slugUitResource('https://mcp.tarasevych.com/ai/claude/') === 'claude'
+    && slugUitResource('https://mcp.tarasevych.com/mcp') === null && slugUitResource('https://evil.example/mcp/claude') === null);
   check('terugkeeradres hoort bij de agent: claude.ai niet op /ai/grok, grok.com niet op /ai/claude; loopback en het eigen adres wel',
     redirectPastBijAgent('claude', 'https://claude.ai/api/mcp/auth_callback') && !redirectPastBijAgent('grok', 'https://claude.ai/api/mcp/auth_callback')
     && !redirectPastBijAgent('claude', 'https://grok.com/cb') && redirectPastBijAgent('cursor', 'cursor://anysphere.cursor-mcp/oauth/callback') && !redirectPastBijAgent('claude', 'cursor://x/cb')
@@ -121,8 +128,8 @@ export async function main(): Promise<number> {
     // metadata en 401
     const prm = body(v2.prm('grok'));
     const zonder = await rpc('grok', undefined, { jsonrpc: '2.0', id: 1, method: 'initialize' });
-    check('PRM per agent: resource = eigen adres; 401 wijst naar de metadata van DEZE agent', prm.resource === 'https://mcp.tarasevych.com/ai/grok' && prm.authorization_servers[0] === c.ISSUER
-      && zonder.statusCode === 401 && kop(zonder, 'www-authenticate').includes('resource_metadata="https://mcp.tarasevych.com/ai/grok/.well-known/oauth-protected-resource"'));
+    check('PRM per agent: resource = canoniek adres; 401 wijst naar de metadata van DEZE agent', prm.resource === 'https://mcp.tarasevych.com/mcp/grok' && prm.authorization_servers[0] === c.ISSUER
+      && zonder.statusCode === 401 && kop(zonder, 'www-authenticate').includes('resource_metadata="https://mcp.tarasevych.com/mcp/grok/.well-known/oauth-protected-resource"'));
     check('onbekende agent → 404', (await rpc('chatgpt', 'x', {})).statusCode === 404);
 
     // claude.ai op het adres van grok: geweigerd vóór het venster
@@ -138,8 +145,8 @@ export async function main(): Promise<number> {
     check('initialize: eigen servernaam en instructies met de naamregel', init.result.serverInfo.name === 'mijn-ruimte-claude' && /_claude_/.test(init.result.instructions) && /no technical/.test(init.result.instructions));
     const namen = (await lijst('claude', k1.t.access_token)).map((t) => t.name);
     check('tools/list: alleen v2-namen van deze agent, alleen wat gekozen is (standaard = lezen)', namen.length > 0 && namen.every((n) => n.endsWith('_tarasevych_com_gebruiker') && n.includes('_claude_'))
-      && namen.includes('tonen_mijn_account_claude_ai_tarasevych_com_gebruiker') && !namen.some((n) => n.startsWith('lezen_bericht_')) && !namen.some((n) => n.startsWith('creeren_nieuwe_taak')), namen.join(','));
-    const ik = JSON.parse((await roep('claude', k1.t.access_token, 'tonen_mijn_account_claude_ai_tarasevych_com_gebruiker')).content[0].text);
+      && namen.includes('tonen_mijn_account_claude_ai_site_tarasevych_com_gebruiker') && !namen.some((n) => n.startsWith('lezen_bericht_')) && !namen.some((n) => n.startsWith('creeren_nieuwe_taak')), namen.join(','));
+    const ik = JSON.parse((await roep('claude', k1.t.access_token, 'tonen_mijn_account_claude_ai_site_tarasevych_com_gebruiker')).content[0].text);
     check('tonen_mijn_account: account en verbinding (agent, ruimte, aantal rechten)', ik.account.email === `${A}@test.invalid` && ik.connection.agent === 'claude' && ik.connection.spaces.join() === 'gebruiker');
 
     // token op ander pad / oud /mcp
@@ -147,11 +154,18 @@ export async function main(): Promise<number> {
     check('token van /ai/claude werkt niet op het oude /mcp', (await c.rpcPost(`Bearer ${k1.t.access_token}`, JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }))).statusCode === 401);
 
     // naam van een andere agent, niet-gekozen recht, beheer zonder kant
-    const vreemdeNaam = await roep('claude', k1.t.access_token, 'tonen_mijn_account_grok_ai_tarasevych_com_gebruiker');
+    const vreemdeNaam = await roep('claude', k1.t.access_token, 'tonen_mijn_account_grok_ai_site_tarasevych_com_gebruiker');
     check('tools/call met de naam van een andere agent → AGENT_MISMATCH', vreemdeNaam.isError && /AGENT_MISMATCH/.test(vreemdeNaam.content[0].text));
-    const nietGekozen = await roep('claude', k1.t.access_token, 'creeren_nieuwe_taak_claude_hub_tarasevych_com_gebruiker', { title: 'x' });
+    const nietGekozen = await roep('claude', k1.t.access_token, 'creeren_nieuwe_taak_claude_hub_site_tarasevych_com_gebruiker', { title: 'x' });
     check('tools/call van een niet-gekozen recht → PERMISSION_OFF', nietGekozen.isError && /PERMISSION_OFF/.test(nietGekozen.content[0].text));
-    const beheerNaam = await roep('claude', k1.t.access_token, 'tonen_live_release_claude_admin_tarasevych_com_beheer');
+    const mailNaam = toolNaam(v2Optie('mail_send_message:gebruiker')!, 'claude');
+    const mailStandaard = await roep('claude', k1.t.access_token, mailNaam, { to: 'a@b.co', subject: 'x', body: 'y' });
+    check('standaard weigert versturen van mail (PERMISSION_OFF) vóór de mailstapel', mailStandaard.isError && /PERMISSION_OFF/.test(mailStandaard.content[0].text));
+    const devNaam = toolNaam(v2Optie('dev.figma_lezen:gebruiker')!, 'claude');
+    await sys.query(`UPDATE app.connector_v2_rechten SET sleutels = sleutels || ARRAY['dev.figma_lezen:gebruiker'] WHERE user_id = $1 AND agent = 'claude'`, [A]);
+    const devRoep = await roep('claude', k1.t.access_token, devNaam);
+    check('«in ontwikkeling» weigert op de server (PERMISSION_OFF), ook als een oude grant «ja» zegt', devRoep.isError && /PERMISSION_OFF/.test(devRoep.content[0].text) && /in development/.test(devRoep.content[0].text));
+    const beheerNaam = await roep('claude', k1.t.access_token, 'tonen_live_release_claude_admin_site_tarasevych_com_beheer');
     check('tools/call van een beheertool zonder technische kant → PERMISSION_OFF (nooit uitgevoerd)', beheerNaam.isError && /PERMISSION_OFF/.test(beheerNaam.content[0].text));
     const journaal = await sys.query(`SELECT details->>'reden' AS reden, details->>'v2' AS v2, details->>'agent' AS agent FROM app.audit WHERE owner_id = $1 AND action = 'owner.mcp.tool' AND result = 'denied' ORDER BY id DESC LIMIT 5`, [A]).catch(() => ({ rows: [] as Array<Record<string, string>> }));
     check('journaal: weigeringen met reden, v2-naam en agent', journaal.rows.some((r) => r.reden === 'andere-agent') && journaal.rows.some((r) => r.reden === 'recht-uit' && r.agent === 'claude' && /_claude_/.test(r.v2 || '')), JSON.stringify(journaal.rows));
@@ -176,14 +190,49 @@ export async function main(): Promise<number> {
     const k2 = await koppel(E, 'gpt', { kanten: ['beheer', 'gebruiker'], sleutels: ['get_live_release:beheer', 'machine_list:beheer', 'machine_list:gebruiker', 'v2_whoami:gebruiker'] });
     const ek = (await lijst('gpt', k2.t.access_token)).map((t) => t.name);
     check('eigenaar, beide kanten: beheer- en gebruikersnamen naast elkaar, elk met de eigen kant', !!k2.t?.access_token &&
-      ek.includes('tonen_live_release_gpt_admin_tarasevych_com_beheer') && ek.includes('tonen_apparaten_gpt_mcp_tarasevych_com_gebruiker') && ek.includes('tonen_apparaten_gpt_mcp_tarasevych_com_beheer'), ek.join(','));
+      ek.includes('tonen_live_release_gpt_admin_site_tarasevych_com_beheer') && ek.includes('tonen_apparaten_gpt_mcp_site_tarasevych_com_gebruiker') && ek.includes('tonen_apparaten_gpt_mcp_site_tarasevych_com_beheer'), ek.join(','));
+
+    // Alleen technische kant: privé-mail bestaat voor dit token niet.
+    const kTech = await koppel(E, 'claude', { kanten: ['beheer'], sleutels: ['get_live_release:beheer', 'mail_read_message:gebruiker', 'mail_send_message:gebruiker'] });
+    const techLijst = (await lijst('claude', kTech.t.access_token)).map((t) => t.name);
+    const techMail = await roep('claude', kTech.t.access_token, toolNaam(v2Optie('mail_read_message:gebruiker')!, 'claude'), { message_id: 'x' });
+    check('technisch token ziet geen privé-mail en de aanroep is PERMISSION_OFF', !techLijst.some((n) => n.includes('_mail_')) && techMail.isError && /PERMISSION_OFF/.test(techMail.content[0].text), techLijst.join(','));
+
+    // Versturen van mail: alleen de gegevens van déze gebruiker (de sessie is de token-eigenaar).
+    const kMail = await koppel(A, 'grok', { kanten: ['gebruiker'], sleutels: [...STANDAARD(), 'mail_send_message:gebruiker'] });
+    check('token van /mcp/grok werkt niet op /mcp/claude', (await rpc('claude', kMail.t.access_token, { jsonrpc: '2.0', id: 1, method: 'tools/list' })).statusCode === 401);
+    await setToolModes(A, { mail_send_message: 'always' });
+    const gezien: Array<{ userId: string; body: Record<string, unknown> }> = [];
+    zetSiteAanroeper(async (userId, _service, _route, reqBody) => {
+      gezien.push({ userId, body: reqBody });
+      if (reqBody.accountId && reqBody.accountId !== `acct-${userId}`) return { status: 403, data: { error: 'NOT_YOURS' } };
+      return { status: 200, data: { ok: true, item: { status: 'sent', id: 'm1', to: reqBody.to, subject: reqBody.subject } } };
+    });
+    const verzonden = await roep('grok', kMail.t.access_token, toolNaam(v2Optie('mail_send_message:gebruiker')!, 'grok'), { to: 'ik@example.test', subject: 'hoi', body: 'tekst' });
+    const vreemdAccount = await roep('grok', kMail.t.access_token, toolNaam(v2Optie('mail_send_message:gebruiker')!, 'grok'), { to: 'ik@example.test', subject: 'hoi', body: 'tekst', account_id: 'acct-iemand-anders' });
+    zetSiteAanroeper(null);
+    check('versturen lukt alleen namens de eigenaar van het token', !verzonden.isError && gezien[0]?.userId === A && String(gezien[0]?.body?.to) === 'ik@example.test', JSON.stringify({ verzonden, gezien }));
+    check('accountId van iemand anders wordt niet als succes behandeld', vreemdAccount.isError && gezien.every((g) => g.userId === A), JSON.stringify(vreemdAccount));
+
+    await sys.query(`INSERT INTO app.ai_site_schakelaars (sleutel, aan, gewijzigd_door) VALUES ('agent:grok', false, 'test') ON CONFLICT (sleutel) DO UPDATE SET aan = false`);
+    vergeetStaat();
+    const uitAgent = await rpc('grok', kMail.t.access_token, { jsonrpc: '2.0', id: 9, method: 'tools/list' });
+    const uitBody = body(uitAgent);
+    check('domeinschakelaar agent:grok weigert de hele connector (403 AGENT_UIT) ook al bestaat de grant', uitAgent.statusCode === 403 && uitBody?.error === 'AGENT_UIT', JSON.stringify(uitBody));
+    await sys.query(`DELETE FROM app.ai_site_schakelaars WHERE sleutel = 'agent:grok' AND gewijzigd_door = 'test'`);
+    vergeetStaat();
+
     await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"member\"') WHERE tbl = 'users' AND id = $1", [E]);
     const naDegradatie = (await lijst('gpt', k2.t.access_token)).map((t) => t.name);
-    const poging = await roep('gpt', k2.t.access_token, 'tonen_live_release_gpt_admin_tarasevych_com_beheer');
+    const poging = await roep('gpt', k2.t.access_token, 'tonen_live_release_gpt_admin_site_tarasevych_com_beheer');
     check('niet meer eigenaar: beheertools verdwijnen meteen en worden geweigerd', !naDegradatie.some((n) => n.endsWith('_beheer')) && poging.isError && /OWNER_REQUIRED/.test(poging.content[0].text));
   } catch (e) {
     check('onverwachte fout', false, String((e as Error)?.stack || e));
   } finally {
+    zetSiteAanroeper(null);
+    vergeetStaat();
+    await sys.query(`DELETE FROM app.ai_site_schakelaars WHERE sleutel = 'agent:grok' AND gewijzigd_door = 'test'`).catch(() => undefined);
+    await sys.query('DELETE FROM app.connector_tool_settings WHERE user_id = $1', [A]).catch(() => undefined);
     if (eOrigineel) await sys.query("UPDATE app.records SET data = $2 WHERE tbl = 'users' AND id = $1", [E, eOrigineel]).catch(() => undefined);
     if (clients.length) {
       await sys.query("DELETE FROM app.ai_toegang WHERE soort = 'mcp-koppeling' AND onderwerp_id IN (SELECT id::text FROM app.mcp_oauth_tokens WHERE client_id = ANY($1))", [clients]);

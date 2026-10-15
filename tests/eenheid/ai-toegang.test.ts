@@ -81,9 +81,9 @@ export async function main(): Promise<number> {
 
   // de tab tekent uit de catalogus: niet-ondersteund wordt niet getekend
   const claudeZichtbaar = zichtbareScopes('claude').map((s) => s.id);
-  check('tab uit catalogus: claude ziet mail/board/devices, maar geen photos.read/files.write (nog geen instrumenten)',
+  check('tab uit catalogus: claude ziet mail/board/devices en files.write (Диск), maar geen photos.read (nog geen instrument)',
     claudeZichtbaar.includes('mail.read') && claudeZichtbaar.includes('board.write') && claudeZichtbaar.includes('devices.read')
-    && !claudeZichtbaar.includes('photos.read') && !claudeZichtbaar.includes('files.write'));
+    && claudeZichtbaar.includes('files.write') && !claudeZichtbaar.includes('photos.read'));
 
   const tekst = TOEGANG_GESCHEIDEN('Claude', 'mail_read_message', 'mail.read');
   check('weigering: begint met TOEGANG_GESCHEIDEN, noemt instrument en scope, verwijst naar «Доступ ШІ», zegt «niet anders proberen»',
