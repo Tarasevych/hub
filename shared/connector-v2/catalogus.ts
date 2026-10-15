@@ -1,11 +1,12 @@
 // Connector v2 — de ENE catalogus van opties (hulpmiddelen) met hun Nederlandse namen, groep, kant, soort, risico en uitleg.
 //
-// Naam van een hulpmiddel (shared/connector-v2/namen.ts):
-//   <essentie (≤5 woorden)>_<agent>_<subdomein>[_<externe dienst>]_tarasevych_com_<gebruiker|beheer>
+// Naam van een hulpmiddel (shared/connector-v2/namen.ts, afkorting in afkorting.ts):
+//   <essentie (≤5 woorden)>_<agent>_<subdomein>_<bron>_tarasevych_com_<gebruiker|beheer>
 //   bv. creeren_bestand_grok_cloud_gdrive_tarasevych_com_gebruiker
-// • De dienst valt weg als hij gelijk is aan het subdomein (github.tarasevych.com ↔ GitHub: …_github_tarasevych_com_…).
-// • Alleen a-z, 0-9 en «_», hoogstens 64 tekens: dat eisen Claude, ChatGPT en de MCP-specificatie voor hulpmiddelnamen. Daarom
-//   «creeren» in de naam en «creëren» in de weergave. De test connector-v2 houdt elke naam voor elke agent binnen die grens.
+// • bron = gmail/gcal/gdrive/… als die verschilt van het subdomein; `site` als het de site zelf is;
+//   de aanbieder valt niet dubbel (github.tarasevych.com ↔ …_github_tarasevych_com_…, niet …_github_github_…).
+// • Alleen a-z, 0-9 en «_», hoogstens 64 tekens. Boven die grens verkort afkorting.ts alleen de essentie.
+//   «creeren» in de naam, «creëren» in de weergave. De test houdt elke naam binnen de grens en uniek.
 // • Kant: 'gebruiker' = privéruimte (eigen mail, bestanden, apparaten); 'beheer' = technische ruimte (site en server, alleen de
 //   eigenaar met actief technisch profiel). Apparaattools bestaan in beide kanten: privé = uw eigen pc, beheer = de server zelf.
 //   Een recht aan de beheerkant kan NOOIT in de privéruimte gebruikt worden en omgekeerd (de kant bepaalt de ruimte van de aanroep).
@@ -99,9 +100,9 @@ const DEFS: readonly Def[] = [
   { id: 'draft_email_reply', essentie: 'opstellen_antwoord', sub: 'mail', dienst: 'gmail', kanten: G, soort: 'schrijven', groep: 'mail', risico: 'laag', gevoelig: true,
     uk: ['Готувати чернетку відповіді', 'Створює чернетку відповіді; надсилаєте її ви самі.', 'Нічого не відправляється без вас. Чернетка з’явиться в «Чернетках».'],
     nl: ['Concept-antwoord opstellen', 'Maakt een concept-antwoord; verzenden doet u zelf.', 'Er gaat niets weg zonder u. Het concept staat bij «Concepten».'] },
-  dev({ id: 'dev.mail_send', essentie: 'versturen_bericht', sub: 'mail', dienst: 'gmail', kanten: G, soort: 'schrijven', groep: 'mail', risico: 'hoog', gevoelig: true,
-    uk: ['Надсилати листи від вашого імені', 'Відправлення листа одразу, без чернетки.', 'Лист піде від вашої адреси; відкликати його не можна.', 'У розробці: з’явиться лише з підтвердженням кожного листа на сайті.'],
-    nl: ['Berichten verzenden namens u', 'Een bericht meteen verzenden, zonder concept.', 'Het bericht vertrekt vanaf uw adres en is niet terug te halen.', 'In ontwikkeling: komt er alleen met bevestiging van elk bericht op de site.'] }),
+  { id: 'mail_send_message', essentie: 'versturen_bericht', sub: 'mail', dienst: 'gmail', kanten: G, soort: 'schrijven', groep: 'mail', risico: 'hoog', gevoelig: true,
+    uk: ['Надсилати листи від вашого імені', 'Відправляє лист через вашу підключену скриньку Gmail. Чернетка не створюється.', 'Лист іде з вашої адреси й відкликати його не можна. Кожне відправлення ще чекає вашого підтвердження на сайті, доки ви самі не дозволите цей інструмент без питання.', 'Увімкнено лише якщо ви явно це дозволили. Чужа скринька недоступна: сервер бере лише обліковий запис цієї сесії.'],
+    nl: ['Berichten verzenden namens u', 'Verstuurt een bericht via uw gekoppelde Gmail-postvak. Er komt geen concept.', 'Het bericht vertrekt vanaf uw adres en is niet terug te halen. Elke verzending wacht nog op uw bevestiging op de site, tot u dit hulpmiddel zelf zonder vraag toestaat.', 'Alleen aan als u het uitdrukkelijk toestaat. Een vreemd postvak kan niet: de server gebruikt alleen het account van deze sessie.'] },
 
   // ---------------------------------------------------------------- agenda
   { id: 'calendar_list_calendars', essentie: 'tonen_agendas', weergave: 'tonen agenda\'s', sub: 'hub', dienst: 'gcal', kanten: G, soort: 'lezen', groep: 'agenda', risico: 'laag',
@@ -124,12 +125,12 @@ const DEFS: readonly Def[] = [
   { id: 'drive_read_file', essentie: 'lezen_bestand', sub: 'cloud', dienst: 'gdrive', kanten: G, soort: 'lezen', groep: 'bestanden', risico: 'midden',
     uk: ['Читати файли з Диска', 'Вміст текстових документів і таблиць з Диска.', 'ШІ читає документ повністю; у документах бувають договори, рахунки, паролі.'],
     nl: ['Bestanden op Drive lezen', 'Inhoud van tekstdocumenten en spreadsheets op Drive.', 'De AI leest het hele document; daarin staan soms contracten, facturen of wachtwoorden.'] },
-  dev({ id: 'dev.drive_create', essentie: 'creeren_bestand', weergave: 'creëren bestand', sub: 'cloud', dienst: 'gdrive', kanten: G, soort: 'schrijven', groep: 'bestanden', risico: 'midden',
-    uk: ['Створювати файли на Диску', 'Новий документ або таблиця у вибраній папці.', 'Файл з’явиться на Диску; видалити його можете лише ви.', 'У розробці.'],
-    nl: ['Bestanden op Drive maken', 'Nieuw document of spreadsheet in een gekozen map.', 'Het bestand verschijnt op Drive; verwijderen kunt alleen u.', 'In ontwikkeling.'] }),
-  dev({ id: 'dev.drive_upload', essentie: 'uploaden_bestand', sub: 'cloud', dienst: 'gdrive', kanten: G, soort: 'schrijven', groep: 'bestanden', risico: 'midden',
-    uk: ['Завантажувати файли на Диск', 'Завантаження зображень, PDF чи архівів у вашу хмару.', 'Займає місце на Диску; файли видно всім, з ким ділиться папка.', 'У розробці.'],
-    nl: ['Bestanden naar Drive uploaden', 'Afbeeldingen, pdf\'s of archieven in uw cloud zetten.', 'Neemt ruimte in op Drive; zichtbaar voor iedereen met wie de map gedeeld is.', 'In ontwikkeling.'] }),
+  { id: 'drive_create_file', essentie: 'creeren_nieuw_bestand', weergave: 'creëren nieuw bestand', sub: 'cloud', dienst: 'gdrive', kanten: G, soort: 'schrijven', groep: 'bestanden', risico: 'midden', gevoelig: true,
+    uk: ['Створювати новий файл на Диску', 'Новий текстовий файл у вибраній папці вашого Google Диска.', 'Файл з’являється на вашому Диску. Видалити його можете ви. Чужий Диск цей інструмент не бачить.', 'За замовчуванням вимкнено. Кожен запис ще чекає підтвердження на сайті, доки ви не зміните режим інструмента.'],
+    nl: ['Nieuw bestand op Drive maken', 'Een nieuw tekstbestand in een gekozen map van uw Google Drive.', 'Het bestand verschijnt op uw Drive. Verwijderen kunt u. Een vreemde Drive ziet dit hulpmiddel niet.', 'Standaard uit. Elke schrijfactie wacht nog op bevestiging op de site, tot u de modus van het hulpmiddel wijzigt.'] },
+  { id: 'drive_upload_file', essentie: 'uploaden_bestand', sub: 'cloud', dienst: 'gdrive', kanten: G, soort: 'schrijven', groep: 'bestanden', risico: 'midden', gevoelig: true,
+    uk: ['Завантажувати файл на Диск', 'Завантажує файл (до 5 МБ) у вашу папку на Google Диску.', 'Займає місце на вашому Диску. Файл видно тим, з ким уже ділиться папка.', 'За замовчуванням вимкнено. Підтвердження на сайті лишається, доки ви самі не дозволите без питання.'],
+    nl: ['Bestand naar Drive uploaden', 'Zet een bestand (tot 5 MB) in uw map op Google Drive.', 'Neemt ruimte in op uw Drive. Zichtbaar voor wie de map al deelt.', 'Standaard uit. Bevestiging op de site blijft, tot u het zelf zonder vraag toestaat.'] },
   dev({ id: 'dev.drive_share', essentie: 'delen_bestand', sub: 'cloud', dienst: 'gdrive', kanten: G, soort: 'schrijven', groep: 'bestanden', risico: 'hoog',
     uk: ['Ділитися файлами', 'Надати іншим людям доступ до файла чи папки.', 'Хтось інший отримає ваш файл; це найчастіша причина витоків.', 'У розробці: лише з підтвердженням на сайті.'],
     nl: ['Bestanden delen', 'Anderen toegang geven tot een bestand of map.', 'Iemand anders krijgt uw bestand; de meest voorkomende oorzaak van lekken.', 'In ontwikkeling: alleen met bevestiging op de site.'] }),
@@ -384,6 +385,18 @@ const DEFS: readonly Def[] = [
     nl: ['Ontwerpcontext', 'Kleuren, lettertypen en componenten van uw site voor AI-ontwerp.', 'Alleen stijlen.', 'In ontwikkeling.'] }),
 
   // ---------------------------------------------------------------- betalingen (in ontwikkeling)
+  dev({ id: 'dev.figma_lezen', essentie: 'lezen_figma_ontwerp', sub: 'ai', kanten: G, soort: 'lezen', groep: 'media', risico: 'laag',
+    uk: ['Читати файл Figma', 'Макет із Figma.', 'ШІ побачив би структуру макета.', 'У розробці: у продукті немає підключення Figma, тож сервер відмовляє навіть зі старим дозволом.'],
+    nl: ['Figma-ontwerp lezen', 'Een ontwerp uit Figma.', 'De AI zou de opbouw van het ontwerp zien.', 'In ontwikkeling: het product heeft geen Figma-koppeling, dus de server weigert ook met een oud recht.'] }),
+  dev({ id: 'dev.notion_lezen', essentie: 'lezen_notion_pagina', sub: 'ai', kanten: G, soort: 'lezen', groep: 'media', risico: 'midden',
+    uk: ['Читати сторінку Notion', 'Сторінка з Notion.', 'Там можуть бути робочі нотатки.', 'У розробці: підключення Notion у продукті немає.'],
+    nl: ['Notion-pagina lezen', 'Een pagina uit Notion.', 'Daar kunnen werknotities staan.', 'In ontwikkeling: een Notion-koppeling zit niet in het product.'] }),
+  dev({ id: 'dev.wix_lezen', essentie: 'lezen_wix_pagina', sub: 'ai', kanten: G, soort: 'lezen', groep: 'media', risico: 'laag',
+    uk: ['Читати сайт Wix', 'Сторінки сайту на Wix.', 'Публічний вміст сайту.', 'У розробці: підключення Wix у продукті немає.'],
+    nl: ['Wix-pagina lezen', 'Pagina\'s van een Wix-site.', 'De openbare inhoud van de site.', 'In ontwikkeling: een Wix-koppeling zit niet in het product.'] }),
+  dev({ id: 'dev.weave_lezen', essentie: 'lezen_weave_data', sub: 'ai', kanten: G, soort: 'lezen', groep: 'media', risico: 'laag',
+    uk: ['Читати дані Weave', 'Дані з Weave.', 'Залежить від того, що там збережено.', 'У розробці: підключення Weave у продукті немає.'],
+    nl: ['Weave-gegevens lezen', 'Gegevens uit Weave.', 'Hangt af van wat daar staat.', 'In ontwikkeling: een Weave-koppeling zit niet in het product.'] }),
   dev({ id: 'dev.payments_list', essentie: 'tonen_betalingen', sub: 'hub', dienst: 'stripe', kanten: G, soort: 'lezen', groep: 'betalingen', risico: 'hoog', gevoelig: true,
     uk: ['Переглядати платежі', 'Платежі й рахунки з підключеного Stripe.', 'Фінансові дані.', 'У розробці.'],
     nl: ['Betalingen bekijken', 'Betalingen en facturen uit een gekoppeld Stripe.', 'Financiële gegevens.', 'In ontwikkeling.'] }),
@@ -435,7 +448,7 @@ const DEFS: readonly Def[] = [
 /** Uitgevouwen catalogus: één optie per (id, kant). */
 export const V2_OPTIES: readonly V2Optie[] = Object.freeze(DEFS.flatMap((d) => d.kanten.map((kant): V2Optie => ({
   key: `${d.id}:${kant}`, id: d.id, intern: d.intern === undefined ? d.id : d.intern, essentie: d.essentie, weergave: d.weergave ?? d.essentie.replace(/_/g, ' '),
-  sub: d.sub, dienst: d.dienst && d.dienst !== d.sub ? d.dienst : null, kant, soort: d.soort, groep: d.groep,
+  sub: d.sub, dienst: d.dienst ?? null, kant, soort: d.soort, groep: d.groep,
   risico: kant === 'beheer' && d.risico === 'laag' && d.soort !== 'lezen' ? 'midden' : d.risico,
   gevoelig: !!d.gevoelig, status: d.intern === null ? 'in-ontwikkeling' : 'actief',
   uk: kant === 'beheer' && d.kanten.length > 1 ? [d.uk[0], `${d.uk[1]} Лише пристрої технічного простору (сам сервер).`, d.uk[2], d.uk[3]] : d.uk,

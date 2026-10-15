@@ -307,11 +307,12 @@ const CONNECTOR_PADEN: Record<string, string> = {
   '/oauth2/token': '/api/mcp-connector/token',
   '/oauth2/revoke': '/api/mcp-connector/revoke',
 };
-// Connector v2 (backend/connector-v2.ts): /ai/<agent> en de metadata eronder; ook de RFC 9728-vorm /.well-known/oauth-protected-resource/ai/<agent>
-// (die bereikt de app alleen als de tunnelregel daarvoor is toegevoegd — zie deploy/CONNECTOR-V2.md; de WWW-Authenticate-header wijst al
-// naar het pad onder /ai/<agent>, dat altijd werkt).
-const V2_PAD = /^\/ai\/(claude|gpt|grok|gemini|copilot|cursor)(\/\.well-known\/oauth-protected-resource)?\/?$/;
-const V2_PRM = /^\/\.well-known\/oauth-protected-resource\/ai\/(claude|gpt|grok|gemini|copilot|cursor)\/?$/;
+// Connector v2 (backend/connector-v2.ts): canoniek /mcp/<agent> (niet het kale deurpad en niet het exacte oude /mcp).
+// /ai/<agent> blijft een alias van etappe 1. Metadata: /.well-known/oauth-protected-resource/(mcp|ai)/<agent>
+// (de tunnel moet het mcp/-pad vóór de deurregel hebben — zie deploy/cloudflared-config.yml).
+const V2_AGENT = 'claude|gpt|grok|gemini|copilot|cursor';
+const V2_PAD = new RegExp(`^/(?:mcp|ai)/(${V2_AGENT})(/\\.well-known/oauth-protected-resource)?/?$`);
+const V2_PRM = new RegExp(`^/\\.well-known/oauth-protected-resource/(?:mcp|ai)/(${V2_AGENT})/?$`);
 function connectorPad(url: URL): URL | null {
   const v2 = V2_PAD.exec(url.pathname), v2prm = V2_PRM.exec(url.pathname);
   if (v2 || v2prm) {
