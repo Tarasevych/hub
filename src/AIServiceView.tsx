@@ -7,7 +7,7 @@ import { canonicalNavigationUrl, routeLang } from './canonical-navigation';
 import { RichtingBand } from './weergave/Weergave';
 
 const ChatPanel = lazy(() => import('./ChatPanel'));
-const AgentBord = lazy(() => import('./agenten/AgentBord'));
+const VerbindingenHub = lazy(() => import('./agenten/VerbindingenHub'));
 
 type Tr = (uk: string, nl: string) => string;
 type Props = { tab: string; tr: Tr; userName: string; workspaceName: string };
@@ -22,7 +22,7 @@ export const openIntegrations = () => {
 };
 
 export default function AIServiceView({ tab, tr }: Props) {
-  if (tab === 'verbindingen') return <Suspense fallback={null}><AgentBord tr={tr} /></Suspense>;
+  if (tab === 'verbindingen') return <Suspense fallback={null}><VerbindingenHub tr={tr} /></Suspense>;
   // null = nog aan het laden; undefined-status = geen recht of geen sleutel -> de lege staat met de volgende stap.
   const [status, setStatus] = useState<Status | null | 'none'>(null);
 
