@@ -237,7 +237,19 @@ if "${cmd[@]}" > "$WERK/installeer.log" 2>&1; then
   log "klaar: $VERSIE"
 else
   tail -n 40 "$WERK/installeer.log" >&2 || true
-  status mislukt INSTALLATIE_MISLUKT "Встановлення не вдалося; попередній випуск лишився активним." "Installeren mislukt; de vorige release blijft actief." "$VERSIE"
-  gebeurtenis INSTALLATIE_MISLUKT fout "Встановлення $VERSIE не вдалося; попередній випуск лишився активним." "Installeren van $VERSIE mislukt; de vorige release blijft actief."
+  # Extract the last meaningful error line so the site shows WHY it failed, not just "failed".
+  REDEN="$(python3 -c '
+import sys
+lines = open(sys.argv[1], encoding="utf-8", errors="replace").read().splitlines()
+candidates = [l.strip() for l in lines if l.strip() and not l.startswith("[installeer] klaar")]
+# Prefer lines that look like errors
+err = [l for l in candidates if any(x in l.lower() for x in ("error", "fout", "failed", "mislykt", "exit", "cannot", "undefined", "ts", "tsc"))]
+use = (err or candidates)[-1:] 
+print(use[0][:240] if use else "onbekende fout")
+' "$WERK/installeer.log" 2>/dev/null || echo "onbekende fout")"
+  REDEN_UK="Встановлення не вдалося (${REDEN}); попередній випуск лишився активним."
+  REDEN_NL="Installeren mislukt (${REDEN}); de vorige release blijft actief."
+  status mislukt INSTALLATIE_MISLUKT "$REDEN_UK" "$REDEN_NL" "$VERSIE"
+  gebeurtenis INSTALLATIE_MISLUKT fout "$REDEN_UK" "$REDEN_NL"
   exit 1
 fi

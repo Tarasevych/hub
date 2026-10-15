@@ -185,7 +185,17 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
       <header><RefreshCw/><div><h2>{tr(lang,'Історія','Geschiedenis')}</h2><p>{tr(lang,'Рядок «Завантажується» — це пакет із браузера, доки його не зібрано. Встановлення з SSH або за підписом з’являється окремим рядком і цей пакет не змінює.','Een rij «Wordt geüpload» is een pakket uit de browser zolang het niet compleet is. Een installatie via SSH of met een handtekening verschijnt als een aparte rij en wijzigt dat pakket niet.')}</p></div></header>
       <ul className='admin-uitrol-lijst'>
         {(data.installaties??[]).map(i=>{
-          const wat=i.code==='SSH_TERUG'?tr(lang,'Відкочено з SSH','Teruggedraaid via SSH'):i.code==='INSTALLATIE_MISLUKT'?tr(lang,'Не вдалося (підпис)','Mislukt (handtekening)'):i.herkomst==='ssh'?tr(lang,'Встановлено з SSH','Geïnstalleerd via SSH'):tr(lang,'Встановлено (підпис)','Geïnstalleerd (handtekening)');
+          const wat=i.code==='SSH_TERUG'?tr(lang,'Відкочено з SSH','Teruggedraaid via SSH')
+          :i.code==='INSTALLATIE_MISLUKT'?tr(lang,'Не вдалося (встановлення)','Mislukt (installatie)')
+          :i.code==='SIG_ONTBREEKT'?tr(lang,'Немає підпису (.sig)','Geen handtekening (.sig)')
+          :i.code==='HANDTEKENING_ONGELDIG'?tr(lang,'Підпис недійсний','Handtekening ongeldig')
+          :i.code==='NIET_NIEUWER'?tr(lang,'Не новіша версія','Niet nieuwer')
+          :i.code==='GOEDKEURING_ONTBREEKT'?tr(lang,'Немає схвалення passkey','Geen passkey-goedkeuring')
+          :i.code==='GOEDKEURING_ONGELDIG'?tr(lang,'Схвалення passkey відхилено','Passkey-goedkeuring geweigerd')
+          :i.code==='GEEN_AUTEUR'||i.code==='GEEN_AGENT'||i.code==='GEEN_SAMENVATTING'?tr(lang,'Бракує метаданих випуску','Release-metadata ontbreekt')
+          :i.herkomst==='ssh'?tr(lang,'Встановлено з SSH','Geïnstalleerd via SSH')
+          :i.herkomst==='passkey'?tr(lang,'Встановлено (passkey)','Geïnstalleerd (passkey)')
+          :tr(lang,'Встановлено (підпис)','Geïnstalleerd (handtekening)');
           const wie=i.wie||(i.herkomst==='handtekening'?tr(lang,'ключ випуску','uitrolsleutel'):'—');
           return <li key={i.id} data-status={i.herkomst||i.code} data-installatie={i.code}><span><b>{i.release||i.pakket}</b> · {wat} · {wie}{i.adres?` · ${i.adres}`:''} · {datum(lang,i.tijd)}{i.uk||i.nl?` · ${lang==='uk'?i.uk:i.nl}`:''}</span></li>;
         })}
