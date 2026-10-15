@@ -69,7 +69,7 @@ const PRIVACY_UK = `
 <ul>
 <li><strong>Gmail</strong>: <code>gmail.readonly</code>, <code>gmail.modify</code>, <code>gmail.send</code>, <code>gmail.labels</code> — щоб показувати ваші листи, мітки та вкладення, позначати/архівувати/переміщати листи, керувати мітками і надсилати листи, які ви самі пишете в сервісі;</li>
 <li><strong>Google Drive</strong>: <code>drive</code> — щоб переглядати ваші файли й папки та зберігати в Drive вибрані вами файли (наприклад, вкладення з пошти);</li>
-<li><strong>Google Calendar</strong>: <code>calendar.readonly</code> — лише читання подій для показу у сервісі;</li>
+<li><strong>Google Calendar</strong>: <code>calendar.readonly</code>, <code>calendar.events</code> — читання подій для показу у сервісі та створення чи зміна подій, які ви підтверджуєте;</li>
 <li><strong>Google Photos</strong>: <code>photospicker.mediaitems.readonly</code> — лише фото, які ви самі вибираєте у вікні вибору Google;</li>
 <li>якщо увімкнено: <strong>Microsoft Outlook</strong> (Microsoft Graph <code>Mail.Read</code>, <code>Mail.ReadWrite</code>, <code>Mail.Send</code>) з тією самою метою, що й Gmail.</li>
 </ul>
@@ -158,7 +158,7 @@ const PRIVACY_NL = `
 <ul>
 <li><strong>Gmail</strong>: <code>gmail.readonly</code>, <code>gmail.modify</code>, <code>gmail.send</code>, <code>gmail.labels</code> — om uw berichten, labels en bijlagen te tonen, berichten te markeren/archiveren/verplaatsen, labels te beheren en berichten te versturen die u zelf in de dienst schrijft;</li>
 <li><strong>Google Drive</strong>: <code>drive</code> — om uw bestanden en mappen te bekijken en door u gekozen bestanden (bijvoorbeeld mailbijlagen) in Drive op te slaan;</li>
-<li><strong>Google Agenda</strong>: <code>calendar.readonly</code> — alleen afspraken lezen om ze in de dienst te tonen;</li>
+<li><strong>Google Agenda</strong>: <code>calendar.readonly</code>, <code>calendar.events</code> — afspraken lezen om ze in de dienst te tonen, en afspraken maken of wijzigen die u bevestigt;</li>
 <li><strong>Google Foto's</strong>: <code>photospicker.mediaitems.readonly</code> — alleen foto's die u zelf in het keuzevenster van Google selecteert;</li>
 <li>indien ingeschakeld: <strong>Microsoft Outlook</strong> (Microsoft Graph <code>Mail.Read</code>, <code>Mail.ReadWrite</code>, <code>Mail.Send</code>) met hetzelfde doel als Gmail.</li>
 </ul>

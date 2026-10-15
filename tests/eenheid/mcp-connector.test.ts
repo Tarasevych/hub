@@ -161,13 +161,13 @@ export async function main(): Promise<number> {
     // ---- hulpmiddelen en isolatie ----
     // Standaard staan riskante hulpmiddelen uit (B heeft niets ingesteld); gebruiker A zet ze zelf op "ask" zodat de rest van deze test ze ziet.
     const standaardLijst = await listTools(B, { alwaysMachine: true });
-    check('standaard: riskante hulpmiddelen staan uit en ontbreken in de lijst (53 van 70, ook hun devtools-namen), de gebruiker kan ze zelf aanzetten',
-      standaardLijst.length === 69 && RISKY_TOOLS.size === 17 && !standaardLijst.some((t) => ['click', 'fill', 'take_screenshot', 'machine_exec'].includes(t.name)), String(standaardLijst.length));
+    check('standaard: riskante hulpmiddelen staan uit en ontbreken in de lijst (ook hun devtools-namen), de gebruiker kan ze zelf aanzetten',
+      standaardLijst.length === 77 && RISKY_TOOLS.size === 17 && !standaardLijst.some((t) => ['click', 'fill', 'take_screenshot', 'machine_exec'].includes(t.name)), String(standaardLijst.length));
     await agents.setToolModes(A, Object.fromEntries([...RISKY_TOOLS].map((n) => [n, 'ask' as const])));
     const leeg = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 4, method: 'tools/list' }));
-    // Privéruimte (0042): de 4 servertools (get_live_release, list_releases, read_release_file, get_system_health) staan er NIET in: 86 − 4 = 82.
-    check('tools/list: zonder apparaat staan alle 82 tools van de privéruimte (9 apparaat + 11 app_* + 6 browser_* + 15 namen naar chrome-devtools-mcp + 23 site) er toch; geen GitHub-tool zonder token, geen servertools',
-      leeg.result.tools.length === 82 && leeg.result.tools.some((t: any) => t.name === 'take_snapshot') && leeg.result.tools.some((t: any) => t.name === 'list_services') && !leeg.result.tools.some((t: any) => t.name === 'browser_snapshot') && !leeg.result.tools.some((t: any) => t.name === 'github_get') && !leeg.result.tools.some((t: any) => t.name === 'get_github_projects')
+    // Privéruimte (0042): de 4 servertools (get_live_release, list_releases, read_release_file, get_system_health) staan er NIET in.
+    check('tools/list: zonder apparaat staan alle 90 tools van de privéruimte (apparaat + app_* + browser-aliassen + site, inclusief 8 connector-acties) er toch; geen github_get zonder token, geen servertools',
+      leeg.result.tools.length === 90 && leeg.result.tools.some((t: any) => t.name === 'take_snapshot') && leeg.result.tools.some((t: any) => t.name === 'list_services') && !leeg.result.tools.some((t: any) => t.name === 'browser_snapshot') && !leeg.result.tools.some((t: any) => t.name === 'github_get') && !leeg.result.tools.some((t: any) => t.name === 'get_github_projects')
       && !leeg.result.tools.some((t: any) => ['get_live_release', 'list_releases', 'read_release_file', 'get_system_health'].includes(t.name)), leeg.result.tools.map((t: any) => t.name).join(','));
     const privePoging = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 45, method: 'tools/call', params: { name: 'get_live_release', arguments: {} } }));
     check('ruimte: een privéverbinding die een servertool aanroept krijgt SPACE_SEPARATED (isError) en geen gegevens', privePoging.result?.isError === true && /^SPACE_SEPARATED: .*private/.test(privePoging.result.content[0].text) && /technical/.test(privePoging.result.content[0].text), JSON.stringify(privePoging.result).slice(0, 200));
@@ -204,7 +204,7 @@ export async function main(): Promise<number> {
     const overzicht = await describeTools(A);
     const kindOf = (n: string) => overzicht.find((t) => t.name === n);
     check('beheeroverzicht: soort en goedkeuring per hulpmiddel (lezen direct; schrijven en uitvoeren na goedkeuring)',
-      overzicht.length === 84 && kindOf('machine_read_file')?.kind === 'read' && kindOf('machine_read_file')?.needsApproval === false && kindOf('get_connector_stats')?.needsApproval === true && kindOf('update_task_status')?.needsApproval === true
+      overzicht.length === 92 && kindOf('machine_read_file')?.kind === 'read' && kindOf('machine_read_file')?.needsApproval === false && kindOf('get_connector_stats')?.needsApproval === true && kindOf('update_task_status')?.needsApproval === true
       && kindOf('machine_write_file')?.kind === 'write' && kindOf('machine_write_file')?.needsApproval === true
       && kindOf('docker_manage_container')?.kind === 'execute' && kindOf('docker_manage_container')?.needsApproval === true
       && kindOf('system_metrics')?.readOnly === true, overzicht.map((t) => `${t.name}:${t.kind}`).join(','));
@@ -213,7 +213,7 @@ export async function main(): Promise<number> {
     const lijst = body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 5, method: 'tools/list' })).result.tools as any[];
     const per = (n: string) => lijst.find((t) => t.name === n);
     check('tools/list: apparaattools met annotaties (lezen = readOnlyHint, schrijven/uitvoeren = destructiveHint) en titel',
-      lijst.length === 82 && per('take_snapshot').annotations.readOnlyHint === true && per('click').annotations.destructiveHint === true && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true && /search_board/.test(per('create_task').description) && /list_services/.test(per('list_services').description)
+      lijst.length === 90 && per('take_snapshot').annotations.readOnlyHint === true && per('click').annotations.destructiveHint === true && per('machine_read_file').annotations.readOnlyHint === true && per('machine_exec').annotations.destructiveHint === true && /search_board/.test(per('create_task').description) && /list_services/.test(per('list_services').description)
       && per('machine_write_file').annotations.readOnlyHint === false && !!per('machine_list').title && !!per('machine_list').inputSchema, lijst.map((t) => t.name).join(','));
     check('tools/list: Docker en metrics: lezen = readOnlyHint, containers beheren = destructiveHint (niet readOnly, niet idempotent)',
       per('docker_list_containers').annotations.readOnlyHint === true && per('system_metrics').annotations.readOnlyHint === true
@@ -309,12 +309,12 @@ export async function main(): Promise<number> {
     const geweigerd = await bt('machine_exec', { command: 'git' }, 63);
     const infoUit = (await describeTools(A)).filter((t) => !t.enabled).map((t) => t.name).sort().join(',');
     check('hulpmiddelen uitzetten: weg uit tools/list, aanroep geweigerd met uitleg, het beheeroverzicht toont het als uit; een andere gebruiker merkt er niets van',
-      naUit.length === 80 && !naUit.includes('machine_exec') && !naUit.includes('click')
+      naUit.length === 88 && !naUit.includes('machine_exec') && !naUit.includes('click')
       && geweigerd.result.isError === true && /turned off by the user/.test(geweigerd.result.content[0].text)
       && infoUit === 'browser_click,machine_exec' && (await agents.getDisabledTools(B)).length === 0);
     await agents.setDisabledTools(A, []);
     await agents.setToolModes(A, Object.fromEntries([...RISKY_TOOLS].map((n) => [n, 'ask' as const]))); // terug naar de standaard maakt riskante hulpmiddelen weer uit; de test wil ze zien
-    check('hulpmiddelen weer aanzetten: alles terug in de lijst', (body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 64, method: 'tools/list' })).result.tools as any[]).length === 82);
+    check('hulpmiddelen weer aanzetten: alles terug in de lijst', (body(await rpc(t1.j.access_token, { jsonrpc: '2.0', id: 64, method: 'tools/list' })).result.tools as any[]).length === 90);
     await agents.setAgentPolicy(A, browserA.id, ['browser.snapshot', 'browser.navigate']);
     check('beleid van een browseragent: alleen van de eigen gebruiker aan te passen',
       JSON.stringify((await agents.getAgent(A, browserA.id))?.policy.autoApprove) === '["browser.navigate","browser.snapshot"]' || JSON.stringify((await agents.getAgent(A, browserA.id))?.policy.autoApprove) === '["browser.snapshot","browser.navigate"]');

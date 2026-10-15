@@ -105,7 +105,7 @@ export async function main(): Promise<number> {
       && await w.locator('[data-v2-optie="mail_read_message:gebruiker"] svg.v2-schets').count() === 1, adres);
     await page.screenshot({ path: `${UIT}/v2-4-rechten-zoeken.png` });
     await w.locator('input[type="search"]').fill('');
-    check('«в розробці» zichtbaar en niet aan te zetten', await w.locator('[data-v2-optie="dev.mail_send:gebruiker"] [role="switch"][disabled]').count() === 1);
+    check('«в розробці» zichtbaar en niet aan te zetten', await w.locator('[data-v2-optie="dev.icloud_events:gebruiker"] [role="switch"][disabled]').count() === 1);
     await page.screenshot({ path: `${UIT}/v2-5-rechten.png`, fullPage: false });
     await w.locator('[data-v2-toestaan]').click();
     for (let i = 0; i < 100 && !terug; i++) await page.waitForTimeout(100);

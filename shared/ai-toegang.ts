@@ -55,9 +55,9 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
   },
   {
     id: 'mail.send', groep: 'Пошта', uk: 'Писати й змінювати листи',
-    omschrijvingUk: 'Чернетки відповідей, мітки «прочитано», архів і кошик (без остаточного видалення).',
+    omschrijvingUk: 'Чернетки, надсилання листів від вашого імені, мітки «прочитано», архів і кошик (без остаточного видалення).',
     gevoelig: true, standaardAan: false, agents: ['*'],
-    tools: ['mail_modify_message', 'draft_email_reply'],
+    tools: ['mail_modify_message', 'draft_email_reply', 'mail_send'],
   },
   {
     id: 'photos.read', groep: 'Фото', uk: 'Читати фото',
@@ -73,9 +73,9 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
   },
   {
     id: 'calendar.write', groep: 'Календар', uk: 'Створювати події',
-    omschrijvingUk: 'Чернетки подій (у календар їх переносите ви самі).',
+    omschrijvingUk: 'Чернетки подій і створення чи зміна подій у Google Календарі (кожна зміна — підтвердження на сайті).',
     gevoelig: false, standaardAan: true, agents: ['*'],
-    tools: ['draft_calendar_event'],
+    tools: ['draft_calendar_event', 'calendar_create_event', 'calendar_update_event'],
   },
   {
     id: 'files.read', groep: 'Файли', uk: 'Читати файли',
@@ -85,9 +85,9 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
   },
   {
     id: 'files.write', groep: 'Файли', uk: 'Змінювати файли',
-    omschrijvingUk: 'Запис у файли Диска (інструменту ще немає — з’явиться автоматично).',
-    gevoelig: false, standaardAan: false, agents: [],
-    tools: [],
+    omschrijvingUk: 'Створення й завантаження файлів на Google Диск (кожна дія — підтвердження на сайті).',
+    gevoelig: false, standaardAan: false, agents: ['*'],
+    tools: ['drive_create', 'drive_upload'],
   },
   {
     id: 'board.read', groep: 'Дошка', uk: 'Читати дошку',
@@ -99,7 +99,7 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
     id: 'board.write', groep: 'Дошка', uk: 'Писати на дошку',
     omschrijvingUk: 'Створення, зміна статусу й видалення задач.',
     gevoelig: false, standaardAan: true, agents: ['*'],
-    tools: ['create_task', 'update_task_status', 'update_board_item', 'delete_board_item', 'mcp_board_add', 'upsert_task'],
+    tools: ['create_task', 'update_task_status', 'update_board_item', 'delete_board_item', 'mcp_board_add', 'upsert_task', 'comment_board_item'],
   },
   {
     id: 'notes.read', groep: 'Нотатки', uk: 'Читати нотатки',
@@ -143,7 +143,7 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
     gevoelig: false, standaardAan: true, agents: ['*'],
     tools: [
       'github_get', 'github_status', 'github_list_repos', 'github_repo_overview', 'github_list_issues',
-      'github_list_commits', 'github_ci_status', 'github_read_readme', 'github_search', 'github_my_activity',
+      'github_list_commits', 'github_ci_status', 'github_read_readme', 'github_read_file', 'github_search', 'github_my_activity',
       'get_github_projects',
     ],
   },
@@ -158,7 +158,7 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
     omschrijvingUk: 'Пошук «Моїм простором», стан служб і статистика підключень.',
     gevoelig: false, standaardAan: true, agents: ['*'],
     tools: [
-      'site_search', 'global_search', 'get_connector_stats',
+      'site_search', 'global_search', 'zoeken_mail_bord_schijf', 'get_connector_stats',
       'list_services', 'hub_overview', 'get_service', 'get_hub_overview', 'health_check',
       'mcp_services_health', 'mcp_traffic_recent', 'mcp_archive_status', 'mcp_backups_list',
       'get_architecture', 'get_roadmap', 'agent_handshake', 'permission_flags',

@@ -37,6 +37,9 @@ export async function main(): Promise<number> {
     && scopeVoorTool('browser_snapshot') === 'devices.read' && scopeVoorTool('browser_click') === 'devices.write'
     && scopeVoorTool('github_get') === 'github.read' && scopeVoorTool('github_create_issue') === 'github.write'
     && scopeVoorTool('site_search') === 'site.read' && scopeVoorTool('list_services') === 'site.read'
+    && scopeVoorTool('mail_send') === 'mail.send' && scopeVoorTool('drive_create') === 'files.write'
+    && scopeVoorTool('calendar_create_event') === 'calendar.write' && scopeVoorTool('github_read_file') === 'github.read'
+    && scopeVoorTool('comment_board_item') === 'board.write' && scopeVoorTool('zoeken_mail_bord_schijf') === 'site.read'
     && scopeVoorTool('iets_nieuws') === undefined && scopeVoorTool('') === undefined);
 
   check('onderwerp: uuid = mcp-koppeling, «token:uuid» = agenttoken, rommel = null',
@@ -81,9 +84,9 @@ export async function main(): Promise<number> {
 
   // de tab tekent uit de catalogus: niet-ondersteund wordt niet getekend
   const claudeZichtbaar = zichtbareScopes('claude').map((s) => s.id);
-  check('tab uit catalogus: claude ziet mail/board/devices, maar geen photos.read/files.write (nog geen instrumenten)',
+  check('tab uit catalogus: claude ziet mail/board/devices і files.write (Drive-запис), але не photos.read',
     claudeZichtbaar.includes('mail.read') && claudeZichtbaar.includes('board.write') && claudeZichtbaar.includes('devices.read')
-    && !claudeZichtbaar.includes('photos.read') && !claudeZichtbaar.includes('files.write'));
+    && claudeZichtbaar.includes('files.write') && !claudeZichtbaar.includes('photos.read'));
 
   const tekst = TOEGANG_GESCHEIDEN('Claude', 'mail_read_message', 'mail.read');
   check('weigering: begint met TOEGANG_GESCHEIDEN, noemt instrument en scope, verwijst naar «Доступ ШІ», zegt «niet anders proberen»',

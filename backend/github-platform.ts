@@ -175,6 +175,22 @@ export async function ghComment(userId: string, repo: string, issue: number, bod
   const res = await gh(userId, `/repos/${repo}/issues/${issue}/comments`, { method: 'POST', body: { body: text } });
   return res.ok ? ({ ok: true, data: { url: s(res.data.html_url, 200) }, rate: res.rate } as GhResult<any>) : res;
 }
+export async function ghReadFile(userId: string, repo: string, path: string, ref?: string) {
+  const p = String(path || '').replace(/^\/+/, '').replace(/\\/g, '/').trim();
+  if (!p || p.includes('..') || p.includes('\0') || p.length > 400) return { ok: false, error: 'GITHUB_PATH_INVALID', status: 400 } as GhResult<any>;
+  const q = ref && /^[A-Za-z0-9._/-]{1,100}$/.test(ref) ? `?ref=${encodeURIComponent(ref)}` : '';
+  const encoded = p.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+  const res = await gh(userId, `/repos/${repo}/contents/${encoded}${q}`);
+  if (!res.ok) return res;
+  if (Array.isArray(res.data)) {
+    return { ok: true, data: { kind: 'dir', path: p, entries: (res.data as any[]).slice(0, 80).map((e) => ({ name: s(e.name, 200), path: s(e.path, 300), type: s(e.type, 20), size: n(e.size) })) }, rate: res.rate } as GhResult<any>;
+  }
+  if (res.data?.type && res.data.type !== 'file') return { ok: false, error: 'GITHUB_NOT_A_FILE', status: 409 } as GhResult<any>;
+  const raw = res.data?.encoding === 'base64' ? Buffer.from(String(res.data.content || '').replace(/\s/g, ''), 'base64') : Buffer.alloc(0);
+  if (raw.length > 200_000) return { ok: false, error: 'GITHUB_FILE_TOO_LARGE', status: 413 } as GhResult<any>;
+  const text = raw.toString('utf8');
+  return { ok: true, data: { kind: 'file', name: s(res.data.name, 200), path: s(res.data.path, 300) || p, sha: s(res.data.sha, 40), text: text.slice(0, 20_000), truncated: text.length > 20_000, url: s(res.data.html_url, 200) }, rate: res.rate } as GhResult<any>;
+}
 
 // ---- routes ----
 type SessionAuth = { errorCode: string } | { service: string; user: { id: string; status: string } };
@@ -207,5 +223,6 @@ export function createGithubRoutes(deps: { requireSession: (event: Record<string
     'POST /api/owner/github/activity': route('activity', false, (u) => ghActivity(u)),
     'POST /api/owner/github/issue/create': route('issue_create', true, withRepo((u, r, b) => ghCreateIssue(u, r, String(b.title ?? ''), String(b.body ?? '')))),
     'POST /api/owner/github/issue/comment': route('issue_comment', true, withRepo((u, r, b) => ghComment(u, r, Number(b.number), String(b.body ?? '')))),
+    'POST /api/owner/github/file': route('file', false, withRepo((u, r, b) => ghReadFile(u, r, String(b.path ?? ''), b.ref ? String(b.ref) : undefined))),
   };
 }
