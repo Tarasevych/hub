@@ -17,6 +17,7 @@ import { useTech, techActief } from '../tech/tech-store';
 import { v2Agent, type AgentSlug } from '../../shared/connector-v2/agenten';
 import { KANT_TEKST, type Kant } from '../../shared/connector-v2/catalogus';
 import { hoogsteRisico, schoon, STANDAARD } from '../../shared/connector-v2/rechten';
+import { factorVerplicht } from '../../shared/connector-v2/factor';
 import { RISICO_TEKST } from '../../shared/connector-v2/catalogus';
 import RechtenKiezer from './RechtenKiezer';
 import './connector-v2.css';
@@ -30,7 +31,7 @@ export type V2ConsentInfo = {
     voorkeur: { kanten: Kant[]; sleutels: string[]; herverbinden: boolean } | null;
     standaard: string[]; extraBevestigen: boolean;
     account: { email: string; rol: string; eigenaar: boolean };
-    methoden: { passkey: boolean; totp: boolean; herstelcode: boolean };
+    methoden: { passkey: boolean; totp: boolean; herstelcode: boolean; email?: boolean; sms?: boolean };
   };
 };
 type Stap = 'bevestigen' | 'beveiliging' | 'account' | 'ruimte' | 'rechten';
@@ -41,7 +42,8 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
   const v = info.v2;
   const agent = v2Agent(info.agent);
   const tech = useTech();
-  const stappen: Stap[] = useMemo(() => ['bevestigen', ...(v.extraBevestigen ? ['beveiliging' as Stap] : []), 'account', ...(v.account.eigenaar ? ['ruimte' as Stap] : []), 'rechten'], [v]);
+  const factor = factorVerplicht(v.methoden);
+  const stappen: Stap[] = useMemo(() => ['bevestigen', ...(factor ? ['beveiliging' as Stap] : []), 'account', ...(v.account.eigenaar ? ['ruimte' as Stap] : []), 'rechten'], [v, factor]);
   const [stap, setStap] = useState<Stap>('bevestigen');
   const i = stappen.indexOf(stap);
   const start = v.voorkeur ?? v.vorige ?? { kanten: ['gebruiker'] as Kant[], sleutels: v.standaard };
@@ -94,7 +96,7 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
 
   return (
     <Venster id='mcp-toestemming' titel={tr(`Підключення ${agent.naam}`, `${agent.naam} koppelen`)} breedte={760} labelledBy='v2-wizard-titel' className='mcp-consent-venster v2-wizard-venster'>
-      <div className='v2-wizard' data-v2-wizard={info.agent} data-v2-stap={stap}>
+      <div className='v2-wizard' data-v2-wizard={info.agent} data-v2-stap={stap} data-v2-factor={factor ? '1' : '0'}>
         <header className='v2-wizard-kop'>
           <h2 id='v2-wizard-titel'>{tr(`${agent.naam} просить доступ до «Мого простору»`, `${agent.naam} vraagt toegang tot Mijn Ruimte`)}</h2>
           <ol className='v2-stappen' aria-label={tr('Кроки', 'Stappen')}>
@@ -118,18 +120,18 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
 
         {stap === 'beveiliging' ? (
           <section className='v2-wizard-deel'>
-            <p className='v2-uitleg'><KeyRound size={16} aria-hidden='true' />{tr('У налаштуваннях ви ввімкнули додаткове підтвердження для кожного нового підключення. Підтвердіть passkey або кодом із застосунку.', 'In de instellingen zette u extra bevestiging aan voor elke nieuwe koppeling. Bevestig met een passkey of een code uit de app.')}</p>
+            <p className='v2-uitleg'><KeyRound size={16} aria-hidden='true' />{tr('У налаштуваннях безпеки цього облікового запису ввімкнено passkey, код із застосунку або запасний код. Підключення ШІ просить цей фактор. Якщо його вимкнути, крок зникне — але тоді викрадена сесія браузера зможе підключити агента без другого підтвердження.', 'In de beveiliging van dit account staat een passkey, een app-code of een herstelcode aan. Een AI koppelen vraagt die factor. Zet u hem uit, dan verdwijnt deze stap — maar dan kan een gestolen browsersessie een agent koppelen zonder tweede bevestiging.')}</p>
             {bevestigd ? <p className='v2-ok'><Check size={16} />{tr('Підтверджено', 'Bevestigd')}</p> : <button type='button' className='mcp-consent-primary' onClick={() => void bevestigNu()}><ShieldCheck size={16} />{tr('Підтвердити зараз', 'Nu bevestigen')}</button>}
           </section>
         ) : null}
 
         {stap === 'account' ? (
           <section className='v2-wizard-deel'>
-            <div className='v2-account'><UserRound size={22} aria-hidden='true' /><div><b>{v.account.email}</b><small>{v.account.eigenaar ? tr('власник сайту', 'eigenaar van de site') : tr('ваш обліковий запис', 'uw account')}</small></div><span className='v2-chip is-nieuw'><Check size={12} />{tr('вибрано', 'gekozen')}</span></div>
-            <button type='button' className='mcp-consent-secondary' onClick={anderAccount}><LogIn size={16} />{tr('Підключити інший обліковий запис', 'Ander account koppelen')}</button>
-            <p className='v2-uitleg'>{tr('Запит збережеться: після входу вікно відкриється знову. Також можна перемкнути обліковий запис у меню вгорі праворуч.', 'Het verzoek blijft bewaard: na het aanmelden opent dit venster opnieuw. U kunt ook van account wisselen in het menu rechtsboven.')}</p>
-            {!v.methoden.passkey && !v.methoden.totp ? (
-              <p className='v2-let' role='note'><ShieldQuestion size={16} aria-hidden='true' />{tr('У вас немає ні passkey, ні застосунку-автентифікатора. Ми радимо додати їх у «Налаштування → Безпека» і ввімкнути «Додаткове підтвердження підключень» у вкладці «Конектори»: тоді навіть викрадена сесія не зможе непомітно підключити ШІ до вашого простору.', 'U hebt geen passkey en geen authenticator-app. We raden aan ze toe te voegen onder «Instellingen → Beveiliging» en «Extra bevestiging van koppelingen» aan te zetten op het tabblad «Connectors»: dan kan zelfs een gestolen sessie niet ongemerkt een AI aan uw ruimte koppelen.')}</p>
+            <div className='v2-account' data-v2-account={v.account.email}><UserRound size={22} aria-hidden='true' /><div><b>{v.account.email}</b><small>{v.account.eigenaar ? tr('власник сайту · уже вхід виконано', 'eigenaar van de site · al aangemeld') : tr('цей обліковий запис · уже вхід виконано', 'dit account · al aangemeld')}</small></div><span className='v2-chip is-nieuw'><Check size={12} />{tr('вибрано', 'gekozen')}</span></div>
+            <button type='button' className='mcp-consent-secondary' data-v2-ander-account='1' onClick={anderAccount}><LogIn size={16} />{tr('Додати інший / увійти', 'Ander account toevoegen / aanmelden')}</button>
+            <p className='v2-uitleg'>{tr('Підключиться обліковий запис, у який ви зараз увійшли. Інший запис: кнопка вище відкриє вхід, а цей запит збережеться й вікно з’явиться знову.', 'Gekoppeld wordt het account waarmee u nu bent aangemeld. Een ander account: de knop hierboven opent het aanmelden, dit verzoek blijft bewaard en het venster komt terug.')}</p>
+            {!factor ? (
+              <p className='v2-let' role='note'><ShieldQuestion size={16} aria-hidden='true' />{tr('Другий фактор не ввімкнено, тож підключення його не вимагає і не блокує вас. У «Налаштування → Безпека» можна додати passkey або код із застосунку: тоді наступне підключення ШІ спитає його, і викрадена сесія браузера сама агента не підключить.', 'Een tweede factor staat niet aan, dus koppelen eist hem niet en blokkeert u niet. Onder «Instellingen → Beveiliging» kunt u een passkey of app-code toevoegen: dan vraagt de volgende AI-koppeling die, en kan een gestolen browsersessie niet zelf een agent koppelen.')}</p>
             ) : null}
           </section>
         ) : null}
@@ -167,7 +169,7 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
           <span className='v2-ruimte-vul' />
           {i > 0 ? <button type='button' className='mcp-consent-secondary' disabled={bezig} onClick={terug}><ArrowLeft size={16} />{tr('Назад', 'Terug')}</button> : null}
           {stap !== 'rechten'
-            ? <button type='button' className='mcp-consent-primary' disabled={bezig || (stap === 'beveiliging' && !bevestigd)} onClick={volgende}>{tr('Далі', 'Volgende')}<ArrowRight size={16} /></button>
+            ? <button type='button' className='mcp-consent-primary' disabled={bezig || (stap === 'beveiliging' && !bevestigd)} onClick={volgende} data-v2-verder='1'>{stap === 'bevestigen' ? tr('Підтвердити', 'Bevestigen') : tr('Далі', 'Volgende')}<ArrowRight size={16} /></button>
             : <button type='button' className={`mcp-consent-primary risico-${risico}`} disabled={bezig} onClick={() => void beslis(true)} data-v2-toestaan='1'><Check size={16} />{tr('Дозволити', 'Toestaan')}</button>}
           <button type='button' className='v2-link' onClick={onKlaar}>{tr('Пізніше', 'Later')}</button>
         </footer>
