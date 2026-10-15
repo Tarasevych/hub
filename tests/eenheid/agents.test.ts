@@ -50,7 +50,7 @@ export async function main(): Promise<number> {
     const verloopt = await als(A, () => store.createPairingCode(A, hashA));
     const eerste = await store.consumePairingCode(hashA);
     const tweede = await store.consumePairingCode(hashA);
-    check('koppelcode: eerste inwisseling geeft de eigenaar, tweede (hergebruik) niets', !!verloopt && eerste === A && tweede === null, JSON.stringify({ eerste, tweede }));
+    check('koppelcode: eerste inwisseling geeft de eigenaar, tweede (hergebruik) niets', !!verloopt && (eerste as { userId?: string } | null)?.userId === A && tweede === null, JSON.stringify({ eerste, tweede }));
 
     const oud = sha256(`oud-${randomUUID()}`);
     await sys.query("INSERT INTO app.agent_pairing_codes (code_hash, user_id, expires_at) VALUES ($1, $2, now() - interval '1 minute')", [oud, A]);

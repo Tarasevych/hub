@@ -128,7 +128,7 @@ export async function main(): Promise<number> {
     r = await fetch(`${B}/oauth/authorize?${q(grok.client_id, 'https://grok.com/oauth/callback', p1, { resource: `${ISS}/claude` })}`, { redirect: 'manual' });
     const naar = new URL(r.headers.get('location') || 'https://x/');
     const rid = naar.searchParams.get('consent') || '';
-    check('authorize → 302 naar het venster «Дозволити» van de site (/agents?consent=mrd_…)', r.status === 302 && naar.origin === ISS && naar.pathname === '/agents' && /^mrd_[A-Za-z0-9_-]{30,}$/.test(rid), naar.toString());
+    check('authorize → 302 naar het venster «Дозволити» van de site in de technische ruimte (/verbindingen?consent=mrd_…)', r.status === 302 && naar.origin === ISS && naar.pathname === '/verbindingen' && /^mrd_[A-Za-z0-9_-]{30,}$/.test(rid), naar.toString());
     r = await fetch(`${B}/oauth/authorize?${q(grok.client_id, 'https://grok.com/oauth/callback', p1, { resource: 'https://evil.example/claude' })}`, { redirect: 'manual' });
     check('authorize: vreemde resource → terug met error=invalid_target', r.status === 302 && new URL(r.headers.get('location') || 'https://x/').searchParams.get('error') === 'invalid_target');
     r = await fetch(`${B}/oauth/authorize?${q(grok.client_id, 'https://evil.example/cb', p1)}`, { redirect: 'manual' });
@@ -200,7 +200,7 @@ export async function main(): Promise<number> {
     const html = await r.text();
     const csp = r.headers.get('content-security-policy') || '';
     const rid4 = /name="verzoek" value="([^"]+)"/.exec(html)?.[1] || '';
-    check('handmatig: formulier met deurtoken + knop «Підтвердити на сайті»', r.status === 200 && html.includes('bridge_token') && html.includes(`${ISS}/agents?consent=${rid4}`) && !!rid4);
+    check('handmatig: formulier met deurtoken + knop «Підтвердити на сайті»', r.status === 200 && html.includes('bridge_token') && html.includes(`${ISS}/verbindingen?consent=${rid4}`) && !!rid4);
     check('handmatig: CSP form-action laat de terugkeer naar grok.com toe (Chrome controleert de redirect na POST)', /form-action 'self' https:\/\/grok\.com/.test(csp), csp);
     r = await post('/oauth/authorize', form({ verzoek: rid4, bridge_token: 'fout' }));
     check('handmatig: verkeerd deurtoken → 401 met formulier', r.status === 401);
