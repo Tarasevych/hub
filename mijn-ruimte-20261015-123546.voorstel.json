@@ -1,0 +1,13 @@
+{
+  "version": "20261015-123546",
+  "bytes": 3387155,
+  "sha256": "4d9a06f1c32c95af363935ca463f5b80ad0feefc5bb13684e7af25ee1d7092ff",
+  "commit": "fad71aad7bdc8f585c420d0cf5fe604761bbb62e",
+  "changelog": "- fad71aa Конектори: реальні дії каталогів Figma, Notion, GitHub, Wix, Stripe і випуску",
+  "tests": {
+    "passed": 69,
+    "failed": 0,
+    "summary": "connector-functies 15/15, connector-v2 22/22, ai-ruimte 16/16, ai-toegang 16/16"
+  },
+  "diff_summary": " backend/connector-functies.ts                | 326 ++++++++++++++\n backend/connector-v2.ts                      |  34 +-\n scripts/preview-connector-functies-entry.tsx |  30 ++\n scripts/preview-connector-functies.mjs       |  21 +\n shared/connector-functies.ts                 | 631 +++++++++++++++++++++++++++\n shared/connector-v2/catalogus.ts             |   2 +-\n shared/connector-v2/rechten.ts               |  13 +-\n src/connector-v2/RechtenKiezer.tsx           |  32 +-\n tests/eenheid/connector-functies.test.ts     | 108 +++++\n tests/eenheid/connector-v2.test.ts           |   5 +-\n 10 files changed, 1180 insertions(+), 22 deletions(-)"
+}
