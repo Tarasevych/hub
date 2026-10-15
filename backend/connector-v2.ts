@@ -1,5 +1,6 @@
-// Connector v2 (15.10.2026): een eigen MCP-adres per AI-agent — https://mcp.tarasevych.com/ai/<agent> — met Nederlandse
+// Connector v2: een eigen MCP-adres per AI-agent — https://mcp.tarasevych.com/mcp/<agent> — met Nederlandse
 // hulpmiddelnamen (shared/connector-v2/namen.ts) en rechten per hulpmiddel per koppeling (app.connector_v2_rechten).
+// Kale /claude en /grok blijven de technische deuren (tunnel, hoofdletterongevoelig). /ai/<agent> is alleen een alias.
 //
 // Volgorde van poorten bij tools/call (elke weigering komt in het journaal):
 //   1. token geldig én gebonden aan DIT pad (een token van /ai/grok werkt niet op /ai/gpt en niet op /mcp);
@@ -16,6 +17,8 @@ import { agentPrmUrl, agentUrl, isAgentSlug, v2Agent, type AgentSlug } from '../
 import { v2Optie, V2_OPTIES, type Kant, type V2Optie } from '../shared/connector-v2/catalogus';
 import { ontleed, toolNaam } from '../shared/connector-v2/namen';
 import { breidtUit, isKant, schoon, STANDAARD } from '../shared/connector-v2/rechten';
+import { agentAan } from '../shared/ai-agent-bord';
+import { leesStaat } from './ai-site-schakelaars';
 import { authenticate, ISSUER, lijstTools, PROTOCOL_VERSIONS, roepTool, SCOPE, werkDetails, type Wie } from './mcp-connector';
 import type { ToolDef } from './connectors-tools';
 import * as v2st from './connector-v2-store';
@@ -98,6 +101,9 @@ async function weiger(who: Koppeling, naam: string, args: Record<string, unknown
 
 export async function v2Roep(who: Koppeling, rechten: v2st.V2Keuze, naam: string, args: Record<string, unknown>) {
   const p = ontleed(naam, who.agent);
+  if (!p.ok && p.reden === 'IN_ONTWIKKELING') {
+    return weiger(who, naam, args, 'in-ontwikkeling', `PERMISSION_OFF: "${naam.slice(0, 80)}" is in development and is refused even if an old grant still lists it. Do not try another way.`);
+  }
   if (!p.ok) {
     if (p.reden === 'ANDERE_AGENT') {
       return weiger(who, naam, args, 'andere-agent', `AGENT_MISMATCH: "${naam.slice(0, 80)}" belongs to the connector of another AI (${p.agent}). This connection is only for ${who.agent}: use tool names with _${who.agent}_. Do not try another way.`);
@@ -161,6 +167,13 @@ export async function rpc(slug: string, authorization: string | undefined, rawBo
     return unauthorizedV2(slug, !!String(authorization || '').trim());
   }
   const koppeling = who as Koppeling;
+  // Доменний перемикач agent:<клієнт> (app.ai_site_schakelaars): вимкнений агент не обслуговується,
+  // навіть якщо рядок дозволу лишився. Технічні двері /Grok і /claude на порту 8091 цей перемикач не чіпає.
+  const staat = await leesStaat();
+  if (!agentAan(staat, v2Agent(slug).klant)) {
+    await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { tool: '(agent)', client: who.clientName.slice(0, 80), grantId: who.tokenId, reden: 'AGENT_UIT', agent: slug } }).catch(() => undefined);
+    return respond(403, { error: 'AGENT_UIT', error_description: `AGENT_UIT: the connector for ${slug} is switched off for the whole site. A remaining grant does not override that. Do not try another way.` });
+  }
   const rechten = await v2st.leesRechten(koppeling.tokenId);
   if (!rechten || rechten.agent !== slug || rechten.userId !== who.userId) return unauthorizedV2(slug, true);
   const limit = await rateLimit(`mcp-rpc:${who.limietSleutel}`, RPC_PER_MINUTE, 60);
@@ -184,11 +197,12 @@ export type BeheerFout = 'AGENT_ONBEKEND' | 'KANT_BEHEER_ALLEEN_EIGENAAR' | 'TEC
 export async function overzicht(userId: string) {
   const koppelingen = await v2st.actieveKoppelingen(userId);
   const instellingen = await v2st.leesInstellingen(userId);
+  const staat = await leesStaat();
   const agenten = await Promise.all((['claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor'] as AgentSlug[]).map(async (slug) => {
     const eigen = koppelingen.filter((k) => k.agent === slug);
     const voorkeur = await v2st.leesVoorkeur(userId, slug);
     const actief = eigen[0] ? { kanten: eigen[0].kanten, sleutels: eigen[0].sleutels } : null;
-    return { slug, url: agentUrl(slug), koppelingen: eigen, voorkeur, actief };
+    return { slug, url: agentUrl(slug), uit: !agentAan(staat, v2Agent(slug).klant), koppelingen: eigen, voorkeur, actief };
   }));
   return { agenten, instellingen };
 }

@@ -16,7 +16,7 @@ import { sessieGeverifieerd } from '../server/platform/context';
 import * as v2 from './connector-v2';
 import { v2Routes } from './connector-v2-routes';
 import { sterkeMethoden, sterkeStapOpFout } from './toegang-context';
-import { leesInstellingen } from './connector-v2-store';
+import { factorVerplicht } from '../shared/connector-v2/factor';
 import { ruimteUitVerzoek, technischeRuimte } from './ai-ruimte-poort';
 import { leesStand } from './ai-beleid';
 import { leesGebruikerCaps, leesStaat, zetGebruikerCap, zetStaat } from './ai-site-schakelaars';
@@ -167,9 +167,11 @@ export function createMcpConnectorRoutes(deps: Deps) {
       // Alleen technisch → de verbinding staat in de technische ruimte; met een privékant blijft ze 'prive' (de kant van elke naam beslist per aanroep).
       const ruimte = v2Keuze ? (v2Keuze.kanten.includes('gebruiker') ? 'prive' as const : 'technisch' as const) : poort.ruimte;
       // H4: toestemming geven (niet weigeren) vraagt een verse aanmelding: tegen consent-phishing met een door een aanvaller gestarte flow.
-      // v2 + «extra bevestiging» in de instellingen: passkey of app-code (Google alleen telt dan niet, als de gebruiker die manieren heeft).
+      // v2: een tweede factor (passkey, app-code, herstelcode) alleen als het account die zelf aan heeft. Zonder factor geen extra blokkade.
       if (approve) {
-        if (v2Keuze && (await leesInstellingen(auth.user.id)).extraBevestigen) { const f = await sterkeStapOpFout(auth as never); if (f) return deps.fail(f, 403); }
+        if (v2Keuze && factorVerplicht(await sterkeMethoden(auth.user.id).catch(() => ({ passkey: false, totp: false, herstelcode: false })))) {
+          const f = await sterkeStapOpFout(auth as never); if (f) return deps.fail(f, 403);
+        }
         const su = await stepUp(ctx, auth); if (su) return su;
       }
       if (isDeurRid(rid)) {

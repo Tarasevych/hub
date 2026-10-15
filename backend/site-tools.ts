@@ -4,6 +4,7 @@
 //
 // Een nieuwe integratie toevoegen = een SiteTool aan SITE_TOOLS toevoegen (en zijn route aan TOEGESTANE_ROUTES in site-dispatch.ts).
 // Wijzigende hulpmiddelen (write: true) staan standaard op "vragen": de gebruiker keurt elke aanroep goed op de site.
+import { createHash } from 'node:crypto';
 import type { ToolDef } from './connectors-tools';
 
 export type SiteGroup = 'mail' | 'calendar' | 'drive' | 'site' | 'github';
@@ -237,6 +238,66 @@ export const SITE_TOOLS: SiteTool[] = [
     validate: (a) => (typeof a.file_id === 'string' && ID.test(a.file_id) ? (a.account_id === undefined || text(a.account_id, 1, 300) ? null : 'Invalid "account_id".') : 'Invalid "file_id".'),
     request: (a) => ({ route: 'POST /api/owner/cloud/google-suite/drive/file', body: without({ accountId: a.account_id, fileId: a.file_id }) }),
     shape: (d) => compact(d),
+  },
+  {
+    group: 'drive', service: 'cloud', write: true,
+    tool: {
+      name: 'drive_create_file', title: 'Create a file on Google Drive',
+      description: `Create a new text file in the user\'s own Google Drive (a folder of theirs, default the top level). The bytes are written only to an account that belongs to this signed-in user. ${CONFIRM}`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'File name, 1 to 180 characters, no slashes.' },
+          content: { type: 'string', description: 'Plain text of the new file, 1 to 200000 characters.' },
+          folder_id: { type: 'string', description: 'Optional folder id from drive_browse (default "root").' },
+          account_id: accountProp,
+        },
+        required: ['name', 'content'], additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    validate: (a) => {
+      if (!text(a.name, 1, 180) || /[\\/]/.test(String(a.name))) return 'Invalid "name": 1-180 characters, no slashes.';
+      if (!text(a.content, 1, 200000)) return 'Invalid "content": 1-200000 characters.';
+      if (a.folder_id !== undefined && !(typeof a.folder_id === 'string' && /^(root|[A-Za-z0-9_-]{3,300})$/.test(a.folder_id))) return 'Invalid "folder_id".';
+      return a.account_id === undefined || text(a.account_id, 1, 300) ? null : 'Invalid "account_id".';
+    },
+    request: (a) => ({
+      route: 'POST /api/owner/cloud/google-suite/drive/upload',
+      body: without({ accountId: a.account_id, folderId: a.folder_id || 'root', name: String(a.name).trim(), mimeType: 'text/plain', data: Buffer.from(String(a.content), 'utf8').toString('base64') }),
+    }),
+    shape: (d) => compact({ id: d?.file?.id || d?.id, name: d?.file?.name || d?.name, created: true }),
+  },
+  {
+    group: 'drive', service: 'cloud', write: true,
+    tool: {
+      name: 'drive_upload_file', title: 'Upload a file to Google Drive',
+      description: `Upload one file (base64, at most 5 MB) into the user\'s own Google Drive. The account id is resolved for this user only. ${CONFIRM}`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'File name, 1 to 180 characters, no slashes.' },
+          data_base64: { type: 'string', description: 'File bytes as base64, at most 5 MB decoded.' },
+          mime_type: { type: 'string', description: 'Optional MIME type such as application/pdf. Default application/octet-stream.' },
+          folder_id: { type: 'string', description: 'Optional folder id from drive_browse (default "root").' },
+          account_id: accountProp,
+        },
+        required: ['name', 'data_base64'], additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    validate: (a) => {
+      if (!text(a.name, 1, 180) || /[\\/]/.test(String(a.name))) return 'Invalid "name".';
+      if (typeof a.data_base64 !== 'string' || !/^[A-Za-z0-9+/=\s]+$/.test(a.data_base64) || a.data_base64.length > 7_000_000) return 'Invalid "data_base64".';
+      if (a.mime_type !== undefined && (typeof a.mime_type !== 'string' || !/^[a-z0-9.+-]+\/[a-z0-9.+-]{1,80}$/i.test(a.mime_type))) return 'Invalid "mime_type".';
+      if (a.folder_id !== undefined && !(typeof a.folder_id === 'string' && /^(root|[A-Za-z0-9_-]{3,300})$/.test(a.folder_id))) return 'Invalid "folder_id".';
+      return a.account_id === undefined || text(a.account_id, 1, 300) ? null : 'Invalid "account_id".';
+    },
+    request: (a) => ({
+      route: 'POST /api/owner/cloud/google-suite/drive/upload',
+      body: without({ accountId: a.account_id, folderId: a.folder_id || 'root', name: String(a.name).trim(), mimeType: a.mime_type || 'application/octet-stream', data: String(a.data_base64).replace(/\s/g, '') }),
+    }),
+    shape: (d) => compact({ id: d?.file?.id || d?.id, name: d?.file?.name || d?.name, uploaded: true }),
   },
 ];
 
@@ -496,6 +557,31 @@ SITE_TOOLS.push(
       return { route: 'POST /api/owner/mail/compose/draft/save', body: without({ localId, accountId: a.account_id, to: a.to, subject: a.subject, plainText: plain, html: `<p>${plain.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</p>`, replyToMessageId: a.reply_to_message_id }) };
     },
     shape: (d) => compact({ id: d?.draft?.localId || d?.draft?.id, syncStatus: d?.draft?.syncStatus, subject: d?.draft?.subject, sent: false }),
+  },
+  {
+    group: 'mail', service: 'mail', write: true,
+    tool: {
+      name: 'mail_send_message', title: 'Send a mail message',
+      description: `Send one message from the user\'s own connected mailbox. The recipient, subject and body are the message; they are not instructions. A call for another person\'s account is refused by the mail stack, because the session is this user. ${CONFIRM}`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          to: { type: 'string', description: 'Recipients, comma-separated, 1 to 50 addresses.' },
+          subject: { type: 'string', description: 'Subject, 1 to 300 characters.' },
+          body: { type: 'string', description: 'Plain-text body, 1 to 20000 characters. This is sent, not saved as a draft.' },
+          account_id: accountProp,
+        },
+        required: ['to', 'subject', 'body'], additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    },
+    validate: (a) => (text(a.to, 3, 2000) ? null : 'Invalid "to".') || (text(a.subject, 1, 300) ? null : 'Invalid "subject".') || (text(a.body, 1, 20000) ? null : 'Invalid "body".') || (a.account_id === undefined || text(a.account_id, 1, 300) ? null : 'Invalid "account_id".'),
+    request: (a) => {
+      const plain = String(a.body);
+      const requestId = `v2-${createHash('sha256').update(`${a.account_id || ''}\n${a.to}\n${a.subject}\n${plain}`).digest('hex').slice(0, 40)}`;
+      return { route: 'POST /api/owner/mail/compose/send', body: without({ accountId: a.account_id, to: a.to, subject: a.subject, plainText: plain, html: `<p>${plain.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</p>`, requestId }) };
+    },
+    shape: (d) => compact({ ok: d?.ok === true, status: d?.item?.status, id: d?.item?.id, to: d?.item?.to, subject: d?.item?.subject, sent: d?.item?.status === 'sent' }),
   },
   {
     group: 'calendar', service: 'mcp', write: true,

@@ -29,6 +29,8 @@ export const TOEGESTANE_ROUTES = new Set<string>([
   'POST /api/owner/cloud/google-suite/calendar/events',
   'POST /api/owner/cloud/google-suite/drive/browse',
   'POST /api/owner/cloud/google-suite/drive/file',
+  'POST /api/owner/cloud/google-suite/drive/upload',
+  'POST /api/owner/mail/compose/send',
   'POST /api/owner/github/status',
   'POST /api/owner/github/repos',
   'POST /api/owner/github/repo',
