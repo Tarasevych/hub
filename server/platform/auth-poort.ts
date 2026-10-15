@@ -16,6 +16,7 @@ import { isSessieGeverifieerd, sessieGeverifieerd } from './context';
 /** Routes die zonder sessie mogen slagen (patroon zoals in de routetabel) → reden. */
 export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'GET /api/_healthcheck': 'gezondheidscontrole',
+  'GET /api/version': 'welke release nu draait (versie, commit, auteur, agent, samenvatting) — openbaar voor transparantie',
   // Exacte paden (geen prefix): server/start.ts stuurt alleen precies /privacy en /terms naar de router.
   'GET /privacy': 'privacybeleid (statische HTML, Google OAuth-merkverificatie)',
   'GET /terms': 'gebruiksvoorwaarden (statische HTML)',

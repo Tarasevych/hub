@@ -1,4 +1,5 @@
 import { db, error, invites, isInviteError, isOwnerEmail, json, ownerEmail, router, secrets } from '../server/platform';
+import { releaseInfo } from './release-info';
 import { alsSysteem, sessieGeverifieerd, zetGebruiker } from '../server/platform/context'
 import { juridischeRoutes } from './juridisch'
 import { createAgentRoutes } from './connectors-routes'
@@ -495,6 +496,8 @@ const sterkeStapOpVereist=async(_ctx:unknown,auth:{user:{id:string};session?:{id
 export const handler = router({
   ...juridischeRoutes,
   'GET /api/_healthcheck': [async () => json({ message: 'Success' })],
+  // Прозорість випуску: будь-хто (агент чи людина) бачить, яка версія/коміт зараз на живому сайті.
+  'GET /api/version': [async () => json(releaseInfo())],
   ...mcpConsoleRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
   // Technisch profiel (architectuur 13.10.2026): toekennen, op tijd activeren per tabblad, band.
   ...techRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),

@@ -205,6 +205,20 @@ LAATSTE="$(cat "$WERK_ROOT/laatste-versie" 2>/dev/null || echo 00000000-000000)"
 [[ "$VERSIE" > "$LAATSTE" ]] || weiger NIET_NIEUWER "Версія $VERSIE не новіша за встановлену ($LAATSTE)." "Versie $VERSIE is niet nieuwer dan de geïnstalleerde ($LAATSTE)."
 [ -f "$BRON/deploy/installeer-app.sh" ] || weiger GEEN_INSTALLER "У пакеті немає deploy/installeer-app.sh." "deploy/installeer-app.sh ontbreekt in het pakket."
 
+# ---- Правило 2 (обов'язкові метадані випуску): машина відхиляє випуск без автора, агента й підсумку. Діє для БУДЬ-ЯКОГО
+# джерела (passkey/підпис/gitops/мобільний додаток). Файли додає скрипт збирання (deploy/uitrol/maak-*pakket).
+meta() { head -c "$2" "$BRON/$1" 2>/dev/null | tr -d '\000' | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
+AUTEUR="$(meta AUTEUR 200)"
+AGENT="$(meta AGENT 40)"
+SAMENVATTING="$(meta SAMENVATTING 8000 | tr '\n' ' ')"
+[ -n "$AUTEUR" ] || weiger GEEN_AUTEUR "У пакеті немає AUTEUR (хто автор випуску). Випуск відхилено." "AUTEUR ontbreekt in het pakket (wie is de auteur). Release geweigerd."
+[[ "${#AUTEUR}" -ge 3 ]] || weiger AUTEUR_ONGELDIG "AUTEUR закороткий. Випуск відхилено." "AUTEUR is te kort. Release geweigerd."
+[ -n "$AGENT" ] || weiger GEEN_AGENT "У пакеті немає AGENT (через якого агента зроблено). Випуск відхилено." "AGENT ontbreekt (via welke agent gemaakt). Release geweigerd."
+[[ "$AGENT" =~ ^[a-z][a-z0-9-]{1,31}$ ]] || weiger AGENT_ONGELDIG "AGENT має бути як-от claude/cursor/gpt (малі літери). Випуск відхилено." "AGENT moet bv. claude/cursor/gpt zijn (kleine letters). Release geweigerd."
+[ -n "$SAMENVATTING" ] || weiger GEEN_SAMENVATTING "У пакеті немає SAMENVATTING (підсумок: що і для чого, що було/зʼявилося/зникло). Випуск відхилено." "SAMENVATTING ontbreekt (samenvatting: wat en waarom, wat was/kwam/verdween). Release geweigerd."
+[[ "${#SAMENVATTING}" -ge 20 ]] || weiger SAMENVATTING_TE_KORT "SAMENVATTING закороткий (мінімум 20 символів змістовного опису). Випуск відхилено." "SAMENVATTING is te kort (minstens 20 tekens). Release geweigerd."
+log "метадані випуску: автор=$AUTEUR агент=$AGENT"
+
 # ---- 5. installeren (alleen ondertekende code) ----
 rm -f -- "$INBOX/$NAAM" "$INBOX/$NAAM.sig" "$INBOX/$NAAM.goedkeuring.json"
 status bezig INSTALLEREN "Встановлюю випуск $VERSIE." "Release $VERSIE wordt geïnstalleerd." "$VERSIE"
@@ -216,9 +230,9 @@ if "${cmd[@]}" > "$WERK/installeer.log" 2>&1; then
   find "$INBOX" -maxdepth 1 -type f \( -name 'mijn-ruimte-*.tar.gz' -o -name 'mijn-ruimte-*.tar.gz.sig' -o -name 'mijn-ruimte-*.tar.gz.goedkeuring.json' \) -delete 2>/dev/null || true
   status klaar OK "Випуск $VERSIE встановлено." "Release $VERSIE is geïnstalleerd." "$VERSIE"
   if [ "$MODUS" = passkey ]; then
-    gebeurtenis OK info "Випуск $VERSIE встановлено (схвалено passkey)." "Release $VERSIE is geïnstalleerd (goedgekeurd met passkey)."
+    gebeurtenis OK info "Випуск $VERSIE встановлено (схвалено passkey). Автор: $AUTEUR, агент: $AGENT." "Release $VERSIE geïnstalleerd (passkey). Auteur: $AUTEUR, agent: $AGENT."
   else
-    gebeurtenis OK info "Випуск $VERSIE встановлено (підпис ключем випуску)." "Release $VERSIE is geïnstalleerd (ondertekend met de uitrolsleutel)."
+    gebeurtenis OK info "Випуск $VERSIE встановлено (підпис ключем). Автор: $AUTEUR, агент: $AGENT." "Release $VERSIE geïnstalleerd (ondertekend). Auteur: $AUTEUR, agent: $AGENT."
   fi
   log "klaar: $VERSIE"
 else

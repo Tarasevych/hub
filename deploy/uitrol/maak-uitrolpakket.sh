@@ -9,10 +9,18 @@ versie="${UITROL_VERSIE_OVERRIDE:-$(date +%Y%m%d-%H%M%S)}"
 [[ "$versie" =~ ^[0-9]{8}-[0-9]{6}$ ]] || { echo "FOUT: ongeldige versie $versie" >&2; exit 1; }
 [ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "FOUT: niet-gecommitte wijzigingen (alleen HEAD wordt verpakt)" >&2; exit 1; }
 commit="$(git rev-parse HEAD)"
+# Правило 2 (PRAVYLA-ADRESY-I-VYPUSKY.md): обовʼязкові метадані випуску. Без них машина відхилить архів.
+AUTEUR="${AUTEUR:-}"; AGENT="${AGENT:-}"; SAMENVATTING="${SAMENVATTING:-}"
+[ -n "$AUTEUR" ] || { echo "FOUT: встановіть AUTEUR (email/імʼя автора випуску)" >&2; exit 1; }
+[[ "$AGENT" =~ ^[a-z][a-z0-9-]{1,31}$ ]] || { echo "FOUT: встановіть AGENT (claude/cursor/gpt, малі літери)" >&2; exit 1; }
+[ "${#SAMENVATTING}" -ge 20 ] || { echo "FOUT: встановіть SAMENVATTING (підсумок, мінімум 20 символів)" >&2; exit 1; }
 doel="$uit/mijn-ruimte-$versie.tar.gz"
 git archive --format=tar.gz --prefix="mijn-ruimte-$versie/" \
   --add-virtual-file="mijn-ruimte-$versie/UITROL-VERSIE:$versie" \
-  --add-virtual-file="mijn-ruimte-$versie/BRON-COMMIT:$commit" -o "$doel" HEAD
+  --add-virtual-file="mijn-ruimte-$versie/BRON-COMMIT:$commit" \
+  --add-virtual-file="mijn-ruimte-$versie/AUTEUR:$AUTEUR" \
+  --add-virtual-file="mijn-ruimte-$versie/AGENT:$AGENT" \
+  --add-virtual-file="mijn-ruimte-$versie/SAMENVATTING:$SAMENVATTING" -o "$doel" HEAD
 rm -f "$doel.sig"
 ssh-keygen -q -Y sign -f "$sleutel" -n mijn-ruimte-uitrol "$doel"
 ond="$(mktemp)"; trap 'rm -f "$ond"' EXIT
