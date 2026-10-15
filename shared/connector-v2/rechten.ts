@@ -8,6 +8,7 @@
 //  • Herverbinden: verschil oud → nieuw in drie delen (toegevoegd / behouden / vervalt).
 // Puur.
 import { V2_OPTIES, isV2Key, v2Optie, type GroepId, type Kant, type Soort, type V2Optie } from './catalogus';
+import { FUNCTIE_OPTIES, functieOptie } from '../connector-functies';
 
 export type Modus = 'alles' | 'lezen' | 'lezen-schrijven' | 'schrijven' | 'geen';
 export const MODI: readonly Modus[] = ['alles', 'lezen', 'lezen-schrijven', 'schrijven', 'geen'];
@@ -27,7 +28,10 @@ export type Ruimtes = readonly Kant[];
 export const isKant = (v: unknown): v is Kant => v === 'gebruiker' || v === 'beheer';
 
 /** Opties die in deze koppeling kunnen meedoen: actief en in een gekozen kant. */
-export const kiesbaar = (ruimtes: Ruimtes) => V2_OPTIES.filter((o) => o.status === 'actief' && ruimtes.includes(o.kant));
+export const kiesbaar = (ruimtes: Ruimtes) => [
+  ...V2_OPTIES.filter((o) => o.status === 'actief' && ruimtes.includes(o.kant)),
+  ...FUNCTIE_OPTIES.filter((o) => ruimtes.includes(o.kant)),
+];
 
 export const STANDAARD = (ruimtes: Ruimtes = ['gebruiker']): string[] =>
   kiesbaar(ruimtes).filter((o) => o.kant === 'gebruiker' && o.soort === 'lezen' && o.risico === 'laag' && !o.gevoelig).map((o) => o.key);
@@ -36,9 +40,8 @@ export const STANDAARD = (ruimtes: Ruimtes = ['gebruiker']): string[] =>
 export function schoon(keys: readonly unknown[], ruimtes: Ruimtes): string[] {
   const ok = new Set<string>();
   for (const k of keys) {
-    if (!isV2Key(k)) continue;
-    const o = v2Optie(k) as V2Optie;
-    if (o.status === 'actief' && ruimtes.includes(o.kant)) ok.add(k);
+    const o = (isV2Key(k) ? v2Optie(k) : functieOptie(String(k))) as V2Optie | undefined;
+    if (o && o.status === 'actief' && ruimtes.includes(o.kant)) ok.add(String(k));
   }
   return [...ok].sort();
 }
@@ -75,7 +78,7 @@ export function verschil(oud: readonly string[], nieuw: readonly string[]): Vers
 export function hoogsteRisico(keys: readonly string[]): V2Optie['risico'] {
   const volgorde = ['laag', 'midden', 'hoog', 'kritiek'] as const;
   let max = 0;
-  for (const k of keys) { const o = v2Optie(k); if (o) max = Math.max(max, volgorde.indexOf(o.risico)); }
+  for (const k of keys) { const o = v2Optie(k) ?? functieOptie(k); if (o) max = Math.max(max, volgorde.indexOf(o.risico)); }
   return volgorde[max];
 }
 

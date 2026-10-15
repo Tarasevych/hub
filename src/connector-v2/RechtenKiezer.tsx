@@ -9,6 +9,7 @@ import {
   Palette, PenLine, PencilLine, Rocket, Search, Server, ShieldAlert, ShieldCheck, Trash2, TriangleAlert, UserRound, Wrench, X,
 } from 'lucide-react';
 import { V2_GROEPEN, V2_OPTIES, RISICO_TEKST, SOORT_TEKST, KANT_TEKST, type GroepId, type Kant, type Soort, type V2Optie } from '../../shared/connector-v2/catalogus';
+import { FUNCTIE_OPTIES } from '../../shared/connector-functies';
 import { toolNaam } from '../../shared/connector-v2/namen';
 import { MODI, MODUS_TEKST, modusVan, pasModusToe, verschil, type Modus } from '../../shared/connector-v2/rechten';
 import { v2Agent, type AgentSlug } from '../../shared/connector-v2/agenten';
@@ -75,7 +76,6 @@ function OptieRij({ o, aan, agent, uk, tr, onToggle, uitgeklapt, onKlap, markeri
             <span className={`v2-chip soort-${o.soort}`}>{SOORT_ICOON[o.soort]}{SOORT_TEKST[o.soort][uk ? 'uk' : 'nl']}</span>
             <span className={`v2-chip risico-${o.risico}`}>{o.risico === 'kritiek' || o.risico === 'hoog' ? <TriangleAlert size={12} /> : <ShieldCheck size={12} />}{RISICO_TEKST[o.risico][uk ? 'uk' : 'nl']}</span>
             {o.gevoelig ? <span className='v2-chip is-gevoelig'>{tr('чутливе', 'gevoelig')}</span> : null}
-            {dev ? <span className='v2-chip is-dev'><Construction size={12} />{tr('у розробці', 'in ontwikkeling')}</span> : null}
             {markering === 'nieuw' ? <span className='v2-chip is-nieuw'>{tr('буде додано', 'wordt toegevoegd')}</span> : markering === 'weg' ? <span className='v2-chip is-weg'>{tr('не буде', 'vervalt')}</span> : null}
           </span>
           <ChevronDown size={16} className='v2-klap' aria-hidden='true' />
@@ -116,32 +116,40 @@ function ModusKeuze({ huidig, onKies, tr, uk, label, compact }: { huidig: Modus 
   );
 }
 
+/** Actieve v2-opties plus de echte connector-functies. Rijen «in ontwikkeling» blijven uit de kiezer. */
+export const ZICHTBARE_OPTIES: readonly V2Optie[] = [...V2_OPTIES.filter((o) => o.status === 'actief'), ...FUNCTIE_OPTIES];
+
 export type KiezerProps = {
   tr: Tr; agent: AgentSlug; kanten: readonly Kant[]; waarde: string[]; onChange: (keys: string[]) => void;
   /** Wat de koppeling had (herverbinden): toont de drie delen «буде додано / вже було / не буде». */
   vorige?: string[] | null;
+  /** Voor een statische voorvertoning: welke rijen open staan en welke groepen dicht zijn. */
+  startOpen?: readonly string[];
+  startDicht?: readonly string[];
+  startZoek?: string;
+  opties?: readonly V2Optie[];
 };
 
-export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vorige }: KiezerProps) {
+export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vorige, startOpen, startDicht, startZoek, opties }: KiezerProps) {
+  const bron = opties ?? ZICHTBARE_OPTIES;
   const uk = tr('uk', 'nl') === 'uk';
-  const [zoek, setZoek] = useState('');
-  const [toonDev, setToonDev] = useState(true);
+  const [zoek, setZoek] = useState(startZoek ?? '');
   const [alleenAan, setAlleenAan] = useState(false);
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-  const [groepDicht, setGroepDicht] = useState<Record<string, boolean>>({});
+  const [open, setOpen] = useState<Record<string, boolean>>(() => Object.fromEntries((startOpen ?? []).map((k) => [k, true])));
+  const [groepDicht, setGroepDicht] = useState<Record<string, boolean>>(() => Object.fromEntries((startDicht ?? []).map((k) => [k, true])));
   const set = useMemo(() => new Set(waarde), [waarde]);
   const zet = (key: string, v: boolean) => { const n = new Set(waarde); if (v) n.add(key); else n.delete(key); onChange([...n].sort()); };
   const q = zoek.trim().toLowerCase();
   const past = (o: V2Optie) => {
-    if (!toonDev && o.status !== 'actief') return false;
+    if (o.status !== 'actief') return false;
     if (alleenAan && !set.has(o.key)) return false;
     if (!q) return true;
     return [o.uk[0], o.nl[0], o.uk[1], o.nl[1], o.weergave, toolNaam(o, agent)].some((s) => String(s).toLowerCase().includes(q));
   };
   const vs = vorige ? verschil(vorige, waarde) : null;
   const markering = (key: string): 'nieuw' | 'was' | 'weg' | undefined => !vs ? undefined : vs.toegevoegd.includes(key) ? 'nieuw' : vs.vervalt.includes(key) ? 'weg' : vs.behouden.includes(key) ? 'was' : undefined;
-  const aanTotaal = (k: Kant) => V2_OPTIES.filter((o) => o.kant === k && set.has(o.key)).length;
-  const risicoTelling = (['laag', 'midden', 'hoog', 'kritiek'] as const).map((r) => ({ r, n: V2_OPTIES.filter((o) => o.risico === r && set.has(o.key)).length }));
+  const aanTotaal = (k: Kant) => bron.filter((o) => o.kant === k && set.has(o.key)).length;
+  const risicoTelling = (['laag', 'midden', 'hoog', 'kritiek'] as const).map((r) => ({ r, n: bron.filter((o) => o.risico === r && set.has(o.key)).length }));
 
   return (
     <div className='v2-kiezer' data-v2-kiezer={agent}>
@@ -151,7 +159,6 @@ export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vor
           <input type='search' value={zoek} onChange={(e) => setZoek(e.target.value)} placeholder={tr('Пошук дозволу або адреси…', 'Recht of adres zoeken…')} aria-label={tr('Пошук дозволів', 'Rechten zoeken')} />
         </label>
         <label className='v2-filter'><input type='checkbox' checked={alleenAan} onChange={(e) => setAlleenAan(e.target.checked)} />{tr('лише ввімкнені', 'alleen aan')}</label>
-        <label className='v2-filter'><input type='checkbox' checked={toonDev} onChange={(e) => setToonDev(e.target.checked)} />{tr('показувати «у розробці»', '«in ontwikkeling» tonen')}</label>
       </div>
 
       <div className='v2-risico-balk' aria-live='polite'>
@@ -167,7 +174,7 @@ export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vor
             <div key={veld} className={`v2-verschil-deel is-${cls}`} data-v2-verschil={veld}>
               <h4>{kop} <span className='v2-teller'>{vs[veld].length}</span></h4>
               {vs[veld].length ? (
-                <ul>{vs[veld].map((k) => { const o = V2_OPTIES.find((x) => x.key === k); if (!o) return null; return (
+                <ul>{vs[veld].map((k) => { const o = bron.find((x) => x.key === k); if (!o) return null; return (
                   <li key={k}><Schakelaar klein aan={set.has(k)} kant={o.kant} label={(uk ? o.uk : o.nl)[0]} onChange={(v) => zet(k, v)} /><span>{(uk ? o.uk : o.nl)[0]}</span></li>
                 ); })}</ul>
               ) : <p className='v2-leeg'>{tr('Нічого', 'Niets')}</p>}
@@ -189,7 +196,7 @@ export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vor
               <ModusKeuze tr={tr} uk={uk} label={tr('Режим для всього простору', 'Modus voor de hele ruimte')} huidig={modusVan(waarde, kanten, { kant })} onKies={(m) => onChange(pasModusToe(waarde, m, kanten, { kant }))} />
             </header>
             {groepen.map((g) => {
-              const opties = V2_OPTIES.filter((o) => o.kant === kant && o.groep === g.id);
+              const opties = bron.filter((o) => o.kant === kant && o.groep === g.id);
               const zichtbaar = opties.filter(past);
               if (!zichtbaar.length) return null;
               const actief = opties.filter((o) => o.status === 'actief');
@@ -205,7 +212,6 @@ export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vor
                       <span className='v2-groep-icoon' aria-hidden='true'>{groepIcoon(g.icoon)}</span>
                       <span>{uk ? g.uk : g.nl}</span>
                       <span className='v2-teller'>{aantalAan}/{actief.length}</span>
-                      {!actief.length ? <span className='v2-chip is-dev'><Construction size={12} />{tr('у розробці', 'in ontwikkeling')}</span> : null}
                       <ChevronDown size={16} className='v2-klap' aria-hidden='true' />
                     </button>
                     {actief.length ? <ModusKeuze compact tr={tr} uk={uk} label={tr(`Режим для «${g.uk}»`, `Modus voor «${g.nl}»`)} huidig={modus} onKies={(m) => onChange(pasModusToe(waarde, m, kanten, { kant, groep: g.id as GroepId }))} /> : null}

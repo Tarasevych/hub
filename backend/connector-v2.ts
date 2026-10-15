@@ -15,7 +15,10 @@ import { auditToevoegen } from '../server/platform/audit';
 import { agentPrmUrl, agentUrl, isAgentSlug, v2Agent, type AgentSlug } from '../shared/connector-v2/agenten';
 import { v2Optie, V2_OPTIES, type Kant, type V2Optie } from '../shared/connector-v2/catalogus';
 import { ontleed, toolNaam } from '../shared/connector-v2/namen';
+import { FUNCTIE_INVOER, FUNCTIE_OPTIES, functieOptie, ontleedFunctie } from '../shared/connector-functies';
+import { RUIMTE_GESCHEIDEN } from '../shared/ai-ruimte';
 import { breidtUit, isKant, schoon, STANDAARD } from '../shared/connector-v2/rechten';
+import { voerConnectorFunctieUit } from './connector-functies';
 import { authenticate, ISSUER, lijstTools, PROTOCOL_VERSIONS, roepTool, SCOPE, werkDetails, type Wie } from './mcp-connector';
 import type { ToolDef } from './connectors-tools';
 import * as v2st from './connector-v2-store';
@@ -87,6 +90,18 @@ export async function v2Lijst(who: Koppeling, rechten: v2st.V2Keuze): Promise<To
       const basis = o.intern ? intern.get(o.intern) : undefined;
       if (basis) uit.push(v2Tool(o, who.agent, basis));
     }
+    for (const o of FUNCTIE_OPTIES) {
+      if (o.kant !== kant || !toegestaan.has(o.key)) continue;
+      if (o.kant === 'beheer' && who.ruimte !== 'technisch') continue;
+      if (o.kant === 'gebruiker' && who.ruimte === 'technisch') continue;
+      uit.push({
+        name: toolNaam(o, who.agent),
+        title: o.nl[0],
+        description: `${o.nl[1]} [Mijn Ruimte · ${o.kant === 'beheer' ? 'technical space' : 'private space'} · ${o.groep}]`,
+        inputSchema: FUNCTIE_INVOER,
+        annotations: { readOnlyHint: o.soort === 'lezen', ...(o.soort === 'wissen' ? { destructiveHint: true } : {}) },
+      });
+    }
   }
   return uit;
 }
@@ -97,6 +112,23 @@ async function weiger(who: Koppeling, naam: string, args: Record<string, unknown
 }
 
 export async function v2Roep(who: Koppeling, rechten: v2st.V2Keuze, naam: string, args: Record<string, unknown>) {
+  const functie = ontleedFunctie(naam, who.agent);
+  if (!functie.ok && functie.reden === 'ANDERE_AGENT') {
+    return weiger(who, naam, args, 'andere-agent', `AGENT_MISMATCH: "${naam.slice(0, 80)}" belongs to the connector of another AI (${functie.agent}). This connection is only for ${who.agent}: use tool names with _${who.agent}_. Do not try another way.`);
+  }
+  if (functie.ok) {
+    const o = functie.optie;
+    if ((o.kant === 'beheer' && who.ruimte !== 'technisch') || (o.kant === 'gebruiker' && who.ruimte === 'technisch')) {
+      return weiger(who, naam, args, 'ruimte', RUIMTE_GESCHEIDEN(who.ruimte, naam));
+    }
+    if (!rechten.kanten.includes(o.kant) || !rechten.sleutels.includes(o.key)) {
+      return weiger(who, naam, args, 'recht-uit', `PERMISSION_OFF: the user did not grant "${naam.slice(0, 80)}" to this connection. They can change it on mcp.tarasevych.com → Agenten → Connectors and reconnect. Do not try another way.`);
+    }
+    if (o.kant === 'beheer' && !(await isEigenaar(who.userId))) {
+      return weiger(who, naam, args, 'geen-eigenaar', 'OWNER_REQUIRED: technical (_beheer) tools are only for the owner of the site.');
+    }
+    return voerConnectorFunctieUit({ userId: who.userId, agent: who.agent, ruimte: who.ruimte, kanten: rechten.kanten, sleutels: rechten.sleutels, clientName: who.clientName }, naam, args);
+  }
   const p = ontleed(naam, who.agent);
   if (!p.ok) {
     if (p.reden === 'ANDERE_AGENT') {
@@ -241,4 +273,4 @@ export function keuzeUitVenster(body: Record<string, unknown>): v2st.V2Keuze {
 }
 
 /** Uitleg voor de UI over één sleutel (gebruikt door tests en de journaalweergave). */
-export const optieVoorSleutel = (key: string) => v2Optie(key) ?? null;
+export const optieVoorSleutel = (key: string) => v2Optie(key) ?? functieOptie(key) ?? null;

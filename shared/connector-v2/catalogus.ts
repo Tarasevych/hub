@@ -16,7 +16,7 @@ export type Kant = 'gebruiker' | 'beheer';
 export type Soort = 'lezen' | 'schrijven' | 'wissen';
 export type Risico = 'laag' | 'midden' | 'hoog' | 'kritiek';
 export type Subdomein = 'mail' | 'hub' | 'cloud' | 'github' | 'mcp' | 'admin' | 'ai';
-export type Dienst = 'gmail' | 'gcal' | 'gdrive' | 'gphotos' | 'icloud' | 'github' | 'stripe';
+export type Dienst = 'gmail' | 'gcal' | 'gdrive' | 'gphotos' | 'icloud' | 'github' | 'stripe' | 'figma' | 'notion' | 'wix' | 'weave' | 'deploy';
 export type GroepId = 'account' | 'mail' | 'agenda' | 'bestanden' | 'bord' | 'ruimte' | 'apparaten' | 'apps' | 'browser' | 'github' | 'media' | 'betalingen' | 'releases' | 'server';
 export type Status = 'actief' | 'in-ontwikkeling';
 
