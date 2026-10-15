@@ -23,11 +23,15 @@ export interface TokenRow {
   duur?: string | null;
   /** Ruimte van de verbinding (0042, shared/ai-ruimte.ts): 'prive' of 'technisch'; oud = prive. */
   ruimte?: string | null;
+  /** Connector v2 (0045): de agent waaraan de koppeling gebonden is; null = oude connector /mcp. */
+  agent?: string | null;
 }
 export interface AuthRow {
   id: string; client_id: string; redirect_uri: string; code_challenge: string; state: string | null; scope: string;
   resource: string | null; status: 'pending' | 'approved' | 'denied' | 'used'; expires_at: Date; user_id: string | null;
   client_name?: string; duur?: string | null; ruimte?: string | null;
+  /** Connector v2 (0045): agent uit de resource, en de keuze van de mens (kanten + sleutels) tot het token er is. */
+  agent?: string | null; v2_keuze?: { kanten: string[]; sleutels: string[] } | null;
 }
 
 // ---- clients (DCR) ----
@@ -53,12 +57,12 @@ export async function purgeStale(): Promise<void> {
 // ---- autorisatieverzoeken en codes ----
 
 export async function insertAuthRequest(a: {
-  id: string; clientId: string; redirectUri: string; codeChallenge: string; state: string | null; scope: string; resource: string | null;
+  id: string; clientId: string; redirectUri: string; codeChallenge: string; state: string | null; scope: string; resource: string | null; agent?: string | null;
 }): Promise<void> {
   await q(
-    `INSERT INTO app.mcp_oauth_auth (id, client_id, redirect_uri, code_challenge, state, scope, resource, expires_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, now() + make_interval(mins => $8))`,
-    [a.id, a.clientId, a.redirectUri, a.codeChallenge, a.state, a.scope, a.resource, LIMITS.authRequestTtlMin]);
+    `INSERT INTO app.mcp_oauth_auth (id, client_id, redirect_uri, code_challenge, state, scope, resource, expires_at, agent)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, now() + make_interval(mins => $8), $9)`,
+    [a.id, a.clientId, a.redirectUri, a.codeChallenge, a.state, a.scope, a.resource, LIMITS.authRequestTtlMin, a.agent ?? null]);
 }
 
 export async function getPendingAuth(id: string): Promise<AuthRow | null> {
@@ -69,13 +73,14 @@ export async function getPendingAuth(id: string): Promise<AuthRow | null> {
 }
 
 /** Atomair: een verzoek kan maar één keer worden goedgekeurd of geweigerd. De ruimte is de keuze van de mens op de site (nooit van de klant). */
-export async function decideAuth(id: string, userId: string, approve: boolean, codeHash: string | null, duur: DuurId | null = null, ruimte: AiRuimte = 'prive'): Promise<AuthRow | null> {
+export async function decideAuth(id: string, userId: string, approve: boolean, codeHash: string | null, duur: DuurId | null = null, ruimte: AiRuimte = 'prive', v2Keuze: { kanten: string[]; sleutels: string[] } | null = null): Promise<AuthRow | null> {
   const { rows } = await q(
     `UPDATE app.mcp_oauth_auth
         SET status = $3, user_id = $2, decided_at = now(), code_hash = $4,
-            code_expires_at = CASE WHEN $4::text IS NULL THEN NULL ELSE now() + make_interval(secs => $5) END, duur = $6, ruimte = $7
+            code_expires_at = CASE WHEN $4::text IS NULL THEN NULL ELSE now() + make_interval(secs => $5) END, duur = $6, ruimte = $7,
+            v2_keuze = $8::jsonb
       WHERE id = $1 AND status = 'pending' AND expires_at > now() RETURNING *`,
-    [id, userId, approve ? 'approved' : 'denied', codeHash, LIMITS.codeTtlSec, duur, ruimteOf(ruimte)]);
+    [id, userId, approve ? 'approved' : 'denied', codeHash, LIMITS.codeTtlSec, duur, ruimteOf(ruimte), v2Keuze ? JSON.stringify(v2Keuze) : null]);
   return rows[0] ?? null;
 }
 
@@ -105,14 +110,14 @@ export function levensduur(duur: string | null | undefined): { accessSec: number
 }
 
 export async function insertToken(t: {
-  userId: string; clientId: string; clientName: string; scope: string; accessHash: string; refreshHash: string; duur?: DuurId | null; ruimte?: AiRuimte | null;
+  userId: string; clientId: string; clientName: string; scope: string; accessHash: string; refreshHash: string; duur?: DuurId | null; ruimte?: AiRuimte | null; agent?: string | null;
 }): Promise<string> {
   const l = levensduur(t.duur);
   const r = await q(
     `INSERT INTO app.mcp_oauth_tokens
-       (user_id, client_id, client_name, scope, access_hash, refresh_hash, access_expires_at, refresh_expires_at, duur, ruimte)
-     VALUES ($1, $2, $3, $4, $5, $6, now() + make_interval(secs => $7), now() + make_interval(secs => $8), $9, $10) RETURNING id`,
-    [t.userId, t.clientId, t.clientName, t.scope, t.accessHash, t.refreshHash, l.accessSec, l.refreshSec, isDuurId(t.duur) ? t.duur : null, ruimteOf(t.ruimte)]);
+       (user_id, client_id, client_name, scope, access_hash, refresh_hash, access_expires_at, refresh_expires_at, duur, ruimte, agent)
+     VALUES ($1, $2, $3, $4, $5, $6, now() + make_interval(secs => $7), now() + make_interval(secs => $8), $9, $10, $11) RETURNING id`,
+    [t.userId, t.clientId, t.clientName, t.scope, t.accessHash, t.refreshHash, l.accessSec, l.refreshSec, isDuurId(t.duur) ? t.duur : null, ruimteOf(t.ruimte), t.agent ?? null]);
   return String(r.rows[0]?.id ?? '');
 }
 
@@ -133,7 +138,7 @@ export async function findByAccessHash(accessHash: string): Promise<TokenRow | n
   const { rows } = await q(
     `UPDATE app.mcp_oauth_tokens SET last_used_at = now()
       WHERE access_hash = $1 AND revoked_at IS NULL AND access_expires_at > now() AND refresh_expires_at > now()
-      RETURNING id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, ruimte`,
+      RETURNING id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, ruimte, agent`,
     [accessHash]);
   return rows[0] ?? null;
 }
@@ -175,7 +180,7 @@ export async function revokeByToken(clientId: string, tokenHash: string): Promis
 
 export async function listGrants(userId: string): Promise<TokenRow[]> {
   const { rows } = await q(
-    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, duur, ruimte
+    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, duur, ruimte, agent
        FROM app.mcp_oauth_tokens WHERE user_id = $1 AND revoked_at IS NULL AND refresh_expires_at > now()
       ORDER BY created_at DESC`, [userId]);
   return rows;
@@ -184,7 +189,7 @@ export async function listGrants(userId: string): Promise<TokenRow[]> {
 /** Alle verbindingen van de laatste `dagen`, ook ingetrokken of verlopen (geschiedenis op /agents). */
 export async function listGrantHistory(userId: string, dagen = 90): Promise<TokenRow[]> {
   const { rows } = await q(
-    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, duur, ruimte
+    `SELECT id, user_id, client_id, client_name, scope, access_expires_at, refresh_expires_at, created_at, last_used_at, revoked_at, duur, ruimte, agent
        FROM app.mcp_oauth_tokens WHERE user_id = $1 AND (revoked_at IS NULL OR revoked_at > now() - make_interval(days => $2))
         AND (refresh_expires_at > now() - make_interval(days => $2))
       ORDER BY created_at DESC LIMIT 100`, [userId, dagen]);

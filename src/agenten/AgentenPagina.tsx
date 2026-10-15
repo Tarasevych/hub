@@ -4,7 +4,7 @@
 // profiel). Het ondertekende AI-beleid (sitebeheer) staat op admin → Доступ ШІ; het oude adres #beleid stuurt daarheen. Adresseerbaar via de hash (#ai, #apparaten/dev:<id>, …); oude adressen (#claude, #doors, #dev:<id>,
 // #extension, …) worden omgezet. Eén poller voor apparaten/wachtende acties; de rest bij openen, na een actie en rustig.
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
-import { Activity, ArrowRight, Globe, KeyRound, LayoutDashboard, Monitor, ShieldCheck, Sparkles } from 'lucide-react';
+import { Activity, ArrowRight, Globe, KeyRound, LayoutDashboard, Monitor, Plug, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAgentsData, useToolApprovals } from '../agents-data';
 import type { Tr } from '../mcp-ui';
 import { PairCard, PendingList } from '../DevicesView';
@@ -16,13 +16,14 @@ import Journaal, { JournaalLijst } from './Journaal';
 import TabAi from './TabAi';
 import TabApparaten from './TabApparaten';
 import TabTokens from './TabTokens';
+import ConnectorsTab from '../connector-v2/ConnectorsTab';
 import { foutTekst } from './fouten';
 import { canonicalNavigationUrl } from '../canonical-navigation';
 import '../mcp-hub.css';
 import './agenten.css';
 
-export type TabId = 'overzicht' | 'ai' | 'apparaten' | 'tokens' | 'journaal';
-const TABS: TabId[] = ['overzicht', 'ai', 'apparaten', 'tokens', 'journaal'];
+export type TabId = 'overzicht' | 'connectors' | 'ai' | 'apparaten' | 'tokens' | 'journaal';
+const TABS: TabId[] = ['overzicht', 'connectors', 'ai', 'apparaten', 'tokens', 'journaal'];
 /** Oud adres van het ondertekende AI-beleid (nu admin → Доступ ШІ, technisch profiel). */
 export const isBeleidHash = (hash: string) => /^#beleid(\/|$)/.test(hash);
 /** Oude hashes (zijbalk van vóór 2026-10) → nieuw tabblad[/item]. */
@@ -87,6 +88,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
 
   const tabInfo: Record<TabId, { uk: string; nl: string; icoon: ReactElement; teller?: number }> = {
     overzicht: { uk: 'Огляд', nl: 'Overzicht', icoon: <LayoutDashboard />, teller: wachten || undefined },
+    connectors: { uk: 'Конектори', nl: 'Connectors', icoon: <Plug /> },
     ai: { uk: 'Підключені ШІ', nl: 'Verbonden AI', icoon: <Sparkles />, teller: oauthActief + tokensActief },
     apparaten: { uk: 'Пристрої й браузери', nl: 'Apparaten en browsers', icoon: <Monitor />, teller: agents.length },
     tokens: { uk: 'Токени', nl: 'Tokens', icoon: <KeyRound />, teller: tokensActief },
@@ -123,6 +125,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
             </> : null}
             leeg={loaded && !agents.length && !oauthActief ? <PairCard tr={tr} reload={naActie} agents={agents} /> : null} />
         ) : null}
+        {plek.tab === 'connectors' ? <ConnectorsTab tr={tr} /> : null}
         {plek.tab === 'ai' ? <TabAi tr={tr} overzicht={overzicht} tokens={tokens} naActie={naActie} item={plek.item} kies={kies} calls={calls} reloadCalls={reloadCalls} /> : null}
         {plek.tab === 'apparaten' ? <TabApparaten tr={tr} agents={agents} pending={pending} last={last} overzicht={overzicht} naActie={naActie} reload={reload} item={plek.item} kies={kies} versie={versie} /> : null}
         {plek.tab === 'tokens' ? <TabTokens tr={tr} data={tok.data ? { ...tok.data, tokens: tokens ?? [] } : null} naActie={naActie} item={plek.item} kies={kies} /> : null}

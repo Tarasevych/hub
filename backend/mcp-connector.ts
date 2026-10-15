@@ -24,6 +24,8 @@ import { SERVICE_HOSTS } from './deployment-identity';
 import * as st from './mcp-connector-store';
 import { UITROL_TOOLS, UITROL_TOOL_NAMEN, UitrolFout, heeftVoorbereiderGrant, isGoedkeurPoging, voerUitrolToolUit, type Onderwerp } from './uitrol-goedkeuring';
 import { RUIMTE_GESCHEIDEN, RUIMTE_INSTRUCTIES, ruimteOf, toolInRuimte, type AiRuimte } from '../shared/ai-ruimte';
+import { redirectPastBijAgent, slugUitResource, type AgentSlug } from '../shared/connector-v2/agenten';
+import { naUitgifte, type V2Keuze } from './connector-v2-store';
 
 export const BASE = `https://${SERVICE_HOSTS.mcp}`;
 export const RESOURCE = `${BASE}/mcp`;
@@ -133,13 +135,19 @@ export async function authorize(query: Record<string, string>): Promise<RouterRe
   if (!query.code_challenge || query.code_challenge_method !== 'S256' || !/^[A-Za-z0-9\-_]{43}$/.test(query.code_challenge)) {
     return fail('invalid_request', 'PKCE met S256 is verplicht');
   }
-  // RFC 8707: de resource moet onze MCP-URL zijn (een slash aan het eind negeren we); andere hosts weigeren we.
-  if (query.resource && query.resource.replace(/\/+$/, '') !== RESOURCE) return fail('invalid_target', 'Onbekende resource');
+  // RFC 8707: de resource moet onze MCP-URL zijn (een slash aan het eind negeren we) of het eigen adres van een agent (connector v2,
+  // shared/connector-v2/agenten.ts); andere hosts weigeren we. Bij v2 moet het terugkeeradres bij díe agent horen: claude.ai kan zich
+  // niet op /ai/grok aanmelden (het eigen terugkeeradres van de site en de extra adressen van de eigenaar mogen altijd).
+  const agent: AgentSlug | null = slugUitResource(query.resource);
+  if (query.resource && !agent && query.resource.replace(/\/+$/, '') !== RESOURCE) return fail('invalid_target', 'Onbekende resource');
+  if (agent && !redirectPastBijAgent(agent, redirectUri, [`${BASE}${SITE_TERUG_PAD}`, ...extraRedirects()])) {
+    return fail('invalid_target', `Dit adres is alleen voor ${agent}; gebruik het connectoradres van uw eigen AI`);
+  }
 
   const id = randomToken(24);
   await st.insertAuthRequest({
     id, clientId: client.client_id, redirectUri, codeChallenge: query.code_challenge,
-    state: query.state ? query.state.slice(0, 512) : null, scope: SCOPE, resource: query.resource || null,
+    state: query.state ? query.state.slice(0, 512) : null, scope: SCOPE, resource: query.resource || null, agent,
   });
   if (Math.random() < 0.05) st.purgeStale().catch(() => undefined);
   // De toestemming gebeurt in de site (bestaande aanmelding): scherm Agenten op mcp.* (privéruimte). Begon de eigenaar de koppeling
@@ -159,7 +167,7 @@ export async function consentInfo(rid: string, userId?: string) {
   return {
     clientName: a.client_name ?? 'Claude', redirectHost: u ? (u.host || u.protocol) : '', loopback: !!u && isLoopback(u),
     redirectSoort: redirectSoort(a.redirect_uri, [`${BASE}${SITE_TERUG_PAD}`, ...extraRedirects()]),
-    scope: a.scope, expiresAt: new Date(a.expires_at).getTime(), soort: 'connector' as const, klant,
+    scope: a.scope, expiresAt: new Date(a.expires_at).getTime(), soort: 'connector' as const, klant, agent: (a.agent ?? null) as AgentSlug | null,
     duur: userId ? (await leesDuren(userId))[klant] : '1u',
   };
 }
@@ -170,9 +178,11 @@ export type ConsentResult = { redirect: string } | { error: 'EXPIRED' | 'GRANT_L
  * `ruimte` (shared/ai-ruimte.ts): in welke webruimte de mens «Дозволити» drukte. 'technisch' mag de route alleen doorgeven voor de
  * eigenaar met actief technisch profiel; de AI-klant zelf kan de ruimte nooit kiezen (zij staat niet in het OAuth-verzoek).
  */
-export async function consentDecide(userId: string, rid: string, approve: boolean, duur: DuurId | null = null, ruimte: AiRuimte = 'prive'): Promise<ConsentResult> {
+export async function consentDecide(userId: string, rid: string, approve: boolean, duur: DuurId | null = null, ruimte: AiRuimte = 'prive', v2: V2Keuze | null = null): Promise<ConsentResult> {
   const a = await st.getPendingAuth(rid);
   if (!a) return { error: 'EXPIRED' };
+  // Connector v2: zonder keuze van de mens geen goedkeuring (de route berekent en controleert die keuze).
+  if (approve && a.agent && !v2) return { error: 'EXPIRED' };
   if (!approve) {
     const done = await st.decideAuth(rid, userId, false, null);
     return done ? { redirect: withRedirect(a.redirect_uri, { error: 'access_denied', state: a.state }) } : { error: 'EXPIRED' };
@@ -186,7 +196,7 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
   const code = randomToken(32);
   // Duur: de keuze in het venster, anders de instelling van de gebruiker voor deze AI-klant (standaard 1 uur).
   const gekozen = isDuurId(duur) ? duur : (await leesDuren(userId))[klantVan(a.client_name)];
-  const done = await st.decideAuth(rid, userId, true, sha256(code), gekozen, ruimteOf(ruimte));
+  const done = await st.decideAuth(rid, userId, true, sha256(code), gekozen, ruimteOf(ruimte), a.agent ? v2 : null);
   return done ? { redirect: withRedirect(a.redirect_uri, { code, state: a.state }) } : { error: 'EXPIRED' };
 }
 
@@ -194,17 +204,25 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
 
 const tokenError = (status: number, error: string, description: string) => respond(status, { error, error_description: description }, { Pragma: 'no-cache' });
 
-async function issue(userId: string, clientId: string, clientName: string, scope: string, duur: string | null | undefined, ruimte: unknown) {
+async function issue(userId: string, clientId: string, clientName: string, scope: string, duur: string | null | undefined, ruimte: unknown, agent: AgentSlug | null = null, v2Keuze: unknown = null) {
   const access = `mcpa_${randomToken(32)}`;
   const refresh = `mcpr_${randomToken(32)}`;
   const d = isDuurId(duur) ? duur : null;
   const r = ruimteOf(ruimte);
-  const grantId = await st.insertToken({ userId, clientId, clientName, scope, accessHash: sha256(access), refreshHash: sha256(refresh), duur: d, ruimte: r });
-  // Gedetailleerde toegang (0043, shared/ai-toegang.ts): een nieuwe verbinding krijgt de niet-gevoelige
-  // standaardscopes; gevoelig (mail, foto's) zet de mens zelf aan op de site (tabblad «Доступ ШІ»).
-  await geefStandaard(userId, { soort: 'mcp-koppeling', id: grantId }, r).catch(() => undefined);
+  const grantId = await st.insertToken({ userId, clientId, clientName, scope, accessHash: sha256(access), refreshHash: sha256(refresh), duur: d, ruimte: r, agent });
+  let v2: V2Keuze | null = null;
+  if (agent) {
+    // Connector v2: precies wat de mens per hulpmiddel koos (en de scopelaag daaraan gelijk). Lukt dat niet, dan geen token:
+    // een v2-koppeling zonder rechtenrij zou niets mogen, maar dat willen we niet stil laten gebeuren.
+    try { v2 = await naUitgifte(userId, grantId, agent, v2Keuze); }
+    catch (err) { await st.revokeGrant(userId, grantId).catch(() => undefined); console.error('[connector-v2] rechten vastleggen mislukt:', (err as Error).message); return tokenError(500, 'server_error', 'Rechten konden niet worden opgeslagen'); }
+  } else {
+    // Gedetailleerde toegang (0043, shared/ai-toegang.ts): een nieuwe verbinding krijgt de niet-gevoelige
+    // standaardscopes; gevoelig (mail, foto's) zet de mens zelf aan op de site (tabblad «Доступ ШІ»).
+    await geefStandaard(userId, { soort: 'mcp-koppeling', id: grantId }, r).catch(() => undefined);
+  }
   // Journaal op /agents: «ШІ підключено» met clientnaam, scope, duur en ruimte (de toestemming zelf staat al als owner.mcp.grant.approved).
-  await auditToevoegen({ ownerId: userId, actorId: userId, action: 'owner.mcp.grant.connected', type: 'ai', result: 'success', details: { grantId, clientId, clientName, scope, duur: d ?? 'standaard', ruimte: r } }).catch(() => undefined);
+  await auditToevoegen({ ownerId: userId, actorId: userId, action: 'owner.mcp.grant.connected', type: 'ai', result: 'success', details: { grantId, clientId, clientName, scope, duur: d ?? 'standaard', ruimte: r, ...(agent && v2 ? { agent, kanten: v2.kanten, rechten: v2.sleutels.length } : {}) } }).catch(() => undefined);
   return tokenResponse(access, refresh, scope, d);
 }
 
@@ -231,7 +249,7 @@ export async function token(rawBody: string): Promise<RouterResponse> {
     if (!row || row.user_id === null || row.client_id !== client.client_id || row.redirect_uri !== redirectUri || !pkceMatches(verifier, row.code_challenge)) {
       return tokenError(400, 'invalid_grant', 'Code ongeldig, verlopen of al gebruikt');
     }
-    return issue(row.user_id, client.client_id, client.client_name, row.scope, row.duur, row.ruimte);
+    return issue(row.user_id, client.client_id, client.client_name, row.scope, row.duur, row.ruimte, (row.agent ?? null) as AgentSlug | null, row.v2_keuze ?? null);
   }
 
   if (grant === 'refresh_token') {
@@ -283,7 +301,7 @@ export async function authenticate(authorization: string | undefined): Promise<W
   if (!row) return null;
   // M4: bij elke aanroep de gebruiker opnieuw controleren: goedgekeurd, niet verwijderd/met pensioen, AI niet geblokkeerd, recht 'api-platform'.
   if (!(await st.userMayUseConnector(row.user_id))) return null;
-  return { userId: row.user_id, tokenId: row.id, clientName: row.client_name, ruimte: ruimteOf(row.ruimte), limietSleutel: row.id };
+  return { userId: row.user_id, tokenId: row.id, clientName: row.client_name, ruimte: ruimteOf(row.ruimte), limietSleutel: row.id, agent: (row.agent ?? null) as AgentSlug | null };
 }
 
 /** Agenttoken tvh_… (app.mcp_console_tokens, alleen hash): niet ingetrokken, niet verlopen; noteert het gebruik. */
@@ -326,13 +344,15 @@ const toMcpTool = (t: ToolDef) => ({
  * Zonder deze velden zou het journaal alleen «eigenaar deed iets» kunnen tonen; nu «Claude → eigenaar: Прочитав файл …».
  */
 /** Wie roept /mcp aan: een OAuth-grant (tokenId) of een agenttoken van de site (agentTokenId, grantId = token:<id>), en in welke ruimte. */
-type Wie = { userId: string; clientName: string; tokenId?: string; agentTokenId?: string; grantId?: string; ruimte: AiRuimte };
+export type Wie = { userId: string; clientName: string; tokenId?: string; agentTokenId?: string; grantId?: string; ruimte: AiRuimte; agent?: AgentSlug | null };
 const grantVan = (who: Wie) => who.grantId ?? who.tokenId;
 const namensVan = (who: Wie) => ({ client: who.clientName, grantId: grantVan(who), ruimte: who.ruimte });
-const werkDetails = (who: Wie, name: string, args: Record<string, unknown>) => {
+/** Connector v2: de naam die de AI gebruikte (…_grok_mail_gmail_tarasevych_com_gebruiker) en de agent, naast de interne naam. */
+export type V2Context = { naam: string; agent: AgentSlug };
+export const werkDetails = (who: Wie, name: string, args: Record<string, unknown>, v2?: V2Context) => {
   const doel = actieDoel(name, args);
   const grantId = grantVan(who);
-  return { tool: name.slice(0, 80), client: String(who.clientName || '').slice(0, 80), ...(grantId ? { grantId: String(grantId) } : {}), ruimte: who.ruimte, soort: actieSoort(name), ...(doel ? { doel } : {}) };
+  return { tool: name.slice(0, 80), client: String(who.clientName || '').slice(0, 80), ...(grantId ? { grantId: String(grantId) } : {}), ruimte: who.ruimte, soort: actieSoort(name), ...(doel ? { doel } : {}), ...(v2 ? { v2: v2.naam.slice(0, 80), agent: v2.agent } : {}) };
 };
 
 /** Onderwerpen voor de grant "updates voorbereiden": eerst deze MCP-koppeling, dan het account. */
@@ -341,6 +361,64 @@ const uitrolOnderwerpen = (who: Wie): Onderwerp[] => [
   ...(who.agentTokenId ? [{ soort: 'agenttoken' as const, id: String(who.agentTokenId), accountId: who.userId }] : []),
   { soort: 'account', id: who.userId, accountId: who.userId },
 ];
+
+/**
+ * Hulpmiddelen die deze verbinding in haar ruimte ziet (intern formaat). Gedeeld door het oude /mcp en connector v2
+ * (backend/connector-v2.ts), die per kant een eigen `who.ruimte` meegeeft en de namen omzet.
+ */
+export async function lijstTools(who: Wie): Promise<ToolDef[]> {
+  // Alleen de hulpmiddelen van de eigen ruimte (shared/ai-ruimte.ts); apparaattools filteren verder op de ruimte van het apparaat.
+  // Приватне підключення додатково втрачає те, що адміністратор або сам користувач вимкнув (shared/ai-agent-bord.ts).
+  let listed = (await metNamens(namensVan(who), () => listTools(who.userId, { alwaysMachine: true }))).filter((t) => toolInRuimte(t.name, who.ruimte));
+  if (who.ruimte === 'prive') {
+    const staat = await leesStaat();
+    const klant = klantVan(who.clientName);
+    const gebruiker = klant === 'overig' ? undefined : (await leesGebruikerCaps(who.userId))[klant];
+    listed = listed.filter((t) => !toolGeweigerd(staat, { ruimte: 'prive', tool: t.name, klant, gebruiker }));
+  }
+  const tools: ToolDef[] = [...listed];
+  // Updates voorbereiden: alleen in de technische ruimte én met een grant van de eigenaar; goedkeuren bestaat hier niet.
+  if (who.ruimte === 'technisch' && (await heeftVoorbereiderGrant(uitrolOnderwerpen(who)))) tools.push(...(UITROL_TOOLS as unknown as ToolDef[]));
+  return tools;
+}
+
+type ToolUit = { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
+/** Eén hulpmiddel uitvoeren met alle poorten (ruimte, sitebrede schakelaars, AI-beleid, uitrol, scopes) en het journaal. */
+export async function roepTool(who: Wie, name: string, args: Record<string, unknown>, v2?: V2Context): Promise<ToolUit> {
+  // Buiten de eigen ruimte: nooit uitvoeren, wel in het journaal (de AI probeerde iets wat de mens niet voor haar bedoelde).
+  // Goedkeurpogingen vallen eronder: die krijgen hun eigen, eerlijke weigering hieronder (ALLEEN_EIGENAAR_MET_PASSKEY).
+  if (!toolInRuimte(name, who.ruimte) && !isGoedkeurPoging(name)) {
+    const uit = { content: [{ type: 'text' as const, text: RUIMTE_GESCHEIDEN(who.ruimte, name.slice(0, 80)) }], isError: true };
+    try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { ...werkDetails(who, name, args, v2), reden: 'ruimte' } }); } catch { /* audit mag niet breken */ }
+    return uit;
+  }
+  if (who.ruimte === 'prive') {
+    const staat = await leesStaat();
+    const klant = klantVan(who.clientName);
+    const gebruiker = klant === 'overig' ? undefined : (await leesGebruikerCaps(who.userId))[klant];
+    const w = toolGeweigerd(staat, { ruimte: 'prive', tool: name, klant, gebruiker });
+    if (w) {
+      const tekst = `SITE_CAP: ${w.code}. This private connection cannot use "${name.slice(0, 80)}". An administrator switch or this user's own setting blocks it. Do not try another way.`;
+      try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { ...werkDetails(who, name, args, v2), reden: w.code } }); } catch { /* audit mag niet breken */ }
+      return { content: [{ type: 'text' as const, text: tekst }], isError: true };
+    }
+  }
+  if (UITROL_TOOL_NAMEN.has(name) || isGoedkeurPoging(name)) {
+    let uit: { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
+    // Ondertekend AI-beleid: «Розгортати сайт» uit voor deze AI → niets voorbereiden (goedkeuren kan hier nooit).
+    const weigering = UITROL_TOOL_NAMEN.has(name) ? await uitrolWeigering({ client: who.clientName, grantId: grantVan(who) }, name) : null;
+    if (weigering) uit = { content: [{ type: 'text', text: weigering }], isError: true };
+    else try { uit = { content: [{ type: 'text', text: JSON.stringify(await metNamens(namensVan(who), async () => voerUitrolToolUit(uitrolOnderwerpen(who), name, args))) }] }; }
+    catch (err) { uit = { content: [{ type: 'text', text: err instanceof UitrolFout ? err.code : 'UITROL_FOUT' }], isError: true }; }
+    try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: uit.isError ? 'failure' : 'success', details: werkDetails(who, name, args, v2) }); } catch { /* audit mag niet breken */ }
+    return uit;
+  }
+  const result = await metNamens(namensVan(who), () => callTool(who.userId, name, args));
+  try {
+    await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: result.isError ? 'failure' : 'success', details: werkDetails(who, name, args, v2) });
+  } catch { /* auditfout mag het hulpmiddel niet breken */ }
+  return result as ToolUit;
+}
 
 async function handleMessage(who: Wie, msg: any): Promise<unknown | null> {
   if (!msg || typeof msg !== 'object' || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return rpcError(msg?.id, -32600, 'Invalid Request');
@@ -358,58 +436,12 @@ async function handleMessage(who: Wie, msg: any): Promise<unknown | null> {
       });
     }
     case 'ping': return rpcResult(id, {});
-    case 'tools/list': {
-      // Alleen de hulpmiddelen van de eigen ruimte (shared/ai-ruimte.ts); apparaattools filteren verder op de ruimte van het apparaat.
-      // Приватне підключення додатково втрачає те, що адміністратор або сам користувач вимкнув (shared/ai-agent-bord.ts).
-      let listed = (await metNamens(namensVan(who), () => listTools(who.userId, { alwaysMachine: true }))).filter((t) => toolInRuimte(t.name, who.ruimte));
-      if (who.ruimte === 'prive') {
-        const staat = await leesStaat();
-        const klant = klantVan(who.clientName);
-        const gebruiker = klant === 'overig' ? undefined : (await leesGebruikerCaps(who.userId))[klant];
-        listed = listed.filter((t) => !toolGeweigerd(staat, { ruimte: 'prive', tool: t.name, klant, gebruiker }));
-      }
-      const tools = listed.map(toMcpTool);
-      // Updates voorbereiden: alleen in de technische ruimte én met een grant van de eigenaar; goedkeuren bestaat hier niet.
-      if (who.ruimte === 'technisch' && (await heeftVoorbereiderGrant(uitrolOnderwerpen(who)))) tools.push(...UITROL_TOOLS.map((t) => toMcpTool(t as unknown as ToolDef)));
-      return rpcResult(id, { tools });
-    }
+    case 'tools/list': return rpcResult(id, { tools: (await lijstTools(who)).map(toMcpTool) });
     case 'tools/call': {
       const name = msg.params?.name;
       if (typeof name !== 'string' || !name) return rpcError(id, -32602, 'name ontbreekt');
       const args: Record<string, unknown> = msg.params?.arguments && typeof msg.params.arguments === 'object' ? msg.params.arguments : {};
-      // Buiten de eigen ruimte: nooit uitvoeren, wel in het journaal (de AI probeerde iets wat de mens niet voor haar bedoelde).
-      // Goedkeurpogingen vallen eronder: die krijgen hun eigen, eerlijke weigering hieronder (ALLEEN_EIGENAAR_MET_PASSKEY).
-      if (!toolInRuimte(name, who.ruimte) && !isGoedkeurPoging(name)) {
-        const uit = { content: [{ type: 'text' as const, text: RUIMTE_GESCHEIDEN(who.ruimte, name.slice(0, 80)) }], isError: true };
-        try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { ...werkDetails(who, name, args), reden: 'ruimte' } }); } catch { /* audit mag niet breken */ }
-        return rpcResult(id, uit);
-      }
-      if (who.ruimte === 'prive') {
-        const staat = await leesStaat();
-        const klant = klantVan(who.clientName);
-        const gebruiker = klant === 'overig' ? undefined : (await leesGebruikerCaps(who.userId))[klant];
-        const w = toolGeweigerd(staat, { ruimte: 'prive', tool: name, klant, gebruiker });
-        if (w) {
-          const tekst = `SITE_CAP: ${w.code}. This private connection cannot use "${name.slice(0, 80)}". An administrator switch or this user's own setting blocks it. Do not try another way.`;
-          try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { ...werkDetails(who, name, args), reden: w.code } }); } catch { /* audit mag niet breken */ }
-          return rpcResult(id, { content: [{ type: 'text' as const, text: tekst }], isError: true });
-        }
-      }
-      if (UITROL_TOOL_NAMEN.has(name) || isGoedkeurPoging(name)) {
-        let uit: { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
-        // Ondertekend AI-beleid: «Розгортати сайт» uit voor deze AI → niets voorbereiden (goedkeuren kan hier nooit).
-        const weigering = UITROL_TOOL_NAMEN.has(name) ? await uitrolWeigering({ client: who.clientName, grantId: grantVan(who) }, name) : null;
-        if (weigering) uit = { content: [{ type: 'text', text: weigering }], isError: true };
-        else try { uit = { content: [{ type: 'text', text: JSON.stringify(await metNamens(namensVan(who), async () => voerUitrolToolUit(uitrolOnderwerpen(who), name, args))) }] }; }
-        catch (err) { uit = { content: [{ type: 'text', text: err instanceof UitrolFout ? err.code : 'UITROL_FOUT' }], isError: true }; }
-        try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: uit.isError ? 'failure' : 'success', details: werkDetails(who, name, args) }); } catch { /* audit mag niet breken */ }
-        return rpcResult(id, uit);
-      }
-      const result = await metNamens(namensVan(who), () => callTool(who.userId, name, args));
-      try {
-        await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: result.isError ? 'failure' : 'success', details: werkDetails(who, name, args) });
-      } catch { /* auditfout mag het hulpmiddel niet breken */ }
-      return rpcResult(id, result);
+      return rpcResult(id, await roepTool(who, name, args));
     }
     default: return rpcError(id, -32601, 'Method not found');
   }
@@ -417,7 +449,8 @@ async function handleMessage(who: Wie, msg: any): Promise<unknown | null> {
 
 export async function rpcPost(authorization: string | undefined, rawBody: string): Promise<RouterResponse> {
   const who = await authenticate(authorization);
-  if (!who) return unauthorized(!!String(authorization || '').trim());
+  // Een v2-token (gebonden aan /ai/<agent>) werkt niet op het oude /mcp: daar zouden de rechten per hulpmiddel niet gelden.
+  if (!who || who.agent) return unauthorized(!!String(authorization || '').trim());
   const limit = await rateLimit(`mcp-rpc:${who.limietSleutel}`, RPC_PER_MINUTE, 60);
   if (!limit.ok) return respond(429, rpcError(null, -32000, 'Te veel verzoeken'), { 'Retry-After': String(limit.retryAfter) });
   if (Buffer.byteLength(rawBody) > MAX_RPC_BYTES) return respond(413, rpcError(null, -32600, 'Request too large'));

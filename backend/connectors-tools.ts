@@ -695,6 +695,9 @@ export async function listTools(userId: string, opts: { alwaysMachine?: boolean 
   return out;
 }
 
+/** Alle vaste hulpmiddelnamen van deze module (zonder sitehulpmiddelen); connector v2 houdt zijn catalogus hieraan gelijk (test connector-v2). */
+export const STATISCHE_TOOLNAMEN = (): string[] => [...MACHINE_TOOLS, ...APP_TOOLS, ...BROWSER_TOOLS].map((t) => t.name).concat('github_get');
+
 async function allTools(userId: string, opts: { alwaysMachine?: boolean }): Promise<ToolDef[]> {
   const tools: ToolDef[] = [];
   const agents = opts.alwaysMachine ? [] : await apparatenInRuimte(userId);

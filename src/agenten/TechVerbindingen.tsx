@@ -12,6 +12,7 @@ import { canonicalNavigationUrl } from '../canonical-navigation';
 import { Logo, type Tr } from '../mcp-ui';
 import { RUIMTE_UITLEG } from '../../shared/ai-ruimte';
 import AiVerbinden from './AiVerbinden';
+import ConnectorsTab from '../connector-v2/ConnectorsTab';
 import SiteSchakelaars from './SiteSchakelaars';
 import DeurVerbindingen, { useDeurVerbindingen } from './DeurVerbindingen';
 import { aiEigenaar, aiLogo, inRuimte, isoMs, useDeurTokens, useOverzicht, type DeurToken, type OauthVerbinding } from './data';
@@ -97,6 +98,9 @@ export default function TechVerbindingen({ tr }: { tr: Tr }) {
         <li><ShieldCheck size={16} aria-hidden='true' /><span>{tr('Підписана політика ШІ лишається стелею. Схвалення випуску, відкат, резервні копії й секрети — лише ви на сайті.', 'Het ondertekende AI-beleid blijft het plafond. Een release goedkeuren, terugdraaien, back-ups en geheimen — alleen u op de site.')}</span></li>
         <li><KeyRound size={16} aria-hidden='true' /><span>{tr('Право «готувати оновлення» можна дати лише технічному підключенню: ', 'Het recht «updates voorbereiden» kan alleen naar een technische verbinding: ')}<a className='ag-link' href={canonicalNavigationUrl('admin', 'updates', lang)}>{tr('Адміністрування → Оновлення', 'Beheer → Updates')} <ArrowRight size={12} aria-hidden='true' /></a></span></li>
       </ul>
+
+      {/* Connector v2: één adres per AI met rechten per hulpmiddel — beide ruimtes, dus ook hier (de accountpagina verwijst met actief technisch profiel hierheen). */}
+      <ConnectorsTab tr={tr} />
 
       <SiteSchakelaars tr={tr} />
 

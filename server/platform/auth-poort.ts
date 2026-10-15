@@ -50,6 +50,11 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'POST /api/mcp-connector/rpc':'MCP-eindpunt: Bearer-token (OAuth) verplicht, anders 401 met WWW-Authenticate',
   'GET /api/mcp-connector/rpc': 'MCP-eindpunt: altijd 405 (geen SSE-stroom)',
   'DELETE /api/mcp-connector/rpc': 'MCP-eindpunt: altijd 405 (geen sessies)',
+  // Connector v2 (backend/connector-v2.ts): eigen adres per AI-agent; zelfde OAuth, token gebonden aan het pad.
+  'POST /api/connector-v2/:agent/rpc': 'MCP-eindpunt per agent (v2): Bearer-token van DEZE agent verplicht, anders 401 met WWW-Authenticate',
+  'GET /api/connector-v2/:agent/rpc': 'MCP-eindpunt per agent: altijd 405 (geen SSE-stroom)',
+  'DELETE /api/connector-v2/:agent/rpc': 'MCP-eindpunt per agent: altijd 405 (geen sessies)',
+  'GET /api/connector-v2/:agent/prm': 'OAuth protected resource metadata per agent (RFC 9728), openbaar',
   'POST /api/mcp/deur/token-check': 'intern: alleen de MCP-deur op loopback met haar sleutel (mcp-state/intern.sleutel), anders 404; antwoordt alleen ok/id/naam van een agenttoken van de eigenaar',
   'POST /api/owner/agents/pair':'agent wisselt een eenmalige koppelcode (5 min, gehasht, één gebruiker) in voor een eigen token',
   'GET /api/owner/agents/self':'zelfde als POST: de browserextensie vraagt met haar eigen token (Authorization-header, leesactie) wat de gebruiker heeft aangezet',

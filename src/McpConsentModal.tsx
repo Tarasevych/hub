@@ -7,10 +7,11 @@ import { Venster, vensterBeheer } from './platform/vensters';
 import './mcp-consent-modal.css';
 import { DUREN, duur as duurVan, isDuurId, type DuurId } from '../shared/ai-verbinding';
 import { RUIMTE_NAAM, RUIMTE_UITLEG, type AiRuimte } from '../shared/ai-ruimte';
+import KoppelWizard, { type V2ConsentInfo } from './connector-v2/KoppelWizard';
 
 type Tr = (uk: string, nl: string) => string;
 // soort 'deur': verzoek van de MCP-deur (/Grok, /claude, …; rid mrd_…), anders de connector /mcp.
-type Info = { clientName: string; redirectHost: string; loopback: boolean; scope: string; expiresAt: number; soort?: 'deur' | 'connector'; deur?: string; duur?: string; redirectSoort?: 'web' | 'loopback' | 'app' | null; handmatigUrl?: string };
+type Info = { agent?: string | null; v2?: unknown; clientName: string; redirectHost: string; loopback: boolean; scope: string; expiresAt: number; soort?: 'deur' | 'connector'; deur?: string; duur?: string; redirectSoort?: 'web' | 'loopback' | 'app' | null; handmatigUrl?: string };
 type Phase = 'loading' | 'ready' | 'deciding' | 'redirecting' | 'gone' | 'forbidden' | 'limit' | 'error';
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
@@ -102,6 +103,10 @@ export default function McpConsentModal({ tr, ruimte = 'prive' }: { tr: Tr; ruim
   const done = () => { clearPendingConsent(); setRid(null); };
 
   if (!open) return null;
+  // Connector v2 (/ai/<agent>): venster in stappen met rechten per hulpmiddel.
+  if (rid && info?.agent && info.v2 && (phase === 'ready' || phase === 'deciding' || phase === 'redirecting')) {
+    return <KoppelWizard tr={tr} rid={rid} info={info as unknown as V2ConsentInfo} onKlaar={close} />;
+  }
 
   const busy = phase === 'deciding' || phase === 'redirecting';
   const name = info?.clientName || 'Claude';

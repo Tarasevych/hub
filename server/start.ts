@@ -307,7 +307,18 @@ const CONNECTOR_PADEN: Record<string, string> = {
   '/oauth2/token': '/api/mcp-connector/token',
   '/oauth2/revoke': '/api/mcp-connector/revoke',
 };
+// Connector v2 (backend/connector-v2.ts): /ai/<agent> en de metadata eronder; ook de RFC 9728-vorm /.well-known/oauth-protected-resource/ai/<agent>
+// (die bereikt de app alleen als de tunnelregel daarvoor is toegevoegd — zie deploy/CONNECTOR-V2.md; de WWW-Authenticate-header wijst al
+// naar het pad onder /ai/<agent>, dat altijd werkt).
+const V2_PAD = /^\/ai\/(claude|gpt|grok|gemini|copilot|cursor)(\/\.well-known\/oauth-protected-resource)?\/?$/;
+const V2_PRM = /^\/\.well-known\/oauth-protected-resource\/ai\/(claude|gpt|grok|gemini|copilot|cursor)\/?$/;
 function connectorPad(url: URL): URL | null {
+  const v2 = V2_PAD.exec(url.pathname), v2prm = V2_PRM.exec(url.pathname);
+  if (v2 || v2prm) {
+    const naar = new URL(url.toString());
+    naar.pathname = v2prm ? `/api/connector-v2/${v2prm[1]}/prm` : `/api/connector-v2/${v2![1]}/${v2![2] ? 'prm' : 'rpc'}`;
+    return naar;
+  }
   const intern = CONNECTOR_PADEN[url.pathname];
   if (!intern) return null;
   const naar = new URL(url.toString());

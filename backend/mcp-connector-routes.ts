@@ -9,9 +9,14 @@ import { DeurFout, deurBesluit, deurIntrekken, deurVerbindingen, deurVerzoek, in
 import { leesDuren, zetDuur } from './ai-verbinding-instellingen';
 import { DUREN, KLANTEN, duur as duurVan, isDuurId, klantVan, type KlantId } from '../shared/ai-verbinding';
 import { isToegangScope, toegangScope } from '../shared/ai-toegang';
+import { isAgentSlug } from '../shared/connector-v2/agenten';
 import { geefStandaard, leesBeheerUit, leesToegang, zetBeheer, zetToegang } from './ai-toegang';
 import { agentTokenVanGebruiker, issuePriveToken } from './mcp-console';
 import { sessieGeverifieerd } from '../server/platform/context';
+import * as v2 from './connector-v2';
+import { v2Routes } from './connector-v2-routes';
+import { sterkeMethoden, sterkeStapOpFout } from './toegang-context';
+import { leesInstellingen } from './connector-v2-store';
 import { ruimteUitVerzoek, technischeRuimte } from './ai-ruimte-poort';
 import { leesStand } from './ai-beleid';
 import { leesGebruikerCaps, leesStaat, zetGebruikerCap, zetStaat } from './ai-site-schakelaars';
@@ -104,6 +109,11 @@ export function createMcpConnectorRoutes(deps: Deps) {
     'POST /api/mcp-connector/revoke': [async (ctx: any) => c.revoke(String(ctx.event.body || ''))],
     'POST /api/mcp-connector/rpc':[async (ctx: any) => c.rpcPost(header(ctx.event, 'authorization'), String(ctx.event.body || ''))],
     'GET /api/mcp-connector/rpc': [async () => c.rpcNotAllowed()],
+    // Connector v2: eigen adres per agent (server/start.ts zet /ai/<agent> om naar deze routes).
+    'POST /api/connector-v2/:agent/rpc': [async (ctx: any) => v2.rpc(String(ctx.params.agent || ''), header(ctx.event, 'authorization'), String(ctx.event.body || ''))],
+    'GET /api/connector-v2/:agent/rpc': [async () => c.rpcNotAllowed()],
+    'DELETE /api/connector-v2/:agent/rpc': [async () => c.rpcNotAllowed()],
+    'GET /api/connector-v2/:agent/prm': [async (ctx: any) => { const a = String(ctx.params.agent || ''); return isAgentSlug(a) ? v2.prm(a) : deps.fail('AGENT_ONBEKEND', 404); }],
     'DELETE /api/mcp-connector/rpc': [async () => c.rpcNotAllowed()],
 
     // ---- toestemming en beheer door de ingelogde gebruiker ----
@@ -122,7 +132,17 @@ export function createMcpConnectorRoutes(deps: Deps) {
         } catch (err) { return deurFout(err); }
       }
       const info = await c.consentInfo(rid, auth.user.id);
-      return info ? deps.respond(info) : deps.fail('CONSENT_EXPIRED', 404);
+      if (!info) return deps.fail('CONSENT_EXPIRED', 404);
+      // Connector v2: het venster in stappen heeft het account, de keuzes van vorige keer en de sterke aanmeldmanieren nodig.
+      if (info.agent) {
+        const methoden = await sterkeMethoden(auth.user.id).catch(() => ({ passkey: false, totp: false, herstelcode: false }));
+        return deps.respond({ ...info, v2: {
+          ...(await v2.consentV2(auth.user.id, info.agent)),
+          account: { email: auth.user.email, rol: auth.user.role, eigenaar: auth.user.role === 'owner' },
+          methoden,
+        } });
+      }
+      return deps.respond(info);
     }],
 
     'POST /api/owner/mcp-connector/consent': [async (ctx: any) => {
@@ -135,10 +155,23 @@ export function createMcpConnectorRoutes(deps: Deps) {
       if (isDeurRid(rid) && auth.user.role !== 'owner') return deps.fail('OWNER_REQUIRED', 403);
       // Ruimte van de verbinding (shared/ai-ruimte.ts): de keuze van de mens op de site. 'technisch' alleen voor de eigenaar met actief
       // technisch profiel in dit tabblad; de serverdeur is altijd technisch. Weigeren mag altijd (veilige richting).
-      const poort = approve ? await (isDeurRid(rid) ? technischeRuimte(auth.user, body) : ruimteUitVerzoek(auth.user, body)) : { ruimte: 'prive' as const };
+      // Connector v2: de mens kiest kanten (privé / technisch / beide) en rechten per hulpmiddel; 'beheer' via dezelfde technische poort.
+      const v2Info = !isDeurRid(rid) ? await c.consentInfo(rid) : null;
+      const v2Keuze = v2Info?.agent && approve ? v2.keuzeUitVenster(body) : null;
+      const poort = approve
+        ? await (isDeurRid(rid) ? technischeRuimte(auth.user, body)
+          : v2Keuze ? (v2Keuze.kanten.includes('beheer') ? technischeRuimte(auth.user, body) : ruimteUitVerzoek(auth.user, { ...body, ruimte: 'prive' }))
+          : ruimteUitVerzoek(auth.user, body))
+        : { ruimte: 'prive' as const };
       if ('fout' in poort) return deps.fail(poort.fout, poort.status);
+      // Alleen technisch → de verbinding staat in de technische ruimte; met een privékant blijft ze 'prive' (de kant van elke naam beslist per aanroep).
+      const ruimte = v2Keuze ? (v2Keuze.kanten.includes('gebruiker') ? 'prive' as const : 'technisch' as const) : poort.ruimte;
       // H4: toestemming geven (niet weigeren) vraagt een verse aanmelding: tegen consent-phishing met een door een aanvaller gestarte flow.
-      if (approve) { const su = await stepUp(ctx, auth); if (su) return su; }
+      // v2 + «extra bevestiging» in de instellingen: passkey of app-code (Google alleen telt dan niet, als de gebruiker die manieren heeft).
+      if (approve) {
+        if (v2Keuze && (await leesInstellingen(auth.user.id)).extraBevestigen) { const f = await sterkeStapOpFout(auth as never); if (f) return deps.fail(f, 403); }
+        const su = await stepUp(ctx, auth); if (su) return su;
+      }
       if (isDeurRid(rid)) {
         try {
           const v = await deurVerzoek(rid);
@@ -150,13 +183,13 @@ export function createMcpConnectorRoutes(deps: Deps) {
           return deps.respond(out);
         } catch (err) { return deurFout(err); }
       }
-      const out = await c.consentDecide(auth.user.id, rid, approve, gekozen, poort.ruimte);
+      const out = await c.consentDecide(auth.user.id, rid, approve, gekozen, ruimte, v2Keuze);
       if ('error' in out) {
         if (out.error === 'GRANT_LIMIT') return deps.fail('MCP_GRANT_LIMIT_REACHED', 409);
         if (out.error === 'EXPIRED') return deps.fail('CONSENT_EXPIRED', 404);
         return deps.fail(out.error, 403);
       }
-      await deps.audit(auth.user.id, approve ? 'owner.mcp.grant.approved' : 'owner.mcp.grant.denied', 'success', approve ? { ruimte: poort.ruimte, ...(gekozen ? { duur: gekozen } : {}) } : {});
+      await deps.audit(auth.user.id, approve ? 'owner.mcp.grant.approved' : 'owner.mcp.grant.denied', 'success', approve ? { ruimte, ...(gekozen ? { duur: gekozen } : {}), ...(v2Keuze && v2Info?.agent ? { agent: v2Info.agent, kanten: v2Keuze.kanten, rechten: v2Keuze.sleutels.length } : {}) } : {});
       return deps.respond(out);
     }],
 
@@ -438,5 +471,8 @@ export function createMcpConnectorRoutes(deps: Deps) {
       await deps.audit(auth.user.id, 'owner.mcp.toegang.beheer', 'success', { scope, uit });
       return deps.respond({ ok: true, uit: await leesBeheerUit() });
     }],
+
+    // Connector v2: beheerpagina (rechten per agent, herverbinden, intrekken, instellingen).
+    ...v2Routes({ ...deps, gate: ownerGate, stepUp }),
   };
 }

@@ -48,8 +48,11 @@ ingress:
   #   - al het andere (de schermen /overview /agents ..., /api/*, WSS /agent/ws voor agents): de hoofdapp op 8080.
   # De MCP-connector voor Claude (backend/mcp-connector.ts) staat in de hoofdapp: /mcp en /oauth2/* vallen al buiten de
   # brugregel hieronder; alleen deze twee discovery-paden zitten onder /.well-known en moeten VÓÓR de brugregel staan.
+  # Connector v2 (15.10.2026): /ai/<agent> valt al onder de laatste regel (hoofdapp). De RFC 9728-vorm van de metadata
+  # (/.well-known/oauth-protected-resource/ai/<agent>) hoort ook bij de app; de 401 wijst al naar /ai/<agent>/.well-known/…, dus
+  # zonder deze uitbreiding werkt alles ook — met de uitbreiding vinden ook klanten die eerst het standaardpad proberen het meteen.
   - hostname: mcp.tarasevych.com
-    path: ^/\.well-known/(oauth-protected-resource/mcp|oauth-authorization-server/oauth2)$
+    path: ^/\.well-known/(oauth-protected-resource/(mcp|ai/(claude|gpt|grok|gemini|copilot|cursor))|oauth-authorization-server/oauth2)$
     service: http://127.0.0.1:8080
   - hostname: mcp.tarasevych.com
     path: ^/((?i:grok|claude|chatgpt|gemini|copilot)|oauth|health|\.well-known)(/|$)
