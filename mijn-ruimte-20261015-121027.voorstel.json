@@ -1,0 +1,13 @@
+{
+  "version": "20261015-121027",
+  "bytes": 3376226,
+  "sha256": "372974f9ebcb638a3885cc3cf9016ecf4815660cdd31c613d3e55b1f0e36cf40",
+  "commit": "106ed58e049cce318dac73deaa8813ea4f7a006d",
+  "changelog": "- 106ed58 Тести граматики назв, ізоляції токена й опис адрес\n- 391c009 Вікно підключення й сторінка дозволів\n- e29f3c3 Реальне надсилання пошти й файлів на Диск, відмова без дозволу\n- 7a1b1da Імена конектора й адреси /mcp/<агент>",
+  "tests": {
+    "passed": 77,
+    "failed": 0,
+    "summary": "connector-integraties 10/10, connector-v2 51/51, ai-toegang 16/16; tsc --noEmit без помилок"
+  },
+  "diff_summary": " backend/connector-v2.ts                     |  18 ++++-\n backend/mcp-connector-routes.ts             |   8 +-\n backend/site-dispatch.ts                    |   2 +\n backend/site-tools.ts                       |  86 ++++++++++++++++++++++\n deploy/CONNECTOR-V2.md                      | 109 +++++++++++++++++-----------\n deploy/cloudflared-config.yml               |   8 +-\n migrations/0045_connector_v2.sql            |   3 +-\n server/platform/auth-poort.ts               |   2 +-\n server/start.ts                             |  11 +--\n shared/ai-toegang.ts                        |  10 +--\n shared/connector-v2/afkorting.ts            |  64 ++++++++++++++++\n shared/connector-v2/agenten.ts              |  27 ++++---\n shared/connector-v2/catalogus.ts            |  43 +++++++----\n shared/connector-v2/factor.ts               |  17 +++++\n shared/connector-v2/namen.ts                |  35 +++++++--\n shared/connector-v2/rechten.ts              |   7 +-\n src/agenten/AgentBord.tsx                   |  11 ++-\n src/connector-v2/ConnectorsTab.tsx          |  36 ++++-----\n src/connector-v2/KoppelWizard.tsx           |  22 +++---\n src/connector-v2/RechtenKiezer.tsx          |  43 ++++++++---\n src/connector-v2/connector-v2.css           |  13 ++--\n tests/e2e/connector-v2.e2e.ts               |  37 +++++-----\n tests/eenheid/ai-toegang.test.ts            |   4 +-\n tests/eenheid/connector-integraties.test.ts |  63 ++++++++++++++++\n tests/eenheid/connector-v2.test.ts          |  83 ++++++++++++++++-----\n 25 files changed, 580 insertions(+), 182 deletions(-)"
+}
