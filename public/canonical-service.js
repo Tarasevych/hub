@@ -6,8 +6,16 @@
   const tabs={hub:['overview','recent','tasks','calendar','notes'],ai:['workspace','agents','runs','workflows','verbindingen'],mail:['inbox','starred','snoozed','sent','drafts','archive','labels','accounts','local','unread','all','important','spam','trash','subscriptions','scheduled','settings'],cloud:['overview','workspaces','capture','inbox','search','recent','calendar','photos','accounts','google','onedrive','dropbox'],github:['overview','repositories','projects','documentation','research','accounts','activity'],huis:['overview'],identity:['personalization','menu','themes','languages','widgets','sharing','identity','account','sessions','methods','security','recovery'],api:['verbindingen','vault','oauth','access','webhooks','events','logs','import','reconciliation'],admin:['overview','access','ai','contour','updates','apps','devices','sso','directories','roles','diagnostics','audit'],mcp:['overview','dashboard','services','tools','board','agents','apps','playground','traffic','connect','roadmap','download','verbindingen']};
   const isService=value=>serviceIds.includes(String(value||''));
   const serviceForHostname=(host=location.hostname)=>Object.entries(domains).find(([,value])=>value===String(host).toLowerCase())?.[0]||'';
-  const TAB_ALIAS={connections:'verbindingen'};const aliasTab=v=>TAB_ALIAS[String(v||'')]||String(v||'');
-  const safeTab=(service,value)=>{const v=aliasTab(value);return tabs[service]?.includes(v)?v:defaults[service]||defaults.hub;};
+  // Нідерландські slug у URL (Правило 0: жодних англіцизмів). Внутрішній id НЕ міняється — лише те, що видно в адресі.
+  const TAB_SLUG={overview:'overzicht',tasks:'taken',calendar:'agenda',notes:'notities',workspace:'werkgebied',agents:'agenten',runs:'processen',workflows:'werkstromen',inbox:'postvak-in',starred:'met-ster',snoozed:'uitgesteld',sent:'verzonden',drafts:'concepten',labels:'etiketten',local:'prive',unread:'ongelezen',all:'alles',trash:'prullenbak',scheduled:'gepland',settings:'instellingen',subscriptions:'abonnementen',archive:'archief',important:'belangrijk',workspaces:'werkruimtes',capture:'vastleggen',search:'zoeken',photos:'fotos',projects:'projecten',research:'onderzoek',activity:'activiteit',documentation:'documentatie',themes:'themas',languages:'talen',widgets:'blokken',sharing:'delen',identity:'identiteit',sessions:'sessies',methods:'aanmeldmethoden',security:'beveiliging',recovery:'herstel',personalization:'personalisatie',vault:'kluis',access:'toegang',events:'gebeurtenissen',logs:'logboeken',reconciliation:'afstemming',devices:'apparaten',directories:'mappen',roles:'rollen',diagnostics:'diagnostiek',services:'diensten',tools:'hulpmiddelen',board:'bord',playground:'zandbak',traffic:'verkeer',connect:'verbinden',roadmap:'routekaart',download:'downloaden'};
+  const LEGACY_ALIAS={connections:'verbindingen'};
+  const SLUG_TO_ID={};for(const k in TAB_SLUG)SLUG_TO_ID[TAB_SLUG[k]]=k;
+  // slug/legacy/англ. id → внутрішній id
+  const idForTab=v=>{const x=String(v||'');return SLUG_TO_ID[x]||LEGACY_ALIAS[x]||x;};
+  // внутрішній id → нідерландський slug для URL
+  const tabSlug=id=>TAB_SLUG[String(id||'')]||String(id||'');
+  const aliasTab=idForTab;
+  const safeTab=(service,value)=>{const v=idForTab(value);return tabs[service]?.includes(v)?v:defaults[service]||defaults.hub;};
   const pathParts=pathname=>String(pathname||'/').split('/').filter(Boolean).map(value=>decodeURIComponent(value));
   const resolve=(loc=location)=>{
     const host=String(loc.hostname||'').toLowerCase();
@@ -24,7 +32,7 @@
     const service=isService(target)?target:'hub';
     const resolvedTab=safeTab(service,tab);
     const url=new URL(`https://${domains[service]}/`);
-    if(options.explicitTab===true)url.pathname=`/${encodeURIComponent(resolvedTab)}`;
+    if(options.explicitTab===true)url.pathname=`/${encodeURIComponent(tabSlug(resolvedTab))}`;
     return url.toString();
   };
   const persistLanguage=lang=>{
@@ -42,8 +50,8 @@
     const route=resolve();
     const requestedService=isService(query.get('service'))?query.get('service'):hostService;
     const queryTab=query.get('tab')||'';
-    const pathTab=requestedService===hostService&&tabs[requestedService].includes(route.pathTab)?route.pathTab:'';
-    const requestedTab=tabs[requestedService].includes(queryTab)?queryTab:pathTab;
+    const pathId=idForTab(route.pathTab);const pathTab=requestedService===hostService&&tabs[requestedService].includes(pathId)?pathId:'';
+    const queryId=idForTab(queryTab);const requestedTab=tabs[requestedService].includes(queryId)?queryId:pathTab;
     const explicitTab=Boolean(queryTab||pathTab);
     const requestedLang=['uk','nl'].includes(query.get('lang')||'')?query.get('lang'):'';
     if(requestedLang)persistLanguage(requestedLang);
@@ -69,5 +77,5 @@
     const zonderPauze=(a,nu)=>{if(a.soort==='interval'){if(a.van===a.tot)return{donker:false,volgende:middernacht(nu)};const g=[];for(const d of[-1,0,1,2])g.push({t:opUur(nu,a.van,d),donker:true},{t:opUur(nu,a.tot,d),donker:false});g.sort((x,y)=>x.t-y.t);let donker=false,volgende=middernacht(nu);for(const x of g){if(x.t<=nu)donker=x.donker;else{volgende=x.t;break}}return{donker,volgende}}const lat=a.lat??50.8,lon=a.lon??4.4,d=new Date(nu),v=zon(d,lat,lon);if(v==='nacht')return{donker:true,volgende:middernacht(nu)};if(v==='dag')return{donker:false,volgende:middernacht(nu)};if(nu<v.op)return{donker:true,volgende:v.op};if(nu<v.onder)return{donker:false,volgende:v.onder};const m=zon(new Date(d.getFullYear(),d.getMonth(),d.getDate()+1),lat,lon);return{donker:true,volgende:typeof m==='object'?m.op:middernacht(nu)}};
     const isModus=v=>v==='light'||v==='dark'||v==='device'||v==='auto',isPalet=v=>v==='grifel'||v==='puur'||v==='violet'||v==='kleur';
     return(o)=>{const t=o.theme;let modus,palet;if(t==='plum-dark'||t==='plum-light'||t==='plum'){modus=t==='plum-dark'?'dark':'light';palet='violet'}else{modus=isModus(t)?t:'device';palet=isPalet(o.palet)?o.palet:'kleur'}if(palet==='violet'&&o.violetToegestaan===false)palet='grifel';let donker=false,volgende=null,gepauzeerd=false;if(modus==='dark')donker=true;else if(modus==='device')donker=Boolean(o.apparaatDonker);else if(modus==='auto'){const a=normaalAuto(o.auto);if(a.pauzeTot&&a.pauzeModus&&o.nu<a.pauzeTot){donker=a.pauzeModus==='dark';volgende=a.pauzeTot;gepauzeerd=true}else{const r=zonderPauze(a,o.nu);donker=r.donker;volgende=r.volgende}}return{donker,palet,presentatie:palet==='violet'?(donker?'plum-dark':'plum-light'):(donker?'dark':'light'),volgende,gepauzeerd}}})();
-  window.__TSV_CANONICAL_SERVICE__={serviceIds,publicServiceIds,domains,defaults,tabs,isService,serviceForHostname,safeTab,resolve,canonicalUrl,replaceLegacy,thema};
+  window.__TSV_CANONICAL_SERVICE__={serviceIds,publicServiceIds,domains,defaults,tabs,isService,serviceForHostname,safeTab,resolve,canonicalUrl,replaceLegacy,thema,idForTab,tabSlug};
 })();

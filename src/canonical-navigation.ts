@@ -1,4 +1,4 @@
-import{canonicalServiceUrl,defaults,domains,publicServiceIds,resolveCanonicalRoute,serviceForHostname,serviceIds,serviceTabs,type CanonicalLang,type CanonicalRoute,type CanonicalService,type PublicService,type ServiceId}from'./canonical-service';
+import{canonicalServiceUrl,defaults,domains,idForTab,publicServiceIds,resolveCanonicalRoute,serviceForHostname,serviceIds,serviceTabs,tabSlug,type CanonicalLang,type CanonicalRoute,type CanonicalService,type PublicService,type ServiceId}from'./canonical-service';
 import{lastPathForService,rememberedTabForPath,rememberServicePath}from'./shared-preferences';
 export type HubTabId='overview'|'recent'|'tasks'|'calendar'|'notes';
 export type TargetService=CanonicalService;
@@ -13,7 +13,7 @@ export const serviceFromLocation=():ServiceId=>{const service=resolveCanonicalRo
 export const routeLang=():CanonicalLang=>resolveCanonicalRoute().lang;
 export const tabFromLocation=(service:ServiceId)=>{const route=resolveCanonicalRoute();return route.service===service&&serviceTabs[service].includes(route.tab)?route.tab:defaults[service]};
 export const hubTabFromLocation=():HubTabId=>{const route=resolveCanonicalRoute();return route.service==='hub'&&hubTabs.includes(route.tab as HubTabId)?route.tab as HubTabId:'overview'};
-export const normalizeCurrentRoute=(service:ServiceId,tab:string,_lang?:CanonicalLang)=>{const route=resolveCanonicalRoute();if(route.service!==service)return;const url=new URL(location.href);clean(url);url.searchParams.delete('service');url.searchParams.delete('tab');url.searchParams.delete('lang');const validPath=location.pathname==='/'||location.pathname===`/${encodeURIComponent(route.tab)}`;if(!validPath)url.pathname=`/${encodeURIComponent(tab)}`;commit(url,'replace')};
+export const normalizeCurrentRoute=(service:ServiceId,tab:string,_lang?:CanonicalLang)=>{const route=resolveCanonicalRoute();if(route.service!==service)return;const url=new URL(location.href);clean(url);url.searchParams.delete('service');url.searchParams.delete('tab');url.searchParams.delete('lang');const validPath=location.pathname==='/'||idForTab(decodeURIComponent(location.pathname.slice(1)))===route.tab;if(!validPath)url.pathname=`/${encodeURIComponent(tabSlug(tab))}`;commit(url,'replace')};
 export const canonicalNavigationUrl=(target:TargetService,targetTab='',lang:CanonicalLang='uk')=>canonicalServiceUrl(target,targetTab,lang,Boolean(targetTab)&&targetTab!==defaults[target]);
 export const rememberedTabForService=(target:TargetService,fallback='')=>{const path=lastPathForService(target);return path?rememberedTabForPath(target,path):(serviceTabs[target].includes(fallback)?fallback:defaults[target])};
 export const railNavigationUrl=(target:TargetService,_fallbackTab='',lang:CanonicalLang='uk')=>{const path=lastPathForService(target);return path?canonicalServiceUrl(target,rememberedTabForPath(target,path),lang,true):canonicalServiceUrl(target,'',lang,false)};
