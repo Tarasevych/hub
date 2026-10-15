@@ -4,7 +4,7 @@ type Pair = readonly [string, string];
 
 const LABELS: Record<string, Pair> = {
   overview: ['Огляд', 'Overzicht'], recent: ['Останні', 'Recent'], tasks: ['Завдання', 'Taken'], calendar: ['Календар', 'Agenda'], notes: ['Нотатки', 'Notities'],
-  workspace: ['Робочий простір', 'Werkruimte'], agents: ['Агенти', 'Agenten'], runs: ['Запуски', 'Runs'], workflows: ['Процеси', 'Workflows'], connections: ['Підключення ШІ', 'AI-koppelingen'],
+  workspace: ['Робочий простір', 'Werkruimte'], agents: ['Агенти', 'Agenten'], runs: ['Запуски', 'Runs'], workflows: ['Процеси', 'Workflows'], verbindingen: ['Підключення ШІ', 'AI-koppelingen'],
   inbox: ['Вхідні', 'Postvak IN'], starred: ['З зірочкою', 'Met ster'], snoozed: ['Відкладені', 'Gesnoozed'], sent: ['Надіслані', 'Verzonden'], drafts: ['Чернетки', 'Concepten'],
   archive: ['Архів', 'Archief'], labels: ['Мітки', 'Labels'], accounts: ['Облікові записи', 'Accounts'], local: ['Локальні', 'Lokaal'], unread: ['Непрочитані', 'Ongelezen'],
   all: ['Усі', 'Alle'], important: ['Важливі', 'Belangrijk'], spam: ['Спам', 'Spam'], trash: ['Кошик', 'Prullenbak'], subscriptions: ['Підписки', 'Abonnementen'],
@@ -20,7 +20,7 @@ const LABELS: Record<string, Pair> = {
   contour: ['Контур', 'Contour'], updates: ['Оновлення', 'Updates'], ai: ['Доступ ШІ', 'AI-toegang'], apps: ['Застосунки', 'Apps'], devices: ['Пристрої', 'Apparaten'], sso: ['SSO', 'SSO'], directories: ['Каталоги', 'Mappen'], roles: ['Ролі', 'Rollen'],
   diagnostics: ['Діагностика', 'Diagnostiek'], audit: ['Аудит', 'Audit'],
   dashboard: ['Панель розгортання', 'Deploy-dashboard'], services: ['Сервіси', 'Diensten'], tools: ['Інструменти', 'Hulpmiddelen'], board: ['Дошка', 'Bord'], playground: ['Пісочниця', 'Zandbak'], traffic: ['Трафік', 'Verkeer'],
-  connect: ['Підключення', 'Koppelen'], roadmap: ['Дорожня карта', 'Roadmap'], download: ['Завантаження', 'Download'], verbindingen: ['Технічні підключення', 'Technische verbindingen'],
+  connect: ['Підключення', 'Koppelen'], roadmap: ['Дорожня карта', 'Roadmap'], download: ['Завантаження', 'Download'],
 };
 
 const titleCase = (id: string) => id.charAt(0).toUpperCase() + id.slice(1).replace(/[-_]+/g, ' ');

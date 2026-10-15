@@ -18,11 +18,11 @@ type Status = { hasKey: boolean; tools: string[]; machines: { total: number; onl
 // navigation on the production subdomains.
 export const openIntegrations = () => {
   const lang = routeLang();
-  location.assign(canonicalNavigationUrl('api', 'connections', lang));
+  location.assign(canonicalNavigationUrl('api', 'verbindingen', lang));
 };
 
 export default function AIServiceView({ tab, tr }: Props) {
-  if (tab === 'connections') return <Suspense fallback={null}><AgentBord tr={tr} /></Suspense>;
+  if (tab === 'verbindingen') return <Suspense fallback={null}><AgentBord tr={tr} /></Suspense>;
   // null = nog aan het laden; undefined-status = geen recht of geen sleutel -> de lege staat met de volgende stap.
   const [status, setStatus] = useState<Status | null | 'none'>(null);
 

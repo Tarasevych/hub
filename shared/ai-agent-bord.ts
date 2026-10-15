@@ -172,7 +172,7 @@ export function toolGeweigerd(staat: SiteStaat, vraag: { ruimte: AiRuimte; tool:
   return null;
 }
 
-export type McpIngang = { service: 'ai'; tab: 'connections' } | { service: 'mcp'; tab: 'verbindingen' } | null;
+export type McpIngang = { service: 'ai'; tab: 'verbindingen' } | { service: 'mcp'; tab: 'verbindingen' } | null;
 const NAAR_VERBINDINGEN = new Set(['', 'overview', 'agents', 'connect']);
 
 /**
@@ -186,7 +186,7 @@ export function mcpIngang(tab: string, technisch: boolean, consent = false): Mcp
   if (isBeheerPagina('mcp', t)) return null;
   if (technisch && NAAR_VERBINDINGEN.has(t)) return { service: 'mcp', tab: 'verbindingen' };
   if (technisch) return null;
-  return { service: 'ai', tab: 'connections' };
+  return { service: 'ai', tab: 'verbindingen' };
 }
 
 export const SITE_REGEL = {

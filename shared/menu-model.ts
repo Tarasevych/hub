@@ -14,13 +14,13 @@ export type DienstId = typeof DIENST_IDS[number];
 /** Pagina's per dienst — moet gelijk blijven aan `tabs` in public/canonical-service.js (eenheidstest controleert dat). */
 export const MENU_PAGINAS: Record<string, readonly string[]> = {
   hub: ['overview', 'recent', 'tasks', 'calendar', 'notes'],
-  ai: ['workspace', 'agents', 'runs', 'workflows', 'connections'],
+  ai: ['workspace', 'agents', 'runs', 'workflows', 'verbindingen'],
   mail: ['inbox', 'starred', 'snoozed', 'sent', 'drafts', 'archive', 'labels', 'accounts', 'local', 'unread', 'all', 'important', 'spam', 'trash', 'subscriptions', 'scheduled', 'settings'],
   cloud: ['overview', 'workspaces', 'capture', 'inbox', 'search', 'recent', 'calendar', 'photos', 'accounts', 'google', 'onedrive', 'dropbox'],
   github: ['overview', 'repositories', 'projects', 'documentation', 'research', 'accounts', 'activity'],
   huis: ['overview'],
   identity: ['personalization', 'menu', 'themes', 'languages', 'widgets', 'sharing', 'identity', 'account', 'sessions', 'methods', 'security', 'recovery'],
-  api: ['connections', 'vault', 'oauth', 'access', 'webhooks', 'events', 'logs', 'import', 'reconciliation'],
+  api: ['verbindingen', 'vault', 'oauth', 'access', 'webhooks', 'events', 'logs', 'import', 'reconciliation'],
   admin: ['overview', 'access', 'ai', 'contour', 'updates', 'apps', 'devices', 'sso', 'directories', 'roles', 'diagnostics', 'audit'],
   mcp: ['overview', 'dashboard', 'services', 'tools', 'board', 'agents', 'apps', 'playground', 'traffic', 'connect', 'roadmap', 'download', 'verbindingen'],
 };

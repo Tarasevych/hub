@@ -55,18 +55,18 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
   const renameVault=async(id:string)=>{const name=String(renameDraft[id]||'').trim();if(busy||!name)return;setBusy(true);try{const response=await api.post(`/api/owner/api-platform/vault/${id}/rename`,{...sessionBody(),name});if(response?.data?.plaintext||response?.data?.value)throw new Error('leak');await load();setNotice(tr('Назву оновлено. Значення лишилось зашифрованим.','Naam bijgewerkt. De waarde blijft versleuteld.'));}catch{setNotice(tr('Не вдалося перейменувати.','Hernoemen mislukt.'))}setBusy(false);};
   const deleteVault=async(id:string,name:string)=>{if(busy||!window.confirm(tr(`Видалити секрет «${name}» без відновлення?`,`Geheim «${name}» definitief verwijderen?`)))return;setBusy(true);try{await api.post(`/api/owner/api-platform/vault/${id}/delete`,sessionBody());await load();setNotice(tr('Секрет видалено.','Geheim verwijderd.'));}catch{setNotice(tr('Не вдалося видалити.','Verwijderen mislukt.'))}setBusy(false);};
   const markConnection=async(id:string,status:ConnectionItem['status'])=>{if(busy)return;setBusy(true);try{await api.post(`/api/owner/api-platform/connections/${id}/status`,{...sessionBody(),status});await load();setNotice(tr('Статус підключення оновлено.','Koppelingsstatus bijgewerkt.'));}catch{setNotice(tr('Не вдалося оновити статус.','Status bijwerken mislukt.'))}setBusy(false);};
-  const heading=tab==='vault'?tr('Сховище секретів','Geheimenkluis'):tab==='connections'?tr('Реєстр підключень','Koppelingenregister'):tab==='access'?tr('API-доступ','API-toegang'):tr('API та інтеграції','API en integraties');
+  const heading=tab==='vault'?tr('Сховище секретів','Geheimenkluis'):tab==='verbindingen'?tr('Реєстр підключень','Koppelingenregister'):tab==='access'?tr('API-доступ','API-toegang'):tr('API та інтеграції','API en integraties');
   return <section className='api-platform' data-api-platform={API_PLATFORM_VERSION} data-api-tab={tab} data-api-token-count={String(liveCount)} data-api-create-token='enabled' data-api-vault={vaultReady?'ready':'blocked'} data-api-connections={String(connections.length)}>
     <header>
       <h1>{heading}</h1>
-      <p>{tab==='connections'?tr('Картка відкриває конкретний наступний крок. Google identity / Gmail / Drive — лише посилання на існуючий конектор, без другого OAuth. GitHub PAT окремо від UI github.tarasevych.com.','Elke kaart opent een concrete volgende stap. Google identity / Gmail / Drive verwijzen alleen naar de bestaande connector, zonder tweede OAuth. GitHub-PAT is los van de UI github.tarasevych.com.'):tr('PAT зберігається як hash. Інтеграційні секрети власника — окреме encrypted vault. Це не AppDeploy platform secrets. Значення після збереження в UI не повертається. Немає «показати секрет». Machine token не пише у vault.','PAT wordt als hash bewaard. Integratiegeheimen van de eigenaar zitten in een aparte encrypted vault. Dit zijn geen AppDeploy-platformgeheimen. Na opslaan keert de waarde niet terug in de UI. Er is geen «toon geheim». Een machinetoken schrijft niet naar de kluis.')}</p>
+      <p>{tab==='verbindingen'?tr('Картка відкриває конкретний наступний крок. Google identity / Gmail / Drive — лише посилання на існуючий конектор, без другого OAuth. GitHub PAT окремо від UI github.tarasevych.com.','Elke kaart opent een concrete volgende stap. Google identity / Gmail / Drive verwijzen alleen naar de bestaande connector, zonder tweede OAuth. GitHub-PAT is los van de UI github.tarasevych.com.'):tr('PAT зберігається як hash. Інтеграційні секрети власника — окреме encrypted vault. Це не AppDeploy platform secrets. Значення після збереження в UI не повертається. Немає «показати секрет». Machine token не пише у vault.','PAT wordt als hash bewaard. Integratiegeheimen van de eigenaar zitten in een aparte encrypted vault. Dit zijn geen AppDeploy-platformgeheimen. Na opslaan keert de waarde niet terug in de UI. Er is geen «toon geheim». Een machinetoken schrijft niet naar de kluis.')}</p>
     </header>
     <nav className='api-platform-tabs' aria-label={tr('Розділи API','API-onderdelen')}>
       <a href='/?service=api&tab=access&lang=uk' data-api-tab-link='access'>{tr('Доступ','Toegang')}</a>
       <a href='/?service=api&tab=vault&lang=uk' data-api-tab-link='vault'>{tr('Сховище секретів','Geheimenkluis')}</a>
-      <a href='/?service=api&tab=connections&lang=uk' data-api-tab-link='connections'>{tr('Підключення','Koppelingen')}</a>
+      <a href='/?service=api&tab=verbindingen&lang=uk' data-api-tab-link='verbindingen'>{tr('Підключення','Koppelingen')}</a>
     </nav>
-    {tab!=='vault'&&tab!=='connections'?<article className='api-platform-panel' data-api-access-panel='true'>
+    {tab!=='vault'&&tab!=='verbindingen'?<article className='api-platform-panel' data-api-access-panel='true'>
       <strong>{tr('Машинні токени','Machinetokens')}</strong>
       <div className='api-platform-meta'>
         <span data-api-token-count-value={String(liveCount)}>{tr('Живі токени','Actieve tokens')}: {liveCount}</span>
@@ -89,7 +89,7 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
         {item.status==='active'?<button type='button' onClick={()=>void revoke(item.id)} disabled={busy}>{tr('Відкликати','Intrekken')}</button>:null}
       </li>)}</ul>
     </article>:null}
-    {tab==='connections'?<article className='api-platform-panel' data-api-connections-panel='true'>
+    {tab==='verbindingen'?<article className='api-platform-panel' data-api-connections-panel='true'>
       <strong>{tr('Зовнішні системи','Externe systemen')}</strong>
       <div className='api-platform-meta'>
         <span data-api-connections-count={String(connections.length)}>{tr('Карток','Kaarten')}: {connections.length}</span>
@@ -133,14 +133,14 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
       </li>)}</ul>
     </article>:null}
     {notice?<p data-api-notice='true'>{notice}</p>:null}
-    {tab!=='connections'&&tab!=='vault'?<article className='api-platform-table'>
+    {tab!=='verbindingen'&&tab!=='vault'?<article className='api-platform-table'>
       <strong>{tr('Можливості','Mogelijkheden')}</strong>
       <table>
         <thead><tr><th>ID</th><th>{tr('Статус','Status')}</th><th>{tr('Актор','Actor')}</th><th>{tr('Опис','Beschrijving')}</th></tr></thead>
         <tbody>{capabilities.map(item=><tr key={item.id} data-api-capability={item.id} data-api-capability-status={item.status}><td><code>{item.id}</code></td><td>{statusLabel(item.status,tr)}</td><td>{item.actor}</td><td>{tr(item.descriptionUk,item.descriptionNl)}</td></tr>)}</tbody>
       </table>
     </article>:null}
-    {tab!=='connections'&&tab!=='vault'?<article className='api-platform-forbidden' data-api-forbidden-scopes={forbidden.join(' ')}>
+    {tab!=='verbindingen'&&tab!=='vault'?<article className='api-platform-forbidden' data-api-forbidden-scopes={forbidden.join(' ')}>
       <strong>{tr('Заборонені scope','Verboden scopes')}</strong>
       <ul>{forbidden.map(id=><li key={id}><code>{id}</code></li>)}</ul>
     </article>:null}

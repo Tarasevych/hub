@@ -48,7 +48,7 @@ export async function main(): Promise<number> {
   check('невідомий ключ перемикача не стає станом',
     Object.keys(staatVanRijen([{ sleutel: 'cap:server.read', aan: false }, { sleutel: 'deur:Grok', aan: false }, { sleutel: 'cap:mail.read', aan: false }]).cap).join() === 'mail.read');
 
-  check('приватна закладка mcp/agents веде на дошку ШІ', JSON.stringify(mcpIngang('agents', false)) === JSON.stringify({ service: 'ai', tab: 'connections' }));
+  check('приватна закладка mcp/agents веде на дошку ШІ', JSON.stringify(mcpIngang('agents', false)) === JSON.stringify({ service: 'ai', tab: 'verbindingen' }));
   check('вікно дозволу OAuth на agents лишається', mcpIngang('agents', false, true) === null);
   check('технічний профіль з огляду потрапляє на технічні підключення, сторінка управління лишається',
     JSON.stringify(mcpIngang('overview', true)) === JSON.stringify({ service: 'mcp', tab: 'verbindingen' }) && mcpIngang('verbindingen', true) === null && mcpIngang('dashboard', false) === null);
