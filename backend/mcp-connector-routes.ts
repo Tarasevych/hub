@@ -8,11 +8,13 @@ import * as agentStore from './connectors-store';
 import { DeurFout, deurBesluit, deurIntrekken, deurVerbindingen, deurVerzoek, internSleutel, isDeurRid, vanDeur } from './mcp-deur-brug';
 import { leesDuren, zetDuur } from './ai-verbinding-instellingen';
 import { DUREN, KLANTEN, duur as duurVan, isDuurId, klantVan, type KlantId } from '../shared/ai-verbinding';
+import { isToegangScope, toegangScope } from '../shared/ai-toegang';
+import { geefStandaard, leesBeheerUit, leesToegang, zetBeheer, zetToegang } from './ai-toegang';
+import { agentTokenVanGebruiker, issuePriveToken } from './mcp-console';
 import { sessieGeverifieerd } from '../server/platform/context';
 import { ruimteUitVerzoek, technischeRuimte } from './ai-ruimte-poort';
 import { leesStand } from './ai-beleid';
 import { leesGebruikerCaps, leesStaat, zetGebruikerCap, zetStaat } from './ai-site-schakelaars';
-import { issuePriveToken } from './mcp-console';
 import {
   BORD_AGENTEN, MCP_URL, PRIVE_CAPS, SITE_REGEL, SITE_UMOVY, agentAan, connectGeweigerd, isBordKlant, isPriveCap, isSiteSleutel, methodeAan, tabsVoor,
 } from '../shared/ai-agent-bord';
@@ -32,6 +34,32 @@ const header = (event: any, name: string): string | undefined => {
   for (const [k, v] of Object.entries(event?.headers || {})) if (k.toLowerCase() === name) return String(v);
   return undefined;
 };
+
+/** Verbinding van deze gebruiker voor de toegangs-tab: 'oauth' = OAuth-grant (of bord:<klant>), 'token' = agenttoken. Anders null. */
+async function toegangOnderwerp(userId: string, body: Record<string, unknown>): Promise<{ soort: 'mcp-koppeling' | 'agenttoken'; id: string } | null> {
+  const soort = body.soort === 'token' ? 'agenttoken' : body.soort === 'oauth' ? 'mcp-koppeling' : null;
+  const id = String(body.id ?? '');
+  if (!soort) return null;
+  if (soort === 'mcp-koppeling' && id.startsWith('bord:')) {
+    const klant = id.slice(5);
+    if (!isBordKlant(klant)) return null;
+    try {
+      const actief = (await c.listUserGrants(userId)).find((g) => klantVan(g.clientName) === klant);
+      if (actief) return { soort: 'mcp-koppeling', id: actief.id };
+    } catch { /* fallback naar bord-onderwerp */ }
+    const bordId = `bord_${userId.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 48)}_${klant}`.slice(0, 80);
+    if (bordId.length < 8) return null;
+    const onderwerp = { soort: 'mcp-koppeling' as const, id: bordId };
+    await geefStandaard(userId, onderwerp, 'prive').catch(() => undefined);
+    return onderwerp;
+  }
+  if (!/^[0-9a-fA-F-]{8,80}$/.test(id)) return null;
+  if (soort === 'mcp-koppeling') {
+    const alle = [...(await c.listUserGrants(userId)), ...(await c.listUserGrantHistory(userId))];
+    if (!alle.some((g) => g.id === id)) return null;
+  } else if (!(await agentTokenVanGebruiker(userId, id))) return null;
+  return { soort, id };
+}
 
 export function createMcpConnectorRoutes(deps: Deps) {
   const ownerGate = async (event: Record<string, unknown>, body: unknown) => {
@@ -360,6 +388,55 @@ export function createMcpConnectorRoutes(deps: Deps) {
       const staat = await zetStaat(sleutel, body.aan, auth.user.id);
       await deps.audit(auth.user.id, 'owner.ai.site.schakelaar', 'success', { sleutel, aan: body.aan });
       return deps.respond({ ok: true, staat });
+    }],
+
+    // Gedetailleerde toegang per verbinding (0044, shared/ai-toegang.ts — de enige catalogus):
+    // de mens zet scopes per AI («Доступ ШІ»); default-deny, gevoelig pas na bevestiging.
+    'POST /api/owner/ai-toegang/overzicht': [async (ctx: any) => {
+      const auth = await accountGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const onderwerp = await toegangOnderwerp(auth.user.id, deps.body(ctx.body));
+      if (!onderwerp) return deps.fail('TOEGANG_ONBEKEND', 404);
+      return deps.respond({ granted: await leesToegang(onderwerp), uit: await leesBeheerUit() });
+    }],
+
+    'POST /api/owner/ai-toegang/zet': [async (ctx: any) => {
+      const auth = await accountGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      const body = deps.body(ctx.body);
+      const onderwerp = await toegangOnderwerp(auth.user.id, body);
+      if (!onderwerp) return deps.fail('TOEGANG_ONBEKEND', 404);
+      const scopes = Array.isArray(body.scopes) ? (body.scopes as unknown[]).filter((s): s is string => typeof s === 'string') : null;
+      if (!scopes || scopes.some((s) => !isToegangScope(s))) return deps.fail('TOEGANG_SCOPE_ONBEKEND', 400);
+      // Gevoelige scopes (mail, foto's) aanzetten vraagt een expliciete bevestiging (de UI doet dit in twee stappen).
+      const oud = await leesToegang(onderwerp);
+      if (scopes.filter((s) => toegangScope(s)?.gevoelig && !oud.includes(s)).length && body.bevestigd !== true) {
+        return deps.fail('TOEGANG_BEVESTIGING_VEREIST', 409);
+      }
+      const bewaard = await zetToegang(auth.user.id, onderwerp, scopes);
+      await deps.audit(auth.user.id, 'owner.mcp.toegang.gezet', 'success', { soort: onderwerp.soort, onderwerp: onderwerp.id, scopes: bewaard });
+      return deps.respond({ ok: true, granted: bewaard });
+    }],
+
+    // Bestuurlijk plafond voor de hele site (alleen de eigenaar): een uitgeschakelde scope weigert de backend
+    // ook met een oude grantrij; de tab verbergt of blokkeert hem.
+    'POST /api/owner/ai-toegang/beheer': [async (ctx: any) => {
+      const auth = await accountGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      return deps.respond({ uit: await leesBeheerUit() });
+    }],
+
+    'POST /api/owner/ai-toegang/beheer/zet': [async (ctx: any) => {
+      const auth = await accountGate(ctx.event, ctx.body);
+      if (!auth) return denied();
+      if (auth.user.role !== 'owner') return deps.fail('OWNER_REQUIRED', 403);
+      const body = deps.body(ctx.body);
+      const scope = String(body.scope ?? '');
+      if (!isToegangScope(scope)) return deps.fail('TOEGANG_SCOPE_ONBEKEND', 400);
+      const uit = body.uit !== false;
+      await zetBeheer(scope, uit);
+      await deps.audit(auth.user.id, 'owner.mcp.toegang.beheer', 'success', { scope, uit });
+      return deps.respond({ ok: true, uit: await leesBeheerUit() });
     }],
   };
 }

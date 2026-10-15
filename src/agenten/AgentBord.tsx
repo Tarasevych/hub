@@ -12,6 +12,7 @@ import {
 } from '../../shared/ai-agent-bord';
 import { aiLogo } from './data';
 import { foutTekst } from './fouten';
+import AiToegangTab from './AiToegangTab';
 import { Knop } from './ui';
 import './agenten.css';
 
@@ -178,6 +179,7 @@ export default function AgentBord({ tr }: { tr: Tr }) {
                     <p>{plafond
                       ? tr('Підписана політика ШІ зараз стеля. Перемикачі лише для перегляду.', 'Het ondertekende AI-beleid is nu het plafond. De schakelaars zijn alleen te bekijken.')
                       : tr('Ці перемикачі стосуються лише вашого простору й цього ШІ. Вимкнене адміністратором лишається вимкненим.', 'Deze schakelaars gelden alleen voor uw ruimte en deze AI. Wat de beheerder uitzette, blijft uit.')}</p>
+                    <AiToegangTab verbinding={{ soort: 'oauth', id: `bord:${gekozen.id}`, naam: gekozen.naam }} tr={tr} metBeheer />
                     {groepen.map(([groep, caps]) => (
                       <fieldset key={groep} className='ag-bord-groep'>
                         <legend>{groep}</legend>
