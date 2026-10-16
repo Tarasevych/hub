@@ -71,7 +71,7 @@ export default function AdminUitrolModern({
     ...voorstellen.filter(v => v.status !== 'wacht-op-goedkeuring').map(v => ({ id: v.id, ver: v.versie, tijd: v.beslistOp || v.aangemaaktOp, wie: v.beslistDoor || v.voorbereider, ok: v.status === 'goedgekeurd' || v.status === 'geinstalleerd', text: v.uitkomst?.uk || v.uitkomst?.nl || v.status })),
   ].slice(0, 30);
   const pending = voorstellen.filter(v => v.status === 'wacht-op-goedkeuring');
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => Number(localStorage.getItem('uitrol-page-size') || 10));
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(history.length / pageSize));
   const pageItems = history.slice(page * pageSize, (page + 1) * pageSize);
@@ -79,9 +79,10 @@ export default function AdminUitrolModern({
     if (!ver) return;
     window.open(`/api/owner/uitrol/archief/${encodeURIComponent(ver)}.tar.gz`, '_blank');
   };
-  const openGithub = (ver?: string) => {
+const openPc = (ver?: string) => {
     if (!ver) return;
-    window.open(`https://github.com/Tarasevych/hub/releases/tag/uitrol-${ver}`, '_blank');
+    // Opens a file:// or shows the expected path; actual file access depends on the browser
+    alert(`Очікуваний шлях на ПК:\nR:\\mijn-ruimte-reservekopie\\mijn-ruimte-${ver}.tar.gz`);
   };
 
   return (
@@ -154,7 +155,7 @@ export default function AdminUitrolModern({
       <div className="uitrol-card" id="uitrol-history">
         <div className="uitrol-card-head">
           <div className="uitrol-title"><History size={16} /> {t('Історія розгортань', 'Uitrolgeschiedenis')}</div>
-          <select className="uitrol-page-size" value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(0); }}>
+          <select className="uitrol-page-size" value={pageSize} onChange={e => { const n = Number(e.target.value); setPageSize(n); setPage(0); localStorage.setItem('uitrol-page-size', String(n)); }}>
             <option value={5}>5</option>
             <option value={10}>10</option>
             <option value={20}>20</option>
@@ -171,8 +172,9 @@ export default function AdminUitrolModern({
               <div className="uitrol-history-meta"><span>{i.tijd?.replace('T', ' ').slice(0, 16) || '—'}</span><span>{i.wie || '—'}</span></div>
               <div className="uitrol-history-comment">{i.text || '—'}</div>
               <span className="uitrol-history-actions">
-                <button type="button" className="uitrol-btn small" onClick={() => downloadRelease(i.ver)} title={t('Завантажити з сервера', 'Downloaden van server')}><Download size={14} /></button>
-                <button type="button" className="uitrol-btn small" onClick={() => openGithub(i.ver)} title={t('Відкрити на GitHub', 'Openen op GitHub')}>GitHub</button>
+                <button type="button" className="uitrol-icon-btn" onClick={() => downloadRelease(i.ver)} title={t('З сервера', 'Van server')}><Download size={14} /></button>
+                <button type="button" className="uitrol-icon-btn" onClick={() => openPc(i.ver)} title="R:\mijn-ruimte-reservekopie">💾</button>
+                <a className="uitrol-gh-btn" href={`https://github.com/Tarasevych/hub/releases/tag/uitrol-${i.ver || ''}`} target="_blank" rel="noreferrer" title="GitHub"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
               </span>
             </div>
           ))}

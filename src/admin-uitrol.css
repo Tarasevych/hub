@@ -168,3 +168,8 @@ html.theme-dark .uitrol-meester-problemen{color:#fca5a5}
 .uitrol-history-row{position:relative}
 .uitrol-history-row .uitrol-btn.small{position:absolute;top:8px;right:8px}
 .uitrol-history-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px}
+.uitrol-icon-btn{background:none;border:1px solid #e2e8f0;border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#475569}
+.uitrol-icon-btn:hover{background:#f1f5f9}
+.uitrol-gh-btn{background:#24292e;color:#fff;border:none;border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.uitrol-gh-btn:hover{background:#1b1f23}
+.uitrol-history-actions{position:absolute;top:8px;right:8px;display:flex;gap:6px}
