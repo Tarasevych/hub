@@ -608,6 +608,19 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
   return {
     // `ik`: wie de pagina bekijkt (voor «Розгорнути з цього пристрою»: de eigenaar als voorbereider van zijn eigen pakket).
     'POST /api/owner/uitrol/overzicht': [eigenaar({}, async (_ctx, auth) => ({ ...(await overzicht()), ik: { id: auth.user.id, email: auth.user.email || '' } }))],
+    'GET /api/owner/uitrol/log': [eigenaar({}, async () => {
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const dir = '/var/lib/mijn-ruimte-uitrol';
+        const entries = await fs.promises.readdir(dir).catch(() => []);
+        const latest = entries.filter(e => e.startsWith('pakket.')).sort().pop();
+        if (!latest) return { log: '' };
+        const logPath = path.join(dir, latest, 'installeer.log');
+        const buf = await fs.promises.readFile(logPath).catch(() => Buffer.from(''));
+        return { log: buf.toString('utf-8').slice(-4000) };
+      } catch { return { log: '' }; }
+    })],
     'GET /api/owner/uitrol/archief/:versie': [eigenaar({}, async (ctx) => {
       const versie = String(ctx.params?.versie || '').replace(/[^0-9-]/g, '');
       if (!versie) return error(400, 'versie');

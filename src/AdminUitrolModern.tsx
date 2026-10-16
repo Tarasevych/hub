@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, Package, Activity, AlertCircle, RefreshCw, Server, Shield, Download, History, Upload, Users, Clock } from 'lucide-react';
 
 type Lang = 'uk' | 'nl';
@@ -72,6 +72,18 @@ export default function AdminUitrolModern({
   ].slice(0, 30);
   const pending = voorstellen.filter(v => v.status === 'wacht-op-goedkeuring');
   const [pageSize, setPageSize] = useState(() => Number(localStorage.getItem('uitrol-page-size') || 10));
+  const [liveLog, setLiveLog] = useState('');
+  useEffect(() => {
+    if (!isRunning) { setLiveLog(''); return; }
+    const id = setInterval(async () => {
+      try {
+        const r = await fetch('/api/owner/uitrol/log', { credentials: 'include' });
+        const j = await r.json();
+        if (j.log) setLiveLog(j.log);
+      } catch { /* ignore */ }
+    }, 2000);
+    return () => clearInterval(id);
+  }, [isRunning]);
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(history.length / pageSize));
   const pageItems = history.slice(page * pageSize, (page + 1) * pageSize);
@@ -130,6 +142,7 @@ const openPc = (ver?: string) => {
 
         <div className="uitrol-progress"><div className="uitrol-progress-bar" style={{ width: `${progress}%`, background: isFailed ? '#ef4444' : '#3b82f6' }} /></div>
         <div className="uitrol-progress-label">{progress}%</div>
+        {isRunning && liveLog && <pre className="uitrol-live-log">{liveLog}</pre>}
         {rootStatus && (rootStatus.uk || rootStatus.nl) && (
           <div className={`uitrol-status${isFailed ? ' fail' : ''}`}>{isFailed && <AlertCircle size={14} />}{lang === 'uk' ? rootStatus.uk : rootStatus.nl}</div>
         )}
