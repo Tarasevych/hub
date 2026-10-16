@@ -106,8 +106,8 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
   const st=(s:string)=>{const t=STATUS[s];return t?tr(lang,t[0],t[1]):s;};
 
   return <div className='admin-uitrol' data-admin-uitrol>
-    <AdminUitrolModern lang={lang} rootStatus={data.rootStatus} installaties={data.installaties} onRefresh={()=>void laden()} />
-    <section className='admin-section'>
+    <AdminUitrolModern lang={lang} rootStatus={data.rootStatus} installaties={data.installaties} onRefresh={()=>void laden()} onUploadClick={()=>{const el=document.getElementById('uitrol-upload-anchor');el?.scrollIntoView({behavior:'smooth'});}} onHistoryClick={()=>{const el=document.getElementById('uitrol-history-anchor');el?.scrollIntoView({behavior:'smooth'});}} onPasskeyClick={()=>{window.location.href=canonicalNavigationUrl('identity','methods',lang);}} />
+    <section className='admin-section' id='uitrol-upload-anchor'>
       <header><PackageCheck/><div><h2>{tr(lang,'Оновлення сервера','Serverupdates')}</h2><p>{tr(lang,'Агенти й помічники лише готують пакет. Встановлюється він тільки після вашого підтвердження passkey на телефоні; сервер (root) перевіряє підпис сам, тож зламаний застосунок не може нічого схвалити.','Agents en helpers bereiden alleen een pakket voor. Het wordt pas geïnstalleerd na uw bevestiging met de passkey op uw telefoon; de server (root) controleert de handtekening zelf, dus een gekraakte app kan niets goedkeuren.')}</p></div>
         <button type='button' className='admin-uitrol-ververs' onClick={()=>void laden()} title={tr(lang,'Оновити','Vernieuwen')}><RefreshCw/></button></header>
       <ul className='admin-uitrol-stand'>
@@ -183,7 +183,7 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
       </div>
     </section>
 
-    <section className='admin-section'>
+    <section className='admin-section' id='uitrol-history-anchor'>
       <header><RefreshCw/><div><h2>{tr(lang,'Історія','Geschiedenis')}</h2><p>{tr(lang,'Рядок «Завантажується» — це пакет із браузера, доки його не зібрано. Встановлення з SSH або за підписом з’являється окремим рядком і цей пакет не змінює.','Een rij «Wordt geüpload» is een pakket uit de browser zolang het niet compleet is. Een installatie via SSH of met een handtekening verschijnt als een aparte rij en wijzigt dat pakket niet.')}</p></div></header>
       <ul className='admin-uitrol-lijst'>
         {(data.installaties??[]).map(i=>{

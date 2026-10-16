@@ -77,3 +77,15 @@ html.theme-dark .uitrol-meester-stap[data-stand="ok"] .uitrol-meester-stand{colo
 html.theme-dark .uitrol-meester-stap[data-stand="todo"] .uitrol-meester-stand{color:#fbbf24}
 html.theme-dark .uitrol-meester-problemen{color:#fca5a5}
 @media (max-width:640px){.uitrol-meester-stand{display:none}.uitrol-meester-inhoud{padding:4px 10px 12px}}
+
+/* Modern dashboard responsive */
+.uitrol-modern-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media (min-width:900px){
+  .uitrol-modern-grid{grid-template-columns:1fr 280px}
+}
+.uitrol-modern-grid table{font-size:12px}
+@media (max-width:640px){
+  .uitrol-modern-grid{padding:4px}
+  .uitrol-modern-grid > div{min-width:0}
+  .uitrol-modern-grid table{display:block;overflow-x:auto}
+}

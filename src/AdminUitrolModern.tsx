@@ -10,6 +10,9 @@ type Props = {
   installaties?: Installatie[];
   currentVersion?: string;
   onRefresh?: () => void;
+  onUploadClick?: () => void;
+  onHistoryClick?: () => void;
+  onPasskeyClick?: () => void;
 };
 
 const stages = [
@@ -38,7 +41,7 @@ function stageFromStatus(status: RootStatus): number {
   return 1;
 }
 
-export default function AdminUitrolModern({ lang, rootStatus, installaties = [], currentVersion, onRefresh }: Props) {
+export default function AdminUitrolModern({ lang, rootStatus, installaties = [], currentVersion, onRefresh, onUploadClick, onHistoryClick, onPasskeyClick }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const stageIdx = stageFromStatus(rootStatus);
   const isRunning = rootStatus?.staat === 'bezig';
@@ -46,7 +49,7 @@ export default function AdminUitrolModern({ lang, rootStatus, installaties = [],
   const progress = Math.min(100, Math.round((stageIdx / 4) * 100));
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 20, padding: 8 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 16, padding: 8 }} className="uitrol-modern-grid">
       <div>
         {/* Top stages */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 20, background: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
@@ -181,13 +184,13 @@ export default function AdminUitrolModern({ lang, rootStatus, installaties = [],
         <div style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
           <div style={{ fontWeight: 600, marginBottom: 12 }}>{t('Швидкі дії', 'Snelle acties')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button type="button" style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button type="button" onClick={onUploadClick} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
               <Download size={16} /> {t('Оновити з архіву', 'Bijwerken vanuit archief')}
             </button>
-            <button type="button" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button type="button" onClick={onHistoryClick} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
               <History size={16} /> {t('Переглянути історію', 'Geschiedenis bekijken')}
             </button>
-            <button type="button" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button type="button" onClick={onPasskeyClick} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
               <Shield size={16} /> {t('Керувати passkey', 'Passkeys beheren')}
             </button>
           </div>
