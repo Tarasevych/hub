@@ -69,7 +69,7 @@ export default function AdminUitrolModern({
   const history = [
     ...installaties.map(i => ({ id: i.id, ver: i.release || i.pakket, tijd: i.tijd, wie: i.wie, ok: isOk(i.code), text: i.uk || i.nl })),
     ...voorstellen.filter(v => v.status !== 'wacht-op-goedkeuring').map(v => ({ id: v.id, ver: v.versie, tijd: v.beslistOp || v.aangemaaktOp, wie: v.beslistDoor || v.voorbereider, ok: v.status === 'goedgekeurd' || v.status === 'geinstalleerd', text: v.uitkomst?.uk || v.uitkomst?.nl || v.status })),
-  ].slice(0, 30);
+  ].sort((a, b) => (b.tijd || '').localeCompare(a.tijd || '')).slice(0, 50);
   const pending = voorstellen.filter(v => v.status === 'wacht-op-goedkeuring');
   const [pageSize, setPageSize] = useState(() => Number(localStorage.getItem('uitrol-page-size') || 10));
   const [liveLog, setLiveLog] = useState('');
