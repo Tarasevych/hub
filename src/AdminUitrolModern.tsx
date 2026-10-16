@@ -3,7 +3,7 @@ import { Check, Package, Activity, AlertCircle, RefreshCw, Server, Shield, Downl
 type Lang = 'uk' | 'nl';
 type RootStatus = { staat?: string; versie?: string; code?: string; uk?: string; nl?: string; tijd?: string; methode?: string } | null;
 type Installatie = { id: string; tijd: string; code: string; herkomst: string; wie: string; pakket: string; release: string; commit: string; uk: string; nl: string };
-type Voorstel = { id: string; versie: string; status: string; commit?: string; sha256?: string; samenvatting?: string; wie?: string; tijd?: string };
+type Voorstel = { id: string; versie: string; status: string; commit?: string; sha256?: string; samenvatting?: string; wie?: string; tijd?: string; beslistOp?: string; aangemaaktOp?: string; beslistDoor?: string; voorbereider?: string; uitkomst?: { uk?: string; nl?: string } | null };
 type Kandidaat = { id: string; naam: string; email?: string };
 
 type Props = {
@@ -65,7 +65,10 @@ export default function AdminUitrolModern({
   const isFailed = rootStatus?.staat === 'mislukt' || rootStatus?.staat === 'geweigerd';
   const progress = Math.min(100, Math.round((stageIdx / 4) * 100));
   const recent = installaties.slice(0, 8);
-  const history = installaties.slice(0, 20);
+  const history = [
+    ...installaties.map(i => ({ id: i.id, ver: i.release || i.pakket, tijd: i.tijd, wie: i.wie, ok: isOk(i.code), text: i.uk || i.nl })),
+    ...voorstellen.filter(v => v.status !== 'wacht-op-goedkeuring').map(v => ({ id: v.id, ver: v.versie, tijd: v.beslistOp || v.aangemaaktOp, wie: v.beslistDoor || v.voorbereider, ok: v.status === 'goedgekeurd' || v.status === 'geinstalleerd', text: v.uitkomst?.uk || v.uitkomst?.nl || v.status })),
+  ].slice(0, 30);
   const pending = voorstellen.filter(v => v.status === 'wacht-op-goedkeuring');
 
   return (
@@ -141,11 +144,11 @@ export default function AdminUitrolModern({
           {history.map(i => (
             <div key={i.id} className="uitrol-history-row">
               <div className="uitrol-history-main">
-                <span className="uitrol-history-ver">{i.release || '—'}</span>
-                <span className={`uitrol-history-status${isOk(i.code) ? ' ok' : ' fail'}`}>● {isOk(i.code) ? t('Встановлено', 'Geïnstalleerd') : t('Не вдалося', 'Mislukt')}</span>
+                <span className="uitrol-history-ver">{i.ver || '—'}</span>
+                <span className={`uitrol-history-status${i.ok ? ' ok' : ' fail'}`}>● {i.ok ? t('Встановлено', 'Geïnstalleerd') : t('Не вдалося', 'Mislukt')}</span>
               </div>
               <div className="uitrol-history-meta"><span>{i.tijd?.replace('T', ' ').slice(0, 16) || '—'}</span><span>{i.wie || '—'}</span></div>
-              <div className="uitrol-history-comment">{i.uk || i.nl || '—'}</div>
+              <div className="uitrol-history-comment">{i.text || '—'}</div>
             </div>
           ))}
         </div>
