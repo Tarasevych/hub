@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Check, Package, Activity, AlertCircle, RefreshCw, Server, Shield, Download, History, Upload, Users, Clock } from 'lucide-react';
 
 type Lang = 'uk' | 'nl';
@@ -70,6 +71,15 @@ export default function AdminUitrolModern({
     ...voorstellen.filter(v => v.status !== 'wacht-op-goedkeuring').map(v => ({ id: v.id, ver: v.versie, tijd: v.beslistOp || v.aangemaaktOp, wie: v.beslistDoor || v.voorbereider, ok: v.status === 'goedgekeurd' || v.status === 'geinstalleerd', text: v.uitkomst?.uk || v.uitkomst?.nl || v.status })),
   ].slice(0, 30);
   const pending = voorstellen.filter(v => v.status === 'wacht-op-goedkeuring');
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(history.length / pageSize));
+  const pageItems = history.slice(page * pageSize, (page + 1) * pageSize);
+  const downloadRelease = (ver?: string) => {
+    if (!ver) return;
+    // TODO: permanent storage endpoint; for now open the known archive path if present
+    window.open(`/api/owner/uitrol/archief/${encodeURIComponent(ver)}.tar.gz`, '_blank');
+  };
 
   return (
     <div className="uitrol-modern">
@@ -138,10 +148,18 @@ export default function AdminUitrolModern({
         ))}
       </div>
 
-      <div className="uitrol-card">
-        <div className="uitrol-title"><History size={16} /> {t('Історія розгортань', 'Uitrolgeschiedenis')}</div>
+      <div className="uitrol-card" id="uitrol-history">
+        <div className="uitrol-card-head">
+          <div className="uitrol-title"><History size={16} /> {t('Історія розгортань', 'Uitrolgeschiedenis')}</div>
+          <select className="uitrol-page-size" value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(0); }}>
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+          </select>
+        </div>
         <div className="uitrol-history">
-          {history.map(i => (
+          {pageItems.map(i => (
             <div key={i.id} className="uitrol-history-row">
               <div className="uitrol-history-main">
                 <span className="uitrol-history-ver">{i.ver || '—'}</span>
@@ -149,9 +167,19 @@ export default function AdminUitrolModern({
               </div>
               <div className="uitrol-history-meta"><span>{i.tijd?.replace('T', ' ').slice(0, 16) || '—'}</span><span>{i.wie || '—'}</span></div>
               <div className="uitrol-history-comment">{i.text || '—'}</div>
+              <button type="button" className="uitrol-btn small" onClick={() => downloadRelease(i.ver)} title={t('Завантажити цей випуск', 'Deze release downloaden')}><Download size={14} /></button>
             </div>
           ))}
         </div>
+        {totalPages > 1 && (
+          <div className="uitrol-pager">
+            <button type="button" disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>‹</button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button key={i} type="button" className={i === page ? 'active' : ''} onClick={() => setPage(i)}>{i + 1}</button>
+            ))}
+            <button type="button" disabled={page >= totalPages - 1} onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}>›</button>
+          </div>
+        )}
       </div>
 
       {/* Upload form integrated */}
