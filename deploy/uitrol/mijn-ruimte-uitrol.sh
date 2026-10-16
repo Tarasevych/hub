@@ -239,6 +239,32 @@ if "${cmd[@]}" > "$WERK/installeer.log" 2>&1; then
   # Oudere (nooit meer installeerbare) pakketten uit de inbox halen.
   find "$INBOX" -maxdepth 1 -type f \( -name 'mijn-ruimte-*.tar.gz' -o -name 'mijn-ruimte-*.tar.gz.sig' -o -name 'mijn-ruimte-*.tar.gz.goedkeuring.json' \) -delete 2>/dev/null || true
   status klaar OK "Випуск $VERSIE встановлено." "Release $VERSIE is geïnstalleerd." "$VERSIE"
+  # Create GitHub release if token is present.
+  GH_TOKEN_FILE="${GITHUB_TOKEN_FILE:-/etc/mijn-ruimte/github-token}"
+  if [ -f "$GH_TOKEN_FILE" ]; then
+    GH_TOKEN="$(head -n1 "$GH_TOKEN_FILE" | tr -d '\r\n')"
+    if [ -n "$GH_TOKEN" ]; then
+      ARCHIEF="/srv/mijn-ruimte/releases/mijn-ruimte-${VERSIE}.tar.gz"
+      if [ -f "$ARCHIEF" ]; then
+        curl -sS -X POST \
+          -H "Authorization: token $GH_TOKEN" \
+          -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/repos/Tarasevych/hub/releases" \
+          -d "{\"tag_name\":\"uitrol-${VERSIE}\",\"name\":\"Uitrol ${VERSIE}\",\"body\":\"${SAMENVATTING}\",\"draft\":false,\"prerelease\":false}" \
+          > "$WERK/gh-release.json" 2>/dev/null || true
+        UPLOAD_URL="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get("upload_url","").split("{")[0])' "$WERK/gh-release.json" 2>/dev/null || true)"
+        if [ -n "$UPLOAD_URL" ]; then
+          curl -sS -X POST \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Content-Type: application/gzip" \
+            --data-binary @"$ARCHIEF" \
+            "${UPLOAD_URL}?name=mijn-ruimte-${VERSIE}.tar.gz" \
+            > /dev/null 2>&1 || true
+          log "GitHub release created: uitrol-${VERSIE}"
+        fi
+      fi
+    fi
+  fi
   if [ "$MODUS" = passkey ]; then
     gebeurtenis OK info "Випуск $VERSIE встановлено (схвалено passkey). Автор: $AUTEUR, агент: $AGENT." "Release $VERSIE geïnstalleerd (passkey). Auteur: $AUTEUR, agent: $AGENT."
   else
