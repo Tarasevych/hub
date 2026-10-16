@@ -148,5 +148,13 @@ html.theme-dark .uitrol-meester-problemen{color:#fca5a5}
   .uitrol-stages,.uitrol-card:not(.tip){grid-column:1}
   .uitrol-side{grid-column:2;grid-row:1 / span 4}
 }
-.admin-uitrol[data-modern="1"] > .admin-section{display:none}
-.admin-uitrol[data-modern="1"] > .uitrol-modern{display:block}
+.uitrol-modern{overflow-x:hidden}
+.uitrol-stages,.uitrol-steps{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.uitrol-stage-label,.uitrol-step-label{white-space:nowrap}
+.uitrol-history-status,.uitrol-kv span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.uitrol-file{display:none}
+@media (max-width:600px){
+  .uitrol-card-head{flex-direction:column}
+  .uitrol-refresh{align-self:flex-end}
+  .admin-title-actions button{font-size:12px;padding:6px 8px}
+}

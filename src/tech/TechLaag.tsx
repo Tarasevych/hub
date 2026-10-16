@@ -48,12 +48,14 @@ export default function TechLaag() {
   useEffect(() => {
     let last = 0;
     const onScroll = () => {
-      const y = window.scrollY || document.documentElement.scrollTop;
-      setVerborgen(y > 80 && y > last);
+      const y = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+      if (y > last + 10 && y > 60) setVerborgen(true);
+      else if (y < last - 10 || y < 40) setVerborgen(false);
       last = y;
     };
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    document.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); document.removeEventListener('scroll', onScroll); };
   }, []);
   const [sshZichtbaar, setSshZichtbaar] = useState(false);
   const kies = (v: TechVenster) => { setMeer(false); setVenster(v); };

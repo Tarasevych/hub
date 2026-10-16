@@ -105,8 +105,8 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
   const keuzes=grant.soort==='account'?data.kandidaten.accounts:grant.soort==='agenttoken'?data.kandidaten.agenttokens:data.kandidaten.koppelingen;
   const st=(s:string)=>{const t=STATUS[s];return t?tr(lang,t[0],t[1]):s;};
 
-  return <div className='admin-uitrol' data-admin-uitrol data-modern='1'>
-    <AdminUitrolModern lang={lang} rootStatus={data.rootStatus} installaties={data.installaties} currentVersion={data.rootStatus?.versie} onRefresh={()=>void laden()} onUploadClick={()=>{const el=document.getElementById('uitrol-upload-anchor');el?.scrollIntoView({behavior:'smooth'});}} onHistoryClick={()=>{const el=document.getElementById('uitrol-history-anchor');el?.scrollIntoView({behavior:'smooth'});}} onPasskeyClick={()=>{window.location.href=canonicalNavigationUrl('identity','methods',lang);}} />
+  return <div className='admin-uitrol' data-admin-uitrol>
+    <AdminUitrolModern lang={lang} rootStatus={data.rootStatus} installaties={data.installaties} voorstellen={data.voorstellen} currentVersion={data.rootStatus?.versie} onRefresh={()=>void laden()} onPasskeyClick={()=>{window.location.href=canonicalNavigationUrl('identity','methods',lang);}} schakelaar={data.schakelaar} />
     <section className='admin-section' id='uitrol-upload-anchor'>
       <header><PackageCheck/><div><h2>{tr(lang,'Оновлення сервера','Serverupdates')}</h2><p>{tr(lang,'Агенти й помічники лише готують пакет. Встановлюється він тільки після вашого підтвердження passkey на телефоні; сервер (root) перевіряє підпис сам, тож зламаний застосунок не може нічого схвалити.','Agents en helpers bereiden alleen een pakket voor. Het wordt pas geïnstalleerd na uw bevestiging met de passkey op uw telefoon; de server (root) controleert de handtekening zelf, dus een gekraakte app kan niets goedkeuren.')}</p></div>
         <button type='button' className='admin-uitrol-ververs' onClick={()=>void laden()} title={tr(lang,'Оновити','Vernieuwen')}><RefreshCw/></button></header>

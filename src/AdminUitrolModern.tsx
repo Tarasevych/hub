@@ -1,18 +1,27 @@
-import { Check, Package, Activity, AlertCircle, RefreshCw, Server, Shield, Download, History } from 'lucide-react';
+import { Check, Package, Activity, AlertCircle, RefreshCw, Server, Shield, Download, History, Upload, Users, Clock } from 'lucide-react';
 
 type Lang = 'uk' | 'nl';
 type RootStatus = { staat?: string; versie?: string; code?: string; uk?: string; nl?: string; tijd?: string; methode?: string } | null;
 type Installatie = { id: string; tijd: string; code: string; herkomst: string; wie: string; pakket: string; release: string; commit: string; uk: string; nl: string };
+type Voorstel = { id: string; versie: string; status: string; commit?: string; sha256?: string; samenvatting?: string; wie?: string; tijd?: string };
+type Kandidaat = { id: string; naam: string; email?: string };
 
 type Props = {
   lang: Lang;
   rootStatus: RootStatus;
   installaties?: Installatie[];
+  voorstellen?: Voorstel[];
   currentVersion?: string;
   onRefresh?: () => void;
-  onUploadClick?: () => void;
-  onHistoryClick?: () => void;
+  onUpload?: (file: File, note: string) => void;
+  onApprove?: (id: string) => void;
+  onReject?: (id: string) => void;
+  onGrant?: (soort: string, id: string, dagen: number, naam: string) => void;
+  onRevoke?: (id: string) => void;
   onPasskeyClick?: () => void;
+  passkeys?: { id?: string; naam?: string; naamWeergave?: string }[];
+  schakelaar?: boolean;
+  kandidaten?: { accounts: Kandidaat[]; agenttokens: Kandidaat[]; koppelingen: Kandidaat[] };
 };
 
 const stages = [
@@ -41,18 +50,26 @@ function stageFromStatus(status: RootStatus): number {
   return 1;
 }
 
-export default function AdminUitrolModern({ lang, rootStatus, installaties = [], currentVersion, onRefresh, onUploadClick, onHistoryClick, onPasskeyClick }: Props) {
+function isOk(code: string) {
+  return !code || code === 'OK' || code === 'GEINSTALLEERD';
+}
+
+export default function AdminUitrolModern({
+  lang, rootStatus, installaties = [], voorstellen = [], currentVersion,
+  onRefresh, onUpload, onApprove, onReject, onGrant, onPasskeyClick,
+  passkeys = [], schakelaar = false,
+}: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const stageIdx = stageFromStatus(rootStatus);
   const isRunning = rootStatus?.staat === 'bezig';
   const isFailed = rootStatus?.staat === 'mislukt' || rootStatus?.staat === 'geweigerd';
   const progress = Math.min(100, Math.round((stageIdx / 4) * 100));
-  const recent = installaties.slice(0, 5);
-  const history = installaties.slice(0, 12);
+  const recent = installaties.slice(0, 8);
+  const history = installaties.slice(0, 20);
+  const pending = voorstellen.filter(v => v.status === 'wacht-op-goedkeuring');
 
   return (
     <div className="uitrol-modern">
-      {/* Top stages */}
       <div className="uitrol-stages">
         {stages.map((s, i) => {
           const done = i < stageIdx;
@@ -66,7 +83,6 @@ export default function AdminUitrolModern({ lang, rootStatus, installaties = [],
         })}
       </div>
 
-      {/* Current deployment */}
       <div className="uitrol-card">
         <div className="uitrol-card-head">
           <div>
@@ -84,7 +100,7 @@ export default function AdminUitrolModern({ lang, rootStatus, installaties = [],
 
         <div className="uitrol-steps">
           {steps.map((s, i) => {
-            const done = i < stageIdx;
+            const done = i < Math.min(stageIdx + 1, 6);
             const current = i === stageIdx - 1 && isRunning;
             return (
               <div key={s.id} className={`uitrol-step${done ? ' done' : ''}${current ? ' current' : ''}`}>
@@ -95,30 +111,21 @@ export default function AdminUitrolModern({ lang, rootStatus, installaties = [],
           })}
         </div>
 
-        <div className="uitrol-progress">
-          <div className="uitrol-progress-bar" style={{ width: `${progress}%`, background: isFailed ? '#ef4444' : '#3b82f6' }} />
-        </div>
+        <div className="uitrol-progress"><div className="uitrol-progress-bar" style={{ width: `${progress}%`, background: isFailed ? '#ef4444' : '#3b82f6' }} /></div>
         <div className="uitrol-progress-label">{progress}%</div>
-
         {rootStatus && (rootStatus.uk || rootStatus.nl) && (
-          <div className={`uitrol-status${isFailed ? ' fail' : ''}`}>
-            {isFailed && <AlertCircle size={14} />}
-            {lang === 'uk' ? rootStatus.uk : rootStatus.nl}
-          </div>
+          <div className={`uitrol-status${isFailed ? ' fail' : ''}`}>{isFailed && <AlertCircle size={14} />}{lang === 'uk' ? rootStatus.uk : rootStatus.nl}</div>
         )}
       </div>
 
-      {/* Events */}
       <div className="uitrol-card">
         <div className="uitrol-card-head">
           <div className="uitrol-title"><Activity size={16} /> {t('Події розгортання', 'Uitrolgebeurtenissen')}</div>
           <span className="uitrol-live">● {t('Реальний час', 'Realtime')}</span>
         </div>
-        {recent.length === 0 ? (
-          <div className="uitrol-empty">{t('Немає подій', 'Geen gebeurtenissen')}</div>
-        ) : recent.map(i => (
+        {recent.length === 0 ? <div className="uitrol-empty">{t('Немає подій', 'Geen gebeurtenissen')}</div> : recent.map(i => (
           <div key={i.id} className="uitrol-event">
-            <span className={`uitrol-dot${i.code === 'OK' || !i.code ? ' ok' : ' fail'}`} />
+            <span className={`uitrol-dot${isOk(i.code) ? ' ok' : ' fail'}`} />
             <div className="uitrol-event-body">
               <div className="uitrol-event-title">{i.release || i.pakket}</div>
               <div className="uitrol-event-desc">{i.uk || i.nl}</div>
@@ -128,7 +135,6 @@ export default function AdminUitrolModern({ lang, rootStatus, installaties = [],
         ))}
       </div>
 
-      {/* History */}
       <div className="uitrol-card">
         <div className="uitrol-title"><History size={16} /> {t('Історія розгортань', 'Uitrolgeschiedenis')}</div>
         <div className="uitrol-history">
@@ -136,39 +142,64 @@ export default function AdminUitrolModern({ lang, rootStatus, installaties = [],
             <div key={i.id} className="uitrol-history-row">
               <div className="uitrol-history-main">
                 <span className="uitrol-history-ver">{i.release || '—'}</span>
-                <span className={`uitrol-history-status${i.code === 'OK' || !i.code ? ' ok' : ' fail'}`}>
-                  ● {i.code === 'OK' || !i.code ? t('Встановлено', 'Geïnstalleerd') : t('Не вдалося', 'Mislukt')}
-                </span>
+                <span className={`uitrol-history-status${isOk(i.code) ? ' ok' : ' fail'}`}>● {isOk(i.code) ? t('Встановлено', 'Geïnstalleerd') : t('Не вдалося', 'Mislukt')}</span>
               </div>
-              <div className="uitrol-history-meta">
-                <span>{i.tijd?.replace('T', ' ').slice(0, 16) || '—'}</span>
-                <span>{i.wie || '—'}</span>
-              </div>
+              <div className="uitrol-history-meta"><span>{i.tijd?.replace('T', ' ').slice(0, 16) || '—'}</span><span>{i.wie || '—'}</span></div>
               <div className="uitrol-history-comment">{i.uk || i.nl || '—'}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Sidebar-like blocks */}
+      {/* Upload form integrated */}
+      <div className="uitrol-card" id="uitrol-upload">
+        <div className="uitrol-title"><Upload size={16} /> {t('Завантажити архів', 'Archief uploaden')}</div>
+        <p className="uitrol-sub">{t('Виберіть .tar.gz з UITROL-VERSIE всередині.', 'Kies een .tar.gz met UITROL-VERSIE erin.')}</p>
+        <input type="file" accept=".tar.gz,.tgz" id="uitrol-file" className="uitrol-file" onChange={e => { const f = e.target.files?.[0]; if (f && onUpload) onUpload(f, ''); }} />
+        <label htmlFor="uitrol-file" className="uitrol-btn primary">{t('Вибрати файл', 'Bestand kiezen')}</label>
+      </div>
+
+      {/* Pending approvals */}
+      {pending.length > 0 && (
+        <div className="uitrol-card">
+          <div className="uitrol-title"><Clock size={16} /> {t('Чекають схвалення', 'Wachten op goedkeuring')}</div>
+          {pending.map(v => (
+            <div key={v.id} className="uitrol-pending">
+              <div><strong>{v.versie}</strong> · {v.wie}</div>
+              <div className="uitrol-pending-actions">
+                <button type="button" className="uitrol-btn primary" onClick={() => onApprove?.(v.id)}>{t('Схвалити', 'Goedkeuren')}</button>
+                <button type="button" className="uitrol-btn" onClick={() => onReject?.(v.id)}>{t('Відхилити', 'Afwijzen')}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Grants */}
+      <div className="uitrol-card">
+        <div className="uitrol-title"><Users size={16} /> {t('Хто може готувати оновлення', 'Wie mag updates voorbereiden')}</div>
+        <p className="uitrol-sub">{t('Дозвольте акаунту або агенту готувати пакети.', 'Sta een account of agent toe om pakketten voor te bereiden.')}</p>
+        <button type="button" className="uitrol-btn" onClick={() => onGrant?.('account', '', 7, '')}>{t('Додати дозвіл', 'Toestemming toevoegen')}</button>
+      </div>
+
       <div className="uitrol-side">
         <div className="uitrol-card">
           <div className="uitrol-title"><Server size={16} /> {t('Стан системи', 'Systeemstatus')}</div>
           <div className="uitrol-kv"><span>{t('Середовище', 'Omgeving')}</span><span className="ok">Production</span></div>
           <div className="uitrol-kv"><span>{t('Активний випуск', 'Actieve release')}</span><span>{currentVersion || rootStatus?.versie || '—'}</span></div>
-          <div className="uitrol-kv"><span>{t('Схвалення passkey', 'Passkey-goedkeuring')}</span><span className="ok">{t('Активно', 'Actief')}</span></div>
+          <div className="uitrol-kv"><span>{t('Passkey', 'Passkey')}</span><span className={schakelaar && passkeys.length ? 'ok' : ''}>{schakelaar && passkeys.length ? t('Активно', 'Actief') : t('Немає', 'Geen')}</span></div>
         </div>
         <div className="uitrol-card">
           <div className="uitrol-title">{t('Швидкі дії', 'Snelle acties')}</div>
-          <button type="button" className="uitrol-btn primary" onClick={onUploadClick}><Download size={16} /> {t('Оновити з архіву', 'Bijwerken vanuit archief')}</button>
-          <button type="button" className="uitrol-btn" onClick={onHistoryClick}><History size={16} /> {t('Переглянути історію', 'Geschiedenis bekijken')}</button>
+          <button type="button" className="uitrol-btn primary" onClick={() => document.getElementById('uitrol-upload')?.scrollIntoView({ behavior: 'smooth' })}><Download size={16} /> {t('Оновити з архіву', 'Bijwerken vanuit archief')}</button>
+          <button type="button" className="uitrol-btn" onClick={() => document.getElementById('uitrol-history')?.scrollIntoView({ behavior: 'smooth' })}><History size={16} /> {t('Переглянути історію', 'Geschiedenis bekijken')}</button>
           <button type="button" className="uitrol-btn" onClick={onPasskeyClick}><Shield size={16} /> {t('Керувати passkey', 'Passkeys beheren')}</button>
         </div>
         <div className="uitrol-card tip">
           <div className="uitrol-title">💡 {t('Корисна інформація', 'Nuttige informatie')}</div>
           <ul>
-            <li>{t('Оновлення через архів — це безпечно. Пакет перевіряється за підписом.', 'Bijwerken via archief is veilig. Het pakket wordt op handtekening gecontroleerd.')}</li>
-            <li>{t('Після встановлення статус з’явиться тут за кілька хвилин.', 'Na installatie verschijnt de status hier binnen enkele minuten.')}</li>
+            <li>{t('Оновлення через архів перевіряється за підписом.', 'Bijwerken via archief wordt op handtekening gecontroleerd.')}</li>
+            <li>{t('Статус оновлюється автоматично кожні 20 секунд.', 'Status wordt elke 20 seconden automatisch bijgewerkt.')}</li>
           </ul>
         </div>
       </div>
