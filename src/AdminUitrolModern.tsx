@@ -66,9 +66,23 @@ export default function AdminUitrolModern({
   const isFailed = rootStatus?.staat === 'mislukt' || rootStatus?.staat === 'geweigerd';
   const progress = Math.min(100, Math.round((stageIdx / 4) * 100));
   const recent = installaties.slice(0, 8);
+  const statusText = (s: string) => {
+    const map: Record<string, [string, string]> = {
+      'goedgekeurd': ['Схвалено', 'Goedgekeurd'],
+      'geinstalleerd': ['Встановлено', 'Geïnstalleerd'],
+      'uploaden': ['Завантажується', 'Uploaden'],
+      'wacht-op-goedkeuring': ['Чекає схвалення', 'Wacht op goedkeuring'],
+      'afgebroken': ['Перервано', 'Afgebroken'],
+      'afgewezen': ['Відхилено', 'Afgewezen'],
+      'mislukt': ['Не вдалося', 'Mislukt'],
+      'geweigerd': ['Відмовлено', 'Geweigerd'],
+      'verlopen': ['Прострочено', 'Verlopen'],
+    };
+    return map[s] ? t(map[s][0], map[s][1]) : s;
+  };
   const history = [
-    ...installaties.map(i => ({ id: i.id, ver: i.release || i.pakket, tijd: i.tijd, wie: i.wie, ok: isOk(i.code), text: i.uk || i.nl })),
-    ...voorstellen.filter(v => v.status !== 'wacht-op-goedkeuring').map(v => ({ id: v.id, ver: v.versie, tijd: v.beslistOp || v.aangemaaktOp, wie: v.beslistDoor || v.voorbereider, ok: v.status === 'goedgekeurd' || v.status === 'geinstalleerd', text: v.uitkomst?.uk || v.uitkomst?.nl || v.status })),
+    ...installaties.map(i => ({ id: i.id, ver: i.release || i.pakket, tijd: i.tijd, wie: i.wie, ok: isOk(i.code) || (i.uk || i.nl || '').includes('встановлено'), text: i.uk || i.nl })),
+    ...voorstellen.filter(v => v.status !== 'wacht-op-goedkeuring').map(v => ({ id: v.id, ver: v.versie, tijd: v.beslistOp || v.aangemaaktOp, wie: v.beslistDoor || v.voorbereider, ok: v.status === 'goedgekeurd' || v.status === 'geinstalleerd', text: v.uitkomst?.uk || v.uitkomst?.nl || statusText(v.status) })),
   ].sort((a, b) => (b.tijd || '').localeCompare(a.tijd || '')).slice(0, 50);
   const pending = voorstellen.filter(v => v.status === 'wacht-op-goedkeuring');
   const [pageSize, setPageSize] = useState(() => Number(localStorage.getItem('uitrol-page-size') || 10));
@@ -84,6 +98,10 @@ export default function AdminUitrolModern({
     }, 2000);
     return () => clearInterval(id);
   }, [isRunning]);
+  useEffect(() => {
+    const id = setInterval(() => { onRefresh?.(); }, 10000);
+    return () => clearInterval(id);
+  }, [onRefresh]);
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(history.length / pageSize));
   const pageItems = history.slice(page * pageSize, (page + 1) * pageSize);

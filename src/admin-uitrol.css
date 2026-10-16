@@ -150,7 +150,7 @@ html.theme-dark .uitrol-meester-problemen{color:#fca5a5}
 }
 .uitrol-modern{overflow-x:hidden}
 .uitrol-stages,.uitrol-steps{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.uitrol-stage-label,.uitrol-step-label{white-space:nowrap}
+.uitrol-stage-label{white-space:nowrap}.uitrol-step-label{white-space:normal;word-break:break-word}
 .uitrol-history-status,.uitrol-kv span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
 .uitrol-file{display:none}
 @media (max-width:600px){
