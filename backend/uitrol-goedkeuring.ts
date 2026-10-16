@@ -608,6 +608,17 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
   return {
     // `ik`: wie de pagina bekijkt (voor «Розгорнути з цього пристрою»: de eigenaar als voorbereider van zijn eigen pakket).
     'POST /api/owner/uitrol/overzicht': [eigenaar({}, async (_ctx, auth) => ({ ...(await overzicht()), ik: { id: auth.user.id, email: auth.user.email || '' } }))],
+    'GET /api/owner/uitrol/archief/:versie': [eigenaar({}, async (ctx) => {
+      const versie = String(ctx.params?.versie || '').replace(/[^0-9-]/g, '');
+      if (!versie) return error(400, 'versie');
+      const file = `/srv/mijn-ruimte/releases/mijn-ruimte-${versie}.tar.gz`;
+      try {
+        const stat = await import('fs').then(fs => fs.promises.stat(file));
+        if (!stat.isFile()) return error(404, 'niet gevonden');
+        const buf = await import('fs').then(fs => fs.promises.readFile(file));
+        return { statusCode: 200, headers: { 'content-type': 'application/gzip', 'content-disposition': `attachment; filename="mijn-ruimte-${versie}.tar.gz"` }, body: buf };
+      } catch { return error(404, 'niet gevonden'); }
+    })],
     'POST /api/owner/uitrol/voorbereiders/toevoegen': [eigenaar({ stepUp: true }, async (ctx, auth) => ({ voorbereider: await grantGeven(wie(auth), body(ctx.body)) }))],
     'POST /api/owner/uitrol/voorbereiders/intrekken': [eigenaar({ sterk: true, reden: true }, async (ctx, auth) => ({ voorbereider: await grantIntrekken(wie(auth), body(ctx.body).id, { reden: body(ctx.body).reden, auth: auth as never }) }))],
     'POST /api/owner/uitrol/voorstel/uitdaging': [eigenaar({}, async (ctx, auth) => goedkeurUitdaging(wie(auth), body(ctx.body).id))],

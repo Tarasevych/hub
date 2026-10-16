@@ -167,3 +167,4 @@ html.theme-dark .uitrol-meester-problemen{color:#fca5a5}
 .uitrol-btn.small{padding:4px 8px;font-size:11px;width:auto;margin:0}
 .uitrol-history-row{position:relative}
 .uitrol-history-row .uitrol-btn.small{position:absolute;top:8px;right:8px}
+.uitrol-history-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px}

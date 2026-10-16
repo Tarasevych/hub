@@ -77,8 +77,11 @@ export default function AdminUitrolModern({
   const pageItems = history.slice(page * pageSize, (page + 1) * pageSize);
   const downloadRelease = (ver?: string) => {
     if (!ver) return;
-    // TODO: permanent storage endpoint; for now open the known archive path if present
     window.open(`/api/owner/uitrol/archief/${encodeURIComponent(ver)}.tar.gz`, '_blank');
+  };
+  const openGithub = (ver?: string) => {
+    if (!ver) return;
+    window.open(`https://github.com/Tarasevych/hub/releases/tag/uitrol-${ver}`, '_blank');
   };
 
   return (
@@ -167,7 +170,10 @@ export default function AdminUitrolModern({
               </div>
               <div className="uitrol-history-meta"><span>{i.tijd?.replace('T', ' ').slice(0, 16) || '—'}</span><span>{i.wie || '—'}</span></div>
               <div className="uitrol-history-comment">{i.text || '—'}</div>
-              <button type="button" className="uitrol-btn small" onClick={() => downloadRelease(i.ver)} title={t('Завантажити цей випуск', 'Deze release downloaden')}><Download size={14} /></button>
+              <span className="uitrol-history-actions">
+                <button type="button" className="uitrol-btn small" onClick={() => downloadRelease(i.ver)} title={t('Завантажити з сервера', 'Downloaden van server')}><Download size={14} /></button>
+                <button type="button" className="uitrol-btn small" onClick={() => openGithub(i.ver)} title={t('Відкрити на GitHub', 'Openen op GitHub')}>GitHub</button>
+              </span>
             </div>
           ))}
         </div>

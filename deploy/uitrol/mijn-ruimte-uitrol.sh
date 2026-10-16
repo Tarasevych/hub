@@ -226,6 +226,16 @@ export MIJN_RUIMTE_UITROL_MODUS="$MODUS"
 if [ -n "$INSTALLEER" ]; then cmd=( "$INSTALLEER" installeren "$BRON" ); else cmd=( bash "$BRON/deploy/installeer-app.sh" installeren "$BRON" ); fi
 if "${cmd[@]}" > "$WERK/installeer.log" 2>&1; then
   printf '%s\n' "$VERSIE" > "$WERK_ROOT/laatste-versie"
+  # Permanent archive of the installed package (for download later).
+  RELEASES_DIR="${UITROL_RELEASES_DIR:-/srv/mijn-ruimte/releases}"
+  mkdir -p "$RELEASES_DIR"
+  if [ -f "$BRON/../$(basename "$NAAM")" ]; then
+    cp -a "$BRON/../$(basename "$NAAM")" "$RELEASES_DIR/" 2>/dev/null || true
+  elif [ -f "/tmp/$NAAM" ]; then
+    cp -a "/tmp/$NAAM" "$RELEASES_DIR/" 2>/dev/null || true
+  fi
+  # Keep only the last 50 archives.
+  ls -1t "$RELEASES_DIR"/mijn-ruimte-*.tar.gz 2>/dev/null | tail -n +51 | xargs -r rm -f
   # Oudere (nooit meer installeerbare) pakketten uit de inbox halen.
   find "$INBOX" -maxdepth 1 -type f \( -name 'mijn-ruimte-*.tar.gz' -o -name 'mijn-ruimte-*.tar.gz.sig' -o -name 'mijn-ruimte-*.tar.gz.goedkeuring.json' \) -delete 2>/dev/null || true
   status klaar OK "Випуск $VERSIE встановлено." "Release $VERSIE is geïnstalleerd." "$VERSIE"
