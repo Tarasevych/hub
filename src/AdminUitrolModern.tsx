@@ -23,12 +23,12 @@ const stages = [
 ];
 
 const steps = [
-  { id: 'archive', uk: 'Архів перевірено', nl: 'Archief gecontroleerd', time: '2 хв' },
-  { id: 'sign', uk: 'Підпис перевірено', nl: 'Handtekening gecontroleerd', time: '4 хв' },
-  { id: 'backup', uk: 'Резервну копію створено', nl: 'Back-up gemaakt', time: '8 хв' },
-  { id: 'install', uk: 'Версію встановлено', nl: 'Versie geïnstalleerd', time: '12 хв' },
-  { id: 'health', uk: 'Перевірка працездатності', nl: 'Gezondheidscontrole', time: '14 хв' },
-  { id: 'done', uk: 'Готово', nl: 'Klaar', time: '—' },
+  { id: 'archive', uk: 'Архів перевірено', nl: 'Archief gecontroleerd' },
+  { id: 'sign', uk: 'Підпис перевірено', nl: 'Handtekening gecontroleerd' },
+  { id: 'backup', uk: 'Резервна копія', nl: 'Back-up' },
+  { id: 'install', uk: 'Версію встановлено', nl: 'Versie geïnstalleerd' },
+  { id: 'health', uk: 'Перевірка роботи', nl: 'Gezondheidscontrole' },
+  { id: 'done', uk: 'Готово', nl: 'Klaar' },
 ];
 
 function stageFromStatus(status: RootStatus): number {
@@ -47,158 +47,126 @@ export default function AdminUitrolModern({ lang, rootStatus, installaties = [],
   const isRunning = rootStatus?.staat === 'bezig';
   const isFailed = rootStatus?.staat === 'mislukt' || rootStatus?.staat === 'geweigerd';
   const progress = Math.min(100, Math.round((stageIdx / 4) * 100));
+  const recent = installaties.slice(0, 5);
+  const history = installaties.slice(0, 12);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 16, padding: 8 }} className="uitrol-modern-grid">
-      <div>
-        {/* Top stages */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 20, background: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
-          {stages.map((s, i) => {
+    <div className="uitrol-modern">
+      {/* Top stages */}
+      <div className="uitrol-stages">
+        {stages.map((s, i) => {
+          const done = i < stageIdx;
+          const current = i === stageIdx - 1 && isRunning;
+          return (
+            <div key={s.id} className={`uitrol-stage${done ? ' done' : ''}${current ? ' current' : ''}`}>
+              <span className="uitrol-stage-dot">{done ? <Check size={12} /> : i + 1}</span>
+              <span className="uitrol-stage-label">{t(s.uk, s.nl)}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Current deployment */}
+      <div className="uitrol-card">
+        <div className="uitrol-card-head">
+          <div>
+            <div className="uitrol-title">
+              <Package size={18} />
+              <span>{t('Розгортання версії', 'Uitrol versie')} {rootStatus?.versie || '—'}</span>
+              {isRunning && <span className="uitrol-badge busy">{t('Виконується', 'Bezig')}</span>}
+              {isFailed && <span className="uitrol-badge fail">{t('Не вдалося', 'Mislukt')}</span>}
+              {!isRunning && !isFailed && rootStatus?.versie && <span className="uitrol-badge ok">{t('Встановлено', 'Geïnstalleerd')}</span>}
+            </div>
+            {rootStatus?.versie && <div className="uitrol-sub">mijn-ruimte-{rootStatus.versie}.tar.gz</div>}
+          </div>
+          <button type="button" className="uitrol-refresh" onClick={onRefresh}><RefreshCw size={16} /> {t('Оновити', 'Vernieuwen')}</button>
+        </div>
+
+        <div className="uitrol-steps">
+          {steps.map((s, i) => {
             const done = i < stageIdx;
             const current = i === stageIdx - 1 && isRunning;
             return (
-              <div key={s.id} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: done ? '#22c55e' : current ? '#3b82f6' : '#e2e8f0', color: done || current ? '#fff' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600 }}>
-                  {done ? <Check size={14} /> : i + 1}
-                </div>
-                <span style={{ fontSize: 13, fontWeight: done || current ? 600 : 400, color: done || current ? '#0f172a' : '#64748b' }}>{t(s.uk, s.nl)}</span>
-                {i < stages.length - 1 && <div style={{ flex: 1, height: 2, background: done ? '#22c55e' : '#e2e8f0', margin: '0 8px' }} />}
+              <div key={s.id} className={`uitrol-step${done ? ' done' : ''}${current ? ' current' : ''}`}>
+                <span className="uitrol-step-dot">{done ? <Check size={12} /> : i + 1}</span>
+                <span className="uitrol-step-label">{t(s.uk, s.nl)}</span>
               </div>
             );
           })}
         </div>
 
-        {/* Current deployment card */}
-        <div style={{ background: '#fff', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,.06)', marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Package size={18} />
-                <span style={{ fontWeight: 600 }}>{t('Розгортання версії', 'Uitrol versie')} {rootStatus?.versie || '—'}</span>
-                {isRunning && <span style={{ background: '#dbeafe', color: '#1d4ed8', fontSize: 11, padding: '2px 8px', borderRadius: 999 }}>{t('Виконується', 'Bezig')}</span>}
-                {isFailed && <span style={{ background: '#fee2e2', color: '#dc2626', fontSize: 11, padding: '2px 8px', borderRadius: 999 }}>{t('Не вдалося', 'Mislukt')}</span>}
-              </div>
-              {rootStatus?.versie && <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{t('Архів', 'Archief')}: mijn-ruimte-{rootStatus.versie}.tar.gz</div>}
-            </div>
-            <button type="button" onClick={onRefresh} style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <RefreshCw size={14} /> {t('Оновити', 'Vernieuwen')}
-            </button>
-          </div>
-
-          {/* Steps with times */}
-          <div style={{ display: 'flex', gap: 0, marginBottom: 16 }}>
-            {steps.map((s, i) => {
-              const done = i < stageIdx;
-              const current = i === stageIdx - 1 && isRunning;
-              return (
-                <div key={s.id} style={{ flex: 1, textAlign: 'center', position: 'relative' }}>
-                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: done ? '#22c55e' : current ? '#3b82f6' : '#e2e8f0', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px', fontSize: 11 }}>
-                    {done ? <Check size={12} /> : i + 1}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#0f172a', fontWeight: 500 }}>{t(s.uk, s.nl)}</div>
-                  <div style={{ fontSize: 10, color: '#64748b' }}>{done ? `✓ ${s.time}` : current ? s.time : '—'}</div>
-                  {i < steps.length - 1 && <div style={{ position: 'absolute', top: 11, left: '50%', width: '100%', height: 2, background: done ? '#22c55e' : '#e2e8f0', zIndex: -1 }} />}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Progress bar */}
-          <div style={{ height: 6, background: '#e2e8f0', borderRadius: 999, overflow: 'hidden', marginBottom: 12 }}>
-            <div style={{ width: `${progress}%`, height: '100%', background: isFailed ? '#ef4444' : '#3b82f6', transition: 'width .3s' }} />
-          </div>
-          <div style={{ fontSize: 12, color: '#64748b', textAlign: 'right' }}>{progress}%</div>
-
-          {rootStatus && (rootStatus.uk || rootStatus.nl) && (
-            <div style={{ background: isFailed ? '#fef2f2' : '#f0f9ff', borderRadius: 10, padding: 10, fontSize: 13, color: isFailed ? '#991b1b' : '#1e40af', marginTop: 8 }}>
-              {isFailed && <AlertCircle size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />}
-              {lang === 'uk' ? rootStatus.uk : rootStatus.nl}
-            </div>
-          )}
+        <div className="uitrol-progress">
+          <div className="uitrol-progress-bar" style={{ width: `${progress}%`, background: isFailed ? '#ef4444' : '#3b82f6' }} />
         </div>
+        <div className="uitrol-progress-label">{progress}%</div>
 
-        {/* Event log */}
-        <div style={{ background: '#fff', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,.06)', marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}><Activity size={16} /> {t('Події розгортання', 'Uitrolgebeurtenissen')}</div>
-            <span style={{ fontSize: 11, color: '#16a34a' }}>● {t('Реальний час', 'Realtime')}</span>
+        {rootStatus && (rootStatus.uk || rootStatus.nl) && (
+          <div className={`uitrol-status${isFailed ? ' fail' : ''}`}>
+            {isFailed && <AlertCircle size={14} />}
+            {lang === 'uk' ? rootStatus.uk : rootStatus.nl}
           </div>
-          <div style={{ fontSize: 13, color: '#475569' }}>
-            {(installaties.slice(0, 6)).map(i => (
-              <div key={i.id} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: i.code === 'OK' || i.herkomst === 'passkey' || i.herkomst === 'ssh' ? '#22c55e' : '#ef4444', marginTop: 6 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500 }}>{i.release || i.pakket}</div>
-                  <div style={{ fontSize: 12, color: '#64748b' }}>{i.uk || i.nl}</div>
-                </div>
-                <div style={{ fontSize: 11, color: '#94a3b8' }}>{i.tijd?.slice(11, 16) || ''}</div>
-              </div>
-            ))}
-            {installaties.length === 0 && <div style={{ textAlign: 'center', padding: 20, color: '#94a3b8' }}>{t('Немає подій', 'Geen gebeurtenissen')}</div>}
-          </div>
+        )}
+      </div>
+
+      {/* Events */}
+      <div className="uitrol-card">
+        <div className="uitrol-card-head">
+          <div className="uitrol-title"><Activity size={16} /> {t('Події розгортання', 'Uitrolgebeurtenissen')}</div>
+          <span className="uitrol-live">● {t('Реальний час', 'Realtime')}</span>
         </div>
+        {recent.length === 0 ? (
+          <div className="uitrol-empty">{t('Немає подій', 'Geen gebeurtenissen')}</div>
+        ) : recent.map(i => (
+          <div key={i.id} className="uitrol-event">
+            <span className={`uitrol-dot${i.code === 'OK' || !i.code ? ' ok' : ' fail'}`} />
+            <div className="uitrol-event-body">
+              <div className="uitrol-event-title">{i.release || i.pakket}</div>
+              <div className="uitrol-event-desc">{i.uk || i.nl}</div>
+            </div>
+            <span className="uitrol-event-time">{i.tijd?.slice(11, 16) || ''}</span>
+          </div>
+        ))}
+      </div>
 
-        {/* History table */}
-        <div style={{ background: '#fff', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
-          <div style={{ fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}><History size={16} /> {t('Історія розгортань', 'Uitrolgeschiedenis')}</div>
-          <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ color: '#64748b', textAlign: 'left' }}>
-                <th style={{ padding: '8px 4px' }}>{t('Дата / час', 'Datum / tijd')}</th>
-                <th>{t('Версія', 'Versie')}</th>
-                <th>{t('Статус', 'Status')}</th>
-                <th>{t('Хто', 'Wie')}</th>
-                <th>{t('Коментар', 'Opmerking')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {installaties.slice(0, 8).map(i => (
-                <tr key={i.id} style={{ borderTop: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '8px 4px' }}>{i.tijd?.replace('T', ' ').slice(0, 16) || '—'}</td>
-                  <td>{i.release || '—'}</td>
-                  <td>
-                    <span style={{ color: i.code === 'OK' || !i.code ? '#16a34a' : '#dc2626' }}>
-                      ● {i.code === 'OK' || !i.code ? t('Встановлено', 'Geïnstalleerd') : t('Не вдалося', 'Mislukt')}
-                    </span>
-                  </td>
-                  <td>{i.wie || '—'}</td>
-                  <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.uk || i.nl || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* History */}
+      <div className="uitrol-card">
+        <div className="uitrol-title"><History size={16} /> {t('Історія розгортань', 'Uitrolgeschiedenis')}</div>
+        <div className="uitrol-history">
+          {history.map(i => (
+            <div key={i.id} className="uitrol-history-row">
+              <div className="uitrol-history-main">
+                <span className="uitrol-history-ver">{i.release || '—'}</span>
+                <span className={`uitrol-history-status${i.code === 'OK' || !i.code ? ' ok' : ' fail'}`}>
+                  ● {i.code === 'OK' || !i.code ? t('Встановлено', 'Geïnstalleerd') : t('Не вдалося', 'Mislukt')}
+                </span>
+              </div>
+              <div className="uitrol-history-meta">
+                <span>{i.tijd?.replace('T', ' ').slice(0, 16) || '—'}</span>
+                <span>{i.wie || '—'}</span>
+              </div>
+              <div className="uitrol-history-comment">{i.uk || i.nl || '—'}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Right sidebar */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
-          <div style={{ fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}><Server size={16} /> {t('Стан системи', 'Systeemstatus')}</div>
-          <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t('Середовище', 'Omgeving')}</span><span style={{ color: '#16a34a' }}>Production</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t('Активний випуск', 'Actieve release')}</span><span>{currentVersion || '—'}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t('Схвалення passkey', 'Passkey-goedkeuring')}</span><span style={{ color: '#16a34a' }}>{t('Активно', 'Actief')}</span></div>
-          </div>
+      {/* Sidebar-like blocks */}
+      <div className="uitrol-side">
+        <div className="uitrol-card">
+          <div className="uitrol-title"><Server size={16} /> {t('Стан системи', 'Systeemstatus')}</div>
+          <div className="uitrol-kv"><span>{t('Середовище', 'Omgeving')}</span><span className="ok">Production</span></div>
+          <div className="uitrol-kv"><span>{t('Активний випуск', 'Actieve release')}</span><span>{currentVersion || rootStatus?.versie || '—'}</span></div>
+          <div className="uitrol-kv"><span>{t('Схвалення passkey', 'Passkey-goedkeuring')}</span><span className="ok">{t('Активно', 'Actief')}</span></div>
         </div>
-
-        <div style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
-          <div style={{ fontWeight: 600, marginBottom: 12 }}>{t('Швидкі дії', 'Snelle acties')}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button type="button" onClick={onUploadClick} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Download size={16} /> {t('Оновити з архіву', 'Bijwerken vanuit archief')}
-            </button>
-            <button type="button" onClick={onHistoryClick} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <History size={16} /> {t('Переглянути історію', 'Geschiedenis bekijken')}
-            </button>
-            <button type="button" onClick={onPasskeyClick} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Shield size={16} /> {t('Керувати passkey', 'Passkeys beheren')}
-            </button>
-          </div>
+        <div className="uitrol-card">
+          <div className="uitrol-title">{t('Швидкі дії', 'Snelle acties')}</div>
+          <button type="button" className="uitrol-btn primary" onClick={onUploadClick}><Download size={16} /> {t('Оновити з архіву', 'Bijwerken vanuit archief')}</button>
+          <button type="button" className="uitrol-btn" onClick={onHistoryClick}><History size={16} /> {t('Переглянути історію', 'Geschiedenis bekijken')}</button>
+          <button type="button" className="uitrol-btn" onClick={onPasskeyClick}><Shield size={16} /> {t('Керувати passkey', 'Passkeys beheren')}</button>
         </div>
-
-        <div style={{ background: '#f0f9ff', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13 }}>💡 {t('Корисна інформація', 'Nuttige informatie')}</div>
-          <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: '#475569', lineHeight: 1.6 }}>
+        <div className="uitrol-card tip">
+          <div className="uitrol-title">💡 {t('Корисна інформація', 'Nuttige informatie')}</div>
+          <ul>
             <li>{t('Оновлення через архів — це безпечно. Пакет перевіряється за підписом.', 'Bijwerken via archief is veilig. Het pakket wordt op handtekening gecontroleerd.')}</li>
             <li>{t('Після встановлення статус з’явиться тут за кілька хвилин.', 'Na installatie verschijnt de status hier binnen enkele minuten.')}</li>
           </ul>

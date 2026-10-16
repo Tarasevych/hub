@@ -117,3 +117,5 @@ html.theme-dark .tech-vraag-laag.is-dev b{color:#c4b5fd}
 .tech-poort button{min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;font-weight:600;cursor:pointer}
 .tech-poort button.is-hoofd{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
 .tech-poort button:focus-visible{outline:3px solid #1d4ed8;outline-offset:2px}
+.tech-band.is-verborgen{transform:translateY(-100%);transition:transform .2s}
+.tech-band{transition:transform .2s}

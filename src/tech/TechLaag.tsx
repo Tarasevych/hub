@@ -44,6 +44,17 @@ export default function TechLaag() {
   const uk = routeLang() !== 'nl';
   const [venster, setVenster] = useState<TechVenster | ''>('');
   const [meer, setMeer] = useState(false);
+  const [verborgen, setVerborgen] = useState(false);
+  useEffect(() => {
+    let last = 0;
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop;
+      setVerborgen(y > 80 && y > last);
+      last = y;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   const [sshZichtbaar, setSshZichtbaar] = useState(false);
   const kies = (v: TechVenster) => { setMeer(false); setVenster(v); };
   const [nu, setNu] = useState(Date.now());
@@ -86,7 +97,7 @@ export default function TechLaag() {
   return (
     <>
       {actief && t.activatie ? (
-        <div className='tech-band' role='region' aria-label={uk ? 'Технічний режим' : 'Technische modus'} data-tech-band='1'>
+        <div className={`tech-band${verborgen ? ' is-verborgen' : ''}`} role='region' aria-label={uk ? 'Технічний режим' : 'Technische modus'} data-tech-band='1'>
           <span className='tech-band-merk'><ShieldCheck aria-hidden='true' />{uk ? 'ТЕХНІЧНИЙ' : 'TECHNISCH'}</span>
           <span className='tech-band-id' title={t.activatie.profielId}>{t.activatie.rollen.map((r) => rolNaam(r, uk)).join(' · ')}</span>
           <span className={`tech-band-tijd${rest < 5 * 60000 ? ' is-bijna' : ''}`} data-tech-rest={Math.round(rest / 60000)}><Timer aria-hidden='true' /><span className='tech-band-nog'>{uk ? 'ще' : 'nog'} </span>{mmss(rest, uk)}</span>
