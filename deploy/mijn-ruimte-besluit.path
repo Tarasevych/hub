@@ -1,0 +1,13 @@
+# Start mijn-ruimte-besluit.service zodra de app een met een passkey ondertekend besluit van de eigenaar in de besluit-inbox
+# zet en `aanvraag` aantikt (terugdraaien naar een release, witte lijst van externe MCP-hosts). De inbox is schrijfbaar voor de
+# app, maar root voert alleen uit als de assertie van een passkey uit /etc/mijn-ruimte/goedkeur-passkeys.json geldig is voor
+# precies deze inhoud (deploy/RUNBOOK-VEILIGE-UITROL.md §15).
+[Unit]
+Description=Mijn Ruimte: inbox voor met een passkey ondertekende besluiten van de eigenaar bewaken
+
+[Path]
+PathChanged=/srv/mijn-ruimte/besluit-inbox/aanvraag
+Unit=mijn-ruimte-besluit.service
+
+[Install]
+WantedBy=paths.target

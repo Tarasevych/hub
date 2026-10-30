@@ -1,0 +1,179 @@
+/* Bijlageviewer v2 (vlag bijlage-viewer-v2). Alles hangt onder [data-bijlage-v2] of .bv2-*: zonder vlag geen enkel effect.
+   Document eerst: één smalle kopregel (48 px), compacte groepen, pictogrammen met uitleg; panelen alleen op verzoek. */
+.google-mail-attachment-preview[data-bijlage-v2]{--bv2-ai:#6d4fd8;--bv2-ai-zacht:color-mix(in srgb,var(--bv2-ai) 13%,transparent);--bv2-h:44px;--bv2-r:10px}
+:where(html.theme-dark,html.theme-plum-dark) .google-mail-attachment-preview[data-bijlage-v2]{--bv2-ai:#b6a3ff}
+
+/* ── Kop: één regel ── */
+html body .google-mail-attachment-preview[data-bijlage-v2][data-workbench-layout]>header.bv2-kop{
+  display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0;min-height:52px;padding:4px 6px 4px 14px;box-sizing:border-box;
+  border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);background:var(--panel);grid-template-columns:none}
+.bv2-titel{display:flex;align-items:center;gap:2px;flex:1 1 auto;min-width:0}
+.bv2-titel>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:650;color:var(--text)}
+.bv2-werkbalk{display:flex;flex:0 0 auto;align-items:center;gap:4px;min-width:0;overflow:visible}
+.bv2-groep{position:relative;display:flex;align-items:center;gap:0;flex:0 0 auto}
+.bv2-werkbalk>.bv2-groep+.bv2-groep{margin-left:4px;padding-left:6px}
+.bv2-werkbalk>.bv2-groep+.bv2-groep::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:1px;background:color-mix(in srgb,var(--line) 80%,transparent)}
+.bv2-teller{min-width:34px;text-align:center;font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+
+/* ── Pictogramknop: 44×44 raakvlak, 34×34 zichtbaar ── */
+.bv2-knop{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:var(--bv2-h,44px);height:var(--bv2-h,44px);padding:0;margin:0;
+  border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.bv2-knop::after{content:'';position:absolute;inset:5px;border-radius:var(--bv2-r,10px);background:transparent;transition:background-color .14s ease,transform .12s ease,box-shadow .14s ease;z-index:0}
+.bv2-knop.met-label{padding:0 12px}
+.bv2-knop>.bv2-pict,.bv2-knop>.bv2-label{position:relative;z-index:1;display:inline-flex;align-items:center}
+.bv2-knop:hover{color:var(--text)}
+.bv2-knop:hover::after{background:var(--nav-hover,color-mix(in srgb,var(--text) 7%,transparent))}
+.bv2-knop:active::after{transform:scale(.94)}
+.bv2-knop:focus-visible{outline:none}
+.bv2-knop:focus-visible::after{box-shadow:0 0 0 2px var(--focus,var(--accent))}
+.bv2-knop[aria-pressed='true']{color:var(--accent)}
+.bv2-knop[aria-pressed='true']::after{background:var(--accent-soft)}
+.bv2-knop:disabled{color:color-mix(in srgb,var(--muted) 45%,transparent);cursor:default}
+.bv2-knop:disabled::after{background:transparent!important;transform:none}
+.bv2-knop.is-hoofd{color:var(--accent)}
+.bv2-knop.is-hoofd::after{background:var(--accent-soft)}
+.bv2-knop.is-hoofd:hover::after{background:color-mix(in srgb,var(--accent) 20%,transparent)}
+.bv2-knop.is-ai{color:var(--bv2-ai)}
+.bv2-knop.is-ai[aria-pressed='true']::after,.bv2-knop.is-ai:hover::after{background:var(--bv2-ai-zacht)}
+.bv2-knop.is-gevaar:hover{color:var(--danger)}
+.bv2-knop[data-staat='gelukt']{color:var(--ok)}
+.bv2-knop[data-staat='gelukt'] .bv2-pict::after{content:'✓';position:absolute;right:-7px;top:-6px;font-size:11px;font-weight:800;color:var(--ok)}
+.bv2-knop[data-staat='fout']{color:var(--danger)}
+.bv2-knop[data-staat='fout'] .bv2-pict::after{content:'!';position:absolute;right:-6px;top:-6px;font-size:11px;font-weight:800}
+.bv2-draai{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:bv2-draai .8s linear infinite}
+@keyframes bv2-draai{to{transform:rotate(360deg)}}
+/* split-knop: hoofdactie + pijltje als één geheel */
+.bv2-split .bv2-knop.is-hoofd::after{border-radius:var(--bv2-r) 3px 3px var(--bv2-r);right:1px}
+.bv2-split .bv2-knop.is-hoofd+.bv2-knop.is-hoofd{min-width:30px}
+.bv2-split .bv2-knop.is-hoofd+.bv2-knop.is-hoofd::after{border-radius:3px var(--bv2-r) var(--bv2-r) 3px;left:1px;right:5px}
+.bv2-venster .bv2-knop[data-bv2='sluit']:hover{color:var(--danger)}
+.bv2-venster .bv2-knop[data-bv2='sluit']:hover::after{background:color-mix(in srgb,var(--danger) 12%,transparent)}
+
+/* ── Tooltip: muis (hover), toetsenbord (focus), aanraking (lang indrukken → data-open) ── */
+.bv2-tip{position:absolute;z-index:30;top:calc(100% + 2px);left:50%;translate:-50% 0;padding:5px 8px;border-radius:7px;background:var(--text);color:var(--panel);
+  font-size:12px;font-weight:550;line-height:1.25;white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(-3px);transition:opacity .12s ease .35s,transform .12s ease .35s;max-width:min(260px,80vw)}
+.bv2-knop:hover>.bv2-tip,.bv2-knop:focus-visible>.bv2-tip,.bv2-segment:hover>.bv2-tip,.bv2-segment:focus-visible>.bv2-tip,.bv2-tip[data-open]{opacity:1;transform:none}
+.bv2-tip[data-open]{transition-delay:0s}
+.bv2-venster .bv2-tip,.bv2-werkbalk>.bv2-groep:last-child .bv2-tip{left:auto;right:4px;translate:none}
+@media (hover:none){.bv2-knop:hover>.bv2-tip,.bv2-segment:hover>.bv2-tip{opacity:0}}
+.bv2-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ── Menu’s en zwevende vensters ── */
+.bv2-zwevend{position:absolute;z-index:40;top:calc(100% + 4px);right:0;min-width:220px;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--panel);
+  box-shadow:0 12px 32px color-mix(in srgb,#000 22%,transparent);animation:bv2-in .14s ease}
+@keyframes bv2-in{from{opacity:0;transform:translateY(-4px)}}
+.bv2-menu{display:grid}
+.bv2-menu-item{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:var(--text);font:inherit;font-size:14px;text-align:left;text-decoration:none;cursor:pointer}
+.bv2-menu-item>svg{color:var(--muted);flex:0 0 auto}
+.bv2-menu-item:hover,.bv2-menu-item:focus-visible{background:var(--nav-hover,color-mix(in srgb,var(--text) 7%,transparent));outline:none}
+.bv2-tekstknop{min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+.bv2-tekstknop[aria-pressed='true']{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));color:var(--accent);background:var(--accent-soft)}
+.bv2-tekstknop.is-hoofd{border-color:transparent;background:var(--accent);color:var(--text-on-accent,#fff)}
+.bv2-tekstknop:focus-visible{outline:2px solid var(--focus,var(--accent));outline-offset:1px}
+
+/* ── Zoomgroep ── */
+.bv2-zoom-waarde{min-width:52px;height:34px;padding:0 6px;border:0;border-radius:8px;background:transparent;color:var(--text);font:inherit;font-size:12.5px;font-weight:650;font-variant-numeric:tabular-nums;cursor:pointer}
+.bv2-zoom-waarde:hover,.bv2-zoom-waarde[aria-expanded='true']{background:var(--nav-hover,color-mix(in srgb,var(--text) 7%,transparent))}
+.bv2-zoom-waarde:focus-visible{outline:2px solid var(--focus,var(--accent));outline-offset:0}
+.bv2-zoom-venster{left:50%;right:auto;translate:-50% 0;display:grid;gap:8px;width:236px}
+.bv2-zoom-invoer{display:flex;align-items:center;gap:6px}
+.bv2-zoom-invoer input{width:76px;min-height:36px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font:inherit}
+.bv2-zoom-invoer .bv2-tekstknop{margin-left:auto}
+.bv2-zoom-keuzes{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+
+/* ── Segmentschakelaar met glijdende markering ── */
+.bv2-segmenten{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(40px,auto);align-items:center;height:36px;padding:2px;border-radius:10px;
+  background:color-mix(in srgb,var(--text) 6%,transparent);flex:0 0 auto}
+.bv2-segment-glijder{position:absolute;top:2px;bottom:2px;left:2px;width:calc((100% - 4px)/var(--bv2-n));border-radius:8px;background:var(--panel);
+  box-shadow:0 1px 3px color-mix(in srgb,#000 18%,transparent);transform:translateX(calc(100% * var(--bv2-i)));transition:transform .2s cubic-bezier(.3,.7,.3,1)}
+.bv2-segmenten[data-leeg] .bv2-segment-glijder{opacity:0}
+.bv2-segment{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;gap:5px;height:32px;min-width:40px;padding:0 8px;border:0;border-radius:8px;
+  background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:650;cursor:pointer;touch-action:manipulation}
+.bv2-segment::before{content:'';position:absolute;inset:-6px 0}/* raakvlak 44 px hoog */
+.bv2-segment[aria-checked='true']{color:var(--accent)}
+.bv2-segment:hover{color:var(--text)}
+.bv2-segment:focus-visible{outline:2px solid var(--focus,var(--accent));outline-offset:-2px}
+.bv2-pict-tekst{font-size:11.5px;font-weight:800;letter-spacing:-.02em}
+
+/* ── PDF-balk v2 (in het document, blijft bovenaan) ── */
+.google-mail-attachment-preview .bv2-pdfbalk{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:center;gap:6px;width:max-content;max-width:calc(100% - 16px);
+  margin:8px auto 0;padding:2px 6px;box-sizing:border-box;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:14px;
+  background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(10px);box-shadow:0 6px 18px color-mix(in srgb,#000 14%,transparent);justify-self:center}
+.bv2-pdfbalk>.bv2-groep+.bv2-groep,.bv2-pdfbalk>.bv2-segmenten,.bv2-pdfbalk>.bv2-zoom{margin-left:2px}
+.bv2-pdfbalk.is-ingeklapt{padding:0 2px 0 10px;gap:0;border-radius:999px}
+.bv2-pagina{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bv2-pagina input{width:38px;height:32px;padding:0;border:1px solid transparent;border-radius:7px;background:color-mix(in srgb,var(--text) 6%,transparent);color:var(--text);font:inherit;font-weight:650;text-align:center}
+.bv2-pagina input:focus{outline:none;border-color:var(--accent);background:var(--panel)}
+.bv2-pdfbalk .bv2-tip{top:calc(100% + 4px)}
+/* oude stilte rond de pagina's: minder lucht */
+.google-mail-attachment-preview[data-bijlage-v2][data-workbench-layout='page'] .mail-pdf-preview{padding:0 12px 28px;gap:14px}
+
+/* ── Gedeeld paneel (ШІ/vertaling, details): rechts op computer, onderaan op telefoon ── */
+.google-mail-attachment-preview[data-bijlage-v2]:not([data-bv2-paneel='ai']) .ai-vertaling-balk{display:none!important}
+.google-mail-attachment-preview[data-bijlage-v2]:not([data-bv2-paneel='details']) .mail-pdf-profile-bar{display:none!important}
+.bv2-paneel{position:fixed;z-index:60;top:var(--bv2-stage-top,64px);right:var(--bv2-stage-right,0px);bottom:var(--bv2-stage-bottom,0px);width:min(360px,46vw);display:grid;grid-template-rows:auto 1fr;
+  box-sizing:border-box;border-left:1px solid var(--line);background:var(--panel);box-shadow:-10px 0 28px color-mix(in srgb,#000 12%,transparent);animation:bv2-paneel-in .18s ease}
+@keyframes bv2-paneel-in{from{opacity:0;transform:translateX(16px)}}
+.bv2-paneel-kop{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 4px 2px 16px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.bv2-paneel-kop strong{font-size:14px}
+.bv2-details{margin:0;padding:12px 16px;display:grid;gap:10px;align-content:start;overflow:auto}
+.bv2-details>div{display:grid;gap:2px}
+.bv2-details dt{font-size:12px;color:var(--muted)}
+.bv2-details dd{margin:0;font-size:13.5px;color:var(--text);overflow-wrap:anywhere}
+.bv2-paneel-hulp{margin:0;padding:12px 16px;font-size:13px;color:var(--muted)}
+/* De echte vertaalbalk (uit de inhoud) en het PDF-profiel verhuizen visueel naar het paneel. */
+.google-mail-attachment-preview[data-bijlage-v2][data-bv2-paneel='ai'] .mail-viewer-cache-panel:not([hidden]) .ai-vertaling-balk,
+.google-mail-attachment-preview[data-bijlage-v2][data-bv2-paneel='details'] .mail-viewer-cache-panel:not([hidden]) .mail-pdf-profile-bar{
+  position:fixed!important;z-index:61;top:calc(var(--bv2-stage-top,64px) + 104px);right:calc(var(--bv2-stage-right,0px) + 1px);width:min(359px,calc(46vw - 1px));max-height:calc(100vh - var(--bv2-stage-top,64px) - var(--bv2-stage-bottom,0px) - 112px);
+  margin:0!important;box-sizing:border-box;overflow:auto;border:0!important;border-radius:0!important;box-shadow:none!important;background:var(--panel)!important}
+.google-mail-attachment-preview[data-bijlage-v2][data-bv2-paneel='ai'] .mail-viewer-cache-panel:not([hidden]) .ai-vertaling-balk{top:calc(var(--bv2-stage-top,64px) + 49px)}
+.google-mail-attachment-preview[data-bijlage-v2][data-bv2-paneel='details'] .mail-viewer-cache-panel:not([hidden]) .mail-pdf-profile-bar{top:auto;bottom:calc(var(--bv2-stage-bottom,0px) + 8px);padding:12px 16px}
+/* document schuift opzij zodat niets eronder verdwijnt (computer) */
+@media (min-width:761px){.google-mail-attachment-preview[data-bijlage-v2][data-bv2-paneel] .mail-viewer-preview-cache{padding-right:min(360px,46vw)}}
+@media (max-width:760px){
+  .bv2-paneel{top:auto;left:0;right:0;bottom:0;width:auto;max-height:62dvh;border-left:0;border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -10px 28px color-mix(in srgb,#000 18%,transparent);
+    padding-bottom:env(safe-area-inset-bottom,0px);animation-name:bv2-blad-in}
+  @keyframes bv2-blad-in{from{transform:translateY(24px);opacity:0}}
+  .google-mail-attachment-preview[data-bijlage-v2][data-bv2-paneel='ai'] .mail-viewer-cache-panel:not([hidden]) .ai-vertaling-balk{top:auto;bottom:0;left:0;right:0;width:auto;max-height:calc(62dvh - 50px)}
+  .google-mail-attachment-preview[data-bijlage-v2][data-bv2-paneel='details'] .mail-viewer-cache-panel:not([hidden]) .mail-pdf-profile-bar{left:0;right:0;width:auto;bottom:0}
+  html body .google-mail-attachment-preview[data-bijlage-v2][data-workbench-layout]>header.bv2-kop{padding-left:12px;gap:2px}
+  .bv2-werkbalk{gap:0}
+  .bv2-werkbalk>.bv2-groep+.bv2-groep{margin-left:1px;padding-left:2px}
+  .google-mail-attachment-preview .bv2-pdfbalk{margin-top:6px;gap:2px;padding:1px 3px}
+  .bv2-pdf-extra{display:none}
+  .bv2-segmenten{grid-auto-columns:minmax(36px,auto)}
+  .bv2-segment{min-width:36px;padding:0 6px}
+}
+@media (max-width:400px){.bv2-pdfbalk .bv2-zoom .bv2-knop{min-width:38px}.bv2-zoom-waarde{min-width:44px}.bv2-teller{min-width:28px}}
+@media (prefers-reduced-motion:reduce){
+  .google-mail-attachment-preview[data-bijlage-v2] *,.bv2-zwevend,.bv2-paneel{animation:none!important;transition:none!important}
+}
+
+/* ── Oude kopstijl (google-mail-werkruimte.css: «header a, header button» met rand en vlak) niet laten doorwerken ── */
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop :is(a,button).bv2-knop{border:0;border-radius:0;background:transparent;padding:0;box-shadow:none;min-height:0;color:var(--muted)}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop :is(a,button).bv2-knop.met-label{padding:0 12px}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop :is(a,button).bv2-knop:hover{color:var(--text)}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop :is(a,button).bv2-knop.is-hoofd{color:var(--accent)}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop :is(a,button).bv2-knop.is-ai{color:var(--bv2-ai)}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop :is(a,button).bv2-knop[aria-pressed='true']:not(.is-ai){color:var(--accent)}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop :is(a,button).bv2-knop:disabled{color:color-mix(in srgb,var(--muted) 45%,transparent)}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop :is(a,button).bv2-knop[data-staat='gelukt']{color:var(--ok)}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop :is(a,button).bv2-knop[data-staat='fout']{color:var(--danger)}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop .bv2-venster .bv2-knop[data-bv2='sluit']:hover{color:var(--danger)}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop :is(a,button).bv2-menu-item{border:0;border-radius:8px;background:transparent;padding:0 12px;width:100%;justify-content:flex-start}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop :is(a,button).bv2-menu-item:hover{background:var(--nav-hover,color-mix(in srgb,var(--text) 7%,transparent))}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop .bv2-zoom-waarde{border:0;background:transparent;padding:0 6px}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop .bv2-tekstknop{border:1px solid var(--line);padding:0 10px}
+html body .google-mail-attachment-preview[data-bijlage-v2]>header.bv2-kop .bv2-tekstknop.is-hoofd{border-color:transparent;background:var(--accent);color:var(--text-on-accent,#fff)}
+.bv2-titel small{flex:0 0 auto;margin-left:6px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+/* Smal (telefoon of smal venster): titel houdt minstens ~72 px; ⓘ en de download-varianten staan dan in «•••». */
+.bv2-kop[data-bv2-niveau='smal'] .bv2-titel{min-width:60px}
+@media (max-width:400px){
+  .bv2-pdfbalk [data-bv2='pdf-vorige'],.bv2-pdfbalk [data-bv2='pdf-volgende']{display:none}
+  .bv2-pagina{padding-left:4px}
+  .bv2-pdfbalk .bv2-zoom .bv2-knop{min-width:36px}
+}
+[data-bijlage-v2]:not([data-bv2-paneel='details']) .mail-graphics-preview>header{display:none}
+[data-bijlage-v2]:not([data-bv2-paneel='details']) .mail-graphics-preview dl{display:none}
+.bv2-zoom.is-compact .bv2-zoom-waarde{min-width:56px;height:44px}
+.bv2-zoom-venster .bv2-zoom-stap{display:flex;align-items:center;justify-content:space-between}

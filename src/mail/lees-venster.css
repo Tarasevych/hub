@@ -1,0 +1,64 @@
+/* Leesvenster van de Post (pakket 1 «Adaptive Mail Canvas», 24.10.2026) — wat per VORM van het venster anders is.
+   De vorm staat op de achtergrond: data-lees-modus = volledig | rechts | onder | zwevend | telefoon, en de breedte van het venster zelf:
+   data-lees-breedte = smal (< 560) | midden (< 1100) | breed. src/mail/lees-modus.ts beslist, src/mail/LeesVenster.tsx zet ze en zet
+   de randen (menu links/rechts, dock boven/onder) inline. Oudere regels per schermbreedte blijven voor wat ze verder doen. */
+
+/* Naast de lijst («rechts», «onder») en zwevend ligt de kop van de brief NIET onder de bovenbalk van de site: de reserve van 4.75rem
+   (avatar en meldingen, google-mail-werkruimte.css) kostte daar alleen knoppen. */
+html body .google-mail-reader-backdrop:is([data-lees-modus='rechts'],[data-lees-modus='onder'],[data-lees-modus='zwevend']) .google-mail-reader>header{padding-right:12px}
+
+/* Focus: het venster krijgt bij het openen zelf de focus (tabIndex −1, LeesVenster), zodat de schermlezer het onderwerp voorleest en
+   Tab bij de eerste knop begint. Geen ring rond het hele venster (op de telefoon een blauwe lijst rond het scherm na elke tik); de
+   knoppen erin tonen hun eigen ring zodra je Tab gebruikt. */
+html body .google-mail-reader-backdrop .google-mail-reader:is(:focus,:focus-visible){outline:none}
+
+/* Greep van het zwevende venster (MailLezerWerkbalk): slepen met de muis of de vinger, pijltjes met het toetsenbord. */
+.mail-reader-venster-greep{display:inline-grid;place-items:center;flex:0 0 auto;width:28px;height:44px;margin-right:2px;border-radius:8px;color:var(--muted);cursor:move;touch-action:none}
+.mail-reader-venster-greep svg{width:16px;height:16px}
+.mail-reader-venster-greep:hover{background:var(--surface2)}
+.mail-reader-venster-greep:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* «Зменшити вікно» bestaat niet op de telefoon (< 721 px: daar is het venster altijd het hele scherm). Was ≤ 559 px in
+   mail-ux-beoordeling-20261021.css (R5) — tussen 560 en 760 px deed de knop niets. LeesVenster rendert hem daar ook niet; dit is de
+   vangrail (ook voor de greep). */
+@media (max-width:720px){
+  html body .google-mail-reader .mail-reader-venster{display:none!important}
+  html body .google-mail-reader .mail-reader-venster-greep{display:none!important}
+}
+/* Telefoon: het venster vult het scherm tot onderaan (pakket 2: daar staat de actiebalk). Was 98vh (google-mail-werkruimte.css, oude
+   kaart met 6 px rand): 16 px leeg onder de brief, en op een echte telefoon is vh de GROOTSTE hoogte — met de adresbalk zichtbaar viel
+   de onderkant dan achter de knoppen van de browser. De achtergrond is fixed inset 0: 100 % is precies het zichtbare deel. */
+html body .google-mail-reader-backdrop[data-lees-modus='telefoon']>.google-mail-reader{height:100%;max-height:100%}
+
+/* Kop van de brief, «priority+» (MailLezerWerkbalk): de acties staan op ÉÉN regel in de gekozen volgorde, rechts uitgelijnd; wat niet
+   past, schuift naar een tweede regel die afgesneden wordt — de werkbalk meet welke dat zijn, maakt ze onzichtbaar (ook voor het
+   toetsenbord en de schermlezer) en toont ze bovenaan in ⋮. Vroeger: een rij die stil horizontaal scrolde met een breedte per
+   SCHERM (56vw, 100vw − 268 px, 54/96 px op ≤ 430 px) — in een smal venster schoven de knoppen over ⋮ en «Згорнути». */
+html body .mail-reader-toolbar:not(.layout-editing){flex:1 1 auto;min-width:0}
+html body .mail-reader-toolbar:not(.layout-editing)>.mail-reader-action-surface.surface-header{flex:1 1 0;min-width:0;max-width:none!important}
+html body .mail-reader-toolbar:not(.layout-editing)>.surface-header>.mail-reader-action-items{flex-wrap:wrap;justify-content:flex-end;align-content:flex-start;row-gap:12px;max-height:52px;margin:-4px;padding:4px;overflow:hidden!important}
+html body .mail-reader-toolbar:not(.layout-editing)>.surface-header>.mail-reader-action-items>[data-kop-verborgen='true']{visibility:hidden}
+
+/* «Onder» op de computer: de lijst schuift gewoon met de pagina mee en houdt onderaan zoveel plaats vrij als de brief hoog is
+   (--lees-onder-hoogte, LeesVenster) — de laatste rij kan boven de brief komen, en openen/sluiten verplaatst de lijst niet. Was: de
+   werkruimte als eigen schuifvak van 48vh − 12 px (mail-snelle-instellingen.css), dat ~60 px achter de brief doorliep en bij openen en
+   sluiten de schuifpositie verloor (de lijst sprong naar boven). */
+@media (min-width:721px){
+  html body .google-mail-workspace[data-reading-pane='below'][data-reader-open='true']{max-height:none;overflow:visible;padding-bottom:calc(var(--lees-onder-hoogte,52vh) + 16px)}
+}
+
+/* Overzicht van de sneltoetsen («?», pakket 2 — src/mail/SneltoetsenHulp.tsx): een klein venster midden in de brief, boven alles. */
+/* boven de werkbalk (z-index 700, voor zijn eigen menu's): op een lage telefoon (640×400) lag de kop anders over het overzicht */
+html body .google-mail-reader>.lz-hulp-scherm{grid-area:1/1/-1/-1;z-index:710;background:var(--overlay);opacity:.5}
+html body .google-mail-reader>.lz-hulp{grid-area:1/1/-1/-1;z-index:711;place-self:center;width:min(440px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;padding:16px 18px;border:1px solid var(--line);border-radius:var(--straal-l,16px);background:var(--panel);color:var(--text);box-shadow:var(--schaduw-3)}
+.lz-hulp>header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding:0;border:0}
+html body .lz-hulp>header h2{margin:0;font-family:inherit;font-size:16px;font-weight:700}
+.lz-hulp>header button{display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.lz-hulp>header button:hover{background:var(--surface);color:var(--text)}
+.lz-hulp>header button:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+html body .google-mail-reader .lz-hulp dl{display:grid;gap:6px;margin:0;padding:0;border:0}
+html body .google-mail-reader .lz-hulp dl>div{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;gap:10px}
+.lz-hulp dt{color:var(--text)}
+.lz-hulp dd{margin:0;font-size:14px}
+.lz-hulp kbd{display:inline-block;min-width:26px;padding:2px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:700;text-align:center}
+.lz-hulp>p{margin:12px 0 0;color:var(--muted);font-size:12px;line-height:1.45}

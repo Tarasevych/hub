@@ -1,0 +1,154 @@
+/* UI-015 «Aanmeldmethoden vNext» — alleen tokens uit src/ontwerp/tokens.css (licht/donker/auto volgen vanzelf).
+   De schil hier is de basis; de uitvoerder F1 bouwt hero/kaarten/panelen in dit bestand verder (zelfde amv-prefix).
+   Vaste lagen (.amv-laag) zijn geregistreerd in scripts/plaatsing-vaste-elementen.json. */
+.amv, .amv *, .amv-laag, .amv-laag * { box-sizing: border-box; }
+.amv { display: grid; gap: var(--ruimte-4); color: var(--text); font-size: var(--tekst-klein); }
+.amv :focus-visible, .amv-laag :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.amv button, .amv-laag button { font: inherit; color: inherit; cursor: pointer; }
+.amv button:disabled, .amv-laag button:disabled { opacity: .55; cursor: not-allowed; }
+.amv-melding { display: flex; gap: var(--ruimte-2); margin: 0; padding: 10px 12px; border-radius: var(--straal-m); font-size: var(--tekst-klein); }
+.amv-melding.is-info { background: var(--info-zacht); color: var(--info); }
+.amv-melding.is-fout { background: var(--fout-zacht); color: var(--fout); }
+.amv-laag { position: fixed; inset: 0; z-index: 230; background: var(--overlay); display: flex; justify-content: flex-end; color: var(--text); font-size: var(--tekst-klein); }
+/* max-width 100%: primitieven.css geeft elk [role=dialog] max-width calc(100vw - 16px); dit zijpaneel/scherm plakt
+   bewust aan de schermrand, dus de laag (= het scherm) is de grens — anders blijft op 390px een geul van 16px staan. */
+.amv-laag-vak { background: var(--panel); display: flex; flex-direction: column; max-height: 100%; width: min(560px, 100%); max-width: 100%; box-shadow: var(--schaduw-3); outline: none; }
+
+/* ———— F1: hero → zoek/chips → kaarten → catalogus → detail-laag. Alleen tokens; geen nieuwe vaste lagen (dossier §9).
+   Breekpunten: 320–599 rijkaarten, 600–859 twee kolommen, 860–1199 twee à drie, ≥1200 drie per rij + container. */
+.amv { min-width: 0; }
+.amv-sectie { display: grid; gap: var(--ruimte-3); min-width: 0; }
+.amv-sectie-kop { display: grid; gap: var(--ruimte-1); }
+.amv-sectie-kop h3 { margin: 0; font-size: var(--tekst-basis); }
+.amv-hint { margin: 0; color: var(--muted); font-size: var(--tekst-mini); line-height: 1.4; overflow-wrap: anywhere; }
+.amv-leeg { margin: 0; padding: var(--ruimte-5); border: 1px dashed var(--line); border-radius: var(--straal-l); color: var(--muted); text-align: center; }
+
+/* —— hero: rustige gradient op tokenkleuren, beeld rechts; GEEN cijfers (dossier §3.2). */
+.amv-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-3); overflow: hidden; padding: var(--ruimte-5); border: 1px solid var(--line); border-radius: var(--straal-xl); background: linear-gradient(130deg, var(--accent-soft), var(--panel) 72%); }
+.amv-hero-tekst { display: grid; gap: var(--ruimte-2); min-width: 0; z-index: 1; }
+.amv-hero-tekst h2 { margin: 0; font-size: 1.45rem; line-height: 1.15; }
+.amv-hero-tekst p { margin: 0; color: var(--muted); max-width: 46ch; }
+.amv-hero-tekst .amv-knop { justify-self: start; }
+.amv-hero-beeld { width: clamp(180px, 28vw, 320px); height: auto; align-self: end; margin: calc(var(--ruimte-5) * -1) calc(var(--ruimte-5) * -1) calc(var(--ruimte-5) * -1) 0; }
+
+/* —— zoeken + chips (dossier §4, §7): filteren vindt, verandert nooit een stand. */
+.amv-filter { display: grid; gap: var(--ruimte-2); min-width: 0; }
+.amv-zoek { display: flex; align-items: center; gap: var(--ruimte-2); min-height: var(--tik-hoogte); padding: 0 var(--ruimte-3); border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); color: var(--muted); }
+.amv-zoek svg { flex: none; width: 17px; height: 17px; }
+.amv-zoek input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--text); font: inherit; outline: none; }
+.amv-chips { display: flex; flex-wrap: wrap; gap: var(--ruimte-2); }
+.amv-chip { display: inline-flex; align-items: center; gap: var(--ruimte-1); min-height: var(--tik-hoogte); padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); font-size: var(--tekst-klein); }
+.amv-chip svg { width: 15px; height: 15px; color: var(--muted); }
+.amv-chip:hover { border-color: var(--accent); }
+.amv-chip.is-actief { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+.amv-chip.is-actief svg { color: var(--accent); }
+
+/* —— kaartenrooster: mobiel rijen, daarboven kolommen. */
+.amv-rooster { display: grid; grid-template-columns: 1fr; gap: var(--ruimte-3); min-width: 0; }
+.amv-kaart { position: relative; display: flex; align-items: flex-start; gap: var(--ruimte-3); min-width: 0; padding: var(--ruimte-3); border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); box-shadow: var(--schaduw-1); cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease; scroll-margin-top: 84px; }
+.amv-kaart:hover, .amv-kaart:focus-visible { border-color: var(--accent); box-shadow: var(--schaduw-2); }
+.amv-kaart-icoon { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--straal-m); background: var(--accent-soft); color: var(--accent); }
+.amv-kaart-icoon svg { width: 21px; height: 21px; }
+.amv-brand { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--accentText); font-size: var(--tekst-klein); font-weight: 800; }
+.amv-brand.is-neutraal { width: 30px; height: 30px; background: var(--surface2); color: var(--text); }
+.amv-kaart-tekst { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.amv-kaart-tekst strong { font-size: var(--tekst-klein); line-height: 1.25; }
+.amv-kaart-tekst > small { color: var(--muted); font-size: var(--tekst-mini); line-height: 1.35; overflow-wrap: anywhere; }
+.amv-kaart-voet { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); margin-top: 2px; }
+.amv-teller { display: inline-grid; place-items: center; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: var(--surface2); color: var(--text); font-size: var(--tekst-mini); font-weight: 700; font-variant-numeric: tabular-nums; }
+.amv-reden { color: var(--muted); font-size: var(--tekst-mini); line-height: 1.35; overflow-wrap: anywhere; }
+.amv-kaart-acties { display: flex; flex: none; align-items: center; gap: var(--ruimte-1); margin-left: auto; }
+
+/* —— staat: tekst + stip; kleur is nooit de enige drager (dossier §5). */
+.amv-staat { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 650; color: var(--muted); }
+.amv-staat i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.amv-staat.is-active { color: var(--ok); }
+.amv-staat.is-ready { color: var(--info); }
+.amv-staat.is-attention { color: var(--warn); }
+.amv-staat.is-unknown { color: var(--warn); }
+.amv-staat.is-unavailable, .amv-staat.is-loading, .amv-staat.is-not-configured { color: var(--muted); }
+.amv-staat.is-catalogus { gap: 0; margin-left: auto; padding: 2px 8px; border-radius: 999px; background: var(--surface2); color: var(--muted); font-weight: 600; }
+.amv-staat.is-catalogus i { display: none; }
+
+/* —— knoppen: tik-hoogte volgt het token (44px op aanraakschermen). */
+.amv-knop { display: inline-flex; align-items: center; justify-content: center; gap: var(--ruimte-1); min-height: var(--tik-hoogte); padding: 6px 14px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); color: var(--text); font-size: var(--tekst-klein); font-weight: 650; text-decoration: none; }
+.amv-knop svg { width: 16px; height: 16px; }
+.amv-knop:hover:not(:disabled) { border-color: var(--accent); }
+.amv-knop.is-hoofd { border-color: var(--accent); background: var(--accent); color: var(--accentText); }
+.amv-knop.is-gevaar { border-color: var(--fout); background: var(--fout-zacht); color: var(--fout); }
+.amv-knop.is-stil { border-color: transparent; background: transparent; color: var(--muted); }
+.amv-knop.is-klein { padding: 4px 10px; }
+.amv-icoonknop { display: grid; place-items: center; width: var(--tik-hoogte); height: var(--tik-hoogte); padding: 0; border: 0; border-radius: var(--straal-m); background: transparent; color: var(--muted); }
+.amv-icoonknop:hover { background: var(--nav-hover); color: var(--text); }
+.amv-icoonknop svg { width: 18px; height: 18px; }
+
+/* —— verwijzingen (sessies = eigen tabblad; step-up = informatief, geen dubbele UI hier). */
+.amv-verwijzingen { display: grid; grid-template-columns: 1fr; gap: var(--ruimte-3); min-width: 0; }
+.amv-verwijzing { display: flex; align-items: center; gap: var(--ruimte-3); min-height: var(--tik-hoogte); padding: var(--ruimte-3); border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); color: var(--text); text-decoration: none; }
+.amv-verwijzing svg { flex: none; width: 20px; height: 20px; color: var(--accent); }
+.amv-verwijzing span { display: grid; gap: 2px; min-width: 0; }
+.amv-verwijzing small { color: var(--muted); font-size: var(--tekst-mini); line-height: 1.35; }
+a.amv-verwijzing:hover { border-color: var(--accent); box-shadow: var(--schaduw-1); }
+.amv-verwijzing.is-stil { cursor: default; }
+
+/* —— eerlijke aanbiederscatalogus: tegels met sleutelchecklist (alleen NAMEN). */
+.amv-tegels { display: grid; grid-template-columns: 1fr; gap: var(--ruimte-3); min-width: 0; }
+.amv-tegel { display: flex; flex-direction: column; gap: var(--ruimte-2); min-width: 0; padding: var(--ruimte-3); border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); }
+.amv-tegel.is-niet-mogelijk, .amv-tegel.is-gepland { background: var(--surface); }
+.amv-tegel-kop { display: flex; align-items: center; gap: var(--ruimte-2); min-width: 0; flex-wrap: wrap; }
+.amv-tegel > small { margin: 0; color: var(--muted); font-size: var(--tekst-mini); line-height: 1.4; overflow-wrap: anywhere; }
+.amv-tegel .amv-knop { align-self: start; }
+.amv-sleutels { display: grid; gap: 4px; margin: 0; padding: var(--ruimte-2); border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--surface); list-style: none; }
+.amv-sleutels li { display: flex; align-items: center; gap: var(--ruimte-2); min-width: 0; font-size: var(--tekst-mini); }
+.amv-sleutels i { flex: none; font-style: normal; font-weight: 800; color: var(--fout); }
+.amv-sleutels li[data-amv-aanwezig='ja'] i { color: var(--ok); }
+.amv-sleutels code { min-width: 0; overflow-wrap: anywhere; font-size: var(--tekst-mini); color: var(--text); }
+
+/* —— detail-laag: kop + inhoud; zijpaneel op breed, volledig scherm op smal (css-klassen uit Laag.tsx). */
+.amv-laag.is-paneel { justify-content: flex-end; }
+.amv-laag.is-paneel .amv-laag-vak { width: min(560px, 100%); border-radius: 0; }
+.amv-laag.is-scherm { justify-content: stretch; }
+.amv-laag.is-scherm .amv-laag-vak { width: 100%; }
+.amv-laag-kop { display: flex; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-3) var(--ruimte-4); border-bottom: 1px solid var(--line); }
+.amv-laag-kop h2 { flex: 1; margin: 0; min-width: 0; font-size: var(--tekst-basis); overflow-wrap: anywhere; }
+.amv-laag-inhoud { display: grid; gap: var(--ruimte-3); align-content: start; min-width: 0; overflow-y: auto; padding: var(--ruimte-4); overscroll-behavior: contain; padding-bottom: calc(var(--ruimte-4) + var(--veilig-onder, 0px)); }
+.amv-rij { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); margin: 0; min-width: 0; }
+.amv-rij > strong { min-width: 7.5em; font-size: var(--tekst-klein); }
+.amv-rij input { flex: 1; min-width: 9em; min-height: var(--tik-hoogte); padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--surface); color: var(--text); font: inherit; letter-spacing: .18em; }
+.amv-geheim { display: block; padding: var(--ruimte-2) var(--ruimte-3); border: 1px dashed var(--line); border-radius: var(--straal-m); background: var(--surface); color: var(--text); font-size: var(--tekst-klein); letter-spacing: .08em; overflow-wrap: anywhere; user-select: all; }
+.amv-totp-setup, .amv-detail-google, .amv-detail-wachtwoord, .amv-detail-totp { display: grid; gap: var(--ruimte-3); min-width: 0; }
+.amv-detail-google .amv-knop { justify-self: start; }
+/* De bestaande secties binnen de laag: eigen kop/rand van de pagina uitzetten — inhoud en gedrag blijven onaangeroerd. */
+.amv-laag .access-plane-section { padding-top: 0; border-top: 0; }
+.amv-laag .access-plane-section-head h2 { font-size: var(--tekst-basis); }
+
+/* —— breekpunten (dossier §9). 320–599 is de basis hierboven; vanaf 600 kolommen. */
+@media (max-width: 599px) {
+  .amv-hero { grid-template-columns: 1fr; padding: var(--ruimte-4); }
+  .amv-hero-beeld { position: absolute; right: calc(var(--ruimte-3) * -1); bottom: calc(var(--ruimte-3) * -1); width: 150px; margin: 0; opacity: .5; }
+  .amv-tegels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .amv-knop { min-height: var(--tik-hoogte-mobiel); }
+  .amv-icoonknop { width: var(--tik-hoogte-mobiel); height: var(--tik-hoogte-mobiel); }
+  .amv-chip { min-height: var(--tik-hoogte-mobiel); }
+}
+@media (min-width: 600px) {
+  .amv-rooster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .amv-kaart { flex-direction: column; }
+  .amv-kaart .amv-kaart-acties { position: absolute; top: var(--ruimte-3); right: var(--ruimte-3); margin-left: 0; }
+  .amv-kaart-tekst { width: 100%; padding-right: 44px; }
+  .amv-verwijzingen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .amv-tegels { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+}
+@media (min-width: 860px) {
+  .amv-rooster { grid-template-columns: repeat(auto-fill, minmax(264px, 1fr)); }
+}
+@media (min-width: 1200px) {
+  .amv { max-width: 1160px; margin-inline: auto; width: 100%; }
+  .amv-rooster { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .amv-hero { min-height: 220px; max-height: 280px; }
+}
+@media (min-width: 1920px) { .amv { max-width: 1220px; } }
+@media (prefers-reduced-motion: reduce) {
+  .amv *, .amv-laag * { transition: none !important; animation: none !important; }
+  .amv-kaart, .amv-laag-vak { scroll-behavior: auto; }
+}

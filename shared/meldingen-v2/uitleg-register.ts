@@ -1,0 +1,293 @@
+// UI-014 — REGISTER VAN MELDINGSSOORTEN: per soort wat de mens moet weten (wie, wat, wanneer, waarom, gevolg, wat te doen, rechten)
+// en welke snelle acties de kaart biedt. Elke soort MOET uitleg + minstens één actie + een deeplink hebben; dat dwingt
+// tests/eenheid/meldingen-uitleg-20261030.test.ts af. Nieuwe soort = hier een regel toevoegen, anders valt hij op «algemeen».
+//
+// Veiligheid: «gevaarlijke» acties (intrekken, verbieden, sessie beëindigen) voeren hier NOOIT iets uit. Ze openen de pagina waar
+// de bestaande bevestiging/step-up (passkey) geldt. Er is geen enkele automatische actie.
+//
+// Niets verzinnen: velden komen uit de melding zelf (titel/tekst/link/bron). Wat de bron niet geeft, staat er eerlijk als
+// «джерело не передало» (zie veld()).
+import type { V2Melding } from './groepering';
+
+type Tw = readonly [uk: string, nl: string];
+export type Risico = 'laag' | 'midden' | 'hoog';
+export type ActieSoort = 'openen' | 'wijziging' | 'intrekken' | 'niet-ik' | 'dit-was-ik' | 'beslissen' | 'type-stil' | 'later' | 'gelezen';
+export type UitlegActie = {
+  soort: ActieSoort;
+  label: Tw;
+  /** Voor link-acties: het exacte doel. Afwezig = handeling in de kaart zelf (gelezen, later, type-stil). */
+  href?: (m: V2Melding) => string | undefined;
+  /** Gevaarlijk: alleen via de doelpagina met bevestiging/step-up. De kaart vraagt bovendien eerst «Точно?». */
+  gevaarlijk?: boolean;
+};
+export type UitlegSoort = {
+  id: string;
+  /** Welke meldingen deze soort beschrijft. Volgorde in REGISTER telt: de eerste die past wint. */
+  past: (m: V2Melding) => boolean;
+  /** Mensentitel als de bron alleen een code gaf (anders de titel van de bron). */
+  titel?: Tw;
+  risico: Risico;
+  wat: Tw;
+  waarom: Tw;
+  gevolg: Tw;
+  doen: Tw;
+  /** Bij toegang/rechten: waartoe en met welke rechten. */
+  rechten?: Tw;
+  /** Deeplink naar het exacte object/de bronpagina. */
+  deeplink: (m: V2Melding) => string;
+  acties: UitlegActie[];
+};
+
+const ID = 'https://id.tarasevych.com';
+const MCP = 'https://mcp.tarasevych.com/agents';
+const UPD = 'https://admin.tarasevych.com/updates';
+const viaLink = (vast: string) => (m: V2Melding) => (m.link && /^(\/|https:\/\/([a-z0-9-]+\.)?tarasevych\.com\/)/.test(m.link) ? m.link : vast);
+const s = (m: V2Melding) => `${m.soort || ''} ${m.categorie || ''}`.toLowerCase();
+const tekst = (m: V2Melding) => `${m.titel} ${m.tekst || ''}`.toLowerCase();
+
+// Algemene acties die elke kaart heeft (naast de soort-eigen): gelezen, later. Niet in de register-test meegeteld.
+export const ALGEMENE_ACTIES: UitlegActie[] = [
+  { soort: 'gelezen', label: ['Позначити прочитаним', 'Als gelezen markeren'] },
+  { soort: 'later', label: ['Нагадати через годину', 'Over een uur herinneren'] },
+];
+
+export const REGISTER: UitlegSoort[] = [
+  // ---- UI-014 fase 2A: aanmeldingen en aanmeldmethoden (vóór «beveiliging», want de eerste passende soort wint)
+  {
+    id: 'nieuw-apparaat',
+    past: (m) => /security/.test(s(m)) && /(новий вхід|новому пристрої|nieuwe aanmelding|nieuw apparaat)/.test(tekst(m)),
+    titel: ['Новий вхід на новому пристрої', 'Nieuwe aanmelding op een nieuw apparaat'],
+    risico: 'hoog',
+    wat: ['У ваш обліковий запис увійшли з пристрою або браузера, якого тут раніше не було (пристрій, регіон за IP і спосіб — у тексті).', 'Er is aangemeld op uw account vanaf een apparaat of browser dat hier nog niet was (apparaat, regio volgens IP en methode in de tekst).'],
+    waarom: ['Вхід пройшов успішно (Google, passkey або код). Повідомлення приходить один раз на кожен новий пристрій.', 'De aanmelding is gelukt (Google, passkey of code). De melding komt één keer per nieuw apparaat.'],
+    gevolg: ['Цей пристрій зараз має повний доступ вашого облікового запису, доки сеанс не завершиться.', 'Dit apparaat heeft nu de volledige toegang van uw account tot de sessie eindigt.'],
+    doen: ['Якщо це ви — «Це був я». Якщо ні — завершіть цей сеанс і змініть спосіб входу (з підтвердженням).', 'Was u het: «Dit was ik». Zo niet: beëindig deze sessie en wijzig uw aanmeldmethode (met bevestiging).'],
+    rechten: ['Сеанс має ті самі права, що й ви. Регіон визначено приблизно за IP, точну адресу не зберігаємо.', 'De sessie heeft dezelfde rechten als u. De regio is bij benadering uit het IP; het adres wordt niet bewaard.'],
+    deeplink: viaLink(`${ID}/sessions`),
+    acties: [
+      { soort: 'dit-was-ik', label: ['Це був я', 'Dit was ik'] },
+      { soort: 'niet-ik', label: ['Це не я — завершити сеанс і змінити доступ', 'Dit was ik niet — sessie beëindigen en toegang wijzigen'], href: viaLink(`${ID}/sessions`), gevaarlijk: true },
+      { soort: 'wijziging', label: ['Способи входу', 'Aanmeldmethoden'], href: () => `${ID}/methods` },
+    ],
+  },
+  {
+    id: 'code-ander-apparaat',
+    past: (m) => /security/.test(s(m)) && /(з іншого пристрою|vanaf een ander apparaat)/.test(tekst(m)),
+    titel: ['Код доступу використано з іншого пристрою', 'Toegangscode gebruikt vanaf een ander apparaat'],
+    risico: 'hoog',
+    wat: ['Ваш код доступу для гостя використали на пристрої, з якого цим кодом ще не входили.', 'Uw toegangscode voor een gast is gebruikt op een apparaat dat deze code nog niet gebruikte.'],
+    waarom: ['Код могли передати іншій людині, або гість відкрив його на іншому телефоні чи комп’ютері.', 'De code kan zijn doorgegeven, of de gast opende hem op een andere telefoon of computer.'],
+    gevolg: ['Цей пристрій бачить лише те, що дозволяє код (тільки читання), доки код діє.', 'Dit apparaat ziet alleen wat de code toelaat (alleen lezen), zolang de code geldig is.'],
+    doen: ['Якщо не впевнені — завершіть гостьовий сеанс і відкличте код (з підтвердженням).', 'Twijfelt u: beëindig de gastsessie en trek de code in (met bevestiging).'],
+    rechten: ['Лише дозволи, обрані при створенні коду; без змін і без входу як власник.', 'Alleen de rechten gekozen bij het maken van de code; geen wijzigingen en geen aanmelding als eigenaar.'],
+    deeplink: viaLink(`${ID}/methods#toegangscodes`),
+    acties: [
+      { soort: 'openen', label: ['Відкрити код', 'Code openen'], href: viaLink(`${ID}/methods#toegangscodes`) },
+      { soort: 'intrekken', label: ['Відкликати код…', 'Code intrekken…'], href: viaLink(`${ID}/methods#toegangscodes`), gevaarlijk: true },
+    ],
+  },
+  {
+    id: 'herstelcode',
+    past: (m) => /access_recovery/.test(m.soort || '') || /(код відновлення|коди відновлення|herstelcode)/.test(tekst(m)),
+    titel: ['Коди відновлення', 'Herstelcodes'],
+    risico: 'hoog',
+    wat: ['Використано один код відновлення або створено нові коди відновлення.', 'Er is een herstelcode gebruikt of er zijn nieuwe herstelcodes gemaakt.'],
+    waarom: ['Хтось підтвердив дію кодом відновлення замість passkey, або замінив набір кодів.', 'Iemand bevestigde een actie met een herstelcode in plaats van een passkey, of verving de set codes.'],
+    gevolg: ['Використаний код більше не діє. Після заміни старі коди не діють зовсім.', 'Een gebruikte code werkt niet meer. Na vervangen werken de oude codes helemaal niet meer.'],
+    doen: ['Якщо це ви — нічого. Якщо ні — завершіть чужі сеанси й створіть нові коди (з підтвердженням).', 'Was u het: niets. Zo niet: beëindig vreemde sessies en maak nieuwe codes (met bevestiging).'],
+    deeplink: viaLink(`${ID}/methods`),
+    acties: [
+      { soort: 'dit-was-ik', label: ['Це був я', 'Dit was ik'] },
+      { soort: 'niet-ik', label: ['Це не я — сеанси…', 'Dit was ik niet — sessies…'], href: () => `${ID}/sessions`, gevaarlijk: true },
+      { soort: 'wijziging', label: ['Коди відновлення', 'Herstelcodes'], href: () => `${ID}/methods` },
+    ],
+  },
+  {
+    id: 'passkey-gewijzigd',
+    past: (m) => /^security$/.test(m.soort || '') && /passkey/.test(tekst(m)) && /(додано|видалено|toegevoegd|verwijderd|новий passkey|nieuwe passkey)/.test(tekst(m)),
+    titel: ['Змінено passkey', 'Passkey gewijzigd'],
+    risico: 'hoog',
+    wat: ['До способів входу додано passkey або його видалено (назва — у тексті).', 'Er is een passkey toegevoegd aan of verwijderd uit uw aanmeldmethoden (naam in de tekst).'],
+    waarom: ['Зміну зробили з сеансу вашого облікового запису після підтвердження.', 'De wijziging gebeurde vanuit een sessie van uw account, na bevestiging.'],
+    gevolg: ['Доданий passkey може підтверджувати дії від вашого імені. Видалений більше не діє.', 'Een toegevoegde passkey kan acties namens u bevestigen. Een verwijderde werkt niet meer.'],
+    doen: ['Якщо це ви — нічого. Якщо ні — відкрийте способи входу, видаліть чужий passkey і завершіть чужі сеанси.', 'Was u het: niets. Zo niet: open aanmeldmethoden, verwijder de vreemde passkey en beëindig vreemde sessies.'],
+    rechten: ['Passkey дає вхід і підтвердження дій; схвалювати оновлення сервера — лише після окремого дозволу root.', 'Een passkey geeft aanmelden en bevestigen; updates goedkeuren pas na een aparte toestemming van root.'],
+    deeplink: viaLink(`${ID}/methods`),
+    acties: [
+      { soort: 'dit-was-ik', label: ['Це був я', 'Dit was ik'] },
+      { soort: 'wijziging', label: ['Способи входу', 'Aanmeldmethoden'], href: () => `${ID}/methods` },
+      { soort: 'niet-ik', label: ['Це не я — сеанси…', 'Dit was ik niet — sessies…'], href: () => `${ID}/sessions`, gevaarlijk: true },
+    ],
+  },
+  {
+    id: 'uitrol-recht-ingetrokken',
+    past: (m) => /security/.test(s(m)) && /(відкликан|ingetrokken)/.test(tekst(m)) && /(оновлен|update)/.test(tekst(m)),
+    risico: 'hoog',
+    wat: ['Право готувати оновлення сайту (завантажувати пакети на схвалення) забрано в облікового запису або агента.', 'Het recht om site-updates voor te bereiden (pakketten ter goedkeuring uploaden) is ingetrokken.'],
+    waarom: ['Причину вказав той, хто відкликав (вона в тексті). Відкликати може власник або адміністратор.', 'De reden staat in de tekst; intrekken kan de eigenaar of een beheerder.'],
+    gevolg: ['Нові пакети від цього облікового запису чи агента більше не приймаються. Пакети, що вже чекають, лишаються — їх можна відхилити.', 'Nieuwe pakketten van dit account of deze agent worden niet meer aanvaard. Wachtende pakketten blijven; u kunt ze afwijzen.'],
+    doen: ['Якщо це зробили ви — нічого. Якщо ні — перегляньте зміну, скасуйте її і змініть ключ входу.', 'Deed u dit zelf: niets. Zo niet: bekijk de wijziging, draai ze terug en wijzig uw aanmeldsleutel.'],
+    rechten: ['Право дозволяло лише завантажувати пакети. Встановлення завжди потребує вашого passkey.', 'Het recht liet alleen uploaden toe. Installeren vraagt altijd uw passkey.'],
+    deeplink: viaLink(`${ID}/methods`),
+    acties: [
+      { soort: 'wijziging', label: ['Переглянути зміну', 'Wijziging bekijken'], href: viaLink(`${ID}/methods`) },
+      { soort: 'niet-ik', label: ['Це не я — скасувати зміну', 'Dit was ik niet — terugdraaien'], href: viaLink(`${ID}/methods`), gevaarlijk: true },
+      { soort: 'openen', label: ['Хто має доступ до оновлень', 'Wie heeft toegang tot updates'], href: () => `${UPD}#toegang` },
+    ],
+  },
+  {
+    id: 'uitrol-recht-gegeven',
+    past: (m) => /security/.test(s(m)) && /(надано|gegeven)/.test(tekst(m)) && /(оновлен|update)/.test(tekst(m)),
+    risico: 'midden',
+    wat: ['Обліковий запис або агент отримав право готувати оновлення сайту.', 'Een account of agent kreeg het recht om site-updates voor te bereiden.'],
+    waarom: ['Право надав власник (ім’я в тексті) на вказаний строк.', 'De eigenaar (naam in de tekst) gaf het recht voor de vermelde termijn.'],
+    gevolg: ['Він може завантажувати пакети на схвалення. Встановити без вашого passkey не може.', 'Hij kan pakketten ter goedkeuring uploaden. Installeren zonder uw passkey kan niet.'],
+    doen: ['Якщо не згодні — відкличте право на сторінці оновлень (з підтвердженням).', 'Niet akkoord: trek het recht in op de updatepagina (met bevestiging).'],
+    rechten: ['Лише завантаження пакетів на схвалення; без встановлення, без доступу до даних.', 'Alleen pakketten uploaden ter goedkeuring; geen installatie, geen toegang tot gegevens.'],
+    deeplink: () => `${UPD}#toegang`,
+    acties: [
+      { soort: 'openen', label: ['Переглянути доступи', 'Toegang bekijken'], href: () => `${UPD}#toegang` },
+      { soort: 'intrekken', label: ['Відкликати…', 'Intrekken…'], href: () => `${UPD}#toegang`, gevaarlijk: true },
+    ],
+  },
+  {
+    id: 'uitrol',
+    past: (m) => /^uitrol[._]|^release/.test(m.soort || ''),
+    risico: 'midden',
+    wat: ['Подія системи оновлень сайту: новий пакет, схвалення, встановлення або відмова.', 'Gebeurtenis van het updatesysteem: nieuw pakket, goedkeuring, installatie of weigering.'],
+    waarom: ['Пакет завантажив агент або людина з правом готувати оновлення; результат прийшов із сервера.', 'Een agent of persoon met voorbereidingsrecht uploadde een pakket; de uitkomst komt van de server.'],
+    gevolg: ['Поки пакет не схвалено вашим passkey, на сайті нічого не змінюється.', 'Zolang u niet met passkey goedkeurt, verandert er niets op de site.'],
+    doen: ['Відкрийте сторінку оновлень: там опис змін, перевірки, схвалення, відхилення й відкат.', 'Open de updatepagina: wijzigingen, controles, goedkeuren, afwijzen en terugdraaien.'],
+    deeplink: viaLink(UPD),
+    acties: [
+      { soort: 'beslissen', label: ['Відкрити оновлення', 'Updates openen'], href: viaLink(UPD) },
+      { soort: 'type-stil', label: ['Тихо для цього типу', 'Stil voor dit soort'] },
+    ],
+  },
+  {
+    id: 'extensie',
+    past: (m) => /owner\.extensie\.|extensie|browserextensie|розширенн/.test(`${s(m)} ${tekst(m)}`),
+    risico: 'midden',
+    wat: ['Доступ розширення браузера (Мій простір) до сайту: розблокування, поновлення, звуження або закриття.', 'Toegang van de browserextensie (Mijn Ruimte) tot de site: ontgrendelen, vernieuwen, beperken of sluiten.'],
+    waarom: ['Строк доступу закінчується, змінилась політика або дозволи, чи хтось закрив доступ.', 'De termijn loopt af, het beleid of de rechten veranderden, of iemand sloot de toegang.'],
+    gevolg: ['Якщо доступ не поновити, розширення перестане діяти від вашого імені після кінця строку.', 'Zonder vernieuwing werkt de extensie na het einde van de termijn niet meer namens u.'],
+    doen: ['Відкрийте «Розширення»: подивіться строк і дозволи, поновіть або закрийте доступ.', 'Open «Extensie»: bekijk termijn en rechten, vernieuw of sluit de toegang.'],
+    rechten: ['Розширення діє лише в дозволених вкладках і з дозволами, які ви обрали при розблокуванні.', 'De extensie werkt alleen in toegestane tabbladen en met de rechten die u bij het ontgrendelen koos.'],
+    deeplink: viaLink(`${MCP}#extensie`),
+    acties: [
+      { soort: 'openen', label: ['Відкрити розширення', 'Extensie openen'], href: viaLink(`${MCP}#extensie`) },
+      { soort: 'intrekken', label: ['Закрити доступ…', 'Toegang sluiten…'], href: () => `${MCP}#extensie`, gevaarlijk: true },
+    ],
+  },
+  {
+    id: 'agent-bestand',
+    past: (m) => /^command\.fs\.|machine_(write|read)_file|^tool\.machine_/.test(m.soort || ''),
+    risico: 'midden',
+    wat: ['Агент на вашому пристрої читав або записував файл (шлях — у полі «Що»).', 'Een agent op uw apparaat las of schreef een bestand (pad bij «Wat»).'],
+    waarom: ['ШІ попросив дію, а пристрій її виконав або відмовив (стан і причина — у тексті).', 'De AI vroeg de actie; het apparaat voerde ze uit of weigerde (status en reden in de tekst).'],
+    gevolg: ['Записаний файл змінено на пристрої. Невдала спроба нічого не змінила.', 'Een geschreven bestand is op het apparaat gewijzigd. Een mislukte poging veranderde niets.'],
+    doen: ['Перевірте журнал дій агента. Якщо не очікували — вимкніть автоматичні дозволи пристрою.', 'Bekijk het actielogboek van de agent. Onverwacht? Zet de automatische rechten van het apparaat uit.'],
+    rechten: ['Агент має доступ лише до папок, які ви дозволили для цього пристрою.', 'De agent heeft alleen toegang tot de mappen die u voor dit apparaat toeliet.'],
+    deeplink: () => `${MCP}#overview`,
+    acties: [
+      { soort: 'openen', label: ['Журнал агента', 'Logboek van de agent'], href: () => `${MCP}#overview` },
+      { soort: 'intrekken', label: ['Дозволи пристрою…', 'Rechten van het apparaat…'], href: () => `${MCP}#dostupy`, gevaarlijk: true },
+    ],
+  },
+  {
+    id: 'ai-actie',
+    past: (m) => m.dienst === 'ai',
+    risico: 'laag',
+    wat: ['Дія ШІ або підключеного агента на сайті чи пристрої.', 'Een actie van de AI of een gekoppelde agent op de site of een apparaat.'],
+    waarom: ['ШІ виконував ваше завдання або чекає вашого рішення.', 'De AI voerde uw opdracht uit of wacht op uw beslissing.'],
+    gevolg: ['Без вашого схвалення небезпечні дії не виконуються.', 'Gevaarlijke acties gebeuren niet zonder uw goedkeuring.'],
+    doen: ['Відкрийте центр агентів, щоб побачити подробиці або вирішити.', 'Open het agentencentrum voor details of om te beslissen.'],
+    deeplink: viaLink(`${MCP}#overview`),
+    acties: [
+      { soort: 'beslissen', label: ['Відкрити центр агентів', 'Agentencentrum openen'], href: viaLink(`${MCP}#overview`) },
+      { soort: 'type-stil', label: ['Тихо для цього типу', 'Stil voor dit soort'] },
+    ],
+  },
+  {
+    id: 'toegangsverzoek',
+    past: (m) => /access_request|toegangsverzoek|verzoek/.test(s(m)),
+    risico: 'midden',
+    wat: ['Хтось просить доступ до вашого ресурсу (який саме — у тексті).', 'Iemand vraagt toegang tot uw bron (welke staat in de tekst).'],
+    waarom: ['Людина надіслала запит; без вашої відповіді доступу немає.', 'Iemand stuurde een verzoek; zonder uw antwoord is er geen toegang.'],
+    gevolg: ['Якщо дозволите — людина отримає вказані права. Відмова нічого не змінює.', 'Staat u het toe, dan krijgt de persoon de vermelde rechten. Weigeren verandert niets.'],
+    doen: ['Відкрийте запит, перевірте хто і які права, тоді дозвольте або відхиліть.', 'Open het verzoek, controleer wie en welke rechten, sta toe of weiger.'],
+    deeplink: viaLink(`${ID}/sharing`),
+    acties: [{ soort: 'beslissen', label: ['Переглянути запит', 'Verzoek bekijken'], href: viaLink(`${ID}/sharing`) }],
+  },
+  {
+    id: 'beveiliging',
+    past: (m) => /security|beveiliging|passkey|access_|toegang|login|sessie|session|herstel|recovery|identity/.test(s(m)) || m.dienst === 'identity',
+    risico: 'hoog',
+    wat: ['Зміна в безпеці облікового запису: вхід, спосіб входу, код доступу, сеанс або право.', 'Wijziging in de beveiliging van het account: aanmelding, aanmeldmethode, toegangscode, sessie of recht.'],
+    waarom: ['Хтось (ви, адміністратор або інший пристрій) зробив дію з вашим обліковим записом.', 'Iemand (u, een beheerder of een ander apparaat) deed iets met uw account.'],
+    gevolg: ['Якщо це були не ви — хтось може мати доступ до вашого облікового запису.', 'Was u het niet, dan kan iemand toegang tot uw account hebben.'],
+    doen: ['Якщо це ви — натисніть «Це був я». Якщо ні — відкрийте способи входу й сеанси, завершіть чужі сеанси.', 'Was u het: «Dit was ik». Zo niet: open aanmeldmethoden en sessies en beëindig vreemde sessies.'],
+    deeplink: viaLink(`${ID}/methods`),
+    acties: [
+      { soort: 'dit-was-ik', label: ['Це був я', 'Dit was ik'] },
+      { soort: 'niet-ik', label: ['Це не я — сеанси…', 'Dit was ik niet — sessies…'], href: () => `${ID}/sessions`, gevaarlijk: true },
+      { soort: 'wijziging', label: ['Способи входу', 'Aanmeldmethoden'], href: viaLink(`${ID}/methods`) },
+    ],
+  },
+  {
+    id: 'mail',
+    past: (m) => m.dienst === 'post',
+    risico: 'laag',
+    wat: ['Подія пошти: синхронізація, імпорт, надсилання або перевірка адрес.', 'Mailgebeurtenis: synchronisatie, import, verzending of adrescontrole.'],
+    waarom: ['Поштовий сервіс (Google, Microsoft, IMAP) повідомив результат.', 'De mailaanbieder (Google, Microsoft, IMAP) meldde een uitkomst.'],
+    gevolg: ['При помилці нові листи можуть не приходити, доки ви не підключите скриньку знову.', 'Bij een fout komen nieuwe berichten mogelijk niet binnen tot u de mailbox opnieuw koppelt.'],
+    doen: ['Відкрийте пошту; при помилці — «Підключити знову».', 'Open de mail; bij een fout: «Opnieuw koppelen».'],
+    deeplink: viaLink('https://mail.tarasevych.com/'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити пошту', 'Mail openen'], href: viaLink('https://mail.tarasevych.com/') },
+      { soort: 'type-stil', label: ['Тихо для цього типу', 'Stil voor dit soort'] },
+    ],
+  },
+  {
+    id: 'cloud',
+    past: (m) => m.dienst === 'cloud',
+    risico: 'laag',
+    wat: ['Подія хмари: синхронізація, спільний доступ або файл.', 'Cloudgebeurtenis: synchronisatie, delen of een bestand.'],
+    waarom: ['Хмарний сервіс або інша людина зробили дію.', 'Een clouddienst of iemand anders deed iets.'],
+    gevolg: ['При спільному доступі інші бачать вказаний файл чи теку.', 'Bij delen zien anderen het vermelde bestand of de map.'],
+    doen: ['Відкрийте хмару, щоб переглянути або змінити доступ.', 'Open de cloud om te bekijken of de toegang te wijzigen.'],
+    deeplink: viaLink('https://cloud.tarasevych.com/'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити в хмарі', 'In de cloud openen'], href: viaLink('https://cloud.tarasevych.com/') },
+      { soort: 'type-stil', label: ['Тихо для цього типу', 'Stil voor dit soort'] },
+    ],
+  },
+  {
+    id: 'algemeen',
+    past: () => true,
+    risico: 'laag',
+    wat: ['Подія на сайті (подробиці — у тексті та в «Технічних подробицях»).', 'Gebeurtenis op de site (details in de tekst en bij «Technische details»).'],
+    waarom: ['Джерело не передало окремої причини.', 'De bron gaf geen aparte reden.'],
+    gevolg: ['Зазвичай нічого робити не треба.', 'Meestal hoeft u niets te doen.'],
+    doen: ['Відкрийте джерело, якщо хочете побачити більше.', 'Open de bron als u meer wilt zien.'],
+    deeplink: viaLink('https://hub.tarasevych.com/'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити джерело', 'Bron openen'], href: viaLink('https://hub.tarasevych.com/') },
+      { soort: 'type-stil', label: ['Тихо для цього типу', 'Stil voor dit soort'] },
+    ],
+  },
+];
+
+export const uitlegVoor = (m: V2Melding): UitlegSoort => REGISTER.find((r) => r.past(m)) || REGISTER[REGISTER.length - 1];
+
+// --------------------------------------------------------------------------------------------- velden uit de tekst halen
+const EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/;
+/** WIE: expliciet (activiteit), anders het eerste e-mailadres in de tekst. */
+export const wieVan = (m: V2Melding): string | undefined => m.wie || (`${m.tekst || ''}`.match(EMAIL)?.[0]);
+/** WAT: expliciet object, anders de eerste naam tussen «». */
+export const objectVan = (m: V2Melding): string | undefined => m.object || (`${m.tekst || ''} ${m.titel}`.match(/«([^»]{1,120})»/)?.[1]);
+/** WAAROM: «Причина: «…»» / «Reden: «…»» in de tekst. */
+export const redenVan = (m: V2Melding): string | undefined => `${m.tekst || ''}`.match(/(?:Причина|Reden):\s*«([^»]{1,300})»/)?.[1];
+/** Absolute tijd in Europe/Brussels. */
+export const absoluteTijd = (t: number, lang: 'uk' | 'nl') =>
+  new Date(t).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Brussels' });

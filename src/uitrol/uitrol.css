@@ -1,0 +1,331 @@
+/* Admin → «Оновлення»: modern dashboard (tabs, live card, terminal, history, diagnose). Mobile-first; light/dark via the admin chrome variables. */
+.ut-root{--ut-bg:var(--panel,#fff);--ut-bg2:var(--surface,#f8fafc);--ut-line:var(--line,#e2e8f0);--ut-text:var(--text,#0f172a);--ut-muted:var(--muted,#64748b);--ut-accent:var(--accent,#2563eb);
+  --ut-ok:var(--ok);--ut-ok-bg:var(--ok-zacht);--ut-warn:var(--warn);--ut-warn-bg:var(--warn-zacht);--ut-err:var(--fout);--ut-err-bg:var(--fout-zacht);--ut-info:var(--info);--ut-info-bg:var(--info-zacht);
+  --ut-term-bg:#0b1220;--ut-term-text:#dbe4f0;
+  display:grid;gap:14px;color:var(--ut-text);min-width:0}
+html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b1220);--ut-line:var(--line,#263041);--ut-text:var(--text,#e5e7eb);--ut-muted:var(--muted,#94a3b8);
+  --ut-ok:var(--ok);--ut-ok-bg:var(--ok-zacht);--ut-warn:var(--warn);--ut-warn-bg:var(--warn-zacht);--ut-err:var(--fout);--ut-err-bg:var(--fout-zacht);--ut-info:var(--info);--ut-info-bg:var(--info-zacht);--ut-term-bg:#060a13}
+.ut-root *{box-sizing:border-box}
+.ut-root h1,.ut-root h2,.ut-root h3,.ut-root p{margin:0}
+.ut-mono,.ut-root code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.ut-root code{overflow-wrap:anywhere}
+
+/* kop + tabbladen */
+.ut-hoofd{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.ut-hoofd h1{display:flex;align-items:center;gap:8px;font-size:1.35rem}
+.ut-hoofd h1 svg{width:22px;height:22px;color:var(--ut-accent)}
+.ut-hoofd p{color:var(--ut-muted);font-size:.9rem;max-width:70ch;margin-top:4px}
+.ut-tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--ut-line);-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.admin-uitrol .ut-tab{display:inline-flex;align-items:center;gap:6px;flex:none;padding:10px 14px;border:0;border-bottom:2px solid transparent;border-radius:8px 8px 0 0;background:transparent;color:var(--ut-muted);font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
+.admin-uitrol .ut-tab svg{width:16px;height:16px}
+.admin-uitrol .ut-tab:hover{color:var(--ut-text);background:var(--ut-bg2)}
+.admin-uitrol .ut-tab[aria-selected="true"]{color:var(--ut-accent);border-bottom-color:var(--ut-accent)}
+.admin-uitrol .ut-tab:focus-visible{outline:2px solid var(--ut-accent);outline-offset:-2px}
+.ut-badge-tel,.ut-teller{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--ut-warn-bg);color:var(--ut-warn);font-size:.75rem;font-weight:700;font-style:normal}
+.ut-teller{margin-left:8px}
+.ut-paneel{display:grid;gap:14px;min-width:0}
+.ut-melding{display:grid;gap:8px}
+.ut-notice{padding:10px 14px;border-radius:10px;border:1px solid var(--ut-ok);background:var(--ut-ok-bg);color:var(--ut-text)}
+.ut-notice[data-ok="false"]{border-color:var(--ut-err);background:var(--ut-err-bg)}
+
+/* indeling Огляд */
+.ut-raster{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1040px){.ut-raster{grid-template-columns:minmax(0,1fr) 320px;align-items:start}.ut-zijkant{position:sticky;top:12px}}
+.ut-hoofdkolom,.ut-zijkant{display:grid;gap:14px;min-width:0}
+
+/* kaarten */
+.ut-kaart{background:var(--ut-bg);border:1px solid var(--ut-line);border-radius:14px;padding:16px;display:grid;gap:12px;min-width:0}
+.ut-kaart>h2{font-size:1rem}
+.ut-kaart-kop{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.ut-kaart-kop h2{display:flex;align-items:center;gap:6px;font-size:1.05rem}
+.ut-kaart-kop h2 svg{width:18px;height:18px}
+.ut-kaart h3{font-size:.95rem;display:flex;align-items:center;gap:6px}
+.ut-kaart h3 small{color:var(--ut-muted);font-weight:400}
+.ut-sub,.ut-hint{color:var(--ut-muted);font-size:.85rem}
+.ut-kop-rechts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ut-tijd{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums;color:var(--ut-muted);font-size:.9rem}
+.ut-tijd svg{width:14px;height:14px}
+.ut-leeg{color:var(--ut-muted);padding:10px 0;font-size:.9rem}
+.ut-fout{color:var(--ut-err);font-size:.9rem}
+.ut-draai{animation:ut-draai 1s linear infinite}
+@keyframes ut-draai{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ut-draai{animation-duration:3s}}
+
+/* knoppen */
+.admin-uitrol .ut-knop,.ut-root a.ut-knop{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:7px 12px;border-radius:10px;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-text);font:inherit;font-size:.9rem;cursor:pointer;text-decoration:none}
+.admin-uitrol .ut-knop:hover:not(:disabled){background:var(--ut-bg2)}
+.admin-uitrol .ut-knop svg{width:16px;height:16px;flex:none}
+.admin-uitrol .ut-knop:disabled{opacity:.5;cursor:not-allowed}
+.admin-uitrol .ut-knop-primair{background:var(--ut-accent);border-color:var(--ut-accent);color:var(--text-on-accent);font-weight:600}
+.admin-uitrol .ut-knop-primair:hover:not(:disabled){background:var(--ut-accent);filter:brightness(1.08)}
+.admin-uitrol .ut-knop-gevaar{border-color:var(--ut-err);color:var(--ut-err)}
+.admin-uitrol .ut-icoon{display:inline-grid;place-items:center;width:32px;height:32px;padding:0;border-radius:8px;border:1px solid var(--ut-line);background:transparent;color:inherit;cursor:pointer}
+.admin-uitrol .ut-icoon svg{width:16px;height:16px}
+.ut-acties{display:flex;gap:8px;flex-wrap:wrap}
+.ut-snel{display:grid;gap:8px}
+.ut-snel .ut-knop{justify-content:flex-start}
+
+/* statusbadges */
+.ut-badge{display:inline-block;text-align:center;padding:2px 10px;border-radius:999px;font-size:.78rem;font-weight:700;font-style:normal;background:var(--ut-bg2);color:var(--ut-muted);white-space:nowrap}
+.ut-badge[data-staat="klaar"]{background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-badge[data-staat="bezig"]{background:var(--ut-info-bg);color:var(--ut-info)}
+.ut-badge[data-staat="mislukt"],.ut-badge[data-staat="geweigerd"]{background:var(--ut-err-bg);color:var(--ut-err)}
+.ut-badge[data-staat="afgebroken"]{background:var(--ut-warn-bg);color:var(--ut-warn)}
+
+/* vier fasen */
+.ut-fasen{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;counter-reset:fase}
+.ut-fasen li{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;position:relative;color:var(--ut-muted);font-size:.85rem;font-weight:600}
+.ut-fasen li+li::before{content:"";position:absolute;top:15px;right:50%;width:100%;height:2px;background:var(--ut-line);z-index:0}
+.ut-fasen li[data-stand="ok"]+li::before,.ut-fasen li[data-stand="actief"]::before{background:var(--ut-ok)}
+.ut-fase-bol{position:relative;z-index:1;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--ut-bg2);border:2px solid var(--ut-line);font-weight:700;font-size:.85rem}
+.ut-fase-bol svg{width:20px;height:20px}
+.ut-fase-sub{font-weight:500;font-size:.75rem;color:var(--ut-info);line-height:1.25;max-width:100%}
+.ut-fasen li[data-stand="ok"] .ut-fase-bol{background:var(--ut-ok-bg);border-color:var(--ut-ok);color:var(--ut-ok)}
+.ut-fasen li[data-stand="actief"] .ut-fase-bol{background:var(--ut-info-bg);border-color:var(--ut-info);color:var(--ut-info)}
+.ut-fasen li[data-stand="actief"],.ut-fasen li[data-stand="ok"]{color:var(--ut-text)}
+.ut-fasen li[data-stand="fout"] .ut-fase-bol{background:var(--ut-err-bg);border-color:var(--ut-err);color:var(--ut-err)}
+.ut-fasen li[data-stand="fout"]{color:var(--ut-err)}
+
+/* voortgang */
+.ut-voortgang{display:flex;align-items:center;gap:10px}
+.ut-voortgang-balk{flex:1;height:10px;background:var(--ut-bg2);border:1px solid var(--ut-line);border-radius:999px;overflow:hidden}
+.ut-voortgang-balk i{display:block;height:100%;background:var(--ut-info);border-radius:999px;transition:width .5s ease}
+.ut-voortgang[data-staat="klaar"] .ut-voortgang-balk i{background:var(--ut-ok)}
+.ut-voortgang[data-staat="mislukt"] .ut-voortgang-balk i,.ut-voortgang[data-staat="geweigerd"] .ut-voortgang-balk i{background:var(--ut-err)}
+.ut-voortgang[data-staat="afgebroken"] .ut-voortgang-balk i{background:var(--ut-warn)}
+.ut-voortgang b{font-variant-numeric:tabular-nums;min-width:3.2ch;text-align:right}
+
+/* uitkomst / waarschuwing */
+.ut-uitkomst,.ut-waarschuwing{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid var(--ut-line);background:var(--ut-bg2)}
+.ut-uitkomst>svg,.ut-waarschuwing>svg{width:22px;height:22px;flex:none;margin-top:1px}
+.ut-uitkomst p,.ut-waarschuwing p{font-size:.9rem;color:var(--ut-muted);margin-top:2px;overflow-wrap:anywhere}
+.ut-uitkomst[data-staat="klaar"]{border-color:var(--ut-ok);background:var(--ut-ok-bg)}
+.ut-uitkomst[data-staat="klaar"]>svg{color:var(--ut-ok)}
+.ut-uitkomst[data-staat="mislukt"],.ut-uitkomst[data-staat="geweigerd"]{border-color:var(--ut-err);background:var(--ut-err-bg)}
+.ut-uitkomst[data-staat="mislukt"]>svg,.ut-uitkomst[data-staat="geweigerd"]>svg{color:var(--ut-err)}
+.ut-uitkomst[data-staat="afgebroken"]{border-color:var(--ut-warn);background:var(--ut-warn-bg)}
+.ut-uitkomst[data-staat="bezig"]>svg{color:var(--ut-info)}
+.ut-waarschuwing{border-color:var(--ut-warn);background:var(--ut-warn-bg)}
+.ut-waarschuwing>svg{color:var(--ut-warn)}
+.ut-waarschuwing .ut-knop{margin-top:8px}
+.ut-wacht{display:flex;align-items:center;gap:8px;color:var(--ut-info);font-size:.9rem}
+.ut-wacht svg{width:16px;height:16px}
+
+/* deelstappen */
+.ut-delen{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.ut-delen li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px}
+.ut-delen li>svg{width:20px;height:20px;color:var(--ut-muted)}
+.ut-delen li[data-stand="ok"]>svg{color:var(--ut-ok)}
+.ut-delen li[data-stand="bezig"]{background:var(--ut-info-bg)}
+.ut-delen li[data-stand="bezig"]>svg{color:var(--ut-info)}
+.ut-delen li[data-stand="fout"]{background:var(--ut-err-bg)}
+.ut-delen li[data-stand="fout"]>svg{color:var(--ut-err)}
+.ut-delen li[data-stand="wacht"]{opacity:.7}
+.ut-deel-tekst{display:grid;gap:1px;min-width:0}
+.ut-deel-tekst small{color:var(--ut-muted);font-size:.8rem;overflow-wrap:anywhere}
+.ut-deel-stand{font-size:.78rem;color:var(--ut-muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ut-delen-compact li{padding:5px 8px}
+@media (max-width:520px){.ut-delen li{grid-template-columns:22px minmax(0,1fr)}.ut-deel-stand{grid-column:2}}
+
+/* terminal */
+.ut-terminal{border:1px solid #1e293b;border-radius:12px;overflow:hidden;background:var(--ut-term-bg);color:var(--ut-term-text)}
+.ut-terminal-balk{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:8px 10px;background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.08)}
+.ut-terminal-titel{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600}
+.ut-terminal-titel i{width:9px;height:9px;border-radius:50%;background:#64748b}
+.ut-terminal[data-live="true"] .ut-terminal-titel i{background:var(--ok-vlak);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:ut-puls 1.6s infinite}
+.ut-terminal-titel b{font-size:.7rem;padding:1px 7px;border-radius:999px;background:rgba(34,197,94,.2);color:var(--ok);text-transform:uppercase;letter-spacing:.04em}
+@keyframes ut-puls{70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+@media (prefers-reduced-motion:reduce){.ut-terminal[data-live="true"] .ut-terminal-titel i{animation:none}}
+.ut-terminal-knoppen{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ut-terminal-schakel{display:inline-flex;align-items:center;gap:6px;font-size:.75rem;color:var(--faint)}
+.admin-uitrol .ut-terminal-knoppen button{min-height:30px;padding:3px 9px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:transparent;color:var(--line);font-size:.78rem}
+.admin-uitrol .ut-terminal-knoppen button:hover:not(:disabled){background:rgba(255,255,255,.08)}
+.ut-terminal-bak{max-height:340px;overflow:auto;padding:8px 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.78rem;line-height:1.5}
+.ut-terminal-bak:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.ut-regel{display:grid;grid-template-columns:5ch 8ch minmax(0,1fr);gap:8px;padding:0 10px}
+.ut-regel:hover{background:rgba(255,255,255,.04)}
+.ut-regel-nr{color:var(--muted);text-align:right;user-select:none}
+.ut-regel-tijd{color:var(--muted);user-select:none}
+.ut-regel-tekst{white-space:pre-wrap;overflow-wrap:anywhere}
+.ut-regel[data-niveau="ok"] .ut-regel-tekst{color:var(--ok)}
+.ut-regel[data-niveau="warn"] .ut-regel-tekst{color:var(--warn)}
+.ut-regel[data-niveau="error"] .ut-regel-tekst{color:var(--fout);font-weight:600}
+.ut-cursor .ut-regel-tekst{animation:ut-knip 1s steps(2) infinite;color:var(--faint)}
+@keyframes ut-knip{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.ut-cursor .ut-regel-tekst{animation:none}}
+.ut-terminal-leeg{padding:14px 12px;color:var(--faint);font-family:inherit}
+.admin-uitrol .ut-terminal-meer{display:block;width:calc(100% - 20px);margin:0 10px 6px;padding:5px;border:1px dashed rgba(255,255,255,.25);border-radius:8px;background:transparent;color:var(--info);font-size:.78rem;cursor:pointer}
+@media (max-width:520px){.ut-regel{grid-template-columns:4ch minmax(0,1fr)}.ut-regel-tijd{display:none}.ut-terminal-schakel{display:none}}
+
+/* geschiedenis: filters + tabel */
+.ut-filters{display:grid;gap:10px}
+.ut-zoek{display:flex;align-items:center;gap:8px;border:1px solid var(--ut-line);border-radius:10px;padding:0 10px;background:var(--ut-bg2)}
+.ut-zoek svg{width:16px;height:16px;color:var(--ut-muted);flex:none}
+.ut-zoek input{flex:1;min-width:0;border:0;background:transparent;color:inherit;font:inherit;padding:9px 0;outline:none}
+.ut-zoek:focus-within{border-color:var(--ut-accent)}
+.ut-chips{display:flex;gap:6px;flex-wrap:wrap}
+.admin-uitrol .ut-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-text);font:inherit;font-size:.82rem;cursor:pointer}
+.ut-chip b{font-variant-numeric:tabular-nums;color:var(--ut-muted);font-size:.78rem}
+.admin-uitrol .ut-chip[aria-pressed="true"]{background:var(--ut-accent);border-color:var(--ut-accent);color:var(--text-on-accent)}
+.ut-chip[aria-pressed="true"] b{color:var(--text-on-accent)}
+.ut-filter-rij{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.ut-filter-rij label,.ut-kies{display:grid;gap:3px;font-size:.78rem;color:var(--ut-muted)}
+.ut-filter-rij select,.ut-filter-rij input,.ut-kies select,.ut-form select,.ut-form input,.ut-reden-veld textarea{min-height:36px;padding:6px 9px;border-radius:9px;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-text);font:inherit;font-size:.9rem;min-width:0}
+.ut-kies select{max-width:100%}
+.ut-tabel{display:grid;gap:0;border:1px solid var(--ut-line);border-radius:12px;overflow:hidden}
+.admin-uitrol .ut-rij{display:grid;grid-template-columns:minmax(120px,1.1fr) 170px minmax(110px,1fr) 125px 80px minmax(160px,2fr);gap:10px;align-items:center;width:100%;text-align:left;padding:10px 12px;border:0;border-bottom:1px solid var(--ut-line);border-radius:0;background:var(--ut-bg);color:var(--ut-text);font:inherit;font-size:.88rem;cursor:pointer}
+.admin-uitrol .ut-rij:last-child{border-bottom:0}
+.admin-uitrol button.ut-rij:hover,.admin-uitrol .ut-rij[data-actief="true"]{background:var(--ut-bg2)}
+.admin-uitrol .ut-rij:focus-visible{outline:2px solid var(--ut-accent);outline-offset:-2px}
+.ut-rij small{display:block;color:var(--ut-muted);font-size:.75rem}
+.ut-rij-kop{background:var(--ut-bg2)!important;color:var(--ut-muted)!important;font-size:.75rem!important;font-weight:700;text-transform:uppercase;letter-spacing:.04em;cursor:default!important}
+.ut-rij-statisch{cursor:default!important;grid-template-columns:minmax(160px,1.6fr) 120px 110px minmax(120px,1fr)!important}
+.ut-rij-statisch[data-staat="klaar"] span:nth-child(2){color:var(--ut-ok)}
+.ut-rij-statisch[data-staat="mislukt"] span:nth-child(2){color:var(--ut-err);font-weight:700}
+.ut-reden{overflow-wrap:anywhere;color:var(--ut-muted)}
+.ut-reden b{color:var(--ut-err);font-size:.78rem}
+.admin-uitrol .ut-rij[data-staat="mislukt"],.admin-uitrol .ut-rij[data-staat="geweigerd"]{border-left:3px solid var(--ut-err)}
+.admin-uitrol .ut-rij[data-staat="klaar"]{border-left:3px solid var(--ut-ok)}
+.admin-uitrol .ut-rij[data-staat="bezig"]{border-left:3px solid var(--ut-info)}
+.admin-uitrol .ut-rij[data-staat="afgebroken"]{border-left:3px solid var(--ut-warn)}
+@media (max-width:860px){
+  .ut-rij-kop{display:none!important}
+  .admin-uitrol .ut-rij{grid-template-columns:1fr 1fr;gap:6px 12px}
+  .ut-rij>span[data-label]::before{content:attr(data-label);display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ut-muted)}
+  .ut-rij>.ut-reden{grid-column:1/-1}
+  .ut-rij-statisch{grid-template-columns:1fr 1fr!important}
+}
+.ut-pagina{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;font-size:.88rem;color:var(--ut-muted)}
+
+/* lade met details */
+.ut-lade-schaduw{position:fixed;inset:0;z-index:450;background:rgba(2,6,23,.5);display:flex;justify-content:flex-end}
+.ut-lade{width:min(760px,100%);height:100%;overflow:auto;background:var(--ut-bg);padding:16px;display:grid;gap:12px;align-content:start;box-shadow:-8px 0 30px rgba(0,0,0,.25)}
+.ut-lade>header{display:flex;justify-content:space-between;align-items:center;position:sticky;top:-16px;margin:-16px -16px 0;padding:14px 16px;background:var(--ut-bg);border-bottom:1px solid var(--ut-line);z-index:2}
+.ut-detail{display:grid;gap:14px;min-width:0}
+.ut-detail-raster{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:760px){.ut-detail-raster{grid-template-columns:1fr 1fr}}
+.ut-dl{display:grid;grid-template-columns:minmax(90px,max-content) minmax(0,1fr);gap:6px 14px;margin:0;font-size:.88rem}
+.ut-dl dt{color:var(--ut-muted)}
+.ut-dl dd{margin:0;overflow-wrap:anywhere}
+.ut-dl dd[data-ok="false"],.ut-dl dd[data-laag="true"]{color:var(--ut-err)}
+.ut-kopieerbaar{display:inline-flex;align-items:center;gap:6px;max-width:100%}
+.ut-pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;margin:6px 0 0;padding:10px;border-radius:10px;background:var(--ut-bg2);border:1px solid var(--ut-line);font-size:.8rem}
+.ut-journaal{max-height:300px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.ut-events{list-style:none;margin:0;padding:0 0 0 14px;border-left:2px solid var(--ut-line);display:grid;gap:8px}
+.ut-events li{display:grid;grid-template-columns:auto 1fr;gap:10px;font-size:.88rem;position:relative}
+.ut-events li::before{content:"";position:absolute;left:-20px;top:7px;width:10px;height:10px;border-radius:50%;background:var(--ut-info);border:2px solid var(--ut-bg)}
+.ut-events li[data-niveau="error"]::before{background:var(--ut-err)}
+.ut-events li[data-niveau="warn"]::before{background:var(--ut-warn)}
+.ut-events time{color:var(--ut-muted);font-variant-numeric:tabular-nums}
+
+/* lijsten, formulieren */
+.ut-lijst{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ut-lijst>li{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 12px;border-radius:10px;background:var(--ut-bg2);font-size:.9rem}
+.ut-lijst>li[data-status="ingetrokken"],.ut-lijst>li[data-status="verlopen"]{opacity:.6}
+.ut-lijst-klein small{display:block;color:var(--ut-muted)}
+.ut-recent>li{padding:0}
+.admin-uitrol .ut-recent button{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;width:100%;text-align:left;padding:9px 12px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;border-radius:10px}
+.ut-recent button:hover{background:var(--ut-bg)}
+.ut-recent small{flex-basis:100%;color:var(--ut-muted);overflow-wrap:anywhere}
+.ut-recent span{color:var(--ut-muted);font-size:.82rem;min-width:0;flex:1 1 200px}
+.ut-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ut-form input[type=number]{width:72px}
+.ut-reden-veld{flex-basis:100%;display:grid;gap:6px;padding:10px;border:1px solid var(--ut-warn);border-radius:10px}
+.ut-reden-veld textarea{width:100%;resize:vertical}
+.ut-pakket{border:1px solid var(--ut-line);border-radius:12px;padding:14px;display:grid;gap:10px;background:var(--ut-bg2)}
+.ut-problemen{margin:0;padding-left:20px;display:grid;gap:4px;color:var(--ut-err)}
+.ut-checks{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:.88rem}
+.ut-checks li{display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:start}
+.ut-checks svg{width:18px;height:18px}
+.ut-checks li[data-ok="true"] svg{color:var(--ut-ok)}
+.ut-checks li[data-ok="false"] svg{color:var(--ut-err)}
+.ut-checks li[data-ok="n"] i{display:block;width:10px;height:10px;margin:4px;border-radius:50%;background:var(--ut-line)}
+
+/* upload-blok (UitrolMeester deel='archief') */
+.uitrol-meester-vast{display:grid;gap:10px}
+.uitrol-meester-vast h3{display:flex;align-items:center;gap:8px;font-size:1.05rem;margin:0}
+.uitrol-meester-vast h3 svg{width:20px;height:20px;color:var(--ut-accent)}
+.uitrol-meester-sub{color:var(--ut-muted);font-size:.88rem;margin:0}
+.uitrol-meester-vast .uitrol-meester-bestand input{width:100%;padding:14px;border:2px dashed var(--ut-line);border-radius:12px;background:var(--ut-bg2);color:inherit;font:inherit}
+.uitrol-meester-vast .admin-uitrol-voorstel{background:var(--ut-bg2)}
+.uitrol-meester-vast .admin-uitrol-ja,.uitrol-meester-vast .admin-uitrol-knoppen button{min-height:44px}
+@media (max-width:640px){.ut-kaart{padding:12px;border-radius:12px}.ut-lade{padding:12px}.ut-fasen{gap:2px}.ut-fasen li{font-size:.75rem}.ut-hoofd h1{font-size:1.15rem}}
+
+/* terminal: syntaxiskleuren (de terminal is altijd donker) */
+.ut-k-tag{color:#67e8f9;font-weight:600}
+.ut-k-cmd{color:#c4b5fd;font-weight:600}
+.ut-k-pad{color:#7dd3fc}
+.ut-k-vlag{color:#f0abfc}
+.ut-k-versie{color:#f9a8d4;font-weight:600}
+.ut-k-getal{color:var(--warn)}
+.ut-k-tekst{color:#bef264}
+.ut-k-sleutel{color:#a5b4fc}
+.ut-k-url{color:#7dd3fc;text-decoration:underline;text-decoration-color:rgba(125,211,252,.4)}
+.ut-k-dim{color:var(--muted)}
+.ut-k-fout{color:var(--fout);font-weight:700}
+.ut-k-waarsch{color:var(--warn);font-weight:600}
+.ut-k-goed{color:var(--ok)}
+.ut-k-a-rood{color:var(--fout)}.ut-k-a-groen{color:var(--ok)}.ut-k-a-geel{color:var(--warn)}.ut-k-a-blauw{color:var(--info)}.ut-k-a-paars{color:#c084fc}.ut-k-a-cyaan{color:#22d3ee}.ut-k-a-dim{color:var(--muted)}.ut-k-a-vet{font-weight:700}
+.ut-regel[data-niveau="error"]{background:rgba(239,68,68,.08)}
+.ut-regel[data-niveau="warn"]{background:rgba(245,158,11,.06)}
+.ut-notice{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.ut-notice[data-herstart]{border-color:var(--ut-warn);background:var(--ut-warn-bg)}
+.admin-uitrol .ut-notice-x{display:grid;place-items:center;flex:none;width:26px;height:26px;border:0;border-radius:50%;background:transparent;color:var(--ut-muted);cursor:pointer}
+.admin-uitrol .ut-notice-x:hover{background:rgba(0,0,0,.08);color:var(--ut-text)}
+.ut-notice-x svg{width:14px;height:14px}
+
+/* terminal als scrollval: de pagina scrollt door zodra de terminal het einde bereikt; op aanraakschermen is hij lager, zodat er altijd pagina naast/onder te grijpen is */
+.ut-terminal-bak{overscroll-behavior:auto;-webkit-overflow-scrolling:touch}
+@media (pointer:coarse){.ut-terminal-bak{max-height:min(300px,38dvh)!important}}
+
+/* levende kaart in rust: ingetogen, wacht op de volgende uitrol */
+.ut-live[data-idle]{padding:12px 16px;gap:8px;border-style:dashed;background:transparent}
+.ut-live[data-idle] .ut-kaart-kop h2{font-size:.98rem;color:var(--ut-muted)}
+.ut-live[data-idle] .ut-fasen{opacity:.55}
+.ut-live[data-idle] .ut-leeg{padding:0;font-size:.85rem}
+.ut-vorige-hint[data-ut-opschonen]{display:flex;align-items:center;gap:6px}
+
+/* «Причина» van een mislukte uitrol en de commitweergave (audit 18.10.2026, punten 2, 6, 10) — src/uitrol/Oorzaak.tsx, CommitTekst.tsx */
+.ut-uitkomst>div{min-width:0;flex:1}
+.ut-oorzaak{display:grid;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed color-mix(in srgb,var(--ut-err) 35%,transparent);min-width:0}
+.ut-oorzaak-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ut-err)}
+.ut-root .ut-oorzaak-regel{display:block;font:600 .8rem/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px 10px;border-radius:8px;background:var(--ut-bg);border:1px solid var(--ut-line);color:var(--ut-text);white-space:pre-wrap;overflow-wrap:anywhere}
+.ut-oorzaak-context summary{cursor:pointer;font-size:.82rem;color:var(--ut-muted)}
+.ut-oorzaak-context pre{margin:6px 0 0;padding:8px 10px;border-radius:8px;background:var(--ut-term-bg);color:var(--ut-term-text);font:.78rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto}
+.ut-oorzaak-context pre span[data-fout]{color:var(--fout);font-weight:700}
+.ut-oorzaak-doen{display:flex;gap:6px;align-items:flex-start;font-size:.86rem;color:var(--ut-text)}
+.ut-oorzaak-doen svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--ut-warn)}
+.ut-commit-let-op{display:inline-flex;align-items:center;gap:5px;color:var(--ut-warn);font-size:max(var(--tekst-mini),.85em);overflow-wrap:anywhere}
+.ut-commit-let-op svg{width:14px;height:14px;flex:none}
+.ut-commit-blok{display:flex;padding:8px 12px;border-radius:10px;background:var(--ut-warn-bg);border:1px solid var(--ut-warn);margin:8px 0}
+
+/* De schuifrij (.ut-tabs-wrap, .ut-tabs-pijl) staat sinds 21.10.2026 in src/ontwerp/tabs-rij.css (samen met TabsRij). */
+.ut-terminal-zone{font-size:.7rem;font-weight:500;opacity:.75;font-variant-numeric:tabular-nums}
+.ut-zone-keuzes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.ut-zone-keuze{display:grid;gap:2px;padding:10px 12px;border:1px solid var(--ut-line);border-radius:10px;cursor:pointer;background:var(--ut-bg)}
+.ut-zone-keuze input{position:absolute;opacity:0;pointer-events:none}
+.ut-zone-keuze span{font-weight:600}
+.ut-zone-keuze small{color:var(--ut-muted);font-variant-numeric:tabular-nums}
+.ut-zone-keuze[data-actief]{border-color:var(--ut-info);background:var(--ut-info-bg)}
+.ut-zone-keuze:focus-within{outline:3px solid var(--ut-info);outline-offset:2px}
+
+/* «Обірвані спроби» (0081): pogingen die niet tot een installatie kwamen — etappe, percentage, reden en de mogelijke actie.
+   Een regel die de BROWSER meldde krijgt een eigen rand, zodat ze nooit op een vaststelling van de server lijkt. */
+.ut-pogingen-blok{display:grid;gap:6px;margin-top:14px}
+.ut-pogingen>li{display:grid;gap:6px;align-items:start;border-left:3px solid var(--ut-warn)}
+.ut-pogingen>li[data-bron="browser"]{border-left-style:dashed}
+.ut-poging-kop{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.ut-poging-etappe{background:var(--ut-info-bg);color:var(--ut-info)}
+.ut-poging-pct{font-variant-numeric:tabular-nums}
+.ut-poging-bron,.ut-poging-onbekend{display:inline-flex;align-items:center;gap:4px;font-weight:600}
+.ut-poging-bron>svg,.ut-poging-onbekend>svg{width:13px;height:13px}
+.ut-poging-reden{display:flex;gap:7px;align-items:start;color:var(--ut-text);font-size:.86rem}
+.ut-poging-reden>svg{width:16px;height:16px;flex:0 0 auto;color:var(--ut-warn);margin-top:2px}
+.ut-poging-reden b{display:block;color:var(--ut-text);font-weight:600}
+.ut-poging-reden small{display:block;margin-top:3px;color:var(--ut-muted);font-size:.76rem;overflow-wrap:anywhere}
+.ut-poging-reden small>svg{width:12px;height:12px;vertical-align:-2px;margin-right:3px}
+.ut-poging-acties{display:flex;gap:6px;flex-wrap:wrap}
+/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
+@media (max-width:700px){
+  .admin-uitrol .ut-knop,.ut-root a.ut-knop{min-height:var(--tik-hoogte)}
+}

@@ -1,0 +1,67 @@
+{
+  "base_archive": "mijn-ruimte-20261027-211425.tar.gz",
+  "base_sha256": "84eaba689d06f364e0d05f9a62fbf5ca7f9712828487194d4c9d13a9f5b43d67",
+  "base_file_count": 1994,
+  "modified_existing_files": {
+    "src/DriveBrowser.tsx": {
+      "before": "6912a1ca1c2b3e540950f30257fba0e6e5ff98f5eb6c1701a4d56801fb4ff61b",
+      "after": "15cbf3d88c8611aad0dded19728ae734e3ae2cad73bcbc385438e21a4eec0432"
+    },
+    "src/MailBijlageVensters.tsx": {
+      "before": "9198945fcbe640056c3462a64c247bd766d053950867bfde2c30cf2e5f5ead96",
+      "after": "782ad87f79dbd9c236ad7a6998c841443719f0bd42e3309d6400f18f06518f5f"
+    },
+    "src/MailBijlageVoorbeeld.tsx": {
+      "before": "abb34bb78104a0060cf95ec51a73d8e524f5e54ca80c0b2177a7be86ef96ae1e",
+      "after": "a01563f168fa3626b9fe84ed9793a7cc7743840097923bcc8dcb3e0b5a67d954"
+    }
+  },
+  "deleted_existing_files": [],
+  "added_files_count_before_documentation": 30,
+  "deploy_performed": false,
+  "full_build_verified": false,
+  "rollout_mail_enabled": false,
+  "source_identity": "self-hosted migrated-bg2v4h (unchanged)",
+  "tests": {
+    "isolated_ufw_core": "34/34",
+    "new_bridge": "15/15",
+    "source_map": "pass",
+    "typescript_syntax": "5 changed/new files passed",
+    "full_build": "not performed: Node >=24 needed and npm dependencies unavailable"
+  },
+  "added_files": {
+    "docs/universele-bestanden/BASE-MERGE-MANIFEST.json": "63a03f2b9921f15b42554821aa7f10c975065407c66700d02976d4133807032e",
+    "docs/universele-bestanden/INTEGRATIE-20261027.uk.md": "1a043eb3f9829755efc8a95bda7a71752f8348caa9700626273e04b0e408b581",
+    "docs/universele-bestanden/PROTOTYPE-REFERENTIE.html": "fddf829816cdab7cad31760de6290016c052e8c897a9f7ee4be53b35cbd4521d",
+    "integrations/universal-file-workspace-core-v0.2/README.md": "64514f060996068d2c60219ca8d6542faa207f4c8bfe6c466face6203e13ad8c",
+    "integrations/universal-file-workspace-core-v0.2/dist/adapters/browser-file.d.ts": "f6fe68c6cfc10d1ff61ab46fbab16305cf31e7ce8a04a8d39e4292c80f48facc",
+    "integrations/universal-file-workspace-core-v0.2/dist/adapters/browser-file.js": "61f411616afe4cd98c41672628c619460b12130ae1d92f269623a57fd5b2446d",
+    "integrations/universal-file-workspace-core-v0.2/dist/contracts.d.ts": "c9a2e354649b7e71bd759b513d8c774b30ad12880f822c40f7144a94cadab4ce",
+    "integrations/universal-file-workspace-core-v0.2/dist/contracts.js": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+    "integrations/universal-file-workspace-core-v0.2/dist/default-engines.d.ts": "9c522547cbd09d1bf0b235d3965f600ea2c09242d92b9a762ec3379b4adfe711",
+    "integrations/universal-file-workspace-core-v0.2/dist/default-engines.js": "80059abe28c00d84538ac09eb0ce72c8ce201871c9c043c796f19dbc614e5bc5",
+    "integrations/universal-file-workspace-core-v0.2/dist/file-client.d.ts": "d91ba23be49e33c8c1e42dbefaf1a0db1b71f7f0e0d8e39f4849e6912335e96d",
+    "integrations/universal-file-workspace-core-v0.2/dist/file-client.js": "ab6c4465dc5a28ec28b5613791e3923b1c78973da79f8ca7345581076c67f2ad",
+    "integrations/universal-file-workspace-core-v0.2/dist/file-service.d.ts": "59807fb6c87bd28936d5279ddbe963eeac10a1f31e46a311544d2d1398045131",
+    "integrations/universal-file-workspace-core-v0.2/dist/file-service.js": "9545a3ee245a2b0fcbe5cb4567d06c6c5e46d847707ef4937c68e3bb6a568e9b",
+    "integrations/universal-file-workspace-core-v0.2/dist/registry.d.ts": "e8d596d7c0211cb1dba425be5d58e0ab0179f18df6014d26bd433c6fd41e88f8",
+    "integrations/universal-file-workspace-core-v0.2/dist/registry.js": "b09df5c4a24c8e98146b509ae48880a9205a02d6f22fcfb4bdf4d473dee84e22",
+    "integrations/universal-file-workspace-core-v0.2/dist/sniff.d.ts": "5b7d3ccbada1a5ac87bd5f4e7ae7935f747123d4a9f617228b9ca2d818d031c0",
+    "integrations/universal-file-workspace-core-v0.2/dist/sniff.js": "e344fa032968f2eeca88bd9c966dd33d978d9b455374993c99e0856a1ec5a4c2",
+    "integrations/universal-file-workspace-core-v0.2/package.json": "5715cc12e6e889f09dc96e4cd8976ce25b595efba0f9369a91309ec315876348",
+    "integrations/universal-file-workspace-core-v0.2/src/adapters/browser-file.ts": "38c30f82703f9c83ff0d140049566e8b89e2092a6f60a6e49f00f124d6e72a22",
+    "integrations/universal-file-workspace-core-v0.2/src/contracts.ts": "225151c67576d386258b335c7ef52573a3f389ed54f62a007a1ea955f989255e",
+    "integrations/universal-file-workspace-core-v0.2/src/default-engines.ts": "3bff16e34616a992a5caab1c6a796e7efff6cfc3dbdbd7df5727fd63be178def",
+    "integrations/universal-file-workspace-core-v0.2/src/file-client.ts": "02447df4627b8cc7b56ea20d0f7a0090e19147e3cf497c7df4a549051085ac0e",
+    "integrations/universal-file-workspace-core-v0.2/src/file-service.ts": "7c1ec65a2b9c020a3944b714a52fe46b43018996e07b87d921a19069b4d60ea2",
+    "integrations/universal-file-workspace-core-v0.2/src/registry.ts": "53dcfa0cb969403632afd34e78712f2bbb648635f9b4fdd1ba2e9d72603d7a6c",
+    "integrations/universal-file-workspace-core-v0.2/src/sniff.ts": "f8f7a465c1dd0df85630249aa8166acecc68aeef0d8ec7bab02bc17e41254297",
+    "integrations/universal-file-workspace-core-v0.2/test/client.test.mjs": "f13a1014a47dce0387af3a50a7f7284f0af65fce3a780b6b62935712d7a85eef",
+    "integrations/universal-file-workspace-core-v0.2/test/core.test.mjs": "ee3cdeb9f4818e7c155e5b4212737334699db873e5f9bd66f0f8474ecb5bb1dc",
+    "integrations/universal-file-workspace-core-v0.2/test/integration.test.mjs": "89284ee1c284346d65be53f530050f1f1a2459f13782b30169a73437d47ec674",
+    "integrations/universal-file-workspace-core-v0.2/tsconfig.json": "a0f57c24d19d55303e0a6cbfa4b463823fc3d19e7c943905663eb128f5881721",
+    "src/bestand/UniverseelBestandVenster.tsx": "324bee3709fb2444bb12a970c8400b37df64b549b68fb508dd799d714757a399",
+    "src/bestand/universeel-bestand.css": "514371240a14c165d62440886a388d171ced54edc3f4a1d9faf0a4e9f59a1ed2",
+    "src/bestand/universeel-bestand.ts": "63deaee9045506ce64d482951a6f70e02c6aac7ebf7d82d58e412b196e342376"
+  }
+}

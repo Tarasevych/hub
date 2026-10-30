@@ -1,0 +1,84 @@
+.term-sessie{display:grid;grid-template-rows:auto auto 1fr;gap:8px;padding:10px 12px 12px;height:100%;box-sizing:border-box;color:var(--text,#1b1f24)}
+.term-kop{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.88rem}
+.term-kop svg{width:16px;height:16px}
+.term-kop button{margin-left:auto;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.term-rec{color:var(--fout);font-weight:700}
+.term-doos{min-height:320px;background:#0d1117;border-radius:8px;padding:6px;overflow:hidden}
+.term-doos.is-afspelen{min-height:240px;margin-top:8px}
+mr-xterm-stijl{display:none}
+[data-term-venster] button{display:inline-flex;align-items:center;gap:6px}[data-term-venster] button svg{width:16px;height:16px}
+/* ---- opdracht-terminal (zone G 22.10.2026): tokens, geen hex; telefoon 390 px: alles onder elkaar, tik ≥ 44 px ---- */
+/* Flex-kolom (geen positionele grid-rijen): instellingen, melding, bevestiging, tips en geschiedenis zijn voorwaardelijk; alleen de uitvoer groeit. */
+.term-opdracht{display:flex;flex-direction:column;gap:8px}
+.term-opdracht > *{flex:none}
+.term-opdracht > .term-uitvoer{flex:1 1 200px}
+.term-opdracht button{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px;border-radius:var(--straal-s,8px);border:1px solid var(--line);background:var(--panel);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.term-opdracht button svg{width:16px;height:16px}
+.term-opdracht button.is-hoofd{background:var(--info-vlak);border-color:var(--info);color:var(--text-on-vlak)}
+.term-opdracht button:disabled{opacity:.55;cursor:not-allowed}
+.term-opdracht :is(button,input,select):focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.term-kop-opdracht{align-items:flex-start;justify-content:space-between}
+.term-status{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0;max-width:100%;font-size:.86rem;line-height:1.5}
+.term-status > *{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.term-opdracht > *{min-width:0;max-width:100%;box-sizing:border-box}
+.term-status code{overflow-wrap:anywhere;font:inherit;font-family:ui-monospace,Consolas,monospace;background:var(--surface2,var(--panel-2));padding:0 4px;border-radius:var(--straal-s,4px)}
+.term-status select{min-height:var(--tik-hoogte,44px);padding:0 8px;border-radius:var(--straal-s,8px);border:1px solid var(--line);background:var(--panel);color:inherit;font:inherit;max-width:100%}
+.term-allow{color:var(--muted);overflow-wrap:anywhere}
+.term-kop-knoppen{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.term-kop .term-kop-knoppen button{margin-left:0;min-height:var(--tik-hoogte,44px)}
+.term-instellingen{display:grid;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--straal-m,10px);background:var(--surface,var(--panel))}
+.term-instellingen .tech-veld select{min-height:var(--tik-hoogte,44px);padding:0 10px;border-radius:var(--straal-s,8px);border:1px solid var(--line);background:var(--panel);color:inherit;font:inherit;width:100%}
+.term-uitvoer{min-height:200px;overflow:auto;border:1px solid var(--line);border-radius:var(--straal-m,10px);background:var(--surface,var(--panel));padding:8px 10px;font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.45;color:var(--text)}
+.term-leeg{margin:0;color:var(--muted);font-family:inherit;white-space:pre-wrap}
+.term-regel{margin:0 0 10px;padding-bottom:8px;border-bottom:1px dashed var(--line)}
+.term-regel:last-child{border-bottom:0;margin-bottom:0}
+.term-regel-kop{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.term-regel-prompt{color:var(--ok);font-weight:700}
+.term-regel-cmd{font-weight:600;word-break:break-all}
+.term-regel-staat{margin-left:auto;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--surface2,var(--panel-2));color:var(--muted)}
+.term-regel-staat.is-klaar{background:var(--ok-zacht);color:var(--ok)}
+.term-regel-staat.is-code,.term-regel-staat.is-mislukt,.term-regel-staat.is-fout,.term-regel-staat.is-tijd{background:var(--fout-zacht);color:var(--fout)}
+.term-regel-staat.is-wacht{background:var(--warn-zacht);color:var(--warn-text,var(--warn))}
+.term-kopieer{display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:32px;padding:0;border:1px solid var(--line);border-radius:var(--straal-s,6px);background:var(--panel);color:inherit;cursor:pointer}
+.term-kopieer svg{width:14px;height:14px}
+.term-regel-fout{margin:4px 0 0;color:var(--fout);white-space:pre-wrap}
+.term-pre{margin:4px 0 0;white-space:pre-wrap;word-break:break-word;font:inherit;max-height:50vh;overflow:auto}
+.term-bevestig{display:grid;gap:8px;padding:10px 12px;border:2px solid var(--warn);border-radius:var(--straal-m,10px);background:var(--warn-zacht);color:var(--text)}
+.term-bevestig p{margin:0}
+.term-code{display:block;padding:8px 10px;border-radius:var(--straal-s,8px);background:var(--surface2,var(--panel-2));font-family:ui-monospace,Consolas,monospace;font-size:13px;word-break:break-all;user-select:all}
+.term-invoer{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px;align-content:start}
+.term-prompt{font-family:ui-monospace,Consolas,monospace;font-size:13px;color:var(--ok);font-weight:700;max-width:38vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.term-invoer input{min-height:var(--tik-hoogte,44px);padding:0 10px;border-radius:var(--straal-s,8px);border:1px solid var(--line);background:var(--panel);color:inherit;font:13px/1.4 ui-monospace,Consolas,monospace;min-width:0;width:100%;box-sizing:border-box}
+.term-invoer button{display:inline-flex;align-items:center;gap:6px;min-height:var(--tik-hoogte,44px);padding:0 12px;border-radius:var(--straal-s,8px);border:1px solid var(--line);background:var(--panel);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.term-invoer button.is-hoofd{background:var(--info-vlak);border-color:var(--info);color:var(--text-on-vlak)}
+.term-invoer button:disabled{opacity:.55;cursor:not-allowed}
+.term-vis-verborgen{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.term-tips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.term-tips button{min-height:36px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface2,var(--panel-2));color:inherit;font:12px/1 ui-monospace,Consolas,monospace;cursor:pointer}
+.term-geschiedenis{display:grid;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--straal-m,10px);background:var(--surface,var(--panel));max-height:40vh;overflow:auto}
+.term-geschiedenis-kop{margin:0;display:flex;align-items:center;gap:8px}
+.term-geschiedenis-kop button{margin-left:auto;min-width:36px;min-height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:var(--straal-s,6px);background:var(--panel);color:inherit;cursor:pointer}
+.term-geschiedenis .tech-lijst li{display:grid;gap:6px;padding:8px;border:1px solid var(--line);border-radius:var(--straal-s,8px)}
+.term-geschiedenis .tech-lijst small{display:block;color:var(--muted);font-size:12px}
+.term-geschiedenis .tech-lijst button{min-height:36px;padding:0 10px;border-radius:var(--straal-s,6px);border:1px solid var(--line);background:var(--panel);color:inherit;font:inherit;cursor:pointer}
+.term-wizard{display:grid;gap:10px}
+.term-wizard .tech-lead{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.term-wizard .tech-lead svg{width:18px;height:18px}
+.term-stappen{margin:0;padding-left:22px;display:grid;gap:12px}
+.term-stappen li{display:grid;gap:6px}
+.term-stappen small{color:var(--muted);line-height:1.45}
+.term-stappen button{justify-self:start;min-height:var(--tik-hoogte,44px)}
+@media (max-width:700px){
+  .term-sessie button,.tech-venster[data-term-venster] button,.term-stappen button{min-height:var(--tik-hoogte,44px)}
+  .term-kopieer{min-width:var(--tik-hoogte,44px);min-height:var(--tik-hoogte,44px)}
+  .term-status select{width:100%}
+  .term-kop-opdracht{flex-direction:column}
+  .term-kop-knoppen{margin-left:0;width:100%}
+  .term-kop-knoppen button{flex:1 1 auto;justify-content:center}
+  .term-kop-knoppen button span{font-size:12px}
+  .term-invoer{grid-template-columns:1fr auto}
+  .term-invoer input,.term-invoer button{min-height:var(--tik-hoogte-mobiel,44px);height:var(--tik-hoogte-mobiel,44px)}
+  .term-prompt{grid-column:1 / -1;max-width:100%}
+  .term-uitvoer{min-height:160px}
+  .term-regel-staat{margin-left:0}
+}

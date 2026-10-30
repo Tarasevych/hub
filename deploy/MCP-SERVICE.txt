@@ -1,0 +1,9 @@
+mcp.tarasevych.com is a service in the same app as mail and hub.
+Screens: /overview /agents /access /connect /tools
+Domain roles: ai. = chat with AI agents, mcp. = MCP setup, agents, keys and tools, api. = programmatic API.
+
+One hostname, two backends (tunnel path split, see deploy/cloudflared-config.yml):
+  8091  MCP bridge (read-only, own bearer/OAuth token): /grok /claude /chatgpt /gemini /copilot, /oauth/*, /.well-known/*, /health
+  8080  main app: screens (/overview /agents ...), /api/*, and the Local Machine Connector
+        (agents pair via POST /api/owner/agents/pair and connect via WSS /agent/ws).
+The split rule for 8091 must stay FIRST; everything else on this hostname goes to 8080.

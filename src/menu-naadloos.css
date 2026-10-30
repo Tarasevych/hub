@@ -1,0 +1,29 @@
+/* «Завжди розгорнута» = naadloos (punt 4, zoals het linkermenu van Google): geen eigen vlak, rand of schaduw — dezelfde achtergrond
+   als de pagina — en geen zichtbare schuifbalk of ▲▼-pijlen: scrollen gaat met het wieltje, vegen of het toetsenbord.
+   Alleen op brede schermen met het menu aan de zijkant; de lade (mobiel), zwevende modus en het dok blijven zoals ze waren.
+   Блок 5.2: із фоном оболонки закріплене меню скляне. 0.64 світла / 0.56 темна (--panel).
+   --muted і --faint на склі не тримають 4.5:1 — підміняються на --text. */
+.canonical-chrome{--menu-alpha-licht:0.64;--menu-alpha-donker:0.56}
+@media (min-width:701px){
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar{background:var(--bg)!important;border-right-color:transparent!important;border-left-color:transparent!important;box-shadow:none!important}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-service-list{scrollbar-width:none}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-service-list::-webkit-scrollbar{display:none}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) [data-zijbalk-pijl]{display:none!important}
+  .canonical-chrome[data-achtergrond]:not([data-achtergrond='geen']).sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar{background:color-mix(in srgb,var(--panel) 64%,transparent)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);--muted:var(--text);--faint:var(--text);--a2:var(--a)}
+  html.theme-dark .canonical-chrome[data-achtergrond]:not([data-achtergrond='geen']).sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar,html.theme-plum-dark .canonical-chrome[data-achtergrond]:not([data-achtergrond='geen']).sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar{background:color-mix(in srgb,var(--panel) 56%,transparent)!important}
+}
+/* Той самий специфічний селектор, що й скло: інакше !important скла лишається при reduced-transparency. */
+@media (prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){
+  .canonical-chrome[data-achtergrond].sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar,
+  html.theme-dark .canonical-chrome[data-achtergrond].sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar,
+  html.theme-plum-dark .canonical-chrome[data-achtergrond].sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar{
+    background:var(--panel)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important
+  }
+}
+@media (forced-colors:active){
+  .canonical-chrome[data-achtergrond].sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar,
+  html.theme-dark .canonical-chrome[data-achtergrond].sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar,
+  html.theme-plum-dark .canonical-chrome[data-achtergrond].sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar{
+    background:Canvas!important;color:CanvasText!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;forced-color-adjust:none
+  }
+}

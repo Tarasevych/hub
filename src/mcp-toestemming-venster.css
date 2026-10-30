@@ -1,0 +1,55 @@
+/* Екран згоди (mcp.tarasevych.com/claude, McpToestemmingVenster.tsx). 20.10.2026: лише токени фундаменту (src/ontwerp/tokens.css).
+   Причина «білого на білому» в темній темі: картки «Читання»/«Підписаний випуск» брали background:var(--soft,#f6f8fb) —
+   змінна --soft ніде не була визначена, тож спрацьовував світлий запасний колір, а текст успадковував --text темної теми.
+   Тепер картка — var(--surface), іконка — var(--panel), попередження — var(--warn-zacht)/var(--text); жодного hex і жодного
+   prefers-color-scheme (тема сайту = клас theme-* на html). */
+.mcp-consent-backdrop{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:var(--overlay);overflow:auto}
+.mcp-consent-dialog{width:min(560px,100%);max-width:100%;min-width:0;max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:auto;display:grid;gap:var(--ruimte-3);padding:var(--ruimte-5);border-radius:var(--straal-xl);background:var(--panel);color:var(--text);border:1px solid var(--line);box-shadow:var(--schaduw-3)}
+.mcp-consent-dialog:focus{outline:none}
+.mcp-consent-head{display:flex;gap:var(--ruimte-3);align-items:flex-start;min-width:0}
+.mcp-consent-head>div{min-width:0}
+.mcp-consent-head h2{margin:0;font-size:1.25rem;line-height:1.3;overflow-wrap:break-word}
+.mcp-consent-icon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:var(--straal-l);background:var(--accent-soft);color:var(--accent)}
+.mcp-consent-sub,.mcp-consent-meta,.mcp-consent-msg{margin:0;color:var(--muted);line-height:1.5;font-size:.95rem;overflow-wrap:break-word}
+.mcp-consent-meta{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:.88rem}
+.mcp-consent-meta a{color:var(--accent)}
+.mcp-consent-groups{list-style:none;margin:0;padding:0;display:grid;gap:var(--ruimte-2)}
+.mcp-consent-group{display:flex;gap:var(--ruimte-3);min-width:0;padding:var(--ruimte-3);border-radius:var(--straal-l);border:1px solid var(--line);background:var(--surface);color:var(--text)}
+.mcp-consent-group>div{min-width:0}
+.mcp-consent-group-icon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:var(--straal-s);background:var(--panel);border:1px solid var(--line);color:var(--info)}
+.mcp-consent-write .mcp-consent-group-icon{color:var(--warn)}
+.mcp-consent-run .mcp-consent-group-icon{color:var(--fout)}
+.mcp-consent-group b{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;color:var(--text)}
+.mcp-consent-note{font-weight:400;font-size:.82rem;color:var(--muted)}
+.mcp-consent-group ul{margin:6px 0 0;padding-left:18px;font-size:.92rem;line-height:1.45;color:var(--text)}
+.mcp-consent-warn{display:flex;gap:var(--ruimte-2);align-items:flex-start;margin:0;padding:10px 12px;border-radius:var(--straal-m);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);background:var(--warn-zacht);color:var(--text);font-size:.9rem}
+.mcp-consent-warn svg{flex:none;margin-top:2px;color:var(--warn)}
+/* Ruimte van de verbinding (shared/ai-ruimte.ts): privé kalm, technisch in de kleur van de technische band. */
+.mcp-consent-ruimte{margin:0;padding:10px 12px;border-radius:var(--straal-m);background:var(--accent-soft);color:var(--text);font-size:.9rem;line-height:1.45}
+.mcp-consent-ruimte.is-technisch{background:var(--warn-zacht)}
+.mcp-consent-ruimte a{display:inline-block;margin-top:4px;font-weight:600;color:var(--accent)}
+.mcp-consent-ruimte-knop{display:inline-flex;align-items:center;gap:5px;margin-top:4px;min-height:var(--tik-hoogte);padding:0;border:0;background:none;color:var(--accent);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
+.mcp-consent-ruimte-knop:disabled{opacity:.6;cursor:default}
+.mcp-consent-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--ruimte-2)}
+.mcp-consent-actions button,.mcp-consent-actions a.mcp-consent-primary{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;min-width:min(140px,100%);max-width:100%;padding:10px 22px;border-radius:var(--straal-m);font-size:1rem;font-weight:700;cursor:pointer;border:2px solid transparent;text-decoration:none}
+.mcp-consent-primary{background:var(--accent);color:var(--text-on-accent)}
+.mcp-consent-secondary{background:transparent;color:var(--text);border-color:var(--line)!important}
+.mcp-consent-secondary:hover{background:var(--surface)}
+.mcp-consent-actions button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.mcp-consent-actions button[disabled]{opacity:.5;cursor:progress}
+@media(max-width:520px){.mcp-consent-dialog{padding:var(--ruimte-4);border-radius:var(--straal-l)}.mcp-consent-actions{flex-direction:column-reverse}.mcp-consent-actions button,.mcp-consent-actions a.mcp-consent-primary{width:100%}}
+
+/* In het gezamenlijke venster (platform/vensters.tsx): rand, schaduw en laag komen van het venster. */
+.mcp-consent-venster .mcp-consent-dialog{width:100%;max-width:none;max-height:none;border:0;border-radius:0;box-shadow:none;margin:0}
+
+/* Termijn van de toegang (shared/ai-verbinding.ts): standaard uit de instelling per AI, hier per keer aan te passen. */
+.mcp-consent-duur{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:12px 0 4px;font-size:14px;color:var(--text)}
+.mcp-consent-duur>span{font-weight:600}
+.mcp-consent-duur select{flex:1 1 min(16rem,100%);min-width:0;min-height:var(--tik-hoogte);padding:6px 10px;border:1px solid var(--line);border-radius:var(--straal-m);background:var(--panel);color:var(--text);font:inherit}
+/* MOBIEL 21.10.2026 (stand ДО: [data-mcp-consent-modal] scrollWidth 414 > clientWidth 372 op 390 px — tekst rechts afgesneden).
+   Oorzaak: grid-/flexkinderen van het venster hadden min-width:auto; de langste regel (keuze «1 година, поновлюється до 14 днів
+   (рекомендовано)» en de technische link) bepaalde de breedte. Nu in het onderdeel zelf, niet alleen via het fundament: */
+.mcp-consent-dialog{min-width:0;max-width:100%;box-sizing:border-box}
+.mcp-consent-dialog :is(section,div,header,footer,label,p,ul,ol,li,form,fieldset){min-width:0}
+.mcp-consent-duur select{max-width:100%}
+.mcp-consent-dialog :is(p,li,a,button,strong,small){overflow-wrap:anywhere}

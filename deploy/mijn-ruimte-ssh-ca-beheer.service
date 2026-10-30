@@ -1,0 +1,31 @@
+# SSH-CA beheren vanaf de site (root, 18.10.2026). De app legt een verzoek in /srv/mijn-ruimte/ssh-ca-beheer en mag deze
+# vaste unit alleen starten (polkit). Root controleert zelf: «inrichten» en «aan» alleen met een geldige ROOT-passkey-assertie
+# (mijn-ruimte-passkey verifieer-ssh-ca), sshd-wijziging alleen via de eigen drop-in met `sshd -t` vóór herladen en terugzetten
+# bij een fout. «uit», «ontmantelen» en «intrekken» (KRL) nemen alleen rechten weg. Geen shell van de site.
+[Unit]
+Description=Mijn Ruimte: SSH-CA beheren (voorbereiden, aan/uit, intrekken)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mijn-ruimte-ssh-ca beheer
+StandardInput=null
+TimeoutStartSec=90
+NoNewPrivileges=yes
+PrivateNetwork=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectHome=yes
+ProtectSystem=strict
+UMask=0077
+# /etc/mijn-ruimte: schakelaar ssh-ca (mcp-rechten.json), CA-map, nonces van de passkey-hulp. /etc/ssh/sshd_config.d: alleen de
+# eigen drop-in (het script raakt sshd_config zelf nooit). /etc/systemd/system: path-unit aan/uit.
+ReadWritePaths=/etc/mijn-ruimte -/etc/ssh/sshd_config.d -/etc/systemd/system
+ReadWritePaths=-/var/lib/mijn-ruimte/ssh-ca -/var/lib/mijn-ruimte/ssh-ca-uit -/var/lib/mijn-ruimte/goedkeuring
+ReadWritePaths=-/var/lib/mijn-ruimte-uitrol-status -/srv/mijn-ruimte/ssh-ca-beheer
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX
+SystemCallArchitectures=native

@@ -1,0 +1,18 @@
+.codewoord-poort {
+  border: 1px solid var(--line, ButtonBorder);
+  border-radius: 12px;
+  padding: 16px;
+  max-width: 28rem;
+  background: var(--panel, Canvas);
+  color: var(--ink, CanvasText);
+}
+.codewoord-poort::backdrop {
+  background: color-mix(in srgb, CanvasText 45%, transparent);
+}
+.codewoord-poort h2 { margin: 0 0 8px; font-size: 1.1rem; }
+.codewoord-poort p { margin: 0 0 12px; }
+.codewoord-poort-knoppen { display: flex; gap: 8px; margin-top: 12px; }
+.codewoord-poort-knoppen button { min-height: 40px; }
+@media (prefers-contrast: more) {
+  .codewoord-poort { border-width: 2px; }
+}

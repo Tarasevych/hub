@@ -1,0 +1,54 @@
+UITLEG-LEESMIJ.txt - T:\mijn-ruimte\hulpmiddelen\age\
+(Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
+У цьому файлі НЕМАЄ жодних секретів. / Dit bestand bevat GEEN geheimen.
+
+==============================================================================
+УКРАЇНСЬКА
+==============================================================================
+
+ЩО ЦЕ
+- age\age.exe, age\age-keygen.exe - офіційна програма шифрування age v1.3.2 для Windows
+  (github.com/FiloSottile/age). Справжність перевірено: контрольна сума з GitHub і підпис
+  Sigsum (див. VERIFICATIE.txt, SHA256SUMS, *.proof, age-sigsum-key.pub).
+- backup-ontvanger.age.pub - ПУБЛІЧНИЙ ключ (не секрет). Той самий лежить на сервері в
+  /etc/mijn-ruimte/backup-ontvanger.age.pub. Ним сервер шифрує резервні копії.
+- СЕКРЕТНОГО ключа тут НЕМАЄ і не повинно бути. Він лише в
+  R:\mijn-ruimte-reservekopie\sleutels\herstelsleutel-age.txt (+ ваші офлайн-копії).
+
+НАВІЩО
+- Цією програмою на ПК розшифровують резервні копії під час відновлення.
+
+ЧИ ПОТРІБНО?  ТАК для відновлення. Якщо програму втрачено - завантажте знову з GitHub
+і перевірте контрольну суму.
+
+БЕЗПЕКА
+- Публічний ключ можна показувати, але не треба його без потреби змінювати.
+- Ніколи не кладіть сюди herstelsleutel-age.txt.
+
+ПРИ ВІДНОВЛЕННІ
+- HERSTEL.md, кроки 3 і 5 використовують T:\mijn-ruimte\hulpmiddelen\age\age\age.exe.
+
+==============================================================================
+NEDERLANDS
+==============================================================================
+
+WAT IS DIT
+- age\age.exe, age\age-keygen.exe - officieel versleutelprogramma age v1.3.2 voor Windows
+  (github.com/FiloSottile/age). Echtheid gecontroleerd: controlesom van GitHub en de
+  Sigsum-handtekening (zie VERIFICATIE.txt, SHA256SUMS, *.proof, age-sigsum-key.pub).
+- backup-ontvanger.age.pub - PUBLIEKE sleutel (niet geheim). Dezelfde staat op de server in
+  /etc/mijn-ruimte/backup-ontvanger.age.pub; daarmee versleutelt de server de back-ups.
+- De GEHEIME sleutel staat hier NIET en hoort hier ook niet. Die staat alleen in
+  R:\mijn-ruimte-reservekopie\sleutels\herstelsleutel-age.txt (+ je offline kopieen).
+
+WAAROM
+- Met dit programma ontsleutel je op de pc de back-ups bij een herstel.
+
+NODIG?  JA voor herstel. Kwijt? Opnieuw downloaden van GitHub en de controlesom nakijken.
+
+VEILIGHEID
+- De publieke sleutel mag gezien worden, maar wijzig hem niet zonder reden.
+- Zet herstelsleutel-age.txt hier nooit neer.
+
+BIJ HERSTEL
+- HERSTEL.md, stap 3 en 5 gebruiken T:\mijn-ruimte\hulpmiddelen\age\age\age.exe.

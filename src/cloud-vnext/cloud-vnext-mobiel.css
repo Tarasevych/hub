@@ -1,0 +1,61 @@
+/* Cloud vNext — smalle schermen en aanraking (uitvoerder D, 29.10.2026). ALLE regels staan BINNEN @media (max-width) of
+   (pointer: coarse): op een breed scherm met muis verandert dit bestand NIETS. Alleen ontwerp-tokens uit src/ontwerp/tokens.css
+   (geen hexkleuren) en geen vaste plaatsing — de onderbalk zelf staat in cloud-vnext.css en is geregistreerd in
+   scripts/plaatsing-vaste-elementen.json. Gedeelde bouwstenen waarop dit rekent (geraamte + uitvoerders B/C):
+   .cvn-kop/.cvn-blok/.cvn-knop/.cvn-leeg/.cvn-laag* (bestaan al), en de afgesproken namen .cvn-werkbalk (knoppenrij boven
+   een lijst), .cvn-raster (tegelraster), .cvn-kruimels (mappenpad), .cvn-tabel (tabel) — een regel op een nog niet
+   gebruikte klasse doet niets en gaat vanzelf werken zodra het onderdeel die naam draagt. */
+
+@media (max-width: 760px) {
+  /* ---- ruimte en kop: compacter, met de veilige zijranden van het toestel ---- */
+  .cvn { gap: var(--ruimte-3); padding-left: var(--veilig-links); padding-right: var(--veilig-rechts); }
+  .cvn-inhoud { gap: var(--ruimte-3); }
+  .cvn-kop h2 { font-size: 19px; }
+  .cvn-kop h2 svg { width: 19px; height: 19px; }
+  .cvn-blok { padding: var(--ruimte-3); }
+  .cvn-leeg { padding: var(--ruimte-5) var(--ruimte-3); }
+
+  /* ---- werkbalk: wrapt, en wat niet past scrolt horizontaal binnen de balk (nooit de hele pagina verbreden) ---- */
+  .cvn-werkbalk { display: flex; flex-wrap: wrap; gap: var(--ruimte-2); align-items: center; max-width: 100%; min-width: 0; }
+  .cvn-werkbalk > * { flex: 0 1 auto; min-width: 0; }
+  .cvn-werkbalk.is-scrol { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; padding-bottom: 2px; }
+  .cvn-werkbalk.is-scrol > * { flex: 0 0 auto; }
+
+  /* ---- rasters (tegels/kaarten): twee kolommen op smal ---- */
+  .cvn-raster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ruimte-2); }
+
+  /* ---- mappenpad (kruimels): één regel, horizontaal scrollen, nooit wrappen of de pagina verbreden ---- */
+  .cvn-kruimels { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; white-space: nowrap; }
+  .cvn-kruimels::-webkit-scrollbar { display: none; }
+  .cvn-kruimels > * { flex: 0 0 auto; }
+
+  /* ---- tabellen: scroll-terugval binnen het blok, cellen breken de kolommen niet ---- */
+  .cvn table, .cvn-tabel { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cvn table th, .cvn table td, .cvn-tabel th, .cvn-tabel td { white-space: nowrap; }
+
+  /* ---- lagen: een venster wordt een onderblad over de volle breedte; een paneel vult het scherm ---- */
+  .cvn-laag.is-venster { padding: 0; align-items: flex-end; }
+  .cvn-laag.is-venster .cvn-laag-vak { width: 100%; max-height: 92dvh; border-radius: var(--straal-l) var(--straal-l) 0 0; }
+  .cvn-laag.is-paneel .cvn-laag-vak { width: 100%; border-left: 0; }
+  .cvn-laag-inhoud { padding: 12px 12px calc(12px + var(--veilig-onder)); }
+  .cvn-onderbalk-menu { max-width: calc(100vw - 16px); }
+
+  /* ---- zoeken (Zoeken.tsx): het veld op de volle breedte, de bronknoppen eronder ---- */
+  [data-cvn-zoek-balk] { flex-direction: column; align-items: stretch; }
+  [data-cvn-zoek-balk] > div { flex: 1 1 auto; width: 100%; }
+}
+
+@media (max-width: 420px) {
+  /* heel smal: één kolom en een nog compactere kop */
+  .cvn-raster { grid-template-columns: minmax(0, 1fr); }
+  .cvn-kop h2 { font-size: 17px; }
+}
+
+@media (pointer: coarse) {
+  /* ---- raakdoelen ≥ 44 px, ook waar een variant ze kleiner maakte ---- */
+  .cvn .cvn-knop.is-klein, .cvn-laag .cvn-knop.is-klein { min-height: var(--tik-hoogte-mobiel); padding-top: 8px; padding-bottom: 8px; }
+  .cvn .cvn-icoonknop, .cvn-laag .cvn-icoonknop { min-width: var(--tik-hoogte-mobiel); min-height: var(--tik-hoogte-mobiel); }
+  /* alleen binnen blokken en lagen: de onderbalk-summary heeft zijn eigen (verticale) vorm in cloud-vnext.css */
+  .cvn-blok summary, .cvn-laag summary { min-height: var(--tik-hoogte-mobiel); }
+  .cvn [data-cvn-zoek-resultaat] { min-height: var(--tik-hoogte-mobiel); }
+}

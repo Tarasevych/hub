@@ -1,0 +1,22 @@
+.ext-bulk{flex-wrap:wrap}
+.ext-legend{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 8px}
+.ext-legend svg{vertical-align:-2px}
+.ext-group-bulk{display:flex;justify-content:flex-end;margin-bottom:6px}
+.ext-bulk-btn{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:2px 12px;border-radius:99px;border:1px solid var(--line,#cbd5e1);background:transparent;color:inherit;font:inherit;font-size:.8rem;cursor:pointer}
+.ext-bulk-btn:hover{background:var(--soft,rgba(120,140,160,.14))}
+.ext-bulk-btn.is-deny{color:var(--fout);border-color:color-mix(in srgb,var(--fout) 45%,var(--line,#cbd5e1))}
+.ext-tri{display:inline-flex;border:1px solid var(--line,#cbd5e1);border-radius:99px;overflow:hidden;flex:none}
+.ext-tri button{display:inline-grid;place-items:center;width:42px;height:34px;border:0;background:transparent;color:var(--muted,#64748b);cursor:pointer}
+.ext-tri button+button{border-left:1px solid var(--line,#cbd5e1)}
+.ext-tri button:hover:not(:disabled){background:var(--soft,rgba(120,140,160,.14))}
+.ext-tri button:disabled{opacity:.55;cursor:default}
+.ext-tri button.is-on[data-state=off]{background:color-mix(in srgb,var(--fout-vlak) 16%,transparent);color:var(--fout)}
+.ext-tri button.is-on[data-state=ask]{background:color-mix(in srgb,var(--warn-vlak) 20%,transparent);color:var(--warn)}
+.ext-tri button.is-on[data-state=auto]{background:color-mix(in srgb,var(--ok-vlak) 18%,transparent);color:var(--ok)}
+.ext-tri button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+
+.wiz-debug{border:1px solid var(--line,#d6dde4);border-radius:12px;padding:10px 12px;display:grid;gap:6px;margin-bottom:10px}
+.wiz-debug[data-debug-mode=on]{border-color:color-mix(in srgb,var(--warn) 55%,var(--line,#d6dde4));background:color-mix(in srgb,var(--warn-vlak) 6%,transparent)}
+.wiz-debug-head{display:flex;gap:8px;align-items:center;cursor:pointer}
+.wiz-debug p{margin:0;font-size:.86rem}
+.wiz-debug-explain ul{margin:4px 0 0;padding-left:18px;display:grid;gap:5px;font-size:.84rem}

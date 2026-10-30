@@ -1,0 +1,13 @@
+/* Venster voor een Mermaid-schema (src/media/MermaidSchema.tsx). Alleen tokens uit src/ontwerp/tokens.css. */
+.mr-mermaid-venster { width: min(1100px, 100%); }
+.mr-mermaid-venster > header > div > span { color: var(--muted); font-size: var(--tekst-klein); }
+.mr-mermaid-acties { display: flex; gap: var(--ruimte-2); }
+.mr-mermaid-acties button { min-width: var(--tik-hoogte); min-height: var(--tik-hoogte); display: inline-grid; place-items: center; }
+.mr-mermaid-stand { color: var(--muted); margin: var(--ruimte-4) 0 0; }
+.mr-mermaid-fout { margin: var(--ruimte-4) 0 0; padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--fout-zacht); color: var(--text); }
+.mr-mermaid-fout small { display: block; margin-top: var(--ruimte-1); color: var(--fout); overflow-wrap: anywhere; }
+.mr-mermaid-beeld { margin: var(--ruimte-4) 0 0; padding: var(--ruimte-4); border-radius: var(--straal-m); background: var(--papier); color: var(--text-on-licht); overflow: auto; max-height: 70vh; }
+.mr-mermaid-beeld svg { max-width: 100%; height: auto; }
+.mr-mermaid-code { margin-top: var(--ruimte-4); }
+.mr-mermaid-code summary { cursor: pointer; color: var(--muted); }
+.mr-mermaid-code pre { margin: var(--ruimte-2) 0 0; padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: var(--tekst-klein); }

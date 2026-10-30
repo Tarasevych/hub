@@ -1,0 +1,13 @@
+# /etc/systemd/system/mijn-ruimte-diagnostiek-server.timer — Mijn Ruimte: serverdiagnose elke 15 minuten (kolom «Сервер (для всіх)»)
+[Unit]
+Description=Mijn Ruimte: serverdiagnose elke 15 minuten (kolom «Сервер (для всіх)» in Діагностика)
+
+[Timer]
+OnCalendar=*:07/15
+RandomizedDelaySec=60s
+Persistent=true
+AccuracySec=30s
+Unit=mijn-ruimte-cron@diagnostiek-server.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,21 @@
+/* Eén vorm voor alle sluitknoppen (kruisje) — punt 8 (17.10.2026): «хрестик не по центру».
+   Oorzaken die we in de code vonden: (1) lucide-pictogrammen hebben een vaste hoogte van 24 terwijl een stijl alleen de breedte zet
+   (bv. «svg{width:17px}») → het kruisje staat 17×24 en zit scheef; (2) knoppen met vaste grootte maar zonder grid/flex-centrering,
+   of met standaard-padding van de browser; (3) tekst-kruisjes «×» die op de basislijn staan.
+   Alle regels hier hebben specificiteit 0 (:where), dus een eigen stijl van een venster wint altijd; wij vullen alleen de gaten. */
+:where(button, a, summary):where(:has(> svg:only-child)){display:inline-grid;place-items:center;justify-content:center;align-content:center;line-height:0}
+:where(button, a, summary) > :where(svg:only-child){display:block;flex:none;margin:0}
+:where(button, a, summary) :where(svg.lucide){height:auto;aspect-ratio:1/1}
+:where(button, a, summary):where([class*="-close"],[class*="close-"],[class$="close"],[class*="sluit"],[class$="-x"],[class*="-wis"],[data-venster-knop="sluit"],[data-nm-sluit]):not(:has(span)){display:inline-grid;place-items:center;justify-content:center;line-height:1}
+:where(button):where([aria-label^="Закрити"],[aria-label^="Sluiten"],[aria-label^="Close"]):where(:has(> svg:only-child)){padding:0;min-width:32px;min-height:32px}
+
+/* Gedeelde sluitknop (SluitKnop.tsx): vast 36×36, rond-vierkant, zichtbare focus. */
+.sluitknop{display:inline-grid;place-items:center;flex:none;width:36px;height:36px;min-width:36px;min-height:36px;padding:0;margin:0;border:0;border-radius:10px;background:transparent;color:inherit;line-height:0;cursor:pointer}
+.sluitknop svg{display:block;width:18px;height:18px}
+.sluitknop:hover{background:rgba(127,127,127,.16)}
+.sluitknop:focus-visible{outline:3px solid var(--venster-actief,#2563eb);outline-offset:1px}
+.sluitknop:disabled{opacity:.4;cursor:not-allowed}
+.sluitknop.is-klein{width:28px;height:28px;min-width:28px;min-height:28px;border-radius:8px}
+.sluitknop.is-klein svg{width:14px;height:14px}
+.sluitknop.is-rond{border-radius:50%}
+@media (pointer:coarse){.sluitknop.is-klein{width:36px;height:36px;min-width:36px;min-height:36px}}

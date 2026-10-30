@@ -1,0 +1,37 @@
+.mail-sched{position:relative;display:inline-flex}
+.mail-sched-trigger{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:6px 12px;border-radius:10px;border:1px solid var(--line,#dce1e6);background:transparent;color:inherit;font:inherit;font-size:.9rem;cursor:pointer}
+.mail-sched-trigger svg{width:16px;height:16px}
+.mail-sched-trigger:hover,.mail-sched-trigger.is-open{background:var(--soft,rgba(120,140,160,.14))}
+.mail-sched-trigger:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.mail-sched-count{padding:0 7px;border-radius:99px;background:var(--accent,#2f6f73);color:var(--text-on-accent);font-size:.75rem;font-weight:700}
+.mail-sched-pop{position:absolute;z-index:1300;right:0;bottom:calc(100% + 8px);width:min(380px,calc(100vw - 24px));max-height:min(75vh,600px);overflow:auto;display:grid;gap:8px;padding:12px;border-radius:14px;background:var(--panel,#fff);color:var(--text,#111);box-shadow:0 18px 48px rgba(0,0,0,.3),0 0 0 1px var(--line,#dce1e6)}
+@media(max-width:560px){.mail-sched-pop{position:fixed;left:8px;right:8px;bottom:8px;width:auto;max-height:82vh}}
+.mail-sched-head{display:flex;align-items:center;justify-content:space-between}
+.mail-sched-head button{display:inline-grid;place-items:center;width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:inherit;cursor:pointer}
+.mail-sched-head svg{width:16px;height:16px}
+.mail-sched-presets{display:grid;gap:6px}
+.mail-sched-presets button{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;min-height:44px;padding:6px 10px;border:1px solid var(--line,#dce1e6);border-radius:10px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mail-sched-presets button:hover:not([disabled]){background:var(--soft,rgba(120,140,160,.14))}
+.mail-sched-presets button[disabled]{opacity:.5;cursor:default}
+.mail-sched-presets small{color:var(--muted,#64748b)}
+.mail-sched-presets svg{width:16px;height:16px;color:var(--accent,#2f6f73)}
+.mail-sched-custom{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
+.mail-sched-custom label{display:grid;gap:2px;font-size:.78rem;color:var(--muted,#64748b);flex:1 1 180px}
+.mail-sched-custom input{min-height:38px;border:1px solid var(--line,#dce1e6);border-radius:9px;background:var(--surface,transparent);color:inherit;font:inherit;padding:0 8px}
+.mail-sched-custom button{min-height:38px;padding:4px 16px;border:0;border-radius:10px;background:var(--accent,#2f6f73);color:var(--text-on-accent);font:inherit;font-weight:700;cursor:pointer}
+.mail-sched-custom button[disabled]{opacity:.5;cursor:default}
+.mail-sched-note{margin:0;color:var(--muted,#64748b);font-size:.78rem;line-height:1.4}
+.mail-sched-error{display:flex;gap:6px;align-items:flex-start;margin:0;padding:8px 10px;border-radius:10px;border:1px solid var(--fout);color:var(--fout);font-size:.84rem}
+.mail-sched-error svg{width:16px;height:16px;flex:0 0 auto}
+.mail-sched-list-title{display:flex;align-items:center;gap:8px;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#64748b);font-weight:700}
+.mail-sched-list{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.mail-sched-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;border:1px solid var(--line,#dce1e6);border-left-width:4px}
+.mail-sched-list li.st-scheduled{border-left-color:var(--warn)}.mail-sched-list li.st-sent{border-left-color:var(--ok)}.mail-sched-list li.st-failed{border-left-color:var(--fout)}.mail-sched-list li.st-cancelled{opacity:.6}
+.mail-sched-list li div{display:grid;min-width:0}
+.mail-sched-list li small{color:var(--muted,#64748b);overflow-wrap:anywhere}
+.mail-sched-list li button{display:inline-grid;place-items:center;width:34px;height:34px;border:0;border-radius:9px;background:transparent;color:inherit;cursor:pointer}
+.mail-sched-list li button:hover{background:var(--soft,rgba(120,140,160,.18))}
+.mail-sched-list li button svg{width:17px;height:17px}
+.mail-sched-spin{width:16px;height:16px;animation:mail-sched-spin 1s linear infinite}
+@keyframes mail-sched-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.mail-sched-spin{animation:none}}

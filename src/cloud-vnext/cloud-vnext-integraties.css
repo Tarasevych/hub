@@ -1,0 +1,107 @@
+/* Cloud vNext — integratiecentrum en bronpagina's (voorvoegsel cvi-). Alleen tokens uit src/ontwerp/tokens.css; licht en donker
+   volgen vanzelf. GEEN vaste (fixed) positionering in dit bestand: de enige laag (BronLaag) hergebruikt de .cvn-laag-geometrie
+   uit cloud-vnext.css (z-index 230) en voegt met .cvi-laag* alleen binnenwerk toe. Monogrammen in plaats van merkafbeeldingen. */
+.cvi { display: grid; gap: var(--ruimte-4); min-width: 0; }
+.cvi .cvi-draai, .cvi-laag .cvi-draai { animation: cvi-draai 1s linear infinite; }
+@keyframes cvi-draai { to { transform: rotate(360deg); } }
+
+/* ---- samenvatting (feitenchips) ---- */
+.cvi-samenvatting { padding-block: var(--ruimte-3); }
+.cvi-chips { display: flex; flex-wrap: wrap; gap: var(--ruimte-2); }
+.cvi-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text); font-size: var(--tekst-mini); }
+.cvi-chip.is-ok { background: var(--ok-zacht); color: var(--ok); border-color: transparent; font-weight: 650; }
+.cvi-chip.is-stil { color: var(--muted); border-style: dashed; }
+
+/* ---- aanbiederkaarten ---- */
+.cvi-kaarten { display: grid; gap: var(--ruimte-3); grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.cvi-kaart { border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--surface); min-width: 0; }
+.cvi-kaart.is-open { padding: var(--ruimte-3); display: grid; gap: var(--ruimte-3); }
+.cvi-kaart > summary { display: flex; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-3); cursor: pointer; list-style: none; border-radius: var(--straal-l); min-height: var(--tik-hoogte); }
+.cvi-kaart > summary::-webkit-details-marker { display: none; }
+.cvi-kaart > summary:hover { background: var(--panel); }
+.cvi-kaart[open] > summary { border-bottom: 1px solid var(--line); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.cvi-kaart-inhoud { display: grid; gap: var(--ruimte-2); padding: var(--ruimte-3); }
+.cvi-kaart-inhoud p { margin: 0; }
+.cvi-kaart-kop { display: flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; }
+.cvi-kaart-naam { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.cvi-kaart-naam strong { font-size: var(--tekst-basis); overflow-wrap: anywhere; }
+.cvi-monogram { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 36px; height: 36px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--accent); font-weight: 750; font-size: 13px; letter-spacing: .02em; }
+.cvi-richting { color: var(--muted); font-size: var(--tekst-mini); }
+.cvi-stand { flex: none; padding: 3px 10px; border-radius: 999px; font-size: var(--tekst-mini); font-weight: 650; background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+.cvi-stand.is-werkt { background: var(--ok-zacht); color: var(--ok); border-color: transparent; }
+.cvi-stand.is-levend { background: var(--ok-zacht); color: var(--ok); border-color: transparent; }
+.cvi-stand.is-sleutels-nodig { background: var(--warn-zacht); color: var(--warn); border-color: transparent; }
+.cvi-stand.is-gepland { background: var(--info-zacht); color: var(--info); border-color: transparent; }
+.cvi-stand.is-niet-mogelijk { background: var(--fout-zacht); color: var(--fout); border-color: transparent; }
+.cvi-omweg { margin: 0; padding: 8px 12px; border-left: 3px solid var(--info); background: var(--info-zacht); color: var(--text); border-radius: var(--straal-m); font-size: var(--tekst-klein); }
+.cvi-site { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: var(--tekst-mini); text-decoration: none; justify-self: start; min-height: var(--tik-hoogte); }
+.cvi-site:hover { color: var(--text); text-decoration: underline; }
+
+/* ---- accounts en sleutelchecklist ---- */
+.cvi-accounts { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.cvi-accounts li { display: flex; align-items: center; gap: var(--ruimte-2); padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); min-height: var(--tik-hoogte); flex-wrap: wrap; }
+.cvi-account-mail { font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.cvi-account-status { margin-left: auto; color: var(--muted); font-size: var(--tekst-mini); }
+.cvi-stip { flex: none; width: 10px; height: 10px; border-radius: 999px; background: var(--muted); }
+.cvi-stip.is-ok { background: var(--ok); }
+.cvi-stip.is-uit { background: var(--warn); }
+.cvi-checklist { display: grid; gap: var(--ruimte-2); }
+.cvi-checklist ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.cvi-check { display: flex; align-items: center; gap: var(--ruimte-2); padding: 6px 10px; border-radius: var(--straal-m); background: var(--panel); border: 1px solid var(--line); flex-wrap: wrap; }
+.cvi-check code { background: var(--surface); padding: 2px 6px; border-radius: var(--straal-s, 6px); }
+.cvi-check span { color: var(--muted); font-size: var(--tekst-mini); margin-left: auto; }
+.cvi-check.is-ja svg { color: var(--ok); }
+.cvi-check.is-nee svg { color: var(--fout); }
+.cvi-check.is-onbekend svg { color: var(--muted); }
+.cvi-acties { display: flex; gap: var(--ruimte-2); flex-wrap: wrap; }
+
+/* ---- synchronisatieregels ---- */
+.cvi-sync { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.cvi-sync li { display: flex; align-items: flex-start; gap: var(--ruimte-2); font-size: var(--tekst-klein); }
+.cvi-sync li svg { margin-top: 2px; color: var(--ok); }
+.cvi-sync li.is-stil { color: var(--muted); }
+.cvi-sync li.is-stil svg { color: var(--muted); }
+.cvi-sync li[data-cvi-sync='tokens'] svg { color: var(--accent); }
+
+/* ---- verkenner (google-drive, lichte lezer) ---- */
+.cvi-werkbalk { display: flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; }
+.cvi-werkbalk-rechts { display: flex; gap: var(--ruimte-2); margin-left: auto; flex-wrap: wrap; }
+.cvi-accountkeuze { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.cvi-zoek { display: flex; align-items: center; gap: 6px; flex: 1 1 240px; min-width: 200px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); padding: 2px 4px 2px 12px; }
+.cvi-zoek svg { color: var(--muted); }
+.cvi-zoek input { flex: 1; min-width: 0; border: 0; background: transparent; min-height: calc(var(--tik-hoogte) - 6px); padding: 4px 6px; }
+.cvi-zoek input:focus-visible { outline: none; }
+.cvi-zoek:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.cvi-kruimels { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; font-size: var(--tekst-klein); }
+.cvi-kruimel { display: inline-flex; align-items: center; gap: 2px; }
+.cvi-kruimel svg { color: var(--muted); width: 14px; height: 14px; }
+.cvi-kruimel button { border: 0; background: transparent; color: var(--accent); padding: 6px 6px; border-radius: var(--straal-m); min-height: 32px; }
+.cvi-kruimel button:hover { background: var(--surface); }
+.cvi-kruimel button:disabled { color: var(--text); font-weight: 650; opacity: 1; cursor: default; }
+.cvi-bestanden { display: grid; gap: var(--ruimte-2); grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.cvi-bestand { display: grid; gap: 4px; justify-items: center; text-align: center; padding: var(--ruimte-3) var(--ruimte-2); border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); min-width: 0; }
+.cvi-bestand:hover { background: var(--surface); border-color: var(--accent); }
+.cvi-bestand strong { font-size: var(--tekst-klein); font-weight: 600; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cvi-bestand small { color: var(--muted); font-size: var(--tekst-mini); overflow-wrap: anywhere; }
+.cvi-bestand-icoon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 14px; background: var(--surface); color: var(--muted); }
+.cvi-bestand-icoon svg { width: 22px; height: 22px; }
+.cvi-bestand.is-map .cvi-bestand-icoon { color: var(--accent); background: var(--accent-soft); }
+.cvi-meer { justify-self: center; }
+
+/* ---- binnenwerk van de voorbeeldlaag (de laaggeometrie zelf komt uit .cvn-laag in cloud-vnext.css) ---- */
+.cvi-laag .cvi-laag-vak { width: min(860px, 100%); }
+.cvi-laag-inhoud { min-height: 240px; }
+.cvi-voorbeeld { display: grid; min-width: 0; }
+.cvi-voorbeeld img, .cvi-voorbeeld video { max-width: 100%; height: auto; border-radius: var(--straal-m); justify-self: center; }
+.cvi-voorbeeld audio { width: 100%; }
+.cvi-voorbeeld pre { max-width: 100%; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--straal-m); padding: var(--ruimte-3); }
+.cvi-voorbeeld iframe { width: 100%; min-height: 60vh; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); }
+
+/* ---- smal scherm ---- */
+@media (max-width: 760px) {
+  .cvi-kaarten { grid-template-columns: 1fr; }
+  .cvi-bestanden { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); }
+  .cvi-account-status, .cvi-check span { margin-left: 0; flex-basis: 100%; }
+  .cvi-werkbalk-rechts { margin-left: 0; }
+}
+.cvi-stand.is-register { background: transparent; border-style: dashed; } /* UI-013 fase 2 */

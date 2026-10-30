@@ -1,0 +1,238 @@
+/* Gedeelde stijl voor pop-up, zijpaneel en opties (extensie 0.6: kaart per slot). Geen externe bronnen. Doelen ≥ 44 px, zichtbare focusring. */
+:root{
+  color-scheme:light dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --bg:#f7f8fa;--fg:#17212b;--zacht:#5b6773;--rand:#d6dde4;--vlak:#ffffff;--focus:#f59e0b;--primair:#2f6f73;--link:#1f5f63;
+  --grijs:#5f6b76;--grijs-bg:#eef1f4;--amber:#a14a06;--amber-bg:#fff6e5;--groen:#1a7f37;--groen-bg:#eaf7ee;
+  --blauw:#1d4ed8;--blauw-bg:#ebf1ff;--rood:#b91c1c;--rood-hover:#991b1b;--rood-tekst:#b91c1c;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#14181d;--fg:#f3f6f8;--zacht:#b7c0c8;--rand:#3a444d;--vlak:#1c2229;--primair:#2f6f73;--link:#7cc7cb;
+    --grijs:#a3adb7;--grijs-bg:#20262d;--amber:#fbbf24;--amber-bg:#2b2210;--groen:#4ac26b;--groen-bg:#12261a;
+    --blauw:#8ab4ff;--blauw-bg:#16213a;--rood:#dc2626;--rood-hover:#ef4444;--rood-tekst:#fca5a5}
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg)}
+main{padding:16px;display:grid;gap:12px}
+body.pagina main{max-width:680px;margin:0 auto;gap:18px}
+h1{margin:0;font-size:1.1rem}
+h2{margin:6px 0 0;font-size:1rem}
+p{margin:0;line-height:1.45}
+a{color:var(--link);font-weight:600}
+.top{display:flex;align-items:center;gap:12px}
+.zacht{font-size:.85rem;color:var(--zacht)}
+.label{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--zacht)}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+section{display:grid;gap:8px}
+
+/* 0.7.0: chat in het zijpaneel */
+.chat-berichten{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:40vh;overflow-y:auto}
+.chat-berichten li{padding:8px 10px;border-radius:10px;border:1px solid var(--rand);background:var(--vlak);font-size:.9rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.chat-berichten li[data-rol="user"]{border-color:var(--primair)}
+.chat-berichten li[data-rol="assistant"]{background:var(--grijs-bg)}
+.chat-berichten .stappen{display:block;margin-top:4px;font-size:.78rem;color:var(--zacht);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.chat-form{display:grid;gap:8px}
+.chat-form textarea{width:100%;min-height:72px;padding:8px 10px;border-radius:10px;border:2px solid var(--rand);background:var(--vlak);color:inherit;font:inherit;resize:vertical}
+.chat-form textarea:focus-visible,.chat-form button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+#chat-verstuur{background:var(--primair);color:#fff;border-color:var(--primair)}
+#chat-verstuur:disabled,#chat-wissen:disabled{opacity:.55;cursor:not-allowed}
+
+/* Statuskaart: kleur volgt data-staat */
+.kaart{--kleur:var(--grijs);--kleur-bg:var(--grijs-bg);border:2px solid var(--kleur);background:var(--kleur-bg);border-radius:14px;padding:14px;display:grid;gap:8px}
+.kaart[data-staat="vergrendeld"]{--kleur:var(--amber);--kleur-bg:var(--amber-bg)}
+.kaart[data-staat="ontgrendeld"]{--kleur:var(--groen);--kleur-bg:var(--groen-bg)}
+.kaart[data-staat="agent"]{--kleur:var(--blauw);--kleur-bg:var(--blauw-bg)}
+.kaart-kop{display:flex;align-items:center;gap:12px}
+.pict{width:40px;height:40px;flex:0 0 auto;color:var(--kleur);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.staat-tekst{font-size:1.15rem;font-weight:800;color:var(--kleur)}
+.kaart.groot{padding:18px}
+.kaart.groot .pict{width:56px;height:56px}
+.kaart.groot .staat-tekst{font-size:1.4rem}
+.resttijd{font-variant-numeric:tabular-nums;font-weight:700;font-size:.92rem}
+.resttijd.bijna{color:var(--rood-tekst)}
+.rechten{display:grid;gap:6px}
+.chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.chips li{padding:3px 10px;border-radius:999px;border:1px solid var(--rand);background:var(--vlak);font-size:.8rem}
+.chips.domeinen li{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.waarschuwing{color:var(--amber);font-weight:600;font-size:.88rem}
+
+/* Knoppen en schakelaars */
+button{min-height:44px;min-width:44px;padding:8px 12px;border-radius:10px;border:2px solid var(--rand);background:transparent;color:inherit;font:inherit;font-weight:700;font-size:.92rem;cursor:pointer}
+button:hover:not(:disabled){background:rgba(120,140,160,.14)}
+button:disabled{cursor:not-allowed;opacity:.6}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+button.primair{background:var(--primair);border-color:var(--primair);color:#fff}
+button.primair:hover:not(:disabled){background:var(--primair);filter:brightness(1.1)}
+button.gevaar{background:var(--rood);border-color:var(--rood);color:#fff;font-size:1rem}
+button.gevaar:hover:not(:disabled){background:var(--rood-hover);border-color:var(--rood-hover)}
+button.gevaar:disabled{background:transparent;color:var(--rood-tekst);opacity:1}
+button.stil{border-color:transparent;font-weight:600;color:var(--zacht)}
+.rij{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label.schakel{display:flex;gap:10px;align-items:flex-start;min-height:44px;cursor:pointer}
+label.schakel input{width:22px;height:22px;margin:2px 0 0;flex:0 0 auto}
+.ok{color:var(--groen)}.off{color:var(--amber)}.fout{color:var(--rood-tekst)}
+.let-op{border-left:4px solid var(--amber);padding:8px 10px;background:var(--amber-bg);border-radius:6px;font-size:.88rem}
+ol.stappen{margin:0;padding-left:1.3em;display:grid;gap:4px;font-size:.88rem}
+
+/* Zijpaneel: tijdlijn en wat de AI ziet */
+.tijdlijn{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.tijdlijn li{display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;align-items:baseline;padding:6px 8px;border:1px solid var(--rand);border-radius:8px;background:var(--vlak);font-size:.82rem}
+.tijdlijn .tijd{font-variant-numeric:tabular-nums;color:var(--zacht)}
+.tijdlijn .type{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
+.tijdlijn .bron{grid-column:2 / 4;color:var(--zacht);font-size:.78rem}
+.ziet{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ziet li{padding:8px 10px;border:1px solid var(--rand);border-radius:8px;background:var(--vlak);display:grid;gap:2px}
+.ziet li[data-aan="ja"]{border-color:var(--groen)}
+.ziet .naam{font-weight:700;display:flex;justify-content:space-between;gap:8px}
+.ziet .uitleg{font-size:.82rem;color:var(--zacht)}
+ul.checks{list-style:none;padding:0;margin:0;display:grid;gap:4px;font-size:.88rem}
+
+/* 0.6: account + profiel bovenaan, kaarten per slot */
+.kop-info{display:grid;gap:2px;padding:8px 10px;border:1px solid var(--rand);border-radius:10px;background:var(--vlak)}
+.account{font-weight:700;font-size:.9rem;overflow-wrap:anywhere}
+.profiel{font-size:.85rem;color:var(--zacht)}
+.profiel[data-profiel="technisch"]{color:var(--blauw);font-weight:700}
+.sloten{display:grid;gap:12px}
+.kaart-titel{margin:0;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--zacht)}
+.kaart[data-ruimte="technisch"]{border-style:dashed}
+.tab-melding{font-style:italic}
+.kaart button{width:100%}
+ul.koppelingen{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+ul.koppelingen li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.tijdlijn-blok{display:grid;gap:4px}
+.tijdlijn-blok h3{margin:4px 0 0;font-size:.9rem}
+
+/* 0.6.1 (punt 7): blok «глибока діагностика» in de pop-up en het zijpaneel */
+.diag{display:grid;gap:6px;padding:8px 10px;border:1px solid var(--rand);border-radius:10px;background:var(--vlak)}
+.diag p{margin:0}
+.diag .diag-stand{font-weight:700;font-size:.9rem}
+.diag .diag-stand[data-diag-stand="ja"]{color:var(--groen)}
+.diag .diag-stand[data-diag-stand="ingetrokken"],.diag .diag-stand[data-diag-stand="geweigerd"]{color:var(--rood-tekst)}
+body{overflow-x:hidden}
+@media (max-width:360px){main{padding:12px}.rij{grid-template-columns:1fr}}
+
+/* ===================== 0.8.0: rustig, compact ontwerp (UI-011) =====================
+   Thema: licht/donker volgt het systeem (prefers-color-scheme) = «auto»; de site kiest het thema niet voor de extensie.
+   Kleur alleen voor betekenis: groen = in orde, amber = let op, rood = fout/gevaar; neutraal voor al het andere. */
+:root{--rand-zacht:color-mix(in srgb,var(--rand) 70%,transparent);--schaduw:0 1px 2px rgba(0,0,0,.06)}
+h1{font-size:1rem;line-height:1.2}
+main{gap:10px}
+/* kop */
+.kop{display:flex;align-items:center;gap:10px}
+.kop-tekst{flex:1 1 auto;min-width:0}
+.logo-img{border-radius:8px;flex:0 0 auto}
+.kop-knoppen{display:flex;gap:2px}
+.status-regel{font-size:.8rem;color:var(--zacht);display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-regel::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--grijs);flex:0 0 auto}
+.status-regel[data-niveau="ok"]::before{background:var(--groen)}
+.status-regel[data-niveau="let-op"]::before{background:var(--amber)}
+.status-regel[data-niveau="fout"]::before{background:var(--rood)}
+/* pictogramknoppen: klein zichtbaar, 44 px tikvlak */
+button.pict-knop{min-width:44px;min-height:44px;padding:0;border:0;border-radius:10px;display:inline-grid;place-items:center;color:var(--zacht)}
+button.pict-knop svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+button.pict-knop:hover:not(:disabled){color:var(--fg)}
+/* één «?» per blok: rond, exact gecentreerd, 44 px tikvlak via ::before */
+button.help{position:relative;min-width:24px;min-height:24px;width:24px;height:24px;padding:0;border:1.5px solid var(--rand);border-radius:50%;display:inline-grid;place-items:center;font-size:.8rem;font-weight:700;line-height:1;color:var(--zacht);background:transparent;flex:0 0 auto}
+button.help::before{content:'';position:absolute;inset:-10px}
+button.help[aria-expanded="true"]{border-color:var(--primair);color:var(--primair)}
+/* account */
+.kop-info{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--rand-zacht);border-radius:12px;background:var(--vlak)}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--grijs-bg);display:inline-grid;place-items:center;flex:0 0 auto}
+.avatar svg{width:18px;height:18px;fill:none;stroke:var(--zacht);stroke-width:1.8}
+.kop-info .account{font-size:.86rem}
+.kop-info .profiel{font-size:.78rem}
+/* kaart: geen gekleurde vlakken meer — dunne rand, smalle streep links, kleur in pictogram */
+.kaart{border:1px solid var(--rand-zacht);border-left:3px solid var(--kleur);background:var(--vlak);border-radius:12px;padding:10px 12px;gap:8px;box-shadow:var(--schaduw)}
+.kaart[data-ruimte="technisch"]{border-style:solid}
+.kaart-kop{gap:10px;align-items:flex-start}
+.kaart-tekst{flex:1 1 auto;min-width:0;display:grid;gap:1px}
+.pict{width:22px;height:22px;margin-top:2px}
+.staat-tekst{font-size:.95rem;font-weight:700}
+.kaart.groot{padding:12px 14px}.kaart.groot .pict{width:24px;height:24px}.kaart.groot .staat-tekst{font-size:1rem}
+.resttijd{font-size:.8rem;font-weight:600;color:var(--zacht)}
+.kaart-titel{font-size:.72rem}
+.label{font-size:.7rem}
+.chips li{font-size:.75rem;padding:2px 8px}
+details.sites summary{cursor:pointer;min-height:32px;display:flex;align-items:center;font-size:.82rem;font-weight:600;color:var(--link)}
+details.sites[open] summary{margin-bottom:6px}
+.kaart button{width:auto}
+.kaart button.primair{width:100%}
+button.gevaar.rand{background:transparent;color:var(--rood-tekst);border:1px solid color-mix(in srgb,var(--rood) 55%,transparent);font-size:.86rem;min-height:40px}
+button.gevaar.rand:hover:not(:disabled){background:color-mix(in srgb,var(--rood) 10%,transparent);border-color:var(--rood)}
+button.gevaar.rand:disabled{opacity:.5}
+button{border-width:1px;font-weight:600;font-size:.88rem;border-radius:10px;transition:background-color .15s,border-color .15s,color .15s}
+button[aria-busy="true"]{cursor:progress;opacity:.7}
+.uitleg{font-size:.82rem}
+/* snelle acties */
+nav.snel{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.voet{font-size:.75rem;text-align:center}
+/* diagnoseblok */
+.diag{padding:8px 10px;border-radius:12px;border-color:var(--rand-zacht)}
+.diag-kop{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.diag .diag-stand{font-size:.86rem}
+.diag .diag-stand[data-werkelijk="actief"],.diag .diag-stand[data-werkelijk="beschikbaar"]{color:var(--groen)}
+.diag .diag-stand[data-werkelijk="geblokkeerd"],.diag .diag-stand[data-werkelijk="fout"]{color:var(--rood-tekst)}
+.diag .diag-stand[data-werkelijk="wacht"]{color:var(--amber)}
+.diag .diag-stand[data-werkelijk="uit"]{color:var(--zacht)}
+/* toestandslijst (opties/zijpaneel) */
+ul.toestand{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+ul.toestand li{display:flex;align-items:center;gap:8px;min-height:32px;font-size:.86rem;border-bottom:1px solid var(--rand-zacht)}
+ul.toestand li:last-child{border-bottom:0}
+.stip{width:8px;height:8px;border-radius:50%;background:var(--grijs);flex:0 0 auto}
+li[data-stand="ja"] .stip{background:var(--groen)}li[data-stand="nee"] .stip{background:var(--rood)}li[data-stand="let-op"] .stip{background:var(--amber)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* 0.8.0: instellingencentrum */
+body.opties{min-height:100vh}
+.opties-kop{max-width:1040px;margin:0 auto;padding:14px 16px 6px}
+.opties-raam{max-width:1040px;margin:0 auto;display:grid;grid-template-columns:220px 1fr;gap:20px;padding:6px 16px 32px;align-items:start}
+body.pagina .opties-raam main{max-width:none;margin:0;padding:0}
+.opties-nav{display:grid;gap:2px;position:sticky;top:12px}
+.opties-nav a{display:flex;align-items:center;min-height:40px;padding:6px 12px;border-radius:10px;color:var(--fg);font-weight:500;text-decoration:none;font-size:.9rem}
+.opties-nav a:hover{background:var(--grijs-bg)}
+.opties-nav a[aria-current="page"]{background:color-mix(in srgb,var(--primair) 14%,transparent);color:var(--link);font-weight:700}
+.sectie{background:var(--vlak);border:1px solid var(--rand-zacht);border-radius:14px;padding:14px 16px;gap:10px;box-shadow:var(--schaduw)}
+.sectie-kop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sectie-kop h2{margin:0;font-size:1.02rem}
+.sectie h3{margin:8px 0 0;font-size:.88rem;color:var(--zacht);font-weight:700}
+.knoppen-rij{display:flex;flex-wrap:wrap;gap:8px}
+.instelling{display:grid;gap:6px}
+/* slanke schakelaar (role=switch) */
+label.schakel.slank{align-items:center}
+label.schakel.slank input{appearance:none;-webkit-appearance:none;width:36px;height:20px;border-radius:999px;background:var(--rand);position:relative;margin:0;cursor:pointer;transition:background-color .15s;flex:0 0 auto}
+label.schakel.slank input::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+label.schakel.slank input:checked{background:var(--primair)}
+label.schakel.slank input:checked::after{transform:translateX(16px)}
+label.schakel.slank input:disabled{opacity:.5;cursor:not-allowed}
+label.schakel.slank input[aria-busy="true"]{opacity:.6}
+label.schakel.slank span{font-size:.9rem}
+.diag-werkelijk{font-size:.86rem}
+.diag-werkelijk.ok{color:var(--groen)}.diag-werkelijk.fout{color:var(--rood-tekst)}
+ul.checks.centrum{gap:0}
+ul.checks.centrum li{display:grid;grid-template-columns:20px 1fr;gap:2px 8px;padding:8px 0;border-bottom:1px solid var(--rand-zacht);color:var(--fg)}
+ul.checks.centrum li:last-child{border-bottom:0}
+.check-teken{font-weight:700}
+li.ok .check-teken{color:var(--groen)} li.off .check-teken{color:var(--rood-tekst)}
+.check-detail{grid-column:2;font-size:.78rem;color:var(--zacht);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
+.check-herstel{grid-column:2;font-size:.84rem;color:var(--amber)}
+details.tech summary{cursor:pointer;min-height:36px;display:flex;align-items:center;font-size:.85rem;color:var(--zacht)}
+details.tech pre{font-size:.75rem;overflow-x:auto;background:var(--grijs-bg);padding:8px;border-radius:8px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+@media (max-width:760px){
+  .opties-raam{grid-template-columns:1fr;gap:10px;padding:4px 12px 24px}
+  .opties-nav{position:static;display:flex;flex-wrap:wrap;gap:6px}
+  .opties-nav a{min-height:36px;padding:4px 12px;border:1px solid var(--rand-zacht);border-radius:999px;font-size:.82rem}
+  .opties-kop{padding:12px 12px 4px}
+}
+/* 0.8.0: zijpaneel — opklapbare blokken, werk (chat) krijgt de ruimte */
+details.paneel-blok{border:1px solid var(--rand-zacht);border-radius:12px;background:var(--vlak);padding:0 12px}
+details.paneel-blok>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;font-size:.9rem;list-style:none}
+details.paneel-blok>summary::-webkit-details-marker{display:none}
+details.paneel-blok>summary::after{content:'▸';margin-left:auto;color:var(--zacht);transition:transform .15s}
+details.paneel-blok[open]>summary::after{transform:rotate(90deg)}
+details.paneel-blok[open]{padding-bottom:12px}
+body.zijpaneel .chat-berichten{max-height:55vh}
+a.pict-knop{min-width:44px;min-height:44px;display:inline-grid;place-items:center;color:var(--zacht);border-radius:10px}
+a.pict-knop svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* 0.8.0: logo (zonder <img>: de scan staat geen externe inhoud toe) — ook buiten de pop-up */
+.kop .logo{width:28px;height:28px;border-radius:8px;background:var(--primair);display:inline-block;position:relative;flex:0 0 auto}
+.kop .logo::after{content:'';position:absolute;inset:8px;border-radius:50%;background:#fff}

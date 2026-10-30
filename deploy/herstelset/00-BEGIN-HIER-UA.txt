@@ -1,0 +1,262 @@
+ПОЧНІТЬ ТУТ — ВІДНОВЛЕННЯ САЙТУ «MIJN RUIMTE» БЕЗ СТОРОННЬОЇ ДОПОМОГИ
+Набір відновлення (herstelset). Версія від 03.10.2026.
+У цьому файлі НЕМАЄ паролів і секретних ключів.
+
+Для кого це: для вас (Власник) або людини, яка вам допомагає, якщо
+«ПК зламали» або «ПК зламався» і сайт (hub.tarasevych.com та інші) не працює.
+Ідея проста: новий ПК -> нова віртуальна машина -> код + зашифрована резервна
+копія з цього диска -> розшифрувати ВАШИМ ключем -> сайт знову працює.
+
+==============================================================================
+1. ЩО ЛЕЖИТЬ НА ЦЬОМУ ДИСКУ
+==============================================================================
+00-BEGIN-HIER-UA.txt / .pdf  ця інструкція (PDF можна роздрукувати)
+00-BEGIN-HIER-NL.txt         та сама інструкція нідерландською
+VERSIE.txt                   яка версія коду і яка резервна копія тут лежать
+SHA256SUMS.txt               контрольні суми всіх файлів
+controleer-herstelset.ps1    перевірка, що жоден файл не пошкоджений
+programmas\age\              програма age.exe (розшифрування), перевірена
+broncode\                    код сайту (tar.gz + git bundle) і dashboard\
+scripts\                     скрипти: створення VM, відновлення, HERSTEL.md;
+                             scripts\cloud\ - щоденна копія в Google Drive (rclone)
+back-ups\database-en-uploads\<дата>\  ЗАШИФРОВАНА копія бази і файлів
+back-ups\geheimen\<дата>\    ЗАШИФРОВАНІ секрети сервера (паролі, ключ тунелю)
+sleutels\                    тільки пояснення і ПУБЛІЧНИЙ ключ.
+                             Секретного ключа тут НЕМАЄ (і так має бути).
+
+==============================================================================
+2. ЩО ВАМ ПОТРІБНО
+==============================================================================
+[ ] Новий ПК з Windows 11 Pro (у версії Home немає Hyper-V), 16 ГБ RAM або
+  більше, 150 ГБ вільного місця на внутрішньому диску, інтернет.
+[ ] Цей зовнішній диск.
+[ ] ОКРЕМА флешка або папір із КЛЮЧЕМ ВІДНОВЛЕННЯ herstelsleutel-age.txt
+  (3 рядки, другий рядок починається з "# public key: age1...", третій - з
+  "AGE-SECRET-KEY-1..."). Без нього резервні копії НЕ розшифрувати.
+  Якщо ключ лише на папері: створіть у Блокноті файл herstelsleutel-age.txt
+  і уважно перепишіть усі 3 рядки.
+[ ] Паролі, які знаєте ви: обліковий запис Cloudflare (для тунелю),
+  GitHub (якщо код беремо звідти), новий пароль для диска VM (LUKS) і для
+  користувача beheer - їх ви придумаєте під час встановлення.
+
+==============================================================================
+3. КРОКИ (робіть по черзі; приблизно 2-3 години)
+==============================================================================
+Важливо: скопіюйте набір на новий ПК або залиште на диску, але в папці БЕЗ
+пробілів у назві, наприклад E:\mijn-ruimte-herstelset. Нижче E: - це цей диск,
+F: - флешка з ключем. Якщо літери інші - підставте свої.
+
+КРОК 1. Відкрити PowerShell і підготувати змінні.
+  Пуск -> введіть PowerShell -> Enter. Виконайте ці рядки (кожне НОВЕ вікно
+  PowerShell починайте знову з цих рядків):
+    cd E:\mijn-ruimte-herstelset
+    Set-ExecutionPolicy -Scope Process Bypass -Force
+    $sl = 'F:\herstelsleutel-age.txt'
+    $k  = "$HOME\.ssh\mijn-ruimte-webserver"
+    $vm = 'beheer@203.0.113.10'
+    $g  = (Get-ChildItem .\back-ups\geheimen -Recurse -Filter *.tar.age | Sort-Object Name | Select-Object -Last 1).FullName
+    $b  = (Get-ChildItem .\back-ups\database-en-uploads -Directory | Sort-Object Name | Select-Object -Last 1).FullName
+  Перевірити набір:
+    .\controleer-herstelset.ps1
+  Має бути "OK: ... bestanden in orde". Якщо "BESCHADIGD" - візьміть іншу копію.
+
+КРОК 2. Перевірити ключ (нічого не записує на диск).
+    .\scripts\ontsleutel-naar-vm.ps1 -Bestand $g -Sleutel $sl -Stap controle-sleutel
+  Має бути "OK: ontsleuteld". Порівняйте SHA256 з файлом KLARE-TEKST-TAR.sha256
+  у тій самій папці - мають збігатися. Якщо "FOUT" - це не той ключ.
+
+КРОК 3. Увімкнути Hyper-V.
+  PowerShell ВІД ІМЕНІ АДМІНІСТРАТОРА (правою кнопкою -> Запуск від імені адміністратора):
+    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+  Перезапустіть ПК.
+
+КРОК 4. Завантажити Ubuntu Server 24.04 LTS.
+  Сайт: https://ubuntu.com/download/server -> файл ubuntu-24.04.x-live-server-amd64.iso.
+  Збережіть, наприклад, у C:\iso\ (на внутрішній диск нового ПК).
+  (Не обов'язково, але добре: порівняти Get-FileHash <файл> з SHA256SUMS на
+  https://releases.ubuntu.com/24.04/ .)
+  ВАРІАНТ Б: якщо на диску поруч із набором є папка E:\mijn-ruimte-vm-export\
+  (експорт старої VM через Hyper-V, робиться окремо адміністратором), можна
+  імпортувати її замість кроків 5-6 (PowerShell від імені адміністратора):
+    .\scripts\nieuwe-vm-maken.ps1 -AlleenNetwerk
+    Import-VM -Path (Get-ChildItem E:\mijn-ruimte-vm-export -Recurse -Filter *.vmcx | Select-Object -First 1).FullName -Copy -GenerateNewId -VirtualMachinePath C:\mijn-ruimte-vm -VhdDestinationPath C:\mijn-ruimte-vm\schijven
+    Start-VM mijn-ruimte-webserver; vmconnect localhost mijn-ruimte-webserver
+  Введіть СТАРИЙ пароль LUKS, увійдіть у консолі як beheer. Зробіть КРОК 7 (новий
+  ключ), але публічну частину вставте в консолі: nano ~/.ssh/authorized_keys, у вікні
+  VM меню Clipboard -> Type clipboard text, Ctrl+O, Enter, Ctrl+X.
+  Потім КРОК 8 і одразу КРОК 13 (найсвіжіша копія бази), далі КРОК 15.
+  (Експорт НЕ кладіть усередину папки набору: оновлення набору її перезаписує.)
+
+КРОК 5. Створити віртуальну машину (PowerShell від імені адміністратора, у папці набору):
+    cd E:\mijn-ruimte-herstelset
+    Set-ExecutionPolicy -Scope Process Bypass -Force
+    .\scripts\nieuwe-vm-maken.ps1 -Basis C:\mijn-ruimte-vm -Iso C:\iso\ubuntu-24.04.x-live-server-amd64.iso
+  (Підставте справжню назву ISO-файлу.) Відкриється вікно VM.
+
+КРОК 6. Встановити Ubuntu у вікні VM (стрілки, Enter, пробіл = позначити):
+  - Language: English. Keyboard: як вам зручно. Type: Ubuntu Server.
+  - Network: eth0 -> Edit IPv4 -> Manual:
+      Subnet 203.0.113.0/24   Address 203.0.113.10   Gateway 203.0.113.1
+      Name servers 1.1.1.1,9.9.9.9
+  - Proxy: порожньо. Mirror: як є.
+  - Storage: "Use an entire disk", позначте "Set up this disk as an LVM group"
+    і "Encrypt the LVM group with LUKS" -> придумайте пароль диска (LUKS).
+    ЗАПИШІТЬ його на папері. Без нього VM не запуститься.
+  - Profile: Your name: beheer; Server name: mijn-ruimte-webserver;
+    Username: beheer; Password: придумайте і запишіть.
+  - Ubuntu Pro: Skip. SSH: позначте "Install OpenSSH server". Snaps: нічого.
+  - Наприкінці "Reboot Now". Якщо просить вийняти диск: у вікні VM меню
+    Media -> DVD Drive -> Eject, потім Enter.
+  - Після перезапуску введіть пароль LUKS. Чекайте "mijn-ruimte-webserver login:".
+
+КРОК 7. Новий SSH-ключ на новому ПК (звичайний PowerShell; старого ключа в наборі
+  немає навмисно - для нового ПК робимо новий):
+    ssh-keygen -t ed25519 -f "$HOME\.ssh\mijn-ruimte-webserver"
+  (двічі Enter - без пароля). Потім передати публічну частину на VM:
+    Get-Content "$HOME\.ssh\mijn-ruimte-webserver.pub" | ssh beheer@203.0.113.10 'mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'
+  (Перший раз введіть yes, потім пароль користувача beheer.) Перевірка:
+    ssh -i $k $vm hostname
+  Має з'явитися mijn-ruimte-webserver без запиту пароля.
+
+КРОК 8. Передати на VM скрипти, код і публічний ключ (у папці набору):
+    ssh -i $k $vm 'mkdir -p ~/herstel'
+    scp -i $k -r .\scripts .\broncode .\sleutels "${vm}:herstel/"
+
+КРОК 9. Базове налаштування VM (оновлення, диск даних, PostgreSQL, Node, cloudflared, age).
+  Триває 10-20 хвилин. Один раз попросить пароль beheer:
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh basis
+  Наприкінці: "[herstel] basis klaar".
+
+КРОК 10. Повернути секрети сервера (розшифровка на ПК, одразу на VM):
+    .\scripts\ontsleutel-naar-vm.ps1 -Bestand $g -Sleutel $sl -Stap geheimen
+  Має бути "geheimen.env teruggezet" і "OK: geheimen".
+
+КРОК 11. База даних (PostgreSQL з тим самим паролем, що в секретах):
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh database
+
+КРОК 12. Встановити сайт (код із набору; ~5-10 хвилин):
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh app
+  Наприкінці: {"ok":true,"db":true}.
+  (Інший спосіб отримати код: GitHub, репозиторій Tarasevych/hub, гілка
+  zelf-hosten - він приватний, потрібен ваш вхід у GitHub. Набір цього не потребує.)
+
+КРОК 13. Повернути базу і файли користувачів з резервної копії:
+    .\scripts\ontsleutel-naar-vm.ps1 -Bestand "$b\database.dump.age" -Sleutel $sl -Stap db-terugzetten
+    .\scripts\ontsleutel-naar-vm.ps1 -Bestand "$b\uploads.tar.gz.age" -Sleutel $sl -Stap uploads-terugzetten
+  Має бути "records: <число>" і {"ok":true,"db":true}.
+  Якщо у вас є новіша копія (наприклад, з R:\...\vm-back-ups або з Google Drive, розділ 4),
+  використайте її.
+
+КРОК 14. Тунель Cloudflare (щоб сайт був видно з інтернету).
+  ВАРІАНТ А (звичайний): старий ключ тунелю вже повернуто на кроці 10:
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh tunnel
+  ВАРІАНТ Б (новий тунель; обов'язково, якщо ПК ЗЛАМАЛИ або старий ПК ще може
+  працювати): спершу в панелі Cloudflare (Zero Trust -> Networks -> Tunnels)
+  видаліть старий тунель "mijn-ruimte". Потім:
+    ssh -t -i $k $vm sudo cloudflared tunnel login
+  (відкрийте показане посилання у браузері, увійдіть у Cloudflare, оберіть tarasevych.com), далі:
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh tunnel-nieuw mijn-ruimte-2
+
+КРОК 15. Перевірка:
+    ssh -t -i $k $vm sudo bash herstel/scripts/herstel-vm.sh controle
+  Потім у браузері: https://hub.tarasevych.com - має відкритися сайт, вхід працює.
+
+КРОК 16. Захист сервера (брандмауер і SSH лише за ключем). Виконуйте по одному;
+  після кожного "firewall"/"ssh" ПЕРЕВІРТЕ "ssh -i $k $vm hostname" у НОВОМУ вікні
+  PowerShell і лише тоді "bevestig-...". Без підтвердження зміни самі скасуються за 5 хв.
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh fail2ban
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh firewall
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh bevestig-firewall
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh ssh
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh bevestig-ssh
+    ssh -t -i $k $vm sudo bash herstel/scripts/vm/verharden.sh controle
+
+КРОК 17. Після відновлення:
+  - Сервер щоночі робить нову ЗАШИФРОВАНУ копію. Щоб забирати її на ПК і оновлювати
+    цей набір: scripts\reservekopie-ophalen.ps1 і scripts\herstelset-bijwerken.ps1
+    (у них шляхи T:\ і R:\ - на новому ПК задайте свої параметри -Project/-Reserve/-Doel
+    або попросіть помічника).
+  - Google Drive знову підключити (щоденна копія): scripts\cloud\UITLEG-LEESMIJ.txt -
+    нова програма rclone і scripts\cloud\cloud-koppelen.ps1 з ТИМ САМИМ OAuth-клієнтом Google
+    (тоді rclone бачить старі файли).
+  - Якщо ПК ЗЛАМАЛИ: вважайте, що секрети і ключ відновлення могли вкрасти.
+    На https://myaccount.google.com/permissions приберіть доступ старого клієнта rclone,
+    у Google Cloud створіть НОВИЙ OAuth-клієнт, а стару папку на Drive перейменуйте на
+    mijn-ruimte-reservekopie-oud (новий клієнт її не бачить і створить нову).
+    Змініть паролі Cloudflare, GitHub, Google; створіть НОВИЙ ключ відновлення
+    (programmas\age\age\age-keygen.exe) і поставте його публічну частину на сервер
+    (/etc/mijn-ruimte/backup-ontvanger.age.pub); попросіть фахівця замінити ключі
+    в geheimen.env.
+
+==============================================================================
+4. КОПІЯ В GOOGLE DRIVE (якщо цього диска немає або там є новіша копія)
+==============================================================================
+Щодня (після 09:00) ПК сам вивантажує ЗАШИФРОВАНІ копії в Google Drive, у папку
+mijn-ruimte-reservekopie (ваш Google-акаунт, https://drive.google.com):
+  dagelijks\<дата>\   database.dump.age, uploads.tar.gz.age, SHA256SUMS
+   (останні 30 днів + по одній за місяць, 12 місяців)
+  geheimen\<дата>\    зашифровані секрети сервера
+  herstelset\         herstelset-<дата>.zip.age = ЦЕЙ набір цілком, зашифрований (4 останні)
+Без ключа відновлення ці файли нічого не варті - так і має бути. Ключа там НЕМАЄ.
+Якщо зовнішнього диска немає:
+  а) На новому ПК: drive.google.com -> папка mijn-ruimte-reservekopie. Завантажте найновіші
+   herstelset\herstelset-<дата>.zip.age і herstelset-<дата>.zip.age.sha256, а також
+   найновішу папку dagelijks\<дата>\ (правою кнопкою -> Завантажити; Drive дає zip -
+   розпакуйте).
+  б) Програма age: https://github.com/FiloSottile/age/releases -> файл
+   age-v1.x.x-windows-amd64.zip, розпакуйте в C:\age\ (вийде C:\age\age\age.exe).
+  в) Перевірити і розшифрувати набір. У ньому немає секретів у відкритому вигляді
+   (копії всередині залишаються зашифрованими), тому тут розшифровка у файл дозволена:
+    cd $HOME\Downloads
+    Get-FileHash .\herstelset-<дата>.zip.age
+    Get-Content .\herstelset-<дата>.zip.age.sha256
+    C:\age\age\age.exe -d -i F:\herstelsleutel-age.txt -o C:\herstelset.zip .\herstelset-<дата>.zip.age
+    Expand-Archive C:\herstelset.zip C:\
+   Обидва числа SHA256 мають збігатися (великі/малі літери не важливі).
+  г) Набір тепер у C:\mijn-ruimte-herstelset\. Робіть розділ 3 з цією папкою замість
+   E:\mijn-ruimte-herstelset. Новішу копію бази з dagelijks\ покладіть ПОРУЧ, не
+   всередину набору, напр. C:\drive-kopie\<дата>\, і одразу після КРОКУ 1 задайте:
+    $b = 'C:\drive-kopie\<дата>'
+   (info.txt у Drive навмисно не вивантажується - він не зашифрований; рядок info.txt
+   у SHA256SUMS там просто ігноруйте.)
+Як це налаштовано і де журнал: scripts\cloud\UITLEG-LEESMIJ.txt.
+
+==============================================================================
+5. ЯК ПОНОВЛЮВАТИ ЦЕЙ НАБІР (раз на тиждень або раз на місяць)
+==============================================================================
+Вставте зовнішній диск (наприклад, він отримав літеру E:) і у звичайному PowerShell:
+    powershell -NoProfile -ExecutionPolicy Bypass -File T:\mijn-ruimte\scripts\herstelset-bijwerken.ps1 -HaalEerstOp -Doel E:\
+Скрипт забере найновішу копію з сервера, оновить набір на R:\, скопіює на E:\
+у папку mijn-ruimte-herstelset і перевірить усі контрольні суми.
+Наприкінці: "OK: E:\mijn-ruimte-herstelset". Потім "Безпечно вийняти пристрій".
+(Набір на R:\ ПК сам оновлює раз на тиждень і кладе зашифровану копію в Google Drive;
+зовнішній диск оновлюєте лише ви цією командою.)
+
+==============================================================================
+6. СЛОВНИЧОК
+==============================================================================
+age       - програма шифрування. Шифрує ПУБЛІЧНИМ ключем, розшифровує лише СЕКРЕТНИМ.
+ключ      - файл herstelsleutel-age.txt (секретний) або age1... (публічний, не секрет).
+тунель    - захищене з'єднання Cloudflare: сайт видно з інтернету, але на ПК
+            не відкриваються вхідні порти.
+VM        - віртуальна машина: «комп'ютер у комп'ютері» (Hyper-V), де працює сайт.
+LUKS      - шифрування диска VM. Після кожного запуску VM потрібен пароль LUKS
+            (якщо не налаштовано автоматичне розблокування через vTPM).
+GitHub    - сайт, де зберігається код (Tarasevych/hub, гілка zelf-hosten).
+SSH       - безпечний вхід з ПК на VM за ключем.
+rclone    - програма, яка щодня копіює зашифровані файли в Google Drive.
+drive.file - обмежений доступ: rclone бачить у Drive лише файли, які створив сам.
+
+==============================================================================
+7. ЧОГО НЕ МОЖНА РОБИТИ
+==============================================================================
+- НЕ кладіть ключ відновлення (herstelsleutel-age.txt) на цей диск або поруч із ним.
+- НЕ надсилайте ключ і секрети поштою/в месенджері і НЕ кладіть ключ у хмару.
+  (У Google Drive лежать лише ЗАШИФРОВАНІ копії - це нормально і так задумано.)
+- НЕ розшифровуйте копії у файли на ПК - тільки скриптом ontsleutel-naar-vm.ps1
+  (єдиний виняток: herstelset-*.zip.age з розділу 4, у ньому немає секретів).
+- НЕ створюйте і НЕ перейменовуйте папку mijn-ruimte-reservekopie у Drive вручну.
+- НЕ забувайте і НЕ видаляйте пароль LUKS.
+- НЕ запускайте одночасно старий і новий сервер з тим самим тунелем.
+- НЕ змінюйте файли в наборі вручну (інакше перевірка покаже "BESCHADIGD").
+- НЕ запускайте команди з інтернету, яких ви не розумієте; спершу прочитайте цю інструкцію.

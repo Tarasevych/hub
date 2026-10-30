@@ -1,0 +1,241 @@
+/* Beheer → «Доступ ШІ»: moderne kaarten, zoeken, filters en groepsbeheer. Bouwt op de tokens van beheer-ai-beleid.css (.aib).
+   Licht + donker via dezelfde tokens; geen merklogo's (monogram-avatars); ook bruikbaar op 360 px en met forced-colors. */
+.aiz{
+  --aiz-kaart:var(--aib-paneel);--aiz-hoog:rgba(29,78,216,.08);
+  --aiz-laag:#166534;--aiz-midden:#8a4b06;--aiz-hoogrood:#b42318;
+  container-type:inline-size
+}
+.theme-dark .aiz,.theme-plum-dark .aiz{--aiz-hoog:rgba(147,197,253,.10);--aiz-laag:#4ade80;--aiz-midden:#fbbf24;--aiz-hoogrood:#fca5a5}
+.aiz .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.aiz small{color:var(--aib-zacht)}
+
+/* avatar met monogram */
+.aiz-avatar{flex:none;display:inline-grid;place-items:center;width:38px;height:38px;border-radius:12px;color:#fff;font-weight:800;font-size:1.05rem;letter-spacing:.01em;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.aiz-avatar.is-groot{width:52px;height:52px;border-radius:16px;font-size:1.4rem}
+.aiz-mini{display:inline-flex;align-items:center;gap:8px}
+.aiz-mini .aiz-avatar{width:26px;height:26px;border-radius:8px;font-size:.8rem}
+
+/* korte cijfers in de statusbalk */
+.aiz-cijfers{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.aiz-cijfers li{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;border:1px solid var(--aib-rand);background:var(--aib-paneel);font-size:.9rem}
+.aiz-cijfers svg{color:var(--aib-hoofd)}
+
+/* zoek- en filterbalk */
+.aiz-balk{display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:10px;align-items:center}
+.aiz-zoek{position:relative;display:flex;align-items:center;min-width:0}
+.aiz-zoek>svg{position:absolute;left:12px;color:var(--aib-zacht);pointer-events:none}
+.aiz .aiz-zoek input{width:100%;min-height:44px;padding:8px 40px 8px 38px;border-radius:12px}
+.aiz .aiz-wis{position:absolute;right:4px;min-height:36px;min-width:36px;padding:0;border:0;background:transparent;border-radius:9px}
+.aiz-sorteer{position:relative;display:flex;align-items:center}
+.aiz-sorteer>svg{position:absolute;left:11px;color:var(--aib-zacht);pointer-events:none}
+.aiz .aiz-sorteer select{min-height:44px;padding-left:34px;border-radius:12px}
+.aiz-chips{display:flex;flex-wrap:wrap;gap:6px}
+.aiz .aiz-chip{min-height:38px;padding:5px 12px;border-radius:999px;font-weight:600;font-size:.9rem}
+.aiz .aiz-chip b{display:inline-grid;place-items:center;min-width:22px;padding:0 6px;border-radius:999px;background:var(--aib-vlak);border:1px solid var(--aib-rand);font-size:.78rem}
+.aiz .aiz-chip[aria-pressed=true]{background:var(--aiz-hoog);border-color:var(--aib-hoofd);box-shadow:inset 0 0 0 1px var(--aib-hoofd);color:var(--aib-hoofd)}
+.theme-dark .aiz .aiz-chip[aria-pressed=true]{color:var(--text)}
+.aiz-groepen{padding-bottom:2px}
+.aiz-teller-lijn{display:flex;flex-wrap:wrap;align-items:center;gap:12px;color:var(--aib-zacht);font-size:.88rem}
+.aiz .aiz-link{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:2px 4px;border:0;background:transparent;color:var(--aib-hoofd);font:inherit;font-weight:650;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.aiz a.aiz-link svg{width:14px;height:14px}
+.aiz .aiz-link.aiz-rood,.aiz .aiz-rood{color:var(--aib-off)}
+.aiz .aib-klein.aiz-rood{border-color:var(--aib-off)}
+
+/* groepsbeheer */
+.aiz-bulk{display:grid;gap:10px}
+.aiz-bulk-deploy{grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.aiz-bulk-deploy strong{display:flex;align-items:center;gap:6px}
+.aiz-bulk-deploy small{display:block;margin-top:3px}
+.aiz-bulk-algemeen{border:1px solid var(--aib-rand);border-radius:12px;background:var(--aib-vlak)}
+.aiz-bulk-algemeen>summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 14px;font-weight:650;cursor:pointer;list-style:none}
+.aiz-bulk-algemeen>summary::-webkit-details-marker{display:none}
+.aiz-bulk-algemeen>summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .15s}
+.aiz-bulk-algemeen[open]>summary::after{transform:rotate(-135deg)}
+.aiz-bulk-algemeen>*:not(summary){margin:0 14px 12px}
+.aiz-bulk-algemeen:focus-within{border-color:var(--aib-hoofd)}
+.aiz-bulk-rij,.aiz-formrij{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
+.aiz-bulk-rij>label,.aiz-formrij>label{display:grid;gap:4px;font-size:.88rem;color:var(--aib-zacht);font-weight:650;min-width:180px}
+.aiz-doel{margin:0;padding:0;border:0;display:grid;gap:4px;min-width:0}
+.aiz-doel legend{padding:0;font-size:.88rem;color:var(--aib-zacht);font-weight:650}
+.aiz-doel label{display:flex;align-items:center;gap:8px;min-height:34px;font-size:.92rem}
+.aiz-doel input{min-height:auto;width:18px;height:18px}
+.aiz-uitleg{color:var(--aib-zacht);font-size:.88rem}
+.aiz-bulk-knoppen{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* drie-standen schakelaar */
+.aiz-segment{display:inline-flex;border:1px solid var(--aib-rand);border-radius:11px;overflow:hidden;background:var(--aib-paneel)}
+.aiz .aiz-seg{min-height:34px;padding:4px 10px;border:0;border-radius:0;font-size:.85rem;font-weight:650;gap:5px;background:transparent}
+.aiz .aiz-seg+.aiz-seg{border-left:1px solid var(--aib-rand)}
+.aiz .aiz-seg svg{width:14px;height:14px}
+.aiz .aiz-seg[aria-pressed=true].is-off{background:var(--aib-off-bg);color:var(--aib-off);box-shadow:inset 0 -2px 0 var(--aib-off)}
+.aiz .aiz-seg[aria-pressed=true].is-ask{background:var(--aib-ask-bg);color:var(--aib-ask);box-shadow:inset 0 -2px 0 var(--aib-ask)}
+.aiz .aiz-seg[aria-pressed=true].is-always{background:var(--aib-ok-bg);color:var(--aib-ok);box-shadow:inset 0 -2px 0 var(--aib-ok)}
+
+/* agentkaarten */
+.aiz-tablist{display:contents}
+.aiz-kaarten{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.aiz .aiz-kaart{display:grid;align-content:start;justify-items:stretch;gap:9px;padding:13px;min-height:0;text-align:left;border-radius:14px;border:1px solid var(--aib-rand);background:var(--aiz-kaart);font-weight:400;position:relative;transition:border-color .12s,box-shadow .12s,transform .12s}
+.aiz .aiz-kaart:hover{border-color:var(--aib-hoofd);background:var(--aiz-kaart);transform:translateY(-1px)}
+.aiz .aiz-kaart.is-gekozen{border-color:var(--aib-hoofd);box-shadow:0 0 0 2px var(--aib-hoofd);background:var(--aiz-hoog)}
+.aiz .aiz-kaart.is-uit:not(.is-gekozen){opacity:.82}
+.aiz-kaart::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 4px 4px 0;background:var(--aib-rand)}
+.aiz-kaart.is-aan::before{background:var(--aib-ok)}
+.aiz-kaart.is-deels::before{background:var(--aib-ask)}
+.aiz-kaart.is-uit::before{background:var(--aib-off)}
+.aiz-kaart-kop{display:flex;align-items:center;gap:10px;min-width:0}
+.aiz-kaart-naam{display:grid;min-width:0;flex:1}
+.aiz-kaart-naam strong{font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aiz-kaart-naam small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aiz-stand{flex:none;padding:2px 9px;border-radius:999px;font-size:.76rem;font-weight:700;white-space:nowrap}
+.aiz-stand.is-aan{color:var(--aib-ok);background:var(--aib-ok-bg)}
+.aiz-stand.is-deels{color:var(--aib-ask);background:var(--aib-ask-bg)}
+.aiz-stand.is-uit{color:var(--aib-off);background:var(--aib-off-bg)}
+.aiz-activiteit,.aiz-verbindingen{display:flex;align-items:flex-start;gap:7px;font-size:.86rem;min-width:0;flex-wrap:wrap}
+.aiz-activiteit>svg,.aiz-verbindingen>svg{margin-top:2px;color:var(--aib-zacht)}
+.aiz-activiteit>span{display:grid;min-width:0;flex:1}
+.aiz-activiteit small{font-size:.78rem;overflow-wrap:anywhere}
+.aiz-zacht{color:var(--aib-zacht)}
+.aiz-pil{padding:1px 8px;border-radius:999px;border:1px solid var(--aib-rand);background:var(--aib-vlak);font-size:.78rem;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aiz-pil.is-uit{opacity:.7;text-decoration:line-through}
+.aiz-pil.is-waarschuwing{border-color:var(--aib-ask);color:var(--aib-ask);background:var(--aib-ask-bg)}
+.aiz-groep-chips{display:flex;flex-wrap:wrap;gap:5px}
+.aiz-gchip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:.76rem;border:1px solid var(--aib-rand);background:var(--aib-vlak)}
+.aiz-gchip svg{width:12px;height:12px}
+.aiz-gchip b{font-variant-numeric:tabular-nums}
+.aiz-gchip.is-aan{color:var(--aib-ok);border-color:color-mix(in srgb,var(--aib-ok) 45%,transparent);background:var(--aib-ok-bg)}
+.aiz-gchip.is-deels{color:var(--aib-ask);border-color:color-mix(in srgb,var(--aib-ask) 45%,transparent);background:var(--aib-ask-bg)}
+.aiz-gchip.is-uit{color:var(--aib-zacht)}
+.aiz-onderrij{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.aiz-treffer{padding:1px 8px;border-radius:7px;background:var(--aiz-hoog);font-size:.78rem;border:1px dashed var(--aib-hoofd)}
+.aiz-leeg{grid-column:1/-1;padding:18px;border:1px dashed var(--aib-rand);border-radius:12px;color:var(--aib-zacht);text-align:center}
+.aiz .aiz-nieuw-kaart{justify-items:center;align-content:center;text-align:center;border-style:dashed;color:var(--aib-hoofd);min-height:132px}
+.aiz-nieuw-kaart::before{display:none}
+.aiz-nieuw-kaart svg{width:26px;height:26px}
+.aiz-nieuw-kaart small{max-width:24ch}
+
+/* agent toevoegen */
+.aiz-toevoegen{display:grid;gap:10px;padding:14px;border:1px solid var(--aib-hoofd);border-radius:14px;background:var(--aib-vlak)}
+.aiz-presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.aiz .aiz-preset{justify-content:flex-start;text-align:left;gap:10px;padding:8px 10px;border-radius:12px;font-weight:400}
+.aiz .aiz-preset[aria-pressed=true]{border-color:var(--aib-hoofd);box-shadow:inset 0 0 0 1px var(--aib-hoofd);background:var(--aiz-hoog)}
+.aiz-preset>span:last-child{display:grid;min-width:0}
+.aiz-preset small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* detail */
+.aiz-detail{padding:14px;border:1px solid var(--aib-rand);border-radius:16px;background:var(--aib-vlak);margin-top:2px}
+.aiz-detail-kop{align-items:center}
+.aiz-detail-kop>.aiz-avatar{align-self:flex-start}
+.aiz-detail-titel{display:grid;gap:2px;flex:1;min-width:200px}
+.aiz-detail-titel strong{font-size:1.15rem}
+.aiz-detail-titel code{justify-self:start;padding:0 7px;border-radius:7px;background:var(--aib-paneel);border:1px solid var(--aib-rand);font-size:.8rem}
+.aiz-agent-snel{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:var(--aib-paneel);border:1px solid var(--aib-rand);font-weight:650;font-size:.9rem}
+
+/* groepen binnen het detail */
+.aiz-groep{gap:8px;padding:10px 12px;border:1px solid var(--aib-rand);border-radius:14px;background:var(--aib-paneel);border-left:4px solid var(--aib-rand)}
+.aiz-groep.is-aan{border-left-color:var(--aib-ok)}
+.aiz-groep.is-deels{border-left-color:var(--aib-ask)}
+.aiz-groep.is-uit{border-left-color:var(--aib-off)}
+.aiz-groep-kop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.aiz .aiz-groep-toggle{width:100%;justify-content:flex-start;gap:9px;border:0;background:transparent;padding:4px 2px;text-align:left;min-height:44px;flex-wrap:wrap}
+.aiz .aiz-groep-titel{margin:0;flex:1 1 220px;display:block;color:var(--text,inherit)}
+.aiz-groep-naam{font-size:1rem;font-weight:700;color:var(--text,inherit)}
+.aiz-groep-toggle>svg:first-child{color:var(--aib-hoofd);width:20px;height:20px}
+.aiz-groep-telling{font-weight:400;font-size:.82rem;color:var(--aib-zacht)}
+.aiz-groep-acties{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.aiz-rij{padding:9px 11px;background:var(--aib-vlak)}
+.aiz-rij .aib-rij-kop{grid-template-columns:minmax(0,1fr) auto}
+.aiz-rij .aib-rij-kop>div:first-child{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;min-width:0}
+.aiz-rij .aib-rij-kop>div:first-child>small{flex:1 1 100%}
+.aiz-rij-acties{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.aiz-hint{display:block}
+.aiz-risico{padding:0 8px;border-radius:999px;font-size:.75rem;font-weight:700;border:1px solid currentColor}
+.aiz-risico.is-laag{color:var(--aiz-laag)}
+.aiz-risico.is-midden{color:var(--aiz-midden)}
+.aiz-risico.is-hoog{color:var(--aiz-hoogrood)}
+.aiz .aib-nieuw{margin-left:0}
+
+/* uitrol-controle */
+.aiz-controle{display:grid;gap:8px;padding:11px 12px;border-radius:12px;border:1px solid var(--aib-hoofd);background:var(--aiz-hoog)}
+.aiz-controle strong{display:flex;align-items:center;gap:6px}
+.aiz-controle ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.aiz-controle li{display:flex;gap:8px;align-items:flex-start;font-size:.9rem}
+.aiz-controle li svg{margin-top:2px}
+.aiz-controle li.is-ok svg{color:var(--aib-ok)}
+.aiz-controle li.is-bad svg{color:var(--aib-off)}
+.aiz-controle li.is-bad{font-weight:650}
+.aiz-controle li.is-info svg{color:var(--aib-hoofd)}
+
+.aiz-gevaar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:4px}
+
+/* wachtrij */
+.aiz-wachtrij{flex-direction:row}
+.aiz-wachtlijst{flex:1 1 100%;order:3;font-size:.9rem}
+.aiz-wachtlijst summary{cursor:pointer;min-height:32px;display:flex;align-items:center;font-weight:650;color:var(--aib-hoofd)}
+.aiz-wachtlijst ul{margin:4px 0 0;padding-left:20px;display:grid;gap:3px;max-height:34vh;overflow:auto}
+
+/* smal: kaarten onder elkaar, bediening over de volle breedte */
+@container (max-width:640px){
+  .aiz-balk{grid-template-columns:1fr}
+  .aiz-bulk-deploy{grid-template-columns:1fr}
+  .aiz-kaarten{grid-template-columns:1fr}
+  .aiz-groepen{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}
+  .aiz-groepen .aiz-chip{flex:none}
+  .aiz-segment{width:100%}
+  .aiz .aiz-seg{flex:1 1 0;min-height:40px}
+  .aiz-detail{padding:10px}
+  .aiz-rij-acties>.aiz-segment{flex:1 1 100%}
+}
+@media (max-width:640px){
+  .aiz-balk{grid-template-columns:1fr}
+  .aiz-bulk-deploy{grid-template-columns:1fr}
+  .aiz-kaarten{grid-template-columns:1fr}
+  .aiz-segment{width:100%}
+  .aiz .aiz-seg{flex:1 1 0;min-height:40px}
+  .aiz-wachtrij .aib-knoppen{width:100%}
+}
+@media (prefers-reduced-motion:reduce){
+  .aiz .aiz-kaart,.aiz-bulk-algemeen>summary::after{transition:none}
+  .aiz .aiz-kaart:hover{transform:none}
+}
+@media (forced-colors:active){
+  .aiz .aiz-kaart,.aiz .aiz-kaart.is-gekozen,.aiz-groep,.aiz-detail{border:1px solid CanvasText}
+  .aiz .aiz-kaart.is-gekozen{outline:3px solid Highlight}
+  .aiz .aiz-seg[aria-pressed=true],.aiz .aiz-chip[aria-pressed=true]{outline:2px solid Highlight;forced-color-adjust:none;background:Highlight;color:HighlightText}
+  .aiz-stand,.aiz-gchip,.aiz-risico,.aiz-pil{border:1px solid CanvasText}
+  .aiz-kaart::before{background:CanvasText}
+}
+
+.aiz-avatar-logo{flex:none}
+.aiz-mini .agent-logo{width:26px;height:26px;border-radius:8px}
+.aiz-detail-kop>.agent-logo{align-self:flex-start}
+
+/* 20.10.2026 — «Підключені ШІ зараз» (de ware stand uit de hub, alleen-lezen) op admin → Доступ ШІ. Alleen bestaande tokens. */
+.aiz-stand{display:grid;gap:8px;padding:12px 14px;border:1px solid var(--aib-rand);border-radius:14px;background:var(--aiz-kaart)}
+.aiz-stand-kop{display:grid;gap:2px}
+.aiz-stand-kop h3{display:flex;align-items:center;gap:8px;margin:0;font-size:1rem}
+.aiz-stand-kop small{color:var(--aib-zacht)}
+.aiz-stand-lijst{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.aiz-stand-rij{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"logo naam link" "logo stand link" "logo meta link";align-items:center;column-gap:10px;row-gap:2px;padding:8px 10px;border:1px solid var(--aib-rand);border-radius:12px;position:relative}
+.aiz-stand-rij::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 4px 4px 0;background:var(--aib-rand)}
+.aiz-stand-rij.is-v2::before{background:var(--aib-ok)}
+.aiz-stand-rij.is-erfenis::before,.aiz-stand-rij.is-deur::before,.aiz-stand-rij.is-wacht::before{background:var(--aib-ask)}
+.aiz-stand-rij.is-geen::before{background:var(--aib-off)}
+.aiz-stand-rij>.agent-logo{grid-area:logo}
+.aiz-stand-naam{grid-area:naam;display:flex;align-items:baseline;gap:8px;min-width:0}
+.aiz-stand-naam code{font-size:.8rem;color:var(--aib-zacht)}
+.aiz-stand-tekst{grid-area:stand;font-size:.88rem;font-weight:600}
+.aiz-stand-tekst.is-v2{color:var(--aiz-laag)}
+.aiz-stand-tekst.is-erfenis,.aiz-stand-tekst.is-deur,.aiz-stand-tekst.is-wacht{color:var(--aiz-midden)}
+.aiz-stand-tekst.is-geen{color:var(--aib-zacht)}
+.aiz-stand-meta{grid-area:meta;display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.82rem;color:var(--aib-zacht);align-items:center}
+.aiz-stand-rij>.aiz-link{grid-area:link;white-space:nowrap}
+.aiz-stand .v2-kant-teller{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-weight:600;font-size:.78rem;border:1px solid var(--aib-rand)}
+.aiz-stand .v2-kant-teller.is-slapend{opacity:.55;text-decoration:line-through}
+@media (max-width:560px){.aiz-stand-rij{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"logo naam" "logo stand" "logo meta" "link link"}.aiz-stand-rij>.aiz-link{justify-self:start}}
+/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
+@media (max-width:700px){
+  .aiz .aiz-link{min-height:var(--tik-hoogte)}
+}
+/* «Технічна сторона зараз не діє…» була 9,7 px en stond (geërfd nowrap) op één regel: kolom 748 px, canonical-workspace 787 > 390 */
+.aiz-stand-kop{min-width:0;white-space:normal}
+.aiz-stand-kop small{font-size:max(var(--tekst-mini),.8rem);overflow-wrap:anywhere}

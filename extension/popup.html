@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mijn Ruimte</title>
+<link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="popup.css">
+</head>
+<body class="popup">
+<main>
+  <!-- 0.8.0: compacte kop — logo, naam, één statusregel, pictogramknoppen met tooltip -->
+  <header class="kop">
+    <span class="logo" aria-hidden="true"></span>
+    <div class="kop-tekst">
+      <h1>Mijn Ruimte</h1>
+      <p id="status-regel" class="status-regel" data-niveau="uit" role="status" aria-live="polite"></p>
+    </div>
+    <div class="kop-knoppen">
+      <button id="paneel" type="button" class="pict-knop" aria-label="Бічна панель" data-nl-aria="Zijpaneel" title="Бічна панель"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg></button>
+      <button id="opties" type="button" class="pict-knop" aria-label="Налаштування" data-nl-aria="Instellingen" title="Налаштування"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+  </header>
+
+  <div class="kop-info">
+    <span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+    <div><p id="account" class="account"></p><p id="profiel-tab" class="profiel" data-profiel="geen"></p></div>
+  </div>
+
+  <div id="sloten" class="sloten"></div>
+  <p id="lokaal" class="zacht" hidden></p>
+  <p id="waarschuwing" class="waarschuwing" hidden></p>
+  <p id="aankondiging" class="vh" role="status" aria-live="polite"></p>
+
+  <div id="diagnostiek" class="diag" hidden></div>
+
+  <nav class="snel" aria-label="Швидкі дії" data-nl-aria="Snelle acties">
+    <button id="snel-test" type="button" data-nl="Verbinding controleren">Перевірити з’єднання</button>
+    <button id="snel-beheer" type="button" data-nl="Toegang beheren">Керувати доступом</button>
+  </nav>
+  <p class="voet zacht"><span data-nl="Werkt alleen op tarasevych.com.">Працює лише на tarasevych.com.</span> <span id="versie"></span></p>
+</main>
+<script src="ui.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

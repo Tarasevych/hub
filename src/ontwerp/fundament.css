@@ -1,0 +1,5 @@
+/* ФУНДАМЕНТ ДИЗАЙНУ (20.10.2026): токени → примітиви → мобільна верстка. Підключається один раз у src/index.css.
+   Для нових сторінок: тільки var(--…) із tokens.css, класи з primitieven.css; жодних hex, prefers-color-scheme чи px-ширин. */
+@import './tokens.css';
+@import './primitieven.css';
+@import './mobiel.css';

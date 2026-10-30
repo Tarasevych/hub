@@ -1,0 +1,109 @@
+/* Рішення власника з підписом passkey (22.10.2026, зона B): майстер відкату (mcp — dashboard) і білий список хостів (mcp — agenten).
+   Усі кольори — лише токени src/ontwerp/tokens.css; тап ≥ 44 px на 390 px; жодного горизонтального скролу. */
+.bsl-schaduw{position:fixed;inset:0;background:var(--overlay);display:flex;align-items:center;justify-content:center;padding:var(--ruimte-4);z-index:60}
+.bsl-meester{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:var(--straal-l);box-shadow:var(--schaduw-3);width:min(560px,100%);max-height:calc(100vh - 2*var(--ruimte-4));overflow:auto;padding:var(--ruimte-5);display:grid;gap:var(--ruimte-3)}
+.bsl-kop{display:flex;align-items:center;justify-content:space-between;gap:var(--ruimte-2)}
+.bsl-kop h2{display:flex;align-items:center;gap:var(--ruimte-2);margin:0;font-size:1.1rem}
+.bsl-x{display:inline-grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:var(--straal-s);background:var(--surface);color:var(--text);cursor:pointer}
+.bsl-x:disabled{opacity:.5;cursor:not-allowed}
+.bsl-lead,.bsl-stil,.bsl-fout,.bsl-stand-tekst,.bsl-stand-hint{margin:0;font-size:var(--tekst-klein);line-height:1.45}
+.bsl-stil{color:var(--muted);display:flex;align-items:center;gap:6px}
+.bsl-fout{color:var(--fout)}
+.bsl-mono{font-family:ui-monospace,'Cascadia Mono',Menlo,Consolas,monospace}
+.bsl-van-naar{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:var(--ruimte-3);padding:var(--ruimte-3);border:1px solid var(--line);border-radius:var(--straal-m);background:var(--surface)}
+.bsl-van-naar>div,.bsl-veld{display:grid;gap:4px;min-width:0}
+.bsl-van-naar small,.bsl-veld>small,.bsl-veld>span{font-size:var(--tekst-mini);color:var(--muted);display:flex;align-items:center;gap:4px}
+.bsl-van-naar b{overflow-wrap:anywhere}
+.bsl-veld select,.bsl-veld input{min-height:var(--tik-hoogte);width:100%;border:1px solid var(--line);border-radius:var(--straal-s);background:var(--panel);color:var(--text);padding:6px 10px;font:inherit;font-size:var(--tekst-klein)}
+.bsl-waarschuwing{display:flex;gap:var(--ruimte-2);align-items:flex-start;margin:0;padding:var(--ruimte-3);border-radius:var(--straal-m);background:var(--warn-zacht);color:var(--warn);font-size:var(--tekst-klein);line-height:1.45}
+.bsl-waarschuwing svg{flex:none;margin-top:2px}
+.bsl-acties{display:flex;flex-wrap:wrap;gap:var(--ruimte-2);align-items:center}
+.bsl-knop{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--tik-hoogte);padding:6px 14px;border:1px solid var(--line);border-radius:var(--straal-s);background:var(--surface);color:var(--text);font:inherit;font-size:var(--tekst-klein);font-weight:600;cursor:pointer;max-width:100%;text-align:left}
+.bsl-knop:hover:not(:disabled){border-color:var(--muted)}
+.bsl-knop:disabled{opacity:.55;cursor:not-allowed}
+.bsl-knop-primair{background:var(--accent);border-color:var(--accent);color:var(--text-on-accent)}
+.bsl-spin{animation:bsl-rot 1s linear infinite}
+@keyframes bsl-rot{to{transform:rotate(360deg)}}
+/* стан рішення */
+.bsl-stand{display:grid;gap:6px;padding:var(--ruimte-3);border:1px solid var(--line);border-radius:var(--straal-m);background:var(--surface)}
+.bsl-stand[data-besluit-stand='klaar']{border-color:var(--ok);background:var(--ok-zacht);color:var(--ok)}
+.bsl-stand[data-besluit-stand='geweigerd'],.bsl-stand[data-besluit-stand='mislukt']{border-color:var(--fout);background:var(--fout-zacht);color:var(--fout)}
+.bsl-stand[data-besluit-stand='verlopen']{border-color:var(--warn);background:var(--warn-zacht);color:var(--warn)}
+.bsl-stand[data-besluit-stand='ondertekend']{border-color:var(--info);background:var(--info-zacht);color:var(--info)}
+.bsl-stand-kop{display:flex;align-items:center;gap:6px;margin:0}
+.bsl-stand-code{margin:0;font-size:var(--tekst-mini);opacity:.85}
+.bsl-stand-detail summary{cursor:pointer;font-size:var(--tekst-mini)}
+.bsl-stand-detail pre{margin:4px 0 0;font-size:var(--tekst-mini);white-space:pre-wrap;overflow-wrap:anywhere}
+/* білий список хостів */
+.bsl-hosts h3{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bsl-chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:var(--ruimte-2)}
+.bsl-chip{display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:2px 4px 2px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:var(--tekst-klein);max-width:100%}
+.bsl-chip code{overflow-wrap:anywhere;font-size:inherit}
+.bsl-chip.is-nieuw{border-style:dashed;border-color:var(--accent)}
+.bsl-chip.is-omgeving{color:var(--muted);padding-right:10px}
+.bsl-chip.is-omgeving small{margin-left:4px}
+.bsl-chip.is-leeg{color:var(--muted);border-style:dashed;padding-right:10px}
+.bsl-chip-x{display:inline-grid;place-items:center;width:32px;height:32px;border:0;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer}
+.bsl-chip-x:hover:not(:disabled){background:var(--fout-zacht);color:var(--fout)}
+.bsl-rij{display:flex;gap:var(--ruimte-2);align-items:end;flex-wrap:wrap}
+.bsl-groei{flex:1 1 220px}
+@media (max-width:640px){
+  .bsl-schaduw{padding:0;align-items:flex-end}
+  .bsl-meester{width:100%;max-height:calc(100vh - var(--veilig-boven));border-radius:var(--straal-l) var(--straal-l) 0 0;padding:var(--ruimte-4) var(--ruimte-4) calc(var(--ruimte-4) + var(--veilig-onder))}
+  .bsl-van-naar{grid-template-columns:1fr}
+  .bsl-van-naar>svg{transform:rotate(90deg);justify-self:center}
+  .bsl-knop,.bsl-x{min-height:var(--tik-hoogte-mobiel)}
+  .bsl-chip{min-height:var(--tik-hoogte-mobiel)}
+  .bsl-chip-x{width:40px;height:40px}
+  .bsl-acties .bsl-knop{flex:1 1 100%}
+}
+/* Майстер відкату на всю сторінку (29.10.2026): кроки, смуга перебігу, джерела, термінал. Лише токени; тап ≥ 44 px; без горизонтального скролу. */
+.bsl-schaduw-pagina{align-items:flex-start;overflow:auto}
+.bsl-pagina{width:min(880px,100%);max-height:none}
+.bsl-stappen{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--ruimte-2)}
+.bsl-stappen li{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;font-size:var(--tekst-mini);color:var(--muted);min-width:0}
+.bsl-stap-nr{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--surface)}
+.bsl-stappen li[data-stand=bezig]{color:var(--text);font-weight:600}
+.bsl-stappen li[data-stand=bezig] .bsl-stap-nr{border-color:var(--accent);color:var(--accent)}
+.bsl-stappen li[data-stand=ok] .bsl-stap-nr{border-color:var(--ok);color:var(--ok)}
+.bsl-stappen li[data-stand=fout] .bsl-stap-nr{border-color:var(--fout);color:var(--fout)}
+.bsl-stap-naam{overflow-wrap:anywhere}
+.bsl-balk{height:6px;border-radius:3px;background:var(--surface);overflow:hidden}
+.bsl-balk i{display:block;height:100%;background:var(--accent);transition:width .3s ease}
+.bsl-balk i[data-stand=ok]{background:var(--ok)}
+.bsl-balk i[data-stand=fout]{background:var(--fout)}
+.bsl-blok{display:grid;gap:var(--ruimte-2);padding:var(--ruimte-3);border:1px solid var(--line);border-radius:var(--straal-m);background:var(--surface);min-width:0}
+.bsl-blok h3{margin:0;font-size:var(--tekst-klein);display:flex;align-items:center;gap:6px}
+.bsl-seg{display:flex;flex-wrap:wrap;gap:var(--ruimte-2)}
+.bsl-seg button{display:inline-flex;align-items:center;gap:6px;min-height:var(--tik-hoogte);padding:6px 12px;border:1px solid var(--line);border-radius:var(--straal-s);background:var(--panel);color:var(--text);font:inherit;font-size:var(--tekst-klein);cursor:pointer}
+.bsl-seg button[aria-checked=true]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.bsl-seg button:disabled{opacity:.6;cursor:not-allowed}
+.bsl-keuzes{list-style:none;margin:0;padding:0;display:grid;gap:var(--ruimte-2)}
+.bsl-keuze{display:flex;gap:var(--ruimte-2);align-items:flex-start;padding:var(--ruimte-2) var(--ruimte-3);min-height:var(--tik-hoogte);border:1px solid var(--line);border-radius:var(--straal-s);background:var(--panel);cursor:pointer}
+.bsl-keuze[data-gekozen=true]{border-color:var(--accent)}
+.bsl-keuze input{margin-top:4px;width:18px;height:18px;flex:none}
+.bsl-keuze>span{display:grid;gap:2px;min-width:0}
+.bsl-keuze small{color:var(--muted);font-size:var(--tekst-mini);overflow-wrap:anywhere}
+.bsl-label{font-style:normal;font-size:var(--tekst-mini);margin-left:6px;padding:1px 6px;border-radius:var(--straal-s);background:var(--accent-zacht,var(--surface));color:var(--accent)}
+.bsl-bestand{display:grid;gap:var(--ruimte-2)}
+.bsl-bestand-kies{position:relative;overflow:hidden;justify-self:start}
+.bsl-bestand-kies input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.bsl-controles{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:var(--tekst-klein)}
+.bsl-controles li{overflow-wrap:anywhere}
+.bsl-controles li::before{content:'○ ';color:var(--muted)}
+.bsl-controles li[data-ok=true]::before{content:'✓ ';color:var(--ok)}
+.bsl-controles li[data-ok=false]::before{content:'✗ ';color:var(--fout)}
+.bsl-diagnose{display:grid;gap:var(--ruimte-2);padding:var(--ruimte-3);border-radius:var(--straal-m);background:var(--warn-zacht);color:var(--text)}
+.bsl-diagnose p{margin:0;font-size:var(--tekst-klein);line-height:1.45}
+.bsl-diagnose pre{margin:0;padding:var(--ruimte-2);border-radius:var(--straal-s);background:var(--panel);font-size:var(--tekst-mini);white-space:pre-wrap;overflow-wrap:anywhere}
+.bsl-terminal{border:1px solid var(--line);border-radius:var(--straal-m);overflow:hidden;background:var(--panel)}
+.bsl-terminal-balk{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--line);font-size:var(--tekst-mini);color:var(--muted)}
+.bsl-terminal-balk b{margin-left:8px;color:var(--ok)}
+.bsl-terminal-bak{max-height:260px;overflow:auto;padding:6px 10px;font-family:ui-monospace,'Cascadia Mono',Menlo,Consolas,monospace;font-size:var(--tekst-mini);line-height:1.5}
+.bsl-regel{display:grid;grid-template-columns:auto auto 1fr;gap:8px;overflow-wrap:anywhere}
+.bsl-regel-tijd,.bsl-regel-bron{color:var(--muted)}
+.bsl-regel[data-niveau=ok]{color:var(--ok)}
+.bsl-regel[data-niveau=warn]{color:var(--warn)}
+.bsl-regel[data-niveau=error]{color:var(--fout)}
+.bsl-samenvatting{white-space:pre-line}
+@media (max-width:640px){.bsl-pagina{padding:var(--ruimte-3)}.bsl-stap-naam{font-size:11px}.bsl-regel{grid-template-columns:auto 1fr}.bsl-regel-bron{display:none}}

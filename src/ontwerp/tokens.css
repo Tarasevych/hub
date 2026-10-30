@@ -1,0 +1,75 @@
+/* ФУНДАМЕНТ ДИЗАЙНУ (20.10.2026) — одна система токенів для всього сайту.
+   Увімкнення теми лишається як було: index.html / CanonicalChrome ставлять клас theme-light | theme-dark | theme-plum-light |
+   theme-plum-dark на <html> і на .canonical-chrome, палітра — html.palet-grifel | palet-puur | palet-violet | palet-kleur
+   (src/thema/paletten.css перевизначає поверхні й акцент). prefers-color-scheme у сторінках НЕ використовувати — лише ці класи.
+
+   Поверхні/текст/акцент (з палітри):      --bg --panel --surface --surface2 --line --text --muted --faint --accent --accentText
+                                            --accent-soft --shadow
+   Стани (тут, однакові для всіх палітр):  --ok --warn --fout --info      текст/іконка на будь-якій поверхні (≥ 4,5:1)
+                                            --ok-zacht … --info-zacht      м'яка підкладка; на ній читається --text, --muted і --ok…
+                                            --ok-vlak … --info-vlak        суцільна заливка (кнопка/бейдж); текст на ній — --text-on-vlak
+   Текст на заливці:                        --text-on-accent (= --accentText) --text-on-vlak --text-on-licht --text-on-donker
+   Завжди світле (лист, PDF, логотип):      --papier --papier-zacht (текст на них — --text-on-licht)
+   Інше:                                    --focus (кільце фокуса) --overlay (затемнення під вікном)
+   Ритм:                                    --ruimte-1…6 = 4/8/12/16/24/32px   --straal-s/m/l/xl = 8/12/16/20px
+                                            --schaduw-1/2/3   --tekst-basis 16px --tekst-klein 14px --tekst-mini 12px (менше — ніде)
+                                            --tik-hoogte 44px на дотику / 40px з мишею
+   Контраст усіх пар перевіряє scripts/kleur-contrast-controle.mjs (падає збірка, якщо пара < вимоги). */
+
+:root, .theme-light, .theme-plum-light {
+  color-scheme: light;
+  --ok:#166534; --ok-zacht:#dcfce7; --ok-vlak:#15803d;
+  --warn:#8a4b06; --warn-zacht:#fef3c7; --warn-vlak:#92400e;
+  --fout:#b42318; --fout-zacht:#fee2e2; --fout-vlak:#b42318;
+  --info:#1e40af; --info-zacht:#dbeafe; --info-vlak:#1d4ed8;
+  --text-on-vlak:#ffffff; --text-on-licht:#17212b; --text-on-donker:#f3f6f8;
+  --papier:#ffffff; --papier-zacht:#e5e7eb; /* завжди світле: лист HTML, PDF-сторінка, плитка логотипа (текст на них — --text-on-licht) */
+  --focus:#1d4ed8;
+  --overlay:rgba(10,14,20,.55);
+  --schaduw-1:0 1px 2px rgba(15,23,42,.08), 0 1px 1px rgba(15,23,42,.04);
+  --schaduw-2:0 8px 24px rgba(15,23,42,.12);
+  --schaduw-3:0 24px 70px rgba(15,23,42,.28);
+}
+.theme-dark, .theme-plum-dark {
+  color-scheme: dark;
+  --ok:#86efac; --ok-zacht:#14381f; --ok-vlak:#4ade80;
+  --warn:#fcd34d; --warn-zacht:#3d2a08; --warn-vlak:#fbbf24;
+  --fout:#fecaca; --fout-zacht:#4a1a1a; --fout-vlak:#fca5a5;
+  --info:#a5c8ff; --info-zacht:#172554; --info-vlak:#93c5fd;
+  --text-on-vlak:#10161c; --text-on-licht:#17212b; --text-on-donker:#f3f6f8;
+  --papier:#ffffff; --papier-zacht:#e5e7eb;
+  --focus:#93c5fd;
+  --overlay:rgba(0,0,0,.66);
+  --schaduw-1:0 1px 2px rgba(0,0,0,.35), 0 1px 1px rgba(0,0,0,.2);
+  --schaduw-2:0 8px 24px rgba(0,0,0,.4);
+  --schaduw-3:0 24px 70px rgba(0,0,0,.6);
+}
+
+/* Поверхні на рівні <html> (вікна, панелі й смуги, що рендеряться порталом у <body>, поза .canonical-chrome): ті самі
+   значення, що й у .canonical-chrome.theme-* (src/canoniek-omlijsting.css) — раніше тут були три різні набори
+   (index.css, ecosysteem-productie.css, chrome), і вікно поза оболонкою мало інші кольори, ніж сторінка під ним. */
+:root, .theme-light { --bg:#f7f8fa; --panel:#fff; --surface:#f1f3f5; --surface2:#e7ebef; --line:#dce1e6; --text:#17212b; --muted:#5a6672; --faint:#636e79; --accent:#2f6f73; --accentText:#fff; --accent-soft:#e4f0ef; --good:#267653; --danger:#b42318; --shadow:rgba(22,31,41,.13); --nav-hover:color-mix(in srgb,var(--surface) 78%,transparent); --nav-active:color-mix(in srgb,var(--surface2) 88%,transparent); }
+.theme-dark { --bg:#14181d; --panel:#20262d; --surface:#29313a; --surface2:#35404b; --line:#46515c; --text:#f3f6f8; --muted:#b7c0c8; --faint:#8f9aa4; --accent:#8dbab7; --accentText:#102426; --accent-soft:#293f41; --good:#95c8a8; --danger:#ffaaa3; --shadow:rgba(0,0,0,.34); }
+.theme-plum-light { --bg:#f8f3f8; --panel:#fffafd; --surface:#f1e7f0; --surface2:#e8d7e5; --line:#d7c4d4; --text:#35243a; --muted:#6a5770; --faint:#75627a; --accent:#6f355f; --accentText:#fff; --accent-soft:#ead7e5; --good:#4f775e; --danger:#a63f57; --shadow:rgba(71,35,63,.16); }
+.theme-plum-dark { --bg:#21161f; --panel:#2d1e2a; --surface:#382633; --surface2:#463141; --line:#64485c; --text:#faedf6; --muted:#d0b9c9; --faint:#a98fa2; --accent:#d8a4c7; --accentText:#2b1725; --accent-soft:#4b3043; --good:#9dc0a7; --danger:#ff9db3; --shadow:rgba(0,0,0,.38); }
+
+/* Ритм — не залежить від теми. */
+:root {
+  --ruimte-1:4px; --ruimte-2:8px; --ruimte-3:12px; --ruimte-4:16px; --ruimte-5:24px; --ruimte-6:32px;
+  --straal-s:8px; --straal-m:12px; --straal-l:16px; --straal-xl:20px;
+  --tekst-basis:16px; --tekst-klein:14px; --tekst-mini:12px;
+  --tik-hoogte:40px; --tik-hoogte-mobiel:44px;
+  --veilig-boven:env(safe-area-inset-top,0px); --veilig-onder:env(safe-area-inset-bottom,0px); --veilig-links:env(safe-area-inset-left,0px); --veilig-rechts:env(safe-area-inset-right,0px);
+}
+@media (pointer:coarse), (max-width:700px) { :root { --tik-hoogte:44px; } }
+
+/* Псевдоніми (специфічність 0 → будь-яке явне визначення сильніше). Ці імена вже вживалися у сторінках, але ніде не були
+   визначені, тож спрацьовували запасні hex світлої теми — головне джерело «білого на білому» в темній темі
+   (--soft 55×, --canonical-* 85×, --fout/--warn/--ok 26×, --border 9×). */
+:where(*) {
+  --text-on-accent:var(--accentText);
+  --soft:var(--surface); --zacht:var(--surface); --panel-2:var(--surface2); --vlak-2:var(--surface2);
+  --border:var(--line); --rand:var(--line); --ink:var(--text); --canvas:var(--bg);
+  --waarschuwing:var(--warn); --warn-text:var(--warn); --gevaar:var(--fout); --bad:var(--fout); --venster-kritiek:var(--fout); --venster-actief:var(--focus);
+  --canonical-panel:var(--panel); --canonical-surface:var(--surface); --canonical-line:var(--line); --canonical-text:var(--text); --canonical-muted:var(--muted); --canonical-accent:var(--accent); --canonical-shadow:var(--shadow);
+}

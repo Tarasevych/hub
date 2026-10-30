@@ -1,0 +1,87 @@
+/* Meldingen: regel «У технічній панелі N…» in de gewone bel, voorkeuren per type, paneel in de technische band (18.10.2026). */
+
+/* --- knop in de band (zelfde vorm als de andere bandknoppen, tech.css) --- */
+.tech-band-knoppen button.tech-meldingen-knop{position:relative;padding:0 8px}
+.tech-meldingen-knop b{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--tech-band-fg);color:var(--tech-band-bg);font:800 11px/1 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums}
+
+/* --- regel in de gewone bel --- */
+.canonical-notification-tech{display:flex;align-items:center;gap:10px;width:calc(100% - 16px);margin:8px 8px 0;min-height:44px;padding:8px 12px;box-sizing:border-box;border:1px solid color-mix(in srgb,var(--warn) 55%,var(--line,#d0d7de));border-radius:12px;background:color-mix(in srgb,var(--warn-vlak) 14%,var(--surface,#fff));color:inherit;font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.canonical-notification-tech:hover{background:color-mix(in srgb,var(--warn-vlak) 22%,var(--surface,#fff))}
+.canonical-notification-tech:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.canonical-notification-tech svg{width:18px;height:18px;flex:none}
+.canonical-notification-tech span{flex:1 1 auto;min-width:0}
+.canonical-notification-tech small{display:block;color:var(--muted,#57606a);font-size:12px}
+.canonical-notification-tech b{flex:none;min-width:24px;height:24px;display:inline-grid;place-items:center;padding:0 6px;border-radius:12px;background:var(--warn-vlak);color:var(--text-on-vlak);font-size:12px;font-variant-numeric:tabular-nums}
+html.theme-dark .canonical-notification-tech b{background:var(--warn-vlak);color:#1a1200}
+.canonical-notification-panel.met-tech{grid-template-rows:auto auto minmax(0,1fr) auto}
+
+/* --- voorkeuren per type (in het paneel van de bel) --- */
+.mv-paneel{display:grid;gap:10px;padding:10px 12px;overflow:auto;min-height:0;font-size:13px}
+.mv-uitleg{margin:0;color:var(--muted,#57606a);font-size:12px;line-height:1.4}
+.mv-groep{display:grid;gap:2px;margin:0;padding:8px 10px 10px;border:1px solid var(--line,#d0d7de);border-radius:12px}
+.mv-groep legend{padding:0 4px;font-weight:700}
+.mv-kop,.mv-rij{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,52px);align-items:center;gap:4px}
+.mv-kop{padding-top:4px;color:var(--muted,#57606a);font-size:12px;text-align:center;overflow-wrap:anywhere}
+.mv-rij{min-height:44px;border-top:1px solid color-mix(in srgb,var(--line,#d0d7de) 60%,transparent)}
+.mv-rij.is-verborgen .mv-naam{opacity:.6;text-decoration:line-through}
+.mv-naam{display:flex;align-items:flex-start;gap:6px;min-width:0;overflow-wrap:anywhere}
+.mv-naam svg{width:15px;height:15px;flex:none;margin-top:2px;color:var(--fout)}
+html.theme-dark .mv-naam svg{color:var(--fout)}
+.mv-naam small{display:block;color:var(--muted,#57606a);font-size:12px;line-height:1.3}
+.mv-schakel{position:relative;display:grid;place-items:center;min-height:44px;cursor:pointer}
+.mv-schakel input{position:absolute;inset:0;z-index:1;margin:0;opacity:0;cursor:inherit}
+.mv-schakel span{position:relative;width:34px;height:20px;border-radius:10px;background:color-mix(in srgb,var(--text,#1f2328) 25%,transparent);transition:background .15s}
+.mv-schakel span::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--panel);box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .15s}
+.mv-schakel input:checked+span{background:var(--info-vlak)}
+html.theme-dark .mv-schakel input:checked+span{background:#4f8cff}
+.mv-schakel input:checked+span::after{transform:translateX(14px)}
+.mv-schakel input:disabled+span{opacity:.45}
+.mv-schakel input:disabled{cursor:not-allowed}
+.mv-schakel input:focus-visible+span{outline:3px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.mv-schakel span,.mv-schakel span::after{transition:none}}
+@media (forced-colors:active){.mv-schakel span{border:1px solid CanvasText}.mv-schakel input:checked+span{background:Highlight}}
+.mv-acties{display:flex;flex-wrap:wrap;gap:6px;padding-top:8px}
+.mv-acties button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 10px;border:1px solid var(--line,#d0d7de);border-radius:9px;background:var(--surface,#fff);color:inherit;font:inherit;font-size:12px;cursor:pointer}
+.mv-acties button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.mv-acties svg{width:14px;height:14px}
+@media (max-width:420px){.mv-kop,.mv-rij{grid-template-columns:minmax(0,1fr) repeat(3,46px)}}
+
+/* --- paneel in de band --- */
+.tm-paneel{gap:12px}
+.tm-filters{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end}
+.tm-filters label{display:grid;gap:3px;font-size:12px;font-weight:600}
+.tm-filters select{min-height:38px;padding:0 8px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;font-weight:500;max-width:100%}
+.tm-seg{display:inline-flex;flex-wrap:wrap;gap:4px}
+.tech-venster .tm-seg button{min-height:38px;padding:0 10px;font-weight:500}
+.tech-venster .tm-seg button[aria-checked=true]{background:var(--info-vlak);border-color:var(--info);color:var(--text-on-vlak)}
+.tm-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px;max-height:min(52vh,460px);overflow:auto}
+.tm-item{display:grid;gap:4px;padding:10px 12px;border:1px solid var(--line,#c4ccd4);border-left-width:4px;border-radius:10px}
+.tm-item.ernst-kritiek{border-left-color:var(--fout)}
+.tm-item.ernst-belangrijk{border-left-color:var(--warn)}
+.tm-item.ernst-info{border-left-color:var(--info)}
+.tm-item.is-gelezen{opacity:.75}
+.tm-item p{margin:0;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+.tm-item strong{overflow-wrap:anywhere}
+.tm-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12px;color:var(--muted,#57606a)}
+.tm-chip{padding:1px 7px;border-radius:999px;font-weight:700;color:var(--text-on-vlak)}
+.tm-chip.ernst-kritiek{background:var(--fout-vlak)}
+.tm-chip.ernst-belangrijk{background:var(--warn-vlak)}
+.tm-chip.ernst-info{background:var(--info-vlak)}
+.tm-link{display:inline-flex;align-items:center;gap:5px;min-height:38px;padding:0 12px;border-radius:8px;border:1px solid var(--line,#c4ccd4);color:inherit;font-weight:600;text-decoration:none}
+.tm-link:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.tm-link svg{width:14px;height:14px}
+.tm-leeg{color:var(--muted,#57606a)}
+.tm-voet{justify-content:space-between}
+.tm-voet small{flex:1 1 220px;color:var(--muted,#57606a);font-size:12px}
+.tech-venster .tm-voet button{display:inline-flex;align-items:center;gap:6px}
+.tm-voet svg{width:15px;height:15px}
+/* 22.10.2026: technische activiteiten (sfeer technisch) onder de meldingen in hetzelfde paneel. */
+.tm-activiteit{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.tm-activiteit h3{margin:0;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.tm-activiteit h3 span{padding:1px 7px;border-radius:999px;background:var(--info-vlak);color:var(--text-on-vlak);font-size:12px}
+/* 22.10.2026: tapdoel ≥ 44 px op de telefoon voor «Прочитано» in het paneel (stand: kleine-knop 36 px). */
+@media (max-width: 700px) { .tm-item .tech-knoppen button, .tm-item .tm-link { min-height: 44px; } }
+/* 23.10.2026: «N×» bij samengevoegde technische activiteiten; op de telefoon scrolt alleen het venster (geen lijst-in-lijst met een
+   half afgesneden laatste kaart en lege ruimte eronder). */
+.tm-aantal{padding:0 7px;border-radius:999px;border:1px solid var(--line);font-weight:700;color:var(--text)}
+@media (max-width: 700px) { .tm-paneel .tm-lijst { max-height: none; overflow: visible; } }

@@ -1,0 +1,48 @@
+# guacd (Apache Guacamole proxy) voor het externe bureaublad van Mijn Ruimte — uitvoerder D, 18.10.2026.
+# Alleen op 127.0.0.1:4822: alleen de app (backend/remote-bureaublad.ts) praat ermee; de browser nooit rechtstreeks.
+# Doelen (RDP/VNC/SSH) kiest de app na een allowlist- en DNS-controle; hier extra: link-local (metadata), multicast en 0.0.0.0/8 dicht.
+# Geïnstalleerd door deploy/installeer-app.sh (guacamole_inrichten) alleen als "guacamole": true in /etc/mijn-ruimte/mcp-rechten.json.
+[Unit]
+Description=Mijn Ruimte guacd (extern bureaublad, 127.0.0.1:4822)
+After=network.target
+
+[Service]
+Type=simple
+User=mijnruimte-guacd
+Group=mijnruimte-guacd
+ExecStart=/usr/sbin/guacd -f -b 127.0.0.1 -l 4822 -L info
+Restart=on-failure
+RestartSec=3
+# FreeRDP wil een schrijfbare HOME (~/.config/freerdp); niets anders is schrijfbaar behalve de opnamemap.
+StateDirectory=mijn-ruimte-guacd
+StateDirectoryMode=0700
+Environment=HOME=/var/lib/mijn-ruimte-guacd
+ReadWritePaths=-/srv/data/guac-opnames
+UMask=0027
+IPAddressDeny=link-local multicast 0.0.0.0/8 240.0.0.0/4
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+CapabilityBoundingSet=
+AmbientCapabilities=
+MemoryMax=1G
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target

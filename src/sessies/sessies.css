@@ -1,0 +1,109 @@
+/* Gedempte tekst met vaste contrastwaarden (de algemene --muted haalt in licht thema op lichte kaart geen 4.5:1). */
+.security-sessions{--sessie-gedempt:#4b5563}
+.theme-dark .security-sessions{--sessie-gedempt:#c3cbd5}
+.security-sessions .security-session-summary small,.settings-center .sessies-overzicht .security-sessions .security-session-summary>div>span>small{color:var(--sessie-gedempt)}
+/* Sessies per apparaat (accordeon). Leesbare maten (min. .8rem), contrast via de bestaande tokens; geen eigen kleurenschema. */
+.sessie-apparaten{display:grid;gap:.6rem}
+.sessie-apparaat{border:1px solid var(--line,#d5dbe1);border-radius:.85rem;background:var(--surface,#fff);overflow:hidden}
+.sessie-apparaat.current{border-color:var(--good,#1f7a4d);box-shadow:inset 3px 0 0 var(--good,#1f7a4d)}
+.sessie-kop{display:flex;align-items:center;gap:.8rem;width:100%;padding:.85rem 1rem;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.sessie-kop:hover{background:var(--accent-soft,rgba(47,111,115,.08))}
+.sessie-kop:focus-visible{outline:2px solid var(--accent,#2f6f73);outline-offset:-2px}
+.sessie-toestel{position:relative;flex:none;display:grid;place-items:center;width:2.75rem;height:2.75rem;border-radius:.75rem;background:var(--accent-soft,rgba(47,111,115,.1));color:var(--accent,#2f6f73)}
+.sessie-toestel>svg{width:1.45rem;height:1.45rem}
+.sessie-os-badge{position:absolute;right:-.3rem;bottom:-.3rem;display:grid;place-items:center;width:1.3rem;height:1.3rem;border-radius:50%;background:var(--surface,#fff);border:1px solid var(--line,#d5dbe1);color:var(--text,#1d252c)}
+.sessie-kop-tekst{display:grid;gap:.25rem;min-width:0;flex:1}
+.sessie-kop-tekst strong{display:flex;align-items:center;flex-wrap:wrap;gap:.3rem;font-size:1rem;line-height:1.3}
+.sessie-kop-tekst small{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem;color:var(--sessie-gedempt);font-size:.86rem;line-height:1.4}
+.sessie-op{color:var(--sessie-gedempt)}
+.sessie-icoon{flex:none;width:1.1rem;height:1.1rem;color:var(--text,#1d252c)}
+.sessie-icoon.klein{width:.95rem;height:.95rem}
+.sessie-os-badge .sessie-icoon{width:.78rem;height:.78rem}
+.sessie-vlag{flex:none;width:21px;height:14px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.18);object-fit:cover}
+.sessie-vlag-tekst{display:inline-grid;place-items:center;width:auto;padding:0 .2rem;font-size:.7rem;font-weight:700;box-shadow:0 0 0 1px var(--line,#d5dbe1)}
+.sessie-badges{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.15rem}
+.sessie-methode,.sessie-telling{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .55rem;border-radius:999px;font-size:.8rem;line-height:1.35;font-weight:600;border:1px solid transparent}
+.sessie-methode svg{width:.9rem;height:.9rem;flex:none}
+.sessie-methode.m-google{background:var(--info-zacht);color:#174ea6}
+.sessie-methode.m-passkey{background:var(--ok-zacht);color:#0d652d}
+.sessie-methode.m-totp{background:#f3e8fd;color:#5b2a86}
+.sessie-methode.m-password{background:#fef7e0;color:#7a4b00}
+.sessie-telling{background:transparent;border-color:var(--line,#d5dbe1);color:var(--sessie-gedempt);font-weight:500}
+.sessie-pijl{flex:none;width:1.2rem;height:1.2rem;color:var(--sessie-gedempt);transition:transform .18s ease}
+.sessie-kop[aria-expanded="true"] .sessie-pijl{transform:rotate(180deg)}
+.sessie-kop .security-current-badge{font-size:.8rem;padding:.25rem .55rem;background:#e0f0e7;color:#0d652d;border-radius:999px}
+.sessie-inhoud{display:grid;gap:.75rem;padding:.25rem 1rem 1rem;border-top:1px solid var(--line,#d5dbe1)}
+.sessie-netwerk{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:.5rem;margin:.75rem 0 0}
+.sessie-netwerk>div{padding:.55rem .7rem;border:1px solid var(--line,#d5dbe1);border-radius:.65rem;background:var(--panel,transparent)}
+.sessie-netwerk dt{font-size:.8rem;font-weight:700;color:var(--sessie-gedempt);text-transform:none}
+.sessie-netwerk dd{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;margin:.2rem 0 0;font-size:.9rem;overflow-wrap:anywhere}
+.sessie-netwerk code{font-size:.85rem}
+.sessie-leeg{color:var(--sessie-gedempt);font-style:italic}
+.sessie-netwerk .security-inline-action,.sessie-diensten .security-inline-action{font-size:.82rem;padding:.1rem .2rem;cursor:pointer}
+.sessie-diensten{display:grid;grid-template-columns:repeat(auto-fill,minmax(19rem,1fr));gap:.55rem;margin:0;padding:0;list-style:none}
+.sessie-diensten>li{display:grid;gap:.5rem;padding:.75rem;border:1px solid var(--line,#d5dbe1);border-radius:.75rem;background:var(--surface,#fff)}
+.sessie-diensten>li.current{border-color:var(--good,#1f7a4d)}
+.sessie-dienst-kop{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:.5rem .6rem;min-width:0}
+.sessie-dienst-kop>div{min-width:0}
+.sessie-dienst-kop strong,.sessie-dienst-kop small{display:block}
+.sessie-dienst-kop small{color:var(--sessie-gedempt);font-size:.84rem}
+.sessie-diensten dl{margin:0}
+.sessie-diensten dl div{display:flex;justify-content:space-between;gap:.5rem;padding:.3rem 0;border-top:1px solid var(--line,#d5dbe1);font-size:.86rem}
+.sessie-diensten dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.sessie-diensten .security-technical-details summary{font-size:.84rem}
+.sessie-diensten .security-technical-details code{font-size:.8rem}
+.sessie-diensten .security-revoke{font-size:.88rem}
+.sessie-apparaat-acties{display:flex;justify-content:flex-end}
+.sessie-apparaat-acties .identity-danger,.sessie-apparaat-acties .sessies-secundair{display:inline-flex;align-items:center;gap:.45rem;min-height:2.6rem;padding:.55rem 1rem;border-radius:12px;font:inherit;font-weight:600;cursor:pointer}
+.sessie-apparaat-acties .sessies-secundair{border:1px solid var(--line,#d5dbe1);background:transparent;color:inherit}
+.sessie-apparaat-acties svg{width:1.05rem;height:1.05rem;flex:none}
+.sessie-apparaat-acties .sessies-bevestig{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;justify-content:flex-end}
+.sessie-apparaat-acties .sessies-bevestig p{flex-basis:100%;margin:0;text-align:right}
+/* Donker thema: de site zet .theme-dark op de schil (niet het OS-voorkeur, de gebruiker kiest) */
+.theme-dark .sessie-methode.m-google{background:#1c2b4a;color:#aecbfa}
+.theme-dark .sessie-methode.m-passkey{background:#173a24;color:#a8dab5}
+.theme-dark .sessie-methode.m-totp{background:#33224a;color:#d7b8f5}
+.theme-dark .sessie-methode.m-password{background:#3d2e0a;color:#fbd679}
+.theme-dark .sessie-kop .security-current-badge{background:#173a24;color:#a8dab5}
+.theme-dark .sessie-vlag{box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+@media (max-width:640px){.sessie-kop{padding:.75rem}.sessie-kop .security-current-badge{display:none}.sessie-inhoud{padding:.25rem .75rem .75rem}.sessie-diensten{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.sessie-pijl{transition:none}}
+
+/* Рівень доступу сесії (audit 18.10.2026, п.3): «Користувацький» / «Користувацький + технічний» + дії на рядку. */
+.sessie-niveau{display:inline-flex;align-items:center;gap:.3rem;padding:.15rem .55rem;border-radius:999px;font-size:.78rem;font-weight:600;border:1px solid var(--line,#d5dbe1);background:var(--panel-2,rgba(127,127,127,.08));color:var(--muted,inherit)}
+.sessie-niveau svg{width:.9rem;height:.9rem}
+.sessie-niveau.tech{border-color:color-mix(in srgb,var(--warn,#b9770e) 55%,transparent);background:color-mix(in srgb,var(--warn,#b9770e) 14%,transparent);color:var(--warn-text,var(--text,inherit))}
+.sessie-diensten li [data-sessie-tech] dd{font-weight:600}
+.sessie-rij-acties{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.sessie-rij-acties .sessie-secundair{display:inline-flex;align-items:center;gap:.4rem;min-height:2.4rem;padding:.45rem .85rem;border-radius:12px;border:1px solid var(--line,#d5dbe1);background:transparent;color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.sessie-rij-acties .sessie-secundair:hover:not(:disabled){border-color:var(--accent,#2f6f73);background:var(--accent-soft,rgba(47,111,115,.1))}
+.sessie-rij-acties .sessie-secundair svg{width:1rem;height:1rem}
+.security-danger-actions .sessies-bevestig{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;padding:.65rem;border:1px solid color-mix(in srgb,var(--danger,#b3261e) 45%,transparent);border-radius:12px}
+.security-danger-actions .sessies-bevestig p{flex-basis:100%;margin:0}
+@media (max-width:640px){.sessie-rij-acties>button{width:100%;justify-content:center}}
+/* ID-01: kaarten werden afgekapt («Адміністрованн»): de kolommen mogen nooit breder zijn dan de kaart; namen lopen om. */
+.sessie-diensten{grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))}
+.sessie-netwerk{grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))}
+.sessie-diensten>li{min-width:0}
+.sessie-dienst-kop strong,.sessie-dienst-kop small,.security-session-head strong,.security-session-head small{overflow-wrap:break-word;white-space:normal}
+
+/* «Підтвердження запам'ятано»: badge op de rij + samenvatting boven de lijst. */
+.sessie-onthouden{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;background:rgba(40,100,180,.1);border:1px solid rgba(40,100,180,.26);font-size:.75rem;line-height:1.3}
+.sessie-onthouden svg{width:13px;height:13px}
+.security-onthoud-samenvatting{margin:0 0 10px;padding:9px 11px;border-radius:9px;background:rgba(40,100,180,.08);border:1px solid rgba(40,100,180,.22);font-size:.82rem;line-height:1.4}
+
+/* ID-05 (klacht eigenaar 20.10.2026: «текст поїхав весь»). OORZAAK: de kop van een dienstkaart was één flexrij
+   (naam + badge aanmeldmethode + badge «Користувацький + технічний» + badge «Підтвердження запам'ятано до <datum>»).
+   De naamkolom had flex:1 met basis 0, de badges basis auto — bij krapte krimpt dan ALLEEN de naamkolom, tot nul breedte,
+   en met overflow-wrap:anywhere viel «Адміністрування» letter voor letter naar beneden; de badges zelf werden afgekapt.
+   OPLOSSING: de kop is een raster van twee kolommen (pictogram + naam, naam altijd minmax(0,1fr)) en de badges staan op een
+   eigen regel die over beide kolommen loopt en omloopt. Niets wordt verborgen of afgekapt. */
+.sessie-dienst-badges{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;min-width:0}
+.sessie-dienst-badges>*{max-width:100%}
+.sessie-methode,.sessie-telling,.sessie-niveau,.sessie-onthouden{white-space:normal;overflow-wrap:break-word;text-align:left}
+/* Badges mogen de kaart nooit breder maken dan de kolom van het raster. */
+.sessie-diensten>li,.sessie-diensten>li>*,.sessie-kop-tekst>*{min-width:0}
+/* Eén knopgewicht op de hele pagina: rijacties, kaartacties en «Відкликати» even hoog, even rond, zelfde icoonmaat. */
+.sessie-rij-acties .sessie-secundair,.sessie-apparaat-acties .identity-danger,.sessie-apparaat-acties .sessies-secundair,.sessie-diensten .security-revoke{min-height:2.5rem;padding:.5rem .95rem;border-radius:12px;font-size:.88rem}
+.sessie-rij-acties .sessie-secundair svg,.sessie-apparaat-acties svg,.sessie-diensten .security-revoke svg{width:1rem;height:1rem;flex:none}
+@media (max-width:640px){.sessie-diensten,.sessie-netwerk{grid-template-columns:1fr}.sessie-apparaten{gap:.5rem}.sessie-dienst-kop{align-items:flex-start}}

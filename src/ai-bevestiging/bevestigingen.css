@@ -1,0 +1,48 @@
+/* «Запити ШІ на підтвердження» (src/ai-bevestiging/BevestigingenPaneel.tsx). Alleen themavariabelen (--panel --surface --line --text
+   --muted --accent --ok --warn --fout); risico met kleur ÉN pictogram/tekst, nooit alleen kleur. Telefoon: één kolom, knoppen 44 px. */
+.ab-paneel { display: grid; gap: 12px; }
+.ab-uitleg { margin: 0; color: var(--muted); font-size: .9rem; }
+.ab-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ab-kaart { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--surface, var(--panel)); display: grid; gap: 8px; }
+.ab-kaart.risico-hoog, .ab-kaart.risico-kritiek { border-left: 4px solid var(--fout, #b42318); }
+.ab-kaart.risico-midden { border-left: 4px solid var(--warn, #b54708); }
+.ab-kaart.is-uitgelicht { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ab-kop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ab-kop b { font-size: 1rem; }
+.ab-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); font-size: .78rem; color: var(--muted); }
+.ab-chip.risico-hoog, .ab-chip.risico-kritiek { color: var(--fout, #b42318); border-color: currentColor; }
+.ab-chip.risico-midden { color: var(--warn, #b54708); border-color: currentColor; }
+.ab-samenvatting { margin: 0; }
+.ab-details { margin: 0; display: grid; gap: 4px; grid-template-columns: minmax(110px, max-content) 1fr; }
+.ab-details > div { display: contents; }
+.ab-details dt { color: var(--muted); font-size: .85rem; }
+.ab-details dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 14em; overflow: auto; }
+.ab-details .is-nadruk dd { font-weight: 600; }
+.ab-let { margin: 0; display: flex; gap: 6px; align-items: flex-start; color: var(--fout, #b42318); font-size: .9rem; }
+.ab-keuzes { display: grid; gap: 8px; }
+.ab-vinkje { display: flex; gap: 8px; align-items: flex-start; padding: 8px; border: 1px dashed var(--fout, #b42318); border-radius: 8px; }
+.ab-vinkje input { width: 20px; height: 20px; margin-top: 2px; }
+.ab-vinkje small { display: block; color: var(--muted); }
+.ab-fotos { display: grid; gap: 4px; justify-items: start; }
+.ab-acties { display: flex; flex-wrap: wrap; gap: 8px; }
+.ab-knop { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; }
+.ab-knop:disabled { opacity: .55; cursor: not-allowed; }
+.ab-knop-hoofd { background: var(--accent); color: var(--text-on-accent, #fff); border-color: transparent; }
+.ab-knop-hoofd.risico-hoog, .ab-knop-hoofd.risico-kritiek { background: var(--fout, #b42318); }
+.ab-fout { margin: 0; color: var(--fout, #b42318); }
+.ab-melding, .ab-stand { margin: 0; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.ab-google { border-color: var(--accent); }
+.ab-google h4 { margin: 0; display: flex; gap: 6px; align-items: center; }
+.ab-google p { margin: 0; }
+.ab-afgerond summary { cursor: pointer; color: var(--muted); }
+.ab-afgerond ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.ab-paneel .spin { animation: ab-draai 1s linear infinite; }
+@keyframes ab-draai { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ab-paneel .spin { animation: none; } }
+@media (max-width: 560px) {
+  .ab-details { grid-template-columns: 1fr; }
+  .ab-acties .ab-knop { flex: 1 1 100%; justify-content: center; min-height: 44px; }
+}
+/* Badge in het toestemmingsvenster (src/connector-v2/RechtenKiezer.tsx): elke actie met bevestiging op de site. */
+.v2-chip.is-bevestiging { border-color: var(--accent); color: var(--accent); }
+.v2-bevestiging-noot { display: flex; gap: 6px; align-items: flex-start; }

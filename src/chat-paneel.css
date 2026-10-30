@@ -1,0 +1,24 @@
+.chat-panel{display:flex;flex-direction:column;gap:12px;max-width:860px;margin:0 auto;padding:clamp(12px,3vw,24px);min-height:60vh}
+.chat-head h1{margin:0;font-size:1.3rem}
+.chat-meta{margin:4px 0 0;color:var(--muted,#64748b);font-size:.9rem;overflow-wrap:anywhere}
+.chat-log{flex:1;display:flex;flex-direction:column;gap:10px;min-height:240px;max-height:56vh;overflow:auto;padding:12px;border:1px solid var(--line,#d7e0ea);border-radius:14px;background:var(--panel,#fff)}
+.chat-empty,.chat-busy{margin:0;color:var(--muted,#64748b)}
+.chat-msg{display:grid;gap:2px;padding:8px 12px;border-radius:12px;max-width:92%}
+.chat-msg p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.chat-user{align-self:flex-end;background:var(--soft,#eef3f8)}
+.chat-assistant{align-self:flex-start;border:1px solid var(--line,#e6edf4)}
+.chat-steps{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.chat-steps li{padding:2px 10px;border-radius:999px;border:1px solid currentColor;font-size:.8rem}
+.chat-step-ok{color:var(--ok)}.chat-step-err{color:var(--warn)}
+.chat-approvals{display:grid;gap:8px;padding:12px;border:1px solid var(--warn);border-radius:14px}
+.chat-approval{display:grid;gap:6px}
+.chat-approval pre{margin:0;padding:8px;border-radius:8px;background:var(--soft,#eef3f8);overflow:auto;max-height:180px;font-size:.82rem}
+.chat-approval-actions{display:flex;gap:8px;flex-wrap:wrap}
+.chat-error{margin:0;color:var(--fout)}
+.chat-form{display:flex;gap:8px;align-items:flex-end}
+.chat-form textarea{flex:1;min-height:44px;padding:10px 12px;border:1px solid var(--line,#d7e0ea);border-radius:12px;font:inherit;resize:vertical;background:var(--panel,#fff);color:inherit}
+.chat-panel button{min-height:44px;padding:10px 16px;border:0;border-radius:12px;background:var(--accent,#2563eb);color:var(--text-on-accent);font-weight:700;cursor:pointer}
+.chat-panel button.chat-secondary{background:transparent;color:inherit;border:1px solid var(--line,#d7e0ea)}
+.chat-panel button[disabled]{opacity:.45;cursor:not-allowed}
+.theme-dark .chat-step-ok,.theme-plum-dark .chat-step-ok{color:var(--ok)}.theme-dark .chat-step-err,.theme-plum-dark .chat-step-err{color:#f0a23a}.theme-dark .chat-error,.theme-plum-dark .chat-error{color:var(--fout)}
+@media(max-width:640px){.chat-msg{max-width:100%}.chat-form{flex-direction:column;align-items:stretch}}

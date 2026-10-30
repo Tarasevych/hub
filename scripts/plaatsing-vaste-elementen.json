@@ -1,0 +1,245 @@
+{
+ "versie": 1,
+ "datum": "2026-10-25",
+ "uitleg": "CSS-regels met position:fixed die er op 25.10.2026 al waren (vóór de laag src/plaatsing/plaatsing.css). Een nieuwe regel laat de build stoppen (scripts/plaatsing-controle.mjs): een knop hoort in een zone; een venster/paneel/balk komt in «toegestaan» met de reden.",
+ "bestaand": [
+  "src/afzenders/afzenders.css :: .afz-laag",
+  "src/afzenders/afzenders.css :: .afz-tip",
+  "src/afzenders/contacten.css :: .ctv-melding",
+  "src/agenda/agenda.css :: .agenda-venster-laag",
+  "src/agenten/toegang/toegang.css :: .tg-venster-achter",
+  "src/audit/audit.css :: .aj-schaduw",
+  "src/beheer-console.css :: .admin-key-dialog",
+  "src/besluit/besluit.css :: .bsl-schaduw",
+  "src/canoniek-account-menu.css :: @media(max-width:520px) .canonical-account-panel",
+  "src/canoniek-meldingencentrum.css :: .canonical-notification-bell",
+  "src/canoniek-meldingencentrum.css :: .canonical-notification-panel",
+  "src/canoniek-meldingencentrum.css :: .canonical-notification-toast",
+  "src/canoniek-omlijsting.css :: .canonical-account-anchor",
+  "src/canoniek-omlijsting.css :: .canonical-chrome.theme-light",
+  "src/canoniek-omlijsting.css :: .canonical-connection-banner",
+  "src/canoniek-omlijsting.css :: .canonical-floating-tooltip",
+  "src/canoniek-omlijsting.css :: .canonical-scroll-top",
+  "src/canoniek-omlijsting.css :: .canonical-sidebar",
+  "src/canoniek-omlijsting.css :: .canonical-sidebar-edge-zone",
+  "src/canoniek-omlijsting.css :: .canonical-sidebar-scrim",
+  "src/canoniek-omlijsting.css :: .canonical-toast",
+  "src/canoniek-omlijsting.css :: .canonical-workspace",
+  "src/canoniek-omlijsting.css :: @media(max-width:700px) .canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-drawer-account .canonical-account-panel",
+  "src/cloud-functioneel.css :: .cloud-dialog-backdrop",
+  "src/connector-v2/beheer.css :: .v2b-overlay",
+  "src/drive-browser.css :: .drive-viewer-backdrop",
+  "src/extensie-update-band.css :: .ext-band",
+  "src/extern/extern.css :: .rb-sessie",
+  "src/google-mail-werkruimte.css :: .google-mail-attachment-backdrop",
+  "src/google-mail-werkruimte.css :: .google-mail-reader-backdrop",
+  "src/google-mail-werkruimte.css :: .mail-top-command-bar",
+  "src/impersonatie/impersonatie.css :: .imp-band",
+  "src/impersonatie/impersonatie.css :: .imp-einde",
+  "src/impersonatie/impersonatie.css :: .imp-pil",
+  "src/impersonatie/impersonatie.css :: html[data-impersonatie=aan] #root",
+  "src/index.css :: .ambient",
+  "src/index.css :: .modal-backdrop",
+  "src/integraties/integraties.css :: .il-modal",
+  "src/mail-account-badge.css :: @media (max-width:720px) .mail-account-badge-menu",
+  "src/mail-ai-werkbalk.css :: @media(max-width:560px) .mail-ai-pop",
+  "src/mail-bijlage-strook.css :: .mail-attachment-hover-preview",
+  "src/mail-concepten.css :: .mail-concept-dok",
+  "src/mail-doorstuur-bijlage-dialoog.css :: .mail-forward-attachment-backdrop",
+  "src/mail-functioneel.css :: .mail-dialog-backdrop",
+  "src/mail-geavanceerd-zoeken.css :: .mail-advanced-search",
+  "src/mail-geavanceerd-zoeken.css :: .mail-search-filter-surface",
+  "src/mail-geminimaliseerde-viewer.css :: .mail-minimized-viewer",
+  "src/mail-gesprek-bewerker.css :: .mail-action-undo",
+  "src/mail-gesprek-bewerker.css :: .mail-doc-editor-backdrop",
+  "src/mail-gesprek-bewerker.css :: .mail-snooze-popover",
+  "src/mail-gesprek-bewerker.css :: .mail-thread-message-details-dismiss",
+  "src/mail-gesprek-bewerker.css :: .mail-thread-message-details-popover",
+  "src/mail-grafisch.css :: .mail-graphics-editor-backdrop",
+  "src/mail-lezer-n09-dialoog.css :: .mail-reader-n09-backdrop",
+  "src/mail-lezer-n10-dialoog.css :: .mail-reader-n10-backdrop",
+  "src/mail-lezer-orden-dialoog.css :: .mail-reader-organize-backdrop",
+  "src/mail-lezer-verbeteringen.css :: .mail-save-backdrop",
+  "src/mail-lezer-werkbalk.css :: .google-mail-reader-more[open]>.mail-reader-overflow-panel",
+  "src/mail-lezer-zoek.css :: .mail-reader-search-dock",
+  "src/mail-navigatie-bewerker.css :: .mail-navigation-editor",
+  "src/mail-navigatie-bewerker.css :: .mail-navigation-editor-backdrop",
+  "src/mail-nieuw-bericht.css :: .mail-compose-context-menu",
+  "src/mail-nieuw-bericht.css :: .mail-compose-float",
+  "src/mail-nieuw-bericht.css :: .mail-compose-menu-backdrop",
+  "src/mail-nieuw-bericht.css :: .mail-new-message-backdrop",
+  "src/mail-nieuw-bericht.css :: .mail-new-message.groot",
+  "src/mail-opstel-bewerker.css :: .mail-compose-floating-formatting",
+  "src/mail-opstel-bewerker.css :: @media(max-width:720px) .mail-compose-color-menu",
+  "src/mail-planning-menu.css :: @media(max-width:560px) .mail-sched-pop",
+  "src/mail-rekenblad.css :: .mail-sheet-editor-backdrop",
+  "src/mail-rij-snelle-acties.css :: .mail-row-action-popover",
+  "src/mail-sectie-menu.css :: .mail-section-menu-popover",
+  "src/mail-sectie-menu.css :: @media(max-width:720px) .mail-selection-mobile-more>div",
+  "src/mail-snelle-instellingen.css :: .mail-quick-settings",
+  "src/mail-ux-beoordeling-20261021.css :: html body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace::before",
+  "src/mail-zijbalk-navigatie.css :: .mail-label-editor",
+  "src/mail-zijbalk-navigatie.css :: .mail-label-editor-backdrop",
+  "src/mail/versie-vergelijk.css :: .vv-laag",
+  "src/mcp-hub.css :: @media(max-width:560px) .hub-help-pop",
+  "src/mcp-toestemming-venster.css :: .mcp-consent-backdrop",
+  "src/menu-v2.css :: #tsv-voortgang",
+  "src/menu-v2.css :: .menu-acties",
+  "src/menu-v2.css :: .menu-bellen",
+  "src/menu-v2.css :: .menu-bewerkbalk.dock",
+  "src/menu-v2.css :: .menu-sleep-geest",
+  "src/menu-v2.css :: .menu-sleep-lijn",
+  "src/menu-v2.css :: .zijbalk-werkbalk-paneel",
+  "src/menu-v2.css :: @media(min-width:701px) .dock-paneel",
+  "src/ondersteuning/ondersteuning.css :: .ond-band",
+  "src/ondersteuning/ondersteuning.css :: html[data-ondersteuning=aan] #root",
+  "src/overzicht/overzicht.css :: .ov-modal-schaduw",
+  "src/platform/bevestig-toegang.css :: .bevestig-toegang-achter",
+  "src/platform/bevestig-toegang.css :: .bevestig-toegang-melding",
+  "src/platform/nieuwe-versie.css :: .nv-band",
+  "src/platform/vensters.css :: .venster",
+  "src/platform/vensters.css :: .venster-achter",
+  "src/platform/vensters.css :: nav.venster-dok.venster-dok",
+  "src/tech/tech.css :: .tech-band",
+  "src/tech/tech.css :: .tech-band[data-pas=\"3\"] .tech-band-extra",
+  "src/tech/tech.css :: .tech-vraag-uitleg",
+  "src/tech/tech.css :: @media (max-width:768px) .tech-band-extra",
+  "src/tech/tech.css :: html[data-tech=aan] #root",
+  "src/toegangslaag.css :: .info-tip-tekst",
+  "src/toegangslaag.css :: @media print body.herstel-afdruk .herstel-nieuw",
+  "src/ui-golf-11.css :: .google-mail-reader-backdrop[data-reader-venster=\"zwevend\"] .google-mail-reader",
+  "src/uitrol/uitrol.css :: .ut-lade-schaduw",
+  "src/uitrol/voorbereiders.css :: .ut-modal-schaduw",
+  "src/verenigd-dienst-inhoud.css :: .menu-customizer-backdrop",
+  "src/verenigd-dienst-inhoud.css :: .service-logout-backdrop",
+  "src/viewport-knopinfo.css :: .canonical-viewport-tooltip",
+  "src/zoek/zoek.css :: .zk-palet-achter",
+  "src/zoek/zoek.css :: .zk-paneel.is-onderblad",
+  "src/zoek/zoek.css :: .zk-scrim",
+  "src/zoek/zoek.css :: .zk-trigger-mobiel"
+ ],
+ "toegestaan": [
+  {
+   "sleutel": "src/editor/opsteller.css :: .mail-compose-link-editor, .mail-compose-link-preview",
+   "reden": "Paneel van de linkbewerker, geportaleerd naar document.body. Geen zwevende knop: zonder position:fixed heeft het venster geen plek. Het hoort niet in een zone van de actiestapel."
+  },
+  {
+   "sleutel": "src/schil-achtergrond.css :: .canonical-chrome.schil-achtergrond[data-achtergrond]:not([data-achtergrond='geen'])::before",
+   "reden": "Achtergrondlaag van de schil (heel scherm, pointer-events:none, z-index 0). Geen knop en geen venster: alleen het behang achter de toepassing, anders dekt .canonical-workspace het af."
+  },
+  {
+   "sleutel": "src/werkblad/bibliotheek/bibliotheek.css :: .bib-bewerk",
+   "reden": "Modaal venster «Мій ярлик» (naam/icoon van een persoonlijke snelkoppeling) met donkere achtergrond over het hele scherm. Geen zwevende knop; zonder position:fixed dekt het de bibliotheek niet af."
+  },
+  {
+   "sleutel": "src/werkblad/blokken/eigenschappen.css :: .eig-zij,.eig-auto",
+   "reden": "Eigenschappenpaneel van Werkblad-blokken (zijpaneel). Paneel, geen zwevende knop."
+  },
+  {
+   "sleutel": "src/werkblad/blokken/eigenschappen.css :: .eig-blad",
+   "reden": "Eigenschappenpaneel van Werkblad-blokken als onderblad op de telefoon. Paneel, geen knop."
+  },
+  {
+   "sleutel": "src/werkblad/blokken/eigenschappen.css :: @media (max-width:700px) .eig-hulp-tekst",
+   "reden": "Uitlegtekst van de (?)-knop in het eigenschappenpaneel op de telefoon, boven het onderblad. Geen knop."
+  },
+  {
+   "sleutel": "src/werkblad/blokken/integratie.css :: .blk-zijpaneel",
+   "reden": "Zijpaneel van Werkblad-blokken (werkbalk + eigenschappen) in de bewerkmodus; onderblad op de telefoon. Paneel, geen knop."
+  },
+  {
+   "sleutel": "src/werkblad/blokken/slepen.css :: .wb-sleep-geest",
+   "reden": "Voorbeeld onder de aanwijzer tijdens slepen (pointer-events:none). Geen knop."
+  },
+  {
+   "sleutel": "src/werkblad/blokken/slepen.css :: .wb-sleep-lijn",
+   "reden": "Invoeglijn tijdens slepen (pointer-events:none). Geen knop."
+  },
+  {
+   "sleutel": "src/werkblad/blokken/slepen.css :: .wb-sleep-melding",
+   "reden": "Reden waarom neerzetten niet mag, naast de aanwijzer (pointer-events:none). Geen knop."
+  },
+  {
+   "sleutel": "src/werkblad/blokken/slepen.css :: .wb-plekkiezer-achtergrond",
+   "reden": "Venster «Перемістити в…» (achtergrond + dialoog). Venster, geen knop."
+  },
+  {
+   "sleutel": "src/tech/ruimtes/ruimtes.css :: .rw-dok-melding",
+   "reden": "Korte uitkomstmelding (role=status) na de sneltoets Ctrl+Alt+1/2, 4 s zichtbaar, boven de ruimtewissel. Geen knop."
+  },
+  {
+   "sleutel": "src/tech/ruimtes/ruimtes.css :: html[data-ruimte=technisch][data-tech=aan] body::after",
+   "reden": "Dun kader rond het scherm in de technische ruimte (afbakening). pointer-events:none, geen knop, geen venster."
+  },
+  {
+   "sleutel": "src/vlaggen/vlaggen.css :: .vlag-laag",
+   "reden": "Lade en bevestigingsvraag van het venster «Перемикачі функцій» (achtergrondlaag over het scherm). Geen zwevende knop: een paneel dat de hele weergave bedekt, dus niet in een zone van de actiestapel."
+  },
+  {
+   "sleutel": "src/agenda/v3/agenda-v3.css :: .agv-laag",
+   "reden": "Agenda v3 (vlag agenda-v3): achtergrond van het modale paneel/blad/venster (detail, bewerker, verbindingen). Geen knop; een modale laag moet het hele scherm afdekken."
+  },
+  {
+   "sleutel": "src/agenda/v3/agenda-v3.css :: .agv-onderbalk",
+   "reden": "Agenda v3 (vlag agenda-v3): navigatiebalk onderaan op smal scherm (≤768px), zoals in het ontwerp. Een balk, geen losse zwevende knop; de pagina krijgt onderaan vrije ruimte (padding-bottom)."
+  },
+  {
+   "sleutel": "src/notities/notities-vnext.css :: .vn-laag",
+   "reden": "Notities vNext (vlag notities-vnext): achtergrond van het modale paneel (bewerker rechts), het volledige scherm op de telefoon en het import-venster. Geen knop; een modale laag moet het hele scherm afdekken."
+  },
+  {
+   "sleutel": "src/notities/notities-vnext.css :: .vn-onderbalk",
+   "reden": "Notities vNext (vlag notities-vnext): navigatiebalk onderaan op smal scherm (≤760px) met de «+» IN de balk (zoals agenda v3), geen losse zwevende knop; de pagina krijgt onderaan vrije ruimte (padding-bottom)."
+  },
+  {
+   "sleutel": "src/huis/huis.css :: .hv-laag",
+   "reden": "Huis vNext (vlag huis-vnext): achtergrond van het modale paneel (inspector/kamerpaneel rechts), het volledige scherm op de telefoon en de vensters (scène, regel, Home Assistant). Geen knop; een modale laag moet het hele scherm afdekken."
+  },
+  {
+   "sleutel": "src/huis/huis.css :: .hv-onderbalk",
+   "reden": "Huis vNext (vlag huis-vnext): navigatiebalk onderaan op smal scherm (≤760px) met «Meer» IN de balk, geen losse zwevende knop; de pagina krijgt onderaan vrije ruimte (padding-bottom)."
+  },
+  {
+   "sleutel": "src/cloud-vnext/cloud-vnext.css :: .cvn-laag",
+   "reden": "Cloud vNext (vlag cloud-vnext): achtergrond van het modale paneel (details/voorbeeld rechts), het volledige scherm op de telefoon en de vensters (map, labels, versies). Geen knop; een modale laag moet het hele scherm afdekken."
+  },
+  {
+   "sleutel": "src/cloud-vnext/cloud-vnext.css :: .cvn-onderbalk",
+   "reden": "Cloud vNext (vlag cloud-vnext): navigatiebalk onderaan op smal scherm (≤760px) met de «+» IN de balk (zoals notities), geen losse zwevende knop; de pagina krijgt onderaan vrije ruimte (padding-bottom)."
+  },
+  {
+   "sleutel": "src/bijlage-v2/bijlage-v2.css :: .bv2-paneel",
+   "reden": "Bijlageviewer v2 (vlag bijlage-viewer-v2): gedeeld zijpaneel (computer, rechts in het werkgebied) / onderblad (telefoon) voor ШІ/vertaling en bestandsgegevens, alleen op verzoek. Geen knop; positie volgt het werkgebied van de bijlagewerkbank (CSS-variabelen)."
+  },
+  {
+   "sleutel": "src/bijlage-v2/bijlage-v2.css :: .google-mail-attachment-preview[data-bijlage-v2][data-bv2-paneel='ai'] .mail-viewer-cache-panel:not([hidden]) .ai-vertaling-balk, .google-mail-attachment-preview[data-bijlage-v2][data-bv2-paneel='details'] .mail-viewer-cache-panel:not([hidden]) .mail-pdf-profile-bar",
+   "reden": "Bijlageviewer v2: de bestaande vertaalbalk en het PDF-profiel worden alleen bij een open paneel visueel IN het gedeelde paneel (.bv2-paneel) geplaatst. Geen knop; zelfde rechthoek als het paneel."
+  },
+  {
+   "sleutel": "src/meldingen/v2/meldingen-v2.css :: .mv2-vanger",
+   "reden": "Onzichtbare vanglaag achter het «…»-menu van een melding (meldingen-v2): een tik buiten het menu sluit het. Geen knop, geen zone."
+  },
+  {
+   "sleutel": "src/foto/foto.css :: .foto-viewer",
+   "reden": "UI-002: fotoviewer op volledig scherm (modaal venster met eigen sluitknop, Esc), geen zwevende knop."
+  },
+  {
+   "sleutel": "src/afstemming-vnext/afstemming.css :: .afv-onderbalk",
+   "reden": "Afstemming vNext (vlag afstemming-vnext): navigatiebalk onderaan op smal scherm (≤760px) met de «+» IN de balk, zoals notities/cloud; de pagina krijgt onderaan vrije ruimte (padding-bottom)."
+  },
+  {
+   "sleutel": "src/afstemming-vnext/afstemming.css :: .afv-laag",
+   "reden": "Afstemming vNext (vlag afstemming-vnext): modale laag (kaartdetail, toevoegen/import, conflict-diff) — moet het hele scherm afdekken, geen knop."
+  },
+  {
+   "sleutel": "src/aanmeld-vnext/aanmeld-vnext.css :: .amv-laag",
+   "reden": "Aanmeldmethoden vNext (vlag aanmeldmethoden-vnext, UI-015): detail-zijpaneel/bottom sheet van een methode — modale laag over de hele pagina, geen knop."
+  }
+ ],
+ "kopReserves": [
+  {
+   "sleutel": "src/mail-bijlage-werkbank.css :: @media(max-width:720px) .google-mail-attachment-preview[data-workbench-layout]>header :: padding-right",
+   "reden": "Oude reserve van het bijlage-werkblad (padding-right:4rem op een smal scherm), vóór de gemeten zone --plaats-boven-reserve. Tijdelijk toegestaan tot dat team de kop op de gemeten ruimte zet."
+  }
+ ]
+}

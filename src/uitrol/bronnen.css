@@ -1,0 +1,110 @@
+/* «Джерела статусу» (src/uitrol/Bronnen.tsx): kaart, lijst, tabel en detail. Kleuren uit de ut-variabelen (licht/donker); toestand altijd met pictogram + woord. */
+.ut-bronnen{min-width:0}
+.ut-bron-knoppen{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ut-bron-schakel{display:inline-flex;gap:0;border:1px solid var(--ut-line);border-radius:10px;overflow:hidden}
+.ut-bron-schakel .ut-knop{border:0;border-radius:0;min-height:34px}
+.ut-bron-schakel .ut-knop[aria-pressed=true]{background:var(--ut-info-bg);color:var(--ut-info)}
+.ut-bron-fout{color:var(--ut-err);background:var(--ut-err-bg);padding:8px 12px;border-radius:10px;font-size:.9rem}
+
+.ut-bron-samenvatting{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 16px;padding:12px 14px;border-radius:12px;border:1px solid var(--ut-line);background:var(--ut-bg2)}
+.ut-bron-samenvatting>div{display:grid;gap:2px;min-width:0}
+.ut-bron-samenvatting b{font-size:.95rem;overflow-wrap:anywhere}
+.ut-bron-samenvatting[data-afw=warn]{border-color:var(--ut-warn)}
+.ut-bron-samenvatting[data-afw=error]{border-color:var(--ut-err)}
+.ut-bron-afw-tel{display:flex;align-items:center;gap:6px;align-self:end}
+.ut-bron-afw-tel svg{width:18px;height:18px;flex:none}
+.ut-bron-samenvatting[data-afw=ok] .ut-bron-afw-tel{color:var(--ut-ok)}
+.ut-bron-samenvatting[data-afw=warn] .ut-bron-afw-tel{color:var(--ut-warn)}
+.ut-bron-samenvatting[data-afw=error] .ut-bron-afw-tel{color:var(--ut-err)}
+
+.ut-bron-instellen{display:grid;gap:12px;padding:12px 14px;border:1px solid var(--ut-line);border-radius:12px;background:var(--ut-bg2)}
+.ut-bron-instellen label{display:grid;gap:6px;font-size:.9rem;font-weight:600}
+.ut-bron-instellen select{font:inherit;padding:7px 10px;border-radius:9px;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-text);max-width:420px}
+.ut-bron-instellen small{font-weight:400}
+.ut-bron-waarschuwing{display:flex;gap:6px;align-items:flex-start;color:var(--ut-warn);background:var(--ut-warn-bg);padding:6px 10px;border-radius:8px;font-weight:400}
+.ut-bron-waarschuwing svg{width:16px;height:16px;flex:none;margin-top:1px}
+
+.ut-bron-afwijkingen{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ut-bron-afwijkingen li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;border:1px solid var(--ut-warn);background:var(--ut-warn-bg);color:var(--ut-text)}
+.ut-bron-afwijkingen li[data-ernst=error]{border-color:var(--ut-err);background:var(--ut-err-bg)}
+.ut-bron-afwijkingen li>svg{width:18px;height:18px;flex:none;margin-top:2px;color:var(--ut-warn)}
+.ut-bron-afwijkingen li[data-ernst=error]>svg{color:var(--ut-err)}
+.ut-bron-afwijkingen b{font-size:.9rem;overflow-wrap:anywhere}
+.ut-bron-afwijkingen p{margin:3px 0 0;font-size:.88rem;line-height:1.4}
+
+/* Kaart */
+.ut-bron-kaartvak{display:grid;gap:8px;min-width:0}
+.ut-bron-svg{width:100%;height:auto;max-height:620px;display:block;border:1px solid var(--ut-line);border-radius:12px;background:var(--ut-bg2);font-family:inherit}
+.ut-bron-kolom{font-size:12px;fill:var(--ut-muted);font-weight:600;letter-spacing:.02em}
+.ut-bron-rand path{fill:none;stroke:var(--ut-muted);stroke-width:1.4;opacity:.55;transition:opacity .15s,stroke .15s}
+.ut-bron-rand.actief path{stroke:var(--ut-accent);stroke-width:2.2;opacity:1}
+.ut-bron-rand.dim path{opacity:.12}
+.ut-bron-pijlkop{fill:var(--ut-muted);opacity:.7}
+.ut-bron-pijlkop.actief{fill:var(--ut-accent);opacity:1}
+.ut-bron-knoop{cursor:pointer;outline:none}
+.ut-bron-knoop rect{fill:var(--ut-bg);stroke:var(--ut-line);stroke-width:1.2;transition:stroke .15s}
+.ut-bron-knoop.ok rect{stroke:var(--ut-ok)}
+.ut-bron-knoop.warn rect{stroke:var(--ut-warn);stroke-width:2}
+.ut-bron-knoop.info rect{stroke:var(--ut-info)}
+.ut-bron-knoop.muted rect{stroke-dasharray:4 3}
+.ut-bron-knoop.hoofd rect{stroke-width:2.5;fill:var(--ut-info-bg)}
+.ut-bron-knoop.gekozen rect,.ut-bron-knoop:focus-visible rect{stroke:var(--ut-accent);stroke-width:3}
+.ut-bron-knoop:hover rect{filter:brightness(.97)}
+.ut-bron-naam{font-size:12.5px;font-weight:600;fill:var(--ut-text)}
+.ut-bron-waarde{font-size:12px;fill:var(--ut-muted);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.ut-bron-tag{font-size:12px;fill:var(--ut-info);font-weight:700}
+.ut-bron-ico{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;color:var(--ut-muted)}
+.ut-bron-ico svg{width:18px;height:18px}
+.ut-bron-toestand{display:inline-flex;align-items:center;gap:4px;font-size:.8rem;font-weight:600;white-space:nowrap}
+.ut-bron-toestand svg{width:16px;height:16px;flex:none}
+.ut-bron-toestand.ok{color:var(--ut-ok)}
+.ut-bron-toestand.warn{color:var(--ut-warn)}
+.ut-bron-toestand.info{color:var(--ut-info)}
+.ut-bron-toestand.muted{color:var(--ut-muted)}
+.ut-bron-svg .ut-bron-toestand{width:20px;height:20px;justify-content:center}
+.ut-bron-svg .ut-bron-toestand.info svg{animation:ut-bron-draai 1.6s linear infinite}
+@keyframes ut-bron-draai{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ut-bron-svg .ut-bron-toestand.info svg{animation:none}}
+
+/* Lijst */
+.ut-bron-lijst{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ut-bron-rij>button{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;padding:9px 12px;border-radius:10px;border:1px solid var(--ut-line);background:var(--ut-bg2);color:var(--ut-text);font:inherit;cursor:pointer;min-width:0}
+.ut-bron-rij.ok>button{border-left:4px solid var(--ut-ok)}
+.ut-bron-rij.warn>button{border-left:4px solid var(--ut-warn)}
+.ut-bron-rij.info>button{border-left:4px solid var(--ut-info)}
+.ut-bron-rij.muted>button{border-left:4px dashed var(--ut-line)}
+.ut-bron-rij.hoofd>button{background:var(--ut-info-bg)}
+.ut-bron-rij-tekst{display:grid;gap:2px;min-width:0}
+.ut-bron-rij-tekst b{font-size:.92rem}
+.ut-bron-rij-tekst small{color:var(--ut-muted);font-size:.8rem;overflow-wrap:anywhere}
+.ut-bron-rij-detail{padding:6px 12px 10px 46px;font-size:.86rem;display:grid;gap:4px}
+.ut-bron-rij-detail p{margin:0}
+
+/* Tabel */
+.ut-bron-tabelvak{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ut-bron-tabel{width:100%;border-collapse:collapse;font-size:.88rem;min-width:620px}
+.ut-bron-tabel th,.ut-bron-tabel td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--ut-line);vertical-align:top}
+.ut-bron-tabel th{color:var(--ut-muted);font-weight:600;font-size:.8rem}
+.ut-bron-tabel tr.hoofd td{background:var(--ut-info-bg)}
+
+/* Detail */
+.ut-bron-detail{display:grid;gap:10px;padding:12px 14px;border:1px solid var(--ut-accent);border-radius:12px;background:var(--ut-bg2)}
+.ut-bron-detail header{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.ut-bron-detail header div{flex:1;min-width:0;display:grid;gap:2px}
+.ut-bron-detail h3{font-size:1rem}
+.ut-bron-detail code{font-size:.78rem;color:var(--ut-muted)}
+.ut-bron-detail p{margin:0;font-size:.88rem;line-height:1.45}
+.ut-bron-detail .ut-dl{margin:0}
+.ut-bron-dl-paar{display:contents}
+
+@media (max-width:700px){
+  .ut-bron-samenvatting{grid-template-columns:1fr 1fr}
+  .ut-bron-svg{max-height:none}
+  .ut-bron-rij>button{grid-template-columns:auto 1fr;}
+  .ut-bron-rij>button .ut-bron-toestand{grid-column:2}
+  .ut-bron-rij-detail{padding-left:12px}
+}
+
+/* Zijkant «Стан системи»: knop naar de kaart als de bronnen uiteenlopen (Zijkant.tsx). */
+.ut-stand-afw{display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:7px 10px;border-radius:9px;border:1px solid var(--ut-warn);background:var(--ut-warn-bg);color:var(--ut-text);font:inherit;font-size:.85rem;cursor:pointer}
+.ut-stand-afw svg{width:16px;height:16px;flex:none;color:var(--ut-warn)}

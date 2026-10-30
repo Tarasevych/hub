@@ -1,0 +1,54 @@
+/* Blok «Розблокування розширення» (src/extensie/ExtensieOntgrendeling.tsx). Kleuren uit de thema-tokens (index.css .theme-light /
+   .theme-dark, paletten); statuskleuren met een donkere variant. Knoppen en vinkjes ≥ 44px raakvlak. */
+.eo{--eo-ok:var(--ok);--eo-ok-bg:var(--ok-zacht);--eo-warn:var(--warn);--eo-warn-bg:var(--warn-zacht);
+  --eo-bad:var(--fout);--eo-bad-bg:var(--fout-zacht);--eo-agent:#6d28d9;--eo-agent-bg:color-mix(in srgb,#7c3aed 12%,transparent);
+  display:grid;gap:12px;margin-top:14px;padding:14px;border:1px solid var(--line,#d7dee8);border-radius:14px;background:var(--panel,#fff);color:var(--text,#0f172a);scroll-margin-top:72px}
+.theme-dark .eo,.eo.theme-dark{--eo-ok:var(--ok);--eo-warn:var(--warn);--eo-bad:var(--fout);--eo-agent:#c4b5fd}
+html.theme-dark:not(.theme-light) .eo,html.theme-plum-dark:not(.theme-light) .eo{--eo-ok:var(--ok);--eo-warn:var(--warn);--eo-bad:var(--fout);--eo-agent:#c4b5fd}
+.eo h3{margin:0;font-size:1.05rem;display:flex;align-items:center;gap:6px}
+.eo h3:focus-visible,.eo-kaart:focus-visible{outline:2px solid var(--accent,#2f6f73);outline-offset:3px;border-radius:8px}
+.eo-kaart{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:12px;border-left:5px solid var(--eo-warn);background:var(--eo-warn-bg)}
+.eo-kaart.is-ontgrendeld{border-left-color:var(--eo-ok);background:var(--eo-ok-bg)}
+.eo-kaart.is-agent{border-left-color:var(--eo-agent);background:var(--eo-agent-bg)}
+.eo-kaart.is-niet-gekoppeld{border-left-color:var(--muted,#64748b);background:var(--surface,#f8fafc)}
+.eo-icoon svg{width:26px;height:26px}
+.eo-kaart.is-vergrendeld .eo-icoon{color:var(--eo-warn)}.eo-kaart.is-ontgrendeld .eo-icoon{color:var(--eo-ok)}.eo-kaart.is-agent .eo-icoon{color:var(--eo-agent)}
+.eo-kaart-tekst{display:grid;gap:2px;min-width:0}
+.eo-kaart-tekst b{font-size:1rem}
+.eo-rest{font-variant-numeric:tabular-nums}
+.eo-meta{color:var(--muted,#475569);font-size:.86rem;margin:0}
+.eo-details{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px;margin:0;font-size:.9rem}
+.eo-details dt{color:var(--muted,#475569)}.eo-details dd{margin:0;display:flex;flex-wrap:wrap;gap:4px}
+.eo-chip{display:inline-block;padding:1px 8px;border-radius:99px;border:1px solid var(--line,#d7dee8);background:var(--surface,#f8fafc);font-size:.82rem}
+.eo-form{display:grid;gap:10px}
+.eo-lead{margin:0;font-size:.9rem}
+.eo-veld{display:grid;gap:4px}
+.eo-veld>span,.eo-domeinen legend{font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.eo-veld select{min-height:44px;max-width:260px;padding:6px 10px;border-radius:10px;border:1px solid var(--line,#d7dee8);background:var(--surface,#fff);color:inherit;font:inherit}
+.eo-veld small{color:var(--muted,#475569)}
+.eo-domeinen{border:1px solid var(--line,#d7dee8);border-radius:12px;padding:8px 12px;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px 12px}
+.eo-domeinen legend{padding:0 4px}
+.eo-vink{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+.eo-vink input{width:20px;height:20px;margin:0;accent-color:var(--accent,#2f6f73)}
+.eo-fout{color:var(--eo-bad);grid-column:1/-1}
+.eo-knoppen{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.eo-knop{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 16px;border-radius:12px;border:1px solid var(--line,#d7dee8);background:var(--surface,#fff);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.eo-knop svg{width:18px;height:18px}
+.eo-knop.is-hoofd{background:var(--accent,#2f6f73);color:var(--accentText,#fff);border-color:transparent}
+.eo-knop.is-gevaar{color:var(--eo-bad);border-color:color-mix(in srgb,var(--eo-bad) 45%,var(--line,#d7dee8))}
+.eo-knop:disabled{opacity:.55;cursor:not-allowed}
+.eo-knop:focus-visible,.eo-actie:focus-visible,.eo-vink input:focus-visible,.eo-veld select:focus-visible{outline:2px solid var(--accent,#2f6f73);outline-offset:2px}
+.eo-weigering{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:start;padding:10px 12px;border-radius:12px;background:var(--eo-bad-bg);border-left:5px solid var(--eo-bad)}
+.eo-weigering svg{width:20px;height:20px;color:var(--eo-bad);margin-top:2px}
+.eo-weigering p{margin:0}
+.eo-actie{grid-column:2;justify-self:start;display:inline-flex;align-items:center;min-height:44px;padding:6px 14px;border-radius:10px;border:1px solid var(--line,#d7dee8);background:var(--panel,#fff);color:inherit;font:inherit;font-weight:600;text-decoration:none;cursor:pointer}
+.eo-melding{margin:0;padding:10px 12px;border-radius:12px;background:var(--eo-bad-bg)}
+.eo-melding.is-ok{background:var(--eo-ok-bg);border-left:5px solid var(--eo-ok)}
+@media (max-width:560px){.eo{padding:12px}.eo-details{grid-template-columns:1fr}.eo-veld select{max-width:none}}
+@media (prefers-reduced-motion:reduce){.eo{scroll-behavior:auto}}
+
+/* Statusregel in het menu «⋯» van de technische band (src/tech/TechLaag.tsx): gekleurde stip + tekst (niet alleen kleur). */
+.tech-ext-stip{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none;background:var(--warn-vlak);box-shadow:0 0 0 2px color-mix(in srgb,currentColor 25%,transparent)}
+.tech-ext-stip[data-tech-ext=ontgrendeld]{background:var(--ok-vlak)}
+.tech-ext-stip[data-tech-ext=agent]{background:#7c3aed}
+.tech-ext-stip[data-tech-ext=niet-gekoppeld]{background:#94a3b8}

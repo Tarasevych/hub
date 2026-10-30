@@ -1,0 +1,256 @@
+// Zelf-gehoste vervanging van `@appdeploy/client` (zie PORTEERPLAN.md §2).
+// - api: axios-achtige fetch-client naar de same-origin /api van de huidige host.
+// - image.resizeIfNeeded: verkleint/hercodeert afbeeldingen in de browser.
+// - invitesClient: bouwt en leest uitnodigingslinks (parameter `invite`).
+import { neemAlgemeneHervat, neemStapOpFout, onthoudKeuzeVerzenden, stapOpVragen } from './stap-op';
+import { meldServerAntwoord } from './nieuwe-versie';
+import { leesBase64, metLeesfout } from '../../shared/bestand-lezen';
+
+// Terug van «Підтвердити повторним входом через Google» zonder bekende actie: korte melding «повторіть дію».
+// Mislukte Google-step-up zonder bekende actie: dezelfde melding, maar met de reden (nooit «підтверджено» als het niet zo is).
+// Was «Запам'ятати цей браузер» aangevinkt bij de keuze voor Google? Dan die keuze nu naar de server (die controleert zelf of
+// er echt net is bevestigd). Eén keer per terugkeer; mislukt het, dan wordt er gewoon opnieuw gevraagd.
+if (typeof window !== 'undefined') window.setTimeout(() => {
+  void onthoudKeuzeVerzenden((url, data) => api.post(url, data));
+  if (neemAlgemeneHervat()) { const fout = neemStapOpFout(); void import('./bevestig-toegang').then((m) => m.toonHervatMelding(fout)).catch(() => undefined); }
+}, 400);
+
+// ---------------------------------------------------------------------------------------------
+// Gescheiden gegevensruimtes: een weigering van de poort is GEEN technische storing maar een stand die uitleg verdient.
+// ---------------------------------------------------------------------------------------------
+/**
+ * Eén melding met de tweetalige uitleg van de poort en een link naar de plek waar de dienst verbonden wordt. Lui geladen,
+ * zodat de kern van de client klein blijft; faalt dat, dan gebeurt er niets (een melding mag nooit een verzoek breken).
+ */
+async function ruimteWeigeringMelden(lichaam: unknown): Promise<void> {
+  if (typeof window === 'undefined') return;
+  try {
+    const { ruimteGeslotenUit } = await import('../../shared/ruimte-weergave');
+    const dicht = ruimteGeslotenUit(lichaam);
+    if (!dicht) return;
+    const [{ emitCanonicalNotice }, { ruimteActieTekst, ruimteVerbindAdres }] = await Promise.all([
+      import('../canoniek-meldingen'),
+      import('../RuimteStrook'),
+    ]);
+    const lang: 'uk' | 'nl' = (typeof document !== 'undefined' && document.documentElement?.lang === 'nl') ? 'nl' : 'uk';
+    emitCanonicalNotice({
+      text: `${dicht.dienstNaam[lang]}: ${dicht.uitleg[lang]}`,
+      kind: 'warning', source: 'ruimte', dedupeSeconds: 120,
+      link: { href: ruimteVerbindAdres(lang), label: ruimteActieTekst(dicht.code, lang) },
+    });
+  } catch { /* uitleg kon niet worden getoond: het verzoek faalt zoals het faalde, nooit erger */ }
+}
+
+// ---------------------------------------------------------------------------------------------
+// api
+// ---------------------------------------------------------------------------------------------
+export type ApiResponse<T = any> = { data: T; status: number; headers: Headers };
+
+/** Fout met dezelfde velden die de app-code al uitleest (response.status/data, status, responseText). */
+export class ApiError extends Error {
+  status: number;
+  statusCode: number;
+  responseText: string;
+  response: { status: number; statusText: string; data: any; responseText: string };
+  constructor(status: number, statusText: string, data: any, responseText: string) {
+    const code = data && typeof data === 'object' ? String((data as { error?: unknown }).error || (data as { reasonCode?: unknown }).reasonCode || '') : '';
+    super(code || `HTTP_${status}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.statusCode = status;
+    this.responseText = responseText;
+    this.response = { status, statusText, data, responseText };
+  }
+}
+
+function withQuery(url: string, data: unknown): string {
+  if (!data || typeof data !== 'object') return url;
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+    if (value === undefined || value === null) continue;
+    params.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+  }
+  const qs = params.toString();
+  return qs ? `${url}${url.includes('?') ? '&' : '?'}${qs}` : url;
+}
+
+// Menu v2 fase B1: aantal lopende API-verzoeken (voor de voortgangsbalk: klaar als het stil is) en optioneel afbreken
+// (alleen voor LEZENDE verzoeken die door een nieuwe navigatie overbodig zijn geworden — nooit voor schrijvende acties).
+export type ApiOpties = { signal?: AbortSignal };
+let lopend = 0;
+const activiteitLuisteraars = new Set<(n: number) => void>();
+const meldActiviteit = (d: number) => { lopend = Math.max(0, lopend + d); for (const f of activiteitLuisteraars) { try { f(lopend); } catch { /* luisteraar mag de client niet breken */ } } };
+export const apiLopend = () => lopend;
+export function opApiActiviteit(f: (n: number) => void) { activiteitLuisteraars.add(f); return () => { activiteitLuisteraars.delete(f); }; }
+export const isAfgebroken = (e: unknown) => e instanceof ApiError && e.message === 'ABORTED';
+
+async function request(method: string, url: string, data?: unknown, opnieuw = false, opties: ApiOpties = {}): Promise<ApiResponse> {
+  meldActiviteit(1);
+  try { return await requestKern(method, url, data, opnieuw, opties); } finally { meldActiviteit(-1); }
+}
+
+async function requestKern(method: string, url: string, data: unknown, opnieuw: boolean, opties: ApiOpties): Promise<ApiResponse> {
+  const hasBody = method !== 'GET' && method !== 'DELETE';
+  const target = hasBody ? url : withQuery(url, data);
+  if (opties.signal?.aborted) throw new ApiError(0, 'ABORTED', { error: 'ABORTED' }, '');
+  let response: Response;
+  try {
+    response = await fetch(target, {
+      signal: opties.signal,
+      method,
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: hasBody ? { 'Content-Type': 'application/json', Accept: 'application/json' } : { Accept: 'application/json' },
+      body: hasBody ? JSON.stringify(data ?? {}) : undefined,
+    });
+  } catch {
+    if (opties.signal?.aborted) throw new ApiError(0, 'ABORTED', { error: 'ABORTED' }, '');
+    throw new ApiError(0, 'NETWORK_ERROR', { error: 'NETWORK_ERROR' }, '');
+  }
+  // G4 + punt 3 (audit 19.10.2026): elke respons meldt de FEITEN aan nieuwe-versie.ts (route, code, rauw lichaam) zodat de plakkaat
+  // «Деталі» echte gegevens heeft; één melding per verzoek, dus het pogingnummer klopt. Elke niet-storing-respons haalt de plakkaat weg.
+  const route = `${method} ${target.split('?')[0]}`;
+  let text: string;
+  try { text = await response.text(); }
+  catch {
+    meldServerAntwoord(response.status, { route, code: `HTTP_${response.status}` });
+    throw new ApiError(0, opties.signal?.aborted ? 'ABORTED' : 'NETWORK_ERROR', { error: opties.signal?.aborted ? 'ABORTED' : 'NETWORK_ERROR' }, '');
+  }
+  let parsed: any = text;
+  if (text) { try { parsed = JSON.parse(text); } catch { parsed = text; } } else parsed = null;
+  const antwoordCode = parsed && typeof parsed === 'object' ? String((parsed as { error?: unknown }).error || (parsed as { reasonCode?: unknown }).reasonCode || '') : '';
+  const poortVlag = parsed && typeof parsed === 'object' && typeof (parsed as { codewoordPoort?: unknown }).codewoordPoort === 'boolean' ? (parsed as { codewoordPoort: boolean }).codewoordPoort : undefined;
+  if (poortVlag !== undefined && typeof window !== 'undefined') void import('../geheim/codewoord-poort-brug').then((m) => m.zetCodewoordPoort(poortVlag));
+  meldServerAntwoord(response.status, { route, code: antwoordCode || `HTTP_${response.status}`, lichaam: response.ok ? '' : text });
+  // Ruimtes-scheiding: elk antwoord met kop X-Ruimte of een 401/403 gaat als gebeurtenis naar src/tech/ruimtes/ruimtes-opslag.ts,
+  // die dan de controle-route vraagt en de uitleg toont. Zonder vlag stuurt de server geen kop en blijft alleen 401/403 over (onschuldig).
+  if (typeof window !== 'undefined' && (response.headers.get('X-Ruimte') || response.status === 401 || response.status === 403)) {
+    try { window.dispatchEvent(new CustomEvent('mr-ruimte-antwoord', { detail: { status: response.status, ruimte: response.headers.get('X-Ruimte'), pad: target.split('?')[0], code: antwoordCode } })); } catch { /* geen venster */ }
+  }
+  if (!response.ok) {
+    const fout = new ApiError(response.status, response.statusText, parsed, text);
+    if (fout.message === 'CODEWOORD_POORT' && typeof window !== 'undefined') void import('../geheim/codewoord-poort-brug').then((m) => m.zetCodewoordPoort(true));
+    // KLACHT 3 VAN DE EIGENAAR (20.10.2026), het vangnet: weigert de poort van de gescheiden gegevensruimtes een dienst
+    // (KEUZE_ONTBREEKT / DIENST_UIT / BEVROREN), dan hoort de mens de ECHTE reden te horen en de volgende stap te zien —
+    // ook op een pagina die zo'n 403 zelf alleen als «er ging iets mis» kan melden. Hier, in de enige doorgang waar élk
+    // antwoord langskomt, wordt die 403 één keer omgezet in een gewone melding met een knop. De pagina blijft onaangeraakt:
+    // de fout wordt niet opgegeten maar gewoon doorgegeven.
+    if (response.status === 403) void ruimteWeigeringMelden(parsed);
+    // Audit-fix 5/7: extra bevestiging gevraagd → venster «Підтвердіть доступ» (passkey, app-code, herstelcode of Google); daarna één herhaling.
+    // STEP_UP_STRONG_REQUIRED (§13.10): rechten intrekken / «Це був не я» — Google alleen telt dan niet.
+    if (response.status === 403 && (fout.message === 'STEP_UP_REQUIRED' || fout.message === 'STEP_UP_STRONG_REQUIRED') && hasBody && !opnieuw && !url.includes('/api/owner/access/stap-op')) {
+      // Kan het venster niet openen (chunk niet geladen na een nieuwe release, renderfout…): nooit stil falen maar een eigen code.
+      let bevestigd = false;
+      try { bevestigd = await stapOpVragen(data, (u, d) => request('POST', u, d, true), url, fout.message === 'STEP_UP_STRONG_REQUIRED'); }
+      catch (err) { console.error('[stap-op] venster «Підтвердіть доступ» kon niet openen', err); throw new ApiError(0, 'STAP_OP_VENSTER_FOUT', { error: 'STAP_OP_VENSTER_FOUT' }, ''); }
+      if (bevestigd) return request(method, url, data, true);
+    }
+    throw fout;
+  }
+  return { data: parsed, status: response.status, headers: response.headers };
+}
+
+export const api = {
+  get: (url: string, data?: any) => request('GET', url, data),
+  post: (url: string, data?: any, opties?: ApiOpties) => request('POST', url, data, false, opties),
+  put: (url: string, data?: any) => request('PUT', url, data),
+  patch: (url: string, data?: any) => request('PATCH', url, data),
+  delete: (url: string, data?: any) => request('DELETE', url, data),
+};
+
+// ---------------------------------------------------------------------------------------------
+// image
+// ---------------------------------------------------------------------------------------------
+export interface PreparedImage { data: string; mimeType: string; width: number; height: number; bytes: number; resized: boolean }
+export interface ImageResizeOptions { maxDimension?: number; maxPixels?: number; quality?: number; mimeType?: 'image/jpeg' | 'image/webp' | 'image/png' }
+
+// Lezen van de schijf gaat door shared/bestand-lezen.ts: `reader.error` is een DOMException van de File API (NotReadableError
+// bij een verplaatst bestand of een cloudmap «op aanvraag») en mag nooit rauw bij de gebruiker komen. Eigenaar 20.10.2026.
+const blobToBase64 = (blob: Blob) => leesBase64(blob);
+
+export const image = {
+  /** Verklein en hercodeer (standaard max 1600 px, max 2 MP, JPEG 0,82). */
+  async resizeIfNeeded(file: File | Blob, options: ImageResizeOptions = {}): Promise<PreparedImage> {
+    const maxDimension = options.maxDimension ?? 1600;
+    const maxPixels = options.maxPixels ?? 2_000_000;
+    const quality = options.quality ?? 0.82;
+    const mimeType = options.mimeType ?? 'image/jpeg';
+    // createImageBitmap leest het bestand ZELF van de schijf: ook dat is een leesbewerking (NotReadableError, InvalidStateError).
+    const bitmap = await metLeesfout(file, () => createImageBitmap(file));
+    try {
+      const { width, height } = bitmap;
+      const scale = Math.min(1, maxDimension / Math.max(width, height), Math.sqrt(maxPixels / Math.max(1, width * height)));
+      if (scale >= 1 && file.type === mimeType) {
+        return { data: await blobToBase64(file), mimeType, width, height, bytes: file.size, resized: false };
+      }
+      const w = Math.max(1, Math.round(width * scale));
+      const h = Math.max(1, Math.round(height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('IMAGE_CANVAS_UNAVAILABLE');
+      if (mimeType === 'image/jpeg') { context.fillStyle = '#fff'; context.fillRect(0, 0, w, h); }
+      context.drawImage(bitmap, 0, 0, w, h);
+      const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('IMAGE_ENCODE_FAILED'))), mimeType, quality));
+      return { data: await blobToBase64(blob), mimeType, width: w, height: h, bytes: blob.size, resized: true };
+    } finally {
+      bitmap.close();
+    }
+  },
+};
+
+// ---------------------------------------------------------------------------------------------
+// invitesClient
+// ---------------------------------------------------------------------------------------------
+const INVITE_PARAM = 'invite';
+const LEGACY_INVITE_PARAM = 'appdeploy_invite';
+const INVITE_STORAGE_KEY = 'mijn-ruimte-pending-invite';
+
+function takeFromParams(params: URLSearchParams): string | null {
+  const code = params.get(INVITE_PARAM) || params.get(LEGACY_INVITE_PARAM);
+  params.delete(INVITE_PARAM);
+  params.delete(LEGACY_INVITE_PARAM);
+  return code;
+}
+
+export const invitesClient = {
+  /** Lees de openstaande uitnodigingscode (sessionStorage of URL) en haal de parameter uit de URL. */
+  getPendingCode(): string | null {
+    try {
+      const stored = sessionStorage.getItem(INVITE_STORAGE_KEY);
+      if (stored) return stored;
+    } catch { /* sessionStorage niet beschikbaar */ }
+    const url = new URL(location.href);
+    let code = takeFromParams(url.searchParams);
+    let hash = url.hash;
+    if (!code && hash.includes('?')) {
+      const [hashPath, hashQuery] = hash.split('?', 2);
+      const params = new URLSearchParams(hashQuery);
+      code = takeFromParams(params);
+      const rest = params.toString();
+      hash = rest ? `${hashPath}?${rest}` : hashPath;
+    }
+    if (!code || !/^[A-Za-z0-9_-]{8,128}$/.test(code)) return null;
+    try { sessionStorage.setItem(INVITE_STORAGE_KEY, code); } catch { /* negeren */ }
+    history.replaceState(history.state, '', `${url.pathname}${url.search}${hash}`);
+    return code;
+  },
+  clearPendingCode(): void {
+    try { sessionStorage.removeItem(INVITE_STORAGE_KEY); } catch { /* negeren */ }
+  },
+  /** Bouw een absolute uitnodigingslink, bijv. path '#/join' of '/join' of '?join=1'. */
+  buildJoinUrl(code: string, options: { path?: string } = {}): string {
+    const target = options.path || '/';
+    const base = `${location.origin}/`;
+    if (target.startsWith('#')) {
+      const [hashPath, hashQuery = ''] = target.split('?', 2);
+      const params = new URLSearchParams(hashQuery);
+      params.set(INVITE_PARAM, code);
+      return `${base}${hashPath}?${params.toString()}`;
+    }
+    const url = new URL(target, base);
+    url.searchParams.set(INVITE_PARAM, code);
+    return url.toString();
+  },
+};

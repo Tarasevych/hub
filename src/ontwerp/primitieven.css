@@ -1,0 +1,126 @@
+/* ФУНДАМЕНТ — примітиви (20.10.2026). Глобальні, з майже нульовою специфічністю (:where; для кнопок і полів — елемент +
+   :where = (0,0,1), щоб перемогти preflight Tailwind «button{background:transparent;padding:0}», але програти будь-якому класу
+   сторінки), щоб сторінки підхопили їх автоматично, а наявні локальні правила лишалися сильнішими. Нові сторінки беруть ці класи замість власних копій:
+     кнопки   .knop (основа) + .knop-primair | .knop-secundair | .knop-stil | .knop-gevaar | .knop-icoon ; .is-klein
+              (старі .primary/.secondary/.ghost/.success/.warning/.danger-button з index.css отримують ті самі токени)
+     поля     будь-які input/select/textarea без класу; .veld — явно
+     картка   .kaart ; .kaart-zacht (на surface)
+     бейдж    .pil + .pil-ok | .pil-warn | .pil-fout | .pil-info | .pil-stil ; .badge/.status-pill з index.css — ті самі кольори
+     смуга    .melding + .melding-ok | -warn | -fout | -info (повідомлення в потоці)
+     вікно    .venster (src/platform/vensters.css) і .modal (index.css) — тут лише спільні розміри/безпечні відступи
+     перемикач .zijbalk-schakel (menu-v2.css) — кольори з токенів
+   Усі кольори — тільки var(--…) з src/ontwerp/tokens.css. */
+
+/* ---------------------------------------------------------------- базова типографіка */
+:where(html) { font-size:var(--tekst-basis); -webkit-text-size-adjust:100%; }
+:where(body) { font-size:1rem; line-height:1.4; overflow-wrap:break-word; }
+:where(code, kbd, samp, pre, .code, .mono, [data-code], [data-id], .id, .sleutel, .hash) { overflow-wrap:anywhere; font-family:ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Menlo, Consolas, monospace; }
+:where(pre) { max-width:100%; overflow:auto; white-space:pre-wrap; }
+:where(small, .hint, .klein) { font-size:max(var(--tekst-mini), .75em); }
+/* 21.10: Tailwind-preflight `small{font-size:80%}` heeft (0,0,1) en won van :where(small) — 80% van een kleine ouder gaf 9,98 px
+   («УСІ ПІДКЛЮЧЕНІ МІСЦЯ»). Zelfde specificiteit, later geladen: wint van preflight, verliest van elke klasse. */
+small { font-size:max(var(--tekst-mini), .8em); }
+:where(a) { color:var(--accent); text-underline-offset:.15em; }
+:where(a:not([class])) { text-decoration:underline; }
+:where(h1, h2, h3, h4) { color:var(--text); overflow-wrap:break-word; }
+:where(hr) { border:0; border-top:1px solid var(--line); }
+:where(::selection) { background:var(--accent-soft); color:var(--text); }
+
+/* ---------------------------------------------------------------- фокус: одне кільце всюди */
+:where(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+:where(input[type=checkbox], input[type=radio], input[type=range]) { accent-color:var(--accent); }
+
+/* ---------------------------------------------------------------- кнопки */
+button:where(:not([class])) { color:inherit; border-radius:var(--straal-s); }
+:where(button:disabled, [aria-disabled=true]) { cursor:not-allowed; opacity:.55; }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.knop, .knop-primair, .knop-secundair, .knop-stil, .knop-gevaar, .knop-icoon, .primary, .secondary, .ghost, .success, .warning, .footer-button, .danger-button, .danger-link) {
+  display:inline-flex; align-items:center; justify-content:center; gap:var(--ruimte-2);
+  min-height:var(--tik-hoogte); padding:var(--ruimte-2) var(--ruimte-4); border:1px solid transparent; border-radius:var(--straal-m);
+  background:var(--surface); color:var(--text); font:inherit; font-weight:600; line-height:1.2; text-decoration:none; cursor:pointer;
+  max-width:100%; min-width:0; overflow-wrap:anywhere;
+}
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.knop, .knop-secundair, .secondary) { border-color:var(--line); background:var(--panel); color:var(--text); }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.knop, .knop-secundair, .secondary):hover { background:var(--surface2); }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.knop-primair, .primary) { background:var(--accent); color:var(--text-on-accent); }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.knop-primair, .primary):hover { filter:brightness(1.06); }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.knop-stil, .ghost, .footer-button) { background:transparent; border-color:var(--line); color:var(--muted); }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.knop-stil, .ghost, .footer-button):hover { background:var(--surface); color:var(--text); }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.knop-gevaar, .danger-button, .danger-link) { background:var(--fout-zacht); border-color:color-mix(in srgb, var(--fout) 40%, transparent); color:var(--fout); }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.knop-gevaar, .danger-button, .danger-link):hover { background:var(--fout-vlak); color:var(--text-on-vlak); }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.success) { background:var(--ok-vlak); color:var(--text-on-vlak); }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.warning) { background:var(--warn-vlak); color:var(--text-on-vlak); }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.knop-icoon) { width:var(--tik-hoogte); padding:0; }
+:is(button, a, [role=button], input[type=submit], input[type=button]):where(.knop.is-klein, .knop-primair.is-klein, .knop-secundair.is-klein, .knop-stil.is-klein, .knop-gevaar.is-klein, .small) { min-height:calc(var(--tik-hoogte) - 8px); padding:var(--ruimte-1) var(--ruimte-3); font-size:var(--tekst-klein); }
+:where(.knop, .knop-primair, .knop-secundair, .knop-stil, .knop-gevaar, .knop-icoon) svg { width:1.1em; height:1.1em; flex:none; }
+/* ряд кнопок: завжди переноситься, на телефоні — кожна на всю ширину */
+:where(.knoppen, .acties) { display:flex; flex-wrap:wrap; gap:var(--ruimte-2); align-items:center; }
+:where(.knoppen, .acties, .form-actions, [class$="-acties"], [class$="-actions"], [class$="-knoppen"]) { flex-wrap:wrap; min-width:0; max-width:100%; }
+
+/* ---------------------------------------------------------------- поля вводу */
+input:where(:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=hidden], [type=submit], [type=button], [type=reset])), select, textarea, :where(.veld) {
+  box-sizing:border-box; max-width:100%; min-width:0; min-height:var(--tik-hoogte); padding:var(--ruimte-2) var(--ruimte-3);
+  border:1px solid var(--line); border-radius:var(--straal-m); background:var(--panel); color:var(--text); font:inherit; line-height:1.3;
+}
+input:where(:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file])):hover, select:hover, textarea:hover { border-color:color-mix(in srgb, var(--text) 24%, var(--line)); }
+:where(input, select, textarea):focus-visible { outline:2px solid var(--focus); outline-offset:0; border-color:var(--focus); }
+input::placeholder, textarea::placeholder { color:var(--faint); opacity:1; }
+:where(input:disabled, select:disabled, textarea:disabled) { opacity:.6; cursor:not-allowed; }
+:where(input[aria-invalid=true], select[aria-invalid=true], textarea[aria-invalid=true], .is-fout) { border-color:var(--fout); }
+textarea { min-height:calc(var(--tik-hoogte) * 2); resize:vertical; }
+:where(select) option { background:var(--panel); color:var(--text); }
+:where(label) { color:var(--text); }
+:where(fieldset) { min-width:0; max-width:100%; border:1px solid var(--line); border-radius:var(--straal-m); padding:var(--ruimte-3) var(--ruimte-4); }
+:where(legend) { color:var(--muted); font-size:var(--tekst-klein); padding:0 var(--ruimte-1); }
+
+/* ---------------------------------------------------------------- картки */
+:where(.kaart, .kaart-zacht) { min-width:0; max-width:100%; padding:var(--ruimte-4); border:1px solid var(--line); border-radius:var(--straal-l); background:var(--panel); color:var(--text); box-shadow:var(--schaduw-1); }
+:where(.kaart-zacht) { background:var(--surface); box-shadow:none; }
+:where(.kaart > :first-child, .kaart-zacht > :first-child) { margin-top:0; }
+:where(.kaart > :last-child, .kaart-zacht > :last-child) { margin-bottom:0; }
+
+/* ---------------------------------------------------------------- бейджі / пілюлі */
+:where(.pil, .badge, .status-pill, .pil-ok, .pil-warn, .pil-fout, .pil-info, .pil-stil) { display:inline-flex; align-items:center; gap:var(--ruimte-1); max-width:100%; padding:2px var(--ruimte-2); border-radius:999px; background:var(--surface2); color:var(--text); font-size:var(--tekst-mini); font-weight:650; line-height:1.3; overflow-wrap:anywhere; }
+:where(.pil-ok, .badge.ok, .status-pill.active, .status-pill.ok) { background:var(--ok-zacht); color:var(--ok); }
+:where(.pil-warn, .badge.amber, .badge.warn, .status-pill.pending, .status-pill.warn) { background:var(--warn-zacht); color:var(--warn); }
+:where(.pil-fout, .badge.fout, .badge.danger, .status-pill.blocked, .status-pill.fout) { background:var(--fout-zacht); color:var(--fout); }
+:where(.pil-info, .badge.info, .status-pill.info) { background:var(--info-zacht); color:var(--info); }
+:where(.pil-stil, .status-pill.deleted) { background:var(--surface2); color:var(--muted); }
+:where(.pil svg, .badge svg, .status-pill svg) { width:.9em; height:.9em; flex:none; }
+
+/* ---------------------------------------------------------------- повідомлення в потоці */
+:where(.melding, .melding-ok, .melding-warn, .melding-fout, .melding-info) { display:flex; gap:var(--ruimte-2); align-items:flex-start; min-width:0; max-width:100%; margin:0; padding:var(--ruimte-3) var(--ruimte-4); border:1px solid var(--line); border-radius:var(--straal-m); background:var(--surface); color:var(--text); font-size:var(--tekst-klein); line-height:1.45; }
+:where(.melding-ok) { background:var(--ok-zacht); border-color:color-mix(in srgb, var(--ok) 35%, transparent); color:var(--text); }
+:where(.melding-warn) { background:var(--warn-zacht); border-color:color-mix(in srgb, var(--warn) 35%, transparent); color:var(--text); }
+:where(.melding-fout) { background:var(--fout-zacht); border-color:color-mix(in srgb, var(--fout) 35%, transparent); color:var(--text); }
+:where(.melding-info) { background:var(--info-zacht); border-color:color-mix(in srgb, var(--info) 35%, transparent); color:var(--text); }
+:where(.melding-ok) > svg { color:var(--ok); } :where(.melding-warn) > svg { color:var(--warn); } :where(.melding-fout) > svg { color:var(--fout); } :where(.melding-info) > svg { color:var(--info); }
+:where(.melding, .melding-ok, .melding-warn, .melding-fout, .melding-info) > svg { flex:none; width:1.1em; height:1.1em; margin-top:.15em; }
+
+/* ---------------------------------------------------------------- таблиці */
+:where(table) { width:100%; max-width:100%; border-collapse:collapse; color:var(--text); }
+:where(th) { text-align:left; color:var(--muted); font-size:var(--tekst-klein); font-weight:650; }
+:where(th, td) { padding:var(--ruimte-2) var(--ruimte-3); border-bottom:1px solid var(--line); vertical-align:top; }
+:where(.tabel-rol) { max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+/* ---------------------------------------------------------------- перемикач (.zijbalk-schakel, menu-v2.css) */
+:where(.zijbalk-schakel-spoor) { background:color-mix(in srgb, var(--muted) 45%, transparent); }
+:where(.zijbalk-schakel-spoor i) { background:var(--panel); box-shadow:var(--schaduw-1); }
+:where(.zijbalk-schakel input:checked + .zijbalk-schakel-spoor) { background:var(--accent); }
+:where(.zijbalk-schakel input:checked + .zijbalk-schakel-spoor i) { background:var(--text-on-accent); }
+:where(.zijbalk-schakel input:focus-visible + .zijbalk-schakel-spoor) { outline:2px solid var(--focus); outline-offset:2px; }
+
+/* ---------------------------------------------------------------- вікна / діалоги: спільні межі */
+:where(.venster-achter, .modal-backdrop, .mcp-consent-backdrop) { background:var(--overlay); }
+:where(.venster, .modal, [role=dialog]) { min-width:0; max-width:calc(100vw - 16px); color:var(--text); }
+:where(.modal) { background:var(--panel); border:1px solid var(--line); box-shadow:var(--schaduw-3); }
+:where(details > summary) { cursor:pointer; min-height:var(--tik-hoogte); display:flex; align-items:center; gap:var(--ruimte-2); }
+
+/* ---------------------------------------------------------------- аватари (21.10.2026) */
+/* Одне правило для всіх фото-аватарів сайту (StableAvatar рендерить img.avatar-img: шапка, «Поштові скриньки», рядки листів,
+   меню акаунта). Фото не стискається флексом/гридом (flex:none), сторони завжди рівні (aspect-ratio:1, коли одна з них auto),
+   а не квадратне фото обрізається по центру, а не сплющується (object-fit:cover). Розмір і форму (коло) задає обгортка.
+   (0,1,1) — сильніше за preflight «img{max-width:100%;height:auto}», слабше за будь-яке правило сторінки «.обгортка img». */
+img.avatar-img { flex:none; aspect-ratio:1; object-fit:cover; object-position:center; }
+
+/* ---------------------------------------------------------------- скролбари в кольорі теми */
+:where(*) { scrollbar-color:color-mix(in srgb, var(--muted) 45%, transparent) transparent; }

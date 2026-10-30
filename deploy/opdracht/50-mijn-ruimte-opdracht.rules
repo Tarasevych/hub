@@ -1,0 +1,30 @@
+// Mijn Ruimte, methode 3: de app-gebruiker mijnruimte mag ALLEEN deze units STARTEN (niets stoppen, herstarten,
+// inschakelen, maskeren of herladen). De SSH-CA is één vaste naam, geen sjabloon met een id uit de app.
+// mijn-ruimte-db-rollen.service (0066, «Захист» → RLS): maakt alleen de app-rol als DATABASE_URL_APP ontbreekt; vaste naam.
+// Geïnstalleerd als /etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules (root 0644).
+// polkit >= 0.106 (Ubuntu 24.04: polkitd 124, JavaScript-regels). Zie deploy/RUNBOOK-VEILIGE-UITROL.md.
+polkit.addRule(function (action, subject) {
+  if (subject.user !== "mijnruimte") {
+    return polkit.Result.NOT_HANDLED;
+  }
+  if (action.id.indexOf("org.freedesktop.systemd1.") !== 0) {
+    return polkit.Result.NOT_HANDLED;
+  }
+  var toegestaan = [
+    "mijn-ruimte-opdracht@status.service",
+    "mijn-ruimte-opdracht@releases.service",
+    "mijn-ruimte-opdracht@backup.service",
+    "mijn-ruimte-opdracht@uitrol-nu.service",
+    "mijn-ruimte-opdracht@terugdraaien.service",
+    "mijn-ruimte-ssh-ca.service",
+    "mijn-ruimte-ssh-ca-beheer.service",
+    "mijn-ruimte-db-rollen.service"
+  ];
+  if (action.id === "org.freedesktop.systemd1.manage-units" &&
+      action.lookup("verb") === "start" &&
+      toegestaan.indexOf(action.lookup("unit")) >= 0) {
+    return polkit.Result.YES;
+  }
+  // Al het andere van systemd voor mijnruimte: uitdrukkelijk nee (geen wachtwoordvraag, geen terugval op andere regels).
+  return polkit.Result.NO;
+});

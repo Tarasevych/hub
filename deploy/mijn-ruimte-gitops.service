@@ -1,0 +1,15 @@
+# Methode 1 (GitOps-pull, root): ondertekende uitrol-tags uit GitHub ophalen, controleren met /etc/mijn-ruimte/uitrol-ondertekenaars
+# en pas daarna installeer-app.sh uitvoeren. Staat uit tot "gitops": true in /etc/mijn-ruimte/mcp-rechten.json. Zie RUNBOOK-VEILIGE-UITROL.md.
+[Unit]
+Description=Mijn Ruimte: ondertekende uitrol-tags ophalen (GitOps)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mijn-ruimte-gitops
+# Root is nodig voor installeer-app.sh; geen omgevingsvariabelen van buitenaf, geen invoer van de app.
+PrivateTmp=yes
+ProtectHome=yes
+TimeoutStartSec=45min
+Nice=5

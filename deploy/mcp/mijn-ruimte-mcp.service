@@ -1,0 +1,52 @@
+# VEROUDERD sinds 20.10.2026 (deploy/CONNECTOR-EEN-PAD.md). De korte paden /claude, /grok, /chatgpt, /gemini en /copilot zijn
+# naar de hoofdapp verhuisd (één connectoradres per agent, mcp.tarasevych.com/<agent>); deze dienst bedient alleen nog haar eigen
+# /oauth/* en /health, voor verbindingen die vóór die datum via de deur zijn gelegd. Trek die verbindingen in en zet daarna deze
+# dienst uit: `sudo systemctl disable --now mijn-ruimte-mcp`, plus de regel ^/(oauth|health) uit /etc/cloudflared/config.yml.
+# Nieuwe installaties hoeven haar niet te activeren.
+# Zolang zij draait én de oude tunnelregel nog /claude, /grok … hierheen stuurt, geeft zij die agentpaden (en de OAuth-ontdekking van
+# de app) zelf door aan de hoofdapp op 8080 (server.mjs → appPad/naarApp), zodat nooit meer het deurvenster verschijnt voor een
+# agentadres. MCP_AGENTPADEN=deur zou dat uitzetten; niet zetten.
+[Unit]
+Description=Mijn Ruimte MCP (VEROUDERD: alleen nog eigen OAuth van de deur; alleen lezen, loopback)
+After=network-online.target mijn-ruimte.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mijnruimte
+Group=mijnruimte
+Environment=NODE_ENV=production
+Environment=MCP_PORT=8091
+Environment=MCP_ROOT=/srv/mijn-ruimte/current
+Environment=MCP_TOKEN_FILE=/etc/mijn-ruimte/mcp.token
+Environment=MCP_HEALTH_URL=http://127.0.0.1:8080/__gezondheid
+Environment=MCP_RECHTEN_FILE=/etc/mijn-ruimte/mcp-rechten.json
+Environment=MCP_STATE_FILE=/srv/mijn-ruimte/mcp-state/sessions.json
+Environment=MCP_UITROL_INBOX=/srv/mijn-ruimte/uitrol-inbox
+ExecStart=/usr/bin/node /srv/mijn-ruimte/mcp/server.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+# Alleen deze twee mappen zijn schrijfbaar. GEEN drop-in met NoNewPrivileges=no of extra ReadWritePaths (zie RUNBOOK-VEILIGE-UITROL.md):
+# de dienst heeft geen sudo-recht meer en hoeft nooit iets als root te doen.
+ReadWritePaths=/srv/mijn-ruimte/mcp-state /srv/mijn-ruimte/uitrol-inbox
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictNamespaces=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+MemoryDenyWriteExecute=no
+
+[Install]
+WantedBy=multi-user.target

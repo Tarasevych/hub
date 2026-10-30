@@ -1,0 +1,155 @@
+/* Zwevende knoppen: ÉÉN laag (25.10.2026). Zones zijn delen van de PAGINA (shared/plaatsing.ts); de browser legt ze uit (flex).
+   Hier staat alles wat vroeger verspreid lag over 11 bestanden («verberg / verschuif als X open is» per combinatie): de bel, «Написати»,
+   «Вгору» en de melding bij de bel. Geen pixels uit JavaScript, geen overgang op left/top, geen :has()-telling per balk.
+   Bouwcontrole: scripts/plaatsing-controle.mjs (een nieuwe position:fixed-knop buiten deze laag laat de build stoppen). */
+
+/* ---------------------------------------------------------------- zones */
+/* bovenbalk = de groep rechtsboven (.canonical-account-anchor): zoeken · foto · gniezda; order uit de indeling */
+.canonical-chrome .canonical-account-anchor{display:flex;align-items:center;gap:var(--ruimte-3,12px);--plaats-boven-gniezdo:2.875rem}
+.canonical-chrome .canonical-account-anchor>.zk-trigger{order:var(--plaats-orde-zoeken,0);margin-right:0}
+.canonical-chrome .canonical-account-anchor>.canonical-account-menu{order:var(--plaats-orde-account,1)}
+.canonical-chrome .canonical-account-anchor>.plaats-gniezdo{width:var(--plaats-boven-gniezdo);height:var(--plaats-boven-gniezdo)}
+/* telefoon: dezelfde zone, op de plek van de ronde zoekknop (die staat er nu IN, als bewoner vooraan) */
+.canonical-chrome .canonical-account-anchor.plaats-boven-telefoon{top:calc(var(--ruimte-2,8px) + var(--veilig-boven,0px));right:calc(var(--ruimte-2,8px) + var(--veilig-rechts,0px));gap:var(--ruimte-2,8px);--plaats-boven-gniezdo:var(--tik-hoogte-mobiel,44px)}
+.canonical-chrome .canonical-account-anchor.plaats-boven-telefoon>.zk-trigger-mobiel{position:relative;inset:auto;order:var(--plaats-orde-zoeken,0)}
+/* RUIMTE van de zone (2.5, 25.10.2026): ./plaatsing-staat.ts MEET de zone en zet op <html> --plaats-boven-reserve (linkerrand van de zone
+   → rechterrand van het venster), --plaats-boven-onder (onderrand van de zone) en --plaats-boven-paneel (open accountpaneel). Elke kop
+   eronder houdt die ruimte vrij: de opdrachtbalk van de post (hier), de kop van het leesvenster en de bijlage (google-mail-werkruimte.css).
+   Geen vaste reserve meer (4.75rem dekte alleen de foto; de bel, «Написати», de volgorde, zoom en menu rechts telden niet) — een vaste
+   reserve in een kop laat de build stoppen (scripts/plaatsing-controle.mjs, regel 5). Vóór de eerste meting (één beeld): de oude
+   rekensom uit de indeling (aantal knoppen × gniezdo). */
+.canonical-chrome .mail-top-command-bar{right:calc(var(--plaats-boven-reserve,calc(var(--canonical-account-inline-reserve,76px) - 14px + var(--plaats-boven-n,0) * (2.875rem + var(--ruimte-3,12px)))) + 14px)}
+@media (max-width:720px){html body .canonical-chrome .mail-top-command-bar{right:calc(var(--plaats-boven-reserve,calc(var(--plaats-boven-n,0) * (var(--tik-hoogte-mobiel,44px) + var(--ruimte-2,8px)))) + 6px)!important}}
+
+/* kop van het menu (telefoon, lade open): foto · gniezda links, de rest rechts */
+.plaats-lade-kop{position:relative;display:flex;align-items:center;gap:var(--ruimte-2,8px);flex:none;min-width:0}
+.plaats-lade-kop>.canonical-drawer-account{order:var(--plaats-orde-account,0)}
+.plaats-lade-kop>.plaats-gniezdo{width:44px;height:44px}
+
+/* menulijst: knoppen als regels van het menu (icoon + naam), boven de snelle toegang */
+.plaats-zijbalk{position:relative;display:grid;align-content:start;gap:2px;margin:0 0 6px}
+.plaats-zijbalk>.plaats-gniezdo{width:100%;min-height:46px;place-items:stretch}
+.plaats-zijbalk-leeg{display:block;padding:8px 10px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:.75rem;line-height:1.3}
+.canonical-chrome:not(.sidebar-expanded) .plaats-zijbalk-leeg{display:none}
+
+.plaats-gniezdo{position:relative;display:grid;place-items:center;flex:none;box-sizing:border-box;margin:0}
+
+/* ---------------------------------------------------------------- knoppen in hun gniezdo */
+.canonical-chrome .plaats-gniezdo>:is(.canonical-notification-bell,.mail-compose-float,.canonical-scroll-top){position:relative;z-index:auto;inset:auto;transform:none;translate:none;margin:0;box-sizing:border-box;width:100%;height:100%;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation;cursor:pointer;transition:background-color .14s ease,box-shadow .14s ease,opacity .14s ease}
+.canonical-chrome .plaats-gniezdo>.canonical-scroll-top{width:44px;height:44px;animation:plaats-verschijnen .14s ease both}
+.canonical-chrome .plaats-gniezdo>.mail-compose-float{display:grid;place-items:center;border-radius:50%;box-shadow:0 10px 28px color-mix(in srgb,var(--shadow) 80%,transparent)}
+.canonical-chrome .plaats-gniezdo>.mail-compose-float svg{width:22px;height:22px}
+.canonical-chrome .canonical-account-anchor .plaats-gniezdo>.canonical-notification-bell{box-shadow:0 6px 20px color-mix(in srgb,var(--shadow) 55%,transparent)}
+.canonical-chrome .plaats-lade-kop .plaats-gniezdo>.canonical-notification-bell{box-shadow:none}
+.canonical-chrome :is(.canonical-account-anchor,.plaats-lade-kop) .plaats-gniezdo>.mail-compose-float{box-shadow:none}
+@keyframes plaats-verschijnen{from{opacity:0}to{opacity:1}}
+
+/* als regel van het menu */
+.canonical-chrome .plaats-gniezdo>[data-vorm='rij']{display:grid;grid-template-columns:46px minmax(0,1fr) auto;align-items:center;justify-items:start;width:100%;height:auto;min-height:46px;padding:0 10px 0 0;border:0;border-radius:12px;background:transparent;color:var(--muted);box-shadow:none;text-align:left;font:inherit}
+.canonical-chrome .plaats-gniezdo>[data-vorm='rij']>svg{justify-self:center;width:22px;height:22px;stroke-width:1.75}
+.canonical-chrome .plaats-gniezdo>[data-vorm='rij']:hover,.canonical-chrome .plaats-gniezdo>[data-vorm='rij']:focus-visible{background:var(--nav-hover);color:var(--text)}
+.canonical-chrome .plaats-gniezdo>[data-vorm='rij']>small{position:static;justify-self:end}
+.plaats-rij-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:650}
+.canonical-chrome:not(.sidebar-expanded) .plaats-rij-label{visibility:hidden;width:0}
+.canonical-chrome:not(.sidebar-expanded) .plaats-gniezdo>[data-vorm='rij']>small{position:absolute;left:26px;top:3px}
+
+/* ---------------------------------------------------------------- actiestapel: rechtsonder in het inhoudsvlak */
+.plaats-actiestapel{--plaats-gniezdo:48px;--plaats-rand:20px;--plaats-gat:12px;position:fixed;z-index:460;right:calc(var(--plaats-rand) + var(--veilig-rechts,0px) + var(--plaats-inzet,0px) + var(--plaats-rechts,0px));bottom:calc(var(--plaats-rand) + var(--veilig-onder,0px) + var(--plaats-inzet,0px) + var(--plaats-onder,0px));display:flex;flex-direction:column-reverse;align-items:center;gap:var(--plaats-gat);width:var(--plaats-gniezdo);pointer-events:none}
+.plaats-actiestapel[data-plaats-klasse='tablet']{--plaats-rand:16px}
+.plaats-actiestapel[data-plaats-klasse='telefoon']{--plaats-gniezdo:52px;--plaats-rand:12px}
+.plaats-actiestapel>.plaats-gniezdo{width:var(--plaats-gniezdo);height:var(--plaats-gniezdo)}
+.plaats-actiestapel>.plaats-gniezdo:not(:empty){pointer-events:auto}
+/* in een iframe (de site in een venster van een ander programma): 72 px van de rand (L002) */
+.canonical-chrome[data-plaats-iframe='ja'] .plaats-actiestapel{--plaats-inzet:72px}
+/* menu rechts: de stapel blijft in het inhoudsvlak, links van het menu */
+@media (min-width:701px){
+  .canonical-chrome[data-dock='rechts'] .plaats-actiestapel{--plaats-rechts:var(--zijbalk-rail,60px)}
+  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .plaats-actiestapel{--plaats-rechts:310px}
+}
+/* technische band verborgen: #root schuift omhoog (translate); de stapel blijft aan de onderrand — regel in src/tech/tech.css */
+/* ruimte onder de inhoud: elke regel kan boven de stapel worden gescrold */
+.canonical-chrome[data-plaats-stapel]:not([data-focus-mode='mail']) .canonical-workspace::after{content:'';display:block;flex:none;width:100%;height:var(--plaats-stapel-ruimte,0px);pointer-events:none}
+html[data-tech=aan] #root .canonical-chrome[data-plaats-stapel]:not([data-focus-mode='mail']) .canonical-workspace::after{height:calc(var(--tech-band-h) + var(--plaats-stapel-ruimte,0px))}
+
+/* ---------------------------------------------------------------- vensters boven de zones
+   Een venster over de pagina (nieuw bericht, lade, zoekpalet, paneel) bedekt de zone eronder: die verdwijnt helemaal (visibility —
+   er schuift niets op en er springt niets naar een andere plek). Eén regel per venster, niet per combinatie. */
+html body:has(.mail-new-message-backdrop) .plaats-actiestapel,
+html body:has(.zk-palet-achter) .plaats-actiestapel,
+.canonical-chrome.sidebar-drawer .plaats-actiestapel{visibility:hidden}
+@media (max-width:900px){html body:has(.zk-scrim) .plaats-actiestapel{visibility:hidden}}
+/* alleen «Написати» in de stapel weg (zijn gniezdo blijft staan): brief open, paneel van de meldingen open */
+html body:has([data-reader-open="true"]) .plaats-actiestapel>.plaats-gniezdo[data-plaats-knop='opstellen'],
+html body:has(.canonical-notification-panel) .plaats-actiestapel>.plaats-gniezdo[data-plaats-knop='opstellen']{visibility:hidden}
+/* telefoon/smal: de bel (waar hij ook staat) achter een venster over het hele scherm */
+@media (max-width:720px){html body:has(.mail-new-message-backdrop) .plaats-gniezdo[data-plaats-knop='bel']{visibility:hidden}}
+@media (max-width:900px){html body:has(.zk-scrim) .plaats-gniezdo[data-plaats-knop='bel']{visibility:hidden}}
+/* tijdens het slepen zijn alle zones doelen: ook de stapel naast een open lade */
+html[data-plaats-sleep] .canonical-chrome.sidebar-drawer .plaats-actiestapel{visibility:visible}
+/* «Редагувати меню» opent op de telefoon de lade: de stapel blijft zichtbaar, zodat ook «Написати» en «Вгору» te verplaatsen zijn */
+.canonical-chrome[data-menu-bewerken='ja'].sidebar-drawer .plaats-actiestapel{visibility:visible}
+/* lege zone tijdens het slepen: toch een doel van één gniezdo groot */
+html[data-plaats-sleep] .canonical-chrome .canonical-account-anchor{min-width:var(--plaats-boven-gniezdo);min-height:var(--plaats-boven-gniezdo)}
+
+/* melding: een VRIJE plek (JS, src/plaatsing/melding-plek.ts) — computer: onder de bel, anders onderaan of bovenaan in het midden;
+   telefoon: schermbreed, bovenaan onder de balk (--melding-top), anders boven de stapel; nooit op een kleine knop (QA 12.10 №11) */
+@media (max-width:700px){
+  html body .canonical-chrome .canonical-notification-toast,html body .canonical-chrome .canonical-notification-toast.has-action{top:var(--melding-top,calc(64px + var(--veilig-boven,0px)))!important;bottom:auto!important;left:calc(8px + var(--veilig-links,0px))!important;right:calc(8px + var(--veilig-rechts,0px))!important;width:auto!important;translate:none!important}
+  /* één regel (QA 12.10 M7, toen alleen op de post ≤ 520 px): tekst + knoppen naast elkaar — een melding van twee regels lag op een
+     telefoon dwars (640×400) op «‹ 1–10 із 18 ›»; nu op elke pagina en op de hele telefoonbreedte */
+  html body .canonical-chrome .canonical-notification-toast,html body .canonical-chrome .canonical-notification-toast.has-action{grid-template-columns:20px minmax(0,1fr) repeat(3,auto)!important;grid-template-rows:auto!important;padding:6px 6px 6px 10px!important;gap:4px!important;height:auto!important}
+  html body .canonical-chrome .canonical-notification-toast>div{grid-column:2!important;grid-row:1!important}
+  html body .canonical-chrome .canonical-notification-toast>:is(.canonical-notification-action-icon,.canonical-notification-expand,.canonical-notification-icon-button:last-child){grid-column:auto!important;grid-row:1!important;width:40px;height:40px}
+}
+
+/* teller op ☰ (telefoon): de bel staat in het menu */
+.plaats-menu-teller{position:absolute;right:2px;top:2px;display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border:2px solid var(--panel);border-radius:999px;background:var(--accent);color:var(--accentText);font-size:9px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;pointer-events:none}
+
+/* ---------------------------------------------------------------- «Редагувати меню»: verplaatsbare knoppen tonen dat ze verplaatsbaar zijn */
+.canonical-chrome[data-menu-bewerken='ja'] .plaats-gniezdo[data-plaats-knop]{outline:2px dashed color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:3px;border-radius:999px}
+.canonical-chrome[data-menu-bewerken='ja'] .plaats-zijbalk>.plaats-gniezdo[data-plaats-knop]{border-radius:12px}
+.canonical-chrome[data-menu-bewerken='ja'] .plaats-gniezdo>.canonical-scroll-top[data-voorbeeld]{border-style:dashed;opacity:.75}
+
+/* ---------------------------------------------------------------- slepen */
+html[data-plaats-sleep] [data-plaats-zone]:is([data-plaats-doel='ja'],[data-plaats-doel='hier'],[data-plaats-doel='vol']){outline:2px dashed color-mix(in srgb,var(--accent) 70%,transparent);outline-offset:4px;border-radius:16px}
+html[data-plaats-sleep] [data-plaats-zone][data-plaats-doel='hier']{outline-style:solid;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+html[data-plaats-sleep] [data-plaats-zone][data-plaats-doel='vol']{outline-color:color-mix(in srgb,var(--danger) 55%,transparent)}
+html[data-plaats-sleep] [data-plaats-zone][data-plaats-doel='vol-hier']{outline:2px solid var(--danger);outline-offset:4px;border-radius:16px;background:color-mix(in srgb,var(--danger) 10%,transparent)}
+/* de bovenbalk boven het scherm van de lade (250), onder de lade zelf (260) */
+html[data-plaats-sleep] .canonical-chrome .canonical-account-anchor{z-index:255}
+html[data-plaats-sleep],html[data-plaats-sleep] body{-webkit-user-select:none;user-select:none}
+.plaats-gniezdo[data-sleept='ja']{position:absolute;opacity:0;pointer-events:none}
+.plaats-voorbeeld{border:2px dashed color-mix(in srgb,var(--accent) 70%,var(--line));border-radius:50%;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.canonical-account-anchor>.plaats-voorbeeld{width:var(--plaats-boven-gniezdo);height:var(--plaats-boven-gniezdo)}
+.plaats-lade-kop>.plaats-voorbeeld{width:44px;height:44px}
+.plaats-zijbalk>.plaats-voorbeeld{width:100%;min-height:46px;border-radius:12px}
+.plaats-actiestapel>.plaats-voorbeeld{width:var(--plaats-gniezdo);height:var(--plaats-gniezdo)}
+.plaats-sleep-laag{position:fixed;inset:0;z-index:1500;pointer-events:none}
+.plaats-sleep-geest{position:fixed;left:0;top:0;display:grid;place-items:center;width:52px;height:52px;box-sizing:border-box;border:2px solid var(--accent);border-radius:50%;background:var(--panel);color:var(--accent);box-shadow:0 16px 40px var(--shadow);will-change:transform}
+.plaats-sleep-geest[data-staat='vol']{border-color:var(--danger);color:var(--danger)}
+.plaats-sleep-geest[data-staat='nee']{border-color:var(--line);color:var(--muted)}
+.plaats-sleep-geest svg{width:22px;height:22px}
+.plaats-sleep-geest small{position:absolute;right:-3px;top:-4px;display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border:2px solid var(--panel);border-radius:999px;background:var(--accent);color:var(--accentText);font-size:9px;font-weight:800}
+.plaats-zone-teller{position:fixed;padding:3px 10px;border:1px solid var(--accent);border-radius:999px;background:var(--panel);color:var(--accent);font-size:.8rem;font-weight:700;line-height:1.4;white-space:nowrap;box-shadow:0 6px 18px var(--shadow)}
+.plaats-zone-teller[data-staat='hier']{background:var(--accent);color:var(--accentText)}
+.plaats-zone-teller[data-staat='vol']{border-color:var(--danger);color:var(--danger)}
+.plaats-zone-hint{position:fixed;box-sizing:border-box;padding:10px 12px;border:1px solid var(--danger);border-radius:12px;background:var(--panel);color:var(--danger);font-size:.85rem;font-weight:650;line-height:1.35;box-shadow:0 12px 30px var(--shadow)}
+
+/* ---------------------------------------------------------------- «Перемістити до…» */
+.plaats-acties{position:fixed;z-index:1400;display:grid;gap:8px;font-family:inherit;font-size:.875rem;line-height:1.35;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:auto;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);box-shadow:0 18px 48px var(--shadow)}
+.plaats-acties .plaats-acties-titel{margin:0;padding:0;border:0;font-family:inherit;font-size:.9rem;font-weight:700;line-height:1.3;letter-spacing:normal;text-transform:none;color:var(--text)}
+.plaats-acties ul{display:grid;gap:4px;margin:0;padding:0;list-style:none}
+.plaats-acties button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;margin:0;padding:6px 10px;box-sizing:border-box;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--text);font:inherit;font-size:.875rem;text-align:left;cursor:pointer}
+.plaats-acties button:hover,.plaats-acties button:focus-visible{background:var(--nav-hover);outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:1px}
+.plaats-acties button:disabled{opacity:.6;cursor:not-allowed}
+.plaats-acties button[aria-current='true']{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:var(--accent-soft)}
+.plaats-acties button svg{flex:none;width:18px;height:18px}
+.plaats-acties-leeg{flex:none;width:18px;height:18px}
+.plaats-acties button>span{display:grid;gap:1px;min-width:0}
+.plaats-acties button small{color:var(--muted);font-size:.75rem}
+.plaats-acties-volgorde{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.plaats-acties-volgorde button{justify-content:center;border-color:var(--line)}
+.plaats-acties .plaats-acties-voet{display:grid;gap:4px;margin:0;padding:6px 0 0;border:0;border-top:1px solid var(--line);background:none}
+.plaats-acties-sluit{justify-content:center;color:var(--muted)!important}
+
+@media (prefers-reduced-motion:reduce){.canonical-chrome .plaats-gniezdo>*{transition:none!important;animation:none!important}}

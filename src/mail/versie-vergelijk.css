@@ -1,0 +1,116 @@
+/* Venster «Порівняти версії» (pakket 3 «Adaptive Mail Canvas», 24.10.2026) — src/mail/VersieVergelijk.tsx.
+   Laag via een portal in <body>: boven het leesvenster (230) en zijn vensters (720), onder «Новий лист» (1200) en de meldingen.
+   Breed: oud | nieuw naast elkaar; smal (venster < 560 px, containerquery): onder elkaar, met het versielabel per kant.
+   Weggevallen tekst doorgestreept (--fout), nieuwe onderstreept (--ok): ook zonder kleur te onderscheiden.
+   Alleen tokens (src/ontwerp/tokens.css); koppen zonder de schreefletter van index.css; 44 px doelen bij aanraken. */
+
+/* ---------------------------------------------------------------- laag en venster */
+.vv-laag{position:fixed;inset:0;z-index:760;display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:16px;padding:max(16px,var(--veilig-boven,0px)) max(16px,var(--veilig-rechts,0px)) max(16px,var(--veilig-onder,0px)) max(16px,var(--veilig-links,0px));background:var(--overlay);overscroll-behavior:contain}
+html body .vv-venster{container:vv/inline-size;display:flex;flex-direction:column;box-sizing:border-box;width:min(1120px,100%);max-width:100%;height:min(880px,100%);max-height:100%;min-width:0;min-height:0;overflow:hidden;border:1px solid var(--line);border-radius:var(--straal-l,16px);background:var(--panel);color:var(--text);box-shadow:var(--schaduw-3)}
+.vv-venster:focus{outline:none}
+.vv-venster:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.vv-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+.vv-kop{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:4px 12px;padding:14px 12px 10px 20px;border-bottom:1px solid var(--line)}
+.vv-titel{min-width:0}
+html body .vv-venster .vv-kop h2{margin:0;font-family:inherit;font-size:18px;font-weight:700;line-height:1.3;letter-spacing:0;color:var(--text)}
+.vv-titel p{margin:2px 0 0;color:var(--muted);font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+html body .vv-venster .vv-sluit{display:grid;place-items:center;width:40px;height:40px;min-width:40px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.vv-sluit svg{width:20px;height:20px}
+.vv-sluit:hover{background:var(--surface);color:var(--text)}
+.vv-sluit:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+
+/* ---------------------------------------------------------------- keuze van de versies */
+.vv-keuze{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;gap:8px 12px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface)}
+.vv-veld{display:grid;gap:4px;min-width:0;color:var(--muted);font-size:13px;font-weight:650}
+html body .vv-venster .vv-veld select{width:100%;min-width:0;min-height:40px;color:var(--text);font-size:14px;font-weight:400}
+.vv-pijl{flex:none;width:20px;height:20px;margin-bottom:10px;color:var(--muted)}
+
+/* ---------------------------------------------------------------- inhoud en voet */
+.vv-inhoud{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:12px 20px 20px}
+/* de globale footer-regel van index.css (marge 2rem auto, breedte, space-between) terugzetten */
+html body .vv-voet{position:static;z-index:auto;flex:0 0 auto;display:grid;gap:4px;width:auto;margin:0;padding:10px 20px 12px;border:0;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.45}
+.vv-voet p{display:flex;align-items:flex-start;gap:6px;margin:0}
+.vv-voet p:not(:first-child){padding-left:20px}
+.vv-voet p[data-soort='let']{color:var(--warn)}
+.vv-voet svg{flex:0 0 auto;width:14px;height:14px;margin-top:2px}
+
+.vv-laden{display:flex;align-items:center;gap:10px;margin:24px 0;color:var(--muted);font-size:14px}
+.vv-laden svg{flex:none;width:18px;height:18px}
+.vv-melding{display:flex;align-items:flex-start;gap:10px;margin:8px 0;padding:12px 14px;border:1px solid var(--line);border-radius:var(--straal-m,12px);background:var(--surface);color:var(--text);font-size:14px;line-height:1.5}
+.vv-melding>svg{flex:0 0 auto;width:18px;height:18px;margin-top:2px;color:var(--muted)}
+.vv-melding p{margin:0}
+.vv-melding[data-soort='ok']{border-color:color-mix(in srgb,var(--ok) 35%,transparent);background:var(--ok-zacht)}
+.vv-melding[data-soort='ok']>svg{color:var(--ok)}
+.vv-melding[data-soort='fout']{border-color:color-mix(in srgb,var(--fout) 35%,transparent);background:var(--fout-zacht)}
+.vv-melding[data-soort='fout']>svg{color:var(--fout)}
+.vv-melding[data-soort='let']{border-color:color-mix(in srgb,var(--warn) 35%,transparent);background:var(--warn-zacht)}
+.vv-melding[data-soort='let']>svg{color:var(--warn)}
+.vv-knoppen{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+html body .vv-venster .vv-knop{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:13px;font-weight:600;line-height:1.2;cursor:pointer}
+.vv-knop:hover{background:var(--surface2)}
+.vv-knop:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+html body .vv-venster .vv-knop[aria-pressed='true']{border-color:var(--accent);background:var(--accent-soft)}
+
+/* ---------------------------------------------------------------- samenvatting en legenda */
+.vv-overzicht{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 0 10px}
+.vv-samenvatting{margin:0;font-size:15px;font-weight:700;line-height:1.4}
+.vv-legenda{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0;padding:0;list-style:none;color:var(--muted);font-size:12px}
+.vv-legenda li{display:inline-flex;align-items:center;gap:6px}
+.vv-overzicht .vv-knop{margin-left:auto}
+.vv-staal{display:inline-block;width:4px;height:16px;border-radius:2px;background:var(--warn)}
+.vv-staal[data-soort='verplaatst']{background:var(--info)}
+
+/* ---------------------------------------------------------------- rijen */
+.vv-kolommen{position:sticky;top:0;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:0 0 8px;padding:8px 13px 6px 16px;border-bottom:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:12px;font-weight:700}
+.vv-kolommen span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vv-rijen{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.vv-rij{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 12px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-left:4px solid var(--line);border-radius:var(--straal-s,8px);background:var(--panel)}
+.vv-rij[data-soort='gewijzigd']{border-left-color:var(--warn)}
+.vv-rij[data-soort='weg']{border-left-color:var(--fout);background:color-mix(in srgb,var(--fout-zacht) 40%,var(--panel))}
+.vv-rij[data-soort='nieuw']{border-left-color:var(--ok);background:color-mix(in srgb,var(--ok-zacht) 40%,var(--panel))}
+.vv-rij[data-soort='gelijk']{color:var(--muted)}
+html body .vv-venster .vv-rij[data-verplaatst]{border-left-style:dashed;border-left-color:var(--info);background:color-mix(in srgb,var(--info-zacht) 40%,var(--panel))}
+.vv-merk{grid-column:1/-1;justify-self:start;padding:0 8px;border-radius:999px;background:var(--info-zacht);color:var(--info);font-size:12px;font-weight:650;line-height:1.7}
+.vv-kant{min-width:0}
+.vv-kant-label{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.vv-tekst{margin:0;font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.vv-leeg{margin:0;color:var(--muted);font-size:12px;font-style:italic;line-height:1.6}
+.vv-tekst del,.vv-weg{padding:0 2px;border-radius:3px;background:var(--fout-zacht);color:var(--fout);text-decoration:line-through;text-decoration-color:var(--fout);text-decoration-thickness:1.5px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.vv-tekst ins,.vv-nieuw{padding:0 2px;border-radius:3px;background:var(--ok-zacht);color:var(--ok);text-decoration:underline;text-decoration-color:var(--ok);text-decoration-thickness:1.5px;text-underline-offset:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.vv-ingeklapt>button{display:flex;align-items:center;justify-content:center;width:100%;min-height:36px;padding:4px 12px;border:1px dashed var(--line);border-radius:var(--straal-s,8px);background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.vv-ingeklapt>button:hover{background:var(--surface);color:var(--text)}
+.vv-ingeklapt>button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.vv-ingeklapt>button[aria-expanded='true']{border-style:solid}
+.vv-meer{display:flex;justify-content:center;margin-top:12px}
+
+/* ---------------------------------------------------------------- smal venster: onder elkaar */
+@container vv (max-width:559px){
+  .vv-kop{padding:10px 8px 8px 14px}
+  .vv-keuze{grid-template-columns:minmax(0,1fr);padding:10px 12px}
+  .vv-pijl{display:none}
+  .vv-inhoud{padding:10px 12px 16px}
+  .vv-voet{padding:8px 12px 10px}
+  .vv-kolommen{display:none}
+  .vv-rij{grid-template-columns:minmax(0,1fr);gap:6px;padding:8px 10px}
+  .vv-kant[data-leeg]{display:none}
+  .vv-kant-label{position:static;display:block;width:auto;height:auto;margin:0 0 2px;overflow:visible;clip-path:none;white-space:normal;color:var(--muted);font-size:12px;font-weight:700}
+  .vv-overzicht .vv-knop{margin-left:0}
+}
+@media (max-width:560px){
+  .vv-laag{padding:8px;padding:max(8px,var(--veilig-boven,0px)) max(8px,var(--veilig-rechts,0px)) max(8px,var(--veilig-onder,0px)) max(8px,var(--veilig-links,0px))}
+  html body .vv-venster{height:100%;border-radius:var(--straal-m,12px)}
+}
+
+/* ---------------------------------------------------------------- aanraken: grotere doelen (макет: 44 px) */
+@media (pointer:coarse){
+  html body .vv-venster .vv-sluit{width:44px;height:44px;min-width:44px}
+  html body .vv-venster .vv-knop,.vv-ingeklapt>button{min-height:44px}
+  html body .vv-venster .vv-veld select{min-height:44px}
+}
+@media (prefers-reduced-motion:no-preference){
+  html body .vv-venster{animation:vv-in .16s ease-out}
+  .vv-laden svg{animation:vv-draai 1s linear infinite}
+}
+@keyframes vv-in{from{transform:translateY(8px);opacity:.6}to{transform:none;opacity:1}}
+@keyframes vv-draai{to{transform:rotate(360deg)}}

@@ -1,0 +1,12 @@
+# Dode-mansschakelaar na een uitrol (zie deploy/uitrol/mijn-ruimte-nazorg.sh). Zonder nazorg-bestand doet hij niets.
+# 22.10.2026: ook wakker voor een rendercontrole-verzoek vanaf de site («Діагностика» → «Перевірити рендеринг»): leeg bestand in de
+# goedkeur-inbox; «|» = één van beide paden is genoeg. Een rendercontrole duurt 1–2 min, vandaar de ruime TimeoutStartSec.
+[Unit]
+Description=Mijn Ruimte: nazorg na uitrol (automatisch terugdraaien als de nieuwe release faalt; rendercontrole op verzoek)
+ConditionPathExists=|/var/lib/mijn-ruimte-uitrol/nazorg
+ConditionPathExists=|/srv/mijn-ruimte/goedkeur-inbox/rook-verzoek
+
+[Service]
+Type=oneshot
+TimeoutStartSec=900
+ExecStart=/usr/local/sbin/mijn-ruimte-nazorg

@@ -1,0 +1,64 @@
+# /etc/cloudflared/config.yml — SJABLOON voor de Cloudflare Tunnel van Mijn Ruimte.
+#
+# Invullen vóór gebruik:
+#   <TUNNEL-ID>  uitvoer van:  cloudflared tunnel create mijn-ruimte
+#   PORT         moet gelijk zijn aan PORT in mijn-ruimte.service (standaard 8080)
+# DNS per hostnaam (eenmalig):  cloudflared tunnel route dns mijn-ruimte <hostnaam>
+#
+# De app luistert alleen op 127.0.0.1 en accepteert alleen deze hostnamen (Host-header); de tunnel geeft
+# de oorspronkelijke Host door en zet cf-connecting-ip, waarop de server het client-IP baseert.
+# TLS eindigt bij Cloudflare; tussen cloudflared en de app is het lokaal http over loopback.
+# Zet in Cloudflare: SSL/TLS "Full", "Always Use HTTPS" aan, en bij voorkeur HSTS (de app stuurt hem ook).
+tunnel: <TUNNEL-ID>
+credentials-file: /etc/cloudflared/<TUNNEL-ID>.json
+
+# Geen automatische updates van cloudflared vanuit de dienst zelf (via de pakketbeheerder bijwerken).
+no-autoupdate: true
+
+originRequest:
+  connectTimeout: 10s
+  keepAliveTimeout: 90s
+  # Geen Happy Eyeballs naar IPv6: de app luistert alleen op 127.0.0.1.
+  noHappyEyeballs: true
+
+ingress:
+  - hostname: hub.tarasevych.com
+    service: http://127.0.0.1:8080
+  - hostname: id.tarasevych.com
+    service: http://127.0.0.1:8080
+  - hostname: mail.tarasevych.com
+    service: http://127.0.0.1:8080
+  - hostname: cloud.tarasevych.com
+    service: http://127.0.0.1:8080
+  - hostname: ai.tarasevych.com
+    service: http://127.0.0.1:8080
+  - hostname: github.tarasevych.com
+    service: http://127.0.0.1:8080
+  - hostname: huis.tarasevych.com
+    service: http://127.0.0.1:8080
+  - hostname: api.tarasevych.com
+    service: http://127.0.0.1:8080
+  - hostname: admin.tarasevych.com
+    service: http://127.0.0.1:8080
+  - hostname: dashboard.tarasevych.com
+    service: http://127.0.0.1:8080
+  # mcp.tarasevych.com — EEN PAD PER AGENT (20.10.2026, zie deploy/CONNECTOR-EEN-PAD.md).
+  #
+  # Eén connectoradres per AI, bediend door de HOOFDAPP op 8080:
+  #     /claude  /gpt  /grok  /gemini  /copilot  /cursor
+  #   + hun metadata: /<agent>/.well-known/oauth-protected-resource en /.well-known/oauth-protected-resource/<agent>
+  #   + /mcp en /oauth2/* (de koppelingen van vóór connector v2 en de agenttokens tvh_…; nog niet weggehaald)
+  #   + het oude /ai/<agent>, waarop de app 308 Permanent Redirect naar /<agent> antwoordt (308 houdt POST + body)
+  #   + de schermen (/overview /agents /verbindingen …), /api/* en WSS /agent/ws voor de agents.
+  #
+  # TOT 20.10.2026 ging /claude, /grok, /chatgpt, /gemini en /copilot naar de MCP-deur op 8091 (deploy/mcp/server.mjs). Die regel
+  # is weg: zonder dat zou /claude nog bij de deur komen en zou het nieuwe adres niet werken. De deur houdt alleen nog haar eigen
+  # OAuth en gezondheid, zolang er verbindingen van de deur bestaan; staat `mijn-ruimte-mcp.service` uit, haal dan ook die regel
+  # weg (de app geeft dan gewoon 404 op /oauth/*, niets anders verandert).
+  - hostname: mcp.tarasevych.com
+    path: ^/(oauth|health)(/|$)
+    service: http://127.0.0.1:8091
+  - hostname: mcp.tarasevych.com
+    service: http://127.0.0.1:8080
+  # Alles wat niet expliciet hierboven staat: 404 aan de rand, komt nooit bij de app.
+  - service: http_status:404

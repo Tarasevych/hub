@@ -1,0 +1,16 @@
+/* Ruimtewissel onderaan het zijmenu (ZijbalkRuimte.tsx). Site-variabelen, licht en donker. Pictogrammen 18 px, tekst 13 px. */
+.zr{padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);display:grid;gap:6px}
+.zr-seg{display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:2px;border-radius:12px;background:var(--surface)}
+.zr-knop{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 8px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.zr-knop svg{width:18px;height:18px;flex:none}
+.zr-knop:hover{color:var(--text)}
+.zr-knop[aria-checked=true]{background:var(--panel);color:var(--accent);box-shadow:0 1px 3px var(--shadow)}
+.zr-knop.is-technisch[aria-checked=true]{color:var(--tech-band-bg,var(--accent))}
+.zr-knop:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.zr.is-smal{padding:6px 0}
+.zr.is-smal .zr-seg{grid-template-columns:1fr;background:transparent;justify-items:center;gap:4px}
+.zr.is-smal .zr-knop{width:36px;height:36px;min-height:36px;padding:0;border-radius:50%}
+.zr.is-smal .zr-knop[aria-checked=true]{background:var(--surface)}
+.zr-uitkomst{font-size:12px;color:var(--muted)}
+.zr-uitkomst.is-fout{color:var(--fout)}
+@media (max-width:768px){.zr-knop{min-height:44px}}

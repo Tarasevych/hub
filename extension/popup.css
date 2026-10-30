@@ -1,0 +1,6 @@
+/* Alleen wat de pop-up anders doet dan ui.css (gedeelde stijl). */
+body{width:360px}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--primair);display:inline-block;position:relative;flex:0 0 auto}
+.logo::after{content:'';position:absolute;inset:11px;border-radius:50%;background:#fff}
+/* 0.8.0: compacte pop-up */
+body.popup main{padding:12px;gap:10px}

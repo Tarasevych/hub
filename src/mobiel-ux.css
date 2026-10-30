@@ -1,0 +1,34 @@
+/* Загальні мобільні покращення оболонки. */
+.canonical-checking-spinner{display:block;width:30px;height:30px;margin:auto;border:3px solid var(--line,#dce1e6);border-top-color:var(--accent,#2f6f73);border-radius:50%;animation:canonical-checking-rot .8s linear infinite}
+.canonical-signed-out.checking{display:grid;place-items:center;min-height:60vh}
+@keyframes canonical-checking-rot{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.canonical-checking-spinner{animation-duration:2.4s}}
+/* Редактор листа на телефоні: панель форматування переноситься на кілька рядків (раніше випадіння за межі й накладання випадних списків «Заг…/1/B/I»),
+   поле вводу нижче, а допоміжна панель (UA/NL, трансліт, клавіатура, рукопис) — компактна, без довгого пояснення. */
+@media (max-width:720px){
+  html body .mail-compose-ribbon{flex-wrap:wrap!important;overflow:visible!important;row-gap:6px}
+  html body .mail-compose-ribbon>.mail-compose-dropdown{flex:0 0 auto!important;width:auto!important;min-width:0}
+  html body .mail-compose-ribbon .mail-compose-dropdown-trigger{min-width:88px;max-width:150px}
+  html body .mail-compose-canvas{min-height:120px!important}
+  html body .mail-compose-canvas>.ProseMirror{min-height:120px!important}
+  html body .mail-input-tools{display:flex!important;flex-wrap:wrap;align-items:center;gap:6px!important;padding:6px 8px!important}
+  html body .mail-input-tools>small,html body .mail-input-tools>p{display:none!important}
+  html body .mail-input-tools>header{display:flex!important;flex-wrap:wrap;align-items:center;gap:4px;width:100%;grid-template-columns:none!important}
+  html body .mail-input-tools>header>button{flex:1 1 auto}
+  html body .mail-input-tools button{min-height:36px!important;padding:0 8px!important;font-size:13px!important;gap:4px}
+  html body .mail-input-tools .mail-input-language{flex:none}
+  /* відкритий лист: рядок кнопок без зайвого правого відступу (було 4rem) */
+  html body .google-mail-reader>header{padding-left:8px!important;padding-right:8px!important}
+}
+/* ≤ 430 px: шапка листа більше не ховає дії від третьої (nth-child(n+3) display:none) — так «До обраного» й «До кошика» зникали
+   зовсім, бо в «⋮» їх не було. Тепер шапка рахує ширину самого вікна листа: що не вміщається, показано вгорі «⋮» (src/mail/lees-venster.css,
+   MailLezerWerkbalk, пакет 1 «Adaptive Mail Canvas», 24.10.2026). */
+@media (max-width:700px){
+  /* повна ширина на ВСІХ сторінках: старе правило резервувало 52–80 px зліва під згорнуте бокове меню, яке на телефоні є кнопкою-гамбургером у кутку */
+  html body .canonical-chrome.sidebar-drawer-mode .canonical-workspace{padding-left:12px!important;padding-right:12px!important}
+  html body .canonical-chrome.sidebar-drawer-mode:has(.mail-functional.google-workspace-active) .canonical-workspace{padding-left:0!important;padding-right:0!important}
+  html body .canonical-chrome.sidebar-drawer-mode .canonical-content{width:100%;max-width:100%}
+  /* бокове меню: затемнення клікабельне, елементи меню достатньо великі */
+  .canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-sidebar-scrim.drawer{cursor:pointer}
+  .canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-sidebar button,.canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-sidebar a{min-height:44px}
+}

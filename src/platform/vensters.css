@@ -1,0 +1,98 @@
+/* Vensterbeheer (vensters.tsx): één laag voor alle vensters, titelbalk met slepen, grootte, minimaliseren, dok aan een schermrand (zie onderaan).
+   Kleuren uit het thema (canonical-chrome / index.css), met vaste terugvallers; tekst ≥ 4.5:1. */
+.venster-achter{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(3px)}
+.venster{
+  position:fixed;display:flex;flex-direction:column;min-width:0;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);
+  border-radius:16px;border:1px solid var(--line,#d7dee8);background:var(--panel,#fff);color:var(--text,#0f172a);
+  box-shadow:0 24px 70px rgba(0,0,0,.35);outline:none;overflow:hidden
+}
+.venster.is-boven{box-shadow:0 28px 80px rgba(0,0,0,.45),0 0 0 2px var(--venster-actief,#2563eb)}
+.venster:not(.is-boven){filter:saturate(.85)}
+.venster[hidden]{display:none}
+.venster.is-max{inset:8px!important;left:8px!important;top:8px!important;width:auto!important;height:auto!important;max-height:none}
+.venster-kop{display:flex;align-items:center;gap:6px;min-height:40px;padding:4px 6px 4px 12px;border-bottom:1px solid var(--line,#d7dee8);background:var(--surface,#f8fafc);cursor:grab;user-select:none;touch-action:none}
+.venster.is-max .venster-kop{cursor:default}
+.venster-kop:active{cursor:grabbing}
+.venster-greep{flex:1;min-width:0;padding:6px 4px;border-radius:8px}
+.venster-greep:focus-visible{outline:3px solid var(--venster-actief,#2563eb);outline-offset:1px}
+.venster-titel{display:block;font-weight:650;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.venster-knoppen{display:flex;gap:2px;flex:none}
+.venster-knoppen button{display:inline-grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:9px;background:transparent;color:inherit;cursor:pointer}
+.venster-knoppen button:hover{background:rgba(127,127,127,.16)}
+.venster-knoppen button:focus-visible{outline:3px solid var(--venster-actief,#2563eb);outline-offset:-2px}
+.venster-knoppen button:disabled{opacity:.4;cursor:not-allowed}
+.venster-knoppen svg{width:18px;height:18px}
+.venster-inhoud{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
+.venster-grootte{position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 50%,rgba(127,127,127,.55) 50%,rgba(127,127,127,.55) 60%,transparent 60%,transparent 70%,rgba(127,127,127,.55) 70%,rgba(127,127,127,.55) 80%,transparent 80%)}
+/* телефон: на всю ширину з безпечними відступами (виріз/жест-смуга), прокрутка всередині вікна */
+@media (max-width:559px){.venster{left:calc(8px + env(safe-area-inset-left,0px))!important;right:calc(8px + env(safe-area-inset-right,0px));top:auto!important;bottom:calc(8px + env(safe-area-inset-bottom,0px));width:auto!important;max-height:calc(100dvh - 16px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}.venster.is-max{inset:calc(8px + env(safe-area-inset-top,0px)) calc(8px + env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) calc(8px + env(safe-area-inset-left,0px))!important}}
+
+/* --venster-actief/--venster-kritiek: псевдоніми --focus/--fout у src/ontwerp/tokens.css */
+@media (prefers-reduced-motion:no-preference){.venster{transition:box-shadow .15s ease,filter .15s ease}}
+@media (forced-colors:active){.venster{border:2px solid CanvasText}.venster.is-boven{outline:3px solid Highlight}}
+
+/* ---------------------------------------------------------------- 21.10.2026: vensters buiten de strook van het dok
+   Het dok (vensters.tsx → Dok, regels in venster-dok-logica.ts) staat aan een schermrand en zet op <html> --venster-dok-<rand>
+   (44 px + 4 px afstand) en data-venster-dok. Vensters houden die strook vrij — de knoppen van een venster liggen nooit onder het dok.
+   (Klacht eigenaar 390 px: het dok lag over «Далі», «Заборонити», «Пізніше» van «Підключення Claude».) */
+html .venster.is-max{inset:calc(8px + var(--venster-dok-boven,0px)) calc(8px + var(--venster-dok-rechts,0px)) calc(8px + var(--venster-dok-onder,0px)) calc(8px + var(--venster-dok-links,0px))!important}
+@media (max-width:559px){
+  html .venster{left:calc(8px + var(--veilig-links) + var(--venster-dok-links,0px))!important;right:calc(8px + var(--veilig-rechts) + var(--venster-dok-rechts,0px));bottom:calc(8px + var(--veilig-onder) + var(--venster-dok-onder,0px));max-height:calc(100dvh - 16px - var(--veilig-boven) - var(--veilig-onder) - var(--venster-dok-boven,0px) - var(--venster-dok-onder,0px))}
+  html .venster.is-max{inset:calc(8px + var(--veilig-boven) + var(--venster-dok-boven,0px)) calc(8px + var(--veilig-rechts) + var(--venster-dok-rechts,0px)) calc(8px + var(--veilig-onder) + var(--venster-dok-onder,0px)) calc(8px + var(--veilig-links) + var(--venster-dok-links,0px))!important}
+}
+/* «Новий лист» (MailNewMessageDialog) staat in dezelfde stapel (vensterBeheer) en tekent zichzelf: ook hij blijft buiten de strook. */
+html[data-venster-dok] body .mail-new-message-backdrop{top:var(--venster-dok-boven,0px);right:var(--venster-dok-rechts,0px);bottom:var(--venster-dok-onder,0px);left:var(--venster-dok-links,0px)}
+@media (max-width:560px){html[data-venster-dok] body .mail-new-message{height:auto!important;max-height:100%!important}}
+html[data-venster-dok] body .mail-new-message.groot{top:max(64px,calc(12px + var(--venster-dok-boven,0px)))!important;right:calc(12px + var(--venster-dok-rechts,0px))!important;bottom:calc(12px + var(--venster-dok-onder,0px))!important;left:calc(12px + var(--venster-dok-links,0px))!important}
+/* het meldingenpaneel is op de telefoon een vol blad: ook dat eindigt vóór de strook van het dok (anders de laatste rijen eronder) */
+@media (max-width:560px), (max-height:500px){html[data-venster-dok] body .canonical-notification-panel{top:calc(var(--ruimte-2) + var(--veilig-boven) + var(--venster-dok-boven,0px))!important;right:calc(var(--ruimte-2) + var(--veilig-rechts) + var(--venster-dok-rechts,0px))!important;bottom:calc(var(--ruimte-2) + var(--veilig-onder) + var(--venster-dok-onder,0px))!important;left:calc(var(--ruimte-2) + var(--veilig-links) + var(--venster-dok-links,0px))!important}}
+@media (max-width:700px){html[data-venster-dok] body .mail-new-message.groot{top:max(56px,calc(4px + var(--venster-dok-boven,0px)))!important;right:calc(4px + var(--venster-dok-rechts,0px))!important;bottom:calc(4px + var(--venster-dok-onder,0px))!important;left:calc(4px + var(--venster-dok-links,0px))!important}}
+
+/* ---------------------------------------------------------------- het dok zelf
+   strook = telefoon onder/boven (breedte uit JS: van de marge tot naast de bel); pil = computer onder/boven (breedte = inhoud);
+   knop = links/rechts (44×44). left/top/breedte zet vensters.tsx inline; right/bottom van oudere regels (ui-golf-11) gelden niet meer.
+   De lijst is een menu dat alleen op een tik opengaat, naar binnen toe (data-dok-menu-naar) en langs de as naar de ruime kant. */
+nav.venster-dok.venster-dok{position:fixed;right:auto!important;bottom:auto!important;display:flex;align-items:stretch;box-sizing:border-box;height:44px;max-width:calc(100vw - 16px);margin:0;padding:0;font:inherit;border-radius:var(--straal-l);border:1px solid color-mix(in srgb,var(--accent) 42%,var(--line));background:var(--panel);color:var(--text);box-shadow:var(--schaduw-2);touch-action:none;user-select:none;-webkit-user-select:none}
+nav.venster-dok[data-dok-vorm=pil]{width:max-content}
+nav.venster-dok[data-dok-vorm=knop]{width:44px}
+nav.venster-dok.is-sleept{cursor:grabbing;box-shadow:var(--schaduw-3)}
+nav.venster-dok.is-kritiek{border-color:var(--venster-kritiek)}
+.venster-dok button{font:inherit;cursor:pointer}
+.venster-dok-greep{display:grid;place-items:center;flex:none;width:32px;border-radius:var(--straal-l) 0 0 var(--straal-l);color:var(--muted);cursor:grab}
+.venster-dok-greep svg{width:18px;height:18px}
+.venster-dok-kop{position:relative;flex:1 1 auto;display:flex;align-items:center;gap:var(--ruimte-2);min-width:0;height:100%;margin:0;padding:0 var(--ruimte-3) 0 var(--ruimte-1);border:0;border-radius:var(--straal-l);background:transparent;color:inherit;font-weight:650;white-space:nowrap}
+.venster-dok[data-dok-vorm=knop] .venster-dok-kop{justify-content:center;padding:0}
+.venster-dok-kop svg{flex:none;width:18px;height:18px}
+.venster-dok-kop .venster-dok-pijl{width:16px;height:16px;margin-left:auto;color:var(--muted)}
+.venster-dok-kop:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
+.venster-dok-kop:focus-visible{outline:3px solid var(--venster-actief);outline-offset:-3px}
+.venster-dok-kop[aria-expanded=true]{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.venster-dok-teller{position:absolute;top:1px;right:1px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:var(--accent);color:var(--text-on-accent);font-size:12px;font-weight:700;line-height:18px;text-align:center}
+.venster-dok-menu{position:absolute;display:grid;gap:var(--ruimte-1);box-sizing:border-box;width:min(320px,calc(100vw - 16px));overflow:auto;overscroll-behavior:contain;padding:6px;border-radius:var(--straal-l);border:1px solid color-mix(in srgb,var(--accent) 42%,var(--line));background:var(--panel);color:var(--text);box-shadow:var(--schaduw-3);touch-action:auto;user-select:auto;-webkit-user-select:auto;cursor:auto}
+.venster-dok-menu[hidden]{display:none}
+.venster-dok[data-dok-menu-naar=boven] .venster-dok-menu{bottom:calc(100% + 6px)}
+.venster-dok[data-dok-menu-naar=onder] .venster-dok-menu{top:calc(100% + 6px)}
+.venster-dok:is([data-dok-menu-naar=boven],[data-dok-menu-naar=onder])[data-dok-uitlijn=begin] .venster-dok-menu{left:0}
+.venster-dok:is([data-dok-menu-naar=boven],[data-dok-menu-naar=onder])[data-dok-uitlijn=eind] .venster-dok-menu{right:0}
+.venster-dok[data-dok-vorm=strook] .venster-dok-menu{left:0;right:0;width:auto}
+.venster-dok[data-dok-menu-naar=rechts] .venster-dok-menu{left:calc(100% + 6px)}
+.venster-dok[data-dok-menu-naar=links] .venster-dok-menu{right:calc(100% + 6px)}
+.venster-dok:is([data-dok-menu-naar=links],[data-dok-menu-naar=rechts])[data-dok-uitlijn=begin] .venster-dok-menu{top:0}
+.venster-dok:is([data-dok-menu-naar=links],[data-dok-menu-naar=rechts])[data-dok-uitlijn=eind] .venster-dok-menu{bottom:0}
+.venster-dok-nu{margin:0;padding:var(--ruimte-1) var(--ruimte-3) 2px;font-size:var(--tekst-klein);color:var(--muted);overflow-wrap:anywhere}
+.venster-dok-nu b{color:var(--text);font-weight:650}
+.venster-dok-menu ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.venster-dok-item{display:grid;gap:1px;width:100%;min-height:var(--tik-hoogte);padding:6px var(--ruimte-3);text-align:left;border:1px solid transparent;border-radius:var(--straal-m);background:transparent;color:var(--text)}
+.venster-dok-item:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
+.venster-dok-item:focus-visible{outline:3px solid var(--venster-actief);outline-offset:1px}
+.venster-dok-item.is-kritiek small{color:var(--venster-kritiek);font-weight:650}
+.venster-dok-item small{font-size:var(--tekst-klein);color:var(--muted)}
+.venster-dok-titel{font-weight:600;overflow-wrap:anywhere}
+.venster-dok-verplaats{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:6px 4px 2px;border-top:1px solid var(--line)}
+.venster-dok-verplaats>span{flex:1 1 100%;padding:0 var(--ruimte-2);font-size:var(--tekst-klein);color:var(--muted)}
+.venster-dok-verplaats button{display:inline-grid;place-items:center;width:var(--tik-hoogte);height:var(--tik-hoogte);padding:0;border:1px solid var(--line);border-radius:var(--straal-m);background:transparent;color:var(--text)}
+.venster-dok-verplaats button:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
+.venster-dok-verplaats button:focus-visible{outline:3px solid var(--venster-actief);outline-offset:1px}
+.venster-dok-verplaats button[aria-pressed=true]{border-color:var(--venster-actief);background:color-mix(in srgb,var(--venster-actief) 12%,transparent)}
+.venster-dok-verplaats svg{width:18px;height:18px}
+@media (forced-colors:active){nav.venster-dok.venster-dok,.venster-dok-menu{border:2px solid CanvasText}.venster-dok-verplaats button[aria-pressed=true]{outline:2px solid Highlight}}

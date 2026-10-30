@@ -1,0 +1,63 @@
+/* «Хто готує оновлення» — kaarten, avatar, venster «Додати агента». */
+.ut-avatar{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;color:#fff;font-weight:700;font-size:1.15rem;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.ut-persoon{overflow:hidden;padding:0}
+.ut-persoon img{width:100%;height:100%;object-fit:cover;display:block}
+.ut-avatar.is-klein{width:30px;height:30px;border-radius:9px;font-size:.9rem}
+.ut-voorb-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ut-voorb-kaart{display:flex;flex-wrap:wrap;gap:12px 14px;align-items:flex-start;padding:14px;border:1px solid var(--ut-line);border-radius:14px;background:var(--ut-bg2);min-width:0}
+.ut-voorb-kaart[data-verweesd]{border-color:var(--ut-warn);background:var(--ut-warn-bg)}
+.ut-voorb-kaart>.ut-avatar{margin-top:1px}
+.ut-voorb-tekst{display:grid;gap:6px;min-width:0;flex:1 1 240px}
+.ut-voorb-naam{font-size:1rem;line-height:1.25;overflow-wrap:anywhere}
+.ut-voorb-persoon{display:flex;align-items:center;gap:7px;min-width:0;color:var(--ut-muted);font-size:.84rem;overflow-wrap:anywhere}
+.ut-voorb-persoon b{color:var(--ut-text);font-weight:600}
+.ut-voorb-persoon small{font-size:.78rem}
+.ut-voorb-meta{display:flex;flex-wrap:wrap;gap:6px}
+.ut-voorb-kaart>.ut-knop{margin-left:auto;flex:none}
+.ut-chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;border:1px solid var(--ut-line);background:var(--ut-bg);font-size:.76rem;color:var(--ut-muted);max-width:100%}
+.ut-chip svg{width:13px;height:13px;flex:none}
+.ut-chip[data-toon="ok"]{color:var(--ut-ok);border-color:transparent;background:var(--ut-ok-bg)}
+.ut-chip[data-toon="warn"]{color:var(--ut-warn);border-color:transparent;background:var(--ut-warn-bg)}
+.ut-voorb-waarschuwing{margin:0;font-size:.85rem;color:var(--ut-text)}
+.ut-voorb-kaart .ut-reden-veld{flex:1 1 100%}
+.admin-uitrol .ut-knop-zacht{background:transparent;color:var(--ut-muted)}
+.admin-uitrol .ut-knop-zacht:hover:not(:disabled){background:var(--ut-warn-bg);color:var(--ut-warn);border-color:var(--ut-warn)}
+.ut-voorb-leeg{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px dashed var(--ut-line);border-radius:12px;color:var(--ut-muted)}
+.ut-voorb-leeg svg{width:26px;height:26px;color:var(--ut-info);flex:none}
+.ut-voorb-leeg b{color:var(--ut-text)}
+.ut-voorb-oud,.ut-voorb-uitleg{border:1px solid var(--ut-line);border-radius:10px;padding:8px 12px;background:var(--ut-bg)}
+.ut-voorb-oud summary,.ut-voorb-uitleg summary{cursor:pointer;font-weight:600;font-size:.9rem;display:flex;align-items:center;gap:6px}
+.ut-voorb-uitleg summary svg{width:16px;height:16px;color:var(--ut-info)}
+.ut-voorb-uitleg ol{margin:8px 0 2px;padding-left:20px;display:grid;gap:6px;font-size:.87rem;color:var(--ut-muted)}
+.ut-voorb-oud .ut-lijst{margin-top:8px}
+
+.ut-modal-schaduw{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(2,6,23,.55);backdrop-filter:blur(2px)}
+.ut-modal{width:min(560px,100%);max-height:calc(100dvh - 32px);overflow:auto;display:grid;gap:12px;padding:16px;border-radius:16px;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-text);box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.ut-modal header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ut-modal h3{display:flex;align-items:center;gap:8px;margin:0;font-size:1.05rem}
+.ut-modal h3 svg{width:18px;height:18px;color:var(--ut-info)}
+.ut-agent-keuze{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.admin-uitrol .ut-agent-tegel{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--ut-line);border-radius:12px;background:var(--ut-bg2);color:inherit;font:inherit;text-align:left;cursor:pointer;flex-wrap:wrap}
+.admin-uitrol .ut-agent-tegel:hover:not(:disabled){border-color:var(--ut-info)}
+.admin-uitrol .ut-agent-tegel[data-gekozen]{border-color:var(--ut-info);background:var(--ut-info-bg);box-shadow:0 0 0 2px var(--ut-info-bg)}
+.admin-uitrol .ut-agent-tegel:disabled{opacity:.55;cursor:not-allowed}
+.ut-agent-tegel small{flex-basis:100%;display:flex;align-items:center;gap:4px;color:var(--ut-ok);font-size:.75rem}
+.ut-agent-tegel small svg{width:12px;height:12px}
+.ut-veld{display:grid;gap:5px;border:0;padding:0;margin:0;font-size:.88rem}
+.ut-veld>span,.ut-veld legend{font-weight:600;padding:0}
+.ut-veld input,.ut-veld select{min-height:38px;padding:6px 10px;border-radius:9px;border:1px solid var(--ut-line);background:var(--ut-bg2);color:inherit;font:inherit}
+.ut-chips-keuze{display:flex;flex-wrap:wrap;gap:6px}
+.admin-uitrol .ut-chips-keuze button{padding:6px 12px;border-radius:999px;border:1px solid var(--ut-line);background:var(--ut-bg2);color:inherit;font:inherit;font-size:.85rem;cursor:pointer}
+.admin-uitrol .ut-chips-keuze button[aria-pressed="true"]{border-color:var(--ut-info);background:var(--ut-info-bg);color:var(--ut-info);font-weight:600}
+.admin-uitrol .ut-link{justify-self:start;border:0;background:none;padding:0;color:var(--ut-info);font:inherit;font-size:.85rem;cursor:pointer;text-decoration:underline}
+@media (max-width:560px){.ut-voorb-kaart>.ut-knop{flex:1 1 100%;margin-left:0}}
+.ut-zij-agents>li{justify-content:flex-start}
+.ut-recent-wie{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:2px;color:var(--ut-muted);font-size:.75rem}
+.ut-recent-wie i{display:inline-flex;align-items:center;gap:4px;font-style:normal}
+.ut-recent-wie svg{width:12px;height:12px}
+.ut-zij-agents>li{justify-content:flex-start;gap:10px}
+.ut-zij-agents>li>span{display:grid;text-align:left}
+.ut-voorb .ut-kaart-kop>div{flex:1 1 280px;min-width:0}
+.ut-voorb .ut-kaart-kop>.ut-knop{flex:none}
+@media (max-width:560px){.ut-voorb .ut-kaart-kop>.ut-knop{flex:1 1 100%}}
+.ut-zij-agents .ut-persoon{flex:none}

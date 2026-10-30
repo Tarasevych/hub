@@ -1,0 +1,349 @@
+/* /zoek — zone Z4 (22.10.2026). Alleen tokens uit src/ontwerp/tokens.css (geen hex, geen prefers-color-scheme: de thema's komen
+   via html.theme-*), primitieven uit primitieven.css (.knop*, .kaart, .pil-*, .melding-*), TabsRij voor de categorieën.
+   Breedtes in rem/%/min(); geen vaste px-breedte boven 22.5rem; geen letter kleiner dan var(--tekst-mini). */
+.zk-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.zk-pagina{color:var(--text);max-width:80rem;margin:0 auto;padding:var(--ruimte-3) var(--ruimte-4) var(--ruimte-6);font:inherit;min-width:0}
+.zk-pagina mark,.zk-palet mark{background:var(--warn-zacht);color:var(--text);border-radius:3px;padding:0 1px;font-weight:650}
+.zk-spin{animation:zk-spin 1s linear infinite}@keyframes zk-spin{to{transform:rotate(360deg)}}
+
+/* ---------------------------------------------------------------- kop: titel, veld, correctie, categorieën */
+.zk-kop{display:flex;flex-direction:column;gap:var(--ruimte-4);padding:var(--ruimte-5);background:linear-gradient(135deg,var(--accent-soft),var(--panel) 70%)}
+.zk-kop-tekst{display:flex;gap:var(--ruimte-4);align-items:flex-start}
+.zk-kop-ic{flex:none;display:grid;place-items:center;width:3.5rem;height:3.5rem;border-radius:50%;background:var(--accent);color:var(--text-on-accent)}
+.zk-kop-ic svg{width:1.6rem;height:1.6rem}
+.zk-h{margin:0;font-size:1.75rem;font-weight:750;letter-spacing:-.01em;line-height:1.15}
+.zk-sub{margin:var(--ruimte-1) 0 0;color:var(--muted);font-size:var(--tekst-klein);max-width:60rem}
+.zk-form{margin:0}
+.zk-veld{position:relative;min-width:0}
+.zk-box{display:flex;align-items:center;gap:var(--ruimte-2);background:var(--panel);border:1px solid var(--line);border-radius:var(--straal-l);padding:var(--ruimte-1) var(--ruimte-1) var(--ruimte-1) var(--ruimte-3);box-shadow:var(--schaduw-1)}
+.zk-box:focus-within{border-color:var(--focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 25%,transparent),var(--schaduw-1)}
+.zk-box-ic{flex:none;width:1.25rem;height:1.25rem;color:var(--muted)}
+.zk-box input{flex:1 1 auto;min-width:0;border:0;outline:0!important;box-shadow:none!important;background:transparent;color:inherit;font-size:var(--tekst-basis);padding:var(--ruimte-2) 0;min-height:var(--tik-hoogte)}
+.zk-veld.is-groot .zk-box input{font-size:1.125rem;min-height:calc(var(--tik-hoogte) + 4px)}
+.zk-veld.is-groot .zk-box-ic{width:1.5rem;height:1.5rem}
+.zk-wis{flex:none;border:0;background:transparent;color:var(--muted);min-width:var(--tik-hoogte);min-height:var(--tik-hoogte)}
+.zk-wis:hover{color:var(--text);background:var(--surface)}
+.zk-go{flex:none}
+.zk-pop{position:absolute;z-index:60;left:0;right:0;top:calc(100% + var(--ruimte-1));list-style:none;margin:0;padding:var(--ruimte-1);background:var(--panel);border:1px solid var(--line);border-radius:var(--straal-m);box-shadow:var(--schaduw-2);text-align:left;max-height:min(24rem,60vh);overflow:auto}
+.zk-optie{display:grid;grid-template-columns:1.25rem minmax(0,1fr) auto;gap:var(--ruimte-2);align-items:center;min-height:var(--tik-hoogte);padding:var(--ruimte-1) var(--ruimte-3);border-radius:var(--straal-s);cursor:pointer;color:var(--text)}
+.zk-optie svg{width:1.1rem;height:1.1rem;color:var(--muted)}
+.zk-optie.is-actief{background:var(--accent-soft);color:var(--text)}
+.zk-optie-tekst{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zk-optie-soort{color:var(--muted);font-size:var(--tekst-mini);white-space:nowrap}
+.zk-dym{display:flex;flex-wrap:wrap;gap:var(--ruimte-1) var(--ruimte-2);align-items:center;margin:0;padding:var(--ruimte-2) var(--ruimte-3);border-radius:var(--straal-m);background:var(--info-zacht);color:var(--text);font-size:var(--tekst-klein)}
+.zk-dym>svg{width:1rem;height:1rem;color:var(--info);flex:none}
+.zk-dym-knop{border:0;background:none;color:var(--info);font:inherit;font-weight:650;text-decoration:underline;text-underline-offset:.15em;cursor:pointer;padding:var(--ruimte-1);min-height:calc(var(--tik-hoogte) - 12px);border-radius:var(--straal-s)}
+.zk-dym-orig{color:var(--muted)}
+.zk-tabs-rij{display:flex;align-items:center;gap:var(--ruimte-2);min-width:0}
+.zk-tabs-rij>.ut-tabs-wrap{flex:1 1 auto;min-width:0}
+.zk-tabs-wrap{--ut-bg:var(--panel)}
+.zk-tabs{display:flex;gap:var(--ruimte-2);align-items:center;overflow-x:auto;scrollbar-width:none;padding:2px}
+.zk-tabs::-webkit-scrollbar{display:none}
+.zk-tab{flex:none;display:inline-flex;align-items:center;gap:var(--ruimte-2);min-height:var(--tik-hoogte);padding:0 var(--ruimte-4);border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+.zk-tab:hover{background:var(--surface)}
+.zk-tab.is-aan{background:var(--accent);border-color:var(--accent);color:var(--text-on-accent)}
+.zk-tab-n{font-size:var(--tekst-mini);padding:0 var(--ruimte-2);border-radius:999px;background:color-mix(in srgb,currentColor 14%,transparent)}
+.zk-filterknop{flex:none}
+.zk-filter-n{margin-left:var(--ruimte-1)}
+.zk-actief{display:flex;flex-wrap:wrap;gap:var(--ruimte-2);list-style:none;margin:0;padding:0}
+.zk-chip{border:0;cursor:pointer;min-height:calc(var(--tik-hoogte) - 12px);padding:0 var(--ruimte-2) 0 var(--ruimte-3);font:inherit;font-size:var(--tekst-mini);font-weight:650}
+.zk-chip svg{width:.9rem;height:.9rem}
+
+/* ---------------------------------------------------------------- raster: resultaten + zijkolom */
+.zk-raster{display:grid;grid-template-columns:minmax(0,1fr) min(20rem,32%);gap:var(--ruimte-5);margin-top:var(--ruimte-5);align-items:start}
+.zk-raster.is-mobiel{grid-template-columns:minmax(0,1fr)}
+.zk-resultaten{min-width:0;display:flex;flex-direction:column;gap:var(--ruimte-3)}
+.zk-balk{display:flex;flex-wrap:wrap;gap:var(--ruimte-1) var(--ruimte-3);align-items:baseline}
+.zk-balk-h{margin:0;font-size:1.25rem;font-weight:700}
+.zk-status{margin:0;color:var(--muted);font-size:var(--tekst-klein);display:inline-flex;gap:var(--ruimte-1);align-items:center}
+.zk-status svg{width:1rem;height:1rem}
+.zk-zij{display:flex;flex-direction:column;gap:var(--ruimte-4);min-width:0}
+
+/* ---------------------------------------------------------------- begin */
+.zk-begin{display:grid;gap:var(--ruimte-4)}
+.zk-wat h3,.zk-bronnen h3{margin:0 0 var(--ruimte-2);font-size:var(--tekst-basis)}
+.zk-wat ul{margin:0;padding-left:1.25rem;color:var(--muted);font-size:var(--tekst-klein);display:grid;gap:var(--ruimte-1)}
+.zk-standen{list-style:none;margin:0;padding:0;display:grid;gap:var(--ruimte-2)}
+.zk-stand{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--ruimte-1) var(--ruimte-2);align-items:center;padding:var(--ruimte-2) 0;border-top:1px solid var(--line)}
+.zk-stand:first-child{border-top:0}
+.zk-stand-naam{font-weight:600}
+.zk-voortgang{grid-column:1/-1;width:100%;height:6px;accent-color:var(--accent)}
+.zk-stand-meta{grid-column:1/-1;color:var(--muted);font-size:var(--tekst-mini)}
+.zk-skelet-regel{height:1rem;border-radius:var(--straal-s);background:var(--surface2)}
+
+/* ---------------------------------------------------------------- resultaten */
+.zk-lijst{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--ruimte-3)}
+.zk-kaart{display:grid;grid-template-columns:3rem minmax(0,1fr) auto;gap:var(--ruimte-3) var(--ruimte-4);align-items:start;padding:var(--ruimte-4);transition:border-color .15s,box-shadow .15s}
+.zk-kaart:hover,.zk-kaart:focus-within{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));box-shadow:var(--schaduw-2)}
+.zk-kaart.is-nieuw{border-color:color-mix(in srgb,var(--info) 55%,var(--line))}
+.zk-kaart-ic{width:3rem;height:3rem;border-radius:50%;display:grid;place-items:center;color:var(--accent);background:var(--accent-soft)}
+.zk-kaart-ic svg{width:1.4rem;height:1.4rem}
+.zk-kaart.bron-mail .zk-kaart-ic,.zk-kaart.bron-bijlage .zk-kaart-ic{color:var(--ok);background:var(--ok-zacht)}
+.zk-kaart.bron-instelling .zk-kaart-ic,.zk-kaart.bron-ui .zk-kaart-ic{color:var(--info);background:var(--info-zacht)}
+.zk-kaart.bron-agenda .zk-kaart-ic{color:var(--warn);background:var(--warn-zacht)}
+.zk-kaart.bron-cloud .zk-kaart-ic,.zk-kaart.bron-drive .zk-kaart-ic{color:var(--accent);background:var(--accent-soft)}
+.zk-kaart-body{min-width:0;display:flex;flex-direction:column;gap:var(--ruimte-1)}
+.zk-kaart-titel{margin:0;font-size:var(--tekst-basis);font-weight:650;display:flex;flex-wrap:wrap;gap:var(--ruimte-2);align-items:center}
+.zk-kaart-titel a{color:inherit;text-decoration:none}
+.zk-kaart-titel a:hover{text-decoration:underline}
+.zk-kaart-titel a::after{content:'';position:absolute;inset:0;border-radius:inherit}
+.zk-kaart{position:relative}
+.zk-kaart-rechts,.zk-uitleg,.zk-tags{position:relative;z-index:1}
+.zk-kaart-pad{margin:0;color:var(--muted);font-size:var(--tekst-mini)}
+.zk-pad-sep{color:var(--faint)}
+.zk-kaart-fragment{margin:var(--ruimte-1) 0 0;font-size:var(--tekst-klein);line-height:1.45;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.zk-kaart-voet{display:flex;flex-wrap:wrap;gap:var(--ruimte-2);align-items:center;justify-content:space-between;margin-top:var(--ruimte-1)}
+.zk-tags{display:flex;flex-wrap:wrap;gap:var(--ruimte-1);list-style:none;margin:0;padding:0}
+.zk-kaart-datum{color:var(--muted);font-size:var(--tekst-mini);white-space:nowrap}
+.zk-uitleg{font-size:var(--tekst-mini);color:var(--muted)}
+.zk-uitleg summary{min-height:calc(var(--tik-hoogte) - 12px);color:var(--accent);font-weight:600;font-size:var(--tekst-mini)}
+.zk-uitleg ul{margin:0;padding-left:1.1rem}
+.zk-uitleg-methode{margin:var(--ruimte-1) 0 0}
+.zk-kaart-rechts{display:flex;flex-direction:column;align-items:flex-end;gap:var(--ruimte-2);flex:none}
+.zk-pct{white-space:nowrap}
+.zk-actie{white-space:nowrap}
+.zk-actie svg{width:1rem;height:1rem}
+.zk-geen-route{color:var(--faint);font-size:var(--tekst-mini)}
+.zk-kaart-skelet .zk-kaart-ic{background:var(--surface2)}
+.zk-sk{display:block;height:.9rem;border-radius:var(--straal-s);background:var(--surface2);width:80%}
+.zk-sk-titel{width:55%;height:1.1rem;color:var(--faint);font-size:var(--tekst-mini);background:transparent}
+.zk-sk-kort{width:35%}
+.zk-niets{text-align:center;padding:var(--ruimte-6) var(--ruimte-4);color:var(--muted);display:grid;gap:var(--ruimte-2);justify-items:center}
+.zk-niets-h{margin:0;font-size:1.125rem;font-weight:650;color:var(--text)}
+.zk-niets p{margin:0}
+.zk-weg summary{font-size:var(--tekst-klein);color:var(--muted)}
+.zk-weg ul{margin:0;padding-left:1.1rem;font-size:var(--tekst-mini);color:var(--muted);display:grid;gap:var(--ruimte-1)}
+.zk-meer{display:flex;flex-wrap:wrap;gap:var(--ruimte-3);align-items:center;justify-content:center;padding:var(--ruimte-3) 0}
+.zk-meer-n{color:var(--muted);font-size:var(--tekst-klein)}
+.zk-tip{display:flex;gap:var(--ruimte-2);align-items:flex-start;margin:var(--ruimte-3) 0 0;padding:var(--ruimte-2) var(--ruimte-3);border:1px dashed var(--line);border-radius:var(--straal-m);color:var(--muted);font-size:var(--tekst-mini)}
+.zk-tip svg{flex:none;width:1rem;height:1rem;margin-top:.1em}
+
+/* ---------------------------------------------------------------- zone D (22.10.2026): gekleurde tegels per bron, raster, groepen «за джерелами»,
+   technische strook, «Останні пошуки» als op het macet, het indexvenster. Alleen tokens (en color-mix van tokens). */
+.zk-kaart-ic{position:relative;flex:none}
+.zk-kaart.bron-pagina .zk-kaart-ic,.zk-kaart.bron-hulp .zk-kaart-ic{color:var(--info);background:var(--info-zacht)}
+.zk-kaart.bron-bord .zk-kaart-ic{color:color-mix(in srgb,var(--info) 55%,var(--fout));background:color-mix(in srgb,var(--info-zacht) 55%,var(--fout-zacht))}
+.zk-kaart.bron-github .zk-kaart-ic{color:var(--text);background:var(--surface2)}
+.zk-kaart.bron-contact .zk-kaart-ic,.zk-kaart.bron-apparaat .zk-kaart-ic{color:var(--muted);background:var(--surface2)}
+.zk-kaart-ic.is-afzender,.zk-kaart-ic.is-merk{background:transparent;color:inherit}
+.zk-kaart-ic.is-afzender .afz-foto{width:100%;height:100%}
+.zk-kaart-ic.is-formaat{flex-direction:column;gap:0;display:flex;align-items:center;justify-content:center}
+.zk-kaart-ic.is-formaat svg{width:1.15rem;height:1.15rem}
+.zk-kaart-formaat{font-size:var(--tekst-mini);font-weight:750;letter-spacing:.02em;line-height:1}
+/* raster: kaarten als tegels (verticaal) */
+.zk-lijst.is-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr));gap:var(--ruimte-3);align-items:stretch}
+.zk-kaart.is-tegel{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:var(--ruimte-2);height:100%}
+.zk-kaart.is-tegel .zk-kaart-ic{width:2.5rem;height:2.5rem}
+.zk-kaart.is-tegel .zk-kaart-rechts{flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.zk-kaart.is-tegel .zk-kaart-fragment{-webkit-line-clamp:3}
+/* balk: ordening + lijst/raster */
+.zk-weergave{margin-left:auto;display:flex;align-items:center;gap:var(--ruimte-2);flex-wrap:wrap}
+.zk-ordening select{min-height:calc(var(--tik-hoogte) - 6px);font-size:var(--tekst-klein)}
+.zk-weergave-knoppen{display:inline-flex;border:1px solid var(--line);border-radius:var(--straal-m);overflow:hidden;background:var(--panel)}
+.zk-weergave-knoppen .knop-icoon{border:0;border-radius:0;min-width:var(--tik-hoogte);min-height:calc(var(--tik-hoogte) - 6px);color:var(--muted);background:transparent}
+.zk-weergave-knoppen .knop-icoon[aria-pressed=true]{background:var(--accent);color:var(--text-on-accent)}
+.zk-weergave-knoppen .knop-icoon svg{width:1.1rem;height:1.1rem}
+/* groepen per categorie */
+.zk-groep-sectie{display:flex;flex-direction:column;gap:var(--ruimte-2)}
+.zk-groep-kop{display:flex;align-items:center;gap:var(--ruimte-2);margin:var(--ruimte-2) 0 0;padding-bottom:var(--ruimte-1);border-bottom:1px solid var(--line);font-size:var(--tekst-basis);font-weight:700}
+.zk-groep-ic{display:grid;place-items:center;width:1.9rem;height:1.9rem;border-radius:var(--straal-s);background:var(--accent-soft);color:var(--accent)}
+.zk-groep-ic svg{width:1.05rem;height:1.05rem}
+.zk-groep-sectie.cat-mail .zk-groep-ic{color:var(--ok);background:var(--ok-zacht)}
+.zk-groep-sectie.cat-paginas .zk-groep-ic,.zk-groep-sectie.cat-instellingen .zk-groep-ic{color:var(--info);background:var(--info-zacht)}
+.zk-groep-sectie.cat-agenda .zk-groep-ic{color:var(--warn);background:var(--warn-zacht)}
+.zk-groep-sectie.cat-github .zk-groep-ic{color:var(--text);background:var(--surface2)}
+.zk-groep-sectie.cat-bord .zk-groep-ic{color:color-mix(in srgb,var(--info) 55%,var(--fout));background:color-mix(in srgb,var(--info-zacht) 55%,var(--fout-zacht))}
+.zk-groep-kop .zk-tab-n{background:var(--surface2);color:var(--muted);font-weight:650}
+/* technische strook + lade per bron + indexknop */
+.zk-tech-strook{margin-bottom:var(--ruimte-3)}
+.zk-tech-strook a{color:inherit;font-weight:650}
+.zk-stand-lade{margin-left:var(--ruimte-2);font-weight:500}
+.zk-stand-lade.is-technisch{color:var(--info);background:var(--info-zacht)}
+.zk-indexknop{flex:none}
+.zk-gesloten-groep{padding:0}
+.zk-gesloten-groep>summary{display:flex;align-items:center;gap:var(--ruimte-2);min-height:var(--tik-hoogte);padding:var(--ruimte-2) var(--ruimte-3);cursor:pointer;font-size:var(--tekst-klein);font-weight:600;color:var(--text);border-radius:inherit}
+.zk-gesloten-groep>summary svg{flex:none;width:1rem;height:1rem;color:var(--muted)}
+.zk-gesloten-groep>summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.zk-gesloten-lijst{display:grid;gap:var(--ruimte-2);padding:0 var(--ruimte-3) var(--ruimte-3)}
+.zk-indexknop[aria-pressed=true]{border-color:var(--accent)}
+/* «Останні пошуки»: rij met pijl, vraag links, tijd rechts (macet) */
+.zk-recent-knop{grid-template-columns:1rem minmax(0,1fr) auto;grid-template-rows:auto;align-items:center}
+.zk-recent-knop svg{grid-row:auto;color:var(--faint)}
+.zk-recent-meta{grid-column:3;white-space:nowrap}
+.zk-recent-lijst li:has(.zk-recent-meta:empty) .zk-recent-knop{grid-template-columns:1rem minmax(0,1fr)}
+/* het indexvenster (src/zoek/ZoekIndexVenster.tsx, in het gezamenlijke venster) */
+.zk-iv-kop{display:inline-flex;align-items:center;gap:var(--ruimte-2);min-width:0}
+.zk-iv-kop svg{width:1rem;height:1rem;flex:none;color:var(--accent)}
+.zk-iv-kop-pil{font-weight:600}
+.zk-iv-inhoud{display:flex;flex-direction:column;gap:var(--ruimte-3);padding:var(--ruimte-4);font-size:var(--tekst-klein);color:var(--text)}
+.zk-iv-intro{margin:0;color:var(--muted)}
+.zk-iv-laden{margin:0;display:flex;flex-wrap:wrap;gap:var(--ruimte-1) var(--ruimte-2);align-items:center}
+.zk-iv-laden small{flex:1 1 100%;color:var(--muted);font-size:var(--tekst-mini)}
+.zk-iv-label{color:var(--muted)}
+.zk-iv-laadt{margin:0;display:inline-flex;gap:var(--ruimte-2);align-items:center;color:var(--muted)}
+.zk-iv-laadt svg{width:1rem;height:1rem}
+.zk-iv-form{display:flex;flex-direction:column;gap:var(--ruimte-3)}
+.zk-iv-groep{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.zk-iv-groep legend{font-size:var(--tekst-mini);font-weight:650;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:0;margin-bottom:var(--ruimte-1);display:flex;align-items:center;gap:var(--ruimte-1)}
+.zk-iv-bronnen{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,13rem),1fr));gap:0 var(--ruimte-2)}
+.zk-iv-sinds{display:grid;gap:2px;font-size:var(--tekst-klein)}
+.zk-iv-sinds>span{display:inline-flex;align-items:center;gap:var(--ruimte-1);font-weight:600}
+.zk-iv-sinds small{color:var(--muted);font-size:var(--tekst-mini)}
+.zk-iv-sinds input{max-width:14rem}
+.zk-iv-knoppen{display:flex;flex-wrap:wrap;gap:var(--ruimte-2);align-items:center}
+.zk-iv-limiet{margin:0;color:var(--muted);font-size:var(--tekst-mini)}
+.zk-iv-voortgang{display:flex;flex-direction:column;gap:var(--ruimte-2)}
+.zk-iv-balk{display:flex;align-items:center;gap:var(--ruimte-2)}
+.zk-iv-balk .zk-voortgang{flex:1 1 auto;height:10px}
+.zk-iv-pct{font-weight:700;min-width:3ch;text-align:right}
+.zk-iv-cijfers{display:grid;grid-template-columns:repeat(auto-fit,minmax(6rem,1fr));gap:var(--ruimte-2);margin:0}
+.zk-iv-cijfers div{padding:var(--ruimte-2);border-radius:var(--straal-s);background:var(--surface)}
+.zk-iv-cijfers dt{font-size:var(--tekst-mini);color:var(--muted)}
+.zk-iv-cijfers dd{margin:0;font-size:1.125rem;font-weight:700}
+.zk-iv-stap{margin:0;overflow-wrap:anywhere}
+.zk-iv-tabel-rol{overflow-x:auto;border-radius:var(--straal-s)}
+.zk-iv-tabel-rol:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.zk-iv-tabel{width:100%;border-collapse:collapse;font-size:var(--tekst-mini)}
+.zk-iv-tabel th,.zk-iv-tabel td{text-align:left;padding:var(--ruimte-1) var(--ruimte-1);border-bottom:1px solid var(--line);vertical-align:top}
+.zk-iv-tabel th{color:var(--muted);font-weight:650}
+.zk-iv-ruimte{color:var(--muted)}
+.zk-iv-uitkomst{display:flex;flex-direction:column;gap:var(--ruimte-2)}
+.zk-iv-uitkomst h3{margin:0;font-size:var(--tekst-basis);display:flex;align-items:center;gap:var(--ruimte-2)}
+.zk-iv-uitkomst h3 svg{width:1.1rem;height:1.1rem}
+.zk-iv-ok{color:var(--ok)}.zk-iv-warn{color:var(--warn)}
+.zk-iv-som{margin:0;color:var(--muted)}
+.zk-iv-tellers{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:var(--ruimte-1) var(--ruimte-3)}
+.zk-iv-tellers li.is-fout{color:var(--fout)}
+.zk-iv-fouten summary,.zk-iv-journaal summary{cursor:pointer;min-height:calc(var(--tik-hoogte) - 12px);display:flex;align-items:center;gap:var(--ruimte-1);font-weight:600}
+.zk-iv-journaal summary svg{width:1rem;height:1rem;color:var(--muted)}
+.zk-iv-fouten ul,.zk-iv-lijst{margin:var(--ruimte-1) 0 0;padding-left:0;list-style:none;display:grid;gap:var(--ruimte-1);font-size:var(--tekst-mini)}
+.zk-iv-fouten li,.zk-iv-lijst li{overflow-wrap:anywhere}
+.zk-iv-journaal h4{margin:var(--ruimte-2) 0 0;font-size:var(--tekst-mini);text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.zk-iv-journaal p{margin:var(--ruimte-1) 0 0;color:var(--muted)}
+
+/* ---------------------------------------------------------------- filterpaneel */
+.zk-paneel{display:flex;flex-direction:column;gap:var(--ruimte-3);min-width:0}
+.zk-paneel-kop{display:flex;align-items:center;gap:var(--ruimte-2);flex-wrap:wrap}
+.zk-paneel-kop h2{margin:0;font-size:var(--tekst-basis);flex:1 1 auto;display:inline-flex;align-items:center;gap:var(--ruimte-2)}
+.zk-paneel-kop h2 svg{width:1rem;height:1rem;color:var(--muted)}
+.zk-paneel-sluit{display:none}
+.zk-groep{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;min-width:0}
+.zk-groep legend{font-size:var(--tekst-mini);font-weight:650;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:0;margin-bottom:var(--ruimte-1)}
+.zk-groep-leeg{margin:0;color:var(--faint);font-size:var(--tekst-mini)}
+.zk-vink{display:flex;gap:var(--ruimte-2);align-items:center;min-height:calc(var(--tik-hoogte) - 8px);padding:2px var(--ruimte-1);border-radius:var(--straal-s);cursor:pointer;font-size:var(--tekst-klein)}
+.zk-vink:hover{background:var(--surface)}
+.zk-vink input{flex:none;width:1rem;height:1rem;margin:0}
+.zk-vink-tekst{flex:1 1 auto;min-width:0}
+.zk-vink-hint{color:var(--muted)}
+.zk-vink-n{color:var(--muted);font-size:var(--tekst-mini)}
+.zk-vink.is-uit{color:var(--faint);cursor:not-allowed}
+.zk-select select{width:100%}
+.zk-periode{display:grid;grid-template-columns:1fr 1fr;gap:var(--ruimte-2);margin-top:var(--ruimte-1)}
+.zk-periode label{display:grid;gap:2px;font-size:var(--tekst-mini);color:var(--muted);min-width:0}
+.zk-periode input{width:100%;font-size:var(--tekst-klein)}
+.zk-paneel-voet{position:sticky;bottom:0;padding-top:var(--ruimte-2);background:var(--panel)}
+.zk-paneel-voet .knop-primair{width:100%}
+/* telefoon: onderblad (zoals het meldingenpaneel) */
+.zk-scrim{position:fixed;inset:0;z-index:700;background:var(--overlay)}
+.zk-paneel.is-onderblad{position:fixed;z-index:701;left:calc(var(--ruimte-2) + var(--veilig-links));right:calc(var(--ruimte-2) + var(--veilig-rechts));bottom:calc(var(--ruimte-2) + var(--veilig-onder));top:auto;max-height:calc(100dvh - var(--ruimte-6) - var(--veilig-boven));overflow:auto;overscroll-behavior:contain;padding:var(--ruimte-4);border:1px solid var(--line);border-radius:var(--straal-l);background:var(--panel);box-shadow:var(--schaduw-3);color:var(--text)}
+.zk-paneel.is-onderblad .zk-paneel-sluit{display:inline-flex}
+.zk-paneel.is-onderblad .zk-paneel-kop{position:sticky;top:calc(-1 * var(--ruimte-4));background:var(--panel);padding:var(--ruimte-1) 0;z-index:1}
+.zk-paneel.is-onderblad .zk-vink{min-height:var(--tik-hoogte-mobiel)}
+/* zone D (stand 768): het onderblad staat in .canonical-workspace — een eigen stapelcontext (z-index 1) binnen .canonical-chrome. Het menu
+   (.canonical-sidebar, z 160: rail links, of dok rechts/boven/onder in menu-v2), de knoppen rechtsboven (z 220) en «naar boven» (z 440)
+   liggen daardoor BOVEN het blad: op 701–900 px lagen de vinkjes onder de rail (niet aan te tikken), met het dok onder lag «Показати
+   результати» eronder. Dus: zolang het MODALE blad open is, zijn het menu en «naar boven» verborgen (zoals de bel hieronder), en het
+   blad begint onder de kopbalk (avatar en zoekknop rechtsboven). */
+.zk-paneel.is-onderblad{max-height:calc(100dvh - 4.5rem - var(--veilig-boven) - var(--veilig-onder))}
+@media (max-width:900px){
+  html body:has(.zk-scrim) :is(.canonical-sidebar,.canonical-sidebar-edge-zone,.canonical-sidebar-scrim){visibility:hidden!important;pointer-events:none!important}
+  /* «Вгору» en de bel achter het onderblad: src/plaatsing/plaatsing.css (visibility, er schuift niets) */
+}
+
+/* ---------------------------------------------------------------- geschiedenis */
+.zk-recent-leeg{margin:0;color:var(--muted);font-size:var(--tekst-mini)}
+.zk-recent-lijst{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.zk-recent-lijst li{display:flex;align-items:center;gap:var(--ruimte-1);min-width:0}
+.zk-recent-knop{flex:1 1 auto;min-width:0;display:grid;grid-template-columns:1rem minmax(0,1fr);grid-template-rows:auto auto;column-gap:var(--ruimte-2);align-items:center;border:0;background:none;color:var(--text);font:inherit;font-size:var(--tekst-klein);padding:var(--ruimte-1) var(--ruimte-2);min-height:var(--tik-hoogte);border-radius:var(--straal-s);cursor:pointer;text-align:left}
+.zk-recent-knop svg{width:1rem;height:1rem;color:var(--muted);grid-row:1/3}
+.zk-recent-q{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zk-recent-meta{grid-column:2;color:var(--muted);font-size:var(--tekst-mini)}
+.zk-recent-knop:hover{background:var(--surface)}
+.zk-recent-wis{flex:none;border:0;background:transparent;color:var(--muted);min-width:var(--tik-hoogte);min-height:var(--tik-hoogte)}
+.zk-recent-wis:hover{color:var(--fout);background:var(--fout-zacht)}
+
+/* ---------------------------------------------------------------- bovenbalk: veld-knop en palet ⌘K */
+.zk-trigger{display:inline-flex;align-items:center;gap:var(--ruimte-2);min-height:var(--tik-hoogte);width:min(22rem,40vw);padding:0 var(--ruimte-2) 0 var(--ruimte-3);border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font:inherit;font-size:var(--tekst-klein);cursor:text;box-shadow:var(--schaduw-1);margin-right:var(--ruimte-3)}
+.zk-trigger:hover{border-color:color-mix(in srgb,var(--text) 24%,var(--line));color:var(--text)}
+.zk-trigger svg{flex:none;width:1.1rem;height:1.1rem}
+.zk-trigger-tekst{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.zk-trigger kbd{flex:none;font:inherit;font-size:var(--tekst-mini);border:1px solid var(--line);border-radius:6px;padding:0 var(--ruimte-1);color:var(--muted);background:var(--surface)}
+.canonical-account-anchor{display:flex;align-items:center}
+.zk-trigger-mobiel{position:fixed;z-index:220;top:calc(var(--ruimte-2) + var(--veilig-boven));right:calc(var(--ruimte-2) + var(--veilig-rechts));display:grid;place-items:center;width:var(--tik-hoogte-mobiel);height:var(--tik-hoogte-mobiel);padding:0;border:1px solid var(--line);border-radius:50%;background:var(--panel);color:var(--muted);box-shadow:var(--schaduw-1);cursor:pointer}
+.zk-trigger-mobiel svg{width:1.25rem;height:1.25rem}
+/* Zoekknop IN HET MENU (alleen op de post, 24.10.2026) — niet meer boven het accountmenu van de post.
+   Lade (telefoon): [profielfoto] … [zoeken][«Редагувати меню»][«Закрити»]; even groot als «Закрити» (44 px), zelfde rust als de kop. */
+.canonical-drawer-header .zk-menu-knop-lade{position:relative;flex:none;display:grid;place-items:center;width:var(--tik-hoogte-mobiel);height:var(--tik-hoogte-mobiel);margin:0 2px 0 auto;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.canonical-drawer-header .zk-menu-knop-lade+.menu-lade-bewerken{margin-left:0}
+.canonical-drawer-header .zk-menu-knop-lade svg{width:1.375rem;height:1.375rem;stroke-width:1.8}
+.canonical-drawer-header .zk-menu-knop-lade:hover,.canonical-drawer-header .zk-menu-knop-lade:focus-visible{background:var(--nav-hover);color:var(--text)}
+.canonical-drawer-header .zk-menu-knop-lade:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+/* Zijbalk (computer): een eigen rond knopje BUITEN de pil «Режим бічної панелі» — breed: direct links van de pil met «Налаштувати
+   меню» (zelfde rand en vlak als de pil, even hoog: 36 px); smal: direct onder de modusknop (34 px, zoals die); dock: vóór ⚙. */
+.zijbalk-werkbalk .zijbalk-werkbalk-zoek{display:grid;place-items:center;flex:none;width:34px;height:34px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;transition:color .14s ease,background-color .14s ease}
+.zijbalk-werkbalk .zijbalk-werkbalk-zoek svg{width:18px;height:18px;stroke-width:1.9}
+.zijbalk-werkbalk.breed .zijbalk-werkbalk-zoek{width:36px;height:36px;margin-left:auto;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);background:var(--surface)}
+.zijbalk-werkbalk.smal .zijbalk-werkbalk-zoek{margin-top:4px}
+.zijbalk-werkbalk.dock .zijbalk-werkbalk-zoek{width:30px;height:30px;margin-right:2px}
+.zijbalk-werkbalk .zijbalk-werkbalk-zoek:hover,.zijbalk-werkbalk .zijbalk-werkbalk-zoek:focus-visible{background:var(--zb-hover);color:var(--text)}
+.zijbalk-werkbalk .zijbalk-werkbalk-zoek:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.zk-palet-achter{position:fixed;inset:0;z-index:720;background:var(--overlay);display:grid;align-content:start;justify-items:center;padding:calc(10vh + var(--veilig-boven)) var(--ruimte-3) var(--ruimte-3)}
+.zk-palet{width:min(40rem,100%);display:flex;flex-direction:column;gap:var(--ruimte-3);padding:var(--ruimte-3);box-shadow:var(--schaduw-3)}
+.zk-palet .zk-pop{position:static;box-shadow:none;border:0;padding:0;max-height:min(50vh,22rem)}
+.zk-palet-voet{display:flex;flex-wrap:wrap;gap:var(--ruimte-2);align-items:center;justify-content:space-between}
+.zk-palet-hint{color:var(--muted);font-size:var(--tekst-mini)}
+
+/* ---------------------------------------------------------------- focus-doel (?focus=<hulp-sleutel>, src/platform/focus-doel.ts) */
+.is-focus-doel{outline:3px solid var(--focus)!important;outline-offset:3px;border-radius:var(--straal-s);animation:zk-puls 1.2s ease-in-out 3}
+@keyframes zk-puls{50%{outline-color:color-mix(in srgb,var(--focus) 30%,transparent)}}
+
+/* ---------------------------------------------------------------- telefoon */
+@media (max-width:900px){
+  .zk-pagina{padding:var(--ruimte-2) var(--ruimte-3) var(--ruimte-6)}
+  .zk-kop{padding:var(--ruimte-4)}
+  .zk-h{font-size:1.375rem}
+  .zk-kop-ic{display:none}
+  .zk-go span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  .zk-go{width:var(--tik-hoogte);padding:0}
+  .zk-raster{grid-template-columns:minmax(0,1fr)}
+  .zk-zij{position:static}
+  .zk-kaart{grid-template-columns:2.5rem minmax(0,1fr);gap:var(--ruimte-2) var(--ruimte-3);padding:var(--ruimte-3)}
+  .zk-kaart-ic{width:2.5rem;height:2.5rem}
+  .zk-kaart-rechts{grid-column:2;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .zk-kaart-fragment{-webkit-line-clamp:4}
+  /* (0,2,0): sterker dan primitieven «:is(…input[type=submit]):where(.is-klein)» = (0,1,1) */
+  .zk-pagina .zk-chip,.zk-pagina .zk-filterknop,.zk-pagina .zk-actie,.zk-pagina .zk-dym-knop{min-height:var(--tik-hoogte-mobiel)}
+  .zk-optie{grid-template-columns:1.25rem minmax(0,1fr)}
+  .zk-optie-tekst{white-space:normal;overflow-wrap:anywhere}
+  .zk-optie-soort{grid-column:2;white-space:normal}
+  /* 22.10 (etap F, stand 390): inline-flex maakte van elk tekstdeel en elke <mark> een flex-item dat midden in een woord brak («Інструк|ція», «Outlook.p|df»); inline-block laat de tekst gewoon lopen en houdt de 40 px hoogte. */
+  .zk-kaart-titel a{display:inline-block;min-height:2.5rem}
+  /* 22.10 (etap F, stand ZOEK-F 390): de zwevende meldingenbel lag over «Показати результати» van het filter-onderblad; zoals bij het opstelvenster (mail) verdwijnt hij zolang het onderblad open is. */
+  /* 22.10 (etap F, stand): de voetlink van het palet («Відкрити сторінку пошуку») was 36 px hoog op 390 — tikvlak ≥ 44 px. */
+  .zk-palet-voet .knop,.zk-palet-voet a.knop{min-height:var(--tik-hoogte-mobiel)}
+  /* zone D: raster op de telefoon = één kolom; ordening/weergave onder de status; indexvenster is daar schermvullend (vensters.css) */
+  .zk-lijst.is-raster{grid-template-columns:minmax(0,1fr)}
+  /* (stand D 390): de telefoonregel hierboven zette de tegel weer op twee kolommen → icoon over de titel; de tegel blijft één kolom */
+  .zk-kaart.is-tegel{grid-template-columns:minmax(0,1fr)}
+  .zk-kaart.is-tegel .zk-kaart-rechts{grid-column:auto}
+  .zk-weergave{margin-left:0;flex:1 1 100%}
+  .zk-pagina .zk-weergave-knoppen .knop-icoon,.zk-pagina .zk-indexknop{min-height:var(--tik-hoogte-mobiel)}
+  .zk-iv-inhoud{padding:var(--ruimte-3)}
+  .zk-iv-knoppen .knop,.zk-iv-fouten summary,.zk-iv-journaal summary,.zk-gesloten-groep>summary{min-height:var(--tik-hoogte-mobiel)}
+  /* mobiel.css maakt elke <table> zelf scrollbaar (display:block) → axe «scrollable-region-focusable»; hier scrolt de focusbare omslag .zk-iv-tabel-rol */
+  .zk-iv-tabel-rol .zk-iv-tabel{display:table;overflow:visible;max-width:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .zk-spin{animation:none}.zk-kaart{transition:none}.is-focus-doel{animation:none}
+}
+

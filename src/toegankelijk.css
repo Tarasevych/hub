@@ -1,0 +1,36 @@
+/* Toegankelijkheid (WCAG 2.2 AA, recensie 21.10.2026) — alleen tokens, geen hex, geen kleur-/maatwijziging buiten de focus.
+   1. Zwevende knoppen (bel, FAB «Новий лист») liggen boven willekeurige inhoud: een focusrand van één kleur verdwijnt op een
+      achtergrond van dezelfde toon (stand ДО: rand van de bel = accent op 50 % → 1:1 tegen het paneel). Twee tinten: een ring in
+      de paneelkleur direct rond de knop en daarbuiten de focuskleur — één van beide contrasteert altijd ≥ 3:1 (1.4.11, 2.4.7).
+   2. prefers-reduced-motion: geen glijdende FAB, geen in-/uitschuivende menu's en vensters (2.3.3, en 2.2.2 voor de puls). */
+html .canonical-notification-bell:focus-visible,
+html .mail-compose-float:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--focus);
+}
+/* Panelen/vensters die zelf de focus krijgen (tabindex=-1): rand binnen het vlak, zodat hij niet buiten het scherm valt. */
+html .canonical-notification-panel:focus-visible,
+html section.mail-new-message:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html .mail-compose-float,
+  html .mail-compose-float-tip,
+  html .canonical-notification-panel,
+  html .canonical-notification-panel *,
+  html .mail-new-message,
+  html .mail-new-message-backdrop,
+  html .mail-compose-zwevend,
+  html .mail-row-action-popover,
+  html .mail-account-badge-menu,
+  html .mail-account-switcher-menu,
+  html .ut-tabs-wrap,
+  html .ut-tabs-wrap * {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,76 @@
+/* Mail → «Поштові акаунти» (MailAccountsHub.tsx). Mobiel 21.10.2026: het raster stond inline als
+   `minmax(0,1fr) 320px` — op 390 px bleef er voor de hoofdkolom 0 px over; de begroeting liep letter voor letter verticaal en
+   de rechterkolom (aside) lag over de tegels, die daardoor niet aanklikbaar waren. Nu: twee kolommen alleen als er ruimte is,
+   anders één kolom met de uitleg ónder de tegels. Alleen tokens; geen vaste breedtes > 360 px. */
+.mail-accounts-hub{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--ruimte-5);padding:var(--ruimte-5);max-width:1400px;margin:0 auto;min-width:0;box-sizing:border-box}
+@media (min-width:1100px){.mail-accounts-hub{grid-template-columns:minmax(0,1fr) minmax(0,320px)}}
+.mail-accounts-hoofd,.mail-accounts-kant{min-width:0}
+.mail-accounts-kant{display:flex;flex-direction:column;gap:var(--ruimte-4)}
+.mail-provider-rooster{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr));gap:var(--ruimte-3);align-items:start}
+.mail-provider-tegel{display:grid;gap:6px;align-content:start;min-width:0;min-height:var(--tik-hoogte);padding:var(--ruimte-4);border:1px solid var(--line);border-radius:var(--straal-m);background:var(--panel);color:var(--text);text-align:left;font:inherit}
+button.mail-provider-tegel{cursor:pointer}
+button.mail-provider-tegel:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.mail-provider-logo{display:block;width:36px;height:36px}
+.mail-provider-tekst{display:grid;gap:2px;min-width:0}
+.mail-provider-naam{font-weight:600;font-size:14px;overflow-wrap:anywhere}
+.mail-provider-onder,.mail-provider-wijze{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.mail-provider-wijze{color:var(--accent)}
+.mail-provider-wijze.is-nog-niet{color:var(--muted)}
+/* «Чому недоступно?» — ingeklapt, zodat de lange uitleg van Online.ua en Proton het raster niet oprekt. */
+.mail-provider-waarom{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.mail-provider-waarom>summary{cursor:pointer;min-height:var(--tik-hoogte);display:flex;align-items:center;color:var(--text);font-weight:600;list-style:revert}
+.mail-provider-waarom>ul{margin:4px 0 0;padding-left:16px;line-height:1.45}
+@media (max-width:700px){
+  .mail-accounts-hub{padding:var(--ruimte-4) 0;gap:var(--ruimte-4)}
+  .mail-provider-rooster{grid-template-columns:repeat(auto-fill,minmax(min(100%,140px),1fr))}
+}
+/* Telefoon (≤ 480 px): één kolom, compacte tegel — logo links, tekst rechts op één of twee regels. */
+@media (max-width:480px){
+  .mail-provider-rooster{grid-template-columns:minmax(0,1fr);gap:var(--ruimte-2)}
+  .mail-provider-tegel{grid-template-columns:36px minmax(0,1fr);align-items:center;column-gap:var(--ruimte-3);padding:var(--ruimte-3)}
+  .mail-provider-onder{display:none}
+}
+
+/* «Підключені акаунти»: per dienst een groep, per account stand + «Перепідключити» + «Відключити». */
+.mail-koppeling-groep{display:grid;gap:var(--ruimte-2);padding:var(--ruimte-3) 0;border-top:1px solid var(--line)}
+.mail-koppeling-groep:first-of-type{border-top:0}
+.mail-koppeling-groep-kop{display:flex;align-items:center;justify-content:space-between;gap:var(--ruimte-3);flex-wrap:wrap}
+.mail-koppeling-groep-kop h3{margin:0;font-size:14px;font-weight:700}
+.mail-koppeling-groep-kop h3>span{margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--surface);font-size:12px;font-weight:600}
+.mail-koppeling{display:grid;gap:var(--ruimte-2);padding:var(--ruimte-3);border:1px solid var(--line);border-radius:var(--straal-m);background:var(--panel)}
+.mail-koppeling-kop{display:flex;align-items:center;gap:var(--ruimte-3);min-width:0}
+.mail-koppeling-tekst{min-width:0;flex:1}
+.mail-koppeling-adres{font-weight:600;overflow-wrap:anywhere}
+.mail-koppeling-sub{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:12px;color:var(--muted)}
+.mail-koppeling-stand,.mail-koppeling-hoofd{display:inline-flex;align-items:center;padding:1px 8px;border-radius:999px;font-weight:700;color:var(--text)}
+.mail-koppeling-stand.is-werkt{background:var(--ok-zacht)}
+.mail-koppeling-stand.is-opnieuw-aanmelden,.mail-koppeling-stand.is-nog-geen-toegang{background:var(--warn-zacht)}
+.mail-koppeling-stand.is-fout{background:var(--fout-zacht)}
+.mail-koppeling-stand.is-losgekoppeld{background:var(--surface)}
+.mail-koppeling-hoofd{background:var(--info-zacht)}
+.mail-koppeling-acties{display:flex;flex-wrap:wrap;gap:var(--ruimte-2)}
+.mail-koppeling-knop{min-height:var(--tik-hoogte);padding:6px 14px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+.mail-koppeling-knop:disabled{opacity:.55;cursor:not-allowed}
+.mail-koppeling-knop.is-gevaar{border-color:color-mix(in srgb,var(--fout) 55%,var(--line));color:var(--text)}
+.mail-koppeling-knop.is-gevaar-vol{background:var(--fout-vlak);border-color:var(--fout);color:var(--text-on-vlak)}
+.mail-ontkoppel-vraag{display:grid;gap:var(--ruimte-2);padding:var(--ruimte-3);border-radius:var(--straal-m);background:var(--fout-zacht);color:var(--text);font-size:13px}
+.mail-ontkoppel-vraag>ul{margin:0;padding-left:18px;line-height:1.5}
+.mail-ontkoppel-keuze{display:grid;gap:4px;margin:0;padding:0;border:0}
+.mail-ontkoppel-keuze>legend{font-weight:600;margin-bottom:4px}
+.mail-ontkoppel-keuze label{display:flex;gap:8px;align-items:center;min-height:var(--tik-hoogte)}
+.mail-koppeling-melding{margin:0 0 var(--ruimte-3);padding:8px 12px;border-radius:10px;background:var(--ok-zacht);color:var(--text)}
+.mail-koppeling-melding.is-fout{background:var(--fout-zacht)}
+.mail-koppeling-noot{display:flex;gap:6px;align-items:flex-start;margin:var(--ruimte-3) 0 0;font-size:12px;color:var(--muted)}
+.mail-koppeling-laatste{color:var(--text)}
+.mail-laatste-opnieuw{min-height:var(--tik-hoogte);padding:0 4px;border:0;background:none;color:var(--accent);font:inherit;font-weight:700;cursor:pointer}
+.mail-koppeling{position:relative}
+.mail-melding-bel{position:relative;flex:none}
+.mail-koppeling-icoon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer}
+.mail-koppeling-icoon:disabled{opacity:.55;cursor:not-allowed}
+@media (pointer:coarse){.mail-koppeling-icoon{width:44px;height:44px}}
+.mail-melding-venster{position:absolute;z-index:6;right:0;top:calc(100% + 6px);width:min(320px,calc(100vw - 32px));display:grid;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);box-shadow:0 12px 32px color-mix(in srgb, var(--shadow) 35%, transparent)}
+.mail-melding-venster p,.mail-melding-venster small{margin:0;color:var(--text);font-size:13px;line-height:1.45}
+.mail-melding-venster [role=radiogroup]{display:grid}
+.mail-melding-venster label{display:flex;gap:8px;align-items:center;min-height:var(--tik-hoogte)}
+@media (max-width:480px){.mail-melding-venster{position:static;width:auto;margin-top:8px}}
+

@@ -1,0 +1,82 @@
+/* Bureaublad van de hub (src/bureau/Bureau.tsx). De tegels dragen de klassen van een venster
+   (.venster, .venster-kop, .venster-knoppen, .venster-grootte uit src/platform/vensters.css); hier staat alleen
+   wat het RASTER regelt: 12 kolommen op een breed scherm, 6 op een tablet, 1 op een telefoon.
+   Kleuren uit het thema (index.css / canoniek-omlijsting.css) met vaste terugvallers; tekst ≥ 4.5:1. */
+.bureau{display:grid;gap:14px;margin-bottom:16px}
+.bureau-balk{display:grid;gap:6px}
+.bureau-balk h2{display:flex;align-items:center;gap:8px;margin:0;font-size:1.05rem}
+.bureau-balk h2 svg{width:18px;height:18px}
+.bureau-balk p{margin:0;color:var(--muted,#4b5563);font-size:.88rem}
+.bureau-balk-acties{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.bureau-balk-acties button{display:inline-flex;align-items:center;gap:6px}
+.bureau-balk-acties svg{width:16px;height:16px}
+.bureau-grens,.bureau-laden{margin:0;color:var(--muted,#4b5563);font-size:.86rem}
+.bureau-fout{margin:0;color:var(--fout,#b42318);font-size:.86rem}
+
+/* ---------------------------------------------------------------- raster */
+.bureau-raster{display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:116px;gap:12px;align-items:stretch}
+.bureau-tegel{position:relative;grid-column:span var(--tegel-k,6);grid-row:span var(--tegel-r,2);min-width:0;
+  /* het venster zelf is `position:fixed`: op het bureaublad hoort de tegel in het raster te staan */
+  position:relative!important;inset:auto!important;left:auto!important;top:auto!important;width:auto!important;height:auto!important;max-width:none;max-height:none;
+  box-shadow:0 6px 20px var(--shadow,rgba(0,0,0,.12))}
+.bureau-tegel.is-sleept{opacity:.55;box-shadow:0 16px 44px var(--shadow,rgba(0,0,0,.3))}
+.bureau-tegel-kop.is-sleepbaar{cursor:grab}
+.bureau-tegel-kop.is-sleepbaar:active{cursor:grabbing}
+.bureau-greep{width:16px;height:16px;flex:none;color:var(--muted,#4b5563)}
+.bureau-tegel-inhoud{padding:10px 12px 14px}
+.bureau-tegel-maat{cursor:nwse-resize}
+@media (max-width:1100px){.bureau-raster{grid-template-columns:repeat(6,1fr)}.bureau-tegel{grid-column:span min(var(--tegel-k,6),6)}}
+@media (max-width:700px){.bureau-raster{grid-template-columns:1fr;grid-auto-rows:minmax(120px,auto)}.bureau-tegel{grid-column:1/-1;grid-row:auto}.bureau-tegel-maat{display:none}}
+
+/* ---------------------------------------------------------------- lege toestand */
+.bureau-leeg{display:grid;justify-items:start;gap:8px;padding:22px;border:1px dashed var(--line,#d7dee8);border-radius:16px;background:var(--surface,#f8fafc)}
+.bureau-leeg>svg{width:28px;height:28px;color:var(--accent,#2f6f73)}
+.bureau-leeg h3{margin:0;font-size:1rem}
+.bureau-leeg p{margin:0;max-width:62ch;color:var(--muted,#4b5563);font-size:.9rem}
+.bureau-leeg-acties{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.bureau-leeg-acties button{display:inline-flex;align-items:center;gap:6px}
+.bureau-leeg-acties svg{width:16px;height:16px}
+
+/* ---------------------------------------------------------------- inhoud van een tegel */
+.bureau-tegel-leeg,.bureau-tegel-fout{margin:0;font-size:.86rem;color:var(--muted,#4b5563)}
+.bureau-tegel-fout{display:flex;align-items:flex-start;gap:6px;color:var(--fout,#b42318)}
+.bureau-tegel-fout svg{width:15px;height:15px;flex:none;margin-top:2px}
+.bureau-tellers{display:flex;flex-wrap:wrap;gap:16px}
+.bureau-tellers span{display:grid;gap:2px}
+.bureau-tellers strong{font-size:1.5rem;line-height:1.1}
+.bureau-tellers small{color:var(--muted,#4b5563);font-size:.78rem}
+.bureau-rijen,.bureau-diensten{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.bureau-rijen>li,.bureau-diensten>li{display:grid;gap:2px;padding:6px 8px;border-radius:9px;background:var(--surface,#f1f5f9)}
+.bureau-rijen a{display:inline-flex;align-items:center;gap:6px;color:inherit;text-decoration:none}
+.bureau-rijen a:hover .bureau-rij-titel{text-decoration:underline}
+.bureau-rijen a svg{width:13px;height:13px;flex:none}
+.bureau-rij-titel{font-weight:600;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bureau-rijen small,.bureau-rijen time,.bureau-diensten small{color:var(--muted,#4b5563);font-size:.78rem}
+.bureau-diensten>li[data-bureau-dienst-conclusie='account'],.bureau-diensten>li[data-bureau-dienst-conclusie='beide']{box-shadow:inset 3px 0 0 var(--fout,#b42318)}
+.bureau-diensten>li[data-bureau-dienst-conclusie='alles-ok']{box-shadow:inset 3px 0 0 var(--ok,#15803d)}
+
+/* ---------------------------------------------------------------- catalogus (in een echt venster) */
+.bureau-catalogus{display:grid;gap:12px;padding:14px 16px}
+.bureau-catalogus-uitleg{margin:0;max-width:72ch;color:var(--muted,#4b5563);font-size:.86rem}
+.bureau-catalogus-filters{display:flex;flex-wrap:wrap;gap:6px}
+.bureau-catalogus-filters button{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 11px;border:1px solid var(--line,#d7dee8);border-radius:999px;background:var(--panel,#fff);color:inherit;cursor:pointer;font-size:.84rem}
+.bureau-catalogus-filters button svg{width:14px;height:14px}
+.bureau-catalogus-filters button.is-actief{border-color:var(--accent,#2f6f73);background:color-mix(in srgb,var(--accent,#2f6f73) 12%,var(--panel,#fff));font-weight:650}
+.bureau-catalogus-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.bureau-catalogus-lijst>li{display:grid;grid-template-columns:auto 1fr auto auto;align-items:start;gap:10px;padding:10px 12px;border:1px solid var(--line,#d7dee8);border-radius:12px;background:var(--surface,#f8fafc)}
+.bureau-catalogus-lijst>li>svg{width:18px;height:18px;margin-top:2px;color:var(--accent,#2f6f73)}
+.bureau-catalogus-lijst>li>div{display:grid;gap:3px;min-width:0}
+.bureau-catalogus-lijst strong{font-size:.92rem}
+.bureau-catalogus-lijst small{color:var(--muted,#4b5563);font-size:.82rem}
+.bureau-bron{font-size:.75rem;color:var(--muted,#4b5563);word-break:break-all}
+.bureau-ontbreekt{font-size:.8rem;font-style:normal;color:var(--fout,#b42318)}
+.bureau-al-op-stol{font-size:.76rem;color:var(--accent,#2f6f73);font-weight:650}
+.bureau-stand{align-self:start;padding:3px 9px;border-radius:999px;font-size:.75rem;font-weight:650;white-space:nowrap}
+.bureau-stand-klaar{background:color-mix(in srgb,var(--ok,#15803d) 16%,var(--panel,#fff));color:var(--ok,#15803d)}
+.bureau-stand-binnenkort{background:color-mix(in srgb,var(--muted,#4b5563) 16%,var(--panel,#fff));color:var(--muted,#4b5563)}
+.bureau-catalogus-lijst button{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.bureau-catalogus-lijst button svg{width:14px;height:14px}
+.bureau-catalogus-voet{display:flex;justify-content:flex-end}
+.bureau-catalogus-voet button{display:inline-flex;align-items:center;gap:6px}
+@media (max-width:620px){.bureau-catalogus-lijst>li{grid-template-columns:auto 1fr;grid-template-areas:'i t' '. s' '. b'}.bureau-catalogus-lijst>li>svg{grid-area:i}.bureau-catalogus-lijst>li>div{grid-area:t}.bureau-stand{grid-area:s;justify-self:start}.bureau-catalogus-lijst button{grid-area:b;justify-self:start}}
+@media (forced-colors:active){.bureau-tegel{border:2px solid CanvasText}.bureau-stand{border:1px solid CanvasText}}

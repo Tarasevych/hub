@@ -1,0 +1,26 @@
+import{canonicalServiceUrl,defaults,domains,idForTab,publicServiceIds,resolveCanonicalRoute,serviceForHostname,serviceIds,serviceTabs,tabSlug,type CanonicalLang,type CanonicalRoute,type CanonicalService,type PublicService,type ServiceId}from'./canoniek-dienst';
+import{lastPathForService,rememberedTabForPath,rememberServicePath}from'./gedeelde-voorkeuren';
+export type HubTabId='overview'|'recent'|'tasks'|'calendar'|'notes'|'zoek'|'photos';
+export type TargetService=CanonicalService;
+export type{CanonicalLang,PublicService,ServiceId};
+export{defaults,domains,publicServiceIds,serviceIds};
+const hubTabs=serviceTabs.hub as readonly HubTabId[];
+const forbidden=/^(token|code|proof|handoff|transaction|request|auth_broker|oauth_code|oauth_error)$/i;
+const clean=(url:URL)=>{for(const key of[...url.searchParams.keys()])if(forbidden.test(key))url.searchParams.delete(key)};
+const commit=(url:URL,mode:'push'|'replace')=>{const next=`${url.pathname}${url.search}${url.hash}`,current=`${location.pathname}${location.search}${location.hash}`;if(next===current)return false;history[mode==='push'?'pushState':'replaceState']({},'',next);return true};
+export const sharedRouteSnapshot=():CanonicalRoute=>resolveCanonicalRoute();
+export const serviceFromLocation=():ServiceId=>{const service=resolveCanonicalRoute().service;return service==='hub'?'ai':service};
+/** Dienst voor de SESSIE-body ({service, tabContext, sourceOrigin}): de dienst van deze host zelf, dus 'hub' op hub.* (serviceFromLocation geeft daar 'ai' voor de weergave; de server weigert die met 403 — G5). */
+export const sessieDienst=():CanonicalService=>resolveCanonicalRoute().service;
+export const routeLang=():CanonicalLang=>resolveCanonicalRoute().lang;
+export const tabFromLocation=(service:ServiceId)=>{const route=resolveCanonicalRoute();return route.service===service&&serviceTabs[service].includes(route.tab)?route.tab:defaults[service]};
+export const hubTabFromLocation=():HubTabId=>{const route=resolveCanonicalRoute();return route.service==='hub'&&hubTabs.includes(route.tab as HubTabId)?route.tab as HubTabId:'overview'};
+export const routeOnbekend=():boolean=>resolveCanonicalRoute().onbekend===true;
+export const normalizeCurrentRoute=(service:ServiceId,tab:string,_lang?:CanonicalLang)=>{const route=resolveCanonicalRoute();if(route.service!==service||route.onbekend)return;const url=new URL(location.href);clean(url);url.searchParams.delete('service');url.searchParams.delete('tab');url.searchParams.delete('lang');const validPath=location.pathname==='/'||idForTab(decodeURIComponent(location.pathname.slice(1)))===route.tab;if(!validPath)url.pathname=`/${encodeURIComponent(tabSlug(tab))}`;commit(url,'replace')};
+export const canonicalNavigationUrl=(target:TargetService,targetTab='',lang:CanonicalLang='uk')=>canonicalServiceUrl(target,targetTab,lang,Boolean(targetTab)&&targetTab!==defaults[target]);
+export const rememberedTabForService=(target:TargetService,fallback='')=>{const path=lastPathForService(target);return path?rememberedTabForPath(target,path):(serviceTabs[target].includes(fallback)?fallback:defaults[target])};
+export const railNavigationUrl=(target:TargetService,_fallbackTab='',lang:CanonicalLang='uk')=>{const path=lastPathForService(target);return path?canonicalServiceUrl(target,rememberedTabForPath(target,path),lang,true):canonicalServiceUrl(target,'',lang,false)};
+export const writeHubTab=(tab:HubTabId,lang:CanonicalLang,mode:'push'|'replace'='push')=>{const url=new URL(canonicalServiceUrl('hub',tab,lang,true));clean(url);rememberServicePath('hub',`/${encodeURIComponent(tab)}`);commit(url,mode)};
+export const writeLocalTab=(service:ServiceId,tab:string,lang:CanonicalLang,mode:'push'|'replace'='push')=>{const resolved=serviceTabs[service].includes(tab)?tab:defaults[service];const url=new URL(canonicalServiceUrl(service,resolved,lang,true));clean(url);rememberServicePath(service,`/${encodeURIComponent(resolved)}`);commit(url,mode)};
+export const canonicalServiceHosts=new Set(serviceIds.filter(id=>id!=='hub').map(id=>domains[id]));
+export const productionServiceHost=()=>serviceForHostname();

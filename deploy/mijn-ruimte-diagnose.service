@@ -1,0 +1,12 @@
+# Schrijft elke minuut een alleen-lezen diagnose van de uitrol-keten naar /var/lib/mijn-ruimte-uitrol-status/diagnose.json (root).
+# Wijzigt niets en neemt de uitrol-vergrendeling nooit. Zie deploy/uitrol/mijn-ruimte-uitrol-diagnose.sh.
+[Unit]
+Description=Mijn Ruimte: diagnose van de uitrol-keten bijwerken
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mijn-ruimte-uitrol-diagnose
+PrivateTmp=yes
+ProtectHome=yes
+Nice=10
+TimeoutStartSec=60

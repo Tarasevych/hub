@@ -1,0 +1,98 @@
+/* Хвиля 11.10 (UI/UX): меню й вікна. */
+@media (min-width:701px){
+  /* 5.3: розгорнуте меню не перекриває рядок пошуку — пошук починається за меню */
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']):not([data-dock='rechts']){--canonical-command-inline-start:calc(min(286px,calc(100vw - var(--zijbalk-rail,60px))) + 12px)}
+  /* безшовне «Завжди розгорнута»: меню без власного тла — тло сторінки під ним і під робочою областю одне */
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']){background:var(--bg)}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar{border-color:transparent!important}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar :is(header,.zijbalk-kop,.canonical-sidebar-head){border-bottom-color:transparent!important;background:transparent!important}
+}
+/* 2.2: на весь екран кнопки вікна не ховаються під аватаром акаунта */
+.mail-new-message.groot{top:64px!important}
+@media (max-width:700px){.mail-new-message.groot{top:56px!important;inset-inline:4px!important;bottom:4px!important}}
+/* 2.3: згорнуті вікна стоять над рядком кнопок (лист «+», дзвіночок), не під ними й не за краєм екрана */
+.mail-minimized-viewer:not([data-geplaatst]){bottom:calc(16px + env(safe-area-inset-bottom,0px))!important}.mail-minimized-viewer{max-height:calc(100dvh - 96px)}
+.venster-dok,.vensters-dok,[data-venster-dok]{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}
+/* 5.4: групи в «Додаткові дії» */
+.mail-reader-overflow-groep{display:grid;gap:1px;padding:4px 0}
+.mail-reader-overflow-groep+.mail-reader-overflow-groep{border-top:1px solid var(--line)}
+.mail-reader-overflow-groep-kop{padding:4px 12px 2px;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+/* 5.4 → blok 1 (25.10.2026): de kleur van een actie in «Додаткові дії» komt uit het register (data-toon, src/mail/mail-acties.css),
+   niet meer uit de groep: «До кошика» blijft rood, archief wordt blauw zoals in de rij en de selectie (mail-lezer-werkbalk.css). */
+/* 5.5 → blok 1: massale acties — dezelfde kleur per actie als overal (verwijderen rood, archief/verplaatsen blauw, belang amber,
+   labels paars), uit data-toon i.p.v. uit de tekst van aria-label; het donker volgt via dezelfde tokens. */
+/* knoppen én de samenvatting van een menu («Перемістити», «Мітки»): twee selectors — één «kind van de balk» met :is(…)
+   kon nooit een summary treffen (die zou dan zowel kind van de balk als van details zijn) */
+html body .mail-selection-actions>button[data-mail-actie],html body .mail-selection-actions>details>summary[data-mail-actie]{color:var(--actie-kleur,var(--muted))}
+html body .mail-selection-actions>button[data-mail-actie]:is(:hover,:focus-visible),html body .mail-selection-actions>details>summary[data-mail-actie]:is(:hover,:focus-visible){background:var(--actie-zacht,var(--nav-hover));color:var(--actie-kleur,var(--text))}
+html body .google-mail-workspace .mail-selection-strip .mail-selection-actions :is(.mail-selection-action-menu,.mail-selection-mobile-more)>div>button[data-mail-actie]{color:var(--actie-tekst,var(--text))}
+html body .google-mail-workspace .mail-selection-strip .mail-selection-actions :is(.mail-selection-action-menu,.mail-selection-mobile-more)>div>button[data-mail-actie] svg{color:var(--actie-kleur,var(--muted))}
+.mail-selection-actions .mail-selection-classify{border-inline:1px solid var(--line);padding-inline:4px}
+/* 4.3: вікно «Перемістити» — ширина за текстом і екраном, без горизонтального скролу */
+.mail-selection-popover,.mail-move-popover,[class*="mail-move"][role="dialog"],[class*="mail-move-menu"]{width:max-content;min-width:min(240px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:min(70dvh,560px);overflow-x:hidden!important;overflow-y:auto}
+.mail-selection-popover :is(button,li,span),[class*="mail-move-menu"] :is(button,li,span){white-space:normal;overflow-wrap:anywhere}
+/* нижній рядок вікна листа — один рядок: статус чернетки стискається, у вузькому вікні лишаються іконки */
+.mail-new-message>footer{flex-wrap:nowrap!important;gap:6px;align-items:center;min-width:0}
+.mail-new-message>footer .mail-new-message-sync{min-width:0;flex:1 1 auto;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+@container (max-width:720px){.mail-new-message>footer :is(.mail-nm-wis,.mail-nm-hulpen) span{display:none}}
+.mail-new-message{container-type:inline-size}
+@media (max-width:720px){.mail-new-message>footer :is(.mail-nm-wis,.mail-nm-hulpen) span{display:none}}
+/* 4.1: при відкритій клавіатурі — лише текст листа і один компактний рядок кнопок */
+.mail-new-message.klavier-open>header{padding-block:4px}
+.mail-new-message.klavier-open>footer{padding-block:4px}
+.mail-new-message.klavier-open>footer :is(.mail-new-message-sync,.mail-nm-wis span,.mail-nm-hulpen span,.mail-schedule-menu span){display:none}
+.mail-new-message.klavier-open .mail-compose-toolbar{overflow-x:auto;flex-wrap:nowrap}
+.mail-new-message.klavier-open .mail-nm-editor{min-height:0}
+/* 3.4: розгорнуте прев’ю фото — усе зображення, плавно */
+.mail-attachment-hover-preview{transition:width .18s ease,max-height .18s ease,top .18s ease}
+.mail-attachment-hover-preview[data-groot="ja"]{max-height:calc(100dvh - 16px)}
+.mail-attachment-hover-preview[data-groot="ja"]>section{height:auto;max-height:calc(100dvh - 64px)}
+.mail-attachment-hover-preview[data-groot="ja"] img{width:100%;height:auto;max-height:calc(100dvh - 64px);object-fit:contain}
+@media (prefers-reduced-motion:reduce){.mail-attachment-hover-preview{transition:none}}
+/* 2.1: «Зменшене» вікно листа — вільне вікно поверх пошти */
+.google-mail-reader-backdrop[data-reader-venster="zwevend"]{background:transparent!important;pointer-events:none;padding:0!important}
+.google-mail-reader-backdrop[data-reader-venster="zwevend"] .google-mail-reader{pointer-events:auto;position:fixed;resize:both;overflow:hidden;min-width:min(520px,calc(100vw - 16px));min-height:min(420px,calc(100dvh - 16px));max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);border:1px solid var(--line);border-radius:12px!important;box-shadow:0 18px 60px rgba(0,0,0,.28)!important}
+.google-mail-reader-backdrop[data-reader-venster="zwevend"] .mail-reader-toolbar{cursor:move}
+.google-mail-reader-backdrop[data-reader-venster="zwevend"] .mail-reader-toolbar :is(button,a,details){cursor:pointer}
+.mail-new-message-backdrop{pointer-events:none}.mail-new-message-backdrop>.mail-new-message{pointer-events:auto}
+.google-mail-reader-backdrop[data-reader-venster="zwevend"] .google-mail-reader>:first-child{cursor:move}
+.mail-nm-bijlagen{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.mail-nm-bijlagen li{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 6px 4px 10px;border:1px solid var(--line);border-radius:999px;font-size:.82rem;background:var(--surface)}
+.mail-nm-bijlagen li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.mail-nm-bijlagen li small{opacity:.7}
+.mail-nm-bijlagen svg{width:14px;height:14px}
+.mail-nm-bijlagen button{border:0;background:transparent;color:inherit;cursor:pointer;display:grid;place-items:center;border-radius:50%;width:24px;height:24px}
+.mail-nm-bijlagen button:hover{background:rgba(127,127,127,.15)}
+.mail-nm-bijlage-knop{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid rgba(127,127,127,.35);background:transparent;color:inherit;cursor:pointer}
+.mail-nm-bijlage-knop svg{width:17px;height:17px}
+/* 3.1 Google Диск у листі */
+.mail-disk{position:relative}
+.mail-disk-knop{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid rgba(127,127,127,.35);background:transparent;color:var(--info);cursor:pointer}
+.mail-disk-knop.grijs{color:var(--muted);filter:grayscale(1);opacity:.75}
+.mail-disk-knop svg{width:17px;height:17px}
+.mail-disk-paneel{position:absolute;bottom:calc(100% + 8px);left:0;z-index:20;display:grid;gap:6px;width:min(360px,calc(100vw - 24px));max-height:min(60dvh,440px);padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);box-shadow:0 14px 40px rgba(0,0,0,.22)}
+.mail-disk-paneel header{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.88rem}
+.mail-disk-paneel header strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mail-disk-paneel header button,.mail-disk-terug{border:0;background:transparent;color:inherit;cursor:pointer;justify-self:start}
+.mail-disk-zoek{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.mail-disk-zoek svg{width:15px;height:15px;opacity:.7}
+.mail-disk-zoek input{flex:1;border:0;background:transparent;color:inherit;font:inherit;outline:none;min-width:0}
+.mail-disk-paneel ul{list-style:none;margin:0;padding:0;overflow:auto;display:grid;gap:1px}
+.mail-disk-paneel li button{display:flex;gap:8px;width:100%;text-align:left;border:0;background:transparent;color:inherit;padding:7px 8px;border-radius:8px;cursor:pointer;font:inherit;font-size:.88rem}
+.mail-disk-paneel li button:hover,.mail-disk-paneel li button:focus-visible{background:rgba(127,127,127,.12)}
+.mail-disk-paneel li button span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mail-disk-paneel .leeg{padding:12px;opacity:.7;text-align:center}
+.mail-disk-paneel small{opacity:.7;font-size:.75rem}
+.mail-disk-paneel li.mail-disk-rij{display:flex;align-items:center;gap:2px}
+.mail-disk-paneel li.mail-disk-rij>button:first-child{flex:1;min-width:0}
+.mail-disk-paneel .mail-disk-vk{flex:none;width:34px;justify-content:center}
+.mail-disk-fout{margin:0;color:var(--fout);font-size:.8rem}
+html.theme-dark .mail-disk-fout{color:var(--fout)}
+/* 3.2 вкладення в окремому вікні */
+.mail-bv{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:8px;height:100%;min-height:0}
+.mail-bv-inhoud{min-height:0;overflow:auto;display:grid;place-items:start center;background:var(--surface);border-radius:8px}
+.mail-bv-beeld{max-width:100%;height:auto;display:block}
+.mail-bv-tekst{white-space:pre-wrap;margin:0;padding:10px;font-size:.85rem;width:100%;box-sizing:border-box}
+.mail-bv-geen{padding:16px;opacity:.8}
+.mail-bv-download{justify-self:end;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;color:inherit;text-decoration:none;font-size:.85rem}
+.mail-bv-download svg{width:15px;height:15px}

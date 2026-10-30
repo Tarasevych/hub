@@ -1,0 +1,10 @@
+.welkom-kaart{display:grid;gap:12px;margin:0 0 16px;padding:16px 18px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:16px;background:var(--accent-soft)}
+.welkom-kaart header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.welkom-kaart h2{margin:0 0 4px;font-size:1.15rem}
+.welkom-kaart header p{margin:0;color:var(--muted)}
+.welkom-kaart ol{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.welkom-kaart li{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.welkom-kaart li p{margin:2px 0 0;color:var(--muted);font-size:.86rem;line-height:1.4}
+.welkom-icoon{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--surface);color:var(--accent)}
+.welkom-icoon svg{width:18px;height:18px}
+@media(max-width:700px){.welkom-kaart li{grid-template-columns:auto 1fr}.welkom-kaart li button{grid-column:2}}

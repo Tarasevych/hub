@@ -1,0 +1,480 @@
+/* Menu v2 (stage 1): smalle rail zonder overlap, cirkel/pil-markering, scrollpijlen, werkbalk, hiërarchie, icoonstijlen. */
+.canonical-chrome{--zijbalk-rail:60px;--canonical-command-inline-start:var(--zijbalk-rail);--zijbalk-bg:var(--bg);--zb-hover:var(--nav-hover,color-mix(in srgb,var(--surface) 78%,transparent));--zb-actief:var(--nav-active,color-mix(in srgb,var(--surface2) 88%,transparent))}
+.canonical-chrome.sidebar-expanded{--zijbalk-bg:var(--panel)}
+
+/* accentpalet — GELIJK aan ACCENT_KLEUREN in shared/menu-model.ts (eenheidstest). --a = hoofditem, --a2 = subitem (zelfde tint).
+   --a-op = tekst/icoon op een vlak in --a (licht: wit, donker: bijna zwart). */
+.canonical-chrome{--a-op:#fff}:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark){--a-op:#0d1117}
+/* accentpalet (licht) */
+.canonical-chrome [data-accent='teal'],.zijbalk-voorbeeld [data-accent='teal']{--a:#0f766e;--a2:#3a8f88}
+.canonical-chrome [data-accent='violet'],.zijbalk-voorbeeld [data-accent='violet']{--a:#9333ea;--a2:#a95cee}
+.canonical-chrome [data-accent='blauw'],.zijbalk-voorbeeld [data-accent='blauw']{--a:#1a5fd6;--a2:#4c82df}
+.canonical-chrome [data-accent='hemel'],.zijbalk-voorbeeld [data-accent='hemel']{--a:#027fbd;--a2:#1b8cc4}
+.canonical-chrome [data-accent='grafiet'],.zijbalk-voorbeeld [data-accent='grafiet']{--a:#24292f;--a2:#808386}
+.canonical-chrome [data-accent='oranje'],.zijbalk-voorbeeld [data-accent='oranje']{--a:#c2570c;--a2:#c96b29}
+.canonical-chrome [data-accent='groen'],.zijbalk-voorbeeld [data-accent='groen']{--a:#15803d;--a2:#3a945c}
+.canonical-chrome [data-accent='limoen'],.zijbalk-voorbeeld [data-accent='limoen']{--a:#4d7c0f;--a2:#668e31}
+.canonical-chrome [data-accent='indigo'],.zijbalk-voorbeeld [data-accent='indigo']{--a:#4f46e5;--a2:#7972eb}
+.canonical-chrome [data-accent='oker'],.zijbalk-voorbeeld [data-accent='oker']{--a:#a16207;--a2:#ae782a}
+.canonical-chrome [data-accent='grijs'],.zijbalk-voorbeeld [data-accent='grijs']{--a:#6b7280;--a2:#7d838f}
+.canonical-chrome [data-accent='roze'],.zijbalk-voorbeeld [data-accent='roze']{--a:#be185d;--a2:#d0598a}
+.canonical-chrome [data-accent='rood'],.zijbalk-voorbeeld [data-accent='rood']{--a:#dc2626;--a2:#e35151}
+.canonical-chrome [data-accent='bruin'],.zijbalk-voorbeeld [data-accent='bruin']{--a:#8b5a2b;--a2:#a27b55}
+/* accentpalet (donker) */
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='teal']{--a:#5eead4;--a2:#4db3a5}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='violet']{--a:#d8b4fe;--a2:#a48cc3}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='blauw']{--a:#7aa7ff;--a2:#6183c4}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='hemel']{--a:#67e8f9;--a2:#53b2c0}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='grafiet']{--a:#e6edf3;--a2:#afb5bc}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='oranje']{--a:#fdba74;--a2:#bf9160}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='groen']{--a:#4ade80;--a2:#3eaa69}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='limoen']{--a:#bef264;--a2:#92b955}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='indigo']{--a:#a5b4fc;--a2:#808cc2}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='oker']{--a:#fde047;--a2:#bfac40}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='grijs']{--a:#a1a1aa;--a2:#7d7f87}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='roze']{--a:#f9a8d4;--a2:#bc84a5}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='rood']{--a:#fca5a5;--a2:#be8183}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark) [data-accent='bruin']{--a:#d6b48f;--a2:#a38c74}
+
+/* --------------------------------------------------------------- rail: breed genoeg, geen scrollbalk over iconen */
+@media(min-width:701px){
+  .canonical-chrome:not(.sidebar-drawer-mode) .canonical-sidebar{width:var(--zijbalk-rail);padding:8px 0 10px}
+  .canonical-chrome:not(.sidebar-drawer-mode).sidebar-expanded .canonical-sidebar{width:min(286px,calc(100vw - var(--zijbalk-rail)));padding:8px 6px 10px}
+  .canonical-chrome:not(.sidebar-expanded):not(.sidebar-pinned):not(.sidebar-drawer):not(.sidebar-drawer-mode):not([data-focus-mode='mail']) .canonical-workspace{padding-left:var(--zijbalk-rail)}
+  .canonical-chrome:not(.sidebar-drawer-mode) .canonical-sidebar-edge-zone{width:calc(var(--zijbalk-rail) - 36px)}
+  .canonical-chrome:not(.sidebar-expanded):not(.sidebar-drawer-mode) .google-mail-reader-backdrop{left:var(--zijbalk-rail)}
+}
+.zijbalk-scrollvak{position:relative;display:flex;flex-direction:column;flex:1;min-height:0}
+.zijbalk-scrollvak>.canonical-service-list{flex:1;min-height:0}
+/* smal: geen eigen scrollbalk (de pijlen + vervaging tonen dat er meer is; wiel/aanraken scrollen gewoon) */
+.canonical-chrome:not(.sidebar-expanded) .canonical-service-list{padding-inline:0;scrollbar-gutter:auto;scrollbar-width:none}
+.canonical-chrome:not(.sidebar-expanded) .canonical-service-list::-webkit-scrollbar{display:none;width:0;height:0}
+/* breed: dunne scrollbalk in een eigen goot, buiten de pillen */
+.canonical-chrome.sidebar-expanded .canonical-service-list{padding-inline-end:4px;scrollbar-gutter:stable}
+
+/* --------------------------------------------------------------- scrollpijlen */
+.zijbalk-pijl{position:absolute;inset-inline:0;z-index:3;display:flex;justify-content:center;height:30px;pointer-events:none;opacity:0;transition:opacity .16s ease}
+.zijbalk-pijl.boven{top:0;align-items:flex-start;background:linear-gradient(var(--zijbalk-bg) 35%,color-mix(in srgb,var(--zijbalk-bg) 0%,transparent))}
+.zijbalk-pijl.onder{bottom:0;align-items:flex-end;background:linear-gradient(color-mix(in srgb,var(--zijbalk-bg) 0%,transparent),var(--zijbalk-bg) 65%)}
+.zijbalk-pijl[data-zichtbaar='true']{opacity:1}
+.zijbalk-pijl[data-zichtbaar='false']{visibility:hidden}
+.zijbalk-pijl button{pointer-events:auto;display:grid;place-items:center;width:30px;height:20px;padding:0;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);box-shadow:0 2px 8px var(--shadow);cursor:pointer;touch-action:none;transition:color .14s ease,background-color .14s ease}
+.zijbalk-pijl button:hover,.zijbalk-pijl button:focus-visible{color:var(--text);background:var(--surface)}
+.zijbalk-pijl button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.zijbalk-pijl svg{width:16px;height:16px;stroke-width:2.2}
+
+/* --------------------------------------------------------------- werkbalk (vervangt «Зафіксувати бічну панель») */
+.canonical-chrome:not(.sidebar-drawer-mode) .canonical-menu-toggle{display:none}
+.zijbalk-werkbalk{flex:none;margin:0 0 8px}
+.zijbalk-werkbalk.smal{display:grid;place-items:center}
+.zijbalk-werkbalk.breed{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 2px 8px 12px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.zijbalk-werkbalk-titel{color:var(--faint);font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.zijbalk-werkbalk-knoppen{display:flex;gap:2px;padding:2px;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:999px;background:var(--surface)}
+.zijbalk-modus-huidig,.zijbalk-werkbalk-knoppen button{display:grid;place-items:center;width:34px;height:34px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;transition:color .14s ease,background-color .14s ease}
+.zijbalk-werkbalk-knoppen button{width:30px;height:30px}
+.zijbalk-modus-huidig svg,.zijbalk-werkbalk-knoppen svg{width:18px;height:18px;stroke-width:1.9}
+.zijbalk-modus-huidig:hover,.zijbalk-modus-huidig:focus-visible,.zijbalk-werkbalk-knoppen button:hover,.zijbalk-werkbalk-knoppen button:focus-visible{background:var(--zb-hover);color:var(--text)}
+.zijbalk-werkbalk-knoppen button.actief{background:var(--panel);color:var(--accent);box-shadow:0 1px 4px var(--shadow)}
+.zijbalk-modus-huidig:focus-visible,.zijbalk-werkbalk-knoppen button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.zijbalk-werkbalk-paneel{position:fixed;z-index:400;top:8px;left:calc(var(--zijbalk-rail) + 6px);padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--panel);box-shadow:0 10px 28px var(--shadow)}
+.zijbalk-werkbalk-paneel .zijbalk-werkbalk-knoppen{border:0;background:transparent}
+
+/* --------------------------------------------------------------- hoofd- vs. subitems */
+.canonical-chrome .canonical-service-button{color:var(--muted)}
+.canonical-chrome .canonical-service-label{color:color-mix(in srgb,var(--text) 86%,var(--muted));font-weight:620}
+.canonical-chrome .canonical-local-page-button{color:var(--faint)}
+.canonical-chrome .canonical-local-label{color:var(--muted);font-size:.8rem;font-weight:520}
+.canonical-chrome .canonical-local-page-button.active .canonical-local-label{color:var(--text);font-weight:620}
+.canonical-chrome .menu-lucide-glyph{transition:color .18s ease,transform .18s ease,stroke-width .18s ease}
+.canonical-chrome .canonical-service-button:hover .canonical-service-label,.canonical-chrome .canonical-service-button:focus-visible .canonical-service-label{color:var(--text)}
+.canonical-chrome .canonical-local-page-button:hover .canonical-local-label,.canonical-chrome .canonical-local-page-button:focus-visible .canonical-local-label{color:var(--text)}
+
+/* Kleur volgt de HERKOMST van een item (data-accent op de groep, fase 2 ook op kopieën): --a hoofditem, --a2 subitem.
+   klassiek: rustig monochroom; bij aanwijzen en voor het actieve item verschijnt de kleur van het onderdeel (actief iets groter). */
+.canonical-chrome .canonical-local-pages{--a-item:var(--a2,var(--a,var(--accent)))}
+.canonical-chrome .canonical-service-button:hover .menu-lucide-glyph,.canonical-chrome .canonical-service-button:focus-visible .menu-lucide-glyph{color:var(--a,var(--accent))}
+.canonical-chrome .canonical-local-page-button:hover :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.lucide),.canonical-chrome .canonical-local-page-button:focus-visible :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.lucide){color:var(--a-item)}
+.canonical-chrome .canonical-service-button:hover,.canonical-chrome .canonical-local-page-button:hover{background:color-mix(in srgb,var(--a,var(--accent)) 8%,var(--zb-hover))}
+.canonical-chrome .canonical-service-group.active>.canonical-service-main-row>.canonical-service-button .menu-lucide-glyph{color:var(--a,var(--accent));stroke-width:2.15;transform:scale(1.12)}
+.canonical-chrome .canonical-local-page-button.active :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg){color:var(--a-item);stroke-width:2.15;transform:scale(1.12)}
+.canonical-chrome .canonical-service-group.active>.canonical-service-main-row>.canonical-service-button{background:color-mix(in srgb,var(--a,var(--accent)) 14%,transparent)}
+.canonical-chrome .canonical-local-page-button.active{background:color-mix(in srgb,var(--a-item) 16%,transparent)}
+.canonical-chrome .canonical-service-group.active>.canonical-service-main-row>.canonical-service-button .canonical-service-label{color:var(--text)}
+.canonical-chrome .mail-sidebar-icon-state svg{transition:color .18s ease,transform .18s ease}
+
+/* kleurrijk: elk onderdeel ALTIJD in zijn eigen kleur (icoon); subitems in de zachtere tint van dezelfde kleur */
+.canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button .menu-lucide-glyph{color:var(--a,var(--accent))}
+.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.lucide){color:var(--a-item)}
+.canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button:hover,.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button:hover{background:color-mix(in srgb,var(--a,var(--accent)) 12%,var(--zb-hover))}
+
+/* --------------------------------------------------------------- smal: ALLES een cirkel zonder tekst (ook actief, ook e-mail) */
+.canonical-chrome:not(.sidebar-expanded) .canonical-service-group{justify-items:center}
+.canonical-chrome:not(.sidebar-expanded) .canonical-service-main-row{justify-items:center;width:100%}
+.canonical-chrome:not(.sidebar-expanded) .canonical-service-button{grid-template-columns:1fr;justify-items:center;width:44px;height:44px;min-height:44px;margin-inline:auto;padding:0;border-radius:50%}
+.canonical-chrome:not(.sidebar-expanded) .canonical-service-label,.canonical-chrome:not(.sidebar-expanded) .canonical-local-label,.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages small{display:none}
+.canonical-chrome .canonical-menu-icon-slot{display:grid;place-items:center}
+/* het submenu: een verticale strook (de «verbindingslijn») in een heel lichte tint van het onderdeel */
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages{justify-items:center;box-sizing:border-box;width:44px;min-width:0;margin:2px auto 6px;padding:4px 0;border-radius:22px;background:color-mix(in srgb,var(--a,var(--accent)) 7%,color-mix(in srgb,var(--surface) 70%,transparent));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--a,var(--accent)) 14%,transparent)}
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages .canonical-local-page-button{display:grid;grid-template-columns:1fr;place-items:center;box-sizing:border-box;width:36px;min-width:36px;max-width:36px;height:36px;min-height:36px;margin:1px auto;padding:0;border-radius:50%;overflow:hidden}
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.canonical-local-page-button>svg){width:17px;height:17px;min-width:17px}
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages :is(.canonical-menu-icon-slot,.mail-sidebar-icon-state){display:grid;place-items:center;width:20px;height:20px;margin:0}
+/* alleen tekst/tellers verbergen — het icoon (ook de eigen e-mailiconen) blijft */
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-page-button>:not(.canonical-menu-icon-slot):not(.mail-sidebar-icon-state):not(svg):not(.menu-brand-glyph){display:none}
+/* e-mail levert een eigen submenu: zelfde cirkels, gecentreerd in de strook */
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-navigation-slot .mail-sidebar-navigation{justify-items:center;width:100%;gap:1px}
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-navigation-slot :is(.mail-sidebar-divider,.mail-sidebar-status){display:none}
+.canonical-chrome:not(.sidebar-expanded) .mail-sidebar-edit-menu{border:1px dashed color-mix(in srgb,var(--a-item) 40%,var(--line))}
+/* «Написати лист»: smal een gevulde cirkel (kleur van E-mail) zonder tekst; de animatie (envelop → pen) blijft */
+.canonical-chrome .mail-compose-pill{background:var(--a,#2d6a6d);color:var(--a-op,#fff);transition:background-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.canonical-chrome .mail-compose-pill:hover:not(:disabled),.canonical-chrome .mail-compose-pill:focus-visible{box-shadow:0 3px 10px color-mix(in srgb,var(--a,#2d6a6d) 40%,transparent)}
+.canonical-chrome:not(.sidebar-expanded) .mail-compose-pill{justify-content:center;box-sizing:border-box;width:36px;min-width:36px;height:36px;margin:1px auto 4px;padding:0;gap:0;border-radius:50%;font-size:0;line-height:0;overflow:hidden}
+.canonical-chrome:not(.sidebar-expanded) .mail-compose-pill:hover:not(:disabled){transform:scale(1.06)}
+.canonical-chrome:not(.sidebar-expanded) .mail-compose-pill-icon{width:17px;height:17px}
+
+/* breed: een pil die alleen icoon + tekst omvat */
+/* breed: ook het eigen submenu van E-mail krijgt de getinte verbindingslijn (zoals de andere submenu's) */
+.canonical-chrome.sidebar-expanded .canonical-local-navigation-slot{margin:0 0 6px 22px;padding-left:6px;border-left:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
+.canonical-chrome.sidebar-expanded .canonical-service-button{justify-self:start;width:fit-content;max-width:100%;padding-right:16px;border-radius:999px}
+.canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot){margin:0 0 6px 22px;padding-left:8px;border-left:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
+.canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot)>.canonical-local-page-button{grid-template-columns:32px minmax(0,1fr) auto;justify-self:start;width:fit-content;max-width:100%;min-height:34px;padding:0 12px 0 2px;border-radius:999px}
+.canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot) .canonical-local-label{padding-right:2px}
+.canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot) small{margin-right:0;margin-left:6px}
+.canonical-chrome .canonical-service-button:focus-visible,.canonical-chrome .canonical-local-page-button:focus-visible{outline:2px solid color-mix(in srgb,var(--a,var(--accent)) 70%,transparent);outline-offset:1px}
+
+@media(prefers-reduced-motion:reduce){.zijbalk-pijl,.canonical-chrome .menu-lucide-glyph,.canonical-chrome .mail-compose-pill{transition:none}.canonical-chrome .canonical-service-group.active .menu-lucide-glyph,.canonical-chrome .canonical-local-page-button.active svg,.canonical-chrome .mail-compose-pill:hover{transform:none}}
+
+/* --------------------------------------------------------------- Instellingen → Меню */
+.zijbalk-instellingen{display:grid;gap:14px;margin:0 0 18px}
+.zijbalk-keuze{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:0;padding:0;border:0}
+.zijbalk-keuze legend{margin-bottom:8px;font-weight:700}
+.zijbalk-keuze label{position:relative;display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer}
+.zijbalk-keuze label.actief{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.zijbalk-keuze input{position:absolute;opacity:0;pointer-events:none}
+.zijbalk-keuze label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.zijbalk-keuze strong{display:block}
+.zijbalk-keuze small{display:block;color:var(--muted);font-size:.78rem}
+.zijbalk-keuze.compact{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.zijbalk-voorbeeld{display:flex;gap:4px;flex:none}
+.zijbalk-voorbeeld>span{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;color:var(--muted)}
+.zijbalk-voorbeeld>span .menu-lucide-glyph{width:17px;height:17px}
+.zijbalk-voorbeeld>span.actief{background:color-mix(in srgb,var(--a,var(--accent)) 14%,transparent);color:var(--a,var(--accent))}
+.zijbalk-voorbeeld[data-icoon-stijl='kleur']>span{color:var(--a)}
+.zijbalk-voorbeeld[data-icoon-stijl='kleur']>span.actief{background:color-mix(in srgb,var(--a) 16%,transparent);color:var(--a)}
+.zijbalk-modus-icoon{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--surface);color:var(--muted)}
+.zijbalk-modus-icoon svg{width:18px;height:18px}
+.zijbalk-keuze label.actief .zijbalk-modus-icoon{color:var(--accent)}
+/* ── Fase B2/B3: «levend» menu — badges, sms-bellen, ⚙ in de werkbalk ─────────────────────────────────────────────── */
+.canonical-chrome{--mb-post:#1a5fd6;--mb-beveiliging:#dc2626;--mb-toegang:#c2570c;--mb-delen:#15803d;--mb-ai:#9333ea;--mb-systeem:#6b7280;--mb-tekst:#fff;--mb-ring:var(--panel,#fff)}
+:is(.canonical-chrome.theme-dark,.canonical-chrome.theme-plum-dark){--mb-post:#7aa7ff;--mb-beveiliging:#fca5a5;--mb-toegang:#fdba74;--mb-delen:#4ade80;--mb-ai:#d8b4fe;--mb-systeem:#a1a1aa;--mb-tekst:#0d1117}
+.menu-badge{--mb:var(--mb-systeem)}
+.menu-badge[data-categorie='post'],.menu-bel[data-categorie='post']{--mb:var(--mb-post)}
+.menu-badge[data-categorie='beveiliging'],.menu-bel[data-categorie='beveiliging']{--mb:var(--mb-beveiliging)}
+.menu-badge[data-categorie='toegang'],.menu-bel[data-categorie='toegang']{--mb:var(--mb-toegang)}
+.menu-badge[data-categorie='delen'],.menu-bel[data-categorie='delen']{--mb:var(--mb-delen)}
+.menu-badge[data-categorie='ai'],.menu-bel[data-categorie='ai']{--mb:var(--mb-ai)}
+.menu-badge[data-categorie='systeem'],.menu-bel[data-categorie='systeem']{--mb:var(--mb-systeem)}
+.canonical-chrome .canonical-menu-icon-slot{position:relative}
+.menu-badge{position:absolute;z-index:2;top:-5px;right:-7px;box-sizing:border-box;pointer-events:none;background:var(--mb);color:var(--mb-tekst);box-shadow:0 0 0 2px var(--mb-ring);font:700 10px/1 system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:0}
+.menu-badge.getal{display:grid;place-items:center;min-width:17px;height:17px;padding:0 4px;border-radius:999px}
+.menu-badge.punt{top:-3px;right:-3px;width:10px;height:10px;border-radius:50%}
+.menu-badge.voorbeeld,.zijbalk-cat .menu-badge{position:static;flex:none;box-shadow:none}
+.menu-badge[data-knipper='ja']{animation:menu-badge-puls 1.1s ease-in-out 3}
+.menu-badge[data-herinner='ja']{animation:menu-badge-herinner 1.4s ease-out 2}
+@keyframes menu-badge-puls{0%,100%{transform:scale(1)}40%{transform:scale(1.28);box-shadow:0 0 0 2px var(--mb-ring),0 0 0 6px color-mix(in srgb,var(--mb) 35%,transparent)}}
+@keyframes menu-badge-herinner{0%{box-shadow:0 0 0 2px var(--mb-ring),0 0 0 0 color-mix(in srgb,var(--mb) 60%,transparent)}100%{box-shadow:0 0 0 2px var(--mb-ring),0 0 0 10px transparent}}
+/* ingeklapt: badge op de rand van de cirkel */
+.canonical-chrome:not(.sidebar-expanded) .menu-badge.getal{top:-9px;right:-11px}
+.canonical-chrome:not(.sidebar-expanded) .menu-badge.punt{top:-6px;right:-6px}
+.menu-bellen{position:fixed;z-index:780;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-height:min(420px,calc(100vh - 16px));overflow:auto;padding:8px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 12px 32px var(--shadow,rgba(0,0,0,.18));animation:menu-bellen-in .16s ease-out}
+.menu-bellen-kop{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 6px 8px;font-size:.82rem}
+.menu-bellen-kop span{color:var(--muted);font-size:.75rem}
+.menu-bellen ul{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.menu-bel{--mb:var(--mb-systeem);position:relative;display:grid;grid-template-columns:8px 1fr 26px;gap:8px;align-items:start;padding:8px 6px 8px 10px;border-radius:14px 14px 14px 4px;background:color-mix(in srgb,var(--mb) 11%,var(--panel));border:1px solid color-mix(in srgb,var(--mb) 28%,transparent);animation:menu-bel-in .2s ease-out both}
+.menu-bel-stip{width:8px;height:8px;margin-top:5px;border-radius:50%;background:var(--mb)}
+.menu-bel-tekst{min-width:0}
+.menu-bel-tekst small{display:block;color:var(--muted);font-size:.7rem}
+.menu-bel-tekst p{margin:2px 0 0;color:var(--muted);font-size:.78rem;line-height:1.35;overflow-wrap:anywhere}
+.menu-bel-titel{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:0;border:0;background:none;color:var(--text);font:600 .84rem/1.3 inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere}
+.menu-bel-titel svg{flex:none;width:12px;height:12px;opacity:.6}
+.menu-bel-titel:hover{text-decoration:underline}
+.menu-bel-weg{display:grid;place-items:center;width:26px;height:26px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.menu-bel-weg svg{width:15px;height:15px}
+.menu-bel-weg:hover,.menu-bel-weg:focus-visible{background:color-mix(in srgb,var(--mb) 20%,transparent);color:var(--text)}
+.menu-bellen button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.menu-bellen-alles{display:block;width:100%;margin-top:8px;padding:6px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:600 .76rem inherit;cursor:pointer}
+.menu-bellen-alles:hover{background:var(--zb-hover,rgba(0,0,0,.05));color:var(--text)}
+@keyframes menu-bellen-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+@keyframes menu-bel-in{from{opacity:0;transform:translateY(4px) scale(.98)}to{opacity:1;transform:none}}
+/* ⚙ in de werkbalk */
+.zijbalk-werkbalk-scheiding{align-self:center;width:1px;height:18px;margin:0 2px;background:color-mix(in srgb,var(--line) 80%,transparent)}
+.zijbalk-werkbalk-instellingen{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;color:var(--muted);text-decoration:none}
+.zijbalk-werkbalk-instellingen svg{width:18px;height:18px;stroke-width:1.9}
+.zijbalk-werkbalk-instellingen:hover,.zijbalk-werkbalk-instellingen:focus-visible{background:var(--zb-hover);color:var(--text)}
+.zijbalk-werkbalk-instellingen:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* Instellingen → Меню → meldingen */
+.zijbalk-meldingen{display:grid;gap:12px;margin:18px 0 0;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--panel);scroll-margin-top:16px}
+.zijbalk-meldingen>legend{display:flex;align-items:center;gap:8px;padding:0 6px;font-weight:700}
+.zijbalk-meldingen>legend svg{width:18px;height:18px;color:var(--accent)}
+.zijbalk-meldingen-uitleg{margin:0;color:var(--muted);font-size:.84rem;line-height:1.45}
+.zijbalk-meldingen-groep{display:grid;gap:12px}
+.zijbalk-meldingen-groep[aria-disabled='true']{opacity:.55}
+.zijbalk-schakel{display:flex;align-items:flex-start;gap:12px;cursor:pointer}
+.zijbalk-schakel.uit{cursor:default}
+.zijbalk-schakel input{position:absolute;opacity:0;pointer-events:none}
+.zijbalk-schakel-spoor{position:relative;flex:none;width:38px;height:22px;margin-top:1px;border-radius:999px;background:color-mix(in srgb,var(--muted) 45%,transparent);transition:background .15s}
+.zijbalk-schakel-spoor i{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--panel);box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .15s}
+.zijbalk-schakel input:checked+.zijbalk-schakel-spoor{background:var(--accent)}
+.zijbalk-schakel input:checked+.zijbalk-schakel-spoor i{transform:translateX(16px)}
+.zijbalk-schakel input:focus-visible+.zijbalk-schakel-spoor{outline:2px solid var(--accent);outline-offset:2px}
+.zijbalk-schakel strong,.zijbalk-meldingen-rij strong{display:block;font-size:.9rem}
+.zijbalk-schakel small,.zijbalk-meldingen-rij small{display:block;color:var(--muted);font-size:.78rem}
+.zijbalk-meldingen-rij{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.zijbalk-meldingen-rij select,.zijbalk-meldingen-tijden input{padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit}
+.zijbalk-meldingen-stil{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.zijbalk-meldingen-tijden{display:inline-flex;align-items:center;gap:6px}
+.zijbalk-meldingen-cat{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;border:0}
+.zijbalk-meldingen-cat legend{margin-bottom:8px;font-weight:700;font-size:.9rem}
+.zijbalk-cat{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 10px;border:1px solid var(--line);border-radius:999px;cursor:pointer;font-size:.85rem}
+.zijbalk-cat:has(input:checked){border-color:color-mix(in srgb,var(--accent) 60%,var(--line))}
+.zijbalk-cat:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.zijbalk-badge-stijl label{gap:10px}
+@media(prefers-reduced-motion:reduce){.menu-badge[data-knipper='ja'],.menu-badge[data-herinner='ja'],.menu-bellen,.menu-bel{animation:none}.zijbalk-schakel-spoor,.zijbalk-schakel-spoor i{transition:none}}
+/* Instellingen-pagina: .settings-center zet label{display:grid} en input{width:100%;min-height:44px} — hier specifieker terugzetten. */
+.zijbalk-meldingen label.zijbalk-schakel{display:flex;align-items:flex-start;gap:12px;font-weight:400}
+.zijbalk-meldingen .zijbalk-keuze label{display:flex;align-items:center;gap:10px;font-weight:400}
+.zijbalk-meldingen label.zijbalk-meldingen-rij{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:400}
+.zijbalk-meldingen label.zijbalk-cat{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.zijbalk-meldingen input[type='checkbox'],.zijbalk-meldingen input[type='radio']{width:16px;height:16px;min-height:0;padding:0;margin:0;flex:none;border-radius:4px;accent-color:var(--accent)}
+.zijbalk-meldingen .zijbalk-schakel input,.zijbalk-meldingen .zijbalk-keuze input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.zijbalk-meldingen label.zijbalk-meldingen-rij select{width:auto;min-width:160px;min-height:38px;padding:6px 10px}
+.zijbalk-meldingen .zijbalk-meldingen-tijden input[type='time']{width:auto;min-height:38px;padding:6px 8px}
+.zijbalk-meldingen .menu-badge.voorbeeld.getal{display:inline-grid;width:auto;flex:none}
+/* ── Fase B1: voortgangsbalk (kleur van het doel-onderdeel), overgangen binnen een onderdeel, vooruitladen ───────────────── */
+#tsv-voortgang{position:fixed;z-index:2147483600;top:0;right:0;left:0;height:3px;pointer-events:none;opacity:0;transition:opacity .2s ease}
+#tsv-voortgang i{display:block;width:var(--tsv-voortgang,0%);height:100%;border-radius:0 3px 3px 0;background:var(--tsv-voortgang-kleur,var(--accent,#2f6f73));box-shadow:0 0 8px color-mix(in srgb,var(--tsv-voortgang-kleur,var(--accent,#2f6f73)) 55%,transparent);transition:width .18s ease-out}
+#tsv-voortgang[data-staat='bezig']{opacity:1}
+#tsv-voortgang[data-staat='klaar']{opacity:0;transition:opacity .3s ease .12s}
+#tsv-voortgang[data-staat='klaar'] i{transition:width .12s ease-out}
+#tsv-vooruit{position:absolute;width:0;height:0;overflow:hidden;clip-path:inset(50%)}
+.canonical-workspace{view-transition-name:tsv-werkruimte}
+::view-transition-old(root),::view-transition-new(root){animation:none}
+::view-transition-old(tsv-werkruimte){animation:.12s ease-out both tsv-werk-uit}
+::view-transition-new(tsv-werkruimte){animation:.2s ease-out both tsv-werk-in}
+@keyframes tsv-werk-uit{to{opacity:0}}
+@keyframes tsv-werk-in{from{opacity:0;transform:translateY(4px)}}
+@media(prefers-reduced-motion:reduce){#tsv-voortgang i{transition:none}::view-transition-old(tsv-werkruimte),::view-transition-new(tsv-werkruimte){animation:none}}
+.zijbalk-risico{display:grid;gap:12px;padding:12px;border:1px dashed color-mix(in srgb,var(--warn) 55%,var(--line));border-radius:12px;background:color-mix(in srgb,var(--warn-vlak) 6%,transparent)}
+.zijbalk-risico-kop{margin:0;font-size:.84rem;color:var(--muted)}
+.zijbalk-risico-kop strong{color:var(--text)}
+
+/* ── Fase 2: indeling (Швидкий доступ, hoofdmenu, secties, startpagina), bewerkmodus, dock rechts/boven/onder ───────────────────── */
+.menu-hoofdlijst,.menu-snelbalk{display:grid;gap:3px;align-content:start;min-width:0}
+.menu-snelbalk{margin:0 0 6px;padding:0 0 6px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.menu-sectie-titel{padding:2px 12px 2px;color:var(--faint);font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.menu-leeg{display:block;margin:2px 6px;padding:8px 10px;border:1px dashed color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:12px;color:var(--muted);font-size:.75rem;text-align:center}
+.canonical-chrome:not(.sidebar-expanded) .canonical-service-list .menu-leeg{width:36px;height:36px;margin:2px auto;padding:0;border-radius:50%;font-size:0}
+.canonical-chrome .canonical-local-page-button[data-accent]{--a-item:var(--a2,var(--a,var(--accent)))}
+.menu-herkomst{color:var(--faint);font-size:.75rem;font-weight:500}
+.canonical-local-page-button .menu-herkomst{margin-left:6px}
+.canonical-service-label .menu-herkomst{display:block;line-height:1.1}
+.canonical-chrome:not(.sidebar-expanded) .canonical-service-list .menu-herkomst{display:none}
+.menu-sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;padding:0}
+
+/* bewerkmodus */
+.menu-bewerkbalk{flex:none;display:grid;gap:8px;margin:0 4px 8px;padding:10px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:14px;background:color-mix(in srgb,var(--accent) 7%,var(--panel));color:var(--text)}
+.menu-bewerkbalk-tekst{display:flex;gap:8px;align-items:flex-start}
+.menu-bewerkbalk-tekst>svg{flex:none;width:18px;height:18px;margin-top:2px;color:var(--accent)}
+.menu-bewerkbalk-tekst strong{display:block;font-size:.84rem}
+.menu-bewerkbalk-tekst small{display:block;color:var(--muted);font-size:.75rem;line-height:1.35}
+.menu-bewerkbalk-knoppen{display:flex;flex-wrap:wrap;gap:6px}
+.menu-bewerkbalk-knoppen button{display:inline-flex;align-items:center;gap:5px;min-height:32px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:.78rem;cursor:pointer}
+.menu-bewerkbalk-knoppen button:hover,.menu-bewerkbalk-knoppen button:focus-visible{background:var(--surface)}
+.menu-bewerkbalk-knoppen button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.menu-bewerkbalk-knoppen svg{width:15px;height:15px}
+.menu-bewerkbalk-knoppen .menu-bewerkbalk-klaar{margin-left:auto;border-color:var(--accent);background:var(--accent);color:var(--accentText,#fff)}
+.menu-bewerkbalk-knoppen .menu-bewerkbalk-klaar:hover,.menu-bewerkbalk-knoppen .menu-bewerkbalk-klaar:focus-visible{background:color-mix(in srgb,var(--accent) 85%,#000)}
+.menu-bewerkbalk.dock{position:fixed;z-index:420;left:50%;grid-template-columns:minmax(0,1fr) auto;align-items:center;width:min(720px,calc(100vw - 32px));margin:0;transform:translateX(-50%);box-shadow:0 10px 28px var(--shadow)}
+/* onder: de balk bovenaan, zodat meldingen (rechtsonder) en het dock hem niet bedekken */
+.menu-bewerkbalk.dock-onder{top:12px}
+.menu-bewerkbalk.dock-boven{top:calc(var(--dock-hoogte,62px) + 20px)}
+.zijbalk-werkbalk-bewerken{display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.zijbalk-werkbalk-bewerken svg{width:18px;height:18px;stroke-width:1.9}
+.zijbalk-werkbalk-bewerken:hover,.zijbalk-werkbalk-bewerken:focus-visible{background:var(--zb-hover);color:var(--text)}
+/* 24.10.2026: margin volledig (niet alleen links) — de geërfde onderrand 12 px van .sidebar-expanded .canonical-menu-toggle tilde ✎ 6 px boven foto en «Закрити». */
+.canonical-drawer-header .menu-lade-bewerken{flex:none;display:grid;place-items:center;width:40px!important;min-width:40px!important;height:40px;padding:0!important;margin:0 0 0 auto}
+.canonical-drawer-header .menu-lade-bewerken svg{width:20px;height:20px}
+.zijbalk-werkbalk-bewerken.actief{background:var(--panel);color:var(--accent);box-shadow:0 1px 4px var(--shadow)}
+.zijbalk-werkbalk-bewerken:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.menu-lade-bewerken.actief{color:var(--accent)}
+[data-menu-bewerken='ja'] [data-menu-sleutel]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+[data-menu-bewerken='ja'] :is(.canonical-service-main-row>.canonical-service-button,.canonical-local-page-button[data-menu-sleutel],.menu-start-tegel){cursor:grab;outline:1px dashed color-mix(in srgb,var(--a-item,var(--a,var(--accent))) 50%,transparent);outline-offset:-1px}
+[data-menu-bewerken='ja'] .canonical-local-page-button:not([data-menu-sleutel]){opacity:.7}
+[data-menu-bewerken='ja'].sidebar-expanded .canonical-service-main-row>.canonical-service-button{position:relative;padding-right:26px}
+[data-menu-bewerken='ja'].sidebar-expanded .canonical-service-main-row>.canonical-service-button::after{content:'⠿';position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--faint);font-size:.8rem;line-height:1}
+[data-menu-bewerken='ja'] [data-menu-kopie='ja']>.canonical-service-main-row>.canonical-service-button::before,[data-menu-bewerken='ja'] [data-menu-kopie='ja'].canonical-local-page-button::before{content:'⧉';position:absolute;left:2px;top:1px;color:var(--a,var(--accent));font-size:.75rem;line-height:1}
+[data-menu-bewerken='ja'] .canonical-service-list{padding-bottom:24px}
+[data-sleept='ja']{opacity:.35}
+html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
+.menu-sleep-geest{position:fixed;z-index:1000;left:0;top:0;display:flex;align-items:center;gap:8px;max-width:260px;padding:6px 12px 6px 8px;border-radius:999px;background:var(--panel);color:var(--text);box-shadow:0 12px 30px var(--shadow),0 0 0 2px var(--a,var(--accent));font-size:.84rem;font-weight:620;white-space:nowrap;pointer-events:none}
+.menu-sleep-geest>span:not(.canonical-menu-icon-slot){overflow:hidden;text-overflow:ellipsis}
+.menu-sleep-geest svg{width:18px;height:18px;color:var(--a,var(--accent))}
+.menu-sleep-geest .menu-badge{display:none}
+.menu-sleep-plus{display:none}
+.menu-sleep-geest[data-kopie='ja'] .menu-sleep-plus{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--ok-vlak);color:var(--text-on-vlak);font-size:.8rem;line-height:1}
+.menu-sleep-geest[data-geldig='nee']{box-shadow:0 12px 30px var(--shadow),0 0 0 2px var(--danger,#b42318);opacity:.85}
+.menu-sleep-lijn{position:fixed;z-index:999;border-radius:3px;background:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent);pointer-events:none}
+.menu-sleep-lijn[data-zichtbaar='nee']{display:none}
+/* actiemenu (toetsenbordalternatief) */
+.menu-acties{position:fixed;z-index:1100;display:grid;gap:1px;min-width:232px;max-width:min(330px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:auto;padding:6px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);box-shadow:0 16px 40px var(--shadow)}
+.menu-acties-kop{margin-bottom:4px;padding:6px 10px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-size:.75rem;font-weight:700}
+.menu-acties button{display:flex;align-items:center;gap:10px;min-height:36px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;font-size:.85rem;text-align:left;cursor:pointer}
+.menu-acties button:hover:not(:disabled),.menu-acties button:focus-visible{background:var(--surface);outline:none}
+.menu-acties button:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.menu-acties button:disabled{opacity:.45;cursor:default}
+.menu-acties svg{flex:none;width:16px;height:16px;color:var(--muted)}
+.menu-acties .menu-acties-pijl{margin-left:auto}
+/* startpagina (Мій простір → Огляд): snelkoppelingen */
+.menu-start{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:0 0 18px;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+.menu-start-titel{flex-basis:100%;color:var(--faint);font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.menu-start-tegel{display:grid;justify-items:center;align-content:start;gap:4px;width:108px;min-height:88px;padding:10px 8px;border:1px solid color-mix(in srgb,var(--a,var(--accent)) 22%,var(--line));border-radius:14px;background:color-mix(in srgb,var(--a,var(--accent)) 6%,var(--panel));color:var(--text);font:inherit;text-align:center;cursor:pointer}
+.menu-start-tegel:hover,.menu-start-tegel:focus-visible{background:color-mix(in srgb,var(--a,var(--accent)) 12%,var(--panel))}
+.menu-start-tegel:focus-visible{outline:2px solid var(--a,var(--accent));outline-offset:2px}
+.menu-start-icoon{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:color-mix(in srgb,var(--a,var(--accent)) 14%,transparent);color:var(--a,var(--accent))}
+.menu-start-icoon svg{width:20px;height:20px}
+.menu-start-label{font-size:.8rem;font-weight:620;line-height:1.2}
+.menu-start-tegel small{color:var(--muted);font-size:.75rem}
+.menu-start .menu-leeg{flex:1;margin:0}
+
+@media(min-width:701px){
+  /* ---- menu rechts: gespiegeld */
+  .canonical-chrome[data-dock='rechts']{--canonical-command-inline-start:12px;--canonical-account-inline-reserve:calc(var(--zijbalk-rail) + 72px)}
+  .canonical-chrome[data-dock='rechts'] .canonical-sidebar{inset:0 0 0 auto;border-right:0;border-left:1px solid transparent}
+  .canonical-chrome[data-dock='rechts'].sidebar-expanded .canonical-sidebar{border-left-color:var(--line)}
+  .canonical-chrome[data-dock='rechts']:is(.sidebar-hover,[data-menu-bewerken='ja']:not(.sidebar-pinned)) .canonical-sidebar{box-shadow:-18px 0 46px var(--shadow)}
+  .canonical-chrome[data-dock='rechts'] .canonical-sidebar-edge-zone{inset:0 0 0 auto}
+  .canonical-chrome[data-dock='rechts'] .canonical-workspace{padding-left:24px!important;padding-right:var(--zijbalk-rail)}
+  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-workspace{padding-right:310px}
+  .canonical-chrome[data-dock='rechts'][data-focus-mode='mail'] .canonical-workspace{padding-right:24px}
+  .canonical-chrome[data-dock='rechts'] .canonical-account-anchor{right:calc(var(--zijbalk-rail) + 12px)}
+  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-account-anchor{right:300px}
+  .canonical-chrome[data-dock='rechts'] .canonical-notification-toast{right:calc(var(--zijbalk-rail) + 18px)}
+  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-notification-toast{right:328px}
+  .canonical-chrome[data-dock='rechts'] .zijbalk-werkbalk-paneel{left:auto;right:calc(var(--zijbalk-rail) + 6px)}
+  .canonical-chrome[data-dock='rechts'] .google-mail-reader-backdrop{left:0;right:var(--zijbalk-rail)}
+  .canonical-chrome[data-dock='rechts'].sidebar-expanded :is(.canonical-local-pages:not(.canonical-local-navigation-slot),.canonical-local-navigation-slot){margin:0 22px 6px 0;padding-left:0;padding-right:8px;border-left:0;border-right:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
+
+  /* ---- dock boven/onder (Mac/tablet): iconen in een zwevende balk, transparantie via --dock-dekking */
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']){--dock-hoogte:62px;--canonical-command-inline-start:12px;--canonical-account-inline-reserve:76px}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .canonical-sidebar{left:50%;right:auto;display:flex;flex-direction:row;align-items:center;gap:6px;width:auto!important;max-width:calc(100vw - 200px);height:var(--dock-hoogte);max-height:none;padding:6px 10px!important;transform:translateX(-50%);border:1px solid color-mix(in srgb,var(--line) 80%,transparent)!important;border-radius:22px;background:color-mix(in srgb,var(--panel) var(--dock-dekking,100%),transparent)!important;-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);box-shadow:0 10px 30px var(--shadow)!important;overflow:visible}
+  .canonical-chrome[data-dock='onder'] .canonical-sidebar{top:auto;bottom:10px}
+  .canonical-chrome[data-dock='boven'] .canonical-sidebar{top:8px;bottom:auto}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .zijbalk-scrollvak{flex:0 1 auto;flex-direction:row;min-width:0}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .canonical-service-list{display:flex;flex-direction:row;align-items:center;gap:4px;padding:0!important;overflow-x:auto;overflow-y:hidden}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder'])[data-dock-vergroting='ja'] .canonical-service-list{overflow:visible}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) :is(.menu-hoofdlijst,.menu-snelbalk){display:flex;flex-direction:row;align-items:center;gap:4px}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .menu-snelbalk{margin:0 4px 0 0;padding:0 8px 0 0;border-bottom:0;border-right:1px solid color-mix(in srgb,var(--line) 80%,transparent)}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .canonical-service-group{display:flex}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .canonical-service-group.dock-open>.canonical-service-main-row>.canonical-service-button{box-shadow:0 0 0 2px color-mix(in srgb,var(--a,var(--accent)) 55%,transparent)}
+  .canonical-chrome[data-dock='onder'] .canonical-service-group.active>.canonical-service-main-row::after,.canonical-chrome[data-dock='boven'] .canonical-service-group.active>.canonical-service-main-row::after{content:'';position:absolute;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--a,var(--accent))}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .canonical-service-main-row{position:relative}
+  .canonical-chrome[data-dock='onder'] .canonical-service-group.active>.canonical-service-main-row::after{bottom:-5px}
+  .canonical-chrome[data-dock='boven'] .canonical-service-group.active>.canonical-service-main-row::after{top:-5px}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .zijbalk-werkbalk.dock{order:3;display:flex;align-items:center;margin:0 0 0 2px;padding-left:6px;border-left:1px solid color-mix(in srgb,var(--line) 80%,transparent)}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .zijbalk-werkbalk.dock .zijbalk-werkbalk-knoppen{border:0;background:transparent}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .canonical-service-list .menu-leeg{width:36px;height:36px;margin:0;padding:0;border-radius:50%;font-size:0}
+  .canonical-chrome[data-dock='onder'] .canonical-workspace{padding:70px 24px calc(var(--dock-hoogte) + 30px)!important}
+  .canonical-chrome[data-dock='boven'] .canonical-workspace{padding:calc(var(--dock-hoogte) + 30px) 24px 24px!important}
+  .canonical-chrome[data-dock='boven'] .mail-top-command-bar{top:calc(var(--dock-hoogte) + 16px)}
+  .canonical-chrome[data-dock='boven'] :is(.mail-search-filter-surface,.mail-advanced-search){top:calc(var(--dock-hoogte) + 66px)}
+  .canonical-chrome[data-dock='onder'] .canonical-connection-banner{bottom:calc(var(--dock-hoogte) + 26px)}
+  .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .google-mail-reader-backdrop{left:0}
+  /* vergroting: alleen schaal (geen herschikking), met marge zodat buren opschuiven */
+  .canonical-chrome[data-dock-vergroting='ja'] .canonical-service-main-row>.canonical-service-button{transform:scale(var(--dock-schaal,1));margin-inline:calc((var(--dock-schaal,1) - 1) * 18px);transition:transform .12s ease-out,margin .12s ease-out}
+  .canonical-chrome[data-dock='onder'][data-dock-vergroting='ja'] .canonical-service-main-row>.canonical-service-button{transform-origin:center bottom}
+  .canonical-chrome[data-dock='boven'][data-dock-vergroting='ja'] .canonical-service-main-row>.canonical-service-button{transform-origin:center top}
+  /* paneel met de pagina's van een dienst boven/onder het dock */
+  .dock-paneel{position:fixed;z-index:410;width:280px;max-height:min(60vh,540px);overflow:auto;padding:8px;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--text);box-shadow:0 16px 40px var(--shadow)}
+  .dock-paneel-kop{padding:4px 10px 8px;color:var(--a,var(--muted));font-size:.78rem;font-weight:700}
+  .canonical-chrome .dock-paneel .canonical-local-pages:not(.canonical-local-navigation-slot){display:grid;gap:2px;justify-items:stretch;width:auto;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+  .canonical-chrome:not(.sidebar-expanded) .dock-paneel .canonical-local-pages:not(.canonical-local-navigation-slot) .canonical-local-page-button{display:grid;grid-template-columns:30px minmax(0,1fr) auto;place-items:center start;width:100%;min-width:0;max-width:none;height:auto;min-height:36px;margin:0;padding:0 12px 0 4px;border-radius:999px;overflow:visible}
+  /* de smalle-rail-regels verbergen alles behalve het icoon (hoge specificiteit); in het dockpaneel horen labels erbij */
+  .canonical-chrome:not(.sidebar-expanded) .dock-paneel :is(button,a) :is(.canonical-local-label,small,.menu-herkomst){display:block!important;visibility:visible;opacity:1;transform:none}
+  .canonical-chrome:not(.sidebar-expanded) .dock-paneel :is(button,a) .canonical-local-label{justify-self:start;max-width:100%}
+  /* eigen navigatie van Пошта in het dockpaneel: de smalle-rail-regels (iconen in een kolom) terugdraaien */
+  .canonical-chrome .dock-paneel .canonical-local-navigation-slot{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important}
+  .canonical-chrome .dock-paneel .canonical-local-navigation-slot .mail-sidebar-navigation{justify-items:stretch!important;width:100%!important}
+  .canonical-chrome .dock-paneel .mail-sidebar-nav-button{display:grid!important;grid-template-columns:28px minmax(0,1fr) auto!important;align-items:center;justify-items:start;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:34px;padding:0 10px 0 4px!important;border-radius:999px!important}
+  .canonical-chrome .dock-paneel .mail-sidebar-nav-button small{justify-self:end}
+  .canonical-chrome .dock-paneel .mail-compose-pill{width:auto!important;min-width:0!important;height:38px!important;margin:2px 0 6px!important;padding:0 14px!important;gap:8px!important;border-radius:999px!important;font-size:.85rem!important;line-height:1.2!important}
+}
+@media(prefers-reduced-motion:reduce){.canonical-chrome[data-dock-vergroting='ja'] .canonical-service-main-row>.canonical-service-button{transform:none!important;margin-inline:0!important;transition:none}}
+/* Налаштування → Меню: «Розташування й порядок меню» */
+.menu-indeling .menu-positie-keuze{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.menu-dock-opties[aria-disabled='true'] strong{color:var(--muted)}
+.menu-dock-transparantie{flex-wrap:nowrap}
+.menu-dock-schuif{display:inline-flex;align-items:center;gap:10px;flex:none}
+.menu-dock-schuif input[type=range]{width:min(200px,40vw);accent-color:var(--accent)}
+.menu-dock-schuif output{min-width:3.2em;color:var(--text);font-variant-numeric:tabular-nums;text-align:right}
+.menu-indeling-acties{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.menu-indeling-acties button:not(.settings-primary),.menu-aangepast button{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+.menu-indeling-acties button:not(.settings-primary):hover:not(:disabled),.menu-aangepast button:hover{background:var(--surface)}
+.menu-indeling-acties button:disabled{opacity:.5;cursor:default}
+.menu-indeling-acties svg,.menu-aangepast svg{width:16px;height:16px;flex:none}
+.menu-indeling-acties button:focus-visible,.menu-aangepast button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.menu-aangepast{display:grid;gap:0;margin:0;padding:0;list-style:none;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.menu-aangepast li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px 8px 14px}
+.menu-aangepast li+li{border-top:1px solid var(--line)}
+.menu-aangepast li>span{display:grid;min-width:0}
+.menu-aangepast strong{font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-aangepast small{color:var(--muted);font-size:.76rem}
+.menu-aangepast button{min-height:34px;padding:0 10px;font-size:.82rem}
+/* HUB-07: de badge (rechtsboven op het icoon) mag in de uitgeklapte zijbalk nooit over de eerste letter van de naam vallen («⑩ошта»):
+   elk icoonvak met een badge krijgt rechts ruimte, op elk soort menuknop (dienst, pagina, start). */
+.canonical-chrome.sidebar-expanded .canonical-menu-icon-slot:has(>.menu-badge.getal){margin-inline-end:12px}
+.canonical-chrome.sidebar-expanded .canonical-menu-icon-slot:has(>.menu-badge.punt){margin-inline-end:6px}
+
+/* ── Punt 17 (19.10.2026): kleurverschil tussen snelkoppelingen ─────────────────────────────────────────────────────────────────
+   «Швидкий доступ» (de snelbalk) staat altijd in de kleur van het onderdeel, óók in de stijl «Класичний» en óók in de SMALLE
+   (ingeklapte) zijbalk, waar alleen het icoon te zien is. Kiest iemand zelf een kleur voor een punt (ItemOverride.kleur /
+   ItemKopie.kleur → data-eigen-kleur='ja'), dan geldt die kleur daar net zo, in beide icoonstijlen. */
+.canonical-chrome .menu-snelbalk .canonical-service-button .menu-lucide-glyph{color:var(--a,var(--accent))}
+.canonical-chrome .menu-snelbalk .canonical-local-page-button :is(.menu-lucide-glyph,.lucide){color:var(--a-item,var(--a,var(--accent)))}
+.canonical-chrome [data-eigen-kleur='ja']>.canonical-service-main-row>.canonical-service-button .menu-lucide-glyph{color:var(--a,var(--accent))}
+.canonical-chrome .canonical-local-page-button[data-eigen-kleur='ja'] :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.lucide){color:var(--a-item,var(--a,var(--accent)))}
+.canonical-chrome .menu-start-tegel[data-eigen-kleur='ja'] .menu-lucide-glyph{color:var(--a,var(--accent))}
+/* Ingeklapt is alleen het icoon zichtbaar: een gekleurde stip bij het icoon maakt het verschil ook dan duidelijk (en bij een
+   monochroom icoon of hoog contrast). Alleen voor de snelbalk en voor zelf gekozen kleuren — niet voor het hele menu. */
+.canonical-chrome:not(.sidebar-expanded) .menu-snelbalk .canonical-menu-icon-slot::after,
+.canonical-chrome:not(.sidebar-expanded) [data-eigen-kleur='ja'] .canonical-menu-icon-slot::after{content:'';position:absolute;right:-2px;bottom:-2px;width:6px;height:6px;border-radius:50%;background:var(--a,var(--accent));box-shadow:0 0 0 2px var(--panel)}
+
+/* Bewerker «Швидкий доступ» (SnelleToegangEditor): één rij per knop, alles met gewone knoppen en keuzelijsten (telefoon + toetsenbord). */
+.menu-snel-lijst{display:grid;gap:6px;margin:8px 0;padding:0;list-style:none}
+.menu-snel-lijst>li{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 8px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.menu-snel-voorbeeld{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:50%;background:color-mix(in srgb,var(--a,var(--accent)) 16%,transparent);color:var(--a,var(--accent))}
+.menu-snel-voorbeeld svg{width:17px;height:17px}
+.menu-snel-naam{flex:1 1 9rem;min-width:0}
+.menu-snel-naam strong{display:block;font-size:.84rem}
+.menu-snel-naam small{display:block;color:var(--muted);font-size:.7rem}
+.menu-snel-knoppen{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.menu-snel-knoppen button{display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:34px;padding:0 6px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);cursor:pointer}
+.menu-snel-knoppen button[disabled]{opacity:.45;cursor:default}
+.menu-snel-knoppen button.menu-snel-weg{color:#b4232a}
+.menu-snel-knoppen select{min-height:34px;max-width:11rem;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);font:inherit;font-size:.78rem}
+.menu-snel-leeg{padding:10px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:.78rem;text-align:center}
+.menu-snel-toevoegen{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.menu-snel-toevoegen label{display:grid;gap:3px;flex:1 1 12rem;min-width:0;font-size:.76rem;color:var(--muted)}
+.menu-snel-toevoegen select{min-height:38px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);font:inherit}
+.menu-snel-toevoegen button{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);font:inherit;font-size:.8rem;cursor:pointer}
+.menu-snel-toevoegen button[disabled]{opacity:.45;cursor:default}
+.menu-snel-inline{width:14px;height:14px;margin-right:5px;vertical-align:-2px}
+@media (max-width:700px){.menu-snel-knoppen select{max-width:100%;flex:1 1 8rem}.menu-snel-lijst>li{gap:6px}}
+/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
+@media (max-width:700px){
+  /* «прокрутити меню» — 30×20 → 44×44 */
+  .zijbalk-pijl{height:var(--tik-hoogte)}
+  .zijbalk-pijl button{width:var(--tik-hoogte);min-height:var(--tik-hoogte)}
+}
+
+/* 29.10.2026 (hub op de telefoon, menu dicht): de lade-houder toont alleen ☰ — geen restjes eronder (lege scrollvak met pijlen,
+   ruimtewissel, zones). De open lade (.sidebar-drawer) en de computer blijven ongemoeid. */
+.canonical-chrome.sidebar-drawer-mode:not(.sidebar-drawer) .canonical-sidebar :is(.zijbalk-scrollvak,[data-zijbalk-pijl],.zr){display:none!important}
