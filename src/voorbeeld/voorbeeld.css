@@ -1,0 +1,70 @@
+/* Uittreksel, knop «Попередній перегляд» en het werkvenster (audit пошти 18.10.2026). Alleen eigen klassen; de opmaak van de
+   rij zelf (kolommen, bulky, ongelezen) is van src/mail-rij-2026-10-18.css. */
+
+/* ---- WoordKnip: één regel zonder harde knip midden in een woord; meerdere regels via line-clamp ---- */
+.woord-knip{display:block;min-width:0;max-width:100%;overflow:hidden}
+.woord-knip[data-regels="1"]{white-space:nowrap;text-overflow:clip}
+.woord-knip:not([data-regels="1"]){white-space:normal;overflow-wrap:break-word;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--woord-knip-regels,2);line-clamp:var(--woord-knip-regels,2)}
+.woord-knip:not(.woord-knip-gemeten){display:inline;white-space:inherit}
+
+/* ---- Knop in de rij: zichtbaar bij aanwijzen/focus; op aanraakschermen altijd (klein) ----
+   Blok 1 (25.10.2026, 6.1): met de muis staat dezelfde actie vooraan in de balk van de rij («Перегляд», MailRijSnelleActies); zolang de
+   balk zichtbaar is, is dit «око» eronder verborgen (data-onder-balk). Met het toetsenbord blijft het bereikbaar: dan wijkt de balk.
+   pointer-events:auto — in de minimale rij erfde het «none» van .mail-minimum-main en was het ook op een aanraakscherm niet te tikken. */
+.voorbeeld-knop{position:relative;display:inline-grid;place-items:center;width:28px;height:28px;flex:0 0 auto;padding:0;margin-inline-end:4px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;opacity:0;pointer-events:auto;transition:opacity .12s ease,background-color .12s ease;line-height:0;overflow:visible}
+.voorbeeld-knop svg{width:16px;height:16px}
+.google-mail-row:hover .voorbeeld-knop,.google-mail-row:focus-within .voorbeeld-knop,.voorbeeld-knop:focus-visible{opacity:1}
+.voorbeeld-knop:hover{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
+.voorbeeld-knop:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Zelfde donkere blad als de balk (.mail-row-hover-actions>button>span), nooit een wit systeemblad. Links van het oog:
+   de blauwe ongelezen-stip staat rechts in de rij en mag niet onder de hint. De viewport-laag verbergt dit span en leest data-tooltip. */
+.voorbeeld-knop>span[role='tooltip']{position:absolute;z-index:30;top:50%;right:calc(100% + 8px);left:auto;translate:0 -50%;width:max-content;max-width:160px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--text);color:var(--panel);box-shadow:0 8px 24px var(--shadow);font-size:12px;font-weight:650;line-height:1.2;white-space:nowrap;opacity:0;pointer-events:none}
+.voorbeeld-knop:is(:hover,:focus-visible)>span[role='tooltip']{opacity:1}
+/* 26.10: met de muis heeft de balk al «Перегляд». Het oog in de datum bleef ernaast zichtbaar (opacity:1 op :hover)
+   en zijn hitvlak / titel zat tegen de blauwe ongelezen-stip. Verberg het zodra de balk de actie toont — als afstammeling
+   van de datum (niet alleen een direct kind `>`: een wrapper onder .mail-row-date-block / .mail-minimum-date / het
+   dichtheidsblok telt mee). Toetsenbord (focus-visible) en aanraakschermen houden het oog. */
+@media (hover:hover) and (pointer:fine) and (min-width:721px){
+  html body .google-mail-row:is(:hover,:focus-within):has(.mail-row-hover-actions [data-mail-actie='preview']):not(:has(.voorbeeld-knop:focus-visible)) :is(.mail-row-date-block,.mail-minimum-date,[data-mail-density-block='date']) .voorbeeld-knop{opacity:0!important;pointer-events:none!important}
+}
+@media (hover:none),(pointer:coarse){.voorbeeld-knop{opacity:.85;width:36px;height:36px}}
+@media (prefers-reduced-motion:reduce){.voorbeeld-knop{transition:none}}
+
+/* ---- Werkvenster ---- */
+.voorbeeld-werk{display:flex;flex-direction:column;min-height:0;height:100%;gap:10px;padding:12px 14px;box-sizing:border-box}
+.voorbeeld-kop{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.voorbeeld-van{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.voorbeeld-tijd{color:var(--muted,#5b6570);font-variant-numeric:tabular-nums;white-space:nowrap}
+.voorbeeld-tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line,#e1e5e9);padding-bottom:8px}
+.voorbeeld-tabs button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 12px;border-radius:999px;border:1px solid var(--line,#e1e5e9);background:transparent;color:inherit;font:inherit;cursor:pointer}
+.voorbeeld-tabs button svg{width:16px;height:16px}
+.voorbeeld-tabs button small{font-variant-numeric:tabular-nums;color:var(--muted,#5b6570)}
+.voorbeeld-tabs button.is-actief{background:color-mix(in srgb,var(--accent,#0e7c6b) 14%,transparent);border-color:var(--accent,#0e7c6b);color:var(--accent,#0e7c6b)}
+.voorbeeld-tabs button:disabled{opacity:.45;cursor:default}
+.voorbeeld-tabs button:focus-visible,.voorbeeld-bijlagenlijst button:focus-visible,.voorbeeld-duimen button:focus-visible{outline:2px solid var(--accent,#0e7c6b);outline-offset:2px}
+.voorbeeld-inhoud{flex:1 1 auto;min-height:0;overflow:auto}
+.voorbeeld-laden,.voorbeeld-fout{display:flex;align-items:center;gap:8px;color:var(--muted,#5b6570);margin:12px 0}
+.voorbeeld-fout{color:var(--bad,#b3441e)}
+.voorbeeld-laden svg,.voorbeeld-fout svg{width:18px;height:18px;flex:0 0 auto}
+.voorbeeld-galerij{display:grid;gap:10px}
+.voorbeeld-beeld-groot{margin:0;display:grid;place-items:center;gap:6px;min-height:220px;background:color-mix(in srgb,var(--line,#e1e5e9) 35%,transparent);border-radius:12px;padding:8px}
+.voorbeeld-beeld-groot img{max-width:100%;max-height:min(56vh,520px);object-fit:contain;border-radius:8px}
+.voorbeeld-beeld-groot figcaption{font-size:12.5px;color:var(--muted,#5b6570);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.voorbeeld-duimen{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.voorbeeld-duimen button{flex:0 0 auto;width:64px;height:64px;padding:0;border-radius:8px;border:2px solid transparent;background:color-mix(in srgb,var(--line,#e1e5e9) 40%,transparent);display:grid;place-items:center;overflow:hidden;cursor:pointer}
+.voorbeeld-duimen button.is-actief{border-color:var(--accent,#0e7c6b)}
+.voorbeeld-duimen img{width:100%;height:100%;object-fit:cover}
+.voorbeeld-bijlagen{display:grid;grid-template-columns:minmax(180px,260px) minmax(0,1fr);gap:12px;min-height:0;height:100%}
+.voorbeeld-bijlagenlijst{list-style:none;margin:0;padding:0;display:grid;gap:4px;align-content:start;overflow:auto}
+.voorbeeld-bijlagenlijst button{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;min-height:40px;padding:6px 8px;border-radius:8px;border:1px solid var(--line,#e1e5e9);background:transparent;color:inherit;font:inherit;text-align:start;cursor:pointer}
+.voorbeeld-bijlagenlijst button.is-actief{border-color:var(--accent,#0e7c6b);background:color-mix(in srgb,var(--accent,#0e7c6b) 10%,transparent)}
+.voorbeeld-type{font:600 10.5px/1.2 ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;background:color-mix(in srgb,var(--accent,#0e7c6b) 14%,transparent);color:var(--accent,#0e7c6b)}
+.voorbeeld-naam{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.voorbeeld-bijlagenlijst small{color:var(--muted,#5b6570);font-variant-numeric:tabular-nums}
+.voorbeeld-bijlage-inhoud{min-width:0;min-height:0;overflow:auto}
+.voorbeeld-voet{color:var(--muted,#5b6570);border-top:1px solid var(--line,#e1e5e9);padding-top:6px}
+@media (max-width:559px){
+  .venster.voorbeeld-venster,.venster.is-max.voorbeeld-venster{inset:0!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:auto!important;height:auto!important;max-width:100vw;max-height:100dvh;border-radius:0}
+  .voorbeeld-bijlagen{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .voorbeeld-bijlagenlijst{grid-auto-flow:column;grid-auto-columns:minmax(200px,80%);overflow-x:auto}
+}

@@ -1,0 +1,47 @@
+# /etc/systemd/system/mijn-ruimte-cron@.service — voert één cron-taak uit cron.json uit (instantienaam = taaknaam).
+# Wordt gestart door de timers mijn-ruimte-*.timer. Overlap wordt voorkomen met een Postgres advisory lock;
+# elke run staat in app.cron_runs. Handmatig: systemctl start mijn-ruimte-cron@opruimen.service
+[Unit]
+Description=Mijn Ruimte cron-taak %i
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=mijnruimte
+Group=mijnruimte
+# Audit-fix 4: alleen de runtime-omgeving. migratie.env (DATABASE_URL legacy + DATABASE_URL_MIGRATIE) wordt hier
+# bewust NIET geladen; alleen de migratiestap van installeer-app.sh leest die.
+EnvironmentFile=/etc/mijn-ruimte/geheimen.env
+Environment=NODE_ENV=production
+Environment=UPLOADS_DIR=/srv/data/uploads
+WorkingDirectory=/srv/mijn-ruimte/current
+ExecStart=/usr/bin/node /srv/mijn-ruimte/current/dist-server/cron.mjs %i
+TimeoutStartSec=15min
+UMask=0027
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/data/uploads
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+SystemCallErrorNumber=EPERM

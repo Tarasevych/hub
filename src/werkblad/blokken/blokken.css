@@ -1,0 +1,31 @@
+/* Werkblad «Blokken» — weergave (stroom B). Alleen thematokens; eigen kleuren komen als --blk-* van BlokWeergave.
+   Geen eigen achtergrond op de wortel (geen witte flits); werkt in licht/donker en op 390px. */
+.blk-wortel{position:relative;width:100%;min-height:0;height:100%;box-sizing:border-box;background:var(--blk-achtergrond,transparent);color:var(--blk-tekst,var(--text));border-radius:var(--blk-straal,0);container-type:inline-size}
+.blk-blok{position:absolute;box-sizing:border-box;border:var(--blk-randdikte,1px) dashed var(--blk-rand,color-mix(in srgb,var(--line) 70%,transparent));border-radius:var(--blk-straal,var(--straal-m,12px));background:var(--blk-achtergrond,transparent);color:var(--blk-tekst,var(--text));box-shadow:var(--blk-schaduw,none)}
+.blk-wortel:not(.blk-bewerken) .blk-blok{border-style:solid;border-color:var(--blk-rand,transparent)}
+.blk-blok-titel{position:absolute;top:-0.6em;left:10px;padding:0 4px;background:var(--panel,var(--surface));color:var(--muted);font-size:var(--tekst-mini,.75rem);font-weight:600;line-height:1.2;border-radius:4px}
+.blk-tegel{position:absolute;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin:0;padding:4px;min-width:0;min-height:0;overflow:visible;
+  border:var(--blk-randdikte,1px) solid var(--blk-rand,color-mix(in srgb,var(--line) 60%,transparent));border-radius:var(--blk-straal,var(--straal-m,12px));
+  background:var(--blk-achtergrond,color-mix(in srgb,var(--surface) 70%,transparent));color:var(--blk-tekst,var(--text));box-shadow:var(--blk-schaduw,none);
+  font-family:inherit;cursor:pointer;transition:background .15s ease,box-shadow .15s ease}
+.blk-tegel:hover{background:var(--blk-achtergrond,var(--surface2))}
+.blk-tegel:focus-visible{outline:2px solid var(--focus,var(--accent));outline-offset:2px;z-index:2}
+.blk-krap{gap:4px;padding:4px 2px}
+.blk-krap .blk-naam{-webkit-line-clamp:1;white-space:nowrap}
+.blk-label-rechts{flex-direction:row;justify-content:flex-start;padding:4px 8px}
+.blk-label-links{flex-direction:row-reverse;justify-content:flex-end;padding:4px 8px}
+.blk-label-boven{flex-direction:column-reverse}
+.blk-icoon{position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:var(--blk-icoon-px,36px);height:var(--blk-icoon-px,36px);border-radius:var(--straal-s,8px);background:var(--accent-soft);color:var(--blk-icoon,var(--accent))}
+.blk-icoon-los .blk-icoon{background:transparent}
+.blk-icoon-rond .blk-icoon{border-radius:50%}
+.blk-icoon svg,.blk-icoon .menu-lucide-glyph{width:var(--blk-tekening-px,20px);height:var(--blk-tekening-px,20px)}
+.blk-naam{min-width:0;max-width:100%;font-weight:600;line-height:1.2;text-align:center;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:normal;hyphens:auto}
+.blk-label-rechts .blk-naam,.blk-label-links .blk-naam{text-align:start;-webkit-line-clamp:1}
+.blk-gekozen{outline:2px solid var(--accent);outline-offset:1px;z-index:1}
+.blk-bewerken .blk-tegel{cursor:grab;touch-action:none}
+/* Tooltip op elke tegel (hover en toetsenbordfocus), geen native venster. */
+.blk-tegel::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 4px);transform:translateX(-50%);width:max-content;z-index:30;pointer-events:none;display:none;max-width:min(240px,80vw);padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel,var(--surface));color:var(--text);font-size:.75rem;font-weight:500;line-height:1.3;white-space:normal;box-shadow:0 6px 18px var(--shadow);animation:blk-tip .12s ease .4s both}
+@keyframes blk-tip{from{opacity:0}to{opacity:1}}
+.blk-tegel:hover::after,.blk-tegel:focus-visible::after{display:block}
+@media (prefers-reduced-motion:reduce){.blk-tegel{transition:none}.blk-tegel::after{animation:none}}
+@media (forced-colors:active){.blk-tegel,.blk-blok{border-color:CanvasText}.blk-gekozen{outline-color:Highlight}}

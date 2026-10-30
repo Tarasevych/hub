@@ -1,0 +1,92 @@
+/* «Браузер і агенти» (src/extensie/BrowserEnAgenten.tsx) — alleen thema-tokens (src/ontwerp/tokens.css), tap ≥ 44 px, 390 px zonder
+   horizontale scroll: op de telefoon toont de matrix één agentkolom tegelijk (keuzelijst «Показати стовпчик»), de ketting is een lijst. */
+.bea{display:grid;gap:16px;min-width:0}
+.bea-kop h2{margin:0;font-size:1.3rem;display:flex;align-items:center;gap:8px}
+.bea-kop p{margin:6px 0 0;color:var(--muted);max-width:72ch;line-height:1.45}
+.bea-sloten{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.bea-slot{margin-top:0}
+.bea-slot h3 svg{width:20px;height:20px}
+.bea-tech-regel{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bea-domeinen summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:6px;font-weight:600}
+.bea-domeinen .eo-domeinen{margin-top:6px}
+.bea-matrix{display:grid;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.bea-matrix-kop{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.bea-matrix-kop h3{margin:0;font-size:1.05rem}
+.bea-matrix .ag-segment{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.bea-matrix .ag-segment button{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 14px;border:0;background:var(--surface);color:var(--muted);font:inherit;font-weight:600;cursor:pointer}
+.bea-matrix .ag-segment button svg{width:16px;height:16px}
+.bea-matrix .ag-segment button[aria-checked=true]{background:var(--accent);color:var(--accentText)}
+.bea-matrix .ag-segment button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.bea-erfenis{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:12px;background:var(--info-zacht,var(--surface));border-left:5px solid var(--info);font-size:.9rem}
+.bea-erfenis svg{flex:none;margin-top:3px}
+.bea-snel{display:flex;flex-wrap:wrap;gap:8px}
+.bea-waarschuwing{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:start;padding:12px;border-radius:12px;background:var(--warn-zacht);border-left:5px solid var(--warn)}
+.bea-waarschuwing>svg{width:22px;height:22px;color:var(--warn);margin-top:2px}
+.bea-waarschuwing p{margin:0}
+.bea-waarschuwing .eo-knoppen{grid-column:2}
+.bea .bea-kolomkeuze{display:none}
+.bea-tabel-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px}
+.bea-tabel{border-collapse:separate;border-spacing:0;width:100%;min-width:640px;font-size:.9rem}
+.bea-tabel th,.bea-tabel td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.bea-tabel thead th{position:sticky;top:0;background:var(--surface);text-align:center;font-weight:600;z-index:1}
+.bea-tabel thead th:first-child,.bea-tabel tbody th{position:sticky;left:0;background:var(--panel);text-align:left;z-index:2;min-width:170px;max-width:240px}
+.bea-tabel thead th:first-child{z-index:3}
+.bea-tabel thead th.is-verbonden .bea-agent-naam{color:var(--ok)}
+.bea-agent-naam{display:block}
+.bea-agent-stand{display:block;color:var(--muted);font-weight:400;font-size:.75rem}
+.bea-cap-naam{display:flex;align-items:center;gap:4px;font-weight:600}
+.bea-cap-uitleg{display:block;color:var(--muted);font-weight:400;font-size:.78rem;line-height:1.3}
+.bea-tabel tr.is-gevaarlijk tbody th,.bea-tabel tr.is-gevaarlijk th{box-shadow:inset 4px 0 0 var(--warn)}
+.bea-tabel td{text-align:center}
+.bea-cel{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;cursor:pointer;border-radius:10px}
+.bea-cel:hover{background:var(--surface)}
+.bea-cel input{width:22px;height:22px;margin:0;accent-color:var(--accent)}
+.bea-cel input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bea-instellingen{display:grid;gap:6px}
+.bea-schakel{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;min-height:44px}
+.bea-schakel span{min-width:0}
+.bea-opslaan{align-items:center}
+.bea-weigeringen h3,.bea-agenten-uitleg h3{margin:0 0 8px;display:flex;align-items:center;gap:6px;font-size:1.05rem}
+.bea-weigeringen h3 svg,.bea-agenten-uitleg h3 svg{width:18px;height:18px}
+.bea-weig-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.bea-weig-lijst li{display:grid;grid-template-columns:auto auto 1fr;gap:4px 10px;align-items:baseline;padding:8px 10px;border-radius:10px;background:var(--fout-zacht);border-left:4px solid var(--fout);font-size:.9rem}
+.bea-weig-lijst time{color:var(--muted);font-variant-numeric:tabular-nums}
+.bea-weig-lijst code{font-size:.8rem}
+.bea-weig-code{font-family:ui-monospace,monospace;font-size:.78rem;color:var(--muted)}
+.bea-weig-lijst li>span:last-child{grid-column:1/-1}
+.bea-agenten-uitleg ol{margin:0;padding-left:1.2em;display:grid;gap:4px;line-height:1.45}
+.bea-agenten-uitleg code{word-break:break-all}
+/* src/ontwerp/mobiel.css maakt van elke tabel ≤ 700 px een blok met thead/tbody als LOSSE tabellen (min-width:max-content): dan lopen
+   kop en vinkjes uit elkaar en rekt de uitleg de rij op. De matrix houdt haar echte tabelopbouw (eigen wrapper scrolt). */
+@media (max-width:700px){
+  .bea-tabel{display:table;overflow:visible}
+  .bea-tabel>thead{display:table-header-group;width:auto;min-width:0}
+  .bea-tabel>tbody{display:table-row-group;width:auto;min-width:0}
+}
+@media (max-width:560px){
+  .bea-matrix{padding:12px}
+  .bea-matrix-kop{flex-direction:column;align-items:stretch}
+  .bea-matrix .ag-segment{width:100%}
+  .bea-matrix .ag-segment button{flex:1;justify-content:center}
+  .bea .bea-kolomkeuze{display:grid}
+  .bea-tabel{min-width:0}
+  .bea-tabel [data-bea-agent]:not(.is-gekozen),.bea-tabel [data-bea-cel]:not(.is-gekozen){display:none}
+  .bea-tabel thead th:first-child,.bea-tabel tbody th{position:static;min-width:0;max-width:none}
+  .bea-tabel td{width:64px}
+  .bea-weig-lijst li{grid-template-columns:1fr}
+}
+
+/* Verwijskaart op het tabblad «Розширення браузера» (src/agenten/TabExtensie.tsx) en de ingeklapte oude toestemmingen (BrowserExtensionPanel). */
+.ag-ext-naar-browser{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border-left:5px solid var(--accent)}
+.ag-ext-naar-browser p{margin:0;flex:1;min-width:240px;line-height:1.45}
+.ext-toestemmingen-oud summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--muted);font-size:.9rem}
+.bea-keten h3{margin:0 0 8px;display:flex;align-items:center;gap:6px;font-size:1.05rem}
+.bea-keten h3 svg{width:18px;height:18px}
+.bea-keten-lijst{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.bea-keten-lijst li{display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,2fr) minmax(0,3fr);gap:4px 14px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:.9rem}
+.bea-keten-lijst li:last-child{border-bottom:0}
+.bea-keten-naam{align-self:start}
+.bea-keten-kop{display:block;color:var(--muted);font-size:.75rem;font-weight:600}
+.bea-keten-regel{display:block;font-variant-numeric:tabular-nums}
+@media (max-width:560px){.bea-keten-lijst li{grid-template-columns:minmax(0,1fr)}}
+.bea-keten-uit{color:var(--warn)}

@@ -1,0 +1,343 @@
+/* WERKBLAD («Робочий стіл», src/werkblad/Werkblad.tsx) — zone F, 22.10.2026.
+   Alle kleuren via de tokens van src/ontwerp/tokens.css (geen hex): de donkere en de lichte thema's komen vanzelf mee.
+   Raster: 12 kolommen (pc) · 6 (tablet ≤ 1100) · 1 (telefoon ≤ 700). De plaatsing (grid-column/grid-row) zet
+   shared/werkblad-indeling.ts plaatsen() expliciet, dus wat de mens ziet is wat de regels zeggen (geen overlap).
+   Achtergronden: neutrale verlopen uit de tokens (geen foto's van anderen); 'eigen' = afbeelding van de gebruiker (--wb-eigen). */
+
+.werkblad{--wb-rij:96px;--wb-kier:12px;--wb-glas:color-mix(in srgb,var(--panel) 86%,transparent);--wb-glas-rand:color-mix(in srgb,var(--line) 70%,transparent);
+  position:relative;display:grid;gap:var(--ruimte-3);margin:calc(-1 * var(--ruimte-3)) calc(-1 * var(--ruimte-3)) var(--ruimte-4);padding:var(--ruimte-4);border-radius:var(--straal-xl);min-height:60vh;isolation:isolate;overflow:hidden;
+  /* zelfde lettertype als de schil (src/canoniek-omlijsting.css); de koppen van index.css (Georgia) gelden hier niet */
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--text)}
+.werkblad :is(h2,h3,h4){font-family:inherit;letter-spacing:-.01em}
+.werkblad::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--wb-verloop,none)}
+.wb-achtergrond-geen{--wb-verloop:none}
+/* Verlopen: alleen tonen uit de tokens, zodat ze in elke palet en elk thema passen (donker: dieper; licht: zachter). */
+.wb-achtergrond-nacht{--wb-verloop:linear-gradient(160deg,color-mix(in srgb,var(--info-vlak) 38%,var(--bg)) 0%,color-mix(in srgb,var(--accent) 22%,var(--bg)) 45%,color-mix(in srgb,var(--warn-vlak) 18%,var(--bg)) 100%)}
+.wb-achtergrond-zee{--wb-verloop:linear-gradient(170deg,color-mix(in srgb,var(--accent) 42%,var(--bg)) 0%,color-mix(in srgb,var(--info-vlak) 24%,var(--bg)) 55%,var(--bg) 100%)}
+.wb-achtergrond-woud{--wb-verloop:linear-gradient(165deg,color-mix(in srgb,var(--ok-vlak) 34%,var(--bg)) 0%,color-mix(in srgb,var(--accent) 20%,var(--bg)) 60%,var(--bg) 100%)}
+.wb-achtergrond-avond{--wb-verloop:linear-gradient(160deg,color-mix(in srgb,var(--warn-vlak) 36%,var(--bg)) 0%,color-mix(in srgb,var(--fout-vlak) 18%,var(--bg)) 50%,color-mix(in srgb,var(--info-vlak) 26%,var(--bg)) 100%)}
+.wb-achtergrond-eigen::before{background:var(--wb-eigen) center/cover no-repeat}
+.wb-achtergrond-eigen::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:color-mix(in srgb,var(--bg) 28%,transparent)}
+
+/* Токени фону (ті самі рядки, що src/schil-achtergrond.css). Малюнок — на оболонці
+   (main.canonical-chrome.schil-achtergrond::before), не на .canonical-workspace і не в .werkblad. */
+.canonical-chrome[data-achtergrond='geen']{--pagina-verloop:none;--achtergrond-sluier:transparent}
+.canonical-chrome[data-achtergrond='nacht']{--pagina-verloop:linear-gradient(160deg,color-mix(in srgb,var(--info-vlak) 38%,var(--bg)) 0%,color-mix(in srgb,var(--accent) 22%,var(--bg)) 45%,color-mix(in srgb,var(--warn-vlak) 18%,var(--bg)) 100%)}
+.canonical-chrome[data-achtergrond='zee']{--pagina-verloop:linear-gradient(170deg,color-mix(in srgb,var(--accent) 42%,var(--bg)) 0%,color-mix(in srgb,var(--info-vlak) 24%,var(--bg)) 55%,var(--bg) 100%)}
+.canonical-chrome[data-achtergrond='woud']{--pagina-verloop:linear-gradient(165deg,color-mix(in srgb,var(--ok-vlak) 34%,var(--bg)) 0%,color-mix(in srgb,var(--accent) 20%,var(--bg)) 60%,var(--bg) 100%)}
+.canonical-chrome[data-achtergrond='avond']{--pagina-verloop:linear-gradient(160deg,color-mix(in srgb,var(--warn-vlak) 36%,var(--bg)) 0%,color-mix(in srgb,var(--fout-vlak) 18%,var(--bg)) 50%,color-mix(in srgb,var(--info-vlak) 26%,var(--bg)) 100%)}
+.canonical-chrome[data-achtergrond='eigen']{--pagina-verloop:none;--achtergrond-sluier:color-mix(in srgb,var(--bg) 28%,transparent)}
+.canonical-chrome[data-achtergrond]:not([data-achtergrond='geen']):not([data-achtergrond='eigen']){--achtergrond-sluier:color-mix(in srgb,var(--bg) 12%,transparent)}
+html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark .canonical-chrome[data-achtergrond='eigen']{--achtergrond-sluier:color-mix(in srgb,var(--bg) 40%,transparent)}
+.canonical-chrome[data-achtergrond] .werkblad::before,.canonical-chrome[data-achtergrond] .werkblad.wb-achtergrond-eigen::after{background:none}
+
+/* ---------------------------------------------------------------- balk */
+.wb-balk{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:var(--ruimte-2) var(--ruimte-3);min-height:var(--tik-hoogte)}
+.wb-ruimte-pil{display:inline-flex;align-items:center;gap:6px;margin-right:auto}
+.wb-ruimte-pil svg{width:14px;height:14px}
+.wb-balk h2{display:flex;align-items:center;gap:var(--ruimte-2);margin:0;font-size:1.05rem;color:var(--text)}
+.wb-balk h2 svg{width:18px;height:18px;color:var(--accent)}
+.wb-balk-acties{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ruimte-2);margin-left:auto}
+.wb-balk-acties .knop-stil,.wb-balk-acties .knop-secundair{background:var(--wb-glas);border-color:var(--wb-glas-rand)}
+.wb-uitleg{margin:0;color:var(--muted);font-size:var(--tekst-klein)}
+.wb-melding,.wb-fout-balk{display:flex;align-items:center;gap:var(--ruimte-2);margin:0;font-size:var(--tekst-klein)}
+.wb-melding .wb-tip-sluit{margin-left:auto}
+
+/* ---------------------------------------------------------------- raster en tegel */
+.wb-raster{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:var(--wb-rij);gap:var(--wb-kier);align-items:stretch}
+.wb-tegel{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;border-radius:var(--straal-l);
+  transition:box-shadow .18s ease,transform .18s ease,opacity .18s ease}
+.wb-tegel.is-kaart{background:var(--wb-glas);border:1px solid var(--wb-glas-rand);box-shadow:var(--schaduw-1);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.wb-tegel.is-kaart:hover{box-shadow:var(--schaduw-2)}
+.wb-tegel.is-kaal{background:transparent}
+.wb-tegel.is-instellen{outline:1px dashed color-mix(in srgb,var(--accent) 60%,transparent);outline-offset:2px}
+.wb-tegel.is-sleept{opacity:.6;transform:scale(.985);box-shadow:var(--schaduw-3);z-index:3}
+.wb-tegel-kop{display:flex;align-items:center;gap:var(--ruimte-2);min-height:40px;padding:6px var(--ruimte-3) 0;color:var(--text)}
+.wb-tegel-kop.is-sleepbaar{touch-action:none}
+@media (pointer:coarse){.wb-tegel-kop{min-height:var(--tik-hoogte-mobiel)}}
+/* Begroeting en tip hebben geen kaart; in de instelmodus zweeft hun kop bovenop de inhoud (de tegel wordt niet hoger). */
+.wb-tegel-kop.is-zwevend{position:absolute;inset:0 0 auto 0;z-index:2;padding-bottom:6px;border-radius:var(--straal-l) var(--straal-l) 0 0;background:var(--wb-glas);border:1px solid var(--wb-glas-rand);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.wb-tegel-kop.is-sleepbaar{cursor:grab;user-select:none;-webkit-user-select:none}
+.wb-tegel-kop.is-sleepbaar:active{cursor:grabbing}
+.wb-tegel-icoon,.wb-greep{width:18px;height:18px;flex:none;color:var(--accent)}
+.wb-greep{color:var(--muted)}
+.wb-tegel-titel{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;font-size:var(--tekst-klein)}
+.wb-tegel-titel[role=button]{border-radius:var(--straal-s);padding:2px 4px;margin:-2px -4px}
+.wb-tegel-knoppen{display:flex;gap:2px;flex:none}
+.wb-icoonknop{display:inline-flex;align-items:center;justify-content:center;width:var(--tik-hoogte);height:var(--tik-hoogte);border:0;border-radius:var(--straal-s);background:transparent;color:var(--muted);cursor:pointer}
+.wb-icoonknop:hover{background:var(--surface);color:var(--text)}
+.wb-icoonknop.is-gevaar:hover{background:var(--fout-zacht);color:var(--fout)}
+.wb-icoonknop svg{width:16px;height:16px}
+.wb-icoonknop:disabled{opacity:.4;cursor:not-allowed}
+.wb-tegel-inhoud{flex:1 1 auto;min-height:0;overflow:auto;padding:var(--ruimte-2) var(--ruimte-3) var(--ruimte-3);scrollbar-width:thin;container-type:inline-size}
+/* teller in de kop (ongelezen post, open taken) en op een tegel van snelle toegang */
+.wb-teller{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--text-on-accent);font-size:var(--tekst-mini);font-weight:700;line-height:1;flex:none}
+.wb-teller.is-op-icoon{position:absolute;top:-8px;right:-10px;min-width:20px;height:20px;padding:0 5px;box-shadow:0 0 0 2px var(--panel)}
+.wb-tegel.is-kaal>.wb-tegel-inhoud{padding:0}
+/* In de instelmodus is een tegel zonder kaart (begroeting, tip) alleen een plek: de inhoud wijkt onder de zwevende kop. */
+.wb-tegel.is-kaal.is-instellen>.wb-tegel-inhoud{opacity:.28;pointer-events:none}
+.wb-maat{position:absolute;right:2px;bottom:2px;width:22px;height:22px;cursor:nwse-resize;border-right:3px solid var(--muted);border-bottom:3px solid var(--muted);border-bottom-right-radius:var(--straal-m);opacity:.7}
+.wb-maat:hover{opacity:1;border-color:var(--accent)}
+@media (max-width:1100px){.wb-raster{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (max-width:700px){
+  .werkblad{margin:calc(-1 * var(--ruimte-2)) calc(-1 * var(--ruimte-2)) var(--ruimte-4);padding:var(--ruimte-3);border-radius:var(--straal-l)}
+  /* Telefoon: één kolom in de volgorde van de lijst; elke tegel zo hoog als haar inhoud (min. één rij) — geen vaste rijhoogtes,
+     dus niets wordt afgeknipt (stand 23.10: knoppen van snelle toegang 5 px hoog). */
+  .wb-raster{grid-template-columns:minmax(0,1fr);grid-auto-rows:auto}
+  .wb-tegel{grid-column:1 / -1!important;grid-row:auto!important;min-height:var(--wb-rij)}
+  .wb-tegel-inhoud{flex:none;min-height:auto;overflow:visible}
+  .wb-snel{height:auto;grid-auto-rows:minmax(72px,auto)}
+  .wb-balk-acties{margin-left:0;width:100%}
+  .wb-catalogus-lijst{max-height:none;overflow:visible}
+}
+@media (prefers-reduced-motion:reduce){.wb-tegel{transition:none}}
+
+/* ---------------------------------------------------------------- gedeelde inhoud */
+.wb-skelet{display:grid;gap:var(--ruimte-2);padding:var(--ruimte-1) 0}
+.wb-skelet span{display:block;height:14px;border-radius:var(--straal-s);background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:wb-skelet 1.3s ease-in-out infinite}
+@keyframes wb-skelet{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.wb-skelet span{animation:none}}
+.wb-leeg{display:flex;align-items:flex-start;gap:var(--ruimte-2);margin:0;padding:var(--ruimte-2) 0;color:var(--muted);font-size:var(--tekst-klein)}
+.wb-leeg svg{width:18px;height:18px;flex:none;color:var(--accent)}
+.wb-fout{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ruimte-2);margin:0;padding:var(--ruimte-2);border-radius:var(--straal-s);background:var(--fout-zacht);color:var(--fout);font-size:var(--tekst-klein)}
+.wb-fout svg{width:16px;height:16px;flex:none}
+.wb-niet-gekoppeld{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ruimte-2);padding:var(--ruimte-3);border:1px dashed var(--line);border-radius:var(--straal-m);color:var(--muted);font-size:var(--tekst-klein)}
+.wb-niet-gekoppeld svg{width:18px;height:18px;color:var(--accent)}
+.wb-niet-gekoppeld button{margin-left:auto}
+.wb-leeg-vlak{font-size:var(--tekst-klein)}
+.wb-lijst-vlak{display:flex;flex-direction:column;gap:var(--ruimte-2);min-height:100%}
+.wb-alles{display:inline-flex;align-items:center;gap:4px;margin-top:auto;padding:var(--ruimte-1) 0;border:0;background:transparent;color:var(--accent);font:inherit;font-size:var(--tekst-klein);font-weight:600;cursor:pointer;align-self:flex-start;min-height:var(--tik-hoogte)}
+.wb-alles svg{width:14px;height:14px}
+.wb-alles:hover{text-decoration:underline}
+.wb-rij-knoppen{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ruimte-2);margin-top:auto}
+.wb-rij-knoppen .wb-alles{margin-top:0}
+.wb-voet{color:var(--muted);font-size:var(--tekst-mini)}
+.wb-rijen{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.wb-rijen li{display:flex;align-items:center;gap:var(--ruimte-2);min-height:40px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);min-width:0}
+.wb-rijen li:last-child{border-bottom:0}
+.wb-rijen li>a{display:flex;align-items:center;gap:var(--ruimte-2);flex:1 1 auto;min-width:0;color:inherit;text-decoration:none}
+.wb-rijen li>a:hover .wb-rij-titel{color:var(--accent)}
+.wb-rijen li>a svg:last-child{width:14px;height:14px;flex:none;color:var(--muted)}
+.wb-rij-titel{display:flex;flex-direction:column;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--tekst-klein);color:var(--text)}
+.wb-rij-titel small{color:var(--muted);font-size:var(--tekst-mini);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 23.10 (integratie, stand H-EIND): de uitkomst van een uitrol («Повернуто на випуск 20261021-221718 за рішенням власника…») is de
+   kern van de regel — twee regels tonen in plaats van na 360 px af te kappen; de volledige tekst staat ook in de title. */
+.wb-uitrol .wb-rij-titel{white-space:normal}
+.wb-uitrol .wb-rij-titel small{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:anywhere}
+.wb-rijen li>small,.wb-rijen li>time{flex:none;color:var(--muted);font-size:var(--tekst-mini)}
+.wb-tellers{display:flex;flex-wrap:wrap;gap:var(--ruimte-3) var(--ruimte-4);padding:var(--ruimte-1) 0}
+.wb-tellers span{display:flex;flex-direction:column;min-width:56px}
+.wb-tellers strong{font-size:1.5rem;line-height:1.1;color:var(--text)}
+.wb-tellers small{color:var(--muted);font-size:var(--tekst-mini)}
+.wb-chips{display:flex;flex-wrap:wrap;gap:6px}
+.wb-chips button{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px var(--ruimte-3);border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font:inherit;font-size:var(--tekst-mini);font-weight:600;cursor:pointer}
+.wb-chips button.is-actief{background:var(--accent);border-color:var(--accent);color:var(--text-on-accent)}
+.wb-chip-n{padding:0 6px;border-radius:999px;background:color-mix(in srgb,var(--text) 10%,transparent);font-size:var(--tekst-mini)}
+.wb-chips button.is-actief .wb-chip-n{background:color-mix(in srgb,var(--text-on-accent) 22%,transparent)}
+@media (pointer:coarse),(max-width:700px){.wb-chips button{min-height:var(--tik-hoogte-mobiel)}}
+.wb-merk{width:28px;height:28px;flex:none;display:inline-flex}
+.wb-avatar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:var(--tekst-mini);font-weight:700}
+.wb-inline-icoon{width:12px;height:12px;vertical-align:-2px}
+.wb-balk .pil{margin-left:var(--ruimte-2);font-size:var(--tekst-mini)}
+
+/* ---------------------------------------------------------------- begroeting */
+.wb-begroeting{display:flex;align-items:center;gap:var(--ruimte-4);min-height:var(--wb-rij);padding:var(--ruimte-2) var(--ruimte-2);color:var(--text)}
+.wb-begroeting-icoon{width:44px;height:44px;flex:none;color:var(--warn-vlak)}
+.wb-begroeting-tekst{flex:1 1 auto;min-width:0}
+.wb-begroeting-tekst h2{margin:0;font-size:1.6rem;line-height:1.15;overflow-wrap:anywhere}
+.wb-begroeting-tekst p{margin:2px 0 0;color:var(--text);font-size:var(--tekst-klein)}
+.wb-begroeting-tijd{display:flex;flex-direction:column;align-items:flex-end;flex:none;text-align:right}
+.wb-begroeting-datum{color:var(--text);font-size:var(--tekst-klein)}
+.wb-begroeting-klok{font-size:1.6rem;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+@media (max-width:700px){.wb-begroeting{flex-wrap:wrap;gap:var(--ruimte-2) var(--ruimte-3)}.wb-begroeting-tijd{flex:1 1 100%;flex-direction:row;justify-content:space-between;align-items:baseline}.wb-begroeting-tekst h2{font-size:1.3rem}.wb-begroeting-icoon{width:32px;height:32px}}
+
+/* ---------------------------------------------------------------- snelle toegang */
+.wb-snel{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));grid-auto-rows:minmax(68px,1fr);gap:var(--ruimte-2);height:100%}
+.wb-snel>li{display:flex;min-height:0}
+.wb-snel-tegel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;min-height:64px;padding:var(--ruimte-2) 4px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:var(--straal-m);background:color-mix(in srgb,var(--surface) 70%,transparent);color:var(--text);font:inherit;cursor:pointer;transition:transform .15s ease,background .15s ease}
+.wb-snel-tegel:hover{background:var(--surface2);transform:translateY(-1px)}
+.wb-snel-icoon{position:relative;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:var(--straal-s);background:var(--accent-soft);color:var(--accent)}
+.wb-snel-icoon svg,.wb-snel-icoon .menu-lucide-glyph{width:20px;height:20px}
+.wb-snel-naam{font-size:var(--tekst-mini);font-weight:600;text-align:center;line-height:1.2;overflow-wrap:normal;word-break:normal;hyphens:auto;max-width:100%}
+@media (prefers-reduced-motion:reduce){.wb-snel-tegel{transition:none}}
+
+/* ---------------------------------------------------------------- snelle acties */
+.wb-acties{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.wb-acties button{display:flex;align-items:center;justify-content:flex-start;gap:var(--ruimte-2);width:100%;min-height:30px;padding:4px var(--ruimte-2);border:0;border-radius:var(--straal-s);background:transparent;color:var(--text);font:inherit;font-size:var(--tekst-klein);text-align:left;cursor:pointer}
+.wb-acties button:hover{background:var(--surface)}
+.wb-acties svg{width:16px;height:16px;flex:none;color:var(--accent)}
+@media (pointer:coarse),(max-width:700px){.wb-acties button{min-height:var(--tik-hoogte-mobiel)}}
+
+/* ---------------------------------------------------------------- tip-strook */
+.wb-tip{display:flex;align-items:center;gap:var(--ruimte-3);min-height:var(--wb-rij);padding:var(--ruimte-3) var(--ruimte-4);border-radius:var(--straal-l);background:color-mix(in srgb,var(--accent) 16%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);color:var(--text)}
+.wb-tip-icoon{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;flex:none;border-radius:50%;background:var(--accent);color:var(--text-on-accent)}
+.wb-tip-icoon svg{width:20px;height:20px}
+.wb-tip-tekst{display:flex;flex-direction:column;flex:1 1 auto;min-width:0}
+.wb-tip-tekst small{color:var(--muted)}
+.wb-tip-knoppen{display:flex;flex-wrap:wrap;gap:var(--ruimte-2);flex:none}
+/* Smalle strook (tablet): alleen de kop en de knoppen — de uitleg zou een derde regel worden en afgeknipt. */
+@container (max-width:760px){.wb-tip-tekst small{display:none}}
+.wb-tip-sluit{display:inline-flex;align-items:center;justify-content:center;width:var(--tik-hoogte);height:var(--tik-hoogte);flex:none;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.wb-tip-sluit:hover{background:var(--surface);color:var(--text)}
+.wb-tip-sluit svg{width:16px;height:16px}
+@media (max-width:700px){.wb-tip{flex-wrap:wrap}.wb-tip-tekst{flex-basis:calc(100% - 56px)}.wb-tip-knoppen{flex:1 1 100%}}
+
+/* ---------------------------------------------------------------- post */
+.wb-post{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.wb-post li{display:flex;align-items:center;gap:var(--ruimte-2);min-height:44px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+.wb-post li:last-child{border-bottom:0}
+.wb-post-tekst{display:flex;flex-direction:column;flex:1 1 auto;min-width:0}
+.wb-post-tekst strong{font-size:var(--tekst-klein);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-post li.is-ongelezen .wb-post-tekst strong{font-weight:700}
+.wb-post-tekst small{color:var(--muted);font-size:var(--tekst-mini);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-post time{flex:none;color:var(--muted);font-size:var(--tekst-mini)}
+
+/* ---------------------------------------------------------------- agenda */
+.wb-agenda{display:flex;flex-direction:column;gap:var(--ruimte-2);min-height:100%}
+.wb-agenda{gap:6px}
+.wb-agenda-balk{display:flex;align-items:center;gap:var(--ruimte-1)}
+.wb-agenda-balk strong{flex:1 1 auto;min-width:0;font-size:var(--tekst-klein);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-agenda-knoppen{display:flex;align-items:center;gap:0}
+.wb-agenda-knoppen .wb-icoonknop{width:32px;height:32px}
+.wb-agenda-vandaag{min-height:28px;padding:2px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:var(--tekst-mini);font-weight:600;cursor:pointer}
+.wb-agenda-vandaag:hover{background:var(--surface2)}
+@media (pointer:coarse){.wb-agenda-knoppen .wb-icoonknop{width:var(--tik-hoogte-mobiel);height:var(--tik-hoogte-mobiel)}.wb-agenda-vandaag{min-height:var(--tik-hoogte-mobiel)}}
+.wb-maand{width:100%;border-collapse:collapse;table-layout:fixed;font-size:var(--tekst-mini)}
+.wb-maand th{padding:0 0 2px;color:var(--muted);font-weight:600;text-transform:lowercase}
+.wb-maand td{padding:0;text-align:center}
+.wb-maand td span{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;color:var(--text);position:relative}
+.wb-maand td span.sr-only{position:absolute;width:1px;height:1px}
+.wb-agenda-regel{display:flex;align-items:center;gap:6px;margin:0;min-width:0;color:var(--muted);font-size:var(--tekst-mini)}
+.wb-agenda-regel>svg{width:14px;height:14px;flex:none;color:var(--accent)}
+.wb-agenda-regel>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-agenda-regel strong{color:var(--text);font-weight:600}
+.wb-link-knop{margin-left:auto;padding:2px 4px;border:0;background:transparent;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;text-decoration:underline;min-height:28px}
+@media (pointer:coarse){.wb-link-knop{min-height:var(--tik-hoogte-mobiel)}}
+.wb-maand td.is-buiten span{color:var(--faint)}
+.wb-maand td.is-vandaag span{background:var(--accent);color:var(--text-on-accent);font-weight:700}
+.wb-maand td.heeft-afspraak span::after{content:'';position:absolute;bottom:2px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--info-vlak)}
+.wb-maand td.is-vandaag.heeft-afspraak span::after{background:var(--text-on-accent)}
+.wb-afspraak-tijd{display:flex;flex-direction:column;align-items:center;flex:none;min-width:44px;padding:2px 4px;border-radius:var(--straal-s);background:var(--accent-soft);color:var(--accent)}
+.wb-afspraak-tijd strong{font-size:var(--tekst-mini);line-height:1.1}
+.wb-afspraak-tijd small{font-size:var(--tekst-mini)}
+
+/* ---------------------------------------------------------------- taken, notities */
+.wb-taak-stip{width:18px;height:18px;flex:none;color:var(--muted)}
+.wb-taak-stip.is-doing{color:var(--info)}
+.wb-taak-meta{display:flex;align-items:center;gap:6px;flex:none}
+/* Smalle tegel (container query op de inhoud): het etiket van een taak wijkt, de titel en de stand blijven leesbaar. */
+@container (max-width:420px){.wb-taak-meta .pil{display:none}}
+@container (max-width:240px){.wb-zoek-rij small{display:none}}
+@container (max-width:300px){.wb-post time{display:none}}
+/* Snelle toegang in een smalle tegel (tablet: halve breedte): kleinere tegels, zodat alle diensten passen. */
+@container (max-width:380px){.wb-snel{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));grid-auto-rows:minmax(54px,1fr);gap:6px}.wb-snel-tegel{min-height:52px;gap:4px;padding:4px 2px}.wb-snel-icoon{width:28px;height:28px}.wb-snel-icoon svg,.wb-snel-icoon .menu-lucide-glyph{width:16px;height:16px}}
+.wb-taak-stand{font-size:var(--tekst-mini);padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted)}
+.wb-taak-stand.is-blocked{background:var(--fout-zacht);color:var(--fout)}
+.wb-taak-stand.is-doing{background:var(--info-zacht);color:var(--info)}
+.wb-pin{width:14px;height:14px;flex:none;color:var(--warn)}
+.wb-rijen .pil{font-size:var(--tekst-mini)}
+
+/* ---------------------------------------------------------------- bestanden, opslag */
+.wb-bestand-icoon{width:22px;height:22px;flex:none;color:var(--accent)}
+.wb-bestand-icoon.is-drive{color:var(--info)}
+.wb-opslag-totaal{display:grid;gap:4px}
+.wb-opslag-totaal small{color:var(--muted);font-size:var(--tekst-mini)}
+.wb-voortgang{height:8px;border-radius:999px;background:var(--surface2);overflow:hidden}
+.wb-voortgang span{display:block;height:100%;border-radius:999px;background:var(--accent)}
+.wb-opslag-cijfer{font-variant-numeric:tabular-nums}
+
+/* ---------------------------------------------------------------- zoeken */
+.wb-zoek li{padding:0}
+.wb-zoek-rij{display:flex;align-items:center;gap:var(--ruimte-2);flex:1 1 auto;min-width:0;min-height:40px;padding:4px var(--ruimte-1);border:0;border-radius:var(--straal-s);background:transparent;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.wb-zoek-rij:hover{background:var(--surface)}
+.wb-zoek-rij>svg{width:16px;height:16px;flex:none;color:var(--muted)}
+.wb-zoek-rij small{flex:none;color:var(--muted);font-size:var(--tekst-mini)}
+
+/* ---------------------------------------------------------------- systeem, technisch, diensten */
+.wb-systeem{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.wb-systeem li{display:flex;align-items:center;gap:var(--ruimte-2);min-height:34px;padding:2px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);min-width:0}
+.wb-systeem li:last-child{border-bottom:0}
+.wb-systeem li>svg{width:16px;height:16px;flex:none;color:var(--accent)}
+.wb-systeem li>small{flex:none;color:var(--muted);font-size:var(--tekst-mini);white-space:nowrap}
+.wb-systeem .pil{flex:none;font-size:var(--tekst-mini)}
+.wb-release{display:flex;align-items:center;gap:var(--ruimte-2);padding:var(--ruimte-2);border-radius:var(--straal-s);background:var(--surface)}
+.wb-release>svg{width:18px;height:18px;flex:none;color:var(--accent)}
+.wb-diensten .pil{flex:none}
+
+/* ---------------------------------------------------------------- ai */
+.wb-ai{display:flex;flex-direction:column;gap:var(--ruimte-2);min-height:100%}
+.wb-ai ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.wb-ai li{display:flex;align-items:flex-start;gap:var(--ruimte-2);padding:4px 0;min-width:0}
+.wb-ai li>svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--accent)}
+.wb-ai li span{display:flex;flex-direction:column;min-width:0}
+.wb-ai li strong{font-size:var(--tekst-klein)}
+.wb-ai li small{color:var(--muted);font-size:var(--tekst-mini);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wb-ai>button{margin-top:auto;width:100%}
+.wb-ai-hint{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:var(--tekst-mini)}
+.wb-ai-hint svg{width:14px;height:14px}
+
+/* ---------------------------------------------------------------- oude blokken, snelkoppeling */
+.wb-oud-blok .hub-block-widget{margin:0}
+.wb-snelkoppeling{display:flex;align-items:center;gap:var(--ruimte-2);min-height:44px;color:var(--text);text-decoration:none}
+.wb-snelkoppeling>svg{width:18px;height:18px;flex:none;color:var(--accent)}
+.wb-snelkoppeling:hover .wb-rij-titel{color:var(--accent)}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---------------------------------------------------------------- lege toestand */
+.wb-leeg-stol{display:grid;justify-items:start;gap:var(--ruimte-2);padding:var(--ruimte-5);border:1px dashed var(--line);border-radius:var(--straal-l);background:var(--wb-glas)}
+.wb-leeg-stol>svg{width:28px;height:28px;color:var(--accent)}
+.wb-leeg-stol h3{margin:0;font-size:1rem}
+.wb-leeg-stol p{margin:0;color:var(--muted);font-size:var(--tekst-klein)}
+
+/* ---------------------------------------------------------------- catalogus en achtergrond (in een venster) */
+.wb-catalogus,.wb-achtergrond-keuze{display:grid;gap:var(--ruimte-3);padding:var(--ruimte-3)}
+.wb-catalogus-uitleg,.wb-achtergrond-keuze>p{margin:0;color:var(--muted);font-size:var(--tekst-klein)}
+.wb-catalogus-lijst{list-style:none;margin:0;padding:0;display:grid;gap:var(--ruimte-2);max-height:min(58vh,560px);overflow:auto}
+.wb-catalogus-lijst li{display:grid;grid-template-columns:24px minmax(0,1fr) auto auto;align-items:center;gap:var(--ruimte-3);padding:var(--ruimte-2) var(--ruimte-3);border:1px solid var(--line);border-radius:var(--straal-m);background:var(--panel)}
+.wb-catalogus-lijst li>svg{width:22px;height:22px;color:var(--accent)}
+.wb-catalogus-lijst li>div{display:grid;gap:2px;min-width:0}
+.wb-catalogus-lijst strong{font-size:var(--tekst-klein)}
+.wb-catalogus-lijst small{color:var(--muted);font-size:var(--tekst-mini)}
+.wb-bron{font-size:var(--tekst-mini);color:var(--muted)}
+.wb-ontbreekt{font-size:var(--tekst-mini);color:var(--warn)}
+.wb-catalogus-voet{display:flex;justify-content:flex-end}
+@keyframes wb-draai{to{transform:rotate(360deg)}}
+.werkblad .spin{animation:wb-draai 1s linear infinite}
+@media (prefers-reduced-motion:reduce){.werkblad .spin{animation:none}}
+@media (max-width:700px){.wb-snel{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}.wb-catalogus-lijst li{grid-template-columns:24px minmax(0,1fr)}.wb-catalogus-lijst li>.pil{grid-column:2}.wb-catalogus-lijst li>button{grid-column:1 / -1}}
+.wb-achtergrond-tegels{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:var(--ruimte-2)}
+.wb-achtergrond-tegel{position:relative;display:flex;align-items:flex-end;min-height:72px;padding:var(--ruimte-2);border:2px solid var(--line);border-radius:var(--straal-m);background:var(--wb-verloop,var(--surface));color:var(--text);font:inherit;font-size:var(--tekst-mini);font-weight:600;cursor:pointer;overflow:hidden}
+.wb-achtergrond-tegel.wb-achtergrond-eigen{background:var(--wb-eigen) center/cover}
+.wb-achtergrond-tegel span{padding:2px 8px;border-radius:999px;background:var(--panel)}
+.wb-achtergrond-tegel.is-actief{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.wb-bestand-keuze{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ruimte-2);font-size:var(--tekst-klein);color:var(--text)}
+.wb-bestand-keuze svg{width:18px;height:18px;color:var(--accent)}
+.wb-bestand-keuze input{flex:1 1 100%}
+
+/* ---------------------------------------------------------------- telefoon: tikvlakken ≥ 44 px (LAATSTE blok: wint van de basisregels hierboven)
+   De primitieven geven .is-klein 36 px en de agenda gebruikt op de pc compacte knoppen van 28–32 px; op de telefoon niet. */
+@media (max-width:700px) {
+  .werkblad :is(.knop,.knop-primair,.knop-secundair,.knop-stil,.knop-gevaar).is-klein,
+  .wb-catalogus :is(.knop,.knop-primair,.knop-secundair,.knop-stil).is-klein,
+  .wb-agenda-vandaag,.wb-alles,.wb-link-knop,.wb-acties button,.wb-zoek-rij,.wb-chips button{min-height:var(--tik-hoogte-mobiel)}
+  .wb-balk-acties .knop-stil.is-klein:not(:has(> :not(svg))),.wb-agenda-knoppen .wb-icoonknop{min-width:var(--tik-hoogte-mobiel);width:var(--tik-hoogte-mobiel);height:var(--tik-hoogte-mobiel)}
+  .wb-rijen li>a,.wb-snelkoppeling{min-height:var(--tik-hoogte-mobiel)}
+  /* 23.10 (integratie, stand 390): met vier knoppen van 44 px bleef voor de maand maar «Жовтень 20…» over en sprong de laatste pijl naar
+     een eigen regel. Op de telefoon: de maand op een eigen volle regel, de knoppen eronder over de hele breedte («Сьогодні» links). */
+  .wb-agenda-balk{flex-wrap:wrap;row-gap:var(--ruimte-1)}
+  .wb-agenda-balk strong{flex:1 1 100%;font-size:var(--tekst-basis);white-space:normal}
+  .wb-agenda-knoppen{flex:1 1 100%;justify-content:flex-end;gap:var(--ruimte-1)}
+  .wb-agenda-knoppen .wb-agenda-vandaag{margin-right:auto}
+}
+
+/* Werkblad v3 (vrij canvas, vlag werkblad-v3) — integratie. Geen position:fixed (plaatsing-controle). */
+.wb3-houder{position:relative;width:100%;min-height:12rem}
+.wb3 .wb3-widget{width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden}
+.wb3 .wb3-widget .wb-tegel-inhoud{flex:1;min-height:0;overflow:auto}
+.wb3-niet{margin:.5rem;font-size:.85rem;opacity:.8}
+.wb3-bibliotheek{max-height:min(60vh,36rem);overflow:auto;margin:0 0 .75rem;border-radius:14px;border:1px solid color-mix(in srgb,currentColor 18%,transparent);background:var(--kleur-oppervlak)}
+.wb3-instellingen{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:0 0 .75rem}
+.wb3-veld{display:inline-flex;gap:.4rem;align-items:center;min-height:44px}
+.wb3-veld select{min-height:36px}
+.wb3-bevestig{flex-basis:100%}
+.wb3-melding{display:flex;justify-content:space-between;align-items:center;gap:.5rem}

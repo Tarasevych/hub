@@ -1,0 +1,154 @@
+{
+ "uitkomst": {
+  "naam": "computer-1440",
+  "viewport": {
+   "width": 1440,
+   "height": 900
+  },
+  "zelfOpen": 3,
+  "zichtWissels": 9,
+  "verdwijnen": 4,
+  "startTerwijlLoopt": 0,
+  "maxGelijktijdig": 2,
+  "autoAanroepen": 4,
+  "startAanroepen": 3,
+  "statusAanroepen": 11,
+  "runs": 3,
+  "eind": "fout",
+  "fouten": []
+ },
+ "overgangen": [
+  {
+   "t": 2,
+   "ev": "zicht ∅ → geen"
+  },
+  {
+   "t": 142,
+   "ev": "net scan/auto → 200"
+  },
+  {
+   "t": 203,
+   "ev": "zicht geen → venster:open"
+  },
+  {
+   "t": 1565,
+   "ev": "zicht venster:open → venster:klein"
+  },
+  {
+   "t": 1569,
+   "ev": "GEBRUIKER minimaliseert"
+  },
+  {
+   "t": 2772,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 5400,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 8028,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 10572,
+   "ev": "GEBRUIKER wisselt naar «Контакти» en terug"
+  },
+  {
+   "t": 10575,
+   "ev": "zicht venster:klein → geen"
+  },
+  {
+   "t": 10656,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 10784,
+   "ev": "net scan/start → 502"
+  },
+  {
+   "t": 11384,
+   "ev": "zicht geen → venster:open"
+  },
+  {
+   "t": 12911,
+   "ev": "net scan/start → 200"
+  },
+  {
+   "t": 14381,
+   "ev": "GEBRUIKER (sessie opnieuw gecontroleerd → hermount)"
+  },
+  {
+   "t": 14385,
+   "ev": "zicht venster:open → geen"
+  },
+  {
+   "t": 14594,
+   "ev": "zicht geen → venster:open"
+  },
+  {
+   "t": 14717,
+   "ev": "net scan/auto → 200"
+  },
+  {
+   "t": 17350,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 19979,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 22607,
+   "ev": "net scan/status → 502"
+  },
+  {
+   "t": 26594,
+   "ev": "GEBRUIKER (15 min later: hermount, periodiek bijwerken)"
+  },
+  {
+   "t": 26722,
+   "ev": "net scan/auto → 200"
+  },
+  {
+   "t": 29349,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 29476,
+   "ev": "net scan/start → 200"
+  },
+  {
+   "t": 32103,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": -1,
+   "ev": "──── herladen ────"
+  },
+  {
+   "t": 1,
+   "ev": "zicht ∅ → geen"
+  },
+  {
+   "t": 6,
+   "ev": "GEBRUIKER ververst de pagina"
+  },
+  {
+   "t": 42,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 125,
+   "ev": "net scan/auto → 200"
+  },
+  {
+   "t": 137,
+   "ev": "zicht geen → venster:open"
+  },
+  {
+   "t": 2752,
+   "ev": "net scan/status → time-out"
+  }
+ ]
+}

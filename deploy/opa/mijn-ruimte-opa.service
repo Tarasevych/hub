@@ -1,0 +1,39 @@
+# Beleidsdienst (OPA) van Mijn Ruimte — alleen op 127.0.0.1:8181, alleen lezen, zonder netwerk naar buiten (architectuur 13.10.2026).
+# Het beleid staat root-eigen in /usr/local/lib/mijn-ruimte/opa/beleid (installeer-app.sh). Geen bundels of beleid van buiten,
+# geen decision logs naar buiten, geen telemetrie. In schaduwmodus vraagt alleen de app (backend/beleid.ts); niets wordt geblokkeerd.
+[Unit]
+Description=Mijn Ruimte beleidsdienst (OPA, 127.0.0.1)
+After=network.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+ExecStart=/usr/local/lib/mijn-ruimte/opa/opa run --server --addr=127.0.0.1:8181 --disable-telemetry --log-level=error --log-format=json /usr/local/lib/mijn-ruimte/opa/beleid
+Restart=on-failure
+RestartSec=3
+# Verharding: alleen loopback, geen schrijfrechten, geen nieuwe rechten.
+IPAddressDeny=any
+IPAddressAllow=localhost
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+MemoryMax=256M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

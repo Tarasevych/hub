@@ -1,0 +1,203 @@
+/* Редактор посилання порталиться в body. Клас у JSX — mail-compose-link-editor;
+   старі правила цілили в mail-compose-link-popover, тож вікно було без позиції і без панелі. */
+.mail-compose-link-editor,
+.mail-compose-link-preview {
+  position: fixed;
+  z-index: 10020;
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 24px));
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 18px 48px var(--shadow, rgba(0, 0, 0, .28));
+}
+.mail-compose-link-editor {
+  display: grid;
+  gap: 8px;
+  transform: translateX(-50%);
+}
+.mail-compose-link-editor-title,
+.mail-compose-link-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+.mail-compose-link-editor-title svg,
+.mail-compose-link-preview-head svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.mail-compose-link-editor label {
+  display: grid;
+  gap: 4px;
+}
+.mail-compose-link-editor label span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.mail-compose-link-editor input {
+  height: 36px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface, var(--panel));
+  color: var(--text);
+  font: inherit;
+}
+.mail-compose-link-validation,
+.mail-compose-link-preview-inline,
+.mail-compose-link-preview-domain,
+.mail-compose-link-preview-url {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+.mail-compose-link-editor code,
+.mail-compose-link-preview-url {
+  overflow-wrap: anywhere;
+}
+.mail-compose-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.mail-compose-link-actions button,
+.mail-compose-link-preview button {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: var(--text-on-accent, #fff);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.mail-compose-link-actions button.secondary,
+.mail-compose-link-actions button.danger {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--text);
+}
+.mail-compose-link-actions button.danger {
+  color: var(--fout, #b42318);
+}
+.mail-compose-link-preview {
+  display: grid;
+  gap: 6px;
+  transform: translateX(-50%);
+}
+
+/* «Вставити»: мініатюри, категорії, пошук. Пункт росте за вмістом, не 38px. */
+.sjabloon-kiezer {
+  display: grid;
+  gap: 6px;
+}
+.sjabloon-kiezer > button {
+  width: 100%;
+  height: auto !important;
+  min-height: 38px;
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 10px !important;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.sjabloon-kiezer-paneel {
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface, var(--panel));
+}
+.sjabloon-kiezer-paneel input {
+  width: 100%;
+  min-height: 36px;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+}
+.sjabloon-kiezer-cats,
+.sjabloon-kiezer-lijst {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.sjabloon-kiezer-lijst {
+  display: grid;
+  max-height: 280px;
+  overflow: auto;
+}
+.sjabloon-kiezer-cats button,
+.sjabloon-kaart {
+  height: auto !important;
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sjabloon-kiezer-cats button {
+  padding: 4px 8px;
+}
+.sjabloon-kiezer-cats button[aria-pressed='true'],
+.sjabloon-kaart[data-actief='1'] {
+  border-color: var(--line);
+  background: var(--panel);
+}
+.sjabloon-kaart {
+  display: grid !important;
+  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 6px !important;
+  white-space: normal;
+}
+.sjabloon-kaart small {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.sjabloon-miniatuur {
+  grid-row: 1 / span 2;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: var(--text);
+  font-weight: 800;
+}
+.sjabloon-kiezer-paneel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}

@@ -1,0 +1,168 @@
+/* Mobiele pass mail (19.10.2026) — melding eigenaar: «вкладення не підлаштовуються до розмірів та теми, документи, листи
+   просто вилазять за межі». Eén plek voor: passende mailinhoud, bijlagekaarten, bijlage-werkbank, vensters en het voorbeeld.
+   Regels: niets breder dan het scherm; brede inhoud krijgt een eigen scroll binnen zijn kader; aanraakdoelen ≥ 44 px;
+   veilige randen (safe-area); kleuren uit de thematokens (--panel/--surface/--text/--line/--accent). */
+
+/* ---------------------------------------------------------------- mailinhoud (alle breedtes) */
+.mail-message-html-paper{display:block;width:100%;min-width:0;max-width:100%;overflow:hidden}
+.mail-message-fit-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;margin:0 0 8px;padding:4px 4px 4px 12px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 90%,var(--accent) 10%);color:var(--text);font-size:13px;line-height:1.35}
+.mail-message-fit-bar > span{flex:1 1 150px;min-width:0;overflow-wrap:anywhere}
+.mail-message-fit-bar > button{min-height:44px;padding:0 16px;border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:999px;background:var(--panel);color:var(--accent);font:inherit;font-weight:700;cursor:pointer;touch-action:manipulation}
+.mail-message-fit-bar > button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Brief op ware grootte: het mailkader zelf scrolt (iframe), de pagina niet. */
+.mail-message-html-body[data-mail-fit='origineel'] .mail-message-html-paper{overflow:hidden;overscroll-behavior-x:contain}
+/* Donker thema: HTML-mail heeft eigen kleuren → expliciet helder «papier» met rand, zodat tekst nooit tegen de donkere rand plakt. */
+:where(html.theme-dark,html.theme-plum-dark) .mail-message-html-paper{padding:10px;border-radius:12px;background:var(--papier);color:var(--text-on-licht);color-scheme:light;box-shadow:0 0 0 1px var(--line)}
+/* Lange woorden/URL's in tekstmails en koppen breken af in plaats van de kolom op te rekken. */
+.mail-thread-message-head,.mail-thread-message-head strong,.mail-thread-message-subject,.mail-thread-toolbar strong{overflow-wrap:anywhere;min-width:0}
+.mail-message-text-body pre,.mail-message-quoted-text pre{word-break:normal;overflow-wrap:anywhere}
+
+/* ---------------------------------------------------------------- bijlagekaarten (alle breedtes) */
+/* index.css heeft een globale footer-regel (marge 2rem, rand, kolom op smal scherm) die in de kaart lekte: naam en knoppen
+   vielen buiten de kaart. Hier volledig terugzetten voor de kaartvoet. */
+html body .mail-attachment-card > footer{position:static;z-index:auto;width:auto;margin:0;border:0;color:inherit;font-size:inherit;flex-direction:row;align-items:center;justify-content:flex-start}
+
+/* Live-audit 19.10 (F9): in de voorbeeldkaart (132–150 px breed) stonden naam + 5 actieknoppen (5×28 px) in één rij → de naam
+   kreeg 0 px en was onzichtbaar, de laatste knop viel buiten de kaart. Nu: naam op een eigen regel, knoppen eronder (wikkelen). */
+html body .mail-attachment-card[data-presentation='preview']{grid-template-rows:var(--mail-density-attachment-preview-height,58px) auto}
+html body .mail-attachment-card[data-presentation='preview'] > footer{flex-direction:column;align-items:stretch;gap:4px;padding:6px 7px 7px}
+html body .mail-attachment-card[data-presentation='preview'] > footer .mail-attachment-card-name{width:100%}
+html body .mail-attachment-card[data-presentation='preview'] > footer > div{flex-wrap:wrap;gap:2px;width:100%}
+@media (width >= 721px){html body .mail-attachment-card[data-presentation='preview'] > footer > div button{width:25px;height:25px}}
+
+/* ---------------------------------------------------------------- bijlage-werkbank (alle breedtes) */
+/* Live-audit 19.10 (F9): de werkbank (z-index 205) lag ONDER de geopende brief (.google-mail-reader-backdrop z-index 230) → de
+   bijlage leek niet te openen. De werkbank hoort boven de lezer (en onder de snelle instellingen/menu's niet: die sluiten). */
+html body .google-mail-attachment-backdrop{z-index:232}
+/* inset:14px + width:100% maakte het paneel 28 px breder dan het kader (rechterkant afgekapt). */
+html body .google-mail-attachment-preview .mail-viewer-cache-panel{width:auto;height:auto}
+.google-mail-attachment-preview > header .mail-workbench-title{min-width:0}
+.google-mail-attachment-preview > header .mail-workbench-title > strong{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:where(html.theme-dark,html.theme-plum-dark) .google-mail-attachment-preview[data-workbench-layout='page'] .mail-viewer-preview-cache{background:var(--surface)}
+/* PDF-pagina's blijven wit papier; de omgeving volgt het thema (was vast lichtgrijs #e4e7eb, ook in donker). */
+:is(html.theme-dark,html.theme-plum-dark) .mail-pdf-preview:not(.mail-pdf-preview-miniature){background:var(--surface)}
+/* Toetsenbordhint van het voorbeeld heeft op een aanraakscherm geen nut en kost hoogte. */
+@media (hover:none) and (pointer:coarse){.voorbeeld-voet{display:none}}
+
+/* ---------------------------------------------------------------- smal scherm */
+@media (max-width:720px){
+  /* Mailkop en werkbalk van de draad: aanraakdoelen. */
+  html body .mail-thread-reply .mail-concept-balk button,
+  html body .mail-thread-toolbar .mail-thread-toggle-all,
+  html body .ai-vertaling-balk :is(.ai-vb-mode-btn,.ai-vb-toggle-orig-btn,.ai-vb-settings-trigger){min-height:44px}
+  html body .ai-vertaling-balk .ai-vb-select-group{min-height:44px}
+
+  /* Bijlagen als passende kaarten: één kolom (≥ 2 kolommen vanaf ~520 px), voorbeeld links, naam rechts, acties eronder. */
+  html body .mail-attachment-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:8px;width:100%}
+  html body .mail-attachment-card,
+  html body .mail-attachment-card[data-presentation]{width:100%;max-width:100%;grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto auto;grid-template-areas:"duim naam" "acties acties";column-gap:10px;row-gap:6px;padding:8px;min-height:0}
+  html body .mail-attachment-card > footer{display:contents}
+  html body .mail-attachment-card .mail-attachment-card-preview{grid-area:duim;width:64px;height:64px;border-radius:8px;align-self:center;padding:0;overflow:hidden}
+  html body .mail-attachment-card[data-presentation=compact] .mail-attachment-card-preview{width:64px;height:64px;padding:0;background:color-mix(in srgb,var(--panel) 90%,var(--surface))}
+  html body .mail-attachment-card .mail-attachment-card-preview > img,html body .mail-attachment-card .mail-attachment-card-preview > video{object-fit:cover}
+  html body .mail-attachment-card .mail-attachment-card-preview > pre{font-size:7px;padding:4px}
+  html body .mail-attachment-card .mail-attachment-card-name{grid-area:naam;align-self:center;min-height:44px;align-content:center}
+  html body .mail-attachment-card .mail-attachment-card-name strong,
+  html body .mail-attachment-card[data-presentation=compact] .mail-attachment-card-name strong{font-size:14px;line-height:1.3;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2}
+  html body .mail-attachment-card .mail-attachment-card-name small,
+  html body .mail-attachment-card[data-presentation=compact] .mail-attachment-card-name small{font-size:12px;justify-content:flex-start}
+  html body .mail-attachment-card > footer > div{grid-area:acties;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start}
+  html body .mail-attachment-card > footer > div button,
+  html body .mail-attachment-card[data-presentation=compact] > footer > div button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:color-mix(in srgb,var(--panel) 86%,var(--text) 6%);color:var(--text)}
+  html body .mail-attachment-card > footer svg{width:18px;height:18px}
+  html body .mail-attachment-card .mail-attachment-search-match{top:4px;left:4px}
+  /* Ingeklapte berichten: miniatuurstrook mag niet breder dan het kader. */
+  html body .mail-thread-collapsed-attachments{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+
+  /* Bijlage-werkbank schermvullend met veilige randen; kop compact: titel (afgekapt met …), daaronder navigatie + acties. */
+  html body .google-mail-attachment-backdrop{padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+  html body .google-mail-attachment-preview[data-workbench-layout] > header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 10px 8px 12px;min-width:0}
+  html body .google-mail-attachment-preview[data-workbench-layout] > header .mail-workbench-title{flex:1 1 100%;display:flex;align-items:center;gap:8px;min-width:0;max-width:100%}
+  html body .google-mail-attachment-preview[data-workbench-layout] > header .mail-workbench-title > strong{flex:0 1 auto;font-size:15px}
+  html body .google-mail-attachment-preview[data-workbench-layout] > header .mail-workbench-edit-badge{flex:0 0 auto}
+  html body .google-mail-attachment-preview[data-workbench-layout] > header .mail-viewer-nav{flex:0 0 auto;margin:0}
+  html body .google-mail-attachment-preview[data-workbench-layout] > header .mail-viewer-tools{flex:1 1 auto;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;min-width:0;margin:0}
+  html body .google-mail-attachment-preview[data-workbench-layout] > header :is(.mail-viewer-nav,.mail-viewer-tools) > :is(button,a),
+  html body .google-mail-attachment-preview[data-workbench-layout] > header .mail-viewer-overflow > summary{min-width:44px;min-height:44px}
+  /* De werkbalk verbergt op smal scherm alle labels (span); het «•••»-teken van «Meer» hoort daar niet bij. */
+  html body .google-mail-attachment-preview .mail-viewer-tools .mail-viewer-overflow > summary > span{display:inline}
+  html body .google-mail-attachment-preview .mail-viewer-preview-cache{padding:8px}
+  html body .google-mail-attachment-preview .mail-viewer-cache-panel{inset:8px}
+  /* Paginaweergave (PDF): MailPdfPreview meet de breedte van .mail-viewer-preview-cache; zonder binnenmarge/inset valt die samen met
+     de echte inhoudsbreedte, zodat «По ширині» precies past (anders 9–28 px horizontale scroll). */
+  html body .google-mail-attachment-preview[data-workbench-layout='page'] .mail-viewer-preview-cache{padding:0}
+  html body .google-mail-attachment-preview[data-workbench-layout='page'] .mail-viewer-cache-panel{inset:0}
+
+  /* PDF-bediening: knoppen lopen door op een tweede regel in plaats van buiten beeld te scrollen. */
+  html body .mail-pdf-controls{flex-wrap:wrap!important;overflow-x:visible!important;justify-content:center!important;gap:4px 8px!important;padding:4px 6px!important}
+  html body .mail-pdf-controls > .mail-pdf-fit-group{order:3}
+  html body .mail-pdf-controls button{min-width:44px;min-height:44px}
+  html body .mail-pdf-controls,html body .mail-pdf-controls button{color:var(--text)}
+  html body .mail-pdf-controls button:disabled{opacity:.45}
+
+  /* ШІ-balk (lezer en bijlage): compact (keuzes naast elkaar, acties in één eigen scrollrij) zodat de inhoud in beeld blijft. */
+  html body .mail-attachment-preview-with-ai{min-width:0;max-width:100%;width:100%}
+  html body .ai-vertaling-balk{gap:6px;padding:8px 10px;margin-bottom:8px;min-width:0;max-width:100%}
+  html body .ai-vertaling-balk .ai-vb-main-row > *{min-width:0;max-width:100%}
+  html body .ai-vertaling-balk .ai-vb-selectors{flex-wrap:nowrap;min-width:0;width:100%}
+  html body .ai-vertaling-balk .ai-vb-select-group{flex:1 1 0;min-width:0;overflow:hidden}
+  html body .ai-vertaling-balk .ai-vb-select-group select{max-width:100%;min-width:0;width:100%}
+  html body .ai-vertaling-balk .ai-vb-modes{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;max-width:100%;min-width:0;padding-bottom:2px}
+  html body .ai-vertaling-balk .ai-vb-modes > *{flex:0 0 auto;white-space:nowrap}
+  html body .ai-vertaling-balk .ai-vb-main-row{min-width:0;max-width:100%}
+
+  /* Losse bijlagevensters en het voorbeeldvenster: schermvullend, met veilige randen. */
+  html body .venster.mail-bijlage-venster,html body .venster.is-max.mail-bijlage-venster,
+  html body .venster.voorbeeld-venster,html body .venster.is-max.voorbeeld-venster{inset:0!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:auto!important;height:auto!important;max-width:100vw;max-height:100dvh;border-radius:0;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+  html body .venster.mail-bijlage-venster .venster-knoppen button,html body .venster.voorbeeld-venster .venster-knoppen button{min-width:44px;min-height:44px}
+  html body .mail-bv{padding:0 8px 8px}
+  html body .mail-bv-inhoud{max-width:100%;min-width:0}
+  html body .mail-bv-download{min-height:44px;padding:0 16px}
+  html body .mail-bv-tekst{overflow-wrap:anywhere}
+
+  /* Voorbeeld: bijlagenlijst als passend raster (2 kolommen) i.p.v. een strook die buiten beeld loopt. */
+  html body .voorbeeld-werk{padding:10px 12px}
+  html body .voorbeeld-tabs button{min-height:44px}
+  html body .voorbeeld-bijlagen{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  html body .voorbeeld-bijlagenlijst{grid-auto-flow:row!important;grid-auto-columns:auto!important;grid-template-columns:repeat(auto-fill,minmax(min(100%,140px),1fr));overflow:visible!important}
+  html body .voorbeeld-bijlagenlijst button{min-height:44px;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;row-gap:0}
+  html body .voorbeeld-bijlagenlijst button > small{grid-column:2}
+  html body .voorbeeld-duimen button{width:56px;height:56px}
+}
+@media (max-width:360px){
+  html body .google-mail-attachment-preview[data-workbench-layout] > header .mail-viewer-zoom-value{min-width:44px;padding:0 6px}
+}
+html body .google-mail-attachment-preview:focus{outline:none}
+
+/* ---------------------------------------------------------------- ШІ-balk in de brief (punt 14, 19.10.2026)
+   Melding eigenaar: «ШІ-кнопки в листі стирчать окремо … вилазять і перекривають». De knoppen gebruiken nu dezelfde klasse als
+   de actierij (.mail-reader-action-button, 44 px); hier alleen: nooit breder dan het scherm, wikkelen in plaats van overlappen,
+   en op een telefoon tekstlabels weg zodat de rij op één of twee regels past. */
+html body .google-mail-reader > section.mra{min-width:0;max-width:100%;overflow:visible}
+html body .mra-bar{flex-wrap:wrap;min-width:0;max-width:100%}
+html body .mra-veld{min-width:0;max-width:100%}
+@media (max-width:720px){
+  html body .google-mail-reader > section.mra{padding:6px 8px 7px}
+  html body .mra-bar{gap:5px}
+  html body .mra-veld-breed{flex:1 1 100%}
+  html body .mra-result{padding:9px 10px}
+}
+@media (max-width:430px){
+  /* Alleen de iconen (elke knop heeft er een); de naam blijft via title/aria-label bereikbaar. «ШІ» houdt zijn tekst. */
+  html body .mra-bar > button:not(.mra-toggle) > span{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  html body .mra-bar > button:not(.mra-toggle){width:44px;padding:0;border-radius:50%;justify-content:center}
+  html body .mra-veld{flex:1 1 100%}
+}
+
+/* ---------------------------------------------------------------- vertaalpaneel (punt 16, 19.10.2026)
+   Caталог рушіїв, плашка «Перекладено …» і режим «поруч» на телефоні: одна колонка, нічого ширшого за екран, цілі ≥ 44 px. */
+html body .ai-vertaling-balk .ai-vb-motoren{min-width:0;max-width:100%}
+html body .mail-vertaal-plaat{min-width:0;max-width:100%}
+@media (max-width:720px){
+  html body .ai-vertaling-balk :is(.ai-vb-motoren-trigger,.ai-vb-motor-knop){min-height:44px}
+  html body .ai-vertaling-balk .ai-vb-motoren-lijst{grid-template-columns:minmax(0,1fr)}
+  /* «Оригінал і переклад поруч» → одне під одним (також у mail-bericht-tekst.css для ширини ≤ 860 px). */
+  html body .mail-vertaal-naast{grid-template-columns:minmax(0,1fr)}
+  html body .mail-vertaal-kolom{min-width:0;max-width:100%}
+  html body .mail-vertaal-plaat > button{width:100%;min-height:44px}
+}

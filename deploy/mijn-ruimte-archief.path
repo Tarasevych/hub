@@ -1,0 +1,9 @@
+[Unit]
+Description=Mijn Ruimte: start het volledige archief zodra de site erom vraagt (verzoekbestand)
+
+[Path]
+PathChanged=/srv/data/uploads/mcp-archives/kit-request
+Unit=mijn-ruimte-archief.service
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+/* Schuifrij voor tabbladen (src/ontwerp/TabsRij.tsx). Openbaar: gebruikt door de updatepagina (admin, --ut-* uit .ut-root)
+   en door mcp-agenten (.ag-tabs-wrap zet --ut-* op tokens). Zonder --ut-*: tokens van het thema. */
+/* Audit 18.10.2026 (8c): tabbladen scrollen op smalle schermen — vervaagde randen tonen dat er meer is (AdminUitrolView zet data-meer-links/rechts). */
+.ut-tabs-wrap{position:relative;min-width:0;max-width:100%}
+.ut-tabs-wrap::before,.ut-tabs-wrap::after{content:"";position:absolute;top:0;bottom:1px;width:28px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:1}
+.ut-tabs-wrap::before{left:0;background:linear-gradient(90deg,var(--ut-bg,var(--panel)),transparent)}
+.ut-tabs-wrap::after{right:0;background:linear-gradient(270deg,var(--ut-bg,var(--panel)),transparent)}
+.ut-tabs-wrap[data-meer-links]::before,.ut-tabs-wrap[data-meer-rechts]::after{opacity:1}
+/* Punt 1: twee klassen in de selector, zodat geen enkele algemene `.iets button`-regel van een omringende pagina deze pijlen
+   zichtbaar kan maken. Standaard staan ze UIT; ze verschijnen alleen als de tabbalk echt verder loopt dan het venster. */
+.ut-tabs-wrap .ut-tabs-pijl{position:absolute;top:50%;transform:translateY(-50%);z-index:2;display:none;place-items:center;width:28px;height:28px;border-radius:50%;border:1px solid var(--ut-line,var(--line));background:var(--ut-bg,var(--panel));color:var(--ut-text,var(--text));cursor:pointer;padding:0}
+.ut-tabs-wrap .ut-tabs-pijl svg{width:16px;height:16px}
+.ut-tabs-wrap[data-meer-rechts] .ut-tabs-pijl.is-rechts{display:grid;right:2px}
+.ut-tabs-wrap[data-meer-links] .ut-tabs-pijl.is-links{display:grid;left:2px}
+/* Telefoon (21.10.2026): pijlen 28×28 waren te klein om te tikken → 44×44. */
+@media (max-width:700px){.ut-tabs-wrap .ut-tabs-pijl{width:var(--tik-hoogte);height:var(--tik-hoogte)}}

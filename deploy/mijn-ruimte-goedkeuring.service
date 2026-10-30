@@ -1,0 +1,13 @@
+# Installatie van een met de passkey van de eigenaar goedgekeurd pakket (root). Root controleert de WebAuthn-assertie zelf
+# (mijn-ruimte-passkey verifieer-goedkeuring) en voert pas daarna installeer-app.sh uit. Zie deploy/RUNBOOK-VEILIGE-UITROL.md §13.
+[Unit]
+Description=Mijn Ruimte: met passkey goedgekeurde update controleren en installeren
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mijn-ruimte-uitrol --goedkeuring
+PrivateTmp=yes
+ProtectHome=yes
+TimeoutStartSec=45min
+Nice=5

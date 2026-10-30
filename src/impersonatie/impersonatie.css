@@ -1,0 +1,82 @@
+/* «Подивитися як користувач» (0068). Beheerder: rode band bovenaan (rood = «увійти як / від імені»; de technische band kan die kleur
+   niet kiezen); met recht op acties gestreept. Gebruiker: compacte pil linksonder + venster «Хто має доступ». Werkt in elk thema:
+   de band heeft vaste kleuren met contrast ≥ 7:1 (wit op #a4161a), vensters gebruiken de themavariabelen. */
+:root{--imp-band-h:40px}
+.imp-band{position:fixed;left:0;right:0;top:0;height:var(--imp-band-h);z-index:99002;display:flex;align-items:center;gap:10px;padding:0 10px 0 12px;box-sizing:border-box;
+  background:var(--fout-vlak);color:var(--text-on-vlak);font:600 14px/1.2 Inter,ui-sans-serif,system-ui,sans-serif;border-bottom:3px solid var(--fout);overflow:hidden}
+.imp-band.is-acties{background-image:repeating-linear-gradient(135deg,transparent 0 12px,rgba(0,0,0,.18) 12px 24px)}
+html[data-tech=aan] .imp-band{top:var(--tech-band-h)}
+.imp-band svg{width:18px;height:18px;flex:none}
+.imp-band-tekst{flex:1 1 auto;min-width:0;display:flex;align-items:baseline;gap:0;white-space:nowrap;overflow:hidden}
+.imp-band-tekst>b{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis}
+.imp-band-sep,.imp-band-tijd,.imp-band-modus{flex:none}
+.imp-band-sep{padding:0 .4em}
+.imp-band-tijd{font-variant-numeric:tabular-nums}
+.imp-band-diensten{display:flex;gap:2px;flex:none}
+.imp-band-diensten a{color:inherit;text-decoration:none;padding:4px 8px;border-radius:6px;font-weight:600}
+.imp-band-diensten a:hover,.imp-band-diensten a[aria-current=page]{background:rgba(255,255,255,.18)}
+.imp-band-diensten a:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.imp-band button{display:inline-flex;align-items:center;gap:4px;min-height:30px;padding:0 12px;border-radius:7px;border:1.5px solid var(--panel);background:var(--papier);color:var(--fout);font:inherit;font-weight:700;cursor:pointer;flex:none}
+.imp-band button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+html[data-impersonatie=aan] #root{position:fixed;top:var(--imp-band-h);left:0;right:0;bottom:0;width:auto;height:auto;min-height:0;transform:translateZ(0);overflow:hidden}
+html[data-impersonatie=aan][data-tech=aan] #root{top:calc(var(--tech-band-h) + var(--imp-band-h))}
+html[data-impersonatie=aan] #root .canonical-sidebar{height:100%;max-height:100%}
+@media (max-width:760px){
+  :root{--imp-band-h:72px}
+  .imp-band{flex-wrap:wrap;align-content:center;row-gap:4px;padding:4px 8px;font-size:13px}
+  .imp-band-tekst{flex:1 1 0}
+  .imp-band-sep.is-modus,.imp-band-modus{display:none} /* modus: strepen + titel; de tijd gaat voor */
+  .imp-band-diensten{order:3;flex:1 1 100%;overflow-x:auto;scrollbar-width:none}
+  .imp-band-diensten a{padding:3px 7px;font-size:12.5px}
+
+}
+.imp-einde{position:fixed;inset:0;z-index:99010;display:grid;place-items:center;padding:16px;background:rgba(10,10,12,.55)}
+.imp-einde-kaart{width:min(100%,440px);display:grid;gap:12px;padding:18px;border-radius:14px;background:var(--panel,#fff);color:var(--text,#0f172a);border:1px solid var(--line,#d7dee8);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.imp-einde-kaart h2{margin:0;font:700 18px/1.3 Inter,ui-sans-serif,system-ui,sans-serif}
+.imp-einde-kaart p{margin:0;line-height:1.5}
+.imp-meta{font-size:.86rem;color:var(--muted,#475569)}
+.imp-einde-kaart button,.imp-venster button{min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.imp-einde-kaart button.is-hoofd,.imp-venster button.is-hoofd{background:var(--fout-vlak);border-color:var(--fout);color:var(--text-on-vlak)}
+.imp-venster button.is-gevaar{border-color:var(--fout);color:var(--fout);background:transparent}
+.imp-einde-kaart button:focus-visible,.imp-venster button:focus-visible,.imp-venster input:focus-visible,.imp-venster select:focus-visible,.imp-pil button:focus-visible{outline:3px solid var(--accent,#22d3ee);outline-offset:2px}
+.imp-venster button:disabled{opacity:.55;cursor:not-allowed}
+
+/* Vensters (beheerder en gebruiker) */
+.imp-venster{display:grid;gap:12px;padding:14px 16px 16px;font-size:14.5px;color:var(--text,#0f172a)}
+.imp-venster p{margin:0;line-height:1.5}
+.imp-venster h3{margin:4px 0 0;font:700 14.5px/1.3 Inter,ui-sans-serif,system-ui,sans-serif}
+.imp-reden{padding:8px 10px;border-radius:8px;background:var(--surface,#f8fafc);border:1px solid var(--line,#d7dee8);overflow-wrap:anywhere}
+.imp-zicht{display:grid;gap:6px;margin:0;padding:10px 12px;border-radius:8px;background:var(--surface2,#eef2f7)}
+.imp-zicht dt{font-weight:700}
+.imp-zicht dd{margin:0 0 4px}
+.imp-vink{display:flex;align-items:flex-start;gap:8px;line-height:1.4}
+.imp-vink input{width:20px;height:20px;margin:1px 0 0;flex:none;accent-color:var(--fout)}
+.imp-knoppen{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.imp-melding{padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--fout-vlak) 14%,var(--panel,#fff));color:var(--text,#0f172a);border:1px solid color-mix(in srgb,var(--fout) 45%,transparent)}
+.imp-melding.is-ok{background:color-mix(in srgb,var(--ok-vlak) 14%,var(--panel,#fff));border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.imp-veld{display:grid;gap:4px}
+.imp-veld span{font-weight:600;font-size:.9rem}
+.imp-veld input,.imp-veld select{min-height:40px;padding:0 10px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:var(--text,#0f172a);font:inherit;box-sizing:border-box;width:100%}
+.imp-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.imp-lijst>li{display:grid;gap:6px;padding:10px 12px;border-radius:10px;border:1px solid var(--line,#d7dee8);background:var(--surface,#f8fafc)}
+.imp-lijst-kop{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;justify-content:space-between}
+.imp-lijst-kop b{overflow-wrap:anywhere}
+.imp-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.78rem;font-weight:700;border:1px solid var(--line,#d7dee8);background:var(--panel,#fff)}
+.imp-chip.is-actief{background:var(--fout-vlak);border-color:var(--fout);color:var(--text-on-vlak)}
+.imp-chip.is-wacht{background:color-mix(in srgb,var(--warn-vlak) 18%,var(--panel,#fff));border-color:var(--warn)}
+.imp-journaal{margin:0;padding:0;list-style:none;display:grid;gap:3px;font-size:.85rem;max-height:260px;overflow:auto}
+.imp-journaal li{display:grid;grid-template-columns:max-content 1fr;gap:8px}
+.imp-journaal time{font-variant-numeric:tabular-nums;color:var(--muted,#475569)}
+.imp-journaal code{font-size:.78rem;overflow-wrap:anywhere}
+.imp-journaal .is-geweigerd{color:var(--fout)}
+.imp-vraag-rij{display:flex;align-items:center;gap:6px}
+
+/* Gebruiker: zolang iemand meekijkt een pil linksonder (geen verschuiving van de pagina) */
+.imp-pil{position:fixed;left:12px;bottom:12px;z-index:99003;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 24px);padding:6px 6px 6px 12px;box-sizing:border-box;
+  border-radius:999px;background:var(--fout-vlak);color:var(--text-on-vlak);font:600 13.5px/1.2 Inter,ui-sans-serif,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.imp-pil svg{width:16px;height:16px;flex:none}
+.imp-pil-tekst{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.imp-pil button{min-height:32px;padding:0 10px;border-radius:999px;border:1.5px solid var(--panel);background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer;flex:none}
+.imp-pil button.is-hoofd{background:var(--papier);color:var(--fout)}
+@media (max-width:420px){.imp-pil{left:8px;right:8px;bottom:8px;max-width:none}.imp-pil-tekst{flex:1 1 auto}}
+@media (prefers-reduced-motion:no-preference){.imp-pil{transition:transform .2s ease}}

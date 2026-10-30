@@ -1,0 +1,19 @@
+/* Strook «Сайт оновлено» (NieuweVersieBand.tsx). Linksonder, zodat de meldingenbel (rechtsonder) vrij blijft; nooit blokkerend. */
+.nv-band{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:95500;
+  width:min(480px,calc(100vw - 96px));box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;border-radius:12px;
+  background:var(--panel,#fff);color:var(--text,#141413);border:1px solid color-mix(in srgb,var(--info) 45%,var(--line,#d6dce3));box-shadow:0 12px 32px rgba(0,0,0,.18);
+  font:500 14px/1.35 Inter,ui-sans-serif,system-ui,sans-serif}
+.nv-icoon{width:20px;height:20px;flex:none;color:var(--info)}
+.nv-tekst{display:grid;gap:2px;min-width:0;flex:1}
+.nv-tekst strong{font-weight:700}
+.nv-tekst span{font-size:12.5px;color:var(--muted,#475569);overflow-wrap:anywhere}
+.nv-hoofd{flex:none;min-height:36px;padding:0 12px;border-radius:8px;border:0;background:var(--info-vlak);color:var(--text-on-vlak);font:inherit;font-weight:600;cursor:pointer}
+.nv-later{flex:none;display:grid;place-items:center;width:36px;height:36px;padding:0;border-radius:8px;border:1px solid var(--line,#d6dce3);background:transparent;color:inherit;cursor:pointer;line-height:0}
+.nv-later svg{width:18px;height:18px}
+.nv-hoofd:focus-visible,.nv-later:focus-visible{outline:2px solid var(--accent,#1d4ed8);outline-offset:2px}
+@media (max-width:560px){
+  .nv-band{display:grid;grid-template-columns:20px minmax(0,1fr) 36px;align-items:start;width:calc(100vw - 88px)}
+  .nv-icoon{grid-column:1;grid-row:1;margin-top:2px}.nv-tekst{grid-column:2;grid-row:1}.nv-later{grid-column:3;grid-row:1}
+  .nv-hoofd{grid-column:1 / -1;grid-row:2;width:100%}
+  .nv-band{padding:8px 8px 8px 10px;gap:6px 8px}.nv-tekst span{font-size:12px;line-height:1.3}
+}

@@ -1,0 +1,162 @@
+{
+ "uitkomst": {
+  "naam": "telefoon-390",
+  "viewport": {
+   "width": 390,
+   "height": 844
+  },
+  "zelfOpen": 0,
+  "zichtWissels": 10,
+  "verdwijnen": 4,
+  "startTerwijlLoopt": 0,
+  "maxGelijktijdig": 2,
+  "autoAanroepen": 4,
+  "startAanroepen": 3,
+  "statusAanroepen": 11,
+  "runs": 3,
+  "eind": "fout",
+  "fouten": []
+ },
+ "overgangen": [
+  {
+   "t": 1,
+   "ev": "zicht ∅ → geen"
+  },
+  {
+   "t": 134,
+   "ev": "net scan/auto → 200"
+  },
+  {
+   "t": 139,
+   "ev": "zicht geen → strook:ingeklapt"
+  },
+  {
+   "t": 1565,
+   "ev": "zicht strook:ingeklapt → strook:open"
+  },
+  {
+   "t": 1580,
+   "ev": "GEBRUIKER klapt open"
+  },
+  {
+   "t": 1902,
+   "ev": "zicht strook:open → strook:ingeklapt"
+  },
+  {
+   "t": 1905,
+   "ev": "GEBRUIKER klapt in"
+  },
+  {
+   "t": 2762,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 5390,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 8017,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 10645,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 10773,
+   "ev": "net scan/start → 502"
+  },
+  {
+   "t": 10907,
+   "ev": "GEBRUIKER wisselt naar «Контакти» en terug"
+  },
+  {
+   "t": 10910,
+   "ev": "zicht strook:ingeklapt → geen"
+  },
+  {
+   "t": 11714,
+   "ev": "zicht geen → strook:ingeklapt"
+  },
+  {
+   "t": 12911,
+   "ev": "net scan/start → 200"
+  },
+  {
+   "t": 14717,
+   "ev": "GEBRUIKER (sessie opnieuw gecontroleerd → hermount)"
+  },
+  {
+   "t": 14722,
+   "ev": "zicht strook:ingeklapt → geen"
+  },
+  {
+   "t": 14925,
+   "ev": "zicht geen → strook:ingeklapt"
+  },
+  {
+   "t": 15049,
+   "ev": "net scan/auto → 200"
+  },
+  {
+   "t": 17676,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 20304,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 22932,
+   "ev": "net scan/status → 502"
+  },
+  {
+   "t": 26935,
+   "ev": "GEBRUIKER (15 min later: hermount, periodiek bijwerken)"
+  },
+  {
+   "t": 27085,
+   "ev": "net scan/auto → 200"
+  },
+  {
+   "t": 29720,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 29846,
+   "ev": "net scan/start → 200"
+  },
+  {
+   "t": 32473,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": -1,
+   "ev": "──── herladen ────"
+  },
+  {
+   "t": 1,
+   "ev": "zicht ∅ → geen"
+  },
+  {
+   "t": 7,
+   "ev": "GEBRUIKER ververst de pagina"
+  },
+  {
+   "t": 86,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 128,
+   "ev": "net scan/auto → 200"
+  },
+  {
+   "t": 131,
+   "ev": "zicht geen → strook:ingeklapt"
+  },
+  {
+   "t": 2755,
+   "ev": "net scan/status → time-out"
+  }
+ ]
+}

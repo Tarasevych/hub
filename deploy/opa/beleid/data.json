@@ -1,0 +1,21 @@
+{
+  "mijnruimte": {
+    "admin_capabilities": {
+      "super_admin": ["admin.read", "users.manage", "apps.manage", "devices.read", "audit.read", "sso.manage", "directories.manage", "roles.manage"],
+      "security_admin": ["admin.read", "devices.read", "audit.read"],
+      "apps_admin": ["admin.read", "apps.manage"],
+      "directory_admin": ["admin.read", "sso.manage", "directories.manage"],
+      "support_viewer": ["admin.read", "devices.read", "audit.read"]
+    },
+    "doel_tech": {
+      "admin.read": "",
+      "users.manage": "users.manage",
+      "roles.manage": "roles.delegate",
+      "audit.read": "journaal.lezen",
+      "devices.read": "diagnose.lezen",
+      "apps.manage": "diensten.beheren",
+      "sso.manage": "diensten.beheren",
+      "directories.manage": "users.manage"
+    }
+  }
+}

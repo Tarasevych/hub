@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stand — Werkblad v3 canvas</title>
+<style>
+body{margin:0;font:15px system-ui,sans-serif;color:#111;background:#f4f5f7}
+.stand{display:flex;min-height:100vh}
+.stand-zij{flex:0 0 240px;background:#2f4f4f;color:#fff;padding:12px;box-sizing:border-box;transition:flex-basis .1s}
+.stand-zij.dicht{flex-basis:64px;overflow:hidden}
+.stand-hoofd{flex:1;min-width:0;padding:12px;box-sizing:border-box}
+.stand-balk{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.stand-balk button,.stand-balk label{min-height:44px;padding:0 12px;border-radius:8px;border:1px solid #888;background:#fff;font:inherit;display:inline-flex;align-items:center;gap:6px}
+.tegel{width:100%;height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border:1px solid #ccd;border-radius:12px;text-align:center}
+.tegel a{color:#1d4ed8}
+.tegel.widget{align-items:stretch;justify-content:flex-start;padding:8px;background:#eef6ff}
+@media (max-width:600px){.stand-zij{display:none}}
+</style></head>
+<body><div id="root"></div><script type="module" src="./main.tsx"></script></body></html>

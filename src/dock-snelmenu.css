@@ -1,0 +1,2 @@
+/* UI-001: lang drukken op een dienst in het horizontale menu opent het submenu; geen iOS-tekstselectie of -callout. */
+.canonical-sidebar .canonical-service-button.has-submenu{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}

@@ -1,0 +1,39 @@
+/* /diagnostiek → «Захист». Binnen .adg-root (diagnostiek.css): globale tokens, licht en donker; geen eigen kleuren buiten de stand-tokens. */
+.bvs{display:grid;gap:14px;min-width:0}
+.bvs-kop{display:flex;gap:12px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+.bvs-kop>p{margin:0;color:var(--muted);font-size:.86rem;line-height:1.5;max-width:78ch}
+.bvs-kop-knoppen{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.bvs-kop-knoppen label{display:grid;gap:3px;font-size:.75rem;color:var(--muted)}
+.bvs-kop-knoppen select,.bvs-acties input{min-height:38px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:.86rem}
+.bvs-kop-knoppen select:focus-visible,.bvs-acties input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bvs-kaarten{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px}
+.bvs-kaart{display:grid;gap:12px;align-content:start;min-width:0;padding:16px;border:1px solid var(--line);border-radius:var(--adg-r,14px);background:var(--panel);border-top:4px solid var(--adg-unk)}
+.bvs-kaart[data-stand='aan']{border-top-color:var(--adg-ok)}
+.bvs-kaart[data-stand='schaduw']{border-top-color:var(--adg-warn)}
+.bvs-kaart header{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.bvs-kaart h3{margin:0;font-size:1rem;line-height:1.3;overflow-wrap:anywhere}
+.bvs-kaart header p{margin:4px 0 0;color:var(--muted);font-size:.8rem;line-height:1.45}
+.bvs-ico{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.bvs-ico svg{width:20px;height:20px}
+.bvs-pillen{display:flex;gap:6px;flex-wrap:wrap}
+.bvs-pillen .adg-pil{white-space:normal}
+.bvs-controles{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.bvs-controles>li{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;font-size:.84rem;line-height:1.4;min-width:0}
+.bvs-controles>li>div{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere}
+.bvs-controles small{color:var(--muted);font-size:.75rem}
+.bvs-teken{display:grid;place-items:center;width:22px;height:22px;border-radius:99px;background:var(--surface2)}
+.bvs-teken svg{width:13px;height:13px}
+.bvs-controles>li[data-ok='1'] .bvs-teken{background:color-mix(in srgb,var(--adg-ok) 18%,transparent);color:var(--adg-ok)}
+.bvs-controles>li[data-ok='0'] .bvs-teken{background:color-mix(in srgb,var(--adg-err) 16%,transparent);color:var(--adg-err)}
+.bvs-controles>li[data-ok='info'] .bvs-teken{background:color-mix(in srgb,var(--adg-warn) 18%,transparent);color:var(--adg-warn)}
+.theme-light .bvs-controles>li[data-ok='1'] .bvs-teken{color:var(--ok)}.theme-light .bvs-controles>li[data-ok='0'] .bvs-teken{color:var(--fout)}.theme-light .bvs-controles>li[data-ok='info'] .bvs-teken{color:var(--warn)}
+.bvs-lijst{list-style:none;margin:2px 0 0;padding:6px 8px;display:grid;gap:3px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:.75rem}
+.bvs-lijst li{display:flex;gap:8px;justify-content:space-between;min-width:0}
+.bvs-lijst code{overflow-wrap:anywhere;min-width:0}
+.bvs-laatst{margin:0;color:var(--muted);font-size:.75rem;overflow-wrap:anywhere}
+.bvs-acties{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bvs-acties input{flex:1 1 180px;min-width:0}
+.bvs-acties input[aria-invalid=true]{border-color:var(--danger,#dc2626);box-shadow:0 0 0 1px var(--danger,#dc2626)}
+.bvs-veld-fout{flex:1 1 100%;margin:0;font-size:.82rem;color:var(--danger,#b91c1c)}
+.bvs-uit{border-color:color-mix(in srgb,var(--adg-err) 50%,var(--line))}
+@media (max-width:480px){.bvs-kaart{padding:12px}.bvs-acties .adg-knop{flex:1 1 100%;justify-content:center}.bvs-kop-knoppen{width:100%}.bvs-kop-knoppen .adg-knop{flex:1}}

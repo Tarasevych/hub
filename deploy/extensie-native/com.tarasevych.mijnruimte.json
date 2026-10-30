@@ -1,0 +1,7 @@
+{
+  "name": "com.tarasevych.mijnruimte",
+  "description": "Mijn Ruimte: lokaal kanaal (alleen lezen) tussen de browserextensie en een lokale AI-agent",
+  "path": "__PAD_NAAR_HOST__",
+  "type": "stdio",
+  "allowed_origins": ["chrome-extension://ofpffonakgjioahgfejmiblfmbkobmmi/"]
+}

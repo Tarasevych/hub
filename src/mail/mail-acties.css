@@ -1,0 +1,17 @@
+/* Tonen van de acties met een brief (blok 1, 25.10.2026, punt 1.2) — de ENIGE plek waar een toon een kleur krijgt.
+   Het register (shared/mail-acties.ts) geeft elke knop data-mail-actie + data-toon (src/mail/MailActieKnop.tsx). Hier worden alleen
+   variabelen gezet; elk oppervlak leest ze zelf:
+     --actie-kleur   pictogram en icoonknop      color:var(--actie-kleur,var(--muted))      (rij, selectiebalk, leesvenster, onderbalk)
+     --actie-tekst   tekst van een menu-item      color:var(--actie-tekst,var(--text))       (alleen «gevaar»: «До кошика» helemaal rood)
+     --actie-zacht   achtergrond bij aanwijzen
+     --actie-vlak    volle vlakte (veegknop)      background:var(--actie-vlak,var(--accent)); tekst var(--actie-op-vlak,var(--text-on-accent))
+   Alleen tokens uit src/ontwerp/tokens.css: licht en donker volgen vanzelf (de tokens hebben per thema hun eigen waarde, ook het
+   contrast is daar al nagerekend). Geen kleur op de tekst van aria-label meer (was src/ui-golf-11.css). */
+[data-mail-actie][data-toon='neutraal']{--actie-vlak:var(--accent);--actie-op-vlak:var(--text-on-accent)}
+[data-mail-actie][data-toon='gevaar']{--actie-kleur:var(--fout);--actie-tekst:var(--fout);--actie-zacht:var(--fout-zacht);--actie-vlak:var(--fout-vlak);--actie-op-vlak:var(--text-on-vlak)}
+[data-mail-actie][data-toon='info']{--actie-kleur:var(--info);--actie-zacht:var(--info-zacht);--actie-vlak:var(--info-vlak);--actie-op-vlak:var(--text-on-vlak)}
+[data-mail-actie][data-toon='let-op']{--actie-kleur:var(--warn);--actie-zacht:var(--warn-zacht);--actie-vlak:var(--warn-vlak);--actie-op-vlak:var(--text-on-vlak)}
+/* labels: paars uit twee statustokens (60 % info, 40 % fout) — licht ≈ 9,9:1 op wit, donker lavendel ≈ 8:1 op het donkere paneel */
+[data-mail-actie][data-toon='etiket']{--actie-kleur:color-mix(in srgb,var(--info) 60%,var(--fout));--actie-zacht:color-mix(in srgb,var(--info-zacht) 60%,var(--fout-zacht));--actie-vlak:color-mix(in srgb,var(--info-vlak) 60%,var(--fout-vlak));--actie-op-vlak:var(--text-on-vlak)}
+/* ingedrukt (aria-pressed, bv. «Перекласти» aan): accent — de ster houdt haar eigen kleur (inline) */
+[data-mail-actie][data-toon][aria-pressed='true']{--actie-kleur:var(--accent);--actie-tekst:var(--accent)}

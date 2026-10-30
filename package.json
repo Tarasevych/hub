@@ -1,0 +1,86 @@
+{
+    "name": "mijn-ruimte",
+    "private": true,
+    "version": "0.0.1",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "node scripts/kaart-controle.mjs --stil && node scripts/plaatsing-controle.mjs --stil && node scripts/hulp-vraagtekens-controle.mjs --stil && node scripts/zoek-ui-catalogus.mjs && node scripts/l002-audit.mjs && node scripts/mail-slimme-inbox-audit.mjs && node scripts/kleur-contrast-controle.mjs --stil && vite build && node scripts/tech-bundels-controle.mjs dist && node scripts/bouw-extensie.mjs && npm run build:server",
+        "build:server": "node scripts/build-server.mjs",
+        "typecheck:server": "tsc -p tsconfig.server.json",
+        "migrate": "node dist-server/migrate.mjs",
+        "start": "node dist-server/start.mjs",
+        "cron": "node dist-server/cron.mjs",
+        "preview": "vite preview",
+        "cloud:preflight": "node scripts/cloud-m10-release-preflight.mjs"
+    },
+    "dependencies": {
+        "@xterm/xterm": "6.0.0",
+        "apache-arrow": "21.1.0",
+        "buffer": "6.0.3",
+        "country-flag-icons": "1.6.20",
+        "dompurify": "^3.4.16",
+        "fflate": "0.8.3",
+        "guacamole-common-js": "1.5.0",
+        "h5wasm": "0.10.3",
+        "html-entities": "2.6.0",
+        "hyparquet": "1.27.1",
+        "hyparquet-writer": "0.16.1",
+        "lucide-react": "^0.469.0",
+        "mdb-reader": "3.2.0",
+        "mermaid": "11.17.2",
+        "netcdfjs": "4.0.0",
+        "officeparser": "8.1.0",
+        "pdf-lib": "^1.17.1",
+        "pdfjs-dist": "^4.10.38",
+        "pg": "^8.16.3",
+        "pptxgenjs": "4.0.1",
+        "prosemirror-commands": "1.7.2",
+        "prosemirror-history": "1.5.0",
+        "prosemirror-keymap": "1.2.3",
+        "prosemirror-model": "1.25.11",
+        "prosemirror-schema-basic": "1.2.4",
+        "prosemirror-schema-list": "1.5.1",
+        "prosemirror-state": "1.4.4",
+        "prosemirror-transform": "1.12.0",
+        "prosemirror-view": "1.42.3",
+        "qrcode-generator": "2.0.4",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "sql.js": "1.14.1",
+        "tesseract.js": "7.0.0",
+        "ws": "^8.22.0",
+        "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-linux-x64-gnu": "^4.0.0"
+    },
+    "devDependencies": {
+        "@iconify-json/logos": "1.2.17",
+        "@iconify-json/vscode-icons": "1.2.92",
+        "@types/node": "^24.0.0",
+        "@types/pg": "^8.15.5",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "@types/ws": "^8.18.2",
+        "@vitejs/plugin-react": "^4.3.0",
+        "autoprefixer": "^10.4.0",
+        "esbuild": "^0.25.0",
+        "postcss": "^8.4.0",
+        "tailwindcss": "^3.4.0",
+        "typescript": "^5.7.0",
+        "vite": "^6.0.0"
+    },
+    "engines": {
+        "node": ">=24.0.0"
+    },
+    "allowScripts": {
+        "esbuild@0.25.12": true,
+        "tesseract.js": false
+    },
+    "overrides": {
+        "pptxgenjs": {
+            "image-size": "2.0.4"
+        }
+    }
+}

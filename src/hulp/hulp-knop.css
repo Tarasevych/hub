@@ -1,0 +1,17 @@
+/* Eén vorm voor elke hulpknop «?» (29.10.2026): .tech-vraag-knop (HulpVraag/Vraag) en .info-tip-knop (InfoTip).
+   Vaste cirkel van 22×22 px, teken exact in het midden (inline-grid + place-items, geen opvulling, line-height 1, SVG-teken).
+   Tikvlak op de telefoon: een onzichtbaar vlak van 44×44 px (::after) — de zichtbare cirkel blijft 22 px.
+   Hoge specificiteit + !important op de maat: oudere regels per pagina (min-width:28px, 24px op mobiel, doorzichtige rand van
+   13 px) maakten de knop ovaal of zetten de rand naast het teken. */
+button.tech-vraag-knop.tech-vraag-knop,button.info-tip-knop.info-tip-knop{
+  position:relative;box-sizing:border-box;display:inline-grid!important;place-items:center;place-content:center;
+  width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;max-width:22px!important;max-height:22px!important;
+  aspect-ratio:1/1;flex:none;padding:0!important;margin:0;gap:0;
+  border:1.5px solid currentColor!important;border-radius:50%!important;background-clip:border-box!important;box-shadow:none!important;
+  font:700 13px/1 Inter,system-ui,sans-serif;letter-spacing:0;text-indent:0;text-align:center;vertical-align:middle;overflow:visible;cursor:help}
+button.tech-vraag-knop.tech-vraag-knop .hulp-teken,button.info-tip-knop.info-tip-knop .hulp-teken{display:block;width:14px;height:14px;margin:0;pointer-events:none}
+button.info-tip-knop.info-tip-knop{color:var(--boot-muted,var(--muted,#6a7580));background:transparent}
+button.info-tip-knop.info-tip-knop:hover,.info-tip[data-open] button.info-tip-knop.info-tip-knop{color:var(--boot-text,var(--text,inherit))}
+@media (max-width:700px),(pointer:coarse){
+  button.tech-vraag-knop.tech-vraag-knop::after,button.info-tip-knop.info-tip-knop::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%);border-radius:50%}
+}

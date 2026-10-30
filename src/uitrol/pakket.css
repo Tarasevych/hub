@@ -1,0 +1,36 @@
+/* Archief van een release en GitHub-publicatie (audit 18.10.2026, punt 4). Gebruikt de tokens van uitrol.css (--ut-*). */
+.ut-pakket-acties{border:1px solid var(--ut-line);border-radius:12px;padding:12px 14px;background:var(--ut-bg2);display:grid;gap:8px}
+.ut-pakket-acties h3,.ut-github h2,.ut-gh-blok h3{display:flex;align-items:center;gap:8px}
+.ut-pakket-acties h3 svg,.ut-gh-blok h3 svg,.ut-github h2 svg{width:18px;height:18px;flex:none}
+.ut-pakket-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.ut-pakket-acties .ut-hint,.ut-github .ut-hint{display:flex;gap:6px;align-items:flex-start}
+.ut-pakket-acties .ut-hint svg,.ut-github .ut-hint svg,.ut-ok-tekst svg,.ut-pakket-acties .ut-fout svg{width:16px;height:16px;flex:none;margin-top:2px}
+.ut-ok-tekst{color:var(--ut-ok);font-size:.9rem;display:flex;gap:6px;align-items:flex-start}
+.ut-pakket-acties .ut-fout{display:flex;gap:6px;align-items:flex-start}
+.ut-gh-raster{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.ut-gh-blok{border:1px solid var(--ut-line);border-radius:12px;padding:12px 14px;display:grid;gap:10px;align-content:start;background:var(--ut-bg)}
+.ut-gh-tokens{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ut-gh-tokens li{display:flex;gap:8px;align-items:flex-start}
+.ut-gh-tokens li svg{width:18px;height:18px;flex:none;color:var(--ut-muted);margin-top:2px}
+.ut-gh-tokens li[data-aanwezig="true"] svg{color:var(--ut-ok)}
+.ut-gh-tokens li span{display:grid}
+.ut-gh-tokens li small{color:var(--ut-muted);overflow-wrap:anywhere}
+.ut-gh-tokens li[data-gebruikt="true"] b::after{content:" ✓";color:var(--ut-ok)}
+.ut-schakel{display:flex;gap:8px;align-items:flex-start;font-size:.9rem;cursor:pointer}
+.ut-schakel input{width:18px;height:18px;margin-top:2px;flex:none}
+.ut-gh-log{margin-top:12px}
+.ut-gh-log summary{cursor:pointer;font-weight:600}
+.ut-gh-log ol{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.ut-gh-log li{display:grid;grid-template-columns:auto auto 1fr auto;gap:8px;align-items:baseline;font-size:.88rem;padding:6px 8px;border-radius:8px;background:var(--ut-bg2)}
+.ut-gh-log li[data-uitkomst="fout"]{border-left:3px solid var(--ut-err)}
+.ut-gh-log li[data-uitkomst="ok"]{border-left:3px solid var(--ut-ok)}
+.ut-gh-log li[data-uitkomst="overgeslagen"]{border-left:3px solid var(--ut-warn)}
+.ut-gh-log li span{overflow-wrap:anywhere}
+.ut-gh-log li small{color:var(--ut-muted)}
+.ut-archief-merk{display:inline-flex;align-items:center;gap:3px;color:var(--ut-muted);font-size:.75rem}
+.ut-archief-merk svg{width:12px;height:12px}
+@media (max-width:640px){
+  .ut-gh-log li{grid-template-columns:1fr auto}
+  .ut-gh-log li span{grid-column:1/-1}
+  .ut-pakket-knoppen .ut-knop{flex:1 1 100%}
+}

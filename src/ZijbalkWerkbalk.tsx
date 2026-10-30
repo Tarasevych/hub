@@ -1,0 +1,61 @@
+// Compacte werkbalk boven in de zijbalk (menu v2) — vervangt de grote knop «Зафіксувати бічну панель».
+// Drie modi: altijd uitgeklapt, altijd ingeklapt (geen hover), automatisch (uitklappen bij aanwijzen) + ⚙ (fase B3): naar
+// Налаштування → Меню (meldingen, stijl, modus). De ⚙ is een echte link (middelklik/nieuw tabblad werkt).
+// Breed: drie iconen naast elkaar (role=toolbar, pijltjestoetsen). Smal: één knop met de huidige modus die een klein paneel opent.
+// Punt 4 (10.10): ⚙ en ✎ zijn samengevoegd tot één knop «Налаштувати меню» die een venster met tabbladen opent (MenuInstellingenVenster);
+// tijdens het bewerken staat daar «Завершити редагування». Dock (boven/onder): alleen die knop (de modus geldt dan niet);
+// `kant` = aan welke kant de tooltips staan in de smalle stand (rechts bij een menu links, links bij een menu rechts).
+// 24.10.2026: `zoek` (alleen op de post) = de globale zoekknop in het menu: breed/dock direct vóór de knoppen met «Налаштувати меню»,
+// smal direct onder de modusknop (altijd zichtbaar, niet weggestopt in het paneeltje). Eén eigen knop BUITEN role=toolbar «Режим
+// бічної панелі» (zoeken is geen modus), met key='zoek' op dezelfde plek (2e kind) in breed én smal: bij in-/uitklappen (hover, ook
+// terwijl het palet open is) blijft het HETZELFDE element, dus de focus komt na Escape terug op de knop.
+import {useEffect,useRef,useState,type KeyboardEvent as RKeyboardEvent,type ReactNode} from 'react';
+import {MousePointer2,PanelLeftClose,PanelLeftOpen,PencilRuler,Settings2} from 'lucide-react';
+import type {ZijbalkModus} from '../shared/menu-model';
+import MenuInstellingenVenster from './MenuInstellingenVenster';
+import {ZoekMenuKnop} from './zoek/ZoekGlobaal';
+import './menu-naadloos.css';
+import './ui-golf-11.css';
+
+const TEKST:Record<ZijbalkModus,[string,string]>={
+  open:['Завжди розгорнута','Altijd uitgeklapt'],
+  dicht:['Завжди згорнута (без розгортання при наведенні)','Altijd ingeklapt (niet openklappen bij aanwijzen)'],
+  auto:['Автоматично: розгортається при наведенні','Automatisch: klapt open bij aanwijzen'],
+};
+const ICOON:Record<ZijbalkModus,typeof MousePointer2>={open:PanelLeftOpen,dicht:PanelLeftClose,auto:MousePointer2};
+const VOLGORDE:ZijbalkModus[]=['open','dicht','auto'];
+export const modusTekst=(m:ZijbalkModus,lang:'uk'|'nl')=>TEKST[m][lang==='uk'?0:1];
+
+type Props={lang:'uk'|'nl';modus:ZijbalkModus;breed:boolean;onModus:(m:ZijbalkModus)=>void;instellingenHref:string;onInstellingen:(e:{preventDefault:()=>void})=>void;kant?:'right'|'left';bewerken?:boolean;onBewerken?:()=>void;dock?:boolean;/** Punt 17: bewerker «Швидкий доступ» als tabblad in het venster «Налаштувати меню». */snelleToegang?:ReactNode;/** 24.10.2026: globale zoekknop in het menu (op de post) */zoek?:boolean};
+export const bewerkTekst=(lang:'uk'|'nl')=>lang==='uk'?'Редагувати меню: перетягнути, перемістити, дублювати':'Menu bewerken: slepen, verplaatsen, dupliceren';
+export default function ZijbalkWerkbalk({lang,modus,breed,onModus,instellingenHref,onInstellingen,kant='right',bewerken=false,onBewerken,dock=false,snelleToegang,zoek=false}:Props){
+  const[open,setOpen]=useState(false);
+  const wrap=useRef<HTMLDivElement|null>(null),knoppen=useRef<Array<HTMLElement|null>>([]);
+  const titel=lang==='uk'?'Режим бічної панелі':'Weergave van de zijbalk';
+  useEffect(()=>{if(breed)setOpen(false)},[breed]);
+  useEffect(()=>{if(!open)return;const weg=(e:PointerEvent)=>{if(wrap.current&&!wrap.current.contains(e.target as Node))setOpen(false)},esc=(e:KeyboardEvent)=>{if(e.key==='Escape'){setOpen(false);wrap.current?.querySelector<HTMLButtonElement>('.zijbalk-modus-huidig')?.focus()}};document.addEventListener('pointerdown',weg,true);document.addEventListener('keydown',esc);window.setTimeout(()=>knoppen.current[Math.max(0,modi.indexOf(modus))]?.focus(),0);return()=>{document.removeEventListener('pointerdown',weg,true);document.removeEventListener('keydown',esc)}},[open]);// eslint-disable-line react-hooks/exhaustive-deps
+  const modi=dock?[]:VOLGORDE,N=modi.length+1,pijltjes=(e:RKeyboardEvent)=>{const i=knoppen.current.findIndex(b=>b===document.activeElement);if(i<0)return;const d=e.key==='ArrowRight'||e.key==='ArrowDown'?1:e.key==='ArrowLeft'||e.key==='ArrowUp'?-1:0;if(e.key==='Home'||e.key==='End'){e.preventDefault();knoppen.current[e.key==='Home'?0:N-1]?.focus();return}if(!d)return;e.preventDefault();knoppen.current[(i+d+N)%N]?.focus()};
+  // Eén knop «Налаштувати меню» (venster met tabbladen: Редагування / Вигляд / Сповіщення й швидкість) i.p.v. losse ⚙ en ✎.
+  // Tijdens het bewerken staat op die plaats «Завершити редагування».
+  const[venster,setVenster]=useState(false);
+  const vensterTekst=lang==='uk'?'Налаштувати меню: редагування, вигляд, сповіщення':'Menu instellen: bewerken, weergave, meldingen';
+  const klaarTekst=lang==='uk'?'Завершити редагування меню':'Menu bewerken afronden';
+  const vensterEl=venster?<MenuInstellingenVenster lang={lang} modus={modus} onModus={onModus} onBewerken={onBewerken} instellingenHref={instellingenHref} onInstellingen={onInstellingen} snelleToegang={snelleToegang} onSluit={()=>setVenster(false)}/>:null;
+  const balk=<div className='zijbalk-werkbalk-knoppen' role='toolbar' aria-label={titel} aria-orientation='horizontal' onKeyDown={pijltjes}>
+    {modi.map((m,i)=>{const I=ICOON[m],t=modusTekst(m,lang);return <button key={m} ref={b=>{knoppen.current[i]=b}} type='button' className={modus===m?'actief':''} data-zijbalk-modus={m} aria-pressed={modus===m} aria-label={t} data-tooltip={t} data-tooltip-placement={breed?undefined:kant} tabIndex={modus===m?0:-1} onClick={()=>{onModus(m);setOpen(false)}}><I aria-hidden='true'/></button>})}
+    {!dock&&<span className='zijbalk-werkbalk-scheiding' aria-hidden='true'/>}
+    {bewerken&&onBewerken
+      ?<button ref={b=>{knoppen.current[modi.length]=b}} type='button' className='zijbalk-werkbalk-bewerken actief' data-menu-bewerken-knop aria-pressed='true' aria-label={klaarTekst} data-tooltip={klaarTekst} data-tooltip-placement={breed||dock?undefined:kant} onClick={()=>{setOpen(false);onBewerken()}}><PencilRuler aria-hidden='true'/></button>
+      :<button ref={b=>{knoppen.current[modi.length]=b}} type='button' className='zijbalk-werkbalk-instellingen' data-menu-venster-knop aria-haspopup='dialog' aria-label={vensterTekst} data-tooltip={vensterTekst} data-tooltip-placement={breed||dock?undefined:kant} onClick={()=>{setOpen(false);setVenster(true)}}><Settings2 aria-hidden='true'/></button>}
+  </div>;
+  const zoekKnop=zoek?<ZoekMenuKnop key='zoek' lang={lang} className={`zijbalk-werkbalk-zoek${breed||dock?'':' smal'}`} sneltoets tooltip tooltipKant={breed||dock?undefined:kant} voorOpenen={()=>setOpen(false)}/>:null;
+  if(dock)return <div className='zijbalk-werkbalk dock' ref={wrap}>{zoekKnop}{balk}{vensterEl}</div>;
+  if(breed)return <div className='zijbalk-werkbalk breed' ref={wrap}><span className='zijbalk-werkbalk-titel' aria-hidden='true'>{lang==='uk'?'Меню':'Menu'}</span>{zoekKnop}{balk}{vensterEl}</div>;
+  const Huidig=ICOON[modus],uitleg=`${titel}: ${modusTekst(modus,lang)}`;
+  return <div className='zijbalk-werkbalk smal' ref={wrap}>
+    <button type='button' className='zijbalk-modus-huidig' data-zijbalk-modus-knop={modus} aria-haspopup='true' aria-expanded={open} aria-label={uitleg} data-tooltip={open?undefined:uitleg} data-tooltip-placement={kant} onClick={()=>setOpen(v=>!v)}><Huidig aria-hidden='true'/></button>
+    {zoekKnop}
+    {open&&<div className='zijbalk-werkbalk-paneel' data-zijbalk-paneel>{balk}</div>}
+    {vensterEl}
+  </div>;
+}

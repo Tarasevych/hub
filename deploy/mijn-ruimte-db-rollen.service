@@ -1,0 +1,18 @@
+# «Захист» → RLS (migratie 0066): rol van de app (mijnruimte_app) en DATABASE_URL_APP aanmaken als die ontbreken, zonder SSH.
+# Root, oneshot. De app start dit hoogstens via polkit (alleen «start» van deze vaste naam, na passkey van de eigenaar in een
+# technisch profiel). Script en SQL zijn root-kopieën (installeer-app.sh → /usr/local/lib/mijn-ruimte/db-rollen), nooit iets uit
+# /srv/mijn-ruimte. Bestaat DATABASE_URL_APP al, dan gebeurt er niets. Anders: db-rollen-instellen.sh instellen — rollen, wachtwoorden
+# (alleen SCRAM naar Postgres), variabelen in /etc/mijn-ruimte/geheimen.env, herstart + gezondheidscontrole; mislukt die → alles terug.
+[Unit]
+Description=Mijn Ruimte: rol van de app voor RLS aanmaken (als die ontbreekt)
+After=postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/mijn-ruimte/db-rollen/deploy/db-rollen-instellen.sh instellen-als-nodig
+StandardInput=null
+PrivateTmp=yes
+ProtectHome=yes
+NoNewPrivileges=yes
+UMask=0077
+TimeoutStartSec=180

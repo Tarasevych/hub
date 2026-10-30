@@ -1,0 +1,139 @@
+/* ШІ in de brief (pakket 3 «Adaptive Mail Canvas», 24.10.2026) — src/mail/WatNodigBlok.tsx, BronBlad.tsx, VertaalStrook.tsx,
+   VergelijkTabel.tsx en de onderwerpregel/antwoordregel in src/MailGesprekInhoud.tsx. Макет: «індиго з пунктиром — ШІ», «бурштиновий
+   — терміни», «зелений — перевірено»; результати ШІ окремо від даних відправника. Alleen tokens (src/ontwerp/tokens.css): --info is
+   het indigo van de site, in licht en donker. Het eenvoudige ontleden (zonder model) is grijs en zonder stippellijn: het is geen ШІ.
+   Knoppen staan achter «html body»: «.mail-functional button{font:inherit}» (0,1,1) gaf ze anders 16 px; voeten zetten de globale
+   footer-regel van index.css (marge 2rem, rand, space-between) terug — gemeten in de stand (mail-lezer-ai-*, stijl/regels). */
+
+/* ---------------------------------------------------------------- «Що від вас потрібно?» */
+.ai-blok{display:grid;min-width:0;margin:10px 0 6px;border:1px dashed color-mix(in srgb,var(--info) 55%,var(--line));border-radius:var(--straal-l,16px);background:color-mix(in srgb,var(--info-zacht) 40%,var(--panel));color:var(--text)}
+.ai-blok[data-opbouw='eenvoudig']{border-style:solid;border-color:color-mix(in srgb,var(--line) 92%,transparent);background:color-mix(in srgb,var(--surface2) 45%,var(--panel))}
+.ai-blok-kop{display:grid;gap:0;min-width:0;padding:4px 8px 6px 4px}
+html body .ai-blok-wissel{display:flex;align-items:center;gap:8px;width:100%;min-width:0;min-height:40px;padding:4px 6px;border:0;border-radius:var(--straal-m,12px);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ai-blok-wissel:hover{background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.ai-blok-wissel:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.ai-blok-wissel strong{flex:0 1 auto;min-width:0;font-size:14px;font-weight:700}
+.ai-blok-samenvatting{flex:1 1 auto;min-width:0;overflow:hidden;color:var(--muted);font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.ai-blok-pijl{flex:0 0 auto;width:18px;height:18px;color:var(--muted);transition:transform .15s}
+.ai-blok[data-open='ja'] .ai-blok-pijl{transform:rotate(180deg)}
+@media (prefers-reduced-motion:reduce){.ai-blok-pijl{transition:none}}
+.ai-blok-merk{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;padding:1px 8px;border:1px dashed color-mix(in srgb,var(--info) 65%,transparent);border-radius:999px;color:var(--info);font-size:12px;font-weight:800;line-height:1.6}
+.ai-blok-merk[data-opbouw='eenvoudig']{border-style:solid;border-color:var(--line);color:var(--muted)}
+.ai-blok-merk svg{width:13px;height:13px}
+.ai-blok-herkomst{padding:0 8px 0 10px;color:var(--muted);font-size:12px;line-height:1.35}
+.ai-blok-inhoud{display:grid;gap:10px;min-width:0;padding:2px 14px 12px}
+.ai-blok-punten,.ai-blok-kort ul,.ai-blok-niet ul{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.ai-blok-punten>li,.ai-blok-kort li,.ai-blok-niet li{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:0 8px;min-width:0}
+/* tekst en chips in één doorlopende regel (de chips lopen achter de tekst door en breken alleen af als het moet) */
+.ai-blok-regel{min-width:0;font-size:14px;line-height:1.55;overflow-wrap:anywhere}
+.ai-blok-icoon{display:grid;place-items:center;width:22px;height:22px;margin-top:1px;color:var(--info)}
+.ai-blok[data-opbouw='eenvoudig'] .ai-blok-icoon{color:var(--muted)}
+.ai-blok-icoon svg{width:17px;height:17px}
+.ai-blok-tekst{margin-right:6px}
+.ai-blok-chips{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0;vertical-align:1px}
+html body .ai-bron-chip{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border:1px solid color-mix(in srgb,var(--info) 40%,var(--line));border-radius:999px;background:var(--panel);color:var(--info);font:inherit;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;cursor:pointer}
+button.ai-bron-chip:hover{background:var(--info-zacht)}
+button.ai-bron-chip:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.ai-bron-chip[data-niet-gevonden]{border-color:color-mix(in srgb,var(--fout) 45%,var(--line));color:var(--fout);cursor:default}
+.ai-termijn-chip{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:0 9px;border-radius:999px;background:var(--warn-zacht);color:var(--warn);font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap}
+.ai-termijn-chip svg{width:13px;height:13px}
+.ai-blok-kort h4,.ai-blok-niet h4{margin:0 0 4px;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:.02em;color:var(--muted);text-transform:uppercase}
+.ai-blok-niet{padding:8px 10px;border:1px dashed color-mix(in srgb,var(--fout) 45%,var(--line));border-radius:var(--straal-m,12px)}
+.ai-blok-niet .ai-blok-tekst{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--fout) 60%,transparent)}
+.ai-blok-leeg{margin:0;color:var(--muted);font-size:13px}
+.ai-blok-acties{display:flex;flex-wrap:wrap;gap:6px}
+html body .ai-blok-knop{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.ai-blok-knop:hover:not(:disabled){background:var(--surface)}
+.ai-blok-knop:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.ai-blok-knop:disabled{opacity:.5;cursor:not-allowed}
+.ai-blok-knop svg{width:16px;height:16px;flex:0 0 auto}
+html body .ai-blok-knop-ai{border-style:dashed;border-color:color-mix(in srgb,var(--info) 60%,var(--line));color:var(--info)}
+html body .ai-blok-knop-weg{color:var(--fout);border-color:color-mix(in srgb,var(--fout) 40%,var(--line))}
+.ai-blok-fout{margin:0;color:var(--fout);font-size:13px}
+.ai-blok-fout a{color:inherit;font-weight:700}
+html body .ai-blok-voet{position:static;z-index:auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:4px 12px;width:auto;margin:0;padding:0;border:0;color:var(--muted);font-size:12px}
+.ai-blok-voet>span{display:inline-flex;align-items:center;gap:5px}
+.ai-blok-voet [data-gevonden] svg{width:15px;height:15px;color:var(--ok)}
+html body .ai-blok-link{display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:0 4px;border:0;background:transparent;color:var(--accent);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.ai-blok-link svg{width:14px;height:14px}
+.ai-blok-link:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+/* aanraken: de bronchip is 32 px hoog in de regel, maar raakt op 44 px (onzichtbare rand erboven en eronder) */
+@media (pointer:coarse){html body .ai-blok-knop{min-height:44px}html body .ai-bron-chip,.ai-termijn-chip{min-height:32px}html body button.ai-bron-chip{position:relative}html body button.ai-bron-chip::after{content:'';position:absolute;inset:-6px -2px}html body .ai-blok-link{min-height:44px}html body .ai-blok-wissel{min-height:44px}}
+
+/* ---------------------------------------------------------------- onderwerp: «Оригінал: …» en «Потребує відповіді» */
+.mail-thread-onderwerp-origineel{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.mail-thread-ai-chips{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:5px}
+html body .mail-thread-ai-chip{display:inline-flex;align-items:center;gap:5px;min-height:24px;padding:0 9px;border:1px dashed color-mix(in srgb,var(--info) 60%,var(--line));border-radius:999px;background:var(--panel);color:var(--info);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.mail-thread-ai-chip[data-opbouw='eenvoudig']{border-style:solid;border-color:var(--line);color:var(--text)}
+.mail-thread-ai-chip svg{width:14px;height:14px}
+.mail-thread-ai-chip:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+@media (pointer:coarse){html body .mail-thread-ai-chip{min-height:44px}}
+
+/* ---------------------------------------------------------------- vertaalstrook in de brief */
+.vertaal-strook{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 10px;padding:6px 10px;border:1px solid color-mix(in srgb,var(--line) 85%,transparent);border-radius:var(--straal-m,12px);background:color-mix(in srgb,var(--surface2) 40%,var(--panel))}
+.vertaal-strook-talen{display:inline-flex;align-items:center;gap:6px;min-width:0;color:var(--muted);font-size:12.5px;font-weight:600}
+.vertaal-strook-talen svg{width:16px;height:16px;flex:0 0 auto}
+.vertaal-strook-keuze label:has(input:disabled){opacity:.5;cursor:not-allowed}
+.vertaal-strook-bezig{width:16px;height:16px;color:var(--muted)}
+.vertaal-strook-zonder{flex:1 1 100%;color:var(--muted);font-size:12px}
+
+/* ---------------------------------------------------------------- «Порівняти»: tabel per alinea */
+.vergelijk{display:grid;gap:8px;min-width:0;margin:0 0 12px}
+.vergelijk table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:var(--straal-m,12px);overflow:hidden;table-layout:fixed}
+.vergelijk-kop{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;color:var(--muted);font-size:12px;font-weight:700}
+.vergelijk-kop svg{width:15px;height:15px}
+.vergelijk th,.vergelijk td{padding:9px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);vertical-align:top;text-align:left;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.vergelijk thead th{background:color-mix(in srgb,var(--surface2) 60%,var(--panel));color:var(--muted);font-size:12px;font-weight:800}
+.vergelijk thead th:first-child,.vergelijk tbody th{width:44px;color:var(--muted);font-size:12px;font-weight:800}
+.vergelijk tbody tr:last-child>*{border-bottom:0}
+.vergelijk td+td{border-left:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.vergelijk tr[data-bron='ja']>*{background:color-mix(in srgb,var(--info-zacht) 55%,var(--panel))}
+.vergelijk tr[data-bron='ja']>th{box-shadow:inset 3px 0 0 var(--info)}
+.vergelijk tr[data-licht='ja']>*{background:var(--warn-zacht)}
+.vergelijk-bron{display:block;margin-top:6px;color:var(--info);font-size:12px;font-weight:700}
+.vergelijk-wacht{color:var(--muted)}
+.vergelijk td em{color:var(--muted);font-style:italic}
+.vergelijk-noot{color:var(--muted);font-size:12px}
+/* de tabel staat in plaats van de brief; de brief met zijn opmaak blijft één klik verder («Оригінал» in de strook erboven) */
+.mail-thread-message[data-vergelijk='ja'] .mail-thread-message-body:has(>[data-vergelijk-tabel])>:is(.mail-message-html-body,.mail-message-text-body,.mail-vertaal-naast,.mail-vertaal-plaat,.mail-beelden-strook){display:none}
+/* smal venster (telefoon): origineel en vertaling onder elkaar */
+html body .google-mail-reader[data-lees-breedte='smal'] .vergelijk table,html body .google-mail-reader[data-lees-breedte='smal'] .vergelijk tbody,html body .google-mail-reader[data-lees-breedte='smal'] .vergelijk tr{display:block}
+html body .google-mail-reader[data-lees-breedte='smal'] .vergelijk thead{display:none}
+html body .google-mail-reader[data-lees-breedte='smal'] .vergelijk tbody th,html body .google-mail-reader[data-lees-breedte='smal'] .vergelijk td{display:block;width:auto;border-left:0}
+html body .google-mail-reader[data-lees-breedte='smal'] .vergelijk td+td{border-top:1px dashed color-mix(in srgb,var(--line) 80%,transparent)}
+
+/* ---------------------------------------------------------------- «Звідки це?»: blad in het leesvenster (zoals het contextblad) */
+html body .google-mail-reader>.bron-blad-scherm{grid-area:2/1/-1/-1;z-index:40;background:var(--overlay);opacity:.3}
+html body .google-mail-reader>.bron-blad{grid-area:2/1/-1/-1;z-index:41;justify-self:end;align-self:start;display:grid;grid-template-rows:auto minmax(0,1fr) auto;width:min(460px,calc(100% - 24px));max-width:none;max-height:calc(100% - 24px);margin:12px;border:1px solid var(--line);border-radius:var(--straal-l,16px);background:var(--panel);color:var(--text);box-shadow:var(--schaduw-3);overflow:hidden}
+html body .google-mail-reader[data-lees-breedte='smal']>.bron-blad{justify-self:stretch;align-self:end;width:auto;max-height:88%;margin:0;border-radius:var(--straal-l,16px) var(--straal-l,16px) 0 0;border-bottom:0}
+.bron-blad>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 10px 6px 16px;border:0}
+html body .bron-blad h2{margin:0;font-family:inherit;font-size:16px;font-weight:700}
+html body .bron-blad h3{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 6px;font-family:inherit;font-size:12px;font-weight:800;color:var(--muted)}
+.bron-blad h3 svg{width:14px;height:14px}
+.bron-blad h3 small{font-weight:600}
+html body .bron-blad-sluit{display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.bron-blad-sluit:hover{background:var(--surface);color:var(--text)}
+.bron-blad-sluit:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.bron-blad-sluit svg{width:20px;height:20px}
+.bron-blad-inhoud{display:grid;align-content:start;gap:12px;min-height:0;padding:4px 16px 12px;overflow:auto}
+.bron-blad-punt{display:grid;gap:6px;justify-items:start;padding:10px 12px;border:1px dashed color-mix(in srgb,var(--info) 55%,var(--line));border-radius:var(--straal-m,12px);background:color-mix(in srgb,var(--info-zacht) 40%,var(--panel))}
+.bron-blad-punt[data-opbouw='eenvoudig']{border-style:solid;border-color:var(--line);background:color-mix(in srgb,var(--surface2) 45%,var(--panel))}
+.bron-blad-punt p{margin:0;font-size:14px;line-height:1.45}
+.bron-blad blockquote{margin:0;padding:10px 12px;border-left:3px solid var(--line);border-radius:0 var(--straal-s,8px) var(--straal-s,8px) 0;background:color-mix(in srgb,var(--surface2) 35%,var(--panel));font-size:14px;line-height:1.55;overflow-wrap:anywhere}
+.bron-blad blockquote mark{padding:0 2px;border-radius:3px;background:var(--warn-zacht);color:var(--text);box-shadow:inset 0 -2px 0 var(--warn)}
+.bron-blad-vertaling p{margin:0 0 4px;font-size:14px;line-height:1.5}
+.bron-blad-vertaling small,.bron-blad-geen{color:var(--muted);font-size:12px}
+.bron-blad-controle{display:flex;align-items:flex-start;gap:8px;margin:0;padding:8px 10px;border-radius:var(--straal-m,12px);background:var(--ok-zacht);color:var(--ok);font-size:13px;line-height:1.45}
+.bron-blad-controle.is-niet{background:var(--fout-zacht);color:var(--fout)}
+.bron-blad-controle svg{flex:0 0 auto;width:18px;height:18px;margin-top:1px}
+html body .bron-blad-knoppen{position:static;z-index:auto;display:flex;flex-wrap:wrap;justify-content:flex-start;gap:6px;width:auto;margin:0;padding:10px 16px 14px;border:0;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);color:inherit;font-size:inherit}
+@media (pointer:coarse){html body .bron-blad-sluit{width:44px;height:44px}}
+
+/* ---------------------------------------------------------------- antwoordregel: «Переслати», hints van ШІ (stippellijn) */
+.mail-reply-extra{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0;margin:6px 0 0}
+html body .mail-reply-extra>button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.mail-reply-extra>button svg{width:16px;height:16px}
+.mail-reply-extra>button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.mail-reply-hint{max-width:100%;border-style:dashed!important;border-color:color-mix(in srgb,var(--info) 60%,var(--line))!important;color:var(--info)!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mail-reply-hint[data-opbouw='eenvoudig']{border-style:solid!important;border-color:var(--line)!important;color:var(--text)!important}
+@media (pointer:coarse){html body .mail-reply-extra>button{min-height:44px}}

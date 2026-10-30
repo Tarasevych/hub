@@ -1,0 +1,11 @@
+# Bewaakt de inbox. Niet inschakelen vanuit de installer: de eigenaar doet dat pas na `inrichten`,
+# het met de hand vertrouwen van de CA in sshd, en het aanzetten van schakelaar ssh-ca.
+[Unit]
+Description=Mijn Ruimte: inbox voor SSH-certificaten bewaken
+
+[Path]
+PathChanged=/srv/mijn-ruimte/ssh-ca-inbox
+Unit=mijn-ruimte-ssh-ca.service
+
+[Install]
+WantedBy=paths.target

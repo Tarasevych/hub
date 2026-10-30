@@ -1,0 +1,10 @@
+# Vangnet voor mijn-ruimte-goedkeuring.path: ligt er een goedgekeurd pakket in de goedkeur-inbox dat (nog) niet wordt verwerkt — bijv. omdat
+# de path-unit een gebeurtenis miste of in een foutstand staat — dan start deze dienst de verwerking alsnog. Zonder pakket doet hij niets
+# (ConditionPathExistsGlob), met een lopende verwerking is `start` een no-op. De verwerking zelf (en alle controles) blijft ongewijzigd.
+[Unit]
+Description=Mijn Ruimte: liggend goedgekeurd pakket alsnog laten verwerken
+ConditionPathExistsGlob=/srv/mijn-ruimte/goedkeur-inbox/mijn-ruimte-*.tar.gz
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl start --no-block mijn-ruimte-goedkeuring.service

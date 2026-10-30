@@ -1,0 +1,33 @@
+/* UI-010 fase 2 (vlag uitrol-weergave-v2): compacte toegang, probleemsamenvatting, gegroepeerde geschiedenis, herstel, voortgang. */
+.ut-toegang{display:grid;gap:8px;min-width:0}
+.ut-toegang-kop{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ut-toegang-titel{margin:0;font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:6px}
+.ut-toegang-lijst{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.ut-toegang-rij{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 8px;border-radius:10px;border:1px solid var(--ut-line);background:var(--ut-bg2);min-width:0}
+.ut-toegang-logo{width:28px;height:28px;flex:none;display:grid;place-items:center;border-radius:8px;overflow:hidden}
+.ut-toegang-logo img,.ut-toegang-logo svg{width:100%;height:100%;object-fit:cover}
+.ut-toegang-tekst{flex:1 1 auto;min-width:0;display:grid;line-height:1.2;font-size:.86rem}
+.ut-toegang-tekst small{color:var(--ut-muted);font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ut-toegang-staat{flex:none}
+.ut-problemen{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;border-radius:12px;border:1px solid var(--ut-warn);background:var(--ut-warn-bg);color:var(--ut-text);font-size:.88rem}
+.ut-problemen .ut-knop{margin-left:auto;min-height:44px}
+.ut-tl-groep{border:1px solid var(--ut-line);border-radius:12px;background:var(--ut-bg2)}
+.ut-tl-groep-kop{cursor:pointer;display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 12px;font-size:.88rem;font-weight:600}
+.ut-tl-binnen{display:grid;gap:4px;padding:0 8px 8px}
+.ut-betrokkenen{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:6px 0;font-size:.84rem}
+.ut-betrokkenen dt{color:var(--ut-muted)}
+.ut-betrokkenen dd{margin:0;min-width:0}
+.ut-breek{overflow-wrap:anywhere;word-break:break-all;font-family:ui-monospace,monospace;font-size:.78rem}
+.ut-herstel{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.ut-herstel .ut-knop{min-height:44px}
+.ut-vereisten{flex:1 1 100%;border:1px solid var(--ut-line);border-radius:10px;padding:6px 10px;background:var(--ut-bg)}
+.ut-vereisten summary{cursor:pointer;min-height:32px;display:flex;align-items:center;font-weight:600;font-size:.86rem}
+.ut-vereisten ul{margin:6px 0 2px;padding-left:18px;font-size:.84rem;color:var(--ut-muted)}
+.ut-log-wie{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.84rem;color:var(--ut-muted);margin:0 0 8px}
+.ut-log-wie b{color:var(--ut-text);font-weight:600}
+@media (max-width:480px){.ut-betrokkenen{grid-template-columns:1fr}.ut-problemen .ut-knop{margin-left:0;width:100%}}
+.ut-problemen>span{display:grid;gap:2px;flex:1 1 240px;min-width:0}
+.ut-problemen>span small{color:var(--ut-muted);overflow-wrap:anywhere}
+.ut-problemen>svg{width:18px;height:18px;color:var(--ut-warn);flex:none}
+/* Tikdoel ≥44 px voor de filterknoppen van Історія (bugfix, ook zonder vlag). */
+#ut-paneel-historie button.ut-chip{min-height:44px}

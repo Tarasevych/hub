@@ -1,0 +1,31 @@
+/* Termijn/eigenaar van sleutels in de kluis (KluisMeta.tsx). Eigen kleuren: tekst ≥ 4.5:1 in licht en donker. */
+.vault-meta,.vault-meta-velden,.vault-meta-bewerker{
+  --vm-ok:var(--ok);--vm-ok-bg:var(--ok-zacht);--vm-bijna:var(--warn);--vm-bijna-bg:var(--warn-zacht);--vm-op:var(--fout);--vm-op-bg:var(--fout-zacht);
+  --vm-zacht:#4b5563;--vm-rand:var(--line,#d7dee8)
+}
+.theme-dark .vault-meta,.theme-dark .vault-meta-velden,.theme-dark .vault-meta-bewerker,
+.theme-plum-dark .vault-meta,.theme-plum-dark .vault-meta-velden,.theme-plum-dark .vault-meta-bewerker{
+  --vm-ok:var(--ok);--vm-ok-bg:var(--ok-zacht);--vm-bijna:var(--warn);--vm-bijna-bg:var(--warn-zacht);--vm-op:var(--fout);--vm-op-bg:var(--fout-zacht);--vm-zacht:#c3cbd5
+}
+.vault-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-top:6px;min-width:0}
+.vault-meta>span{display:inline-flex;align-items:center;gap:5px;font-size:.86rem;color:var(--vm-zacht);overflow-wrap:anywhere}
+.vault-meta svg{width:14px;height:14px;flex:none}
+.vault-meta .vault-meta-termijn{padding:2px 9px;border-radius:999px;font-weight:650;color:var(--vm-zacht);border:1px solid var(--vm-rand)}
+.vault-meta .vault-meta-termijn.is-actief{color:var(--vm-ok);background:var(--vm-ok-bg);border-color:transparent}
+.vault-meta .vault-meta-termijn.is-bijna{color:var(--vm-bijna);background:var(--vm-bijna-bg);border-color:transparent}
+.vault-meta .vault-meta-termijn.is-verlopen{color:var(--vm-op);background:var(--vm-op-bg);border-color:transparent}
+.vault-meta-notitie{flex-basis:100%;color:var(--vm-zacht)}
+.vault-meta-velden{display:grid;gap:10px;margin:0;padding:12px;border:1px solid var(--vm-rand);border-radius:12px;min-width:0}
+.vault-meta-velden legend{padding:0 4px;font-weight:650}
+.vault-meta-rij{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:10px;align-items:end}
+.vault-meta-velden label{display:grid;gap:4px;font-size:.86rem;color:var(--vm-zacht);min-width:0}
+.vault-meta-velden.vault-meta-velden input,.vault-meta-velden.vault-meta-velden select{min-height:38px;padding:6px 9px;border-radius:9px;border:1px solid var(--vm-rand);background:var(--panel,Canvas);color:var(--text,CanvasText);font:inherit;min-width:0;width:100%}
+.vault-meta-snel{display:flex;flex-wrap:wrap;gap:6px}
+.vault-meta-snel button,.vault-meta-bewerker button,.vault-meta-knoppen button{min-height:36px;padding:5px 11px;border-radius:9px;border:1px solid var(--vm-rand);background:transparent;color:inherit;font:inherit;cursor:pointer}
+.vault-meta-snel button:focus-visible,.vault-meta-bewerker button:focus-visible,.vault-meta-velden input:focus-visible,.vault-meta-velden select:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.vault-meta-bewerker{display:grid;gap:8px;margin-top:8px;min-width:0}
+.vault-meta-bewerker>button{justify-self:start}
+.vault-meta-bewerker form{display:grid;gap:8px}
+.vault-meta-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.vault-meta-melding{margin:0;font-size:.88rem;color:var(--vm-ok)}
+.vault-meta-melding[data-ok="false"]{color:var(--vm-op);font-weight:600}

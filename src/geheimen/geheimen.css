@@ -1,0 +1,131 @@
+/* «Секрети й ключі» — kaarten, filters, journaal, vensters. Alleen tokens van het thema (--panel, --surface, --line, --text, --muted, --accent). */
+.gm-root{--gm-ok:var(--ok);--gm-bad:var(--fout);--gm-warn:var(--warn);--gm-bg:var(--panel,#fff);--gm-bg2:var(--surface,#f8fafc);--gm-line:var(--line,#e2e8f0);--gm-text:var(--text,#0f172a);--gm-muted:var(--muted,#64748b);--gm-accent:var(--accent,#2563eb);gap:16px}
+html.theme-dark .gm-root{--gm-warn:var(--warn)}
+.gm-root *{box-sizing:border-box}
+.gm-kop{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 16px}
+.gm-kop>div:first-of-type{flex:1 1 320px;min-width:0}
+.gm-kop h2{margin:0 0 4px;font-size:1.35rem}
+.gm-kop p{margin:0;color:var(--gm-muted);max-width:70ch}
+.gm-kop-acties{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.gm-root .gm-knop{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:7px 13px;border:1px solid var(--gm-line);border-radius:10px;background:var(--gm-bg);color:var(--gm-text);font-weight:650;font-size:.88rem;cursor:pointer;line-height:1.1;transition:background .15s,border-color .15s}
+.gm-root .gm-knop svg{width:16px;height:16px;flex:none}
+.gm-root .gm-knop:hover:not(:disabled){border-color:var(--gm-accent);background:color-mix(in srgb,var(--gm-accent) 7%,var(--gm-bg))}
+.gm-root .gm-knop:disabled{opacity:.5;cursor:not-allowed}
+.gm-root .gm-knop.is-primair{background:var(--gm-accent);border-color:var(--gm-accent);color:var(--text-on-accent)}
+.gm-root .gm-knop.is-primair:hover:not(:disabled){background:color-mix(in srgb,var(--gm-accent) 88%,#000)}
+.gm-root .gm-knop.is-gevaar{color:var(--gm-bad);border-color:color-mix(in srgb,var(--gm-bad) 40%,var(--gm-line))}
+.gm-root .gm-knop.is-gevaar:hover:not(:disabled){background:color-mix(in srgb,var(--gm-bad) 9%,var(--gm-bg));border-color:var(--gm-bad)}
+.gm-root .gm-knop.is-gevaar:disabled{opacity:.45}
+.gm-root :focus-visible{outline:2px solid var(--gm-accent);outline-offset:2px}
+.gm-veilig{display:flex;gap:11px;align-items:flex-start;padding:11px 14px;border:1px solid color-mix(in srgb,var(--gm-accent) 28%,var(--gm-line));border-radius:12px;background:color-mix(in srgb,var(--gm-accent) 6%,var(--gm-bg))}
+.gm-veilig svg{flex:none;width:18px;height:18px;margin-top:2px;color:var(--gm-accent)}
+.gm-veilig p{margin:0;font-size:.86rem;color:var(--gm-text)}
+.gm-banner{display:flex;align-items:flex-start;gap:9px;margin:0;padding:10px 12px;border-radius:11px;border:1px solid var(--gm-line);background:var(--gm-bg2);font-size:.88rem}
+.gm-banner>svg{flex:none;width:17px;height:17px;margin-top:2px}
+.gm-banner>span{flex:1;min-width:0}
+.gm-banner.is-ok{border-color:color-mix(in srgb,var(--gm-ok) 40%,var(--gm-line));background:color-mix(in srgb,var(--gm-ok) 8%,var(--gm-bg));color:var(--gm-text)}
+.gm-banner.is-ok>svg{color:var(--gm-ok)}
+.gm-banner.is-fout,.gm-banner.is-bad{border-color:color-mix(in srgb,var(--gm-bad) 45%,var(--gm-line));background:color-mix(in srgb,var(--gm-bad) 8%,var(--gm-bg))}
+.gm-banner.is-fout>svg,.gm-banner.is-bad>svg{color:var(--gm-bad)}
+.gm-banner.is-info>svg{color:var(--gm-accent)}
+.gm-root .gm-sluit{display:inline-grid;place-items:center;flex:none;width:28px;height:28px;min-height:0;padding:0;border:0;border-radius:8px;background:transparent;color:var(--gm-muted);cursor:pointer}
+.gm-root .gm-sluit svg{width:16px;height:16px;display:block;margin:0}
+.gm-root .gm-sluit:hover{background:color-mix(in srgb,var(--gm-text) 9%,transparent);color:var(--gm-text)}
+.gm-tegels{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.gm-tegels>article,.gm-tegel-knop{display:grid;gap:2px;align-content:start;padding:13px 15px;border:1px solid var(--gm-line);border-radius:13px;background:var(--gm-bg2);text-align:left;color:var(--gm-text);font:inherit}
+.gm-tegels b{font-size:1.65rem;line-height:1.1}
+.gm-tegels span{color:var(--gm-muted);font-size:.84rem}
+.gm-tegels small{color:var(--gm-muted);font-size:.75rem}
+.gm-tegel-knop{cursor:pointer}
+.gm-tegel-knop:hover{border-color:var(--gm-accent)}
+.gm-tegels [data-toon=ok] b{color:var(--gm-ok)}
+.gm-tegels [data-toon=bad] b{color:var(--gm-bad)}
+.gm-tabs{display:flex;gap:6px;border-bottom:1px solid var(--gm-line);overflow-x:auto;scrollbar-width:thin}
+.gm-root .gm-tabs button{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;min-height:40px;border:0;border-bottom:2px solid transparent;border-radius:9px 9px 0 0;background:transparent;color:var(--gm-muted);font-weight:650;cursor:pointer;white-space:nowrap}
+.gm-root .gm-tabs button svg{width:16px;height:16px}
+.gm-root .gm-tabs button.is-actief{color:var(--gm-text);border-bottom-color:var(--gm-accent)}
+.gm-tabs i,.gm-chips i,.gm-groep h3 i{font-style:normal;font-size:.75rem;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,var(--gm-text) 9%,transparent);color:var(--gm-muted)}
+.gm-balk{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.gm-root .gm-balk select,.gm-root .gm-balk input[type=date],.gm-root .gm-formulier select,.gm-root .gm-formulier input,.gm-root .gm-formulier textarea{width:auto;min-height:38px;padding:7px 10px;border:1px solid var(--gm-line);border-radius:10px;background:var(--gm-bg2);color:var(--gm-text);font:inherit;font-size:.88rem}
+.gm-zoek{position:relative;flex:1 1 240px;min-width:0;display:block}
+.gm-zoek svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--gm-muted);pointer-events:none}
+.gm-root .gm-zoek input{width:100%;padding-left:34px}
+.gm-datum{display:inline-flex;align-items:center;gap:6px;color:var(--gm-muted);font-size:.8rem}
+.gm-chips{display:flex;flex-wrap:wrap;gap:7px}
+.gm-root .gm-chips button{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:5px 11px;border:1px solid var(--gm-line);border-radius:999px;background:var(--gm-bg);color:var(--gm-text);font-size:.82rem;font-weight:600;cursor:pointer}
+.gm-chips button svg{width:14px;height:14px;color:var(--gm-muted)}
+.gm-root .gm-chips button.is-actief{border-color:var(--gm-accent);background:color-mix(in srgb,var(--gm-accent) 12%,var(--gm-bg))}
+.gm-groep{display:grid;gap:9px}
+.gm-groep h3{display:flex;align-items:center;gap:8px;margin:6px 0 0;font-size:1rem}
+.gm-groep h3 svg{width:18px;height:18px;color:var(--gm-accent)}
+.gm-lijst{display:grid;gap:9px}
+.gm-kaart{display:flex;flex-wrap:wrap;gap:12px 14px;align-items:flex-start;padding:13px 14px;border:1px solid var(--gm-line);border-radius:14px;background:var(--gm-bg2);min-width:0}
+.gm-kaart[data-aandacht]{border-color:color-mix(in srgb,var(--gm-warn) 50%,var(--gm-line))}
+.gm-kaart[data-gm-staat=verlopen],.gm-kaart[data-gm-staat=ontbreekt]{border-color:color-mix(in srgb,var(--gm-bad) 45%,var(--gm-line))}
+.gm-kaart-tekst{display:grid;gap:5px;flex:1 1 280px;min-width:0}
+.gm-kaart-kop{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.gm-root .gm-naam{padding:0;min-height:0;border:0;background:none;color:var(--gm-text);font-weight:750;font-size:.98rem;text-align:left;cursor:pointer;overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.gm-naam:hover{color:var(--gm-accent);text-decoration:underline}
+.gm-kaart-sub{display:flex;flex-wrap:wrap;gap:4px 7px;color:var(--gm-muted);font-size:.8rem}
+.gm-waarde{display:block;max-width:100%;padding:6px 10px;border-radius:9px;background:color-mix(in srgb,var(--gm-text) 6%,var(--gm-bg));font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84rem;letter-spacing:.04em;color:var(--gm-muted);overflow-wrap:anywhere;word-break:break-all;white-space:pre-wrap;max-height:220px;overflow:auto}
+.gm-waarde.is-zichtbaar{color:var(--gm-text);letter-spacing:0;border:1px dashed color-mix(in srgb,var(--gm-warn) 55%,var(--gm-line));background:color-mix(in srgb,var(--gm-warn) 8%,var(--gm-bg))}
+.gm-teller{position:relative;display:flex;align-items:center;gap:8px}
+.gm-teller>span{display:block;height:4px;border-radius:2px;background:var(--gm-warn);transition:width .25s linear;flex:none;max-width:60%}
+.gm-teller small{color:var(--gm-muted);font-size:.75rem}
+.gm-klein{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:var(--gm-muted);font-size:.78rem;margin:0}
+.gm-klein svg{width:13px;height:13px;flex:none}
+.gm-laatste .gm-avatar{flex:none}
+.gm-beheerd{color:var(--gm-muted)}
+.gm-acties{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;justify-content:flex-end;flex:0 1 auto;margin-left:auto}
+.gm-chip{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:.75rem;font-weight:700;border:1px solid var(--gm-line);background:var(--gm-bg);color:var(--gm-muted);white-space:nowrap}
+.gm-chip[data-toon=ok]{color:var(--gm-ok);border-color:transparent;background:color-mix(in srgb,var(--gm-ok) 12%,var(--gm-bg))}
+.gm-chip[data-toon=warn]{color:var(--gm-warn);border-color:transparent;background:color-mix(in srgb,var(--gm-warn) 14%,var(--gm-bg))}
+.gm-chip[data-toon=bad]{color:var(--gm-bad);border-color:transparent;background:color-mix(in srgb,var(--gm-bad) 12%,var(--gm-bg))}
+.gm-logo{display:inline-grid;place-items:center;flex:none;border-radius:11px;color:#fff;font-weight:800;letter-spacing:-.02em;user-select:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.gm-logo b{font-weight:800;line-height:1}
+.gm-logo.is-google{background:conic-gradient(from -45deg,#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0)}
+/* Merklogo uit het register (src/merk): de tegel tekent <Merk> zelf — geen eigen vlak, geen witte letters. */
+.gm-logo.is-merk{background:none;box-shadow:none;color:inherit}
+.gm-avatar{display:inline-grid;place-items:center;flex:none;border-radius:50%;overflow:hidden;background:color-mix(in srgb,var(--gm-accent) 22%,var(--gm-bg));color:var(--gm-text);font-weight:700}
+.gm-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.gm-leeg{display:flex;align-items:center;gap:8px;margin:4px 0;padding:14px;border:1px dashed var(--gm-line);border-radius:12px;color:var(--gm-muted);font-size:.9rem}
+.gm-root .gm-link{padding:0;min-height:0;border:0;background:none;color:var(--gm-accent);font-weight:650;cursor:pointer;text-decoration:underline}
+.gm-historie{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.gm-historie li{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;border:1px solid var(--gm-line);border-radius:12px;background:var(--gm-bg2);min-width:0}
+.gm-historie li[data-mislukt]{border-color:color-mix(in srgb,var(--gm-bad) 40%,var(--gm-line))}
+.gm-historie-icoon{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--gm-accent) 12%,var(--gm-bg));color:var(--gm-accent)}
+.gm-historie li[data-actie=getoond] .gm-historie-icoon{background:color-mix(in srgb,var(--gm-warn) 15%,var(--gm-bg));color:var(--gm-warn)}
+.gm-historie li[data-actie=verwijderd] .gm-historie-icoon{background:color-mix(in srgb,var(--gm-bad) 13%,var(--gm-bg));color:var(--gm-bad)}
+.gm-historie-icoon svg{width:16px;height:16px}
+.gm-historie-tekst{min-width:0;flex:1}
+.gm-historie-tekst p{margin:0;font-size:.88rem;overflow-wrap:anywhere}
+.gm-historie-tekst small{color:var(--gm-muted);font-size:.76rem;overflow-wrap:anywhere}
+.gm-historie code{font-size:.82rem}
+.gm-detail{display:grid;gap:12px}
+.gm-detail-kop{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.gm-detail-kop>div{flex:1 1 200px;min-width:0}
+.gm-detail-kop h3{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}
+.gm-detail-kop p{margin:2px 0 0;color:var(--gm-muted);font-size:.85rem}
+.gm-feiten{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:0}
+.gm-feiten>div{padding:9px 11px;border:1px solid var(--gm-line);border-radius:11px;background:var(--gm-bg2)}
+.gm-feiten dt{color:var(--gm-muted);font-size:.75rem}
+.gm-feiten dd{margin:2px 0 0;font-size:.88rem;overflow-wrap:anywhere}
+.gm-detail h4{margin:4px 0 0;font-size:.95rem}
+.gm-historie-kop{display:flex;align-items:center;gap:7px}
+.gm-historie-kop svg{width:16px;height:16px;color:var(--gm-accent)}
+.gm-formulier{display:grid;gap:12px;padding:2px}
+.gm-formulier label{display:grid;gap:5px;color:var(--gm-muted);font-size:.8rem}
+.gm-root .gm-formulier input,.gm-root .gm-formulier textarea,.gm-root .gm-formulier select{width:100%}
+.gm-geheim-invoer{-webkit-text-security:disc;text-security:disc;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical}
+.gm-formulier-acties{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+@media (max-width:640px){
+  .gm-acties{margin-left:0;justify-content:flex-start;width:100%}
+  .gm-kop-acties{margin-left:0;width:100%}
+  .gm-root .gm-kop-acties .gm-knop{flex:1 1 140px}
+  .gm-teller>span{max-width:45%}
+}
+@media (prefers-reduced-motion:reduce){.gm-teller>span{transition:none}}
+/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
+@media (max-width:700px){
+  .gm-root .gm-knop{min-height:var(--tik-hoogte)}
+}

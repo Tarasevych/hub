@@ -1,0 +1,34 @@
+# Sjabloon — geschreven door deploy/apparaat-inrichten.sh (mijn-ruimte-installeer terminal-inrichten), zone G 22.10.2026.
+# Deze server als apparaat van de eigenaar op de site («Термінал» van het technisch profiel): de agent (deploy/agent/agent.mjs 0.8.0)
+# draait als de GEWONE gebruiker @GEBRUIKER@ — nooit root, nooit de dienstgebruiker. NoNewPrivileges: geen sudo/setuid voor de agent en
+# alles wat hij start; ProtectSystem=strict: het hele systeem alleen-lezen behalve de genoemde paden. Wat de agent mag, beslist de
+# agent zelf (allow-lijst, roots in ~/.hub-agent/config.json) én het besturingssysteem (rechten van @GEBRUIKER@).
+[Unit]
+Description=Mijn Ruimte apparaat-agent (@GEBRUIKER@): opdracht-terminal van het technisch profiel
+Documentation=file:///srv/mijn-ruimte/current/docs/terminal/TERMINAL.md
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=@HOME@/.hub-agent/config.json
+
+[Service]
+User=@GEBRUIKER@
+Environment=HOME=@HOME@
+Environment=HUB_AGENT_CONFIG=@HOME@/.hub-agent/config.json
+ExecStart=@NODE@ @AGENT_DIR@/agent.mjs run
+Restart=always
+RestartSec=10
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=@SCHRIJF@
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictRealtime=true
+MemoryMax=512M
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target

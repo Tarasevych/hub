@@ -1,0 +1,147 @@
+/* «Перемикачі функцій» — rustige vorm (28.10.2026). Alleen site-variabelen (src/ontwerp/tokens.css): licht en donker vanzelf.
+   Twee lettergroottes (15 px tekst, 17 px titel) + één klein (13 px). Eén accentkleur (--accent). Geen stippelranden, geen gekleurde balken. */
+.vlag-venster{display:flex;flex-direction:column;gap:16px;padding:12px 20px 16px;color:var(--text);font-size:15px;line-height:1.45}
+.vlag-venster svg,.vlag-lade svg,.vlag-vraag svg{width:16px;height:16px;flex:none}
+.vlag-klein{margin:0;color:var(--muted);font-size:13px;line-height:1.4}
+.vlag-lead{margin:0;color:var(--muted)}
+.vlag-link{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0;border:0;background:none;color:var(--accent);font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.vlag-link:hover{text-decoration-thickness:2px}
+.vlag-hoe-tekst{padding:12px 14px;border-radius:12px;background:var(--surface)}
+.vlag-hoe-tekst p{margin:0 0 6px}.vlag-hoe-tekst p:last-child{margin:0}
+
+/* Bovenbalk: segment + zoeken */
+.vlag-balk-boven{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.vlag-segment{display:inline-flex;padding:3px;gap:2px;border-radius:12px;background:var(--surface);max-width:100%}
+.vlag-segment button{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 14px;border:0;border-radius:9px;background:transparent;color:var(--muted);font:inherit;font-size:15px;cursor:pointer;white-space:nowrap}
+.vlag-segment button:hover:not(:disabled){color:var(--text)}
+.vlag-segment button[aria-selected=true],.vlag-segment button[aria-pressed=true]{background:var(--panel);color:var(--text);font-weight:600;box-shadow:0 1px 3px var(--shadow)}
+.vlag-segment button:disabled{cursor:not-allowed}
+.vlag-teller{color:var(--muted);font-size:13px;font-weight:400}
+.vlag-segment.is-vijf{display:grid;grid-template-columns:repeat(5,1fr);width:100%}
+.vlag-segment.is-vijf button{padding:0 6px}
+.vlag-zoek{display:flex;align-items:center;gap:8px;flex:1 1 180px;max-width:260px;min-height:40px;padding:0 12px;border-radius:12px;background:var(--surface);color:var(--muted)}
+.vlag-zoek input{flex:1;min-width:0;border:0;background:transparent;color:var(--text);font:inherit;outline:none}
+.vlag-zoek:focus-within{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent)}
+
+/* Rijen */
+.vlag-rijen{list-style:none;margin:0;padding:0}
+.vlag-rij{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}
+.vlag-rij:last-child{border-bottom:0}
+.vlag-rij-hoofd{display:grid;gap:2px;min-width:0;min-height:52px;padding:6px 8px;margin-left:-8px;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.vlag-rij-hoofd:hover{background:var(--nav-hover)}
+.vlag-naam{font-weight:600}
+.vlag-omschrijving{overflow:hidden;color:var(--muted);font-size:13px;text-overflow:ellipsis;white-space:nowrap}
+.vlag-pil{padding:2px 10px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:13px;white-space:nowrap}
+.vlag-pil.is-alle{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.vlag-pijl{color:var(--muted);opacity:.7}
+.vlag-tuimel{position:relative;width:44px;height:26px;padding:0;border:0;border-radius:999px;background:color-mix(in srgb,var(--muted) 45%,transparent);cursor:pointer;transition:background .15s;flex:none}
+.vlag-tuimel span{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
+.vlag-tuimel[aria-pressed=true]{background:var(--accent)}
+.vlag-tuimel[aria-pressed=true] span{left:21px}
+.vlag-tuimel:disabled{cursor:not-allowed;opacity:.5}
+.vlag-toast,.vlag-fout{font-size:13px}
+.vlag-rij .vlag-toast,.vlag-rij .vlag-fout{grid-column:1/-1;margin:-4px 0 4px}
+.vlag-toast{color:var(--ok)}
+.vlag-fout{color:var(--fout)}
+.vlag-leeg{margin:24px 0;color:var(--muted);text-align:center}
+.vlag-nieuw-knop{align-self:flex-start}
+.vlag-nieuw{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:var(--surface)}
+
+/* Velden en knoppen */
+.vlag-veld{display:flex;flex-direction:column;gap:4px;color:var(--muted);font-size:13px}
+.vlag-veld input,.vlag-mail-toevoegen input{min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);font:inherit;font-size:15px}
+.vlag-veld input:focus,.vlag-mail-toevoegen input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.vlag-acties{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px}
+.vlag-acties .vlag-toast,.vlag-acties .vlag-fout{margin-right:auto}
+.vlag-knop{min-height:40px;padding:0 16px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--text);font:inherit;font-size:15px;cursor:pointer}
+.vlag-knop:hover:not(:disabled){background:var(--nav-hover)}
+.vlag-knop.is-hoofd{border-color:var(--accent);background:var(--accent);color:var(--text-on-accent);font-weight:600}
+.vlag-knop.is-hoofd:hover:not(:disabled){filter:brightness(1.07);background:var(--accent)}
+.vlag-knop.is-gevaar{border-color:transparent;color:var(--fout)}
+.vlag-knop.is-gevaar:hover:not(:disabled){background:var(--fout-zacht)}
+.vlag-knop:disabled{opacity:.45;cursor:not-allowed}
+.vlag-venster :focus-visible,.vlag-laag :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* Melding bij ontbrekende rechten: rustig, één kleur */
+.vlag-melding-balk{display:flex;gap:10px;padding:12px 14px;border-radius:12px;background:var(--warn-zacht);color:var(--text)}
+.vlag-melding-balk>svg{color:var(--warn);margin-top:2px}
+.vlag-melding-balk p{margin:0 0 6px}
+.vlag-melding-balk ol{margin:0 0 6px;padding-left:18px;font-size:13px;color:var(--text)}
+
+/* Laag: lade rechts (pc) of van onderen (telefoon), en de bevestigingsvraag */
+.vlag-laag{position:fixed;inset:0;z-index:90000;display:flex;background:color-mix(in srgb,#000 38%,transparent);animation:vlag-in .15s ease-out}
+.vlag-laag.is-lade{justify-content:flex-end}
+.vlag-laag.is-vraag{align-items:center;justify-content:center;padding:16px}
+.vlag-lade-vak{width:min(440px,100vw);height:100%;overflow:auto;background:var(--panel);color:var(--text);box-shadow:-12px 0 40px var(--shadow);outline:none;animation:vlag-rechts .18s ease-out}
+.vlag-vraag-vak{width:min(400px,100%);border-radius:16px;background:var(--panel);color:var(--text);box-shadow:0 20px 60px var(--shadow);outline:none}
+.vlag-vraag{display:flex;flex-direction:column;gap:8px;padding:20px;font-size:15px}
+.vlag-vraag h3{margin:0;font-size:17px}
+.vlag-vraag p{margin:0}
+.vlag-vraag .vlag-acties{margin-top:10px}
+.vlag-lade{display:flex;flex-direction:column;gap:20px;padding:20px;font-size:15px;line-height:1.45}
+.vlag-lade-kop{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.vlag-lade-kop h3{margin:0 0 4px;font-size:17px}
+.vlag-sluit{display:grid;place-items:center;width:40px;height:40px;flex:none;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.vlag-sluit:hover{background:var(--nav-hover);color:var(--text)}
+.vlag-blok{display:flex;flex-direction:column;gap:12px}
+.vlag-blok h4{margin:0;font-size:13px;font-weight:600;color:var(--muted)}
+.vlag-blok.is-rij{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:12px;background:var(--surface)}
+.vlag-invoer{display:flex;flex-direction:column;gap:8px}
+.vlag-mails{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.vlag-mails li{display:inline-flex;align-items:center;gap:2px;padding:0 2px 0 12px;border-radius:999px;background:var(--surface);font-size:13px;overflow-wrap:anywhere}
+.vlag-mails button{display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.vlag-mail-toevoegen{display:flex;gap:8px}
+.vlag-mail-toevoegen input{flex:1;min-width:0}
+.vlag-schuif{display:flex;flex-direction:column;gap:6px;font-weight:600}
+.vlag-schuif input{width:100%;accent-color:var(--accent);min-height:32px}
+.vlag-meer{border-top:1px solid var(--line);padding-top:12px}
+.vlag-meer summary{display:flex;align-items:center;gap:4px;min-height:36px;cursor:pointer;color:var(--text);list-style:none}
+.vlag-meer summary::-webkit-details-marker{display:none}
+.vlag-meer summary::before{content:'›';display:inline-block;width:14px;color:var(--muted);transition:transform .15s}
+.vlag-meer[open] summary::before{transform:rotate(90deg)}
+.vlag-meer>p,.vlag-meer>div{margin:6px 0 0}
+.vlag-meer.is-gevaar summary{color:var(--fout)}
+.vlag-meer .vlag-segment{margin-top:8px}
+@keyframes vlag-in{from{opacity:0}}
+@keyframes vlag-rechts{from{transform:translateX(24px)}}
+@keyframes vlag-op{from{transform:translateY(32px)}}
+@media (prefers-reduced-motion:reduce){.vlag-laag,.vlag-lade-vak,.vlag-tuimel,.vlag-tuimel span{animation:none;transition:none}}
+
+/* Telefoon */
+@media (max-width:600px){
+  .vlag-balk-boven{flex-direction:column;align-items:stretch}
+  .vlag-segment{width:100%}
+  .vlag-zoek{flex:none;max-width:none;min-height:44px}
+  .vlag-venster{padding:10px 14px 16px}
+  .vlag-segment button{min-height:40px;padding:0 8px}
+  .vlag-segment.is-vijf button{min-height:44px;font-size:13px;padding:0 2px}
+  .vlag-rij{grid-template-columns:minmax(0,1fr) auto auto;gap:10px}
+  .vlag-pijl{display:none}
+  .vlag-rij .vlag-pil{grid-column:1;grid-row:2;justify-self:start;margin:-6px 0 6px}
+  .vlag-rij .vlag-tuimel{grid-column:2;grid-row:1}
+  .vlag-tuimel{width:50px;height:30px}.vlag-tuimel span{width:24px;height:24px}.vlag-tuimel[aria-pressed=true] span{left:23px}
+  .vlag-knop,.vlag-link{min-height:44px}
+  .vlag-laag.is-lade{align-items:flex-end}
+  .vlag-lade-vak{width:100%;height:auto;max-height:88vh;border-radius:18px 18px 0 0;animation:vlag-op .2s ease-out}
+  .vlag-lade{padding:16px 16px 24px}
+  .vlag-lade::before{content:'';align-self:center;width:40px;height:4px;border-radius:2px;background:var(--line);margin:-6px 0 -8px}
+  .vlag-blok.is-rij{flex-direction:column;align-items:stretch}
+}
+
+/* 28.10.2026 (Pavlo: «наїлися та пожирніли»): slanker. Tuimelaar altijd 44×24 (ook als de site op de telefoon knoppen groter maakt);
+   het tikvlak blijft ≥ 44 px via een onzichtbare rand (::after). Kleine pil, minder witruimte, titel 16 px / tekst 13 px. */
+.vlag-rij .vlag-tuimel,.vlag-tuimel{width:44px !important;height:24px !important;min-width:44px !important;min-height:24px !important;max-height:24px;padding:0 !important;margin:0;box-sizing:border-box}
+.vlag-tuimel::after{content:'';position:absolute;inset:-10px -4px}
+.vlag-tuimel span{top:2px !important;left:2px;width:20px !important;height:20px !important}
+.vlag-tuimel[aria-pressed=true] span{left:22px !important}
+.vlag-pil{padding:1px 8px;font-size:12px;line-height:18px}
+.vlag-naam{font-size:15px;line-height:1.3}
+.vlag-rij{padding:2px 0}
+.vlag-rij-hoofd{min-height:44px;padding:6px 8px}
+@media (max-width:600px){
+  .vlag-naam{font-size:16px}
+  .vlag-omschrijving{font-size:13px}
+  .vlag-rij{gap:8px;padding:4px 0}
+  .vlag-rij .vlag-pil{margin:-8px 0 6px;font-size:11px;line-height:16px;padding:1px 7px}
+  .vlag-rij-hoofd{min-height:44px;padding:4px 8px 6px}
+}

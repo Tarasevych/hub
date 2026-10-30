@@ -1,0 +1,23 @@
+# Variant met Docker (alleen als het pakket «guacd» via apt niet beschikbaar is en docker er al is) — uitvoerder D, 18.10.2026.
+# --network host + guacd -b 127.0.0.1: luistert alleen op loopback van de server (zonder host-netwerk kan guacd doelen op de
+# server zelf niet bereiken, en -p 127.0.0.1:4822 zou de container 0.0.0.0 laten binden). Vaste versie van het image.
+[Unit]
+Description=Mijn Ruimte guacd in Docker (extern bureaublad, 127.0.0.1:4822)
+After=docker.service network.target
+Requires=docker.service
+
+[Service]
+Type=simple
+# GUACD_UID/GUACD_GID van de systeemgebruiker mijnruimte-guacd (eigenaar van de opnamemap), geschreven door installeer-app.sh.
+EnvironmentFile=/etc/mijn-ruimte/guacd-docker.env
+ExecStartPre=-/usr/bin/docker rm -f mijn-ruimte-guacd
+ExecStart=/usr/bin/docker run --rm --name mijn-ruimte-guacd --network host --read-only --tmpfs /tmp -e HOME=/tmp --user ${GUACD_UID}:${GUACD_GID} \
+  --cap-drop ALL --security-opt no-new-privileges --pids-limit 256 --memory 1g \
+  -v /srv/data/guac-opnames:/srv/data/guac-opnames \
+  --entrypoint /opt/guacamole/sbin/guacd guacamole/guacd:1.5.5 -f -b 127.0.0.1 -l 4822 -L info
+ExecStop=/usr/bin/docker stop -t 5 mijn-ruimte-guacd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

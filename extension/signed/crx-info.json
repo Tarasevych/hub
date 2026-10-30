@@ -1,0 +1,8 @@
+{
+  "extensionId": "ofpffonakgjioahgfejmiblfmbkobmmi",
+  "version": "0.3.4",
+  "contentHash": "9050c5d87bb2e10828d3be0539ac79dea882b25d25f61163d204e65ef9aaf1ec",
+  "publicKeyBase64": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzcZnxA1QZm6Y5DXSOiWvNTIy+FsNKxIQEQ/lirLjWnKAYTfuQCCnBxNqLihLeu5+mKLc9CQoN4+si2WceYzeSpEUpJD75+abVEgqg3runJ6O8XFko+cWmmDpVpSQin4HBylp0o50SUoi14u75Y5U4JW6v681Cr4lxMpyRE6qO1Msx6pAyJo/1ayOuZvYf5jq5Ge+2iE2Igt9R8EoaYsaGBZwhr7bYLJHlmarQe//Z4XQ2jU/XsPghhf944i4n4MEd2GEM2dWDwPg/CZIM5dj8JO7Vu4FlGYFfC2BzDf7N2Ia/Sfp8NovUZ11gVrvy181tXirtPVg/qey5EqrFed/xwIDAQAB",
+  "codebase": "https://mcp.tarasevych.com/downloads/mijn-ruimte-extension.crx",
+  "updateUrl": "https://mcp.tarasevych.com/downloads/updates.xml"
+}

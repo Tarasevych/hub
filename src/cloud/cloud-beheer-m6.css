@@ -1,0 +1,13 @@
+.tsv-cloud-governance{max-width:1150px;margin:auto;padding:clamp(14px,2vw,28px);color:inherit}
+.tsv-cloud-governance h2{font-size:clamp(1.3rem,2vw,1.8rem);margin:6px 0 10px}
+.tsv-cloud-governance__eyebrow{font-size:.8rem;letter-spacing:.08em;color:var(--tekst-zacht,#64748b)}
+.tsv-cloud-governance>label{display:block;max-width:720px;margin:22px 0 12px;font-size:.9rem;font-weight:600}
+.tsv-cloud-governance textarea{display:block;width:100%;box-sizing:border-box;margin-top:7px;padding:12px;border:1px solid var(--rand,#b5bbc6);border-radius:10px;background:var(--vlak,#fff);color:inherit;font:inherit}
+.tsv-cloud-governance__items{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px}
+.tsv-cloud-governance__items article{border:1px solid var(--rand,#cbd5e1);border-radius:14px;padding:16px;background:var(--vlak,#fff)}
+.tsv-cloud-governance__top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.tsv-cloud-governance__top small{color:var(--tekst-zacht,#64748b)}
+.tsv-cloud-governance__toggles{display:grid;gap:10px}
+.tsv-cloud-governance__toggles label{display:flex;align-items:center;gap:10px;font-size:.9rem;cursor:pointer}
+.tsv-cloud-governance__toggles input{width:18px;height:18px}
+.tsv-cloud-governance :focus-visible{outline:3px solid #6475e8;outline-offset:2px}

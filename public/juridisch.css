@@ -1,0 +1,18 @@
+/* Publieke juridische pagina's (/privacy, /terms): geen JavaScript, alleen deze stijl. */
+:root{color-scheme:light dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.55}
+body{margin:0;background:#f7f8fa;color:#17212b}
+@media(prefers-color-scheme:dark){body{background:#14181d;color:#f3f6f8}a{color:#8dbab7}.kop,.voet{background:#20262d!important;border-color:#46515c!important}code{background:#29313a!important}}
+a{color:#2f6f73}
+.kop{position:sticky;top:0;background:#fff;border-bottom:1px solid #dce1e6}
+.kop nav{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;max-width:860px;margin:0 auto;padding:10px 18px;font-size:.95rem}
+.kop nav>a{font-weight:700;text-decoration:none}
+main{max-width:860px;margin:0 auto;padding:12px 18px 32px}
+section{scroll-margin-top:64px}
+h1{font-size:1.7rem;margin:24px 0 4px}
+h2{font-size:1.15rem;margin:26px 0 6px}
+.datum{color:#6a7580;margin-top:0}
+code{background:#eef1f4;padding:1px 5px;border-radius:5px;font-size:.88em}
+li{margin:4px 0}
+hr{margin:40px 0;border:0;border-top:1px solid #dce1e6}
+.voet{border-top:1px solid #dce1e6;background:#fff;padding:14px 18px;text-align:center;font-size:.9rem}
+.voet p{margin:4px 0}

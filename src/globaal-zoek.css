@@ -1,0 +1,5 @@
+/* «Пошук усюди» (Z4, 22.10.2026): het oude paneel is vervangen door het palet ⌘K (src/zoek/ZoekGlobaal.tsx); alleen de knop in de
+   zijkant van de hmara (CloudFunctionalView .global-search-trigger) heeft hier nog een stijl — tokens uit src/ontwerp/tokens.css. */
+.global-search-trigger{display:inline-flex;align-items:center;gap:var(--ruimte-2);min-height:var(--tik-hoogte);border:1px solid var(--line);border-radius:var(--straal-m);background:var(--panel);color:var(--text);padding:0 var(--ruimte-3);font:inherit;cursor:pointer}
+.global-search-trigger:hover{background:var(--surface)}
+.global-search-trigger svg{width:1.1rem;height:1.1rem}

@@ -1,0 +1,9 @@
+/* BUG-003 (29.10.2026): PDF in de bijlagewerkbank van mail.* scrolde niet met muiswiel, twee vingers op het touchpad of aanraking.
+   Oorzaak: mail-lezer-verbeteringen.css maakt .mail-pdf-preview een EIGEN scrollcontainer (overflow:auto + overscroll-behavior:contain,
+   height:100%). In de werkbank is die hoogte niet bepaald, dus het blok groeit mee met de pagina's en heeft zelf niets te scrollen;
+   «contain» verbiedt dan het doorgeven van het gebaar aan de echte scroller (.mail-viewer-preview-cache). Elk gebaar boven het document
+   eindigde dus in een container zonder scrollruimte. Oplossing: in de werkbank is .mail-viewer-preview-cache de enige scroller.
+   Neveneffect (gewenst): de PDF-balk (sticky) blijft nu bovenaan staan tijdens het scrollen. Geldt zonder vlag (bugfix). */
+.google-mail-attachment-preview .mail-viewer-scaled-content .mail-pdf-preview:not(.mail-pdf-preview-miniature){height:auto;overflow:visible;overscroll-behavior:auto}
+/* Aanraking: verticaal én horizontaal pannen (bij inzoomen) en knijpen blijven bij de browser; geen enkele laag eronder vangt het. */
+.google-mail-attachment-preview .mail-viewer-preview-cache{touch-action:pan-x pan-y pinch-zoom;-webkit-overflow-scrolling:touch}

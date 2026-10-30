@@ -1,0 +1,47 @@
+# /etc/systemd/system/cloudflared.service — Cloudflare Tunnel voor Mijn Ruimte (alleen uitgaande verbindingen).
+# Vervangt de unit van `cloudflared service install`, met hardening. Leest /etc/cloudflared/config.yml en het
+# tunnel-credentialsbestand (root:root 0600). Draait als root maar zonder enige capability: root mag zijn eigen
+# 0600-bestanden lezen zonder CAP_DAC_*, en verder kan het proces niets wat een gewone gebruiker niet kan.
+[Unit]
+Description=Cloudflare Tunnel (Mijn Ruimte)
+Documentation=file:///srv/mijn-ruimte/current/deploy/LEESMIJ.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/cloudflared --no-autoupdate --config /etc/cloudflared/config.yml tunnel run
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=0
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RemoveIPC=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+SystemCallErrorNumber=EPERM
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

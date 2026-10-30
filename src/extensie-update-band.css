@@ -1,0 +1,26 @@
+/* Strook «Доступне оновлення розширення» (ExtensieUpdateBand.tsx). Rechtsonder, boven de inhoud; nooit over de techband (z-index lager). */
+.ext-band{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:95000;width:min(520px,calc(100vw - 24px));box-sizing:border-box;
+  display:grid;gap:8px;padding:12px 14px;border-radius:14px;background:#eef4ff;color:var(--text);border:1px solid var(--info);box-shadow:0 10px 30px rgba(15,23,42,.18);font:500 14px/1.4 Inter,system-ui,sans-serif}
+.ext-band[data-verplicht]{background:#fff7e6;border-color:#f3c46b}
+.ext-band-rij{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.ext-band-rij>svg{width:22px;height:22px;flex:none;color:var(--info);margin-top:1px}
+.ext-band[data-verplicht] .ext-band-rij>svg{color:var(--warn)}
+.ext-band-rij p{margin:0;flex:1 1 220px;display:grid;gap:2px}
+.ext-band-versie{font-variant-numeric:tabular-nums;font-weight:700}
+.ext-band-knoppen{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ext-band button{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 12px;border-radius:9px;border:1px solid #9db4e6;background:var(--papier);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.ext-band button svg{width:16px;height:16px}
+.ext-band button.is-hoofd{background:var(--info-vlak);border-color:var(--info);color:var(--text-on-vlak)}
+.ext-band button:focus-visible,.ext-band a:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.ext-band .ext-band-x{width:34px;padding:0;justify-content:center}
+.ext-band-stappen{margin:0;padding-left:22px;display:grid;gap:6px}
+.ext-band-stappen a{display:inline-flex;gap:4px;align-items:center;font-weight:700}
+.ext-band-stappen a svg{width:14px;height:14px}
+.ext-band-noot{color:var(--muted);font-size:13px}
+.ext-band-melding{margin:0;font-size:13px}
+html.theme-dark .ext-band,.theme-dark .ext-band{background:#14213d;color:var(--text);border-color:var(--info)}
+html.theme-dark .ext-band button{background:#1d2a44;border-color:var(--info)}
+html.theme-dark .ext-band button.is-hoofd{background:#3b6fe0;border-color:#3b6fe0}
+html.theme-dark .ext-band[data-verplicht]{background:#3a2a0e;border-color:#8a6420}
+html.theme-dark:not(.theme-light) .ext-band,html.theme-plum-dark:not(.theme-light) .ext-band{background:#14213d;color:var(--text);border-color:var(--info)}
+@media (max-width:520px){.ext-band{left:12px;right:12px;width:auto}.ext-band-knoppen{width:100%}.ext-band-knoppen button{flex:1 1 auto;justify-content:center}.ext-band .ext-band-x{flex:0 0 34px}}

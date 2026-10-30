@@ -1,0 +1,97 @@
+[
+{
+"naam": "inbox"
+},
+{
+"naam": "hover-avatar",
+"doe": "await page.locator('[aria-label^=\"Вибрати лист\"]:visible').nth(2).hover()"
+},
+{
+"naam": "selectie-3",
+"doe": "for (const i of [0,1,2]) await page.locator('[aria-label^=\"Вибрати лист\"]:visible').nth(i).click()"
+},
+{
+"naam": "bulk-prullenbak-geen-confirm",
+"doe": "let d=false; page.once('dialog',x=>{d=true;void x.dismiss()}); await page.getByRole('button',{name:'Перемістити до кошика'}).first().click(); await page.waitForTimeout(1200); if(d) throw new Error('native confirm verscheen nog')"
+},
+{
+"naam": "toast-positie",
+"doe": "const t=page.locator('.canonical-notification-toast').first(); await t.waitFor({timeout:5000}); const info=await t.evaluate(e=>{const c=getComputedStyle(e);const b=e.getBoundingClientRect();return {x:b.x,y:b.y,w:b.width,h:b.height,top:c.top,bottom:c.bottom,rows:c.gridTemplateRows,cols:c.gridTemplateColumns,kids:[...e.children].map(k=>k.tagName+'.'+k.className+':'+Math.round(k.getBoundingClientRect().height))}}); process.getBuiltinModule('fs').writeFileSync('/home/claude/e2e-shots/toast.json',JSON.stringify(info,null,1)); if(info.x+info.w>1300) throw new Error('toast nog rechts')"
+},
+{
+"naam": "rij-meer-menu-onderaan",
+"doe": "await page.mouse.wheel(0,2000); await page.waitForTimeout(400); const rows=page.locator('.google-mail-row'); const n=await rows.count(); await rows.nth(n-1).hover(); await rows.nth(n-1).getByRole('button',{name:'Інші дії'}).click(); await page.waitForTimeout(400); const r=await page.locator('.mail-row-action-popover').first().boundingBox(); if(!r||r.y<0||r.y+r.height>900) throw new Error('menu buiten beeld '+JSON.stringify(r))"
+},
+{
+"naam": "menu-dicht",
+"doe": "await page.keyboard.press('Escape'); await page.mouse.wheel(0,-3000)"
+},
+{
+"naam": "compose",
+"doe": "await page.getByRole('button',{name:/^Написати лист/}).first().click(); await page.waitForTimeout(600)"
+},
+{
+"naam": "compose-adres-fout",
+"doe": "await page.locator('#mail-nm-aan').fill('t'); await page.getByLabel('Тема').last().click(); await page.waitForTimeout(300); if(!(await page.locator('#mail-nm-aan-fout').isVisible())) throw new Error('geen adresfout'); if(await page.getByRole('button',{name:/^Надіслати$/}).isEnabled()) throw new Error('verzenden mogelijk met t')"
+},
+{
+"naam": "compose-ok",
+"doe": "await page.locator('#mail-nm-aan').fill('olena@example.test'); await page.getByLabel('Тема').last().fill('[ТЕСТ-QA] e2e'); await page.keyboard.press('Tab'); await page.keyboard.type('Тест.'); const txt=await page.locator('.ProseMirror').first().innerText(); if(!/Тест/.test(txt)) throw new Error('Tab ging niet naar tekst')"
+},
+{
+"naam": "compose-footer-breedte",
+"doe": "const f=await page.locator('.mail-new-message>footer').boundingBox(); const d=await page.locator('.mail-new-message').boundingBox(); if(f.width<d.width-60) throw new Error('footer smaller dan venster '+f.width+'/'+d.width)"
+},
+{
+"naam": "compose-verzend",
+"doe": "await page.getByRole('button',{name:/^Надіслати$/}).click(); await page.waitForTimeout(1200)"
+},
+{
+"naam": "compose-2-schoon",
+"doe": "await page.getByRole('button',{name:/^Написати лист/}).first().click(); await page.waitForTimeout(600); await page.locator('#mail-nm-aan').click(); await page.keyboard.type('olena@example.test',{delay:30}); const v=await page.locator('#mail-nm-aan').inputValue().catch(()=> 'WEG'); if(v!=='olena@example.test') throw new Error('Кому verloor tekst: '+v)"
+},
+{
+"naam": "compose-2-sluit",
+"doe": "await page.locator('[data-nm-sluit]').click(); await page.waitForTimeout(400)"
+},
+{
+"naam": "lees",
+"doe": "await page.getByRole('button',{name:/^Відкрити лист: Підтвердження/}).click(); await page.waitForTimeout(800)"
+},
+{
+"naam": "lees-antwoord-dicht",
+"doe": "if(await page.locator('[data-reply-ingeklapt=\"nee\"]').count()) throw new Error('antwoord staat open')"
+},
+{
+"naam": "lees-prullenbak-knop",
+"doe": "if(!(await page.locator('[data-reader-action-id=\"trash\"][data-reader-action-surface=\"header\"]').count())) throw new Error('geen prullenbak in bovenbalk')"
+},
+{
+"naam": "lees-sluit",
+"doe": "await page.keyboard.press('Escape')"
+},
+{
+"naam": "archief",
+"doe": "await page.goto('https://mail.tarasevych.com/archive?lang=uk',{waitUntil:'networkidle'}); await page.waitForTimeout(1200)"
+},
+{
+"naam": "prullenbak",
+"doe": "await page.goto('https://mail.tarasevych.com/trash?lang=uk',{waitUntil:'networkidle'}); await page.waitForTimeout(1200)"
+},
+{
+"naam": "zoek",
+"doe": "await page.getByPlaceholder('Пошук у пошті').click(); await page.keyboard.type('лист'); await page.waitForTimeout(900)"
+},
+{
+"naam": "zoek-enter",
+"doe": "await page.keyboard.press('Enter'); await page.waitForTimeout(1500)"
+},
+{
+"naam": "zoek-selectie-inbox",
+"doe": "await page.locator('[aria-label^=\"Вибрати лист\"]:visible').first().click(); await page.waitForTimeout(300)"
+},
+{
+"naam": "bel",
+"doe": "await page.keyboard.press('Escape'); await page.locator('button.canonical-notification-bell').click(); await page.waitForTimeout(600)"
+}
+]

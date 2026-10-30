@@ -1,0 +1,138 @@
+/* РЕЦЕНЗІЯ UX ПОШТИ (21.10.2026) — свіже око після чотирьох агентів (сповіщення, «Новий лист», рядки, акаунти).
+   Знайдено на знімках лише видимої області (360×740, 390×844, 844×390 альбомна, світла й темна, uk + nl), не на розгорнутому скролі.
+   Тільки токени з src/ontwerp/tokens.css (var(--…)); жодних hex, prefers-color-scheme, px-ширин > 360, шрифту < 12px.
+   Підключається з MailFunctioneelWeergave.tsx (усі сторінки пошти). Правила стережуть tests/eenheid/mail-ux-beoordeling-20261021.test.ts. */
+
+/* R1 Шапка пошти непрозора. Робоча область (.canonical-workspace) прокручується від самого верху екрана, а смуга з пошуком,
+   «оновити», «налаштування», аватаром і «☰» — прозорі фіксовані шари над нею: прокручені листи просвічували між іконками
+   («Олекс…» під «☰», час листа під шестернею). Смуга кольору тла сторінки лежить ВСЕРЕДИНІ робочої області (z 30): над листами,
+   під шапкою й гамбургером (окремі шари поверх робочої області) і під вікном читання (z 230 там само). Висота = відступ робочої
+   області зверху (70 px; 62 px на телефоні). Лише там, де є смуга пошуку пошти (налаштування/акаунти мають власні липкі заголовки). */
+html body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace::before {
+  content:''; position:fixed; z-index:30; inset:0 0 auto 0; height:var(--mr-kop-hoogte, 70px);
+  background:var(--bg); pointer-events:auto;
+}
+@media (max-width:700px) { html body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace { --mr-kop-hoogte:62px; } }
+/* Тонка межа з'являється лише тоді, коли під шапкою вже є прокручений вміст (scroll-driven; без підтримки — просто без межі). */
+@supports (animation-timeline: scroll()) {
+  html body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace { scroll-timeline:--mr-kop block; }
+  html body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace::before { animation:mr-kop-rand linear both; animation-timeline:--mr-kop; animation-range:0 48px; }
+}
+@keyframes mr-kop-rand { from { box-shadow:none; } to { box-shadow:0 1px 0 var(--line), var(--schaduw-1); } }
+
+/* R2 Вкладення в рядку листа на телефоні. Плашки й так переносяться в окремі рядки, але ширину обмежувала змінна щільності
+   (~154 px на 360): від назви лишалося «foto…» / «ra…». На вузькому екрані плашка займає стільки, скільки треба, до всієї ширини. */
+@media (max-width:480px) {
+  html body .google-mail-workspace .google-mail-row .google-mail-row-attachments > .mail-attachment:not(.mail-attachment-preview-card) {
+    flex:0 1 auto; width:auto; max-width:100%;
+  }
+}
+
+/* R3 Тости й смуга «Сервер знову відповідає» не лягають на колонку «Новий лист» + дзвоник (праворуч унизу).
+   Було: тост на bottom 84 px перекривав FAB (його «×» ховалася під кнопкою), смуга зв'язку закривала дзвоник. */
+@media (max-width:520px) {
+  /* 25.10.2026: de melding staat op de telefoon bovenaan; de actiestapel staat BOVEN de verbindingsbalk (src/plaatsing/Plek.tsx meet hem) */
+  html body .canonical-connection-banner {
+    inset-inline:calc(var(--ruimte-2) + var(--veilig-links)) calc(var(--ruimte-2) + var(--veilig-rechts)) !important;
+    bottom:calc(var(--ruimte-2) + var(--veilig-onder)) !important; width:auto !important; max-width:none !important;
+  }
+  /* у вікні «Новий лист» смуга зв'язку — під його заголовком: «Згорнути»/«Закрити» і «Надіслати» лишаються досяжними */
+  html body:has(.mail-new-message-backdrop) .canonical-connection-banner {
+    top:calc(60px + var(--veilig-boven)) !important; bottom:auto !important; inset-inline:calc(var(--ruimte-2) + var(--veilig-links)) calc(var(--ruimte-2) + var(--veilig-rechts)) !important;
+  }
+}
+
+/* R4 «Перевірка всіх адрес» на телефоні (компактна смуга .ctv-melding): стояла з лівим відступом рейки (52 + 12 px) і шириною
+   100vw − 32 px → на 360/390 px правий край із «×» виходив за екран на 30+ px і лягав на «Новий лист». Тепер — між безпечними
+   відступами, над колонкою FAB + дзвоник, з прокруткою всередині, якщо пояснень багато. */
+@media (max-width:559px) {
+  html body .ctv-melding {
+    inset-inline:calc(var(--ruimte-2) + var(--veilig-links)) calc(var(--ruimte-2) + var(--veilig-rechts)) !important;
+    bottom:calc(124px + var(--veilig-onder)) !important; width:auto !important; max-width:none !important;
+    max-height:calc(100dvh - 200px - var(--veilig-boven) - var(--veilig-onder)); overflow:auto; overscroll-behavior:contain;
+  }
+  html body .ctv-melding .ctv-melding-weg { width:var(--tik-hoogte); height:var(--tik-hoogte); }
+}
+
+/* R5 Вікно читання на телефоні: дев'ять кнопок шапки не вміщаються в 360 px — друга дія («Позначити непрочитаним») була
+   обрізана наполовину під «⋮». Кнопка «Зменшити вікно (перетягувати)» на телефоні нічого не дає (вікна там завжди на всю ширину,
+   див. vensters.css) — ховаємо її, як «На весь екран» у «Новому листі» (mail-nieuw-bericht.css, ≤ 560 px). */
+/* 24.10.2026 (pakket 1 «Adaptive Mail Canvas»): правило переїхало до src/mail/lees-venster.css і діє до 720 px (було ≤ 559 px) —
+   зменшене вікно існує лише від 721 px (src/mail/lees-modus.ts, TELEFOON_TOT); між 560 і 760 px кнопка нічого не робила. */
+
+/* R6 «Новий лист» в альбомній орієнтації (844×390 тощо): вікно мало висоту 88vh, а вміст — ні; «Надіслати», «Пізніше» і
+   вкладення були нижче краю вікна й недосяжні. Тепер на низькому екрані: на всю висоту, вікно прокручується, нижня панель
+   липка (завжди видно «Надіслати»), підпис «Чернетка» — у тому ж рядку, що й кнопки. */
+@media (max-height:500px) and (min-width:561px) {
+  html body .mail-new-message-backdrop { padding:0 !important; align-items:stretch !important; }
+  html body .mail-new-message {
+    height:100dvh !important; max-height:100dvh !important; width:min(48rem, 100%) !important;
+    border-radius:0 !important; padding:var(--ruimte-2) var(--ruimte-4) 0 !important; gap:var(--ruimte-2) !important;
+    overflow-y:auto !important; overscroll-behavior:contain;
+  }
+  html body .mail-new-message .mail-nm-editor { flex:0 0 auto !important; min-height:180px !important; }
+  html body .mail-new-message .mail-new-message-resize { display:none !important; }
+  html body .mail-new-message > footer {
+    position:sticky !important; bottom:0; z-index:5; flex-direction:row !important; flex-wrap:nowrap !important; align-items:center !important;
+    gap:var(--ruimte-2) !important; margin:0 calc(var(--ruimte-4) * -1) !important; padding:var(--ruimte-2) var(--ruimte-4) calc(var(--ruimte-2) + var(--veilig-onder)) !important;
+    border-top:1px solid var(--line) !important; background:var(--panel) !important;
+  }
+  html body .mail-new-message > footer > .mail-new-message-sync { order:0 !important; flex:1 1 auto !important; min-width:0; width:auto !important; }
+  html body .mail-new-message > footer > .primary { margin-left:0 !important; }
+}
+
+/* R7 Заголовок листа у вікні читання: ім'я жирним, адреса — окремим приглушеним рядком (MailThreadContent → splitsAfzender),
+   а не сирий рядок «Anastasia … <anastasia-…@…>» з «>» на окремому рядку. */
+html body .mail-thread-message-head .mail-thread-message-adres {
+  display:block; min-width:0; color:var(--muted); font-size:var(--tekst-klein); font-weight:400; line-height:1.35; overflow-wrap:anywhere;
+}
+
+/* R8 Щільність «Мінімум» на телефоні: прочитаний рядок мав 41 px, а кнопка «⋮» — 44 px і була прив'язана до НИЗУ рядка
+   (mail-mobiel.css: inset auto 4px 4px auto) → її біла «пігулка» на 8 px залазила на сусідній рядок і сиділа не по центру.
+   Рядок тепер не нижчий за дотикову висоту, «⋮» — по центру рядка. Blok 1 (25.10.2026): dezelfde plaatsing als overal, zonder
+   translate — gecentreerd op het gemeten anker (--mail-row-actions-y) en geklemd binnen de rij (--mail-row-actions-h = de «⋮», 44 px);
+   voor elke compacte rij: ook «Детальний» gebruikt die rij (MailMinimumBerichtRij) en had op 390 px hetzelfde: 41 px, «⋮» 8 px erboven. */
+@media (max-width:720px) {
+  html body .google-mail-workspace[data-density-mode] .google-mail-row.mail-row-minimum { min-height:var(--tik-hoogte); }
+  html body .google-mail-workspace[data-density-mode] .google-mail-row.mail-row-minimum .mail-row-hover-actions {
+    top:clamp(0px, calc(var(--mail-row-actions-y, 50%) - var(--mail-row-actions-h, 44px) / 2), calc(100% - var(--mail-row-actions-h, 44px))) !important; bottom:auto !important; translate:none;
+  }
+}
+
+/* R12 Елементи, що не виглядали клікабельними.
+   Налаштування пошти на телефоні: перелік розділів («Щільність», «Кількість листів»…) — посилання-якорі, але були звичайним
+   жирним сірим текстом без рамки. Тепер — пігулки дотикової висоти, як чипи в панелі сповіщень.
+   «Поштові акаунти»: «Чому недоступно?» і «Контакти»: «Які джерела використовуються» (розкривні <details>) були чорним
+   жирним рядком, схожим на підзаголовок — тепер
+   колір посилання, підкреслення й стрілка, що повертається, коли відкрито. Кнопки «Перепідключити»/«Відключити» на вузькій
+   картці переносяться — тоді кожна на всю ширину, а не дві різної довжини, притиснуті вліво. */
+@media (max-width:720px) {
+  html body .mail-settings-scaffold nav a {
+    display:inline-flex; align-items:center; min-height:var(--tik-hoogte); padding:0 var(--ruimte-3);
+    border:1px solid var(--line); border-radius:999px; background:var(--surface); color:var(--text);
+  }
+  html body .mail-settings-scaffold nav a:hover, html body .mail-settings-scaffold nav a:focus-visible { background:var(--surface2); color:var(--text); }
+}
+html body :is(.mail-provider-waarom, .ctv-bronnen) > summary { min-height:var(--tik-hoogte); color:var(--accent); text-decoration:underline; text-underline-offset:.15em; list-style:none; gap:var(--ruimte-2); }
+html body :is(.mail-provider-waarom, .ctv-bronnen) > summary::-webkit-details-marker { display:none; }
+html body :is(.mail-provider-waarom, .ctv-bronnen) > summary::after {
+  content:''; flex:none; width:.45em; height:.45em; margin-top:-.15em; border-right:2px solid currentColor; border-bottom:2px solid currentColor; rotate:45deg; transition:rotate .15s ease;
+}
+html body :is(.mail-provider-waarom, .ctv-bronnen)[open] > summary::after { rotate:225deg; margin-top:.2em; }
+@media (prefers-reduced-motion:reduce) { html body :is(.mail-provider-waarom, .ctv-bronnen) > summary::after { transition:none; } }
+@media (max-width:480px) {
+  html body .mail-koppeling-acties > .mail-koppeling-knop { flex:1 1 auto; }
+}
+
+/* R11 Поле пошуку на 360 px: коротка підказка «Пошук» (MailZoekVeld.tsx, ≤ 480 px) — і менший внутрішній відступ, бо в темній
+   темі шапка починається на 8 px правіше (--canonical-command-inline-start 60 замість 52): поле 60 px − 2 × 8 лишало 44 px на
+   «Пошук» (48 px) → «Пошу». З відступом 4 px: 52 px. */
+@media (max-width:480px) { html body .mail-top-search-shell input { padding-inline:var(--ruimte-1); } }
+
+/* R14 Вкладення у вікні читання на комп'ютері (компактна картка: мініатюра + назва + п'ять кнопок в одному рядку): картка мала
+   ширину змінної щільності (~258 px), п'ять кнопок забирали 175 px — від назви лишалося «foto-…» / «r…». Компактна картка тепер
+   не вужча за 22rem (назві ~125 px), але й не ширша за рядок. На телефоні (≤ 720 px) діє окремий розклад «назва зверху,
+   кнопки під нею» з mail-mobiel-passend.css. */
+@media (min-width:721px) {
+  html body .mail-attachment-card[data-presentation='compact'] { width:max(var(--mail-density-attachment-width, 226px), min(22rem, 100%)); }
+}

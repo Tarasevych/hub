@@ -1,0 +1,299 @@
+/* Technisch profiel: band bovenaan, «?»-uitleg en de vensters (TechLaag.tsx, Vraag.tsx).
+   Waarom zo: de band is een eigen vaste strook; de hele app (#root) schuift eronder door #root zelf het «containing block» van zijn
+   vaste elementen te maken (transform). Zo hoeven we niet elk vast paneel (zijbalk, accountknop, meldingen…) apart te verschuiven en
+   kan geen enkel venster van de dienst de band bedekken. Vensters van het platform (portal naar body, z-index 100000+) blijven erboven. */
+:root{--tech-band-h:40px;--tech-band-bg:#f5b400;--tech-band-fg:#1a1200}
+html[data-tech=aan] #root{position:fixed;top:var(--tech-band-h);left:0;right:0;bottom:0;width:auto;height:auto;min-height:0;transform:translateZ(0);overflow:hidden}
+/* Zijbalk (alleen de verticale; de dock boven/onder en de dichte telefoonknop houden hun eigen hoogte): één bandhoogte langer dan #root,
+   met evenveel extra ruimte onderaan (de gewone onderpadding uit canoniek-omlijsting.css/menu-v2.css + bandhoogte). De inhoud is dus precies
+   zo hoog als vroeger; achtergrond en scheidingslijn lopen tot onderaan door, zodat er geen gat valt als de band verborgen is (alles
+   schuift dan omhoog). Zie «Verbergen bij scrollen» hieronder. */
+html[data-tech=aan] #root .canonical-chrome:not([data-dock='boven']):not([data-dock='onder']):not(.sidebar-drawer-mode) .canonical-sidebar,
+html[data-tech=aan] #root .canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-sidebar{height:calc(100% + var(--tech-band-h));max-height:none;box-sizing:border-box;padding-bottom:calc(12px + var(--tech-band-h))}
+html[data-tech=aan] #root .canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-sidebar{padding-bottom:calc(8px + var(--tech-band-h))}
+@media (min-width:701px){html[data-tech=aan] #root .canonical-chrome:not([data-dock='boven']):not([data-dock='onder']):not(.sidebar-drawer-mode) .canonical-sidebar{padding-bottom:calc(10px + var(--tech-band-h))}}
+
+.tech-band{position:fixed;top:0;left:0;right:0;height:var(--tech-band-h);z-index:99000;display:flex;align-items:center;gap:12px;padding:0 10px 0 12px;box-sizing:border-box;
+  background-color:var(--tech-band-bg);color:var(--tech-band-fg);font:600 14px/1.2 Inter,ui-sans-serif,system-ui,sans-serif;border-bottom:3px solid var(--tech-band-fg);overflow:hidden}
+html[data-tech-patroon=strepen] .tech-band{background-image:repeating-linear-gradient(135deg,transparent 0 14px,rgba(0,0,0,.10) 14px 28px)}
+html[data-tech-patroon=stippen] .tech-band{background-image:radial-gradient(rgba(0,0,0,.14) 1.5px,transparent 1.6px);background-size:10px 10px}
+.tech-band svg{width:16px;height:16px;flex:none}
+.tech-band-merk{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:6px;background:var(--tech-band-fg);color:var(--tech-band-bg);letter-spacing:.06em;font-weight:800;flex:none}
+.tech-band-id{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:28ch}
+.tech-band-tijd{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-variant-numeric:tabular-nums;flex:none}
+.tech-band-tijd.is-bijna{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.tech-band-reden{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;opacity:.92}
+.tech-band-reden-label{font-weight:700;opacity:.85}
+.tech-band-reden-tekst{quotes:'«' '»';font-style:italic}
+.tech-band-reden-tekst::before{content:open-quote}.tech-band-reden-tekst::after{content:close-quote}
+.tech-band-knoppen{display:flex;gap:6px;margin-left:auto;flex:none}
+.tech-band-knoppen button{display:inline-flex;align-items:center;gap:5px;min-height:30px;min-width:30px;padding:0 10px;border-radius:7px;border:1.5px solid var(--tech-band-fg);
+  background:transparent;color:var(--tech-band-fg);font:inherit;font-weight:600;cursor:pointer}
+.tech-band-knoppen button:hover{background:rgba(0,0,0,.08)}
+.tech-band-knoppen button.is-uit{background:var(--tech-band-fg);color:var(--tech-band-bg)}
+.tech-band-knoppen button:focus-visible,.tech-vraag-knop:focus-visible,.tech-venster :is(button,input,select):focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+@media (max-width:768px){
+  :root{--tech-band-h:44px}
+  .tech-band{gap:6px;padding:0 6px 0 8px;font-size:13px}
+  .tech-band-knoppen{gap:4px}
+  .tech-band-reden,.tech-band-id,.tech-band-nog{display:none}
+  .tech-band-merk{padding:3px 6px;letter-spacing:.02em;font-size:12px}
+  .tech-band-merk svg{display:none}
+  .tech-band-knoppen button span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .tech-band-knoppen button{padding:0 8px;min-height:34px;min-width:34px}
+}
+@media (prefers-reduced-motion:no-preference){.tech-band{animation:tech-in .18s ease-out}}
+@keyframes tech-in{from{transform:translateY(-100%)}to{transform:none}}
+@media (forced-colors:active){.tech-band{border-bottom:3px solid CanvasText}.tech-band-merk{border:1px solid CanvasText}}
+
+/* «?» */
+.tech-vraag{position:relative;display:inline-flex;vertical-align:middle;margin-left:4px}
+.tech-vraag-knop{width:22px;height:22px;min-width:22px;padding:0;border-radius:50%;border:1.5px solid currentColor;background:transparent;color:inherit;font:700 13px/1 Inter,system-ui,sans-serif;cursor:help;opacity:.8}
+.tech-vraag-knop:hover,.tech-vraag-knop[aria-expanded=true]{opacity:1}
+.tech-vraag-uitleg{position:fixed;z-index:2147483000;width:min(340px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:auto;box-sizing:border-box;display:grid;gap:8px;padding:12px 14px;border-radius:10px;
+  background:var(--panel);color:#1b1f24;border:1px solid var(--line);box-shadow:0 12px 32px rgba(0,0,0,.22);font:400 13.5px/1.45 Inter,system-ui,sans-serif;text-align:left;white-space:normal}
+.tech-vraag-laag{display:grid;gap:2px}
+.tech-vraag-laag b{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;opacity:.75}
+.tech-vraag-laag.is-risico b{color:var(--fout);opacity:1}
+.tech-vraag-laag.is-dev{padding-top:8px;border-top:1px dashed var(--line,#d0d7de)}
+.tech-vraag-laag.is-dev b{color:#5b21b6;opacity:1}
+.tech-vraag-laag.is-dev > summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px}
+.tech-vraag-laag.is-dev > summary::-webkit-details-marker{display:none}
+.tech-vraag-laag.is-dev > summary::before{content:'▸';font-size:12px;opacity:.7}
+.tech-vraag-laag.is-dev[open] > summary::before{content:'▾'}
+.tech-vraag-laag.is-dev > summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+.tech-vraag-bron{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.tech-vraag-bron code{font:11.5px/1.4 ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:color-mix(in srgb,currentColor 10%,transparent);overflow-wrap:anywhere}
+html.theme-dark .tech-vraag-uitleg{background:#1d232a;color:var(--text);border-color:#3a434d}
+html.theme-dark .tech-vraag-laag.is-risico b{color:var(--fout)}
+html.theme-dark .tech-vraag-laag.is-dev b{color:#c4b5fd}
+
+/* Vensters */
+.tech-venster{display:grid;gap:14px;padding:14px 16px 16px;font-size:14.5px}
+.tech-venster p{margin:0}
+.tech-lead{opacity:.85}
+.tech-veld{display:grid;gap:5px}
+.tech-veld > span,.tech-label{font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.tech-veld :is(input,select),.tech-geven :is(input,select){min-height:40px;padding:0 10px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;box-sizing:border-box;width:100%}
+.tech-veld-aanvink > small{color:inherit;opacity:.82;font-size:12.5px;line-height:1.45} /* Fix 28.10: var(--zacht) bestond niet in dit thema → bijna onzichtbaar */
+/* Aanvinkregel (0080: nieuwe tabbladen technisch of gebruiker): vinkje naast tekst, niet op volle breedte. */
+.tech-aanvink{display:flex;align-items:flex-start;gap:8px;font-weight:400;cursor:pointer}
+.tech-aanvink input[type="checkbox"]{width:18px;min-height:18px;height:18px;flex:0 0 auto;margin-top:2px;padding:0;accent-color:var(--tech-band-bg,#b45309)}
+.tech-veld textarea{min-height:72px;padding:8px 10px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:13px/1.45 ui-monospace,monospace;box-sizing:border-box;width:100%;resize:vertical}
+.tech-rollen,.tech-rolkeuze{display:flex;flex-wrap:wrap;gap:6px 14px}
+.tech-rolkeuze label,.tech-rollen > *{display:inline-flex;align-items:center;gap:6px;min-height:32px}
+.tech-rolkeuze input[type=checkbox]{width:18px;height:18px;min-height:0;padding:0}
+.tech-meta{font-size:13px;opacity:.8}
+.tech-rij{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.tech-knoppen{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tech-venster button{min-height:38px;padding:0 14px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.tech-venster button.is-hoofd{background:var(--info-vlak);border-color:var(--info);color:var(--text-on-vlak)}
+.tech-venster button.is-gevaar{border-color:var(--fout);color:var(--fout)}
+.tech-venster button:disabled{opacity:.55;cursor:not-allowed}
+.tech-melding{margin:0;padding:8px 10px;border-radius:8px;background:var(--fout-zacht);color:var(--fout)}
+.tech-melding.is-ok{background:#e7f6ec;color:var(--ok)}
+.tech-kleuren{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tech-venster button.tech-kleur{min-height:44px;padding:0 6px;font-size:13px;border:2px solid transparent}
+.tech-venster button.tech-kleur[aria-checked=true]{outline:3px solid currentColor;outline-offset:2px}
+.tech-patronen{display:flex;flex-wrap:wrap;gap:8px}
+.tech-patronen button[aria-checked=true]{background:var(--info-vlak);color:var(--text-on-vlak);border-color:var(--info)}
+.tech-band-voorbeeld{background-color:var(--tech-band-bg);color:var(--tech-band-fg);display:flex;align-items:center;gap:8px;min-height:40px;padding:0 12px;border-radius:8px;font-weight:700;border-bottom:3px solid currentColor}
+.tech-band-voorbeeld[data-patroon=strepen]{background-image:repeating-linear-gradient(135deg,transparent 0 14px,rgba(0,0,0,.10) 14px 28px)}
+.tech-band-voorbeeld[data-patroon=stippen]{background-image:radial-gradient(rgba(0,0,0,.14) 1.5px,transparent 1.6px);background-size:10px 10px}
+.tech-geven{display:grid;gap:10px;padding:12px;border:1px solid var(--line,#d0d7de);border-radius:10px}
+.tech-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.tech-lijst li{display:grid;gap:4px;padding:10px 12px;border:1px solid var(--line,#d0d7de);border-radius:10px}
+.tech-lijst li.is-weg{opacity:.6}
+.tech-lijst-wie{font-weight:700;overflow-wrap:anywhere}
+.tech-lijst-rollen,.tech-lijst-stand{font-size:13px}
+@media (max-width:520px){.tech-kleuren{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tech-band-voorbeeld svg{width:16px;height:16px}
+/* «?» binnen vensters: rond houden (de algemene knopstijl van .tech-venster niet overnemen). */
+.tech-venster .tech-vraag-knop,.tech-band .tech-vraag-knop{width:22px;height:22px;min-width:22px;min-height:22px;padding:0;border-radius:50%;border:1.5px solid currentColor;background:transparent;font:700 13px/1 Inter,system-ui,sans-serif}
+.tech-venster :is(h3,legend){margin:0;font:700 15px/1.3 Inter,ui-sans-serif,system-ui,sans-serif;display:flex;align-items:center;gap:4px}
+.tech-venster fieldset{border:0;margin:0;padding:0;min-width:0}
+.tech-venster legend{margin-bottom:6px;font-weight:600;font-size:14px}
+.tech-lijst-wie{display:grid;gap:2px}
+.tech-lijst-wie small{font-weight:400;font-size:12.5px;opacity:.8;overflow-wrap:anywhere}
+.tech-rolkeuze label{gap:4px;margin-right:6px}
+/* Extra knoppen van de band: op een breed scherm gewoon in de rij; op de telefoon achter «⋯» in een uitklaplijst onder de band. */
+.tech-band-extra{display:contents}
+.tech-band-meer{display:none !important}
+@media (max-width:768px){
+  .tech-band-meer{display:inline-flex !important}
+  .tech-band-extra{display:none;position:fixed;top:var(--tech-band-h);right:6px;z-index:99002;flex-direction:column;align-items:stretch;gap:6px;padding:8px;border-radius:10px;
+    background:var(--tech-band-bg);color:var(--tech-band-fg);border:2px solid var(--tech-band-fg);box-shadow:0 10px 24px rgba(0,0,0,.25)}
+  .tech-band-extra.is-open{display:flex}
+  .tech-band-extra button span{position:static !important;width:auto !important;height:auto !important;overflow:visible !important;clip:auto !important;white-space:nowrap}
+  .tech-band-extra button{justify-content:flex-start;padding:0 12px}
+}
+.tech-alleen-mobiel{display:none}
+@media (max-width:768px){.tech-band-extra .tech-alleen-mobiel{display:inline}}
+
+/* Двері в управління: консоль не показується, доки технічний профіль цієї вкладки вимкнений. */
+.tech-poort{max-width:38rem;margin:48px auto;padding:8px 20px 28px;display:grid;gap:14px}
+.tech-poort h1{margin:0;font-size:1.45rem;font-weight:700}
+.tech-poort p{margin:0;line-height:1.5}
+.tech-poort-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.tech-poort button{min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.tech-poort button.is-hoofd{background:var(--info-vlak);border-color:var(--info);color:var(--text-on-vlak)}
+.tech-poort button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+/* Verbergen bij scrollen («headroom», src/tech/band-inschuiven.ts, 18.10.2026). Alleen `translate`: top, hoogte en padding van #root,
+   de werkruimte en de zijbalk zijn in BEIDE standen gelijk, dus scrollHeight/clientHeight veranderen niet en de browser hoeft geen
+   scrollTop te corrigeren (dat gaf de lus van 305 wissels in 15 s). Verborgen: band, ondersteunings-/impersonatieband en de hele app
+   schuiven samen één bandhoogte omhoog (zoals de adresbalk op een telefoon). De bel, haar melding en paneel schuiven even ver terug en
+   staan dus stil (vast-kader.ts rekent met #root zonder translate). De werkruimte loopt één bandhoogte onder #root door (buiten beeld
+   zolang de band zichtbaar is) zodat er onderaan geen gat valt; ::after houdt het laatste stuk inhoud bereikbaar. Mail (volle hoogte)
+   krijgt in plaats daarvan een doorzichtige onderrand: zijn indeling blijft precies zoals ze was. */
+html[data-tech=aan] body>#root{overflow:visible;transition:translate .22s ease}
+html[data-tech=aan][data-tech-verborgen] body>#root{translate:0 calc(-1 * var(--tech-band-h))}
+html[data-tech=aan] #root .canonical-workspace{bottom:calc(-1 * var(--tech-band-h))}
+html[data-tech=aan] #root .canonical-workspace::after{content:'';display:block;height:var(--tech-band-h);pointer-events:none}
+html[data-tech=aan] #root .canonical-chrome:has(.mail-functional.google-workspace-active) .canonical-workspace{border-bottom:var(--tech-band-h) solid transparent}
+html[data-tech=aan] #root .canonical-chrome:has(.mail-functional.google-workspace-active) .canonical-workspace::after{content:none}
+.tech-band{transition:translate .22s ease}
+html[data-tech=aan][data-tech-verborgen] .tech-band{translate:0 -100%}
+html[data-tech=aan] :is(.ond-band,.imp-band){transition:translate .22s ease}
+html[data-tech=aan][data-tech-verborgen] :is(.ond-band,.imp-band){translate:0 calc(-1 * var(--tech-band-h))}
+html[data-tech=aan] #root :is(.canonical-notification-toast,.canonical-notification-panel,.plaats-actiestapel){transition:translate .22s ease!important}
+/* 25.10.2026: de bel staat in een zone van de pagina (schuift mee met #root); de actiestapel blijft aan de onderrand van het scherm */
+html[data-tech=aan][data-tech-verborgen] #root :is(.canonical-notification-toast,.canonical-notification-panel,.plaats-actiestapel){translate:0 var(--tech-band-h)}
+/* 25.10.2026: de melding staat niet meer met left:50% + translate −50% in het midden (QA 12.10), maar op een berekende plek
+   (src/plaatsing/melding-plek.ts): de compensatie hierboven (0, bandhoogte) geldt ook voor de computer — anders schoof ze een halve
+   breedte naar links zodra de band verdween. */
+@media (prefers-reduced-motion:reduce){html[data-tech=aan] body>#root,.tech-band,html[data-tech=aan] :is(.ond-band,.imp-band),html[data-tech=aan] #root :is(.canonical-notification-toast,.canonical-notification-panel,.plaats-actiestapel){transition:none!important}}
+
+/* Aanpassing aan de breedte (TechLaag meet en zet data-pas op de band):
+   0 = alles met tekst · 1 = alleen pictogrammen (tekst alleen voor schermlezers + tooltip) · 2 = idem, zonder «до виходу…»-tekst · 3 = knoppen achter «⋯» in een lijst onder de band.
+   Niets wordt afgekapt zonder dat de inhoud bereikbaar blijft; de lijst scrolt als het scherm laag is. */
+.tech-band-reden{min-width:0}
+.tech-band-id{flex:0 0 auto}
+.tech-band-knoppen{flex:0 0 auto}
+.tech-band[data-pas="1"] .tech-band-knoppen button{padding:0 8px}
+.tech-band[data-pas="1"] .tech-band-knoppen button span:not(.tech-alleen-mobiel){position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tech-band[data-pas="2"] .tech-band-knoppen button{padding:0 8px}
+.tech-band[data-pas="2"] .tech-band-knoppen button span:not(.tech-alleen-mobiel){position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tech-band[data-pas="2"] .tech-band-nog{display:none}
+.tech-band[data-pas="3"] .tech-band-nog{display:none}
+.tech-band[data-pas="3"] .tech-band-knoppen button.is-uit span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tech-band[data-pas="3"] .tech-band-meer{display:inline-flex !important}
+.tech-band[data-pas="3"] .tech-band-extra{display:none;position:fixed;top:var(--tech-band-h);right:6px;z-index:99002;flex-direction:column;align-items:stretch;gap:6px;padding:8px;border-radius:10px;
+  background:var(--tech-band-bg);color:var(--tech-band-fg);border:2px solid var(--tech-band-fg);box-shadow:0 10px 24px rgba(0,0,0,.25);
+  max-height:calc(100dvh - var(--tech-band-h) - 12px);overflow:auto;min-width:min(240px,calc(100vw - 12px));box-sizing:border-box}
+.tech-band[data-pas="3"] .tech-band-extra.is-open{display:flex}
+.tech-band[data-pas="3"] .tech-band-extra button span{position:static !important;width:auto !important;height:auto !important;overflow:visible !important;clip:auto !important;white-space:nowrap}
+.tech-band[data-pas="3"] .tech-band-extra button{justify-content:flex-start;padding:0 12px}
+.tech-band[data-pas="3"] .tech-alleen-mobiel{display:inline}
+/* Extern bureaublad (uitvoerder D): aanduiding op de band zolang dit tabblad een sessie heeft (src/extern/extern-opslag.ts). */
+.tech-remote-actief{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:0 7px;border-radius:999px;background:var(--fout-vlak);color:var(--text-on-vlak);font-size:12px;font-style:normal;font-weight:800;white-space:nowrap}
+.tech-band[data-pas="2"] .tech-remote-tekst,.tech-band[data-pas="3"] .tech-remote-tekst{display:none}
+/* Lijst «⋯» (18.10.2026): groepen met kop, korte uitleg per knop, zoeken, huidige plek gemarkeerd, gelijke raakvlakken (44px).
+   In de rij (data-pas 0–2, breed scherm) blijven groepen onzichtbaar (display:contents) en zie je alleen de knoppen zoals vroeger. */
+.tech-menu-groep,.tech-menu-los{display:contents}
+.tech-band-extra [hidden],.tech-band .tech-band-extra.is-open button[hidden]{display:none!important}
+.tech-menu-uitleg,.tech-menu-kop,.tech-menu-zoek,.tech-menu-leeg{display:none}
+.tech-band-knoppen button.is-hier{background:rgba(0,0,0,.14);box-shadow:inset 0 -3px 0 currentColor}
+.tech-band-extra.is-open{gap:2px;padding:8px;width:min(320px,calc(100vw - 12px))}
+.tech-band-extra.is-open .tech-menu-groep{display:grid;gap:2px;padding:4px 0}
+.tech-band-extra.is-open .tech-menu-groep+.tech-menu-groep{border-top:1px solid color-mix(in srgb,var(--tech-band-fg) 35%,transparent)}
+.tech-band-extra.is-open .tech-menu-kop{display:block;padding:4px 8px 2px;font:700 11.5px/1.3 Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;opacity:.8}
+.tech-band-extra.is-open .tech-menu-zoek{display:flex;align-items:center;gap:6px;margin:0 0 4px;padding:0 10px;min-height:44px;border:1.5px solid var(--tech-band-fg);border-radius:8px}
+.tech-band-extra.is-open .tech-menu-zoek svg{width:16px;height:16px;flex:0 0 auto}
+.tech-band-extra.is-open .tech-menu-zoek input{flex:1;min-width:0;min-height:40px;border:0;background:transparent;color:inherit;font:inherit;font-size:15px;outline:none}
+.tech-band-extra.is-open .tech-menu-zoek:focus-within{outline:3px solid var(--focus);outline-offset:1px}
+.tech-band-extra.is-open .tech-menu-zoek input::placeholder{color:inherit;opacity:.7}
+.tech-band-extra.is-open button{display:grid!important;grid-template-columns:20px minmax(0,1fr);column-gap:10px;align-items:center;justify-items:start;width:100%;min-height:44px;padding:4px 10px!important;border-color:transparent;text-align:left}
+.tech-band-extra.is-open button>svg{grid-row:span 2;width:18px;height:18px}
+.tech-band-extra.is-open button>span{font-weight:700}
+.tech-band-extra.is-open button:hover,.tech-band-extra.is-open button:focus-visible{border-color:var(--tech-band-fg)}
+.tech-band-extra.is-open button.is-hier{background:color-mix(in srgb,var(--tech-band-fg) 18%,transparent);box-shadow:inset 3px 0 0 currentColor}
+.tech-band-extra.is-open .tech-menu-uitleg{display:block;font-size:12px;font-weight:500;line-height:1.3;opacity:.85;white-space:normal}
+.tech-band-extra.is-open .tech-menu-leeg{display:block;padding:10px;font-size:13px;opacity:.85}
+@media (prefers-reduced-motion:no-preference){.tech-band-extra.is-open{animation:tech-menu-in .14s ease-out}}
+@keyframes tech-menu-in{from{opacity:0;translate:0 -4px}to{opacity:1;translate:0 0}}
+/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
+@media (max-width:700px){
+  /* технічна смуга: кнопки 34×34 → 44×44 (смуга на телефоні 44 px) */
+  .tech-band-knoppen button{min-width:var(--tik-hoogte);min-height:var(--tik-hoogte);justify-content:center}
+  /* Fix 28.10: was 44×44 met doorzichtige rand + inset-schaduw; binnen .tech-venster zette regel 112 de rand terug en een algemene
+     min-height van knoppen maakte er een hoge OVALE ring van (en rekte de regelhoogte van de alinea op). Nu: zichtbaar rondje 24 px,
+     tikvlak 44 px via ::after (raakt de lay-out niet). */
+  .tech-vraag-knop,.tech-venster .tech-vraag-knop,.tech-band .tech-vraag-knop{position:relative;flex:none;width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important;max-height:24px;aspect-ratio:1;padding:0!important;border:1.5px solid currentColor;border-radius:50%;box-shadow:none;background-clip:border-box}
+  .tech-vraag-knop::after{content:'';position:absolute;inset:-10px;border-radius:50%}
+  .tech-vraag{vertical-align:-6px}
+}
+
+/* 28.10.2026 (Pavlo): technische band op de telefoon (≤ 768 px) = één dunne balk met alleen het label en een menuknop.
+   Bel, ruimtewissel, inklappen en afmelden staan dan IN het menu (bovenaan de wissel «Звичайний | Технічний», onderaan de acties). */
+.tech-mobiel-wissel,.tech-mobiel-onder{display:none}
+@media (max-width:768px){
+  :root{--tech-band-h:44px}
+  .tech-band{border-bottom-width:0;gap:8px;padding:0 4px 0 10px}
+  .tech-band-merk{font-size:11px;padding:2px 8px;border-radius:999px;letter-spacing:.04em}
+  .tech-band-tijd{font-size:12px;font-weight:500;opacity:.9}
+  .tech-band-breed{display:none !important}
+  .tech-band-knoppen .tech-band-meer{min-width:44px;min-height:44px;border:0;border-radius:10px;justify-content:center;padding:0}
+  .tech-band-knoppen .tech-band-meer svg{width:22px;height:22px}
+  .tech-band-extra{left:0;right:0;top:var(--tech-band-h);border-radius:0 0 16px 16px;border:0;border-top:1px solid var(--line);
+    background:var(--panel,#fff);color:var(--text,#111);box-shadow:0 12px 32px rgba(0,0,0,.28);max-height:calc(100dvh - var(--tech-band-h) - 24px);overflow-y:auto;padding:10px 12px 14px;gap:2px}
+  .tech-band-extra button{border:0;border-radius:10px;min-height:44px;color:inherit;background:transparent;font-size:15px;font-weight:500}
+  .tech-band-extra button:hover{background:var(--surface)}
+  .tech-band-extra button svg{width:18px;height:18px;opacity:.8}
+  .tech-band-extra .tech-menu-kop{font-size:12px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0;padding:10px 12px 2px}
+  .tech-band-extra .tech-menu-uitleg{display:none}
+  .tech-band-extra button.is-hier{background:var(--surface);color:var(--accent)}
+  .tech-mobiel-wissel{display:block;padding:2px 0 8px;border-bottom:1px solid var(--line);margin-bottom:4px}
+  .tech-mobiel-wissel .rw-seg{display:grid;grid-template-columns:1fr 1fr;width:100%;border:0;border-radius:12px;background:var(--surface);padding:2px}
+  .tech-mobiel-wissel .rw-knop{justify-content:center;min-height:40px;font-size:13px;color:var(--muted);border-radius:10px}
+  .tech-mobiel-wissel .rw-knop svg{width:18px;height:18px}
+  .tech-mobiel-wissel .rw-stand{display:none}
+  .tech-mobiel-wissel .rw-naam{display:inline !important;max-width:none}
+  .tech-mobiel-wissel .rw-knop[aria-checked=true]{background:var(--panel);color:var(--accent);background-image:none;box-shadow:0 1px 3px var(--shadow,rgba(0,0,0,.2))}
+  .tech-mobiel-onder{display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line);margin-top:6px;padding-top:6px}
+  .tech-mobiel-onder button.is-uit{color:var(--fout,#dc2626);background:transparent}
+  .tech-mobiel-onder button span{position:static !important;width:auto !important;height:auto !important;overflow:visible !important;clip:auto !important}
+}
+
+/* Stille poort (vlag tech-ruimtes-v2): één regel en één knop, geen groot vraagvenster. */
+.tech-poort-stil{max-width:30rem;margin:64px auto;padding:0 20px;gap:10px;justify-items:start;color:var(--muted);font-size:15px}
+.tech-poort-stil p{margin:0}
+.tech-poort-naar{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+.tech-poort-naar svg{width:18px;height:18px}
+.tech-poort-naar:disabled{opacity:.6;cursor:progress}
+.tech-poort-fout{color:var(--fout,#dc2626)}
+@media (max-width:768px){
+  /* Ingeklapte band op de telefoon: de menuknop blijft (anders kan men niet terug uitklappen); tikvlak via ::after ≥ 44 px. */
+  .tech-band.is-ingeklapt .tech-band-knoppen .tech-band-meer{display:inline-flex!important;min-height:28px;height:28px;position:relative}
+  .tech-band.is-ingeklapt .tech-band-knoppen .tech-band-meer::after{content:'';position:absolute;inset:-8px 0 -8px}
+  .tech-band.is-ingeklapt .tech-band-meer svg{width:18px;height:18px}
+  .tech-band.is-ingeklapt .tech-band-extra.is-open{display:flex!important}
+  .tech-band.is-ingeklapt .tech-mobiel-onder .tech-meldingen-knop,.tech-band.is-ingeklapt .tech-mobiel-wissel .rw{display:block!important}
+  .tech-band.is-ingeklapt .tech-mobiel-onder [data-tech-mobiel]{display:inline-flex!important}
+}
+@media (max-width:768px){
+  /* Telefoonmenu: overschrijft de smalle uitklaplijst (.is-open, 320 px) — volle breedte, rustige lijst, geen uitlegregels. */
+  .tech-band .tech-band-extra.is-open{left:0;right:0;width:auto;background:var(--panel,#fff);color:var(--text,#111);border:0;border-top:1px solid var(--line);border-radius:0 0 16px 16px;padding:10px 12px 14px}
+  .tech-band .tech-band-extra.is-open .tech-menu-uitleg{display:none}
+  .tech-band .tech-band-extra.is-open .tech-menu-kop{text-transform:none;letter-spacing:0;font-weight:600;font-size:12px;color:var(--muted);opacity:1;padding:10px 10px 2px}
+  .tech-band .tech-band-extra.is-open .tech-menu-groep+.tech-menu-groep{border-top:1px solid var(--line)}
+  .tech-band .tech-band-extra.is-open .tech-menu-zoek{border:0;background:var(--surface);border-radius:12px}
+  .tech-band .tech-band-extra.is-open button{border:0!important;font-weight:500}
+  .tech-band .tech-band-extra.is-open button>span{font-weight:500}
+  .tech-band .tech-band-extra.is-open button.is-hier{background:var(--surface);color:var(--accent);box-shadow:none}
+  .tech-band .tech-band-extra.is-open .tech-mobiel-wissel button{display:inline-flex!important;justify-content:center;padding:0 8px!important}
+  .tech-band .tech-band-extra.is-open .tech-mobiel-onder button.is-uit{color:var(--fout,#dc2626);background:transparent}
+  .tech-band .tech-band-extra.is-open .tech-mobiel-onder .tech-meldingen-knop::after{content:'Технічні сповіщення';font-size:15px}
+  html[lang=nl] .tech-band .tech-band-extra.is-open .tech-mobiel-onder .tech-meldingen-knop::after{content:'Technische meldingen'}
+}
+@media (max-width:768px){
+  .tech-band .tech-band-extra.is-open button>svg{grid-row:auto}
+  .tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-seg{background:var(--surface);border:0}
+  .tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-knop{color:var(--muted);background:transparent;background-image:none}
+  .tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-knop[aria-checked=true]{background:var(--panel);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  .tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-knop.rw-tech[aria-checked=true]{color:var(--tech-band-bg)}
+  html.theme-light .tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-knop.rw-tech[aria-checked=true]{color:var(--accent)}
+  .tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-naam{font-size:13px}
+}
+/* 29.10.2026 «één (?) per kop»: korte alinea per bedieningselement binnen dezelfde laag. */
+.tech-vraag-deel{display:block;margin-top:4px}
+.tech-vraag-deel i{font-style:normal;font-weight:700}

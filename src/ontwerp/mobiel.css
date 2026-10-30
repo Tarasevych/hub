@@ -1,0 +1,40 @@
+/* ФУНДАМЕНТ — мобільна верстка (20.10.2026). Глобальні правила, що не дають жодному контейнеру стати ширшим за екран,
+   без переписування сторінок. Специфічність 0 (:where), тож локальні правила сторінок лишаються сильнішими. */
+
+/* Медіа ніколи не ширші за контейнер. */
+:where(img, video, canvas, iframe, embed, object) { max-width:100%; }
+:where(img, video, canvas) { height:auto; }
+
+/* Діти гріда/флекса: min-width:0 — інакше довгий текст/код розтягує колонку за межі екрана (класична причина «все поїхало»). */
+:where(.canonical-content, .venster-inhoud, .modal, .page, .auth-card, .mcp-consent-dialog) :where(div, section, article, header, footer, main, nav, aside, form, fieldset, p, ul, ol, li, dl, dt, dd, label, a, pre, code, table, h1, h2, h3, h4, summary, details) { min-width:0; }
+
+@media (max-width:700px) {
+  :where(html, body) { overflow-x:hidden; }
+  /* жоден блок усередині робочої області не ширший за viewport */
+  :where(.canonical-content, .venster-inhoud, .modal, .page, .auth-card, .mcp-consent-dialog) :where(div, section, article, header, footer, main, nav, aside, form, fieldset, ul, ol, dl, table, pre, figure) { max-width:100%; }
+  /* фіксовані ширини в px у сторінках стають «не більше за екран» */
+  :where(.canonical-content, .venster-inhoud, .modal) :where([style*="width"]) { max-width:100%; }
+  /* таблиці: прокрутка всередині контейнера, не сторінки */
+  :where(table) { display:block; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  :where(table) > :where(thead, tbody, tfoot) { display:table; width:100%; min-width:max-content; }
+  /* ряди кнопок переносяться; кнопки не тонші за 44px і не ширші за екран */
+  :where(.knoppen, .acties, .form-actions, [class$="-acties"], [class$="-actions"], [class$="-knoppen"]) { flex-wrap:wrap; }
+  :where(button, [role=button], a.knop, .knop, .knop-primair, .knop-secundair, .knop-stil, .knop-gevaar, select, input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=hidden]), textarea, summary) { max-width:100%; }
+  :where(button, [role=button], a.knop, .knop, .knop-primair, .knop-secundair, .knop-stil, .knop-gevaar, select, input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=hidden]), textarea, summary):not(:has(> svg:only-child)):not(.is-icoon):not([role=switch], [role=checkbox], [role=radio]) { min-height:var(--tik-hoogte-mobiel); }
+  /* 21.10: schakelaars (role=switch, bv. .v2-schakelaar 44×24) NIET ophogen — min-height won van hun height en maakte er een
+     cirkel van 44×44 van. Hun tikvlak vergroten ze zelf met een onzichtbaar ::after (connector-v2.css). */
+  /* іконкові кнопки (лише svg всередині) лишаються своїх розмірів — їхня площа дотику задається сторінкою (44px у меню/вікнах). */
+  /* вікна й діалоги: на всю ширину з безпечними відступами (виріз/жест-смуга), прокрутка всередині */
+  :where(.venster, .modal, .mcp-consent-dialog, [role=dialog]) { width:auto; max-width:calc(100vw - var(--ruimte-2) * 2 - var(--veilig-links) - var(--veilig-rechts)); max-height:calc(100dvh - var(--ruimte-2) * 2 - var(--veilig-boven) - var(--veilig-onder)); }
+  :where(.modal-backdrop, .mcp-consent-backdrop, .venster-achter) { padding:calc(var(--ruimte-2) + var(--veilig-boven)) calc(var(--ruimte-2) + var(--veilig-rechts)) calc(var(--ruimte-2) + var(--veilig-onder)) calc(var(--ruimte-2) + var(--veilig-links)); }
+  :where(.modal, .mcp-consent-dialog) { padding:var(--ruimte-4); border-radius:var(--straal-l); }
+  /* форми й поля: одна колонка, повна ширина */
+  :where(.form, .form-grid, .check-grid, .recovery-grid, .block-editor-grid) { grid-template-columns:1fr; }
+  :where(select, textarea, input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=hidden])) { width:100%; }
+  :where(select, input, textarea) { font-size:max(16px, 1em); } /* iOS не масштабує сторінку при фокусі, якщо ≥ 16px */
+  /* базовий текст 16px, нічого менше 12px */
+  :where(body) { font-size:var(--tekst-basis); }
+  :where(small, .hint, .klein, .pil, .badge, .status-pill) { font-size:max(var(--tekst-mini), .75em); }
+  /* довгі ідентифікатори/адреси переносяться, а не розтягують блок */
+  :where(code, kbd, pre, a[href^="http"], .id, .mono, [data-code], [data-id]) { overflow-wrap:anywhere; word-break:normal; }
+}

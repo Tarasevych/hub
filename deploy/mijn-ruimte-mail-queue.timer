@@ -1,0 +1,12 @@
+# /etc/systemd/system/mijn-ruimte-mail-queue.timer — Mijn Ruimte: uitgestelde mail versturen (cron.json mail-queue-send, elke minuut)
+[Unit]
+Description=Mijn Ruimte: uitgestelde mail versturen (cron.json mail-queue-send, elke minuut)
+
+[Timer]
+OnCalendar=*:*:00
+AccuracySec=5s
+Persistent=true
+Unit=mijn-ruimte-cron@mail-queue-send.service
+
+[Install]
+WantedBy=timers.target
