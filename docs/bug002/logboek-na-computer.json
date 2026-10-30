@@ -1,0 +1,138 @@
+{
+ "uitkomst": {
+  "naam": "computer-1440",
+  "viewport": {
+   "width": 1440,
+   "height": 900
+  },
+  "zelfOpen": 0,
+  "zichtWissels": 9,
+  "verdwijnen": 4,
+  "startTerwijlLoopt": 0,
+  "maxGelijktijdig": 1,
+  "autoAanroepen": 2,
+  "startAanroepen": 2,
+  "statusAanroepen": 10,
+  "runs": 3,
+  "eind": "fout",
+  "fouten": []
+ },
+ "overgangen": [
+  {
+   "t": 1,
+   "ev": "zicht ∅ → geen"
+  },
+  {
+   "t": 140,
+   "ev": "net scan/auto → 200"
+  },
+  {
+   "t": 186,
+   "ev": "zicht geen → venster:open"
+  },
+  {
+   "t": 1563,
+   "ev": "zicht venster:open → venster:klein"
+  },
+  {
+   "t": 1566,
+   "ev": "GEBRUIKER minimaliseert"
+  },
+  {
+   "t": 2768,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 5415,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 8042,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 10570,
+   "ev": "GEBRUIKER wisselt naar «Контакти» en terug"
+  },
+  {
+   "t": 10576,
+   "ev": "zicht venster:klein → geen"
+  },
+  {
+   "t": 10669,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 10797,
+   "ev": "net scan/start → 502"
+  },
+  {
+   "t": 11382,
+   "ev": "zicht geen → venster:klein"
+  },
+  {
+   "t": 12925,
+   "ev": "net scan/start → 200"
+  },
+  {
+   "t": 14378,
+   "ev": "GEBRUIKER (sessie opnieuw gecontroleerd → hermount)"
+  },
+  {
+   "t": 14382,
+   "ev": "zicht venster:klein → geen"
+  },
+  {
+   "t": 14588,
+   "ev": "zicht geen → venster:klein"
+  },
+  {
+   "t": 15558,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 18185,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 20810,
+   "ev": "net scan/status → 502"
+  },
+  {
+   "t": 25937,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 26586,
+   "ev": "GEBRUIKER (15 min later: hermount, periodiek bijwerken)"
+  },
+  {
+   "t": -1,
+   "ev": "──── herladen ────"
+  },
+  {
+   "t": 0,
+   "ev": "zicht ∅ → geen"
+  },
+  {
+   "t": 9,
+   "ev": "GEBRUIKER ververst de pagina"
+  },
+  {
+   "t": 129,
+   "ev": "net scan/auto → 200"
+  },
+  {
+   "t": 143,
+   "ev": "zicht geen → venster:klein"
+  },
+  {
+   "t": 2759,
+   "ev": "net scan/status → 200"
+  },
+  {
+   "t": 5386,
+   "ev": "net scan/status → 200"
+  }
+ ]
+}

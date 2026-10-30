@@ -1,0 +1,21 @@
+.cloud-m5{color:var(--tekst,inherit);padding:clamp(14px,2vw,32px);max-width:1500px;margin:auto;font-family:inherit}
+.cloud-m5__heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:24px}
+.cloud-m5__eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:12px;opacity:.6}
+.cloud-m5__heading h2{font-size:clamp(24px,3vw,36px);margin:5px 0 8px}
+.cloud-m5__heading p{margin:0;line-height:1.6;max-width:700px}
+.cloud-m5__stage,.cloud-m5__status{border-radius:999px;background:rgba(148,163,184,.15);border:1px solid rgba(148,163,184,.3);padding:6px 10px;font-size:12px}
+.cloud-m5__status.is-ready{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.32)}
+.cloud-m5__search{display:flex;flex-direction:column;gap:8px;font-size:13px;max-width:400px}
+.cloud-m5__search input{border:1px solid #8892a348;border-radius:12px;padding:12px;background:transparent;color:inherit;font:inherit}
+.cloud-m5__warning{margin:16px 0;padding:14px 16px;border:1px solid #b18a4b55;border-radius:12px;background:rgba(202,165,93,.06);line-height:1.5}
+.cloud-m5__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,265px),1fr));gap:14px;margin-top:22px}
+.cloud-m5__card{padding:18px;border-radius:16px;border:1px solid #8892a344;background:rgba(127,127,127,.025);min-width:0}
+.cloud-m5__card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.cloud-m5__card h3{font-size:17px;margin:0 0 5px}.cloud-m5__card small{opacity:.6;font-size:12px}
+.cloud-m5__card p{font-size:13px;line-height:1.6;opacity:.88}
+.cloud-m5__actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.cloud-m5__actions button{border:1px solid #8892a355;border-radius:10px;padding:9px 11px;background:transparent;color:inherit;cursor:pointer;font:inherit;font-size:12px}
+.cloud-m5__actions button:disabled{opacity:.42;cursor:not-allowed}
+.cloud-m5__details{border-top:1px solid #8892a333;margin-top:14px;padding-top:6px}
+.cloud-m5__footnote{font-size:12px;opacity:.7;line-height:1.7;margin-top:22px}
+@media(max-width:480px){.cloud-m5__card{padding:15px}.cloud-m5__stage{align-self:flex-start}}

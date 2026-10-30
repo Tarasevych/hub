@@ -1,0 +1,10 @@
+[Unit]
+Description=Mijn Ruimte: elke minuut controleren of er een goedgekeurd pakket ligt te wachten
+
+[Timer]
+OnBootSec=90s
+OnUnitActiveSec=60s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

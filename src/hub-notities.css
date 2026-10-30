@@ -1,0 +1,90 @@
+/* Hub → «Нотатки» (echte notities) */
+.hub-notes{display:grid;gap:12px;margin-bottom:16px;padding:14px 16px;border:1px solid var(--line,#e5e7eb);border-radius:14px;background:var(--panel,var(--bg,#fff))}
+.hub-notes-kop{display:grid;gap:6px}
+.hub-notes-kop h2{display:flex;align-items:center;gap:8px;margin:0;font-size:1rem}
+.hub-notes-kop h2 svg{width:18px;height:18px}
+.hub-notes-kop p{margin:0;color:var(--muted,#6b7280);font-size:.88rem}
+.hub-notes-kop>button{justify-self:start;display:inline-flex;align-items:center;gap:6px}
+.hub-notes-form{display:grid;gap:8px;padding:10px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:var(--surface,#f6f7f9)}
+.hub-notes-form label{display:grid;gap:4px;font-size:.85rem}
+.hub-notes-form input,.hub-notes-form textarea{padding:8px 10px;border:1px solid var(--line,#e5e7eb);border-radius:8px;background:var(--panel,#fff);color:inherit;font:inherit}
+.hub-notes-acties{display:flex;gap:8px;flex-wrap:wrap}
+.hub-notes-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.hub-notes-lijst>li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:var(--surface,#f6f7f9)}
+.hub-notes-lijst>li>form{flex:1}
+.hub-notes-tekst{flex:1;min-width:0;display:grid;gap:4px}
+.hub-notes-tekst h3{margin:0;font-size:.95rem}
+.hub-notes-tekst p{margin:0;white-space:pre-wrap;font-size:.88rem}
+.hub-notes-tekst small{color:var(--muted,#6b7280)}
+.hub-notes-knoppen{display:flex;gap:4px;flex:none}
+.hub-notes-knoppen .is-gevaar{color:var(--fout)}
+.hub-notes-leeg,.hub-notes-fout{margin:0;color:var(--muted,#6b7280)}
+.hub-notes-fout{color:var(--fout)}
+
+/* ---- 19.10.2026 (punt 11): soorten notities, zoeken, etiketten en de catalogus van notitie-apps ---- */
+.hub-notes-kop-acties{display:flex;flex-wrap:wrap;gap:8px}
+.hub-notes-kop-acties button{display:inline-flex;align-items:center;gap:6px}
+.hub-notes-kop-acties svg{width:15px;height:15px}
+.hub-notes-soorten{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;border:0}
+.hub-notes-soorten legend{padding:0 0 4px;font-size:.82rem;color:var(--muted,#6b7280)}
+.hub-notes-soorten label{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 11px;border:1px solid var(--line,#e5e7eb);border-radius:999px;background:var(--panel,#fff);cursor:pointer;font-size:.84rem}
+.hub-notes-soorten label svg{width:14px;height:14px}
+.hub-notes-soorten label input{position:absolute;width:1px;height:1px;opacity:0}
+.hub-notes-soorten label.is-actief{border-color:var(--accent,#2f6f73);background:color-mix(in srgb,var(--accent,#2f6f73) 12%,var(--panel,#fff));font-weight:650}
+.hub-notes-soorten label:focus-within{outline:3px solid var(--accent,#2f6f73);outline-offset:1px}
+.hub-notes-form textarea.is-code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.84rem}
+.hub-notes-vorm-rij{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.hub-notes-vorm-rij label{display:grid;gap:4px;font-size:.85rem}
+.hub-notes-vast{display:inline-flex!important;align-items:center;gap:6px}
+.hub-notes-vast svg{width:14px;height:14px}
+.hub-notes-waarschuwing{display:flex;align-items:flex-start;gap:6px;margin:0;font-size:.82rem;color:var(--waarschuwing,#92400e)}
+.hub-notes-waarschuwing svg{width:14px;height:14px;flex:none;margin-top:2px}
+.hub-notes-etiketten-vorm,.hub-notes-etiketten,.hub-notes-wolk{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.hub-notes-etiketten-kop{display:inline-flex;align-items:center;gap:5px;font-size:.82rem;color:var(--muted,#6b7280)}
+.hub-notes-etiketten-kop svg{width:14px;height:14px}
+.hub-notes-etiket{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border:1px solid var(--line,#e5e7eb);border-radius:999px;background:var(--surface,#f6f7f9);font-size:.78rem}
+.hub-notes-etiket.is-filter{cursor:pointer;color:inherit}
+.hub-notes-etiket.is-actief{border-color:var(--accent,#2f6f73);background:color-mix(in srgb,var(--accent,#2f6f73) 14%,var(--panel,#fff));font-weight:650}
+.hub-notes-etiket button{display:grid;place-items:center;width:16px;height:16px;padding:0;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer}
+.hub-notes-etiket svg{width:11px;height:11px}
+.hub-notes-etiket-nieuw{display:inline-flex;align-items:center;gap:4px}
+.hub-notes-etiket-nieuw input{width:9rem;padding:5px 9px;border:1px solid var(--line,#e5e7eb);border-radius:999px;background:var(--panel,#fff);color:inherit;font:inherit;font-size:.8rem}
+.hub-notes-etiket-nieuw button{display:inline-flex;align-items:center;gap:4px;font-size:.78rem}
+.hub-notes-etiket-nieuw svg{width:12px;height:12px}
+.hub-notes-zoek{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:var(--surface,#f6f7f9)}
+.hub-notes-zoek label{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted,#6b7280)}
+.hub-notes-zoekveld{flex:1;min-width:12rem}
+.hub-notes-zoekveld svg{width:15px;height:15px;flex:none}
+.hub-notes-zoekveld input{flex:1;min-width:0;padding:6px 10px;border:1px solid var(--line,#e5e7eb);border-radius:8px;background:var(--panel,#fff);color:inherit;font:inherit}
+.hub-notes-zoek select{padding:5px 8px;border:1px solid var(--line,#e5e7eb);border-radius:8px;background:var(--panel,#fff);color:inherit;font:inherit}
+.hub-notes-zoek .ghost.small{display:inline-flex;align-items:center;gap:5px;font-size:.8rem}
+.hub-notes-tekst h3{display:flex;align-items:center;gap:6px}
+.hub-notes-tekst h3 svg{width:15px;height:15px;flex:none;color:var(--accent,#2f6f73)}
+.hub-notes-vast-teken{color:var(--waarschuwing,#92400e)!important}
+.hub-notes-checklist{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+.hub-notes-checklist label{display:flex;align-items:flex-start;gap:7px;font-size:.88rem;cursor:pointer}
+.hub-notes-checklist .is-af{text-decoration:line-through;color:var(--muted,#6b7280)}
+.hub-notes-voortgang{font-variant-numeric:tabular-nums}
+.hub-notes-code{margin:0;padding:8px 10px;border-radius:8px;background:var(--panel,#fff);border:1px solid var(--line,#e5e7eb);overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.82rem;white-space:pre-wrap;word-break:break-word}
+.hub-notes-koppeling{display:inline-flex;align-items:center;gap:5px;font-size:.84rem;color:var(--accent,#2f6f73);word-break:break-all}
+.hub-notes-koppeling svg{width:13px;height:13px;flex:none}
+.hub-notes-lijst>li[data-hub-note-vast='1']{box-shadow:inset 3px 0 0 var(--waarschuwing,#92400e)}
+.hub-notes-lijst>li.kleur-geel{background:color-mix(in srgb,var(--warn-zacht) 32%,var(--surface,#f6f7f9))}
+.hub-notes-lijst>li.kleur-groen{background:color-mix(in srgb,#bbf7d0 32%,var(--surface,#f6f7f9))}
+.hub-notes-lijst>li.kleur-blauw{background:color-mix(in srgb,#bfdbfe 32%,var(--surface,#f6f7f9))}
+.hub-notes-lijst>li.kleur-roze{background:color-mix(in srgb,#fbcfe8 32%,var(--surface,#f6f7f9))}
+.hub-notes-lijst>li.kleur-grijs{background:color-mix(in srgb,var(--line) 46%,var(--surface,#f6f7f9))}
+.hub-notes-apps{display:grid;gap:8px}
+.hub-notes-apps-uitleg{margin:0;max-width:78ch;padding:9px 11px;border-left:3px solid var(--accent,#2f6f73);border-radius:0 10px 10px 0;background:var(--surface,#f6f7f9);color:var(--muted,#6b7280);font-size:.85rem}
+.hub-notes-apps-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.hub-notes-apps-lijst>li{display:grid;grid-template-columns:auto 1fr auto auto;align-items:start;gap:10px;padding:10px 12px;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--panel,#fff)}
+.hub-notes-app-monogram{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--accent,#2f6f73) 16%,var(--panel,#fff));color:var(--accent,#2f6f73);font-weight:700}
+.hub-notes-apps-lijst>li>div{display:grid;gap:3px;min-width:0}
+.hub-notes-apps-lijst small{color:var(--muted,#6b7280);font-size:.82rem}
+.hub-notes-apps-lijst em{display:flex;align-items:flex-start;gap:6px;font-style:normal;font-size:.8rem;color:var(--fout,#b91c1c)}
+.hub-notes-apps-lijst em svg{width:13px;height:13px;flex:none;margin-top:2px}
+.hub-notes-app-stand{align-self:start;padding:3px 9px;border-radius:999px;font-size:.75rem;font-weight:650;white-space:nowrap;background:color-mix(in srgb,var(--muted,#6b7280) 18%,var(--panel,#fff));color:var(--muted,#4b5563)}
+.hub-notes-app-stand.is-beschikbaar{background:color-mix(in srgb,var(--accent,#2f6f73) 16%,var(--panel,#fff));color:var(--accent,#2f6f73)}
+.hub-notes-app-geen{font-size:.82rem;color:var(--muted,#6b7280);font-style:italic}
+@media (max-width:620px){.hub-notes-apps-lijst>li{grid-template-columns:auto 1fr}.hub-notes-app-stand,.hub-notes-app-geen,.hub-notes-apps-lijst>li>button{grid-column:2}}
+@media (forced-colors:active){.hub-notes-soorten label.is-actief,.hub-notes-etiket.is-actief{outline:2px solid Highlight}}

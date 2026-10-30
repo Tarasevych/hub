@@ -1,0 +1,177 @@
+/* Contextpaneel van de open brief (pakket 2 «Adaptive Mail Canvas», 24.10.2026) — src/mail/ContextPaneel.tsx.
+   De vorm staat op het leesvenster zelf: data-context = kolom | blad | uit (src/mail/LeesVenster.tsx).
+   kolom — tweede kolom van het raster, onder de kop, naast ШІ-balk en gesprek (venster ≥ 1100 px breed, макет: 368 px);
+   blad  — boven de brief, onder de kop (de kop blijft bruikbaar): een zijblad in een middelbreed venster, van onderen in een smal
+           venster (telefoon), met een donkere laag ernaast die het blad sluit. Alleen tokens (src/ontwerp/tokens.css). */
+
+/* ---------------------------------------------------------------- plaats in het leesvenster */
+/* Vaste rijen voor wat er altijd is: kop (1), ШІ-balk (2) en het gesprek (de laatste rij, 1fr). Zonder vaste rijen duwen de lagen met
+   een eigen plaats (het blad, het overzicht van de sneltoetsen) de gewone kinderen naar nieuwe rijen eronder — het blad werd 0 px hoog. */
+html body .google-mail-reader>header{grid-row:1;grid-column:1/-1}
+html body .google-mail-reader>section.mra{grid-row:2;grid-column:1/-1}
+html body .google-mail-reader>:is(section.mail-thread-content,section.mail-reader-content-loading){grid-row:-2;grid-column:1/-1}
+html body .google-mail-reader[data-context='kolom']{grid-template-columns:minmax(0,1fr) var(--ctx-breedte,368px)}
+html body .google-mail-reader[data-context='kolom']>header{grid-column:1/-1}
+html body .google-mail-reader[data-context='kolom']>section{grid-column:1;min-width:0}
+html body .google-mail-reader[data-context='kolom']>.ctx-paneel{grid-column:2;grid-row:2/-1;border-left:1px solid var(--line)}
+
+html body .google-mail-reader[data-context='blad']>.ctx-scherm{grid-area:2/1/-1/-1;z-index:30;background:var(--overlay);opacity:.55}
+/* max-width: een blad heeft role=dialog, en de algemene regel voor vensters (ontwerp/primitieven.css: 100vw − 16 px) maakte het op de
+   telefoon 16 px smaller dan het scherm */
+html body .google-mail-reader[data-context='blad']>.ctx-paneel{grid-area:2/1/-1/-1;z-index:31;justify-self:end;width:min(384px,calc(100% - 24px));max-width:100%;border-left:1px solid var(--line);box-shadow:var(--schaduw-3)}
+html body .google-mail-reader[data-context='blad'][data-lees-breedte='smal']>.ctx-paneel{justify-self:stretch;align-self:end;width:auto;max-width:none;max-height:min(84%,680px);border-left:0;border-top:1px solid var(--line);border-radius:var(--straal-l,16px) var(--straal-l,16px) 0 0}
+
+/* ---------------------------------------------------------------- paneel */
+.ctx-paneel{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;background:var(--panel);color:var(--text)}
+.ctx-paneel:focus{outline:none}
+.ctx-paneel:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.ctx-kop{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:8px;padding:10px 8px 8px 16px;border-bottom:1px solid var(--line)}
+html body .ctx-paneel .ctx-kop h2{grid-column:1;margin:0;font-family:inherit;font-size:15px;font-weight:700;line-height:1.3;letter-spacing:0}
+.ctx-kop small{grid-column:1;color:var(--muted);font-size:12px}
+.ctx-sluit{grid-column:2;grid-row:1/span 2;display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.ctx-sluit svg{width:18px;height:18px}
+.ctx-sluit:hover{background:var(--surface);color:var(--text)}
+.ctx-sluit:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.ctx-greep{display:none;grid-column:1/-1;justify-self:center;width:40px;height:4px;margin:0 0 8px;border-radius:2px;background:var(--line)}
+html body .google-mail-reader[data-lees-breedte='smal'] .ctx-greep{display:block}
+.ctx-inhoud{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:2px 16px 24px}
+/* de meldingsknop van de site zweeft rechtsonder: de laatste regels moeten erboven kunnen schuiven */
+html body .google-mail-reader[data-context='kolom']>.ctx-paneel .ctx-inhoud{padding-bottom:84px}
+/* tabbladen lopen door op een tweede regel in plaats van weg te schuiven: niets onzichtbaars */
+.ctx-tabs{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:4px;padding:6px 12px;border-bottom:1px solid var(--line)}
+html body .ctx-paneel .ctx-tabs button{flex:0 0 auto;min-height:36px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.ctx-tabs button:hover{background:var(--surface);color:var(--text)}
+.ctx-tabs button[aria-selected='true']{background:var(--accent-soft);color:var(--text)}
+.ctx-tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+
+.ctx-sectie{padding:14px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.ctx-sectie:last-child{border-bottom:0}
+html body .ctx-paneel .ctx-sectie h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-family:inherit;font-size:13px;font-weight:700;letter-spacing:0}
+.ctx-sectie h3>svg{flex:0 0 auto;width:16px;height:16px;color:var(--muted)}
+.ctx-sectie h3>small{margin-left:4px;color:var(--muted);font-size:12px;font-weight:600}
+.ctx-sectie h3>.ctx-zonder-ai{margin-left:auto;padding:1px 8px;border:1px dashed var(--muted);border-radius:999px}
+html body .ctx-paneel .ctx-sectie h4{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px;margin:0 0 6px;font-family:inherit;font-size:13px;font-weight:650}
+.ctx-sectie h4>small{color:var(--muted);font-size:12px;font-weight:500}
+.ctx-tussenkop{margin-top:12px!important;color:var(--muted)}
+.ctx-leeg{margin:0;color:var(--muted);font-size:13px}
+.ctx-noot{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.45}
+.ctx-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.ctx-merk{display:inline-flex;align-items:center;padding:0 7px;border-radius:999px;background:var(--surface2);color:var(--text);font-size:12px;font-weight:650;line-height:1.6;white-space:nowrap}
+.ctx-merk[data-merk='hier']{background:var(--accent);color:var(--accentText)}
+.ctx-merk[data-merk='toekomst']{background:var(--warn-zacht);color:var(--warn)}
+.ctx-merk[data-merk='verwant']{background:transparent;border:1px dashed var(--muted);color:var(--muted)}
+/* «html body»: «.mail-functional button{font:inherit}» (0,1,1) gaf de knoppen van het paneel anders 16 px (gemeten in de stand, pakket 3) */
+html body .ctx-knop{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.ctx-knop svg{width:16px;height:16px}
+.ctx-knop:hover{background:var(--surface)}
+.ctx-knop:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.ctx-knoppen{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+
+/* ---------------------------------------------------------------- tijdlijn */
+.ctx-tijdlijn{display:grid;gap:2px;margin:0;padding:0;list-style:none}
+.ctx-tijdlijn>li{position:relative;display:grid;grid-template-columns:16px minmax(0,1fr);align-items:start;column-gap:8px}
+.ctx-tijdlijn>li::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--line)}
+.ctx-tijdlijn>li:first-child::before{top:14px}
+.ctx-tijdlijn>li:last-child::before{bottom:auto;height:14px}
+.ctx-tijdlijn>li:only-child::before{display:none}
+.ctx-tijdlijn>li[data-soort='verwant']::before{background:repeating-linear-gradient(to bottom,var(--line) 0 4px,transparent 4px 8px)}
+.ctx-tl-punt{position:relative;z-index:1;width:12px;height:12px;margin:10px 0 0 2px;border:2px solid var(--panel);border-radius:50%;background:var(--ctx-kleur,var(--muted));box-shadow:0 0 0 1px var(--ctx-kleur,var(--muted))}
+.ctx-tijdlijn>li[data-soort='verwant'] .ctx-tl-punt{background:var(--panel);border:2px dashed var(--muted);box-shadow:none}
+.ctx-tijdlijn>li[data-soort='gebeurtenis'] .ctx-tl-punt{border-radius:3px;background:var(--warn);box-shadow:0 0 0 1px var(--warn)}
+.ctx-tijdlijn>li[data-hier] .ctx-tl-punt{width:14px;height:14px;margin:9px 0 0 1px;background:var(--ctx-kleur,var(--accent));box-shadow:0 0 0 2px var(--ctx-kleur,var(--accent))}
+.ctx-tl-tekst{display:grid;gap:2px;width:100%;min-width:0;padding:6px 8px;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;text-align:left}
+button.ctx-tl-tekst{cursor:pointer}
+button.ctx-tl-tekst:hover{background:var(--surface)}
+button.ctx-tl-tekst:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.ctx-tijdlijn>li[data-hier] .ctx-tl-tekst{background:color-mix(in srgb,var(--accent-soft) 80%,transparent)}
+.ctx-tl-tekst strong{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;font-size:13px;font-weight:650;text-overflow:ellipsis;white-space:nowrap}
+.ctx-tl-tekst strong svg{flex:0 0 auto;width:14px;height:14px;color:var(--warn)}
+.ctx-tl-tekst small{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+.ctx-tl-uittreksel{display:-webkit-box;overflow:hidden;color:var(--muted);font-size:12px;line-height:1.4;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ctx-chips{display:flex;flex-wrap:wrap;gap:4px}
+.ctx-chips em{padding:0 6px;border-radius:6px;background:var(--surface2);color:var(--text);font-size:12px;font-style:normal;font-weight:650}
+
+/* ---------------------------------------------------------------- bijlagen en verbanden */
+.ctx-versies{margin:0 0 10px;padding:10px;border:1px solid var(--line);border-radius:var(--straal-m,12px);background:color-mix(in srgb,var(--surface) 50%,var(--panel))}
+.ctx-lijst{display:grid;gap:4px;margin:0;padding:0;list-style:none}
+.ctx-lijst>li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px}
+.ctx-bestand{display:grid;justify-items:start;gap:1px;min-width:0}
+.ctx-bestand>strong{max-width:100%;overflow:hidden;font-size:13px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
+.ctx-bestand>small{color:var(--muted);font-size:12px}
+.ctx-versie{padding:0 7px;border-radius:6px;background:var(--surface2);color:var(--text);font-size:12px;font-weight:700}
+.ctx-versie[data-laatste]{background:var(--ok-zacht);color:var(--ok)}
+.ctx-acties{display:flex;gap:2px}
+.ctx-acties button{display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.ctx-acties button svg{width:16px;height:16px}
+.ctx-acties button:hover{background:var(--surface);color:var(--text)}
+.ctx-acties button:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.ctx-verwant>li{grid-template-columns:minmax(0,1fr)}
+.ctx-verwant button.ctx-bestand{width:100%;padding:6px 8px;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ctx-verwant button.ctx-bestand:hover{background:var(--surface)}
+.ctx-verwant button.ctx-bestand:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.ctx-verwant .ctx-merk{margin-top:3px}
+
+/* ---------------------------------------------------------------- afspraken */
+.ctx-afspraak{display:grid;gap:3px;margin:0 0 10px;padding:10px 12px;border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:var(--straal-m,12px)}
+.ctx-afspraak>strong{font-size:14px;font-weight:700}
+.ctx-afspraak>small{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+.ctx-afspraak>small svg{width:14px;height:14px}
+.ctx-afspraak .ctx-knop:first-child{border-color:var(--accent);background:var(--accent);color:var(--accentText)}
+
+/* ---------------------------------------------------------------- afzender en veiligheid */
+.ctx-afzender{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px}
+.ctx-foto{display:inline-grid;border-radius:50%;box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--ctx-kleur,transparent)}
+.ctx-afzender-tekst{display:grid;min-width:0}
+.ctx-afzender-tekst strong{font-size:14px;overflow-wrap:anywhere}
+.ctx-afzender-tekst small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.ctx-controle{display:flex;align-items:flex-start;gap:8px;margin:10px 0 0;padding:8px 10px;border-radius:10px;background:var(--surface);font-size:13px;line-height:1.45}
+.ctx-controle>svg{flex:0 0 auto;width:16px;height:16px;margin-top:2px;color:var(--muted)}
+.ctx-controle small{display:block;color:var(--muted);font-size:12px}
+.ctx-controle[data-controle='ok']{background:var(--ok-zacht)}
+.ctx-controle[data-controle='ok']>svg{color:var(--ok)}
+.ctx-controle[data-controle='mislukt']{background:var(--fout-zacht)}
+.ctx-controle[data-controle='mislukt']>svg{color:var(--fout)}
+.ctx-controle[data-controle='deels']>svg{color:var(--warn)}
+.ctx-kleuren{display:flex;flex-wrap:wrap;gap:4px;min-width:0;margin:12px 0 0;padding:0;border:0}
+.ctx-kleuren legend{width:100%;margin:0 0 6px;padding:0;color:var(--muted);font-size:12px;font-weight:650}
+.ctx-kleur{position:relative;display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;cursor:pointer}
+.ctx-kleur>input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.ctx-kleur>span[aria-hidden]{display:grid;place-items:center;width:24px;height:24px;border:1px solid color-mix(in srgb,var(--text) 24%,transparent);border-radius:50%;background:var(--ctx-staal,var(--panel));color:var(--muted);font-size:14px;font-weight:700;pointer-events:none}
+.ctx-kleur:has(>input:checked)>span[aria-hidden]{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--text)}
+.ctx-kleur:has(>input:focus-visible){outline:2px solid var(--focus);outline-offset:1px}
+.ctx-veilig{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.ctx-veilig>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;font-size:13px;line-height:1.45}
+.ctx-veilig>li>svg{width:16px;height:16px;margin-top:1px;color:var(--muted)}
+.ctx-veilig>li[data-ok]>svg{color:var(--ok)}
+.ctx-veilig>li[data-let]>svg{color:var(--warn)}
+
+/* aanraken: grotere doelen (макет: 44 px) */
+@media (pointer:coarse){
+  .ctx-sluit,.ctx-acties button{width:44px;height:44px}
+  html body .ctx-knop,.ctx-tabs button{min-height:44px}
+  .ctx-kleur{width:44px;height:44px}
+  .ctx-kleur>span[aria-hidden]{width:30px;height:30px}
+  .ctx-tl-tekst{padding:9px 8px}
+}
+@media (prefers-reduced-motion:no-preference){
+  html body .google-mail-reader[data-context='blad']>.ctx-paneel{animation:ctx-in .16s ease-out}
+  html body .google-mail-reader[data-context='blad'][data-lees-breedte='smal']>.ctx-paneel{animation-name:ctx-op}
+}
+@keyframes ctx-in{from{transform:translateX(16px);opacity:.6}to{transform:none;opacity:1}}
+@keyframes ctx-op{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+.ctx-veilig .ctx-knop-klein{display:flex;width:max-content;min-height:32px;margin-top:6px;padding:0 10px;font-size:12px}
+@media (pointer:coarse){.ctx-veilig .ctx-knop-klein{min-height:44px}}
+
+/* ---------------------------------------------------------------- pakket 3: «Порівняти» bij versies, punten van «Що від вас потрібно?» */
+.ctx-versies-kop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px;margin:0 0 6px}
+html body .ctx-paneel .ctx-sectie .ctx-versies-kop h4{margin:0;min-width:0}
+html body .ctx-vergelijk{min-height:32px;padding:0 10px;font-size:12px}
+.ctx-ai{display:grid;gap:6px;margin:0 0 12px;padding:10px;border:1px dashed color-mix(in srgb,var(--info) 55%,var(--line));border-radius:var(--straal-m,12px);background:color-mix(in srgb,var(--info-zacht) 35%,var(--panel))}
+.ctx-ai[data-opbouw='eenvoudig']{border-style:solid;border-color:var(--line);background:color-mix(in srgb,var(--surface2) 40%,var(--panel))}
+html body .ctx-paneel .ctx-sectie .ctx-ai h4{align-items:center;margin:0}
+.ctx-ai .ctx-noot{margin:0}
+.ctx-ai-punten>li{align-items:start}
+/* punten zijn zinnen, geen bestandsnamen: ze lopen door op meer regels */
+html body .ctx-ai-punten .ctx-bestand>strong{overflow:visible;font-size:13px;font-weight:600;line-height:1.4;white-space:normal;overflow-wrap:anywhere}
+.ctx-ai-punten .ctx-bestand>small{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:3px}
+@media (pointer:coarse){html body .ctx-vergelijk{min-height:44px}}

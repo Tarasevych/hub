@@ -1,0 +1,54 @@
+UITLEG-LEESMIJ.txt - herstelset\sleutels\
+(Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
+У цьому файлі НЕМАЄ жодних секретів. / Dit bestand bevat GEEN geheimen.
+
+==============================================================================
+УКРАЇНСЬКА
+==============================================================================
+У цій папці НАВМИСНО НЕМАЄ секретного ключа відновлення.
+- herstelsleutel-age.pub.txt - ПУБЛІЧНИЙ ключ (age1...). Не секрет. Ним сервер
+  шифрує резервні копії; розшифрувати ним не можна.
+
+ДЕ СЕКРЕТНИЙ КЛЮЧ
+- Файл herstelsleutel-age.txt лежить на старому ПК у
+  R:\mijn-ruimte-reservekopie\sleutels\ і має бути ще на ОКРЕМІЙ флешці та/або на папері.
+- Скопіюйте його САМІ на окрему флешку (не на цей диск!) і/або роздрукуйте.
+  Зберігайте флешку/папір в іншому місці, ніж цей диск (наприклад, вдома в сейфі,
+  а диск - в іншому місці або навпаки).
+
+ЧОМУ НЕ РАЗОМ
+- Цей диск + ключ = будь-хто може прочитати всі ваші дані і секрети сервера.
+  Окремо кожна частина нічого не дає злодієві.
+
+ЯКЩО КЛЮЧ ВТРАЧЕНО: резервні копії на цьому диску вже не розшифрувати. Поки старий сервер
+  працює - створіть новий ключ і нові копії (див. R:\...\sleutels\UITLEG-LEESMIJ.txt).
+ЯКЩО КЛЮЧ ВИКРАДЕНО: новий ключ, нові копії, змініть секрети сервера.
+ПРИ ВІДНОВЛЕННІ: ключ потрібен у КРОЦІ 2, 10 і 13 інструкції 00-BEGIN-HIER-UA.
+  Він залишається на флешці; на сервер його не копіюють.
+
+SSH-ключа тут теж немає: на новому ПК створюється новий (КРОК 7).
+
+==============================================================================
+NEDERLANDS
+==============================================================================
+In deze map staat BEWUST GEEN geheime herstelsleutel.
+- herstelsleutel-age.pub.txt - PUBLIEKE sleutel (age1...). Niet geheim. De server versleutelt
+  er de back-ups mee; ontsleutelen kan er niet mee.
+
+WAAR IS DE GEHEIME SLEUTEL
+- herstelsleutel-age.txt staat op de oude pc in R:\mijn-ruimte-reservekopie\sleutels\ en hoort
+  ook op een APARTE USB-stick en/of papier te staan.
+- Kopieer hem ZELF naar een aparte USB-stick (niet naar deze schijf!) en/of print hem.
+  Bewaar stick/papier op een andere plek dan deze schijf.
+
+WAAROM NIET SAMEN
+- Deze schijf + de sleutel = iedereen kan al je gegevens en servergeheimen lezen.
+  Apart heeft een dief aan geen van beide iets.
+
+SLEUTEL KWIJT: de back-ups op deze schijf zijn dan niet meer te ontsleutelen. Zolang de oude
+  server draait: nieuw sleutelpaar en nieuwe back-ups maken (zie R:\...\sleutels\UITLEG-LEESMIJ.txt).
+SLEUTEL GESTOLEN: nieuwe sleutel, nieuwe back-ups, servergeheimen vervangen.
+BIJ HERSTEL: de sleutel is nodig in STAP 2, 10 en 13 van 00-BEGIN-HIER-NL. Hij blijft op de stick;
+  hij gaat nooit naar de server.
+
+Een SSH-sleutel staat hier ook niet: op de nieuwe pc maak je een nieuwe (STAP 7).

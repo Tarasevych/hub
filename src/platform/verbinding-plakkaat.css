@@ -1,0 +1,19 @@
+/* Plakkaat «verbinding» (punt 3, audit 19.10.2026): meta-regel met code/dienst/tijd/poging, knoppen en uitklapbare «Деталі».
+   De plaatsing en kleuren van .canonical-connection-banner zelf staan in src/canoniek-omlijsting.css; hier alleen het nieuwe binnenwerk. */
+.canonical-connection-banner{max-width:min(520px,calc(100vw - 96px))}
+.canonical-connection-banner .vp-doen{color:var(--text);opacity:.86}
+.canonical-connection-banner .vp-meta{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:4px}
+.canonical-connection-banner .vp-meta code{padding:1px 6px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font-size:.75rem;line-height:1.5;white-space:nowrap}
+.canonical-connection-banner .vp-acties{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.canonical-connection-banner .vp-knop{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text);font:inherit;font-size:.75rem;cursor:pointer;text-decoration:none}
+.canonical-connection-banner .vp-knop:hover,.canonical-connection-banner .vp-knop:focus-visible{background:var(--nav-hover);outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:1px}
+.canonical-connection-banner .vp-knop[disabled]{opacity:.6;cursor:progress}
+.canonical-connection-banner .vp-knop svg{width:14px;height:14px;margin:0;stroke-width:2}
+.canonical-connection-banner .vp-knop svg[data-open='1']{rotate:180deg}
+.canonical-connection-banner .vp-hoofd{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
+.canonical-connection-banner .vp-details{display:grid;gap:6px;margin-top:7px}
+.canonical-connection-banner .vp-details pre{margin:0;max-height:210px;overflow:auto;padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--muted);font-size:.75rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:700px){.canonical-connection-banner{max-width:none}.canonical-connection-banner .vp-details pre{max-height:150px}}
+/* MOBIEL 21.10.2026: knoppen in de verbindingsbanner 26 px → 44 px op de telefoon; uitleg nooit < 12 px */
+.vp-doen{font-size:max(var(--tekst-mini),1em)}
+@media (max-width:700px){.vp-knop{min-height:var(--tik-hoogte)}}

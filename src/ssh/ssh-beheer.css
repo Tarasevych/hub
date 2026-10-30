@@ -1,0 +1,31 @@
+/* Kaart «SSH-сертифікати» (src/ssh/SshBeheer.tsx). Kleuren via currentColor/color-mix → werkt in lichte en donkere thema's. */
+.ssh-beheer .ssh-blok{display:grid;gap:10px;padding:12px;border:1px solid var(--line,#c4ccd4);border-radius:10px;background:color-mix(in srgb,var(--panel,#fff) 92%,currentColor 2%)}
+.ssh-beheer h3 svg,.ssh-beheer button svg{width:16px;height:16px;flex:none}
+.ssh-beheer button{display:inline-flex;align-items:center;gap:6px}
+.ssh-kenmerken{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px 12px}
+.ssh-kenmerk{display:flex;align-items:center;gap:8px;min-height:28px}
+.ssh-stip{width:10px;height:10px;border-radius:50%;flex:none;background:var(--fout-vlak);box-shadow:0 0 0 2px color-mix(in srgb,#b42318 25%,transparent)}
+.ssh-kenmerk.is-aan .ssh-stip{background:var(--ok-vlak);box-shadow:0 0 0 2px color-mix(in srgb,#15803d 25%,transparent)}
+.ssh-vinger{font:12px/1.4 ui-monospace,monospace;overflow-wrap:anywhere}
+.ssh-acties{display:flex;flex-wrap:wrap;gap:10px}
+.ssh-actie{display:inline-flex;align-items:center;gap:6px}
+.ssh-schakelaar button[role=switch]{padding-left:10px}
+.ssh-schuif{position:relative;width:34px;height:20px;border-radius:10px;background:color-mix(in srgb,currentColor 25%,transparent);flex:none}
+.ssh-schuif::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--panel,#fff);box-shadow:0 1px 2px rgba(0,0,0,.35);transition:left .15s}
+.ssh-schakelaar button[aria-checked=true] .ssh-schuif{background:var(--ok-vlak)}
+.ssh-schakelaar button[aria-checked=true] .ssh-schuif::after{left:16px}
+.ssh-uitgifte{display:grid;gap:10px}
+.ssh-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px;max-height:340px;overflow:auto}
+.ssh-cert{display:grid;gap:3px;padding:8px 10px;border-radius:8px;border:1px solid var(--line,#c4ccd4);font-size:13.5px}
+.ssh-cert.is-ingetrokken{opacity:.75}
+.ssh-cert-kop{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.ssh-cert-status{font-size:12px;padding:1px 8px;border-radius:999px;border:1px solid currentColor;opacity:.85}
+.ssh-cert.is-actief .ssh-cert-status{color:var(--ok)}
+.ssh-cert.is-ingetrokken .ssh-cert-status{color:var(--fout)}
+.ssh-cert-rij{display:grid;grid-template-columns:minmax(90px,max-content) 1fr;gap:8px;overflow-wrap:anywhere}
+.ssh-cert-rij > span{opacity:.7}
+.ssh-detail{display:block;margin-top:4px;font:12px/1.4 ui-monospace,monospace;overflow-wrap:anywhere;opacity:.85}
+.theme-dark .ssh-cert.is-actief .ssh-cert-status,.theme-plum-dark .ssh-cert.is-actief .ssh-cert-status,.theme-dark .ssh-schakelaar button[aria-checked=true] .ssh-schuif,.theme-plum-dark .ssh-schakelaar button[aria-checked=true] .ssh-schuif{color:var(--ok)}.theme-dark .ssh-cert.is-ingetrokken .ssh-cert-status,.theme-plum-dark .ssh-cert.is-ingetrokken .ssh-cert-status{color:var(--fout)}
+:root[data-theme=dark] .ssh-cert.is-actief .ssh-cert-status{color:var(--ok)}
+:root[data-theme=dark] .ssh-cert.is-ingetrokken .ssh-cert-status{color:var(--fout)}
+@media (max-width:480px){.ssh-beheer .ssh-blok{padding:10px}.ssh-acties{flex-direction:column;align-items:stretch}.ssh-actie > button{flex:1}.ssh-cert-rij{grid-template-columns:1fr;gap:0}}

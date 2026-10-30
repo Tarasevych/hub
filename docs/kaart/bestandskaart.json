@@ -1,0 +1,2808 @@
+{
+ "versie": 1,
+ "datum": "2026-10-24",
+ "uitleg": "Hernoeming van de bronbestanden naar het Nederlands (pakket 1 «Adaptive Mail Canvas»). oud → nieuw; scripts/kaart-controle.mjs controleert in de build dat elk nieuw pad bestaat, geen oud pad terugkomt en nergens nog naar een oud pad verwezen wordt.",
+ "mappen": {
+  "src/search": "src/zoek",
+  "src/flags": "src/vlaggen",
+  "src/remote": "src/extern"
+ },
+ "bestanden": [
+  {
+   "oud": "backend/access-plane.ts",
+   "nieuw": "backend/toegangslaag.ts"
+  },
+  {
+   "oud": "backend/admin-diagnostiek-gebruiker.ts",
+   "nieuw": "backend/beheer-diagnostiek-gebruiker.ts"
+  },
+  {
+   "oud": "backend/admin-diagnostiek.ts",
+   "nieuw": "backend/beheer-diagnostiek.ts"
+  },
+  {
+   "oud": "backend/admin-integraties.ts",
+   "nieuw": "backend/beheer-integraties.ts"
+  },
+  {
+   "oud": "backend/admin-overzicht-kern.ts",
+   "nieuw": "backend/beheer-overzicht-kern.ts"
+  },
+  {
+   "oud": "backend/admin-overzicht-momentopnamen.ts",
+   "nieuw": "backend/beheer-overzicht-momentopnamen.ts"
+  },
+  {
+   "oud": "backend/admin-overzicht.ts",
+   "nieuw": "backend/beheer-overzicht.ts"
+  },
+  {
+   "oud": "backend/ai-beheer-tooldefs.ts",
+   "nieuw": "backend/ai-beheer-hulpmiddeldefinities.ts"
+  },
+  {
+   "oud": "backend/ai-beheer-tools.ts",
+   "nieuw": "backend/ai-beheer-hulpmiddelen.ts"
+  },
+  {
+   "oud": "backend/ai-grants.ts",
+   "nieuw": "backend/ai-toestemmingen.ts"
+  },
+  {
+   "oud": "backend/ai-mail-assistant.ts",
+   "nieuw": "backend/ai-mail-assistent.ts"
+  },
+  {
+   "oud": "backend/api-platform-connections.ts",
+   "nieuw": "backend/api-platform-verbindingen.ts"
+  },
+  {
+   "oud": "backend/api-platform-vault.ts",
+   "nieuw": "backend/api-platform-kluis.ts"
+  },
+  {
+   "oud": "backend/browser-capabilities.ts",
+   "nieuw": "backend/browser-mogelijkheden.ts"
+  },
+  {
+   "oud": "backend/cognitive-context.ts",
+   "nieuw": "backend/cognitief-context.ts"
+  },
+  {
+   "oud": "backend/connector-v2-store.ts",
+   "nieuw": "backend/connector-v2-opslag.ts"
+  },
+  {
+   "oud": "backend/connectors-commands.ts",
+   "nieuw": "backend/connectors-opdrachten.ts"
+  },
+  {
+   "oud": "backend/connectors-store.ts",
+   "nieuw": "backend/connectors-opslag.ts"
+  },
+  {
+   "oud": "backend/connectors-tools.ts",
+   "nieuw": "backend/connectors-hulpmiddelen.ts"
+  },
+  {
+   "oud": "backend/dev-gebruiker-tooldefs.ts",
+   "nieuw": "backend/dev-gebruiker-hulpmiddeldefinities.ts"
+  },
+  {
+   "oud": "backend/flags.ts",
+   "nieuw": "backend/vlaggen.ts"
+  },
+  {
+   "oud": "backend/global-search.ts",
+   "nieuw": "backend/globaal-zoek.ts"
+  },
+  {
+   "oud": "backend/google-suite-calendar-photos.ts",
+   "nieuw": "backend/google-suite-agenda-fotos.ts"
+  },
+  {
+   "oud": "backend/google-suite-calendar-sync.ts",
+   "nieuw": "backend/google-suite-agenda-sync.ts"
+  },
+  {
+   "oud": "backend/google-suite-onboarding.ts",
+   "nieuw": "backend/google-suite-inrichting.ts"
+  },
+  {
+   "oud": "backend/handoff-binding.ts",
+   "nieuw": "backend/overdracht-binding.ts"
+  },
+  {
+   "oud": "backend/hub-block-data.ts",
+   "nieuw": "backend/hub-blok-gegevens.ts"
+  },
+  {
+   "oud": "backend/hub-layout-preferences.ts",
+   "nieuw": "backend/hub-indeling-voorkeuren.ts"
+  },
+  {
+   "oud": "backend/mail-commands.ts",
+   "nieuw": "backend/mail-opdrachten.ts"
+  },
+  {
+   "oud": "backend/mail-compose-html.ts",
+   "nieuw": "backend/mail-opstel-html.ts"
+  },
+  {
+   "oud": "backend/mail-compose.ts",
+   "nieuw": "backend/mail-opstel.ts"
+  },
+  {
+   "oud": "backend/mail-handwriting.ts",
+   "nieuw": "backend/mail-handschrift.ts"
+  },
+  {
+   "oud": "backend/mail-period-bounds-cache.ts",
+   "nieuw": "backend/mail-periode-grenzen-cache.ts"
+  },
+  {
+   "oud": "backend/mail-pmid-bootstrap.ts",
+   "nieuw": "backend/mail-pmid-opstart.ts"
+  },
+  {
+   "oud": "backend/mail-search-durable.ts",
+   "nieuw": "backend/mail-zoek-duurzaam.ts"
+  },
+  {
+   "oud": "backend/mail-search-relevance.ts",
+   "nieuw": "backend/mail-zoek-relevantie.ts"
+  },
+  {
+   "oud": "backend/mail-search.ts",
+   "nieuw": "backend/mail-zoek.ts"
+  },
+  {
+   "oud": "backend/mail-snooze.ts",
+   "nieuw": "backend/mail-uitstel.ts"
+  },
+  {
+   "oud": "backend/mail-text-normalization.ts",
+   "nieuw": "backend/mail-tekst-normalisatie.ts"
+  },
+  {
+   "oud": "backend/mail-view-preferences.ts",
+   "nieuw": "backend/mail-weergave-voorkeuren.ts"
+  },
+  {
+   "oud": "backend/mcp-connector-store.ts",
+   "nieuw": "backend/mcp-connector-opslag.ts"
+  },
+  {
+   "oud": "backend/mcp-klant-store.ts",
+   "nieuw": "backend/mcp-klant-opslag.ts"
+  },
+  {
+   "oud": "backend/owner-session-handoff.ts",
+   "nieuw": "backend/eigenaar-sessie-overdracht.ts"
+  },
+  {
+   "oud": "backend/passkeys.ts",
+   "nieuw": "backend/toegangssleutels.ts"
+  },
+  {
+   "oud": "backend/release-info.ts",
+   "nieuw": "backend/uitgave-info.ts"
+  },
+  {
+   "oud": "backend/remote-routes.ts",
+   "nieuw": "backend/extern-routes.ts"
+  },
+  {
+   "oud": "backend/site-activity.ts",
+   "nieuw": "backend/site-activiteit.ts"
+  },
+  {
+   "oud": "backend/site-dispatch.ts",
+   "nieuw": "backend/site-aanroep.ts"
+  },
+  {
+   "oud": "backend/site-tools.ts",
+   "nieuw": "backend/site-hulpmiddelen.ts"
+  },
+  {
+   "oud": "backend/tech-assets.ts",
+   "nieuw": "backend/tech-bundels.ts"
+  },
+  {
+   "oud": "scripts/build-extension.mjs",
+   "nieuw": "scripts/bouw-extensie.mjs"
+  },
+  {
+   "oud": "scripts/extension-lib.mjs",
+   "nieuw": "scripts/extensie-lib.mjs"
+  },
+  {
+   "oud": "scripts/mail-smart-inbox-audit.mjs",
+   "nieuw": "scripts/mail-slimme-inbox-audit.mjs"
+  },
+  {
+   "oud": "scripts/security-build.mjs",
+   "nieuw": "scripts/beveiliging-bouw.mjs"
+  },
+  {
+   "oud": "scripts/sign-extension.mjs",
+   "nieuw": "scripts/onderteken-extensie.mjs"
+  },
+  {
+   "oud": "scripts/tech-assets-controle.mjs",
+   "nieuw": "scripts/tech-bundels-controle.mjs"
+  },
+  {
+   "oud": "server/platform/invites.ts",
+   "nieuw": "server/platform/uitnodigingen.ts"
+  },
+  {
+   "oud": "server/platform/secrets.ts",
+   "nieuw": "server/platform/geheimen.ts"
+  },
+  {
+   "oud": "server/platform/storage.ts",
+   "nieuw": "server/platform/opslag.ts"
+  },
+  {
+   "oud": "shared/admin-diagnostiek.ts",
+   "nieuw": "shared/beheer-diagnostiek.ts"
+  },
+  {
+   "oud": "shared/ai-beleid/canonical.ts",
+   "nieuw": "shared/ai-beleid/canoniek.ts"
+  },
+  {
+   "oud": "shared/ai-beleid/catalog.ts",
+   "nieuw": "shared/ai-beleid/catalogus.ts"
+  },
+  {
+   "oud": "shared/ai-beleid/time.ts",
+   "nieuw": "shared/ai-beleid/tijd.ts"
+  },
+  {
+   "oud": "shared/flags.ts",
+   "nieuw": "shared/vlaggen.ts"
+  },
+  {
+   "oud": "shared/mail-search-query.ts",
+   "nieuw": "shared/mail-zoekopdracht.ts"
+  },
+  {
+   "oud": "shared/mail-smart-inbox.ts",
+   "nieuw": "shared/mail-slimme-inbox.ts"
+  },
+  {
+   "oud": "shared/remote-bureaublad.ts",
+   "nieuw": "shared/extern-bureaublad.ts"
+  },
+  {
+   "oud": "shared/tech-assets.ts",
+   "nieuw": "shared/tech-bundels.ts"
+  },
+  {
+   "oud": "shared/uitrol-diagnose-checks.ts",
+   "nieuw": "shared/uitrol-diagnose-controles.ts"
+  },
+  {
+   "oud": "shared/vault-meta.ts",
+   "nieuw": "shared/kluis-meta.ts"
+  },
+  {
+   "oud": "src/AIServiceView.tsx",
+   "nieuw": "src/AIDienstWeergave.tsx"
+  },
+  {
+   "oud": "src/AccessPlaneView.tsx",
+   "nieuw": "src/ToegangslaagWeergave.tsx"
+  },
+  {
+   "oud": "src/AdminAiBeleidView.tsx",
+   "nieuw": "src/BeheerAiBeleidWeergave.tsx"
+  },
+  {
+   "oud": "src/AdminConsoleView.tsx",
+   "nieuw": "src/BeheerConsoleWeergave.tsx"
+  },
+  {
+   "oud": "src/AdminDiagnosticsView.tsx",
+   "nieuw": "src/BeheerDiagnostiekWeergave.tsx"
+  },
+  {
+   "oud": "src/AdminKeysView.tsx",
+   "nieuw": "src/BeheerSleutelsWeergave.tsx"
+  },
+  {
+   "oud": "src/AdminOverviewView.tsx",
+   "nieuw": "src/BeheerOverzichtWeergave.tsx"
+  },
+  {
+   "oud": "src/AdminUitrolView.tsx",
+   "nieuw": "src/BeheerUitrolWeergave.tsx"
+  },
+  {
+   "oud": "src/AgentSetupWizard.tsx",
+   "nieuw": "src/AgentInrichtingWizard.tsx"
+  },
+  {
+   "oud": "src/AgentsPanel.tsx",
+   "nieuw": "src/AgentenPaneel.tsx"
+  },
+  {
+   "oud": "src/ApiPlatformView.tsx",
+   "nieuw": "src/ApiPlatformWeergave.tsx"
+  },
+  {
+   "oud": "src/BrowserExtensionPanel.tsx",
+   "nieuw": "src/BrowserExtensiePaneel.tsx"
+  },
+  {
+   "oud": "src/CanonicalAccountMenu.tsx",
+   "nieuw": "src/CanoniekAccountMenu.tsx"
+  },
+  {
+   "oud": "src/CanonicalChrome.tsx",
+   "nieuw": "src/CanoniekOmlijsting.tsx"
+  },
+  {
+   "oud": "src/CanonicalConnectionBanner.tsx",
+   "nieuw": "src/CanoniekVerbindingBand.tsx"
+  },
+  {
+   "oud": "src/CanonicalConsolidationView.tsx",
+   "nieuw": "src/CanoniekConsolidatieWeergave.tsx"
+  },
+  {
+   "oud": "src/CanonicalImplementationTruthMatrix.tsx",
+   "nieuw": "src/CanoniekImplementatieWaarheidMatrix.tsx"
+  },
+  {
+   "oud": "src/CanonicalNotificationCenter.tsx",
+   "nieuw": "src/CanoniekMeldingencentrum.tsx"
+  },
+  {
+   "oud": "src/CloudFunctionalView.tsx",
+   "nieuw": "src/CloudFunctioneelWeergave.tsx"
+  },
+  {
+   "oud": "src/CognitiveContext.tsx",
+   "nieuw": "src/CognitiefContext.tsx"
+  },
+  {
+   "oud": "src/DevicesView.tsx",
+   "nieuw": "src/ApparatenWeergave.tsx"
+  },
+  {
+   "oud": "src/ExtensionWizard.tsx",
+   "nieuw": "src/ExtensieWizard.tsx"
+  },
+  {
+   "oud": "src/GitHubView.tsx",
+   "nieuw": "src/GitHubWeergave.tsx"
+  },
+  {
+   "oud": "src/GlobalSearchPanel.tsx",
+   "nieuw": "src/GlobaalZoekPaneel.tsx"
+  },
+  {
+   "oud": "src/GoogleMailWorkspace.tsx",
+   "nieuw": "src/GoogleMailWerkruimte.tsx"
+  },
+  {
+   "oud": "src/GoogleSuiteMediaView.tsx",
+   "nieuw": "src/GoogleSuiteMediaWeergave.tsx"
+  },
+  {
+   "oud": "src/HubBlockWidget.tsx",
+   "nieuw": "src/HubBlokWidget.tsx"
+  },
+  {
+   "oud": "src/HubNotes.tsx",
+   "nieuw": "src/HubNotities.tsx"
+  },
+  {
+   "oud": "src/IdentityAdminView.tsx",
+   "nieuw": "src/IdentiteitBeheerWeergave.tsx"
+  },
+  {
+   "oud": "src/LanguageFlag.tsx",
+   "nieuw": "src/TaalVlag.tsx"
+  },
+  {
+   "oud": "src/MailAccountSwitcher.tsx",
+   "nieuw": "src/MailAccountWisselaar.tsx"
+  },
+  {
+   "oud": "src/MailAdvancedSearch.tsx",
+   "nieuw": "src/MailGeavanceerdZoeken.tsx"
+  },
+  {
+   "oud": "src/MailAiToolbar.tsx",
+   "nieuw": "src/MailAiWerkbalk.tsx"
+  },
+  {
+   "oud": "src/MailArchiveEditor.tsx",
+   "nieuw": "src/MailArchiefBewerker.tsx"
+  },
+  {
+   "oud": "src/MailArchivePreview.tsx",
+   "nieuw": "src/MailArchiefVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailAttachmentCard.tsx",
+   "nieuw": "src/MailBijlageKaart.tsx"
+  },
+  {
+   "oud": "src/MailAttachmentMiniature.tsx",
+   "nieuw": "src/MailBijlageMiniatuur.tsx"
+  },
+  {
+   "oud": "src/MailAttachmentPreview.tsx",
+   "nieuw": "src/MailBijlageVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailBioinformaticsEditor.tsx",
+   "nieuw": "src/MailBioinformaticaBewerker.tsx"
+  },
+  {
+   "oud": "src/MailBioinformaticsPreview.tsx",
+   "nieuw": "src/MailBioinformaticaVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailCadEditor.tsx",
+   "nieuw": "src/MailCadBewerker.tsx"
+  },
+  {
+   "oud": "src/MailCadPreview.tsx",
+   "nieuw": "src/MailCadVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailColorSwatches.tsx",
+   "nieuw": "src/MailKleurstalen.tsx"
+  },
+  {
+   "oud": "src/MailComposeEditor.tsx",
+   "nieuw": "src/MailOpstelBewerker.tsx"
+  },
+  {
+   "oud": "src/MailComposeFloat.tsx",
+   "nieuw": "src/MailOpstelZwevend.tsx"
+  },
+  {
+   "oud": "src/MailDatabaseEditor.tsx",
+   "nieuw": "src/MailDatabaseBewerker.tsx"
+  },
+  {
+   "oud": "src/MailDatabasePreview.tsx",
+   "nieuw": "src/MailDatabaseVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailDateCalendar.tsx",
+   "nieuw": "src/MailDatumKalender.tsx"
+  },
+  {
+   "oud": "src/MailDensityProfileEditor.tsx",
+   "nieuw": "src/MailDichtheidProfielBewerker.tsx"
+  },
+  {
+   "oud": "src/MailDevOpsEditor.tsx",
+   "nieuw": "src/MailDevOpsBewerker.tsx"
+  },
+  {
+   "oud": "src/MailDevOpsPreview.tsx",
+   "nieuw": "src/MailDevOpsVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailDiskKnop.tsx",
+   "nieuw": "src/MailDriveKnop.tsx"
+  },
+  {
+   "oud": "src/MailDocumentEditor.tsx",
+   "nieuw": "src/MailDocumentBewerker.tsx"
+  },
+  {
+   "oud": "src/MailEbookEditor.tsx",
+   "nieuw": "src/MailEbookBewerker.tsx"
+  },
+  {
+   "oud": "src/MailEbookPreview.tsx",
+   "nieuw": "src/MailEbookVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailEngineeringEditor.tsx",
+   "nieuw": "src/MailTechniekBewerker.tsx"
+  },
+  {
+   "oud": "src/MailEngineeringPreview.tsx",
+   "nieuw": "src/MailTechniekVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailExternalSaveDialog.tsx",
+   "nieuw": "src/MailExternOpslaanDialoog.tsx"
+  },
+  {
+   "oud": "src/MailFinanceEditor.tsx",
+   "nieuw": "src/MailFinancienBewerker.tsx"
+  },
+  {
+   "oud": "src/MailFinancePreview.tsx",
+   "nieuw": "src/MailFinancienVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailFixedLayoutEditor.tsx",
+   "nieuw": "src/MailVasteIndelingBewerker.tsx"
+  },
+  {
+   "oud": "src/MailFixedLayoutPreview.tsx",
+   "nieuw": "src/MailVasteIndelingVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailFontEditor.tsx",
+   "nieuw": "src/MailLettertypeBewerker.tsx"
+  },
+  {
+   "oud": "src/MailFontPreview.tsx",
+   "nieuw": "src/MailLettertypeVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailForwardAttachmentDialog.tsx",
+   "nieuw": "src/MailDoorstuurBijlageDialoog.tsx"
+  },
+  {
+   "oud": "src/MailFunctionalView.tsx",
+   "nieuw": "src/MailFunctioneelWeergave.tsx"
+  },
+  {
+   "oud": "src/MailGameDevEditor.tsx",
+   "nieuw": "src/MailSpelontwikkelingBewerker.tsx"
+  },
+  {
+   "oud": "src/MailGameDevPreview.tsx",
+   "nieuw": "src/MailSpelontwikkelingVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailGeospatialMap.tsx",
+   "nieuw": "src/MailGeoKaart.tsx"
+  },
+  {
+   "oud": "src/MailGovernmentEditor.tsx",
+   "nieuw": "src/MailOverheidBewerker.tsx"
+  },
+  {
+   "oud": "src/MailGovernmentPreview.tsx",
+   "nieuw": "src/MailOverheidVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailGraphicsEditor.tsx",
+   "nieuw": "src/MailGrafischBewerker.tsx"
+  },
+  {
+   "oud": "src/MailGraphicsPreview.tsx",
+   "nieuw": "src/MailGrafischVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailHandwritingInput.tsx",
+   "nieuw": "src/MailHandschriftInvoer.tsx"
+  },
+  {
+   "oud": "src/MailInputTools.tsx",
+   "nieuw": "src/MailInvoerHulpmiddelen.tsx"
+  },
+  {
+   "oud": "src/MailLinguisticsEditor.tsx",
+   "nieuw": "src/MailTaalkundeBewerker.tsx"
+  },
+  {
+   "oud": "src/MailLinguisticsPreview.tsx",
+   "nieuw": "src/MailTaalkundeVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailLogisticsEditor.tsx",
+   "nieuw": "src/MailLogistiekBewerker.tsx"
+  },
+  {
+   "oud": "src/MailLogisticsPreview.tsx",
+   "nieuw": "src/MailLogistiekVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailMediaDocumentEditor.tsx",
+   "nieuw": "src/MailMediaDocumentBewerker.tsx"
+  },
+  {
+   "oud": "src/MailMediaDocumentPreview.tsx",
+   "nieuw": "src/MailMediaDocumentVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailMedicalEditor.tsx",
+   "nieuw": "src/MailMedischBewerker.tsx"
+  },
+  {
+   "oud": "src/MailMedicalPreview.tsx",
+   "nieuw": "src/MailMedischVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailMessageBody.tsx",
+   "nieuw": "src/MailBerichtTekst.tsx"
+  },
+  {
+   "oud": "src/MailMessageEditor.tsx",
+   "nieuw": "src/MailBerichtBewerker.tsx"
+  },
+  {
+   "oud": "src/MailMessagePreview.tsx",
+   "nieuw": "src/MailBerichtVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailMessageRow.tsx",
+   "nieuw": "src/MailBerichtRij.tsx"
+  },
+  {
+   "oud": "src/MailMinimizedViewer.tsx",
+   "nieuw": "src/MailGeminimaliseerdeViewer.tsx"
+  },
+  {
+   "oud": "src/MailMinimumMessageRow.tsx",
+   "nieuw": "src/MailMinimumBerichtRij.tsx"
+  },
+  {
+   "oud": "src/MailMlEditor.tsx",
+   "nieuw": "src/MailMlBewerker.tsx"
+  },
+  {
+   "oud": "src/MailMlPreview.tsx",
+   "nieuw": "src/MailMlVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailMusicEditor.tsx",
+   "nieuw": "src/MailMuziekBewerker.tsx"
+  },
+  {
+   "oud": "src/MailMusicPreview.tsx",
+   "nieuw": "src/MailMuziekVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailMusicWorkbench.tsx",
+   "nieuw": "src/MailMuziekWerkbank.tsx"
+  },
+  {
+   "oud": "src/MailNavigationEditor.tsx",
+   "nieuw": "src/MailNavigatieBewerker.tsx"
+  },
+  {
+   "oud": "src/MailNetworkEditor.tsx",
+   "nieuw": "src/MailNetwerkBewerker.tsx"
+  },
+  {
+   "oud": "src/MailNetworkPreview.tsx",
+   "nieuw": "src/MailNetwerkVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailNewMessageDialog.tsx",
+   "nieuw": "src/MailNieuwBerichtDialoog.tsx"
+  },
+  {
+   "oud": "src/MailOrderedDensityBlocks.tsx",
+   "nieuw": "src/MailGeordendDichtheidBlokken.tsx"
+  },
+  {
+   "oud": "src/MailPdfPreview.tsx",
+   "nieuw": "src/MailPdfVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailPdfProfileBanner.tsx",
+   "nieuw": "src/MailPdfProfielBand.tsx"
+  },
+  {
+   "oud": "src/MailPeriodPicker.tsx",
+   "nieuw": "src/MailPeriodeKiezer.tsx"
+  },
+  {
+   "oud": "src/MailPersonalDataEditor.tsx",
+   "nieuw": "src/MailPersoonsgegevensBewerker.tsx"
+  },
+  {
+   "oud": "src/MailPersonalDataPreview.tsx",
+   "nieuw": "src/MailPersoonsgegevensVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailPrepressEditor.tsx",
+   "nieuw": "src/MailDrukvoorbereidingBewerker.tsx"
+  },
+  {
+   "oud": "src/MailPrepressPreview.tsx",
+   "nieuw": "src/MailDrukvoorbereidingVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailPresentationEditor.tsx",
+   "nieuw": "src/MailPresentatieBewerker.tsx"
+  },
+  {
+   "oud": "src/MailPresentationPreview.tsx",
+   "nieuw": "src/MailPresentatieVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailQuickSettings.tsx",
+   "nieuw": "src/MailSnelleInstellingen.tsx"
+  },
+  {
+   "oud": "src/MailReaderAi.tsx",
+   "nieuw": "src/MailLezerAi.tsx"
+  },
+  {
+   "oud": "src/MailReaderN09Dialog.tsx",
+   "nieuw": "src/MailLezerN09Dialoog.tsx"
+  },
+  {
+   "oud": "src/MailReaderN10Dialog.tsx",
+   "nieuw": "src/MailLezerN10Dialoog.tsx"
+  },
+  {
+   "oud": "src/MailReaderOrganizeDialog.tsx",
+   "nieuw": "src/MailLezerOrdenDialoog.tsx"
+  },
+  {
+   "oud": "src/MailReaderSearchNavigator.tsx",
+   "nieuw": "src/MailLezerZoekNavigator.tsx"
+  },
+  {
+   "oud": "src/MailReaderToolbar.tsx",
+   "nieuw": "src/MailLezerWerkbalk.tsx"
+  },
+  {
+   "oud": "src/MailRichDocumentPreview.tsx",
+   "nieuw": "src/MailOpgemaaktDocumentVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailRowQuickActionSettings.tsx",
+   "nieuw": "src/MailRijSnelleActieInstellingen.tsx"
+  },
+  {
+   "oud": "src/MailRowQuickActions.tsx",
+   "nieuw": "src/MailRijSnelleActies.tsx"
+  },
+  {
+   "oud": "src/MailScheduleMenu.tsx",
+   "nieuw": "src/MailPlanningMenu.tsx"
+  },
+  {
+   "oud": "src/MailScientificEditor.tsx",
+   "nieuw": "src/MailWetenschappelijkBewerker.tsx"
+  },
+  {
+   "oud": "src/MailScientificPreview.tsx",
+   "nieuw": "src/MailWetenschappelijkVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailSearchActiveChips.tsx",
+   "nieuw": "src/MailZoekActiefChips.tsx"
+  },
+  {
+   "oud": "src/MailSearchField.tsx",
+   "nieuw": "src/MailZoekVeld.tsx"
+  },
+  {
+   "oud": "src/MailSearchFilters.tsx",
+   "nieuw": "src/MailZoekFilters.tsx"
+  },
+  {
+   "oud": "src/MailSectionMenu.tsx",
+   "nieuw": "src/MailSectieMenu.tsx"
+  },
+  {
+   "oud": "src/MailSectionSelect.tsx",
+   "nieuw": "src/MailSectieKeuze.tsx"
+  },
+  {
+   "oud": "src/MailSecurityEditor.tsx",
+   "nieuw": "src/MailBeveiligingBewerker.tsx"
+  },
+  {
+   "oud": "src/MailSecurityPreview.tsx",
+   "nieuw": "src/MailBeveiligingVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailSelectionToolbar.tsx",
+   "nieuw": "src/MailSelectieWerkbalk.tsx"
+  },
+  {
+   "oud": "src/MailSettingsPreview.tsx",
+   "nieuw": "src/MailInstellingenVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailSettingsScaffold.tsx",
+   "nieuw": "src/MailInstellingenGeraamte.tsx"
+  },
+  {
+   "oud": "src/MailSidebarNavigation.tsx",
+   "nieuw": "src/MailZijbalkNavigatie.tsx"
+  },
+  {
+   "oud": "src/MailSnoozeControl.tsx",
+   "nieuw": "src/MailUitstelBediening.tsx"
+  },
+  {
+   "oud": "src/MailSourceWorkspace.tsx",
+   "nieuw": "src/MailBronWerkruimte.tsx"
+  },
+  {
+   "oud": "src/MailSpecialistExplorer.tsx",
+   "nieuw": "src/MailSpecialistVerkenner.tsx"
+  },
+  {
+   "oud": "src/MailSpreadsheetEditor.tsx",
+   "nieuw": "src/MailRekenbladBewerker.tsx"
+  },
+  {
+   "oud": "src/MailSpreadsheetPreview.tsx",
+   "nieuw": "src/MailRekenbladVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailSubscriptionsView.tsx",
+   "nieuw": "src/MailAbonnementenWeergave.tsx"
+  },
+  {
+   "oud": "src/MailSystemAttentionBuckets.tsx",
+   "nieuw": "src/MailSysteemAandachtGroepen.tsx"
+  },
+  {
+   "oud": "src/MailThreadContent.tsx",
+   "nieuw": "src/MailGesprekInhoud.tsx"
+  },
+  {
+   "oud": "src/MailThreatEditor.tsx",
+   "nieuw": "src/MailDreigingBewerker.tsx"
+  },
+  {
+   "oud": "src/MailThreatPreview.tsx",
+   "nieuw": "src/MailDreigingVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/MailTranslationBar.tsx",
+   "nieuw": "src/MailVertalingBalk.tsx"
+  },
+  {
+   "oud": "src/MailVttRpgEditor.tsx",
+   "nieuw": "src/MailVttRpgBewerker.tsx"
+  },
+  {
+   "oud": "src/MailVttRpgPreview.tsx",
+   "nieuw": "src/MailVttRpgVoorbeeld.tsx"
+  },
+  {
+   "oud": "src/McpAgentsHub.tsx",
+   "nieuw": "src/McpAgentenHub.tsx"
+  },
+  {
+   "oud": "src/McpAppsView.tsx",
+   "nieuw": "src/McpAppsWeergave.tsx"
+  },
+  {
+   "oud": "src/McpBackupsCard.tsx",
+   "nieuw": "src/McpBackupsKaart.tsx"
+  },
+  {
+   "oud": "src/McpConnectorPanel.tsx",
+   "nieuw": "src/McpConnectorPaneel.tsx"
+  },
+  {
+   "oud": "src/McpConsentModal.tsx",
+   "nieuw": "src/McpToestemmingVenster.tsx"
+  },
+  {
+   "oud": "src/McpServerBeheerCard.tsx",
+   "nieuw": "src/McpServerBeheerKaart.tsx"
+  },
+  {
+   "oud": "src/McpServiceView.tsx",
+   "nieuw": "src/McpDienstWeergave.tsx"
+  },
+  {
+   "oud": "src/McpToolsPanel.tsx",
+   "nieuw": "src/McpHulpmiddelenPaneel.tsx"
+  },
+  {
+   "oud": "src/MenuCustomizer.tsx",
+   "nieuw": "src/MenuAanpasser.tsx"
+  },
+  {
+   "oud": "src/NotificationPanelBody.tsx",
+   "nieuw": "src/MeldingenpaneelInhoud.tsx"
+  },
+  {
+   "oud": "src/OwnerIdentityAuthorize.tsx",
+   "nieuw": "src/EigenaarIdentiteitAutoriseer.tsx"
+  },
+  {
+   "oud": "src/OwnerIdentityCallback.tsx",
+   "nieuw": "src/EigenaarIdentiteitTerug.tsx"
+  },
+  {
+   "oud": "src/PasskeysSection.tsx",
+   "nieuw": "src/ToegangssleutelsSectie.tsx"
+  },
+  {
+   "oud": "src/ProductEmptyState.tsx",
+   "nieuw": "src/ProductLegeToestand.tsx"
+  },
+  {
+   "oud": "src/SecuritySessionsPanel.tsx",
+   "nieuw": "src/BeveiligingSessiesPaneel.tsx"
+  },
+  {
+   "oud": "src/ServiceViews.tsx",
+   "nieuw": "src/DienstWeergaven.tsx"
+  },
+  {
+   "oud": "src/SettingsCenterView.tsx",
+   "nieuw": "src/InstellingencentrumWeergave.tsx"
+  },
+  {
+   "oud": "src/SmartHomeView.tsx",
+   "nieuw": "src/DomoticaWeergave.tsx"
+  },
+  {
+   "oud": "src/SnelleToegangEditor.tsx",
+   "nieuw": "src/SnelleToegangBewerker.tsx"
+  },
+  {
+   "oud": "src/StableAvatar.tsx",
+   "nieuw": "src/StabielAvatar.tsx"
+  },
+  {
+   "oud": "src/UnifiedServiceApp.tsx",
+   "nieuw": "src/VerenigdDienstApp.tsx"
+  },
+  {
+   "oud": "src/VaultMeta.tsx",
+   "nieuw": "src/KluisMeta.tsx"
+  },
+  {
+   "oud": "src/ViewportTooltipLayer.tsx",
+   "nieuw": "src/ViewportKnopinfoLaag.tsx"
+  },
+  {
+   "oud": "src/access-plane-copy.ts",
+   "nieuw": "src/toegangslaag-teksten.ts"
+  },
+  {
+   "oud": "src/access-plane-panels.tsx",
+   "nieuw": "src/toegangslaag-panelen.tsx"
+  },
+  {
+   "oud": "src/access-plane.css",
+   "nieuw": "src/toegangslaag.css"
+  },
+  {
+   "oud": "src/access-signed-out.css",
+   "nieuw": "src/toegang-afgemeld.css"
+  },
+  {
+   "oud": "src/account-preview-history.ts",
+   "nieuw": "src/account-voorbeeld-geschiedenis.ts"
+  },
+  {
+   "oud": "src/admin-ai-beleid.css",
+   "nieuw": "src/beheer-ai-beleid.css"
+  },
+  {
+   "oud": "src/admin-console.css",
+   "nieuw": "src/beheer-console.css"
+  },
+  {
+   "oud": "src/admin-terms.tsx",
+   "nieuw": "src/beheer-termen.tsx"
+  },
+  {
+   "oud": "src/admin-uitrol.css",
+   "nieuw": "src/beheer-uitrol.css"
+  },
+  {
+   "oud": "src/agent-commands.ts",
+   "nieuw": "src/agent-opdrachten.ts"
+  },
+  {
+   "oud": "src/agenten/data.ts",
+   "nieuw": "src/agenten/gegevens.ts"
+  },
+  {
+   "oud": "src/agents-data.ts",
+   "nieuw": "src/agenten-gegevens.ts"
+  },
+  {
+   "oud": "src/agents-panel.css",
+   "nieuw": "src/agenten-paneel.css"
+  },
+  {
+   "oud": "src/ai-site-actions.ts",
+   "nieuw": "src/ai-site-acties.ts"
+  },
+  {
+   "oud": "src/api-platform-view.css",
+   "nieuw": "src/api-platform-weergave.css"
+  },
+  {
+   "oud": "src/auth-flow-policy.ts",
+   "nieuw": "src/auth-stroom-beleid.ts"
+  },
+  {
+   "oud": "src/boot-shell.ts",
+   "nieuw": "src/opstart-schil.ts"
+  },
+  {
+   "oud": "src/browser-agent-heartbeat.ts",
+   "nieuw": "src/browser-agent-hartslag.ts"
+  },
+  {
+   "oud": "src/browser-capabilities-ui.ts",
+   "nieuw": "src/browser-mogelijkheden-ui.ts"
+  },
+  {
+   "oud": "src/canonical-account-menu-model.ts",
+   "nieuw": "src/canoniek-account-menu-model.ts"
+  },
+  {
+   "oud": "src/canonical-account-menu.css",
+   "nieuw": "src/canoniek-account-menu.css"
+  },
+  {
+   "oud": "src/canonical-chrome.css",
+   "nieuw": "src/canoniek-omlijsting.css"
+  },
+  {
+   "oud": "src/canonical-copy.ts",
+   "nieuw": "src/canoniek-teksten.ts"
+  },
+  {
+   "oud": "src/canonical-events.ts",
+   "nieuw": "src/canoniek-gebeurtenissen.ts"
+  },
+  {
+   "oud": "src/canonical-governance.css",
+   "nieuw": "src/canoniek-bestuur.css"
+  },
+  {
+   "oud": "src/canonical-implementation-truth.css",
+   "nieuw": "src/canoniek-implementatie-waarheid.css"
+  },
+  {
+   "oud": "src/canonical-navigation.ts",
+   "nieuw": "src/canoniek-navigatie.ts"
+  },
+  {
+   "oud": "src/canonical-notification-center.css",
+   "nieuw": "src/canoniek-meldingencentrum.css"
+  },
+  {
+   "oud": "src/canonical-notifications.ts",
+   "nieuw": "src/canoniek-meldingen.ts"
+  },
+  {
+   "oud": "src/canonical-service.ts",
+   "nieuw": "src/canoniek-dienst.ts"
+  },
+  {
+   "oud": "src/chat-panel.css",
+   "nieuw": "src/chat-paneel.css"
+  },
+  {
+   "oud": "src/cloud-functional.css",
+   "nieuw": "src/cloud-functioneel.css"
+  },
+  {
+   "oud": "src/cloud-provider-i18n.ts",
+   "nieuw": "src/cloud-aanbieder-i18n.ts"
+  },
+  {
+   "oud": "src/cognitive-context.css",
+   "nieuw": "src/cognitief-context.css"
+  },
+  {
+   "oud": "src/connector-activity.ts",
+   "nieuw": "src/connector-activiteit.ts"
+  },
+  {
+   "oud": "src/domain-view-cache.ts",
+   "nieuw": "src/domein-weergave-cache.ts"
+  },
+  {
+   "oud": "src/ecosystem-production.css",
+   "nieuw": "src/ecosysteem-productie.css"
+  },
+  {
+   "oud": "src/ext-permissions.css",
+   "nieuw": "src/ext-rechten.css"
+  },
+  {
+   "oud": "src/extension-folder-install.ts",
+   "nieuw": "src/extensie-map-installeer.ts"
+  },
+  {
+   "oud": "src/extension-welcome-store.ts",
+   "nieuw": "src/extensie-welkom-opslag.ts"
+  },
+  {
+   "oud": "src/extension-wizard.css",
+   "nieuw": "src/extensie-wizard.css"
+  },
+  {
+   "oud": "src/flags/Vlaggen.tsx",
+   "nieuw": "src/vlaggen/Vlaggen.tsx"
+  },
+  {
+   "oud": "src/flags/flags.css",
+   "nieuw": "src/vlaggen/vlaggen.css"
+  },
+  {
+   "oud": "src/flags/flags.ts",
+   "nieuw": "src/vlaggen/vlaggen-api.ts"
+  },
+  {
+   "oud": "src/floating-avoidance.ts",
+   "nieuw": "src/zwevend-ontwijking.ts"
+  },
+  {
+   "oud": "src/github-view.css",
+   "nieuw": "src/github-weergave.css"
+  },
+  {
+   "oud": "src/global-search.css",
+   "nieuw": "src/globaal-zoek.css"
+  },
+  {
+   "oud": "src/google-mail-workspace.css",
+   "nieuw": "src/google-mail-werkruimte.css"
+  },
+  {
+   "oud": "src/hub-block-data.ts",
+   "nieuw": "src/hub-blok-gegevens.ts"
+  },
+  {
+   "oud": "src/hub-functional-blocks.css",
+   "nieuw": "src/hub-functioneel-blokken.css"
+  },
+  {
+   "oud": "src/hub-notes.css",
+   "nieuw": "src/hub-notities.css"
+  },
+  {
+   "oud": "src/install-commands.ts",
+   "nieuw": "src/installeer-opdrachten.ts"
+  },
+  {
+   "oud": "src/language-controller.ts",
+   "nieuw": "src/taal-controller.ts"
+  },
+  {
+   "oud": "src/language-flag.css",
+   "nieuw": "src/taal-vlag.css"
+  },
+  {
+   "oud": "src/mail-advanced-search.css",
+   "nieuw": "src/mail-geavanceerd-zoeken.css"
+  },
+  {
+   "oud": "src/mail-ai-toolbar.css",
+   "nieuw": "src/mail-ai-werkbalk.css"
+  },
+  {
+   "oud": "src/mail-archive-capabilities.ts",
+   "nieuw": "src/mail-archief-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-archive-content.ts",
+   "nieuw": "src/mail-archief-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-attachment-cache.ts",
+   "nieuw": "src/mail-bijlage-cache.ts"
+  },
+  {
+   "oud": "src/mail-attachment-loader.ts",
+   "nieuw": "src/mail-bijlage-lader.ts"
+  },
+  {
+   "oud": "src/mail-attachment-strip.css",
+   "nieuw": "src/mail-bijlage-strook.css"
+  },
+  {
+   "oud": "src/mail-attachment-workbench.css",
+   "nieuw": "src/mail-bijlage-werkbank.css"
+  },
+  {
+   "oud": "src/mail-attachment-workbench.ts",
+   "nieuw": "src/mail-bijlage-werkbank.ts"
+  },
+  {
+   "oud": "src/mail-bioinformatics-capabilities.ts",
+   "nieuw": "src/mail-bioinformatica-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-bioinformatics-content.ts",
+   "nieuw": "src/mail-bioinformatica-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-bioinformatics.css",
+   "nieuw": "src/mail-bioinformatica.css"
+  },
+  {
+   "oud": "src/mail-body-passend.ts",
+   "nieuw": "src/mail-tekst-passend.ts"
+  },
+  {
+   "oud": "src/mail-bounded-gzip.ts",
+   "nieuw": "src/mail-begrensd-gzip.ts"
+  },
+  {
+   "oud": "src/mail-bounded-zip.ts",
+   "nieuw": "src/mail-begrensd-zip.ts"
+  },
+  {
+   "oud": "src/mail-bulky-preview-prefetch.ts",
+   "nieuw": "src/mail-ruim-voorbeeld-voorladen.ts"
+  },
+  {
+   "oud": "src/mail-bulky-raster.ts",
+   "nieuw": "src/mail-ruim-raster.ts"
+  },
+  {
+   "oud": "src/mail-cad-capabilities.ts",
+   "nieuw": "src/mail-cad-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-cad-content.ts",
+   "nieuw": "src/mail-cad-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-calendar-contact.ts",
+   "nieuw": "src/mail-agenda-contact.ts"
+  },
+  {
+   "oud": "src/mail-color-palette.ts",
+   "nieuw": "src/mail-kleur-palet.ts"
+  },
+  {
+   "oud": "src/mail-color-swatches.css",
+   "nieuw": "src/mail-kleurstalen.css"
+  },
+  {
+   "oud": "src/mail-compact-reading-options.css",
+   "nieuw": "src/mail-compact-lees-opties.css"
+  },
+  {
+   "oud": "src/mail-compose-api.ts",
+   "nieuw": "src/mail-opstel-api.ts"
+  },
+  {
+   "oud": "src/mail-compose-editor.css",
+   "nieuw": "src/mail-opstel-bewerker.css"
+  },
+  {
+   "oud": "src/mail-compose-menu-plaats.ts",
+   "nieuw": "src/mail-opstel-menu-plaats.ts"
+  },
+  {
+   "oud": "src/mail-compose-plaats.ts",
+   "nieuw": "src/mail-opstel-plaats.ts"
+  },
+  {
+   "oud": "src/mail-database-binary.ts",
+   "nieuw": "src/mail-database-binair.ts"
+  },
+  {
+   "oud": "src/mail-database-capabilities.ts",
+   "nieuw": "src/mail-database-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-database-content.ts",
+   "nieuw": "src/mail-database-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-date-periods.css",
+   "nieuw": "src/mail-datum-periodes.css"
+  },
+  {
+   "oud": "src/mail-date-periods.ts",
+   "nieuw": "src/mail-datum-periodes.ts"
+  },
+  {
+   "oud": "src/mail-density-fluid.ts",
+   "nieuw": "src/mail-dichtheid-vloeiend.ts"
+  },
+  {
+   "oud": "src/mail-density-profile-editor.css",
+   "nieuw": "src/mail-dichtheid-profiel-bewerker.css"
+  },
+  {
+   "oud": "src/mail-density-profile.ts",
+   "nieuw": "src/mail-dichtheid-profiel.ts"
+  },
+  {
+   "oud": "src/mail-devops-capabilities.ts",
+   "nieuw": "src/mail-devops-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-devops-content.ts",
+   "nieuw": "src/mail-devops-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-devops-serialization.ts",
+   "nieuw": "src/mail-devops-serialisatie.ts"
+  },
+  {
+   "oud": "src/mail-document-capabilities.ts",
+   "nieuw": "src/mail-document-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-document-content.ts",
+   "nieuw": "src/mail-document-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-document-source.ts",
+   "nieuw": "src/mail-document-bron.ts"
+  },
+  {
+   "oud": "src/mail-docx-copy.ts",
+   "nieuw": "src/mail-docx-kopie.ts"
+  },
+  {
+   "oud": "src/mail-ebook-capabilities.ts",
+   "nieuw": "src/mail-ebook-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-ebook-content.ts",
+   "nieuw": "src/mail-ebook-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-engineering-capabilities.ts",
+   "nieuw": "src/mail-techniek-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-engineering-content.ts",
+   "nieuw": "src/mail-techniek-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-engineering.css",
+   "nieuw": "src/mail-techniek.css"
+  },
+  {
+   "oud": "src/mail-finance-capabilities.ts",
+   "nieuw": "src/mail-financien-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-finance-content.ts",
+   "nieuw": "src/mail-financien-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-fixed-layout-capabilities.ts",
+   "nieuw": "src/mail-vaste-indeling-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-fixed-layout-content.ts",
+   "nieuw": "src/mail-vaste-indeling-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-fixed-layout.css",
+   "nieuw": "src/mail-vaste-indeling.css"
+  },
+  {
+   "oud": "src/mail-font-capabilities.ts",
+   "nieuw": "src/mail-lettertype-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-font-content.ts",
+   "nieuw": "src/mail-lettertype-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-format-catalog.ts",
+   "nieuw": "src/mail-formaat-catalogus.ts"
+  },
+  {
+   "oud": "src/mail-format-qa.ts",
+   "nieuw": "src/mail-formaat-qa.ts"
+  },
+  {
+   "oud": "src/mail-forward-attachment-dialog.css",
+   "nieuw": "src/mail-doorstuur-bijlage-dialoog.css"
+  },
+  {
+   "oud": "src/mail-forward-pdf.ts",
+   "nieuw": "src/mail-doorstuur-pdf.ts"
+  },
+  {
+   "oud": "src/mail-functional.css",
+   "nieuw": "src/mail-functioneel.css"
+  },
+  {
+   "oud": "src/mail-gamedev-capabilities.ts",
+   "nieuw": "src/mail-spelontwikkeling-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-gamedev-content.ts",
+   "nieuw": "src/mail-spelontwikkeling-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-geospatial-extended.ts",
+   "nieuw": "src/mail-geo-uitgebreid.ts"
+  },
+  {
+   "oud": "src/mail-geospatial-map.css",
+   "nieuw": "src/mail-geo-kaart.css"
+  },
+  {
+   "oud": "src/mail-government-capabilities.ts",
+   "nieuw": "src/mail-overheid-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-government-content.ts",
+   "nieuw": "src/mail-overheid-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-graphics-capabilities.ts",
+   "nieuw": "src/mail-grafisch-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-graphics-content.ts",
+   "nieuw": "src/mail-grafisch-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-graphics.css",
+   "nieuw": "src/mail-grafisch.css"
+  },
+  {
+   "oud": "src/mail-html-sanitize.ts",
+   "nieuw": "src/mail-html-opschonen.ts"
+  },
+  {
+   "oud": "src/mail-input-tools.css",
+   "nieuw": "src/mail-invoer-hulpmiddelen.css"
+  },
+  {
+   "oud": "src/mail-layered-inbox.css",
+   "nieuw": "src/mail-gelaagde-inbox.css"
+  },
+  {
+   "oud": "src/mail-legal-archive-extended.ts",
+   "nieuw": "src/mail-juridisch-archief-uitgebreid.ts"
+  },
+  {
+   "oud": "src/mail-linguistics-capabilities.ts",
+   "nieuw": "src/mail-taalkunde-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-linguistics-content.ts",
+   "nieuw": "src/mail-taalkunde-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-logistics-capabilities.ts",
+   "nieuw": "src/mail-logistiek-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-logistics-content.ts",
+   "nieuw": "src/mail-logistiek-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-mdb-reader.ts",
+   "nieuw": "src/mail-mdb-lezer.ts"
+  },
+  {
+   "oud": "src/mail-media-document-capabilities.ts",
+   "nieuw": "src/mail-media-document-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-media-document-content.ts",
+   "nieuw": "src/mail-media-document-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-medical-capabilities.ts",
+   "nieuw": "src/mail-medisch-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-medical-content.ts",
+   "nieuw": "src/mail-medisch-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-medical.css",
+   "nieuw": "src/mail-medisch.css"
+  },
+  {
+   "oud": "src/mail-message-body.css",
+   "nieuw": "src/mail-bericht-tekst.css"
+  },
+  {
+   "oud": "src/mail-message-capabilities.ts",
+   "nieuw": "src/mail-bericht-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-message-content.ts",
+   "nieuw": "src/mail-bericht-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-minimized-viewer.css",
+   "nieuw": "src/mail-geminimaliseerde-viewer.css"
+  },
+  {
+   "oud": "src/mail-minimum-row.css",
+   "nieuw": "src/mail-minimum-rij.css"
+  },
+  {
+   "oud": "src/mail-ml-capabilities.ts",
+   "nieuw": "src/mail-ml-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-ml-content.ts",
+   "nieuw": "src/mail-ml-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-mobile.css",
+   "nieuw": "src/mail-mobiel.css"
+  },
+  {
+   "oud": "src/mail-music-capabilities.ts",
+   "nieuw": "src/mail-muziek-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-music-content.ts",
+   "nieuw": "src/mail-muziek-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-music-workbench.css",
+   "nieuw": "src/mail-muziek-werkbank.css"
+  },
+  {
+   "oud": "src/mail-navigation-editor.css",
+   "nieuw": "src/mail-navigatie-bewerker.css"
+  },
+  {
+   "oud": "src/mail-network-capabilities.ts",
+   "nieuw": "src/mail-netwerk-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-network-content.ts",
+   "nieuw": "src/mail-netwerk-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-network.css",
+   "nieuw": "src/mail-netwerk.css"
+  },
+  {
+   "oud": "src/mail-new-message.css",
+   "nieuw": "src/mail-nieuw-bericht.css"
+  },
+  {
+   "oud": "src/mail-overlay-surface.css",
+   "nieuw": "src/mail-overlay-oppervlak.css"
+  },
+  {
+   "oud": "src/mail-pdf-profile.ts",
+   "nieuw": "src/mail-pdf-profiel.ts"
+  },
+  {
+   "oud": "src/mail-period-cache.ts",
+   "nieuw": "src/mail-periode-cache.ts"
+  },
+  {
+   "oud": "src/mail-personal-data-capabilities.ts",
+   "nieuw": "src/mail-persoonsgegevens-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-personal-data-content.ts",
+   "nieuw": "src/mail-persoonsgegevens-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-prepress-capabilities.ts",
+   "nieuw": "src/mail-drukvoorbereiding-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-prepress-content.ts",
+   "nieuw": "src/mail-drukvoorbereiding-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-prepress.css",
+   "nieuw": "src/mail-drukvoorbereiding.css"
+  },
+  {
+   "oud": "src/mail-presentation-capabilities.ts",
+   "nieuw": "src/mail-presentatie-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-presentation-content.ts",
+   "nieuw": "src/mail-presentatie-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-presentation.css",
+   "nieuw": "src/mail-presentatie.css"
+  },
+  {
+   "oud": "src/mail-provider-state.ts",
+   "nieuw": "src/mail-aanbieder-toestand.ts"
+  },
+  {
+   "oud": "src/mail-quick-settings.css",
+   "nieuw": "src/mail-snelle-instellingen.css"
+  },
+  {
+   "oud": "src/mail-reader-ai.css",
+   "nieuw": "src/mail-lezer-ai.css"
+  },
+  {
+   "oud": "src/mail-reader-document.ts",
+   "nieuw": "src/mail-lezer-document.ts"
+  },
+  {
+   "oud": "src/mail-reader-enhancements.css",
+   "nieuw": "src/mail-lezer-verbeteringen.css"
+  },
+  {
+   "oud": "src/mail-reader-n09-dialog.css",
+   "nieuw": "src/mail-lezer-n09-dialoog.css"
+  },
+  {
+   "oud": "src/mail-reader-n10-dialog.css",
+   "nieuw": "src/mail-lezer-n10-dialoog.css"
+  },
+  {
+   "oud": "src/mail-reader-organize-dialog.css",
+   "nieuw": "src/mail-lezer-orden-dialoog.css"
+  },
+  {
+   "oud": "src/mail-reader-search.css",
+   "nieuw": "src/mail-lezer-zoek.css"
+  },
+  {
+   "oud": "src/mail-reader-toolbar.css",
+   "nieuw": "src/mail-lezer-werkbalk.css"
+  },
+  {
+   "oud": "src/mail-row-quick-actions.css",
+   "nieuw": "src/mail-rij-snelle-acties.css"
+  },
+  {
+   "oud": "src/mail-schedule-menu.css",
+   "nieuw": "src/mail-planning-menu.css"
+  },
+  {
+   "oud": "src/mail-scientific-capabilities.ts",
+   "nieuw": "src/mail-wetenschappelijk-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-scientific-content.ts",
+   "nieuw": "src/mail-wetenschappelijk-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-scientific-extended.ts",
+   "nieuw": "src/mail-wetenschappelijk-uitgebreid.ts"
+  },
+  {
+   "oud": "src/mail-search-cache.ts",
+   "nieuw": "src/mail-zoek-cache.ts"
+  },
+  {
+   "oud": "src/mail-search-relaxation.ts",
+   "nieuw": "src/mail-zoek-versoepeling.ts"
+  },
+  {
+   "oud": "src/mail-search.ts",
+   "nieuw": "src/mail-zoek.ts"
+  },
+  {
+   "oud": "src/mail-section-menu.css",
+   "nieuw": "src/mail-sectie-menu.css"
+  },
+  {
+   "oud": "src/mail-security-capabilities.ts",
+   "nieuw": "src/mail-beveiliging-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-security-content.ts",
+   "nieuw": "src/mail-beveiliging-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-security.css",
+   "nieuw": "src/mail-beveiliging.css"
+  },
+  {
+   "oud": "src/mail-settings-preview.css",
+   "nieuw": "src/mail-instellingen-voorbeeld.css"
+  },
+  {
+   "oud": "src/mail-settings-scaffold.css",
+   "nieuw": "src/mail-instellingen-geraamte.css"
+  },
+  {
+   "oud": "src/mail-sidebar-navigation.css",
+   "nieuw": "src/mail-zijbalk-navigatie.css"
+  },
+  {
+   "oud": "src/mail-smart-inbox.ts",
+   "nieuw": "src/mail-slimme-inbox.ts"
+  },
+  {
+   "oud": "src/mail-snooze-control.css",
+   "nieuw": "src/mail-uitstel-bediening.css"
+  },
+  {
+   "oud": "src/mail-source-workspace.css",
+   "nieuw": "src/mail-bron-werkruimte.css"
+  },
+  {
+   "oud": "src/mail-specialist-explorer.css",
+   "nieuw": "src/mail-specialist-verkenner.css"
+  },
+  {
+   "oud": "src/mail-spreadsheet-capabilities.ts",
+   "nieuw": "src/mail-rekenblad-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-spreadsheet-content.ts",
+   "nieuw": "src/mail-rekenblad-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-spreadsheet.css",
+   "nieuw": "src/mail-rekenblad.css"
+  },
+  {
+   "oud": "src/mail-state-intents.ts",
+   "nieuw": "src/mail-toestand-intenties.ts"
+  },
+  {
+   "oud": "src/mail-subscriptions.css",
+   "nieuw": "src/mail-abonnementen.css"
+  },
+  {
+   "oud": "src/mail-system-attention.css",
+   "nieuw": "src/mail-systeem-aandacht.css"
+  },
+  {
+   "oud": "src/mail-thread-editor.css",
+   "nieuw": "src/mail-gesprek-bewerker.css"
+  },
+  {
+   "oud": "src/mail-threat-capabilities.ts",
+   "nieuw": "src/mail-dreiging-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-threat-content.ts",
+   "nieuw": "src/mail-dreiging-inhoud.ts"
+  },
+  {
+   "oud": "src/mail-threat.css",
+   "nieuw": "src/mail-dreiging.css"
+  },
+  {
+   "oud": "src/mail-translation-bar.css",
+   "nieuw": "src/mail-vertaling-balk.css"
+  },
+  {
+   "oud": "src/mail-unread-focus.css",
+   "nieuw": "src/mail-ongelezen-focus.css"
+  },
+  {
+   "oud": "src/mail-ux-review-20261021.css",
+   "nieuw": "src/mail-ux-beoordeling-20261021.css"
+  },
+  {
+   "oud": "src/mail-view-preferences-cache.ts",
+   "nieuw": "src/mail-weergave-voorkeuren-cache.ts"
+  },
+  {
+   "oud": "src/mail-view-preferences-server.ts",
+   "nieuw": "src/mail-weergave-voorkeuren-server.ts"
+  },
+  {
+   "oud": "src/mail-vtt-rpg-capabilities.ts",
+   "nieuw": "src/mail-vtt-rpg-mogelijkheden.ts"
+  },
+  {
+   "oud": "src/mail-vtt-rpg-content.ts",
+   "nieuw": "src/mail-vtt-rpg-inhoud.ts"
+  },
+  {
+   "oud": "src/mcp-backups-card.css",
+   "nieuw": "src/mcp-backups-kaart.css"
+  },
+  {
+   "oud": "src/mcp-bridge.css",
+   "nieuw": "src/mcp-brug.css"
+  },
+  {
+   "oud": "src/mcp-catalog.ts",
+   "nieuw": "src/mcp-catalogus.ts"
+  },
+  {
+   "oud": "src/mcp-consent-modal.css",
+   "nieuw": "src/mcp-toestemming-venster.css"
+  },
+  {
+   "oud": "src/mcp-consent-store.ts",
+   "nieuw": "src/mcp-toestemming-opslag.ts"
+  },
+  {
+   "oud": "src/mcp-estate.css",
+   "nieuw": "src/mcp-domein.css"
+  },
+  {
+   "oud": "src/mcp-texts.ts",
+   "nieuw": "src/mcp-teksten.ts"
+  },
+  {
+   "oud": "src/meldingen/tech-meldingen-store.ts",
+   "nieuw": "src/meldingen/tech-meldingen-opslag.ts"
+  },
+  {
+   "oud": "src/menu-meldingen-store.ts",
+   "nieuw": "src/menu-meldingen-opslag.ts"
+  },
+  {
+   "oud": "src/menu-preferences.tsx",
+   "nieuw": "src/menu-voorkeuren.tsx"
+  },
+  {
+   "oud": "src/mobile-ux.css",
+   "nieuw": "src/mobiel-ux.css"
+  },
+  {
+   "oud": "src/notification-panel.css",
+   "nieuw": "src/meldingenpaneel.css"
+  },
+  {
+   "oud": "src/notification-position.ts",
+   "nieuw": "src/melding-positie.ts"
+  },
+  {
+   "oud": "src/notification-style.tsx",
+   "nieuw": "src/melding-stijl.tsx"
+  },
+  {
+   "oud": "src/product-empty-state.css",
+   "nieuw": "src/product-lege-toestand.css"
+  },
+  {
+   "oud": "src/reader-venster.ts",
+   "nieuw": "src/lezer-venster.ts"
+  },
+  {
+   "oud": "src/redirect-login.ts",
+   "nieuw": "src/aanmeld-omleiding.ts"
+  },
+  {
+   "oud": "src/remote/RemoteBureaublad.tsx",
+   "nieuw": "src/extern/ExternBureaublad.tsx"
+  },
+  {
+   "oud": "src/remote/guacamole.d.ts",
+   "nieuw": "src/extern/guacamole.d.ts"
+  },
+  {
+   "oud": "src/remote/remote-store.ts",
+   "nieuw": "src/extern/extern-opslag.ts"
+  },
+  {
+   "oud": "src/remote/remote.css",
+   "nieuw": "src/extern/extern.css"
+  },
+  {
+   "oud": "src/search/ZoekCategorieIcoon.ts",
+   "nieuw": "src/zoek/ZoekCategorieIcoon.ts"
+  },
+  {
+   "oud": "src/search/ZoekFilters.tsx",
+   "nieuw": "src/zoek/ZoekFilters.tsx"
+  },
+  {
+   "oud": "src/search/ZoekGlobaal.tsx",
+   "nieuw": "src/zoek/ZoekGlobaal.tsx"
+  },
+  {
+   "oud": "src/search/ZoekIndexVenster.tsx",
+   "nieuw": "src/zoek/ZoekIndexVenster.tsx"
+  },
+  {
+   "oud": "src/search/ZoekKaart.tsx",
+   "nieuw": "src/zoek/ZoekKaart.tsx"
+  },
+  {
+   "oud": "src/search/ZoekPagina.tsx",
+   "nieuw": "src/zoek/ZoekPagina.tsx"
+  },
+  {
+   "oud": "src/search/ZoekVeld.tsx",
+   "nieuw": "src/zoek/ZoekVeld.tsx"
+  },
+  {
+   "oud": "src/search/zoek-api.ts",
+   "nieuw": "src/zoek/zoek-api.ts"
+  },
+  {
+   "oud": "src/search/zoek-core.ts",
+   "nieuw": "src/zoek/zoek-kern.ts"
+  },
+  {
+   "oud": "src/search/zoek-index-api.ts",
+   "nieuw": "src/zoek/zoek-index-api.ts"
+  },
+  {
+   "oud": "src/search/zoek-index-logic.ts",
+   "nieuw": "src/zoek/zoek-index-logica.ts"
+  },
+  {
+   "oud": "src/search/zoek-logic.ts",
+   "nieuw": "src/zoek/zoek-logica.ts"
+  },
+  {
+   "oud": "src/search/zoek.css",
+   "nieuw": "src/zoek/zoek.css"
+  },
+  {
+   "oud": "src/service-tab-labels.ts",
+   "nieuw": "src/dienst-tab-labels.ts"
+  },
+  {
+   "oud": "src/session-handoff.ts",
+   "nieuw": "src/sessie-overdracht.ts"
+  },
+  {
+   "oud": "src/settings-center.css",
+   "nieuw": "src/instellingencentrum.css"
+  },
+  {
+   "oud": "src/shared-preferences.ts",
+   "nieuw": "src/gedeelde-voorkeuren.ts"
+  },
+  {
+   "oud": "src/smart-home.css",
+   "nieuw": "src/domotica.css"
+  },
+  {
+   "oud": "src/stable-state.ts",
+   "nieuw": "src/stabiel-toestand.ts"
+  },
+  {
+   "oud": "src/tech/band-headroom.ts",
+   "nieuw": "src/tech/band-inschuiven.ts"
+  },
+  {
+   "oud": "src/tech/tech-store.ts",
+   "nieuw": "src/tech/tech-opslag.ts"
+  },
+  {
+   "oud": "src/unified-service-content.css",
+   "nieuw": "src/verenigd-dienst-inhoud.css"
+  },
+  {
+   "oud": "src/use-external-rect.ts",
+   "nieuw": "src/use-extern-rechthoek.ts"
+  },
+  {
+   "oud": "src/useCanonicalHubAuth.ts",
+   "nieuw": "src/useCanoniekHubAuth.ts"
+  },
+  {
+   "oud": "src/useStableViewModel.ts",
+   "nieuw": "src/useStabielWeergaveModel.ts"
+  },
+  {
+   "oud": "src/vault-meta.css",
+   "nieuw": "src/kluis-meta.css"
+  },
+  {
+   "oud": "src/viewport-tooltip.css",
+   "nieuw": "src/viewport-knopinfo.css"
+  },
+  {
+   "oud": "src/visible-prefetch.ts",
+   "nieuw": "src/zichtbaar-voorladen.ts"
+  },
+  {
+   "oud": "src/weergave/weergave-store.ts",
+   "nieuw": "src/weergave/weergave-opslag.ts"
+  },
+  {
+   "oud": "tests/e2e/flags.e2e.ts",
+   "nieuw": "tests/e2e/vlaggen.e2e.ts"
+  },
+  {
+   "oud": "tests/e2e/mail-compose-venster.e2e.ts",
+   "nieuw": "tests/e2e/mail-opstel-venster.e2e.ts"
+  },
+  {
+   "oud": "tests/e2e/tech-assets.e2e.ts",
+   "nieuw": "tests/e2e/tech-bundels.e2e.ts"
+  },
+  {
+   "oud": "tests/e2e/vault-meta.e2e.ts",
+   "nieuw": "tests/e2e/kluis-meta.e2e.ts"
+  },
+  {
+   "oud": "tests/eenheid/admin-diagnostiek-rook-20261022.test.ts",
+   "nieuw": "tests/eenheid/beheer-diagnostiek-rook-20261022.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/admin-diagnostiek.test.ts",
+   "nieuw": "tests/eenheid/beheer-diagnostiek.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/admin-integraties.test.ts",
+   "nieuw": "tests/eenheid/beheer-integraties.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/admin-overzicht.test.ts",
+   "nieuw": "tests/eenheid/beheer-overzicht.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/agent-commands.test.ts",
+   "nieuw": "tests/eenheid/agent-opdrachten.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/agents.test.ts",
+   "nieuw": "tests/eenheid/agenten.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/ai-grants-contract.test.ts",
+   "nieuw": "tests/eenheid/ai-toestemmingen-contract.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/ai-mail-assistant.test.ts",
+   "nieuw": "tests/eenheid/ai-mail-assistent.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/band-headroom.test.ts",
+   "nieuw": "tests/eenheid/band-inschuiven.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/beveiliging-review-20261021.test.ts",
+   "nieuw": "tests/eenheid/beveiliging-beoordeling-20261021.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/consent-ruimte-cyclus-20261020.test.ts",
+   "nieuw": "tests/eenheid/toestemming-ruimte-cyclus-20261020.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/extension-folder-install.test.ts",
+   "nieuw": "tests/eenheid/extensie-map-installeer.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/flags.test.ts",
+   "nieuw": "tests/eenheid/vlaggen.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/hulp/nep-passkey.ts",
+   "nieuw": "tests/eenheid/hulp/nep-toegangssleutel.ts"
+  },
+  {
+   "oud": "tests/eenheid/install-commands.test.ts",
+   "nieuw": "tests/eenheid/installeer-opdrachten.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/mail-compose.test.ts",
+   "nieuw": "tests/eenheid/mail-opstel.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/mail-queue.test.ts",
+   "nieuw": "tests/eenheid/mail-wachtrij.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/mail-ux-review-20261021.test.ts",
+   "nieuw": "tests/eenheid/mail-ux-beoordeling-20261021.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/notice-dedupe.test.ts",
+   "nieuw": "tests/eenheid/mededeling-ontdubbelen.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/notification-position.test.ts",
+   "nieuw": "tests/eenheid/melding-positie.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/passkeys.test.ts",
+   "nieuw": "tests/eenheid/toegangssleutels.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/release-info.test.ts",
+   "nieuw": "tests/eenheid/uitgave-info.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/remote-bureaublad.test.ts",
+   "nieuw": "tests/eenheid/extern-bureaublad.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/site-activity.test.ts",
+   "nieuw": "tests/eenheid/site-activiteit.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/site-tools.test.ts",
+   "nieuw": "tests/eenheid/site-hulpmiddelen.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/tech-assets.test.ts",
+   "nieuw": "tests/eenheid/tech-bundels.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/tools-tweetalig-20261020.test.ts",
+   "nieuw": "tests/eenheid/hulpmiddelen-tweetalig-20261020.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/vault-meta.test.ts",
+   "nieuw": "tests/eenheid/kluis-meta.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/zoek-bronnen-etap-c-20261021.test.ts",
+   "nieuw": "tests/eenheid/zoek-bronnen-etappe-c-20261021.test.ts"
+  },
+  {
+   "oud": "tests/eenheid/zoek-etap-d-20261021.test.ts",
+   "nieuw": "tests/eenheid/zoek-etappe-d-20261021.test.ts"
+  }
+ ],
+ "behouden": [
+  {
+   "pad": "backend/ai-beleid.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "backend/beleid.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "backend/connector-v2.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "backend/connectors-crypto.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "backend/deployment-identity.ts",
+   "reden": "installeer-app.sh en apparaat-inrichten.sh lezen PUBLIC_DOMAIN uit dit bestand"
+  },
+  {
+   "pad": "backend/eigenaar-besluit.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "backend/index.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "backend/remote-bureaublad.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "backend/server-beheer.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "backend/uitrol-github.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "backend/uitrol-goedkeuring.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "backend/zoek/bronnen.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "scripts/build-server.mjs",
+   "reden": "de voorcontrole van de geïnstalleerde versie eist dit bestand in elk pakket"
+  },
+  {
+   "pad": "scripts/google-login-instellen.ps1",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "scripts/installer/Install-MijnRuimte.cmd",
+   "reden": "download voor gebruikers (naam zichtbaar)"
+  },
+  {
+   "pad": "scripts/installer/install-mijn-ruimte.sh",
+   "reden": "download voor gebruikers (naam zichtbaar)"
+  },
+  {
+   "pad": "scripts/rook-controle.mjs",
+   "reden": "aangeroepen door de installer op de server"
+  },
+  {
+   "pad": "server/apparaat-koppelcode.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "server/migrate.ts",
+   "reden": "de voorcontrole van de geïnstalleerde versie eist dit bestand in elk pakket"
+  },
+  {
+   "pad": "server/pg-versie.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "shared/ai-beleid/model.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "shared/ai-ruimte.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "shared/ai-verbinding.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "shared/mcp-klant-model.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "shared/terminal-opdrachten.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "shared/uitrol-codes.ts",
+   "reden": "genoemd in deploy/ (scripts, units, agent)"
+  },
+  {
+   "pad": "src/App.tsx",
+   "reden": "conventie"
+  },
+  {
+   "pad": "src/index.css",
+   "reden": "conventie"
+  },
+  {
+   "pad": "src/main.tsx",
+   "reden": "ingang (index.html)"
+  }
+ ],
+ "woorden": {
+  "access": "toegang",
+  "action": "actie",
+  "actions": "acties",
+  "active": "actief",
+  "activity": "activiteit",
+  "admin": "beheer",
+  "advanced": "geavanceerd",
+  "agents": "agenten",
+  "archive": "archief",
+  "assets": "bundels",
+  "assistant": "assistent",
+  "attachment": "bijlage",
+  "attention": "aandacht",
+  "authorize": "autoriseer",
+  "avoidance": "ontwijking",
+  "banner": "band",
+  "bar": "balk",
+  "binary": "binair",
+  "bioinformatics": "bioinformatica",
+  "block": "blok",
+  "blocks": "blokken",
+  "body": "tekst",
+  "boot": "opstart",
+  "bootstrap": "opstart",
+  "bounded": "begrensd",
+  "bounds": "grenzen",
+  "bridge": "brug",
+  "buckets": "groepen",
+  "build": "bouw",
+  "bulky": "ruim",
+  "calendar": "agenda",
+  "callback": "terug",
+  "canonical": "canoniek",
+  "capabilities": "mogelijkheden",
+  "card": "kaart",
+  "catalog": "catalogus",
+  "center": "centrum",
+  "checks": "controles",
+  "chrome": "omlijsting",
+  "cognitive": "cognitief",
+  "color": "kleur",
+  "commands": "opdrachten",
+  "compose": "opstel",
+  "connection": "verbinding",
+  "connections": "verbindingen",
+  "consent": "toestemming",
+  "consolidation": "consolidatie",
+  "content": "inhoud",
+  "control": "bediening",
+  "copy": "teksten",
+  "core": "kern",
+  "customizer": "aanpasser",
+  "data": "gegevens",
+  "date": "datum",
+  "dedupe": "ontdubbelen",
+  "density": "dichtheid",
+  "deployment": "installatie",
+  "devices": "apparaten",
+  "diagnostics": "diagnostiek",
+  "dialog": "dialoog",
+  "disk": "drive",
+  "dispatch": "aanroep",
+  "domain": "domein",
+  "durable": "duurzaam",
+  "ecosystem": "ecosysteem",
+  "editor": "bewerker",
+  "empty": "leeg",
+  "engineering": "techniek",
+  "enhancements": "verbeteringen",
+  "estate": "domein",
+  "etap": "etappe",
+  "events": "gebeurtenissen",
+  "explorer": "verkenner",
+  "extended": "uitgebreid",
+  "extension": "extensie",
+  "external": "extern",
+  "field": "veld",
+  "finance": "financien",
+  "fixed": "vast",
+  "flag": "vlag",
+  "flags": "vlaggen",
+  "float": "zwevend",
+  "floating": "zwevend",
+  "flow": "stroom",
+  "fluid": "vloeiend",
+  "folder": "map",
+  "font": "lettertype",
+  "format": "formaat",
+  "forward": "doorstuur",
+  "functional": "functioneel",
+  "game": "spel",
+  "gamedev": "spelontwikkeling",
+  "geospatial": "geo",
+  "global": "globaal",
+  "governance": "bestuur",
+  "government": "overheid",
+  "grants": "toestemmingen",
+  "graphics": "grafisch",
+  "handoff": "overdracht",
+  "handwriting": "handschrift",
+  "headroom": "verbergen",
+  "heartbeat": "hartslag",
+  "history": "geschiedenis",
+  "home": "thuis",
+  "identity": "identiteit",
+  "implementation": "implementatie",
+  "input": "invoer",
+  "install": "installeer",
+  "intents": "intenties",
+  "invites": "uitnodigingen",
+  "keys": "sleutels",
+  "language": "taal",
+  "layer": "laag",
+  "layered": "gelaagd",
+  "layout": "indeling",
+  "legal": "juridisch",
+  "linguistics": "taalkunde",
+  "loader": "lader",
+  "logic": "logica",
+  "login": "aanmeld",
+  "logistics": "logistiek",
+  "map": "kaart",
+  "medical": "medisch",
+  "message": "bericht",
+  "migrate": "migreer",
+  "miniature": "miniatuur",
+  "minimized": "geminimaliseerd",
+  "mobile": "mobiel",
+  "modal": "venster",
+  "music": "muziek",
+  "navigation": "navigatie",
+  "network": "netwerk",
+  "new": "nieuw",
+  "normalization": "normalisatie",
+  "notes": "notities",
+  "notice": "mededeling",
+  "notification": "melding",
+  "notifications": "meldingen",
+  "onboarding": "inrichting",
+  "options": "opties",
+  "ordered": "geordend",
+  "organize": "orden",
+  "out": "uit",
+  "overview": "overzicht",
+  "owner": "eigenaar",
+  "palette": "palet",
+  "panel": "paneel",
+  "panels": "panelen",
+  "passkey": "toegangssleutel",
+  "passkeys": "toegangssleutels",
+  "period": "periode",
+  "periods": "periodes",
+  "permissions": "rechten",
+  "personal": "persoons",
+  "photos": "fotos",
+  "picker": "kiezer",
+  "plane": "laag",
+  "policy": "beleid",
+  "position": "positie",
+  "preferences": "voorkeuren",
+  "prefetch": "voorladen",
+  "prepress": "drukvoorbereiding",
+  "presentation": "presentatie",
+  "preview": "voorbeeld",
+  "production": "productie",
+  "profile": "profiel",
+  "provider": "aanbieder",
+  "query": "zoekvraag",
+  "queue": "wachtrij",
+  "quick": "snel",
+  "reader": "lezer",
+  "reading": "lees",
+  "rect": "rechthoek",
+  "redirect": "omleiding",
+  "relaxation": "versoepeling",
+  "release": "uitgave",
+  "relevance": "relevantie",
+  "remote": "extern",
+  "review": "beoordeling",
+  "rich": "opgemaakt",
+  "row": "rij",
+  "sanitize": "opschonen",
+  "save": "opslaan",
+  "scaffold": "geraamte",
+  "schedule": "planning",
+  "scientific": "wetenschappelijk",
+  "search": "zoek",
+  "secrets": "geheimen",
+  "section": "sectie",
+  "security": "beveiliging",
+  "select": "keuze",
+  "selection": "selectie",
+  "serialization": "serialisatie",
+  "service": "dienst",
+  "session": "sessie",
+  "sessions": "sessies",
+  "settings": "instellingen",
+  "setup": "inrichting",
+  "shared": "gedeeld",
+  "shell": "schil",
+  "sidebar": "zijbalk",
+  "sign": "onderteken",
+  "signed": "ondertekend",
+  "smart": "slim",
+  "snooze": "uitstel",
+  "source": "bron",
+  "spreadsheet": "rekenblad",
+  "stable": "stabiel",
+  "state": "toestand",
+  "storage": "opslag",
+  "store": "opslag",
+  "strip": "strook",
+  "style": "stijl",
+  "subscriptions": "abonnementen",
+  "surface": "oppervlak",
+  "swatches": "stalen",
+  "switcher": "wisselaar",
+  "system": "systeem",
+  "terms": "termen",
+  "text": "tekst",
+  "texts": "teksten",
+  "thread": "gesprek",
+  "threat": "dreiging",
+  "time": "tijd",
+  "toolbar": "werkbalk",
+  "tooldefs": "hulpmiddeldefinities",
+  "tools": "hulpmiddelen",
+  "tooltip": "knopinfo",
+  "translation": "vertaling",
+  "truth": "waarheid",
+  "unified": "verenigd",
+  "unread": "ongelezen",
+  "vault": "kluis",
+  "view": "weergave",
+  "views": "weergaven",
+  "visible": "zichtbaar",
+  "welcome": "welkom",
+  "workbench": "werkbank",
+  "workspace": "werkruimte"
+ },
+ "samenstellingen": {
+  "personal data": "persoonsgegevens",
+  "quick settings": "snelle instellingen",
+  "quick actions": "snelle acties",
+  "quick action": "snelle actie",
+  "notification center": "meldingencentrum",
+  "notification panel body": "meldingenpaneel inhoud",
+  "notification panel": "meldingenpaneel",
+  "settings center": "instellingencentrum",
+  "smart inbox": "slimme inbox",
+  "smart home": "domotica",
+  "layered inbox": "gelaagde inbox",
+  "fixed layout": "vaste indeling",
+  "game dev": "spelontwikkeling",
+  "advanced search": "geavanceerd zoeken",
+  "color swatches": "kleurstalen",
+  "access plane": "toegangslaag",
+  "signed out": "afgemeld",
+  "empty state": "lege toestand",
+  "date calendar": "datum kalender",
+  "redirect login": "aanmeld omleiding",
+  "docx copy": "docx kopie",
+  "search query": "zoekopdracht",
+  "shared preferences": "gedeelde voorkeuren",
+  "minimized viewer": "geminimaliseerde viewer"
+ },
+ "toegevoegd": [
+  {
+   "pad": "scripts/kaart-controle.mjs",
+   "wat": "Bouwcontrole van deze kaart (eerste stap van npm run build): oude paden, ontbrekende nieuwe, Engelse namen.",
+   "sinds": "86fd409"
+  },
+  {
+   "pad": "tests/eenheid/bestandskaart-20261024.test.ts",
+   "wat": "Test van de kaart en van kaart-controle.",
+   "sinds": "86fd409"
+  },
+  {
+   "pad": "src/mail/lees-modus.ts",
+   "wat": "Leesvenster: pure regels per vorm (volledig/rechts/onder/zwevend/telefoon) — rol, focus, Escape, «Назад», randen, priority+ van de kop.",
+   "sinds": "pakket 1 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/LeesVenster.tsx",
+   "wat": "Leesvenster: het kader rond een geopende brief (één kader voor alle vormen), context voor de werkbalk.",
+   "sinds": "pakket 1 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/lees-venster.css",
+   "wat": "Leesvenster: CSS per vorm (data-lees-modus/-breedte), kop priority+, «onder» zonder eigen schuifvak.",
+   "sinds": "pakket 1 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "tests/eenheid/lees-venster-20261024.test.ts",
+   "wat": "Test van het leesvenster (regels, structuur per vorm, bron, CSS).",
+   "sinds": "pakket 1 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "tests/e2e/hulp/stand-lezer.ts",
+   "wat": "Stand mail-lezer-*: geometrie en gedrag van het leesvenster in elke vorm en maat, menu rechts/dock.",
+   "sinds": "pakket 1 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/gesprek-context.ts",
+   "wat": "Context van een gesprek, puur (zonder DOM en zonder ШІ): versies van bijlagen, tijdlijn, verwante brieven met hun reden, afzendercontrole (SPF/DKIM/DMARC), «N eerdere brieven», ontvangers, beelden tellen (extern/pixel/http), .ics-tijd met TZID.",
+   "sinds": "pakket 2 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "tests/eenheid/gesprek-context-20261024.test.ts",
+   "wat": "Test van de contextregels van een gesprek (versies, tijdlijn, verwante brieven, afzendercontrole, ontvangers).",
+   "sinds": "pakket 2 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/ContextPaneel.tsx",
+   "wat": "Contextpaneel van de open brief: kolom naast de brief (≥ 1100 px) of blad met tabbladen; Хронологія · Вкладення (versiegroepen) · Зв'язки (zoeken in deze mailbox, «без ШІ») · Завдання й події (.ics → «В Агенду») · Відправник (controle + kleur van het contact) · Безпека; pakket 3: «Порівняти» bij elke versiegroep en de punten van «Що від вас потрібно?» (met bron) in «Завдання й події».",
+   "sinds": "pakket 2 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/context-paneel.css",
+   "wat": "CSS van het contextpaneel: vaste rijen van het leesvenster, kolom (368 px) en blad (zijkant/onderaan), tijdlijn, versies, kleuren, veiligheid; alleen tokens.",
+   "sinds": "pakket 2 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/gesprek-opmaak.css",
+   "wat": "CSS van de brieven en de kop van het leesvenster (pakket 2): foto en kleur van het contact, «кому/копія», ↩, «N попередні листи», versie op de kaart, afspraak uit .ics, «Вигляд» (dichtheid/tekstgrootte), ∧ N з M ∨, «Відповісти», telefoonbalk.",
+   "sinds": "pakket 2 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/ics-gebeurtenissen.ts",
+   "wat": "Afspraken uit .ics-bijlagen: één keer lezen per bijlage (gedeeld door de kaart in de brief en het contextpaneel), tijd met TZID, leesbare tijd («ср, 28 жовт., 10:00–11:00»).",
+   "sinds": "pakket 2 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/SneltoetsenHulp.tsx",
+   "wat": "Overzicht van de sneltoetsen in de open brief («?»): R, A, F, E, J/K, F6, Esc, ?.",
+   "sinds": "pakket 2 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/WeergaveKeuze.tsx",
+   "wat": "«Вигляд» van de brief: dichtheid (compact/normaal/ruim) en tekstgrootte (90–130 %), als knop in de kop en als blok in ⋮ op de telefoon; pakket 3: «Мова листа» (origineel of bij het openen vertalen door de privé-agent).",
+   "sinds": "pakket 2 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "tests/eenheid/lezer-context-20261024.test.ts",
+   "wat": "Test van pakket 2: contextvorm, «Вигляд», sneltoetsen (ook Oekraïense indeling), beelden/.ics/tekstgrootte, structuur van het contextpaneel en de kop, bron en CSS.",
+   "sinds": "pakket 2 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/beelden-toestemming.ts",
+   "wat": "Externe beelden per afzender op dit apparaat («Завжди від цього відправника»): lijst van hoogstens 300 adressen in localStorage, met een React-hook die wijzigingen (ook uit andere tabbladen) volgt.",
+   "sinds": "pakket 2 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "shared/ai-bronnen.ts",
+   "wat": "Bronnen bij AI-punten, puur (browser én server): alinea's per brief (§1, §2 …), letterlijk zoeken van een citaat, controle van punten en termijnen tegen het ORIGINEEL, datums, eenvoudig ontleden zonder model, «Потребує відповіді», markeren in de originele tekst.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/ai-staat.ts",
+   "wat": "Welke privé-AI-agent de post mag lezen (één verzoek per context, gedeeld), eerlijke foutteksten, één aanroep van /ai-vertaling/run; de laatst geladen staat voor «Вигляд».",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/alinea-aanwijzen.ts",
+   "wat": "«Показати абзац у листі»: het citaat van een punt aanwijzen in de getoonde brief zelf (iframe of tekst) — omlijning en CSS Custom Highlight, zonder de tekst te veranderen.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/WatNodigBlok.tsx",
+   "wat": "Blok «Що від вас потрібно?» boven de brieven: eenvoudig ontleden in de browser of (na een klik) de privé-agent, elk punt met bronchip en termijn, alleen wat letterlijk in de brief staat; Чернетка відповіді · До завдань · В Агенду.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/BronBlad.tsx",
+   "wat": "Blad «Звідки це?»: het punt, de originele alinea met het citaat gemarkeerd, vertaling van de alinea (alleen met agent), de controle, «Показати абзац у листі» en «Пункт хибний — прибрати».",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/VertaalStrook.tsx",
+   "wat": "Vertaalstrook in de brief: «Оригінал / Переклад / Порівняти»; zonder agent alleen het origineel (en waarom).",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/VergelijkTabel.tsx",
+   "wat": "«Порівняти»: de brief als tabel per alinea (origineel ↔ vertaling), de bronalinea van de punten gemarkeerd; op de telefoon onder elkaar.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/ai-blok.css",
+   "wat": "CSS van ШІ in de brief: blok, chips, termijnen, onderwerpregel, vertaalstrook, vergelijkingstabel, blad «Звідки це?», antwoordregel; alleen tokens (--info = ШІ).",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/VersieVergelijk.tsx",
+   "wat": "Venster «Порівняти версії» (vanuit het contextpaneel): twee versies van een bijlage, alleen de tekst, verschil per alinea/zin met gemarkeerde woorden; eerlijke meldingen.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/versie-vergelijk.css",
+   "wat": "CSS van «Порівняти версії»: laag boven de lezer, naast elkaar of onder elkaar (containerquery), alleen tokens.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/tekst-verschil.ts",
+   "wat": "Verschil tussen twee teksten, puur: blokken (alinea's, lijstpunten, zinnen), LCS met ankers, verplaatste en gewijzigde blokken, woordverschil.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "src/mail/bijlage-tekst.ts",
+   "wat": "Tekst uit een bijlage voor «Порівняти версії»: PDF via pdf.js (hoogstens 60 pagina's, kop/voet weg), tekst/CSV met decodering, DOCX/ODT/RTF via de bestaande documentlader.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "tests/eenheid/ai-bronnen-20261024.test.ts",
+   "wat": "Test van shared/ai-bronnen.ts: alinea's, letterlijk zoeken, controle, datums en termijnen (nl/uk/en/pl), eenvoudig ontleden, «Потребує відповіді», markeren.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "tests/eenheid/lezer-ai-20261024.test.ts",
+   "wat": "Test van ШІ in de lezer: blok, blad «Звідки це?», vertaalstrook, tabel, contextpaneel («Порівняти», punten), «Мова листа», bedrading en CSS.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "tests/eenheid/ai-acties-20261024.test.ts",
+   "wat": "Test van de server-modus «acties» van /ai-vertaling/run: invoer, controle tegen het origineel, eerlijke weigeringen, cache.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "tests/eenheid/versie-vergelijk-20261024.test.ts",
+   "wat": "Test van «Порівняти версії»: verschil, tekst uit bijlagen (ook een echte pdf), structuur van het venster, CSS.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "tests/e2e/hulp/stand-lezer-ai.ts",
+   "wat": "Stand mail-lezer-ai-*: ШІ in de brief met een nagebootste privé-agent (één punt verzonnen) — blok, «Звідки це?», «Показати абзац у листі», vertaalstrook en «Порівняти», contextpaneel (punten, «Порівняти версії» met echte PDF's), antwoordregel, «Мова листа», axe.",
+   "sinds": "pakket 3 «Adaptive Mail Canvas»"
+  },
+  {
+   "pad": "shared/plaatsing.ts",
+   "wat": "Zwevende knoppen — model zonder DOM: zones (bovenbalk, kop van het menu, menulijst, actiestapel), gniezda per apparaatklasse, standaardplaatsen, indeling, verplaatsen met weigering bij een volle zone, terugzetten, maten van de stapel, teksten uk/nl.",
+   "sinds": "zwevende knoppen «zones en gniezda» (25.10.2026)"
+  },
+  {
+   "pad": "src/plaatsing/plaatsing-staat.ts",
+   "wat": "Gedeelde staat van zones en gniezda (useSyncExternalStore): indeling van de omlijsting, gniezda per knop, slepen, menu «Перемістити до…», teller van de bel voor ☰, hoogte van onderbalken.",
+   "sinds": "zwevende knoppen «zones en gniezda» (25.10.2026)"
+  },
+  {
+   "pad": "src/plaatsing/Plek.tsx",
+   "wat": "Zones en gniezda in React: useZone, <Gniezda>, <Plek knop> (portal in het eigen gniezdo), <Actiestapel> (boven onderbalken), <PlaatsActies> («Перемістити до…», toetsenbord, terugzetten), klasse per breedte.",
+   "sinds": "zwevende knoppen «zones en gniezda» (25.10.2026)"
+  },
+  {
+   "pad": "src/plaatsing/plaats-slepen.ts",
+   "wat": "Розставлення: lang vasthouden (aanraken) of 5 px slepen (muis), geest, oplichtende zones met teller, volle zone weigert met hint, veerlade op ☰, Esc/pointercancel, rechtermuisknop/contextmenu → «Перемістити до…».",
+   "sinds": "zwevende knoppen «zones en gniezda» (25.10.2026)"
+  },
+  {
+   "pad": "src/plaatsing/plaats-flip.ts",
+   "wat": "FLIP voor de buren in een zone tijdens het slepen (160 ms, niet bij prefers-reduced-motion).",
+   "sinds": "zwevende knoppen «zones en gniezda» (25.10.2026)"
+  },
+  {
+   "pad": "src/plaatsing/plaatsing.css",
+   "wat": "Eén CSS-laag voor de zwevende knoppen: zones, gniezda, actiestapel (maten = model), vensters boven de zones (visibility), melding bovenaan op de telefoon, teller op ☰, slepen, «Перемістити до…».",
+   "sinds": "zwevende knoppen «zones en gniezda» (25.10.2026)"
+  },
+  {
+   "pad": "src/plaatsing/melding-plek.ts",
+   "wat": "Plaats van de melding (toast): kandidaten in volgorde (computer: onder de bel, onderaan of bovenaan in het midden; telefoon: bovenaan onder de balk of boven de stapel), de eerste zonder kleine knop eronder wint (QA 12.10 №11).",
+   "sinds": "zwevende knoppen «zones en gniezda» (25.10.2026)"
+  },
+  {
+   "pad": "scripts/plaatsing-controle.mjs",
+   "wat": "Bouwcontrole van de zwevende knoppen: catalogus en ruimte per klasse, maten CSS = model, elke knop precies één <Plek>, geen nieuwe position:fixed-regel buiten de laag.",
+   "sinds": "zwevende knoppen «zones en gniezda» (25.10.2026)"
+  },
+  {
+   "pad": "scripts/plaatsing-vaste-elementen.json",
+   "wat": "Lijst van CSS-regels met position:fixed van vóór de laag (25.10.2026) en toegestane vensters/balken met reden — voor scripts/plaatsing-controle.mjs.",
+   "sinds": "zwevende knoppen «zones en gniezda» (25.10.2026)"
+  },
+  {
+   "pad": "tests/eenheid/plaatsing-20261025.test.ts",
+   "wat": "Test van het model en de bouwcontrole: klassen, standaard, ruimte (43 200 combinaties), verplaatsen en weigeringen, normalisatie, terugzetten, maten, teksten, zijbalkvoorkeuren.",
+   "sinds": "zwevende knoppen «zones en gniezda» (25.10.2026)"
+  },
+  {
+   "pad": "tests/e2e/hulp/stand-plaatsing.ts",
+   "wat": "Stand plaatsing-*: meting vóór (plaatsing-nu) en acceptatie na (plaatsing-na): scrollen, adresbalk, «Вгору», veeg, knijpzoom, computer → telefoon, herladen, slepen, volle zone, veerlade, «Перемістити до…», vrije plek van de melding; plaatsing-dok (dock rechts/boven/onder) en plaatsing-lagen (tellers, hint en menu in licht en donker, met axe).",
+   "sinds": "zwevende knoppen «zones en gniezda» (25.10.2026)"
+  },
+  {
+   "pad": "shared/mail-acties.ts",
+   "wat": "Eén register van alle mailacties (39): groep, toon, uk/nl-teksten in zes vormen, sneltoets en toestanden; bron voor rijbalk, ⋮-menu, selectiebalk, leesvenster, telefoonbalk, vegen en sneltoetshulp.",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "src/mail/MailActieKnop.tsx",
+   "wat": "Pictogrammen en knop van een mailactie uit het register (data-mail-actie, data-toon).",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "src/mail/mail-acties.css",
+   "wat": "De enige plek waar een toon een kleur wordt (gevaar → --fout, info → --info, let-op → --warn …), voor elk oppervlak.",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "tests/eenheid/mail-acties-20261025.test.ts",
+   "wat": "Test van het actieregister: elk oppervlak haalt zijn acties uit het register, geen kleur op aria-label meer, tonen in licht en donker.",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "tests/eenheid/mail-geminimaliseerd-20261025.test.ts",
+   "wat": "Test van de ingeklapte brieven: plek met natuurlijke hoogte (geminimaliseerdPlek), data-geplaatst, geen uitrekken, badge «+N», bijlagekaart groeit niet in de rij.",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "tests/eenheid/connector-instructies-20261025.test.ts",
+   "wat": "Test van de instructies van de connector: de eerste 512 tekens zijn op zich leesbaar (vijf regels, hele zinnen) voor elke agent en elke stand; PERMISSION_OFF wijst naar /agenten#agent/<agent>.",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "tests/eenheid/bevestig-toegang-opmaak-20261025.test.ts",
+   "wat": "Test van het venster «Підтвердіть доступ» en de toestemmingschips: geen uitgerekt vinkje, label binnen het venster, contrast van label en uitleg op alle 26 paletten.",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "tests/e2e/hulp/stand-blok1.ts",
+   "wat": "Stand blok 1: verzamelt de stappen blok1-* van de vier teams (elk een eigen bestand).",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "tests/e2e/hulp/stand-blok1-acties.ts",
+   "wat": "Stand blok1-acties-*: balk binnen de rij in elke dichtheid, niets bedekt; dezelfde kleur per actie op elk oppervlak (licht en donker).",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "tests/e2e/hulp/stand-blok1-geminimaliseerd.ts",
+   "wat": "Stand blok1-geminimaliseerd-*: dok ≤ 60 px ingeklapt, slepen zonder uitrekken, herladen; bijlagekaart groeit niet bij het wiel, de lijst scrolt, de zwevende voorvertoning wordt groter.",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "tests/e2e/hulp/stand-blok1-vensters.ts",
+   "wat": "Stand blok1-vensters: elke knop van elk venster (lezer in vier vormen, bijlage, «Новий лист», platformvenster) en elke [data-plaats-knop] raakt zichzelf, voor elke plek van de bel.",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "tests/e2e/hulp/stand-blok1-toegang.ts",
+   "wat": "Stand blok1-toegang-*: venster «Підтвердіть доступ» (label binnen het venster, contrast), chips van de toestemming op 390 px, pagina ChatGPT met de nieuwe stappen en de waarschuwing over het plan.",
+   "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  }
+ ]
+}

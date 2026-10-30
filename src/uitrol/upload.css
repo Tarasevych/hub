@@ -1,0 +1,173 @@
+/* Wizard «Нове оновлення» + voorcontrole-lijst. Gebruikt de --ut-* variabelen van uitrol.css. Mobile-first. */
+
+/* stappenbalk */
+.ut-wiz-balk{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.ut-wiz-balk li{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;font-size:.78rem;color:var(--ut-muted);font-weight:600;position:relative}
+.ut-wiz-balk li>span{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;border:2px solid var(--ut-line);background:var(--ut-bg);font-size:.8rem;z-index:1}
+.ut-wiz-balk li>span svg{width:16px;height:16px}
+.ut-wiz-balk li+li::before{content:"";position:absolute;top:13px;right:50%;width:100%;height:2px;background:var(--ut-line)}
+.ut-wiz-balk li[data-stand="klaar"]{color:var(--ut-text)}
+.ut-wiz-balk li[data-stand="klaar"]>span{border-color:var(--ut-ok);background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-wiz-balk li[data-stand="klaar"]+li::before,.ut-wiz-balk li[data-stand="actief"]::before{background:var(--ut-ok)}
+.ut-wiz-balk li[data-stand="actief"]{color:var(--ut-info)}
+.ut-wiz-balk li[data-stand="actief"]>span{border-color:var(--ut-info);background:var(--ut-info-bg);color:var(--ut-info)}
+
+/* een stap */
+.ut-wiz-stap{display:grid;gap:10px;padding:14px;border:1px solid var(--ut-line);border-radius:12px;background:var(--ut-bg2);scroll-margin-top:12px;transition:border-color .3s,box-shadow .3s}
+.ut-wiz-stap[data-stand="wacht"]{opacity:.6}
+.ut-wiz-stap[data-stand="actief"]{border-color:var(--ut-info);background:var(--ut-bg)}
+.ut-wiz-stap[data-stand="klaar"]{border-color:var(--ut-line)}
+.ut-wiz-kop{display:flex;align-items:center;gap:8px}
+.ut-wiz-kop h3{margin:0;font-size:1rem}
+.ut-wiz-nr{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ut-info-bg);color:var(--ut-info);font-weight:700;font-size:.82rem;flex:none}
+.ut-wiz-nr svg{width:16px;height:16px}
+.ut-wiz-stap[data-stand="klaar"] .ut-wiz-nr{background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-wiz-pict{width:18px;height:18px;color:var(--ut-muted)}
+.ut-wiz-onderkop{display:flex;align-items:center;gap:6px;font-size:.92rem;margin:0}
+.ut-wiz-onderkop svg{width:16px;height:16px;color:var(--ut-ok)}
+
+/* de volgende stap oplichten */
+.ut-wiz-stap[data-puls]{animation:ut-wiz-puls 1.1s ease-out 2;border-color:var(--ut-info)}
+.ut-wiz-stap[data-puls] [data-ut-hoofdactie]{animation:ut-wiz-knop 1.1s ease-out 3}
+@keyframes ut-wiz-puls{0%{box-shadow:0 0 0 0 rgba(37,99,235,.45)}100%{box-shadow:0 0 0 14px rgba(37,99,235,0)}}
+@keyframes ut-wiz-knop{0%{box-shadow:0 0 0 0 rgba(37,99,235,.6)}100%{box-shadow:0 0 0 10px rgba(37,99,235,0)}}
+/* Hoofd3: kopieerknop rechtsboven in «Що змінено» */
+.ut-beschrijving{position:relative}
+.ut-beschrijving h4{padding-right:36px}
+.ut-beschrijving h4 .ut-badge{white-space:normal;text-align:left}
+.ut-blok-kopie{position:absolute;top:8px;right:8px;z-index:1}
+.ut-blok-kopie-knop{position:relative;display:grid;place-items:center;width:28px;height:28px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ut-muted);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.ut-blok-kopie-knop::before{content:'';position:absolute;inset:-8px}
+.ut-blok-kopie-knop:hover{background:var(--ut-bg2);border-color:var(--ut-line);color:var(--ut-text)}
+.ut-blok-kopie-knop:focus-visible{outline:2px solid var(--ut-info);outline-offset:2px}
+.ut-blok-kopie-knop[data-staat=ok]{color:var(--ut-ok)}
+.ut-blok-kopie-knop svg{width:15px;height:15px}
+.ut-blok-kopie-melding{position:absolute;top:50%;right:calc(100% + 6px);transform:translateY(-50%);padding:2px 8px;border:1px solid var(--ut-line);border-radius:999px;background:var(--ut-bg);box-shadow:0 2px 8px rgba(0,0,0,.12);font-size:.75rem;color:var(--ut-muted);white-space:nowrap}
+.ut-blok-kopie-melding:empty{display:none}
+@media (prefers-reduced-motion:reduce){.ut-wiz-stap[data-puls],.ut-wiz-stap[data-puls] [data-ut-hoofdactie]{animation:none;box-shadow:0 0 0 3px var(--ut-info-bg)}}
+.ut-root [data-ut-hoofdactie]:focus-visible{outline:3px solid var(--ut-info);outline-offset:2px}
+
+/* dropzone */
+.ut-drop{display:grid;justify-items:center;gap:10px;text-align:center;padding:22px 14px;border:2px dashed var(--ut-line);border-radius:14px;background:var(--ut-bg);transition:border-color .2s,background .2s}
+.ut-drop[data-sleep]{border-color:var(--ut-info);background:var(--ut-info-bg)}
+.ut-drop>svg{width:40px;height:40px;color:var(--ut-info)}
+.ut-drop p{display:grid;gap:2px}
+.ut-drop p span{color:var(--ut-muted);font-size:.85rem}
+.ut-chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.ut-chips li{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;background:var(--ut-bg2);border:1px solid var(--ut-line);font-size:.78rem;color:var(--ut-muted)}
+.ut-chips li svg{width:13px;height:13px}
+
+/* gekozen bestand */
+.ut-bestand{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--ut-line);border-radius:12px;background:var(--ut-bg);min-width:0}
+.ut-bestand[data-ok="ja"]{border-color:var(--ut-ok)}
+.ut-bestand[data-ok="nee"]{border-color:var(--ut-err);background:var(--ut-err-bg)}
+.ut-bestand-pict{display:grid;place-items:center;width:44px;height:44px;border-radius:10px;background:var(--ut-info-bg);color:var(--ut-info);flex:none}
+.ut-bestand[data-ok="ja"] .ut-bestand-pict{background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-bestand[data-ok="nee"] .ut-bestand-pict{background:var(--ut-err-bg);color:var(--ut-err)}
+.ut-bestand-pict svg{width:24px;height:24px}
+.ut-bestand-tekst{display:grid;gap:2px;min-width:0;flex:1}
+.ut-bestand-tekst b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ut-bestand-tekst small{color:var(--ut-muted)}
+.ut-bestand-soort{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:.78rem;font-weight:700;white-space:nowrap;background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-bestand-soort[data-ok="false"]{background:var(--ut-err-bg);color:var(--ut-err)}
+.ut-bestand-soort svg{width:14px;height:14px}
+.admin-uitrol .ut-bestand-x{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-muted);cursor:pointer;flex:none}
+.admin-uitrol .ut-bestand-x:hover:not(:disabled){background:var(--ut-err-bg);color:var(--ut-err);border-color:var(--ut-err)}
+.admin-uitrol .ut-bestand-x:disabled{opacity:.4;cursor:not-allowed}
+.ut-bestand-x svg{width:16px;height:16px}
+
+/* tegels */
+.ut-tegels{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.ut-tegel{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--ut-line);border-radius:11px;background:var(--ut-bg);min-width:0}
+.ut-tegel-pict{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--ut-info-bg);color:var(--ut-info);flex:none}
+.ut-tegel-pict svg{width:17px;height:17px}
+.ut-tegel-tekst{display:grid;gap:1px;min-width:0;flex:1}
+.ut-tegel-tekst small{color:var(--ut-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.03em}
+.ut-tegel-tekst b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem}
+.admin-uitrol .ut-tegel-kopie{display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:var(--ut-muted);cursor:pointer}
+.admin-uitrol .ut-tegel-kopie:hover{background:var(--ut-bg2);color:var(--ut-text)}
+.ut-tegel-kopie svg{width:15px;height:15px}
+
+/* beschrijving */
+.ut-beschrijving{padding:12px;border:1px solid var(--ut-line);border-radius:12px;background:var(--ut-bg)}
+.ut-beschrijving[data-aanwezig]{border-color:var(--ut-ok)}
+.ut-beschrijving h4{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 6px;font-size:.95rem}
+.ut-beschrijving h4 svg{width:16px;height:16px;color:var(--ut-info)}
+.ut-badge-verplicht{background:var(--ut-info-bg);color:var(--ut-info);font-size:.7rem;font-weight:600}
+
+/* meldingen in de wizard */
+.ut-probleem{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid var(--ut-err);background:var(--ut-err-bg)}
+.ut-probleem>svg{width:22px;height:22px;flex:none;color:var(--ut-err);margin-top:1px}
+.ut-probleem>div{display:grid;gap:8px;min-width:0}
+.ut-probleem ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:.9rem}
+.ut-probleem p{font-size:.9rem;color:var(--ut-text)}
+.ut-probleem .ut-knop{justify-self:start}
+.ut-goed{display:flex;align-items:center;gap:8px;color:var(--ut-ok);font-size:.9rem;font-weight:600}
+.ut-goed svg{width:18px;height:18px;flex:none}
+.ut-acties{display:flex;gap:8px;flex-wrap:wrap}
+.ut-wiz .ut-voortgang small{color:var(--ut-muted);font-size:.78rem;white-space:nowrap}
+.ut-wiz .ut-uitkomst>div{display:grid;gap:8px;min-width:0}
+
+/* wat de site beschermt */
+.ut-veilig{border:1px solid var(--ut-line);border-radius:10px;background:var(--ut-bg);padding:8px 12px}
+.ut-veilig summary{cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;font-size:.9rem}
+.ut-veilig summary svg{width:16px;height:16px;color:var(--ut-ok)}
+.ut-veilig ul{list-style:none;margin:8px 0 2px;padding:0;display:grid;gap:8px;font-size:.87rem;color:var(--ut-muted)}
+.ut-veilig li{display:flex;gap:8px;align-items:flex-start}
+.ut-veilig li svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--ut-info)}
+
+/* voorcontrole-lijst */
+.ut-vc{display:grid;gap:8px}
+.ut-vc-kop{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;border:1px solid var(--ut-ok);background:var(--ut-ok-bg);font-size:.9rem}
+.ut-vc-kop svg{width:18px;height:18px;flex:none}
+.ut-vc-kop[data-niveau="waarschuwing"]{border-color:var(--ut-warn);background:var(--ut-warn-bg)}
+.ut-vc-kop[data-niveau="fout"]{border-color:var(--ut-err);background:var(--ut-err-bg)}
+.ut-vc-lijst{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ut-vc-lijst>li{border:1px solid var(--ut-line);border-radius:10px;background:var(--ut-bg);overflow:hidden}
+.ut-vc-lijst>li[data-niveau="waarschuwing"]{border-color:var(--ut-warn)}
+.ut-vc-lijst>li[data-niveau="fout"]{border-color:var(--ut-err)}
+.admin-uitrol .ut-vc-rij{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ut-vc-rij:hover{background:var(--ut-bg2)}
+.ut-vc-pict{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--ut-bg2);color:var(--ut-muted);flex:none}
+.ut-vc-pict svg{width:16px;height:16px}
+.ut-vc-tekst{display:grid;gap:1px;flex:1;min-width:0}
+.ut-vc-tekst small{color:var(--ut-muted);overflow-wrap:anywhere}
+.ut-vc-niveau{width:18px;height:18px;flex:none;color:var(--ut-ok)}
+li[data-niveau="waarschuwing"] .ut-vc-niveau{color:var(--ut-warn)}
+li[data-niveau="fout"] .ut-vc-niveau{color:var(--ut-err)}
+.ut-vc-pijl{width:16px;height:16px;flex:none;color:var(--ut-muted);transition:transform .2s}
+.ut-vc-rij[aria-expanded="true"] .ut-vc-pijl{transform:rotate(180deg)}
+.ut-vc-uitleg{padding:2px 12px 10px 52px;font-size:.85rem;color:var(--ut-muted);display:grid;gap:6px}
+.ut-vc-uitleg ul{margin:0;padding-left:16px;display:grid;gap:3px}
+
+/* LiveKaart: nieuw bestand / afgeronde run */
+.ut-vorige,.ut-vorige-hint{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:8px 12px;border-radius:10px;background:var(--ut-bg2);border:1px solid var(--ut-line);font-size:.85rem;color:var(--ut-muted)}
+.ut-vorige-hint{justify-content:flex-start}
+.ut-fasen[data-afgerond]{opacity:.78}
+
+@media (max-width:640px){
+  .ut-wiz-balk li{font-size:.7rem;line-height:1.15}
+  .ut-wiz-stap{padding:10px}
+  .ut-tegels{grid-template-columns:1fr}
+  .ut-bestand{flex-wrap:wrap}
+  .ut-bestand-soort{order:3}
+  .ut-vc-uitleg{padding-left:12px}
+}
+
+/* MOBIEL 21.10.2026: korte stapnamen («Перев.», «Файл») stonden op 11,2 px — minimum --tekst-mini (8 tekens × 12 px past in 1/5 van 358 px). */
+@media (max-width:640px){.ut-wiz-balk li,.ut-wiz-balk li em.ut-wiz-kort{font-size:max(var(--tekst-mini),.78rem)}}
+/* Audit 18.10.2026 (8c): lange en korte stapnamen; elk label blijft binnen zijn eigen kolom (afbreken, nooit overlopen). */
+.ut-wiz-balk li em{font-style:normal;display:block;max-width:100%;overflow-wrap:anywhere;hyphens:auto;padding:0 2px}
+.ut-wiz-balk .ut-wiz-kort{display:none}
+.ut-wiz-balk li{min-width:0}
+/* UI-010: tweetalige beschrijving, deelnemers, details van falende tests */
+.ut-vc-details{max-height:260px;overflow:auto;overflow-wrap:anywhere}
+.ut-vc-details li[data-nieuw] code{color:var(--ut-fout,#b42318);font-weight:600}
+.ut-knop-klein{justify-self:start;min-height:36px;padding:4px 10px;font-size:.8rem}
+.ut-release-tekst{display:grid;gap:4px;font-size:.88rem;overflow-wrap:anywhere}
+.ut-release-tekst p{margin:0}.ut-release-tekst ul{margin:2px 0 4px;padding-left:18px}
+.ut-deelnemers{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
+.ut-deelnemer{display:flex;align-items:center;gap:8px;font-size:.85rem;min-height:28px}
+.ut-deelnemer-mens{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;background:var(--ut-vlak,#eef);font-size:.75rem;font-weight:600;flex:none}
+.ut-manifest-fouten{margin:6px 0 0;padding-left:18px;font-size:.85rem;overflow-wrap:anywhere}
+@media (max-width:640px){.ut-wiz-balk .ut-wiz-lang{display:none}.ut-wiz-balk .ut-wiz-kort{display:block}}

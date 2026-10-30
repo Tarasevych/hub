@@ -1,0 +1,71 @@
+UITLEG-LEESMIJ.txt - T:\mijn-ruimte\geheim\  (sleutel uitrol-sleutel)
+(Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
+У цьому файлі НЕМАЄ жодних секретів. / Dit bestand bevat GEEN geheimen.
+
+==============================================================================
+УКРАЇНСЬКА
+==============================================================================
+
+ЩО ЦЕ
+- uitrol-sleutel      - СЕКРЕТНИЙ ключ підпису випусків сайту Mijn Ruimte (ed25519), захищений паролем.
+                        Пароль - у менеджері паролів, НЕ тут і НЕ на диску T:.
+- uitrol-sleutel.pub  - публічна частина. Не секрет; вона записана на сервері у файлі
+                        /etc/mijn-ruimte/uitrol-ondertekenaars.
+
+НАВІЩО
+Сервер встановлює новий код ЛИШЕ тоді, коли він підписаний цим ключем. Три способи:
+  1. Тег у GitHub (GitOps):  powershell -ExecutionPolicy Bypass -File scripts\onderteken-uitrol.ps1
+     Скрипт створює підписаний тег uitrol-РРРРММДД-ГГХХ і надсилає його в GitHub; сервер сам забирає його
+     протягом 5 хвилин (якщо GitOps увімкнено).
+  2. Пакет:  powershell -ExecutionPolicy Bypass -File deploy\uitrol\maak-uitrolpakket.ps1
+     Створює пакет (.tar.gz), підпис (.sig) і файл з розміром і сумою (.txt) для Grok (mcp.tarasevych.com) або SSH.
+  3. Кнопки на сайті (MCP → «Керування сервером»): перевірити випуски зараз, резервна копія, відкат.
+     Вони НЕ можуть встановити непідписаний код.
+Пароль запитує ssh-add або ssh-keygen; скрипти його не бачать і не зберігають.
+
+НІКОЛИ
+- не надсилайте файл uitrol-sleutel (без .pub) нікому: ні Grok, ні поштою, ні в чат;
+- не кладіть його на сервер, у GitHub чи в хмару;
+- не знімайте з нього пароль.
+
+ЯКЩО КЛЮЧ ЗАГУБЛЕНО АБО ВІН МІГ ПОТРАПИТИ ДО ЧУЖИХ РУК
+- Створіть новий ключ (deploy/RUNBOOK-VEILIGE-UITROL.md, розділ 2) і замініть публічний ключ на сервері (розділи 3 і 10).
+- До того часу вимкніть GitOps ("gitops": false у /etc/mijn-ruimte/mcp-rechten.json).
+
+КОПІЯ
+- Друга копія цієї теки - на офлайн-диску (той самий пароль). Без ключа нові випуски неможливі,
+  але сайт продовжує працювати.
+
+==============================================================================
+NEDERLANDS
+==============================================================================
+
+WAT IS DIT
+- uitrol-sleutel      - GEHEIME ondertekeningssleutel voor releases van Mijn Ruimte (ed25519), beveiligd met een
+                        wachtwoordzin. De wachtwoordzin staat in de wachtwoordbeheerder, NIET hier en NIET op T:.
+- uitrol-sleutel.pub  - het publieke deel. Geen geheim; het staat op de server in /etc/mijn-ruimte/uitrol-ondertekenaars.
+
+WAARVOOR
+De server installeert nieuwe code ALLEEN als die met deze sleutel is ondertekend. Drie manieren:
+  1. Tag in GitHub (GitOps):  powershell -ExecutionPolicy Bypass -File scripts\onderteken-uitrol.ps1
+     Het script maakt een ondertekende tag uitrol-JJJJMMDD-UUMM en pusht die; de server haalt hem binnen
+     5 minuten zelf op (als GitOps aan staat).
+  2. Pakket:  powershell -ExecutionPolicy Bypass -File deploy\uitrol\maak-uitrolpakket.ps1
+     Maakt het pakket (.tar.gz), de handtekening (.sig) en een bestand met grootte en controlesom (.txt) voor
+     Grok (mcp.tarasevych.com) of SSH.
+  3. Knoppen op de site (MCP → 'Serverbeheer'): nu op releases controleren, back-up, terugdraaien.
+     Die kunnen GEEN niet-ondertekende code installeren.
+De wachtwoordzin wordt gevraagd door ssh-add of ssh-keygen; de scripts zien of bewaren hem niet.
+
+NOOIT
+- het bestand uitrol-sleutel (zonder .pub) naar iemand sturen: niet naar Grok, niet per mail, niet in een chat;
+- het op de server, in GitHub of in de cloud zetten;
+- de wachtwoordzin eraf halen.
+
+ALS DE SLEUTEL KWIJT IS OF IN VERKEERDE HANDEN KAN ZIJN
+- Maak een nieuwe sleutel (deploy/RUNBOOK-VEILIGE-UITROL.md, §2) en vervang de publieke sleutel op de server (§3 en §10).
+- Zet tot dan GitOps uit ("gitops": false in /etc/mijn-ruimte/mcp-rechten.json).
+
+KOPIE
+- Een tweede kopie van deze map staat op een offline schijf (zelfde wachtwoordzin). Zonder sleutel kunnen er geen
+  nieuwe releases komen, maar de site blijft gewoon werken.

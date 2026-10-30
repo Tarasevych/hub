@@ -1,0 +1,13 @@
+# /etc/systemd/system/mijn-ruimte-google-sync.timer — Mijn Ruimte: Google Suite-synchronisatie (cron.json google-suite-bplus-sync, elke 5 min)
+[Unit]
+Description=Mijn Ruimte: Google Suite-synchronisatie (cron.json google-suite-bplus-sync, elke 5 min)
+
+[Timer]
+OnCalendar=*:2/5
+RandomizedDelaySec=20s
+Persistent=true
+AccuracySec=30s
+Unit=mijn-ruimte-cron@google-suite-bplus-sync.service
+
+[Install]
+WantedBy=timers.target

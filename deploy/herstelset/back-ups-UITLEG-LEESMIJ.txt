@@ -1,0 +1,21 @@
+UITLEG-LEESMIJ.txt - herstelset\back-ups\
+(Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
+У цьому файлі НЕМАЄ жодних секретів. / Dit bestand bevat GEEN geheimen.
+
+УКРАЇНСЬКА
+- database-en-uploads\<дата>\ - найновіша нічна копія: database.dump.age (база) і
+  uploads.tar.gz.age (файли користувачів), ЗАШИФРОВАНІ. info.txt, SHA256SUMS, KLAAR - не секрет.
+- geheimen\geheimen-<дата>\ - ЗАШИФРОВАНІ секрети сервера (geheimen.env + ключ тунелю Cloudflare).
+- Без ключа відновлення (herstelsleutel-age.txt, зберігається окремо) їх не прочитати.
+- Не надсилайте і не кладіть у хмару. Не розшифровуйте у файли - тільки
+  scripts\ontsleutel-naar-vm.ps1 (КРОКИ 10 і 13 інструкції).
+- Втратили диск: візьміть копію з R:\mijn-ruimte-reservekopie\ або оновіть набір.
+
+NEDERLANDS
+- database-en-uploads\<datum>\ - nieuwste nachtelijke back-up: database.dump.age (database) en
+  uploads.tar.gz.age (gebruikersbestanden), VERSLEUTELD. info.txt, SHA256SUMS, KLAAR - niet geheim.
+- geheimen\geheimen-<datum>\ - VERSLEUTELDE servergeheimen (geheimen.env + Cloudflare-tunnelsleutel).
+- Zonder herstelsleutel (herstelsleutel-age.txt, apart bewaard) onleesbaar.
+- Niet versturen of in de cloud zetten. Niet naar bestanden ontsleutelen - alleen met
+  scripts\ontsleutel-naar-vm.ps1 (STAP 10 en 13 van de handleiding).
+- Schijf kwijt: neem de kopie uit R:\mijn-ruimte-reservekopie\ of werk de set opnieuw bij.

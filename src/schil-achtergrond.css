@@ -1,0 +1,22 @@
+/* Блок 5.1: фон «Робочого столу» на оболонці (main.canonical-chrome.schil-achtergrond),
+   за всім застосунком, не лише всередині .werkblad. Ті самі градієнти, що .wb-achtergrond-*
+   у src/werkblad/werkblad.css; власне зображення — --pagina-beeld (pagina-achtergrond.ts).
+   .canonical-workspace стоїть position:fixed на весь екран і непрозоре — його треба прозорим,
+   інакше малюнок оболонки не видно. Меню: src/menu-naadloos.css. */
+
+.canonical-chrome.schil-achtergrond[data-achtergrond='geen']{--pagina-verloop:none;--achtergrond-sluier:transparent}
+.canonical-chrome.schil-achtergrond[data-achtergrond='nacht']{--pagina-verloop:linear-gradient(160deg,color-mix(in srgb,var(--info-vlak) 38%,var(--bg)) 0%,color-mix(in srgb,var(--accent) 22%,var(--bg)) 45%,color-mix(in srgb,var(--warn-vlak) 18%,var(--bg)) 100%)}
+.canonical-chrome.schil-achtergrond[data-achtergrond='zee']{--pagina-verloop:linear-gradient(170deg,color-mix(in srgb,var(--accent) 42%,var(--bg)) 0%,color-mix(in srgb,var(--info-vlak) 24%,var(--bg)) 55%,var(--bg) 100%)}
+.canonical-chrome.schil-achtergrond[data-achtergrond='woud']{--pagina-verloop:linear-gradient(165deg,color-mix(in srgb,var(--ok-vlak) 34%,var(--bg)) 0%,color-mix(in srgb,var(--accent) 20%,var(--bg)) 60%,var(--bg) 100%)}
+.canonical-chrome.schil-achtergrond[data-achtergrond='avond']{--pagina-verloop:linear-gradient(160deg,color-mix(in srgb,var(--warn-vlak) 36%,var(--bg)) 0%,color-mix(in srgb,var(--fout-vlak) 18%,var(--bg)) 50%,color-mix(in srgb,var(--info-vlak) 26%,var(--bg)) 100%)}
+.canonical-chrome.schil-achtergrond[data-achtergrond='eigen']{--pagina-verloop:none;--achtergrond-sluier:color-mix(in srgb,var(--bg) 28%,transparent)}
+.canonical-chrome.schil-achtergrond[data-achtergrond]:not([data-achtergrond='geen']):not([data-achtergrond='eigen']){--achtergrond-sluier:color-mix(in srgb,var(--bg) 12%,transparent)}
+html.theme-dark .canonical-chrome.schil-achtergrond[data-achtergrond='eigen'],html.theme-plum-dark .canonical-chrome.schil-achtergrond[data-achtergrond='eigen']{--achtergrond-sluier:color-mix(in srgb,var(--bg) 40%,transparent)}
+
+.canonical-chrome.schil-achtergrond[data-achtergrond]:not([data-achtergrond='geen'])::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(var(--achtergrond-sluier,transparent),var(--achtergrond-sluier,transparent)),var(--pagina-beeld,none) center/cover no-repeat,var(--pagina-verloop,none),var(--bg);
+}
+.canonical-chrome.schil-achtergrond[data-achtergrond]:not([data-achtergrond='geen']) .canonical-workspace{background:transparent}
+.canonical-chrome.schil-achtergrond[data-achtergrond] .werkblad::before,
+.canonical-chrome.schil-achtergrond[data-achtergrond] .werkblad.wb-achtergrond-eigen::after{background:none}

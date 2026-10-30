@@ -1,0 +1,14 @@
+# Uitrol van een ondertekend releasepakket (root). Controleert de handtekening met de publieke sleutel in
+# /etc/mijn-ruimte/uitrol-ondertekenaars en voert pas daarna installeer-app.sh uit. Zie deploy/RUNBOOK-VEILIGE-UITROL.md.
+[Unit]
+Description=Mijn Ruimte: ondertekende release controleren en installeren
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mijn-ruimte-uitrol
+# Root is nodig voor installeer-app.sh (systemd-units, eigenaren, dienst herstarten); geen omgevingsvariabelen van buitenaf.
+PrivateTmp=yes
+ProtectHome=yes
+TimeoutStartSec=45min
+Nice=5

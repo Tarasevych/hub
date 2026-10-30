@@ -1,0 +1,219 @@
+UITLEG-LEESMIJ.txt - щоденна копія в Google Drive / dagelijkse kopie naar Google Drive
+Map / Папка: T:\mijn-ruimte\scripts\cloud\   (копія / kopie: R:\mijn-ruimte-reservekopie\cloud\)
+(Спочатку українською, далі нідерландською / Eerst Oekraiens, daarna Nederlands)
+У цьому файлі НЕМАЄ секретів. / Dit bestand bevat GEEN geheimen.
+
+##############################################################################
+УКРАЇНСЬКА
+##############################################################################
+
+НАВІЩО
+Щодня ЗАШИФРОВАНІ резервні копії сайту йдуть у ваш Google Drive. Якщо ПК і зовнішній
+диск пропадуть разом, ви втратите щонайбільше один день даних.
+
+ЯК ЦЕ ПРАЦЮЄ (без участі помічника)
+  ~03:30  сервер (VM) робить копію бази і файлів і шифрує її ПУБЛІЧНИМ ключем age.
+  09:00   завдання Windows "Mijn Ruimte - reservekopie ophalen" (користувач t) забирає
+          копію на R:\mijn-ruimte-reservekopie\vm-back-ups\ і ОДРАЗУ ПІСЛЯ цього запускає
+          cloud-reservekopie.ps1, який вивантажує нове в Google Drive.
+          ПК був вимкнений о 09:00? Завдання запуститься, щойно ви увійдете в Windows.
+  Раз на тиждень скрипт також оновлює набір відновлення R:\...\herstelset\ і кладе його
+  в Drive (як один зашифрований файл). Змінився набір раніше - теж вивантажує.
+
+ЩО ЛЕЖИТЬ У GOOGLE DRIVE (папка mijn-ruimte-reservekopie)
+  dagelijks\<дата-час>\        database.dump.age, uploads.tar.gz.age, SHA256SUMS
+  geheimen\geheimen-<дата>\    *.tar.age (секрети сервера, зашифровані), *.sha256, SHA256SUMS
+  herstelset\                  herstelset-<дата>.zip.age + .sha256 (весь набір, зашифрований)
+  ЛИШЕ файли .age (перевіряється справжній заголовок age) і контрольні суми SHA256.
+  info.txt, KLAAR, INFO.txt НЕ вивантажуються (вони не зашифровані).
+  НІКОЛИ не вивантажуються: herstelsleutel-age.txt, SSH-ключі, *.pfx, rclone.conf, нічого з
+  R:\...\sleutels\. Якщо в папці копії знайдеться незашифрований або незнайомий файл,
+  скрипт ВІДМОВЛЯЄТЬСЯ вивантажувати цю папку і пише FOUT у журнал.
+  Після кожного вивантаження розмір і SHA256 у Drive порівнюються з файлом на ПК.
+
+СКІЛЬКИ ЗБЕРІГАЄТЬСЯ
+  - останні 30 щоденних копій + найновіша копія кожного місяця за 12 місяців;
+  - набір відновлення: 4 останні версії; секрети: усі (вони маленькі).
+  Видаляє скрипт лише всередині mijn-ruimte-reservekopie\dagelijks\<дата> і
+  herstelset\herstelset-*.zip.age, не більше 5 папок за раз і лише тоді, коли найновіша
+  копія вже точно в Drive. Видалене 30 днів лежить у кошику Drive.
+  На R:\ нічого не видаляється.
+
+ДОСТУП ДО GOOGLE (drive.file)
+  rclone отримує обмежений доступ "drive.file": бачить і змінює ЛИШЕ файли, які створив
+  сам. Решту вашого Drive (фото, документи) він НЕ бачить. Тому:
+  - НЕ створюйте папку mijn-ruimte-reservekopie вручну і НЕ перейменовуйте/переносьте її.
+  - Файли в ній можна переглядати й завантажувати у браузері.
+
+ОДНОРАЗОВО: ПІДКЛЮЧИТИ GOOGLE DRIVE (робить Павло, ~15 хвилин)
+  Спільний клієнт rclone Google вимикає у 2026 році, тому потрібен ВЛАСНИЙ OAuth-клієнт.
+  А) У браузері: https://console.cloud.google.com/ (ваш Google-акаунт)
+     1. Угорі "Select a project" -> "New project" -> назва mijn-ruimte-backup -> Create.
+     2. Меню -> APIs & Services -> Library -> знайдіть "Google Drive API" -> Enable.
+     3. Меню -> Google Auth Platform (або "OAuth consent screen") -> Get started:
+        App name: mijn-ruimte-backup; User support email: ваша пошта; Audience: External;
+        Contact: ваша пошта; погодьтеся з умовами -> Create.
+     4. Data Access -> "Add or remove scopes" -> внизу "Manually add scopes":
+        https://www.googleapis.com/auth/drive.file  -> Add to table -> Update -> Save.
+        (Лише цей один доступ.)
+     5. Audience -> "Publish app" -> Confirm (статус "In production"). Інакше Google
+        вимикатиме доступ кожні 7 днів.
+     6. Clients -> "Create client" -> Application type: Desktop app -> назва rclone-pc ->
+        Create. Скопіюйте Client ID і Client secret (вікно можна відкрити знову пізніше).
+        Нікуди їх не зберігайте у файл.
+  Б) У ЗВИЧАЙНОМУ PowerShell (НЕ від імені адміністратора) на цьому ПК:
+       powershell -NoProfile -ExecutionPolicy Bypass -File T:\mijn-ruimte\scripts\cloud\cloud-koppelen.ps1
+     Скрипт попросить Client ID і Client secret (вставте: правий клік), потім відкриє
+     браузер. Що ви побачите:
+       - вибір Google-акаунта -> оберіть свій;
+       - можливо "Google hasn't verified this app": це ВАШ власний клієнт -> Advanced ->
+         "Go to mijn-ruimte-backup (unsafe)";
+       - "mijn-ruimte-backup wants access to your Google Account ... See, edit, create, and
+         delete only the specific Google Drive files you use with this app" -> Continue/Allow;
+       - у браузері: "Success! All done. Please go back to rclone."
+     У PowerShell: "6/6 OK: Google Drive підключено ..." і питання про перше вивантаження
+     (Enter = так). Перше вивантаження ~1-3 хвилини (набір ~45 МБ).
+  Після цього все працює саме, щодня після 09:00.
+
+ДЕ ЗАПИСАНО, ЩО СТАЛОСЯ
+  R:\mijn-ruimte-reservekopie\cloud\cloud.log         один рядок на подію (OK / FOUT / ...)
+  R:\mijn-ruimte-reservekopie\cloud\cloud-rclone.log  подробиці rclone (без паролів і токенів)
+  R:\mijn-ruimte-reservekopie\cloud\status.json       остання вдала синхронізація, версія набору
+  R:\mijn-ruimte-reservekopie\vm-back-ups\ophalen.log  рядок "OK cloud: ..." після кожного запуску
+  "NIET GEKOPPELD" = кроку Б ще не було. "FOUT" = подивіться рядок і cloud-rclone.log.
+  Перевірка без змін у Drive:
+    powershell -NoProfile -ExecutionPolicy Bypass -File T:\mijn-ruimte\scripts\cloud\cloud-reservekopie.ps1 -DryRun
+
+ДЕ ЗБЕРІГАЄТЬСЯ ДОСТУП ДО GOOGLE (токен)
+  C:\Users\t\AppData\Local\mijn-ruimte\rclone\  - див. UITLEG-LEESMIJ.txt там і в
+  T:\mijn-ruimte\hulpmiddelen\rclone\. Коротко: rclone мусить сам переписувати цей файл
+  (токен оновлюється), а на T:\ і R:\ Windows дозволяє писати лише PowerShell.
+  Файл зашифрований; пароль до нього захищений Windows (лише користувач t на цьому ПК).
+
+ЯКЩО ...
+  - Google пише "invalid_grant"/токен недійсний: ще раз cloud-koppelen.ps1 -Opnieuw
+    (той самий Client ID/secret з Google Cloud -> Clients).
+  - Windows перевстановлено / новий ПК: rclone знову в T:\mijn-ruimte\hulpmiddelen\rclone\,
+    папку C:\Users\t\AppData\Local\mijn-ruimte\rclone видалити, cloud-koppelen.ps1 з ТИМ САМИМ
+    OAuth-клієнтом (тоді rclone бачить старі файли в Drive).
+  - ПК ЗЛАМАЛИ: https://myaccount.google.com/permissions -> mijn-ruimte-backup -> видалити
+    доступ; у Google Cloud -> Clients видалити rclone-pc; змініть пароль Google. Копії в Drive
+    зашифровані - без herstelsleutel-age.txt їх не прочитати.
+  - Вимкнути: у планувальнику нічого міняти не треба - видаліть папку
+    C:\Users\t\AppData\Local\mijn-ruimte\rclone (тоді "NIET GEKOPPELD") і відкличте доступ.
+
+ВІДНОВЛЕННЯ З DRIVE: розділ 4 у 00-BEGIN-HIER-UA.txt / .pdf (набір відновлення).
+
+ФАЙЛИ
+  cloud-reservekopie.ps1   щоденне вивантаження (запускає reservekopie-ophalen.ps1)
+  cloud-koppelen.ps1       одноразове підключення Google (крок Б)
+  cloud-wachtwoord.ps1     допоміжний: дає rclone пароль до зашифрованого rclone.conf (DPAPI)
+  config-UITLEG-LEESMIJ.txt  пояснення для папки C:\Users\t\AppData\Local\mijn-ruimte\rclone
+  Код: GitHub Tarasevych/hub, гілка zelf-hosten, deploy/cloud/.
+
+##############################################################################
+NEDERLANDS
+##############################################################################
+
+WAAROM
+Elke dag gaan de VERSLEUTELDE back-ups van de site naar jouw Google Drive. Zijn pc en externe
+schijf allebei weg, dan verlies je hooguit een dag aan gegevens.
+
+HOE HET WERKT (zonder hulp)
+  ~03:30  de server (VM) maakt een back-up van database en bestanden en versleutelt die met
+          de PUBLIEKE age-sleutel.
+  09:00   de Windows-taak "Mijn Ruimte - reservekopie ophalen" (gebruiker t) haalt de back-up
+          naar R:\mijn-ruimte-reservekopie\vm-back-ups\ en start DIRECT DAARNA
+          cloud-reservekopie.ps1, dat het nieuwe naar Google Drive zet.
+          Stond de pc om 09:00 uit? Dan start de taak zodra je inlogt.
+  Eens per week ververst het script ook de herstelset R:\...\herstelset\ en zet die op Drive
+  (als een versleuteld bestand). Is de set eerder veranderd, dan ook.
+
+WAT STAAT ER OP GOOGLE DRIVE (map mijn-ruimte-reservekopie)
+  dagelijks\<datum-tijd>\      database.dump.age, uploads.tar.gz.age, SHA256SUMS
+  geheimen\geheimen-<datum>\   *.tar.age (servergeheimen, versleuteld), *.sha256, SHA256SUMS
+  herstelset\                  herstelset-<datum>.zip.age + .sha256 (hele set, versleuteld)
+  ALLEEN .age-bestanden (de echte age-header wordt gecontroleerd) en SHA256-controlesommen.
+  info.txt, KLAAR en INFO.txt gaan NIET mee (niet versleuteld).
+  NOOIT: herstelsleutel-age.txt, SSH-sleutels, *.pfx, rclone.conf, niets uit R:\...\sleutels\.
+  Staat er in een back-upmap een onversleuteld of onbekend bestand, dan WEIGERT het script die
+  map en schrijft FOUT in het logboek.
+  Na elke upload worden grootte en SHA256 op Drive vergeleken met het bestand op de pc.
+
+HOE LANG BEWAARD
+  - de laatste 30 dagelijkse back-ups + de nieuwste van elke maand, 12 maanden lang;
+  - herstelset: de laatste 4 versies; geheimen: alles (klein).
+  Het script verwijdert alleen binnen mijn-ruimte-reservekopie\dagelijks\<datum> en
+  herstelset\herstelset-*.zip.age, hooguit 5 mappen per keer en alleen als de nieuwste back-up
+  zeker op Drive staat. Verwijderd = 30 dagen in de Drive-prullenbak. Op R:\ wordt niets verwijderd.
+
+TOEGANG TOT GOOGLE (drive.file)
+  rclone krijgt de beperkte toegang "drive.file": het ziet en wijzigt ALLEEN bestanden die het
+  zelf heeft gemaakt. De rest van je Drive ziet het NIET. Daarom:
+  - de map mijn-ruimte-reservekopie NIET zelf aanmaken, hernoemen of verplaatsen;
+  - bekijken en downloaden in de browser mag gewoon.
+
+EENMALIG: GOOGLE DRIVE KOPPELEN (Pavlo, ~15 minuten)
+  Google zet de gedeelde rclone-client in 2026 uit; je hebt een EIGEN OAuth-client nodig.
+  A) In de browser: https://console.cloud.google.com/ (jouw Google-account)
+     1. Bovenaan "Select a project" -> "New project" -> naam mijn-ruimte-backup -> Create.
+     2. Menu -> APIs & Services -> Library -> "Google Drive API" -> Enable.
+     3. Menu -> Google Auth Platform (of "OAuth consent screen") -> Get started:
+        App name mijn-ruimte-backup; support-e-mail: je eigen; Audience: External;
+        Contact: je eigen e-mail; voorwaarden accepteren -> Create.
+     4. Data Access -> "Add or remove scopes" -> onderaan "Manually add scopes":
+        https://www.googleapis.com/auth/drive.file -> Add to table -> Update -> Save.
+        (Alleen deze ene.)
+     5. Audience -> "Publish app" -> Confirm (status "In production"). Anders trekt Google de
+        toegang elke 7 dagen in.
+     6. Clients -> "Create client" -> Application type: Desktop app -> naam rclone-pc -> Create.
+        Kopieer Client ID en Client secret (later opnieuw te bekijken). Niet in een bestand zetten.
+  B) In een GEWONE PowerShell (NIET als administrator) op deze pc:
+       powershell -NoProfile -ExecutionPolicy Bypass -File T:\mijn-ruimte\scripts\cloud\cloud-koppelen.ps1
+     Het script vraagt Client ID en Client secret (plakken: rechtermuisklik) en opent de browser.
+     Wat je ziet:
+       - Google-account kiezen -> je eigen;
+       - mogelijk "Google hasn't verified this app": dat is JOUW eigen client -> Advanced ->
+         "Go to mijn-ruimte-backup (unsafe)";
+       - "mijn-ruimte-backup wants access ... See, edit, create, and delete only the specific
+         Google Drive files you use with this app" -> Continue/Allow;
+       - in de browser: "Success! All done. Please go back to rclone."
+     In PowerShell: "6/6 OK: ..." en de vraag of de eerste upload nu moet (Enter = ja).
+     De eerste upload duurt ~1-3 minuten (set ~45 MB).
+  Daarna gaat alles vanzelf, elke dag na 09:00.
+
+WAAR STAAT WAT ER GEBEURDE
+  R:\mijn-ruimte-reservekopie\cloud\cloud.log         een regel per gebeurtenis (OK / FOUT / ...)
+  R:\mijn-ruimte-reservekopie\cloud\cloud-rclone.log  details van rclone (zonder wachtwoorden/tokens)
+  R:\mijn-ruimte-reservekopie\cloud\status.json       laatste geslaagde run, versie van de set
+  R:\mijn-ruimte-reservekopie\vm-back-ups\ophalen.log  regel "OK cloud: ..." na elke run
+  "NIET GEKOPPELD" = stap B nog niet gedaan. "FOUT" = lees de regel en cloud-rclone.log.
+  Proefdraaien zonder iets op Drive te veranderen:
+    powershell -NoProfile -ExecutionPolicy Bypass -File T:\mijn-ruimte\scripts\cloud\cloud-reservekopie.ps1 -DryRun
+
+WAAR STAAT DE GOOGLE-TOEGANG (token)
+  C:\Users\t\AppData\Local\mijn-ruimte\rclone\ - zie de UITLEG-LEESMIJ.txt daar en in
+  T:\mijn-ruimte\hulpmiddelen\rclone\. Kort: rclone moet dat bestand zelf herschrijven (het token
+  wordt ververst) en op T:\ en R:\ mag alleen PowerShell schrijven. Het bestand is versleuteld;
+  het wachtwoord is door Windows beschermd (alleen gebruiker t op deze pc).
+
+ALS ...
+  - Google meldt "invalid_grant"/token ongeldig: cloud-koppelen.ps1 -Opnieuw (zelfde Client
+    ID/secret uit Google Cloud -> Clients).
+  - Windows opnieuw geinstalleerd / nieuwe pc: rclone weer in T:\mijn-ruimte\hulpmiddelen\rclone\,
+    map C:\Users\t\AppData\Local\mijn-ruimte\rclone verwijderen, cloud-koppelen.ps1 met DEZELFDE
+    OAuth-client (dan ziet rclone de oude bestanden op Drive).
+  - Pc GEHACKT: https://myaccount.google.com/permissions -> mijn-ruimte-backup -> toegang
+    verwijderen; in Google Cloud -> Clients rclone-pc verwijderen; Google-wachtwoord wijzigen.
+    De kopieen op Drive zijn versleuteld - zonder herstelsleutel-age.txt onleesbaar.
+  - Uitzetten: in de taakplanner hoeft niets; verwijder C:\Users\t\AppData\Local\mijn-ruimte\rclone
+    (dan "NIET GEKOPPELD") en trek de toegang in.
+
+HERSTELLEN VANAF DRIVE: hoofdstuk 4 in 00-BEGIN-HIER-NL.txt (herstelset).
+
+BESTANDEN
+  cloud-reservekopie.ps1   dagelijkse upload (gestart door reservekopie-ophalen.ps1)
+  cloud-koppelen.ps1       eenmalig Google koppelen (stap B)
+  cloud-wachtwoord.ps1     hulpje: geeft rclone het wachtwoord van de versleutelde rclone.conf (DPAPI)
+  config-UITLEG-LEESMIJ.txt  uitleg voor de map C:\Users\t\AppData\Local\mijn-ruimte\rclone
+  Code: GitHub Tarasevych/hub, branch zelf-hosten, deploy/cloud/.

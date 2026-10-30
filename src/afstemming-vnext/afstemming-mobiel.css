@@ -1,0 +1,27 @@
+/* Afstemming vNext — mobiel fijnslijpen (uitvoerder D3). ALLES in dit bestand leeft binnen @media (max-width ≤760px of
+   pointer: coarse): geen top-level regels, geen position:fixed, geen hex-kleuren — alleen ontwerp-tokens. De basis
+   (afstemming.css) regelt de onderbalk en de lagen; hier alleen wat smalle schermen en aanraking extra nodig hebben. */
+
+@media (max-width: 760px) {
+  /* De graf: volle breedte, het paneel ernaast valt eronder (de schil zet de kolommen al via smal). */
+  .afv-graaf-romp { grid-template-columns: minmax(0, 1fr); }
+  [data-afv-graaf] svg { max-height: 70vh; }
+  [data-afv-zoom] button { background: var(--panel); border: 1px solid var(--line); }
+
+  /* Lange regels (releases, bevindingen, bronnen): laat de inhoud netjes wikkelen in plaats van horizontaal te duwen. */
+  [data-afv-releases] summary { align-items: flex-start; }
+  [data-afv-releases] code, [data-afv-controles] code, [data-afv-bronnen] code { overflow-wrap: anywhere; }
+
+  /* Tabellen of brede roosters die een onderdeel nog toevoegt: terugval naar scrollen BINNEN het blok, nooit de pagina. */
+  .afv-blok { overflow-x: auto; }
+
+  /* De cijfertegels van het rapport in twee kolommen zodat ze niet uitrekken. */
+  [data-afv-rapport-uit] > div:first-child { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+}
+
+@media (pointer: coarse) {
+  /* Aanraakdoelen: chips, zoomknoppen en rijknoppen minstens de mobiele tikhoogte; de graf pant met één vinger. */
+  [data-afv-graaf-soort], [data-afv-zoom] button { min-height: var(--tik-hoogte-mobiel); }
+  [data-afv-graaf] svg { touch-action: none; }
+  [data-afv-controles] [role='list'] > *, [data-afv-releases] [role='list'] > * { min-height: var(--tik-hoogte-mobiel); }
+}

@@ -1,0 +1,37 @@
+/* «Історія розгортань» — одна стрічка (22.10.2026, зона B). Токени з src/uitrol/uitrol.css (--ut-*) ← src/ontwerp/tokens.css.
+   Рядок = кнопка (aria-expanded), розгортання під ним; на ≤ 860 px — картка з підписами; тап ≥ 44 px. */
+.ut-tl{list-style:none;margin:0;padding:0;display:grid;gap:0;border:1px solid var(--ut-line);border-radius:12px;overflow:hidden;background:var(--ut-bg)}
+.ut-tl-item{border-bottom:1px solid var(--ut-line);border-left:3px solid transparent}
+.ut-tl-item:last-child{border-bottom:0}
+.ut-tl-item[data-staat="klaar"]{border-left-color:var(--ut-ok)}
+.ut-tl-item[data-staat="bezig"]{border-left-color:var(--ut-info)}
+.ut-tl-item[data-staat="mislukt"],.ut-tl-item[data-staat="geweigerd"],.ut-tl-item[data-staat="afgewezen"]{border-left-color:var(--ut-err)}
+.ut-tl-item[data-staat="afgebroken"],.ut-tl-item[data-staat="verlopen"],.ut-tl-item[data-staat="teruggedraaid"],.ut-tl-item[data-staat="autoterug"]{border-left-color:var(--ut-warn)}
+.ut-tl-item[data-open]{background:var(--ut-bg2)}
+.admin-uitrol .ut-tl-rij{display:grid;grid-template-columns:minmax(120px,1.1fr) 150px minmax(110px,1fr) 125px minmax(160px,2fr) 24px;gap:10px;align-items:center;width:100%;min-height:44px;text-align:left;padding:10px 12px;border:0;background:transparent;color:var(--ut-text);font:inherit;font-size:.88rem;cursor:pointer}
+.admin-uitrol .ut-tl-rij:hover{background:var(--ut-bg2)}
+.admin-uitrol .ut-tl-rij:focus-visible{outline:2px solid var(--ut-accent);outline-offset:-2px}
+.ut-tl-rij small{display:block;color:var(--ut-muted);font-size:.75rem}
+.ut-tl-rij>span{min-width:0;overflow-wrap:anywhere}
+.ut-tl-methode{display:flex;flex-direction:column;gap:2px}
+.ut-tl-methode svg{width:13px;height:13px;vertical-align:-2px;margin-right:3px}
+.ut-tl-pijl{width:18px;height:18px;color:var(--ut-muted);transition:transform .15s}
+.ut-tl-item[data-open] .ut-tl-pijl{transform:rotate(180deg)}
+.ut-badge[data-tl-staat="teruggedraaid"],.ut-badge[data-tl-staat="autoterug"]{background:var(--ut-warn-bg);color:var(--ut-warn)}
+.ut-badge[data-tl-staat="afgewezen"],.ut-badge[data-tl-staat="verlopen"]{background:var(--ut-bg2);color:var(--ut-muted)}
+.ut-tl-detail{padding:4px 12px 14px 12px;border-top:1px dashed var(--ut-line);display:grid;gap:12px}
+.ut-tl-acties{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ut-tl-waarom{display:flex;gap:6px;align-items:flex-start;margin:0;font-size:.85rem;color:var(--ut-warn);max-width:60ch}
+.ut-tl-waarom svg{width:16px;height:16px;flex:none;margin-top:2px}
+.ut-inline-icoon{width:14px;height:14px;vertical-align:-2px;margin-right:4px}
+.ut-tl .ut-leeg{padding:14px 12px;margin:0}
+@media (max-width:860px){
+  .admin-uitrol .ut-tl-rij{grid-template-columns:1fr auto;grid-template-areas:"versie staat" "methode tijd" "reden reden";gap:6px 10px;padding:12px}
+  .ut-tl-versie{grid-area:versie}.ut-tl-staat{grid-area:staat;justify-self:end}.ut-tl-methode{grid-area:methode}.ut-tl-tijd{grid-area:tijd;justify-self:end;text-align:right}.ut-tl-reden{grid-area:reden}
+  .ut-tl-pijl{display:none}
+  .ut-tl-acties .ut-knop{min-height:44px;flex:1 1 100%}
+  /* filters boven de tijdlijn: chips, keuzelijst en datumvelden op tap-hoogte */
+  .admin-uitrol [data-ut-geschiedenis] .ut-chip{min-height:44px;display:inline-flex;align-items:center}
+  .admin-uitrol [data-ut-geschiedenis] .ut-filter-rij select,.admin-uitrol [data-ut-geschiedenis] .ut-filter-rij input{min-height:44px}
+}
+@media (prefers-reduced-motion:reduce){.ut-tl-pijl{transition:none}}

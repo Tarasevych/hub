@@ -1,0 +1,47 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {initializeVault,unlockVault,encryptObject,decryptObject} from '../../src/cloud/versleutelde-kluis-m7.mjs';
+const c={accountId:'user-1',space:'prive',fileId:'file-1',revision:'rev1'};
+const bytes=x=>new TextEncoder().encode(x);
+const flip=x=>{const b=Uint8Array.from(x);b[0]^=1;return b;};
+let setup;
+test('M7 initialize and restore owner key from user-held recovery secret',async()=>{
+ setup=await initializeVault(c.accountId);
+ assert.equal(setup.vault.accountId,c.accountId);
+ const opened=await unlockVault(setup.vault,setup.recoverySecret,c.accountId);
+ const encrypted=await encryptObject({rootKey:opened,context:c,chunks:[bytes('secret report'),bytes('private data')],metadata:{name:'medical.pdf',mime:'application/pdf'}});
+ const result=await decryptObject({rootKey:opened,expectedContext:c,manifest:encrypted.manifest,packets:encrypted.packets});
+ assert.equal(new TextDecoder().decode(result.chunks[0]),'secret report');
+ assert.equal(result.metadata.name,'medical.pdf');
+ assert.equal(JSON.stringify(encrypted).includes('medical.pdf'),false);
+ assert.equal(JSON.stringify(encrypted).includes('secret report'),false);
+});
+test('M7 wrong recovery secret cannot unlock',async()=>{await assert.rejects(unlockVault(setup.vault,'A'.repeat(43),c.accountId));});
+test('M7 account binding blocks recovery across accounts',async()=>{await assert.rejects(unlockVault(setup.vault,setup.recoverySecret,'other-owner'),/MISMATCH/);});
+test('M7 cross-space decrypt fails even for same identity',async()=>{const e=await encryptObject({rootKey:setup.unlockedRoot,context:c,chunks:[bytes('classified')]});await assert.rejects(decryptObject({rootKey:setup.unlockedRoot,expectedContext:{...c,space:'technisch'},manifest:e.manifest,packets:e.packets}),/MISMATCH/);});
+test('M7 ciphertext tampering detectable',async()=>{const e=await encryptObject({rootKey:setup.unlockedRoot,context:c,chunks:[bytes('ABC')]});const p=structuredClone(e.packets);p[0].data=(p[0].data.startsWith('A')?'B':'A')+p[0].data.slice(1);await assert.rejects(decryptObject({rootKey:setup.unlockedRoot,expectedContext:c,manifest:e.manifest,packets:p}));});
+test('M7 packet reorder detects changed index',async()=>{const e=await encryptObject({rootKey:setup.unlockedRoot,context:c,chunks:[bytes('a'),bytes('b')]});await assert.rejects(decryptObject({rootKey:setup.unlockedRoot,expectedContext:c,manifest:e.manifest,packets:[e.packets[1],e.packets[0]]}),/INDEX/);});
+test('M7 missing chunk detected',async()=>{const e=await encryptObject({rootKey:setup.unlockedRoot,context:c,chunks:[bytes('a'),bytes('b')]});await assert.rejects(decryptObject({rootKey:setup.unlockedRoot,expectedContext:c,manifest:e.manifest,packets:[e.packets[0]]}),/COUNT/);});
+test('M7 wrong root from different user does not open file',async()=>{const other=await initializeVault('other');const e=await encryptObject({rootKey:setup.unlockedRoot,context:c,chunks:[bytes('a')]});await assert.rejects(decryptObject({rootKey:other.unlockedRoot,expectedContext:c,manifest:e.manifest,packets:e.packets}));});
+test('M7 metadata packet tampering detected',async()=>{const e=await encryptObject({rootKey:setup.unlockedRoot,context:c,chunks:[bytes('a')],metadata:{name:'hidden'}});e.manifest.encryptedMetadata.data='AAAA';await assert.rejects(decryptObject({rootKey:setup.unlockedRoot,expectedContext:c,manifest:e.manifest,packets:e.packets}));});
+test('M7 oversize chunk rejected',async()=>{await assert.rejects(encryptObject({rootKey:setup.unlockedRoot,context:c,chunks:[new Uint8Array(4*1024*1024+1)]}),/TOO_LARGE/);});
+test('M7 verified PRF-output unlocks matching credential; rejects other credential',async()=>{
+ const {unlockVaultWithPasskey}=await import('../../src/cloud/versleutelde-kluis-m7.mjs');
+ const prf=new Uint8Array(32).fill(81);
+ const i=await initializeVault('passkey-account',{verifiedPrfOutput:prf,credentialId:'credential-1'});
+ const key=await unlockVaultWithPasskey(i.vault,prf,'passkey-account','credential-1');
+ const e=await encryptObject({rootKey:key,context:{...c,accountId:'passkey-account'},chunks:[bytes('confidential')]});
+ const v=await decryptObject({rootKey:key,expectedContext:{...c,accountId:'passkey-account'},...e});
+ assert.equal(new TextDecoder().decode(v.chunks[0]),'confidential');
+ await assert.rejects(unlockVaultWithPasskey(i.vault,prf,'passkey-account','credential-other'),/MISMATCH/);
+});
+test('M7 streaming encryption has no all-file buffer and requires complete upload',async()=>{
+ const {createEncryptionSession}=await import('../../src/cloud/versleutelde-kluis-m7.mjs');
+ const s=await createEncryptionSession({rootKey:setup.unlockedRoot,context:c,totalChunks:2,metadata:{name:'private.txt'}});
+ const p1=await s.encryptNext(bytes('one'));
+ assert.throws(()=>s.finalize(),/INCOMPLETE/);
+ const p2=await s.encryptNext(bytes('two'));
+ const manifest=s.finalize();
+ const out=await decryptObject({rootKey:setup.unlockedRoot,expectedContext:c,manifest,packets:[p1,p2]});
+ assert.equal(new TextDecoder().decode(out.chunks[1]),'two');
+});

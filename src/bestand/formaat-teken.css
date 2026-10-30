@@ -1,0 +1,16 @@
+/* 13 родин — лише токени теми, щоб контраст ішов разом із палітрою. */
+.formaat-teken{display:inline-flex;align-items:center;justify-content:center;min-width:2.2em;height:1.35em;padding:0 4px;border-radius:4px;border:1px solid var(--formaat-rand,var(--line));background:var(--formaat-vlak,var(--surface));color:var(--text);font-size:10px;font-weight:750;letter-spacing:.03em;line-height:1;flex:none}
+.formaat-teken-stip{width:8px;height:8px;border-radius:2px;background:var(--formaat-rand,var(--text))}
+.formaat-teken[data-familie='pdf']{--formaat-vlak:var(--fout-zacht);--formaat-rand:var(--fout)}
+.formaat-teken[data-familie='document']{--formaat-vlak:var(--info-zacht);--formaat-rand:var(--info)}
+.formaat-teken[data-familie='spreadsheet']{--formaat-vlak:var(--ok-zacht);--formaat-rand:var(--ok)}
+.formaat-teken[data-familie='presentatie']{--formaat-vlak:var(--warn-zacht);--formaat-rand:var(--warn)}
+.formaat-teken[data-familie='archief']{--formaat-vlak:var(--surface);--formaat-rand:var(--text)}
+.formaat-teken[data-familie='beeld']{--formaat-vlak:var(--accent-soft,var(--info-zacht));--formaat-rand:var(--accent)}
+.formaat-teken[data-familie='audio']{--formaat-vlak:var(--info-zacht);--formaat-rand:var(--info)}
+.formaat-teken[data-familie='video']{--formaat-vlak:var(--warn-zacht);--formaat-rand:var(--warn)}
+.formaat-teken[data-familie='tekst']{--formaat-vlak:var(--surface);--formaat-rand:var(--muted)}
+.formaat-teken[data-familie='agenda']{--formaat-vlak:var(--warn-zacht);--formaat-rand:var(--warn)}
+.formaat-teken[data-familie='contact']{--formaat-vlak:var(--ok-zacht);--formaat-rand:var(--ok)}
+.formaat-teken[data-familie='mail']{--formaat-vlak:var(--info-zacht);--formaat-rand:var(--info)}
+.formaat-teken[data-familie='overig']{--formaat-vlak:var(--surface);--formaat-rand:var(--muted)}

@@ -1,0 +1,29 @@
+/* Аватар поштового акаунта з логотипом сервісу: лише на вузьких екранах.
+   21.10.2026: лише токени (src/ontwerp/tokens.css), без hex; фото в меню — «.is-klein» (не «.small»: це глобальний модифікатор кнопки,
+   його padding стискав фото до 17,6×40). Обгортка фото — коло з рівними сторонами, яке не стискається (flex:none, aspect-ratio:1);
+   саме фото — img.avatar-img (src/ontwerp/primitieven.css: object-fit:cover). */
+.mail-account-badge{display:none}
+@media (max-width:720px){
+  .mail-account-badge{display:block;position:relative;flex:none}
+  .mail-account-badge-trigger{position:relative;display:block;width:46px;height:46px;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer}
+  .mail-account-badge-photo{display:grid;place-items:center;box-sizing:border-box;width:100%;height:100%;aspect-ratio:1;border-radius:50%;overflow:hidden;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:15px;box-shadow:0 0 0 1px var(--line)}
+  .mail-account-badge-photo img{width:100%;height:100%;object-fit:cover}
+  .mail-account-badge-logo{position:absolute;right:-3px;bottom:-3px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--panel);box-shadow:0 0 0 1.5px var(--panel),0 0 0 2.5px var(--line)}
+  .mail-account-badge-logo svg{width:14px;height:14px}
+  .mail-account-badge-photo.is-klein{position:relative;flex:none;width:40px;height:40px;min-width:40px;min-height:40px;max-width:40px;max-height:40px;padding:0;overflow:visible;background:transparent;box-shadow:none}
+  .mail-account-badge-photo.is-klein>img,.mail-account-badge-initial{display:grid;place-items:center;box-sizing:border-box;width:40px;height:40px;max-width:none;aspect-ratio:1;padding:0;border-radius:50%;overflow:hidden;background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .mail-account-badge-photo.is-klein>img{display:block}
+  .mail-account-badge-menu{position:fixed;right:8px;z-index:640;width:min(340px,calc(100vw - 16px));display:grid;grid-template-rows:auto minmax(0,1fr) auto;border:1px solid var(--line);border-radius:var(--straal-l);background:var(--panel);color:var(--text);box-shadow:var(--schaduw-3);overflow:hidden}
+  .mail-account-badge-menu header{display:grid;gap:2px;padding:12px 14px 8px}
+  .mail-account-badge-menu header small{color:var(--muted);font-size:var(--tekst-mini)}
+  .mail-account-badge-list{display:grid;overflow:auto}
+  .mail-account-badge-menu button{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 14px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+  .mail-account-badge-menu button:active,.mail-account-badge-menu button.active{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+  .mail-account-badge-menu button>span:nth-child(2){display:grid;min-width:0;flex:1}
+  .mail-account-badge-menu button strong,.mail-account-badge-menu button small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mail-account-badge-menu button small{color:var(--muted);font-size:var(--tekst-mini)}
+  .mail-account-badge-menu button>svg{flex:none}
+  /* (0,2,1): загальне правило footer (padding 1.15rem, 12 px) робило «Додати акаунт» дрібним і з порожнечею над ним */
+  .mail-account-badge .mail-account-badge-menu>footer{margin:0;padding:0;border-top:1px solid var(--line);font-size:var(--tekst-basis)}
+  .mail-account-badge .mail-account-badge-menu>footer button{min-height:52px;padding:14px;color:var(--accent);font-size:var(--tekst-basis);font-weight:600}
+}

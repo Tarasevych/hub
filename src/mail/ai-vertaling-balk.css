@@ -1,0 +1,661 @@
+.ai-vertaling-balk {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: 0 0 12px 0;
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.24);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(16, 185, 129, 0.04) 100%);
+  color: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.ai-vertaling-balk.is-translated {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.09) 0%, rgba(99, 102, 241, 0.07) 100%);
+}
+
+.ai-vb-main-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.ai-vb-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 650;
+}
+
+.ai-vb-sparkle {
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+.ai-vb-title {
+  white-space: nowrap;
+}
+
+.ai-vb-space-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size:12px;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.14);
+  color: var(--ok);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Site-thema i.p.v. OS-voorkeur (mobiele pass 19.10.2026): donker volgt html.theme-dark. */
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-space-badge {
+  color: var(--ok);
+}
+
+.ai-vb-selectors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-vb-select-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(127, 127, 127, 0.28);
+  background: rgba(255, 255, 255, 0.65);
+  color: inherit;
+}
+
+/* Site-thema i.p.v. OS-voorkeur (mobiele pass 19.10.2026): donker volgt html.theme-dark. */
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-select-group {
+  background: rgba(30, 32, 42, 0.75);
+}
+
+.ai-vb-select-group select {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  max-width: 210px;
+  cursor: pointer;
+  outline: none;
+}
+
+.ai-vb-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.ai-vb-modes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-vb-mode-btn,
+.ai-vb-toggle-orig-btn,
+.ai-vb-settings-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(127, 127, 127, 0.28);
+  background: rgba(255, 255, 255, 0.72);
+  color: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.1s ease;
+}
+
+/* Site-thema i.p.v. OS-voorkeur (mobiele pass 19.10.2026): donker volgt html.theme-dark. */
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-mode-btn,
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-toggle-orig-btn,
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-settings-trigger {
+  background: rgba(30, 32, 42, 0.8);
+}
+
+.ai-vb-mode-btn:hover:not(:disabled),
+.ai-vb-toggle-orig-btn:hover,
+.ai-vb-settings-trigger:hover {
+  border-color: rgba(99, 102, 241, 0.55);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.ai-vb-mode-btn.active,
+.ai-vb-settings-trigger.active {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #ffffff;
+}
+
+.ai-vb-toggle-orig-btn.showing-translation {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.5);
+  font-weight: 650;
+}
+
+.ai-vb-toggle-orig-btn.showing-original {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.5);
+  font-weight: 650;
+}
+
+.ai-vb-settings-drawer {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(127, 127, 127, 0.25);
+  background: rgba(255, 255, 255, 0.86);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Site-thema i.p.v. OS-voorkeur (mobiele pass 19.10.2026): donker volgt html.theme-dark. */
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-settings-drawer {
+  background: rgba(20, 22, 30, 0.92);
+}
+
+.ai-vb-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ai-vb-settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-vb-setting-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-vb-setting-label {
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.ai-vb-depth-pills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ai-vb-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 127, 127, 0.3);
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ai-vb-pill.active {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.ai-vb-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+
+.ai-vb-setting-defaults {
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid rgba(127, 127, 127, 0.18);
+}
+
+.ai-vb-save-default-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  background: rgba(99, 102, 241, 0.12);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ai-vb-toegang-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.ai-vb-toegang-link:hover {
+  text-decoration: underline;
+}
+
+.ai-vb-refusal-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.ai-vb-refusal-icon {
+  color: var(--fout);
+  flex-shrink: 0;
+}
+
+.ai-vb-refusal-content {
+  flex: 1 1 240px;
+}
+
+.ai-vb-refusal-content strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.ai-vb-refusal-content p {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.ai-vb-refusal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--fout-vlak);
+  color: var(--text-on-vlak);
+  font-weight: 600;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.ai-vb-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.ai-vb-translate-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 12.5px;
+}
+
+.ai-vb-panel {
+  border-radius: 10px;
+  border: 1px solid rgba(127, 127, 127, 0.26);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Site-thema i.p.v. OS-voorkeur (mobiele pass 19.10.2026): donker volgt html.theme-dark. */
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-panel {
+  background: rgba(22, 24, 34, 0.92);
+}
+
+.ai-vb-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.18);
+  padding-bottom: 8px;
+}
+
+.ai-vb-panel-header strong {
+  display: block;
+  font-size: 13.5px;
+}
+
+.ai-vb-panel-header small {
+  display: block;
+  opacity: 0.78;
+  font-size:12px;
+  margin-top: 2px;
+}
+
+.ai-vb-close-btn {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 6px;
+}
+
+.ai-vb-close-btn:hover {
+  background: rgba(127, 127, 127, 0.18);
+}
+
+.ai-vb-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-vb-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ai-vb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+}
+
+.ai-vb-chip-date {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.ai-vb-chip-sum {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.ai-vb-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.ai-vb-col h4,
+.ai-vb-timeline-box h4,
+.ai-vb-attachments-purpose h4,
+.ai-vb-citations h4 {
+  margin: 0 0 6px 0;
+  font-size: 12.5px;
+  font-weight: 650;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ai-vb-col ul,
+.ai-vb-timeline-box ol,
+.ai-vb-attachments-purpose ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-vb-purpose-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.ai-vb-purpose-grid > div {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(127, 127, 127, 0.07);
+  border: 1px solid rgba(127, 127, 127, 0.16);
+}
+
+.ai-vb-purpose-grid dt {
+  font-weight: 650;
+  font-size: 12px;
+  opacity: 0.85;
+  margin-bottom: 3px;
+}
+
+.ai-vb-purpose-grid dd {
+  margin: 0;
+  font-size: 12.8px;
+}
+
+.ai-vb-context-overview {
+  margin: 0;
+  font-weight: 550;
+}
+
+.ai-vb-citation-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 8px;
+}
+
+.ai-vb-citation-card {
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(127, 127, 127, 0.24);
+  background: rgba(127, 127, 127, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-vb-citation-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.ai-vb-citation-badge {
+  font-size:12px;
+  font-weight: 650;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.16);
+  color: #4f46e5;
+}
+
+/* Site-thema i.p.v. OS-voorkeur (mobiele pass 19.10.2026): donker volgt html.theme-dark. */
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-citation-badge {
+  color: #818cf8;
+}
+
+.ai-vb-citation-subject {
+  font-size: 12.8px;
+}
+
+.ai-vb-citation-from {
+  font-size:12px;
+  opacity: 0.8;
+}
+
+.ai-vb-citation-reason {
+  margin: 2px 0;
+  font-size: 12px;
+}
+
+.ai-vb-citation-snippet {
+  margin: 2px 0;
+  padding-left: 8px;
+  border-left: 2px solid rgba(99, 102, 241, 0.45);
+  font-size:12px;
+  opacity: 0.86;
+}
+
+.ai-vb-citation-footer {
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ai-vb-open-source-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.1);
+  color: inherit;
+  font-size:12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ai-vb-open-source-btn:hover {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .ai-vertaling-balk {
+    padding: 8px 10px;
+  }
+  .ai-vb-main-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ai-vb-selectors,
+  .ai-vb-modes {
+    width: 100%;
+  }
+  .ai-vb-select-group {
+    flex: 1 1 auto;
+  }
+  .ai-vb-select-group select {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+/* ================================================================ каталог рушіїв перекладу (punt 16, 19.10.2026)
+   Melding eigenaar: «немає альтернативних рушіїв перекладу (Google, Microsoft, інші) і зручної кнопки інтеграції». Kaarten in
+   dezelfde vorm als de andere integratiekaarten: naam, leverancier, een pastille met de ECHTE stand en één knop. Een motor met
+   de stand «ще немає» krijgt geen knop — niets imiteren. */
+.ai-vb-motoren-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(127, 127, 127, 0.28);
+  background: rgba(255, 255, 255, 0.72);
+  color: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+}
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-motoren-trigger { background: rgba(30, 32, 42, 0.8); }
+.ai-vb-motoren-trigger:hover { border-color: rgba(99, 102, 241, 0.55); background: rgba(99, 102, 241, 0.1); }
+.ai-vb-motoren-trigger.active { background: #4f46e5; border-color: #4f46e5; color: #ffffff; }
+
+.ai-vb-motoren {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(127, 127, 127, 0.25);
+  background: rgba(255, 255, 255, 0.86);
+}
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-motoren { background: rgba(20, 22, 30, 0.92); }
+.ai-vb-motoren-note { margin: 0; font-size: 12px; line-height: 1.4; color: var(--muted, #64748b); }
+.ai-vb-motoren-lijst { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 8px; min-width: 0; }
+.ai-vb-motor-kaart { display: grid; gap: 4px; align-content: start; min-width: 0; padding: 9px 10px; border: 1px solid rgba(127, 127, 127, 0.28); border-radius: 10px; background: rgba(255, 255, 255, 0.6); }
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-motor-kaart { background: rgba(30, 32, 42, 0.6); }
+.ai-vb-motor-kaart[data-motor-staat='werkt'] { border-color: rgba(16, 185, 129, 0.5); }
+.ai-vb-motor-kaart[data-motor-staat='aansluiten'] { border-color: rgba(245, 158, 11, 0.5); }
+.ai-vb-motor-kop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; min-width: 0; }
+.ai-vb-motor-kop strong { min-width: 0; font-size: 13px; overflow-wrap: anywhere; }
+.ai-vb-motor-staat { flex: 0 0 auto; padding: 1px 8px; border-radius: 999px; font-size:12px; font-weight: 700; }
+.ai-vb-motor-staat[data-staat='werkt'] { background: rgba(16, 185, 129, 0.16); color: var(--ok); }
+.ai-vb-motor-staat[data-staat='aansluiten'] { background: rgba(245, 158, 11, 0.18); color: var(--warn); }
+.ai-vb-motor-staat[data-staat='nog-niet'] { background: rgba(127, 127, 127, 0.18); color: var(--muted, #64748b); }
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-motor-staat[data-staat='werkt'] { color: var(--ok); }
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-motor-staat[data-staat='aansluiten'] { color: var(--warn); }
+.ai-vb-motor-leverancier { color: var(--muted, #64748b); font-size:12px; }
+.ai-vb-motor-kaart p { margin: 0; font-size: 12px; line-height: 1.4; }
+.ai-vb-motor-knop { display: inline-flex; align-items: center; justify-content: center; gap: 5px; justify-self: start; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #4f46e5; background: #4f46e5; color: #fff; font-size: 12.5px; font-weight: 700; text-decoration: none; }
+.ai-vb-motor-knop:hover { filter: brightness(1.08); }
+.ai-vb-motor-knop:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
+.ai-vb-motor-klaar, .ai-vb-motor-leeg { display: inline-flex; align-items: center; gap: 5px; font-size:12px; }
+.ai-vb-motor-klaar { color: var(--ok); font-weight: 650; }
+:where(html.theme-dark, html.theme-plum-dark) .ai-vb-motor-klaar { color: var(--ok); }
+.ai-vb-motor-leeg { color: var(--muted, #64748b); }
+.ai-vb-uitleg { display: inline-flex; align-items: center; }
+@media (max-width: 720px) {
+  .ai-vb-motoren-lijst { grid-template-columns: minmax(0, 1fr); }
+  .ai-vb-motoren-trigger { min-height: 44px; }
+  .ai-vb-motor-knop { width: 100%; min-height: 44px; }
+}
+
+/* ================================================================ 21.10.2026 рецензія UX: згортання на малому екрані
+   На телефоні/в альбомній орієнтації панель займала 200+ px над текстом листа. Тут — одна смуга «✦ ШІ-аналіз і переклад ⌄»;
+   вибір агента й мови, режими, рушії й налаштування — під кнопкою-стрілкою (aria-expanded). Результати (підсумок, контекст)
+   лишаються видимими. Лише токени. (Tot 24.10 alleen op een klein scherm; sinds pakket 3 op elk scherm.) */
+/* 24.10.2026 (pakket 3): de knop en het inklappen gelden nu op elk scherm — zie aiBalkStartIngeklapt in AiVertalingBalk.tsx. */
+.ai-vb-inklap {
+  display:inline-grid; place-items:center; flex:none; width:var(--tik-hoogte); height:var(--tik-hoogte);
+  margin-inline-start:auto; padding:0; border:1px solid var(--line); border-radius:var(--straal-m);
+  background:var(--panel); color:var(--text); cursor:pointer;
+}
+.ai-vb-inklap:hover { background:var(--surface2); }
+.ai-vb-inklap:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+.ai-vb-inklap svg { transition:rotate .15s ease; }
+.ai-vb-inklap[aria-expanded='true'] svg { rotate:180deg; }
+.ai-vertaling-balk[data-ingeklapt='ja'] { gap:0; padding-block:var(--ruimte-1); }
+.ai-vertaling-balk[data-ingeklapt='ja'] .ai-vb-brand { flex:1 1 auto; min-width:0; }
+.ai-vertaling-balk[data-ingeklapt='ja'] :is(.ai-vb-selectors, .ai-vb-modes, .ai-vb-motoren, .ai-vb-settings-drawer, .ai-vb-space-badge) { display:none; }
+@media (max-width:700px), (max-height:500px) {
+  .ai-vb-brand { flex-wrap:wrap; min-width:0; }
+  .ai-vb-title { white-space:normal; min-width:0; }
+}
+@media (prefers-reduced-motion:reduce) { .ai-vb-inklap svg { transition:none; } }

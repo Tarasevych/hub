@@ -1,0 +1,11 @@
+# Start mijn-ruimte-uitrol.service zodra de MCP-dienst of de app een aanvraag in de inbox zet.
+# De inbox is schrijfbaar voor de app, maar het script voert alleen ondertekende pakketten uit (zie deploy/uitrol/mijn-ruimte-uitrol.sh).
+[Unit]
+Description=Mijn Ruimte: inbox voor ondertekende releasepakketten bewaken
+
+[Path]
+PathChanged=/srv/mijn-ruimte/uitrol-inbox/aanvraag
+Unit=mijn-ruimte-uitrol.service
+
+[Install]
+WantedBy=paths.target

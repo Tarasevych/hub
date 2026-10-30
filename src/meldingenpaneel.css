@@ -1,0 +1,156 @@
+/* Meldingencentrum: brede, rustige lijst met zoeken, filters, groepering per dag, stand en duur. Op een telefoon een volle onderlade. */
+.canonical-notification-panel{width:min(480px,calc(100vw - 16px));max-height:min(720px,calc(100dvh - 16px))}
+/* telefoon: zie «PANEEL OP DE TELEFOON» onderaan (21.10.2026) */
+.cnc-body{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;overflow:hidden}
+.cnc-tools{display:grid;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.cnc-search{display:flex;align-items:center;gap:8px;min-height:38px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface,var(--panel))}
+.cnc-search svg{width:16px;height:16px;color:var(--muted);flex:0 0 auto}
+.cnc-search input{flex:1;min-width:0;border:0;background:transparent;color:inherit;font:inherit;outline:none;min-height:36px}
+.cnc-search:focus-within{outline:2px solid var(--accent,#2f6f73)}
+.cnc-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin}
+.cnc-chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:2px 12px;border-radius:99px;border:1px solid var(--line);background:transparent;color:inherit;font:inherit;font-size:.82rem;cursor:pointer;white-space:nowrap}
+.cnc-chip[aria-pressed=true]{background:var(--accent,#2f6f73);border-color:var(--accent,#2f6f73);color:var(--text-on-accent);font-weight:700}
+.cnc-chip:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.cnc-chip-n{padding:0 6px;border-radius:99px;background:rgba(120,140,160,.25);font-size:.75rem}
+.cnc-chip[aria-pressed=true] .cnc-chip-n{background:rgba(255,255,255,.28)}
+.cnc-selects{display:flex;flex-wrap:wrap;gap:8px 12px}
+.cnc-selects label{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted)}
+.cnc-selects select{min-height:32px;border-radius:8px;border:1px solid var(--line);background:var(--surface,var(--panel));color:var(--text);font:inherit;font-size:.82rem;padding:0 6px}
+.cnc-list{overflow:auto;padding:6px 8px 10px;display:grid;align-content:start;gap:6px;min-height:0}
+.cnc-day{position:sticky;top:0;z-index:1;padding:8px 6px 4px;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--panel)}
+.cnc-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px;border-radius:12px;border:1px solid var(--line);border-left-width:4px;background:var(--surface,var(--panel))}
+.cnc-row.kind-success{border-left-color:var(--ok)}.cnc-row.kind-warning{border-left-color:var(--warn)}.cnc-row.kind-error{border-left-color:var(--fout)}.cnc-row.kind-info{border-left-color:var(--accent,#2f6f73)}
+/* 23.10.2026 (зона C, стенд sferen-bel-prive: contrast 3.75–3.92:1 у мета-рядку прочитаних): не приглушуємо ТЕКСТ (opacity на рядку опускала
+   дрібний мета-текст нижче WCAG AA 4.5:1); прочитаний рядок розрізняє приглушена іконка, непрочитаний — жирний заголовок (нижче). */
+.cnc-row.is-read .cnc-icon{opacity:.6}
+.cnc-row.is-unread strong{font-weight:750}
+.cnc-icon{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--soft,rgba(47,111,115,.12));color:var(--accent,#2f6f73)}
+.cnc-icon svg{width:18px;height:18px}
+.cnc-main{display:grid;gap:4px;min-width:0}
+.cnc-main strong{font-weight:650;line-height:1.3;overflow-wrap:anywhere}
+.cnc-meta{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:.76rem;color:var(--muted)}
+.cnc-cat{padding:0 8px;border-radius:99px;background:var(--soft,rgba(120,140,160,.16));font-weight:650}
+.cnc-status{display:inline-flex;align-items:center;gap:5px;font-weight:700}
+.cnc-status i{width:8px;height:8px;border-radius:99px;background:currentColor}
+.cnc-status.st-waiting{color:var(--warn)}.cnc-status.st-active{color:var(--info)}.cnc-status.st-done{color:var(--ok)}.cnc-status.st-failed{color:var(--fout)}.cnc-status.st-rejected{color:var(--muted)}.cnc-status.st-expired{color:var(--muted)}
+.cnc-status.st-waiting i,.cnc-status.st-active i{animation:cnc-pulse 1.4s ease-in-out infinite}
+@keyframes cnc-pulse{50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.cnc-status i{animation:none!important}}
+.theme-dark .cnc-status.st-waiting,.theme-plum-dark .cnc-status.st-waiting{color:var(--warn)}.theme-dark .cnc-status.st-active,.theme-plum-dark .cnc-status.st-active{color:var(--info)}.theme-dark .cnc-status.st-done,.theme-plum-dark .cnc-status.st-done{color:var(--ok)}.theme-dark .cnc-status.st-failed,.theme-plum-dark .cnc-status.st-failed{color:var(--fout)}
+.cnc-details{display:grid;gap:8px;margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--soft,rgba(120,140,160,.12))}
+.cnc-details p{margin:0;color:var(--muted)}
+.cnc-details dl{display:grid;gap:4px;margin:0}
+.cnc-details dl>div{display:flex;justify-content:space-between;gap:12px;font-size:.82rem}
+.cnc-details dt{color:var(--muted)}.cnc-details dd{margin:0;text-align:right;font-weight:600}
+.cnc-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px;max-width:112px}
+.cnc-actions button{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--muted);cursor:pointer}
+.cnc-actions button:hover{background:var(--soft,rgba(120,140,160,.18));color:var(--text)}
+.cnc-actions button:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.cnc-actions svg{width:17px;height:17px}
+.cnc-done{display:inline-grid;place-items:center;width:34px;height:34px;color:var(--ok)}
+.cnc-done svg{width:16px;height:16px}
+
+.cnc-link{justify-self:start;font-size:.82rem;font-weight:700;color:var(--accent,#2f6f73);text-decoration:none}
+.cnc-link:hover{text-decoration:underline}
+.cnc-link:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+/* kleurige sectiepictogrammen met logo van de dienst; lichte toon per soort (geen regenboog: alleen een rand en een zweem achtergrond) */
+.cnc-icon{position:relative;--sec:#2f6f73;background:color-mix(in srgb,var(--sec) 16%,transparent);color:var(--sec)}
+.cnc-provider{position:absolute;right:-5px;bottom:-5px;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--panel,#fff);box-shadow:0 0 0 1px var(--line,#d6dde4)}
+.cnc-provider svg{width:12px;height:12px}
+.cnc-row.sec-mail,.cnc-sec.sec-mail{--sec:#2563eb}.cnc-row.sec-cloud,.cnc-sec.sec-cloud{--sec:#0284c7}.cnc-row.sec-calendar,.cnc-sec.sec-calendar{--sec:#ea580c}
+.cnc-row.sec-ai,.cnc-sec.sec-ai,.cnc-row.sec-claude,.cnc-sec.sec-claude{--sec:#c2603d}.cnc-row.sec-agent,.cnc-sec.sec-agent{--sec:#0f766e}.cnc-row.sec-browser,.cnc-sec.sec-browser{--sec:#7c3aed}
+.cnc-row.sec-github,.cnc-sec.sec-github{--sec:#475569}.cnc-row.sec-mcp,.cnc-sec.sec-mcp{--sec:#0d9488}.cnc-row.sec-hub,.cnc-sec.sec-hub{--sec:#4f46e5}
+.cnc-row.sec-huis,.cnc-sec.sec-huis{--sec:#b45309}.cnc-row.sec-identity,.cnc-sec.sec-identity,.cnc-row.sec-api,.cnc-sec.sec-api{--sec:#be185d}.cnc-row.sec-admin,.cnc-sec.sec-admin{--sec:#dc2626}
+.cnc-row .cnc-icon{--sec:inherit}
+.cnc-row.sec-mail .cnc-icon{--sec:#2563eb}.cnc-row.sec-cloud .cnc-icon{--sec:#0284c7}.cnc-row.sec-calendar .cnc-icon{--sec:#ea580c}.cnc-row.sec-ai .cnc-icon,.cnc-row.sec-claude .cnc-icon{--sec:#c2603d}
+.cnc-row.sec-agent .cnc-icon{--sec:#0f766e}.cnc-row.sec-browser .cnc-icon{--sec:#7c3aed}.cnc-row.sec-github .cnc-icon{--sec:#475569}.cnc-row.sec-mcp .cnc-icon{--sec:#0d9488}.cnc-row.sec-hub .cnc-icon{--sec:#4f46e5}
+.cnc-row.sec-huis .cnc-icon{--sec:#b45309}.cnc-row.sec-identity .cnc-icon,.cnc-row.sec-api .cnc-icon{--sec:#be185d}.cnc-row.sec-admin .cnc-icon{--sec:#dc2626}
+.cnc-row.kind-success{background:color-mix(in srgb,var(--ok-vlak) 6%,var(--surface,var(--panel)))}
+.cnc-row.kind-warning{background:color-mix(in srgb,var(--warn-vlak) 8%,var(--surface,var(--panel)))}
+.cnc-row.kind-error{background:color-mix(in srgb,var(--fout-vlak) 7%,var(--surface,var(--panel)))}
+.cnc-row.is-nested{margin-left:18px;padding:8px;background:transparent;opacity:.9}
+.cnc-row.is-nested .cnc-icon{width:28px;height:28px}
+.cnc-nested{display:grid;gap:4px;margin-top:4px;padding-left:6px;border-left:2px solid var(--line,#d6dde4)}
+.cnc-more{display:inline-flex;align-items:center;gap:6px;justify-self:start;min-height:28px;padding:2px 10px;border-radius:99px;border:1px dashed var(--line,#cbd5e1);background:transparent;color:var(--muted,#64748b);font:inherit;font-size:.78rem;cursor:pointer}
+.cnc-more:hover{background:var(--soft,rgba(120,140,160,.14))}
+.cnc-more svg{width:14px;height:14px}
+.cnc-sections{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin}
+.cnc-sec{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:2px 10px;border-radius:99px;border:1px solid var(--line,#d6dde4);background:transparent;color:inherit;font:inherit;font-size:.78rem;cursor:pointer;white-space:nowrap}
+.cnc-sec svg{width:14px;height:14px;color:var(--sec,var(--muted))}
+.cnc-sec[aria-pressed=true]{background:color-mix(in srgb,var(--sec,#2f6f73) 16%,transparent);border-color:var(--sec,#2f6f73);font-weight:700}
+
+/* ---------------------------------------------------------------- KOP, FILTERRIJ, ACTIES (21.10.2026, klacht eigenaar op 390 px)
+   Vroeger: zoeken + 4 chips + 7 sectieknoppen (2 regels) + «Порядок» + vier knoppen over de volle breedte onderaan = ±590 px van 770;
+   voor de lijst bleef ±150 px (18 % van het scherm). Nu op de computer hetzelfde beeld (zoeken boven, chips, secties, volgorde,
+   actiebalk onderaan); op de telefoon een vol blad met een compacte kop, ÉÉN rij statuschips (scrollt, met vervaagde rand + pijl) en
+   «Фільтри» (zoeken/розділи/порядок) en «⋯» (звук, типи, позначити все, повернути в кут) als uitklappers. */
+.canonical-notification-panel>header>div{flex:1 1 auto}
+.canonical-notification-panel>header .cnc-meer-knop{display:none}
+.canonical-notification-panel>header .cnc-meer-knop[aria-expanded=true]{background:var(--surface);color:var(--text)}
+.cnc-rij{display:flex;align-items:center;gap:var(--ruimte-2);min-width:0}
+.cnc-chips-wrap{flex:1 1 auto;min-width:0}
+.cnc-chips{scrollbar-width:none}
+.cnc-chips::-webkit-scrollbar{display:none}
+.cnc-filterknop{display:inline-flex;align-items:center;gap:var(--ruimte-1);flex:none;min-height:36px;padding:0 var(--ruimte-3);
+  border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:var(--tekst-klein);font-weight:650;cursor:pointer}
+.cnc-filterknop svg{width:16px;height:16px}
+.cnc-rij .cnc-search{flex:1 1 8rem;min-width:0}
+.cnc-extra{display:none;position:absolute;z-index:4;left:var(--ruimte-2);right:var(--ruimte-2);max-height:min(280px,50vh);overflow:auto;
+  padding:var(--ruimte-2);border:1px solid var(--line);border-radius:var(--straal-m);background:var(--panel);box-shadow:var(--schaduw-2)}
+.cnc-tools{position:relative}
+.cnc-tools[data-filters-open] .cnc-extra{display:grid;gap:var(--ruimte-2)}
+.canonical-notification-panel>footer{display:flex;align-items:center;gap:6px;margin:0;width:auto;max-width:none;padding:8px;min-height:52px;box-sizing:border-box}
+.canonical-notification-panel>footer button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;min-width:36px;padding:0 8px}
+.canonical-notification-panel>footer .cnc-actie-tekst{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.canonical-notification-panel>footer button:last-child{margin-left:auto}
+.canonical-notification-panel>footer button:last-child .cnc-actie-tekst{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}
+/* link in een rij: tekstkleur + onderstreept (accent op de getinte rij van een waarschuwing haalde 4,2:1 i.p.v. 4,5:1) */
+.cnc-row .cnc-link{color:var(--text);text-decoration:underline;text-underline-offset:.15em}
+
+/* ---------------------------------------------------------------- PANEEL OP DE TELEFOON */
+@media (max-width:560px), (max-height:500px){
+  html .canonical-notification-panel{left:calc(var(--ruimte-2) + var(--veilig-links))!important;right:calc(var(--ruimte-2) + var(--veilig-rechts))!important;
+    top:calc(var(--ruimte-2) + var(--veilig-boven))!important;bottom:calc(var(--ruimte-2) + var(--veilig-onder))!important;
+    width:auto!important;max-width:none!important;max-height:none!important;grid-template-rows:auto minmax(0,1fr);border-radius:var(--straal-l)}
+  html .canonical-notification-panel.met-tech{grid-template-rows:auto auto minmax(0,1fr)}
+  html .canonical-notification-panel>header{gap:var(--ruimte-1);padding:var(--ruimte-1) var(--ruimte-1) var(--ruimte-1) var(--ruimte-4)}
+  html .canonical-notification-panel>header .cnc-meer-knop{display:grid}
+  /* acties: menu onder «⋯» (zelfde knoppen als de balk op de computer — één keer in de DOM) */
+  html .canonical-notification-panel>footer{display:none}
+  html .canonical-notification-panel>footer.is-open{display:grid;grid-template-columns:1fr;gap:2px;position:absolute;z-index:3;
+    top:calc(var(--tik-hoogte) + var(--ruimte-2) + 2px);right:var(--ruimte-2);width:min(300px,calc(100% - var(--ruimte-4)));box-sizing:border-box;
+    padding:var(--ruimte-1);border:1px solid var(--line);border-radius:var(--straal-m);background:var(--panel);box-shadow:var(--schaduw-2)}
+  html .canonical-notification-panel>footer.is-open button{justify-content:flex-start;width:100%;min-height:var(--tik-hoogte);padding:var(--ruimte-2) var(--ruimte-3);
+    border:0;border-radius:var(--straal-s);background:transparent;color:var(--text);font-size:var(--tekst-klein);text-align:left}
+  html .canonical-notification-panel>footer.is-open button .cnc-actie-tekst{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}
+  /* één filterrij + «Фільтри» */
+  .cnc-tools{gap:var(--ruimte-2);padding:var(--ruimte-2)}
+  .cnc-chip{min-height:var(--tik-hoogte);font-size:var(--tekst-klein)}
+  .cnc-filterknop{display:inline-flex;align-items:center;gap:var(--ruimte-1);flex:none;min-height:var(--tik-hoogte);padding:0 var(--ruimte-3);
+    border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:var(--tekst-klein);font-weight:650;cursor:pointer}
+  .cnc-filterknop svg{width:16px;height:16px;color:var(--muted)}
+  .cnc-filterknop[aria-expanded=true]{background:var(--accent-soft);border-color:var(--accent)}
+  .cnc-filterknop:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .cnc-extra{display:none}
+  .cnc-tools[data-filters-open] .cnc-extra{display:grid;gap:var(--ruimte-2);padding-top:var(--ruimte-1)}
+  .cnc-search{min-height:var(--tik-hoogte)}
+  .cnc-sections{flex-wrap:wrap;overflow:visible}
+  .cnc-sec{min-height:var(--tik-hoogte);font-size:var(--tekst-klein)}
+  .cnc-selects label{font-size:var(--tekst-klein)}
+  .cnc-selects select{min-height:var(--tik-hoogte);font-size:var(--tekst-basis)}
+  /* rijen: tikvlakken 44 px, maximaal twee acties naast elkaar */
+  .cnc-list{padding:var(--ruimte-1) var(--ruimte-2) var(--ruimte-3)}
+  .cnc-actions{flex-wrap:nowrap;gap:0;max-width:none}
+  .cnc-actions button,.cnc-done{width:var(--tik-hoogte);height:var(--tik-hoogte)}
+  .cnc-more{min-height:var(--tik-hoogte)}
+  .cnc-link{display:inline-flex;align-items:center;min-height:var(--tik-hoogte)}
+}
+/* 21.10 рецензія UX: альбомна орієнтація телефону (844×390 тощо, ширина > 560, висота ≤ 500). Без цього діяв комп'ютерний
+   вигляд: заголовок + пошук + два рядки чипів + чотири кнопки внизу з'їдали всі 390 px, і на сам список лишалося 0 px.
+   Тепер — той самий компактний режим, що й на телефоні (один рядок чипів, «Фільтри», «⋯»), але бічною панеллю праворуч на всю висоту. */
+@media (max-height:500px) and (min-width:561px){
+  html .canonical-notification-panel{left:auto!important;width:min(360px,calc(100vw - var(--ruimte-4)))!important}
+  /* één schuifrij chips (TabsRij met pijl), zoals op de telefoon — mail-qa-2026-10.css laat ze vanaf 561 px omlopen (3 rijen = 100+ px) */
+  html body .canonical-notification-panel .cnc-chips{flex-wrap:nowrap!important;overflow-x:auto!important}
+}

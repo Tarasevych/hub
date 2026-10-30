@@ -1,0 +1,64 @@
+/* UI-008 — verfijnd accountmenu (vlag accountmenu-v2). Alles hangt onder [data-account-menu-v2]: zonder vlag verandert niets.
+   Kop (grote ronde foto, naam, e-mail) blijft zoals hij is; alleen de knoppen eronder worden compact, gelijk en gegroepeerd. */
+[data-account-menu-v2] .canonical-account-panel{padding:14px 12px 10px}
+[data-account-menu-v2] .canonical-current-account{padding-bottom:10px}
+/* «Керування обліковим записом»: geen grote gekleurde balk meer, een rustige omlijnde knop met accent. */
+[data-account-menu-v2] .canonical-current-account+.canonical-menu-action.primary{justify-content:center;width:auto;margin:0 auto 4px;padding:0 18px;border:1px solid color-mix(in srgb,var(--canonical-accent) 45%,var(--canonical-line));border-radius:999px;background:transparent;color:var(--canonical-text)}
+[data-account-menu-v2] .canonical-current-account+.canonical-menu-action.primary>svg{color:var(--canonical-accent)}
+[data-account-menu-v2] .canonical-current-account+.canonical-menu-action.primary>span{flex:none}
+[data-account-menu-v2] .canonical-current-account+.canonical-menu-action.primary:hover{background:color-mix(in srgb,var(--canonical-accent) 10%,transparent)}
+/* Eén hoogte, één marge, één pictogrammaat voor elke actie. */
+[data-account-menu-v2] .canonical-menu-action{min-height:44px;padding:0 12px;gap:12px;border-radius:12px;font-size:.875rem;font-weight:600}
+[data-account-menu-v2] .canonical-menu-action>svg{width:18px;height:18px}
+[data-account-menu-v2] .canonical-menu-action:focus-visible,[data-account-menu-v2] .am2-ikoon:focus-visible,[data-account-menu-v2] .am2-seg button:focus-visible{outline:2px solid var(--focus,var(--canonical-accent));outline-offset:1px}
+[data-account-menu-v2] .canonical-other-accounts-bar{margin:6px 0;padding:2px 0}
+[data-account-menu-v2] .canonical-other-toggle{min-height:44px;padding:0 0 0 7px}[data-account-menu-v2] .canonical-other-toggle-main{min-height:44px}
+[data-account-menu-v2] .canonical-other-toggle-chevron,[data-account-menu-v2] .canonical-account-forget{width:44px;height:44px}
+[data-account-menu-v2] .canonical-account-row{grid-template-columns:minmax(0,1fr) 44px}
+/* Blokken: dunne scheidingslijn, geen kaders in kaders. */
+[data-account-menu-v2] .am2-blok{display:grid;gap:2px;padding:6px 0;border-top:1px solid var(--canonical-line)}
+[data-account-menu-v2] .am2-stand{margin-left:auto;padding:2px 8px;border-radius:999px;background:var(--canonical-surface);color:var(--canonical-muted);font-size:.75rem;font-style:normal;font-weight:600}
+[data-account-menu-v2] .am2-stand.is-aan{color:var(--canonical-accent)}
+[data-account-menu-v2] .am2-sessie.canonical-session-actions{margin-top:0;grid-template-columns:minmax(0,1fr)}
+[data-account-menu-v2] .am2-sessie-rij{display:flex;align-items:center;gap:4px;min-width:0}
+[data-account-menu-v2] .am2-sessie-rij>.canonical-menu-action{flex:1 1 0;min-width:0;font-size:.875rem}
+[data-account-menu-v2] .am2-sessie .canonical-menu-action.logout-all{font-size:.875rem}
+/* Weergave: twee rijen [pictogram][gesegmenteerd][extra]. */
+[data-account-menu-v2] .am2-weergave{gap:6px;margin-top:0;padding:8px 0}
+[data-account-menu-v2] .am2-rij{display:flex;align-items:center;gap:8px;min-width:0}
+[data-account-menu-v2] .am2-rij-kop{display:grid;place-items:center;width:28px;flex:none;color:var(--canonical-muted)}
+[data-account-menu-v2] .am2-rij-kop svg{width:18px;height:18px}
+.am2-verborgen{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+[data-account-menu-v2] .am2-seg{flex:1 1 auto;padding:2px;border-radius:12px}
+[data-account-menu-v2] .am2-seg button{height:44px;min-width:44px;gap:6px;border-radius:10px;font-size:.8125rem}
+[data-account-menu-v2] .am2-seg button svg{width:17px;height:17px}
+[data-account-menu-v2] .am2-seg button.active{color:var(--canonical-text);font-weight:650}
+[data-account-menu-v2] .am2-seg button.active svg{color:var(--canonical-accent)}
+/* Thema: alleen pictogrammen op smal scherm; naam staat in tooltip en aria-label. */
+[data-account-menu-v2] .am2-thema-naam{font-weight:inherit}
+@media(max-width:520px){[data-account-menu-v2] .am2-thema-naam{display:none}}
+/* Echte vlaggen (emoji): eigen kleuren, nooit door thema of filters veranderd. */
+[data-account-menu-v2] .am2-vlag{display:inline-block;font-family:'Noto Color Emoji','Apple Color Emoji','Segoe UI Emoji','Twemoji Mozilla',sans-serif;font-size:18px;line-height:1;filter:none!important;mix-blend-mode:normal!important;opacity:1!important;color:initial;forced-color-adjust:none;-webkit-text-fill-color:initial}
+[data-account-menu-v2] .am2-ikoon{display:grid;place-items:center;width:44px;height:44px;flex:none;padding:0;border:0;border-radius:12px;background:transparent;color:var(--canonical-muted);cursor:pointer}
+[data-account-menu-v2] .am2-ikoon:hover{background:var(--canonical-surface);color:var(--canonical-text)}
+[data-account-menu-v2] .am2-ikoon[aria-pressed=true]{color:var(--canonical-accent)}
+[data-account-menu-v2] .am2-ikoon svg{width:18px;height:18px}
+[data-account-menu-v2] .am2-weergave .hulp-knop,[data-account-menu-v2] .am2-sessie-rij .hulp-knop{flex:none}
+/* Ruimtewissel onderaan: twee gelijke tabs over de hele breedte, zonder losse gekleurde streep. */
+[data-account-menu-v2] .am2-ruimte{padding:8px 0 4px;border-top:1px solid var(--canonical-line)}
+[data-account-menu-v2] .am2-ruimte .rw{display:block}
+[data-account-menu-v2] .am2-ruimte .rw-seg{display:flex;width:100%;box-sizing:border-box;border-width:1px;border-radius:12px}
+[data-account-menu-v2] .am2-ruimte .rw-knop{flex:1 1 0;justify-content:center;min-height:44px;border-radius:10px;font-size:.8125rem;background-image:none;flex-wrap:wrap;row-gap:0}
+[data-account-menu-v2] .am2-ruimte .rw-stand{flex-basis:100%;text-align:center;font-size:.75rem}
+[data-account-menu-v2] .am2-ruimte .rw-uitkomst{display:block;margin-top:4px;text-align:center}
+[data-account-menu-v2] .canonical-account-legal{padding-top:6px;border-top:1px solid var(--canonical-line)}
+[data-account-menu-v2] .canonical-account-legal a{min-height:32px}
+[data-account-menu-v2] .am2-seg{flex-wrap:nowrap;min-width:0}
+[data-account-menu-v2] .am2-seg button{flex:1 1 0}
+[data-account-menu-v2] .am2-sessie-rij>.canonical-menu-action{flex:1 1 auto}
+[data-account-menu-v2] .am2-sessie-rij>.canonical-menu-action>span{flex:none}
+[data-account-menu-v2] .canonical-other-accounts-bar+.am2-blok,[data-account-menu-v2] .canonical-expanded-accounts+.am2-blok{border-top:0}
+[data-account-menu-v2] .am2-sessie-rij>.session-add-account{flex:1 1 auto;min-width:0}
+[data-account-menu-v2] .am2-sessie-rij>.session-add-account>span{flex:1 1 auto;min-width:0}
+[data-account-menu-v2] .am2-sessie-rij>.logout-current{flex:0 0 auto}
+[data-account-menu-v2] .am2-sessie-rij{display:grid;grid-template-columns:minmax(0,1fr) auto auto}

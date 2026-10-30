@@ -1,0 +1,250 @@
+/* Cloud vNext (dienst cloud, vlag cloud-vnext). Alleen tokens uit src/ontwerp/tokens.css (--panel --surface --line --text --muted
+   --accent --ok/--warn/--fout/--info + -zacht, --focus, --ruimte-*, --straal-*, --schaduw-*, --veilig-*): licht en donker volgen
+   vanzelf. Tik-doelen ≥ 44 px op aanraking. Lagen (.cvn-laag) worden geportaleerd naar <body>, z-index 230 (boven de chrome, 220).
+   De kern (deze file) is van de schil + «Bestanden»; het integratiecentrum en het mobiele fijnslijpen hebben hun eigen bestanden. */
+.cvn, .cvn *, .cvn-laag, .cvn-laag * { box-sizing: border-box; }
+.cvn { display: grid; gap: var(--ruimte-4); color: var(--text); font-size: var(--tekst-klein); }
+.cvn :focus-visible, .cvn-laag :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.cvn button, .cvn-laag button { font: inherit; color: inherit; cursor: pointer; }
+.cvn button:disabled, .cvn-laag button:disabled { opacity: .55; cursor: not-allowed; }
+.cvn svg, .cvn-laag svg { width: 16px; height: 16px; flex: none; }
+.cvn h2, .cvn h3, .cvn h4, .cvn-laag h2, .cvn-laag h3, .cvn-laag h4 { font-family: inherit; color: inherit; }
+.cvn input, .cvn select, .cvn textarea, .cvn-laag input, .cvn-laag select, .cvn-laag textarea { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-m); min-height: var(--tik-hoogte); padding: 6px 10px; max-width: 100%; }
+.cvn input[type='checkbox'], .cvn-laag input[type='checkbox'] { min-height: 0; width: 18px; height: 18px; padding: 0; accent-color: var(--accent); }
+.cvn code, .cvn-laag code { font: 500 12px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+@media (pointer: coarse) { .cvn button, .cvn-laag button, .cvn input, .cvn select { min-height: var(--tik-hoogte-mobiel); } }
+
+/* ---- kop, meldingen, bouwstenen (gedeeld door alle onderdelen) ---- */
+.cvn-kop { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--ruimte-3); flex-wrap: wrap; }
+.cvn-kop h2 { display: flex; align-items: center; gap: var(--ruimte-2); margin: 0; font-size: 24px; line-height: 1.2; }
+.cvn-kop h2 svg { width: 22px; height: 22px; color: var(--accent); }
+.cvn-hint { margin: 0; color: var(--muted); font-size: var(--tekst-klein); display: inline-flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
+.cvn-melding { display: flex; align-items: flex-start; gap: var(--ruimte-2); flex-wrap: wrap; margin: 0; padding: 10px 12px; border-radius: var(--straal-m); font-size: var(--tekst-klein); }
+.cvn-melding.is-fout { background: var(--fout-zacht); color: var(--fout); }
+.cvn-melding.is-info { background: var(--info-zacht); color: var(--info); }
+.cvn-melding.is-ok { background: var(--ok-zacht); color: var(--ok); }
+.cvn-toost { margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--ok-zacht); color: var(--ok); font-size: var(--tekst-klein); justify-self: start; }
+.cvn-inhoud { display: grid; gap: var(--ruimte-4); min-width: 0; }
+.cvn-inhoud > * { min-width: 0; }
+.cvn-blok { display: grid; gap: var(--ruimte-3); padding: var(--ruimte-4); border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); min-width: 0; }
+.cvn-blok > h3 { display: flex; align-items: center; gap: var(--ruimte-2); margin: 0; font-size: var(--tekst-basis); font-weight: 650; }
+.cvn-knop, .cvn-icoonknop { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--tik-hoogte); padding: 6px 12px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); color: var(--text); }
+.cvn-knop:hover, .cvn-icoonknop:hover { background: var(--surface); }
+.cvn-knop.is-hoofd { background: var(--accent); color: var(--accentText); border-color: var(--accent); font-weight: 650; }
+.cvn-knop.is-hoofd:hover { filter: brightness(1.06); }
+.cvn-knop.is-stil { background: transparent; border-color: transparent; color: var(--muted); }
+.cvn-knop.is-stil:hover { background: var(--surface); color: var(--text); }
+.cvn-knop.is-klein { min-height: 32px; padding: 4px 10px; font-size: var(--tekst-mini); border-radius: 999px; }
+.cvn-knop.is-actief { border-color: var(--accent); background: var(--accent-soft); }
+.cvn-icoonknop { width: var(--tik-hoogte); padding: 0; border-color: transparent; background: transparent; color: var(--muted); }
+.cvn-icoonknop:hover { color: var(--text); background: var(--surface); }
+.cvn-icoonknop.is-gevaar:hover { color: var(--fout); background: var(--fout-zacht); }
+.cvn-leeg { display: grid; justify-items: center; gap: var(--ruimte-2); padding: var(--ruimte-6) var(--ruimte-4); border: 1px dashed var(--line); border-radius: var(--straal-l); text-align: center; background: var(--surface); }
+
+/* ---- onderbalk (telefoon) — registratie in scripts/plaatsing-vaste-elementen.json ---- */
+.cvn.is-smal { padding-bottom: calc(84px + var(--veilig-onder)); }
+.cvn-onderbalk { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; justify-content: space-around; align-items: stretch; padding: 4px 4px calc(4px + var(--veilig-onder)); border-top: 1px solid var(--line); background: var(--panel); box-shadow: var(--schaduw-2); }
+.cvn-onderbalk > button, .cvn-onderbalk summary { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; padding: 4px 2px; border: 0; border-radius: var(--straal-m); background: transparent; color: var(--muted); font-size: 11px; font-weight: 600; cursor: pointer; list-style: none; }
+.cvn-onderbalk summary::-webkit-details-marker { display: none; }
+.cvn-onderbalk > button.is-actief { color: var(--accent); background: var(--accent-soft); }
+.cvn-onderbalk svg { width: 20px; height: 20px; }
+.cvn-onderbalk .cvn-plus { flex: 0 0 auto; align-self: center; width: 52px; height: 52px; min-height: 52px; margin: 0 4px; border-radius: 16px; background: var(--accent); color: var(--accentText); box-shadow: var(--schaduw-2); }
+.cvn-onderbalk .cvn-plus svg { width: 26px; height: 26px; }
+.cvn-onderbalk-meer { flex: 1; position: relative; display: flex; }
+.cvn-onderbalk-meer summary { width: 100%; }
+.cvn-onderbalk-menu { position: absolute; right: 0; bottom: calc(100% + 8px); min-width: 220px; max-height: 60vh; overflow: auto; display: grid; gap: 2px; padding: 6px; border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); box-shadow: var(--schaduw-3); }
+.cvn-onderbalk-menu button { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 10px; border: 0; border-radius: var(--straal-m); background: transparent; text-align: left; color: var(--text); }
+.cvn-onderbalk-menu button:hover { background: var(--surface); }
+
+/* ---- laag (paneel / scherm / venster), geportaleerd in <body> boven de chrome ---- */
+.cvn-laag { position: fixed; inset: 0; z-index: 230; background: var(--overlay); display: flex; justify-content: flex-end; font-family: inherit; color: var(--text); font-size: var(--tekst-klein); }
+.cvn-laag.is-venster { align-items: center; justify-content: center; padding: 16px; }
+.cvn-laag-vak { background: var(--panel); color: var(--text); display: flex; flex-direction: column; max-height: 100%; width: min(560px, 100%); box-shadow: var(--schaduw-3); outline: none; }
+.cvn-laag.is-paneel .cvn-laag-vak { height: 100%; border-left: 1px solid var(--line); }
+.cvn-laag.is-venster .cvn-laag-vak { border-radius: var(--straal-l); max-height: min(90vh, 900px); width: min(680px, 100%); }
+.cvn-laag.is-scherm { justify-content: flex-start; }
+.cvn-laag.is-scherm .cvn-laag-vak { width: 100vw; max-width: 100vw; flex: 1 0 100%; height: 100dvh; max-height: 100dvh; padding-top: var(--veilig-boven); }
+.cvn-laag-kop { display: flex; align-items: center; gap: var(--ruimte-2); padding: 12px 16px 10px; border-bottom: 1px solid var(--line); margin: 0; background: transparent; }
+.cvn-laag-kop h2 { margin: 0; font-size: 17px; font-weight: 650; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.cvn-laag-inhoud { padding: 16px; overflow-y: auto; display: grid; gap: var(--ruimte-3); align-content: start; flex: 1; min-width: 0; }
+
+/* ---- de chrome (data-surface-model=flat-content) haalt zijranden van <section>/<article> weg; hier terugzetten ---- */
+.canonical-content .cvn section.cvn-blok { border-inline: 1px solid var(--line); border-radius: var(--straal-l); }
+.canonical-content .cvn section.cvn-leeg { border-inline: 1px dashed var(--line); border-radius: var(--straal-l); }
+
+/* ====================================================================== uitvoerder B: Overzicht + Mijn bestanden ====
+   Alleen ontwerp-tokens; zonder vaste schermpositionering (de bouwpoort plaatsing-controle bewaakt dat) en zonder
+   hex-kleuren. Kleurvariatie komt van dekking (opacity) op het accent-token — nooit merk- of letterlijke kleuren. */
+.cvn-draai { animation: cvn-draai 1s linear infinite; }
+@keyframes cvn-draai { to { transform: rotate(360deg); } }
+.cvn-verborgen { display: none; }
+.cvn-verborgen-tekst { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ---- Overzicht: tegels, verdeling per soort, snelkoppelingen, mini-lijsten ---- */
+.cvn-overzicht { display: grid; gap: var(--ruimte-4); min-width: 0; }
+.cvn-tegels { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--ruimte-3); }
+.cvn-tegel { display: grid; gap: 2px; justify-items: start; padding: var(--ruimte-3); border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--surface); text-align: left; }
+.cvn-tegel:hover { border-color: var(--accent); background: var(--accent-soft); }
+.cvn-tegel strong { font-size: 22px; line-height: 1.2; }
+.cvn-tegel span { color: var(--muted); font-size: var(--tekst-mini); }
+.cvn-snel { display: flex; gap: var(--ruimte-2); flex-wrap: wrap; }
+.cvn-soort-balken { display: grid; gap: 6px; }
+.cvn-balk-rij { display: grid; grid-template-columns: minmax(110px, 160px) 1fr auto; align-items: center; gap: var(--ruimte-2); }
+.cvn-balk-naam { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--tekst-mini); }
+.cvn-balk { display: block; height: 8px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+.cvn-balk > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.cvn-balk-cijfer { color: var(--muted); font-size: var(--tekst-mini); white-space: nowrap; }
+.cvn-overzicht-lijsten { display: grid; gap: var(--ruimte-4); grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.cvn-mini-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.cvn-mini-lijst button, .cvn-postvak-open { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--tik-hoogte); padding: 6px 8px; border: 0; border-radius: var(--straal-m); background: transparent; text-align: left; }
+.cvn-mini-lijst button:hover, .cvn-postvak-open:hover { background: var(--surface); }
+.cvn-mini-naam { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cvn-mini-meta { color: var(--muted); font-size: var(--tekst-mini); white-space: nowrap; }
+
+/* ---- werkbalk, kruimels, filters ---- */
+.cvn-bestanden { position: relative; display: grid; gap: var(--ruimte-3); min-width: 0; }
+.cvn-werkbalk { display: flex; justify-content: space-between; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; }
+.cvn-werkbalk-acties { display: flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; }
+.cvn-kruimels { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; min-width: 0; }
+.cvn-kruimel-paar { display: inline-flex; align-items: center; gap: 2px; color: var(--muted); }
+.cvn-kruimel { border: 1px solid transparent; border-radius: var(--straal-m); background: transparent; padding: 4px 8px; min-height: 32px; color: var(--muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cvn-kruimel:hover { background: var(--surface); color: var(--text); }
+.cvn-kruimel.is-hier { color: var(--text); font-weight: 650; }
+.cvn-kruimel.is-doel, .cvn-map.is-doel { border-color: var(--accent); background: var(--accent-soft); outline: 2px dashed var(--accent); outline-offset: -2px; }
+.cvn-filters { display: flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; }
+.cvn-zoekveld { position: relative; flex: 1 1 220px; min-width: 180px; display: flex; }
+.cvn-zoekveld svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.cvn-zoekveld input { width: 100%; padding-left: 32px; }
+.cvn-chips { display: flex; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.cvn-tagfilter { max-width: 150px; min-height: 32px; border-radius: 999px; font-size: var(--tekst-mini); }
+.cvn-sorteer select { min-height: 32px; padding: 2px 8px; border-radius: 999px; font-size: var(--tekst-mini); }
+.cvn-selectie-balk { display: flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; padding: 8px 12px; border: 1px solid var(--accent); border-radius: var(--straal-m); background: var(--accent-soft); }
+
+/* ---- sleepvlak, mappen, raster, tabel ---- */
+.cvn-dropvlak { position: relative; display: grid; gap: var(--ruimte-3); min-height: 180px; align-content: start; border-radius: var(--straal-l); }
+.cvn-dropvlak.is-sleep::after { content: ''; position: absolute; inset: 0; border: 2px dashed var(--accent); border-radius: var(--straal-l); background: var(--accent-soft); opacity: .6; pointer-events: none; }
+.cvn-mappen { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--ruimte-2); }
+.cvn-map { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--tik-hoogte); padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); text-align: left; }
+.cvn-map:hover { background: var(--surface); border-color: var(--accent); }
+.cvn-map svg { color: var(--accent); }
+.cvn-map-naam { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.cvn-map-aantal { color: var(--muted); font-size: var(--tekst-mini); }
+.cvn-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: var(--ruimte-2); }
+.cvn-kaart { position: relative; display: grid; gap: 6px; justify-items: start; padding: 38px 10px 10px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); cursor: pointer; min-width: 0; }
+.cvn-kaart:hover { border-color: var(--accent); box-shadow: var(--schaduw-1); }
+.cvn-kaart.is-gekozen { border-color: var(--accent); background: var(--accent-soft); }
+.cvn-kaart-kies { position: absolute; top: 8px; left: 10px; display: inline-flex; }
+.cvn-kaart-acties { position: absolute; top: 2px; right: 2px; display: inline-flex; }
+.cvn-kaart-acties .cvn-icoonknop { width: 34px; min-height: 34px; }
+.cvn-kaart-icoon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--straal-m); background: var(--surface); color: var(--accent); }
+.cvn-kaart-icoon svg { width: 22px; height: 22px; }
+.cvn-kaart-naam { font-weight: 600; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cvn-kaart-meta { display: flex; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: var(--tekst-mini); }
+.cvn-kaart-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.cvn-kaart-tags i, .cvn-tag { font-style: normal; font-size: var(--tekst-mini); color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
+.cvn-ster.is-aan { color: var(--warn); }
+.cvn-ster.is-aan svg { fill: var(--warn); }
+.cvn-tabel { width: 100%; border-collapse: collapse; }
+.cvn-tabel th { text-align: left; font-size: var(--tekst-mini); color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.cvn-tabel td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.cvn-tabel tbody tr { cursor: pointer; }
+.cvn-tabel tbody tr:hover { background: var(--surface); }
+.cvn-tabel tbody tr.is-gekozen { background: var(--accent-soft); }
+.cvn-cel-naam { display: flex; align-items: center; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.cvn-cel-naam svg { color: var(--accent); }
+.cvn-cel-acties { white-space: nowrap; text-align: right; }
+.cvn-volgende { justify-self: center; }
+
+/* ---- contextmenu: absoluut BINNEN .cvn-bestanden (geen fixed) ---- */
+.cvn-ctx { position: absolute; z-index: 120; min-width: 220px; max-width: 280px; display: grid; gap: 2px; padding: 6px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); box-shadow: var(--schaduw-3); }
+.cvn-ctx button { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 10px; border: 0; border-radius: var(--straal-s); background: transparent; text-align: left; color: var(--text); }
+.cvn-ctx button:hover { background: var(--surface); }
+.cvn-ctx button.is-gevaar { color: var(--fout); }
+.cvn-ctx button.is-gevaar:hover { background: var(--fout-zacht); }
+
+/* ---- uploadwachtrij ---- */
+.cvn-upload-rijen { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.cvn-upload-rij { display: flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--surface); }
+.cvn-upload-rij.is-fout { border-color: var(--fout); background: var(--fout-zacht); }
+.cvn-upload-naam { flex: 1 1 160px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.cvn-upload-info { color: var(--muted); font-size: var(--tekst-mini); overflow-wrap: anywhere; }
+.cvn-upload-ok { color: var(--ok); }
+.cvn-upload-mis { color: var(--fout); }
+.cvn-voortgang { flex: 1 1 120px; display: block; height: 6px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; min-width: 80px; }
+.cvn-voortgang > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .2s ease; }
+
+/* ---- detailpaneel ---- */
+.cvn-detail-acties { display: flex; gap: var(--ruimte-2); flex-wrap: wrap; }
+.cvn-detail-hernoem { display: flex; gap: 6px; align-items: center; }
+.cvn-detail-hernoem input { flex: 1; min-width: 0; }
+.cvn-detail-voorbeeld { display: grid; gap: var(--ruimte-2); min-width: 0; }
+.cvn-detail-voorbeeld img, .cvn-detail-voorbeeld video { max-width: 100%; height: auto; border-radius: var(--straal-m); }
+.cvn-detail-voorbeeld audio { width: 100%; }
+.cvn-detail-meta dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; }
+.cvn-detail-meta dl > div { display: contents; }
+.cvn-detail-meta dt { color: var(--muted); font-size: var(--tekst-mini); }
+.cvn-detail-meta dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.cvn-detail-meta h3, .cvn-detail-tags h3, .cvn-detail-versies h3 { display: flex; align-items: center; gap: var(--ruimte-2); margin: 0 0 6px; font-size: var(--tekst-basis); }
+.cvn-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.cvn-tag { display: inline-flex; align-items: center; gap: 4px; }
+.cvn-tag button { display: inline-flex; border: 0; background: transparent; color: var(--muted); padding: 0; min-height: 0; }
+.cvn-tag button:hover { color: var(--fout); }
+.cvn-tag button svg { width: 12px; height: 12px; }
+.cvn-tag-vorm { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.cvn-tag-vorm input { flex: 1 1 140px; min-width: 120px; }
+.cvn-versie-rijen { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.cvn-versie-rijen li { display: flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--surface); font-size: var(--tekst-mini); }
+.cvn-versie-acties { margin-inline-start: auto; display: inline-flex; gap: 6px; }
+
+/* ---- mappenkiezer en vormen in lagen ---- */
+.cvn-mapkiezer { display: grid; gap: var(--ruimte-3); }
+.cvn-mapkiezer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 50vh; overflow: auto; }
+.cvn-mapkiezer-tak { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.cvn-mapkiezer-rij { flex: 1; display: flex; align-items: center; gap: 8px; min-height: var(--tik-hoogte); padding: 6px 8px; border: 1px solid transparent; border-radius: var(--straal-m); background: transparent; text-align: left; min-width: 0; }
+.cvn-mapkiezer-rij:hover { background: var(--surface); }
+.cvn-mapkiezer-rij.is-doel { border-color: var(--accent); background: var(--accent-soft); }
+.cvn-mapkiezer-rij svg { color: var(--accent); }
+.cvn-mapkiezer-rij span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cvn-laag-vorm { display: grid; gap: var(--ruimte-3); }
+.cvn-laag-vorm label { display: grid; gap: 4px; font-size: var(--tekst-mini); color: var(--muted); }
+.cvn-laag-vorm label > input, .cvn-laag-vorm label > select, .cvn-laag-vorm label > textarea { color: var(--text); font-size: var(--tekst-klein); }
+.cvn-laag-knoppen { display: flex; gap: var(--ruimte-2); flex-wrap: wrap; }
+
+/* ---- werkruimtes, vastleggen, postvak, recent ---- */
+.cvn-werkruimtes, .cvn-recent { display: grid; gap: var(--ruimte-4); min-width: 0; }
+.cvn-ws-kaarten { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--ruimte-2); }
+.cvn-ws-kaart { display: grid; gap: 6px; justify-items: start; padding: var(--ruimte-3); border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--surface); min-width: 0; }
+.cvn-ws-kaart strong { overflow-wrap: anywhere; }
+.cvn-vast-vorm { display: grid; gap: var(--ruimte-3); max-width: 560px; }
+.cvn-vast-vorm label { display: grid; gap: 4px; font-size: var(--tekst-mini); color: var(--muted); }
+.cvn-vast-vorm textarea { min-height: 120px; resize: vertical; }
+.cvn-vast-vorm label > input, .cvn-vast-vorm label > select, .cvn-vast-vorm label > textarea { color: var(--text); font-size: var(--tekst-klein); }
+.cvn-postvak-rijen { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.cvn-postvak-rijen > li { display: flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); padding: 4px 8px; }
+.cvn-postvak-open { flex: 1 1 240px; }
+.cvn-postvak-acties { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---- smal (telefoon): zelfde inhoud, rustiger raster; kolommen die niet passen gaan weg ---- */
+@media (max-width: 760px) {
+  .cvn-raster { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .cvn-verberg-smal { display: none; }
+  .cvn-balk-rij { grid-template-columns: 96px 1fr auto; }
+  .cvn-werkbalk, .cvn-werkbalk-acties { justify-content: flex-start; }
+  .cvn-chips { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; scrollbar-width: thin; }
+  .cvn-chips .cvn-knop { white-space: nowrap; flex: none; }
+}
+
+/* ---- overdrachten (uploads/downloads/taken) — paneel «Передачі», alleen tokens, niets fixed ---- */
+.cvn-uploads h3 .cvn-hint { font-weight: 400; margin-left: auto; }
+.cvn-upload-rij.is-wacht-netwerk, .cvn-upload-rij.is-gepauzeerd { opacity: .85; }
+.cvn-upload-rij.is-hervatbaar { background: var(--info-zacht); border-radius: var(--straal-m); padding-inline: 8px; }
+.cvn-ov-taak { display: flex; align-items: center; gap: 8px; min-height: 36px; flex-wrap: wrap; }
+.cvn-ov-taak svg { color: var(--muted); }
+.cvn-ov-taak.is-fout svg { color: var(--fout); }
+.cvn-ov-taak.is-klaar svg { color: var(--ok); }
+.cvn-ov-route { color: var(--muted); font-size: var(--tekst-mini); }
+.cvn-ov-fout { flex-basis: 100%; color: var(--fout); background: var(--fout-zacht); border-radius: var(--straal-m); padding: 6px 10px; font-size: var(--tekst-mini); }
+.cvn-ov-taken-kop { margin: var(--ruimte-2) 0 0; font-size: var(--tekst-klein); color: var(--muted); font-weight: 650; }
+.cvi-bestand-rij { position: relative; display: flex; align-items: stretch; min-width: 0; }
+.cvi-bestand-rij .cvi-bestand { flex: 1; min-width: 0; }
+.cvi-naar-eigen { align-self: center; }

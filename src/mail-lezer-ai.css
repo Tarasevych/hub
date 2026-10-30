@@ -1,0 +1,54 @@
+/* ШІ-balk in de geopende brief (punt 14, 19.10.2026).
+   Geometrie van de knoppen komt UITSLUITEND uit .mail-reader-action-button (mail-lezer-werkbalk.css): hoogte 44 px, vorm 999 px,
+   binnenmarge, rand, lettergrootte en icoongrootte zijn daardoor per definitie gelijk aan de rest van de actierij. Hier staat
+   alleen: de plaats van de balk, de eigen kleur van «ШІ» en het resultaatkaartje. Nooit min-height/padding/border-radius/font-size
+   voor .mra-bar button — anders loopt de rij weer uit elkaar. */
+
+/* Oorzaak van het overlappen: .google-mail-reader is `grid-template-rows:auto minmax(0,1fr)` (kop + inhoud) en deze balk is een
+   DERDE kind. De balk pakte dus de flexibele rij en de brief belandde in een impliciete rij buiten `overflow:hidden`. Zodra de
+   balk er is: drie rijen (kop, balk, inhoud). Zonder balk (tijdens het laden) blijft het raster ongewijzigd. */
+.google-mail-reader:has(> .mra){grid-template-rows:auto auto minmax(0,1fr)}
+/* `.google-mail-reader>section` is de scrollende inhoud; deze <section> is dat niet. */
+.google-mail-reader > section.mra{overflow:visible;padding:6px 12px 7px}
+/* mail-gelaagde-inbox.css zet met drie klassen `.google-mail-reader>section{padding:0}` zodra de mailwerkruimte actief is —
+   precies ons geval. Daarom hier dezelfde regel met één klasse meer, anders plakt de balk tegen de rand. */
+.canonical-chrome .google-mail-reader > section.mra{overflow:visible;padding:6px 12px 7px}
+
+.mra{display:grid;gap:8px;min-width:0;padding:6px 12px 7px;border-bottom:1px solid color-mix(in srgb,var(--line,#cbd5e1) 66%,transparent)}
+.mra-bar{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-width:0}
+.mra-bar > *{flex:0 0 auto}
+.mra-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+/* Eigen kleur van «ШІ», zonder de geometrie aan te raken. */
+.mra-toggle{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line,#cbd5e1))}
+.mra-toggle[aria-pressed=true]{background:color-mix(in srgb,var(--warn-vlak) 14%,transparent)}
+.mra-bar button:disabled{opacity:.5;cursor:not-allowed}
+
+/* Keuze en tekstveld krijgen dezelfde hoogte als de knoppen (44 px), met hun eigen icoon ervoor. */
+.mra-veld{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 10px;border:1px solid var(--line,#cbd5e1);border-radius:999px;min-width:0;max-width:100%}
+.mra-veld > svg{width:17px;height:17px;flex:0 0 auto;color:var(--muted,#64748b)}
+.mra-veld select,.mra-veld input{min-width:0;max-width:100%;border:0;background:transparent;color:inherit;font:inherit;font-size:12px;font-weight:650}
+.mra-veld select:focus-visible,.mra-veld input:focus-visible{outline:2px solid var(--accent,#2f6f73);outline-offset:2px}
+.mra-veld:focus-within{border-color:color-mix(in srgb,var(--accent,#2f6f73) 48%,var(--line,#cbd5e1))}
+.mra-veld-breed{flex:1 1 220px;min-width:140px}
+.mra-veld-breed input{flex:1 1 auto;width:100%}
+
+.mra-note{margin:0;font-size:.78rem;color:var(--muted,#64748b)}
+.mra-error{margin:0;font-size:.82rem;color:var(--fout)}
+.mra-result{display:grid;gap:8px;min-width:0;padding:10px 12px;border-radius:12px;border:1px solid color-mix(in srgb,var(--warn) 35%,var(--line,#d6dde4));background:color-mix(in srgb,var(--warn-vlak) 5%,transparent)}
+.mra-result header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mra-text{white-space:pre-wrap;word-break:break-word;font-size:.9rem;line-height:1.5;max-height:260px;overflow:auto}
+.mra-result footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.mra-result footer button{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:2px 11px;border-radius:999px;border:1px solid var(--line,#cbd5e1);background:transparent;color:inherit;font:inherit;font-size:.8rem;cursor:pointer}
+.mra-result footer button:hover{background:var(--soft,rgba(120,140,160,.14))}
+.mra-result footer button svg{width:15px;height:15px;flex:0 0 auto}
+.mra-result footer small{display:inline-flex;align-items:center;gap:5px;color:var(--muted,#64748b);font-size:.75rem}
+.mra-result footer small svg{width:13px;height:13px;flex:0 0 auto}
+.mra-primary{background:var(--accent);border-color:var(--accent);color:var(--text-on-accent)}
+.mra-icon{display:inline-grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:8px;background:transparent;color:inherit;cursor:pointer}
+.mra-icon svg{width:15px;height:15px}
+.mra-spin{animation:mra-rot 1s linear infinite}
+@keyframes mra-rot{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.mra-spin{animation:none}}
+
+/* Pakket 3 «Adaptive Mail Canvas» (24.10.2026): in de antwoordregel van het gesprek — geen eigen rand of marge, de regel doet dat. */
+.mra.mra-antwoord{padding:0;border-bottom:0}

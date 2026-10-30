@@ -1,0 +1,45 @@
+/* Налаштування → Теми. Leesbare maten, duidelijke focus, kaarten met voorbeeld (licht + donker). */
+.thema-instellingen{display:grid;gap:1.4rem}
+.thema-instellingen section{display:grid;gap:.6rem}
+.thema-instellingen h3{margin:0;font-size:1.05rem}
+.thema-uitleg{margin:0;color:var(--muted);font-size:.9rem;line-height:1.45}
+.thema-modi{display:grid;grid-template-columns:repeat(auto-fit,minmax(10.5rem,1fr));gap:.6rem}
+.thema-modi button,.thema-paletten button{display:grid;gap:.3rem;justify-items:start;padding:.8rem .9rem;border:1.5px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.thema-modi button svg{width:1.3rem;height:1.3rem;color:var(--accent)}
+.thema-modi button small,.thema-paletten button small{color:var(--muted);font-size:.82rem;line-height:1.35}
+.thema-modi button.active,.thema-paletten button.active{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+.thema-modi button:hover,.thema-paletten button:hover{border-color:color-mix(in srgb,var(--accent) 60%,var(--line))}
+.thema-modi button:focus-visible,.thema-paletten button:focus-visible,.thema-knop:focus-visible,.thema-pauze:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.thema-paletten{display:grid;grid-template-columns:repeat(auto-fit,minmax(12.5rem,1fr));gap:.7rem}
+.thema-voorbeelden{display:flex;gap:.4rem;width:100%}
+.thema-voorbeeld{position:relative;flex:1;display:grid;gap:4px;padding:6px;height:58px;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(127,127,127,.35)}
+.thema-voorbeeld-balk{display:flex;gap:4px;align-items:center;padding:4px;border-radius:5px}
+.thema-voorbeeld-balk i{display:block;height:6px;border-radius:3px;width:22%}
+.thema-voorbeeld-balk i+i{width:40%}
+.thema-voorbeeld-kaart{display:flex;align-items:flex-end;padding:4px;border-radius:5px}
+.thema-voorbeeld-kaart i{display:block;width:34%;height:8px;border-radius:4px}
+.thema-sectiekleuren{display:flex;gap:3px}
+.thema-sectiekleuren i{display:block;width:12px;height:12px;border-radius:50%}
+.thema-auto{padding:1rem;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.thema-status{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:0;font-weight:600}
+.thema-status>svg{width:1.15rem;height:1.15rem;color:var(--accent)}
+.thema-status>span{flex:1 1 14rem}
+.thema-pauze,.thema-knop{display:inline-flex;align-items:center;gap:.4rem;min-height:2.5rem;padding:.45rem .85rem;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+.thema-pauze svg,.thema-knop svg{width:1rem;height:1rem}
+.thema-soort{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:.5rem}
+.thema-soort label{display:flex;gap:.55rem;align-items:flex-start;padding:.7rem .8rem;border:1px solid var(--line);border-radius:12px;background:var(--panel);cursor:pointer}
+.thema-soort label span{display:grid;gap:.15rem}
+.thema-soort small{color:var(--muted);font-size:.84rem}
+.thema-soort input{margin-top:.2rem;accent-color:var(--accent);width:1.05rem;height:1.05rem}
+.thema-zon,.thema-interval{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.6rem}
+.thema-zon .thema-uitleg{flex-basis:100%}
+.thema-veld{display:grid;gap:.25rem;font-size:.86rem;font-weight:600}
+.thema-interval .thema-veld{display:flex;align-items:center;gap:.4rem}
+.thema-veld svg{width:1rem;height:1rem;color:var(--accent)}
+.thema-veld select,.thema-veld input{min-height:2.5rem;padding:.35rem .6rem;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);font:inherit}
+/* De algemene formulierstijl van Налаштування (input 100% breed, label als raster) niet op de keuzerondjes en tijdvelden toepassen. */
+.settings-center .thema-soort label{display:flex;flex-direction:row;gap:.6rem;font-weight:400}
+.settings-center .thema-soort input[type=radio]{flex:none;width:18px;height:18px;min-height:0;padding:0;margin:.2rem 0 0;border:0;border-radius:50%;background:none;box-shadow:none;appearance:auto}
+.settings-center .thema-interval .thema-veld{display:flex;align-items:center;gap:.45rem;white-space:nowrap}
+.settings-center .thema-interval input[type=time]{width:auto;min-width:8.5rem}
+.settings-center .thema-zon .thema-veld select{width:auto;min-width:12rem}

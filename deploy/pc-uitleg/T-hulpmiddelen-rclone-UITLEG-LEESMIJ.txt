@@ -1,0 +1,84 @@
+UITLEG-LEESMIJ.txt - T:\mijn-ruimte\hulpmiddelen\rclone\
+(Спочатку українською, далі нідерландською / Eerst Oekraiens, daarna Nederlands)
+У цій папці НЕМАЄ секретів. / In deze map staan GEEN geheimen.
+
+##############################################################################
+УКРАЇНСЬКА
+##############################################################################
+
+ЩО ЦЕ
+rclone v1.75.1 (офіційний випуск, Windows 64-біт) - програма, яка щодня копіює
+ЗАШИФРОВАНІ резервні копії в Google Drive. Запускає її лише скрипт
+T:\mijn-ruimte\scripts\cloud\cloud-reservekopie.ps1 (див. UITLEG-LEESMIJ.txt там).
+
+ФАЙЛИ
+  rclone.exe                          програма (з офіційного zip)
+  rclone-v1.75.1-windows-amd64.zip    оригінальний zip з GitHub
+  SHA256SUMS                          контрольні суми від авторів, з PGP-підписом
+  rclone-KEYS.asc                     публічні PGP-ключі авторів rclone (rclone.org/KEYS)
+  VERIFICATIE.txt                     як і коли перевірено (підпис + SHA256)
+ПЕРЕВІРКА: підпис SHA256SUMS ключем FBF737ECE9F8AB18604BD2AC93935E02FF3B54FA (Nick Craig-Wood)
+правильний; SHA256 zip збігається. SHA256 rclone.exe зашитий у скрипти: якщо rclone.exe
+змінять, скрипт НЕ запуститься.
+
+ДЕ rclone ЗБЕРІГАЄ ДОСТУП ДО GOOGLE - І ЧОМУ САМЕ ТАМ
+  C:\Users\t\AppData\Local\mijn-ruimte\rclone\   (rclone.conf, кеш, тимчасові файли)
+  Чому не на T:\ або R:\: там Windows ("Контрольований доступ до папок") дозволяє писати
+  лише PowerShell. А rclone мусить САМ переписувати rclone.conf: доступ Google (токен)
+  оновлюється приблизно щогодини роботи. Дозволити rclone.exe писати на T:\/R:\ можна лише
+  як адміністратор, і це послабило б захист від вірусів-шифрувальників.
+  Чому AppData\Local: це особиста папка користувача t; вона не синхронізується (не OneDrive,
+  не "roaming") і не входить до захищених папок.
+  Захист: (1) права лише для t (без успадкування; навіть інші користувачі не бачать);
+  (2) rclone.conf ЗАШИФРОВАНИЙ (rclone config encryption) випадковим паролем, а сам пароль
+  збережено через Windows DPAPI - розшифрувати його може лише користувач t на ЦЬОМУ ПК.
+  Копія rclone.conf на іншому ПК марна. (3) Доступ лише "drive.file": навіть з токеном видно
+  тільки файли, створені rclone, а вони зашифровані age.
+
+ОНОВЛЕННЯ rclone (рідко, лише за потреби)
+  Новий випуск з https://github.com/rclone/rclone/releases: перевірити PGP-підпис SHA256SUMS
+  і SHA256 zip, замінити rclone.exe і записати новий SHA256 у cloud-reservekopie.ps1 і
+  cloud-koppelen.ps1 ($RcloneSha256). Без цього скрипт відмовиться працювати (так задумано).
+
+НЕ МОЖНА: копіювати rclone.conf кудись, надсилати його, класти в хмару.
+
+##############################################################################
+NEDERLANDS
+##############################################################################
+
+WAT IS DIT
+rclone v1.75.1 (officiele release, Windows 64-bit): kopieert elke dag de VERSLEUTELDE back-ups
+naar Google Drive. Wordt alleen gestart door T:\mijn-ruimte\scripts\cloud\cloud-reservekopie.ps1
+(zie de UITLEG-LEESMIJ.txt daar).
+
+BESTANDEN
+  rclone.exe                          het programma (uit het officiele zip)
+  rclone-v1.75.1-windows-amd64.zip    origineel zip van GitHub
+  SHA256SUMS                          controlesommen van de makers, PGP-ondertekend
+  rclone-KEYS.asc                     publieke PGP-sleutels van rclone (rclone.org/KEYS)
+  VERIFICATIE.txt                     hoe en wanneer gecontroleerd (handtekening + SHA256)
+CONTROLE: handtekening op SHA256SUMS met sleutel FBF737ECE9F8AB18604BD2AC93935E02FF3B54FA
+(Nick Craig-Wood) is goed; SHA256 van het zip klopt. De SHA256 van rclone.exe staat vast in de
+scripts: is rclone.exe veranderd, dan start het script NIET.
+
+WAAR rclone DE GOOGLE-TOEGANG BEWAART - EN WAAROM DAAR
+  C:\Users\t\AppData\Local\mijn-ruimte\rclone\   (rclone.conf, cache, tijdelijke bestanden)
+  Waarom niet op T:\ of R:\: daar laat Windows ("Beheerde maptoegang") alleen PowerShell schrijven.
+  rclone moet rclone.conf ZELF herschrijven: het Google-token wordt ongeveer elk uur dat het draait
+  ververst. rclone.exe toestaan op T:\/R:\ kan alleen als administrator en verzwakt de bescherming
+  tegen ransomware.
+  Waarom AppData\Local: persoonlijke map van gebruiker t; niet gesynchroniseerd (geen OneDrive,
+  geen "roaming") en geen beschermde map.
+  Bescherming: (1) rechten alleen voor t (geen overerving); (2) rclone.conf is VERSLEUTELD
+  (rclone config encryption) met een willekeurig wachtwoord, en dat wachtwoord staat met Windows
+  DPAPI opgeslagen - alleen gebruiker t op DEZE pc kan het ontsleutelen. Een kopie van rclone.conf
+  op een andere pc is waardeloos. (3) Alleen "drive.file": zelfs met het token zie je alleen
+  bestanden die rclone zelf maakte, en die zijn met age versleuteld.
+
+rclone BIJWERKEN (zelden, alleen als het nodig is)
+  Nieuwe release van https://github.com/rclone/rclone/releases: PGP-handtekening van SHA256SUMS
+  en SHA256 van het zip controleren, rclone.exe vervangen en de nieuwe SHA256 in
+  cloud-reservekopie.ps1 en cloud-koppelen.ps1 zetten ($RcloneSha256). Anders weigert het script
+  (zo bedoeld).
+
+NIET DOEN: rclone.conf ergens heen kopieren, versturen of in de cloud zetten.

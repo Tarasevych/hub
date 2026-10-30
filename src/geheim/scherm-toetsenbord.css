@@ -1,0 +1,37 @@
+.scherm-toetsenbord {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--panel, Canvas);
+  color: var(--ink, CanvasText);
+  border: 1px solid var(--line, ButtonBorder);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink, CanvasText) 18%, transparent);
+}
+.scherm-toetsenbord-lagen,
+.scherm-toetsenbord-rij {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.scherm-toetsenbord button {
+  flex: 1;
+  min-width: 0;
+  min-height: 36px;
+  border-radius: 6px;
+  border: 1px solid var(--line, ButtonBorder);
+  background: var(--panel-2, ButtonFace);
+  color: inherit;
+  font: inherit;
+}
+.scherm-toetsenbord button[aria-pressed='true'] {
+  outline: 2px solid var(--accent, Highlight);
+}
+@media (prefers-contrast: more) {
+  .scherm-toetsenbord { border-width: 2px; }
+}
+.geheim-invoer textarea { width: 100%; font: inherit; }
+.geheim-invoer-verborgen { -webkit-text-security: disc; }

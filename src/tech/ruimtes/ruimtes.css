@@ -1,0 +1,90 @@
+/* Twee ruimtes (vlag tech-ruimtes-v2): wisselknop, startvenster, «Доступ і терміни», uitlogkeuzes. Kleur per ruimte; licht/donker via
+   html.theme-dark en prefers-color-scheme. Geen vaste hoogtes die kunnen knipperen. */
+:root{--rw-prive:#0f766e;--rw-prive-fg:#fff;--rw-tech:#374151;--rw-tech-fg:#fff;--rw-rand:rgba(125,125,145,.45)}
+html.theme-dark{--rw-prive:#14b8a6;--rw-prive-fg:#04201d;--rw-tech:#f5b400;--rw-tech-fg:#1a1200}
+@media (prefers-color-scheme:dark){html:not(.theme-light){--rw-prive:#14b8a6;--rw-prive-fg:#04201d;--rw-tech:#f5b400;--rw-tech-fg:#1a1200}}
+.rw{display:flex;flex-wrap:wrap;align-items:center;gap:6px;max-width:100%}
+.rw-seg{display:inline-flex;border:1.5px solid var(--rw-rand);border-radius:999px;padding:2px;gap:2px;background:rgba(125,125,145,.10);max-width:100%}
+.rw-knop{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:inherit;font:600 14px/1.15 inherit;cursor:pointer;text-align:left}
+.rw-knop svg{width:16px;height:16px;flex:none}
+.rw-knop:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+.rw-prive[aria-checked=true]{background:var(--rw-prive);color:var(--rw-prive-fg)}
+.rw-tech[aria-checked=true]{background:var(--rw-tech);color:var(--rw-tech-fg);background-image:repeating-linear-gradient(135deg,transparent 0 10px,rgba(255,255,255,.08) 10px 20px)}
+.rw-tech[aria-disabled=true]{opacity:.55;cursor:not-allowed}
+.rw-stand{font-weight:500;opacity:.85;font-size:12px;white-space:nowrap}
+.rw-tech[aria-checked=false] .rw-stand{opacity:.75}
+.rw-reden,.rw-uitkomst{flex-basis:100%;font-size:12px}
+.rw-uitkomst.is-fout{color:#b91c1c}
+.rw-compact .rw-knop{min-height:32px;padding:0 9px;font-size:13px}
+@media (max-width:480px){.rw-knop{padding:0 8px;font-size:13px}.rw-stand{display:block}.rw-knop{flex-direction:row;flex-wrap:wrap}}
+.tech-band .rw-seg{border-color:var(--tech-band-fg);background:rgba(255,255,255,.35)}
+.tech-band .rw-knop{color:var(--tech-band-fg)}
+.tech-band .rw-tech[aria-checked=true]{background:var(--tech-band-fg);color:var(--tech-band-bg)}
+.rs-groep{border:0;margin:0 0 10px;padding:0}
+.rs-groep legend{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.rs-tijden{display:flex;flex-wrap:wrap;gap:6px}
+.rs-chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:1.5px solid var(--rw-rand);border-radius:999px;cursor:pointer;font-weight:600}
+.rs-chip input{margin:0}
+.rs-chip.is-gekozen{border-color:var(--rw-prive);background:color-mix(in srgb,var(--rw-prive) 14%,transparent)}
+.rs-chip.is-uit{opacity:.5;cursor:not-allowed;border-style:dashed}
+.rs-chip:focus-within{outline:3px solid #2563eb;outline-offset:2px}
+.rs-keuze{margin:8px 0 2px;display:flex;flex-direction:column;gap:2px}
+.rs .rs-reden{display:block;margin-top:4px;font-size:13px}
+.rs{max-height:min(78dvh,760px);overflow:auto;overscroll-behavior:contain}
+/* Fix 28.10: op de telefoon scrollde .rs binnen een venster dat zelf al scrolt → knoppen onderaan afgesneden. Eén scroller (het venster), knoppen plakken onderaan. */
+@media (max-width:700px){.rs{max-height:none;overflow:visible}.rs .tech-knoppen{position:sticky;bottom:0;z-index:1;padding:8px 0 calc(4px + env(safe-area-inset-bottom,0px));background:var(--panel,#fff);flex-wrap:wrap}}
+.rs-kaart{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:1.5px solid var(--rw-rand);border-radius:10px;cursor:pointer;margin-bottom:6px}
+.rs-kaart.is-gekozen{border-color:var(--rw-prive);box-shadow:0 0 0 2px color-mix(in srgb,var(--rw-prive) 30%,transparent)}
+.rs-kaart.is-uit{opacity:.6;cursor:not-allowed;border-style:dashed}
+.rs-kaart input{margin-top:3px}
+.rs-kaart-tekst{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rs-uitleg{opacity:.85;line-height:1.35}
+.rs-reden{color:#92400e}
+html.theme-dark .rs-reden{color:#fbbf24}
+.rs-soort{display:flex;flex-direction:column;gap:4px;margin:6px 0}
+.rs-meta{font-size:13px;opacity:.85}
+.rt-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;border-bottom:1.5px solid var(--rw-rand);margin-bottom:10px}
+.rt-tabs::-webkit-scrollbar{display:none}
+.rt-tabs [role=tab]{flex:none;min-height:40px;padding:0 12px;border:0;border-bottom:3px solid transparent;background:transparent;color:inherit;font:600 14px inherit;cursor:pointer;white-space:nowrap}
+.rt-tabs [role=tab][aria-selected=true]{border-bottom-color:var(--rw-prive)}
+.rt-tabs [role=tab]:focus-visible{outline:3px solid #2563eb;outline-offset:-3px}
+.rt-feiten{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:12px 0}
+.rt-feiten dt{font-weight:700}
+.rt-lijst{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rt-lijst li{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:8px 10px;border:1px solid var(--rw-rand);border-radius:10px}
+.rt-wie{display:flex;flex-direction:column;min-width:0;flex:1 1 200px}
+.rt-wie small,.rt-ruimtes{opacity:.8;font-size:13px}
+.ru-keuzes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.ru-keuzes li{display:flex;flex-direction:column;gap:3px}
+.ru-knop{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1.5px solid var(--rw-rand);border-radius:10px;background:transparent;color:inherit;font:600 15px inherit;cursor:pointer;align-self:flex-start}
+.ru-knop svg{width:18px;height:18px}
+.ru-knop.is-gevaar{border-color:#b91c1c;color:#b91c1c}
+html.theme-dark .ru-knop.is-gevaar{border-color:#f87171;color:#f87171}
+.ru-knop:disabled{opacity:.55;cursor:not-allowed}
+.ru-gevolg{opacity:.85;line-height:1.35}
+.rs-sjablonen{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.rs-sjabloon{min-height:32px;padding:0 10px;border:1px solid var(--rw-rand);border-radius:999px;background:transparent;color:inherit;font:13px inherit;cursor:pointer}
+/* ── Wissel altijd zichtbaar, inklappen, afbakening van de ruimte (vlag tech-ruimtes-v2, 28.10.2026) ── */
+.rw-dok-melding{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(66px + env(safe-area-inset-bottom,0px) + var(--venster-dok-onder,0px));z-index:98901;max-width:min(360px,calc(100vw - 24px));padding:8px 12px;border-radius:10px;background:#111827;color:#fff;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.rw-dok-melding.is-fout{background:#7f1d1d}
+/* Ingeklapte band: smalle strook (28 px) met merk, resttijd en «Розгорнути»; de rest verborgen. #root schuift mee via --tech-band-h. */
+html[data-tech-ingeklapt='1']{--tech-band-h:28px}
+.tech-band.is-ingeklapt .tech-band-id,.tech-band.is-ingeklapt .tech-band-reden,.tech-band.is-ingeklapt .tech-band-extra,.tech-band.is-ingeklapt .tech-band-meer,
+.tech-band.is-ingeklapt .tech-meldingen-knop,.tech-band.is-ingeklapt .rw,.tech-band.is-ingeklapt [data-tech-knop=uitloggen]{display:none!important}
+.tech-band.is-ingeklapt{font-size:12px}
+.tech-band-inklap{display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:0 8px;border:1.5px solid currentColor;border-radius:8px;background:transparent;color:var(--tech-band-fg);font:600 13px inherit;cursor:pointer}
+.tech-band-inklap:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+@media (max-width:700px){.tech-band-inklap span{display:none}.tech-band-inklap{min-width:36px;min-height:36px;justify-content:center}}
+/* Afbakening: in de technische ruimte een dun kader rond de pagina en een gekleurde rand langs het menu, in de bandkleur.
+   Geen beweging, geen knipperen; pointer-events uit zodat niets eronder onklikbaar wordt. Niet alleen kleur: titel «[ТЕХ]», merk in de band,
+   label naast «Меню» en het hoekje in het tabbladpictogram. */
+html[data-ruimte=technisch][data-tech=aan] body::after{content:'';position:fixed;inset:0;border:3px solid var(--tech-band-bg);border-top-width:0;pointer-events:none;z-index:98800}
+/* 28.10.2026: de paarse streep rechts van het menu (inset-schaduw) is weg — zag eruit als een defect. Nu een kleine stip op de menuknop. */
+html[data-ruimte=technisch][data-tech=aan] #root .canonical-menu-toggle{position:relative}
+html[data-ruimte=technisch][data-tech=aan] #root .canonical-menu-toggle::before{content:'';position:absolute;left:4px;bottom:4px;width:7px;height:7px;border-radius:50%;background:var(--tech-band-bg);pointer-events:none}
+html[data-ruimte=technisch][data-tech=aan] .zijbalk-werkbalk-titel::after{content:' · ТЕХ';font-weight:800;color:inherit;background:var(--tech-band-bg);color:var(--tech-band-fg);border-radius:4px;padding:0 4px;margin-left:4px}
+html[data-ruimte=technisch][data-tech=aan][lang=nl] .zijbalk-werkbalk-titel::after{content:' · TECH'}
+@media (prefers-reduced-motion:reduce){.tech-band{transition:none!important}}
+/* Telefoon en tablet (≤1100 px): in de band alleen pictogrammen in de wissel (de naam staat in title/aria), zodat «Згорнути» en «Вийти…» niet buiten beeld vallen. */
+@media (max-width:1100px){.tech-band .rw-stand,.tech-band .rw-naam{display:none}.tech-band .rw-knop{padding:0 8px;min-width:36px;justify-content:center}}
+.rw-dok-sluit{margin-left:8px;min-width:32px;min-height:32px;border:0;border-radius:8px;background:rgba(255,255,255,.15);color:inherit;font-size:18px;cursor:pointer}

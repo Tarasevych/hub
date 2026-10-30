@@ -1,0 +1,98 @@
+.mcp-estate{color:var(--text);background:transparent;border-radius:18px;padding:22px 22px 28px;display:grid;gap:22px}
+.mcp-estate h1,.mcp-estate h2,.mcp-estate p{margin:0}
+.mcp-estate h1{font-size:clamp(1.8rem,4vw,2.7rem);line-height:1.08;letter-spacing:-.03em;color:var(--text)}
+.mcp-estate h2{font-size:1.35rem;letter-spacing:-.02em;color:var(--text)}
+.mcp-kicker{color:var(--accent);font-size:.75rem;letter-spacing:.16em;text-transform:uppercase}
+.mcp-lead{max-width:680px;color:var(--muted);line-height:1.55}
+.mcp-grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mcp-grid2{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
+.mcp-card{background:var(--panel);border-radius:16px;padding:16px 18px;box-shadow:0 0 0 1px var(--line);overflow:visible;color:var(--text)}
+.mcp-card strong{display:block;font-size:1.7rem;color:var(--text)}
+.mcp-card span,.mcp-card p,.mcp-card li{color:var(--muted);line-height:1.5}
+.mcp-card a{color:var(--accent)}
+.mcp-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.mcp-url{margin-top:4px;font-family:ui-monospace,Consolas,monospace;font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
+.mcp-badge{flex:0 0 auto;padding:3px 8px;border-radius:999px;font-size:.75rem;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.mcp-badge.wait{background:color-mix(in srgb,var(--danger,#c4a15a) 16%,transparent);color:var(--danger,#c4a15a)}
+.mcp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.mcp-chips span,.mcp-pills li{font-family:ui-monospace,Consolas,monospace;font-size:.75rem;padding:4px 8px;border-radius:8px;background:var(--surface);color:var(--text)}
+.mcp-scopes{margin-top:10px;font-size:.75rem;color:var(--muted)}
+.mcp-arch{display:grid;gap:0}
+.mcp-arch div{display:grid;grid-template-columns:16px 1fr;gap:10px}
+.mcp-arch i{display:block;width:8px;height:8px;margin-top:6px;border-radius:99px;background:var(--accent)}
+.mcp-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.mcp-form{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.mcp-form input,.mcp-form select,.mcp-form button,.mcp-form textarea{border:0;border-radius:10px;background:var(--surface);color:var(--text);padding:10px 12px}
+.mcp-form button{background:var(--accent);color:var(--accentText);font-weight:650}
+.mcp-form button.on{box-shadow:0 0 0 2px var(--text)}
+.mcp-form button:disabled,.mcp-board button:disabled{opacity:.45}
+.mcp-form textarea,.mcp-out{width:100%;min-height:140px;font-family:ui-monospace,Consolas,monospace;font-size:.8rem}
+.mcp-out{background:var(--surface);color:var(--text);border-radius:12px;padding:12px;white-space:pre-wrap}
+.mcp-split-tools{display:grid;grid-template-columns:220px 1fr;gap:12px}
+.mcp-toolnav{display:grid;gap:4px;max-height:520px;overflow:auto}
+.mcp-toolnav button{text-align:left;background:transparent;color:var(--muted);border:0;border-radius:8px;padding:8px}
+.mcp-toolnav button.on{background:var(--surface);color:var(--text)}
+.mcp-toolnav small{display:block;color:var(--muted);font-size:.75rem}
+.mcp-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.mcp-tabs a{color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:999px;background:var(--surface)}
+.mcp-tabs a.on{color:var(--accentText);background:var(--accent)}
+.mcp-pills{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.mcp-switches{display:grid}
+.mcp-switch{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:14px 0;border-top:1px solid var(--line);overflow:visible}
+.mcp-switch:first-of-type{border-top:0;padding-top:4px}
+.mcp-switch h3,.mcp-card h2{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.mcp-switch h3{margin:0;font-size:1rem;letter-spacing:0;color:var(--text)}
+.mcp-switch p{margin:4px 0 0;font-size:.85rem;white-space:pre-line}
+.mcp-now{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:0;color:var(--muted);font-size:.85rem}
+.mcp-now b{color:var(--text);font-weight:600}
+.mcp-now-item{display:inline-flex;align-items:center;color:var(--text)}
+.mcp-themes{display:flex;flex-wrap:wrap;gap:8px}
+.mcp-themes button{border:0;border-radius:999px;background:var(--surface);color:var(--text);padding:8px 12px;box-shadow:0 0 0 1px var(--line)}
+.mcp-themes button.on{background:var(--accent);color:var(--accentText);box-shadow:none}
+.mcp-q{position:relative;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:99px;box-shadow:0 0 0 1px var(--line);background:var(--surface);color:var(--muted);font-size:.75rem;font-weight:650;line-height:1;cursor:help;flex:0 0 auto}
+.mcp-q:hover,.mcp-q:focus{color:var(--text);outline:none}
+.mcp-estate .mcp-tip{display:none;position:absolute;z-index:20;left:0;top:calc(100% + 6px);width:min(320px,70vw);padding:8px 10px;border-radius:10px;background:var(--panel);color:var(--text);font-size:.8rem;font-weight:450;line-height:1.45;letter-spacing:0;text-transform:none;white-space:pre-line;box-shadow:0 12px 28px var(--shadow),0 0 0 1px var(--line)}
+.mcp-q:hover .mcp-tip,.mcp-q:focus .mcp-tip,.mcp-q:focus-within .mcp-tip{display:block}
+.mcp-toggle{width:46px;height:28px;border:0;border-radius:999px;background:var(--surface2);position:relative;flex:0 0 auto;padding:0;cursor:pointer;box-shadow:0 0 0 1px var(--line)}
+.mcp-toggle[aria-checked="true"]{background:var(--accent);box-shadow:none}
+.mcp-toggle i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:99px;background:var(--panel);display:block;transition:transform .15s ease}
+.mcp-toggle[aria-checked="true"] i{transform:translateX(18px);background:var(--accentText)}
+.mcp-toggle:disabled{opacity:.45;cursor:default}
+.theme-plum-light .mcp-estate,.theme-plum-dark .mcp-estate{color:var(--text)}
+.mcp-archive{display:grid;gap:14px}
+.mcp-archive-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.mcp-archive-top h2{margin:0}
+.mcp-bar{height:6px;border-radius:99px;background:var(--surface);overflow:hidden}
+.mcp-bar-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline;font-size:.85rem;color:var(--muted)}
+.mcp-bar-row b{color:var(--text);font-variant-numeric:tabular-nums}
+.mcp-bar i{display:block;height:100%;border-radius:99px;background:var(--accent);transition:width .45s ease}
+.mcp-steps{list-style:none;margin:4px 0 0;padding:0;display:grid}
+.mcp-step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;position:relative;padding:2px 8px;border-radius:12px}
+.mcp-step.on{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.mcp-step .mcp-rail{position:absolute;left:29px;top:46px;bottom:2px;width:2px;background:var(--line)}
+.mcp-step:last-child .mcp-rail{display:none}
+.mcp-step.done .mcp-rail{background:var(--accent)}
+.mcp-ring{position:relative;z-index:1;width:44px;height:44px;background:var(--panel)}
+.mcp-ring svg{display:block;width:44px;height:44px;transform:rotate(-90deg)}
+.mcp-ring circle{fill:none;stroke:var(--line);stroke-width:3}
+.mcp-ring circle:last-of-type{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .45s ease}
+.mcp-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:.75rem;font-weight:700;color:var(--muted)}
+.mcp-ring.on b,.mcp-ring.done b{color:var(--accent)}
+.mcp-step h3{margin:8px 0 0;font-size:1rem;color:var(--text)}
+.mcp-step p{margin:2px 0 16px}
+.mcp-history{list-style:none;margin:12px 0 0;padding:0;display:grid}
+.mcp-history li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.mcp-history span{display:grid;min-width:0}
+.mcp-history b{color:var(--text);font-weight:650}
+.mcp-history small,.mcp-history button{font-size:.78rem}
+.mcp-form button.mcp-ghost,.mcp-history button.mcp-ghost{background:transparent;color:var(--text);box-shadow:0 0 0 1px var(--line);font-weight:600}
+@media(max-width:800px){.mcp-grid3,.mcp-grid2,.mcp-board,.mcp-split-tools{grid-template-columns:1fr}}
+/* MCP-02: bordknoppen los van elkaar, in een rij die op de telefoon omloopt. */
+.mcp-board-item{padding:8px 0;border-top:1px solid var(--line)}
+.mcp-board-acties{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.mcp-board-knop{padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font-size:.8rem;cursor:pointer}
+/* 20.10.2026 — tabblad «Підключити»: naast «adres kopiëren» de weg naar de plek van die AI in de hub (zelfde vorm als de knop). */
+.mcp-form a.mcp-knop{display:inline-flex;align-items:center;border-radius:10px;background:var(--surface);color:var(--text);padding:10px 12px;font-weight:650;text-decoration:none;border:1px solid var(--line)}
+.mcp-card h2 .agent-logo{vertical-align:middle;margin-right:4px}
+/* MOBIEL 21.10.2026: «Оновити» (icoon) in de kop van kaartblokken was 16×16 */
+@media (max-width:700px){.mbk-head .mcp-ghost{display:inline-grid;place-items:center;min-width:var(--tik-hoogte);min-height:var(--tik-hoogte)}}

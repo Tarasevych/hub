@@ -1,0 +1,44 @@
+/* Venster «Додати агента»: blokken van alle agents, termijn, «Інший спосіб». Hoort bij AgentToevoegen.tsx. */
+.ut-agentvenster{width:min(720px,100%)}
+.ut-agentvenster header{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px}
+.ut-agentvenster header:not(:has(>.ut-icoon-knop:first-child:not(.ut-sluit))){grid-template-columns:minmax(0,1fr) auto}
+.ut-agentvenster h3{min-width:0}
+/* Eén centrale stijl voor sluit-/terugknoppen: exact gecentreerd icoon, 36 px aanraakdoel */
+.admin-uitrol .ut-icoon-knop{display:inline-grid;place-items:center;width:36px;height:36px;padding:0;border-radius:50%;border:1px solid var(--ut-line);background:var(--ut-bg2);color:var(--ut-muted);cursor:pointer;line-height:0;flex:none}
+.admin-uitrol .ut-icoon-knop:hover{background:var(--ut-bg);color:var(--ut-text);border-color:var(--ut-info)}
+.admin-uitrol .ut-icoon-knop.ut-sluit:hover{background:var(--ut-err-bg);color:var(--ut-err);border-color:var(--ut-err)}
+.ut-icoon-knop svg{width:18px;height:18px;display:block}
+.ut-agenttegels{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.ut-agenttegel{display:grid;gap:10px;align-content:start;padding:12px;border:1px solid var(--ut-line);border-radius:14px;background:var(--ut-bg2)}
+.ut-agenttegel[data-recht="ja"]{border-color:var(--ut-ok);background:linear-gradient(0deg,var(--ut-ok-bg),transparent 70%),var(--ut-bg2)}
+.ut-agenttegel-kop{display:flex;gap:12px;align-items:center;min-width:0}
+.ut-agenttegel-kop>div{display:grid;gap:2px;min-width:0}
+.ut-agenttegel-sub{font-size:.76rem;color:var(--ut-muted)}
+.ut-agenttegel-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ut-agenttegel-nb{display:flex;gap:8px;align-items:flex-start;margin:0;padding:8px 10px;border-radius:10px;background:var(--ut-info-bg);color:var(--ut-text);font-size:.82rem}
+.ut-agenttegel-nb[data-toon="warn"]{background:var(--ut-warn-bg)}
+.ut-agenttegel-nb svg{width:15px;height:15px;flex:none;margin-top:2px;color:var(--ut-info)}
+.ut-agenttegel-nb a{display:inline-flex;align-items:center;gap:3px;color:var(--ut-info)}
+.ut-agenttegel-nb a svg{width:12px;height:12px;margin:0}
+.ut-agenttegel-wijzig{display:grid;gap:8px;padding:8px;border-radius:10px;border:1px dashed var(--ut-line)}
+.admin-uitrol .ut-chips-keuze button[data-onbepaald]{display:inline-flex;align-items:center;gap:5px}
+.ut-chips-keuze button svg{width:14px;height:14px}
+.ut-keuzekaarten{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:280px;overflow:auto}
+.admin-uitrol .ut-keuzekaart{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:1px solid var(--ut-line);border-radius:12px;background:var(--ut-bg2);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.admin-uitrol .ut-keuzekaart>span{display:grid;gap:2px;min-width:0}
+.admin-uitrol .ut-keuzekaart b{overflow:hidden;text-overflow:ellipsis;font-size:.88rem}
+.admin-uitrol .ut-keuzekaart:hover:not(:disabled){border-color:var(--ut-info)}
+.admin-uitrol .ut-keuzekaart[data-gekozen]{border-color:var(--ut-info);background:var(--ut-info-bg);box-shadow:0 0 0 2px var(--ut-info-bg)}
+.admin-uitrol .ut-keuzekaart:disabled{opacity:.55;cursor:not-allowed}
+.ut-keuzekaart small{display:flex;align-items:center;gap:4px;color:var(--ut-ok);font-size:.75rem}
+.ut-keuzekaart small svg{width:12px;height:12px}
+.ut-keuze-leeg{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px dashed var(--ut-line);border-radius:12px;color:var(--ut-muted)}
+.ut-keuze-leeg svg{width:20px;height:20px;color:var(--ut-info);flex:none}
+.ut-keuze-leeg b{color:var(--ut-text)}
+.ut-keuze-leeg p{margin:4px 0 0;font-size:.84rem}
+@media (max-width:560px){.ut-agenttegels{grid-template-columns:1fr}}
+/* 20.10.2026: zoeken onder ALLE goedgekeurde accounts. Zonder dit viel iedereen voorbij de eerste 200 (alfabetisch) stil uit de lijst. */
+.ut-keuze-zoek{display:grid;gap:4px;margin:0 0 10px}
+.ut-keuze-zoek label{font-size:.78rem;font-weight:600;color:var(--ut-muted)}
+.ut-keuze-zoek input{width:100%;box-sizing:border-box;font:inherit;padding:8px 10px;border-radius:9px;border:1px solid var(--ut-line);background:var(--ut-bg);color:inherit}
+.ut-keuze-zoek small{font-size:.76rem;color:var(--ut-muted)}

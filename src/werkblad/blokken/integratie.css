@@ -1,0 +1,21 @@
+/* Werkblad «Blokken» — integratie in Werkblad v3: vak in de widget, werkbalk, keuzelijsten, zijpaneel. Alleen thematokens. */
+.blk-vak{position:relative;width:100%;min-height:68px}
+.blk-vak.is-bewerken{outline:1px dashed color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:2px;border-radius:10px}
+.blk-vak-balk{position:absolute;top:-30px;right:0;display:flex;gap:4px}
+.blk-los{width:100%;height:100%}
+.blk-los .blk-wortel{height:100%}
+.blk-zijpaneel{position:fixed;z-index:8500;right:12px;top:72px;bottom:12px;width:min(380px,calc(100vw - 24px));display:flex;flex-direction:column;gap:8px;overflow:auto;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--panel,var(--surface));color:var(--text);box-shadow:0 12px 40px var(--shadow)}
+.blk-werkbalk{display:flex;flex-wrap:wrap;gap:6px}
+.blk-werkbalk button:disabled{opacity:.5;cursor:not-allowed}
+.blk-keuzelijst{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px;max-height:240px;overflow:auto;padding:4px;border:1px solid var(--line);border-radius:10px}
+.blk-keuze{display:flex;align-items:center;gap:6px;min-height:36px;padding:4px 8px;border:1px solid transparent;border-radius:8px;background:transparent;color:inherit;font:inherit;text-align:start;cursor:pointer}
+.blk-keuze:hover,.blk-keuze:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
+.blk-keuze-icoon{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;color:var(--accent)}
+.blk-keuze-icoon svg{width:18px;height:18px}
+.blk-icoonkiezer{display:flex;flex-wrap:wrap;gap:4px;margin:0;padding:6px;border:1px solid var(--line);border-radius:10px;max-height:200px;overflow:auto}
+.blk-icoonkiezer legend{font-size:var(--tekst-mini,.78rem);color:var(--muted)}
+.blk-icoonknop{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--accent);cursor:pointer}
+.blk-icoonknop svg{width:20px;height:20px}
+.blk-icoonknop:hover,.blk-icoonknop:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
+.blk-zijpaneel .eig-paneel{position:relative;width:auto;max-height:none;box-shadow:none;border:0;padding:0}
+@media (max-width:700px){.blk-zijpaneel{top:auto;left:0;right:0;bottom:0;width:auto;max-height:70dvh;border-radius:14px 14px 0 0}}

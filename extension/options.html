@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mijn Ruimte: налаштування розширення / instellingen van de extensie</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body class="pagina opties">
+<!-- 0.8.0 (UI-011): instellingencentrum met interne navigatie; elke sectie één «?». Niets van 0.7.1 is verwijderd, alleen gegroepeerd. -->
+<header class="kop opties-kop">
+  <span class="logo" aria-hidden="true"></span>
+  <div class="kop-tekst">
+    <h1 data-nl="Extensie «Mijn Ruimte»">Розширення «Mijn Ruimte»</h1>
+    <p id="status-regel" class="status-regel" data-niveau="uit" role="status" aria-live="polite"></p>
+  </div>
+  <p class="zacht" id="version"></p>
+</header>
+<div class="opties-raam">
+  <nav class="opties-nav" aria-label="Розділи" data-nl-aria="Secties">
+    <a href="#overzicht" data-sectie="overzicht" data-nl="Overzicht">Огляд</a>
+    <a href="#account-sectie" data-sectie="account-sectie" data-nl="Account en profielen">Обліковий запис і профілі</a>
+    <a href="#toegang" data-sectie="toegang" data-nl="Toegang en rechten">Доступи й дозволи</a>
+    <a href="#tabbladen" data-sectie="tabbladen" data-nl="Browser en tabbladen">Браузер і вкладки</a>
+    <a href="#diagnose" data-sectie="diagnose" data-nl="Diagnose">Діагностика</a>
+    <a href="#agenten" data-sectie="agenten" data-nl="AI-agenten en koppelingen">ШІ-агенти та інтеграції</a>
+    <a href="#extra" data-sectie="extra" data-nl="Extra">Додатково</a>
+  </nav>
+  <main>
+    <p id="aankondiging" class="vh" role="status" aria-live="polite"></p>
+    <p id="waarschuwing" class="waarschuwing" hidden></p>
+
+    <section id="overzicht" class="sectie" aria-labelledby="kop-overzicht">
+      <div class="sectie-kop"><h2 id="kop-overzicht" data-nl="Overzicht">Огляд</h2><button type="button" class="help" data-help="uitleg-overzicht"></button></div>
+      <p id="uitleg-overzicht" class="zacht" hidden data-nl="Elke regel is een aparte voorwaarde. Groen bovenaan verschijnt alleen als alles klopt wat de AI nodig heeft.">Кожен рядок — окрема умова. Зелений стан угорі з’являється лише тоді, коли виконано все потрібне для роботи ШІ.</p>
+      <ul id="toestand" class="toestand"></ul>
+      <div class="knoppen-rij">
+        <button type="button" id="open-site" class="primair" data-nl="Beheer op de site">Керування на сайті</button>
+        <button type="button" id="naar-diagnose" data-nl="Controleren">Перевірити</button>
+      </div>
+    </section>
+
+    <section id="account-sectie" class="sectie" aria-labelledby="kop-account" hidden>
+      <div class="sectie-kop"><h2 id="kop-account" data-nl="Account en profielen">Обліковий запис і профілі</h2><button type="button" class="help" data-help="uitleg-account"></button></div>
+      <p id="uitleg-account" class="zacht" hidden data-nl="Het account van Mijn Ruimte is één account voor de hele site. Koppelingen van externe AI-diensten staan onder «AI-agenten».">Обліковий запис Mijn Ruimte — один для всього сайту. Підключення зовнішніх ШІ — у розділі «ШІ-агенти».</p>
+      <div class="kop-info">
+        <span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+        <div><p id="account" class="account"></p><p id="profiel-tab" class="profiel" data-profiel="geen"></p></div>
+      </div>
+      <h3 id="kop-koppeling" data-nl="Koppelingen van deze browser">Підключення цього браузера</h3>
+      <ul id="koppelingen" class="koppelingen"></ul>
+    </section>
+
+    <section id="toegang" class="sectie" aria-labelledby="kop-staat" hidden>
+      <div class="sectie-kop"><h2 id="kop-staat" data-nl="Toegang en rechten">Доступи й дозволи</h2><button type="button" class="help" data-help="uitleg-toegang"></button></div>
+      <p id="uitleg-toegang" class="zacht" hidden data-nl="De toegang openen kan alleen op de site, aangemeld met uw eigen account. Daar kiest u ook de rechten, sites en duur. Hier kunt u de toegang meteen intrekken.">Відкрити доступ можна лише на сайті, увійшовши у власний обліковий запис. Там же обираються дозволи, сайти й тривалість. Тут доступ можна одразу відкликати.</p>
+      <div id="sloten" class="sloten"></div>
+    </section>
+
+    <section id="tabbladen" class="sectie" aria-labelledby="kop-tab" hidden>
+      <div class="sectie-kop"><h2 id="kop-tab" data-nl="Browser en tabbladen">Браузер і вкладки</h2><button type="button" class="help" data-help="uitleg-tab"></button></div>
+      <p id="uitleg-tab" class="zacht" hidden data-nl="De extensie werkt alleen op tarasevych.com en alleen op de sites die u bij het openen van de toegang koos. Andere sites leest ze nooit.">Розширення працює лише на tarasevych.com і лише на сайтах, які ви обрали під час відкриття доступу. Інші сайти воно ніколи не читає.</p>
+      <ul id="tab-info" class="toestand"></ul>
+    </section>
+
+    <section id="diagnose" class="sectie" aria-labelledby="kop-diag" hidden>
+      <div class="sectie-kop"><h2 id="kop-diag" data-nl="Diagnose">Діагностика</h2><button type="button" class="help" data-help="diag-uitleg" data-alleen-tech></button></div>
+      <div class="instelling" data-alleen-tech>
+        <label class="schakel slank"><input type="checkbox" role="switch" id="diag" aria-describedby="diag-status">
+          <span data-nl="Diepe diagnose van Mijn Ruimte-pagina’s via de Chrome-debugger toestaan.">Дозволити глибоку діагностику сторінок Mijn Ruimte через налагоджувач Chrome.</span></label>
+        <p id="diag-status" class="diag-werkelijk" role="status" aria-live="polite"></p>
+        <p id="diag-recht" class="zacht"></p>
+        <p id="diag-hulp" class="let-op" hidden></p>
+        <p id="diag-pakket-rij" hidden><a id="diag-pakket" href="https://mcp.tarasevych.com/downloads/mijn-ruimte-extension.zip" target="_blank" rel="noopener noreferrer" data-nl="Nieuwste extensie downloaden">Завантажити найновіше розширення</a></p>
+      </div>
+      <p id="diag-uitleg" class="zacht" hidden data-alleen-tech data-nl="Vanaf 0.8.0 staat het debuggerrecht vast in de extensie (Chrome geeft het niet op verzoek). Met deze schakelaar geeft u alleen uw toestemming. De debugger wordt pas aangehangen als de toegang op de site open is met «Diepe diagnose», alleen op toegestane adressen en alleen enkele seconden; Chrome toont dan een gele balk.">Починаючи з 0.8.0 дозвіл налагоджувача записаний у самому розширенні (Chrome не видає його на вимогу). Цим перемикачем ви лише даєте згоду. Налагоджувач під’єднується тільки коли на сайті відкрито доступ із «Глибокою діагностикою», лише на дозволених адресах і на кілька секунд; Chrome тоді показує жовту смугу.</p>
+      <h3 data-nl="Controles">Перевірки</h3>
+      <div class="knoppen-rij"><button type="button" id="self-test" class="primair" data-nl="Opnieuw controleren">Перевірити знову</button></div>
+      <p id="self-test-result" role="status"></p>
+      <ul class="checks centrum" id="checks"></ul>
+    </section>
+
+    <section id="agenten" class="sectie" aria-labelledby="kop-agenten" hidden>
+      <div class="sectie-kop"><h2 id="kop-agenten" data-nl="AI-agenten en koppelingen">ШІ-агенти та інтеграції</h2><button type="button" class="help" data-help="uitleg-agenten"></button></div>
+      <p id="uitleg-agenten" class="zacht" hidden data-nl="Welke AI verbonden is, ziet u hier. Rechten van AI-diensten worden op de site beheerd (één plek), niet in de extensie. Een model wordt alleen getoond als het zeker bekend is.">Тут видно, який ШІ підключено. Дозволи ШІ-сервісів керуються на сайті (в одному місці), а не в розширенні. Модель показується лише тоді, коли вона точно відома.</p>
+      <ul id="agenten-lijst" class="toestand"></ul>
+      <div class="knoppen-rij"><button type="button" id="naar-agenten" data-nl="Agenten op de site">Агенти на сайті</button></div>
+    </section>
+
+    <section id="extra" class="sectie" aria-labelledby="kop-extra" hidden>
+      <div class="sectie-kop"><h2 id="kop-extra" data-nl="Extra">Додатково</h2><button type="button" class="help" data-help="native-let-op"></button></div>
+      <h3 id="kop-lokaal" data-nl="Lokale AI-agent (Native Messaging)">Локальний ШІ-агент (Native Messaging)</h3>
+      <label class="schakel slank"><input type="checkbox" role="switch" id="native" aria-describedby="native-status">
+        <span data-nl="Een AI-agent op deze computer (via Native Messaging) toestaan om Mijn Ruimte-pagina’s te lezen.">Дозволити ШІ-агенту на цьому комп’ютері (через Native Messaging) читати сторінки Mijn Ruimte.</span></label>
+      <p id="native-status" role="status" aria-live="polite"></p>
+      <p id="lokaal" class="zacht" hidden></p>
+      <div id="native-let-op" hidden>
+        <p class="let-op" data-nl="Let op: de lokale agent mag alleen LEZEN (nooit klikken, typen of pagina’s openen), en alleen nadat u de toegang op de site opende met «lokale agent» aangevinkt.">Увага: локальний агент може лише ЧИТАТИ (ніколи не натискає, не вводить і не відкриває сторінки), і лише після відкриття доступу на сайті з позначкою «локальний агент».</p>
+        <ol class="stappen">
+          <li data-nl="Installeer het lokale programma voor uw computer (instructies op de site).">Встановіть локальну програму для свого комп’ютера (інструкція на сайті).</li>
+          <li data-nl="Zet deze schakelaar aan; Chrome vraagt om toestemming.">Увімкніть цей перемикач — Chrome попросить дозвіл.</li>
+          <li data-nl="Kies bij het openen van de toegang op de site «lokale agent».">Під час відкриття доступу на сайті позначте «локальний агент».</li>
+        </ol>
+        <p><a id="native-link" href="https://mcp.tarasevych.com/agents#extension-lokaal" target="_blank" rel="noopener noreferrer" data-nl="Installatie-instructies op de site">Інструкція з установлення на сайті</a></p>
+      </div>
+      <h3 data-nl="Versie en installatie">Версія та встановлення</h3>
+      <ul id="extra-info" class="toestand"></ul>
+      <details class="tech"><summary data-nl="Systeemgegevens">Службові відомості</summary><pre id="tech-details"></pre></details>
+    </section>
+  </main>
+</div>
+<script src="ui.js"></script>
+<script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+/* Werkgebied «ШІ для вас» op ai.* (punt 13, 19.10.2026). Eigen bestand: src/index.css blijft ongemoeid. */
+.aiw{display:flex;flex-direction:column;gap:16px;max-width:980px;margin:0 auto;padding:clamp(12px,3vw,24px)}
+.aiw-kop h1{margin:0;font-size:1.45rem}
+.aiw-kop p{margin:6px 0 0;color:var(--muted,#64748b);line-height:1.5;overflow-wrap:anywhere}
+.aiw-schakel{display:flex;gap:8px;flex-wrap:wrap}
+.aiw-schakel button{min-height:40px;padding:8px 14px;border:1px solid var(--line,#d7e0ea);border-radius:999px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.aiw-schakel button[aria-pressed='true']{background:var(--accent,#2563eb);border-color:transparent;color:var(--text-on-accent);font-weight:700}
+.aiw-kaart{display:grid;gap:10px;padding:14px;border:1px solid var(--line,#d7e0ea);border-radius:14px;background:var(--panel,#fff)}
+.aiw-kaart h2{margin:0;font-size:1.05rem}
+.aiw-kaart h3{margin:0;font-size:.95rem}
+.aiw-kaart p,.aiw-kaart li{line-height:1.5;overflow-wrap:anywhere}
+.aiw-kaart>p{margin:0;color:var(--muted,#64748b)}
+.aiw-lijst{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.aiw-middel{display:grid;gap:4px;padding:10px 12px;border:1px solid var(--line,#e6edf4);border-radius:12px}
+.aiw-middel b{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.aiw-middel small{color:var(--muted,#64748b)}
+.aiw-middel a{color:inherit}
+.aiw-vlag{padding:1px 9px;border-radius:999px;border:1px solid currentColor;font-size:.78rem;font-weight:700;white-space:nowrap}
+.aiw-staat-aan{color:var(--ok)}
+.aiw-staat-koppelen{color:var(--warn)}
+.aiw-staat-niet-in-chat{color:#6b4ea8}
+.aiw-staat-geen-recht{color:var(--fout)}
+.aiw-vragen{display:grid;gap:12px}
+.aiw-vraaggroep{display:grid;gap:6px}
+.aiw-vraaggroep>span{font-weight:700;font-size:.9rem}
+.aiw-vraagrij{display:flex;flex-wrap:wrap;gap:8px}
+.aiw-vraagrij button{text-align:left;max-width:100%;min-height:40px;padding:8px 14px;border:1px solid var(--line,#d7e0ea);border-radius:12px;background:var(--soft,#eef3f8);color:inherit;font:inherit;cursor:pointer}
+.aiw-vraagrij button:hover{border-color:var(--accent,#2563eb)}
+.aiw-vraagrij .aiw-vraag-uit{opacity:.75;cursor:default;background:transparent}
+.aiw-model{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.9rem;color:var(--muted,#64748b)}
+.aiw-model select{min-height:40px;padding:6px 10px;border:1px solid var(--line,#d7e0ea);border-radius:10px;background:var(--panel,#fff);color:inherit;font:inherit}
+.aiw-knoppen{display:flex;gap:8px;flex-wrap:wrap}
+.aiw button.aiw-hoofd{min-height:44px;padding:10px 16px;border:0;border-radius:12px;background:var(--accent,#2563eb);color:var(--text-on-accent);font-weight:700;cursor:pointer}
+.aiw button.aiw-tweede{min-height:44px;padding:10px 16px;border:1px solid var(--line,#d7e0ea);border-radius:12px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.aiw button[disabled]{opacity:.45;cursor:not-allowed}
+.aiw-fout{margin:0;padding:10px 12px;border:1px solid var(--fout);border-radius:12px;color:var(--fout)}
+.aiw-nog-niet{margin:0;color:var(--muted,#64748b);font-size:.9rem}
+.theme-dark .aiw-staat-aan,.theme-plum-dark .aiw-staat-aan{color:var(--ok)}.theme-dark .aiw-staat-koppelen,.theme-plum-dark .aiw-staat-koppelen{color:#f0a23a}.theme-dark .aiw-staat-niet-in-chat,.theme-plum-dark .aiw-staat-niet-in-chat{color:#c0a8f0}.theme-dark .aiw-staat-geen-recht,.theme-plum-dark .aiw-staat-geen-recht,.theme-dark .aiw-fout,.theme-plum-dark .aiw-fout{color:var(--fout)}
+@media(max-width:640px){.aiw-vraagrij button{width:100%}}

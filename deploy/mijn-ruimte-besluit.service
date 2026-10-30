@@ -1,0 +1,17 @@
+# Een met de passkey van de eigenaar ondertekend besluit uitvoeren (root): root controleert de WebAuthn-assertie en de inhoud zelf
+# (mijn-ruimte-passkey verifieer-besluit) en voert pas daarna uit — terugdraaien via de root-kopie van de installer, of de witte
+# lijst externeMcpHosts in /etc/mijn-ruimte/mcp-rechten.json herschrijven. Zie deploy/RUNBOOK-VEILIGE-UITROL.md §15.
+# Geen ProtectSystem=strict: terugdraaien wisselt de release-symlink en herstart de dienst (zoals mijn-ruimte-goedkeuring.service).
+[Unit]
+Description=Mijn Ruimte: besluit van de eigenaar (passkey) controleren en uitvoeren
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mijn-ruimte-besluit verwerk
+StandardInput=null
+PrivateTmp=yes
+ProtectHome=yes
+NoNewPrivileges=no
+TimeoutStartSec=20min
+Nice=5

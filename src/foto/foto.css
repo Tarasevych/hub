@@ -1,0 +1,147 @@
+/* UI-002 «Фото» (vlag foto-dienst). Alleen tokens uit src/ontwerp/tokens.css: licht en donker volgen vanzelf.
+   Rustig: één accent, dunne lijnen, geen schaduwen behalve op de viewer. Tik-doelen ≥ 44 px op aanraking. */
+.foto, .foto *, .foto-viewer, .foto-viewer * { box-sizing: border-box; }
+.foto { display: grid; gap: var(--ruimte-3); color: var(--text); font-size: var(--tekst-klein); min-width: 0; }
+.foto :focus-visible, .foto-viewer :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.foto svg, .foto-viewer svg { width: 16px; height: 16px; flex: none; }
+.foto h2, .foto h3 { margin: 0; font-family: inherit; color: inherit; }
+.foto input, .foto select, .foto-viewer input { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-m); min-height: 36px; padding: 6px 10px; max-width: 100%; }
+.foto-hint { margin: 0; color: var(--muted); }
+.foto-kop { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-3); flex-wrap: wrap; }
+.foto-kop h2 { display: flex; align-items: center; gap: 8px; font-size: 22px; line-height: 1.2; }
+.foto-kop h2 svg { width: 22px; height: 22px; color: var(--accent); }
+.foto-segment { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.foto-segment button { border: 0; background: none; color: var(--muted); border-radius: 999px; padding: 6px 14px; min-height: 34px; font: inherit; cursor: pointer; white-space: nowrap; }
+.foto-segment button.is-actief { background: var(--panel); color: var(--text); box-shadow: 0 0 0 1px var(--line); font-weight: 600; }
+.foto-knop { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); color: var(--text); font: inherit; cursor: pointer; text-decoration: none; white-space: nowrap; }
+.foto-knop:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.foto-knop:disabled { opacity: .5; cursor: not-allowed; }
+.foto-knop.is-hoofd { background: var(--accent); border-color: var(--accent); color: #fff; }
+.foto-knop.is-aan { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.foto-knop.is-gevaar { color: var(--fout); }
+.foto-knop.is-ikoon { width: 36px; padding: 0; }
+@media (pointer: coarse) { .foto-knop, .foto-segment button, .foto input, .foto select { min-height: 44px; } .foto-knop.is-ikoon { width: 44px; } }
+.foto-zoekbalk { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.foto-zoek { flex: 1; display: flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); min-width: 0; }
+.foto-zoek svg { color: var(--muted); }
+.foto-zoek input { border: 0; background: none; flex: 1; min-width: 0; padding-left: 0; }
+.foto-zoek:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
+.foto-zoek input:focus-visible { outline: none; }
+.foto-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.foto-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px 3px 10px; min-height: 28px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 12px; cursor: pointer; }
+.foto-chip svg { width: 12px; height: 12px; }
+.foto-chip.is-leeg { border-style: dashed; color: var(--muted); }
+.foto-chips input { min-height: 28px; width: 110px; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+.foto-filters { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); }
+.foto-filters-rij { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.foto-filters-rij.is-vinkjes { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.foto-veld { display: grid; gap: 3px; min-width: 0; }
+.foto-veld span { color: var(--muted); font-size: 12px; }
+.foto-veld select, .foto-veld input { width: 100%; }
+.foto-vink { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; cursor: pointer; }
+.foto-vink input { width: 18px; height: 18px; min-height: 0; padding: 0; accent-color: var(--accent); }
+.foto-toost { margin: 0; justify-self: start; padding: 6px 14px; border-radius: 999px; background: var(--ok-zacht); color: var(--ok); }
+.foto-melding { margin: 0; padding: 10px 12px; border-radius: var(--straal-m); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.foto-melding.is-fout { background: var(--fout-zacht); color: var(--fout); }
+/* ---- tijdlijn ---- */
+.foto-tijdlijn { display: grid; gap: var(--ruimte-4); }
+.foto-maand h3 { font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 6px; text-transform: none; position: sticky; top: 0; z-index: 1; background: var(--surface, var(--panel)); padding: 4px 0; }
+.foto-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 4px; }
+@media (max-width: 520px) { .foto-raster { grid-template-columns: repeat(3, 1fr); gap: 2px; } }
+.foto-raster.is-laden i { aspect-ratio: 1; border-radius: 6px; background: var(--line); opacity: .5; }
+.foto-tegel { position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; background: var(--surface); }
+.foto-tegel-open { all: unset; display: block; width: 100%; height: 100%; cursor: pointer; position: relative; }
+.foto-tegel-open:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.foto-mini { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--muted); background: color-mix(in srgb, var(--line) 40%, transparent); }
+.foto-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.foto-mini svg { width: 22px; height: 22px; opacity: .6; }
+.foto-tegel-video, .foto-tegel-hart, .foto-tegel-weg { position: absolute; display: inline-flex; padding: 3px; border-radius: 999px; background: rgb(0 0 0 / .45); color: #fff; }
+.foto-tegel-video { right: 6px; bottom: 6px; } .foto-tegel-hart { left: 6px; bottom: 6px; } .foto-tegel-weg { right: 6px; top: 6px; }
+.foto-tegel-video svg, .foto-tegel-hart svg, .foto-tegel-weg svg { width: 13px; height: 13px; }
+.foto-tegel-kies { position: absolute; left: 6px; top: 6px; width: 24px; height: 24px; border-radius: 999px; border: 2px solid #fff; background: rgb(0 0 0 / .25); color: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: opacity .12s; padding: 0; }
+.foto-tegel:hover .foto-tegel-kies, .foto-tegel-kies:focus-visible, .foto-tegel.is-gekozen .foto-tegel-kies { opacity: 1; }
+@media (pointer: coarse) { .foto-tegel-kies { opacity: .85; width: 28px; height: 28px; } .foto-tegel-kies::before { content: ''; position: absolute; inset: -8px; } }
+.foto-tegel.is-gekozen { box-shadow: inset 0 0 0 3px var(--accent); }
+.foto-tegel.is-gekozen .foto-tegel-kies { background: var(--accent); border-color: var(--accent); color: #fff; }
+.foto-tegel-kies svg { width: 14px; height: 14px; }
+.foto-meer { justify-self: center; }
+.foto-leeg { display: grid; justify-items: center; text-align: center; gap: 8px; padding: 40px 16px; border: 1px dashed var(--line); border-radius: var(--straal-l); }
+.foto-leeg > svg { width: 36px; height: 36px; color: var(--accent); }
+.foto-leeg p { margin: 0; color: var(--muted); max-width: 46ch; }
+/* ---- selectie ---- */
+.foto-selectie { position: sticky; bottom: calc(12px + var(--veilig-onder, 0px)); z-index: 5; justify-self: center; display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); box-shadow: var(--schaduw-m, 0 6px 24px rgb(0 0 0 / .15)); max-width: 100%; overflow-x: auto; }
+.foto-selectie strong { padding: 0 6px; }
+.foto-select { min-height: 36px; border-radius: var(--straal-m); }
+/* ---- viewer ---- */
+.foto-viewer { position: fixed; inset: 0; z-index: 240; display: grid; grid-template-rows: auto 1fr; background: #0b0c0e; color: #f3f4f6; }
+.foto-viewer .foto-knop { background: transparent; border-color: transparent; color: #f3f4f6; }
+.foto-viewer .foto-knop:hover { background: rgb(255 255 255 / .08); }
+.foto-viewer .foto-knop.is-aan { color: #fda4af; }
+.foto-viewer-balk { display: flex; align-items: center; gap: 4px; padding: 6px 8px; padding-top: max(6px, env(safe-area-inset-top)); }
+.foto-viewer-titel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; font-weight: 500; }
+.foto-viewer-lijf { display: grid; grid-template-columns: 1fr; min-height: 0; }
+.foto-viewer-lijf.met-info { grid-template-columns: 1fr 340px; }
+.foto-viewer-beeld { position: relative; display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; touch-action: pan-y pinch-zoom; }
+.foto-viewer-beeld img, .foto-viewer-beeld video { max-width: 100%; max-height: 100%; object-fit: contain; }
+.foto-pijl { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 999px; border: 0; background: rgb(255 255 255 / .1); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.foto-pijl.is-links { left: 10px; } .foto-pijl.is-rechts { right: 10px; }
+.foto-spinner { width: 28px; height: 28px; border-radius: 999px; border: 3px solid rgb(255 255 255 / .2); border-top-color: #fff; animation: foto-draai 1s linear infinite; }
+@keyframes foto-draai { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .foto-spinner { animation: none; } }
+.foto-info { overflow: auto; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); background: var(--panel); color: var(--text); border-left: 1px solid var(--line); display: grid; align-content: start; gap: 12px; }
+.foto-info dl { margin: 0; display: grid; gap: 3px 0; }
+.foto-info dt { color: var(--muted); font-size: 12px; margin-top: 8px; }
+.foto-info dd { margin: 0; overflow-wrap: anywhere; }
+.foto-info dd small { color: var(--muted); }
+.foto-info a { color: var(--accent); display: inline-flex; gap: 4px; align-items: center; }
+.foto-info .foto-knop { background: var(--panel); border-color: var(--line); color: var(--text); }
+.foto-info .foto-knop.is-gevaar { color: var(--fout); }
+.foto-info-acties { display: flex; flex-wrap: wrap; gap: 6px; }
+.foto-herkomst { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.foto-herkomst small { color: var(--muted); display: block; overflow-wrap: anywhere; }
+.foto-bevestig { display: grid; gap: 8px; padding: 10px; border-radius: var(--straal-m); background: var(--fout-zacht); }
+.foto-bevestig p { margin: 0; }
+@media (max-width: 900px) {
+  .foto-viewer-lijf.met-info { grid-template-columns: 1fr; grid-template-rows: 1fr minmax(0, 46vh); }
+  .foto-info { border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; }
+}
+/* ---- albums ---- */
+.foto-albums { display: grid; gap: var(--ruimte-3); }
+.foto-album-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.foto-album { position: relative; display: grid; gap: 4px; }
+.foto-album-open { all: unset; cursor: pointer; display: grid; gap: 4px; }
+.foto-album-open .foto-mini { aspect-ratio: 1; border-radius: 10px; overflow: hidden; }
+.foto-album-open small { color: var(--muted); }
+.foto-album-open:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 10px; }
+.foto-album-meer { position: absolute; top: 6px; right: 6px; }
+.foto-album-meer summary { list-style: none; width: 32px; height: 32px; border-radius: 999px; background: rgb(0 0 0 / .45); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.foto-album-meer summary::-webkit-details-marker { display: none; }
+.foto-album-meer > div { position: absolute; right: 0; top: 36px; z-index: 3; display: grid; min-width: 180px; padding: 4px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); }
+.foto-album-meer > div button { all: unset; padding: 8px 10px; min-height: 28px; border-radius: 6px; cursor: pointer; }
+.foto-album-meer > div button:hover { background: var(--surface); }
+/* ---- bronnen ---- */
+.foto-bronnen, .foto-orde { display: grid; gap: var(--ruimte-4); }
+.foto-bron-groep h3 { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+.foto-bron-groep > ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.foto-bron { display: grid; gap: 6px; align-content: start; padding: 12px; border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); }
+.foto-bron p { margin: 0; color: var(--muted); }
+.foto-bron-kop { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.foto-bron-teller { color: var(--muted); font-variant-numeric: tabular-nums; }
+.foto-bron-standen { display: flex; flex-wrap: wrap; gap: 4px; }
+.foto-stand { font-size: 11px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.foto-stand.is-live { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+.foto-stand.is-kiezer { color: var(--info); border-color: color-mix(in srgb, var(--info) 40%, var(--line)); }
+.foto-stand.is-gepland { border-style: dashed; }
+.foto-bron-uitleg summary { cursor: pointer; color: var(--accent); min-height: 28px; display: inline-flex; align-items: center; }
+.foto-bron-acties { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.foto-voortgang { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); }
+.foto-voortgang > div { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.foto-voortgang small { color: var(--muted); }
+.foto-voortgang progress { width: 100%; accent-color: var(--accent); }
+.foto-voortgang .foto-knop { justify-self: start; }
+.foto-imports { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.foto-imports small { color: var(--muted); }
+.foto-orde-rij { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 6px 0; }
+.foto-orde-beelden { display: flex; gap: 4px; overflow-x: auto; }
+.foto-orde-beelden .foto-tegel-open { width: 84px; height: 84px; border-radius: 6px; overflow: hidden; flex: none; }
+.foto-orde-beelden small { position: absolute; left: 4px; bottom: 4px; font-size: 10px; padding: 0 4px; border-radius: 4px; background: rgb(0 0 0 / .5); color: #fff; }

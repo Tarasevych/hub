@@ -1,0 +1,15 @@
+# /etc/systemd/system/mijn-ruimte-zoek-index.timer — Mijn Ruimte: zoekindex (/zoek) elke 5 minuten bijwerken
+# Incrementele scans + wachtrij (bijlagen, bestandsinhoud, OCR); zie backend/zoek/bronnen.ts en ENV-VARS.md (ZOEK_INDEX_*).
+# Loopt ook in het serverproces als er een sleutelkluis open staat (dezelfde advisory lock: nooit twee keer tegelijk).
+[Unit]
+Description=Mijn Ruimte: zoekindex bijwerken (elke 5 minuten)
+
+[Timer]
+OnCalendar=*:03/5
+RandomizedDelaySec=30s
+Persistent=true
+AccuracySec=30s
+Unit=mijn-ruimte-cron@zoek-index.service
+
+[Install]
+WantedBy=timers.target

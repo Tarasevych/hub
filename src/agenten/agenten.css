@@ -1,0 +1,455 @@
+/* /agents in GitHub-stijl (Settings → Applications). Alleen themavariabelen (--panel --surface --line --text --muted --accent
+   --accent-soft): licht en donker volgen vanzelf. Statuskleuren apart per thema. */
+.ag{--ag-ok:var(--ok);--ag-warn:var(--warn);--ag-bad:var(--fout);--ag-off:var(--muted);--ag-info:var(--info);--ag-r:10px;display:grid;gap:16px;color:var(--text);min-width:0;max-width:1100px}
+.theme-dark .ag,.theme-plum-dark .ag{--ag-ok:var(--ok);--ag-warn:var(--warn);--ag-bad:var(--fout);--ag-off:var(--muted);--ag-info:var(--info)}
+.ag :is(h1,h2,h3,h4){margin:0}
+.ag code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;overflow-wrap:anywhere}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Kop en tabbladen */
+.ag-kop{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
+.ag-kop h1{font-size:1.6rem;line-height:1.2}
+.ag-kop p{margin:4px 0 0;color:var(--muted);max-width:64ch;line-height:1.45}
+.ag-tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.ag-tab-knop{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--muted);text-decoration:none;white-space:nowrap;font-weight:600;font-size:.92rem;border-radius:6px 6px 0 0}
+.ag-tab-knop svg{width:16px;height:16px}
+.ag-tab-knop:hover{color:var(--text);background:var(--surface)}
+.ag-tab-knop[aria-selected=true]{color:var(--text);border-bottom-color:var(--accent)}
+.ag-tab-knop:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ag-teller{display:inline-block;min-width:20px;padding:0 6px;border-radius:99px;background:var(--surface2,var(--surface));color:var(--text);font-size:.75rem;font-weight:700;line-height:20px;text-align:center}
+.ag-teller.is-warn{background:var(--warn-vlak);color:var(--text-on-vlak)}
+.ag-paneel,.ag-tab{display:grid;gap:14px;min-width:0}
+
+/* Lijstkop: «Ви надали доступ N застосункам» · sorteren · alles intrekken */
+.ag-lijstkop,.ag-werkbalk{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}
+.ag-lijstkop-tekst{margin:0 auto 0 0;font-weight:600;align-self:center}
+.ag-werkbalk-info{flex-basis:100%}
+.ag-veld{display:grid;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+.ag-veld-inline{display:flex;align-items:center;gap:6px}
+.ag-veld-breed{flex:1 1 260px}
+.ag :is(input,select,textarea){font:inherit;font-size:.9rem;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 8px;min-height:32px;min-width:0;box-sizing:border-box}
+.ag :is(input,select,textarea):focus-visible{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+
+/* Rijen */
+.ag-lijst{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);overflow:hidden}
+.ag-rij{border-top:1px solid var(--line)}
+.ag-rij:first-child{border-top:0}
+.ag-rij.is-gedimd .ag-rij-kop{opacity:.78}
+.ag-rij-kop{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;min-width:0}
+.ag-rij-toggle{flex:1 1 auto;display:flex;align-items:center;gap:12px;min-width:0;padding:10px 8px;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ag-rij-toggle:hover{background:var(--surface)}
+.ag-rij-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ag-rij-logo{flex:0 0 auto;display:grid;place-items:center}
+.ag-rij-tekst{display:grid;gap:2px;min-width:0}
+.ag-rij-titel{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+.ag-rij-titel b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.ag-rij-status{color:var(--muted);font-size:.82rem;line-height:1.4;overflow-wrap:anywhere}
+.ag-chevron{flex:0 0 auto;width:16px;height:16px;color:var(--muted);transition:transform .15s;margin-left:auto}
+.ag-rij.is-open>.ag-rij-kop .ag-chevron,.ag-groep[open]>summary .ag-chevron{transform:rotate(180deg)}
+.ag-rij-acties{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;max-width:60%}
+.ag-rij-details{display:grid;gap:12px;padding:4px 16px 16px 58px;min-width:0}
+.ag-journaal .ag-rij-details{padding-left:52px}
+
+/* Technische gegevens */
+.ag-tech{display:grid;grid-template-columns:minmax(120px,max-content) minmax(0,1fr);gap:0;margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:.84rem}
+.ag-tech-rij{display:contents}
+.ag-tech dt,.ag-tech dd{margin:0;padding:6px 10px;border-top:1px solid var(--line);min-width:0}
+.ag-tech-rij:first-child dt,.ag-tech-rij:first-child dd{border-top:0}
+.ag-tech dt{color:var(--muted);background:var(--surface)}
+.ag-tech dd{overflow-wrap:anywhere}
+.ag-ruw{margin:6px 0 0;padding:8px;max-height:260px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px;font-size:.78rem;white-space:pre-wrap;word-break:break-all}
+
+/* Badges, chips */
+.ag-badge{display:inline-flex;align-items:center;gap:4px;padding:0 7px;border:1px solid currentColor;border-radius:99px;font-size:.75rem;font-weight:600;line-height:18px;white-space:nowrap}
+.ag-badge .hub-dot,.ag-badge [class*=dot]{margin:0}
+.ag-ok{color:var(--ag-ok)}.ag-warn{color:var(--ag-warn)}.ag-bad{color:var(--ag-bad)}.ag-off{color:var(--ag-off)}.ag-info{color:var(--ag-info)}
+.ag-chip{display:inline-block;margin-right:6px;padding:0 6px;border-radius:6px;background:var(--surface);border:1px solid var(--line);color:var(--text);font-size:.75rem}
+.ag-chip-tech{background:var(--warn-vlak);border-color:#1a1200;color:#1a1200;font-weight:700;letter-spacing:.03em}
+.ag-chip-namens{background:var(--fout-vlak);border-color:var(--fout);color:var(--text-on-vlak);font-weight:600}
+.ag-tijd{white-space:nowrap}
+.ag-link{display:inline-flex;align-items:center;gap:4px;color:var(--accent);font-weight:600;text-decoration:none}
+.ag-link:hover{text-decoration:underline}
+
+/* Knoppen */
+.ag-knop{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:30px;padding:4px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--text);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.ag-knop:hover:not(:disabled){background:var(--surface2,var(--panel));border-color:var(--muted)}
+.ag-knop:disabled{opacity:.55;cursor:not-allowed}
+.ag-knop:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.ag-knop svg{width:15px;height:15px}
+.ag-knop-icoon{display:inline-grid}
+.ag-knop-primary{background:var(--accent);border-color:var(--accent);color:var(--accentText,#fff)}
+.ag-knop-primary:hover:not(:disabled){background:var(--accent);filter:brightness(1.08)}
+.ag-knop-danger{color:var(--ag-bad)}
+.ag-knop-danger:hover:not(:disabled){background:var(--fout-vlak);border-color:var(--fout-vlak);color:var(--text-on-vlak)}
+.ag-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.ag-spin{animation:ag-spin .8s linear infinite}
+@keyframes ag-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.ag-spin{animation-duration:2.4s}.ag-chevron{transition:none}}
+
+/* Bevestiging op de pagina */
+.ag-bevestig{display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;padding:6px 8px;border:1px solid var(--ag-bad);border-radius:8px;background:color-mix(in srgb,var(--ag-bad) 8%,var(--panel))}
+.ag-bevestig-vraag{font-size:.82rem;max-width:42ch;line-height:1.35}
+.ag-bevestig.is-klein .ag-bevestig-vraag{flex-basis:100%;text-align:right}
+
+/* Meldingen */
+.ag-melding{display:flex;align-items:flex-start;gap:8px;margin:0;padding:9px 12px;border:1px solid var(--line);border-left-width:4px;border-radius:8px;background:var(--panel);font-size:.88rem;line-height:1.45}
+.ag-melding>svg{flex:0 0 auto;width:16px;height:16px;margin-top:2px}
+.ag-melding>span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.ag-melding-ok{border-left-color:var(--ag-ok);background:color-mix(in srgb,var(--ag-ok) 8%,var(--panel))}
+.ag-melding-ok>svg{color:var(--ag-ok)}
+.ag-melding-fout{border-left-color:var(--ag-bad);background:color-mix(in srgb,var(--ag-bad) 8%,var(--panel))}
+.ag-melding-fout>svg{color:var(--ag-bad)}
+small.ag-melding{display:block}
+.ag-melding-x{flex:0 0 auto;display:grid;place-items:center;width:24px;height:24px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer}
+.ag-melding-x:hover{background:var(--surface)}
+.ag-melding-x svg{width:14px;height:14px}
+
+/* Kaarten, groepen, overzicht */
+.ag-kaart{display:grid;gap:10px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);min-width:0}
+.ag-kaart h3{font-size:1rem}.ag-kaart h4{font-size:.9rem}
+.ag-kaart-kop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.ag-waarschuwing{border-color:var(--ag-warn);box-shadow:inset 4px 0 0 var(--ag-warn)}
+.ag-vers{border-color:var(--ag-ok)}
+.ag-vers code{display:block;padding:8px;border-radius:6px;background:var(--surface);word-break:break-all}
+.ag-groep{border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel)}
+.ag-groep-acties{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 14px 10px}
+.ag-groep>summary{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;list-style:none;color:var(--muted);font-weight:600;font-size:.9rem}
+.ag-groep>summary::-webkit-details-marker{display:none}
+.ag-groep>summary .ag-chevron{margin:0}
+.ag-groep>.ag-lijst{border:0;border-top:1px solid var(--line);border-radius:0 0 var(--ag-r) var(--ag-r)}
+.ag-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.ag-stat{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ag-stat:hover{border-color:var(--accent)}
+.ag-stat-icoon{grid-row:1/3;display:grid;place-items:center;width:36px;height:36px;border-radius:8px;background:var(--accent-soft,var(--surface));color:var(--accent)}
+.ag-stat-icoon svg{width:18px;height:18px}
+.ag-stat strong{font-size:1.35rem;line-height:1.1}
+.ag-stat span:last-child{color:var(--muted);font-size:.82rem}
+.ag-leeg{margin:0;padding:18px;color:var(--muted);text-align:center;border:1px dashed var(--line);border-radius:var(--ag-r)}
+.ag-meer{display:flex;justify-content:center}
+.ag-voet{display:flex;align-items:center;gap:6px;margin:0}
+.ag-verbinden{display:grid;gap:8px}
+.ag-formrij{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel)}
+.ag-formrij-uitleg{flex-basis:100%}
+
+/* Journaal */
+.ag-journaal-icoon{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--surface);border:1px solid var(--line)}
+.ag-journaal-icoon svg{width:15px;height:15px}
+.ag-journaal.is-compact .ag-rij-toggle{padding:7px 8px}
+.ag-journaal-wrap{display:grid;gap:12px}
+/* Werksessie van een AI: stappen op volgorde, herhalingen samengevoegd (×3) */
+.ag-werkstappen{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:2px;counter-reset:stap}
+.ag-werkstappen li{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:8px;padding:5px 8px;border-radius:6px}
+.ag-werkstappen li:nth-child(odd){background:var(--surface)}
+.ag-werkstap-icoon{display:grid;place-items:center;color:var(--accent)}
+.ag-werkstap-icoon svg{width:15px;height:15px}
+.ag-werkstap-tekst{min-width:0;overflow-wrap:anywhere}
+.ag-werkstap-keer{color:var(--muted);font-weight:600}
+.ag-werkstap-fout{color:var(--ag-bad);font-style:normal}
+.ag-werkstappen li.is-mislukt .ag-werkstap-icoon{color:var(--ag-bad)}
+
+/* Gesegmenteerde keuze (presets) */
+.ag-segment{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface);max-width:100%}
+.ag-segment-optie{display:inline-flex;align-items:center;gap:2px;padding-right:6px;border-left:1px solid var(--line)}
+.ag-segment-optie:first-child{border-left:0}
+.ag-segment button[role=radio]{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:0;background:transparent;color:var(--text);font:inherit;font-size:.86rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.ag-segment button[role=radio] svg{width:15px;height:15px}
+.ag-segment button[role=radio][aria-checked=true]{background:var(--accent);color:var(--accentText,#fff);border-radius:6px}
+.ag-segment button[role=radio]:disabled{opacity:.55;cursor:not-allowed}
+.ag-segment .hub-help-btn{width:22px;height:22px}
+
+/* Toestemmingen-editor */
+.ai-grants{display:grid;gap:14px;min-width:0}
+.ai-blok{display:grid;gap:8px;min-width:0}
+.ai-blok-kop{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 12px}
+.ai-tabel{width:100%;border-collapse:collapse;font-size:.85rem;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.ai-tabel th{text-align:left;font-weight:600;color:var(--muted);background:var(--surface);padding:6px 10px;font-size:.78rem}
+.ai-tabel td{padding:6px 10px;border-top:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere}
+.ai-tabel td .ag-badge{margin-left:6px}
+.ai-tabel-actie{text-align:right;white-space:nowrap;width:1%}
+.ai-grant-form{display:grid;grid-template-columns:minmax(170px,1.3fr) minmax(130px,1fr) auto;align-items:end;gap:8px 10px}
+.ai-veld{display:grid;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+.ai-veld :is(select,input){width:100%}
+.ai-veld-breed{grid-column:1/-2}
+.ai-veld-knop{grid-column:-2/-1;grid-row:1}
+.ai-veld-uitleg,.ai-always{grid-column:1/-1}
+.ai-always{display:flex;align-items:center;gap:6px;font-size:.84rem}
+.ai-stop{display:inline-grid;justify-items:end;gap:6px;max-width:100%}
+
+@media(max-width:720px){
+  .ag-rij-kop{flex-wrap:wrap;padding:4px 8px 8px 4px}
+  .ag-rij-acties{max-width:100%;width:100%;justify-content:flex-start;padding-left:50px}
+  .ag-rij-details{padding:4px 10px 14px}
+  .ag-tech{grid-template-columns:1fr}
+  .ag-tech dd{border-top:0;padding-top:0}
+  .ai-grant-form{grid-template-columns:1fr}
+  .ai-veld-breed,.ai-veld-knop{grid-column:auto;grid-row:auto}
+  .ag-tab-knop span:not(.ag-teller){font-size:.85rem}
+}
+
+/* «Підключити ШІ» (AiVerbinden.tsx): keuze van de AI, doel en duur, dan twee duidelijke wegen. */
+.ag-verbind{display:flex;flex-direction:column;gap:14px}
+.ag-verbind-klanten{display:flex;flex-wrap:wrap;gap:8px}
+.ag-verbind-klant{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:inherit;font:inherit;cursor:pointer}
+.ag-verbind-klant[aria-checked='true']{border-color:var(--accent,#1f5fbf);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#1f5fbf) 30%,transparent);font-weight:600}
+.ag-verbind-klant:focus-visible,.ag-verbind-weg:focus-visible{outline:2px solid var(--accent,#1f5fbf);outline-offset:2px}
+.ag-verbind-rij{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 20px}
+.ag-verbind-rij .ag-veld select{min-height:40px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:inherit;font:inherit;max-width:100%}
+.ag-verbind-wegen{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:12px}
+.ag-verbind-weg{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:4px 12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ag-verbind-weg>svg{grid-row:span 2;width:24px;height:24px;color:var(--accent,#1f5fbf)}
+.ag-verbind-weg small{color:var(--muted);line-height:1.4}
+.ag-verbind-weg.is-aan{border-color:var(--accent,#1f5fbf);background:color-mix(in srgb,var(--accent,#1f5fbf) 8%,var(--panel))}
+.ag-verbind-paneel{display:flex;flex-direction:column;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--surface)}
+.ag-verbind-stappen{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:10px;line-height:1.5}
+.ag-verbind-stappen li{display:flex;flex-direction:column;gap:6px}
+.ag-verbind-adres{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ag-verbind-adres code{flex:1 1 16rem;min-width:0;padding:8px 10px;border-radius:8px;background:var(--panel);word-break:break-all;font-size:13px}
+.ag-verbind-let{display:flex;gap:8px;align-items:flex-start;margin:0;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--ag-warn,#b45309) 12%,transparent);font-size:13px;line-height:1.45}
+.ag-verbind-snippet summary{cursor:pointer;font-weight:600;padding:4px 0}
+.ag-verbind-snippet pre{margin:8px 0;padding:10px;border-radius:8px;background:var(--surface);overflow:auto;max-width:100%;font-size:12px}
+.ag-deur-verbindingen{margin-top:8px}
+/* Ruimte van de verbinding (shared/ai-ruimte.ts): privé = kalm, technisch = de kleur van de technische band. */
+.ag-verbind-ruimte{display:flex;gap:8px;align-items:flex-start;margin:0;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--accent,#1f5fbf) 8%,transparent);font-size:13px;line-height:1.45}
+.ag-verbind-ruimte[data-ruimte-uitleg=technisch]{background:color-mix(in srgb,var(--tech-kleur,#b45309) 10%,transparent)}
+.ag-tech{display:flex;flex-direction:column;gap:16px}
+.ag-tech-kop{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
+.ag-tech-kop h1{margin:0;font-size:22px}
+.ag-tech-kop p{margin:0;color:var(--muted,#667);line-height:1.5}
+.ag-tech-regels{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.ag-tech-regels li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:var(--ag-r,12px);background:var(--surface);font-size:13px;line-height:1.45}
+.ag-tech-regels li svg{flex:none;margin-top:2px}
+@media(max-width:560px){.ag-verbind-weg{padding:12px}.ag-verbind-rij{flex-direction:column;align-items:stretch}.ag-verbind-rij .ag-veld,.ag-verbind-rij select{width:100%}}
+/* Keuze deur/connector: op een smal scherm twee volle rijen, tekst mag afbreken (niets buiten de kaart). */
+.ag-verbind .ag-segment button[role=radio]{min-height:40px;white-space:normal;text-align:left}
+@media(max-width:560px){.ag-verbind .ag-segment{display:grid;width:100%}.ag-verbind .ag-segment-optie{border-left:0;border-top:1px solid var(--line);padding-right:0}.ag-verbind .ag-segment-optie:first-child{border-top:0}.ag-verbind .ag-segment button[role=radio]{width:100%}}
+/* Дошка підключення ШІ: картки й панель на всю ширину рядка, вкладки як у браузері. */
+.ag-bord-wrap{max-width:1100px}
+.ag-bord{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;align-items:stretch}
+.ag-bord-kaart{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:148px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);text-align:left;cursor:pointer;font:inherit}
+.ag-bord-kaart:hover:not(:disabled){border-color:var(--accent);box-shadow:0 8px 24px color-mix(in srgb,var(--text) 6%,transparent)}
+.ag-bord-kaart.is-open{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--panel))}
+.ag-bord-kaart.is-uit,.ag-bord-kaart:disabled{cursor:not-allowed;opacity:.72}
+.ag-bord-kaart:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ag-bord-naam{font-size:1.15rem;font-weight:700}
+.ag-bord-sub{color:var(--muted);font-size:.85rem}
+.ag-bord-paneel{grid-column:1 / -1;display:grid;gap:12px;padding:12px 14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);min-width:0}
+.ag-bord-tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.ag-bord-tab{flex:0 0 auto;padding:8px 14px;border:1px solid transparent;border-bottom:0;border-radius:10px 10px 0 0;background:transparent;color:var(--muted);font:inherit;font-weight:650;cursor:pointer}
+.ag-bord-tab[aria-selected=true]{color:var(--text);background:var(--panel);border-color:var(--line);box-shadow:inset 0 -2px 0 var(--accent)}
+.ag-bord-tab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ag-bord-blad{display:grid;gap:10px;min-width:0}
+.ag-bord-blad p,.ag-bord-blad li{margin:0;line-height:1.5}
+.ag-bord-eerlijk{padding:10px 12px;border-radius:10px;background:var(--panel)}
+.ag-bord-url{min-width:0}
+.ag-bord-url code{display:block;overflow-wrap:anywhere;padding:8px 10px;border-radius:8px;background:var(--panel)}
+.ag-bord-groep{border:1px solid var(--line);border-radius:12px;padding:8px 12px 12px;display:grid;gap:8px;min-width:0}
+.ag-bord-groep legend{padding:0 6px;font-weight:700}
+.ag-bord-cap{display:flex;gap:10px;align-items:flex-start}
+.ag-bord-cap small{display:block;color:var(--muted);font-size:.8rem}
+.ag-site-regel{margin:0;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,var(--panel));font-weight:650}
+a.ag-knop{text-decoration:none}
+@media(max-width:640px){
+  .ag-bord{grid-template-columns:1fr}
+  .ag-bord-kaart{min-height:0}
+  .ag-bord-tab{padding:8px 10px}
+}
+
+/* «Доступ ШІ» (shared/ai-toegang.ts): перемикачі скоупів одного підключення. Світла, сучасна; вузький екран — стовпчиком. */
+.at{display:grid;gap:12px;min-width:0}
+.at-ondertitel{margin:0;color:var(--muted);font-size:.86rem;line-height:1.5;max-width:70ch}
+.at-leeg{margin:0;color:var(--muted)}
+.at-melding{margin:0;padding:8px 12px;border-radius:8px;font-size:.86rem;line-height:1.45}
+.at-fout{background:color-mix(in srgb,var(--ag-bad,#cf222e) 10%,transparent);color:var(--ag-bad,#cf222e)}
+.at-ok{background:color-mix(in srgb,var(--ag-ok,#1a7f37) 10%,transparent);color:var(--ag-ok,#1a7f37)}
+.at-groep h4{margin:0 0 6px;font-size:.92rem}
+.at-groep ul{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);overflow:hidden}
+.at-rij{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-top:1px solid var(--line)}
+.at-rij:first-child{border-top:0}
+.at-rij.is-beheer-uit{opacity:.75}
+.at-schakelaar{flex:0 0 auto;width:40px;height:24px;margin-top:2px;border-radius:99px;border:1px solid var(--line);background:var(--surface);cursor:pointer;position:relative;padding:0}
+.at-schakelaar .at-knop{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:left .15s,background .15s}
+.at-schakelaar.is-aan,.at-schakelaar[aria-checked=true]{background:color-mix(in srgb,var(--ag-ok,#1a7f37) 85%,transparent);border-color:transparent}
+.at-schakelaar[aria-checked=true] .at-knop{left:18px;background:var(--panel)}
+.at-schakelaar:disabled{cursor:not-allowed;opacity:.6}
+.at-schakelaar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.at-tekst{display:grid;gap:2px;min-width:0}
+.at-naam{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-weight:600;font-size:.9rem}
+.at-lijn{color:var(--muted);font-size:.82rem;line-height:1.45}
+.at-gevoelig{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:99px;background:color-mix(in srgb,var(--ag-warn,#9a6700) 14%,transparent);color:var(--ag-warn,#9a6700);font-size:.75rem;font-weight:700}
+.at-beheer{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font-size:.78rem}
+.at-bevest{border:1px solid var(--ag-warn,#9a6700);border-radius:var(--ag-r);padding:12px;background:var(--panel);display:grid;gap:8px}
+.at-bevest p{margin:0;font-size:.88rem;line-height:1.5;display:flex;gap:6px;align-items:flex-start}
+.at-bevest-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.at-voet{display:flex;flex-wrap:wrap;gap:8px}
+.at-knop-prim{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:0;background:var(--accent);color:var(--text-on-accent);font:inherit;font-weight:600;font-size:.88rem;cursor:pointer}
+.at-knop-prim:disabled{opacity:.6;cursor:wait}
+.at-knop-twee{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:.88rem;cursor:pointer}
+.at-knop-twee:disabled{opacity:.6}
+.at-beheer{border:1px dashed var(--line);border-radius:var(--ag-r);padding:12px;display:grid;gap:8px}
+.at-beheer h4{margin:0;display:flex;align-items:center;gap:6px;font-size:.9rem}
+.at-beheer-lijst{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.at-beheer-rij2{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.84rem}
+.at-beheer-groep-naam{color:var(--muted);font-size:.76rem}
+@media(max-width:560px){.at-rij{padding:10px}.at-voet .at-knop-prim,.at-voet .at-knop-twee{flex:1 1 100%;justify-content:center}}
+/* Aanbod «technisch profiel aanzetten» op mcp-agents#extension (ExtensieTechAanbod): knoppen naast elkaar, op 390px onder elkaar, 44px raakvlak. */
+.ag-extensie-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.ag-extensie-knoppen .ag-knop{min-height:44px;text-decoration:none}
+@media (max-width:480px){.ag-extensie-knoppen{flex-direction:column}.ag-extensie-knoppen .ag-knop{width:100%;white-space:normal}}
+
+/* ---- Hub «Підключення ШІ» (0.6, 19.10.2026): tab «Розширення браузера», matrix op het overzicht, «Способи підключення» ---- */
+.ag-ext{display:grid;gap:14px;min-width:0}
+.ag-ext-profiel{display:flex;gap:10px;align-items:flex-start}
+.ag-ext-profiel svg{flex:0 0 auto;width:20px;height:20px;color:var(--accent);margin-top:2px}
+.ag-ext-profiel p{margin:0;line-height:1.5;min-width:0}
+.ag-ext-sectie{display:grid;gap:10px;min-width:0}
+.ag-ext-sectie>h3{display:flex;align-items:center;gap:8px;margin:4px 0 0;font-size:1.05rem}
+.ag-ext-sectie>h3 svg{width:18px;height:18px}
+.ag-ext-uitleg{margin:0;color:var(--muted);line-height:1.5}
+.ag-ext-lijst{list-style:none;margin:0;padding:0;display:grid;gap:10px;min-width:0}
+.ag-ext-slot{min-width:0}
+.ag-ext-naam{margin:0 0 8px;font-size:.95rem;overflow-wrap:anywhere}
+.ag-ext-regel{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0;padding:12px;border:1px dashed var(--line);border-radius:var(--ag-r,10px)}
+.ag-ext-regel span{flex:1 1 240px;min-width:0;line-height:1.5}
+.ag-ext-regel .ag-knop{min-height:44px}
+.ext-toestemmingen{margin-top:12px;min-width:0}
+.ext-toestemmingen>h4{margin:0 0 8px;font-size:.95rem}
+.ag-ext [data-paneel],.ag-ext .ag-kaart{min-width:0;overflow-wrap:anywhere}
+.ag-bord-uitklap>summary{cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:600;min-height:44px}
+.ag-bord-uitklap[open]>summary{margin-bottom:10px}
+.ag-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.ag-matrix{min-width:0}
+.ag-matrix-legenda{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 10px;color:var(--muted);font-size:.85rem}
+.ag-matrix-legenda b{display:inline-block;min-width:1.2em;text-align:center;color:var(--text)}
+.ag-matrix-tabel{overflow-x:auto;max-width:100%;position:relative} /* 21.10: position:relative = bevattend blok voor de .ag-sr-spans (position:absolute) in de cellen; zonder dit ontsnapten ze aan de scrollcontainer en maakten .canonical-content 913 px breed op 768 (canonical-workspace scrolde zijwaarts) */
+.ag-matrix-tabel table{border-collapse:collapse;width:100%;font-size:.88rem}
+.ag-matrix-tabel th,.ag-matrix-tabel td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:center;vertical-align:middle}
+.ag-matrix-tabel thead th{font-weight:600;color:var(--muted);font-size:.8rem}
+.ag-matrix-tabel tbody th{text-align:left;font-weight:600;white-space:nowrap}
+.ag-matrix-tabel tbody th a{color:var(--text);text-decoration:none}
+.ag-matrix-tabel tbody th a:hover{text-decoration:underline}
+.ag-matrix-tabel tbody th small{display:block;font-weight:400;color:var(--muted);font-size:.76rem;white-space:normal}
+.ag-matrix .is-ja,.ag-matrix td.is-ja span[aria-hidden]{color:var(--ok,#15803d);font-weight:700}
+.ag-matrix .is-kan,.ag-matrix td.is-kan span[aria-hidden]{color:var(--accent)}
+.ag-matrix td.is-nooit span[aria-hidden]{color:var(--muted)}
+.ag-matrix-lijst{display:none;list-style:none;margin:0;padding:0;gap:8px}
+.ag-matrix-lijst li{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:3px;min-width:0}
+.ag-matrix-lijst li a{color:var(--text);text-decoration:none}
+.ag-matrix-lijst li small{color:var(--muted)}
+.ag-matrix-lijst li p{margin:0;font-size:.86rem;line-height:1.45;overflow-wrap:anywhere}
+.ag-matrix-lijst li p span{display:inline-block;min-width:1.2em;font-weight:700}
+@media(max-width:640px){.ag-matrix-tabel{display:none}.ag-matrix-lijst{display:grid}}
+/* Tabbladenrij: op de telefoon een scrollende rij binnen de pagina (nooit de hele pagina breder). */
+.ag{min-width:0;max-width:100%}
+.ag-tabs{max-width:100%;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+@media(max-width:414px){.ag-tab-knop{padding:9px 10px;min-height:44px}}
+/* Mobiel 21.10.2026: de tabrij zit in TabsRij (src/uitrol/TabsRij.tsx + .ut-tabs-wrap/.ut-tabs-pijl uit uitrol.css).
+   Breed scherm (> 700 px): tabbladen lopen om — geen scroll, alles zichtbaar. Telefoon: één scrollende rij BINNEN de pagina,
+   met vervaagde rand + pijl als hint (data-meer-links/-rechts); pijlen 44×44 (src/ontwerp/tabs-rij.css). */
+.ag-tabs-wrap{--ut-bg:var(--bg);--ut-line:var(--line);--ut-text:var(--text);min-width:0;max-width:100%;position:sticky;top:0;z-index:5;background:var(--bg)}
+/* 8.4: липка смуга якорів (.ag-tabs-wrap) і одна довга сторінка. Секція не ховається під смугою. */
+.ag-ankers{min-width:0}
+.ag-secties{display:grid;gap:22px}
+.ag-sectie,#extension-lokaal,#ruimte{scroll-margin-top:4.5rem}
+.ag-sectie[data-ag-lui='dicht']{min-height:18rem}
+.ag-lui-plaats{min-height:16rem}
+/* tabbladen krimpen nooit (het fundament zet min-width:0 op elke <a> in .canonical-content; dan schoven de labels op 390 over elkaar) */
+.ag-tabs>.ag-tab-knop{flex:none}
+@media (min-width:701px){.ag-tabs{flex-wrap:wrap;overflow-x:visible}}
+@media (max-width:700px){
+  .ag-tab-knop{min-height:var(--tik-hoogte)}
+}
+
+/* HUB-08: één wizard «Підключити ШІ» — keuze van de methode. */
+.ag-methoden{display:grid;gap:8px}
+.ag-methode{display:grid;gap:4px;padding:10px 12px;text-decoration:none;color:inherit}
+a.ag-methode:hover,a.ag-methode:focus-visible{border-color:var(--accent,#2563eb);outline:none}
+.ag-methode small{color:var(--muted,#6b7280)}
+.ag-methode summary{cursor:pointer}
+.ag-methode .hub-code{margin-top:8px}
+
+/* Audit 19.10 (U-03): muur «Доступ ШІ ще не увімкнено» (geen recht api-platform) — één kaart, geen tabbladen. */
+.ag-muur { max-width: 44rem; margin: 1rem auto; }
+.ag-muur h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+.ag-muur p { margin: 0 0 .6rem; line-height: 1.5; }
+
+/* «Зовнішні MCP» (src/agenten/TabExternMcp.tsx): de site als MCP-klant. Geen eigen stijltaal, alleen de
+   ontbrekende bouwstenen: kleine uitlegregels, een codeblok met het voorbeeld voor de eigenaar, en de
+   sublijst met de hulpmiddelen van één vreemde server. */
+.ag-meta{margin:2px 0 0;color:var(--muted);font-size:.86rem;line-height:1.45}
+.ag-code{margin:8px 0 0;padding:10px 12px;background:var(--panel-2,rgba(127,127,127,.08));border:1px solid var(--line);border-radius:var(--ag-r);overflow-x:auto;font-size:.86rem}
+.ag-stappen{margin:8px 0 0;padding-left:22px;display:grid;gap:6px;color:var(--muted);font-size:.9rem}
+.ag-sublijst{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:8px}
+.ag-subrij{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:var(--ag-r)}
+.ag-subrij[data-aan='false']{opacity:.6}
+.ag-subrij>div{min-width:0}
+.ag-subrij code{word-break:break-all}
+
+/* «Окремі простори» (src/agenten/RuimteScheiding.tsx, migratie 0082): de eenmalige keuze als drie kaarten, en de tabel met
+   de stand per dienst. Geen nieuwe stijltaal: dezelfde randen, radii en gedempte tekst als de rest van dit tabblad. */
+.ag-keuzes{display:grid;gap:12px;margin:12px 0 0;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr))}
+.ag-keuze{padding:12px 14px;border:1px solid var(--line);border-radius:var(--ag-r);display:grid;gap:8px;align-content:start}
+.ag-keuze h4{margin:0;font-size:1rem}
+.ag-keuze p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.5}
+.ag-uitleg{margin:8px 0 0;color:var(--muted);font-size:.88rem;line-height:1.5}
+.ag-fout{margin:10px 0 0;color:var(--gevaar,#b91c1c);font-size:.9rem}
+.ag-tabel{width:100%;margin:12px 0 0;border-collapse:collapse;font-size:.92rem}
+.ag-tabel th,.ag-tabel td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.ag-tabel th{color:var(--muted);font-weight:600;font-size:.86rem}
+.ag-tabel tr[data-stand='bevroren']{background:var(--panel-2,rgba(127,127,127,.08))}
+.ag-acties{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+
+/* «Колір агента» (20.10.2026): kleur per AI voor de markering in het tabblad, de badge en deze lijst. */
+.ag-kleur-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ag-kleur-rij { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.ag-kleur-wie { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+.ag-kleur-staal { width: 14px; height: 14px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
+.ag-kleur-keuzes { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.ag-kleur-knop { width: 20px; height: 20px; padding: 0; border: 1px solid rgba(0, 0, 0, .2); border-radius: 5px; cursor: pointer; }
+.ag-kleur-knop[aria-pressed="true"] { outline: 2px solid currentColor; outline-offset: 2px; }
+.ag-kleur-knop:disabled { cursor: default; opacity: .6; }
+.ag-kleur-terug { margin-left: 6px; }
+
+/* «Один ШІ — одна вкладка» (20.10.2026): ingangen op het overzicht en de plek van één agent. */
+.ag-agent-ingangen { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
+.ag-agent-ingangen > li { min-width: 0; display: grid; }
+.ag-agent-ingang { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 10px 12px; text-decoration: none; color: inherit; }
+.ag-agent-ingang b { min-width: 0; overflow-wrap: break-word; }
+.ag-agent-ingang small { margin-left: auto; opacity: .7; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.ag-agent-kop { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 10px; min-width: 0; }
+.ag-agent-kop > div { min-width: 0; }
+.ag-agent-kop h2 { margin: 0; font-size: 1.1rem; }
+.ag-agent-adres { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.ag-agent-adres code { min-width: 0; overflow-wrap: anywhere; }
+.ag-agent-ruimtes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 8px; margin: 6px 0; padding: 0; list-style: none; }
+.ag-agent-ruimtes > li { min-width: 0; display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line, #dce1e6); border-radius: 10px; }
+.ag-agent-ruimtes small { opacity: .85; }
+.ag-agent [data-agent-sectie] > details > summary { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 650; }
+
+/* 20.10.2026 — «Підключити <ШІ>» op de pagina van één agent: één grote knop, de ware stand, de levende ruimte. Alleen bestaande tokens. */
+.ag-verbind-agent { display: grid; gap: 8px; }
+.ag-verbind-knoppen { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ag-verbind-groot { min-height: 44px; padding: 8px 18px; font-size: .95rem; }
+.ag-verbind-knoppen .ag-knop { text-decoration: none; }
+.ag-verbind-knop-uitleg { margin: -4px 0 0; }
+.ag-verbind-vereist { display: flex; gap: 6px; align-items: flex-start; }
+.ag-verbind-grens { display: flex; gap: 6px; align-items: flex-start; }
+.ag-agent-verbindingen { display: grid; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.ag-agent-verbindingen h4 { margin: 0; font-size: .9rem; }
+.ag-agent-koppelingen > li.is-oud { border-left: 3px solid var(--ag-warn, var(--muted)); padding-left: 8px; }
+.ag-agent-ruimtes > li.is-aan { border-color: var(--accent); }
+.ag-agent-ruimtes > li.is-slapend { border-style: dashed; }
+.ag-agent-ruimtes > li.is-uit { opacity: .7; }
+.ag-agent-ruimtes > li b { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.ag-agent [data-agent-sectie='verbinding-soort'] > details > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; cursor: pointer; font-weight: 650; }
+.ag-agent [data-agent-sectie='verbinding-soort'] > details > summary small { margin-left: auto; font-weight: 500; }
+.v2b-stand.is-onbekend i { background: var(--muted); }
+@media (max-width: 480px) { .ag-verbind-knoppen { flex-direction: column; align-items: stretch; } .ag-verbind-knoppen .ag-knop { width: 100%; white-space: normal; } }
+@media (max-width: 700px) { .ag-verbind-knoppen .ag-knop { min-height: var(--tik-hoogte); } }
+.ag-agent-ingang-tekst { display: grid; gap: 2px; min-width: 0; }
+.ag-agent-ingang-tekst small { margin-left: 0; font-family: inherit; opacity: 1; }
+/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
+@media (max-width:700px){
+  /* «Усі конектори» (16 px), «Усі ШІ» (22 px), .ag-knop (30 px) */
+  .ag-link{min-height:var(--tik-hoogte)}
+  .ag-knop{min-height:var(--tik-hoogte)}
+}

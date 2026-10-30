@@ -1,0 +1,16 @@
+[Unit]
+Description=Mijn Ruimte: volledig archief maken (code, database, bestanden, systeem, geheimen versleuteld)
+Documentation=file:///srv/mijn-ruimte/current/deploy/HERSTEL.md
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mijn-ruimte-archief
+TimeoutStartSec=6h
+Nice=10
+IOSchedulingClass=idle
+# Schrijft alleen naar zijn eigen root-map (/var/lib/mijn-ruimte-archief: werkmap 0700 + uitgifte root:mijnruimte 0750) en mag in de
+# verzoekmap van de app alleen het verzoekbestand weghalen. Het resultaat is in zijn geheel met age versleuteld (publieke sleutel).
+ProtectSystem=strict
+ReadWritePaths=/var/lib/mijn-ruimte-archief /srv/data/uploads/mcp-archives /run/lock
+ProtectHome=yes
+PrivateTmp=yes

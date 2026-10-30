@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mijn Ruimte</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body class="zijpaneel">
+<main>
+  <!-- 0.8.0: compacte kop; de meeste ruimte gaat naar het werk (chat), status en geschiedenis klappen open -->
+  <header class="kop">
+    <span class="logo" aria-hidden="true"></span>
+    <div class="kop-tekst">
+      <h1>Mijn Ruimte</h1>
+      <p id="status-regel" class="status-regel" data-niveau="uit" role="status" aria-live="polite"></p>
+    </div>
+    <a id="beheer-link" class="pict-knop" href="https://mcp.tarasevych.com/agents#toegang" target="_blank" rel="noopener noreferrer" aria-label="Керування на сайті" data-nl-aria="Beheer op de site" title="Керування на сайті"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></a>
+  </header>
+  <div class="kop-info">
+    <span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+    <div><p id="account" class="account"></p><p id="profiel-tab" class="profiel" data-profiel="geen"></p></div>
+  </div>
+
+  <details class="paneel-blok" id="blok-toegang"><summary data-nl="Toegang en rechten">Доступ і дозволи</summary>
+  <div id="sloten" class="sloten"></div>
+  </details>
+  <p id="lokaal" class="zacht" hidden></p>
+  <p id="waarschuwing" class="waarschuwing" hidden></p>
+  <p id="aankondiging" class="vh" role="status" aria-live="polite"></p>
+
+  <div id="diagnostiek" class="diag" hidden></div>
+
+  <section aria-labelledby="kop-chat" class="chat" data-chat-ruimte="prive">
+    <h2 id="kop-chat" data-nl="AI voor u — bij dit tabblad">ШІ для вас — поруч із цією вкладкою</h2>
+    <p id="chat-voor" class="zacht"></p>
+    <ol id="chat-berichten" class="chat-berichten" aria-live="polite"></ol>
+    <form id="chat-form" class="chat-form">
+      <label for="chat-invoer" class="vh" data-nl="Uw vraag">Ваше питання</label>
+      <textarea id="chat-invoer" rows="3" maxlength="20000" placeholder="Запитайте про цю сторінку або попросіть щось зробити…" data-nl-placeholder="Vraag iets over deze pagina of laat iets doen…"></textarea>
+      <div class="rij">
+        <button type="submit" id="chat-verstuur" data-nl="Versturen">Надіслати</button>
+        <button type="button" id="chat-wissen" data-nl="Wissen">Очистити</button>
+      </div>
+    </form>
+    <p id="chat-stand" role="status" aria-live="polite" class="zacht"></p>
+  </section>
+
+  <details class="paneel-blok"><summary id="kop-tijdlijn" data-nl="Laatste opdrachten">Останні команди</summary>
+  <section aria-labelledby="kop-tijdlijn">
+    <p class="zacht" data-nl="Alleen tijd, soort, resultaat en bron — nooit de inhoud of parameters van een opdracht.">Лише час, тип, результат і джерело — ніколи вміст чи параметри команди.</p>
+    <div id="tijdlijnen"></div>
+  </section>
+  </details>
+
+  <details class="paneel-blok"><summary id="kop-ziet" data-nl="Wat de AI ziet">Що бачить ШІ</summary>
+  <section aria-labelledby="kop-ziet">
+    <p id="ziet-voor" class="zacht"></p>
+    <ul id="ziet" class="ziet"></ul>
+  </section>
+  </details>
+
+  <details class="paneel-blok"><summary id="kop-test" data-nl="Zelftest">Самоперевірка</summary>
+  <section aria-labelledby="kop-test">
+    <div class="rij">
+      <button type="button" id="test" data-nl="Test">Тест</button>
+      <button type="button" id="opties" data-nl="Instellingen">Налаштування</button>
+    </div>
+    <p id="test-uitkomst" role="status" aria-live="polite"></p>
+    <ul id="checks" class="checks"></ul>
+  </section>
+  </details>
+</main>
+<script src="ui.js"></script>
+<script src="sidepanel.js"></script>
+</body>
+</html>

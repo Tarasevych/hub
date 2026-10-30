@@ -1,0 +1,43 @@
+/* «Стан моїх служб» en de tabel «Сервер (для всіх) / Цей акаунт». Kleuren uit het thema (--panel, --line, --text, --muted). */
+.mdt-sectie{display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);min-width:0}
+.mdt-sectie>header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.mdt-sectie h3{display:flex;align-items:center;gap:8px;margin:0;font-size:1rem}
+.mdt-sectie h3 svg{width:18px;height:18px}
+.mdt-sectie>header button{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface,transparent);color:var(--text);font:inherit;cursor:pointer}
+.mdt-sectie>header button:disabled{opacity:.6;cursor:default}
+.mdt-sectie>header button svg{width:16px;height:16px}
+.mdt-uitleg,.mdt-voet{margin:0;color:var(--muted);font-size:.86rem;line-height:1.4}
+.mdt-fout{margin:0;color:var(--danger,#ef4444)}
+.mdt-draai{animation:mdt-draai 1s linear infinite;width:16px;height:16px;vertical-align:middle}
+@keyframes mdt-draai{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.mdt-draai{animation:none}}
+.mdt-wrap{min-width:0;overflow-x:auto}
+.mdt{width:100%;border-collapse:collapse;font-size:.9rem}
+.mdt th,.mdt td{padding:8px 10px;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+.mdt thead th{border-top:0;color:var(--muted);font-weight:600;font-size:.8rem}
+.mdt tbody th{font-weight:600;white-space:nowrap}
+.mdt td small{display:block;color:var(--muted);font-size:.75rem;margin-top:2px}
+.mdt-stand{display:inline-flex;align-items:center;gap:5px;font-weight:600}
+.mdt-stand svg{width:15px;height:15px;flex:none}
+.mdt-stand.is-ok{color:var(--adg-ok,#10b981)}
+.mdt-stand.is-let-op{color:var(--adg-warn,#d97706)}
+.mdt-stand.is-fout{color:var(--adg-err,#ef4444)}
+.mdt-stand.is-onbekend,.mdt-stand.is-nooit{color:var(--muted)}
+.mdt-advies{margin:4px 0 0;font-size:.8rem;line-height:1.35;color:var(--text)}
+.mdt-conclusies{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:4px;font-size:.85rem}
+.mdt-conclusies li{padding:6px 10px;border-radius:8px;border:1px solid var(--line)}
+.mdt-conclusies li.is-server,.mdt-conclusies li.is-beide{border-color:var(--adg-err,#ef4444)}
+.mdt-conclusies li.is-account{border-color:var(--adg-warn,#d97706)}
+/* Telefoon (≤ 560px): elke rij wordt een kaart, kolomkoppen als label; geen horizontaal scrollen. */
+@media (max-width:560px){
+  .mdt thead{display:none}
+  .mdt,.mdt tbody,.mdt tr,.mdt th,.mdt td{display:block;width:100%}
+  .mdt tr{border-top:1px solid var(--line);padding:6px 0}
+  .mdt th,.mdt td{border-top:0;padding:4px 2px}
+  .mdt td::before{content:attr(data-label);display:block;color:var(--muted);font-size:.75rem}
+  .mdt tbody th{white-space:normal}
+}
+.mdt-hist summary{cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.85rem}
+.mdt-hist summary svg{width:15px;height:15px}
+.mdt-hist ul{margin:6px 0 0;padding-left:18px;display:grid;gap:3px;font-size:.82rem}
+.mdt-hist small{color:var(--muted)}

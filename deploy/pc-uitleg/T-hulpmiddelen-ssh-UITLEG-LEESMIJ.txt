@@ -1,0 +1,73 @@
+UITLEG-LEESMIJ.txt - T:\mijn-ruimte\hulpmiddelen\ssh\
+(Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
+У цьому файлі НЕМАЄ жодних секретів. / Dit bestand bevat GEEN geheimen.
+
+==============================================================================
+УКРАЇНСЬКА
+==============================================================================
+
+ЩО ЦЕ
+- mijn-ruimte-webserver - СЕКРЕТНИЙ SSH-ключ (без пароля) для входу на сервер (VM,
+  адреса 10.77.0.10) як користувач "beheer". "beheer" може виконувати команди адміністратора.
+- mijn-ruimte-webserver.pub - публічна частина. Не секрет; вона записана на сервері.
+
+НАВІЩО
+- Цим ключем PowerShell-скрипти (наприклад scripts\reservekopie-ophalen.ps1) заходять
+  на сервер, оновлюють програму і забирають зашифровані резервні копії.
+
+ЧИ ПОТРІБНО?  ТАК, поки ви керуєте сервером з цього ПК.
+Запасна копія: R:\mijn-ruimte-reservekopie\sleutels\mijn-ruimte-webserver.
+
+ЯК ЗБЕРІГАТИ БЕЗПЕЧНО
+- Права доступу: тільки користувач t (перевірено 03.10.2026). Не змінюйте їх:
+  програма ssh відмовиться працювати, якщо ключ можуть читати інші.
+- НІКОЛИ не надсилайте ключ поштою/в месенджері, не кладіть у хмару чи GitHub.
+- Хто має цей файл, той може керувати сервером.
+
+ЯКЩО ВТРАЧЕНО
+- Візьміть копію з R:\...\sleutels\ (скопіюйте через PowerShell і знову обмежте права:
+  icacls <файл> /inheritance:r /grant:r "T\t:(F)").
+- Якщо втрачено обидві копії: увійдіть через консоль VM у Hyper-V, створіть новий ключ
+  і додайте його публічну частину в /home/beheer/.ssh/authorized_keys.
+ЯКЩО ВИКРАДЕНО
+- Негайно створіть новий ключ, замініть публічну частину в authorized_keys на сервері
+  і видаліть стару. Перевірте журнал входів (journalctl -u ssh).
+
+ПРИ ВІДНОВЛЕННІ
+- Новий сервер отримує цей самий публічний ключ (або новий), щоб PowerShell міг
+  передати туди розшифровані дані. Див. HERSTEL.md.
+
+==============================================================================
+NEDERLANDS
+==============================================================================
+
+WAT IS DIT
+- mijn-ruimte-webserver - GEHEIME SSH-sleutel (zonder wachtwoord) om op de server (VM,
+  adres 10.77.0.10) in te loggen als "beheer". "beheer" mag beheerdersopdrachten uitvoeren.
+- mijn-ruimte-webserver.pub - publieke helft. Niet geheim; staat op de server.
+
+WAAROM
+- Hiermee loggen de PowerShell-scripts (bijv. scripts\reservekopie-ophalen.ps1) in op de
+  server om bij te werken en de versleutelde back-ups op te halen.
+
+NODIG?  JA, zolang je de server vanaf deze pc beheert.
+Reservekopie: R:\mijn-ruimte-reservekopie\sleutels\mijn-ruimte-webserver.
+
+VEILIG BEWAREN
+- Rechten: alleen gebruiker t (gecontroleerd op 03-10-2026). Niet wijzigen: ssh weigert
+  een sleutel die anderen kunnen lezen.
+- NOOIT mailen, via chat sturen, in de cloud of GitHub zetten.
+- Wie dit bestand heeft, kan de server beheren.
+
+KWIJT
+- Kopieer de reservekopie uit R:\...\sleutels\ (met PowerShell) en beperk opnieuw de rechten:
+  icacls <bestand> /inheritance:r /grant:r "T\t:(F)".
+- Beide kopieen kwijt: log in via de VM-console in Hyper-V, maak een nieuwe sleutel en zet de
+  publieke helft in /home/beheer/.ssh/authorized_keys.
+GESTOLEN
+- Direct een nieuwe sleutel maken, de publieke helft in authorized_keys op de server vervangen
+  en de oude verwijderen. Controleer de inlogs (journalctl -u ssh).
+
+BIJ HERSTEL
+- De nieuwe server krijgt dezelfde (of een nieuwe) publieke sleutel, zodat PowerShell de
+  ontsleutelde gegevens erheen kan sturen. Zie HERSTEL.md.

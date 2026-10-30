@@ -1,0 +1,20 @@
+/* Donkere mailweergave (28.10.2026) — melding eigenaar: «Припини рендерити листи на білому тлі під час темної теми!».
+   «Темний вигляд»: geen wit papier meer; het kader krijgt het systeemoppervlak en de brief zelf is omgekleurd (shared/mail-donker.ts).
+   «Оригінал»: het oude lichte papier (mail-mobiel-passend.css) blijft. Licht thema: niets verandert. */
+:where(html.theme-dark,html.theme-plum-dark) .mail-message-html-body[data-mail-donker='aan'] .mail-message-html-paper{background:var(--panel);color:var(--text);color-scheme:dark;box-shadow:0 0 0 1px var(--line)}
+.mail-message-html-body[data-mail-donker='aan'] iframe{background:transparent;color-scheme:dark}
+
+/* Wissel «Оригінал / Темний вигляд»: klein, rechts, nooit over de brief heen. */
+.mail-donker-wissel{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;margin:0 0 8px;min-width:0}
+.mail-donker-wissel>button{min-height:32px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:12.5px;font-weight:650;cursor:pointer;touch-action:manipulation}
+.mail-donker-wissel>button[aria-pressed='true']{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--panel));color:var(--text)}
+.mail-donker-wissel>button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mail-donker-melding{flex:1 1 220px;min-width:0;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+@media (pointer:coarse){.mail-donker-wissel>button{min-height:44px}}
+
+/* Veiligheidsstrook boven de brief: de uitleg («Показані — завантажує ваш сервер, не браузер.») werd afgekapt en de knoppen
+   schoven eroverheen. Tekst mag altijd afbreken; de strook groeit mee en staat los van de werkbalk erboven. */
+.mail-beelden-strook{position:relative;z-index:0;clear:both;min-width:0;max-width:100%;box-sizing:border-box}
+.mail-beelden-strook>span{white-space:normal;overflow:visible}
+.mail-beelden-strook>span small{display:block;white-space:normal;overflow-wrap:anywhere;text-overflow:clip;overflow:visible;line-height:1.35}
+.mail-beelden-strook>button{flex:0 1 auto;max-width:100%;white-space:normal;text-align:center}

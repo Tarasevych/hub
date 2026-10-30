@@ -1,0 +1,12 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Стенд: перетягування</title>
+<link rel="stylesheet" href="stand.css"><style>
+:root{color-scheme:dark;--accent:#3b82f6;--kaart:#1f2430;--tekst:#e7e9ee}body{margin:0;background:#12151c;color:#e7e9ee;font:14px system-ui}
+.st{display:flex;min-height:100dvh}.st-menu{width:150px;flex:none;border-right:1px solid #333;padding:8px}.st-menu [data-menu-lijst]{display:flex;flex-direction:column;gap:4px;min-height:200px}
+.st-menu-item{padding:8px;border-radius:8px;background:#232838;font-size:13px}.st-canvas{position:relative;flex:1;min-height:900px}
+.st-widget{position:absolute;left:20px;top:150px;width:min(560px,calc(100% - 40px));background:#1a1f2b;border-radius:12px;padding:8px}
+.st-blok-kop{font-size:12px;opacity:.7;padding:2px 4px}.st-blok-inhoud{display:flex;flex-wrap:wrap;gap:8px;min-height:80px;padding:6px;border-radius:10px}
+.st-blok-inhoud[data-modus=kolom]{flex-direction:column}.st-blok .st-blok{border:1px solid #39415a;border-radius:10px;padding:4px;min-width:110px}
+.st-onderdeel{width:88px;height:76px;border:0;border-radius:10px;background:#2a3042;color:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:12px system-ui}
+.st-los{position:absolute}.st-icoon{width:28px;height:28px;border-radius:8px;background:#4b5675}.st-melding{position:fixed;right:10px;bottom:10px;padding:6px 10px;background:#232838;border-radius:8px}
+@media (max-width:700px){.st-menu{width:96px}.st-onderdeel{width:72px;height:66px}}
+</style></head><body><div id="app"></div><script src="stand.js"></script></body></html>

@@ -1,0 +1,56 @@
+/* Het ene merkcomponent (src/merk/Merk.tsx). Kleuren komen uit het register en staan dus inline of in --merk-kleur;
+   hier staat alleen de vorm, zodat elk logo op de hele site dezelfde maatvoering en uitlijning heeft. */
+.merk { flex: none; display: block; }
+.merk-vlak { overflow: visible; }
+
+/* DE ENE regel voor de kleur van een gliefje (merk-register.ts → merkKleuren): Merk.tsx zet per logo
+   --merk-vul-d: var(--merk-in-donker) <kleur in het donker>  en  --merk-vul-l: var(--merk-in-licht) <kleur in het licht>.
+   «Spatie-schakelaar»: --merk-in-donker is LEEG in het donker en ongeldig (initial) in het licht, en omgekeerd — zo kiest
+   var(--merk-vul-d, var(--merk-vul-l, merkkleur)) vanzelf de kleur van de modus van de EIGEN omgeving (ook een licht venster
+   in een donkere pagina). Monochrome merken worden zo var(--text), gekleurde houden hun toon bij ≥ 3:1. */
+:root, .theme-light, .theme-plum-light { --merk-in-licht: ; --merk-in-donker: initial; }
+.theme-dark, .theme-plum-dark { --merk-in-donker: ; --merk-in-licht: initial; }
+
+/* Bijna zwart merkvlak (Grok, Cursor …) in het donker: randje in de lijnkleur, zodat de tegel niet wegvalt. */
+.merk .merk-rand-donker { stroke: transparent; stroke-width: 1; }
+:is(.theme-dark, .theme-plum-dark) .merk .merk-rand-donker { stroke: var(--line); }
+
+/* Tegel zonder eigen merkvlak: zachte tint van de merkkleur, zodat een licht logo ook op een lichte pagina leesbaar blijft. */
+.merk .merk-tint {
+  fill: color-mix(in srgb, var(--merk-kleur, currentColor) 12%, var(--panel, #fff));
+  stroke: color-mix(in srgb, var(--merk-kleur, currentColor) 22%, transparent);
+  stroke-width: 1;
+}
+
+/* Monogram: merk zonder gliefje (en de korte tijd voordat de luie tabel binnen is). */
+span.merk-mono {
+  display: grid;
+  place-items: center;
+  /* De letters in de tekstkleur (≥ 4,5:1 op de tint in alle 26 paletten); de kleurtoon zit alleen in de tint. Was de tint zelf
+     als tekstkleur: 1,5–2,2:1 in het donker («RA», «S2», «IS» op admin-mappen). */
+  color: var(--text);
+  background: color-mix(in srgb, var(--merk-kleur, currentColor) 12%, var(--panel, #fff));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--merk-kleur, currentColor) 22%, transparent);
+  font-weight: 800;
+  letter-spacing: .02em;
+  line-height: 1;
+  border-radius: 28%;
+}
+/* Monogram op de plaats van een los gliefje (sessiepagina, hub): de letters moeten in het kleine vakje passen. */
+span.merk-gliefje.merk-mono { font-size: .62em; box-shadow: none; background: none; }
+
+/* Eigen logo van de beheerder (officieel bestand, src/merk/merk-register.ts → eigenMerk): op een neutraal vlak, nooit vervormd. */
+span.merk-eigen { display: grid; place-items: center; overflow: hidden; background: var(--panel, #fff); box-shadow: inset 0 0 0 1px var(--line); border-radius: 28%; }
+span.merk-eigen > img { width: 78%; height: 78%; object-fit: contain; display: block; }
+span.merk-gliefje.merk-eigen { background: none; box-shadow: none; }
+span.merk-gliefje.merk-eigen > img { width: 100%; height: 100%; }
+
+/* Officieel logo (ingebouwd, src/merk/officieel) of uit de merkendatabase van de server (app.merk_beeld): het bestand van het merk
+   zelf, nooit vervormd, op een vaste LICHTE plaat — zo zijn merklogo's ontworpen, ook in het donkere thema; een rand in de
+   lijnkleur houdt de tegel zichtbaar op een licht paneel. Zelfde maat en ronding als de andere tegels: geen sprong bij het wisselen. */
+span.merk-beeld { display: grid; place-items: center; overflow: hidden; border-radius: 28%; }
+span.merk-beeld.merk-plaat { background: #ffffff; box-shadow: inset 0 0 0 1px var(--line); }
+span.merk-beeld > img { width: 78%; height: 78%; object-fit: contain; display: block; }
+span.merk-gliefje.merk-beeld:not(.merk-plaat) { background: none; box-shadow: none; }
+span.merk-gliefje.merk-beeld:not(.merk-plaat) > img { width: 100%; height: 100%; }
+span.merk-gliefje.merk-beeld.merk-plaat > img { width: 86%; height: 86%; }

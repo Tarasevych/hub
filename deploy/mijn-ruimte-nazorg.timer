@@ -1,0 +1,10 @@
+[Unit]
+Description=Mijn Ruimte: elke minuut nazorg na een uitrol
+
+[Timer]
+OnBootSec=60s
+OnUnitActiveSec=60s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

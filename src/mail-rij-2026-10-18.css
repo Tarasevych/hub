@@ -1,0 +1,153 @@
+/* Аудит пошти 18.10.2026 (виконавець M1) — рядок листа: «Громіздкий», непрочитане, контраст прочитаних, фокус з клавіатури.
+   Систему блоків/профілів щільності не змінено: сітка «Громіздкого» бере колонки з src/mail-ruim-raster.ts (порядок блоків
+   з редактора), решта — лише стилі. Перевіряють: tests/eenheid/mail-rij-2026-10-18.test.ts і harness /tmp/h-M1. */
+
+/* ---------------------------------------------------------------- 1. «Громіздкий»: однакова сітка для всіх рядків (> 720 px) */
+@media (min-width:721px){
+  html body .google-mail-workspace[data-density-mode='bulky']{
+    --mail-bulky-avatar:clamp(36px,var(--mail-density-avatar-size,40px),44px);
+    /* відправник: частка ширини списку з межами — коротке ім'я не розтягує колонку, довге не забирає рядок */
+    --mail-bulky-sender:clamp(8.5rem,24%,max(8.5rem,var(--mail-density-sender-width,260px)));
+    --mail-bulky-date:7rem;
+    --mail-bulky-gap:max(16px,var(--mail-density-gap,10px));
+  }
+  html body .google-mail-workspace[data-density-mode='bulky'] .google-mail-row.mail-row-semantic-order .mail-row-block-stream{
+    display:grid;grid-template-columns:var(--mail-bulky-cols,var(--mail-bulky-avatar) minmax(0,var(--mail-bulky-sender)) minmax(0,1fr) var(--mail-bulky-date));
+    grid-auto-rows:auto;column-gap:var(--mail-bulky-gap);row-gap:3px;align-items:center;
+  }
+  html body .google-mail-workspace[data-density-mode='bulky'] .google-mail-row.mail-row-semantic-order .mail-row-block-stream>.mail-row-block{
+    flex:none;min-width:0;max-width:100%;margin:0;order:0;
+  }
+  html body .google-mail-workspace[data-density-mode='bulky'] .mail-row-block-stream>[data-mail-density-block='avatar']{
+    grid-column:var(--mail-bulky-c-avatar,1);grid-row:var(--mail-bulky-span,1);align-self:center;justify-self:center;margin:0;
+  }
+  html body .google-mail-workspace[data-density-mode='bulky'] .mail-row-block-stream>[data-mail-density-block='sender']{
+    grid-column:var(--mail-bulky-c-sender,2);grid-row:var(--mail-bulky-span,1);align-self:center;overflow:hidden;
+  }
+  html body .google-mail-workspace[data-density-mode='bulky'] .mail-row-block-stream>[data-mail-density-block='sender'] .mail-row-sender-copy{min-width:0;max-width:100%}
+  html body .google-mail-workspace[data-density-mode='bulky'] .mail-row-block-stream>[data-mail-density-block='subject']{
+    grid-column:var(--mail-bulky-c-subject,3);grid-row:var(--mail-bulky-r-subject,1);align-self:end;overflow:hidden;
+  }
+  html body .google-mail-workspace[data-density-mode='bulky'] .mail-row-block-stream>[data-mail-density-block='snippet']{
+    grid-column:var(--mail-bulky-c-snippet,3);grid-row:var(--mail-bulky-r-snippet,2);align-self:start;overflow:hidden;
+    margin-inline-start:0!important;flex-basis:auto;
+  }
+  html body .google-mail-workspace[data-density-mode='bulky'] .mail-row-block-stream>[data-mail-density-block='date']{
+    grid-column:var(--mail-bulky-c-date,4);grid-row:var(--mail-bulky-span,1);align-self:center;justify-self:end;
+    position:static;width:auto;text-align:right;
+  }
+  html body .google-mail-workspace[data-density-mode='bulky'] .mail-row-block-stream>[data-mail-density-block='attachments']{
+    grid-column:var(--mail-bulky-c-attach,3 / -1);grid-row:var(--mail-bulky-r-attach,3);margin-top:4px;
+  }
+}
+
+/* «Громіздкий»: текст помітно більший за «Звичайний», аватар помітний, але не домінує (усі ширини) */
+html body .google-mail-workspace[data-density-mode='bulky'] .google-mail-row .mail-row-block-stream .mail-row-sender-copy>strong{font-size:max(var(--mail-density-sender-name-size,15.5px),15.5px);line-height:1.3}
+html body .google-mail-workspace[data-density-mode='bulky'] .google-mail-row .mail-row-block-stream .mail-row-sender-copy>small{font-size:max(var(--mail-density-sender-email-size,12.5px),12.5px)}
+html body .google-mail-workspace[data-density-mode='bulky'] .google-mail-row .mail-row-block-stream .mail-row-subject-block>strong{font-size:max(var(--mail-density-subject-size,16px),16px);line-height:1.3}
+html body .google-mail-workspace[data-density-mode='bulky'] .google-mail-row .mail-row-block-stream .mail-row-snippet-block>small{font-size:max(var(--mail-density-snippet-size,14.5px),14.5px);line-height:1.35}
+html body .google-mail-workspace[data-density-mode='bulky'] .google-mail-row .mail-row-block-stream .mail-row-date-block time{font-size:max(var(--mail-density-date-size,13.5px),13.5px)}
+html body .google-mail-workspace[data-density-mode='bulky'] .mail-row-block-stream .mail-row-avatar{
+  width:clamp(36px,var(--mail-density-avatar-size,40px),44px);height:clamp(36px,var(--mail-density-avatar-size,40px),44px);
+  font-size:calc(clamp(36px,var(--mail-density-avatar-size,40px),44px) * .4);
+}
+
+/* ---------------------------------------------------------------- 2. Непрочитане: фон за темою, лівий маркер, крапка справа */
+/* Світла тема (кольорова й фіолетова палітри): легкий відтінок акценту — 3 % в OKLab, світлота майже панелі (темніший відтінок
+   злився б із фоном прочитаних, бо той сам має відтінок палітри). «Графіт» і «Чиста» світлі лишаються білими: їхній акцент
+   майже безбарвний, тож відтінок не додав би кольору, а лише зменшив би різницю з прочитаними (тест показує ΔE).
+   Темні теми (у т. ч. кольорові, чисті й фіолетова): помітно інший відтінок — 12 % акценту на панелі.
+   Власний колір «непрочитаних» з налаштувань (data-mail-unread-custom) має перевагу. Значення перевіряє тест для всіх палітр. */
+.google-mail-workspace:not([data-mail-unread-custom='true']){--mail-unread-surface:var(--panel)}
+html.palet-kleur .google-mail-workspace:not([data-mail-unread-custom='true']),
+html.palet-violet .google-mail-workspace:not([data-mail-unread-custom='true']){--mail-unread-surface:color-mix(in oklab,var(--accent) 3%,var(--panel))}
+.canonical-chrome.theme-dark .google-mail-workspace:not([data-mail-unread-custom='true']),
+.canonical-chrome.theme-plum-dark .google-mail-workspace:not([data-mail-unread-custom='true']){--mail-unread-surface:color-mix(in srgb,var(--accent) 12%,var(--panel))}
+
+/* Крапка справа по центру висоти рядка — у зоні, де при наведенні з'являються кнопки дій. Кнопки (z-index 5–9) лягають
+   поверх, крапка не зсувається й не ховається розкладкою; коли курсор відходить — знову видна. */
+.google-mail-row{--mail-row-unread-dot-zone:28px}
+.google-mail-row>.mail-row-unread-dot{
+  position:absolute;z-index:3;top:50%;right:calc(var(--mail-row-unread-dot-zone) / 2 - 4px);width:8px;height:8px;margin-top:-4px;
+  border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--mail-unread-surface,var(--panel)) 80%,transparent);
+  pointer-events:none;
+}
+/* місце для крапки (однакове в усіх рядках — інакше колонки прочитаних і непрочитаних розійшлися б), щоб вона не лягала на дату */
+html body .google-mail-workspace .google-mail-row.mail-row-semantic-order .mail-row-block-stream{padding-right:max(var(--mail-row-unread-dot-zone),44px)}
+html body .google-mail-workspace .google-mail-row.mail-row-minimum{padding-right:var(--mail-row-unread-dot-zone)}
+.google-mail-row.unread .mail-row-hover-actions{z-index:9}
+/* Телефон: кнопка «⋮» видима завжди (наведення немає). У мінімальному рядку вона стоїть по центру висоти справа — крапка стоїть
+   ліворуч від неї (між датою і «⋮»), щоб не ховатися під нею назавжди; місце однакове в усіх рядках. */
+@media (max-width:720px){
+  html body .google-mail-workspace .google-mail-row.mail-row-minimum{padding-right:60px!important}
+  html body .google-mail-workspace .google-mail-row.mail-row-minimum>.mail-row-unread-dot{right:44px}
+}
+
+/* ---------------------------------------------------------------- 3. Контраст другорядного тексту в рядках */
+/* Було: color-mix(muted 88 %, faint) у прочитаних — у палітрах «Графіт» і «Фіолетова» світлих нижче 4.5:1 до фону прочитаних
+   (3.9 і 4.3). Тепер трохи темніше (до кольору тексту), той самий токен --muted: ≥ 4.5:1 у всіх палітрах (тест). */
+.google-mail-workspace{--mail-row-secondary:color-mix(in srgb,var(--muted) 80%,var(--text))}
+.google-mail-row.read .mail-row-sender small,.google-mail-row.read .mail-row-copy small,.google-mail-row.read .mail-row-right-meta time,
+.google-mail-workspace .google-mail-row.read .mail-row-snippet-block>small,.google-mail-workspace .google-mail-row .mail-row-snippet-block>small,
+.google-mail-workspace .google-mail-row.read .mail-row-date-block time,.google-mail-workspace .google-mail-row.read .mail-row-sender-copy>small,
+.google-mail-workspace .mail-row-minimum .mail-minimum-snippet,.google-mail-workspace .mail-row-minimum.read .mail-minimum-date{color:var(--mail-row-secondary)}
+
+/* ---------------------------------------------------------------- 4. Видимий фокус з клавіатури — лише там, де його не було */
+/* 4а. Кнопки швидких дій у рядку листа та свайп-кнопки, кнопки мінімального рядка */
+html .mail-row-hover-actions>button:focus-visible,html .mail-row-actions-overflow>.mail-row-actions-more:focus-visible,
+html .mail-row-swipe-actions>button:focus-visible,html .mail-minimum-paperclip:focus-visible,html .mail-minimum-select:focus-visible,
+html .mail-minimum-star:focus-visible,html .mail-minimum-attachment-collapse:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* 4б. Правила, які прибирали outline на :focus-visible без власного кільця (знайдено скануванням CSS; перелік звіряє тест) */
+html :is(
+  .google-mail-reader-more>summary:focus-visible,
+  .google-mail-reader>header .mail-reader-icon-action:focus-visible,
+  .mail-action-undo>button:focus-visible,
+  .mail-advanced-search>header>button:focus-visible,
+  .mail-category-load-more:focus-visible,
+  .mail-compose-dropdown-menu button:focus-visible,
+  .mail-compose-more-menu>button:focus-visible,
+  .mail-condition-row:focus-visible,
+  .mail-date-month-grid>button:focus-visible,
+  .mail-date-year-track>button:focus-visible,
+  .mail-label-more:focus-visible,
+  .mail-live-search>section>button:focus-visible,
+  .mail-minimized-actions button:focus-visible,
+  .mail-minimized-entry-close:focus-visible,
+  .mail-minimized-previews>button:focus-visible,
+  .mail-modern-date-field:focus-visible:not(:disabled),
+  .mail-pdf-controls button:focus-visible,
+  .mail-period-four>button:focus-visible:not(:disabled),
+  .mail-period-quick>button:focus-visible,
+  .mail-period-reset:focus-visible,
+  .mail-quick-settings-header>button:focus-visible,
+  .mail-reader-overflow-edit-entry:focus-visible,
+  .mail-reader-search-nav button:focus-visible,
+  .mail-screen-keyboard-controls>button:focus-visible,
+  .mail-screen-keyboard-row>button:focus-visible,
+  .mail-search-chip-clear-all:focus-visible,
+  .mail-search-chip-collapse:focus-visible,
+  .mail-search-file-groups button:focus-visible,
+  .mail-search-filter-popover>header>button:focus-visible,
+  .mail-search-list button:focus-visible,
+  .mail-search-status>button:focus-visible,
+  .mail-search-trigger-row>button:focus-visible,
+  .mail-selection-action-menu>div>button:focus-visible,
+  .mail-selection-action-menu>summary:focus-visible,
+  .mail-selection-actions>button:focus-visible,
+  .mail-selection-clear:focus-visible,
+  .mail-selection-picker>summary:focus-visible,
+  .mail-selection-popover button:focus-visible,
+  .mail-settings-scaffold nav a:focus-visible,
+  .mail-sidebar-label-main:focus-visible,
+  .mail-sidebar-section-head .mail-sidebar-label-toggle:focus-visible,
+  .mail-snooze-custom-toggle:focus-visible,
+  .mail-snooze-presets button:focus-visible,
+  .mail-thread-toolbar button.mail-thread-toggle-all:focus-visible,
+  .mail-viewer-overflow-menu>a:focus-visible,
+  .mail-viewer-overflow-menu>button:focus-visible
+){outline:2px solid var(--accent);outline-offset:2px}
+/* 4в. Поля з outline:none: кільце на контейнері, коли фокус усередині */
+html .mail-search-inline-input:focus-within,html .mail-new-message-field:focus-within,html .mail-reader-new-label:focus-within{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+html .mail-compose-canvas:focus-within{outline:2px solid color-mix(in srgb,var(--accent) 70%,transparent);outline-offset:-2px}
+
+@media (prefers-reduced-motion:reduce){.google-mail-row>.mail-row-unread-dot{transition:none}}

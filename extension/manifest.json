@@ -1,0 +1,89 @@
+{
+  "manifest_version": 3,
+  "name": "Mijn Ruimte",
+  "version": "0.8.0",
+  "description": "Mijn Ruimte: uw AI werkt alleen op uw eigen diensten (of, met technisch profiel, beheerpagina's) die u op de site opent.",
+  "minimum_chrome_version": "116",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzcZnxA1QZm6Y5DXSOiWvNTIy+FsNKxIQEQ/lirLjWnKAYTfuQCCnBxNqLihLeu5+mKLc9CQoN4+si2WceYzeSpEUpJD75+abVEgqg3runJ6O8XFko+cWmmDpVpSQin4HBylp0o50SUoi14u75Y5U4JW6v681Cr4lxMpyRE6qO1Msx6pAyJo/1ayOuZvYf5jq5Ge+2iE2Igt9R8EoaYsaGBZwhr7bYLJHlmarQe//Z4XQ2jU/XsPghhf944i4n4MEd2GEM2dWDwPg/CZIM5dj8JO7Vu4FlGYFfC2BzDf7N2Ia/Sfp8NovUZ11gVrvy181tXirtPVg/qey5EqrFed/xwIDAQAB",
+  "permissions": [
+    "storage",
+    "alarms",
+    "scripting",
+    "activeTab",
+    "sidePanel",
+    "webRequest",
+    "debugger"
+  ],
+  "optional_permissions": [
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "https://*.tarasevych.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.tarasevych.com/*"
+      ],
+      "js": [
+        "collector.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://*.tarasevych.com/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
+      "run_at": "document_idle",
+      "world": "ISOLATED",
+      "all_frames": false
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://*.tarasevych.com/*"
+    ]
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "shared.js",
+        "guide.js",
+        "markering.js",
+        "markering-agenten.js",
+        "merk-agenten.js"
+      ],
+      "matches": [
+        "https://*.tarasevych.com/*"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'"
+  },
+  "action": {
+    "default_title": "Mijn Ruimte",
+    "default_popup": "popup.html"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -1,0 +1,281 @@
+/* Каталог інтеграцій (admin /mappen). Kleuren komen uit de tokens van de site; geen eigen thema. */
+.il{--il-ok:var(--ok);--il-ok-bg:var(--ok-zacht);--il-warn:var(--warn);--il-warn-bg:var(--warn-zacht);--il-soon:var(--muted,#667);--il-soon-bg:color-mix(in srgb,var(--muted,#667) 11%,var(--panel,#fff));display:grid;gap:16px;min-width:0}
+.theme-dark .il{--il-ok:var(--ok);--il-warn:var(--warn)}
+.il *{box-sizing:border-box}
+.il svg{width:1em;height:1em;flex:none}
+.il-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.il-hero{display:flex;flex-wrap:wrap;gap:18px 28px;align-items:flex-end;justify-content:space-between;padding:22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,var(--accent-soft),var(--panel) 62%)}
+.il-hero>div{min-width:min(100%,320px);flex:1 1 360px}
+.il-over{color:var(--accent);font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.il-hero h2{margin:4px 0 6px;font-size:clamp(1.3rem,2.4vw,1.85rem);line-height:1.2}
+.il-hero p{margin:0;color:var(--muted);max-width:68ch}
+.il-cijfers{display:flex;gap:10px;margin:0;flex-wrap:wrap}
+.il-cijfers>div{min-width:96px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.il-cijfers dt{color:var(--muted);font-size:.75rem}
+.il-cijfers dd{margin:2px 0 0;font-size:1.55rem;font-weight:800;line-height:1.1}
+.il-tabs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:10px}
+.il-tabs>button[role=tab]{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:8px 14px;border:1px solid transparent;border-radius:11px;background:transparent;color:var(--muted);font-weight:700;cursor:pointer}
+.il-tabs>button[role=tab]:hover{color:var(--text);background:var(--surface)}
+.il-tabs>button[role=tab].is-actief{color:var(--text);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.il-tabs b,.il-groep b,.il-wens b{min-width:20px;padding:1px 6px;border-radius:999px;background:color-mix(in srgb,var(--muted) 16%,transparent);color:inherit;font-size:.75rem;font-weight:700;text-align:center}
+.il-ververs{margin-left:auto;display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:7px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);color:var(--text);font-weight:600;cursor:pointer}
+.il-ververs:disabled{opacity:.6;cursor:progress}
+.il-melding{margin:0;padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--muted);font-size:.88rem}
+.il-werkbalk{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.il-zoek{position:relative;flex:1 1 280px;display:flex;align-items:center;min-width:0}
+.il-zoek>svg{position:absolute;left:13px;width:18px;height:18px;color:var(--muted);pointer-events:none}
+.il-zoek input{width:100%;min-height:46px;padding:10px 40px 10px 40px;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--text);font-size:1rem}
+.il-zoek input:focus-visible,.il-sorteer select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.il-wis{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer}
+.il-wis:hover{background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--text)}
+.il-wis svg{width:16px;height:16px}
+.il-sorteer{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.84rem}
+.il-sorteer select{min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text)}
+.il-filters{display:grid;gap:10px}
+.il-groep{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.il-groep.is-klein{flex-wrap:wrap;overflow:visible;padding:0}
+.il-groep button,.il-wens,.il-reset{display:inline-flex;align-items:center;gap:7px;flex:none;min-height:36px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-size:.84rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.il-groep button svg,.il-wens svg,.il-reset svg{width:15px;height:15px;color:var(--muted)}
+.il-groep button:hover,.il-wens:hover,.il-reset:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.il-groep button.is-actief,.il-wens.is-actief{background:var(--accent);border-color:var(--accent);color:var(--accentText,#fff)}
+.il-groep button.is-actief svg,.il-wens.is-actief svg{color:var(--accentText,#fff)}
+.il-groep button.is-actief b,.il-wens.is-actief b{background:color-mix(in srgb,var(--accentText,#fff) 22%,transparent)}
+.il-rij{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.il-reset{border-style:dashed;color:var(--muted)}
+.il-teller{margin:0;color:var(--muted);font-size:.84rem}
+.il-sectie{display:grid;gap:12px;margin-bottom:6px}
+.il-sectiekop{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:10px 0 0;font-size:1.02rem}
+.il-sectiekop svg{width:19px;height:19px;color:var(--accent)}
+.il-sectiekop small{color:var(--muted);font-weight:500;font-size:.8rem}
+.il-raster{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,272px),1fr));gap:12px}
+.il-kaart{display:flex;flex-direction:column;gap:11px;min-width:0;padding:15px;border:1px solid var(--line);border-radius:16px;background:var(--panel);transition:border-color .15s,transform .15s,box-shadow .15s}
+.il-kaart:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line));box-shadow:0 6px 22px rgba(0,0,0,.07)}
+.il-kaart[data-status=binnenkort]{background:color-mix(in srgb,var(--surface) 55%,var(--panel))}
+.il-kaart[data-status=klaar]{border-color:color-mix(in srgb,var(--il-ok) 28%,var(--line))}
+@media (prefers-reduced-motion:no-preference){.il-kaart:hover{transform:translateY(-1px)}}
+.il-kop{display:flex;align-items:center;gap:12px;min-width:0}
+.il-titel{display:grid;gap:2px;min-width:0;flex:1}
+.il-titel h3{margin:0;font-size:1.02rem;line-height:1.2;overflow-wrap:anywhere}
+.il-cat{color:var(--muted);font-size:.76rem}
+.il-ster{display:grid;place-items:center;flex:none;width:38px;height:38px;padding:0;border:0;border-radius:11px;background:transparent;color:var(--muted);cursor:pointer}
+.il-ster:hover{background:var(--surface);color:var(--text)}
+.il-ster svg{width:19px;height:19px}
+.il-ster[aria-pressed=true]{color:#d99a1c}
+.il-ster[aria-pressed=true] svg{fill:currentColor}
+.il-uitleg{margin:0;color:var(--muted);font-size:.86rem;line-height:1.45;flex:1}
+.il-chips{display:flex;flex-wrap:wrap;gap:6px}
+.il-status,.il-levend,.il-methode{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:.75rem;font-weight:700;line-height:1.5}
+.il-status svg{width:13px;height:13px}
+.il-status[data-status=klaar]{background:var(--il-ok-bg);color:var(--il-ok)}
+.il-status[data-status=instellen]{background:var(--il-warn-bg);color:var(--il-warn)}
+.il-status[data-status=binnenkort]{background:var(--il-soon-bg);color:var(--il-soon)}
+.il-levend{border:1px solid var(--line);color:var(--text)}
+.il-levend i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.il-levend[data-levend=verbonden] i{background:var(--il-ok)}
+.il-levend[data-levend=ingesteld] i{background:var(--il-warn)}
+.il-methode{border:1px solid var(--line);color:var(--muted);font-weight:600}
+.il-acties{display:flex;gap:8px;align-items:center}
+.il-knop{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:8px 14px;border:1px solid var(--line);border-radius:11px;background:var(--panel);color:var(--text);font-weight:700;font-size:.88rem;text-decoration:none;cursor:pointer}
+.il-knop:hover:not(:disabled){border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+.il-knop:focus-visible,.il-ster:focus-visible,.il-groep button:focus-visible,.il-tabs button:focus-visible,.il-wens:focus-visible,.il-reset:focus-visible,.il-ververs:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.il-knop.is-primair{flex:1;background:var(--accent);border-color:var(--accent);color:var(--accentText,#fff)}
+.il-knop.is-primair:hover{filter:brightness(1.08)}
+.il-knop:disabled{flex:1;cursor:not-allowed;opacity:.65;background:var(--surface)}
+.il-knop.is-tekst{flex:none;width:40px;padding:0;color:var(--muted)}
+.il-knop svg{width:16px;height:16px}
+.il-leeg{display:grid;justify-items:center;gap:6px;padding:38px 18px;text-align:center;border:1px dashed var(--line);border-radius:16px;background:var(--surface)}
+.il-leeg svg{width:30px;height:30px;color:var(--accent)}
+.il-leeg p{margin:0;color:var(--muted);max-width:56ch}
+.il-noot{margin:6px 0 0;color:var(--muted);font-size:.8rem;max-width:90ch}
+.il-mijn{display:grid;gap:12px}
+.il-mijn h3{margin:6px 0 0}
+.il-mappen{display:grid;gap:14px}
+@media (max-width:640px){.il-hero{padding:16px}.il-ververs{margin-left:0}.il-sorteer{width:100%}.il-sorteer select{flex:1}.il-cijfers>div{flex:1}}
+@media (prefers-contrast:more){.il-kaart,.il-knop,.il-groep button{border-width:2px}}
+
+/* Detailvenster */
+.il-beschikbaar{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:.75rem;font-weight:700;background:var(--accent-soft);color:var(--accent)}
+.il-beschikbaar svg{width:13px;height:13px}
+.il-levend[data-levend=fout] i{background:var(--danger,#c0392b)}
+.il-knop.is-stil{flex:none;color:var(--muted)}
+.il-knop.is-gevaar{flex:none;color:var(--danger,#c0392b);border-color:color-mix(in srgb,var(--danger,#c0392b) 45%,var(--line))}
+.il-modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:16px;background:rgba(10,14,24,.55);backdrop-filter:blur(2px)}
+.il-dialoog{display:flex;flex-direction:column;width:min(640px,100%);max-height:min(92vh,880px);border:1px solid var(--line);border-radius:20px;background:var(--panel,#fff);color:var(--text);box-shadow:0 24px 70px rgba(0,0,0,.35);overflow:hidden}
+.il-d-kop{display:flex;align-items:center;gap:14px;padding:18px 18px 14px;border-bottom:1px solid var(--line)}
+.il-d-titel{min-width:0;flex:1}
+.il-d-titel h3{margin:0;font-size:1.2rem;line-height:1.25;overflow-wrap:anywhere}
+.il-d-titel span{color:var(--muted);font-size:.84rem}
+/* Sluitknop: vaste vierkante knop, pictogram exact in het midden (grid + place-items), ook op aanraakschermen 44 px. */
+.il-sluit{display:grid;place-items:center;flex:none;width:44px;height:44px;padding:0;line-height:0;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);cursor:pointer}
+.il-sluit svg{display:block;width:20px;height:20px;margin:0}
+.il-sluit:hover{background:color-mix(in srgb,var(--muted) 16%,var(--surface))}
+.il-sluit:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.il-d-body{display:grid;gap:14px;padding:16px 18px;overflow-y:auto;overscroll-behavior:contain}
+.il-d-uitleg{margin:0;font-size:.98rem}
+.il-d-noot{margin:0;color:var(--muted);font-size:.84rem}
+.il-d-sectie{display:grid;gap:8px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.il-d-sectie h4{display:flex;align-items:center;gap:8px;margin:0;font-size:.92rem}
+.il-d-sectie h4 svg{width:16px;height:16px;color:var(--accent)}
+.il-d-sectie ul,.il-d-sectie ol{margin:0;padding-left:20px;display:grid;gap:5px;font-size:.9rem}
+.il-d-controle{margin:0;font-size:.9rem}
+.il-d-controle[data-stand=ok] b{color:var(--il-ok)}
+.il-d-controle[data-stand=let-op] b{color:var(--il-warn)}
+.il-d-controle[data-stand=fout] b{color:var(--danger,#c0392b)}
+.il-d-bericht{display:flex;align-items:flex-start;gap:8px;margin:0;padding:10px 12px;border-radius:12px;font-size:.88rem;background:var(--il-ok-bg);color:var(--text)}
+.il-d-bericht[data-soort=fout]{background:color-mix(in srgb,var(--danger,#c0392b) 14%,var(--panel,#fff))}
+.il-d-bericht svg{width:17px;height:17px;margin-top:1px}
+.il-schakel{display:flex;align-items:flex-start;gap:12px;cursor:pointer}
+.il-schakel input{appearance:none;flex:none;position:relative;width:46px;height:26px;margin:2px 0 0;border-radius:999px;background:color-mix(in srgb,var(--muted) 38%,transparent);cursor:pointer;transition:background .15s}
+.il-schakel input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.il-schakel input:checked{background:var(--accent)}
+.il-schakel input:checked::after{transform:translateX(20px)}
+.il-schakel input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.il-schakel input:disabled{opacity:.6;cursor:progress}
+.il-schakel span{display:grid;gap:2px;font-size:.9rem}
+.il-schakel small{color:var(--muted);font-size:.8rem}
+.il-d-voet{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px 16px;border-top:1px solid var(--line);background:var(--panel,#fff)}
+.il-d-voet .il-knop{flex:1 1 auto}
+.il-d-voet .il-knop.is-stil{flex:none}
+@media (max-width:640px){.il-modal{padding:0;place-items:end stretch}.il-dialoog{width:100%;max-height:94vh;border-radius:20px 20px 0 0}.il-d-voet{display:grid;grid-template-columns:1fr 1fr}.il-d-voet .il-knop{width:100%;min-width:0;white-space:normal;text-align:center}.il-d-voet .il-knop.is-primair{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){.il-schakel input,.il-schakel input::after{transition:none}}
+/* «Майстер підключень» (Wizard.tsx): alleen tokens van de site; geen eigen kleuren. */
+.il-w{display:grid;gap:14px;min-width:0}
+.il-w-intro{margin:0;color:var(--muted);font-size:.92rem;max-width:90ch}
+.il-w-lijst{display:grid;gap:12px}
+.il-w-kaart{border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden}
+.il-w-kaart[data-open=ja]{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.il-w-kop{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+.il-w-kop:hover{background:var(--surface)}
+.il-w-kop:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.il-w-titel{display:grid;gap:2px;min-width:0;flex:1}
+.il-w-titel strong{font-size:1rem;line-height:1.25}
+.il-w-titel small{color:var(--muted);font-size:.8rem;overflow-wrap:anywhere}
+.il-w-body{display:grid;gap:12px;padding:0 14px 14px;border-top:1px solid var(--line);padding-top:12px}
+.il-w-acties{display:flex;flex-wrap:wrap;gap:8px}
+.il-w-acties .il-knop{flex:0 1 auto}
+.il-w-acties .il-knop.is-primair{flex:0 1 auto}
+.il-w-waarden{display:grid;gap:10px;margin:0}
+.il-w-waarden>div{display:grid;gap:4px}
+.il-w-waarden dt{font-size:.82rem;font-weight:700;color:var(--muted)}
+.il-w-waarden dd{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0}
+.il-w-waarden dd>small{flex-basis:100%;color:var(--muted);font-size:.8rem}
+.il-w-waarden ul{display:grid;gap:4px;margin:0;padding:0;list-style:none;flex-basis:100%}
+.il-w-waarden li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.il-w code,.il-w-opdracht code{padding:3px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:.84rem;overflow-wrap:anywhere;user-select:all}
+.il-w-kopieer{display:inline-flex;align-items:center;gap:5px;min-height:32px;padding:4px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font-size:.78rem;font-weight:600;cursor:pointer}
+.il-w-kopieer:hover:not(:disabled){border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+.il-w-kopieer:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.il-w-kopieer:disabled{opacity:.5;cursor:not-allowed}
+.il-w-kopieer svg{width:14px;height:14px}
+.il-w-opdracht{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.il-w-formulier{display:grid;gap:10px}
+.il-w-veld{display:grid;gap:4px;font-size:.86rem;font-weight:600}
+.il-w-veld input,.il-w-veld textarea{width:100%;min-height:40px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);font:inherit;font-weight:400}
+.il-w-veld textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.82rem;resize:vertical}
+.il-w-veld input:focus-visible,.il-w-veld textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.il-w-formulier .il-knop.is-primair{flex:none;justify-self:start}
+.il-w-env,.il-w-sleutellijst{display:grid;gap:4px;margin:0;padding:0;list-style:none;font-size:.84rem}
+.il-w-env li,.il-w-sleutellijst li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.il-w-env li[data-ok=nee],.il-w-sleutellijst li[data-ok=nee]{color:var(--il-warn)}
+.il-w-sleutellijst li[data-ok=ja] svg{color:var(--il-ok)}
+.il-w-sleutellijst li[data-ok=nee] svg{color:var(--il-warn)}
+.il-w-sleutels[data-sleutels-missen]:not([data-sleutels-missen="0"]){border-color:color-mix(in srgb,var(--il-warn) 45%,var(--line))}
+.il-d-noot[data-let-op=ja]{color:var(--il-warn)}
+@media (max-width:640px){.il-w-acties .il-knop{flex:1 1 100%}.il-w-formulier .il-knop.is-primair{justify-self:stretch}}
+/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
+@media (max-width:700px){
+  .il-ververs,.il-groep button,.il-wens,.il-reset{min-height:var(--tik-hoogte)}
+}
+
+/* UI-013: vernieuwde catalogus (vlag integraties-catalogus-v2). Rustig, compact, licht/donker via currentColor en bestaande variabelen. */
+.ic2{display:flex;flex-direction:column;gap:12px}
+.ic2-kopblok{display:flex;align-items:center;gap:8px}
+.ic2-kopblok h3{margin:0;font-size:1.05rem;font-weight:600}
+.ic2-samen{margin:0;font-size:.82rem;opacity:.72}
+.ic2-balk{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ic2-zoek{flex:1 1 240px;display:flex;align-items:center;gap:6px;border:1px solid var(--line,color-mix(in srgb,currentColor 18%,transparent));border-radius:10px;padding:0 10px;min-height:44px}
+.ic2-zoek svg{width:16px;height:16px;opacity:.6}
+.ic2-zoek input{flex:1;border:0;background:transparent;color:inherit;font:inherit;min-width:0;outline:none}
+.ic2-zoek button{border:0;background:transparent;color:inherit;min-width:32px;min-height:32px;cursor:pointer}
+.ic2-balk select{min-height:44px;border-radius:10px;border:1px solid var(--line,color-mix(in srgb,currentColor 18%,transparent));background:transparent;color:inherit;padding:0 10px;font:inherit;max-width:100%}
+.ic2-wissel{display:inline-flex;border:1px solid var(--line,color-mix(in srgb,currentColor 18%,transparent));border-radius:10px;overflow:hidden}
+.ic2-wissel button{min-width:44px;min-height:44px;border:0;background:transparent;color:inherit;cursor:pointer;display:grid;place-items:center}
+.ic2-wissel button[aria-pressed=true]{background:color-mix(in srgb,currentColor 10%,transparent)}
+.ic2-wissel svg{width:18px;height:18px}
+.ic2-blok{border-top:1px solid color-mix(in srgb,currentColor 10%,transparent);padding-top:6px}
+.ic2-blokkop,.ic2-groepkop{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;border:0;background:transparent;color:inherit;font:inherit;font-weight:600;cursor:pointer;text-align:left;padding:0 4px;border-radius:8px}
+.ic2-groepkop{font-weight:500;font-size:.9rem;opacity:.85;padding-left:12px}
+.ic2-blokkop:hover,.ic2-groepkop:hover{background:color-mix(in srgb,currentColor 5%,transparent)}
+.ic2-blokkop b,.ic2-groepkop b{font-weight:500;font-size:.78rem;opacity:.6}
+.ic2-blokkop em{font-style:normal;font-size:.75rem;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,#16a34a 16%,transparent)}
+.ic2-pijl{margin-left:auto;width:18px;height:18px;transition:transform .15s}
+[aria-expanded=false]>.ic2-pijl{transform:rotate(-90deg)}
+.ic2-raster{list-style:none;margin:4px 0 10px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.ic2[data-weergave=lijst] .ic2-raster{grid-template-columns:1fr;gap:6px}
+.ic2-kaart{border:1px solid var(--line,color-mix(in srgb,currentColor 12%,transparent));border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;transition:border-color .15s,box-shadow .15s}
+.ic2-kaart:hover{border-color:color-mix(in srgb,currentColor 26%,transparent);box-shadow:0 2px 10px color-mix(in srgb,currentColor 8%,transparent)}
+.ic2[data-weergave=lijst] .ic2-kaart{flex-direction:row;flex-wrap:wrap;align-items:center;padding:8px 12px}
+.ic2[data-weergave=lijst] .ic2-uitleg{display:none}
+.ic2-kop{display:flex;align-items:center;gap:10px;min-width:0}
+.ic2[data-weergave=lijst] .ic2-kop{flex:1 1 220px}
+.ic2-titel{min-width:0;flex:1}
+.ic2-titel h4{margin:0;font-size:.95rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ic2-titel span{font-size:.75rem;opacity:.65}
+.ic2-ster{min-width:44px;min-height:44px;border:0;background:transparent;color:inherit;cursor:pointer;display:grid;place-items:center;opacity:.5}
+.ic2-ster[aria-pressed=true]{opacity:1;color:#d97706}
+.ic2-ster svg{width:18px;height:18px}
+.ic2-ster[aria-pressed=true] svg{fill:currentColor}
+.ic2-uitleg{margin:0;font-size:.85rem;opacity:.85}
+.ic2-stand{margin:0;font-size:.8rem;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ic2-stand i{width:8px;height:8px;border-radius:50%;background:#9ca3af;flex:none}
+.ic2-stand[data-groep=verbonden] i{background:#16a34a}
+.ic2-stand[data-groep=aandacht] i{background:#dc2626}
+.ic2-stand[data-groep=instellen] i{background:#d97706}
+.ic2-stand[data-groep=beschikbaar] i{background:var(--accent,#2563eb)}
+.ic2-acc{opacity:.7}
+.ic2-tijd{margin:0;font-size:.72rem;opacity:.6}
+.ic2-plan{font-size:.8rem;border-radius:8px;padding:8px 10px;background:color-mix(in srgb,currentColor 5%,transparent)}
+.ic2-plan p{margin:2px 0}
+.ic2-acties{display:flex;gap:6px;align-items:center;margin-top:auto}
+.ic2-knop{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line,color-mix(in srgb,currentColor 18%,transparent));background:transparent;color:inherit;font:inherit;font-size:.85rem;display:inline-flex;align-items:center;gap:6px;cursor:pointer;text-decoration:none}
+.ic2-knop.is-primair{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:#fff}
+.ic2-knop.is-icoon{padding:0;min-width:44px;justify-content:center;border-color:transparent}
+.ic2-knop svg{width:16px;height:16px}
+.ic2-knop:focus-visible,.ic2-blokkop:focus-visible,.ic2-groepkop:focus-visible{outline:2px solid var(--accent,#2563eb);outline-offset:2px}
+.ic2-fouten{border:1px solid color-mix(in srgb,#dc2626 40%,transparent);border-radius:12px;padding:8px 10px;background:color-mix(in srgb,#dc2626 6%,transparent)}
+.ic2-fouten h4{display:flex;gap:6px;align-items:center;margin:4px 0;font-size:.9rem}
+.ic2-fouten h4 svg{width:16px;height:16px;color:#dc2626}
+.ic2-leeg{opacity:.7}
+@media (max-width:600px){.ic2-balk select{flex:1 1 45%}.ic2-raster{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.ic2-pijl,.ic2-kaart{transition:none}}
+/* UI-013 fase 2: wizard (zes stappen) en strook op themapagina's */
+.iw2{border:1px solid var(--line,#ddd);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--panel,transparent)}
+.iw2-kop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.iw2-kop h3{margin:0;font-size:1rem}
+.iw2-stappen{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.iw2-stappen li{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;opacity:.55}
+.iw2-stappen li b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;border:1px solid currentColor;font-weight:600}
+.iw2-stappen li[data-stand=nu]{opacity:1}.iw2-stappen li[data-stand=nu] b{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:#fff}
+.iw2-stappen li[data-stand=klaar]{opacity:.85}
+.iw2-inhoud{display:flex;flex-direction:column;gap:8px}
+.iw2-inhoud p{margin:0}
+.iw2-zoek,.iw2-veld input{min-height:44px;border-radius:10px;border:1px solid var(--line,#ccc);background:transparent;color:inherit;padding:0 10px;font:inherit}
+.iw2-veld{display:flex;flex-direction:column;gap:4px;font-size:.85rem}
+.iw2-keuzes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;max-height:320px;overflow:auto}
+.iw2-keuzes button,.iw2-wijzen button{width:100%;min-height:44px;display:flex;align-items:center;gap:8px;border:1px solid var(--line,#ccc);border-radius:10px;background:transparent;color:inherit;font:inherit;padding:4px 8px;cursor:pointer;text-align:left}
+.iw2-keuzes button[aria-pressed=true],.iw2-wijzen button[aria-checked=true]{border-color:var(--accent,#2563eb);box-shadow:inset 0 0 0 1px var(--accent,#2563eb)}
+.iw2-wijzen{display:flex;flex-wrap:wrap;gap:6px}.iw2-wijzen button{width:auto}
+.iw2-noot{font-size:.8rem;opacity:.7}
+.iw2-uitslag{display:flex;gap:6px;align-items:center;font-size:.9rem}.iw2-uitslag[data-ok=false]{color:var(--danger,#dc2626)}.iw2-uitslag svg{width:18px;height:18px;color:#16a34a}
+.iw2-lijst{margin:0;padding-left:18px;font-size:.88rem}
+.iw2-voet{display:flex;flex-direction:row;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+.iw2-voet>*{flex:0 0 auto;width:auto;margin:0}
+.ic2-verouderd{color:var(--warn,#b45309)}
+.is2{border:1px solid var(--line,#ddd);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.is2-kop{display:flex;align-items:center;gap:8px}.is2-kop h3{margin:0;font-size:.95rem}.is2-kop a{margin-left:auto}
+.is2-lijst{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.is2-lijst li{display:flex;align-items:center;gap:6px;border:1px solid var(--line,#ddd);border-radius:999px;padding:4px 10px 4px 4px;font-size:.8rem}
+.is2-lijst li i{width:8px;height:8px;border-radius:50%;background:#9ca3af}
+.is2-lijst li[data-groep=verbonden] i{background:#16a34a}.is2-lijst li[data-groep=aandacht] i{background:#dc2626}.is2-lijst li[data-groep=instellen] i{background:#d97706}.is2-lijst li[data-groep=beschikbaar] i{background:var(--accent,#2563eb)}
+@media (max-width:600px){.iw2-stappen li span{display:none}}
+.ic2-wizardknop{margin-left:auto}

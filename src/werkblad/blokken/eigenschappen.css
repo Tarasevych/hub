@@ -1,0 +1,92 @@
+/* Werkblad «Blokken» — eigenschappenpaneel (stroom C). Alleen tokens uit src/ontwerp/tokens.css; licht en donker komen vanzelf mee.
+   Computer: zijpaneel rechts. Telefoon (≤700px): onderblad met één scrollgebied en vaste knoppen onderaan. */
+.eig-paneel{--eig-rand:var(--line);box-sizing:border-box;display:flex;flex-direction:column;background:var(--panel);color:var(--text);
+  border:1px solid var(--eig-rand);border-radius:14px;box-shadow:0 12px 32px var(--shadow);font-size:14px;line-height:1.4;
+  width:380px;max-width:100%;max-height:min(86vh,820px);overflow:hidden}
+.eig-paneel *{box-sizing:border-box}
+.eig-zij,.eig-auto{position:fixed;top:72px;right:16px;z-index:60}
+.eig-blad{position:fixed;left:0;right:0;bottom:0;width:100%;max-height:88vh;border-radius:16px 16px 0 0;z-index:60}
+@media (max-width:700px){.eig-auto{top:auto;left:0;right:0;bottom:0;width:100%;max-height:88vh;border-radius:16px 16px 0 0}}
+.eig-leeg{padding:20px;color:var(--muted)}
+.eig-kop{position:relative;padding:12px 52px 8px 14px;border-bottom:1px solid var(--eig-rand);flex:none}
+.eig-titel{display:flex;align-items:center;gap:6px}
+.eig-titel h2{margin:0;font-size:16px;font-weight:650}
+.eig-ondertitel{color:var(--muted);font-size:13px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eig-soort{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--text);font-size:12px;margin-right:4px}
+.eig-sluit{position:absolute;top:8px;right:8px;width:44px;height:44px;border:0;background:transparent;color:var(--text);font-size:24px;border-radius:10px;cursor:pointer}
+.eig-sluit:hover{background:var(--surface)}
+.eig-scroll{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:10px 14px 14px;min-height:0}
+.eig-voet{flex:none;position:sticky;bottom:0;border-top:1px solid var(--eig-rand);background:var(--panel);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px))}
+.eig-voet-knoppen{display:flex;flex-wrap:wrap;gap:6px}
+.eig-voet-knoppen button,.eig-knoppen button,.eig-voortgang button{min-height:40px;padding:6px 12px;border-radius:10px;border:1px solid var(--eig-rand);background:var(--surface);color:var(--text);font:inherit;cursor:pointer}
+.eig-voet-knoppen .eig-hoofd{background:var(--accent);color:var(--accentText);border-color:var(--accent);margin-left:auto}
+.eig-paneel button:disabled{opacity:.5;cursor:not-allowed}
+.eig-paneel button:focus-visible,.eig-paneel input:focus-visible{outline:2px solid var(--focus,var(--accent));outline-offset:2px}
+.eig-voortgang{min-height:22px;font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:var(--muted)}
+.eig-voortgang.bewaard{color:var(--good)} .eig-voortgang.mislukt{color:var(--danger);font-weight:600}
+.eig-draai{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:eig-draai .8s linear infinite}
+@keyframes eig-draai{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.eig-draai{animation:none}}
+
+.eig-voorbeeld{display:flex;justify-content:center;align-items:center;padding:12px;margin-bottom:10px;border-radius:12px;background:var(--bg);border:1px dashed var(--eig-rand);min-height:110px;overflow:hidden}
+.eig-vb-tegel{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;max-width:100%;text-align:center;transition:all .12s}
+.eig-vb-icoon{display:inline-flex;align-items:center;justify-content:center;line-height:1;border-radius:10px;background:var(--accent-soft)}
+.eig-vb-icoon.stijl-los{background:transparent} .eig-vb-icoon.stijl-rond{border-radius:50%}
+
+.eig-slot{display:flex;align-items:center;gap:8px;min-height:44px}
+.eig-slot input{width:20px;height:20px}
+.eig-melding{margin:0 0 8px;padding:6px 10px;border-radius:8px;background:var(--surface);color:var(--text);font-size:13px}
+.eig-uitleg{margin:4px 0;color:var(--muted);font-size:13px}
+.eig-voorinstellingen{margin-bottom:10px}
+.eig-knoppen{display:flex;flex-wrap:wrap;gap:6px}
+
+.eig-tabs{display:flex;gap:2px;border-bottom:1px solid var(--eig-rand);margin:6px 0 8px;overflow-x:auto;scrollbar-width:none}
+.eig-tabs button{flex:1 1 auto;min-height:44px;padding:6px 6px;font-size:13px;white-space:nowrap;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--muted);font:inherit;font-weight:600;cursor:pointer}
+.eig-tabs button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent)}
+
+.eig-rij{padding:8px 0;border-bottom:1px solid color-mix(in srgb,var(--eig-rand) 60%,transparent)}
+.eig-rij:last-child{border-bottom:0}
+.eig-rij-kop{display:flex;align-items:center;gap:6px;margin-bottom:6px;min-height:28px}
+.eig-naam{font-weight:600}
+.eig-herstel{margin-left:auto;min-height:32px;padding:2px 10px;border-radius:999px;border:1px solid var(--eig-rand);background:transparent;color:var(--text);font:inherit;font-size:12px;cursor:pointer}
+.eig-rij-inhoud{display:flex;flex-direction:column;gap:6px}
+.eig-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.eig-sub-rij{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+.eig-keuze{display:flex;flex-wrap:wrap;gap:4px}
+.eig-keuze button{min-height:36px;padding:4px 10px;border-radius:8px;border:1px solid var(--eig-rand);background:var(--surface);color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+.eig-keuze button.gekozen{background:var(--accent);color:var(--accentText);border-color:var(--accent)}
+@media (pointer:coarse),(max-width:700px){.eig-keuze button{min-height:44px}}
+
+.eig-getal{display:inline-flex;align-items:center;gap:6px}
+.eig-getal input{width:84px;min-height:36px;padding:4px 8px;border-radius:8px;border:1px solid var(--eig-rand);background:var(--bg);color:var(--text);font:inherit}
+.eig-eenheid{font-size:12px;color:var(--muted)}
+.eig-maat{display:flex;flex-direction:column;gap:6px}
+.eig-grenzen{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.eig-grenzen label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+.eig-schuif{display:flex;align-items:center;gap:8px}
+.eig-schuif input[type=range]{flex:1;min-width:0;accent-color:var(--accent);min-height:32px}
+.eig-paneel input[type=text]{min-height:36px;padding:4px 8px;border-radius:8px;border:1px solid var(--eig-rand);background:var(--bg);color:var(--text);font:inherit;width:100%}
+
+.eig-kleur{display:grid;grid-template-columns:72px 1fr;align-items:center;gap:6px}
+.eig-kleur-naam{font-size:13px}
+.eig-kleur-kies{grid-column:2;display:flex;align-items:center;gap:6px}
+.eig-kleur-kies input[type=color]{width:44px;height:36px;padding:0;border:1px solid var(--eig-rand);border-radius:8px;background:transparent}
+.eig-paneel .eig-hex{width:96px}
+.eig-contrast{margin:4px 0 0;padding:6px 10px;border-radius:8px;font-size:13px;border:1px solid}
+.eig-contrast.laag{background:var(--warn-vlak,var(--surface));color:var(--text);border-color:var(--danger);font-weight:600}
+.eig-contrast.goed{background:var(--surface);color:var(--text);border-color:var(--good)}
+
+.eig-schakel{position:relative;width:48px;height:28px;border-radius:999px;border:1px solid var(--eig-rand);background:var(--surface2);cursor:pointer;padding:0}
+.eig-schakel span{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--text);transition:left .12s}
+.eig-schakel.aan{background:var(--accent);border-color:var(--accent)} .eig-schakel.aan span{left:23px;background:var(--accentText)}
+.eig-schakel::after{content:'';position:absolute;inset:-8px}
+.eig-apparaat{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+
+/* (?) — klein rond 24px, onzichtbaar tikvlak ≥44px */
+.eig-hulp{position:relative;display:inline-flex}
+.eig-paneel .eig-hulp-knop{position:relative;width:24px;height:24px;min-width:24px;min-height:24px;max-height:24px;padding:0;border-radius:50%;border:1px solid var(--muted);background:var(--panel);color:var(--text);font:700 13px/1 system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.eig-hulp-knop::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
+.eig-hulp-knop[aria-expanded="true"]{background:var(--accent);color:var(--accentText);border-color:var(--accent)}
+.eig-hulp-tekst{position:absolute;z-index:5;top:30px;left:-8px;width:min(260px,70vw);padding:8px 10px;border-radius:10px;background:var(--text);color:var(--panel);font-size:13px;font-weight:400;line-height:1.4;box-shadow:0 6px 18px var(--shadow)}
+@media (max-width:700px){.eig-hulp-tekst{position:fixed;left:12px;right:12px;top:auto;bottom:96px;width:auto;z-index:70}}

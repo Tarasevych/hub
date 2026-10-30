@@ -1,0 +1,178 @@
+/* Mail zoeken v2 (UI-009, vlag mail-zoeken-v2). Positie (fixed onder de zoekbalk) komt van de bestaande regel .mail-advanced-search;
+   hier geen nieuwe vaste elementen. Hoogte volgt de inhoud tot een maximum; alleen .mzv2-werk scrolt; kop, chips en voet blijven staan. */
+.mail-advanced-search.mzv2{display:flex;flex-direction:column;width:min(520px,calc(100vw - var(--canonical-command-inline-start,88px) - 100px));max-height:min(720px,calc(100dvh - 72px));font-size:14px}
+.mzv2 h2,.mzv2 h3{font-family:inherit}
+.mail-advanced-search.mzv2>.mzv2-kop{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:2px;padding:4px 6px;border-bottom:1px solid var(--line)}
+.mzv2-kop h2{margin:0;overflow:clip;font-size:15px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.mzv2-kop-ikoon{display:grid;place-items:center;color:var(--accent)}
+.mzv2-kop-ikoon svg{width:18px;height:18px}
+.mzv2-ikoon-knop{display:grid;place-items:center;flex:0 0 auto;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
+.mzv2-ikoon-knop:hover,.mzv2-ikoon-knop:focus-visible{background:var(--nav-hover);color:var(--text);outline:none}
+.mzv2-ikoon-knop:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+.mzv2-ikoon-knop svg{width:17px;height:17px}
+.mail-advanced-search.mzv2>.mzv2-kop>.mzv2-ikoon-knop{width:44px;height:44px}
+.mzv2-chips .mail-search-chip-clear-all{min-height:36px;padding:0 12px}
+.mzv2-chips .mail-search-chip{min-height:32px}
+@media (max-width:720px){.mail-advanced-search.mzv2>.mzv2-chips{gap:4px}.mzv2-chips .mail-search-chip{font-size:11px}}
+.mail-advanced-search.mzv2>.mzv2-chips{width:auto;max-height:none;margin:8px 10px 0;padding:0;border:0;background:transparent;box-shadow:none;overflow:visible}
+.mzv2-werk{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:10px;display:grid;align-content:start;gap:12px}
+.mail-advanced-search.mzv2>.mzv2-voet{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:6px;padding:8px 10px;border-top:1px solid var(--line)}
+.mail-advanced-search.mzv2 .mzv2-knop{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.mzv2-knop svg{width:16px;height:16px}
+.mzv2-knop:hover:not(:disabled),.mzv2-knop:focus-visible{background:var(--nav-hover);outline:none}
+.mzv2-knop:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+.mzv2-knop:disabled{opacity:.5;cursor:default}
+.mail-advanced-search.mzv2 .mzv2-knop.primair{justify-self:end;min-width:132px;border-color:transparent;background:var(--accent);color:var(--accentText)}
+.mzv2-knop.primair:hover:not(:disabled){background:color-mix(in srgb,var(--accent) 88%,#000)}
+/* zoekveld */
+.mzv2-zoek{position:relative;display:grid;gap:6px}
+.mzv2-zoek-veld{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 4px 0 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.mzv2-zoek-veld:focus-within{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 16%,transparent)}
+.mzv2-zoek-veld>svg{flex:0 0 auto;width:16px;height:16px;color:var(--muted)}
+.mzv2-zoek-veld input{flex:1 1 auto;min-width:0;height:40px;border:0;background:transparent;color:inherit;font:inherit;outline:none}
+.mzv2-zoek-veld.klein{min-height:40px}
+.mzv2-voorstellen{display:grid;gap:2px;padding:4px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.mzv2-ops{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:4px;padding:2px}
+.mzv2-op{min-height:36px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:inherit;font:12px/1 ui-monospace,SFMono-Regular,Consolas,monospace;text-align:left;cursor:pointer}
+.mzv2-op.actief,.mzv2-op:hover{border-color:var(--accent);background:var(--accent-soft)}
+/* snelfilters */
+.mzv2-snel{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:6px}
+.mzv2-pil{display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font:inherit;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer}
+.mzv2-pil svg{width:15px;height:15px}
+.mzv2-pil.actief{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));background:var(--accent-soft);color:var(--text)}
+.mzv2-pil.actief svg{color:var(--accent)}
+.mzv2-pil:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* segment (exclusieve keuze) */
+.mzv2-segment{display:grid;grid-auto-columns:minmax(0,1fr);grid-auto-flow:column;gap:2px;min-width:0;padding:2px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.mzv2-segment>button{min-width:0;min-height:36px;padding:0 6px;overflow:clip;border:0;border-radius:8px;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:600;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.mzv2-segment>button.actief{background:var(--panel);color:var(--text);box-shadow:0 1px 3px color-mix(in srgb,var(--shadow) 60%,transparent)}
+.mzv2-segment>button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* groepen en rijen */
+.mzv2-groep{display:grid;gap:4px}
+.mzv2-groep h3,.mzv2-lijst-kop h3{display:flex;align-items:center;gap:5px;margin:0;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.02em}
+.mzv2-lijst-kop h3 svg{width:13px;height:13px}
+.mzv2-groep-rijen{display:grid;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:clip}
+.mzv2-rij{display:grid;grid-template-columns:28px minmax(0,1fr) 16px;align-items:center;gap:8px;min-height:44px;padding:4px 10px;border:0;border-top:1px solid var(--line);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mzv2-rij:first-child{border-top:0}
+.mzv2-rij:hover,.mzv2-rij:focus-visible{background:var(--nav-hover);outline:none}
+.mzv2-rij:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.mzv2-rij-ikoon{display:grid;place-items:center;color:var(--muted)}
+.mzv2-rij.gezet .mzv2-rij-ikoon{color:var(--accent)}
+.mzv2-rij-ikoon svg{width:17px;height:17px}
+.mzv2-rij>svg{width:15px;height:15px;color:var(--muted)}
+.mzv2-rij-tekst{display:grid;min-width:0}
+.mzv2-rij-tekst strong{font-weight:600}
+.mzv2-rij-tekst small{overflow:clip;color:var(--accent);font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+/* editors */
+.mzv2-editor{display:grid;gap:10px;min-width:0}
+.mzv2-veld{display:grid;gap:4px}
+.mzv2-veld>span,.mzv2-veld-kop>span{color:var(--muted);font-size:12px;font-weight:700}
+.mzv2-veld-kop{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:28px}
+.mzv2-veld input,.mzv2-grootte select,.mzv2-grootte input,.mzv2-meer-kop select,.mzv2-hernoem input{min-width:0;min-height:44px;box-sizing:border-box;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:inherit;font:inherit}
+.mzv2-veld input:focus-visible,.mzv2-grootte input:focus-visible,.mzv2-grootte select:focus-visible,.mzv2-meer-kop select:focus-visible,.mzv2-hernoem input:focus-visible{outline:2px solid var(--accent);outline-offset:0}
+.mzv2-noot{margin:0;color:var(--muted);font-size:12px;line-height:1.4}
+.mzv2-fout{margin:0;color:var(--fout,#b42318);font-size:12px;font-weight:600}
+.mzv2-leeg{margin:0;padding:10px;color:var(--muted);font-size:13px;text-align:center}
+.mzv2-link{min-height:36px;padding:0 8px;border:0;background:transparent;color:var(--accent);font:inherit;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer}
+.mzv2-link:hover,.mzv2-link:focus-visible{text-decoration:underline;text-underline-offset:3px;outline:none}
+.mzv2-keuze-chips{display:flex;flex-wrap:wrap;gap:5px}
+.mzv2-keuze-chips .mail-search-chip{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+/* lijsten: geen eigen scroll — het werkgebied scrolt */
+.mzv2-lijst{display:grid;gap:5px}
+.mzv2-lijst-kop{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:28px;padding:0 2px}
+.mzv2-lijst-items{display:grid;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:clip}
+.mzv2-voorstellen .mzv2-lijst-kop{padding:2px 6px}
+.mzv2-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px;width:100%;min-height:44px;padding:5px 10px;border:0;border-top:1px solid var(--line);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mzv2-lijst-items>.mzv2-item:first-child,.mzv2-voorstellen .mzv2-item{border-top:0}
+.mzv2-voorstellen .mzv2-item{border-radius:8px}
+.mzv2-item:has(.mzv2-item-ikoon),.mzv2-item.persoon{grid-template-columns:auto minmax(0,1fr) auto auto}
+.mzv2-item:hover,.mzv2-item:focus-visible,.mzv2-item.actief{background:var(--nav-hover);outline:none}
+.mzv2-item[aria-pressed='true']{background:var(--accent-soft)}
+.mzv2-item:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.mzv2-item-tekst{display:grid;min-width:0}
+.mzv2-item-tekst strong{font-weight:600;overflow-wrap:anywhere}
+.mzv2-item-tekst small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.mzv2-item em{color:var(--muted);font-size:12px;font-style:normal;font-variant-numeric:tabular-nums}
+.mzv2-item-ikoon{display:grid;place-items:center;width:22px;color:var(--muted)}
+.mzv2-item-ikoon svg{width:16px;height:16px}
+.mzv2-vink{width:16px;height:16px;color:var(--accent)}
+.mzv2-hit{padding:0 1px;border-radius:3px;background:color-mix(in srgb,var(--accent) 22%,transparent);color:inherit}
+.mzv2-avatar{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:hsl(var(--mzv2-tint) 55% 88%);color:hsl(var(--mzv2-tint) 45% 28%);font-size:11px;font-weight:700}
+.canonical-chrome.theme-dark .mzv2-avatar,.canonical-chrome.theme-plum-dark .mzv2-avatar,.theme-dark .mzv2-avatar{background:hsl(var(--mzv2-tint) 35% 28%);color:hsl(var(--mzv2-tint) 70% 86%)}
+/* schakelaar (slank) */
+.mzv2-schakel{position:relative;display:flex;align-items:center;gap:10px;min-height:44px;padding:0 2px;cursor:pointer}
+.mzv2-schakel input{position:absolute;opacity:0;width:1px;height:1px}
+.mzv2-schakel-baan{position:relative;flex:0 0 auto;width:34px;height:20px;border-radius:999px;background:color-mix(in srgb,var(--muted) 45%,transparent);transition:background .15s}
+.mzv2-schakel-baan::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--panel);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.mzv2-schakel input:checked+.mzv2-schakel-baan{background:var(--accent)}
+.mzv2-schakel input:checked+.mzv2-schakel-baan::after{transform:translateX(14px)}
+.mzv2-schakel input:focus-visible+.mzv2-schakel-baan{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
+/* uitleg ⓘ */
+.mzv2-uitleg{display:contents}
+.mzv2-uitleg .mzv2-ikoon-knop{width:36px;height:36px}
+.mzv2-uitleg-tekst{order:99;flex-basis:100%;display:block;margin:2px 0 0;padding:8px 10px;border-radius:10px;background:var(--surface);color:var(--muted);font-size:12px;line-height:1.45}
+.mzv2-veld-kop,.mzv2-lijst-kop{flex-wrap:wrap}
+/* grootte: één groep */
+.mzv2-grootte{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,190px);gap:6px;align-items:center}
+.mzv2-grootte-invoer{display:grid;grid-template-columns:minmax(0,1fr) 76px;gap:4px}
+.mzv2-grootte input[aria-invalid='true']{border-color:var(--fout,#b42318)}
+.mzv2-grootte :disabled{opacity:.5}
+/* opgeslagen */
+.mzv2-opgeslagen{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;border-top:1px solid var(--line)}
+.mzv2-opgeslagen:first-child{border-top:0}
+.mzv2-opgeslagen>.mzv2-item{border-top:0}
+.mzv2-hernoem{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:4px;padding:4px 6px;border-top:1px solid var(--line)}
+/* periode */
+.mzv2-periode-gekozen{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 6px 6px 10px;border-radius:10px;background:var(--accent-soft)}
+.mzv2-periode-gekozen>svg{width:18px;height:18px;color:var(--accent)}
+.mzv2-periode-gekozen>span{display:grid;min-width:0}
+.mzv2-periode-gekozen small{color:var(--muted);font-size:11px;font-weight:700}
+.mzv2-periode-gekozen strong{overflow-wrap:anywhere}
+.mzv2-bereik{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mzv2-datumveld{display:grid;justify-items:start;gap:1px;min-height:48px;padding:5px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mzv2-datumveld small{color:var(--muted);font-size:11px;font-weight:700}
+.mzv2-datumveld.actief{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 18%,transparent)}
+.mzv2-datumveld:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.mzv2-periode .mail-date-calendar{margin:0}
+.mzv2-grens{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;min-height:36px;padding:0 0 0 2px;color:var(--muted);font-size:12px;line-height:1.35}
+.mzv2-grens>svg{width:15px;height:15px}
+.mzv2-grens.stand-fout>svg{color:var(--warn,#b45309)}
+.mzv2-grens small{opacity:.8}
+.mzv2-uitklap{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 4px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.mzv2-uitklap svg{width:16px;height:16px;color:var(--muted);transition:transform .15s}
+.mzv2-uitklap[aria-expanded='true'] svg{transform:rotate(90deg)}
+.mzv2-uitklap:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:8px}
+.mzv2-meer{display:grid;gap:8px}
+.mzv2-meer-kop{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
+.mzv2-meer-kop select{min-height:40px}
+.mzv2-raster{display:grid;gap:4px}
+.mzv2-raster.vier{grid-template-columns:repeat(4,minmax(0,1fr))}
+.mzv2-raster.jaren{grid-template-columns:repeat(auto-fill,minmax(68px,1fr))}
+.mzv2-raster>button{min-height:40px;padding:0 4px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:inherit;font:inherit;font-size:13px;cursor:pointer}
+.mzv2-raster>button.actief{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+.mzv2-raster>button:disabled{opacity:.4;cursor:default}
+.mzv2-raster>button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* bijlagen: formaten als compact raster met teller */
+.mzv2-formaten{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:4px;padding:6px}
+.mzv2-formaat{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:5px;min-height:40px;padding:0 8px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:inherit;font:inherit;font-size:12px;cursor:pointer}
+.mzv2-formaat svg{width:14px;height:14px;color:var(--muted)}
+.mzv2-formaat strong{overflow:clip;text-overflow:ellipsis;white-space:nowrap}
+.mzv2-formaat em{color:var(--muted);font-style:normal}
+.mzv2-formaat.actief{border-color:var(--accent);background:var(--accent-soft)}
+.mzv2-formaat:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.mzv2-lijst-items>.mzv2-zoek-veld{margin:6px 6px 0}
+/* telefoon: paneel over de volle breedte, tikdoelen 44px, voet blijft onderaan zichtbaar */
+@media (max-width:720px){
+  .mail-advanced-search.mzv2{width:auto;max-height:calc(100dvh - 64px)}
+  .mzv2-snel{grid-template-columns:1fr 1fr}
+  .mzv2-snel>.mzv2-segment{grid-column:1/-1}
+  .mzv2-pil{justify-content:center;min-height:44px}
+  .mzv2-segment>button{min-height:40px}
+  .mzv2-grootte{grid-template-columns:1fr}
+  .mail-advanced-search.mzv2>.mzv2-voet{grid-template-columns:1fr 1fr;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+  .mail-advanced-search.mzv2 .mzv2-knop.primair{grid-column:1/-1;justify-self:stretch;order:-1}
+}
+@media (max-width:420px){
+  .mzv2-meer-kop{grid-template-columns:1fr}
+  .mzv2-segment>button{font-size:12px;padding:0 3px}
+}

@@ -1,0 +1,1294 @@
+{
+  "_": [
+    "НАБІР ОЦІНКИ ЯКОСТІ ПОШУКУ /zoek (Z5, 22.10.2026). Проганяє tests/eenheid/zoek-evaluatie-20261022.test.ts через zoek() на засіяному індексі (справжній каталог UI Z2 + документи нижче). Набір ядра Z1 (синтетичний корпус, zoek-kern-20261022) — окремо: zoek-evaluatie-kern.json. НЕ ПЕРЕЗАПИСУВАТИ цей файл іншим форматом.",
+    "Поля запиту: q — текст запиту; taal — мова запиту (uk nl en ru de fr pl ro bg; 'mix' = суржик/трансліт); soort — категорія;",
+    "  verwacht — список релевантних результатів: {bron, id} (точний id у джерелі) або {bron, titelRegex} (регулярний вираз по назві, без урахування регістру);",
+    "  top — k для Precision@k; nietVerwacht — результати, яких НЕ має бути (чужі/недоступні; будь-яка поява = провал запиту); opmerking — що перевіряє запит.",
+    "Джерела (bron): ui = будь-яке з ui/pagina/instelling/hulp (каталог інтерфейсу Z2; shared/zoek-model.ts ZOEK_BRONNEN), mail, bijlage, cloud, drive, agenda, bord, github.",
+    "Тестові документи (bron ≠ ui) засіває сам тест із фіксованими id (zaai.docs); id інтерфейсу = pagina:<dienst>/<tab>, menu:<id>, hulp:<sleutel>, recht:<key>, integratie:<id> (backend/zoek/catalogus-ui.ts).",
+    "Метрики: P@k = |релевантні ∩ top-k| / min(k, |релевантні|) (нормована точність; при одному релевантному = hit@k); MRR = середнє 1/ранг першого релевантного;",
+    "  Recall@20 = |релевантні ∩ top-20| / |релевантні|. Пороги: P@5 ≥ 0,80, MRR ≥ 0,75, 0 витоків nietVerwacht.",
+    "ruimte: 'technisch' — запит виконується в ТЕХНІЧНІЙ ладі користувача A (сторінки адміністрування індексуються лише туди: без активного технічного профілю їх не видно — це перевірка ізоляції, не промах)."
+  ],
+  "drempels": {
+    "p5": 0.8,
+    "mrr": 0.75,
+    "recall20": 0.85
+  },
+  "zaai": {
+    "_": "Документи, які тест засіває для користувача A (B отримує ТІ САМІ назви з суфіксом -B; жоден B-документ не має з'явитися).",
+    "docs": [
+      {
+        "bron": "mail",
+        "id": "eval-mail-huur",
+        "titel": "Factuur huur oktober 2026",
+        "inhoud": "Beste Pavlo, hierbij de factuur voor de huur van oktober. Bedrag 950 EUR, te betalen vóór 5 november. Met vriendelijke groet, Verhuurder",
+        "onderkop": "verhuurder@voorbeeld.test",
+        "soort": "bericht"
+      },
+      {
+        "bron": "mail",
+        "id": "eval-mail-orenda",
+        "titel": "Рахунок за оренду квартири",
+        "inhoud": "Доброго дня! Надсилаю рахунок за оренду за жовтень. Сума 950 євро. Оплатити до 5 листопада.",
+        "onderkop": "orendodavets@voorbeeld.test",
+        "soort": "bericht"
+      },
+      {
+        "bron": "mail",
+        "id": "eval-mail-notaris",
+        "titel": "Afspraak bij de notaris",
+        "inhoud": "Goedemiddag, de afspraak voor het tekenen van de koopakte staat gepland op dinsdag 4 november om 14:00 in ons kantoor te Gent.",
+        "onderkop": "notaris@voorbeeld.test",
+        "soort": "bericht"
+      },
+      {
+        "bron": "mail",
+        "id": "eval-mail-passport",
+        "titel": "Ваш закордонний паспорт готовий",
+        "inhoud": "Повідомляємо, що ваш закордонний паспорт виготовлено. Заберіть його у відділенні ДМС протягом 30 днів.",
+        "onderkop": "dms@voorbeeld.test",
+        "soort": "bericht"
+      },
+      {
+        "bron": "mail",
+        "id": "eval-mail-newsletter",
+        "titel": "Nieuwsbrief november",
+        "inhoud": "Ook iets over huur en energie in deze nieuwsbrief. Lees verder op onze site.",
+        "onderkop": "nieuws@voorbeeld.test",
+        "soort": "bericht"
+      },
+      {
+        "bron": "bijlage",
+        "id": "eval-bijlage-akte",
+        "titel": "koopakte-ontwerp.pdf",
+        "inhoud": "ONTWERP NOTARIËLE AKTE. De verkoper verklaart te verkopen aan de koper het appartement gelegen te Gent, Kortrijksesteenweg 12. Koopprijs 285000 euro.",
+        "onderkop": "Afspraak bij de notaris",
+        "soort": "bestand"
+      },
+      {
+        "bron": "bijlage",
+        "id": "eval-bijlage-cv",
+        "titel": "resume-tarasevych.docx",
+        "inhoud": "Curriculum vitae. Досвід роботи: інженер-програміст, TypeScript, PostgreSQL. Освіта: КПІ.",
+        "onderkop": "Резюме",
+        "soort": "bestand"
+      },
+      {
+        "bron": "cloud",
+        "id": "eval-cloud-garantie",
+        "titel": "Гарантійний талон пральна машина",
+        "inhoud": "Гарантійний талон. Модель Bosch WAN28. Термін гарантії 24 місяці з дати продажу 12.03.2026.",
+        "onderkop": "",
+        "soort": "bestand"
+      },
+      {
+        "bron": "cloud",
+        "id": "eval-cloud-ocr",
+        "titel": "scan-2026-03-01.pdf",
+        "inhoud": "[OCR] Договір про надання послуг інтернету. Абонент: Тарасевич П. Тариф: 100 Мбіт/с. Щомісячна плата 300 грн.",
+        "onderkop": "",
+        "soort": "bestand",
+        "metadata": {
+          "ocr": true,
+          "ocrEngine": "test"
+        }
+      },
+      {
+        "bron": "cloud",
+        "id": "eval-cloud-recept",
+        "titel": "Рецепт борщу",
+        "inhoud": "Буряк, капуста, картопля, морква, квасоля, томатна паста. Варити 2 години.",
+        "onderkop": "",
+        "soort": "notitie"
+      },
+      {
+        "bron": "drive",
+        "id": "eval-drive-budget",
+        "titel": "Budget 2026.xlsx",
+        "inhoud": "Begroting gezin 2026: huur, energie, verzekering, sparen.",
+        "onderkop": "application/vnd.google-apps.spreadsheet",
+        "soort": "bestand"
+      },
+      {
+        "bron": "drive",
+        "id": "eval-drive-verzekering",
+        "titel": "Polis autoverzekering.pdf",
+        "inhoud": "Verzekeringspolis personenwagen. Polisnummer 4471-22. Dekking: BA + omnium.",
+        "onderkop": "application/pdf",
+        "soort": "bestand"
+      },
+      {
+        "bron": "agenda",
+        "id": "eval-agenda-notaris",
+        "titel": "Зустріч із нотаріусом",
+        "inhoud": "Підписання купчої. Взяти паспорт і код.",
+        "onderkop": "2026-11-04 14:00 · Gent",
+        "soort": "afspraak"
+      },
+      {
+        "bron": "agenda",
+        "id": "eval-agenda-tandarts",
+        "titel": "Tandarts controle",
+        "inhoud": "Halfjaarlijkse controle.",
+        "onderkop": "2026-11-12 09:30",
+        "soort": "afspraak"
+      },
+      {
+        "bron": "bord",
+        "id": "eval-bord-melk",
+        "titel": "Купити молоко і хліб",
+        "inhoud": "",
+        "onderkop": "te doen",
+        "soort": "notitie"
+      },
+      {
+        "bron": "bord",
+        "id": "eval-bord-backup",
+        "titel": "Перевірити резервну копію сервера",
+        "inhoud": "Переконатися, що mijn-ruimte-backup.timer спрацював і архів є.",
+        "onderkop": "bezig",
+        "soort": "notitie"
+      },
+      {
+        "bron": "github",
+        "id": "eval-github-repo",
+        "titel": "pavlo/mijn-ruimte",
+        "inhoud": "README: Mijn Ruimte — self-hosted BYOS platform. TypeScript, React, PostgreSQL 16.",
+        "onderkop": "repository",
+        "soort": "overig"
+      },
+      {
+        "bron": "github",
+        "id": "eval-github-issue",
+        "titel": "Zoeken vindt geen Cyrillische titels #42",
+        "inhoud": "Bij een zoekopdracht met Cyrillische letters komt er niets terug uit de index.",
+        "onderkop": "issue",
+        "soort": "overig"
+      }
+    ]
+  },
+  "vragen": [
+    {
+      "q": "Пошук",
+      "taal": "uk",
+      "soort": "exact",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:hub/zoek"
+        }
+      ],
+      "top": 5,
+      "opmerking": "точна назва сторінки (uk)"
+    },
+    {
+      "q": "Postvak IN",
+      "taal": "nl",
+      "soort": "exact",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:mail/inbox"
+        }
+      ],
+      "top": 5,
+      "opmerking": "точна назва вкладки (nl)"
+    },
+    {
+      "q": "Сесії",
+      "taal": "uk",
+      "soort": "exact",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:identity/sessions"
+        }
+      ],
+      "top": 5,
+      "opmerking": "точна назва (uk)"
+    },
+    {
+      "q": "Repositories",
+      "taal": "nl",
+      "soort": "exact",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:github/repositories"
+        }
+      ],
+      "top": 5,
+      "opmerking": "точна назва (nl/en)"
+    },
+    {
+      "q": "Способи входу",
+      "taal": "uk",
+      "soort": "exact",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:identity/methods"
+        }
+      ],
+      "top": 5,
+      "opmerking": "точна двослівна назва"
+    },
+    {
+      "q": "Секрети й ключі",
+      "taal": "uk",
+      "soort": "exact",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:admin/contour"
+        }
+      ],
+      "top": 5,
+      "opmerking": "точна назва зі сполучником",
+      "ruimte": "technisch"
+    },
+    {
+      "q": "Factuur huur oktober 2026",
+      "taal": "nl",
+      "soort": "exact",
+      "verwacht": [
+        {
+          "bron": "mail",
+          "id": "eval-mail-huur"
+        }
+      ],
+      "top": 5,
+      "opmerking": "точна тема листа"
+    },
+    {
+      "q": "Зустріч із нотаріусом",
+      "taal": "uk",
+      "soort": "exact",
+      "verwacht": [
+        {
+          "bron": "agenda",
+          "id": "eval-agenda-notaris"
+        }
+      ],
+      "top": 5,
+      "opmerking": "точна назва події"
+    },
+    {
+      "q": "Налаштуваня",
+      "taal": "uk",
+      "soort": "typefout",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "^Налаштування$|^Instellingen$"
+        }
+      ],
+      "top": 5,
+      "opmerking": "пропущена літера"
+    },
+    {
+      "q": "Сессії",
+      "taal": "uk",
+      "soort": "typefout",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:identity/sessions"
+        }
+      ],
+      "top": 5,
+      "opmerking": "подвоєна літера (ru-манера)"
+    },
+    {
+      "q": "Postvka IN",
+      "taal": "nl",
+      "soort": "typefout",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:mail/inbox"
+        }
+      ],
+      "top": 5,
+      "opmerking": "транспозиція літер"
+    },
+    {
+      "q": "Калнедар",
+      "taal": "uk",
+      "soort": "typefout",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "^Календар$|^Agenda$"
+        }
+      ],
+      "top": 5,
+      "opmerking": "транспозиція в середині слова"
+    },
+    {
+      "q": "Diagnostik",
+      "taal": "nl",
+      "soort": "typefout",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:admin/diagnostics"
+        }
+      ],
+      "top": 5,
+      "opmerking": "пропущена кінцева літера",
+      "ruimte": "technisch"
+    },
+    {
+      "q": "factur huur",
+      "taal": "nl",
+      "soort": "typefout",
+      "verwacht": [
+        {
+          "bron": "mail",
+          "id": "eval-mail-huur"
+        }
+      ],
+      "top": 5,
+      "opmerking": "помилка в темі листа; лист-дублер (newsletter) не має бути першим"
+    },
+    {
+      "q": "нотариусом",
+      "taal": "ru",
+      "soort": "typefout",
+      "verwacht": [
+        {
+          "bron": "agenda",
+          "id": "eval-agenda-notaris"
+        },
+        {
+          "bron": "mail",
+          "id": "eval-mail-notaris"
+        }
+      ],
+      "top": 5,
+      "opmerking": "ru-словоформа замість uk"
+    },
+    {
+      "q": "електронна пошта",
+      "taal": "uk",
+      "soort": "synoniem",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "menu:mail"
+        },
+        {
+          "bron": "ui",
+          "id": "pagina:mail/inbox"
+        }
+      ],
+      "top": 5,
+      "opmerking": "синонім назви служби"
+    },
+    {
+      "q": "світлини",
+      "taal": "uk",
+      "soort": "synoniem",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:cloud/photos"
+        }
+      ],
+      "top": 5,
+      "opmerking": "синонім «фото»"
+    },
+    {
+      "q": "скриньки",
+      "taal": "uk",
+      "soort": "synoniem",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:mail/accounts"
+        }
+      ],
+      "top": 5,
+      "opmerking": "поштові скриньки → облікові записи пошти"
+    },
+    {
+      "q": "сміття",
+      "taal": "uk",
+      "soort": "synoniem",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:mail/trash"
+        }
+      ],
+      "top": 5,
+      "opmerking": "сміття → кошик"
+    },
+    {
+      "q": "invoice rent",
+      "taal": "en",
+      "soort": "synoniem",
+      "verwacht": [
+        {
+          "bron": "mail",
+          "id": "eval-mail-huur"
+        },
+        {
+          "bron": "mail",
+          "id": "eval-mail-orenda"
+        }
+      ],
+      "top": 5,
+      "opmerking": "синоніми factuur/рахунок, huur/оренда"
+    },
+    {
+      "q": "логи",
+      "taal": "uk",
+      "soort": "synoniem",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "Аудит|Audit|Журнал|Logboek"
+        }
+      ],
+      "top": 5,
+      "opmerking": "жаргон → журнал/аудит",
+      "ruimte": "technisch"
+    },
+    {
+      "q": "mail settings",
+      "taal": "en",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:mail/settings"
+        }
+      ],
+      "top": 5,
+      "opmerking": "en → uk/nl"
+    },
+    {
+      "q": "Einstellungen",
+      "taal": "de",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "^Налаштування$|^Instellingen$"
+        }
+      ],
+      "top": 5,
+      "opmerking": "de"
+    },
+    {
+      "q": "paramètres",
+      "taal": "fr",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "^Налаштування$|^Instellingen$"
+        }
+      ],
+      "top": 5,
+      "opmerking": "fr з діакритикою"
+    },
+    {
+      "q": "ustawienia",
+      "taal": "pl",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "^Налаштування$|^Instellingen$"
+        }
+      ],
+      "top": 5,
+      "opmerking": "pl"
+    },
+    {
+      "q": "setări",
+      "taal": "ro",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "^Налаштування$|^Instellingen$"
+        }
+      ],
+      "top": 5,
+      "opmerking": "ro з діакритикою"
+    },
+    {
+      "q": "настройки",
+      "taal": "ru",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "^Налаштування$|^Instellingen$"
+        }
+      ],
+      "top": 5,
+      "opmerking": "ru/bg"
+    },
+    {
+      "q": "Kalender",
+      "taal": "de",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "^Календар$|^Agenda$"
+        }
+      ],
+      "top": 5,
+      "opmerking": "de → agenda/календар"
+    },
+    {
+      "q": "kalendarz",
+      "taal": "pl",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "^Календар$|^Agenda$"
+        }
+      ],
+      "top": 5,
+      "opmerking": "pl"
+    },
+    {
+      "q": "Papierkorb",
+      "taal": "de",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:mail/trash"
+        }
+      ],
+      "top": 5,
+      "opmerking": "de → кошик/prullenbak"
+    },
+    {
+      "q": "corbeille",
+      "taal": "fr",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:mail/trash"
+        }
+      ],
+      "top": 5,
+      "opmerking": "fr"
+    },
+    {
+      "q": "брояч устройства",
+      "taal": "bg",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:admin/devices"
+        }
+      ],
+      "top": 10,
+      "opmerking": "bg «устройства» → пристрої",
+      "ruimte": "technisch"
+    },
+    {
+      "q": "dispozitive",
+      "taal": "ro",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:admin/devices"
+        }
+      ],
+      "top": 5,
+      "opmerking": "ro → пристрої",
+      "ruimte": "technisch"
+    },
+    {
+      "q": "contacts",
+      "taal": "en",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:mail/contacts"
+        }
+      ],
+      "top": 5,
+      "opmerking": "en → контакти"
+    },
+    {
+      "q": "rent invoice October",
+      "taal": "en",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "mail",
+          "id": "eval-mail-huur"
+        }
+      ],
+      "top": 5,
+      "opmerking": "en-запит до nl-документа"
+    },
+    {
+      "q": "паспорт",
+      "taal": "uk",
+      "soort": "meertalig",
+      "verwacht": [
+        {
+          "bron": "mail",
+          "id": "eval-mail-passport"
+        },
+        {
+          "bron": "agenda",
+          "id": "eval-agenda-notaris"
+        }
+      ],
+      "top": 5,
+      "opmerking": "слово в темі та в описі події"
+    },
+    {
+      "q": "poshta",
+      "taal": "mix",
+      "soort": "translit",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "menu:mail"
+        },
+        {
+          "bron": "ui",
+          "id": "pagina:mail/inbox"
+        }
+      ],
+      "top": 5,
+      "opmerking": "трансліт «пошта»"
+    },
+    {
+      "q": "nalashtuvannya",
+      "taal": "mix",
+      "soort": "translit",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "^Налаштування$|^Instellingen$"
+        }
+      ],
+      "top": 5,
+      "opmerking": "трансліт «налаштування»"
+    },
+    {
+      "q": "настройки почты",
+      "taal": "ru",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:mail/settings"
+        }
+      ],
+      "top": 5,
+      "opmerking": "суржик/ru → налаштування пошти"
+    },
+    {
+      "q": "де поміняти мову",
+      "taal": "uk",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:identity/languages"
+        }
+      ],
+      "top": 5,
+      "opmerking": "розмовне формулювання → Мови"
+    },
+    {
+      "q": "taal wijzigen",
+      "taal": "nl",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:identity/languages"
+        }
+      ],
+      "top": 5,
+      "opmerking": "nl-опис дії"
+    },
+    {
+      "q": "change language",
+      "taal": "en",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:identity/languages"
+        }
+      ],
+      "top": 5,
+      "opmerking": "en-опис дії"
+    },
+    {
+      "q": "змінити пароль",
+      "taal": "uk",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "Способи входу|Aanmeldmethoden|Безпека|Beveiliging"
+        }
+      ],
+      "top": 5,
+      "opmerking": "пароль → способи входу / безпека"
+    },
+    {
+      "q": "passkey",
+      "taal": "en",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "Способи входу|Aanmeldmethoden|passkey|Toegangssleutel"
+        }
+      ],
+      "top": 5,
+      "opmerking": "продуктова назва не перекладається"
+    },
+    {
+      "q": "вийти з усіх пристроїв",
+      "taal": "uk",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "Сесії|Sessies|Вийти з усіх|afmelden"
+        }
+      ],
+      "top": 5,
+      "opmerking": "опис дії → сесії / вийти з усіх акаунтів"
+    },
+    {
+      "q": "підключити claude",
+      "taal": "mix",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "Підключення ШІ|AI-koppelingen|Claude|Підключення|Koppelen"
+        }
+      ],
+      "top": 5,
+      "opmerking": "продуктова назва + дія"
+    },
+    {
+      "q": "темна тема",
+      "taal": "uk",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "Теми|Thema|Темна|Donker|Zwart"
+        }
+      ],
+      "top": 5,
+      "opmerking": "опис налаштування"
+    },
+    {
+      "q": "donker thema",
+      "taal": "nl",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "Теми|Thema|Темна|Donker|Zwart"
+        }
+      ],
+      "top": 5,
+      "opmerking": "nl-опис налаштування"
+    },
+    {
+      "q": "згорнуті вікна",
+      "taal": "uk",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "вікна|vensters|Віджети|Widgets|Персоналізація"
+        }
+      ],
+      "top": 10,
+      "opmerking": "елемент без власної сторінки — очікуємо найближчу"
+    },
+    {
+      "q": "ріпозиторії",
+      "taal": "mix",
+      "soort": "surzhyk",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:github/repositories"
+        }
+      ],
+      "top": 5,
+      "opmerking": "суржикове написання"
+    },
+    {
+      "q": "shukaty lysty",
+      "taal": "mix",
+      "soort": "translit",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "Пошук|Zoeken|Шукати листи|Berichten zoeken"
+        }
+      ],
+      "top": 5,
+      "opmerking": "трансліт фрази"
+    },
+    {
+      "q": "Нала",
+      "taal": "uk",
+      "soort": "prefix",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "^Налаштування"
+        }
+      ],
+      "top": 5,
+      "opmerking": "префікс 4 літери"
+    },
+    {
+      "q": "Sess",
+      "taal": "nl",
+      "soort": "prefix",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:identity/sessions"
+        }
+      ],
+      "top": 5,
+      "opmerking": "префікс латиницею"
+    },
+    {
+      "q": "Репоз",
+      "taal": "uk",
+      "soort": "prefix",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:github/repositories"
+        }
+      ],
+      "top": 5,
+      "opmerking": "префікс"
+    },
+    {
+      "q": "гаранті",
+      "taal": "uk",
+      "soort": "prefix",
+      "verwacht": [
+        {
+          "bron": "cloud",
+          "id": "eval-cloud-garantie"
+        }
+      ],
+      "top": 5,
+      "opmerking": "префікс слова з назви файлу"
+    },
+    {
+      "q": "verzeker",
+      "taal": "nl",
+      "soort": "prefix",
+      "verwacht": [
+        {
+          "bron": "drive",
+          "id": "eval-drive-verzekering"
+        },
+        {
+          "bron": "drive",
+          "id": "eval-drive-budget"
+        }
+      ],
+      "top": 5,
+      "opmerking": "префікс: назва Drive-файлу + слово в тексті іншого"
+    },
+    {
+      "q": "де подивитися хто входив у мій акаунт",
+      "taal": "uk",
+      "soort": "doel",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:identity/sessions"
+        }
+      ],
+      "top": 5,
+      "opmerking": "опис призначення → Сесії"
+    },
+    {
+      "q": "додати ще одну скриньку gmail",
+      "taal": "uk",
+      "soort": "doel",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:mail/accounts"
+        }
+      ],
+      "top": 5,
+      "opmerking": "опис дії → Облікові записи пошти"
+    },
+    {
+      "q": "перевірити чи все працює на сервері",
+      "taal": "uk",
+      "soort": "doel",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:admin/diagnostics"
+        }
+      ],
+      "top": 5,
+      "opmerking": "опис → Діагностика",
+      "ruimte": "technisch"
+    },
+    {
+      "q": "wie heeft wat gewijzigd",
+      "taal": "nl",
+      "soort": "doel",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:admin/audit"
+        }
+      ],
+      "top": 5,
+      "opmerking": "опис → Audit/журнал",
+      "ruimte": "technisch"
+    },
+    {
+      "q": "оновити сайт до нової версії",
+      "taal": "uk",
+      "soort": "doel",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "Оновлення|Updates|Панель розгортання|Deploy"
+        }
+      ],
+      "top": 5,
+      "opmerking": "опис → Оновлення / панель розгортання",
+      "ruimte": "technisch"
+    },
+    {
+      "q": "mijn menu anders ordenen",
+      "taal": "nl",
+      "soort": "doel",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:identity/menu"
+        }
+      ],
+      "top": 5,
+      "opmerking": "опис → Меню"
+    },
+    {
+      "q": "коди відновлення якщо загублю телефон",
+      "taal": "uk",
+      "soort": "doel",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "id": "pagina:identity/recovery"
+        }
+      ],
+      "top": 5,
+      "opmerking": "опис → Відновлення"
+    },
+    {
+      "q": "термінал на сервері",
+      "taal": "uk",
+      "soort": "doel",
+      "verwacht": [
+        {
+          "bron": "ui",
+          "titelRegex": "Термінал|Terminal|Інструменти|Hulpmiddelen"
+        }
+      ],
+      "top": 5,
+      "opmerking": "опис інструмента",
+      "ruimte": "technisch"
+    },
+    {
+      "q": "Kortrijksesteenweg",
+      "taal": "nl",
+      "soort": "bijlage",
+      "verwacht": [
+        {
+          "bron": "bijlage",
+          "id": "eval-bijlage-akte"
+        }
+      ],
+      "top": 5,
+      "opmerking": "слово лише всередині вкладення"
+    },
+    {
+      "q": "koopprijs appartement",
+      "taal": "nl",
+      "soort": "bijlage",
+      "verwacht": [
+        {
+          "bron": "bijlage",
+          "id": "eval-bijlage-akte"
+        }
+      ],
+      "top": 5,
+      "opmerking": "два слова з тексту вкладення"
+    },
+    {
+      "q": "notaris akte",
+      "taal": "nl",
+      "soort": "bijlage",
+      "verwacht": [
+        {
+          "bron": "bijlage",
+          "id": "eval-bijlage-akte"
+        },
+        {
+          "bron": "mail",
+          "id": "eval-mail-notaris"
+        },
+        {
+          "bron": "agenda",
+          "id": "eval-agenda-notaris"
+        }
+      ],
+      "top": 5,
+      "opmerking": "те саме поняття у вкладенні, листі, події"
+    },
+    {
+      "q": "інженер-програміст КПІ",
+      "taal": "uk",
+      "soort": "bijlage",
+      "verwacht": [
+        {
+          "bron": "bijlage",
+          "id": "eval-bijlage-cv"
+        }
+      ],
+      "top": 5,
+      "opmerking": "текст DOCX-вкладення"
+    },
+    {
+      "q": "тариф 100 Мбіт",
+      "taal": "uk",
+      "soort": "ocr",
+      "verwacht": [
+        {
+          "bron": "cloud",
+          "id": "eval-cloud-ocr"
+        }
+      ],
+      "top": 5,
+      "opmerking": "текст із OCR сканованого PDF"
+    },
+    {
+      "q": "договір інтернет",
+      "taal": "uk",
+      "soort": "ocr",
+      "verwacht": [
+        {
+          "bron": "cloud",
+          "id": "eval-cloud-ocr"
+        }
+      ],
+      "top": 5,
+      "opmerking": "OCR-документ за змістом"
+    },
+    {
+      "q": "буряк капуста квасоля",
+      "taal": "uk",
+      "soort": "inhoud",
+      "verwacht": [
+        {
+          "bron": "cloud",
+          "id": "eval-cloud-recept"
+        }
+      ],
+      "top": 5,
+      "opmerking": "слова в тексті нотатки"
+    },
+    {
+      "q": "молоко",
+      "taal": "uk",
+      "soort": "inhoud",
+      "verwacht": [
+        {
+          "bron": "bord",
+          "id": "eval-bord-melk"
+        }
+      ],
+      "top": 5,
+      "opmerking": "задача на дошці"
+    },
+    {
+      "q": "backup timer",
+      "taal": "en",
+      "soort": "inhoud",
+      "verwacht": [
+        {
+          "bron": "bord",
+          "id": "eval-bord-backup"
+        }
+      ],
+      "top": 5,
+      "opmerking": "en-слова всередині uk-задачі"
+    },
+    {
+      "q": "cyrillische titels",
+      "taal": "nl",
+      "soort": "inhoud",
+      "verwacht": [
+        {
+          "bron": "github",
+          "id": "eval-github-issue"
+        }
+      ],
+      "top": 5,
+      "opmerking": "GitHub issue за назвою"
+    },
+    {
+      "q": "mijn-ruimte",
+      "taal": "nl",
+      "soort": "inhoud",
+      "verwacht": [
+        {
+          "bron": "github",
+          "id": "eval-github-repo"
+        }
+      ],
+      "top": 5,
+      "opmerking": "назва репозиторію з дефісом — не перекладати/не розбивати"
+    },
+    {
+      "q": "tandarts",
+      "taal": "nl",
+      "soort": "inhoud",
+      "verwacht": [
+        {
+          "bron": "agenda",
+          "id": "eval-agenda-tandarts"
+        }
+      ],
+      "top": 5,
+      "opmerking": "подія календаря"
+    },
+    {
+      "q": "Bosch WAN28",
+      "taal": "mix",
+      "soort": "inhoud",
+      "verwacht": [
+        {
+          "bron": "cloud",
+          "id": "eval-cloud-garantie"
+        }
+      ],
+      "top": 5,
+      "opmerking": "ідентифікатор моделі у тексті"
+    },
+    {
+      "q": "полис автоверзекеринг",
+      "taal": "mix",
+      "soort": "translit",
+      "verwacht": [
+        {
+          "bron": "drive",
+          "id": "eval-drive-verzekering"
+        }
+      ],
+      "top": 10,
+      "opmerking": "кирилична транслітерація nl-назви (слабкий сигнал — top 10)"
+    },
+    {
+      "q": "Factuur huur oktober 2026",
+      "taal": "nl",
+      "soort": "onbereikbaar",
+      "verwacht": [
+        {
+          "bron": "mail",
+          "id": "eval-mail-huur"
+        }
+      ],
+      "nietVerwacht": [
+        {
+          "bron": "mail",
+          "id": "eval-mail-huur-B"
+        }
+      ],
+      "top": 5,
+      "opmerking": "однакова тема в користувача B — його лист НІКОЛИ не з'являється"
+    },
+    {
+      "q": "koopakte",
+      "taal": "nl",
+      "soort": "onbereikbaar",
+      "verwacht": [
+        {
+          "bron": "bijlage",
+          "id": "eval-bijlage-akte"
+        }
+      ],
+      "nietVerwacht": [
+        {
+          "bron": "bijlage",
+          "id": "eval-bijlage-akte-B"
+        }
+      ],
+      "top": 5,
+      "opmerking": "вкладення з такою самою назвою в B — не з'являється"
+    },
+    {
+      "q": "технічний документ",
+      "taal": "uk",
+      "soort": "onbereikbaar",
+      "verwacht": [],
+      "nietVerwacht": [
+        {
+          "bron": "cloud",
+          "id": "eval-cloud-tech-alleen"
+        }
+      ],
+      "top": 5,
+      "opmerking": "документ лише в ТЕХНІЧНОМУ просторі A — з особистого простору невидимий (запит виконується в prive)"
+    },
+    {
+      "q": "sk_live_",
+      "taal": "en",
+      "soort": "geheim",
+      "verwacht": [],
+      "nietVerwacht": [
+        {
+          "bron": "mail",
+          "id": "eval-mail-geheim"
+        }
+      ],
+      "top": 5,
+      "opmerking": "секрет у тексті листа НЕ індексується як токен: пошук за ним нічого не дає"
+    }
+  ]
+}

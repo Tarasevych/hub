@@ -1,0 +1,313 @@
+/* Huis vNext (dienst huis, vlag huis-vnext). Alleen tokens uit src/ontwerp/tokens.css (--panel --surface --line --text --muted
+   --accent --ok/--warn/--fout/--info + -zacht, --focus, --ruimte-*, --straal-*, --schaduw-*, --veilig-*): licht en donker volgen
+   vanzelf. Geen merkkleuren, geen logo's. Tik-doelen ≥ 44 px op aanraking. Versheid is altijd zichtbaar (is-vers/is-verouderd/
+   is-onbekend/is-onbeschikbaar), nooit «groen = aan» zonder meting. Lagen (.hv-laag) zijn geportaleerd naar <body>, z-index 230. */
+.hv, .hv *, .hv-laag, .hv-laag * { box-sizing: border-box; }
+.hv { display: grid; gap: var(--ruimte-4); color: var(--text); font-size: var(--tekst-klein); }
+.hv :focus-visible, .hv-laag :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.hv button, .hv-laag button { font: inherit; color: inherit; cursor: pointer; }
+.hv button:disabled, .hv-laag button:disabled { opacity: .55; cursor: not-allowed; }
+.hv svg:not(.hv-plan):not(.hv-lijn), .hv-laag svg:not(.hv-plan):not(.hv-lijn) { width: 16px; height: 16px; flex: none; }
+.hv h2, .hv h3, .hv h4, .hv-laag h2, .hv-laag h3, .hv-laag h4 { font-family: inherit; color: inherit; }
+.hv input, .hv select, .hv textarea, .hv-laag input, .hv-laag select, .hv-laag textarea { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-m); min-height: var(--tik-hoogte); padding: 6px 10px; max-width: 100%; }
+.hv input[type='checkbox'], .hv-laag input[type='checkbox'] { min-height: 0; width: 18px; height: 18px; padding: 0; accent-color: var(--accent); }
+.hv input[type='range'], .hv-laag input[type='range'] { padding: 0; border: 0; background: transparent; accent-color: var(--accent); min-width: 0; }
+.hv code, .hv-laag code { font: 500 12px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+.hv pre, .hv-laag pre { margin: 0; font: 500 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.hv a.hv-link { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-size: var(--tekst-mini); text-decoration: none; }
+.hv a.hv-link:hover { text-decoration: underline; }
+@media (pointer: coarse) { .hv button, .hv-laag button, .hv input, .hv select, .hv-laag input, .hv-laag select { min-height: var(--tik-hoogte-mobiel); } .hv .hv-knop.is-klein, .hv-laag .hv-knop.is-klein { min-height: 36px; } }
+
+/* ---- knoppen ---- */
+.hv-knop, .hv-icoonknop { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--tik-hoogte); padding: 6px 12px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); color: var(--text); }
+.hv-knop:hover, .hv-icoonknop:hover { background: var(--surface); }
+.hv-knop.is-hoofd { background: var(--accent); color: var(--accentText); border-color: var(--accent); font-weight: 650; }
+.hv-knop.is-hoofd:hover { filter: brightness(1.06); }
+.hv-knop.is-stil { background: transparent; border-color: transparent; color: var(--muted); }
+.hv-knop.is-stil:hover { background: var(--surface); color: var(--text); }
+.hv-knop.is-klein { min-height: 32px; padding: 4px 10px; font-size: var(--tekst-mini); border-radius: 999px; }
+.hv-knop.is-actief { border-color: var(--accent); background: var(--accent-soft); }
+.hv-icoonknop { width: var(--tik-hoogte); padding: 0; border-color: transparent; background: transparent; color: var(--muted); }
+.hv-icoonknop:hover { color: var(--text); background: var(--surface); }
+.hv-icoonknop.is-gevaar:hover { color: var(--fout); background: var(--fout-zacht); }
+.hv-knoppen { display: flex; flex-wrap: wrap; gap: var(--ruimte-2); align-items: center; }
+.hv-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.hv-chip { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--text); font-size: var(--tekst-mini); font-weight: 600; }
+.hv-chip.is-actief { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.hv-chip.is-passief { cursor: default; background: var(--surface); color: var(--muted); font-weight: 600; }
+.hv-chip.is-kritiek, .hv-chip.is-passief.is-kritiek { background: var(--fout-zacht); color: var(--fout); border-color: transparent; }
+.hv-chip.is-beschikbaar, .hv-chip.is-verbonden, .hv-chip.is-schrijven { background: var(--ok-zacht); color: var(--ok); border-color: transparent; }
+.hv-chip.is-gepland, .hv-chip.is-verzwakt, .hv-chip.is-geconfigureerd, .hv-chip.is-simulatie { background: var(--warn-zacht); color: var(--warn); border-color: transparent; }
+.hv-chip.is-niet_ondersteund, .hv-chip.is-geweigerd { background: var(--fout-zacht); color: var(--fout); border-color: transparent; }
+@media (pointer: coarse) { .hv-chip { min-height: 40px; } }
+
+/* ---- kop, meldingen ---- */
+.hv-kop { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--ruimte-3); flex-wrap: wrap; }
+.hv-kop-tekst { display: grid; gap: 6px; min-width: 0; flex: 1; }
+.hv-kop h2 { display: flex; align-items: center; gap: var(--ruimte-2); margin: 0; font-size: 24px; line-height: 1.2; }
+.hv-kop h2 svg { width: 22px; height: 22px; color: var(--accent); }
+.hv-kop-woning { display: flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; }
+.hv-kop-naam { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-weight: 600; }
+.hv-kiezer { position: relative; }
+.hv-kiezer-lijst { position: absolute; top: calc(100% + 6px); left: 0; z-index: 5; min-width: 220px; margin: 0; padding: 6px; list-style: none; border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); box-shadow: var(--schaduw-2); display: grid; gap: 2px; }
+.hv-kiezer-lijst button { width: 100%; text-align: left; min-height: var(--tik-hoogte); padding: 6px 10px; border: 0; border-radius: var(--straal-m); background: transparent; color: var(--text); }
+.hv-kiezer-lijst button:hover { background: var(--surface); }
+.hv-kiezer-lijst [aria-selected='true'] button { background: var(--accent-soft); color: var(--accent); }
+.hv-kanaal { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 12px 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-kanaal > span { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.hv-kanaal.is-lokaal { color: var(--ok); } .hv-kanaal.is-lokaal > span { background: var(--ok-vlak); }
+.hv-kanaal.is-verouderd, .hv-kanaal.is-verzwakt, .hv-kanaal.is-geconfigureerd { color: var(--warn); } .hv-kanaal.is-verouderd > span, .hv-kanaal.is-verzwakt > span, .hv-kanaal.is-geconfigureerd > span { background: var(--warn-vlak); }
+.hv-kanaal.is-geweigerd { color: var(--fout); } .hv-kanaal.is-geweigerd > span { background: var(--fout-vlak); }
+.hv-hint { margin: 0; color: var(--muted); font-size: var(--tekst-klein); display: inline-flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
+.hv-hint svg { margin-top: 2px; }
+.hv-melding { display: flex; align-items: flex-start; gap: var(--ruimte-2); flex-wrap: wrap; margin: 0; padding: 10px 12px; border-radius: var(--straal-m); font-size: var(--tekst-klein); }
+.hv-melding svg { margin-top: 1px; }
+.hv-melding.is-fout { background: var(--fout-zacht); color: var(--fout); }
+.hv-melding.is-info { background: var(--info-zacht); color: var(--info); }
+.hv-melding.is-ok { background: var(--ok-zacht); color: var(--ok); }
+.hv-toost { margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--ok-zacht); color: var(--ok); font-size: var(--tekst-klein); justify-self: start; }
+.hv-fout-tekst { color: var(--fout); }
+
+/* ---- bouwstenen ---- */
+.hv-inhoud { display: grid; gap: var(--ruimte-4); min-width: 0; }
+.hv-inhoud > * { min-width: 0; }
+.hv-overzicht, .hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen, .hv-beveiliging, .hv-energie, .hv-gebeurtenissen-pagina, .hv-integraties, .hv-assistent, .hv-instellingen, .hv-showroom, .hv-planner { display: grid; gap: var(--ruimte-4); min-width: 0; }
+.hv-blok { display: grid; gap: var(--ruimte-3); padding: var(--ruimte-4); border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); min-width: 0; }
+.hv-blok > h3 { display: flex; align-items: center; gap: var(--ruimte-2); margin: 0; font-size: var(--tekst-basis); font-weight: 650; }
+.hv-blok > h3 small { color: var(--muted); font-weight: 500; }
+.hv-sub { margin: var(--ruimte-2) 0 0; font-size: var(--tekst-klein); font-weight: 650; color: var(--muted); text-transform: none; }
+.hv-kolommen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ruimte-4); align-items: start; }
+.hv-kolommen.is-een { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 900px) { .hv-kolommen { grid-template-columns: minmax(0, 1fr); } }
+.hv-rij { display: flex; gap: var(--ruimte-2); align-items: center; flex-wrap: wrap; }
+.hv-rij > input { flex: 1 1 200px; min-width: 0; }
+.hv-rij.is-wrap > * { flex: 1 1 160px; }
+.hv-veld { display: grid; gap: 4px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.hv-veld > span, .hv-veld > legend { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); padding: 0; }
+.hv-veld.is-rij { grid-auto-flow: column; align-items: center; justify-content: start; }
+.hv-veld.is-rij input { width: 90px; }
+.hv-keuze { display: flex; align-items: center; gap: 10px; min-height: var(--tik-hoogte); cursor: pointer; }
+.hv-keuze small { color: var(--muted); }
+.hv-werkbalk { display: flex; gap: var(--ruimte-2); align-items: center; flex-wrap: wrap; }
+.hv-zoekveld { display: flex; align-items: center; gap: 6px; flex: 1 1 220px; min-width: 0; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); }
+.hv-zoekveld svg { color: var(--muted); }
+.hv-zoekveld input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 6px 0; }
+.hv-zoekveld input:focus-visible { outline: none; }
+.hv-zoekveld:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
+.hv-lijst { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--ruimte-2); }
+.hv-lijst > li { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); flex-wrap: wrap; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); min-width: 0; }
+.hv-lijst.is-dicht { gap: 4px; }
+.hv-lijst.is-dicht > li { padding: 6px 10px; border-color: transparent; background: var(--surface); }
+.hv-lijst > li > span, .hv-lijst > li > .hv-keuze { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.hv-lijst > li.is-kritiek { background: var(--fout-zacht); color: var(--fout); }
+.hv-lijst-knop { display: grid; gap: 2px; flex: 1; min-width: 0; padding: 4px 0; border: 0; background: transparent; text-align: left; color: var(--text); }
+.hv-lijst-knop strong { font-weight: 650; overflow-wrap: anywhere; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.hv-lijst-knop small { color: var(--muted); }
+.hv-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--ruimte-3); }
+.hv-kaart { position: relative; display: grid; gap: 4px; align-content: start; padding: 12px 14px; border: 1px solid var(--line); border-left: 4px solid var(--muted); border-radius: var(--straal-l); background: var(--panel); text-align: left; color: var(--text); min-width: 0; }
+button.hv-kaart:hover { background: var(--surface); }
+.hv-kaart small { color: var(--muted); font-size: var(--tekst-mini); overflow-wrap: anywhere; }
+.hv-kaart strong { font-weight: 650; overflow-wrap: anywhere; }
+.hv-kaart em { font-style: normal; color: var(--muted); font-size: var(--tekst-mini); }
+.hv-kaart .hv-waarde { font-size: var(--tekst-basis); font-weight: 600; overflow-wrap: anywhere; }
+.hv-kaart.is-vers { border-left-color: var(--ok-vlak); }
+.hv-kaart.is-verouderd { border-left-color: var(--warn-vlak); }
+.hv-kaart.is-onbekend { border-left-color: var(--muted); }
+.hv-kaart.is-onbekend .hv-waarde, .hv-kaart.is-onbeschikbaar .hv-waarde { color: var(--muted); font-weight: 500; }
+.hv-kaart.is-onbeschikbaar { border-left-color: var(--fout-vlak); opacity: .85; }
+.hv-kaart.is-kritiek strong::after { content: ' ⚠'; color: var(--fout); }
+.hv-kaart.is-scene { border-left-color: var(--accent); }
+.hv-kaart.is-catalogus { border-left-color: var(--line); }
+.hv-kaart.is-catalogus .hv-waarde { font-size: var(--tekst-klein); font-weight: 500; }
+.hv-kaart .hv-knoppen { margin-top: 6px; }
+.hv-details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 10px; margin: 4px 0 0; font-size: var(--tekst-mini); }
+.hv-details dt { color: var(--muted); font-weight: 600; }
+.hv-details dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.hv-tegels { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--ruimte-3); }
+.hv-tegel { display: grid; gap: 2px; justify-items: start; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); color: var(--text); text-align: left; min-width: 0; }
+button.hv-tegel:hover { background: var(--surface); }
+.hv-tegel svg { color: var(--accent); width: 18px; height: 18px; }
+.hv-tegel strong { font-size: 22px; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.hv-tegel span { color: var(--muted); font-size: var(--tekst-mini); overflow-wrap: anywhere; }
+.hv-tabel { width: 100%; border-collapse: collapse; font-size: var(--tekst-klein); }
+.hv-tabel th, .hv-tabel td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.hv-tabel th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+.hv-tabel tr:last-child th, .hv-tabel tr:last-child td { border-bottom: 0; }
+.hv-uitleg { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.hv-uitleg li { overflow-wrap: anywhere; }
+.hv-uitleg svg { vertical-align: -3px; color: var(--ok); }
+.hv-stappen { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--ruimte-2); counter-reset: stap; }
+.hv-stap { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--surface); counter-increment: stap; }
+.hv-stap::before { content: counter(stap); width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--panel); color: var(--muted); font-size: 11px; font-weight: 700; flex: none; }
+.hv-stap select, .hv-stap input { flex: 1 1 120px; min-width: 0; }
+.hv-stap input[type='time'] { flex: 0 1 120px; }
+.hv-stap input[type='number'] { flex: 0 1 100px; }
+.hv-stap .hv-chips { flex-basis: 100%; }
+.hv-droogloop { display: grid; gap: var(--ruimte-2); padding: 12px; border-radius: var(--straal-m); background: var(--surface); border: 1px solid var(--line); }
+.hv-droogloop.is-ok { border-color: var(--ok-vlak); }
+.hv-droogloop p { margin: 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.hv-droogloop small { color: var(--muted); }
+.hv-droogloop li svg { color: var(--muted); }
+
+/* ---- lege toestand, start ---- */
+.hv-leeg, .hv-start { display: grid; justify-items: center; gap: var(--ruimte-2); padding: var(--ruimte-6) var(--ruimte-4); border: 1px dashed var(--line); border-radius: var(--straal-l); text-align: center; background: var(--surface); }
+.hv-leeg > svg, .hv-start > svg { width: 32px; height: 32px; color: var(--accent); }
+.hv-leeg h3, .hv-start h3 { margin: 0; font-size: 18px; }
+.hv-leeg p, .hv-start p { margin: 0; max-width: 56ch; color: var(--muted); }
+.hv-start form { width: min(100%, 480px); }
+
+/* ---- apparaten en bediening ---- */
+.hv-apparaat { display: grid; gap: var(--ruimte-2); padding: 10px 12px; border: 1px solid var(--line); border-left: 4px solid var(--muted); border-radius: var(--straal-m); background: var(--panel); }
+.hv-apparaat.is-vers { border-left-color: var(--ok-vlak); } .hv-apparaat.is-verouderd { border-left-color: var(--warn-vlak); } .hv-apparaat.is-onbeschikbaar { border-left-color: var(--fout-vlak); }
+.hv-apparaat > header { display: grid; gap: 2px; margin: 0; padding: 0; background: transparent; border: 0; }
+.hv-apparaat > header small { color: var(--muted); }
+.hv-bediening { display: grid; gap: var(--ruimte-2); }
+.hv-regelaar { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); flex-wrap: wrap; }
+.hv-regelaar.is-schuif { display: grid; }
+.hv-regelaar-naam { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.hv-regelaar-naam small { color: var(--muted); font-weight: 500; }
+.hv-kritiek { font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--fout-zacht); color: var(--fout); }
+.hv-schakelaar { position: relative; width: 52px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); flex: none; }
+.hv-schakelaar-knop { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--panel); box-shadow: var(--schaduw-1); transition: transform .15s; }
+.hv-schakelaar.is-aan { background: var(--ok-vlak); border-color: var(--ok-vlak); }
+.hv-schakelaar.is-aan .hv-schakelaar-knop { transform: translateX(22px); }
+.hv-schakelaar.is-onbekend { background: repeating-linear-gradient(45deg, var(--surface) 0 6px, var(--line) 6px 8px); }
+.hv-schakelaar.is-onbekend .hv-schakelaar-knop { transform: translateX(11px); }
+@media (pointer: coarse) { .hv-schakelaar { width: 60px; height: 34px; } .hv-schakelaar-knop { width: 26px; height: 26px; } .hv-schakelaar.is-aan .hv-schakelaar-knop { transform: translateX(26px); } .hv-schakelaar.is-onbekend .hv-schakelaar-knop { transform: translateX(13px); } }
+.hv-schuif { display: flex; align-items: center; gap: 6px; }
+.hv-schuif input { flex: 1; }
+.hv-opdracht-stand { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0; padding: 6px 10px; border-radius: var(--straal-m); background: var(--surface); color: var(--muted); font-size: var(--tekst-mini); }
+.hv-opdracht-stand.is-voltooid { background: var(--ok-zacht); color: var(--ok); }
+.hv-opdracht-stand.is-geweigerd, .hv-opdracht-stand.is-mislukt, .hv-opdracht-stand.is-verlopen, .hv-opdracht-stand.is-offline { background: var(--fout-zacht); color: var(--fout); }
+.hv-opdracht-stand.is-gedeeltelijk { background: var(--warn-zacht); color: var(--warn); }
+.hv-spin { width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: hv-draai .8s linear infinite; }
+@keyframes hv-draai { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .hv-spin { animation: none; } .hv-schakelaar-knop { transition: none; } }
+.hv-versheid { color: var(--muted); font-size: 11px; }
+.hv-bevestig { display: grid; gap: var(--ruimte-2); padding: 12px; border: 1px solid var(--fout); border-radius: var(--straal-m); background: var(--fout-zacht); color: var(--fout); }
+.hv-bevestig p { margin: 0; display: flex; gap: 8px; }
+.hv-bevestig .hv-knop.is-hoofd { background: var(--fout-vlak); border-color: var(--fout-vlak); color: var(--text-on-vlak); }
+
+/* ---- plattegrond (SVG) ---- */
+.hv-plan { width: 100%; height: auto; max-height: 420px; display: block; }
+.hv-plan.is-compact { max-height: 240px; }
+.hv-plan-kamer rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.hv-plan-kamer.heeft-licht rect { fill: var(--warn-zacht); }
+.hv-plan-kamer.is-gekozen rect { stroke: var(--accent); stroke-width: 2.5; }
+.hv-plan-kamer:hover rect { stroke: var(--accent); }
+.hv-plan-kamer:focus-visible { outline: none; } .hv-plan-kamer:focus-visible rect { stroke: var(--focus); stroke-width: 3; }
+.hv-plan-naam { fill: var(--text); font-size: 12px; font-weight: 650; pointer-events: none; }
+.hv-plan-info { fill: var(--muted); font-size: 10px; pointer-events: none; }
+.hv-plan-knoppen { display: inline-flex; gap: 2px; flex-wrap: wrap; }
+.hv-scenes-rij { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--ruimte-2); }
+.hv-scene-kaart { display: grid; gap: 2px; justify-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); color: var(--text); text-align: left; }
+.hv-scene-kaart:hover { background: var(--surface); }
+.hv-scene-kaart svg { color: var(--accent); }
+.hv-scene-kaart small { color: var(--muted); font-size: 11px; }
+
+/* ---- gebeurtenissen ---- */
+.hv-gebeurtenissen { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.hv-gebeurtenissen > li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 2px 10px; align-items: start; padding: 8px 10px; border-left: 3px solid var(--line); border-radius: var(--straal-s); background: var(--surface); }
+.hv-gebeurtenissen > li > span { color: var(--muted); font-size: var(--tekst-mini); padding-top: 5px; }
+.hv-gebeurtenissen > li > strong { font-weight: 600; overflow-wrap: anywhere; }
+.hv-gebeurtenissen > li > small { grid-column: 2; color: var(--muted); }
+.hv-gebeurtenissen > li > .hv-details { grid-column: 2; }
+.hv-gebeurtenissen > li.is-belangrijk { border-left-color: var(--warn-vlak); }
+.hv-gebeurtenissen > li.is-kritiek { border-left-color: var(--fout-vlak); background: var(--fout-zacht); }
+.hv-gebeurtenissen.is-klein > li { grid-template-columns: 72px minmax(0, 1fr); }
+@media (max-width: 420px) { .hv-gebeurtenissen > li, .hv-gebeurtenissen.is-klein > li { grid-template-columns: minmax(0, 1fr); } .hv-gebeurtenissen > li > small, .hv-gebeurtenissen > li > .hv-details { grid-column: 1; } }
+
+/* ---- integraties ---- */
+.hv-integratie { display: grid; gap: var(--ruimte-2); padding: 12px 14px; border: 1px solid var(--line); border-left: 4px solid var(--muted); border-radius: var(--straal-l); background: var(--surface); }
+.hv-integratie.is-verbonden { border-left-color: var(--ok-vlak); } .hv-integratie.is-verzwakt, .hv-integratie.is-geconfigureerd { border-left-color: var(--warn-vlak); } .hv-integratie.is-geweigerd { border-left-color: var(--fout-vlak); }
+.hv-integratie > header { display: flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; margin: 0; padding: 0; border: 0; background: transparent; }
+.hv-integratie > header strong { font-size: var(--tekst-basis); }
+
+/* ---- energie ---- */
+.hv-lijn { width: 100%; height: 60px; display: block; margin-top: 4px; }
+.hv-lijn path { stroke: var(--accent); stroke-width: 1.5; }
+.hv-lijn-tekst { fill: var(--muted); font-size: 9px; }
+
+/* ---- showroom ---- */
+.hv-afspeel { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.hv-afspeel li { display: grid; gap: 2px; padding: 8px 10px; border-left: 3px solid var(--line); border-radius: var(--straal-s); background: var(--surface); opacity: .6; }
+.hv-afspeel li.is-klaar { opacity: .85; border-left-color: var(--ok-vlak); }
+.hv-afspeel li.is-actief { opacity: 1; border-left-color: var(--accent); background: var(--accent-soft); }
+.hv-afspeel small { color: var(--muted); }
+
+/* ---- onderbalk (telefoon) — een balk, geen zwevende knop; registratie in scripts/plaatsing-vaste-elementen.json ---- */
+.hv.is-smal { padding-bottom: calc(84px + var(--veilig-onder)); }
+.hv-onderbalk { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; justify-content: space-around; align-items: stretch; padding: 4px 4px calc(4px + var(--veilig-onder)); border-top: 1px solid var(--line); background: var(--panel); box-shadow: var(--schaduw-2); }
+.hv-onderbalk > button, .hv-onderbalk summary { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; padding: 4px 2px; border: 0; border-radius: var(--straal-m); background: transparent; color: var(--muted); font-size: 11px; font-weight: 600; cursor: pointer; list-style: none; }
+.hv-onderbalk summary::-webkit-details-marker { display: none; }
+.hv-onderbalk > button.is-actief { color: var(--accent); background: var(--accent-soft); }
+.hv-onderbalk svg { width: 20px; height: 20px; }
+.hv-onderbalk-meer { flex: 1; position: relative; display: flex; }
+.hv-onderbalk-meer summary { width: 100%; }
+.hv-onderbalk-menu { position: absolute; right: 0; bottom: calc(100% + 8px); min-width: 220px; max-height: 60vh; overflow: auto; display: grid; gap: 2px; padding: 6px; border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); box-shadow: var(--schaduw-3); }
+.hv-onderbalk-menu button { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 10px; border: 0; border-radius: var(--straal-m); background: transparent; text-align: left; color: var(--text); }
+.hv-onderbalk-menu button:hover { background: var(--surface); }
+
+/* ---- laag (paneel / scherm / venster), geportaleerd in <body> boven de chrome ---- */
+.hv-laag { position: fixed; inset: 0; z-index: 230; /* boven bovenbalk/accountmenu (220) */ background: var(--overlay); display: flex; justify-content: flex-end; animation: hv-in .16s ease-out; font-family: inherit; color: var(--text); font-size: var(--tekst-klein); }
+.hv-laag.is-venster { align-items: center; justify-content: center; padding: 16px; }
+.hv-laag-vak { background: var(--panel); color: var(--text); display: flex; flex-direction: column; max-height: 100%; width: min(560px, 100%); box-shadow: var(--schaduw-3); outline: none; }
+.hv-laag.is-paneel .hv-laag-vak { height: 100%; border-left: 1px solid var(--line); }
+.hv-laag.is-venster .hv-laag-vak { border-radius: var(--straal-l); max-height: min(90vh, 900px); width: min(680px, 100%); }
+.hv-laag.is-scherm { justify-content: flex-start; }
+.hv-laag.is-scherm .hv-laag-vak { width: 100vw; max-width: 100vw; flex: 1 0 100%; height: 100dvh; max-height: 100dvh; padding-top: var(--veilig-boven); }
+.hv-laag-kop { display: flex; align-items: center; gap: var(--ruimte-2); padding: 12px 16px 10px; border-bottom: 1px solid var(--line); margin: 0; background: transparent; }
+.hv-laag-kop h2 { margin: 0; font-size: 17px; font-weight: 650; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.hv-laag-sluit { margin-left: auto; flex: none; }
+.hv-laag-inhoud { padding: 16px; overflow-y: auto; display: grid; gap: var(--ruimte-3); align-content: start; flex: 1; min-width: 0; }
+.hv-laag-inhoud > * { min-width: 0; }
+.hv-laag.is-scherm .hv-laag-inhoud { padding-bottom: calc(16px + var(--veilig-onder)); }
+@keyframes hv-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .hv-laag { animation: none; } }
+
+/* ---- de chrome (data-surface-model=flat-content) haalt bij elke <section>/<article> in de inhoud de zijranden en de straal weg;
+   kaarten van het huis dragen hun versheid in de linkerrand, dus die komt hier met dezelfde specificiteit terug ---- */
+.canonical-content .hv section.hv-blok, .canonical-content .hv section.hv-leeg, .canonical-content .hv section.hv-start, .canonical-content .hv section.hv-droogloop { border-inline: 1px solid var(--line); border-radius: var(--straal-l); }
+.canonical-content .hv section.hv-leeg, .canonical-content .hv section.hv-start { border-inline-style: dashed; }
+.canonical-content .hv section.hv-droogloop { border-radius: var(--straal-m); }
+.canonical-content .hv section.hv-droogloop.is-ok { border-color: var(--ok-vlak); }
+.canonical-content .hv article.hv-kaart, .canonical-content .hv article.hv-integratie, .canonical-content .hv article.hv-apparaat { border-inline: 1px solid var(--line); border-left-width: 4px; border-left-color: var(--muted); border-radius: var(--straal-l); }
+.canonical-content .hv article.hv-apparaat { border-radius: var(--straal-m); }
+.canonical-content .hv article.is-vers { border-left-color: var(--ok-vlak); }
+.canonical-content .hv article.is-verouderd, .canonical-content .hv article.is-verzwakt, .canonical-content .hv article.is-geconfigureerd { border-left-color: var(--warn-vlak); }
+.canonical-content .hv article.is-onbeschikbaar, .canonical-content .hv article.is-geweigerd { border-left-color: var(--fout-vlak); }
+.canonical-content .hv article.is-verbonden { border-left-color: var(--ok-vlak); }
+.canonical-content .hv article.is-scene { border-left-color: var(--accent); }
+.canonical-content .hv article.is-catalogus { border-left-color: var(--line); }
+
+/* UI-005: beginscherm (onboarding) en foutkaart — rustig, drie acties, duidelijk onderscheid echt/demo. */
+.hv-start { justify-items: stretch; text-align: start; gap: var(--ruimte-4); padding: var(--ruimte-5) var(--ruimte-4); border-style: solid; background: var(--panel); }
+.hv-start-kop { display: grid; gap: 6px; }
+.hv-start-kop h3 { font-size: 20px; line-height: 1.25; }
+.hv-start .hv-start-kop p { max-width: 62ch; }
+.hv-start-acties { display: grid; gap: var(--ruimte-3); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.hv-start-actie { display: grid; align-content: start; gap: 6px; padding: var(--ruimte-3) var(--ruimte-4) var(--ruimte-4); border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--surface); min-width: 0; }
+.hv-start-actie.is-hoofd { border-color: var(--accent); background: var(--accent-soft); }
+.hv-start-actie h4 { margin: 0; font-size: 15px; font-weight: 650; }
+.hv-start .hv-start-actie p { margin: 0; color: var(--muted); }
+.hv-start-actie > .hv-knop { justify-self: start; margin-top: 4px; }
+.hv-start-icoon { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; background: var(--panel); color: var(--accent); }
+.hv-start-icoon svg { width: 18px; height: 18px; }
+.hv-start-vorm { display: flex; gap: var(--ruimte-2); margin-top: 4px; min-width: 0; }
+.hv-start-vorm input { flex: 1 1 auto; min-width: 0; }
+.hv-start .hv-start-uitleg { color: var(--info); font-size: var(--tekst-mini); }
+.hv-start-mogelijk { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 6px var(--ruimte-3); margin: 0; padding: 0; list-style: none; color: var(--muted); }
+.hv-start-mogelijk li { display: flex; align-items: center; gap: 8px; }
+.hv-start-mogelijk svg { width: 16px; height: 16px; flex: none; color: var(--accent); }
+.hv-start .hv-start-echt { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: var(--tekst-mini); }
+.hv-merk, .hv-demo-label { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; font-size: var(--tekst-mini); font-weight: 650; line-height: 18px; }
+.hv-merk.is-echt { background: var(--ok-zacht); color: var(--ok); }
+.hv-merk.is-demo, .hv-demo-label { background: var(--info-zacht); color: var(--info); }
+.hv-start-echt > span { display: inline-flex; align-items: center; gap: 6px; margin-inline-end: var(--ruimte-3); }
+.hv-demo-label { margin-inline-start: 10px; vertical-align: middle; }
+.hv-foutkaart { display: grid; grid-template-columns: auto 1fr; gap: var(--ruimte-2) var(--ruimte-3); align-items: start; padding: var(--ruimte-4); border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); }
+.hv-foutkaart > svg { width: 24px; height: 24px; color: var(--fout); }
+.hv-foutkaart h3 { margin: 0 0 4px; font-size: 16px; }
+.hv-foutkaart p { margin: 0; color: var(--muted); }
+.hv-foutkaart > .hv-knop { grid-column: 2; justify-self: start; }
+@media (max-width: 520px) { .hv-start-vorm { flex-direction: column; } .hv-start-vorm .hv-knop { width: 100%; } }

@@ -1,0 +1,8 @@
+{
+  "prefetch": [
+    { "source": "document", "where": { "selector_matches": "a[data-tsv-vooruit]" }, "eagerness": "immediate" }
+  ],
+  "prerender": [
+    { "source": "document", "where": { "selector_matches": "a[data-tsv-vooruit='prerender']" }, "eagerness": "immediate" }
+  ]
+}
