@@ -80,7 +80,7 @@ export const ORCH_TOOLS: readonly ToolDef[] = Object.freeze([
       type: 'object',
       properties: {
         id,
-        zonderTests: { type: 'string', description: p('Необов’язково: причина, чому тести пропущено — лишається в записі передачі.', 'Optioneel: reden waarom de tests zijn overgeslagen — blijft in het record van de overdracht.') },
+        zonderTests: { type: 'string', description: p('Необов’язково: примітка, чому тести агента не запускались — лишається в записі передачі. Довірену перевірку правил (controleer) сервер виконує завжди: пакет зі зміненими правилами без нового lock буде відхилено й з цією приміткою.', 'Optioneel: notitie waarom de tests van de agent niet liepen — blijft in het record. De vertrouwde regelcontrole (controleer) voert de server altijd uit: een pakket met gewijzigde regels zonder nieuwe lock wordt ook met deze notitie geweigerd.') },
       },
       required: ['id'], additionalProperties: false,
     },

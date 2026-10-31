@@ -274,21 +274,78 @@ BRON="$WERK/uit/bron"
 #     geldt de lock als NIET bevestigd — een agent die eigenaar.soort=passkey in de repo zet, komt zo niet voorbij root.
 # Zonder orchestratie/ (oudere bron) geldt alleen de schakelaar "gitops" zoals voorheen.
 if [ -f "$BRON/orchestratie/beleid.json" ]; then
-  MODUS_FOUT="$(python3 - "$BRON" "$ORCH_BEVESTIGD" "$EIGENAAR_ONDERTEKENAARS" 2>&1 <<'PYMODUS'
-import json, os, re, shutil, subprocess, sys, tempfile
+  MODUS_FOUT="$(python3 -I - "$BRON" "$ORCH_BEVESTIGD" "$EIGENAAR_ONDERTEKENAARS" 2>&1 <<'PYMODUS'
+import hashlib, json, os, re, shutil, subprocess, sys, tempfile
 bron, journal = sys.argv[1], sys.argv[2]
 ondertekenaars = sys.argv[3] if len(sys.argv) > 3 else "/etc/mijn-ruimte/eigenaar-ondertekenaars"
-b = json.load(open(os.path.join(bron, "orchestratie/beleid.json"), encoding="utf-8"))
+def geen_constante(c):
+    raise ValueError(f"{c} is geen geldige JSON-waarde")
+def laad(pad):
+    # Strikt zoals JSON.parse in scripts/orch/kern.mjs: NaN/Infinity weigeren (Python zou ze anders stil accepteren).
+    with open(os.path.join(bron, pad), encoding="utf-8") as f:
+        return json.load(f, parse_constant=geen_constante)
+try:
+    b = laad("orchestratie/beleid.json")
+except Exception as ex:
+    sys.exit(f"beleid.json onleesbaar: {ex}")
+if not isinstance(b, dict):
+    sys.exit("beleid.json is geen JSON-object")
 modi = (b.get("kritiek") or {}).get("installatieModi") or {}
 if "automatisch_beperkt" not in (modi.get("toegestaan") or []):
     sys.exit("automatisch_beperkt staat niet in kritiek.installatieModi.toegestaan")
 try:
-    lock = json.load(open(os.path.join(bron, "orchestratie/regels.lock.json"), encoding="utf-8"))
+    lock = laad("orchestratie/regels.lock.json")
 except Exception as e:
     sys.exit(f"regels.lock.json ontbreekt of onleesbaar: {e}")
+if not isinstance(lock, dict):
+    sys.exit("regels.lock.json is geen JSON-object")
 e = lock.get("eigenaar") or {}
 if not e or e.get("kritiekHash") != lock.get("kritiekHash"):
     sys.exit("kritieke regels zijn niet (meer) door de eigenaar bevestigd")
+# Прив'язка lock ↔ ФАКТИЧНІ файли релізу (те саме, що controleerLock у scripts/orch/kern.mjs). Без неї підтвердження власника стосувалося б
+# лише lock.kritiekHash, а beleid.json у релізі міг би містити ІНШІ критичні політики — наприклад, сам automatisch_beperkt, дописаний агентом
+# поверх старого підписаного lock. root-інсталятор (PYREGELS у mijn-ruimte-uitrol.sh) на шляху GitOps не викликається, тож звірка — тут.
+# Koppeling lock ↔ werkelijke bestanden: anders gold de bevestiging alleen voor de lock en kon beleid.json andere kritieke regels bevatten.
+def stabiel(w):
+    # Те саме, що stabielJson у kern.mjs (ключі відсортовані, без пробілів). Рідкісні дробові числа (1e-7) Python пише інакше, ніж JS —
+    # тоді відбиток не збігається і випуск відхиляється (fail closed), а не навпаки.
+    if w is None or isinstance(w, (bool, str)):
+        return json.dumps(w, ensure_ascii=False)
+    if isinstance(w, int):
+        return str(w)
+    if isinstance(w, float):
+        return str(int(w)) if w.is_integer() and abs(w) < 1e21 else repr(w)
+    if isinstance(w, list):
+        return "[" + ",".join(stabiel(x) for x in w) + "]"
+    if isinstance(w, dict):
+        return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + stabiel(w[k]) for k in sorted(w)) + "}"
+    sys.exit("beleid.json bevat een onbekend JSON-type")
+try:
+    kritiek_echt = hashlib.sha256(stabiel(b.get("kritiek")).encode("utf-8")).hexdigest()
+except UnicodeEncodeError:
+    sys.exit("beleid.json bevat ongeldige Unicode (losse surrogaten)")
+if lock.get("regelsVersie") != b.get("regelsVersie"):
+    sys.exit(f"regelsVersie van de lock ({lock.get('regelsVersie')}) wijkt af van beleid.json ({b.get('regelsVersie')})")
+if lock.get("kritiekHash") != kritiek_echt:
+    sys.exit("kritieke regels in beleid.json wijken af van regels.lock.json (kritiekHash) — de bevestiging van de eigenaar geldt niet voor deze regels")
+paden = b.get("regelBestanden")
+if not isinstance(paden, list) or not all(isinstance(p, str) for p in paden) or "AGENTS.md" not in paden or "orchestratie/beleid.json" not in paden:
+    sys.exit("regelBestanden moet AGENTS.md en orchestratie/beleid.json bevatten")
+def norm(t):
+    # = normaliseer() in kern.mjs: één BOM weg, CRLF/CR → LF, geen spaties/tabs aan het regeleinde
+    return re.sub(r"[ \t]+$", "", (t[1:] if t.startswith("﻿") else t).replace("\r\n", "\n").replace("\r", "\n"), flags=re.M)
+per = {}
+for pad in sorted(set(paden)):
+    if pad.startswith("/") or "\\" in pad or ":" in pad or any(d in ("", ".", "..") for d in pad.split("/")):
+        sys.exit(f"onveilig pad in regelBestanden: {pad!r}")
+    try:
+        with open(os.path.join(bron, pad), encoding="utf-8", newline="") as f:
+            per[pad] = hashlib.sha256(norm(f.read()).encode("utf-8")).hexdigest()
+    except (OSError, UnicodeDecodeError):
+        sys.exit(f"regelbestand ontbreekt of is onleesbaar: {pad}")
+if hashlib.sha256("".join(f"{h}  {p}\n" for p, h in per.items()).encode("utf-8")).hexdigest() != lock.get("hash"):
+    anders = [p for p in per if (lock.get("bestanden") or {}).get(p) != per[p]]
+    sys.exit("regels gewijzigd zonder lock bij te werken: " + ", ".join(anders or ["(lijst bestanden)"]))
 if e.get("soort") == "passkey":
     sleutels = ("regelsVersie", "hash", "kritiekHash", "voorstel")
     kort = re.sub(r"-", "", str(e.get("besluit") or "")).lower()

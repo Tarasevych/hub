@@ -400,7 +400,7 @@ fi
 # gewijzigd zonder versie/lock — het pakket volgt zijn eigen regels niet. Modus: dit script installeert na bevestiging van de eigenaar
 # (passkey of handtekening); dat moet het beleid in het pakket toestaan.
 if [ -f "$BRON/orchestratie/regels.lock.json" ]; then
-  REGELS_FOUT="$(python3 - "$BRON" 2>&1 <<'PYREGELS'
+  REGELS_FOUT="$(python3 -I - "$BRON" 2>&1 <<'PYREGELS'
 import hashlib, json, os, re, sys
 bron = sys.argv[1]
 try:
@@ -408,14 +408,41 @@ try:
     beleid = json.load(open(os.path.join(bron, "orchestratie/beleid.json"), encoding="utf-8"))
 except Exception as e:
     sys.exit(f"lock/beleid onleesbaar: {e}")
+if not isinstance(lock, dict) or not isinstance(beleid, dict):
+    sys.exit("lock/beleid is geen JSON-object")
 if lock.get("regelsVersie") != beleid.get("regelsVersie"):
     sys.exit(f"regelsVersie lock {lock.get('regelsVersie')} != beleid {beleid.get('regelsVersie')}")
-norm = lambda t: re.sub(r"[ \t]+$", "", t.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n"), flags=re.M)
+# \u0422\u0435 \u0441\u0430\u043c\u0435, \u0449\u043e stabielJson + kritiekAfdruk \u0443 scripts/orch/kern.mjs: kritieke regels in beleid.json moeten de kritiekHash van de lock hebben.
+# (Onafhankelijk van regelBestanden \u2014 anders kon een pakket beleid.json uit de lijst halen en zo de afdruk omzeilen.)
+def stabiel(w):
+    if w is None or isinstance(w, (bool, str)):
+        return json.dumps(w, ensure_ascii=False)
+    if isinstance(w, int):
+        return str(w)
+    if isinstance(w, float):
+        return str(int(w)) if w.is_integer() and abs(w) < 1e21 else repr(w)
+    if isinstance(w, list):
+        return "[" + ",".join(stabiel(x) for x in w) + "]"
+    if isinstance(w, dict):
+        return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + stabiel(w[k]) for k in sorted(w)) + "}"
+    sys.exit("beleid.json bevat een onbekend JSON-type")
+try:
+    if hashlib.sha256(stabiel(beleid.get("kritiek")).encode("utf-8")).hexdigest() != lock.get("kritiekHash"):
+        sys.exit("kritieke regels in beleid.json wijken af van kritiekHash in de lock")
+except UnicodeEncodeError:
+    sys.exit("beleid.json bevat ongeldige Unicode")
+paden = beleid.get("regelBestanden")
+if not isinstance(paden, list) or not all(isinstance(p, str) for p in paden) or "AGENTS.md" not in paden or "orchestratie/beleid.json" not in paden:
+    sys.exit("regelBestanden moet AGENTS.md en orchestratie/beleid.json bevatten")
+norm = lambda t: re.sub(r"[ \t]+$", "", (t[1:] if t.startswith("\ufeff") else t).replace("\r\n", "\n").replace("\r", "\n"), flags=re.M)
 per = {}
-for pad in sorted(beleid.get("regelBestanden", [])):
+for pad in sorted(set(paden)):
+    if pad.startswith("/") or "\\" in pad or ":" in pad or any(d in ("", ".", "..") for d in pad.split("/")):
+        sys.exit(f"onveilig pad in regelBestanden: {pad!r}")
     try:
-        per[pad] = hashlib.sha256(norm(open(os.path.join(bron, pad), encoding="utf-8").read()).encode()).hexdigest()
-    except OSError:
+        with open(os.path.join(bron, pad), encoding="utf-8", newline="") as f:
+            per[pad] = hashlib.sha256(norm(f.read()).encode()).hexdigest()
+    except (OSError, UnicodeDecodeError):
         sys.exit(f"regelbestand ontbreekt: {pad}")
 totaal = hashlib.sha256("".join(f"{h}  {p}\n" for p, h in per.items()).encode()).hexdigest()
 if totaal != lock.get("hash"):

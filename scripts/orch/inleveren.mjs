@@ -9,7 +9,7 @@ import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, 
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { KANALEN, SHA40, TAR_NAAM, herkenKanaal, padVeilig, valideerOverdracht, vergelijkBestanden, versheid, wachtrijVoegToe } from './kern.mjs';
-import { controleerTarGzVooraf, controleerZipVooraf, leesOverdrachtZip } from './pakket.mjs';
+import { MAX_UITGEPAKT_BYTES, controleerTarGzVooraf, controleerZipVooraf, leesOverdrachtZip, omvangVanMap } from './pakket.mjs';
 
 const fout = (code, uk, nl, extra = {}) => ({ code, ernst: 'fout', uk, nl, ...extra });
 /** Стан координації: пише лише orch (команди) або власник; агентська передача з такими файлами відхиляється. */
@@ -35,6 +35,9 @@ function loopBestanden(map) {
   stap(''); return uit.sort();
 }
 
+/** Зауваження (fout) → виняток, що зберігає і український, і нідерландський текст (раніше nl отримував український). */
+const zaakFout = (z) => Object.assign(new Error(`${z.code}: ${z.uk}`), { nl: z.nl });
+
 /** Якщо архів має одну верхню теку (як mijn-ruimte-<versie>/), заходимо в неї. */
 function wortelVanUitgepakt(map) {
   const items = readdirSync(map).filter((n) => n !== '__MACOSX');
@@ -51,34 +54,36 @@ export function veiligeTestEnv(bron = process.env) {
 }
 
 /** Повертає { inhoud, odPad }: тека з файлами й (для пакета передачі) шлях до ORCH-OVERDRACHT.json поза tar. */
-function pakUit(bron, kanaal, werk) {
+function pakUit(bron, kanaal, werk, maxBytes = MAX_UITGEPAKT_BYTES) {
   const doel = join(werk, 'uitgepakt'); mkdirSync(doel, { recursive: true });
+  // Другий рубіж після розпакування: «видимий» обсяг файлів (ловить розріджені GNU-файли tar і будь-що, що пройшло повз вимір потоку).
+  const nietTeGroot = (map) => { const n = omvangVanMap(map); if (n > maxBytes) throw zaakFout({ code: 'INHOUD_TE_GROOT', uk: `розпаковано ${Math.round(n / 1048576)} МіБ — більше за межу ${Math.round(maxBytes / 1048576)} МіБ`, nl: `${Math.round(n / 1048576)} MiB uitgepakt — meer dan de grens van ${Math.round(maxBytes / 1048576)} MiB` }); return map; };
   if (kanaal === 'zip') {
-    const vz = controleerZipVooraf(bron);
-    if (vz) throw new Error(`${vz.code}: ${vz.uk}`);
+    const vz = controleerZipVooraf(bron, { maxBytes });
+    if (vz) throw zaakFout(vz);
     const r = spawnSync('unzip', ['-o', '-q', bron, '-d', doel], { encoding: 'utf8' });
     if (r.status !== 0) throw new Error(`UITPAKKEN_MISLUKT: unzip: ${(r.stderr || r.error?.message || '').trim()}`);
     // Пакет передачі (етап 2): zip з mijn-ruimte-<versie>.tar.gz + .sha256 + ORCH-OVERDRACHT.json → цілісність, потім вміст самого tar.gz.
     const w = wortelVanUitgepakt(doel);
     if (readdirSync(w).some((n) => TAR_NAAM.test(n)) && existsSync(join(w, 'ORCH-OVERDRACHT.json'))) {
-      const g = leesOverdrachtZip(bron, join(werk, 'overdracht-zip'));
-      const f = g.zaken.find((x) => x.ernst === 'fout'); if (f) throw new Error(`${f.code}: ${f.uk}`);
-      const vt = controleerTarGzVooraf(g.tarPad);
-      if (vt) throw new Error(`${vt.code}: ${vt.uk}`);
+      const g = leesOverdrachtZip(bron, join(werk, 'overdracht-zip'), { maxBytes });
+      const f = g.zaken.find((x) => x.ernst === 'fout'); if (f) throw zaakFout(f);
+      const vt = controleerTarGzVooraf(g.tarPad, { maxBytes });
+      if (vt) throw zaakFout(vt);
       const tarDoel = join(werk, 'uitgepakt-tar'); mkdirSync(tarDoel);
       const t = spawnSync('tar', ['-xzf', g.tarPad, '-C', tarDoel, '--no-same-owner', '--no-same-permissions'], { encoding: 'utf8' });
       if (t.status !== 0) throw new Error(`UITPAKKEN_MISLUKT: tar in overdrachtzip: ${(t.stderr || '').trim()}`);
-      return { inhoud: wortelVanUitgepakt(tarDoel), odPad: join(g.map, 'ORCH-OVERDRACHT.json'), overdrachtZip: true };
+      return { inhoud: wortelVanUitgepakt(nietTeGroot(tarDoel)), odPad: join(g.map, 'ORCH-OVERDRACHT.json'), overdrachtZip: true };
     }
   } else if (kanaal === 'tar_gz') {
-    const vt = controleerTarGzVooraf(bron);
-    if (vt) throw new Error(`${vt.code}: ${vt.uk}`);
+    const vt = controleerTarGzVooraf(bron, { maxBytes });
+    if (vt) throw zaakFout(vt);
     const r = spawnSync('tar', ['-xzf', bron, '-C', doel, '--no-same-owner', '--no-same-permissions'], { encoding: 'utf8' });
     if (r.status !== 0) throw new Error(`UITPAKKEN_MISLUKT: tar: ${(r.stderr || '').trim()}`);
   } else if (kanaal === 'lokaal_bestand') {
     cpSync(bron, doel, { recursive: true, dereference: false, filter: (src) => padVeilig(relative(bron, src) || 'x') || relative(bron, src) === '' });
   } else throw new Error(`KANAAL_ONBEKEND: ${kanaal}`);
-  return { inhoud: wortelVanUitgepakt(doel), odPad: null, overdrachtZip: false };
+  return { inhoud: wortelVanUitgepakt(nietTeGroot(doel)), odPad: null, overdrachtZip: false };
 }
 
 /** Знаходить гілку/ref для каналу github_pr: гілка в origin, PR-URL або pr/N. Відхиляє прапорці git (початок з «-»). */
@@ -94,14 +99,16 @@ function githubRef(git, bron) {
 }
 
 /**
- * Головний конвеєр. opties: { wortel, beleid, lock, bron, kanaal?, overdrachtPad?, taakId?, tests?: string[], zonderTests?: string,
+ * Головний конвеєр. opties: { wortel, beleid, lock, bron, kanaal?, overdrachtPad?, taakId?, tests?: string[] (shell — код із пакета!),
+ *                             standaardTests?: boolean (beleid.inlevering.standaardTests, теж shell), zonderTests?: string, alleenVeiligeControle?,
+ *                             verwachteAgent?: string (сервер: агент MCP-підключення), door?: string (хто доставив), maxUitgepaktBytes?,
  *                             integratieRef?, bewaarTak?: boolean, nu? }
  * Повертає запис передачі (inlevering) — його ж пише orch.mjs у orchestratie/inleveringen/ і додає в чергу при «aanvaard».
  */
 export function inleveren(o) {
   const nu = o.nu ?? new Date().toISOString();
   const git = gitIn(o.wortel);
-  const z = []; const record = { schema: 1, id: '', taakId: null, agent: null, kanaal: null, bron: String(o.bron), bronSha256: null, basisCommit: null, tak: null, commit: null,
+  const z = []; const record = { schema: 1, id: '', taakId: null, agent: null, door: o.door ? String(o.door).slice(0, 120) : null, kanaal: null, bron: String(o.bron), bronSha256: null, basisCommit: null, tak: null, commit: null,
     bestanden: [], conflicten: [], tests: null, zaken: z, uitkomst: 'geweigerd', aangemaakt: nu, integratieRef: null, pr: null };
   const werk = mkdtempSync(join(tmpdir(), 'orch-inlever-'));
   let werkboom = null; let takAangemaakt = false;
@@ -116,7 +123,7 @@ export function inleveren(o) {
     // 1. Вміст: архів/тека → розпакувати; patch → лишити; git → ref.
     let inhoud = null; let ref = null; let patchPad = null; let odBuiten = null;
     const fysiekKanaal = ['mcp', 'http_api', 'web_upload'].includes(kanaal) ? herkenKanaal(o.bron, !!bronPad && statSync(bronPad).isDirectory(), null) : kanaal;
-    if (['zip', 'tar_gz', 'lokaal_bestand'].includes(fysiekKanaal)) { if (!bronPad) { z.push(fout('BRON_ONTBREEKT', `файл/тека «${o.bron}» не існує`, `bestand/map «${o.bron}» bestaat niet`)); return record; } const u = pakUit(bronPad, fysiekKanaal, werk); inhoud = u.inhoud; odBuiten = u.odPad; if (u.overdrachtZip) record.overdrachtZip = true; }
+    if (['zip', 'tar_gz', 'lokaal_bestand'].includes(fysiekKanaal)) { if (!bronPad) { z.push(fout('BRON_ONTBREEKT', `файл/тека «${o.bron}» не існує`, `bestand/map «${o.bron}» bestaat niet`)); return record; } const u = pakUit(bronPad, fysiekKanaal, werk, o.maxUitgepaktBytes ?? MAX_UITGEPAKT_BYTES); inhoud = u.inhoud; odBuiten = u.odPad; if (u.overdrachtZip) record.overdrachtZip = true; }
     else if (fysiekKanaal === 'git_patch') { if (!bronPad) { z.push(fout('BRON_ONTBREEKT', `patch «${o.bron}» не існує`, `patch «${o.bron}» bestaat niet`)); return record; } patchPad = bronPad; }
     else if (fysiekKanaal === 'github_pr') ref = githubRef(git, o.bron);
     else { z.push(fout('BRON_ONTBREEKT', `для каналу ${kanaal} потрібен файл .zip/.tar.gz/.patch або тека`, `kanaal ${kanaal} vraagt een .zip/.tar.gz/.patch of map`)); return record; }
@@ -131,7 +138,11 @@ export function inleveren(o) {
     if (!od) { z.push(fout('OVERDRACHT_ONTBREEKT', 'немає ORCH-OVERDRACHT.json (у архіві/теці або через --overdracht; для git-гілки — --taak <ID> зареєстрованої задачі). Шаблон: orchestratie/sjablonen/ORCH-OVERDRACHT.json', 'ORCH-OVERDRACHT.json ontbreekt (in archief/map of via --overdracht; voor een git-tak --taak <ID>). Sjabloon: orchestratie/sjablonen/ORCH-OVERDRACHT.json')); return record; }
     z.push(...valideerOverdracht(od, o.beleid));
     if (z.some((x) => x.ernst === 'fout')) return record;
+    // Агент діє лише від власного імені: MCP-підключення агента X не може здати пакет «від» агента Y (сервер передає verwachteAgent).
+    // taakId/agent уже провалідовані — записуємо їх у record, щоб відмова мала впізнаваний id (а не ONBEKEND-…).
     Object.assign(record, { taakId: od.taakId, agent: od.agent, basisCommit: od.basisCommit, overdracht: od });
+    if (o.verwachteAgent && od.agent !== o.verwachteAgent) z.push(fout('AGENT_VERSCHILT', `пакет заявляє агента «${String(od.agent).slice(0, 32)}», а здає підключення агента «${o.verwachteAgent}» — агент діє лише від власного імені`, `pakket noemt agent «${String(od.agent).slice(0, 32)}», maar wordt ingeleverd door de verbinding van «${o.verwachteAgent}» — een agent handelt alleen op eigen naam`));
+    if (z.some((x) => x.ernst === 'fout')) return record;
 
     // 3. База існує? Правила чинні?
     if (git('cat-file', '-e', `${od.basisCommit}^{commit}`) === null) { z.push(fout('BASIS_ONBEKEND', `базовий commit ${od.basisCommit.slice(0, 12)} невідомий у цьому репозиторії — зробіть git fetch або агент працював від неіснуючої бази`, `basiscommit ${od.basisCommit.slice(0, 12)} onbekend in deze repository`)); return record; }
@@ -187,36 +198,44 @@ export function inleveren(o) {
     z.push(...versheid({ taak: taakVoorVersheid, fase: 'overdracht', regelsVersie: o.beleid.regelsVersie, regelsHash: o.lock?.hash ?? null, headIsAfstammeling: true, integratieVoorsprong, eigenBestanden: record.bestanden, schoon: true }));
     if (integratieRef) {
       const mt = spawnSync('git', ['merge-tree', '--write-tree', '--name-only', integratieRef, record.commit], { cwd: o.wortel, encoding: 'utf8' });
-      if (mt.status === 1) { record.conflicten = mt.stdout.trim().split('\n').slice(1).filter(Boolean); z.push(fout('CONFLICT', `злиття з ${integratieRef} конфліктує у: ${record.conflicten.join(', ')} — перебазуйте гілку ${tak} і передайте знову`, `samenvoegen met ${integratieRef} geeft conflicten in: ${record.conflicten.join(', ')} — rebase ${tak} en lever opnieuw in`)); }
+      if (mt.status === 1) { /* --name-only: regel 1 = tree, dan de conflictbestanden tot de eerste lege regel; daarna informatieve meldingen (Auto-merging …) — die horen niet in de lijst */ const mtRegels = mt.stdout.split('\n'); const leeg = mtRegels.indexOf('', 1); record.conflicten = [...new Set(mtRegels.slice(1, leeg < 0 ? undefined : leeg).filter(Boolean))]; z.push(fout('CONFLICT', `злиття з ${integratieRef} конфліктує у: ${record.conflicten.join(', ')} — перебазуйте гілку ${tak} і передайте знову`, `samenvoegen met ${integratieRef} geeft conflicten in: ${record.conflicten.join(', ')} — rebase ${tak} en lever opnieuw in`)); }
       else if (mt.status !== 0) z.push(waarsch('MERGE_TREE_ONBEKEND', `git merge-tree не дав відповіді: ${(mt.stderr || '').trim()}`, 'git merge-tree gaf geen uitslag'));
     } else z.push(waarsch('GEEN_INTEGRATIE', 'інтеграційну гілку не знайдено — конфлікти не перевірено', 'geen integratietak gevonden — conflicten niet gecontroleerd'));
 
-    // 7. Тести у робочому дереві передачі (не в головному!). Пропуск лише з явною причиною, яка лишається в записі.
-    // Безпека: на сервері (alleenVeiligeControle) та для стандартної перевірки «node scripts/orch.mjs controleer» виконується ЛИШЕ
-    // довірений scripts/orch.mjs із o.wortel з прапорцем --wortel <map>, без sh -c і без виконання жодного коду з пакета агента.
+    // Передача вже відхилена (конфлікт, застаріла база/правила…) → далі нічого не виконуємо, зокрема жодного коду з пакета.
+    // Al geweigerd (conflict, verouderd …) → niets meer uitvoeren, zeker geen code uit het pakket.
+    if (z.some((x) => x.ernst === 'fout')) return record;
+
+    // 7. Перевірки у робочому дереві передачі (не в головному!).
+    // Безпека (адверсарна перевірка 31.10.2026):
+    //   - ЗАВЖДИ виконується довірений controleer: scripts/orch.mjs із o.wortel з --wortel <map>, без sh -c і без жодного коду з пакета агента.
+    //     Його не вимикає й --zonder-tests / zonderTests — інакше пакет зі зміненими правилами без нового lock пройшов би неперевіреним.
+    //   - Shell-тести виконують КОД ІЗ ПАКЕТА АГЕНТА (scripts/eenheidstests.mjs, tests/… — усе з пакета) з HOME оператора. Тому лише за явним
+    //     вибором оператора CLI: --tests "cmd" або --standaardtests (beleid.inlevering.standaardTests). За замовчуванням — ні; на сервері
+    //     (alleenVeiligeControle) — ніколи. --zonder-tests пропускає лише shell-тести; причина лишається в записі.
+    // Altijd de vertrouwde controleer; shell-tests (code uit het pakket!) alleen op uitdrukkelijke keuze van de operator, nooit op de server.
     const VEILIGE_CONTROLE_CMD = 'node scripts/orch.mjs controleer';
-    const tests = o.alleenVeiligeControle ? [VEILIGE_CONTROLE_CMD] : (o.tests ?? o.beleid.inlevering.standaardTests ?? []);
-    if (o.zonderTests) record.tests = { overgeslagen: true, reden: String(o.zonderTests), geslaagd: 0, mislukt: 0, uitvoer: [] };
-    else if (tests.length) {
-      const map = werkboom ?? (() => { const b = join(werk, 'boom-ref'); git('worktree', 'add', '-q', '--detach', b, record.commit); werkboom = b; return b; })();
-      const env = veiligeTestEnv();
-      const heeftShellTest = !o.alleenVeiligeControle && tests.some((c) => String(c).trim() !== VEILIGE_CONTROLE_CMD);
-      if (heeftShellTest && existsSync(join(o.wortel, 'node_modules')) && !existsSync(join(map, 'node_modules'))) { try { execFileSync('ln', ['-s', join(o.wortel, 'node_modules'), join(map, 'node_modules')]); } catch { /* без node_modules тести самі скажуть */ } }
-      record.tests = { overgeslagen: false, geslaagd: 0, mislukt: 0, uitvoer: [] };
-      for (const cmd of tests) {
-        const r = o.alleenVeiligeControle || String(cmd).trim() === VEILIGE_CONTROLE_CMD
-          ? spawnSync(process.execPath, [join(o.wortel, 'scripts/orch.mjs'), 'controleer', '--wortel', map], { cwd: map, env, encoding: 'utf8', timeout: 120_000 })
-          : spawnSync('sh', ['-c', cmd], { cwd: map, env, encoding: 'utf8', timeout: 600_000 });
-        const ok = r.status === 0; record.tests[ok ? 'geslaagd' : 'mislukt']++;
-        record.tests.uitvoer.push({ cmd, status: r.status, laatste: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim().split('\n').slice(-6).join('\n') });
-        if (!ok) z.push(fout('TESTS_MISLUKT', `тест «${cmd}» впав (код ${r.status})`, `test «${cmd}» faalde (code ${r.status})`));
-      }
-    } else record.tests = { overgeslagen: true, reden: 'geen tests geconfigureerd', geslaagd: 0, mislukt: 0, uitvoer: [] };
+    const isVeilig = (c) => String(c).trim() === VEILIGE_CONTROLE_CMD;
+    const gevraagd = o.alleenVeiligeControle || o.zonderTests ? [] : (o.tests ?? (o.standaardTests ? (o.beleid.inlevering.standaardTests ?? []) : []));
+    const shellTests = gevraagd.filter((c) => !isVeilig(c));
+    const map = werkboom ?? (() => { const b = join(werk, 'boom-ref'); git('worktree', 'add', '-q', '--detach', b, record.commit); werkboom = b; return b; })();
+    const env = veiligeTestEnv();
+    if (shellTests.length && existsSync(join(o.wortel, 'node_modules')) && !existsSync(join(map, 'node_modules'))) { try { execFileSync('ln', ['-s', join(o.wortel, 'node_modules'), join(map, 'node_modules')]); } catch { /* без node_modules тести самі скажуть */ } }
+    record.tests = { overgeslagen: !!o.zonderTests, ...(o.zonderTests ? { reden: String(o.zonderTests) } : {}), geslaagd: 0, mislukt: 0, uitvoer: [] };
+    for (const cmd of [VEILIGE_CONTROLE_CMD, ...shellTests]) {
+      const r = isVeilig(cmd)
+        ? spawnSync(process.execPath, [join(o.wortel, 'scripts/orch.mjs'), 'controleer', '--wortel', map], { cwd: map, env, encoding: 'utf8', timeout: 120_000 })
+        : spawnSync('sh', ['-c', cmd], { cwd: map, env, encoding: 'utf8', timeout: 600_000 });
+      const ok = r.status === 0; record.tests[ok ? 'geslaagd' : 'mislukt']++;
+      record.tests.uitvoer.push({ cmd, vertrouwd: isVeilig(cmd), status: r.status, laatste: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim().split('\n').slice(-6).join('\n') });
+      if (!ok) z.push(fout('TESTS_MISLUKT', isVeilig(cmd) ? `перевірка правил (довірений controleer) «${cmd}» не пройшла (код ${r.status})` : `тест «${cmd}» впав (код ${r.status})`, `${isVeilig(cmd) ? 'regelcontrole (vertrouwde controleer)' : 'test'} «${cmd}» faalde (code ${r.status})`));
+    }
     if (z.some((x) => x.ernst === 'fout')) return record;
     record.uitkomst = 'aanvaard';
     return record;
   } catch (e) {
-    z.push(fout(String(e.message).split(':')[0] || 'INLEVEREN_MISLUKT', e.message, e.message)); return record;
+    const code = /^[A-Z][A-Z_]+(?=:)/.exec(String(e.message))?.[0] ?? 'INLEVEREN_MISLUKT';
+    z.push(fout(code, String(e.message).replace(/^[A-Z][A-Z_]+: /, ''), e.nl ?? String(e.message).replace(/^[A-Z][A-Z_]+: /, ''))); return record;
   } finally {
     if (werkboom) { spawnSync('git', ['worktree', 'remove', '--force', werkboom], { cwd: o.wortel }); }
     spawnSync('git', ['worktree', 'prune'], { cwd: o.wortel });

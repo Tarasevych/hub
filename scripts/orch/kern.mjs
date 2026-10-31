@@ -57,6 +57,12 @@ export function valideerBeleid(b) {
     if (m.standaard && !m.toegestaan?.includes(m.standaard)) z.push(fout('MODI_STANDAARD', 'installatieModi.standaard має бути серед дозволених', 'installatieModi.standaard moet toegestaan zijn'));
     if (b.kritiek.privesleutelsNaarAgenten !== false) z.push(fout('SLEUTELS', 'privesleutelsNaarAgenten має бути false — приватні ключі власника агентам не передаються', 'privesleutelsNaarAgenten moet false zijn — privésleutels van de eigenaar gaan nooit naar agenten'));
   }
+  // compactContext.bestand: orch ПИШЕ цей файл (context, voorstelToepassen) — лише orchestratie/<назва>.md, не файл правил і не lock.
+  // Інакше пропозиція правил могла б перезаписати AGENTS.md, README чи щось поза деревом («../»). Alleen orchestratie/<naam>.md.
+  const cc = b.compactContext || {};
+  if (!CONTEXT_PAD.test(String(cc.bestand || '')) || (Array.isArray(b.regelBestanden) && b.regelBestanden.includes(cc.bestand)))
+    z.push(fout('CONTEXT_PAD', 'compactContext.bestand — лише orchestratie/<назва>.md і не файл правил', 'compactContext.bestand — alleen orchestratie/<naam>.md en geen regelbestand'));
+  if (!Number.isInteger(cc.maxBytes) || cc.maxBytes < 1000 || cc.maxBytes > 200_000) z.push(fout('CONTEXT_MAX', 'compactContext.maxBytes — ціле 1000…200000', 'compactContext.maxBytes — geheel getal 1000…200000'));
   const a = b.adapters || {};
   if (!Number.isInteger(a.maxRegels) || a.maxRegels < 5 || a.maxRegels > 60) z.push(fout('ADAPTER_MAX', 'adapters.maxRegels — ціле 5…60', 'adapters.maxRegels — geheel getal 5…60'));
   if (!Array.isArray(a.bestanden) || a.bestanden.length === 0) z.push(fout('ADAPTER_LIJST', 'adapters.bestanden порожній', 'adapters.bestanden is leeg'));
@@ -126,6 +132,8 @@ export function eigenaarStatus(lock, verifieerUitslag) {
 const PASSKEY_VINGERAFDRUK = /^[0-9a-f]{8,16}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export const VOORSTEL_ID = /^[0-9a-f]{16,32}$/;
+/** Дозволений шлях компактного контексту (пише orch): orchestratie/<назва>.md, без підтек. */
+export const CONTEXT_PAD = /^orchestratie\/[A-Za-z0-9._-]+\.md$/;
 
 /**
  * Етап 3: підтвердження критичних політик рішенням власника з passkey (сайт → root). Чисто: звіряє, що рішення стосується САМЕ цього

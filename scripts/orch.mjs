@@ -9,8 +9,10 @@
 //   versheid --taak X --fase start|overdracht                   звірити правила й базу з git (HEAD, інтеграційна гілка)
 //   onderteken-bericht          рядок для підпису власника (ssh-keygen -Y sign -n mijn-ruimte-regels)
 //   bevestig <bericht.sig>      перевірити підпис власника та записати його в lock
-//   inleveren --bron <zip|tar.gz|patch|map|git-ref> [--kanaal k] [--overdracht pad.json] [--taak X] [--tests "cmd"]… [--zonder-tests "reden"] [--push]
-//                               прийняти результат агента з будь-якого каналу: гілка від бази, зміни, конфлікти, тести, запис, черга
+//   inleveren --bron <zip|tar.gz|patch|map|git-ref> [--kanaal k] [--overdracht pad.json] [--taak X] [--tests "cmd"]… [--standaardtests] [--zonder-tests "reden"] [--push]
+//                               прийняти результат агента з будь-якого каналу: гілка від бази, зміни, конфлікти, перевірка правил, запис, черга.
+//                               Завжди лише довірений controleer (без коду з пакета). --tests / --standaardtests (beleid.inlevering.standaardTests)
+//                               ВИКОНУЮТЬ КОД ІЗ ПАКЕТА АГЕНТА на цій машині — лише для перевірених пакетів, в ізольованому середовищі.
 //   wachtrij toon|volgende|klaar|terugtrekken   послідовна черга інтеграції (klaar: --taak X --uitkomst integrated|afgewezen [--hoofd sha])
 //   status                      огляд задач: in_progress / integrated / released / installed (installed — лише з orchestratie/geinstalleerd.json)
 //   werkruimte --taak X [--pad P]   ізольоване робоче дерево (git worktree) для задачі
@@ -24,7 +26,7 @@ import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  SHA40, compacteContext, controleerAdapter, controleerLock, eigenaarStatus, kritiekBericht, normaliseer, statusAfleiden, valideerBeleid, valideerTaak,
+  CONTEXT_PAD, SHA40, compacteContext, controleerAdapter, controleerLock, eigenaarStatus, kritiekBericht, normaliseer, statusAfleiden, valideerBeleid, valideerTaak,
   vergrendel, verifieerSshsig, versheid, wachtrijKlaar, wachtrijTerugtrekken, wachtrijVolgende, REGELS_NAMESPACE, TAAK_STATEN,
 } from './orch/kern.mjs';
 import { inleveren, registreerInlevering } from './orch/inleveren.mjs';
@@ -107,6 +109,7 @@ function doeVergrendel() {
 
 function doeContext() {
   const beleid = laadBeleid();
+  if (!CONTEXT_PAD.test(String(beleid.compactContext?.bestand || ''))) { console.log('FOUT CONTEXT_PAD: compactContext.bestand — лише orchestratie/<назва>.md · nl: alleen orchestratie/<naam>.md'); return 1; }
   const tekst = compacteContext(lees('AGENTS.md'), beleid, laadLock());
   writeFileSync(P(beleid.compactContext.bestand), tekst);
   console.log(`geschreven: ${beleid.compactContext.bestand} (${Buffer.byteLength(tekst)} bytes)`);
@@ -192,10 +195,13 @@ function doeInleveren() {
   const beleid = laadBeleid(); const lock = laadLock();
   const bron = optie('bron', ''); if (!bron) { console.log('gebruik: inleveren --bron <zip|tar.gz|patch|map|git-ref> [--kanaal k] [--overdracht pad.json] [--taak X]'); return 2; }
   const tests = optiesAlle('tests');
-  const record = inleveren({ wortel, beleid, lock, bron, kanaal: optie('kanaal', null), overdrachtPad: optie('overdracht', null), taakId: optie('taak', null), tests: tests.length ? tests : undefined, zonderTests: optie('zonder-tests', null), integratieRef: optie('integratie', null) });
+  const standaardTests = args.includes('--standaardtests');
+  const shell = [...tests, ...(standaardTests && !tests.length ? beleid.inlevering?.standaardTests ?? [] : [])].filter((c) => String(c).trim() !== 'node scripts/orch.mjs controleer');
+  if (shell.length && !optie('zonder-tests', null)) console.log(`LET OP: виконую КОД ІЗ ПАКЕТА АГЕНТА на цій машині (${shell.join(' ; ')}) — середовище очищене від секретів, але з вашим HOME. Лише для пакетів, яким ви довіряєте.\n     nl: code UIT HET PAKKET van de agent wordt op deze machine uitgevoerd (${shell.join(' ; ')}) — env zonder geheimen, maar met uw HOME. Alleen voor pakketten die u vertrouwt.`);
+  const record = inleveren({ wortel, beleid, lock, bron, kanaal: optie('kanaal', null), overdrachtPad: optie('overdracht', null), taakId: optie('taak', null), tests: tests.length ? tests : undefined, standaardTests, zonderTests: optie('zonder-tests', null), integratieRef: optie('integratie', null) });
   const uit = registreerInlevering(wortel, record);
   for (const z of record.zaken) console.log(`${z.ernst === 'fout' ? 'FOUT' : 'LET OP'} ${z.code}: ${z.uk}\n     nl: ${z.nl}`);
-  console.log(`\nORCH inleveren: ${record.uitkomst === 'aanvaard' ? 'ПРИЙНЯТО · aanvaard' : 'ВІДХИЛЕНО · geweigerd'} · kanaal ${record.kanaal ?? '—'} · taak ${record.taakId ?? '—'} · tak ${record.tak ?? '—'} · commit ${record.commit?.slice(0, 12) ?? '—'} · bestanden ${record.bestanden.length} · tests ${record.tests ? (record.tests.overgeslagen ? `overgeslagen (${record.tests.reden})` : `${record.tests.geslaagd} ok / ${record.tests.mislukt} mis`) : '—'}`);
+  console.log(`\nORCH inleveren: ${record.uitkomst === 'aanvaard' ? 'ПРИЙНЯТО · aanvaard' : 'ВІДХИЛЕНО · geweigerd'} · kanaal ${record.kanaal ?? '—'} · taak ${record.taakId ?? '—'} · tak ${record.tak ?? '—'} · commit ${record.commit?.slice(0, 12) ?? '—'} · bestanden ${record.bestanden.length} · tests ${record.tests ? `${record.tests.geslaagd} ok / ${record.tests.mislukt} mis${record.tests.overgeslagen ? ` · agenttests overgeslagen (${record.tests.reden})` : ''}` : '—'}`);
   console.log(`record: ${uit.recordPad}${uit.taakBijgewerkt ? ' · taak ter_integratie' : ''}${uit.wachtrij ? ` · wachtrij: ${typeof uit.wachtrij === 'string' ? uit.wachtrij : uit.wachtrij.code}` : ''}`);
   if (record.uitkomst === 'aanvaard' && args.includes('--push')) {
     const p = git('push', '-u', 'origin', record.tak);

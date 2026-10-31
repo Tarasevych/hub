@@ -5,7 +5,7 @@
 // Universele releases: compatibele tar.gz + één overdrachtzip met alles wat de eigenaar en de installer nodig hebben.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { OVERDRACHT_ZIP, SHA40, TAR_NAAM, VERSIE, basisBestandTekst, controleerBasis, leesBasisBestand, maakRapport, overdrachtZipNaam, valideerOverdracht } from './kern.mjs';
@@ -117,8 +117,36 @@ const padOnveiligInArchief = (naam) => {
   return delen.includes('..');
 };
 
-/** Перевіряє список і типи записів ZIP до розпакування (захист від Zip-Slip та символьних посилань). */
-export function controleerZipVooraf(zipPad) {
+/**
+ * Межа розпакованого обсягу одного архіву (захист від «zip/tar-бомби»): 1 ГіБ — утричі більше за найбільше завантаження (300 МіБ),
+ * а весь репозиторій без стиснення — ~35 МБ. Grens voor uitgepakte omvang per archief (zip-/tar-bom).
+ */
+export const MAX_UITGEPAKT_BYTES = 1024 * 1024 * 1024;
+
+/**
+ * Рахує ФАКТИЧНО розпаковані байти потоком (unzip -p / gzip -dc → head → wc), нічого не пишучи на диск, і зупиняється на межі + 1.
+ * Заявленим розмірам у заголовках не віримо: unzip 6.0 пише всі байти потоку deflate, навіть якщо заголовок zip каже «10 байт»
+ * (перевірено: 20 МіБ нулів із підробленим розміром 10 — розпаковано 20 МіБ, код 0).
+ * Telt de WERKELIJK uitgepakte bytes via een stroom (niets op schijf); opgegeven groottes in de koppen zijn te vervalsen.
+ */
+function uitgepaktTeGroot(soort, pad, max) {
+  const cmd = soort === 'zip' ? 'unzip -p "$1"' : 'gzip -dc -- "$1"';
+  const r = spawnSync('sh', ['-c', `${cmd} 2>/dev/null | head -c "$2" | wc -c`, 'sh', resolve(pad), String(max + 1)], { encoding: 'utf8', timeout: 600_000 });
+  const n = Number(String(r.stdout || '').trim());
+  if (r.status !== 0 || !Number.isFinite(n)) return fout('UITPAKKEN_MISLUKT', `не вдалося виміряти розпакований обсяг (${soort})`, `uitgepakte omvang niet te meten (${soort})`);
+  if (n > max) return fout('INHOUD_TE_GROOT', `архів розпаковується в понад ${Math.round(max / 1048576)} МіБ — схоже на «архівну бомбу», відхилено до розпакування`, `archief pakt uit tot meer dan ${Math.round(max / 1048576)} MiB — lijkt op een archiefbom, geweigerd vóór het uitpakken`);
+  return null;
+}
+
+/** Сума розмірів (lstat, «видимий» розмір) усіх файлів у теці — другий рубіж після розпакування (розріджені файли tar тощо). */
+export function omvangVanMap(map) {
+  let som = 0; const stapel = [map];
+  while (stapel.length) { const d = stapel.pop(); for (const n of readdirSync(d, { withFileTypes: true })) { const p = join(d, n.name); if (n.isDirectory()) stapel.push(p); else som += lstatSync(p).size; } }
+  return som;
+}
+
+/** Перевіряє список і типи записів ZIP до розпакування (захист від Zip-Slip, символьних посилань і «zip-бомб»). */
+export function controleerZipVooraf(zipPad, { maxBytes = MAX_UITGEPAKT_BYTES } = {}) {
   const l1 = spawnSync('unzip', ['-Z1', zipPad], { encoding: 'utf8' });
   if (l1.status !== 0) return fout('UITPAKKEN_MISLUKT', `unzip -Z1: ${(l1.stderr || l1.error?.message || '').trim()}`, 'unzip -Z1 mislukt');
   const paden = (l1.stdout || '').split('\n').map((s) => s.replace(/\r$/, '')).filter(Boolean);
@@ -129,11 +157,11 @@ export function controleerZipVooraf(zipPad) {
   if (ll.status !== 0) return fout('UITPAKKEN_MISLUKT', `unzip -Z -l: ${(ll.stderr || '').trim()}`, 'unzip -Z -l mislukt');
   const slechtType = (ll.stdout || '').split('\n').find((r) => /^([lcbps])[-rwxstST]{9}\s/.test(r.trim()));
   if (slechtType) return fout('INHOUD_ONVEILIG', `zip містить символьне посилання або спецфайл: ${slechtType.trim().slice(0, 120)}`, 'zip bevat symlink of speciaal bestand');
-  return null;
+  return uitgepaktTeGroot('zip', zipPad, maxBytes);
 }
 
-/** Перевіряє список і типи записів TAR.GZ до розпакування (лише звичайні файли й теки, без «..» і абсолютних шляхів). */
-export function controleerTarGzVooraf(tarPad) {
+/** Перевіряє список і типи записів TAR.GZ до розпакування (лише звичайні файли й теки, без «..» і абсолютних шляхів, без «бомб»). */
+export function controleerTarGzVooraf(tarPad, { maxBytes = MAX_UITGEPAKT_BYTES } = {}) {
   const l1 = spawnSync('tar', ['-tzf', tarPad], { encoding: 'utf8' });
   if (l1.status !== 0) return fout('UITPAKKEN_MISLUKT', `tar -tzf: ${(l1.stderr || l1.error?.message || '').trim()}`, 'tar -tzf mislukt');
   const paden = (l1.stdout || '').split('\n').map((s) => s.replace(/\r$/, '')).filter(Boolean);
@@ -142,17 +170,23 @@ export function controleerTarGzVooraf(tarPad) {
   if (slechtPad) return fout('INHOUD_ONVEILIG', `небезпечний шлях у tar.gz: ${slechtPad.slice(0, 120)}`, `onveilig pad in tar.gz: ${slechtPad.slice(0, 120)}`);
   const lv = spawnSync('tar', ['-tvzf', tarPad], { encoding: 'utf8' });
   if (lv.status !== 0) return fout('UITPAKKEN_MISLUKT', `tar -tvzf: ${(lv.stderr || '').trim()}`, 'tar -tvzf mislukt');
+  let gemeld = 0;
   for (const r of (lv.stdout || '').split('\n').map((s) => s.trim()).filter(Boolean)) {
     const m = /^(.)[-rwxstST]{9}(?:[+@.]|\s)/.exec(r);
     if (m && m[1] !== '-' && m[1] !== 'd') return fout('INHOUD_ONVEILIG', `tar.gz містить недозволений тип запису (${m[1]}): ${r.slice(0, 120)}`, `tar.gz bevat niet-toegestaan type (${m[1]})`);
+    // Розмір із заголовка tar — це саме те, що tar запише (для розрідженого GNU/PAX-файла — його повний «видимий» розмір, напр. 2 ГіБ
+    // із потоку в 10 КБ). Для tar заголовок обов'язковий для розпакувальника, тож сума тут не підробляється на відміну від zip.
+    const grootte = /^\S+\s+\S+\s+(\d+)\s/.exec(r); if (grootte) gemeld += Number(grootte[1]);
   }
-  return null;
+  if (gemeld > maxBytes) return fout('INHOUD_TE_GROOT', `файли в tar.gz займуть ${Math.round(gemeld / 1048576)} МіБ (зокрема розріджені) — більше за межу ${Math.round(maxBytes / 1048576)} МіБ, відхилено до розпакування`, `bestanden in tar.gz worden ${Math.round(gemeld / 1048576)} MiB (ook sparse) — meer dan de grens van ${Math.round(maxBytes / 1048576)} MiB, geweigerd vóór het uitpakken`);
+  // І фактичний потік gzip (заголовки + дані): обмежує час і пам'ять розпакування незалежно від того, що заявлено.
+  return uitgepaktTeGroot('tar_gz', tarPad, maxBytes);
 }
 
 /** Розпаковує пакет передачі й повертає {map, tarPad, overdracht, zaken}. Цілісність: .sha256 має збігатися з архівом. */
-export function leesOverdrachtZip(zipPad, werk) {
+export function leesOverdrachtZip(zipPad, werk, { maxBytes = MAX_UITGEPAKT_BYTES } = {}) {
   const z = []; const map = join(werk, 'overdracht'); mkdirSync(map, { recursive: true });
-  const vooraf = controleerZipVooraf(zipPad);
+  const vooraf = controleerZipVooraf(zipPad, { maxBytes });
   if (vooraf) return { zaken: [vooraf] };
   const r = spawnSync('unzip', ['-o', '-q', '-j', zipPad, '-d', map], { encoding: 'utf8' });
   if (r.status !== 0) return { zaken: [fout('UITPAKKEN_MISLUKT', `unzip: ${(r.stderr || '').trim()}`, 'unzip mislukt')] };
