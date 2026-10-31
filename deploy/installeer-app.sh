@@ -331,6 +331,26 @@ oude_deur_opruimen() {
   fi
 }
 
+# MCP-deur op poort 8091 (deploy/mcp/server.mjs → $APP_ROOT/mcp/server.mjs): staat los van de current-symlink (root:root 0644),
+# dus ZOWEL bij `installeren` (via veilige_uitrol_inrichten) ALS bij `terugdraaien` bijwerken en een actieve dienst herstarten.
+# Een uitgeschakelde dienst (CONNECTOR-EEN-PAD.md) blijft uit (`try-restart` start geen gestopte unit); faalt herstart wel, dan waarschuwen.
+mcp_deur_bijwerken() {
+  local doel="$1" unit_doel="${MCP_UNIT_DOEL:-/etc/systemd/system/mijn-ruimte-mcp.service}"
+  [ -s "$doel/deploy/mcp/server.mjs" ] || return 0
+  [ "$(id -u)" -eq 0 ] && unit_doel="/etc/systemd/system/mijn-ruimte-mcp.service"
+  install -d -o root -g root -m 0755 "$APP_ROOT/mcp"
+  install -m 0644 -o root -g root "$doel/deploy/mcp/server.mjs" "$APP_ROOT/mcp/server.mjs"
+  if [ -s "$doel/deploy/mcp/mijn-ruimte-mcp.service" ] && ! cmp -s "$doel/deploy/mcp/mijn-ruimte-mcp.service" "$unit_doel"; then
+    install -m 0644 -o root -g root "$doel/deploy/mcp/mijn-ruimte-mcp.service" "$unit_doel"
+    systemctl daemon-reload
+  fi
+  if ! systemctl try-restart mijn-ruimte-mcp.service >/dev/null 2>&1; then
+    waarschuwing "mijn-ruimte-mcp.service (poort 8091) kon niet worden herstart"
+  elif systemctl is-active --quiet mijn-ruimte-mcp.service 2>/dev/null; then
+    melding "MCP-deur bijgewerkt en herstart (mijn-ruimte-mcp.service, poort 8091)"
+  fi
+}
+
 # Veilige uitrol (ondertekende pakketten): root-script, units, mappen, standaard-schakelaars van de MCP-deur.
 veilige_uitrol_inrichten() {
   local doel="$1"
@@ -356,15 +376,7 @@ veilige_uitrol_inrichten() {
     printf '%s\n' '{"read": true, "uitrol": false, "gitops": false, "passkey-goedkeuring": false, "ssh-ca": false, "beheer-alleen-tech": false, "guacamole": false, "terugdraaien-passkey": true, "externe-hosts-passkey": true, "externeMcpHosts": [], "opdracht": {"status": true, "releases": true, "backup": true, "uitrol-nu": true, "terugdraaien": false}}' > /etc/mijn-ruimte/mcp-rechten.json
     chown root:"$GEBRUIKER" /etc/mijn-ruimte/mcp-rechten.json; chmod 0640 /etc/mijn-ruimte/mcp-rechten.json
   fi
-  if [ -s "$doel/deploy/mcp/server.mjs" ]; then
-    install -d -o root -g root -m 0755 "$APP_ROOT/mcp"
-    install -m 0644 -o root -g root "$doel/deploy/mcp/server.mjs" "$APP_ROOT/mcp/server.mjs"
-    if ! cmp -s "$doel/deploy/mcp/mijn-ruimte-mcp.service" /etc/systemd/system/mijn-ruimte-mcp.service; then
-      install -m 0644 -o root -g root "$doel/deploy/mcp/mijn-ruimte-mcp.service" /etc/systemd/system/mijn-ruimte-mcp.service
-      systemctl daemon-reload
-    fi
-    systemctl try-restart mijn-ruimte-mcp.service >/dev/null 2>&1 || true
-  fi
+  mcp_deur_bijwerken "$doel"
   if [ -s /etc/mijn-ruimte/uitrol-ondertekenaars ]; then
     systemctl enable --now mijn-ruimte-uitrol.path >/dev/null 2>&1 || waarschuwing "mijn-ruimte-uitrol.path kon niet worden gestart"
   else
@@ -1089,6 +1101,7 @@ terugdraaien() {
   echo "$actief" > "$VORIGE_BESTAND"
   systemctl restart "$DIENST"
   gezond || fout "release $doel start niet gezond; journalctl -u $DIENST -n 50"
+  mcp_deur_bijwerken "$doel"
   melding "teruggedraaid naar $(basename "$doel")"
   noteer_ssh SSH_TERUG "$(basename "$doel")" "$(pakket_versie "$doel")" "$(commit_van "$doel")" || waarschuwing "auditregel voor dit terugdraaien niet geschreven"
 }
