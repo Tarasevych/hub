@@ -22,8 +22,8 @@ export async function voerOrchToolUit(who: OrchWie, name: string, args: Record<s
       case ORCH_CONTEXT: return uit({ notice: DATA, ...opslag.context() });
       case ORCH_TAAK_START: return uit(opslag.taakStart({ ...args, agent: args.agent ?? who.agent ?? undefined, kanaal: 'mcp' }, door));
       case ORCH_INLEVEREN_BEGIN: return uit(opslag.uploadBegin({ ...args, kanaal: 'mcp' }, door, 'mcp'));
-      case ORCH_INLEVEREN_STUK: { const u = opslag.uploadStuk(args); return uit({ id: u.id, ontvangen: u.ontvangen, grootte: u.grootte, klaarVoorAfronden: u.ontvangen === u.grootte }); }
-      case ORCH_INLEVEREN_KLAAR: { const r = opslag.uploadKlaar(args); const rec = r.record as Record<string, unknown>; return uit({ uitkomst: rec.uitkomst, id: rec.id, taakId: rec.taakId, tak: rec.tak, commit: rec.commit, bestanden: Array.isArray(rec.bestanden) ? (rec.bestanden as unknown[]).length : 0, tests: rec.tests, zaken: rec.zaken, registratie: r.registratie, staatCommit: r.staatCommit }); }
+      case ORCH_INLEVEREN_STUK: { const u = opslag.uploadStuk(args, door); return uit({ id: u.id, ontvangen: u.ontvangen, grootte: u.grootte, klaarVoorAfronden: u.ontvangen === u.grootte }); }
+      case ORCH_INLEVEREN_KLAAR: { const r = opslag.uploadKlaar(args, door); const rec = r.record as Record<string, unknown>; return uit({ uitkomst: rec.uitkomst, id: rec.id, taakId: rec.taakId, tak: rec.tak, commit: rec.commit, bestanden: Array.isArray(rec.bestanden) ? (rec.bestanden as unknown[]).length : 0, tests: rec.tests, zaken: rec.zaken, registratie: r.registratie, staatCommit: r.staatCommit }); }
       default: return fout(`UNKNOWN_TOOL: ${name.slice(0, 80)}`);
     }
   } catch (e) {
