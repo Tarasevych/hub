@@ -36,10 +36,13 @@ BEGIN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.notities, app.notities_mappen, app.notities_revisies TO mijnruimte_app;
       GRANT USAGE, SELECT ON SEQUENCE app.notities_revisies_id_seq TO mijnruimte_app;
     END IF;
-    -- 0128: huis vNext (lid van de woning onder RLS).
+    -- 0128/0131: huis vNext (lid van de woning onder RLS + SECURITY DEFINER helpers zonder kringloop).
     IF to_regclass('app.huis_woningen') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.huis_woningen, app.huis_leden, app.huis_ruimtes, app.huis_integraties, app.huis_apparaten, app.huis_toestanden, app.huis_opdrachten, app.huis_scenes, app.huis_automatiseringen, app.huis_gebeurtenissen, app.huis_voorstellen TO mijnruimte_app;
       GRANT USAGE, SELECT ON SEQUENCE app.huis_gebeurtenissen_id_seq TO mijnruimte_app;
+    END IF;
+    IF to_regprocedure('app.huis_is_lid(uuid)') IS NOT NULL THEN
+      GRANT EXECUTE ON FUNCTION app.huis_is_lid(uuid), app.huis_is_eigenaar(uuid) TO mijnruimte_app;
     END IF;
     -- 0022: goedkeuren van updates (voorbereiders, voorstellen, WebAuthn-challenges): alleen de systeemrol, nooit de app-rol.
     IF to_regclass('app.uitrol_voorstellen') IS NOT NULL THEN REVOKE ALL ON app.uitrol_voorbereiders, app.uitrol_voorstellen, app.goedkeur_uitdagingen FROM mijnruimte_app; END IF;
@@ -54,8 +57,18 @@ BEGIN
     END IF;
     -- 0112 (zone F): werkblad per lade — de app-rol leest en schrijft eigen rijen onder RLS (zelfde vorm als 0103 zoek_geschiedenis).
     IF to_regclass('app.werkblad_indeling') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.werkblad_indeling TO mijnruimte_app; END IF;
-    -- 0114 (Werkblad v3): lade/laag/items, eigen rijen onder RLS (zelfde vorm als 0112).
+    -- 0114/0116 (Werkblad v3 + blokken): lade/laag/items/plekken, eigen rijen onder RLS (zelfde vorm als 0112).
     IF to_regclass('app.werkblad_items') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.werkblad_v3_lade, app.werkblad_layout, app.werkblad_items TO mijnruimte_app; END IF;
+    IF to_regclass('app.werkblad_plekken') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.werkblad_plekken TO mijnruimte_app; END IF;
+    -- 0115: technische ruimtes v2 (alleen lezen onder RLS voor app-rol).
+    IF to_regclass('app.tech_ruimte_sessies') IS NOT NULL THEN
+      GRANT SELECT ON app.tech_ruimte_sessies, app.tech_ruimte_tabs, app.tech_ruimte_ai TO mijnruimte_app;
+      REVOKE INSERT, UPDATE, DELETE ON app.tech_ruimte_sessies, app.tech_ruimte_tabs, app.tech_ruimte_ai FROM mijnruimte_app;
+    END IF;
+    -- 0117-0119: cloud overdracht-jobs, move-proofs en share-receipts (alleen lezen onder RLS voor app-rol).
+    IF to_regclass('app.cloud_overdracht_jobs') IS NOT NULL THEN GRANT SELECT ON app.cloud_overdracht_jobs TO mijnruimte_app; END IF;
+    IF to_regclass('app.cloud_move_proofs') IS NOT NULL THEN GRANT SELECT ON app.cloud_move_proofs TO mijnruimte_app; END IF;
+    IF to_regclass('app.cloud_share_receipts') IS NOT NULL THEN GRANT SELECT ON app.cloud_share_receipts TO mijnruimte_app; END IF;
     -- 0061: archieven van releases en GitHub-publicatie: alleen de systeemrol.
     IF to_regclass('app.uitrol_github_publicaties') IS NOT NULL THEN REVOKE ALL ON app.uitrol_github_instellingen, app.uitrol_github_publicaties FROM mijnruimte_app; END IF;
     -- 0023: passkeys per gebruiker (Aanmeldmethoden). Onder strikte RLS (altijd eigen rijen, app.user_id).
@@ -99,6 +112,8 @@ BEGIN
     END IF;
     IF to_regclass('app.zoek_bron_stand') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.zoek_bron_stand TO mijnruimte_app; END IF;
     IF to_regclass('app.zoek_synoniemen_eigenaar') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.zoek_synoniemen_eigenaar TO mijnruimte_app; END IF;
+    IF to_regclass('app.zoek_ocr_tekst') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.zoek_ocr_tekst TO mijnruimte_app; END IF;
+    IF to_regclass('app.zoek_geschiedenis') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.zoek_geschiedenis TO mijnruimte_app; END IF;
     IF to_regclass('app.ondersteuning_verzoeken') IS NOT NULL THEN
       GRANT SELECT ON app.ondersteuning_verzoeken TO mijnruimte_app;
       REVOKE INSERT, UPDATE, DELETE ON app.ondersteuning_verzoeken FROM mijnruimte_app;

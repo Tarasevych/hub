@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { db, error, json, storage } from '../server/platform';
 import type { RouterMiddleware } from '../server/platform/router';
+import { denyMutation } from './rbac';
 import { OVERDRACHT_GRENZEN, overdrachtGrens, type CloudTaak, type CloudTaakPunt, type CloudTaakSoort, type CloudTaakStand } from '../shared/cloud-overdracht-model';
 import { hoortBij, ladeFilter, ladeVelden, type Lade } from '../shared/ruimte-scheiding';
 import { cloudVoorvoegsel, ladeOf, padInLade } from './ruimte-cloud-agenda';
@@ -298,6 +299,9 @@ export function cloudVnextTakenRoutes(requireSession: RequireSession): Record<st
 
   const takenRoute = route(async (_c, auth, lade, d) => {
     const actie = str(d.actie);
+    if (actie !== 'lijst') {
+      const denied = denyMutation(auth.user, 'cloud.write'); if (denied) return denied;
+    }
     if (actie === 'nieuw') {
       const soort: CloudTaakSoort = d.soort === 'verplaats' ? 'verplaats' : d.soort === 'kopie' ? 'kopie' : fout('ACTIE_ONGELDIG');
       const bron = puntVan(d.bron) ?? fout('ACTIE_ONGELDIG');

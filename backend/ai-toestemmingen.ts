@@ -12,6 +12,7 @@
 //   6. Blokkeren = één transactie (tokens + grants ingetrokken, epoch + 1, blocked_at), daarna de WebSocket-verbindingen sluiten.
 // Alle queries lopen via de app-rol (mijnruimte_app, strikte RLS) met app.user_id = de betrokken gebruiker.
 import { appRolActief, getPool } from '../server/platform/pg';
+import { huidigeContext } from '../server/platform/context';
 import { auditToevoegen } from '../server/platform/audit';
 import { rateLimit } from '../server/platform/beveiliging';
 
@@ -79,12 +80,16 @@ export async function alsGebruiker<T>(userId: string, fn: (q: Q) => Promise<T>, 
   const client = await getPool(appRolActief() && !opts.systeem ? 'app' : 'systeem').connect();
   try {
     await client.query('BEGIN');
+    const ctx = huidigeContext();
+    if (ctx?.alleenLezen && !opts.systeem) await client.query('SET LOCAL transaction_read_only = on');
     await client.query("SELECT set_config('app.user_id', $1, true), set_config('app.service', 'ai-grants', true)", [userId]);
+    if (ctx?.ruimte && !opts.systeem) await client.query("SELECT set_config('app.ruimte', $1, true)", [ctx.ruimte]);
     const out = await fn((sql, params = []) => client.query(sql, params) as Promise<{ rows: any[]; rowCount: number | null }>);
     await client.query('COMMIT');
     return out;
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);
+    if ((err as { code?: string })?.code === '25006') { const imp = huidigeContext()?.impersonatie; if (imp) imp.geblokkeerd = true; throw new Error('IMPERSONATIE_ALLEEN_LEZEN'); }
     throw err;
   } finally {
     client.release();

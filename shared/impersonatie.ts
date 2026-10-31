@@ -27,18 +27,19 @@ export const IMPERSONATIE_ALTIJD_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/access\//,                     // aanmeldmethoden, passkeys, TOTP, herstelcodes, rollen, beleid
   /^[A-Z]+ \/api\/(owner\/)?admin\//,                   // beheer en rollen
   /^[A-Z]+ \/api\/([^ ]*\/)?(admin|beheer|security)(\/|$)/, // ook /api/service/admin, /api/beheer, /journaal/beheer, /api/security
-  /^[A-Z]+ \/api\/owner\/(tech|uitrol|agent-namens|ai-beleid|geheimen|google-contour|connector-v2|mcp-connector)(\/|$)/,
+  /^[A-Z]+ \/api\/owner\/(tech|tech-ruimtes|uitrol|agent-namens|ai-beleid|geheimen|sleutelkluis|google-contour|connector-v2|mcp-connector|agents|apps|aanmeld|besluit|codewoord)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/api-platform\//,               // sleutels en kluis
   /^[A-Z]+ \/api\/owner\/audit\/beheer(\/|$)/,
   /^[A-Z]+ \/api\/owner\/agents\/[^/]+\/(policy|revoke)(\/|$)/,
   /^[A-Z]+ \/api\/mcp\/(console|server|consent)(\/|$)/,
   /^[A-Z]+ \/api\/(impersonatie|ondersteuning)\//,
+  /^[A-Z]+ \/api\/(aanmeld|huis\/vertrouwde-toestellen)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/stap-op(\/|$)/,
   /^[A-Z]+ \/api\/[^ ]*\/(passkeys?|webauthn|totp|recovery|herstelcodes?)(\/|$)/,
   /^[A-Z]+ \/api\/[^ ]*\/(export|takeout|download-all)(\/|$)/,
   /^[A-Z]+ \/api\/[^ ]*\/(secrets?|vault|reveal|tokens?|api-keys?)(\/|$)/,
   /^[A-Z]+ \/api\/[^ ]*\/(billing|payments?|betalingen?|abonnement|checkout)(\/|$)/,
-  /^[A-Z]+ \/api\/[^ ]*\/(logout|sign-?out|uitloggen|afmelden|logout-all|revoke-all|revoke-others)(\/|$)/,
+  /^[A-Z]+ \/api\/[^ ]*\/(logout(-[a-z0-9-]+)?|sign-?out|uitloggen|afmelden|revoke-all|revoke-others)(\/|$)/,
   /^[A-Z]+ \/api\/[^ ]*\/(account\/delete|delete-account|forget)(\/|$)/,
 ]);
 

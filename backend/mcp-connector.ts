@@ -9,6 +9,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { grantOpenen, grantRoteren, grantSluiten, grantVerzegelen } from './sleutelkluis';
 import { getPool } from '../server/platform/pg';
+import { sessieGeverifieerd, zetGebruiker } from '../server/platform/context';
 import { isDuurId, klantVan, redirectPast, redirectSoort, SITE_TERUG_PAD, type DuurId } from '../shared/ai-verbinding';
 import { connectGeweigerd, toolGeweigerd, type WeigerCode } from '../shared/ai-agent-bord';
 import { leesGebruikerCaps, leesStaat } from './ai-site-schakelaars';
@@ -30,7 +31,7 @@ import { DEV_MG_ALLEEN_V2, isDevMgTool } from '../shared/dev-media-github';
 import { isBrowserToolNaam, RUIMTE_GESCHEIDEN, RUIMTE_INSTRUCTIES, TECH_NU_UIT_INSTRUCTIE, TECH_PROFIEL_UIT, ruimteOf, toolInRuimte, type AiRuimte } from '../shared/ai-ruimte';
 import { aiDienstStand, aiPoortNu } from './ai-ruimte-poort';
 import { listAgents } from './connectors-opslag';
-import { redirectPastBijAgent, slugUitResource, type AgentSlug } from '../shared/connector-v2/agenten';
+import { redirectPastBijAgent, slugUitResource, V2_AGENTEN, type AgentSlug } from '../shared/connector-v2/agenten';
 import { naUitgifte, type V2Keuze } from './connector-v2-opslag';
 
 export const BASE = `https://${SERVICE_HOSTS.mcp}`;
@@ -114,6 +115,20 @@ export async function registerClient(rawBody: string): Promise<RouterResponse> {
   const method = body?.token_endpoint_auth_method;
   if (method !== undefined && method !== 'none') return respond(400, { error: 'invalid_client_metadata', error_description: 'Alleen token_endpoint_auth_method "none"' });
   const name = (typeof body?.client_name === 'string' && body.client_name.trim() ? body.client_name.trim() : 'Claude').slice(0, 80);
+  // SEC-001-10: als een redirect_uri bij een specifieke AI-aanbieder hoort (bv. grok.com of cursor://), mag client_name geen andere aanbieder claimen.
+  const beweerdeKlant = typeof body?.client_name === 'string' && body.client_name.trim() ? klantVan(name) : 'overig';
+  if (beweerdeKlant !== 'overig') {
+    for (const rawUri of uris as string[]) {
+      const u = parseUrl(rawUri);
+      if (!u) continue;
+      const schema = u.protocol.replace(/:$/, '');
+      const host = u.hostname.toLowerCase();
+      const eigenaar = V2_AGENTEN.find((a) => (schema === 'https' && a.webHosts.some((w) => host === w || host.endsWith(`.${w}`))) || a.appSchemas.includes(schema));
+      if (eigenaar && eigenaar.klant !== beweerdeKlant) {
+        return respond(400, { error: 'invalid_client_metadata', error_description: 'client_name past niet bij redirect_uris' });
+      }
+    }
+  }
 
   if ((await st.countClients()) >= st.LIMITS.maxClients) {
     await st.purgeStale();
@@ -327,7 +342,7 @@ export async function agentToken(token: string): Promise<{ id: string; user_id: 
     `UPDATE app.mcp_console_tokens t SET calls = calls + 1, last_seen_at = now()
        FROM app.records r
       WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now() AND r.tbl = 'users' AND r.id = t.user_id
-        AND COALESCE(r.data->>'status', '') NOT IN ('blocked', 'rejected', 'deleted') AND COALESCE((r.data->>'retiredAt')::numeric, 0) = 0
+        AND r.data->>'status' = 'approved' AND COALESCE((r.data->>'retiredAt')::numeric, 0) = 0
         AND NOT EXISTS (SELECT 1 FROM app.user_ai_settings s WHERE s.user_id = t.user_id AND s.blocked_at IS NOT NULL)
       RETURNING t.id::text AS id, t.user_id, t.name, COALESCE(r.data->>'role', '') AS role, t.ruimte`, [sha256(token)]);
   return rows[0] ?? null;
@@ -584,6 +599,8 @@ export async function rpcPost(authorization: string | undefined, rawBody: string
   const who = await authenticate(authorization);
   // Een v2-token (gebonden aan /<agent>) werkt niet op het oude /mcp: daar zouden de rechten per hulpmiddel niet gelden.
   if (!who || who.agent) return unauthorized(!!String(authorization || '').trim());
+  zetGebruiker(who.userId, 'mcp', undefined, String(grantVan(who) || ''));
+  sessieGeverifieerd();
   const limit = await rateLimit(`mcp-rpc:${who.limietSleutel}`, RPC_PER_MINUTE, 60);
   if (!limit.ok) return respond(429, rpcError(null, -32000, 'Te veel verzoeken'), { 'Retry-After': String(limit.retryAfter) });
   if (Buffer.byteLength(rawBody) > MAX_RPC_BYTES) return respond(413, rpcError(null, -32600, 'Request too large'));

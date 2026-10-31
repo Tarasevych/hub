@@ -770,6 +770,7 @@ export const LEZEND = Object.freeze({
   apt: { sub: ['list', 'search', 'show', 'policy'] }, 'apt-get': { sub: [] },
   tar: { alleenMet: ['-t', '--list', '-tf', '-tzf', '-tvf', '-tzvf', '-tjf', '-tJf'], nietMet: ['-I', '-F', '--use-compress-program', '--to-command', '--checkpoint-action', '--info-script', '--new-volume-script', '--rsh-command', '--rmt-command'] },
 });
+const VOOR_SUB_VLAGGEN = ['--no-pager', '--no-legend', '--plain', '--full', '-q', '--quiet'];
 /** Een argument uit een «niet met»-lijst: exact, met `=waarde`, of — bij een korte vlag `-x` — aangeplakt of gebundeld (`-ofile`, `-tK`). */
 const raakt = (args, lijst) => !!lijst && args.some((a) => lijst.some((v) =>
   a === v || a.startsWith(`${v}=`) || (/^-[A-Za-z]$/.test(v) && /^-[A-Za-z]/.test(a) && !a.startsWith('--') && a.slice(1).includes(v[1]))));
@@ -784,12 +785,11 @@ export function opdrachtSoort(programma, args) {
   if (regel.alleenMet) { const alleen = regel.alleenMet; return args.some((a) => alleen.includes(a)) ? 'lezend' : 'wijzigend'; }
   const sub = regel.sub;
   if (!sub) return 'lezend';
-  // {sub}: het eerste niet-vlag-woord moet lezend zijn; bij podman volume/network/pod/system, git worktree/remote/branch/tag/reflog en
-  // npm version telt ook het tweede woord (ls/list/inspect/show/… of niets).
+  // {sub}: het eerste niet-vlag-woord moet lezend zijn; onbekende globale vlaggen vóór het subcommando tellen als wijzigend.
   const eerste = args.find((a) => !a.startsWith('-')) ?? '';
-  const vlag = args.find((a) => a.startsWith('-')) ?? '';
-  if (!eerste) return sub.includes(vlag) ? 'lezend' : (regel.zonderSub === false ? 'wijzigend' : 'lezend');
+  if (!eerste) return regel.zonderSub === false ? (args.length > 0 && args.every((a) => sub.includes(a)) ? 'lezend' : 'wijzigend') : 'lezend';
   if (!sub.includes(eerste)) return 'wijzigend';
+  if (args.slice(0, args.indexOf(eerste)).some((a) => !VOOR_SUB_VLAGGEN.includes(a))) return 'wijzigend';
   if (['volume', 'network', 'pod', 'system', 'worktree', 'remote', 'branch', 'tag', 'stash', 'reflog', 'version'].includes(eerste)) {
     const tweede = args.slice(args.indexOf(eerste) + 1).find((a) => !a.startsWith('-')) ?? '';
     const lezendeTweede = ['ls', 'list', 'inspect', 'df', 'info', 'show', 'get-url', '-v', ''];
@@ -820,6 +820,25 @@ function programmaStarten(command, args, dir) {
     child.on('close', (code, signal) => { clearTimeout(timer); resolve({ code, signal, stdout: out, stderr: err, truncated, timeout: gedood }); });
   });
 }
+async function controleerArgPaden(cfg, dir, args) {
+  for (const a of args) {
+    const kandidaten = [];
+    if (a.startsWith('-') && a.includes('=')) kandidaten.push(a.slice(a.indexOf('=') + 1));
+    else if (!a.startsWith('-')) kandidaten.push(a);
+    else if (/^-[A-Za-z](.+)$/.test(a) && /[\\/]|^\.|\.[a-z0-9]{2,8}$/i.test(a.slice(2))) kandidaten.push(a.slice(2));
+    for (const waarde of kandidaten) {
+      if (!waarde) continue;
+      if (/[\\/]|^\.|\.[a-z0-9]{2,8}$/i.test(waarde) && isGeheim(path.resolve(dir, waarde))) {
+        throw new Error(`argument "${a}" points to a protected secret location`);
+      }
+      const abs = path.resolve(dir, waarde);
+      if (/^\.\.(?:[\\/]|$)/.test(waarde) || /^[A-Za-z]:[\\/]/.test(waarde) || (!isWin && waarde.startsWith('/')) || existsSync(abs)) {
+        await safePath(cfg, abs);
+      }
+    }
+  }
+}
+
 async function termExec(cfg, { command, args = [], cwd = '' } = {}) {
   const t = terminalDefaults(cfg.terminal);
   if (!t.enabled || !(t.opdrachten || t.powershell)) throw new Error('refused: the command terminal is switched off on this device (node agent.mjs terminal-config on --opdrachten | --powershell)');
@@ -846,10 +865,7 @@ async function termExec(cfg, { command, args = [], cwd = '' } = {}) {
   const soort = opdrachtSoort(name, args);
   // Lezend mag in een alleen-lezen root (git log in /srv/mijn-ruimte); wijzigend alleen in een schrijfbare root.
   const dir = await safePath(cfg, start, { schrijven: soort !== 'lezend' });
-  for (const a of args) {
-    const waarde = a.includes('=') && a.startsWith('-') ? a.slice(a.indexOf('=') + 1) : a;
-    if (/[\\/]|^\.|\.[a-z0-9]{2,8}$/i.test(waarde) && isGeheim(path.resolve(dir, waarde))) throw new Error(`argument "${a}" points to a protected secret location`);
-  }
+  await controleerArgPaden(cfg, dir, args);
   const r = await programmaStarten(command, args, dir);
   return { ...r, cwd: dir, soort };
 }
@@ -1004,11 +1020,8 @@ const handlers = {
     if (command !== path.basename(command) || !cfg.allow.includes(name)) throw new Error(`command "${command}" is not in the agent allow-list`);
     checkInterpreterArgs(name, args);
     const dir = await safePath(cfg, cwd, { schrijven: true });
-    // Argumenten die naar een geheime plek wijzen (bv. `git -C T:\mijn-ruimte\geheim …`, `node x.js ..\.env`) weigeren.
-    for (const a of args) {
-      const waarde = a.includes('=') && a.startsWith('-') ? a.slice(a.indexOf('=') + 1) : a;
-      if (/[\\/]|^\.|\.[a-z0-9]{2,8}$/i.test(waarde) && isGeheim(path.resolve(dir, waarde))) throw new Error(`argument "${a}" points to a protected secret location`);
-    }
+    // Argumenten die naar een geheime plek of buiten de toegestane roots wijzen weigeren.
+    await controleerArgPaden(cfg, dir, args);
     return programmaStarten(command, args, dir);
   },
 };

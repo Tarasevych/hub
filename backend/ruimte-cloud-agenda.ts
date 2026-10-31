@@ -337,7 +337,7 @@ export async function ladeNogGeldig(userId: string, ruimte: unknown, dienst: Dee
  * daar kan hij er werkelijk bij. De bestanden verhuizen mee naar ZIJN persoonlijke boom; lukt het kopiëren van een
  * bestand niet, dan blijft het origineel staan en gooit de uitvoerder.
  */
-const RECORD_TABELLEN_CLOUD = ['cloud_workspaces_v1', 'cloud_items_v1', 'cloud_resume_v1', 'cloud_ai_decisions_v1', 'cloud_audit_v1'] as const;
+export const RECORD_TABELLEN_CLOUD = ['cloud_workspaces_v1', 'cloud_items_v1', 'cloud_mappen_v1', 'cloud_taken_v1', 'foto_media_v1', 'foto_albums_v1', 'foto_import_v1', 'cloud_resume_v1', 'cloud_ai_decisions_v1', 'cloud_audit_v1'] as const;
 const RECORD_TABELLEN_GOOGLE = [
   'provider_principals_v1', 'provider_service_grants_v1', 'provider_service_tokens_v1', 'google_oauth_grant_v1',
   'google_suite_onboarding_v1', 'cloud_provider_accounts_v1', 'cloud_provider_selections_v1',
@@ -378,7 +378,7 @@ async function technischePaden(userId: string): Promise<string[]> {
   const lade: Lade = { userId, ruimte: 'technisch' };
   const rijen = (await sys().query(
     `SELECT data->>'storagePath' AS pad FROM app.records
-       WHERE tbl = 'cloud_items_v1' AND data->>'ownerUserId' = $1 AND data->>'ruimte' = 'technisch' AND COALESCE(data->>'storagePath','') <> ''`,
+       WHERE tbl IN ('cloud_items_v1', 'foto_media_v1') AND data->>'ownerUserId' = $1 AND data->>'ruimte' = 'technisch' AND COALESCE(data->>'storagePath','') <> ''`,
     [userId],
   )).rows as Array<{ pad: string }>;
   // Dubbel hek: alleen paden die werkelijk in DEZE lade liggen (padInLade), nooit een pad uit de persoonlijke boom.
@@ -400,7 +400,7 @@ registreerLadeUitvoerder({
       if (!geschreven) throw new Error('CLOUD_LADE_BESTAND_OVERDRACHT_MISLUKT');
       await sys().query(
         `UPDATE app.records SET data = jsonb_set(data, '{storagePath}', to_jsonb($3::text))
-           WHERE tbl = 'cloud_items_v1' AND data->>'ownerUserId' = $1 AND data->>'ruimte' = 'technisch' AND data->>'storagePath' = $2`,
+           WHERE tbl IN ('cloud_items_v1', 'foto_media_v1') AND data->>'ownerUserId' = $1 AND data->>'ruimte' = 'technisch' AND data->>'storagePath' = $2`,
         [vanUserId, oud, nieuw],
       );
       await storage.delete([oud]);

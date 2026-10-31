@@ -8,21 +8,14 @@
 import https from 'node:https';
 import {lookup as dnsLookup,type LookupAddress} from 'node:dns';
 import {isIP} from 'node:net';
+import {adresSoort,ipv6Groepen} from '../shared/extern-bureaublad';
 
-/** true voor niet-publieke adressen (loopback, privé, link-local, CGNAT, multicast, ULA, …). */
-export const privateAddress=(value:string):boolean=>{
-  const lower=value.toLowerCase();
-  if(isIP(value)===4){
-    const[a,b]=value.split('.').map(Number);
-    return a===0||a===10||a===127||(a===169&&b===254)||(a===172&&b>=16&&b<=31)||(a===192&&b===168)||(a===100&&b>=64&&b<=127)||(a===198&&(b===18||b===19))||a>=224;
-  }
-  if(isIP(value)===6){
-    if(lower==='::'||lower==='::1'||lower.startsWith('fc')||lower.startsWith('fd')||/^fe[89ab]/.test(lower)||lower.startsWith('ff')||lower.startsWith('64:ff9b:')||lower.startsWith('2001:db8'))return true;
-    const mapped=lower.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    return Boolean(mapped&&privateAddress(mapped[1]));
-  }
-  return true;
-};
+/**
+ * true voor niet-publieke adressen (loopback, privé, link-local, CGNAT, multicast, ULA,
+ * plus alle IPv4-in-IPv6-schrijfwijzen zoals ::ffff:7f00:1, ::7f00:1, 0:0:0:0:0:0:0:1, 6to4, NAT64, Teredo).
+ */
+export const privateAddress=(value:string):boolean=>adresSoort(value)!=='publiek';
+const isIpLiteral=(value:string):boolean=>isIP(value)!==0||ipv6Groepen(value)!==null;
 
 type LookupCallback=(err:NodeJS.ErrnoException|null,address:string|LookupAddress[],family?:number)=>void;
 /** lookup-hook: resolveert, weigert als ÉÉN adres niet publiek is, en geeft alleen gecontroleerde adressen terug. */
@@ -50,7 +43,7 @@ export function pinnedFetch(url:string,init:{method?:string;headers?:Record<stri
     if(target.protocol!=='https:')return reject(new Error('REMOTE_URL_INVALID'));
     // IP-literals passeren de lookup-hook niet: hier expliciet controleren.
     const literal=target.hostname.replace(/^\[|\]$/g,'');
-    if(isIP(literal)&&privateAddress(literal))return reject(new Error('SSRF_ADRES_GEWEIGERD'));
+    if(isIpLiteral(literal)&&privateAddress(literal))return reject(new Error('SSRF_ADRES_GEWEIGERD'));
     const req=https.request(target,{method:init.method||'GET',headers:{'User-Agent':'mijn-ruimte/1',...(init.headers||{})},lookup:pinnedLookup as never,timeout:timeoutMs},res=>{
       const declared=Number(res.headers['content-length']||0);
       if(declared>maxBytes){res.destroy();return reject(new Error(tooLargeCode))}
@@ -97,7 +90,7 @@ export function pinnedStream(url:string,opties:{
     try{target=new URL(url)}catch{return reject(new Error('REMOTE_URL_INVALID'))}
     if(target.protocol!=='https:')return reject(new Error('REMOTE_URL_INVALID'));
     const literal=target.hostname.replace(/^\[|\]$/g,'');
-    if(isIP(literal)&&privateAddress(literal))return reject(new Error('SSRF_ADRES_GEWEIGERD'));
+    if(isIpLiteral(literal)&&privateAddress(literal))return reject(new Error('SSRF_ADRES_GEWEIGERD'));
     let gestopt=false,klaar=false,bytes=0;
     let stilte:NodeJS.Timeout|undefined;
     const req=https.request(target,{method:opties.method||'GET',headers:{'User-Agent':'mijn-ruimte/1',...(opties.headers||{})},lookup:pinnedLookup as never,timeout:stilteMs},res=>{

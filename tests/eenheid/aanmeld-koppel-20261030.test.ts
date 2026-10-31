@@ -57,14 +57,43 @@ export async function main(): Promise<number> {
   const rA = maak(a);
   const rB = maak(b);
 
-  type RuwAntwoord = { statusCode: number; headers?: Record<string, string>; body: string };
+  type RuwAntwoord = { statusCode: number; headers?: Record<string, string | string[]>; multiValueHeaders?: Record<string, string[]>; body: string };
+  const potten = new WeakMap<Routes, Map<string, string>>();
+  const potVan = (routes: Routes): Map<string, string> => {
+    let p = potten.get(routes);
+    if (!p) { p = new Map(); potten.set(routes, p); }
+    return p;
+  };
+  const bewaarCookies = (routes: Routes, res: RuwAntwoord): void => {
+    const pot = potVan(routes);
+    const ruw: string[] = [];
+    const sc = res.headers?.['Set-Cookie'] ?? res.headers?.['set-cookie'];
+    if (Array.isArray(sc)) ruw.push(...sc);
+    else if (typeof sc === 'string' && sc) ruw.push(sc);
+    const mv = res.multiValueHeaders?.['Set-Cookie'] ?? res.multiValueHeaders?.['set-cookie'];
+    if (Array.isArray(mv)) for (const c of mv) if (!ruw.includes(c)) ruw.push(c);
+    for (const regel of ruw) {
+      const eerste = String(regel || '').split(';')[0] || '';
+      const eq = eerste.indexOf('=');
+      if (eq <= 0) continue;
+      const naam = eerste.slice(0, eq).trim();
+      const waarde = eerste.slice(eq + 1).trim();
+      if (!waarde || /;\s*Max-Age=0\b/i.test(regel)) pot.delete(naam);
+      else pot.set(naam, waarde);
+    }
+  };
+  const cookieHeader = (routes: Routes): string => [...potVan(routes).entries()].map(([k, v]) => `${k}=${v}`).join('; ');
   const roep = async (routes: Routes, pad: string, body: Record<string, unknown> = {}): Promise<Antw> => {
-    const res = await (routes[`POST /api/owner/aanmeld/vnext/${pad}`][0] as unknown as (x: unknown) => Promise<RuwAntwoord>)({ event: {}, body, params: {}, query: {} });
+    const cookie = cookieHeader(routes);
+    const res = await (routes[`POST /api/owner/aanmeld/vnext/${pad}`][0] as unknown as (x: unknown) => Promise<RuwAntwoord>)({ event: { headers: cookie ? { cookie } : {} }, body, params: {}, query: {} });
+    bewaarCookies(routes, res);
     return { status: res.statusCode, uit: JSON.parse(res.body || '{}') };
   };
   const locaties: string[] = [];
   const terug = async (routes: Routes, aanbieder: string, query: Record<string, string>): Promise<{ status: number; naar: string }> => {
-    const res = await (routes['GET /api/aanmeld/koppel/:aanbieder/terug'][0] as unknown as (x: unknown) => Promise<RuwAntwoord>)({ event: {}, body: '', params: { aanbieder }, query });
+    const cookie = cookieHeader(routes);
+    const res = await (routes['GET /api/aanmeld/koppel/:aanbieder/terug'][0] as unknown as (x: unknown) => Promise<RuwAntwoord>)({ event: { headers: cookie ? { cookie } : {} }, body: '', params: { aanbieder }, query });
+    bewaarCookies(routes, res);
     const naar = String(res.headers?.Location || '');
     locaties.push(naar);
     return { status: res.statusCode, naar };
@@ -162,6 +191,9 @@ export async function main(): Promise<number> {
       !!rij1 && rij1.gebruiktOp === 0 && rij1.ownerUserId === a && s256(String(rij1.verifier)) === q1.get('code_challenge'));
     const subMs = `sub-ms-${sfx}`;
     const code1 = nep.codeVoor({ aanbieder: 'microsoft', sub: subMs, nonce: q1.get('nonce')!, challenge: q1.get('code_challenge')!, email: `ms-pavlo-${sfx}@voorbeeld.nl` });
+    const vreemdeBrowser = await terug(rB, 'microsoft', { state: q1.get('state')!, code: code1 });
+    check('andere browser zonder koppel-bindingscookie → SESSIE_VEREIST en state blijft ongebruikt',
+      fout(vreemdeBrowser.naar, 'SESSIE_VEREIST', 'microsoft') && (await stateRij(q1.get('state')!))?.gebruiktOp === 0 && (await koppelingen(a, 'microsoft')).length === 0);
     const t1 = await terug(rA, 'microsoft', { state: q1.get('state')!, code: code1 });
     check('geldige terug → 302 naar …?koppel=microsoft-ok zonder geheimen in de URL', t1.status === 302 && t1.naar === `${TERUG_BASIS}/aanmeldmethoden?koppel=microsoft-ok`);
     const kMs = (await koppelingen(a, 'microsoft'))[0];

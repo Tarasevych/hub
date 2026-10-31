@@ -23,7 +23,11 @@ export async function tekenMermaid(code: string): Promise<string> {
   mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: donker() ? 'dark' : 'default', htmlLabels: false, flowchart: { htmlLabels: false }, fontFamily: 'inherit' });
   await mermaid.parse(o.code);
   const { svg } = await mermaid.render(`mr-mermaid-${Date.now().toString(36)}-${teller++}`, o.code);
-  return DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
+  return DOMPurify.sanitize(svg, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    FORBID_TAGS: ['script', 'foreignObject', 'iframe', 'object', 'embed', 'animate', 'set', 'animateMotion', 'animateTransform'],
+    FORBID_ATTR: ['xlink:href'],
+  });
 }
 
 export default function MermaidSchema({ titel, code, lang, onClose }: { titel: string; code: string; lang: Lang; onClose: () => void }) {

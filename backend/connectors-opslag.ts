@@ -417,7 +417,7 @@ export async function findAgentByTokenHash(tokenHash: string): Promise<AgentRow 
       WHERE a.token_hash = $1 AND a.revoked_at IS NULL AND a.token_expires_at > now()
         AND NOT EXISTS (SELECT 1 FROM app.user_ai_settings s WHERE s.user_id = a.user_id AND s.blocked_at IS NOT NULL)
         AND NOT EXISTS (SELECT 1 FROM app.records r WHERE r.tbl = 'users' AND r.id = a.user_id
-                          AND (r.data->>'status' IN ('blocked', 'rejected', 'deleted') OR COALESCE((r.data->>'retiredAt')::numeric, 0) > 0))`, [tokenHash]);
+                          AND (COALESCE(r.data->>'status', '') <> 'approved' OR COALESCE((r.data->>'retiredAt')::numeric, 0) > 0))`, [tokenHash]);
   return (rows[0] as AgentRow | undefined) ?? null;
 }
 
