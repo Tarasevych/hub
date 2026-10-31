@@ -112,6 +112,8 @@ import { aiBevestigingRoutes } from './ai-bevestiging-routes'; import { devRecht
 import { uitrolGoedkeuringRoutes, isEigenaar as uitrolIsEigenaar } from './uitrol-goedkeuring'; import { uitrolDiagnoseRunRoutes } from './uitrol-diagnose-run'; import { uitrolBronRoutes } from './uitrol-bron'; import { uitrolGithubRoutes } from './uitrol-github';
 import { aiBeleidRoutes } from './ai-beleid';
 import { eigenaarBesluitRoutes } from './eigenaar-besluit'; // besluiten van de eigenaar met passkey (zone B 22.10.2026, §15)
+import { orchRoutes } from './orch-routes'; // ORCH-001 етап 3 (31.10.2026): координація агентів через сайт — /api/owner/orch/*
+import { besluitZoekenPg } from './orch-besluit-pg';
 import { aiWerkruimteRoutes } from './ai-werkruimte';
 import { passkeyRoutes } from './toegangssleutels';
 import { toegangRoutes } from './toegang-routes';
@@ -140,6 +142,11 @@ import {createMailSnoozeRoutes} from './mail-uitstel';
 import {createMailAdvancedSearchRoutes} from './mail-zoek';
 import {writePmidMapForAccount} from './mail-zoek-duurzaam';
 import {runMailPmidBootstrapPage} from './mail-pmid-opstart';
+// Стара помилка (знімок SEC-001 від 30.10.2026 втратив цей імпорт): index.ts викликає gmail*-функції й тип MailClassificationSignals без імпорту —
+// tsc: TS2304, а в рантаймі Gmail-синхронізація/самотести впали б із ReferenceError. Виявлено й виправлено під ORCH-001 етап 3 (31.10.2026).
+// Oude fout: deze imports ontbraken sinds de SEC-001-momentopname; zonder ze faalt de Gmail-synchronisatie met een ReferenceError.
+import {gmailHistoryMessageIds,gmailMaxHistoryId,gmailParserPolicySelfTest,normalizeGmailMessage,type GmailMessage} from './mail-gmail';
+import type {MailClassificationSignals} from '../shared/mail-slimme-inbox';
 import {createMailHandwritingRoutes} from './mail-handschrift';import {metMailRuimte,postRecordsVanLade,postRecordVanLade,postRecordVelden} from './mail-ruimte';import {mailRuimteRoutes} from './mail-ruimte-routes';import {apiPlatformOwnerContract} from './api-platform-tokens';import {createApiPlatformRoutes} from './api-platform-tokens';import {createApiPlatformVaultRoutes,vaultTermijnMeldingen} from './api-platform-kluis';import {createApiPlatformConnectionRoutes} from './api-platform-verbindingen';import {rateLimit} from '../server/platform';import {privacyVoorkeur,zetAnalyticsToestemming,analyticsTellen,persoonsgegevensExport} from './privacy';import {codewoordEis,codewoordPoortOpen,codewoordRoutes,codewoordRouteVrij,codewoordSessieId} from './codewoord';import {accountMeteenWissen} from './account-wissen';import {kritiekeActie} from '../shared/kritieke-acties';import {werkruimteRol,magDelen,magRolBeheren,scopeBlokkenControleren,ledenVoorWeergave,uitnodigingVerlopen,hoogsteRol,UITNODIGING_GELDIG_MS} from './werkruimte-delen';import {can,canManageRole,canonicalWorkspaceRole,denyMutation,grantFromDecision,permissionsFor,rbacLab,rejectForeignOwnerUserId,shareRoleFromInput,wrapFactoryMutations} from './rbac';
 
 let CLIENT_ID = ''; /* zelf gehost: alleen uit env (resolveGoogleContour) */const refreshClientId = async () => { try { const contour = await resolveGoogleContour(); if (contour.clientId) CLIENT_ID = contour.clientId; } catch {} };refreshClientId();setInterval(refreshClientId, 5 * 60 * 1000);
@@ -696,6 +703,8 @@ export const handler = router(metMailRuimte({
   ...aiBeleidRoutes({ requireSession: ownerRequireSession as never }),
   // Besluiten van de eigenaar met passkey-handtekening (§15): terugdraaien naar een release, witte lijst externe MCP-hosts; root controleert en voert uit.
   ...eigenaarBesluitRoutes({ requireSession: ownerRequireSession as never }),
+  // ORCH-001 етап 3: координація агентів (огляд, передача пакета через сайт, зміна правил із підписом passkey) — той самий конвеєр, що й scripts/orch.mjs.
+  ...orchRoutes({ requireSession: ownerRequireSession as never, isOwnerEmail, besluitZoeken: besluitZoekenPg, rateLimit, audit: (e, action, result, details) => auditToevoegen({ ownerId: e.id, actorId: e.id, action, type: 'beveiliging', result, details, service: 'mcp' }).then(() => undefined) }),
   // Werkgebied «ШІ для вас» op ai.* (punt 13, 19.10.2026): echte startstaat van het account + chat met keuze uit de ingestelde modellen.
   // Een geldige sessie zonder het recht 'api-platform' krijgt hier API_RECHT_VEREIST, nooit OWNER_API_SESSION_REQUIRED.
   ...aiWerkruimteRoutes({ requireSession: ownerRequireSession as never }),

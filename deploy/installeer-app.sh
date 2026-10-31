@@ -466,6 +466,15 @@ besluit_inrichten() {
   melding "besluiten van de eigenaar (passkey) ingericht: terugdraaien en externe MCP-hosts vanaf de site"
 }
 
+# ORCH-001 етап 3 (31.10.2026): coördinatie van AI-agenten vanaf de site (mcp.*/agenten → «Координація», MCP orch_*). De app schrijft
+# uploads en regelvoorstellen in $APP_ROOT/orch-inbox (eigendom app, 0750). De WERKKOPIE van de coördinatierepository ($APP_ROOT/orch-repo,
+# ORCH_WORTEL) maakt de EIGENAAR zelf aan met een deploy key (RUNBOOK §18) — de installer kloont niets en zet geen sleutels; zonder werkkopie
+# meldt de site eerlijk ORCH_GEEN_REPO. De bevestigingen van de regels legt root vast via mijn-ruimte-besluit (soort orch-regels).
+orch_inrichten() {
+  install -d -o "$GEBRUIKER" -g "$GEBRUIKER" -m 0750 "$APP_ROOT/orch-inbox"
+  if [ -f "$APP_ROOT/orch-repo/orchestratie/beleid.json" ]; then melding "coördinatie van agenten: werkkopie $APP_ROOT/orch-repo aanwezig"; else melding "coördinatie van agenten: geen werkkopie in $APP_ROOT/orch-repo (RUNBOOK §18) — de site toont ORCH_GEEN_REPO tot de eigenaar die aanmaakt"; fi
+}
+
 # SSH-CA (etap C, deel 2): script, mappen en de polkit-naam. Geen sleutel, geen schakelaar aan, geen wijziging van sshd,
 # en de path-unit wordt niet ingeschakeld. De eigenaar doet dat zelf na `mijn-ruimte-ssh-ca inrichten` en `publiek`.
 ssh_ca_inrichten() {
@@ -1041,6 +1050,7 @@ installeren() {
   beheer_inrichten "$doel"
   goedkeuring_inrichten "$doel"
   besluit_inrichten "$doel"
+  orch_inrichten
   ssh_ca_inrichten "$doel"
   db_rollen_hulp_inrichten "$doel"
   guacamole_inrichten "$doel"

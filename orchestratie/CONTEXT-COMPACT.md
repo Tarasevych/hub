@@ -1,9 +1,9 @@
 <!-- GEGENEREERD door node scripts/orch.mjs context — niet met de hand wijzigen · ЗГЕНЕРОВАНО, не редагувати вручну -->
 # Mijn Ruimte — компактний контекст агента · compacte agentcontext
 
-- regelsVersie: `1.2.0`
-- regelsHash: `e2d1de4e5b6edcc9c10ef88bc80f945790835e2cbb59e7974d4c84740bc45877`
-- kritiekHash: `d978f0f1b25c1e714c25e1e52c2c10fe44207051a61f887299776bf1d8a3a492` (НЕ підтверджено власником · NIET bevestigd door eigenaar)
+- regelsVersie: `1.3.0`
+- regelsHash: `b0429aad47b7177a507745370d829babfcf697f93d386b1e207290d0595a4c72`
+- kritiekHash: `15fb72c45e30c0347440c8bc5002934d080b229eb61ce20543f5d1cd49b43bf7` (НЕ підтверджено власником · NIET bevestigd door eigenaar)
 - база · basis: `20261031-093842` @ `b279ccabe31a27139b337822162653ccc13b6a5a` (opgave_eigenaar)
 - інтеграційна гілка · integratietak: `integratie`
 
@@ -65,7 +65,12 @@
 - Пакет на застарілій базі (basisCommit не предок `integratie`, перетин файлів) не випускається й не встановлюється.
 - Режими встановлення (`beleid.json → kritiek.installatieModi`): `handmatig`, `na_bevestiging` (Passkey/підпис власника; типовий),
   `automatisch_beperkt` — лише за окремо затвердженою й підписаною політикою. Зараз дозволені перші два.
-- Критичні політики (`kritiek`) чинні лише з підписом власника (`orchestratie/regels.lock.json → eigenaar`); до того — «пропозиція».
+- Критичні політики (`kritiek`) чинні лише з підтвердженням власника в `orchestratie/regels.lock.json → eigenaar`: підпис SSH (`orch bevestig`)
+  або passkey на сайті (`eigenaar.soort = passkey`, запис у root-журналі); до того — «пропозиція».
+- Зміна правил власником без SSH: сайт `mcp.tarasevych.com/agents` → «Координація» → редагування файлів правил → перевірка пропозиції (`regelsVersie`
+  вища, запис у `BESLUITEN.md`, `beleid.json` валідний) → passkey (рішення `orch-regels`; root лише фіксує підтвердження у своєму журналі) →
+  гілка `regels/<versie>-<час>` з новим lock і `CONTEXT-COMPACT.md` іде в `origin`. Злиття в `integratie` — лише власник. Сайт/MCP/HTTP викликають
+  ті самі функції, що й CLI (`inleveren`, `beoordeelVoorstel`, `vergrendel`) — окремої логіки немає (`beleid.json → site`).
 - Випуск збирає лише `node scripts/orch.mjs pakket --taak <ID> --auteur "…" [--manifest …] [--testresultaten …] [--sig …]`: сумісний
   `mijn-ruimte-<versie>.tar.gz` (через `deploy/uitrol/maak-voorstelpakket.sh`, з файлом `UITROL-BASIS` = встановлена версія + commit + відбиток
   правил) і пакет передачі `mijn-ruimte-<versie>-<agent>-overdracht.zip` (архів, `.sha256`, `ORCH-OVERDRACHT.json`, `UITROL-MANIFEST.json`,

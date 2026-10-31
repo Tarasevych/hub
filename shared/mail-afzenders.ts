@@ -169,6 +169,8 @@ export const merkInNaam = (naam: string): BekendeDienst | null => merkenInNaam(n
 // ------------------------------------------------------------------------------------------------ Authentication-Results
 const UITSLAGEN = new Set(['pass', 'fail', 'softfail', 'neutral', 'none', 'temperror', 'permerror', 'policy']);
 const uitslag = (v: string): AuthUitslag => (UITSLAGEN.has(v) ? v as AuthUitslag : '');
+/** Збережений доказ (bewijs.laatste) тримає рядки; перед повторною оцінкою їх треба звірити з переліком AuthUitslag. · Opgeslagen bewijs bevat strings. */
+export const authUitslag = uitslag;
 /** Alleen de BOVENSTE Authentication-Results (= toegevoegd door de eigen ontvangende server) telt, en alleen als die server in
  *  VERTROUWDE_AUTHSERV staat. Lagere/andere kopregels kan de afzender zelf meesturen (vervalsing) en worden genegeerd. */
 export function parseAuthResults(kopregels: readonly string[] | undefined, vertrouwd: readonly string[] = VERTROUWDE_AUTHSERV): AuthResultaten {

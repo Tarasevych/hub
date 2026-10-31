@@ -82,8 +82,10 @@ function controleer() {
     if (lees(ctx) !== verwacht) z.push({ code: 'CONTEXT_VEROUDERD', ernst: 'fout', uk: `${ctx} застарів — виконайте node scripts/orch.mjs context`, nl: `${ctx} is verouderd — voer node scripts/orch.mjs context uit` });
     if (Buffer.byteLength(verwacht) > beleid.compactContext.maxBytes) z.push({ code: 'CONTEXT_TE_GROOT', ernst: 'fout', uk: `${ctx} більший за ${beleid.compactContext.maxBytes} байтів — скоротіть compact-блоки AGENTS.md`, nl: `${ctx} groter dan ${beleid.compactContext.maxBytes} bytes — kort de compact-blokken in AGENTS.md in` });
   } else z.push({ code: 'CONTEXT_ONTBREEKT', ernst: 'fout', uk: `${ctx} відсутній — node scripts/orch.mjs context`, nl: `${ctx} ontbreekt — node scripts/orch.mjs context` });
-  const e = lock ? eigenaarStatus(lock, lock.eigenaar ? verifieerEigenaar(lock) : null) : null;
+  // Етап 3: підтвердження passkey (lock.eigenaar.soort = 'passkey') перевіряє root на сервері; тут лише SSH-підпис звіряється локально.
+  const e = lock ? eigenaarStatus(lock, lock.eigenaar?.handtekening ? verifieerEigenaar(lock) : null) : null;
   if (e) z.push(e);
+  if (lock?.eigenaar?.soort === 'passkey' && !e) console.log(`eigenaar: підтверджено passkey ${lock.eigenaar.passkey} (рішення ${lock.eigenaar.besluit}, ${lock.eigenaar.op}) · звірку з root-журналом робить GitOps/інсталятор`);
   const code = toon(z);
   console.log(code ? '\nORCH: перевірку НЕ пройдено · controle NIET geslaagd' : `\nORCH: усе гаразд · alles in orde (regelsVersie ${beleid.regelsVersie}, hash ${lock?.hash.slice(0, 12)}…)`);
   return code;

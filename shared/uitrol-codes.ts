@@ -79,6 +79,8 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
   BESLUIT_HASH_VERSCHILT: { uk: 'Вміст рішення змінено після підпису', nl: 'Inhoud van het besluit na het ondertekenen gewijzigd', doenUk: 'Root відмовив: підпишіть рішення заново.', doenNl: 'Root weigerde: onderteken het besluit opnieuw.' },
   BESLUIT_TERUGDRAAIEN_OK: { uk: 'Відкат за рішенням власника (passkey)', nl: 'Teruggedraaid op besluit van de eigenaar (passkey)' },
   BESLUIT_EXTERNE_HOSTS_OK: { uk: 'Білий список зовнішніх MCP-хостів оновлено (passkey)', nl: 'Witte lijst van externe MCP-hosts bijgewerkt (passkey)' },
+  // ORCH-001 етап 3: root зафіксував підтвердження правил координації агентів (застосунок застосовує їх у git-гілці).
+  BESLUIT_ORCH_REGELS_OK: { uk: 'Правила координації агентів підтверджено власником (passkey)', nl: 'Coördinatieregels van de agenten bevestigd door de eigenaar (passkey)' },
   BESLUIT_TERUGDRAAIEN_MISLUKT: { uk: 'Відкат за рішенням власника не вдався', nl: 'Terugdraaien op besluit van de eigenaar mislukt', ...viaSsh },
   BESLUIT_STAND_VERANDERD: { uk: 'Рішення застаріло: активний випуск уже інший', nl: 'Besluit verouderd: de actieve release is al een andere' },
   BESLUIT_RELEASE_ONBEKEND: { uk: 'Випуск відсутній або неповний', nl: 'Release ontbreekt of is onvolledig' },

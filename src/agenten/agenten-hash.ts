@@ -1,6 +1,7 @@
 // Читання адреси хаба «Підключення ШІ». Окремо від AgentenPagina.tsx: той файл тягне CSS, а тести — ні.
-export type TabId = 'overzicht' | 'connectors' | 'agent' | 'ai' | 'extern' | 'extensie' | 'browser' | 'apparaten' | 'tokens' | 'toegang' | 'technisch' | 'journaal';
-export const TABS: TabId[] = ['overzicht', 'connectors', 'ai', 'extern', 'extensie', 'browser', 'apparaten', 'tokens', 'toegang', 'technisch', 'journaal'];
+// ORCH-001 етап 3 (31.10.2026): 'orch' = «Координація» — правила, задачі, черга й передачі всіх ШІ-агентів (src/agenten/TabOrch.tsx).
+export type TabId = 'overzicht' | 'connectors' | 'agent' | 'ai' | 'extern' | 'orch' | 'extensie' | 'browser' | 'apparaten' | 'tokens' | 'toegang' | 'technisch' | 'journaal';
+export const TABS: TabId[] = ['overzicht', 'connectors', 'ai', 'extern', 'orch', 'extensie', 'browser', 'apparaten', 'tokens', 'toegang', 'technisch', 'journaal'];
 export const PLEKKEN: TabId[] = [...TABS, 'agent'];
 export const ALLEEN_TECHNISCH: readonly TabId[] = ['technisch'];
 export const zichtbareTabs = (technisch: boolean): TabId[] => TABS.filter((t) => technisch || !ALLEEN_TECHNISCH.includes(t));

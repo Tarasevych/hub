@@ -23,6 +23,7 @@ import { HELP_TERMINAL_OPDRACHT } from './terminal-opdrachten';
 import { HELP_IMP_AANVRAGEN, HELP_IMP_TOESTEMMING } from './impersonatie';
 import { HELP_ONDERSTEUNING, HELP_TOESTEMMING } from './ondersteuning';
 import { HELP_BESLUIT } from './eigenaar-besluit';
+import { HELP_ORCH } from './orch-model'; // ORCH-001 етап 3: координація агентів на mcp.*/agenten
 import { HELP_MATRIX } from './extensie-matrix';
 import { HELP_WERKBLAD } from './werkblad-indeling'; // zone F 22.10.2026: knoppen van de instelmodus van het werkblad
 import { HELP_ZOEK_INDEX } from './zoek-hulp';   // zone D 22.10.2026: indexvenster op /zoek
@@ -610,6 +611,7 @@ hulpRegistreren({
 
 // ================================================================== besluiten van de eigenaar met passkey (zone B 22.10.2026, RUNBOOK §15)
 hulpRegistreren(HELP_BESLUIT);
+hulpRegistreren(HELP_ORCH);
 
 // ================================================================== «Браузер і агенти» — matrix slot × mogelijkheid × agent (zone E 22.10.2026, 0110)
 hulpRegistreren(HELP_MATRIX);

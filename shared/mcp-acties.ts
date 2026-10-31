@@ -69,6 +69,7 @@ const TOOL_SOORT: Readonly<Record<string, ActieSoort>> = {
   site_search: 'zoeken', global_search: 'zoeken',
   uitrol_voorstel_begin: 'uitrol', uitrol_voorstel_stuk: 'uitrol', uitrol_voorstel_klaar: 'uitrol', uitrol_voorstel_status: 'uitrol', uitrol_voorstel_annuleren: 'uitrol',
   audit_read: 'server', siem_status: 'server', users_manage: 'server', flags_manage: 'server',
+  orch_overzicht: 'uitrol', orch_context: 'uitrol', orch_taak_start: 'uitrol', orch_inleveren_begin: 'uitrol', orch_inleveren_stuk: 'uitrol', orch_inleveren_klaar: 'uitrol',
 };
 const zonderPrefix = (t: string) => String(t || '').replace(/^mcp__[^_]+(?:_[^_]+)*?__/, '');
 export const actieSoort = (tool: string): ActieSoort => TOOL_SOORT[zonderPrefix(tool)] ?? 'onbekend';
@@ -182,6 +183,10 @@ const Z: Readonly<Record<string, [string, string]>> = {
   audit_read: ['Прочитав журнал безпеки (замасковано)', 'Las het beveiligingslogboek (gemaskeerd)'], siem_status: ['Перевірив передачу в SIEM', 'Controleerde de SIEM-export'],
   users_manage: ['Запропонував зміну користувача (чекає вашого passkey)', 'Stelde een wijziging van een gebruiker voor (wacht op uw passkey)'],
   flags_manage: ['Запропонував зміну прапорця функції (чекає підтвердження)', 'Stelde een wijziging van een functievlag voor (wacht op bevestiging)'],
+  // ORCH-001 етап 3: координація агентів
+  orch_overzicht: ['Переглянув координацію агентів', 'Bekeek de agentcoördinatie'], orch_context: ['Прочитав компактний контекст правил', 'Las de compacte regelcontext'],
+  orch_taak_start: ['Зареєстрував задачу агента', 'Registreerde een agenttaak'], orch_inleveren_begin: ['Почав передачу результату', 'Begon een overdracht van een resultaat'],
+  orch_inleveren_stuk: ['Надіслав частину пакета передачі', 'Stuurde een deel van een overdrachtspakket'], orch_inleveren_klaar: ['Завершив передачу (пакет у черзі перевірки)', 'Rondde een overdracht af (pakket in de controlerij)'],
 };
 const SYNONIEM: Readonly<Record<string, string>> = {
   browser_snapshot: 'take_snapshot', browser_pages: 'list_pages', browser_list_tabs: 'list_pages', browser_console: 'list_console_messages', browser_network: 'list_network_requests',

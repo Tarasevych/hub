@@ -99,3 +99,59 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 - Виклик на production не виконувався; `laatste-commit` на сервері з'явиться після першої установки новим скриптом (до того `BASIS_COMMIT_VERSCHILT`
   не спрацьовує — лише версія).
 - Сайт/MCP для завантаження пакета передачі — етап 3.
+
+## Етап 3 — керування через сайт, MCP і HTTP; правила з passkey (31.10.2026)
+
+**Додано**
+- `shared/orch-model.ts` — маршрути `/api/owner/orch/*`, ліміти (фрагмент 512 КіБ, пакет ≤ 300 МіБ, 20 завантажень/год), типи, коди `ORCH_CODES` (uk+nl).
+- `backend/orch-opslag.ts` — єдиний доступ до робочої копії координації (`ORCH_WORTEL`, типово `/srv/mijn-ruimte/orch-repo`): огляд, контекст,
+  реєстрація задачі, завантаження фрагментами в `ORCH_INBOX` → той самий `inleveren(...)`/`registreerInlevering(...)`, пропозиції правил через
+  `beoordeelVoorstel`, застосування (`vergrendel` → `bevestigMetPasskey`, `compacteContext`, `controleer`, commit, push, compare-URL). Жодної
+  власної логіки правил — лише виклики `scripts/orch/kern.mjs` і `scripts/orch/inleveren.mjs` (для них додано `.d.mts`).
+- `backend/orch-routes.ts` (власник, `requireSession` + `isOwnerEmail`; `ADMIN_SERVICE_REQUIRED` для технічного простору), `backend/orch-hulpmiddelen.ts`
+  + `orch-hulpmiddeldefinities.ts` (MCP: `orch_overzicht`, `orch_context`, `orch_taak_start`, `orch_inleveren_begin|stuk|klaar`; у каталозі v2,
+  `TOOL_CAPABILITY`, `mcp-acties`, двомовні тексти), `backend/orch-besluit-pg.ts` (пошук рішення для застосування).
+- Рішення власника нового виду **`orch-regels`**: `deploy/goedkeuring/besluit-kern.mjs` (+ `.d.mts`), `deploy/besluit/mijn-ruimte-besluit.sh`
+  (`orch_regels`: root лише дописує підтвердження у `$WERK/orch-regels-bevestigd.jsonl` 0600 і переписує `$STATUS/orch-regels-bevestigd.json` 0640,
+  останні 50; подія `BESLUIT_ORCH_REGELS_OK`; вимикач `orch-regels-passkey`), `backend/eigenaar-besluit.ts`, `shared/eigenaar-besluit.ts`,
+  `src/besluit/besluit-client.ts`.
+- `deploy/gitops/gitops-ophalen.sh` — passkey-lock приймається **лише** якщо той самий запис є в root-журналі (`GITOPS_ORCH_BEVESTIGD`);
+  підпис SSH — як і раніше.
+- Сайт: `src/agenten/TabOrch.tsx` + `src/orch/orch-client.ts` + `src/orch/orch.css` (вкладка «Координація»: огляд, задачі/черга/передачі,
+  передача пакета з пристрою з поступом, редактор правил → перевірка → passkey → гілка), довідка `orch.inlevering` / `orch.regels` у `hulp-register`.
+- `server/platform/antwoord.ts` — `json`/`error` без ланцюжка до `pg` (router реекспортує); маршрути координації тестуються без бази.
+- `deploy/installeer-app.sh` → `orch_inrichten` (створює `orch-inbox`, повідомляє про наявність робочої копії). `beleid.json` 1.2.0 → **1.3.0**
+  (розділ `site`; `kritiek.toelichting` згадує passkey), B-006, `AGENTS.md` §5–§7, RUNBOOK §18, `uitrol-codes` (+`BESLUIT_ORCH_REGELS_OK`).
+- Виправлено старе: `tests/eenheid/besluit-root-20261022.test.ts` падав, якщо тести запускає root (скрипт свідомо ігнорує `BESLUIT_*` для root) —
+  тепер запускається під uid 65534 через `setpriv` (спільні помічники експортовано). `hulpmiddelen-tweetalig` використовує спільний
+  `tests/eenheid/hulp/taalcontrole.ts`. `backend/index.ts` викликав `gmailParserPolicySelfTest`, `normalizeGmailMessage`, `gmailMaxHistoryId`,
+  `gmailHistoryMessageIds` і тип `MailClassificationSignals` **без імпорту** (загублено у знімку SEC-001 30.10.2026; tsc TS2304, у рантаймі —
+  ReferenceError у Gmail-синхронізації) — імпорти повернено. `backend/mail-afzenders.ts`: `was` поза областю видимості в `afzenderVerifieren`
+  (ReferenceError при ручній верифікації відправника) → `basis.status`; `fout` став оголошенням функції (TS звужує тип після `if (!x) fout()`);
+  рядки збереженого доказу звіряються з `AuthUitslag` (`shared/mail-afzenders.ts → authUitslag`). `tsc -p tsconfig.server.json`: 130 → 111 помилок,
+  усі решта — відсутні в середовищі модулі (`pg`, `ws`, `pdf-lib` → TS2307/TS7006) і два місця, що залежать від типів `pg`
+  (`ruimte-scheiding.ts:117`, `uitrol-goedkeuring.ts:447`, `index.ts:636`) — перевірити в середовищі з повним `node_modules`.
+
+**Перевірено**
+- `tests/eenheid/orch-site-20261031.test.ts` — 74/74 на справжніх git-репозиторіях з `origin`: поріг доступу (401, `OWNER_REQUIRED`,
+  `ADMIN_SERVICE_REQUIRED`), `ORCH_GEEN_REPO` без емуляції, огляд/контекст, реєстрація задачі (`TAAK_BESTAAT`, `TAAK_ONGELDIG`, `BASIS_ONBEKEND`),
+  завантаження фрагментами (ім'я, розмір, зміщення, SHA-256, незавершене + скасування) → прийнято/відхилено (`REGELS_VEROUDERD`), MCP-інструменти
+  через `voerOrchToolUit`, пропозиція правил (усі коди відмови, 413), застосування (`GEEN_BESLUIT`, `BESLUIT_PAST_NIET`, `NIET_BEVESTIGD_DOOR_ROOT`,
+  `ORCH_REPO_VUIL`; успіх: гілка `regels/<versie>-<час>`, lock з passkey, CONTEXT-COMPACT, push в origin, `controleer` зелений, повтор →
+  `GEEN_VOORSTEL`), `VOORSTEL_VEROUDERD` після зміни правил, відкликання; реєстри (каталог v2, довжина імен ≤ 64 для кожного агента, мова текстів).
+- `tests/eenheid/orch-besluit-root-20261031.test.ts` — 34/34: справжній `mijn-ruimte-besluit.sh` під uid 65534 (журнал 0600, файл стану 0640, подія,
+  вимикач, права не змінено, інсталятор не викликано; атаки: вміст, невідомий ключ, повторний підпис, чужа задача, інший hash, вимкнено);
+  `rootBevestigingen()` читає файл root; перевірка GitOps виконується тим самим Python-кодом зі скрипта проти справжнього журналу (прийнято;
+  без журналу; чужий besluit/voorstel/hash/kritiekHash; неповний passkey; зіпсований журнал; SSH-шлях; без eigenaar).
+- Разом `orch-*`: kern 78 + cli 16 + inleveren 36 + pakket 23 + uitrol-basis 14 + site 74 + besluit-root 34 = **275**; `besluit-root` 47/47,
+  `mcp-acties` 12/12, `uitrol-codes` 17/17; `bash -n` для трьох скриптів; `tsc -p tsconfig.server.json` — у змінених файлах помилок немає.
+
+**Свідомо не зроблено / обмеження**
+- Перевірка типів фронтенду (`src/`) у середовищі агента неможлива: немає `react`/`lucide-react`/`@types/react`, `npm install` блокується
+  (403 на `cdn.sheetjs.com`). Логіку `TabOrch.tsx` перевірено з заглушками типів; остаточно — CI/`npm run typecheck` у власника.
+- Тести, що потребують `pg` (`connector-v2`, `tweetalig`, `besluit-app`), тут не запускаються — реєстри перевірено окремо в `orch-site`.
+- Робочу копію координації на сервері (`/srv/mijn-ruimte/orch-repo`) створює власник з deploy-ключем (RUNBOOK §18.1) — інсталятор свідомо не має ключа.
+- Production не чіпалося; гілка `regels/*` після passkey лише відправляється в `origin`, злиття в `integratie` — за власником.
+
+**Наступне** — етап 4: приймальні тести (паралельні агенти, конфлікти git, застарілий випуск, імпорт архіву без git, зміна політики, відновлення
+«замороженого» агента, одночасні установки, відкат).
