@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "taakId": "ABC-001",
+  "agent": "claude",
+  "agentPlatform": "Claude Code",
+  "model": { "id": null, "versie": null, "bron": "onbekend" },
+  "basisCommit": "b279ccabe31a27139b337822162653ccc13b6a5a",
+  "basisVersie": "20261031-093842",
+  "regelsVersie": "1.0.0",
+  "regelsHash": "<orchestratie/regels.lock.json → hash>",
+  "tak": "feature/abc-001-20261031-120000",
+  "kanaal": "zip",
+  "zonderGit": null,
+  "commits": [],
+  "bestanden": { "gewijzigd": [], "toegevoegd": [], "verwijderd": [] },
+  "samenvatting": { "uk": "Що змінено і навіщо (≥ 20 символів)", "nl": "Wat en waarom (≥ 20 tekens)" },
+  "tests": { "geslaagd": 0, "mislukt": 0, "falend": [], "uitleg": { "uk": "", "nl": "" } },
+  "nietGedaan": { "uk": "Що свідомо не зроблено й чому", "nl": "Wat bewust niet gedaan is en waarom" },
+  "conflicten": [],
+  "aangemaakt": "2026-10-31T12:00:00Z"
+}
