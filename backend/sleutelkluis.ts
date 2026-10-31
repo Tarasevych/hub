@@ -58,11 +58,14 @@ const gcmDicht = (prefix: string, key: Buffer, plaintext: Buffer, aad: string): 
   return [prefix, iv.toString('base64url'), ct.toString('base64url'), c.getAuthTag().toString('base64url')].join('.');
 };
 const gcmOpen = (prefix: string, key: Buffer, envelop: string, aad: string): Buffer => {
-  const [v, iv, ct, tag] = String(envelop || '').split('.');
-  if (v !== prefix || !iv || !ct || !tag) throw new SleutelkluisFout('ENVELOP_ONGELDIG');
-  const d = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64url'));
+  const [v, iv, ct, tag, extra] = String(envelop || '').split('.');
+  if (v !== prefix || !iv || ct === undefined || !tag || extra !== undefined) throw new SleutelkluisFout('ENVELOP_ONGELDIG');
+  const ivBuf = Buffer.from(iv, 'base64url');
+  const tagBuf = Buffer.from(tag, 'base64url');
+  if (ivBuf.length !== 12 || tagBuf.length !== 16) throw new SleutelkluisFout('ENVELOP_ONGELDIG');
+  const d = createDecipheriv('aes-256-gcm', key, ivBuf, { authTagLength: 16 });
   d.setAAD(Buffer.from(aad, 'utf8'));
-  d.setAuthTag(Buffer.from(tag, 'base64url'));
+  d.setAuthTag(tagBuf);
   return Buffer.concat([d.update(Buffer.from(ct, 'base64url')), d.final()]);
 };
 /** Een waarde onder de DEK: 'dek1.<iv>.<ct>.<tag>'. */

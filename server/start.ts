@@ -34,6 +34,7 @@ import { closePool, getPool } from './platform/pg';
 import { ownerEmail, rateLimit } from './platform/beveiliging';
 import { auditIpPepperGeldig } from './platform/audit';
 import { isCanoniekPad, type LambdaEvent, type RouterResponse } from './platform/router';
+import { schakelaarsVerversen } from './platform/schakelaars';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.HOST || '127.0.0.1';
@@ -89,11 +90,13 @@ const MIME: Record<string, string> = {
 // ---------------------------------------------------------------------------------------------
 const hostOf = (req: http.IncomingMessage) => String(req.headers.host || '').toLowerCase().replace(/:\d+$/, '');
 
-/** Client-IP: alleen cf-connecting-ip (Cloudflare); anders het socket-adres (lokaal verkeer). */
-function clientIp(req: http.IncomingMessage): string {
+const LOOPBACK_SOCKET = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1', '']);
+/** Client-IP: alleen cf-connecting-ip wanneer het verzoek via de lokale tunnel (loopback) binnenkomt; anders het socket-adres. */
+export function clientIp(req: http.IncomingMessage): string {
+  const rawRemote = String(req.socket?.remoteAddress || '');
   const cf = String(req.headers['cf-connecting-ip'] || '').trim();
-  if (cf && /^[0-9a-fA-F:.]{2,45}$/.test(cf)) return cf;
-  return String(req.socket.remoteAddress || 'unknown').replace(/^::ffff:/, '');
+  if (cf && LOOPBACK_SOCKET.has(rawRemote) && /^[0-9a-fA-F:.]{2,45}$/.test(cf)) return cf;
+  return (rawRemote || 'unknown').replace(/^::ffff:/, '');
 }
 
 /** Uitgaand verkeer van Anthropic (Claude-connectors): 160.79.104.0/21 (IPv4). */
@@ -160,9 +163,15 @@ async function writeRouterResponse(res: http.ServerResponse, response: RouterRes
     const file = response.filePath;
     // Alleen het age-archief (vaste naam in de root-uitgiftemap) en de (versleutelde) nachtelijke back-ups; de routes eisen eigenaar + eenmalige downloadId.
     // Plus de blijvende archieven van releases (audit 18.10.2026, punt 4): alleen mijn-ruimte-<versie>.tar.gz direct in de archiefmap.
-    const pakketten = (process.env.UITROL_PAKKETTEN_DIR || "/srv/mijn-ruimte/pakketten").replace(/\/+$/, "");
-    const isPakket = file.startsWith(pakketten + "/") && /^mijn-ruimte-\d{8}-\d{6}\.tar\.gz$/.test(file.slice(pakketten.length + 1));
-    const allowed = file === "/var/lib/mijn-ruimte-archief/uitgifte/archief-laatste.tar.age" || file.startsWith("/srv/backups/mijn-ruimte/") || isPakket;
+    const fileNorm = String(file || "").replace(/\\/g, "/");
+    const canon = path.posix.normalize(fileNorm);
+    const pakketten = (process.env.UITROL_PAKKETTEN_DIR || "/srv/mijn-ruimte/pakketten").replace(/\\/g, "/").replace(/\/+$/, "");
+    const backups = (process.env.BACKUP_DIR || "/srv/backups/mijn-ruimte").replace(/\\/g, "/").replace(/\/+$/, "");
+    const archiefUit = (process.env.ARCHIEF_UIT || "/var/lib/mijn-ruimte-archief/uitgifte").replace(/\\/g, "/").replace(/\/+$/, "");
+    const isPakket = canon.startsWith(pakketten + "/") && /^mijn-ruimte-\d{8}-\d{6}\.tar\.gz$/.test(canon.slice(pakketten.length + 1));
+    const isBackup = canon.startsWith(backups + "/") && /^\d{8}-\d{6}\/(database\.dump\.age|uploads\.tar\.gz\.age|systeem\.tar\.gz\.age|systeem-info\.txt|info\.txt|SHA256SUMS)$/.test(canon.slice(backups.length + 1));
+    const isArchief = canon === `${archiefUit}/archief-laatste.tar.age`;
+    const allowed = !file.includes("\0") && fileNorm === canon && !fileNorm.includes("..") && (isArchief || isBackup || isPakket);
     const s = allowed ? await fileStat(file) : null;
     if (!s) return sendText(res, 404, "NOT_FOUND");
     const headers: Record<string, string> = {
@@ -312,6 +321,8 @@ const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
   [/^\/api\/mcp-connector\/register$/, 'mcp-register', 20, true],
   [/^\/api\/mcp-connector\/(token|revoke)$/, 'mcp-token', 120, true],
   [/^\/api\/mcp-connector\/authorize$/, 'mcp-authorize', 60, true],
+  [/^\/api\/owner\/agents\/ws-ticket$/, 'ws-ticket', 60, true],
+  [/^\/api\/aanmeld\/koppel\/[^/]+\/(start|terug)$/, 'aanmeld-koppel', 30, true],
   [/^\/api\/owner\/identity\/transactions\/(create|attach)$/, 'login-start', 20, true],
   [/^\/api\/(auth|owner\/auth|ecosystem\/auth|owner\/identity|service-handoff|ecosystem\/handoff|owner\/session\/handoff|share\/join)(\/|$)/, 'aanmelden', 120, true],
 ];
@@ -383,10 +394,10 @@ function strikteFactor(): number {
   if (!factorGemeld) { factorGemeld = true; console.warn('[rate-limit] E2E_LOKALE_LIMIETEN=1: strikte limieten ×20 (alleen lokale e2e-tests)'); }
   return 20;
 }
-async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
+export async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
   const algemeen = geheugenLimiet(`api:${ip}`, API_LIMIT_PER_MIN, 60_000);
   if (!algemeen.ok) return algemeen.retryAfter;
-  if (SAFE_METHODS.has(method) && !pathname.includes('/callback')) return 0;
+  if (SAFE_METHODS.has(method) && !pathname.includes('/callback') && !/^\/api\/(mcp-connector\/authorize|auth\/|aanmeld\/koppel\/|owner\/agents\/ws-ticket)/.test(pathname)) return 0;
   for (const [patroon, naam, max, failClosed] of STRIKTE_LIMIETEN) {
     if (!patroon.test(pathname)) continue;
     const r = await rateLimit(`${naam}:${ip}`, max * strikteFactor(), 60, { failClosed });
@@ -510,7 +521,12 @@ if (isMain) {
   server.headersTimeout = 30_000;
   // > originRequest.keepAliveTimeout van cloudflared (90 s): anders hergebruikt de tunnel soms een net door Node gesloten verbinding → 502.
   server.keepAliveTimeout = 100_000;
-  server.listen(PORT, HOST, () => console.log(`[server] luistert op http://${HOST}:${PORT} (dist: ${DIST_DIR})`));
+  // SEC-001-11: actieve beschermingsschakelaars (auth-poort, opa-afdwingen, rls) vóór het eerste verzoek laden.
+  void schakelaarsVerversen()
+    .catch((err) => console.error('[schakelaars] laden bij start mislukt:', (err as Error).message))
+    .finally(() => {
+      server.listen(PORT, HOST, () => console.log(`[server] luistert op http://${HOST}:${PORT} (dist: ${DIST_DIR})`));
+    });
   // Fase 3: verouderde eigenaarsrollen (adres ≠ OWNER_EMAIL) intrekken; faalt nooit de start.
   verouderdeEigenarenIntrekken().catch((err) => console.error('[eigenaar] opschonen mislukt:', (err as Error).message));
   // Diagnose-archief: verlopen archieven (90 dagen) bij de start en daarna elke 6 uur verwijderen; faalt nooit de start.

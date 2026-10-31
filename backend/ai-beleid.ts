@@ -23,6 +23,7 @@ import { getPool } from '../server/platform/pg';
 import { assertPolicy, buildDraft, diffPolicy, evaluate, listGrants, type Decision, type Op, type Policy } from '../shared/ai-beleid/model';
 import { CAPABILITIES, capabilityForTool } from '../shared/ai-beleid/catalogus';
 import { DEFAULT_TZ } from '../shared/ai-beleid/tijd';
+import { isAgentSlug } from '../shared/connector-v2/agenten';
 import { CHAT_KLANT, type Namens } from './mcp-namens';
 import { agentAudit } from './agent-audit';
 import { assertieOpties, assertieUit, leesSleutels, uitdagingMaken, uitdagingVerbruiken, UitrolFout } from './uitrol-goedkeuring';
@@ -74,7 +75,11 @@ const normaal = (s: string) => s.toLowerCase().normalize('NFKC').replace(/[^a-z0
  */
 export function agentVoor(beleid: Policy, client: string | undefined, slug?: string): string | null {
   const sl = normaal(String(slug || ''));
-  if (sl) for (const [id, a] of Object.entries(beleid.agents)) if (normaal(id) === sl || normaal(a.name) === sl) return id;
+  if (sl) {
+    for (const [id, a] of Object.entries(beleid.agents)) if (normaal(id) === sl || normaal(a.name) === sl) return id;
+    // SEC-001-09: bij een echt v2-agentslug (bv. /gemini) NOOIT terugvallen op de door de client zelf opgegeven naam («Claude»).
+    if (isAgentSlug(sl)) return null;
+  }
   const c = normaal(String(client || ''));
   if (!c) return null;
   for (const [id, a] of Object.entries(beleid.agents)) if (normaal(id) === c || normaal(a.name) === c) return id;

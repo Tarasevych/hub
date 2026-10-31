@@ -27,7 +27,7 @@ export interface RouterContext {
 export type RouterMiddleware = (ctx: RouterContext) => Promise<RouterResponse | void> | RouterResponse | void;
 export type RouterRoutes = Record<string, RouterMiddleware[]>;
 
-import { metVerzoek } from './context';
+import { isSessieGeverifieerd, metVerzoek } from './context';
 import { poortNaVerzoek } from './auth-poort';
 import { telAntwoord, telFout } from './antwoord-teller';
 
@@ -135,7 +135,11 @@ export function router(routes: RouterRoutes): RouterHandler {
       try {
         for (const middleware of gekozen.route.chain) {
           const result = await middleware(ctx);
-          if (result) { const uit = await nabewerken(event.rawPath || '/', poortNaVerzoek(gekozen.route.pattern, event, result)); telAntwoord(uit.statusCode); return uit; }
+          if (result) {
+            const uit = await nabewerken(event.rawPath || '/', poortNaVerzoek(gekozen.route.pattern, event, result));
+            telAntwoord(uit.statusCode, undefined, { geverifieerd: isSessieGeverifieerd() });
+            return uit;
+          }
         }
         telAntwoord(500);
         return error('No response', 500);

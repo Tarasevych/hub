@@ -14,7 +14,8 @@ import { ruimteVanSessie, scheidingAan } from './ruimte-sessie';
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, readdir, realpath, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { error, fileDownload, json } from "../server/platform";
+import { error, fileDownload, isOwnerEmail, json } from "../server/platform";
+import { sessieGeverifieerd, zetGebruiker } from "../server/platform/context";
 import { rateLimit } from "../server/platform/beveiliging";
 import { auditToevoegen } from "../server/platform/audit";
 import { getPool } from "../server/platform/pg";
@@ -134,7 +135,7 @@ async function probeOne(name: string, url: string) {
     return { id: name, url, ok: false, status: 0, ms: Date.now() - started, error: err instanceof Error ? err.message : "NO_ANSWER" };
   }
 }
-const isOwner = (u: SessionOk["user"]) => u.role === "owner";
+const isOwner = (u: SessionOk["user"]) => u.role === "owner" && (!process.env.OWNER_EMAIL || isOwnerEmail(u.email));
 
 // ---------------------------------------------------------------- bord, tokens, log per gebruiker (0019)
 async function logCall(userId: string, row: { method: string; detail: string; transport: string; agent: string; ok: boolean; ms: number }) {
@@ -837,13 +838,15 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       if (!/^tvh_[A-Za-z0-9_-]{20,64}$/.test(got)) return error("TOKEN_INVALID", 401);
       const sys = getPool("systeem");
       const { rows } = await sys.query(
-        `SELECT t.id, t.user_id, t.name, t.ruimte, r.data->>'role' AS role FROM app.mcp_console_tokens t
-           LEFT JOIN app.records r ON r.tbl = 'users' AND r.id = t.user_id
+        `SELECT t.id, t.user_id, t.name, t.ruimte, r.data->>'role' AS role, r.data->>'email' AS email FROM app.mcp_console_tokens t
+           JOIN app.records r ON r.tbl = 'users' AND r.id = t.user_id
           WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now()
-            AND COALESCE(r.data->>'status', '') NOT IN ('blocked', 'rejected', 'deleted') AND COALESCE((r.data->>'retiredAt')::numeric, 0) = 0
+            AND r.data->>'status' = 'approved' AND COALESCE((r.data->>'retiredAt')::numeric, 0) = 0
             AND NOT EXISTS (SELECT 1 FROM app.user_ai_settings s WHERE s.user_id = t.user_id AND s.blocked_at IS NOT NULL)`, [sha(got)]);
       const tok = rows[0];
       if (!tok) return error("TOKEN_INVALID", 401);
+      zetGebruiker(String(tok.user_id), "mcp", undefined, `token:${tok.id}`);
+      sessieGeverifieerd();
       const limit = await rateLimit(`mcp-agent:${tok.id}`, 60, 60);
       if (!limit.ok) return error("RATE_LIMITED", 429);
       await sys.query("UPDATE app.mcp_console_tokens SET calls = calls + 1, last_seen_at = now() WHERE id = $1", [tok.id]);
@@ -864,7 +867,8 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
         return json({ ok: false, error: `AI_BELEID:${beleid.code}`, message: weigerTekst(beleid) }, 403);
       }
       try {
-        const result = await metNamens({ client: String(tok.name), grantId: `token:${tok.id}`, ruimte }, () => runTool(tok.user_id, tok.role === "owner", name, args, `agent:${tok.name}`, String(tok.id), ruimte));
+        const tokIsOwner = tok.role === "owner" && (!process.env.OWNER_EMAIL || isOwnerEmail(String(tok.email || "")));
+        const result = await metNamens({ client: String(tok.name), grantId: `token:${tok.id}`, ruimte }, () => runTool(tok.user_id, tokIsOwner, name, args, `agent:${tok.name}`, String(tok.id), ruimte));
         await logCall(tok.user_id, { method: "tools/call", detail: name, transport: "agent", agent: tok.name, ok: true, ms: Date.now() - started });
         return json({ ok: true, result: text(result) });
       } catch (err) {

@@ -32,7 +32,9 @@ import { createReadStream } from 'node:fs';
 import { mkdir, open, readdir, readFile, rename, rm, statfs, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { db, error, json, storage } from '../server/platform';
+import { isAlleenLezen } from '../server/platform/context';
 import type { RouterMiddleware } from '../server/platform/router';
+import { can, denyMutation } from './rbac';
 import {
   CLOUD_SORTERING, CLOUD_VNEXT_LIMIETEN as LIMIET, cloudSoort, schoneNaam, schoneTag,
   type CloudBestand, type CloudMap, type CloudSoort, type CloudSortering, type CloudVersie,
@@ -283,12 +285,12 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
   }) as unknown as RouterMiddleware];
 
   // ---------------------------------------------------------------- overzicht
-  const overzicht: Run = async (_c, _a, lade) => {
+  const overzicht: Run = async (_c, auth, lade) => {
     const [itemsRauw, mappen, werkruimtes] = await Promise.all([
       eigenItems(lade), eigenMappen(lade),
       alleRecords<WerkruimteRecord>(WERKRUIMTES, ladeFilter(lade)),
     ]);
-    const items = await prullenbakOpruimen(lade, itemsRauw);
+    const items = can(auth.user, 'cloud.write') && !isAlleenLezen() ? await prullenbakOpruimen(lade, itemsRauw) : itemsRauw;
     const actief = items.filter((r) => !str(r.verwijderdOp));
     const buiten = actief.map(naarBuiten);
     const perSoort: Partial<Record<CloudSoort, { aantal: number; bytes: number }>> = {};
@@ -308,10 +310,10 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
   };
 
   // ---------------------------------------------------------------- bestanden (lijst met filters, sortering, paginering)
-  const bestanden: Run = async (_c, _a, lade, d) => {
+  const bestanden: Run = async (_c, auth, lade, d) => {
     const [itemsRauw, mappen] = await Promise.all([eigenItems(lade), eigenMappen(lade)]);
     const prullenbak = d.prullenbak === true;
-    const items = prullenbak ? await prullenbakOpruimen(lade, itemsRauw) : itemsRauw;
+    const items = prullenbak && can(auth.user, 'cloud.write') && !isAlleenLezen() ? await prullenbakOpruimen(lade, itemsRauw) : itemsRauw;
     const mapId = idOfNull(d.mapId);
     const huidige = mapId ? mappen.find((m) => m.id === mapId) ?? fout('MAP_ONBEKEND') : null;
     const zoek = str(d.zoek).trim().toLowerCase().slice(0, LIMIET.zoekMax);
@@ -359,7 +361,8 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
   };
 
   // ---------------------------------------------------------------- map (nieuw / hernoem / verplaats / verwijder)
-  const map: Run = async (_c, _a, lade, d) => {
+  const map: Run = async (_c, auth, lade, d) => {
+    const denied = denyMutation(auth.user, 'cloud.write'); if (denied) return denied;
     const actie = str(d.actie);
     const mappen = await eigenMappen(lade);
     const eigenMap = (id: unknown) => mappen.find((m) => m.id === idOfNull(id)) ?? fout('MAP_ONBEKEND');
@@ -414,7 +417,8 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
   };
 
   // ---------------------------------------------------------------- bestand (hernoem / verplaats / tags / favoriet / prullenbak)
-  const bestand: Run = async (_c, _a, lade, d) => {
+  const bestand: Run = async (_c, auth, lade, d) => {
+    const denied = denyMutation(auth.user, 'cloud.write'); if (denied) return denied;
     const actie = str(d.actie);
     const enkel = !Array.isArray(d.ids);
     const ids = (Array.isArray(d.ids) ? d.ids.map(idOfNull).filter((x): x is string => x !== null) : [idOfNull(d.id)].filter((x): x is string => x !== null)).slice(0, 400);
@@ -471,8 +475,11 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
 
   // ---------------------------------------------------------------- upload (begin / stuk / status / zoek / klaar / afbreken)
   const upload: Run = async (_c, auth, lade, d) => {
-    await sessiesOpruimen();
     const actie = str(d.actie);
+    if (actie !== 'status' && actie !== 'zoek') {
+      const denied = denyMutation(auth.user, 'cloud.write'); if (denied) return denied;
+      await sessiesOpruimen();
+    }
     if (actie === 'begin') {
       const naam = schoneNaam(d.naam) || fout('NAAM_ONGELDIG');
       const mime = schoneMime(d.mime);
@@ -582,7 +589,7 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
   };
 
   // ---------------------------------------------------------------- download (hele inhoud of één versie, base64 in JSON)
-  const download: Run = async (_c, _a, lade, d) => {
+  const download: Run = async (_c, auth, lade, d) => {
     const r = (await eenItem(lade, d.id)) ?? fout('BESTAND_ONBEKEND');
     const kind = r.kind === 'note' || r.kind === 'link' ? r.kind : 'file';
     if (kind !== 'file') {
@@ -606,7 +613,7 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
       const lengte = Math.min(Number.isInteger(lengteRauw) && lengteRauw > 0 ? lengteRauw : LIMIET.downloadDeelBytes, LIMIET.downloadDeelBytes);
       const deel = await storage.leesDeel(pad, offset, lengte, { eigenaar: str(r.ownerUserId) || undefined });
       if (!deel) fout('DEEL_BUITEN_BEREIK');
-      await db.update(ITEMS, [{ id: r.id, record: { ...zonderId(r), openedAt: Date.now() } as Record<string, unknown> }]).catch(() => undefined);
+      if (can(auth.user, 'cloud.write') && !isAlleenLezen()) await db.update(ITEMS, [{ id: r.id, record: { ...zonderId(r), openedAt: Date.now() } as Record<string, unknown> }]).catch(() => undefined);
       return json({ naam: buitenNaam(r), mime: schoneMime(r.mimeType) || 'application/octet-stream', bytes: deel!.totaal, sha256: gekozen ? gekozen.sha256 : str(r.sha256), offset, data: deel!.data.toString('base64') });
     }
     if (bytes > LIMIET.downloadMaxBytes) fout('TE_GROOT');
@@ -614,15 +621,16 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
     if (!gelezen?.content) throw new Error('CLOUD_OPSLAG_LEZEN_MISLUKT');
     // storage.read geeft base64 terug voor binaire inhoud en de (zelf al base64 geschreven) tekst voor tekst-typen:
     // in beide gevallen is `content` de base64 van de oorspronkelijke bytes.
-    await db.update(ITEMS, [{ id: r.id, record: { ...zonderId(r), openedAt: Date.now() } as Record<string, unknown> }]).catch(() => undefined);
+    if (can(auth.user, 'cloud.write') && !isAlleenLezen()) await db.update(ITEMS, [{ id: r.id, record: { ...zonderId(r), openedAt: Date.now() } as Record<string, unknown> }]).catch(() => undefined);
     return json({ naam: buitenNaam(r), mime: schoneMime(r.mimeType) || 'application/octet-stream', bytes, sha256: gekozen ? gekozen.sha256 : str(r.sha256), data: gelezen.content });
   };
 
   // ---------------------------------------------------------------- versies (lijst en herstel)
-  const versiesRoute: Run = async (_c, _a, lade, d) => {
+  const versiesRoute: Run = async (_c, auth, lade, d) => {
     const r = (await eenItem(lade, d.id)) ?? fout('BESTAND_ONBEKEND');
     const lijst: Versie[] = Array.isArray(r.versies) ? r.versies : [];
     if (str(d.actie) !== 'herstel') return json({ versies: [...lijst].reverse() as CloudVersie[] });
+    const denied = denyMutation(auth.user, 'cloud.write'); if (denied) return denied;
     const sleutel = str(d.versie) || fout('VERSIE_ONBEKEND');
     const plek = lijst.findIndex((v) => v.sha256 === sleutel || v.pad === sleutel);
     if (plek < 0) fout('VERSIE_ONBEKEND');

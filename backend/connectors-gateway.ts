@@ -45,6 +45,16 @@ const HEARTBEAT_MS = 20_000;
 const AUTH_TIMEOUT_MS = 5_000;
 const COMMAND_TIMEOUT_MS = 90_000;
 const MAX_PAYLOAD = 8 * 1024 * 1024;
+export const MAX_AGENT_CAPABILITIES_BYTES = 64 * 1024;
+function begrensCapabilities(v: unknown): { ok: true; caps: object | undefined } | { ok: false } {
+  if (v === undefined || v === null) return { ok: true, caps: undefined };
+  if (typeof v !== 'object' || Array.isArray(v)) return { ok: true, caps: undefined };
+  try {
+    return Buffer.byteLength(JSON.stringify(v), 'utf8') <= MAX_AGENT_CAPABILITIES_BYTES
+      ? { ok: true, caps: v as object }
+      : { ok: false };
+  } catch { return { ok: false }; }
+}
 export const WS_TICKET_TTL_MS = 60_000;
 /** Oude agents sturen hun token zelf in het eerste bericht. Uitzetten met AGENT_WS_TOKEN_AUTH_LEGACY=0 zodra alle agents ≥ 0.4 zijn. */
 export const legacyTokenAuthAllowed = (): boolean => process.env.AGENT_WS_TOKEN_AUTH_LEGACY !== '0';
@@ -242,11 +252,13 @@ export function onConnection(ws: WebSocket): void {
         agent = await store.findAgentByTokenHash(sha256(msg.token));
       }
       if (!agent) { ws.close(4403, 'invalid token'); return; }
+      const capCheck = begrensCapabilities(msg.capabilities);
+      if (!capCheck.ok) { ws.close(4400, 'capabilities too large'); return; }
       clearTimeout(authTimer);
       agentId = agent.id;
       live.get(agentId)?.ws.close(4409, 'replaced by new connection');
       live.set(agentId, { ws, userId: agent.user_id, alive: true, platform: agent.platform ?? null });
-      const caps = msg.capabilities && typeof msg.capabilities === 'object' ? msg.capabilities : undefined;
+      const caps = capCheck.caps;
       const nieuweVersie = typeof msg.version === 'string' ? msg.version.slice(0, 40) : '';
       // Journaal op /agents: «оновлено з x до y» wanneer de agent of extensie met een andere versie terugkomt.
       if (nieuweVersie && agent.agent_version && agent.agent_version !== nieuweVersie) {
@@ -267,7 +279,8 @@ export function onConnection(ws: WebSocket): void {
     if (!entry || entry.ws !== ws) return;
     entry.alive = true;
     if (msg?.t === 'pong') {
-      const caps = msg.capabilities && typeof msg.capabilities === 'object' ? msg.capabilities : undefined;
+      const capCheck = begrensCapabilities(msg.capabilities);
+      const caps = capCheck.ok ? capCheck.caps : undefined;
       if (caps || typeof msg.version === 'string') store.touchAgent(agentId, caps, typeof msg.version === 'string' ? msg.version : undefined).catch(() => undefined);
       if (entry.platform === 'browser' && typeof msg.staat === 'string') ext.bijStatus(agentId, msg);
       return;

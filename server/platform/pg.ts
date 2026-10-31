@@ -23,7 +23,16 @@ export function poolUrl(soort: PoolSoort = 'systeem'): string {
 /** true als verzoeken van gebruikers via een eigen (RLS-)rol lopen. */
 export const appRolActief = (): boolean => Boolean(process.env.DATABASE_URL_APP) && poolUrl('app') !== poolUrl('systeem');
 
+let appRolWaarschuwingGemeld = false;
+
 export function getPool(soort: PoolSoort = 'systeem'): pg.Pool {
+  if (soort === 'app' && !appRolActief()) {
+    if (process.env.REQUIRE_SEPARATE_APP_DB_ROLE === '1') throw new Error('DATABASE_URL_APP_VEREIST');
+    if (process.env.NODE_ENV === 'production' && !appRolWaarschuwingGemeld) {
+      appRolWaarschuwingGemeld = true;
+      console.warn('[pg] WAARSCHUWING: DATABASE_URL_APP ontbreekt of is gelijk aan DATABASE_URL_SYSTEM — PostgreSQL RLS is niet afgedwongen op de app-pool (zie deploy/db-rollen-instellen.sh)');
+    }
+  }
   const connectionString = poolUrl(soort);
   if (!connectionString) throw new Error('DATABASE_URL_ONTBREEKT');
   const bestaand = pools.get(connectionString);

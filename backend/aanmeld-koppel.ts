@@ -28,8 +28,10 @@
 import { createHash, createHmac, createPrivateKey, createPublicKey, randomBytes, sign as cryptoSign, verify as cryptoVerify, type KeyObject } from 'node:crypto';
 import { db, error, json } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
+import { getPool } from '../server/platform/pg';
 import type { RouterContext, RouterMiddleware, RouterResponse } from '../server/platform/router';
 import { AANMELD_AANBIEDERS, aanmeldAanbieder, type AanmeldAanbieder } from '../shared/aanmeld-vnext-model';
+import { koppelBindingKlopt, koppelBindingVoorAanmaken, koppelBindingWissen, metBindingCookie } from './koppel-binding';
 
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
 type SessionFail = { errorCode: string };
@@ -46,7 +48,7 @@ const STATE_TTL_MS = 10 * 60 * 1000;
 const TELEGRAM_VERS_SEC = 10 * 60;
 
 type KoppelRecord = { ownerUserId: string; aanbieder: string; subject: string; label: string; op: string };
-type StateRecord = { ownerUserId: string; aanbieder: string; stateHash: string; verifier: string; nonce: string; aangemaaktOp: number; verlooptOp: number; gebruiktOp: number };
+type StateRecord = { ownerUserId: string; aanbieder: string; stateHash: string; bindingHash: string; verifier: string; nonce: string; aangemaaktOp: number; verlooptOp: number; gebruiktOp: number };
 type ZelftestRecord = { aanbieder: string; zelftest: 'ok' | 'fout'; details: string[]; op: string; doorUserId: string };
 
 // ------------------------------------------------------------------------------------------------ kleine hulpjes (puur)
@@ -139,25 +141,39 @@ async function idTokenControle(token: string, o: { jwksUrl: string; issToegestaa
   return inhoud;
 }
 
-// ------------------------------------------------------------------------------------------------ state (eenmalig, 10 min)
-async function stateNieuw(ownerUserId: string, aanbieder: string): Promise<{ state: string; verifier: string; nonce: string }> {
+// ------------------------------------------------------------------------------------------------ state (eenmalig, 10 min, browsergebonden)
+async function stateNieuw(ownerUserId: string, aanbieder: string): Promise<{ state: string; verifier: string; nonce: string; setCookie: string }> {
   const state = b64url(randomBytes(24));
   const verifier = b64url(randomBytes(48));
   const nonce = b64url(randomBytes(18));
-  const rij: StateRecord = { ownerUserId, aanbieder, stateHash: sha256hex(state), verifier, nonce, aangemaaktOp: Date.now(), verlooptOp: Date.now() + STATE_TTL_MS, gebruiktOp: 0 };
+  const stateHash = sha256hex(state);
+  const binding = koppelBindingVoorAanmaken('koppel', stateHash, ownerUserId);
+  const rij: StateRecord = { ownerUserId, aanbieder, stateHash, bindingHash: binding.bindingHash, verifier, nonce, aangemaaktOp: Date.now(), verlooptOp: Date.now() + STATE_TTL_MS, gebruiktOp: 0 };
   await db.add(STATES, [rij as unknown as Record<string, unknown>]);
-  return { state, verifier, nonce };
+  return { state, verifier, nonce, setCookie: binding.setCookie };
 }
-/** Eenmalig innemen: eerst gebruiktOp zetten, dan pas verder — een tweede callback met dezelfde state strandt. */
-async function stateInnemen(aanbieder: string, state: string): Promise<{ id: string } & StateRecord> {
+/** Eenmalig en atomair innemen: controleert eerst de browserbindingscookie (zonder die cookie blijft de state heel), daarna een atomaire UPDATE met gebruiktOp=0. */
+async function stateInnemen(aanbieder: string, state: string, event: Record<string, unknown> | null | undefined): Promise<{ id: string } & StateRecord> {
   if (!state) fout('STATE_ONGELDIG');
   const { items } = await db.list<StateRecord>(STATES, { filter: { stateHash: sha256hex(state), aanbieder }, limit: 2 });
   const rij = (items as Array<{ id: string } & StateRecord>)[0];
   if (!rij) fout('STATE_ONGELDIG');
   if (rij.gebruiktOp) fout('STATE_ONGELDIG');
-  if (rij.verlooptOp <= Date.now()) fout('VERLOPEN');
-  const [gelukt] = await db.update(STATES, [{ id: rij.id, record: { ...rij, id: undefined, gebruiktOp: Date.now() } as unknown as Record<string, unknown> }]);
-  if (!gelukt) fout('STATE_ONGELDIG');
+  const nuMs = Date.now();
+  if (rij.verlooptOp <= nuMs) fout('VERLOPEN');
+  if (!koppelBindingKlopt(event, 'koppel', rij.stateHash, rij.ownerUserId, rij.bindingHash)) fout('SESSIE_VEREIST');
+  const claim = await getPool('systeem').query(
+    `UPDATE app.records
+        SET data = jsonb_set(data, '{gebruiktOp}', to_jsonb($3::bigint)),
+            updated_at = now()
+      WHERE id = $1
+        AND tbl = $2
+        AND COALESCE((data->>'gebruiktOp')::bigint, 0) = 0
+        AND COALESCE((data->>'verlooptOp')::bigint, 0) > $3
+    RETURNING id`,
+    [rij.id, STATES, nuMs],
+  );
+  if (!claim.rowCount) fout('STATE_ONGELDIG');
   return rij;
 }
 
@@ -316,16 +332,20 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
     };
   };
 
-  // De PUBLIEKE callback: géén requireSession — de eenmalige state-rij bindt het antwoord aan de mens die de start deed
-  // (zelfde patroon als de bestaande Google-callback met zijn oauth-state). GET is een veilige methode (geen CSRF-poort).
+  // De PUBLIEKE callback: géén requireSession — de eenmalige state-rij + browserbindingscookie binden het antwoord aan de
+  // exacte browser die de start deed. GET is een veilige methode (geen CSRF-poort).
   const terug: RouterMiddleware = async (rc: RouterContext): Promise<RouterResponse> => {
     const id = String(rc.params.aanbieder || '');
     const a = aanmeldAanbieder(id);
     if (!a || a.stand !== 'sleutels-nodig') return redirect(paginaUrl(`${id || 'onbekend'}-fout&reden=AANBIEDER_ONBEKEND`));
     const q = rc.query || {};
+    let geclaimdeStateHash = '';
+    const stuurTerug = (naar: string): RouterResponse =>
+      geclaimdeStateHash ? metBindingCookie(redirect(naar), koppelBindingWissen('koppel', geclaimdeStateHash)) : redirect(naar);
     try {
       if (str(q.error)) fout('TOKEN_ONGELDIG');                                   // de aanbieder weigerde; geen geheimen herhalen
-      const rij = await stateInnemen(id, str(q.state));                            // eenmalig, 10 min, juiste aanbieder
+      const rij = await stateInnemen(id, str(q.state), rc.event as unknown as Record<string, unknown>); // eenmalig, 10 min, browsergebonden
+      geclaimdeStateHash = rij.stateHash;
       if (sleutelsOntbreken(a).length) fout('SLEUTELS_ONTBREKEN');
       let uit: TerugUit;
       if (id === 'telegram') {
@@ -339,15 +359,15 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
       }
       if (await subjectBestaat(id, uit.subject)) {
         await auditToevoegen({ ownerId: rij.ownerUserId, actorId: rij.ownerUserId, action: 'aanmeld.koppeling', type: 'identity', result: 'denied', details: { aanbieder: id, reden: 'KOPPELING_BESTAAT' } }).catch(() => undefined);
-        return redirect(paginaUrl(`${id}-fout&reden=KOPPELING_BESTAAT`));
+        return stuurTerug(paginaUrl(`${id}-fout&reden=KOPPELING_BESTAAT`));
       }
       const record: KoppelRecord = { ownerUserId: rij.ownerUserId, aanbieder: id, subject: uit.subject, label: uit.label, op: nu() };
       await db.add(KOPPELINGEN, [record as unknown as Record<string, unknown>]);
       await auditToevoegen({ ownerId: rij.ownerUserId, actorId: rij.ownerUserId, action: 'aanmeld.koppeling', type: 'identity', result: 'ok', details: { aanbieder: id, label: uit.label } }).catch(() => undefined);
-      return redirect(paginaUrl(`${id}-ok`));
+      return stuurTerug(paginaUrl(`${id}-ok`));
     } catch (err) {
       const code = String((err as Error)?.message || 'AANMELD_FOUT').replace(/[^A-Z_]/g, '').slice(0, 40) || 'AANMELD_FOUT';
-      return redirect(paginaUrl(`${id}-fout&reden=${code}`));
+      return stuurTerug(paginaUrl(`${id}-fout&reden=${code}`));
     }
   };
 
@@ -374,17 +394,17 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
       const test = await zelftestLaatste(a.id);
       if (test?.zelftest !== 'ok') fout('ZELFTEST_VEREIST');
       if (!startToegestaan(auth.user.id, a.id)) fout('RATE_LIMITED');
-      const { state, verifier, nonce } = await stateNieuw(auth.user.id, a.id);
+      const { state, verifier, nonce, setCookie } = await stateNieuw(auth.user.id, a.id);
       const challenge = b64url(createHash('sha256').update(verifier).digest());
       if (a.id === 'telegram') {
         // Het officiële widget stuurt zijn velden naar data-auth-url; onze state reist als eigen queryparameter mee.
-        return json({ id: a.id, widget: { bot: env('AANMELD_TELEGRAM_BOT_NAAM'), authUrl: `${callbackUrl('telegram')}?state=${encodeURIComponent(state)}` } });
+        return metBindingCookie(json({ id: a.id, widget: { bot: env('AANMELD_TELEGRAM_BOT_NAAM'), authUrl: `${callbackUrl('telegram')}?state=${encodeURIComponent(state)}` } }), setCookie);
       }
       const basis: Record<string, string> = { response_type: 'code', client_id: env(`AANMELD_${a.id.toUpperCase()}_CLIENT_ID`), redirect_uri: callbackUrl(a.id), state, code_challenge: challenge, code_challenge_method: 'S256' };
       const url = a.id === 'microsoft' ? `${MS().authorize}?${new URLSearchParams({ ...basis, scope: 'openid profile email', nonce, response_mode: 'query' })}`
         : a.id === 'discord' ? `${DISCORD().authorize}?${new URLSearchParams({ ...basis, scope: 'identify email', prompt: 'consent' })}`
         : `${APPLE().authorize}?${new URLSearchParams({ ...basis, nonce, response_mode: 'query' })}`; // apple: lege scope → query mag (zie kop)
-      return json({ id: a.id, url });
+      return metBindingCookie(json({ id: a.id, url }), setCookie);
     }),
     // -------------------------------------------------------------- ontkoppelen (eigen koppeling; dit is nooit de laatste aanmeldweg)
     'POST /api/owner/aanmeld/vnext/ontkoppel': route(async (_c, auth, d) => {
