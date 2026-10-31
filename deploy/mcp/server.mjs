@@ -72,7 +72,10 @@ function appPad(pathName) {
     }
     return null;
   }
-  // /.well-known/oauth-protected-resource/<agent>  (RFC 9728-vorm) en …/mcp van de app
+  // /.well-known/oauth-protected-resource/<agent>  (RFC 9728-vorm), …/mcp én de wortel /.well-known/oauth-protected-resource van de app
+  if (delen[0] === ".well-known" && delen[1] === "oauth-protected-resource" && delen.length === 2) {
+    return "/.well-known/oauth-protected-resource";
+  }
   if (delen[0] === ".well-known" && delen[1] === "oauth-protected-resource" && delen.length === 3 && (AGENT_SLUGS.test(delen[2]) || delen[2] === "mcp")) {
     return `/.well-known/oauth-protected-resource/${delen[2].toLowerCase()}`;
   }
@@ -258,7 +261,7 @@ async function paneelToken(token, deur) {
 }
 
 // ---------------------------------------------------------------------------------------------- terugkeeradressen (RFC 8252)
-const WEB_HOSTS = ["claude.ai", "grok.com", "x.ai", "chatgpt.com", "openai.com", "vscode.dev"];
+const WEB_HOSTS = ["claude.ai", "claude.com", "grok.com", "x.ai", "chatgpt.com", "openai.com", "vscode.dev", "cursor.com"];
 const APP_SCHEMAS = ["cursor", "vscode", "vscode-insiders", "windsurf"];
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "[::1]"]);
 /** 'web' | 'loopback' | 'app' | null — gelijk aan redirectSoort() in shared/ai-verbinding.ts (zelfde test). */

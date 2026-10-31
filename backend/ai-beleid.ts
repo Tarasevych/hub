@@ -23,7 +23,7 @@ import { getPool } from '../server/platform/pg';
 import { assertPolicy, buildDraft, diffPolicy, evaluate, listGrants, type Decision, type Op, type Policy } from '../shared/ai-beleid/model';
 import { CAPABILITIES, capabilityForTool } from '../shared/ai-beleid/catalogus';
 import { DEFAULT_TZ } from '../shared/ai-beleid/tijd';
-import { isAgentSlug } from '../shared/connector-v2/agenten';
+import { isAgentSlug, v2Agent } from '../shared/connector-v2/agenten';
 import { CHAT_KLANT, type Namens } from './mcp-namens';
 import { agentAudit } from './agent-audit';
 import { assertieOpties, assertieUit, leesSleutels, uitdagingMaken, uitdagingVerbruiken, UitrolFout } from './uitrol-goedkeuring';
@@ -66,7 +66,7 @@ export async function leesStand(): Promise<Stand> {
 export const vergeetCache = () => { cache = null; };
 
 // ---------------------------------------------------------------- welke agent in het beleid is deze AI-verbinding?
-const normaal = (s: string) => s.toLowerCase().normalize('NFKC').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const normaal = (s: string | undefined | null) => String(s || '').toLowerCase().normalize('NFKC').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 /**
  * Op id (bv. «claude») of op de naam in het beleid (bv. «Claude»); hoofdletters en leestekens tellen niet.
  * `slug`: bij connector v2 de agent waaraan het token is gebonden (/<agent>, door de server vastgesteld). Die gaat vóór de naam
@@ -76,7 +76,8 @@ const normaal = (s: string) => s.toLowerCase().normalize('NFKC').replace(/[^a-z0
 export function agentVoor(beleid: Policy, client: string | undefined, slug?: string): string | null {
   const sl = normaal(String(slug || ''));
   if (sl) {
-    for (const [id, a] of Object.entries(beleid.agents)) if (normaal(id) === sl || normaal(a.name) === sl) return id;
+    const synoniemen = isAgentSlug(sl) ? new Set([sl, normaal(v2Agent(sl).klant), normaal(v2Agent(sl).naam)]) : new Set([sl]);
+    for (const [id, a] of Object.entries(beleid.agents)) if (synoniemen.has(normaal(id)) || synoniemen.has(normaal(a.name))) return id;
     // SEC-001-09: bij een echt v2-agentslug (bv. /gemini) NOOIT terugvallen op de door de client zelf opgegeven naam («Claude»).
     if (isAgentSlug(sl)) return null;
   }

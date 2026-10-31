@@ -46,6 +46,7 @@ export function klantVan(naam: string | null | undefined): KlantId {
   if (/\b(openai|gpt)\b/.test(n)) return 'chatgpt';
   if (/\b(xai|x ai)\b/.test(n)) return 'grok';
   if (/\b(anthropic)\b/.test(n)) return 'claude';
+  if (/\b(anysphere|cursormcp)\b/.test(n)) return 'cursor';
   if (/\b(vscode|vs code|visual studio|github)\b/.test(n)) return 'copilot';
   return 'overig';
 }
@@ -59,7 +60,7 @@ export function duurVoorKlant(instellingen: unknown, id: KlantId): DuurId {
 // ---------------------------------------------------------------- OAuth-terugkeeradressen (RFC 8252)
 export type RedirectSoort = 'web' | 'loopback' | 'app';
 /** https-hosts van bekende AI-klanten (exact of subdomein). */
-export const WEB_HOSTS: readonly string[] = Object.freeze(['claude.ai', 'grok.com', 'x.ai', 'chatgpt.com', 'openai.com', 'vscode.dev']);
+export const WEB_HOSTS: readonly string[] = Object.freeze(['claude.ai', 'claude.com', 'grok.com', 'x.ai', 'chatgpt.com', 'openai.com', 'vscode.dev', 'cursor.com']);
 /** Eigen schema's van desktopapps (RFC 8252 §7.1): alleen deze, met een host (cursor://anysphere.cursor-mcp/oauth/callback). */
 export const APP_SCHEMAS: readonly string[] = Object.freeze(['cursor', 'vscode', 'vscode-insiders', 'windsurf']);
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
