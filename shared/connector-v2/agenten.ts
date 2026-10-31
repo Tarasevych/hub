@@ -56,7 +56,7 @@ export const V2_AGENTEN: readonly V2Agent[] = Object.freeze([
   { slug: 'copilot', naam: 'Copilot', klant: 'copilot', webHosts: ['vscode.dev'], appSchemas: ['vscode', 'vscode-insiders'], loopback: true,
     uk: 'VS Code (Copilot): кнопка «Install in VS Code» або MCP: Add Server → HTTP → адреса.',
     nl: 'VS Code (Copilot): knop «Install in VS Code» of MCP: Add Server → HTTP → adres.' },
-  { slug: 'cursor', naam: 'Cursor', klant: 'cursor', webHosts: [], appSchemas: ['cursor'], loopback: true,
+  { slug: 'cursor', naam: 'Cursor', klant: 'cursor', webHosts: ['cursor.com'], appSchemas: ['cursor'], loopback: true,
     uk: 'Cursor: кнопка «Add to Cursor» або Settings → Tools & MCP → New MCP server → url.',
     nl: 'Cursor: knop «Add to Cursor» of Settings → Tools & MCP → New MCP server → url.' },
 ]);

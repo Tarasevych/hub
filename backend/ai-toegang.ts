@@ -110,6 +110,36 @@ export async function geefStandaard(userId: string, onderwerp: Onderwerp, ruimte
   );
 }
 
+/** Vaste herinneringsrij per gebruiker × AI-klant (AiToegangTab met «bord:<klant>»), zodat ook nieuwe OAuth-sessies die keuze erven. */
+export function bordOnderwerp(userId: string, klant: string): Onderwerp | null {
+  if (!/^[a-z0-9_-]{2,24}$/.test(klant) || klant === 'overig') return null;
+  const bordId = `bord_${userId.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 48)}_${klant}`.slice(0, 80);
+  return bordId.length >= 8 ? { soort: 'mcp-koppeling', id: bordId } : null;
+}
+
+/**
+ * Nieuwe /mcp OAuth-verbinding: had de gebruiker op de site («Доступ ШІ», bord:<klant>) al expliciet scopes gezet,
+ * kopieer die keuze naar de nieuwe grant (zonder gevoelige scopes op een technische verbinding); anders `geefStandaard`.
+ */
+export async function geefVoorNieuweKoppeling(userId: string, grantId: string, klant: string, ruimte: AiRuimte): Promise<void> {
+  const doel: Onderwerp = { soort: 'mcp-koppeling', id: grantId };
+  const bord = bordOnderwerp(userId, klant);
+  if (bord) {
+    const { rows } = await q('SELECT scopes FROM app.ai_toegang WHERE soort = $1 AND onderwerp_id = $2', [bord.soort, bord.id]);
+    if (rows[0] && Array.isArray(rows[0].scopes)) {
+      const technisch = ruimteOf(ruimte) === 'technisch';
+      const lijst = (rows[0].scopes as unknown[]).filter(isToegangScope).filter((s) => !(technisch && toegangScope(s)?.gevoelig));
+      await q(
+        `INSERT INTO app.ai_toegang (user_id, soort, onderwerp_id, scopes)
+         VALUES ($1, $2, $3, $4::text[]) ON CONFLICT (soort, onderwerp_id) DO NOTHING`,
+        [userId, doel.soort, doel.id, [...new Set(lijst)]],
+      );
+      return;
+    }
+  }
+  await geefStandaard(userId, doel, ruimte);
+}
+
 /** Bestuurlijk plafond (alleen de eigenaar, via de route): een scope voor de hele site uit of aan. */
 export async function zetBeheer(scope: string, uit: boolean): Promise<void> {
   if (!isToegangScope(scope)) throw new Error('TOEGANG_SCOPE_ONBEKEND');

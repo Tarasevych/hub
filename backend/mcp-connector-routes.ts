@@ -10,7 +10,8 @@ import { leesDuren, zetDuur } from './ai-verbinding-instellingen';
 import { DUREN, KLANTEN, duur as duurVan, isDuurId, klantVan, type KlantId } from '../shared/ai-verbinding';
 import { isToegangScope, toegangScope } from '../shared/ai-toegang';
 import { isAgentSlug } from '../shared/connector-v2/agenten';
-import { geefStandaard, leesBeheerUit, leesToegang, zetBeheer, zetToegang } from './ai-toegang';
+import { bordOnderwerp, geefStandaard, leesBeheerUit, leesToegang, zetBeheer, zetToegang } from './ai-toegang';
+import { meldLijstGewijzigd } from './connector-v2-stroom';
 import { agentTokenVanGebruiker, issuePriveToken } from './mcp-console';
 import { sessieGeverifieerd } from '../server/platform/context';
 import * as v2 from './connector-v2';
@@ -111,12 +112,14 @@ export function createMcpConnectorRoutes(deps: Deps) {
     'POST /api/mcp-connector/revoke': [async (ctx: any) => c.revoke(String(ctx.event.body || ''))],
     'POST /api/mcp-connector/rpc':[async (ctx: any) => c.rpcPost(header(ctx.event, 'authorization'), String(ctx.event.body || ''))],
     'GET /api/mcp-connector/rpc': [async () => c.rpcNotAllowed()],
+    'DELETE /api/mcp-connector/rpc': [async (ctx: any) => c.rpcDelete(header(ctx.event, 'authorization'))],
+    'OPTIONS /api/mcp-connector/rpc': [async () => c.rpcOptions()],
     // Connector v2: eigen adres per agent (server/start.ts zet /<agent> om naar deze routes; het oude /ai/<agent> krijgt 308).
     'POST /api/connector-v2/:agent/rpc': [async (ctx: any) => v2.rpc(String(ctx.params.agent || ''), header(ctx.event, 'authorization'), String(ctx.event.body || ''))],
     'GET /api/connector-v2/:agent/rpc': [async () => c.rpcNotAllowed()],
-    'DELETE /api/connector-v2/:agent/rpc': [async () => c.rpcNotAllowed()],
+    'DELETE /api/connector-v2/:agent/rpc': [async (ctx: any) => v2.rpcDelete(String(ctx.params.agent || ''), header(ctx.event, 'authorization'))],
+    'OPTIONS /api/connector-v2/:agent/rpc': [async () => c.rpcOptions()],
     'GET /api/connector-v2/:agent/prm': [async (ctx: any) => { const a = String(ctx.params.agent || ''); return isAgentSlug(a) ? v2.prm(a) : deps.fail('AGENT_ONBEKEND', 404); }],
-    'DELETE /api/mcp-connector/rpc': [async () => c.rpcNotAllowed()],
 
     // ---- toestemming en beheer door de ingelogde gebruiker ----
     'POST /api/owner/mcp-connector/consent/info': [async (ctx: any) => {
@@ -293,6 +296,7 @@ export function createMcpConnectorRoutes(deps: Deps) {
       else return deps.fail('TOOL_SETTING_INVALID', 400);
       if (mode === 'always' && RISKY_TOOLS.has(name)) { const su = await stepUp(ctx, auth); if (su) return su; }
       await agentStore.setToolModes(auth.user.id, { [name]: mode });
+      meldLijstGewijzigd(auth.user.id);
       await deps.audit(auth.user.id, 'owner.mcp.tool.setting', 'success', { tool: name, mode: mode ?? 'default' });
       return deps.respond({ ok: true, tools: await describeTools(auth.user.id) });
     }],
@@ -315,6 +319,7 @@ export function createMcpConnectorRoutes(deps: Deps) {
         changes[t.name] = body.mode === 'default' ? null : (body.mode as 'always' | 'ask' | 'off');
       }
       await agentStore.setToolModes(auth.user.id, changes);
+      meldLijstGewijzigd(auth.user.id);
       await deps.audit(auth.user.id, 'owner.mcp.tool.setting_all', 'success', { mode: body.mode, group: group || 'all', tools: Object.keys(changes).length });
       return deps.respond({ ok: true, tools: await describeTools(auth.user.id) });
     }],
@@ -412,6 +417,7 @@ export function createMcpConnectorRoutes(deps: Deps) {
       const beleid = await leesStand().catch(() => ({ staat: 'niet-ingesteld' as const }));
       if (beleid.staat === 'geldig') return deps.fail('BELEID_PLAFOND', 403);
       await zetGebruikerCap(auth.user.id, body.klant, cap, body.aan === true);
+      meldLijstGewijzigd(auth.user.id);
       await deps.audit(auth.user.id, 'owner.ai.bord.modus', 'success', { klant: body.klant, cap, aan: body.aan === true });
       return deps.respond({ ok: true, gebruiker: await leesGebruikerCaps(auth.user.id) });
     }],
@@ -463,6 +469,25 @@ export function createMcpConnectorRoutes(deps: Deps) {
         return deps.fail('TOEGANG_BEVESTIGING_VEREIST', 409);
       }
       const bewaard = await zetToegang(auth.user.id, onderwerp, scopes);
+      const ruweId = String(body.id ?? '');
+      if (body.soort === 'oauth' && ruweId.startsWith('bord:')) {
+        const klant = ruweId.slice(5);
+        const bord = bordOnderwerp(auth.user.id, klant);
+        if (bord && bord.id !== onderwerp.id) await zetToegang(auth.user.id, bord, bewaard).catch(() => undefined);
+        const actief = (await c.listUserGrants(auth.user.id).catch(() => [])).filter((g) => klantVan(g.clientName) === klant && g.id !== onderwerp.id);
+        for (const g of actief) {
+          const lijst = g.ruimte === 'technisch' ? bewaard.filter((s) => !toegangScope(s)?.gevoelig) : bewaard;
+          await zetToegang(auth.user.id, { soort: 'mcp-koppeling', id: g.id }, lijst).catch(() => undefined);
+        }
+      } else if (onderwerp.soort === 'mcp-koppeling' && !onderwerp.id.startsWith('bord_')) {
+        const g = (await c.listUserGrants(auth.user.id).catch(() => [])).find((x) => x.id === onderwerp.id);
+        if (g && g.ruimte === 'prive') {
+          const klant = klantVan(g.clientName);
+          const bord = isBordKlant(klant) ? bordOnderwerp(auth.user.id, klant) : null;
+          if (bord) await zetToegang(auth.user.id, bord, bewaard).catch(() => undefined);
+        }
+      }
+      meldLijstGewijzigd(auth.user.id);
       await deps.audit(auth.user.id, 'owner.mcp.toegang.gezet', 'success', { soort: onderwerp.soort, onderwerp: onderwerp.id, scopes: bewaard });
       return deps.respond({ ok: true, granted: bewaard });
     }],
