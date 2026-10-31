@@ -549,8 +549,15 @@ if [ "$INSTALL_RC" -eq 0 ]; then
   printf '%s\n' "$VERSIE" > "$WERK_ROOT/laatste-versie"
   # ORCH-001: de geïnstalleerde commit bewaren voor de basiscontrole van het volgende pakket (alleen een echte 40-hex commit).
   if [[ "${BRON_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]]; then printf '%s\n' "$BRON_COMMIT" > "$WERK_ROOT/laatste-commit"; fi
-  # Oudere (nooit meer installeerbare) pakketten uit de inbox halen.
-  find "$INBOX" -maxdepth 1 -type f \( -name 'mijn-ruimte-*.tar.gz' -o -name 'mijn-ruimte-*.tar.gz.sig' -o -name 'mijn-ruimte-*.tar.gz.goedkeuring.json' \) -delete 2>/dev/null || true
+  # Oudere (nooit meer installeerbare: NIET_NIEUWER) pakketten uit de inbox halen. Een NIEUWER pakket dat tijdens deze installatie binnenkwam
+  # blijft staan voor de volgende ronde, waar de gewone controles (versie, UITROL-BASIS, regels) erover oordelen — vroeger werd het hier stil
+  # gewist (ORCH-001 etappe 4, acceptatietest «gelijktijdige installaties», 31.10.2026).
+  # Старі пакети (не новіші за щойно встановлений) прибираються; новіший, що надійшов під час установки, лишається на наступний прохід.
+  while IFS= read -r oud; do
+    v="${oud#mijn-ruimte-}"; v="${v%%.tar.gz*}"
+    [[ "$v" > "$VERSIE" ]] && continue
+    rm -f -- "$INBOX/$oud" "$INBOX/$oud.sig" "$INBOX/$oud.goedkeuring.json" 2>/dev/null || true
+  done < <(find "$INBOX" -maxdepth 1 -type f -name 'mijn-ruimte-*.tar.gz' -printf '%f\n' 2>/dev/null)
   # Archief vóór de OK-gebeurtenis bewaren, zodat die gebeurtenis het pad en de sha256 bevat (de app zet ze in app.uitrol_runs).
   set +e; pakket_bewaren; set -e
   status klaar OK "Випуск $VERSIE встановлено." "Release $VERSIE is geïnstalleerd." "$VERSIE"
