@@ -42,6 +42,8 @@ const TECHNISCH = new Set([
   'get_admin_view',
   // 21.10.2026 (backend/ai-beheer-hulpmiddelen.ts): journaal lezen, SIEM-stand, gebruikers en functievlaggen beheren — alleen technisch.
   'audit_read', 'siem_status', 'users_manage', 'flags_manage',
+  // 31.10.2026 (ORCH-001, backend/orch-hulpmiddelen.ts): coördinatie van AI-agenten — alleen technisch (nooit in privéruimte).
+  'orch_overzicht', 'orch_context', 'orch_taak_start', 'orch_inleveren_begin', 'orch_inleveren_stuk', 'orch_inleveren_klaar',
   // 21.10.2026 (shared/dev-media-github.ts): eigen domein voor een app op de SERVER — alleen technisch (zonder dit zou het app_-voorvoegsel
   // het als apparaathulpmiddel in beide ruimtes laten bestaan).
   'app_domain',
