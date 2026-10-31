@@ -214,3 +214,96 @@ export function verifieerSshsig({ handtekening, bericht, namespace, toegestaan, 
 }
 /** Що саме підписує власник: однозначний рядок з версією й відбитком критичних політик. */
 export const kritiekBericht = (lock) => `mijn-ruimte-regels\nregelsVersie=${lock.regelsVersie}\nkritiekHash=${lock.kritiekHash}\n`;
+
+// ——— Етап 1: передача результатів, черга інтеграції, статуси ———
+export const KANALEN = Object.freeze(['github_pr', 'mcp', 'http_api', 'lokaal_bestand', 'zip', 'tar_gz', 'git_patch', 'web_upload']);
+export const INLEVERING_UITKOMSTEN = Object.freeze(['aanvaard', 'geweigerd']);
+export const WACHTRIJ_STATEN = Object.freeze(['wacht', 'bezig', 'integrated', 'afgewezen', 'teruggetrokken']);
+
+/** Перевірка ORCH-OVERDRACHT.json (шаблон: orchestratie/sjablonen/ORCH-OVERDRACHT.json). */
+export function valideerOverdracht(o, beleid) {
+  const z = [];
+  if (!o || typeof o !== 'object') return [fout('OVERDRACHT_ONGELDIG', 'ORCH-OVERDRACHT.json має бути JSON-обʼєктом', 'ORCH-OVERDRACHT.json moet een JSON-object zijn')];
+  for (const veld of beleid?.inlevering?.verplichteVelden ?? []) {
+    const w = o[veld];
+    const leeg = w === undefined || w === null || w === '' || (typeof w === 'object' && !Array.isArray(w) && !Object.values(w).some((x) => typeof x === 'string' && x.trim()));
+    if (leeg) z.push(fout('OVERDRACHT_VELD', `бракує обовʼязкового поля «${veld}»`, `verplicht veld «${veld}» ontbreekt`, { veld }));
+  }
+  if (o.taakId && !TAAK_ID.test(String(o.taakId))) z.push(fout('TAAK_ID', `taakId «${o.taakId}»: формат ABC-001`, `taakId «${o.taakId}»: vorm ABC-001`));
+  if (o.agent && !AGENT_ID.test(String(o.agent))) z.push(fout('TAAK_AGENT', 'agent — малі латинські літери', 'agent — kleine letters'));
+  if (o.basisCommit && !SHA40.test(String(o.basisCommit))) z.push(fout('TAAK_BASIS', 'basisCommit — повний SHA (40 hex)', 'basisCommit — volledige SHA (40 hex)'));
+  if (o.regelsVersie && !SEMVER.test(String(o.regelsVersie))) z.push(fout('TAAK_REGELS', 'regelsVersie X.Y.Z', 'regelsVersie X.Y.Z'));
+  if (o.regelsHash && !/^[0-9a-f]{64}$/.test(String(o.regelsHash)) && !String(o.regelsHash).startsWith('<')) z.push(fout('OVERDRACHT_HASH', 'regelsHash — sha256 (64 hex) з CONTEXT-COMPACT.md', 'regelsHash — sha256 (64 hex) uit CONTEXT-COMPACT.md'));
+  else if (String(o.regelsHash ?? '').startsWith('<')) z.push(fout('OVERDRACHT_SJABLOON', 'regelsHash ще зі шаблону — підставте справжній відбиток', 'regelsHash is nog de sjabloonwaarde — vul de echte afdruk in'));
+  if (o.kanaal && !KANALEN.includes(o.kanaal)) z.push(fout('KANAAL_ONBEKEND', `kanaal «${o.kanaal}» невідомий (${KANALEN.join(', ')})`, `kanaal «${o.kanaal}» onbekend`));
+  const sam = o.samenvatting; const samUk = typeof sam === 'string' ? sam : sam?.uk;
+  if (samUk !== undefined && String(samUk).trim().length < 20) z.push(fout('SAMENVATTING_TE_KORT', 'samenvatting.uk — мінімум 20 символів', 'samenvatting.uk — minstens 20 tekens'));
+  if (o.zonderGit && String(o.zonderGit).trim().length < 5) z.push(fout('ZONDER_GIT_REDEN', 'zonderGit потребує причини ≥ 5 символів', 'zonderGit vraagt een reden van ≥ 5 tekens'));
+  return z;
+}
+
+/** Порівнює заявлені агентом файли з фактично зміненими (git diff): розбіжність — попередження, не блокер. */
+export function vergelijkBestanden(opgegeven, feitelijk) {
+  const o = new Set([...(opgegeven?.gewijzigd ?? []), ...(opgegeven?.toegevoegd ?? []), ...(opgegeven?.verwijderd ?? [])]);
+  if (o.size === 0) return [];
+  const f = new Set(feitelijk);
+  const nietOpgegeven = [...f].filter((p) => !o.has(p)).sort(); const nietGewijzigd = [...o].filter((p) => !f.has(p)).sort();
+  if (!nietOpgegeven.length && !nietGewijzigd.length) return [];
+  return [waarsch('BESTANDEN_AFWIJKEND', `Перелік файлів у ORCH-OVERDRACHT не збігається з фактичним diff${nietOpgegeven.length ? `; не заявлено: ${nietOpgegeven.join(', ')}` : ''}${nietGewijzigd.length ? `; заявлено, але не змінено: ${nietGewijzigd.join(', ')}` : ''}.`,
+    `Bestandenlijst in ORCH-OVERDRACHT wijkt af van de echte diff${nietOpgegeven.length ? `; niet opgegeven: ${nietOpgegeven.join(', ')}` : ''}${nietGewijzigd.length ? `; opgegeven maar ongewijzigd: ${nietGewijzigd.join(', ')}` : ''}.`, { nietOpgegeven, nietGewijzigd })];
+}
+
+/** Файли, які ніколи не переносяться з архіву в робоче дерево. */
+export const UITGESLOTEN_PADEN = /^(\.git|node_modules|dist|dist-server|rapporten|harness|harness-[^/]*|ORCH-OVERDRACHT\.json|UITROL-VERSIE|AUTEUR|AGENT|SAMENVATTING|BRON-COMMIT|TESTRESULTATEN|UITROL-MANIFEST\.json)(\/|$)/;
+export const padVeilig = (p) => !!p && !p.startsWith('/') && !p.split('/').includes('..') && !/\0/.test(p) && !UITGESLOTEN_PADEN.test(p);
+
+/** Канал за джерелом: розширення/тип. Явний --kanaal (mcp, http_api, web_upload) переважає — ці канали доставляють файл. */
+export function herkenKanaal(bron, isMap, expliciet) {
+  if (expliciet) return KANALEN.includes(expliciet) ? expliciet : null;
+  const b = String(bron);
+  if (isMap) return 'lokaal_bestand';
+  if (/\.zip$/i.test(b)) return 'zip';
+  if (/\.(tar\.gz|tgz)$/i.test(b)) return 'tar_gz';
+  if (/\.(patch|diff|mbox)$/i.test(b)) return 'git_patch';
+  if (/^https?:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+/.test(b) || /^(origin\/|refs\/|pr\/\d+$)/.test(b) || /^[a-z]+\/[a-z0-9-]+-\d{8}-\d{6}$/.test(b)) return 'github_pr';
+  return null;
+}
+
+// — черга інтеграції (чисті операції над orchestratie/wachtrij.json) —
+export function wachtrijVoegToe(w, item) {
+  const lijst = Array.isArray(w?.wachtrij) ? w.wachtrij : [];
+  if (lijst.some((r) => r.taakId === item.taakId)) return { fout: fout('WACHTRIJ_DUBBEL', `задача ${item.taakId} уже в черзі — нова передача замінює стару лише через «wachtrij terugtrekken»`, `taak ${item.taakId} staat al in de wachtrij — eerst «wachtrij terugtrekken»`) };
+  return { w: { ...w, wachtrij: [...lijst, { ...item, staat: 'wacht' }] } };
+}
+export function wachtrijVolgende(w, nu = new Date().toISOString()) {
+  if (w.bezig) return { fout: fout('WACHTRIJ_BEZIG', `черга послідовна: ${w.bezig} ще інтегрується — спершу «wachtrij klaar» або «wachtrij terugtrekken»`, `wachtrij is serieel: ${w.bezig} wordt nog geïntegreerd — eerst «wachtrij klaar» of «terugtrekken»`) };
+  const i = (w.wachtrij ?? []).findIndex((r) => r.staat === 'wacht');
+  if (i < 0) return { fout: waarsch('WACHTRIJ_LEEG', 'черга порожня', 'wachtrij is leeg') };
+  const lijst = w.wachtrij.map((r, j) => (j === i ? { ...r, staat: 'bezig', begonnen: nu } : r));
+  return { w: { ...w, wachtrij: lijst, bezig: lijst[i].taakId }, item: lijst[i] };
+}
+export function wachtrijKlaar(w, taakId, uitkomst, integratieHoofd, nu = new Date().toISOString()) {
+  if (w.bezig !== taakId) return { fout: fout('WACHTRIJ_NIET_BEZIG', `${taakId} не є поточною задачею в інтеграції (bezig: ${w.bezig ?? '—'})`, `${taakId} is niet de taak die nu geïntegreerd wordt (bezig: ${w.bezig ?? '—'})`) };
+  if (!['integrated', 'afgewezen'].includes(uitkomst)) return { fout: fout('WACHTRIJ_UITKOMST', 'uitkomst: integrated або afgewezen', 'uitkomst: integrated of afgewezen') };
+  if (uitkomst === 'integrated' && !SHA40.test(String(integratieHoofd || ''))) return { fout: fout('WACHTRIJ_HOOFD', 'для integrated потрібен SHA нового вершка integratie', 'voor integrated is de SHA van het nieuwe integratiehoofd nodig') };
+  const item = w.wachtrij.find((r) => r.taakId === taakId);
+  const klaar = { ...item, staat: uitkomst, afgerond: nu, integratieHoofd: uitkomst === 'integrated' ? integratieHoofd : null };
+  return { w: { ...w, bezig: null, integratieHoofd: uitkomst === 'integrated' ? integratieHoofd : w.integratieHoofd, wachtrij: w.wachtrij.filter((r) => r.taakId !== taakId), geschiedenis: [...(w.geschiedenis ?? []), klaar] }, item: klaar };
+}
+export function wachtrijTerugtrekken(w, taakId, reden, nu = new Date().toISOString()) {
+  const item = (w.wachtrij ?? []).find((r) => r.taakId === taakId);
+  if (!item) return { fout: fout('WACHTRIJ_ONBEKEND', `${taakId} немає в черзі`, `${taakId} staat niet in de wachtrij`) };
+  return { w: { ...w, bezig: w.bezig === taakId ? null : w.bezig, wachtrij: w.wachtrij.filter((r) => r.taakId !== taakId), geschiedenis: [...(w.geschiedenis ?? []), { ...item, staat: 'teruggetrokken', afgerond: nu, reden: String(reden || '') }] } };
+}
+
+/**
+ * Статус задачі, виведений з фактів (ORCH-001 етап 1.6): in_progress → integrated → released → installed.
+ * «installed» ставить лише факт установки (geinstalleerd.bronCommit містить integratieCommit), не агент.
+ */
+export function statusAfleiden(taak, geinstalleerd, isVoorouder) {
+  if (['geannuleerd', 'bevroren'].includes(taak.staat)) return { status: taak.staat, bron: 'taak' };
+  if (taak.integratieCommit && geinstalleerd?.bronCommit && isVoorouder(taak.integratieCommit, geinstalleerd.bronCommit)) return { status: 'installed', bron: `geïnstalleerd ${geinstalleerd.versie ?? ''} @ ${geinstalleerd.bronCommit.slice(0, 12)}` };
+  if (taak.releaseVersie) return { status: 'released', bron: `pakket ${taak.releaseVersie}` };
+  if (taak.integratieCommit) return { status: 'integrated', bron: `integratie @ ${taak.integratieCommit.slice(0, 12)}` };
+  return { status: taak.staat === 'ter_integratie' ? 'in_progress' : 'in_progress', bron: taak.staat === 'ter_integratie' ? 'передано, чекає в черзі · ingeleverd, wacht' : 'в роботі · in bewerking' };
+}

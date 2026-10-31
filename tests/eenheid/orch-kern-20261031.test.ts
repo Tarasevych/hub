@@ -50,7 +50,7 @@ export async function main(): Promise<number> {
   const c1 = k.controleerLock(beleid, gewijzigd, lock);
   check('AGENTS.md змінено без lock → REGELS_NIET_VERGRENDELD з назвою файла', c1.some((z: { code: string; bestanden?: string[] }) => z.code === 'REGELS_NIET_VERGRENDELD' && z.bestanden?.includes('AGENTS.md')));
   check('зміна правил без підвищення regelsVersie → VERSIE_NIET_VERHOOGD', k.vergrendel(beleid, gewijzigd, lock).fout?.code === 'VERSIE_NIET_VERHOOGD');
-  check('зміна правил з вищою версією → новий lock', !!k.vergrendel({ ...beleid, regelsVersie: '1.0.1' }, gewijzigd, lock).lock);
+  check('зміна правил з вищою версією → новий lock', !!k.vergrendel({ ...beleid, regelsVersie: '9.0.0' }, gewijzigd, lock).lock);
   check('CRLF і LF дають той самий відбиток (Windows ≡ Linux)', k.regelsAfdruk({ a: 'x\r\ny\r\n' }).hash === k.regelsAfdruk({ a: 'x\ny\n' }).hash);
   check('зміна некритичного поля не змінює kritiekHash', k.kritiekAfdruk({ ...beleid, adapters: { ...beleid.adapters, maxRegels: 30 } }) === k.kritiekAfdruk(beleid));
   check('зміна режиму встановлення змінює kritiekHash', k.kritiekAfdruk({ ...beleid, kritiek: { ...beleid.kritiek, installatieModi: { toegestaan: ['handmatig'] } } }) !== k.kritiekAfdruk(beleid));
@@ -101,7 +101,7 @@ export async function main(): Promise<number> {
   const basis = { taak, regelsVersie: beleid.regelsVersie, regelsHash: lock.hash, headIsAfstammeling: true, integratieVoorsprong: [], eigenBestanden: ['src/a.ts'], schoon: true, fase: 'overdracht' };
   const vc = (f: unknown) => k.versheid(f).map((z: { code: string }) => z.code);
   check('усе свіже → без зауважень', k.versheid(basis).length === 0, JSON.stringify(k.versheid(basis)));
-  check('правила оновились (1.0.0 → 1.1.0) → REGELS_VEROUDERD', vc({ ...basis, regelsVersie: '1.1.0' }).includes('REGELS_VEROUDERD'));
+  check('правила оновились (→ 9.0.0) → REGELS_VEROUDERD', vc({ ...basis, regelsVersie: '9.0.0' }).includes('REGELS_VEROUDERD'));
   check('база не предок HEAD → BASIS_NIET_IN_HEAD', vc({ ...basis, headIsAfstammeling: false }).includes('BASIS_NIET_IN_HEAD'));
   const voor = [{ sha: 'x', bestanden: ['src/a.ts', 'src/b.ts'] }];
   const o = k.versheid({ ...basis, integratieVoorsprong: voor });
@@ -111,12 +111,36 @@ export async function main(): Promise<number> {
   check('незакомічені зміни при передаванні → NIET_GECOMMIT; на старті — ні', vc({ ...basis, schoon: false }).includes('NIET_GECOMMIT') && !vc({ ...basis, schoon: false, fase: 'start' }).includes('NIET_GECOMMIT'));
   check('заморожена задача не передається без відновлення', vc({ ...basis, taak: { ...taak, staat: 'bevroren' } }).includes('TAAK_BEVROREN'));
 
-  // — черга —
+  // — етап 1: передача, канали, черга, статуси (чисті функції) —
+  const od = { taakId: 'ABC-001', agent: 'grok', basisCommit: 'a'.repeat(40), regelsVersie: '1.1.0', regelsHash: 'b'.repeat(64), samenvatting: { uk: 'Достатньо довгий підсумок змін для тесту', nl: 'x' } };
+  const oc = (o: unknown) => k.valideerOverdracht(o, beleid).map((z: { code: string }) => z.code);
+  check('ORCH-OVERDRACHT повний → валідний', oc(od).length === 0, JSON.stringify(oc(od)));
+  check('ORCH-OVERDRACHT без regelsHash/agent → OVERDRACHT_VELD з назвою поля', (() => { const z = k.valideerOverdracht({ ...od, regelsHash: undefined, agent: '' }, beleid); return z.filter((x: { code: string }) => x.code === 'OVERDRACHT_VELD').map((x: { veld: string }) => x.veld).sort().join() === 'agent,regelsHash'; })());
+  check('ORCH-OVERDRACHT: короткий підсумок, невідомий канал, zonderGit без причини', ['SAMENVATTING_TE_KORT', 'KANAAL_ONBEKEND', 'ZONDER_GIT_REDEN'].every((c) => oc({ ...od, samenvatting: { uk: 'мало' }, kanaal: 'fax', zonderGit: 'x' }).includes(c)));
+  check('herkenKanaal: zip/tar.gz/patch/тека/гілка/PR-URL; явний mcp переважає', k.herkenKanaal('a.zip', false) === 'zip' && k.herkenKanaal('a.tar.gz', false) === 'tar_gz' && k.herkenKanaal('0001-x.patch', false) === 'git_patch' && k.herkenKanaal('map', true) === 'lokaal_bestand' && k.herkenKanaal('feature/x-001-20261031-120000', false) === 'github_pr' && k.herkenKanaal('https://github.com/Tarasevych/hub/pull/11', false) === 'github_pr' && k.herkenKanaal('a.zip', false, 'mcp') === 'mcp' && k.herkenKanaal('a.zip', false, 'fax') === null && k.herkenKanaal('iets', false) === null);
+  check('vergelijkBestanden: збіг → нічого; розбіжність → попередження з обома списками', k.vergelijkBestanden({ gewijzigd: ['a'], toegevoegd: ['b'] }, ['a', 'b']).length === 0 && (() => { const z = k.vergelijkBestanden({ gewijzigd: ['a', 'c'] }, ['a', 'd'])[0]; return z.code === 'BESTANDEN_AFWIJKEND' && z.ernst === 'waarschuwing' && z.nietOpgegeven.join() === 'd' && z.nietGewijzigd.join() === 'c'; })());
+  check('padVeilig: відкидає .git, node_modules, .., абсолютні, службові файли пакета', !k.padVeilig('.git/config') && !k.padVeilig('node_modules/x') && !k.padVeilig('../a') && !k.padVeilig('/etc/passwd') && !k.padVeilig('ORCH-OVERDRACHT.json') && !k.padVeilig('UITROL-VERSIE') && k.padVeilig('src/a.ts') && k.padVeilig('deploy/x.sh'));
+  let w0: any = { schema: 1, integratieTak: 'integratie', integratieHoofd: null, bezig: null, wachtrij: [] };
+  const item = (id: string) => ({ taakId: id, agent: 'a', tak: `feature/${id.toLowerCase()}-20261031-120000`, basisCommit: 'a'.repeat(40), ingediend: 'now', kanaal: 'zip' });
+  w0 = k.wachtrijVoegToe(w0, item('AAA-001')).w; w0 = k.wachtrijVoegToe(w0, item('BBB-001')).w;
+  check('черга: дубль → WACHTRIJ_DUBBEL', k.wachtrijVoegToe(w0, item('AAA-001')).fout?.code === 'WACHTRIJ_DUBBEL');
+  const v1 = k.wachtrijVolgende(w0, 't1'); check('черга: volgende → перша задача bezig', v1.item.taakId === 'AAA-001' && v1.w.bezig === 'AAA-001');
+  check('черга: друге volgende під час bezig → WACHTRIJ_BEZIG', k.wachtrijVolgende(v1.w).fout?.code === 'WACHTRIJ_BEZIG');
+  check('черга: klaar не для bezig → WACHTRIJ_NIET_BEZIG; integrated без hoofd → WACHTRIJ_HOOFD', k.wachtrijKlaar(v1.w, 'BBB-001', 'integrated', 'c'.repeat(40)).fout?.code === 'WACHTRIJ_NIET_BEZIG' && k.wachtrijKlaar(v1.w, 'AAA-001', 'integrated', '').fout?.code === 'WACHTRIJ_HOOFD');
+  const k1 = k.wachtrijKlaar(v1.w, 'AAA-001', 'integrated', 'c'.repeat(40), 't2');
+  check('черга: klaar integrated → знято з черги, bezig порожній, integratieHoofd оновлено, історія', k1.w.bezig === null && k1.w.integratieHoofd === 'c'.repeat(40) && k1.w.wachtrij.length === 1 && k1.w.geschiedenis[0].staat === 'integrated' && k1.w.geschiedenis[0].afgerond === 't2');
+  const t1 = k.wachtrijTerugtrekken(k1.w, 'BBB-001', 'агент ще працює');
+  check('черга: terugtrekken → порожня черга, причина в історії; невідома → WACHTRIJ_ONBEKEND', t1.w.wachtrij.length === 0 && t1.w.geschiedenis[1].reden === 'агент ще працює' && k.wachtrijTerugtrekken(t1.w, 'ZZZ-001', '').fout?.code === 'WACHTRIJ_ONBEKEND');
+  const isV = (a: string, b: string) => a === 'i'.repeat(40) && b === 'g'.repeat(40);
+  check('statusAfleiden: in_progress → integrated (факт злиття) → released (пакет) → installed (факт установки)', k.statusAfleiden({ staat: 'ter_integratie' }, null, isV).status === 'in_progress' && k.statusAfleiden({ staat: 'integrated', integratieCommit: 'i'.repeat(40) }, null, isV).status === 'integrated' && k.statusAfleiden({ staat: 'integrated', integratieCommit: 'i'.repeat(40), releaseVersie: '20261101-000000' }, null, isV).status === 'released' && k.statusAfleiden({ staat: 'integrated', integratieCommit: 'i'.repeat(40), releaseVersie: '20261101-000000' }, { versie: 'v', bronCommit: 'g'.repeat(40) }, isV).status === 'installed');
+  check('statusAfleiden: installed лише якщо integratieCommit справді встановлений (не предок → released)', k.statusAfleiden({ staat: 'integrated', integratieCommit: 'x'.repeat(40), releaseVersie: 'v' }, { bronCommit: 'g'.repeat(40) }, isV).status === 'released' && k.statusAfleiden({ staat: 'bevroren' }, null, isV).status === 'bevroren');
+
+  // — черга (закомічений файл) —
   const w = JSON.parse(lees('orchestratie/wachtrij.json'));
   check('черга послідовна: один запис «bezig» або жоден, ORCH-001 у черзі', w.bezig === null && w.wachtrij.some((r: { taakId: string }) => r.taakId === 'ORCH-001'));
   // — реєстр рішень —
   const besl = lees('orchestratie/BESLUITEN.md');
-  check('BESLUITEN.md: B-001…B-003 зі статусом і версією 1.0.0', ['B-001', 'B-002', 'B-003'].every((b) => new RegExp(`## ${b} · \\d{4}-\\d{2}-\\d{2} · 1\\.0\\.0 · (voorstel|bevestigd)`).test(besl)));
+  check('BESLUITEN.md: B-001…B-003 (1.0.0) і B-004 (1.1.0) зі статусом', ['B-001', 'B-002', 'B-003'].every((b) => new RegExp(`## ${b} · \\d{4}-\\d{2}-\\d{2} · 1\\.0\\.0 · (voorstel|bevestigd)`).test(besl)) && /## B-004 · \d{4}-\d{2}-\d{2} · 1\.1\.0 · (voorstel|bevestigd)/.test(besl));
   check('BESLUITEN.md фіксує, що базу ще не звірено з production (чесність)', /не виконано|niet uitgevoerd/.test(besl) && beleid.basis.verificatie === 'opgave_eigenaar');
   return einde();
 }

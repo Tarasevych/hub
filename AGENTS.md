@@ -49,13 +49,17 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 2. Тести: `node scripts/eenheidstests.mjs <фільтр>`, `npm run typecheck:server` (де можливо). Результати — у `TESTRESULTATEN` (формат v2) і звіті.
 3. Передача будь-яким каналом з `beleid.json → inlevering.kanalen` (PR, MCP, HTTP API, локальний файл, ZIP, TAR.GZ, git patch, вебзавантаження),
    але завжди з `ORCH-OVERDRACHT.json`: taakId, agent, basisCommit, regelsVersie, regelsHash, samenvatting, список змінених файлів, тести.
+   Приймає все один конвеєр: `node scripts/orch.mjs inleveren --bron <файл|тека|гілка>` — нова гілка від бази, зміни, конфлікти з `integratie`
+   (`git merge-tree`), тести, запис у `orchestratie/inleveringen/`, черга. Передача, що змінює файли стану (`orchestratie/taken`, `inleveringen`,
+   `wachtrij.json`, `regels.lock.json`, `geinstalleerd.json`), відхиляється — їх пише лише `orch` або власник.
 4. Звіт українською: що готово, що перевірено (фактично, не за метаданими), де результат, що наступне, що свідомо не зроблено.
 5. Статус задачі: `in_progress` → `ter_integratie` (передано) → `integrated` (злито в `integratie`) → `released` (пакет зібрано) → `installed`
    (встановлено інсталятором на сервері). Статус змінює лише той крок, що його здійснив; агент не ставить `installed` сам.
 
 ## 5. Інтеграція та випуск · Integratie en release
 
-- Одна послідовна черга: `orchestratie/wachtrij.json` (FIFO за базою). Наступний у черзі перебазовується на поточний `integratie` перед злиттям.
+- Одна послідовна черга: `orchestratie/wachtrij.json` (FIFO за базою; `wachtrij volgende|klaar|terugtrekken`, лише одна задача `bezig`).
+  Злиття в `integratie` — завжди `--no-ff`, без force; конфлікт → `klaar --uitkomst afgewezen`, задача повертається агентові на rebase.
 - Пакет на застарілій базі (basisCommit не предок `integratie`, перетин файлів) не випускається й не встановлюється.
 - Режими встановлення (`beleid.json → kritiek.installatieModi`): `handmatig`, `na_bevestiging` (Passkey/підпис власника; типовий),
   `automatisch_beperkt` — лише за окремо затвердженою й підписаною політикою. Зараз дозволені перші два.
@@ -75,7 +79,9 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 | Публічні ключі власника | `orchestratie/eigenaar-ondertekenaars` |
 | Компактний контекст (без GitHub/MCP) | `orchestratie/CONTEXT-COMPACT.md` (генерується: `node scripts/orch.mjs context`) |
 | Задачі агентів | `orchestratie/taken/<TASK-ID>.json` |
+| Записи передач (усі канали, прийняті й відхилені) | `orchestratie/inleveringen/<TASK-ID>-<час>.json` |
 | Черга інтеграції | `orchestratie/wachtrij.json` |
+| Факт установки (пише інсталятор/власник) | `orchestratie/geinstalleerd.json` |
 | Шаблони передачі | `orchestratie/sjablonen/` |
 | Правила пакета випуску | `deploy/REGELS-UITROLPAKKET.md`, `shared/uitrol-manifest.ts`, `shared/uitrol-codes.ts` |
 | Безпечне розгортання, passkey, відкат | `deploy/RUNBOOK-VEILIGE-UITROL.md` (§13 passkey, §15 рішення власника) |
@@ -91,6 +97,12 @@ node scripts/orch.mjs vergrendel                     # оновити regels.loc
 node scripts/orch.mjs context                        # згенерувати orchestratie/CONTEXT-COMPACT.md
 node scripts/orch.mjs taak-start --id ORCH-001 --agent claude --basis <sha40> --tak feature/orch-001-YYYYMMDD-HHMMSS
 node scripts/orch.mjs versheid --taak ORCH-001 --fase start|overdracht
+node scripts/orch.mjs taak-herlees --id ORCH-001     # «я перечитав правила» після їх зміни
+node scripts/orch.mjs werkruimte --taak ORCH-001     # ізольоване робоче дерево (git worktree) для задачі
+node scripts/orch.mjs inleveren --bron <zip|tar.gz|patch|тека|гілка> [--kanaal mcp|http_api|web_upload] [--overdracht od.json] [--taak ID] [--zonder-tests "причина"] [--push]
+node scripts/orch.mjs wachtrij toon|volgende|klaar|terugtrekken   # послідовна черга інтеграції
+node scripts/orch.mjs status                         # in_progress / integrated / released / installed по задачах
+node scripts/orch.mjs staat-commit                   # закомітити лише файли стану координації
 node scripts/orch.mjs onderteken-bericht             # рядок, який власник підписує (ssh-keygen -Y sign -n mijn-ruimte-regels)
 node scripts/orch.mjs bevestig <bericht.sig>         # записати підпис власника в lock
 node scripts/eenheidstests.mjs orch                  # тести координації
