@@ -222,8 +222,10 @@ export function uploadBegin(input: Record<string, unknown>, door: string, kanaal
   schrijfUpload(u);
   return u;
 }
-export function uploadStuk(input: Record<string, unknown>): OrchUpload {
+export function uploadStuk(input: Record<string, unknown>, actor: string): OrchUpload {
   const u = leesUpload(input.id);
+  // A known upload ID is not authority: agents must not mutate another actor's transfer.
+  if (!actor || u.door !== actor) fout('UPLOAD_ONBEKEND', 404);
   if (u.staat !== 'bezig') fout('UPLOAD_ONBEKEND', 409);
   const offset = input.offset === undefined ? u.ontvangen : Number(input.offset);
   if (offset !== u.ontvangen) fout('UPLOAD_OFFSET', 409);
@@ -236,8 +238,9 @@ export function uploadStuk(input: Record<string, unknown>): OrchUpload {
   schrijfUpload(u);
   return u;
 }
-export function uploadAnnuleren(input: Record<string, unknown>): { id: string; geannuleerd: true } {
+export function uploadAnnuleren(input: Record<string, unknown>, actor: string): { id: string; geannuleerd: true } {
   const u = leesUpload(input.id);
+  if (!actor || u.door !== actor) fout('UPLOAD_ONBEKEND', 404);
   rmSync(uploadMap(u.id), { recursive: true, force: true });
   return { id: u.id, geannuleerd: true };
 }
@@ -246,16 +249,24 @@ export function uploadAnnuleren(input: Record<string, unknown>): { id: string; g
  * конфлікти, тести, запис у orchestratie/inleveringen, задача ter_integratie, черга; стан закомічено. Відхилена передача → uitkomst
  * 'geweigerd' із zaken (не HTTP-помилка: це результат, який власник має побачити).
  */
-export function uploadKlaar(input: Record<string, unknown>): { upload: OrchUpload; record: Record<string, unknown>; registratie: Record<string, unknown> | null; staatCommit: string | null } {
+export function uploadKlaar(input: Record<string, unknown>, actor: string): { upload: OrchUpload; record: Record<string, unknown>; registratie: Record<string, unknown> | null; staatCommit: string | null } {
   const { beleid, lock } = laadOrch();
   const u = leesUpload(input.id);
+  if (!actor || u.door !== actor) fout('UPLOAD_ONBEKEND', 404);
+  // Imported source code and caller-provided shell commands are untrusted. Running them as
+  // the main server user would expose its filesystem, credentials and GitHub deploy key.
+  // Integration is still possible, but verification must happen in an isolated CI runner.
+  if (input.tests !== undefined || input.zonderTests !== undefined) fout('TESTS_NIET_GEISOLEERD', 409);
   if (u.staat !== 'bezig') fout('UPLOAD_ONBEKEND', 409);
   if (u.ontvangen !== u.grootte) fout('UPLOAD_ONVOLLEDIG', 409);
   const pad = join(uploadMap(u.id), u.naam);
   const sha = createHash('sha256').update(readFileSync(pad)).digest('hex');
   if (sha !== u.sha256) { u.staat = 'mislukt'; schrijfUpload(u); fout('UPLOAD_SHA_VERSCHILT', 409); }
-  const tests = Array.isArray(input.tests) ? (input.tests as unknown[]).map((t) => tekst(t, 300)).filter(Boolean).slice(0, 10) : undefined;
-  const record = inleveren({ wortel: wortel(), beleid, lock, bron: pad, kanaal: u.kanaal, taakId: u.taakId ?? null, tests: tests?.length ? tests : undefined, zonderTests: input.zonderTests ? tekst(input.zonderTests, 300) : null });
+  const record = inleveren({ wortel: wortel(), beleid, lock, bron: pad, kanaal: u.kanaal, taakId: u.taakId ?? null,
+    zonderTests: 'Untrusted upload: tests deferred to isolated CI; manual integration requires verified test evidence.' });
+  record.zaken.push({ code: 'TESTS_NIET_GEISOLEERD', ernst: 'waarschuwing',
+    uk: 'Код прийнято без запуску на сервері: тести потрібно виконати в ізольованому CI перед злиттям.',
+    nl: 'Bron ontvangen zonder uitvoering op de server: voer de tests uit in geïsoleerde CI vóór samenvoegen.' });
   const registratie = registreerInlevering(wortel(), record) as Record<string, unknown>;
   const commit = staatCommit(`orch: inlevering ${record.id} (${record.uitkomst}) via ${u.kanaal}`);
   u.staat = record.uitkomst === 'aanvaard' ? 'klaar' : 'mislukt';
