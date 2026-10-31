@@ -9,8 +9,9 @@ export type InleverRecord = {
   tests: { overgeslagen?: boolean; geslaagd: number; mislukt: number; reden?: string; uitvoer?: unknown[] } | null;
   zaken: Zaak[]; uitkomst: 'aanvaard' | 'geweigerd'; aangemaakt: string; integratieRef: string | null; pr: unknown; [k: string]: unknown;
 };
+export function veiligeTestEnv(env?: NodeJS.ProcessEnv): Record<string, string>;
 export function inleveren(o: {
   wortel: string; beleid: any; lock: any; bron: string; kanaal?: string | null; taakId?: string | null; overdrachtPad?: string | null;
-  tests?: string[] | null; zonderTests?: string | null; integratieRef?: string | null; push?: boolean; nu?: string;
+  tests?: string[] | null; zonderTests?: string | null; alleenVeiligeControle?: boolean; integratieRef?: string | null; push?: boolean; nu?: string;
 }): InleverRecord;
 export function registreerInlevering(wortel: string, record: InleverRecord): { recordPad: string; taakBijgewerkt: boolean; wachtrij: unknown };

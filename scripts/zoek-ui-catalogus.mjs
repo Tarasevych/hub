@@ -41,6 +41,7 @@ export const PLEKKEN = [
   ['ToegangslaagWeergave', 'identity', 'methods', 'iedereen'], ['toegangslaag-panelen', 'identity', 'methods', 'iedereen'], ['SleutelkluisSectie', 'identity', 'methods', 'iedereen'],
   ['HerstelcodesSectie', 'identity', 'recovery', 'iedereen'], ['ToegangssleutelsSectie', 'identity', 'methods', 'iedereen'], ['Toegangscodes', 'identity', 'security', 'iedereen'], ['geheim/', 'identity', 'security', 'iedereen'],
   ['AIDienstWeergave', 'ai', 'workspace', 'iedereen'], ['AiWerkruimte', 'ai', 'workspace', 'iedereen'],
+  ['agenten/TabOrch', 'mcp', 'agents', 'technisch'] /* ORCH-001: «Координація» — alleen eigenaar op mcp.* */,
   ['agenten/', 'ai', 'agents', 'iedereen'], ['connector-v2/', 'ai', 'agents', 'iedereen'], ['ai-bevestiging/', 'ai', 'agents', 'iedereen'],
   ['extensie/', 'ai', 'agents', 'iedereen'], ['McpAgentenHub', 'ai', 'agents', 'iedereen'], ['McpConnectorPaneel', 'ai', 'agents', 'iedereen'],
   ['McpToestemmingVenster', 'ai', 'agents', 'iedereen'], ['AgentenPaneel', 'ai', 'agents', 'iedereen'], ['AgentInrichtingWizard', 'ai', 'agents', 'iedereen'],

@@ -143,7 +143,7 @@ function bouw(): UiObject[] {
   // ---------------------------------------------------------------- gegenereerd uit src/**/*.tsx: knoppen, koppen, dialogen, hash-tabbladen
   for (const e of UI_ELEMENTEN) {
     const basis = strenger(e.toegang, dienstToegang(e.dienst, e.tab));
-    const toegang: UiToegang = e.soort === 'tab' && e.hash === 'technisch' ? 'technisch' : basis;
+    const toegang: UiToegang = e.soort === 'tab' && (e.hash === 'technisch' || e.hash === 'orch') ? 'technisch' : basis;
     const soort: ZoekSoort = e.soort === 'knop' ? 'knop' : e.soort === 'dialoog' ? 'dialoog' : 'pagina';
     const sectie = e.sectieUk ? { uk: e.sectieUk, nl: e.sectieNl } : null;
     const wat = e.soort === 'knop' ? { uk: 'Кнопка', nl: 'Knop' } : e.soort === 'dialoog' ? { uk: 'Вікно', nl: 'Venster' } : e.soort === 'tab' ? { uk: 'Вкладка', nl: 'Tabblad' } : { uk: 'Розділ сторінки', nl: 'Sectie van de pagina' };

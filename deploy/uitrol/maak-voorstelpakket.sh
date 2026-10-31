@@ -45,7 +45,7 @@ if [ -n "${BASIS_VERSIE:-}${BASIS_COMMIT:-}" ]; then
   { [[ "${BASIS_VERSIE:-}" =~ ^[0-9]{8}-[0-9]{6}$ ]] && [[ "${BASIS_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]]; } || { echo "FOUT: BASIS_VERSIE (JJJJMMDD-UUMMSS) en BASIS_COMMIT (40 hex) horen samen en moeten geldig zijn" >&2; exit 1; }
   BASISTEKST="versie=$BASIS_VERSIE"$'\n'"commit=$BASIS_COMMIT"
   if [ -f orchestratie/regels.lock.json ]; then
-    BASISTEKST+=$'\n'"$(python3 -c 'import json; d=json.load(open("orchestratie/regels.lock.json",encoding="utf-8")); print("regelsVersie=" + d["regelsVersie"] + "\nregelsHash=" + d["hash"])')"
+    BASISTEKST+=$'\n'"$(python3 -c 'import json; d=json.load(open("orchestratie/regels.lock.json",encoding="utf-8")); print("regelsVersie=" + d["regelsVersie"] + "\nregelsHash=" + d["hash"])' | tr -d '\r')"
   fi
 elif [[ "$versie" > "20261201-000000" || "$versie" == "20261201-000000" ]]; then
   echo "FOUT: встановіть BASIS_VERSIE і BASIS_COMMIT (встановлена база) — root відхилить пакет без UITROL-BASIS (GEEN_BASIS); простіше: node scripts/orch.mjs pakket" >&2; exit 1
@@ -55,7 +55,7 @@ fi
 MANIFESTJSON=""
 if [ -n "${MANIFEST:-}" ]; then
   [ -f "$MANIFEST" ] || { echo "FOUT: MANIFEST-bestand niet gevonden: $MANIFEST" >&2; exit 1; }
-  MANIFESTJSON="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); d["versie"]=sys.argv[2]; print(json.dumps(d,ensure_ascii=False,separators=(",",":")))' "$MANIFEST" "$versie")" \
+  MANIFESTJSON="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); d["versie"]=sys.argv[2]; print(json.dumps(d,ensure_ascii=False,separators=(",",":")))' "$MANIFEST" "$versie" | tr -d '\r')" \
     || { echo "FOUT: MANIFEST is geen geldige JSON" >&2; exit 1; }
 elif [[ "$versie" > "20261101-000000" || "$versie" == "20261101-000000" ]]; then
   echo "FOUT: встановіть MANIFEST=<шлях до UITROL-MANIFEST.json> (опис uk+nl і учасники; див. deploy/REGELS-UITROLPAKKET.md §5)" >&2; exit 1
@@ -65,7 +65,7 @@ fi
 TESTJSON=""
 # UI-010: TESTRESULTATEN_BESTAND=<pad> = volledig formaat 2 (falend[] met ookOpBasis, basis{}, uitleg{uk,nl}); gaat vóór de losse getallen.
 if [ -n "${TESTRESULTATEN_BESTAND:-}" ]; then
-  TESTJSON="$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1],encoding="utf-8")),ensure_ascii=False,separators=(",",":")))' "$TESTRESULTATEN_BESTAND")" || { echo "FOUT: TESTRESULTATEN_BESTAND is geen geldige JSON" >&2; exit 1; }
+  TESTJSON="$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1],encoding="utf-8")),ensure_ascii=False,separators=(",",":")))' "$TESTRESULTATEN_BESTAND" | tr -d '\r')" || { echo "FOUT: TESTRESULTATEN_BESTAND is geen geldige JSON" >&2; exit 1; }
 elif [ -n "${TESTS_GESLAAGD:-}${TESTS_MISLUKT:-}${TESTS_SAMENVATTING:-}" ]; then
   TESTJSON="$(python3 - "${TESTS_GESLAAGD:-}" "${TESTS_MISLUKT:-}" "${TESTS_SAMENVATTING:-}" <<'PY'
 import json, sys
@@ -99,7 +99,7 @@ else
   tar -C "$stage" -czf "$doel" "mijn-ruimte-$versie"; rm -rf -- "$stage"
 fi
 bytes="$(stat -c %s "$doel" 2>/dev/null || stat -f %z "$doel")"
-sha="$(sha256sum "$doel" 2>/dev/null | cut -d' ' -f1 || shasum -a 256 "$doel" | cut -d' ' -f1)"
+sha="$(sha256sum "$doel" 2>/dev/null | sed 's/^\\//' | cut -d' ' -f1 || shasum -a 256 "$doel" | cut -d' ' -f1)"
 if [ -n "$ZONDER_GIT" ]; then
   wijzigingen="- (buiten git: $ZONDER_GIT) $SAMENVATTING"; diff=""
 elif git rev-parse --verify -q "$basis" >/dev/null; then

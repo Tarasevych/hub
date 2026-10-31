@@ -75,12 +75,11 @@ export const ORCH_TOOLS: readonly ToolDef[] = Object.freeze([
   },
   {
     name: ORCH_INLEVEREN_KLAAR, title: 'Finish handing in a package',
-    description: 'Finish the upload: the server checks the SHA-256 and runs the hand-in pipeline (branch from the declared base, rules and base freshness, protected files, conflicts with the integration branch, tests in a temporary worktree, record in orchestratie/inleveringen, task → ter_integratie, queue). Returns the record with uitkomst "aanvaard" or "geweigerd" and the reasons (zaken). Nothing is merged or installed.',
+    description: 'Finish the upload: the server checks the SHA-256 and runs the hand-in pipeline (branch from the declared base, rules and base freshness, protected files, conflicts with the integration branch, trusted coordination check without executing package code, record in orchestratie/inleveringen, task → ter_integratie, queue). Returns the record with uitkomst "aanvaard" or "geweigerd" and the reasons (zaken). Nothing is merged or installed.',
     inputSchema: {
       type: 'object',
       properties: {
         id,
-        tests: { type: 'array', items: { type: 'string' }, description: p('Необов’язково: команди тестів замість стандартних з beleid.json (до 10).', 'Optioneel: testopdrachten in plaats van de standaard uit beleid.json (hoogstens 10).') },
         zonderTests: { type: 'string', description: p('Необов’язково: причина, чому тести пропущено — лишається в записі передачі.', 'Optioneel: reden waarom de tests zijn overgeslagen — blijft in het record van de overdracht.') },
       },
       required: ['id'], additionalProperties: false,

@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import { getPool } from '../server/platform/pg';
 import { CODEWOORD_BLOK_MS, CODEWOORD_MAX_MISLUKT, codewoordSterk, normaliseerCodewoord, pogingToegestaan } from '../shared/codewoord';
 import { codewoordSessieId, loginVers } from '../shared/codewoord-poort';
+import type { RouterMiddleware, RouterResponse } from '../server/platform/router';
 import { codewoordStapOpVastleggen, type StapOpAuth } from './stap-op';
 
 const scryptAsync = promisify(scrypt) as (password: string, salt: Buffer, keylen: number, options: { N: number; r: number; p: number }) => Promise<Buffer>;
@@ -100,12 +101,12 @@ type Auth = { user: { id: string; email: string } } | { errorCode: string };
 type VolAuth = { user: { id: string; email: string }; session?: { id: string; userId: string }; tabSession?: { id: string; userId: string } | null };
 export function codewoordRoutes(deps: {
   requireSession: (event: unknown, body: unknown) => Promise<Auth>;
-  fail: (code: string, status: number) => unknown;
-  ok: (data: unknown) => unknown;
+  fail: (code: string, status: number) => RouterResponse;
+  ok: (data: unknown) => RouterResponse;
   body: (body: unknown) => Record<string, unknown>;
-  stepUp: (ctx: Ctx, auth: Auth) => Promise<unknown>;
-}) {
-  const metSessie = (run: (user: { id: string; email: string }, body: Record<string, unknown>, ctx: Ctx, auth: VolAuth) => Promise<unknown>) => async (ctx: Ctx) => {
+  stepUp: (ctx: Ctx, auth: Auth) => Promise<RouterResponse | null>;
+}): Record<string, RouterMiddleware[]> {
+  const metSessie = (run: (user: { id: string; email: string }, body: Record<string, unknown>, ctx: Ctx, auth: VolAuth) => Promise<RouterResponse>): RouterMiddleware => async (ctx) => {
     const auth = await deps.requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return deps.fail(auth.errorCode, 401);
     const stap = await deps.stepUp(ctx, auth);
