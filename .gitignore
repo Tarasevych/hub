@@ -26,6 +26,8 @@ AUTEUR
 AGENT
 SAMENVATTING
 mijn-ruimte-*.tar.gz*
+incoming/*.tar.gz
+incoming/*.tgz
 mijn-ruimte-*.voorstel.json
 mijn-ruimte-*.txt
 mijn-ruimte-*.bundle
