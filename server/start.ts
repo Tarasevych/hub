@@ -25,7 +25,7 @@ import { siemConfig, siemRonde } from '../backend/siem';
 import { TECH_ASSET_KOPPEN, assetToegestaan } from '../backend/tech-bundels';
 import { diepAntwoord } from '../backend/diepe-gezondheid';
 import { techMeldingVerwerken, telStatus } from '../backend/toegangsfout-tellers';
-import { sluitAlleStromen, stroomVerzoek } from '../backend/connector-v2-stroom';
+import { sluitAlleStromen, stroomVerzoek, stroomVerzoekMcp } from '../backend/connector-v2-stroom';
 import { googleSuiteSyncCron, mailMaintenanceCron } from '../backend/index';
 import { ACHTERGROND_INTERVAL_MS, sleutelkluisAchtergrondRonde } from '../backend/sleutelkluis-achtergrond';
 import { zoekIndexCron } from '../backend/zoek/bronnen';
@@ -331,6 +331,7 @@ const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
 // (de MCP-brug op poort 8091 houdt /Grok, /claude, /oauth/*, /health en de eigen /.well-known/* via de tunnel).
 const CONNECTOR_PADEN: Record<string, string> = {
   '/mcp': '/api/mcp-connector/rpc',
+  '/.well-known/oauth-protected-resource': '/api/mcp-connector/prm',
   '/.well-known/oauth-protected-resource/mcp': '/api/mcp-connector/prm',
   '/.well-known/oauth-authorization-server/oauth2': '/api/mcp-connector/asm',
   // Alle ontdekkingsvormen van RFC 8414 §3 / OpenID voor issuer https://mcp.…/oauth2, plus de wortel (terugval van sommige klanten):
@@ -455,6 +456,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   // notifications/tools/list_changed stuurt zodra de levende staat (technisch profiel, dienst «ai») de lijst verandert. De router
   // kan geen open verbinding vasthouden, dus hier, vóór de routering (backend/connector-v2-stroom.ts).
   if (host === SERVICE_HOSTS.mcp && req.method === 'GET' && /text\/event-stream/i.test(String(req.headers.accept || ''))) {
+    if (url.pathname === '/mcp' || url.pathname === '/mcp/') { await stroomVerzoekMcp(req, res); return; }
     const m = /^\/(claude|gpt|grok|gemini|copilot|cursor)\/?$/.exec(url.pathname);
     if (m) { await stroomVerzoek(req, res, m[1]); return; }
   }

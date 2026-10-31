@@ -29,14 +29,16 @@ import { ontleed, toolNaam } from '../shared/connector-v2/namen';
 import { TECH_PROFIEL_UIT } from '../shared/ai-ruimte';
 import { breidtUit, isKant, schoon, STANDAARD } from '../shared/connector-v2/rechten';
 import { basisVan, berekenMassa, type MassaInvoer, type MassaUitkomst } from '../shared/connector-v2/massa';
-import { authenticate, ISSUER, lijstTools, PROTOCOL_VERSIONS, roepTool, SCOPE, werkDetails, type Wie } from './mcp-connector';
+import { authenticate, ISSUER, lijstTools, PROTOCOL_VERSIONS, revokeUserGrant, roepTool, SCOPE, werkDetails, type Wie } from './mcp-connector';
+import { zetToegang } from './ai-toegang';
+import { meldLijstGewijzigd, sluitStromenVan } from './connector-v2-stroom';
 import { aiPoortNu } from './ai-ruimte-poort';
 import type { AiRuimte } from '../shared/ai-ruimte';
 import { taalVanGebruiker, vertaal, type ToolDef } from './connectors-hulpmiddelen';
 import { BEHEER_TOOLS } from './ai-beheer-hulpmiddeldefinities';
 import { tekstVanOptie, v2Staart, type ToolTaal } from '../shared/hulpmiddel-teksten';
 import * as v2st from './connector-v2-opslag';
-import { erfenisVoor, oudeGrantsVoor, rechtenVoorOudToken, type OudeGrant } from './connector-v2-erfenis';
+import { erfenisUit, erfenisVoor, oudeGrantsVoor, rechtenVoorOudToken, type OudeGrant } from './connector-v2-erfenis';
 // Zone E (22.10.2026): chrome-devtools-mcp-namen als aliassen + «devtools-namen» in tools/list (matrix «Браузер і агенти»).
 import { devtoolsBeslissing, devtoolsDefinities, slotHint } from './connector-v2-browser';
 import { instellingenVan as matrixInstellingen } from './extensie-matrix';
@@ -46,7 +48,7 @@ const MAX_RPC_BYTES = 6 * 1024 * 1024;
 
 const respond = (status: number, data: unknown, headers: Record<string, string> = {}): RouterResponse => ({
   statusCode: status,
-  headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers },
+  headers: { ...(data === undefined ? {} : { 'Content-Type': 'application/json; charset=utf-8' }), 'Cache-Control': 'no-store', ...headers },
   body: data === undefined ? '' : JSON.stringify(data),
 });
 const rpcResult = (id: unknown, result: unknown) => ({ jsonrpc: '2.0', id, result });
@@ -309,6 +311,17 @@ export async function rpc(slug: string, authorization: string | undefined, rawBo
   return out === null ? respond(202, undefined) : respond(200, out);
 }
 
+/** Streamable HTTP: DELETE /<agent> beëindigt de huidige sessie/SSE-stroom zodat een client zijn tools/list vers ophaalt. */
+export async function rpcDelete(slug: string, authorization: string | undefined): Promise<RouterResponse> {
+  if (!isAgentSlug(slug)) return respond(404, { error: 'unknown_agent' });
+  const toegang = await koppelingVan(slug, authorization);
+  if ('statusCode' in toegang) return toegang;
+  zetGebruiker(toegang.koppeling.userId, 'mcp', undefined, String(toegang.koppeling.tokenId ?? ''));
+  sessieGeverifieerd();
+  sluitStromenVan(toegang.koppeling.userId, slug);
+  return respond(204, undefined);
+}
+
 // ---------------------------------------------------------------- beheer door de gebruiker (routes in connector-v2-routes.ts)
 
 export type BeheerFout = 'AGENT_ONBEKEND' | 'KANT_BEHEER_ALLEEN_EIGENAAR' | 'TECH_PROFIEL_VEREIST';
@@ -411,6 +424,7 @@ export async function agentStanden(userId: string): Promise<{ agenten: AgentStan
 export async function wijzig(userId: string, slug: AgentSlug, keuze: unknown): Promise<{ voorkeur: v2st.Voorkeur; ingeperkt: number; herverbinden: boolean }> {
   const nieuw = v2st.normaliseerKeuze(keuze);
   const actief = await v2st.actieveKoppelingen(userId, slug);
+  const oud = await oudeGrantsVoor(userId, slug).catch(() => [] as OudeGrant[]);
   let ingeperkt = 0;
   let herverbinden = false;
   for (const k of actief) {
@@ -422,8 +436,20 @@ export async function wijzig(userId: string, slug: AgentSlug, keuze: unknown): P
       ingeperkt++;
     }
   }
-  const voorkeur = await v2st.zetVoorkeur(userId, slug, nieuw, actief.length > 0 && herverbinden);
-  return { voorkeur, ingeperkt, herverbinden: actief.length > 0 && herverbinden };
+  const nieuwScopes = new Set(v2st.scopesVoor(nieuw.sleutels));
+  for (const g of oud) {
+    const erfenis = erfenisUit([g]);
+    if (breidtUit(erfenis.sleutels, nieuw.sleutels) || nieuw.kanten.some((x) => !erfenis.kanten.includes(x))) herverbinden = true;
+    const blijftScopes = g.scopes.filter((s) => nieuwScopes.has(s));
+    if (blijftScopes.length !== g.scopes.length) {
+      await zetToegang(userId, { soort: 'mcp-koppeling', id: g.id }, blijftScopes);
+      ingeperkt++;
+    }
+  }
+  const moetHerverbinden = (actief.length > 0 || oud.length > 0) && herverbinden;
+  const voorkeur = await v2st.zetVoorkeur(userId, slug, nieuw, moetHerverbinden);
+  if (ingeperkt > 0) meldLijstGewijzigd(userId);
+  return { voorkeur, ingeperkt, herverbinden: moetHerverbinden };
 }
 
 /** Massale wijziging, stap 1: wat zou er per agent gebeuren? (Niets opgeslagen — voedt de samenvatting en de beslissing over passkey.) */
@@ -448,8 +474,17 @@ export async function massaToepassen(userId: string, voorbeeld: ReadonlyArray<{ 
   return resultaat;
 }
 
-/** Herverbinden: de huidige koppelingen van deze agent intrekken. De AI-klant krijgt 401 en start zelf de nieuwe toestemming. */
-export const herverbind = (userId: string, slug: AgentSlug) => v2st.trekIn(userId, slug);
+/** Herverbinden: de huidige koppelingen (v2 én geërfde /mcp-grants) van deze agent intrekken. De AI-klant krijgt 401 en start zelf de nieuwe toestemming. */
+export async function herverbind(userId: string, slug: AgentSlug): Promise<string[]> {
+  const v2Ids = await v2st.trekIn(userId, slug);
+  const oud = await oudeGrantsVoor(userId, slug).catch(() => [] as OudeGrant[]);
+  const oudIds: string[] = [];
+  for (const g of oud) {
+    if (await revokeUserGrant(userId, g.id).catch(() => false)) oudIds.push(g.id);
+  }
+  sluitStromenVan(userId, slug);
+  return [...v2Ids, ...oudIds];
+}
 export const intrekken = (userId: string, slug: AgentSlug, grantId?: string) => v2st.trekIn(userId, slug, grantId);
 
 /** Voor het toestemmingsvenster: wat de koppeling van deze agent had (laatste actieve), wat klaarstaat en de standaard. */
