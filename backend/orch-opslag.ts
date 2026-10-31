@@ -223,8 +223,13 @@ export function uploadBegin(input: Record<string, unknown>, door: string, kanaal
   schrijfUpload(u);
   return u;
 }
-export function uploadStuk(input: Record<string, unknown>): OrchUpload {
+/** Завантаження належить тому, хто його почав: знання id (16 hex) — не повноваження. Інший актор (інший агент, інша сесія) бачить 404, як для неіснуючого. */
+function eisEigenUpload(u: OrchUpload, actor: string): void {
+  if (!actor || u.door !== tekst(actor, 120)) fout('UPLOAD_ONBEKEND', 404);
+}
+export function uploadStuk(input: Record<string, unknown>, actor: string): OrchUpload {
   const u = leesUpload(input.id);
+  eisEigenUpload(u, actor);
   if (u.staat !== 'bezig') fout('UPLOAD_ONBEKEND', 409);
   const offset = input.offset === undefined ? u.ontvangen : Number(input.offset);
   if (offset !== u.ontvangen) fout('UPLOAD_OFFSET', 409);
@@ -237,8 +242,9 @@ export function uploadStuk(input: Record<string, unknown>): OrchUpload {
   schrijfUpload(u);
   return u;
 }
-export function uploadAnnuleren(input: Record<string, unknown>): { id: string; geannuleerd: true } {
+export function uploadAnnuleren(input: Record<string, unknown>, actor: string): { id: string; geannuleerd: true } {
   const u = leesUpload(input.id);
+  eisEigenUpload(u, actor);
   rmSync(uploadMap(u.id), { recursive: true, force: true });
   return { id: u.id, geannuleerd: true };
 }
@@ -247,9 +253,10 @@ export function uploadAnnuleren(input: Record<string, unknown>): { id: string; g
  * конфлікти, тести, запис у orchestratie/inleveringen, задача ter_integratie, черга; стан закомічено. Відхилена передача → uitkomst
  * 'geweigerd' із zaken (не HTTP-помилка: це результат, який власник має побачити).
  */
-export function uploadKlaar(input: Record<string, unknown>): { upload: OrchUpload; record: Record<string, unknown>; registratie: Record<string, unknown> | null; staatCommit: string | null } {
+export function uploadKlaar(input: Record<string, unknown>, actor: string): { upload: OrchUpload; record: Record<string, unknown>; registratie: Record<string, unknown> | null; staatCommit: string | null } {
   const { beleid, lock } = laadOrch();
   const u = leesUpload(input.id);
+  eisEigenUpload(u, actor);
   if (u.staat !== 'bezig') fout('UPLOAD_ONBEKEND', 409);
   if (u.ontvangen !== u.grootte) fout('UPLOAD_ONVOLLEDIG', 409);
   const pad = join(uploadMap(u.id), u.naam);

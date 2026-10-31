@@ -213,6 +213,7 @@ with tarfile.open(uit, "w:gz") as tf:
 
     const { orchRoutes } = await import('../../backend/orch-routes');
     const { voerOrchToolUit } = await import('../../backend/orch-hulpmiddelen');
+    const opslag = await import('../../backend/orch-opslag');
     const EIGENAAR = 'eigenaar@test.invalid';
     const besluiten = new Map<string, import('../../backend/orch-opslag').BesluitVoorToepassen>();
     const routes = orchRoutes({
@@ -235,10 +236,40 @@ with tarfile.open(uit, "w:gz") as tf:
     check('uploadKlaar (HTTP): willekeurige shell-testopdracht geweigerd met 400 TESTS_NIET_TOEGESTAAN',
       rceHttp.status === 400 && rceHttp.data.error === 'TESTS_NIET_TOEGESTAAN' && !existsSync(pwnPad));
 
-    // Poging tot shell-injectie via MCP
-    const rceMcp = await voerOrchToolUit({ userId: 'u-owner', clientName: 'Grok', agent: 'grok' }, 'orch_inleveren_klaar', { id: b1.data.id, tests: ['id'] });
+    // Прив'язка до актора (PR #13): завантаження, почате власником через HTTP, для MCP-агента не існує — ні stuk, ні klaar, ні annuleren.
+    const grok = { userId: 'u-owner', clientName: 'Grok', agent: 'grok', tokenId: '0f9d2c4b-grant-a' };
+    const vreemdStuk = await voerOrchToolUit(grok, 'orch_inleveren_stuk', { id: b1.data.id, offset: tarBytes.length, data: 'AAAA' });
+    const vreemdKlaar = await voerOrchToolUit(grok, 'orch_inleveren_klaar', { id: b1.data.id });
+    const vreemdAnnuleren = (() => { try { opslag.uploadAnnuleren({ id: b1.data.id }, 'iemand-anders@test.invalid'); return null; } catch (e) { return e as InstanceType<typeof opslag.OrchFout>; } })();
+    check('actor-binding: MCP-agent en andere actor krijgen UPLOAD_ONBEKEND (404) op de HTTP-upload van de eigenaar; de upload blijft intact',
+      vreemdStuk.isError === true && vreemdStuk.content[0].text.startsWith('UPLOAD_ONBEKEND:')
+      && vreemdKlaar.isError === true && vreemdKlaar.content[0].text.startsWith('UPLOAD_ONBEKEND:')
+      && vreemdAnnuleren?.code === 'UPLOAD_ONBEKEND' && vreemdAnnuleren.status === 404
+      && opslag.uploadsLijst().some((x) => x.id === b1.data.id && x.ontvangen === tarBytes.length && x.staat === 'bezig'),
+      `${vreemdStuk.content[0].text} | ${vreemdKlaar.content[0].text} | ${vreemdAnnuleren?.code}`);
+
+    // Poging tot shell-injectie via MCP — op een upload die Grok zelf via MCP begon (eigen actor, dus wél bevoegd)
+    const bM = JSON.parse((await voerOrchToolUit(grok, 'orch_inleveren_begin', { naam: 'sec-999.tar.gz', grootte: tarBytes.length, sha256: sha256(tarBytes) })).content[0].text) as { id: string };
+    const sM = await voerOrchToolUit(grok, 'orch_inleveren_stuk', { id: bM.id, offset: 0, data: tarBytes.toString('base64') });
+    check('actor-binding: dezelfde MCP-actor vult zijn eigen upload aan', sM.isError !== true && JSON.parse(sM.content[0].text).klaarVoorAfronden === true, sM.content[0].text);
+    const rceMcp = await voerOrchToolUit(grok, 'orch_inleveren_klaar', { id: bM.id, tests: ['id'] });
     check('orch_inleveren_klaar (MCP): willekeurige tests-parameter geweigerd met TESTS_NIET_TOEGESTAAN',
       rceMcp.isError === true && rceMcp.content[0].text.startsWith('TESTS_NIET_TOEGESTAAN:') && !existsSync(pwnPad));
+    // Власник через HTTP і інший агент через MCP не можуть завершити завантаження Grok; сам Grok може його скасувати.
+    const eigenaarOpMcp = await call(ORCH_ROUTES.inleveringKlaar, { id: bM.id });
+    const andereAgent = await voerOrchToolUit({ userId: 'u-owner', clientName: 'Grok', agent: 'codex', tokenId: '0f9d2c4b-grant-a' }, 'orch_inleveren_klaar', { id: bM.id });
+    // Та сама назва клієнта й той самий агент, але ІНШИЙ grant/токен (друге підключення «Grok (grok)») — теж чужий актор.
+    const zelfdeNaamAndereGrant = await voerOrchToolUit({ userId: 'u-owner', clientName: 'Grok', agent: 'grok', tokenId: '7a1e5b90-grant-b' }, 'orch_inleveren_klaar', { id: bM.id });
+    check('actor-binding: eigenaar (HTTP), een andere agent (MCP) én dezelfde naam via een andere grant krijgen UPLOAD_ONBEKEND op de MCP-upload van Grok',
+      eigenaarOpMcp.status === 404 && eigenaarOpMcp.data.error === 'UPLOAD_ONBEKEND' && andereAgent.isError === true && andereAgent.content[0].text.startsWith('UPLOAD_ONBEKEND:')
+      && zelfdeNaamAndereGrant.isError === true && zelfdeNaamAndereGrant.content[0].text.startsWith('UPLOAD_ONBEKEND:'),
+      `${eigenaarOpMcp.status} ${JSON.stringify(eigenaarOpMcp.data).slice(0, 120)} | ${andereAgent.content[0].text} | ${zelfdeNaamAndereGrant.content[0].text}`);
+    check('actor-binding: door van een MCP-upload bevat de grant/token-id, niet alleen de clientnaam',
+      opslag.uploadsLijst().some((x) => x.id === bM.id && /^Grok \(grok\) via mcp \[0f9d2c4b-grant-a\]$/.test(x.door)), opslag.uploadsLijst().find((x) => x.id === bM.id)?.door);
+    const grokUpload = opslag.uploadsLijst().find((x) => x.id === bM.id);
+    const grokAnnuleert = grokUpload ? opslag.uploadAnnuleren({ id: bM.id }, grokUpload.door) : null;
+    check('actor-binding: alleen de actor die begon kan annuleren (door uit het record) → geannuleerd en weg uit de lijst',
+      grokAnnuleert?.geannuleerd === true && !opslag.uploadsLijst().some((x) => x.id === bM.id));
 
     // Normale afronding: voert vertrouwde controleer uit, NIET scripts/orch.mjs uit het pakket!
     const okKlaar = await call(ORCH_ROUTES.inleveringKlaar, { id: b1.data.id });

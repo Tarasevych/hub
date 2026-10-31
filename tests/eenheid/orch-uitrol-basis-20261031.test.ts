@@ -38,8 +38,9 @@ export async function main(): Promise<number> {
   const basisMap = mkdtempSync('/tmp/orch-uitrol-'); chmodSync(basisMap, 0o777);
   try {
     const bin = join(basisMap, 'bin'); mkdirSync(bin);
-    const echteSshKeygen = spawnSync('ssh-keygen', ['-?'], { encoding: 'utf8' }).error === undefined;
-    if (!echteSshKeygen) { writeFileSync(join(bin, 'ssh-keygen'), '#!/bin/bash\n# shim voor de test: alleen -Y verify, altijd geldig (de handtekening zelf test uitrol-deur met echte sleutels)\n[ "$1" = "-Y" ] && [ "$2" = "verify" ] && exit 0\nexit 1\n'); chmodSync(join(bin, 'ssh-keygen'), 0o755); }
+    // Shim ALTIJD vóór in PATH, ook als er een echte ssh-keygen is: de .sig-bestanden hieronder zijn nep («shim»), en een echte ssh-keygen zou
+    // ze terecht afkeuren (HANDTEKENING_ONGELDIG) — deze suite test de controles ná de handtekening; de handtekening zelf test uitrol-deur.
+    writeFileSync(join(bin, 'ssh-keygen'), '#!/bin/bash\n# shim voor de test: alleen -Y verify, altijd geldig (de handtekening zelf test uitrol-deur met echte sleutels)\n[ "$1" = "-Y" ] && [ "$2" = "verify" ] && exit 0\nexit 1\n'); chmodSync(join(bin, 'ssh-keygen'), 0o755);
     const inbox = join(basisMap, 'inbox'); const werk = join(basisMap, 'werk'); const statusMap = join(basisMap, 'status'); const pk = join(basisMap, 'pk'); const pakketten = join(basisMap, 'pakketten');
     for (const d of [inbox, pk]) { mkdirSync(d); chmodSync(d, 0o777); }
     const ondertekenaars = join(basisMap, 'ondertekenaars'); writeFileSync(ondertekenaars, 'uitrol@mijn-ruimte namespaces="mijn-ruimte-uitrol" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n'); chmodSync(ondertekenaars, 0o644);
