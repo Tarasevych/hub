@@ -107,12 +107,79 @@ export function controleerLock(beleid, bestanden, lock) {
   return z;
 }
 
-/** Чи підтверджено поточні критичні політики власником (не агентом). */
+/**
+ * Чи підтверджено поточні критичні політики власником (не агентом). Два способи підтвердження (lock.eigenaar):
+ *   - SSH-підпис (`handtekening`, ssh-keygen -Y sign, namespace mijn-ruimte-regels) — перевіряється тут же (verifieerUitslag);
+ *   - passkey (`soort: 'passkey'`, етап 3): рішення власника на сайті; підпис зберігає й перевіряє ROOT (orch-regels-bevestigd.jsonl),
+ *     у репозиторії лишається лише запис про рішення (besluit, passkey, voorstel) — GitOps звіряє його з root-файлом перед установкою.
+ */
 export function eigenaarStatus(lock, verifieerUitslag) {
   if (!lock?.eigenaar) return waarsch('KRITIEK_NIET_BEVESTIGD', 'Критичні політики ще не підтверджені підписом власника — діють як «пропозиція». Встановлення в автоматичному режимі заборонене.', 'Kritieke beleidsregels zijn nog niet door de eigenaar ondertekend — ze gelden als «voorstel». Automatische installatie is verboden.');
   if (lock.eigenaar.kritiekHash !== lock.kritiekHash) return fout('KRITIEK_GEWIJZIGD', 'Критичні політики змінено після підпису власника — потрібен новий підпис.', 'Kritieke beleidsregels gewijzigd na de handtekening van de eigenaar — nieuwe handtekening nodig.');
+  if (lock.eigenaar.soort === 'passkey') {
+    if (!PASSKEY_VINGERAFDRUK.test(String(lock.eigenaar.passkey || '')) || !UUID.test(String(lock.eigenaar.besluit || ''))) return fout('BEVESTIGING_ONGELDIG', 'Запис про підтвердження passkey неповний (немає відбитка passkey або id рішення).', 'De passkey-bevestiging is onvolledig (geen vingerafdruk van de passkey of id van het besluit).');
+    return null;
+  }
   if (verifieerUitslag && !verifieerUitslag.ok) return fout('HANDTEKENING_ONGELDIG', `Підпис власника недійсний: ${verifieerUitslag.reden}`, `Handtekening van de eigenaar ongeldig: ${verifieerUitslag.reden}`);
   return null;
+}
+const PASSKEY_VINGERAFDRUK = /^[0-9a-f]{8,16}$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const VOORSTEL_ID = /^[0-9a-f]{16,32}$/;
+
+/**
+ * Етап 3: підтвердження критичних політик рішенням власника з passkey (сайт → root). Чисто: звіряє, що рішення стосується САМЕ цього
+ * lock (regelsVersie, hash, kritiekHash, id пропозиції) і повертає новий lock з eigenaar.soort = 'passkey'. Інакше — fout.
+ * b: { regelsVersie, hash, kritiekHash, voorstel, passkey (відбиток 8–16 hex), besluit (uuid рядка app.eigenaar_besluiten), op }
+ */
+export function bevestigMetPasskey(lock, b) {
+  if (!lock || !b) return { fout: fout('GEEN_LOCK', 'Немає lock або рішення для підтвердження', 'Geen lock of besluit om te bevestigen') };
+  if (b.regelsVersie !== lock.regelsVersie || b.hash !== lock.hash || b.kritiekHash !== lock.kritiekHash) return { fout: fout('BESLUIT_PAST_NIET', `Рішення власника стосується інших правил (версія ${b.regelsVersie}, відбиток ${String(b.hash).slice(0, 12)}…), а не ${lock.regelsVersie} / ${lock.hash.slice(0, 12)}…`, `Het besluit van de eigenaar hoort bij andere regels (versie ${b.regelsVersie}, afdruk ${String(b.hash).slice(0, 12)}…), niet bij ${lock.regelsVersie} / ${lock.hash.slice(0, 12)}…`) };
+  if (!VOORSTEL_ID.test(String(b.voorstel || '')) || !PASSKEY_VINGERAFDRUK.test(String(b.passkey || '')) || !UUID.test(String(b.besluit || ''))) return { fout: fout('BEVESTIGING_ONGELDIG', 'Підтвердження неповне: потрібні id пропозиції, відбиток passkey і id рішення.', 'Bevestiging onvolledig: id van het voorstel, vingerafdruk van de passkey en id van het besluit zijn nodig.') };
+  return { lock: { ...lock, eigenaar: { soort: 'passkey', kritiekHash: lock.kritiekHash, regelsVersie: lock.regelsVersie, hash: lock.hash, voorstel: b.voorstel, besluit: b.besluit, passkey: b.passkey, op: b.op || new Date().toISOString() } } };
+}
+
+/** Різниця двох текстів у рядках (без LCS: мультимножини рядків) — достатньо для огляду пропозиції власником. */
+export function regelVerschil(oud, nieuw) {
+  const tel = (t) => { const m = new Map(); for (const r of normaliseer(t ?? '').split('\n')) m.set(r, (m.get(r) || 0) + 1); return m; };
+  const a = tel(oud), b = tel(nieuw);
+  let toegevoegd = 0, verwijderd = 0;
+  for (const [r, n] of b) toegevoegd += Math.max(0, n - (a.get(r) || 0));
+  for (const [r, n] of a) verwijderd += Math.max(0, n - (b.get(r) || 0));
+  return { toegevoegd, verwijderd, gewijzigd: normaliseer(oud ?? '') !== normaliseer(nieuw ?? '') };
+}
+
+/**
+ * Етап 3: оцінити пропозицію нових правил (власник редагує AGENTS.md / beleid.json / BESLUITEN.md на сайті) — ЧИСТО, без запису.
+ * huidig: { beleid, bestanden: {pad: tekst}, lock }; nieuw: { bestanden: {pad: tekst} } (лише змінені файли, решта береться з huidig).
+ * Повертає { zaken, regelsVersie, hash, kritiekHash, kritiekGewijzigd, verschil: {pad: {toegevoegd, verwijderd, gewijzigd}}, beleid, bestanden, lock }.
+ * Правила: лише файли з beleid.regelBestanden; beleid.json валідний; хоч одна зміна; regelsVersie вища за чинну; у BESLUITEN.md є запис
+ * «· <regelsVersie> ·» (рішення зафіксоване, не лише текст); lock обчислюється тим самим vergrendel, що й у CLI.
+ */
+export function beoordeelVoorstel(huidig, nieuw) {
+  const z = [];
+  const toegestaan = new Set(huidig.beleid.regelBestanden);
+  const paden = Object.keys(nieuw?.bestanden || {});
+  if (!paden.length) z.push(fout('VOORSTEL_LEEG', 'Пропозиція не містить жодного файла правил', 'Het voorstel bevat geen enkel regelbestand'));
+  for (const p of paden) if (!toegestaan.has(p)) z.push(fout('VOORSTEL_PAD', `${p} не є файлом правил (дозволено: ${[...toegestaan].join(', ')})`, `${p} is geen regelbestand (toegestaan: ${[...toegestaan].join(', ')})`));
+  if (z.length) return { zaken: z };
+  const bestanden = { ...huidig.bestanden, ...nieuw.bestanden };
+  let beleid = huidig.beleid;
+  if (nieuw.bestanden['orchestratie/beleid.json'] !== undefined) {
+    try { beleid = JSON.parse(nieuw.bestanden['orchestratie/beleid.json']); } catch (e) { return { zaken: [fout('BELEID_JSON', `orchestratie/beleid.json не є коректним JSON: ${e.message}`, `orchestratie/beleid.json is geen geldige JSON: ${e.message}`)] }; }
+    const vb = valideerBeleid(beleid); if (vb.length) return { zaken: vb };
+    if (JSON.stringify([...beleid.regelBestanden].sort()) !== JSON.stringify([...huidig.beleid.regelBestanden].sort())) z.push(fout('REGELBESTANDEN_GEWIJZIGD', 'Перелік файлів правил (regelBestanden) через сайт змінювати не можна — лише через git', 'De lijst regelBestanden is via de site niet te wijzigen — alleen via git'));
+  }
+  const verschil = Object.fromEntries(Object.keys(bestanden).map((p) => [p, regelVerschil(huidig.bestanden[p], bestanden[p])]));
+  if (!Object.values(verschil).some((v) => v.gewijzigd)) z.push(fout('GEEN_WIJZIGING', 'Жоден файл правил не змінився — підписувати нічого', 'Geen enkel regelbestand is veranderd — er is niets te ondertekenen'));
+  if (!(vergelijkSemver(beleid.regelsVersie, huidig.beleid.regelsVersie) > 0)) z.push(fout('VERSIE_NIET_VERHOOGD', `regelsVersie (${beleid.regelsVersie}) має бути вищою за чинну ${huidig.beleid.regelsVersie}`, `regelsVersie (${beleid.regelsVersie}) moet hoger zijn dan de geldende ${huidig.beleid.regelsVersie}`));
+  const besluiten = bestanden['orchestratie/BESLUITEN.md'] ?? '';
+  if (!new RegExp(`^## B-\\d{3} · \\d{4}-\\d{2}-\\d{2} · ${beleid.regelsVersie.replace(/\./g, '\\.')} · `, 'm').test(normaliseer(besluiten))) z.push(fout('BESLUIT_ONTBREEKT', `У orchestratie/BESLUITEN.md немає запису «## B-xxx · дата · ${beleid.regelsVersie} · …» — рішення має бути зафіксоване`, `orchestratie/BESLUITEN.md mist een regel «## B-xxx · datum · ${beleid.regelsVersie} · …» — het besluit moet vastgelegd zijn`));
+  if (z.length) return { zaken: z };
+  const r = vergrendel(beleid, bestanden, huidig.lock);
+  if (r.fout) return { zaken: [r.fout] };
+  const kritiekGewijzigd = r.lock.kritiekHash !== (huidig.lock?.kritiekHash ?? kritiekAfdruk(huidig.beleid));
+  return { zaken: z, regelsVersie: beleid.regelsVersie, hash: r.lock.hash, kritiekHash: r.lock.kritiekHash, kritiekGewijzigd, verschil, beleid, bestanden, lock: r.lock };
 }
 
 /** Адаптер (CLAUDE.md, GEMINI.md…) — лише вказівник на AGENTS.md, не окреме джерело правил. */
@@ -135,7 +202,7 @@ export function compacteContext(agentsMd, beleid, lock) {
     '',
     `- regelsVersie: \`${beleid.regelsVersie}\``,
     `- regelsHash: \`${lock?.hash ?? '—'}\``,
-    `- kritiekHash: \`${lock?.kritiekHash ?? '—'}\` (${lock?.eigenaar ? 'підтверджено власником · door eigenaar bevestigd' : 'НЕ підтверджено власником · NIET bevestigd door eigenaar'})`,
+    `- kritiekHash: \`${lock?.kritiekHash ?? '—'}\` (${lock?.eigenaar ? `підтверджено власником · door eigenaar bevestigd (${lock.eigenaar.soort === 'passkey' ? 'passkey' : 'SSH'})` : 'НЕ підтверджено власником · NIET bevestigd door eigenaar'})`,
     `- база · basis: \`${beleid.basis.versie}\` @ \`${beleid.basis.bronCommit}\` (${beleid.basis.verificatie})`,
     `- інтеграційна гілка · integratietak: \`${beleid.integratie?.tak ?? '—'}\``,
     '',

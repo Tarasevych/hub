@@ -1,0 +1,21 @@
+/* ORCH-001 етап 3 · «Координація» на mcp.*/agenten (src/agenten/TabOrch.tsx): редактор правил, смуга завантаження, рядки звіту. */
+.orch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.orch-kv{display:grid;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel)}
+.orch-kv small{color:var(--muted);font-size:.78rem}
+.orch-kv b{font-size:.95rem;overflow-wrap:anywhere}
+.orch-kv code{font-size:.8rem;overflow-wrap:anywhere}
+.orch-regels{display:grid;gap:10px}
+.orch-bestand{display:grid;gap:4px}
+.orch-bestand label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.86rem;color:var(--muted)}
+.orch-bestand textarea{width:100%;min-height:220px;resize:vertical;padding:8px;font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:inherit;tab-size:2}
+.orch-bestand textarea.is-gewijzigd{border-color:var(--accent)}
+.orch-balk{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.orch-balk i{display:block;height:100%;background:var(--accent);transition:width .2s}
+.orch-zaken{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:.86rem}
+.orch-zaken li[data-ernst="fout"]{color:var(--ag-bad,#b42318)}
+.orch-zaken li[data-ernst="waarschuwing"]{color:var(--ag-warn,#b54708)}
+.orch-regel-uit{margin:0;padding:8px;max-height:220px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px;font-size:.78rem;white-space:pre-wrap;word-break:break-word}
+.orch-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.orch-chips li{padding:3px 8px;border:1px solid var(--line);border-radius:999px;font-size:.82rem;background:var(--surface)}
+.orch-waarsch{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:var(--ag-r);border:1px solid var(--ag-warn,#b54708);background:color-mix(in srgb,var(--ag-warn,#b54708) 8%,transparent);font-size:.88rem}
+.orch-waarsch svg{flex:none;margin-top:2px}

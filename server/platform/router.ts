@@ -31,17 +31,9 @@ import { isSessieGeverifieerd, metVerzoek } from './context';
 import { poortNaVerzoek } from './auth-poort';
 import { telAntwoord, telFout } from './antwoord-teller';
 
-const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
-
-/** JSON-succesantwoord (zoals AppDeploy `json`). */
-export function json(data: unknown, status = 200): RouterResponse {
-  return { statusCode: status, headers: { ...JSON_HEADERS }, body: JSON.stringify(data ?? null) };
-}
-
-/** JSON-foutantwoord `{ error: message }` (zoals AppDeploy `error`). */
-export function error(message: string, status = 400): RouterResponse {
-  return { statusCode: status, headers: { ...JSON_HEADERS }, body: JSON.stringify({ error: message }) };
-}
+// `json`/`error` staan in ./antwoord.ts (zonder pg) en worden hier opnieuw geëxporteerd — niets verandert voor de backend.
+import { error, json } from './antwoord';
+export { error, json };
 
 export function fileDownload(filePath: string, filename: string, contentType = "application/gzip"): RouterResponse {
   return {

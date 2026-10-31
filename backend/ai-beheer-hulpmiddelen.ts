@@ -40,6 +40,7 @@ import {
 } from './ai-beheer-hulpmiddeldefinities';
 
 export { BEHEER_TOOLS, BEHEER_TOOL_NAMEN } from './ai-beheer-hulpmiddeldefinities';
+import { isOrchTool, voerOrchToolUit } from './orch-hulpmiddelen';
 
 const sys = () => getPool('systeem');
 type ToolUit = { content: Array<{ type: 'text'; text: string }>; isError?: boolean };
@@ -539,7 +540,10 @@ export async function voerBeheerToolUit(who: BeheerWie, name: string, args: Reco
       case SIEM_STATUS: return await siemStatus();
       case USERS_MANAGE: return await gebruikersBeheer(who, args);
       case FLAGS_MANAGE: return await vlaggenBeheer(who, args);
-      default: return fout(`UNKNOWN_TOOL: ${name.slice(0, 80)}`);
+      default:
+        // ORCH-001 етап 3: координація агентів (orch_*) — backend/orch-hulpmiddelen.ts, той самий конвеєр, що й scripts/orch.mjs.
+        if (isOrchTool(name)) return await voerOrchToolUit({ userId: who.userId, clientName: who.clientName, agent: who.agent }, name, args);
+        return fout(`UNKNOWN_TOOL: ${name.slice(0, 80)}`);
     }
   } catch (e) {
     console.error('[ai-beheer]', name, (e as Error).message);

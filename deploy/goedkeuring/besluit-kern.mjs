@@ -12,15 +12,24 @@
 //                  (root voert `mijn-ruimte-installeer terugdraaien <naar>` uit; migraties worden NIET teruggedraaid)
 //   externe-hosts  { hosts: [<host>…] }                 — de witte lijst `externeMcpHosts` in /etc/mijn-ruimte/mcp-rechten.json
 //                  (root schrijft het bestand atomisch, met reservekopie en syntaxiscontrole)
+//   orch-regels    { regelsVersie, hash, kritiekHash, voorstel } — ORCH-001 етап 3 (31.10.2026): власник підтверджує НОВУ версію правил
+//                  координації агентів (AGENTS.md + orchestratie/beleid.json + BESLUITEN.md → regels.lock.json). Підпис іде над відбитком
+//                  правил (hash = regelsAfdruk, kritiekHash = kritiekAfdruk з scripts/orch/kern.mjs) і над id пропозиції; root лише записує
+//                  підтвердження у власний журнал (orch-regels-bevestigd.jsonl) і файл стану — код правил змінює застосунок у git-гілці,
+//                  а GitOps/інсталятор звіряють lock із цим root-файлом. Нічого іншого root не виконує.
 import { createHash } from "node:crypto";
 
 export const BESLUIT_VERSIE = 1;
-export const BESLUIT_SOORTEN = Object.freeze(["terugdraaien", "externe-hosts"]);
+export const BESLUIT_SOORTEN = Object.freeze(["terugdraaien", "externe-hosts", "orch-regels"]);
 /** Zoveel minuten mag een ondertekend besluit onderweg zijn; daarna is de challenge sowieso verlopen (webauthn-kern: 5 min). */
 export const BESLUIT_MAX_HOSTS = 50;
 const RELEASE = /^[0-9]{8}-[0-9]{6}$/;
 const HOST = /^\*?\.?[a-z0-9.-]+$/;
 const ID = /^[0-9a-f]{32}$/;
+const SHA256 = /^[0-9a-f]{64}$/;
+const SEMVER = /^\d+\.\d+\.\d+$/;
+/** Id van een regelvoorstel (backend/orch-opslag.ts): 16–32 hex. */
+const VOORSTEL_ID = /^[0-9a-f]{16,32}$/;
 
 export const isBesluitSoort = (s) => BESLUIT_SOORTEN.includes(String(s || ""));
 export const isBesluitId = (s) => ID.test(String(s || ""));
@@ -43,6 +52,12 @@ export function normaliseerInhoud(soort, inhoud) {
     if (!RELEASE.test(van) || !RELEASE.test(naar) || van === naar) throw new Error("INHOUD_ONGELDIG");
     return { van, naar };
   }
+  if (soort === "orch-regels") {
+    const regelsVersie = String(i.regelsVersie ?? "").trim(), hash = String(i.hash ?? "").trim().toLowerCase();
+    const kritiekHash = String(i.kritiekHash ?? "").trim().toLowerCase(), voorstel = String(i.voorstel ?? "").trim().toLowerCase();
+    if (!SEMVER.test(regelsVersie) || !SHA256.test(hash) || !SHA256.test(kritiekHash) || !VOORSTEL_ID.test(voorstel)) throw new Error("INHOUD_ONGELDIG");
+    return { regelsVersie, hash, kritiekHash, voorstel };
+  }
   const bron = Array.isArray(i.hosts) ? i.hosts : null;
   if (!bron || bron.length > BESLUIT_MAX_HOSTS) throw new Error("INHOUD_ONGELDIG");
   const hosts = [];
@@ -57,7 +72,9 @@ export function normaliseerInhoud(soort, inhoud) {
 /** Canonieke tekst (vaste sleutelvolgorde, geen witruimte) — hierover gaat de hash. */
 export function canoniekeTekst(soort, inhoud) {
   const n = normaliseerInhoud(soort, inhoud);
-  const body = soort === "terugdraaien" ? `{"naar":${JSON.stringify(n.naar)},"van":${JSON.stringify(n.van)}}` : `{"hosts":${JSON.stringify(n.hosts)}}`;
+  const body = soort === "terugdraaien" ? `{"naar":${JSON.stringify(n.naar)},"van":${JSON.stringify(n.van)}}`
+    : soort === "orch-regels" ? `{"hash":${JSON.stringify(n.hash)},"kritiekHash":${JSON.stringify(n.kritiekHash)},"regelsVersie":${JSON.stringify(n.regelsVersie)},"voorstel":${JSON.stringify(n.voorstel)}}`
+    : `{"hosts":${JSON.stringify(n.hosts)}}`;
   return `mijn-ruimte-besluit/v${BESLUIT_VERSIE}\n${soort}\n${body}`;
 }
 
@@ -71,11 +88,13 @@ export function besluitHash(soort, inhoud) {
  *   terugdraaien:  "opdracht.terugdraaien": true → de oude directe knop werkt ook; ontbreekt/false → alleen via een passkey-besluit;
  *                  "terugdraaien-passkey": false → ook het passkey-besluit is dicht (BESLUIT_UIT).
  *   externe-hosts: "externe-hosts-passkey": false → dicht; anders open (de lijst zelf staat in "externeMcpHosts").
+ *   orch-regels:   "orch-regels-passkey": false → dicht; anders open (ORCH-001 етап 3: підтвердження правил координації).
  * Ontbreekt de sleutel, dan is het passkey-kanaal OPEN: een passkey-handtekening van de eigenaar is de poort, niet een SSH-sessie.
  */
 export function besluitKanaalOpen(soort, rechten) {
   const d = rechten && typeof rechten === "object" ? rechten : {};
   if (soort === "terugdraaien") return d["terugdraaien-passkey"] !== false;
   if (soort === "externe-hosts") return d["externe-hosts-passkey"] !== false;
+  if (soort === "orch-regels") return d["orch-regels-passkey"] !== false;
   return false;
 }

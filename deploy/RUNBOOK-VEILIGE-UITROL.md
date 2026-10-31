@@ -1235,3 +1235,73 @@ extensie. Contract: `docs/ontwerp/TECH-RUIMTES-API.md`. Vlag UIT = exact het oud
 - Pauze geldt per aanmelding (alle tabbladen van die browser-aanmelding samen), niet per tabblad.
 - AI-instelling `verbindingId` wordt nu per account toegepast (de MCP-poort kent de verbinding-id niet); per verbinding = volgende stap.
 - Adminpagina's vragen de technische ruimte alleen als de bestaande afdwinging (root/site-schakelaar, §OPA) aan staat.
+
+## 18. Coördinatie van AI-agenten op de server (ORCH-001 etappe 3, 31.10.2026)
+
+**Waarom.** De coördinatie (taken, wachtrij, inleveringen, regels — `AGENTS.md`, `orchestratie/*`, `scripts/orch.mjs`) was alleen vanaf de
+opdrachtregel te bedienen en de regels alleen via git + SSH-handtekening op de pc van de eigenaar te wijzigen. De eigenaar wil het overzicht
+op de site, pakketten van agenten zonder SSH aannemen en regels wijzigen met dezelfde zekerheid als het goedkeuren van updates (§13, §15).
+
+**Principe.** Site, HTTP en MCP hebben géén eigen logica: `backend/orch-opslag.ts` roept dezelfde functies aan als de CLI
+(`scripts/orch/inleveren.mjs` → `inleveren`, `scripts/orch/kern.mjs` → `beoordeelVoorstel`, `vergrendel`, `compacteContext`). De app werkt
+op een eigen werkkopie van de repository en schrijft nooit naar `/etc`, `/var/lib/mijn-ruimte` of de productie-release.
+
+```
+agent / eigenaar ── mcp.*/agents «Координація» · /api/owner/orch/* (alleen eigenaar) · MCP orch_* (zie beleid.json → site)
+   │   overzicht/context/taak-start → leest ORCH_WORTEL; inleveren: stukken van 512 KiB → ORCH_INBOX → SHA-256 → `inleveren` (zelfde pijplijn)
+   │   regels: voorstel (beoordeelVoorstel) → POST /api/owner/besluit/starten soort «orch-regels» → passkey (§15)
+   ▼
+mijn-ruimte-besluit (root): verifieert de assertie en schrijft ALLEEN
+   │   /var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl (root, 0600; bron van waarheid)
+   │   /var/lib/mijn-ruimte-uitrol-status/orch-regels-bevestigd.json (root:mijnruimte 0640; laatste 50, kopie voor de app)
+   ▼
+app (regels/toepassen): bevestiging aanwezig + voorstel past + werkkopie schoon → tak regels/<versie>-<tijd>: regelbestanden, regels.lock.json
+   (eigenaar.soort = passkey, besluit, passkey), CONTEXT-COMPACT.md → `orch controleer` (fout = alles weg) → commit → git push -u origin
+gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (besluit/regelsVersie/hash/kritiekHash/voorstel) in het root-journaal staat
+```
+
+### 18.1 Eenmalig inrichten (eigenaar, via SSH)
+1. Werkkopie van de coördinatie (de installer maakt die bewust niet: hij heeft geen sleutel en hoort die niet te hebben):
+   ```bash
+   sudo -u mijnruimte git clone --branch integratie git@github.com:Tarasevych/hub.git /srv/mijn-ruimte/orch-repo
+   sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.name "Mijn Ruimte orch" && sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.email "orch@tarasevych.com"
+   ```
+   Gebruik een **deploy key met schrijfrecht** (GitHub → repo → Settings → Deploy keys) voor de gebruiker `mijnruimte`, nooit de persoonlijke
+   sleutel van de eigenaar. Zonder schrijfrecht blijft alles werken, maar de tak `regels/*` blijft op de server staan (`gepusht: false`,
+   `PUSH_MISLUKT`) tot u hem zelf pusht. Zonder werkkopie toont de site eerlijk `ORCH_GEEN_REPO` en doet niets alsof.
+2. Inbox voor uploads: `install -d -o mijnruimte -g mijnruimte -m 0750 /srv/mijn-ruimte/orch-inbox` (de installer `installeer-app.sh` doet dit
+   ook, `orch_inrichten`).
+3. Omgevingsvariabelen van de app (alleen als de paden afwijken): `ORCH_WORTEL`, `ORCH_INBOX`; de app leest verder `OPDRACHT_STATUS_DIR`
+   (standaard `/var/lib/mijn-ruimte-uitrol-status`) en `MCP_RECHTEN_PAD` (`/etc/mijn-ruimte/mcp-rechten.json`), beide alleen lezen.
+4. De besluit-dienst (§15) kent het soort `orch-regels` na het uitrollen van `deploy/besluit/mijn-ruimte-besluit.sh` en `besluit-kern.mjs`.
+   Schakelaar in `/etc/mijn-ruimte/mcp-rechten.json`: `"orch-regels-passkey": false` zet alleen de regelbevestiging dicht (standaard open;
+   de pagina toont dan `BESLUIT_UIT`). `terugdraaien` en `externe-hosts` blijven onafhankelijk.
+
+### 18.2 Dagelijks gebruik
+- **Overzicht**: regelsversie + lock, basis, integratietak, geïnstalleerde versie, agenten, taken (met «regels verouderd»), wachtrij, laatste
+  inleveringen, uitslag van `controleer`. MCP: `orch_overzicht`, `orch_context` (de compacte context voor een agent zonder GitHub).
+- **Inleveren vanaf de site**: pakket `mijn-ruimte-<versie>-<agent>-overdracht.zip`, zip/tar.gz met `ORCH-OVERDRACHT.json` of git patch
+  (≤ 300 MiB, 20 uploads per uur per persoon). Dezelfde pijplijn als `node scripts/orch.mjs inleveren --kanaal web_upload|mcp`: tak vanaf de
+  basis, regels, conflicten met `integratie`, tests, record in `orchestratie/inleveringen/`, wachtrij. Er wordt niets samengevoegd of
+  geïnstalleerd. Een geweigerde inlevering laat geen tak achter (wel het record).
+- **Regels wijzigen**: «Regels wijzigen» → bewerk `AGENTS.md` / `orchestratie/beleid.json` / `orchestratie/BESLUITEN.md` → «Voorstel controleren»
+  (codes: `GEEN_WIJZIGING`, `VERSIE_NIET_VERHOOGD`, `BESLUIT_ONTBREEKT`, `BELEID_JSON`, `REGELBESTANDEN_GEWIJZIGD`) → «Ondertekenen met passkey
+  en tak maken». Bij gewijzigde `kritiek`-regels toont de pagina een waarschuwing: uw passkey bevestigt precies die. Daarna: de tak
+  `regels/<versie>-<tijd>` staat in GitHub (link naar de compare-pagina) — samenvoegen in `integratie` doet u zelf; agenten met de oude
+  `regelsVersie` krijgen `REGELS_VEROUDERD` en moeten `taak-herlees` uitvoeren.
+
+### 18.3 Controle en storingen
+- Journaal root: `sudo tail -n 5 /var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl`; gebeurtenis `BESLUIT_ORCH_REGELS_OK` in
+  `gebeurtenissen.jsonl`; app-audit `eigenaar_besluit_*` en `orch.*`.
+- `ORCH_GEEN_REPO` — geen werkkopie op `ORCH_WORTEL` (stap 18.1.1). `ORCH_REPO_VUIL` — niet-gecommitte wijzigingen in de werkkopie: opruimen
+  via SSH (`git status`), de app ruimt nooit zelf op.
+- `NIET_BEVESTIGD_DOOR_ROOT` — het besluit is ondertekend maar root heeft (nog) niet geschreven: controleer `systemctl status
+  mijn-ruimte-besluit.path` en het journaal; de pagina probeert het zelf opnieuw zolang het besluit niet verlopen is.
+- `BESLUIT_PAST_NIET` / `VOORSTEL_VEROUDERD` — de regels zijn intussen gewijzigd (andere `hash`): maak een nieuw voorstel; een oude bevestiging
+  is nooit herbruikbaar (root-journaal is per `voorstel`).
+- GitOps weigert met «passkey-bevestiging staat niet in het root-journaal» — iemand heeft `regels.lock.json` met de hand bewerkt of het
+  journaal ontbreekt op deze server: alleen een echte bevestiging via de site (of een SSH-handtekening) maakt de lock weer geldig.
+- Terugdraaien van een regelwijziging = de tak `regels/*` niet samenvoegen (of een nieuw voorstel met hogere versie). Niets op de server
+  verandert tot de tak in `integratie` zit en een pakket is geïnstalleerd.
+- Tests die dit afdekken: `node scripts/eenheidstests.mjs orch-site` (74, echte git-repo's + routes + MCP), `orch-besluit-root` (34, het echte
+  root-script onder een onbevoorrechte gebruiker + de GitOps-controle), `besluit-root` (47).

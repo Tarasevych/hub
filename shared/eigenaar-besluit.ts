@@ -3,11 +3,14 @@
 // De cryptografische kern (normaliseren, hash) staat in deploy/goedkeuring/besluit-kern.mjs (gedeeld met root, nooit twee keer).
 import type { Tekst } from './tech-rollen';
 
-export const BESLUIT_SOORTEN = ['terugdraaien', 'externe-hosts'] as const;
+// ORCH-001 етап 3 (31.10.2026): «orch-regels» — підтвердження нової версії правил координації агентів (shared/orch-model.ts).
+export const BESLUIT_SOORTEN = ['terugdraaien', 'externe-hosts', 'orch-regels'] as const;
 export type BesluitSoort = (typeof BESLUIT_SOORTEN)[number];
 export const BESLUIT_STATEN = ['ontwerp', 'ondertekend', 'klaar', 'geweigerd', 'mislukt', 'verlopen'] as const;
 export type BesluitStaat = (typeof BESLUIT_STATEN)[number];
-export type BesluitInhoud = { van: string; naar: string } | { hosts: string[] };
+/** Inhoud van een besluit «orch-regels»: de afdruk van het regelvoorstel (scripts/orch/kern.mjs regelsAfdruk/kritiekAfdruk) en zijn id. */
+export type OrchRegelsInhoud = { regelsVersie: string; hash: string; kritiekHash: string; voorstel: string };
+export type BesluitInhoud = { van: string; naar: string } | { hosts: string[] } | OrchRegelsInhoud;
 
 /** Grenzen van het kanaal (app-kant). Root heeft zijn eigen, strengere controles (besluit-kern.mjs, mijn-ruimte-besluit.sh). */
 export const BESLUIT_LIMIETEN = Object.freeze({
@@ -30,7 +33,7 @@ export type BesluitUit = {
 /** Stand die root schrijft (besluit-stand.json) — de bron voor «huidige lijst uit het bestand» en «van welke naar welke release». */
 export type BesluitStand = {
   bijgewerkt: string; rechtenLeesbaar: boolean; hosts: string[];
-  schakelaars: { terugdraaienDirect: boolean; terugdraaienPasskey: boolean; externeHostsPasskey: boolean };
+  schakelaars: { terugdraaienDirect: boolean; terugdraaienPasskey: boolean; externeHostsPasskey: boolean; orchRegelsPasskey?: boolean };
   actief: string; vorige: string; releases: Array<{ naam: string; commit: string; actief: boolean; vorige: boolean; bruikbaar: boolean; versie?: string; auteur?: string; agent?: string; bronCommit?: string; samenvatting?: string }>;
 };
 
@@ -46,6 +49,7 @@ export const BESLUIT_STAAT_TEKST: Readonly<Record<BesluitStaat, Tekst>> = Object
 export const BESLUIT_SOORT_TEKST: Readonly<Record<BesluitSoort, Tekst>> = Object.freeze({
   terugdraaien: T('Відкат до випуску', 'Terugdraaien naar release'),
   'externe-hosts': T('Білий список зовнішніх MCP-хостів', 'Witte lijst van externe MCP-hosts'),
+  'orch-regels': T('Нова версія правил координації агентів', 'Nieuwe versie van de regels voor agentcoördinatie'),
 });
 
 /**
@@ -91,6 +95,11 @@ export const BESLUIT_CODES: Readonly<Record<string, Tekst>> = Object.freeze({
   INBOX_VOL: T('На диску сервера немає місця — рішення не записано.', 'De schijf van de server is vol — het besluit is niet weggeschreven.'),
   INBOX_NIET_BEVESTIGD: T('Рішення записано, але під час перевірки його не знайдено в теці besluit-inbox. Сервер нічого не виконав. Спробуйте ще раз.', 'Het besluit is weggeschreven, maar bij de controle niet teruggevonden in de map besluit-inbox. De server heeft niets uitgevoerd. Probeer opnieuw.'),
   INBOX_SCHRIJFFOUT: T('Не вдалося записати рішення в теку besluit-inbox (див. подробиці). Сервер нічого не виконав.', 'Het besluit kon niet in de map besluit-inbox worden gezet (zie details). De server heeft niets uitgevoerd.'),
+  // ORCH-001 етап 3 (31.10.2026): рішення «orch-regels».
+  GEEN_VOORSTEL: T('Пропозиції правил з таким ідентифікатором немає (її вже застосовано або відкликано). Створіть пропозицію заново.', 'Er is geen regelvoorstel met dit id (al toegepast of ingetrokken). Maak het voorstel opnieuw.'),
+  VOORSTEL_VEROUDERD: T('Пропозиція правил зроблена для іншого стану репозиторію: чинні правила змінилися після її створення. Створіть пропозицію заново.', 'Het regelvoorstel hoort bij een andere staat van de repository: de geldende regels zijn na het maken veranderd. Maak het voorstel opnieuw.'),
+  ORCH_GEEN_REPO: T('На сервері немає робочої копії репозиторію координації (ORCH_WORTEL). Налаштуйте її за RUNBOOK §18 — до того керувати правилами можна лише через git.', 'Op de server staat geen werkkopie van de coördinatierepository (ORCH_WORTEL). Richt die in volgens RUNBOOK §18 — tot dan zijn de regels alleen via git te beheren.'),
+  BESLUIT_ORCH_REGELS_OK: T('Root записав підтвердження правил. Застосунок застосовує нову версію в git-гілці.', 'Root heeft de bevestiging van de regels vastgelegd. De app past de nieuwe versie toe in een git-tak.'),
 });
 export const besluitCodeTekst = (lang: 'uk' | 'nl', code: string): string => {
   const t = BESLUIT_CODES[code];
@@ -101,6 +110,7 @@ export const besluitCodeTekst = (lang: 'uk' | 'nl', code: string): string => {
 export function besluitSamenvatting(lang: 'uk' | 'nl', soort: BesluitSoort, inhoud: BesluitInhoud): string {
   if (soort === 'terugdraaien' && 'van' in inhoud) return lang === 'uk' ? `відкат з ${inhoud.van} на ${inhoud.naar}` : `terugdraaien van ${inhoud.van} naar ${inhoud.naar}`;
   if ('hosts' in inhoud) return `${lang === 'uk' ? 'хости' : 'hosts'}: ${inhoud.hosts.length ? inhoud.hosts.join(', ') : (lang === 'uk' ? 'порожній список' : 'lege lijst')}`;
+  if ('regelsVersie' in inhoud) return lang === 'uk' ? `правила координації ${inhoud.regelsVersie} (відбиток ${inhoud.hash.slice(0, 12)}…)` : `coördinatieregels ${inhoud.regelsVersie} (afdruk ${inhoud.hash.slice(0, 12)}…)`;
   return soort;
 }
 
@@ -134,6 +144,11 @@ export const HELP_BESLUIT: Readonly<Record<string, HulpItem>> = Object.freeze({
     T('Якщо за 60 секунд рішення ще лежить у папці, служба не працює: сторінка показує команди для перевірки.', 'Ligt het besluit na 60 seconden nog in de map, dan draait de dienst niet: de pagina toont de opdrachten om na te kijken.'),
     T('Команди лише читають стан, нічого не змінюють.', 'De opdrachten lezen alleen de toestand, ze wijzigen niets.'),
     T('служби mijn-ruimte-besluit.path → mijn-ruimte-besluit.service; папка /srv/mijn-ruimte/besluit-inbox.', 'diensten mijn-ruimte-besluit.path → mijn-ruimte-besluit.service; map /srv/mijn-ruimte/besluit-inbox.')),
+  'root.orch-regels-passkey': item(ROOT,
+    T('Чи може власник підтверджувати нову версію правил координації агентів (AGENTS.md, orchestratie/beleid.json) рішенням із підписом passkey.', 'Of de eigenaar een nieuwe versie van de regels voor agentcoördinatie (AGENTS.md, orchestratie/beleid.json) met een passkey-ondertekend besluit mag bevestigen.'),
+    T('Відсутній або true — на mcp.*/agenten → «Координація» пропозицію правил можна підписати; root записує підтвердження, застосунок створює git-гілку з новим lock. false — лише node scripts/orch.mjs bevestig з SSH-підписом.', 'Ontbreekt of true — op mcp.*/agenten → «Coördinatie» is een regelvoorstel te ondertekenen; root legt de bevestiging vast, de app maakt een git-tak met de nieuwe lock. false — alleen node scripts/orch.mjs bevestig met een SSH-handtekening.'),
+    T('Підтверджені критичні політики відкривають дорогу автоматичному режиму встановлення (GitOps), якщо він дозволений у beleid.json. Root нічого не виконує — лише фіксує підпис.', 'Bevestigde kritieke regels openen de weg naar de automatische installatiemodus (GitOps) als beleid.json die toestaat. Root voert niets uit — hij legt alleen de handtekening vast.'),
+    T('"orch-regels-passkey" у /etc/mijn-ruimte/mcp-rechten.json; root: mijn-ruimte-besluit.sh orch_regels → /var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl + <status>/orch-regels-bevestigd.json; застосунок: backend/orch-opslag.ts voorstelToepassen.', '"orch-regels-passkey" in /etc/mijn-ruimte/mcp-rechten.json; root: mijn-ruimte-besluit.sh orch_regels → /var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl + <status>/orch-regels-bevestigd.json; app: backend/orch-opslag.ts voorstelToepassen.')),
   'besluit.externe-hosts': item('src/besluit/ExterneHosts.tsx',
     T('Білий список хостів, до яких сайт як MCP-клієнт може підключатися (ім’я хоста або *.суфікс).', 'De witte lijst van hosts waarmee de site als MCP-klant mag verbinden (hostnaam of *.achtervoegsel).'),
     T('Після підпису passkey root записує новий список у mcp-rechten.json; сайт одразу бачить його (кеш за mtime).', 'Na de passkey-handtekening schrijft root de nieuwe lijst in mcp-rechten.json; de site ziet hem meteen (cache op mtime).'),

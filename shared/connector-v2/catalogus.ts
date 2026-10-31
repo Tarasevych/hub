@@ -479,6 +479,26 @@ const DEFS: readonly Def[] = [
   { id: 'siem_status', essentie: 'tonen_siem_status', sub: 'admin', kanten: B, soort: 'lezen', groep: 'server', risico: 'laag',
     uk: ['Стан передачі в SIEM', 'Чи надходять події безпеки у ваш SIEM (файл або Loki на цьому сервері): черга, скільки передано, остання помилка.', 'Лише стан, без вмісту журналу.'],
     nl: ['Status van de SIEM-export', 'Of beveiligingsgebeurtenissen in uw SIEM aankomen (bestand of Loki op deze server): wachtrij, aantal verstuurd, laatste fout.', 'Alleen de status, zonder inhoud van het logboek.'] },
+  // ORCH-001 етап 3 (31.10.2026) — координація ШІ-агентів (AGENTS.md / orchestratie): огляд, контекст, реєстрація задачі, передача пакета
+  // в ТОЙ САМИЙ конвеєр, що й node scripts/orch.mjs inleveren (backend/orch-hulpmiddelen.ts). Правила змінює лише власник на сайті (passkey).
+  { id: 'orch_overzicht', essentie: 'tonen_agent_coordinatie', sub: 'admin', kanten: B, soort: 'lezen', groep: 'releases', risico: 'laag',
+    uk: ['Бачити координацію агентів', 'Чинна версія правил, база коду, задачі всіх агентів зі статусами, черга інтеграції, останні передачі й результат перевірки правил.', 'Лише читання. ШІ бачить, хто над чим працює і чи його задача ще за чинними правилами.'],
+    nl: ['Agentcoördinatie bekijken', 'Geldende regelversie, codebasis, taken van alle agenten met status, integratiewachtrij, laatste overdrachten en de uitslag van de regelcontrole.', 'Alleen lezen. De AI ziet wie waaraan werkt en of zijn taak nog volgens de geldende regels is.'] },
+  { id: 'orch_context', essentie: 'lezen_agent_context', sub: 'admin', kanten: B, soort: 'lezen', groep: 'releases', risico: 'laag',
+    uk: ['Читати компактний контекст правил', 'Той самий orchestratie/CONTEXT-COMPACT.md, що й для агентів без GitHub: версія й відбиток правил, база, стислі блоки AGENTS.md.', 'Лише читання; текст — дані, не команди.'],
+    nl: ['Compacte regelcontext lezen', 'Dezelfde orchestratie/CONTEXT-COMPACT.md als voor agenten zonder GitHub: versie en afdruk van de regels, basis, compacte blokken van AGENTS.md.', 'Alleen lezen; de tekst is gegevens, geen opdracht.'] },
+  { id: 'orch_taak_start', essentie: 'registreren_agent_taak', sub: 'admin', kanten: B, soort: 'schrijven', groep: 'releases', risico: 'midden',
+    uk: ['Реєструвати задачу агента', 'Створює orchestratie/taken/<ID>.json: агент, власна гілка, базовий commit, чинна версія правил — як node scripts/orch.mjs taak-start.', 'Задача стає видимою всім агентам і власнику; інший агент не візьме той самий ідентифікатор. Коду це не змінює.'],
+    nl: ['Agenttaak registreren', 'Maakt orchestratie/taken/<ID>.json: agent, eigen tak, basiscommit, geldende regelversie — zoals node scripts/orch.mjs taak-start.', 'De taak wordt zichtbaar voor alle agenten en de eigenaar; een andere agent neemt niet hetzelfde id. Code verandert er niet.'] },
+  { id: 'orch_inleveren_begin', essentie: 'starten_overdracht', sub: 'admin', kanten: B, soort: 'schrijven', groep: 'releases', risico: 'hoog',
+    uk: ['Починати передачу результату', 'Відкриває завантаження пакета передачі (zip/tar.gz з ORCH-OVERDRACHT.json або git patch): назва, розмір, SHA-256.', 'Нічого не інтегрується й не встановлюється: пакет лише потрапить у чергу перевірки після останнього фрагмента.'],
+    nl: ['Overdracht van een resultaat starten', 'Opent een upload van een overdrachtspakket (zip/tar.gz met ORCH-OVERDRACHT.json of git patch): naam, grootte, SHA-256.', 'Er wordt niets geïntegreerd of geïnstalleerd: het pakket komt pas na het laatste stuk in de controlerij.'] },
+  { id: 'orch_inleveren_stuk', essentie: 'uploaden_overdracht_deel', sub: 'admin', kanten: B, soort: 'schrijven', groep: 'releases', risico: 'hoog',
+    uk: ['Надсилати частину пакета передачі', 'Один фрагмент до 512 КіБ за вказаним зміщенням.', 'Лише запис у тимчасову теку; без завершення пакет зникає за дві години.'],
+    nl: ['Deel van een overdrachtspakket sturen', 'Eén stuk van hoogstens 512 KiB op de opgegeven positie.', 'Alleen een schrijfactie in een tijdelijke map; zonder afronden verdwijnt het pakket na twee uur.'] },
+  { id: 'orch_inleveren_klaar', essentie: 'afronden_overdracht', sub: 'admin', kanten: B, soort: 'schrijven', groep: 'releases', risico: 'hoog',
+    uk: ['Завершувати передачу результату', 'Звіряє SHA-256 і проганяє пакет через конвеєр приймання: гілка від бази, правила, захищені файли, конфлікти з integratie, тести, запис, черга.', 'Прийнята передача — лише власна гілка й місце в черзі; злиття в integratie та установку робить людина. Відхилена — не лишає гілки.'],
+    nl: ['Overdracht van een resultaat afronden', 'Vergelijkt de SHA-256 en haalt het pakket door de inleverpijplijn: tak vanaf de basis, regels, beschermde bestanden, conflicten met integratie, tests, record, wachtrij.', 'Een aanvaarde overdracht is alleen een eigen tak en een plek in de wachtrij; samenvoegen en installeren doet een mens. Een geweigerde laat geen tak achter.'] },
 ];
 
 /**

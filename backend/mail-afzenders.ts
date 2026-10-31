@@ -26,6 +26,7 @@ import {
   normaliseerAdres, organisatieDomein, parseAuthResults, vertrouwenVan,
   type AfzenderBron, type AfzenderStatus, type AuthResultaten, type Classificatie, type ContactInvoer, type DnsBewijs,
 } from '../shared/mail-afzenders';
+import { authUitslag } from '../shared/mail-afzenders'; // звірка рядків доказу з AuthUitslag (стара помилка TS2322 у herbeoordeelUitBewijs, 31.10.2026)
 import { AFZENDER_REGELS_VERSIE, magAutomatischOverschrijven, magContactnaamOpheffen, NU_UITLEG } from '../shared/afzender-regels';
 import { DNS_GRENS, herhaalVerdacht } from '../shared/afzender-wachtrij';
 import { beperkt, DNS_GELIJKTIJDIG, domeinDns, fetchMetTijd, gmailFoutVan, gmailScanBron, tokenVoor, wisTokens, type ScanBron, type ScanKop } from './mail-afzender-bronnen';
@@ -209,9 +210,9 @@ export function herbeoordeelUitBewijs(rij: AfzenderRij, nu = Date.now()): Afzend
   const laatste = rij.bewijs?.laatste;
   if (!laatste?.dmarc) return stempel(rij);
   const auth: AuthResultaten = {
-    betrouwbaar: true, authserv: laatste.authserv || '', spf: laatste.spf || '', spfDomein: laatste.spfDomein || '',
+    betrouwbaar: true, authserv: laatste.authserv || '', spf: authUitslag(laatste.spf || ''), spfDomein: laatste.spfDomein || '',
     dkim: laatste.dkimDomein ? [{ uitslag: 'pass', domein: laatste.dkimDomein }] : [],
-    dmarc: laatste.dmarc, dmarcDomein: laatste.dmarcDomein || '', arc: laatste.arc || '',
+    dmarc: authUitslag(laatste.dmarc), dmarcDomein: laatste.dmarcDomein || '', arc: authUitslag(laatste.arc || ''),
   };
   const klass = classificeer({ naam: rij.naam, adres: rij.adres, domein: rij.domein, auth });
   if (klass.status === rij.status && klass.reden === rij.reden) return stempel(rij);
@@ -312,7 +313,9 @@ export async function afzenderNu(userId: string, i: { adres?: unknown; from?: un
 
 // ------------------------------------------------------------------------------------------------ beheer (lijst, bevestigen, …)
 export class AfzenderFout extends Error { constructor(public code: string, public status = 400) { super(code); } }
-const fout = (code: string, status = 400): never => { throw new AfzenderFout(code, status); };
+// Оголошення функції (не const-стрілка), щоб TypeScript звужував тип після `if (!x) fout(...)` (стара помилка TS2345 ×6, виправлено 31.10.2026).
+// Functiedeclaratie i.p.v. const-pijl: alleen dan versmalt TypeScript het type na `if (!x) fout(...)`.
+function fout(code: string, status = 400): never { throw new AfzenderFout(code, status); }
 const adresHash = (adres: string) => createHash('sha256').update(adres).digest('hex').slice(0, 16);
 const logboek = (userId: string, actie: string, adres: string, extra: { voor?: unknown; na?: unknown; reden?: string; resultaat?: string } = {}) =>
   schrijfBeheerAudit({ actor: userId, eigenaar: userId, service: 'mail', actie, doel: { soort: 'afzender', id: adresHash(adres), naam: adres.slice(adres.lastIndexOf('@') + 1) }, ...extra }).catch(() => undefined);
@@ -364,7 +367,9 @@ export async function afzenderVerifieren(userId: string, i: { adres?: unknown; f
     const basis = oud || samenvoegen(null, { adres, naam, domein, klass: { status: 'onbekend', bron: null, reden: 'NIET_BEVESTIGD', merk: '' }, auth: { betrouwbaar: false, authserv: '', spf: '', spfDomein: '', dkim: [], dmarc: '', dmarcDomein: '', arc: '' }, tijd: 0, telt: false }, nu);
     const nieuw = bewaarInContacten(basis, userId, naam || basis.naam, i.notitie !== undefined ? tekst(i.notitie, 500) : undefined, nu, nuKlass.status === 'verdacht' ? nuKlass.reden : '');
     await schrijfRij(q, lade, nieuw);
-    return { nieuw, was, ondanks: nuKlass.status === 'verdacht' ? nuKlass.reden : '' };
+    // Стара помилка: `was` тут не існувало (ReferenceError під час ручної верифікації відправника); потрібен статус ДО верифікації.
+    // Oude fout: `was` bestond hier niet (ReferenceError bij handmatig verifiëren); bedoeld is de status vóór de verificatie.
+    return { nieuw, was: basis.status, ondanks: nuKlass.status === 'verdacht' ? nuKlass.reden : '' };
   });
   await logboek(userId, 'owner.mail.afzender.geverifieerd', adres, { voor: r.was, na: 'geverifieerd', reden: r.ondanks ? `bevestigd ondanks ${r.ondanks}` : undefined });
   return r.nieuw;

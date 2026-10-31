@@ -238,6 +238,8 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   // 21.10.2026 (backend/ai-beheer-hulpmiddelen.ts): lezen valt onder «Стан сервера»; users_manage en flags_manage staan bewust NIET in de
   // catalogus (= «ask» onder een beleid): zij voeren toch nooit iets uit zonder bevestiging van de eigenaar op de site.
   audit_read: 'server.read', siem_status: 'server.read',
+  // ORCH-001 етап 3: координація агентів — читання як стан розгортання, передача пакета як випуск (лише пропозиція, нічого не встановлює).
+  orch_overzicht: 'deploy.status', orch_context: 'deploy.status', orch_taak_start: 'deploy.release', orch_inleveren_begin: 'deploy.release', orch_inleveren_stuk: 'deploy.release', orch_inleveren_klaar: 'deploy.release',
   admin_list_access: 'server.read', dashboard_usage: 'server.read', server_status: 'server.read', server_releases: 'server.read',
 };
 
