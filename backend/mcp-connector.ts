@@ -20,7 +20,8 @@ import { actieDoel, actieSoort, foutCodeUit } from '../shared/mcp-acties';
 import { metNamens } from './mcp-namens';
 import { uitrolWeigering } from './ai-beleid';
 import { randomToken, sha256 } from './connectors-crypto';
-import { geefStandaard } from './ai-toegang';
+import { geefVoorNieuweKoppeling } from './ai-toegang';
+import { meldLijstGewijzigd, sluitStromenVan } from './connector-v2-stroom';
 import { callTool, listTools, resolveAlias, taalVanGebruiker, vertaal, type ToolDef } from './connectors-hulpmiddelen';
 import type { ToolTaal } from '../shared/hulpmiddel-teksten';
 import { SERVICE_HOSTS } from './deployment-identity';
@@ -49,7 +50,7 @@ const MAX_RPC_BYTES = 6 * 1024 * 1024;
 
 const respond = (status: number, data: unknown, headers: Record<string, string> = {}): RouterResponse => ({
   statusCode: status,
-  headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers },
+  headers: { ...(data === undefined ? {} : { 'Content-Type': 'application/json; charset=utf-8' }), 'Cache-Control': 'no-store', ...headers },
   body: data === undefined ? '' : JSON.stringify(data),
 });
 const redirect = (location: string): RouterResponse => ({ statusCode: 302, headers: { Location: location, 'Cache-Control': 'no-store' }, body: '' });
@@ -114,16 +115,21 @@ export async function registerClient(rawBody: string): Promise<RouterResponse> {
   }
   const method = body?.token_endpoint_auth_method;
   if (method !== undefined && method !== 'none') return respond(400, { error: 'invalid_client_metadata', error_description: 'Alleen token_endpoint_auth_method "none"' });
-  const name = (typeof body?.client_name === 'string' && body.client_name.trim() ? body.client_name.trim() : 'Claude').slice(0, 80);
+  const eigenaarVanUri = (rawUri: string) => {
+    const u = parseUrl(rawUri);
+    if (!u) return undefined;
+    const schema = u.protocol.replace(/:$/, '');
+    const host = u.hostname.toLowerCase();
+    return V2_AGENTEN.find((a) => (schema === 'https' && a.webHosts.some((w) => host === w || host.endsWith(`.${w}`))) || a.appSchemas.includes(schema));
+  };
+  const eersteEigenaar = (uris as string[]).map(eigenaarVanUri).find(Boolean);
+  const opgegevenNaam = typeof body?.client_name === 'string' && body.client_name.trim() ? body.client_name.trim() : '';
+  const name = (opgegevenNaam || eersteEigenaar?.naam || 'Claude').slice(0, 80);
   // SEC-001-10: als een redirect_uri bij een specifieke AI-aanbieder hoort (bv. grok.com of cursor://), mag client_name geen andere aanbieder claimen.
-  const beweerdeKlant = typeof body?.client_name === 'string' && body.client_name.trim() ? klantVan(name) : 'overig';
+  const beweerdeKlant = opgegevenNaam ? klantVan(name) : 'overig';
   if (beweerdeKlant !== 'overig') {
     for (const rawUri of uris as string[]) {
-      const u = parseUrl(rawUri);
-      if (!u) continue;
-      const schema = u.protocol.replace(/:$/, '');
-      const host = u.hostname.toLowerCase();
-      const eigenaar = V2_AGENTEN.find((a) => (schema === 'https' && a.webHosts.some((w) => host === w || host.endsWith(`.${w}`))) || a.appSchemas.includes(schema));
+      const eigenaar = eigenaarVanUri(rawUri);
       if (eigenaar && eigenaar.klant !== beweerdeKlant) {
         return respond(400, { error: 'invalid_client_metadata', error_description: 'client_name past niet bij redirect_uris' });
       }
@@ -243,10 +249,11 @@ async function issue(userId: string, clientId: string, clientName: string, scope
     try { v2 = await naUitgifte(userId, grantId, agent, v2Keuze); }
     catch (err) { await st.revokeGrant(userId, grantId).catch(() => undefined); console.error('[connector-v2] rechten vastleggen mislukt:', (err as Error).message); return tokenError(500, 'server_error', 'Rechten konden niet worden opgeslagen'); }
   } else {
-    // Gedetailleerde toegang (0043, shared/ai-toegang.ts): een nieuwe verbinding krijgt de niet-gevoelige
-    // standaardscopes; gevoelig (mail, foto's) zet de mens zelf aan op de site (tabblad «Доступ ШІ»).
-    await geefStandaard(userId, { soort: 'mcp-koppeling', id: grantId }, r).catch(() => undefined);
+    // Gedetailleerde toegang (0043, shared/ai-toegang.ts): had de mens op de site («Доступ ШІ», bord:<klant>) al scopes gekozen,
+    // erf die keuze; anders krijgt de verbinding de niet-gevoelige standaardscopes.
+    await geefVoorNieuweKoppeling(userId, grantId, klantVan(clientName), r).catch(() => undefined);
   }
+  meldLijstGewijzigd(userId);
   // Journaal op /agents: «ШІ підключено» met clientnaam, scope, duur en ruimte (de toestemming zelf staat al als owner.mcp.grant.approved).
   await auditToevoegen({ ownerId: userId, actorId: userId, action: 'owner.mcp.grant.connected', type: 'ai', result: 'success', details: { grantId, clientId, clientName, scope, duur: d ?? 'standaard', ruimte: r, sleutelOmslag, ...(agent && v2 ? { agent, kanten: v2.kanten, rechten: v2.sleutels.length } : {}) } }).catch(() => undefined);
   return tokenResponse(access, refresh, scope, d);
@@ -578,7 +585,7 @@ async function handleMessage(who: Wie, msg: any): Promise<unknown | null> {
       const wanted = String(msg.params?.protocolVersion ?? '');
       return rpcResult(id, {
         protocolVersion: PROTOCOL_VERSIONS.includes(wanted) ? wanted : PROTOCOL_VERSIONS[0],
-        capabilities: { tools: { listChanged: false } },
+        capabilities: { tools: { listChanged: true } },
         serverInfo: { name: 'mijn-ruimte', title: 'Mijn Ruimte', version: '1.0.0' },
         instructions: techNuUit ? `${instructies(who.ruimte)} ${TECH_NU_UIT_INSTRUCTIE}` : instructies(who.ruimte),
       });
@@ -616,8 +623,27 @@ export async function rpcPost(authorization: string | undefined, rawBody: string
   return out === null ? respond(202, undefined) : respond(200, out);
 }
 
-/** Streamable HTTP: wij bieden geen SSE-stroom en geen sessies, dus GET en DELETE zijn niet toegestaan. */
+/** Streamable HTTP: een gewone GET zonder event-stream-Accept is niet toegestaan (405). */
 export const rpcNotAllowed = (): RouterResponse => respond(405, { error: 'method_not_allowed' }, { Allow: 'POST' });
+
+/** Streamable HTTP: DELETE beëindigt de huidige sessie/SSE-stroom zodat een client bij herauthenticatie zijn tools/list vers ophaalt. */
+export async function rpcDelete(authorization: string | undefined): Promise<RouterResponse> {
+  const who = await authenticate(authorization);
+  if (!who || who.agent) return unauthorized(!!String(authorization || '').trim());
+  zetGebruiker(who.userId, 'mcp', undefined, String(grantVan(who) || ''));
+  sessieGeverifieerd();
+  sluitStromenVan(who.userId, 'mcp');
+  return respond(204, undefined);
+}
+
+/** Streamable HTTP: CORS/preflight voor webgebaseerde MCP-clients (bv. cursor.com, claude.ai). */
+export const rpcOptions = (): RouterResponse => respond(204, undefined, {
+  Allow: 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version',
+  'Access-Control-Expose-Headers': 'WWW-Authenticate, Mcp-Session-Id',
+});
 
 // ---------------- beheer door de gebruiker ----------------
 
@@ -627,7 +653,7 @@ export async function listUserGrants(userId: string) {
     lastUsedAt: g.last_used_at ? new Date(g.last_used_at).getTime() : null, expiresAt: new Date(g.refresh_expires_at).getTime(),
   }));
 }
-export const revokeUserGrant = async (userId: string, id: string) => { const ok = await st.revokeGrant(userId, id); if (ok) await grantSluiten(id).catch(() => undefined); return ok; };
+export const revokeUserGrant = async (userId: string, id: string) => { const ok = await st.revokeGrant(userId, id); if (ok) { await grantSluiten(id).catch(() => undefined); sluitStromenVan(userId); } return ok; };
 
 /** Geschiedenis (90 dagen): ook ingetrokken en verlopen verbindingen, met stand. Nooit tokens of hashes. */
 export async function listUserGrantHistory(userId: string) {

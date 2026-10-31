@@ -28,7 +28,7 @@ import { callSite } from './site-aanroep';
 import { explainSiteError, SITE_TOOL_BY_NAME, SITE_TOOLS, type SiteTool } from './site-hulpmiddelen';
 import { githubKoppeling } from './github-platform';
 import { githubPoort } from './ruimte-bord-github';
-import { githubTokenVoor } from './github-toegang';
+import { githubTokenVoor, githubWeg } from './github-toegang';
 // 20.10.2026: de site is nu ook MCP-KLANT. Hulpmiddelen van VREEMDE MCP-servers die de gebruiker zelf koppelde
 // (backend/mcp-klant/*, migratie 0078) komen hier het lijstje in met een dynamische naam `extern_<sleutel>_<tool>`.
 // Hun naam, titel, beschrijving en schema komen van die vreemde server: ONBETROUWBARE GEGEVENS, geen instructies.
@@ -757,7 +757,13 @@ const untrusted = (data: unknown): ToolResult => {
 };
 
 async function githubTokenName(userId: string): Promise<string | null> {
-  return (await githubKoppeling(userId))?.keyName ?? null;
+  const lade = huidigeLade();
+  if (lade !== 'technisch') {
+    const pat = await githubKoppeling(userId).catch(() => null);
+    if (pat?.keyName) return pat.keyName;
+  }
+  const weg = await githubWeg(userId, lade).catch(() => null);
+  return weg?.via || null;
 }
 
 /** Blijft bij de eigenaar op de site. De connector voert dit nooit uit, ook niet als een oude deur-naam wordt gevraagd. */
