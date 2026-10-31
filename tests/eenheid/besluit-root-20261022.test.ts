@@ -16,17 +16,26 @@ import { checker } from './hulp/nep-google';
 
 const SCRIPT = resolve('deploy/besluit/mijn-ruimte-besluit.sh');
 const HULP = resolve('deploy/goedkeuring/goedkeur-hulp.mjs');
-const RP = 'tarasevych.com'; const ORIGIN_MCP = 'https://mcp.tarasevych.com'; const ORIGIN_ADMIN = 'https://admin.tarasevych.com';
+export const RP = 'tarasevych.com'; export const ORIGIN_MCP = 'https://mcp.tarasevych.com'; export const ORIGIN_ADMIN = 'https://admin.tarasevych.com';
 const nonce = () => randomBytes(32).toString('base64url');
-const id32 = () => randomBytes(16).toString('hex');
+export const id32 = () => randomBytes(16).toString('hex');
 
-function sleutelUit(pk: NepPasskey, label = 'telefoon') {
+// ORCH-001 етап 3 (31.10.2026): als root (cloud-sessie) negeert het script de testpaden (BESLUIT_*) en zou het de ECHTE /srv- en /var-paden
+// raken. Daarom draaien script en root-hulp dan als uid 65534 via setpriv (zelfde patroon als orch-uitrol-basis-20261031); alle testmappen
+// worden eigendom van 65534 (chown -R) zodat het script erin kan schrijven. Zonder setpriv wordt de test als root overgeslagen.
+export const ALS_ROOT = process.getuid?.() === 0;
+export const HEEFT_SETPRIV = ALS_ROOT && spawnSync('setpriv', ['--help'], { encoding: 'utf8' }).status === 0;
+const TESTGEBRUIKER = ['--reuid=65534', '--regid=65534', '--clear-groups'];
+/** bash/node als testgebruiker: als root via setpriv (uid 65534), anders gewoon. */
+export const alsTest = (cmd: string, args: string[], env: NodeJS.ProcessEnv) => (ALS_ROOT ? spawnSync('setpriv', [...TESTGEBRUIKER, cmd, ...args], { encoding: 'utf8', env }) : spawnSync(cmd, args, { encoding: 'utf8', env }));
+
+export function sleutelUit(pk: NepPasskey, label = 'telefoon') {
   const r = kern.verifieerRegistratie({ ...registreer(pk, 'c'), verwachteUitdaging: 'c', rpId: RP, origins: [ORIGIN_ADMIN] });
   if (!r.ok) throw new Error(`registratie: ${r.code}`);
   return { credentialId: r.credentialId, alg: r.alg, jwk: r.jwk, label, vingerafdruk: r.vingerafdruk, toegevoegd: new Date().toISOString(), door: 'test' };
 }
 
-function omgeving() {
+export function omgeving() {
   const w = mkdtempSync(join(tmpdir(), 'besluit-root-'));
   const p = { w, inbox: join(w, 'inbox'), werk: join(w, 'werk'), status: join(w, 'status'), rechten: join(w, 'mcp-rechten.json'), app: join(w, 'srv'), goed: join(w, 'goed'), sleutels: join(w, 'goed', 'goedkeur-passkeys.json'), installeerLog: join(w, 'installeer.log') };
   for (const d of [p.inbox, p.werk, p.status, join(p.app, 'releases'), p.goed, join(p.goed, 'staat')]) mkdirSync(d, { recursive: true });
@@ -43,15 +52,18 @@ function omgeving() {
   const passkey = join(w, 'passkey');
   writeFileSync(passkey, `#!/bin/bash\nexport GOEDKEUR_SLEUTELS="${p.sleutels}" GOEDKEUR_RECHTEN="${p.rechten}" GOEDKEUR_STAAT="${join(p.goed, 'staat')}" GOEDKEUR_INBOX="${p.goed}" GOEDKEUR_STATUS_DIR="${p.status}" GOEDKEUR_GROEP=nogroup\nexec "${process.execPath}" "${HULP}" "$@"\n`);
   chmodSync(installeer, 0o755); chmodSync(passkey, 0o755);
+  // Als root: de hele testboom aan de testgebruiker (script, hulp en installer-stub schrijven erin); bestanden die de test later als root
+  // neerlegt (inbox, sleutels) zijn 0644 en dus leesbaar; hernoemen/verwijderen lukt omdat de mappen van 65534 zijn.
+  if (ALS_ROOT) spawnSync('chown', ['-R', '65534:65534', w]);
   const env = { ...process.env, BESLUIT_INBOX: p.inbox, BESLUIT_WERK: p.werk, BESLUIT_STATUS: p.status, BESLUIT_RECHTEN: p.rechten, BESLUIT_PASSKEY: passkey, BESLUIT_INSTALLEER: installeer, BESLUIT_APP_ROOT: p.app, BESLUIT_GROEP: 'nogroup', BESLUIT_WACHT_TERUG: '600' };
-  const run = (...args: string[]) => spawnSync('bash', [SCRIPT, ...args], { encoding: 'utf8', env });
-  const hulp = (...args: string[]) => { const r = spawnSync(process.execPath, [HULP, ...args], { encoding: 'utf8', env: { GOEDKEUR_SLEUTELS: p.sleutels, GOEDKEUR_RECHTEN: p.rechten, GOEDKEUR_STAAT: join(p.goed, 'staat'), GOEDKEUR_INBOX: p.goed, GOEDKEUR_STATUS_DIR: p.status, GOEDKEUR_GROEP: 'nogroup', PATH: process.env.PATH } }); let uit: any = null; try { uit = JSON.parse(r.stdout.trim().split('\n').pop() || ''); } catch { uit = null; } return { status: r.status, uit, stderr: r.stderr }; };
+  const run = (...args: string[]) => alsTest('bash', [SCRIPT, ...args], env);
+  const hulp = (...args: string[]) => { const r = alsTest(process.execPath, [HULP, ...args], { GOEDKEUR_SLEUTELS: p.sleutels, GOEDKEUR_RECHTEN: p.rechten, GOEDKEUR_STAAT: join(p.goed, 'staat'), GOEDKEUR_INBOX: p.goed, GOEDKEUR_STATUS_DIR: p.status, GOEDKEUR_GROEP: 'nogroup', PATH: process.env.PATH }); let uit: any = null; try { uit = JSON.parse(r.stdout.trim().split('\n').pop() || ''); } catch { uit = null; } return { status: r.status, uit, stderr: r.stderr }; };
   return { p, env, run, hulp };
 }
 
-type Besluit = { soort: 'terugdraaien' | 'externe-hosts'; inhoud: unknown; tekenInhoud?: unknown; verloopt?: number; origin?: string; nonce?: string; hashClaim?: string; doel?: string };
+export type Besluit = { soort: 'terugdraaien' | 'externe-hosts' | 'orch-regels'; inhoud: unknown; tekenInhoud?: unknown; verloopt?: number; origin?: string; nonce?: string; hashClaim?: string; doel?: string };
 /** Het bestand zoals de app het schrijft; `pk` tekent de hash van `tekenInhoud` (standaard = inhoud). */
-function besluitBestand(pk: NepPasskey, b: Besluit) {
+export function besluitBestand(pk: NepPasskey, b: Besluit) {
   const id = id32();
   const n = b.nonce ?? nonce(); const verloopt = b.verloopt ?? Date.now() + 240_000;
   const hash = bk.besluitHash(b.soort, b.tekenInhoud ?? b.inhoud);
@@ -62,6 +74,7 @@ function besluitBestand(pk: NepPasskey, b: Besluit) {
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('besluit-root-20261022');
+  if (ALS_ROOT && !HEEFT_SETPRIV) { console.log('overgeslagen: root zonder setpriv — het root-script negeert als root de testpaden'); return 0; }
   const o = omgeving();
   const { p, run, hulp } = o;
   const eigenaar = nieuwePasskey('es256', 1);
@@ -177,7 +190,7 @@ export async function main(): Promise<number> {
       r = doe(vreemd, { soort: 'terugdraaien', inhoud: { van: '20261021-120000', naar: '20261022-120000' } });
       check('script: terugdraaien met vreemde passkey → geweigerd, installer NIET aangeroepen', r.st?.uitkomst === 'geweigerd' && readFileSync(p.installeerLog, 'utf8').split('\n').length === voor); }
     check('script: `status` schrijft de stand zonder iets te doen', run('status').status === 0 && JSON.parse(readFileSync(join(p.status, 'besluit-stand.json'), 'utf8')).actief === '20261021-120000');
-    check('script: buiten root alleen met testpaden (echte paden geweigerd)', spawnSync('bash', [SCRIPT, 'verwerk'], { encoding: 'utf8', env: { ...process.env, BESLUIT_INBOX: '/srv/mijn-ruimte/besluit-inbox', BESLUIT_WERK: p.werk, BESLUIT_STATUS: p.status, BESLUIT_RECHTEN: p.rechten, BESLUIT_APP_ROOT: p.app } }).status === 1);
+    check('script: buiten root alleen met testpaden (echte paden geweigerd)', alsTest('bash', [SCRIPT, 'verwerk'], { ...process.env, BESLUIT_INBOX: '/srv/mijn-ruimte/besluit-inbox', BESLUIT_WERK: p.werk, BESLUIT_STATUS: p.status, BESLUIT_RECHTEN: p.rechten, BESLUIT_APP_ROOT: p.app }).status === 1);
   } finally {
     rmSync(p.w, { recursive: true, force: true });
   }

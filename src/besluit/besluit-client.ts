@@ -13,7 +13,7 @@ export type BesluitContext = Record<string, unknown>;
 export type Gestart = { id: string; soort: BesluitSoort; inhoud: BesluitInhoud; hash: string; uitdagingId: string; verloopt: number; publicKey: AssertieOpties; stand: { actief: string; vorige: string; hosts: string[] } };
 export type Overzicht = { stand: BesluitStand & { hostsUitOmgeving: string[]; rootBijgewerkt: string }; inbox?: { pad: string; schrijfbaar: boolean; code: string; detail: string }; passkeys: Array<{ kort: string; label: string }>; rpId: string; besluiten: BesluitUit[]; limieten: { wachtMs: number; uitkomstMinuten: number; maxHosts: number } };
 export type RootRegel = { tijd: string; code: string; niveau: string; uk: string; nl: string };
-export type StatusAntwoord = { besluit: BesluitUit; stand: { actief?: string; vorige?: string; hosts?: string[] };
+export type StatusAntwoord = { besluit: BesluitUit; stand: { actief?: string; vorige?: string; hosts?: string[]; /** orch-regels: root heeft de bevestiging vastgelegd */ bevestigd?: boolean };
   /** Ligt het besluit nog in de inbox (root heeft het niet opgepakt) en hoe lang na het ondertekenen. */
   verwerking?: { inInbox: boolean; seconden: number };
   /** Regels van root (gebeurtenissen.jsonl) sinds het ondertekenen. */

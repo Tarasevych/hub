@@ -8,6 +8,9 @@
 #                                           (fine-grained, alleen "Contents: read"); root 0600. Nooit het persoonlijke token van de eigenaar.
 #   - /etc/mijn-ruimte/uitrol-ondertekenaars dezelfde ed25519-sleutel als methode 2 (regel met namespaces="mijn-ruimte-uitrol,git")
 #   - /var/lib/mijn-ruimte/gitops/          eigen root-map (0700): spiegel, staat, werkmap
+#   - /var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl  (ORCH-001 етап 3) root-журнал mijn-ruimte-besluit: підтвердження правил
+#                                           координації passkey власника. Lock із eigenaar.soort=passkey приймається ЛИШЕ коли тут є запис
+#                                           із тими самими regelsVersie/hash/kritiekHash/voorstel/besluit — репозиторій сам собі не свідок.
 # Het leest NIETS wat de app (gebruiker mijnruimte) kan schrijven: geen uploads, geen inbox, geen staging.
 #
 # Stappen:
@@ -29,8 +32,10 @@ export LC_ALL=C
 # Pad-overrides alleen in tests (niet als root).
 if [ "$(id -u)" -eq 0 ]; then
   unset GITOPS_RECHTEN GITOPS_ENV GITOPS_ONDERTEKENAARS GITOPS_STAAT GITOPS_STATUS_DIR GITOPS_INSTALLEER GITOPS_LOCK GITOPS_GROEP \
-        GITOPS_KNOWN_HOSTS GITOPS_MAX_BYTES GITOPS_INSTALLEER_LOCK 2>/dev/null || true
+        GITOPS_KNOWN_HOSTS GITOPS_MAX_BYTES GITOPS_INSTALLEER_LOCK GITOPS_ORCH_BEVESTIGD 2>/dev/null || true
 fi
+# ORCH-001 етап 3: root-журнал підтверджень правил (пише лише mijn-ruimte-besluit, soort orch-regels). Override alleen in tests.
+ORCH_BEVESTIGD="${GITOPS_ORCH_BEVESTIGD:-/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl}"
 RECHTEN="${GITOPS_RECHTEN:-/etc/mijn-ruimte/mcp-rechten.json}"
 ENVBESTAND="${GITOPS_ENV:-/etc/mijn-ruimte/gitops.env}"
 ONDERTEKENAARS="${GITOPS_ONDERTEKENAARS:-/etc/mijn-ruimte/uitrol-ondertekenaars}"
@@ -261,12 +266,16 @@ fi
 BRON="$WERK/uit/bron"
 [ -f "$BRON/deploy/installeer-app.sh" ] || { weiger_tag "$KIES" "$OBJ" GEEN_INSTALLER "У випуску немає deploy/installeer-app.sh." "deploy/installeer-app.sh ontbreekt in de release."; status geweigerd GEEN_INSTALLER "Немає інсталятора." "Installer ontbreekt." "$KIES"; exit 2; }
 # ORCH-001 (31.10.2026): GitOps is de AUTOMATISCHE modus. Die mag alleen als orchestratie/beleid.json in de bron «automatisch_beperkt» toestaat
-# én de eigenaar de kritieke regels heeft ondertekend (orchestratie/regels.lock.json → eigenaar). Zonder orchestratie/ (oudere bron) geldt
-# alleen de schakelaar "gitops" zoals voorheen.
+# én de eigenaar de kritieke regels heeft bevestigd (orchestratie/regels.lock.json → eigenaar). Twee vormen (scripts/orch/kern.mjs eigenaarStatus):
+#   - SSH-handtekening (eigenaar.handtekening): de handtekening zelf staat in de lock;
+#   - passkey (eigenaar.soort = "passkey", etap 3): de repo bevat alleen het RECORD van het besluit (besluit, passkey, voorstel). Bewijs is
+#     het root-journal van mijn-ruimte-besluit ($ORCH_BEVESTIGD): zonder regel met dezelfde regelsVersie/hash/kritiekHash/voorstel/besluit
+#     geldt de lock als NIET bevestigd — een agent die eigenaar.soort=passkey in de repo zet, komt zo niet voorbij root.
+# Zonder orchestratie/ (oudere bron) geldt alleen de schakelaar "gitops" zoals voorheen.
 if [ -f "$BRON/orchestratie/beleid.json" ]; then
-  MODUS_FOUT="$(python3 - "$BRON" 2>&1 <<'PYMODUS'
-import json, os, sys
-bron = sys.argv[1]
+  MODUS_FOUT="$(python3 - "$BRON" "$ORCH_BEVESTIGD" 2>&1 <<'PYMODUS'
+import json, os, re, sys
+bron, journal = sys.argv[1], sys.argv[2]
 b = json.load(open(os.path.join(bron, "orchestratie/beleid.json"), encoding="utf-8"))
 modi = (b.get("kritiek") or {}).get("installatieModi") or {}
 if "automatisch_beperkt" not in (modi.get("toegestaan") or []):
@@ -276,7 +285,23 @@ try:
 except Exception as e:
     sys.exit(f"regels.lock.json ontbreekt of onleesbaar: {e}")
 e = lock.get("eigenaar") or {}
-if not e.get("handtekening") or e.get("kritiekHash") != lock.get("kritiekHash"):
+if not e or e.get("kritiekHash") != lock.get("kritiekHash"):
+    sys.exit("kritieke regels zijn niet (meer) door de eigenaar bevestigd")
+if e.get("soort") == "passkey":
+    sleutels = ("regelsVersie", "hash", "kritiekHash", "voorstel")
+    kort = re.sub(r"-", "", str(e.get("besluit") or "")).lower()
+    if not re.fullmatch(r"[0-9a-f]{32}", kort) or not re.fullmatch(r"[0-9a-f]{8,16}", str(e.get("passkey") or "")):
+        sys.exit("passkey-bevestiging in de lock is onvolledig (besluit/passkey)")
+    try:
+        regels = [json.loads(r) for r in open(journal, encoding="utf-8").read().splitlines() if r.strip()]
+    except FileNotFoundError:
+        sys.exit("passkey-bevestiging niet in het root-journal (orch-regels-bevestigd.jsonl ontbreekt)")
+    except Exception as ex:
+        sys.exit(f"root-journal onleesbaar: {ex}")
+    past = [r for r in regels if isinstance(r, dict) and r.get("besluit") == kort and all(r.get(k) == e.get(k) for k in sleutels)]
+    if not past:
+        sys.exit("passkey-bevestiging staat niet in het root-journal voor deze regels (besluit/regelsVersie/hash/kritiekHash/voorstel)")
+elif not e.get("handtekening"):
     sys.exit("kritieke regels zijn niet (meer) door de eigenaar ondertekend")
 PYMODUS
 )" || { weiger_tag "$KIES" "$OBJ" MODUS_NIET_TOEGESTAAN "Автоматичне встановлення (GitOps) не дозволене політикою цього випуску: $MODUS_FOUT." "Automatisch installeren (GitOps) is niet toegestaan door het beleid van deze release: $MODUS_FOUT."; status geweigerd MODUS_NIET_TOEGESTAAN "Автоматичний режим не дозволений політикою." "Automatische modus niet toegestaan door het beleid." "$KIES"; exit 2; }

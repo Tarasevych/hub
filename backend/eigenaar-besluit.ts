@@ -26,6 +26,8 @@ import type { RouterMiddleware } from '../server/platform/router';
 import { schoonHostLijst } from '../shared/mcp-klant-model';
 import { BESLUIT_CODES, BESLUIT_LIMIETEN, BESLUIT_SOORTEN, type BesluitInhoud, type BesluitSoort, type BesluitStaat, type BesluitStand, type BesluitUit } from '../shared/eigenaar-besluit';
 import { UitrolFout, assertieOpties, assertieUit, leesSleutels, uitdagingMaken, uitdagingVerbruiken } from './uitrol-goedkeuring';
+// ORCH-001 етап 3 (31.10.2026): besluit «orch-regels» — het ontwerp van de regels komt uit backend/orch-opslag.ts (werkkopie ORCH_WORTEL).
+import { OrchFout, rootBevestigingen, voorstelVoorBesluit } from './orch-opslag';
 
 // ---------------------------------------------------------------- paden (tests: omgeving)
 /** RELEASE-COMMIT → alleen een echte hex-commit (7–40), anders ''. Vroeger: alle niet-hex weg → «onbekend» werd «beed» (29.10.2026). */
@@ -104,7 +106,7 @@ export async function stand(): Promise<BesluitStand & { hostsUitOmgeving: string
   return {
     bijgewerkt: new Date().toISOString(), rechtenLeesbaar: leesbaar && !!data,
     hosts: schoonHostLijst(d.externeMcpHosts), hostsUitOmgeving: schoonHostLijst(process.env.EXTERNE_MCP_HOSTS || ''),
-    schakelaars: { terugdraaienDirect: op.terugdraaien === true, terugdraaienPasskey: bk.besluitKanaalOpen('terugdraaien', d), externeHostsPasskey: bk.besluitKanaalOpen('externe-hosts', d) },
+    schakelaars: { terugdraaienDirect: op.terugdraaien === true, terugdraaienPasskey: bk.besluitKanaalOpen('terugdraaien', d), externeHostsPasskey: bk.besluitKanaalOpen('externe-hosts', d), orchRegelsPasskey: bk.besluitKanaalOpen('orch-regels', d) },
     actief, vorige, releases: await releasesLijst(actief, vorige), rootBijgewerkt: tekst(r?.bijgewerkt, 40),
   };
 }
@@ -152,12 +154,16 @@ export async function uitkomstOpnemen(r: Record<string, unknown>): Promise<Recor
   return r;
 }
 
+/** De schakelaar van dit soort in de stand (mcp-rechten.json): dicht → BESLUIT_UIT. */
+const kanaalOpen = (s: Awaited<ReturnType<typeof stand>>, soort: BesluitSoort) =>
+  soort === 'terugdraaien' ? s.schakelaars.terugdraaienPasskey : soort === 'orch-regels' ? s.schakelaars.orchRegelsPasskey !== false : s.schakelaars.externeHostsPasskey;
+
 // ---------------------------------------------------------------- 1. starten
 export async function starten(e: Eigenaar, input: { soort?: unknown; inhoud?: unknown }) {
   const soort = String(input.soort || '') as BesluitSoort;
   if (!(BESLUIT_SOORTEN as readonly string[]).includes(soort)) fout('SOORT_ONGELDIG');
   const s = await stand();
-  if (!(soort === 'terugdraaien' ? s.schakelaars.terugdraaienPasskey : s.schakelaars.externeHostsPasskey)) fout('BESLUIT_UIT', 409);
+  if (!kanaalOpen(s, soort)) fout('BESLUIT_UIT', 409);
   const b = await leesSleutels();
   if (!b.sleutels.length) fout('GEEN_PASSKEY', 409);
   let inhoud: BesluitInhoud;
@@ -168,6 +174,12 @@ export async function starten(e: Eigenaar, input: { soort?: unknown; inhoud?: un
     const rel = s.releases.find((x) => x.naam === i.naar);
     if (!rel || !rel.bruikbaar) fout('RELEASE_ONBEKEND', 404);
     if (rel.actief) fout('RELEASE_ACTIEF', 409);
+  } else if (soort === 'orch-regels') {
+    // Het ontwerp (ORCH_INBOX/voorstellen) moet nog bestaan en bij de HUIDIGE regels horen; de eigenaar tekent precies de afdruk van dat ontwerp.
+    const i = inhoud! as { regelsVersie: string; hash: string; kritiekHash: string; voorstel: string };
+    let v: ReturnType<typeof voorstelVoorBesluit>;
+    try { v = voorstelVoorBesluit(i.voorstel); } catch (err) { if (err instanceof OrchFout) fout(err.code, err.status); throw err; }
+    if (v.hash !== i.hash || v.kritiekHash !== i.kritiekHash || v.regelsVersie !== i.regelsVersie) fout('VOORSTEL_VEROUDERD', 409);
   } else {
     const i = inhoud! as { hosts: string[] };
     if (i.hosts.length > BESLUIT_LIMIETEN.maxHosts) fout('TE_VEEL_HOSTS');
@@ -235,7 +247,7 @@ export async function ondertekenen(e: Eigenaar, input: { id?: unknown; uitdaging
   const hash = bk.besluitHash(soort, r.inhoud);
   if (hash !== String(r.hash)) fout('UITDAGING_ONGELDIG', 403);
   const s = await stand();
-  if (!(soort === 'terugdraaien' ? s.schakelaars.terugdraaienPasskey : s.schakelaars.externeHostsPasskey)) fout('BESLUIT_UIT', 409);
+  if (!kanaalOpen(s, soort)) fout('BESLUIT_UIT', 409);
   const b = await leesSleutels();
   const origins = [...new Set([...b.origins, ...(kern.originHoortBijRp(MCP_ORIGIN, b.rpId) ? [MCP_ORIGIN] : [])])];
   const verwacht = kern.uitdagingVoor('eigenaar-besluit', { besluitHash: hash, nonce: u.nonce, verloopt: u.verloopt });
@@ -279,7 +291,9 @@ export async function status(e: Eigenaar, id: unknown) {
   if (String(voor.staat) !== uit.staat && ['klaar', 'geweigerd', 'mislukt', 'verlopen'].includes(uit.staat)) {
     await audit(e, `eigenaar_besluit_${uit.staat}`, uit.staat === 'klaar' ? 'success' : uit.staat === 'geweigerd' ? 'denied' : 'failure', { besluit: uit.id, soort: uit.soort, code: uit.code, passkey: uit.passkey });
   }
-  const s = uit.soort === 'terugdraaien' ? { actief: await actieveRelease(), vorige: await vorigeRelease() } : { hosts: (await stand()).hosts };
+  const s = uit.soort === 'terugdraaien' ? { actief: await actieveRelease(), vorige: await vorigeRelease() }
+    : uit.soort === 'orch-regels' ? { bevestigd: rootBevestigingen().some((x) => x.besluit === kortId(uit.id)) } // root heeft de bevestiging vastgelegd (orch-regels-bevestigd.json)
+    : { hosts: (await stand()).hosts };
   return { besluit: uit, stand: s, verwerking: await verwerking(na), gebeurtenissen: await gebeurtenissenSinds(na),
     nacontrole: uit.soort === 'terugdraaien' && uit.staat === 'klaar' ? await nacontrole() : null };
 }

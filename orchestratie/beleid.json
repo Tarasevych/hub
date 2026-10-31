@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "regelsVersie": "1.2.0",
+  "regelsVersie": "1.3.0",
   "bijgewerkt": "2026-10-31",
   "regelBestanden": [
     "AGENTS.md",
@@ -113,6 +113,30 @@
     "maxBytes": 12000,
     "synchronisatie": "Агент без GitHub/MCP отримує CONTEXT-COMPACT.md + патч від basisCommit; повертає патч/ZIP з ORCH-OVERDRACHT.json. Після відновлення лімітів: node scripts/orch.mjs versheid --taak <ID> --fase overdracht."
   },
+  "site": {
+    "routes": "/api/owner/orch/*",
+    "pagina": "mcp.tarasevych.com/agents → «Координація»",
+    "tools": [
+      "orch_overzicht",
+      "orch_context",
+      "orch_taak_start",
+      "orch_inleveren_begin",
+      "orch_inleveren_stuk",
+      "orch_inleveren_klaar"
+    ],
+    "omgeving": {
+      "ORCH_WORTEL": "/srv/mijn-ruimte/orch-repo",
+      "ORCH_INBOX": "/srv/mijn-ruimte/orch-inbox"
+    },
+    "regelsWijzigen": {
+      "besluitSoort": "orch-regels",
+      "schakelaar": "orch-regels-passkey",
+      "rootJournaal": "/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl",
+      "statusBestand": "/var/lib/mijn-ruimte-uitrol-status/orch-regels-bevestigd.json",
+      "takPatroon": "^regels/[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]{8}-[0-9]{6}$"
+    },
+    "toelichting": "Сайт, MCP і HTTP не мають власної логіки: маршрути й інструменти викликають ті самі функції, що й CLI (inleveren, beoordeelVoorstel, vergrendel, compacteContext). Зміна правил власником: редагування regelBestanden на сайті → beoordeelVoorstel (regelsVersie вища, запис у BESLUITEN.md, beleid.json валідний) → рішення passkey soort orch-regels → root лише дописує підтвердження у rootJournaal і переписує statusBestand → застосунок створює гілку regels/<versie>-<час> із новим regels.lock.json (eigenaar.soort = passkey) і CONTEXT-COMPACT.md, запускає controleer і відправляє гілку в origin. Злиття в integratie лишається за власником. GitOps довіряє passkey-lock лише якщо той самий запис є в rootJournaal."
+  },
   "agenten": [
     {
       "id": "claude",
@@ -194,7 +218,7 @@
     }
   ],
   "kritiek": {
-    "toelichting": "Зміна будь-якого поля в цьому розділі змінює kritiekHash і вимагає нового незалежного підпису власника (SSH ed25519, namespace mijn-ruimte-regels). Без підпису критичні політики діють лише як пропозиція.",
+    "toelichting": "Зміна будь-якого поля в цьому розділі змінює kritiekHash і вимагає нового незалежного підтвердження власника: підпис SSH ed25519 (namespace mijn-ruimte-regels, orch bevestig) або passkey на сайті (рішення orch-regels, запис у root-журналі). Без підтвердження критичні політики діють лише як пропозиція.",
     "installatieModi": {
       "toegestaan": [
         "handmatig",

@@ -10,7 +10,7 @@
 // #dev:<id>, #extension, #apparaten/extensie, #extensie/…, #verbindingen, #dostupy) worden omgezet; een querydeel in de hash
 // (#extensie?koppel=prive) blijft gelden. Eén poller voor apparaten/wachtende acties; de rest bij openen, na een actie en rustig.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
-import { Activity, ArrowRight, Globe, KeyRound, LayoutDashboard, ListChecks, Monitor, Network, Plug, Puzzle, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
+import { Activity, ArrowRight, GitMerge, Globe, KeyRound, LayoutDashboard, ListChecks, Monitor, Network, Plug, Puzzle, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
 import { useAgentsData, useToolApprovals } from '../agenten-gegevens';
 import type { Tr } from '../mcp-ui';
 import { PairCard, PendingList } from '../ApparatenWeergave';
@@ -28,6 +28,8 @@ import TabExtensie from './TabExtensie';
 // Zone E (22.10.2026): «Браузер і агенти» — matrix slot × mogelijkheid × agent + termijnen, op één scherm (src/extensie/BrowserEnAgenten.tsx).
 import BrowserEnAgenten from '../extensie/BrowserEnAgenten';
 import TabExternMcp from './TabExternMcp';
+// ORCH-001 етап 3 (31.10.2026): «Координація» — правила, задачі, черга й передачі всіх ШІ-агентів; той самий конвеєр, що й scripts/orch.mjs.
+import TabOrch from './TabOrch';
 import TabTechnisch from './TabTechnisch';
 import TabToegang from './TabToegang';
 import AgentBord from './AgentBord';
@@ -211,6 +213,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     connectors: { uk: 'Конектори', nl: 'Connectors', icoon: <Plug /> },
     ai: { uk: 'Підключені ШІ', nl: 'Verbonden AI', icoon: <Sparkles />, teller: aiVerbonden },
     extern: { uk: 'Зовнішні MCP', nl: 'Externe MCP', icoon: <Network /> },
+    orch: { uk: 'Координація', nl: 'Coördinatie', icoon: <GitMerge /> },
     extensie: { uk: 'Розширення браузера', nl: 'Browserextensie', icoon: <Puzzle /> },
     browser: { uk: 'Браузер і агенти', nl: 'Browser en agenten', icoon: <Globe /> },
     apparaten: { uk: 'Пристрої', nl: 'Apparaten', icoon: <Monitor />, teller: apparaten.length },
@@ -322,6 +325,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
                   <TabAi tr={tr} overzicht={overzicht} tokens={tokens} naActie={naActie} item={plek.item} kies={kies} calls={calls} reloadCalls={reloadCalls} />
                 </> : null}
                 {t === 'extern' ? <TabExternMcp tr={tr} /> : null}
+                {t === 'orch' ? <TabOrch tr={tr} /> : null}
                 {t === 'extensie' ? <TabExtensie tr={tr} agents={agents} techAgents={techAan ? techBrowsers : []} naActie={naActie} versie={versie} koppel={koppel} naarBrowser={() => ga('browser')} /> : null}
                 {t === 'browser' ? <BrowserEnAgenten tr={tr} naarExtensie={() => ga('extensie')} openSlot={openSlot} /> : null}
                 {t === 'apparaten' ? <TabApparaten tr={tr} agents={apparaten} pending={apparatenPending} last={last} overzicht={overzicht} naActie={naActie} reload={reload} item={plek.item} kies={kies} versie={versie} naarExtensie={() => ga('extensie')} /> : null}

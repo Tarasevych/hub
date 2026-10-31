@@ -90,3 +90,34 @@ Alleen toevoegen. Elke wijziging van de regels = nieuw besluit hier + hogere `re
 1.1.0 перечитують правила. Нові коди в `shared/uitrol-codes.ts`.
 
 **Хто.** Агент `claude`. Потребує підтвердження власника (критичні політики не змінено, підпис лишається «пропозицією»).
+
+## B-006 · 2026-10-31 · 1.3.0 · voorstel
+
+**Контекст.** Етап 3 ORCH-001: координацією можна було керувати лише з командного рядка (`scripts/orch.mjs`), а правила змінювати лише через
+git і підпис SSH на ПК власника. Власник хоче бачити задачі, чергу й передачі на сайті, приймати пакети агентів без SSH і змінювати правила з
+тією самою певністю, що й затвердження оновлень (passkey, §13/§15 RUNBOOK).
+
+**Рішення.**
+1. Сайт (`mcp.tarasevych.com/agents` → «Координація»), HTTP (`/api/owner/orch/*`, лише власник) і MCP (`orch_overzicht`, `orch_context`,
+   `orch_taak_start`, `orch_inleveren_begin|stuk|klaar`) **не мають власної логіки**: вони викликають ті самі функції, що й CLI — `inleveren`,
+   `beoordeelVoorstel`, `vergrendel`, `compacteContext`. Робоча копія координації на сервері — `ORCH_WORTEL` (`/srv/mijn-ruimte/orch-repo`),
+   завантаження — `ORCH_INBOX`, фрагментами по 512 КіБ зі звіркою SHA-256; записи передач і черга — ті самі файли `orchestratie/*`.
+2. Зміна правил власником: редагування `AGENTS.md` / `beleid.json` / `BESLUITEN.md` на сайті → перевірка пропозиції (`regelsVersie` вища,
+   запис `## B-xxx · … · <versie> · …` у `BESLUITEN.md`, `beleid.json` валідний, інші файли правил не змінилися) → рішення passkey нового
+   виду **`orch-regels`** (той самий канал, що `terugdraaien`/`externe-hosts`; вимикач `orch-regels-passkey` у `/etc/mijn-ruimte/mcp-rechten.json`,
+   типово відкритий) → **root нічого не виконує**: він дописує підтвердження (`regelsVersie`, `hash`, `kritiekHash`, `voorstel`, `passkey`,
+   `besluit`) у власний журнал `/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl` (0600) і переписує читабельну копію
+   `/var/lib/mijn-ruimte-uitrol-status/orch-regels-bevestigd.json` (0640, останні 50) → застосунок, побачивши підтвердження, створює гілку
+   `regels/<versie>-<час>` з новим `regels.lock.json` (`eigenaar.soort = "passkey"`, `besluit`, `passkey`), `CONTEXT-COMPACT.md`, виконує
+   `controleer` (при помилці все відкидається) і відправляє гілку в `origin`. Злиття в `integratie` лишається за власником.
+3. Lock із `eigenaar.soort = "passkey"` рівноцінний підписові SSH для `eigenaarStatus`/`controleer`. GitOps (`gitops-ophalen.sh`, root) довіряє
+   такому lock **лише** якщо той самий запис (`besluit`, `regelsVersie`, `hash`, `kritiekHash`, `voorstel`) є в root-журналі — застосунок не може
+   сам «підтвердити» правила. Підпис SSH лишається повноцінною альтернативою (`orch onderteken-bericht` / `bevestig`).
+4. Інсталятор створює `orch-inbox` і повідомляє, чи є робоча копія координації; саму копію (`git clone` з deploy-ключем) робить власник
+   (RUNBOOK §18). Без неї сайт чесно показує `ORCH_GEEN_REPO`, нічого не емулюючи.
+
+**Наслідки.** `regelsVersie` 1.2.0 → 1.3.0 (розділ `site`; `kritiek.toelichting` згадує passkey як другий шлях підтвердження — через це
+змінився `kritiekHash`, самі критичні політики без змін); задачі з 1.2.0 перечитують правила. Новий код події `BESLUIT_ORCH_REGELS_OK`,
+коди `ORCH_CODES` у `shared/orch-model.ts`, довідка `orch.inlevering` / `orch.regels`.
+
+**Хто.** Агент `claude`. Потребує підтвердження власника — відтепер це можна зробити passkey на сайті або підписом SSH.

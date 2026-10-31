@@ -15,6 +15,10 @@
 #   externe-hosts  → sleutel "externeMcpHosts" in /etc/mijn-ruimte/mcp-rechten.json vervangen: atomisch (tmp + rename), eigenaar en
 #                    rechten van het bestand blijven, reservekopie in /var/lib/mijn-ruimte/besluit/, het resultaat wordt teruggelezen
 #                    en als JSON gecontroleerd vóór de rename. Niets anders in dat bestand verandert.
+#   orch-regels    → ORCH-001 етап 3 (31.10.2026): підтвердження нової версії правил координації агентів (regelsVersie, hash, kritiekHash,
+#                    voorstel). Root НІЧОГО не виконує: він дописує підтвердження у власний журнал $WERK/orch-regels-bevestigd.jsonl
+#                    (лише root) і переписує $STATUS/orch-regels-bevestigd.json (root:groep 0640, останні 50) — застосунок читає його, щоб
+#                    застосувати правила в git-гілці; gitops-ophalen.sh звіряє lock випуску з цим журналом перед автоматичною установкою.
 # De app leest NOOIT uit de werkmap van root; de uitkomst staat in /var/lib/mijn-ruimte-uitrol-status/besluit-<id>.json (root:mijnruimte
 # 0640), de stand (hosts, schakelaars, releases) in besluit-stand.json, en elke uitkomst ook in gebeurtenissen.jsonl (bron «besluit») en in
 # het root-journaal /var/lib/mijn-ruimte/besluit/journaal.jsonl.
@@ -55,7 +59,10 @@ import datetime, fcntl, grp, json, os, re, secrets, stat, subprocess, sys, time
 ID = re.compile(r"[0-9a-f]{32}\Z")
 RELEASE = re.compile(r"[0-9]{8}-[0-9]{6}\Z")
 HOST = re.compile(r"\*?\.?[a-z0-9.-]+\Z")
-SOORTEN = ("terugdraaien", "externe-hosts")
+SOORTEN = ("terugdraaien", "externe-hosts", "orch-regels")
+SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+SEMVER = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+\Z")
+VOORSTEL_ID = re.compile(r"[0-9a-f]{16,32}\Z")
 MAX_JSON = 65536
 
 def nu():
@@ -210,6 +217,7 @@ def stand():
             "terugdraaienDirect": op.get("terugdraaien") is True,
             "terugdraaienPasskey": d.get("terugdraaien-passkey") is not False,
             "externeHostsPasskey": d.get("externe-hosts-passkey") is not False,
+            "orchRegelsPasskey": d.get("orch-regels-passkey") is not False,
         },
         "actief": actief(), "vorige": vorige(), "releases": releases(),
     }
@@ -327,6 +335,32 @@ def externe_hosts(rid, inhoud):
     os.replace(tmp, rechten)
     return {"hosts": hosts, "vorige": oud, "toegevoegd": [h for h in hosts if h not in oud], "verwijderd": [h for h in oud if h not in hosts], "kopie": os.path.basename(kopie)}
 
+def orch_regels(rid, inhoud, extra):
+    """ORCH-001 етап 3: підтвердження правил координації. Root лише фіксує (журнал root + файл стану для застосунку); код правил не чіпає."""
+    rv, h, kh, vs = (str(inhoud.get(k, "")).strip() for k in ("regelsVersie", "hash", "kritiekHash", "voorstel"))
+    if not SEMVER.fullmatch(rv) or not SHA256.fullmatch(h) or not SHA256.fullmatch(kh) or not VOORSTEL_ID.fullmatch(vs):
+        raise Fout("BESLUIT_INHOUD_ONGELDIG", "Вміст рішення про правила недійсний.", "De inhoud van het regelbesluit is ongeldig.")
+    regel = {"regelsVersie": rv, "hash": h, "kritiekHash": kh, "voorstel": vs, "passkey": extra.get("passkey", ""), "label": extra.get("label", ""),
+             "door": extra.get("door", ""), "besluit": rid, "tijd": nu()}
+    os.makedirs(werk, exist_ok=True)
+    pad = os.path.join(werk, "orch-regels-bevestigd.jsonl")
+    with open(pad, "a", encoding="utf-8") as f:
+        f.write(json.dumps(regel, ensure_ascii=False) + "\n")
+    os.chmod(pad, 0o600)
+    # Файл стану для застосунку: останні 50 підтверджень із root-журналу (джерело правди — журнал, файл лише копія для читання).
+    regels = []
+    try:
+        with open(pad, encoding="utf-8") as f:
+            for r in f.read().splitlines()[-50:]:
+                try:
+                    regels.append(json.loads(r))
+                except Exception:
+                    continue
+    except Exception:
+        regels = [regel]
+    schrijf_json(os.path.join(status_dir, "orch-regels-bevestigd.json"), {"bijgewerkt": nu(), "bevestigingen": regels})
+    return {"regelsVersie": rv, "hash": h, "kritiekHash": kh, "voorstel": vs}
+
 def verwerk_een(doel, rid):
     st = os.lstat(doel)
     if not stat.S_ISREG(st.st_mode) or st.st_size > MAX_JSON:
@@ -347,6 +381,10 @@ def verwerk_een(doel, rid):
         extra.update(terugdraaien(rid, inhoud))
         uk = "Повернуто з випуску %s на %s за рішенням власника (passkey %s). Міграції бази не відкочуються." % (extra["van"], extra["actief"], extra["passkey"])
         nl = "Teruggedraaid van release %s naar %s op besluit van de eigenaar (passkey %s). Databasemigraties worden niet teruggedraaid." % (extra["van"], extra["actief"], extra["passkey"])
+    elif soort == "orch-regels":
+        extra.update(orch_regels(rid, inhoud, extra))
+        uk = "Правила координації агентів %s (відбиток %s…) підтверджено власником (passkey %s). Root записав підтвердження; застосунок застосовує правила в git." % (extra["regelsVersie"], extra["hash"][:12], extra["passkey"])
+        nl = "Coördinatieregels %s (afdruk %s…) bevestigd door de eigenaar (passkey %s). Root legde de bevestiging vast; de app past de regels toe in git." % (extra["regelsVersie"], extra["hash"][:12], extra["passkey"])
     else:
         extra.update(externe_hosts(rid, inhoud))
         uk = "Білий список зовнішніх MCP-хостів оновлено (passkey %s): %s." % (extra["passkey"], ", ".join(extra["hosts"]) or "порожній")

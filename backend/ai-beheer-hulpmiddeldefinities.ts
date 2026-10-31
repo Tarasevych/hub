@@ -8,6 +8,7 @@
 import type { ToolDef } from './connectors-hulpmiddelen';
 import { p } from '../shared/hulpmiddel-teksten';
 import { ALLE_CATEGORIEEN } from '../shared/beheer-journaal';
+import { ORCH_TOOLS } from './orch-hulpmiddeldefinities'; // ORCH-001 етап 3: координація агентів (orch_*), zelfde kant 'beheer'
 
 /** Interne namen (= `intern` in de catalogus van connector v2). */
 export const AUDIT_READ = 'audit_read';
@@ -94,6 +95,8 @@ export const BEHEER_TOOLS: readonly ToolDef[] = Object.freeze([
     },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   },
+  // ORCH-001 етап 3 (31.10.2026): координація агентів — ті самі правила доступу (kant beheer, connector v2, право на кожен інструмент).
+  ...ORCH_TOOLS,
 ] as ToolDef[]);
 
-export const BEHEER_TOOL_NAMEN: ReadonlySet<string> = new Set(BEHEER_TOOLS.map((t) => t.name));
+export const BEHEER_TOOL_NAMEN: ReadonlySet<string> = new Set([...BEHEER_TOOLS, ...ORCH_TOOLS].map((t) => t.name));
