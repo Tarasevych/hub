@@ -32,13 +32,28 @@ AUTEUR="${AUTEUR:-}"; AGENT="${AGENT:-}"; SAMENVATTING="${SAMENVATTING:-}"
 [[ "$AGENT" =~ ^[a-z][a-z0-9-]{1,31}$ ]] || { echo "FOUT: встановіть AGENT (claude/cursor/gpt, малі літери)" >&2; exit 1; }
 [ "${#SAMENVATTING}" -ge 20 ] || { echo "FOUT: встановіть SAMENVATTING (підсумок, мінімум 20 символів)" >&2; exit 1; }
 doel="$uit/mijn-ruimte-$versie.tar.gz"
+# ORCH-001 (31.10.2026): UITROL-BASIS — op welke GEÏNSTALLEERDE versie en commit dit pakket is gebouwd (BASIS_VERSIE=JJJJMMDD-UUMMSS,
+# BASIS_COMMIT=<40 hex>); root weigert een pakket waarvan de basis ouder is dan wat er staat (BASIS_VEROUDERD). Komt er een
+# orchestratie/regels.lock.json mee, dan ook regelsVersie/regelsHash. Verplicht voor UITROL-VERSIE ≥ 20261201-000000 (GEEN_BASIS).
+# Het eenvoudigst: node scripts/orch.mjs pakket (leest de basis uit orchestratie/geinstalleerd.json of beleid.json).
+BASISTEKST=""
+if [ -n "${BASIS_VERSIE:-}${BASIS_COMMIT:-}" ]; then
+  { [[ "${BASIS_VERSIE:-}" =~ ^[0-9]{8}-[0-9]{6}$ ]] && [[ "${BASIS_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]]; } || { echo "FOUT: BASIS_VERSIE (JJJJMMDD-UUMMSS) en BASIS_COMMIT (40 hex) horen samen en moeten geldig zijn" >&2; exit 1; }
+  BASISTEKST="versie=$BASIS_VERSIE"$'\n'"commit=$BASIS_COMMIT"
+  if [ -f orchestratie/regels.lock.json ]; then
+    BASISTEKST+=$'\n'"$(python3 -c 'import json; d=json.load(open("orchestratie/regels.lock.json",encoding="utf-8")); print("regelsVersie=" + d["regelsVersie"] + "\nregelsHash=" + d["hash"])')"
+  fi
+elif [[ "$versie" > "20261201-000000" || "$versie" == "20261201-000000" ]]; then
+  echo "FOUT: встановіть BASIS_VERSIE і BASIS_COMMIT (встановлена база) — root відхилить пакет без UITROL-BASIS (GEEN_BASIS); простіше: node scripts/orch.mjs pakket" >&2; exit 1
+fi
 if [ -z "$ZONDER_GIT" ]; then
   git archive --format=tar.gz --prefix="mijn-ruimte-$versie/" \
     --add-virtual-file="mijn-ruimte-$versie/UITROL-VERSIE:$versie" \
     --add-virtual-file="mijn-ruimte-$versie/BRON-COMMIT:$commit" \
     --add-virtual-file="mijn-ruimte-$versie/AUTEUR:$AUTEUR" \
     --add-virtual-file="mijn-ruimte-$versie/AGENT:$AGENT" \
-    --add-virtual-file="mijn-ruimte-$versie/SAMENVATTING:$SAMENVATTING" -o "$doel" HEAD
+    --add-virtual-file="mijn-ruimte-$versie/SAMENVATTING:$SAMENVATTING" \
+    ${BASISTEKST:+--add-virtual-file="mijn-ruimte-$versie/UITROL-BASIS:$BASISTEKST"} -o "$doel" HEAD
 else
   # Buiten git: de werkmap zelf (zonder bouwresten), met dezelfde metadatabestanden en één bovenmap.
   stage="$(mktemp -d)"; mkdir -p "$stage/mijn-ruimte-$versie"
@@ -46,6 +61,7 @@ else
       --exclude='./harness-*' --exclude='*.bak' --exclude='./mijn-ruimte-*.tar.gz*' --exclude='./mijn-ruimte-*.voorstel.json' --exclude='./mijn-ruimte-*.txt' -cf - . | tar -C "$stage/mijn-ruimte-$versie" -xf -
   printf '%s' "$versie" > "$stage/mijn-ruimte-$versie/UITROL-VERSIE"; printf '%s' "$commit" > "$stage/mijn-ruimte-$versie/BRON-COMMIT"
   printf '%s' "$AUTEUR" > "$stage/mijn-ruimte-$versie/AUTEUR"; printf '%s' "$AGENT" > "$stage/mijn-ruimte-$versie/AGENT"; printf '%s' "$SAMENVATTING" > "$stage/mijn-ruimte-$versie/SAMENVATTING"
+  [ -z "$BASISTEKST" ] || printf '%s\n' "$BASISTEKST" > "$stage/mijn-ruimte-$versie/UITROL-BASIS"
   tar -C "$stage" -czf "$doel" "mijn-ruimte-$versie"; rm -rf -- "$stage"
 fi
 rm -f "$doel.sig"

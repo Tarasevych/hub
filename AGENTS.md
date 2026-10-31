@@ -51,7 +51,8 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
    але завжди з `ORCH-OVERDRACHT.json`: taakId, agent, basisCommit, regelsVersie, regelsHash, samenvatting, список змінених файлів, тести.
    Приймає все один конвеєр: `node scripts/orch.mjs inleveren --bron <файл|тека|гілка>` — нова гілка від бази, зміни, конфлікти з `integratie`
    (`git merge-tree`), тести, запис у `orchestratie/inleveringen/`, черга. Передача, що змінює файли стану (`orchestratie/taken`, `inleveringen`,
-   `wachtrij.json`, `regels.lock.json`, `geinstalleerd.json`), відхиляється — їх пише лише `orch` або власник.
+   `wachtrij.json`, `regels.lock.json`, `geinstalleerd.json`), відхиляється — їх пише лише `orch` або власник. Єдиний виняток — власний
+   `orchestratie/taken/<ID>.json` (декларація агента з `taak-start`); при злитті лишається версія `integratie` (`.gitattributes` → `merge=orch-staat`).
 4. Звіт українською: що готово, що перевірено (фактично, не за метаданими), де результат, що наступне, що свідомо не зроблено.
 5. Статус задачі: `in_progress` → `ter_integratie` (передано) → `integrated` (злито в `integratie`) → `released` (пакет зібрано) → `installed`
    (встановлено інсталятором на сервері). Статус змінює лише той крок, що його здійснив; агент не ставить `installed` сам.
@@ -64,6 +65,14 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 - Режими встановлення (`beleid.json → kritiek.installatieModi`): `handmatig`, `na_bevestiging` (Passkey/підпис власника; типовий),
   `automatisch_beperkt` — лише за окремо затвердженою й підписаною політикою. Зараз дозволені перші два.
 - Критичні політики (`kritiek`) чинні лише з підписом власника (`orchestratie/regels.lock.json → eigenaar`); до того — «пропозиція».
+- Випуск збирає лише `node scripts/orch.mjs pakket --taak <ID> --auteur "…" [--manifest …] [--testresultaten …] [--sig …]`: сумісний
+  `mijn-ruimte-<versie>.tar.gz` (через `deploy/uitrol/maak-voorstelpakket.sh`, з файлом `UITROL-BASIS` = встановлена версія + commit + відбиток
+  правил) і пакет передачі `mijn-ruimte-<versie>-<agent>-overdracht.zip` (архів, `.sha256`, `ORCH-OVERDRACHT.json`, `UITROL-MANIFEST.json`,
+  `TESTRESULTATEN.json`, `RAPPORT.md`, `COMMITS.txt` + `commits.bundle`, `AGENTEN.json`, `.sig` — лише якщо власник підписав на своєму ПК).
+  Перевірка без установки: `pakket-controleer --bron <zip>`; імпорт на іншому боці без git: `inleveren --bron <zip>` (той самий конвеєр).
+- Інсталятор (root) відхиляє пакет: база старіша за встановлену (`BASIS_VEROUDERD`), інший встановлений commit (`BASIS_COMMIT_VERSCHILT`),
+  без `UITROL-BASIS` із версії `20261201` (`GEEN_BASIS`), правила ≠ `regels.lock.json` (`REGELS_NIET_VERGRENDELD`), режим поза політикою
+  (`MODUS_NIET_TOEGESTAAN`). GitOps (автоматично) працює лише за `automatisch_beperkt` **і** підписаним lock. Приватні ключі агентам не передаються.
 <!-- compact:einde -->
 
 ---
@@ -83,6 +92,8 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 | Черга інтеграції | `orchestratie/wachtrij.json` |
 | Факт установки (пише інсталятор/власник) | `orchestratie/geinstalleerd.json` |
 | Шаблони передачі | `orchestratie/sjablonen/` |
+| Пакети випуску (локально, не в git) | `uitvoer/` — `mijn-ruimte-<versie>.tar.gz` + `mijn-ruimte-<versie>-<agent>-overdracht.zip` (`orch pakket`) |
+| Стан координації при злитті | `.gitattributes` (`merge=orch-staat`: версія `integratie` перемагає) |
 | Правила пакета випуску | `deploy/REGELS-UITROLPAKKET.md`, `shared/uitrol-manifest.ts`, `shared/uitrol-codes.ts` |
 | Безпечне розгортання, passkey, відкат | `deploy/RUNBOOK-VEILIGE-UITROL.md` (§13 passkey, §15 рішення власника) |
 | Доступи агентів, MCP | `deploy/RUNBOOK-AGENTEN-0.4.md`, `deploy/MCP-CONNECTOR.md`, `deploy/CONNECTOR-V2.md` |
@@ -103,6 +114,9 @@ node scripts/orch.mjs inleveren --bron <zip|tar.gz|patch|тека|гілка> [-
 node scripts/orch.mjs wachtrij toon|volgende|klaar|terugtrekken   # послідовна черга інтеграції
 node scripts/orch.mjs status                         # in_progress / integrated / released / installed по задачах
 node scripts/orch.mjs staat-commit                   # закомітити лише файли стану координації
+node scripts/orch.mjs pakket --taak ORCH-001 --auteur "Імʼя" [--manifest m.json] [--testresultaten t.json] [--sig p.sig] [--uit uitvoer]
+                                                     # tar.gz (UITROL-BASIS) + <versie>-<agent>-overdracht.zip; задача → released
+node scripts/orch.mjs pakket-controleer --bron uitvoer/mijn-ruimte-<versie>-<agent>-overdracht.zip   # перевірка без установки
 node scripts/orch.mjs onderteken-bericht             # рядок, який власник підписує (ssh-keygen -Y sign -n mijn-ruimte-regels)
 node scripts/orch.mjs bevestig <bericht.sig>         # записати підпис власника в lock
 node scripts/eenheidstests.mjs orch                  # тести координації

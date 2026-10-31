@@ -8,7 +8,8 @@ import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
-import { KANALEN, SHA40, herkenKanaal, padVeilig, valideerOverdracht, vergelijkBestanden, versheid, wachtrijVoegToe } from './kern.mjs';
+import { KANALEN, SHA40, TAR_NAAM, herkenKanaal, padVeilig, valideerOverdracht, vergelijkBestanden, versheid, wachtrijVoegToe } from './kern.mjs';
+import { leesOverdrachtZip } from './pakket.mjs';
 
 const fout = (code, uk, nl, extra = {}) => ({ code, ernst: 'fout', uk, nl, ...extra });
 /** Стан координації: пише лише orch (команди) або власник; агентська передача з такими файлами відхиляється. */
@@ -41,11 +42,22 @@ function wortelVanUitgepakt(map) {
   return map;
 }
 
+/** Повертає { inhoud, odPad }: тека з файлами й (для пакета передачі) шлях до ORCH-OVERDRACHT.json поза tar. */
 function pakUit(bron, kanaal, werk) {
   const doel = join(werk, 'uitgepakt'); mkdirSync(doel, { recursive: true });
   if (kanaal === 'zip') {
     const r = spawnSync('unzip', ['-o', '-q', bron, '-d', doel], { encoding: 'utf8' });
     if (r.status !== 0) throw new Error(`UITPAKKEN_MISLUKT: unzip: ${(r.stderr || r.error?.message || '').trim()}`);
+    // Пакет передачі (етап 2): zip з mijn-ruimte-<versie>.tar.gz + .sha256 + ORCH-OVERDRACHT.json → цілісність, потім вміст самого tar.gz.
+    const w = wortelVanUitgepakt(doel);
+    if (readdirSync(w).some((n) => TAR_NAAM.test(n)) && existsSync(join(w, 'ORCH-OVERDRACHT.json'))) {
+      const g = leesOverdrachtZip(bron, join(werk, 'overdracht-zip'));
+      const f = g.zaken.find((x) => x.ernst === 'fout'); if (f) throw new Error(`${f.code}: ${f.uk}`);
+      const tarDoel = join(werk, 'uitgepakt-tar'); mkdirSync(tarDoel);
+      const t = spawnSync('tar', ['-xzf', g.tarPad, '-C', tarDoel, '--no-same-owner', '--no-same-permissions'], { encoding: 'utf8' });
+      if (t.status !== 0) throw new Error(`UITPAKKEN_MISLUKT: tar in overdrachtzip: ${(t.stderr || '').trim()}`);
+      return { inhoud: wortelVanUitgepakt(tarDoel), odPad: join(g.map, 'ORCH-OVERDRACHT.json'), overdrachtZip: true };
+    }
   } else if (kanaal === 'tar_gz') {
     // Без абсолютних шляхів і «..» (tar відкидає їх сам), без спецфайлів.
     const r = spawnSync('tar', ['-xzf', bron, '-C', doel, '--no-same-owner', '--no-same-permissions'], { encoding: 'utf8' });
@@ -53,7 +65,7 @@ function pakUit(bron, kanaal, werk) {
   } else if (kanaal === 'lokaal_bestand') {
     cpSync(bron, doel, { recursive: true, dereference: false, filter: (src) => padVeilig(relative(bron, src) || 'x') || relative(bron, src) === '' });
   } else throw new Error(`KANAAL_ONBEKEND: ${kanaal}`);
-  return wortelVanUitgepakt(doel);
+  return { inhoud: wortelVanUitgepakt(doel), odPad: null, overdrachtZip: false };
 }
 
 /** Знаходить гілку/ref для каналу github_pr: гілка в origin, PR-URL або pr/N. */
@@ -86,15 +98,15 @@ export function inleveren(o) {
     if (bronPad && statSync(bronPad).isFile()) record.bronSha256 = sha256Bestand(bronPad);
 
     // 1. Вміст: архів/тека → розпакувати; patch → лишити; git → ref.
-    let inhoud = null; let ref = null; let patchPad = null;
+    let inhoud = null; let ref = null; let patchPad = null; let odBuiten = null;
     const fysiekKanaal = ['mcp', 'http_api', 'web_upload'].includes(kanaal) ? herkenKanaal(o.bron, !!bronPad && statSync(bronPad).isDirectory(), null) : kanaal;
-    if (['zip', 'tar_gz', 'lokaal_bestand'].includes(fysiekKanaal)) { if (!bronPad) { z.push(fout('BRON_ONTBREEKT', `файл/тека «${o.bron}» не існує`, `bestand/map «${o.bron}» bestaat niet`)); return record; } inhoud = pakUit(bronPad, fysiekKanaal, werk); }
+    if (['zip', 'tar_gz', 'lokaal_bestand'].includes(fysiekKanaal)) { if (!bronPad) { z.push(fout('BRON_ONTBREEKT', `файл/тека «${o.bron}» не існує`, `bestand/map «${o.bron}» bestaat niet`)); return record; } const u = pakUit(bronPad, fysiekKanaal, werk); inhoud = u.inhoud; odBuiten = u.odPad; if (u.overdrachtZip) record.overdrachtZip = true; }
     else if (fysiekKanaal === 'git_patch') { if (!bronPad) { z.push(fout('BRON_ONTBREEKT', `patch «${o.bron}» не існує`, `patch «${o.bron}» bestaat niet`)); return record; } patchPad = bronPad; }
     else if (fysiekKanaal === 'github_pr') ref = githubRef(git, o.bron);
     else { z.push(fout('BRON_ONTBREEKT', `для каналу ${kanaal} потрібен файл .zip/.tar.gz/.patch або тека`, `kanaal ${kanaal} vraagt een .zip/.tar.gz/.patch of map`)); return record; }
 
     // 2. ORCH-OVERDRACHT.json: у архіві/теці, або --overdracht, або (для git-гілки) з реєстрації задачі.
-    let od = null; const odPad = o.overdrachtPad ? resolve(o.overdrachtPad) : inhoud && existsSync(join(inhoud, 'ORCH-OVERDRACHT.json')) ? join(inhoud, 'ORCH-OVERDRACHT.json') : null;
+    let od = null; const odPad = o.overdrachtPad ? resolve(o.overdrachtPad) : odBuiten ?? (inhoud && existsSync(join(inhoud, 'ORCH-OVERDRACHT.json')) ? join(inhoud, 'ORCH-OVERDRACHT.json') : null);
     if (odPad) { try { od = JSON.parse(readFileSync(odPad, 'utf8')); } catch { z.push(fout('OVERDRACHT_ONGELDIG', 'ORCH-OVERDRACHT.json не є дійсним JSON', 'ORCH-OVERDRACHT.json is geen geldige JSON')); return record; } }
     else if (ref && o.taakId && existsSync(join(o.wortel, 'orchestratie/taken', `${o.taakId}.json`))) {
       const t = JSON.parse(readFileSync(join(o.wortel, 'orchestratie/taken', `${o.taakId}.json`), 'utf8'));
@@ -147,7 +159,10 @@ export function inleveren(o) {
     record.bestanden = (git('diff', '--name-only', `${od.basisCommit}..${record.commit}`) || '').split('\n').filter(Boolean);
     z.push(...vergelijkBestanden(od.bestanden, record.bestanden));
     // Файли стану координації змінює лише orch (черга, задачі, записи передач, lock, факт установки) — не передача агента.
-    const beschermd = record.bestanden.filter((p) => BESCHERMDE_STAAT.test(p));
+    // Виняток: власний файл задачі orchestratie/taken/<taakId>.json — декларація агента (taak-start у його гілці); при злитті лишається
+    // версія integratie (.gitattributes merge=orch-staat). Eigen taakbestand mag mee; de integratieversie wint bij het mergen.
+    const eigenTaak = `orchestratie/taken/${od.taakId}.json`;
+    const beschermd = record.bestanden.filter((p) => BESCHERMDE_STAAT.test(p) && p !== eigenTaak);
     if (beschermd.length) { z.push(fout('BESCHERMDE_BESTANDEN', `передача змінює файли стану координації: ${beschermd.join(', ')} — їх пише лише orch/власник; правила (AGENTS.md, beleid.json, BESLUITEN.md) пропонуйте окремою задачею`, `overdracht wijzigt coördinatiestaat: ${beschermd.join(', ')} — die schrijft alleen orch/de eigenaar`, { bestanden: beschermd })); return record; }
 
     // 6. Свіжість (правила + база відносно integratie) і реальні конфлікти злиття (git merge-tree, без зміни integratie).
