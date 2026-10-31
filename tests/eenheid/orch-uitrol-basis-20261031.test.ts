@@ -88,6 +88,15 @@ export async function main(): Promise<number> {
     r = draai();
     check('5 AGENTS.md змінено без lock → REGELS_NIET_VERGRENDELD з назвою файла', r.status === 2 && status().code === 'REGELS_NIET_VERGRENDELD' && /AGENTS\.md/.test(status().nl), `${r.status} ${status().code} ${status().nl}`);
 
+    // 5b. обхід відбитка: beleid.json прибрано з regelBestanden, lock.hash чесно перераховано лише по AGENTS.md + BESLUITEN.md, а kritiek
+    // змінено (privesleutelsNaarAgenten: true) зі СТАРИМ kritiekHash → root мусить відхилити (kritiekHash звіряється незалежно від списку).
+    const beleidOmzeil = JSON.parse(regels.beleid); beleidOmzeil.regelBestanden = ['AGENTS.md', 'orchestratie/BESLUITEN.md']; beleidOmzeil.kritiek.privesleutelsNaarAgenten = true;
+    const afdrukOmzeil = k.regelsAfdruk({ 'AGENTS.md': regels.agents, 'orchestratie/BESLUITEN.md': regels.besluiten });
+    const lockOmzeil = JSON.stringify({ ...JSON.parse(regels.lock), hash: afdrukOmzeil.hash, bestanden: afdrukOmzeil.bestanden }, null, 2);
+    leg(pakket(pk, '20261102-100450', { basis: goedeBasis, bronCommit: C2, regels: { ...regels, beleid: JSON.stringify(beleidOmzeil, null, 2) + '\n', lock: lockOmzeil } }));
+    r = draai();
+    check('5b beleid.json уникає відбитка (прибрано з regelBestanden) і змінює kritiek → REGELS_NIET_VERGRENDELD (kritiekHash)', r.status === 2 && status().code === 'REGELS_NIET_VERGRENDELD' && /kritiek/.test(status().nl), `${r.status} ${status().code} ${status().nl}`);
+
     // 6. узгоджений lock (відбиток порахований у JS kern.mjs), але режим na_bevestiging заборонено → MODUS_NIET_TOEGESTAAN (і python == JS відбиток!)
     const beleidModus = JSON.parse(regels.beleid); beleidModus.kritiek.installatieModi.toegestaan = ['handmatig']; beleidModus.kritiek.installatieModi.standaard = 'handmatig';
     const beleidTekst = JSON.stringify(beleidModus, null, 2) + '\n';

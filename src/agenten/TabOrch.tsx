@@ -94,7 +94,7 @@ function Taken({ tr, lang, data, open, setOpen }: { tr: Tr; lang: 'uk' | 'nl'; d
     </Groep>}
     <Groep titel={tr('Останні передачі', 'Laatste overdrachten')} aantal={data.inleveringen.length} data='inleveringen'>
       {data.inleveringen.map((i) => <li key={i.id} className='ag-rij'><div className='ag-rij-kop'><span className='ag-rij-tekst'><span className='ag-rij-titel'><b>{i.id}</b> <Badge toon={i.uitkomst === 'aanvaard' ? 'ok' : 'bad'}>{i.uitkomst === 'aanvaard' ? tr('прийнято', 'aanvaard') : tr('відхилено', 'geweigerd')}</Badge></span>
-        <small className='ag-rij-status'>{i.agent ?? '—'} · {i.kanaal} · {i.bestanden} {tr('файлів', 'bestanden')} · {i.tests ? (i.tests.overgeslagen ? tr('тести пропущено', 'tests overgeslagen') : `${tr('тести', 'tests')} ${i.tests.geslaagd}/${i.tests.geslaagd + i.tests.mislukt}`) : ''}</small></span></div>
+        <small className='ag-rij-status'>{i.agent ?? '—'} · {i.kanaal} · {i.bestanden} {tr('файлів', 'bestanden')} · {i.tests ? `${i.tests.geslaagd + i.tests.mislukt ? `${tr('перевірки', 'controles')} ${i.tests.geslaagd}/${i.tests.geslaagd + i.tests.mislukt}` : ''}${i.tests.overgeslagen ? ` · ${tr('тести агента пропущено', 'agenttests overgeslagen')}` : ''}` : ''}</small></span></div>
         <Zaken zaken={i.zaken.filter((z) => z.ernst === 'fout')} lang={lang} /></li>)}
     </Groep>
   </section>;
@@ -127,7 +127,7 @@ function Inleveren({ tr, lang, ctx, data, naKlaar }: { tr: Tr; lang: 'uk' | 'nl'
     {fout && <p className='ag-fout' role='alert'>{fout}</p>}
     {uit && <div className={`ag-kaart${uit.record.uitkomst === 'aanvaard' ? ' ag-vers' : ' ag-waarschuwing'}`} data-orch-uitkomst={uit.record.uitkomst}>
       <p><b>{uit.record.uitkomst === 'aanvaard' ? tr('Прийнято', 'Aanvaard') : tr('Відхилено', 'Geweigerd')}</b> · {uit.record.id}</p>
-      <Tech rijen={[[tr('Задача', 'Taak'), uit.record.taakId ?? '—'], [tr('Гілка', 'Tak'), <code>{uit.record.tak ?? '—'}</code>], ['commit', <code>{kort(uit.record.commit)}</code>], [tr('Файлів', 'Bestanden'), String(uit.record.bestanden.length)], [tr('Тести', 'Tests'), uit.record.tests ? (uit.record.tests.overgeslagen ? `${tr('пропущено', 'overgeslagen')}: ${uit.record.tests.reden ?? ''}` : `${uit.record.tests.geslaagd} ok / ${uit.record.tests.mislukt} ${tr('помилок', 'fout')}`) : '—'], uit.record.conflicten.length ? [tr('Конфлікти', 'Conflicten'), uit.record.conflicten.join(', ')] : null, [tr('Стан закомічено', 'Staat gecommit'), <code>{kort(uit.staatCommit)}</code>]]} />
+      <Tech rijen={[[tr('Задача', 'Taak'), uit.record.taakId ?? '—'], [tr('Гілка', 'Tak'), <code>{uit.record.tak ?? '—'}</code>], ['commit', <code>{kort(uit.record.commit)}</code>], [tr('Файлів', 'Bestanden'), String(uit.record.bestanden.length)], [tr('Тести', 'Tests'), uit.record.tests ? `${uit.record.tests.geslaagd} ok / ${uit.record.tests.mislukt} ${tr('помилок', 'fout')}${uit.record.tests.overgeslagen ? ` · ${tr('тести агента пропущено', 'agenttests overgeslagen')}: ${uit.record.tests.reden ?? ''}` : ''}` : '—'], uit.record.conflicten.length ? [tr('Конфлікти', 'Conflicten'), uit.record.conflicten.join(', ')] : null, [tr('Стан закомічено', 'Staat gecommit'), <code>{kort(uit.staatCommit)}</code>]]} />
       <Zaken zaken={uit.record.zaken} lang={lang} />
     </div>}
   </section>;

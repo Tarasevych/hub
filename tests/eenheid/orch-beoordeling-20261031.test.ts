@@ -9,13 +9,13 @@
 //   7. Прив’язка besluit.id до запису root-журналу та ізольований git worktree у voorstelToepassen.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash, generateKeyPairSync, randomUUID, sign as cryptoSign } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import * as k from '../../scripts/orch/kern.mjs';
 import { inleveren, veiligeTestEnv } from '../../scripts/orch/inleveren.mjs';
-import { controleerTarGzVooraf } from '../../scripts/orch/pakket.mjs';
+import { controleerTarGzVooraf, controleerZipVooraf } from '../../scripts/orch/pakket.mjs';
 import { ORCH_TOOLS } from '../../backend/orch-hulpmiddeldefinities';
 import { agentRouteVerboden } from '../../backend/agent-namens';
 import { _uiCatalogusLeeg, uiObjectenVoor } from '../../backend/zoek/catalogus-ui';
@@ -184,6 +184,61 @@ with tarfile.open(sys.argv[1], "w:gz") as tf:
       check('archief-voorcontrole: tar.gz met symlink wordt vóór uitpakken geweigerd met INHOUD_ONVEILIG', vt?.code === 'INHOUD_ONVEILIG');
     }
 
+    else console.log('  OVERGESLAGEN: python ontbreekt — tar.gz met symlink niet gebouwd');
+
+    // 5b2. Archiefbommen en zip-voorcontrole (adversariële review): de grens geldt voor de WERKELIJK uitgepakte bytes, niet voor wat de koppen
+    // beweren; een sparse tar-bestand telt met zijn volle grootte; zip met symlink/«..» wordt vóór het uitpakken geweigerd.
+    const MB = 1024 * 1024;
+    const bom = join(T, 'bommen'); mkdirSync(bom, { recursive: true });
+    const pyBom = spawnSync(py, ['-I', '-c', `
+import os, struct, sys, tarfile, zipfile
+d = sys.argv[1]; n = 20 * 1024 * 1024
+for naam in ("eerlijk", "vals"):
+    with zipfile.ZipFile(os.path.join(d, naam + ".zip"), "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("nul.bin", b"\\0" * n)
+data = bytearray(open(os.path.join(d, "vals.zip"), "rb").read())
+struct.pack_into("<I", data, 22, 10)
+cd = data.find(b"PK\\x01\\x02"); struct.pack_into("<I", data, cd + 24, 10)
+open(os.path.join(d, "vals.zip"), "wb").write(data)
+open(os.path.join(d, "nul.bin"), "wb").write(b"\\0" * n)
+with tarfile.open(os.path.join(d, "bom.tar.gz"), "w:gz") as tf:
+    tf.add(os.path.join(d, "nul.bin"), arcname="nul.bin")
+with zipfile.ZipFile(os.path.join(d, "klein.zip"), "w", zipfile.ZIP_DEFLATED) as zf:
+    zf.writestr("src/a.ts", "export const a = 1;\\n")
+with zipfile.ZipFile(os.path.join(d, "slip.zip"), "w") as zf:
+    zf.writestr("../buiten.txt", "x")
+with zipfile.ZipFile(os.path.join(d, "link.zip"), "w") as zf:
+    zi = zipfile.ZipInfo("sub/link"); zi.create_system = 3; zi.external_attr = (0o120777 << 16)
+    zf.writestr(zi, "/etc/passwd")
+`, bom], { encoding: 'utf8' });
+    if (pyBom.status === 0) {
+      const ll = spawnSync('unzip', ['-Z', '-l', join(bom, 'vals.zip')], { encoding: 'utf8' }).stdout;
+      const v1 = controleerZipVooraf(join(bom, 'eerlijk.zip'), { maxBytes: 10 * MB });
+      const v2 = controleerZipVooraf(join(bom, 'vals.zip'), { maxBytes: 10 * MB });
+      check('zip-bom (20 MiB nullen in 20 KiB) → INHOUD_TE_GROOT vóór uitpakken', v1?.code === 'INHOUD_TE_GROOT', JSON.stringify(v1));
+      check('zip-bom met VERVALSTE grootte in de koppen (unzip -Z zegt «10 bytes») → toch INHOUD_TE_GROOT: telt werkelijke bytes',
+        /\b10 bytes uncompressed\b/.test(ll) && v2?.code === 'INHOUD_TE_GROOT', `${JSON.stringify(v2)} | ${ll.trim().split('\n').pop()}`);
+      const v3 = controleerTarGzVooraf(join(bom, 'bom.tar.gz'), { maxBytes: 10 * MB });
+      check('tar.gz-bom (20 MiB nullen) → INHOUD_TE_GROOT vóór uitpakken', v3?.code === 'INHOUD_TE_GROOT', JSON.stringify(v3));
+      check('kleine zip onder de grens → geen bezwaar; standaardgrens 1 GiB ruim boven de repo (~35 MB)', controleerZipVooraf(join(bom, 'klein.zip'), { maxBytes: 10 * MB }) === null && controleerZipVooraf(join(bom, 'eerlijk.zip')) === null);
+      check('zip-voorcontrole: «../buiten.txt» → INHOUD_ONVEILIG (Zip-Slip) vóór uitpakken', controleerZipVooraf(join(bom, 'slip.zip'))?.code === 'INHOUD_ONVEILIG');
+      check('zip-voorcontrole: symlink-item (0120777) → INHOUD_ONVEILIG vóór uitpakken', controleerZipVooraf(join(bom, 'link.zip'))?.code === 'INHOUD_ONVEILIG', JSON.stringify(controleerZipVooraf(join(bom, 'link.zip'))));
+      const werkMappen = () => readdirSync(tmpdir()).filter((n) => n.startsWith('orch-inlever-')).length;
+      const voor = werkMappen();
+      const eind = inleveren({ wortel: R, beleid, lock, bron: join(bom, 'vals.zip'), maxUitgepaktBytes: 10 * MB });
+      check('inleveren met zip-bom (vervalste koppen) → geweigerd met INHOUD_TE_GROOT (uk én nl), geen werkmap achtergelaten',
+        eind.uitkomst === 'geweigerd' && eind.zaken.some((z: { code: string; uk: string; nl: string }) => z.code === 'INHOUD_TE_GROOT' && /архівну бомбу/.test(z.uk) && /archiefbom/.test(z.nl)) && werkMappen() === voor, JSON.stringify(eind.zaken));
+    } else console.log('  OVERGESLAGEN: python ontbreekt — archiefbommen niet gebouwd', pyBom.stderr);
+    // Sparse tar: 64 MiB «zichtbaar» uit een stroom van een paar KiB — de gz-stroom is klein, de tar-koppen niet.
+    const sparseBron = join(bom, 'sparse.bin');
+    const sp = spawnSync(py, ['-I', '-c', 'import sys\nf = open(sys.argv[1], "wb"); f.seek(64 * 1024 * 1024 - 1); f.write(b"\\0"); f.close()', sparseBron], { encoding: 'utf8' });
+    const spTar = sp.status === 0 ? spawnSync('tar', ['--sparse', '--format=posix', '-czf', join(bom, 'sparse.tar.gz'), '-C', bom, 'sparse.bin'], { encoding: 'utf8' }) : null;
+    if (spTar?.status === 0) {
+      const gz = Number(spawnSync('sh', ['-c', 'gzip -dc -- "$1" | wc -c', 'sh', join(bom, 'sparse.tar.gz')], { encoding: 'utf8' }).stdout.trim());
+      const vs = controleerTarGzVooraf(join(bom, 'sparse.tar.gz'), { maxBytes: 10 * MB });
+      check('sparse tar (64 MiB zichtbaar, gz-stroom < 1 MiB) → INHOUD_TE_GROOT uit de tar-koppen, vóór uitpakken', gz < MB && vs?.code === 'INHOUD_TE_GROOT', `gz=${gz} ${JSON.stringify(vs)}`);
+    } else console.log('  OVERGESLAGEN: tar --sparse niet beschikbaar — sparse-bom niet getest');
+
     // 5c. kwaadaardig pakket dat scripts/orch.mjs overschrijft mag NOOIT worden uitgevoerd bij uploadKlaar / inleveren
     const pwnPad = join(T, 'PWNED.txt');
     const pakBron = join(T, 'pakbron');
@@ -271,11 +326,63 @@ with tarfile.open(uit, "w:gz") as tf:
     check('actor-binding: alleen de actor die begon kan annuleren (door uit het record) → geannuleerd en weg uit de lijst',
       grokAnnuleert?.geannuleerd === true && !opslag.uploadsLijst().some((x) => x.id === bM.id));
 
+    // Agent-identiteit (adversariële review): de verbinding van Grok kan geen pakket «van claude» inleveren en geen taak op naam van claude
+    // registreren; het record bewaart wie het werkelijk deed (door, met grant-id).
+    const pakBron3 = join(T, 'pakbron3'); mkdirSync(join(pakBron3, 'src'), { recursive: true });
+    writeFileSync(join(pakBron3, 'src/van-claude.ts'), 'export const vanClaude = 1;\n');
+    writeFileSync(join(pakBron3, 'ORCH-OVERDRACHT.json'), JSON.stringify({ ...JSON.parse(lees(join(pakBron, 'ORCH-OVERDRACHT.json'))), taakId: 'SEC-997', agent: 'claude', tak: 'feature/sec-997-20261031-170200', samenvatting: { uk: 'Тест: чужий агент у пакеті', nl: 'Test: andere agent in het pakket' } }));
+    const vreemdTar = join(T, 'sec-997.tar.gz');
+    spawnSync(py, ['-c', 'import os, sys, tarfile\nwith tarfile.open(sys.argv[2], "w:gz") as tf:\n    tf.add(os.path.join(sys.argv[1], "src/van-claude.ts"), arcname="src/van-claude.ts")\n    tf.add(os.path.join(sys.argv[1], "ORCH-OVERDRACHT.json"), arcname="ORCH-OVERDRACHT.json")\n', pakBron3, vreemdTar], { encoding: 'utf8' });
+    const vBytes = readFileSync(vreemdTar);
+    const bV = JSON.parse((await voerOrchToolUit(grok, 'orch_inleveren_begin', { naam: 'sec-997.tar.gz', grootte: vBytes.length, sha256: sha256(vBytes) })).content[0].text) as { id: string };
+    await voerOrchToolUit(grok, 'orch_inleveren_stuk', { id: bV.id, offset: 0, data: vBytes.toString('base64') });
+    const kV = await voerOrchToolUit(grok, 'orch_inleveren_klaar', { id: bV.id });
+    const kVd = JSON.parse(kV.content[0].text) as { uitkomst: string; zaken: Array<{ code: string }>; id: string };
+    const recV = (() => { try { return json(join(R, 'orchestratie/inleveringen', `${kVd.id}.json`)); } catch { return null; } })();
+    check('agent-identiteit: Grok (MCP) levert een pakket in met agent «claude» → geweigerd met AGENT_VERSCHILT; record bewaart door met grant-id',
+      kVd.uitkomst === 'geweigerd' && kVd.zaken.some((z) => z.code === 'AGENT_VERSCHILT') && /^Grok \(grok\) via mcp \[0f9d2c4b-grant-a\]$/.test(recV?.door ?? ''), `${kV.content[0].text.slice(0, 300)} | door=${recV?.door}`);
+    const taakVreemd = await voerOrchToolUit(grok, 'orch_taak_start', { id: 'CLD-777', agent: 'claude', tak: 'feature/cld-777-20261031-170300', basisCommit: basis, omschrijving: 'probeer op naam van claude' });
+    check('agent-identiteit: Grok registreert een taak met agent «claude» → AGENT_VERSCHILT, geen taakbestand', taakVreemd.isError === true && taakVreemd.content[0].text.startsWith('AGENT_VERSCHILT:') && !existsSync(join(R, 'orchestratie/taken/CLD-777.json')), taakVreemd.content[0].text);
+    const taakEigen = await voerOrchToolUit(grok, 'orch_taak_start', { id: 'GRK-777', tak: 'feature/grk-777-20261031-170300', basisCommit: basis, omschrijving: 'eigen taak zonder agent-veld' });
+    check('agent-identiteit: zonder agent-veld registreert Grok op zijn eigen naam (agent uit de verbinding)', taakEigen.isError !== true && json(join(R, 'orchestratie/taken/GRK-777.json')).agent === 'grok', taakEigen.content[0].text.slice(0, 200));
+
+    // Limiet via MCP (zoals HTTP: uploadsPerUur per eigenaar, over al zijn verbindingen) — voor begin én klaar.
+    const { _mcpLimietenLeeg } = await import('../../backend/orch-hulpmiddelen');
+    _mcpLimietenLeeg();
+    const limWie = { userId: 'u-limiet', clientName: 'Codex', agent: 'codex', tokenId: 'limiet-a' };
+    const limWie2 = { ...limWie, tokenId: 'limiet-b' };
+    const pogingen: string[] = [];
+    for (let i = 0; i < 20; i++) pogingen.push((await voerOrchToolUit(i % 2 ? limWie2 : limWie, 'orch_inleveren_begin', { naam: 'x.zip', grootte: 0 })).content[0].text);
+    const teVeel = await voerOrchToolUit(limWie, 'orch_inleveren_begin', { naam: 'x.zip', grootte: 0 });
+    const teVeelKlaar = await (async () => { let t = ''; for (let i = 0; i < 21; i++) t = (await voerOrchToolUit(limWie2, 'orch_inleveren_klaar', { id: '0'.repeat(16) })).content[0].text; return t; })();
+    const anderePersoon = await voerOrchToolUit({ ...limWie, userId: 'u-ander' }, 'orch_inleveren_begin', { naam: 'x.zip', grootte: 0 });
+    check('MCP-limiet: 21e orch_inleveren_begin binnen een uur (twee verbindingen van dezelfde eigenaar) → RATE_LIMITED; ook klaar begrensd; andere eigenaar niet geraakt',
+      !pogingen.some((t) => t.startsWith('RATE_LIMITED')) && teVeel.isError === true && teVeel.content[0].text.startsWith('RATE_LIMITED:') && teVeelKlaar.startsWith('RATE_LIMITED:') && !anderePersoon.content[0].text.startsWith('RATE_LIMITED'),
+      `${teVeel.content[0].text.slice(0, 80)} | ${teVeelKlaar.slice(0, 80)} | ${anderePersoon.content[0].text.slice(0, 80)}`);
+    _mcpLimietenLeeg();
+
     // Normale afronding: voert vertrouwde controleer uit, NIET scripts/orch.mjs uit het pakket!
     const okKlaar = await call(ORCH_ROUTES.inleveringKlaar, { id: b1.data.id });
     check('uploadKlaar: voert vertrouwde controleer uit zonder code uit het geüploade pakket te starten',
       okKlaar.status === 200 && okKlaar.data.record.uitkomst === 'aanvaard' && okKlaar.data.record.tests.geslaagd === 1 && !existsSync(pwnPad),
       JSON.stringify(okKlaar.data.record.zaken));
+
+    // zonderTests op de server (adversariële review): een pakket dat AGENTS.md wijzigt zonder lock mag NIET door met «tests overgeslagen» —
+    // de vertrouwde controleer draait altijd; zonderTests is alleen nog een notitie in het record.
+    const pakBron2 = join(T, 'pakbron2');
+    mkdirSync(pakBron2, { recursive: true });
+    writeFileSync(join(pakBron2, 'AGENTS.md'), `${lees(join(R, 'AGENTS.md'))}\n## Тихо додане правило: агенти зливають у integratie самі\n`);
+    writeFileSync(join(pakBron2, 'ORCH-OVERDRACHT.json'), JSON.stringify({ ...JSON.parse(lees(join(pakBron, 'ORCH-OVERDRACHT.json'))), taakId: 'SEC-998', tak: 'feature/sec-998-20261031-170100', samenvatting: { uk: 'Тест: AGENTS.md без lock із zonderTests', nl: 'Test: AGENTS.md zonder lock met zonderTests' } }));
+    const regelTar = join(T, 'sec-998.tar.gz');
+    spawnSync(py, ['-c', 'import os, sys, tarfile\nwith tarfile.open(sys.argv[2], "w:gz") as tf:\n    tf.add(os.path.join(sys.argv[1], "AGENTS.md"), arcname="AGENTS.md")\n    tf.add(os.path.join(sys.argv[1], "ORCH-OVERDRACHT.json"), arcname="ORCH-OVERDRACHT.json")\n', pakBron2, regelTar], { encoding: 'utf8' });
+    const regelBytes = readFileSync(regelTar);
+    const b2 = await call(ORCH_ROUTES.inleveringBegin, { naam: 'sec-998.tar.gz', grootte: regelBytes.length, sha256: sha256(regelBytes) });
+    await call(ORCH_ROUTES.inleveringStuk, { id: b2.data.id, offset: 0, data: regelBytes.toString('base64') });
+    const zonderKlaar = await call(ORCH_ROUTES.inleveringKlaar, { id: b2.data.id, zonderTests: 'tests liepen bij de agent' });
+    const zr = zonderKlaar.data.record;
+    check('uploadKlaar met zonderTests: AGENTS.md gewijzigd zonder lock → vertrouwde controleer draait tóch → geweigerd (TESTS_MISLUKT), reden bewaard',
+      zr?.uitkomst === 'geweigerd' && zr.tests.overgeslagen === true && zr.tests.reden === 'tests liepen bij de agent' && zr.tests.mislukt === 1 && zr.tests.uitvoer[0].vertrouwd === true
+      && zr.zaken.some((x: { code: string }) => x.code === 'TESTS_MISLUKT'), `${zonderKlaar.status} ${JSON.stringify(zr?.tests)} ${JSON.stringify(zr?.zaken)}`);
 
     // 5d. voorstelToepassen: eist exacte besluit-id in root-bestand én laat ORCH_WORTEL op integratie
     const rg = (await call(ORCH_ROUTES.regelsOverzicht)).data;
@@ -304,30 +411,77 @@ with tarfile.open(uit, "w:gz") as tf:
     const goedToepas = await call(ORCH_ROUTES.regelsToepassen, { id: v.id, besluit: besluitB });
     check('voorstelToepassen: slaagt in geïsoleerde worktree met exact besluit-id; ORCH_WORTEL blijft op integratie',
       goedToepas.status === 200 && git(R, 'branch', '--show-current') === 'integratie' && /^regels\//.test(goedToepas.data.tak));
+    // Scherper dan «HEAD staat nu op integratie» (een oude implementatie die checkout deed en terugschakelde slaagde daar ook):
+    // de reflog van de hoofdwerkkopie toont geen enkele checkout naar regels/*, en de tak heeft exact de gecontroleerde HEAD als ouder.
+    const reflog = git(R, 'reflog', '-n', '30', '--format=%gs', 'HEAD');
+    const worktrees = () => git(R, 'worktree', 'list', '--porcelain').split('\n').filter((l) => l.startsWith('worktree ')).length;
+    check('voorstelToepassen: hoofdwerkkopie nooit omgeschakeld (reflog zonder checkout naar regels/*), ouder van de tak = gecontroleerde HEAD (SHA), geen worktree over',
+      !/checkout: moving from \S+ to regels\//.test(reflog) && git(R, 'rev-parse', `${goedToepas.data.tak}^`) === git(R, 'rev-parse', 'HEAD') && worktrees() === 1, reflog);
 
-    // 5e. GitOps PYMODUS: weigert vervalste SSH-handtekening, accepteert echte ssh-keygen handtekening tegen root-bestand
+    // compactContext.bestand buiten orchestratie/ (of over een regelbestand heen) → het voorstel wordt al bij de beoordeling geweigerd.
+    for (const slecht of ['../../buiten.md', 'AGENTS.md', 'orchestratie/sub/x.md', 'deploy/RUNBOOK-VEILIGE-UITROL.md']) {
+      const bSlecht = { ...bNieuw, compactContext: { ...bNieuw.compactContext, bestand: slecht } };
+      const vs = await call(ORCH_ROUTES.regelsVoorstel, { bestanden: { 'orchestratie/beleid.json': `${JSON.stringify(bSlecht, null, 2)}\n`, 'orchestratie/BESLUITEN.md': `${rg.bestanden['orchestratie/BESLUITEN.md']}\n## B-098 · 2026-10-31 · ${nieuwVersie} · voorstel\n\nTest.\n` } });
+      check(`regelvoorstel: compactContext.bestand «${slecht}» → CONTEXT_PAD, geen voorstel`, JSON.stringify(vs.data).includes('CONTEXT_PAD') && !vs.data?.voorstel?.id, `${vs.status} ${JSON.stringify(vs.data).slice(0, 200)}`);
+    }
+
+    // Mislukte worktree add (post-checkout hook met code 1: git laat dan boom én tak achter) → GIT_FOUT, en GEEN regels/*-tak of worktree over.
+    await new Promise((r) => setTimeout(r, 1100)); // andere seconde → andere taknaam dan goedToepas
+    const vr2 = await call(ORCH_ROUTES.regelsVoorstel, { bestanden: { 'orchestratie/beleid.json': `${JSON.stringify(bNieuw, null, 2)}\n`, 'orchestratie/BESLUITEN.md': `${rg.bestanden['orchestratie/BESLUITEN.md']}\n## B-098 · 2026-10-31 · ${nieuwVersie} · voorstel\n\nTest 2.\n` } });
+    const v2 = vr2.data.voorstel; const besluitC = randomUUID();
+    besluiten.set(besluitC, { id: besluitC, passkey: '11223344', inhoud: { regelsVersie: v2.regelsVersie, hash: v2.hash, kritiekHash: v2.kritiekHash, voorstel: v2.id } });
+    writeFileSync(join(T, 'status/orch-regels-bevestigd.json'), JSON.stringify({ bijgewerkt: new Date().toISOString(), bevestigingen: [{ regelsVersie: v2.regelsVersie, hash: v2.hash, kritiekHash: v2.kritiekHash, voorstel: v2.id, passkey: '11223344', besluit: besluitC.replace(/-/g, ''), tijd: new Date().toISOString() }] }));
+    const takkenVoor = git(R, 'branch', '--list', 'regels/*');
+    const hook = join(git(R, 'rev-parse', '--absolute-git-dir'), 'hooks/post-checkout');
+    mkdirSync(join(hook, '..'), { recursive: true }); writeFileSync(hook, '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+    const mislukt = await call(ORCH_ROUTES.regelsToepassen, { id: v2.id, besluit: besluitC });
+    rmSync(hook, { force: true });
+    check('voorstelToepassen: worktree add mislukt (hook) → GIT_FOUT; geen achtergebleven regels/*-tak en geen extra worktree',
+      mislukt.status === 500 && mislukt.data.error === 'GIT_FOUT' && JSON.stringify(mislukt.data).includes('worktree add') && git(R, 'branch', '--list', 'regels/*') === takkenVoor && worktrees() === 1,
+      `${mislukt.status} ${JSON.stringify(mislukt.data).slice(0, 200)} | ${git(R, 'branch', '--list', 'regels/*')}`);
+
+    // orch_overzicht voor een agent: geen e-mail van de eigenaar, geen uploads van anderen, geen passkey-vingerafdruk/besluit-id.
+    const bE = await call(ORCH_ROUTES.inleveringBegin, { naam: 'eigen.zip', grootte: 10, sha256: 'a'.repeat(64) });
+    const ovAgent = (await voerOrchToolUit(grok, 'orch_overzicht', {})).content[0].text;
+    const ovEigenaar = opslag.overzicht();
+    check('orch_overzicht (MCP): maskeert eigenaar-e-mail, uploads van anderen, passkey en besluit-id (terwijl het volledige overzicht ze wél heeft)',
+      ovEigenaar.uploads.some((u) => u.id === bE.data.id && u.door === EIGENAAR) && ovEigenaar.bevestigingen.some((b) => b.passkey === '11223344')
+      && !ovAgent.includes(EIGENAAR) && !ovAgent.includes(bE.data.id) && !ovAgent.includes('11223344') && !ovAgent.includes(besluitC.replace(/-/g, '')) && ovAgent.includes(v2.kritiekHash),
+      ovAgent.slice(0, 300));
+
+    // 5e. GitOps PYMODUS: weigert vervalste SSH-handtekening, accepteert echte ssh-keygen handtekening tegen root-bestand — op een ECHTE
+    // release (regelbestanden + lock met kloppende afdrukken): PYMODUS controleert nu ook lock ↔ bestanden (adversariële review).
     const gBron = join(T, 'gitops-bron');
     mkdirSync(join(gBron, 'orchestratie'), { recursive: true });
-    writeFileSync(join(gBron, 'orchestratie/beleid.json'), JSON.stringify({ kritiek: { installatieModi: { toegestaan: ['handmatig', 'na_bevestiging', 'automatisch_beperkt'] } } }));
-    const kritHash = 'c'.repeat(64);
+    const gBeleid = { ...json('orchestratie/beleid.json') };
+    gBeleid.kritiek = { ...gBeleid.kritiek, installatieModi: { ...gBeleid.kritiek.installatieModi, toegestaan: ['handmatig', 'na_bevestiging', 'automatisch_beperkt'] } };
+    const gTeksten: Record<string, string> = { 'AGENTS.md': lees('AGENTS.md'), 'orchestratie/BESLUITEN.md': lees('orchestratie/BESLUITEN.md'), 'orchestratie/beleid.json': JSON.stringify(gBeleid, null, 2) + '\n' };
+    for (const [p, t] of Object.entries(gTeksten)) writeFileSync(join(gBron, p), t);
+    const gAfdruk = k.regelsAfdruk(gTeksten);
+    const kritHash = k.kritiekAfdruk(gBeleid);
+    const gVersie = gBeleid.regelsVersie as string;
     const ondertekenaarsPad = join(T, 'eigenaar-ondertekenaars');
-    const gSig = sshSignEd25519('mijn-ruimte-regels', k.kritiekBericht({ regelsVersie: '1.3.0', kritiekHash: kritHash }));
+    const gSig = sshSignEd25519('mijn-ruimte-regels', k.kritiekBericht({ regelsVersie: gVersie, kritiekHash: kritHash }));
     writeFileSync(ondertekenaarsPad, `eigenaar@mijn-ruimte namespaces="mijn-ruimte-regels" ssh-ed25519 ${gSig.pubB64}\n`);
     writeFileSync(join(gBron, 'orchestratie/regels.lock.json'), JSON.stringify({
-      schema: 1, regelsVersie: '1.3.0', hash: 'd'.repeat(64), kritiekHash: kritHash, bestanden: {},
-      eigenaar: { kritiekHash: kritHash, regelsVersie: '1.3.0', handtekening: '-----BEGIN SSH SIGNATURE-----\nx\n-----END SSH SIGNATURE-----', op: new Date().toISOString() },
+      schema: 1, regelsVersie: gVersie, hash: gAfdruk.hash, kritiekHash: kritHash, bestanden: gAfdruk.bestanden,
+      eigenaar: { kritiekHash: kritHash, regelsVersie: gVersie, handtekening: '-----BEGIN SSH SIGNATURE-----\nx\n-----END SSH SIGNATURE-----', op: new Date().toISOString() },
     }));
     const nepUit = gitopsPyModus(gBron, join(T, 'geen.jsonl'), ondertekenaarsPad);
-    check('gitops PYMODUS: vervalste SSH-handtekening ("x") wordt geweigerd', nepUit.code !== 0, nepUit.uit);
+    check('gitops PYMODUS: vervalste SSH-handtekening ("x") wordt geweigerd', nepUit.code !== 0 && /past bij geen enkele sleutel|ongeldig|ontbreekt/.test(nepUit.uit), nepUit.uit);
 
     if (spawnSync('ssh-keygen', ['-?'], { encoding: 'utf8' }).error === undefined) {
       writeFileSync(join(gBron, 'orchestratie/regels.lock.json'), JSON.stringify({
-        schema: 1, regelsVersie: '1.3.0', hash: 'd'.repeat(64), kritiekHash: kritHash, bestanden: {},
-        eigenaar: { kritiekHash: kritHash, regelsVersie: '1.3.0', handtekening: gSig.handtekening, op: new Date().toISOString() },
+        schema: 1, regelsVersie: gVersie, hash: gAfdruk.hash, kritiekHash: kritHash, bestanden: gAfdruk.bestanden,
+        eigenaar: { kritiekHash: kritHash, regelsVersie: gVersie, handtekening: gSig.handtekening, op: new Date().toISOString() },
       }));
       const echtUit = gitopsPyModus(gBron, join(T, 'geen.jsonl'), ondertekenaarsPad);
-      check('gitops PYMODUS: echte SSH-handtekening voor mijn-ruimte-regels tegen root eigenaar-ondertekenaars → toegestaan', echtUit.code === 0, echtUit.uit);
-    }
+      check('gitops PYMODUS: echte SSH-handtekening voor mijn-ruimte-regels tegen root eigenaar-ondertekenaars → toegestaan', echtUit.code === 0 && echtUit.uit === '', echtUit.uit);
+      // Zelfde geldige handtekening + lock, maar een agent zet in beleid.json een ANDERE kritieke regel (privésleutels naar agenten).
+      writeFileSync(join(gBron, 'orchestratie/beleid.json'), JSON.stringify({ ...gBeleid, kritiek: { ...gBeleid.kritiek, privesleutelsNaarAgenten: true } }, null, 2) + '\n');
+      const omzeilUit = gitopsPyModus(gBron, join(T, 'geen.jsonl'), ondertekenaarsPad);
+      check('gitops PYMODUS: geldige handtekening, maar kritiek in beleid.json gewijzigd → geweigerd (kritiekHash)', omzeilUit.code !== 0 && /kritiekHash/.test(omzeilUit.uit), omzeilUit.uit);
+    } else console.log('  OVERGESLAGEN: ssh-keygen ontbreekt — echte SSH-handtekening in GitOps NIET getest (installeer openssh-client)');
   } finally {
     for (const [sleutel, waarde] of Object.entries(oudEnv)) {
       if (waarde === undefined) delete process.env[sleutel]; else process.env[sleutel] = waarde;

@@ -14,6 +14,7 @@ export const VERSIE: RegExp;
 export const SEMVER: RegExp;
 export const AGENT_ID: RegExp;
 export const VOORSTEL_ID: RegExp;
+export const CONTEXT_PAD: RegExp;
 export const REGELS_NAMESPACE: string;
 export const KANALEN: readonly string[];
 export const INLEVERING_UITKOMSTEN: readonly string[];
