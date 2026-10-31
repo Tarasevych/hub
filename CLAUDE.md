@@ -1,0 +1,11 @@
+<!-- orch-adapter -->
+# Адаптер для Claude (Claude Code, claude.ai, MCP-конектор mcp.tarasevych.com) · Adapter voor Claude (Claude Code, claude.ai, MCP-конектор mcp.tarasevych.com)
+
+Цей файл — лише вказівник. Усі правила — в **AGENTS.md** (канонічне джерело) і `orchestratie/beleid.json`. Тут нічого не додається й не скасовується.
+Dit bestand is alleen een verwijzing. Alle regels staan in **AGENTS.md** en `orchestratie/beleid.json`.
+
+1. Прочитай AGENTS.md повністю (без доступу до репозиторію — `orchestratie/CONTEXT-COMPACT.md`).
+2. Ідентифікатор агента для Task ID, пакетів і `AGENT`: `claude`.
+3. Перед початком: `node scripts/orch.mjs controleer` і `versheid --taak <ID> --fase start`. Перед передаванням: `versheid --fase overdracht` + `ORCH-OVERDRACHT.json`.
+4. Мова відповідей і звітів — українська; коментарі в коді — українська/нідерландська; UI — українська/нідерландська.
+5. Жодних змін у production, `voornaamst`, `integratie`, `release/*`, чужих гілках чи резервних копіях без явного погодження власника.

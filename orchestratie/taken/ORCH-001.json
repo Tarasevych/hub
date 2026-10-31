@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "ORCH-001",
+  "agent": "claude",
+  "tak": "feature/orch-001-20261031-112355",
+  "basisCommit": "b279ccabe31a27139b337822162653ccc13b6a5a",
+  "basisVersie": "20261031-093842",
+  "regelsVersie": "1.0.0",
+  "regelsHash": "89d79dc6c98b80b3ecb49479476fd2e86dda6410301681f6156ffefa6f07e22a",
+  "staat": "in_progress",
+  "gestart": "2026-10-31T11:32:34.460Z",
+  "bijgewerkt": "2026-10-31T11:32:34.460Z",
+  "omschrijving": "Єдина система координації AI-агентів (етапи 0–4)",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
