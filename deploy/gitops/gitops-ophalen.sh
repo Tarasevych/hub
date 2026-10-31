@@ -32,10 +32,11 @@ export LC_ALL=C
 # Pad-overrides alleen in tests (niet als root).
 if [ "$(id -u)" -eq 0 ]; then
   unset GITOPS_RECHTEN GITOPS_ENV GITOPS_ONDERTEKENAARS GITOPS_STAAT GITOPS_STATUS_DIR GITOPS_INSTALLEER GITOPS_LOCK GITOPS_GROEP \
-        GITOPS_KNOWN_HOSTS GITOPS_MAX_BYTES GITOPS_INSTALLEER_LOCK GITOPS_ORCH_BEVESTIGD 2>/dev/null || true
+        GITOPS_KNOWN_HOSTS GITOPS_MAX_BYTES GITOPS_INSTALLEER_LOCK GITOPS_ORCH_BEVESTIGD GITOPS_EIGENAAR_ONDERTEKENAARS 2>/dev/null || true
 fi
-# ORCH-001 етап 3: root-журнал підтверджень правил (пише лише mijn-ruimte-besluit, soort orch-regels). Override alleen in tests.
+# ORCH-001 етап 3: root-журнал підтверджень правил (пише лише mijn-ruimte-besluit, soort orch-regels) та root-файл ключів власника для правил. Override alleen in tests.
 ORCH_BEVESTIGD="${GITOPS_ORCH_BEVESTIGD:-/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl}"
+EIGENAAR_ONDERTEKENAARS="${GITOPS_EIGENAAR_ONDERTEKENAARS:-/etc/mijn-ruimte/eigenaar-ondertekenaars}"
 RECHTEN="${GITOPS_RECHTEN:-/etc/mijn-ruimte/mcp-rechten.json}"
 ENVBESTAND="${GITOPS_ENV:-/etc/mijn-ruimte/gitops.env}"
 ONDERTEKENAARS="${GITOPS_ONDERTEKENAARS:-/etc/mijn-ruimte/uitrol-ondertekenaars}"
@@ -273,9 +274,10 @@ BRON="$WERK/uit/bron"
 #     geldt de lock als NIET bevestigd — een agent die eigenaar.soort=passkey in de repo zet, komt zo niet voorbij root.
 # Zonder orchestratie/ (oudere bron) geldt alleen de schakelaar "gitops" zoals voorheen.
 if [ -f "$BRON/orchestratie/beleid.json" ]; then
-  MODUS_FOUT="$(python3 - "$BRON" "$ORCH_BEVESTIGD" 2>&1 <<'PYMODUS'
-import json, os, re, sys
+  MODUS_FOUT="$(python3 - "$BRON" "$ORCH_BEVESTIGD" "$EIGENAAR_ONDERTEKENAARS" 2>&1 <<'PYMODUS'
+import json, os, re, shutil, subprocess, sys, tempfile
 bron, journal = sys.argv[1], sys.argv[2]
+ondertekenaars = sys.argv[3] if len(sys.argv) > 3 else "/etc/mijn-ruimte/eigenaar-ondertekenaars"
 b = json.load(open(os.path.join(bron, "orchestratie/beleid.json"), encoding="utf-8"))
 modi = (b.get("kritiek") or {}).get("installatieModi") or {}
 if "automatisch_beperkt" not in (modi.get("toegestaan") or []):
@@ -303,6 +305,29 @@ if e.get("soort") == "passkey":
         sys.exit("passkey-bevestiging staat niet in het root-journal voor deze regels (besluit/regelsVersie/hash/kritiekHash/voorstel)")
 elif not e.get("handtekening"):
     sys.exit("kritieke regels zijn niet (meer) door de eigenaar ondertekend")
+else:
+    if not os.path.isfile(ondertekenaars):
+        sys.exit("eigenaar-ondertekenaars op de server ontbreekt (/etc/mijn-ruimte/eigenaar-ondertekenaars)")
+    ssh_keygen = shutil.which("ssh-keygen")
+    if not ssh_keygen:
+        sys.exit("ssh-keygen ontbreekt — SSH-handtekening van eigenaar kan niet worden geverifieerd")
+    bericht = f"mijn-ruimte-regels\nregelsVersie={lock.get('regelsVersie')}\nkritiekHash={lock.get('kritiekHash')}\n"
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", newline="\n", suffix=".sig", delete=False) as tf:
+        tf.write(str(e.get("handtekening")).strip() + "\n")
+        sig_pad = tf.name
+    try:
+        fp = subprocess.run([ssh_keygen, "-Y", "find-principals", "-f", ondertekenaars, "-s", sig_pad], capture_output=True, text=True)
+        principals = [p.strip() for p in (fp.stdout or "").splitlines() if p.strip()]
+        if fp.returncode != 0 or not principals:
+            sys.exit("SSH-handtekening van eigenaar past bij geen enkele sleutel in eigenaar-ondertekenaars")
+        vr = subprocess.run([ssh_keygen, "-Y", "verify", "-f", ondertekenaars, "-I", principals[0], "-n", "mijn-ruimte-regels", "-s", sig_pad], input=bericht.encode("utf-8"), capture_output=True)
+        if vr.returncode != 0:
+            sys.exit("SSH-handtekening van eigenaar voor mijn-ruimte-regels is ongeldig")
+    finally:
+        try:
+            os.unlink(sig_pad)
+        except OSError:
+            pass
 PYMODUS
 )" || { weiger_tag "$KIES" "$OBJ" MODUS_NIET_TOEGESTAAN "Автоматичне встановлення (GitOps) не дозволене політикою цього випуску: $MODUS_FOUT." "Automatisch installeren (GitOps) is niet toegestaan door het beleid van deze release: $MODUS_FOUT."; status geweigerd MODUS_NIET_TOEGESTAAN "Автоматичний режим не дозволений політикою." "Automatische modus niet toegestaan door het beleid." "$KIES"; exit 2; }
 fi

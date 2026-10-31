@@ -110,9 +110,50 @@ export function maakOverdrachtPakket(o) {
   } finally { rmSync(werk, { recursive: true, force: true }); }
 }
 
+const padOnveiligInArchief = (naam) => {
+  const n = String(naam || '').replace(/\r$/, '');
+  if (!n || n.startsWith('/') || /[\\:\0]/.test(n)) return true;
+  const delen = n.replace(/^\.\//, '').split('/').filter(Boolean);
+  return delen.includes('..');
+};
+
+/** Перевіряє список і типи записів ZIP до розпакування (захист від Zip-Slip та символьних посилань). */
+export function controleerZipVooraf(zipPad) {
+  const l1 = spawnSync('unzip', ['-Z1', zipPad], { encoding: 'utf8' });
+  if (l1.status !== 0) return fout('UITPAKKEN_MISLUKT', `unzip -Z1: ${(l1.stderr || l1.error?.message || '').trim()}`, 'unzip -Z1 mislukt');
+  const paden = (l1.stdout || '').split('\n').map((s) => s.replace(/\r$/, '')).filter(Boolean);
+  if (paden.length > 60_000) return fout('INHOUD_ONVEILIG', `забагато записів у zip (${paden.length})`, 'te veel items in zip');
+  const slechtPad = paden.find(padOnveiligInArchief);
+  if (slechtPad) return fout('INHOUD_ONVEILIG', `небезпечний шлях у zip: ${slechtPad.slice(0, 120)}`, `onveilig pad in zip: ${slechtPad.slice(0, 120)}`);
+  const ll = spawnSync('unzip', ['-Z', '-l', zipPad], { encoding: 'utf8' });
+  if (ll.status !== 0) return fout('UITPAKKEN_MISLUKT', `unzip -Z -l: ${(ll.stderr || '').trim()}`, 'unzip -Z -l mislukt');
+  const slechtType = (ll.stdout || '').split('\n').find((r) => /^([lcbps])[-rwxstST]{9}\s/.test(r.trim()));
+  if (slechtType) return fout('INHOUD_ONVEILIG', `zip містить символьне посилання або спецфайл: ${slechtType.trim().slice(0, 120)}`, 'zip bevat symlink of speciaal bestand');
+  return null;
+}
+
+/** Перевіряє список і типи записів TAR.GZ до розпакування (лише звичайні файли й теки, без «..» і абсолютних шляхів). */
+export function controleerTarGzVooraf(tarPad) {
+  const l1 = spawnSync('tar', ['-tzf', tarPad], { encoding: 'utf8' });
+  if (l1.status !== 0) return fout('UITPAKKEN_MISLUKT', `tar -tzf: ${(l1.stderr || l1.error?.message || '').trim()}`, 'tar -tzf mislukt');
+  const paden = (l1.stdout || '').split('\n').map((s) => s.replace(/\r$/, '')).filter(Boolean);
+  if (paden.length > 60_000) return fout('INHOUD_ONVEILIG', `забагато записів у tar.gz (${paden.length})`, 'te veel items in tar.gz');
+  const slechtPad = paden.find(padOnveiligInArchief);
+  if (slechtPad) return fout('INHOUD_ONVEILIG', `небезпечний шлях у tar.gz: ${slechtPad.slice(0, 120)}`, `onveilig pad in tar.gz: ${slechtPad.slice(0, 120)}`);
+  const lv = spawnSync('tar', ['-tvzf', tarPad], { encoding: 'utf8' });
+  if (lv.status !== 0) return fout('UITPAKKEN_MISLUKT', `tar -tvzf: ${(lv.stderr || '').trim()}`, 'tar -tvzf mislukt');
+  for (const r of (lv.stdout || '').split('\n').map((s) => s.trim()).filter(Boolean)) {
+    const m = /^(.)[-rwxstST]{9}(?:[+@.]|\s)/.exec(r);
+    if (m && m[1] !== '-' && m[1] !== 'd') return fout('INHOUD_ONVEILIG', `tar.gz містить недозволений тип запису (${m[1]}): ${r.slice(0, 120)}`, `tar.gz bevat niet-toegestaan type (${m[1]})`);
+  }
+  return null;
+}
+
 /** Розпаковує пакет передачі й повертає {map, tarPad, overdracht, zaken}. Цілісність: .sha256 має збігатися з архівом. */
 export function leesOverdrachtZip(zipPad, werk) {
   const z = []; const map = join(werk, 'overdracht'); mkdirSync(map, { recursive: true });
+  const vooraf = controleerZipVooraf(zipPad);
+  if (vooraf) return { zaken: [vooraf] };
   const r = spawnSync('unzip', ['-o', '-q', '-j', zipPad, '-d', map], { encoding: 'utf8' });
   if (r.status !== 0) return { zaken: [fout('UITPAKKEN_MISLUKT', `unzip: ${(r.stderr || '').trim()}`, 'unzip mislukt')] };
   const namen = readdirSync(map); const tar = namen.find((n) => TAR_NAAM.test(n));
@@ -141,7 +182,7 @@ export function controleerOverdrachtPakket(zipPad, { beleid, lock, geinstalleerd
     for (const b of ['RAPPORT.md', 'AGENTEN.json', 'COMMITS.txt', 'TESTRESULTATEN.json']) if (!readdirSync(g.map).includes(b)) z.push(waarsch('BIJLAGE_ONTBREEKT', `у пакеті немає ${b}`, `${b} ontbreekt`));
     const m = OVERDRACHT_ZIP.exec(naam);
     if (m && (m[1] !== g.versie || m[2] !== od.agent)) z.push(fout('ZIP_NAAM_VERSCHILT', `назва zip (${m[1]}, ${m[2]}) ≠ вміст (${g.versie}, ${od.agent})`, `zipnaam (${m[1]}, ${m[2]}) ≠ inhoud (${g.versie}, ${od.agent})`));
-    const lijst = (spawnSync('tar', ['-tzf', g.tarPad], { encoding: 'utf8' }).stdout || '').split('\n').filter(Boolean);
+    const lijst = (spawnSync('tar', ['-tzf', g.tarPad], { encoding: 'utf8' }).stdout || '').split('\n').map((s) => s.replace(/\r$/, '')).filter(Boolean);
     const top = lijst[0]?.split('/')[0] ?? '';
     const lees = (n) => tarLees(g.tarPad, `${top}/${n}`);
     const uv = (lees('UITROL-VERSIE') ?? '').trim();
