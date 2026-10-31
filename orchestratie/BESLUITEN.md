@@ -47,3 +47,19 @@ Alleen toevoegen. Elke wijziging van de regels = nieuw besluit hier + hogere `re
 До підпису критичні політики мають статус «пропозиція»; автоматичний режим встановлення в такому стані заборонений.
 
 **Хто.** Агент `claude`. Потребує підтвердження власника (сам підпис і є підтвердженням).
+
+## B-004 · 2026-10-31 · 1.1.0 · voorstel
+
+**Контекст.** Етап 1 ORCH-001: результати агентів надходять вісьмома каналами (GitHub PR/гілка, MCP, HTTP API, локальна тека, ZIP, TAR.GZ, git patch,
+вебзавантаження); раніше кожен канал мав власну долю і міг тихо перезаписати чужу роботу.
+
+**Рішення.** Усі канали йдуть через один конвеєр `node scripts/orch.mjs inleveren`: розпакувати → `ORCH-OVERDRACHT.json` → звірити правила й базу →
+накласти на нову гілку від базового commit у тимчасовому worktree → виявити зміни → `git merge-tree` проти `integratie` → тести з
+`beleid.json → inlevering.standaardTests` → запис `orchestratie/inleveringen/<id>.json` → черга. Відхилена передача не лишає гілки й не торкається
+`integratie`. Черга послідовна (`wachtrij volgende|klaar|terugtrekken`, одна задача `bezig`). Статус `installed` виводиться лише з
+`orchestratie/geinstalleerd.json` (пише інсталятор/власник), `integrated` — з факту злиття, `released` — з факту пакета.
+
+**Наслідки.** `regelsVersie` 1.0.0 → 1.1.0 (додано `inlevering.standaardTests`, `werkruimte`, `geinstalleerd`); задачі з `regelsVersie 1.0.0` мають
+перечитати правила (`versheid` → `REGELS_VEROUDERD`).
+
+**Хто.** Агент `claude`. Потребує підтвердження власника.

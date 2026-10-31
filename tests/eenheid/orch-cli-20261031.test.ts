@@ -26,10 +26,10 @@ export async function main(): Promise<number> {
     check('правило додано без lock → controleer падає з REGELS_NIET_VERGRENDELD і CONTEXT_VEROUDERD', r.code === 1 && r.uit.includes('REGELS_NIET_VERGRENDELD') && r.uit.includes('CONTEXT_VEROUDERD'), r.uit);
     r = run(d, 'vergrendel');
     check('vergrendel без підвищення regelsVersie → VERSIE_NIET_VERHOOGD', r.code === 1 && r.uit.includes('VERSIE_NIET_VERHOOGD'), r.uit);
-    const bp = join(d, 'orchestratie/beleid.json'); const b = JSON.parse(readFileSync(bp, 'utf8')); b.regelsVersie = '1.0.1'; writeFileSync(bp, JSON.stringify(b, null, 2) + '\n');
+    const bp = join(d, 'orchestratie/beleid.json'); const b = JSON.parse(readFileSync(bp, 'utf8')); b.regelsVersie = '9.0.0'; writeFileSync(bp, JSON.stringify(b, null, 2) + '\n');
     r = run(d, 'vergrendel'); const r2 = run(d, 'context'); const r3 = run(d, 'controleer');
-    check('після підвищення версії: vergrendel + context → controleer знову зелений', r.code === 0 && r2.code === 0 && r3.code === 0, `${r.uit}\n${r2.uit}\n${r3.uit}`);
-    check('context містить нову версію 1.0.1', readFileSync(join(d, 'orchestratie/CONTEXT-COMPACT.md'), 'utf8').includes('regelsVersie: `1.0.1`'));
+    check('після підвищення версії (9.0.0): vergrendel + context → controleer знову зелений', r.code === 0 && r2.code === 0 && r3.code === 0, `${r.uit}\n${r2.uit}\n${r3.uit}`);
+    check('context містить нову версію 9.0.0', readFileSync(join(d, 'orchestratie/CONTEXT-COMPACT.md'), 'utf8').includes('regelsVersie: `9.0.0`'));
     // задача, зареєстрована за 1.0.0, тепер застаріла за правилами
     r = run(d, 'versheid', '--taak', 'ORCH-001', '--fase', 'start');
     check('задача зі старою regelsVersie → REGELS_VEROUDERD (агент має перечитати правила)', r.code === 1 && r.uit.includes('REGELS_VEROUDERD'), r.uit);

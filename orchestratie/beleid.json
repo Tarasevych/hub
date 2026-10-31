@@ -1,8 +1,12 @@
 {
   "schema": 1,
-  "regelsVersie": "1.0.0",
+  "regelsVersie": "1.1.0",
   "bijgewerkt": "2026-10-31",
-  "regelBestanden": ["AGENTS.md", "orchestratie/beleid.json", "orchestratie/BESLUITEN.md"],
+  "regelBestanden": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "orchestratie/BESLUITEN.md"
+  ],
   "basis": {
     "versie": "20261031-093842",
     "bronCommit": "b279ccabe31a27139b337822162653ccc13b6a5a",
@@ -14,21 +18,63 @@
     "basisTak": "release/sec-001-20261031-084138",
     "wachtrij": "orchestratie/wachtrij.json",
     "volgorde": "fifo_per_basis",
-    "verplichteControles": ["orch:controleer", "orch:versheid", "eenheidstests", "typecheck:server"]
+    "verplichteControles": [
+      "orch:controleer",
+      "orch:versheid",
+      "eenheidstests",
+      "typecheck:server"
+    ],
+    "toelichting": "Послідовна черга: wachtrij volgende → (людина/агент зливає гілку в integratie без force) → wachtrij klaar --uitkomst integrated --hoofd <sha>. Лише одна задача bezig."
   },
   "takPatroon": "^(feature|fix|audit|release)/[a-z0-9]+(-[a-z0-9]+)*-[0-9]{8}-[0-9]{6}$",
   "taakIdPatroon": "^[A-Z][A-Z0-9]{1,9}-\\d{3,5}$",
-  "statussen": ["in_progress", "integrated", "released", "installed"],
+  "statussen": [
+    "in_progress",
+    "integrated",
+    "released",
+    "installed"
+  ],
   "inlevering": {
-    "kanalen": ["github_pr", "mcp", "http_api", "lokaal_bestand", "zip", "tar_gz", "git_patch", "web_upload"],
-    "verplichteVelden": ["taakId", "agent", "basisCommit", "regelsVersie", "regelsHash", "samenvatting"],
+    "kanalen": [
+      "github_pr",
+      "mcp",
+      "http_api",
+      "lokaal_bestand",
+      "zip",
+      "tar_gz",
+      "git_patch",
+      "web_upload"
+    ],
+    "verplichteVelden": [
+      "taakId",
+      "agent",
+      "basisCommit",
+      "regelsVersie",
+      "regelsHash",
+      "samenvatting"
+    ],
     "zonderGitToegestaan": true,
-    "zonderGitVereistReden": true
+    "zonderGitVereistReden": true,
+    "standaardTests": [
+      "node scripts/orch.mjs controleer",
+      "node scripts/eenheidstests.mjs orch-kern"
+    ],
+    "recordMap": "orchestratie/inleveringen",
+    "toelichting": "Усі канали проходять один конвеєр: node scripts/orch.mjs inleveren --bron <zip|tar.gz|patch|map|git-ref> [--kanaal mcp|http_api|web_upload]. Відхилена передача не створює гілки й не торкається integratie."
   },
   "adapters": {
     "maxRegels": 25,
     "marker": "<!-- orch-adapter -->",
-    "bestanden": ["CLAUDE.md", "GEMINI.md", ".github/copilot-instructions.md", ".cursorrules", "CODEX.md", "GROK.md", "ANTIGRAVITY.md", "CHATGPT.md"]
+    "bestanden": [
+      "CLAUDE.md",
+      "GEMINI.md",
+      ".github/copilot-instructions.md",
+      ".cursorrules",
+      "CODEX.md",
+      "GROK.md",
+      "ANTIGRAVITY.md",
+      "CHATGPT.md"
+    ]
   },
   "compactContext": {
     "bestand": "orchestratie/CONTEXT-COMPACT.md",
@@ -36,23 +82,119 @@
     "synchronisatie": "Агент без GitHub/MCP отримує CONTEXT-COMPACT.md + патч від basisCommit; повертає патч/ZIP з ORCH-OVERDRACHT.json. Після відновлення лімітів: node scripts/orch.mjs versheid --taak <ID> --fase overdracht."
   },
   "agenten": [
-    { "id": "claude", "weergave": "Claude", "kanalen": ["github_pr", "mcp", "zip", "tar_gz"], "adapter": "CLAUDE.md" },
-    { "id": "antigravity", "weergave": "Antigravity", "kanalen": ["github_pr", "git_patch", "zip"], "adapter": "ANTIGRAVITY.md" },
-    { "id": "chatgpt", "weergave": "ChatGPT", "kanalen": ["zip", "git_patch", "web_upload"], "adapter": "CHATGPT.md" },
-    { "id": "codex", "weergave": "Codex", "kanalen": ["github_pr", "git_patch"], "adapter": "CODEX.md" },
-    { "id": "grok", "weergave": "Grok", "kanalen": ["mcp", "zip", "tar_gz", "web_upload"], "adapter": "GROK.md" },
-    { "id": "copilot", "weergave": "GitHub Copilot", "kanalen": ["github_pr"], "adapter": ".github/copilot-instructions.md" },
-    { "id": "gemini", "weergave": "Gemini", "kanalen": ["github_pr", "zip", "git_patch"], "adapter": "GEMINI.md" },
-    { "id": "cursor", "weergave": "Cursor", "kanalen": ["github_pr", "git_patch"], "adapter": ".cursorrules" }
+    {
+      "id": "claude",
+      "weergave": "Claude",
+      "kanalen": [
+        "github_pr",
+        "mcp",
+        "zip",
+        "tar_gz"
+      ],
+      "adapter": "CLAUDE.md"
+    },
+    {
+      "id": "antigravity",
+      "weergave": "Antigravity",
+      "kanalen": [
+        "github_pr",
+        "git_patch",
+        "zip"
+      ],
+      "adapter": "ANTIGRAVITY.md"
+    },
+    {
+      "id": "chatgpt",
+      "weergave": "ChatGPT",
+      "kanalen": [
+        "zip",
+        "git_patch",
+        "web_upload"
+      ],
+      "adapter": "CHATGPT.md"
+    },
+    {
+      "id": "codex",
+      "weergave": "Codex",
+      "kanalen": [
+        "github_pr",
+        "git_patch"
+      ],
+      "adapter": "CODEX.md"
+    },
+    {
+      "id": "grok",
+      "weergave": "Grok",
+      "kanalen": [
+        "mcp",
+        "zip",
+        "tar_gz",
+        "web_upload"
+      ],
+      "adapter": "GROK.md"
+    },
+    {
+      "id": "copilot",
+      "weergave": "GitHub Copilot",
+      "kanalen": [
+        "github_pr"
+      ],
+      "adapter": ".github/copilot-instructions.md"
+    },
+    {
+      "id": "gemini",
+      "weergave": "Gemini",
+      "kanalen": [
+        "github_pr",
+        "zip",
+        "git_patch"
+      ],
+      "adapter": "GEMINI.md"
+    },
+    {
+      "id": "cursor",
+      "weergave": "Cursor",
+      "kanalen": [
+        "github_pr",
+        "git_patch"
+      ],
+      "adapter": ".cursorrules"
+    }
   ],
   "kritiek": {
     "toelichting": "Зміна будь-якого поля в цьому розділі змінює kritiekHash і вимагає нового незалежного підпису власника (SSH ed25519, namespace mijn-ruimte-regels). Без підпису критичні політики діють лише як пропозиція.",
-    "installatieModi": { "toegestaan": ["handmatig", "na_bevestiging"], "standaard": "na_bevestiging", "automatischBeperkt": null },
+    "installatieModi": {
+      "toegestaan": [
+        "handmatig",
+        "na_bevestiging"
+      ],
+      "standaard": "na_bevestiging",
+      "automatischBeperkt": null
+    },
     "privesleutelsNaarAgenten": false,
-    "beschermdeTakken": ["voornaamst", "integratie", "release/*"],
+    "beschermdeTakken": [
+      "voornaamst",
+      "integratie",
+      "release/*"
+    ],
     "stilOverschrijvenVerboden": true,
     "verouderdeBasisInstallerenVerboden": true,
-    "eigenaarBevestigingVoor": ["kritiek", "installatieModi", "beschermdeTakken", "productie", "reservekopieen", "rechten"],
+    "eigenaarBevestigingVoor": [
+      "kritiek",
+      "installatieModi",
+      "beschermdeTakken",
+      "productie",
+      "reservekopieen",
+      "rechten"
+    ],
     "ondertekenaars": "orchestratie/eigenaar-ondertekenaars"
+  },
+  "werkruimte": {
+    "map": "../mijn-ruimte-werk",
+    "toelichting": "Ізольоване робоче дерево на задачу: node scripts/orch.mjs werkruimte --taak <ID> (git worktree)."
+  },
+  "geinstalleerd": {
+    "bestand": "orchestratie/geinstalleerd.json",
+    "toelichting": "Факт установки (versie, bronCommit, bron: installer|eigenaar). Пише інсталятор/власник, не агент; з нього виводиться статус installed."
   }
 }

@@ -6,7 +6,7 @@
   "model": { "id": null, "versie": null, "bron": "onbekend" },
   "basisCommit": "b279ccabe31a27139b337822162653ccc13b6a5a",
   "basisVersie": "20261031-093842",
-  "regelsVersie": "1.0.0",
+  "regelsVersie": "1.1.0",
   "regelsHash": "<orchestratie/regels.lock.json → hash>",
   "tak": "feature/abc-001-20261031-120000",
   "kanaal": "zip",
