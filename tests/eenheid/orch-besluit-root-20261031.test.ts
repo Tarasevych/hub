@@ -43,7 +43,23 @@ export async function main(): Promise<number> {
   const journalPad = join(p.werk, 'orch-regels-bevestigd.jsonl'); const standPad = join(p.status, 'orch-regels-bevestigd.json');
   const journal = (): any[] => (existsSync(journalPad) ? lees(journalPad).split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
   const stand = () => { try { return JSON.parse(lees(standPad)); } catch { return null; } };
-  const inhoud = { regelsVersie: '1.3.0', hash: hex(32), kritiekHash: hex(32), voorstel: hex(12) };
+  // Справжній реліз для GitOps (не фіктивні відбитки): PYMODUS звіряє lock із фактичними файлами. «Важкий» kritiek — кирилиця, лапки, «\»,
+  // керівний символ, emoji, вкладені масиви/обʼєкти, 1.0 і 1e20 — щоб відбиток Python (PYMODUS) мусив збігтися з kern.mjs (JS) байт у байт.
+  // Echte release: AGENTS.md met BOM/CRLF/spaties aan het regeleinde — de normalisatie in Python moet gelijk zijn aan normaliseer() in kern.mjs.
+  const bron = join(p.w, 'bron'); mkdirSync(join(bron, 'orchestratie'), { recursive: true });
+  const regelTeksten: Record<string, string> = { 'AGENTS.md': '﻿# Regels\r\nregel 1   \r\nregel 2\t\r\n', 'orchestratie/BESLUITEN.md': '# Besluiten\n\nB-001 voorstel\n' };
+  const beleidAuto = {
+    schema: 1, regelsVersie: '1.3.0', regelBestanden: ['AGENTS.md', 'orchestratie/beleid.json', 'orchestratie/BESLUITEN.md'],
+    kritiek: {
+      toelichting: 'Критичні «політики»: "лапки", \\ та \u0001 керівний; emoji 🔐', installatieModi: { toegestaan: ['handmatig', 'na_bevestiging', 'automatisch_beperkt'], standaard: 'na_bevestiging', automatischBeperkt: null },
+      een: 1, ratio: 1.5, groot: 1e20, privesleutelsNaarAgenten: false, beschermdeTakken: ['voornaamst', 'release/*'], zz: { b: 2, a: [1, { y: true, x: null }] },
+    },
+  };
+  // "een": 1.0 in de tekst: JSON.parse geeft 1, Python json.loads 1.0 — stabielJson moet in beide «1» schrijven.
+  const beleidAutoTekst = JSON.stringify(beleidAuto, null, 2).replace('"een": 1,', '"een": 1.0,');
+  const regelsMet = (beleidTekst: string, extra: Record<string, string> = {}) => k.regelsAfdruk({ ...regelTeksten, ...extra, 'orchestratie/beleid.json': beleidTekst });
+  for (const [pad, t] of Object.entries(regelTeksten)) writeFileSync(join(bron, pad), t);
+  const inhoud = { regelsVersie: '1.3.0', hash: regelsMet(beleidAutoTekst).hash, kritiekHash: k.kritiekAfdruk(JSON.parse(beleidAutoTekst)), voorstel: hex(12) };
   const vinger = sleutel.vingerafdruk.slice(0, 16);
 
   try {
@@ -103,33 +119,61 @@ export async function main(): Promise<number> {
     check('script: andere soorten blijven werken naast orch-regels (externe hosts → klaar)', doe(eigenaar, { soort: 'externe-hosts', inhoud: { hosts: ['api.githubcopilot.com'] } }).st?.uitkomst === 'klaar' && journal().length === 3);
 
     // ---------------------------------------------------------------- GitOps: PYMODUS tegen het ECHTE root-journal
-    const bron = join(p.w, 'bron'); mkdirSync(join(bron, 'orchestratie'), { recursive: true });
-    const beleidAuto = { kritiek: { installatieModi: { toegestaan: ['handmatig', 'na_bevestiging', 'automatisch_beperkt'] } } };
-    const schrijfBron = (beleid: unknown, lock: unknown) => { writeFileSync(join(bron, 'orchestratie/beleid.json'), JSON.stringify(beleid)); writeFileSync(join(bron, 'orchestratie/regels.lock.json'), JSON.stringify(lock)); };
+    const schrijfBron = (lock: unknown, beleidTekst = beleidAutoTekst) => { writeFileSync(join(bron, 'orchestratie/beleid.json'), beleidTekst); writeFileSync(join(bron, 'orchestratie/regels.lock.json'), JSON.stringify(lock)); };
     const uuidVan = (kort: string) => `${kort.slice(0, 8)}-${kort.slice(8, 12)}-${kort.slice(12, 16)}-${kort.slice(16, 20)}-${kort.slice(20)}`;
     const eig = { soort: 'passkey', kritiekHash: inhoud.kritiekHash, regelsVersie: '1.3.0', hash: inhoud.hash, voorstel: inhoud.voorstel, besluit: uuidVan(j[0].besluit), passkey: j[0].passkey, op: j[0].tijd };
-    const lockP = { schema: 1, regelsVersie: '1.3.0', hash: inhoud.hash, kritiekHash: inhoud.kritiekHash, bestanden: {}, eigenaar: eig };
-    schrijfBron(beleidAuto, lockP);
+    const lockP = { schema: 1, regelsVersie: '1.3.0', hash: inhoud.hash, kritiekHash: inhoud.kritiekHash, bestanden: regelsMet(beleidAutoTekst).bestanden, eigenaar: eig };
+    schrijfBron(lockP);
     let g = gitopsModus(bron, journalPad);
-    check('gitops: lock met passkey-bevestiging die in het root-journal staat (uuid ↔ 32 hex) → toegestaan', g.code === 0 && g.uit === '', g.uit);
+    check('gitops: echte release (BOM/CRLF, kyrillisch, emoji, 1.0, 1e20) + passkey-bevestiging in het root-journal → toegestaan (Python-afdruk = kern.mjs)', g.code === 0 && g.uit === '', g.uit);
     g = gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'));
     check('gitops: geen root-journal → geweigerd («ontbreekt»)', g.code !== 0 && /ontbreekt/.test(g.uit), g.uit);
-    schrijfBron(beleidAuto, { ...lockP, eigenaar: { ...eig, besluit: randomUUID() } });
+    schrijfBron({ ...lockP, eigenaar: { ...eig, besluit: randomUUID() } });
     g = gitopsModus(bron, journalPad);
     check('gitops: besluit-id niet in het journal (een agent zet zelf soort=passkey in de repo) → geweigerd', g.code !== 0 && /root-journal/.test(g.uit), g.uit);
-    schrijfBron(beleidAuto, { ...lockP, eigenaar: { ...eig, voorstel: hex(12) } });
-    check('gitops: ander voorstel-id dan in het journal → geweigerd', gitopsModus(bron, journalPad).code !== 0);
-    schrijfBron(beleidAuto, { ...lockP, eigenaar: { ...eig, hash: hex(32) } });
-    check('gitops: andere regels-hash dan bevestigd → geweigerd', gitopsModus(bron, journalPad).code !== 0);
-    schrijfBron(beleidAuto, { ...lockP, kritiekHash: hex(32) });
+    schrijfBron({ ...lockP, eigenaar: { ...eig, voorstel: hex(12) } });
+    check('gitops: ander voorstel-id dan in het journal → geweigerd', /root-journal/.test(gitopsModus(bron, journalPad).uit));
+    schrijfBron({ ...lockP, eigenaar: { ...eig, hash: hex(32) } });
+    check('gitops: andere regels-hash dan bevestigd → geweigerd', /root-journal/.test(gitopsModus(bron, journalPad).uit));
+    schrijfBron({ ...lockP, kritiekHash: hex(32) });
     check('gitops: kritiekHash van de lock ≠ bevestigde → geweigerd (niet (meer) bevestigd)', /niet \(meer\) door de eigenaar bevestigd/.test(gitopsModus(bron, journalPad).uit));
-    schrijfBron(beleidAuto, { ...lockP, eigenaar: { ...eig, passkey: 'zz' } });
+    schrijfBron({ ...lockP, eigenaar: { ...eig, passkey: 'zz' } });
     check('gitops: onvolledige passkey-bevestiging in de lock → geweigerd', /onvolledig/.test(gitopsModus(bron, journalPad).uit));
     writeFileSync(join(p.w, 'kapot.jsonl'), '{niet json\n');
-    schrijfBron(beleidAuto, lockP);
+    schrijfBron(lockP);
     check('gitops: kapot journal → geweigerd (onleesbaar), geen uitzondering', /onleesbaar/.test(gitopsModus(bron, join(p.w, 'kapot.jsonl')).uit));
-    schrijfBron(beleidAuto, { ...lockP, eigenaar: { kritiekHash: inhoud.kritiekHash, regelsVersie: '1.3.0', handtekening: '-----BEGIN SSH SIGNATURE-----\nx\n-----END SSH SIGNATURE-----', op: j[0].tijd } });
-    check('gitops: vervalste SSH-handtekening ("x") zonder geldige root-ondertekenaar → geweigerd', gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'), join(p.w, 'geen-ondertekenaars')).code !== 0);
+
+    // Lock ↔ werkelijke bestanden (adversariële review): de bevestigde lock blijft staan, maar de release bevat ANDERE regels.
+    const kritiekAnders = JSON.parse(beleidAutoTekst); kritiekAnders.kritiek.beschermdeTakken = ['release/*']; kritiekAnders.kritiek.privesleutelsNaarAgenten = true;
+    schrijfBron(lockP, JSON.stringify(kritiekAnders, null, 2));
+    g = gitopsModus(bron, journalPad);
+    check('gitops: agent wijzigt kritiek in beleid.json (beschermdeTakken, privésleutels) onder een geldig bevestigde lock → geweigerd (kritiekHash)', g.code !== 0 && /kritiekHash/.test(g.uit), g.uit);
+    const alleenAuto = JSON.parse(beleidAutoTekst); alleenAuto.kritiek.installatieModi.toegestaan = ['automatisch_beperkt'];
+    schrijfBron(lockP, JSON.stringify(alleenAuto, null, 2));
+    check('gitops: alleen installatieModi aangepast (zelfde lock) → geweigerd (kritiekHash)', /kritiekHash/.test(gitopsModus(bron, journalPad).uit));
+    writeFileSync(join(bron, 'AGENTS.md'), regelTeksten['AGENTS.md'] + 'regel 3: agenten mogen alles\n');
+    schrijfBron(lockP);
+    g = gitopsModus(bron, journalPad);
+    check('gitops: AGENTS.md gewijzigd zonder vergrendel (lock.hash oud) → geweigerd en noemt AGENTS.md', g.code !== 0 && /zonder lock bij te werken: AGENTS\.md/.test(g.uit), g.uit);
+    writeFileSync(join(bron, 'AGENTS.md'), regelTeksten['AGENTS.md'].replace(/\r\n/g, '\n').replace(/[ \t]+$/gm, '').replace(/^﻿/, ''));
+    check('gitops: dezelfde AGENTS.md zonder BOM/CRLF/eindspaties → zelfde afdruk → toegestaan (normalisatie = kern.mjs)', gitopsModus(bron, journalPad).code === 0);
+    writeFileSync(join(bron, 'AGENTS.md'), regelTeksten['AGENTS.md']);
+    const versieAnders = JSON.parse(beleidAutoTekst); versieAnders.regelsVersie = '1.3.1';
+    schrijfBron(lockP, JSON.stringify(versieAnders, null, 2));
+    check('gitops: regelsVersie in beleid.json ≠ lock → geweigerd', /regelsVersie van de lock/.test(gitopsModus(bron, journalPad).uit));
+    const padUit = JSON.parse(beleidAutoTekst); padUit.regelBestanden = ['AGENTS.md', 'orchestratie/beleid.json', '../../etc/passwd'];
+    schrijfBron(lockP, JSON.stringify(padUit, null, 2));
+    check('gitops: regelBestanden met «../» → geweigerd (onveilig pad), niets buiten de release gelezen', /onveilig pad/.test(gitopsModus(bron, journalPad).uit));
+    const zonderBeleid = JSON.parse(beleidAutoTekst); zonderBeleid.regelBestanden = ['AGENTS.md'];
+    schrijfBron(lockP, JSON.stringify(zonderBeleid, null, 2));
+    check('gitops: beleid.json uit regelBestanden gehaald → geweigerd', /regelBestanden moet/.test(gitopsModus(bron, journalPad).uit));
+    schrijfBron(lockP, beleidAutoTekst.replace('"een": 1.0,', '"een": NaN,'));
+    check('gitops: NaN in beleid.json (Python zou het slikken, JSON.parse niet) → geweigerd', /onleesbaar/.test(gitopsModus(bron, journalPad).uit));
+    schrijfBron(lockP);
+    check('gitops: na herstel van de bestanden → weer toegestaan', gitopsModus(bron, journalPad).code === 0);
+
+    schrijfBron({ ...lockP, eigenaar: { kritiekHash: inhoud.kritiekHash, regelsVersie: '1.3.0', handtekening: '-----BEGIN SSH SIGNATURE-----\nx\n-----END SSH SIGNATURE-----', op: j[0].tijd } });
+    check('gitops: vervalste SSH-handtekening ("x") zonder geldige root-ondertekenaar → geweigerd', /ontbreekt/.test(gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'), join(p.w, 'geen-ondertekenaars')).uit));
     if (spawnSync('ssh-keygen', ['-?'], { encoding: 'utf8' }).error === undefined) {
       const { privateKey, publicKey } = generateKeyPairSync('ed25519');
       const pubRaw = Buffer.from((publicKey.export({ format: 'jwk' }) as { x: string }).x, 'base64url');
@@ -143,15 +187,26 @@ export async function main(): Promise<number> {
       const echteHandtekening = `-----BEGIN SSH SIGNATURE-----\n${blob.toString('base64').match(/.{1,70}/g)!.join('\n')}\n-----END SSH SIGNATURE-----\n`;
       const ondertekenaarsPad = join(p.w, 'eigenaar-ondertekenaars');
       writeFileSync(ondertekenaarsPad, `eigenaar@mijn-ruimte namespaces="mijn-ruimte-regels" ssh-ed25519 ${pub.toString('base64')}\n`);
-      check('gitops: vervalste SSH-handtekening met aanwezig eigenaar-ondertekenaars → geweigerd', gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'), ondertekenaarsPad).code !== 0);
-      schrijfBron(beleidAuto, { ...lockP, eigenaar: { kritiekHash: inhoud.kritiekHash, regelsVersie: '1.3.0', handtekening: echteHandtekening, op: j[0].tijd } });
-      check('gitops: ECHTE SSH-handtekening tegen root eigenaar-ondertekenaars → toegestaan (geen journal nodig)', gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'), ondertekenaarsPad).code === 0);
-    }
-    schrijfBron(beleidAuto, { ...lockP, eigenaar: null });
-    check('gitops: zonder eigenaar → geweigerd', gitopsModus(bron, journalPad).code !== 0);
-    schrijfBron({ kritiek: { installatieModi: { toegestaan: ['handmatig', 'na_bevestiging'] } } }, lockP);
+      g = gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'), ondertekenaarsPad);
+      check('gitops: vervalste SSH-handtekening met aanwezig eigenaar-ondertekenaars → geweigerd door ssh-keygen (geen sleutel past)', g.code !== 0 && /past bij geen enkele sleutel|ongeldig/.test(g.uit), g.uit);
+      const lockS = { ...lockP, eigenaar: { kritiekHash: inhoud.kritiekHash, regelsVersie: '1.3.0', handtekening: echteHandtekening, op: j[0].tijd } };
+      schrijfBron(lockS);
+      g = gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'), ondertekenaarsPad);
+      check('gitops: ECHTE SSH-handtekening tegen root eigenaar-ondertekenaars → toegestaan (geen journal nodig)', g.code === 0 && g.uit === '', g.uit);
+      schrijfBron(lockS, JSON.stringify(kritiekAnders, null, 2));
+      g = gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'), ondertekenaarsPad);
+      check('gitops: ECHTE SSH-handtekening, maar kritiek in beleid.json daarna gewijzigd → geweigerd (handtekening dekt alleen de ondertekende kritiekHash)', g.code !== 0 && /kritiekHash/.test(g.uit), g.uit);
+      check('gitops: ECHTE SSH-handtekening, ondertekenaar-bestand van een ANDERE sleutel → geweigerd', (() => { const ander = generateKeyPairSync('ed25519').publicKey; const raw = Buffer.from((ander.export({ format: 'jwk' }) as { x: string }).x, 'base64url'); const pad2 = join(p.w, 'andere-ondertekenaars'); writeFileSync(pad2, `eigenaar@mijn-ruimte namespaces="mijn-ruimte-regels" ssh-ed25519 ${Buffer.concat([s(Buffer.from('ssh-ed25519')), s(raw)]).toString('base64')}\n`); schrijfBron(lockS); return /past bij geen enkele sleutel/.test(gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'), pad2).uit); })());
+    } else console.log('  OVERGESLAGEN: ssh-keygen ontbreekt — echte SSH-handtekeningen in GitOps NIET getest (installeer openssh-client)');
+    schrijfBron({ ...lockP, eigenaar: null });
+    check('gitops: zonder eigenaar → geweigerd', /niet \(meer\) door de eigenaar bevestigd/.test(gitopsModus(bron, journalPad).uit));
+    schrijfBron(lockP, JSON.stringify({ ...JSON.parse(beleidAutoTekst), kritiek: { ...JSON.parse(beleidAutoTekst).kritiek, installatieModi: { toegestaan: ['handmatig', 'na_bevestiging'] } } }, null, 2));
     check('gitops: automatisch_beperkt niet toegestaan → geweigerd, ook met geldige bevestiging', /automatisch_beperkt/.test(gitopsModus(bron, journalPad).uit));
     const gitops = lees(GITOPS);
+    check('plafond: als root negeert gitops GITOPS_EIGENAAR_ONDERTEKENAARS (unset) en geeft het root-bestand /etc/mijn-ruimte/eigenaar-ondertekenaars aan PYMODUS',
+      /unset GITOPS_RECHTEN[^\n]*\\\n[^\n]*GITOPS_EIGENAAR_ONDERTEKENAARS/.test(gitops) && gitops.includes('EIGENAAR_ONDERTEKENAARS="${GITOPS_EIGENAAR_ONDERTEKENAARS:-/etc/mijn-ruimte/eigenaar-ondertekenaars}"') && gitops.includes('"$BRON" "$ORCH_BEVESTIGD" "$EIGENAAR_ONDERTEKENAARS"'));
+    check('plafond: PYMODUS draait met python3 -I (geen modules uit de werkmap) en vergelijkt kritiekHash/hash met de bestanden van de release',
+      gitops.includes('python3 -I - "$BRON" "$ORCH_BEVESTIGD"') && /def stabiel\(w\)/.test(gitops) && gitops.includes('regels gewijzigd zonder lock bij te werken'));
     check('plafond: gitops leest het root-journal van mijn-ruimte-besluit en negeert GITOPS_ORCH_BEVESTIGD als root', gitops.includes('GITOPS_ORCH_BEVESTIGD:-/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl') && /unset [^\n]*\n?[^\n]*GITOPS_ORCH_BEVESTIGD/.test(gitops) && gitops.includes('"$BRON" "$ORCH_BEVESTIGD"'));
     check('plafond: het root-script schrijft het journal in zijn eigen werkmap (/var/lib/mijn-ruimte/besluit) — dezelfde als gitops leest', lees('deploy/besluit/mijn-ruimte-besluit.sh').includes('WERK="${BESLUIT_WERK:-/var/lib/mijn-ruimte/besluit}"') && lees('deploy/besluit/mijn-ruimte-besluit.sh').includes('os.path.join(werk, "orch-regels-bevestigd.jsonl")'));
   } finally {

@@ -53,7 +53,9 @@ export type OrchTaak = {
 };
 export type OrchInlevering = { id: string; taakId: string | null; agent: string | null; kanaal: string | null; tak: string | null; commit: string | null; uitkomst: 'aanvaard' | 'geweigerd'; aangemaakt: string; bestanden: number; zaken: OrchZaak[]; tests: { overgeslagen?: boolean; geslaagd: number; mislukt: number; reden?: string } | null };
 export type OrchWachtrij = { integratieTak: string; integratieHoofd: string | null; bezig: unknown; wachtrij: Array<{ taakId: string; agent: string; tak: string; staat: string; ingediend: string; kanaal: string; inleveringId: string }> };
-export type OrchUpload = { id: string; naam: string; grootte: number; ontvangen: number; sha256: string; taakId: string | null; kanaal: string; door: string; begonnen: string; staat: 'bezig' | 'klaar' | 'mislukt' };
+export type OrchUpload = { id: string; naam: string; grootte: number; ontvangen: number; sha256: string; taakId: string | null; kanaal: string; door: string; begonnen: string; staat: 'bezig' | 'klaar' | 'mislukt';
+  /** Агент MCP-підключення, що почало завантаження: пакет мусить бути від імені САМЕ цього агента (ORCH-OVERDRACHT.json → agent). */
+  agent?: string | null };
 export type OrchVoorstel = {
   id: string; aangemaakt: string; door: string; staat: 'ontwerp' | 'toegepast' | 'ingetrokken';
   regelsVersie: string; hash: string; kritiekHash: string; kritiekGewijzigd: boolean;
@@ -118,6 +120,7 @@ export const ORCH_CODES: Readonly<Record<string, Tekst>> = Object.freeze({
   GIT_FOUT: T('Операція git у робочій копії координації не вдалася (подробиці нижче).', 'De git-bewerking in de werkkopie van de coördinatie is mislukt (zie detail).'),
   PUSH_MISLUKT: T('Гілку створено й закомічено локально, але не вдалося відправити у віддалений репозиторій. Відправте через SSH: git push -u origin <tak>.', 'De tak is lokaal gemaakt en gecommit, maar kon niet naar origin worden gestuurd. Stuur via SSH: git push -u origin <tak>.'),
   TESTS_NIET_TOEGESTAAN: T('Довільні команди тестів через сайт або MCP заборонені: сервер виконує лише перевірку правил із довіреної копії.', 'Willekeurige testopdrachten via de site of MCP zijn verboden: de server voert alleen de vertrouwde regelcontrole uit.'),
+  AGENT_VERSCHILT: T('Агент у запиті або в ORCH-OVERDRACHT.json не збігається з агентом цього MCP-підключення: агент діє лише від власного імені.', 'De agent in het verzoek of in ORCH-OVERDRACHT.json is niet de agent van deze MCP-verbinding: een agent handelt alleen op eigen naam.'),
   INHOUD_ONGELDIG: T('Вхідні дані неповні або в недопустимій формі.', 'De invoer is onvolledig of heeft een onjuiste vorm.'),
 });
 export const orchCodeTekst = (lang: 'uk' | 'nl', code: string): string => { const t = ORCH_CODES[code]; return t ? (lang === 'uk' ? t[0] : t[1]) : code; };

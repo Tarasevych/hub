@@ -228,7 +228,8 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
   додано свідомо (ChatGPT сам позначив це як залишковий ризик): дві підключення з однаковою назвою «Grok (grok)» — різні актори. Покрито 5
   перевірками в `orch-beoordeling` (MCP↔HTTP, інший агент, та сама назва через інший grant, скасування лише ініціатором, `door` містить id).
 - **Не прийнято:** `TESTS_NIET_GEISOLEERD` (409) із повним пропуском перевірок і забороною `zonderTests` — перекрито безпечнішим варіантом Antigravity
-  (довірений `controleer` таки виконується, без коду пакета); `zonderTests` лишається дозволеним — лише пропускає цю перевірку й записує причину.
+  (довірений `controleer` таки виконується, без коду пакета); `zonderTests` лишається дозволеним — після адверсарної перевірки (нижче) лише
+  примітка в записі: довірений `controleer` виконується завжди.
 
 **Виправлено старе (знайдено під час інтеграції)**
 - `orch-uitrol-basis` і `orch-acceptatie` ставили shim `ssh-keygen` лише коли справжнього немає; на машині зі справжнім `ssh-keygen` їхні фіктивні
@@ -242,6 +243,43 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
   скриптів; `python3 -m py_compile` блоку PYMODUS; `build:server` (esbuild) зібрався; `vite build` у пісочниці неможливий (немає vite/react).
 - Повний набір `node scripts/eenheidstests.mjs` без фільтра у пісочниці зупиняється на першому ж тесті, якому потрібна БД (`DATABASE_URL_ONTBREEKT`),
   як і на базі `d4c2ae9`; тому набори прогнано по одному — підсумок у звіті в треді.
+
+## Адверсарна перевірка після інтеграції (31.10.2026)
+
+Після злиття `a5f2741` + PR #13 гілку ще раз розібрали «атакувальними» лінзами (19 знахідок). Кожну перевірено вручну; реальні виправлено й
+покрито тестами, що на попередньому коді падали б.
+
+**HIGH**
+- **GitOps не звіряв lock із файлами релізу.** PYMODUS перевіряв підпис/passkey лише для `lock.kritiekHash`, а `beleid.json` у релізі міг містити
+  ІНШІ критичні політики (агент дописує `automatisch_beperkt` чи `privesleutelsNaarAgenten: true` поверх старого підтвердженого lock). Тепер
+  PYMODUS (і PYREGELS root-інсталятора) рахує `stabielJson`/`kritiekAfdruk`/`regelsAfdruk` у Python так само, як `kern.mjs` (BOM/CRLF, кирилиця,
+  emoji, `1.0`, `1e20` — перевірено тестом на збіг байт у байт), і вимагає рівності `kritiekHash`, `hash`, `regelsVersie`; `regelBestanden` —
+  безпечні шляхи, з `AGENTS.md` і `beleid.json`; `NaN` у JSON відхиляється; `python3 -I`. Тести `orch-besluit-root` і 5e в `orch-beoordeling`
+  раніше подавали фіктивні відбитки — тепер справжній реліз.
+- **CLI `inleveren` виконував код пакета за замовчуванням** (`standaardTests[1]` = `node scripts/eenheidstests.mjs orch-kern` у дереві пакета,
+  з `HOME` оператора). Тепер — лише довірений `controleer`; shell-тести тільки за явним `--tests`/`--standaardtests` з попередженням; після
+  помилок кроку 6 (конфлікт, застарілість) тести не запускаються взагалі.
+- **Розпакувальна бомба.** Передперевірки обмежували кількість записів, але не обсяг: 408 КіБ → 400 МіБ на диску. Тепер ≤ 1 ГіБ на архів за
+  ФАКТИЧНИМИ байтами (`unzip -p`/`gzip -dc` → `head` → `wc`, без запису): перевірено, що unzip 6.0 пише 20 МіБ при заголовку «10 байт».
+  Для tar ще й сума розмірів із заголовків (розріджений файл 64 МіБ із потоку 10 КБ), і після розпакування — видимий обсяг тек.
+
+**MEDIUM**
+- `zonderTests` на сервері вимикав довірений `controleer` → пакет зі зміненим `AGENTS.md` без lock проходив. Тепер `controleer` завжди.
+- Агент міг діяти від імені іншого (`orch_taak_start` з чужим `agent`, пакет із чужим `agent` в `ORCH-OVERDRACHT.json`) → `AGENT_VERSCHILT`;
+  запис передачі зберігає `door`.
+- `deploy/mijn-ruimte.service` без `ReadWritePaths` для `orch-inbox`/`orch-repo` → EROFS при першому завантаженні. Додано (RUNBOOK §18.1.6).
+- `compactContext.bestand` не перевірявся — пропозиція правил могла записати файл поза деревом або поверх `AGENTS.md`. Тепер лише
+  `orchestratie/<назва>.md` (`CONTEXT_PAD`) у `valideerBeleid`, у `context()`, `voorstelToepassen` і CLI `context`.
+
+**LOW**
+- Гілка `regels/*` будується від перевіреного SHA, а не назви гілки (TOCTOU); гілку створюємо самі перед `worktree add`, а при збої
+  (напр. post-checkout hook) прибираємо і дерево, і гілку — тест із hook.
+- MCP: ліміт 20/год на `begin` і `klaar` на власника; `orch_overzicht` для агента маскує e-mail власника, чужі завантаження, passkey і besluit-id.
+- Старе: список конфліктів містив інформаційні рядки `git merge-tree` («Auto-merging …»); помилки розпакування мали український текст і в `nl`.
+
+**Тести:** `orch-beoordeling` 28 → 49, `orch-besluit-root` 36 → 49, `orch-inleveren` 36 → 41, `orch-uitrol-basis` 14 → 15; явні
+`OVERGESLAGEN`-повідомлення, якщо бракує `ssh-keygen`/`python`/`tar --sparse`; ізоляцію worktree перевіряє reflog; `veiligeTestEnv` — наскрізно
+(код пакета не бачить `DATABASE_URL`/`SESSION_SECRET` оператора).
 
 **Обмеження / далі за власником**
 - На сервері потрібен root-файл `/etc/mijn-ruimte/eigenaar-ondertekenaars` (RUNBOOK §18.1.5), інакше GitOps відхиляє SSH-підписаний lock.

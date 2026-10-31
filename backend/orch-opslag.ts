@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import * as bk from '../deploy/goedkeuring/besluit-kern.mjs';
 import {
-  SHA40, TAAK_ID, VOORSTEL_ID, beoordeelVoorstel, bevestigMetPasskey, compacteContext, eigenaarStatus, statusAfleiden, valideerBeleid, valideerTaak, vergrendel,
+  CONTEXT_PAD, SHA40, TAAK_ID, VOORSTEL_ID, beoordeelVoorstel, bevestigMetPasskey, compacteContext, eigenaarStatus, statusAfleiden, valideerBeleid, valideerTaak, vergrendel,
 } from '../scripts/orch/kern.mjs';
 import { inleveren, registreerInlevering } from '../scripts/orch/inleveren.mjs';
 import { ORCH_LIMIETEN, ORCH_TOOL_NAMEN, type OrchBevestiging, type OrchInlevering, type OrchOverzicht, type OrchRegelsOverzicht, type OrchTaak, type OrchUpload, type OrchVoorstel, type OrchZaak } from '../shared/orch-model';
@@ -151,6 +151,8 @@ export function overzicht(): OrchOverzicht {
 /** De compacte context voor agents zonder GitHub/MCP (orchestratie/CONTEXT-COMPACT.md), zoals hij in de werkkopie staat. */
 export function context(): { bestand: string; tekst: string; regelsVersie: string; hash: string } {
   const { beleid, lock } = laadOrch();
+  // Захист у глибину: valideerBeleid уже вимагає orchestratie/<назва>.md, але integratie могли змінити повз сайт.
+  if (!CONTEXT_PAD.test(String(beleid.compactContext?.bestand || ''))) fout('BELEID_ONGELDIG', 500, [], 'compactContext.bestand');
   const pad = join(wortel(), beleid.compactContext.bestand);
   return { bestand: beleid.compactContext.bestand, tekst: existsSync(pad) ? readFileSync(pad, 'utf8') : '', regelsVersie: beleid.regelsVersie, hash: lock?.hash ?? '' };
 }
@@ -204,7 +206,7 @@ export function uploadsLijst(): OrchUpload[] {
   }
   return uit.sort((a, b) => (a.begonnen < b.begonnen ? 1 : -1)).slice(0, 20);
 }
-export function uploadBegin(input: Record<string, unknown>, door: string, kanaalVoorkeur: 'web_upload' | 'mcp' | 'http_api' = 'web_upload'): OrchUpload {
+export function uploadBegin(input: Record<string, unknown>, door: string, kanaalVoorkeur: 'web_upload' | 'mcp' | 'http_api' = 'web_upload', agent: string | null = null): OrchUpload {
   const { beleid } = laadOrch();
   const naam = tekst(input.naam, 140);
   if (!UPLOAD_NAAM.test(naam)) fout('UPLOAD_NAAM');
@@ -219,7 +221,7 @@ export function uploadBegin(input: Record<string, unknown>, door: string, kanaal
   if (!beleid.inlevering.kanalen.includes(kanaal)) fout('INHOUD_ONGELDIG');
   const id = randomBytes(8).toString('hex');
   mkdirSync(uploadMap(id), { recursive: true });
-  const u: OrchUpload = { id, naam, grootte, ontvangen: 0, sha256: sha, taakId, kanaal, door: tekst(door, 120), begonnen: nu(), staat: 'bezig' };
+  const u: OrchUpload = { id, naam, grootte, ontvangen: 0, sha256: sha, taakId, kanaal, door: tekst(door, 120), begonnen: nu(), staat: 'bezig', agent: agent ? tekst(agent, 32) : null };
   schrijfUpload(u);
   return u;
 }
@@ -268,7 +270,9 @@ export function uploadKlaar(input: Record<string, unknown>, actor: string): { up
       fout('TESTS_NIET_TOEGESTAAN', 400);
     }
   }
-  const record = inleveren({ wortel: wortel(), beleid, lock, bron: pad, kanaal: u.kanaal, taakId: u.taakId ?? null, alleenVeiligeControle: true, zonderTests: input.zonderTests ? tekst(input.zonderTests, 300) : null });
+  // verwachteAgent: завантаження MCP-агента приймається лише з ORCH-OVERDRACHT.json від імені того самого агента (AGENT_VERSCHILT);
+  // door — хто фактично доставив (власник або MCP-підключення з grant-id) — лишається в записі передачі.
+  const record = inleveren({ wortel: wortel(), beleid, lock, bron: pad, kanaal: u.kanaal, taakId: u.taakId ?? null, alleenVeiligeControle: true, zonderTests: input.zonderTests ? tekst(input.zonderTests, 300) : null, verwachteAgent: u.agent ?? null, door: u.door });
   const registratie = registreerInlevering(wortel(), record) as Record<string, unknown>;
   const commit = staatCommit(`orch: inlevering ${record.id} (${record.uitkomst}) via ${u.kanaal}`);
   u.staat = record.uitkomst === 'aanvaard' ? 'klaar' : 'mislukt';
@@ -362,26 +366,32 @@ export function voorstelToepassen(id: unknown, besluit: BesluitVoorToepassen): {
   if (!b.lock) fout('BESLUIT_PAST_NIET', 409, b.fout ? [b.fout] : []);
 
   // Ізольований тимчасовий git worktree: ORCH_WORTEL ніколи не перемикає HEAD, тому паралельні читання/задачі не стикаються.
-  const basisRef = huidig.repo.tak && huidig.repo.tak !== 'HEAD' ? huidig.repo.tak : huidig.repo.hoofd;
+  // База — SHA, перевірений щойно (huidig.repo.hoofd), а не назва гілки: між перевіркою і worktree add гілку могли пересунути (TOCTOU).
+  const basisRef = /^[0-9a-f]{40}$/.test(String(huidig.repo.hoofd || '')) ? huidig.repo.hoofd : (huidig.repo.tak && huidig.repo.tak !== 'HEAD' ? huidig.repo.tak : huidig.repo.hoofd);
   const tak = `regels/${v.regelsVersie}-${stempel()}`;
   const werk = mkdtempSync(join(tmpdir(), 'orch-regels-'));
   const boom = join(werk, 'boom');
   let commit = '';
   let controleRegels: string[] = [];
-  if (git('worktree', 'add', '-q', '-b', tak, boom, basisRef) === null) { rmSync(werk, { recursive: true, force: true }); fout('GIT_FOUT', 500, [], `git worktree add -b ${tak}`); }
   const gw = (...a: string[]): string | null => {
     try { return execFileSync('git', a, { cwd: boom, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 30_000 }).trim(); } catch { return null; }
   };
   const verwijderTak = () => { spawnSync('git', ['worktree', 'remove', '--force', boom], { cwd: wortel() }); spawnSync('git', ['worktree', 'prune'], { cwd: wortel() }); git('branch', '-D', tak); };
+  // Спершу гілку створюємо самі (git branch відмовить, якщо така вже є — тоді нічого чужого не видаляємо), потім worktree без -b.
+  // worktree add може повернути помилку, лишивши і дерево, і гілку (напр. post-checkout hook з кодом 1) — тоді прибираємо обидва.
+  // Eerst zelf de tak maken (faalt als hij bestaat → niets van een ander verwijderen); mislukt worktree add, dan boom én tak opruimen.
+  if (git('branch', tak, basisRef) === null) { rmSync(werk, { recursive: true, force: true }); fout('GIT_FOUT', 500, [], `git branch ${tak}`); }
+  if (git('worktree', 'add', '-q', boom, tak) === null) { verwijderTak(); rmSync(werk, { recursive: true, force: true }); fout('GIT_FOUT', 500, [], `git worktree add ${tak}`); }
   try {
     for (const [p, t] of Object.entries(v.bestanden)) { mkdirSync(join(boom, p, '..'), { recursive: true }); writeFileSync(join(boom, p), t); }
     schrijfJson(join(boom, LOCK), b.lock);
     const beleidNieuw = r.beleid!;
+    if (!CONTEXT_PAD.test(String(beleidNieuw.compactContext?.bestand || ''))) { verwijderTak(); fout('BELEID_ONGELDIG', 409, [], 'compactContext.bestand'); }
     writeFileSync(join(boom, beleidNieuw.compactContext.bestand), compacteContext(r.bestanden!['AGENTS.md'] ?? readFileSync(join(boom, 'AGENTS.md'), 'utf8'), beleidNieuw, b.lock));
     const cr = spawnSync(process.execPath, [join(wortel(), 'scripts/orch.mjs'), 'controleer', '--wortel', boom], { cwd: boom, encoding: 'utf8', timeout: 120_000 });
     const cRegels = `${cr.stdout ?? ''}${cr.stderr ?? ''}`.trim().split('\n').filter(Boolean);
     if ((cr.status ?? 1) !== 0) { verwijderTak(); fout('CONTROLE_MISLUKT', 409, [], cRegels.slice(-30).join('\n')); }
-    gw('add', '-A', '--', ...huidig.beleid.regelBestanden, LOCK, beleidNieuw.compactContext.bestand);
+    if (gw('add', '-A', '--', ...huidig.beleid.regelBestanden, LOCK, beleidNieuw.compactContext.bestand) === null) { verwijderTak(); fout('GIT_FOUT', 500, [], 'git add'); }
     const bericht = `ORCH regels ${v.regelsVersie}: bevestigd door eigenaar (passkey ${bevestigd.passkey}, besluit ${besluit.id})\n\nVoorstel ${v.id} via mcp.* /agenten → Координація. kritiekHash ${v.kritiekHash}${v.kritiekGewijzigd ? ' (kritiek gewijzigd)' : ''}.`;
     if (gw('-c', 'user.name=orch-site', '-c', 'user.email=orch@mijn-ruimte.invalid', 'commit', '-q', '-m', bericht) === null) { verwijderTak(); fout('GIT_FOUT', 500, [], 'git commit'); }
     commit = gw('rev-parse', 'HEAD') || '';

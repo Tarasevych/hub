@@ -47,6 +47,11 @@ ReadWritePaths=-/srv/mijn-ruimte/besluit-inbox
 ReadWritePaths=-/srv/mijn-ruimte/pakketten
 # Eigen logo's van de beheerder (21.10.2026): officiële SVG/PNG ≤ 200 KB; de app leest altijd en schrijft alleen na passkey (admin → Інтеграції).
 ReadWritePaths=-/srv/mijn-ruimte/merk-eigen
+# ORCH-001 (31.10.2026, RUNBOOK §18.1): uploads van agenten/eigenaar in orch-inbox (fragmenten ≤ 300 MiB) en de git-werkkopie orch-repo
+# (takken inlevering/* en regels/*, records, wachtrij — integratie zelf wordt nooit omgeschakeld). Ontbrak in de eerste versie van etap 3:
+# door ProtectSystem=strict faalde de eerste upload met EROFS (adversariële review 31.10.2026). "-" = geen fout zolang §18.1 niet gedaan is.
+ReadWritePaths=-/srv/mijn-ruimte/orch-inbox
+ReadWritePaths=-/srv/mijn-ruimte/orch-repo
 # Etap E: NDJSON-export van het journaal (alleen als siem.env SIEM_BESTAND zet). "-" = geen fout zonder de map.
 ReadWritePaths=-/var/log/mijn-ruimte
 ProtectHome=yes

@@ -1288,6 +1288,10 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
    Zonder dit bestand weigert GitOps automatisch installeren met «eigenaar-ondertekenaars op de server ontbreekt»; de passkey-weg
    (root-journaal, stap 4) heeft het niet nodig. Dezelfde regels (`namespaces="mijn-ruimte-regels"`, geen `cert-authority`) gelden voor
    `node scripts/orch.mjs controleer` en `bevestig` op de pc van de eigenaar.
+6. **Schrijfrechten van de app-dienst.** `deploy/mijn-ruimte.service` draait met `ProtectSystem=strict`; sinds de adversariële review van
+   31.10.2026 staan `ReadWritePaths=-/srv/mijn-ruimte/orch-inbox` en `ReadWritePaths=-/srv/mijn-ruimte/orch-repo` erin (zonder: de eerste upload
+   faalt met `EROFS`). De installer zet de unit mee neer; bij een eigen kopie van de unit: beide regels toevoegen en
+   `systemctl daemon-reload && systemctl restart mijn-ruimte`. Controle: `systemctl show mijn-ruimte -p ReadWritePaths`.
 
 ### 18.2 Dagelijks gebruik
 - **Overzicht**: regelsversie + lock, basis, integratietak, geïnstalleerde versie, agenten, taken (met «regels verouderd»), wachtrij, laatste
@@ -1303,6 +1307,24 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
   absolute paden of een `.git`-map geven `INHOUD_ONVEILIG`; een `github_pr`-bron die met «-» begint geeft `REF_ONGELDIG`. Een upload hoort bij
   wie hem begon (de eigenaar via de site, of een agent via zijn MCP-verbinding — client, agent én grant-id, dus niet een tweede verbinding met
   dezelfde naam): een ander krijgt op `stuk`, `klaar` en `annuleren` `UPLOAD_ONBEKEND`, alsof de upload niet bestaat.
+  **Aanvullingen na de adversariële review (31.10.2026).**
+  - De vertrouwde `controleer` draait **altijd**, ook met `zonderTests` / `--zonder-tests`: die notitie slaat alleen de tests van de agent over
+    (het record toont «agenttests overgeslagen» naast de uitslag van de regelcontrole). Een pakket dat `AGENTS.md` wijzigt zonder nieuwe lock
+    wordt dus altijd geweigerd (`TESTS_MISLUKT`, regelcontrole).
+  - **CLI op uw pc**: `node scripts/orch.mjs inleveren` voert standaard ALLEEN die vertrouwde `controleer` uit — geen code uit het pakket.
+    Shell-tests (`--tests "cmd"` of `--standaardtests` = `beleid.inlevering.standaardTests`) draaien code UIT HET PAKKET met uw `HOME`
+    (wel zonder `DATABASE_URL`, sleutels en pepers); de CLI waarschuwt dan («LET OP: виконую КОД ІЗ ПАКЕТА АГЕНТА»). Gebruik ze alleen voor
+    pakketten die u vertrouwt, liefst in een wegwerp-VM. Is de inlevering al geweigerd (conflict, verouderde basis/regels), dan draait er niets.
+  - **Archiefbommen**: per archief hoogstens 1 GiB uitgepakt (`INHOUD_TE_GROOT`). Gemeten worden de **werkelijke** bytes (stroom via
+    `unzip -p` / `gzip -dc`, niets op schijf) — vervalste groottes in zip-koppen helpen niet — plus de groottes uit de tar-koppen (sparse
+    bestanden met hun volle grootte), en na het uitpakken nog eens de zichtbare omvang van alle bestanden.
+  - **Agent op eigen naam**: een MCP-verbinding van agent X kan geen taak voor agent Y registreren en geen pakket met `"agent": "Y"` in
+    `ORCH-OVERDRACHT.json` inleveren (`AGENT_VERSCHILT`); het record bewaart `door` (wie het werkelijk deed, met grant-id).
+  - **MCP-limiet**: `orch_inleveren_begin` en `orch_inleveren_klaar` elk hoogstens 20 per uur per eigenaar over al zijn MCP-verbindingen
+    (`RATE_LIMITED`); teller in het geheugen van de app, los van de HTTP-teller, leeg na een herstart. `klaar` blokkeert de app zolang de
+    pijplijn loopt (git + `controleer`, gewoonlijk seconden, hoogstens 120 s) — bekend en bewust, de limiet begrenst het.
+  - **`orch_overzicht` voor agenten**: alleen eigen uploads; het e-mailadres van de eigenaar wordt «eigenaar», grant-id's van andere
+    verbindingen vallen weg, bevestigingen tonen geen passkey-vingerafdruk, label of besluit-id.
 - **Regels wijzigen**: «Regels wijzigen» → bewerk `AGENTS.md` / `orchestratie/beleid.json` / `orchestratie/BESLUITEN.md` → «Voorstel controleren»
   (codes: `GEEN_WIJZIGING`, `VERSIE_NIET_VERHOOGD`, `BESLUIT_ONTBREEKT`, `BELEID_JSON`, `REGELBESTANDEN_GEWIJZIGD`) → «Ondertekenen met passkey
   en tak maken». Bij gewijzigde `kritiek`-regels toont de pagina een waarschuwing: uw passkey bevestigt precies die. Daarna: de tak
@@ -1330,12 +1352,21 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
 - `TESTS_NIET_TOEGESTAAN` — een client stuurde eigen testopdrachten mee (zie 18.2); `INHOUD_ONVEILIG` — het archief is vóór het uitpakken
   geweigerd (record met de reden, geen tak); `UPLOAD_ONBEKEND` op een bestaand id — een andere actor dan de starter probeert de upload te
   gebruiken.
+- `INHOUD_TE_GROOT` — het archief pakt uit tot meer dan 1 GiB (of een sparse bestand is groter): splits het pakket of stuur alleen de
+  gewijzigde bestanden. `AGENT_VERSCHILT` — de MCP-verbinding van één agent probeert iets op naam van een andere agent; de agent moet zijn eigen
+  verbinding gebruiken. `CONTEXT_PAD` — `compactContext.bestand` in `beleid.json` moet `orchestratie/<naam>.md` zijn (orch schrijft dat bestand).
+- GitOps weigert met «kritieke regels in beleid.json wijken af van regels.lock.json (kritiekHash)» — iemand heeft `kritiek` in `beleid.json`
+  gewijzigd onder een eerder bevestigde lock; met «regels gewijzigd zonder lock bij te werken: …» — `AGENTS.md`/`BESLUITEN.md`/`beleid.json`
+  wijken af van `lock.hash`; met «regelsVersie van de lock … wijkt af» — versie niet doorgevoerd. Sinds 31.10.2026 vergelijkt GitOps (net als
+  de root-installer) de lock met de werkelijke bestanden van de release; oplossing: `vergrendel`, en bij gewijzigde `kritiek` opnieuw bevestigen.
 - Terugdraaien van een regelwijziging = de tak `regels/*` niet samenvoegen (of een nieuw voorstel met hogere versie). Niets op de server
   verandert tot de tak in `integratie` zit en een pakket is geïnstalleerd.
-- Tests die dit afdekken: `node scripts/eenheidstests.mjs orch-site` (74, echte git-repo's + routes + MCP), `orch-besluit-root` (36, het echte
-  root-script onder een onbevoorrechte gebruiker + de GitOps-controle, met echte `ssh-keygen`-handtekeningen), `besluit-root` (47),
-  `orch-beoordeling` (28, de regressietests van de onafhankelijke review van 31.10.2026: RCE-blokkade, schone omgeving, SEC-001-05,
-  zoekcatalogus, SSHSIG, archief-voorcontrole, actor-binding van uploads, besluit-id en worktree bij regels/toepassen).
+- Tests die dit afdekken: `node scripts/eenheidstests.mjs orch-site` (74, echte git-repo's + routes + MCP), `orch-besluit-root` (49, het echte
+  root-script onder een onbevoorrechte gebruiker + de GitOps-controle, met echte `ssh-keygen`-handtekeningen en een echte release: lock ↔
+  bestanden), `besluit-root` (47), `orch-beoordeling` (49, de regressietests van de onafhankelijke en de adversariële review van 31.10.2026:
+  RCE-blokkade, schone omgeving, SEC-001-05, zoekcatalogus, SSHSIG, archief-voorcontrole en archiefbommen, actor-binding van uploads, agent op
+  eigen naam, MCP-limiet en maskering, zonderTests, besluit-id, worktree en opruimen bij regels/toepassen), `orch-inleveren` (41, o.a. CLI zonder
+  pakketcode).
 
 ### 18.4 Acceptatietests (etappe 4) en wat ze over de werking vastleggen
 `node scripts/eenheidstests.mjs orch-acceptatie` (47) speelt de acht scenario's uit de opdracht na op echte repo's en de echte root-scripts:

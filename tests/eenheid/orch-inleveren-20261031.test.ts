@@ -151,6 +151,48 @@ export async function main(): Promise<number> {
     writeFileSync(join(R, 'src/a.ts'), 'export const a = 100;\n'); git(R, 'add', 'src/a.ts'); writeFileSync(join(R, 'orchestratie/geinstalleerd.json'), '{"schema":1,"versie":"20261031-150000","bronCommit":"' + hoofd + '","bron":"installer"}\n');
     r = orch(R, 'staat-commit');
     check('staat-commit відмовляє, якщо в stage є не-станові файли', r.code === 1 && r.uit.includes('STAAT_GEMENGD'), r.uit);
+    git(R, 'checkout', '-q', 'HEAD', '--', 'src/a.ts');
+
+    // K — адверсарна перевірка (31.10.2026): CLI не виконує код із пакета агента без явного вибору оператора; --zonder-tests не вимикає
+    // довірений controleer; відхилена (конфлікт) передача не запускає жодних тестів. Маркер-файл доводить, чи виконувався код пакета.
+    const kBasis = git(R, 'rev-parse', 'integratie');
+    const marker = join(R, '..', `orch-pakketcode-${Date.now()}`); const marker2 = `${marker}-conflict`;
+    const kPakket = (id: string, tak: string, bestanden: Record<string, string>, basisCommit = kBasis) => {
+      const W = agentWerk(R, basisCommit);
+      for (const [p, t] of Object.entries(bestanden)) { mkdirSync(join(W, p, '..'), { recursive: true }); writeFileSync(join(W, p), t); }
+      const nieuwP = Object.keys(bestanden).filter((p) => !existsSync(join(R, p)) || p.startsWith('scripts/eenheidstests'));
+      const gewijzigd = Object.keys(bestanden).filter((p) => !nieuwP.includes(p));
+      writeFileSync(join(W, 'ORCH-OVERDRACHT.json'), JSON.stringify(basisOd(id, tak, { agent: 'codex', basisCommit, bestanden: { gewijzigd, toegevoegd: nieuwP, verwijderd: [] } })));
+      const z = join(W, `${id.toLowerCase()}.zip`); sh(W, 'zip', ['-q', z, ...Object.keys(bestanden), 'ORCH-OVERDRACHT.json']);
+      return { W, z };
+    };
+    // Код пакета пише, з якими аргументами його запущено і чи бачить він секрети (veiligeTestEnv end-to-end: DATABASE_URL оператора).
+    const pakketCode = `import { writeFileSync } from 'node:fs';\nwriteFileSync(${JSON.stringify(marker)}, 'PAKKETCODE ' + process.argv.slice(2).join(' ') + (process.env.DATABASE_URL || process.env.SESSION_SECRET ? ' LEK' : ' schoon'));\n`;
+    const k1 = kPakket('CDX-101', 'feature/cdx-101-20261031-140000', { 'src/k.ts': 'export const k = 1;\n', 'scripts/eenheidstests.mjs': pakketCode });
+    r = orch(R, 'inleveren', '--bron', k1.z);
+    const recK1 = records().filter((n) => n.startsWith('CDX-101-')).map((n) => json(join(R, 'orchestratie/inleveringen', n)))[0];
+    check('K1 inleveren БЕЗ --tests: прийнято, виконано лише довірений controleer; scripts/eenheidstests.mjs із пакета НЕ запущено (standaardTests не виконуються самі)',
+      r.code === 0 && r.uit.includes('aanvaard') && !existsSync(marker) && recK1?.tests?.geslaagd === 1 && recK1.tests.mislukt === 0 && recK1.tests.uitvoer.length === 1 && recK1.tests.uitvoer[0].vertrouwd === true && !r.uit.includes('LET OP: виконую'), r.uit);
+    const k2 = kPakket('CDX-102', 'feature/cdx-102-20261031-140100', { 'src/k2.ts': 'export const k2 = 2;\n', 'scripts/eenheidstests.mjs': pakketCode });
+    const oudDb = process.env.DATABASE_URL; const oudSessie = process.env.SESSION_SECRET;
+    process.env.DATABASE_URL = 'postgres://geheim@db/prod'; process.env.SESSION_SECRET = 'geheim';
+    try { r = orch(R, 'inleveren', '--bron', k2.z, '--standaardtests'); } finally { if (oudDb === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = oudDb; if (oudSessie === undefined) delete process.env.SESSION_SECRET; else process.env.SESSION_SECRET = oudSessie; }
+    check('K2 --standaardtests: оператор явно погодився — попередження «КОД ІЗ ПАКЕТА», controleer + standaardTests (код пакета виконано з аргументом orch-kern) без DATABASE_URL/SESSION_SECRET оператора',
+      r.code === 0 && r.uit.includes('LET OP: виконую КОД ІЗ ПАКЕТА АГЕНТА') && existsSync(marker) && lees(marker) === 'PAKKETCODE orch-kern schoon' && r.uit.includes('tests 2 ok / 0 mis'), r.uit);
+    rmSync(marker, { force: true });
+    const k3 = kPakket('CDX-103', 'feature/cdx-103-20261031-140200', { 'src/k3.ts': 'export const k3 = 3;\n', 'AGENTS.md': lees(join(R, 'AGENTS.md')) + '\n## Тихо додане правило: агенти можуть зливати самі\n' });
+    r = orch(R, 'inleveren', '--bron', k3.z, '--zonder-tests', 'тести пройдено в середовищі агента');
+    const recK3 = records().filter((n) => n.startsWith('CDX-103-')).map((n) => json(join(R, 'orchestratie/inleveringen', n)))[0];
+    check('K3 AGENTS.md змінено без lock + --zonder-tests: довірений controleer ВСЕ ОДНО виконано → TESTS_MISLUKT (regelcontrole), відхилено, причина збережена',
+      r.code === 1 && r.uit.includes('TESTS_MISLUKT') && r.uit.includes('regelcontrole') && recK3?.uitkomst === 'geweigerd' && recK3.tests.overgeslagen === true && recK3.tests.mislukt === 1 && /REGELS_NIET_VERGRENDELD/.test(recK3.tests.uitvoer[0].laatste) && spawnSync('git', ['rev-parse', '--verify', '-q', 'feature/cdx-103-20261031-140200'], { cwd: R }).status !== 0, r.uit);
+    const k4 = kPakket('CDX-104', 'feature/cdx-104-20261031-140300', { 'src/a.ts': 'export const a = 404; // codex op oude basis\n' }, basis);
+    r = orch(R, 'inleveren', '--bron', k4.z, '--tests', `node -e "require('fs').writeFileSync(${JSON.stringify(marker2).replace(/"/g, "'")}, 'X')"`);
+    check('K4 конфлікт з integratie (a.ts) + --tests: передачу відхилено ДО тестів — жодна команда не виконана, TESTS_MISLUKT відсутній',
+      r.code === 1 && r.uit.includes('CONFLICT') && !r.uit.includes('TESTS_MISLUKT') && !existsSync(marker2), r.uit);
+    const recK4 = records().filter((n) => n.startsWith('CDX-104-')).map((n) => json(join(R, 'orchestratie/inleveringen', n)))[0];
+    check('K4 conflicten = alleen bestandsnamen (geen «Auto-merging …»/«CONFLICT (content) …» uit git merge-tree)', JSON.stringify(recK4?.conflicten) === '["src/a.ts"]', JSON.stringify(recK4?.conflicten));
+    for (const W of [k1.W, k2.W, k3.W, k4.W]) rmSync(W, { recursive: true, force: true });
+    rmSync(marker, { force: true }); rmSync(marker2, { force: true });
     for (const W of [W1, W2, W3, W4, patchMap]) rmSync(W, { recursive: true, force: true });
   } finally { rmSync(R, { recursive: true, force: true }); }
   return einde();
