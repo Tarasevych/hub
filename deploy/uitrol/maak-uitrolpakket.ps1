@@ -46,10 +46,35 @@ try {
   if (-not $env:AUTEUR) { Stop-Met "Встановіть AUTEUR." "Zet AUTEUR." }
   if ($env:AGENT -notmatch '^[a-z][a-z0-9-]{1,31}$') { Stop-Met "Встановіть AGENT (claude/cursor/gpt)." "Zet AGENT." }
   if (-not $env:SAMENVATTING -or $env:SAMENVATTING.Length -lt 20) { Stop-Met "Встановіть SAMENVATTING (>=20)." "Zet SAMENVATTING (>=20)." }
+  # ORCH-001 (31.10.2026): UITROL-BASIS — op welke GEÏNSTALLEERDE versie en commit dit pakket is gebouwd (BASIS_VERSIE + BASIS_COMMIT);
+  # root weigert een pakket waarvan de basis ouder is dan wat er staat (BASIS_VEROUDERD), en vanaf 20261201-000000 zonder basis (GEEN_BASIS).
+  $basisTekst = ''
+  if ($env:BASIS_VERSIE -or $env:BASIS_COMMIT) {
+    if ($env:BASIS_VERSIE -notmatch '^[0-9]{8}-[0-9]{6}$' -or $env:BASIS_COMMIT -notmatch '^[0-9a-f]{40}$') {
+      Stop-Met "BASIS_VERSIE (JJJJMMDD-UUMMSS) і BASIS_COMMIT (40 hex) мають бути задані разом і бути коректними." "BASIS_VERSIE (JJJJMMDD-UUMMSS) en BASIS_COMMIT (40 hex) horen samen en moeten geldig zijn."
+    }
+    $basisTekst = "versie=$($env:BASIS_VERSIE)`ncommit=$($env:BASIS_COMMIT)"
+    if (Test-Path 'orchestratie/regels.lock.json') {
+      $lockJson = Get-Content 'orchestratie/regels.lock.json' -Raw -Encoding UTF8 | ConvertFrom-Json
+      $basisTekst += "`nregelsVersie=$($lockJson.regelsVersie)`nregelsHash=$($lockJson.hash)"
+    }
+  } elseif ($versie -ge '20261201-000000') {
+    Stop-Met "Встановіть BASIS_VERSIE і BASIS_COMMIT (встановлена база) — root відхилить пакет без UITROL-BASIS (GEEN_BASIS)." "Zet BASIS_VERSIE en BASIS_COMMIT (geïnstalleerde basis) — root weigert pakketten zonder UITROL-BASIS (GEEN_BASIS)."
+  }
   $naam = "mijn-ruimte-$versie.tar.gz"
   $doel = Join-Path $Uit $naam
   if (-not $ZonderGit) {
-    git archive --format=tar.gz --prefix="mijn-ruimte-$versie/" --add-virtual-file="mijn-ruimte-$versie/UITROL-VERSIE:$versie" --add-virtual-file="mijn-ruimte-$versie/BRON-COMMIT:$commit" --add-virtual-file="mijn-ruimte-$versie/AUTEUR:$env:AUTEUR" --add-virtual-file="mijn-ruimte-$versie/AGENT:$env:AGENT" --add-virtual-file="mijn-ruimte-$versie/SAMENVATTING:$env:SAMENVATTING" -o $doel HEAD
+    $gitArgs = @(
+      'archive', '--format=tar.gz', "--prefix=mijn-ruimte-$versie/",
+      "--add-virtual-file=mijn-ruimte-$versie/UITROL-VERSIE:$versie",
+      "--add-virtual-file=mijn-ruimte-$versie/BRON-COMMIT:$commit",
+      "--add-virtual-file=mijn-ruimte-$versie/AUTEUR:$env:AUTEUR",
+      "--add-virtual-file=mijn-ruimte-$versie/AGENT:$env:AGENT",
+      "--add-virtual-file=mijn-ruimte-$versie/SAMENVATTING:$env:SAMENVATTING"
+    )
+    if ($basisTekst) { $gitArgs += "--add-virtual-file=mijn-ruimte-$versie/UITROL-BASIS:$basisTekst" }
+    $gitArgs += @('-o', $doel, 'HEAD')
+    & git @gitArgs
     if ($LASTEXITCODE -ne 0) { Stop-Met "git archive не вдався." "git archive mislukt." }
   } else {
     # Buiten git: kopie van de werkmap zonder bouwresten, metadata erbij, één bovenmap; tar.exe zit in Windows 10/11.
@@ -58,7 +83,9 @@ try {
     New-Item -ItemType Directory -Path $binnen -Force | Out-Null
     robocopy . $binnen /E /NFL /NDL /NJH /NJS /NP /XD node_modules dist dist-server .git rapporten harness /XF *.bak "mijn-ruimte-*.tar.gz*" | Out-Null
     if ($LASTEXITCODE -ge 8) { Stop-Met "Копіювання не вдалося (robocopy)." "Kopiëren mislukt (robocopy)." }
-    foreach ($kv in @(@('UITROL-VERSIE', $versie), @('BRON-COMMIT', $commit), @('AUTEUR', $env:AUTEUR), @('AGENT', $env:AGENT), @('SAMENVATTING', $env:SAMENVATTING))) {
+    $metaParen = @(@('UITROL-VERSIE', $versie), @('BRON-COMMIT', $commit), @('AUTEUR', $env:AUTEUR), @('AGENT', $env:AGENT), @('SAMENVATTING', $env:SAMENVATTING))
+    if ($basisTekst) { $metaParen += ,@('UITROL-BASIS', "$basisTekst`n") }
+    foreach ($kv in $metaParen) {
       [System.IO.File]::WriteAllText((Join-Path $binnen $kv[0]), [string]$kv[1], (New-Object System.Text.UTF8Encoding($false)))
     }
     tar -czf $doel -C $stage "mijn-ruimte-$versie"
