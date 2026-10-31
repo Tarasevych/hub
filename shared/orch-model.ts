@@ -97,6 +97,7 @@ const T = (uk: string, nl: string): Tekst => [uk, nl];
 export const ORCH_CODES: Readonly<Record<string, Tekst>> = Object.freeze({
   ORCH_GEEN_REPO: T('На сервері немає робочої копії репозиторію координації (ORCH_WORTEL). Налаштуйте її за RUNBOOK §18.', 'Op de server staat geen werkkopie van de coördinatierepository (ORCH_WORTEL). Richt die in volgens RUNBOOK §18.'),
   ORCH_REPO_VUIL: T('У робочій копії координації є незакомічені зміни — спершу наведіть лад через SSH (git status).', 'De werkkopie van de coördinatie heeft niet-gecommitte wijzigingen — ruim eerst op via SSH (git status).'),
+  TESTS_NIET_GEISOLEERD: T('Тести імпортованого коду не можна запускати на сервері застосунку; потрібен ізольований CI.', 'Tests van geïmporteerde code mogen niet op de appserver draaien; geïsoleerde CI is vereist.'),
   UPLOAD_ONBEKEND: T('Такого завантаження немає (завершено, скасовано або минув строк).', 'Deze upload bestaat niet (afgerond, geannuleerd of verlopen).'),
   UPLOAD_NAAM: T('Назва файла має бути .zip, .tar.gz або .patch без шляхів.', 'De bestandsnaam moet .zip, .tar.gz of .patch zijn, zonder paden.'),
   UPLOAD_TE_GROOT: T('Пакет більший за дозволені 300 МіБ.', 'Het pakket is groter dan de toegestane 300 MiB.'),
