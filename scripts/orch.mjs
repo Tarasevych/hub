@@ -5,18 +5,26 @@
 //   context                     згенерувати orchestratie/CONTEXT-COMPACT.md для агентів без GitHub/MCP
 //   taak-start --id X --agent a --basis <sha40> --tak <гілка>   зареєструвати задачу (orchestratie/taken/X.json)
 //   taak-staat --id X --staat <staat>                           змінити статус задачі
+//   taak-herlees --id X                                         «я перечитав правила»: оновити regelsVersie/regelsHash задачі до чинних
 //   versheid --taak X --fase start|overdracht                   звірити правила й базу з git (HEAD, інтеграційна гілка)
 //   onderteken-bericht          рядок для підпису власника (ssh-keygen -Y sign -n mijn-ruimte-regels)
 //   bevestig <bericht.sig>      перевірити підпис власника та записати його в lock
+//   inleveren --bron <zip|tar.gz|patch|map|git-ref> [--kanaal k] [--overdracht pad.json] [--taak X] [--tests "cmd"]… [--zonder-tests "reden"] [--push]
+//                               прийняти результат агента з будь-якого каналу: гілка від бази, зміни, конфлікти, тести, запис, черга
+//   wachtrij toon|volgende|klaar|terugtrekken   послідовна черга інтеграції (klaar: --taak X --uitkomst integrated|afgewezen [--hoofd sha])
+//   status                      огляд задач: in_progress / integrated / released / installed (installed — лише з orchestratie/geinstalleerd.json)
+//   werkruimte --taak X [--pad P]   ізольоване робоче дерево (git worktree) для задачі
+//   staat-commit [--bericht "…"]    закомітити лише файли стану координації (taken, inleveringen, wachtrij, geinstalleerd)
 // Усі тексти uk+nl, усі перевірки — чисті функції в scripts/orch/kern.mjs (тести: tests/eenheid/orch-*.test.ts).
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  SHA40, compacteContext, controleerAdapter, controleerLock, eigenaarStatus, kritiekBericht, valideerBeleid, valideerTaak,
-  vergrendel, verifieerSshsig, versheid, REGELS_NAMESPACE, TAAK_STATEN,
+  SHA40, compacteContext, controleerAdapter, controleerLock, eigenaarStatus, kritiekBericht, statusAfleiden, valideerBeleid, valideerTaak,
+  vergrendel, verifieerSshsig, versheid, wachtrijKlaar, wachtrijTerugtrekken, wachtrijVolgende, REGELS_NAMESPACE, TAAK_STATEN,
 } from './orch/kern.mjs';
+import { inleveren, registreerInlevering } from './orch/inleveren.mjs';
 
 const wortel = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const P = (p) => join(wortel, p);
@@ -123,6 +131,14 @@ function taakStaat() {
   const t = leesJson(pad); t.staat = staat; t.bijgewerkt = new Date().toISOString(); schrijfJson(pad, t); console.log(`${t.id}: ${staat}`); return 0;
 }
 
+function taakHerlees() {
+  const beleid = laadBeleid(); const lock = laadLock(); const pad = `${TAKEN}/${optie('id', '')}.json`;
+  if (!existsSync(P(pad))) { console.log(`FOUT TAAK_ONBEKEND: ${pad}`); return 1; }
+  const t = leesJson(pad); const van = t.regelsVersie; t.regelsVersie = beleid.regelsVersie; t.regelsHash = lock?.hash ?? null; t.bijgewerkt = new Date().toISOString();
+  t.regelsHerlezen = [...(t.regelsHerlezen ?? []), { van, naar: beleid.regelsVersie, op: t.bijgewerkt }];
+  schrijfJson(pad, t); console.log(`${t.id}: regels ${van} → ${beleid.regelsVersie} (${lock?.hash.slice(0, 12)}…)`); return 0;
+}
+
 function doeVersheid() {
   const beleid = laadBeleid(); const lock = laadLock();
   const pad = `${TAKEN}/${optie('taak', '')}.json`;
@@ -164,6 +180,91 @@ function bevestig() {
   schrijfJson(LOCK, lock); console.log(`bevestigd door eigenaar (sleutel ${r.sleutel}) voor kritiekHash ${lock.kritiekHash}`); return 0;
 }
 
-const tabel = { controleer, vergrendel: doeVergrendel, context: doeContext, 'taak-start': taakStart, 'taak-staat': taakStaat, versheid: doeVersheid, 'onderteken-bericht': ondertekenBericht, bevestig };
+const optiesAlle = (naam) => args.flatMap((a, i) => (a === `--${naam}` && args[i + 1] !== undefined ? [args[i + 1]] : []));
+
+function doeInleveren() {
+  const beleid = laadBeleid(); const lock = laadLock();
+  const bron = optie('bron', ''); if (!bron) { console.log('gebruik: inleveren --bron <zip|tar.gz|patch|map|git-ref> [--kanaal k] [--overdracht pad.json] [--taak X]'); return 2; }
+  const tests = optiesAlle('tests');
+  const record = inleveren({ wortel, beleid, lock, bron, kanaal: optie('kanaal', null), overdrachtPad: optie('overdracht', null), taakId: optie('taak', null), tests: tests.length ? tests : undefined, zonderTests: optie('zonder-tests', null), integratieRef: optie('integratie', null) });
+  const uit = registreerInlevering(wortel, record);
+  for (const z of record.zaken) console.log(`${z.ernst === 'fout' ? 'FOUT' : 'LET OP'} ${z.code}: ${z.uk}\n     nl: ${z.nl}`);
+  console.log(`\nORCH inleveren: ${record.uitkomst === 'aanvaard' ? 'ПРИЙНЯТО · aanvaard' : 'ВІДХИЛЕНО · geweigerd'} · kanaal ${record.kanaal ?? '—'} · taak ${record.taakId ?? '—'} · tak ${record.tak ?? '—'} · commit ${record.commit?.slice(0, 12) ?? '—'} · bestanden ${record.bestanden.length} · tests ${record.tests ? (record.tests.overgeslagen ? `overgeslagen (${record.tests.reden})` : `${record.tests.geslaagd} ok / ${record.tests.mislukt} mis`) : '—'}`);
+  console.log(`record: ${uit.recordPad}${uit.taakBijgewerkt ? ' · taak ter_integratie' : ''}${uit.wachtrij ? ` · wachtrij: ${typeof uit.wachtrij === 'string' ? uit.wachtrij : uit.wachtrij.code}` : ''}`);
+  if (record.uitkomst === 'aanvaard' && args.includes('--push')) {
+    const p = git('push', '-u', 'origin', record.tak);
+    console.log(p === null ? 'LET OP PUSH_MISLUKT: гілку не вдалося відправити — зробіть git push -u origin ' + record.tak : `gepusht: origin/${record.tak}`);
+    const remote = git('remote', 'get-url', 'origin') || ''; const m = /github\.com[:/]([^/]+\/[^/.]+)/.exec(remote);
+    if (m) console.log(`PR (draft) проти ${beleid.integratie.tak}: https://github.com/${m[1]}/compare/${encodeURIComponent(beleid.integratie.tak)}...${encodeURIComponent(record.tak)}?expand=1`);
+  }
+  return record.uitkomst === 'aanvaard' ? 0 : 1;
+}
+
+function doeWachtrij() {
+  const beleid = laadBeleid(); const pad = beleid.integratie.wachtrij; const w = existsSync(P(pad)) ? leesJson(pad) : { schema: 1, integratieTak: beleid.integratie.tak, integratieHoofd: null, bezig: null, wachtrij: [] };
+  const sub = args[1] || 'toon';
+  if (sub === 'toon') {
+    console.log(`integratie: ${w.integratieTak} @ ${w.integratieHoofd ?? '—'} · bezig: ${w.bezig ?? '—'} · wacht: ${w.wachtrij.filter((r) => r.staat === 'wacht').length}`);
+    for (const r of w.wachtrij) console.log(`  [${r.staat}] ${r.taakId} (${r.agent}) ${r.tak} basis ${r.basisCommit?.slice(0, 12)} via ${r.kanaal} · ${r.ingediend}`);
+    return 0;
+  }
+  let r;
+  if (sub === 'volgende') {
+    r = wachtrijVolgende(w);
+    if (!r.fout) {
+      const i = r.item; const zRef = git('rev-parse', '--verify', '-q', `origin/${w.integratieTak}`) ? `origin/${w.integratieTak}` : w.integratieTak;
+      console.log(`наступна · volgende: ${i.taakId} (${i.agent}) tak ${i.tak}\n  1) git fetch origin && git checkout ${w.integratieTak} && git merge --no-ff ${i.tak}   (без force; конфлікти → wachtrij klaar --uitkomst afgewezen)\n  2) тести на integratie\n  3) node scripts/orch.mjs wachtrij klaar --taak ${i.taakId} --uitkomst integrated --hoofd $(git rev-parse ${w.integratieTak})`);
+      if (zRef && git('merge-base', '--is-ancestor', i.basisCommit, zRef) === null) console.log(`LET OP BASIS_NIET_IN_INTEGRATIE: база ${i.basisCommit.slice(0, 12)} не є предком ${zRef}`);
+    }
+  } else if (sub === 'klaar') {
+    r = wachtrijKlaar(w, optie('taak', ''), optie('uitkomst', ''), optie('hoofd', ''));
+    if (!r.fout) {
+      const tp = `${TAKEN}/${r.item.taakId}.json`;
+      if (existsSync(P(tp))) { const t = leesJson(tp); if (r.item.staat === 'integrated') { t.staat = 'integrated'; t.integratieCommit = r.item.integratieHoofd; } else t.staat = 'in_progress'; t.bijgewerkt = new Date().toISOString(); schrijfJson(tp, t); }
+      console.log(`${r.item.taakId}: ${r.item.staat}${r.item.integratieHoofd ? ` @ ${r.item.integratieHoofd.slice(0, 12)}` : ''}`);
+    }
+  } else if (sub === 'terugtrekken') {
+    r = wachtrijTerugtrekken(w, optie('taak', ''), optie('reden', ''));
+    if (!r.fout) { const tp = `${TAKEN}/${optie('taak', '')}.json`; if (existsSync(P(tp))) { const t = leesJson(tp); t.staat = 'in_progress'; t.bijgewerkt = new Date().toISOString(); schrijfJson(tp, t); } console.log(`${optie('taak', '')}: teruggetrokken`); }
+  } else { console.log('gebruik: wachtrij toon|volgende|klaar|terugtrekken'); return 2; }
+  if (r.fout) return toon([r.fout]);
+  schrijfJson(pad, r.w); return 0;
+}
+
+function doeStatus() {
+  const beleid = laadBeleid();
+  const gi = existsSync(P(beleid.geinstalleerd.bestand)) ? leesJson(beleid.geinstalleerd.bestand) : null;
+  const isVoorouder = (a, b) => git('merge-base', '--is-ancestor', a, b) !== null;
+  console.log(`basis: ${beleid.basis.versie} @ ${beleid.basis.bronCommit.slice(0, 12)} (${beleid.basis.verificatie}) · geïnstalleerd: ${gi ? `${gi.versie} @ ${gi.bronCommit.slice(0, 12)} (${gi.bron})` : 'onbekend — orchestratie/geinstalleerd.json ontbreekt'}`);
+  if (!existsSync(P(TAKEN))) return 0;
+  for (const f of readdirSync(P(TAKEN)).filter((n) => n.endsWith('.json'))) {
+    const t = leesJson(`${TAKEN}/${f}`); const s = statusAfleiden(t, gi, isVoorouder);
+    console.log(`  ${t.id.padEnd(10)} ${s.status.padEnd(12)} ${t.agent.padEnd(12)} ${t.tak}  — ${s.bron}`);
+  }
+  return 0;
+}
+
+function doeWerkruimte() {
+  const beleid = laadBeleid(); const id = optie('taak', ''); const tp = `${TAKEN}/${id}.json`;
+  if (!existsSync(P(tp))) { console.log(`FOUT TAAK_ONBEKEND: ${tp}`); return 1; }
+  const t = leesJson(tp); const pad = resolve(wortel, optie('pad', join(beleid.werkruimte.map, id)));
+  const bestaat = git('rev-parse', '--verify', '-q', t.tak) !== null;
+  const r = bestaat ? git('worktree', 'add', pad, t.tak) : git('worktree', 'add', '-b', t.tak, pad, t.basisCommit);
+  if (r === null) { console.log(`FOUT WERKRUIMTE_MISLUKT: git worktree add ${pad}`); return 1; }
+  console.log(`werkruimte: ${pad} (tak ${t.tak}${bestaat ? '' : ` nieuw vanaf ${t.basisCommit.slice(0, 12)}`})`); return 0;
+}
+
+function staatCommit() {
+  const paden = ['orchestratie/taken', 'orchestratie/inleveringen', 'orchestratie/wachtrij.json', 'orchestratie/geinstalleerd.json'].filter((p) => existsSync(P(p)));
+  if (git('add', '--', ...paden) === null) { console.log('FOUT STAAT_ADD: git add мислукт'); return 1; }
+  const gestaged = git('diff', '--cached', '--name-only', '--', ...paden) || '';
+  if (!gestaged) { console.log('niets te committen: стан координації не змінився'); return 0; }
+  const buiten = (git('diff', '--cached', '--name-only') || '').split('\n').filter((p) => p && !paden.some((q) => p === q || p.startsWith(`${q}/`)));
+  if (buiten.length) { console.log(`FOUT STAAT_GEMENGD: у stage є інші файли (${buiten.join(', ')}) — закомітьте їх окремо`); return 1; }
+  const r = git('commit', '-q', '-m', optie('bericht', `orch: стан координації · coördinatiestaat (${gestaged.split('\n').length} bestanden)`), '--', ...paden);
+  console.log(r === null ? 'FOUT STAAT_COMMIT' : `gecommit: ${gestaged.split('\n').join(', ')}`); return r === null ? 1 : 0;
+}
+
+const tabel = { inleveren: doeInleveren, 'staat-commit': staatCommit, wachtrij: doeWachtrij, status: doeStatus, werkruimte: doeWerkruimte, controleer, vergrendel: doeVergrendel, context: doeContext, 'taak-start': taakStart, 'taak-staat': taakStaat, 'taak-herlees': taakHerlees, versheid: doeVersheid, 'onderteken-bericht': ondertekenBericht, bevestig };
 if (!tabel[opdracht]) { console.log(`gebruik: node scripts/orch.mjs <${Object.keys(tabel).join('|')}>`); process.exit(2); }
 try { process.exit(tabel[opdracht]()); } catch (e) { console.log(`FOUT: ${e.message}`); process.exit(1); }
