@@ -1305,3 +1305,16 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
   verandert tot de tak in `integratie` zit en een pakket is geïnstalleerd.
 - Tests die dit afdekken: `node scripts/eenheidstests.mjs orch-site` (74, echte git-repo's + routes + MCP), `orch-besluit-root` (34, het echte
   root-script onder een onbevoorrechte gebruiker + de GitOps-controle), `besluit-root` (47).
+
+### 18.4 Acceptatietests (etappe 4) en wat ze over de werking vastleggen
+`node scripts/eenheidstests.mjs orch-acceptatie` (47) speelt de acht scenario's uit de opdracht na op echte repo's en de echte root-scripts:
+parallelle agenten, git-conflicten bij inleveren én bij samenvoegen (herstel via rebase), verouderde release (`BASIS_VEROUDERD` bij root én
+`pakket-controleer`), import zonder git, beleidswijziging (`REGELS_VEROUDERD` → `taak-herlees`), bevroren agent (`terugtrekken` + `taak-staat bevroren`,
+wachtrij loopt door), gelijktijdige installaties, terugdraaien. Twee gedragsregels die daaruit volgen en die u mag verwachten:
+- **Gelijktijdige installaties**: `mijn-ruimte-uitrol.sh` houdt een `flock`; een tweede start tijdens een installatie logt «er loopt al een uitrol»
+  en doet niets. Na een geslaagde installatie ruimt het script alleen pakketten op die **niet nieuwer** zijn dan de zojuist geïnstalleerde versie;
+  een nieuwer pakket dat intussen in de inbox kwam blijft staan en wordt in de volgende ronde gewoon gecontroleerd (versie, `UITROL-BASIS`,
+  regels). Vóór 31.10.2026 werd zo'n pakket stil gewist.
+- **Terugdraaien en de coördinatie**: na `terugdraaien` schrijft de installer/eigenaar `orchestratie/geinstalleerd.json` terug naar de vorige
+  basis; `orch status` toont de taken van de teruggedraaide release dan weer als `released` (niet `installed`), en hetzelfde pakket is opnieuw
+  installeerbaar zonder herbouw (`pakket-controleer` OK).
