@@ -1,0 +1,6 @@
+# Публічні ключі власника, якими підписуються критичні політики (orchestratie/regels.lock.json → eigenaar).
+# Формат allowed_signers OpenSSH: <principal> namespaces="mijn-ruimte-regels" ssh-ed25519 AAAA…
+# Додає лише власник (через PR або сайт після Passkey). Агенти цей файл не змінюють. Приватний ключ сюди НІКОЛИ не потрапляє.
+# Publieke sleutels van de eigenaar voor het ondertekenen van kritieke beleidsregels. Alleen de eigenaar voegt toe.
+#
+# eigenaar@mijn-ruimte namespaces="mijn-ruimte-regels" ssh-ed25519 AAAA...   ← приклад, замінити справжнім

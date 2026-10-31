@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "regelsVersie": "1.0.0",
+  "hash": "89d79dc6c98b80b3ecb49479476fd2e86dda6410301681f6156ffefa6f07e22a",
+  "kritiekHash": "d978f0f1b25c1e714c25e1e52c2c10fe44207051a61f887299776bf1d8a3a492",
+  "bestanden": {
+    "AGENTS.md": "0a8c03aae7359d23c857fc02a49b3c3bc712afcd256b15ff70ce0140b53a7eea",
+    "orchestratie/BESLUITEN.md": "9c1f390067409d5895110b8f70728d48d5dff61608ab26b13748ab8beb7108b4",
+    "orchestratie/beleid.json": "caa9243bf22dbda6394728084e5b5978f0b2c33a7303de3b00ccde9378a2137b"
+  },
+  "eigenaar": null
+}
