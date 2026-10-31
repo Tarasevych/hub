@@ -254,7 +254,7 @@ export function vergelijkBestanden(opgegeven, feitelijk) {
 }
 
 /** Файли, які ніколи не переносяться з архіву в робоче дерево. */
-export const UITGESLOTEN_PADEN = /^(\.git|node_modules|dist|dist-server|rapporten|harness|harness-[^/]*|ORCH-OVERDRACHT\.json|UITROL-VERSIE|AUTEUR|AGENT|SAMENVATTING|BRON-COMMIT|TESTRESULTATEN|UITROL-MANIFEST\.json)(\/|$)/;
+export const UITGESLOTEN_PADEN = /^(\.git|node_modules|dist|dist-server|rapporten|harness|harness-[^/]*|ORCH-OVERDRACHT\.json|UITROL-VERSIE|UITROL-BASIS|AUTEUR|AGENT|SAMENVATTING|BRON-COMMIT|TESTRESULTATEN|UITROL-MANIFEST\.json)(\/|$)/;
 export const padVeilig = (p) => !!p && !p.startsWith('/') && !p.split('/').includes('..') && !/\0/.test(p) && !UITGESLOTEN_PADEN.test(p);
 
 /** Канал за джерелом: розширення/тип. Явний --kanaal (mcp, http_api, web_upload) переважає — ці канали доставляють файл. */
@@ -306,4 +306,81 @@ export function statusAfleiden(taak, geinstalleerd, isVoorouder) {
   if (taak.releaseVersie) return { status: 'released', bron: `pakket ${taak.releaseVersie}` };
   if (taak.integratieCommit) return { status: 'integrated', bron: `integratie @ ${taak.integratieCommit.slice(0, 12)}` };
   return { status: taak.staat === 'ter_integratie' ? 'in_progress' : 'in_progress', bron: taak.staat === 'ter_integratie' ? 'передано, чекає в черзі · ingeleverd, wacht' : 'в роботі · in bewerking' };
+}
+
+// ——— Етап 2: універсальні випуски — UITROL-BASIS, пакет передачі ———
+/** Назва пакета передачі: mijn-ruimte-<versie>-<agent>-overdracht.zip (AGENT з ТЗ = ідентифікатор агента, як у файлі AGENT). */
+export const overdrachtZipNaam = (versie, agent) => `mijn-ruimte-${versie}-${agent}-overdracht.zip`;
+export const OVERDRACHT_ZIP = /^mijn-ruimte-(\d{8}-\d{6})-([a-z][a-z0-9-]{1,31})-overdracht\.zip$/;
+export const TAR_NAAM = /^mijn-ruimte-(\d{8}-\d{6})\.tar\.gz$/;
+export const BASIS_VERPLICHT_VANAF = '20261201-000000';
+
+/** Читає UITROL-BASIS (versie=…, commit=…, regelsVersie=…, regelsHash=…). Null — файл відсутній/порожній. */
+export function leesBasisBestand(tekst) {
+  if (tekst === null || tekst === undefined) return null;
+  const uit = {};
+  for (const r of String(tekst).split(/\r?\n/)) { const m = /^([a-zA-Z]+)=(.*)$/.exec(r.trim()); if (m) uit[m[1]] = m[2].trim(); }
+  return Object.keys(uit).length ? uit : null;
+}
+/** Те саме, що робить root (mijn-ruimte-uitrol.sh): чи можна ставити пакет із цією базою на сервер із цим станом. */
+export function controleerBasis(basis, geinstalleerd, pakketVersie) {
+  const z = [];
+  if (!basis) {
+    if (pakketVersie && pakketVersie >= BASIS_VERPLICHT_VANAF) z.push(fout('GEEN_BASIS', `у пакеті немає UITROL-BASIS — обовʼязковий для випусків від ${BASIS_VERPLICHT_VANAF}`, `UITROL-BASIS ontbreekt — verplicht vanaf ${BASIS_VERPLICHT_VANAF}`));
+    else z.push(waarsch('GEEN_BASIS', 'пакет без UITROL-BASIS (старий формат) — базу не перевірено', 'pakket zonder UITROL-BASIS (oud formaat) — basis niet gecontroleerd'));
+    return z;
+  }
+  if (!VERSIE.test(basis.versie || '') || !SHA40.test(basis.commit || '')) { z.push(fout('BASIS_ONGELDIG', 'UITROL-BASIS: потрібні versie=РРРРММДД-ГГХХСС і commit=<40 hex>', 'UITROL-BASIS: versie=JJJJMMDD-UUMMSS en commit=<40 hex> nodig')); return z; }
+  const lv = geinstalleerd?.versie; const lc = geinstalleerd?.bronCommit;
+  if (lv && VERSIE.test(lv) && lv > basis.versie) z.push(fout('BASIS_VEROUDERD', `пакет зібрано на базі ${basis.versie}, а встановлено новішу ${lv} — перебазуйтесь і зберіть знову`, `pakket gebouwd op basis ${basis.versie}, geïnstalleerd is de nieuwere ${lv} — rebase en bouw opnieuw`));
+  if (lc && SHA40.test(lc) && lc !== basis.commit) z.push(fout('BASIS_COMMIT_VERSCHILT', `базовий commit ${basis.commit.slice(0, 12)} ≠ встановлений ${lc.slice(0, 12)}`, `basiscommit ${basis.commit.slice(0, 12)} ≠ geïnstalleerd ${lc.slice(0, 12)}`));
+  return z;
+}
+/** Текст UITROL-BASIS для пакета. */
+export const basisBestandTekst = (versie, commit, lock) => `versie=${versie}\ncommit=${commit}\n${lock ? `regelsVersie=${lock.regelsVersie}\nregelsHash=${lock.hash}\n` : ''}`;
+
+/** Звіт передачі (RAPPORT.md), uk+nl, з того, що справді відомо — без вигадок. */
+export function maakRapport(r) {
+  const lijst = (xs) => (xs?.length ? xs.map((x) => `- ${x}`).join('\n') : '- —');
+  return `# Передача випуску ${r.versie} · Overdracht van release ${r.versie}
+
+| | |
+|---|---|
+| Task ID | \`${r.taakId}\` |
+| Агент · agent | \`${r.agent}\` (${r.agentPlatform ?? '—'}; model: ${r.model?.id ?? 'onbekend'}, bron ${r.model?.bron ?? 'onbekend'}) |
+| Автор · auteur | ${r.auteur} |
+| Пакет · pakket | \`mijn-ruimte-${r.versie}.tar.gz\` · ${r.bytes} bytes · sha256 \`${r.sha256}\` |
+| BRON-COMMIT | \`${r.commit}\` |
+| Встановлена база · geïnstalleerde basis (UITROL-BASIS) | \`${r.basisVersie}\` @ \`${r.basisCommit}\` (${r.basisBron})${r.sindsInstallatie ? ` · від установки ${r.sindsInstallatie.commits} комітів, ${r.sindsInstallatie.bestanden} файлів` : ''} |
+| База гілки · basis van de tak | \`${r.takBasis ?? '—'}\`${r.tak ? ` (${r.tak})` : ''} |
+| Правила · regels | ${r.regelsVersie} · \`${r.regelsHash ?? '—'}\` · ${r.kritiekBevestigd ? 'критичні політики підтверджено власником' : 'критичні політики НЕ підтверджені власником (пропозиція)'} |
+| Режим встановлення · modus | ${r.modus} |
+| Підпис · handtekening | ${r.handtekening ? 'є (.sig власника)' : 'немає — установка після підтвердження власника (passkey) або вручну'} |
+
+## Що змінено · Wat is gewijzigd
+${r.samenvatting.uk}
+
+${r.samenvatting.nl}
+
+## Коміти гілки задачі · Commits van de taak-tak (${r.commits.length})
+${lijst(r.commits.map((c) => `\`${c.sha.slice(0, 12)}\` ${c.onderwerp} (${c.auteur})`))}
+
+## Файли гілки задачі · Bestanden van de taak-tak (${r.bestanden.length})
+${lijst(r.bestanden)}
+
+## Тести · Tests
+${r.tests ? `${r.tests.geslaagd ?? '?'} ok / ${r.tests.mislukt ?? '?'} mis${r.tests.uitleg?.uk ? ` — ${r.tests.uitleg.uk}` : ''}` : 'результати тестів не додано · geen testresultaten meegegeven'}
+
+## Учасники · Deelnemers
+${lijst(r.deelnemers.map((d) => `${d.soort}: ${d.naam}${d.platform ? ` (${d.platform})` : ''} — ${d.rollen.join(', ')}`))}
+
+## Свідомо не зроблено · Bewust niet gedaan
+${r.nietGedaan?.uk ?? '—'}
+
+## Як встановити · Installeren
+1. Перевірити: \`node scripts/orch.mjs pakket-controleer --bron ${overdrachtZipNaam(r.versie, r.agent)}\`
+2. Завантажити \`mijn-ruimte-${r.versie}.tar.gz\` через майстер «Нове оновлення» (попередня перевірка сайту) і підтвердити passkey власника,
+   або покласти підписаний пакет (.sig) в inbox root-скрипта. Інсталятор перевіряє версію, базу (UITROL-BASIS), цілісність, правила (regels.lock.json).
+3. Імпорт без git: \`node scripts/orch.mjs inleveren --bron ${overdrachtZipNaam(r.versie, r.agent)}\`
+`;
 }

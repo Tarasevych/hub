@@ -372,6 +372,67 @@ LAATSTE="$(cat "$WERK_ROOT/laatste-versie" 2>/dev/null || echo 00000000-000000)"
 [[ "$VERSIE" > "$LAATSTE" ]] || weiger NIET_NIEUWER "Версія $VERSIE не новіша за встановлену ($LAATSTE)." "Versie $VERSIE is niet nieuwer dan de geïnstalleerde ($LAATSTE)."
 [ -f "$BRON/deploy/installeer-app.sh" ] || weiger GEEN_INSTALLER "У пакеті немає deploy/installeer-app.sh." "deploy/installeer-app.sh ontbreekt in het pakket."
 
+# ---- ORCH-001 (31.10.2026): basis, regels en modus van het pakket (AGENTS.md §5, orchestratie/beleid.json → kritiek) ----
+# UITROL-BASIS (versie=…, commit=…, regelsVersie=…, regelsHash=…) zegt op welke GEÏNSTALLEERDE versie en welke commit het pakket is gebouwd.
+# Staat hier intussen een nieuwere versie dan die basis, of een andere commit, dan is het pakket op een verouderde basis gebouwd (een andere
+# agent installeerde ertussen) → geweigerd: niets wordt stil overschreven. Pakketten zonder UITROL-BASIS blijven installeerbaar tot
+# BASIS_VERPLICHT_VANAF (waarschuwing «oud formaat»); daarna GEEN_BASIS. De laatst geïnstalleerde commit staat in $WERK_ROOT/laatste-commit.
+BASIS_VERPLICHT_VANAF="20261201-000000"
+LAATSTE_COMMIT="$(head -c 64 "$WERK_ROOT/laatste-commit" 2>/dev/null | tr -d '\r\n[:space:]' || true)"
+if [ -f "$BRON/UITROL-BASIS" ]; then
+  BASIS_VERSIE="$(grep -m1 '^versie=' "$BRON/UITROL-BASIS" | cut -d= -f2- | tr -d '\r[:space:]' || true)"
+  BASIS_COMMIT="$(grep -m1 '^commit=' "$BRON/UITROL-BASIS" | cut -d= -f2- | tr -d '\r[:space:]' || true)"
+  { [[ "$BASIS_VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ ]] && [[ "$BASIS_COMMIT" =~ ^[0-9a-f]{40}$ ]]; } || weiger BASIS_ONGELDIG "UITROL-BASIS у пакеті неповний: потрібні versie=РРРРММДД-ГГХХСС і commit=<40 hex>. Випуск відхилено." "UITROL-BASIS in het pakket is onvolledig: versie=JJJJMMDD-UUMMSS en commit=<40 hex> zijn nodig. Release geweigerd."
+  if [ "$LAATSTE" != 00000000-000000 ] && [[ "$LAATSTE" > "$BASIS_VERSIE" ]]; then
+    weiger BASIS_VEROUDERD "Пакет зібрано на базі $BASIS_VERSIE, але на сервері вже встановлено новішу $LAATSTE (хтось установив між збіркою й цим пакетом). Перебазуйте зміни на встановлену версію й зберіть знову. Випуск відхилено." "Het pakket is gebouwd op basis $BASIS_VERSIE, maar op de server staat al de nieuwere $LAATSTE (iemand installeerde ertussen). Rebase op de geïnstalleerde versie en bouw opnieuw. Release geweigerd."
+  fi
+  if [ -n "$LAATSTE_COMMIT" ] && [ "$LAATSTE_COMMIT" != "$BASIS_COMMIT" ]; then
+    weiger BASIS_COMMIT_VERSCHILT "Базовий commit пакета ($BASIS_COMMIT) не той, що встановлено на сервері ($LAATSTE_COMMIT): код на сервері відрізняється від того, від якого працював агент. Випуск відхилено." "De basiscommit van het pakket ($BASIS_COMMIT) is niet de geïnstalleerde ($LAATSTE_COMMIT): de code op de server verschilt van waar de agent van vertrok. Release geweigerd."
+  fi
+  log "basis van het pakket: $BASIS_VERSIE @ $BASIS_COMMIT (geïnstalleerd: $LAATSTE @ ${LAATSTE_COMMIT:-onbekend})"
+elif [[ "$VERSIE" > "$BASIS_VERPLICHT_VANAF" ]] || [ "$VERSIE" = "$BASIS_VERPLICHT_VANAF" ]; then
+  weiger GEEN_BASIS "У пакеті немає UITROL-BASIS (на якій встановленій версії й commit його зібрано) — для випусків від $BASIS_VERPLICHT_VANAF він обовʼязковий. Збирайте через node scripts/orch.mjs pakket або з BASIS_VERSIE/BASIS_COMMIT." "UITROL-BASIS ontbreekt (op welke geïnstalleerde versie en commit is gebouwd) — verplicht voor releases vanaf $BASIS_VERPLICHT_VANAF. Bouw met node scripts/orch.mjs pakket of met BASIS_VERSIE/BASIS_COMMIT."
+else
+  log "LET OP: pakket zonder UITROL-BASIS (oud formaat) — basisversie en -commit niet gecontroleerd"
+fi
+# Regels: zit orchestratie/regels.lock.json in het pakket, dan moeten de regelbestanden erin (AGENTS.md, beleid.json, BESLUITEN.md) precies die
+# afdruk hebben (zelfde normalisatie als scripts/orch/kern.mjs: geen BOM, LF, geen spaties aan het regeleinde). Anders zijn de regels
+# gewijzigd zonder versie/lock — het pakket volgt zijn eigen regels niet. Modus: dit script installeert na bevestiging van de eigenaar
+# (passkey of handtekening); dat moet het beleid in het pakket toestaan.
+if [ -f "$BRON/orchestratie/regels.lock.json" ]; then
+  REGELS_FOUT="$(python3 - "$BRON" 2>&1 <<'PYREGELS'
+import hashlib, json, os, re, sys
+bron = sys.argv[1]
+try:
+    lock = json.load(open(os.path.join(bron, "orchestratie/regels.lock.json"), encoding="utf-8"))
+    beleid = json.load(open(os.path.join(bron, "orchestratie/beleid.json"), encoding="utf-8"))
+except Exception as e:
+    sys.exit(f"lock/beleid onleesbaar: {e}")
+if lock.get("regelsVersie") != beleid.get("regelsVersie"):
+    sys.exit(f"regelsVersie lock {lock.get('regelsVersie')} != beleid {beleid.get('regelsVersie')}")
+norm = lambda t: re.sub(r"[ \t]+$", "", t.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n"), flags=re.M)
+per = {}
+for pad in sorted(beleid.get("regelBestanden", [])):
+    try:
+        per[pad] = hashlib.sha256(norm(open(os.path.join(bron, pad), encoding="utf-8").read()).encode()).hexdigest()
+    except OSError:
+        sys.exit(f"regelbestand ontbreekt: {pad}")
+totaal = hashlib.sha256("".join(f"{h}  {p}\n" for p, h in per.items()).encode()).hexdigest()
+if totaal != lock.get("hash"):
+    anders = [p for p in per if lock.get("bestanden", {}).get(p) != per[p]]
+    sys.exit("gewijzigd zonder lock: " + ", ".join(anders or ["(onbekend)"]))
+modi = (beleid.get("kritiek") or {}).get("installatieModi") or {}
+if "na_bevestiging" not in (modi.get("toegestaan") or []):
+    sys.exit("MODUS: na_bevestiging staat niet in kritiek.installatieModi.toegestaan")
+PYREGELS
+)" || {
+    case "$REGELS_FOUT" in
+      MODUS:*) weiger MODUS_NIET_TOEGESTAAN "Політика в пакеті не дозволяє режим встановлення «після підтвердження власника»: ${REGELS_FOUT#MODUS: }. Випуск відхилено." "Het beleid in het pakket staat de modus «na bevestiging van de eigenaar» niet toe: ${REGELS_FOUT#MODUS: }. Release geweigerd." ;;
+      *) weiger REGELS_NIET_VERGRENDELD "Правила в пакеті (AGENTS.md / beleid.json / BESLUITEN.md) не збігаються з orchestratie/regels.lock.json: $REGELS_FOUT. Підвищте regelsVersie, виконайте node scripts/orch.mjs vergrendel і зберіть знову. Випуск відхилено." "De regels in het pakket komen niet overeen met orchestratie/regels.lock.json: $REGELS_FOUT. Verhoog regelsVersie, voer node scripts/orch.mjs vergrendel uit en bouw opnieuw. Release geweigerd." ;;
+    esac; }
+  log "regels in het pakket vergrendeld (lock klopt) en modus na_bevestiging toegestaan"
+fi
+
 # ---- Правило 2 (обов'язкові метадані випуску): машина відхиляє випуск без автора, агента й підсумку. Діє для БУДЬ-ЯКОГО
 # джерела (passkey/підпис/gitops/мобільний додаток). Файли додає скрипт збирання (deploy/uitrol/maak-*pakket).
 # Een ontbrekend bestand geeft een LEGE tekst, geen fout: `head` op een ontbrekend pad gaf rc 1 en onder pipefail stierf het hele script
@@ -486,6 +547,8 @@ publiceer_log
 set -e
 if [ "$INSTALL_RC" -eq 0 ]; then
   printf '%s\n' "$VERSIE" > "$WERK_ROOT/laatste-versie"
+  # ORCH-001: de geïnstalleerde commit bewaren voor de basiscontrole van het volgende pakket (alleen een echte 40-hex commit).
+  if [[ "${BRON_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]]; then printf '%s\n' "$BRON_COMMIT" > "$WERK_ROOT/laatste-commit"; fi
   # Oudere (nooit meer installeerbare) pakketten uit de inbox halen.
   find "$INBOX" -maxdepth 1 -type f \( -name 'mijn-ruimte-*.tar.gz' -o -name 'mijn-ruimte-*.tar.gz.sig' -o -name 'mijn-ruimte-*.tar.gz.goedkeuring.json' \) -delete 2>/dev/null || true
   # Archief vóór de OK-gebeurtenis bewaren, zodat die gebeurtenis het pad en de sha256 bevat (de app zet ze in app.uitrol_runs).

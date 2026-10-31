@@ -15,6 +15,9 @@
 //   status                      огляд задач: in_progress / integrated / released / installed (installed — лише з orchestratie/geinstalleerd.json)
 //   werkruimte --taak X [--pad P]   ізольоване робоче дерево (git worktree) для задачі
 //   staat-commit [--bericht "…"]    закомітити лише файли стану координації (taken, inleveringen, wachtrij, geinstalleerd)
+//   pakket --taak X --auteur "Імʼя" [--versie V] [--uit map] [--manifest m.json] [--testresultaten t.json] [--sig p.sig] [--samenvatting-uk …] [--samenvatting-nl …] [--niet-gedaan …]
+//                               зібрати mijn-ruimte-<V>.tar.gz (сумісний, через maak-voorstelpakket.sh, з UITROL-BASIS) + mijn-ruimte-<V>-<agent>-overdracht.zip
+//   pakket-controleer --bron <zip>  перевірити пакет передачі без встановлення (цілісність, метадані, база, правила)
 // Усі тексти uk+nl, усі перевірки — чисті функції в scripts/orch/kern.mjs (тести: tests/eenheid/orch-*.test.ts).
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -25,6 +28,7 @@ import {
   vergrendel, verifieerSshsig, versheid, wachtrijKlaar, wachtrijTerugtrekken, wachtrijVolgende, REGELS_NAMESPACE, TAAK_STATEN,
 } from './orch/kern.mjs';
 import { inleveren, registreerInlevering } from './orch/inleveren.mjs';
+import { basisVoorPakket, controleerOverdrachtPakket, maakOverdrachtPakket } from './orch/pakket.mjs';
 
 const wortel = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const P = (p) => join(wortel, p);
@@ -213,7 +217,10 @@ function doeWachtrij() {
     r = wachtrijVolgende(w);
     if (!r.fout) {
       const i = r.item; const zRef = git('rev-parse', '--verify', '-q', `origin/${w.integratieTak}`) ? `origin/${w.integratieTak}` : w.integratieTak;
-      console.log(`наступна · volgende: ${i.taakId} (${i.agent}) tak ${i.tak}\n  1) git fetch origin && git checkout ${w.integratieTak} && git merge --no-ff ${i.tak}   (без force; конфлікти → wachtrij klaar --uitkomst afgewezen)\n  2) тести на integratie\n  3) node scripts/orch.mjs wachtrij klaar --taak ${i.taakId} --uitkomst integrated --hoofd $(git rev-parse ${w.integratieTak})`);
+      // Стан координації (orchestratie/taken, wachtrij, inleveringen, geinstalleerd) при злитті лишається з integratie: .gitattributes merge=orch-staat,
+      // драйвер «true» = залишити нашу версію. Локальна конфігурація репозиторію, нічого поза ним.
+      git('config', 'merge.orch-staat.driver', 'true');
+      console.log(`наступна · volgende: ${i.taakId} (${i.agent}) tak ${i.tak}\n  1) git fetch origin && git checkout ${w.integratieTak} && git merge --no-ff ${i.tak}   (без force; стан координації лишається з integratie (merge=orch-staat); інші конфлікти → wachtrij klaar --uitkomst afgewezen)\n  2) тести на integratie\n  3) node scripts/orch.mjs wachtrij klaar --taak ${i.taakId} --uitkomst integrated --hoofd $(git rev-parse ${w.integratieTak})`);
       if (zRef && git('merge-base', '--is-ancestor', i.basisCommit, zRef) === null) console.log(`LET OP BASIS_NIET_IN_INTEGRATIE: база ${i.basisCommit.slice(0, 12)} не є предком ${zRef}`);
     }
   } else if (sub === 'klaar') {
@@ -265,6 +272,27 @@ function staatCommit() {
   console.log(r === null ? 'FOUT STAAT_COMMIT' : `gecommit: ${gestaged.split('\n').join(', ')}`); return r === null ? 1 : 0;
 }
 
-const tabel = { inleveren: doeInleveren, 'staat-commit': staatCommit, wachtrij: doeWachtrij, status: doeStatus, werkruimte: doeWerkruimte, controleer, vergrendel: doeVergrendel, context: doeContext, 'taak-start': taakStart, 'taak-staat': taakStaat, 'taak-herlees': taakHerlees, versheid: doeVersheid, 'onderteken-bericht': ondertekenBericht, bevestig };
+function doePakket() {
+  const beleid = laadBeleid(); const lock = laadLock();
+  const r = maakOverdrachtPakket({ wortel, beleid, lock, taakId: optie('taak', ''), auteur: optie('auteur', ''), agent: optie('agent', undefined), versie: optie('versie', undefined), uit: optie('uit', join(wortel, 'uitvoer')),
+    manifestPad: optie('manifest', undefined), testresultatenPad: optie('testresultaten', undefined), sigPad: optie('sig', undefined), agentPlatform: optie('platform', undefined),
+    samenvatting: optie('samenvatting-uk', null) ? { uk: optie('samenvatting-uk', ''), nl: optie('samenvatting-nl', optie('samenvatting-uk', '')) } : undefined,
+    nietGedaan: optie('niet-gedaan', null) ? { uk: optie('niet-gedaan', ''), nl: optie('niet-gedaan', '') } : undefined });
+  const code = toon(r.zaken);
+  if (code || !r.zipPad) { console.log('ORCH pakket: НЕ зібрано · niet gebouwd'); return 1; }
+  console.log(`ORCH pakket: ${r.zipPad}\n  tar: ${r.tarPad} (${r.bytes} bytes, sha256 ${r.sha256})\n  versie ${r.versie} · basis ${r.basis.versie} @ ${r.basis.commit.slice(0, 12)} (${r.basis.bron}) · commits ${r.commits} · bestanden ${r.bestanden} · handtekening ${r.handtekening ? 'ja' : 'nee'}\n  задача ${optie('taak', '')}: releaseVersie ${r.versie} (status released)`);
+  return 0;
+}
+function doePakketControleer() {
+  const beleid = laadBeleid(); const lock = laadLock(); const bron = optie('bron', '');
+  if (!bron || !existsSync(resolve(bron))) { console.log('gebruik: pakket-controleer --bron <mijn-ruimte-…-overdracht.zip>'); return 2; }
+  const gi = existsSync(P(beleid.geinstalleerd.bestand)) ? leesJson(beleid.geinstalleerd.bestand) : null;
+  const r = controleerOverdrachtPakket(resolve(bron), { beleid, lock, geinstalleerd: gi ?? { versie: beleid.basis.versie, bronCommit: beleid.basis.bronCommit } });
+  toon(r.zaken);
+  console.log(`\nORCH pakket-controleer: ${r.geslaagd ? 'ГАРАЗД · in orde' : 'ВІДХИЛЕНО · geweigerd'}${r.versie ? ` · versie ${r.versie}` : ''}${r.basis ? ` · basis ${r.basis.versie} @ ${r.basis.commit?.slice(0, 12)}` : ''}`);
+  return r.geslaagd ? 0 : 1;
+}
+
+const tabel = { inleveren: doeInleveren, 'staat-commit': staatCommit, pakket: doePakket, 'pakket-controleer': doePakketControleer, wachtrij: doeWachtrij, status: doeStatus, werkruimte: doeWerkruimte, controleer, vergrendel: doeVergrendel, context: doeContext, 'taak-start': taakStart, 'taak-staat': taakStaat, 'taak-herlees': taakHerlees, versheid: doeVersheid, 'onderteken-bericht': ondertekenBericht, bevestig };
 if (!tabel[opdracht]) { console.log(`gebruik: node scripts/orch.mjs <${Object.keys(tabel).join('|')}>`); process.exit(2); }
 try { process.exit(tabel[opdracht]()); } catch (e) { console.log(`FOUT: ${e.message}`); process.exit(1); }

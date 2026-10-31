@@ -65,3 +65,37 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 
 **Наступне** — етап 2: `mijn-ruimte-…-AGENT-overdracht.zip` (інсталяційний архів + SHA-256 + метадані + звіт + тести + коміти + агенти + підпис),
 перевірки інсталятора (базова версія, Git SHA, цілісність, правила), три режими встановлення.
+
+## Етап 2 — універсальні випуски (31.10.2026)
+
+**Додано**
+- `UITROL-BASIS` у пакеті (`maak-voorstelpakket.sh`, `maak-uitrolpakket.sh`: `BASIS_VERSIE` + `BASIS_COMMIT`, + `regelsVersie`/`regelsHash` з lock;
+  обов'язково з `20261201-000000`). Root-інсталятор `mijn-ruimte-uitrol.sh`: `BASIS_ONGELDIG`, `BASIS_VEROUDERD`, `BASIS_COMMIT_VERSCHILT`, `GEEN_BASIS`,
+  `REGELS_NIET_VERGRENDELD` (python-відбиток = JS `regelsAfdruk`), `MODUS_NIET_TOEGESTAAN`; після вдалої установки пише `$WERK_ROOT/laatste-commit`.
+  `gitops-ophalen.sh` (автоматично) — лише за `automatisch_beperkt` і підписаним lock.
+- `scripts/orch/pakket.mjs` + `orch pakket`: `mijn-ruimte-<versie>.tar.gz` (через наявний `maak-voorstelpakket.sh`) + `mijn-ruimte-<versie>-<agent>-overdracht.zip`
+  (архів, `.sha256`, `.voorstel.json`, `ORCH-OVERDRACHT.json` з `installatie` і `sindsInstallatie`, `UITROL-MANIFEST.json`, `TESTRESULTATEN.json`,
+  `RAPPORT.md` uk+nl, `COMMITS.txt` + `commits.bundle`, `AGENTEN.json`, `LEESMIJ.txt`, `.sig` якщо є); задача → `released`.
+  `orch pakket-controleer --bron <zip>` — перевірка без установки. `inleveren --bron <overdracht.zip>` — цілісність, потім вміст tar.gz.
+- Виправлено (стан координації): власний `orchestratie/taken/<taakId>.json` дозволено в передачі; `.gitattributes` `merge=orch-staat` + драйвер у
+  `wachtrij volgende`; `UITROL-BASIS` у `UITGESLOTEN_PADEN` (службові файли архіву не потрапляють у гілку).
+- `beleid.json` 1.1.0 → **1.2.0** (`pakket`, `inlevering.eigenTaakBestandToegestaan`, статуси з `ter_integratie`), B-005, `REGELS-UITROLPAKKET.md` §6,
+  `shared/uitrol-codes.ts` (+6 кодів), `.gitignore` `uitvoer/`.
+
+**Перевірено**
+- `tests/eenheid/orch-pakket-20261031.test.ts` — 23/23: справжній `orch pakket` на тимчасовому репозиторії (tar через `maak-voorstelpakket.sh`, вміст zip і tar,
+  `UITROL-BASIS`, `ORCH-OVERDRACHT` з двома базами, `RAPPORT.md`, справжній `git bundle`, статус `released`), `pakket-controleer` (гаразд / підроблений
+  tar → `INTEGRITEIT` / новіша встановлена → `BASIS_VEROUDERD` / інший commit → `BASIS_COMMIT_VERSCHILT`), імпорт zip через `inleveren` (існуюча гілка →
+  `TAK_BESTAAT`; потім прийнято, гілка відтворена від бази), відмови `maak-voorstelpakket.sh` без/з некоректними `BASIS_*`.
+- `tests/eenheid/orch-uitrol-basis-20261031.test.ts` — 14/14: справжній root-скрипт під непривілейованим користувачем (`setpriv`, uid 65534) зі стабом
+  інсталятора: старий формат OK + `laatste-commit`, правильна база OK, `BASIS_VEROUDERD`, `BASIS_COMMIT_VERSCHILT`, `BASIS_ONGELDIG`,
+  `REGELS_NIET_VERGRENDELD`, `MODUS_NIET_TOEGESTAAN` з lock, пораховaним у JS (python-відбиток root = JS), CRLF, `GEEN_BASIS`; стаб викликано рівно 4 рази.
+- Разом `orch-*`: kern 67 + cli 16 + inleveren 36 + pakket 23 + uitrol-basis 14 = **156**; `uitrol-codes` 17, `uitrol-manifest` 18, `uitrol-pakket-maken` 5,
+  `uitrol-weergave-v2` 29 — зелені. `uitrol-deur` пропущено (немає `ssh-keygen` у середовищі), `server-beheer`/`uitrol-goedkeuring` — немає `pg`.
+
+**Свідомо не зроблено / обмеження**
+- Підпис пакета справжнім ключем власника не перевірявся (ключа в агента немає й не має бути) — root-перевірка підпису лишається тією, що й була
+  (`uitrol-deur`). Тести етапу 2 покривають усе після підпису.
+- Виклик на production не виконувався; `laatste-commit` на сервері з'явиться після першої установки новим скриптом (до того `BASIS_COMMIT_VERSCHILT`
+  не спрацьовує — лише версія).
+- Сайт/MCP для завантаження пакета передачі — етап 3.

@@ -260,6 +260,27 @@ then
 fi
 BRON="$WERK/uit/bron"
 [ -f "$BRON/deploy/installeer-app.sh" ] || { weiger_tag "$KIES" "$OBJ" GEEN_INSTALLER "У випуску немає deploy/installeer-app.sh." "deploy/installeer-app.sh ontbreekt in de release."; status geweigerd GEEN_INSTALLER "Немає інсталятора." "Installer ontbreekt." "$KIES"; exit 2; }
+# ORCH-001 (31.10.2026): GitOps is de AUTOMATISCHE modus. Die mag alleen als orchestratie/beleid.json in de bron «automatisch_beperkt» toestaat
+# én de eigenaar de kritieke regels heeft ondertekend (orchestratie/regels.lock.json → eigenaar). Zonder orchestratie/ (oudere bron) geldt
+# alleen de schakelaar "gitops" zoals voorheen.
+if [ -f "$BRON/orchestratie/beleid.json" ]; then
+  MODUS_FOUT="$(python3 - "$BRON" 2>&1 <<'PYMODUS'
+import json, os, sys
+bron = sys.argv[1]
+b = json.load(open(os.path.join(bron, "orchestratie/beleid.json"), encoding="utf-8"))
+modi = (b.get("kritiek") or {}).get("installatieModi") or {}
+if "automatisch_beperkt" not in (modi.get("toegestaan") or []):
+    sys.exit("automatisch_beperkt staat niet in kritiek.installatieModi.toegestaan")
+try:
+    lock = json.load(open(os.path.join(bron, "orchestratie/regels.lock.json"), encoding="utf-8"))
+except Exception as e:
+    sys.exit(f"regels.lock.json ontbreekt of onleesbaar: {e}")
+e = lock.get("eigenaar") or {}
+if not e.get("handtekening") or e.get("kritiekHash") != lock.get("kritiekHash"):
+    sys.exit("kritieke regels zijn niet (meer) door de eigenaar ondertekend")
+PYMODUS
+)" || { weiger_tag "$KIES" "$OBJ" MODUS_NIET_TOEGESTAAN "Автоматичне встановлення (GitOps) не дозволене політикою цього випуску: $MODUS_FOUT." "Automatisch installeren (GitOps) is niet toegestaan door het beleid van deze release: $MODUS_FOUT."; status geweigerd MODUS_NIET_TOEGESTAAN "Автоматичний режим не дозволений політикою." "Automatische modus niet toegestaan door het beleid." "$KIES"; exit 2; }
+fi
 printf '%s\n' "$COMMIT" > "$BRON/BRON-COMMIT"
 printf '%s\n' "$KIES" > "$BRON/UITROL-TAG"
 

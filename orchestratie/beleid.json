@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "regelsVersie": "1.1.0",
+  "regelsVersie": "1.2.0",
   "bijgewerkt": "2026-10-31",
   "regelBestanden": [
     "AGENTS.md",
@@ -30,6 +30,7 @@
   "taakIdPatroon": "^[A-Z][A-Z0-9]{1,9}-\\d{3,5}$",
   "statussen": [
     "in_progress",
+    "ter_integratie",
     "integrated",
     "released",
     "installed"
@@ -60,7 +61,38 @@
       "node scripts/eenheidstests.mjs orch-kern"
     ],
     "recordMap": "orchestratie/inleveringen",
-    "toelichting": "Усі канали проходять один конвеєр: node scripts/orch.mjs inleveren --bron <zip|tar.gz|patch|map|git-ref> [--kanaal mcp|http_api|web_upload]. Відхилена передача не створює гілки й не торкається integratie."
+    "toelichting": "Усі канали проходять один конвеєр: node scripts/orch.mjs inleveren --bron <zip|tar.gz|patch|map|git-ref|overdracht.zip> [--kanaal mcp|http_api|web_upload]. Пакет передачі (-overdracht.zip) спершу перевіряється на цілісність (.sha256), далі накладається вміст tar.gz. Відхилена передача не створює гілки й не торкається integratie. Файли стану (taken, inleveringen, wachtrij, regels.lock, geinstalleerd) передача не змінює — виняток лише власний orchestratie/taken/<taakId>.json; при злитті лишається версія integratie (.gitattributes merge=orch-staat).",
+    "eigenTaakBestandToegestaan": true
+  },
+  "pakket": {
+    "tar": "mijn-ruimte-<versie>.tar.gz",
+    "overdrachtZip": "mijn-ruimte-<versie>-<agent>-overdracht.zip",
+    "basisBestand": "UITROL-BASIS",
+    "basisVerplichtVanaf": "20261201-000000",
+    "uitvoerMap": "uitvoer",
+    "inhoud": [
+      "mijn-ruimte-<versie>.tar.gz",
+      "mijn-ruimte-<versie>.tar.gz.sha256",
+      "mijn-ruimte-<versie>.voorstel.json",
+      "ORCH-OVERDRACHT.json",
+      "UITROL-MANIFEST.json",
+      "TESTRESULTATEN.json",
+      "RAPPORT.md",
+      "COMMITS.txt",
+      "commits.bundle",
+      "AGENTEN.json",
+      "LEESMIJ.txt",
+      "mijn-ruimte-<versie>.tar.gz.sig (лише якщо власник підписав)"
+    ],
+    "installerControles": [
+      "UITROL-VERSIE > laatste-versie",
+      "UITROL-BASIS.versie == laatste-versie (інакше BASIS_VEROUDERD)",
+      "UITROL-BASIS.commit == laatste-commit (інакше BASIS_COMMIT_VERSCHILT)",
+      "regels.lock.json ↔ відбиток правил у пакеті (REGELS_NIET_VERGRENDELD)",
+      "kritiek.installatieModi дозволяє режим (MODUS_NIET_TOEGESTAAN)",
+      "GEEN_BASIS для версій ≥ basisVerplichtVanaf"
+    ],
+    "toelichting": "node scripts/orch.mjs pakket --taak <ID> --auteur \"…\" [--manifest …] [--testresultaten …] [--sig …] збирає tar.gz через deploy/uitrol/maak-voorstelpakket.sh (нічого не дублюється) і пакет передачі. UITROL-BASIS = ВСТАНОВЛЕНА база (orchestratie/geinstalleerd.json, інакше basis); basisCommit в ORCH-OVERDRACHT = база ГІЛКИ задачі (від неї inleveren відтворює зміни). Перевірка без установки: pakket-controleer --bron <zip>. Підписує лише власник на своєму ПК (kritiek.privesleutelsNaarAgenten = false)."
   },
   "adapters": {
     "maxRegels": 25,
