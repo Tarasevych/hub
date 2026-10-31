@@ -11,19 +11,21 @@
 // HET GEHEIM. Het HA-token staat als AES-256-GCM-envelop in de rij (server/platform/beveiliging.ts), AAD = woning + integratie;
 // het verlaat de server nooit en komt nooit in een antwoord, log of gebeurtenis.
 import { randomUUID } from 'node:crypto';
-import { error, json } from '../server/platform';
+import { db, error, isOwnerEmail, json } from '../server/platform';
+import { alsSysteem } from '../server/platform/context';
 import { openWithEnvKey, sealWithEnvKey } from '../server/platform/beveiliging';
 import { auditToevoegen } from '../server/platform/audit';
 import type { RouterMiddleware } from '../server/platform/router';
 import { alsGebruiker } from './ai-toestemmingen';
-import { haDienstVoor, haGeschiedenis, haLezen, haOntdekken, haStuur, haVerbinden, komtOvereen, veiligAdres, type OntdektApparaat } from './huis-adapter-home-assistant';
+import { denyMutation } from './rbac';
+import { haDienstVoor, haGeschiedenis, haLezen, haOntdekken, haStuur, haVerbinden, komtOvereen, parseVertrouwdToestel, veiligAdres, vertrouwdeToestellenUitEnv, zetVertrouwdeToestellenBron, type OntdektApparaat } from './huis-adapter-home-assistant';
 import {
   KRITIEKE_SOORTEN, MAX_RUIMTES, MAX_WONINGEN, OPDRACHT_DEADLINE_MS, OPDRACHT_EIND, droogloop, magOvergang, schoneOpdrachtWaarde, schoneRegel, schoneScene,
   type Apparaat, type Automatisering, type Gebeurtenis, type Integratie, type Lid, type Mogelijkheid, type MogelijkheidSoort, type Opdracht, type OpdrachtStand, type Ruimte, type Scene, type Toestand, type Voorstel, type Waarnemingen, type Woning,
 } from '../shared/huis-model';
 
 type Q = (sql: string, params?: unknown[]) => Promise<{ rows: any[]; rowCount: number | null }>;
-type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
+type SessionOk = { user: { id: string; email?: string; role?: string; status?: string; accessLevel?: string }; service: string };
 type SessionFail = { errorCode: string };
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | SessionFail>;
 type Ctx = { event: Record<string, unknown>; body: unknown };
@@ -498,6 +500,47 @@ export async function woningWijzigen(userId: string, woningId: string, v: { naam
   });
 }
 
+// ---------------------------------------------------------------- gecontroleerde lijst van vertrouwde toestellen (alleen systeemeigenaar)
+const VERTROUWDE_TOESTELLEN_TBL = 'huis_vertrouwde_toestellen_v1';
+type VertrouwdToestelRij = { patroon: string; label: string; doorUserId: string; aangemaaktOp: string };
+const isSysteemEigenaar = (u: { id?: string; email?: string; role?: string } | null | undefined): boolean =>
+  Boolean(u && u.role === 'owner' && isOwnerEmail(u.email));
+
+zetVertrouwdeToestellenBron(async () => {
+  const { items } = await alsSysteem(() => db.list<VertrouwdToestelRij>(VERTROUWDE_TOESTELLEN_TBL, { limit: 100 }));
+  return items.map((x) => String(x.patroon || '')).filter(Boolean);
+});
+
+export async function vertrouwdeToestellenLijst(user: SessionOk['user']) {
+  if (!isSysteemEigenaar(user)) return { fout: 'ALLEEN_SYSTEEMEIGENAAR' as const };
+  const { items } = await alsSysteem(() => db.list<VertrouwdToestelRij>(VERTROUWDE_TOESTELLEN_TBL, { limit: 100 }));
+  return {
+    toestellen: (items as Array<{ id: string } & VertrouwdToestelRij>).map((x) => ({ id: x.id, patroon: x.patroon, label: x.label, aangemaaktOp: x.aangemaaktOp })),
+    uitOmgeving: vertrouwdeToestellenUitEnv().map((x) => x.patroon),
+  };
+}
+export async function vertrouwdToestelToevoegen(user: SessionOk['user'], v: { adres: string; label?: string }) {
+  if (!isSysteemEigenaar(user)) return { fout: 'ALLEEN_SYSTEEMEIGENAAR' as const };
+  const regel = parseVertrouwdToestel(v.adres);
+  if (!regel) return { fout: 'ADRES_GEWEIGERD' as const };
+  const label = String(v.label ?? '').replace(/\s+/g, ' ').trim().slice(0, 80) || regel.patroon;
+  const { items } = await alsSysteem(() => db.list<VertrouwdToestelRij>(VERTROUWDE_TOESTELLEN_TBL, { filter: { patroon: regel.patroon }, limit: 2 }));
+  if (items.length) return { fout: 'TOESTEL_BESTAAT' as const };
+  const record: VertrouwdToestelRij = { patroon: regel.patroon, label, doorUserId: user.id, aangemaaktOp: new Date().toISOString() };
+  const [id] = await alsSysteem(() => db.add(VERTROUWDE_TOESTELLEN_TBL, [record as unknown as Record<string, unknown>]));
+  await auditToevoegen({ ownerId: user.id, actorId: user.id, action: 'huis.vertrouwd-toestel.toegevoegd', type: 'huis', result: 'ok', details: { id, patroon: regel.patroon, label } }).catch(() => undefined);
+  return { toestel: { id: String(id || ''), patroon: regel.patroon, label, aangemaaktOp: record.aangemaaktOp } };
+}
+export async function vertrouwdToestelVerwijderen(user: SessionOk['user'], id: string) {
+  if (!isSysteemEigenaar(user)) return { fout: 'ALLEEN_SYSTEEMEIGENAAR' as const };
+  if (!id || id.length > 120) return { fout: 'ID_ONGELDIG' as const };
+  const [rij] = await alsSysteem(() => db.get<VertrouwdToestelRij>(VERTROUWDE_TOESTELLEN_TBL, [id]));
+  if (!rij) return { fout: 'NIET_GEVONDEN' as const };
+  await alsSysteem(() => db.delete(VERTROUWDE_TOESTELLEN_TBL, [id]));
+  await auditToevoegen({ ownerId: user.id, actorId: user.id, action: 'huis.vertrouwd-toestel.verwijderd', type: 'huis', result: 'ok', details: { id, patroon: rij.patroon } }).catch(() => undefined);
+  return { verwijderd: true as const };
+}
+
 // ---------------------------------------------------------------- routes
 const DIENSTEN = ['huis', 'hub'] as const;
 export function huisRoutes(requireSession: RequireSession, deps: HuisDeps = {}): Record<string, RouterMiddleware[]> {
@@ -518,15 +561,28 @@ export function huisRoutes(requireSession: RequireSession, deps: HuisDeps = {}):
     }
   }) as RouterMiddleware];
   const w = (d: Record<string, unknown>) => (isUuid(d.woningId) ? d.woningId : '');
-  const foutResp = (f: string) => error(f, f === 'NIET_GEVONDEN' || f === 'APPARAAT_ONBEKEND' ? 404 : f === 'GEEN_TOEGANG' || f === 'ALLEEN_EIGENAAR' ? 403 : f === 'HUIS_MIGRATIE_ONTBREEKT' ? 503 : 400);
+  const schrijfGeweigerd = (a: SessionOk) => denyMutation(a.user, 'workspace.write') || null;
+  const foutResp = (f: string) => error(f, f === 'NIET_GEVONDEN' || f === 'APPARAAT_ONBEKEND' ? 404 : f === 'GEEN_TOEGANG' || f === 'ALLEEN_EIGENAAR' || f === 'ALLEEN_SYSTEEMEIGENAAR' || f === 'TOESTEL_NIET_VERTROUWD' ? 403 : f === 'TOESTEL_BESTAAT' ? 409 : f === 'HUIS_MIGRATIE_ONTBREEKT' ? 503 : 400);
   const uit = (r: unknown, sleutel?: string) => (r === null ? error('NIET_GEVONDEN', 404) : r && typeof r === 'object' && 'fout' in (r as object) && (r as { fout?: string }).fout ? foutResp(String((r as { fout: string }).fout)) : json(sleutel ? { [sleutel]: r } : (r as object)));
 
   return {
+    'POST /api/huis/vertrouwde-toestellen': route(async (ctx, a, d) => {
+      if (!isSysteemEigenaar(a.user)) return error('ALLEEN_SYSTEEMEIGENAAR', 403);
+      const actie = String(d.actie || 'lijst');
+      if (actie === 'lijst') return uit(await vertrouwdeToestellenLijst(a.user));
+      if (!deps.stepUp) return error('STEP_UP_REQUIRED', 403);
+      const su = await deps.stepUp(ctx, a);
+      if (su) return su;
+      if (actie === 'toevoegen') return uit(await vertrouwdToestelToevoegen(a.user, { adres: String(d.adres ?? ''), label: typeof d.label === 'string' ? d.label : undefined }));
+      if (actie === 'verwijder') return uit(await vertrouwdToestelVerwijderen(a.user, String(d.id ?? '')));
+      return error('ACTIE_ONGELDIG', 400);
+    }),
     'POST /api/huis/woningen': route(async (_c, a) => json({ woningen: await woningenLijst(a.user.id) })),
-    'POST /api/huis/woningen/nieuw': route(async (_c, a, d) => uit(await woningMaken(a.user.id, String(d.naam ?? ''), typeof d.tijdzone === 'string' ? d.tijdzone : undefined, d.taal === 'nl' ? 'nl' : 'uk'), 'woning')),
-    'POST /api/huis/woningen/wijzig': route(async (_c, a, d) => w(d) ? uit(await woningWijzigen(a.user.id, w(d), d as any), 'woning') : error('WONING_ONGELDIG', 400)),
+    'POST /api/huis/woningen/nieuw': route(async (_c, a, d) => schrijfGeweigerd(a) || uit(await woningMaken(a.user.id, String(d.naam ?? ''), typeof d.tijdzone === 'string' ? d.tijdzone : undefined, d.taal === 'nl' ? 'nl' : 'uk'), 'woning')),
+    'POST /api/huis/woningen/wijzig': route(async (_c, a, d) => schrijfGeweigerd(a) || (w(d) ? uit(await woningWijzigen(a.user.id, w(d), d as any), 'woning') : error('WONING_ONGELDIG', 400))),
     'POST /api/huis/overzicht': route(async (_c, a, d) => w(d) ? uit(await overzicht(a.user.id, w(d))) : error('WONING_ONGELDIG', 400)),
     'POST /api/huis/ruimtes': route(async (_c, a, d) => {
+      const weiger = schrijfGeweigerd(a); if (weiger) return weiger;
       if (!w(d)) return error('WONING_ONGELDIG', 400);
       const actie = String(d.actie || '');
       if (actie === 'nieuw') return uit(await ruimteMaken(a.user.id, w(d), d as any), 'ruimte');
@@ -535,19 +591,21 @@ export function huisRoutes(requireSession: RequireSession, deps: HuisDeps = {}):
       if (actie === 'verwijder') return (await ruimteVerwijderen(a.user.id, w(d), d.id)) ? json({ verwijderd: true }) : error('NIET_GEVONDEN', 404);
       return error('ACTIE_ONGELDIG', 400);
     }),
-    'POST /api/huis/apparaten/wijzig': route(async (_c, a, d) => w(d) && isUuid(d.id) ? uit(await apparaatWijzigen(a.user.id, w(d), d.id, { naam: typeof d.naam === 'string' ? d.naam : undefined, ruimteId: d.ruimteId === null ? null : isUuid(d.ruimteId) ? d.ruimteId : undefined, verborgen: typeof d.verborgen === 'boolean' ? d.verborgen : undefined }), 'apparaat') : error('ID_ONGELDIG', 400)),
-    'POST /api/huis/integraties/instellen': route(async (_c, a, d) => w(d) ? uit(await integratieInstellen(a.user.id, w(d), { adres: String(d.adres ?? ''), token: String(d.token ?? ''), naam: typeof d.naam === 'string' ? d.naam : undefined }), 'integratie') : error('WONING_ONGELDIG', 400)),
+    'POST /api/huis/apparaten/wijzig': route(async (_c, a, d) => schrijfGeweigerd(a) || (w(d) && isUuid(d.id) ? uit(await apparaatWijzigen(a.user.id, w(d), d.id, { naam: typeof d.naam === 'string' ? d.naam : undefined, ruimteId: d.ruimteId === null ? null : isUuid(d.ruimteId) ? d.ruimteId : undefined, verborgen: typeof d.verborgen === 'boolean' ? d.verborgen : undefined }), 'apparaat') : error('ID_ONGELDIG', 400))),
+    'POST /api/huis/integraties/instellen': route(async (_c, a, d) => schrijfGeweigerd(a) || (w(d) ? uit(await integratieInstellen(a.user.id, w(d), { adres: String(d.adres ?? ''), token: String(d.token ?? ''), naam: typeof d.naam === 'string' ? d.naam : undefined }), 'integratie') : error('WONING_ONGELDIG', 400))),
     'POST /api/huis/integraties/ontdekken': route(async (_c, a, d) => w(d) && isUuid(d.integratieId) ? uit(await integratieOntdekken(a.user.id, w(d), d.integratieId)) : error('ID_ONGELDIG', 400)),
-    'POST /api/huis/integraties/importeren': route(async (_c, a, d) => w(d) && isUuid(d.integratieId) ? uit(await integratieImporteren(a.user.id, w(d), d.integratieId, Array.isArray(d.bronIds) ? d.bronIds.map(String).slice(0, 2000) : null)) : error('ID_ONGELDIG', 400)),
+    'POST /api/huis/integraties/importeren': route(async (_c, a, d) => schrijfGeweigerd(a) || (w(d) && isUuid(d.integratieId) ? uit(await integratieImporteren(a.user.id, w(d), d.integratieId, Array.isArray(d.bronIds) ? d.bronIds.map(String).slice(0, 2000) : null)) : error('ID_ONGELDIG', 400))),
     'POST /api/huis/integraties/synchroniseren': route(async (_c, a, d) => w(d) && isUuid(d.integratieId) ? uit(await integratieSynchroniseren(a.user.id, w(d), d.integratieId)) : error('ID_ONGELDIG', 400)),
     // Schrijftoestemming aanzetten is een beveiligingskeuze: step-up van de eigenaar (dezelfde poort als de andere kritieke acties).
     'POST /api/huis/integraties/schrijven': route(async (ctx, a, d) => {
+      const weiger = schrijfGeweigerd(a); if (weiger) return weiger;
       if (!w(d) || !isUuid(d.integratieId)) return error('ID_ONGELDIG', 400);
       if (d.aan === true) { if (!deps.stepUp) return error('STEP_UP_REQUIRED', 403); const su = await deps.stepUp(ctx, a); if (su) return su; }
       return uit(await integratieSchrijven(a.user.id, w(d), d.integratieId, d.aan === true), 'integratie');
     }),
-    'POST /api/huis/integraties/verwijderen': route(async (_c, a, d) => w(d) && isUuid(d.integratieId) ? uit(await integratieVerwijderen(a.user.id, w(d), d.integratieId)) : error('ID_ONGELDIG', 400)),
+    'POST /api/huis/integraties/verwijderen': route(async (_c, a, d) => schrijfGeweigerd(a) || (w(d) && isUuid(d.integratieId) ? uit(await integratieVerwijderen(a.user.id, w(d), d.integratieId)) : error('ID_ONGELDIG', 400))),
     'POST /api/huis/opdrachten/nieuw': route(async (ctx, a, d) => {
+      const weiger = schrijfGeweigerd(a); if (weiger) return weiger;
       if (!w(d) || !isUuid(d.apparaatId)) return error('ID_ONGELDIG', 400);
       let stepUpOk = false;
       if (d.kritiekBevestigd === true) { if (!deps.stepUp) return error('STEP_UP_REQUIRED', 403); const su = await deps.stepUp(ctx, a); if (su) return su; stepUpOk = true; }
@@ -560,6 +618,7 @@ export function huisRoutes(requireSession: RequireSession, deps: HuisDeps = {}):
       if (!w(d)) return error('WONING_ONGELDIG', 400);
       const actie = String(d.actie || 'lijst');
       if (actie === 'lijst') return uit(await scenesLijst(a.user.id, w(d)), 'scenes');
+      const weiger = schrijfGeweigerd(a); if (weiger) return weiger;
       if (actie === 'bewaar') return uit(await sceneBewaren(a.user.id, w(d), isUuid(d.id) ? d.id : null, d), 'scene');
       if (!isUuid(d.id)) return error('ID_ONGELDIG', 400);
       if (actie === 'verwijder') return (await sceneVerwijderen(a.user.id, w(d), d.id)) ? json({ verwijderd: true }) : error('NIET_GEVONDEN', 404);
@@ -571,6 +630,7 @@ export function huisRoutes(requireSession: RequireSession, deps: HuisDeps = {}):
       const actie = String(d.actie || 'lijst');
       if (actie === 'lijst') return uit(await automatiseringenLijst(a.user.id, w(d)), 'automatiseringen');
       if (actie === 'droogloop') return uit(await automatiseringDroogloop(a.user.id, w(d), d.regel, typeof d.tijd === 'string' ? d.tijd : undefined));
+      const weiger = schrijfGeweigerd(a); if (weiger) return weiger;
       if (actie === 'bewaar') return uit(await automatiseringBewaren(a.user.id, w(d), isUuid(d.id) ? d.id : null, { naam: String(d.naam ?? ''), regel: d.regel, stand: typeof d.stand === 'string' ? d.stand : undefined }), 'automatisering');
       if (actie === 'verwijder' && isUuid(d.id)) return (await automatiseringVerwijderen(a.user.id, w(d), d.id)) ? json({ verwijderd: true }) : error('NIET_GEVONDEN', 404);
       return error('ACTIE_ONGELDIG', 400);
@@ -582,6 +642,7 @@ export function huisRoutes(requireSession: RequireSession, deps: HuisDeps = {}):
       if (!w(d)) return error('WONING_ONGELDIG', 400);
       const actie = String(d.actie || 'lijst');
       if (actie === 'lijst') return uit(await voorstellenLijst(a.user.id, w(d)), 'voorstellen');
+      const weiger = schrijfGeweigerd(a); if (weiger) return weiger;
       if (actie === 'nieuw') return uit(await voorstelMaken(a.user.id, w(d), { door: String(d.door || 'assistent'), samenvatting: String(d.samenvatting ?? ''), apparaatId: String(d.apparaatId ?? ''), mogelijkheid: String(d.mogelijkheid ?? '') as MogelijkheidSoort, waarde: d.waarde }), 'voorstel');
       if ((actie === 'goedkeuren' || actie === 'afwijzen') && isUuid(d.id)) return uit(await voorstelBesluiten(a.user.id, w(d), d.id, actie === 'goedkeuren'));
       return error('ACTIE_ONGELDIG', 400);
@@ -590,6 +651,7 @@ export function huisRoutes(requireSession: RequireSession, deps: HuisDeps = {}):
       if (!w(d)) return error('WONING_ONGELDIG', 400);
       const actie = String(d.actie || 'lijst');
       if (actie === 'lijst') return uit(await ledenLijst(a.user.id, w(d)), 'leden');
+      const weiger = schrijfGeweigerd(a); if (weiger) return weiger;
       if (actie === 'toevoegen') return uit(await lidToevoegen(a.user.id, w(d), { email: String(d.email ?? ''), rol: String(d.rol ?? 'gast'), dagen: Number(d.dagen) || undefined }));
       if (actie === 'verwijder') return (await lidVerwijderen(a.user.id, w(d), String(d.userId ?? ''))) ? json({ verwijderd: true }) : error('NIET_GEVONDEN', 404);
       return error('ACTIE_ONGELDIG', 400);

@@ -21,6 +21,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { db, error, json, storage } from '../server/platform';
 import type { RouterMiddleware } from '../server/platform/router';
+import { denyMutation } from './rbac';
 import {
   BRON_IDS, FOTO_BRONNEN, FOTO_LIMIETEN as L, duplicaatGroepen, gelijkendeGroepen, mediaSoort, mimeVoor, extVan,
   leesExif, schoneTag, schoneTekst, type Exif, type FotoAlbum, type FotoHerkomst, type FotoItem,
@@ -176,7 +177,8 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
   };
 
   // ---- indexeren: foto's en video's uit «Хмарне сховище» virtueel opnemen (geen kopie)
-  const indexeer: Run = async (lade) => {
+  const indexeer: Run = async (lade, _d, auth) => {
+    const denied = denyMutation(auth.user, 'photos.write'); if (denied) return denied;
     const [cloud, media] = await Promise.all([alle<CloudRec>(CLOUD_ITEMS, lade), alle<MediaRec>(MEDIA, lade)]);
     const bekend = new Set(media.map((m) => str(m.cloudItemId)).filter(Boolean));
     const shaBekend = new Map(media.filter((m) => m.sha256).map((m) => [str(m.sha256), m]));
@@ -220,7 +222,8 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
   };
 
   // ---- acties op items
-  const item: Run = async (lade, d) => {
+  const item: Run = async (lade, d, auth) => {
+    const denied = denyMutation(auth.user, 'photos.write'); if (denied) return denied;
     const actie = str(d.actie);
     const ids = (Array.isArray(d.ids) ? d.ids : [d.id]).map(idOf).filter(Boolean).slice(0, 500);
     if (!ids.length) fout('ITEM_ONBEKEND');
@@ -269,7 +272,8 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
   };
 
   // ---- albums en collecties
-  const album: Run = async (lade, d) => {
+  const album: Run = async (lade, d, auth) => {
+    const denied = denyMutation(auth.user, 'photos.write'); if (denied) return denied;
     const actie = str(d.actie);
     if (actie === 'nieuw') {
       const naam = schoneTekst(d.naam, L.albumNaamMax); if (!naam) fout('NAAM_ONGELDIG');
@@ -288,7 +292,8 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
   };
 
   // ---- upload van één mediabestand (uit een import of rechtstreeks), in stukken
-  const upload: Run = async (lade, d) => {
+  const upload: Run = async (lade, d, auth) => {
+    const denied = denyMutation(auth.user, 'photos.write'); if (denied) return denied;
     await opruimen();
     const actie = str(d.actie);
     if (actie === 'begin') {
@@ -373,7 +378,8 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
     const tel: Record<string, number> = {}; for (const m of media) for (const b of new Set((m.herkomst || []).map((h) => h.bron))) tel[b] = (tel[b] || 0) + 1;
     return json({ bronnen: FOTO_BRONNEN.map((b) => ({ ...b, aantal: tel[b.id] || 0 })), imports: imports.sort((a, b) => num(b.createdAt) - num(a.createdAt)).slice(0, 50).map((i) => ({ id: i.id, bron: i.bron, archief: i.archief, soort: i.soort, nieuw: i.nieuw, bekend: i.bekend, overgeslagen: i.overgeslagen, mislukt: i.mislukt, klaar: i.klaar === true, createdAt: new Date(num(i.createdAt)).toISOString() })) });
   };
-  const importLog: Run = async (lade, d) => {
+  const importLog: Run = async (lade, d, auth) => {
+    const denied = denyMutation(auth.user, 'photos.write'); if (denied) return denied;
     const velden = { bron: BRON_IDS.has(str(d.bron)) ? str(d.bron) : 'map', archief: schoneTekst(d.archief, 200), soort: schoneTekst(d.soort, 20), nieuw: num(d.nieuw), bekend: num(d.bekend), overgeslagen: num(d.overgeslagen), mislukt: num(d.mislukt), klaar: d.klaar === true };
     if (idOf(d.id)) { const r = await een<Record<string, unknown>>(IMPORTS, lade, d.id); if (!r) fout('ITEM_ONBEKEND'); const { id, ...rest } = r!; await db.update(IMPORTS, [{ id, record: { ...rest, ...velden } }]); return json({ id }); }
     const [id] = await db.add(IMPORTS, [{ ...ladeVelden(lade), ...velden, createdAt: Date.now() }]); return json({ id });

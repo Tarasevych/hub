@@ -44,6 +44,7 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/identity\/account\//,          // account verwijderen/wijzigen
   /^[A-Z]+ \/api\/owner\/identity\/security\//,         // sessies intrekken, «het was ik niet»
   /^[A-Z]+ \/api\/owner\/identity\/admin\//,            // rollen van anderen
+  /^[A-Z]+ \/api\/owner\/identity\/codewoord(\/|$)/,    // codewoord instellen/wijzigen
   /^[A-Z]+ \/api\/owner\/access\//,                     // aanmeldmethoden, passkeys, TOTP, herstelcodes, rollen, beleid
   /^[A-Z]+ \/api\/owner\/admin\/(users|roles|access)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/agent-namens\//,               // namens-sessies zelf
@@ -51,14 +52,17 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/uitrol\/(goedkeuren|goedkeuring)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/ai-beleid(\/|$)/,              // AI-beleid (ondertekend door de eigenaar)
   /^[A-Z]+ \/api\/owner\/geheimen(\/|$)/,               // «Секрети й ключі»
+  /^[A-Z]+ \/api\/owner\/(sleutelkluis|codewoord|tech-ruimtes|besluit|aanmeld)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/api-platform\/vault(\/|$)/,
   /^[A-Z]+ \/api\/owner\/google-contour(\/|$)/,
   /^[A-Z]+ \/api\/owner\/mcp-connector\/(grants|approvals|consent)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/mcp\/consent(\/|$)/,
   /^[A-Z]+ \/api\/owner\/connector-v2\//,
   /^[A-Z]+ \/api\/owner\/agents\/[^/]+\/(policy|revoke)(\/|$)/,
-  /^[A-Z]+ \/api\/owner\/agents\/(ontgrendeling|extensie-status|extensie-beheer)(\/|$)/, // browserextensie ontgrendelen/intrekken/status (0.5) en beheer/beleid (0.6): alleen een mens
+  /^[A-Z]+ \/api\/owner\/agents\/(ontgrendeling|extensie-status|extensie-beheer|register|ws-ticket|block|unblock)(\/|$)/, // browserextensie ontgrendelen/intrekken/status (0.5), beheer/beleid (0.6) en agentregistratie: alleen een mens
   /^[A-Z]+ \/api\/owner\/tech\//,                       // technisch profiel activeren/verlengen
+  /^[A-Z]+ \/api\/owner\/session\/logout(-[a-z0-9-]+)?(\/|$)/, // sessies uitloggen
+  /^[A-Z]+ \/api\/(aanmeld|huis\/vertrouwde-toestellen)(\/|$)/, // OAuth-koppelingen & vertrouwde LAN-toestellen
   /^[A-Z]+ \/api\/ssh-ca(\/|$)/,                        // SSH-certificaten: uitgeven, voorbereiden, aan/uit, intrekken (toegang tot de host)
   /^[A-Z]+ \/api\/owner\/remote(\/|$)/,                 // extern bureaublad (RDP/VNC/SSH via guacd): alleen een mens met passkey
   /^[A-Z]+ \/api\/mcp\/console\/tokens?(\/|$)/,         // agenttokens uitgeven/intrekken

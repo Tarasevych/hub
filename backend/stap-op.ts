@@ -190,18 +190,19 @@ const ACTIE_PER_PAD: Array<[RegExp, string]> = [
   [/\/toegangscodes\/maken/, 'toegangscode-maken'], [/\/toegangscodes\/wijzigen/, 'toegangscode-verlengen'],
   [/\/ruimte\/keuze/, 'ruimte-keuze'], [/\/ruimte\/besluit/, 'ruimte-besluit'], [/\/ruimte\/dienst/, 'ruimte-verbinden'],
   [/\/toegang\/wijziging\/terugdraaien/, 'wijziging-terugdraaien'], [/\/uitrol\/voorbereiders/, 'voorbereider'], [/\/uitrol\//, 'uitrol-goedkeuren'],
-  [/\/totp\/(disable|uitschakelen)/, 'totp-uitschakelen'], [/\/totp\//, 'totp-wijzigen'], [/\/password/, 'wachtwoord'],
+  [/\/totp\/(disable|uitschakelen)/, 'totp-uitschakelen'], [/\/totp\//, 'totp-wijzigen'], [/\/(password|codewoord)\b/, 'wachtwoord'],
   [/export/, 'export'], [/(account|user)s?\/(delete|verwijder)/, 'account-verwijderen'], [/\/admin\b|\/beheer\b/, 'beheer'],
-  [/\/(geheim|geheimen|secret|secrets|vault|sleutel|sleutels)\b/, 'onbekend'],
+  [/\/(geheim|geheimen|secret|secrets|vault|sleutel|sleutels|sleutelkluis)\b/, 'onbekend'],
   [/\/(verwijderen|verwijder|delete|intrekken|revoke|wissen)\b/, 'onbekend'],
-  [/\/(ssh|ssh-ca|terminal|impersonatie|remote|bureaublad|ontgrendel|ontgrendeling)\b/, 'onbekend'],
-  [/\/(agents|connectors|mcp)\b/, 'agenten'],
+  [/\/(ssh|ssh-ca|terminal|impersonatie|ondersteuning|tech-ruimtes|remote|bureaublad|ontgrendel|ontgrendeling)\b/, 'onbekend'],
+  [/\/tech\/activeren\b/, 'bevestigen'],
+  [/\/(agents|connectors|mcp-connector|mcp)\b/, 'agenten'],
 ];
 export function actieVoorPad(pad: string): string {
   const p = String(pad || '').split('?')[0];
   if (!p) return 'onbekend';
   for (const [re, actie] of ACTIE_PER_PAD) if (re.test(p)) return actie;
-  return 'bevestigen';
+  return 'onbekend';
 }
 /** Mag een onthouden bevestiging dit pad doorlaten? Pad onbekend → nee. */
 export const onthoudMagVoorPad = (pad: string): boolean => (pad ? onthoudMagVoorActie(actieVoorPad(pad)) : false);

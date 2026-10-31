@@ -25,11 +25,11 @@ let bewaker: ((nu: number) => Promise<unknown> | unknown) | null = null;
 let laatsteBewaking = 0;
 export function registreerBewaker(fn: (nu: number) => Promise<unknown> | unknown): void { bewaker = fn; }
 
-/** Eén antwoord van de router. */
-export function telAntwoord(status: number, nu = Date.now()): void {
+/** Eén antwoord van de router. Anonieme (ongeverifieerde) 403's tellen niet mee voor de OPA-zekering (SEC-001-11). */
+export function telAntwoord(status: number, nu = Date.now(), opties?: { geverifieerd?: boolean }): void {
   tel('totaal', 1, nu);
   if (status >= 500) tel('5xx', 1, nu);
-  else if (status === 403) tel('403', 1, nu);
+  else if (status === 403 && opties?.geverifieerd !== false) tel('403', 1, nu);
   if (bewaker && nu - laatsteBewaking >= 15_000) {
     laatsteBewaking = nu;
     const fn = bewaker;

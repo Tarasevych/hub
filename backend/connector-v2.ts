@@ -20,6 +20,7 @@
 // OAuth (registratie, autorisatie, token) is gedeeld met /mcp: het verschil zit in `resource` (RFC 8707) = het agentadres.
 import { getPool } from '../server/platform/pg';
 import { rateLimit, type RouterResponse } from '../server/platform';
+import { sessieGeverifieerd, zetGebruiker } from '../server/platform/context';
 import { auditToevoegen } from '../server/platform/audit';
 import { agentPaginaUrl, agentPrmUrl, agentUrl, isAgentSlug, v2Agent, V2_AGENTEN, type AgentSlug } from '../shared/connector-v2/agenten';
 import { klantVan } from '../shared/ai-verbinding';
@@ -290,6 +291,8 @@ export async function rpc(slug: string, authorization: string | undefined, rawBo
   if ('statusCode' in toegang) return toegang;
   const { koppeling, rechten, via } = toegang;
   const who = koppeling;
+  zetGebruiker(who.userId, 'mcp', undefined, String(who.tokenId ?? ''));
+  sessieGeverifieerd();
   const limit = await rateLimit(`mcp-rpc:${who.limietSleutel}`, RPC_PER_MINUTE, 60);
   if (!limit.ok) return respond(429, rpcError(null, -32000, 'Te veel verzoeken'), { 'Retry-After': String(limit.retryAfter) });
   if (Buffer.byteLength(rawBody) > MAX_RPC_BYTES) return respond(413, rpcError(null, -32600, 'Request too large'));

@@ -7,7 +7,11 @@ import { networkInterfaces } from 'node:os';
 
 export type NepEntiteit = { entity_id: string; state: string; attributes: Record<string, unknown>; last_changed: string; last_updated: string };
 export function nietLoopbackAdres(): string | null {
-  for (const lijst of Object.values(networkInterfaces())) for (const i of lijst ?? []) if (i.family === 'IPv4' && !i.internal) return i.address;
+  for (const lijst of Object.values(networkInterfaces())) {
+    for (const i of lijst ?? []) {
+      if (i.family === 'IPv4' && !i.internal && !i.address.startsWith('203.0.113.')) return i.address;
+    }
+  }
   return null;
 }
 export async function nepHomeAssistant(o: { token: string; entiteiten: NepEntiteit[]; vertragingMs?: number; doof?: boolean }) {

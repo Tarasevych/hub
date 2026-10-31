@@ -75,10 +75,17 @@ export function ipv6Groepen(ipIn: string): number[] | null {
   return groepen.map((g) => parseInt(g, 16));
 }
 
-/** Uitpakken van «IPv4 in IPv6» (::ffff:a.b.c.d, ::ffff:7f00:1, ::a.b.c.d) — anders kan een filter op IPv4 omzeild worden. */
+/** Uitpakken van «IPv4 in IPv6» (::ffff:a.b.c.d, ::ffff:7f00:1, ::ffff:0:a.b.c.d, ::a.b.c.d, 2002:a.b.c.d::) — anders kan een filter op IPv4 omzeild worden. */
 export function ipv4UitV6(ip: string): string | null {
   const g = ipv6Groepen(ip);
-  if (!g || g.slice(0, 5).some((x) => x !== 0) || !(g[5] === 0xffff || (g[5] === 0 && (g[6] !== 0 || g[7] > 1)))) return null;
+  if (!g) return null;
+  // 6to4 (2002::/16): groepen 1 en 2 dragen het IPv4-adres.
+  if (g[0] === 0x2002) return `${g[1] >> 8}.${g[1] & 255}.${g[2] >> 8}.${g[2] & 255}`;
+  // SIIT IPv4-translated (::ffff:0:a.b.c.d, RFC 2765): 0:0:0:0:ffff:0:xxxx:yyyy
+  if (g.slice(0, 4).every((x) => x === 0) && g[4] === 0xffff && g[5] === 0) {
+    return `${g[6] >> 8}.${g[6] & 255}.${g[7] >> 8}.${g[7] & 255}`;
+  }
+  if (g.slice(0, 5).some((x) => x !== 0) || !(g[5] === 0xffff || (g[5] === 0 && (g[6] !== 0 || g[7] > 1)))) return null;
   return `${g[6] >> 8}.${g[6] & 255}.${g[7] >> 8}.${g[7] & 255}`;
 }
 
@@ -97,11 +104,12 @@ export function adresSoort(ipIn: string): AdresSoort {
   }
   const g = ipv6Groepen(ip);
   if (!g) return 'verboden'; // geen geldig IP
-  if (g.every((x, i) => (i < 7 ? x === 0 : x === 1))) return 'loopback'; // ::1
+  if (g.every((x, i) => (i < 7 ? x === 0 : x === 1))) return 'loopback'; // ::1 / 0:0:0:0:0:0:0:1
   if (g.every((x) => x === 0) || (g[0] & 0xff00) === 0xff00) return 'verboden'; // ::, multicast ff00::/8
   if ((g[0] & 0xffc0) === 0xfe80) return 'verboden';   // link-local fe80::/10
   if ((g[0] & 0xfe00) === 0xfc00) return 'prive';      // unique local fc00::/7
-  if ((g[0] === 0x64 && g[1] === 0xff9b) || (g[0] === 0x2001 && g[1] === 0xdb8) || (g[0] === 0x100 && g.slice(1, 4).every((x) => x === 0))) return 'verboden'; // NAT64, documentatie, discard
+  // NAT64 (64:ff9b::/96 en 64:ff9b:1::/48), Teredo (2001:0000::/32), benchmarking (2001:2::/48), documentatie (2001:db8::/32), discard (100::/64)
+  if ((g[0] === 0x64 && g[1] === 0xff9b) || (g[0] === 0x2001 && (g[1] === 0x0000 || (g[1] === 0x0002 && g[2] === 0) || g[1] === 0xdb8)) || (g[0] === 0x100 && g.slice(1, 4).every((x) => x === 0))) return 'verboden';
   return 'publiek';
 }
 

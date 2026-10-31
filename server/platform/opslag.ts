@@ -146,12 +146,20 @@ export const storage = {
     return out;
   },
 
-  /** Verwijder bestanden. true als het bestand bestond en verwijderd is. */
-  async delete(paths: string[]): Promise<boolean[]> {
+  /** Verwijder bestanden. true als het bestand bestond en verwijderd is. Met `opties.eigenaar` wordt eigenaarschap afgedwongen. */
+  async delete(paths: string[], opties: { eigenaar?: string } = {}): Promise<boolean[]> {
+    const list = (paths || []).map(String);
+    const valid = opties.eigenaar ? list.filter((p) => { try { resolveStoragePath(p); return true; } catch { return false; } }) : [];
+    const meta = opties.eigenaar ? await eigenarenVan(valid).catch(() => new Map()) : new Map();
     const results: boolean[] = [];
-    for (const p of paths || []) {
+    for (const p of list) {
       try {
-        const full = resolveStoragePath(String(p));
+        if (opties.eigenaar && eigenaarWijktAf(p, opties.eigenaar, meta.get(p)?.owner)) {
+          console.warn('[storage.delete] geweigerd: eigenaar wijkt af');
+          results.push(false);
+          continue;
+        }
+        const full = resolveStoragePath(p);
         await stat(full);
         await rm(full);
         await getPool().query('DELETE FROM app.storage_objects WHERE path = $1', [p]);

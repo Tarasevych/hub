@@ -5,35 +5,209 @@
 // geschiedenis van meetwaarden (/api/history/period) voor energie.
 // Wat hij NIET doet: poorten openzetten, inkomend verkeer, geheimen loggen, toestanden verzinnen. Een adres zonder antwoord geeft
 // 'offline'; 'unavailable' bij HA wordt kwaliteit 'onbeschikbaar'. Het token komt alleen versleuteld uit de database (huis-vnext.ts).
+import http from 'node:http';
+import https from 'node:https';
+import { lookup as dnsLookup } from 'node:dns/promises';
+import type { LookupAddress } from 'node:dns';
+import { isIP } from 'node:net';
+import { adresSoort, ipv4UitV6, ipv6Groepen } from '../shared/extern-bureaublad';
 import type { Mogelijkheid, MogelijkheidSoort, Toestand } from '../shared/huis-model';
 
 export type HaEntiteit = { entity_id: string; state: string; attributes: Record<string, unknown>; last_changed?: string; last_updated?: string };
 export type OntdektApparaat = { bronId: string; naam: string; soort: string; fabrikant: string; model: string; mogelijkheden: Mogelijkheid[]; kritiek: boolean; online: boolean; laatstGezien: string | null; toestanden: Omit<Toestand, 'ontvangenOp'>[] };
-export type HaFout = 'ADRES_ONGELDIG' | 'ADRES_GEWEIGERD' | 'TOKEN_GEWEIGERD' | 'GEEN_ANTWOORD' | 'ANTWOORD_ONGELDIG' | 'TE_GROOT' | 'ONBEKEND';
+export type HaFout = 'ADRES_ONGELDIG' | 'ADRES_GEWEIGERD' | 'TOESTEL_NIET_VERTROUWD' | 'TOKEN_GEWEIGERD' | 'GEEN_ANTWOORD' | 'ANTWOORD_ONGELDIG' | 'TE_GROOT' | 'ONBEKEND';
+export type VertrouwdToestelRegel = { protocol: 'http:' | 'https:' | null; host: string; poort: number | null; patroon: string };
+
 const TIMEOUT_MS = 8000;
 const MAX_BYTES = 6_000_000;
 
-/** Alleen http(s), geen aanmeldgegevens in het adres, geen loopback/link-local/0.0.0.0: de server praat met een echte HA op LAN/VPN. */
+const stripBrackets = (host: string): string => host.toLowerCase().replace(/^\[|\]$/g, '');
+const isIpLiteral = (host: string): boolean => isIP(host) !== 0 || ipv6Groepen(host) !== null;
+/** Hyper-V-beheersubnet tussen Windows-host (203.0.113.1) en productieserver (203.0.113.10): altijd verboden voor HA. */
+export function isHypervBeheerAdres(adres: string): boolean {
+  const schoon = stripBrackets(adres);
+  const v4 = ipv4UitV6(schoon) ?? schoon;
+  return /^10\.77\.0\.(\d{1,3})$/.test(v4);
+}
+function canoniekIp(adres: string): string {
+  const schoon = stripBrackets(adres);
+  const v4 = ipv4UitV6(schoon);
+  if (v4) return v4;
+  const g = ipv6Groepen(schoon);
+  return g ? g.map((n) => n.toString(16)).join(':') : schoon;
+}
+function isVerbodenHostnaam(h: string): boolean {
+  return !h || h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.internal');
+}
+function isVerbodenIp(ip: string): boolean {
+  const soort = adresSoort(ip);
+  return soort === 'loopback' || soort === 'verboden' || isHypervBeheerAdres(ip);
+}
+
+/**
+ * Ontleedt en valideert één regel uit de gecontroleerde lijst van vertrouwde toestellen
+ * (bv. `http://192.168.1.50:8123`, `192.168.1.50:8123`, `192.168.1.50` of `ha.thuis.lan:8123`).
+ * Wildcards, loopback, link-local en het Hyper-V-beheersubnet (203.0.113.0/24) worden altijd geweigerd.
+ */
+export function parseVertrouwdToestel(raw: unknown): VertrouwdToestelRegel | null {
+  const tekst = String(raw ?? '').trim();
+  if (!tekst || tekst.includes('*') || /\s/.test(tekst)) return null;
+  const heeftSchema = /^[a-z][a-z0-9+.-]*:\/\//i.test(tekst);
+  let u: URL;
+  try { u = new URL(heeftSchema ? tekst : `http://${tekst}`); } catch { return null; }
+  if (!/^https?:$/.test(u.protocol) || u.username || u.password || u.search || u.hash) return null;
+  if (u.pathname && u.pathname !== '/') return null;
+  const host = stripBrackets(u.hostname);
+  if (isVerbodenHostnaam(host)) return null;
+  if (isIpLiteral(host) && isVerbodenIp(host)) return null;
+  const poort = u.port ? Number(u.port) : null;
+  if (poort !== null && (!Number.isInteger(poort) || poort < 1 || poort > 65535)) return null;
+  const protocol = heeftSchema ? (u.protocol as 'http:' | 'https:') : null;
+  const hostTekst = host.includes(':') ? `[${host}]` : host;
+  const patroon = `${protocol ? `${protocol}//` : ''}${hostTekst}${poort ? `:${poort}` : ''}`;
+  return { protocol, host, poort, patroon };
+}
+
+export function vertrouwdeToestellenUitEnv(): VertrouwdToestelRegel[] {
+  const ruw = String(process.env.HUIS_VERTROUWDE_TOESTELLEN ?? '').trim();
+  if (!ruw) return [];
+  const uit: VertrouwdToestelRegel[] = [];
+  for (const deel of ruw.split(/[,\n;]+/)) {
+    const r = parseVertrouwdToestel(deel);
+    if (r) uit.push(r);
+  }
+  return uit;
+}
+
+let extraVertrouwdeBron: (() => Promise<string[]>) | null = null;
+export function zetVertrouwdeToestellenBron(bron: (() => Promise<string[]>) | null): void {
+  extraVertrouwdeBron = bron;
+}
+async function alleVertrouwdeToestellen(): Promise<VertrouwdToestelRegel[]> {
+  const lijst = [...vertrouwdeToestellenUitEnv()];
+  if (extraVertrouwdeBron) {
+    try {
+      for (const s of await extraVertrouwdeBron()) {
+        const r = parseVertrouwdToestel(s);
+        if (r) lijst.push(r);
+      }
+    } catch { /* bij DB-storing blijft alleen de expliciete omgevingslijst gelden (fail-closed) */ }
+  }
+  return lijst;
+}
+
+function toestelVertrouwd(u: URL, opgelosteIps: string[], lijst: ReadonlyArray<VertrouwdToestelRegel>): boolean {
+  if (!lijst.length || !opgelosteIps.length) return false;
+  const host = stripBrackets(u.hostname);
+  const doelPoort = u.port ? Number(u.port) : (u.protocol === 'https:' ? 443 : 80);
+  const canoniekeDoelIps = opgelosteIps.map(canoniekIp);
+  return lijst.some((r) => {
+    if (r.protocol !== null && r.protocol !== u.protocol) return false;
+    if (r.poort !== null && r.poort !== doelPoort) return false;
+    if (isIpLiteral(r.host)) {
+      const verwacht = canoniekIp(r.host);
+      return canoniekeDoelIps.every((ip) => ip === verwacht);
+    }
+    return !isIpLiteral(host) && host === r.host;
+  });
+}
+
+type HaDnsFn = (host: string) => Promise<string[]>;
+const standaardHaDns: HaDnsFn = async (host) => (await dnsLookup(host, { all: true, verbatim: true })).map((a) => a.address);
+let haDns: HaDnsFn = standaardHaDns;
+/** Alleen voor eenheidstests (DNS-rebinding en vertrouwde-toestellen-poort). */
+export function _zetHaDns(fn: HaDnsFn | null): void { haDns = fn ?? standaardHaDns; }
+
+/** Alleen http(s), geen aanmeldgegevens in het adres, geen loopback/link-local/0.0.0.0/203.0.113.0/24 en geen onversleuteld http naar publiek IP. */
 export function veiligAdres(raw: unknown): { ok: true; adres: string } | { ok: false; fout: HaFout } {
   let u: URL;
   try { u = new URL(String(raw ?? '').trim()); } catch { return { ok: false, fout: 'ADRES_ONGELDIG' }; }
   if (!/^https?:$/.test(u.protocol) || u.username || u.password || u.search || u.hash) return { ok: false, fout: 'ADRES_ONGELDIG' };
-  const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
-  if (h === 'localhost' || h === '0.0.0.0' || h === '::1' || h === '::' || /^127\./.test(h) || /^169\.254\./.test(h) || /^fe80:/i.test(h) || h.endsWith('.internal')) return { ok: false, fout: 'ADRES_GEWEIGERD' };
+  const h = stripBrackets(u.hostname);
+  if (isVerbodenHostnaam(h)) return { ok: false, fout: 'ADRES_GEWEIGERD' };
+  if (isIpLiteral(h)) {
+    if (isVerbodenIp(h)) return { ok: false, fout: 'ADRES_GEWEIGERD' };
+    if (u.protocol === 'http:' && adresSoort(h) === 'publiek') return { ok: false, fout: 'ADRES_GEWEIGERD' };
+  }
   return { ok: true, adres: `${u.protocol}//${u.host}${u.pathname.replace(/\/+$/, '')}` };
 }
 
 async function roep(adres: string, token: string, pad: string, init: { method?: string; body?: unknown } = {}): Promise<{ ok: true; data: unknown } | { ok: false; fout: HaFout; status?: number }> {
-  const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
-  try {
-    const res = await fetch(`${adres}${pad}`, { method: init.method || 'GET', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', accept: 'application/json' }, body: init.body === undefined ? undefined : JSON.stringify(init.body), signal: ctrl.signal, redirect: 'manual' });
-    if (res.status === 401 || res.status === 403) return { ok: false, fout: 'TOKEN_GEWEIGERD', status: res.status };
-    const len = Number(res.headers.get('content-length') || 0); if (len > MAX_BYTES) return { ok: false, fout: 'TE_GROOT' };
-    const tekst = await res.text(); if (tekst.length > MAX_BYTES) return { ok: false, fout: 'TE_GROOT' };
-    if (!res.ok) return { ok: false, fout: 'ANTWOORD_ONGELDIG', status: res.status };
-    try { return { ok: true, data: tekst ? JSON.parse(tekst) : null }; } catch { return { ok: false, fout: 'ANTWOORD_ONGELDIG', status: res.status }; }
-  } catch { return { ok: false, fout: 'GEEN_ANTWOORD' }; }
-  finally { clearTimeout(t); }
+  const basis = veiligAdres(adres);
+  if (!basis.ok) return basis;
+  let doel: URL;
+  try { doel = new URL(`${basis.adres}${pad}`); } catch { return { ok: false, fout: 'ADRES_ONGELDIG' }; }
+  const host = stripBrackets(doel.hostname);
+  let adressen: string[];
+  if (isIpLiteral(host)) {
+    const v4 = ipv4UitV6(host);
+    adressen = [isIP(host) !== 0 ? host : (v4 ?? canoniekIp(host))];
+  } else {
+    try { adressen = await haDns(host); } catch { return { ok: false, fout: 'GEEN_ANTWOORD' }; }
+  }
+  if (!adressen.length) return { ok: false, fout: 'GEEN_ANTWOORD' };
+  if (adressen.some((ip) => isIP(ip) === 0 && ipv6Groepen(ip) === null)) return { ok: false, fout: 'ADRES_GEWEIGERD' };
+  if (adressen.some((ip) => isVerbodenIp(ip))) return { ok: false, fout: 'ADRES_GEWEIGERD' };
+  if (doel.protocol === 'http:' && adressen.some((ip) => adresSoort(ip) === 'publiek')) return { ok: false, fout: 'ADRES_GEWEIGERD' };
+  const lokaalOfHttp = doel.protocol === 'http:' || adressen.some((ip) => { const s = adresSoort(ip); return s === 'prive' || s === 'cgnat'; });
+  if (lokaalOfHttp) {
+    const vertrouwd = await alleVertrouwdeToestellen();
+    if (!toestelVertrouwd(doel, adressen, vertrouwd)) return { ok: false, fout: 'TOESTEL_NIET_VERTROUWD' };
+  }
+  const gekozenIp = isIP(adressen[0]) !== 0 ? adressen[0] : canoniekIp(adressen[0]);
+  const familie = isIP(gekozenIp) === 6 ? 6 : 4;
+  const gepindeLookup = (_hostname: string, opts: { all?: boolean } | number | undefined, cb: (err: NodeJS.ErrnoException | null, address: string | LookupAddress[], family?: number) => void) => {
+    const alles = typeof opts === 'object' && opts !== null && Boolean(opts.all);
+    if (alles) return cb(null, [{ address: gekozenIp, family: familie }]);
+    return cb(null, gekozenIp, familie);
+  };
+  const payload = init.body === undefined ? undefined : Buffer.from(JSON.stringify(init.body), 'utf8');
+  const mod = doel.protocol === 'https:' ? https : http;
+  return new Promise((resolve) => {
+    let klaar = false;
+    const afronden = (uit: { ok: true; data: unknown } | { ok: false; fout: HaFout; status?: number }) => {
+      if (klaar) return;
+      klaar = true;
+      clearTimeout(timer);
+      resolve(uit);
+    };
+    const req = mod.request(doel, {
+      method: init.method || 'GET',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+        accept: 'application/json',
+        ...(payload ? { 'content-length': String(payload.byteLength) } : {}),
+      },
+      lookup: gepindeLookup as never,
+      timeout: TIMEOUT_MS,
+    }, (res) => {
+      const status = res.statusCode ?? 0;
+      if (status === 401 || status === 403) { res.resume(); return afronden({ ok: false, fout: 'TOKEN_GEWEIGERD', status }); }
+      const opgegeven = Number(res.headers['content-length'] || 0);
+      if (opgegeven > MAX_BYTES) { res.destroy(); return afronden({ ok: false, fout: 'TE_GROOT' }); }
+      const stukken: Buffer[] = [];
+      let totaal = 0;
+      res.on('data', (stuk: Buffer) => {
+        totaal += stuk.byteLength;
+        if (totaal > MAX_BYTES) { res.destroy(); afronden({ ok: false, fout: 'TE_GROOT' }); return; }
+        stukken.push(stuk);
+      });
+      res.on('error', () => afronden({ ok: false, fout: 'GEEN_ANTWOORD' }));
+      res.on('end', () => {
+        if (klaar) return;
+        if (status < 200 || status >= 300) return afronden({ ok: false, fout: 'ANTWOORD_ONGELDIG', status });
+        const tekst = Buffer.concat(stukken).toString('utf8');
+        try { return afronden({ ok: true, data: tekst ? JSON.parse(tekst) : null }); }
+        catch { return afronden({ ok: false, fout: 'ANTWOORD_ONGELDIG', status }); }
+      });
+    });
+    const timer = setTimeout(() => { req.destroy(); afronden({ ok: false, fout: 'GEEN_ANTWOORD' }); }, TIMEOUT_MS);
+    req.on('timeout', () => { req.destroy(); afronden({ ok: false, fout: 'GEEN_ANTWOORD' }); });
+    req.on('error', () => afronden({ ok: false, fout: 'GEEN_ANTWOORD' }));
+    if (payload) req.write(payload);
+    req.end();
+  });
 }
 
 export async function haVerbinden(adres: string, token: string): Promise<{ ok: true; versie: string; locatie: string; entiteiten: number } | { ok: false; fout: HaFout }> {

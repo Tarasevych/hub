@@ -36,6 +36,8 @@ export async function main(): Promise<number> {
   const vreemd = await mk(`huis-vreemd-${sfx}@eenheid.test`);
   const TOKEN = `tok_${randomBytes(24).toString('hex')}`;
   const ha = await nepHomeAssistant({ token: TOKEN, entiteiten: ENTITEITEN });
+  const oudVertrouwd = process.env.HUIS_VERTROUWDE_TOESTELLEN;
+  delete process.env.HUIS_VERTROUWDE_TOESTELLEN;
   let woningId = '';
   try {
     // ================================================================ 0. migratie en vlag
@@ -62,11 +64,14 @@ export async function main(): Promise<number> {
     check('binary_sensor door → contact (+ batterij 87 %); moisture → water; smoke unknown → rook, kwaliteit onbekend, kritiek', per['binary_sensor.voordeur']?.mogelijkheden.map((m) => m.soort).join() === 'contact,batterij' && per['binary_sensor.lek_keuken']?.mogelijkheden[0].soort === 'water' && per['binary_sensor.rook_hal']?.toestanden[0].kwaliteit === 'onbekend' && per['binary_sensor.rook_hal']?.kritiek === true);
     check('climate → temperatuur (lezen) + doeltemperatuur (schrijven, bereik 7–30); cover → open_dicht + positie; lock/alarm kritiek; person → aanwezigheid', per['climate.thermostaat']?.mogelijkheden[1].bereik?.join() === '7,30' && per['cover.rolluik']?.mogelijkheden.map((m) => m.soort).join() === 'open_dicht,positie' && per['lock.voordeur']?.kritiek && per['alarm_control_panel.huis']?.kritiek && per['person.pavlo']?.toestanden[0].waarde === true);
     check('automation en sun zijn geen apparaat (null)', per['automation.nachtlicht'] === null && per['sun.sun'] === null);
-    check('veiligAdres: loopback, userinfo, query, ftp geweigerd; LAN-adres aanvaard en genormaliseerd', !veiligAdres('http://127.0.0.1:8123').ok && !veiligAdres('http://localhost:8123').ok && !veiligAdres('http://u:p@192.168.1.5:8123').ok && !veiligAdres('http://192.168.1.5:8123/?x=1').ok && !veiligAdres('ftp://192.168.1.5').ok && (veiligAdres('http://192.168.1.5:8123/') as any).adres === 'http://192.168.1.5:8123');
+    check('veiligAdres: loopback (ook IPv6-mapped), Hyper-V-subnet 203.0.113.0/24, userinfo, query, ftp geweigerd; LAN-adres aanvaard en genormaliseerd', !veiligAdres('http://127.0.0.1:8123').ok && !veiligAdres('http://[::ffff:127.0.0.1]:8123').ok && !veiligAdres('http://203.0.113.10:8123').ok && !veiligAdres('http://localhost:8123').ok && !veiligAdres('http://u:p@192.168.1.5:8123').ok && !veiligAdres('http://192.168.1.5:8123/?x=1').ok && !veiligAdres('ftp://192.168.1.5').ok && (veiligAdres('http://192.168.1.5:8123/') as any).adres === 'http://192.168.1.5:8123');
     check('haDienstVoor: aan→light.turn_on, helderheid→brightness_pct, cover dicht→close_cover, slot→lock; verkeerd domein → null', haDienstVoor('light.a', 'aan_uit', { aan: true })?.dienst === 'turn_on' && haDienstVoor('light.a', 'helderheid', { waarde: 40 })?.data.brightness_pct === 40 && haDienstVoor('cover.a', 'open_dicht', { actie: 'dicht' })?.dienst === 'close_cover' && haDienstVoor('lock.a', 'vergrendeld', { aan: true })?.dienst === 'lock' && haDienstVoor('sensor.a', 'aan_uit', { aan: true }) === null);
     check('komtOvereen: helderheid binnen 2 %, doeltemperatuur binnen 0,3 °C, aan/uit exact', komtOvereen('helderheid', { waarde: 40 }, [{ kenmerk: 'helderheid', waarde: 41 }]) && !komtOvereen('helderheid', { waarde: 40 }, [{ kenmerk: 'helderheid', waarde: 50 }]) && komtOvereen('doeltemperatuur', { waarde: 21 }, [{ kenmerk: 'doeltemperatuur', waarde: 21.2 }]) && !komtOvereen('aan_uit', { aan: true }, [{ kenmerk: 'aan', waarde: false }]));
 
     // ================================================================ 3. integratie: instellen, ontdekken, importeren
+    check('lokaal adres zonder vermelding in gecontroleerde vertrouwde-toestellenlijst → TOESTEL_NIET_VERTROUWD en geen netwerkaanroep',
+      (await huis.integratieInstellen(eig, woningId, { adres: ha.url, token: TOKEN }) as any).fout === 'TOESTEL_NIET_VERTROUWD' && ha.s.aanroepen.length === 0);
+    process.env.HUIS_VERTROUWDE_TOESTELLEN = ha.url;
     check('instellen met een fout token wordt geweigerd (TOKEN_GEWEIGERD) en slaat niets op', (await huis.integratieInstellen(eig, woningId, { adres: ha.url, token: 'x'.repeat(30) }) as any).fout === 'TOKEN_GEWEIGERD' && (await pool.query(`SELECT count(*)::int AS n FROM app.huis_integraties WHERE woning_id = $1`, [woningId])).rows[0].n === 0);
     check('instellen door een niet-eigenaar is niet toegestaan', (await huis.integratieInstellen(gast, woningId, { adres: ha.url, token: TOKEN }) as any).fout === 'ALLEEN_EIGENAAR');
     const integ = await huis.integratieInstellen(eig, woningId, { adres: ha.url, token: TOKEN });
@@ -167,6 +172,7 @@ export async function main(): Promise<number> {
     check('de oude pagina (DomoticaWeergave) bestaat nog; de nieuwe zit achter de vlag', /huis-vnext/.test(lees('src/DomoticaWeergave.tsx')) && /SmartHomeView/.test(lees('src/VerenigdDienstApp.tsx')));
     check('bronadres zonder loopback beschikbaar voor deze test', Boolean(nietLoopbackAdres()));
   } finally {
+    if (oudVertrouwd === undefined) delete process.env.HUIS_VERTROUWDE_TOESTELLEN; else process.env.HUIS_VERTROUWDE_TOESTELLEN = oudVertrouwd;
     await ha.stop().catch(() => undefined);
     if (woningId) await pool.query(`DELETE FROM app.huis_woningen WHERE id = $1`, [woningId]).catch(() => undefined);
     await pool.query(`DELETE FROM app.records WHERE tbl = 'users' AND id = ANY($1)`, [[eig, gast, vreemd]]).catch(() => undefined);

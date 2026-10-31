@@ -73,6 +73,7 @@ export const LEZEND: Readonly<Record<string, LezendRegel>> = Object.freeze({
   tar: { alleenMet: ['-t', '--list', '-tf', '-tzf', '-tvf', '-tzvf', '-tjf', '-tJf'], nietMet: ['-I', '-F', '--use-compress-program', '--to-command', '--checkpoint-action', '--info-script', '--new-volume-script', '--rsh-command', '--rmt-command'] },
 });
 
+const VOOR_SUB_VLAGGEN: readonly string[] = ['--no-pager', '--no-legend', '--plain', '--full', '-q', '--quiet'];
 /** Een argument uit een «niet met»-lijst: exact, met `=waarde`, of — bij een korte vlag `-x` — aangeplakt of gebundeld (`-ofile`, `-tK`). */
 const raakt = (args: readonly string[], lijst?: readonly string[]): boolean => !!lijst && args.some((a) => lijst.some((v) =>
   a === v || a.startsWith(`${v}=`) || (/^-[A-Za-z]$/.test(v) && /^-[A-Za-z]/.test(a) && !a.startsWith('--') && a.slice(1).includes(v[1]))));
@@ -87,12 +88,12 @@ export function opdrachtSoort(programma: string, args: readonly string[]): Opdra
   if (regel.alleenMet) { const alleen = regel.alleenMet; return args.some((a) => alleen.includes(a)) ? 'lezend' : 'wijzigend'; }
   const sub = regel.sub;
   if (!sub) return 'lezend';
-  // {sub}: het eerste niet-vlag-woord moet lezend zijn; bij podman volume/network/pod/system, git worktree/remote/branch/tag/reflog en
-  // npm version telt ook het tweede woord (ls/list/inspect/show/… of niets).
+  // {sub}: het eerste niet-vlag-woord moet lezend zijn; onbekende globale vlaggen vóór het subcommando tellen als wijzigend
+  // (voorkomt flag-value subcommand smuggling zoals `docker --log-level info rm x` of `git -C /pad push`).
   const eerste = args.find((a) => !a.startsWith('-')) ?? '';
-  const vlag = args.find((a) => a.startsWith('-')) ?? '';
-  if (!eerste) return sub.includes(vlag) ? 'lezend' : (regel.zonderSub === false ? 'wijzigend' : 'lezend');
+  if (!eerste) return regel.zonderSub === false ? (args.length > 0 && args.every((a) => sub.includes(a)) ? 'lezend' : 'wijzigend') : 'lezend';
   if (!sub.includes(eerste)) return 'wijzigend';
+  if (args.slice(0, args.indexOf(eerste)).some((a) => !VOOR_SUB_VLAGGEN.includes(a))) return 'wijzigend';
   if (['volume', 'network', 'pod', 'system', 'worktree', 'remote', 'branch', 'tag', 'stash', 'reflog', 'version'].includes(eerste)) {
     const tweede = args.slice(args.indexOf(eerste) + 1).find((a) => !a.startsWith('-')) ?? '';
     const lezendeTweede = ['ls', 'list', 'inspect', 'df', 'info', 'show', 'get-url', '-v', ''];

@@ -65,8 +65,19 @@ export async function persoonsgegevensExport(userId: string) {
   const rijen = await pool.query('SELECT tbl, id, data, created_at, updated_at FROM app.records WHERE owner_id = $1 ORDER BY tbl, seq LIMIT $2', [userId, EXPORT_MAX + 1]);
   const bestanden = await pool.query('SELECT path, content_type, size_bytes, created_at FROM app.storage_objects WHERE owner_id = $1 ORDER BY created_at LIMIT 5000', [userId]);
   const audit = await pool.query('SELECT created_at, action, type, result, service, device FROM app.audit WHERE owner_id = $1 ORDER BY seq DESC LIMIT 5000', [userId]).catch(() => ({ rows: [] as unknown[] }));
+  // SEC-001-13: ook relationele gebruikerstabellen buiten app.records meenemen in de AVG-export (geheimen gefilterd).
+  const [notities, woningen, agendaAbos, mcpItems] = await Promise.all([
+    pool.query('SELECT id, ruimte, titel, inhoud_md, soort, kleur, etiketten, map_id, vast_sinds, gearchiveerd_op, verwijderd_op, created_at, updated_at FROM app.notities WHERE user_id = $1 ORDER BY created_at LIMIT 5000', [userId]).catch(() => ({ rows: [] as Record<string, unknown>[] })),
+    pool.query('SELECT id, naam, tijdzone, taal, verdiepingen, created_at, updated_at FROM app.huis_woningen WHERE user_id = $1 ORDER BY created_at LIMIT 500', [userId]).catch(() => ({ rows: [] as Record<string, unknown>[] })),
+    pool.query('SELECT id, bron, naam, adres, gebruikersnaam, actief, interval_minuten, agendas, aangemaakt_op, bijgewerkt_op FROM app.agenda_abonnement WHERE user_id = $1 ORDER BY aangemaakt_op LIMIT 500', [userId]).catch(() => ({ rows: [] as Record<string, unknown>[] })),
+    pool.query('SELECT id, kind, title, body, status, tags, author, created_at, updated_at FROM app.mcp_console_items WHERE user_id = $1 ORDER BY created_at LIMIT 5000', [userId]).catch(() => ({ rows: [] as Record<string, unknown>[] })),
+  ]);
   const perTabel: Record<string, unknown[]> = {};
   for (const r of rijen.rows.slice(0, EXPORT_MAX)) (perTabel[r.tbl] ||= []).push({ id: r.id, aangemaakt: r.created_at, bijgewerkt: r.updated_at, gegevens: zonderGeheimen(r.data) });
+  if (notities.rows.length) perTabel['app.notities'] = notities.rows.map((r) => zonderGeheimen(r));
+  if (woningen.rows.length) perTabel['app.huis_woningen'] = woningen.rows.map((r) => zonderGeheimen(r));
+  if (agendaAbos.rows.length) perTabel['app.agenda_abonnement'] = agendaAbos.rows.map((r) => zonderGeheimen(r));
+  if (mcpItems.rows.length) perTabel['app.mcp_console_items'] = mcpItems.rows.map((r) => zonderGeheimen(r));
   return {
     formaat: 'mijn-ruimte-export-v1',
     gemaaktOp: new Date().toISOString(),

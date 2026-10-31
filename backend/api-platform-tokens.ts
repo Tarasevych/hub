@@ -1,7 +1,7 @@
 import {createHash,randomBytes,timingSafeEqual} from 'node:crypto';
 import {GEEN_RECHT,heeftApiRecht,weigerCode} from './api-recht';
 import {db,error,json} from '../server/platform';
-import {sessieGeverifieerd} from '../server/platform/context';
+import {sessieGeverifieerd,zetGebruiker} from '../server/platform/context';
 import {apiPlatformContractPayload} from './api-platform-contract';
 import {apiPlatformVaultCount,vaultEncryptionReady} from './api-platform-kluis';
 import {apiPlatformConnectionsConfiguredCount} from './api-platform-verbindingen';
@@ -41,8 +41,8 @@ export async function resolveApiMachineToken(event:Record<string,unknown>,query:
   const now=Date.now();
   if(record.revokedAt)return{errorCode:'API_TOKEN_REVOKED',status:401} as const;
   if(record.expiresAt<=now)return{errorCode:'API_TOKEN_EXPIRED',status:401} as const;
-  // Fase 3: token werkt alleen zolang de maker nog recht op het API-platform heeft (en niet geblokkeerd is).
-  {const[maker]=await db.get<{role?:string;email?:string;status?:string;entitlements?:unknown}>('users',[record.ownerUserId]);if(!maker||maker.status==='blocked'||maker.status==='deleted'||!heeftApiRecht(maker))return{errorCode:'API_TOKEN_ENTITLEMENT_REVOKED',status:403} as const;}
+  // Fase 3: token werkt alleen zolang de maker goedgekeurd is, nog recht op het API-platform heeft en niet geblokkeerd of gewist is.
+  {const[maker]=await db.get<{role?:string;email?:string;status?:string;retiredAt?:number;entitlements?:unknown}>('users',[record.ownerUserId]);if(!maker||maker.status!=='approved'||Number(maker.retiredAt||0)>0||!heeftApiRecht(maker))return{errorCode:'API_TOKEN_ENTITLEMENT_REVOKED',status:403} as const;}
   const windowStart=record.rateWindowStart&&now-record.rateWindowStart<RATE_WINDOW_MS?record.rateWindowStart:now;
   const rateCount=windowStart===record.rateWindowStart?record.rateCount+1:1;
   if(rateCount>RATE_MAX)return{errorCode:'API_TOKEN_RATE_LIMITED',status:429} as const;
@@ -54,6 +54,7 @@ export async function resolveApiMachineToken(event:Record<string,unknown>,query:
   const next={...record,lastUsedAt:now,rateWindowStart:windowStart,rateCount};
   const{id,...stored}=next;
   await db.update(API_MACHINE_TOKEN_TABLE,[{id,record:stored}]);
+  zetGebruiker(record.ownerUserId,'api',undefined,`pat:${record.id}`);
   sessieGeverifieerd();// audit-fix 8: geldig API-token = gecontroleerde referentie voor het vangnet
   return{token:next} as const;
 }

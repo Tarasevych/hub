@@ -16,6 +16,7 @@ import { createHash } from 'node:crypto';
 import { error, json } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
 import type { RouterMiddleware } from '../server/platform/router';
+import { denyMutation } from './rbac';
 import { alsGebruiker } from './ai-toestemmingen';
 import { bordLade } from './ruimte-bord-github';
 import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
@@ -390,6 +391,7 @@ export function notitiesRoutes(requireSession: RequireSession): Record<string, R
       return n ? json({ notitie: n, ruimte: kop }) : error('NIET_GEVONDEN', 404);
     }),
     'POST /api/notities/nieuw': route(async (_c, auth, lade, kop, d) => {
+      const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
       const s = schoneInvoer(d);
       if (!s.ok) return error(s.fout, 400);
       const n = await notitieMaken(lade, s.invoer, { auteur: wie(auth), herkomst: { bron: 'site' } });
@@ -398,6 +400,7 @@ export function notitiesRoutes(requireSession: RequireSession): Record<string, R
       return json({ notitie: n, ruimte: kop });
     }),
     'POST /api/notities/wijzig': route(async (_c, auth, lade, kop, d) => {
+      const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
       if (!isUuid(d.id)) return error('ID_ONGELDIG', 400);
       const versie = d.versie === undefined || d.versie === null ? null : Number(d.versie);
       if (versie !== null && !Number.isInteger(versie)) return error('VERSIE_ONGELDIG', 400);
@@ -415,6 +418,7 @@ export function notitiesRoutes(requireSession: RequireSession): Record<string, R
       return json({ notitie: uit.notitie, ruimte: kop });
     }),
     'POST /api/notities/actie': route(async (_c, auth, lade, kop, d) => {
+      const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
       if (!isUuid(d.id)) return error('ID_ONGELDIG', 400);
       if (!ACTIES.includes(d.actie as Actie)) return error('ACTIE_ONGELDIG', 400);
       const n = await notitieActie(lade, d.id, d.actie as Actie, wie(auth));
@@ -428,13 +432,15 @@ export function notitiesRoutes(requireSession: RequireSession): Record<string, R
       return r ? json({ revisies: r, ruimte: kop }) : error('NIET_GEVONDEN', 404);
     }),
     'POST /api/notities/revisie-herstel': route(async (_c, auth, lade, kop, d) => {
+      const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
       if (!isUuid(d.id) || !/^\d{1,18}$/.test(String(d.revisieId ?? ''))) return error('ID_ONGELDIG', 400);
       const uit = await revisieHerstellen(lade, d.id, String(d.revisieId), wie(auth));
       return uit.ok ? json({ notitie: uit.notitie, ruimte: kop }) : error(uit.fout, 404);
     }),
-    'POST /api/notities/mappen': route(async (_c, _a, lade, kop, d) => {
+    'POST /api/notities/mappen': route(async (_c, auth, lade, kop, d) => {
       const actie = String(d.actie || 'lijst');
       if (actie === 'lijst') return json({ mappen: await mappenLijst(lade), ruimte: kop });
+      const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
       if (actie === 'nieuw') { const m = await mapMaken(lade, String(d.naam ?? ''), d.kleur as NotitieKleur); return 'fout' in m ? error(m.fout, 400) : json({ map: m, ruimte: kop }); }
       if (!isUuid(d.id)) return error('ID_ONGELDIG', 400);
       if (actie === 'wijzig') { const m = await mapWijzigen(lade, d.id, { naam: typeof d.naam === 'string' ? d.naam : undefined, kleur: d.kleur as NotitieKleur }); return 'fout' in m ? error(m.fout, m.fout === 'NIET_GEVONDEN' ? 404 : 400) : json({ map: m, ruimte: kop }); }
@@ -447,6 +453,7 @@ export function notitiesRoutes(requireSession: RequireSession): Record<string, R
       return json({ ...(await importVoorbeeld(lade, b)), ruimte: kop });
     }),
     'POST /api/notities/import/uitvoeren': route(async (_c, auth, lade, kop, d) => {
+      const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
       const b = bestandenUit(d.bestanden);
       if (!b) return error('IMPORT_ONGELDIG', 400);
       if (d.mapId !== undefined && d.mapId !== null && !isUuid(d.mapId)) return error('MAP_ONGELDIG', 400);

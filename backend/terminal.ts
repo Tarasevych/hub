@@ -16,6 +16,7 @@ import { randomToken, sha256 } from './connectors-crypto';
 import * as store from './connectors-opslag';
 import { agentOnline, registreerTerminal, stuurNaarAgent, stuurTerminalOpen } from './connectors-gateway';
 import { actieveActivatie, TAB_RE, TechFout, type Gebruiker } from './tech-profiel';
+import { SERVICE_HOSTS } from './deployment-identity';
 import { magApparaat } from '../shared/terminal';
 import * as opdr from './terminal-opdrachten';
 
@@ -165,7 +166,26 @@ function browserVerbinding(ws: WebSocket) {
   ws.on('close', () => { clearTimeout(t); if (s && s.open) afsluiten(s, 'browser-weg'); });
   ws.on('error', () => undefined);
 }
-registreerTerminal({ vanAgent, upgrade: (req: IncomingMessage, socket: Duplex, head: Buffer) => wss.handleUpgrade(req, socket, head, browserVerbinding) });
+const TOEGESTANE_TERMINAL_ORIGINS = new Set<string>(Object.values(SERVICE_HOSTS).map((h) => `https://${h}`));
+export function terminalOriginToegestaan(originHeader: unknown, hostHeader?: unknown): boolean {
+  const raw = String(originHeader || '').trim().toLowerCase();
+  if (!raw) return false;
+  if (TOEGESTANE_TERMINAL_ORIGINS.has(raw)) return true;
+  try {
+    const u = new URL(raw);
+    const host = String(hostHeader || '').trim().toLowerCase();
+    return (u.hostname === '127.0.0.1' || u.hostname === 'localhost') && !!host && u.host.toLowerCase() === host;
+  } catch { return false; }
+}
+export function terminalUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer) {
+  if (!terminalOriginToegestaan(req.headers.origin, req.headers.host)) {
+    socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+  wss.handleUpgrade(req, socket, head, browserVerbinding);
+}
+registreerTerminal({ vanAgent, upgrade: terminalUpgrade });
 
 /** Eigen sessies (zonder opname); met 'opnames.bekijken' in een actief technisch profiel: alle sessies. */
 export async function sessiesLijst(u: Gebruiker, tab: string) {

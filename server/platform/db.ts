@@ -51,13 +51,16 @@ async function q(table: string, sql: string, params: unknown[], lezen = false): 
     // app.route: alleen voor de telling in app.rls_audit door de users-trigger (0007).
     await client.query("SELECT set_config('app.user_id', $1, true), set_config('app.service', $2, true), set_config('app.route', $3, true)", [gebruiker.userId, gebruiker.service, String(huidigeContext()?.route || '').slice(0, 200)]);
     // Ruimtes-scheiding (0123): alleen als de server de ruimte van dit verzoek al berekende (vlag aan). Niet gezet = oud gedrag.
-    const ruimte = huidigeContext()?.ruimte;
+    const ctx = huidigeContext();
+    if (ctx?.alleenLezen && !SYSTEEM_TABELLEN.has(table)) await client.query('SET LOCAL transaction_read_only = on');
+    const ruimte = ctx?.ruimte;
     if (ruimte) await client.query("SELECT set_config('app.ruimte', $1, true)", [ruimte]);
     const result = await client.query(sql, params);
     await client.query('COMMIT');
     return result;
   } catch (err) {
     await client.query('ROLLBACK').catch(() => undefined);
+    if ((err as { code?: string })?.code === '25006') { const imp = huidigeContext()?.impersonatie; if (imp) imp.geblokkeerd = true; throw new Error('IMPERSONATIE_ALLEEN_LEZEN'); }
     throw err;
   } finally {
     client.release();
@@ -133,6 +136,7 @@ export const db = {
         );
         audit(table, 'toevoegen', result.rows);
       } catch (err) {
+        if ((err as Error)?.message === 'IMPERSONATIE_ALLEEN_LEZEN') throw err;
         // Val terug op per-record invoegen, zodat één fout record de rest niet blokkeert.
         console.error('[db.add] batch mislukt, per record opnieuw:', (err as Error).message);
         for (const row of valid) {
