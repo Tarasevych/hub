@@ -24,23 +24,23 @@ import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  SHA40, compacteContext, controleerAdapter, controleerLock, eigenaarStatus, kritiekBericht, statusAfleiden, valideerBeleid, valideerTaak,
+  SHA40, compacteContext, controleerAdapter, controleerLock, eigenaarStatus, kritiekBericht, normaliseer, statusAfleiden, valideerBeleid, valideerTaak,
   vergrendel, verifieerSshsig, versheid, wachtrijKlaar, wachtrijTerugtrekken, wachtrijVolgende, REGELS_NAMESPACE, TAAK_STATEN,
 } from './orch/kern.mjs';
 import { inleveren, registreerInlevering } from './orch/inleveren.mjs';
 import { basisVoorPakket, controleerOverdrachtPakket, maakOverdrachtPakket } from './orch/pakket.mjs';
 
-const wortel = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const args = process.argv.slice(2);
+const opdracht = args[0];
+const optie = (naam, standaard) => { const i = args.indexOf(`--${naam}`); return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : standaard; };
+
+const wortel = optie('wortel', null) ? resolve(optie('wortel', '')) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const P = (p) => join(wortel, p);
 const lees = (p) => readFileSync(P(p), 'utf8');
 const leesJson = (p) => JSON.parse(lees(p));
 const schrijfJson = (p, w) => writeFileSync(P(p), `${JSON.stringify(w, null, 2)}\n`);
 const LOCK = 'orchestratie/regels.lock.json';
 const TAKEN = 'orchestratie/taken';
-
-const args = process.argv.slice(2);
-const opdracht = args[0];
-const optie = (naam, standaard) => { const i = args.indexOf(`--${naam}`); return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : standaard; };
 
 const toon = (lijst) => {
   for (const z of lijst) console.log(`${z.ernst === 'fout' ? 'FOUT' : 'LET OP'} ${z.code}: ${z.uk}\n     nl: ${z.nl}`);
@@ -79,7 +79,7 @@ function controleer() {
   const ctx = beleid.compactContext.bestand;
   if (existsSync(P(ctx))) {
     const verwacht = compacteContext(lees('AGENTS.md'), beleid, lock);
-    if (lees(ctx) !== verwacht) z.push({ code: 'CONTEXT_VEROUDERD', ernst: 'fout', uk: `${ctx} застарів — виконайте node scripts/orch.mjs context`, nl: `${ctx} is verouderd — voer node scripts/orch.mjs context uit` });
+    if (normaliseer(lees(ctx)) !== normaliseer(verwacht)) z.push({ code: 'CONTEXT_VEROUDERD', ernst: 'fout', uk: `${ctx} застарів — виконайте node scripts/orch.mjs context`, nl: `${ctx} is verouderd — voer node scripts/orch.mjs context uit` });
     if (Buffer.byteLength(verwacht) > beleid.compactContext.maxBytes) z.push({ code: 'CONTEXT_TE_GROOT', ernst: 'fout', uk: `${ctx} більший за ${beleid.compactContext.maxBytes} байтів — скоротіть compact-блоки AGENTS.md`, nl: `${ctx} groter dan ${beleid.compactContext.maxBytes} bytes — kort de compact-blokken in AGENTS.md in` });
   } else z.push({ code: 'CONTEXT_ONTBREEKT', ernst: 'fout', uk: `${ctx} відсутній — node scripts/orch.mjs context`, nl: `${ctx} ontbreekt — node scripts/orch.mjs context` });
   // Етап 3: підтвердження passkey (lock.eigenaar.soort = 'passkey') перевіряє root на сервері; тут лише SSH-підпис звіряється локально.

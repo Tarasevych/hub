@@ -13,7 +13,8 @@
 // OPDRACHT_STATUS_DIR (root-statusmap, zelfde als eigenaar-besluit.ts). Tests: tests/eenheid/orch-site-20261031.test.ts.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import * as bk from '../deploy/goedkeuring/besluit-kern.mjs';
 import {
@@ -254,8 +255,13 @@ export function uploadKlaar(input: Record<string, unknown>): { upload: OrchUploa
   const pad = join(uploadMap(u.id), u.naam);
   const sha = createHash('sha256').update(readFileSync(pad)).digest('hex');
   if (sha !== u.sha256) { u.staat = 'mislukt'; schrijfUpload(u); fout('UPLOAD_SHA_VERSCHILT', 409); }
-  const tests = Array.isArray(input.tests) ? (input.tests as unknown[]).map((t) => tekst(t, 300)).filter(Boolean).slice(0, 10) : undefined;
-  const record = inleveren({ wortel: wortel(), beleid, lock, bron: pad, kanaal: u.kanaal, taakId: u.taakId ?? null, tests: tests?.length ? tests : undefined, zonderTests: input.zonderTests ? tekst(input.zonderTests, 300) : null });
+  // Безпека: через HTTP/MCP ніколи не виконуються довільні shell-команди і ніколи не запускається код із завантаженого пакета.
+  if (input.tests !== undefined) {
+    if (!Array.isArray(input.tests) || (input.tests as unknown[]).some((t) => typeof t !== 'string' || t.trim() !== 'node scripts/orch.mjs controleer')) {
+      fout('TESTS_NIET_TOEGESTAAN', 400);
+    }
+  }
+  const record = inleveren({ wortel: wortel(), beleid, lock, bron: pad, kanaal: u.kanaal, taakId: u.taakId ?? null, alleenVeiligeControle: true, zonderTests: input.zonderTests ? tekst(input.zonderTests, 300) : null });
   const registratie = registreerInlevering(wortel(), record) as Record<string, unknown>;
   const commit = staatCommit(`orch: inlevering ${record.id} (${record.uitkomst}) via ${u.kanaal}`);
   u.staat = record.uitkomst === 'aanvaard' ? 'klaar' : 'mislukt';
@@ -335,7 +341,9 @@ export function voorstelToepassen(id: unknown, besluit: BesluitVoorToepassen): {
   if (v.staat !== 'ontwerp') fout('GEEN_VOORSTEL', 409);
   const i = besluit?.inhoud;
   if (!i || i.voorstel !== v.id || i.hash !== v.hash || i.kritiekHash !== v.kritiekHash || i.regelsVersie !== v.regelsVersie) fout('BESLUIT_PAST_NIET', 409);
-  const bevestigd = rootBevestigingen().find((b) => b.voorstel === v.id && b.hash === v.hash && b.kritiekHash === v.kritiekHash && b.regelsVersie === v.regelsVersie);
+  const besluitKort = String(besluit?.id || '').replace(/-/g, '').toLowerCase();
+  const bevestigd = rootBevestigingen().find((b) => String(b.besluit || '').replace(/-/g, '').toLowerCase() === besluitKort
+    && b.voorstel === v.id && b.hash === v.hash && b.kritiekHash === v.kritiekHash && b.regelsVersie === v.regelsVersie);
   if (!bevestigd) fout('NIET_BEVESTIGD_DOOR_ROOT', 409);
   const huidig = laadOrch();
   if ((huidig.lock?.hash ?? null) !== v.basisHash) fout('VOORSTEL_VEROUDERD', 409);
@@ -346,26 +354,39 @@ export function voorstelToepassen(id: unknown, besluit: BesluitVoorToepassen): {
   const b = bevestigMetPasskey(r.lock, { regelsVersie: v.regelsVersie, hash: v.hash, kritiekHash: v.kritiekHash, voorstel: v.id, passkey: bevestigd.passkey, besluit: besluit.id, op: bevestigd.tijd || nu() }) as { lock?: Lock; fout?: OrchZaak };
   if (!b.lock) fout('BESLUIT_PAST_NIET', 409, b.fout ? [b.fout] : []);
 
-  const vorige = huidig.repo.tak && huidig.repo.tak !== 'HEAD' ? huidig.repo.tak : huidig.repo.hoofd;
+  // Ізольований тимчасовий git worktree: ORCH_WORTEL ніколи не перемикає HEAD, тому паралельні читання/задачі не стикаються.
+  const basisRef = huidig.repo.tak && huidig.repo.tak !== 'HEAD' ? huidig.repo.tak : huidig.repo.hoofd;
   const tak = `regels/${v.regelsVersie}-${stempel()}`;
-  if (git('checkout', '-q', '-b', tak) === null) fout('GIT_FOUT', 500, [], `git checkout -b ${tak}`);
-  const terug = () => { git('checkout', '-q', '--', '.'); git('clean', '-qfd', '--', 'orchestratie'); git('checkout', '-q', vorige); git('branch', '-D', tak); };
+  const werk = mkdtempSync(join(tmpdir(), 'orch-regels-'));
+  const boom = join(werk, 'boom');
+  let commit = '';
+  let controleRegels: string[] = [];
+  if (git('worktree', 'add', '-q', '-b', tak, boom, basisRef) === null) { rmSync(werk, { recursive: true, force: true }); fout('GIT_FOUT', 500, [], `git worktree add -b ${tak}`); }
+  const gw = (...a: string[]): string | null => {
+    try { return execFileSync('git', a, { cwd: boom, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 30_000 }).trim(); } catch { return null; }
+  };
+  const verwijderTak = () => { spawnSync('git', ['worktree', 'remove', '--force', boom], { cwd: wortel() }); spawnSync('git', ['worktree', 'prune'], { cwd: wortel() }); git('branch', '-D', tak); };
   try {
-    for (const [p, t] of Object.entries(v.bestanden)) { mkdirSync(join(wortel(), p, '..'), { recursive: true }); writeFileSync(join(wortel(), p), t); }
-    schrijfJson(join(wortel(), LOCK), b.lock);
+    for (const [p, t] of Object.entries(v.bestanden)) { mkdirSync(join(boom, p, '..'), { recursive: true }); writeFileSync(join(boom, p), t); }
+    schrijfJson(join(boom, LOCK), b.lock);
     const beleidNieuw = r.beleid!;
-    writeFileSync(join(wortel(), beleidNieuw.compactContext.bestand), compacteContext(r.bestanden!['AGENTS.md'] ?? readFileSync(join(wortel(), 'AGENTS.md'), 'utf8'), beleidNieuw, b.lock));
-    const c = controleer();
-    if (c.code !== 0) { terug(); fout('CONTROLE_MISLUKT', 409, [], c.regels.join('\n')); }
-    git('add', '-A', '--', ...huidig.beleid.regelBestanden, LOCK, beleidNieuw.compactContext.bestand);
-    const bericht = `ORCH regels ${v.regelsVersie}: bevestigd door eigenaar (passkey ${bevestigd.passkey}, besluit ${besluit.id})\n\nVoorstel ${v.id} via mcp.*/agenten → Координація. kritiekHash ${v.kritiekHash}${v.kritiekGewijzigd ? ' (kritiek gewijzigd)' : ''}.`;
-    if (git('-c', 'user.name=orch-site', '-c', 'user.email=orch@mijn-ruimte.invalid', 'commit', '-q', '-m', bericht) === null) { terug(); fout('GIT_FOUT', 500, [], 'git commit'); }
+    writeFileSync(join(boom, beleidNieuw.compactContext.bestand), compacteContext(r.bestanden!['AGENTS.md'] ?? readFileSync(join(boom, 'AGENTS.md'), 'utf8'), beleidNieuw, b.lock));
+    const cr = spawnSync(process.execPath, [join(wortel(), 'scripts/orch.mjs'), 'controleer', '--wortel', boom], { cwd: boom, encoding: 'utf8', timeout: 120_000 });
+    const cRegels = `${cr.stdout ?? ''}${cr.stderr ?? ''}`.trim().split('\n').filter(Boolean);
+    if ((cr.status ?? 1) !== 0) { verwijderTak(); fout('CONTROLE_MISLUKT', 409, [], cRegels.slice(-30).join('\n')); }
+    gw('add', '-A', '--', ...huidig.beleid.regelBestanden, LOCK, beleidNieuw.compactContext.bestand);
+    const bericht = `ORCH regels ${v.regelsVersie}: bevestigd door eigenaar (passkey ${bevestigd.passkey}, besluit ${besluit.id})\n\nVoorstel ${v.id} via mcp.* /agenten → Координація. kritiekHash ${v.kritiekHash}${v.kritiekGewijzigd ? ' (kritiek gewijzigd)' : ''}.`;
+    if (gw('-c', 'user.name=orch-site', '-c', 'user.email=orch@mijn-ruimte.invalid', 'commit', '-q', '-m', bericht) === null) { verwijderTak(); fout('GIT_FOUT', 500, [], 'git commit'); }
+    commit = gw('rev-parse', 'HEAD') || '';
+    controleRegels = [`commit ${commit.slice(0, 12)}`, ...cRegels.slice(-6)];
   } catch (e) {
-    if (!(e instanceof OrchFout)) { terug(); fout('GIT_FOUT', 500, [], tekst((e as Error).message, 300)); }
+    if (!(e instanceof OrchFout)) { verwijderTak(); fout('GIT_FOUT', 500, [], tekst((e as Error).message, 300)); }
     throw e;
+  } finally {
+    spawnSync('git', ['worktree', 'remove', '--force', boom], { cwd: wortel() });
+    spawnSync('git', ['worktree', 'prune'], { cwd: wortel() });
+    rmSync(werk, { recursive: true, force: true });
   }
-  const commit = git('rev-parse', 'HEAD') || '';
-  git('checkout', '-q', vorige);
   const heeftOrigin = !!git('remote', 'get-url', 'origin');
   const push = heeftOrigin ? spawnSync('git', ['push', '-q', '-u', 'origin', tak], { cwd: wortel(), encoding: 'utf8', timeout: 90_000 }) : null;
   const gepusht = !!push && push.status === 0;
@@ -373,11 +394,7 @@ export function voorstelToepassen(id: unknown, besluit: BesluitVoorToepassen): {
   const prUrl = m && gepusht ? `https://github.com/${m[1]}/compare/${encodeURIComponent(huidig.beleid.integratie.tak)}...${encodeURIComponent(tak)}?expand=1` : null;
   v.staat = 'toegepast'; v.toegepast = { tak, commit, gepusht, op: nu(), besluit: besluit.id };
   schrijfVoorstel(v);
-  return { voorstel: zonderInhoud(v), tak, commit, gepusht, prUrl, controleer: controleerUit(commit), pushDetail: push ? tekst(veiligeOrigin(`${push.stderr || ''}`).trim().split('\n').slice(-2).join(' | '), 300) : 'geen origin' };
-}
-function controleerUit(commit: string): string[] {
-  const r = spawnSync(process.execPath, [join(wortel(), 'scripts/orch.mjs'), 'controleer'], { cwd: wortel(), encoding: 'utf8', timeout: 120_000 });
-  return [`commit ${commit.slice(0, 12)}`, ...`${r.stdout}${r.stderr}`.trim().split('\n').filter(Boolean).slice(-6)];
+  return { voorstel: zonderInhoud(v), tak, commit, gepusht, prUrl, controleer: controleRegels, pushDetail: push ? tekst(veiligeOrigin(`${push.stderr || ''}`).trim().split('\n').slice(-2).join(' | '), 300) : 'geen origin' };
 }
 
 /** Voor tests en diagnose: de kern van «vergrendel» op de werkkopie (zonder eigenaar), zoals orch.mjs vergrendel. */

@@ -41,7 +41,7 @@ if [ -n "${BASIS_VERSIE:-}${BASIS_COMMIT:-}" ]; then
   { [[ "${BASIS_VERSIE:-}" =~ ^[0-9]{8}-[0-9]{6}$ ]] && [[ "${BASIS_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]]; } || { echo "FOUT: BASIS_VERSIE (JJJJMMDD-UUMMSS) en BASIS_COMMIT (40 hex) horen samen en moeten geldig zijn" >&2; exit 1; }
   BASISTEKST="versie=$BASIS_VERSIE"$'\n'"commit=$BASIS_COMMIT"
   if [ -f orchestratie/regels.lock.json ]; then
-    BASISTEKST+=$'\n'"$(python3 -c 'import json; d=json.load(open("orchestratie/regels.lock.json",encoding="utf-8")); print("regelsVersie=" + d["regelsVersie"] + "\nregelsHash=" + d["hash"])')"
+    BASISTEKST+=$'\n'"$(python3 -c 'import json; d=json.load(open("orchestratie/regels.lock.json",encoding="utf-8")); print("regelsVersie=" + d["regelsVersie"] + "\nregelsHash=" + d["hash"])' | tr -d '\r')"
   fi
 elif [[ "$versie" > "20261201-000000" || "$versie" == "20261201-000000" ]]; then
   echo "FOUT: встановіть BASIS_VERSIE і BASIS_COMMIT (встановлена база) — root відхилить пакет без UITROL-BASIS (GEEN_BASIS); простіше: node scripts/orch.mjs pakket" >&2; exit 1
@@ -70,6 +70,6 @@ ond="$(mktemp)"; trap 'rm -f "$ond"' EXIT
 printf 'uitrol@mijn-ruimte namespaces="mijn-ruimte-uitrol" %s\n' "$(cat "$sleutel.pub")" > "$ond"
 ssh-keygen -Y verify -f "$ond" -I uitrol@mijn-ruimte -n mijn-ruimte-uitrol -s "$doel.sig" < "$doel" >/dev/null
 bytes="$(stat -c %s "$doel" 2>/dev/null || stat -f %z "$doel")"
-sha="$(sha256sum "$doel" 2>/dev/null | cut -d' ' -f1 || shasum -a 256 "$doel" | cut -d' ' -f1)"
+sha="$(sha256sum "$doel" 2>/dev/null | sed 's/^\\//' | cut -d' ' -f1 || shasum -a 256 "$doel" | cut -d' ' -f1)"
 printf 'versie=%s\ncommit=%s\nbytes=%s\nsha256=%s\n' "$versie" "$commit" "$bytes" "$sha" > "$uit/mijn-ruimte-$versie.txt"
 echo "klaar: $doel (+ .sig, .txt)  versie=$versie bytes=$bytes sha256=$sha"

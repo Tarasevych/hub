@@ -251,29 +251,66 @@ export function versheid(feiten) {
 }
 
 // ——— SSH-підпис (SSHSIG, ed25519) без ssh-keygen: перевіряємо підпис власника навіть там, де OpenSSH немає ———
-function leesString(buf, pos) { const n = buf.readUInt32BE(pos); return [buf.subarray(pos + 4, pos + 4 + n), pos + 4 + n]; }
+function leesString(buf, pos) {
+  if (pos < 0 || pos + 4 > buf.length) throw new Error('afgekapt veld');
+  const n = buf.readUInt32BE(pos);
+  if (pos + 4 + n > buf.length) throw new Error('afgekapt veld');
+  return [buf.subarray(pos + 4, pos + 4 + n), pos + 4 + n];
+}
 const sshString = (b) => { const l = Buffer.alloc(4); l.writeUInt32BE(b.length); return Buffer.concat([l, b]); };
+const sshGlobRe = (pat) => new RegExp(`^${String(pat).replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.')}$`);
+function sshPatroonLijstPast(lijst, waarde) {
+  let positief = false;
+  for (const deel of String(lijst).split(',').map((s) => s.trim()).filter(Boolean)) {
+    if (deel.startsWith('!')) { if (sshGlobRe(deel.slice(1)).test(waarde)) return false; }
+    else if (sshGlobRe(deel).test(waarde)) positief = true;
+  }
+  return positief;
+}
+function ondertekenaarRegelPast(regel, pubB64, namespace, principal) {
+  const d = String(regel).match(/(?:[^\s"]+|"[^"]*")+/g);
+  if (!d || d.length < 3) return false;
+  const zonderOpties = d[1] === 'ssh-ed25519';
+  const metOpties = !zonderOpties && d[2] === 'ssh-ed25519';
+  if (!zonderOpties && !metOpties) return false;
+  const sleutelB64 = zonderOpties ? d[2] : d[3];
+  if (sleutelB64 !== pubB64) return false;
+  if (principal && !sshPatroonLijstPast(d[0], principal)) return false;
+  if (metOpties) {
+    const opties = d[1].match(/(?:[^,"]+|"[^"]*")+/g) ?? [];
+    for (const opt of opties) {
+      const o = opt.trim();
+      if (/^cert-authority$/i.test(o)) return false;
+      const m = /^namespaces=(?:"([^"]*)"|(.*))$/i.exec(o);
+      if (m && !sshPatroonLijstPast(m[1] ?? m[2] ?? '', namespace)) return false;
+    }
+  }
+  return true;
+}
 export function sshsigGegevens(namespace, bericht) {
   const h = createHash('sha512').update(bericht).digest();
   return Buffer.concat([Buffer.from('SSHSIG'), sshString(Buffer.from(namespace)), sshString(Buffer.alloc(0)), sshString(Buffer.from('sha512')), sshString(h)]);
 }
-/** Перевіряє армований SSH SIGNATURE (ed25519) для повідомлення проти allowed_signers (рядки «principal ssh-ed25519 AAAA…»). */
+/** Перевіряє армований SSH SIGNATURE (ed25519) для повідомлення проти allowed_signers (рядки «principal [options] ssh-ed25519 AAAA…»). */
 export function verifieerSshsig({ handtekening, bericht, namespace, toegestaan, principal }) {
   try {
     const b64 = String(handtekening).replace(/-----(BEGIN|END) SSH SIGNATURE-----/g, '').replace(/\s+/g, '');
     const buf = Buffer.from(b64, 'base64');
-    if (buf.subarray(0, 6).toString() !== 'SSHSIG') return { ok: false, reden: 'geen SSHSIG' };
+    if (buf.length < 10 || buf.subarray(0, 6).toString() !== 'SSHSIG') return { ok: false, reden: 'geen SSHSIG' };
+    if (buf.readUInt32BE(6) !== 1) return { ok: false, reden: 'alleen SSHSIG versie 1' };
     let p = 10; let pub, ns, hashAlg, sig;
-    [pub, p] = leesString(buf, p); [ns, p] = leesString(buf, p); [, p] = leesString(buf, p); [hashAlg, p] = leesString(buf, p); [sig] = leesString(buf, p);
+    [pub, p] = leesString(buf, p); [ns, p] = leesString(buf, p); [, p] = leesString(buf, p); [hashAlg, p] = leesString(buf, p); [sig, p] = leesString(buf, p);
+    if (p !== buf.length) return { ok: false, reden: 'extra bytes in SSHSIG' };
     if (ns.toString() !== namespace) return { ok: false, reden: `namespace ${ns} ≠ ${namespace}` };
     if (hashAlg.toString() !== 'sha512') return { ok: false, reden: 'hash moet sha512 zijn' };
-    const [type, p2] = leesString(pub, 0); const [raw] = leesString(pub, p2);
-    if (type.toString() !== 'ssh-ed25519' || raw.length !== 32) return { ok: false, reden: 'alleen ssh-ed25519' };
+    const [type, p2] = leesString(pub, 0); const [raw, pPub] = leesString(pub, p2);
+    if (type.toString() !== 'ssh-ed25519' || raw.length !== 32 || pPub !== pub.length) return { ok: false, reden: 'alleen ssh-ed25519' };
     const pubB64 = pub.toString('base64');
     const regel = String(toegestaan).split(/\r?\n/).map((r) => r.trim()).filter((r) => r && !r.startsWith('#'))
-      .find((r) => { const d = r.split(/\s+/); return d.includes('ssh-ed25519') && d[d.indexOf('ssh-ed25519') + 1] === pubB64 && (!principal || d[0].split(',').includes(principal)); });
+      .find((r) => ondertekenaarRegelPast(r, pubB64, namespace, principal));
     if (!regel) return { ok: false, reden: 'sleutel staat niet in de lijst van ondertekenaars' };
-    const [, p3] = leesString(sig, 0); const [ruw] = leesString(sig, p3);
+    const [sigType, p3] = leesString(sig, 0); const [ruw, pSig] = leesString(sig, p3);
+    if (sigType.toString() !== 'ssh-ed25519' || ruw.length !== 64 || pSig !== sig.length) return { ok: false, reden: 'ongeldige ed25519-handtekening' };
     const key = createPublicKey({ key: { kty: 'OKP', crv: 'Ed25519', x: raw.toString('base64url') }, format: 'jwk' });
     const ok = cryptoVerify(null, sshsigGegevens(namespace, Buffer.from(bericht)), key, ruw);
     return ok ? { ok: true, sleutel: `SHA256:${createHash('sha256').update(pub).digest('base64').replace(/=+$/, '')}` } : { ok: false, reden: 'handtekening klopt niet' };
@@ -322,7 +359,8 @@ export function vergelijkBestanden(opgegeven, feitelijk) {
 
 /** Файли, які ніколи не переносяться з архіву в робоче дерево. */
 export const UITGESLOTEN_PADEN = /^(\.git|node_modules|dist|dist-server|rapporten|harness|harness-[^/]*|ORCH-OVERDRACHT\.json|UITROL-VERSIE|UITROL-BASIS|AUTEUR|AGENT|SAMENVATTING|BRON-COMMIT|TESTRESULTATEN|UITROL-MANIFEST\.json)(\/|$)/;
-export const padVeilig = (p) => !!p && !p.startsWith('/') && !p.split('/').includes('..') && !/\0/.test(p) && !UITGESLOTEN_PADEN.test(p);
+export const padVeilig = (p) => typeof p === 'string' && p.length > 0 && !p.startsWith('/') && !/[\\:\0]/.test(p)
+  && !p.split('/').some((d) => !d || d === '.' || d === '..' || d === '.git') && !UITGESLOTEN_PADEN.test(p);
 
 /** Канал за джерелом: розширення/тип. Явний --kanaal (mcp, http_api, web_upload) переважає — ці канали доставляють файл. */
 export function herkenKanaal(bron, isMap, expliciet) {

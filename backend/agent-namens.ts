@@ -52,7 +52,7 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/uitrol\/(goedkeuren|goedkeuring)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/ai-beleid(\/|$)/,              // AI-beleid (ondertekend door de eigenaar)
   /^[A-Z]+ \/api\/owner\/geheimen(\/|$)/,               // «Секрети й ключі»
-  /^[A-Z]+ \/api\/owner\/(sleutelkluis|codewoord|tech-ruimtes|besluit|aanmeld)(\/|$)/,
+  /^[A-Z]+ \/api\/owner\/(sleutelkluis|codewoord|tech-ruimtes|besluit|aanmeld|orch)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/api-platform\/vault(\/|$)/,
   /^[A-Z]+ \/api\/owner\/google-contour(\/|$)/,
   /^[A-Z]+ \/api\/owner\/mcp-connector\/(grants|approvals|consent)(\/|$)/,

@@ -5,10 +5,11 @@
 // Далі по ланцюжку: застосунок (backend/orch-opslag.ts rootBevestigingen) читає цей файл; GitOps (deploy/gitops/gitops-ophalen.sh,
 // блок PYMODUS — виконується ТОЙ САМИЙ python-код зі скрипта) приймає lock з eigenaar.soort=passkey лише за записом у root-журналі.
 import { spawnSync } from 'node:child_process';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { generateKeyPairSync, randomBytes, randomUUID, sign as cryptoSign } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as bk from '../../deploy/goedkeuring/besluit-kern.mjs';
+import * as k from '../../scripts/orch/kern.mjs';
 import { ALS_ROOT, HEEFT_SETPRIV, ORIGIN_ADMIN, RP, besluitBestand, omgeving, sleutelUit, type Besluit } from './besluit-root-20261022.test';
 import { nieuwePasskey, type NepPasskey } from './hulp/nep-toegangssleutel';
 import { checker } from './hulp/nep-google';
@@ -17,12 +18,13 @@ const hex = (n: number) => randomBytes(n).toString('hex');
 const lees = (p: string) => readFileSync(p, 'utf8');
 const GITOPS = 'deploy/gitops/gitops-ophalen.sh';
 
-/** Het PYMODUS-blok van gitops-ophalen.sh zoals het in het script staat (geen kopie): python3 - <bron> <journal>. */
-function gitopsModus(bron: string, journal: string) {
+/** Het PYMODUS-blok van gitops-ophalen.sh zoals het in het script staat (geen kopie): python3 - <bron> <journal> [ondertekenaars]. */
+function gitopsModus(bron: string, journal: string, ondertekenaars?: string) {
   const s = lees(GITOPS);
   const a = s.indexOf("<<'PYMODUS'\n"); const b = s.indexOf('\nPYMODUS\n', a);
   if (a < 0 || b < 0) throw new Error('PYMODUS niet gevonden in gitops-ophalen.sh');
-  const r = spawnSync('python3', ['-I', '-', bron, journal], { input: s.slice(a + "<<'PYMODUS'\n".length, b + 1), encoding: 'utf8' });
+  const argv = ['-I', '-', bron, journal, ...(ondertekenaars ? [ondertekenaars] : [])];
+  const r = spawnSync('python3', argv, { input: s.slice(a + "<<'PYMODUS'\n".length, b + 1), encoding: 'utf8' });
   return { code: r.status ?? -1, uit: `${r.stdout}${r.stderr}`.trim() };
 }
 
@@ -127,7 +129,24 @@ export async function main(): Promise<number> {
     schrijfBron(beleidAuto, lockP);
     check('gitops: kapot journal → geweigerd (onleesbaar), geen uitzondering', /onleesbaar/.test(gitopsModus(bron, join(p.w, 'kapot.jsonl')).uit));
     schrijfBron(beleidAuto, { ...lockP, eigenaar: { kritiekHash: inhoud.kritiekHash, regelsVersie: '1.3.0', handtekening: '-----BEGIN SSH SIGNATURE-----\nx\n-----END SSH SIGNATURE-----', op: j[0].tijd } });
-    check('gitops: SSH-handtekening blijft de andere weg (geen journal nodig)', gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl')).code === 0);
+    check('gitops: vervalste SSH-handtekening ("x") zonder geldige root-ondertekenaar → geweigerd', gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'), join(p.w, 'geen-ondertekenaars')).code !== 0);
+    if (spawnSync('ssh-keygen', ['-?'], { encoding: 'utf8' }).error === undefined) {
+      const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+      const pubRaw = Buffer.from((publicKey.export({ format: 'jwk' }) as { x: string }).x, 'base64url');
+      const s = (b: Buffer) => { const l = Buffer.alloc(4); l.writeUInt32BE(b.length); return Buffer.concat([l, b]); };
+      const pub = Buffer.concat([s(Buffer.from('ssh-ed25519')), s(pubRaw)]);
+      const bericht = k.kritiekBericht({ regelsVersie: '1.3.0', kritiekHash: inhoud.kritiekHash });
+      const ruw = cryptoSign(null, k.sshsigGegevens('mijn-ruimte-regels', Buffer.from(bericht)), privateKey);
+      const sig = Buffer.concat([s(Buffer.from('ssh-ed25519')), s(ruw)]);
+      const ver = Buffer.alloc(4); ver.writeUInt32BE(1);
+      const blob = Buffer.concat([Buffer.from('SSHSIG'), ver, s(pub), s(Buffer.from('mijn-ruimte-regels')), s(Buffer.alloc(0)), s(Buffer.from('sha512')), s(sig)]);
+      const echteHandtekening = `-----BEGIN SSH SIGNATURE-----\n${blob.toString('base64').match(/.{1,70}/g)!.join('\n')}\n-----END SSH SIGNATURE-----\n`;
+      const ondertekenaarsPad = join(p.w, 'eigenaar-ondertekenaars');
+      writeFileSync(ondertekenaarsPad, `eigenaar@mijn-ruimte namespaces="mijn-ruimte-regels" ssh-ed25519 ${pub.toString('base64')}\n`);
+      check('gitops: vervalste SSH-handtekening met aanwezig eigenaar-ondertekenaars → geweigerd', gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'), ondertekenaarsPad).code !== 0);
+      schrijfBron(beleidAuto, { ...lockP, eigenaar: { kritiekHash: inhoud.kritiekHash, regelsVersie: '1.3.0', handtekening: echteHandtekening, op: j[0].tijd } });
+      check('gitops: ECHTE SSH-handtekening tegen root eigenaar-ondertekenaars → toegestaan (geen journal nodig)', gitopsModus(bron, join(p.w, 'bestaat-niet.jsonl'), ondertekenaarsPad).code === 0);
+    }
     schrijfBron(beleidAuto, { ...lockP, eigenaar: null });
     check('gitops: zonder eigenaar → geweigerd', gitopsModus(bron, journalPad).code !== 0);
     schrijfBron({ kritiek: { installatieModi: { toegestaan: ['handmatig', 'na_bevestiging'] } } }, lockP);

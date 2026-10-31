@@ -117,6 +117,7 @@ export const ORCH_CODES: Readonly<Record<string, Tekst>> = Object.freeze({
   CONTROLE_MISLUKT: T('Після застосування node scripts/orch.mjs controleer дав помилки — зміни відкинуто.', 'Na het toepassen gaf node scripts/orch.mjs controleer fouten — de wijziging is teruggedraaid.'),
   GIT_FOUT: T('Операція git у робочій копії координації не вдалася (подробиці нижче).', 'De git-bewerking in de werkkopie van de coördinatie is mislukt (zie detail).'),
   PUSH_MISLUKT: T('Гілку створено й закомічено локально, але не вдалося відправити у віддалений репозиторій. Відправте через SSH: git push -u origin <tak>.', 'De tak is lokaal gemaakt en gecommit, maar kon niet naar origin worden gestuurd. Stuur via SSH: git push -u origin <tak>.'),
+  TESTS_NIET_TOEGESTAAN: T('Довільні команди тестів через сайт або MCP заборонені: сервер виконує лише перевірку правил із довіреної копії.', 'Willekeurige testopdrachten via de site of MCP zijn verboden: de server voert alleen de vertrouwde regelcontrole uit.'),
   INHOUD_ONGELDIG: T('Вхідні дані неповні або в недопустимій формі.', 'De invoer is onvolledig of heeft een onjuiste vorm.'),
 });
 export const orchCodeTekst = (lang: 'uk' | 'nl', code: string): string => { const t = ORCH_CODES[code]; return t ? (lang === 'uk' ? t[0] : t[1]) : code; };
