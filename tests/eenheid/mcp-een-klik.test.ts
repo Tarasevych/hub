@@ -12,8 +12,8 @@ import { checker } from './hulp/nep-google';
 
 const ISS = 'https://mcp.example.test';
 const VECTOREN: Array<[string, 'web' | 'loopback' | 'app' | null]> = [
-  ['https://grok.com/oauth/callback', 'web'], ['https://accounts.x.ai/cb', 'web'], ['https://claude.ai/api/mcp/auth_callback', 'web'], ['https://chatgpt.com/connector_platform_oauth_redirect', 'web'],
-  ['https://vscode.dev/redirect', 'web'], ['http://127.0.0.1:33418/', 'loopback'], ['http://localhost:8787/callback', 'loopback'], ['http://[::1]:9000/cb', 'loopback'],
+  ['https://grok.com/oauth/callback', 'web'], ['https://accounts.x.ai/cb', 'web'], ['https://claude.ai/api/mcp/auth_callback', 'web'], ['https://claude.com/api/mcp/auth_callback', 'web'], ['https://chatgpt.com/connector_platform_oauth_redirect', 'web'],
+  ['https://vscode.dev/redirect', 'web'], ['https://cursor.com/api/auth/callback', 'web'], ['http://127.0.0.1:33418/', 'loopback'], ['http://localhost:8787/callback', 'loopback'], ['http://[::1]:9000/cb', 'loopback'],
   ['cursor://anysphere.cursor-mcp/oauth/callback', 'app'], ['vscode://vscode.github-authentication/did-authenticate', 'app'],
   ['https://evil.example/cb', null], ['https://grok.com.evil.example/cb', null], ['https://evilgrok.com/cb', null], ['http://grok.com/cb', null], ['https://localhost/cb', null],
   ['https://grok.com/cb#x', null], ['https://user:pw@grok.com/cb', null], ['javascript:alert(1)', null], ['data:text/html,hi', null], ['file:///etc/passwd', null],
@@ -38,7 +38,7 @@ export async function main(): Promise<number> {
   const ka = Number((/server\.keepAliveTimeout = ([0-9_]+)/.exec(start)?.[1] || '0').replace(/_/g, ''));
   check('502: keep-alive van de app langer dan die van cloudflared (90 s)', ka > 90_000, String(ka));
   check('502: keep-alive van de deur langer dan die van cloudflared', /server\.keepAliveTimeout = 120_000/.test(deurBron) && /server\.headersTimeout = 125_000/.test(deurBron));
-  check('deur: gelijke lijsten als shared/ai-verbinding.ts', ['claude.ai', 'grok.com', 'x.ai', 'chatgpt.com', 'openai.com', 'vscode.dev'].every((h) => deurBron.includes(`"${h}"`)) && ['cursor', 'vscode', 'vscode-insiders', 'windsurf'].every((h) => deurBron.includes(`"${h}"`)));
+  check('deur: gelijke lijsten als shared/ai-verbinding.ts', ['claude.ai', 'claude.com', 'grok.com', 'x.ai', 'chatgpt.com', 'openai.com', 'vscode.dev', 'cursor.com'].every((h) => deurBron.includes(`"${h}"`)) && ['cursor', 'vscode', 'vscode-insiders', 'windsurf'].every((h) => deurBron.includes(`"${h}"`)));
   check('deur: geen child_process of sudo (plafond blijft)', !/child_process|\bspawn\(|\bsudo\b/.test(deurBron.replace(/^\s*\/\/.*$/gm, '')));
 
   // ---------------------------------------------------------------- de deur zelf
