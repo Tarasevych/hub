@@ -75,7 +75,8 @@ function integreer(R: string, taakId: string, tak: string) {
 function uitrolOmgeving(stubScript: string) {
   const basisMap = mkdtempSync('/tmp/orch-acc-uitrol-'); chmodSync(basisMap, 0o777);
   const bin = join(basisMap, 'bin'); mkdirSync(bin);
-  if (spawnSync('ssh-keygen', ['-?'], { encoding: 'utf8' }).error) { writeFileSync(join(bin, 'ssh-keygen'), '#!/bin/bash\n[ "$1" = "-Y" ] && [ "$2" = "verify" ] && exit 0\nexit 1\n'); chmodSync(join(bin, 'ssh-keygen'), 0o755); }
+  // Shim altijd vóór in PATH (ook met een echte ssh-keygen): de .sig-bestanden zijn nep en zouden anders terecht HANDTEKENING_ONGELDIG geven.
+  writeFileSync(join(bin, 'ssh-keygen'), '#!/bin/bash\n[ "$1" = "-Y" ] && [ "$2" = "verify" ] && exit 0\nexit 1\n'); chmodSync(join(bin, 'ssh-keygen'), 0o755);
   const inbox = join(basisMap, 'inbox'); const werk = join(basisMap, 'werk'); const statusMap = join(basisMap, 'status'); const pk = join(basisMap, 'pk');
   for (const d of [inbox, pk]) { mkdirSync(d); chmodSync(d, 0o777); }
   const ondertekenaars = join(basisMap, 'ondertekenaars'); writeFileSync(ondertekenaars, 'uitrol@mijn-ruimte namespaces="mijn-ruimte-uitrol" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n'); chmodSync(ondertekenaars, 0o644);

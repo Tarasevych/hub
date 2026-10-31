@@ -192,3 +192,57 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 **Свідомо не зроблено / обмеження**
 - Сценарії з root (3, 7, 8) виконуються лише там, де є `setpriv` або тести не запущено від root; без цього вони пропускаються з повідомленням.
 - Production не чіпалося; усі сценарії — на тимчасових репозиторіях і деревах.
+
+## Незалежна перевірка перед інтеграцією (31.10.2026, Antigravity `a5f2741` + ChatGPT PR #13)
+
+Власник прогнав PR #11 через двох незалежних агентів. Antigravity виявив критичні блокери й підготував гілку `fix/orch-001-review-20261031-165744`
+(`a5f2741`, 688/688 на його машині); ChatGPT — чорновий PR #13 (`fix/orch-001-audit-20261031-170250`, 4 зміни без прогону). Обидві гілки
+починаються від `d4c2ae9`; `a5f2741` злито у `feature/orch-001-20261031-112355` без змін (fast-forward), дельту PR #13 додано окремим комітом.
+
+**Прийнято з `a5f2741` (кожну групу прочитано рядок за рядком і перевірено тестами тут)**
+- **CRITICAL — RCE №1.** `uploadKlaar` (сайт/MCP/HTTP) більше не передає `tests[]` у `sh -c`: будь-що, крім рівно `node scripts/orch.mjs controleer`,
+  → `400 TESTS_NIET_TOEGESTAAN`; параметр `tests` вилучено зі схеми `orch_inleveren_klaar`. `veiligeTestEnv` — дочірні процеси отримують лише
+  `PATH/HOME/TMP*/LANG/LC_ALL/TZ/…`, без `DATABASE_URL`, ключів і перців.
+- **CRITICAL — RCE №2.** Стандартна перевірка виконувала `scripts/orch.mjs` **з пакета агента** (cwd = розпаковане дерево). Тепер запускається
+  довірений `join(wortel, 'scripts/orch.mjs') controleer --wortel <дерево>` через `spawnSync(process.execPath, …)`, без shell; `orch.mjs` навчився
+  `--wortel`. Регресійний тест кладе в пакет `scripts/orch.mjs`, що пише `PWNED.txt`, — файл не з'являється.
+- **HIGH — GitOps і SSHSIG.** `gitops-ophalen.sh` (PYMODUS) раніше приймав будь-який непорожній `eigenaar.handtekening`; тепер — справжня перевірка
+  `ssh-keygen -Y find-principals` + `-Y verify -n mijn-ruimte-regels` проти **root-файла** `/etc/mijn-ruimte/eigenaar-ondertekenaars` (не з релізу —
+  RUNBOOK §18.1.5). `verifieerSshsig` у `kern.mjs`: опції allowed_signers (`namespaces=`, негація, заборона `cert-authority`), версія SSHSIG = 1,
+  довжини полів, заборона зайвих байтів, тип підпису ed25519/64 байти.
+- **HIGH — регресія SEC-001-05.** `orch` додано в `IMPERSONATIE_ALTIJD_VERBODEN` і `AGENT_VERBODEN`: усі `/api/owner/orch/*` заборонені під
+  імперсонацією (і з `metActies`) та для агентів від імені власника.
+- **HIGH — архіви, git-refs, ізоляція `ORCH_WORTEL`.** `controleerZipVooraf`/`controleerTarGzVooraf` відхиляють до розпакування symlink/спецфайли,
+  `..`, абсолютні шляхи, `\`, `:`, >60 000 записів (`INHOUD_ONVEILIG`); `padVeilig` — ще й порожні сегменти, `.`, вкладений `.git`; `githubRef`
+  відкидає аргументи з `-` і недопустимі символи (`REF_ONGELDIG`), `fetch origin -- <ref>`. `voorstelToepassen`: точна звірка `besluit.id` із записом
+  root-журналу (той самий id, без дефісів) і гілка `regels/*` будується в ізольованому `git worktree` — `ORCH_WORTEL` лишається на `integratie`.
+- **MEDIUM.** `shared/zoek-ui-knoppen.generated.ts` перегенеровано (`TabOrch` → профіль `technisch`, вкладка `#orch` теж); `TS2345` у
+  `backend/codewoord.ts`; коментар `src/orch/orch.css` містив `*/` і закривав коментар достроково; `tr -d '\r'` для python-виводу й `sed` для
+  `\`-префікса `sha256sum` у `maak-*.sh`; `controleer` порівнює CONTEXT-COMPACT після `normaliseer` (CRLF). Новий набір
+  `tests/eenheid/orch-beoordeling-20261031.test.ts`.
+
+**Прийнято з PR #13 (ChatGPT) — чого не було в `a5f2741`**
+- **Прив'язка завантаження до актора-ініціатора.** `uploadStuk`/`uploadKlaar`/`uploadAnnuleren` отримують `actor` (HTTP: email власника; MCP:
+  `clientName (agent) via mcp [grant/token-id]`) і порівнюють із `door`, записаним у `uploadBegin`; інший актор отримує `UPLOAD_ONBEKEND` (404), як
+  для неіснуючого. Інакше будь-який агент, що дізнався 16-hex `id`, міг завершити або скасувати чуже завантаження. Серверний id grant-у/токена
+  додано свідомо (ChatGPT сам позначив це як залишковий ризик): дві підключення з однаковою назвою «Grok (grok)» — різні актори. Покрито 5
+  перевірками в `orch-beoordeling` (MCP↔HTTP, інший агент, та сама назва через інший grant, скасування лише ініціатором, `door` містить id).
+- **Не прийнято:** `TESTS_NIET_GEISOLEERD` (409) із повним пропуском перевірок і забороною `zonderTests` — перекрито безпечнішим варіантом Antigravity
+  (довірений `controleer` таки виконується, без коду пакета); `zonderTests` лишається дозволеним — лише пропускає цю перевірку й записує причину.
+
+**Виправлено старе (знайдено під час інтеграції)**
+- `orch-uitrol-basis` і `orch-acceptatie` ставили shim `ssh-keygen` лише коли справжнього немає; на машині зі справжнім `ssh-keygen` їхні фіктивні
+  `.sig` давали `HANDTEKENING_ONGELDIG`. Shim тепер завжди попереду в `PATH` (ці набори перевіряють не підпис — підпис перевіряє `uitrol-deur`).
+
+**Перевірено (у цьому середовищі, зі справжнім `ssh-keygen` 9.6)**
+- `orch-beoordeling` 28/28 (23 Antigravity + 5 актор-прив'язка), `orch-site` 74/74, `orch-besluit-root` 36/36 (у т.ч. справжній підпис → GitOps
+  приймає, підроблений → відхиляє), `orch-uitrol-basis` 14/14, `orch-acceptatie` 47/47, `orch-kern`/`orch-cli`/`orch-inleveren`/`orch-pakket` — див.
+  підсумок нижче; `tsc -p tsconfig.server.json` — 110 помилок, усі в не-ORCH файлах через відсутні `@types/pg`/`react` у пісочниці (було 111;
+  `codewoord.ts` виправлено); `node scripts/zoek-ui-catalogus.mjs --controle` актуально (1331); `npm run orch:controleer` зелений; `bash -n` п'яти
+  скриптів; `python3 -m py_compile` блоку PYMODUS; `build:server` (esbuild) зібрався; `vite build` у пісочниці неможливий (немає vite/react).
+- Повний набір `node scripts/eenheidstests.mjs` без фільтра у пісочниці зупиняється на першому ж тесті, якому потрібна БД (`DATABASE_URL_ONTBREEKT`),
+  як і на базі `d4c2ae9`; тому набори прогнано по одному — підсумок у звіті в треді.
+
+**Обмеження / далі за власником**
+- На сервері потрібен root-файл `/etc/mijn-ruimte/eigenaar-ondertekenaars` (RUNBOOK §18.1.5), інакше GitOps відхиляє SSH-підписаний lock.
+- PR #11 не злито, `integratie` не створено, політики не підписано, production (`b279ccab…`) не чіпалося — чекає на окреме `DEPLOY ПІДТВЕРДЖЕНО`.

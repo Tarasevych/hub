@@ -1276,6 +1276,18 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
 4. De besluit-dienst (§15) kent het soort `orch-regels` na het uitrollen van `deploy/besluit/mijn-ruimte-besluit.sh` en `besluit-kern.mjs`.
    Schakelaar in `/etc/mijn-ruimte/mcp-rechten.json`: `"orch-regels-passkey": false` zet alleen de regelbevestiging dicht (standaard open;
    de pagina toont dan `BESLUIT_UIT`). `terugdraaien` en `externe-hosts` blijven onafhankelijk.
+5. **Publieke sleutels van de eigenaar voor de regels — root-kopie (verplicht voor GitOps met SSH-handtekening).** Sinds de onafhankelijke
+   review van 31.10.2026 verifieert `gitops-ophalen.sh` een SSH-ondertekende `regels.lock.json` (eigenaar zonder passkey) écht:
+   `ssh-keygen -Y find-principals` + `ssh-keygen -Y verify -n mijn-ruimte-regels` tegen `/etc/mijn-ruimte/eigenaar-ondertekenaars` — nooit tegen
+   `orchestratie/eigenaar-ondertekenaars` uit de release, want dat bestand kan een agent meesturen. Zet het bestand zelf, net als §3; de
+   installer kopieert het bewust niet uit het pakket:
+   ```bash
+   printf 'eigenaar@mijn-ruimte namespaces="mijn-ruimte-regels" %s\n' 'ssh-ed25519 AAAA…' > /etc/mijn-ruimte/eigenaar-ondertekenaars
+   chown root:root /etc/mijn-ruimte/eigenaar-ondertekenaars && chmod 0644 /etc/mijn-ruimte/eigenaar-ondertekenaars
+   ```
+   Zonder dit bestand weigert GitOps automatisch installeren met «eigenaar-ondertekenaars op de server ontbreekt»; de passkey-weg
+   (root-journaal, stap 4) heeft het niet nodig. Dezelfde regels (`namespaces="mijn-ruimte-regels"`, geen `cert-authority`) gelden voor
+   `node scripts/orch.mjs controleer` en `bevestig` op de pc van de eigenaar.
 
 ### 18.2 Dagelijks gebruik
 - **Overzicht**: regelsversie + lock, basis, integratietak, geïnstalleerde versie, agenten, taken (met «regels verouderd»), wachtrij, laatste
@@ -1284,6 +1296,13 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
   (≤ 300 MiB, 20 uploads per uur per persoon). Dezelfde pijplijn als `node scripts/orch.mjs inleveren --kanaal web_upload|mcp`: tak vanaf de
   basis, regels, conflicten met `integratie`, tests, record in `orchestratie/inleveringen/`, wachtrij. Er wordt niets samengevoegd of
   geïnstalleerd. Een geweigerde inlevering laat geen tak achter (wel het record).
+  **Veiligheid van de inlevering (review 31.10.2026).** Via de site en MCP voert de server nooit code uit het pakket en nooit opgegeven
+  shell-opdrachten uit: als «test» draait alleen `node scripts/orch.mjs controleer` uit de **eigen werkkopie** (`--wortel` wijst naar het
+  tijdelijke werkboom van de inlevering) in een schone omgeving zonder `DATABASE_URL`, sleutels of pepers. Een `tests`-parameter met iets
+  anders geeft `TESTS_NIET_TOEGESTAAN` (400). Archieven worden vóór het uitpakken gecontroleerd — symlinks, speciale bestanden, `..`,
+  absolute paden of een `.git`-map geven `INHOUD_ONVEILIG`; een `github_pr`-bron die met «-» begint geeft `REF_ONGELDIG`. Een upload hoort bij
+  wie hem begon (de eigenaar via de site, of een agent via zijn MCP-verbinding — client, agent én grant-id, dus niet een tweede verbinding met
+  dezelfde naam): een ander krijgt op `stuk`, `klaar` en `annuleren` `UPLOAD_ONBEKEND`, alsof de upload niet bestaat.
 - **Regels wijzigen**: «Regels wijzigen» → bewerk `AGENTS.md` / `orchestratie/beleid.json` / `orchestratie/BESLUITEN.md` → «Voorstel controleren»
   (codes: `GEEN_WIJZIGING`, `VERSIE_NIET_VERHOOGD`, `BESLUIT_ONTBREEKT`, `BELEID_JSON`, `REGELBESTANDEN_GEWIJZIGD`) → «Ondertekenen met passkey
   en tak maken». Bij gewijzigde `kritiek`-regels toont de pagina een waarschuwing: uw passkey bevestigt precies die. Daarna: de tak
@@ -1301,10 +1320,22 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
   is nooit herbruikbaar (root-journaal is per `voorstel`).
 - GitOps weigert met «passkey-bevestiging staat niet in het root-journaal» — iemand heeft `regels.lock.json` met de hand bewerkt of het
   journaal ontbreekt op deze server: alleen een echte bevestiging via de site (of een SSH-handtekening) maakt de lock weer geldig.
+- GitOps weigert met «eigenaar-ondertekenaars op de server ontbreekt» — stap 18.1.5 is niet gedaan; met «SSH-handtekening van eigenaar voor
+  mijn-ruimte-regels is ongeldig» — de handtekening hoort bij een andere `regelsVersie`/`kritiekHash` of bij een sleutel die niet (met
+  `namespaces="mijn-ruimte-regels"`) in het root-bestand staat: onderteken opnieuw (`node scripts/orch.mjs bevestig`).
+- `NIET_BEVESTIGD_DOOR_ROOT` terwijl het journaal wél een regel heeft — het besluit-id van de pagina moet exact het id in het root-journaal
+  zijn (een tweede besluit voor hetzelfde voorstel telt niet); start de bevestiging opnieuw vanaf de pagina.
+- Een regelwijziging via de site gebeurt in een tijdelijke `git worktree`: `ORCH_WORTEL` blijft op `integratie` en wordt nooit omgeschakeld;
+  blijft er na een storing een `regels/*`-tak zonder commit achter, verwijder die via SSH (`git branch -D`, `git worktree prune`).
+- `TESTS_NIET_TOEGESTAAN` — een client stuurde eigen testopdrachten mee (zie 18.2); `INHOUD_ONVEILIG` — het archief is vóór het uitpakken
+  geweigerd (record met de reden, geen tak); `UPLOAD_ONBEKEND` op een bestaand id — een andere actor dan de starter probeert de upload te
+  gebruiken.
 - Terugdraaien van een regelwijziging = de tak `regels/*` niet samenvoegen (of een nieuw voorstel met hogere versie). Niets op de server
   verandert tot de tak in `integratie` zit en een pakket is geïnstalleerd.
-- Tests die dit afdekken: `node scripts/eenheidstests.mjs orch-site` (74, echte git-repo's + routes + MCP), `orch-besluit-root` (34, het echte
-  root-script onder een onbevoorrechte gebruiker + de GitOps-controle), `besluit-root` (47).
+- Tests die dit afdekken: `node scripts/eenheidstests.mjs orch-site` (74, echte git-repo's + routes + MCP), `orch-besluit-root` (36, het echte
+  root-script onder een onbevoorrechte gebruiker + de GitOps-controle, met echte `ssh-keygen`-handtekeningen), `besluit-root` (47),
+  `orch-beoordeling` (28, de regressietests van de onafhankelijke review van 31.10.2026: RCE-blokkade, schone omgeving, SEC-001-05,
+  zoekcatalogus, SSHSIG, archief-voorcontrole, actor-binding van uploads, besluit-id en worktree bij regels/toepassen).
 
 ### 18.4 Acceptatietests (etappe 4) en wat ze over de werking vastleggen
 `node scripts/eenheidstests.mjs orch-acceptatie` (47) speelt de acht scenario's uit de opdracht na op echte repo's en de echte root-scripts:

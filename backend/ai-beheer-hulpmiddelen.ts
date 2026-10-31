@@ -542,7 +542,7 @@ export async function voerBeheerToolUit(who: BeheerWie, name: string, args: Reco
       case FLAGS_MANAGE: return await vlaggenBeheer(who, args);
       default:
         // ORCH-001 етап 3: координація агентів (orch_*) — backend/orch-hulpmiddelen.ts, той самий конвеєр, що й scripts/orch.mjs.
-        if (isOrchTool(name)) return await voerOrchToolUit({ userId: who.userId, clientName: who.clientName, agent: who.agent }, name, args);
+        if (isOrchTool(name)) return await voerOrchToolUit({ userId: who.userId, clientName: who.clientName, agent: who.agent, grantId: who.grantId, tokenId: who.tokenId }, name, args);
         return fout(`UNKNOWN_TOOL: ${name.slice(0, 80)}`);
     }
   } catch (e) {
