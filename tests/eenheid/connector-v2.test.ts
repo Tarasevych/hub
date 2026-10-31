@@ -114,8 +114,8 @@ export async function main(): Promise<number> {
   const eOrigineel = (await sys.query("SELECT data FROM app.records WHERE tbl = 'users' AND id = $1", [E])).rows[0]?.data;
   await sys.query("UPDATE app.records SET data = jsonb_set(data, '{entitlements}', '[\"api-platform\"]') WHERE tbl = 'users' AND id = $1", [E]);
 
-  async function koppel(userId: string, slug: AgentSlug, keuze: v2st.V2Keuze | null, redirect = slug === 'claude' ? 'https://claude.ai/api/mcp/auth_callback' : 'http://127.0.0.1/callback') {
-    const reg = body(await c.registerClient(JSON.stringify({ client_name: slug === 'gpt' ? 'ChatGPT' : slug, redirect_uris: [redirect] })));
+  async function koppel(userId: string, slug: AgentSlug, keuze: v2st.V2Keuze | null, redirect = slug === 'claude' ? 'https://claude.ai/api/mcp/auth_callback' : 'http://127.0.0.1/callback', clientNaam = slug === 'gpt' ? 'ChatGPT' : slug) {
+    const reg = body(await c.registerClient(JSON.stringify({ client_name: clientNaam, redirect_uris: [redirect] })));
     clients.push(reg.client_id);
     const p = pkce();
     const a = await c.authorize({ response_type: 'code', client_id: reg.client_id, redirect_uri: redirect, code_challenge: p.challenge, code_challenge_method: 'S256', state: 's', resource: agentUrl(slug) });
@@ -140,7 +140,7 @@ export async function main(): Promise<number> {
     check('onbekende agent → 404', (await rpc('chatgpt', 'x', {})).statusCode === 404);
 
     // claude.ai op het adres van grok: geweigerd vóór het venster
-    const vreemd = await koppel(A, 'grok', null, 'https://claude.ai/api/mcp/auth_callback');
+    const vreemd = await koppel(A, 'grok', null, 'https://claude.ai/api/mcp/auth_callback', 'Claude');
     check('autorisatie: terugkeeradres van een andere AI op /grok → invalid_target, geen toestemmingsvenster', vreemd.loc.includes('error=invalid_target') && !vreemd.loc.includes('consent='));
 
     // standaardkoppeling (keuze uit het venster = standaard)

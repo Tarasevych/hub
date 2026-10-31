@@ -17,9 +17,10 @@ import type http from 'node:http';
 import { aiPoortNu } from './ai-ruimte-poort';
 import { isAgentSlug } from '../shared/connector-v2/agenten';
 import { koppelingVan } from './connector-v2';
+import { authenticate, unauthorized } from './mcp-connector';
 import type { AiRuimte } from '../shared/ai-ruimte';
 
-const POLL_MS = Math.max(200, Number(process.env.MCP_LIJST_POLL_MS) || 10_000);
+const pollMs = () => Math.max(200, Number(process.env.MCP_LIJST_POLL_MS) || 10_000);
 const HARTSLAG_MS = 25_000;
 const MAX_STROMEN = 60;
 const MAX_PER_GEBRUIKER = 6;
@@ -43,6 +44,17 @@ export function meldLijstGewijzigd(userId: string, ruimte?: AiRuimte): number {
 }
 
 export const openStromen = (userId?: string) => [...stromen].filter((s) => !userId || s.userId === userId).map((s) => ({ agent: s.agent, geopend: s.geopend, ruimte: s.ruimte }));
+
+/** Open SSE-stromen van één gebruiker (optioneel alleen één agent of 'mcp') netjes sluiten, bv. bij DELETE of intrekken. */
+export function sluitStromenVan(userId: string, agent?: string): number {
+  let n = 0;
+  for (const s of [...stromen]) {
+    if (s.userId !== userId || (agent !== undefined && s.agent !== agent)) continue;
+    s.sluit();
+    n++;
+  }
+  return n;
+}
 
 /** Alle stromen netjes sluiten (bij het stoppen van de server). */
 export function sluitAlleStromen(): void { for (const s of [...stromen]) s.sluit(); }
@@ -81,7 +93,7 @@ export async function openStroom(req: http.IncomingMessage, res: http.ServerResp
       if (nu !== s.ruimte) { s.ruimte = nu; if (!schrijf(s, `event: message\ndata: ${LIST_CHANGED}\n\n`)) s.sluit(); }
     } catch { /* de volgende ronde probeert opnieuw; nooit de stroom sluiten om een tijdelijke databasefout */ }
     finally { bezig = false; }
-  }, POLL_MS));
+  }, pollMs()));
   for (const t of timers) t.unref?.();
   req.on('close', () => s.sluit());
   res.on('error', () => s.sluit());
@@ -97,4 +109,17 @@ export async function stroomVerzoek(req: http.IncomingMessage, res: http.ServerR
   const toegang = await koppelingVan(slug, String(req.headers.authorization || ''));
   if ('statusCode' in toegang) { res.writeHead(toegang.statusCode, toegang.headers); res.end(toegang.body); return; }
   await openStroom(req, res, { userId: toegang.koppeling.userId, agent: slug });
+}
+
+/** GET /mcp met `Accept: text/event-stream`: SSE-stroom voor het oude /mcp-eindpunt (list_changed bij herauthenticatie of UI-wijziging). */
+export async function stroomVerzoekMcp(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  const authHeader = String(req.headers.authorization || '');
+  const who = await authenticate(authHeader);
+  if (!who || who.agent) {
+    const weigering = unauthorized(!!authHeader.trim());
+    res.writeHead(weigering.statusCode, weigering.headers);
+    res.end(weigering.body);
+    return;
+  }
+  await openStroom(req, res, { userId: who.userId, agent: 'mcp' });
 }
