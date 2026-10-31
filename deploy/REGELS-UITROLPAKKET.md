@@ -105,3 +105,35 @@ een SSH-installatie zonder voorcontrole slaat deze regel dus over (zie STATUS UI
 Сайт показує, які саме файли падали, і чи падали вони на базовій версії («ook op basis») чи нові («NIEUW»). Без `falend` — «деталі недоступні в цьому пакеті».
 
 Збірка · bouwen: `MANIFEST=pad/UITROL-MANIFEST.json TESTRESULTATEN_BESTAND=pad/testen.json AUTEUR=… AGENT=… SAMENVATTING=… deploy/uitrol/maak-voorstelpakket.sh /tmp/uit`
+
+## 6. UITROL-BASIS і пакет передачі (ORCH-001, з 31.10.2026) · UITROL-BASIS en het overdrachtpakket
+
+**`UITROL-BASIS`** — на якій ВСТАНОВЛЕНІЙ версії й commit зібрано пакет (`key=value`, по рядку): `versie=РРРРММДД-ГГХХСС`, `commit=<40 hex>`,
+за наявності `orchestratie/regels.lock.json` також `regelsVersie=`, `regelsHash=`. Пишуть `maak-voorstelpakket.sh` / `maak-uitrolpakket.sh`
+із `BASIS_VERSIE` + `BASIS_COMMIT` (разом і валідні, інакше відмова); найпростіше — `node scripts/orch.mjs pakket` (бере базу з
+`orchestratie/geinstalleerd.json`, інакше з `beleid.json → basis`). **Обов'язково для `UITROL-VERSIE` ≥ `20261201-000000`** (`GEEN_BASIS`);
+старіші пакети без нього встановлюються з записом «oud formaat» у лозі.
+**`UITROL-BASIS`** zegt op welke GEÏNSTALLEERDE versie en commit het pakket is gebouwd. Verplicht vanaf `20261201-000000`.
+
+Root-інсталятор (`deploy/uitrol/mijn-ruimte-uitrol.sh`) після підпису й версії перевіряє · het root-script controleert na handtekening en versie:
+
+| Код · code | Коли · wanneer |
+|---|---|
+| `BASIS_ONGELDIG` | `UITROL-BASIS` є, але без коректних `versie`/`commit` |
+| `BASIS_VEROUDERD` | `versie` у `UITROL-BASIS` старіша за `$WERK_ROOT/laatste-versie` — хтось установив між збіркою й цим пакетом; rebase і зібрати знову |
+| `BASIS_COMMIT_VERSCHILT` | `commit` ≠ `$WERK_ROOT/laatste-commit` (root пише його після кожної вдалої установки з 40-hex `BRON-COMMIT`) |
+| `GEEN_BASIS` | версія ≥ `20261201-000000` без `UITROL-BASIS` |
+| `REGELS_NIET_VERGRENDELD` | у пакеті є `orchestratie/regels.lock.json`, але відбиток правил (`AGENTS.md`, `beleid.json`, `BESLUITEN.md`; LF, без кінцевих пробілів) або `regelsVersie` не збігається |
+| `MODUS_NIET_TOEGESTAAN` | `beleid.json → kritiek.installatieModi.toegestaan` не містить потрібного режиму (`na_bevestiging` для passkey/підпису; `automatisch_beperkt` + підписаний lock для GitOps `gitops-ophalen.sh`) |
+
+Переклади кодів — `shared/uitrol-codes.ts` (тест `uitrol-codes` стежить, щоб кожен `weiger CODE` мав uk/nl).
+
+**Пакет передачі** `mijn-ruimte-<versie>-<agent>-overdracht.zip` (`node scripts/orch.mjs pakket --taak <ID> --auteur "…"`) містить: `mijn-ruimte-<versie>.tar.gz`
+(той самий сумісний архів, встановлюється ЛИШЕ він), `.tar.gz.sha256`, `.voorstel.json`, `ORCH-OVERDRACHT.json` (taakId, agent, `basisCommit` = база
+гілки задачі, `installatie` = встановлена база, коміти, файли, тести, `pakket.sha256`/`bronCommit`/`modus`), `UITROL-MANIFEST.json`, `TESTRESULTATEN.json`,
+`RAPPORT.md` (uk+nl), `COMMITS.txt` + `commits.bundle`, `AGENTEN.json`, `LEESMIJ.txt`, і `.tar.gz.sig` лише якщо власник підписав на своєму ПК
+(приватні ключі агентам не передаються). Перевірка без установки: `node scripts/orch.mjs pakket-controleer --bron <zip>` (назва, цілісність,
+`UITROL-VERSIE`/`BRON-COMMIT`/`AGENT`/`UITROL-BASIS` ↔ метадані, база ↔ `geinstalleerd.json`, правила ↔ lock, `deploy/installeer-app.sh`,
+без `node_modules/dist/.git`). Імпорт без git на іншому боці: `node scripts/orch.mjs inleveren --bron <zip>` — спершу цілісність, далі вміст `tar.gz`
+на нову гілку від `basisCommit`; службові файли архіву (`UITROL-*`, `AUTEUR`, `AGENT`, …) у гілку не потрапляють.
+Het overdrachtpakket bundelt het installeerbare archief met zijn SHA-256, metadata, rapport, tests, commits en deelnemers; alleen het `.tar.gz` wordt geïnstalleerd.

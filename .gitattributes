@@ -1,0 +1,7 @@
+# ORCH-001: стан координації пише лише orch на гілці integratie. При злитті гілок агентів лишається версія integratie
+# (merge-драйвер orch-staat = «true»; «node scripts/orch.mjs wachtrij volgende» задає git config merge.orch-staat.driver true локально).
+# Coördinatiestaat wordt alleen door orch op integratie geschreven; bij het mergen van agenttakken wint de integratieversie.
+orchestratie/taken/*.json merge=orch-staat
+orchestratie/inleveringen/*.json merge=orch-staat
+orchestratie/wachtrij.json merge=orch-staat
+orchestratie/geinstalleerd.json merge=orch-staat

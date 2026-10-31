@@ -5,11 +5,11 @@
   "tak": "feature/orch-001-20261031-112355",
   "basisCommit": "b279ccabe31a27139b337822162653ccc13b6a5a",
   "basisVersie": "20261031-093842",
-  "regelsVersie": "1.1.0",
-  "regelsHash": "8bb97b3e74eea74582670852fd189ea69c5bab8a500b651eeece181f141d6e08",
+  "regelsVersie": "1.2.0",
+  "regelsHash": "e2d1de4e5b6edcc9c10ef88bc80f945790835e2cbb59e7974d4c84740bc45877",
   "staat": "in_progress",
   "gestart": "2026-10-31T11:32:34.460Z",
-  "bijgewerkt": "2026-10-31T11:52:19.547Z",
+  "bijgewerkt": "2026-10-31T12:27:01.895Z",
   "omschrijving": "Єдина система координації AI-агентів (етапи 0–4)",
   "kanaal": "github_pr",
   "overdrachten": [],
@@ -23,6 +23,11 @@
       "van": "1.1.0",
       "naar": "1.1.0",
       "op": "2026-10-31T11:52:19.547Z"
+    },
+    {
+      "van": "1.1.0",
+      "naar": "1.2.0",
+      "op": "2026-10-31T12:27:01.895Z"
     }
   ]
 }

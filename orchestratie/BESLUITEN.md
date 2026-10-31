@@ -63,3 +63,30 @@ Alleen toevoegen. Elke wijziging van de regels = nieuw besluit hier + hogere `re
 перечитати правила (`versheid` → `REGELS_VEROUDERD`).
 
 **Хто.** Агент `claude`. Потребує підтвердження власника.
+
+## B-005 · 2026-10-31 · 1.2.0 · voorstel
+
+**Контекст.** Етап 2 ORCH-001: випуск мав бути один для всіх агентів, а інсталятор перевіряв лише дату версії — пакет, зібраний на застарілій базі
+або з іншими правилами, встановлювався, якщо його версія була новішою.
+
+**Рішення.**
+1. У пакеті `mijn-ruimte-<versie>.tar.gz` з'являється `UITROL-BASIS` (встановлена версія + commit + відбиток правил). Root-інсталятор звіряє його з
+   `$WERK_ROOT/laatste-versie` і `laatste-commit` (`BASIS_VEROUDERD`, `BASIS_COMMIT_VERSCHILT`, `BASIS_ONGELDIG`), з `20261201-000000` — обов'язково
+   (`GEEN_BASIS`). Якщо в пакеті є `orchestratie/regels.lock.json`, відбиток правил і `regelsVersie` мають збігатися (`REGELS_NIET_VERGRENDELD`),
+   а режим установки — бути дозволеним у `kritiek.installatieModi` (`MODUS_NIET_TOEGESTAAN`). GitOps (`gitops-ophalen.sh`, автоматично) працює лише
+   за `automatisch_beperkt` **і** підписаним власником lock.
+2. Єдиний пакет передачі `mijn-ruimte-<versie>-<agent>-overdracht.zip` збирає `node scripts/orch.mjs pakket` (через `maak-voorstelpakket.sh`, без
+   дублювання): архів, SHA-256, `ORCH-OVERDRACHT.json`, `UITROL-MANIFEST.json`, тести, `RAPPORT.md`, коміти (`COMMITS.txt` + `commits.bundle`),
+   агенти (`AGENTEN.json`), підпис `.sig` лише якщо власник підписав сам. Перевірка — `pakket-controleer`, імпорт без git — той самий `inleveren`.
+3. Дві бази свідомо різні: `UITROL-BASIS`/`installatie` = **встановлена** (для інсталятора), `basisCommit` в `ORCH-OVERDRACHT.json` = **база гілки
+   задачі** (від неї `inleveren` відтворює зміни й рахує коміти).
+4. Власний `orchestratie/taken/<taakId>.json` дозволено в передачі (агент реєструє задачу у своїй гілці — іншого шляху в нього немає); інший стан
+   координації лишається захищеним. При злитті версія `integratie` перемагає (`.gitattributes` → `merge=orch-staat`, драйвер задає
+   `orch wachtrij volgende`).
+5. Режими встановлення без змін (`handmatig`, `na_bevestiging`; `automatisch_beperkt` — лише за окремою підписаною політикою); приватні ключі
+   власника агентам не передаються.
+
+**Наслідки.** `regelsVersie` 1.1.0 → 1.2.0 (`pakket`, `inlevering.eigenTaakBestandToegestaan`, статус `ter_integratie` у переліку); задачі з
+1.1.0 перечитують правила. Нові коди в `shared/uitrol-codes.ts`.
+
+**Хто.** Агент `claude`. Потребує підтвердження власника (критичні політики не змінено, підпис лишається «пропозицією»).
