@@ -77,7 +77,7 @@ export async function main(): Promise<number> {
   // ================================================================ DEEL 2: één ШІ — одна вкладка
   const herstel = nepBrowser();
   const hub = await import('../../src/agenten/AgentenPagina').finally(() => undefined);
-  check('de tabrij blijft onveranderd (de agentplek is geen elfde knop)', hub.TABS.join() === 'overzicht,connectors,ai,extern,extensie,browser,apparaten,tokens,toegang,technisch,journaal' && !hub.zichtbareTabs(true).includes('agent'));
+  check('de tabrij blijft onveranderd (de agentplek is geen elfde knop)', hub.TABS.join() === 'overzicht,connectors,ai,extern,orch,extensie,browser,apparaten,tokens,toegang,technisch,journaal' && !hub.zichtbareTabs(true).includes('agent'));
   check('#agent/<slug> is een echte plek met een eigen adres', V2_AGENTEN.every((a) => { const p = hub.leesHash(`#agent/${a.slug}`); return p.tab === 'agent' && p.item === a.slug && hub.agentUitPlek(p.tab, p.item) === a.slug; }));
   check('een onzinnige agent in de hash levert geen pagina op (dan blijft het bij de connectorlijst)', hub.agentUitPlek('agent', 'onzin') === null && hub.agentUitPlek('tokens', 'grok') === null);
 

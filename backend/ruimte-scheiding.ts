@@ -183,7 +183,7 @@ export async function technischeRechten(userId: string): Promise<Rechten> {
  *     rechten én een lopende activering.
  * Zonder herkomst: 'prive'. Elke fout: 'prive'.
  */
-export async function gegevensRuimteVeilig(userId: string, herkomst: { tabContext?: string | null; aiRuimte?: AiRuimte | null } = {}): Promise<AiRuimte> {
+export async function gegevensRuimteVeilig(userId: string, herkomst: { tabContext?: string | null; aiRuimte?: AiRuimte | null; verbindingId?: string | null } = {}): Promise<AiRuimte> {
   if (!userId) return 'prive';
   const tab = String(herkomst.tabContext ?? '');
   const viaTab = TAB_RE.test(tab);
@@ -191,7 +191,7 @@ export async function gegevensRuimteVeilig(userId: string, herkomst: { tabContex
   try {
     const rechten = await technischeRechten(userId);
     if (!rechten.ok) return 'prive';
-    const a = viaTab ? await actieveActivatie(userId, tab) : await lopendeActivatie(userId);
+    const a = viaTab ? await actieveActivatie(userId, tab) : await lopendeActivatie(userId, herkomst.verbindingId);
     // Niet alleen «er loopt iets», maar: loopt er iets met een rol die een eigen lade rechtvaardigt?
     return a && magEigenLade(a.rollen) ? 'technisch' : 'prive';
   } catch (err) { console.error('[ruimte-scheiding] gegevensruimte onbepaalbaar, terug naar prive:', (err as Error).message); return 'prive'; }
@@ -206,6 +206,8 @@ export type LadeVraag = {
   tabContext?: string | null;
   /** Aanroep van een AI-connector: de ruimte van de VERBINDING (effectieveRuimte). Kan alleen verkleinen, nooit vergroten. */
   aiRuimte?: AiRuimte | null;
+  /** Specifieke AI-verbinding (mcp_oauth_tokens.id of grantId) bij technische ruimtes v2. */
+  verbindingId?: string | null;
   dienst: unknown;
 };
 /**
@@ -217,7 +219,7 @@ export async function gegevensLade(v: LadeVraag): Promise<LadeBesluit> {
   if (!dienst) return ladeVoor({ userId: v.userId, ruimte: 'prive', dienst: v.dienst, stand: 'uit', keuzeGemaakt: false });
   // De ruimte komt NOOIT uit het verzoek: gegevensRuimteVeilig leest rol, status, profiel en de lopende activering zelf uit
   // de database. Een sessie kan oud zijn (wie net zijn rol verloor draagt die rol nog mee), dus niets wordt hier geloofd.
-  let ruimte: 'prive' | 'technisch' = await gegevensRuimteVeilig(v.userId, { tabContext: v.tabContext, aiRuimte: v.aiRuimte });
+  let ruimte: 'prive' | 'technisch' = await gegevensRuimteVeilig(v.userId, { tabContext: v.tabContext, aiRuimte: v.aiRuimte, verbindingId: v.verbindingId });
   if (ruimte === 'prive') {
     // Niet in de technische ruimte? Dan de persoonlijke lade — maar eerst: zijn de rechten wéG (niet alleen «profiel niet
     // actief»)? Dan hoort alles van de technische kant bevroren te zijn, ook als niemand dat eerder meldde.

@@ -21,6 +21,15 @@ export function termijnRegel(r: ToegangRegel, taal: Taal): string {
   return termijnNaam(t.modus, taal, t.eindTijd);
 }
 
+/** Welke AI-termijnkeuze uit AI_TERMIJNEN op dit moment al exact voor deze regel geldt (nooit twee keer dezelfde stand aanbieden). */
+export function actieveAiKeuzeId(r: ToegangRegel): (typeof AI_TERMIJNEN)[number]['id'] | null {
+  const heeftTech = (r.ruimtes ?? ['prive']).includes('technisch');
+  if (!heeftTech) return 'prive';
+  if (r.termijn?.modus === 'tot-technisch-einde') return 'tot-technisch-einde';
+  if (r.termijn?.modus === 'tot-site-uitloggen') return 'tot-site-uitloggen';
+  return null;
+}
+
 export default function ToegangPagina({ taal, sluit, start }: { taal: Taal; sluit: () => void; start?: TabId }) {
   const uk = taal === 'uk';
   const [tab, setTab] = useState<TabId>(start ?? leesTab());
@@ -82,17 +91,23 @@ export default function ToegangPagina({ taal, sluit, start }: { taal: Taal; slui
                 <span className='rt-wie'><b>{x.soort === 'sessie' ? (x.deze ? (uk ? 'Цей браузер' : 'Deze browser') : (uk ? 'Інший браузер' : 'Andere browser')) : x.naam}</b>{x.detail ? <small>{x.detail}</small> : null}</span>
                 <span className='rt-termijn'>{termijnRegel(x, taal)}{x.termijn?.eindTijd && x.termijn.modus !== 'tijd' ? ` · ${uurMinuut(x.termijn.eindTijd, taal)}` : ''}</span>
                 {x.ruimtes ? <span className='rt-ruimtes'>{x.ruimtes.map((q) => RUIMTE_NAAM[q][taal]).join(' + ')}</span> : null}
-                {tab === 'ai' ? (
-                  <span className='rt-ai'>
-                    <select aria-label={uk ? `Термін для ${x.naam}` : `Termijn voor ${x.naam}`} defaultValue='' data-rt-ai-termijn={x.id}
-                      disabled={bezig === x.id || !aiMag} title={aiMag ? undefined : aiReden}
-                      onChange={(e) => { const k = AI_TERMIJNEN.find((a) => a.id === e.target.value); if (k) void aiZet(x, k); }}>
-                      <option value=''>{uk ? 'Змінити доступ…' : 'Toegang wijzigen…'}</option>
-                      {AI_TERMIJNEN.map((a) => <option key={a.id} value={a.id}>{a.label[taal]}</option>)}
-                    </select>
-                    {bezig === x.id ? <small role='status'>{uk ? 'Зберігаю…' : 'Opslaan…'}</small> : null}
-                  </span>
-                ) : null}
+                {tab === 'ai' ? (() => {
+                  const actiefId = actieveAiKeuzeId(x);
+                  return (
+                    <span className='rt-ai'>
+                      <select aria-label={uk ? `Термін для ${x.naam}` : `Termijn voor ${x.naam}`} value='' data-rt-ai-termijn={x.id}
+                        disabled={bezig === x.id || !aiMag} title={aiMag ? undefined : aiReden}
+                        onChange={(e) => { const k = AI_TERMIJNEN.find((a) => a.id === e.target.value); if (k && k.id !== actiefId) void aiZet(x, k); }}>
+                        <option value=''>{uk ? 'Змінити доступ…' : 'Toegang wijzigen…'}</option>
+                        {AI_TERMIJNEN.map((a) => (
+                          <option key={a.id} value={a.id} disabled={actiefId === a.id} data-al-actief={actiefId === a.id ? '1' : undefined}
+                            title={actiefId === a.id ? (uk ? 'Цей режим уже діє зараз' : 'Deze stand geldt nu al') : undefined}>{a.label[taal]}</option>
+                        ))}
+                      </select>
+                      {bezig === x.id ? <small role='status'>{uk ? 'Зберігаю…' : 'Opslaan…'}</small> : null}
+                    </span>
+                  );
+                })() : null}
               </li>
             ))}</ul>
           ) : tab !== 'eigen' ? <p className='tech-meta' data-rt-leeg='1'>{uk ? 'Тут поки нічого немає.' : 'Hier staat nog niets.'}</p> : null) : null}

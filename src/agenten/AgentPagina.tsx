@@ -15,16 +15,23 @@
 // Er komt GEEN nieuwe pagina bij: dit is een plek in de bestaande hub (#agent/<slug>). De algemene tabbladen blijven voor wat
 // echt gedeeld is (apparaten, externe MCP-servers, de browserextensie, het hele journaal).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Activity, ArrowLeft, KeyRound, Link2, Palette, Plug, ShieldCheck, SlidersHorizontal, Trash2, UserRound, Wrench } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowLeft, Check, ExternalLink, KeyRound, Link2, Palette, Pause, Play, Plug, ShieldCheck, SlidersHorizontal, Trash2, UserRound, Wrench, Zap } from 'lucide-react';
 import { api } from '../platform/client';
 import { sessionBody } from '../agenten-gegevens';
+import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import type { Tr } from '../mcp-ui';
 import { agentUrl, oudAgentUrl, OUD_GEDEELD_URL, v2Agent, type AgentSlug } from '../../shared/connector-v2/agenten';
 import { RUIMTE_NAAM, RUIMTE_UITLEG } from '../../shared/ai-ruimte';
+import { WEIGER_UITLEG, type AgentToegangDiagnose } from '../../shared/ai-toegang-diagnose';
+import { STAND_NAAM } from '../../shared/ruimte-scheiding';
 import { agentSlugUitNaam } from '../../shared/markering-agenten';
 import { KANT_TEKST, type Kant } from '../../shared/connector-v2/catalogus';
 import { levendeKanten, SOORT_TEKST, zichtbareSleutels, type VerbindingSoort } from '../../shared/connector-v2/stand';
 import { AgentInstellingen, agentVanItem, standVanAgent, type AgentStand, type Data } from '../connector-v2/ConnectorsTab';
+import { openTechVenster, techActief, techBody, techVernieuwen, useTech } from '../tech/tech-opslag';
+import { ruimtesApi } from '../tech/ruimtes-api';
+import { ruimtesVernieuwen, useRuimtes, wissel } from '../tech/ruimtes/ruimtes-opslag';
+import { restTekst } from '../tech/ruimtes/teksten';
 import AgentKleuren from './AgentKleuren';
 import AgentLogo from './AgentLogo';
 import AgentVerbinden from './AgentVerbinden';
@@ -49,6 +56,377 @@ function rijenVan(a: AgentStand): Rij[] {
   return uit.sort((x, y) => (y.laatst ?? 0) - (x.laatst ?? 0));
 }
 
+/** Voorwaarde-per-voorwaarde gereedheid en 1-klik acties voor één agent (MCP-ACCESS-001).
+ *  Regel: bied NOOIT een «Увімкнути / Дозволити»-knop aan voor een voorwaarde die al actief is — toon dan een groene actieve badge
+ *  met resterende tijd en hoogstens een secundaire «Призупинити / Зняти / Вимкнути»-actie. */
+function AgentToegangGereedheid({
+  tr, uk, slug, naam, diag, kanten, tabTechAan, naWijziging,
+}: {
+  tr: Tr; uk: boolean; slug: AgentSlug; naam: string; diag: AgentToegangDiagnose; kanten: Kant[]; tabTechAan: boolean; naWijziging: () => Promise<void>;
+}) {
+  const taal: 'uk' | 'nl' = uk ? 'uk' : 'nl';
+  const [bezig, setBezig] = useState('');
+  const [bericht, setBericht] = useState<{ ok: boolean; tekst: string } | null>(null);
+  const nu = Date.now();
+  const doelGrantId = diag.connectionGranted.grantId || '*';
+  const wilBeheer = kanten.includes('beheer') || diag.connectionGranted.kanten.includes('beheer');
+
+  const voerActieUit = async (sleutel: string, fn: () => Promise<string>) => {
+    setBezig(sleutel);
+    setBericht(null);
+    try {
+      const tekst = await fn();
+      await Promise.all([techVernieuwen().catch(() => undefined), ruimtesVernieuwen().catch(() => undefined), naWijziging()]);
+      setBericht({ ok: true, tekst });
+    } catch (e) {
+      const code = String((e as Error)?.message || 'FOUT');
+      setBericht({
+        ok: false,
+        tekst: /STEP_UP/.test(code)
+          ? tr('Підтвердження скасовано — стан не змінено.', 'Bevestiging geannuleerd — de staat is niet gewijzigd.')
+          : code === 'TECH_PROFIEL_VEREIST'
+            ? tr('Для цієї дії потрібно активувати технічний простір у цій вкладці.', 'Voor deze actie moet de technische ruimte in dit tabblad actief zijn.')
+            : foutTekst(e, tr, ['Дію не виконано', 'Actie mislukt']),
+      });
+    } finally {
+      setBezig('');
+    }
+  };
+
+  /** Zorgt dat dit browsertabblad de al lopende technische sessie overneemt vóór een ruimte- of ai-zetten-aanroep. */
+  const zorgVoorTechTab = async () => {
+    if (!tabTechAan && diag.profileSessionActive) {
+      if (diag.techV2Active) await wissel('technisch').catch(() => undefined);
+      await techVernieuwen();
+      await ruimtesVernieuwen();
+    }
+  };
+
+  const sessieRest = restTekst(diag.profileSessionEnd, nu, taal);
+  const delegatieRest = restTekst(diag.aiSessionDelegationEnd, nu, taal);
+  const dienstActief = diag.aiServiceState === 'eigen' || diag.aiServiceState === 'gedeeld';
+  const beleidBlokkeert = diag.aiPolicyBlockedCount > 0 || diag.aiPolicyState === 'ongeldig' || diag.aiPolicyState === 'agent-onbekend' || diag.aiPolicyState === 'agent-uit' || diag.aiPolicyState === 'verlopen' || diag.aiPolicyState === 'uit';
+  const adminAiHref = canonicalNavigationUrl('admin', 'ai', taal);
+  const githubHref = canonicalNavigationUrl('github', 'accounts', taal);
+
+  return (
+    <div className='ag-diagnose' id={`ag-agent-gereedheid-${slug}`} data-agent-diagnose={diag.denialCode ?? 'OK'} data-agent-zichtbaar-echt={diag.effectiveVisibleToolsCount}>
+      <div className='ag-diagnose-kop'>
+        <div>
+          <h4>{tr('Фактична готовність інструментів зараз', 'Werkelijke beschikbaarheid van hulpmiddelen nu')}</h4>
+          <p className='hub-meta'>
+            {diag.connectionGranted.verbonden
+              ? tr(
+                  `Зараз ${naam} реально бачить у списку MCP: ${diag.effectiveVisibleToolsCount} із ${diag.connectionGranted.totaal} наданих інструментів (приватних: ${diag.effectiveGebruikerVisibleCount}/${diag.connectionGranted.gebruiker}${wilBeheer ? `, технічних _beheer: ${diag.effectiveBeheerVisibleCount}/${diag.connectionGranted.beheer}` : ''}).`,
+                  `Nu ziet ${naam} daadwerkelijk in de MCP-lijst: ${diag.effectiveVisibleToolsCount} van ${diag.connectionGranted.totaal} toegekende hulpmiddelen (privé: ${diag.effectiveGebruikerVisibleCount}/${diag.connectionGranted.gebruiker}${wilBeheer ? `, technisch _beheer: ${diag.effectiveBeheerVisibleCount}/${diag.connectionGranted.beheer}` : ''}).`,
+                )
+              : tr(
+                  `Підключення OAuth для ${naam} ще немає; нижче показано поточний стан умов на сервері.`,
+                  `Er is nog geen actieve OAuth-koppeling voor ${naam}; hieronder staat de huidige staat van de voorwaarden op de server.`,
+                )}
+          </p>
+        </div>
+        <span className={`ag-badge ${diag.denialCode ? 'ag-warn' : 'ag-ok'}`} data-diagnose-hoofdcode={diag.denialCode ?? 'OK'}>
+          {diag.denialCode ? <AlertTriangle size={13} aria-hidden='true' /> : <Check size={13} aria-hidden='true' />}
+          {diag.denialCode ? diag.denialCode : tr('Усі умови виконано', 'Alle voorwaarden vervuld')}
+        </span>
+      </div>
+
+      {bericht ? (
+        <p className={`ag-melding ${bericht.ok ? 'ag-melding-ok' : 'ag-melding-fout'}`} role='status' data-diagnose-melding='1'>
+          {bericht.ok ? <Check size={15} aria-hidden='true' /> : <AlertTriangle size={15} aria-hidden='true' />}
+          <span>{bericht.tekst}</span>
+        </p>
+      ) : null}
+
+      <ul className='ag-diagnose-lijst'>
+        {/* 1. Technische sessie van de eigenaar */}
+        {diag.eigenaar && (wilBeheer || diag.profileSessionActive || diag.profileSessionPaused) ? (
+          <li className='ag-diagnose-rij' data-diagnose-laag='sessie' data-diagnose-staat={diag.profileSessionActive ? 'actief' : diag.profileSessionPaused ? 'pauze' : 'uit'}>
+            <div className='ag-diagnose-info'>
+              <div className='ag-diagnose-titel'>
+                <b>{tr('1. Технічний сеанс власника', '1. Technische sessie van de eigenaar')}</b>
+                {diag.profileSessionActive ? (
+                  <span className='ag-badge ag-ok'><Check size={12} aria-hidden='true' />{tr('Активний', 'Actief')}{sessieRest ? ` · ${sessieRest}` : ''}</span>
+                ) : diag.profileSessionPaused ? (
+                  <span className='ag-badge ag-warn'><Pause size={12} aria-hidden='true' />{tr('На паузі', 'Op pauze')}</span>
+                ) : (
+                  <span className='ag-badge ag-off'>{tr('Не запущений', 'Niet gestart')}</span>
+                )}
+              </div>
+              <small className='hub-meta'>
+                {diag.profileSessionActive
+                  ? tr('Ваш технічний простір зараз відкритий.', 'Uw technische ruimte is nu geopend.')
+                  : diag.profileSessionPaused
+                    ? WEIGER_UITLEG.PAUZE[taal]
+                    : WEIGER_UITLEG.GEEN_TECH_SESSIE[taal]}
+              </small>
+            </div>
+            <div className='ag-diagnose-acties'>
+              {diag.profileSessionActive ? (
+                <>
+                  {diag.techV2Active ? (
+                    <button type='button' className='ag-knop' disabled={!!bezig} data-diagnose-actie='pauzeer_tech_sessie'
+                      onClick={() => void voerActieUit('pauzeer', async () => { await wissel('prive'); return tr('Технічний простір поставлено на паузу.', 'Technische ruimte op pauze gezet.'); })}>
+                      <Pause size={14} aria-hidden='true' />{tr('Поставити на паузу', 'Pauzeren')}
+                    </button>
+                  ) : null}
+                  <button type='button' className='ag-knop' disabled={!!bezig} data-diagnose-actie='open_tech_termijnen' onClick={() => openTechVenster('toegang')}>
+                    <SlidersHorizontal size={14} aria-hidden='true' />{tr('Терміни', 'Termijnen')}
+                  </button>
+                </>
+              ) : diag.profileSessionPaused ? (
+                <button type='button' className='ag-knop ag-knop-primary' disabled={!!bezig} data-diagnose-actie='hervat_tech_sessie'
+                  onClick={() => void voerActieUit('hervat', async () => { await wissel('technisch'); return tr('Технічний сеанс відновлено з паузи.', 'Technische sessie hervat.'); })}>
+                  <Play size={14} aria-hidden='true' />{tr('Відновити з паузи', 'Hervatten uit pauze')}
+                </button>
+              ) : (
+                <button type='button' className='ag-knop ag-knop-primary' disabled={!!bezig} data-diagnose-actie='start_tech_sessie'
+                  onClick={() => openTechVenster('activeren')}>
+                  <Wrench size={14} aria-hidden='true' />{tr('Увімкнути технічний простір', 'Technische ruimte starten')}
+                </button>
+              )}
+            </div>
+          </li>
+        ) : null}
+
+        {/* 2. Per-verbinding AI-sessiedelegatie (tech-ruimtes-v2) */}
+        {diag.eigenaar && diag.techV2Active && wilBeheer ? (
+          <li className='ag-diagnose-rij' data-diagnose-laag='delegatie' data-diagnose-staat={diag.aiSessionDelegationActive ? 'actief' : 'uit'}>
+            <div className='ag-diagnose-info'>
+              <div className='ag-diagnose-titel'>
+                <b>{tr(`2. Доступ ${naam} до технічного сеансу`, `2. Toegang van ${naam} tot technische sessie`)}</b>
+                {diag.aiSessionDelegationActive ? (
+                  <span className='ag-badge ag-ok'>
+                    <Check size={12} aria-hidden='true' />
+                    {diag.aiSessionDelegationScope === 'verbinding' ? tr('Дозволено цьому агенту', 'Toegestaan voor deze agent') : tr('Дозволено', 'Toegestaan')}
+                    {delegatieRest ? ` · ${delegatieRest}` : ''}
+                  </span>
+                ) : (
+                  <span className='ag-badge ag-warn'>{tr('Не дозволено для сеансу', 'Niet toegestaan voor sessie')}</span>
+                )}
+              </div>
+              <small className='hub-meta'>
+                {diag.aiSessionDelegationActive
+                  ? tr(`Делегування активне лише на вказаний термін і не зачіпає інших ШІ-агентів.`, `Delegatie geldt alleen voor de gekozen termijn en lekt niet naar andere AI-agents.`)
+                  : WEIGER_UITLEG.AI_NIET_TOEGESTAAN[taal]}
+              </small>
+            </div>
+            <div className='ag-diagnose-acties'>
+              {diag.aiSessionDelegationActive ? (
+                <button type='button' className='ag-knop' disabled={!!bezig || !diag.profileSessionActive} data-diagnose-actie='trek_ai_sessie_in'
+                  onClick={() => void voerActieUit('delegatie-uit', async () => {
+                    await zorgVoorTechTab();
+                    await ruimtesApi.aiZetten(doelGrantId, ['prive'], 'tot-site-uitloggen');
+                    return tr(`Технічний доступ сеансу для ${naam} знято (залишено лише звичайний простір).`, `Technische sessietoegang voor ${naam} ingetrokken (alleen gewone ruimte blijft).`);
+                  })}>
+                  {tr('Залишити лише звичайний простір', 'Alleen gewone ruimte laten')}
+                </button>
+              ) : diag.profileSessionActive ? (
+                <>
+                  <button type='button' className='ag-knop ag-knop-primary' disabled={!!bezig} data-diagnose-actie='zet_ai_sessie_einde'
+                    onClick={() => void voerActieUit('delegatie-einde', async () => {
+                      await zorgVoorTechTab();
+                      await ruimtesApi.aiZetten(doelGrantId, ['prive', 'technisch'], 'tot-technisch-einde');
+                      return tr(`Технічний простір дозволено для ${naam} до завершення технічного сеансу.`, `Technische ruimte toegestaan voor ${naam} tot het einde van de technische sessie.`);
+                    })}>
+                    <Zap size={14} aria-hidden='true' />{tr('Дозволити до кінця сеансу', 'Toestaan tot einde sessie')}
+                  </button>
+                  <button type='button' className='ag-knop' disabled={!!bezig} data-diagnose-actie='zet_ai_sessie_60'
+                    onClick={() => void voerActieUit('delegatie-60', async () => {
+                      await zorgVoorTechTab();
+                      await ruimtesApi.aiZetten(doelGrantId, ['prive', 'technisch'], 'tijd', 60);
+                      return tr(`Технічний простір дозволено для ${naam} на 1 годину.`, `Technische ruimte toegestaan voor ${naam} voor 1 uur.`);
+                    })}>
+                    {tr('На 1 год', 'Voor 1 uur')}
+                  </button>
+                </>
+              ) : (
+                <small className='hub-meta' data-diagnose-wacht-op='sessie'>{tr('Спочатку запустіть або відновіть технічний сеанс (крок 1).', 'Start of hervat eerst de technische sessie (stap 1).')}</small>
+              )}
+            </div>
+          </li>
+        ) : null}
+
+        {/* 3. Dienst «AI-koppelingen» in technische gegevensruimte */}
+        {diag.eigenaar && wilBeheer ? (
+          <li className='ag-diagnose-rij' data-diagnose-laag='dienst' data-diagnose-staat={dienstActief ? 'actief' : diag.aiServiceState}>
+            <div className='ag-diagnose-info'>
+              <div className='ag-diagnose-titel'>
+                <b>{tr('3. Служба «Підключення ШІ» у технічному просторі даних', '3. Dienst «AI-koppelingen» in technische gegevensruimte')}</b>
+                {dienstActief ? (
+                  <span className='ag-badge ag-ok'><Check size={12} aria-hidden='true' />{STAND_NAAM[diag.aiServiceState][taal]}</span>
+                ) : diag.aiServiceState === 'bevroren' ? (
+                  <span className='ag-badge ag-bad'>{STAND_NAAM.bevroren[taal]}</span>
+                ) : (
+                  <span className='ag-badge ag-warn'>{!diag.ruimteKeuzeGemaakt ? tr('Вибір ще не зроблено', 'Keuze ontbreekt') : STAND_NAAM.uit[taal]}</span>
+                )}
+              </div>
+              <small className='hub-meta'>
+                {dienstActief
+                  ? tr('Служба активна у технічному просторі даних.', 'De dienst staat aan in de technische gegevensruimte.')
+                  : !diag.ruimteKeuzeGemaakt
+                    ? WEIGER_UITLEG.KEUZE_ONTBREEKT[taal]
+                    : diag.aiServiceState === 'bevroren'
+                      ? WEIGER_UITLEG.BEVROREN[taal]
+                      : WEIGER_UITLEG.DIENST_UIT[taal]}
+              </small>
+            </div>
+            <div className='ag-diagnose-acties'>
+              {dienstActief ? (
+                diag.profileSessionActive ? (
+                  <button type='button' className='ag-knop' disabled={!!bezig} data-diagnose-actie='zet_ai_dienst_uit'
+                    onClick={() => void voerActieUit('dienst-uit', async () => {
+                      await zorgVoorTechTab();
+                      await api.post('/api/owner/ruimte/dienst', { ...techBody(), dienst: 'ai', actie: 'ontkoppel' });
+                      return tr('Службу «Підключення ШІ» від’єднано від технічного простору.', 'Dienst «AI-koppelingen» losgemaakt uit de technische ruimte.');
+                    })}>
+                    {tr("Від'єднати службу", 'Dienst losmaken')}
+                  </button>
+                ) : null
+              ) : diag.aiServiceState === 'bevroren' ? (
+                <a className='ag-knop ag-knop-primary' href='#technisch' data-diagnose-actie='ontvries_ai_dienst'>
+                  {tr('Відкрити «Технічне» для рішення', 'Open «Technisch» voor besluit')}
+                </a>
+              ) : diag.profileSessionActive ? (
+                <>
+                  <button type='button' className='ag-knop ag-knop-primary' disabled={!!bezig} data-diagnose-actie='zet_ai_dienst_eigen'
+                    onClick={() => void voerActieUit('dienst-eigen', async () => {
+                      await zorgVoorTechTab();
+                      if (!diag.ruimteKeuzeGemaakt) await api.post('/api/owner/ruimte/keuze', { ...techBody(), keuze: 'per_dienst' });
+                      await api.post('/api/owner/ruimte/dienst', { ...techBody(), dienst: 'ai', actie: 'verbind-eigen' });
+                      return tr('Службу «Підключення ШІ» увімкнено у технічному просторі (окремі дані).', 'Dienst «AI-koppelingen» aangezet in de technische ruimte (eigen gegevens).');
+                    })}>
+                    <KeyRound size={14} aria-hidden='true' />{tr('Увімкнути (окремі дані)', 'Aanzetten (eigen gegevens)')}
+                  </button>
+                  <button type='button' className='ag-knop' disabled={!!bezig} data-diagnose-actie='zet_ai_dienst_gedeeld'
+                    onClick={() => void voerActieUit('dienst-gedeeld', async () => {
+                      await zorgVoorTechTab();
+                      if (!diag.ruimteKeuzeGemaakt) await api.post('/api/owner/ruimte/keuze', { ...techBody(), keuze: 'per_dienst' });
+                      await api.post('/api/owner/ruimte/dienst', { ...techBody(), dienst: 'ai', actie: 'verbind-gedeeld' });
+                      return tr('Службу «Підключення ШІ» увімкнено у технічному просторі (спільно з особистим).', 'Dienst «AI-koppelingen» aangezet in de technische ruimte (gedeeld met persoonlijk).');
+                    })}>
+                    {tr('Увімкнути (спільно)', 'Aanzetten (gedeeld)')}
+                  </button>
+                </>
+              ) : (
+                <small className='hub-meta' data-diagnose-wacht-op='sessie'>{tr('Спочатку запустіть технічний сеанс (крок 1), щоб увімкнути службу.', 'Start eerst de technische sessie (stap 1) om de dienst aan te zetten.')}</small>
+              )}
+            </div>
+          </li>
+        ) : null}
+
+        {/* 4. Ondertekend AI-beleid (keten.json op admin/ai) */}
+        {diag.eigenaar || beleidBlokkeert || diag.aiPolicyState !== 'niet-ingesteld' ? (
+          <li className='ag-diagnose-rij' data-diagnose-laag='beleid' data-diagnose-staat={beleidBlokkeert ? diag.aiPolicyState : 'ok'}>
+            <div className='ag-diagnose-info'>
+              <div className='ag-diagnose-titel'>
+                <b>{tr('4. Підписана політика-стеля «Доступ ШІ»', '4. Ondertekend beleidsplafond «AI-toegang»')}</b>
+                {!beleidBlokkeert ? (
+                  <span className='ag-badge ag-ok'>
+                    <Check size={12} aria-hidden='true' />
+                    {diag.aiPolicyState === 'niet-ingesteld' ? tr('Не обмежує', 'Beperkt niet') : tr('Дозволяє', 'Staat toe')}
+                  </span>
+                ) : (
+                  <span className='ag-badge ag-warn'>
+                    <AlertTriangle size={12} aria-hidden='true' />
+                    {tr(`Приховано інструментів: ${diag.aiPolicyBlockedCount}`, `Verborgen hulpmiddelen: ${diag.aiPolicyBlockedCount}`)}
+                  </span>
+                )}
+              </div>
+              <small className='hub-meta'>
+                {diag.aiPolicyState === 'ongeldig'
+                  ? WEIGER_UITLEG.BELEID_ONGELDIG[taal]
+                  : diag.aiPolicyState === 'agent-onbekend'
+                    ? WEIGER_UITLEG.BELEID_AGENT_ONBEKEND[taal]
+                    : diag.aiPolicyState === 'agent-uit'
+                      ? WEIGER_UITLEG.BELEID_AGENT_UIT[taal]
+                      : diag.aiPolicyState === 'verlopen'
+                        ? WEIGER_UITLEG.BELEID_VERLOPEN[taal]
+                        : beleidBlokkeert
+                          ? WEIGER_UITLEG.BELEID_UIT[taal]
+                          : tr('Підписана політика власника не блокує вибрані інструменти цього агента.', 'Het ondertekende beleid van de eigenaar blokkeert de gekozen hulpmiddelen van deze agent niet.')}
+              </small>
+            </div>
+            <div className='ag-diagnose-acties'>
+              <a className={`ag-knop${beleidBlokkeert ? ' ag-knop-primary' : ''}`} href={adminAiHref} data-diagnose-actie='open_ai_beleid'>
+                {beleidBlokkeert
+                  ? (diag.aiPolicyState === 'agent-onbekend'
+                      ? tr(`Додати ${naam} у «Доступ ШІ»`, `${naam} toevoegen in «AI-toegang»`)
+                      : diag.aiPolicyState === 'verlopen'
+                        ? tr('Подовжити в «Доступ ШІ»', 'Verlengen in «AI-toegang»')
+                        : tr('Відкрити «Доступ ШІ» (admin)', 'Open «AI-toegang» (admin)'))
+                  : tr('Політика (admin)', 'Beleid (admin)')}
+                <ExternalLink size={13} aria-hidden='true' />
+              </a>
+            </div>
+          </li>
+        ) : null}
+
+        {/* 5. Wachtende uitbreiding van rechten in voorkeur */}
+        {diag.pendingExpansion.wacht ? (
+          <li className='ag-diagnose-rij' data-diagnose-laag='voorkeur' data-diagnose-staat='wacht'>
+            <div className='ag-diagnose-info'>
+              <div className='ag-diagnose-titel'>
+                <b>{tr('Чернетка нових дозволів', 'Wachtende nieuwe rechten')}</b>
+                <span className='ag-badge ag-warn'>+{diag.pendingExpansion.toegevoegdAantal}</span>
+              </div>
+              <small className='hub-meta'>{WEIGER_UITLEG.VOORKEUR_WACHT_TOEPASSEN[taal]}</small>
+            </div>
+            <div className='ag-diagnose-acties'>
+              <button type='button' className='ag-knop ag-knop-primary' disabled={!!bezig} data-diagnose-actie='pas_voorkeur_toe'
+                onClick={() => void voerActieUit('voorkeur-toe', async () => {
+                  const r = await api.post('/api/owner/connector-v2/toepassen', { ...sessionBody(), agent: slug });
+                  return tr(
+                    `Збережені дозволи застосовано до активного підключення (${r.data?.bijgewerkt ?? 1}) без розриву сесії.`,
+                    `Opgeslagen rechten toegepast op de actieve koppeling (${r.data?.bijgewerkt ?? 1}) zonder verbreken.`,
+                  );
+                })}>
+                <Zap size={14} aria-hidden='true' />{tr('Застосувати зараз', 'Nu toepassen')}
+              </button>
+            </div>
+          </li>
+        ) : null}
+
+        {/* 6. Aanvullende filters: GitHub / site-schakelaars / hulpmiddelmodi */}
+        {diag.githubBlockedCount > 0 ? (
+          <li className='ag-diagnose-rij' data-diagnose-laag='github' data-diagnose-staat='uit'>
+            <div className='ag-diagnose-info'>
+              <div className='ag-diagnose-titel'>
+                <b>GitHub</b>
+                <span className='ag-badge ag-warn'>{tr(`Приховано: ${diag.githubBlockedCount}`, `Verborgen: ${diag.githubBlockedCount}`)}</span>
+              </div>
+              <small className='hub-meta'>{WEIGER_UITLEG.GITHUB_NIET_GEKOPPELD[taal]}</small>
+            </div>
+            <div className='ag-diagnose-acties'>
+              <a className='ag-knop' href={githubHref} data-diagnose-actie='koppel_github'>
+                {tr('Підключити GitHub', 'GitHub koppelen')} <ExternalLink size={13} aria-hidden='true' />
+              </a>
+            </div>
+          </li>
+        ) : null}
+
+        {diag.siteSwitchBlockedCount > 0 || diag.toolModeBlockedCount > 0 ? (
+          <li className='ag-diagnose-rij' data-diagnose-laag='schakelaar' data-diagnose-staat='uit'>
+            <div className='ag-diagnose-info'>
+              <div className='ag-diagnose-titel'>
+                <b>{tr('Перемикачі доступів і режими інструментів', 'Toegangsschakelaars en hulpmiddelmodi')}</b>
+                <span className='ag-badge ag-warn'>{tr(`Приховано: ${diag.siteSwitchBlockedCount + diag.toolModeBlockedCount}`, `Verborgen: ${diag.siteSwitchBlockedCount + diag.toolModeBlockedCount}`)}</span>
+              </div>
+              <small className='hub-meta'>
+                {diag.siteSwitchBlockedCount > 0 ? WEIGER_UITLEG.SITE_SCHAKELAAR_UIT[taal] : WEIGER_UITLEG.HULPMIDDEL_MODUS_UIT[taal]}
+              </small>
+            </div>
+            <div className='ag-diagnose-acties'>
+              <a className='ag-knop' href='#toegang' data-diagnose-actie='open_ai_schakelaars'>{tr('Відкрити «Доступи»', 'Open «Toegang»')}</a>
+            </div>
+          </li>
+        ) : null}
+      </ul>
+    </div>
+  );
+}
+
 export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSlug; terug: () => void }) {
   // De open rij is PLAATSELIJK: het adres (#agent/<slug>) wijst de agent aan, niet een geopende rij — anders zou het openen van
   // een tokenrij de slug uit de hash duwen en de pagina kwijtraken.
@@ -62,26 +440,36 @@ export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSl
   const [versie, setVersie] = useState(0);
   const tok = useDeurTokens();
   const acties = useActies(tr);
+  const tech = useTech();
+  const ruimtes = useRuimtes();
+  const tabTechAan = techActief(tech) || (!!ruimtes.status?.sessie && ruimtes.status.actief === 'technisch' && !ruimtes.status.pauze);
 
   const laad = useCallback(async () => {
     try { setData((await api.post('/api/owner/connector-v2/overzicht', sessionBody())).data as Data); setFout(null); }
     catch (e) { setFout(e); }
   }, []);
   useEffect(() => { void laad(); }, [laad]);
+  // Wanneer het technische startvenster of de ruimtewissel sluit/verandert, direct de serverdiagnose herladen zonder paginaherladen.
+  useEffect(() => {
+    if (tech.geladen || ruimtes.geladen) void laad();
+  }, [tech.activatie?.id, tech.activatie?.eind, ruimtes.status?.actief, ruimtes.status?.pauze, ruimtes.status?.sessie?.eindTijd, laad]); // eslint-disable-line react-hooks/exhaustive-deps
   const naWijziging = useCallback(async () => { await Promise.all([laad(), tok.laad()]); setVersie((v) => v + 1); }, [laad, tok.laad]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stand = useMemo(() => (data?.agenten ?? []).find((a) => a.slug === slug) ?? null, [data, slug]);
+  const diag = stand?.diagnose ?? null;
   // De WARE stand (shared/connector-v2/stand.ts): v2 + oud /mcp + serverdeur. `null` zolang de server niet antwoordde (geen
   // «не підключено» beweren wat we niet weten).
   const ware = stand ? standVanAgent(stand) : null;
   const rijen = useMemo(() => (stand ? rijenVan(stand) : []), [stand]);
   const poort = data?.poort ?? null;
-  const ruimteNu = poort?.ruimte ?? 'prive';
+  // MCP-ACCESS-001: gebruik de werkelijke effectieve technische toegang van DEZE agent (inclusief per-verbinding delegatie en beleid),
+  // met terugval op de algemene poort zolang diagnose nog niet aanwezig is.
+  const ruimteNu = diag ? (diag.effectiveTechnicalAccess ? 'technisch' : 'prive') : (poort?.ruimte ?? 'prive');
   // Toegestane kanten (actieve koppeling, anders de onthouden keuze) en welke daarvan NU bestaan.
   const keuze = stand?.actief ?? stand?.voorkeur ?? null;
   const kanten: Kant[] = keuze?.kanten ?? ['gebruiker'];
   const levend = levendeKanten(kanten, ruimteNu);
-  const hulpmiddelenNu = keuze ? zichtbareSleutels(keuze.sleutels, kanten, ruimteNu).length : 0;
+  const hulpmiddelenNu = diag ? diag.effectiveVisibleToolsCount : (keuze ? zichtbareSleutels(keuze.sleutels, kanten, ruimteNu).length : 0);
   // Tokens van DEZE agent: de naam van een token is de klant waarvoor het is uitgegeven (AiVerbinden stuurt `klant` mee).
   const nu = Date.now();
   // Dezelfde naamregel als de markering in het tabblad en de logo's (shared/markering-agenten.ts), zodat «ChatGPT», «gpt» en
@@ -114,6 +502,19 @@ export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSl
         </div>
       </div>
       {fout ? <p className='ag-melding ag-melding-fout' role='alert'>{foutTekst(fout, tr, ['Не вдалося завантажити дані агента', 'Gegevens van de agent laden mislukt'])}</p> : null}
+      {diag && diag.connectionGranted.verbonden && diag.denialCode ? (
+        <div className='ag-melding ag-diagnose-snel' role='status' data-agent-snel-diagnose={diag.denialCode}>
+          <AlertTriangle size={16} aria-hidden='true' />
+          <span>
+            <b>{tr(`Зараз ${info.naam} бачить ${diag.effectiveVisibleToolsCount} із ${diag.connectionGranted.totaal} наданих інструментів.`, `Nu ziet ${info.naam} ${diag.effectiveVisibleToolsCount} van ${diag.connectionGranted.totaal} toegekende hulpmiddelen.`)}</b>{' '}
+            {WEIGER_UITLEG[diag.denialCode][uk ? 'uk' : 'nl']}
+          </span>
+          <a className='ag-knop ag-knop-primary' href={`#ag-agent-gereedheid-${slug}`}
+            onClick={(e) => { e.preventDefault(); document.getElementById(`ag-agent-gereedheid-${slug}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}>
+            {tr('Відкрити дії нижче', 'Acties hieronder openen')}
+          </a>
+        </div>
+      ) : null}
 
       {/* 1: підключити — de grote knop en de stappen voor juist deze client, en de ware stand. */}
       <section className='ag-kaart ag-agent-verbinden' data-agent-sectie='verbinding' aria-labelledby={`ag-agent-verbinding-${slug}`}>
@@ -178,7 +579,15 @@ export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSl
         </ul>
         <p className='hub-meta'>{tr(`Зараз для ${info.naam} дозволено: ${kanten.map((k) => KANT_TEKST[k].uk).join(', ')}; діє: ${levend.map((k) => KANT_TEKST[k].uk).join(', ')}. Технічні інструменти існують лише поки активний ваш технічний профіль і дія «Підключення ШІ» увімкнена в технічному просторі — незалежно від того, що відмічено.`,
           `Nu toegestaan voor ${info.naam}: ${kanten.map((k) => KANT_TEKST[k].nl).join(', ')}; actief: ${levend.map((k) => KANT_TEKST[k].nl).join(', ')}. Technische hulpmiddelen bestaan alleen zolang uw technisch profiel actief is en «AI-koppelingen» in de technische ruimte aan staat — wat er ook is aangevinkt.`)}</p>
-        {poort?.code ? <p className='hub-meta' data-agent-poort-code={poort.code}>{tr(`Причина, чому технічна сторона зараз не діє: ${poort.code}.`, `Waarom de technische kant nu niet actief is: ${poort.code}.`)}</p> : null}
+        {(diag?.denialCode ?? poort?.code) ? (
+          <p className='hub-meta' data-agent-poort-code={diag?.denialCode ?? poort?.code ?? undefined}>
+            {tr(`Причина обмеження зараз: ${diag?.denialCode ?? poort?.code}.`, `Reden van huidige beperking: ${diag?.denialCode ?? poort?.code}.`)}{' '}
+            {diag?.denialCode ? WEIGER_UITLEG[diag.denialCode][uk ? 'uk' : 'nl'] : ''}
+          </p>
+        ) : null}
+        {diag ? (
+          <AgentToegangGereedheid tr={tr} uk={uk} slug={slug} naam={info.naam} diag={diag} kanten={kanten} tabTechAan={tabTechAan} naWijziging={naWijziging} />
+        ) : null}
       </section>
 
       {/* 4: спосіб зв'язку (прямий токен) і токени саме цього агента — ingeklapt: waar OAuth bestaat is dit de oude weg. */}

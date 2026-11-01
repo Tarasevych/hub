@@ -313,8 +313,8 @@ export async function main(): Promise<number> {
     };
 
     // Activeer technisch profiel vanuit Chrome zelf (zodat ook _beheer en admin/ai werken)
-    await cdp.send('Page.navigate', { url: 'https://mcp.tarasevych.com/' }, s);
-    await wachtOp('mcp startpagina geladen', `document.readyState === 'complete'`);
+    await cdp.send('Page.navigate', { url: 'https://mcp.tarasevych.com/agents' }, s);
+    await wachtOp('mcp agentspagina geladen', `Boolean(document.querySelector('[data-ag-tab]'))`);
     const techStatus = await evalJs<number>(`(async () => (await fetch('/api/owner/tech/activeren', {
       method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ service: 'mcp', tabContext: ${JSON.stringify(tab)}, sourceOrigin: location.origin, minuten: 30, reden: 'Chrome lokale verificatie MCP-001' }),

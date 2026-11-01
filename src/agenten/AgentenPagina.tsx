@@ -10,7 +10,7 @@
 // #dev:<id>, #extension, #apparaten/extensie, #extensie/…, #verbindingen, #dostupy) worden omgezet; een querydeel in de hash
 // (#extensie?koppel=prive) blijft gelden. Eén poller voor apparaten/wachtende acties; de rest bij openen, na een actie en rustig.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
-import { Activity, ArrowRight, GitMerge, Globe, KeyRound, LayoutDashboard, ListChecks, Monitor, Network, Plug, Puzzle, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, GitMerge, Globe, KeyRound, LayoutDashboard, ListChecks, Monitor, Network, Plug, Puzzle, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
 import { useAgentsData, useToolApprovals } from '../agenten-gegevens';
 import type { Tr } from '../mcp-ui';
 import { PairCard, PendingList } from '../ApparatenWeergave';
@@ -40,7 +40,8 @@ import { combineer, useExtensieLiveToestand, type ExtensieLive } from '../extens
 import { ADMIN_HOSTS_TOEGESTAAN, PRIVE_HOSTS } from '../../shared/extensie-ontgrendeling';
 import { RECHT_UITLEG, foutTekst, isRechtFout } from './fouten';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
-import { isAgentSlug, V2_AGENTEN, type AgentSlug } from '../../shared/connector-v2/agenten';
+import { isAgentSlug, v2Agent, V2_AGENTEN, type AgentSlug } from '../../shared/connector-v2/agenten';
+import { WEIGER_UITLEG } from '../../shared/ai-toegang-diagnose';
 import AgentPagina from './AgentPagina';
 import BevestigingenPaneel from '../ai-bevestiging/BevestigingenPaneel';
 import AgentLogo from './AgentLogo';
@@ -169,6 +170,15 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     for (const a of v2.data?.agenten ?? []) m.set(a.slug, standVan({ v2: a.koppelingen.length, erfenis: a.erfenis?.length ?? 0, deur: a.deur === null ? null : (a.deur?.length ?? 0), wacht: !!a.voorkeur?.herverbinden }));
     return m;
   }, [v2.data]);
+  const geblokkeerdeAgenten = useMemo(() => (v2.data?.agenten ?? []).filter((a) => {
+    const d = a.diagnose;
+    if (!d || !d.connectionGranted.verbonden || !d.denialCode) return false;
+    return (
+      (d.connectionGranted.kanten.includes('beheer') && !d.effectiveTechnicalAccess)
+      || d.pendingExpansion.wacht
+      || (d.aiPolicyBlockedCount > 0 && d.effectiveGebruikerVisibleCount <= 1)
+    );
+  }), [v2.data]);
   const nu = Date.now();
   const oauthActief = (overzicht?.oauth ?? []).filter((g) => g.status === 'active').length;
   const tokensActief = (tokens ?? []).filter((t) => !t.revokedAt && (isoMs(t.expiresAt) ?? 0) > nu).length;
@@ -301,6 +311,32 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
 
       <section id='ag-paneel' className='ag-paneel' aria-label={tr('Розділи підключення ШІ', 'Onderdelen van AI-koppelingen')}>
         {laadFout ? <p className='ag-melding ag-melding-fout' role='alert' data-ag-melding='laden'>{foutTekst(laadFout, tr, ['Не всі дані вдалося завантажити', 'Niet alle gegevens konden worden geladen'])}</p> : null}
+        {plek.tab !== 'agent' && geblokkeerdeAgenten.length > 0 ? (
+          <section className='ag-kaart ag-waarschuwing ag-blokkade-banner' role='status' data-ag-blokkade-banner={geblokkeerdeAgenten.length}>
+            <div className='ag-kaart-kop'>
+              <h3><AlertTriangle size={16} aria-hidden='true' /> {tr('Підключені ШІ зараз бачать не всі надані інструменти', 'Gekoppelde AI-agents zien nu niet alle toegekende hulpmiddelen')}</h3>
+            </div>
+            <ul className='ag-blokkade-lijst'>
+              {geblokkeerdeAgenten.map((a) => {
+                const d = a.diagnose!;
+                const code = d.denialCode!;
+                const ukTaal = tr('uk', 'nl') === 'uk';
+                return (
+                  <li key={a.slug} data-ag-blokkade-agent={a.slug} data-ag-blokkade-code={code}>
+                    <div className='ag-blokkade-tekst'>
+                      <b>{v2Agent(a.slug).naam}</b>{' '}
+                      <small className='hub-meta'>({tr(`доступно зараз: ${d.effectiveVisibleToolsCount} із ${d.connectionGranted.totaal}`, `nu beschikbaar: ${d.effectiveVisibleToolsCount} van ${d.connectionGranted.totaal}`)})</small>
+                      <span> — {WEIGER_UITLEG[code][ukTaal ? 'uk' : 'nl']}</span>
+                    </div>
+                    <button type='button' className='ag-knop ag-knop-primary' data-ag-blokkade-open={a.slug} onClick={() => ga('agent', a.slug)}>
+                      {tr(`Керувати ${v2Agent(a.slug).naam}`, `${v2Agent(a.slug).naam} openen`)} <ArrowRight size={14} aria-hidden='true' />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ) : null}
         {plek.tab === 'agent' ? (agentUitPlek(plek.tab, plek.item)
           ? <AgentPagina tr={tr} slug={agentUitPlek(plek.tab, plek.item)!} terug={() => ga('connectors')} />
           : <ConnectorsTab tr={tr} />) : (

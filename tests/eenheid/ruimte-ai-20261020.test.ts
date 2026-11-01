@@ -231,9 +231,9 @@ export async function main(): Promise<number> {
     // ---------------------------------------------------------------- 7. niemand gaat eromheen
     const poortBron = lees('backend/ai-ruimte-poort.ts');
     check('7. de connector rekent nergens meer zelf: levendeRuimte en technischNuGeldig lopen allebei via aiPoortNu',
-      /levendeRuimte = async \(who: Koppeling\): Promise<AiRuimte> => \(await aiPoortNu\(who\.userId\)\)\.ruimte/.test(lees('backend/connector-v2.ts'))
+      /levendeRuimte = async \(who: Koppeling\): Promise<AiRuimte> => \(await aiPoortNu\(who\.userId(?:,\s*\{[^}]*\})?\)\)\.ruimte/.test(lees('backend/connector-v2.ts'))
       && !/effectieveRuimteVeilig/.test(lees('backend/connector-v2.ts'))
-      && /return \(await aiPoortNu\(who\.userId\)\)\.ruimte === 'technisch'/.test(lees('backend/mcp-connector.ts'))
+      && /return \(await aiPoortNu\(who\.userId(?:,\s*\{[^}]*\})?\)\)\.ruimte === 'technisch'/.test(lees('backend/mcp-connector.ts'))
       && !/effectieveRuimteVeilig/.test(lees('backend/mcp-connector.ts')));
     check('7b. de apparaten en de externe MCP-servers volgen de LADE, en die komt alleen uit aiPoortNu',
       /huidigeLade\(\)/.test(lees('backend/connectors-hulpmiddelen.ts'))

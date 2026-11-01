@@ -237,9 +237,9 @@ async function isEigenaarNu(userId: string): Promise<Persoon | null> {
  * Bij het UITVOEREN opnieuw de levende poort (backend/ai-ruimte-poort.ts → aiPoortNu): nog eigenaar, technisch profiel NU actief en de
  * dienst «ai» aan. Een verzoek dat werd gemaakt terwijl het profiel aan stond, wordt dus niet meer uitgevoerd als het intussen uit is.
  */
-async function technischNu(userId: string): Promise<string | null> {
+async function technischNu(userId: string, tabContext?: string | null): Promise<string | null> {
   if (!(await isEigenaarNu(userId))) return 'OWNER_REQUIRED';
-  return (await aiPoortNu(userId)).ruimte === 'technisch' ? null : 'TECH_PROFILE_OFF';
+  return (await aiPoortNu(userId, tabContext ? { tabContext } : {})).ruimte === 'technisch' ? null : 'TECH_PROFILE_OFF';
 }
 
 /**
@@ -318,9 +318,9 @@ registreerBevestigSoort<GebruikerParams>({
   voerUit: async (ctx) => {
     const p = ctx.params;
     if (ctx.ruimte !== 'technisch') return { ok: false, fout: 'TECH_RUIMTE_VEREIST' };
-    const poort = await technischNu(ctx.userId);
-    if (poort) return { ok: false, fout: poort };
     const wie = await bevestigerVan(ctx);
+    const poort = await technischNu(ctx.userId, wie.tab || null);
+    if (poort) return { ok: false, fout: poort };
     if (!wie.passkey) return { ok: false, fout: 'PASSKEY_VEREIST' };
     // Opnieuw uit de database, op het moment van uitvoeren: de eigenaar (en wie er ooit eigenaar werd) is nooit een doel.
     const doel = (await personen([p.doelId])).get(p.doelId);
@@ -448,10 +448,10 @@ registreerBevestigSoort<VlagParams>({
   voerUit: async (ctx) => {
     const p = ctx.params;
     if (ctx.ruimte !== 'technisch') return { ok: false, fout: 'TECH_RUIMTE_VEREIST' };
-    const poort = await technischNu(ctx.userId);
+    const wie = await bevestigerVan(ctx);
+    const poort = await technischNu(ctx.userId, wie.tab || null);
     const eigenaar = await isEigenaarNu(ctx.userId);
     if (poort || !eigenaar) return { ok: false, fout: poort || 'OWNER_REQUIRED' };
-    const wie = await bevestigerVan(ctx);
     // Dezelfde functie als het venster «Прапорці», in het tabblad van de mens die bevestigde: zijn technische rechten (diensten.beheren) NU.
     if (!wie.tab) return { ok: false, fout: 'TECH_TABBLAD_VEREIST' };
     if (!uitvoerders) return { ok: false, fout: 'BEHEER_NIET_GEREED' };
