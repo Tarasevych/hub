@@ -5,18 +5,17 @@
 //  - een getoonde waarde staat alleen in het geheugen van deze pagina en verdwijnt na 30 s, bij een andere tab of bij sluiten;
 //  - tonen, vervangen en verwijderen worden met wie/wanneer/hoe vastgelegd in het auditlogboek (nooit de waarde).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, CalendarClock, Check, Dices, ClipboardCopy, Eye, EyeOff, History, Info, KeyRound, Lock, Plus, RefreshCw, Replace, Search, ShieldCheck, Trash2, X } from 'lucide-react';
+import { AlertTriangle, CalendarClock, Check, ClipboardCopy, Eye, EyeOff, History, Info, KeyRound, Lock, Plus, RefreshCw, Replace, Search, ShieldCheck, Trash2, X } from 'lucide-react';
 import { api } from '../platform/client';
 import { Venster } from '../platform/vensters';
-import { VaultMetaBewerker, VaultMetaRegel, VaultMetaVelden } from '../KluisMeta';
-import { leegMeta, vandaag, type VaultMeta } from '../../shared/kluis-meta';
-import { ACTIE_NAAM, BRON_NAAM, DIENSTEN, DOEL_INFO, GEHEIM_GROEPEN, GROEP_NAAM, STAAT_NAAM, VAULT_DOELEN, type Geheim, type GeheimActie, type GeheimGebeurtenis, type GeheimGroep, type VaultDoel } from '../../shared/geheimen';
+import { VaultMetaBewerker, VaultMetaRegel } from '../KluisMeta';
+import { ACTIE_NAAM, BRON_NAAM, DIENSTEN, DOEL_INFO, GEHEIM_GROEPEN, GROEP_NAAM, STAAT_NAAM, VAULT_DOELEN, isVaultDoel, type Geheim, type GeheimActie, type GeheimGebeurtenis, type GeheimGroep, type VaultDoel } from '../../shared/geheimen';
 import { DienstLogo, GROEP_ICOON } from './logos';
 import { Avatar, Historie } from './Historie';
-import { genereerGeheim, aandacht, datum, datumTijd, filterGeheimen, filterJournaal, foutTekst, geleden, groepeer, kies, laatstePerNaam, sorteerGeheimen, standaardFilters, standaardJournaal, telStanden, tr, type Filters, type JournaalFilter, type Lang } from './hulp';
+import { aandacht, datum, datumTijd, filterGeheimen, filterJournaal, foutTekst, geleden, groepeer, kies, laatstePerNaam, sorteerGeheimen, standaardFilters, standaardJournaal, telStanden, tr, type Filters, type JournaalFilter, type Lang } from './hulp';
+// Invoer en rotatie lopen via het canonieke GeheimFormulier (met GeheimInvoer soort='kluis' en verborgen).
+import { GeheimFormulier } from './GeheimFormulier';
 import './geheimen.css';
-import HulpVraag from '../hulp/HulpVraag';
-import GeheimInvoer from '../geheim/GeheimInvoer';
 
 type Props = { lang: Lang; sourceOrigin: string; tabContext: string };
 type Bericht = { soort: 'ok' | 'fout' | 'info'; tekst: string } | null;
@@ -43,8 +42,8 @@ export default function Geheimen({ lang, sourceOrigin, tabContext }: Props) {
   const [getoond, setGetoond] = useState<{ id: string; waarde: string; tot: number } | null>(null);
   const [nu, setNu] = useState(Date.now());
   const [gekopieerd, setGekopieerd] = useState('');
-  const [toevoegen, setToevoegen] = useState<{ naam: string; doel: VaultDoel; waarde: string; meta: VaultMeta } | null>(null);
-  const [vervangen, setVervangen] = useState<{ item: Geheim; waarde: string } | null>(null);
+  const [toevoegen, setToevoegen] = useState<{ doel: VaultDoel } | null>(null);
+  const [vervangen, setVervangen] = useState<{ item: Geheim } | null>(null);
   const [verwijderen, setVerwijderen] = useState<{ item: Geheim; typed: string } | null>(null);
   const timer = useRef<number>(0);
 
@@ -116,17 +115,6 @@ export default function Geheimen({ lang, sourceOrigin, tabContext }: Props) {
     catch { melding('fout', tr(lang, 'Браузер не дозволив копіювання.', 'De browser stond kopiëren niet toe.')); }
   };
 
-  const bewaar = async (opties: { id?: string; naam: string; doel: VaultDoel; waarde: string; meta?: VaultMeta }) => {
-    setBezig('opslaan');
-    try {
-      await api.post('/api/owner/api-platform/vault/save', { ...context, id: opties.id, name: opties.naam, purpose: opties.doel, usedBy: opties.doel, value: opties.waarde, ...(opties.meta ? { meta: opties.meta } : {}) });
-      setToevoegen(null); setVervangen(null); verberg();
-      await laad();
-      melding('ok', opties.id ? tr(lang, 'Значення замінено й зашифровано. Дію записано в журнал.', 'Waarde vervangen en versleuteld. De actie is gelogd.') : tr(lang, 'Секрет додано й зашифровано. Дію записано в журнал.', 'Geheim toegevoegd en versleuteld. De actie is gelogd.'));
-    } catch (e) { melding('fout', tr(lang, 'Не вдалося зберегти: ', 'Opslaan mislukt: ') + foutTekst(apiFout(e), lang)); }
-    setBezig('');
-  };
-
   const verwijder = async (g: Geheim) => {
     setBezig('verwijder');
     try {
@@ -182,7 +170,7 @@ export default function Geheimen({ lang, sourceOrigin, tabContext }: Props) {
               {isGetoond ? <EyeOff aria-hidden='true' /> : <Eye aria-hidden='true' />}{isGetoond ? tr(lang, 'Сховати', 'Verbergen') : tr(lang, 'Показати', 'Tonen')}
             </button>
             {isGetoond ? <button type='button' className='gm-knop' onClick={() => void kopieer(g)}>{gekopieerd === g.id ? <Check aria-hidden='true' /> : <ClipboardCopy aria-hidden='true' />}{gekopieerd === g.id ? tr(lang, 'Скопійовано', 'Gekopieerd') : tr(lang, 'Копіювати', 'Kopiëren')}</button> : null}
-            <button type='button' className='gm-knop' data-gm-vervang={g.naam} disabled={!!bezig || !g.kanWijzigen} onClick={() => setVervangen({ item: g, waarde: '' })}><Replace aria-hidden='true' />{tr(lang, 'Замінити', 'Vervangen')}</button>
+            <button type='button' className='gm-knop' data-gm-vervang={g.naam} disabled={!!bezig || !g.kanWijzigen} onClick={() => setVervangen({ item: g })}><Replace aria-hidden='true' />{tr(lang, 'Замінити', 'Vervangen')}</button>
             <button type='button' className='gm-knop is-gevaar' data-gm-verwijder={g.naam} disabled={!!bezig} onClick={() => setVerwijderen({ item: g, typed: '' })}><Trash2 aria-hidden='true' />{tr(lang, 'Видалити', 'Verwijderen')}</button>
           </> : null}
           <button type='button' className='gm-knop' onClick={() => void openDetail(g)}><History aria-hidden='true' />{tr(lang, 'Історія', 'Geschiedenis')}</button>
@@ -205,7 +193,7 @@ export default function Geheimen({ lang, sourceOrigin, tabContext }: Props) {
         </div>
         <div className='gm-kop-acties'>
           <button type='button' className='gm-knop' onClick={() => void laad()} disabled={laden}><RefreshCw className={laden ? 'spin' : undefined} aria-hidden='true' />{tr(lang, 'Оновити', 'Vernieuwen')}</button>
-          <button type='button' className='gm-knop is-primair' data-gm-toevoegen onClick={() => setToevoegen({ naam: '', doel: 'other', waarde: '', meta: { ...leegMeta(), geldigVan: vandaag() } })} disabled={!vaultKlaar}><Plus aria-hidden='true' />{tr(lang, 'Додати секрет', 'Geheim toevoegen')}</button>
+          <button type='button' className='gm-knop is-primair' data-gm-toevoegen onClick={() => setToevoegen({ doel: 'github' })} disabled={!vaultKlaar}><Plus aria-hidden='true' />{tr(lang, 'Додати секрет', 'Geheim toevoegen')}</button>
         </div>
       </header>
 
@@ -293,29 +281,45 @@ export default function Geheimen({ lang, sourceOrigin, tabContext }: Props) {
       ) : null}
 
       {toevoegen ? (
-        <Venster id='gm-toevoegen' titel={tr(lang, 'Додати секрет', 'Geheim toevoegen')} breedte={600} lang={lang} onSluit={() => setToevoegen(null)} className='gm-venster'>
-          <form className='gm-formulier' data-gm-formulier='toevoegen' onSubmit={(e) => { e.preventDefault(); if (toevoegen.naam.trim() && toevoegen.waarde) void bewaar({ naam: toevoegen.naam.trim(), doel: toevoegen.doel, waarde: toevoegen.waarde, meta: toevoegen.meta }); }}>
-            <label>{tr(lang, 'Назва', 'Naam')}<input value={toevoegen.naam} onChange={(e) => setToevoegen({ ...toevoegen, naam: e.target.value })} autoComplete='off' placeholder='HOME_ASSISTANT_TOKEN' required /></label>
-            <label>{tr(lang, 'Сервіс / призначення', 'Dienst / doel')} <HulpVraag k='geheimen.doel' lang={lang} />
-              <select data-hulp='geheimen.doel' value={toevoegen.doel} onChange={(e) => setToevoegen({ ...toevoegen, doel: e.target.value as VaultDoel })}>{VAULT_DOELEN.map((d) => <option key={d} value={d}>{kies(lang, DOEL_INFO[d].naam)} — {kies(lang, GROEP_NAAM[DOEL_INFO[d].groep])}</option>)}</select>
-            </label>
-            <label>{tr(lang, 'Значення', 'Waarde')}<GeheimInvoer lang={lang} value={toevoegen.waarde} onChange={(waarde) => setToevoegen({ ...toevoegen, waarde })} rijen={3} autoComplete='off' spellCheck={false} required max={8192} soort='kluis' verborgen /></label>
-            <button type='button' className='gm-knop gm-genereer' data-gm-genereer onClick={() => setToevoegen({ ...toevoegen, waarde: genereerGeheim() })}><Dices aria-hidden='true' />{tr(lang, 'Згенерувати надійне значення', 'Sterke waarde genereren')}</button>
-            <VaultMetaVelden lang={lang} waarde={toevoegen.meta} onChange={(meta) => setToevoegen({ ...toevoegen, meta })} />
-            <p className='gm-klein'><Lock aria-hidden='true' />{tr(lang, 'Для збереження потрібне підтвердження passkey або кодом. Значення шифрується (AES-256-GCM) і більше не показується без підтвердження.', 'Opslaan vraagt een bevestiging met passkey of code. De waarde wordt versleuteld (AES-256-GCM) en niet meer getoond zonder bevestiging.')}</p>
-            <div className='gm-formulier-acties'><button type='button' className='gm-knop' onClick={() => setToevoegen(null)}>{tr(lang, 'Скасувати', 'Annuleren')}</button><button type='submit' className='gm-knop is-primair' disabled={!!bezig || !toevoegen.naam.trim() || !toevoegen.waarde}>{bezig === 'opslaan' ? <RefreshCw className='spin' aria-hidden='true' /> : <Lock aria-hidden='true' />}{tr(lang, 'Зберегти зашифровано', 'Versleuteld opslaan')}</button></div>
-          </form>
+        <Venster id='gm-toevoegen' titel={tr(lang, 'Додати секрет', 'Geheim toevoegen')} breedte={620} lang={lang} onSluit={() => setToevoegen(null)} className='gm-venster'>
+          <GeheimFormulier
+            lang={lang}
+            beginDoel={toevoegen.doel}
+            vaultKlaar={vaultKlaar}
+            context={context}
+            formulierNaam='toevoegen'
+            onAnnuleer={() => setToevoegen(null)}
+            onOpgeslagen={async ({ rotated }) => {
+              setToevoegen(null);
+              verberg();
+              await laad();
+              melding('ok', rotated ? tr(lang, 'Значення замінено й зашифровано. Дію записано в журнал.', 'Waarde vervangen en versleuteld. De actie is gelogd.') : tr(lang, 'Секрет додано й зашифровано. Дію записано в журнал.', 'Geheim toegevoegd en versleuteld. De actie is gelogd.'));
+            }}
+          />
         </Venster>
       ) : null}
 
       {vervangen ? (
-        <Venster id='gm-vervangen' titel={`${tr(lang, 'Замінити значення', 'Waarde vervangen')}: ${vervangen.item.naam}`} breedte={560} lang={lang} onSluit={() => setVervangen(null)} className='gm-venster'>
-          <form className='gm-formulier' data-gm-formulier='vervangen' onSubmit={(e) => { e.preventDefault(); if (vervangen.waarde) void bewaar({ id: vaultId(vervangen.item), naam: vervangen.item.naam, doel: ((VAULT_DOELEN as readonly string[]).includes(vervangen.item.doel || '') ? vervangen.item.doel : 'other') as VaultDoel, waarde: vervangen.waarde }); }}>
-            <p className='gm-klein'><Info aria-hidden='true' />{tr(lang, 'Нове значення замінить старе. Попередження про термін для цього ключа скидаються.', 'De nieuwe waarde vervangt de oude. Meldingen over de termijn van deze sleutel worden gewist.')}</p>
-            <label>{tr(lang, 'Нове значення', 'Nieuwe waarde')}<GeheimInvoer lang={lang} value={vervangen.waarde} onChange={(waarde) => setVervangen({ ...vervangen, waarde })} rijen={4} autoComplete='off' spellCheck={false} required max={8192} soort='kluis' verborgen /></label>
-            <button type='button' className='gm-knop gm-genereer' data-gm-genereer onClick={() => setVervangen({ ...vervangen, waarde: genereerGeheim() })}><Dices aria-hidden='true' />{tr(lang, 'Ротація: згенерувати нове значення', 'Rotatie: nieuwe waarde genereren')}</button>
-            <div className='gm-formulier-acties'><button type='button' className='gm-knop' onClick={() => setVervangen(null)}>{tr(lang, 'Скасувати', 'Annuleren')}</button><button type='submit' className='gm-knop is-primair' disabled={!!bezig || !vervangen.waarde}>{bezig === 'opslaan' ? <RefreshCw className='spin' aria-hidden='true' /> : <Replace aria-hidden='true' />}{tr(lang, 'Замінити', 'Vervangen')}</button></div>
-          </form>
+        <Venster id='gm-vervangen' titel={`${tr(lang, 'Замінити значення', 'Waarde vervangen')}: ${vervangen.item.naam}`} breedte={600} lang={lang} onSluit={() => setVervangen(null)} className='gm-venster'>
+          <GeheimFormulier
+            lang={lang}
+            vasteItem={{
+              id: vaultId(vervangen.item),
+              naam: vervangen.item.naam,
+              doel: isVaultDoel(vervangen.item.doel) ? vervangen.item.doel : 'other',
+              meta: vervangen.item.meta,
+            }}
+            vaultKlaar={vaultKlaar}
+            context={context}
+            formulierNaam='vervangen'
+            onAnnuleer={() => setVervangen(null)}
+            onOpgeslagen={async () => {
+              setVervangen(null);
+              verberg();
+              await laad();
+              melding('ok', tr(lang, 'Значення замінено й зашифровано. Дію записано в журнал.', 'Waarde vervangen en versleuteld. De actie is gelogd.'));
+            }}
+          />
         </Venster>
       ) : null}
 

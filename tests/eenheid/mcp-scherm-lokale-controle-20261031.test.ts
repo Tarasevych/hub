@@ -480,8 +480,8 @@ export async function main(): Promise<number> {
       && !namenNaInperken.some((n) => n.startsWith('creeren_nieuwe_taak_cursor_')),
       sse.berichten.join('').trim().slice(0, 200));
 
-    // ============================================================== 6. Herautorisatie («Перепідключити» in Chrome + nieuwe OAuth-koppeling met bewaarde voorkeur)
-    // Zet create_task:gebruiker weer aan in de UI (wordt opgeslagen als voorkeur voor herverbinden) en klik «Перепідключити»
+    // ============================================================== 6. Directe 1-actie uitbreiding (UX-AI-VAULT-001) + herautorisatie («Перепідключити» in Chrome)
+    // Zet create_task:gebruiker weer aan in de UI: 1-actie activering past de uitbreiding direct toe op het levende token én bewaart de voorkeur
     await wachtOp('create_task weer ingeschakeld en Зберегти actief', `(() => {
       const rij = document.querySelector('[data-agent-pagina="cursor"] [data-v2-optie="create_task:gebruiker"]');
       const btn = document.querySelector('[data-agent-pagina="cursor"] [data-v2-bewaar="cursor"]');
@@ -489,8 +489,14 @@ export async function main(): Promise<number> {
       return Boolean(rij?.classList.contains('is-aan')) && Boolean(btn && !btn.disabled);
     })()`);
     await evalJs(`document.querySelector('[data-agent-pagina="cursor"] [data-v2-bewaar="cursor"]')?.click()`);
-    await wachtOp('uitbreiding opgeslagen als voorkeur voor herverbinden en knop Перепідключити vrijgegeven',
-      `(document.querySelector('[data-agent-pagina="cursor"] .v2-melding')?.textContent || '').includes('після перепідключення') && ![...document.querySelectorAll('[data-agent-pagina="cursor"] .v2b-adresrij button')].find(b => /Перепідключити/.test(b.textContent || ''))?.disabled`);
+    await wachtOp('uitbreiding direct toegepast op actieve koppeling en knop Перепідключити vrijgegeven',
+      `(document.querySelector('[data-agent-pagina="cursor"] .v2-melding')?.textContent || '').includes('застосовано') && ![...document.querySelectorAll('[data-agent-pagina="cursor"] .v2b-adresrij button')].find(b => /Перепідключити/.test(b.textContent || ''))?.disabled`);
+    const lijstNaUitbreiden = JSON.parse((await httpsVerzoek(poort, 'POST', '/cursor', JSON.stringify({
+      jsonrpc: '2.0', id: 31, method: 'tools/list',
+    }), { authorization: `Bearer ${tok1.access_token}` })).body);
+    const namenNaUitbreiden: string[] = (lijstNaUitbreiden?.result?.tools ?? []).map((t: { name: string }) => t.name);
+    check('1-actie uitbreiding op #agent/cursor activeert create_task direct op het bestaande OAuth-token zonder herverbinden',
+      namenNaUitbreiden.some((n) => n.startsWith('creeren_nieuwe_taak_cursor_')), `aantal=${namenNaUitbreiden.length}`);
     await evalJs(`[...document.querySelectorAll('[data-agent-pagina="cursor"] .v2b-adresrij button')].find(b => /Перепідключити/.test(b.textContent || ''))?.click()`);
     for (let i = 0; i < 30; i++) {
       const st = (await httpsVerzoek(poort, 'POST', '/cursor', JSON.stringify({ jsonrpc: '2.0', id: 4, method: 'tools/list' }), {
@@ -562,7 +568,7 @@ export async function main(): Promise<number> {
     if (vorigeOrchWortel === undefined) delete process.env.ORCH_WORTEL; else process.env.ORCH_WORTEL = vorigeOrchWortel;
     if (vorigeOrchInbox === undefined) delete process.env.ORCH_INBOX; else process.env.ORCH_INBOX = vorigeOrchInbox;
     await slaap(400);
-    rmSync(werk, { recursive: true, force: true });
+    try { rmSync(werk, { recursive: true, force: true, maxRetries: 5, retryDelay: 150 }); } catch { /* Windows Chrome profielmap */ }
     await closePool().catch(() => undefined);
   }
   return einde();

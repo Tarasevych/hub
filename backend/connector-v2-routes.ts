@@ -10,13 +10,23 @@ import { isAgentSlug, V2_AGENTEN, type AgentSlug } from '../shared/connector-v2/
 import { V2_GROEPEN, type GroepId } from '../shared/connector-v2/catalogus';
 import { isKant, isModus } from '../shared/connector-v2/rechten';
 import { vraagtSterkeBevestiging } from '../shared/connector-v2/massa';
+import type { RuimteModus } from '../shared/ruimte-toegang';
 import * as v2 from './connector-v2';
-import { leesInstellingen, zetInstellingen } from './connector-v2-opslag';
+import { actieveKoppelingen, leesInstellingen, zetInstellingen } from './connector-v2-opslag';
+import { meldLijstGewijzigd } from './connector-v2-stroom';
+import * as rs from './ruimte-scheiding';
+import * as tp from './tech-profiel';
 import { isEigenaar } from './tech-profiel';
+import * as kern from './tech-ruimtes-kern';
 import { sterkeMethoden } from './toegang-context';
 import { weigerCode, type RechtWeigering } from './api-recht';
 
-type Auth = { user: { id: string; email: string; role: string; status: string }; service: string };
+type Auth = {
+  user: { id: string; email: string; role: string; status: string };
+  service: string;
+  session?: { id: string; createdAt: number } | null;
+  tabSession?: { id: string } | null;
+};
 type Deps = {
   respond: (data: unknown, status?: number) => any;
   fail: (message: string, status?: number) => any;
@@ -124,6 +134,104 @@ export function v2Routes(deps: Deps) {
       const ids = await v2.intrekken(r.auth.user.id, r.slug, id);
       for (const g of ids) await deps.audit(r.auth.user.id, 'owner.mcp.grant.revoked', 'success', { grantId: g, agent: r.slug, reason: 'user' });
       return deps.respond({ ok: true, ingetrokken: ids.length });
+    }],
+
+    // UX-AI-VAULT-001: 1-klik activering van technische sessie, ruimte-scheiding dienst «ai» en per-verbinding AI-delegatie
+    // rechtstreeks vanaf mcp.tarasevych.com/agenten#agent/<slug> zonder ooit HTTP 403 TECH_RUIMTE_VEREIST terug te geven.
+    'POST /api/owner/connector-v2/activeer-tech': [async (ctx: any) => {
+      const r = await metAgent(ctx);
+      if ('fout' in r) return r.fout;
+      if (!isEigenaar(r.auth.user)) return deps.fail('OWNER_REQUIRED', 403);
+      const tab = String(r.body.tabContext ?? '');
+      if (!tp.TAB_RE.test(tab)) return deps.fail('TAB_ONGELDIG', 400);
+      const actie = String(r.body.actie ?? 'alles-aan');
+      const GELDIG = new Set(['alles-aan', 'delegatie-aan', 'delegatie-uit', 'dienst-eigen', 'dienst-gedeeld', 'dienst-uit']);
+      if (!GELDIG.has(actie)) return deps.fail('ACTIE_ONBEKEND', 400);
+
+      const sessie: tp.Sessie | null = r.auth.session?.id
+        ? {
+            id: String(r.auth.session.id),
+            createdAt: Number(r.auth.session.createdAt) || 0,
+            tabSessieId: r.auth.tabSession?.id ? String(r.auth.tabSession.id) : null,
+          }
+        : null;
+      const userId = r.auth.user.id;
+      const v2Actief = await kern.v2Aan(userId);
+      const isAan = actie === 'alles-aan' || actie === 'delegatie-aan' || actie === 'dienst-eigen' || actie === 'dienst-gedeeld';
+
+      try {
+        if (isAan) {
+          const su = await deps.stepUp(ctx, r.auth);
+          if (su) return su;
+
+          if (v2Actief) {
+            await kern.zorgVoorActieveTechSessie(r.auth.user, sessie, tab, { magNieuwStarten: true, reden: `AI-toegang ${r.slug}` });
+          } else if (!(await tp.actieveActivatie(userId, tab, sessie))) {
+            await tp.activeren(r.auth.user, tab, 120, `AI-toegang ${r.slug}`, sessie);
+          }
+
+          const huidigeStand = await rs.standVan(userId, 'ai');
+          const wilDienst = actie === 'dienst-eigen' || actie === 'dienst-gedeeld' || huidigeStand === 'uit';
+          if (wilDienst) {
+            if (huidigeStand === 'bevroren') {
+              if (actie === 'dienst-eigen' || actie === 'dienst-gedeeld') return deps.fail('RUIMTE_BEVROREN', 409);
+            } else {
+              const k = await rs.keuzeVan(userId);
+              if (!k) await rs.keuzeZetten(userId, 'per_dienst', userId);
+              const naKeuze = await rs.standVan(userId, 'ai');
+              const doelActie = actie === 'dienst-gedeeld' ? 'verbind-gedeeld' : 'verbind-eigen';
+              if (actie === 'dienst-eigen' || actie === 'dienst-gedeeld' || naKeuze === 'uit') {
+                await rs.dienstZetten(userId, 'ai', doelActie, { actorId: userId, stapOpGedaan: true });
+              }
+            }
+          }
+
+          if ((actie === 'alles-aan' || actie === 'delegatie-aan') && v2Actief) {
+            const rawVid = typeof r.body.verbindingId === 'string' ? r.body.verbindingId.trim() : '';
+            const koppelingen = rawVid ? [] : await actieveKoppelingen(userId, r.slug);
+            const vid = rawVid || koppelingen[0]?.id || '*';
+            const termijn: RuimteModus = r.body.termijn === 'tijd'
+              ? 'tijd'
+              : r.body.termijn === 'tot-site-uitloggen'
+                ? 'tot-site-uitloggen'
+                : 'tot-technisch-einde';
+            await kern.aiZetten(r.auth.user, sessie, {
+              tabContext: tab,
+              verbindingId: vid,
+              ruimtes: ['prive', 'technisch'],
+              termijn,
+              minuten: r.body.minuten,
+              activeerSessie: true,
+            });
+          }
+        } else if (actie === 'dienst-uit') {
+          await rs.dienstZetten(userId, 'ai', 'ontkoppel', { actorId: userId, stapOpGedaan: false });
+        } else if (actie === 'delegatie-uit' && v2Actief) {
+          const rawVid = typeof r.body.verbindingId === 'string' ? r.body.verbindingId.trim() : '';
+          const koppelingen = rawVid ? [] : await actieveKoppelingen(userId, r.slug);
+          const vid = rawVid || koppelingen[0]?.id || '*';
+          try {
+            await kern.aiZetten(r.auth.user, sessie, {
+              tabContext: tab,
+              verbindingId: vid,
+              ruimtes: ['prive'],
+              termijn: 'tot-site-uitloggen',
+              activeerSessie: false,
+            });
+          } catch (e) {
+            if (!(e instanceof tp.TechFout && e.code === 'TECH_RUIMTE_VEREIST')) throw e;
+          }
+        }
+
+        meldLijstGewijzigd(userId);
+        await deps.audit(userId, 'owner.connector.v2.tech_actief', 'success', { agent: r.slug, actie });
+        return deps.respond({ ok: true, actie });
+      } catch (err) {
+        if (err instanceof rs.RuimteFout || err instanceof tp.TechFout) {
+          return deps.fail(err.code, err.status);
+        }
+        throw err;
+      }
     }],
 
     'POST /api/owner/connector-v2/instellingen': [async (ctx: any) => {

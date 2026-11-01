@@ -779,14 +779,21 @@ export async function main(): Promise<number> {
   } finally {
     for (const sluit of sseSluiters) sluit();
     if (cdp) cdp.sluit();
-    if (chromeProc) { try { chromeProc.kill(); } catch { /* al gestopt */ } }
+    if (chromeProc) {
+      const wachtExit = new Promise<void>((r) => {
+        const t = setTimeout(r, 1500);
+        chromeProc!.once('close', () => { clearTimeout(t); r(); });
+      });
+      try { chromeProc.kill(); } catch { /* al gestopt */ }
+      await wachtExit;
+    }
     if (tlsServer) await new Promise<void>((r) => tlsServer!.close(() => r()));
     G.herstel();
 
     if (uid) {
       await trk.bijIntrekken(uid, 'zelf').catch(() => undefined);
-      await koppelingWissen(uid, 'prive').catch(() => undefined);
-      await koppelingWissen(uid, 'technisch').catch(() => undefined);
+      await koppelingWissen(uid, 'oauth', 'prive').catch(() => undefined);
+      await koppelingWissen(uid, 'oauth', 'technisch').catch(() => undefined);
       await aiDienstOpruimen([uid]).catch(() => undefined);
       await sys.query('DELETE FROM app.tech_ruimte_ai WHERE user_id = $1', [uid]).catch(() => undefined);
       await sys.query('DELETE FROM app.tech_ruimte_tabs WHERE user_id = $1', [uid]).catch(() => undefined);
@@ -818,7 +825,7 @@ export async function main(): Promise<number> {
     if (vorigeOrchWortel === undefined) delete process.env.ORCH_WORTEL; else process.env.ORCH_WORTEL = vorigeOrchWortel;
     if (vorigeOrchInbox === undefined) delete process.env.ORCH_INBOX; else process.env.ORCH_INBOX = vorigeOrchInbox;
     vergeetCache();
-    rmSync(werk, { recursive: true, force: true });
+    try { rmSync(werk, { recursive: true, force: true, maxRetries: 5, retryDelay: 150 }); } catch { /* Windows Chrome profielmap */ }
   }
 
   return einde();

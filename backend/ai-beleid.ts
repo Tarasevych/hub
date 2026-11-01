@@ -26,6 +26,7 @@ import { DEFAULT_TZ } from '../shared/ai-beleid/tijd';
 import { isAgentSlug, v2Agent } from '../shared/connector-v2/agenten';
 import { CHAT_KLANT, type Namens } from './mcp-namens';
 import { agentAudit } from './agent-audit';
+import { passkeyStapOpVastleggen, type StapOpAuth } from './stap-op';
 import { assertieOpties, assertieUit, leesSleutels, uitdagingMaken, uitdagingVerbruiken, UitrolFout } from './uitrol-goedkeuring';
 
 const beleidDir = () => process.env.AI_BELEID_DIR || '/var/lib/mijn-ruimte/ai-beleid';
@@ -278,7 +279,12 @@ export async function ondertekenen(eigenaar: Eigenaar, input: { uitdagingId?: un
 }
 
 // ---------------------------------------------------------------- routes
-type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
+type SessionOk = {
+  user: { id: string; email?: string; role?: string; status?: string };
+  service: string;
+  session?: { id: string; createdAt?: number } | null;
+  tabSession?: { id: string } | null;
+};
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
 type Ctx = { event: Record<string, unknown>; body: unknown };
 const lichaam = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
@@ -288,13 +294,13 @@ export function aiBeleidRoutes(deps: { requireSession: RequireSession }): Record
    * Alleen de eigenaar. Beheer op mcp-host /agents (waar de AI-verbindingen staan) en gespiegeld op admin-host /ai; root accepteert
    * voor het AI-beleid (alleen dit doel) ook de origin van mcp-host (goedkeur-hulp.mjs BELEID_EXTRA_ORIGINS).
    */
-  const eigenaar = (diensten: readonly string[], run: (ctx: Ctx, e: Eigenaar) => Promise<unknown>) => (async (raw) => {
+  const eigenaar = (diensten: readonly string[], run: (ctx: Ctx, e: Eigenaar, auth: SessionOk) => Promise<unknown>) => (async (raw) => {
     const ctx = raw as unknown as Ctx;
     const auth = await deps.requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
     if (!diensten.includes(auth.service)) return error('ADMIN_SERVICE_REQUIRED', 403);
     if (!(auth.user.role === 'owner' && isOwnerEmail(auth.user.email))) return error('OWNER_REQUIRED', 403);
-    try { return json(await run(ctx, { id: auth.user.id, email: auth.user.email })); }
+    try { return json(await run(ctx, { id: auth.user.id, email: auth.user.email }, auth)); }
     catch (err) {
       if (err instanceof UitrolFout) return error(err.code, err.status);
       console.error('[ai-beleid]', (err as Error).message);
@@ -304,6 +310,13 @@ export function aiBeleidRoutes(deps: { requireSession: RequireSession }): Record
   return {
     'POST /api/owner/ai-beleid/overzicht': [eigenaar(['admin', 'mcp'], async (_ctx, e) => overzicht(e))],
     'POST /api/owner/ai-beleid/voorstel': [eigenaar(['admin', 'mcp'], async (ctx, e) => voorstel(e, lichaam(ctx.body).ops))],
-    'POST /api/owner/ai-beleid/ondertekenen': [eigenaar(['admin', 'mcp'], async (ctx, e) => ondertekenen(e, lichaam(ctx.body)))],
+    'POST /api/owner/ai-beleid/ondertekenen': [eigenaar(['admin', 'mcp'], async (ctx, e, auth) => {
+      const uit = await ondertekenen(e, lichaam(ctx.body));
+      if (uit.resultaat === 'klaar') {
+        await passkeyStapOpVastleggen(auth as unknown as StapOpAuth).catch(() => false);
+        try { const m = await import('./connector-v2-stroom'); m.meldLijstGewijzigd(e.id); } catch { /* SSE-melding is best-effort */ }
+      }
+      return uit;
+    })],
   };
 }

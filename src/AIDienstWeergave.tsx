@@ -22,10 +22,14 @@ export const openIntegrations = () => {
   const lang = routeLang();
   location.assign(canonicalNavigationUrl('api', 'verbindingen', lang));
 };
-/** G2: «Відкрити сховище ключів» moet naar de kluis (api.*\/vault), niet naar de koppelingen. */
-export const openVault = () => {
+/** G2: «Відкрити сховище ключів» moet naar de kluis (api.*\/vault), niet naar de koppelingen. Optioneel met ?doel=... voorgeselecteerd. */
+export const openVault = (doel?: unknown) => {
   const lang = routeLang();
-  location.assign(canonicalNavigationUrl('api', 'vault', lang));
+  const basis = canonicalNavigationUrl('api', 'vault', lang);
+  const q = typeof doel === 'string' && /^[a-z0-9-]+$/.test(doel)
+    ? `${basis.includes('?') ? '&' : '?'}doel=${encodeURIComponent(doel)}`
+    : '';
+  location.assign(`${basis}${q}`);
 };
 
 /** Adres van de hub «Підключення ШІ» (mcp.*\/agents) met tabblad. */

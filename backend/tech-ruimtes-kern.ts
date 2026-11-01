@@ -329,9 +329,60 @@ export async function toegang(u: tp.Gebruiker, s: SiteSessie, tab: string) {
   return { magBeheren, mensen, sessies, ai, extensie, codes, vlagTests, fouten };
 }
 
-export async function aiZetten(u: tp.Gebruiker, s: SiteSessie, input: Record<string, unknown>) {
+export async function zorgVoorActieveTechSessie(
+  u: tp.Gebruiker,
+  s: SiteSessie,
+  tab: string,
+  opties: { magNieuwStarten?: boolean; reden?: string } = {},
+) {
   const sid = vereisSessie(s);
-  const b = await besluit(u.id, { bron: 'site', sessieId: sid });
+  let b = await besluit(u.id, { bron: 'site', sessieId: sid });
+  if (b.toegestaan && b.rij) return b;
+
+  // Controleer of dezelfde gebruiker al een levende actieve technische sessie op een ander subdomein heeft (bv. admin.* → mcp.*).
+  const { alle } = await rijVoor(u.id, { bron: 'mcp' });
+  let actieveElders: Rij | null = null;
+  for (const kand of alle ?? []) {
+    if (kand.sessie_id === sid || kand.actief !== 'technisch') continue;
+    const elders = await besluit(u.id, { bron: 'site', sessieId: kand.sessie_id });
+    if (elders.toegestaan && elders.rij) { actieveElders = elders.rij; break; }
+  }
+
+  if (b.rij && b.rij.actief === 'prive' && (opties.magNieuwStarten || actieveElders !== null)) {
+    await wisselen(u, s, tab, 'technisch');
+    return besluit(u.id, { bron: 'site', sessieId: sid });
+  }
+
+  if (!b.rij && actieveElders !== null) {
+    const modus: RuimteModus = actieveElders.modus;
+    const restMin = modus === 'tijd' && actieveElders.eind_op
+      ? Math.max(5, Math.min(RUIMTE_MAX_MINUTEN, Math.ceil((new Date(actieveElders.eind_op).getTime() - Date.now()) / 60_000)))
+      : undefined;
+    await starten(u, s, tab, modus, restMin, String(actieveElders.reden || opties.reden || 'AI-sessie overgenomen'));
+    return besluit(u.id, { bron: 'site', sessieId: sid });
+  }
+
+  if (!b.rij && opties.magNieuwStarten) {
+    const acc = await account(u.id);
+    const p = await profielFeit(u.id, acc.eigenaar, acc.email, acc.rol);
+    if (!p || p.ingetrokken || !p.rollen.length) fout('GEEN_TECH_PROFIEL', 403);
+    const magUitlog = rollenVoorTermijn(p!.rollen, p!.max, 'tot-site-uitloggen', undefined).length > 0;
+    const modus: RuimteModus = magUitlog ? 'tot-site-uitloggen' : 'tijd';
+    const min = magUitlog ? undefined : Math.max(15, Math.min(60, maxMinutenBeste(p!.rollen, p!.max) || 60));
+    await starten(u, s, tab, modus, min, opties.reden || 'AI-toegang op pagina van agent');
+    return besluit(u.id, { bron: 'site', sessieId: sid });
+  }
+
+  return b;
+}
+
+export async function aiZetten(u: tp.Gebruiker, s: SiteSessie, input: Record<string, unknown>) {
+  vereisSessie(s);
+  const wilTech = Array.isArray(input.ruimtes) && input.ruimtes.includes('technisch');
+  const b = await zorgVoorActieveTechSessie(u, s, String(input.tabContext || ''), {
+    magNieuwStarten: wilTech && input.activeerSessie === true,
+    reden: 'AI-sessiedelegatie',
+  });
   if (!b.toegestaan || !b.rij) fout('TECH_RUIMTE_VEREIST', 403);
   const vid = String(input.verbindingId ?? '');
   if (!/^(\*|[A-Za-z0-9._:-]{1,100})$/.test(vid)) fout('VERBINDING_ONGELDIG');

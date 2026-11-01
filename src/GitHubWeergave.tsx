@@ -12,6 +12,8 @@ import {
   type GithubKoppelingFeiten, type KaartInvoer, type KoppelPad,
 } from '../shared/github-koppeling';
 import { staatTekst } from '../shared/kluis-meta';
+import { isVaultDoel, type VaultDoel } from '../shared/geheimen';
+import { GeheimVenster } from './geheimen/GeheimFormulier';
 import { RuimteGeslotenVlak, RuimteStrook } from './RuimteStrook';
 import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGesloten } from '../shared/ruimte-weergave';
 import './github-weergave.css';
@@ -223,7 +225,7 @@ function InstelBlok({ feiten, tr }: { feiten: GithubKoppelingFeiten | null; tr: 
     </ol>
     <KopieerRij tr={tr} label='Homepage URL' waarde={instel.homepageUrl}
       uitleg={tr('Домашня адреса застосунку — сторінка GitHub у вашому просторі.', 'Het startadres van de app — de GitHub-pagina in uw ruimte.')} />
-    <KopieerRij tr={tr} label='Authorization callback URL' waarde={instel.callbackUrl}
+    <KopieerRij tr={tr} label='Redirect URI (Authorization callback URL)' waarde={instel.callbackUrl}
       uitleg={tr('Єдина адреса, на яку сервер приймає повернення з GitHub. Інша адреса дасть помилку «redirect_uri_mismatch».', 'Het enige adres waarop de server de terugkeer van GitHub aanneemt. Een ander adres geeft «redirect_uri_mismatch».')} />
     <KopieerRij tr={tr} label={tr('Області (scopes), які запитує сервер', 'Scopes die de server vraagt')} waarde={instel.scopeTekst}
       uitleg={tr('Саме ці права запитує кнопка «Увійти через GitHub» — не більше. Що дає кожне, написано нижче.', 'Precies deze rechten vraagt de knop «Aanmelden met GitHub» — niet meer. Wat elk recht geeft, staat hieronder.')} />
@@ -247,11 +249,12 @@ function InstelBlok({ feiten, tr }: { feiten: GithubKoppelingFeiten | null; tr: 
  * Eén weg om te koppelen: wat ze doet, of de server haar vandaag echt kan lopen, en — als de eigenaar zijn app nog niet in de
  * kluis heeft gezet — wat hij daarvoor eerst moet doen. Een niet-gebouwde weg krijgt nog steeds nooit een knop.
  */
-function PadRij({ pad, tr, klaar, bezig, onActie }: { pad: KoppelPad; tr: Tr; klaar: boolean; bezig: boolean; onActie: (pad: KoppelPad) => void }) {
+function PadRij({ pad, tr, klaar, bezig, onActie, onOpenKluis }: { pad: KoppelPad; tr: Tr; klaar: boolean; bezig: boolean; onActie: (pad: KoppelPad) => void; onOpenKluis: (doel: VaultDoel) => void }) {
   const uk = tr('uk', 'nl') === 'uk';
   const actief = padKnopActief(pad);
-  // Een weg die de server kan lopen maar waarvoor de sleutel nog ontbreekt: de knop gaat dan naar de kluis.
+  // Een weg die de server kan lopen maar waarvoor de sleutel nog ontbreekt: de knop opent het canonieke kluisvenster ter plekke.
   const naarKluis = pad.actie === 'kluis' || !klaar;
+  const doel: VaultDoel = isVaultDoel(pad.doel) ? pad.doel : 'github';
   const label = pad.actie === 'oauth' ? tr('Увійти через GitHub', 'Aanmelden met GitHub')
     : pad.actie === 'app' ? tr('Під’єднати застосунок', 'App verbinden')
     : tr('Відкрити безпечне поле', 'Beveiligd veld openen');
@@ -267,7 +270,7 @@ function PadRij({ pad, tr, klaar, bezig, onActie }: { pad: KoppelPad; tr: Tr; kl
     {actief && !klaar && pad.doel && pad.actie !== 'kluis'
       ? <span className='gh-sub gh-pad-mist'>{tr(`Спершу покладіть дані у сховище (призначення «${pad.doel}») — точні значення для GitHub показані вище.`, `Zet eerst de gegevens in de kluis (doel «${pad.doel}») — de exacte waarden voor GitHub staan hierboven.`)}</span>
       : null}
-    {actief ? <button type='button' className={naarKluis ? 'gh-btn' : 'gh-btn gh-primary'} disabled={bezig} onClick={() => (naarKluis ? openVault() : onActie(pad))}>
+    {actief ? <button type='button' className={naarKluis ? 'gh-btn' : 'gh-btn gh-primary'} data-gh-pad-actie={pad.id} disabled={bezig} onClick={() => (naarKluis ? onOpenKluis(doel) : onActie(pad))}>
       {bezig ? <Loader2 size={14} className='gh-spin' /> : naarKluis ? <KeyRound size={14} /> : <Plug size={14} />}
       {naarKluis ? tr('Відкрити безпечне поле', 'Beveiligd veld openen') : label}
     </button> : null}
@@ -287,6 +290,7 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte }: { tr: Tr; invoer: KaartI
   const sleutel = feiten?.sleutel ?? null;
   const [bezig, setBezig] = useState('');
   const [actieFout, setActieFout] = useState('');
+  const [kluisDoel, setKluisDoel] = useState<VaultDoel | null>(null);
   // Resultaat van de terugkeer van GitHub: de server zette alleen een CODE in de adresbalk (nooit een token of een code van
   // GitHub). Die lezen we één keer en halen we daarna uit de URL weg.
   const [terugkeer, setTerugkeer] = useState('');
@@ -398,9 +402,9 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte }: { tr: Tr; invoer: KaartI
     </div>}
 
     <div className='gh-actions'>
-      {/* «Увійти через GitHub» werkt echt zodra de OAuth-app van de eigenaar in de kluis staat; anders gaat de knop daar naartoe. */}
-      <button type='button' className='gh-btn gh-primary' disabled={!staat.kanVerbinden || !!bezig}
-        onClick={() => (feiten?.oauthKlaar ? void start(koppelPad('oauth')) : openVault())}>
+      {/* «Увійти через GitHub» werkt echt zodra de OAuth-app van de eigenaar in de kluis staat; anders opent het canonieke kluisvenster ter plekke. */}
+      <button type='button' className='gh-btn gh-primary' data-gh-hoofd-actie='1' disabled={!staat.kanVerbinden || !!bezig}
+        onClick={() => (feiten?.oauthKlaar ? void start(koppelPad('oauth')) : setKluisDoel(sleutel?.purpose && isVaultDoel(sleutel.purpose) ? sleutel.purpose : 'github-oauth'))}>
         {bezig === 'oauth' ? <Loader2 size={14} className='gh-spin' /> : feiten?.oauthKlaar ? <Github size={14} /> : <KeyRound size={14} />}
         {feiten?.oauthKlaar ? tr('Увійти через GitHub', 'Aanmelden met GitHub') : sleutel ? tr('Замінити токен', 'Token vervangen') : tr('Підключити', 'Verbinden')}
       </button>
@@ -425,8 +429,25 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte }: { tr: Tr; invoer: KaartI
       <h4><Plug size={15} aria-hidden='true' />{tr('Способи підключення', 'Manieren om te koppelen')}</h4>
       <ul className='gh-paden'>{KOPPEL_PADEN.map((pad) => <PadRij key={pad.id} pad={pad} tr={tr} bezig={bezig === pad.id}
         klaar={pad.id === 'oauth' ? !!feiten?.oauthKlaar : pad.id === 'github-app' ? !!feiten?.appKlaar : pad.id === 'pat' ? !!sleutel : false}
-        onActie={(p) => void start(p)} />)}</ul>
+        onActie={(p) => void start(p)}
+        onOpenKluis={(d) => setKluisDoel(d)} />)}</ul>
     </div>
+
+    {kluisDoel ? (
+      <GeheimVenster
+        id='gh-kluis-venster'
+        lang={lang}
+        beginDoel={kluisDoel}
+        githubHost={feiten?.instel?.host}
+        context={ctx()}
+        formulierNaam='github-kluis'
+        onSluit={() => setKluisDoel(null)}
+        onOpgeslagen={async () => {
+          setKluisDoel(null);
+          onHerlaad();
+        }}
+      />
+    ) : null}
 
     <div className='gh-koppel-blok'>
       <h4><ShieldCheck size={15} aria-hidden='true' />{tr('Якщо ви обрали персональний токен', 'Als u voor een persoonlijke token kiest')}</h4>
