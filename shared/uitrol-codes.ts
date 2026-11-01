@@ -64,6 +64,12 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
   GEANNULEERD: { uk: 'Скасовано вручну', nl: 'Handmatig geannuleerd' },
   SSH_OK: { uk: 'Встановлено через SSH', nl: 'Via SSH geïnstalleerd' },
   SSH_TERUG: { uk: 'Відкат через SSH', nl: 'Terugdraaien via SSH' },
+  // deploy/installeer-app.sh noteer_mcp_deur: відкат удався, двері MCP (порт 8091) — ні. Terugdraaien gelukt, MCP-deur niet teruggezet.
+  MCP_DEUR_NIET_TERUGGEZET: {
+    uk: 'Двері MCP (порт 8091) не повернуто після відкату', nl: 'MCP-deur (poort 8091) niet teruggezet na terugdraaien',
+    doenUk: 'Сайт уже на попередньому випуску й працює; MCP-конектор може лишатися на іншому. Через SSH перевірте /srv/mijn-ruimte/mcp/server.mjs і unit mijn-ruimte-mcp, далі systemctl daemon-reload && systemctl try-restart mijn-ruimte-mcp. Відкат не повторюйте — він поверне ще давніший випуск.',
+    doenNl: 'De site draait al op de vorige release; de MCP-connector mogelijk nog op een andere. Controleer via SSH /srv/mijn-ruimte/mcp/server.mjs en de unit mijn-ruimte-mcp, daarna systemctl daemon-reload && systemctl try-restart mijn-ruimte-mcp. Niet opnieuw terugdraaien — dat zet een nog oudere release terug.',
+  },
   NAZORG_TERUGGEDRAAID: { uk: 'Автовідкат після збою', nl: 'Automatisch teruggedraaid na storing' },
   NAZORG_MISLUKT: { uk: 'Автовідкат не вдався', nl: 'Automatisch terugdraaien mislukt', ...viaSsh },
   // ---- rendercontrole (deploy/installeer-app.sh noteer_rook, scripts/rook-controle.mjs; zone A 22.10.2026)

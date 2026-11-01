@@ -17,8 +17,13 @@ export const AGENT_ID = /^[a-z][a-z0-9-]{1,31}$/;
 export const REGELS_NAMESPACE = 'mijn-ruimte-regels';
 
 export const sha256 = (tekst) => createHash('sha256').update(tekst).digest('hex');
-/** Нормалізація: LF, без BOM і без кінцевих пробілів у рядках — щоб Windows (CRLF) і Linux давали однаковий відбиток. */
-export const normaliseer = (tekst) => String(tekst).replace(/^﻿/, '').replace(/\r\n?/g, '\n').replace(/[ \t]+$/gm, '');
+/**
+ * Нормалізація: LF, без BOM і без кінцевих пробілів у рядках — щоб Windows (CRLF) і Linux давали однаковий відбиток.
+ * Кінець рядка — лише перед \n або в кінці тексту: `$` з прапорцем m у JS спрацьовує ще й перед U+2028/U+2029, а Python re.M
+ * (PYREGELS у mijn-ruimte-uitrol.sh, PYMODUS у gitops-ophalen.sh) — ні; тоді lock від orch відхиляв би root/GitOps.
+ * Regeleinde = alleen vóór \n of aan het einde (zoals Python re.M), niet vóór U+2028/U+2029.
+ */
+export const normaliseer = (tekst) => String(tekst).replace(/^﻿/, '').replace(/\r\n?/g, '\n').replace(/[ \t]+(?=\n|$)/g, '');
 
 /** Стабільна серіалізація JSON (відсортовані ключі) — для відбитка критичних політик. */
 export function stabielJson(w) {

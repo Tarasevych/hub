@@ -47,7 +47,8 @@ export async function main(): Promise<number> {
   // керівний символ, emoji, вкладені масиви/обʼєкти, 1.0 і 1e20 — щоб відбиток Python (PYMODUS) мусив збігтися з kern.mjs (JS) байт у байт.
   // Echte release: AGENTS.md met BOM/CRLF/spaties aan het regeleinde — de normalisatie in Python moet gelijk zijn aan normaliseer() in kern.mjs.
   const bron = join(p.w, 'bron'); mkdirSync(join(bron, 'orchestratie'), { recursive: true });
-  const regelTeksten: Record<string, string> = { 'AGENTS.md': '﻿# Regels\r\nregel 1   \r\nregel 2\t\r\n', 'orchestratie/BESLUITEN.md': '# Besluiten\n\nB-001 voorstel\n' };
+  // «regel 3  \u2028…»: пробіли перед U+2028 — JS normaliseer мусить лишати їх так само, як Python re.M у PYMODUS (не кінець рядка).
+  const regelTeksten: Record<string, string> = { 'AGENTS.md': '﻿# Regels\r\nregel 1   \r\nregel 2\t\r\nregel 3  \u2028vervolg\r\n', 'orchestratie/BESLUITEN.md': '# Besluiten\n\nB-001 voorstel\n' };
   const beleidAuto = {
     schema: 1, regelsVersie: '1.3.0', regelBestanden: ['AGENTS.md', 'orchestratie/beleid.json', 'orchestratie/BESLUITEN.md'],
     kritiek: {
@@ -155,7 +156,13 @@ export async function main(): Promise<number> {
     schrijfBron(lockP);
     g = gitopsModus(bron, journalPad);
     check('gitops: AGENTS.md gewijzigd zonder vergrendel (lock.hash oud) → geweigerd en noemt AGENTS.md', g.code !== 0 && /zonder lock bij te werken: AGENTS\.md/.test(g.uit), g.uit);
-    writeFileSync(join(bron, 'AGENTS.md'), regelTeksten['AGENTS.md'].replace(/\r\n/g, '\n').replace(/[ \t]+$/gm, '').replace(/^﻿/, ''));
+    // Letterlijke verwachte tekst — niet via normaliseer() zelf (dat is wat getest wordt): zonder BOM, LF, zonder eindspaties per regel,
+    // maar de spaties vóór U+2028 blijven (geen regeleinde voor Python re.M). Буквальний еталон, а не результат коду, що тестується.
+    const LS = String.fromCharCode(0x2028);
+    const agentsVerwacht = '# Regels\nregel 1\nregel 2\nregel 3  ' + LS + 'vervolg\n';
+    check('kern: normaliseer(AGENTS.md met BOM/CRLF/eindspaties) = letterlijk verwachte tekst (spaties vóór U+2028 blijven)',
+      k.normaliseer(regelTeksten['AGENTS.md']) === agentsVerwacht, JSON.stringify(k.normaliseer(regelTeksten['AGENTS.md'])));
+    writeFileSync(join(bron, 'AGENTS.md'), agentsVerwacht);
     check('gitops: dezelfde AGENTS.md zonder BOM/CRLF/eindspaties → zelfde afdruk → toegestaan (normalisatie = kern.mjs)', gitopsModus(bron, journalPad).code === 0);
     writeFileSync(join(bron, 'AGENTS.md'), regelTeksten['AGENTS.md']);
     const versieAnders = JSON.parse(beleidAutoTekst); versieAnders.regelsVersie = '1.3.1';
