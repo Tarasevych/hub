@@ -1,0 +1,190 @@
+name: LOGIN-001 verified release candidate (no deployment)
+
+on:
+  push:
+    branches:
+      - feature/login-001-20261101-184800-chatgpt
+
+permissions:
+  contents: write
+
+concurrency:
+  group: login-001-release-candidate
+  cancel-in-progress: false
+
+jobs:
+  verify-and-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout complete PR branch history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Validate production version (read only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --max-time 20 --retry 2 \
+            'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/mijn-ruimte-production.json"
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const data = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/mijn-ruimte-production.json', 'utf8'));
+          const expectedVersion = '20261101-185530';
+          const expectedCommit = '10a92781b4fb5e03825caebcb63aa74c4206eefc';
+          if (data.versie !== expectedVersion || data.commit !== expectedCommit) {
+            console.error('BASIS_VEROUDERD/COMMIT_VERSCHILT: actual production is not the owner-approved base.', {version: data.versie, commit: String(data.commit || '').slice(0, 12)});
+            process.exit(1);
+          }
+          // Volatile read-only snapshot for the packager only; it is NEVER committed or archived.
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({
+            versie: expectedVersion, bronCommit: expectedCommit, bron: 'geverifieerd_productie_api'
+          }, null, 2) + '\n');
+          console.log('Read-only production basis verified:', expectedVersion, expectedCommit.slice(0, 12));
+          JS
+
+      - name: Install build dependencies
+        run: npm ci
+
+      - name: Register task and regenerate UI catalogue (own branch only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/zoek-ui-catalogus.mjs
+          if [ ! -f orchestratie/taken/LOGIN-001.json ]; then
+            node scripts/orch.mjs taak-start \
+              --id LOGIN-001 --agent chatgpt \
+              --basis 10a92781b4fb5e03825caebcb63aa74c4206eefc \
+              --tak feature/login-001-20261101-184800-chatgpt \
+              --omschrijving 'Модерний мінімалістичний адаптивний екран авторизації Mijn Ruimte та меню збережених акаунтів'
+          fi
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const path = 'orchestratie/taken/LOGIN-001.json';
+          const task = JSON.parse(readFileSync(path, 'utf8'));
+          if (task.basisCommit !== '10a92781b4fb5e03825caebcb63aa74c4206eefc') throw Error('LOGIN-001 basis mismatch');
+          task.basisVersie = '20261101-185530';
+          writeFileSync(path, JSON.stringify(task, null, 2) + '\n');
+          JS
+          git add shared/zoek-ui-knoppen.generated.ts orchestratie/taken/LOGIN-001.json
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'LOGIN-001: registreer taak en werk UI-catalogus bij'
+            git push origin "HEAD:refs/heads/feature/login-001-20261101-184800-chatgpt"
+          fi
+          git status --short
+          test -z "$(git status --porcelain --untracked-files=no)"
+
+      - name: Run static checks, type checks, tests and production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p uitvoer
+          node scripts/kaart-controle.mjs
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak LOGIN-001 --fase overdracht
+          node scripts/zoek-ui-catalogus.mjs --controle
+          npx tsc --noEmit
+          npm run typecheck:server
+          node scripts/eenheidstests.mjs login-001-weergave | tee uitvoer/login-001-test.log
+          node scripts/eenheidstests.mjs aanmeld-ui-20261030 | tee -a uitvoer/login-001-test.log
+          npm run build
+          node scripts/kaart-controle.mjs
+          node scripts/orch.mjs controleer
+          test -z "$(git status --porcelain --untracked-files=no)"
+
+      - name: Prepare bilingual verified-release manifest and test report
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p uitvoer
+          RELEASE_VERSION="$(date -u +%Y%m%d-%H%M%S)"
+          printf 'RELEASE_VERSION=%s\n' "$RELEASE_VERSION" >> "$GITHUB_ENV"
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { execFileSync } from 'node:child_process';
+          const version = new Date().toISOString().replace(/[-:]/g, '').replace(/^([0-9]{8})T([0-9]{6}).*/, '$1-$2');
+          const sha = execFileSync('git', ['rev-parse','HEAD'], {encoding:'utf8'}).trim();
+          const f = 'uitvoer/LOGIN-001-UITROL-MANIFEST.json';
+          writeFileSync(f, JSON.stringify({
+            schema: 1, versie: version, aangemaakt: new Date().toISOString(),
+            herkomst: 'git: feature/login-001-20261101-184800-chatgpt@' + sha + ' (basis 10a92781b4fb5e03825caebcb63aa74c4206eefc)',
+            auteur: 'Eigenaar Test', zonderAi: false,
+            deelnemers: [
+              {soort:'mens',naam:'Eigenaar Test',rollen:['auteur']},
+              {soort:'ai',naam:'ChatGPT',platform:'ChatGPT',tool:'GitHub connector en GitHub Actions',model:{id:'GPT-6',versie:null,bron:'omgeving'},rollen:['ontwikkeling','verpakken']}
+            ],
+            beschrijving:{
+              uk:{titel:'Мінімалістичний вхід Mijn Ruimte',samenvatting:'Новий адаптивний екран входу, меню облікових записів і тонка анімована рамка кнопки авторизації.',
+                wijzigingen:['Змінено екран входу та вибір збереженого акаунта','Додано компактне перемикання мови та теми'],
+                fixes:['Доступ до меню акаунта на смартфоні'],
+                beperkingen:['Автоматичний CI не замінює ручну перевірку в реальному Chrome з OAuth/Passkey'],
+                instructies:'Встановлювати лише власнику через Admin → Оновлення після перевірки пакета та підтвердження Passkey.'},
+              nl:{titel:'Minimalistische aanmelding Mijn Ruimte',samenvatting:'Nieuwe responsieve aanmeldpagina, accountmenu en een subtiele geanimeerde rand rond de aanmeldknop.',
+                wijzigingen:['Aanmeldweergave en opgeslagen accountkeuze aangepast','Compacte taal- en themaknoppen toegevoegd'],
+                fixes:['Accountmenu toegankelijk gemaakt op smartphones'],
+                beperkingen:['Geautomatiseerde CI vervangt geen handmatige Chrome-controle met OAuth/Passkey'],
+                instructies:'Alleen de eigenaar mag installeren via Admin → Updates na pakketcontrole en Passkey-bevestiging.'}
+            }
+          }, null, 2)+'\n');
+          const text = readFileSync('uitvoer/login-001-test.log','utf8');
+          const passed = (text.match(/^OK\s/gm)||[]).length;
+          const failed = (text.match(/^FOUT\s/gm)||[]).length;
+          writeFileSync('uitvoer/LOGIN-001-TESTRESULTATEN.json', JSON.stringify({
+            geslaagd:passed,mislukt:failed,samenvatting:'LOGIN-001 + aanmeld-ui broncontroles; zie GitHub Actions log voor builds/typechecks',
+            falend:[],basis:{versie:'20261101-185530',geslaagd:null,mislukt:null},
+            uitleg:{uk:'Збірка, TypeScript та ORCH перевірені окремими кроками CI; ручна перевірка браузера ще потрібна.',
+                   nl:'Build, TypeScript en ORCH zijn afzonderlijk via CI gecontroleerd; handmatige browsercontrole blijft nodig.'}
+          },null,2)+'\n');
+          console.log('Verified test assertions:',passed,'failed:',failed);
+          if(!passed||failed)process.exit(1);
+          JS
+
+      - name: Build UNSIGNED standard ORCH release and verify its integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket \
+            --taak LOGIN-001 --auteur 'Eigenaar Test' \
+            --agent chatgpt \
+            --versie "$RELEASE_VERSION" \
+            --manifest "$PWD/uitvoer/LOGIN-001-UITROL-MANIFEST.json" \
+            --testresultaten "$PWD/uitvoer/LOGIN-001-TESTRESULTATEN.json" \
+            --samenvatting-uk 'Новий адаптивний мінімалістичний екран входу Mijn Ruimte без логотипа, з тонкою анімацією.' \
+            --samenvatting-nl 'Nieuwe responsieve minimalistische Mijn Ruimte aanmelding zonder fictief logo en met subtiele randanimatie.' \
+            --uit uitvoer
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-$RELEASE_VERSION-chatgpt-overdracht.zip"
+          sha256sum -c "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256"
+          echo "RELEASE_SHA=$(sha256sum "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          echo "RELEASE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Upload unsigned release candidate (NOT deployed)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mijn-ruimte-login-001-unsigned
+          path: |
+            uitvoer/mijn-ruimte-*.tar.gz
+            uitvoer/mijn-ruimte-*.tar.gz.sha256
+            uitvoer/mijn-ruimte-*.voorstel.json
+            uitvoer/mijn-ruimte-*-overdracht.zip
+            uitvoer/LOGIN-001-UITROL-MANIFEST.json
+            uitvoer/LOGIN-001-TESTRESULTATEN.json
+            uitvoer/login-001-test.log
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Record read-only build summary
+        run: |
+          echo "Verified release candidate: $RELEASE_VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "Source: $RELEASE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "SHA-256: $RELEASE_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "No production deployment, no signing, no PR merge." >> "$GITHUB_STEP_SUMMARY"
