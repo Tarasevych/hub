@@ -9,8 +9,18 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readlinkSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { checker } from './hulp/nep-google';
+import { parseRootGebeurtenissen } from '../../backend/server-beheer';
+import { UITROL_CODES } from '../../shared/uitrol-codes';
 
 const W = process.cwd();
+
+function pythonCmd(): string {
+  for (const cmd of ['python3', 'python']) {
+    const r = spawnSync(cmd, ['-c', 'import sys; sys.exit(0)'], { encoding: 'utf8' });
+    if (r.status === 0) return cmd;
+  }
+  return 'python3';
+}
 
 function zoekBash(): string {
   if (process.platform === 'win32') {
@@ -82,6 +92,7 @@ export async function main(): Promise<number> {
     stub('systemctl', [
       `echo "systemctl $*" >> "${logBash}"`,
       'if [ "$1" = "try-restart" ] && [ "${MCP_HERSTART_FAALT:-0}" = "1" ]; then exit 1; fi',
+      'if [ "$1" = "daemon-reload" ] && [ "${MCP_RELOAD_FAALT:-0}" = "1" ]; then echo "Failed to reload daemon: Connection timed out" >&2; exit 1; fi',
       'if [ "$1" = "is-active" ]; then [ "${MCP_IS_ACTIEF:-1}" = "1" ] && exit 0 || exit 3; fi',
       'exit 0',
     ].join('\n'));
@@ -92,8 +103,13 @@ export async function main(): Promise<number> {
       '[ -n "$m" ] && chmod "$m" "${args[@]: -1}" 2>/dev/null || true',
       'exit 0',
     ].join('\n'));
+    // Onder root negeert mcp_deur_bijwerken MCP_UNIT_DOEL (zie de controle hierboven) en zou de install-stub de ECHTE
+    // /etc/systemd/system/mijn-ruimte-mcp.service overschrijven (CI-container, server). `id -u` daarom altijd als gewone gebruiker.
+    // Під root тест інакше перезаписав би справжній unit хоста; id -u підмінено.
+    stub('id', 'if [ "${1:-}" = "-u" ]; then echo 1000; exit 0; fi\nexec /usr/bin/id "$@"');
     stub('curl', 'echo \'{"ok":true}\'; exit 0');
     stub('flock', 'exit 0');
+    if (pythonCmd() !== 'python3') stub('python3', `exec ${pythonCmd()} "$@"`);
     if (process.platform === 'win32') {
       // Op Windows zonder Developer Mode maakt MSYS2 `ln -s` een mapkopie i.p.v. een link; gebruik NTFS-junctions via Node zodat `omzetten` atomair blijft.
       const nodeB = naarBashPad(bashBin, process.execPath);
@@ -136,6 +152,8 @@ export async function main(): Promise<number> {
     const relBB = naarBashPad(bashBin, relB);
     const unitB = naarBashPad(bashBin, unitPad);
     const binB = naarBashPad(bashBin, bin);
+    const statusMap = join(T, 'status');
+    const gebeurtenissenPad = join(statusMap, 'gebeurtenissen.jsonl');
 
     const kop = [
       'set -euo pipefail',
@@ -152,7 +170,9 @@ export async function main(): Promise<number> {
       fn('commit_van'),
       fn('gezond'),
       fn('omzetten'),
+      `STATUS_GEBEURTENISSEN="${naarBashPad(bashBin, statusMap)}"; STATUS_GROEP="$(id -gn)"`,
       fn('mcp_deur_bijwerken'),
+      fn('noteer_mcp_deur'),
       fn('terugdraaien'),
     ].join('\n');
 
@@ -204,6 +224,55 @@ export async function main(): Promise<number> {
         && x.regels.includes('systemctl try-restart mijn-ruimte-mcp.service')
         && /teruggedraaid naar 20261031-093842/.test(x.uit),
       `${x.regels.join(' | ')} // ${x.uit}`);
+    check('terugdraaien met werkende deur: geen gebeurtenis MCP_DEUR_NIET_TERUGGEZET (niets in gebeurtenissen.jsonl)',
+      !existsSync(gebeurtenissenPad), existsSync(gebeurtenissenPad) ? readFileSync(gebeurtenissenPad, 'utf8') : '');
+
+    // 3e. Terugdraaien waarbij de deur niet bij te werken is (daemon-reload faalt na een gewijzigde unit): de hoofdapp is al terug en
+    // gezond → rc 0, «teruggedraaid» + auditregel SSH_TERUG, alleen een waarschuwing voor de deur (geen abort via set -e, anders meldt
+    // nazorg/opdracht/besluit MISLUKT en zet een herhaling zonder argument via VORIGE de net teruggedraaide release terug).
+    const relC = maakRelease('20261030-120000', '// server.mjs versie C (ouder)\n', `${unitBron}# variant C\n`);
+    rmSync(join(app, 'current'), { force: true });
+    symlinkSync(relB, join(app, 'current'), process.platform === 'win32' ? 'junction' : 'dir');
+    writeFileSync(join(app, 'VORIGE'), `${naarBashPad(bashBin, relC)}\n`, 'utf8');
+    x = draai('terugdraaien', { MCP_IS_ACTIEF: '1', MCP_RELOAD_FAALT: '1' });
+    check('terugdraaien met falende daemon-reload van de deur: rc 0, hoofdapp op C, «teruggedraaid» + audit SSH_TERUG, waarschuwing «niet teruggezet» zonder herhaaladvies',
+      x.r.status === 0
+        && readFileSync(join(app, 'current/UITROL-VERSIE'), 'utf8').trim() === '20261030-120000'
+        && /teruggedraaid naar 20261030-120000/.test(x.uit)
+        && x.regels.some((r) => r.startsWith('noteer_ssh SSH_TERUG 20261030-120000'))
+        && x.regels.includes('systemctl daemon-reload')
+        && !x.regels.includes('systemctl try-restart mijn-ruimte-mcp.service')
+        && /MCP-deur \(poort 8091\) niet teruggezet naar 20261030-120000/.test(x.uit)
+        && /NIET opnieuw terugdraaien/.test(x.uit),
+      `${x.regels.join(' | ')} // ${x.uit}`);
+    // Zonder gebeurtenis zag de eigenaar op de site alleen «teruggedraaid» (SSH_TERUG/TERUG_OK); nu ook de waarschuwing voor de deur.
+    const ruw = existsSync(gebeurtenissenPad) ? readFileSync(gebeurtenissenPad, 'utf8') : '';
+    const ev = parseRootGebeurtenissen(ruw);
+    const deur = ev.find((g) => g.code === 'MCP_DEUR_NIET_TERUGGEZET');
+    check('falende deur bij terugdraaien → gebeurtenis MCP_DEUR_NIET_TERUGGEZET (warn, bron uitrol, release C) die de app inleest',
+      ev.length === 1 && !!deur && deur.niveau === 'warn' && deur.bron === 'uitrol' && deur.release === '20261030-120000'
+        && /8091/.test(deur.uk) && /8091/.test(deur.nl) && /НЕ повторюйте/.test(deur.uk) && /NIET opnieuw terugdraaien/.test(deur.nl)
+        && deur.uk.includes('20261030-120000') && !x.uit.includes('niet geschreven'),
+      `${ruw} // ${x.uit}`);
+    // Geen herkomst en geen versie-tag: uitrol-runs.ts (eindEvent / oudeUitkomstenOpnemen) mag er geen einde of weigering van een run van maken.
+    const regelRuw = JSON.parse(ruw.trim().split('\n').pop() || '{}') as Record<string, unknown>;
+    check('gebeurtenis zonder herkomst, tag «mcp-deur», teksten ≤ 300 tekens (niet afgekapt), code vertaald in shared/uitrol-codes.ts',
+      !!deur && !deur.herkomst && regelRuw.herkomst === undefined && deur.tag === 'mcp-deur' && !/^\d{8}-\d{6}$/.test(String(deur.tag))
+        && String(regelRuw.uk).length <= 300 && String(regelRuw.nl).length <= 300
+        && String(regelRuw.uk).endsWith('try-restart mijn-ruimte-mcp.') && String(regelRuw.nl).endsWith('try-restart mijn-ruimte-mcp.')
+        && !!UITROL_CODES.MCP_DEUR_NIET_TERUGGEZET?.doenUk && !!UITROL_CODES.MCP_DEUR_NIET_TERUGGEZET?.doenNl,
+      JSON.stringify(regelRuw));
+    // noteer_mcp_deur zelf: onbekende code of niveau → niets geschreven (rc ≠ 0).
+    // Ontbreekt het bestand (regressie hierboven), dan een FOUT in deze check en geen crash van de hele suite.
+    const leesGeb = () => (existsSync(gebeurtenissenPad) ? readFileSync(gebeurtenissenPad, 'utf8') : '');
+    const voor = leesGeb();
+    const fout1 = draai(`noteer_mcp_deur IETS_ANDERS warn "${relAB}"`);
+    const fout2 = draai(`noteer_mcp_deur MCP_DEUR_NIET_TERUGGEZET info "${relAB}"`);
+    check('noteer_mcp_deur weigert een andere code of niveau info (rc ≠ 0, gebeurtenissen.jsonl ongewijzigd)',
+      fout1.r.status !== 0 && fout2.r.status !== 0 && leesGeb() === voor, `${fout1.r.status} ${fout2.r.status}`);
+    check('volgorde in terugdraaien: auditregel SSH_TERUG vóór mcp_deur_bijwerken, dat niet-fataal is; bij installeren blijft een fout fataal',
+      /noteer_ssh SSH_TERUG[^\n]*\n[\s\S]*?mcp_deur_bijwerken "\$doel" \|\| \{\n\s*waarschuwing [^\n]*\n\s*noteer_mcp_deur MCP_DEUR_NIET_TERUGGEZET warn "\$doel"/.test(fn('terugdraaien'))
+        && /mcp_deur_bijwerken "\$doel" \|\| fout /.test(fn('veilige_uitrol_inrichten')));
   } finally {
     rmSync(T, { recursive: true, force: true });
   }

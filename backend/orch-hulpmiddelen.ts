@@ -43,13 +43,44 @@ const maskeerDoor = (d: unknown, eigen: string): string => {
   if (s.includes('@')) return 'eigenaar';
   return s.replace(/\s*\[[^\]]*\]$/, '');
 };
+/**
+ * Підтвердження власника в lock (regels.eigenaar) для агента — лише «що підтверджено і коли»: без відбитка passkey, id рішення,
+ * SSH-підпису чи ключа. Bevestiging van de eigenaar voor een agent: alleen wat en wanneer, geen passkey-afdruk, besluit-id of handtekening.
+ */
+const EIGENAAR_VOOR_AGENT = ['soort', 'regelsVersie', 'hash', 'kritiekHash', 'voorstel', 'op'] as const;
+function eigenaarVoorAgent(e: unknown): Record<string, unknown> | null {
+  if (!e || typeof e !== 'object') return null;
+  const bron = e as Record<string, unknown>;
+  return Object.fromEntries(EIGENAAR_VOOR_AGENT.filter((k) => bron[k] !== undefined).map((k) => [k, bron[k]]));
+}
+/** Рядки `controleer` для агента: «passkey <відбиток>» і uuid рішення замасковано. Regels van controleer: passkey-afdruk en besluit-uuid gemaskeerd. */
+// uuid met streepjes, of precies 32 hex als los woord (root-bestand bewaart besluit zonder streepjes); een 64-hex-hash blijft heel.
+const UUID_IN_TEKST = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b|\b[0-9a-f]{32}\b/gi;
+// Лише відбиток passkey (8–16 hex, як PASSKEY_VINGERAFDRUK у kern.mjs) після слова «passkey»; решта тексту лишається. Alleen de vingerafdruk.
+export const maskeerRegel = (r: unknown): string => String(r ?? '').replace(/(passkey\s+)[0-9a-f]{8,16}\b/gi, '$1…').replace(UUID_IN_TEKST, '…');
+/**
+ * Вивід тестів здачі (tests.uitvoer[].laatste — останні рядки довіреного `orch controleer`) для агента: той самий рядок
+ * «eigenaar: підтверджено passkey X (рішення Y, …)», що й в orch_overzicht, — тому та сама маска. Uitvoer van controleer: zelfde masker.
+ */
+function testsVoorAgent(t: unknown): unknown {
+  if (!t || typeof t !== 'object') return t;
+  const tests = t as { uitvoer?: Array<Record<string, unknown>> };
+  if (!Array.isArray(tests.uitvoer)) return t;
+  return { ...tests, uitvoer: tests.uitvoer.map((u) => ({ ...u, laatste: String(u?.laatste ?? '').split('\n').map(maskeerRegel).join('\n') })) };
+}
 function overzichtVoorAgent(o: ReturnType<typeof opslag.overzicht>, door: string) {
   return {
     ...o,
+    regels: o.regels ? { ...o.regels, eigenaar: eigenaarVoorAgent(o.regels.eigenaar) as typeof o.regels.eigenaar } : o.regels,
     // Лише власні незавершені завантаження: id чужих ні до чого (прив'язка до актора), а door розкриває e-mail/grant-id.
     uploads: (o.uploads ?? []).filter((u) => u.door === door),
-    voorstellen: (o.voorstellen ?? []).map((v) => ({ ...v, door: maskeerDoor(v.door, door) })),
+    // toegepast.besluit — id рішення власника: агенту не потрібен (tak/commit/op лишаються).
+    voorstellen: (o.voorstellen ?? []).map((v) => {
+      const { toegepast, ...rest } = v;
+      return { ...rest, door: maskeerDoor(v.door, door), ...(toegepast ? { toegepast: { tak: toegepast.tak, commit: toegepast.commit, gepusht: toegepast.gepusht, op: toegepast.op } as typeof toegepast } : {}) };
+    }),
     bevestigingen: (o.bevestigingen ?? []).map((b) => ({ regelsVersie: b.regelsVersie, hash: b.hash, kritiekHash: b.kritiekHash, voorstel: b.voorstel, tijd: b.tijd })),
+    controleer: o.controleer ? { ...o.controleer, regels: (o.controleer.regels ?? []).map(maskeerRegel) } : o.controleer,
   };
 }
 
@@ -75,7 +106,7 @@ export async function voerOrchToolUit(who: OrchWie, name: string, args: Record<s
         if (!binnenLimiet(`begin:${who.userId}`, ORCH_LIMIETEN.uploadsPerUur)) throw new OrchFout('RATE_LIMITED', 429);
         return uit(opslag.uploadBegin({ ...args, kanaal: 'mcp' }, door, 'mcp', eigenAgent));
       case ORCH_INLEVEREN_STUK: { const u = opslag.uploadStuk(args, door); return uit({ id: u.id, ontvangen: u.ontvangen, grootte: u.grootte, klaarVoorAfronden: u.ontvangen === u.grootte }); }
-      case ORCH_INLEVEREN_KLAAR: { if (!binnenLimiet(`klaar:${who.userId}`, ORCH_LIMIETEN.uploadsPerUur)) throw new OrchFout('RATE_LIMITED', 429); const r = opslag.uploadKlaar(args, door); const rec = r.record as Record<string, unknown>; return uit({ uitkomst: rec.uitkomst, id: rec.id, taakId: rec.taakId, tak: rec.tak, commit: rec.commit, bestanden: Array.isArray(rec.bestanden) ? (rec.bestanden as unknown[]).length : 0, tests: rec.tests, zaken: rec.zaken, registratie: r.registratie, staatCommit: r.staatCommit }); }
+      case ORCH_INLEVEREN_KLAAR: { if (!binnenLimiet(`klaar:${who.userId}`, ORCH_LIMIETEN.uploadsPerUur)) throw new OrchFout('RATE_LIMITED', 429); const r = opslag.uploadKlaar(args, door); const rec = r.record as Record<string, unknown>; return uit({ uitkomst: rec.uitkomst, id: rec.id, taakId: rec.taakId, tak: rec.tak, commit: rec.commit, bestanden: Array.isArray(rec.bestanden) ? (rec.bestanden as unknown[]).length : 0, tests: testsVoorAgent(rec.tests), zaken: rec.zaken, registratie: r.registratie, staatCommit: r.staatCommit }); }
       default: return fout(`UNKNOWN_TOOL: ${name.slice(0, 80)}`);
     }
   } catch (e) {

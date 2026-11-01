@@ -24,6 +24,7 @@ import { useZichtbaar } from './gegevens';
 import { tr, type Acties, type Dienst, type Lang } from './soorten';
 import { Skelet } from './widgets/Vlak';
 import { Inhoud, KAAL, WIDGET_ICOON, type WerkbladProps } from './Werkblad';
+import HulpVraag from '../hulp/HulpVraag';
 import { Canvas, type CanvasStatus } from './canvas/Canvas';
 import * as K from './canvas/kern';
 import { useContainerBreedte } from './canvas/hooks';
@@ -324,10 +325,12 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       {bewerken && instellingen ? (
         <div className='wb3-instellingen' data-wb3-paneel='instellingen'>
           <label className='wb3-veld'><Image aria-hidden='true' />{tr(lang, 'Фон', 'Achtergrond')}
-            <select value={achtergrond} onChange={(e) => kiesAchtergrond(e.target.value)} data-wb3='achtergrond'>
+            <select data-hulp='werkblad.achtergrond' value={achtergrond} onChange={(e) => kiesAchtergrond(e.target.value)} data-wb3='achtergrond'>
               {ACHTERGRONDEN.filter((a) => a !== 'eigen' || achtergrondEigen || achtergrond === 'eigen').map((a) => <option key={a} value={a}>{a === 'geen' ? tr(lang, 'Без фону', 'Geen') : a === 'nacht' ? tr(lang, 'Ніч', 'Nacht') : a === 'zee' ? tr(lang, 'Море', 'Zee') : a === 'woud' ? tr(lang, 'Ліс', 'Woud') : a === 'avond' ? tr(lang, 'Вечір', 'Avond') : tr(lang, 'Власне', 'Eigen')}</option>)}
             </select>
           </label>
+          {/* «?» naast het veld, niet in het label: een klik op de knop mag de select niet openen. */}
+          <HulpVraag k='werkblad.achtergrond' lang={lang} />
           <button type='button' className='knop-stil is-klein' data-wb3='reset' onClick={() => zetBevestig('reset')}><RotateCcw aria-hidden='true' />{tr(lang, 'Скинути стіл', 'Werkblad terugzetten')}</button>
           {blk.aan ? <button type='button' className='knop-stil is-klein' data-wb3='blokken-herstellen' title={tr(lang, 'Повертає блоки зі збереженої копії — наприклад, після встановлення старішої версії сайту.', 'Zet de blokken terug uit de bewaarde kopie — bijvoorbeeld na het installeren van een oudere versie van de site.')} onClick={() => void blk.herstel('na')}><RotateCcw aria-hidden='true' />{tr(lang, 'Відновити блоки', 'Blokken herstellen')}</button> : null}
           {rechten.eigenaar ? <button type='button' className='knop-stil is-klein' data-wb3='naar-v2' onClick={() => zetBevestig('v2')}><Undo2 aria-hidden='true' />{tr(lang, 'Повернути розкладку v2', 'v2-indeling herstellen')}</button> : null}

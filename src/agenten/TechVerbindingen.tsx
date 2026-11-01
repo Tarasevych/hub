@@ -12,6 +12,7 @@ import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import { Logo, type Tr } from '../mcp-ui';
 import { RUIMTE_UITLEG } from '../../shared/ai-ruimte';
 import AiVerbinden from './AiVerbinden';
+import AiToegangTab from './AiToegangTab';
 import ConnectorsTab from '../connector-v2/ConnectorsTab';
 import SiteSchakelaars from './SiteSchakelaars';
 import DeurVerbindingen, { useDeurVerbindingen } from './DeurVerbindingen';
@@ -79,6 +80,13 @@ export default function TechVerbindingen({ tr, ingebed = false }: { tr: Tr; inge
           t ? [tr('Викликів', 'Aanroepen'), String(t.calls)] : null,
           [tr('Простір', 'Ruimte'), tr('технічний — випуски, підготовка оновлень, стан сервера; без пошти, Drive чи особистих пристроїв', 'technisch — releases, updates voorbereiden, serverstand; geen mail, Drive of persoonlijke apparaten')],
         ]} />
+        {/* Gescheiden ruimtes (1.11.2026): een technische verbinding erft het privébord niet — haar eigen rechten wijzigt u hier. */}
+        {!historisch ? (
+          <section className='ag-kaart' data-toegang-tab={x.sleutel}>
+            <div className='ag-kaart-kop'><h3>{tr('Доступ ШІ цього технічного підключення', 'AI-toegang van deze technische verbinding')}</h3></div>
+            <AiToegangTab verbinding={{ soort: x.soort, id: g?.id ?? t?.id ?? '', naam: x.naam }} tr={tr} />
+          </section>
+        ) : null}
       </Rij>
     );
   };
