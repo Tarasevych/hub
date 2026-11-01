@@ -1,7 +1,7 @@
 /** Private owner administration, not mounted before Cloud release acceptance.
  * CanonicalChrome supplies the server-registered tabContext; never invent a tab id.
  */
-import React,{useEffect,useState} from 'react';
+import {useEffect,useState} from 'react';
 import './cloud-beheer-m6.css';
 type Policy={provider:string;allowNewConnections:boolean;allowExistingOperations:boolean;revision:number;updatedBy:string};
 type Props={tabContext:string};

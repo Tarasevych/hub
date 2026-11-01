@@ -18,7 +18,7 @@ export function codesUitScripts(): Record<string, string[]> {
     'mijn-ruimte-uitrol.sh': sh('deploy/uitrol/mijn-ruimte-uitrol.sh'),
     'gitops-ophalen.sh': sh('deploy/gitops/gitops-ophalen.sh'),
     'mijn-ruimte-nazorg.sh': alle(lees('deploy/uitrol/mijn-ruimte-nazorg.sh'), /"(NAZORG_[A-Z_]+)"/g),
-    'installeer-app.sh': [...alle(lees('deploy/installeer-app.sh'), /\bnoteer_ssh ([A-Z][A-Z0-9_]{2,})/g), ...alle(lees('deploy/installeer-app.sh'), /\b(SSH_(?:OK|TERUG))\b/g)],
+    'installeer-app.sh': [...alle(lees('deploy/installeer-app.sh'), /\bnoteer_[a-z_]+ ([A-Z][A-Z0-9_]{2,})/g), ...alle(lees('deploy/installeer-app.sh'), /\b(SSH_(?:OK|TERUG))\b/g)],
     'goedkeur-hulp.mjs': [...alle(teksten, /^\s+([A-Z][A-Z0-9_]{2,}): \[/gm), ...js(hulp)],
     'webauthn-kern.mjs': js(kern),
     'app (uitrol-runs/goedkeuring)': [...alle(lees('backend/uitrol-runs.ts'), /\bcode = '([A-Z][A-Z0-9_]{2,})'/g), ...alle(lees('backend/uitrol-goedkeuring.ts'), /\bcode = '([A-Z][A-Z0-9_]{2,})'/g), 'GEWEIGERD', 'INSTALLATIE_MISLUKT', 'VOORCONTROLE_MISLUKT'],
