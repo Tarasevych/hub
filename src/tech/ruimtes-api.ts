@@ -23,5 +23,12 @@ export const ruimtesApi = {
   /** Werker 1 (28.10): 200 {ruimte, eindTijd} | 401 | 403 {error, uitleg:{uk,nl}} — mag de technische ruimte nu gebruikt worden? */
   controle: () => post<{ ruimte: Ruimte; eindTijd: string | null }>('controle'),
   toegang: () => post<ToegangRuw>('toegang').then(naarRegels),
-  aiZetten: (verbindingId: string, ruimtes: Ruimte[], termijn: TermijnModus, minuten?: number) => post<ToegangRuw>('ai-zetten', { verbindingId, ruimtes, termijn, ...(termijn === 'tijd' ? { minuten } : {}) }).then(naarRegels),
+  aiZetten: (verbindingId: string, ruimtes: Ruimte[], termijn: TermijnModus, minuten?: number, opties?: { activeerSessie?: boolean }) =>
+    post<ToegangRuw>('ai-zetten', {
+      verbindingId,
+      ruimtes,
+      termijn,
+      ...(termijn === 'tijd' ? { minuten } : {}),
+      ...(opties?.activeerSessie ? { activeerSessie: true } : {}),
+    }).then(naarRegels),
 };

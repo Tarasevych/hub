@@ -127,5 +127,30 @@ html.theme-dark .gm-root{--gm-warn:var(--warn)}
 @media (prefers-reduced-motion:reduce){.gm-teller>span{transition:none}}
 /* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
 @media (max-width:700px){
-  .gm-root .gm-knop{min-height:var(--tik-hoogte)}
+  .gm-root .gm-knop,.gm-kluis-formulier .gm-knop{min-height:var(--tik-hoogte)}
 }
+/* UX-AI-VAULT-001: canoniek adaptief kluisformulier (werkt zowel binnen .gm-root als los in Venster op github.* en op api.*\/vault). */
+.gm-kluis-formulier{--gm-ok:var(--ok,#16a34a);--gm-bad:var(--fout,#dc2626);--gm-warn:var(--warn,#d97706);--gm-bg:var(--panel,#fff);--gm-bg2:var(--surface,#f8fafc);--gm-line:var(--line,#e2e8f0);--gm-text:var(--text,#0f172a);--gm-muted:var(--muted,#64748b);--gm-accent:var(--accent,#2563eb);display:grid;gap:12px;color:var(--gm-text)}
+.gm-kluis-formulier *{box-sizing:border-box}
+.gm-kluis-formulier select,.gm-kluis-formulier input,.gm-kluis-formulier textarea{width:100%;min-height:38px;padding:7px 10px;border:1px solid var(--gm-line);border-radius:10px;background:var(--gm-bg2);color:var(--gm-text);font:inherit;font-size:.88rem}
+.gm-kluis-formulier input[aria-invalid=true],.gm-kluis-formulier textarea[aria-invalid=true]{border-color:var(--gm-bad)}
+.gm-kluis-formulier .gm-knop{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:7px 13px;border:1px solid var(--gm-line);border-radius:10px;background:var(--gm-bg);color:var(--gm-text);font-weight:650;font-size:.88rem;cursor:pointer;line-height:1.1;transition:background .15s,border-color .15s}
+.gm-kluis-formulier .gm-knop svg{width:16px;height:16px;flex:none}
+.gm-kluis-formulier .gm-knop:hover:not(:disabled){border-color:var(--gm-accent);background:color-mix(in srgb,var(--gm-accent) 7%,var(--gm-bg))}
+.gm-kluis-formulier .gm-knop:disabled{opacity:.5;cursor:not-allowed}
+.gm-kluis-formulier .gm-knop.is-primair{background:var(--gm-accent);border-color:var(--gm-accent);color:var(--text-on-accent,#fff)}
+.gm-kluis-formulier .gm-knop.is-primair:hover:not(:disabled){background:color-mix(in srgb,var(--gm-accent) 88%,#000)}
+.gm-vaste-kop{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 11px;border:1px solid var(--gm-line);border-radius:10px;background:var(--gm-bg2)}
+.gm-vaste-kop strong{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92rem}
+.gm-github-urls{display:grid;gap:8px;padding:11px 13px;border:1px solid color-mix(in srgb,var(--gm-accent) 30%,var(--gm-line));border-radius:12px;background:color-mix(in srgb,var(--gm-accent) 6%,var(--gm-bg))}
+.gm-github-urls strong{font-size:.88rem;color:var(--gm-text)}
+.gm-github-urls>small{color:var(--gm-muted);font-size:.78rem}
+.gm-kopieer-rij{display:grid;gap:4px}
+.gm-kopieer-label{font-size:.78rem;font-weight:650;color:var(--gm-muted)}
+.gm-kopieer-invoer{display:flex;gap:7px;align-items:center}
+.gm-kopieer-invoer input{flex:1 1 auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.82rem}
+.gm-veld-fout{display:block;margin-top:2px;color:var(--gm-bad);font-size:.8rem;font-weight:600}
+.gm-extra{border:1px solid var(--gm-line);border-radius:12px;background:var(--gm-bg2);padding:9px 12px}
+.gm-extra>summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;font-weight:650;font-size:.86rem;color:var(--gm-text)}
+.gm-extra-samenvatting{font-weight:400;font-size:.78rem;color:var(--gm-muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.gm-extra-inhoud{display:grid;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--gm-line)}

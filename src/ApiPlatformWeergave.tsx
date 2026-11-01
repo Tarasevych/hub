@@ -1,12 +1,15 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useMemo,useState} from 'react';
 import IntegratieStrook from './integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import {api} from './platform/client';
 import {API_PLATFORM_VERSION,apiPlatformContractPayload,type ApiPlatformCapability} from './api-platform-contract';
 import {ecosystemTabContext} from './tab-context';
-import {VaultMetaBewerker,VaultMetaRegel,VaultMetaVelden} from './KluisMeta';
-import {leegMeta,vandaag,type VaultMeta,type VaultStaat} from '../shared/kluis-meta';
+import {VaultMetaBewerker,VaultMetaRegel} from './KluisMeta';
+import type {VaultMeta,VaultStaat} from '../shared/kluis-meta';
+import {DOEL_INFO,isVaultDoel,type VaultDoel} from '../shared/geheimen';
+// Kluisinvoer loopt via het canonieke GeheimFormulier (GeheimInvoer met schermtoetsenbord).
+import {GeheimFormulier} from './geheimen/GeheimFormulier';
+import {foutTekst,kies} from './geheimen/hulp';
 import './api-platform-weergave.css';
-import GeheimInvoer from './geheim/GeheimInvoer';
 type Tr=(uk:string,nl:string)=>string;
 type Contract=ReturnType<typeof apiPlatformContractPayload>;
 type TokenItem={id:string;prefix:string;display:string;scopes:string[];label:string;createdAt:number;expiresAt:number;lastUsedAt:number|null;revokedAt:number|null;status:'active'|'expired'|'revoked'};
@@ -17,7 +20,7 @@ const sessionBody=()=>({service:'api',tabContext:ecosystemTabContext(),sourceOri
 const statusLabel=(status:ApiPlatformCapability['status'],tr:Tr)=>status==='published'?tr('Опубліковано','Gepubliceerd'):status==='planned'?tr('Заплановано','Gepland'):tr('Заборонено','Verboden');
 const connectionStatusLabel=(status:ConnectionItem['status'],tr:Tr)=>status==='configured'?tr('Налаштовано','Geconfigureerd'):status==='error'?tr('Помилка','Fout'):status==='revoked'?tr('Відкликано','Ingetrokken'):tr('Не підключено','Niet gekoppeld');
 const when=(value:number|null)=>value?new Date(value).toLocaleString():'—';
-const PURPOSES=[{id:'anthropic',uk:'Anthropic (Claude API)',nl:'Anthropic (Claude-API)'},{id:'home-assistant',uk:'Home Assistant',nl:'Home Assistant'},{id:'telegram',uk:'Telegram bot',nl:'Telegram-bot'},{id:'github',uk:'GitHub PAT',nl:'GitHub PAT'},{id:'github-app',uk:'GitHub (альтернативне підключення)',nl:'GitHub (alternatieve koppeling)'},{id:'webhook',uk:'Webhook signing',nl:'Webhook-ondertekening'},{id:'other',uk:'Інше',nl:'Overig'}];
+const apiFout=(e:unknown)=>String((e as {response?:{data?:{error?:unknown;reasonCode?:unknown}};message?:unknown})?.response?.data?.error||(e as {response?:{data?:{reasonCode?:unknown}}})?.response?.data?.reasonCode||(e as {message?:unknown})?.message||'');
 export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
   const[contract,setContract]=useState<Contract>(fallback);
   const[tokens,setTokens]=useState<TokenItem[]>([]);
@@ -25,11 +28,11 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
   const[connections,setConnections]=useState<ConnectionItem[]>([]);
   const[vaultReady,setVaultReady]=useState(false);
   const[plaintext,setPlaintext]=useState('');
-  const[vaultName,setVaultName]=useState('ha-long-lived');
-  const[vaultPurpose,setVaultPurpose]=useState('home-assistant');
-  const[vaultValue,setVaultValue]=useState('');
-  const[vaultMeta,setVaultMeta]=useState<VaultMeta>(()=>({...leegMeta(),geldigVan:vandaag()}));
   const lang=tr('uk','nl')==='uk'?'uk' as const:'nl' as const;
+  const beginDoel=useMemo<VaultDoel>(()=>{
+    try{const d=new URLSearchParams(location.search).get('doel');if(isVaultDoel(d))return d;}catch{/* ignore */}
+    return 'github-oauth';
+  },[tab]);
   const[renameDraft,setRenameDraft]=useState<Record<string,string>>({});
   const[busy,setBusy]=useState(false);
   const[notice,setNotice]=useState('');
@@ -53,9 +56,8 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
   const create=async()=>{if(busy)return;setBusy(true);setNotice('');try{const response=await api.post('/api/owner/api-platform/tokens/create',{...sessionBody(),label:tr('Ключ API','API-sleutel'),scopes:['identity.me.read'],expiresInDays:90});const key=String(response?.data?.plaintext||'');if(!key)throw new Error('empty');setPlaintext(key);setNotice(tr('Ключ показано один раз. Скопіюйте зараз. Backend зберіг лише hash.','Sleutel één keer getoond. Kopieer nu. Backend bewaart alleen de hash.'));await load();}catch{setNotice(tr('Не вдалося створити ключ.','Sleutel aanmaken mislukt.'))}setBusy(false);};
   const revoke=async(id:string)=>{if(busy||!window.confirm(tr('Відкликати ключ одразу?','Sleutel nu intrekken?')))return;setBusy(true);try{await api.post(`/api/owner/api-platform/tokens/${id}/revoke`,sessionBody());if(plaintext)setPlaintext('');await load();setNotice(tr('Ключ відкликано. GET /api/v1/me більше не прийме.','Sleutel ingetrokken. GET /api/v1/me weigert hem nu.'))}catch{setNotice(tr('Не вдалося відкликати.','Intrekken mislukt.'))}setBusy(false);};
   const verify=async()=>{if(!plaintext||busy)return;setBusy(true);try{const response=await api.post('/api/owner/api-platform/tokens/verify',{...sessionBody(),plaintext});setNotice(tr(`Перевірка успішна. owner id: ${response.data.ownerId}. scopes: ${(response.data.scopes||[]).join(', ')}`,`Controle geslaagd. owner-id: ${response.data.ownerId}. scopes: ${(response.data.scopes||[]).join(', ')}`));}catch{setNotice(tr('Ключ недійсний, прострочений або відкликаний.','Sleutel ongeldig, verlopen of ingetrokken.'))}setBusy(false);};
-  const saveVault=async()=>{if(busy)return;setBusy(true);setNotice('');try{const response=await api.post('/api/owner/api-platform/vault/save',{...sessionBody(),name:vaultName,purpose:vaultPurpose,usedBy:vaultPurpose,value:vaultValue,meta:vaultMeta});if(response?.data?.plaintext||response?.data?.value||response?.data?.secret)throw new Error('leak');setVaultValue('');setVaultMeta({...leegMeta(),geldigVan:vandaag()});await load();setNotice(tr('Секрет збережено зашифровано. Значення в UI більше не показується.','Geheim versleuteld opgeslagen. De waarde wordt niet meer in de UI getoond.'));}catch{setNotice(tr('Не вдалося зберегти секрет. Перевірте назву і що поле значення не порожнє.','Geheim opslaan mislukt. Controleer de naam en of de waarde niet leeg is.'))}setBusy(false);};
-  const renameVault=async(id:string)=>{const name=String(renameDraft[id]||'').trim();if(busy||!name)return;setBusy(true);try{const response=await api.post(`/api/owner/api-platform/vault/${id}/rename`,{...sessionBody(),name});if(response?.data?.plaintext||response?.data?.value)throw new Error('leak');await load();setNotice(tr('Назву оновлено. Значення лишилось зашифрованим.','Naam bijgewerkt. De waarde blijft versleuteld.'));}catch{setNotice(tr('Не вдалося перейменувати.','Hernoemen mislukt.'))}setBusy(false);};
-  const deleteVault=async(id:string,name:string)=>{if(busy||!window.confirm(tr(`Видалити секрет «${name}» без відновлення?`,`Geheim «${name}» definitief verwijderen?`)))return;setBusy(true);try{await api.post(`/api/owner/api-platform/vault/${id}/delete`,sessionBody());await load();setNotice(tr('Секрет видалено.','Geheim verwijderd.'));}catch{setNotice(tr('Не вдалося видалити.','Verwijderen mislukt.'))}setBusy(false);};
+  const renameVault=async(id:string)=>{const name=String(renameDraft[id]||'').trim();if(busy||!name)return;setBusy(true);try{const response=await api.post(`/api/owner/api-platform/vault/${id}/rename`,{...sessionBody(),name});if(response?.data?.plaintext||response?.data?.value)throw new Error('leak');await load();setNotice(tr('Назву оновлено. Значення лишилось зашифрованим.','Naam bijgewerkt. De waarde blijft versleuteld.'));}catch(e){setNotice(`${tr('Не вдалося перейменувати: ','Hernoemen mislukt: ')}${foutTekst(apiFout(e),lang)}`)}setBusy(false);};
+  const deleteVault=async(id:string,name:string)=>{if(busy||!window.confirm(tr(`Видалити секрет «${name}» без відновлення?`,`Geheim «${name}» definitief verwijderen?`)))return;setBusy(true);try{await api.post(`/api/owner/api-platform/vault/${id}/delete`,sessionBody());await load();setNotice(tr('Секрет видалено.','Geheim verwijderd.'));}catch(e){setNotice(`${tr('Не вдалося видалити: ','Verwijderen mislukt: ')}${foutTekst(apiFout(e),lang)}`)}setBusy(false);};
   const markConnection=async(id:string,status:ConnectionItem['status'])=>{if(busy)return;setBusy(true);try{await api.post(`/api/owner/api-platform/connections/${id}/status`,{...sessionBody(),status});await load();setNotice(tr('Статус підключення оновлено.','Koppelingsstatus bijgewerkt.'));}catch{setNotice(tr('Не вдалося оновити статус.','Status bijwerken mislukt.'))}setBusy(false);};
   const heading=tab==='vault'?tr('Сховище секретів','Geheimenkluis'):tab==='verbindingen'?tr('Реєстр підключень','Koppelingenregister'):tab==='access'?tr('API-доступ','API-toegang'):tr('API та інтеграції','API en integraties');
   return <section className='api-platform' data-api-platform={API_PLATFORM_VERSION} data-api-tab={tab} data-api-token-count={String(liveCount)} data-api-create-token='enabled' data-api-vault={vaultReady?'ready':'blocked'} data-api-connections={String(connections.length)}>
@@ -118,16 +120,22 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
         <span data-api-vault-ready={vaultReady?'yes':'no'}>{vaultReady?tr('Шифрування AES-256-GCM готове','AES-256-GCM-versleuteling klaar'):tr('Ключ шифрування недоступний','Versleutelingsleutel ontbreekt')}</span>
         <span>{tr('Читає лише backend конектора','Alleen connector-backend leest')}</span>
       </div>
-      <form className='api-platform-vault-form' onSubmit={event=>{event.preventDefault();void saveVault();}}>
-        <label>{tr('Назва','Naam')}<input name='vault-name' autoComplete='off' value={vaultName} onChange={event=>setVaultName(event.target.value)} placeholder='ha-long-lived' /></label>
-        <label>{tr('Призначення','Doel')}<select value={vaultPurpose} onChange={event=>setVaultPurpose(event.target.value)}>{PURPOSES.map(item=><option key={item.id} value={item.id}>{tr(item.uk,item.nl)}</option>)}</select></label>
-        <label>{tr('Значення (один раз)','Waarde (één keer)')}<GeheimInvoer t={tr} name='vault-value' autoComplete='new-password' value={vaultValue} onChange={setVaultValue} placeholder={tr('Вставте секрет і збережіть','Plak het geheim en sla op')} max={8192} soort='kluis'/></label>
-        <VaultMetaVelden lang={lang} waarde={vaultMeta} onChange={setVaultMeta}/>
-        <button type='submit' disabled={busy||!vaultValue||!vaultReady}>{tr('Зберегти зашифровано','Versleuteld opslaan')}</button>
-      </form>
-      <small>{tr('Після збереження поле очищується. Показати секрет неможливо. Google/Microsoft platform secrets сюди не входять.','Na opslaan wordt het veld leeggemaakt. Het geheim kan niet getoond worden. Google-/Microsoft-platformgeheimen horen hier niet.')}</small>
+      <GeheimFormulier
+        lang={lang}
+        beginDoel={beginDoel}
+        vaultKlaar={vaultReady}
+        context={sessionBody()}
+        formulierNaam='api-kluis'
+        onOpgeslagen={async ({ naam, rotated }) => {
+          await load();
+          setNotice(rotated
+            ? tr(`Секрет «${naam}» оновлено й зашифровано. Значення в UI не повертається.`, `Geheim «${naam}» bijgewerkt en versleuteld. De waarde keert niet terug in de UI.`)
+            : tr(`Секрет «${naam}» збережено зашифровано. Значення в UI не повертається.`, `Geheim «${naam}» versleuteld opgeslagen. De waarde keert niet terug in de UI.`));
+        }}
+      />
+      <small>{tr('Після збереження поле очищується. Значення ніколи не передається відкритим текстом.', 'Na opslaan wordt het veld leeggemaakt. De waarde wordt nooit onversleuteld verzonden.')}</small>
       <ul className='api-platform-tokens' data-api-vault-list='true'>{vault.map(item=><li key={item.id} data-api-vault-id={item.id} data-api-vault-name={item.name}>
-        <div><code>{item.name}</code> · {item.usedBy||item.purpose} · {tr('оновлено','bijgewerkt')} {when(item.updatedAt)}<VaultMetaRegel lang={lang} meta={item.meta} staat={item.staat}/><VaultMetaBewerker lang={lang} id={item.id} meta={item.meta} context={sessionBody()} onOpgeslagen={load}/></div>
+        <div><code>{item.name}</code> · {isVaultDoel(item.purpose)?kies(lang,DOEL_INFO[item.purpose].naam):(item.usedBy||item.purpose)} · {tr('оновлено','bijgewerkt')} {when(item.updatedAt)}<VaultMetaRegel lang={lang} meta={item.meta} staat={item.staat}/><VaultMetaBewerker lang={lang} id={item.id} meta={item.meta} context={sessionBody()} onOpgeslagen={load}/></div>
         <div className='api-platform-secret-actions'>
           <input aria-label={tr('Нова назва','Nieuwe naam')} value={renameDraft[item.id]??item.name} onChange={event=>setRenameDraft(current=>({...current,[item.id]:event.target.value}))} />
           <button type='button' onClick={()=>void renameVault(item.id)} disabled={busy}>{tr('Перейменувати','Hernoemen')}</button>

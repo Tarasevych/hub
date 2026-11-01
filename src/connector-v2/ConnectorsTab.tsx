@@ -5,9 +5,10 @@
 // wordt onthouden en vraagt herverbinden. Een massale wijziging toont eerst per agent wat er bij komt en wegvalt; uitbreiden of
 // «alle acties» vraagt een verse passkey-bevestiging (zelfde stap als elders: STEP_UP_REQUIRED).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowRight, Ban, Check, Copy, Eye, KeyRound, Link2, RefreshCw, Search, ShieldCheck, ShieldQuestion, SlidersHorizontal, Trash2, UserRound, Wrench, X, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Ban, Check, Copy, Eye, Fingerprint, KeyRound, Link2, RefreshCw, Search, ShieldCheck, ShieldQuestion, SlidersHorizontal, Trash2, UserRound, Wrench, X, Zap } from 'lucide-react';
 import { api } from '../platform/client';
 import { sessionBody } from '../agenten-gegevens';
+import { ondertekenAgentBeleidInPlaats } from '../agenten/beleid-ondertekenen';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import { v2Agent, V2_AGENTEN, type AgentSlug } from '../../shared/connector-v2/agenten';
 import { KANT_TEKST, RISICO_TEKST, V2_GROEPEN, V2_OPTIES, type GroepId, type Kant } from '../../shared/connector-v2/catalogus';
@@ -116,10 +117,27 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
   const gekozen = schoon(sleutels, kanten);
   const gewijzigd = gekozen.join() !== schoon(basis.sleutels, basis.kanten).join() || kanten.join() !== basis.kanten.join();
   const verbonden = a.koppelingen.length > 0;
-  const kanDirectToepassen = verbonden && (
+  const heeftActieveVerbinding = verbonden || (a.erfenis?.length ?? 0) > 0;
+  const kanDirectToepassen = heeftActieveVerbinding && (
     !!a.voorkeur?.herverbinden
-    || (!!a.actief && (breidtUit(a.actief.sleutels, gekozen) || kanten.some((x) => !a.actief!.kanten.includes(x))))
+    || !a.actief
+    || breidtUit(a.actief.sleutels, gekozen)
+    || kanten.some((x) => !a.actief!.kanten.includes(x))
   );
+  const beleidIngesteld = eigenaar && !!a.diagnose && a.diagnose.aiPolicyState !== 'niet-ingesteld' && a.diagnose.aiPolicyState !== 'ongeldig';
+  const beleidBlokkeert = beleidIngesteld && (
+    a.diagnose!.aiPolicyBlockedCount > 0
+    || a.diagnose!.aiPolicyState === 'agent-onbekend'
+    || a.diagnose!.aiPolicyState === 'agent-uit'
+    || a.diagnose!.aiPolicyState === 'verlopen'
+    || a.diagnose!.aiPolicyState === 'uit'
+  );
+  const techActiveringNodig = eigenaar && kanten.includes('beheer') && !agentTechNu && a.diagnose?.aiServiceState !== 'bevroren';
+  const heeftActieNodig = gewijzigd || kanDirectToepassen || beleidBlokkeert || techActiveringNodig;
+  const vraagtEenActieActivatie = kanDirectToepassen
+    || beleidBlokkeert
+    || techActiveringNodig
+    || (beleidIngesteld && (breidtUit(basis.sleutels, gekozen) || kanten.some((x) => !basis.kanten.includes(x))));
   const voorbeeld = V2_OPTIES.find((o) => o.key === 'v2_whoami:gebruiker');
 
   const doe = async (pad: string, extra: Record<string, unknown>, ok: (d: any) => string) => {
@@ -127,16 +145,66 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
     try { const r = await api.post(pad, { ...sessionBody(), agent: a.slug, ...extra }); setMelding(ok(r.data)); await naWijziging(); }
     catch (e) {
       const code = String((e as Error)?.message ?? '');
-      setMelding(code === 'OWNER_REQUIRED' || code === 'TECH_PROFIEL_VEREIST' ? tr('Технічні інструменти змінює лише власник сайту.', 'Technische hulpmiddelen wijzigt alleen de eigenaar van de site.') : /STEP_UP/.test(code) ? tr('Підтвердження скасовано — активний токен не змінено.', 'Bevestiging geannuleerd — het actieve token is niet gewijzigd.') : tr(`Не вдалося (${code || 'немає зв’язку'}).`, `Mislukt (${code || 'geen verbinding'}).`));
+      setMelding(code === 'OWNER_REQUIRED' || code === 'TECH_PROFIEL_VEREIST' ? tr('Технічні інструменти змінює лише власник сайту.', 'Technische hulpmiddelen wijzigt alleen de eigenaar van de site.') : /STEP_UP|NotAllowedError/.test(code) ? tr('Підтвердження скасовано — активний токен не змінено.', 'Bevestiging geannuleerd — het actieve token is niet gewijzigd.') : tr(`Не вдалося (${code || 'немає зв’язку'}).`, `Mislukt (${code || 'geen verbinding'}).`));
     } finally { setBezig(false); }
   };
-  const bewaar = () => doe('/api/owner/connector-v2/wijzig', { kanten, sleutels: gekozen }, (d) => d.herverbinden
-    ? tr(`Збережено. Обмеження вже діють (${d.ingeperkt}); нові дозволи з’являться після застосування нижче або після перепідключення.`, `Opgeslagen. Beperkingen gelden al (${d.ingeperkt}); nieuwe rechten komen na direct toepassen hieronder of na opnieuw verbinden.`)
-    : verbonden ? tr('Збережено й уже діє для активного підключення.', 'Opgeslagen en al van kracht voor de actieve koppeling.') : tr('Збережено. Ці дозволи буде запропоновано під час підключення.', 'Opgeslagen. Deze rechten worden voorgesteld bij het koppelen.'));
-  const toepassen = () => doe('/api/owner/connector-v2/toepassen', gewijzigd || !a.voorkeur ? { kanten, sleutels: gekozen } : {}, (d) => tr(
-    `Дозволи застосовано до активного підключення (${d.bijgewerkt}) без розриву сесії; сервер надіслав сповіщення про оновлення списку.`,
-    `Rechten toegepast op de actieve koppeling (${d.bijgewerkt}) zonder verbreken; de server stuurde een lijst-gewijzigd-melding.`,
-  ));
+
+  // UX-AI-VAULT-001: één gecombineerde actie (zonder herverbinden=true-val en zonder omweg via admin/ai) die met één Passkey-bevestiging
+  // tegelijk het ondertekende beleidsplafond (ai-beleid), de actieve koppeling (connector_v2_rechten) én de technische sessiedelegatie bijwerkt.
+  const bewaarEnActiveer = async () => {
+    if (!vraagtEenActieActivatie) {
+      await doe('/api/owner/connector-v2/wijzig', { kanten, sleutels: gekozen }, (d) =>
+        verbonden
+          ? tr(`Збережено й уже діє для активного підключення (${d.ingeperkt ?? 1}).`, `Opgeslagen en al van kracht voor de actieve koppeling (${d.ingeperkt ?? 1}).`)
+          : tr('Збережено. Ці дозволи буде запропоновано під час підключення.', 'Opgeslagen. Deze rechten worden voorgesteld bij het koppelen.'));
+      return;
+    }
+    setBezig(true);
+    setMelding('');
+    try {
+      const delen: string[] = [];
+      if (beleidIngesteld) {
+        const pol = await ondertekenAgentBeleidInPlaats({
+          slug: a.slug,
+          naam: info.naam,
+          sleutels: gekozen,
+          lang: uk ? 'uk' : 'nl',
+        });
+        if (pol.getekend) {
+          delen.push(tr(`політику «Доступ ШІ» підписано (версія ${pol.seq})`, `beleid «AI-toegang» getekend (versie ${pol.seq})`));
+        }
+      }
+      if (heeftActieveVerbinding) {
+        const r = await api.post('/api/owner/connector-v2/toepassen', { ...sessionBody(), agent: a.slug, kanten, sleutels: gekozen });
+        delen.push(tr(`дозволи застосовано до активного підключення (${r.data?.bijgewerkt ?? 1})`, `rechten toegepast op de actieve koppeling (${r.data?.bijgewerkt ?? 1})`));
+      } else {
+        await api.post('/api/owner/connector-v2/wijzig', { ...sessionBody(), agent: a.slug, kanten, sleutels: gekozen });
+        delen.push(tr('дозволи збережено', 'rechten opgeslagen'));
+      }
+      if (eigenaar && kanten.includes('beheer') && a.diagnose?.aiServiceState !== 'bevroren') {
+        await api.post('/api/owner/connector-v2/activeer-tech', {
+          ...sessionBody(),
+          agent: a.slug,
+          actie: 'alles-aan',
+          termijn: 'tot-technisch-einde',
+        });
+        delen.push(tr('технічний сеанс делеговано', 'technische sessie gedelegeerd'));
+      }
+      await naWijziging();
+      setMelding(`${tr('Готово однією дією', 'In één actie uitgevoerd')}: ${delen.join(' · ')}.`);
+    } catch (e) {
+      const code = String((e as Error)?.message ?? '');
+      setMelding(
+        code === 'OWNER_REQUIRED'
+          ? tr('Технічні інструменти змінює лише власник сайту.', 'Technische hulpmiddelen wijzigt alleen de eigenaar van de site.')
+          : /STEP_UP|NotAllowedError|Підтвердження passkey скасовано|Passkey-bevestiging geannuleerd/i.test(code)
+            ? tr('Підтвердження Passkey скасовано — стан не змінено.', 'Passkey-bevestiging geannuleerd — de staat is niet gewijzigd.')
+            : code || tr('Не вдалося застосувати дозволи.', 'Rechten toepassen mislukt.'),
+      );
+    } finally {
+      setBezig(false);
+    }
+  };
   const herverbind = () => doe('/api/owner/connector-v2/herverbind', {}, () => tr(`Підключення закрито. Відкрийте ${info.naam}: він попросить підключитися знову, і ви побачите, що буде додано.`, `Koppeling gesloten. Open ${info.naam}: die vraagt opnieuw te verbinden en u ziet wat erbij komt.`));
   const intrek = () => doe('/api/owner/connector-v2/intrekken', {}, (d) => tr(`Відкликано: ${d.ingetrokken}. ${info.naam} більше нічого не зможе зробити, доки ви знову не підключите.`, `Ingetrokken: ${d.ingetrokken}. ${info.naam} kan niets meer tot u opnieuw koppelt.`));
 
@@ -183,13 +251,20 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
       <p className='v2-uitleg' data-v2-lijst-cache='1'>{tr('Застосунки ШІ запам’ятовують список інструментів. Коли ви вмикаєте чи вимикаєте технічний профіль, сервер надсилає сповіщення «список змінився» через відкритий потік підключення; якщо застосунок такого потоку не тримає (наприклад, claude.ai), список у поточній розмові оновиться лише після нової розмови або «Перепідключити». Дозволи при цьому не втрачаються.', 'AI-apps onthouden de lijst van hulpmiddelen. Zet u het technische profiel aan of uit, dan stuurt de server «lijst gewijzigd» over de open stroom van de koppeling; houdt de app geen stroom open (bijvoorbeeld claude.ai), dan wordt de lijst in het lopende gesprek pas na een nieuw gesprek of «Opnieuw verbinden» vernieuwd. Rechten gaan daarbij niet verloren.')}</p>
       <RechtenKiezer tr={tr} agent={a.slug} kanten={kanten} waarde={gekozen} onChange={setSleutels} vorige={verbonden && a.actief ? a.actief.sleutels : null} techNu={agentTechNu} />
       <div className='v2-agent-acties'>
-        <button type='button' className='v2-knop is-primair' disabled={bezig || !gewijzigd} onClick={() => void bewaar()} data-v2-bewaar={a.slug}><Check size={15} />{tr('Зберегти', 'Opslaan')}</button>
-        {kanDirectToepassen ? (
-          <button type='button' className='v2-knop' disabled={bezig} onClick={() => void toepassen()} data-v2-toepassen={a.slug}>
-            <Zap size={15} />{tr('Застосувати до активного підключення зараз', 'Nu toepassen op actieve koppeling')}
-          </button>
+        <button type='button' className='v2-knop is-primair' disabled={bezig || !heeftActieNodig} onClick={() => void bewaarEnActiveer()} data-v2-bewaar={a.slug}>
+          {vraagtEenActieActivatie ? <Fingerprint size={15} /> : <Check size={15} />}
+          {vraagtEenActieActivatie
+            ? tr('Зберегти й активувати (Passkey)', 'Opslaan en activeren (Passkey)')
+            : tr('Зберегти', 'Opslaan')}
+        </button>
+        {vraagtEenActieActivatie ? (
+          <small className='v2-let-klein'>
+            {tr(
+              'Однією дією оновлює активний грант без перепідключення, підписує політику-стелю «Доступ ШІ» та за потреби делегує технічний сеанс.',
+              'Werkt in één actie de actieve koppeling bij zonder opnieuw verbinden, ondertekent het beleidsplafond «AI-toegang» en delegeert zo nodig de technische sessie.',
+            )}
+          </small>
         ) : null}
-        {verbonden && a.actief && breidtUit(a.actief.sleutels, gekozen) ? <small className='v2-let-klein'>{tr('Розширення можна застосувати одразу кнопкою поруч (з підтвердженням) або після перепідключення; обмеження діють одразу.', 'Uitbreiden kan meteen met de knop hiernaast (met bevestiging) of na opnieuw verbinden; beperken geldt meteen.')}</small> : null}
       </div>
       {voorbeeld ? <p className='v2-uitleg'>{tr('Приклад назви інструмента для цього агента:', 'Voorbeeld van een hulpmiddelnaam voor deze agent:')} <code>{toolNaam(voorbeeld, a.slug)}</code></p> : null}
       {melding ? <p className='v2-melding' role='status'>{melding}</p> : null}

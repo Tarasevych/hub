@@ -87,6 +87,8 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
     reden: { uk: 'Теми й розкладка потрібні ДО входу (перший кадр) — не містять особистого змісту; низький клас чутливості.', nl: 'Thema en indeling zijn nodig VÓÓR het aanmelden (eerste beeld) en bevatten geen persoonlijke inhoud; lage gevoeligheid.' } },
   { tabel: 'app.browser_diag_archive', veld: 'sealed (diagnose van de extensie)', klasse: 'persoonlijk', stand: 'nog-niet', module: 'backend/browser-diag-archief.ts',
     reden: { uk: 'Архів пишеться агентом розширення без сесії сайту; потрібен грант-шлях для токена агента. Наступний випуск.', nl: 'Het archief wordt door de extensie-agent zonder sitesessie geschreven; vraagt de grant-weg voor agenttokens. Volgende uitrol.' } },
+  { tabel: 'app.huis_integraties', veld: 'token_envelop (Home Assistant-koppeling van de woning)', klasse: 'geheim', stand: 'nog-niet', module: 'backend/huis-vnext.ts',
+    reden: { uk: 'Інтеграція оселі спільна для учасників дому (app.huis_leden) та автоматизацій без сесії однієї людини; потрібен окремий ключ оселі.', nl: 'Een woningintegratie wordt gedeeld door leden van de woning (app.huis_leden) en automatiseringen zonder één mensensessie; vraagt een eigen woningsleutel.' } },
 ]);
 export const registerVan = (stand: RegisterStand) => SLEUTELKLUIS_REGISTER.filter((r) => r.stand === stand);
 

@@ -3,6 +3,7 @@ import {db,isOwnerEmail,secrets} from '../server/platform';
 import {stapOpMethode,stapOpVerbruiken,type StapOpAuth} from './stap-op';
 import {sterkeStapOpFout} from './toegang-context';
 import {VAULT_DOELEN} from '../shared/geheimen';
+import {leesAppSleutel,leesOauthApp} from '../shared/github-koppeling';
 import {GEEN_RECHT,heeftApiRecht,weigerCode} from './api-recht';
 import {leegMeta,metaUitRecord,normaliseerVaultMeta,staatTekst,vandaag,vaultStaat,type VaultMeta,type VaultStaat} from '../shared/kluis-meta';
 
@@ -143,7 +144,7 @@ export function createApiPlatformVaultRoutes(deps:{
 }){
   const ownerGate=async(event:Record<string,unknown>,body:unknown)=>{
     const auth=await deps.requireSession(event,body);
-    if('errorCode'in auth||(auth.service!=='api'&&auth.service!=='admin')||auth.user.status!=='approved')return null;
+    if('errorCode'in auth||!['api','admin','github','ai','mcp'].includes(auth.service)||auth.user.status!=='approved')return null;
     if(!heeftApiRecht(auth.user as never))return GEEN_RECHT;// fase 3: recht 'api-platform' of eigenaar
     return auth;
   };
@@ -173,19 +174,30 @@ export function createApiPlatformVaultRoutes(deps:{
       const value=String(body.value||body.secret||'');
       const metaIn=body.meta;
       if(!value||value.length>MAX_VALUE)return deps.fail(value?'OWNER_VAULT_VALUE_TOO_LARGE':'OWNER_VAULT_VALUE_EMPTY',400);
+      if(purpose==='github-oauth'&&!leesOauthApp(value)){
+        const mId=/^\s*client_id\s*[:=]\s*(\S+)\s*$/im.exec(value);
+        const idOk=!!mId&&/^[A-Za-z0-9](?:[A-Za-z0-9._-]{6,78})[A-Za-z0-9]$/.test(mId[1]);
+        return deps.fail(idOk?'GITHUB_OAUTH_CLIENT_SECRET_ONGELDIG':'GITHUB_OAUTH_CLIENT_ID_ONGELDIG',400);
+      }
+      if(purpose==='github-app'&&!leesAppSleutel(value)){
+        const pemRe=new RegExp('-----BEGIN (?:RSA )?PRIVATE'+' KEY-----[\\s\\S]+?-----END (?:RSA )?PRIVATE'+' KEY-----');
+        const heeftPem=pemRe.test(value.replace(/\\n/g,'\n'));
+        const mApp=/^\s*app_id\s*[:=]\s*([0-9]{1,20})\s*$/im.exec(value);
+        return deps.fail(!mApp?'GITHUB_APP_ID_ONGELDIG':!heeftPem?'GITHUB_APP_PEM_ONGELDIG':'GITHUB_APP_SLEUTEL_ONLEESBAAR',400);
+      }
       const resolved=await resolveVaultSecret();
       if(!resolved.ready)return deps.fail('OWNER_VAULT_ENCRYPTION_UNAVAILABLE',503);
       const items=await apiPlatformVaultItems(auth.user.id);
       const existing=items.find(item=>item.id===String(body.id||'')||item.keyName===keyName)||null;
       if(!existing&&items.length>=MAX_ITEMS)return deps.fail('OWNER_VAULT_LIMIT_REACHED',400);
       if(existing&&existing.keyName!==keyName&&items.some(item=>item.keyName===keyName&&item.id!==existing.id))return deps.fail('OWNER_VAULT_NAME_TAKEN',409);
+      const now=Date.now();
+      const metaUit=normaliseerVaultMeta(metaIn,existing?metaUitRecord(existing.meta):{...leegMeta(),geldigVan:vandaag(now)});
+      if('fout'in metaUit)return deps.fail(metaUit.fout,400);
       const stapSave=await gevoelig(auth);
       if(stapSave.fout){await geweigerd(auth.user.id,'save',keyName,stapSave.fout);return deps.fail(stapSave.fout,403);}
       let envelope;
       try{envelope=encryptValue(value,resolved.secret,auth.user.id,keyName);}catch(caught){return deps.fail(caught instanceof Error?caught.message:'OWNER_VAULT_ENCRYPT_FAILED',500);}
-      const now=Date.now();
-      const metaUit=normaliseerVaultMeta(metaIn,existing?metaUitRecord(existing.meta):{...leegMeta(),geldigVan:vandaag(now)});
-      if('fout'in metaUit)return deps.fail(metaUit.fout,400);
       if(existing){
         // Nieuwe waarde = rotatie: meldingen over de oude termijn vervallen.
         const record={...existing,keyName,purpose,usedBy,...envelope,keySource:resolved.keySource,meta:metaUit.meta,gemeld:{},rotatedAt:now,updatedAt:now};

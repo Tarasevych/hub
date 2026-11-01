@@ -106,7 +106,11 @@ export async function main(): Promise<number> {
     // Onder root negeert mcp_deur_bijwerken MCP_UNIT_DOEL (zie de controle hierboven) en zou de install-stub de ECHTE
     // /etc/systemd/system/mijn-ruimte-mcp.service overschrijven (CI-container, server). `id -u` daarom altijd als gewone gebruiker.
     // Під root тест інакше перезаписав би справжній unit хоста; id -u підмінено.
-    stub('id', 'if [ "${1:-}" = "-u" ]; then echo 1000; exit 0; fi\nexec /usr/bin/id "$@"');
+    stub('id', [
+      'if [ "${1:-}" = "-u" ]; then echo 1000; exit 0; fi',
+      'if [ "${1:-}" = "-gn" ]; then /usr/bin/id -gn 2>/dev/null || echo mijnruimte; exit 0; fi',
+      'exec /usr/bin/id "$@"',
+    ].join('\n'));
     stub('curl', 'echo \'{"ok":true}\'; exit 0');
     stub('flock', 'exit 0');
     if (pythonCmd() !== 'python3') stub('python3', `exec ${pythonCmd()} "$@"`);
@@ -119,7 +123,7 @@ export async function main(): Promise<number> {
       ].join('\n'));
       stub('mv', [
         'while [ $# -gt 2 ]; do shift; done',
-        `"${nodeB}" -e "const fs=require('node:fs'),cp=require('node:child_process');const [s,d]=process.argv.slice(1);const t=fs.readlinkSync(s);try{cp.execFileSync('cmd',['/c','rmdir',s],{stdio:'ignore'})}catch{}try{cp.execFileSync('cmd',['/c','rmdir',d],{stdio:'ignore'})}catch{}fs.symlinkSync(t,d,'junction');" "$(cygpath -w "$1")" "$(cygpath -w "$2")"`,
+        `"${nodeB}" -e "const fs=require('node:fs'),cp=require('node:child_process');const [s,d]=process.argv.slice(1);const st=fs.lstatSync(s);if(st.isSymbolicLink()){const t=fs.readlinkSync(s);try{cp.execFileSync('cmd',['/c','rmdir',s],{stdio:'ignore'})}catch{}try{cp.execFileSync('cmd',['/c','rmdir',d],{stdio:'ignore'})}catch{}fs.symlinkSync(t,d,'junction');}else{try{fs.rmSync(d,{force:true})}catch{}fs.renameSync(s,d);}" "$(cygpath -w "$1")" "$(cygpath -w "$2")"`,
       ].join('\n'));
       stub('readlink', [
         'shift $(( $# - 1 ))',
@@ -178,7 +182,7 @@ export async function main(): Promise<number> {
 
     const draai = (script: string, extraEnv: Record<string, string> = {}) => {
       rmSync(log, { force: true });
-      const r = spawnSync(bashBin, ['-c', `${kop}\nexport PATH="${binB}:$PATH"\n${script}\n`], {
+      const r = spawnSync(bashBin, ['-c', `export PATH="${binB}:$PATH"\n${kop}\n${script}\n`], {
         encoding: 'utf8',
         env: { ...process.env, ...extraEnv },
       });

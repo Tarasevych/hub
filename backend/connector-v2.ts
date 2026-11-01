@@ -627,9 +627,16 @@ export async function toepassenVoorkeur(userId: string, slug: AgentSlug, keuzeOv
     await v2st.zetRechten(userId, k.id, slug, doel);
     bijgewerkt++;
   }
-  const doelScopes = v2st.scopesVoor(doel.sleutels);
+  const scopesVanKant = (kant: Kant, sleutels: readonly string[]) => new Set(v2st.scopesVoor(sleutels.filter((s) => v2Optie(s)?.kant === kant)));
+  const kiesbaar = V2_OPTIES.filter((o) => o.status === 'actief').map((o) => o.key);
+  const dekbaar: Record<Kant, Set<string>> = { gebruiker: scopesVanKant('gebruiker', kiesbaar), beheer: scopesVanKant('beheer', kiesbaar) };
+  const ooitGekozen = new Set<Kant>([...(bestaand?.kanten ?? []), ...actief.flatMap((k) => k.kanten), ...doel.kanten]);
   for (const g of oud) {
-    await zetToegang(userId, { soort: 'mcp-koppeling', id: g.id }, doelScopes);
+    const kant: Kant = g.ruimte === 'technisch' ? 'beheer' : 'gebruiker';
+    if (!ooitGekozen.has(kant)) continue;
+    const toegestaan = doel.kanten.includes(kant) ? scopesVanKant(kant, doel.sleutels) : new Set<string>();
+    const nieuwScopes = [...new Set([...g.scopes.filter((s) => !dekbaar[kant].has(s)), ...toegestaan])];
+    await zetToegang(userId, { soort: 'mcp-koppeling', id: g.id }, nieuwScopes);
     bijgewerkt++;
   }
   const voorkeur = await v2st.zetVoorkeur(userId, slug, doel, false);
