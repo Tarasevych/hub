@@ -78,6 +78,7 @@ export type GebruikerDiagnoseContext = {
   profileSessionEnd: number | null;
   profileSessionMode: string | null;
   levendeSessieRij: TechSessieRij | null;
+  levendeActieveRijen: TechSessieRij[];
   basisTechCode: ToegangWeigerCode | null;
   aiDelegaties: AiDelegatieRij[];
   ruimteKeuzeGemaakt: boolean;
@@ -135,6 +136,7 @@ export async function bouwGebruikerDiagnoseContext(userId: string): Promise<Gebr
   let profileSessionEnd: number | null = null;
   let profileSessionMode: string | null = null;
   let levendeSessieRij: TechSessieRij | null = null;
+  const levendeActieveRijen: TechSessieRij[] = [];
   let basisTechCode: ToegangWeigerCode | null = null;
   let aiDelegaties: AiDelegatieRij[] = [];
 
@@ -151,6 +153,7 @@ export async function bouwGebruikerDiagnoseContext(userId: string): Promise<Gebr
     ]);
     aiDelegaties = aiRes.rows as AiDelegatieRij[];
     const nu = Date.now();
+    let eersteLevendeRij: TechSessieRij | null = null;
     for (const r of sessieRes.rows as TechSessieRij[]) {
       if (r.beeindigd_op) continue;
       const grens = msVan(r.grens_op) ?? 0;
@@ -158,9 +161,10 @@ export async function bouwGebruikerDiagnoseContext(userId: string): Promise<Gebr
       if (grens <= nu || (r.modus === 'tijd' && (eind === null || eind <= nu))) continue;
       const site = await kern.siteSessie(String(r.sessie_id));
       if (!site.leeft) continue;
-      levendeSessieRij = r;
-      break;
+      if (!eersteLevendeRij) eersteLevendeRij = r;
+      if (r.actief === 'technisch') levendeActieveRijen.push(r);
     }
+    levendeSessieRij = levendeActieveRijen[0] ?? eersteLevendeRij;
     if (levendeSessieRij) {
       profileSessionMode = levendeSessieRij.modus;
       profileSessionEnd = levendeSessieRij.modus === 'tijd' ? msVan(levendeSessieRij.eind_op) : msVan(levendeSessieRij.grens_op);
@@ -227,6 +231,7 @@ export async function bouwGebruikerDiagnoseContext(userId: string): Promise<Gebr
     profileSessionEnd,
     profileSessionMode,
     levendeSessieRij,
+    levendeActieveRijen,
     basisTechCode,
     aiDelegaties,
     ruimteKeuzeGemaakt: Boolean(keuze),
@@ -249,12 +254,13 @@ function evalueerDelegatie(ctx: GebruikerDiagnoseContext, grantId: string | null
   if (!ctx.techV2Active) {
     return { actief: ctx.profileSessionActive, scope: 'niet-van-toepassing', termijn: null, eind: ctx.profileSessionEnd };
   }
-  const rij = ctx.levendeSessieRij;
-  if (!rij) return { actief: false, scope: 'geen', termijn: null, eind: null };
+  const rijen = ctx.levendeActieveRijen.length ? ctx.levendeActieveRijen : ctx.levendeSessieRij ? [ctx.levendeSessieRij] : [];
+  if (!rijen.length) return { actief: false, scope: 'geen', termijn: null, eind: null };
+  const rijIds = new Set(rijen.map((r) => r.id));
   const nu = Date.now();
   const geldigVoorSessie = (a: AiDelegatieRij): boolean => {
-    if (a.termijn === 'tijd') return a.ruimte_sessie_id === rij.id && (msVan(a.eind_op) ?? 0) > nu;
-    if (a.termijn === 'tot-technisch-einde') return a.ruimte_sessie_id === rij.id;
+    if (a.termijn === 'tijd') return Boolean(a.ruimte_sessie_id && rijIds.has(a.ruimte_sessie_id)) && (msVan(a.eind_op) ?? 0) > nu;
+    if (a.termijn === 'tot-technisch-einde') return Boolean(a.ruimte_sessie_id && rijIds.has(a.ruimte_sessie_id));
     if (a.termijn === 'tot-site-uitloggen') return true; // gekoppeld aan sessie_id; wordt hieronder gevalideerd als nodig
     return false;
   };
