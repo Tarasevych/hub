@@ -249,8 +249,8 @@ async function issue(userId: string, clientId: string, clientName: string, scope
     try { v2 = await naUitgifte(userId, grantId, agent, v2Keuze); }
     catch (err) { await st.revokeGrant(userId, grantId).catch(() => undefined); console.error('[connector-v2] rechten vastleggen mislukt:', (err as Error).message); return tokenError(500, 'server_error', 'Rechten konden niet worden opgeslagen'); }
   } else {
-    // Gedetailleerde toegang (0043, shared/ai-toegang.ts): had de mens op de site («Доступ ШІ», bord:<klant>) al scopes gekozen,
-    // erf die keuze; anders krijgt de verbinding de niet-gevoelige standaardscopes.
+    // Gedetailleerde toegang (0043, shared/ai-toegang.ts): een PRIVÉ verbinding erft de keuze van «Доступ ШІ» (bord:<klant>), als
+    // die er is; een TECHNISCHE krijgt altijd de technische standaard (gescheiden ruimtes, besluit eigenaar 1.11.2026).
     await geefVoorNieuweKoppeling(userId, grantId, klantVan(clientName), r).catch(() => undefined);
   }
   meldLijstGewijzigd(userId);
@@ -651,6 +651,8 @@ export async function listUserGrants(userId: string) {
   return (await st.listGrants(userId)).map((g) => ({
     id: g.id, clientName: g.client_name, scope: g.scope, createdAt: new Date(g.created_at).getTime(), duur: g.duur ?? null, ruimte: ruimteOf(g.ruimte),
     lastUsedAt: g.last_used_at ? new Date(g.last_used_at).getTime() : null, expiresAt: new Date(g.refresh_expires_at).getTime(),
+    // Connector v2 (0045): de agent van de koppeling; null = oude /mcp. «Доступ ШІ» (bord) raakt alleen oude privégrants.
+    agent: g.agent ?? null,
   }));
 }
 export const revokeUserGrant = async (userId: string, id: string) => { const ok = await st.revokeGrant(userId, id); if (ok) { await grantSluiten(id).catch(() => undefined); sluitStromenVan(userId); } return ok; };
@@ -662,7 +664,7 @@ export async function listUserGrantHistory(userId: string) {
     const revokedAt = g.revoked_at ? new Date(g.revoked_at).getTime() : null;
     const expiresAt = new Date(g.refresh_expires_at).getTime();
     return {
-      id: g.id, clientId: g.client_id, clientName: g.client_name, scope: g.scope, createdAt: new Date(g.created_at).getTime(), duur: g.duur ?? null, ruimte: ruimteOf(g.ruimte),
+      id: g.id, clientId: g.client_id, clientName: g.client_name, scope: g.scope, createdAt: new Date(g.created_at).getTime(), duur: g.duur ?? null, ruimte: ruimteOf(g.ruimte), agent: g.agent ?? null,
       lastUsedAt: g.last_used_at ? new Date(g.last_used_at).getTime() : null, expiresAt, accessExpiresAt: new Date(g.access_expires_at).getTime(), revokedAt,
       status: revokedAt ? 'revoked' as const : expiresAt <= now ? 'expired' as const : 'active' as const,
     };

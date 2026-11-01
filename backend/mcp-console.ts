@@ -166,12 +166,12 @@ export async function issuePriveToken(userId: string, name: string) {
   return { ...tokenOut(row), token: raw };
 }
 
-/** Agenttoken van deze gebruiker (voor de toegangs-tab «Доступ ШІ»): id + naam, nooit het geheim. */
-export async function agentTokenVanGebruiker(userId: string, id: string): Promise<{ id: string; name: string } | null> {
+/** Agenttoken van deze gebruiker (voor de toegangs-tab «Доступ ШІ»): id + naam + ruimte, nooit het geheim. */
+export async function agentTokenVanGebruiker(userId: string, id: string): Promise<{ id: string; name: string; ruimte: AiRuimte } | null> {
   const { rows } = await getPool("systeem").query(
-    `SELECT id::text AS id, name FROM app.mcp_console_tokens
+    `SELECT id::text AS id, name, ruimte FROM app.mcp_console_tokens
       WHERE id::text = $1 AND user_id = $2 AND revoked_at IS NULL AND expires_at > now()`, [id, userId]);
-  return rows[0] ?? null;
+  return rows[0] ? { id: String(rows[0].id), name: String(rows[0].name), ruimte: ruimteOf(rows[0].ruimte) } : null;
 }
 
 /**

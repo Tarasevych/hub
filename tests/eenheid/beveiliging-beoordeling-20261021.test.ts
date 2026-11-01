@@ -190,7 +190,13 @@ export async function main(): Promise<number> {
     check('connector (geen valse weigering): het technische token van de echte registratie houdt zijn beheerkant', !!r2 && r2.kanten.includes('beheer') && r2.sleutels.includes('get_live_release:beheer'), JSON.stringify(r2?.kanten));
     const tEcht2 = await token(echt, 'Claude', 'prive', ['devices.read']);
     const r3 = await rechtenVoorOudToken(brUser, 'Claude', 'claude', tEcht2);
-    check('connector (erfenis blijft): twee grants van DEZELFDE registratie → beide kanten (de mens gaf DEZE app beide)', r3?.kanten.join() === 'beheer,gebruiker', JSON.stringify(r3?.kanten));
+    const r2b = await rechtenVoorOudToken(brUser, 'Claude', 'claude', tEcht);
+    // Gescheiden ruimtes (besluit eigenaar 1.11.2026): één token = één ruimte; tot dan erfde een privétoken de beheerkant van een
+    // technische grant van dezelfde registratie, met beheersleutels afgeleid uit zijn PRIVÉscopes (devices.read → machine_list:beheer).
+    check('connector (gescheiden ruimtes): een PRIVÉ token van dezelfde registratie als een technische grant krijgt alleen de gebruikerskant',
+      r3?.kanten.join() === 'gebruiker' && !(r3?.sleutels ?? []).some((k) => k.endsWith(':beheer')) && (r3?.sleutels ?? []).includes('machine_list:gebruiker'), JSON.stringify(r3?.kanten));
+    check('connector (gescheiden ruimtes): het TECHNISCHE token houdt alleen zijn beheerkant, ook naast een privégrant van dezelfde registratie',
+      r2b?.kanten.join() === 'beheer' && (r2b?.sleutels ?? []).includes('machine_list:beheer') && !(r2b?.sleutels ?? []).some((k) => k.endsWith(':gebruiker')), JSON.stringify(r2b?.kanten));
   } finally {
     await pool.query(`DELETE FROM app.ai_toegang WHERE user_id = $1`, [brUser]).catch(() => undefined);
     await pool.query(`DELETE FROM app.mcp_oauth_clients WHERE client_id = ANY($1)`, [opruimClients]).catch(() => undefined);
