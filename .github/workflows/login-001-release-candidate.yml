@@ -163,7 +163,8 @@ jobs:
             --samenvatting-nl 'Nieuwe responsieve minimalistische Mijn Ruimte aanmelding zonder fictief logo en met subtiele randanimatie.' \
             --uit uitvoer
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-$RELEASE_VERSION-chatgpt-overdracht.zip"
-          sha256sum -c "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256"
+          (cd uitvoer && sha256sum "mijn-ruimte-$RELEASE_VERSION.tar.gz" > "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
+          (cd uitvoer && sha256sum -c "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
           echo "RELEASE_SHA=$(sha256sum "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" | cut -d' ' -f1)" >> "$GITHUB_ENV"
           echo "RELEASE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
