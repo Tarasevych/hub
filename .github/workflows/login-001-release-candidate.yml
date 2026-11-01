@@ -97,7 +97,7 @@ jobs:
           npm run typecheck:server
           node scripts/eenheidstests.mjs login-001-weergave | tee uitvoer/login-001-test.log
           node scripts/eenheidstests.mjs aanmeld-ui-20261030 | tee -a uitvoer/login-001-test.log
-          npm run build
+          NODE_OPTIONS=--max-old-space-size=5120 npm run build
           node scripts/kaart-controle.mjs
           node scripts/orch.mjs controleer
           test -z "$(git status --porcelain --untracked-files=no)"
