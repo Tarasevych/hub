@@ -346,6 +346,45 @@ with tarfile.open(uit, "w:gz") as tf:
     const taakEigen = await voerOrchToolUit(grok, 'orch_taak_start', { id: 'GRK-777', tak: 'feature/grk-777-20261031-170300', basisCommit: basis, omschrijving: 'eigen taak zonder agent-veld' });
     check('agent-identiteit: zonder agent-veld registreert Grok op zijn eigen naam (agent uit de verbinding)', taakEigen.isError !== true && json(join(R, 'orchestratie/taken/GRK-777.json')).agent === 'grok', taakEigen.content[0].text.slice(0, 200));
 
+    // Overname van een geregistreerde taak (review van de release f8def89): Claude registreert CLD-778; Grok levert op EIGEN naam
+    // («agent»: «grok») een pakket in met taakId CLD-778. Vroeger: aanvaard, taak van Claude kreeg de tak van Grok en Grok stond in de
+    // wachtrij. Nu: AGENT_VERSCHILT, taakbestand en wachtrij ongewijzigd — via MCP én via de eigenaar (HTTP, zonder verwachteAgent).
+    const claudeWie = { userId: 'u-owner', clientName: 'Claude', agent: 'claude', tokenId: '3c4d5e6f-grant-c' };
+    const taakClaude = await voerOrchToolUit(claudeWie, 'orch_taak_start', { id: 'CLD-778', tak: 'feature/cld-778-20261031-170400', basisCommit: basis, omschrijving: 'taak van claude' });
+    const taakVoor = lees(join(R, 'orchestratie/taken/CLD-778.json'));
+    const wachtrijVoor = existsSync(join(R, 'orchestratie/wachtrij.json')) ? lees(join(R, 'orchestratie/wachtrij.json')) : '';
+    const pakBron4 = join(T, 'pakbron4'); mkdirSync(join(pakBron4, 'src'), { recursive: true });
+    writeFileSync(join(pakBron4, 'src/overname.ts'), 'export const overname = 1;\n');
+    writeFileSync(join(pakBron4, 'ORCH-OVERDRACHT.json'), JSON.stringify({ ...JSON.parse(lees(join(pakBron, 'ORCH-OVERDRACHT.json'))), taakId: 'CLD-778', agent: 'grok', tak: 'feature/cld-778-20261031-170500', bestanden: ['src/overname.ts'], samenvatting: { uk: 'Тест: здача чужої зареєстрованої задачі', nl: 'Test: inleveren op de geregistreerde taak van een ander' } }));
+    const overTar = join(T, 'cld-778.tar.gz');
+    spawnSync(py, ['-c', 'import os, sys, tarfile\nwith tarfile.open(sys.argv[2], "w:gz") as tf:\n    tf.add(os.path.join(sys.argv[1], "src/overname.ts"), arcname="src/overname.ts")\n    tf.add(os.path.join(sys.argv[1], "ORCH-OVERDRACHT.json"), arcname="ORCH-OVERDRACHT.json")\n', pakBron4, overTar], { encoding: 'utf8' });
+    const oBytes = readFileSync(overTar);
+    const bO = JSON.parse((await voerOrchToolUit(grok, 'orch_inleveren_begin', { naam: 'cld-778.tar.gz', grootte: oBytes.length, sha256: sha256(oBytes) })).content[0].text) as { id: string };
+    await voerOrchToolUit(grok, 'orch_inleveren_stuk', { id: bO.id, offset: 0, data: oBytes.toString('base64') });
+    const kO = await voerOrchToolUit(grok, 'orch_inleveren_klaar', { id: bO.id });
+    const kOd = JSON.parse(kO.content[0].text) as { uitkomst: string; zaken: Array<{ code: string }> };
+    const wachtrijNa = existsSync(join(R, 'orchestratie/wachtrij.json')) ? lees(join(R, 'orchestratie/wachtrij.json')) : '';
+    check('taak-overname: Grok levert op eigen naam een pakket in voor de taak CLD-778 van Claude → geweigerd AGENT_VERSCHILT; taakbestand en wachtrij ongewijzigd',
+      taakClaude.isError !== true && kOd.uitkomst === 'geweigerd' && kOd.zaken.some((z) => z.code === 'AGENT_VERSCHILT')
+      && lees(join(R, 'orchestratie/taken/CLD-778.json')) === taakVoor && wachtrijNa === wachtrijVoor && !wachtrijNa.includes('feature/cld-778-20261031-170500'),
+      `${kO.content[0].text.slice(0, 300)}`);
+    // Eigen pakket met een andere tak: de HTTP-controle hangt niet af van wat de MCP-poging hierboven wel/niet achterliet (tak, wachtrij).
+    const pakBron5 = join(T, 'pakbron5'); mkdirSync(join(pakBron5, 'src'), { recursive: true });
+    writeFileSync(join(pakBron5, 'src/overname-http.ts'), 'export const overnameHttp = 1;\n');
+    writeFileSync(join(pakBron5, 'ORCH-OVERDRACHT.json'), JSON.stringify({ ...JSON.parse(lees(join(pakBron, 'ORCH-OVERDRACHT.json'))), taakId: 'CLD-778', agent: 'grok', tak: 'feature/cld-778-20261031-170600', samenvatting: { uk: 'Тест: здача чужої задачі власником через HTTP', nl: 'Test: andermans taak inleveren door de eigenaar via HTTP' } }));
+    const overTarH = join(T, 'cld-778-http.tar.gz');
+    spawnSync(py, ['-c', 'import os, sys, tarfile\nwith tarfile.open(sys.argv[2], "w:gz") as tf:\n    tf.add(os.path.join(sys.argv[1], "src/overname-http.ts"), arcname="src/overname-http.ts")\n    tf.add(os.path.join(sys.argv[1], "ORCH-OVERDRACHT.json"), arcname="ORCH-OVERDRACHT.json")\n', pakBron5, overTarH], { encoding: 'utf8' });
+    const hBytes = readFileSync(overTarH);
+    const bOE = await call(ORCH_ROUTES.inleveringBegin, { naam: 'cld-778-http.tar.gz', grootte: hBytes.length, sha256: sha256(hBytes) });
+    await call(ORCH_ROUTES.inleveringStuk, { id: bOE.data.id, offset: 0, data: hBytes.toString('base64') });
+    const kOE = await call(ORCH_ROUTES.inleveringKlaar, { id: bOE.data.id });
+    const wachtrijNaHttp = existsSync(join(R, 'orchestratie/wachtrij.json')) ? lees(join(R, 'orchestratie/wachtrij.json')) : '';
+    const takkenCld778 = git(R, 'branch', '--list', 'feature/cld-778-20261031-1705*', 'feature/cld-778-20261031-1706*');
+    check('taak-overname: ook de eigenaar (HTTP, geen verwachteAgent, eigen pakket) kan een pakket «van grok» niet op de taak van claude zetten → AGENT_VERSCHILT; taak, wachtrij en takken ongewijzigd',
+      kOE.data?.record?.uitkomst === 'geweigerd' && kOE.data.record.zaken.some((z: { code: string }) => z.code === 'AGENT_VERSCHILT') && lees(join(R, 'orchestratie/taken/CLD-778.json')) === taakVoor
+      && wachtrijNaHttp === wachtrijVoor && takkenCld778 === '',
+      `${kOE.status} ${JSON.stringify(kOE.data?.record?.zaken ?? kOE.data).slice(0, 300)} | takken: ${takkenCld778}`);
+
     // Limiet via MCP (zoals HTTP: uploadsPerUur per eigenaar, over al zijn verbindingen) — voor begin én klaar.
     const { _mcpLimietenLeeg } = await import('../../backend/orch-hulpmiddelen');
     _mcpLimietenLeeg();
@@ -448,6 +487,79 @@ with tarfile.open(uit, "w:gz") as tf:
       ovEigenaar.uploads.some((u) => u.id === bE.data.id && u.door === EIGENAAR) && ovEigenaar.bevestigingen.some((b) => b.passkey === '11223344')
       && !ovAgent.includes(EIGENAAR) && !ovAgent.includes(bE.data.id) && !ovAgent.includes('11223344') && !ovAgent.includes(besluitC.replace(/-/g, '')) && ovAgent.includes(v2.kritiekHash),
       ovAgent.slice(0, 300));
+    // Strenger (review f8def89): het toegepaste besluit (besluitB) stond in voorstellen[].toegepast.besluit — met én zonder streepjes weg;
+    // de eigenaar ziet het wel; tak/commit van het toegepaste voorstel blijven zichtbaar voor de agent.
+    const vToegepastAgent = (JSON.parse(ovAgent) as { voorstellen: Array<{ id: string; toegepast?: Record<string, unknown> }> }).voorstellen.find((x) => x.id === v.id);
+    check('orch_overzicht (MCP): voorstellen[].toegepast zonder besluit-id (met/zonder streepjes); tak en commit blijven; eigenaar ziet het besluit',
+      ovEigenaar.voorstellen.some((x) => x.id === v.id && x.toegepast?.besluit === besluitB) && !ovAgent.includes(besluitB) && !ovAgent.includes(besluitB.replace(/-/g, ''))
+      && vToegepastAgent?.toegepast?.tak === goedToepas.data.tak && typeof vToegepastAgent?.toegepast?.commit === 'string' && !('besluit' in (vToegepastAgent?.toegepast ?? {})),
+      JSON.stringify(vToegepastAgent));
+    // Na het samenvoegen van regels/* staat de passkey-bevestiging IN de lock van de werkkopie (regels.eigenaar): ook daar geen vingerafdruk
+    // of besluit-id voor agenten (review van de release f8def89) — wel soort, versie en tijd.
+    const lockPad = join(R, 'orchestratie/regels.lock.json');
+    const lockWerk = json(lockPad);
+    const besluitE = randomUUID();
+    writeFileSync(lockPad, `${JSON.stringify({ ...lockWerk, eigenaar: { soort: 'passkey', kritiekHash: lockWerk.kritiekHash, regelsVersie: lockWerk.regelsVersie, hash: lockWerk.hash, voorstel: 'v-0123456789abcdef', besluit: besluitE, passkey: 'a1b2c3d4e5f60718', op: '2026-10-31T20:00:00Z' } }, null, 2)}\n`);
+    const ovAgentLock = (await voerOrchToolUit(grok, 'orch_overzicht', {})).content[0].text;
+    const eigAgent = (JSON.parse(ovAgentLock) as { regels?: { eigenaar?: Record<string, unknown> | null } }).regels?.eigenaar ?? null;
+    const eigVol = opslag.overzicht().regels?.eigenaar as Record<string, unknown> | null;
+    const controleerAgent = (JSON.parse(ovAgentLock) as { controleer?: { regels?: string[] } | null }).controleer?.regels ?? [];
+    const controleerVol = opslag.overzicht().controleer?.regels ?? [];
+    check('orch_overzicht (MCP): bevestiging in de lock → zonder passkey-vingerafdruk en besluit-id voor agenten (regels.eigenaar én controleer-regels); eigenaar ziet alles',
+      eigVol?.passkey === 'a1b2c3d4e5f60718' && eigVol?.besluit === besluitE && controleerVol.some((r) => r.includes('a1b2c3d4e5f60718'))
+      && !ovAgentLock.includes('a1b2c3d4e5f60718') && !ovAgentLock.includes(besluitE) && !ovAgentLock.includes(besluitE.replace(/-/g, ''))
+      && controleerAgent.some((r) => /passkey …/.test(r)) && ovAgentLock.includes(lockWerk.hash)
+      && eigAgent?.soort === 'passkey' && eigAgent?.regelsVersie === lockWerk.regelsVersie && eigAgent?.op === '2026-10-31T20:00:00Z' && !('passkey' in (eigAgent ?? {})) && !('besluit' in (eigAgent ?? {})),
+      `${JSON.stringify(eigAgent)} | controleer: ${JSON.stringify(controleerAgent).slice(0, 300)}`);
+    // maskeerRegel zelf (review f8def89): alleen de afdruk na «passkey» (8–16 hex) en een besluit-uuid (met streepjes of 32 hex);
+    // een 40-hex commit-SHA, een 64-hex hash en gewone woorden na «passkey» blijven staan.
+    const { maskeerRegel } = await import('../../backend/orch-hulpmiddelen');
+    const sha40 = 'b279ccabe31a27139b337822162653ccc13b6a5a';
+    const hash64 = lockWerk.hash as string;
+    const besluit32 = besluitE.replace(/-/g, '');
+    const maskers: Array<[string, string]> = [
+      [`eigenaar: підтверджено passkey a1b2c3d4e5f60718 (рішення ${besluitE}, 2026-10-31T20:00:00Z)`, 'eigenaar: підтверджено passkey … (рішення …, 2026-10-31T20:00:00Z)'],
+      [`root: besluit ${besluit32} bevestigd`, 'root: besluit … bevestigd'],
+      [`commit ${sha40} hash ${hash64}`, `commit ${sha40} hash ${hash64}`],
+      ['установка після підтвердження власника (passkey) або вручну; passkey власника', 'установка після підтвердження власника (passkey) або вручну; passkey власника'],
+      ['PASSKEY 11223344, ok', 'PASSKEY …, ok'],
+    ];
+    const maskerFout = maskers.filter(([inv, verw]) => maskeerRegel(inv) !== verw).map(([inv]) => `${inv} → ${maskeerRegel(inv)}`);
+    check('maskeerRegel: afdruk na «passkey» en besluit-uuid (met/zonder streepjes) weg; 40-hex SHA, 64-hex hash en woorden na «passkey» blijven',
+      maskerFout.length === 0, maskerFout.join(' | '));
+
+    // orch_inleveren_klaar (MCP) gaf tests.uitvoer[].laatste ongemaskeerd terug — de laatste regels van de vertrouwde controleer, met
+    // «eigenaar: підтверджено passkey X (рішення Y, …)» zodra de lock van de basis een passkey-bevestiging heeft (na regels/*).
+    // Basis = HEAD + die lock (en de bijbehorende CONTEXT-COMPACT.md), als losse commit: de werkkopie en HEAD blijven ongemoeid.
+    const beleidR = json(join(R, 'orchestratie/beleid.json'));
+    const ctxRel = beleidR.compactContext.bestand as string;
+    const ctxTmp = join(T, 'ctx-lock-eigenaar.md');
+    writeFileSync(ctxTmp, k.compacteContext(lees(join(R, 'AGENTS.md')), beleidR, json(lockPad)));
+    const gitEnv = (env: Record<string, string>, ...a: string[]) => execFileSync('git', a, { cwd: R, encoding: 'utf8', env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    const idxEnv = { GIT_INDEX_FILE: join(T, 'index-lock-eigenaar') };
+    gitEnv(idxEnv, 'read-tree', 'HEAD');
+    gitEnv(idxEnv, 'update-index', '--cacheinfo', `100644,${git(R, 'hash-object', '-w', lockPad)},orchestratie/regels.lock.json`);
+    gitEnv(idxEnv, 'update-index', '--cacheinfo', `100644,${git(R, 'hash-object', '-w', ctxTmp)},${ctxRel}`);
+    const basisLock = gitEnv({ GIT_AUTHOR_NAME: 'eigenaar', GIT_AUTHOR_EMAIL: 'eigenaar@test.invalid', GIT_COMMITTER_NAME: 'eigenaar', GIT_COMMITTER_EMAIL: 'eigenaar@test.invalid' },
+      'commit-tree', gitEnv(idxEnv, 'write-tree'), '-p', 'HEAD', '-m', 'test: lock met passkey-bevestiging (regels/* samengevoegd)');
+    const pakBron6 = join(T, 'pakbron6'); mkdirSync(join(pakBron6, 'src'), { recursive: true });
+    writeFileSync(join(pakBron6, 'src/lock-masker.ts'), 'export const lockMasker = 1;\n');
+    writeFileSync(join(pakBron6, 'ORCH-OVERDRACHT.json'), JSON.stringify({ ...JSON.parse(lees(join(pakBron, 'ORCH-OVERDRACHT.json'))), taakId: 'GRK-779', agent: 'grok', tak: 'feature/grk-779-20261031-170700', basisCommit: basisLock, samenvatting: { uk: 'Тест: вивід controleer у здачі без відбитка passkey', nl: 'Test: uitvoer van controleer bij inleveren zonder passkey-afdruk' } }));
+    const lockTar = join(T, 'grk-779.tar.gz');
+    spawnSync(py, ['-c', 'import os, sys, tarfile\nwith tarfile.open(sys.argv[2], "w:gz") as tf:\n    tf.add(os.path.join(sys.argv[1], "src/lock-masker.ts"), arcname="src/lock-masker.ts")\n    tf.add(os.path.join(sys.argv[1], "ORCH-OVERDRACHT.json"), arcname="ORCH-OVERDRACHT.json")\n', pakBron6, lockTar], { encoding: 'utf8' });
+    const lBytes = readFileSync(lockTar);
+    const bL = JSON.parse((await voerOrchToolUit(grok, 'orch_inleveren_begin', { naam: 'grk-779.tar.gz', grootte: lBytes.length, sha256: sha256(lBytes) })).content[0].text) as { id: string };
+    await voerOrchToolUit(grok, 'orch_inleveren_stuk', { id: bL.id, offset: 0, data: lBytes.toString('base64') });
+    const kL = (await voerOrchToolUit(grok, 'orch_inleveren_klaar', { id: bL.id })).content[0].text;
+    const kLd = JSON.parse(kL) as { uitkomst: string; id: string; tests?: { uitvoer?: Array<{ laatste?: string; vertrouwd?: boolean }> } };
+    const laatsteAgent = kLd.tests?.uitvoer?.[0]?.laatste ?? '';
+    const laatsteVol = (() => { try { return String(json(join(R, 'orchestratie/inleveringen', `${kLd.id}.json`)).tests?.uitvoer?.[0]?.laatste ?? ''); } catch { return ''; } })();
+    check('orch_inleveren_klaar (MCP): uitvoer van de vertrouwde controleer (tests.uitvoer[].laatste) zonder passkey-afdruk en besluit-id; het record van de eigenaar heeft ze',
+      kLd.uitkomst === 'aanvaard' && kLd.tests?.uitvoer?.[0]?.vertrouwd === true && /passkey …/.test(laatsteAgent) && /ORCH: /.test(laatsteAgent)
+      && !kL.includes('a1b2c3d4e5f60718') && !kL.includes(besluitE) && !kL.includes(besluit32)
+      && laatsteVol.includes('a1b2c3d4e5f60718') && laatsteVol.includes(besluitE),
+      `${kL.slice(0, 400)} | eigenaar: ${laatsteVol.slice(0, 200)}`);
+    git(R, 'checkout', '--', 'orchestratie/regels.lock.json');
 
     // 5e. GitOps PYMODUS: weigert vervalste SSH-handtekening, accepteert echte ssh-keygen handtekening tegen root-bestand — op een ECHTE
     // release (regelbestanden + lock met kloppende afdrukken): PYMODUS controleert nu ook lock ↔ bestanden (adversariële review).

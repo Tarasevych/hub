@@ -111,10 +111,14 @@ export async function main(): Promise<number> {
     r = draai();
     check('7 правила з репозиторію + lock + правильна база → встановлено, «regels … vergrendeld» у лозі, laatste-commit = C2', r.status === 0 && status().code === 'OK' && /vergrendeld \(lock klopt\)/.test(r.stderr) && laatsteCommit() === C2, `${r.status} ${status().code} ${r.stderr.slice(-300)}`);
 
-    // 8. CRLF у правилах (Windows) з тим самим lock → усе ще гаразд (нормалізація як у kern.mjs)
-    leg(pakket(pk, '20261102-100700', { basis: `versie=20261102-100600\ncommit=${C2}\n`, bronCommit: C3, regels: { ...regels, agents: regels.agents.replace(/\n/g, '\r\n') } }));
+    // 8. CRLF у правилах (Windows) + рядок із пробілами перед U+2028 (вставка з вебсторінки/Word), lock порахований у JS kern.mjs →
+    // root (PYREGELS, Python re.M) мусить дати той самий відбиток: `$` з /m у JS спрацьовував і перед U+2028, Python — ні (тоді REGELS_NIET_VERGRENDELD).
+    const agents8 = `${regels.agents.replace(/\n/g, '\r\n')}regel met spaties  \u2028vervolg\t\r\n`;
+    const afdruk8 = k.regelsAfdruk({ 'AGENTS.md': agents8, 'orchestratie/beleid.json': regels.beleid, 'orchestratie/BESLUITEN.md': regels.besluiten });
+    const lock8 = JSON.stringify({ ...JSON.parse(regels.lock), hash: afdruk8.hash, bestanden: afdruk8.bestanden }, null, 2);
+    leg(pakket(pk, '20261102-100700', { basis: `versie=20261102-100600\ncommit=${C2}\n`, bronCommit: C3, regels: { ...regels, agents: agents8, lock: lock8 } }));
     r = draai();
-    check('8 AGENTS.md з CRLF, той самий lock → відбиток збігається, встановлено', r.status === 0 && status().code === 'OK', `${r.status} ${status().code} ${status().nl}`);
+    check('8 AGENTS.md з CRLF і пробілами перед U+2028, lock від kern.mjs → python-відбиток root = JS, встановлено', r.status === 0 && status().code === 'OK', `${r.status} ${status().code} ${status().nl}`);
 
     // 9. версія ≥ 20261201 без UITROL-BASIS → GEEN_BASIS
     leg(pakket(pk, '20261202-100000', { basis: null, bronCommit: C3 }));

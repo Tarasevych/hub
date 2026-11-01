@@ -197,8 +197,18 @@ export default function AgentBord({ tr }: { tr: Tr }) {
                   <div className='ag-bord-blad' data-blad='toegang'>
                     <p>{plafond
                       ? tr('Підписана політика ШІ зараз стеля. Перемикачі лише для перегляду.', 'Het ondertekende AI-beleid is nu het plafond. De schakelaars zijn alleen te bekijken.')
-                      : tr('Ці перемикачі стосуються лише вашого простору й цього ШІ. Вимкнене адміністратором лишається вимкненим.', 'Deze schakelaars gelden alleen voor uw ruimte en deze AI. Wat de beheerder uitzette, blijft uit.')}</p>
+                      : tr('Перемикачі «Доступ ШІ» стосуються лише вашого приватного простору й цього ШІ: усіх його приватних підключень через спільну адресу /mcp, наявних і нових. Вони не змінюють підключень через власну адресу ШІ (їхні інструменти — на сторінці ШІ), MCP-токенів (доступ — у рядку токена) і технічних підключень цього ШІ: ті мають власні права, які змінюються на вкладці «Технічне» (видно з активним технічним профілем) у рядку підключення.',
+                        'De schakelaars «AI-toegang» gelden alleen voor uw privéruimte en deze AI: al zijn privéverbindingen via het gedeelde adres /mcp, bestaande en nieuwe. Ze veranderen geen verbindingen via het eigen adres van de AI (hun hulpmiddelen staan op de pagina van de AI), geen MCP-tokens (toegang op de rij van het token) en geen technische verbindingen van deze AI: die hebben eigen rechten, die u wijzigt op het tabblad «Technisch» (zichtbaar met een actief technisch profiel) op de rij van de verbinding.')}</p>
                     <AiToegangTab verbinding={{ soort: 'oauth', id: `bord:${gekozen.id}`, naam: gekozen.naam }} tr={tr} metBeheer />
+                    {groepen.length && !plafond ? (
+                      <p data-caps-uitleg='1'>{(() => {
+                        // De mogelijkheden (app.ai_gebruiker_caps) gelden voor ELKE privé-OAuth-verbinding van deze AI (mcp-connector lijstTools/
+                        // roepTool, ook connector v2 via wieVoorKant 'gebruiker'); niet voor MCP-tokens en niet voor technische verbindingen.
+                        const adres = agentVoorKlant(gekozen.id) ? ` (${agentUrl(agentVoorKlant(gekozen.id)!.slug).replace(/^https?:\/\/[^/]+/, '')})` : '';
+                        return tr(`Можливості нижче — додаткова заборона для всіх приватних підключень цього ШІ: і через спільну адресу /mcp, і через його власну адресу${adres}. MCP-токенів і технічних підключень вони не стосуються. Вимкнене адміністратором лишається вимкненим.`,
+                          `De mogelijkheden hieronder zijn een extra verbod voor alle privéverbindingen van deze AI: via het gedeelde adres /mcp én via het eigen adres${adres}. Ze gelden niet voor MCP-tokens en technische verbindingen. Wat de beheerder uitzette, blijft uit.`);
+                      })()}</p>
+                    ) : null}
                     {groepen.map(([groep, caps]) => (
                       <fieldset key={groep} className='ag-bord-groep'>
                         <legend>{groep}</legend>

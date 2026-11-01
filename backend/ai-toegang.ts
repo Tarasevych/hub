@@ -8,7 +8,7 @@
 // AI-beleid van de eigenaar blijft het plafond daarboven (zie connectors-tools.callTool).
 import { getPool } from '../server/platform/pg';
 import {
-  STANDAARD_SCOPES, isToegangScope, scopeVoorTool, toegangScope,
+  STANDAARD_SCOPES, TECHNISCHE_STANDAARD_SCOPES, isToegangScope, scopeVoorTool, toegangScope,
   type AiToegangSoort,
 } from '../shared/ai-toegang';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
@@ -99,18 +99,26 @@ export async function zetToegang(userId: string, onderwerp: Onderwerp, scopes: r
   return schoon;
 }
 
+/** Standaardscopes voor een verbinding in deze ruimte (puur): de niet-gevoelige standaard; technisch nooit een gevoelige scope. */
+export function standaardScopesVoor(ruimte: AiRuimte): string[] {
+  // Technisch: TECHNISCHE_STANDAARD_SCOPES (shared) — dezelfde lijst als de knop «Технічний стандарт» in de tab.
+  return ruimteOf(ruimte) === 'technisch' ? [...TECHNISCHE_STANDAARD_SCOPES] : [...STANDAARD_SCOPES];
+}
+
 /** Nieuwe verbinding: standaard (niet-gevoelige) scopes; gevoelige nooit voor een technische verbinding. */
 export async function geefStandaard(userId: string, onderwerp: Onderwerp, ruimte: AiRuimte): Promise<void> {
-  const technisch = ruimteOf(ruimte) === 'technisch';
-  const lijst = STANDAARD_SCOPES.filter((s) => !(technisch && toegangScope(s)?.gevoelig));
   await q(
     `INSERT INTO app.ai_toegang (user_id, soort, onderwerp_id, scopes)
      VALUES ($1, $2, $3, $4::text[]) ON CONFLICT (soort, onderwerp_id) DO NOTHING`,
-    [userId, onderwerp.soort, onderwerp.id, lijst],
+    [userId, onderwerp.soort, onderwerp.id, standaardScopesVoor(ruimte)],
   );
 }
 
-/** Vaste herinneringsrij per gebruiker × AI-klant (AiToegangTab met «bord:<klant>»), zodat ook nieuwe OAuth-sessies die keuze erven. */
+/**
+ * Vaste herinneringsrij per gebruiker × AI-klant (AiToegangTab met «bord:<klant>»): de keuze voor de PRIVÉRUIMTE van die AI, zodat
+ * nieuwe privé OAuth-sessies haar erven. Gescheiden ruimtes (besluit eigenaar 1.11.2026): een technische verbinding erft haar nooit.
+ * Рядок «Доступу ШІ» — лише приватний простір цього ШІ; технічні підключення його не успадковують.
+ */
 export function bordOnderwerp(userId: string, klant: string): Onderwerp | null {
   if (!/^[a-z0-9_-]{2,24}$/.test(klant) || klant === 'overig') return null;
   const bordId = `bord_${userId.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 48)}_${klant}`.slice(0, 80);
@@ -118,26 +126,38 @@ export function bordOnderwerp(userId: string, klant: string): Onderwerp | null {
 }
 
 /**
- * Nieuwe /mcp OAuth-verbinding: had de gebruiker op de site («Доступ ШІ», bord:<klant>) al expliciet scopes gezet,
- * kopieer die keuze naar de nieuwe grant (zonder gevoelige scopes op een technische verbinding); anders `geefStandaard`.
+ * Gescheiden ruimtes (besluit eigenaar 1.11.2026): «Доступ ШІ» van een AI (bord:<klant>) geldt alleen voor oude /mcp-grants in de
+ * PRIVÉRUIMTE. Technische /mcp-grants (eigen technische standaard) en connector-v2-koppelingen (rechten per hulpmiddel in
+ * connector_v2_rechten) worden er nooit door gelezen of geschreven. Puur.
  */
+export const isPriveOudeGrant = (g: { ruimte: unknown; agent?: string | null }): boolean => ruimteOf(g.ruimte) === 'prive' && !g.agent;
+
+/**
+ * Scopes voor een nieuwe /mcp OAuth-verbinding (puur; ook voor tests). Gescheiden ruimtes (besluit eigenaar 1.11.2026):
+ *   • privé: had de mens op de site («Доступ ШІ», bord:<klant>) al scopes gekozen, dan precies die (alleen bekende scopes);
+ *     zonder bordrij (`null`) de standaard;
+ *   • technisch: ALTIJD de technische standaard — de privékeuze van «Доступ ШІ» telt hier niet mee, ook niet ingeperkt.
+ * Технічне підключення ніколи не бере приватний вибір «Доступу ШІ»: лише технічний стандарт.
+ */
+export function scopesVoorNieuweKoppeling(bord: readonly unknown[] | null, ruimte: AiRuimte): string[] {
+  if (ruimteOf(ruimte) === 'technisch' || !bord) return standaardScopesVoor(ruimte);
+  return [...new Set(bord.filter(isToegangScope))];
+}
+
+/** Nieuwe /mcp OAuth-verbinding: scopes volgens `scopesVoorNieuweKoppeling`; een technische leest de bordrij niet eens. */
 export async function geefVoorNieuweKoppeling(userId: string, grantId: string, klant: string, ruimte: AiRuimte): Promise<void> {
   const doel: Onderwerp = { soort: 'mcp-koppeling', id: grantId };
-  const bord = bordOnderwerp(userId, klant);
+  const bord = ruimteOf(ruimte) === 'technisch' ? null : bordOnderwerp(userId, klant);
+  let gekozen: unknown[] | null = null;
   if (bord) {
     const { rows } = await q('SELECT scopes FROM app.ai_toegang WHERE soort = $1 AND onderwerp_id = $2', [bord.soort, bord.id]);
-    if (rows[0] && Array.isArray(rows[0].scopes)) {
-      const technisch = ruimteOf(ruimte) === 'technisch';
-      const lijst = (rows[0].scopes as unknown[]).filter(isToegangScope).filter((s) => !(technisch && toegangScope(s)?.gevoelig));
-      await q(
-        `INSERT INTO app.ai_toegang (user_id, soort, onderwerp_id, scopes)
-         VALUES ($1, $2, $3, $4::text[]) ON CONFLICT (soort, onderwerp_id) DO NOTHING`,
-        [userId, doel.soort, doel.id, [...new Set(lijst)]],
-      );
-      return;
-    }
+    if (rows[0] && Array.isArray(rows[0].scopes)) gekozen = rows[0].scopes as unknown[];
   }
-  await geefStandaard(userId, doel, ruimte);
+  await q(
+    `INSERT INTO app.ai_toegang (user_id, soort, onderwerp_id, scopes)
+     VALUES ($1, $2, $3, $4::text[]) ON CONFLICT (soort, onderwerp_id) DO NOTHING`,
+    [userId, doel.soort, doel.id, scopesVoorNieuweKoppeling(gekozen, ruimte)],
+  );
 }
 
 /** Bestuurlijk plafond (alleen de eigenaar, via de route): een scope voor de hele site uit of aan. */

@@ -9,8 +9,8 @@ import { DeurFout, deurBesluit, deurIntrekken, deurVerbindingen, deurVerzoek, in
 import { leesDuren, zetDuur } from './ai-verbinding-instellingen';
 import { DUREN, KLANTEN, duur as duurVan, isDuurId, klantVan, type KlantId } from '../shared/ai-verbinding';
 import { isToegangScope, toegangScope } from '../shared/ai-toegang';
-import { isAgentSlug } from '../shared/connector-v2/agenten';
-import { bordOnderwerp, geefStandaard, leesBeheerUit, leesToegang, zetBeheer, zetToegang } from './ai-toegang';
+import { agentVoorKlant, isAgentSlug } from '../shared/connector-v2/agenten';
+import { bordOnderwerp, geefStandaard, isPriveOudeGrant, leesBeheerUit, leesToegang, zetBeheer, zetToegang } from './ai-toegang';
 import { meldLijstGewijzigd } from './connector-v2-stroom';
 import { agentTokenVanGebruiker, issuePriveToken } from './mcp-console';
 import { sessieGeverifieerd } from '../server/platform/context';
@@ -19,6 +19,7 @@ import { v2Routes } from './connector-v2-routes';
 import { sterkeMethoden, sterkeStapOpFout } from './toegang-context';
 import { leesInstellingen } from './connector-v2-opslag';
 import { aiVerbindingRuimte, technischeRuimte } from './ai-ruimte-poort';
+import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import { isEigenaar } from './tech-profiel';
 import { leesStand } from './ai-beleid';
 import { leesGebruikerCaps, leesStaat, zetGebruikerCap, zetStaat } from './ai-site-schakelaars';
@@ -42,30 +43,38 @@ const header = (event: any, name: string): string | undefined => {
   return undefined;
 };
 
+/**
+ * Verbinding voor de toegangs-tab, met haar ruimte. agent ≠ null = connector-v2-koppeling: haar rechten staan per hulpmiddel in
+ * connector_v2_rechten (de scopelaag volgt die, v2st.zetRechten) en worden alleen op de agentpagina gewijzigd.
+ */
+type ToegangDoel = { soort: 'mcp-koppeling' | 'agenttoken'; id: string; ruimte: AiRuimte; agent: string | null };
+
 /** Verbinding van deze gebruiker voor de toegangs-tab: 'oauth' = OAuth-grant (of bord:<klant>), 'token' = agenttoken. Anders null. */
-async function toegangOnderwerp(userId: string, body: Record<string, unknown>): Promise<{ soort: 'mcp-koppeling' | 'agenttoken'; id: string } | null> {
+async function toegangOnderwerp(userId: string, body: Record<string, unknown>): Promise<ToegangDoel | null> {
   const soort = body.soort === 'token' ? 'agenttoken' : body.soort === 'oauth' ? 'mcp-koppeling' : null;
   const id = String(body.id ?? '');
   if (!soort) return null;
   if (soort === 'mcp-koppeling' && id.startsWith('bord:')) {
     const klant = id.slice(5);
     if (!isBordKlant(klant)) return null;
+    // De nieuwste actieve PRIVÉ /mcp-grant van deze klant staat voor het bord; technisch en v2 nooit (eigen rechten).
     try {
-      const actief = (await c.listUserGrants(userId)).find((g) => klantVan(g.clientName) === klant);
-      if (actief) return { soort: 'mcp-koppeling', id: actief.id };
+      const actief = (await c.listUserGrants(userId)).find((g) => isPriveOudeGrant(g) && klantVan(g.clientName) === klant);
+      if (actief) return { soort: 'mcp-koppeling', id: actief.id, ruimte: 'prive', agent: null };
     } catch { /* fallback naar bord-onderwerp */ }
-    const bordId = `bord_${userId.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 48)}_${klant}`.slice(0, 80);
-    if (bordId.length < 8) return null;
-    const onderwerp = { soort: 'mcp-koppeling' as const, id: bordId };
-    await geefStandaard(userId, onderwerp, 'prive').catch(() => undefined);
-    return onderwerp;
+    const bord = bordOnderwerp(userId, klant);
+    if (!bord) return null;
+    await geefStandaard(userId, bord, 'prive').catch(() => undefined);
+    return { soort: 'mcp-koppeling', id: bord.id, ruimte: 'prive', agent: null };
   }
   if (!/^[0-9a-fA-F-]{8,80}$/.test(id)) return null;
   if (soort === 'mcp-koppeling') {
     const alle = [...(await c.listUserGrants(userId)), ...(await c.listUserGrantHistory(userId))];
-    if (!alle.some((g) => g.id === id)) return null;
-  } else if (!(await agentTokenVanGebruiker(userId, id))) return null;
-  return { soort, id };
+    const g = alle.find((x) => x.id === id);
+    return g ? { soort, id, ruimte: ruimteOf(g.ruimte), agent: g.agent ?? null } : null;
+  }
+  const token = await agentTokenVanGebruiker(userId, id);
+  return token ? { soort, id, ruimte: token.ruimte, agent: null } : null;
 }
 
 export function createMcpConnectorRoutes(deps: Deps) {
@@ -450,9 +459,20 @@ export function createMcpConnectorRoutes(deps: Deps) {
     'POST /api/owner/ai-toegang/overzicht': [async (ctx: any) => {
       const auth = await accountGate(ctx.event, ctx.body);
       if (!auth || 'errorCode' in auth) return denied(auth);
-      const onderwerp = await toegangOnderwerp(auth.user.id, deps.body(ctx.body));
+      const body = deps.body(ctx.body);
+      const onderwerp = await toegangOnderwerp(auth.user.id, body);
       if (!onderwerp) return deps.fail('TOEGANG_ONBEKEND', 404);
-      return deps.respond({ granted: await leesToegang(onderwerp), uit: await leesBeheerUit() });
+      // ruimte: de tab toont bij een technische verbinding alleen wat daar kan werken en legt uit dat zij niets van het bord erft.
+      // agent: een connector-v2-koppeling wijzig je op de agentpagina — de tab toont dan alleen de weg erheen.
+      // v2Elders: het bord geldt niet voor de v2-koppelingen van deze AI; de tab zegt hoeveel er zijn en waar ze te wijzigen zijn.
+      const ruweId = String(body.id ?? '');
+      let v2Elders: { agent: string; aantal: number } | null = null;
+      if (body.soort === 'oauth' && ruweId.startsWith('bord:')) {
+        const slug = agentVoorKlant(ruweId.slice(5) as KlantId)?.slug;
+        const aantal = slug ? (await c.listUserGrants(auth.user.id).catch(() => [])).filter((g) => g.agent === slug).length : 0;
+        if (slug && aantal) v2Elders = { agent: slug, aantal };
+      }
+      return deps.respond({ granted: await leesToegang(onderwerp), uit: await leesBeheerUit(), ruimte: onderwerp.ruimte, agent: onderwerp.agent, v2Elders });
     }],
 
     'POST /api/owner/ai-toegang/zet': [async (ctx: any) => {
@@ -461,8 +481,14 @@ export function createMcpConnectorRoutes(deps: Deps) {
       const body = deps.body(ctx.body);
       const onderwerp = await toegangOnderwerp(auth.user.id, body);
       if (!onderwerp) return deps.fail('TOEGANG_ONBEKEND', 404);
-      const scopes = Array.isArray(body.scopes) ? (body.scopes as unknown[]).filter((s): s is string => typeof s === 'string') : null;
-      if (!scopes || scopes.some((s) => !isToegangScope(s))) return deps.fail('TOEGANG_SCOPE_ONBEKEND', 400);
+      // Connector v2: de scopelaag volgt connector_v2_rechten (v2st.zetRechten). Hier schrijven zou die twee uit elkaar trekken en
+      // stil de rechten per hulpmiddel omzeilen — wijzigen alleen op de agentpagina. Підключення v2 змінюються лише на сторінці ШІ.
+      if (onderwerp.agent) return deps.fail('TOEGANG_V2', 409);
+      const gevraagd =Array.isArray(body.scopes) ? (body.scopes as unknown[]).filter((s): s is string => typeof s === 'string') : null;
+      if (!gevraagd || gevraagd.some((s) => !isToegangScope(s))) return deps.fail('TOEGANG_SCOPE_ONBEKEND', 400);
+      // Een technische verbinding krijgt nooit een gevoelige scope (de AiRuimte-poort weigert hem toch): niet bewaren, zodat de tab
+      // toont wat werkelijk geldt. Технічне підключення ніколи не отримує чутливих скоупів.
+      const scopes = onderwerp.ruimte === 'technisch' ? gevraagd.filter((s) => !toegangScope(s)?.gevoelig) : gevraagd;
       // Gevoelige scopes (mail, foto's) aanzetten vraagt een expliciete bevestiging (de UI doet dit in twee stappen).
       const oud = await leesToegang(onderwerp);
       if (scopes.filter((s) => toegangScope(s)?.gevoelig && !oud.includes(s)).length && body.bevestigd !== true) {
@@ -471,17 +497,17 @@ export function createMcpConnectorRoutes(deps: Deps) {
       const bewaard = await zetToegang(auth.user.id, onderwerp, scopes);
       const ruweId = String(body.id ?? '');
       if (body.soort === 'oauth' && ruweId.startsWith('bord:')) {
+        // De privékeuze van deze AI: naar de bordrij en naar elke andere actieve PRIVÉ /mcp-grant van deze klant.
+        // Technische /mcp-grants en connector-v2-koppelingen hebben eigen rechten en blijven ongemoeid (gescheiden ruimtes).
         const klant = ruweId.slice(5);
         const bord = bordOnderwerp(auth.user.id, klant);
         if (bord && bord.id !== onderwerp.id) await zetToegang(auth.user.id, bord, bewaard).catch(() => undefined);
-        const actief = (await c.listUserGrants(auth.user.id).catch(() => [])).filter((g) => klantVan(g.clientName) === klant && g.id !== onderwerp.id);
-        for (const g of actief) {
-          const lijst = g.ruimte === 'technisch' ? bewaard.filter((s) => !toegangScope(s)?.gevoelig) : bewaard;
-          await zetToegang(auth.user.id, { soort: 'mcp-koppeling', id: g.id }, lijst).catch(() => undefined);
-        }
+        const actief = (await c.listUserGrants(auth.user.id).catch(() => [])).filter((g) => isPriveOudeGrant(g) && klantVan(g.clientName) === klant && g.id !== onderwerp.id);
+        for (const g of actief) await zetToegang(auth.user.id, { soort: 'mcp-koppeling', id: g.id }, bewaard).catch(() => undefined);
       } else if (onderwerp.soort === 'mcp-koppeling' && !onderwerp.id.startsWith('bord_')) {
+        // Eén verbinding: alleen een actieve privé /mcp-grant werkt de privékeuze (bord) bij; een technische of v2-koppeling nooit.
         const g = (await c.listUserGrants(auth.user.id).catch(() => [])).find((x) => x.id === onderwerp.id);
-        if (g && g.ruimte === 'prive') {
+        if (g && isPriveOudeGrant(g)) {
           const klant = klantVan(g.clientName);
           const bord = isBordKlant(klant) ? bordOnderwerp(auth.user.id, klant) : null;
           if (bord) await zetToegang(auth.user.id, bord, bewaard).catch(() => undefined);
