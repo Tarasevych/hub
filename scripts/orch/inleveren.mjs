@@ -142,6 +142,14 @@ export function inleveren(o) {
     // taakId/agent уже провалідовані — записуємо їх у record, щоб відмова мала впізнаваний id (а не ONBEKEND-…).
     Object.assign(record, { taakId: od.taakId, agent: od.agent, basisCommit: od.basisCommit, overdracht: od });
     if (o.verwachteAgent && od.agent !== o.verwachteAgent) z.push(fout('AGENT_VERSCHILT', `пакет заявляє агента «${String(od.agent).slice(0, 32)}», а здає підключення агента «${o.verwachteAgent}» — агент діє лише від власного імені`, `pakket noemt agent «${String(od.agent).slice(0, 32)}», maar wordt ingeleverd door de verbinding van «${o.verwachteAgent}» — een agent handelt alleen op eigen naam`));
+    // Зареєстрована задача належить своєму агенту: передача від іншого агента не може «перехопити» її (переписати tak/стан у
+    // taken/<ID>.json і зайняти місце в черзі). Een geregistreerde taak hoort bij haar agent; een ander kan haar niet overnemen.
+    const geregistreerd = join(o.wortel, 'orchestratie/taken', `${od.taakId}.json`);
+    if (existsSync(geregistreerd)) {
+      let eigenaarTaak = null;
+      try { eigenaarTaak = JSON.parse(readFileSync(geregistreerd, 'utf8'))?.agent ?? null; } catch { eigenaarTaak = null; }
+      if (eigenaarTaak !== od.agent) z.push(fout('AGENT_VERSCHILT', `задачу ${od.taakId} зареєстровано на агента «${String(eigenaarTaak ?? '—').slice(0, 32)}», а пакет — від «${String(od.agent).slice(0, 32)}»; чужу задачу не можна здати — візьміть новий Task ID`, `taak ${od.taakId} staat op naam van agent «${String(eigenaarTaak ?? '—').slice(0, 32)}», het pakket komt van «${String(od.agent).slice(0, 32)}»; een andermans taak kan niet worden ingeleverd — neem een nieuw Task ID`));
+    }
     if (z.some((x) => x.ernst === 'fout')) return record;
 
     // 3. База існує? Правила чинні?

@@ -334,21 +334,63 @@ oude_deur_opruimen() {
 # MCP-deur op poort 8091 (deploy/mcp/server.mjs → $APP_ROOT/mcp/server.mjs): staat los van de current-symlink (root:root 0644),
 # dus ZOWEL bij `installeren` (via veilige_uitrol_inrichten) ALS bij `terugdraaien` bijwerken en een actieve dienst herstarten.
 # Een uitgeschakelde dienst (CONNECTOR-EEN-PAD.md) blijft uit (`try-restart` start geen gestopte unit); faalt herstart wel, dan waarschuwen.
+# Elke stap die kan falen geeft expliciet 1 terug (ook binnen `||`, waar `set -e` niet geldt); de aanroeper beslist: bij installeren
+# fataal (zoals vroeger), bij terugdraaien alleen een waarschuwing NA de audit — de hoofdapp is dan al terug en gezond, en een
+# herhaling «terugdraaien» zonder argument zou via VORIGE juist de release terugzetten die net is teruggedraaid.
+# Кожен крок, що може впасти, явно повертає 1; при відкаті — лише попередження ПІСЛЯ аудиту (застосунок уже відкочено й здоровий).
 mcp_deur_bijwerken() {
   local doel="$1" unit_doel="${MCP_UNIT_DOEL:-/etc/systemd/system/mijn-ruimte-mcp.service}"
   [ -s "$doel/deploy/mcp/server.mjs" ] || return 0
   [ "$(id -u)" -eq 0 ] && unit_doel="/etc/systemd/system/mijn-ruimte-mcp.service"
-  install -d -o root -g root -m 0755 "$APP_ROOT/mcp"
-  install -m 0644 -o root -g root "$doel/deploy/mcp/server.mjs" "$APP_ROOT/mcp/server.mjs"
+  install -d -o root -g root -m 0755 "$APP_ROOT/mcp" || return 1
+  install -m 0644 -o root -g root "$doel/deploy/mcp/server.mjs" "$APP_ROOT/mcp/server.mjs" || return 1
   if [ -s "$doel/deploy/mcp/mijn-ruimte-mcp.service" ] && ! cmp -s "$doel/deploy/mcp/mijn-ruimte-mcp.service" "$unit_doel"; then
-    install -m 0644 -o root -g root "$doel/deploy/mcp/mijn-ruimte-mcp.service" "$unit_doel"
-    systemctl daemon-reload
+    install -m 0644 -o root -g root "$doel/deploy/mcp/mijn-ruimte-mcp.service" "$unit_doel" || return 1
+    systemctl daemon-reload || return 1
   fi
   if ! systemctl try-restart mijn-ruimte-mcp.service >/dev/null 2>&1; then
     waarschuwing "mijn-ruimte-mcp.service (poort 8091) kon niet worden herstart"
   elif systemctl is-active --quiet mijn-ruimte-mcp.service 2>/dev/null; then
     melding "MCP-deur bijgewerkt en herstart (mijn-ruimte-mcp.service, poort 8091)"
   fi
+}
+
+# Gebeurtenis voor de site (gebeurtenissen.jsonl → audit «server.uitrol.mcp_deur_niet_teruggezet»), in ALLE modi (ssh, opdracht, nazorg,
+# besluit, passkey, gitops): het terugdraaien is gelukt, maar de MCP-deur (poort 8091) kon niet worden teruggezet. Zonder deze regel
+# stond dat alleen in de terminal/journal en zag de eigenaar op de site enkel «teruggedraaid». Bewust ZONDER «herkomst» en met tag
+# «mcp-deur»: dit is geen uitkomst van een uitrol-run (uitrol-runs.ts leest een waarschuwing met herkomst + versie-tag als einde/weigering).
+# Подія для сайту в усіх режимах: відкат удався, але двері MCP (порт 8091) не повернуто. Без «herkomst» — це не підсумок запуску.
+noteer_mcp_deur() { # noteer_mcp_deur MCP_DEUR_NIET_TERUGGEZET <warn|error> <release>
+  mkdir -p "$STATUS_GEBEURTENISSEN" || return 1
+  (
+    flock 7
+    tmp="$(mktemp "$STATUS_GEBEURTENISSEN/.gebeurtenis.XXXXXX")"
+    python3 - "$STATUS_GEBEURTENISSEN/gebeurtenissen.jsonl" "$tmp" "$1" "$2" "$(basename "$3")" "$APP_ROOT" <<'PY' || { rm -f -- "$tmp"; exit 1; }
+import json, sys, datetime, secrets, re
+pad, tmp, code, niveau, release, app = sys.argv[1:7]
+if code != "MCP_DEUR_NIET_TERUGGEZET" or niveau not in ("warn", "error"):
+    sys.exit(2)
+release = release if re.fullmatch(r"[0-9]{8}-[0-9]{6}", release) else ""
+app = app if re.fullmatch(r"/[A-Za-z0-9._/-]{1,80}", app) else "/srv/mijn-ruimte"
+waar = f" {release}" if release else ""
+# Het advies «niet opnieuw terugdraaien» staat vooraan: de app kapt uk/nl af op 300 tekens. Порада «не повторювати» — на початку.
+uk = (f"Відкат на{waar} удався, але двері MCP (порт 8091) не оновлено — відкат НЕ повторюйте. "
+      f"SSH: перевірте {app}/mcp/server.mjs і unit, далі systemctl daemon-reload && systemctl try-restart mijn-ruimte-mcp.")
+nl = (f"Terugdraaien naar{waar} gelukt, maar de MCP-deur (poort 8091) is niet bijgewerkt — NIET opnieuw terugdraaien. "
+      f"SSH: controleer {app}/mcp/server.mjs en de unit, dan systemctl daemon-reload && systemctl try-restart mijn-ruimte-mcp.")
+nu = datetime.datetime.now(datetime.timezone.utc)
+regel = {"id": nu.strftime("%Y%m%dT%H%M%S%fZ") + "-" + secrets.token_hex(4), "tijd": nu.isoformat(), "bron": "uitrol", "code": code,
+         "niveau": niveau, "uk": uk[:300], "nl": nl[:300], "tag": "mcp-deur"}
+if release: regel["release"] = release
+try: oud = open(pad, encoding="utf-8").read().splitlines()[-499:]
+except FileNotFoundError: oud = []
+with open(tmp, "w", encoding="utf-8") as f:
+    f.write("\n".join(oud + [json.dumps(regel, ensure_ascii=False)]) + "\n")
+PY
+    chgrp "$STATUS_GROEP" "$tmp" 2>/dev/null || true
+    chmod 0640 "$tmp"
+    mv -f "$tmp" "$STATUS_GEBEURTENISSEN/gebeurtenissen.jsonl"
+  ) 7>"$STATUS_GEBEURTENISSEN/.gebeurtenissen.lock"
 }
 
 # Veilige uitrol (ondertekende pakketten): root-script, units, mappen, standaard-schakelaars van de MCP-deur.
@@ -376,7 +418,7 @@ veilige_uitrol_inrichten() {
     printf '%s\n' '{"read": true, "uitrol": false, "gitops": false, "passkey-goedkeuring": false, "ssh-ca": false, "beheer-alleen-tech": false, "guacamole": false, "terugdraaien-passkey": true, "externe-hosts-passkey": true, "externeMcpHosts": [], "opdracht": {"status": true, "releases": true, "backup": true, "uitrol-nu": true, "terugdraaien": false}}' > /etc/mijn-ruimte/mcp-rechten.json
     chown root:"$GEBRUIKER" /etc/mijn-ruimte/mcp-rechten.json; chmod 0640 /etc/mijn-ruimte/mcp-rechten.json
   fi
-  mcp_deur_bijwerken "$doel"
+  mcp_deur_bijwerken "$doel" || fout "MCP-deur (poort 8091) kon niet worden bijgewerkt (install of daemon-reload faalde) — zie de melding hierboven"
   if [ -s /etc/mijn-ruimte/uitrol-ondertekenaars ]; then
     systemctl enable --now mijn-ruimte-uitrol.path >/dev/null 2>&1 || waarschuwing "mijn-ruimte-uitrol.path kon niet worden gestart"
   else
@@ -1111,9 +1153,14 @@ terugdraaien() {
   echo "$actief" > "$VORIGE_BESTAND"
   systemctl restart "$DIENST"
   gezond || fout "release $doel start niet gezond; journalctl -u $DIENST -n 50"
-  mcp_deur_bijwerken "$doel"
   melding "teruggedraaid naar $(basename "$doel")"
   noteer_ssh SSH_TERUG "$(basename "$doel")" "$(pakket_versie "$doel")" "$(commit_van "$doel")" || waarschuwing "auditregel voor dit terugdraaien niet geschreven"
+  # Na de audit en niet-fataal: de hoofdapp is terug en gezond (zie mcp_deur_bijwerken).
+  # Faalt de deur, dan ook een gebeurtenis voor de site (noteer_mcp_deur), anders zag de eigenaar daar alleen «teruggedraaid».
+  mcp_deur_bijwerken "$doel" || {
+    waarschuwing "MCP-deur (poort 8091) niet teruggezet naar $(basename "$doel"): controleer $APP_ROOT/mcp/server.mjs en de unit, daarna 'systemctl daemon-reload && systemctl try-restart mijn-ruimte-mcp' — NIET opnieuw terugdraaien (dat zet de vorige release terug)"
+    noteer_mcp_deur MCP_DEUR_NIET_TERUGGEZET warn "$doel" || waarschuwing "gebeurtenis MCP_DEUR_NIET_TERUGGEZET niet geschreven"
+  }
 }
 
 dashboard() {

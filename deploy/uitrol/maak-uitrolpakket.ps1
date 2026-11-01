@@ -42,15 +42,15 @@ try {
   }
   $versie = Get-Date -Format 'yyyyMMdd-HHmmss'
   if ($ZonderGit) { $commit = "zonder-git:$ZonderGit"; Write-Host "УВАГА / LET OP: пакет збирається ПОЗА git (BRON-COMMIT = $commit)." -ForegroundColor Yellow }
-  else { $commit = (git rev-parse HEAD).Trim(); if ($commit -notmatch '^[0-9a-f]{40}$') { Stop-Met "git rev-parse HEAD не дав повного коміту." "git rev-parse HEAD gaf geen volledige commit." } }
+  else { $commit = (git rev-parse HEAD).Trim(); if ($commit -cnotmatch '^[0-9a-f]{40}\z') { Stop-Met "git rev-parse HEAD не дав повного коміту." "git rev-parse HEAD gaf geen volledige commit." } }
   if (-not $env:AUTEUR) { Stop-Met "Встановіть AUTEUR." "Zet AUTEUR." }
-  if ($env:AGENT -notmatch '^[a-z][a-z0-9-]{1,31}$') { Stop-Met "Встановіть AGENT (claude/cursor/gpt)." "Zet AGENT." }
+  if ($env:AGENT -cnotmatch '^[a-z][a-z0-9-]{1,31}\z') { Stop-Met "Встановіть AGENT (claude/cursor/gpt)." "Zet AGENT." }
   if (-not $env:SAMENVATTING -or $env:SAMENVATTING.Length -lt 20) { Stop-Met "Встановіть SAMENVATTING (>=20)." "Zet SAMENVATTING (>=20)." }
   # ORCH-001 (31.10.2026): UITROL-BASIS — op welke GEÏNSTALLEERDE versie en commit dit pakket is gebouwd (BASIS_VERSIE + BASIS_COMMIT);
   # root weigert een pakket waarvan de basis ouder is dan wat er staat (BASIS_VEROUDERD), en vanaf 20261201-000000 zonder basis (GEEN_BASIS).
   $basisTekst = ''
   if ($env:BASIS_VERSIE -or $env:BASIS_COMMIT) {
-    if ($env:BASIS_VERSIE -notmatch '^[0-9]{8}-[0-9]{6}$' -or $env:BASIS_COMMIT -notmatch '^[0-9a-f]{40}$') {
+    if ($env:BASIS_VERSIE -cnotmatch '^[0-9]{8}-[0-9]{6}\z' -or $env:BASIS_COMMIT -cnotmatch '^[0-9a-f]{40}\z') {
       Stop-Met "BASIS_VERSIE (JJJJMMDD-UUMMSS) і BASIS_COMMIT (40 hex) мають бути задані разом і бути коректними." "BASIS_VERSIE (JJJJMMDD-UUMMSS) en BASIS_COMMIT (40 hex) horen samen en moeten geldig zijn."
     }
     $basisTekst = "versie=$($env:BASIS_VERSIE)`ncommit=$($env:BASIS_COMMIT)"
