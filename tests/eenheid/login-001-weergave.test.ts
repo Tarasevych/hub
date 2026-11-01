@@ -32,7 +32,7 @@ export async function main(): Promise<number> {
   check('bewaren van account blijft een beheerbare checkbox',
     inhoud.includes("type='checkbox'") && inhoud.includes('onRememberBrowser(event.target.checked)'));
   check('juridische links blijven in beide talen',
-    inhoud.includes("'/privacy#nl'") === false && inhoud.includes("'/privacy'") && inhoud.includes("'/terms#nl'"));
+    inhoud.includes("'/privacy#nl'") && inhoud.includes("'/privacy'") && inhoud.includes("'/terms#nl'"));
   check('taal en thema verschijnen als kleine knoppen, niet als een groot paneel',
     menu.includes('mr-sign-in-quick-controls') && menu.includes("onLanguage(lang === 'uk' ? 'nl' : 'uk')")
     && menu.includes('theme === \'plum-dark\'') && css.includes('.mr-sign-in-quick-controls button{width:38px;height:38px'));
