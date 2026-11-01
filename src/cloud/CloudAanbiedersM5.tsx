@@ -2,7 +2,7 @@
  * This component NEVER enables permissions based on a provider name alone.
  * Server-side catalogue intentionally reports all unverified first-wave providers as not ready.
  */
-import React,{useEffect,useState} from 'react';
+import {useEffect,useState} from 'react';
 import './cloud-aanbieders-m5.css';
 type State={id:string;title:string;authentication:string;ready:boolean;status:string;missing:string[];constraints:string[]};
 type Envelope={schema:string;release:string;providers:State[];allReady:boolean};

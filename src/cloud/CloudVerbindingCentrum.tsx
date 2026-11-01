@@ -2,7 +2,7 @@
  * Requires the existing CanonicalChrome; no duplicate global shell.
  * Not mounted until full release gate and real provider acceptance pass.
  */
-import React,{useEffect,useMemo,useState}from'react';
+import {useEffect,useMemo,useState}from'react';
 import{beginCloudConsent,CloudAccountSync,type CloudAccountListItem}from'./cloud-account-sync';
 import './cloud-verbinding-centrum.css';
 const META=[

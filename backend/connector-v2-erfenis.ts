@@ -8,12 +8,14 @@
 //   • kanten  = de vereniging van alle nog geldige /mcp-grants van deze mens voor deze AI-klant ('prive' → gebruiker,
 //               'technisch' → beheer). Had de mens Claude ooit privé én technisch toegestaan, dan draagt de erfenis beide kanten;
 //   • sleutels = elke actieve optie van die kanten waarvan het interne hulpmiddel geen scope kent (bv. v2_whoami, apparaten) of
-//               waarvan de scope in de vereniging van de verleende scopes staat. Een scope die de mens nooit gaf, geeft geen sleutel.
+//               waarvan de scope verleend is aan een grant VAN DIE KANT (gescheiden ruimtes, besluit eigenaar 1.11.2026: gebruiker ←
+//               scopes van privégrants, beheer ← scopes van technische grants). Een scope die de mens nooit gaf, geeft geen sleutel,
+//               en een privéscope geeft nooit een beheersleutel.
 //
 // Twee gebruikers:
 //   1. backend/connector-v2.ts → rpc: een token dat voor het oude /mcp is uitgegeven (agent IS NULL) werkt op /<agent> van DEZELFDE
-//      AI-klant (klantVan(client_name) = de klant van de agent) met deze afgeleide rechten. Geen nieuwe toestemming; de levende
-//      filtering (v2Lijst/v2Roep) blijft precies dezelfde als voor een v2-grant;
+//      AI-klant (klantVan(client_name) = de klant van de agent) met de rechten van ALLEEN DIT token (zijn eigen ruimte en scopes).
+//      Geen nieuwe toestemming; de levende filtering (v2Lijst/v2Roep) blijft precies dezelfde als voor een v2-grant;
 //   2. backend/connector-v2.ts → consentV2: zonder v2-koppeling en zonder onthouden keuze start het venster met de erfenis
 //      aangevinkt, zodat «opnieuw verbinden via het nieuwe adres» niets stil laat vallen.
 import { getPool } from '../server/platform/pg';
@@ -90,19 +92,29 @@ export async function erfenisVoor(userId: string, slug: AgentSlug): Promise<Erfe
   return erfenisUit(eigen);
 }
 
-/** Puur deel: van oude grants naar kanten + sleutels. */
+const kantVanRuimte = (ruimte: 'prive' | 'technisch'): Kant => (ruimte === 'technisch' ? 'beheer' : 'gebruiker');
+
+/**
+ * Puur deel: van oude grants naar kanten + sleutels. Gescheiden ruimtes (besluit eigenaar 1.11.2026): de sleutels van elke kant komen
+ * ALLEEN uit de scopes van de grants van die ruimte — de privékeuze («Доступ ШІ») bepaalt nooit wat de beheerkant mag, en omgekeerd.
+ * Ключі кожного боку — лише зі скоупів підключень цього простору.
+ */
 export function erfenisUit(grants: ReadonlyArray<{ id: string; ruimte: 'prive' | 'technisch'; scopes: readonly string[] }>): Erfenis {
-  const kanten = [...new Set(grants.map((g): Kant => (g.ruimte === 'technisch' ? 'beheer' : 'gebruiker')))].sort() as Kant[];
+  const kanten = [...new Set(grants.map((g) => kantVanRuimte(g.ruimte)))].sort() as Kant[];
   const scopes = [...new Set(grants.flatMap((g) => g.scopes))].sort();
   if (!kanten.length) return { kanten: ['gebruiker'], sleutels: [], grants: [], scopes: [] };
-  return { kanten, sleutels: sleutelsUitScopes(kanten, scopes), grants: grants.map((g) => g.id), scopes };
+  const perKant = kanten.flatMap((k) => sleutelsUitScopes([k], grants.filter((g) => kantVanRuimte(g.ruimte) === k).flatMap((g) => g.scopes)));
+  return { kanten, sleutels: schoon(perKant, kanten), grants: grants.map((g) => g.id), scopes };
 }
 
 /**
  * Rechten voor een /mcp-token dat op /<agent> aanklopt: alleen als de klant van het token bij die agent hoort (een token van
  * «ChatGPT» werkt niet op /claude), anders null.
- *   • kanten  = de erfenis van de geldige /mcp-grants van DEZELFDE OAuth-REGISTRATIE (client_id) als dit token; de levende poorten
- *               (eigenaar, technisch profiel, dienst «ai») beslissen bij elke aanroep opnieuw wat daarvan nu bestaat;
+ *   • kanten  = ALLEEN de ruimte van DIT token (privé → gebruiker, technisch → beheer). Gescheiden ruimtes (besluit eigenaar
+ *               1.11.2026): tot dan kreeg een privétoken ook de beheerkant zodra dezelfde registratie (client_id) een technische grant
+ *               had — met beheersleutels afgeleid uit zijn PRIVÉscopes («Доступ ШІ»). Wie op /<agent> beide kanten wil, verbindt
+ *               via het venster van connector v2. De levende poorten (eigenaar, technisch profiel, dienst «ai») beslissen bij elke
+ *               aanroep opnieuw wat daarvan nu bestaat;
  *   • sleutels = gedekt door de scopes van DIT token: dat is wat connectors-tools.callTool bij de aanroep controleert
  *               (app.ai_toegang op deze grant), dus tools/list belooft nooit iets wat tools/call daarna zou weigeren.
  *
@@ -119,6 +131,5 @@ export async function rechtenVoorOudToken(userId: string, clientName: string, sl
   const alle = (await oudeGrants(userId)).filter((g) => klantVan(g.clientName) === v2Agent(slug).klant);
   const dit = alle.find((g) => g.id === grantId);
   if (!dit || !dit.clientId) return null;
-  const e = erfenisUit(alle.filter((g) => g.clientId === dit.clientId));
-  return { ...e, sleutels: sleutelsUitScopes(e.kanten, dit.scopes), scopes: [...dit.scopes].sort() };
+  return erfenisUit([dit]);
 }
