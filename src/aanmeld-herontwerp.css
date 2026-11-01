@@ -25,7 +25,7 @@
 .canonical-chrome:has(.mr-sign-in) .canonical-topbar{background:transparent;border:0;box-shadow:none}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.plaats-boven-telefoon{display:none!important}
 .canonical-chrome:has(.mr-sign-in) .mr-guest-mobile-account{display:flex;align-items:center;justify-content:flex-end}
-.canonical-signed-out.mr-sign-in{
+.canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in{
  position:relative;inset:auto;box-sizing:border-box;min-height:calc(100dvh - clamp(20px,5vw,112px));
  margin:clamp(10px,3.5vw,56px)!important;padding:90px 28px 92px;
  display:flex;flex-direction:column;justify-content:center;align-items:center;gap:0;
