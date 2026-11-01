@@ -79,6 +79,35 @@ export function v2Routes(deps: Deps) {
       return deps.respond({ ok: true, agenten: samenvatting, resultaat: gedaan });
     }],
 
+    // Direct toepassen van opgeslagen (of meegegeven) rechten op actieve koppelingen zonder OAuth-tokenintrekking (MCP-ACCESS-001).
+    // Elke uitbreiding van rechten op een levend token vraagt een verse step-up-bevestiging van de gebruiker (passkey/2FA).
+    'POST /api/owner/connector-v2/toepassen': [async (ctx: any) => {
+      const r = await metAgent(ctx);
+      if ('fout' in r) return r.fout;
+      const heeftKeuze = Array.isArray(r.body.sleutels) || Array.isArray(r.body.kanten);
+      if (heeftKeuze) {
+        const keuze = v2.keuzeUitVenster(r.body);
+        if (keuze.kanten.includes('beheer') && !isEigenaar(r.auth.user)) return deps.fail('OWNER_REQUIRED', 403);
+        await v2.wijzig(r.auth.user.id, r.slug, keuze);
+      }
+      const proef = await v2.voorkeurVoorbeeldToepassen(r.auth.user.id, r.slug);
+      if (!proef.voorkeur) return deps.fail('VOORKEUR_ONTBREEKT', 400);
+      if (proef.beheerGevraagd && !isEigenaar(r.auth.user)) return deps.fail('OWNER_REQUIRED', 403);
+      if (proef.uitbreiding) {
+        const su = await deps.stepUp(ctx, r.auth);
+        if (su) return su;
+      }
+      const uit = await v2.toepassenVoorkeur(r.auth.user.id, r.slug);
+      await deps.audit(r.auth.user.id, 'owner.connector.v2.toegepast', 'success', {
+        agent: r.slug,
+        kanten: uit.voorkeur.kanten,
+        rechten: uit.voorkeur.sleutels.length,
+        bijgewerkt: uit.bijgewerkt,
+        uitbreiding: proef.uitbreiding,
+      });
+      return deps.respond({ ok: true, bijgewerkt: uit.bijgewerkt, voorkeur: uit.voorkeur });
+    }],
+
     // Herverbinden: huidige koppelingen van deze agent intrekken; de keuze blijft bewaard en verschijnt in het nieuwe venster.
     'POST /api/owner/connector-v2/herverbind': [async (ctx: any) => {
       const r = await metAgent(ctx);

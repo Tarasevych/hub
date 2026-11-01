@@ -67,12 +67,14 @@ async function profielFeit(userId: string, eigenaar: boolean, email: string, rol
   return r ? { rollen: (r.rollen as string[]).filter(isTechRol), ingetrokken: !!r.ingetrokken_op, max: Number(r.max_minuten), profielId: String(r.profiel_id) } : null;
 }
 
-async function aiToegestaan(userId: string, rij: Rij): Promise<boolean> {
-  const r = (await sys().query(`SELECT 1 FROM app.tech_ruimte_ai a WHERE a.user_id = $1 AND 'technisch' = ANY(a.ruimtes) AND (
+export async function aiToegestaan(userId: string, rij: Rij, verbindingId?: string | null): Promise<boolean> {
+  const doelen = verbindingId ? ['*', verbindingId] : ['*'];
+  const r = (await sys().query(`SELECT a.ruimtes FROM app.tech_ruimte_ai a WHERE a.user_id = $1 AND a.verbinding_id = ANY($4::text[]) AND (
       (a.termijn = 'tijd' AND a.eind_op > now() AND a.ruimte_sessie_id = $2)
    OR (a.termijn = 'tot-technisch-einde' AND a.ruimte_sessie_id = $2)
-   OR (a.termijn = 'tot-site-uitloggen' AND EXISTS (SELECT 1 FROM app.tech_ruimte_sessies x WHERE x.id = a.ruimte_sessie_id AND x.sessie_id = $3))) LIMIT 1`, [userId, rij.id, rij.sessie_id])).rows;
-  return r.length > 0;
+   OR (a.termijn = 'tot-site-uitloggen' AND EXISTS (SELECT 1 FROM app.tech_ruimte_sessies x WHERE x.id = a.ruimte_sessie_id AND x.sessie_id = $3)))
+    ORDER BY CASE WHEN a.verbinding_id = '*' THEN 1 ELSE 0 END, a.gezet_op DESC LIMIT 1`, [userId, rij.id, rij.sessie_id, doelen])).rows[0];
+  return Array.isArray(r?.ruimtes) && (r.ruimtes as string[]).includes('technisch');
 }
 
 /**
@@ -116,7 +118,7 @@ async function siteWegReden(userId: string, sessieId: string | null): Promise<bo
   return SITE_WEG_REDENEN.includes(String(r.beeindigd_reden)) || !(await siteSessie(String(r.sessie_id))).leeft;
 }
 
-export type Herkomst = { bron: RuimteBron; tab?: string | null; sessieId?: string | null };
+export type Herkomst = { bron: RuimteBron; tab?: string | null; sessieId?: string | null; verbindingId?: string | null };
 /** Lopende v2-rij voor dit verzoek: via sessie-id (site), via geregistreerd tabblad (oude controles zonder sessie) of — MCP — elke levende. */
 async function rijVoor(userId: string, h: Herkomst): Promise<{ rij: Rij | null; gebonden: boolean; alle?: Rij[] }> {
   if (h.sessieId) {
@@ -151,10 +153,10 @@ export async function besluit(userId: string, h: Herkomst, ruimte: Ruimte = 'tec
     const naGeen = async (b: RuimteBesluit, r: Rij | null) => (streng && b.code === 'GEEN_TECH_SESSIE' && await siteWegReden(userId, h.bron === 'mcp' ? null : (h.sessieId ?? null))) ? metCode({ ...b, code: 'SITE_SESSIE_WEG' }, r) : metCode(b, r);
     if (h.bron === 'mcp') {
       for (const r of alle ?? []) {
-        const b = ruimteToegang({ ...basis, sessie: await feitVan(r, false, streng ? { verzoekSessie: r.sessie_id, magBinden: false } : undefined), aiToegestaan: await aiToegestaan(userId, r) }, ruimte);
+        const b = ruimteToegang({ ...basis, sessie: await feitVan(r, false, streng ? { verzoekSessie: r.sessie_id, magBinden: false } : undefined), aiToegestaan: await aiToegestaan(userId, r, h.verbindingId) }, ruimte);
         if (b.toegestaan && b.ruimte === 'technisch') return { ...b, rij: r };
       }
-      return naGeen(ruimteToegang({ ...basis, sessie: await feitVan(rij, false, streng && rij ? { verzoekSessie: rij.sessie_id, magBinden: false } : undefined), aiToegestaan: false }, ruimte), rij);
+      return naGeen(ruimteToegang({ ...basis, sessie: await feitVan(rij, false, streng && rij ? { verzoekSessie: rij.sessie_id, magBinden: false } : undefined), aiToegestaan: rij ? await aiToegestaan(userId, rij, h.verbindingId) : false }, ruimte), rij);
     }
     if (streng && !h.sessieId) return metCode(ruimteToegang({ ...basis, sessie: null }, ruimte), null);
     return naGeen(ruimteToegang({ ...basis, sessie: await feitVan(rij, gebonden, streng ? { verzoekSessie: h.sessieId ?? null, magBinden: true } : undefined) }, ruimte), rij);
@@ -182,10 +184,12 @@ export async function registreerTab(userId: string, sessieId: string, tab: strin
 export type SiteSessie = { id: string; createdAt: number } | null;
 const vereisSessie = (s: SiteSessie): string => s?.id ? String(s.id) : fout('SESSIE_VEREIST', 403);
 
+const meldMcpLijst = (userId: string) => { void import('./connector-v2-stroom').then((m) => m.meldLijstGewijzigd(userId)).catch(() => undefined); };
+
 async function beeindigRijen(userId: string, where: string, params: unknown[], reden: string): Promise<number> {
   const rows = (await sys().query(`UPDATE app.tech_ruimte_sessies r SET beeindigd_op = now(), beeindigd_reden = $2 WHERE r.user_id = $1 AND r.beeindigd_op IS NULL ${where} RETURNING id, modus, sessie_id`, [userId, reden, ...params])).rows;
   for (const r of rows) await audit(userId, 'owner.tech.ruimte.beeindigd', { ruimteSessie: r.id, modus: r.modus, reden, sessie: r.sessie_id });
-  if (rows.length) tp.meldTechEindeExtern(userId);
+  if (rows.length) { tp.meldTechEindeExtern(userId); meldMcpLijst(userId); }
   return rows.length;
 }
 
@@ -212,6 +216,7 @@ export async function starten(u: tp.Gebruiker, s: SiteSessie, tab: string, modus
   await registreerTab(u.id, sid, tab);
   await sys().query('UPDATE app.tech_profielen SET laatst_actief = now() WHERE user_id = $1', [u.id]);
   await audit(u.id, 'owner.tech.ruimte.gestart', { ruimteSessie: row.id, modus, minuten: minuten ?? null, rollen, reden, sessie: sid });
+  meldMcpLijst(u.id);
   return row;
 }
 
@@ -225,6 +230,7 @@ export async function wisselen(u: tp.Gebruiker, s: SiteSessie, tab: string, naar
   await registreerTab(u.id, sid, tab);
   await audit(u.id, naar === 'prive' ? 'owner.tech.ruimte.pauze' : 'owner.tech.ruimte.hervat', { ruimteSessie: rij!.id, sessie: sid });
   if (naar === 'prive') tp.meldTechEindeExtern(u.id);
+  meldMcpLijst(u.id);
 }
 
 export async function verlengen(u: tp.Gebruiker, s: SiteSessie, minutenIn: unknown, soort: unknown) {
@@ -339,6 +345,7 @@ export async function aiZetten(u: tp.Gebruiker, s: SiteSessie, input: Record<str
     ON CONFLICT (user_id, verbinding_id) DO UPDATE SET ruimtes = EXCLUDED.ruimtes, termijn = EXCLUDED.termijn, eind_op = EXCLUDED.eind_op, ruimte_sessie_id = EXCLUDED.ruimte_sessie_id, gezet_op = now()`,
     [u.id, vid, ruimtes, termijn, minuten, b.rij!.id]);
   await audit(u.id, 'owner.tech.ruimte.ai', { verbinding: vid, ruimtes, termijn, minuten: termijn === 'tijd' ? minuten : null, ruimteSessie: b.rij!.id });
+  meldMcpLijst(u.id);
 }
 
 // ---------------------------------------------------------------- schaduw (stap 0)

@@ -76,6 +76,7 @@ export function ruimteScheidingRoutes(requireSession: RequireSession, deps: Ruim
       const su = await bevestig(ctx, auth);
       if (su) return su;
       const uit = await rs.keuzeZetten(auth.user.id, bodyOf(ctx.body).keuze, auth.user.id);
+      void import('./connector-v2-stroom').then((m) => m.meldLijstGewijzigd(auth.user.id)).catch(() => undefined);
       return json({ ...uit, ...(await rs.overzichtVan(auth.user.id)), catalogus: catalogus() });
     })],
 
@@ -93,6 +94,7 @@ export function ruimteScheidingRoutes(requireSession: RequireSession, deps: Ruim
         stapOpGedaan = true;
       }
       const uit = await rs.dienstZetten(auth.user.id, b.dienst, actie, { actorId: auth.user.id, stapOpGedaan });
+      if (b.dienst === 'ai') void import('./connector-v2-stroom').then((m) => m.meldLijstGewijzigd(auth.user.id)).catch(() => undefined);
       return json({ standen: uit.standen, overgang: uit.overgang });
     })],
 

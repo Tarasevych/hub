@@ -63,13 +63,13 @@ export function sluitAlleStromen(): void { for (const s of [...stromen]) s.sluit
  * Een geauthenticeerde GET /<agent> als SSE-stroom openen. De aanroeper (server/start.ts) heeft het token al gecontroleerd en de
  * rechten gelezen; hier alleen nog de stroom zelf. Keert meteen terug; de verbinding blijft open tot de klant sluit.
  */
-export async function openStroom(req: http.IncomingMessage, res: http.ServerResponse, wie: { userId: string; agent: string }): Promise<void> {
+export async function openStroom(req: http.IncomingMessage, res: http.ServerResponse, wie: { userId: string; agent: string; verbindingId?: string | null }): Promise<void> {
   // Begrenzen: de oudste stroom van dezelfde mens (of van allemaal) wijkt.
   const eigen = [...stromen].filter((s) => s.userId === wie.userId).sort((a, b) => a.geopend - b.geopend);
   if (eigen.length >= MAX_PER_GEBRUIKER) eigen[0].sluit();
   if (stromen.size >= MAX_STROMEN) [...stromen].sort((a, b) => a.geopend - b.geopend)[0]?.sluit();
 
-  const start = (await aiPoortNu(wie.userId)).ruimte;
+  const start = (await aiPoortNu(wie.userId, { verbindingId: wie.verbindingId ?? null })).ruimte;
   res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive',
     'X-Accel-Buffering': 'no', 'Content-Encoding': 'identity',
@@ -89,7 +89,7 @@ export async function openStroom(req: http.IncomingMessage, res: http.ServerResp
     if (bezig) return;
     bezig = true;
     try {
-      const nu = (await aiPoortNu(wie.userId)).ruimte;
+      const nu = (await aiPoortNu(wie.userId, { verbindingId: wie.verbindingId ?? null })).ruimte;
       if (nu !== s.ruimte) { s.ruimte = nu; if (!schrijf(s, `event: message\ndata: ${LIST_CHANGED}\n\n`)) s.sluit(); }
     } catch { /* de volgende ronde probeert opnieuw; nooit de stroom sluiten om een tijdelijke databasefout */ }
     finally { bezig = false; }
@@ -108,7 +108,7 @@ export async function stroomVerzoek(req: http.IncomingMessage, res: http.ServerR
   if (!isAgentSlug(slug)) { res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ error: 'unknown_agent' })); return; }
   const toegang = await koppelingVan(slug, String(req.headers.authorization || ''));
   if ('statusCode' in toegang) { res.writeHead(toegang.statusCode, toegang.headers); res.end(toegang.body); return; }
-  await openStroom(req, res, { userId: toegang.koppeling.userId, agent: slug });
+  await openStroom(req, res, { userId: toegang.koppeling.userId, agent: slug, verbindingId: toegang.koppeling.tokenId || toegang.koppeling.grantId || null });
 }
 
 /** GET /mcp met `Accept: text/event-stream`: SSE-stroom voor het oude /mcp-eindpunt (list_changed bij herauthenticatie of UI-wijziging). */
@@ -121,5 +121,5 @@ export async function stroomVerzoekMcp(req: http.IncomingMessage, res: http.Serv
     res.end(weigering.body);
     return;
   }
-  await openStroom(req, res, { userId: who.userId, agent: 'mcp' });
+  await openStroom(req, res, { userId: who.userId, agent: 'mcp', verbindingId: who.grantId ?? who.tokenId ?? null });
 }

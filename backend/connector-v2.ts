@@ -42,6 +42,8 @@ import { erfenisUit, erfenisVoor, oudeGrantsVoor, rechtenVoorOudToken, type Oude
 // Zone E (22.10.2026): chrome-devtools-mcp-namen als aliassen + «devtools-namen» in tools/list (matrix «Браузер і агенти»).
 import { devtoolsBeslissing, devtoolsDefinities, slotHint } from './connector-v2-browser';
 import { instellingenVan as matrixInstellingen } from './extensie-matrix';
+import { veiligeExterneDiagnose, type AgentToegangDiagnose, type ToegangWeigerCode } from '../shared/ai-toegang-diagnose';
+import { bouwGebruikerDiagnoseContext, diagnoseVoorAgent, diagnoseVoorAgentMetContext, meldGeblokkeerdeAiPoging } from './ai-toegang-diagnose';
 
 const RPC_PER_MINUTE = 120;
 const MAX_RPC_BYTES = 6 * 1024 * 1024;
@@ -143,7 +145,7 @@ async function isEigenaar(userId: string): Promise<boolean> {
  * antwoord 'prive' en verdwijnt de hele _beheer-kant uit tools/list en tools/call — zonder dat de privékant iets verliest.
  * Eén weg, geen tweede waarheid: backend/ai-ruimte-poort.ts → aiPoortNu.
  */
-export const levendeRuimte = async (who: Koppeling): Promise<AiRuimte> => (await aiPoortNu(who.userId)).ruimte;
+export const levendeRuimte = async (who: Koppeling): Promise<AiRuimte> => (await aiPoortNu(who.userId, { verbindingId: who.tokenId || who.grantId || null })).ruimte;
 
 export async function v2Lijst(who: Koppeling, rechten: v2st.V2Keuze, ruimte?: AiRuimte): Promise<ToolDef[]> {
   const uit: ToolDef[] = [];
@@ -206,6 +208,12 @@ export async function v2Roep(who: Koppeling, rechten: v2st.V2Keuze, naam: string
   }
   const o = p.optie;
   if (!rechten.kanten.includes(o.kant) || !rechten.sleutels.includes(o.key)) {
+    const voorkeur = await v2st.leesVoorkeur(who.userId, who.agent).catch(() => null);
+    const wachtInVoorkeur = Boolean(voorkeur?.herverbinden && (voorkeur.sleutels.includes(o.key) || (o.kant === 'beheer' && voorkeur.kanten.includes('beheer'))));
+    if (wachtInVoorkeur) {
+      void meldGeblokkeerdeAiPoging({ userId: who.userId, slug: who.agent, clientName: who.clientName, code: 'VOORKEUR_WACHT_TOEPASSEN', aanleiding: 'tools/call', hulpmiddel: naam }).catch(() => undefined);
+      return weiger(who, naam, args, 'recht-uit', `PERMISSION_OFF: "${naam.slice(0, 80)}" is saved as a pending permission preference, but not yet applied to this active connection. Ask the user to click "Apply permissions now" («Застосувати зараз») or reconnect at ${agentPaginaUrl(who.agent)}. Do not try another way.`);
+    }
     return weiger(who, naam, args, 'recht-uit', `PERMISSION_OFF: the user did not grant "${naam.slice(0, 80)}" to this connection. They can change it at ${agentPaginaUrl(who.agent)} and reconnect. Do not try another way.`);
   }
   if (o.kant === 'beheer') {
@@ -215,16 +223,61 @@ export async function v2Roep(who: Koppeling, rechten: v2st.V2Keuze, naam: string
       return weiger(who, naam, args, 'geen-eigenaar', 'OWNER_REQUIRED: technical (_beheer) tools are only for the owner of the site.');
     }
     const nu = ruimte ?? await levendeRuimte(who);
-    if (nu !== 'technisch') return weiger(who, naam, args, 'tech-profiel', TECH_PROFIEL_UIT(naam.slice(0, 80)));
+    if (nu !== 'technisch') {
+      const diag = await diagnoseVanKoppeling(who, rechten, 'prive').catch(() => null);
+      const oorzaak: ToegangWeigerCode = diag?.blokkades.find((b) => b.laag === 'sessie' || b.laag === 'delegatie' || b.laag === 'dienst')?.code ?? 'GEEN_TECH_SESSIE';
+      void meldGeblokkeerdeAiPoging({ userId: who.userId, slug: who.agent, clientName: who.clientName, code: oorzaak, aanleiding: 'tools/call', hulpmiddel: naam }).catch(() => undefined);
+      return weiger(who, naam, args, 'tech-profiel', `${TECH_PROFIEL_UIT(naam.slice(0, 80))} Cause: ${oorzaak}. Manage at ${agentPaginaUrl(who.agent)}.`);
+    }
   }
   if (o.intern === WHOAMI) return whoami(who, rechten, ruimte, via);
-  return roepTool(wieVoorKant(who, o.kant), o.intern as string, args, { naam, agent: who.agent });
+  const uit = await roepTool(wieVoorKant(who, o.kant), o.intern as string, args, { naam, agent: who.agent });
+  if (uit.isError) {
+    const errTekst = uit.content?.[0]?.text ?? '';
+    if (/signed AI policy/i.test(errTekst)) {
+      const diag = await diagnoseVanKoppeling(who, rechten, ruimte).catch(() => null);
+      const bCode = diag?.blokkades.find((b) => b.laag === 'beleid')?.code ?? 'BELEID_UIT';
+      void meldGeblokkeerdeAiPoging({ userId: who.userId, slug: who.agent, clientName: who.clientName, code: bCode, aanleiding: 'tools/call', hulpmiddel: naam }).catch(() => undefined);
+    }
+  }
+  return uit;
+}
+
+async function diagnoseVanKoppeling(who: Koppeling, rechten: v2st.V2Keuze, ruimte?: AiRuimte): Promise<AgentToegangDiagnose> {
+  const voorkeur = await v2st.leesVoorkeur(who.userId, who.agent).catch(() => null);
+  return diagnoseVoorAgent(who.userId, {
+    slug: who.agent,
+    verbonden: true,
+    grantId: who.tokenId || who.grantId || null,
+    clientName: who.clientName,
+    actief: rechten,
+    voorkeur,
+    lijstFn: (r, k) => v2Lijst(who, k, ruimte ?? r),
+  });
+}
+
+function meldAlsBeperkt(who: Koppeling, diag: AgentToegangDiagnose, aanleiding: 'tools/list' | 'whoami') {
+  const techGeblokkeerd = diag.connectionGranted.beheer > 0 && !diag.effectiveTechnicalAccess;
+  const beleidWistPrive = diag.aiPolicyBlockedCount > 0 && diag.effectiveGebruikerVisibleCount <= 1 && diag.connectionGranted.gebruiker > 1;
+  const wachtUitbreiding = diag.pendingExpansion.wacht;
+  if ((!techGeblokkeerd && !beleidWistPrive && !wachtUitbreiding) || !diag.denialCode) return;
+  void meldGeblokkeerdeAiPoging({
+    userId: who.userId,
+    slug: who.agent,
+    clientName: who.clientName,
+    code: diag.denialCode,
+    aanleiding,
+    zichtbaar: diag.effectiveVisibleToolsCount,
+    toegekend: diag.connectionGranted.totaal,
+  }).catch(() => undefined);
 }
 
 async function whoami(who: Koppeling, rechten: v2st.V2Keuze, ruimte?: AiRuimte, via: 'v2' | 'mcp' = 'v2') {
   const { rows } = await getPool('systeem').query("SELECT data->>'email' AS email, data->>'name' AS name, data->>'role' AS role FROM app.records WHERE tbl = 'users' AND id = $1", [who.userId]);
   const u = rows[0] ?? {};
   const nu = ruimte ?? await levendeRuimte(who);
+  const diag = await diagnoseVanKoppeling(who, rechten, nu).catch(() => null);
+  if (diag) meldAlsBeperkt(who, diag, 'whoami');
   return tekst(JSON.stringify({
     account: { email: u.email ?? null, name: u.name ?? null, role: u.role ?? null },
     // `granted` = wat de mens deze connector ooit toestond; `activeNow` = wat op dit moment echt bestaat (levende rechten).
@@ -233,6 +286,7 @@ async function whoami(who: Koppeling, rechten: v2st.V2Keuze, ruimte?: AiRuimte, 
       granted: rechten.kanten, spaces: rechten.kanten, tools: rechten.sleutels.length,
       activeNow: nu === 'technisch' ? ['gebruiker', 'beheer'].filter((k) => rechten.kanten.includes(k as Kant)) : rechten.kanten.filter((k) => k !== 'beheer'),
       technicalProfileActive: nu === 'technisch',
+      ...(diag ? { diagnostics: veiligeExterneDiagnose(diag, agentPaginaUrl(who.agent)) } : {}),
     },
   }));
 }
@@ -253,7 +307,13 @@ async function bericht(who: Koppeling, rechten: v2st.V2Keuze, msg: any, ruimte: 
       });
     }
     case 'ping': return rpcResult(id, {});
-    case 'tools/list': return rpcResult(id, { tools: (await v2Lijst(who, rechten, ruimte)).map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })) });
+    case 'tools/list': {
+      const lijst = await v2Lijst(who, rechten, ruimte);
+      if ((rechten.kanten.includes('beheer') && ruimte !== 'technisch') || (lijst.length <= 1 && rechten.sleutels.length > 1)) {
+        void diagnoseVanKoppeling(who, rechten, ruimte).then((d) => meldAlsBeperkt(who, d, 'tools/list')).catch(() => undefined);
+      }
+      return rpcResult(id, { tools: lijst.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })) });
+    }
     case 'tools/call': {
       const name = msg.params?.name;
       if (typeof name !== 'string' || !name) return rpcError(id, -32602, 'name ontbreekt');
@@ -360,26 +420,55 @@ export type AgentStandServer = {
   deur: DeurStand[] | null;
   /** Laatste gebruik langs welke weg dan ook (ms) of null. */
   laatst: number | null;
+  /** Volledige oorzakelijke diagnose van wat deze AI NU ziet en waarom iets geblokkeerd is (MCP-ACCESS-001). */
+  diagnose: AgentToegangDiagnose;
 };
 
 /**
  * Overzicht: per agent het adres, de actieve koppelingen, het geheugen en of er herverbonden moet worden — en sinds 20.10.2026
  * de WARE stand: ook de erfenis (oud /mcp) en de serverdeur tellen mee (shared/connector-v2/stand.ts), plus de levende poort
- * (aiPoortNu) zodat de pagina kan zeggen welke kant NU bestaat.
+ * (aiPoortNu) en per-agent oorzakelijke diagnose zodat de pagina exact zegt hoeveel hulpmiddelen NU zichtbaar zijn en wat ontbreekt.
  */
 export async function overzicht(userId: string): Promise<{ agenten: AgentStandServer[]; instellingen: Awaited<ReturnType<typeof v2st.leesInstellingen>>; poort: { ruimte: AiRuimte; stand: string; code: string | null } }> {
-  const koppelingen = await v2st.actieveKoppelingen(userId);
-  const instellingen = await v2st.leesInstellingen(userId);
-  const deuren = await deurPerSlug(userId);
   const poort = await aiPoortNu(userId).catch(() => ({ ruimte: 'prive' as AiRuimte, stand: 'uit', code: 'DIENST_UIT' as string | null }));
+  const [koppelingen, instellingen, deuren, diagCtx] = await Promise.all([
+    v2st.actieveKoppelingen(userId),
+    v2st.leesInstellingen(userId),
+    deurPerSlug(userId),
+    bouwGebruikerDiagnoseContext(userId),
+  ]);
   const agenten = await Promise.all(V2_AGENTEN.map(async ({ slug }) => {
     const eigen = koppelingen.filter((k) => k.agent === slug);
     const voorkeur = await v2st.leesVoorkeur(userId, slug);
-    const actief = eigen[0] ? { kanten: eigen[0].kanten, sleutels: eigen[0].sleutels } : null;
     const erfenis = await oudeGrantsVoor(userId, slug).catch(() => [] as OudeGrant[]);
+    const erfenisRechten = !eigen[0] && erfenis.length ? erfenisUit(erfenis) : null;
+    const actief = eigen[0]
+      ? { kanten: eigen[0].kanten, sleutels: eigen[0].sleutels }
+      : erfenisRechten
+        ? { kanten: erfenisRechten.kanten, sleutels: erfenisRechten.sleutels }
+        : null;
     const deur = deuren ? (deuren.get(slug) ?? []) : null;
     const laatst = Math.max(0, ...eigen.map((k) => k.lastUsedAt ?? 0), ...erfenis.map((g) => g.lastUsedAt ?? 0), ...(deur ?? []).map((d) => d.laatst)) || null;
-    return { slug, url: agentUrl(slug), koppelingen: eigen, voorkeur, actief, erfenis, deur, laatst };
+    const grantId = eigen[0]?.id ?? erfenis[0]?.id ?? null;
+    const clientName = eigen[0]?.clientName ?? erfenis[0]?.clientName ?? v2Agent(slug).naam;
+    const diagnose = await diagnoseVoorAgentMetContext(diagCtx, {
+      slug,
+      verbonden: eigen.length > 0 || erfenis.length > 0,
+      grantId,
+      clientName,
+      actief,
+      voorkeur,
+      lijstFn: (r, k) => v2Lijst({
+        userId,
+        clientName,
+        tokenId: grantId ?? '',
+        ...(grantId ? { grantId } : {}),
+        ruimte: r,
+        agent: slug,
+        limietSleutel: 'diagnose',
+      }, k, r),
+    });
+    return { slug, url: agentUrl(slug), koppelingen: eigen, voorkeur, actief, erfenis, deur, laatst, diagnose };
   }));
   return { agenten, instellingen, poort: { ruimte: poort.ruimte, stand: String(poort.stand), code: poort.code ?? null } };
 }
@@ -389,8 +478,9 @@ export type AgentStandKort = {
   v2: number; erfenis: number; deur: number | null; wacht: boolean;
   /** Kanten die de mens toestond (actieve koppeling, anders de onthouden keuze); welke daarvan NU leven zegt `levend`. */
   kanten: Kant[]; levend: Kant[];
-  /** Hulpmiddelen die deze AI NU zou zien (shared/connector-v2/stand.ts → zichtbareSleutels). */
+  /** Hulpmiddelen die deze AI NU echt ziet (inclusief beleidsplafond, GitHub en ruimte-scheiding). */
   hulpmiddelen: number;
+  denialCode: ToegangWeigerCode | null;
   laatst: number | null;
 };
 
@@ -399,18 +489,20 @@ export type AgentStandKort = {
  * en zei «немає підключень» terwijl Claude via de deur werkte). Zelfde bron als het overzicht van de hub: één waarheid.
  */
 export async function agentStanden(userId: string): Promise<{ agenten: AgentStandKort[]; poort: { ruimte: AiRuimte; stand: string; code: string | null } }> {
-  const { zichtbareSleutels, levendeKanten } = await import('../shared/connector-v2/stand');
+  const { levendeKanten } = await import('../shared/connector-v2/stand');
   const o = await overzicht(userId);
   return {
     poort: o.poort,
     agenten: o.agenten.map((a) => {
       const keuze = a.actief ?? (a.voorkeur ? { kanten: a.voorkeur.kanten, sleutels: a.voorkeur.sleutels } : null);
       const kanten: Kant[] = keuze?.kanten ?? [];
+      const agentRuimte: AiRuimte = a.diagnose.effectiveTechnicalAccess ? 'technisch' : 'prive';
       return {
         slug: a.slug, naam: v2Agent(a.slug).naam, url: a.url,
         v2: a.koppelingen.length, erfenis: a.erfenis.length, deur: a.deur === null ? null : a.deur.length, wacht: !!a.voorkeur?.herverbinden,
-        kanten, levend: levendeKanten(kanten, o.poort.ruimte),
-        hulpmiddelen: keuze ? zichtbareSleutels(keuze.sleutels, kanten, o.poort.ruimte).length : 0,
+        kanten, levend: levendeKanten(kanten, agentRuimte),
+        hulpmiddelen: keuze ? a.diagnose.effectiveVisibleToolsCount : 0,
+        denialCode: a.diagnose.denialCode,
         laatst: a.laatst,
       };
     }),
@@ -472,6 +564,64 @@ export async function massaToepassen(userId: string, voorbeeld: ReadonlyArray<{ 
     resultaat.push({ slug: v.slug, gewijzigd: true, ingeperkt: r.ingeperkt, herverbinden: r.herverbinden });
   }
   return resultaat;
+}
+
+/**
+ * Controleert of het live toepassen van de opgeslagen voorkeur op actieve koppelingen een uitbreiding van rechten inhoudt
+ * (zodat de route een verse step-up-bevestiging van de gebruiker eist).
+ */
+export async function voorkeurVoorbeeldToepassen(userId: string, slug: AgentSlug): Promise<{
+  voorkeur: v2st.Voorkeur | null;
+  uitbreiding: boolean;
+  beheerGevraagd: boolean;
+  actieveAantal: number;
+}> {
+  const voorkeur = await v2st.leesVoorkeur(userId, slug);
+  if (!voorkeur) return { voorkeur: null, uitbreiding: false, beheerGevraagd: false, actieveAantal: 0 };
+  const actief = await v2st.actieveKoppelingen(userId, slug);
+  const oud = await oudeGrantsVoor(userId, slug).catch(() => [] as OudeGrant[]);
+  let uitbreiding = false;
+  for (const k of actief) {
+    if (breidtUit(k.sleutels, voorkeur.sleutels) || voorkeur.kanten.some((x) => !k.kanten.includes(x))) uitbreiding = true;
+  }
+  for (const g of oud) {
+    const erf = erfenisUit([g]);
+    if (breidtUit(erf.sleutels, voorkeur.sleutels) || voorkeur.kanten.some((x) => !erf.kanten.includes(x))) uitbreiding = true;
+  }
+  return {
+    voorkeur,
+    uitbreiding,
+    beheerGevraagd: voorkeur.kanten.includes('beheer'),
+    actieveAantal: actief.length + oud.length,
+  };
+}
+
+/**
+ * Past de opgeslagen voorkeur DIRECT toe op alle actieve koppelingen van deze agent (na bevestiging van de gebruiker op de site),
+ * zonder het OAuth-token in te trekken (zodat cloud-agents zoals Cursor Cloud en ChatGPT niet midden in een gesprek een 401 krijgen),
+ * en stuurt notifications/tools/list_changed over open SSE-stromen.
+ */
+export async function toepassenVoorkeur(userId: string, slug: AgentSlug, keuzeOverride?: unknown): Promise<{
+  voorkeur: v2st.Voorkeur;
+  bijgewerkt: number;
+}> {
+  const bestaand = await v2st.leesVoorkeur(userId, slug);
+  const doel = keuzeOverride !== undefined ? v2st.normaliseerKeuze(keuzeOverride) : (bestaand ? { kanten: bestaand.kanten, sleutels: bestaand.sleutels } : v2st.normaliseerKeuze(null));
+  const actief = await v2st.actieveKoppelingen(userId, slug);
+  const oud = await oudeGrantsVoor(userId, slug).catch(() => [] as OudeGrant[]);
+  let bijgewerkt = 0;
+  for (const k of actief) {
+    await v2st.zetRechten(userId, k.id, slug, doel);
+    bijgewerkt++;
+  }
+  const doelScopes = v2st.scopesVoor(doel.sleutels);
+  for (const g of oud) {
+    await zetToegang(userId, { soort: 'mcp-koppeling', id: g.id }, doelScopes);
+    bijgewerkt++;
+  }
+  const voorkeur = await v2st.zetVoorkeur(userId, slug, doel, false);
+  if (bijgewerkt > 0) meldLijstGewijzigd(userId);
+  return { voorkeur, bijgewerkt };
 }
 
 /** Herverbinden: de huidige koppelingen (v2 én geërfde /mcp-grants) van deze agent intrekken. De AI-klant krijgt 401 en start zelf de nieuwe toestemming. */
