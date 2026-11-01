@@ -3,7 +3,7 @@ name: LOGIN-001 verified release candidate (no deployment)
 on:
   push:
     branches:
-      - feature/login-001-20261101-184800-chatgpt
+      - feature/login-001-20261101-195230
 
 permissions:
   contents: write
@@ -63,7 +63,7 @@ jobs:
             node scripts/orch.mjs taak-start \
               --id LOGIN-001 --agent chatgpt \
               --basis 10a92781b4fb5e03825caebcb63aa74c4206eefc \
-              --tak feature/login-001-20261101-184800-chatgpt \
+              --tak feature/login-001-20261101-195230 \
               --omschrijving 'Модерний мінімалістичний адаптивний екран авторизації Mijn Ruimte та меню збережених акаунтів'
           fi
           node --input-type=module <<'JS'
@@ -79,7 +79,7 @@ jobs:
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git commit -m 'LOGIN-001: registreer taak en werk UI-catalogus bij'
-            git push origin "HEAD:refs/heads/feature/login-001-20261101-184800-chatgpt"
+            git push origin "HEAD:refs/heads/feature/login-001-20261101-195230"
           fi
           git status --short
           test -z "$(git status --porcelain --untracked-files=no)"
@@ -117,7 +117,7 @@ jobs:
           const f = 'uitvoer/LOGIN-001-UITROL-MANIFEST.json';
           writeFileSync(f, JSON.stringify({
             schema: 1, versie: version, aangemaakt: new Date().toISOString(),
-            herkomst: 'git: feature/login-001-20261101-184800-chatgpt@' + sha + ' (basis 10a92781b4fb5e03825caebcb63aa74c4206eefc)',
+            herkomst: 'git: feature/login-001-20261101-195230@' + sha + ' (basis 10a92781b4fb5e03825caebcb63aa74c4206eefc)',
             auteur: 'Eigenaar Test', zonderAi: false,
             deelnemers: [
               {soort:'mens',naam:'Eigenaar Test',rollen:['auteur']},
