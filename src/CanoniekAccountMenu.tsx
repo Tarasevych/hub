@@ -696,9 +696,18 @@ export default function CanonicalAccountMenu({
       data-other-accounts-toggle-visible={model.shouldShowOtherAccountsToggle ? 'true' : 'false'}
       data-logout-all-visible={showLogoutAll ? 'true' : 'false'}
       data-first-login={model.isFirstLogin ? 'true' : 'false'}
+      data-signed-out={!displayUser ? 'true' : 'false'}
       data-profile-photo-control={onProfilePhotoChange ? 'enabled' : 'unavailable'}
       data-account-menu-v2={am2 ? 'aan' : undefined}
     >
+      {!displayUser && <div className='mr-sign-in-quick-controls' role='group' aria-label={lang === 'uk' ? 'Мова й тема' : 'Taal en thema'}>
+        <button type='button' aria-label={lang === 'uk' ? 'Змінити мову на нідерландську' : 'Taal wijzigen naar Oekraïens'} title={lang === 'uk' ? 'Мова: українська' : 'Taal: Nederlands'} onClick={() => onLanguage(lang === 'uk' ? 'nl' : 'uk')}>
+          {lang === 'uk' ? 'UA' : 'NL'}
+        </button>
+        <button type='button' aria-label={lang === 'uk' ? 'Перемкнути тему' : 'Thema wisselen'} title={lang === 'uk' ? 'Перемкнути світлу / темну тему' : 'Licht / donker wisselen'} onClick={() => onTheme(theme === 'dark' ? 'light' : theme === 'plum-dark' ? 'plum-light' : theme === 'plum-light' ? 'plum-dark' : 'dark')}>
+          {dark || theme === 'plum-dark' ? <Moon aria-hidden='true'/> : <Sun aria-hidden='true'/>}
+        </button>
+      </div>}
       <button
         type='button'
         className='canonical-avatar-trigger'
