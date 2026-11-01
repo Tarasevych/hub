@@ -425,6 +425,8 @@ export async function wijzig(userId: string, slug: AgentSlug, keuze: unknown): P
   const nieuw = v2st.normaliseerKeuze(keuze);
   const actief = await v2st.actieveKoppelingen(userId, slug);
   const oud = await oudeGrantsVoor(userId, slug).catch(() => [] as OudeGrant[]);
+  // Vóór het opslaan: welke kanten koos de mens hier al eerder (zie de oude grants hieronder).
+  const vorige = await v2st.leesVoorkeur(userId, slug).catch(() => null);
   let ingeperkt = 0;
   let herverbinden = false;
   for (const k of actief) {
@@ -436,11 +438,22 @@ export async function wijzig(userId: string, slug: AgentSlug, keuze: unknown): P
       ingeperkt++;
     }
   }
-  const nieuwScopes = new Set(v2st.scopesVoor(nieuw.sleutels));
+  // Gescheiden ruimtes (besluit eigenaar 1.11.2026): een privé /mcp-grant volgt alleen de GEBRUIKERSkant van de keuze, een technische
+  // alleen de BEHEERkant. Een kant die hier nooit gekozen is (niet in de vorige voorkeur, niet op een actieve v2-koppeling, niet nu)
+  // laat de grants van die ruimte ongemoeid; een kant die nu uitgaat, haalt daar weg wat de v2-keuze kan uitdrukken. Scopes die deze
+  // kant niet kan uitdrukken (bv. site.read, extern.mcp) beslist deze keuze niet: die blijven, wijzigen gaat via «Доступ ШІ».
+  // Розділені простори: вибір для одного боку не змінює підключень іншого простору й не стирає того, чого вибір не описує.
+  const scopesVanKant = (kant: Kant, sleutels: readonly string[]) => new Set(v2st.scopesVoor(sleutels.filter((s) => v2Optie(s)?.kant === kant)));
+  const kiesbaar = V2_OPTIES.filter((o) => o.status === 'actief').map((o) => o.key);
+  const dekbaar: Record<Kant, Set<string>> = { gebruiker: scopesVanKant('gebruiker', kiesbaar), beheer: scopesVanKant('beheer', kiesbaar) };
+  const ooitGekozen = new Set<Kant>([...(vorige?.kanten ?? []), ...actief.flatMap((k) => k.kanten), ...nieuw.kanten]);
   for (const g of oud) {
     const erfenis = erfenisUit([g]);
     if (breidtUit(erfenis.sleutels, nieuw.sleutels) || nieuw.kanten.some((x) => !erfenis.kanten.includes(x))) herverbinden = true;
-    const blijftScopes = g.scopes.filter((s) => nieuwScopes.has(s));
+    const kant: Kant = g.ruimte === 'technisch' ? 'beheer' : 'gebruiker';
+    if (!ooitGekozen.has(kant)) continue;
+    const toegestaan = nieuw.kanten.includes(kant) ? scopesVanKant(kant, nieuw.sleutels) : new Set<string>();
+    const blijftScopes = g.scopes.filter((s) => toegestaan.has(s) || !dekbaar[kant].has(s));
     if (blijftScopes.length !== g.scopes.length) {
       await zetToegang(userId, { soort: 'mcp-koppeling', id: g.id }, blijftScopes);
       ingeperkt++;

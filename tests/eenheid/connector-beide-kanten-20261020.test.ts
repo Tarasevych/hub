@@ -124,8 +124,15 @@ export async function main(): Promise<number> {
     e1.kanten.join() === 'gebruiker' && e2.kanten.join() === 'beheer,gebruiker' && e0.kanten.join() === 'gebruiker' && e0.sleutels.length === 0 && e0.grants.length === 0, JSON.stringify([e1.kanten, e2.kanten]));
   check('erfenis-sleutels: een hulpmiddel met scope alleen als de scope verleend is; zonder scope (v2_whoami, get_live_release) altijd binnen zijn kant',
     e1.sleutels.includes('v2_whoami:gebruiker') && e1.sleutels.includes('machine_list:gebruiker') && !e1.sleutels.includes('mail_search_messages:gebruiker')
-    && e1.sleutels.every((k) => k.endsWith(':gebruiker')) && e2.sleutels.includes('get_live_release:beheer') && e2.sleutels.includes('machine_list:beheer')
+    && e1.sleutels.every((k) => k.endsWith(':gebruiker')) && e2.sleutels.includes('get_live_release:beheer') && e2.sleutels.includes('machine_list:gebruiker')
     && sleutelsUitScopes(['gebruiker'], ['mail.read']).includes('mail_search_messages:gebruiker'), e1.sleutels.slice(0, 12).join(','));
+  // Gescheiden ruimtes (besluit eigenaar 1.11.2026): de sleutels van een kant komen alleen uit de scopes van grants van die ruimte.
+  const e3 = erfenisUit([{ id: 'a', ruimte: 'prive', scopes: ['board.read'] }, { id: 'b', ruimte: 'technisch', scopes: ['devices.read'] }]);
+  check('erfenis per ruimte: devices.read alleen PRIVÉ → machine_list:gebruiker, nooit machine_list:beheer (privéscope geeft geen beheersleutel)',
+    !e2.sleutels.includes('machine_list:beheer') && e2.sleutels.includes('machine_list:gebruiker'), e2.sleutels.filter((k) => k.startsWith('machine_')).join(','));
+  check('erfenis per ruimte: devices.read alleen TECHNISCH → machine_list:beheer, niet machine_list:gebruiker; board.read blijft privé',
+    e3.sleutels.includes('machine_list:beheer') && !e3.sleutels.includes('machine_list:gebruiker') && e3.sleutels.includes('search_board:gebruiker')
+    && e3.kanten.join() === 'beheer,gebruiker', e3.sleutels.filter((k) => k.startsWith('machine_')).join(','));
   check('erfenis-sleutels zijn altijd geldige, actieve catalogussleutels', e2.sleutels.every((k) => V2_OPTIES.some((o) => o.key === k && o.status === 'actief')));
 
   // ============================================================== 2. de deur als proces: doorsturen én de regressie

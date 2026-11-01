@@ -545,7 +545,8 @@ export async function main(): Promise<number> {
       await aiDienstOpruimen([uid]).catch(() => undefined);
       await sys.query('DELETE FROM app.connector_v2_voorkeur WHERE user_id = $1', [uid]).catch(() => undefined);
       await sys.query('DELETE FROM app.connector_v2_rechten WHERE user_id = $1', [uid]).catch(() => undefined);
-      await sys.query('DELETE FROM app.ai_toegang WHERE onderwerp_id = $1', [`bord:cursor`]).catch(() => undefined);
+      // De bordrij heet bord_<uid>_cursor (bordOnderwerp), nooit «bord:cursor»: alle rijen van deze testgebruiker weg.
+      await sys.query('DELETE FROM app.ai_toegang WHERE user_id = $1', [uid]).catch(() => undefined);
       await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = $1", [uid]).catch(() => undefined);
     }
     if (clients.length) {

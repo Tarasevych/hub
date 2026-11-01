@@ -261,6 +261,8 @@ a.ag-knop{text-decoration:none}
 .at-melding{margin:0;padding:8px 12px;border-radius:8px;font-size:.86rem;line-height:1.45}
 .at-fout{background:color-mix(in srgb,var(--ag-bad,#cf222e) 10%,transparent);color:var(--ag-bad,#cf222e)}
 .at-ok{background:color-mix(in srgb,var(--ag-ok,#1a7f37) 10%,transparent);color:var(--ag-ok,#1a7f37)}
+.at-info{background:color-mix(in srgb,var(--ag-info,#0969da) 8%,transparent);color:var(--text)}
+.at-info svg{vertical-align:-2px}
 .at-groep h4{margin:0 0 6px;font-size:.92rem}
 .at-groep ul{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);overflow:hidden}
 .at-rij{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-top:1px solid var(--line)}
