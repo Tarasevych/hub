@@ -15,6 +15,7 @@ import { toolNaam } from '../../shared/connector-v2/namen';
 import { breidtUit, hoogsteRisico, MODI, MODUS_TEKST, schoon, STANDAARD, type Modus } from '../../shared/connector-v2/rechten';
 import { aantalMogelijk, berekenMassa, basisVan } from '../../shared/connector-v2/massa';
 import { standVan } from '../../shared/connector-v2/stand';
+import { WEIGER_UITLEG, type AgentToegangDiagnose } from '../../shared/ai-toegang-diagnose';
 import { actieZin } from '../../shared/mcp-acties';
 import { Logo, type LogoKind } from '../mcp-ui';
 import { useJournaal, type JournaalItem } from '../agenten/gegevens';
@@ -34,6 +35,8 @@ export type AgentStand = {
   erfenis?: Array<{ id: string; clientName: string; ruimte: 'prive' | 'technisch'; createdAt: number; lastUsedAt: number | null; expiresAt: number }>;
   deur?: Array<{ id: string; klant: string; deur: string; laatst: number; refreshTot: number }> | null;
   laatst?: number | null;
+  /** 01.11.2026 (MCP-ACCESS-001) — exacte oorzakelijke diagnose en echt zichtbaar aantal hulpmiddelen uit v2Lijst. */
+  diagnose?: AgentToegangDiagnose;
 };
 export type Poort = { ruimte: 'prive' | 'technisch'; stand: string; code: string | null };
 export type Data = { agenten: AgentStand[]; instellingen: { extraBevestigen: boolean }; account: { email: string; eigenaar: boolean }; methoden: { passkey: boolean; totp: boolean; herstelcode: boolean }; poort?: Poort };
@@ -99,7 +102,10 @@ const PRESETS: readonly Preset[] = [
 
 export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr; uk: boolean; a: AgentStand; eigenaar: boolean; naWijziging: () => Promise<void> }) {
   const info = v2Agent(a.slug);
-  const techNu = techActief(useTech());
+  const tabTechNu = techActief(useTech());
+  // MCP-ACCESS-001: gebruik de WERKELIJKE technische toegang van deze agent op de server (niet de staat van het browsertabblad),
+  // zodat het scherm nooit beweert dat technische hulpmiddelen zichtbaar zijn terwijl delegatie, dienst of beleid ze blokkeert.
+  const agentTechNu = a.diagnose ? a.diagnose.effectiveTechnicalAccess : tabTechNu;
   const basis: Keuze = a.voorkeur ?? a.actief ?? { kanten: ['gebruiker'], sleutels: STANDAARD() };
   const [kanten, setKanten] = useState<Kant[]>(basis.kanten);
   const [sleutels, setSleutels] = useState<string[]>(basis.sleutels);
@@ -110,6 +116,10 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
   const gekozen = schoon(sleutels, kanten);
   const gewijzigd = gekozen.join() !== schoon(basis.sleutels, basis.kanten).join() || kanten.join() !== basis.kanten.join();
   const verbonden = a.koppelingen.length > 0;
+  const kanDirectToepassen = verbonden && (
+    !!a.voorkeur?.herverbinden
+    || (!!a.actief && (breidtUit(a.actief.sleutels, gekozen) || kanten.some((x) => !a.actief!.kanten.includes(x))))
+  );
   const voorbeeld = V2_OPTIES.find((o) => o.key === 'v2_whoami:gebruiker');
 
   const doe = async (pad: string, extra: Record<string, unknown>, ok: (d: any) => string) => {
@@ -117,14 +127,24 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
     try { const r = await api.post(pad, { ...sessionBody(), agent: a.slug, ...extra }); setMelding(ok(r.data)); await naWijziging(); }
     catch (e) {
       const code = String((e as Error)?.message ?? '');
-      setMelding(code === 'OWNER_REQUIRED' || code === 'TECH_PROFIEL_VEREIST' ? tr('Технічні інструменти змінює лише власник сайту.', 'Technische hulpmiddelen wijzigt alleen de eigenaar van de site.') : tr(`Не вдалося (${code || 'немає зв’язку'}).`, `Mislukt (${code || 'geen verbinding'}).`));
+      setMelding(code === 'OWNER_REQUIRED' || code === 'TECH_PROFIEL_VEREIST' ? tr('Технічні інструменти змінює лише власник сайту.', 'Technische hulpmiddelen wijzigt alleen de eigenaar van de site.') : /STEP_UP/.test(code) ? tr('Підтвердження скасовано — активний токен не змінено.', 'Bevestiging geannuleerd — het actieve token is niet gewijzigd.') : tr(`Не вдалося (${code || 'немає зв’язку'}).`, `Mislukt (${code || 'geen verbinding'}).`));
     } finally { setBezig(false); }
   };
   const bewaar = () => doe('/api/owner/connector-v2/wijzig', { kanten, sleutels: gekozen }, (d) => d.herverbinden
-    ? tr(`Збережено. Обмеження вже діють (${d.ingeperkt}); нові дозволи з’являться після перепідключення.`, `Opgeslagen. Beperkingen gelden al (${d.ingeperkt}); nieuwe rechten komen na opnieuw verbinden.`)
+    ? tr(`Збережено. Обмеження вже діють (${d.ingeperkt}); нові дозволи з’являться після застосування нижче або після перепідключення.`, `Opgeslagen. Beperkingen gelden al (${d.ingeperkt}); nieuwe rechten komen na direct toepassen hieronder of na opnieuw verbinden.`)
     : verbonden ? tr('Збережено й уже діє для активного підключення.', 'Opgeslagen en al van kracht voor de actieve koppeling.') : tr('Збережено. Ці дозволи буде запропоновано під час підключення.', 'Opgeslagen. Deze rechten worden voorgesteld bij het koppelen.'));
+  const toepassen = () => doe('/api/owner/connector-v2/toepassen', gewijzigd || !a.voorkeur ? { kanten, sleutels: gekozen } : {}, (d) => tr(
+    `Дозволи застосовано до активного підключення (${d.bijgewerkt}) без розриву сесії; сервер надіслав сповіщення про оновлення списку.`,
+    `Rechten toegepast op de actieve koppeling (${d.bijgewerkt}) zonder verbreken; de server stuurde een lijst-gewijzigd-melding.`,
+  ));
   const herverbind = () => doe('/api/owner/connector-v2/herverbind', {}, () => tr(`Підключення закрито. Відкрийте ${info.naam}: він попросить підключитися знову, і ви побачите, що буде додано.`, `Koppeling gesloten. Open ${info.naam}: die vraagt opnieuw te verbinden en u ziet wat erbij komt.`));
   const intrek = () => doe('/api/owner/connector-v2/intrekken', {}, (d) => tr(`Відкликано: ${d.ingetrokken}. ${info.naam} більше нічого не зможе зробити, доки ви знову не підключите.`, `Ingetrokken: ${d.ingetrokken}. ${info.naam} kan niets meer tot u opnieuw koppelt.`));
+
+  const techRedenTekst = agentTechNu
+    ? tr('технічний доступ для цього ШІ активний — ці інструменти він бачить зараз', 'technische toegang voor deze AI actief — de AI ziet deze hulpmiddelen nu')
+    : a.diagnose?.denialCode
+      ? WEIGER_UITLEG[a.diagnose.denialCode][uk ? 'uk' : 'nl']
+      : tr('технічний профіль вимкнений — ШІ зараз їх не бачить', 'technisch profiel uit — de AI ziet ze nu niet');
 
   return (
     <div className='v2-agent-rechten v2b-instellingen'>
@@ -153,9 +173,7 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
               <input type='checkbox' checked={kanten.includes(k)} onChange={(e) => setKanten((h) => { const n = e.target.checked ? [...new Set([...h, k])] : h.filter((x) => x !== k); return (n.length ? n : ['gebruiker']).sort() as Kant[]; })} />
               <span className='v2-kant-icoon' aria-hidden='true'>{k === 'beheer' ? <Wrench size={18} /> : <UserRound size={18} />}</span>
               <span><b>{KANT_TEKST[k][uk ? 'uk' : 'nl']}</b>
-                {k === 'beheer' ? <small className='v2-let-klein'>{techNu
-                  ? tr('технічний профіль активний — ці інструменти ШІ бачить зараз', 'technisch profiel actief — de AI ziet deze hulpmiddelen nu')
-                  : tr('технічний профіль вимкнений — ШІ зараз їх не бачить', 'technisch profiel uit — de AI ziet ze nu niet')}</small> : null}
+                {k === 'beheer' ? <small className='v2-let-klein' data-v2-beheer-status={agentTechNu ? 'actief' : (a.diagnose?.denialCode ?? 'uit')}>{techRedenTekst}</small> : null}
               </span>
             </label>
           ))}
@@ -163,10 +181,15 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
       ) : null}
       <p className='v2-uitleg'>{tr('Одна адреса на агента. Що ШІ бачить і може викликати, вирішується в момент кожного виклику за вашим поточним станом: приватні інструменти — завжди, технічні — лише поки активний технічний профіль.', 'Eén adres per agent. Wat de AI ziet en kan aanroepen, wordt bij elke aanroep bepaald naar uw huidige staat: privéhulpmiddelen altijd, technische alleen zolang het technische profiel actief is.')}</p>
       <p className='v2-uitleg' data-v2-lijst-cache='1'>{tr('Застосунки ШІ запам’ятовують список інструментів. Коли ви вмикаєте чи вимикаєте технічний профіль, сервер надсилає сповіщення «список змінився» через відкритий потік підключення; якщо застосунок такого потоку не тримає (наприклад, claude.ai), список у поточній розмові оновиться лише після нової розмови або «Перепідключити». Дозволи при цьому не втрачаються.', 'AI-apps onthouden de lijst van hulpmiddelen. Zet u het technische profiel aan of uit, dan stuurt de server «lijst gewijzigd» over de open stroom van de koppeling; houdt de app geen stroom open (bijvoorbeeld claude.ai), dan wordt de lijst in het lopende gesprek pas na een nieuw gesprek of «Opnieuw verbinden» vernieuwd. Rechten gaan daarbij niet verloren.')}</p>
-      <RechtenKiezer tr={tr} agent={a.slug} kanten={kanten} waarde={gekozen} onChange={setSleutels} vorige={verbonden && a.actief ? a.actief.sleutels : null} techNu={techNu} />
+      <RechtenKiezer tr={tr} agent={a.slug} kanten={kanten} waarde={gekozen} onChange={setSleutels} vorige={verbonden && a.actief ? a.actief.sleutels : null} techNu={agentTechNu} />
       <div className='v2-agent-acties'>
         <button type='button' className='v2-knop is-primair' disabled={bezig || !gewijzigd} onClick={() => void bewaar()} data-v2-bewaar={a.slug}><Check size={15} />{tr('Зберегти', 'Opslaan')}</button>
-        {verbonden && a.actief && breidtUit(a.actief.sleutels, gekozen) ? <small className='v2-let-klein'>{tr('Розширення почне діяти після перепідключення; обмеження — одразу.', 'Uitbreiden werkt na opnieuw verbinden; beperken meteen.')}</small> : null}
+        {kanDirectToepassen ? (
+          <button type='button' className='v2-knop' disabled={bezig} onClick={() => void toepassen()} data-v2-toepassen={a.slug}>
+            <Zap size={15} />{tr('Застосувати до активного підключення зараз', 'Nu toepassen op actieve koppeling')}
+          </button>
+        ) : null}
+        {verbonden && a.actief && breidtUit(a.actief.sleutels, gekozen) ? <small className='v2-let-klein'>{tr('Розширення можна застосувати одразу кнопкою поруч (з підтвердженням) або після перепідключення; обмеження діють одразу.', 'Uitbreiden kan meteen met de knop hiernaast (met bevestiging) of na opnieuw verbinden; beperken geldt meteen.')}</small> : null}
       </div>
       {voorbeeld ? <p className='v2-uitleg'>{tr('Приклад назви інструмента для цього агента:', 'Voorbeeld van een hulpmiddelnaam voor deze agent:')} <code>{toolNaam(voorbeeld, a.slug)}</code></p> : null}
       {melding ? <p className='v2-melding' role='status'>{melding}</p> : null}
@@ -206,9 +229,19 @@ function AgentKaart({ tr, uk, a, laatste, gekozen, onKies }: KaartProps) {
       <p className='v2b-kaart-tekst'>{uitleg}</p>
       <div className='v2b-teller'>
         <span className='v2b-teller-icoon' aria-hidden='true'><Zap size={15} /></span>
-        <span className='v2b-teller-tekst'><small>{tr('Дії для агента', 'Acties voor agent')}</small><b>{tr(`${aan} з ${totaal} увімкнено`, `${aan} van ${totaal} aan`)}</b></span>
+        <span className='v2b-teller-tekst'>
+          <small>{tr('Дії для агента', 'Acties voor agent')}</small>
+          <b>{verbonden && a.diagnose
+            ? tr(`доступно зараз: ${a.diagnose.effectiveVisibleToolsCount} (обрано ${aan} з ${totaal})`, `nu beschikbaar: ${a.diagnose.effectiveVisibleToolsCount} (${aan} van ${totaal} gekozen)`)
+            : tr(`${aan} з ${totaal} увімкнено`, `${aan} van ${totaal} aan`)}</b>
+        </span>
         <span className={`v2-chip risico-${risico}`}>{RISICO_TEKST[risico][uk ? 'uk' : 'nl']}</span>
       </div>
+      {verbonden && a.diagnose?.denialCode ? (
+        <p className='v2-let-klein' data-v2-kaart-diagnose={a.diagnose.denialCode}>
+          <AlertTriangle size={13} aria-hidden='true' /> {WEIGER_UITLEG[a.diagnose.denialCode][uk ? 'uk' : 'nl']}
+        </p>
+      ) : null}
       <div className='v2b-kaart-meta'>
         <span>{a.koppelingen.some((k) => k.kanten.includes('beheer')) || (!verbonden && basis.kanten.includes('beheer')) ? <span className='v2-kant-teller kant-beheer'><Wrench size={12} />{KANT_TEKST.beheer[uk ? 'uk' : 'nl']}</span> : null}<span className='v2-kant-teller kant-gebruiker'><UserRound size={12} />{KANT_TEKST.gebruiker[uk ? 'uk' : 'nl']}</span></span>
         <small title={laatste ? new Date(laatste).toLocaleString(uk ? 'uk-UA' : 'nl-BE') : ''}>{tr('остання дія', 'laatste actie')}: {relatief(laatste, uk)}</small>

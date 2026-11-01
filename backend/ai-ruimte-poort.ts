@@ -66,7 +66,7 @@ async function rolVanAccount(userId: string): Promise<string | null> {
  *
  * Elke fout — geen rol, geen profiel, databasefout bij de aanroeper — geeft 'prive': de veilige richting.
  */
-export async function effectieveRuimte(userId: string, rol?: string | null, tabContext?: string | null): Promise<AiRuimte> {
+export async function effectieveRuimte(userId: string, rol?: string | null, tabContext?: string | null, verbindingId?: string | null): Promise<AiRuimte> {
   if (!userId) return 'prive';
   const r = rol === undefined ? await rolVanAccount(userId) : rol;
   if (r !== 'owner') return 'prive';
@@ -78,15 +78,15 @@ export async function effectieveRuimte(userId: string, rol?: string | null, tabC
   }
   const tab = String(tabContext ?? '');
   if (TAB_RE.test(tab)) return (await actieveActivatie(userId, tab)) ? 'technisch' : 'prive';
-  return (await lopendeActivatie(userId)) ? 'technisch' : 'prive';
+  return (await lopendeActivatie(userId, verbindingId)) ? 'technisch' : 'prive';
 }
 
 /**
  * Zelfde vraag, maar valt bij een storing nooit open: een databasefout geeft 'prive'. De connector gebruikt deze variant,
  * zodat een kapotte verbinding met de database technische hulpmiddelen wegneemt in plaats van ze te laten staan.
  */
-export async function effectieveRuimteVeilig(userId: string, rol?: string | null, tabContext?: string | null): Promise<AiRuimte> {
-  try { return await effectieveRuimte(userId, rol, tabContext); }
+export async function effectieveRuimteVeilig(userId: string, rol?: string | null, tabContext?: string | null, verbindingId?: string | null): Promise<AiRuimte> {
+  try { return await effectieveRuimte(userId, rol, tabContext, verbindingId); }
   catch (err) { console.error('[ai-ruimte-poort] levende ruimte onbepaalbaar, terug naar prive:', (err as Error).message); return 'prive'; }
 }
 
@@ -139,13 +139,20 @@ const PRIVE_POORT = (basis: AiRuimte, stand: DienstStand, code: LadeWeigering | 
  * De poort van de dienst «ai»: hulpmiddelruimte + gegevenslade, in één beslissing. Gebruik deze functie — niet
  * `effectieveRuimte(Veilig)` — overal waar een AI-aanroep beslist wat zij ziet of mag.
  */
-export async function aiPoortNu(userId: string, herkomst: { rol?: string | null; tabContext?: string | null } = {}): Promise<AiPoort> {
+export async function aiPoortNu(userId: string, herkomst: { rol?: string | null; tabContext?: string | null; verbindingId?: string | null } = {}): Promise<AiPoort> {
   if (!userId) return PRIVE_POORT('prive', 'uit', null);
-  const basis = await effectieveRuimteVeilig(userId, herkomst.rol, herkomst.tabContext);
+  const basis = await effectieveRuimteVeilig(userId, herkomst.rol, herkomst.tabContext, herkomst.verbindingId);
   if (basis !== 'technisch') return PRIVE_POORT(basis, await aiStandVeilig(userId), null);
   // De kern beslist (en logt): de eenmalige keuze, de stand van «ai» en de live rechten van deze mens.
   try {
-    const besluit = await gegevensLade({ userId, ...(herkomst.rol ? { rol: herkomst.rol } : {}), ...(herkomst.tabContext ? { tabContext: herkomst.tabContext } : {}), aiRuimte: 'technisch', dienst: 'ai' });
+    const besluit = await gegevensLade({
+      userId,
+      ...(herkomst.rol ? { rol: herkomst.rol } : {}),
+      ...(herkomst.tabContext ? { tabContext: herkomst.tabContext } : {}),
+      ...(herkomst.verbindingId ? { verbindingId: herkomst.verbindingId } : {}),
+      aiRuimte: 'technisch',
+      dienst: 'ai',
+    });
     if (!besluit.ok) return PRIVE_POORT(basis, await aiStandVeilig(userId), besluit.code);
     // 'prive' kan hier niet uit een technische herkomst komen; mocht het ooit toch, dan is dat GEEN technische ruimte.
     if (besluit.stand !== 'eigen' && besluit.stand !== 'gedeeld') return PRIVE_POORT(basis, besluit.stand, 'DIENST_UIT');

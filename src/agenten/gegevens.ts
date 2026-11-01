@@ -7,6 +7,7 @@ import type { LogoKind } from '../mcp-ui';
 import { ruimteOf, type AiRuimte } from '../../shared/ai-ruimte';
 import { agentSlugUitNaam } from '../../shared/markering-agenten';
 import type { AgentSlug } from '../../shared/connector-v2/agenten';
+import type { AgentToegangDiagnose } from '../../shared/ai-toegang-diagnose';
 import { isRechtFout } from './fouten';
 
 export type OauthVerbinding = { id: string; clientId: string; clientName: string; scope: string; createdAt: number; lastUsedAt: number | null; expiresAt: number; accessExpiresAt: number; revokedAt: number | null; status: 'active' | 'revoked' | 'expired'; ruimte?: AiRuimte };
@@ -45,7 +46,7 @@ function useRustig<T>(laadFn: () => Promise<T>, interval = RUSTIG_MS) {
 export const useOverzicht = () => useRustig<Overzicht>(async () => (await api.post('/api/owner/agents/overzicht', sessionBody())).data as Overzicht);
 /** De stand van connector v2 per agent (zelfde verzoek als «Конектори» en de pagina van één agent): voor de ingangen op het overzicht. */
 export const useV2Overzicht = () => useRustig<V2OverzichtData>(async () => (await api.post('/api/owner/connector-v2/overzicht', sessionBody())).data as V2OverzichtData);
-export type V2OverzichtData = { agenten: Array<{ slug: AgentSlug; koppelingen: unknown[]; erfenis?: unknown[]; deur?: unknown[] | null; voorkeur: { herverbinden: boolean } | null }>; poort?: { ruimte: AiRuimte; stand: string; code: string | null } };
+export type V2OverzichtData = { agenten: Array<{ slug: AgentSlug; koppelingen: unknown[]; erfenis?: unknown[]; deur?: unknown[] | null; voorkeur: { herverbinden: boolean } | null; diagnose?: AgentToegangDiagnose }>; poort?: { ruimte: AiRuimte; stand: string; code: string | null } };
 
 export function useDeurTokens() {
   return useRustig<{ tokens: DeurToken[]; rechten: Record<string, boolean>; catalogus: Array<{ id: string; uk: string; nl: string; group?: string }>; bestand: string }>(async () => {

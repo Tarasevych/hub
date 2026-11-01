@@ -421,7 +421,7 @@ const uitrolOnderwerpen = (who: Wie): Onderwerp[] => [
  */
 export async function technischNuGeldig(who: Wie): Promise<boolean> {
   if (who.ruimte !== 'technisch') return true;
-  return (await aiPoortNu(who.userId)).ruimte === 'technisch';
+  return (await aiPoortNu(who.userId, { verbindingId: grantVan(who) ?? null })).ruimte === 'technisch';
 }
 
 /**
@@ -491,7 +491,7 @@ export async function roepTool(who: Wie, name: string, args: Record<string, unkn
   // hulpmiddel net nog toonde. `technischNuGeldig` loopt sinds 20.10.2026 via aiPoortNu en dekt dus drie dingen in één:
   // nog eigenaar, technisch profiel actief, en de dienst «ai» aan in de technische gegevensruimte.
   if (!(await technischNuGeldig(who))) {
-    const ruimteCode = await ruimteFoutVoorMcp(who.userId, name).catch(() => null);
+    const ruimteCode = await ruimteFoutVoorMcp(who.userId, name, grantVan(who) ?? null).catch(() => null);
     const uit = { content: [{ type: 'text' as const, text: ruimteCode ?? TECH_PROFIEL_UIT(name.slice(0, 80)) }], isError: true };
     try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { ...werkDetails(who, name, args, v2), reden: 'tech-profiel' } }); } catch { /* audit mag niet breken */ }
     return uit;
@@ -563,12 +563,12 @@ export async function roepTool(who: Wie, name: string, args: Record<string, unkn
  * Ruimtes-scheiding (docs/ontwerp/RUIMTES-COMPATIBILITEIT.md §4.3–4.4): met de vlaggen ruimtes-scheiding én tech-ruimtes-v2 aan krijgt
  * een geweigerde technische aanroep de vaste foutcode + uitleg {uk, nl} (backend/ruimtes-compatibiliteit.ts). Vlag uit: null = oude tekst.
  */
-async function ruimteFoutVoorMcp(userId: string, name: string): Promise<string | null> {
+async function ruimteFoutVoorMcp(userId: string, name: string, verbindingId?: string | null): Promise<string | null> {
   const { scheidingAan } = await import('./ruimte-sessie');
   const kern = await import('./tech-ruimtes-kern');
   if (!(await scheidingAan(userId)) || !(await kern.v2Aan(userId))) return null;
   const { antwoordVoorCode, hulpmiddelScope } = await import('./ruimtes-compatibiliteit');
-  const b = await kern.besluit(userId, { bron: 'mcp' });
+  const b = await kern.besluit(userId, { bron: 'mcp', ...(verbindingId ? { verbindingId } : {}) });
   const a = antwoordVoorCode(b.toegestaan ? 'GEEN_TECH_SESSIE' : b.code);
   return JSON.stringify({ error: a.code, status: a.status, uitleg: a.uitleg, hulpmiddel: name.slice(0, 80), scope: hulpmiddelScope(name, BEHEER_TOOL_NAMEN) });
 }

@@ -130,11 +130,11 @@ async function actieveActivatieOud(userId: string, tabContext: string, sessie?: 
  * de tijd om is (tech_activaties.eind_op), is het antwoord meteen `null` — en verdwijnen de technische hulpmiddelen uit
  * tools/list én uit tools/call. Verlopen rijen worden hier ook afgesloten, zodat het logboek het einde blijft tonen.
  */
-export async function lopendeActivatie(userId: string): Promise<Activatie | null> {
+export async function lopendeActivatie(userId: string, verbindingId?: string | null): Promise<Activatie | null> {
   if (!userId) return null;
-  // v2: de AI/MCP gebruikt DEZELFDE beslissing (bron 'mcp'): levende, niet-gepauzeerde sessie + expliciete AI-instelling (S4).
+  // v2: de AI/MCP gebruikt DEZELFDE beslissing (bron 'mcp'): levende, niet-gepauzeerde sessie + expliciete AI-instelling per verbinding (S4).
   const k2 = await v2(userId);
-  if (k2) return k2.alsActivatie(await k2.besluit(userId, { bron: 'mcp' }));
+  if (k2) return k2.alsActivatie(await k2.besluit(userId, { bron: 'mcp', ...(verbindingId ? { verbindingId } : {}) }));
   const oud = await lopendeActivatieOud(userId);
   if (oud) void kern().then(async (k) => { const st = await k.strengOpOudeRij(oud.sessieId); k.schaduwVerschil(userId, 'mcp-account-breed', true, st.ok, st.reden); }).catch(() => undefined);
   return oud;

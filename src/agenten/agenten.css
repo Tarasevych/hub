@@ -453,3 +453,24 @@ a.ag-methode:hover,a.ag-methode:focus-visible{border-color:var(--accent,#2563eb)
   .ag-link{min-height:var(--tik-hoogte)}
   .ag-knop{min-height:var(--tik-hoogte)}
 }
+
+/* MCP-ACCESS-001 (01.11.2026): oorzakelijke diagnose en 1-klik gereedheidspaneel op /agents en #agent/<slug>. */
+.ag-blokkade-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ag-blokkade-lijst>li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.ag-blokkade-tekst{flex:1 1 260px;min-width:0;line-height:1.45;font-size:.88rem}
+.ag-diagnose-snel{align-items:center;border-left-color:var(--ag-warn);background:color-mix(in srgb,var(--ag-warn) 8%,var(--panel))}
+.ag-diagnose-snel>svg{color:var(--ag-warn)}
+.ag-diagnose{display:grid;gap:10px;margin-top:6px;padding-top:12px;border-top:1px solid var(--line);min-width:0}
+.ag-diagnose-kop{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:8px}
+.ag-diagnose-kop>div{flex:1 1 260px;min-width:0;display:grid;gap:3px}
+.ag-diagnose-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ag-diagnose-rij{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
+.ag-diagnose-rij[data-diagnose-staat='actief'],.ag-diagnose-rij[data-diagnose-staat='ok']{border-color:color-mix(in srgb,var(--ag-ok) 45%,var(--line))}
+.ag-diagnose-info{flex:1 1 280px;min-width:0;display:grid;gap:3px}
+.ag-diagnose-titel{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+.ag-diagnose-acties{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+@media (max-width:560px){
+  .ag-blokkade-lijst>li,.ag-diagnose-rij,.ag-diagnose-snel{flex-direction:column;align-items:stretch}
+  .ag-diagnose-acties{width:100%}
+  .ag-diagnose-acties .ag-knop{flex:1 1 auto;white-space:normal}
+}
