@@ -17,7 +17,7 @@ import MenuItemActies,{type ActieDoel}from'./MenuItemActies';
 import{bewerkTekst}from'./ZijbalkWerkbalk';
 import{emitCanonicalNotice,meldingInTaal}from'./canoniek-meldingen';import{badgesBouwen,isStil,vanServer,vanTellers,type MenuMelding,type ServerMelding}from'../shared/menu-meldingen';import{meldingScope,meldingenVoorRuimte}from'../shared/meldingen-ruimte';import{zetTechMeldingen}from'./meldingen/tech-meldingen-opslag';import{tellerWegklikken,tellersOphalen,tellersScope,useMenuTellers}from'./menu-meldingen-opslag';import{MeldingBellen,MenuBadge,badgeLabel}from'./MenuMeldingen';import{zijbalkServerDienst}from'./zijbalk-voorkeuren';import{installeerConcepten}from'./concepten';import{heeftNavigationApi,installeerNavigatieSnel,metOvergang,voortgangStart,vooruitladen}from'./navigatie-snel';
 import{huidigeModus,useWeergave}from'./weergave/weergave-opslag';import{zichtbaar}from'../shared/weergave';import{isBeheerPagina}from'../shared/beheer-paginas';
-import'./canoniek-omlijsting.css';import'./menu-v2.css';
+import'./canoniek-omlijsting.css';import'./menu-v2.css';import'./aanmeld-herontwerp.css';
 /* 25.10.2026 zwevende knoppen: zones en gniezda (shared/plaatsing.ts) — bovenbalk, kop van het menu, menulijst, actiestapel. */
 import{IN_LADE,STAPEL_RAND,indeling as plaatsIndeling,stapelRechthoek,type PaginaContext}from'../shared/plaatsing';import{Actiestapel,Gniezda,PlaatsActies,Plek,inIframe,useKlasse,useZone,voerUit}from'./plaatsing/Plek';import{publiceer as plaatsPubliceer,useBelTeller,usePlaatsStaat,zetLade}from'./plaatsing/plaatsing-staat';import{installeerPlaatsSlepen}from'./plaatsing/plaats-slepen';
 export type ShellTheme='light'|'dark'|'plum-light'|'plum-dark';
@@ -29,7 +29,36 @@ const parentIds=new Set<MenuItemId>(['hub','ai','mail','cloud','github','huis','
 const readTouchMode=()=>typeof window!=='undefined'&&typeof window.matchMedia==='function'&&window.matchMedia('(max-width:700px)').matches;
 const readSubmenuPreferences=():SubmenuPreferences=>{try{const raw=JSON.parse(sessionStorage.getItem(SUBMENU_STORAGE_KEY)||'{}')as Record<string,unknown>,next:SubmenuPreferences={};for(const id of parentIds){if(typeof raw[id]==='boolean')next[id]=raw[id]as boolean}return next}catch{return{}}};
 const writeSubmenuPreferences=(value:SubmenuPreferences)=>{try{sessionStorage.setItem(SUBMENU_STORAGE_KEY,JSON.stringify(value))}catch{}};
-export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrowser=true,onRememberBrowser}:{lang:'uk'|'nl';checking?:boolean;onOpenAccount:()=>void;rememberBrowser?:boolean;onRememberBrowser?:(value:boolean)=>void}){if(checking)return <section className='canonical-signed-out checking' aria-busy='true' aria-live='polite' aria-label={lang==='uk'?'Завантаження':'Laden'}><span className='canonical-checking-spinner' aria-hidden='true'/></section>;return <section className={`canonical-signed-out${checking?' checking':''}`} aria-busy={checking}><h1>{lang==='uk'?'Увійдіть в обліковий запис':'Meld u aan bij uw account'}</h1>{onRememberBrowser&&<label className='canonical-signed-out-remember'><input type='checkbox' checked={rememberBrowser} onChange={event=>onRememberBrowser(event.target.checked)}/><span><strong>{lang==='uk'?'Зберегти цей акаунт для наступних сесій':'Dit account bewaren voor volgende sessies'}</strong><small>{lang==='uk'?'Якщо вимкнути, приватний локальний кеш буде видалено після виходу.':'Als dit uit staat, wordt de lokale privécache na afmelden verwijderd.'}</small></span></label>}<button type='button' onClick={onOpenAccount}>{lang==='uk'?'Увійти':'Aanmelden'}</button><nav className='canonical-signed-out-legal' aria-label={lang==='uk'?'Правова інформація':'Juridische informatie'}><a href={lang==='uk'?'/privacy':'/privacy#nl'}>{lang==='uk'?'Політика конфіденційності':'Privacybeleid'}</a><span aria-hidden='true'> · </span><a href={lang==='uk'?'/terms':'/terms#nl'}>{lang==='uk'?'Умови користування':'Gebruiksvoorwaarden'}</a></nav></section>}
+export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrowser=true,onRememberBrowser,preferredAccount}:{lang:'uk'|'nl';checking?:boolean;onOpenAccount:()=>void;rememberBrowser?:boolean;onRememberBrowser?:(value:boolean)=>void;preferredAccount?:{name?:string|null;email?:string|null}|null}){
+ const[activating,setActivating]=useState(false);
+ if(checking)return <section className='canonical-signed-out mr-sign-in checking' aria-busy='true' aria-live='polite' aria-label={lang==='uk'?'Завантаження':'Laden'}><span className='canonical-checking-spinner' aria-hidden='true'/></section>;
+ const open=()=>{setActivating(true);onOpenAccount()};
+ const known=rememberBrowser&&preferredAccount&&(preferredAccount.name||preferredAccount.email);
+ return <section className='canonical-signed-out mr-sign-in' data-login-design='LOGIN-001' aria-busy='false'>
+  <div className='mr-sign-in-content'>
+   <h1>{lang==='uk'?'Увійдіть у Мій простір':'Meld u aan bij Mijn Ruimte'}</h1>
+   <p className='mr-sign-in-subtitle'>{lang==='uk'?'Єдиний обліковий запис для вашої роботи, файлів і сервісів.':'Eén account voor uw werk, bestanden en diensten.'}</p>
+   {known&&<button type='button' className='mr-sign-in-account' onClick={open} aria-label={lang==='uk'?'Вибрати збережений обліковий запис':'Opgeslagen account kiezen'}>
+    <span className='mr-sign-in-initials' aria-hidden='true'>{String(preferredAccount?.name||preferredAccount?.email||'').trim().slice(0,1).toLocaleUpperCase(lang)}</span>
+    <span className='mr-sign-in-account-copy'><strong>{preferredAccount?.name||preferredAccount?.email}</strong><small>{lang==='uk'?'Збережений на цьому пристрої':'Op dit apparaat bewaard'}</small></span>
+    <span aria-hidden='true' className='mr-sign-in-chevron'>⌄</span>
+   </button>}
+   <button type='button' className='mr-sign-in-main-button' data-activated={activating?'true':'false'} onClick={open} onBlur={()=>setActivating(false)}>
+    <span>{lang==='uk'?'Увійти':'Aanmelden'}</span><span className='mr-sign-in-arrow' aria-hidden='true'>→</span>
+   </button>
+   <button type='button' className='mr-sign-in-alternative' onClick={open}>{lang==='uk'?'Інші способи входу':'Andere aanmeldmethoden'}</button>
+   {onRememberBrowser&&<label className='mr-sign-in-remember'>
+    <input type='checkbox' checked={rememberBrowser} onChange={event=>onRememberBrowser(event.target.checked)}/>
+    <span>{lang==='uk'?'Зберегти обліковий запис на цьому пристрої':'Account op dit apparaat bewaren'}</span>
+   </label>}
+  </div>
+  <nav className='canonical-signed-out-legal mr-sign-in-legal' aria-label={lang==='uk'?'Правова інформація':'Juridische informatie'}>
+   <a href={lang==='uk'?'/privacy':'/privacy#nl'}>{lang==='uk'?'Конфіденційність':'Privacy'}</a>
+   <span aria-hidden='true'> · </span>
+   <a href={lang==='uk'?'/terms':'/terms#nl'}>{lang==='uk'?'Умови використання':'Gebruiksvoorwaarden'}</a>
+  </nav>
+ </section>
+}
 export default function CanonicalChrome({lang,theme,current,items,tabs,activeTab,onNavigateService,onNavigateTab,account,notice,notificationScope='anon',serverNotifications=[],onDismissNotice,onReadNotification,onReadAllNotifications,sidebarActions,localNavigation,focusMode=false,oppervlak='account',rechten,children}:Props){
  useEffect(()=>{focusDoelStarten()},[]);/* Z4: ?focus=<hulp-sleutel> */
  const[initialSidebar]=useState(ecosystemSidebarState),[initialTransient]=useState(()=>consumeEcosystemSidebarNavigation(current)),[initialTouch]=useState(readTouchMode);
