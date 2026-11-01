@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "LOGIN-001",
+  "agent": "chatgpt",
+  "tak": "feature/login-001-20261101-195230",
+  "basisCommit": "10a92781b4fb5e03825caebcb63aa74c4206eefc",
+  "basisVersie": "20261101-185530",
+  "regelsVersie": "1.3.0",
+  "regelsHash": "b0429aad47b7177a507745370d829babfcf697f93d386b1e207290d0595a4c72",
+  "staat": "in_progress",
+  "gestart": "2026-11-01T19:01:17.052Z",
+  "bijgewerkt": "2026-11-01T19:01:17.052Z",
+  "omschrijving": "Модерний мінімалістичний адаптивний екран авторизації Mijn Ruimte та меню збережених акаунтів",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
