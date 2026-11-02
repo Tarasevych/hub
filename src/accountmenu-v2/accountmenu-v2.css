@@ -62,3 +62,123 @@
 [data-account-menu-v2] .am2-sessie-rij>.session-add-account>span{flex:1 1 auto;min-width:0}
 [data-account-menu-v2] .am2-sessie-rij>.logout-current{flex:0 0 auto}
 [data-account-menu-v2] .am2-sessie-rij{display:grid;grid-template-columns:minmax(0,1fr) auto auto}
+
+
+/* LOGIN-001 · hetzelfde Dark Soft UI-karakter voor accountbeheer na aanmelden.
+   Alleen de presentatie: accountacties, sessies en ruimterechten blijven ongewijzigd. */
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan']{
+ --canonical-text:#f6f3f5;--canonical-muted:#cac4cb;--canonical-line:rgba(255,255,255,.1);
+ --canonical-panel:#2b292c;--canonical-surface:#403a40;--canonical-accent:#f08bbb;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-account-panel{
+ width:min(452px,calc(100vw - 24px));max-height:min(760px,calc(100dvh - 86px));
+ padding:22px 21px 16px;border:1px solid rgba(255,255,255,.1);border-radius:26px;
+ color:#f6f3f5;
+ background:radial-gradient(90% 43% at 85% 0%,rgba(132,76,110,.39),transparent 80%),
+            radial-gradient(76% 43% at 0% 0%,rgba(160,126,83,.31),transparent 76%),#2b292c;
+ box-shadow:0 30px 78px rgba(0,0,0,.36);backdrop-filter:blur(20px);
+ scrollbar-color:rgba(255,255,255,.2) transparent;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-current-account{
+ display:grid;justify-items:center;gap:6px;padding:2px 0 16px;text-align:center;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-current-photo{
+ margin-bottom:4px;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-current-copy strong{
+ color:#f6f3f5;font-size:1rem;line-height:1.4;font-weight:700;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-current-copy small{
+ color:#cac4cb;font-size:.8rem;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-profile-camera{
+ border-color:rgba(255,255,255,.26);background:#262428;color:#f6f3f5;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-current-account+.canonical-menu-action.primary{
+ min-height:44px;width:100%;margin:0 0 10px;padding:8px 16px;border:0;border-radius:999px;
+ background:#f0eef0;color:#29272a;box-shadow:none;font-size:.9rem;font-weight:700;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-current-account+.canonical-menu-action.primary>svg{
+ color:#ae4a79;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-current-account+.canonical-menu-action.primary:hover{
+ background:#fff;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-blok{
+ gap:2px;padding:12px 0;border-top:1px solid rgba(255,255,255,.12);
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-acties .canonical-menu-action{
+ color:#f6f3f5;background:transparent;border:0;border-radius:12px;
+ min-height:44px;font-size:.91rem;font-weight:580;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-acties .canonical-menu-action>svg{
+ color:#beb7c0;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-acties .canonical-menu-action:hover{
+ background:rgba(255,255,255,.085);
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-sessie-rij{
+ grid-template-columns:minmax(0,1fr) auto auto;gap:8px;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-sessie-rij .session-add-account{
+ border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.045);color:#f6f3f5;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-sessie-rij .session-add-account:hover{
+ background:rgba(255,255,255,.11);
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-sessie-rij .logout-current{
+ border:1px solid rgba(244,138,169,.24);border-radius:12px;background:rgba(240,107,154,.065);color:#ffadbf;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-sessie-rij .logout-current:hover{
+ background:rgba(240,107,154,.14);
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-seg{
+ background:#383439;border:1px solid rgba(255,255,255,.11);border-radius:14px;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-seg button{
+ color:#d4cdd4;min-width:0;border-radius:11px;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-seg button.active{
+ background:#f0ecf0;color:#28252b;box-shadow:0 2px 10px rgba(0,0,0,.15);
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-seg button.active svg{
+ color:#bd5084;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij-kop,
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ikoon{
+ color:#c3bcc4;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ikoon:hover{
+ background:rgba(255,255,255,.085);color:#fff;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte{
+ padding:12px 0;border-top:1px solid rgba(255,255,255,.12);
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-seg{
+ background:#383439;border-color:rgba(255,255,255,.14);
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-knop{
+ background:transparent;color:#dad3da;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-knop[aria-checked='true']{
+ background:#f0ecf0!important;color:#29252b!important;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-knop[aria-disabled='true']{
+ opacity:.65;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-account-legal{
+ margin-top:3px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12);color:#c6c0c7;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-account-legal a{
+ color:#c6c0c7;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-account-legal a:hover{
+ color:#fff;
+}
+@media(max-width:520px){
+ .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .canonical-account-panel{
+  width:calc(100vw - 20px);max-height:calc(100dvh - 76px);padding:18px 14px 12px;border-radius:22px;
+ }
+ .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij{gap:5px}
+ .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-seg button{min-width:42px}
+}

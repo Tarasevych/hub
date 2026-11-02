@@ -57,5 +57,15 @@ export async function main(): Promise<number> {
     menu.includes("firstLogin: 'Обрати спосіб входу'")
     && menu.includes("firstLogin: 'Aanmeldmethode kiezen'")
     && !menu.includes("firstLogin: 'Увійти в обліковий запис через'"));
+  const accountCss = lees('src/accountmenu-v2/accountmenu-v2.css');
+  check('accountbeheer na aanmelden gebruikt dezelfde Dark Soft UI zonder anonieme modus te raken',
+    accountCss.includes("[data-signed-out='false'][data-account-menu-v2='aan']")
+    && accountCss.includes('radial-gradient(')
+    && accountCss.includes('.canonical-current-account+.canonical-menu-action.primary')
+    && accountCss.includes('background:#f0eef0'));
+  check('bestaande ruimtewissel en taal-/themakeuze behouden zichtbare actieve stand',
+    accountCss.includes(".am2-ruimte .rw-knop[aria-checked='true']")
+    && accountCss.includes('.am2-seg button.active')
+    && accountCss.includes('.am2-sessie-rij .logout-current'));
   return einde();
 }
