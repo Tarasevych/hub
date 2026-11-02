@@ -195,7 +195,7 @@ const readRows = (scope: string): Retained[] => {
 };
 
 /** Lagen met een eigen Esc-afhandeling: zit de focus daarin (of op een menu-item waarvan de «bel» open staat), dan laat het paneel Esc aan hen (één Esc = één laag). */
-const ANDERE_ESC_LAGEN = '.menu-bellen,.plaats-acties,.menu-acties,.zk-palet,[role="menu"],[role="listbox"]';
+const ANDERE_ESC_LAGEN = '.menu-bellen,.plaats-acties,.menu-acties,.zk-uitklap,[role="menu"],[role="listbox"]';
 
 export default function CanonicalNotificationCenter(p: Props) {
   const v2 = useMeldingenV2();

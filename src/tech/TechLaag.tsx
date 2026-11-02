@@ -1,8 +1,8 @@
 // Laag van het technisch profiel: de band bovenaan (alleen als het profiel in DIT tabblad loopt) en de vensters «Увімкнути»,
 // «Колір смуги» en «Технічні профілі». Eigen React-root (main.tsx), los van de dienst die eronder draait, zodat de band op elke
 // pagina van elk subdomein hetzelfde is.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ToetsEvent, type ReactElement } from 'react';
-import { AppWindow, Bot, Clock, Flag, Home, KeyRound, LifeBuoy, LogOut, Menu, MonitorUp, Network, Palette, Rocket, Search, ShieldCheck, SquareTerminal, Timer, Users } from 'lucide-react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ToetsEvent, type ReactElement } from 'react';
+import { AppWindow, Bot, Clock, Flag, Home, KeyRound, LifeBuoy, LogOut, Menu, MonitorUp, Network, Palette, Rocket, Search, ShieldCheck, SlidersHorizontal, SquareTerminal, Timer, Users } from 'lucide-react';
 import { Venster } from '../platform/vensters';
 import { api } from '../platform/client';
 import { canonicalNavigationUrl, routeLang } from '../canoniek-navigatie';
@@ -38,10 +38,10 @@ const RuimteToegang = lazy(() => import('./ruimtes/ToegangPagina'));
 const RuimteUitloggen = lazy(() => import('./ruimtes/UitloggenKeuze'));
 const RuimteDok = lazy(() => import('./ruimtes/RuimteDok'));
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { bewaarVoorkeur, leesVoorkeur, STROOK_NAMEN, STROOK_STANDAARD_KNOPPEN, verplaats, volgendeModus, zetAan, type StrookVoorkeur } from './strook-voorkeur';
+import { StrookInstelPaneel, StrookKnopMenu, type KnopMenuItem } from './StrookPaneel';
+import './strook.css';
 import { zetTabbladMerk } from './ruimtes/tabblad-pictogram';
-// Band in- of uitklappen (per apparaat onthouden). Ingeklapt = smalle strook met merk, resttijd en «Розгорнути»; de wissel staat dan in RuimteDok.
-const INKLAP_SLEUTEL = 'mr-tech-band-ingeklapt';
-const leesIngeklapt = () => { try { return localStorage.getItem(INKLAP_SLEUTEL) === '1'; } catch { return false; } };
 
 const fout = (e: unknown) => String((e as Error)?.message || 'FOUT');
 const FOUTEN: Record<string, [string, string]> = {
@@ -83,16 +83,46 @@ export default function TechLaag() {
   const v2 = useRuimtesV2();
   const taal = uk ? 'uk' as const : 'nl' as const;
   useEffect(() => { if (v2) startRuimtes(); }, [v2]);
-  const [ingeklapt, setIngeklaptState] = useState(leesIngeklapt);
-  const setIngeklapt = (x: boolean) => { setIngeklaptState(x); try { localStorage.setItem(INKLAP_SLEUTEL, x ? '1' : '0'); } catch { /* geen opslag */ } };
-  const bandIngeklapt = v2 && ingeklapt;
+  // Technische strook (strook-voorkeur.ts): modus, grootte, tekst en volgorde van de knoppen. Standaard uitgeklapt, zoals vroeger.
+  const [voorkeur, setVoorkeur] = useState<StrookVoorkeur>(() => leesVoorkeur());
+  const zetVoorkeur = (v: StrookVoorkeur) => { setVoorkeur(v); bewaarVoorkeur(v); };
+  const modus = voorkeur.modus;
+  // Ingeklapt (ook automatisch, zolang de muis niet bij de band is): de smalle strook. Alleen met de vlag tech-ruimtes-v2, zoals vroeger.
+  const bandIngeklapt = v2 && modus !== 'uitgeklapt';
+  // Automatisch: tijdelijk open als de muis tegen de bovenrand komt, of de focus of een paneel bij de band is.
+  const [piek, setPiek] = useState(false);
+  const volledig = !bandIngeklapt || (modus === 'auto' && piek);
+  const [strookMenu, setStrookMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [instelOpen, setInstelOpen] = useState(false);
+  const instelRef = useRef<HTMLButtonElement | null>(null);
+  const sluitInstel = useCallback(() => { setInstelOpen(false); window.setTimeout(() => instelRef.current?.focus(), 0); }, []);
+  const langDruk = useRef(0);
+  const stopLangDruk = () => window.clearTimeout(langDruk.current);
   // Verbergen bij scrollen naar beneden, tonen bij scrollen naar boven (band-inschuiven.ts): alleen translate, nooit geometrie →
   // geen terugkoppeling, geen knipperen. Niet verbergen zolang de lijst «⋯» of een venster van de band open is.
   const vastRef = useRef(false);
-  vastRef.current = meer || venster !== '';
+  vastRef.current = meer || venster !== '' || instelOpen || strookMenu !== null;
   const bandAan = actief && !!t.activatie;
   const extRegel = useExtensieRegel(bandAan, uk);
   useEffect(() => (bandAan ? koppelHeadroom({ band: () => bandRef.current, vast: () => vastRef.current }) : undefined), [bandAan]);
+  // Automatisch: de band opent als de muis tegen de bovenrand komt (of de band zelf raakt) en klapt weer in als de muis wegglijdt.
+  // Een open menu of paneel houdt hem open (vastRef). Alleen zolang de band ingeklapt is en de modus «automatisch» staat.
+  useEffect(() => {
+    if (!(actief && bandIngeklapt && modus === 'auto')) { setPiek(false); return; }
+    let timer = 0;
+    const binnen = (x: number, y: number) => {
+      if (y <= 4) return true;
+      const r = bandRef.current?.getBoundingClientRect();
+      return !!r && x >= r.left - 6 && x <= r.right + 6 && y >= r.top - 4 && y <= r.bottom + 8;
+    };
+    const beweeg = (e: PointerEvent) => {
+      window.clearTimeout(timer);
+      if (vastRef.current || binnen(e.clientX, e.clientY)) setPiek(true);
+      else timer = window.setTimeout(() => setPiek(false), 500);
+    };
+    document.addEventListener('pointermove', beweeg);
+    return () => { document.removeEventListener('pointermove', beweeg); window.clearTimeout(timer); };
+  }, [actief, bandIngeklapt, modus]);
 
   useEffect(() => { startTech(); }, []);
   useEffect(() => {
@@ -127,6 +157,7 @@ export default function TechLaag() {
     return () => { mo?.disconnect(); document.title = document.title.replace(/^\[(ТЕХ|TECH)\] /, ''); delete html.dataset.tech; if (v2) zetTabbladMerk(false); };
   }, [actief, kleur?.bg, kleur?.fg, t.profiel?.band.patroon, uk, v2]);
   useEffect(() => { const h = document.documentElement; if (bandIngeklapt && actief) h.dataset.techIngeklapt = '1'; else delete h.dataset.techIngeklapt; }, [bandIngeklapt, actief]);
+  useEffect(() => { const h = document.documentElement; if (actief) h.dataset.techGrootte = voorkeur.grootte; else delete h.dataset.techGrootte; }, [actief, voorkeur.grootte]);
 
   // Past de band niet? Stap voor stap versmallen: 0 = alles met tekst, 1 = alleen pictogrammen, 2 = ook zonder «tot uitloggen»-tekst, 3 = knoppen achter «⋯».
   // De stand staat als kenmerk op de band zelf (data-pas) zodat React hem niet overschrijft; CSS in tech.css.
@@ -221,6 +252,38 @@ export default function TechLaag() {
       { k: 'band', icoon: <Palette aria-hidden='true' />, naam: uk ? 'Колір смуги' : 'Kleur van de band', uitleg: uk ? 'Колір і візерунок' : 'Kleur en patroon', doe: () => kies('band'), aria: uk ? 'Колір смуги' : 'Kleur van de band', alleenMobiel: true },
     ]),
   ] : [];
+  // De knoppen die op de strook kunnen staan (strook-voorkeur.ts): dezelfde acties als in de ⋯-lijst. Meldingen, ruimte, in- en uitklappen
+  // en afmelden hebben hun eigen weergave. Een knop die voor deze rollen niet mag, wordt overgeslagen.
+  const knopData: Record<string, MenuItem> = {};
+  for (const g of bandMenu) for (const i of g.items) knopData[i.k] = i;
+  const inklapTekst = bandIngeklapt ? (uk ? 'Розгорнути' : 'Uitklappen') : (uk ? 'Згорнути' : 'Inklappen');
+  const uitTekst = v2 ? (uk ? 'Вийти…' : 'Afmelden…') : (uk ? 'Вийти з технічного' : 'Technisch verlaten');
+  const naamVan = (id: string): string => { const m = STROOK_NAMEN[id]; return m ? (uk ? m.uk : m.nl) : id; };
+  const labelVan = (id: string): string => (id === 'inklap' ? inklapTekst : id === 'uit' ? uitTekst : knopData[id] ? knopData[id].naam : naamVan(id));
+  const stripKnop = (id: string): ReactElement | null => {
+    if (id === 'meldingen') return <TechMeldingenKnop uk={uk} />;
+    if (id === 'wissel') return v2 ? <TechBundelGrens><Suspense fallback={null}><RuimteWissel taal={taal} compact /></Suspense></TechBundelGrens> : null;
+    if (id === 'inklap') return v2 ? <button type='button' className='tech-band-inklap' data-tech-knop='inklappen' aria-expanded={!bandIngeklapt} onClick={() => zetVoorkeur({ ...voorkeur, modus: volgendeModus(modus) })}
+      title={bandIngeklapt ? (uk ? 'Розгорнути технічну смугу' : 'Technische band uitklappen') : (uk ? 'Згорнути технічну смугу (запам’ятовується на цьому пристрої)' : 'Technische band inklappen (onthouden op dit apparaat)')}
+      aria-label={bandIngeklapt ? (uk ? 'Розгорнути технічну смугу' : 'Technische band uitklappen') : (uk ? 'Згорнути технічну смугу' : 'Technische band inklappen')}>{bandIngeklapt ? <ChevronDown aria-hidden='true' /> : <ChevronUp aria-hidden='true' />}<span>{inklapTekst}</span></button> : null;
+    if (id === 'uit') return v2
+      ? <button type='button' className='is-uit' onClick={() => setVenster('uitloggen')} data-tech-knop='uitloggen'><LogOut aria-hidden='true' /><span>{uitTekst}</span></button>
+      : <button type='button' className='is-uit' onClick={() => void techBeeindigen()} data-tech-knop='uit'><LogOut aria-hidden='true' /><span>{uitTekst}</span></button>;
+    const m = knopData[id];
+    if (!m) return null;
+    return <button type='button' onClick={m.doe} data-tech-knop={m.k} aria-label={m.aria} aria-current={m.hier ? 'page' : undefined} className={m.hier ? 'is-hier' : undefined}>{m.icoon}<span>{m.naam}</span></button>;
+  };
+  const strookItems = voorkeur.knoppen.map(id => ({ id, el: stripKnop(id) })).filter((x): x is { id: string; el: ReactElement } => x.el !== null);
+  // Snelmenu van één knop: verplaatsen, van de strook halen, of de instellingen openen.
+  const menuVoor = (id: string): KnopMenuItem[] => {
+    const i = voorkeur.knoppen.indexOf(id);
+    return [
+      { label: uk ? 'Ліворуч' : 'Naar links', disabled: i <= 0, onKies: () => zetVoorkeur(verplaats(voorkeur, id, -1)) },
+      { label: uk ? 'Праворуч' : 'Naar rechts', disabled: i < 0 || i >= voorkeur.knoppen.length - 1, onKies: () => zetVoorkeur(verplaats(voorkeur, id, 1)) },
+      { label: uk ? 'Прибрати зі смуги' : 'Van de strook halen', onKies: () => zetVoorkeur(zetAan(voorkeur, id, false)) },
+      { label: uk ? 'Налаштування смуги…' : 'Instellingen van de strook…', onKies: () => setInstelOpen(true) },
+    ];
+  };
   const z = zoek.trim().toLocaleLowerCase();
   const past = (i: MenuItem) => !meer || !z || `${i.naam} ${i.uitleg} ${i.k}`.toLocaleLowerCase().includes(z);
   // Toetsenbord in de lijst: ↑/↓ tussen zichtbare knoppen (↓ vanuit het zoekveld naar de eerste), Home/End, Enter = de knop zelf.
@@ -238,7 +301,8 @@ export default function TechLaag() {
   return (
     <>
       {actief && t.activatie ? (
-        <div ref={bandRef} className={`tech-band${bandIngeklapt ? ' is-ingeklapt' : ''}`} data-tech-ingeklapt={bandIngeklapt ? '1' : '0'} role='region' aria-label={uk ? 'Технічний режим' : 'Technische modus'} data-tech-band='1'>
+        <div ref={bandRef} className={`tech-band${bandIngeklapt && !volledig ? ' is-ingeklapt' : ''}${modus === 'auto' && bandIngeklapt && piek ? ' is-piek' : ''}`} data-tech-ingeklapt={bandIngeklapt ? '1' : '0'} data-tech-label={voorkeur.label} data-tech-grootte={voorkeur.grootte} data-tech-modus={modus} role='region' aria-label={uk ? 'Технічний режим' : 'Technische modus'} data-tech-band='1'
+          onFocus={() => { if (modus === 'auto') setPiek(true); }} onBlur={(e) => { if (modus === 'auto' && !e.currentTarget.contains(e.relatedTarget as Node | null)) setPiek(false); }}>
           <span className='tech-band-merk'><ShieldCheck aria-hidden='true' />{uk ? 'ТЕХНІЧНИЙ' : 'TECHNISCH'}{remoteN > 0 ? <i className='tech-remote-actief' data-tech-remote={remoteN} role='status' title={uk ? 'активний віддалений сеанс' : 'actieve externe sessie'}>●<span className='tech-remote-tekst'>{uk ? 'активний віддалений сеанс' : 'actieve externe sessie'}</span></i> : null}</span>
           <span className='tech-band-id' title={t.activatie.profielId}>{t.activatie.rollen.map((r) => rolNaam(r, uk)).join(' · ')}</span>
           <span className={`tech-band-tijd${rest < 5 * 60000 ? ' is-bijna' : ''}`} data-tech-rest={Math.round(rest / 60000)}><Timer aria-hidden='true' />{t.activatie.modus === 'tot-uitloggen' ? <span className='tech-band-nog'>{v2 ? WOORDEN.bandTotUitloggen[taal] : uk ? 'до виходу з акаунта' : 'tot uitloggen'}</span> : t.activatie.modus === 'tot-verlaten' ? <span className='tech-band-nog'>{v2 ? WOORDEN.bandTotVerlaten[taal] : uk ? 'до виходу з профілю' : 'tot verlaten profiel'}</span> : <><span className='tech-band-nog'>{uk ? 'ще' : 'nog'} </span>{mmss(rest, uk)}</>}</span>
@@ -265,26 +329,26 @@ export default function TechLaag() {
               {meer ? (
                 <span className='tech-mobiel-onder' data-tech-mobiel='acties'>
                   <TechMeldingenKnop uk={uk} />
-                  {v2 ? <button type='button' onClick={() => { setMeer(false); setIngeklapt(!bandIngeklapt); }} data-tech-mobiel='inklappen'>{bandIngeklapt ? <ChevronDown aria-hidden='true' /> : <ChevronUp aria-hidden='true' />}<span>{bandIngeklapt ? (uk ? 'Розгорнути смугу' : 'Band uitklappen') : (uk ? 'Згорнути смугу' : 'Band inklappen')}</span></button> : null}
+                  {v2 ? <button type='button' onClick={() => { setMeer(false); zetVoorkeur({ ...voorkeur, modus: volgendeModus(modus) }); }} data-tech-mobiel='inklappen'>{bandIngeklapt ? <ChevronDown aria-hidden='true' /> : <ChevronUp aria-hidden='true' />}<span>{bandIngeklapt ? (uk ? 'Розгорнути смугу' : 'Band uitklappen') : (uk ? 'Згорнути смугу' : 'Band inklappen')}</span></button> : null}
                   {v2
                     ? <button type='button' className='is-uit' onClick={() => { setMeer(false); setVenster('uitloggen'); }} data-tech-mobiel='uitloggen'><LogOut aria-hidden='true' /><span>{uk ? 'Вийти з технічного…' : 'Technisch verlaten…'}</span></button>
                     : <button type='button' className='is-uit' onClick={() => { setMeer(false); void techBeeindigen(); }} data-tech-mobiel='uit'><LogOut aria-hidden='true' /><span>{uk ? 'Вийти з технічного' : 'Technisch verlaten'}</span></button>}
                 </span>
               ) : null}
             </span>
-            <span className='tech-band-breed'><TechMeldingenKnop uk={uk} /></span>
+            {strookItems.map(({ id, el }) => (
+              <span key={id} className={`tech-strook-item ${STROOK_STANDAARD_KNOPPEN.includes(id) ? 'tech-band-breed' : 'tech-strook-extra'}`} data-strook-id={id} data-label={labelVan(id)}
+                onContextMenu={(e) => { e.preventDefault(); setStrookMenu({ id, x: e.clientX, y: e.clientY }); }}
+                onPointerDown={(e) => { if (e.pointerType !== 'touch') return; const x = e.clientX; const y = e.clientY; stopLangDruk(); langDruk.current = window.setTimeout(() => setStrookMenu({ id, x, y }), 500); }}
+                onPointerUp={stopLangDruk} onPointerLeave={stopLangDruk} onPointerCancel={stopLangDruk} onPointerMove={stopLangDruk}>{el}</span>
+            ))}
             <button ref={meerRef} type='button' className='tech-band-meer' aria-expanded={meer} aria-controls='tech-band-extra' aria-label={uk ? 'Меню технічного простору' : 'Menu van de technische ruimte'} onClick={() => setMeer((m) => !m)} data-tech-knop='meer'><Menu aria-hidden='true' /></button>
-            {v2 ? <span className='tech-band-breed'><TechBundelGrens><Suspense fallback={null}><RuimteWissel taal={taal} compact /></Suspense></TechBundelGrens></span> : null}
-            {v2 ? <button type='button' className='tech-band-inklap tech-band-breed' data-tech-knop='inklappen' aria-expanded={!bandIngeklapt} onClick={() => setIngeklapt(!bandIngeklapt)}
-              title={bandIngeklapt ? (uk ? 'Розгорнути технічну смугу' : 'Technische band uitklappen') : (uk ? 'Згорнути технічну смугу (запам’ятовується на цьому пристрої)' : 'Technische band inklappen (onthouden op dit apparaat)')}
-              aria-label={bandIngeklapt ? (uk ? 'Розгорнути технічну смугу' : 'Technische band uitklappen') : (uk ? 'Згорнути технічну смугу' : 'Technische band inklappen')}>
-              {bandIngeklapt ? <ChevronDown aria-hidden='true' /> : <ChevronUp aria-hidden='true' />}<span>{bandIngeklapt ? (uk ? 'Розгорнути' : 'Uitklappen') : (uk ? 'Згорнути' : 'Inklappen')}</span></button> : null}
-            {v2
-              ? <button type='button' className='is-uit tech-band-breed' onClick={() => setVenster('uitloggen')} data-tech-knop='uitloggen'><LogOut aria-hidden='true' /><span>{uk ? 'Вийти…' : 'Afmelden…'}</span></button>
-              : <button type='button' className='is-uit tech-band-breed' onClick={() => void techBeeindigen()} data-tech-knop='uit'><LogOut aria-hidden='true' /><span>{uk ? 'Вийти з технічного' : 'Technisch verlaten'}</span></button>}
+            <button ref={instelRef} type='button' className='tech-strook-instel' aria-label={uk ? 'Налаштування технічної смуги' : 'Instellingen van de technische strook'} title={uk ? 'Налаштування смуги: вигляд, розмір, текст і порядок кнопок' : 'Instellingen van de strook: weergave, grootte, tekst en volgorde van de knoppen'} aria-expanded={instelOpen} aria-haspopup='dialog' data-strook-instel-knop='' data-tech-knop='strook-instellingen' onClick={() => setInstelOpen(o => !o)}><SlidersHorizontal aria-hidden='true' /></button>
           </span>
         </div>
       ) : null}
+      {actief && t.activatie && strookMenu ? <StrookKnopMenu label={uk ? 'Дії для кнопки' : 'Acties voor knop'} items={menuVoor(strookMenu.id)} x={strookMenu.x} y={strookMenu.y} onSluit={() => setStrookMenu(null)} /> : null}
+      {actief && t.activatie && instelOpen ? <StrookInstelPaneel uk={uk} voorkeur={voorkeur} onWijzig={zetVoorkeur} top={(bandRef.current?.getBoundingClientRect().bottom ?? 40) + 4} onSluit={sluitInstel} /> : null}
       {venster === 'activeren' && !v2 ? <Activeren uk={uk} t={t} sluit={() => setVenster('')} /> : null}
       {venster === 'activeren' && v2 ? <TechBundelGrens><Suspense fallback={null}><RuimteStart taal={taal} sluit={() => setVenster('')} /></Suspense></TechBundelGrens> : null}
       {venster === 'toegang' && v2 ? <TechBundelGrens><Suspense fallback={null}><RuimteToegang taal={taal} sluit={() => setVenster('')} /></Suspense></TechBundelGrens> : null}
