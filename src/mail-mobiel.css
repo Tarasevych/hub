@@ -37,7 +37,7 @@
   html body .google-mail-workspace .google-mail-row .mail-row-hover-actions{position:absolute!important;right:4px!important;bottom:4px!important;top:auto!important;left:auto!important;display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto;background:transparent!important;box-shadow:none!important;padding:0!important;gap:0!important;transition:opacity .12s ease}
   html body .google-mail-workspace .google-mail-row .mail-row-hover-actions>button{display:none!important}
   html body .google-mail-workspace .google-mail-row .mail-row-actions-overflow{display:grid}
-  html body .google-mail-workspace .google-mail-row .mail-row-actions-more{display:grid!important;place-items:center;width:44px;height:44px;border-radius:50%;color:var(--muted,#64748b)}
+  html body .google-mail-workspace .google-mail-row .mail-row-actions-more{display:grid!important;place-items:center;width:44px!important;height:44px!important;border-radius:50%;color:var(--muted,#64748b)}
   html body .google-mail-workspace .google-mail-row .mail-row-actions-more svg{width:22px;height:22px}
   html body .google-mail-workspace .google-mail-row .mail-row-actions-more [role='tooltip']{display:none}
   html body .google-mail-workspace .google-mail-row.mail-row-swiping .mail-row-hover-actions,html body .google-mail-workspace .google-mail-row.mail-row-swipe-open .mail-row-hover-actions{opacity:0!important;pointer-events:none!important}
@@ -80,6 +80,8 @@
   html body .mail-top-search-shell input{font-size:16px}
   html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{width:44px;height:44px}
   html body .mail-top-interface-actions{gap:0}
+  /* zoekveld: op de telefoon staat «Швидкі налаштування» (⚙) uit de bovenbalk — de instellingen zijn bereikbaar via het zijmenu (Пошта → Налаштування); zo krijgt het zoekveld de ruimte (was 75 px breed, nu ruim 120 px) */
+  html body .mail-top-interface-actions .mail-top-settings{display:none!important}
   html body .google-mail-workspace .mail-category-pager button{min-width:44px;min-height:40px}
   html body .google-mail-workspace>h1.mail-workspace-heading{font-size:20px;padding:14px 16px 8px}
   html body .mail-reader-icon-action{min-width:44px;min-height:44px}
