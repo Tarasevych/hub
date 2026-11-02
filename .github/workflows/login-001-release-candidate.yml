@@ -195,6 +195,28 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Publish verified unsigned candidate for direct download (GitHub prerelease, no deploy)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="login-001-candidate-$RELEASE_VERSION"
+          gh release create "$tag" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION-chatgpt-overdracht.zip" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$(git rev-parse HEAD)" \
+            --prerelease \
+            --title "LOGIN-001 · Непідписаний кандидат $RELEASE_VERSION" \
+            --notes "Перевірено в GitHub CI: TypeScript, збірка, тести, ORCH pakket-controleer, SHA-256 і розпакування GNU tar. Не встановлює production; встановлення лише за рішенням власника через Passkey."
+          mkdir -p "$RUNNER_TEMP/release-check"
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/release-check" \
+            --pattern "mijn-ruimte-$RELEASE_VERSION.tar.gz*"
+          (cd "$RUNNER_TEMP/release-check" && sha256sum -c "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
+          echo "Direct TAR.GZ: https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/mijn-ruimte-$RELEASE_VERSION.tar.gz" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Record read-only build summary
         run: |
           echo "Verified release candidate: $RELEASE_VERSION" >> "$GITHUB_STEP_SUMMARY"
