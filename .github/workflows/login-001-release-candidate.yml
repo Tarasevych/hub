@@ -165,6 +165,16 @@ jobs:
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-$RELEASE_VERSION-chatgpt-overdracht.zip"
           (cd uitvoer && sha256sum "mijn-ruimte-$RELEASE_VERSION.tar.gz" > "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
           (cd uitvoer && sha256sum -c "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
+          # Сайт перевіряє завантажений файл .tar.gz.deel через GNU tar.
+          # Перед випуском відтворюємо саме цю операцію, а не лише читання списку архіву.
+          controle_bestand="$RUNNER_TEMP/mijn-ruimte-$RELEASE_VERSION.tar.gz.deel"
+          controle_dir="$(mktemp -d "$RUNNER_TEMP/uitrol-voorcontrole-XXXXXXXX")"
+          cp "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" "$controle_bestand"
+          /usr/bin/tar --list --verbose --gzip --quoting-style=literal --file "$controle_bestand" > /dev/null
+          /usr/bin/tar --extract --gzip --no-same-owner --no-same-permissions --file "$controle_bestand" -C "$controle_dir"
+          test -f "$controle_dir/mijn-ruimte-$RELEASE_VERSION/UITROL-VERSIE"
+          test "$(tr -d '\r\n' < "$controle_dir/mijn-ruimte-$RELEASE_VERSION/UITROL-VERSIE")" = "$RELEASE_VERSION"
+          echo "Production-equivalent extraction: OK ($controle_bestand)"
           echo "RELEASE_SHA=$(sha256sum "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" | cut -d' ' -f1)" >> "$GITHUB_ENV"
           echo "RELEASE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
