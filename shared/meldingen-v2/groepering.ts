@@ -26,6 +26,8 @@ export type V2Melding = {
   ernst: Ernst;
   titel: string;
   tekst?: string;
+  /** Hoe vaak dezelfde lokale melding zich herhaalde (samengevoegd tot één regel, zie canoniek-meldingen.ts). */
+  herhaald?: number;
   tijd: number;
   gelezen: boolean;
   toestand?: Toestand;

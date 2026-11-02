@@ -47,9 +47,16 @@ export const isMeldingType = (v: unknown): v is MeldingType => typeof v === 'str
 export const typeInfo = (t: MeldingType): MeldingTypeInfo => MELDING_TYPES[t];
 export const isKritiekType = (t: MeldingType): boolean => (MELDING_TYPES[t] as MeldingTypeInfo).kritiek === true;
 
-/** Per type: geluid (bel), opduiken (toast) en tonen (bel/geschiedenis). Kritieke types worden altijd getoond. */
-export type TypeVoorkeur = { geluid: boolean; opduiken: boolean; tonen: boolean };
-export const standaardTypeVoorkeur = (): TypeVoorkeur => ({ geluid: true, opduiken: true, tonen: true });
+/**
+ * Per type: geluid (bel), opduiken (pop-up), tonen (bel/geschiedenis), vast (blijft staan tot u sluit) en seconden (hoe lang de pop-up staat,
+ * zonder «vast»). Kritieke types worden altijd getoond en staan standaard vast, zodat een beveiligingsmelding niet vanzelf verdwijnt.
+ */
+export type TypeVoorkeur = { geluid: boolean; opduiken: boolean; tonen: boolean; vast: boolean; seconden: number };
+export const TOAST_SECONDEN_STANDAARD = 10;
+export const TOAST_SECONDEN_KEUZES = [3, 5, 7, 10, 14, 20, 30, 60] as const;
+export const standaardTypeVoorkeur = (type?: MeldingType): TypeVoorkeur => ({
+  geluid: true, opduiken: true, tonen: true, vast: type ? isKritiekType(type) : false, seconden: TOAST_SECONDEN_STANDAARD,
+});
 
 export function normaliseerTypeVoorkeuren(raw: unknown): Record<MeldingType, TypeVoorkeur> {
   const r = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
@@ -57,13 +64,19 @@ export function normaliseerTypeVoorkeuren(raw: unknown): Record<MeldingType, Typ
   for (const t of MELDING_TYPE_IDS) {
     const v = r[t] && typeof r[t] === 'object' && !Array.isArray(r[t]) ? r[t] as Record<string, unknown> : {};
     const b = (x: unknown) => (typeof x === 'boolean' ? x : true);
-    uit[t] = { geluid: b(v.geluid), opduiken: b(v.opduiken), tonen: isKritiekType(t) ? true : b(v.tonen) };
+    const sec = typeof v.seconden === 'number' ? Math.round(v.seconden) : NaN;
+    uit[t] = {
+      geluid: b(v.geluid), opduiken: b(v.opduiken), tonen: isKritiekType(t) ? true : b(v.tonen),
+      vast: typeof v.vast === 'boolean' ? v.vast : isKritiekType(t),
+      seconden: Number.isFinite(sec) ? Math.min(60, Math.max(3, sec)) : TOAST_SECONDEN_STANDAARD,
+    };
   }
   return uit;
 }
 
 /** Effectieve voorkeur (kritiek → altijd tonen, wat er ook in de opslag staat). */
 export function voorkeurVoor(v: Partial<Record<MeldingType, TypeVoorkeur>> | undefined, t: MeldingType): TypeVoorkeur {
-  const x = v?.[t] ?? standaardTypeVoorkeur();
+  // Oude opslag (zonder vast/seconden) krijgt de standaard voor de ontbrekende velden.
+  const x: TypeVoorkeur = v?.[t] ? { ...standaardTypeVoorkeur(t), ...v[t] } : standaardTypeVoorkeur(t);
   return isKritiekType(t) ? { ...x, tonen: true } : x;
 }

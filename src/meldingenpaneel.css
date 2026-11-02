@@ -154,3 +154,9 @@
   /* één schuifrij chips (TabsRij met pijl), zoals op de telefoon — mail-qa-2026-10.css laat ze vanaf 561 px omlopen (3 rijen = 100+ px) */
   html body .canonical-notification-panel .cnc-chips{flex-wrap:nowrap!important;overflow-x:auto!important}
 }
+
+/* Meldingenlijst (UI notif-b): uitleg onder de titel, herhalingen met een teller, en de stip «Вирішено» bij een opgeloste fout. */
+.canonical-notification-panel .cnc-uitleg{margin:2px 0 0;color:var(--muted);font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.canonical-notification-panel .cnc-count{display:inline-flex;align-items:center;min-height:20px;padding:0 6px;border-radius:999px;background:var(--panel-2,var(--surface));font-weight:700;font-size:12px}
+.canonical-notification-panel .cnc-pill{display:inline-flex;align-items:center;min-height:20px;padding:0 7px;border-radius:999px;font-size:12px;font-weight:600}
+.canonical-notification-panel .cnc-pill.is-resolved{background:var(--good-vlak,var(--surface));color:var(--good)}

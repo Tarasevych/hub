@@ -478,3 +478,13 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
 /* 29.10.2026 (hub op de telefoon, menu dicht): de lade-houder toont alleen ☰ — geen restjes eronder (lege scrollvak met pijlen,
    ruimtewissel, zones). De open lade (.sidebar-drawer) en de computer blijven ongemoeid. */
 .canonical-chrome.sidebar-drawer-mode:not(.sidebar-drawer) .canonical-sidebar :is(.zijbalk-scrollvak,[data-zijbalk-pijl],.zr){display:none!important}
+
+/* Legenda in de bel van een menu-stip (UI notif-b): dezelfde kleur als de stip en de regels eronder. */
+.menu-bellen-legenda{display:flex;flex-wrap:wrap;gap:4px 10px;padding:0 0 6px;font-size:12px;color:var(--muted)}
+.menu-bellen-legenda-item{display:inline-flex;align-items:center;gap:5px}
+.menu-bellen-legenda-item>i{width:8px;height:8px;border-radius:50%;background:var(--mb-systeem);flex:none}
+.menu-bellen-legenda-item[data-categorie='post']>i{background:var(--mb-post)}
+.menu-bellen-legenda-item[data-categorie='beveiliging']>i{background:var(--mb-beveiliging)}
+.menu-bellen-legenda-item[data-categorie='toegang']>i{background:var(--mb-toegang)}
+.menu-bellen-legenda-item[data-categorie='delen']>i{background:var(--mb-delen)}
+.menu-bellen-legenda-item[data-categorie='ai']>i{background:var(--mb-ai)}

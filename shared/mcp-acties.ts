@@ -274,7 +274,7 @@ export function foutUitleg(code: string | undefined, taal: Taal): string | undef
 export function meldingMetOorzaak(o: { tool: string; doel?: string; uitkomst: 'succeeded' | 'failed'; geweigerd?: boolean; code?: string; reden?: string }, taal: Taal): { titel: string; oorzaak?: string; status: string } {
   const titel = actieZin(o.tool, o.doel, taal);
   if (o.uitkomst === 'succeeded') return { titel, status: taal === 'nl' ? 'uitgevoerd' : 'виконано' };
-  const status = o.geweigerd ? (taal === 'nl' ? 'geweigerd' : 'відхилено') : (taal === 'nl' ? 'mislukt' : 'помилка');
+  const status = o.geweigerd ? (taal === 'nl' ? 'geweigerd' : 'відхилено') : (taal === 'nl' ? 'mislukt' : 'не вдалося');
   const oorzaak = foutUitleg(o.code, taal) ?? foutUitleg(o.reden, taal);
   return { titel, status, ...(oorzaak ? { oorzaak } : {}) };
 }
@@ -293,7 +293,7 @@ export function siteToolOorzaak(e: SiteToolMelding, taal: Taal): string {
 }
 /** «відхилено» (de poort liet de actie niet toe) is iets anders dan «помилка» (uitgevoerd, maar mislukt). */
 export const siteToolStatus = (e: SiteToolMelding, taal: Taal): string | undefined =>
-  e.status === 'failed' ? (e.geweigerd ? (taal === 'nl' ? 'geweigerd' : 'відхилено') : (taal === 'nl' ? 'mislukt' : 'помилка')) : undefined;
+  e.status === 'failed' ? (e.geweigerd ? (taal === 'nl' ? 'geweigerd' : 'відхилено') : (taal === 'nl' ? 'mislukt' : 'не вдалося')) : undefined;
 
 /** «3 читання файлів чи тек» / «3 bestanden of mappen gelezen». */
 export function telling(n: number, soort: ActieSoort, taal: Taal): string {

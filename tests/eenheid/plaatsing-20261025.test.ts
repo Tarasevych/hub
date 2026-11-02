@@ -219,15 +219,18 @@ export async function main(): Promise<number> {
   check('N grote klikvlakken (een hele rij) tellen niet als knop; rakende randen met 4 px lucht wel', mp.GROOT_KLIKVLAK.breedte === 400 && mp.GROOT_KLIKVLAK.hoogte === 120 && mp.overlapDoos({ left: 0, top: 0, width: 10, height: 10 }, { left: 13, top: 0, width: 5, height: 5 }, 4) && !mp.overlapDoos({ left: 0, top: 0, width: 10, height: 10 }, { left: 15, top: 0, width: 5, height: 5 }, 4));
   const mcBron = (await import('node:fs')).readFileSync('src/CanoniekMeldingencentrum.tsx', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const techBron = (await import('node:fs')).readFileSync('src/tech/tech.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  check('N de melding gebruikt meldingPlaats (data-melding-plek, --melding-top voor de telefoon); geen translate −50% meer bij een verborgen technische band',
-    mcBron.includes('meldingPlaats(el,bellRef.current,plaatsStaat().ctx.klasse,zichtbaarKader(el))') && mcBron.includes('data-melding-plek={toastPos?.plek}') && mcBron.includes("['--melding-top' as string]") && !/notification-toast\{translate:-50%/.test(techBron) && laag.includes('top:var(--melding-top,calc(64px + var(--veilig-boven,0px)))!important'));
+  // De pop-up staat altijd NAAST de bel (placeNear), nooit op een vrije plek in het midden; telefoon: --melding-top (CSS-regel hierboven).
+  check('N de melding staat naast de bel (placeNear, nooit midden in het scherm); --melding-top voor de telefoon; geen translate −50% meer bij een verborgen technische band',
+    mcBron.includes('placeNear({ left: rect.left - v.kx') && !mcBron.includes('meldingPlaats(') && mcBron.includes("['--melding-top' as string]") && !/notification-toast\{translate:-50%/.test(techBron) && laag.includes('top:var(--melding-top,calc(64px + var(--veilig-boven,0px)))!important'));
 
   // ------------------------------------------------------------------ M. één Esc = één laag (stand a11y-meldingen, 25.10.2026)
   const mc = (await import('node:fs')).readFileSync('src/CanoniekMeldingencentrum.tsx', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  const lagen = /ANDERE_ESC_LAGEN='([^']+)'/.exec(mc)?.[1] || '';
-  const escBlok = /const onKey=\(event:KeyboardEvent\)=>\{if\(event\.key!=='Escape'[\s\S]{0,420}?event\.preventDefault\(\)/.exec(mc)?.[0] || '';
+  const lagen = /ANDERE_ESC_LAGEN = '([^']+)'/.exec(mc)?.[1] || '';
+  // Vergelijking zonder witruimte (de Esc-afhandeling staat in leesbare code).
+  const sq = (s: string) => s.replace(/\s+/g, '');
+  const escBlok = /const onKey = \(event: KeyboardEvent\) => \{[\s\S]{0,1400}?event\.preventDefault\(\)/.exec(mc)?.[0] || '';
   check('M Esc van het meldingenpaneel (vangfase) laat een andere laag met eigen Esc voor: bel van een menu-item, «Перемістити до…», contextmenu, zoeken, of een menu-item met open «bel» — vóór preventDefault, en alleen als de focus níet in het paneel zelf staat',
-    ['.menu-bellen', '.plaats-acties', '.menu-acties', '.zk-palet'].every((k) => lagen.includes(k)) && escBlok.includes("closest('.canonical-notification-panel')") && escBlok.includes('closest(ANDERE_ESC_LAGEN)||') && escBlok.includes("closest('[data-heeft-bellen]')&&document.querySelector('.menu-bellen')") && mc.includes("window.addEventListener('keydown',onKey,true)"), escBlok.slice(0, 200));
+    ['.menu-bellen', '.plaats-acties', '.menu-acties', '.zk-palet'].every((k) => lagen.includes(k)) && sq(escBlok).includes(sq("closest('.canonical-notification-panel')")) && sq(escBlok).includes(sq('closest(ANDERE_ESC_LAGEN) ||')) && sq(escBlok).includes(sq("closest('[data-heeft-bellen]') && document.querySelector('.menu-bellen')")) && sq(mc).includes(sq("window.addEventListener('keydown', onKey, true)")), escBlok.slice(0, 200));
 
   // ------------------------------------------------------------------ O. ruimte van de bovenbalk (2.5: de bel lag met «99+» op «Закрити» van een brief)
   const st = await import('../../src/plaatsing/plaatsing-staat');

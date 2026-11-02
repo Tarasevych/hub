@@ -1,7 +1,7 @@
 import { useMemo, useState, type ComponentType } from 'react';
 import { Bell, Check, ChevronDown, ChevronUp, CircleCheck, Info, Layers, ListFilter, Search, Trash2, Undo2 } from 'lucide-react';
 import TabsRij from './ontwerp/TabsRij';
-import { activityCause, activityLink, activityStatusText, activityTitle, durationText, sourceLabel, statusInfo, type ActivityEvent } from './connector-activiteit';
+import { activiteitMeldingTekst, activityCause, activityLink, activityStatusText, activityTitle, durationText, sourceLabel, statusInfo, type ActivityEvent } from './connector-activiteit';
 import { Logo } from './mcp-ui';
 import { sectionLabel, styleOf, type Section } from './melding-stijl';
 import './meldingenpaneel.css';
@@ -12,11 +12,11 @@ type Kind = 'info' | 'success' | 'warning' | 'error';
 type Detail = { icon: string; label: string; value: string };
 type SectionBlock = { title: string; items: Detail[] };
 
-export type LocalRow = { id: string; text: string; kind: Kind; createdAt: number; source: string; read: boolean; link?: { href: string; label: string }; details?: SectionBlock[]; action?: { label: string; onAction: () => void | Promise<void> } };
+export type LocalRow = { id: string; text: string; kind: Kind; createdAt: number; source: string; read: boolean; link?: { href: string; label: string }; details?: SectionBlock[]; action?: { label: string; onAction: () => void | Promise<void> }; explain?: string; count?: number; opgelost?: boolean };
 export type ServerRow = { id: string; kind: string; title: string; message: string; createdAt: number; read?: boolean; link?: string; sfeer?: 'prive' | 'technisch' };
 
 type Item = {
-  key: string; group: string; origin: 'local' | 'server' | 'activity'; kind: Kind; title: string; text?: string; source: string; createdAt: number; read: boolean;
+  key: string; group: string; origin: 'local' | 'server' | 'activity'; kind: Kind; title: string; text?: string; /** Uitleg: oorzaak en wat u nu kunt doen. */ explain?: string; /** Aantal keer samengevoegd. */ count?: number; /** Opgelost door een latere gelukte stap. */ opgelost?: boolean; source: string; createdAt: number; read: boolean;
   status?: { text: string; group: 'waiting' | 'active' | 'done' | 'failed' | 'rejected' | 'expired' }; duration?: string;
   link?: { href: string; label: string }; details?: SectionBlock[]; facts?: Array<[string, string]>; markRead: () => void; remove?: () => void; action?: LocalRow['action'];
   /** 22.10.2026: sfeer van de server (meldingen en activiteiten); lokaal: geen. Alleen als data-attribuut (meting in de stand). */
@@ -78,7 +78,7 @@ export default function NotificationPanelBody(p: Props) {
 
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
-    for (const r of p.local) out.push({ key: `l:${r.id}`, group: groupKeyOf(r.source, r.text), origin: 'local', kind: r.kind, title: r.text, source: r.source, createdAt: r.createdAt, read: r.read, link: r.link, details: r.details, markRead: () => p.onReadLocal(r.id), remove: () => p.onRemoveLocal(r.id), action: r.action });
+    for (const r of p.local) out.push({ key: `l:${r.id}`, group: groupKeyOf(r.source, r.text), origin: 'local', kind: r.kind, title: r.text, explain: r.explain, count: r.count, opgelost: r.opgelost, source: r.source, createdAt: r.createdAt, read: r.read, link: r.link, details: r.details, markRead: () => p.onReadLocal(r.id), remove: () => p.onRemoveLocal(r.id), action: r.action });
     for (const r of p.server) out.push({ key: `s:${r.id}`, group: groupKeyOf('site', r.title), origin: 'server', sfeer: r.sfeer, kind: /error|fail/i.test(r.kind) ? 'error' : /warn/i.test(r.kind) ? 'warning' : 'info', title: r.title, text: r.message, source: 'site', createdAt: r.createdAt, read: Boolean(r.read), link: serverLink(r.link) ? { href: serverLink(r.link), label: /wijziging=/.test(String(r.link)) ? t('Переглянути зміну', 'Wijziging bekijken') : t('Відкрити', 'Openen') } : undefined, markRead: () => { if (!r.read) void p.onReadServer?.(r.id); } });
     for (const e of p.events) {
       const st = statusInfo(e.status, p.lang);
@@ -86,7 +86,7 @@ export default function NotificationPanelBody(p: Props) {
       out.push({
         key: `a:${e.id}`, group: `${source}|${e.kind}|${e.type}|${st.group}`, origin: 'activity', sfeer: e.sfeer, source, createdAt: e.createdAt, read: p.readEvents.has(e.id),
         kind: st.group === 'failed' ? 'error' : st.group === 'waiting' ? 'warning' : st.group === 'done' || e.kind === 'grant' ? 'success' : 'info',
-        title: activityTitle(e, p.lang), text: activityCause(e, p.lang) || undefined, status: st, duration: e.kind === 'grant' || e.kind === 'site' ? undefined : durationText(e, p.lang),
+        title: activityTitle(e, p.lang), text: activityCause(e, p.lang) || undefined, explain: activiteitMeldingTekst(e, p.lang).uitleg, status: st, duration: e.kind === 'grant' || e.kind === 'site' ? undefined : durationText(e, p.lang),
         facts: [
           [t('Джерело', 'Bron'), e.kind === 'site' ? styleOf(source, p.lang).label : `${sourceLabel(e.source, p.lang)}${e.kind === 'command' ? ` → ${e.subject}` : ''}`],
           [t('Стан', 'Status'), activityStatusText(e, p.lang)],
@@ -108,7 +108,8 @@ export default function NotificationPanelBody(p: Props) {
       if (section !== 'all' && styleOf(i.source, p.lang).section !== section) return false;
       if (filter === 'unread' && i.read) return false;
       if (filter === 'waiting' && i.status?.group !== 'waiting') return false;
-      if (filter === 'problems' && !(i.kind === 'error' || i.kind === 'warning' || i.status?.group === 'failed' || i.status?.group === 'expired' || i.status?.group === 'rejected')) return false;
+      // Een fout die een latere gelukte stap al heeft opgelost, is geen probleem meer.
+      if (filter === 'problems' && (i.opgelost || !(i.kind === 'error' || i.kind === 'warning' || i.status?.group === 'failed' || i.status?.group === 'expired' || i.status?.group === 'rejected'))) return false;
       if (q && !`${i.title} ${i.text || ''} ${styleOf(i.source, p.lang).label} ${i.status?.text || ''}`.toLowerCase().includes(q)) return false;
       return true;
     });
@@ -133,7 +134,7 @@ export default function NotificationPanelBody(p: Props) {
   const counts = useMemo(() => ({
     unread: items.filter((i) => !i.read).length,
     waiting: items.filter((i) => i.status?.group === 'waiting').length,
-    problems: items.filter((i) => i.kind === 'error' || i.status?.group === 'failed').length,
+    problems: items.filter((i) => !i.opgelost && (i.kind === 'error' || i.status?.group === 'failed')).length,
   }), [items]);
   const sections = useMemo(() => [...new Set(items.map((i) => styleOf(i.source, p.lang).section))], [items, p.lang]);
 
@@ -160,11 +161,14 @@ export default function NotificationPanelBody(p: Props) {
         </span>
         <div className='cnc-main'>
           <strong id={titelId}>{item.title}</strong>
+          {item.explain ? <p className='cnc-uitleg'>{item.explain}</p> : null}
           <div className='cnc-meta'>
             <span className='cnc-cat'>{style.label}{style.providerLabel && style.providerLabel !== style.label ? ` · ${style.providerLabel}` : ''}</span>
             {item.status ? <span className={`cnc-status st-${item.status.group}`}><i aria-hidden='true' />{item.status.text}</span> : null}
             <span title={new Date(item.createdAt).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE')}>{relative(item.createdAt, p.lang)}</span>
             {item.duration ? <span>{item.duration}</span> : null}
+            {item.count && item.count > 1 ? <span className='cnc-count' title={t('Та сама подія, об’єднано', 'Dezelfde gebeurtenis, samengevoegd')}>×{item.count}</span> : null}
+            {item.opgelost ? <span className='cnc-pill is-resolved'>{t('Вирішено', 'Opgelost')}</span> : null}
           </div>
           {item.link ? <a className='cnc-link' href={item.link.href} onClick={() => item.markRead()}>{item.link.label} →</a> : null}
           {opts.extra ? (

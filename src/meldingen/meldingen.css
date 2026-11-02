@@ -20,7 +20,10 @@ html.theme-dark .canonical-notification-tech b{background:var(--warn-vlak);color
 .mv-uitleg{margin:0;color:var(--muted,#57606a);font-size:12px;line-height:1.4}
 .mv-groep{display:grid;gap:2px;margin:0;padding:8px 10px 10px;border:1px solid var(--line,#d0d7de);border-radius:12px}
 .mv-groep legend{padding:0 4px;font-weight:700}
-.mv-kop,.mv-rij{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,52px);align-items:center;gap:4px}
+.mv-kop,.mv-rij{display:grid;grid-template-columns:minmax(0,1fr) repeat(4,52px) 84px;align-items:center;gap:4px}
+.mv-duur{min-height:36px;max-width:84px;padding:0 4px;border:1px solid var(--line,#d0d7de);border-radius:8px;background:var(--surface,#fff);color:inherit;font:inherit;font-size:12px}
+.mv-duur:disabled{opacity:.5}
+.mv-duur:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .mv-kop{padding-top:4px;color:var(--muted,#57606a);font-size:12px;text-align:center;overflow-wrap:anywhere}
 .mv-rij{min-height:44px;border-top:1px solid color-mix(in srgb,var(--line,#d0d7de) 60%,transparent)}
 .mv-rij.is-verborgen .mv-naam{opacity:.6;text-decoration:line-through}
@@ -44,7 +47,7 @@ html.theme-dark .mv-schakel input:checked+span{background:#4f8cff}
 .mv-acties button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 10px;border:1px solid var(--line,#d0d7de);border-radius:9px;background:var(--surface,#fff);color:inherit;font:inherit;font-size:12px;cursor:pointer}
 .mv-acties button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .mv-acties svg{width:14px;height:14px}
-@media (max-width:420px){.mv-kop,.mv-rij{grid-template-columns:minmax(0,1fr) repeat(3,46px)}}
+@media (max-width:420px){.mv-kop,.mv-rij{grid-template-columns:minmax(0,1fr) repeat(4,38px) 66px;gap:3px}.mv-duur{max-width:66px;padding:0 2px}}
 
 /* --- paneel in de band --- */
 .tm-paneel{gap:12px}

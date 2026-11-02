@@ -37,7 +37,7 @@ export async function main(): Promise<number> {
   check('titel noemt de actie en het doel, niet het algemene «mcp tool»', !/mcp tool/i.test(uk) && uk.includes('src/AdminUitrolModern.tsx') && uk.startsWith('Claude: '));
   check('oorzaak: SPIEGEL_FOUT wordt «файл не знайдено …»; geweigerd door ruimte krijgt eigen uitleg en status «відхилено»',
     /не знайдено/.test(siteToolOorzaak(mislukt[0], 'uk')) && /bestand niet gevonden/.test(siteToolOorzaak(mislukt[0], 'nl'))
-    && /простор/.test(siteToolOorzaak(mislukt[1], 'uk')) && siteToolStatus(mislukt[1], 'uk') === 'відхилено' && siteToolStatus(mislukt[0], 'uk') === 'помилка');
+    && /простор/.test(siteToolOorzaak(mislukt[1], 'uk')) && siteToolStatus(mislukt[1], 'uk') === 'відхилено' && siteToolStatus(mislukt[0], 'uk') === 'не вдалося');
   check('zonder bekende reden zegt de melding eerlijk dat de server geen reden gaf, en een onbekende code blijft zichtbaar',
     /не повідомив/.test(siteToolOorzaak(mislukt[2], 'uk')) && foutUitleg('IETS_NIEUWS', 'uk') === 'код IETS_NIEUWS');
   check('meldingMetOorzaak: succes zonder oorzaak, mislukking met oorzaak',
