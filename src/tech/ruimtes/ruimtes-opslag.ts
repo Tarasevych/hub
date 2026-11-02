@@ -78,6 +78,8 @@ export function startRuimtes(): void {
   });
   document.addEventListener('visibilitychange', zichtbaar);
   window.addEventListener('focus', zichtbaar);
-  window.setInterval(() => { if (!document.hidden) void ruimtesVernieuwen(); }, POLL_MS);
-  window.setInterval(() => zet({}), 15_000); // resterende tijd bijwerken
+  // Alleen pollen waar het nodig is: een technische ruimte die loopt, of de pagina staat er nu in. Anders dekken de
+  // zichtbaarheids-, focus- en kanaalmeldingen hierboven het af; op de telefoon scheelt dat elke 15 s een verzoek en een herrender.
+  window.setInterval(() => { if (!document.hidden && (toestand.status?.aan || huidigeRuimte() === 'technisch')) void ruimtesVernieuwen(); }, POLL_MS);
+  window.setInterval(() => { if (toestand.status?.aan) zet({}); }, 15_000); // resterende tijd bijwerken (alleen tijdens een actieve ruimte)
 }

@@ -83,6 +83,8 @@
   html body .google-mail-workspace .mail-category-pager button{min-width:44px;min-height:40px}
   html body .google-mail-workspace>h1.mail-workspace-heading{font-size:20px;padding:14px 16px 8px}
   html body .mail-reader-icon-action{min-width:44px;min-height:44px}
+  /* zwevende knoppen (Написати, Вгору; rechtsonder): de lijst krijgt onderaan zoveel lucht als de stapel hoog is, zodat de laatste rij erboven te zien is */
+  html body .google-mail-workspace .mail-list-viewport>.google-mail-list::after{content:'';display:block;flex:none;height:var(--plaats-stapel-ruimte,0px);pointer-events:none}
 }
 
 @media (prefers-reduced-motion:reduce){
