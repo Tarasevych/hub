@@ -227,7 +227,7 @@ export async function main(): Promise<number> {
   const lagen = /ANDERE_ESC_LAGEN='([^']+)'/.exec(mc)?.[1] || '';
   const escBlok = /const onKey=\(event:KeyboardEvent\)=>\{if\(event\.key!=='Escape'[\s\S]{0,420}?event\.preventDefault\(\)/.exec(mc)?.[0] || '';
   check('M Esc van het meldingenpaneel (vangfase) laat een andere laag met eigen Esc voor: bel van een menu-item, «Перемістити до…», contextmenu, zoeken, of een menu-item met open «bel» — vóór preventDefault, en alleen als de focus níet in het paneel zelf staat',
-    ['.menu-bellen', '.plaats-acties', '.menu-acties', '.zk-palet'].every((k) => lagen.includes(k)) && escBlok.includes("closest('.canonical-notification-panel')") && escBlok.includes('closest(ANDERE_ESC_LAGEN)||') && escBlok.includes("closest('[data-heeft-bellen]')&&document.querySelector('.menu-bellen')") && mc.includes("window.addEventListener('keydown',onKey,true)"), escBlok.slice(0, 200));
+    ['.menu-bellen', '.plaats-acties', '.menu-acties', '.zk-uitklap'].every((k) => lagen.includes(k)) && escBlok.includes("closest('.canonical-notification-panel')") && escBlok.includes('closest(ANDERE_ESC_LAGEN)||') && escBlok.includes("closest('[data-heeft-bellen]')&&document.querySelector('.menu-bellen')") && mc.includes("window.addEventListener('keydown',onKey,true)"), escBlok.slice(0, 200));
 
   // ------------------------------------------------------------------ O. ruimte van de bovenbalk (2.5: de bel lag met «99+» op «Закрити» van een brief)
   const st = await import('../../src/plaatsing/plaatsing-staat');

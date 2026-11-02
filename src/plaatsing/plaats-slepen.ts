@@ -56,7 +56,7 @@ export function zoneOnder(x: number, y: number): ZoneId | null {
  *  boven→onder; stapel: onder→boven (column-reverse, index 0 = onderaan). Bewoners vooraan (zoeken) tellen niet. */
 export function indexIn(zone: ZoneId, zoneEl: HTMLElement, x: number, y: number): number {
   const items = Array.from(zoneEl.children).filter((c): c is HTMLElement => c instanceof HTMLElement
-    && !c.classList.contains('plaats-voorbeeld') && c.dataset.sleept !== 'ja' && !c.matches('.zk-trigger,.zk-trigger-mobiel,.zk-palet-achter,.plaats-zone-hint')
+    && !c.classList.contains('plaats-voorbeeld') && c.dataset.sleept !== 'ja' && !c.matches('.zk-anker,.zk-trigger,.zk-trigger-mobiel,.plaats-zone-hint')
     && (c.matches('.plaats-gniezdo,.canonical-account-menu,.canonical-drawer-account')));
   let n = 0;
   for (const c of items) {

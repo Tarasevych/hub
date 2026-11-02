@@ -113,7 +113,6 @@
   "src/verenigd-dienst-inhoud.css :: .menu-customizer-backdrop",
   "src/verenigd-dienst-inhoud.css :: .service-logout-backdrop",
   "src/viewport-knopinfo.css :: .canonical-viewport-tooltip",
-  "src/zoek/zoek.css :: .zk-palet-achter",
   "src/zoek/zoek.css :: .zk-paneel.is-onderblad",
   "src/zoek/zoek.css :: .zk-scrim",
   "src/zoek/zoek.css :: .zk-trigger-mobiel"
@@ -234,6 +233,22 @@
   {
    "sleutel": "src/aanmeld-vnext/aanmeld-vnext.css :: .amv-laag",
    "reden": "Aanmeldmethoden vNext (vlag aanmeldmethoden-vnext, UI-015): detail-zijpaneel/bottom sheet van een methode — modale laag over de hele pagina, geen knop."
+  },
+  {
+   "sleutel": "src/zoek/zoek.css :: .zk-uitklap",
+   "reden": "Uitklapvenster van het zoekveld in de bovenbalk (zoekronde 02.11.2026): het veld klapt op zijn plek open en het venster valt eronder met de recente zoekopdrachten. Een paneel, geen zwevende knop; geportaleerd naar body en op het beeld gepositioneerd. De knop zelf blijft in de zone van de bovenbalk."
+  },
+  {
+   "sleutel": "src/tech/strook.css :: .tech-strook-paneel",
+   "reden": "Instellingenpaneel van de technische strook (zoekronde 02.11.2026): modus, grootte, tekst en volgorde van de knoppen. Een paneel met keuzes, geen zwevende knop; geportaleerd naar body, zoals de andere vensters van de band."
+  },
+  {
+   "sleutel": "src/tech/strook.css :: .tech-strook-menu",
+   "reden": "Snelmenu van één knop op de technische strook (rechtermuisknop of lang tikken): verplaatsen, van de strook halen, instellingen. Een paneel met opties, geen knop; geportaleerd naar body."
+  },
+  {
+   "sleutel": "src/tech/strook.css :: @media (min-width:769px) .tech-band .tech-band-extra.is-open",
+   "reden": "De volledige ⋯-lijst van de technische band op een breed scherm (zoekronde 02.11.2026): hetzelfde paneel als op de telefoon, onder de band. Geen knop; de knop ⋯ staat in de zone van de band."
   }
  ],
  "kopReserves": [
