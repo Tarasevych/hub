@@ -197,3 +197,107 @@
  .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij .theme-switch{max-width:calc(100% - 56px);}
  .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-sessie-rij{grid-template-columns:minmax(0,1fr) auto auto;}
 }
+
+/* LOGIN-001 · goedgekeurde volgorde: beheer → ruimtes → accountacties → thema/taal → afmelden → juridisch. */
+/* Technische knop gebruikt de eigen serverconfiguratie van de band (kleur én patroon), nooit vaste themakleuren. */
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte{
+  margin-top:2px;padding:11px 0 10px;border-top:1px solid rgba(255,255,255,.12);
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-seg{
+  display:flex;width:min(330px,100%);gap:4px;margin:0 auto;padding:2px;background:#383439;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-knop{
+  flex:1 1 0;min-width:0;min-height:52px;padding:6px 8px;font-size:.79rem;line-height:1.15;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-knop.rw-tech[aria-checked]{
+  position:relative;display:grid;grid-template-columns:18px minmax(0,1fr);
+  grid-template-rows:auto auto;justify-content:center;align-content:center;align-items:center;
+  column-gap:6px;row-gap:2px;overflow:hidden;
+  background-color:var(--am2-tech-bg,var(--tech-band-bg,#f2b705))!important;
+  background-image:none!important;color:var(--am2-tech-fg,var(--tech-band-fg,#1d1300))!important;
+  border:1px solid color-mix(in srgb,var(--am2-tech-fg) 18%,transparent);
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-tech::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;background:none;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte[data-tech-patroon='strepen'] .rw-tech::before{
+  background-image:repeating-linear-gradient(135deg,transparent 0 14px,rgba(0,0,0,.10) 14px 28px);
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte[data-tech-patroon='stippen'] .rw-tech::before{
+  background-image:radial-gradient(rgba(0,0,0,.14) 1.5px,transparent 1.6px);background-size:10px 10px;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-tech>svg{
+  grid-column:1;grid-row:1 / span 2;justify-self:center;align-self:center;z-index:1;
+  width:18px;height:18px;position:relative;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-tech .rw-naam{
+  grid-column:2;grid-row:1;position:relative;z-index:1;
+  font-size:.76rem;font-weight:700;white-space:nowrap;line-height:1.22;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-tech .rw-stand{
+  grid-column:2;grid-row:2;position:relative;z-index:1;
+  font-size:.69rem;font-weight:600;white-space:nowrap;line-height:1.25;opacity:1;
+}
+/* Bij stippen geen stippen achter kleine letters: een effen eiland in exact dezelfde bandkleur. */
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte[data-tech-patroon='stippen'] .rw-tech :is(.rw-naam,.rw-stand){
+  background:var(--am2-tech-bg,var(--tech-band-bg,#6d28d9));
+  border-radius:4px;padding:1px 4px;margin-left:-4px;width:fit-content;
+  box-decoration-break:clone;-webkit-box-decoration-break:clone;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-prive[aria-checked='true']{
+  background:#f0ecf0!important;color:#29252b!important;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-acties .canonical-menu-action{
+  min-height:36px;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-sessie-rij{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-sessie-rij .session-add-account{
+  flex:0 1 auto;min-width:0;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-weergave .am2-rij{
+  min-height:40px;gap:6px;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij-zichtbaar{
+  font-size:.79rem;font-weight:650;white-space:nowrap;min-width:0;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij .theme-switch,
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij .language-switch{
+  margin-left:auto;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij .theme-switch .am2-thema-naam{
+  display:none;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij .theme-switch button{
+  width:32px;min-width:32px;height:34px;min-height:34px;padding:0;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-afmelden{
+  padding:7px 0 6px;border-top:1px solid rgba(255,255,255,.12);
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-afmelden .logout-current{
+  display:flex;width:100%;min-height:38px;padding:0 11px;gap:12px;
+  border:0;border-radius:10px;background:transparent;color:#ffadbf;
+  font-size:.84rem;font-weight:700;text-align:left;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-afmelden .logout-current>svg{
+  width:18px;height:18px;color:#f2778d;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-afmelden .logout-current::after{
+  content:'›';margin-left:auto;font-size:1.3rem;font-weight:400;color:#cfc6cc;
+}
+.canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-afmelden .logout-current:hover{
+  background:rgba(240,107,154,.11);
+}
+@media(max-width:520px){
+  .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-seg{width:100%}
+  .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-knop{padding:5px 6px;min-height:52px}
+  .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-ruimte .rw-tech .rw-naam{font-size:.72rem}
+  .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij .language-switch button{min-width:56px}
+  .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij .theme-switch button{width:29px;min-width:29px}
+}
+@media(max-width:360px){
+  .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij-zichtbaar{font-size:.7rem}
+  .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij .language-switch button{min-width:44px}
+  .canonical-account-menu[data-signed-out='false'][data-account-menu-v2='aan'] .am2-rij .theme-switch button{width:27px;min-width:27px}
+}
