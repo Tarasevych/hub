@@ -38,8 +38,8 @@ jobs:
           node --input-type=module <<'JS'
           import { readFileSync, writeFileSync } from 'node:fs';
           const data = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/mijn-ruimte-production.json', 'utf8'));
-          const expectedVersion = '20261102-010425';
-          const expectedCommit = 'eccee209c9181cced085d69ce674408a121d9bcc';
+          const expectedVersion = '20261102-053006';
+          const expectedCommit = 'ae8f3fae6294f266130a1a015be5e0c91b6f4163';
           if (data.versie !== expectedVersion || data.commit !== expectedCommit) {
             console.error('BASIS_VEROUDERD/COMMIT_VERSCHILT: actual production differs from the verified installation base.', {version: data.versie, commit: String(data.commit || '').slice(0, 12)});
             process.exit(1);
@@ -143,7 +143,7 @@ jobs:
           const failed = (text.match(/^FOUT\s/gm)||[]).length;
           writeFileSync('uitvoer/LOGIN-001-TESTRESULTATEN.json', JSON.stringify({
             geslaagd:passed,mislukt:failed,samenvatting:'LOGIN-001 + aanmeld-ui broncontroles; zie GitHub Actions log voor builds/typechecks',
-            falend:[],basis:{versie:'20261102-010425',geslaagd:null,mislukt:null},
+            falend:[],basis:{versie:'20261102-053006',geslaagd:null,mislukt:null},
             uitleg:{uk:'Збірка, TypeScript та ORCH перевірені окремими кроками CI; ручна перевірка браузера ще потрібна.',
                    nl:'Build, TypeScript en ORCH zijn afzonderlijk via CI gecontroleerd; handmatige browsercontrole blijft nodig.'}
           },null,2)+'\n');
