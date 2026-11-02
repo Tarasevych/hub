@@ -51,17 +51,18 @@ export async function main(): Promise<number> {
 
   // Aansluiting in de componenten.
   const bel = lees('src/CanoniekMeldingencentrum.tsx'), lijst = lees('src/MailOpstelZwevend.tsx');
-  check('bel: viewport() rekent in het kader (zichtbaarKader), niet meer in vensterpixels', /const viewport=\(\)=>zichtbaarKader\(/.test(bel) && !/const viewport=\(\)=>\{const vv=window\.visualViewport;return\{left:vv\?\.offsetLeft/.test(bel));
+  check('bel: viewport() rekent in het kader (zichtbaarKader), niet meer in vensterpixels', /const viewport = \(\) => zichtbaarKader\(/.test(bel) && !/const viewport=\(\)=>\{const vv=window\.visualViewport;return\{left:vv\?\.offsetLeft/.test(bel));
   // 25.10.2026: de bel staat in een zone van de PAGINA (shared/plaatsing.ts) en schuift met #root mee; geen eigen positie, geen eigen slepen.
   check('bel: geen eigen positie of slepen meer in vensterpixels (zone in de pagina; slepen: src/plaatsing/plaats-slepen.ts)', !/event\.clientX-drag\.dx|bellStyle|bellPos/.test(bel) && bel.includes("<Plek knop='bel'>"));
   // 25.10.2026: de melding kiest een vrije plek (src/plaatsing/melding-plek.ts): de plek bij de bel in kadercoördinaten (placeNear met − kx/ky),
   // het resultaat terug naar het kader van de melding zelf (gemeten verschuiving: getBoundingClientRect − berekende left/top, zonder de
   // lopende intro-animatie).
   const mpBron = lees('src/plaatsing/melding-plek.ts');
-  check('bel: paneel en melding naast de bel in kadercoördinaten', (bel.match(/left:rect\.left-v\.kx,top:rect\.top-v\.ky/g) || []).length === 1
-    && bel.includes('meldingPlaats(el,bellRef.current,plaatsStaat().ctx.klasse,zichtbaarKader(el))') && mpBron.includes('left: o.bel.left - v.kx, top: o.bel.top - v.ky')
+  // Pop-up én paneel staan naast de bel (placeNear); de pop-up valt nooit meer terug op het midden van het scherm (geen meldingPlaats).
+  check('bel: paneel en melding naast de bel in kadercoördinaten', (bel.match(/left: rect\.left - v\.kx, top: rect\.top - v\.ky/g) || []).length === 2
+    && bel.includes('placeNear({ left: rect.left - v.kx') && !bel.includes('meldingPlaats(') && mpBron.includes('left: o.bel.left - v.kx, top: o.bel.top - v.ky')
     && mpBron.includes('const { dx, dy } = verschuivingZonderAnimatie(el);') && mpBron.includes('return { dx: r0.left - (parseFloat(cs.left) || 0), dy: r0.top - (parseFloat(cs.top) || 0) };'));
-  check('bel: herberekent bij band aan/uit/verbergen (volgKader)', bel.includes('volgKader(()=>setViewportRev('));
+  check('bel: herberekent bij band aan/uit/verbergen (volgKader)', bel.includes('volgKader(() => setViewportRev('));
   // 25.10.2026: «Написати» staat in de actiestapel (zone); bij een verborgen band blijft de stapel aan de onderrand (tech.css), zonder JS.
   check('«Написати лист» en de actiestapel: band verbergen = alleen translate (CSS), geen herberekening in JS', /html\[data-tech=aan\]\[data-tech-verborgen\] #root :is\(\.canonical-notification-toast,\.canonical-notification-panel,\.plaats-actiestapel\)\{translate:0 var\(--tech-band-h\)\}/.test(lees('src/tech/tech.css')) && !/volgKader|fabPlaats/.test(lijst.replace(/\/\/.*$/gm, '')));
   const vk = lees('src/platform/vast-kader.ts');

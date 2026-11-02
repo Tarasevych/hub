@@ -16,3 +16,16 @@
 @media (max-width:700px){
   .canonical-notification-link{display:inline-flex;align-items:center;min-height:var(--tik-hoogte)}
 }
+
+/* Pop-up (UI notif-b): sectie, titel en uitleg; de balk toont de resterende tijd; hover/focus/uitklappen pauzeert de aftelling. */
+.canonical-notification-toast{overflow-y:auto;overscroll-behavior:contain}
+.canonical-notification-toast-sectie{color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.01em}
+.canonical-notification-toast-titel{font-weight:600}
+.canonical-notification-toast-uitleg{margin:0;color:var(--muted);font-size:12px;line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;overflow-wrap:anywhere}
+.canonical-notification-toast.expanded .canonical-notification-toast-uitleg{display:block;overflow:visible;-webkit-line-clamp:unset}
+.canonical-notification-toast-balk{position:absolute;left:12px;right:12px;bottom:4px;height:3px;overflow:hidden;border-radius:3px;background:color-mix(in srgb,var(--muted) 22%,transparent);pointer-events:none}
+.canonical-notification-toast-balk>i{display:block;width:100%;height:100%;background:var(--accent);transform-origin:left center;transform:scaleX(1)}
+.canonical-notification-toast.kind-error .canonical-notification-toast-balk>i{background:var(--danger)}
+.canonical-notification-toast.kind-success .canonical-notification-toast-balk>i{background:var(--good)}
+.canonical-notification-toast.is-paused{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+@media (prefers-reduced-motion:reduce){.canonical-notification-toast-balk>i{transition:none}}

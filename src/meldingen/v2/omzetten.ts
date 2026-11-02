@@ -8,7 +8,7 @@ import { isKritiekType } from '../../../shared/melding-typen';
 import type { Ernst, V2Melding } from '../../../shared/meldingen-v2/groepering';
 
 type Lang = 'uk' | 'nl';
-export type LokaleRij = { id: string; text: string; kind: 'info' | 'success' | 'warning' | 'error'; createdAt: number; source: string; read: boolean; link?: { href: string; label: string }; action?: unknown };
+export type LokaleRij = { id: string; text: string; kind: 'info' | 'success' | 'warning' | 'error'; createdAt: number; source: string; read: boolean; link?: { href: string; label: string }; action?: unknown; /** Uitleg: oorzaak en wat u nu kunt doen. */ explain?: string; /** Herhalingen (samengevoegd). */ count?: number; /** Opgelost door een latere gelukte stap. */ opgelost?: boolean };
 export type ServerRij = { id: string; kind: string; title: string; message: string; createdAt: number; read?: boolean; link?: string; sfeer?: 'prive' | 'technisch'; [k: string]: unknown };
 
 const DIENST_VAN_SECTIE: Array<[RegExp, string]> = [
@@ -43,7 +43,7 @@ export function vanServer(r: ServerRij): V2Melding {
 }
 export function vanLokaal(r: LokaleRij): V2Melding {
   const ernst: Ernst = r.kind === 'error' ? 'fout' : r.kind === 'warning' ? 'aandacht' : r.kind === 'success' ? 'succes' : 'info';
-  return { id: `l:${r.id}`, dienst: dienstVan(r.source), aanbieder: aanbiederUitBron(r.source), categorie: String(r.source || '').toLowerCase(), soort: String(r.source || '').toLowerCase(), ernst, titel: r.text, tijd: r.createdAt, gelezen: r.read, link: r.link?.href, vraagtActie: r.action ? true : undefined, herkomst: 'lokaal' };
+  return { id: `l:${r.id}`, dienst: dienstVan(r.source), aanbieder: aanbiederUitBron(r.source), categorie: String(r.source || '').toLowerCase(), soort: String(r.source || '').toLowerCase(), ernst, titel: r.text, tekst: r.explain || undefined, herhaald: r.count && r.count > 1 ? r.count : undefined, toestand: r.opgelost ? 'opgelost' : undefined, tijd: r.createdAt, gelezen: r.read, link: r.link?.href, vraagtActie: r.action ? true : undefined, herkomst: 'lokaal' };
 }
 export function vanActiviteit(e: ActivityEvent, lang: Lang, gelezen: boolean): V2Melding {
   const st = statusInfo(e.status, lang);
