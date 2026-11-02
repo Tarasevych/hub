@@ -38,7 +38,10 @@
  box-shadow:0 22px 66px rgba(33,45,67,.10);text-align:center;color:var(--mr-login-ink);
 }
 .canonical-chrome:is(.theme-dark,.theme-plum-dark) .mr-sign-in{border-color:rgba(185,199,220,.12);box-shadow:0 22px 65px rgba(0,0,0,.22)}
-.mr-sign-in-content{width:min(460px,100%);display:grid;justify-items:center;gap:0;transition:transform .2s ease}
+.mr-sign-in-content{width:min(460px,100%);display:grid;justify-items:center;gap:0;transition:opacity .2s ease}
+/* Het menu van de bovenhoek staat open: de aanmeldtekst blijft op zijn plek (gecentreerd) maar wordt wat zachter, zodat het menu
+   duidelijk de aandacht heeft en er niets achter de tekst doorheen valt. */
+.canonical-chrome:has(.mr-sign-in-content):has(.canonical-account-panel) .mr-sign-in-content{opacity:.38;pointer-events:none}
 .mr-sign-in h1{margin:0!important;font-size:clamp(1.7rem,3.2vw,2.7rem)!important;line-height:1.14;letter-spacing:-.047em;font-weight:650!important;color:var(--mr-login-ink)!important;text-wrap:balance}
 .mr-sign-in-subtitle{margin:16px 0 31px!important;max-width:425px;color:var(--mr-login-muted);font-size:clamp(.9rem,1.2vw,1.05rem);line-height:1.55;text-wrap:balance}
 .mr-sign-in-account{
@@ -61,13 +64,21 @@
  color:#f9fafb!important;font-size:1rem;font-weight:650;letter-spacing:-.015em;
  box-shadow:none!important;text-decoration:none!important;cursor:pointer
 }
+/* Hover en focus: alleen een rustige rand, géén kleurrotatie. De rotatie loopt uitsluitend terwijl het aanmelden bezig is
+   (data-activated='true', van klik tot het venster weer loslaat) — niet bij de muis erop. */
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:hover,
-.canonical-signed-out.mr-sign-in .mr-sign-in-main-button:focus-visible,
+.canonical-signed-out.mr-sign-in .mr-sign-in-main-button:focus-visible{
+ border-color:rgba(176,190,212,.72)!important;box-shadow:0 0 0 3px rgba(115,139,171,.14)!important
+}
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button[data-activated='true']{
  border-color:transparent!important;
  background:linear-gradient(#222933,#222933) padding-box,conic-gradient(from var(--mr-ring-angle),#38cfc4,#7298e8,#bb80d5,#e6af73,#38cfc4) border-box!important;
  animation:mr-login-ring 1.35s linear infinite!important
 }
+/* Merklogo's staan op een altijd witte plaat: de merkkleur blijft die van het licht (ook in het donker thema), zodat een zwart Apple-logo zichtbaar blijft. */
+.mr-sign-in-logo,.mr-sign-in-optie-logo{--text:#17212b;--merk-in-licht:;--merk-in-donker:initial}
+.mr-sign-in-logo{display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+.mr-sign-in-main-tekst{min-width:0}
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:focus-visible{outline:2px solid var(--mr-login-ink);outline-offset:4px}
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button .mr-sign-in-arrow{font-size:1.25rem;font-weight:400}
 @property --mr-ring-angle{syntax:'<angle>';inherits:false;initial-value:0deg}
@@ -78,6 +89,23 @@
 }
 .canonical-signed-out.mr-sign-in .mr-sign-in-alternative:hover,
 .canonical-signed-out.mr-sign-in .mr-sign-in-alternative:focus-visible{color:var(--mr-login-ink)!important;text-decoration:underline!important}
+.mr-sign-in-alternative{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.mr-sign-in-alt-pijl{width:15px;height:15px;flex:none;transition:transform .2s ease}
+.mr-sign-in-alternative[aria-expanded='true'] .mr-sign-in-alt-pijl{transform:rotate(180deg)}
+/* «Інші способи входу»: uitklapbare lijst met merklogo's. Een optie die nu niet werkt blijft leesbaar (naam en uitleg in gewone kleur). */
+.mr-sign-in-andere{width:100%;display:grid;justify-items:center}
+.mr-sign-in-opties{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px;width:100%;max-width:420px;text-align:left}
+.mr-sign-in-optie{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;box-sizing:border-box;padding:10px 16px;border:1px solid var(--mr-login-border);border-radius:16px;background:var(--mr-login-card);color:var(--mr-login-ink);font:inherit;text-align:left;cursor:pointer}
+.mr-sign-in-optie:hover:not(:disabled),.mr-sign-in-optie:focus-visible{background:color-mix(in srgb,var(--mr-login-card) 80%,#ffffff);border-color:rgba(115,139,171,.38)}
+.mr-sign-in-optie:focus-visible{outline:2px solid var(--mr-login-ink);outline-offset:2px}
+/* Nog niet beschikbaar: de tekst blijft volledig leesbaar (de globale :disabled-vervaging uit primitieven.css zou hem grijs maken). */
+.mr-sign-in-optie:disabled{cursor:default;opacity:1}
+.mr-sign-in-optie-logo{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.07);color:#222b39}
+.mr-sign-in-optie-logo svg{width:22px;height:22px}
+.mr-sign-in-optie-tekst{display:grid;gap:3px;min-width:0}
+.mr-sign-in-optie-tekst strong{font-size:.95rem;font-weight:650;color:var(--mr-login-ink)}
+.mr-sign-in-optie-tekst small{font-size:.78rem;line-height:1.4;color:var(--mr-login-muted)}
+.mr-sign-in-optie-tekst small em{display:block;margin-top:3px;font-style:normal;font-weight:650;color:var(--mr-login-ink)}
 .mr-sign-in-remember{display:flex;align-items:center;justify-content:center;gap:8px;max-width:100%;margin-top:12px;color:var(--mr-login-muted);font-size:.77rem;text-align:left;cursor:pointer}
 .mr-sign-in-remember input{accent-color:#526d8b;width:15px;height:15px;margin:0}
 .canonical-signed-out.mr-sign-in .mr-sign-in-legal{
@@ -90,11 +118,15 @@
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true']{--canonical-text:var(--mr-login-ink);--canonical-muted:var(--mr-login-muted);--canonical-line:var(--mr-login-border);--canonical-panel:var(--mr-login-card);display:flex;flex-direction:row;align-items:center;gap:8px;position:relative}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-avatar-trigger{width:38px;height:38px;border:1px solid var(--mr-login-border);box-shadow:none;background:var(--mr-login-card)}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-avatar-trigger svg{width:19px;height:19px}
-.mr-sign-in-quick-controls{display:none;align-items:center;gap:4px}
+.mr-sign-in-quick-controls{display:none;align-items:center;gap:12px}
 .canonical-chrome:has(.mr-sign-in) .mr-sign-in-quick-controls{display:flex}
 .mr-sign-in-quick-controls button{width:38px;height:38px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--mr-login-ink);cursor:pointer;font-size:.73rem;font-weight:600}
 .mr-sign-in-quick-controls button:hover,.mr-sign-in-quick-controls button:focus-visible{background:rgba(128,145,173,.12);outline-offset:2px}
 .mr-sign-in-quick-controls button svg{width:17px;height:17px;stroke-width:1.75}
+/* Taal: kleine pil met echte vlag en «Укр.» — duidelijk kleiner dan de themaknop en met ruimte ernaast. */
+.mr-sign-in-quick-controls .mr-sign-in-taal{display:inline-flex;align-items:center;justify-content:center;width:auto;height:32px;gap:7px;padding:0 12px 0 10px;border:1px solid var(--mr-login-border);border-radius:999px;background:var(--mr-login-card);color:var(--mr-login-ink);font-size:.78rem;font-weight:650;letter-spacing:.01em;white-space:nowrap}
+.mr-sign-in-quick-controls .mr-sign-in-taal .taal-vlag{width:1.35em;height:.9em;font-size:14px}
+.mr-sign-in-quick-controls .mr-sign-in-taal:hover,.mr-sign-in-quick-controls .mr-sign-in-taal:focus-visible{background:color-mix(in srgb,var(--mr-login-card) 80%,#ffffff)}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-account-panel{
  right:0;top:50px;width:min(370px,calc(100vw - 28px));max-height:min(650px,calc(100dvh - 90px));
  padding:20px!important;border:1px solid var(--mr-login-border);border-radius:22px;
@@ -113,10 +145,9 @@
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-add-account-control{border-color:var(--mr-login-border);border-radius:13px;background:transparent}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] :where(.canonical-preference-strip,.am2-weergave){margin-top:16px;padding-top:12px;border-top:1px solid var(--mr-login-border)}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-account-legal{font-size:.71rem}
-@media(min-width:1150px){
- .canonical-chrome:has(.mr-sign-in):has(.canonical-account-panel) .mr-sign-in-content{transform:translateX(-min(7vw,105px))}
-}
+/* LOGIN-001: de aanmeldtekst blijft gecentreerd als het menu openklapt (het menu zweeft eroverheen; de tekst schuift niet meer weg). */
 @media(max-width:700px){
+ .mr-sign-in-optie{min-height:60px}
  .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor{top:22px;right:24px}
  .canonical-signed-out.mr-sign-in{margin:8px!important;min-height:calc(100dvh - 16px);padding:115px 22px 90px;border-radius:22px}
  .mr-sign-in h1{font-size:clamp(1.6rem,7vw,2.1rem)!important}
@@ -129,4 +160,5 @@
 @media(prefers-reduced-motion:reduce){
  .mr-sign-in-content{transition:none}
  .canonical-signed-out.mr-sign-in .mr-sign-in-main-button{animation:none!important}
+ .mr-sign-in-alt-pijl{transition:none}
 }

@@ -1,25 +1,33 @@
 /* Twee ruimtes (vlag tech-ruimtes-v2): wisselknop, startvenster, «Доступ і терміни», uitlogkeuzes. Kleur per ruimte; licht/donker via
    html.theme-dark en prefers-color-scheme. Geen vaste hoogtes die kunnen knipperen. */
-:root{--rw-prive:#0f766e;--rw-prive-fg:#fff;--rw-tech:#374151;--rw-tech-fg:#fff;--rw-rand:rgba(125,125,145,.45)}
-html.theme-dark{--rw-prive:#14b8a6;--rw-prive-fg:#04201d;--rw-tech:#f5b400;--rw-tech-fg:#1a1200}
-@media (prefers-color-scheme:dark){html:not(.theme-light){--rw-prive:#14b8a6;--rw-prive-fg:#04201d;--rw-tech:#f5b400;--rw-tech-fg:#1a1200}}
-.rw{display:flex;flex-wrap:wrap;align-items:center;gap:6px;max-width:100%}
-.rw-seg{display:inline-flex;border:1.5px solid var(--rw-rand);border-radius:999px;padding:2px;gap:2px;background:rgba(125,125,145,.10);max-width:100%}
-.rw-knop{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:inherit;font:600 14px/1.15 inherit;cursor:pointer;text-align:left}
+/* Schakelaar «Звичайний | Технічний»: één spoor met één schuivend blokje onder de actieve ruimte (geen twee losse knoppen).
+   Kleur per thema: licht → donkerteal voor «Звичайний», donker amber voor «Технічний»; donker thema → felle varianten. Tekst op
+   het blokje ≥ 4,5:1. De stand staat er altijd onder, in dezelfde stijl in beide standen. */
+:root,.theme-light,.theme-plum-light{--rw-prive:#0f766e;--rw-prive-fg:#ffffff;--rw-tech:#b45309;--rw-tech-fg:#ffffff;--rw-spoor:#e4e8ee;--rw-tekst:#374151;--rw-rand:rgba(92,110,142,.28)}
+.theme-dark,.theme-plum-dark{--rw-prive:#14b8a6;--rw-prive-fg:#04201d;--rw-tech:#f5b400;--rw-tech-fg:#1a1200;--rw-spoor:#222b38;--rw-tekst:#c3cbd5;--rw-rand:rgba(189,201,223,.22)}
+@media (prefers-color-scheme:dark){html:not(.theme-light):not(.theme-plum-light){--rw-prive:#14b8a6;--rw-prive-fg:#04201d;--rw-tech:#f5b400;--rw-tech-fg:#1a1200;--rw-spoor:#222b38;--rw-tekst:#c3cbd5;--rw-rand:rgba(189,201,223,.22)}}
+.rw{display:flex;flex-direction:column;align-items:flex-start;gap:4px;max-width:100%}
+.rw-rij{display:flex;align-items:center;gap:8px;max-width:100%}
+.rw-seg{position:relative;isolation:isolate;display:grid;grid-template-columns:1fr 1fr;min-width:0;max-width:100%;padding:3px;border-radius:999px;background:var(--rw-spoor);box-shadow:inset 0 0 0 1px var(--rw-rand)}
+.rw-schuif{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);z-index:-1;border-radius:999px;background:var(--rw-prive);box-shadow:0 1px 3px rgba(0,0,0,.18);transition:left .22s ease,background-color .22s ease}
+.rw-seg[data-stand=technisch] .rw-schuif{left:50%;background:var(--rw-tech)}
+.rw-knop{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:36px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:var(--rw-tekst);font-family:inherit;font-size:14px;font-weight:600;line-height:1.15;white-space:nowrap;cursor:pointer;transition:color .22s ease}
 .rw-knop svg{width:16px;height:16px;flex:none}
-.rw-knop:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
-.rw-prive[aria-checked=true]{background:var(--rw-prive);color:var(--rw-prive-fg)}
-.rw-tech[aria-checked=true]{background:var(--rw-tech);color:var(--rw-tech-fg);background-image:repeating-linear-gradient(135deg,transparent 0 10px,rgba(255,255,255,.08) 10px 20px)}
-.rw-tech[aria-disabled=true]{opacity:.55;cursor:not-allowed}
-.rw-stand{font-weight:500;opacity:.85;font-size:12px;white-space:nowrap}
-.rw-tech[aria-checked=false] .rw-stand{opacity:.75}
-.rw-reden,.rw-uitkomst{flex-basis:100%;font-size:12px}
+.rw-knop:focus-visible{outline:2px solid var(--focus,#2563eb);outline-offset:2px}
+.rw-prive[aria-checked=true]{color:var(--rw-prive-fg)}
+.rw-tech[aria-checked=true]{color:var(--rw-tech-fg)}
+.rw-tech[aria-disabled=true]{opacity:.6;cursor:not-allowed}
+.rw-stand{padding-left:4px;color:var(--rw-tekst);font-size:12px;line-height:1.3;white-space:nowrap;opacity:.85}
+.rw-reden,.rw-uitkomst{font-size:12px}
 .rw-uitkomst.is-fout{color:#b91c1c}
-.rw-compact .rw-knop{min-height:32px;padding:0 9px;font-size:13px}
-@media (max-width:480px){.rw-knop{padding:0 8px;font-size:13px}.rw-stand{display:block}.rw-knop{flex-direction:row;flex-wrap:wrap}}
-.tech-band .rw-seg{border-color:var(--tech-band-fg);background:rgba(255,255,255,.35)}
+.rw-compact .rw-knop{min-height:30px;padding:0 9px;font-size:13px}
+@media (max-width:480px){.rw-knop{padding:0 8px;font-size:13px}}
+.tech-band .rw-seg{background:rgba(255,255,255,.28);box-shadow:inset 0 0 0 1px var(--tech-band-fg)}
 .tech-band .rw-knop{color:var(--tech-band-fg)}
-.tech-band .rw-tech[aria-checked=true]{background:var(--tech-band-fg);color:var(--tech-band-bg)}
+.tech-band .rw-seg .rw-knop{border:0;border-radius:999px;box-shadow:none;background-clip:border-box}
+.tech-band .rw-seg .rw-schuif{background:var(--tech-band-fg)}
+.tech-band .rw-prive[aria-checked=true],.tech-band .rw-tech[aria-checked=true]{color:var(--tech-band-bg)}
+.tech-band .rw-stand{display:none}
 .rs-groep{border:0;margin:0 0 10px;padding:0}
 .rs-groep legend{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .rs-tijden{display:flex;flex-wrap:wrap;gap:6px}

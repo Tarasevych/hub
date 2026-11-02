@@ -31,6 +31,8 @@ import {
   X,
 } from 'lucide-react';
 import StableAvatar from './StabielAvatar';
+// LOGIN-001 (taal): echte vlaggen als SVG, geen emoji en geen CSS-gradient-blokjes.
+import LanguageFlag from './TaalVlag';
 import { openTechVenster, techActief, techGebruiker, useTech } from './tech/tech-opslag';
 // Twee ruimtes (vlag tech-ruimtes-v2, standaard uit → precies het oude menu).
 import { useRuimtesV2 } from './tech/ruimtes/ruimtes-vlag';
@@ -596,10 +598,10 @@ export default function CanonicalAccountMenu({
         <Languages />
         <div className='canonical-segmented language-switch' role='group' aria-label={t.language}>
           <button type='button' className={lang === 'uk' ? 'active' : ''} onClick={() => onLanguage('uk')}>
-            <i className='compact-flag flag-uk' /><b>Укр.</b>
+            <LanguageFlag lang='uk' /><b>Укр.</b>
           </button>
           <button type='button' className={lang === 'nl' ? 'active' : ''} onClick={() => onLanguage('nl')}>
-            <i className='compact-flag flag-nl' /><b>NL</b>
+            <LanguageFlag lang='nl' /><b>NL</b>
           </button>
         </div>
       </div>
@@ -646,10 +648,10 @@ export default function CanonicalAccountMenu({
         <span className='am2-rij-kop' title={t.language}><Languages aria-hidden='true' /><span className='am2-verborgen'>{t.language}</span></span>
         <div className='canonical-segmented am2-seg language-switch' role='group' aria-label={t.language}>
           <button type='button' className={lang === 'uk' ? 'active' : ''} aria-pressed={lang === 'uk'} onClick={() => onLanguage('uk')} title='Українська' lang='uk'>
-            <span className='am2-vlag' data-am2-vlag='uk' aria-hidden='true'>🇺🇦</span><b>Укр.</b>
+            <span className='am2-vlag' data-am2-vlag='uk' aria-hidden='true'><LanguageFlag lang='uk' /></span><b>Укр.</b>
           </button>
           <button type='button' className={lang === 'nl' ? 'active' : ''} aria-pressed={lang === 'nl'} onClick={() => onLanguage('nl')} title='Nederlands' lang='nl'>
-            <span className='am2-vlag' data-am2-vlag='nl' aria-hidden='true'>🇳🇱</span><b>NL</b>
+            <span className='am2-vlag' data-am2-vlag='nl' aria-hidden='true'><LanguageFlag lang='nl' /></span><b>NL</b>
           </button>
         </div>
         <Vraag help={V2_HULP.weergave} uk={lang === 'uk'} label={`${t.language} · ${t.theme}`} />
@@ -701,8 +703,9 @@ export default function CanonicalAccountMenu({
       data-account-menu-v2={am2 ? 'aan' : undefined}
     >
       {!displayUser && <div className='mr-sign-in-quick-controls' role='group' aria-label={lang === 'uk' ? 'Мова й тема' : 'Taal en thema'}>
-        <button type='button' aria-label={lang === 'uk' ? 'Змінити мову на нідерландську' : 'Taal wijzigen naar Oekraïens'} title={lang === 'uk' ? 'Мова: українська' : 'Taal: Nederlands'} onClick={() => onLanguage(lang === 'uk' ? 'nl' : 'uk')}>
-          {lang === 'uk' ? 'UA' : 'NL'}
+        {/* Taal: echte vlag (SVG) + korte naam; klik wisselt. Dezelfde plek als voorheen, kleiner, met ruimte naast het thema-knopje. */}
+        <button type='button' className='mr-sign-in-taal' aria-label={lang === 'uk' ? 'Укр. · змінити мову на нідерландську' : 'NL · taal wijzigen naar Oekraïens'} title={lang === 'uk' ? 'Мова: українська' : 'Taal: Nederlands'} onClick={() => onLanguage(lang === 'uk' ? 'nl' : 'uk')}>
+          <LanguageFlag lang={lang} /><b>{lang === 'uk' ? 'Укр.' : 'NL'}</b>
         </button>
         <button type='button' aria-label={lang === 'uk' ? 'Перемкнути тему' : 'Thema wisselen'} title={lang === 'uk' ? 'Перемкнути світлу / темну тему' : 'Licht / donker wisselen'} onClick={() => onTheme(theme === 'dark' ? 'light' : theme === 'plum-dark' ? 'plum-light' : theme === 'plum-light' ? 'plum-dark' : 'dark')}>
           {dark || theme === 'plum-dark' ? <Moon aria-hidden='true'/> : <Sun aria-hidden='true'/>}
@@ -801,10 +804,12 @@ export default function CanonicalAccountMenu({
 
               {model.shouldShowOtherAccountsToggle && (
                 <div className='canonical-other-accounts-bar'>
+                  {/* Eén hit-vlak: tekst, voorbeeldfoto's en pijl zitten in dezelfde knop (geen los pijltje-vakje ernaast). */}
                   <div className='canonical-other-toggle' data-preview-location='inside-toggle'>
                     <button
                       type='button'
                       className='canonical-other-toggle-main'
+                      aria-expanded={expanded}
                       onClick={() => setExpanded((value) => !value)}
                     >
                       <Users />
@@ -812,14 +817,9 @@ export default function CanonicalAccountMenu({
                       {!expanded && (
                         <IllustrativePreviews items={model.collapsedSwitchPreviewAccounts} mode='quick' />
                       )}
-                    </button>
-                    <button
-                      type='button'
-                      className='canonical-other-toggle-chevron'
-                      aria-label={expanded ? t.hide : t.show}
-                      onClick={() => setExpanded((value) => !value)}
-                    >
-                      {expanded ? <ChevronUp /> : <ChevronDown />}
+                      <span className='canonical-other-toggle-pijl' aria-hidden='true'>
+                        {expanded ? <ChevronUp /> : <ChevronDown />}
+                      </span>
                     </button>
                   </div>
                 </div>
