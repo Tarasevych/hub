@@ -16,8 +16,10 @@ export async function main(): Promise<number> {
   check('tip: andere accounts nl', avatarTip('nl', 'Pavlo', 'p@x.org', 1).includes('Nog 1 account(s)'));
   const menu = readFileSync('src/CanoniekAccountMenu.tsx', 'utf8');
   check('poort: v2-delen alleen met am2', /\{am2 \? controlsV2 : controls\}/.test(menu) && /\{am2 \? \(\n\s+<>\n\s+<div className='am2-blok am2-acties'/.test(menu));
-  check('poort: oude CSS-vlaggen in het oude menu behouden', /compact-flag flag-uk/.test(menu) && /compact-flag flag-nl/.test(menu));
-  check('vlaggen: echte emoji in v2', menu.includes('🇺🇦') && menu.includes('🇳🇱'));
+  // LOGIN-001 (taal): beide menu's tonen dezelfde echte vlag als SVG (TaalVlag.tsx), geen emoji en geen CSS-blokjes meer.
+  check('vlaggen: oude menu en v2 gebruiken dezelfde SVG-taalvlag', /<LanguageFlag lang='uk' \/><b>Укр\.<\/b>/.test(menu) && /<LanguageFlag lang='nl' \/><b>NL<\/b>/.test(menu)
+    && /data-am2-vlag='uk' aria-hidden='true'><LanguageFlag lang='uk' \/><\/span>/.test(menu) && /data-am2-vlag='nl' aria-hidden='true'><LanguageFlag lang='nl' \/><\/span>/.test(menu));
+  check('vlaggen: geen emoji-vlag meer in de code', !menu.includes('🇺🇦') && !menu.includes('🇳🇱'));
   const css = readFileSync('src/accountmenu-v2/accountmenu-v2.css', 'utf8');
   check('css: alles onder [data-account-menu-v2] (behalve hulpklasse)', css.split('}').map((r) => r.trim()).filter((r) => r && !r.startsWith('/*') && !r.startsWith('@media') && !r.startsWith('.am2-verborgen')).every((r) => r.replace(/\/\*[\s\S]*?\*\//g, '').trim().startsWith('[data-account-menu-v2]') || !r.includes('{')));
   check('css: vlaggen krijgen geen filter/grayscale', /\.am2-vlag\{[^}]*filter:none!important/.test(css) && !/am2-vlag[^{]*\{[^}]*grayscale/.test(css));

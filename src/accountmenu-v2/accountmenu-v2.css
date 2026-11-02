@@ -13,7 +13,7 @@
 [data-account-menu-v2] .canonical-menu-action:focus-visible,[data-account-menu-v2] .am2-ikoon:focus-visible,[data-account-menu-v2] .am2-seg button:focus-visible{outline:2px solid var(--focus,var(--canonical-accent));outline-offset:1px}
 [data-account-menu-v2] .canonical-other-accounts-bar{margin:6px 0;padding:2px 0}
 [data-account-menu-v2] .canonical-other-toggle{min-height:44px;padding:0 0 0 7px}[data-account-menu-v2] .canonical-other-toggle-main{min-height:44px}
-[data-account-menu-v2] .canonical-other-toggle-chevron,[data-account-menu-v2] .canonical-account-forget{width:44px;height:44px}
+[data-account-menu-v2] .canonical-other-toggle-pijl{width:44px;height:44px}[data-account-menu-v2] .canonical-account-forget{width:44px;height:44px}
 [data-account-menu-v2] .canonical-account-row{grid-template-columns:minmax(0,1fr) 44px}
 /* Blokken: dunne scheidingslijn, geen kaders in kaders. */
 [data-account-menu-v2] .am2-blok{display:grid;gap:2px;padding:6px 0;border-top:1px solid var(--canonical-line)}
@@ -44,10 +44,10 @@
 [data-account-menu-v2] .am2-ikoon[aria-pressed=true]{color:var(--canonical-accent)}
 [data-account-menu-v2] .am2-ikoon svg{width:18px;height:18px}
 [data-account-menu-v2] .am2-weergave .hulp-knop,[data-account-menu-v2] .am2-sessie-rij .hulp-knop{flex:none}
-/* Ruimtewissel onderaan: twee gelijke tabs over de hele breedte, zonder losse gekleurde streep. */
+/* Ruimtewissel onderaan: één schakelaar over de hele breedte (twee gelijke helften), zonder losse gekleurde streep. */
 [data-account-menu-v2] .am2-ruimte{padding:8px 0 4px;border-top:1px solid var(--canonical-line)}
 [data-account-menu-v2] .am2-ruimte .rw{display:block}
-[data-account-menu-v2] .am2-ruimte .rw-seg{display:flex;width:100%;box-sizing:border-box;border-width:1px;border-radius:12px}
+[data-account-menu-v2] .am2-ruimte .rw-seg{display:grid;width:100%;box-sizing:border-box;border-radius:12px}
 [data-account-menu-v2] .am2-ruimte .rw-knop{flex:1 1 0;justify-content:center;min-height:44px;border-radius:10px;font-size:.8125rem;background-image:none;flex-wrap:wrap;row-gap:0}
 [data-account-menu-v2] .am2-ruimte .rw-stand{flex-basis:100%;text-align:center;font-size:.75rem}
 [data-account-menu-v2] .am2-ruimte .rw-uitkomst{display:block;margin-top:4px;text-align:center}
