@@ -354,6 +354,16 @@ a.ag-knop{text-decoration:none}
 .ag-sectie,#extension-lokaal,#ruimte{scroll-margin-top:4.5rem}
 .ag-sectie[data-ag-lui='dicht']{min-height:18rem}
 .ag-lui-plaats{min-height:16rem}
+/* Elke sectie heeft een vaste kop (icoon, titel, één zin) en een duidelijke scheidingslijn met de vorige sectie. */
+.ag-sectie{display:grid;gap:14px;padding-top:26px;border-top:1px solid var(--line)}
+.ag-sectie:first-child{padding-top:0;border-top:0}
+.ag-sectie-kop{display:flex;align-items:flex-start;gap:12px;min-width:0}
+.ag-sectie-icoon{flex:0 0 auto;display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--accent-soft,var(--surface));color:var(--accent)}
+.ag-sectie-icoon svg{width:18px;height:18px}
+.ag-sectie-tekst{display:grid;gap:3px;min-width:0}
+.ag-sectie-tekst h2{margin:0;font-size:1.08rem;line-height:1.3;font-weight:700;color:var(--text)}
+.ag-sectie-tekst p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.45;max-width:70ch}
+@media(max-width:560px){.ag-sectie-kop{gap:10px}.ag-sectie-icoon{width:32px;height:32px}}
 /* tabbladen krimpen nooit (het fundament zet min-width:0 op elke <a> in .canonical-content; dan schoven de labels op 390 over elkaar) */
 .ag-tabs>.ag-tab-knop{flex:none}
 @media (min-width:701px){.ag-tabs{flex-wrap:wrap;overflow-x:visible}}
