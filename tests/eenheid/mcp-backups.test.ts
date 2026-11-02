@@ -52,11 +52,31 @@ export async function main(): Promise<number> {
       const nooit = await readKitStatus();
       check('verzoek >60 s onbehandeld = NOT_STARTED (de service draait niet)', nooit.state === 'failed' && nooit.error === 'NOT_STARTED');
       await rm(path.join(verzoek, 'kit-request'));
-      await wf(path.join(kit, 'kit-status.txt'), 'state=ready\nstage=5\npct=100\nname=mijn-ruimte-20261007-200000-volledig.tar\nbytes=123\n');
+      await wf(path.join(kit, 'kit-status.txt'), 'state=ready\nstage=5\npct=100\nname=mijn-ruimte-20261007-200000-volledig.tar.age\nbytes=123\n');
       check('klaar: naam en grootte', (await readKitStatus()).state === 'ready' && (await readKitStatus()).bytes === '123');
-      check('archief: alleen het ene age-bestand met vaste naam in de uitgiftemap; oude onversleutelde namen en padtrucs niet',
+      check('archief: vaste naam en de eigen generaties (.tar.age) zijn toegestaan; oude onversleutelde namen en padtrucs niet',
         archiveFile() === path.join(kit, 'archief-laatste.tar.age') && archiveFile('archief-laatste.tar.age') === path.join(kit, 'archief-laatste.tar.age')
-        && archiveFile('mijn-ruimte-20261007-200000-volledig.tar') === '' && archiveFile('mijn-ruimte-20261006-125448-kod-baza-fajly-sekrety-instrukcija.tar.gz') === '' && archiveFile('../x.tar') === '');
+        && archiveFile('mijn-ruimte-20261007-200000-volledig.tar.age') === path.join(kit, 'mijn-ruimte-20261007-200000-volledig.tar.age')
+        && archiveFile('mijn-ruimte-20261007-200000-volledig.tar') === '' && archiveFile('mijn-ruimte-20261006-125448-kod-baza-fajly-sekrety-instrukcija.tar.gz') === ''
+        && archiveFile('../mijn-ruimte-20261007-200000-volledig.tar.age') === '' && archiveFile('mijn-ruimte-1-volledig.tar.age') === '' && archiveFile('../x.tar') === '');
+
+      // Twee generaties: op schijf staan 3 eigen archieven (één zonder geschiedenisregel), de geschiedenis heeft een regel te veel.
+      // Verwacht: 4 rijen, nieuwste eerst; de regel zonder bestand (20261001) kept=false; het vreemde bestand rommel.tar.age telt niet mee.
+      await wf(path.join(kit, 'mijn-ruimte-20261005-100000-volledig.tar.age'), 'x'.repeat(40));
+      await wf(path.join(kit, 'mijn-ruimte-20261007-200000-volledig.tar.age'), 'x'.repeat(50));
+      await wf(path.join(kit, 'mijn-ruimte-20261009-090000-volledig.tar.age'), 'x'.repeat(60));
+      await wf(path.join(kit, 'rommel.tar.age'), 'x');
+      await wf(path.join(kit, 'history.json'), JSON.stringify([
+        { at: '2026-10-07T20:00:00.000Z', name: 'mijn-ruimte-20261007-200000-volledig.tar.age', bytes: 50, kod: 1, baza: 2, fajly: 3, sekrety: 4 },
+        { at: '2026-10-05T10:00:00.000Z', name: 'mijn-ruimte-20261005-100000-volledig.tar.age', bytes: 40, kod: 0, baza: 0, fajly: 0, sekrety: 0 },
+        { at: '2026-10-01T10:00:00.000Z', name: 'mijn-ruimte-20261001-100000-volledig.tar.age', bytes: 30, kod: 0, baza: 0, fajly: 0, sekrety: 0 },
+      ]));
+      const { archiveHistory } = await import('../../backend/mcp-console');
+      const geschiedenis = await archiveHistory();
+      check('geschiedenis: twee bewaarde generaties + oudere notitie zonder bestand, nieuwste eerst, vreemd bestand telt niet mee',
+        geschiedenis.map((r) => `${r.name.slice(12, 20)}:${r.kept ? 'op-schijf' : 'weg'}`).join(',') ==='20261009:op-schijf,20261007:op-schijf,20261005:op-schijf,20261001:weg'
+        && geschiedenis.length === 4 && !geschiedenis.some((r) => r.name === 'rommel.tar.age'));
+      check('geschiedenis: de regel van 20261009 (geen historieregel) krijgt de grootte van het bestand', geschiedenis[0].bytes === 60 && geschiedenis[1].kod === 1);
       check('back-ups: onversleutelde namen zijn niet meer te downloaden', backupFile('20261006-030000', 'database.dump') === '' && backupFile('20261006-030000', 'uploads.tar.gz') === '' && backupFile('20261006-030000', 'systeem.tar.gz') === '');
     } finally {
       if (vorigeUploads === undefined) delete process.env.UPLOADS_DIR; else process.env.UPLOADS_DIR = vorigeUploads;

@@ -7,8 +7,8 @@
 //  - rechten (vlaggen) zijn alleen-lezen: ze staan in /etc/mijn-ruimte/mcp-rechten.json (root), de site kan ze niet wijzigen;
 //  - geen deur-aanroepen, geen bridge-token, geen klad (staging), geen install/backup-hulpmiddelen meer: uitrollen gaat alleen
 //    via een ondertekend pakket (deploy/RUNBOOK-VEILIGE-UITROL.md);
-//  - het archief is één age-versleuteld bestand in een root-map; downloaden alleen door de eigenaar na step-up via een eenmalige
-//    willekeurige downloadId (5 minuten).
+//  - het archief is age-versleuteld en staat in een root-map; er blijven twee generaties over. Downloaden alleen door de eigenaar
+//    na step-up via een eenmalige willekeurige downloadId (5 minuten).
 import { huidigeRuimte } from './mcp-namens';
 import { ruimteVanSessie, scheidingAan } from './ruimte-sessie';
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
@@ -405,18 +405,28 @@ function parseKit(raw: string) {
   for (const row of raw.split("\n")) { const cut = row.indexOf("="); if (cut > 0) lines[row.slice(0, cut)] = row.slice(cut + 1).trim(); }
   return lines;
 }
-/** Het enige downloadbare archief (vaste naam in de root-map). */
+/** Eigen generatie van het volledige archief: mijn-ruimte-<stempel>-volledig.tar.age (de oude, onversleutelde namen horen hier niet bij). */
+const ARCHIEF_GENERATIE = /^mijn-ruimte-\d{8}-\d{6}-volledig\.tar\.age$/;
+/** Downloadbare archieven: de vaste naam (laatste generatie) of één van de bewaarde generaties, in de root-map. */
 export function archiveFile(name: string = ARCHIEF_BESTAND) {
-  return name === ARCHIEF_BESTAND ? path.join(archiefUit(), ARCHIEF_BESTAND) : "";
+  return name === ARCHIEF_BESTAND || ARCHIEF_GENERATIE.test(name) ? path.join(archiefUit(), name) : "";
 }
 type ArchiveRow = { at: string; name: string; bytes: number; kod: number; baza: number; fajly: number; sekrety: number; kept?: boolean };
-async function archiveHistory(): Promise<ArchiveRow[]> {
+/** Geschiedenis: wat er op schijf staat (de bewaarde generaties) is leidend; een oude regel zonder bestand blijft alleen als notitie. */
+export async function archiveHistory(): Promise<ArchiveRow[]> {
   let saved: ArchiveRow[] = [];
   try { const data = JSON.parse(await readFile(path.join(archiefUit(), "history.json"), "utf8")); if (Array.isArray(data)) saved = data.filter((r) => r && typeof r.name === "string"); } catch { /* nog geen geschiedenis */ }
-  let current = "";
-  try { current = JSON.parse(await readFile(path.join(archiefUit(), "archief-laatste.json"), "utf8")).naam || ""; } catch { /* geen archief */ }
-  return saved.map((r) => ({ at: String(r.at || ""), name: r.name, bytes: Number(r.bytes || 0), kod: Number(r.kod || 0), baza: Number(r.baza || 0), fajly: Number(r.fajly || 0), sekrety: Number(r.sekrety || 0), kept: r.name === current }))
-    .sort((a, b) => b.at.localeCompare(a.at)).slice(0, 30);
+  const onDisk = new Map<string, { at: string; bytes: number }>();
+  try {
+    for (const name of await readdir(archiefUit())) {
+      if (!ARCHIEF_GENERATIE.test(name)) continue;
+      const info = await stat(path.join(archiefUit(), name));
+      onDisk.set(name, { at: info.mtime.toISOString(), bytes: info.size });
+    }
+  } catch { /* uitgiftemap nog niet aanwezig */ }
+  const rows: ArchiveRow[] = saved.map((r) => ({ at: String(r.at || ""), name: r.name, bytes: Number(r.bytes || 0), kod: Number(r.kod || 0), baza: Number(r.baza || 0), fajly: Number(r.fajly || 0), sekrety: Number(r.sekrety || 0), kept: onDisk.has(r.name) }));
+  for (const [name, info] of onDisk) if (!rows.some((r) => r.name === name)) rows.push({ at: info.at, name, bytes: info.bytes, kod: 0, baza: 0, fajly: 0, sekrety: 0, kept: true });
+  return rows.sort((a, b) => b.at.localeCompare(a.at) || b.name.localeCompare(a.name)).slice(0, 30);
 }
 function kitPayload(lines: Record<string, string>, history: ArchiveRow[]) {
   const state = lines.state || "idle";
@@ -780,13 +790,20 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       catch (err) { return error(err instanceof Error ? err.message : "ARCHIVE_FAILED", 500); }
     })],
     // Stap 1: na step-up een eenmalige downloadId (5 minuten). Stap 2: /api/mcp/archive/file met die id.
-    "POST /api/mcp/archive/link": [gate("owner", { stepUp: true }, async (_ctx, auth) => {
-      const file = archiveFile();
-      let meta: { naam?: string; bytes?: number } = {};
-      try { if (!(await stat(file)).isFile()) return error("ARCHIVE_MISSING", 404); meta = JSON.parse(await readFile(path.join(archiefUit(), "archief-laatste.json"), "utf8")); } catch { return error("ARCHIVE_MISSING", 404); }
-      const filename = /^[A-Za-z0-9._-]{1,120}$/.test(String(meta.naam || "")) ? String(meta.naam) : ARCHIEF_BESTAND;
+    // Zonder naam: de laatste generatie. Met naam: één van de twee bewaarde generaties (strikte naam, zie archiveFile).
+    "POST /api/mcp/archive/link": [gate("owner", { stepUp: true }, async (ctx, auth) => {
+      const gevraagd = String(bodyOf(ctx.body).name || ARCHIEF_BESTAND);
+      const file = archiveFile(gevraagd);
+      if (!file) return error("ARCHIVE_NAME", 400);
+      let bytes = 0;
+      try { const info = await stat(file); if (!info.isFile()) return error("ARCHIVE_MISSING", 404); bytes = info.size; } catch { return error("ARCHIVE_MISSING", 404); }
+      // De vaste naam krijgt de echte naam van zijn generatie (uit archief-laatste.json), zodat de download de juiste naam heeft.
+      let filename = gevraagd;
+      if (gevraagd === ARCHIEF_BESTAND) {
+        try { const meta = JSON.parse(await readFile(path.join(archiefUit(), "archief-laatste.json"), "utf8")) as { naam?: string }; if (ARCHIEF_GENERATIE.test(String(meta.naam || ""))) filename = String(meta.naam); } catch { /* blijft de vaste naam */ }
+      }
       await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_archive_download_link", type: "beveiliging", result: "ok", details: { name: filename } }).catch(() => undefined);
-      return json({ ...issueDownload(auth.user.id, "archive", file, filename), name: filename, bytes: Number(meta.bytes || 0) });
+      return json({ ...issueDownload(auth.user.id, "archive", file, filename), name: filename, bytes });
     })],
     "POST /api/mcp/archive/file": [gate("owner", {}, async (ctx, auth) => {
       const row = redeemDownload(String(bodyOf(ctx.body).downloadId || ""), auth.user.id, "archive");

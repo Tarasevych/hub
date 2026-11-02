@@ -24,6 +24,8 @@ while [ $# -gt 0 ]; do
     *) echo "onbekende optie: $1" >&2; exit 2 ;;
   esac
 done
+# De naam wordt in shell-opdrachten gebruikt: alleen een gewone PostgreSQL-naam toestaan.
+[[ "$DB_NAAM" =~ ^[a-z_][a-z0-9_]{0,62}$ ]] || { echo "FOUT: ongeldige databasenaam voor --db: $DB_NAAM" >&2; exit 2; }
 
 stap() { echo; echo "==> $*"; }
 fout() { echo "FOUT: $*" >&2; exit 1; }
@@ -88,9 +90,23 @@ fi
 stap "8/10 Bestanden terugzetten"
 doe_sh "install -d /srv/data && age --decrypt -i '$SLEUTEL' '$HIER/fajly/uploads.tar.gz.age' | tar -xzpf - -C /srv/data && chown -R mijnruimte:mijnruimte /srv/data/uploads"
 
+# Git-opslagplaatsen (kod/repos/*.bundle, index in INDEX.tsv) terugzetten op hun eigen pad onder /srv/mijn-ruimte.
+# Bestaat het pad al, dan wordt er niets overschreven. Een mislukte bundel stopt het herstel niet; het wordt wel gemeld.
+if [ -f "$HIER/kod/repos/INDEX.tsv" ]; then
+  while IFS=$'\t' read -r naam rel; do
+    [ -n "${naam:-}" ] && [ -n "${rel:-}" ] || continue
+    case "$rel" in /*|*..*) echo "  overgeslagen (ongeldig pad): $rel"; continue ;; esac
+    [ -f "$HIER/kod/repos/$naam.bundle" ] || { echo "  bundel ontbreekt: $naam"; continue; }
+    doel="/srv/mijn-ruimte/$rel"
+    if [ -e "$doel" ]; then echo "  bestaat al, niet overschreven: $doel"; continue; fi
+    doe git clone --quiet "$HIER/kod/repos/$naam.bundle" "$doel" && doe chown -R mijnruimte:mijnruimte "$doel" \
+      || echo "  LET OP: opslagplaats $rel kon niet worden teruggezet (zie de melding hierboven)"
+  done < "$HIER/kod/repos/INDEX.tsv"
+fi
+
 stap "9/10 Site bouwen en starten (voor deze architectuur, zonder extra back-up: dit archief is de back-up)"
 doe_sh "ZONDER_BACKUP=1 NODE=/usr/bin/node bash '$CODE/deploy/installeer-app.sh' installeren '$CODE'"
-doe_sh "if [ -f '$HIER/kod/mcp.tar.gz' ]; then tar -xzpf '$HIER/kod/mcp.tar.gz' -C /srv/mijn-ruimte && chown -R mijnruimte:mijnruimte /srv/mijn-ruimte/mcp /srv/mijn-ruimte/mcp-staging 2>/dev/null; if [ -f /etc/systemd/system/mijn-ruimte-mcp.service ]; then systemctl enable --now mijn-ruimte-mcp.service || true; fi; fi; true"
+doe_sh "if [ -f '$HIER/kod/mcp.tar.gz' ]; then tar -xzpf '$HIER/kod/mcp.tar.gz' -C /srv/mijn-ruimte && chown -R mijnruimte:mijnruimte /srv/mijn-ruimte/mcp 2>/dev/null; if [ -f /etc/systemd/system/mijn-ruimte-mcp.service ]; then systemctl enable --now mijn-ruimte-mcp.service || true; fi; fi; true"
 
 stap "10/10 Tunnel en gezondheidscontrole"
 if [ "$TUNNEL" -eq 1 ]; then
