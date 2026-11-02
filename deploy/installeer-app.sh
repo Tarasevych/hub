@@ -1117,8 +1117,12 @@ installeren() {
     install -d -o root -g root -m 0711 /var/lib/mijn-ruimte-archief
     install -d -o root -g root -m 0700 /var/lib/mijn-ruimte-archief/werk
     install -d -o root -g "$GEBRUIKER" -m 0750 /var/lib/mijn-ruimte-archief/uitgifte
-    # Oude, deels onversleutelde archieven in de app-map weghalen (bevatten broncode, units en sudoers in leesbare vorm).
-    find /srv/data/uploads/mcp-archives -maxdepth 1 -type f \( -name 'mijn-ruimte-*-volledig.tar' -o -name 'mijn-ruimte-*.tar.gz' -o -name 'kit-status.txt' -o -name 'history.json' \) -delete 2>/dev/null || true
+    # Oude, deels onversleutelde archieven in de app-map blijven staan: er wordt NIETS automatisch verwijderd. Ze wel melden,
+    # want ze bevatten broncode en units (en in oude versies sudoers) leesbaar. De eigenaar controleert en verwijdert ze zelf.
+    oud_archief="$(find /srv/data/uploads/mcp-archives -maxdepth 1 -type f \( -name 'mijn-ruimte-*-volledig.tar' -o -name 'mijn-ruimte-*.tar.gz' \) 2>/dev/null | wc -l || true)"
+    if [ "${oud_archief:-0}" -gt 0 ]; then
+      waarschuwing "er staan $oud_archief oud(e) onversleuteld(e) archief/archieven in /srv/data/uploads/mcp-archives; die zijn NIET verwijderd. Controleer ze en verwijder ze zelf (ls -l /srv/data/uploads/mcp-archives)."
+    fi
     systemctl enable --now mijn-ruimte-archief.path >/dev/null 2>&1 || waarschuwing "mijn-ruimte-archief.path kon niet worden gestart"
     melding "archief-hulp bijgewerkt"
   fi
