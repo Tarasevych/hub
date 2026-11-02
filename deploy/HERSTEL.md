@@ -25,7 +25,8 @@ en gaat de klare tekst via SSH rechtstreeks de nieuwe VM in.
 ## Snelste weg: het volledige archief (één bestand, één opdracht)
 Site `mcp.tarasevych.com` → «Архів на ПК» → «Зібрати повний архів» maakt `mijn-ruimte-<stempel>-volledig.tar.age` (root-script
 `/usr/local/sbin/mijn-ruimte-archief`, gestart door `mijn-ruimte-archief.path`; voortgang in `kit-status.txt`; uitvoer in de root-map
-`/var/lib/mijn-ruimte-archief/uitgifte` onder de vaste naam `archief-laatste.tar.age`). Downloaden kan alleen de eigenaar, na step-up, via een
+`/var/lib/mijn-ruimte-archief/uitgifte` onder de vaste naam `archief-laatste.tar.age`; de laatste twee generaties blijven staan, de oudste
+verdwijnt; `ARCHIEF_BEWAAR` in het script regelt het aantal). Downloaden kan alleen de eigenaar, na step-up, via een
 eenmalige download-id. Het **hele archief** is met age versleuteld voor de bestaande publieke sleutel (sinds 2026-10; daarvoor waren alleen database,
 bestanden en geheimen versleuteld). Inhoud: code, MCP-deur, git-bundels, database + rollen, bestanden, systeemunits/tunnelconfig (geen sudoers), geheimen,
 `LEES-MIJ.txt`, `SHA256SUMS` en `vidnovyty.sh`. Op een nieuwe Ubuntu/Debian-machine (virtueel of fysiek, x86-64 of ARM64):
@@ -37,7 +38,12 @@ sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt              #
 ```
 Het script controleert de sommen, installeert Node/PostgreSQL 17/age/cloudflared, ontsleutelt, herstelt database/bestanden, bouwt de site voor deze
 architectuur (`installeer-app.sh`) en wacht op de gezondheidscontrole. Nog niet op een lege machine volledig doorlopen; de proefrun en het maken zijn
-getest op de productie-VM. De handmatige stappen hieronder blijven de bewezen weg.
+getest op de productie-VM. De tweegeneratieregeling, de harde link en het herstel van de git-opslagplaatsen zijn nog niet op de VM getest.
+De handmatige stappen hieronder blijven de bewezen weg.
+
+Git-opslagplaatsen (`kod/repos/*.bundle`, met `INDEX.tsv`) worden teruggezet op hun eigen pad onder `/srv/mijn-ruimte`, alleen als dat pad nog
+niet bestaat. Oude, onversleutelde archieven (`mijn-ruimte-*-volledig.tar`, `*.tar.gz`) in `/srv/data/uploads/mcp-archives` verwijdert de
+installer **niet**; hij meldt ze alleen. Controleer ze en verwijder ze zelf.
 
 ## 0. Controleren (PowerShell op de pc)
 ```powershell
