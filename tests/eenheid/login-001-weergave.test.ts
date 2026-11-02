@@ -47,5 +47,15 @@ export async function main(): Promise<number> {
     css.includes('@media(max-width:700px)') && css.includes('@media(prefers-reduced-motion:reduce)'));
   check('alle bestaande themavarianten blijven ondersteund',
     css.includes('theme-dark') && css.includes('theme-plum-dark') && css.includes('theme-plum-light'));
+  check('afgemeld aanmeldvenster gebruikt de goedgekeurde Dark Soft UI, zonder dubbele instellingen',
+    menu.includes("data-login-popup={!displayUser ? 'LOGIN-001' : undefined}")
+    && menu.includes('mr-login-popup-identity') && menu.includes('mr-login-popup-cta')
+    && menu.includes('{displayUser ? (am2 ? controlsV2 : controls) : null}')
+    && css.includes(".canonical-account-panel[data-login-popup='LOGIN-001']")
+    && css.includes('.mr-login-popup-symbol') && css.includes('background:#f0f0f1!important'));
+  check('aanmeldknop bevat geen onafgemaakte tekst',
+    menu.includes("firstLogin: 'Обрати спосіб входу'")
+    && menu.includes("firstLogin: 'Aanmeldmethode kiezen'")
+    && !menu.includes("firstLogin: 'Увійти в обліковий запис через'"));
   return einde();
 }

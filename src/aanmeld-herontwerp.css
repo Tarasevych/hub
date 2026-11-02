@@ -130,3 +130,66 @@
  .mr-sign-in-content{transition:none}
  .canonical-signed-out.mr-sign-in .mr-sign-in-main-button{animation:none!important}
 }
+
+
+/* LOGIN-001 · Dark Soft UI: alleen het afgemelde aanmeldvenster; accountinstellingen blijven buiten dit venster. */
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-account-panel[data-login-popup='LOGIN-001']{
+ --canonical-text:#f4f2f4;--canonical-muted:#c6c0c7;--canonical-line:rgba(255,255,255,.1);--canonical-panel:#2b2a2c;
+ position:fixed!important;left:50%!important;right:auto!important;top:50%!important;bottom:auto!important;
+ transform:translate(-50%,-50%)!important;z-index:600!important;box-sizing:border-box;
+ width:min(480px,calc(100vw - 28px))!important;max-height:calc(100dvh - 28px)!important;
+ overflow-y:auto;overscroll-behavior:contain;padding:clamp(28px,5vw,42px)!important;
+ border:1px solid rgba(255,255,255,.07)!important;border-radius:26px!important;
+ background:radial-gradient(95% 45% at 84% 0%,rgba(122,68,106,.36),transparent 78%),
+            radial-gradient(85% 40% at 0% 0%,rgba(158,123,75,.27),transparent 75%),#2b2a2c!important;
+ color:#f4f2f4!important;box-shadow:0 24px 70px rgba(0,0,0,.48),0 0 0 100vmax rgba(0,0,0,.46)!important;
+ backdrop-filter:none;
+}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-panel[data-login-popup='LOGIN-001'] .mr-login-popup-main{display:grid;gap:22px;min-width:0}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-panel[data-login-popup='LOGIN-001'] .mr-login-popup-heading{
+ display:flex;flex-direction:column;align-items:center;gap:0;padding:0!important;margin:0;text-align:center;
+ font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+.mr-login-popup-identity{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 0 27px}
+.mr-login-popup-symbol{width:60px;height:60px;display:grid;place-items:center;border-radius:16px;background:#09090b;color:white}
+.mr-login-popup-symbol svg{width:31px;height:31px;stroke-width:1.65}
+.mr-login-popup-dots{font-size:20px;letter-spacing:2px;color:#82777d}
+.canonical-chrome:has(.mr-sign-in) .mr-login-popup-heading h2{
+ margin:0!important;color:#f4f2f4!important;font-family:inherit!important;font-size:clamp(1.32rem,4vw,1.52rem)!important;
+ font-weight:700!important;letter-spacing:-.025em!important;line-height:1.2!important
+}
+.canonical-chrome:has(.mr-sign-in) .mr-login-popup-heading p{
+ margin:10px 0 0!important;color:#cdc8cd!important;font-size:.92rem!important;line-height:1.5!important;max-width:350px
+}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-panel[data-login-popup='LOGIN-001'] .canonical-account-list{
+ display:grid;gap:8px;max-height:250px;overflow-y:auto
+}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-panel[data-login-popup='LOGIN-001'] .canonical-account-row{
+ background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:13px
+}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-panel[data-login-popup='LOGIN-001'] .canonical-account-copy,
+.canonical-chrome:has(.mr-sign-in) .canonical-account-panel[data-login-popup='LOGIN-001'] .canonical-account-select{color:#f4f2f4!important}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-panel[data-login-popup='LOGIN-001'] .canonical-account-copy small{color:#c6c0c7!important}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-panel[data-login-popup='LOGIN-001'] .mr-login-popup-action{
+ margin:0;padding:0!important;border:0!important;background:transparent!important
+}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-panel[data-login-popup='LOGIN-001'] .mr-login-popup-cta{
+ display:flex!important;width:100%;min-height:44px;align-items:center;justify-content:center;margin:0!important;padding:12px 18px!important;
+ border:0!important;border-radius:999px!important;background:#f0f0f1!important;color:#272629!important;
+ box-shadow:none!important;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:.92rem!important;
+ font-weight:600!important;text-align:center;cursor:pointer
+}
+.canonical-chrome:has(.mr-sign-in) .mr-login-popup-cta svg{display:none}
+.canonical-chrome:has(.mr-sign-in) .mr-login-popup-cta:hover:not(:disabled){background:#fff!important}
+.canonical-chrome:has(.mr-sign-in) .mr-login-popup-cta:focus-visible{outline:2px solid #ff88ba;outline-offset:4px}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-panel[data-login-popup='LOGIN-001'] .canonical-account-legal{
+ display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:24px 0 0;padding-top:17px;
+ border-top:1px solid rgba(255,255,255,.11);color:#cac5cb!important;font-size:.78rem;text-align:center
+}
+.canonical-chrome:has(.mr-sign-in) .canonical-account-panel[data-login-popup='LOGIN-001'] .canonical-account-legal a{color:#cac5cb!important}
+@media(max-width:600px){
+ .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-account-panel[data-login-popup='LOGIN-001']{
+  width:calc(100vw - 24px)!important;max-height:calc(100dvh - 24px)!important;padding:28px 22px!important;border-radius:24px!important
+ }
+ .mr-login-popup-symbol{width:54px;height:54px}
+}

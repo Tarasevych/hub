@@ -120,7 +120,7 @@ const copy = {
     firstLoginHint: 'Увійдіть, щоб відкрити свій простір',
     none: 'Відомих облікових записів немає.',
     add: 'Додати інший обліковий запис',
-    firstLogin: 'Увійти в обліковий запис через',
+    firstLogin: 'Обрати спосіб входу',
     manage: 'Керування обліковим записом',
     show: 'Показати інші облікові записи',
     hide: 'Сховати інші облікові записи',
@@ -165,7 +165,7 @@ const copy = {
     firstLoginHint: 'Meld u aan om uw ruimte te openen',
     none: 'Er zijn geen bekende accounts.',
     add: 'Ander account toevoegen',
-    firstLogin: 'Aanmelden bij een account via',
+    firstLogin: 'Aanmeldmethode kiezen',
     manage: 'Account beheren',
     show: 'Andere accounts tonen',
     hide: 'Andere accounts verbergen',
@@ -728,7 +728,7 @@ export default function CanonicalAccountMenu({
       </button>
 
       {open && (
-        <section className='canonical-account-panel' role='dialog' aria-label={t.accounts}>
+        <section className='canonical-account-panel' data-login-popup={!displayUser ? 'LOGIN-001' : undefined} role='dialog' aria-label={displayUser ? t.accounts : (lang === 'uk' ? 'Вхід у Мій простір' : 'Aanmelden bij Mijn Ruimte')}>
           {displayUser ? (
             <>
               <header className='canonical-current-account'>
@@ -956,26 +956,30 @@ export default function CanonicalAccountMenu({
               )}
             </>
           ) : (
-            <>
-              <header className='canonical-account-heading'>
-                <KeyRound />
-                <div>
-                  <h2>{t.accounts}</h2>
-                  <p>{model.isFirstLogin ? t.firstLoginHint : t.choose}</p>
+            <div className='mr-login-popup-main'>
+              <header className='mr-login-popup-heading'>
+                <div className='mr-login-popup-identity' aria-hidden='true'>
+                  <span className='mr-login-popup-symbol'><UserRound /></span>
+                  <span className='mr-login-popup-dots'>•••</span>
+                  <span className='mr-login-popup-symbol'><ShieldCheck /></span>
                 </div>
+                <h2>{lang === 'uk' ? 'Увійдіть у Мій простір' : 'Meld u aan bij Mijn Ruimte'}</h2>
+                <p>{model.isFirstLogin
+                  ? (lang === 'uk' ? 'Продовжіть, щоб вибрати спосіб входу.' : 'Ga verder om een aanmeldmethode te kiezen.')
+                  : (lang === 'uk' ? 'Виберіть збережений акаунт або ввійдіть іншим способом.' : 'Kies een bewaard account of meld u op een andere manier aan.')}</p>
               </header>
               {loading && <p className='canonical-account-state'>{t.loading}</p>}
               {loadFailed && <p className='canonical-account-state error'>{t.loadFailed}</p>}
               {!model.isFirstLogin && list}
-              <div className='canonical-add-account-control' data-add-account-control='composite'>
-                <button type='button' className='canonical-menu-action add-account' onClick={add} disabled={busy}>
+              <div className='canonical-add-account-control mr-login-popup-action' data-add-account-control='composite'>
+                <button type='button' className='canonical-menu-action add-account mr-login-popup-cta' onClick={add} disabled={busy}>
                   {model.isFirstLogin ? <KeyRound /> : <Plus />}
                   <span>{model.isFirstLogin ? t.firstLogin : t.add}</span>
                 </button>
               </div>
-            </>
+            </div>
           )}
-          {am2 ? controlsV2 : controls}
+          {displayUser ? (am2 ? controlsV2 : controls) : null}
           {am2 && displayUser && tech.profiel && v2 ? (
             <div className='am2-ruimte' data-ruimtes-menu='1' data-am2-blok='ruimte'>
               <Suspense fallback={null}><RuimteWissel taal={lang === 'uk' ? 'uk' : 'nl'} compact /></Suspense>
