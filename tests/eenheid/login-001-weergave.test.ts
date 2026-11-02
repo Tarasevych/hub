@@ -63,10 +63,35 @@ export async function main(): Promise<number> {
     && accountCss.includes('radial-gradient(')
     && accountCss.includes('.canonical-current-account+.canonical-menu-action.primary')
     && accountCss.includes('background:#f0eef0'));
-  check('bestaande ruimtewissel en taal-/themakeuze behouden zichtbare actieve stand',
-    accountCss.includes(".am2-ruimte .rw-knop[aria-checked='true']")
+  check('ruimtewissel blijft een echte tweewegknop, thema en taal behouden hun actieve stand',
+    accountCss.includes('.am2-ruimte .rw-prive[aria-checked=')
     && accountCss.includes('.am2-seg button.active')
-    && accountCss.includes('.am2-sessie-rij .logout-current'));
+    && accountCss.includes('.am2-ruimte .rw-tech .rw-stand'));
+  check('goedkeuring eigenaar: ruimte direct na accountbeheer en voor acties',
+    menu.indexOf("data-am2-blok='ruimte'") > menu.indexOf("className='canonical-menu-action primary'")
+    && menu.indexOf("data-am2-blok='ruimte'") < menu.indexOf("data-am2-blok='acties'")
+    && menu.includes('data-tech-patroon={tech.profiel.band.patroon}'));
+  check('site-instellingen verduidelijkt, met behoud van de accountbeheeractie',
+    menu.includes("'Налаштування сайту'") && menu.includes("'Site-instellingen'")
+    && menu.includes('onSettings();') && menu.includes('onManage();'));
+  check('afmelden staat rood onder taal/thema en net voor juridische links',
+    menu.indexOf("data-am2-blok='afmelden'") > menu.indexOf('{displayUser ? (am2 ? controlsV2 : controls) : null}')
+    && accountCss.includes('.am2-afmelden .logout-current')
+    && accountCss.includes('color:#ffadbf'));
+  check('technische knop erft de serverkleur met contrasttekst, strepen en stippen',
+    menu.includes("tech.catalogus.kleuren[tech.profiel.band.kleur]")
+    && accountCss.includes('var(--am2-tech-bg')
+    && accountCss.includes('var(--am2-tech-fg')
+    && accountCss.includes("[data-tech-patroon='strepen']")
+    && accountCss.includes("[data-tech-patroon='stippen']"));
+  check('kleine stippen blijven buiten de lettervormen door een effen teksteiland',
+    accountCss.includes("[data-tech-patroon='stippen'] .rw-tech :is(.rw-naam,.rw-stand)")
+    && accountCss.includes('background:var(--am2-tech-bg')
+    && accountCss.includes('box-decoration-break:clone'));
+  check('thema staat boven taal, beide met zichtbare verduidelijkende rijtitel',
+    menu.indexOf("aria-label={t.theme}", menu.indexOf('const controlsV2')) > menu.indexOf('const controlsV2')
+    && menu.indexOf("aria-label={t.theme}", menu.indexOf('const controlsV2')) < menu.indexOf("aria-label={t.language}", menu.indexOf('const controlsV2'))
+    && menu.includes('am2-rij-zichtbaar'));
   check('beheerknop is inhoudsbreed in plaats van kaartbreed',
     accountCss.includes('min-height:38px;width:fit-content;max-width:100%;margin:0 auto 6px')
     && !accountCss.includes('min-height:44px;width:100%;margin:0 0 10px'));
@@ -76,6 +101,6 @@ export async function main(): Promise<number> {
     && accountCss.includes('.am2-rij .language-switch button{min-width:76px'));
   check('ruimtewissel blijft tweedelig maar niet rand-tot-rand',
     accountCss.includes('width:min(330px,100%);margin:0 auto')
-    && accountCss.includes('min-height:42px;padding:4px 9px'));
+    && accountCss.includes('min-height:52px;padding:6px 8px'));
   return einde();
 }

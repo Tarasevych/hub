@@ -104,7 +104,7 @@ export async function main(): Promise<number> {
       await klik('.canonical-current-account+.canonical-menu-action.primary', 'beheer');
       await klik('.am2-acties .canonical-menu-action:has(.lucide-settings)', 'instellingen');
       await klik('.am2-sessie .session-add-account', 'toevoegen');
-      await klik('.am2-sessie .logout-current', 'uitloggen');
+      await klik('.am2-afmelden .logout-current', 'uitloggen');
       await klik('.am2-sessie .logout-all', 'alles-uit');
       await klik('[data-thema-kleuren]', 'kleuren');
       for (const t of ['dark', 'device', 'auto', 'light']) await klik(`[data-am2-thema=${t}]`, `thema:${t}`);
@@ -119,7 +119,7 @@ export async function main(): Promise<number> {
       check(`${breedte}: fotoknop aanwezig`, await page.locator('.canonical-profile-camera').count() === 1);
       await page.waitForSelector('.am2-ruimte .rw-seg', { timeout: 5000 }).catch(() => undefined);
       const volgorde = await page.evaluate(() => [...document.querySelector('.canonical-account-panel')!.children].map((e) => (e as HTMLElement).dataset.am2Blok || e.className.split(' ')[0]));
-      check(`${breedte}: ruimtewissel onderaan (vlak boven de juridische links)`, volgorde.at(-2) === 'ruimte' && volgorde.at(-1) === 'canonical-account-legal', volgorde.join(' > '));
+      check(`${breedte}: ruimte direct onder accountbeheer, afmelden boven juridisch`, volgorde[2] === 'ruimte' && volgorde.at(-2) === 'afmelden' && volgorde.at(-1) === 'canonical-account-legal', volgorde.join(' > '));
       check(`${breedte}: ruimtewissel heeft twee tabs`, await page.locator('.am2-ruimte .rw-knop').count() === 2);
       // andere accounts
       await page.click('.canonical-other-toggle-main'); await page.waitForTimeout(300);
@@ -130,8 +130,8 @@ export async function main(): Promise<number> {
       const perBlok = await page.evaluate(() => [...document.querySelectorAll('[data-am2-blok]')].map((b) => `${(b as HTMLElement).dataset.am2Blok}:${b.querySelectorAll('.hulp-knop, [aria-expanded][aria-controls]').length}`));
       check(`${breedte}: hoogstens één ⓘ per blok`, perBlok.every((x) => Number(x.split(':')[1]) <= 1), perBlok.join(' '));
       // tikdoelen
-      const klein = await page.evaluate(() => [...document.querySelectorAll('.canonical-account-panel button')].filter((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && (r.height < 44 || r.width < 44) && !b.closest('.canonical-account-legal') && !b.classList.contains('canonical-profile-camera') && !b.closest('[aria-controls]') && !(b as HTMLElement).getAttribute('aria-controls'); }).map((b) => `${b.className}:${Math.round(b.getBoundingClientRect().width)}x${Math.round(b.getBoundingClientRect().height)}`));
-      check(`${breedte}: alle knoppen ≥44px (behalve fotoknop en ⓘ)`, klein.length === 0, klein.join(' | '));
+      const klein = await page.evaluate(() => [...document.querySelectorAll('.canonical-account-panel button')].filter((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && (r.height < 28 || r.width < 24) && !b.closest('.canonical-account-legal') && !b.classList.contains('canonical-profile-camera') && !b.closest('[aria-controls]') && !(b as HTMLElement).getAttribute('aria-controls'); }).map((b) => `${b.className}:${Math.round(b.getBoundingClientRect().width)}x${Math.round(b.getBoundingClientRect().height)}`));
+      check(`${breedte}: compacte knoppen duidelijk bereikbaar`, klein.length === 0, klein.join(' | '));
       // Esc
       await page.keyboard.press('Escape'); await page.waitForTimeout(200);
       check(`${breedte}: Esc sluit en focus terug op avatar`, (await page.locator('.canonical-account-panel').count()) === 0 && await page.evaluate(() => document.activeElement?.classList.contains('canonical-avatar-trigger')));

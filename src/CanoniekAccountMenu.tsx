@@ -342,6 +342,12 @@ export default function CanonicalAccountMenu({
   const tech = useTech();
   const v2 = useRuimtesV2();
   const am2 = useAccountmenuV2();
+  // Dezelfde serverkeuze als de technische band: geen eigen kleurenlijst in het accountmenu.
+  const am2Kleur = tech.profiel && tech.catalogus ? tech.catalogus.kleuren[tech.profiel.band.kleur] : null;
+  const am2KleurStijl = {
+    '--am2-tech-bg': am2Kleur?.bg ?? '#f2b705',
+    '--am2-tech-fg': am2Kleur?.fg ?? '#1d1300',
+  } as CSSProperties;
   useEffect(() => { if (v2) startRuimtes(); }, [v2]);
   // «Вийти з акаунта на сайті» / «Вийти всюди» uit het venster «Вийти» (src/tech/ruimtes/UitloggenKeuze.tsx) → de echte afmelding hier.
   useEffect(() => {
@@ -642,20 +648,9 @@ export default function CanonicalAccountMenu({
   ];
   const controlsV2 = (
     <div className='am2-blok am2-weergave' data-am2-blok='weergave'>
-      <div className='am2-rij' role='group' aria-label={t.language}>
-        <span className='am2-rij-kop' title={t.language}><Languages aria-hidden='true' /><span className='am2-verborgen'>{t.language}</span></span>
-        <div className='canonical-segmented am2-seg language-switch' role='group' aria-label={t.language}>
-          <button type='button' className={lang === 'uk' ? 'active' : ''} aria-pressed={lang === 'uk'} onClick={() => onLanguage('uk')} title='Українська' lang='uk'>
-            <span className='am2-vlag' data-am2-vlag='uk' aria-hidden='true'>🇺🇦</span><b>Укр.</b>
-          </button>
-          <button type='button' className={lang === 'nl' ? 'active' : ''} aria-pressed={lang === 'nl'} onClick={() => onLanguage('nl')} title='Nederlands' lang='nl'>
-            <span className='am2-vlag' data-am2-vlag='nl' aria-hidden='true'>🇳🇱</span><b>NL</b>
-          </button>
-        </div>
-        <Vraag help={V2_HULP.weergave} uk={lang === 'uk'} label={`${t.language} · ${t.theme}`} />
-      </div>
       <div className='am2-rij' role='group' aria-label={t.theme}>
-        <span className='am2-rij-kop' title={t.theme}><Palette aria-hidden='true' /><span className='am2-verborgen'>{t.theme}</span></span>
+        <span className='am2-rij-kop' title={t.theme}><Monitor aria-hidden='true' /></span>
+        <strong className='am2-rij-zichtbaar'>{t.theme}</strong>
         <div className='canonical-segmented am2-seg theme-switch' role='group' aria-label={t.theme}>
           {themaKnoppen.map((k) => (
             <button key={k.id} type='button' className={k.aan ? 'active' : ''} aria-pressed={k.aan} aria-label={k.label} title={k.id === 'auto' ? t.autoHint : k.label} onClick={() => onTheme(k.id)} data-thema-auto={k.id === 'auto' ? '' : undefined} data-am2-thema={k.id}>
@@ -671,6 +666,19 @@ export default function CanonicalAccountMenu({
         <button type='button' className='am2-ikoon' data-thema-kleuren aria-label={t.kleuren.replace('…', '')} title={t.kleuren.replace('…', '')} onClick={() => { close(); onThemeColors?.(); }}>
           <Settings />
         </button>
+      </div>
+      <div className='am2-rij' role='group' aria-label={t.language}>
+        <span className='am2-rij-kop' title={t.language}><Languages aria-hidden='true' /></span>
+        <strong className='am2-rij-zichtbaar'>{lang === 'uk' ? 'Мова інтерфейсу' : 'Interfacetaal'}</strong>
+        <div className='canonical-segmented am2-seg language-switch' role='group' aria-label={t.language}>
+          <button type='button' className={lang === 'uk' ? 'active' : ''} aria-pressed={lang === 'uk'} onClick={() => onLanguage('uk')} title='Українська' lang='uk'>
+            <span className='am2-vlag' data-am2-vlag='uk' aria-hidden='true'>🇺🇦</span><b>Укр.</b>
+          </button>
+          <button type='button' className={lang === 'nl' ? 'active' : ''} aria-pressed={lang === 'nl'} onClick={() => onLanguage('nl')} title='Nederlands' lang='nl'>
+            <span className='am2-vlag' data-am2-vlag='nl' aria-hidden='true'>🇳🇱</span><b>NL</b>
+          </button>
+        </div>
+        <Vraag help={V2_HULP.weergave} uk={lang === 'uk'} label={`${t.language} · ${t.theme}`} />
       </div>
     </div>
   );
@@ -774,6 +782,13 @@ export default function CanonicalAccountMenu({
                 />
               )}
 
+              {/* LOGIN-001: ruimte direct onder de accountbeheerknop, zonder toegang te wijzigen. */}
+              {am2 && tech.profiel && v2 ? (
+                <div className='am2-ruimte' data-ruimtes-menu='1' data-am2-blok='ruimte' data-tech-patroon={tech.profiel.band.patroon} style={am2KleurStijl}>
+                  <Suspense fallback={null}><RuimteWissel taal={lang === 'uk' ? 'uk' : 'nl'} compact /></Suspense>
+                </div>
+              ) : null}
+
               {/* Klacht 2: wat er net gebeurde, in gewone woorden — en de enige volgende stap die er is. */}
               {gewisseld && (() => {
                 const m = accountWisselMelding(lang, { techBeeindigd: gewisseld.techBeeindigd, heeftTechProfiel: !!tech.profiel, techActief: techActief(tech), techGeladen: tech.geladen });
@@ -853,7 +868,7 @@ export default function CanonicalAccountMenu({
                 <>
                   <div className='am2-blok am2-acties' data-am2-blok='acties'>
                     {onSettings && (
-                      <IconAction icon={<Settings />} label={t.settings} onClick={() => { close(); onSettings(); }} className='canonical-menu-action' />
+                      <IconAction icon={<Settings />} label={lang === 'uk' ? 'Налаштування сайту' : 'Site-instellingen'} onClick={() => { close(); onSettings(); }} className='canonical-menu-action' />
                     )}
                     {tech.profiel && v2 ? (
                       <IconAction icon={<KeyRound />} label={WOORDEN.toegangPagina[lang === 'uk' ? 'uk' : 'nl']} onClick={() => { close(); openTechVenster('toegang'); }} className='canonical-menu-action' />
@@ -870,9 +885,6 @@ export default function CanonicalAccountMenu({
                     <div className='am2-sessie-rij'>
                       {!expanded && (
                         <IconAction icon={<Plus />} label={lang === 'uk' ? 'Додати акаунт' : 'Account toevoegen'} onClick={add} className='canonical-menu-action add-account session-add-account' disabled={busy} />
-                      )}
-                      {onLogout && (
-                        <IconAction icon={<LogOut />} label={lang === 'uk' ? 'Вийти' : 'Afmelden'} onClick={() => { close(); onLogout(); }} className='canonical-menu-action logout-current' disabled={busy} />
                       )}
                       <Vraag help={V2_HULP.sessie} uk={lang === 'uk'} label={t.logout} />
                     </div>
@@ -980,9 +992,9 @@ export default function CanonicalAccountMenu({
             </div>
           )}
           {displayUser ? (am2 ? controlsV2 : controls) : null}
-          {am2 && displayUser && tech.profiel && v2 ? (
-            <div className='am2-ruimte' data-ruimtes-menu='1' data-am2-blok='ruimte'>
-              <Suspense fallback={null}><RuimteWissel taal={lang === 'uk' ? 'uk' : 'nl'} compact /></Suspense>
+          {am2 && displayUser && onLogout ? (
+            <div className='am2-blok am2-afmelden' data-am2-blok='afmelden'>
+              <IconAction icon={<LogOut />} label={lang === 'uk' ? 'Вийти' : 'Afmelden'} onClick={() => { close(); onLogout(); }} className='canonical-menu-action logout-current' disabled={busy} />
             </div>
           ) : null}
           {footer}
