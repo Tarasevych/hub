@@ -1,6 +1,7 @@
-// Tweedelige wisselknop «Звичайний простір | Технічний простір» (vlag tech-ruimtes-v2). Wisselt IN PLAATS: geen herladen, getypte
-// tekst en open vensters blijven; de band en html[data-tech] volgen via de gewone tech-status. Toetsenbord: ←/→ (of Home/End)
-// wisselt, Tab gaat verder. Elke klik toont wat er gebeurt («Перемикаю…») en hoe het afliep (role=status).
+// Eén schakelaar «Звичайний простір | Технічний простір» (vlag tech-ruimtes-v2): één spoor met een schuivend blokje onder de actieve
+// ruimte, geen twee losse knoppen. Wisselt IN PLAATS: geen herladen, getypte tekst en open vensters blijven; de band en html[data-tech]
+// volgen via de gewone tech-status. Toetsenbord: ←/→ (of Home/End) wisselt, Tab gaat verder. De stand staat er altijd onder (zelfde
+// tekst en plaats in beide standen), zodat «uit» er even rustig uitziet als «aan».
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { Home, Lock, ShieldCheck } from 'lucide-react';
 import { openTechVenster } from '../tech-opslag';
@@ -49,18 +50,21 @@ export default function RuimteWissel({ taal, compact = false }: { taal: Taal; co
   const redenGeen = uk ? 'Немає дозволу на технічний простір. Його дає власник сервера.' : 'Geen toestemming voor de technische ruimte. De servereigenaar geeft die.';
   return (
     <div className={`rw${compact ? ' rw-compact' : ''}`} data-ruimte-wissel={actief} data-ruimte-pauze={s.pauze ? '1' : '0'}>
-      <div className='rw-seg' role='radiogroup' aria-label={uk ? 'Простір' : 'Ruimte'} onKeyDown={toets} aria-busy={r.bezig === 'wisselen' || undefined}>
-        <button ref={refs.prive} type='button' role='radio' aria-checked={actief === 'prive'} tabIndex={actief === 'prive' ? 0 : -1} className='rw-knop rw-prive' data-ruimte='prive' title={`${RUIMTE_NAAM.prive[taal]} (${SNELTOETS_TEKST.prive})`} aria-keyshortcuts='Control+Alt+1' onClick={() => void kies('prive')}>
-          <Home aria-hidden='true' /><span className='rw-naam'>{RUIMTE_NAAM.prive[taal]}</span>
-        </button>
-        <button ref={refs.technisch} type='button' role='radio' aria-checked={actief === 'technisch'} tabIndex={actief === 'technisch' ? 0 : -1} aria-disabled={geenRecht || undefined}
-          title={geenRecht ? redenGeen : `${RUIMTE_NAAM.technisch[taal]} (${SNELTOETS_TEKST.technisch})`} aria-keyshortcuts='Control+Alt+2' className='rw-knop rw-tech' data-ruimte='technisch' onClick={() => void kies('technisch')}>
-          {geenRecht ? <Lock aria-hidden='true' /> : <ShieldCheck aria-hidden='true' />}
-          <span className='rw-naam'>{RUIMTE_NAAM.technisch[taal]}</span>
-          <small className='rw-stand' data-ruimte-stand='1'>{r.bezig === 'wisselen' ? (uk ? 'перемикаю…' : 'wisselen…') : stand}</small>
-        </button>
+      <div className='rw-rij'>
+        <div className='rw-seg' role='radiogroup' aria-label={uk ? 'Простір' : 'Ruimte'} data-stand={actief} onKeyDown={toets} aria-busy={r.bezig === 'wisselen' || undefined}>
+          <span className='rw-schuif' aria-hidden='true' />
+          <button ref={refs.prive} type='button' role='radio' aria-checked={actief === 'prive'} tabIndex={actief === 'prive' ? 0 : -1} className='rw-knop rw-prive' data-ruimte='prive' title={`${RUIMTE_NAAM.prive[taal]} (${SNELTOETS_TEKST.prive})`} aria-keyshortcuts='Control+Alt+1' onClick={() => void kies('prive')}>
+            <Home aria-hidden='true' /><span className='rw-naam'>{RUIMTE_NAAM.prive[taal]}</span>
+          </button>
+          <button ref={refs.technisch} type='button' role='radio' aria-checked={actief === 'technisch'} tabIndex={actief === 'technisch' ? 0 : -1} aria-disabled={geenRecht || undefined}
+            title={geenRecht ? redenGeen : `${RUIMTE_NAAM.technisch[taal]} (${SNELTOETS_TEKST.technisch})`} aria-keyshortcuts='Control+Alt+2' className='rw-knop rw-tech' data-ruimte='technisch' onClick={() => void kies('technisch')}>
+            {geenRecht ? <Lock aria-hidden='true' /> : <ShieldCheck aria-hidden='true' />}
+            <span className='rw-naam'>{RUIMTE_NAAM.technisch[taal]}</span>
+          </button>
+        </div>
+        {!compact ? <Vraag help={HELP} uk={uk} label={uk ? 'Простори' : 'Ruimtes'} /> : null}
       </div>
-      {!compact ? <Vraag help={HELP} uk={uk} label={uk ? 'Простори' : 'Ruimtes'} /> : null}
+      <small className='rw-stand' data-ruimte-stand='1'>{r.bezig === 'wisselen' ? (uk ? 'перемикаю…' : 'wisselen…') : stand}</small>
       {geenRecht && !compact ? <small className='rw-reden' data-ruimte-reden='1'>{redenGeen}</small> : null}
       {uitkomst ? <small className={`rw-uitkomst${uitkomst.ok ? ' is-ok' : ' is-fout'}`} role={uitkomst.ok ? 'status' : 'alert'} data-ruimte-uitkomst='1'>{uitkomst.tekst}</small> : null}
     </div>
