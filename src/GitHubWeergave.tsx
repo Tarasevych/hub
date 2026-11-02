@@ -282,7 +282,7 @@ function PadRij({ pad, tr, klaar, bezig, onActie, onOpenKluis }: { pad: KoppelPa
  * sleutelnaam, het doel en de termijn uit de kluis. De tokenwaarde staat nergens in het antwoord en wordt hier dus ook nooit
  * getoond; «Підключити» leidt naar het beveiligde veld van de kluis, waar passkey of TOTP nodig is.
  */
-function KoppelKaart({ tr, invoer, onHerlaad, ruimte }: { tr: Tr; invoer: KaartInvoer; onHerlaad: () => void; ruimte: RuimteFeiten | null }) {
+function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: KaartInvoer; onHerlaad: () => void; ruimte: RuimteFeiten | null; rate?: Rate }) {
   const uk = tr('uk', 'nl') === 'uk';
   const lang: 'uk' | 'nl' = uk ? 'uk' : 'nl';
   const staat = koppelKaartStaat(invoer);
@@ -417,6 +417,11 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte }: { tr: Tr; invoer: KaartI
       </button>
       <a className='gh-btn' href='https://github.com/settings/applications' target='_blank' rel='noopener noreferrer'><ExternalLink size={14} />{tr('Дозволи на GitHub', 'Toestemmingen op GitHub')}</a>
     </div>
+    {/* Resterend aantal GitHub-API-aanvragen, uit het antwoord van de server. */}
+    {rate ? <p className='gh-sub' title={tr('Залишок запитів до GitHub API', 'Resterende GitHub API-aanvragen')}>
+      {tr(`Залишок запитів: ${rate.remaining}`, `Resterende aanvragen: ${rate.remaining}`)}
+      {rate.reset ? tr(`; оновлення ліміту: ${new Date(rate.reset).toLocaleTimeString()}`, `; limiet vernieuwd om ${new Date(rate.reset).toLocaleTimeString()}`) : ''}
+    </p> : null}
     <p className='gh-sub'>{staat.via === 'oauth' || staat.via === 'app'
       ? tr('«Відключити» справді відкликає токен на GitHub (для OAuth — через DELETE /applications/{client_id}/token) і видаляє запис на сервері. Саме встановлення GitHub App прибирають на github.com.',
         '«Ontkoppelen» trekt de token echt in bij GitHub (bij OAuth via DELETE /applications/{client_id}/token) en verwijdert het record op de server. De installatie van een GitHub App haalt u weg op github.com.')
@@ -481,7 +486,7 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
   if (tab === 'accounts') return <div className="gh-root"><IntegratieStrook dienst='github' />
     <RuimteStrook feiten={koppeling.ruimte ?? null} lang={ruimteLang} />
     {koppeling.gesloten ? <RuimteGeslotenVlak gesloten={koppeling.gesloten} lang={ruimteLang} /> : null}
-    <KoppelKaart tr={tr} onHerlaad={koppeling.reload} ruimte={koppeling.ruimte ?? null}
+    <KoppelKaart tr={tr} onHerlaad={koppeling.reload} ruimte={koppeling.ruimte ?? null} rate={koppeling.rate}
       invoer={{ laden: koppeling.loading && !koppeling.data, fout: koppeling.code, feiten: koppeling.data }} />
   </div>;
   if (status.error) return <div className="gh-root"><Notice kind="error">{status.error}</Notice><button className="gh-btn" onClick={status.reload}><RefreshCw size={14} />{tr('Повторити', 'Opnieuw')}</button></div>;

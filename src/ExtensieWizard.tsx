@@ -10,7 +10,7 @@ import './extensie-wizard.css';
 type BrowserKey = 'chrome' | 'edge' | 'opera' | 'brave' | 'vivaldi' | 'firefox' | 'safari';
 type OsKey = 'windows' | 'macos' | 'linux';
 type Method = 'picker' | 'terminal' | 'helper' | 'zip' | 'crx';
-type Release = { version?: string; sha256?: string; storeUrl?: string; installers?: string[]; debug?: { file: string; sha256: string }; crx?: { file: string; extensionId: string; version: string } | null };
+type Release = { version?: string; sha256?: string; storeUrl?: string; installers?: string[]; diagnose?: { file: string; sha256: string; version?: string }; crx?: { file: string; extensionId: string; version: string } | null };
 type Presence = 'checking' | 'present' | 'absent';
 
 export type WizardProps = {
@@ -105,8 +105,8 @@ export default function ExtensionWizard(p: WizardProps) {
   const info = BROWSERS.find((b) => b.key === browser)!;
   const helperFile = os === 'windows' ? 'Install-MijnRuimte.cmd' : 'install-mijn-ruimte.sh';
   const hasHelper = (p.release.installers ?? []).includes(helperFile) && !debugMode;
-  // Окремий пакет «з режимом налагодження»: Chrome не дозволяє дозвіл debugger як необов'язковий, тож це свідомий вибір на етапі встановлення.
-  const debugPkg = debugMode && p.release.debug ? p.release.debug : null;
+  // Окремий пакет «діагностика» (debugger vast in het manifest): Chrome staat debugger niet als optioneel recht toe, dus dit is een bewuste keuze bij het installeren.
+  const debugPkg = debugMode && p.release.diagnose ? p.release.diagnose : null;
   const pkgFile = debugPkg ? debugPkg.file : 'mijn-ruimte-extension.zip';
   const pkgSha = (debugPkg ? debugPkg.sha256 : p.release.sha256) || '';
   const present = p.presence === 'present';
@@ -135,7 +135,7 @@ export default function ExtensionWizard(p: WizardProps) {
   // Папку обирає користувач (на якому диску — його справа); жодного шляху за замовчуванням, нічого не створюється на диску, який він не обрав.
   const folderOk = os === 'windows' ? /^([A-Za-z]:\\[^<>|?*"]+|%[A-Za-z_]+%\\[^<>|?*"]+|\\\\[^\\]+\\[^<>|?*"]+)$/.test(folder.trim()) : /^(~\/|\/)[^\0]{2,}$/.test(folder.trim());
   const folderChoices: Array<[string, string]> = os === 'windows'
-    ? ['C', 'D', 'E', 'F', 'G', 'H'].map((d) => [`${d}:`, `${d}:\\MijnRuimte-extension`])
+    ? ['T', 'R', 'D', 'E', 'F', 'G', 'H'].map((d) => [`${d}:`, `${d}:\\MijnRuimte-extension`])
     : [['~/MijnRuimte-extension', '~/MijnRuimte-extension'], ['~/Documents/MijnRuimte-extension', '~/Documents/MijnRuimte-extension']];
 
   // Повідомлення про кожен виконаний етап: вони лишаються в панелі сповіщень із посиланням сюди.
@@ -168,7 +168,7 @@ export default function ExtensionWizard(p: WizardProps) {
       id: 'download', title: tr('Завантажте файл', 'Download het bestand'), done: downloaded || present, manual: true,
       body: (
         <>
-          {p.release.debug ? <div className='wiz-debug' data-debug-mode={debugMode ? 'on' : 'off'}>
+          {p.release.diagnose ? <div className='wiz-debug' data-debug-mode={debugMode ? 'on' : 'off'}>
             <label className='wiz-debug-head'>
               <input type='checkbox' checked={debugMode} onChange={(e) => { setDebugMode(e.target.checked); if (e.target.checked && (method === 'helper' || method === 'crx')) setMethod('terminal'); }} />
               <b>{tr('Режим налагодження (необов’язково, для просунутих)', 'Foutopsporingsmodus (optioneel, voor gevorderden)')}</b>
