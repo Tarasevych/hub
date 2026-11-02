@@ -234,6 +234,10 @@
   {
    "sleutel": "src/aanmeld-vnext/aanmeld-vnext.css :: .amv-laag",
    "reden": "Aanmeldmethoden vNext (vlag aanmeldmethoden-vnext, UI-015): detail-zijpaneel/bottom sheet van een methode — modale laag over de hele pagina, geen knop."
+  },
+  {
+   "sleutel": "src/aanmeld-herontwerp.css :: .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-account-panel[data-login-popup='LOGIN-001']",
+   "reden": "LOGIN-001: het afgemelde aanmeldvenster is een modale dialoog midden in het scherm, geen zwevende knop. De bestaande accountknop en de echte aanmeldstroom blijven intact."
   }
  ],
  "kopReserves": [
