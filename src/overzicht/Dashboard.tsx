@@ -59,7 +59,7 @@ export default function Dashboard({ lang, context, bron, codes }: { lang: Lang; 
 
   useEffect(() => {
     void laden();
-    // Op de telefoon elke ~60 s in plaats van 15 s (zelfde verversing bij terugkeer naar het tabblad en bij elke wijziging).
+    // Op de telefoon elke ~60 s in plaats van 15 s; terugkeer naar het tabblad ververst nog steeds meteen.
     let teller = 0;
     const iv = window.setInterval(() => { teller += 1; const telefoon = window.matchMedia('(max-width:700px)').matches; if (!pauzeRef.current && !document.hidden && (!telefoon || teller % 4 === 0)) void laden(); }, POLL_MS);
     const zichtbaar = () => { if (!document.hidden && !pauzeRef.current) void laden(); };
