@@ -1028,7 +1028,7 @@ async function humanAttach(r, tab, tabOk, cap = DIAG_CAP) {
   return async () => { attached.delete(tab.id); try { await chrome.debugger.detach(target); } catch { /* al los */ } await statusWijziging(); };
 }
 const DEBUG_WEIGER = {
-  GEEN_RECHT: 'Refused: Chrome has not granted the "debugger" permission. It is not active for this extension (0.8.0 declares it in the manifest; reload the extension in chrome://extensions or approve the new permission if Chrome disabled the extension after the update)',
+  GEEN_RECHT: 'Refused: the "debugger" permission is not active for this extension. The standard package has no debugger permission by design; deep diagnosis needs the separate diagnose package (mijn-ruimte-extension-diagnose.zip). If that package is installed, reload the extension in chrome://extensions or approve the new permission if Chrome disabled the extension after the update.',
   CONFLICT: 'Refused: another debugger is already attached to this tab (close Chrome DevTools or the other debugging tool for this tab and try again)',
   ATTACH: 'Refused: Chrome could not attach the debugger to this tab',
   GEEN_OPT_IN: 'Refused: deep diagnostics is off in the extension options (the user can switch it on there, in the pop-up or in the side panel)',
@@ -1236,7 +1236,7 @@ async function selfTest(r) {
     info.push(`${x}.unlocked`);
   }
   const ds = await diagStand();
-  add('debugger_permission', ds.recht, ds.stand === 'niet-aanvraagbaar' ? 'debugger ontbreekt in manifest (pakket ouder dan 0.8.0)' : ds.laatsteFout ? `${ds.stand}, laatste aanhaking: ${ds.laatsteFout.code}` : ds.stand);
+  add('debugger_permission', ds.recht, ds.stand === 'niet-aanvraagbaar' ? 'debugger ontbreekt: standaardpakket (diepe diagnose vereist pakket diagnose)' : ds.laatsteFout ? `${ds.stand}, laatste aanhaking: ${ds.laatsteFout.code}` : ds.stand);
   add('diag_opt_in', ds.optIn);
   const doel = r || 'prive';
   const g = huidigeGrant(doel);

@@ -87,17 +87,17 @@
     nee: ['Дозвіл налагоджувача: немає', 'Debuggerrecht: niet aanwezig'],
     geweigerd: ['Дозвіл налагоджувача: ви відмовили', 'Debuggerrecht: u hebt geweigerd'],
     ingetrokken: ['Дозвіл налагоджувача: відкликано', 'Debuggerrecht: ingetrokken'],
-    'niet-aanvraagbaar': ['Дозвіл налагоджувача: немає в цій версії', 'Debuggerrecht: ontbreekt in deze versie'],
+    'niet-aanvraagbaar': ['Дозвіл налагоджувача: лише в пакеті «діагностика»', 'Debuggerrecht: alleen in het pakket «diagnose»'],
   });
   const DIAG_HULP = Object.freeze({
     ja: ['', ''],
-    nee: ['Chrome ще не ввімкнув дозвіл налагоджувача для розширення. Відкрийте chrome://extensions, знайдіть «Mijn Ruimte» і, якщо Chrome просить, підтвердіть новий дозвіл (після оновлення до 0.8.0 Chrome може тимчасово вимкнути розширення до вашого підтвердження).',
-      'Chrome heeft het debuggerrecht voor de extensie nog niet actief. Open chrome://extensions, zoek «Mijn Ruimte» en bevestig het nieuwe recht als Chrome erom vraagt (na de update naar 0.8.0 kan Chrome de extensie tijdelijk uitzetten tot u bevestigt).'],
+    nee: ['Chrome ще не ввімкнув дозвіл налагоджувача для розширення. Відкрийте chrome://extensions, знайдіть «Mijn Ruimte» і, якщо Chrome просить, підтвердіть новий дозвіл (після оновлення розширення Chrome може тимчасово вимкнути його до вашого підтвердження).',
+      'Chrome heeft het debuggerrecht voor de extensie nog niet actief. Open chrome://extensions, zoek «Mijn Ruimte» en bevestig het nieuwe recht als Chrome erom vraagt (na een update van de extensie kan Chrome haar tijdelijk uitzetten tot u bevestigt).'],
     geweigerd: ['Chrome не підтвердив дозвіл. Відкрийте chrome://extensions і ввімкніть «Mijn Ruimte» знову.', 'Chrome heeft het recht niet bevestigd. Open chrome://extensions en zet «Mijn Ruimte» weer aan.'],
     ingetrokken: ['Дозвіл налагоджувача зараз не діє. Перезавантажте розширення в chrome://extensions (кнопка ↻). Нічого не збирається.',
       'Het debuggerrecht werkt nu niet. Herlaad de extensie in chrome://extensions (knop ↻). Er wordt niets verzameld.'],
-    'niet-aanvraagbaar': ['У цій версії розширення немає дозволу налагоджувача (старий пакет). Встановіть версію 0.8.0 або новішу в ту саму постійну папку й натисніть ↻ у chrome://extensions. Усе інше працює й без цього дозволу.',
-      'Deze versie van de extensie heeft geen debuggerrecht (oud pakket). Installeer 0.8.0 of nieuwer in dezelfde vaste map en klik ↻ in chrome://extensions. Al het andere werkt ook zonder dit recht.'],
+    'niet-aanvraagbaar': ['Стандартний пакет навмисно не має дозволу налагоджувача (його має лише пакет «діагностика»). Для глибокої діагностики встановіть пакет «діагностика» (посилання нижче) в окрему постійну папку. Усе інше працює й без цього дозволу.',
+      'Het standaardpakket heeft bewust geen debuggerrecht (dat heeft alleen het pakket «diagnose»). Voor diepe diagnose installeert u het pakket «diagnose» (link hieronder) in een aparte vaste map. Al het andere werkt ook zonder dit recht.'],
   });
   /** Waarom dit recht nodig is (altijd zichtbaar bij de knop, zodat niemand het blind aanzet). */
   const DIAG_WAAROM = ['Потрібен лише для глибокої діагностики: Chrome на кілька секунд під’єднує налагоджувач до вкладки (жовта смуга вгорі) і збирає помилки консолі та невдалі запити. Доступно лише за відкритого доступу й лише на обраних сайтах.',
