@@ -29,10 +29,15 @@ const parentIds=new Set<MenuItemId>(['hub','ai','mail','cloud','github','huis','
 const readTouchMode=()=>typeof window!=='undefined'&&typeof window.matchMedia==='function'&&window.matchMedia('(max-width:700px)').matches;
 const readSubmenuPreferences=():SubmenuPreferences=>{try{const raw=JSON.parse(sessionStorage.getItem(SUBMENU_STORAGE_KEY)||'{}')as Record<string,unknown>,next:SubmenuPreferences={};for(const id of parentIds){if(typeof raw[id]==='boolean')next[id]=raw[id]as boolean}return next}catch{return{}}};
 const writeSubmenuPreferences=(value:SubmenuPreferences)=>{try{sessionStorage.setItem(SUBMENU_STORAGE_KEY,JSON.stringify(value))}catch{}};
-export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrowser=true,onRememberBrowser,preferredAccount}:{lang:'uk'|'nl';checking?:boolean;onOpenAccount:()=>void;rememberBrowser?:boolean;onRememberBrowser?:(value:boolean)=>void;preferredAccount?:{name?:string|null;email?:string|null}|null}){
+// LOGIN-001 (aanmelden): knop «Увійти через Google» met merklogo; «Інші способи входу» klapt de andere methoden uit (AanmeldAndereOpties).
+// Het bestaande gedrag blijft: met een opgeslagen account of een open menu gaat «open» naar het menu; de Google-knop gaat direct naar Google.
+import AanmeldAndereOpties from './AanmeldAndereOpties';
+import Merk from './merk/Merk';
+export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrowser=true,onRememberBrowser,preferredAccount,onGoogle}:{lang:'uk'|'nl';checking?:boolean;onOpenAccount:()=>void;rememberBrowser?:boolean;onRememberBrowser?:(value:boolean)=>void;preferredAccount?:{name?:string|null;email?:string|null}|null;onGoogle?:()=>void}){
  const[activating,setActivating]=useState(false);
  if(checking)return <section className='canonical-signed-out mr-sign-in checking' aria-busy='true' aria-live='polite' aria-label={lang==='uk'?'Завантаження':'Laden'}><span className='canonical-checking-spinner' aria-hidden='true'/></section>;
  const open=()=>{setActivating(true);onOpenAccount()};
+ const google=()=>{setActivating(true);(onGoogle||onOpenAccount)()};
  const known=rememberBrowser&&preferredAccount&&(preferredAccount.name||preferredAccount.email);
  return <section className='canonical-signed-out mr-sign-in' data-login-design='LOGIN-001' aria-busy='false'>
   <div className='mr-sign-in-content'>
@@ -43,10 +48,11 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
     <span className='mr-sign-in-account-copy'><strong>{preferredAccount?.name||preferredAccount?.email}</strong><small>{lang==='uk'?'Збережений на цьому пристрої':'Op dit apparaat bewaard'}</small></span>
     <span aria-hidden='true' className='mr-sign-in-chevron'>⌄</span>
    </button>}
-   <button type='button' className='mr-sign-in-main-button' data-activated={activating?'true':'false'} onClick={open} onBlur={()=>setActivating(false)}>
-    <span>{lang==='uk'?'Увійти':'Aanmelden'}</span><span className='mr-sign-in-arrow' aria-hidden='true'>→</span>
+   <button type='button' className='mr-sign-in-main-button' data-activated={activating?'true':'false'} onClick={google} onBlur={()=>setActivating(false)}>
+    <span className='mr-sign-in-logo' aria-hidden='true'><Merk merk='google' vorm='gliefje' maat={16} terugval={null}/></span>
+    <span className='mr-sign-in-main-tekst'>{lang==='uk'?'Увійти':'Aanmelden'} {lang==='uk'?'через Google':'met Google'}</span><span className='mr-sign-in-arrow' aria-hidden='true'>→</span>
    </button>
-   <button type='button' className='mr-sign-in-alternative' onClick={open}>{lang==='uk'?'Інші способи входу':'Andere aanmeldmethoden'}</button>
+   <AanmeldAndereOpties lang={lang} onGoogle={google}/>
    {onRememberBrowser&&<label className='mr-sign-in-remember'>
     <input type='checkbox' checked={rememberBrowser} onChange={event=>onRememberBrowser(event.target.checked)}/>
     <span>{lang==='uk'?'Зберегти обліковий запис на цьому пристрої':'Account op dit apparaat bewaren'}</span>
