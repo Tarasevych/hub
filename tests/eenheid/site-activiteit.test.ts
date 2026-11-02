@@ -1,5 +1,5 @@
 // Auditlogboek -> meldingen: juiste sectie/dienst per actie, ruis eruit, mislukkingen herkenbaar.
-import { siteEventsFromAudit, sourceOfAudit } from '../../backend/site-activiteit';
+import { reasonOfAudit, siteEventsFromAudit, sourceOfAudit } from '../../backend/site-activiteit';
 import { styleOf } from '../../src/melding-stijl';
 import { checker } from './hulp/nep-google';
 import { foutCodeUit, foutUitleg, meldingMetOorzaak, siteToolOorzaak, siteToolStatus, siteToolTitel } from '../../shared/mcp-acties';
@@ -33,6 +33,15 @@ export async function main(): Promise<number> {
   check('AI-actie: hulpmiddel, doel, client en foutcode komen in de gebeurtenis; ongeldige code niet; geweigerd apart',
     mislukt[0].tool === 'read_release_file' && mislukt[0].doel === 'src/AdminUitrolModern.tsx' && mislukt[0].code === 'SPIEGEL_FOUT' && mislukt[0].client === 'Claude' && !mislukt[0].geweigerd
     && mislukt[1].geweigerd === true && mislukt[1].reden === 'ruimte' && mislukt[2].code === undefined);
+  // Oorzaak: alleen een code uit het journaal, nooit vrije tekst (ook niet als reden van een AI-actie).
+  const oorzaak = siteEventsFromAudit([
+    { id: '20', action: 'owner.github.issue_create', result: 'failure', createdAt: 8000, details: { code: 'GITHUB_RATE_LIMITED' } },
+    { id: '21', action: 'owner.github.issue_create', result: 'failure', createdAt: 9000, details: { error: 'token gelekt in een zin' } },
+    { id: '22', action: 'owner.mcp.tool', result: 'denied', createdAt: 9500, details: { tool: 'x', reden: 'vrije tekst met spaties' } },
+  ]);
+  check('oorzaak: een foutcode uit het journaal wordt de code van de melding; vrije tekst nooit (ook niet als reden van een AI-actie)',
+    reasonOfAudit({ code: 'GITHUB_RATE_LIMITED' }) === 'GITHUB_RATE_LIMITED' && reasonOfAudit({ error: 'een zin met spaties' }) === '' && reasonOfAudit(undefined) === ''
+    && oorzaak[0].code === 'GITHUB_RATE_LIMITED' && oorzaak[0].status === 'failed' && oorzaak[1].code === undefined && oorzaak[2].reden === undefined && oorzaak[2].geweigerd === true);
   const uk = siteToolTitel(mislukt[0], 'uk');
   check('titel noemt de actie en het doel, niet het algemene «mcp tool»', !/mcp tool/i.test(uk) && uk.includes('src/AdminUitrolModern.tsx') && uk.startsWith('Claude: '));
   check('oorzaak: SPIEGEL_FOUT wordt «файл не знайдено …»; geweigerd door ruimte krijgt eigen uitleg en status «відхилено»',
