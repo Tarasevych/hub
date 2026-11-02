@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 import { serviceFromLocation, sessieDienst } from './canoniek-navigatie';
-import type { CanonicalNoticeInput } from './canoniek-meldingen';
+import type { CanonicalNoticeInput, CanonicalNoticeKind } from './canoniek-meldingen';
+import { canonicalServiceUrl } from './canoniek-dienst';
+import { SECTIE_DIENST, meldingUitleg, siteActieTekst, sectionLabel, soortVanStatus, styleOf, type Section, type StatusGroep } from './melding-stijl';
 import { COMMAND_LABELS } from './agenten-gegevens';
 import { textOf } from './mcp-teksten';
 import { siteToolOorzaak, siteToolStatus, siteToolTitel } from '../shared/mcp-acties';
@@ -25,7 +27,7 @@ const STATUS: Record<string, { uk: string; nl: string; group: 'waiting' | 'activ
   sent: { uk: 'виконується', nl: 'wordt uitgevoerd', group: 'active' },
   active: { uk: 'активний', nl: 'actief', group: 'active' },
   succeeded: { uk: 'виконано', nl: 'uitgevoerd', group: 'done' },
-  failed: { uk: 'помилка', nl: 'mislukt', group: 'failed' },
+  failed: { uk: 'не вдалося', nl: 'mislukt', group: 'failed' },
   rejected: { uk: 'відхилено', nl: 'geweigerd', group: 'rejected' },
   timeout: { uk: 'час вийшов', nl: 'verlopen', group: 'expired' },
 };
@@ -83,7 +85,8 @@ const siteTitle = (e: ActivityEvent, lang: Lang): string => {
   const uitJournaal = activiteitNaamUitJournaal(e.type, lang, e.sfeer === 'technisch');
   if (uitJournaal) return uitJournaal;
   // UI-014: nooit de interne code als titel (die staat onder «Технічні подробиці»); wel de rubriek als die bekend is.
-  return lang === 'uk' ? 'Інша дія на сайті' : 'Andere actie op de site';
+  // Geen naam in het journaal: het gebied van de actie voorop (nooit de kale «Інша дія на сайті»).
+  return siteActieTekst(e.type, lang);
 };
 
 /** Naam van de actie in de taal van de site (nooit de Engelse beschrijving). */
@@ -160,13 +163,22 @@ export function useConnectorActivity(scope: string, lang: Lang, toast: (notice: 
           if (e.kind === 'site' && e.status !== 'failed') continue;
           const title = activityTitle(e, l);
           const st = statusInfo(e.status, l);
-          const cause = activityCause(e, l);
-          const stText = activityStatusText(e, l);
+          const onderwerp = `${e.source}|${e.kind}|${e.type}|${e.subject || ''}`;
           if (e.status === 'pending_approval') {
             const who = `${sourceLabel(e.source, l)}${e.kind === 'command' ? `, ${e.subject}` : ''}`;
-            say({ text: l === 'uk' ? `Очікує вашого рішення: ${title} (${who})` : `Wacht op uw beslissing: ${title} (${who})`, kind: 'warning', source: 'mcp', transient: true, link: activityLink(e, l) });
-          } else if (e.kind === 'grant') say({ text: title, kind: 'success', source: 'mcp', transient: true });
-          else if (st.group !== 'active' && st.group !== 'waiting') say({ text: `${title}: ${stText}${cause ? ` — ${cause}` : ''}`, kind: st.group === 'done' ? 'success' : st.group === 'failed' ? 'error' : 'info', source: e.kind === 'site' ? e.source : 'mcp', transient: true });
+            say({
+              text: l === 'uk' ? `Очікує вашого рішення: ${title} (${who})` : `Wacht op uw beslissing: ${title} (${who})`,
+              explain: meldingUitleg({ groep: 'waiting', sectie: 'mcp', lang: l }), kind: 'warning', source: 'mcp', transient: true, link: activityLink(e, l), topic: onderwerp,
+            });
+          } else if (e.kind === 'grant') {
+            say({
+              text: title, kind: 'success', source: 'mcp', transient: true,
+              explain: l === 'uk' ? 'Claude має доступ. Його можна будь-коли відкликати в розділі «Агенти».' : 'Claude heeft toegang. Die kunt u altijd intrekken onder Agenten.',
+            });
+          } else if (st.group !== 'active' && st.group !== 'waiting') {
+            const m = activiteitMeldingTekst(e, l);
+            say({ text: m.titel, explain: m.uitleg, kind: m.kind, source: m.bron, transient: true, link: m.link, topic: onderwerp });
+          }
         }
       }
       known.current = new Map(list.map((e) => [e.id, e.status]));
@@ -197,6 +209,44 @@ export function useConnectorActivity(scope: string, lang: Lang, toast: (notice: 
   const markRead = (id: string) => { stuurGelezen([id]); setRead((current) => { if (current.has(id)) return current; const next = new Set(current); next.add(id); return saveRead(scope, next); }); };
   const markAllRead = () => { stuurGelezen(events.map((e) => e.id)); setRead((current) => { const next = new Set(current); for (const e of events) next.add(e.id); return saveRead(scope, next); }); };
   return { events, read, available, markRead, markAllRead, refresh: poll };
+}
+
+/** De sectie (dienst) van een activiteit: een site-actie heeft die in zijn bron; een agentopdracht hoort bij Agenten. */
+const sectieVan = (e: ActivityEvent, lang: Lang): Section => styleOf(e.kind === 'site' ? e.source : 'mcp', lang).section;
+
+/** Directe knop naar het onderdeel waar de melding te repareren of op te ruimen is. */
+export function sectieLink(sectie: Section, lang: Lang): { href: string; label: string } | undefined {
+  const dienst = SECTIE_DIENST[sectie];
+  if (!dienst) return undefined;
+  try {
+    return { href: canonicalServiceUrl(dienst, '', lang), label: lang === 'uk' ? `Відкрити: ${sectionLabel(sectie, lang)}` : `Openen: ${sectionLabel(sectie, lang)}` };
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Tekst van een pop-up of regel over een activiteit: wat er gebeurde (titel + stand), de oorzaak en wat u nu kunt doen (uitleg),
+ * de sectie, en de knop naar het onderdeel. Het onderwerp koppelt een latere gelukte stap aan deze mislukte stap.
+ */
+export function activiteitMeldingTekst(e: ActivityEvent, lang: Lang): { titel: string; uitleg: string; link?: { href: string; label: string }; kind: CanonicalNoticeKind; bron: string; onderwerp: string } {
+  const st = statusInfo(e.status, lang);
+  const groep = st.group as StatusGroep;
+  const stand = activityStatusText(e, lang);
+  const wat = e.kind === 'site' ? siteTitle(e, lang) : activityTitle(e, lang);
+  // Staat de stand al in de titel (bv. «… відхилено»), dan niet nog eens erachter.
+  const titel = wat.toLowerCase().includes(stand.toLowerCase()) ? wat : `${wat} — ${stand}`;
+  const sectie = sectieVan(e, lang);
+  const reden = activityCause(e, lang) || e.code || e.reden || '';
+  const link = e.kind === 'site' ? sectieLink(sectie, lang) : activityLink(e, lang);
+  return {
+    titel,
+    uitleg: meldingUitleg({ groep, sectie, lang, reden }),
+    link: link?.href ? link : undefined,
+    kind: soortVanStatus(groep),
+    bron: e.kind === 'site' ? e.source : 'mcp',
+    onderwerp: `${e.source}|${e.kind}|${e.type}|${e.subject || ''}`,
+  };
 }
 
 /** Waarom een AI-actie op de site mislukte of geweigerd werd, in gewone woorden (leeg bij andere meldingen). */

@@ -122,6 +122,20 @@ export default function MeldingenV2(p: MeldingenV2Props) {
   const nFilters = actieveFilters(f);
 
   const markeer = (m: V2Melding) => { if (m.gelezen) return; const id = m.id.slice(2); if (m.id.startsWith('s:')) void p.onReadServer?.(id); else if (m.id.startsWith('l:')) p.onReadLocal(id); else p.onReadEvent(id); };
+  // Wat in het open paneel te zien is, telt als gelezen (na een korte weergave). Op «Непрочитані» blijft het staan tot het paneel dicht gaat,
+  // anders verdwijnt de lijst terwijl u kijkt; dan worden die alsnog gelezen bij het sluiten.
+  const onOngelezen = v3 ? tab === 'ongelezen' : weergave === 'ongelezen';
+  const zichtbaarOngelezen = geschiedenis ? [] : lijst.flatMap((g) => g.leden.filter((m) => !m.gelezen));
+  const zichtbaarSleutel = zichtbaarOngelezen.map((m) => m.id).join('|');
+  const ongelezenGetoond = useRef<V2Melding[]>([]);
+  ongelezenGetoond.current = onOngelezen ? zichtbaarOngelezen : [];
+  useEffect(() => {
+    if (onOngelezen || !zichtbaarSleutel) return;
+    const timer = window.setTimeout(() => zichtbaarOngelezen.forEach(markeer), 900);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zichtbaarSleutel, onOngelezen]);
+  useEffect(() => () => { ongelezenGetoond.current.forEach(markeer); }, []);
   const markeerGroep = (g: V2Groep) => { g.leden.forEach(markeer); if (v3) { const terug = g.leden.filter((x) => x.terugOp).map((x) => x.id); if (terug.length) void wijzigStatus({ ids: terug, status: 'gelezen', hoe: 'kaart' }); } };
   const regel = async (doel: { dienst?: string; account?: string; categorie?: string }, modus: LeverModus | null, uitleg: string) => {
     const ok = await bewaarRegels(zetRegel(p.regels, doel, modus));
@@ -154,7 +168,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
             {v3 && g.hoofd.terugOp ? <span className='mv2-toestand t-terug'>{t('Повернулось після відкладення', 'Terug na uitstel')}</span> : null}
             {v3 && toonVerborgen && verborgenReden(g) ? <span className='mv2-toestand t-verborgen'><EyeOff aria-hidden='true' />{verborgenReden(g) === 'stil-standaard' ? t('Тихе за замовчуванням', 'Standaard stil') : verborgenReden(g) === 'regel-uit' ? t('Вимкнено правилом', 'Uit door regel') : t('Тихе за правилом', 'Stil door regel')}</span> : null}
             <time dateTime={new Date(m.tijd).toISOString()} title={tijdLang(m.tijd, lang)}>{relatief(m.tijd, nu, lang)}</time>
-            {g.aantal > 1 ? <span className='mv2-aantal' title={t(`${g.aantal} подій цього процесу`, `${g.aantal} gebeurtenissen van dit proces`)}>×{g.aantal}</span> : null}
+            {g.hoofd.herhaald && g.hoofd.herhaald > 1 ? <span className='mv2-aantal' title={t('Та сама подія, об’єднано', 'Dezelfde gebeurtenis, samengevoegd')}>×{g.hoofd.herhaald}</span> : null}{g.aantal > 1 ? <span className='mv2-aantal' title={t(`${g.aantal} подій цього процесу`, `${g.aantal} gebeurtenissen van dit proces`)}>×{g.aantal}</span> : null}
           </span>
         </button>
         <div className='mv2-menu-houder'>

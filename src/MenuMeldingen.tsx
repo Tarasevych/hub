@@ -25,6 +25,8 @@ export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,
   const toets=(e:RKeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();onEsc()}};
   return <div ref={ref} className='menu-bellen' role='region' aria-label={`${label}: ${badgeLabel(lang,badge.aantal)}`} data-menu-bellen={badge.item} style={{left:pos.left,top:pos.top}} onPointerEnter={()=>onBinnen(true)} onPointerLeave={()=>onBinnen(false)} onFocus={()=>onBinnen(true)} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node))onBinnen(false)}} onKeyDown={toets}>
     <div className='menu-bellen-kop'><strong>{label}</strong><span>{badgeLabel(lang,badge.aantal)}</span></div>
+    {/* Legenda: de kleur van de stip is de soort melding (zelfde kleur als in de lijst hieronder). */}
+    <div className='menu-bellen-legenda' aria-hidden='true'>{[...new Set(badge.meldingen.map((m)=>m.categorie))].map((c)=><span key={c} className='menu-bellen-legenda-item' data-categorie={c}><i/>{CATEGORIE_TEKST[c][lang==='uk'?0:1]}</span>)}</div>
     <ul>{badge.meldingen.map((m,i)=><li key={m.id} className='menu-bel' data-categorie={m.categorie} data-melding-id={m.id} style={{animationDelay:`${i*45}ms`}}>
       <span className='menu-bel-stip' aria-hidden='true'/>
       <div className='menu-bel-tekst'>

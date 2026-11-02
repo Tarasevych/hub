@@ -116,14 +116,14 @@ export async function main(): Promise<number> {
     && techSamenvattingTekst('uk', 5) === 'У технічній панелі 5 нових сповіщень' && techSamenvattingTekst('uk', 12) === 'У технічній панелі 12 нових сповіщень' && techSamenvattingTekst('uk', 22) === 'У технічній панелі 22 нові сповіщення'
     && techSamenvattingTekst('nl', 1) === 'In het technisch paneel: 1 nieuwe melding' && techSamenvattingTekst('nl', 4) === 'In het technisch paneel: 4 nieuwe meldingen');
 
-  // Bel: geluid en opduiken volgen de voorkeur (structuur van de geminificeerde component).
+  // Bel: geluid en pop-up volgen de voorkeur per type (src/CanoniekMeldingencentrum.tsx, leesbare vorm).
   const bel = lees('src/CanoniekMeldingencentrum.tsx');
-  check('bel: geen geluid als het type geluid uit heeft (activate speelt alleen zonder «stil»)', bel.includes('if(!next.stil)playChime()') && bel.includes('stil:!geluid'));
-  check('bel: opduiken uit → wel in de geschiedenis, geen toast (return vóór activate/wachtrij)', /saveRetained\(rows=>\[[\s\S]{0,400}\]\);if\(!voorkeur\.opduiken\)\{if\(origin==='prop'\)p\.onDismissNotice\?\.\(next\.text\);if\(geluid\)playChime\(\);return\}if\(activeRef\.current\)/.test(bel));
-  check('bel: verborgen type → niet getoond, niet bewaard', /if\(!voorkeur\.tonen\)\{if\(origin==='prop'\)p\.onDismissNotice\?\.\(notice\.text\.trim\(\)\);return\}/.test(bel));
-  check('bel: nieuwe servermelding → geluid alleen als een type geluid mag, toast alleen als opduiken mag', bel.includes('klinkt=added.some(item=>vk(soortInfo(item.kind).type).geluid)') && bel.includes('toon=added.filter(item=>vk(soortInfo(item.kind).type).opduiken)') && bel.includes('else if(klinkt)playChime()'));
-  check('bel: lijst, teller en geschiedenis zonder verborgen types', bel.includes('server=(p.serverItems||[]).filter(item=>vk(soortInfo(item.kind).type).tonen)') && bel.includes('local={zichtbaarLokaal}'));
-  check('bel: één regel naar het technische paneel (alleen met profiel), opent via openTechMeldingen', bel.includes("data-qa-id='tech-meldingen-samenvatting'") && bel.includes('techRegel=techUnread>0&&!!tech.profiel') && bel.includes('openTechMeldingen()'));
+  check('bel: geen geluid als het type geluid uit heeft (activate speelt alleen zonder «stil»)', bel.includes('if (!next.stil) playChime();') && bel.includes('stil: !geluid'));
+  check('bel: opduiken uit → wel in de geschiedenis, geen toast (return vóór activate/wachtrij)', /if \(!voorkeur\.opduiken\) \{[\s\S]{0,300}if \(geluid\) playChime\(\);\s*return;\s*\}\s*if \(activeRef\.current\)/.test(bel));
+  check('bel: verborgen type → niet getoond, niet bewaard', /if \(!voorkeur\.tonen\) \{\s*if \(origin === 'prop'\) propsRef\.current\.onDismissNotice\?\.\(tekst\);\s*return;\s*\}/.test(bel));
+  check('bel: nieuwe servermelding → geluid alleen als een type geluid mag, pop-up alleen als opduiken mag', bel.includes('const klinkt = added.some((item) => vk(soortInfo(item.kind).type).geluid);') && bel.includes('const toon = added.filter((item) => vk(soortInfo(item.kind).type).opduiken);') && /else if \(klinkt\) \{\s*playChime\(\);/.test(bel));
+  check('bel: lijst, teller en geschiedenis zonder verborgen types', bel.includes('const server = (p.serverItems || []).filter((item) => vk(soortInfo(item.kind).type).tonen') && bel.includes('local={zichtbaarLokaal}'));
+  check('bel: één regel naar het technische paneel (alleen met profiel), opent via openTechMeldingen', bel.includes("data-qa-id='tech-meldingen-samenvatting'") && bel.includes('const techRegel = techUnread > 0 && !!tech.profiel;') && bel.includes('openTechMeldingen()'));
   const chrome = lees('src/CanoniekOmlijsting.tsx');
   check('chrome: accountruimte geeft de bel alleen persoonlijke items + technische apart (techItems); store voor de band', chrome.includes("techItems={ruimte==='prive'?techMeldingen:undefined}") && chrome.includes('typen={mv.soorten}') && chrome.includes('zetTechMeldingen(techMeldingen,onReadNotification||null)'));
   check('band: knop «Технічні сповіщення» in TechLaag', /<TechMeldingenKnop uk=\{uk\} \/>/.test(lees('src/tech/TechLaag.tsx')));
