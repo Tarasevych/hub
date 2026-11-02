@@ -6,7 +6,8 @@
 /* Редактор листа на телефоні: панель форматування переноситься на кілька рядків (раніше випадіння за межі й накладання випадних списків «Заг…/1/B/I»),
    поле вводу нижче, а допоміжна панель (UA/NL, трансліт, клавіатура, рукопис) — компактна, без довгого пояснення. */
 @media (max-width:720px){
-  html body .mail-compose-ribbon{flex-wrap:wrap!important;overflow:visible!important;row-gap:6px}
+  /* (specificiteit verhoogd: het nieuwe-bericht- en het antwoordvenster zetten zelf «nowrap!important» met meer gewicht) */
+  html body .mail-compose-ribbon,html body .mail-new-message .mail-compose-ribbon.mail-compose-ribbon,html body .mail-compose-editor .mail-compose-balk .mail-compose-ribbon{flex-wrap:wrap!important;overflow:visible!important;row-gap:6px!important}
   html body .mail-compose-ribbon>.mail-compose-dropdown{flex:0 0 auto!important;width:auto!important;min-width:0}
   html body .mail-compose-ribbon .mail-compose-dropdown-trigger{min-width:88px;max-width:150px}
   html body .mail-compose-canvas{min-height:120px!important}
