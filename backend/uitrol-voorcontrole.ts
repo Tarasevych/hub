@@ -230,7 +230,19 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     else if (tests && tests.geslaagd != null && tests.geslaagd > 0) voeg('tests', 'ok', `Підготовник повідомив: ${tests.geslaagd} тестів пройдено${bronTekst[0]}.`, `De voorbereider meldde: ${tests.geslaagd} tests geslaagd${bronTekst[1]}.`);
     else voeg('tests', 'waarschuwing', 'Підготовник не повідомив результатів тестів (ані в пропозиції, ані файлом TESTRESULTATEN у пакеті).', 'De voorbereider meldde geen testresultaten (niet in het voorstel en niet via TESTRESULTATEN in het pakket).');
   } catch (e) {
-    voeg('voorcontrole', 'fout', 'Перевірку пакета не вдалося виконати.', 'De voorcontrole kon niet worden uitgevoerd.', [String((e as Error).message).slice(0, 200)]);
+    // Toon de echte tar-/gzip-fout, niet alleen de afgekorte opdrachtregel van execFile.
+    // Geen stdout (kan inhoud bevatten); maximaal zes geschoonde stderr-regels voor de eigenaar.
+    const fout = e as Error & { stderr?: string | Buffer; code?: string | number; signal?: string; killed?: boolean };
+    const diagnostiek = String(fout.stderr ?? '')
+      .split(/\r?\n/)
+      .map((regel) => regel.replace(/[\u0000-\u001f\u007f]/g, ' ').trim())
+      .filter(Boolean)
+      .slice(-6)
+      .map((regel) => regel.slice(0, 400));
+    if (!diagnostiek.length) diagnostiek.push(String(fout.message || e).slice(0, 900));
+    if (fout.code !== undefined && fout.code !== null) diagnostiek.unshift(`exitcode: ${String(fout.code).slice(0, 40)}`);
+    if (fout.killed || fout.signal) diagnostiek.unshift(`timeout/signaal: ${String(fout.signal || 'timeout').slice(0, 40)}`);
+    voeg('voorcontrole', 'fout', 'Перевірку пакета не вдалося виконати.', 'De voorcontrole kon niet worden uitgevoerd.', diagnostiek);
   } finally {
     if (werk) await rm(werk, { recursive: true, force: true }).catch(() => undefined);
   }
