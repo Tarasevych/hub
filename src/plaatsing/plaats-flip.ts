@@ -7,7 +7,7 @@ import { plaatsStaat } from './plaatsing-staat';
 let oud = new WeakMap<Element, DOMRect>();
 let actief = false;
 
-const kinderen = (zone: Element) => Array.from(zone.children).filter((c) => !c.classList.contains('zk-palet-achter'));
+const kinderen = (zone: Element) => Array.from(zone.children);
 const rustig = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Plaats van alle kinderen van alle zones vastleggen (vlak vóór de staat van het slepen verandert). */

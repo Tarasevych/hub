@@ -1,0 +1,113 @@
+/* Technische strook: modus, grootte, tekst bij de knoppen, volgorde en de twee paneeltjes (zoekronde 02.11.2026, StrookPaneel.tsx).
+   Alles hier overschrijft tech.css/ruimtes.css alleen waar nodig; de specificiteit is zo gekozen dat de volgorde van de imports niet uitmaakt. */
+
+/* Knoppen op de strook: elk een eigen vlak en rand, duidelijk gescheiden (vroeger liepen ze in elkaar). */
+.tech-band .tech-band-knoppen{gap:8px;align-items:center}
+.tech-band .tech-band-knoppen .tech-strook-item{position:relative;display:inline-flex;align-items:center;flex:none;margin:0;transition:transform .14s ease}
+.tech-band .tech-band-knoppen .tech-strook-item>button,
+.tech-band .tech-band-knoppen .tech-strook-item>.tech-meldingen-knop,
+.tech-band .tech-band-knoppen .tech-band-inklap{border:1.5px solid var(--tech-band-fg);background:color-mix(in srgb,var(--tech-band-fg) 7%,transparent);box-shadow:none}
+.tech-band .tech-band-knoppen .tech-strook-item>button:hover{background:color-mix(in srgb,var(--tech-band-fg) 16%,transparent)}
+.tech-band .tech-band-knoppen .tech-strook-item>button.is-uit{background:var(--tech-band-fg);color:var(--tech-band-bg)}
+.tech-band .tech-band-knoppen .tech-strook-item>button.is-hier{background:color-mix(in srgb,var(--tech-band-fg) 22%,transparent)}
+/* Snelle knoppen die de gebruiker zelf op de strook zette: alleen op een breed scherm (op de telefoon blijven ze in de lijst ⋯). */
+@media (max-width:768px){.tech-band .tech-band-knoppen .tech-strook-extra{display:none!important}}
+
+/* Grootte: klein / middel (standaard, zoals tech.css) / groot. De bandhoogte volgt de grootte (--tech-band-h) op <html>. */
+.tech-band[data-tech-grootte] .tech-band-knoppen>.tech-strook-item>button{min-height:30px;padding:0 10px;font-size:14px}
+.tech-band[data-tech-grootte] .tech-band-knoppen>.tech-strook-item>button svg{width:16px;height:16px}
+html[data-tech-grootte=klein] .tech-band .tech-band-knoppen>.tech-strook-item>button{min-height:24px;padding:0 7px;font-size:12px;gap:4px}
+html[data-tech-grootte=klein] .tech-band .tech-band-knoppen>.tech-strook-item>button svg{width:13px;height:13px}
+html[data-tech-grootte=groot] .tech-band .tech-band-knoppen>.tech-strook-item>button{min-height:38px;padding:0 13px;font-size:16px;gap:7px}
+html[data-tech-grootte=groot] .tech-band .tech-band-knoppen>.tech-strook-item>button svg{width:20px;height:20px}
+html[data-tech=aan][data-tech-grootte=groot]:not([data-tech-ingeklapt='1']){--tech-band-h:50px}
+html[data-tech=aan][data-tech-grootte=klein]:not([data-tech-ingeklapt='1']){--tech-band-h:36px}
+html[data-tech=aan][data-tech-grootte=klein] .tech-band{height:var(--tech-band-h)}
+html[data-tech=aan][data-tech-grootte=groot] .tech-band{height:var(--tech-band-h)}
+@media (max-width:768px){
+  html[data-tech=aan][data-tech-grootte=groot]:not([data-tech-ingeklapt='1']){--tech-band-h:48px}
+  html[data-tech=aan][data-tech-grootte=klein]:not([data-tech-ingeklapt='1']){--tech-band-h:40px}
+}
+
+/* Tekst bij de knoppen. «Alleen pictogrammen»: het label is er nog (voor schermlezers) maar niet zichtbaar; bij hover groeit de knop
+   iets en verschijnt het label als tekstwolkje onder de knop. De band mag dan overlopen (alleen dit geval). */
+.tech-band[data-tech-label=iconen]{overflow:visible}
+.tech-band[data-tech-label=iconen] .tech-band-knoppen>.tech-strook-item>button span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tech-band[data-tech-label=iconen] .tech-band-knoppen>.tech-strook-item:hover,
+.tech-band[data-tech-label=iconen] .tech-band-knoppen>.tech-strook-item:focus-within{transform:scale(1.08)}
+.tech-band[data-tech-label=iconen] .tech-strook-item::after{content:attr(data-label);position:absolute;top:calc(100% + 6px);left:50%;translate:-50% 0;z-index:99010;padding:3px 8px;border-radius:6px;background:var(--tech-band-fg);color:var(--tech-band-bg);font:600 12px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s ease}
+.tech-band[data-tech-label=iconen] .tech-strook-item:hover::after,
+.tech-band[data-tech-label=iconen] .tech-strook-item:focus-within::after{opacity:1}
+.tech-band[data-tech-label=tekst] .tech-band-knoppen>.tech-strook-item>button svg{display:none}
+.tech-band[data-tech-label=tekst] .tech-band-knoppen>.tech-strook-item>button{gap:0}
+
+/* Ingeklapt (vaste strook, 28 px): alleen de essentie — merk, resttijd, uitklappen, afmelden en het instellingen-icoon. */
+.tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-item{display:none}
+.tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-item:has(>[data-tech-knop=inklappen]),
+.tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-item:has(>[data-tech-knop=uitloggen]){display:inline-flex}
+.tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-item>[data-tech-knop=uitloggen]{display:inline-flex!important;min-height:22px;padding:0 8px}
+.tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-item>[data-tech-knop=inklappen]{min-height:22px;padding:0 8px}
+.tech-band.is-ingeklapt .tech-strook-instel{display:inline-flex;min-height:22px;min-width:22px;padding:0 4px}
+.tech-band.is-ingeklapt .tech-strook-instel svg{width:14px;height:14px}
+
+/* Automatisch: de muis is bij de bovenrand, dus de band staat tijdelijk open (over de pagina heen, de pagina schuift niet mee). */
+.tech-band.is-piek{height:var(--tech-band-uit,40px);transition:height .14s ease}
+
+/* Instellingen-icoon op de strook: even groot als de knoppen, altijd zichtbaar. */
+.tech-band .tech-strook-instel{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:30px;min-height:30px;padding:0 6px;border:1.5px solid var(--tech-band-fg);border-radius:7px;background:color-mix(in srgb,var(--tech-band-fg) 7%,transparent);color:var(--tech-band-fg);cursor:pointer}
+.tech-band .tech-strook-instel svg{width:16px;height:16px}
+.tech-band .tech-strook-instel:hover{background:color-mix(in srgb,var(--tech-band-fg) 16%,transparent)}
+.tech-band .tech-strook-instel[aria-expanded=true]{background:color-mix(in srgb,var(--tech-band-fg) 22%,transparent)}
+.tech-band .tech-strook-instel:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+@media (max-width:768px){.tech-band .tech-strook-instel{min-width:34px;min-height:34px}}
+
+/* ---------------------------------------------------------------- instellingenpaneel (geportaleerd naar body) */
+.tech-strook-paneel{position:fixed;right:8px;z-index:99020;width:min(380px,calc(100vw - 16px));max-height:calc(100dvh - 60px);overflow:auto;box-sizing:border-box;display:grid;gap:10px;padding:12px;border-radius:12px;border:1px solid var(--line,#d6d3d1);background:var(--panel,#fff);color:var(--text,#111);box-shadow:0 14px 36px rgba(0,0,0,.28);font:500 14px/1.35 Inter,system-ui,sans-serif}
+.tech-strook-kop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tech-strook-kop strong{font-size:15px}
+.tech-strook-sluit{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border:0;border-radius:8px;background:transparent;color:inherit;cursor:pointer}
+.tech-strook-sluit svg{width:18px;height:18px}
+.tech-strook-sluit:hover{background:var(--surface,#f5f5f4)}
+.tech-strook-groep{margin:0;padding:8px 10px 10px;border:1px solid var(--line,#d6d3d1);border-radius:10px;display:grid;gap:8px;min-width:0}
+.tech-strook-groep legend{padding:0 4px;font-size:12px;font-weight:700;color:var(--muted,#57534e)}
+.tech-strook-rij{display:grid;gap:4px;min-width:0}
+.tech-strook-rij-kop{font-size:12px;font-weight:600;color:var(--muted,#57534e)}
+.tech-strook-keuze{display:flex;flex-wrap:wrap;gap:4px}
+.tech-strook-optie{min-height:34px;padding:0 10px;border:1px solid var(--line,#d6d3d1);border-radius:999px;background:transparent;color:inherit;font:inherit;font-size:13px;cursor:pointer}
+.tech-strook-optie.is-gekozen{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:#fff;font-weight:700}
+.tech-strook-optie:focus-visible,.tech-strook-reset:focus-visible,.tech-strook-pijlen button:focus-visible,.tech-strook-vink input:focus-visible{outline:3px solid var(--focus,#2563eb);outline-offset:2px}
+.tech-strook-lijst{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.tech-strook-lijst li{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:36px;padding:0 4px;border-radius:8px}
+.tech-strook-lijst li:hover{background:var(--surface,#f5f5f4)}
+.tech-strook-lijst li.is-uit{opacity:.62}
+.tech-strook-vink{display:flex;align-items:center;gap:8px;min-width:0;flex:1;cursor:pointer}
+.tech-strook-vink input{width:18px;height:18px;margin:0;flex:none;accent-color:var(--accent,#2563eb)}
+.tech-strook-vink span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tech-strook-pijlen{display:inline-flex;gap:2px;flex:none}
+.tech-strook-pijlen button{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--line,#d6d3d1);border-radius:8px;background:transparent;color:inherit;cursor:pointer}
+.tech-strook-pijlen button svg{width:16px;height:16px}
+.tech-strook-pijlen button:disabled{opacity:.35;cursor:default}
+.tech-strook-voet{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tech-strook-voet small{color:var(--muted,#57534e);font-size:12px}
+.tech-strook-reset{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 10px;border:1px solid var(--line,#d6d3d1);border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:13px;cursor:pointer}
+.tech-strook-reset svg{width:15px;height:15px}
+
+/* ---------------------------------------------------------------- snelmenu van één knop (rechtermuisknop / lang tikken) */
+.tech-strook-menu{position:fixed;z-index:99030;min-width:220px;display:grid;padding:4px;border-radius:10px;border:1px solid var(--line,#d6d3d1);background:var(--panel,#fff);color:var(--text,#111);box-shadow:0 12px 30px rgba(0,0,0,.28);font:500 14px/1.3 Inter,system-ui,sans-serif}
+.tech-strook-menu button{min-height:40px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.tech-strook-menu button:hover,.tech-strook-menu button:focus-visible{background:var(--surface,#f5f5f4);outline:none}
+.tech-strook-menu button:disabled{opacity:.4;cursor:default;background:transparent}
+
+@media (prefers-reduced-motion:reduce){
+  .tech-band .tech-band-knoppen .tech-strook-item,.tech-band[data-tech-label=iconen] .tech-strook-item::after{transition:none}
+}
+
+/* Volledige ⋯-lijst: op een breed scherm staat de lijst NIET meer in de rij (daar stonden alle acties dicht op elkaar en liepen de
+   knoppen in elkaar). Alleen de knoppen die de gebruiker op de strook zette staan in de rij; de rest opent met ⋯ als paneel. */
+@media (min-width:769px){
+  .tech-band .tech-band-meer{display:inline-flex!important}
+  .tech-band .tech-band-extra:not(.is-open){display:none!important}
+  .tech-band .tech-band-extra.is-open{display:flex!important;position:fixed;top:var(--tech-band-h);right:8px;z-index:99002;flex-direction:column;align-items:stretch;gap:2px;padding:8px;border-radius:10px;background:var(--tech-band-bg);color:var(--tech-band-fg);border:2px solid var(--tech-band-fg);box-shadow:0 10px 24px rgba(0,0,0,.25);max-height:calc(100dvh - var(--tech-band-h) - 12px);overflow:auto;min-width:min(240px,calc(100vw - 12px));box-sizing:border-box}
+}
+/* Te smal voor alle knoppen met tekst: de eigen knoppen op de strook verdwijnen (ze staan dan in ⋯). */
+.tech-band[data-pas="3"] .tech-strook-item{display:none!important}

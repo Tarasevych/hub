@@ -6,12 +6,14 @@
 /* ---------------------------------------------------------------- zones */
 /* bovenbalk = de groep rechtsboven (.canonical-account-anchor): zoeken · foto · gniezda; order uit de indeling */
 .canonical-chrome .canonical-account-anchor{display:flex;align-items:center;gap:var(--ruimte-3,12px);--plaats-boven-gniezdo:2.875rem}
-.canonical-chrome .canonical-account-anchor>.zk-trigger{order:var(--plaats-orde-zoeken,0);margin-right:0}
+.canonical-chrome .canonical-account-anchor>.zk-anker{order:var(--plaats-orde-zoeken,0);margin-right:0}
+.canonical-chrome .canonical-account-anchor>.zk-anker>.zk-trigger{margin-right:0}
 .canonical-chrome .canonical-account-anchor>.canonical-account-menu{order:var(--plaats-orde-account,1)}
 .canonical-chrome .canonical-account-anchor>.plaats-gniezdo{width:var(--plaats-boven-gniezdo);height:var(--plaats-boven-gniezdo)}
 /* telefoon: dezelfde zone, op de plek van de ronde zoekknop (die staat er nu IN, als bewoner vooraan) */
 .canonical-chrome .canonical-account-anchor.plaats-boven-telefoon{top:calc(var(--ruimte-2,8px) + var(--veilig-boven,0px));right:calc(var(--ruimte-2,8px) + var(--veilig-rechts,0px));gap:var(--ruimte-2,8px);--plaats-boven-gniezdo:var(--tik-hoogte-mobiel,44px)}
-.canonical-chrome .canonical-account-anchor.plaats-boven-telefoon>.zk-trigger-mobiel{position:relative;inset:auto;order:var(--plaats-orde-zoeken,0)}
+.canonical-chrome .canonical-account-anchor.plaats-boven-telefoon>.zk-anker{order:var(--plaats-orde-zoeken,0)}
+.canonical-chrome .canonical-account-anchor.plaats-boven-telefoon>.zk-anker>.zk-trigger-mobiel{position:relative;inset:auto}
 /* RUIMTE van de zone (2.5, 25.10.2026): ./plaatsing-staat.ts MEET de zone en zet op <html> --plaats-boven-reserve (linkerrand van de zone
    → rechterrand van het venster), --plaats-boven-onder (onderrand van de zone) en --plaats-boven-paneel (open accountpaneel). Elke kop
    eronder houdt die ruimte vrij: de opdrachtbalk van de post (hier), de kop van het leesvenster en de bijlage (google-mail-werkruimte.css).
@@ -75,7 +77,7 @@ html[data-tech=aan] #root .canonical-chrome[data-plaats-stapel]:not([data-focus-
    Een venster over de pagina (nieuw bericht, lade, zoekpalet, paneel) bedekt de zone eronder: die verdwijnt helemaal (visibility —
    er schuift niets op en er springt niets naar een andere plek). Eén regel per venster, niet per combinatie. */
 html body:has(.mail-new-message-backdrop) .plaats-actiestapel,
-html body:has(.zk-palet-achter) .plaats-actiestapel,
+html body:has(.zk-uitklap) .plaats-actiestapel,
 .canonical-chrome.sidebar-drawer .plaats-actiestapel{visibility:hidden}
 @media (max-width:900px){html body:has(.zk-scrim) .plaats-actiestapel{visibility:hidden}}
 /* alleen «Написати» in de stapel weg (zijn gniezdo blijft staan): brief open, paneel van de meldingen open */
