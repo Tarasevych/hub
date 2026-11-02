@@ -12,7 +12,8 @@ import { highlightParts, norm } from './zoek-kern';
 import type { Lang } from './zoek-kern';
 import type { ZoekSuggestie } from '../../shared/zoek-model';
 
-export type VeldSuggestie = ZoekSuggestie | { soort: 'geschiedenis'; tekst: string; id: string; aantal?: number; label?: { uk: string; nl: string } };
+/** `meta` (bv. «Пошта · 5 хв тому») en `icoon` (type zoekopdracht) zijn alleen voor recente zoekopdrachten van de bovenbalk. */
+export type VeldSuggestie = ZoekSuggestie | { soort: 'geschiedenis'; tekst: string; id: string; aantal?: number; label?: { uk: string; nl: string }; meta?: string; icoon?: typeof Search };
 export const SUGGESTIE_LABEL: Readonly<Record<VeldSuggestie['soort'], { uk: string; nl: string }>> = Object.freeze({
   aanvulling: { uk: 'Завершення', nl: 'Aanvulling' }, functie: { uk: 'Функція', nl: 'Functie' }, pagina: { uk: 'Сторінка', nl: 'Pagina' }, categorie: { uk: 'Категорія', nl: 'Categorie' },
   correctie: { uk: 'Виправлення', nl: 'Correctie' }, synoniem: { uk: 'Синонім', nl: 'Synoniem' }, geschiedenis: { uk: 'Нещодавній пошук', nl: 'Recente zoekopdracht' },
@@ -33,9 +34,11 @@ export type ZoekVeldProps = {
   rechts?: ReactNode;
   inputRef?: React.RefObject<HTMLInputElement | null>;
   onEscapeLeeg?: () => void;
+  /** Vaste rij onder de lijst (bv. «Wis recente zoekopdrachten»). Zet de lijst dan in een uitklapvenster met die rij. */
+  voet?: ReactNode;
 };
 
-export default function ZoekVeld({ lang, value, onChange, onSubmit, onKies, suggesties, placeholder, label, groot, autoFocus, beschrijvingId, rechts, inputRef, onEscapeLeeg }: ZoekVeldProps) {
+export default function ZoekVeld({ lang, value, onChange, onSubmit, onKies, suggesties, placeholder, label, groot, autoFocus, beschrijvingId, rechts, inputRef, onEscapeLeeg, voet }: ZoekVeldProps) {
   const uid = useId(); const lb = `${uid}-lb`; const eigenRef = useRef<HTMLInputElement | null>(null); const ref = inputRef || eigenRef;
   const [open, setOpen] = useState(false); const [actief, setActief] = useState(-1);
   const [melding, setMelding] = useState('');
@@ -66,6 +69,18 @@ export default function ZoekVeld({ lang, value, onChange, onSubmit, onKies, sugg
       else if (value) { e.preventDefault(); e.stopPropagation(); onChange(''); onEscapeLeeg?.(); }
     } else if (e.key === 'Tab') { setOpen(false); setActief(-1); }
   };
+  const lijst = (
+    <ul id={lb} role='listbox' aria-label={t('Підказки пошуку', 'Zoeksuggesties')} className={voet ? 'zk-pop zk-pop-in-kader' : 'zk-pop'} hidden={!toon}>
+      {suggesties.map((s, i) => { const I = ('icoon' in s && s.icoon) || ICOON[s.soort] || CircleHelp; const lbl = s.label && s.label[lang] && s.label[lang] !== s.tekst ? s.label[lang] : SUGGESTIE_LABEL[s.soort][lang]; // label gelijk aan de tekst zegt niets → soort tonen
+        return (
+          <li key={`${s.soort}:${s.tekst}:${'id' in s ? s.id || '' : ''}`} id={`${uid}-o${i}`} role='option' aria-selected={i === actief} className={`zk-optie${i === actief ? ' is-actief' : ''} soort-${s.soort}`}
+            onMouseEnter={() => setActief(i)} onMouseDown={e => { e.preventDefault(); kies(s); }}>
+            <I aria-hidden='true' />
+            <span className='zk-optie-tekst'><Hl text={s.tekst} terms={norm(value).split(' ')} /></span>
+            <span className='zk-optie-soort'>{'meta' in s && s.meta ? s.meta : lbl}{typeof s.aantal === 'number' ? ` · ${s.aantal}` : ''}</span>
+          </li>);
+      })}
+    </ul>);
   return (
     <div className={`zk-veld${groot ? ' is-groot' : ''}`}>
       <label htmlFor={`${uid}-in`} className='zk-sr'>{label}</label>
@@ -78,17 +93,7 @@ export default function ZoekVeld({ lang, value, onChange, onSubmit, onKies, sugg
         {value && <button type='button' className='knop-icoon zk-wis' aria-label={t('Очистити поле', 'Veld wissen')} onClick={() => { onChange(''); ref.current?.focus(); }}><X aria-hidden='true' /></button>}
         {rechts}
       </div>
-      <ul id={lb} role='listbox' aria-label={t('Підказки пошуку', 'Zoeksuggesties')} className='zk-pop' hidden={!toon}>
-        {suggesties.map((s, i) => { const I = ICOON[s.soort] || CircleHelp; const lbl = s.label && s.label[lang] && s.label[lang] !== s.tekst ? s.label[lang] : SUGGESTIE_LABEL[s.soort][lang]; // label gelijk aan de tekst zegt niets → soort tonen
-          return (
-            <li key={`${s.soort}:${s.tekst}:${'id' in s ? s.id || '' : ''}`} id={`${uid}-o${i}`} role='option' aria-selected={i === actief} className={`zk-optie${i === actief ? ' is-actief' : ''} soort-${s.soort}`}
-              onMouseEnter={() => setActief(i)} onMouseDown={e => { e.preventDefault(); kies(s); }}>
-              <I aria-hidden='true' />
-              <span className='zk-optie-tekst'><Hl text={s.tekst} terms={norm(value).split(' ')} /></span>
-              <span className='zk-optie-soort'>{lbl}{typeof s.aantal === 'number' ? ` · ${s.aantal}` : ''}</span>
-            </li>);
-        })}
-      </ul>
+      {voet ? <div className='zk-pop-kader' hidden={!open}>{lijst}{voet}</div> : lijst}
       <p role='status' aria-live='polite' className='zk-sr'>{melding}</p>
     </div>);
 }

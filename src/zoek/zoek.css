@@ -3,7 +3,7 @@
    Breedtes in rem/%/min(); geen vaste px-breedte boven 22.5rem; geen letter kleiner dan var(--tekst-mini). */
 .zk-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .zk-pagina{color:var(--text);max-width:80rem;margin:0 auto;padding:var(--ruimte-3) var(--ruimte-4) var(--ruimte-6);font:inherit;min-width:0}
-.zk-pagina mark,.zk-palet mark{background:var(--warn-zacht);color:var(--text);border-radius:3px;padding:0 1px;font-weight:650}
+.zk-pagina mark,.zk-uitklap mark{background:var(--warn-zacht);color:var(--text);border-radius:3px;padding:0 1px;font-weight:650}
 .zk-spin{animation:zk-spin 1s linear infinite}@keyframes zk-spin{to{transform:rotate(360deg)}}
 
 /* ---------------------------------------------------------------- kop: titel, veld, correctie, categorieën */
@@ -297,11 +297,26 @@
 .zijbalk-werkbalk.dock .zijbalk-werkbalk-zoek{width:30px;height:30px;margin-right:2px}
 .zijbalk-werkbalk .zijbalk-werkbalk-zoek:hover,.zijbalk-werkbalk .zijbalk-werkbalk-zoek:focus-visible{background:var(--zb-hover);color:var(--text)}
 .zijbalk-werkbalk .zijbalk-werkbalk-zoek:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.zk-palet-achter{position:fixed;inset:0;z-index:720;background:var(--overlay);display:grid;align-content:start;justify-items:center;padding:calc(10vh + var(--veilig-boven)) var(--ruimte-3) var(--ruimte-3)}
-.zk-palet{width:min(40rem,100%);display:flex;flex-direction:column;gap:var(--ruimte-3);padding:var(--ruimte-3);box-shadow:var(--schaduw-3)}
-.zk-palet .zk-pop{position:static;box-shadow:none;border:0;padding:0;max-height:min(50vh,22rem)}
-.zk-palet-voet{display:flex;flex-wrap:wrap;gap:var(--ruimte-2);align-items:center;justify-content:space-between}
-.zk-palet-hint{color:var(--muted);font-size:var(--tekst-mini)}
+/* Zoekveld klapt UIT OP DE PLEK (zoekronde 02.11.2026): de pil wordt een veld, het venster eronder staat geportaleerd naar body
+   (zie ZoekGlobaal.tsx). Het veld is ZICHTBAAR verborgen i.p.v. weggehaald, zodat de plek in de bovenbalk even groot blijft. */
+.zk-anker{position:relative;display:inline-flex;align-items:center;min-width:0;max-width:100%}
+.zk-trigger.is-verborgen,.zk-trigger-mobiel.is-verborgen{visibility:hidden}
+.zk-uitklap{position:fixed;z-index:760;display:flex;flex-direction:column;min-width:0;max-width:calc(100vw - 16px);box-sizing:border-box}
+.zk-uitklap .zk-veld{width:100%}
+.zk-uitklap .zk-box{background:var(--panel);box-shadow:var(--schaduw-2)}
+.zk-pop-kader{position:absolute;z-index:60;left:0;right:0;top:calc(100% + var(--ruimte-1));display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:var(--straal-m);box-shadow:var(--schaduw-2);padding:var(--ruimte-1);text-align:left}
+.zk-pop-kader[hidden]{display:none}
+.zk-pop.zk-pop-in-kader{position:static;margin:0;padding:0;border:0;box-shadow:none;background:transparent;max-height:min(24rem,56vh);overflow:auto}
+.zk-pop-voet{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ruimte-1) var(--ruimte-2);padding:var(--ruimte-1) var(--ruimte-2) 0;margin-top:var(--ruimte-1);border-top:1px solid var(--line)}
+.zk-pop-wis{display:inline-flex;align-items:center;gap:var(--ruimte-1);min-height:var(--tik-hoogte);padding:0 var(--ruimte-2);border:0;border-radius:var(--straal-s);background:transparent;color:var(--muted);font:inherit;font-size:var(--tekst-klein);cursor:pointer}
+.zk-pop-wis svg{flex:none;width:1rem;height:1rem}
+.zk-pop-wis:hover,.zk-pop-wis:focus-visible{background:var(--surface);color:var(--text)}
+.zk-pop-leeg{color:var(--muted);font-size:var(--tekst-klein)}
+.zk-pop-hint{margin-left:auto;color:var(--muted);font-size:var(--tekst-mini)}
+.zk-naar-pagina{flex:none;display:inline-flex;align-items:center;gap:var(--ruimte-1);min-height:var(--tik-hoogte);margin-right:var(--ruimte-1);padding:0 var(--ruimte-2);border:1px solid var(--line);border-radius:var(--straal-s);background:var(--surface);color:var(--text);font:inherit;font-size:var(--tekst-klein);font-weight:600;white-space:nowrap;cursor:pointer}
+.zk-naar-pagina svg{flex:none;width:1rem;height:1rem}
+.zk-naar-pagina:hover{border-color:color-mix(in srgb,var(--text) 24%,var(--line))}
+.zk-naar-pagina:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 /* ---------------------------------------------------------------- focus-doel (?focus=<hulp-sleutel>, src/platform/focus-doel.ts) */
 .is-focus-doel{outline:3px solid var(--focus)!important;outline-offset:3px;border-radius:var(--straal-s);animation:zk-puls 1.2s ease-in-out 3}
@@ -330,7 +345,8 @@
   .zk-kaart-titel a{display:inline-block;min-height:2.5rem}
   /* 22.10 (etap F, stand ZOEK-F 390): de zwevende meldingenbel lag over «Показати результати» van het filter-onderblad; zoals bij het opstelvenster (mail) verdwijnt hij zolang het onderblad open is. */
   /* 22.10 (etap F, stand): de voetlink van het palet («Відкрити сторінку пошуку») was 36 px hoog op 390 — tikvlak ≥ 44 px. */
-  .zk-palet-voet .knop,.zk-palet-voet a.knop{min-height:var(--tik-hoogte-mobiel)}
+  .zk-uitklap .zk-naar-pagina,.zk-pop-wis{min-height:var(--tik-hoogte-mobiel)}
+  .zk-uitklap .zk-naar-pagina span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
   /* zone D: raster op de telefoon = één kolom; ordening/weergave onder de status; indexvenster is daar schermvullend (vensters.css) */
   .zk-lijst.is-raster{grid-template-columns:minmax(0,1fr)}
   /* (stand D 390): de telefoonregel hierboven zette de tegel weer op twee kolommen → icoon over de titel; de tegel blijft één kolom */

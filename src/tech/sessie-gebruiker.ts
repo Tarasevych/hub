@@ -6,8 +6,9 @@
 import { useEffect } from 'react';
 import { techGebruiker } from './tech-opslag';
 import { weergaveGebruiker } from '../weergave/weergave-opslag';
+import { zetZoekGebruiker } from '../zoek/zoek-recent';
 
 /** undefined = nog onbekend (niets doen); null = niet aangemeld; anders de gebruikers-id. */
 export function useSessieGebruiker(userId: string | null | undefined): void {
-  useEffect(() => { if (userId !== undefined) { techGebruiker(userId); weergaveGebruiker(userId); } }, [userId]);
+  useEffect(() => { if (userId !== undefined) { techGebruiker(userId); weergaveGebruiker(userId); zetZoekGebruiker(userId); } }, [userId]);
 }

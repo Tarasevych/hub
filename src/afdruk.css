@@ -1,0 +1,173 @@
+/* Afdrukken (Ctrl+P, zoekronde 02.11.2026): de hele pagina op papier, niet alleen het zichtbare deel.
+   De schil van de app (zijbalk, bovenbalk, lade, meldingen, zoekvenster, technische band) valt weg; de inhoud stroomt van boven naar
+   beneden, zonder afgesneden scrollvensters, met zinnige paginaovergangen. Zonder scherm te zien getest met de printweergave van de
+   browser: zie het verslag van de zoekronde (scheidingen en controles in de bestandskaart). */
+
+@page {
+  margin: 14mm 12mm 16mm;
+}
+
+@media print {
+  /* 1. Geen vaste lagen en geen beperkte hoogte: de documentstroom bepaalt wat er op papier komt. */
+  html,
+  body,
+  #root,
+  .canonical-chrome,
+  .canonical-workspace,
+  .canonical-content,
+  .canonical-main,
+  .canonical-shell,
+  .canonical-workspace > *,
+  html[data-tech=aan] #root,
+  html[data-tech=aan] body > #root {
+    position: static !important;
+    inset: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    transform: none !important;
+    translate: none !important;
+    scroll-behavior: auto !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11.5pt;
+    line-height: 1.4;
+    print-color-adjust: economy;
+    -webkit-print-color-adjust: economy;
+  }
+
+  /* 2. De schil die op papier niets toevoegt: zijbalk, bovenbalk, lade, bel, zoeken, menu's, meldingen en vensterlagen. */
+  .canonical-sidebar,
+  .canonical-topbar,
+  .canonical-drawer,
+  .canonical-drawer-header,
+  .canonical-menu-toggle,
+  .canonical-account-anchor,
+  .canonical-account-menu,
+  .canonical-notification-center,
+  .canonical-notification-toast,
+  .canonical-notification-panel,
+  .canonical-viewport-tooltip,
+  .canonical-floating-tooltip,
+  .canonical-workspace::after,
+  .zk-uitklap,
+  .zk-trigger,
+  .zk-trigger-mobiel,
+  .zk-anker,
+  .plaats-actiestapel,
+  .plaats-zone-hint,
+  .plaats-gniezdo,
+  .tech-band,
+  .tech-strook-paneel,
+  .tech-strook-menu,
+  .venster-achter,
+  .venster-dok,
+  .ruimte-dok,
+  .rw-dok-melding,
+  .info-tip-tekst,
+  .tech-vraag-uitleg,
+  button,
+  .knop,
+  [role='tooltip'],
+  [data-afdruk-verberg] {
+    display: none !important;
+  }
+
+  /* 3. Ruimte van de schil terug: geen linkermarge voor de zijbalk, geen bovenmarge voor de bovenbalk. */
+  .canonical-workspace,
+  .sidebar-pinned .canonical-workspace,
+  .sidebar-hover .canonical-workspace,
+  .canonical-chrome.sidebar-drawer-mode .canonical-workspace {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* 4. Scrollvensters (lijsten, tabellen, kaarten met eigen hoogte): alle inhoud zichtbaar, geen afkapping. */
+  [class*='scroll'],
+  [class*='lijst'],
+  [class*='tabel'],
+  [class*='paneel'],
+  [class*='kaart'],
+  [class*='inhoud'] {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* 5. Papiergedrag: koppen blijven bij hun tekst, blokken worden niet midden doorgesneden, tabelkoppen herhalen zich. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  p,
+  li,
+  blockquote,
+  dd,
+  dt {
+    orphans: 3;
+    widows: 3;
+  }
+
+  table,
+  figure,
+  img,
+  pre,
+  blockquote,
+  .kaart,
+  [class*='kaart'],
+  [class*='card'],
+  tr,
+  li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  img,
+  video,
+  iframe,
+  canvas,
+  svg {
+    max-width: 100% !important;
+    height: auto;
+  }
+
+  a[href]:not([class]) {
+    text-decoration: underline;
+    color: inherit;
+  }
+
+  /* 6. Open vensters en overlays horen niet op papier: die vallen weg (de inhoud van de pagina zelf blijft). */
+  .venster,
+  .venster-achter,
+  [role='dialog'],
+  [aria-modal='true'],
+  [data-zoek-palet] {
+    display: none !important;
+  }
+}

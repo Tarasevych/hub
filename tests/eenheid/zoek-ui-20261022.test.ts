@@ -154,7 +154,7 @@ export async function main(): Promise<number> {
     const chrome = lees('src/CanoniekOmlijsting.tsx');
     check('B bovenbalk: ZoekGlobaal (veld-knop + palet ⌘K) op computer én telefoon; focus-doel gestart', chrome.includes("<ZoekGlobaal lang={lang} dienst={current}/>") && chrome.includes('<ZoekGlobaal lang={lang} mobiel dienst={current}/>') && chrome.includes('focusDoelStarten()'));
     const palet = lees('src/zoek/ZoekGlobaal.tsx');
-    check('B palet: ⌘K/Ctrl+K, role=dialog aria-modal, houdTab, Escape → sluiten + focus terug, Enter zonder keuze → /zoek?q=', palet.includes("(e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && (e.key === 'k'") && palet.includes("role='dialog' aria-modal='true'") && palet.includes('houdTab(e, focusbaar(paneel.current)') && palet.includes('focusTerug(vorigeFocus.current)') && palet.includes('location.assign(zoekPaginaUrl(lang, tekst))'));
+    check('B uitklapvenster op de plek van het veld (zoekronde 02.11.2026): ⌘K/Ctrl+K, Escape → sluiten + focus terug, Enter zonder keuze → zoekpagina met de tekst, recente zoekopdrachten bewaard', palet.includes("(e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && (e.key === 'k'") && palet.includes('zk-uitklap') && palet.includes('focusTerug(vorigeFocus.current)') && palet.includes('location.assign(zoekPaginaUrl(lang, v') && palet.includes('bewaarRecent(v, sectie)'));
 
     // ================================================================ C. geschiedenis op de server (0103) via de echte routes
     const pool = getPool('systeem');
