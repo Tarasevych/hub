@@ -128,9 +128,9 @@ export async function main(): Promise<number> {
   // ---------------------------------------------------------------- 2. waarom het verzoek nooit lukte + waar het nu vandaan komt
   {
     const opt = lees('options.js'); const ui = lees('ui.js'); const bg = lees('background.js');
-    // UI-011 (0.8.0): opgelost — `debugger` staat VAST in permissions (Chrome weigert het als optioneel recht; bewezen in Chrome 156).
-    check('0.8.0: `debugger` staat VAST in permissions en NIET meer in optional_permissions',
-      !(manifest.optional_permissions || []).includes('debugger') && (manifest.permissions || []).includes('debugger'));
+    // 0.8.1: het standaardpakket heeft GEEN `debugger` (ook niet optioneel). Alleen het pakket «diagnose» voegt hem vast toe (scripts/bouw-extensie.mjs).
+    check('0.8.1: standaardpakket heeft `debugger` NIET (ook niet optioneel); het pakket diagnose voegt hem vast toe',
+      !(manifest.optional_permissions || []).includes('debugger') && !(manifest.permissions || []).includes('debugger'));
     check('de fout van Chrome wordt als «niet-aanvraagbaar» geclassificeerd, niet als weigering van de gebruiker',
       JS.diagRechtStandVanFout(new Error('Only permissions specified in the manifest may be requested.')) === 'niet-aanvraagbaar'
       && JS.diagRechtStandVanFout(new Error("'debugger' cannot be optional")) === 'niet-aanvraagbaar'
@@ -145,7 +145,7 @@ export async function main(): Promise<number> {
     check('de achtergrond (service worker) vraagt NOOIT een recht aan — daar is geen gebruikersgebaar; ze leest het alleen',
       !/chrome\.permissions\.request/.test(bg) && /permissions\.contains\(\{ permissions: \['debugger'\] \}\)/.test(bg));
     check('0.8.0: elke stand heeft eigen uitleg én een herstelstap (chrome://extensions / ↻ / bijwerken naar 0.8.0); de schakelaar springt nooit stil terug',
-      DIAG_RECHT_STANDEN.every((s) => ui.includes(`'${s}'`) || ui.includes(`${s}:`)) && ui.includes('chrome://extensions') && ui.includes('0.8.0') && /diag-hulp/.test(opt) && /diagWerkelijk/.test(ui));
+      DIAG_RECHT_STANDEN.every((s) => ui.includes(`'${s}'`) || ui.includes(`${s}:`)) && ui.includes('chrome://extensions') && ui.includes('pakket «діагностика»') && /diag-hulp/.test(opt) && /diagWerkelijk/.test(ui));
   }
 
   // ---------------------------------------------------------------- 3. de poortwachter: alleen technisch profiel, alleen toegestane hosts
@@ -232,7 +232,9 @@ export async function main(): Promise<number> {
   try {
     const opslag: Record<string, unknown> = {};
     const verleend = new Set<string>();
-    const nep = nepChrome(opslag, verleend, manifest);
+    // Deze scenario's gaan over het pakket «діагностика» (debugger vast in het manifest); het standaardpakket heeft het recht niet.
+    const diagnoseManifest = { ...manifest, permissions: [...(manifest.permissions || []), 'debugger'] };
+    const nep = nepChrome(opslag, verleend, diagnoseManifest);
     g.chrome = nep.chrome;
     g.fetch = async () => { throw new Error('geen netwerk in de eenheidstest'); };
     g.WebSocket = class { constructor() { throw new Error('geen netwerk'); } };

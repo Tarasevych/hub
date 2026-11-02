@@ -30,6 +30,13 @@ export function sourceOfAudit(action: string): string | null {
 const FAIL = /fail|denied|error|reject|invalid|blocked|conflict|mislukt|fout|afgebroken/i;
 /** Nederlandse weigering uit het beheerlogboek (journaalSchrijf resultaat 'geweigerd'): «відхилено», geen «помилка» en geen pop-up. */
 const GEWEIGERD = /^(geweigerd|afgewezen)$/i;
+/** Alleen een code (letters, cijfers, _ of -), nooit vrije tekst: die kan gevoelige gegevens bevatten. */
+const CODE = /^[A-Za-z0-9_-]{2,60}$/;
+const codeVan = (v: unknown): string => (typeof v === 'string' && CODE.test(v.trim()) ? v.trim() : '');
+/** Oorzaak uit de details van een auditregel (code/reason/reden/error), of '' als die geen code is. */
+export function reasonOfAudit(details?: Record<string, unknown>): string {
+  return codeVan(details?.code ?? details?.reason ?? details?.reden ?? details?.error);
+}
 export function siteEventsFromAudit(rows: Array<{ id: string; action: string; result: string; createdAt: number; details?: Record<string, unknown>; context?: { profiel?: string; activatie?: string } }>): SiteEvent[] {
   const out: SiteEvent[] = [];
   for (const r of rows) {
@@ -52,7 +59,7 @@ export function siteEventsFromAudit(rows: Array<{ id: string; action: string; re
       const kort = (v: unknown, n: number) => (typeof v === 'string' && v ? v.slice(0, n) : undefined);
       const tool = kort(r.details.tool, 80), doel = kort(r.details.doel, 120), client = kort(r.details.client, 60);
       const code = typeof r.details.fout === 'string' && /^[A-Z][A-Z0-9_]{2,47}$/.test(r.details.fout) ? r.details.fout : undefined;
-      const reden = kort(r.details.reden, 40);
+      const reden = codeVan(r.details.reden).slice(0, 40) || undefined;
       if (tool) ev.tool = tool;
       if (doel) ev.doel = doel;
       if (client) ev.client = client;
@@ -60,6 +67,8 @@ export function siteEventsFromAudit(rows: Array<{ id: string; action: string; re
       if (code) ev.code = code;
       if (reden) ev.reden = reden;
     }
+    // Elke andere mislukte actie krijgt de foutcode uit het journaal (alleen een code), zodat de melding zegt waarom. Voor AI-acties staat dat hierboven.
+    if (ev.code === undefined && r.action !== 'owner.mcp.tool') { const code = reasonOfAudit(r.details); if (code) ev.code = code; }
     out.push(ev);
   }
   return out;

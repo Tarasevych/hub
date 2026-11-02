@@ -53,8 +53,8 @@ mkdirSync(outDir, { recursive: true });
 const target = join(outDir, 'mijn-ruimte-extension.zip');
 writeFileSync(target, zip(entries));
 const sha256 = createHash('sha256').update(readFileSync(target)).digest('hex');
-// Sinds 0.4.0 staat "debugger" vast in het manifest (de gebruiker zet diepe diagnose zelf aan in de opties: diagOptIn), dus er is
-// geen aparte uitgave "налагодження" meer. Een oud pakket uit een eerdere build wordt opgeruimd; extension-version.json meldt debug: null.
+// Sinds 0.8.1 heeft het standaardpakket GEEN "debugger" (minimale rechten, bewuste keuze). Het pakket «diagnose» hieronder voegt hem vast toe.
+// Een oud pakket «налагодження» uit een eerdere build wordt opgeruimd; extension-version.json meldt debug: null.
 const debugOud = join(outDir, 'mijn-ruimte-extension-debug.zip');
 if (existsSync(debugOud)) rmSync(debugOud);
 const debug = null;
@@ -68,7 +68,7 @@ const debug = null;
 const diagnoseEntries = extensionEntries(extDir).map((e) => {
   if (e.name !== 'manifest.json') return e;
   const m = JSON.parse(e.data.toString('utf8'));
-  // UI-011 (0.8.0): het gewone pakket heeft `debugger` nu zelf vast; dit pakket blijft bestaan voor oude links (geen dubbel recht).
+  // 0.8.1: het gewone pakket heeft geen `debugger`; dit pakket voegt hem vast toe (geen dubbel recht als hij er al staat).
   m.permissions = m.permissions.includes('debugger') ? m.permissions : [...m.permissions, 'debugger'];
   m.optional_permissions = (m.optional_permissions || []).filter((p) => p !== 'debugger');
   m.name = `${m.name} (diagnose)`;

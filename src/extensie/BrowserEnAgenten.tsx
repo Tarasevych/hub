@@ -9,7 +9,7 @@
 //   4. een korte uitleg voor agenten (docs/agenten/BROWSER-VIA-CONNECTOR.md).
 // Server: GET/POST /api/owner/agents/extensie-matrix (MatrixStand), POST …/zet, POST …/snel (backend/extensie-matrix.ts).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Bot, Check, Eye, KeyRound, Lock, LockOpen, RefreshCw, Save, ShieldCheck, ShieldOff, User } from 'lucide-react';
+import { AlertTriangle, Ban, Bot, Check, Eye, Hand, KeyRound, Lock, LockOpen, RefreshCw, Save, ShieldCheck, ShieldOff, User } from 'lucide-react';
 import HulpVraag from '../hulp/HulpVraag';
 import { api } from '../platform/client';
 import { foutTekst } from '../agenten/fouten';
@@ -102,6 +102,16 @@ export default function BrowserEnAgenten({ tr, naarExtensie, openSlot = '' }: { 
     if (aan) n[agent].add(c); else n[agent].delete(c);
     return n;
   });
+  // Groepsknoppen (overgenomen uit de hub-UX): veilige of gevaarlijke mogelijkheden in één keer toestaan of intrekken, voor de gekozen
+  // agentkolom. Ze wijzigen alleen de bewerkbare kaart; pas «Opslaan» schrijft naar de server (zelfde controle als bij een vinkje).
+  const groepCaps = (g: 'veilig' | 'gevaarlijk' | 'alles') => caps.filter((c) => g === 'alles' || (g === 'veilig' ? !CAP_INFO[c].gevaarlijk : !!CAP_INFO[c].gevaarlijk));
+  const groepAllesAan = (g: 'veilig' | 'gevaarlijk' | 'alles') => { const lijst = groepCaps(g); const set = kaart?.[kolom]; return lijst.length > 0 && !!set && lijst.every((c) => set.has(c)); };
+  const zetGroep = (g: 'veilig' | 'gevaarlijk' | 'alles', aan: boolean) => setKaart((k) => {
+    if (!k) return k;
+    const n = { ...k, [kolom]: new Set(k[kolom]) } as Kaart;
+    for (const c of groepCaps(g)) { if (aan) n[kolom].add(c); else n[kolom].delete(c); }
+    return n;
+  });
   const opslaan = async () => {
     if (!kaart || !inst) return;
     setBezig('opslaan'); setMelding(null);
@@ -186,6 +196,25 @@ export default function BrowserEnAgenten({ tr, naarExtensie, openSlot = '' }: { 
         ) : null}
         {kaart ? (
           <div className='bea-tabel-wrap'>
+            <div data-bea-groepen={kolom} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', margin: '6px 0 8px' }}>
+              <small className='hub-meta'>{tr('Для:', 'Voor:')} <b>{agentNaam(kolom)}</b></small>
+              {(['veilig', 'gevaarlijk'] as const).map((g) => {
+                const aan = groepAllesAan(g);
+                return (
+                  <button key={g} type='button' className='eo-knop' disabled={!!bezig} data-bea-groep={g} data-bea-groep-aan={aan ? 'ja' : 'nee'} onClick={() => zetGroep(g, !aan)}>
+                    {aan ? <Ban aria-hidden='true' /> : <ShieldCheck aria-hidden='true' />}
+                    {g === 'veilig'
+                      ? (aan ? tr('Безпечні: зняти всі', 'Veilige: alles intrekken') : tr('Безпечні: дозволити всі', 'Veilige: alles toestaan'))
+                      : (aan ? tr('Небезпечні: зняти всі', 'Gevaarlijke: alles intrekken') : tr('Небезпечні: дозволити всі', 'Gevaarlijke: alles toestaan'))}
+                  </button>
+                );
+              })}
+              <button type='button' className='eo-knop' disabled={!!bezig} data-bea-groep='alles' data-bea-groep-aan={groepAllesAan('alles') ? 'ja' : 'nee'} onClick={() => zetGroep('alles', !groepAllesAan('alles'))}>
+                {groepAllesAan('alles') ? <Ban aria-hidden='true' /> : <ShieldCheck aria-hidden='true' />}
+                {groepAllesAan('alles') ? tr('Усе зняти', 'Alles intrekken') : tr('Усе дозволити', 'Alles toestaan')}
+              </button>
+              <small className='hub-meta'>{tr('Зміни діють після «Зберегти».', 'Wijzigingen gelden na «Opslaan».')}</small>
+            </div>
             <table className='bea-tabel' data-bea-tabel={ruimte} data-bea-kolom={kolom}>
               <thead>
                 <tr>
@@ -213,7 +242,9 @@ export default function BrowserEnAgenten({ tr, naarExtensie, openSlot = '' }: { 
                         <label className='bea-cel'>
                           <input type='checkbox' data-hulp={`browser.matrix.${kort(c)}`} checked={kaart[a].has(c)} disabled={!!bezig} onChange={(e) => zet(a, c, e.target.checked)}
                             aria-label={`${uk ? CAP_INFO[c].uk[0] : CAP_INFO[c].nl[0]} — ${agentNaam(a)}`} />
-                          <span className='bea-vink' aria-hidden='true' />
+                          <span className='bea-vink' aria-hidden='true'>
+                            {!kaart[a].has(c) ? <Ban size={14} /> : CAP_INFO[c].gevaarlijk && inst && !inst.zonderBevestiging ? <Hand size={14} /> : <ShieldCheck size={14} />}
+                          </span>
                         </label>
                       </td>
                     ))}
@@ -221,6 +252,11 @@ export default function BrowserEnAgenten({ tr, naarExtensie, openSlot = '' }: { 
                 ))}
               </tbody>
             </table>
+            <p className='hub-meta' data-bea-legenda='1' style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', margin: '8px 0 0' }}>
+              <span><Ban size={13} aria-hidden='true' /> {tr('заборонено', 'verboden')}</span>
+              <span><ShieldCheck size={13} aria-hidden='true' /> {tr('дозволено', 'toegestaan')}</span>
+              <span><Hand size={13} aria-hidden='true' /> {tr('дозволено, але кожна небезпечна дія спершу чекає вашого підтвердження (якщо нижче не ввімкнено «Без підтвердження»)', 'toegestaan, maar elke gevaarlijke stap vraagt eerst uw bevestiging (tenzij «Zonder bevestiging» hieronder aan staat)')}</span>
+            </p>
           </div>
         ) : <p className='hub-meta'>{tr('Завантаження…', 'Laden…')}</p>}
 
