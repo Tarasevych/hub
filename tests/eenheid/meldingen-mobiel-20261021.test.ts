@@ -99,13 +99,15 @@ export async function main(): Promise<number> {
   check('B veiligeRand meet env(safe-area-inset-*) via CSSOM (geen style-attribuut, CSP)', veiligBron.includes("s.paddingBottom = 'env(safe-area-inset-bottom, 0px)'") && !veiligBron.includes("setAttribute('style'"));
 
   // ------------------------------------------------------------------ C. paneel: kop met «⋯», acties één keer in de DOM
+  // Vergelijking zonder witruimte (de bron is leesbare code, geen geminificeerde regels).
+  const heeft = (bron: string, patroon: string) => bron.replace(/\s+/g, '').includes(patroon.replace(/\s+/g, ''));
   check('C kop: «⋯» (data-qa-id melding-meer) met aria-expanded + aria-controls=cnc-acties, vóór de knop inklappen',
-    bel.includes("className='cnc-meer-knop' data-qa-id='melding-meer' aria-expanded={meer} aria-controls='cnc-acties'") && bel.indexOf("data-qa-id='melding-meer'") < bel.indexOf("onClick={()=>setPanelOpen(false)}"));
-  check('C acties: één <footer id=cnc-acties> (computer: balk onderaan; telefoon: menu), elke actie sluit het menu', bel.includes("<footer id='cnc-acties' className={meer?'is-open':undefined}") && (bel.match(/<footer/g) || []).length === 1
-    && bel.includes('onClick={()=>{resetPosition();setMeer(false)}}') && bel.includes('onClick={()=>{setMeer(false);void markAll()}}') && bel.includes('onClick={()=>{setInstellingen(v=>!v);setMeer(false)}}'));
-  check('C Escape sluit eerst het menu (focus terug op «⋯»), daarna pas het paneel', bel.includes('if(meerRef.current){setMeer(false);meerKnopRef.current?.focus();return}setPanelOpen(false)'));
-  check('C tik buiten het menu (in het paneel) sluit het; paneel dicht → menu dicht', bel.includes("!event.target.closest('#cnc-acties,[data-qa-id=\"melding-meer\"]'))setMeer(false)") && bel.includes('if(!panelOpen){setInstellingen(false);setMeer(false)}'));
-  check('C in «Типи сповіщень» een terugknop in de kop', bel.includes("{instellingen&&<button type='button' className='cnc-terug' onClick={()=>setInstellingen(false)}"));
+    heeft(bel, "className='cnc-meer-knop' data-qa-id='melding-meer' aria-expanded={meer} aria-controls='cnc-acties'") && bel.indexOf("data-qa-id='melding-meer'") < bel.indexOf('onClick={() => setPanelOpen(false)}'));
+  check('C acties: één <footer id=cnc-acties> (computer: balk onderaan; telefoon: menu), elke actie sluit het menu', heeft(bel, "<footer id='cnc-acties' className={meer ? 'is-open' : undefined}") && (bel.match(/<footer/g) || []).length === 1
+    && heeft(bel, 'onClick={() => { resetPosition(); setMeer(false); }}') && heeft(bel, 'onClick={() => { setMeer(false); void markAll(); }}') && heeft(bel, 'onClick={() => { setInstellingen((v) => !v); setMeer(false); }}'));
+  check('C Escape sluit eerst het menu (focus terug op «⋯»), daarna pas het paneel', heeft(bel, 'if (meerRef.current) { setMeer(false); meerKnopRef.current?.focus(); return; }'));
+  check('C tik buiten het menu (in het paneel) sluit het; paneel dicht → menu dicht', heeft(bel, "!event.target.closest('#cnc-acties,[data-qa-id=\"melding-meer\"]')) setMeer(false)") && heeft(bel, 'if (!panelOpen) { setInstellingen(false); setMeer(false); }'));
+  check('C in «Типи сповіщень» een terugknop in de kop', heeft(bel, "{instellingen && (<button type='button' className='cnc-terug' onClick={() => setInstellingen(false)}"));
 
   // ------------------------------------------------------------------ D. paneel: één chiprij + «Фільтри» (render)
   const herstel = nepBrowser();

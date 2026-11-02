@@ -95,6 +95,6 @@ export async function main(): Promise<number> {
   const be = readFileSync('backend/meldingen-regels.ts', 'utf8');
   check('regels-route vraagt sessie + vlag, user-id uit sessie', /requireSession/.test(be) && /MELDINGEN_V2_UIT/.test(be) && !/b\.userId|body\.userId/.test(be));
   const cnc = readFileSync('src/CanoniekMeldingencentrum.tsx', 'utf8');
-  check('zonder vlag: oud paneel ongewijzigd bereikbaar', /\{v2\?<MeldingenV2 [^]*:<><header>/.test(cnc) && /unreadCount=v2Model\?/.test(cnc));
+  check('zonder vlag: oud paneel ongewijzigd bereikbaar', /\{v2 \? \(\s*<MeldingenV2\s[\s\S]*\) : \(\s*<>\s*<header>/.test(cnc) && /unreadCount = v2Model \? /.test(cnc));
   return einde();
 }
