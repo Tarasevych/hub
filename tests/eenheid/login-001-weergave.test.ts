@@ -67,5 +67,15 @@ export async function main(): Promise<number> {
     accountCss.includes(".am2-ruimte .rw-knop[aria-checked='true']")
     && accountCss.includes('.am2-seg button.active')
     && accountCss.includes('.am2-sessie-rij .logout-current'));
+  check('beheerknop is inhoudsbreed in plaats van kaartbreed',
+    accountCss.includes('min-height:38px;width:fit-content;max-width:100%;margin:0 auto 6px')
+    && !accountCss.includes('min-height:44px;width:100%;margin:0 0 10px'));
+  check('sessieacties en taal-/themaknoppen hebben compacte maten',
+    accountCss.includes('min-height:36px;width:auto;padding:0 8px')
+    && accountCss.includes('height:34px;min-height:34px')
+    && accountCss.includes('.am2-rij .language-switch button{min-width:76px'));
+  check('ruimtewissel blijft tweedelig maar niet rand-tot-rand',
+    accountCss.includes('width:min(330px,100%);margin:0 auto')
+    && accountCss.includes('min-height:42px;padding:4px 9px'));
   return einde();
 }
