@@ -59,7 +59,9 @@ export default function Dashboard({ lang, context, bron, codes }: { lang: Lang; 
 
   useEffect(() => {
     void laden();
-    const iv = window.setInterval(() => { if (!pauzeRef.current && !document.hidden) void laden(); }, POLL_MS);
+    // Op de telefoon elke ~60 s in plaats van 15 s (zelfde verversing bij terugkeer naar het tabblad en bij elke wijziging).
+    let teller = 0;
+    const iv = window.setInterval(() => { teller += 1; const telefoon = window.matchMedia('(max-width:700px)').matches; if (!pauzeRef.current && !document.hidden && (!telefoon || teller % 4 === 0)) void laden(); }, POLL_MS);
     const zichtbaar = () => { if (!document.hidden && !pauzeRef.current) void laden(); };
     document.addEventListener('visibilitychange', zichtbaar);
     return () => { window.clearInterval(iv); document.removeEventListener('visibilitychange', zichtbaar); };
