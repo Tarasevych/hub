@@ -67,12 +67,29 @@ const schrijf = (tab: TabId, item: string, push: boolean, vraag?: URLSearchParam
 /** #extension-lokaal en #ruimte zijn ankers ín een sectie, geen tabbladnaam. Andere oude hashes (#claude) wel herschrijven. */
 const ANKER_ID = new Set(['extension-lokaal', 'ruimte']);
 
-/** Eén lange pagina: de zware inhoud van een sectie mount pas als die gekozen is of in beeld komt. */
-function LuieSectie({ tab, actief, zien, children }: { tab: TabId; actief: boolean; zien: boolean; children: ReactNode }) {
+/** Eén zin per sectie: wat dit is en wat u hier doet (uk, nl). Staat in de kop van elke sectie (zie sectieKop). */
+const SECTIE_HINT: Partial<Record<TabId, [string, string]>> = {
+  overzicht: ['Що зараз відбувається і що чекає на вас. Натисніть на цифру, щоб перейти до розділу.', 'Wat er nu speelt en wat op u wacht. Klik op een cijfer om naar dat onderdeel te gaan.'],
+  connectors: ['Адреса для кожного ШІ: її вставляєте в налаштування конектора у самому ШІ.', 'Het adres per AI: u vult het in bij de connector-instellingen van die AI zelf.'],
+  ai: ['Усі ШІ, які ви підключили, з їхнім доступом і токенами.', 'Alle AI die u heeft gekoppeld, met hun toegang en tokens.'],
+  extern: ['Зовнішні MCP-сервери, до яких цей сайт сам звертається.', 'Externe MCP-servers waar deze site zelf naartoe gaat.'],
+  orch: ['Узгодження між ШІ-агентами: правила, задачі, черга та передачі.', 'Afstemming tussen AI-agenten: regels, taken, wachtrij en overdrachten.'],
+  extensie: ['Браузерне розширення: підключення, дозволи та технічний профіль.', 'De browserextensie: koppeling, rechten en het technische profiel.'],
+  browser: ['Хто через який браузер і з яким доступом працює, і до коли.', 'Wie via welke browser werkt, met welke toegang en tot wanneer.'],
+  apparaten: ['Комп’ютери та браузери, підключені до вашого простору.', 'Computers en browsers die aan uw ruimte gekoppeld zijn.'],
+  tokens: ['Ключі, за якими ШІ або пристрій увійде. Відкликати можна будь-коли.', 'Sleutels waarmee een AI of apparaat inlogt. Intrekken kan altijd.'],
+  toegang: ['Хто має який доступ до цієї сторінки та до ваших даних.', 'Wie welke toegang heeft tot deze pagina en tot uw gegevens.'],
+  technisch: ['Технічні підключення сервера. Видно лише за наявності технічного профілю.', 'Technische verbindingen van de server. Alleen zichtbaar met een technisch profiel.'],
+  journaal: ['Усе, що тут відбувається, по порядку. Нічого не видаляється.', 'Alles wat hier gebeurt, in volgorde. Niets wordt gewist.'],
+};
+
+/** Eén lange pagina: de zware inhoud van een sectie mount pas als die gekozen is of in beeld komt. De kop (icoon, titel, één zin) staat altijd. */
+function LuieSectie({ tab, actief, zien, kop, children }: { tab: TabId; actief: boolean; zien: boolean; kop: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(actief);
   useEffect(() => { if (actief || zien) setOpen(true); }, [actief, zien]);
   return (
     <section id={`ag-sectie-${tab}`} data-ag-sectie={tab} data-ag-lui={open ? 'open' : 'dicht'} className='ag-sectie' aria-labelledby={`ag-tab-${tab}`}>
+      {kop}
       {open ? children : <div className='ag-lui-plaats' aria-hidden='true' />}
     </section>
   );
@@ -233,6 +250,19 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     technisch: { uk: 'Технічне', nl: 'Technisch', icoon: <Wrench /> },
     journaal: { uk: 'Журнал', nl: 'Logboek', icoon: <Activity /> },
   };
+  /** Vaste kop van elke sectie: icoon, titel en één zin, zodat elke sectie zichtbaar begint en eindigt. */
+  const sectieKop = (t: TabId) => {
+    const hint = SECTIE_HINT[t];
+    return (
+      <header className='ag-sectie-kop'>
+        <span className='ag-sectie-icoon' aria-hidden='true'>{tabInfo[t].icoon}</span>
+        <div className='ag-sectie-tekst'>
+          <h2>{tr(tabInfo[t].uk, tabInfo[t].nl)}</h2>
+          {hint ? <p>{tr(hint[0], hint[1])}</p> : null}
+        </div>
+      </header>
+    );
+  };
   const rij = zichtbareTabs(techAan);
   // #ruimte hoort bij «Технічне», ook als dat anker niet in de rij staat (profiel nog niet actief).
   const toon = useMemo(() => {
@@ -342,7 +372,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
           : <ConnectorsTab tr={tr} />) : (
           <div className='ag-secties' data-ag-lang='1'>
             {toon.map((t) => (
-              <LuieSectie key={t} tab={t} actief={plek.tab === t || plek.anker !== '' && ((plek.anker === 'ruimte' && t === 'technisch') || (plek.anker === 'extension-lokaal' && t === 'extensie'))} zien={inBeeld === t || toon[Math.max(0, toon.indexOf(huidig) + 1)] === t}>
+              <LuieSectie key={t} tab={t} actief={plek.tab === t || plek.anker !== '' && ((plek.anker === 'ruimte' && t === 'technisch') || (plek.anker === 'extension-lokaal' && t === 'extensie'))} zien={inBeeld === t || toon[Math.max(0, toon.indexOf(huidig) + 1)] === t} kop={sectieKop(t)}>
                 {t === 'overzicht' ? (
                   <Overzicht tr={tr} ga={ga} versie={versie} standen={standen} cijfers={{ ai: aiVerbonden, online, totaal: apparaten.length, tokens: tokensActief, wachten }}
                     wacht={wachten ? <>
