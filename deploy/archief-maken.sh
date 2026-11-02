@@ -6,8 +6,10 @@
 # Resultaat: $UIT/mijn-ruimte-<stempel>-volledig.tar.age — het HELE archief is met age versleuteld voor de publieke sleutel van de
 # eigenaar (audit 2026-10-08, C4: vroeger stonden code, units, sudoers en git-geschiedenis leesbaar in de tar). Uitpakken:
 #   age -d -i herstelsleutel-age.txt mijn-ruimte-<stempel>-volledig.tar.age | tar -x
+# Naast de laatste generatie staat de vaste naam archief-laatste.tar.age (+ archief-laatste.json): een harde link naar dezelfde gegevens
+# (geen extra schijfruimte). Er blijven twee generaties over (ARCHIEF_BEWAAR, standaard 2); alleen oudere eigen .tar.age-archieven gaan weg.
 # $UIT is een root-map (/var/lib/mijn-ruimte-archief/uitgifte, root:mijnruimte 0750): de app kan lezen maar niets neerzetten of
-# vervangen; het werk gebeurt in een root-map 0700. Overdracht via een vaste naam: archief-laatste.tar.age (+ archief-laatste.json).
+# vervangen; het werk gebeurt in een root-map 0700.
 # De app (mcp.tarasevych.com) geeft het alleen aan de eigenaar na step-up, via een willekeurige eenmalige download-id.
 # Inhoud (binnen de versleuteling):
 #   mijn-ruimte-<stempel>-volledig/
@@ -39,6 +41,8 @@ DATA="${DATA_ROOT:-/srv/data}"
 ETC="${ETC_MIJN:-/etc/mijn-ruimte}"
 ONTVANGER="${BACKUP_ONTVANGER:-$ETC/backup-ontvanger.age.pub}"
 DB_NAAM="${DB_NAAM:-mijnruimte}"
+BEWAAR="${ARCHIEF_BEWAAR:-2}"                       # aantal generaties dat blijft staan (minstens 1)
+[[ "$BEWAAR" =~ ^[1-9][0-9]?$ ]] || BEWAAR=2
 
 GROEP="${ARCHIEF_GROEP:-mijnruimte}"
 STATUS="$UIT/kit-status.txt"
@@ -121,9 +125,14 @@ tar --create --gzip --file "$W/kod/release.tar.gz" --directory "$(dirname "$rele
 tar --create --gzip --file "$W/kod/mcp.tar.gz" --directory "$APP" --exclude='*.env' --exclude='*.token' --exclude='*.secret' --exclude=.git \
   $( [ -d "$APP/mcp" ] && echo mcp ) 2>/dev/null || true
 zet 1 14 code "git-geschiedenis (als er opslagplaatsen zijn)"
+# kod/repos/INDEX.tsv (naam<TAB>pad t.o.v. $APP) zodat het herstelscript elke bundel weer op zijn eigen plek zet.
 while IFS= read -r g; do
-  d="$(dirname "$g")"; n="$(echo "${d#$APP/}" | tr '/ ' '__')"
-  git -c safe.directory="$d" -C "$d" bundle create "$W/kod/repos/${n}.bundle" --all >/dev/null 2>&1 || true
+  d="$(dirname "$g")"
+  rel="${d#"$APP"}"; rel="${rel#/}"; [ -n "$rel" ] || rel="."
+  n="$(echo "$rel" | tr '/ ' '__')"; [ "$rel" = "." ] && n="_wortel"
+  if git -c safe.directory="$d" -C "$d" bundle create "$W/kod/repos/${n}.bundle" --all >/dev/null 2>&1; then
+    printf '%s\t%s\n' "$n" "$rel" >> "$W/kod/repos/INDEX.tsv"
+  fi
 done < <(find "$APP" -maxdepth 3 -name .git -not -path '*/releases/*' -not -path '*/node_modules/*' 2>/dev/null)
 kod=$(( $(grootte "$W/kod/release.tar.gz") + $(grootte "$W/kod/mcp.tar.gz") ))
 
@@ -142,7 +151,8 @@ zet 3 52 files "gebruikersbestanden"
 volg_start "$W/fajly/uploads.tar.gz.age" $(( upl_bytes / 2 + 1 )) 52 72 "bestanden"
 tar --create --gzip --file - --directory "$DATA" --exclude=uploads/mcp-archives --exclude=uploads/mcp-bridge.token uploads | versleutel "$W/fajly/uploads.tar.gz.age"; rc=${PIPESTATUS[0]}
 volg_stop
-[ "$rc" -eq 0 ] && [ -s "$W/fajly/uploads.tar.gz.age" ] || mislukt FILES
+# rc 1 = een bestand veranderde tijdens het lezen (de site draait door): dat is geen fout, zoals bij de geheimen hieronder.
+[ "$rc" -le 1 ] && [ -s "$W/fajly/uploads.tar.gz.age" ] || mislukt FILES
 fajly=$(grootte "$W/fajly/uploads.tar.gz.age")
 
 # ---- 5. geheimen en systeem ----
@@ -205,16 +215,27 @@ zet 5 94 pack "archief samenstellen en in zijn geheel versleutelen"
 tar --create --file - --directory "$werk" "$map" | versleutel "$werk/$naam"; rc=${PIPESTATUS[0]}
 [ "$rc" -eq 0 ] && [ -s "$werk/$naam" ] || mislukt PACK
 head -c 32 "$werk/$naam" | grep -q '^age-encryption.org/v1' || mislukt PACK_VERIFY "geen age-kop"
-# Overdracht: eerst in de root-map klaarzetten, dan atomisch onder de vaste naam (de app kan in $UIT niets schrijven).
-install -m 0640 -g "$GROEP" "$werk/$naam" "$UIT/.archief-laatste.tar.age.deel" 2>/dev/null || install -m 0640 "$werk/$naam" "$UIT/.archief-laatste.tar.age.deel"
+# Overdracht: het archief krijgt zijn eigen naam in de root-map (verplaatsen, geen kopie). De app kan in $UIT niets schrijven.
+mv -f "$werk/$naam" "$UIT/.$naam.deel" 2>/dev/null || { cp -f "$werk/$naam" "$UIT/.$naam.deel" && rm -f "$werk/$naam"; } || mislukt PACK "verplaatsen naar uitgifte"
+chgrp "$GROEP" "$UIT/.$naam.deel" 2>/dev/null || true; chmod 0640 "$UIT/.$naam.deel"
+mv -f "$UIT/.$naam.deel" "$UIT/$naam"
+# Vaste naam = harde link naar dezelfde gegevens (geen tweede kopie op schijf); atomisch ververst.
+ln -f "$UIT/$naam" "$UIT/.archief-laatste.tar.age.deel" 2>/dev/null || cp -f "$UIT/$naam" "$UIT/.archief-laatste.tar.age.deel"
+chgrp "$GROEP" "$UIT/.archief-laatste.tar.age.deel" 2>/dev/null || true; chmod 0640 "$UIT/.archief-laatste.tar.age.deel"
 mv -f "$UIT/.archief-laatste.tar.age.deel" "$UIT/archief-laatste.tar.age"
-bytes="$(grootte "$UIT/archief-laatste.tar.age")"
+bytes="$(grootte "$UIT/$naam")"
 printf '{"naam":"%s","bytes":%s,"stempel":"%s","versleuteld":"age"}\n' "$naam" "$bytes" "$stamp" > "$UIT/.archief-laatste.json.deel"
 chgrp "$GROEP" "$UIT/.archief-laatste.json.deel" 2>/dev/null || true; chmod 0640 "$UIT/.archief-laatste.json.deel"
 mv -f "$UIT/.archief-laatste.json.deel" "$UIT/archief-laatste.json"
 rm -rf "$werk"
 
-# geschiedenis bijwerken (er blijft één archief: archief-laatste.tar.age; het vorige wordt overschreven)
+# Generaties: alleen na een geslaagd nieuw archief. Er blijven de $BEWAAR nieuwste eigen versleutelde archieven staan
+# (mijn-ruimte-<stempel>-volledig.tar.age; de namen sorteren op tijd). Andere bestanden in de uitgiftemap worden niet aangeraakt;
+# oude onversleutelde archieven in /srv/data/uploads/mcp-archives worden hier ook niet gewist (dat meldt installeer-app.sh).
+find "$UIT" -maxdepth 1 -type f -name 'mijn-ruimte-*-volledig.tar.age' -printf '%f\n' 2>/dev/null | sort -r | tail -n +$((BEWAAR + 1)) |
+  while IFS= read -r oud; do rm -f -- "$UIT/$oud"; echo "[archief] oude generatie opgeruimd: $oud (bewaard: $BEWAAR)"; done
+
+# geschiedenis bijwerken (history.json: één regel per gemaakt archief, nieuwste eerst; de app toont alleen wat er nog op schijf staat)
 GESCH="$GESCHIEDENIS" NAAM="$naam" BYTES="$bytes" KOD="$kod" BAZA="$baza" FAJLY="$fajly" SEKRETY="$sekrety" SYSTEEM="$systeem" node -e '
 const fs=require("fs");const f=process.env.GESCH;let h=[];try{h=JSON.parse(fs.readFileSync(f,"utf8"))}catch{}
 h.unshift({at:new Date().toISOString(),name:process.env.NAAM,bytes:+process.env.BYTES,kod:+process.env.KOD,baza:+process.env.BAZA,fajly:+process.env.FAJLY,sekrety:+process.env.SEKRETY,systeem:+process.env.SYSTEEM});

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "ARCH-001",
+  "agent": "claude",
+  "tak": "feature/archief-f1-20261102-203129",
+  "basisCommit": "4a9e10be51f37748b3d803de9ca8813bebd143b4",
+  "basisVersie": "20261031-093842",
+  "regelsVersie": "1.3.0",
+  "regelsHash": "b0429aad47b7177a507745370d829babfcf697f93d386b1e207290d0595a4c72",
+  "staat": "in_progress",
+  "gestart": "2026-11-02T20:31:36.859Z",
+  "bijgewerkt": "2026-11-02T20:31:36.861Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

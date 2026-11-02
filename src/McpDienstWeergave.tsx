@@ -226,10 +226,11 @@ export default function McpServiceView({ lang, tab }: Props) {
   }
   const [downloaded, setDownloaded] = useState(0);
   /** Стрімить файл на диск, який ви самі обираєте у вікні системи (File System Access); у браузерах без цього — звичайне завантаження. */
-  async function saveBlob() {
+  async function saveBlob(gevraagd?: string) {
     setDownloaded(0);
     // Stap 1 (na step-up, die client.ts zelf vraagt): eenmalige downloadId, 5 minuten geldig. Stap 2: het bestand zelf.
-    const dl = (await api.post("/api/mcp/archive/link", ctx())).data as { downloadId: string; name: string; bytes: number };
+    // Zonder naam: de laatste generatie; met naam: één van de twee bewaarde generaties uit de geschiedenis.
+    const dl = (await api.post("/api/mcp/archive/link", { ...ctx(), name: gevraagd })).data as { downloadId: string; name: string; bytes: number };
     const name = String(dl.name || "archief-laatste.tar.age");
     const w = window as unknown as { showSaveFilePicker?: (o: object) => Promise<{ createWritable: () => Promise<{ write: (d: Uint8Array) => Promise<void>; close: () => Promise<void> }> }> };
     let writable: { write: (d: Uint8Array) => Promise<void>; close: () => Promise<void> } | null = null;
@@ -576,13 +577,13 @@ export default function McpServiceView({ lang, tab }: Props) {
           <McpServerBeheerCard tr={t} />
           <article className="mcp-card">
             <h2>{t("Історія", "Geschiedenis")}</h2>
-            <p>{t("Кожен рядок — окремий збір. На сервері лишається лише останній файл, щоб старі копії з секретами не накопичувались. Старі рядки лишаються як запис: коли і якого розміру.", "Elke rij is één keer maken. Op de server blijft alleen het laatste bestand, zodat oude kopieën met geheimen niet blijven liggen. Oudere rijen blijven als notitie: wanneer en hoe groot.")}</p>
+            <p>{t("Кожен рядок — окремий збір. На сервері лишаються два останні архіви; ще старіші видаляються. Обидва зашифровані публічним ключем власника, тож без офлайн-ключа їх не відкрити. Старі рядки лишаються як запис: коли і якого розміру.", "Elke rij is één keer maken. Op de server blijven de twee laatste archieven staan; ouder wordt opgeruimd. Beide zijn versleuteld met de publieke sleutel van de eigenaar; zonder de offline sleutel zijn ze niet te openen. Oudere rijen blijven als notitie: wanneer en hoe groot.")}</p>
             {archive.history.length ? (
               <ul className="mcp-history">
                 {archive.history.map((row) => (
                   <li key={`${row.at}-${row.name}`}>
                     <span><b>{whenText(row.at)}</b><small>{sizeText(row.bytes)}{row.kod ? ` · ${t("код", "code")} ${sizeText(row.kod)} · ${t("база", "database")} ${sizeText(row.baza)} · ${t("файли", "bestanden")} ${sizeText(row.fajly)}` : ""}</small></span>
-                    {row.kept ? <button type="button" className="mcp-ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob())}>{t("Завантажити", "Downloaden")}</button> : <small>{t("файл уже замінено", "bestand vervangen")}</small>}
+                    {row.kept ? <button type="button" className="mcp-ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob(row.name))}>{t("Завантажити", "Downloaden")}</button> : <small>{t("вже видалено (лишаються два останні)", "al opgeruimd (er blijven twee over)")}</small>}
                   </li>
                 ))}
               </ul>
