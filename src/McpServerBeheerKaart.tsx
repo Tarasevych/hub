@@ -50,9 +50,13 @@ export default function McpServerBeheerCard({ tr }: { tr: Tr }) {
   };
   // De wizard (passkey-besluit) vervangt window.confirm + de directe opdracht; na een uitgevoerd besluit de stand opnieuw lezen.
   const terug = () => { setError(''); setMsg(''); setTerugOpen(true); };
-  return <article className="mcp-card mbk">
-    <header className="mbk-head"><h2><ServerCog size={18} />{tr('Керування сервером', 'Serverbeheer')}</h2>
-      <button type="button" className="mcp-ghost" onClick={() => void load()} aria-label={tr('Оновити', 'Vernieuwen')}><RefreshCw size={14} /></button></header>
+  return <section className="mcp-block mbk">
+    <header className="mcp-block-head mbk-head">
+      <span className="mcp-block-icon" aria-hidden="true"><ServerCog /></span>
+      <div className="mcp-block-title"><h2>{tr('Керування сервером', 'Serverbeheer')}</h2></div>
+      <div className="mcp-block-actions"><button type="button" className="mcp-btn ghost small mcp-ghost" onClick={() => void load()} aria-label={tr('Оновити', 'Vernieuwen')}><RefreshCw /></button></div>
+    </header>
+    <div className="mcp-block-body">
     <p>{tr('Лише фіксовані команди. Сервер встановлює тільки випуски, підписані вашим ключем (тег у GitHub або пакет); сайт не може запустити власний код від root.', 'Alleen vaste opdrachten. De server installeert alleen releases die met uw sleutel zijn ondertekend (tag in GitHub of pakket); de site kan geen eigen code als root starten.')}</p>
     {error && <p className="mbk-error" role="alert">{error}</p>}
     {msg && <p className="mcp-live" role="status">{msg}</p>}
@@ -64,11 +68,12 @@ export default function McpServerBeheerCard({ tr }: { tr: Tr }) {
     </ul> : !error ? <p className="mbk-busy"><Loader2 size={14} className="mbk-spin" /> {tr('Завантаження…', 'Laden…')}</p> : null}
     {releases && releases.length > 0 && <ul className="mbk-files">{releases.map((r) => <li key={r.naam}><History size={14} /><span><b>{r.naam}</b><small>{r.commit || '—'}{r.actief ? ` · ${tr('активний', 'actief')}` : ''}{r.vorige ? ` · ${tr('попередній', 'vorige')}` : ''}{r.bruikbaar ? '' : ` · ${tr('неповний', 'onvolledig')}`}</small></span></li>)}</ul>}
     <form className="mcp-form">
-      <button type="button" className="mcp-ghost" disabled={!!busy} onClick={() => void doe('/api/mcp/server/backup', 'backup')}>{busy === 'backup' ? <Loader2 size={14} className="mbk-spin" /> : <ServerCog size={14} />}{tr('Резервна копія зараз', 'Nu een back-up')}</button>
-      <button type="button" className="mcp-ghost" disabled={!!busy} onClick={() => void doe('/api/mcp/server/uitrol-nu', 'uitrol')}>{busy === 'uitrol' ? <Loader2 size={14} className="mbk-spin" /> : <Rocket size={14} />}{tr('Перевірити підписані випуски', 'Op ondertekende releases controleren')}</button>
-      <button type="button" className="mcp-ghost" disabled={!!busy} onClick={terug} data-besluit-open="terugdraaien"><Undo2 size={14} />{tr('Відкат до попереднього', 'Terug naar de vorige')}</button>
+      <button type="button" className="mcp-btn ghost" disabled={!!busy} onClick={() => void doe('/api/mcp/server/backup', 'backup')}>{busy === 'backup' ? <Loader2 size={14} className="mbk-spin" /> : <ServerCog size={14} />}{tr('Резервна копія зараз', 'Nu een back-up')}</button>
+      <button type="button" className="mcp-btn ghost" disabled={!!busy} onClick={() => void doe('/api/mcp/server/uitrol-nu', 'uitrol')}>{busy === 'uitrol' ? <Loader2 size={14} className="mbk-spin" /> : <Rocket size={14} />}{tr('Перевірити підписані випуски', 'Op ondertekende releases controleren')}</button>
+      <button type="button" className="mcp-btn ghost" disabled={!!busy} onClick={terug} data-besluit-open="terugdraaien"><Undo2 size={14} />{tr('Відкат до попереднього', 'Terug naar de vorige')}</button>
     </form>
     <p className="mbk-note">{tr('Резервна копія і перевірка випусків вмикаються у файлі /etc/mijn-ruimte/mcp-rechten.json на сервері. Відкат — рішення з підписом вашого passkey: root перевіряє підпис сам (RUNBOOK §15).', 'Back-up en releasecontrole worden aangezet in /etc/mijn-ruimte/mcp-rechten.json op de server. Terugdraaien is een besluit met uw passkey-handtekening: root controleert die zelf (RUNBOOK §15).')}</p>
     <TerugdraaiMeester tr={tr} ctx={besluitCtx} open={terugOpen} onSluit={() => setTerugOpen(false)} onKlaar={() => { void load(); setMsg(tr('Відкат виконано. Стан сервера оновлено.', 'Terugdraaien uitgevoerd. De serverstand is vernieuwd.')); }} />
-  </article>;
+    </div>
+  </section>;
 }
