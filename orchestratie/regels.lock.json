@@ -1,12 +1,12 @@
 {
   "schema": 1,
-  "regelsVersie": "1.3.0",
-  "hash": "b0429aad47b7177a507745370d829babfcf697f93d386b1e207290d0595a4c72",
+  "regelsVersie": "1.4.0",
+  "hash": "14030808f1abf5fb5f978ce256c01d94598603563d2432a1c5e858d91e696b8a",
   "kritiekHash": "15fb72c45e30c0347440c8bc5002934d080b229eb61ce20543f5d1cd49b43bf7",
   "bestanden": {
-    "AGENTS.md": "e7fd8ae088ee487d47ae4544bbe308e2d2d9aa95a904d92a5a84d3d6deb31845",
-    "orchestratie/BESLUITEN.md": "9bea41a6e3e784112cd7eeaa7d96e6e0a5f1bc8f3cf702e0cc7ed383579f617a",
-    "orchestratie/beleid.json": "7ddc4c56bc05185999af764b689f905d2091cec1c115a84ac1b8b6ec09ccdac1"
+    "AGENTS.md": "a1cf3b5fde5ee5fa1ec6083887cb62f2de6fb671daebf9d048e1b3e4b3e498d9",
+    "orchestratie/BESLUITEN.md": "c76da3212f19324aeab2a789e0f98a0aace62d4723f4fa42d319889b2a2474a3",
+    "orchestratie/beleid.json": "6c6fc0707a21cb7d4902da129cbc273ad8ecfc3336438dbf660ebc145ca4cadd"
   },
   "eigenaar": null
 }
