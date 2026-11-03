@@ -1,4 +1,4 @@
-name: MAILORBIT-001 guard and task registration
+name: MAILORBIT-001 · verified unsigned preview package
 on:
   push:
     branches:
@@ -6,35 +6,161 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: mailorbit-001-guard
+  group: mailorbit-001-release
   cancel-in-progress: false
 jobs:
-  guard:
+  verify-and-package:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 55
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout full history
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Verify canonical coordination rules
-        run: node scripts/orch.mjs controleer
-      - name: Register only own MAILORBIT-001 task
+          cache: npm
+      - name: Check canonical policy and own task registration
         shell: bash
         run: |
           set -euo pipefail
-          if [ ! -f orchestratie/taken/MAILORBIT-001.json ]; then
-            node scripts/orch.mjs taak-start --id MAILORBIT-001 --agent codex --basis 15025c3e9c8466b650f0a5488b18c42f54ab9d3a --tak feature/mailorbit-001-20261103-205354 --omschrijving 'Анімована доступна орбіта поштових сервісів і справжнє внутрішнє вікно підключення'
-            git add orchestratie/taken/MAILORBIT-001.json
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'MAILORBIT-001: registreer eigen ORCH-taak'
-            git push origin "HEAD:refs/heads/feature/mailorbit-001-20261103-205354"
-          fi
-      - name: Verify task freshness before code work
-        run: |
           node scripts/orch.mjs controleer
+          test -f orchestratie/taken/MAILORBIT-001.json
           node scripts/orch.mjs versheid --taak MAILORBIT-001 --fase start
+      - name: Dependencies
+        run: npm ci
+      - name: Verify affected contracts, TypeScript and production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p uitvoer
+          node scripts/eenheidstests.mjs mail-orbit-001 | tee uitvoer/mailorbit-001-tests.log
+          node scripts/eenheidstests.mjs mail-koppelen-20261020 | tee -a uitvoer/mailorbit-001-tests.log
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=5120 npm run build
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILORBIT-001 --fase overdracht
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - name: Verify actual installed production base (read-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --max-time 20 --retry 2 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/mijn-ruimte-production.json"
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const actual = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/mijn-ruimte-production.json', 'utf8'));
+          const versie = '20261102-092316', commit = 'a860abdfbead7473959d9dc47885cd74ad3c94f9';
+          if (actual.versie !== versie || actual.commit !== commit) {
+            console.error('BASIS_VEROUDERD: verified production differs from owner-provided installed base', {versie:actual.versie, commit:String(actual.commit||'').slice(0,12)});
+            process.exit(1);
+          }
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({versie,bronCommit:commit,bron:'geverifieerd_productie_api'},null,2)+'\n');
+          console.log('Basis verified:',versie,commit.slice(0,12));
+          JS
+      - name: Prepare bilingual v2 manifest and verified test results
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELEASE_VERSION="$(date -u +%Y%m%d-%H%M%S)"
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const versie=process.env.RELEASE_VERSION;
+          const sha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+          const basis='20261102-092316',basisSha='a860abdfbead7473959d9dc47885cd74ad3c94f9';
+          const manifest={
+            schema:1,versie,aangemaakt:new Date().toISOString(),
+            herkomst:'git: feature/mailorbit-001-20261103-205354@'+sha+' (basis '+basis+' '+basisSha+')',
+            auteur:'Eigenaar Test',zonderAi:false,
+            deelnemers:[
+              {soort:'mens',naam:'Eigenaar Test',rollen:['auteur','controle']},
+              {soort:'ai',naam:'ChatGPT',platform:'ChatGPT',tool:'GitHub connector en GitHub Actions',model:{id:'gpt-6',versie:null,bron:'omgeving'},rollen:['ontwikkeling','testen','verpakken']}
+            ],
+            beschrijving:{
+              uk:{
+                titel:'Жива пошта: анімоване підключення сервісів',
+                samenvatting:'Інтерактивна орбіта брендованих конвертів на порожній сторінці пошти й акаунтів із реальними внутрішніми вікнами підключення.',
+                wijzigingen:['Орбіта з шістьма доступними поштовими сервісами, анімацією та збільшенням при наведенні','Однакова нова концепція на сторінках акаунтів та порожньої поштової скриньки','Адаптивний каталог для смартфонів, клавіатури й режиму зменшеного руху'],
+                fixes:['Натомість старого порожнього екрана показано конкретний вибір підключення','Прямі дії повторно використовують наявні безпечні вікна OAuth та IMAP'],
+                beperkingen:['Proton та Online.ua залишаються без кнопки, бо відповідний спосіб підключення не реалізований','Справжній Google/Microsoft OAuth не виконувався у CI; встановлення та перевірка Passkey — за власником'],
+                instructies:'Спершу перевірте макет і роботу входу вручну. Лише власник може встановити пакет через Admin → Оновлення з Passkey.'
+              },
+              nl:{
+                titel:'Levende e-mail: geanimeerde dienstkoppeling',
+                samenvatting:'Interactieve cirkel van merk-enveloppen op een leeg e-mailscherm en accountpagina, met echte koppelvensters op dezelfde site.',
+                wijzigingen:['Baan met zes beschikbare aanbieders, aankomstanimatie en vergroten bij aanwijzen','Dezelfde nieuwe ervaring op accountpagina en lege inbox','Responsieve catalogus voor mobiel, toetsenbord en verminderde beweging'],
+                fixes:['Het oude lege scherm is vervangen door concrete koppelkeuzes','Acties gebruiken bestaande veilige OAuth- en IMAP-vensters opnieuw'],
+                beperkingen:['Proton en Online.ua hebben geen knop zolang er geen veilige koppeling gebouwd is','Echte Google/Microsoft OAuth is niet in CI uitgevoerd; installatie en Passkey-bevestiging blijven bij eigenaar'],
+                instructies:'Controleer het ontwerp en het aanmelden eerst handmatig. Alleen de eigenaar mag installeren via Admin → Updates en Passkey.'
+              }
+            }
+          };
+          writeFileSync('uitvoer/MAILORBIT-001-UITROL-MANIFEST.json',JSON.stringify(manifest,null,2)+'\n');
+          const log=readFileSync('uitvoer/mailorbit-001-tests.log','utf8');
+          const geslaagd=(log.match(/^OK\s/gm)||[]).length;
+          const mislukt=(log.match(/^FOUT\s/gm)||[]).length;
+          if(!geslaagd||mislukt)throw Error('Test checks missing or failing: '+geslaagd+'/'+mislukt);
+          writeFileSync('uitvoer/MAILORBIT-001-TESTRESULTATEN.json',JSON.stringify({
+            geslaagd,mislukt,falend:[],uitleg:{
+              uk:'Пройдено '+geslaagd+' перевірок UI та підключення, TypeScript і production build у CI. OAuth і реальний браузер після інсталяції не перевірялися.',
+              nl:geslaagd+' UI- en koppelcontroles geslaagd, plus TypeScript en productiebuild in CI. OAuth en de echte browser na installatie niet gecontroleerd.'
+            }
+          },null,2)+'\n');
+          console.log('Test checks:',geslaagd,'failed:',mislukt);
+          JS
+      - name: Build and validate unsigned ORCH installation package
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket \
+            --taak MAILORBIT-001 --auteur 'Eigenaar Test' \
+            --agent chatgpt \
+            --versie "$RELEASE_VERSION" \
+            --manifest "$PWD/uitvoer/MAILORBIT-001-UITROL-MANIFEST.json" \
+            --testresultaten "$PWD/uitvoer/MAILORBIT-001-TESTRESULTATEN.json" \
+            --samenvatting-uk 'Анімаційне підключення поштових акаунтів у Mijn Ruimte через наявні захищені вікна.' \
+            --samenvatting-nl 'Geanimeerd e-mailaccounts koppelen met bestaande beveiligde vensters in Mijn Ruimte.' \
+            --uit uitvoer
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-$RELEASE_VERSION-chatgpt-overdracht.zip"
+          tar --gzip --list --file "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" > "$RUNNER_TEMP/mailorbit-tar-entries.txt"
+          (cd uitvoer && sha256sum "mijn-ruimte-$RELEASE_VERSION.tar.gz" > "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
+          (cd uitvoer && sha256sum -c "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
+          echo "RELEASE_SHA=$(sha256sum "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          echo "RELEASE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Upload verified unsigned archive and handover
+        uses: actions/upload-artifact@v4
+        with:
+          name: mijn-ruimte-mailorbit-001-unsigned
+          path: |
+            uitvoer/mijn-ruimte-*.tar.gz
+            uitvoer/mijn-ruimte-*.tar.gz.sha256
+            uitvoer/mijn-ruimte-*.voorstel.json
+            uitvoer/mijn-ruimte-*-overdracht.zip
+            uitvoer/MAILORBIT-001-UITROL-MANIFEST.json
+            uitvoer/MAILORBIT-001-TESTRESULTATEN.json
+            uitvoer/mailorbit-001-tests.log
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish downloadable GitHub prerelease (NO deployment)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_VERSION" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION-chatgpt-overdracht.zip" \
+            --target "$GITHUB_SHA" --prerelease --latest=false \
+            --title "MAILORBIT-001 · $RELEASE_VERSION (unsigned)" \
+            --notes "Verified CI-built unsigned install package for MAILORBIT-001. Base: 20261102-092316 / a860abdfbead7473959d9dc47885cd74ad3c94f9. SHA-256: $RELEASE_SHA. Not installed, not signed, no PR merge. The owner must authorize install with Passkey."
+      - name: Summary
+        run: |
+          echo "MAILORBIT-001 version: $RELEASE_VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub source commit: $RELEASE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "SHA-256: $RELEASE_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "No production changes, no package signing." >> "$GITHUB_STEP_SUMMARY"
