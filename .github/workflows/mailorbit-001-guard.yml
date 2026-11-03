@@ -1,0 +1,40 @@
+name: MAILORBIT-001 guard and task registration
+on:
+  push:
+    branches:
+      - feature/mailorbit-001-20261103-205354
+permissions:
+  contents: write
+concurrency:
+  group: mailorbit-001-guard
+  cancel-in-progress: false
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify canonical coordination rules
+        run: node scripts/orch.mjs controleer
+      - name: Register only own MAILORBIT-001 task
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f orchestratie/taken/MAILORBIT-001.json ]; then
+            node scripts/orch.mjs taak-start --id MAILORBIT-001 --agent codex --basis 15025c3e9c8466b650f0a5488b18c42f54ab9d3a --tak feature/mailorbit-001-20261103-205354 --omschrijving 'Анімована доступна орбіта поштових сервісів і справжнє внутрішнє вікно підключення'
+            git add orchestratie/taken/MAILORBIT-001.json
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'MAILORBIT-001: registreer eigen ORCH-taak'
+            git push origin "HEAD:refs/heads/feature/mailorbit-001-20261103-205354"
+          fi
+      - name: Verify task freshness before code work
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILORBIT-001 --fase start
