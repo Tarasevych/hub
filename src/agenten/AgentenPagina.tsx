@@ -16,6 +16,8 @@
 // того, як з’явиться на екрані, тож порожніх смуг між розділами не видно. Контракт класів для всіх розділів —
 // src/agenten/agenten-pagina.css (.ag-pagina .ag-blok .ag-blok-kop .ag-blok-titel .ag-blok-uitleg .ag-rij .ag-leeg .ag-knoppen).
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
+import { bijAfdrukVoorbereiding } from '../platform/afdruk';
 import { Activity, AlertTriangle, ArrowRight, ChevronDown, GitMerge, Globe, KeyRound, LayoutDashboard, ListChecks, Monitor, Network, Plug, Puzzle, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
 import { useAgentsData, useToolApprovals } from '../agenten-gegevens';
 import type { Tr } from '../mcp-ui';
@@ -126,6 +128,8 @@ function LuieSectie({ tab, actief, zien, kop, dicht, tr, children }: { tab: TabI
   const [open, setOpen] = useState(actief);
   const ref = useRef<HTMLElement | null>(null);
   useEffect(() => { if (actief || zien) setOpen(true); }, [actief, zien]);
+  // INTEG-001 (print): Ctrl+P en Bestand → Afdrukken moeten ook de nog dichte secties openen, anders komen ze leeg op papier.
+  useEffect(() => bijAfdrukVoorbereiding(() => flushSync(() => setOpen(true))), []);
   useEffect(() => {
     if (open || dicht) return undefined;
     const el = ref.current;
