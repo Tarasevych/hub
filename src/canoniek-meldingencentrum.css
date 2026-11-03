@@ -29,3 +29,48 @@
 .canonical-notification-toast.kind-success .canonical-notification-toast-balk>i{background:var(--good)}
 .canonical-notification-toast.is-paused{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
 @media (prefers-reduced-motion:reduce){.canonical-notification-toast-balk>i{transition:none}}
+
+/* INTEG-001 — pop-up: waar/over wie, wat, waarom, en twee duidelijke acties («Відкрити: …» en «Очистити»). De balk staat stil tijdens
+   de pauze (muis erop): dan zachter, met een korte uitleg; een vaste pop-up (zelf gekozen per type) zegt dat ook. */
+.canonical-notification-toast-acties{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:4px}
+.canonical-notification-toast-acties .canonical-notification-link{margin-top:0}
+.canonical-notification-opruimen{display:inline-flex;align-items:center;min-height:30px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);font:inherit;font-size:.82rem;font-weight:650;cursor:pointer}
+.canonical-notification-opruimen:hover,.canonical-notification-opruimen:focus-visible{background:var(--nav-hover);outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:1px}
+.canonical-notification-toast-pauze{color:var(--muted);font-size:12px}
+.canonical-notification-toast.is-paused .canonical-notification-toast-balk>i{opacity:.45}
+@media (max-width:700px){.canonical-notification-opruimen{min-height:var(--tik-hoogte)}}
+
+/* INTEG-001 — pijltje van het paneel/de pop-up naar de bel (plaats uit pijlNaarBel, src/melding-positie.ts). Een gedraaid vierkantje
+   in de kleur van het venster, half over de rand: zo hangt het venster zichtbaar aan de bel. Geen knop, vangt geen klikken. */
+.cnc-pijl{position:fixed;z-index:711;width:14px;height:14px;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);transform:rotate(45deg);pointer-events:none}
+.cnc-pijl[data-kant=boven]{border-right-color:transparent;border-bottom-color:transparent}
+.cnc-pijl[data-kant=onder]{border-left-color:transparent;border-top-color:transparent}
+.cnc-pijl.is-toast{z-index:701;background:color-mix(in srgb,var(--panel) 97%,transparent)}
+/* INTEG-001 — venster bij een stip in het menu (src/MenuMeldingen.tsx): ook een klik/tik op de stip opent het; bovenaan wat de stip
+   betekent; per melding «Відкрити» en «Очистити» als tekstknoppen; onderaan «Очистити все тут» en «Усі сповіщення». */
+.menu-badge[data-klik='ja']{pointer-events:auto;cursor:pointer}
+.menu-badge[data-klik='ja']::before{content:'';position:absolute;inset:-8px}
+.menu-bellen .menu-bellen-uitleg{margin:0 6px 8px;color:var(--muted);font-size:12px;line-height:1.4}
+.menu-bellen .menu-bel{grid-template-columns:8px minmax(0,1fr)}
+.menu-bellen .menu-bel-acties{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.menu-bellen .menu-bel-openen,.menu-bellen .menu-bel-weg{display:inline-flex;align-items:center;gap:5px;width:auto;height:auto;min-height:30px;padding:0 10px;border:1px solid color-mix(in srgb,var(--mb) 35%,var(--line));border-radius:8px;background:var(--panel);color:var(--text);font:600 12px/1.2 inherit;cursor:pointer}
+.menu-bellen .menu-bel-openen svg{width:13px;height:13px}
+.menu-bellen .menu-bel-openen:hover,.menu-bellen .menu-bel-weg:hover{background:color-mix(in srgb,var(--mb) 16%,var(--panel))}
+.menu-bellen .menu-bellen-voet{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.menu-bellen .menu-bellen-voet .menu-bellen-alles{flex:1 1 auto;width:auto;margin:0;border:1px solid var(--line);color:var(--text)}
+.menu-bellen .menu-bellen-paneel{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:1 1 auto;min-height:32px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--text);font:600 12px/1.2 inherit;cursor:pointer}
+.menu-bellen .menu-bellen-paneel svg{width:14px;height:14px}
+.menu-bellen .menu-bellen-paneel:hover{background:var(--nav-hover)}
+@media (pointer:coarse),(max-width:700px){.menu-bellen .menu-bel-openen,.menu-bellen .menu-bel-weg,.menu-bellen .menu-bellen-alles,.menu-bellen .menu-bellen-paneel{min-height:var(--tik-hoogte)}}
+
+/* INTEG-001 (eigenaar: «дзвіночок — піктограма»): in de bovenbalk, de kop van het menu en de zijbalk is de bel een pictogram — geen ronde
+   knop met rand en schaduw. Alleen zwevend in de actiestapel (boven de inhoud) houdt hij zijn rondje, anders verdwijnt hij in de pagina.
+   Open paneel: de bel licht op (zelfde kleur als het pijltje dat naar hem wijst). */
+html .canonical-chrome .plaats-gniezdo>.canonical-notification-bell:not([data-vorm='rij']){border-color:transparent;background:transparent;box-shadow:none;color:var(--text)}
+html .canonical-chrome .plaats-gniezdo>.canonical-notification-bell:not([data-vorm='rij']):hover{background:var(--nav-hover)}
+html .canonical-chrome .plaats-gniezdo>.canonical-notification-bell[aria-expanded='true']{background:var(--accent-soft);color:var(--accent)}
+html .canonical-chrome .plaats-actiestapel .plaats-gniezdo>.canonical-notification-bell:not([data-vorm='rij']){border-color:color-mix(in srgb,var(--accent) 36%,var(--line));background:var(--panel);color:var(--accent);box-shadow:0 12px 34px var(--shadow)}
+
+/* zelfde compensatie als het paneel en de pop-up bij een verborgen technische band (src/tech/tech.css) — anders hangt de pijl ernaast */
+html[data-tech=aan] #root .cnc-pijl{transition:translate .22s ease!important}
+html[data-tech=aan][data-tech-verborgen] #root .cnc-pijl{translate:0 var(--tech-band-h)}

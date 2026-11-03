@@ -133,16 +133,52 @@ const SITE_ZIN: Array<[RegExp, [string, string]]> = [
   [/(fail|error)/, ['дію не вдалося виконати', 'actie mislukt']],
 ];
 
+/**
+ * INTEG-001 (eigenaar: «Не «інша дія»: кажи конкретно, яка і про що»): een auditnaam zonder eigen label wordt — als ALLE delen bekend
+ * zijn — een gewone zin «<gebied>: <wat> <gebeurde>» («Хмара: теку створено»). Is een deel onbekend, dan nooit de interne code als titel
+ * (vroeger «Дія на сайті: mail contacten scan gestart»), maar wel het gebied en waar de code staat (de technische details).
+ */
+const SITE_WAT: Record<string, [string, string]> = {
+  file: ['файл', 'bestand'], bestand: ['файл', 'bestand'], folder: ['теку', 'map'], map: ['теку', 'map'], account: ['акаунт', 'account'], mailbox: ['поштову скриньку', 'mailbox'],
+  session: ['сеанс', 'sessie'], sessie: ['сеанс', 'sessie'], key: ['ключ', 'sleutel'], sleutel: ['ключ', 'sleutel'], token: ['токен', 'token'], passkey: ['ключ входу (passkey)', 'passkey'],
+  device: ['пристрій', 'apparaat'], apparaat: ['пристрій', 'apparaat'], label: ['мітку', 'label'], labels: ['мітки', 'labels'], message: ['лист', 'bericht'], bericht: ['лист', 'bericht'],
+  event: ['подію', 'afspraak'], afspraak: ['подію', 'afspraak'], rule: ['правило', 'regel'], regel: ['правило', 'regel'], policy: ['правила', 'beleid'], beleid: ['правила', 'beleid'],
+  settings: ['налаштування', 'instellingen'], setting: ['налаштування', 'instelling'], instellingen: ['налаштування', 'instellingen'], grant: ['доступ', 'toegang'], toegang: ['доступ', 'toegang'], access: ['доступ', 'toegang'],
+  user: ['користувача', 'gebruiker'], gebruiker: ['користувача', 'gebruiker'], role: ['роль', 'rol'], rol: ['роль', 'rol'], photo: ['фото', 'foto'], foto: ['фото', 'foto'], profile: ['профіль', 'profiel'], profiel: ['профіль', 'profiel'],
+  share: ['спільний доступ', 'deling'], deling: ['спільний доступ', 'deling'], export: ['експорт', 'export'], backup: ['резервну копію', 'back-up'], secret: ['секрет', 'geheim'], geheim: ['секрет', 'geheim'],
+  contact: ['контакт', 'contact'], contacten: ['контакти', 'contacten'], draft: ['чернетку', 'concept'], concept: ['чернетку', 'concept'], note: ['нотатку', 'notitie'], notitie: ['нотатку', 'notitie'],
+  repo: ['репозиторій', 'repository'], issue: ['задачу', 'issue'], extensie: ['розширення', 'extensie'], extension: ['розширення', 'extensie'], webhook: ['вебхук', 'webhook'],
+};
+const SITE_GEBEURDE: Record<string, [string, string]> = {
+  created: ['створено', 'aangemaakt'], create: ['створено', 'aangemaakt'], aangemaakt: ['створено', 'aangemaakt'], added: ['додано', 'toegevoegd'], toegevoegd: ['додано', 'toegevoegd'],
+  deleted: ['видалено', 'verwijderd'], delete: ['видалено', 'verwijderd'], verwijderd: ['видалено', 'verwijderd'], removed: ['прибрано', 'weggehaald'],
+  updated: ['змінено', 'gewijzigd'], update: ['змінено', 'gewijzigd'], modified: ['змінено', 'gewijzigd'], changed: ['змінено', 'gewijzigd'], gewijzigd: ['змінено', 'gewijzigd'], bijgewerkt: ['оновлено', 'bijgewerkt'],
+  connected: ['підключено', 'gekoppeld'], linked: ['підключено', 'gekoppeld'], gekoppeld: ['підключено', 'gekoppeld'], disconnected: ['відключено', 'ontkoppeld'], unlinked: ['відключено', 'ontkoppeld'], ontkoppeld: ['відключено', 'ontkoppeld'],
+  revoked: ['відкликано', 'ingetrokken'], ingetrokken: ['відкликано', 'ingetrokken'], approved: ['схвалено', 'goedgekeurd'], goedgekeurd: ['схвалено', 'goedgekeurd'],
+  started: ['почато', 'gestart'], gestart: ['почато', 'gestart'], completed: ['завершено', 'voltooid'], klaar: ['завершено', 'voltooid'], done: ['завершено', 'voltooid'], voltooid: ['завершено', 'voltooid'],
+  enabled: ['увімкнено', 'aangezet'], disabled: ['вимкнено', 'uitgezet'], sent: ['надіслано', 'verzonden'], verzonden: ['надіслано', 'verzonden'], imported: ['імпортовано', 'geïmporteerd'], exported: ['експортовано', 'geëxporteerd'],
+  shared: ['поділено', 'gedeeld'], gedeeld: ['поділено', 'gedeeld'], restored: ['відновлено', 'hersteld'], hersteld: ['відновлено', 'hersteld'], renamed: ['перейменовано', 'hernoemd'], moved: ['переміщено', 'verplaatst'], verplaatst: ['переміщено', 'verplaatst'],
+  scheduled: ['заплановано', 'ingepland'], cancelled: ['скасовано', 'geannuleerd'], canceled: ['скасовано', 'geannuleerd'], requested: ['запитано', 'aangevraagd'], saved: ['збережено', 'opgeslagen'], opgeslagen: ['збережено', 'opgeslagen'],
+  verified: ['перевірено', 'geverifieerd'], geverifieerd: ['перевірено', 'geverifieerd'], expired: ['прострочено', 'verlopen'], verlopen: ['прострочено', 'verlopen'], rotated: ['замінено на новий', 'vernieuwd'], vernieuwd: ['оновлено', 'vernieuwd'],
+};
 export function siteActieTekst(type: string, lang: Lang): string {
   const delen = String(type || '').replace(/^owner\./, '').split('.');
   const gebied = delen[0] || '';
   const rest = delen.slice(1).join('.');
-  const gebiedNaam = SITE_GEBIED[gebied] ? (lang === 'uk' ? SITE_GEBIED[gebied][0] : SITE_GEBIED[gebied][1]) : (lang === 'uk' ? 'Сайт' : 'Site');
+  const i = lang === 'uk' ? 0 : 1;
+  const gebiedNaam = SITE_GEBIED[gebied] ? SITE_GEBIED[gebied][i] : (lang === 'uk' ? 'Сайт' : 'Site');
   const zin = SITE_ZIN.find(([re]) => re.test(`${gebied}.${rest}`));
-  if (zin) return `${gebiedNaam}: ${lang === 'uk' ? zin[1][0] : zin[1][1]}`;
-  // Een onbekend gebied of een onbekende actie: nooit de interne code als titel (die staat in de technische details).
-  if (!SITE_GEBIED[gebied]) return lang === 'uk' ? 'Дія на сайті' : 'Actie op de site';
-  return `${gebiedNaam}: ${lang === 'uk' ? 'дія' : 'actie'}`;
+  if (zin) return `${gebiedNaam}: ${zin[1][i]}`;
+  const woorden = delen.slice(1).flatMap((d) => d.split(/[_-]/)).map((w) => w.toLowerCase()).filter(Boolean);
+  const wat = woorden.filter((w) => SITE_WAT[w]), gebeurde = woorden.filter((w) => SITE_GEBEURDE[w]);
+  // Alleen als ELK woord bekend is, wordt het een zin (anders zou een interne code als «tekst» in het paneel komen).
+  if (SITE_GEBIED[gebied] && gebeurde.length && wat.length + gebeurde.length === woorden.length) {
+    const watTekst = wat.map((w) => SITE_WAT[w][i]).join(' ');
+    return `${gebiedNaam}: ${watTekst} ${SITE_GEBEURDE[gebeurde[gebeurde.length - 1]][i]}`.replace(/\s+/g, ' ').trim();
+  }
+  // Onbekend: het gebied en waar de code staat — nooit de kale «дія» of «інша дія», nooit de code zelf als titel.
+  if (!SITE_GEBIED[gebied]) return lang === 'uk' ? 'Подія на сайті без опису (код — у «Технічних подробицях»)' : 'Gebeurtenis op de site zonder omschrijving (code onder «Technische details»)';
+  return lang === 'uk' ? `${gebiedNaam}: подія без опису (код — у «Технічних подробицях»)` : `${gebiedNaam}: gebeurtenis zonder omschrijving (code onder «Technische details»)`;
 }
 
 /** Het gebied van een site-actie als sectie: voor het pictogram en de link naar het onderdeel. */

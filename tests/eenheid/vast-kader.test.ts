@@ -51,7 +51,9 @@ export async function main(): Promise<number> {
 
   // Aansluiting in de componenten.
   const bel = lees('src/CanoniekMeldingencentrum.tsx'), lijst = lees('src/MailOpstelZwevend.tsx');
-  check('bel: viewport() rekent in het kader (zichtbaarKader), niet meer in vensterpixels', /const viewport = \(\) => zichtbaarKader\(/.test(bel) && !/const viewport=\(\)=>\{const vv=window\.visualViewport;return\{left:vv\?\.offsetLeft/.test(bel));
+  // INTEG-001: het kader zonder de strook van het vensterdok (zonderDok) — het paneel staat nu ook op de telefoon aan de bel, dus houdt
+  // de berekening zelf de dokstrook vrij (vroeger deed de CSS dat met een vol blad). Nog steeds in kadercoördinaten (zichtbaarKader).
+  check('bel: viewport() rekent in het kader (zichtbaarKader, zonder de dokstrook), niet meer in vensterpixels', /const viewport = \(\) => (zonderDok\()?zichtbaarKader\(/.test(bel) && !/const viewport=\(\)=>\{const vv=window\.visualViewport;return\{left:vv\?\.offsetLeft/.test(bel));
   // 25.10.2026: de bel staat in een zone van de PAGINA (shared/plaatsing.ts) en schuift met #root mee; geen eigen positie, geen eigen slepen.
   check('bel: geen eigen positie of slepen meer in vensterpixels (zone in de pagina; slepen: src/plaatsing/plaats-slepen.ts)', !/event\.clientX-drag\.dx|bellStyle|bellPos/.test(bel) && bel.includes("<Plek knop='bel'>"));
   // 25.10.2026: de melding kiest een vrije plek (src/plaatsing/melding-plek.ts): de plek bij de bel in kadercoördinaten (placeNear met − kx/ky),

@@ -1,22 +1,29 @@
-import { useMemo, useState, type ComponentType } from 'react';
-import { Bell, Check, ChevronDown, ChevronUp, CircleCheck, Info, Layers, ListFilter, Search, Trash2, Undo2 } from 'lucide-react';
+import { useMemo, useRef, useState, type ComponentType } from 'react';
+import { Archive, ArchiveRestore, Bell, BellDot, Check, ChevronDown, ChevronUp, CircleCheck, Eye, Info, Layers, ListFilter, Search, Trash2, TriangleAlert, Undo2 } from 'lucide-react';
 import TabsRij from './ontwerp/TabsRij';
-import { activiteitMeldingTekst, activityCause, activityLink, activityStatusText, activityTitle, durationText, sourceLabel, statusInfo, type ActivityEvent } from './connector-activiteit';
+import { activiteitContext, activiteitMeldingTekst, activityCause, activityLink, activityStatusText, activityTitle, durationText, sectieLink, sourceLabel, statusInfo, type ActivityEvent } from './connector-activiteit';
 import { Logo } from './mcp-ui';
 import { sectionLabel, styleOf, type Section } from './melding-stijl';
 import './meldingenpaneel.css';
 import { zijbalkScopeNu } from './zijbalk-voorkeuren';
+import { zelfdeGebeurtenis } from '../shared/meldingen-v2/groepering';
+import { ARCHIEF_NA_DAGEN, sectieVan, type Sectie } from '../shared/meldingen-v2/secties';
+import type { StatusStand } from '../shared/meldingen-v2/status';
+import { isKritiekType, typeInfo } from '../shared/melding-typen';
+import { soortInfo, typeVanBron } from '../shared/melding-soorten';
 
 type Lang = 'uk' | 'nl';
 type Kind = 'info' | 'success' | 'warning' | 'error';
 type Detail = { icon: string; label: string; value: string };
 type SectionBlock = { title: string; items: Detail[] };
 
-export type LocalRow = { id: string; text: string; kind: Kind; createdAt: number; source: string; read: boolean; link?: { href: string; label: string }; details?: SectionBlock[]; action?: { label: string; onAction: () => void | Promise<void> }; explain?: string; count?: number; opgelost?: boolean };
+export type LocalRow = { id: string; text: string; kind: Kind; createdAt: number; source: string; read: boolean; link?: { href: string; label: string }; details?: SectionBlock[]; action?: { label: string; onAction: () => void | Promise<void> }; explain?: string; count?: number; opgelost?: boolean; context?: string };
 export type ServerRow = { id: string; kind: string; title: string; message: string; createdAt: number; read?: boolean; link?: string; sfeer?: 'prive' | 'technisch' };
 
 type Item = {
   key: string; group: string; origin: 'local' | 'server' | 'activity'; kind: Kind; title: string; text?: string; /** Uitleg: oorzaak en wat u nu kunt doen. */ explain?: string; /** Aantal keer samengevoegd. */ count?: number; /** Opgelost door een latere gelukte stap. */ opgelost?: boolean; source: string; createdAt: number; read: boolean;
+  /** INTEG-001: deel van het paneel (Нові / Прочитані / Архів); opgeruimd = status «очищено»/«вирішено» (terug te zetten); over wie/wat: context. */
+  sectie: Sectie; opgeruimd?: boolean; context?: string; beveiliging?: boolean;
   status?: { text: string; group: 'waiting' | 'active' | 'done' | 'failed' | 'rejected' | 'expired' }; duration?: string;
   link?: { href: string; label: string }; details?: SectionBlock[]; facts?: Array<[string, string]>; markRead: () => void; remove?: () => void; action?: LocalRow['action'];
   /** 22.10.2026: sfeer van de server (meldingen en activiteiten); lokaal: geen. Alleen als data-attribuut (meting in de stand). */
@@ -27,10 +34,14 @@ type Props = {
   onReadLocal: (id: string) => void; onRemoveLocal: (id: string) => void; onRunAction: (id: string, action: NonNullable<LocalRow['action']>) => void | Promise<void>;
   onReadServer?: (id: string) => void | Promise<void>; onReadEvent: (id: string) => void;
   detailIcons: Record<string, ComponentType<any>>;
+  /** INTEG-001: blijvende status per melding (server; «очищено»/«вирішено»), en opruimen/terugzetten. Zonder: alleen gelezen/ongelezen en ouderdom. */
+  status?: StatusStand; onOpruimen?: (ids: string[], beveiliging: string[]) => void; onTerug?: (ids: string[]) => void;
+  /** Tests: vaste «nu». */
+  nu?: number;
 };
 
-function relative(value: number, lang: Lang): string {
-  const s = Math.max(0, Math.round((Date.now() - value) / 1000));
+function relative(value: number, lang: Lang, nu: number): string {
+  const s = Math.max(0, Math.round((nu - value) / 1000));
   if (s < 60) return lang === 'uk' ? 'щойно' : 'zojuist';
   const m = Math.round(s / 60);
   if (m < 60) return lang === 'uk' ? `${m} хв тому` : `${m} min geleden`;
@@ -49,7 +60,8 @@ function dayLabel(value: number, lang: Lang): string {
 /** Ключ групи: однакові за змістом сповіщення (без чисел і лапок) з однієї служби зливаються в одну групу. */
 const groupKeyOf = (source: string, text: string) => `${source}|${text.toLowerCase().replace(/[\d«»"'“”‘’.,:;!?()[\]{}]+/g, '').replace(/\s+/g, ' ').trim().slice(0, 48)}`;
 
-type Filter = 'all' | 'unread' | 'waiting' | 'problems';
+/** INTEG-001: «Нові» / «Прочитані» / «Архів» (shared/meldingen-v2/secties.ts) + «Проблеми» (open fouten). Vroeger: Усі / Непрочитані / Очікують / Проблеми. */
+type Filter = Sectie | 'problems';
 type Sort = 'new' | 'old' | 'unread' | 'status';
 // Audit 19.10.2026 (punt 2): ook deze weergavekeuze hangt aan het ACCOUNT ('mr.notif.group:<scope>'), zodat twee accounts in
 // dezelfde browser elkaars meldingenpaneel niet instellen. De oude, accountloze sleutel wordt opgeruimd.
@@ -60,12 +72,14 @@ const readGroupPref = () => { try { if (localStorage.getItem(GROUP_BASIS) !== nu
 /**
  * Список центру сповіщень: кожна мітка має колірний значок розділу з логотипом служби (Google, Microsoft, Claude, ОС пристрою…), легкий тон за типом
  * (успіх, увага, помилка), однакові сповіщення групуються (видно останнє, решта розгортається), пошук, фільтри, сортування, групування за днями.
+ * INTEG-001: розділи «Нові» / «Прочитані» / «Архів» дрібними піктограмами (назва при наведенні), у кожному рядку «Відкрити» та «Очистити».
  */
 export default function NotificationPanelBody(p: Props) {
   const t = (uk: string, nl: string) => (p.lang === 'uk' ? uk : nl);
+  const nu = p.nu ?? Date.now();
   /** Link van de server alleen als eigen pad of https *.tarasevych.com (de server controleert dat ook, backend/melder.ts meldLink). */
   const serverLink = (v?: string) => { const h = String(v || ''); if (!h || /[\\\s]/.test(h)) return ''; if (h.startsWith('/') && !h.startsWith('//')) return h; try { const u = new URL(h); return u.protocol === 'https:' && !u.username && !u.password && (u.hostname === 'tarasevych.com' || u.hostname.endsWith('.tarasevych.com')) ? u.toString() : ''; } catch { return ''; } };
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<Filter | null>(null);
   const [section, setSection] = useState<'all' | Section>('all');
   const [sort, setSort] = useState<Sort>('new');
   const [query, setQuery] = useState('');
@@ -78,15 +92,35 @@ export default function NotificationPanelBody(p: Props) {
 
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
-    for (const r of p.local) out.push({ key: `l:${r.id}`, group: groupKeyOf(r.source, r.text), origin: 'local', kind: r.kind, title: r.text, explain: r.explain, count: r.count, opgelost: r.opgelost, source: r.source, createdAt: r.createdAt, read: r.read, link: r.link, details: r.details, markRead: () => p.onReadLocal(r.id), remove: () => p.onRemoveLocal(r.id), action: r.action });
-    for (const r of p.server) out.push({ key: `s:${r.id}`, group: groupKeyOf('site', r.title), origin: 'server', sfeer: r.sfeer, kind: /error|fail/i.test(r.kind) ? 'error' : /warn/i.test(r.kind) ? 'warning' : 'info', title: r.title, text: r.message, source: 'site', createdAt: r.createdAt, read: Boolean(r.read), link: serverLink(r.link) ? { href: serverLink(r.link), label: /wijziging=/.test(String(r.link)) ? t('Переглянути зміну', 'Wijziging bekijken') : t('Відкрити', 'Openen') } : undefined, markRead: () => { if (!r.read) void p.onReadServer?.(r.id); } });
+    /** Deel van het paneel volgens de blijvende status (server) en of het al gezien is. */
+    const deel = (key: string, gelezen: boolean, tijd: number, opgelostLokaal?: boolean) => {
+      const s = p.status?.items[key]?.s;
+      const toestand = s === 'archief' ? 'archief' as const : s === 'opgelost' || opgelostLokaal ? 'opgelost' as const : undefined;
+      return { sectie: sectieVan({ gelezen: gelezen || !!s, toestand, tijd }, nu), opgeruimd: s === 'archief' || s === 'opgelost' };
+    };
+    for (const r of p.local) {
+      const sec = styleOf(r.source, p.lang).section;
+      out.push({ key: `l:${r.id}`, group: groupKeyOf(r.source, r.text), origin: 'local', kind: r.kind, title: r.text, explain: r.explain, count: r.count, opgelost: r.opgelost, source: r.source, createdAt: r.createdAt, read: r.read, context: r.context,
+        // INTEG-001: altijd een weg naar de plek waar u het oplost — de eigen link, anders het onderdeel zelf.
+        link: r.link ?? sectieLink(sec, p.lang), details: r.details, markRead: () => p.onReadLocal(r.id), remove: () => p.onRemoveLocal(r.id), action: r.action,
+        beveiliging: isKritiekType(typeVanBron(r.source)), ...deel(`l:${r.id}`, r.read, r.createdAt, r.opgelost) });
+    }
+    for (const r of p.server) {
+      const type = soortInfo(r.kind).type;
+      out.push({ key: `s:${r.id}`, group: groupKeyOf('site', r.title), origin: 'server', sfeer: r.sfeer, kind: /error|fail/i.test(r.kind) ? 'error' : /warn/i.test(r.kind) ? 'warning' : 'info', title: r.title, text: r.message, source: 'site', createdAt: r.createdAt, read: Boolean(r.read),
+        context: t(...typeInfo(type).naam), beveiliging: isKritiekType(type),
+        link: serverLink(r.link) ? { href: serverLink(r.link), label: /wijziging=/.test(String(r.link)) ? t('Переглянути зміну', 'Wijziging bekijken') : t('Відкрити, де це виправити', 'Openen waar u het oplost') } : undefined, markRead: () => { if (!r.read) void p.onReadServer?.(r.id); },
+        ...deel(`s:${r.id}`, Boolean(r.read), r.createdAt) });
+    }
     for (const e of p.events) {
       const st = statusInfo(e.status, p.lang);
       const source = e.kind === 'site' ? e.source : e.source === 'claude' ? 'claude' : e.source === 'browser' ? `browser:${/edge/i.test(e.subject) ? 'edge' : /opera/i.test(e.subject) ? 'opera' : /firefox/i.test(e.subject) ? 'firefox' : 'chrome'}` : `agent:${/win/i.test(e.platform || '') ? 'windows' : /darwin|mac/i.test(e.platform || '') ? 'macos' : 'linux'}`;
+      const eigen = activityLink(e, p.lang).href ? activityLink(e, p.lang) : sectieLink(styleOf(source, p.lang).section, p.lang);
       out.push({
         key: `a:${e.id}`, group: `${source}|${e.kind}|${e.type}|${st.group}`, origin: 'activity', sfeer: e.sfeer, source, createdAt: e.createdAt, read: p.readEvents.has(e.id),
         kind: st.group === 'failed' ? 'error' : st.group === 'waiting' ? 'warning' : st.group === 'done' || e.kind === 'grant' ? 'success' : 'info',
         title: activityTitle(e, p.lang), text: activityCause(e, p.lang) || undefined, explain: activiteitMeldingTekst(e, p.lang).uitleg, status: st, duration: e.kind === 'grant' || e.kind === 'site' ? undefined : durationText(e, p.lang),
+        context: activiteitContext(e, p.lang),
         facts: [
           [t('Джерело', 'Bron'), e.kind === 'site' ? styleOf(source, p.lang).label : `${sourceLabel(e.source, p.lang)}${e.kind === 'command' ? ` → ${e.subject}` : ''}`],
           [t('Стан', 'Status'), activityStatusText(e, p.lang)],
@@ -96,21 +130,40 @@ export default function NotificationPanelBody(p: Props) {
           ...(e.finishedAt ? [[t('Завершення', 'Einde'), new Date(e.finishedAt).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE')] as [string, string]] : []),
           ...(e.kind !== 'grant' && e.kind !== 'site' ? [[t('Тривалість', 'Duur'), durationText(e, p.lang)] as [string, string]] : []),
         ],
-        link: activityLink(e, p.lang).href ? activityLink(e, p.lang) : undefined, markRead: () => p.onReadEvent(e.id),
+        link: eigen, markRead: () => p.onReadEvent(e.id),
+        ...deel(`a:${e.id}`, p.readEvents.has(e.id), e.createdAt),
       });
     }
-    return out;
-  }, [p.local, p.server, p.events, p.readEvents, p.lang]);
+    // INTEG-001: dezelfde gebeurtenis uit de dienst (lokaal) én uit de server/activiteit was twee regels; de lokale kopie valt weg.
+    const sleutel = (i: Item) => ({ dienst: styleOf(i.source, p.lang).section, titel: i.title, tijd: i.createdAt });
+    const anderen = out.filter((i) => i.origin !== 'local').map(sleutel);
+    return anderen.length ? out.filter((i) => i.origin !== 'local' || !anderen.some((a) => zelfdeGebeurtenis(a, sleutel(i)))) : out;
+  }, [p.local, p.server, p.events, p.readEvents, p.lang, p.status, nu]);
+
+  /* Wat bij het openen (of terwijl het paneel open is) nieuw was, blijft tot het sluiten in «Нові» — ook al is het intussen gelezen. */
+  const vastNieuw = useRef<Set<string>>(new Set());
+  for (const i of items) if (i.sectie === 'nieuw') vastNieuw.current.add(i.key);
+  const inDeel = (i: Item, d: Sectie) => {
+    const vast = i.sectie !== 'archief' && vastNieuw.current.has(i.key);
+    return d === 'nieuw' ? i.sectie === 'nieuw' || vast : d === 'gelezen' ? i.sectie === 'gelezen' && !vast : i.sectie === 'archief';
+  };
+  const isProbleem = (i: Item) => i.sectie !== 'archief' && !i.opgelost && (i.kind === 'error' || i.kind === 'warning' || i.status?.group === 'failed' || i.status?.group === 'expired' || i.status?.group === 'rejected');
+  const counts = useMemo(() => ({
+    nieuw: items.filter((i) => inDeel(i, 'nieuw')).length,
+    gelezen: items.filter((i) => inDeel(i, 'gelezen')).length,
+    archief: items.filter((i) => inDeel(i, 'archief')).length,
+    problems: items.filter((i) => isProbleem(i) && (i.kind === 'error' || i.status?.group === 'failed')).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [items]);
+  /** Bij het openen: «Нові» als er iets nieuws is, anders «Прочитані» — nooit een leeg begin. */
+  const deel: Filter = filter ?? (counts.nieuw ? 'nieuw' : 'gelezen');
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = items.filter((i) => {
       if (section !== 'all' && styleOf(i.source, p.lang).section !== section) return false;
-      if (filter === 'unread' && i.read) return false;
-      if (filter === 'waiting' && i.status?.group !== 'waiting') return false;
-      // Een fout die een latere gelukte stap al heeft opgelost, is geen probleem meer.
-      if (filter === 'problems' && (i.opgelost || !(i.kind === 'error' || i.kind === 'warning' || i.status?.group === 'failed' || i.status?.group === 'expired' || i.status?.group === 'rejected'))) return false;
-      if (q && !`${i.title} ${i.text || ''} ${styleOf(i.source, p.lang).label} ${i.status?.text || ''}`.toLowerCase().includes(q)) return false;
+      if (deel === 'problems' ? !isProbleem(i) : !inDeel(i, deel)) return false;
+      if (q && !`${i.title} ${i.text || ''} ${i.context || ''} ${styleOf(i.source, p.lang).label} ${i.status?.text || ''}`.toLowerCase().includes(q)) return false;
       return true;
     });
     const rank: Record<string, number> = { waiting: 0, active: 1, failed: 2, rejected: 3, expired: 4, done: 5 };
@@ -121,7 +174,8 @@ export default function NotificationPanelBody(p: Props) {
       return b.createdAt - a.createdAt;
     });
     return list;
-  }, [items, filter, section, sort, query, p.lang]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, deel, section, sort, query, p.lang]);
 
   // Групи: перший (за поточним порядком) елемент групи — «головний»; решта ховається під «ще N».
   const groups = useMemo(() => {
@@ -131,19 +185,16 @@ export default function NotificationPanelBody(p: Props) {
     return order.map((k) => map.get(k)!);
   }, [shown, grouped]);
 
-  const counts = useMemo(() => ({
-    unread: items.filter((i) => !i.read).length,
-    waiting: items.filter((i) => i.status?.group === 'waiting').length,
-    problems: items.filter((i) => !i.opgelost && (i.kind === 'error' || i.status?.group === 'failed')).length,
-  }), [items]);
   const sections = useMemo(() => [...new Set(items.map((i) => styleOf(i.source, p.lang).section))], [items, p.lang]);
 
   /** Actieve keuzes achter «Фільтри» (розділ, порядок, пошук): het getal op de knop. */
   const actief = (section !== 'all' ? 1 : 0) + (sort !== 'new' ? 1 : 0) + (query.trim() ? 1 : 0);
 
-  const chip = (id: Filter, label: string, n?: number) => (
-    <button key={id} type='button' className='cnc-chip' aria-pressed={filter === id} aria-label={n ? `${label}: ${n}` : undefined} onClick={() => setFilter(id)}>{label}{n ? <span className='cnc-chip-n'>{n}</span> : null}</button>
+  /** INTEG-001: chip = klein pictogram + teller; de naam bij aanwijzen (title) en voor de schermlezer (aria-label). */
+  const chip = (id: Filter, label: string, Icon: typeof Bell, n: number) => (
+    <button key={id} type='button' className='cnc-chip' data-cnc-deel={id} aria-pressed={deel === id} aria-label={`${label}: ${n}`} title={label} onClick={() => setFilter(id)}><Icon aria-hidden='true' /><span className='cnc-chip-n'>{n > 99 ? '99+' : n}</span></button>
   );
+  const ruimOp = (lijst: Item[]) => p.onOpruimen?.(lijst.map((i) => i.key), lijst.filter((i) => i.beveiliging).map((i) => i.key));
 
   const renderRow = (item: Item, opts: { nested?: boolean; extra?: number; groupKey?: string; unread?: number } = {}) => {
     const style = styleOf(item.source, p.lang);
@@ -154,7 +205,7 @@ export default function NotificationPanelBody(p: Props) {
     const titelId = `cnc-t-${item.key.replace(/[^A-Za-z0-9_-]/g, '_')}`;
     const groupOpen = opts.groupKey ? Boolean(expandedGroups[opts.groupKey]) : false;
     return (
-      <article className={`cnc-row sec-${style.section} kind-${item.kind}${item.read ? ' is-read' : ' is-unread'}${item.status ? ` st-${item.status.group}` : ''}${opts.nested ? ' is-nested' : ''}`} data-origin={item.origin} data-section={style.section} data-sfeer={item.sfeer} aria-labelledby={titelId} onPointerDown={() => { if (!item.read) item.markRead(); }}>
+      <article className={`cnc-row sec-${style.section} kind-${item.kind}${item.read ? ' is-read' : ' is-unread'}${item.status ? ` st-${item.status.group}` : ''}${opts.nested ? ' is-nested' : ''}`} data-origin={item.origin} data-section={style.section} data-sfeer={item.sfeer} data-deel={item.sectie} aria-labelledby={titelId} onPointerDown={() => { if (!item.read) item.markRead(); }}>
         <span className='cnc-icon' aria-hidden='true' title={`${style.label}${style.providerLabel ? ` · ${style.providerLabel}` : ''}`}>
           <Icon aria-hidden='true' />
           {style.provider ? <span className='cnc-provider'><Logo kind={style.provider} size={14} label={style.providerLabel} /></span> : null}
@@ -164,8 +215,9 @@ export default function NotificationPanelBody(p: Props) {
           {item.explain ? <p className='cnc-uitleg'>{item.explain}</p> : null}
           <div className='cnc-meta'>
             <span className='cnc-cat'>{style.label}{style.providerLabel && style.providerLabel !== style.label ? ` · ${style.providerLabel}` : ''}</span>
+            {item.context ? <span className='cnc-context' data-cnc-context='1'>{item.context}</span> : null}
             {item.status ? <span className={`cnc-status st-${item.status.group}`}><i aria-hidden='true' />{item.status.text}</span> : null}
-            <span title={new Date(item.createdAt).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE')}>{relative(item.createdAt, p.lang)}</span>
+            <span title={new Date(item.createdAt).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE')}>{relative(item.createdAt, p.lang, nu)}</span>
             {item.duration ? <span>{item.duration}</span> : null}
             {item.count && item.count > 1 ? <span className='cnc-count' title={t('Та сама подія, об’єднано', 'Dezelfde gebeurtenis, samengevoegd')}>×{item.count}</span> : null}
             {item.opgelost ? <span className='cnc-pill is-resolved'>{t('Вирішено', 'Opgelost')}</span> : null}
@@ -194,24 +246,32 @@ export default function NotificationPanelBody(p: Props) {
           {item.action ? <button type='button' title={item.action.label} aria-label={item.action.label} aria-describedby={titelId} onClick={() => void p.onRunAction(item.key.slice(2), item.action!)}><Undo2 /></button> : null}
           {expandable ? <button type='button' aria-expanded={isOpen} title={isOpen ? t('Згорнути', 'Inklappen') : t('Докладніше', 'Meer details')} aria-label={isOpen ? t('Згорнути', 'Inklappen') : t('Докладніше', 'Meer details')} aria-describedby={titelId} onClick={() => { item.markRead(); setOpen((c) => ({ ...c, [item.key]: !c[item.key] })); }}>{isOpen ? <ChevronUp /> : <ChevronDown />}</button> : null}
           {!item.read ? <button type='button' title={t('Позначити прочитаним', 'Als gelezen markeren')} aria-label={t('Позначити прочитаним', 'Als gelezen markeren')} aria-describedby={titelId} onClick={() => item.markRead()}><CircleCheck /></button> : <span className='cnc-done' role='img' aria-label={t('Прочитано', 'Gelezen')} title={t('Прочитано', 'Gelezen')}><Check aria-hidden='true' /></span>}
+          {p.onOpruimen && item.sectie !== 'archief' ? <button type='button' data-cnc-opruimen='1' title={t('Очистити — у «Архів» (можна повернути)', 'Opruimen — naar «Archief» (terug te zetten)')} aria-label={t('Очистити', 'Opruimen')} aria-describedby={titelId} onClick={() => { item.markRead(); ruimOp([item]); }}><Archive /></button> : null}
+          {p.onTerug && item.opgeruimd ? <button type='button' data-cnc-terug='1' title={t('Повернути з архіву', 'Uit het archief terugzetten')} aria-label={t('Повернути з архіву', 'Uit het archief terugzetten')} aria-describedby={titelId} onClick={() => p.onTerug!([item.key])}><ArchiveRestore /></button> : null}
           {item.remove ? <button type='button' title={t('Видалити з історії', 'Uit geschiedenis verwijderen')} aria-label={t('Видалити з історії', 'Uit geschiedenis verwijderen')} aria-describedby={titelId} onClick={() => item.remove!()}><Trash2 /></button> : null}
         </div>
       </article>
     );
   };
 
+  const leeg: Record<Filter, [string, string]> = {
+    nieuw: [t('Нових сповіщень немає', 'Geen nieuwe meldingen'), t('Те, що ви вже бачили, — у «Прочитані».', 'Wat u al zag, staat in «Gelezen».')],
+    gelezen: [t('Прочитаних немає', 'Niets gelezen'), t(`Тут будуть сповіщення, які ви вже переглянули. Через ${ARCHIEF_NA_DAGEN} днів вони самі переходять в «Архів».`, `Hier komen de meldingen die u al zag. Na ${ARCHIEF_NA_DAGEN} dagen gaan ze vanzelf naar «Archief».`)],
+    archief: [t('Архів порожній', 'Het archief is leeg'), t(`Сюди потрапляє те, що ви очистили або що вирішено, і прочитане старше ${ARCHIEF_NA_DAGEN} днів. Нічого не видаляється.`, `Hier komt wat u opruimde of wat opgelost is, en gelezen meldingen ouder dan ${ARCHIEF_NA_DAGEN} dagen. Niets wordt gewist.`)],
+    problems: [t('Проблем немає', 'Geen problemen'), t('Відкритих помилок і попереджень немає.', 'Er staan geen open fouten of waarschuwingen.')],
+  };
   let lastDay = '';
   return (
-    <div className='cnc-body'>
+    <div className='cnc-body' data-cnc-deel={deel}>
       <div className='cnc-tools' data-filters-open={filtersOpen ? '1' : undefined}>
-        {/* Eén rij: statusfilters (horizontaal scrollend, vervaagde rand + pijl als er meer is) en op de telefoon de knop «Фільтри». */}
+        {/* Eén rij: delen (Нові / Прочитані / Архів / Проблеми) als kleine pictogrammen en op de telefoon de knop «Фільтри». */}
         <div className='cnc-rij'>
-          <TabsRij lang={p.lang} rol='group' navKlasse='cnc-chips' wrapKlasse='cnc-chips-wrap' label={t('Фільтр за станом', 'Filter op status')}>
-            {chip('all', t('Усі', 'Alle'))}
-            {chip('unread', t('Непрочитані', 'Ongelezen'), counts.unread)}
-            {chip('waiting', t('Очікують', 'Wachtend'), counts.waiting)}
-            {chip('problems', t('Проблеми', 'Problemen'), counts.problems)}
-            <button type='button' className='cnc-chip' aria-pressed={grouped} onClick={toggleGroupMode} title={t('Однакові сповіщення зливаються в одну групу: видно останнє, решта розгортається', 'Gelijke meldingen worden samengevoegd: u ziet de laatste, de rest klapt uit')}><Layers aria-hidden='true' style={{ width: 14, height: 14 }} />{t('Групувати', 'Groeperen')}</button>
+          <TabsRij lang={p.lang} rol='group' navKlasse='cnc-chips' wrapKlasse='cnc-chips-wrap' label={t('Розділи сповіщень', 'Delen van de meldingen')}>
+            {chip('nieuw', t('Нові', 'Nieuw'), BellDot, counts.nieuw)}
+            {chip('gelezen', t('Прочитані', 'Gelezen'), Eye, counts.gelezen)}
+            {chip('archief', t('Архів', 'Archief'), Archive, counts.archief)}
+            {chip('problems', t('Проблеми', 'Problemen'), TriangleAlert, counts.problems)}
+            <button type='button' className='cnc-chip' data-cnc-groeperen='1' aria-pressed={grouped} onClick={toggleGroupMode} aria-label={t('Групувати однакові', 'Gelijke groeperen')} title={t('Однакові сповіщення зливаються в одну групу: видно останнє, решта розгортається', 'Gelijke meldingen worden samengevoegd: u ziet de laatste, de rest klapt uit')}><Layers aria-hidden='true' style={{ width: 14, height: 14 }} /></button>
           </TabsRij>
           <label className='cnc-search'><Search aria-hidden='true' /><input type='search' value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('Пошук у сповіщеннях', 'Zoeken in meldingen')} aria-label={t('Пошук у сповіщеннях', 'Zoeken in meldingen')} /></label>
           <button type='button' className='cnc-filterknop' data-qa-id='melding-filters' aria-expanded={filtersOpen} aria-controls='cnc-extra' onClick={() => setFiltersOpen((v) => !v)}
@@ -219,6 +279,11 @@ export default function NotificationPanelBody(p: Props) {
             <ListFilter aria-hidden='true' /><span>{t('Фільтри', 'Filters')}</span>{actief ? <span className='cnc-chip-n' aria-hidden='true'>{actief}</span> : null}
           </button>
         </div>
+        <p className='cnc-deel-uitleg' data-cnc-deel-uitleg={deel}>
+          <b>{deel === 'nieuw' ? t('Нові', 'Nieuw') : deel === 'gelezen' ? t('Прочитані', 'Gelezen') : deel === 'archief' ? t('Архів', 'Archief') : t('Проблеми', 'Problemen')}</b>
+          {' — '}{deel === 'nieuw' ? t('ще не переглянуті; що ви бачите тут, стає прочитаним.', 'nog niet gezien; wat u hier ziet, wordt gelezen.') : deel === 'gelezen' ? t('уже переглянуті, ще не очищені.', 'al gezien, nog niet opgeruimd.') : deel === 'archief' ? t('очищені, вирішені й старі прочитані; можна повернути.', 'opgeruimd, opgelost en oude gelezen; terug te zetten.') : t('відкриті помилки й попередження.', 'open fouten en waarschuwingen.')}
+          {deel === 'nieuw' && counts.nieuw && p.onOpruimen ? <button type='button' className='cnc-alles-opruimen' data-cnc-alles-opruimen='1' onClick={() => ruimOp(shown)}><Archive aria-hidden='true' />{t('Очистити всі нові', 'Alle nieuwe opruimen')}</button> : null}
+        </p>
         <div className='cnc-extra' id='cnc-extra' role='dialog' aria-modal='false' hidden={!filtersOpen}>
           <div className='cnc-sections' role='group' aria-label={t('Розділ', 'Sectie')}>
             <button type='button' className='cnc-sec' aria-pressed={section === 'all'} onClick={() => setSection('all')}>{t('Усі розділи', 'Alle secties')}</button>
@@ -239,8 +304,8 @@ export default function NotificationPanelBody(p: Props) {
 
       <div className='cnc-list' role='list'>
         {!groups.length ? (
-          <div className='canonical-notification-empty'><Bell /><strong>{items.length ? t('Нічого не знайдено', 'Niets gevonden') : t('Історія сповіщень порожня', 'Meldingsgeschiedenis is leeg')}</strong>
-            <span>{items.length ? t('Змініть фільтр або пошук.', 'Pas het filter of de zoekopdracht aan.') : t('Тут з’являтиметься все, що роблять Claude, ваші пристрої, браузер, пошта й сайт.', 'Hier verschijnt alles wat Claude, uw apparaten, de browser, de mail en de site doen.')}</span></div>
+          <div className='canonical-notification-empty' data-cnc-leeg={deel}><Bell /><strong>{query.trim() || section !== 'all' ? t('Нічого не знайдено', 'Niets gevonden') : leeg[deel][0]}</strong>
+            <span>{query.trim() || section !== 'all' ? t('Змініть фільтр або пошук.', 'Pas het filter of de zoekopdracht aan.') : items.length ? leeg[deel][1] : t('Тут з’являтиметься все, що роблять Claude, ваші пристрої, браузер, пошта й сайт.', 'Hier verschijnt alles wat Claude, uw apparaten, de browser, de mail en de site doen.')}</span></div>
         ) : null}
         {groups.map((group) => {
           const lead = group[0];

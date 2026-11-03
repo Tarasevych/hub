@@ -24,7 +24,8 @@ export const MELDING_TYPES = {
   ai: { ruimte: 'prive', naam: ['ШІ-агенти (мій простір)', 'AI-agenten (mijn ruimte)'] },
   apparaten: { ruimte: 'prive', naam: ['Мої пристрої', 'Mijn apparaten'] },
   'inzage': { ruimte: 'prive', naam: ['Запити на перегляд мого акаунта', 'Verzoeken om mijn account in te zien'], kritiek: true },
-  systeem: { ruimte: 'prive', naam: ['Інше', 'Overig'] },
+  // INTEG-001: niet het vage «Інше» — wat er wel onder valt (meldingen van de site zelf: indeling, ruimte, concepten …).
+  systeem: { ruimte: 'prive', naam: ['Сайт і система (решта)', 'Site en systeem (overige)'] },
   // ---------------------------------------------------------------- technisch (alleen wie een technisch profiel heeft)
   'tech.toegang': { ruimte: 'technisch', naam: ['Запити на доступ до сайту', 'Toegangsverzoeken voor de site'] },
   'tech.uitrol': { ruimte: 'technisch', naam: ['Оновлення сайту', 'Updates van de site'] },
@@ -49,13 +50,19 @@ export const isKritiekType = (t: MeldingType): boolean => (MELDING_TYPES[t] as M
 
 /**
  * Per type: geluid (bel), opduiken (pop-up), tonen (bel/geschiedenis), vast (blijft staan tot u sluit) en seconden (hoe lang de pop-up staat,
- * zonder «vast»). Kritieke types worden altijd getoond en staan standaard vast, zodat een beveiligingsmelding niet vanzelf verdwijnt.
+ * zonder «vast»; 0 = automatisch volgens soort en lengte, zie src/canoniek-meldingen.ts popupLevensduurMs).
+ *
+ * INTEG-001 (eigenaar: «Сповіщення не має висіти, доки його не закриють вручну»): GEEN enkel type staat nog standaard vast — ook
+ * beveiliging niet (die blijft wel altijd zichtbaar en gaat na het sluiten naar het paneel). «Vast» geldt alleen als de gebruiker het
+ * zelf koos (`vastGekozen`). Vroeger stond kritiek standaard vast en schreef elke andere wijziging die standaard mee in de opslag;
+ * zo'n oude `vast: true` zonder eigen keuze telt niet meer.
  */
-export type TypeVoorkeur = { geluid: boolean; opduiken: boolean; tonen: boolean; vast: boolean; seconden: number };
-export const TOAST_SECONDEN_STANDAARD = 10;
+export type TypeVoorkeur = { geluid: boolean; opduiken: boolean; tonen: boolean; vast: boolean; seconden: number; vastGekozen?: boolean };
+/** 0 = automatisch: korter voor «готово», langer voor een fout, extra tijd voor een lange tekst. */
+export const TOAST_SECONDEN_STANDAARD = 0;
 export const TOAST_SECONDEN_KEUZES = [3, 5, 7, 10, 14, 20, 30, 60] as const;
-export const standaardTypeVoorkeur = (type?: MeldingType): TypeVoorkeur => ({
-  geluid: true, opduiken: true, tonen: true, vast: type ? isKritiekType(type) : false, seconden: TOAST_SECONDEN_STANDAARD,
+export const standaardTypeVoorkeur = (_type?: MeldingType): TypeVoorkeur => ({
+  geluid: true, opduiken: true, tonen: true, vast: false, seconden: TOAST_SECONDEN_STANDAARD,
 });
 
 export function normaliseerTypeVoorkeuren(raw: unknown): Record<MeldingType, TypeVoorkeur> {
@@ -65,18 +72,40 @@ export function normaliseerTypeVoorkeuren(raw: unknown): Record<MeldingType, Typ
     const v = r[t] && typeof r[t] === 'object' && !Array.isArray(r[t]) ? r[t] as Record<string, unknown> : {};
     const b = (x: unknown) => (typeof x === 'boolean' ? x : true);
     const sec = typeof v.seconden === 'number' ? Math.round(v.seconden) : NaN;
+    const vast = v.vast === true && v.vastGekozen === true;
     uit[t] = {
       geluid: b(v.geluid), opduiken: b(v.opduiken), tonen: isKritiekType(t) ? true : b(v.tonen),
-      vast: typeof v.vast === 'boolean' ? v.vast : isKritiekType(t),
-      seconden: Number.isFinite(sec) ? Math.min(60, Math.max(3, sec)) : TOAST_SECONDEN_STANDAARD,
+      vast, ...(vast ? { vastGekozen: true } : {}),
+      seconden: Number.isFinite(sec) && sec > 0 ? Math.min(60, Math.max(3, sec)) : TOAST_SECONDEN_STANDAARD,
     };
   }
   return uit;
 }
 
-/** Effectieve voorkeur (kritiek → altijd tonen, wat er ook in de opslag staat). */
+/** Effectieve voorkeur (kritiek → altijd tonen, wat er ook in de opslag staat; «vast» alleen als de gebruiker het koos). */
 export function voorkeurVoor(v: Partial<Record<MeldingType, TypeVoorkeur>> | undefined, t: MeldingType): TypeVoorkeur {
   // Oude opslag (zonder vast/seconden) krijgt de standaard voor de ontbrekende velden.
   const x: TypeVoorkeur = v?.[t] ? { ...standaardTypeVoorkeur(t), ...v[t] } : standaardTypeVoorkeur(t);
-  return isKritiekType(t) ? { ...x, tonen: true } : x;
+  const vast = x.vast === true && x.vastGekozen === true;
+  return { ...x, vast, tonen: isKritiekType(t) ? true : x.tonen };
+}
+
+/**
+ * INTEG-001: één keuze «hoe» per type in gewone woorden (in plaats van drie losse schakelaars):
+ *   beide        — pop-up met geluid
+ *   popup        — pop-up zonder geluid
+ *   geluid       — alleen het geluid, geen pop-up (de melding staat in het paneel)
+ *   paneel       — stil, alleen in het paneel
+ *   uit          — niet tonen (kan niet bij kritieke types)
+ */
+export type MeldingWeergave = 'beide' | 'popup' | 'geluid' | 'paneel' | 'uit';
+export const MELDING_WEERGAVEN: readonly MeldingWeergave[] = ['beide', 'popup', 'geluid', 'paneel', 'uit'];
+export function weergaveVan(v: Pick<TypeVoorkeur, 'geluid' | 'opduiken' | 'tonen'>): MeldingWeergave {
+  if (!v.tonen) return 'uit';
+  if (v.opduiken) return v.geluid ? 'beide' : 'popup';
+  return v.geluid ? 'geluid' : 'paneel';
+}
+export function metWeergave(v: TypeVoorkeur, w: MeldingWeergave, t: MeldingType): TypeVoorkeur {
+  if (w === 'uit' && isKritiekType(t)) w = 'paneel';
+  return { ...v, tonen: w !== 'uit', opduiken: w === 'beide' || w === 'popup', geluid: w === 'beide' || w === 'geluid' };
 }

@@ -72,12 +72,14 @@ export async function main(): Promise<number> {
     await page.waitForSelector('[data-qa-id="canonical-notification-bell"]', { timeout: 15000 });
     await page.waitForTimeout(400);
     await page.click('[data-qa-id="canonical-notification-bell"]'); await page.waitForSelector('.mv2'); await page.waitForTimeout(250);
-    await page.click('.mv2-segment button:nth-child(2)').catch(() => undefined); await page.waitForTimeout(200);
+    // INTEG-001: geen tab «Усі» meer — de kaart staat in «Нові» of «Прочитані» (kaartOpen zoekt het deel).
     return { c, page };
   };
   const shot = (p: Page, naam: string) => p.screenshot({ path: join(UIT, `${naam}.png`), animations: 'disabled' }).catch(() => undefined);
   const kaartOpen = async (p: Page, tekst: string | RegExp) => {
-    const k = p.locator('.mv2-rij', { hasText: tekst }).first();
+    let k = p.locator('.mv2-rij', { hasText: tekst }).first();
+    // INTEG-001: drie delen (Нові/Прочитані/Архів); een kaart staat in precies één deel.
+    if (!(await k.count())) for (const s of ['nieuw', 'gelezen', 'archief']) { await p.click(`[data-mv2-secties] [data-sectie="${s}"]`).catch(() => undefined); await p.waitForTimeout(150); k = p.locator('.mv2-rij', { hasText: tekst }).first(); if (await k.count()) break; }
     if (!(await k.count())) return null;
     await k.locator('.mv2-hoofd').click(); await p.waitForTimeout(250);
     return { k, u: k.locator('.mv2u').first() };

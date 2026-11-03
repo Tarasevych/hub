@@ -109,10 +109,14 @@
 .cnc-row .cnc-link{color:var(--text);text-decoration:underline;text-underline-offset:.15em}
 
 /* ---------------------------------------------------------------- PANEEL OP DE TELEFOON */
+/* INTEG-001 (eigenaar: «панель має відкриватися біля дзвіночка, прив'язана до нього, а не посеред екрана»): ook hier een venster AAN de
+   bel — bovenkant (onder of boven de bel) en maximale hoogte komen uit placeNear (CanoniekMeldingencentrum), met een pijltje naar de
+   bel. Vroeger een vol blad van rand tot rand (top/bottom vast). Op de smalle telefoon blijven alleen links/rechts tussen de veilige randen. */
+@media (max-width:560px){
+  html .canonical-notification-panel{left:calc(var(--ruimte-2) + var(--veilig-links))!important;right:calc(var(--ruimte-2) + var(--veilig-rechts))!important;width:auto!important;max-width:none!important}
+}
 @media (max-width:560px), (max-height:500px){
-  html .canonical-notification-panel{left:calc(var(--ruimte-2) + var(--veilig-links))!important;right:calc(var(--ruimte-2) + var(--veilig-rechts))!important;
-    top:calc(var(--ruimte-2) + var(--veilig-boven))!important;bottom:calc(var(--ruimte-2) + var(--veilig-onder))!important;
-    width:auto!important;max-width:none!important;max-height:none!important;grid-template-rows:auto minmax(0,1fr);border-radius:var(--straal-l)}
+  html .canonical-notification-panel{grid-template-rows:auto minmax(0,1fr);border-radius:var(--straal-l)}
   html .canonical-notification-panel.met-tech{grid-template-rows:auto auto minmax(0,1fr)}
   html .canonical-notification-panel>header{gap:var(--ruimte-1);padding:var(--ruimte-1) var(--ruimte-1) var(--ruimte-1) var(--ruimte-4)}
   html .canonical-notification-panel>header .cnc-meer-knop{display:grid}
@@ -148,12 +152,25 @@
 }
 /* 21.10 рецензія UX: альбомна орієнтація телефону (844×390 тощо, ширина > 560, висота ≤ 500). Без цього діяв комп'ютерний
    вигляд: заголовок + пошук + два рядки чипів + чотири кнопки внизу з'їдали всі 390 px, і на сам список лишалося 0 px.
-   Тепер — той самий компактний режим, що й на телефоні (один рядок чипів, «Фільтри», «⋯»), але бічною панеллю праворуч на всю висоту. */
+   Тепер — той самий компактний режим, що й на телефоні (один рядок чипів, «Фільтри», «⋯»), вузьким вікном (≤ 360 px).
+   INTEG-001: не бічною панеллю на всю висоту, а вікном біля дзвіночка (місце й висота — з placeNear). */
 @media (max-height:500px) and (min-width:561px){
-  html .canonical-notification-panel{left:auto!important;width:min(360px,calc(100vw - var(--ruimte-4)))!important}
+  html .canonical-notification-panel{width:min(360px,calc(100vw - var(--ruimte-4)))!important}
   /* één schuifrij chips (TabsRij met pijl), zoals op de telefoon — mail-qa-2026-10.css laat ze vanaf 561 px omlopen (3 rijen = 100+ px) */
   html body .canonical-notification-panel .cnc-chips{flex-wrap:nowrap!important;overflow-x:auto!important}
 }
+
+/* INTEG-001: delen «Нові / Прочитані / Архів / Проблеми» als kleine pictogrammen met teller (naam bij aanwijzen), één regel uitleg
+   over het gekozen deel, «Очистити всі нові», en per regel over wie/wat het gaat (context). */
+.cnc-chip[data-cnc-deel],.cnc-chip[data-cnc-groeperen]{gap:4px;min-width:40px;justify-content:center;padding:2px 10px}
+.cnc-chip[data-cnc-deel] svg{width:15px;height:15px;flex:none}
+.cnc-deel-uitleg{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:0;color:var(--muted);font-size:12px;line-height:1.35}
+.cnc-deel-uitleg b{color:var(--text);font-weight:650}
+.cnc-alles-opruimen{display:inline-flex;align-items:center;gap:5px;min-height:30px;margin-left:auto;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--text);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.cnc-alles-opruimen svg{width:14px;height:14px}
+.cnc-alles-opruimen:hover,.cnc-alles-opruimen:focus-visible{background:var(--nav-hover);outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:1px}
+.cnc-context{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+@media (max-width:560px){.cnc-alles-opruimen{min-height:var(--tik-hoogte)}}
 
 /* Meldingenlijst (UI notif-b): uitleg onder de titel, herhalingen met een teller, en de stip «Вирішено» bij een opgeloste fout. */
 .canonical-notification-panel .cnc-uitleg{margin:2px 0 0;color:var(--muted);font-size:12px;line-height:1.4;overflow-wrap:anywhere}
