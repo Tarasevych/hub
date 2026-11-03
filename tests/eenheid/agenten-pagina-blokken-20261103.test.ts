@@ -93,6 +93,9 @@ export async function main(): Promise<number> {
   check('«Конектори» in de hub: geen eigen kop (die staat in de rand) en geen paneel «Останні дії» (dubbel met «Останні події»/«Журнал»)',
     !conIn.includes('v2b-hoofd') && !conIn.includes('data-v2-laatste') && conIn.includes('data-ingebed="1"') && conIn.includes('data-v2-massa'));
   check('«Конектори» elders (ai.* → verbindingen): kop en «Останні дії» blijven', conLos.includes('v2b-hoofd') && conLos.includes('data-v2-laatste'));
+  // Oude fout (gevonden bij INTEG-001): de filters toonden «Усі 0 · Підключені 0 …» terwijl de server nog niet (of niet) antwoordde —
+  // precies de valse bewering die HUB-03 voor de samenvatting al verbood. Zonder gegevens nu geen teller.
+  check('«Конектори» zonder antwoord van de server: geen «0» in de filters (HUB-03: onbekend is geen nul)', !conIn.includes('<span class="v2-teller">') && !conLos.includes('<span class="v2-teller">'));
 
   const { default: TabExternMcp } = await import('../../src/agenten/TabExternMcp');
   const ext = renderToStaticMarkup(createElement(TabExternMcp, { tr: UK }));
