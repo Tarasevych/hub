@@ -231,7 +231,7 @@ export async function main(): Promise<number> {
     check('code: in de eigenaarsroute reist de lade via het tabblad van de sessie (auth.tab); nergens een vrij veld «ruimte» uit de body',
       /lade=await meldingenLade\(auth\.user\.id,\{tabContext:auth\.tab,/.test(index) && !/meldingenLade\([^)]*body\.ruimte/.test(index));
     check('scherm: CanonicalChrome filtert nog steeds via meldingenVoorRuimte (dat nu het serverveld volgt) en het type kent «ruimte»',
-      /meldingenVoorRuimte\(serverNotifications,ruimte\)/.test(lees('src/CanoniekOmlijsting.tsx')) && /ruimte\?:'prive'\|'technisch'/.test(lees('src/canoniek-meldingen.ts')));
+      /meldingenVoorRuimte\(serverNotifications,ruimte\)/.test(lees('src/CanoniekOmlijsting.tsx')) && /ruimte\?:\s*'prive'\s*\|\s*'technisch'/.test(lees('src/canoniek-meldingen.ts')));
     check('push: er is geen web-push/abonnement in de site (service-worker zonder push) — de enige weg is dit overzicht, dus de regel dekt alles',
       !/push|Notification/.test(lees('public/service-worker.js')) && !/PushManager|pushManager/.test(lees('src/main.tsx')));
   } finally {
