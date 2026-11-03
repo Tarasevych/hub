@@ -313,5 +313,36 @@ export async function main(): Promise<number> {
   check('F3 standaarduitleg bij een fout noemt het onderdeel (waar u het oplost)', belE.includes("uitlegStandaard(propsRef.current.lang, styleOf(notice.source || '', propsRef.current.lang).label)") && belE.includes('спробуйте ще раз у розділі «${onderdeel}»'));
   check('F3 servermelding in de pop-up: welk soort (context) en «Відкрити: <onderdeel>» uit de link', belE.includes("...(info.type !== 'systeem' ? { context: t(...typeInfo(info.type).naam) } : {}),") && belE.includes('t(`Відкрити: ${plek}`, `Openen: ${plek}`)'));
 
+  // ------------------------------------------------------------------ G. stip in het menu: uitleg, «Відкрити», «Очистити», ook op klik
+  const herstelG = nepBrowser();
+  try {
+    const { MeldingBellen, MenuBadge, stipUitleg } = await import('../../src/MenuMeldingen');
+    const badge = { item: 'svc:identity', aantal: 2, categorieen: ['beveiliging', 'toegang'] as Array<'beveiliging' | 'toegang'>, nieuwste: NU, meldingen: [
+      { id: 's1', bron: 'server' as const, item: 'svc:identity', categorie: 'beveiliging' as const, titel: 'Новий вхід з пристрою', tekst: 'Windows · Chrome', op: NU - 60_000, link: 'https://id.tarasevych.com/account' },
+      { id: 's2', bron: 'server' as const, item: 'svc:identity', categorie: 'toegang' as const, titel: 'Запит на доступ', tekst: '', op: NU - 120_000 },
+    ] };
+    const anker = { left: 0, top: 100, right: 220, bottom: 140, width: 220, height: 40, x: 0, y: 100, toJSON: () => ({}) } as DOMRect;
+    const bellen = (lang: 'uk' | 'nl') => renderToStaticMarkup(createElement(MeldingBellen, { lang, label: lang === 'uk' ? 'Обліковий запис' : 'Account', badge, anker, onSluit: () => undefined, onOpen: () => undefined, onAllesWeg: () => undefined, onBinnen: () => undefined, onEsc: () => undefined, paneelRef: () => undefined }));
+    const ukB = bellen('uk'), nlB = bellen('nl');
+    check('G1 het venster zegt wat de stip betekent (hoeveel, welk soort, waar) en wat u kunt doen', ukB.includes('data-menu-bellen-uitleg="1"') && ukB.includes('Позначка на «Обліковий запис» означає') && ukB.includes('безпека, доступ і запити') && ukB.includes('позначка зникне'));
+    check('G1 per melding «Відкрити» en «Очистити» als tekstknop (niet alleen ×); onderaan «Очистити все тут» en «Усі сповіщення»',
+      (ukB.match(/data-menu-bel-openen="1"/g) || []).length === 2 && (ukB.match(/data-menu-bel-weg="1"[^>]*>Очистити</g) || []).length === 2 && ukB.includes('>Очистити все тут<') && ukB.includes('data-menu-bellen-paneel="1"') && ukB.includes('Усі сповіщення'));
+    check('G1 nl', nlB.includes('De stip op «Account» betekent') && nlB.includes('>Opruimen<') && nlB.includes('>Alles hier opruimen<') && nlB.includes('Alle meldingen'));
+    check('G1 één melding: «Очистити» (niet «Очистити все тут»), uitleg in het enkelvoud', stipUitleg('uk', 'Пошта', { ...badge, aantal: 1, categorieen: ['beveiliging'], meldingen: [badge.meldingen[0]] }).includes('є 1 непрочитане сповіщення'));
+    const metKlik = renderToStaticMarkup(createElement(MenuBadge, { badge, stijl: 'punt', knipper: false, herinner: false, onOpen: () => undefined }));
+    const zonder = renderToStaticMarkup(createElement(MenuBadge, { badge, stijl: 'punt', knipper: false, herinner: false }));
+    check('G2 de stip is klikbaar (data-klik) als er een venster bij hoort; anders niet', metKlik.includes('data-klik="ja"') && !zonder.includes('data-klik'));
+  } catch (e) {
+    check('G venster bij de stip rendert in node', false, String((e as Error).stack || e).slice(0, 500));
+  } finally {
+    herstelG();
+  }
+  const chrome = lees('src/CanoniekOmlijsting.tsx');
+  check('G3 menu: klik/tik op de stip opent het venster (badge onOpen → belOpenen), ook als «bellen bij aanwijzen» uit staat',
+    chrome.includes("onOpen={el=>{") && chrome.includes("belOpenen(id,belLabels.current[id]||'',k,true)") && chrome.includes('const belOpenen=(id:string,label:string,el:HTMLElement,direct=false)=>{if(!badges[id])return;') && chrome.includes('ankerEl={bel.knop}'));
+  check('G3 «Усі сповіщення» opent het paneel aan de bel', belE.includes('window.addEventListener(MELDINGEN_OPENEN_EVENT, openen);') && lees('src/MenuMeldingen.tsx').includes('new CustomEvent(MELDINGEN_OPENEN_EVENT)'));
+  const mcss = code(lees('src/canoniek-meldingencentrum.css'));
+  check('G3 CSS: alleen de klikbare stip vangt klikken (groter tikvlak); de rest van de badge blijft «pointer-events:none»', mcss.includes(".menu-badge[data-klik='ja']{pointer-events:auto;cursor:pointer}") && mcss.includes(".menu-badge[data-klik='ja']::before{content:'';position:absolute;inset:-8px}"));
+
   return einde();
 }

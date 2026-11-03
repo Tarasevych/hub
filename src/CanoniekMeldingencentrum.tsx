@@ -2,7 +2,7 @@ import { ArrowLeft, Bell, CheckCheck, ChevronDown, ChevronUp, CircleCheck, Clock
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { readSharedPreferences, writeSharedPreferences } from './gedeelde-voorkeuren';
 import {
-  CANONICAL_NOTICE_EVENT, SAMENVOEG_MS, isBronDuplicaat, losOpEerdere, popupLevensduurMs, registerCanonicalNoticeAction, releaseCanonicalNoticeAction,
+  CANONICAL_NOTICE_EVENT, MELDINGEN_OPENEN_EVENT, SAMENVOEG_MS, isBronDuplicaat, losOpEerdere, popupLevensduurMs, registerCanonicalNoticeAction, releaseCanonicalNoticeAction,
   samenvoegDoel, samenvoegSleutel, uniekOpId, voegHerhalingToe, type CanonicalNoticeAction, type CanonicalNoticeDetailIcon, type CanonicalNoticeInput, type CanonicalNoticeKind,
   type CanonicalServerNotification, type RecentePopup,
 } from './canoniek-meldingen';
@@ -448,7 +448,10 @@ export default function CanonicalNotificationCenter(p: Props) {
   useEffect(() => {
     const handler = (event: Event) => receiveRef.current((event as CustomEvent<CanonicalNoticeInput>).detail, 'event');
     window.addEventListener(CANONICAL_NOTICE_EVENT, handler);
-    return () => window.removeEventListener(CANONICAL_NOTICE_EVENT, handler);
+    // INTEG-001: «Усі сповіщення» in het venster bij een stip in het menu opent het paneel aan de bel.
+    const openen = () => setPanelOpen(true);
+    window.addEventListener(MELDINGEN_OPENEN_EVENT, openen);
+    return () => { window.removeEventListener(CANONICAL_NOTICE_EVENT, handler); window.removeEventListener(MELDINGEN_OPENEN_EVENT, openen); };
   }, [p.scope]);
 
   useEffect(() => {

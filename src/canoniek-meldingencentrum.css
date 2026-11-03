@@ -46,6 +46,23 @@
 .cnc-pijl[data-kant=boven]{border-right-color:transparent;border-bottom-color:transparent}
 .cnc-pijl[data-kant=onder]{border-left-color:transparent;border-top-color:transparent}
 .cnc-pijl.is-toast{z-index:701;background:color-mix(in srgb,var(--panel) 97%,transparent)}
+/* INTEG-001 — venster bij een stip in het menu (src/MenuMeldingen.tsx): ook een klik/tik op de stip opent het; bovenaan wat de stip
+   betekent; per melding «Відкрити» en «Очистити» als tekstknoppen; onderaan «Очистити все тут» en «Усі сповіщення». */
+.menu-badge[data-klik='ja']{pointer-events:auto;cursor:pointer}
+.menu-badge[data-klik='ja']::before{content:'';position:absolute;inset:-8px}
+.menu-bellen .menu-bellen-uitleg{margin:0 6px 8px;color:var(--muted);font-size:12px;line-height:1.4}
+.menu-bellen .menu-bel{grid-template-columns:8px minmax(0,1fr)}
+.menu-bellen .menu-bel-acties{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.menu-bellen .menu-bel-openen,.menu-bellen .menu-bel-weg{display:inline-flex;align-items:center;gap:5px;width:auto;height:auto;min-height:30px;padding:0 10px;border:1px solid color-mix(in srgb,var(--mb) 35%,var(--line));border-radius:8px;background:var(--panel);color:var(--text);font:600 12px/1.2 inherit;cursor:pointer}
+.menu-bellen .menu-bel-openen svg{width:13px;height:13px}
+.menu-bellen .menu-bel-openen:hover,.menu-bellen .menu-bel-weg:hover{background:color-mix(in srgb,var(--mb) 16%,var(--panel))}
+.menu-bellen .menu-bellen-voet{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.menu-bellen .menu-bellen-voet .menu-bellen-alles{flex:1 1 auto;width:auto;margin:0;border:1px solid var(--line);color:var(--text)}
+.menu-bellen .menu-bellen-paneel{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:1 1 auto;min-height:32px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--text);font:600 12px/1.2 inherit;cursor:pointer}
+.menu-bellen .menu-bellen-paneel svg{width:14px;height:14px}
+.menu-bellen .menu-bellen-paneel:hover{background:var(--nav-hover)}
+@media (pointer:coarse),(max-width:700px){.menu-bellen .menu-bel-openen,.menu-bellen .menu-bel-weg,.menu-bellen .menu-bellen-alles,.menu-bellen .menu-bellen-paneel{min-height:var(--tik-hoogte)}}
+
 /* zelfde compensatie als het paneel en de pop-up bij een verborgen technische band (src/tech/tech.css) — anders hangt de pijl ernaast */
 html[data-tech=aan] #root .cnc-pijl{transition:translate .22s ease!important}
 html[data-tech=aan][data-tech-verborgen] #root .cnc-pijl{translate:0 var(--tech-band-h)}
