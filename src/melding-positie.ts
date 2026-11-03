@@ -3,6 +3,26 @@
 export type Box = { left: number; top: number; width: number; height: number };
 export type Placement = { left: number; top: number; maxHeight: number; side: 'above' | 'below' };
 
+/**
+ * INTEG-001: het pijltje dat het venster (paneel of pop-up) zichtbaar aan de bel vastmaakt. Staat het venster onder de bel, dan op de
+ * bovenrand ('boven'); erboven: op de onderrand ('onder'); horizontaal boven het midden van de bel, binnen de randen van het venster.
+ * Overlapt het venster de bel (geen ruimte), dan geen pijltje (null).
+ */
+export type Pijl = { left: number; top: number; kant: 'boven' | 'onder' };
+export function pijlNaarBel(venster: Box, bel: Box, maat = 14): Pijl | null {
+  if (venster.width < maat * 3 || venster.height < maat) return null;
+  const midden = bel.left + bel.width / 2;
+  const left = Math.round(Math.max(venster.left + 12, Math.min(venster.left + venster.width - 12 - maat, midden - maat / 2)));
+  if (venster.top >= bel.top + bel.height - 1) return { left, top: Math.round(venster.top - maat / 2), kant: 'boven' };
+  if (venster.top + venster.height <= bel.top + 1) return { left, top: Math.round(venster.top + venster.height - maat / 2), kant: 'onder' };
+  return null;
+}
+
+/** Strook van het vensterdok (src/platform/vensters.css: --venster-dok-<rand> op <html>) uit het kader halen: het venster komt er nooit onder. */
+export function zonderDok<T extends Box>(kader: T, dok: { boven: number; onder: number; links: number; rechts: number }): T {
+  return { ...kader, left: kader.left + dok.links, top: kader.top + dok.boven, width: Math.max(0, kader.width - dok.links - dok.rechts), height: Math.max(0, kader.height - dok.boven - dok.onder) };
+}
+
 export function placeNear(anchor: Box, size: { width: number; height: number }, viewport: Box, opts: { pad?: number; gap?: number } = {}): Placement {
   const pad = opts.pad ?? 8; const gap = opts.gap ?? 8;
   const width = Math.min(size.width, viewport.width - pad * 2);

@@ -119,6 +119,10 @@
  ],
  "toegestaan": [
   {
+   "sleutel": "src/canoniek-meldingencentrum.css :: .cnc-pijl",
+   "reden": "INTEG-001: pijltje van het meldingenpaneel/de pop-up naar de bel (deel van het venster, geen knop, pointer-events:none). Staat in hetzelfde kader als .canonical-notification-panel en -toast, die zelf al vast zijn; zonder position:fixed kan het niet aan de rand van dat venster hangen."
+  },
+  {
    "sleutel": "src/editor/opsteller.css :: .mail-compose-link-editor, .mail-compose-link-preview",
    "reden": "Paneel van de linkbewerker, geportaleerd naar document.body. Geen zwevende knop: zonder position:fixed heeft het venster geen plek. Het hoort niet in een zone van de actiestapel."
   },

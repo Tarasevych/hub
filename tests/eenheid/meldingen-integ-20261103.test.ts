@@ -11,6 +11,7 @@ import { MIN_NA_PAUZE_MS, fractie, gepauzeerd, klaar, nieuweAftelling, pauze, ti
 import { MELDING_TYPES, MELDING_TYPE_IDS, MELDING_WEERGAVEN, isKritiekType, metWeergave, normaliseerTypeVoorkeuren, standaardTypeVoorkeur, voorkeurVoor, weergaveVan } from '../../shared/melding-typen';
 import { historyKey, readRows, werkRijenBij, type BewaardeRij } from '../../src/meldingen/lokale-rijen';
 import { ontdubbelBronnen, zelfdeGebeurtenis, type V2Melding } from '../../shared/meldingen-v2/groepering';
+import { pijlNaarBel, placeNear, zonderDok } from '../../src/melding-positie';
 
 const lees = (p: string) => readFileSync(p, 'utf8');
 const code = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -195,6 +196,37 @@ export async function main(): Promise<number> {
   const v2bron = lees('src/meldingen/v2/MeldingenV2.tsx');
   check('C2 meldingen v2: dezelfde typekeuzes bovenaan «Правила сповіщень» (één systeem)', v2bron.includes("<MeldingVoorkeurenPaneel lang={lang} techTypen={!!p.techTypen} />") && v2bron.includes("data-mv2-typen='1'"));
   check('C2 een regel «Тихе/Вимкнене» per bron maakt de pop-up en het geluid stil (beveiliging niet)', belB.includes("const regelStil = !!regel && (regel.modus === 'stil' || regel.modus === 'uit') && !isKritiekType(type);") && belB.includes('!dnd && !dubbel && !regelStil'));
+
+  // ------------------------------------------------------------------ D. paneel en pop-up aan de bel (niet midden op het scherm)
+  const maten: Array<[number, number, string]> = [[1280, 800, 'computer'], [768, 1024, 'tablet'], [390, 844, 'telefoon'], [844, 390, 'liggend']];
+  let foutD = '';
+  for (const [vw, vh, naam] of maten) {
+    const kader = { left: 0, top: 0, width: vw, height: vh };
+    const bel = { left: vw - 60, top: 8, width: 44, height: 44 };
+    const breedte = Math.min(vw <= 560 ? vw - 16 : 400, vw - 16);
+    const p = placeNear(bel, { width: breedte, height: 600 }, kader);
+    const venster = { left: p.left, top: p.top, width: breedte, height: Math.min(600, p.maxHeight) };
+    const pijl = pijlNaarBel(venster, bel);
+    const midden = Math.abs(venster.left + venster.width / 2 - vw / 2) < 2 && Math.abs(venster.top + venster.height / 2 - vh / 2) < 2 && vw > 560;
+    if (p.side !== 'below' || p.top !== bel.top + bel.height + 8 || venster.top + venster.height > vh - 8 || !pijl || pijl.kant !== 'boven' || pijl.top !== venster.top - 7 || midden) { foutD = `${naam}: ${JSON.stringify({ p, pijl })}`; break; }
+  }
+  check('D1 op elke breedte (computer, tablet, telefoon, liggend): het venster begint vlak onder de bel, blijft binnen het scherm en heeft een pijltje naar de bel', !foutD, foutD);
+  const belOnder = { left: 1200, top: 740, width: 44, height: 44 };
+  const pOnder = placeNear(belOnder, { width: 400, height: 500 }, { left: 0, top: 0, width: 1280, height: 800 });
+  const pijlOnder = pijlNaarBel({ left: pOnder.left, top: pOnder.top, width: 400, height: 500 }, belOnder);
+  check('D1 bel onderaan (gesleept naar de actiestapel): venster erboven, pijltje op de onderrand', pOnder.side === 'above' && !!pijlOnder && pijlOnder.kant === 'onder' && pijlOnder.top === pOnder.top + 500 - 7);
+  const pijlRand = pijlNaarBel({ left: 8, top: 60, width: 374, height: 700 }, { left: 340, top: 8, width: 44, height: 44 });
+  check('D1 pijltje binnen de randen van het venster, boven het midden van de bel (telefoon: venster tussen de veilige randen)', !!pijlRand && pijlRand.left === Math.round(362 - 7) && pijlRand.left <= 8 + 374 - 12 - 14);
+  check('D1 geen pijltje als het venster de bel overlapt (bel niet in beeld)', pijlNaarBel({ left: 0, top: 0, width: 400, height: 400 }, { left: 100, top: 100, width: 44, height: 44 }) === null);
+  const dokKader = zonderDok({ left: 0, top: 0, width: 390, height: 844, kx: 0, ky: 0 }, { boven: 0, onder: 56, links: 0, rechts: 0 });
+  check('D2 de strook van het vensterdok telt niet als ruimte (paneel eindigt erboven); kadervelden blijven', dokKader.height === 788 && dokKader.width === 390 && dokKader.kx === 0);
+  const v2css = code(lees('src/meldingen/v2/meldingen-v2.css')), npcss = code(lees('src/meldingenpaneel.css')), vcss = code(lees('src/platform/vensters.css'));
+  check('D3 CSS: geen uitschuifpaneel over de volle hoogte (tablet) en geen «Уся історія» over het hele scherm meer',
+    !/\.canonical-notification-panel\.is-v2\{inset:0 0 0 auto!important/.test(v2css) && !/is-v2-volledig\{inset:0!important/.test(v2css) && /\.is-v2-volledig\{width:min\(760px,calc\(100vw - 16px\)\)/.test(v2css));
+  check('D3 CSS telefoon/liggend/dok: geen vaste top/bottom van rand tot rand meer (het venster hangt aan de bel)',
+    !/canonical-notification-panel\{[^}]*top:calc\(var\(--ruimte-2\) \+ var\(--veilig-boven\)\)!important/.test(npcss) && !/canonical-notification-panel\{[^}]*bottom:calc/.test(vcss) && !/canonical-notification-panel\{left:auto!important/.test(npcss));
+  check('D4 bron: pijltje voor paneel én pop-up, gemeten na het plaatsen; de dokstrook gaat uit het kader',
+    belB.includes("className='cnc-pijl' data-kant={paneelPijl.kant}") && belB.includes("className='cnc-pijl is-toast'") && belB.includes('const viewport = () => zonderDok(zichtbaarKader(') && lees('scripts/plaatsing-vaste-elementen.json').includes('canoniek-meldingencentrum.css :: .cnc-pijl'));
 
   return einde();
 }
