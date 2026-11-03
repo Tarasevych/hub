@@ -1,0 +1,39 @@
+name: TRACE-001 canonical guard
+on:
+  push:
+    branches:
+      - feature/trace-001-20261103-214810
+permissions:
+  contents: write
+concurrency:
+  group: trace-001-guard
+  cancel-in-progress: false
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Canonical rules
+        run: node scripts/orch.mjs controleer
+      - name: Register TRACE-001 task on own branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f orchestratie/taken/TRACE-001.json ]; then
+            node scripts/orch.mjs taak-start --id TRACE-001 --agent codex --basis a643431743eb1e7e64947bf747018aac55d69750 --tak feature/trace-001-20261103-214810 --omschrijving 'Обов’язкова відтворювана історія розробки у GitHub та перевірка на сайті й в інсталяторі'
+            git add orchestratie/taken/TRACE-001.json
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'TRACE-001: registreer eigen ORCH-taak [skip ci]'
+            git push origin "HEAD:refs/heads/feature/trace-001-20261103-214810"
+          fi
+      - name: Freshness
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak TRACE-001 --fase start
