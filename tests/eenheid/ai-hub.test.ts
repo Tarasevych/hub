@@ -60,8 +60,9 @@ export async function main(): Promise<number> {
     // ================================================================ 2. tabbladen en oude adressen
     // 20.10.2026: «extern» erbij — de ANDERE richting (vreemde MCP-servers waar de site zelf naartoe gaat,
     // backend/mcp-klant/*). Het blijft dezelfde ÉNE hub van §4: er komt geen pagina bij.
-    check('tabbladen volgens §4 (+ extern): overzicht, connectors, ai, extern, extensie, apparaten, tokens, toegang, technisch, journaal',
-      TABS.join() === 'overzicht,connectors,ai,extern,extensie,browser,apparaten,tokens,toegang,technisch,journaal');
+    // + orch: de coördinatie-tab (ORCH-001, src/agenten/TabOrch.tsx) hoort bij dezelfde hub.
+    check('tabbladen volgens §4 (+ extern, + orch): overzicht, connectors, ai, extern, orch, extensie, browser, apparaten, tokens, toegang, technisch, journaal',
+      TABS.join() === 'overzicht,connectors,ai,extern,orch,extensie,browser,apparaten,tokens,toegang,technisch,journaal');
     check('«Технічне» alleen in de rij met actief technisch profiel', !zichtbareTabs(false).includes('technisch') && zichtbareTabs(true).includes('technisch') && zichtbareTabs(false).includes('extensie'));
     const h = (x: string) => { const p = leesHash(x); return `${p.tab}|${p.item}|${p.oud ? 1 : 0}`; };
     check('#apparaten/extensie → extensie (oud)', h('#apparaten/extensie') === 'extensie||1');

@@ -164,8 +164,11 @@ export async function main(): Promise<number> {
     await mig.query(migratie); // idempotent
     const na2 = await pol(oudA.id);
     // 0011 zet de CHECK terug op 8 typen; herstel de nieuwste stand (0012) zodat latere testgroepen niet een oude database zien.
-    // alle latere migraties (0012, 0013, ...) opnieuw: ze zijn idempotent en herstellen samen de nieuwste stand
-    for (const f of readdirSync(join(process.cwd(), 'migrations')).filter((n) => /^00(1[2-9]|[2-9]\d)_.*\.sql$/.test(n)).sort()) await mig.query(readFileSync(join(process.cwd(), 'migrations', f), 'utf8'));
+    // alle latere migraties die de CHECK zetten (0012 t/m 0110, ook de nieuwere dan 0099) opnieuw, in volgorde: ze zijn idempotent en herstellen samen de nieuwste stand
+    for (const f of readdirSync(join(process.cwd(), 'migrations')).filter((n) => /^\d{4}_.*\.sql$/.test(n) && Number(n.slice(0, 4)) > 11).sort()) {
+      const tekst = readFileSync(join(process.cwd(), 'migrations', f), 'utf8');
+      if (tekst.includes('agent_commands_type_check')) await mig.query(tekst);
+    }
     check('na het herhalen van 0011 herstellen de latere migraties de volledige typelijst (zelfde als COMMAND_TYPES)',
       JSON.stringify(((await sys.query(`SELECT pg_get_constraintdef(oid) AS d FROM pg_constraint WHERE conrelid = 'app.agent_commands'::regclass AND conname = 'agent_commands_type_check'`)).rows[0].d.match(/'([a-z_.]+)'::text/g) ?? []).map((m: string) => m.slice(1, m.indexOf("'", 1))).sort())
       === JSON.stringify([...COMMAND_TYPES].sort()));

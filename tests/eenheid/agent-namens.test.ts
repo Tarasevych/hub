@@ -106,7 +106,9 @@ export async function main(): Promise<number> {
     await sys.query("INSERT INTO app.records (tbl,id,data) VALUES ('owner_service_sessions_v1',$1,$2)", [spookId, { id: spookId, userId: E.id, authMethod: 'agent-token', tokenHash: sha('x'), createdAt: Date.now(), absoluteExpiresAt: Date.now() + 864e5, service: 'admin' }]);
     sessieRijen.push(spookId);
     const sql = readFileSync('migrations/0059_agent_namens_sessies.sql', 'utf8');
-    await sys.query(sql); await sys.query(sql);
+    // DDL hoort bij de migratierol (als de echte migratiestap), niet bij mijnruimte_system: die heeft geen CREATE op schema app.
+    const mig = getPool('migratie');
+    await mig.query(sql); await mig.query(sql);
     const na = (await sys.query("SELECT data FROM app.records WHERE id = $1", [spookId])).rows[0]?.data;
     check('0059: spooksessie gemarkeerd (verwijderdOp, AUDIT_K1), niet gewist; twee keer draaien kan', !!na?.verwijderdOp && na?.verwijderdReden === 'AUDIT_K1');
     const spoken = await an.spookSessies(E.id);
