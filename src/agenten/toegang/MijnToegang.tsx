@@ -66,10 +66,16 @@ export default function MijnToegang({ tr }: { tr: Tr }) {
   const fout = Object.values(s.fouten)[0];
   const aantal = rijen.length;
   return (
-    <section className='tg-blok' aria-labelledby='tg-mijn-kop' data-tg-mijn=''>
-      <div className='tg-blok-kop'>
-        <h3 id='tg-mijn-kop'>{tr('Мої доступи', 'Mijn toegang')} <span className='ag-teller'>{aantal}</span> <HulpVraag k='toegang.intrekken' naam={['Відкликати', 'Intrekken']} meer={[['toegang.verlengen', 'Продовжити', 'Verlengen'], ['toegang.beperken', 'Обмежити', 'Beperken']]} uk={uk} label={tr('Мої доступи', 'Mijn toegang')} /></h3>
-        <Knop icoon={<RefreshCw />} onClick={() => void laadMijn()} data='tg-vernieuw'>{tr('Оновити', 'Vernieuwen')}</Knop>
+    // INTEG-001 (03.11.2026): blok uit het contract van agenten-pagina.css — naam, één zin, de knop «Оновити» in de kop.
+    <section className='tg-blok ag-blok' aria-labelledby='tg-mijn-kop' data-tg-mijn='' data-ag-blok='mijn-toegang'>
+      <div className='tg-blok-kop ag-blok-kop'>
+        <div className='ag2-kop-tekst'>
+          <h3 className='ag-blok-titel' id='tg-mijn-kop'>{tr('Мої доступи', 'Mijn toegang')} <span className='ag-teller'>{aantal}</span> <HulpVraag k='toegang.intrekken' naam={['Відкликати', 'Intrekken']} meer={[['toegang.verlengen', 'Продовжити', 'Verlengen'], ['toegang.beperken', 'Обмежити', 'Beperken']]} uk={uk} label={tr('Мої доступи', 'Mijn toegang')} /></h3>
+          <p className='ag-blok-uitleg'>{tr('Кожна картка — один доступ, який ви дали ШІ, згрупований за способом підключення.', 'Elke kaart is één toegang die u een AI gaf, gegroepeerd per manier van koppelen.')}</p>
+        </div>
+        <div className='ag-knoppen ag2-acties'>
+          <Knop icoon={<RefreshCw />} onClick={() => void laadMijn()} data='tg-vernieuw'>{tr('Оновити', 'Vernieuwen')}</Knop>
+        </div>
       </div>
       <p className='tg-legenda'>
         <span>{tr('Відкликати — одразу', 'Intrekken — meteen')}</span>

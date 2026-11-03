@@ -48,11 +48,16 @@ export default function SiteSchakelaars({ tr }: { tr: Tr }) {
       .finally(() => setBezig(''));
   };
 
+  // INTEG-001 (agpag2, 03.11.2026): blok (.ag-blok) met naam en één zin; de sitebrede regel staat er meteen onder.
   return (
-    <section className='ag-kaart ag-site' data-site-schakelaars='1'>
-      <div className='ag-kaart-kop'><h3>{tr('Доступність для всіх на сайті', 'Beschikbaarheid voor iedereen op de site')}</h3></div>
+    <section className='ag-blok ag-site' data-ag-blok='site-schakelaars' data-site-schakelaars='1' aria-labelledby='ag2-site-kop'>
+      <header className='ag-blok-kop'>
+        <div className='ag2-kop-tekst'>
+          <h3 className='ag-blok-titel' id='ag2-site-kop'>{tr('Доступність для всіх на сайті', 'Beschikbaarheid voor iedereen op de site')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Ці перемикачі керують лише приватними підключеннями людей, а технічний простір сайту не закривають і не відкривають.', 'Deze schakelaars gelden alleen voor privéverbindingen van mensen en sluiten of openen de technische ruimte van de site niet.')}</p>
+        </div>
+      </header>
       <p className='ag-site-regel' data-site-regel='1'>{tr(SITE_REGEL.uk, SITE_REGEL.nl)}</p>
-      <p>{tr('Ці перемикачі керують лише приватними підключеннями людей. Технічний простір сайту вони не закривають і не відкривають.', 'Deze schakelaars gelden alleen voor privéverbindingen van mensen. De technische ruimte van de site sluiten of openen ze niet.')}</p>
       {fout ? <p className='ag-melding ag-melding-fout' role='alert'>{fout}</p> : null}
       {groepen.map((groep) => (
         <fieldset key={groep} className='ag-bord-groep'>
