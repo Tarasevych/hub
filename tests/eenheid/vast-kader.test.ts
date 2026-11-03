@@ -64,7 +64,10 @@ export async function main(): Promise<number> {
     && mpBron.includes('const { dx, dy } = verschuivingZonderAnimatie(el);') && mpBron.includes('return { dx: r0.left - (parseFloat(cs.left) || 0), dy: r0.top - (parseFloat(cs.top) || 0) };'));
   check('bel: herberekent bij band aan/uit/verbergen (volgKader)', bel.includes('volgKader(() => setViewportRev('));
   // 25.10.2026: «Написати» staat in de actiestapel (zone); bij een verborgen band blijft de stapel aan de onderrand (tech.css), zonder JS.
-  check('«Написати лист» en de actiestapel: band verbergen = alleen translate (CSS), geen herberekening in JS', /html\[data-tech=aan\]\[data-tech-verborgen\] #root :is\(\.canonical-notification-toast,\.canonical-notification-panel,\.plaats-actiestapel\)\{translate:0 var\(--tech-band-h\)\}/.test(lees('src/tech/tech.css')) && !/volgKader|fabPlaats/.test(lijst.replace(/\/\/.*$/gm, '')));
+  // 03.11.2026 (beslissing eigenaar, src/tech/band-inschuiven.ts): de band verbergt niet meer door #root te verschuiven maar schuift
+  // in tot een dunne strook en uit OVER de pagina. #root, de bel en de actiestapel bewegen dus helemaal niet meer: geen translate-
+  // compensatie in CSS nodig (die regel is weg) en nog steeds geen herberekening in JS.
+  check('«Написати лист» en de actiestapel: in-/uitschuiven van de band verschuift #root niet (geen compensatie nodig), geen herberekening in JS', !/data-tech-verborgen/.test(lees('src/tech/tech.css').replace(/\/\*[\s\S]*?\*\//g, '')) && !/\.is-piek[^{]*#root/.test(lees('src/tech/strook.css')) && !/volgKader|fabPlaats/.test(lijst.replace(/\/\/.*$/gm, '')));
   const vk = lees('src/platform/vast-kader.ts');
   check('volgKader luistert naar data-tech (band aan/uit); verbergen (alleen translate) verandert het kader niet', vk.includes("'data-tech'") && !vk.includes("'data-tech-verborgen'") && !vk.includes('ingeklapt'));
   check('translate: berekende waarde ontleden ("none", "0px -40px", 3D, procenten)', JSON.stringify([verschuiving('none'), verschuiving('0px -40px'), verschuiving('3px 4px 5px'), verschuiving('-50% 0px'), verschuiving('12px')]) === JSON.stringify([[0, 0], [0, -40], [3, 4], [0, 0], [12, 0]]));
