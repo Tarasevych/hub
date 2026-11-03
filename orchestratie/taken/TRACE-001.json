@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "TRACE-001",
+  "agent": "codex",
+  "tak": "feature/trace-001-20261103-214810",
+  "basisCommit": "a643431743eb1e7e64947bf747018aac55d69750",
+  "basisVersie": "20261031-093842",
+  "regelsVersie": "1.3.0",
+  "regelsHash": "b0429aad47b7177a507745370d829babfcf697f93d386b1e207290d0595a4c72",
+  "staat": "in_progress",
+  "gestart": "2026-11-03T21:49:08.970Z",
+  "bijgewerkt": "2026-11-03T21:49:08.970Z",
+  "omschrijving": "Обов’язкова відтворювана історія розробки у GitHub та перевірка на сайті й в інсталяторі",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
