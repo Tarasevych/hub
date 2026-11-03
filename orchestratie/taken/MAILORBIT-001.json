@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MAILORBIT-001",
+  "agent": "codex",
+  "tak": "feature/mailorbit-001-20261103-205354",
+  "basisCommit": "15025c3e9c8466b650f0a5488b18c42f54ab9d3a",
+  "basisVersie": "20261031-093842",
+  "regelsVersie": "1.3.0",
+  "regelsHash": "b0429aad47b7177a507745370d829babfcf697f93d386b1e207290d0595a4c72",
+  "staat": "in_progress",
+  "gestart": "2026-11-03T20:55:54.299Z",
+  "bijgewerkt": "2026-11-03T20:55:54.300Z",
+  "omschrijving": "Анімована доступна орбіта поштових сервісів і справжнє внутрішнє вікно підключення",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
