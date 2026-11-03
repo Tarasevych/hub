@@ -28,7 +28,8 @@ type Bord = {
   umovy: readonly string[];
 };
 
-const TAB: Record<TabId, string> = { kaart: 'Картка', mcp: 'MCP', token: 'Токен', toegang: 'Доступ ШІ', umovy: 'Умови ШІ' };
+// INTEG-001: de namen van de tabbladen stonden alleen in het Oekraïens (ook op de Nederlandse site); nu uk + nl via tr().
+const TAB: Record<TabId, readonly [string, string]> = { kaart: ['Картка', 'Kaart'], mcp: ['MCP', 'MCP'], token: ['Токен', 'Token'], toegang: ['Доступ ШІ', 'AI-toegang'], umovy: ['Умови ШІ', 'AI-voorwaarden'] };
 
 const lokaal = (): Bord => ({
   agenten: BORD_AGENTEN.map((a) => ({ ...a, aan: true, tabs: tabsVoor(a.id, STANDAARD_STAAT) })),
@@ -159,7 +160,7 @@ export default function AgentBord({ tr, ingebed = false }: { tr: Tr; ingebed?: b
               <div className='ag-bord-paneel' data-agent-paneel={gekozen.id} role='region' aria-label={gekozen.naam}>
                 <div className='ag-bord-tabs' role='tablist' aria-label={tr(`Розділи: ${gekozen.naam}`, `Onderdelen: ${gekozen.naam}`)}>
                   {gekozen.tabs.map((id) => (
-                    <button key={id} type='button' role='tab' className='ag-bord-tab' aria-selected={tab === id} data-tab={id} onClick={() => setTab(id)}>{TAB[id]}</button>
+                    <button key={id} type='button' role='tab' className='ag-bord-tab' aria-selected={tab === id} data-tab={id} onClick={() => setTab(id)}>{tr(TAB[id][0], TAB[id][1])}</button>
                   ))}
                 </div>
                 {tab === 'kaart' ? (

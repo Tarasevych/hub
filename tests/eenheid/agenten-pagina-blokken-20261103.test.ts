@@ -91,6 +91,10 @@ export async function main(): Promise<number> {
   check('«Підключені ШІ»: blok «Підключити новий ШІ» met kop en één zin; e2e-ankers blijven (#ag-ai-hulpmiddelen, .ag-lijstkop-tekst)',
     /id="ag-ai-verbinden"[^>]*><header class="ag-blok-kop"><h3 class="ag-blok-titel">/.test(ai) && ai.includes('data-hub-section="ag-ai-hulpmiddelen"') && ai.includes('class="ag-lijstkop-tekst"'));
 
+  // Oude fout (gevonden bij INTEG-001): de tabbladen van het bord (Картка/Токен/Доступ ШІ/Умови ШІ) stonden alleen in het Oekraïens.
+  const bordBron = lees('src/agenten/AgentBord.tsx');
+  check('bord: namen van de tabbladen in uk én nl (tr), niet alleen Oekraïens', bordBron.includes("toegang: ['Доступ ШІ', 'AI-toegang']") && bordBron.includes('{tr(TAB[id][0], TAB[id][1])}') && !/\{TAB\[id\]\}/.test(bordBron));
+
   const { default: ConnectorsTab } = await import('../../src/connector-v2/ConnectorsTab');
   const conIn = renderToStaticMarkup(createElement(ConnectorsTab, { tr: UK, ingebed: true }));
   const conLos = renderToStaticMarkup(createElement(ConnectorsTab, { tr: UK }));
