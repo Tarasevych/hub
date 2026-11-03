@@ -28,7 +28,8 @@ type Bord = {
   umovy: readonly string[];
 };
 
-const TAB: Record<TabId, string> = { kaart: 'Картка', mcp: 'MCP', token: 'Токен', toegang: 'Доступ ШІ', umovy: 'Умови ШІ' };
+// INTEG-001: de namen van de tabbladen stonden alleen in het Oekraïens (ook op de Nederlandse site); nu uk + nl via tr().
+const TAB: Record<TabId, readonly [string, string]> = { kaart: ['Картка', 'Kaart'], mcp: ['MCP', 'MCP'], token: ['Токен', 'Token'], toegang: ['Доступ ШІ', 'AI-toegang'], umovy: ['Умови ШІ', 'AI-voorwaarden'] };
 
 const lokaal = (): Bord => ({
   agenten: BORD_AGENTEN.map((a) => ({ ...a, aan: true, tabs: tabsVoor(a.id, STANDAARD_STAAT) })),
@@ -68,7 +69,9 @@ function useKolommen(ref: { current: HTMLElement | null }) {
   return n;
 }
 
-export default function AgentBord({ tr }: { tr: Tr }) {
+// `ingebed` (INTEG-001): in de hub mcp.* → agents staat het bord in het blok «Підключити новий ШІ»; de eigen kop
+// «Підключення ШІ» (h1) zou daar de paginatitel herhalen en valt dan weg. Op ai.* → verbindingen blijft hij staan.
+export default function AgentBord({ tr, ingebed = false }: { tr: Tr; ingebed?: boolean }) {
   const [bord, setBord] = useState<Bord>(lokaal);
   const [open, setOpen] = useState<BordKlantId | ''>('');
   const [tab, setTab] = useState<TabId>('kaart');
@@ -134,13 +137,17 @@ export default function AgentBord({ tr }: { tr: Tr }) {
   }, [bord.caps]);
 
   return (
-    <section className='ag ag-bord-wrap' data-agent-bord='1'>
-      <header className='ag-kop'>
-        <div>
-          <h1>{tr('Підключення ШІ', 'AI-koppelingen')}</h1>
-          <p>{tr('Оберіть ШІ. Картка розгорнеться під блоком: що він вміє, як підключити і який доступ отримає. Лише ваш простір.', 'Kies een AI. De kaart opent eronder: wat hij kan, hoe u koppelt en welke toegang hij krijgt. Alleen uw ruimte.')}</p>
-        </div>
-      </header>
+    <section className='ag ag-bord-wrap' data-agent-bord='1' data-ingebed={ingebed ? '1' : undefined}>
+      {ingebed ? (
+        <p className='ag-blok-uitleg'>{tr('Оберіть ШІ. Картка розгорнеться під блоком: що він вміє, як підключити і який доступ отримає. Лише ваш простір.', 'Kies een AI. De kaart opent eronder: wat hij kan, hoe u koppelt en welke toegang hij krijgt. Alleen uw ruimte.')}</p>
+      ) : (
+        <header className='ag-kop'>
+          <div>
+            <h1>{tr('Підключення ШІ', 'AI-koppelingen')}</h1>
+            <p>{tr('Оберіть ШІ. Картка розгорнеться під блоком: що він вміє, як підключити і який доступ отримає. Лише ваш простір.', 'Kies een AI. De kaart opent eronder: wat hij kan, hoe u koppelt en welke toegang hij krijgt. Alleen uw ruimte.')}</p>
+          </div>
+        </header>
+      )}
       <div className='ag-bord' ref={rooster} data-kolommen={kolommen}>
         {bord.agenten.map((a, i) => (
           <div key={a.id} className='ag-bord-sleuf' style={{ display: 'contents' }}>
@@ -153,7 +160,7 @@ export default function AgentBord({ tr }: { tr: Tr }) {
               <div className='ag-bord-paneel' data-agent-paneel={gekozen.id} role='region' aria-label={gekozen.naam}>
                 <div className='ag-bord-tabs' role='tablist' aria-label={tr(`Розділи: ${gekozen.naam}`, `Onderdelen: ${gekozen.naam}`)}>
                   {gekozen.tabs.map((id) => (
-                    <button key={id} type='button' role='tab' className='ag-bord-tab' aria-selected={tab === id} data-tab={id} onClick={() => setTab(id)}>{TAB[id]}</button>
+                    <button key={id} type='button' role='tab' className='ag-bord-tab' aria-selected={tab === id} data-tab={id} onClick={() => setTab(id)}>{tr(TAB[id][0], TAB[id][1])}</button>
                   ))}
                 </div>
                 {tab === 'kaart' ? (

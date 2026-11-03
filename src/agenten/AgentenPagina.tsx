@@ -9,8 +9,14 @@
 // Het ondertekende AI-beleid staat op admin → Доступ ШІ; het oude adres #beleid stuurt daarheen. Oude adressen (#claude, #doors,
 // #dev:<id>, #extension, #apparaten/extensie, #extensie/…, #verbindingen, #dostupy) worden omgezet; een querydeel in de hash
 // (#extensie?koppel=prive) blijft gelden. Eén poller voor apparaten/wachtende acties; de rest bij openen, na een actie en rustig.
+//
+// INTEG-001 (03.11.2026, «сторінка виглядає як сира таблиця»): спільна рамка сторінки. Кожен розділ — одна картка .ag-blok
+// (.ag-blok-hoofd) з ОДНИМ заголовком: іконка, назва, лічильник, одне речення «що це і для чого» і кнопка «Згорнути». Вміст розділу
+// цей заголовок не повторює. Стан «згорнуто» пам’ятає лише цей браузер (localStorage). Ледачий розділ монтується вже за 480 px до
+// того, як з’явиться на екрані, тож порожніх смуг між розділами не видно. Контракт класів для всіх розділів —
+// src/agenten/agenten-pagina.css (.ag-pagina .ag-blok .ag-blok-kop .ag-blok-titel .ag-blok-uitleg .ag-rij .ag-leeg .ag-knoppen).
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
-import { Activity, AlertTriangle, ArrowRight, GitMerge, Globe, KeyRound, LayoutDashboard, ListChecks, Monitor, Network, Plug, Puzzle, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, ChevronDown, GitMerge, Globe, KeyRound, LayoutDashboard, ListChecks, Monitor, Network, Plug, Puzzle, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
 import { useAgentsData, useToolApprovals } from '../agenten-gegevens';
 import type { Tr } from '../mcp-ui';
 import { PairCard, PendingList } from '../ApparatenWeergave';
@@ -18,7 +24,6 @@ import { ToolApprovals } from '../McpHulpmiddelenPaneel';
 import { AiStopKnop } from '../AiToestemmingen';
 import { welcomePending } from '../extensie-welkom-opslag';
 import { aiTeller, inRuimte, isoMs, useDeurTokens, useJournaal, useOverzicht, useV2Overzicht } from './gegevens';
-import { standVan, type Stand } from '../../shared/connector-v2/stand';
 import Journaal, { JournaalLijst } from './Journaal';
 import TabAi from './TabAi';
 import TabApparaten from './TabApparaten';
@@ -32,7 +37,6 @@ import TabExternMcp from './TabExternMcp';
 import TabOrch from './TabOrch';
 import TabTechnisch from './TabTechnisch';
 import TabToegang from './TabToegang';
-import AgentBord from './AgentBord';
 import HubMatrix from './HubMatrix';
 import type { MatrixInvoer } from './matrix';
 import { techActief, useTech } from '../tech/tech-opslag';
@@ -40,22 +44,23 @@ import { combineer, useExtensieLiveToestand, type ExtensieLive } from '../extens
 import { ADMIN_HOSTS_TOEGESTAAN, PRIVE_HOSTS } from '../../shared/extensie-ontgrendeling';
 import { RECHT_UITLEG, foutTekst, isRechtFout } from './fouten';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
-import { isAgentSlug, v2Agent, V2_AGENTEN, type AgentSlug } from '../../shared/connector-v2/agenten';
+import { isAgentSlug, v2Agent, type AgentSlug } from '../../shared/connector-v2/agenten';
 import { WEIGER_UITLEG } from '../../shared/ai-toegang-diagnose';
 import AgentPagina from './AgentPagina';
 import BevestigingenPaneel from '../ai-bevestiging/BevestigingenPaneel';
-import AgentLogo from './AgentLogo';
 import '../mcp-hub.css';
 import './agenten.css';
+// INTEG-001: рамка сторінки й контракт класів — ПІСЛЯ agenten.css, щоб її правила (у межах .ag-pagina) мали останнє слово.
+import './agenten-pagina.css';
 import TabsRij from '../ontwerp/TabsRij';
-import { isBeleidHash, koppelVraag, leesHash, ontgrendelDoel, zichtbareTabs, type TabId } from './agenten-hash';
+import { TABS, isBeleidHash, koppelVraag, leesHash, ontgrendelDoel, zichtbareTabs, type TabId } from './agenten-hash';
 export { ALLEEN_TECHNISCH, OUDE_HASH, PLEKKEN, TABS, isBeleidHash, koppelVraag, leesHash, ontgrendelDoel, zichtbareTabs } from './agenten-hash';
 export type { HashPlek, TabId } from './agenten-hash';
 
 // «extern» (20.10.2026): de ANDERE richting — vreemde MCP-servers waar DEZE site zelf naartoe gaat
 // (backend/mcp-klant/*). Hoort hier, want dit tabblad gaat over wat de AI via ons kan; er komt geen pagina bij.
 // 'agent' (20.10.2026) = de plek van ÉÉN AI: #agent/<slug>. Hij staat NIET in de tabrij (er zijn zes agenten; een rij van
-// zestien tabbladen is juist de rommel waarover de eigenaar klaagde). Je komt er vanaf «Конектори» en vanuit het overzicht.
+// zestien tabbladen is juist de rommel waarover de eigenaar klaagde). Je komt er vanaf «Конектори» (de lijst met alle AI).
 /** '#agent/grok' → 'grok'; onbekende agent → null (dan blijft de hub op «Конектори»). */
 export const agentUitPlek = (tab: TabId, item: string): AgentSlug | null => (tab === 'agent' && isAgentSlug(item) ? item : null);
 const schrijf = (tab: TabId, item: string, push: boolean, vraag?: URLSearchParams) => {
@@ -67,13 +72,13 @@ const schrijf = (tab: TabId, item: string, push: boolean, vraag?: URLSearchParam
 /** #extension-lokaal en #ruimte zijn ankers ín een sectie, geen tabbladnaam. Andere oude hashes (#claude) wel herschrijven. */
 const ANKER_ID = new Set(['extension-lokaal', 'ruimte']);
 
-/** Eén zin per sectie: wat dit is en wat u hier doet (uk, nl). Staat in de kop van elke sectie (zie sectieKop). */
+/** Eén zin per sectie: wat dit is en waarvoor het dient (uk, nl). Staat in de kop van elk blok (zie blokKop). */
 const SECTIE_HINT: Partial<Record<TabId, [string, string]>> = {
-  overzicht: ['Що зараз відбувається і що чекає на вас. Натисніть на цифру, щоб перейти до розділу.', 'Wat er nu speelt en wat op u wacht. Klik op een cijfer om naar dat onderdeel te gaan.'],
-  connectors: ['Адреса для кожного ШІ: її вставляєте в налаштування конектора у самому ШІ.', 'Het adres per AI: u vult het in bij de connector-instellingen van die AI zelf.'],
-  ai: ['Усі ШІ, які ви підключили, з їхнім доступом і токенами.', 'Alle AI die u heeft gekoppeld, met hun toegang en tokens.'],
-  extern: ['Зовнішні MCP-сервери, до яких цей сайт сам звертається.', 'Externe MCP-servers waar deze site zelf naartoe gaat.'],
-  orch: ['Узгодження між ШІ-агентами: правила, задачі, черга та передачі.', 'Afstemming tussen AI-agenten: regels, taken, wachtrij en overdrachten.'],
+  overzicht: ['Коротко про стан: скільки ШІ й пристроїв підключено, що чекає вашого рішення і що сталося останнім.', 'Kort de stand: hoeveel AI en apparaten gekoppeld zijn, wat op uw beslissing wacht en wat er laatst gebeurde.'],
+  connectors: ['Кожен ШІ має власну адресу-конектор: тут видно, хто підключений, і звідси ви керуєте доступом одного ШІ або всіх одразу.', 'Elke AI heeft een eigen connectoradres: hier ziet u wie gekoppeld is en beheert u de toegang van één AI of van alle tegelijk.'],
+  ai: ['Програми ШІ, яким ви вже дали доступ, і що кожна з них може; нижче — як підключити нову.', 'De AI-toepassingen die al toegang hebben en wat elk ervan mag; daaronder hoe u een nieuwe koppelt.'],
+  extern: ['Чужі MCP-сервери, до яких підключається сам сайт, щоб передати їхні інструменти вашому ШІ.', 'Vreemde MCP-servers waarmee de site zelf verbindt, om hun hulpmiddelen aan uw AI door te geven.'],
+  orch: ['Спільні правила, задачі й черга інтеграції для всіх ШІ-агентів, що працюють над сайтом.', 'Gezamenlijke regels, taken en integratiewachtrij voor alle AI-agenten die aan de site werken.'],
   extensie: ['Браузерне розширення: підключення, дозволи та технічний профіль.', 'De browserextensie: koppeling, rechten en het technische profiel.'],
   browser: ['Хто через який браузер і з яким доступом працює, і до коли.', 'Wie via welke browser werkt, met welke toegang en tot wanneer.'],
   apparaten: ['Комп’ютери та браузери, підключені до вашого простору.', 'Computers en browsers die aan uw ruimte gekoppeld zijn.'],
@@ -83,14 +88,59 @@ const SECTIE_HINT: Partial<Record<TabId, [string, string]>> = {
   journaal: ['Усе, що тут відбувається, по порядку. Нічого не видаляється.', 'Alles wat hier gebeurt, in volgorde. Niets wordt gewist.'],
 };
 
-/** Eén lange pagina: de zware inhoud van een sectie mount pas als die gekozen is of in beeld komt. De kop (icoon, titel, één zin) staat altijd. */
-function LuieSectie({ tab, actief, zien, kop, children }: { tab: TabId; actief: boolean; zien: boolean; kop: ReactNode; children: ReactNode }) {
-  const [open, setOpen] = useState(actief);
-  useEffect(() => { if (actief || zien) setOpen(true); }, [actief, zien]);
+/** Welke blokken de lezer heeft ingeklapt: alleen een gemak per browser (localStorage), nooit nodig om de pagina te tonen. */
+const DICHT_SLEUTEL = 'mr.agenten.blokken-dicht';
+function leesDicht(): Set<TabId> {
+  try {
+    const r: unknown = JSON.parse(localStorage.getItem(DICHT_SLEUTEL) || '[]');
+    return new Set(Array.isArray(r) ? r.filter((x): x is TabId => typeof x === 'string' && TABS.includes(x as TabId)) : []);
+  } catch { return new Set(); }
+}
+function bewaarDicht(s: Set<TabId>) { try { localStorage.setItem(DICHT_SLEUTEL, JSON.stringify([...s])); } catch { /* geen opslag */ } }
+
+/** De echte scrollcontainer van de pagina (de werkruimte van de omlijsting), anders het venster (null). <html>/<body> tellen
+ *  als venster: met hen als expliciete root meldt de IntersectionObserver niets (gemeten in Chrome, harnas 03.11.2026). */
+function scrollOuder(el: HTMLElement): Element | null {
+  for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+    let y = '';
+    try { y = getComputedStyle(p).overflowY; } catch { return null; }
+    if ((y === 'auto' || y === 'scroll' || y === 'overlay') && p.scrollHeight > p.clientHeight) return p;
+  }
+  return null;
+}
+
+/** Skelet zolang een blok nog niet gemount is: zichtbaar «bezig», nooit een lege vlakte. */
+function BlokSkelet({ tr }: { tr: Tr }) {
   return (
-    <section id={`ag-sectie-${tab}`} data-ag-sectie={tab} data-ag-lui={open ? 'open' : 'dicht'} className='ag-sectie' aria-labelledby={`ag-tab-${tab}`}>
+    <div className='ag-lui-plaats ag-blok-skelet'>
+      <span className='ag-skelet-regel' aria-hidden='true' /><span className='ag-skelet-regel is-kort' aria-hidden='true' /><span className='ag-skelet-regel' aria-hidden='true' />
+      <small>{tr('Розділ завантажиться, щойно ви до нього дійдете…', 'Dit onderdeel laadt zodra u er bent…')}</small>
+    </div>
+  );
+}
+
+/** Eén lange pagina: de zware inhoud van een sectie mount pas als die gekozen is of (bijna) in beeld komt. De kop (icoon, titel,
+ *  één zin, «Згорнути») staat altijd. INTEG-001: een eigen IntersectionObserver op de echte scrollcontainer mount het blok al
+ *  480 px vóór het in beeld schuift; ingeklapt blijft het dicht (niets laden wat de lezer niet wil zien). */
+function LuieSectie({ tab, actief, zien, kop, dicht, tr, children }: { tab: TabId; actief: boolean; zien: boolean; kop: ReactNode; dicht: boolean; tr: Tr; children: ReactNode }) {
+  const [open, setOpen] = useState(actief);
+  const ref = useRef<HTMLElement | null>(null);
+  useEffect(() => { if (actief || zien) setOpen(true); }, [actief, zien]);
+  useEffect(() => {
+    if (open || dicht) return undefined;
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return undefined;
+    const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) setOpen(true); }, { root: scrollOuder(el), rootMargin: '0px 0px 480px 0px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [open, dicht]);
+  return (
+    <section ref={ref} id={`ag-sectie-${tab}`} data-ag-sectie={tab} data-ag-lui={open ? 'open' : 'dicht'} data-ag-dicht={dicht ? '1' : undefined}
+      className='ag-sectie ag-blok ag-blok-hoofd' aria-labelledby={`ag-blok-titel-${tab}`}>
       {kop}
-      {open ? children : <div className='ag-lui-plaats' aria-hidden='true' />}
+      <div id={`ag-blok-inhoud-${tab}`} className='ag-blok-inhoud' hidden={dicht}>
+        {open ? children : dicht ? null : <BlokSkelet tr={tr} />}
+      </div>
     </section>
   );
 }
@@ -129,6 +179,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   const tokens = useMemo(() => (tok.data ? inRuimte(tok.data.tokens, 'prive') : null), [tok.data]);
   const [versie, setVersie] = useState(0);
   const [inBeeld, setInBeeld] = useState<TabId | null>(null);
+  const [dicht, setDicht] = useState<Set<TabId>>(leesDicht);
   const vastTot = useRef(0);
   const [plek, setPlek] = useState(() => {
     const p = leesHash(location.hash);
@@ -159,6 +210,14 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     return () => { window.removeEventListener('hashchange', volg); window.removeEventListener('popstate', volg); };
   }, []);
   const ga = useCallback((tab: TabId, item = '') => { setInBeeld(null); vastTot.current = Date.now() + 800; setPlek({ tab, item, vraag: new URLSearchParams(), anker: '' }); schrijf(tab, item, true); }, []);
+  /** Blok in- of uitklappen (kop blijft altijd staan). */
+  const klap = useCallback((t: TabId) => { setDicht((d) => { const n = new Set(d); if (n.has(t)) n.delete(t); else n.add(t); bewaarDicht(n); return n; }); }, []);
+  // Wie naar een blok gaat (tabrij, hash, link), wil de inhoud zien: een ingeklapt doel gaat open.
+  useEffect(() => {
+    const doel: TabId | null = plek.anker === 'ruimte' ? 'technisch' : plek.anker === 'extension-lokaal' ? 'extensie' : plek.tab === 'agent' ? null : plek.tab;
+    if (!doel) return;
+    setDicht((d) => { if (!d.has(doel)) return d; const n = new Set(d); n.delete(doel); bewaarDicht(n); return n; });
+  }, [plek.tab, plek.anker]);
   // Старий якір (#extension-lokaal, #ruimte) або обрана секція — гортаємо туди, щойно ледачий вміст змонтовано.
   useEffect(() => {
     if (plek.tab === 'agent') return;
@@ -181,12 +240,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     setVersie((v) => v + 1);
   }, [reload, ov.laad, tok.laad, v2.laad, reloadCalls]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // De WARE stand per agent (v2 + oud /mcp + serverdeur; shared/connector-v2/stand.ts) voor de ingangen op het overzicht.
-  const standen = useMemo(() => {
-    const m = new Map<AgentSlug, Stand>();
-    for (const a of v2.data?.agenten ?? []) m.set(a.slug, standVan({ v2: a.koppelingen.length, erfenis: a.erfenis?.length ?? 0, deur: a.deur === null ? null : (a.deur?.length ?? 0), wacht: !!a.voorkeur?.herverbinden }));
-    return m;
-  }, [v2.data]);
+  // MCP-ACCESS-001: AI's die nu niet alle toegekende hulpmiddelen zien (ware stand uit v2; shared/connector-v2/stand.ts).
   const geblokkeerdeAgenten = useMemo(() => (v2.data?.agenten ?? []).filter((a) => {
     const d = a.diagnose;
     if (!d || !d.connectionGranted.verbonden || !d.denialCode) return false;
@@ -250,15 +304,23 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     technisch: { uk: 'Технічне', nl: 'Technisch', icoon: <Wrench /> },
     journaal: { uk: 'Журнал', nl: 'Logboek', icoon: <Activity /> },
   };
-  /** Vaste kop van elke sectie: icoon, titel en één zin, zodat elke sectie zichtbaar begint en eindigt. */
-  const sectieKop = (t: TabId) => {
+  /** Vaste kop van elk blok: icoon, titel (+ teller), één zin en «Згорнути» — zodat elk blok zichtbaar begint en eindigt. */
+  const blokKop = (t: TabId) => {
     const hint = SECTIE_HINT[t];
+    const isDicht = dicht.has(t);
+    const teller = tabInfo[t].teller;
     return (
-      <header className='ag-sectie-kop'>
-        <span className='ag-sectie-icoon' aria-hidden='true'>{tabInfo[t].icoon}</span>
-        <div className='ag-sectie-tekst'>
-          <h2>{tr(tabInfo[t].uk, tabInfo[t].nl)}</h2>
-          {hint ? <p>{tr(hint[0], hint[1])}</p> : null}
+      <header className='ag-blok-kop'>
+        <span className='ag-blok-icoon' aria-hidden='true'>{tabInfo[t].icoon}</span>
+        <div className='ag-blok-tekst'>
+          <h2 className='ag-blok-titel' id={`ag-blok-titel-${t}`}>{tr(tabInfo[t].uk, tabInfo[t].nl)}{teller ? <span className={`ag-teller${t === 'overzicht' ? ' is-warn' : ''}`}>{teller}</span> : null}</h2>
+          {hint ? <p className='ag-blok-uitleg'>{tr(hint[0], hint[1])}</p> : null}
+        </div>
+        <div className='ag-knoppen'>
+          <button type='button' className='ag-knop ag-blok-klap' aria-expanded={!isDicht} aria-controls={`ag-blok-inhoud-${t}`} onClick={() => klap(t)} data-ag-klap={t}
+            title={isDicht ? tr('Показати вміст цього розділу', 'De inhoud van dit onderdeel tonen') : tr('Сховати вміст цього розділу; заголовок лишається на місці', 'De inhoud van dit onderdeel verbergen; de kop blijft staan')}>
+            <ChevronDown className='ag-chevron' aria-hidden='true' /><span>{isDicht ? tr('Розгорнути', 'Uitklappen') : tr('Згорнути', 'Inklappen')}</span>
+          </button>
         </div>
       </header>
     );
@@ -308,20 +370,26 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   if (geenRecht) {
     return (
       <div className='ag' data-ag-tab={plek.tab} data-ag-recht='ontbreekt'>
-        <header className='ag-kop'><div><h1>{tr('Підключення ШІ', 'AI-koppelingen')}</h1></div></header>
-        <section className='ag-kaart ag-muur' role='status' data-ag-melding='recht'>
-          <h2>{tr('Доступ ШІ ще не увімкнено', 'AI-toegang nog niet ingeschakeld')}</h2>
-          <p>{tr(RECHT_UITLEG[0], RECHT_UITLEG[1])}</p>
-          {plek.tab === 'extensie' ? <p>{tr('Розширення браузера також потребує цього права: код підключення видається лише після того, як власник увімкне «API-платформу».', 'Ook de browserextensie heeft dit recht nodig: een koppelcode komt er pas als de eigenaar «API-platform» aanzet.')}</p> : null}
-        </section>
+        <div className='ag-pagina'>
+          <header className='ag-kop ag-pagina-kop'>
+            <span className='ag-pagina-icoon' aria-hidden='true'><Plug /></span>
+            <div className='ag-pagina-tekst'><h1>{tr('Підключення ШІ', 'AI-koppelingen')}</h1></div>
+          </header>
+          <section className='ag-blok ag-muur' role='status' data-ag-melding='recht'>
+            <header className='ag-blok-kop'><h2 className='ag-blok-titel'>{tr('Доступ ШІ ще не увімкнено', 'AI-toegang nog niet ingeschakeld')}</h2></header>
+            <p>{tr(RECHT_UITLEG[0], RECHT_UITLEG[1])}</p>
+            {plek.tab === 'extensie' ? <p>{tr('Розширення браузера також потребує цього права: код підключення видається лише після того, як власник увімкне «API-платформу».', 'Ook de browserextensie heeft dit recht nodig: een koppelcode komt er pas als de eigenaar «API-platform» aanzet.')}</p> : null}
+          </section>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className='ag' data-ag-tab={plek.tab}>
-      <header className='ag-kop'>
-        <div>
+    <div className='ag ag-pagina' data-ag-tab={plek.tab}>
+      <header className='ag-kop ag-pagina-kop'>
+        <span className='ag-pagina-icoon' aria-hidden='true'><Plug /></span>
+        <div className='ag-pagina-tekst'>
           <h1>{tr('Підключення ШІ', 'AI-koppelingen')}</h1>
           <p>{tr('Усе про доступ ШІ в одному місці: способи підключення, конектори, розширення браузера, пристрої й токени. Ви бачите лише своє; усе можна відкликати, історія лишається в журналі.', 'Alles over AI-toegang op één plek: manieren van koppelen, connectors, de browserextensie, apparaten en tokens. U ziet alleen het uwe; alles is in te trekken, de geschiedenis blijft in het logboek.')}</p>
         </div>
@@ -342,10 +410,11 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
       <section id='ag-paneel' className='ag-paneel' aria-label={tr('Розділи підключення ШІ', 'Onderdelen van AI-koppelingen')}>
         {laadFout ? <p className='ag-melding ag-melding-fout' role='alert' data-ag-melding='laden'>{foutTekst(laadFout, tr, ['Не всі дані вдалося завантажити', 'Niet alle gegevens konden worden geladen'])}</p> : null}
         {plek.tab !== 'agent' && geblokkeerdeAgenten.length > 0 ? (
-          <section className='ag-kaart ag-waarschuwing ag-blokkade-banner' role='status' data-ag-blokkade-banner={geblokkeerdeAgenten.length}>
-            <div className='ag-kaart-kop'>
-              <h3><AlertTriangle size={16} aria-hidden='true' /> {tr('Підключені ШІ зараз бачать не всі надані інструменти', 'Gekoppelde AI-agents zien nu niet alle toegekende hulpmiddelen')}</h3>
-            </div>
+          <section className='ag-blok is-waarschuwing ag-blokkade-banner' role='status' data-ag-blokkade-banner={geblokkeerdeAgenten.length}>
+            <header className='ag-blok-kop'>
+              <h2 className='ag-blok-titel'><AlertTriangle aria-hidden='true' /> {tr('Підключені ШІ зараз бачать не всі надані інструменти', 'Gekoppelde AI-agents zien nu niet alle toegekende hulpmiddelen')}</h2>
+              <p className='ag-blok-uitleg'>{tr('Нижче — що саме обмежує кожен ШІ; кнопка відкриває його сторінку, де це виправляється.', 'Hieronder wat elke AI precies beperkt; de knop opent zijn plek, waar u het oplost.')}</p>
+            </header>
             <ul className='ag-blokkade-lijst'>
               {geblokkeerdeAgenten.map((a) => {
                 const d = a.diagnose!;
@@ -372,9 +441,9 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
           : <ConnectorsTab tr={tr} />) : (
           <div className='ag-secties' data-ag-lang='1'>
             {toon.map((t) => (
-              <LuieSectie key={t} tab={t} actief={plek.tab === t || plek.anker !== '' && ((plek.anker === 'ruimte' && t === 'technisch') || (plek.anker === 'extension-lokaal' && t === 'extensie'))} zien={inBeeld === t || toon[Math.max(0, toon.indexOf(huidig) + 1)] === t} kop={sectieKop(t)}>
+              <LuieSectie key={t} tab={t} tr={tr} dicht={dicht.has(t)} actief={plek.tab === t || plek.anker !== '' && ((plek.anker === 'ruimte' && t === 'technisch') || (plek.anker === 'extension-lokaal' && t === 'extensie'))} zien={inBeeld === t || toon[Math.max(0, toon.indexOf(huidig) + 1)] === t} kop={blokKop(t)}>
                 {t === 'overzicht' ? (
-                  <Overzicht tr={tr} ga={ga} versie={versie} standen={standen} cijfers={{ ai: aiVerbonden, online, totaal: apparaten.length, tokens: tokensActief, wachten }}
+                  <Overzicht tr={tr} ga={ga} versie={versie} cijfers={{ ai: aiVerbonden, online, totaal: apparaten.length, tokens: tokensActief, wachten }}
                     wacht={wachten ? <>
                       {pending.length ? <PendingList tr={tr} pending={pending} reload={naActie} compact /> : null}
                       {toolPending.length ? <ToolApprovals tr={tr} calls={calls} reload={reloadCalls} /> : null}
@@ -382,14 +451,8 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
                     leeg={loaded && !agents.length && !oauthActief ? <PairCard tr={tr} reload={naActie} agents={agents} /> : null}
                     matrix={<HubMatrix tr={tr} invoer={matrix} ga={(x) => ga(x as TabId)} />} />
                 ) : null}
-                {t === 'connectors' ? <ConnectorsTab tr={tr} /> : null}
-                {t === 'ai' ? <>
-                  <details className='ag-kaart ag-bord-uitklap' data-bord='1' open={!oauthActief && !tokensActief}>
-                    <summary><Sparkles size={16} aria-hidden='true' /> {tr('Способи підключення ШІ (Claude, ChatGPT, Grok…)', 'Manieren om een AI te koppelen (Claude, ChatGPT, Grok…)')}</summary>
-                    <AgentBord tr={tr} />
-                  </details>
-                  <TabAi tr={tr} overzicht={overzicht} tokens={tokens} naActie={naActie} item={plek.item} kies={kies} calls={calls} reloadCalls={reloadCalls} />
-                </> : null}
+                {t === 'connectors' ? <ConnectorsTab tr={tr} ingebed /> : null}
+                {t === 'ai' ? <TabAi tr={tr} overzicht={overzicht} tokens={tokens} naActie={naActie} item={plek.item} kies={kies} calls={calls} /> : null}
                 {t === 'extern' ? <TabExternMcp tr={tr} /> : null}
                 {t === 'orch' ? <TabOrch tr={tr} /> : null}
                 {t === 'extensie' ? <TabExtensie tr={tr} agents={agents} techAgents={techAan ? techBrowsers : []} naActie={naActie} versie={versie} koppel={koppel} naarBrowser={() => ga('browser')} /> : null}
@@ -408,47 +471,62 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   );
 }
 
-function Overzicht({ tr, ga, versie, cijfers, wacht, leeg, matrix, standen }: { tr: Tr; ga: (t: TabId, item?: string) => void; versie: number; cijfers: { ai: number; online: number; totaal: number; tokens: number; wachten: number }; wacht: ReactElement | null; leeg: ReactElement | null; matrix: ReactElement; standen: Map<AgentSlug, Stand> }) {
+/** «Огляд» = het dashboard: vier cijfers, wat op u wacht, de AI-verzoeken, de laatste gebeurtenissen en de matrix.
+ *  INTEG-001: de rij «Керування окремим ШІ» (zes AI-tegels) is weg — exact dezelfde zes AI met dezelfde ware stand en dezelfde
+ *  weg naar #agent/<slug> staan één blok lager in «Конектори». Eén plek per ding, geen herhaling. */
+function Overzicht({ tr, ga, versie, cijfers, wacht, leeg, matrix }: { tr: Tr; ga: (t: TabId, item?: string) => void; versie: number; cijfers: { ai: number; online: number; totaal: number; tokens: number; wachten: number }; wacht: ReactElement | null; leeg: ReactElement | null; matrix: ReactElement }) {
   const filter = useMemo(() => ({ soort: '', onderwerp: '', limit: 10 }), []);
   const j = useJournaal(filter, true, versie);
-  const kaart = (tab: TabId, icoon: ReactElement, getal: string, uk: string, nl: string, data: string) => (
-    <button type='button' className='ag-stat' onClick={() => ga(tab)} data-stat={data}>
+  /** «чекають рішення»: naar het blok met wat wacht, anders naar de AI-verzoeken (hetzelfde overzicht, geen ander tabblad). */
+  const naarWacht = () => {
+    const el = document.getElementById('ag-overzicht-wacht') ?? document.getElementById('ag-overzicht-bevestigen');
+    if (el) { try { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch { /* geen DOM */ } } else ga('overzicht');
+  };
+  const kaart = (data: string, icoon: ReactElement, getal: string, uk: string, nl: string, onClick: () => void, toon?: 'warn') => (
+    <button type='button' className={`ag-stat${toon ? ` is-${toon}` : ''}`} onClick={onClick} data-stat={data}>
       <span className='ag-stat-icoon' aria-hidden='true'>{icoon}</span><strong>{getal}</strong><span>{tr(uk, nl)}</span>
     </button>
   );
   return (
-    <div className='ag-tab' data-tab-inhoud='overzicht'>
+    <div className='ag-tab ag-overzicht' data-tab-inhoud='overzicht'>
       <div className='ag-stats'>
-        {kaart('ai', <Sparkles />, String(cijfers.ai), 'ШІ підключено', 'AI verbonden', 'ai')}
-        {kaart('apparaten', <Globe />, `${cijfers.online}/${cijfers.totaal}`, 'пристроїв у мережі', 'apparaten online', 'online')}
-        {kaart('tokens', <KeyRound />, String(cijfers.tokens), 'активних токенів', 'actieve tokens', 'tokens')}
-        {kaart('overzicht', <ShieldCheck />, String(cijfers.wachten), 'чекають рішення', 'wachten op beslissing', 'wachten')}
+        {kaart('ai', <Sparkles />, String(cijfers.ai), 'ШІ підключено', 'AI verbonden', () => ga('ai'))}
+        {kaart('online', <Globe />, `${cijfers.online}/${cijfers.totaal}`, 'пристроїв у мережі', 'apparaten online', () => ga('apparaten'))}
+        {kaart('tokens', <KeyRound />, String(cijfers.tokens), 'активних токенів', 'actieve tokens', () => ga('tokens'))}
+        {kaart('wachten', <ShieldCheck />, String(cijfers.wachten), 'чекають рішення', 'wachten op beslissing', naarWacht, cijfers.wachten ? 'warn' : undefined)}
       </div>
-      {/* 21.10.2026: het gezamenlijke centrum van «Запити ШІ на підтвердження» (alle AI, ruimte van dit tabblad). */}
-      <BevestigingenPaneel tr={tr} />
-      {/* «Один ШІ — одна вкладка»: vanaf hier ga je rechtstreeks naar de plek van één AI, met alles van die AI bij elkaar. */}
-      <section className='ag-kaart' data-agent-ingangen='1'>
-        <div className='ag-kaart-kop'><h3>{tr('Керування окремим ШІ', 'Eén AI beheren')}</h3><a href='#connectors' className='ag-link' onClick={(e) => { e.preventDefault(); ga('connectors'); }}>{tr('Усі конектори', 'Alle connectors')} <ArrowRight size={14} aria-hidden='true' /></a></div>
-        <p className='hub-meta'>{tr('На сторінці одного ШІ разом: велика кнопка «Підключити» з кроками саме для цього клієнта, справжній стан, дозволи, простір, токени, колір і журнал саме цього ШІ.', 'Op de plek van één AI staat alles bij elkaar: de grote knop «Koppelen» met de stappen voor juist die client, de ware stand, de rechten, de ruimte, de tokens, de kleur en het logboek van juist die AI.')}</p>
-        <ul className='ag-agent-ingangen'>
-          {V2_AGENTEN.map((a) => {
-            const st = standen.get(a.slug) ?? null;
-            return (
-              <li key={a.slug}><a className='ag-kaart ag-agent-ingang' href={`#agent/${a.slug}`} data-agent-ingang={a.slug} data-agent-ingang-stand={st?.code ?? 'onbekend'} onClick={(e) => { e.preventDefault(); ga('agent', a.slug); }}>
-                <AgentLogo agent={a.slug} naam={a.naam} size={26} /><span className='ag-agent-ingang-tekst'><b>{a.naam}</b><small className={`v2b-stand ${!st ? 'is-onbekend' : st.code === 'wacht' ? 'is-wacht' : st.alleenOud ? 'is-oud' : st.verbonden ? 'is-aan' : 'is-uit'}`}><i aria-hidden='true' />{st ? tr(st.uk, st.nl) : tr('стан…', 'stand…')}</small></span>
-              </a></li>
-            );
-          })}
-        </ul>
-      </section>
-      {wacht ? <section className='ag-kaart ag-waarschuwing' data-wacht={cijfers.wachten}><h3>{tr('Потрібне ваше рішення', 'Uw beslissing is nodig')}</h3>{wacht}</section> : null}
-      {leeg ? <section className='ag-kaart'><h3>{tr('Почніть із підключення', 'Begin met koppelen')}</h3>{leeg}</section> : null}
+      {wacht ? (
+        <section id='ag-overzicht-wacht' className='ag-blok is-waarschuwing' data-wacht={cijfers.wachten}>
+          <header className='ag-blok-kop'>
+            <h3 className='ag-blok-titel'><AlertTriangle aria-hidden='true' /> {tr('Потрібне ваше рішення', 'Uw beslissing is nodig')} <span className='ag-teller is-warn'>{cijfers.wachten}</span></h3>
+            <p className='ag-blok-uitleg'>{tr('Пристрій або ШІ чекає вашої відповіді: дозвольте або відхиліть кожен запит.', 'Een apparaat of AI wacht op uw antwoord: sta elk verzoek toe of weiger het.')}</p>
+          </header>
+          {wacht}
+        </section>
+      ) : null}
+      {leeg ? (
+        <section className='ag-blok' data-ag-start='1'>
+          <header className='ag-blok-kop'>
+            <h3 className='ag-blok-titel'>{tr('Почніть із підключення', 'Begin met koppelen')}</h3>
+            <p className='ag-blok-uitleg'>{tr('Ще не підключено жодного пристрою чи ШІ. Підключіть перший — і тут з’явиться його стан.', 'Er is nog geen apparaat of AI gekoppeld. Koppel de eerste — dan verschijnt hier de stand.')}</p>
+          </header>
+          {leeg}
+        </section>
+      ) : null}
+      <div className='ag-overzicht-raster'>
+        {/* 21.10.2026: het gezamenlijke centrum van «Запити ШІ на підтвердження» (alle AI, ruimte van dit tabblad). */}
+        <div id='ag-overzicht-bevestigen' className='ag-overzicht-cel'><BevestigingenPaneel tr={tr} /></div>
+        <section className='ag-blok' data-recent='1'>
+          <header className='ag-blok-kop'>
+            <h3 className='ag-blok-titel'>{tr('Останні події', 'Recente gebeurtenissen')}</h3>
+            <div className='ag-knoppen'><a href='#journaal' className='ag-link' onClick={(e) => { e.preventDefault(); ga('journaal'); }}>{tr('Увесь журнал', 'Hele logboek')} <ArrowRight size={14} aria-hidden='true' /></a></div>
+            <p className='ag-blok-uitleg'>{tr('Десять останніх дій ШІ, пристроїв і ваших — нові зверху.', 'De tien laatste acties van AI, apparaten en uzelf — nieuwste bovenaan.')}</p>
+          </header>
+          {j.fout ? <p className='ag-melding ag-melding-fout' role='alert'>{foutTekst(j.fout, tr, ['Не вдалося завантажити події', 'Gebeurtenissen laden mislukt'])}</p> : null}
+          {j.items === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : <JournaalLijst tr={tr} items={j.items.slice(0, 10)} compact />}
+        </section>
+      </div>
       {matrix}
-      <section className='ag-kaart' data-recent='1'>
-        <div className='ag-kaart-kop'><h3>{tr('Останні події', 'Recente gebeurtenissen')}</h3><a href='#journaal' className='ag-link' onClick={(e) => { e.preventDefault(); ga('journaal'); }}>{tr('Увесь журнал', 'Hele logboek')} <ArrowRight size={14} aria-hidden='true' /></a></div>
-        {j.fout ? <p className='ag-melding ag-melding-fout' role='alert'>{foutTekst(j.fout, tr, ['Не вдалося завантажити події', 'Gebeurtenissen laden mislukt'])}</p> : null}
-        {j.items === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : <JournaalLijst tr={tr} items={j.items.slice(0, 10)} compact />}
-      </section>
     </div>
   );
 }
