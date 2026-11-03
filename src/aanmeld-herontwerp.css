@@ -19,15 +19,23 @@
 .canonical-chrome:has(.mr-sign-in).sidebar-hover .canonical-workspace{
  inset:0!important;padding:0!important;background:transparent!important;scrollbar-gutter:auto
 }
-.canonical-chrome:has(.mr-sign-in) .canonical-content{min-height:100dvh;width:100%;max-width:none}
+/* flow-root: de marge van het aanmeldblad blijft BINNEN de inhoud (geen marge die door de ouder heen valt en een schuifbalk geeft). */
+.canonical-chrome:has(.mr-sign-in) .canonical-content{min-height:100dvh;width:100%;max-width:none;display:flow-root}
+/* De reserve onder de pagina voor de zwevende actiestapel (plaatsing, ::after van de werkruimte) gaf op het aanmeldscherm altijd een
+   verticale schuifbalk: het blad vult het venster al precies, de stapel zweeft rechtsonder over de lege hoek. */
+.canonical-chrome:has(.mr-sign-in) .canonical-workspace::after{content:none!important;height:0!important}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor{z-index:410;top:clamp(22px,5vw,110px);right:clamp(22px,6vw,110px)}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor>:not(.canonical-account-menu){display:none!important}
 .canonical-chrome:has(.mr-sign-in) .canonical-topbar{background:transparent;border:0;box-shadow:none}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.plaats-boven-telefoon{display:none!important}
 .canonical-chrome:has(.mr-sign-in) .mr-guest-mobile-account{display:flex;align-items:center;justify-content:flex-end}
+/* INTEG-001 (03.11.2026, «логотип ніби поїхав»): de globale flat-content-regel zet elk blok op width:100%; samen met de marge rondom
+   stak het blad daardoor rechts en onder buiten beeld (schuifbalken) en stond alles ~45 px rechts van het midden. Nu: breedte auto
+   (= beschikbare ruimte min de marge) en een hoogte die de marge aan beide kanten meetelt — één variabele voor marge en hoogte. */
 .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in{
- position:relative;inset:auto;box-sizing:border-box;min-height:calc(100dvh - clamp(20px,5vw,112px));
- margin:clamp(10px,3.5vw,56px)!important;padding:90px 28px 92px;
+ --mr-login-rand:clamp(10px,3.5vw,56px);
+ position:relative;inset:auto;box-sizing:border-box;width:auto;max-width:none;min-height:calc(100dvh - 2 * var(--mr-login-rand));
+ margin:var(--mr-login-rand)!important;padding:90px 28px 92px;
  display:flex;flex-direction:column;justify-content:center;align-items:center;gap:0;
  overflow:hidden;border:1px solid rgba(255,255,255,.7);border-radius:clamp(22px,2.8vw,34px);
  background:
@@ -149,7 +157,8 @@
 @media(max-width:700px){
  .mr-sign-in-optie{min-height:60px}
  .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor{top:22px;right:24px}
- .canonical-signed-out.mr-sign-in{margin:8px!important;min-height:calc(100dvh - 16px);padding:115px 22px 90px;border-radius:22px}
+ /* Zelfde selector als de hoofdregel (anders won die met zijn hogere specificiteit en bleef deze telefoonregel dood). */
+ .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in{--mr-login-rand:8px;padding:115px 22px 90px;border-radius:22px}
  .mr-sign-in h1{font-size:clamp(1.6rem,7vw,2.1rem)!important}
  .mr-sign-in-subtitle{margin:14px 0 25px!important;font-size:.92rem}
  .mr-sign-in-account{min-height:62px}
