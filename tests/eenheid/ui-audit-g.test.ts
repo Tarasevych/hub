@@ -23,12 +23,15 @@ export async function main(): Promise<number> {
   {
     // Eerste oplossing (verbergen bij scrollen) gaf live een terugkoppeling: 305 wissels van data-tech-verborgen in 15 s (top van
     // #root 40→0 → scrollcontainer hoger → browser corrigeert scrollTop → scroll-event → weer tonen …). Daarna een knop «Згорнути»
-    // — afgewezen door de eigenaar. Nu: headroom zonder geometrie (src/tech/band-inschuiven.ts; uitgebreid getest in
-    // band-inschuiven.test.ts en in de browser-harnas): alleen translate, drempel 24 px, ≥ 300 ms tussen wissels.
-    const laag = lees('src/tech/TechLaag.tsx'), css = lees('src/tech/tech.css');
-    check('8a oude band-verbergen.ts en de knop «Згорнути» zijn weg', !existsSync(join(W, 'src/tech/band-verbergen.ts')) && !existsSync(join(W, 'src/tech/band-inklappen.ts')) && !/band-verbergen|koppelBandVerbergen|data-tech-knop='inklappen'/.test(laag));
+    // — afgewezen door de eigenaar. Daarna: headroom zonder geometrie (alleen translate, drempel 24 px, ≥ 300 ms tussen wissels).
+    // 03.11.2026 BESLISSING EIGENAAR: de band moet juist «згортатися в тонку смужку» en uitschuiven bij aanwijzen, zoals het menu
+    // (modi розгорнуто / згорнуто / автоматично). Eén mechanisme in band-inschuiven.ts (uitgebreid getest in band-inschuiven.test.ts):
+    // uitschuiven ligt OVER de pagina, #root verschuift nooit meer. De twee controles hieronder eisten «knop Згорнути weg» en de
+    // translate-regels van het verbergen; ze controleren nu het nieuwe gedrag. De lusbescherming blijft gecontroleerd.
+    const laag = lees('src/tech/TechLaag.tsx'), css = lees('src/tech/tech.css'), strook = lees('src/tech/strook.css');
+    check('8a oude band-verbergen.ts en band-inklappen.ts zijn weg; inklappen is één vaste modusknop (beslissing eigenaar 03.11.2026)', !existsSync(join(W, 'src/tech/band-verbergen.ts')) && !existsSync(join(W, 'src/tech/band-inklappen.ts')) && !/band-verbergen|koppelBandVerbergen/.test(laag) && (laag.match(/data-tech-knop='inklappen'/g) || []).length === 1 && /koppelInschuiven\(/.test(laag));
     check('8a TechLaag luistert zelf niet naar scroll (dat doet band-inschuiven.ts op de echte container)', !/addEventListener\(\s*'scroll'/.test(laag) && /from '\.\/band-inschuiven'/.test(laag));
-    check('8a verborgen = alleen translate (#root, band, bel); #root top blijft gelijk', /html\[data-tech=aan\]\[data-tech-verborgen\] body>#root\{translate:0 calc\(-1 \* var\(--tech-band-h\)\)\}/.test(css) && /html\[data-tech=aan\]\[data-tech-verborgen\] \.tech-band\{translate:0 -100%\}/.test(css));
+    check('8a in-/uitschuiven zonder geometrie: #root top = var(--tech-band-h), niets verschuift #root (geen data-tech-verborgen meer)', /html\[data-tech=aan\] #root\{position:fixed;top:var\(--tech-band-h\)/.test(css) && !/data-tech-verborgen/.test((css + strook).replace(/\/\*[\s\S]*?\*\//g, '')) && /html\[data-tech=aan\] \.tech-band\.is-piek\{height:var\(--tech-band-vol\)/.test(strook));
     check('8a bel en «Написати лист» springen niet: vast-kader rekent zonder translate en volgt data-tech-verborgen bewust niet', lees('src/platform/vast-kader.ts').includes('getComputedStyle(blok).translate') && !lees('src/platform/vast-kader.ts').includes("'data-tech-verborgen'"));
   }
 
