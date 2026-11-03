@@ -6,7 +6,7 @@ import { runInNewContext } from 'node:vm';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { checker } from './hulp/nep-google';
-import { AUTO_SECONDEN, BRON_DUBBEL_MS, GEZIEN_VENSTER_MS, SAMENVOEG_MS, isBronDuplicaat, popupLevensduurMs, samenvoegDoel, uniekOpId, voegHerhalingToe } from '../../src/canoniek-meldingen';
+import { AUTO_SECONDEN, BRON_DUBBEL_MS, GEZIEN_VENSTER_MS, SAMENVOEG_MS, isBronDuplicaat, popupLevensduurMs, registerCanonicalNoticeAction, samenvoegDoel, uniekOpId, voegHerhalingToe } from '../../src/canoniek-meldingen';
 import { MIN_NA_PAUZE_MS, fractie, gepauzeerd, klaar, nieuweAftelling, pauze, tik, verleng } from '../../src/meldingen/aftelling';
 import { MELDING_TYPES, MELDING_TYPE_IDS, MELDING_WEERGAVEN, isKritiekType, metWeergave, normaliseerTypeVoorkeuren, standaardTypeVoorkeur, voorkeurVoor, weergaveVan } from '../../shared/melding-typen';
 import { historyKey, readRows, werkRijenBij, type BewaardeRij } from '../../src/meldingen/lokale-rijen';
@@ -86,6 +86,10 @@ export async function main(): Promise<number> {
     werkRijenBij(scope, [], (r) => r.map((x) => (x.id === 'Y' ? { ...x, count: 2 } : x)));
     check('A1 de knop («Скасувати») van een melding uit een ander tabblad blijft bewaard als dit tabblad de lijst opslaat',
       JSON.parse(opslag.lokaal.get(historyKey(scope)) || '[]').find((x: { id: string }) => x.id === 'Z')?.hasAction === true);
+    // de vervaltijd van een knop blijft bewaard (de lijst wordt nu bij elke wijziging uit de opslag gelezen)
+    registerCanonicalNoticeAction('K', { label: 'Скасувати', onAction: () => undefined });
+    werkRijenBij(scope, [], (r) => [rij('K', { createdAt: NU + 4, action: { label: 'Скасувати', onAction: () => undefined }, actionExpiresAt: NU + 60_000 }), ...r]);
+    check('A1 de vervaltijd van een knop («Скасувати» binnen 60 s) gaat niet verloren bij het opnieuw lezen uit de opslag', readRows(scope).find((x) => x.id === 'K')?.actionExpiresAt === NU + 60_000 && !!readRows(scope).find((x) => x.id === 'K')?.action);
     // zonder bruikbare opslag: verder op het geheugen
     const g = globalThis as Record<string, unknown>;
     const echt = g.localStorage;
