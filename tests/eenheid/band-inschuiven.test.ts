@@ -1,14 +1,24 @@
-// Technische band «headroom» (18.10.2026). Live gaf de eerste versie 305 wissels in 15 s: verbergen veranderde de geometrie (top van
-// #root 40→0), de scrollcontainer werd hoger, de browser klemde scrollTop → scroll-gebeurtenis naar boven → tonen → … Hier:
+// Technische band: in- en uitschuiven (band-inschuiven.ts). Geschiedenis van deze test:
+//  • 18.10.2026 «headroom»: live gaf de eerste versie 305 wissels in 15 s — verbergen veranderde de geometrie (top van #root 40→0), de
+//    scrollcontainer werd hoger, de browser klemde scrollTop → scroll-gebeurtenis naar boven → tonen → … De eigenaar wees toen ook een
+//    knop «Згорнути» af; deze test eiste daarom dat die knop en band-inklappen.ts weg waren.
+//  • 03.11.2026 BESLISSING EIGENAAR: «Ця панель має працювати … за аналогією з меню сайту: згортатися в тонку смужку … і розгортатися,
+//    коли наводжу на верхню область вікна. Режими: розгорнуто / згорнуто / автоматично». Het inklappen tot een dunne strook is dus
+//    WEL gewenst. De controle «knop Згорнути weg» (sectie 3) is vervangen door controles van het nieuwe gedrag; ALLE controles van de
+//    lusbescherming blijven: de nagebootste lus van 305 wissels, drempel, tussentijden, rubberband, containerfilter en «geen geometrie».
+// Secties:
 //  1. de oude lus nagebootst (oude beslisregel + geometrie die bij elke wissel scrollTop klemt) → wisselt aan één stuk door;
-//  2. de nieuwe beslisregel: drempel 24 px, ≥ 300 ms tussen wissels, niets binnen 220 ms na een wissel, bovenaan altijd zichtbaar,
+//  2. de beslisregel bij scrollen: drempel 24 px, ≥ 300 ms tussen wissels, niets binnen 220 ms na een wissel, bovenaan altijd zichtbaar,
 //     rubberband begrensd, alleen grote containers; zelfs mét klemmende geometrie geen lus; 15 s intensief scrollen → hooguit zoveel
 //     wissels als echte richtingswissels, 0 bij kleine bewegingen;
-//  3. CSS/TechLaag: geen knop «Згорнути» meer, verbergen alleen via translate (geen top/height/padding die met de stand verandert).
+//  2c. (nieuw) de muis zoals het menu: hysterese + vertraging; een trillende muis aan de rand gaf met een naïeve regel honderden
+//     wissels, nu hooguit enkele;
+//  3. CSS/TechLaag: drie modi voor iedereen, vaste modusknop, in-/uitschuiven verandert NOOIT de geometrie van de pagina;
+//  4. (nieuw) de koppeling zelf met een nagebootste pagina: muis, Esc, klik ernaast, scrollen, modi — en niets op <html>.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { checker } from './hulp/nep-google';
-import { DREMPEL_PX, MIN_TUSSEN_MS, OVERGANG_MS, beginStaat, teltMee, toonNu, verwerkScroll, type Staat } from '../../src/tech/band-inschuiven';
+import { DICHT_NA_MS, DREMPEL_PX, MARGE_PX, MIN_TUSSEN_MS, OPEN_NA_MS, OVERGANG_MS, RAND_PX, beginPiek, beginStaat, inZone, koppelInschuiven, teltMee, toonNu, verwerkScroll, verwerkWijzer, zetPiek, type Modus, type PiekStaat, type Staat } from '../../src/tech/band-inschuiven';
 
 const W = process.cwd();
 const lees = (p: string) => readFileSync(join(W, p), 'utf8');
@@ -139,18 +149,135 @@ export async function main(): Promise<number> {
     check('15 s kleine bewegingen (< 24 px) → 0 wissels', speel(tril).wissels === 0);
   }
 
-  // ---------------------------------------------------------------- 3. CSS en TechLaag
+  // ---------------------------------------------------------------- 2c. muis: hysterese en vertraging (zoals het menu van de site)
   {
-    const css = lees('src/tech/tech.css'), laag = lees('src/tech/TechLaag.tsx'), hr = lees('src/tech/band-inschuiven.ts');
-    check('knop «Згорнути смугу» en band-inklappen.ts zijn weg', !existsSync(join(W, 'src/tech/band-inklappen.ts')) && !/inklappen|ingeklapt|klap\(/.test(laag) && !/tech-band-lijn|tech-band-inklap|data-tech-ingeklapt/.test(css));
-    check('TechLaag koppelt headroom alleen als de band actief is', /koppelHeadroom\(\{ band: \(\) => bandRef\.current/.test(laag) && /\[bandAan\]\)/.test(laag));
-    const regels = css.match(/html\[data-tech=aan\]\[data-tech-verborgen\][^{]*\{[^}]*\}/g) || [];
-    check(`verborgen-regels (${regels.length}) zetten alleen translate — geen top/height/padding/margin/inset/bottom`, regels.length >= 4 && regels.every((r) => /\{translate:[^;}]+\}$/.test(r)));
-    check('#root zelf: top blijft var(--tech-band-h) in beide standen', /html\[data-tech=aan\] #root\{position:fixed;top:var\(--tech-band-h\)/.test(css) && !/data-tech-verborgen\][^{]*#root\{[^}]*top:/.test(css));
-    check('band, #root, bel/melding/paneel schuiven met dezelfde duur (.22s)', (css.match(/transition:translate \.22s ease/g) || []).length >= 4 && hr.includes('OVERGANG_MS = 220'));
-    check('prefers-reduced-motion: geen animatie', /prefers-reduced-motion:reduce\)\{html\[data-tech=aan\] body>#root,\.tech-band[^}]*transition:none!important\}/.test(css));
+    const STROOK = 24, VOL = 40;
+    const rect = (open: boolean) => ({ left: 0, right: 1280, bottom: open ? VOL : STROOK });
+    check(`zone dicht = alleen de bovenrand (≤ strookhoogte ${STROOK} px, minstens ${RAND_PX} px)`, inZone(false, 600, STROOK, rect(false), STROOK) && !inZone(false, 600, STROOK + 1, rect(false), STROOK) && inZone(false, 5, RAND_PX, null, 0));
+    check(`zone open = band + ${MARGE_PX} px marge (de uitgeschoven band zet de muis nooit «buiten»)`, inZone(true, 600, VOL + MARGE_PX, rect(true), STROOK) && !inZone(true, 600, VOL + MARGE_PX + 1, rect(true), STROOK));
+    const p0 = beginPiek();
+    const a = verwerkWijzer(p0, { tijd: 1000, binnen: true });
+    check(`uitschuiven niet meteen: eerst ${OPEN_NA_MS} ms in de bovenrand (opnieuwOm)`, !a.gewisseld && a.opnieuwOm === 1000 + OPEN_NA_MS);
+    const b = verwerkWijzer(a.staat, { tijd: 1000 + OPEN_NA_MS, binnen: true });
+    check('… daarna uit', b.gewisseld && b.staat.open);
+    const kort = verwerkWijzer(verwerkWijzer(p0, { tijd: 1000, binnen: true }).staat, { tijd: 1000 + OPEN_NA_MS - 50, binnen: false });
+    check('kort langs de rand strijken (naar de tabbladen van de browser) opent niets', !kort.gewisseld && !kort.staat.open && kort.staat.wens === null);
+    const weg = verwerkWijzer(b.staat, { tijd: 1000 + OPEN_NA_MS + 10, binnen: false });
+    check(`inschuiven pas na ${DICHT_NA_MS} ms buiten de band`, !weg.gewisseld && weg.opnieuwOm === 1000 + OPEN_NA_MS + 10 + DICHT_NA_MS);
+    const vastOpen = verwerkWijzer(b.staat, { tijd: 9000, binnen: false, vast: true });
+    check('menu/paneel open (vast) → blijft uit, ook met de muis ver weg', !vastOpen.gewisseld && vastOpen.staat.open);
+    const snel = zetPiek(b.staat, false, 1000 + OPEN_NA_MS + 20);
+    const terug = verwerkWijzer(snel.staat, { tijd: 1000 + OPEN_NA_MS + 30, binnen: true, vast: true });
+    check(`ook «vast» wacht op ${MIN_TUSSEN_MS} ms tussen twee wissels`, snel.gewisseld && !terug.gewisseld && terug.opnieuwOm === 1000 + OPEN_NA_MS + 20 + MIN_TUSSEN_MS);
+    check('op verzoek (klik, Esc, klik ernaast): meteen', zetPiek(p0, true, 5).gewisseld && zetPiek(p0, true, 5).staat.open && !zetPiek(p0, false, 5).gewisseld);
+
+    // Reproductie: naïeve regel (uit zodra y ≤ strook, in zodra y > strook, meteen) en een muis die 15 s rond de rand trilt (60 fps).
+    const trilY = (i: number) => STROOK - 3 + (i % 7);           // 21 … 27 px: telkens over de rand heen
+    let naief = false, naiefW = 0;
+    for (let i = 0; i < 15_000 / 16; i++) { const v = trilY(i) <= STROOK; if (v !== naief) { naief = v; naiefW++; } }
+    check(`reproductie: naïeve regel + trillende muis aan de rand wisselt aan één stuk door (${naiefW} wissels in 15 s)`, naiefW > 100);
+    let s: PiekStaat = beginPiek(), w = 0, wacht: number | undefined;
+    for (let i = 0, t = 0; i < 15_000 / 16; i++, t += 16) {
+      if (wacht !== undefined && wacht <= t) { const u = verwerkWijzer(s, { tijd: wacht, binnen: inZone(s.open, 600, trilY(i), rect(s.open), STROOK) }); s = u.staat; wacht = u.opnieuwOm; if (u.gewisseld) w++; }
+      const u = verwerkWijzer(s, { tijd: t, binnen: inZone(s.open, 600, trilY(i), rect(s.open), STROOK) });
+      s = u.staat; wacht = u.opnieuwOm; if (u.gewisseld) w++;
+    }
+    check(`nieuwe regel met dezelfde muis: hooguit één wissel (${w}) — de uitgeschoven band houdt de muis binnen (hysterese)`, w <= 1);
+    // Zelfs als de band de muis «buiten» zou zetten (zone zonder hysterese), dan nog hooguit één wissel per MIN_TUSSEN_MS + vertraging.
+    let s2: PiekStaat = beginPiek(), w2 = 0, n2 = 0, naief2 = false;
+    for (let t = 0; t < 15_000; t += 16) {
+      const u = verwerkWijzer(s2, { tijd: t, binnen: !s2.open }); s2 = u.staat; if (u.gewisseld) w2++;
+      if (!naief2 !== naief2) { naief2 = !naief2; n2++; } // naïef: elke gebeurtenis een wissel
+    }
+    check(`slechtste geval (de band zelf zet de muis buiten): ${w2} wissels in 15 s ≤ 15000 / ${MIN_TUSSEN_MS} en < 1/10 van naïef (${n2})`, w2 <= Math.floor(15_000 / MIN_TUSSEN_MS) && w2 * 10 < n2);
+  }
+
+  // ---------------------------------------------------------------- 3. CSS en TechLaag (nieuw gedrag, beslissing eigenaar 03.11.2026)
+  {
+    const css = lees('src/tech/tech.css'), strook = lees('src/tech/strook.css'), laag = lees('src/tech/TechLaag.tsx'), hr = lees('src/tech/band-inschuiven.ts');
+    const zc = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '');
+    // Vervangt «knop Згорнути en band-inklappen.ts zijn weg» (18.10.2026): de eigenaar wil nu juist inklappen tot een dunne strook.
+    check('oude losse oplossingen blijven weg (band-verbergen.ts, band-inklappen.ts); één mechanisme in band-inschuiven.ts', !existsSync(join(W, 'src/tech/band-verbergen.ts')) && !existsSync(join(W, 'src/tech/band-inklappen.ts')) && !/koppelHeadroom|band-verbergen|band-inklappen/.test(laag) && /from '\.\/band-inschuiven'/.test(laag));
+    check('drie modi voor iedereen (niet meer alleen met de vlag tech-ruimtes-v2): ingeklapt = elke modus behalve «uitgeklapt»', /const bandIngeklapt = modus !== 'uitgeklapt';/.test(laag) && !/bandIngeklapt = v2/.test(laag));
+    check('vaste modusknop «Розгорнути / Закріпити / Згорнути» (data-tech-knop=inklappen), ook in de dunne strook', /vasteKnop\('modus', <button[^>]*data-tech-knop='inklappen'/.test(laag) && /'Розгорнути смугу'/.test(laag) && /'Закріпити смугу'/.test(laag) && /'Згорнути смугу'/.test(laag) && /\.tech-band\.is-ingeklapt \.tech-band-knoppen>\.tech-strook-vast-modus\{display:inline-flex\}/.test(strook));
+    check('TechLaag koppelt het mechanisme alleen als de band actief is', /koppelInschuiven\(\{ band: \(\) => bandRef\.current/.test(laag) && /\[bandAan\]\)/.test(laag));
+    // Geometrie (lusbescherming): in- en uitschuiven raakt de pagina niet.
+    check('#root: top = var(--tech-band-h), en geen enkele regel verschuift #root nog (geen data-tech-verborgen, geen translate van #root)', /html\[data-tech=aan\] #root\{position:fixed;top:var\(--tech-band-h\)/.test(css) && !/data-tech-verborgen/.test(zc(css) + zc(strook)) && !/#root\{[^}]*translate:/.test(zc(css)));
+    const bandH = (zc(strook).match(/[^{}]*\{[^}]*--tech-band-h:[^}]*\}/g) || []).map((r) => r.trim());
+    check(`--tech-band-h (gereserveerde ruimte) alleen per modus/grootte, nooit per uitschuiven (${bandH.length} regels)`, bandH.length >= 2 && bandH.every((r) => /data-tech-ingeklapt/.test(r) && !/is-piek|data-tech-open/.test(r)));
+    const piek = zc(strook).match(/[^{}]*\.is-piek[^{]*\{[^}]*\}/g) || [];
+    check('uitgeschoven (.is-piek): alleen de band zelf wordt hoger (height/box-shadow), niets in #root', piek.length >= 1 && piek.every((r) => !/#root/.test(r) && /\{(height|box-shadow)[^}]*\}$/.test(r.trim())));
+    check('band-inschuiven.ts schrijft niets op <html> (geen kenmerk, stijl of klasse)', !/documentElement\.(setAttribute|removeAttribute|dataset|style|classList)/.test(hr) && !/html\.(setAttribute|removeAttribute)/.test(hr));
+    check('werkruimte en zijbalk zijn niet meer verlengd onder #root (dat was alleen nodig voor verbergen bij scrollen)', !/bottom:calc\(-1 \* var\(--tech-band-h\)\)/.test(zc(css)) && !/calc\(100% \+ var\(--tech-band-h\)\)/.test(zc(css)));
+    check('tussentijden van headroom blijven de basis (OVERGANG_MS 220, MIN_TUSSEN_MS 300, DREMPEL_PX 24)', hr.includes('OVERGANG_MS = 220') && hr.includes('MIN_TUSSEN_MS = 300') && hr.includes('DREMPEL_PX = 24'));
+    check('prefers-reduced-motion: geen animatie van de knoppen', /prefers-reduced-motion:reduce\)\{\s*\.tech-band \.tech-band-knoppen>\.tech-strook-item\{transition:none\}/.test(strook));
     check('scroll-luisteraar met capture op het document (echte container via e.target), passief', /addEventListener\('scroll', opScroll, \{ capture: true, passive: true \}\)/.test(hr) && hr.includes('e.target'));
-    check('zijbalk: één bandhoogte langer met evenveel extra onderpadding (12/10/8 px + band) — inhoud even hoog als vroeger', /height:calc\(100% \+ var\(--tech-band-h\)\);max-height:none;box-sizing:border-box;padding-bottom:calc\(12px \+ var\(--tech-band-h\)\)/.test(css) && css.includes('padding-bottom:calc(10px + var(--tech-band-h))') && css.includes('padding-bottom:calc(8px + var(--tech-band-h))'));
+    check('scrollen schuift alleen IN (een uitgeschoven band), nooit uit', /if \(u\.gewisseld && scroll\.verborgen\) \{ vertrekNodig = true; pas\(zetPiek\(piek, false, nu\(\)\)\); \}/.test(hr) && !/scroll\.verborgen\)?\s*\?\s*.*zetPiek\(piek, true/.test(hr));
+  }
+
+  // ---------------------------------------------------------------- 4. de koppeling met een nagebootste pagina
+  {
+    const oud = { document: (globalThis as any).document, window: (globalThis as any).window, Element: (globalThis as any).Element, Node: (globalThis as any).Node };
+    class NepNode { contains(x: unknown) { return x === this; } closest() { return null; } }
+    class NepElement extends NepNode { scrollTop = 0; scrollHeight = 4000; clientHeight = 760; }
+    const luister: Record<string, Array<(e: any) => void>> = {};
+    const htmlSchrijf: string[] = [];
+    const html = new Proxy({}, { get: (_d, k) => { if (k === 'setAttribute' || k === 'removeAttribute') return (...a: unknown[]) => htmlSchrijf.push(`${String(k)}(${a.join(',')})`); return undefined; }, set: (_d, k) => { htmlSchrijf.push(`set ${String(k)}`); return true; } });
+    let klok = 0;
+    const timers: Array<{ t: number; f: () => void; id: number }> = [];
+    let volgende = 1;
+    (globalThis as any).document = { documentElement: html, scrollingElement: null, addEventListener: (t: string, f: (e: any) => void) => { (luister[t] ||= []).push(f); }, removeEventListener: (t: string, f: (e: any) => void) => { luister[t] = (luister[t] || []).filter((x) => x !== f); } };
+    (globalThis as any).window = { innerHeight: 800, setTimeout: (f: () => void, ms: number) => { const id = volgende++; timers.push({ t: klok + ms, f, id }); return id; }, clearTimeout: (id: number) => { const i = timers.findIndex((x) => x.id === id); if (i >= 0) timers.splice(i, 1); } };
+    (globalThis as any).Element = NepElement; (globalThis as any).Node = NepNode;
+    try {
+      const band = new NepElement();
+      let open = false;
+      const bandRect = () => ({ left: 0, right: 1280, top: 0, bottom: open ? 40 : 24 });
+      (band as any).getBoundingClientRect = bandRect;
+      let modus: Modus = 'auto', vast = false;
+      const wissels: boolean[] = [];
+      const k = koppelInschuiven({ band: () => band as unknown as Element, modus: () => modus, strookH: () => 24, vast: () => vast, zet: (v) => { open = v; wissels.push(v); }, nu: () => klok });
+      const zend = (t: string, e: any) => (luister[t] || []).forEach((f) => f(e));
+      const loop = (ms: number) => { const eind = klok + ms; for (;;) { timers.sort((x, y) => x.t - y.t); const v = timers[0]; if (!v || v.t > eind) break; timers.shift(); klok = v.t; v.f(); } klok = eind; };
+      const muis = (y: number) => zend('pointermove', { pointerType: 'mouse', clientX: 600, clientY: y });
+      muis(10); loop(OPEN_NA_MS + 20);
+      check('auto: muis tegen de bovenrand → na de vertraging uitgeschoven', open && wissels.length === 1);
+      muis(35); loop(DICHT_NA_MS + 50);
+      check('auto: muis op de uitgeschoven band (35 px) → blijft uit', open);
+      muis(300); loop(DICHT_NA_MS + 20);
+      check('auto: muis weg → na de vertraging weer ingeschoven', !open && wissels.length === 2);
+      muis(10); loop(OPEN_NA_MS + 20); vast = true; muis(500); loop(2000);
+      check('auto: met een open menu/paneel (vast) blijft de band uit, ook met de muis weg', open);
+      vast = false; zend('keydown', { key: 'Escape' });
+      check('Esc schuift meteen in', !open);
+      muis(10); muis(12); loop(1000);
+      check('na Esc met de muis nog aan de rand: blijft in (geen terugveren onder de muis)', !open);
+      muis(300); muis(10); loop(MIN_TUSSEN_MS + OPEN_NA_MS + 20);
+      check('… pas na wegbewegen en terugkomen weer uit', open);
+      zend('pointerdown', { target: { closest: () => null } });
+      check('klik ernaast (buiten band, paneel, menu, venster) → in', !open);
+      k.open();
+      const cont = new NepElement(); cont.scrollTop = 1000;
+      const scrol = (top: number) => { cont.scrollTop = top; zend('scroll', { target: cont }); };
+      klok += 400; muis(300); scrol(1000); klok += 50; scrol(1010); klok += 50; scrol(1040);
+      check(`scrollen ≥ ${DREMPEL_PX} px naar beneden schuift een aangeklikte band weer in`, !open);
+      const voor = wissels.length;
+      for (let i = 0; i < 40; i++) { klok += 16; scrol(1040 - i * 20); }
+      check('scrollen naar boven schuift nooit uit (geen nieuwe wissel)', wissels.length === voor && !open);
+      modus = 'ingeklapt'; k.herstel();
+      const na = wissels.length;
+      muis(5); loop(1000);
+      check('«Згорнуто»: de muis aan de rand schuift NIETS uit (zoals het menu «dicht»)', !open && wissels.length === na);
+      k.open(); muis(200); loop(DICHT_NA_MS + 50);
+      check('«Згорнуто»: op verzoek uit (knop ▾), en weer in als de muis weggaat', !open && wissels.slice(-2).join() === 'true,false');
+      modus = 'uitgeklapt'; k.herstel(); muis(5); loop(1000); k.open();
+      check('«Розгорнуто»: muis, klik en scrollen doen niets (de band is gewoon vol)', !open);
+      check('de koppeling schreef niets op <html>', htmlSchrijf.length === 0, htmlSchrijf.join(' '));
+      k.stop();
+      check('stop: alle luisteraars weg', Object.values(luister).every((l) => l.length === 0));
+    } finally {
+      (globalThis as any).document = oud.document; (globalThis as any).window = oud.window; (globalThis as any).Element = oud.Element; (globalThis as any).Node = oud.Node;
+    }
   }
   return einde();
 }
