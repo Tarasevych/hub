@@ -70,6 +70,10 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
   вища, запис у `BESLUITEN.md`, `beleid.json` валідний) → passkey (рішення `orch-regels`; root лише фіксує підтвердження у своєму журналі) →
   гілка `regels/<versie>-<час>` з новим lock і `CONTEXT-COMPACT.md` іде в `origin`. Злиття в `integratie` — лише власник. Сайт/MCP/HTTP викликають
   ті самі функції, що й CLI (`inleveren`, `beoordeelVoorstel`, `vergrendel`) — окремої логіки немає (`beleid.json → site`).
+- **TRACE-001 (з 20261103-211555):** обов'язковий `ONTWIKKELARCHIEF.json` і підтверджена точна GitHub Release-asset SHA-256. Журнал комічений, сервер і root відхиляють відсутнє, неправильне чи недоступне. Детальні умови нижче, B-007, deploy/REGELS-UITROLPAKKET.md §7.
+<!-- compact:einde -->
+### Повні умови випуску, журналу й перевірок (§5)
+
 - **TRACE-001 (з випуску 20261103-211555):** кожен пакет містить `ONTWIKKELARCHIEF.json` із посиланням на `orchestratie/ontwikkelarchieven/<TASK-ID>.json` у тому самому GitHub-коміті й посиланням на реліз `.tar.gz`. Журнал зберігає доступні тексти запитів, покрокові дії та спроби, коміти, результати тестів, вкладення з посиланнями й хешами, тимчасові артефакти (або факт їх відсутності), обґрунтування рішень, компроміси й невиконане; не містить приватних ключів, токенів, вмісту пошти чи прихованих внутрішніх міркувань моделі. Дані з обмеженим доступом — лише опис і хеш без вмісту. Після складання release-asset `mijn-ruimte-<versie>.tar.gz` публікують у GitHub Release з тегом версії. Серверна передперевірка і root-інсталятор окремо перевіряють незмінний коміт, його походження з вказаної гілки, SHA-256 журналу і точний SHA-256 архіву на GitHub; відсутність, помилка посилання, невідповідність чи недоступність GitHub **обов'язково блокують встановлення**. Жодних винятків «продовжити без перевірки» немає. Старіші пакети не змінюються. Потребує затвердження правил власником Passkey/SSH і злиття у захищену інтеграцію.
   TRACE-001: elk nieuw pakket heeft een commitgebonden dossier én een werkelijk geüploade Release-asset met identieke SHA-256. De site en root weigeren bij ontbrekende, ongeldige of onbereikbare GitHub-herkomst. Geen geheime gegevens of verborgen modelredenering.
 - Випуск збирає лише `node scripts/orch.mjs pakket --taak <ID> --auteur "…" [--manifest …] [--testresultaten …] [--sig …]`: сумісний
@@ -80,7 +84,8 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 - Інсталятор (root) відхиляє пакет: база старіша за встановлену (`BASIS_VEROUDERD`), інший встановлений commit (`BASIS_COMMIT_VERSCHILT`),
   без `UITROL-BASIS` із версії `20261201` (`GEEN_BASIS`), правила ≠ `regels.lock.json` (`REGELS_NIET_VERGRENDELD`), режим поза політикою
   (`MODUS_NIET_TOEGESTAAN`). GitOps (автоматично) працює лише за `automatisch_beperkt` **і** підписаним lock. Приватні ключі агентам не передаються.
-<!-- compact:einde -->
+
+
 
 ---
 
