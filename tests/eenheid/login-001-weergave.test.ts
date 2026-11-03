@@ -18,11 +18,17 @@ export async function main(): Promise<number> {
 
   check('SignedOutCenter blijft in de gemeenschappelijke schil en wordt door beide apps gebruikt',
     van >= 0 && tot > van && hub.includes('<SignedOutCenter') && diensten.includes('<SignedOutCenter'));
-  check('geen fictief merklogo of afbeelding op het aanmeldscherm',
-    !inhoud.includes('<img') && !inhoud.includes('mr-login-logo') && !inhoud.includes('<svg'));
-  check('Nederlandse en Oekraïense titel en hoofdaanmelding',
+  // INTEG-001 (03.11.2026): de eigenaar vroeg expliciet «Увійти через Google» met het merklogo van Google. Daarom staat er nu
+  // precies ÉÉN afbeelding: het officiële Google-«G» uit src/merk/google-g-officieel.ts (letterlijk uit @iconify-json/logos, CC0;
+  // tests/eenheid/aanmelden-integ-20261103 vergelijkt het met het pakket). Nog steeds geen verzonnen logo (mr-login-logo) en geen
+  // zelfgetekende <svg>.
+  check('geen fictief merklogo: alleen het officiële Google-«G» als enige afbeelding',
+    (inhoud.match(/<img/g) || []).length === 1 && inhoud.includes('src={GOOGLE_G_DATA_URI}') && schil.includes("from './merk/google-g-officieel'")
+    && !inhoud.includes('mr-login-logo') && !inhoud.includes('<svg'));
+  // INTEG-001: geen algemene «Увійти»/«Aanmelden» meer — de knop zegt meteen hoe (wens van de eigenaar).
+  check('Nederlandse en Oekraïense titel en hoofdaanmelding («Увійти через Google» / «Aanmelden met Google»)',
     inhoud.includes('Увійдіть у Мій простір') && inhoud.includes('Meld u aan bij Mijn Ruimte')
-    && inhoud.includes("'Увійти'") && inhoud.includes("'Aanmelden'"));
+    && inhoud.includes("'Увійти через Google'") && inhoud.includes("'Aanmelden met Google'"));
   check('de echte bestaande aanmeldfunctie blijft het enige ingangspunt',
     inhoud.includes('onOpenAccount()') && !inhoud.includes('/api/owner/session') && !inhoud.includes('startPrimaryRedirectLogin'));
   check('opgeslagen account is optioneel en wordt niet verzonnen',

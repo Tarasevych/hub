@@ -64,16 +64,18 @@
 .mr-sign-in-account-copy strong{font-size:.95rem;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mr-sign-in-account-copy small{font-size:.76rem;color:var(--mr-login-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mr-sign-in-chevron{color:var(--mr-login-muted);font-size:1.5rem;font-weight:400}
+/* Hoofdknop: drie kolommen [logo · tekst · pijl] met gelijke buitenkolommen — het Google-«G» staat vast links (zoals de eigen knoppen
+   van Google), de tekst exact in het midden van de knop en niet meer «ergens» naast een zwevend bolletje. */
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button{
- --mr-ring-angle:0deg;position:relative;isolation:isolate;display:flex!important;align-items:center;justify-content:center;gap:14px;
- box-sizing:border-box;width:100%;min-height:58px;margin-top:14px;padding:13px 20px!important;
+ --mr-ring-angle:0deg;position:relative;isolation:isolate;display:grid!important;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;justify-items:center;gap:10px;
+ box-sizing:border-box;width:100%;min-height:58px;margin-top:14px;padding:11px 12px!important;
  border:1px solid rgba(139,151,173,.46)!important;border-radius:999px!important;
  background:linear-gradient(#222933,#222933) padding-box,linear-gradient(90deg,rgba(88,187,194,.48),rgba(146,130,193,.42),rgba(215,164,113,.42)) border-box!important;
  color:#f9fafb!important;font-size:1rem;font-weight:650;letter-spacing:-.015em;
  box-shadow:none!important;text-decoration:none!important;cursor:pointer
 }
-/* Hover en focus: alleen een rustige rand, géén kleurrotatie. De rotatie loopt uitsluitend terwijl het aanmelden bezig is
-   (data-activated='true', van klik tot het venster weer loslaat) — niet bij de muis erop. */
+/* Hover en focus: alleen een rustige rand, géén kleurrotatie. De rotatie loopt uitsluitend terwijl het aanmelden of de controle
+   bezig is (data-activated='true': van de klik tot het werkprofiel open is, zie SignedOutCenter) — niet bij de muis erop. */
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:hover,
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:focus-visible{
  border-color:rgba(176,190,212,.72)!important;box-shadow:0 0 0 3px rgba(115,139,171,.14)!important
@@ -83,12 +85,16 @@
  background:linear-gradient(#222933,#222933) padding-box,conic-gradient(from var(--mr-ring-angle),#38cfc4,#7298e8,#bb80d5,#e6af73,#38cfc4) border-box!important;
  animation:mr-login-ring 1.35s linear infinite!important
 }
+/* Controle na terugkeer van Google: dezelfde knop, draaiend, niet nog eens klikbaar. */
+.canonical-signed-out.mr-sign-in .mr-sign-in-main-button[aria-disabled='true']{cursor:progress;opacity:1}
 /* Merklogo's staan op een altijd witte plaat: de merkkleur blijft die van het licht (ook in het donker thema), zodat een zwart Apple-logo zichtbaar blijft. */
 .mr-sign-in-logo,.mr-sign-in-optie-logo{--text:#17212b;--merk-in-licht:;--merk-in-donker:initial}
-.mr-sign-in-logo{display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
-.mr-sign-in-main-tekst{min-width:0}
+/* Verhouding als bij Google zelf: «G» van 18 px op een witte plaat van 34 px (≈ 53 %), precies in het midden. */
+.mr-sign-in-logo{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.mr-sign-in-logo img{display:block;width:18px;height:18px;object-fit:contain}
+.mr-sign-in-main-tekst{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:focus-visible{outline:2px solid var(--mr-login-ink);outline-offset:4px}
-.canonical-signed-out.mr-sign-in .mr-sign-in-main-button .mr-sign-in-arrow{font-size:1.25rem;font-weight:400}
+.canonical-signed-out.mr-sign-in .mr-sign-in-main-button .mr-sign-in-arrow{font-size:1.25rem;font-weight:400;line-height:1}
 @property --mr-ring-angle{syntax:'<angle>';inherits:false;initial-value:0deg}
 @keyframes mr-login-ring{to{--mr-ring-angle:360deg}}
 .canonical-signed-out.mr-sign-in .mr-sign-in-alternative{
@@ -100,20 +106,23 @@
 .mr-sign-in-alternative{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .mr-sign-in-alt-pijl{width:15px;height:15px;flex:none;transition:transform .2s ease}
 .mr-sign-in-alternative[aria-expanded='true'] .mr-sign-in-alt-pijl{transform:rotate(180deg)}
-/* «Інші способи входу»: uitklapbare lijst met merklogo's. Een optie die nu niet werkt blijft leesbaar (naam en uitleg in gewone kleur). */
+/* «Інші способи входу»: uitklapbare lijst met merklogo's. Een optie die nu niet werkt blijft leesbaar (naam en uitleg in gewone kleur).
+   INTEG-001: alle regels onder .canonical-signed-out.mr-sign-in — de oude algemene regel «.canonical-signed-out button» (padding 2px 0,
+   geen rand, accentkleur, onderstreping bij hover) won anders van deze knoppen: logo's plakten tegen de rand, zonder kader. */
 .mr-sign-in-andere{width:100%;display:grid;justify-items:center}
-.mr-sign-in-opties{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px;width:100%;max-width:420px;text-align:left}
-.mr-sign-in-optie{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;box-sizing:border-box;padding:10px 16px;border:1px solid var(--mr-login-border);border-radius:16px;background:var(--mr-login-card);color:var(--mr-login-ink);font:inherit;text-align:left;cursor:pointer}
-.mr-sign-in-optie:hover:not(:disabled),.mr-sign-in-optie:focus-visible{background:color-mix(in srgb,var(--mr-login-card) 80%,#ffffff);border-color:rgba(115,139,171,.38)}
-.mr-sign-in-optie:focus-visible{outline:2px solid var(--mr-login-ink);outline-offset:2px}
-/* Nog niet beschikbaar: de tekst blijft volledig leesbaar (de globale :disabled-vervaging uit primitieven.css zou hem grijs maken). */
-.mr-sign-in-optie:disabled{cursor:default;opacity:1}
-.mr-sign-in-optie-logo{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.07);color:#222b39}
-.mr-sign-in-optie-logo svg{width:22px;height:22px}
+.mr-sign-in-opties{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px;width:100%;max-width:460px;text-align:left}
+.canonical-signed-out.mr-sign-in .mr-sign-in-optie{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;min-height:62px;box-sizing:border-box;padding:10px 14px;border:1px solid var(--mr-login-border);border-radius:16px;background:var(--mr-login-card);color:var(--mr-login-ink);font:inherit;font-weight:500;text-align:left;cursor:pointer}
+.canonical-signed-out.mr-sign-in .mr-sign-in-optie:hover:not(:disabled),.canonical-signed-out.mr-sign-in .mr-sign-in-optie:focus-visible{background:color-mix(in srgb,var(--mr-login-card) 80%,#ffffff);border-color:rgba(115,139,171,.38)}
+.canonical-signed-out.mr-sign-in .mr-sign-in-optie:focus-visible{outline:2px solid var(--mr-login-ink);outline-offset:2px}
+/* Nog niet beschikbaar: gestippelde rand en een duidelijk label «Недоступно»; de tekst blijft volledig leesbaar (de globale
+   :disabled-vervaging uit primitieven.css zou hem grijs maken) en het merklogo houdt zijn eigen kleur. */
+.canonical-signed-out.mr-sign-in .mr-sign-in-optie:disabled{cursor:default;opacity:1;background:transparent;border-style:dashed;border-color:var(--mr-login-border)}
+.mr-sign-in-optie-logo{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.08);color:#222b39}
+.mr-sign-in-optie-logo svg{width:20px;height:20px}
 .mr-sign-in-optie-tekst{display:grid;gap:3px;min-width:0}
-.mr-sign-in-optie-tekst strong{font-size:.95rem;font-weight:650;color:var(--mr-login-ink)}
-.mr-sign-in-optie-tekst small{font-size:.78rem;line-height:1.4;color:var(--mr-login-muted)}
-.mr-sign-in-optie-tekst small em{display:block;margin-top:3px;font-style:normal;font-weight:650;color:var(--mr-login-ink)}
+.mr-sign-in-optie-tekst strong{font-size:.9rem;font-weight:650;line-height:1.3;color:var(--mr-login-ink)}
+.mr-sign-in-optie-tekst small{font-size:.76rem;line-height:1.4;color:var(--mr-login-muted)}
+.mr-sign-in-optie-stand{align-self:start;padding:2px 8px;border:1px solid var(--mr-login-border);border-radius:999px;color:var(--mr-login-muted);font-size:.7rem;font-style:normal;font-weight:650;white-space:nowrap}
 .mr-sign-in-remember{display:flex;align-items:center;justify-content:center;gap:8px;max-width:100%;margin-top:12px;color:var(--mr-login-muted);font-size:.77rem;text-align:left;cursor:pointer}
 .mr-sign-in-remember input{accent-color:#526d8b;width:15px;height:15px;margin:0}
 .canonical-signed-out.mr-sign-in .mr-sign-in-legal{
@@ -155,7 +164,8 @@
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-account-legal{font-size:.71rem}
 /* LOGIN-001: de aanmeldtekst blijft gecentreerd als het menu openklapt (het menu zweeft eroverheen; de tekst schuift niet meer weg). */
 @media(max-width:700px){
- .mr-sign-in-optie{min-height:60px}
+ .canonical-signed-out.mr-sign-in .mr-sign-in-optie{min-height:60px;grid-template-columns:34px minmax(0,1fr)}
+ .canonical-signed-out.mr-sign-in .mr-sign-in-optie-stand{grid-column:2;justify-self:start}
  .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor{top:22px;right:24px}
  /* Zelfde selector als de hoofdregel (anders won die met zijn hogere specificiteit en bleef deze telefoonregel dood). */
  .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in{--mr-login-rand:8px;padding:115px 22px 90px;border-radius:22px}
