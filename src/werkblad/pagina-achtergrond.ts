@@ -39,6 +39,7 @@ function houdPaginaAchtergrond(): void {
   window.addEventListener('storage', later);
   // Оболонка зʼявляється після цього модуля. Кілька секунд дочитуємо кеш, якщо атрибута ще немає.
   const timer = window.setInterval(() => {
+    if (typeof document === 'undefined') return;
     const chrome = document.querySelector('.canonical-chrome');
     if (chrome && !chrome.getAttribute('data-achtergrond')) pasPaginaAchtergrondToe();
   }, 500);
