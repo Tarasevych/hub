@@ -167,7 +167,7 @@ export async function main(): Promise<number> {
   check('D nergens nog data-expanding (bron en CSS)', ['src/MailBijlageVoorbeeld.tsx', 'src/mail-bijlage-strook.css', 'src/mail-gesprek-bewerker.css', 'src/MailGesprekInhoud.tsx'].every((f) => !zc(lees(f)).includes('data-expanding')));
   check('D kaart: aanwijzen/focus opent het voorbeeld en klikken opent de bijlage zoals vroeger', knop.includes('onPointerEnter={event=>{activeRef.current=true;onHoverStart?.(event.currentTarget)}}') && knop.includes('onClick={loading?undefined:open}') && knop.includes("data-scrolling={scrolling?'true':undefined}"));
   check('D zwevend voorbeeld: «groot» komt van de strook (wiel boven de kaart of boven een foto in het voorbeeld)', kaart.includes('({state,lang,groot,onGroot,vakRef,onEnter,onLeave,onOpen}') && !kaart.includes('useState(false)') && kaart.includes("onGroot(true)") && kaart.includes('ref={vakRef}')
-    && kaart.includes("data-groot={groot?'ja':undefined}") && kaart.includes("width=voorbeeldBreedte('S',window.innerWidth,groot)"));
+    && kaart.includes("data-groot={groot?'ja':undefined}") && /voorbeeldBreedte\(\w+,window\.innerWidth,groot\)/.test(kaart));
   check('D wiel: alleen een luisteraar terwijl een voorbeeld open is; preventDefault pas als het zichtbaar is, niet geblokkeerd, na WIEL_RUST_MS, omlaag, niet horizontaal of met Ctrl',
     /if\(!node\|\|!hover\|\|!hoverPreview\)return;/.test(strip) && strip.includes("node.addEventListener('wheel',wiel,{passive:false})") && strip.includes('},[hover?.key,hoverPreview]);')
     && /if\(!h\|\|!pop\|\|!pop\.isConnected\|\|!pop\.getClientRects\(\)\.length\)return;/.test(strip)
