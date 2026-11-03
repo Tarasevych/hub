@@ -15,8 +15,8 @@
 - `backend/cloud-m5-catalogue-routes.ts`: один staging-only захищений route `POST /api/owner/cloud/integrations/v1/catalogue`; повертає статуси **not-ready** без доказів. Підключено лише всередині чинного `ladePoort('cloud')` у `cloud-platform.ts`. Flag `CLOUD_M5_CATALOGUE_STAGING` default OFF.
 - `src/cloud/CloudAanbiedersM5.tsx` + CSS: адаптивна оглядова сторінка підтримки, без дублю CanonicalChrome, без фіктивної кнопки «Підключити». Компонент поки не вмонтовано у production nav.
 - `shared/cloud-integratie-contract.ts`: назви `pcloud`, `backblaze-b2` для єдиного посилання на файл.
-- `scripts/cloud-full-release-gate.mjs`: +9 live/CI evidence-блокерів M5. Тепер **45 required checks**, у цьому пакеті `BLOCKED`.
-- `tests/eenheid/cloud-m5-provider-wave.test.mjs`: 29 нових offline тестів.
+- `scripts/cloud-volledige-uitgave-poort.mjs`: +9 live/CI evidence-блокерів M5. Тепер **45 required checks**, у цьому пакеті `BLOCKED`.
+- `tests/eenheid/cloud-m5-aanbieder-golf.test.mjs`: 29 нових offline тестів.
 
 ## 2. Перша хвиля провайдерів: реальні можливості API ≠ готовність інтеграції
 
@@ -51,7 +51,7 @@ OAuth: «Підключити» -> офіційний consent -> server callback
 
 - `node --experimental-strip-types --test` для M1–M5: **133/133 passed** (offline unit/mock). Тільки mock/logic, не реальні сервісні акаунти.
 - `node scripts/kaart-controle.mjs --stil`: повертає 0 із попередженнями про декілька англомовних назв файлів.
-- `node scripts/cloud-full-release-gate.mjs`: exit 2, **BLOCKED 45/45** — немає підтверджень live E2E.
+- `node scripts/cloud-volledige-uitgave-poort.mjs`: exit 2, **BLOCKED 45/45** — немає підтверджень live E2E.
 - **Не виконано:** повну Node.js 24+ build, DB migrations у staging, багатобраузерні E2E, ліміти/тарифи живих акаунтів, реальний OAuth для кожного провайдера.
 
 ## 5. Критичні захисні вимоги перед релізом

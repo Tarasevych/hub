@@ -12,8 +12,8 @@ function moduleUrl(file,replace={}){let content=readFileSync(new URL(file,root),
 const errorUrl='data:text/javascript;base64,'+Buffer.from('export class CloudTransportError extends Error{constructor(code,status=502){super(code);this.code=code;this.status=status}}').toString('base64');
 const catalog=moduleUrl('shared/cloud-m5-catalogus.ts');
 const pgUrl='data:text/javascript;base64,'+Buffer.from('export class PostgresCloudProviderPolicies{};export const postgresCiVerifier=async()=>false').toString('base64');
-const mod=await import(moduleUrl('backend/cloud-m6-provider-gate.ts',{
- "'./cloud-overdracht-adapters'":`'${errorUrl}'`,"'./cloud-m6-governance-pg'":`'${pgUrl}'`,"'../shared/cloud-m5-catalogus'":`'${catalog}'`
+const mod=await import(moduleUrl('backend/cloud-m6-aanbieder-gate.ts',{
+ "'./cloud-overdracht-adapters'":`'${errorUrl}'`,"'./cloud-m6-bestuur-pg'":`'${pgUrl}'`,"'../shared/cloud-m5-catalogus'":`'${catalog}'`
 }));
 const store=(policy)=>({read:async()=>policy});const allows={allowNewConnections:true,allowExistingOperations:true};
 test('unknown provider refused',async()=>assert.rejects(mod.assertCloudProviderEnabled('random','connect',store(allows),async()=>true),e=>e.code==='CLOUD_PROVIDER_UNKNOWN'));

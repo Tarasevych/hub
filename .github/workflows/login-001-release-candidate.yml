@@ -95,7 +95,7 @@ jobs:
           node scripts/zoek-ui-catalogus.mjs --controle
           npx tsc --noEmit
           npm run typecheck:server
-          node scripts/eenheidstests.mjs login-001-weergave | tee uitvoer/login-001-test.log
+          node scripts/eenheidstests.mjs aanmeld-001-weergave | tee uitvoer/login-001-test.log
           node scripts/eenheidstests.mjs aanmeld-ui-20261030 | tee -a uitvoer/login-001-test.log
           NODE_OPTIONS=--max-old-space-size=5120 npm run build
           node scripts/kaart-controle.mjs

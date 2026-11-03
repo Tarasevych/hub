@@ -4,7 +4,7 @@
  */
 import {createCipheriv,createDecipheriv,randomBytes} from 'node:crypto';
 import {getPool} from '../server/platform/pg';
-import type {UploadLease,UploadDelta,UploadStore} from './cloud-m9-upload-sessions';
+import type {UploadLease,UploadDelta,UploadStore} from './cloud-m9-upload-sessies';
 import {CloudTransportError} from './cloud-overdracht-adapters';
 const failure=(code:string,status=409):never=>{throw new CloudTransportError(code,status);};
 const context=(l:UploadLease)=>Buffer.from(JSON.stringify([1,l.jobId,l.owner,l.space,l.accountId,l.provider]));

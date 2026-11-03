@@ -26,7 +26,7 @@
 - `backend/cloud-overdracht-credentials.ts`: новий token broker тільки для не-Google провайдерів і тільки за staging gate; Google залишається без змін.
 - `migrations/0120_cloud_multi_account_connections.sql`: зашифровані grants, OAuth flows, унікальність акаунтів, refresh lease, RLS.
 - `src/cloud/cloud-account-sync.ts`, `CloudVerbindingCentrum.tsx`, `cloud-verbinding-centrum.css`.
-- `scripts/cloud-full-release-gate.mjs`: 36 незалежних пунктів приймання, включно з мультиакаунтами та багатобраузерним доступом.
+- `scripts/cloud-volledige-uitgave-poort.mjs`: 36 незалежних пунктів приймання, включно з мультиакаунтами та багатобраузерним доступом.
 
 ## 3. Необхідна конфігурація лише на ізольованому тестовому оточенні
 
@@ -70,7 +70,7 @@
 7. Визначити остаточний список підтримуваних провайдерів. Не можна позначати як «підключення доступне» ті, у яких немає повноцінного API/onboarding.
 8. Звірка з **найновішою** production base. Наша база — 20261027-212158; якщо вже є пізніший випуск, спочатку тристороннє злиття.
 
-Технічний релізний контроль — `node scripts/cloud-full-release-gate.mjs`. Нині результат BLOCKED із 36/36 невиконаних доказів. Сам цей локальний gate ще **не вбудовано в адміністративний інсталятор**. Не обходити його вручну: потрібні справжні CI артефакти та живі E2E.
+Технічний релізний контроль — `node scripts/cloud-volledige-uitgave-poort.mjs`. Нині результат BLOCKED із 36/36 невиконаних доказів. Сам цей локальний gate ще **не вбудовано в адміністративний інсталятор**. Не обходити його вручну: потрібні справжні CI артефакти та живі E2E.
 
 ## 7. Перевірки
 
@@ -83,7 +83,7 @@ node --experimental-strip-types --test \
   tests/eenheid/cloud-versies-m3.test.mjs \
   tests/eenheid/cloud-delen-m3.test.mjs \
   tests/eenheid/cloud-verbinding-m4.test.mjs
-node scripts/cloud-full-release-gate.mjs
+node scripts/cloud-volledige-uitgave-poort.mjs
 ```
 
 Результат: **104/104 offline unit/mock tests passed; release gate BLOCKED/exit 2**.

@@ -71,6 +71,6 @@ export async function main() {
   check('ouderId самої чернетки не робить відповідь', zelfOuder.soort === 'nieuw');
 
   const mis = resultaten.filter((r) => !r.ok);
-  console.log(`${resultaten.length - mis.length}/${resultaten.length} geslaagd (editor-schil-20261026)`);
+  console.log(`${resultaten.length - mis.length}/${resultaten.length} geslaagd (bewerker-schil-20261026)`);
   return mis.length ? 1 : 0;
 }

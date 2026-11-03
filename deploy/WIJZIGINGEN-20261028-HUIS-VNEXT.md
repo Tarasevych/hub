@@ -28,7 +28,7 @@
 | Безпека: лише спостереження (контакт/рух/дим/газ/вода/замок/панель/присутність), явне `gecertificeerd: false`, попередження при спрацьованому датчику, замок/панель лише людиною з підтвердженням | **implemented** (не охоронна система — так і написано) | `Beveiliging.tsx` |
 | Енергія: тільки виміряні значення (vermogen/energie), історія з `history/period` джерела як SVG-лінія, без тарифів/оцінок | **implemented** | `Energie.tsx`, `haGeschiedenis` |
 | Події: журнал з джерелом, типом, серйозністю, часом джерела, кореляцією, фільтр, курсор | **implemented** | `Gebeurtenissen.tsx` |
-| Інтеграції: чесний каталог + майстер Home Assistant (адреса+токен → перевірка `/api/`, `/api/config` → знайти (з «уже на сайті»/критично/офлайн) → імпорт вибраного → синхронізація (оновлено/зникло/нові) → дозволити команди (step-up) → від'єднати) | **implemented** | `Integraties.tsx`, `backend/huis-adapter-home-assistant.ts` |
+| Інтеграції: чесний каталог + майстер Home Assistant (адреса+токен → перевірка `/api/`, `/api/config` → знайти (з «уже на сайті»/критично/офлайн) → імпорт вибраного → синхронізація (оновлено/зникло/нові) → дозволити команди (step-up) → від'єднати) | **implemented** | `Integraties.tsx`, `backend/huis-adapter-thuis-assistent.ts` |
 | ШІ-помічник: ланцюжок пропозиція → рішення людини → команда через `ai-voorstel` з ACK; критичне відхиляється; TTL пропозиції; ручне створення для тесту ланцюжка | **implemented** (вбудованого чат-бота оселі немає — пропозиції приходять через MCP/сторінку; так і написано) | `Assistent.tsx`, `voorstelMaken/voorstelBesluiten` |
 | Налаштування: назва/часовий пояс/поверхи, учасники з ролями (тимчасові для інсталятора/підтримки), ще одна оселя | **implemented** | `Instellingen.tsx` |
 | Showroom: демо на вигаданих даних з явною позначкою, демо-план, 3 сценарії («Вечір», «Ранок», «Вода») як покроковий текстовий playback, без API/команд/токенів | **implemented** | `Showroom.tsx` |
@@ -42,7 +42,7 @@
 
 | Інтеграція | Стан у коді | Примітка |
 |---|---|---|
-| Home Assistant (REST, long-lived token) | **implemented** — читання всіх сутностей; команди light/switch/input_boolean/fan/cover/climate/lock (lock лише людина+step-up); history | перевірено лише проти **імітованого** HA (`tests/eenheid/hulp/nep-home-assistant.ts`); **реальне залізо — NOT TESTED** |
+| Home Assistant (REST, long-lived token) | **implemented** — читання всіх сутностей; команди light/switch/input_boolean/fan/cover/climate/lock (lock лише людина+step-up); history | перевірено лише проти **імітованого** HA (`tests/eenheid/hulp/nep-thuis-assistent.ts`); **реальне залізо — NOT TESTED** |
 | Matter/Thread, Zigbee, Z-Wave, Tuya/LSC, MQTT/ESPHome | **planned** — лише через Home Assistant | власного адаптера немає, кнопок «Підключити» немає |
 | KNX, Loxone, Google Home, Alexa | **planned** | адаптера немає |
 | Ajax Systems | **restricted/unsupported** — Enterprise API партнерський | не обіцяємо; керування лише з рідного застосунку |
@@ -78,7 +78,7 @@
 
 ### Змінені/нові файли
 
-Нові: `migrations/0128_huis_vnext.sql`, `shared/huis-model.ts`, `backend/huis-vnext.ts`, `backend/huis-adapter-home-assistant.ts`, `src/huis/{HuisPagina,HuisLaag,ApparaatBediening}.tsx`, `src/huis/{huis-client,huis-vlag,tekst}.ts`, `src/huis/huis.css`, `src/huis/onderdelen/{Overzicht,Plattegrond,Kamers,Apparaten,Scenes,Automatiseringen,Beveiliging,Energie,Gebeurtenissen,Integraties,Assistent,Instellingen,Showroom,Planner}.tsx`, `tests/eenheid/huis-vnext-20261028.test.ts`, `tests/eenheid/hulp/nep-home-assistant.ts`, `tests/e2e/huis-vnext.e2e.ts`, `deploy/huis-vnext-terugdraaien.sql`, цей файл.
+Нові: `migrations/0128_huis_vnext.sql`, `shared/huis-model.ts`, `backend/huis-vnext.ts`, `backend/huis-adapter-thuis-assistent.ts`, `src/huis/{HuisPagina,HuisLaag,ApparaatBediening}.tsx`, `src/huis/{huis-client,huis-vlag,tekst}.ts`, `src/huis/huis.css`, `src/huis/onderdelen/{Overzicht,Plattegrond,Kamers,Apparaten,Scenes,Automatiseringen,Beveiliging,Energie,Gebeurtenissen,Integraties,Assistent,Instellingen,Showroom,Planner}.tsx`, `tests/eenheid/huis-vnext-20261028.test.ts`, `tests/eenheid/hulp/nep-thuis-assistent.ts`, `tests/e2e/huis-vnext.e2e.ts`, `deploy/huis-vnext-terugdraaien.sql`, цей файл.
 Змінені: `backend/index.ts` (реєстрація маршрутів `huisRoutes` зі step-up), `src/DomoticaWeergave.tsx` (перемикач за прапорцем; стара сторінка `SmartHomeOud` без змін), `src/VerenigdDienstApp.tsx` (вкладки huis + `onNavigateTab`), `public/canonical-service.js`, `shared/menu-model.ts`, `shared/werkblad-register.ts`, `src/menu-voorkeuren.tsx` (13 вкладок), `shared/vlaggen.ts` (пояснення прапорця), `migrations/rechten.sql` (GRANT 0128), `scripts/plaatsing-vaste-elementen.json` (`.hv-laag`, `.hv-onderbalk` з причиною), `scripts/e2e-lokaal.mjs` (власні адреси інтерфейсів машини вважаються локальними — для nep-HA; назовні так само нічого не йде), `ENV-VARS.md`.
 
 ### Знахідки під час роботи (виправлено)

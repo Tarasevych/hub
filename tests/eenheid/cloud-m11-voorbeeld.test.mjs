@@ -12,7 +12,7 @@ const moduleUrl=(path,replace={})=>{let code=src(path);for(const [a,b]of Object.
  assert.deepEqual(out.diagnostics.filter(d=>d.category===ts.DiagnosticCategory.Error),[]);
  return 'data:text/javascript;base64,'+Buffer.from(out.outputText).toString('base64');};
 const adapter=moduleUrl('backend/cloud-overdracht-adapters.ts');
-const preview=moduleUrl('backend/cloud-m11-preview.ts',{"'./cloud-overdracht-adapters'":`'${adapter}'`});
+const preview=moduleUrl('backend/cloud-m11-voorbeeld.ts',{"'./cloud-overdracht-adapters'":`'${adapter}'`});
 const {CloudM11PreviewService}=await import(preview);
 const ctx={owner:'user-1',space:'prive'};
 const bytes=Buffer.from('%PDF-1.7\nHello secure reader');
@@ -64,7 +64,7 @@ test('M11: multiple drivers with same provider rejected',async()=>{
  const fake={provider:'dropbox'};assert.throws(()=>new CloudM11PreviewService({authorizedAccount:async()=>{}},[fake,fake]),e=>e.code==='CLOUD_PREVIEW_DUPLICATE_DRIVER');
 });
 test('M11: stage-only web endpoint and no-store are present in source',()=>{
- const r=src('backend/cloud-m11-preview-routes.ts');assert(r.includes("CLOUD_M11_PREVIEW_STAGING==='enabled'"));
+ const r=src('backend/cloud-m11-voorbeeld-routes.ts');assert(r.includes("CLOUD_M11_PREVIEW_STAGING==='enabled'"));
  assert(r.includes("auth.service!=='cloud'"));assert(r.includes('Cache-Control'));assert(r.includes("'no-cache'"));
  assert(src('backend/cloud-platform.ts').includes('...createM11CloudPreviewRoutes(authorize,createM11StagingPreviewRuntime(stagedDirectory))'));
 });

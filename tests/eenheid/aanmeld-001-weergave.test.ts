@@ -6,7 +6,7 @@ import { checker } from './hulp/nep-google';
 const lees = (pad: string) => readFileSync(join(process.cwd(), pad), 'utf8');
 
 export async function main(): Promise<number> {
-  const { check, einde } = checker('login-001-weergave');
+  const { check, einde } = checker('aanmeld-001-weergave');
   const schil = lees('src/CanoniekOmlijsting.tsx');
   const van = schil.indexOf('export function SignedOutCenter(');
   const tot = schil.indexOf('export default function CanonicalChrome(', van);

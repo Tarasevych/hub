@@ -8,7 +8,7 @@ import {CloudConnectionError,CloudConnectionManager,type CloudPrincipal,type OAu
 import {LiveOAuthProviders}from'./cloud-verbinding-m4-providers';
 import {PostgresCloudConnections}from'./cloud-verbinding-m4-pg';
 import {cloudOAuthM4Config}from'./cloud-verbinding-m4-config';
-import {assertCloudProviderEnabled}from'./cloud-m6-provider-gate';
+import {assertCloudProviderEnabled}from'./cloud-m6-aanbieder-gate';
 const allowed=new Set(['onedrive-personal','onedrive-business','sharepoint','dropbox','box']);
 const enabled=()=>process.env.CLOUD_M4_CONNECTIONS_STAGING==='enabled';
 const safeQuery=(s:unknown,max=300)=>typeof s==='string'&&s.length<=max&&!/[\r\n\0]/.test(s)?s:'';

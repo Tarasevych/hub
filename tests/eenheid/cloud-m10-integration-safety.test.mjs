@@ -20,13 +20,13 @@ test('M10: new frontend is reachable only through an explicit build-stage flag a
  assert(cloud.includes('<CloudAccountsPanel'));assert(cloud.includes('DriveBrowser'));
 });
 test('M10: release preflight always rejects absent real provider evidence and missing runtime',()=>{
- try{execFileSync(process.execPath,['scripts/cloud-m10-release-preflight.mjs'],{cwd:new URL('../../',import.meta.url).pathname,stdio:'pipe'});assert.fail('must block');}
+ try{execFileSync(process.execPath,['scripts/cloud-m10-uitgave-voorcontrole.mjs'],{cwd:new URL('../../',import.meta.url).pathname,stdio:'pipe'});assert.fail('must block');}
  catch(e){assert.equal(e.status,2);const obj=JSON.parse(e.stdout.toString('utf8'));
  assert.equal(obj.decision,'BLOCKED');assert(obj.checks.some(x=>x.id==='all-eleven-runtime-resolvers-live'&&!x.passed));assert.equal(obj.attestation.valid,false);}
 });
 
 test('M10: admin controls are only on admin host with live owner, technical tab and strong step-up',()=>{
- const backend=src('backend/cloud-m10-admin-bridge.ts'); const admin=src('src/BeheerConsoleWeergave.tsx');
+ const backend=src('backend/cloud-m10-beheer-brug.ts'); const admin=src('src/BeheerConsoleWeergave.tsx');
  assert(backend.includes("a.service!=='admin'"));
  assert(backend.includes('TAB_RE.test(tab)'));
  assert(backend.includes('actieveActivatie(a.user.id,tab)'));

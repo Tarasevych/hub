@@ -9,9 +9,9 @@ import {PostgresCloudConnections} from './cloud-verbinding-m4-pg';
 import {cloudTransportToken} from './cloud-overdracht-credentials';
 import {GoogleDriveTransport,MicrosoftGraphTransport,DropboxTransport} from './cloud-overdracht-adapters';
 import {BoxTransport} from './cloud-overdracht-m3-providers';
-import {CloudM11PreviewService} from './cloud-m11-preview';
+import {CloudM11PreviewService} from './cloud-m11-voorbeeld';
 import type {CloudMultiAccountWorkspace as M11Workspace} from './cloud-m8-werkruimte';
-import {assertCloudProviderEnabled} from './cloud-m6-provider-gate';
+import {assertCloudProviderEnabled} from './cloud-m6-aanbieder-gate';
 import {googleSuiteDriveProviderSnapshot} from './google-suite-inrichting';
 
 function cursorSecret():Uint8Array|null{

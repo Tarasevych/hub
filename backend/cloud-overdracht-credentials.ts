@@ -10,7 +10,7 @@ import {PostgresCloudConnections} from './cloud-verbinding-m4-pg';
 import {LiveOAuthProviders} from './cloud-verbinding-m4-providers';
 import {CloudMultiAccountTokenBroker} from './cloud-verbinding-m4-token';
 import {cloudOAuthM4Config} from './cloud-verbinding-m4-config';
-import {assertCloudProviderEnabled} from './cloud-m6-provider-gate';
+import {assertCloudProviderEnabled} from './cloud-m6-aanbieder-gate';
 const m4Broker=new CloudMultiAccountTokenBroker(new PostgresCloudConnections(),new LiveOAuthProviders(),cloudOAuthM4Config);
 export const cloudTransportToken:CloudTokenResolver=async(ctx:CloudGrantContext,operation:'read'|'write')=>{
  if(ladeOf(ctx.userId).ruimte!==ctx.space)throw new CloudTransportError('CLOUD_TOKEN_SPACE_MISMATCH',403);

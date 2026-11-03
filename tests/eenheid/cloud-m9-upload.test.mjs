@@ -7,7 +7,7 @@ const root=new URL('../../',import.meta.url);
 function m(file,replace={}){let code=readFileSync(new URL(file,root),'utf8');for(const [k,v] of Object.entries(replace))code=code.replaceAll(k,v);
  const output=ts.transpileModule(code,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext},reportDiagnostics:true});
  assert(!output.diagnostics.some(d=>d.category===ts.DiagnosticCategory.Error));return 'data:text/javascript;base64,'+Buffer.from(output.outputText).toString('base64');}
-const base=m('backend/cloud-overdracht-adapters.ts');const importer=m('backend/cloud-m9-upload-sessions.ts',{"'./cloud-overdracht-adapters'":`'${base}'`});
+const base=m('backend/cloud-overdracht-adapters.ts');const importer=m('backend/cloud-m9-upload-sessies.ts',{"'./cloud-overdracht-adapters'":`'${base}'`});
 const {M9ChunkUploader}=await import(importer);
 const graph=()=>({jobId:'job1',owner:'user1',space:'prive',accountId:'acc1',provider:'onedrive-personal',total:1_000_000,offset:0,session:'https://example.up.1drv.com/upload?token=x',target:'folder',name:'a.pdf',leaseId:'lease',expectedRevision:'e1'});
 const drop=()=>({...graph(),provider:'dropbox',total:8_388_610,session:'session:abcde12345',target:'/data/a.pdf'});

@@ -6,7 +6,7 @@
 
 ```bash
 node --test tests/eenheid/cloud-*mjs
-node scripts/cloud-full-release-gate.mjs
+node scripts/cloud-volledige-uitgave-poort.mjs
 node scripts/kaart-controle.mjs --stil
 ```
 

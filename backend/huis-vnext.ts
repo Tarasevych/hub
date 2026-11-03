@@ -18,7 +18,7 @@ import { auditToevoegen } from '../server/platform/audit';
 import type { RouterMiddleware } from '../server/platform/router';
 import { alsGebruiker } from './ai-toestemmingen';
 import { denyMutation } from './rbac';
-import { haDienstVoor, haGeschiedenis, haLezen, haOntdekken, haStuur, haVerbinden, komtOvereen, parseVertrouwdToestel, veiligAdres, vertrouwdeToestellenUitEnv, zetVertrouwdeToestellenBron, type OntdektApparaat } from './huis-adapter-home-assistant';
+import { haDienstVoor, haGeschiedenis, haLezen, haOntdekken, haStuur, haVerbinden, komtOvereen, parseVertrouwdToestel, veiligAdres, vertrouwdeToestellenUitEnv, zetVertrouwdeToestellenBron, type OntdektApparaat } from './huis-adapter-thuis-assistent';
 import {
   KRITIEKE_SOORTEN, MAX_RUIMTES, MAX_WONINGEN, OPDRACHT_DEADLINE_MS, OPDRACHT_EIND, droogloop, magOvergang, schoneOpdrachtWaarde, schoneRegel, schoneScene,
   type Apparaat, type Automatisering, type Gebeurtenis, type Integratie, type Lid, type Mogelijkheid, type MogelijkheidSoort, type Opdracht, type OpdrachtStand, type Ruimte, type Scene, type Toestand, type Voorstel, type Waarnemingen, type Woning,
