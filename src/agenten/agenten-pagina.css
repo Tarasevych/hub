@@ -1,0 +1,206 @@
+/* =============================================================================================================================
+   INTEG-001 (03.11.2026) · Рамка сторінки mcp.* → agents («Підключення ШІ») і КОНТРАКТ КЛАСІВ для всіх її розділів.
+   Власник: «сторінка виглядає як сира таблиця… розділи не відділені, не зрозуміло, де початок і кінець». Тепер кожен розділ —
+   окрема картка з одним заголовком і одним реченням «що це і для чого», однакові відступи, однакові кнопки, без порожніх смуг.
+   Лише токени теми (src/ontwerp/tokens.css): світла й темна тема, палітри — самі. Без prefers-color-scheme, без hex, без <style>.
+
+   КОНТРАКТ (назви незмінні; їх використовують розділи інших агентів) · CONTRACT (vaste namen):
+     .ag-pagina       обгортка сторінки · paginaomhulsel (AgentenPagina.tsx)
+     .ag-blok         картка розділу або частини розділу · kaart van een onderdeel
+     .ag-blok-kop     рядок заголовка з діями · koprij met acties
+     .ag-blok-titel   назва (h2/h3) · titel
+     .ag-blok-uitleg  одне речення: що це і для чого · één zin: wat het is en waarvoor
+     .ag-rij          рядок списку · rij van een lijst
+     .ag-leeg         порожній стан · lege toestand
+     .ag-knoppen      ряд кнопок · knoppenrij
+
+   Розмітка · Opmaak:
+     <section class="ag-blok">
+       <header class="ag-blok-kop">
+         <h3 class="ag-blok-titel">Назва <span class="ag-teller">3</span></h3>
+         <div class="ag-knoppen"><button class="ag-knop">…</button></div>
+         <p class="ag-blok-uitleg">Одне речення.</p>             (стоїть під назвою, де б не був у коді)
+       </header>
+       <ul class="ag-lijst"><li class="ag-rij">…</li></ul>
+       <p class="ag-leeg">Тут ще нічого немає — і що зробити.</p>
+       <div class="ag-knoppen">…</div>
+     </section>
+   Рамка сама малює для КОЖНОГО розділу сторінки верхню картку .ag-blok.ag-blok-hoofd (іконка, назва, лічильник, речення з
+   SECTIE_HINT, «Згорнути»). Розділ цю назву НЕ повторює; його частини — вкладені .ag-blok (внутрішні картки без тіні).
+   .ag-rij — або рядок із ui.tsx (Rij: li.ag-rij > .ag-rij-kop …), або простий рядок <li class="ag-rij">текст + .ag-knoppen</li>.
+   ============================================================================================================================= */
+
+/* ---------------------------------------------------------------- сторінка · pagina */
+.ag-pagina{width:100%;max-width:1200px;margin-inline:auto;box-sizing:border-box;min-width:0}
+.ag-pagina :is(.ag-paneel,.ag-secties){gap:var(--ruimte-5)}
+.ag-pagina .ag-tab{gap:var(--ruimte-4)}
+
+/* Kop van de pagina: icoon, titel, één zin, «Стоп» rechts. */
+.ag-pagina-kop{align-items:center}
+.ag-pagina-icoon{flex:none;display:grid;place-items:center;width:48px;height:48px;border-radius:var(--straal-m);background:var(--accent-soft);color:var(--accent)}
+.ag-pagina-icoon svg{width:24px;height:24px}
+.ag-pagina-tekst{flex:1 1 20rem;min-width:0;display:grid;gap:var(--ruimte-1)}
+.ag-pagina-tekst h1{margin:0;font-size:1.6rem;line-height:1.2;overflow-wrap:anywhere}
+.ag-pagina-tekst p{margin:0;color:var(--muted);line-height:1.5;max-width:72ch}
+
+/* Стара помилка (блок 8.4): .ag-tabs-wrap мав position:sticky, але його батько .ag-ankers був рівно такої ж висоти — липкий
+   елемент не може вийти за межі батька, тож смуга ніколи не прилипала (виміряно в Chrome: після прокрутки y=-41). display:contents
+   робить контейнером саму сторінку; відступ прокрутки секцій — під дві лави вкладок на широкому екрані, одну на телефоні. */
+.ag-pagina>.ag-ankers{display:contents}
+.ag-pagina .ag-sectie{scroll-margin-top:7rem}
+@media (max-width:700px){.ag-pagina .ag-sectie{scroll-margin-top:4.5rem}}
+
+/* Липка смуга розділів: «пігулки», вибраний — на м’якому акценті. */
+.ag-pagina .ag-tabs-wrap{padding:6px 0;border-bottom:1px solid var(--line)}
+.ag-pagina .ag-tabs{gap:var(--ruimte-1);border-bottom:0}
+.ag-pagina .ag-tab-knop{min-height:var(--tik-hoogte);margin:0;padding:6px 12px;border:1px solid transparent;border-radius:999px;font-size:var(--tekst-klein)}
+.ag-pagina .ag-tab-knop:hover{background:var(--surface);color:var(--text)}
+.ag-pagina .ag-tab-knop[aria-selected=true]{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 40%,transparent);color:var(--text)}
+.ag-pagina .ag-tab-knop:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+
+/* ---------------------------------------------------------------- блок · blok (contract) */
+.ag-blok{display:grid;gap:var(--ruimte-4);align-content:start;min-width:0;box-sizing:border-box;margin:0;padding:var(--ruimte-4) var(--ruimte-5);border:1px solid var(--line);border-radius:var(--straal-l);background:var(--panel);color:var(--text)}
+.ag-blok>*{min-width:0}
+.ag-blok-kop{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ruimte-2) var(--ruimte-3);min-width:0;margin:0}
+.ag-blok-kop>.ag-blok-titel{flex:1 1 14rem}
+.ag-blok-kop>.ag-knoppen{flex:0 1 auto;margin-left:auto;justify-content:flex-end}
+/* De uitleg staat altijd op een eigen regel onder de titel, ook als ze in de code na de knoppen komt. */
+.ag-blok-kop>.ag-blok-uitleg{flex:1 1 100%;order:3;max-width:none}  /* max-width zou de 100% inperken en de zin naast de titel zetten */
+.ag-blok-titel{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0;font-size:1.02rem;font-weight:700;line-height:1.3;color:var(--text);min-width:0;overflow-wrap:anywhere}
+.ag-blok-titel>svg{flex:none;width:18px;height:18px;color:var(--accent)}
+.ag-blok-uitleg{margin:0;color:var(--muted);font-size:var(--tekst-klein);line-height:1.5;max-width:78ch;overflow-wrap:anywhere}
+.ag-knoppen{align-items:center}
+/* Blok in een blok: een binnenkaart, kleiner en zonder schaduw. */
+.ag-blok .ag-blok{padding:var(--ruimte-4);border-radius:var(--straal-m)}
+.ag-blok .ag-blok .ag-blok-titel{font-size:.98rem}
+/* Blokken direct op de pagina (banner, muur) dragen een lichte schaduw, net als de blokken van de onderdelen. */
+.ag-pagina>.ag-blok,.ag-pagina .ag-paneel>.ag-blok{box-shadow:var(--schaduw-1)}
+/* Waarschuwing: rand en zachte vlak in de statuskleur, links een balk. */
+.ag-blok.is-waarschuwing{border-color:color-mix(in srgb,var(--warn) 55%,var(--line));background:color-mix(in srgb,var(--warn-zacht) 55%,var(--panel));box-shadow:inset 4px 0 0 var(--warn)}
+.ag-pagina>.ag-blok.is-waarschuwing,.ag-pagina .ag-paneel>.ag-blok.is-waarschuwing{box-shadow:inset 4px 0 0 var(--warn),var(--schaduw-1)}
+.ag-blok.is-waarschuwing>.ag-blok-kop .ag-blok-titel>svg{color:var(--warn)}
+
+/* Muur «Доступ ШІ ще не увімкнено» (geen recht api-platform): dezelfde kaart, tekst als uitleg. */
+.ag-pagina .ag-muur{margin:0;max-width:none}
+.ag-pagina .ag-muur>p{margin:0;color:var(--muted);line-height:1.5;max-width:72ch}
+
+/* ---------------------------------------------------------------- верхня картка розділу · bovenste kaart van een onderdeel */
+.ag-pagina .ag-sectie.ag-blok-hoofd{gap:0;padding:0;border:1px solid var(--line);border-radius:var(--straal-l);background:var(--panel);box-shadow:var(--schaduw-1)}
+.ag-blok-hoofd>.ag-blok-kop{flex-wrap:nowrap;align-items:center;padding:var(--ruimte-4) var(--ruimte-5);border-bottom:1px solid var(--line);border-radius:calc(var(--straal-l) - 1px) calc(var(--straal-l) - 1px) 0 0;background:color-mix(in srgb,var(--accent-soft) 45%,var(--panel))}
+.ag-blok-hoofd>.ag-blok-kop .ag-blok-titel{font-size:1.2rem}
+.ag-blok-icoon{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:var(--straal-m);border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line));background:var(--panel);color:var(--accent)}
+.ag-blok-icoon svg{width:20px;height:20px}
+.ag-blok-tekst{flex:1 1 0;min-width:0;display:grid;gap:var(--ruimte-1)}
+.ag-blok-hoofd>.ag-blok-inhoud{display:grid;gap:var(--ruimte-4);min-width:0;padding:var(--ruimte-5)}
+.ag-blok-inhoud[hidden]{display:none}
+/* Ingeklapt: alleen de kop, geen gereserveerde hoogte (agenten.css houdt een dicht lui blok 18rem hoog). */
+.ag-pagina .ag-sectie.ag-blok-hoofd[data-ag-dicht='1']{min-height:0}
+.ag-blok-hoofd[data-ag-dicht='1']>.ag-blok-kop{border-bottom:0;border-radius:calc(var(--straal-l) - 1px)}
+/* Knop «Згорнути/Розгорнути»: rustig, het pijltje draait mee. */
+.ag-pagina .ag-blok-klap{background:transparent;border-color:transparent;color:var(--muted)}
+.ag-pagina .ag-blok-klap:hover:not(:disabled){background:var(--surface);border-color:var(--line);color:var(--text)}
+.ag-blok-klap .ag-chevron{margin:0;transition:transform .15s}
+.ag-blok-klap[aria-expanded=true] .ag-chevron{transform:rotate(180deg)}
+
+/* Skelet van een blok dat nog laadt: lijnen in plaats van een lege vlakte. */
+.ag-blok-skelet{display:grid;align-content:start;gap:var(--ruimte-3)}
+.ag-skelet-regel{display:block;height:14px;border-radius:7px;background:linear-gradient(90deg,var(--surface) 0%,var(--surface2) 50%,var(--surface) 100%);background-size:200% 100%;animation:ag-skelet 1.4s ease-in-out infinite}
+.ag-skelet-regel.is-kort{width:60%}
+.ag-blok-skelet small{color:var(--muted)}
+@keyframes ag-skelet{from{background-position:100% 0}to{background-position:-100% 0}}
+
+/* ---------------------------------------------------------------- кнопки · knoppen: één maat op de hele pagina */
+.ag-pagina :is(.ag-knop,.v2-knop){min-height:var(--tik-hoogte);padding:6px 14px;gap:6px;border-radius:var(--straal-s);font-size:var(--tekst-klein);font-weight:600;line-height:1.2}
+.ag-pagina :is(.ag-knop,.v2-knop):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.ag-pagina :is(.ag-knoppen,.ag-blok-kop)>.ag-link{min-height:var(--tik-hoogte)}
+
+/* ---------------------------------------------------------------- рядки · rijen (contract) */
+.ag-pagina .ag-lijst{border-radius:var(--straal-m)}
+.ag-pagina .ag-rij{min-width:0}
+/* Eenvoudige rij (zonder .ag-rij-kop van ui.tsx): tekst links, .ag-knoppen rechts, loopt om op een smal scherm. */
+.ag-pagina .ag-rij:not(:has(>.ag-rij-kop)){display:flex;flex-wrap:wrap;align-items:center;gap:var(--ruimte-2) var(--ruimte-3);padding:var(--ruimte-3) var(--ruimte-4)}
+.ag-pagina .ag-rij:not(:has(>.ag-rij-kop))>.ag-knoppen{margin-left:auto}
+
+/* ---------------------------------------------------------------- порожній стан · lege toestand (contract) */
+.ag-pagina .ag-leeg{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:var(--ruimte-2);margin:0;padding:var(--ruimte-4) var(--ruimte-5);border:1px dashed var(--line);border-radius:var(--straal-m);background:var(--surface);color:var(--muted);font-size:var(--tekst-klein);line-height:1.5;text-align:center}
+.ag-pagina .ag-leeg svg{flex:none;width:18px;height:18px}
+
+/* ---------------------------------------------------------------- melding «wacht» (TabAi): één regel met de weg erheen */
+.ag-pagina .ag-melding-wacht{flex-wrap:wrap;align-items:center;border-left-color:var(--warn);background:color-mix(in srgb,var(--warn-zacht) 55%,var(--panel))}
+.ag-pagina .ag-melding-wacht>svg{color:var(--warn);margin-top:0}
+.ag-pagina .ag-melding-wacht>.ag-link{margin-left:auto}
+
+/* ---------------------------------------------------------------- «Огляд» · overzicht */
+.ag-pagina .ag-stats{grid-template-columns:repeat(auto-fit,minmax(min(100%,9.5rem),1fr));gap:var(--ruimte-3)}  /* telefoon: twee per rij */
+.ag-pagina .ag-stat{min-height:var(--tik-hoogte);padding:var(--ruimte-4);border-radius:var(--straal-m);background:var(--panel);transition:border-color .15s,box-shadow .15s}
+.ag-pagina .ag-stat:hover{border-color:var(--accent);box-shadow:var(--schaduw-1)}
+.ag-pagina .ag-stat:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.ag-pagina .ag-stat strong{font-size:1.6rem}
+.ag-pagina .ag-stat span:last-child{font-size:var(--tekst-klein)}
+.ag-pagina .ag-stat.is-warn{border-color:color-mix(in srgb,var(--warn) 55%,var(--line));background:color-mix(in srgb,var(--warn-zacht) 50%,var(--panel))}
+.ag-pagina .ag-stat.is-warn .ag-stat-icoon{background:var(--warn-zacht);color:var(--warn)}
+/* AI-verzoeken en laatste gebeurtenissen naast elkaar op een breed scherm, onder elkaar op de telefoon. */
+.ag-overzicht-raster{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr));gap:var(--ruimte-4);align-items:start;min-width:0}
+.ag-overzicht-cel{display:grid;min-width:0}
+.ag-overzicht-cel>.ag-kaart{border-radius:var(--straal-m)}
+.ag-pagina #ag-overzicht-wacht,.ag-pagina #ag-overzicht-bevestigen{scroll-margin-top:4.5rem}
+
+/* Matrix «Що через який спосіб»: afgeronde tabel, zebrarijen, cellen als ronde tekens in de statuskleur. */
+.ag-pagina .ag-matrix-tabel{border:1px solid var(--line);border-radius:var(--straal-m)}
+.ag-pagina .ag-matrix-tabel table{font-size:var(--tekst-klein)}
+.ag-pagina .ag-matrix-tabel thead th{padding:10px 8px;background:var(--surface);font-size:var(--tekst-mini)}
+.ag-pagina .ag-matrix-tabel tbody th{padding:10px 12px}
+.ag-pagina .ag-matrix-tabel tbody tr:nth-child(even){background:color-mix(in srgb,var(--surface) 45%,transparent)}
+.ag-pagina .ag-matrix-tabel tbody tr:last-child>*{border-bottom:0}
+.ag-pagina .ag-matrix td>span[aria-hidden]{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;font-weight:700}
+.ag-pagina .ag-matrix td.is-ja>span[aria-hidden]{background:var(--ok-zacht);color:var(--ok)}
+.ag-pagina .ag-matrix td.is-kan>span[aria-hidden]{background:var(--info-zacht);color:var(--info)}
+.ag-pagina .ag-matrix td.is-nooit>span[aria-hidden]{color:var(--muted)}
+.ag-pagina .ag-matrix-legenda{margin:0}
+.ag-pagina .ag-matrix-lijst li{border-radius:var(--straal-m);background:var(--panel)}
+
+/* ---------------------------------------------------------------- formulieren, uitklapblokken, manieren van koppelen */
+.ag-formraster{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:var(--ruimte-3);min-width:0}
+.ag-formraster>.ag-veld-vol{grid-column:1/-1}
+.ag-formraster :is(input,select,textarea){width:100%;min-height:var(--tik-hoogte)}
+/* <details class="ag-blok">: kop is de <summary>; geen grid op details (oudere motoren negeren dat), dus marges. */
+details.ag-blok{display:block}
+details.ag-blok>*+*{margin-top:var(--ruimte-3)}
+details.ag-blok>summary{list-style:none;cursor:pointer;flex-wrap:nowrap;align-items:center;min-height:var(--tik-hoogte)}
+details.ag-blok>summary::-webkit-details-marker{display:none}
+details.ag-blok>summary .ag-chevron{flex:none;margin-left:auto;transition:transform .15s}
+details.ag-blok[open]>summary .ag-chevron{transform:rotate(180deg)}
+details.ag-blok>summary:focus-visible,.ag-uitklap>summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--straal-s)}
+.ag-uitklap>summary{display:flex;align-items:center;min-height:var(--tik-hoogte);cursor:pointer;font-weight:600;color:var(--accent)}
+.ag-pagina .ag-methoden{grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:var(--ruimte-3);align-items:start}
+.ag-pagina .ag-methode{padding:var(--ruimte-3) var(--ruimte-4);border-radius:var(--straal-m)}
+.ag-pagina .ag-methode>.ag-badge{justify-self:start}  /* het label «рекомендовано» rekte in het raster uit over de hele breedte */
+.ag-pagina .ag-bord-uitklap{border-radius:var(--straal-m)}
+/* Koppen van bestaande kaarten met een icoon ervoor (o.a. «Запити ШІ на підтвердження»): icoon en tekst op één regel
+   (het fundament zet svg op display:block, dan stond het icoon boven de titel). */
+.ag-pagina .ag-kaart-kop>:is(h2,h3,h4){display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+
+/* ---------------------------------------------------------------- telefoon · telefoon */
+@media (max-width:700px){
+  /* mobiel-ux.css geeft de werkruimte 12 px aan elke kant; +4 px = de gevraagde 16 px. Nooit breder dan het scherm. */
+  .ag-pagina{padding-inline:4px}
+  .ag-pagina-tekst h1{font-size:1.35rem}
+  .ag-pagina-icoon{width:40px;height:40px}
+  .ag-blok{padding:var(--ruimte-4)}
+  .ag-blok .ag-blok{padding:var(--ruimte-3)}
+  .ag-blok-hoofd>.ag-blok-kop{gap:var(--ruimte-2);padding:var(--ruimte-3) var(--ruimte-4)}
+  .ag-blok-hoofd>.ag-blok-kop .ag-blok-titel{font-size:1.08rem}
+  .ag-blok-hoofd>.ag-blok-inhoud{padding:var(--ruimte-4)}
+  .ag-blok-icoon{width:34px;height:34px}
+}
+@media (max-width:560px){
+  /* De knop «Згорнути» toont alleen het pijltje; de tekst blijft voor schermlezers (visueel verborgen, niet weg). */
+  .ag-blok-klap{padding-inline:10px}
+  .ag-blok-klap>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .ag-blok-kop>.ag-knoppen{margin-left:0}
+  .ag-blok-hoofd>.ag-blok-kop>.ag-knoppen{margin-left:auto}
+}
+@media (prefers-reduced-motion:reduce){
+  .ag-skelet-regel{animation:none}
+  .ag-blok-klap .ag-chevron,details.ag-blok>summary .ag-chevron,.ag-pagina .ag-stat{transition:none}
+}

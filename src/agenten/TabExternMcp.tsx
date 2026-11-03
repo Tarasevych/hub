@@ -10,8 +10,12 @@
 //   • loskoppelen haalt de verbinding, het geheugen van de hulpmiddelen en de sleutel uit de kluis weg.
 // OAuth 2.1 met dynamische clientregistratie is er NIET: dat staat er met de lijst van wat ervoor nodig is, en
 // er is geen knop. Zonder witte lijst van de eigenaar staat er wat hij in welk bestand moet zetten.
+//
+// INTEG-001 (03.11.2026): volgorde naar wat de eigenaar komt doen — eerst wat het werk blokkeert (lege witte lijst), dan de
+// verbonden servers, dan «Додати сервер», de witte lijst, en onderaan ingeklapt «Як це працює» (protocol, grenzen, OAuth).
+// De kop «Зовнішні MCP-сервери» staat al in de rand van de pagina en wordt hier niet herhaald.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Globe, Link2, Plug, RefreshCw, Trash2 } from 'lucide-react';
+import { AlertTriangle, ChevronDown, Globe, Info, Link2, Plug, RefreshCw, Server, Trash2 } from 'lucide-react';
 import { api } from '../platform/client';
 import { sessionBody } from '../agenten-gegevens';
 import { Logo, type Tr } from '../mcp-ui';
@@ -132,69 +136,25 @@ export default function TabExternMcp({ tr }: { tr: Tr }) {
       <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
       {laadFout ? <p className='ag-melding ag-melding-fout' role='alert'>{foutTekst(laadFout, tr, ['Не вдалося завантажити підключення', 'Verbindingen laden mislukt'])}</p> : null}
 
-      <section className='ag-kaart' data-extern-uitleg='1'>
-        <h3>{tr('Зовнішні MCP-сервери', 'Externe MCP-servers')}</h3>
-        <p>{tr('Тут сайт сам виступає клієнтом MCP: він підключається до чужого MCP-сервера і дає його інструменти вашому ШІ так само, як власні — з правами, підтвердженням для дій, що щось змінюють, і записом у журнал.',
-          'Hier is de site zélf MCP-klant: hij verbindt met een vreemde MCP-server en geeft diens hulpmiddelen aan uw AI net als de eigen — met rechten, bevestiging voor wat iets wijzigt, en een regel in het logboek.')}</p>
-        <p className='ag-meta'>{tr('Усе, що віддалений сервер повертає (назви, описи, результати), — це ДАНІ, а не інструкції: описи йдуть до ШІ з явною позначкою «недовірене».',
-          'Alles wat de vreemde server teruggeeft (namen, beschrijvingen, resultaten) is DATA, geen instructie: beschrijvingen gaan naar de AI met een duidelijke markering "onbetrouwbaar".')}</p>
-        {data ? (
-          <Tech rijen={[
-            [tr('Транспорти', 'Vervoer'), <span>{tr('сучасний Streamable HTTP + старий HTTP+SSE; stdio — ні (це локальний процес, не сервер)', 'modern Streamable HTTP + oud HTTP+SSE; stdio niet (dat is een lokaal proces, geen server)')}</span>],
-            [tr('Версії протоколу', 'Protocolversies'), <code>{data.protocol.versies.join(', ')}</code>],
-            [tr('Методи', 'Methoden'), <code>{data.mogelijkheden.methoden.join(', ')}</code>],
-            [tr('Межі', 'Grenzen'), <span>{tr(`${data.grenzen.perMinuut} викликів/хв · ${Math.round(Number(data.grenzen.maxBytes) / 1024)} КБ на відповідь · ${Math.round(Number(data.grenzen.timeoutMs) / 1000)} с на запит · ${data.grenzen.maxVerbindingen} підключень`,
-              `${data.grenzen.perMinuut} aanroepen/min · ${Math.round(Number(data.grenzen.maxBytes) / 1024)} kB per antwoord · ${Math.round(Number(data.grenzen.timeoutMs) / 1000)} s per verzoek · ${data.grenzen.maxVerbindingen} verbindingen`)}</span>],
-            [tr('Білий список хостів', 'Witte lijst van hosts'), <code>{data.witteLijst.hosts.length ? data.witteLijst.hosts.join(', ') : tr('порожній', 'leeg')}</code>],
-          ]} />
-        ) : null}
-      </section>
-
       {data && leeg ? (
-        <section className='ag-kaart ag-waarschuwing' role='status' data-extern-witte-lijst='leeg'>
-          <h3>{tr('Спочатку дозвольте хости (білий список власника)', 'Sta eerst hosts toe (witte lijst van de eigenaar)')}</h3>
-          <p>{tr('Жодне вихідне підключення неможливе, поки список дозволених хостів порожній. Сайт сам його не змінює: власник додає хости нижче й підписує список passkey — root перевіряє підпис і записує файл.',
-            'Geen enkele uitgaande verbinding is mogelijk zolang de lijst met toegestane hosts leeg is. De site wijzigt hem niet zelf: de eigenaar voegt hieronder hosts toe en ondertekent de lijst met zijn passkey — root controleert de handtekening en schrijft het bestand.')}</p>
+        <section className='ag-blok is-waarschuwing' role='status' data-extern-witte-lijst='leeg'>
+          <header className='ag-blok-kop'>
+            <h3 className='ag-blok-titel'><AlertTriangle aria-hidden='true' /> {tr('Спочатку дозвольте хости (білий список власника)', 'Sta eerst hosts toe (witte lijst van de eigenaar)')}</h3>
+            <p className='ag-blok-uitleg'>{tr('Жодне вихідне підключення неможливе, поки список дозволених хостів порожній. Сайт сам його не змінює: власник додає хости нижче й підписує список passkey — root перевіряє підпис і записує файл.',
+              'Geen enkele uitgaande verbinding is mogelijk zolang de lijst met toegestane hosts leeg is. De site wijzigt hem niet zelf: de eigenaar voegt hieronder hosts toe en ondertekent de lijst met zijn passkey — root controleert de handtekening en schrijft het bestand.')}</p>
+          </header>
           <p className='ag-meta'>{tr('Де: ', 'Waar: ')}<code>{data.witteLijst.bron}</code></p>
         </section>
       ) : null}
-      {/* Witte lijst beheren zonder SSH: alleen de eigenaar ziet iets zinnigs (de route eist de eigenaarsrol; anderen krijgen de uitleg). */}
-      <ExterneHosts tr={tr} ctx={besluitCtx} onKlaar={() => void laad()} />
 
-      <section className='ag-kaart' data-extern-toevoegen='1'>
-        <h3>{tr('Додати сервер', 'Server toevoegen')}</h3>
-        <label className='ag-veld'><span>{tr('Адреса MCP-сервера (https)', 'Adres van de MCP-server (https)')}</span>
-          <input type='url' inputMode='url' autoComplete='off' value={adres} placeholder='https://api.githubcopilot.com/mcp/x/all'
-            onChange={(e) => setAdres(e.target.value)} data-extern-veld='adres' />
-        </label>
-        <label className='ag-veld'><span>{tr('Назва (для себе)', 'Naam (voor uzelf)')}</span>
-          <input type='text' value={naam} onChange={(e) => setNaam(e.target.value)} maxLength={200} data-extern-veld='naam' />
-        </label>
-        <label className='ag-veld'><span>{tr('Простір', 'Ruimte')}</span>
-          <select value={ruimte} onChange={(e) => setRuimte(e.target.value === 'technisch' ? 'technisch' : 'prive')} data-extern-veld='ruimte'>
-            <option value='prive'>{tr('Приватний (ваші дані)', 'Privé (uw gegevens)')}</option>
-            <option value='technisch'>{tr('Технічний (сайт і сервер)', 'Technisch (site en server)')}</option>
-          </select>
-        </label>
-        <label className='ag-veld'><span>{tr('Токен (необовʼязково; піде у ваше сховище, не в адресу)', 'Token (optioneel; gaat naar uw kluis, niet in het adres)')}</span>
-          <GeheimInvoer t={tr} value={token} onChange={setToken} max={4096} autoComplete='off' soort='token' data={{ 'extern-veld': 'token' }} />
-        </label>
-        <p className='ag-meta'>{tr('Простір не змішується: технічне підключення ШІ ніколи не побачить приватний сервер, і навпаки.',
-          'De ruimtes worden niet gemengd: een technische AI-verbinding ziet nooit een privéserver, en omgekeerd.')}</p>
-        <div className='ag-knoppen'>
-          <Knop toon='primary' icoon={<Link2 />} bezig={acties.bezig === 'toevoegen'} disabled={!adres.trim()} onClick={() => void toevoegen()} data='extern-toevoegen'>
-            {tr('Додати', 'Toevoegen')}
-          </Knop>
-        </div>
-      </section>
-
-      <div className='ag-lijstkop'>
-        <p className='ag-lijstkop-tekst'>{data?.verbindingen.length
-          ? tr(`Підключень: ${data.verbindingen.length}`, `Verbindingen: ${data.verbindingen.length}`)
-          : tr('Поки жодного зовнішнього MCP-сервера.', 'Nog geen enkele externe MCP-server.')}</p>
-      </div>
-
-      {data === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : (
+      <section className='ag-blok' data-extern-lijst='1'>
+        <header className='ag-blok-kop'>
+          <h3 className='ag-blok-titel'><Server aria-hidden='true' /> {tr('Підключені сервери', 'Verbonden servers')}{data?.verbindingen.length ? <span className='ag-teller'>{data.verbindingen.length}</span> : null}</h3>
+          <p className='ag-blok-uitleg'>{tr('Кожен сервер можна перевірити, вимкнути або відключити; його інструменти вмикаються поодинці в рядку сервера.', 'Elke server kunt u testen, uitzetten of loskoppelen; zijn hulpmiddelen zet u apart aan in de rij van de server.')}</p>
+        </header>
+      {data === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : !data.verbindingen.length ? (
+        <p className='ag-leeg' data-extern-leeg='1'>{tr('Поки жодного зовнішнього MCP-сервера. Додайте перший у блоці «Додати сервер» нижче.', 'Nog geen enkele externe MCP-server. Voeg de eerste toe in het blok «Server toevoegen» hieronder.')}</p>
+      ) : (
         <ul className='ag-lijst' data-lijst='extern-mcp'>
           {data.verbindingen.map((v) => {
             const sleutel = `ext:${v.id}`;
@@ -262,16 +222,78 @@ export default function TabExternMcp({ tr }: { tr: Tr }) {
           })}
         </ul>
       )}
+      </section>
+
+      <section className='ag-blok' data-extern-toevoegen='1'>
+        <header className='ag-blok-kop'>
+          <h3 className='ag-blok-titel'><Link2 aria-hidden='true' /> {tr('Додати сервер', 'Server toevoegen')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Лише https-адреса з білого списку власника; після додавання натисніть у рядку сервера «Перевірити зʼєднання».', 'Alleen een https-adres van de witte lijst van de eigenaar; klik na het toevoegen in de rij van de server op «Verbinding testen».')}</p>
+        </header>
+        <div className='ag-formraster'>
+          <label className='ag-veld ag-veld-vol'><span>{tr('Адреса MCP-сервера (https)', 'Adres van de MCP-server (https)')}</span>
+            <input type='url' inputMode='url' autoComplete='off' value={adres} placeholder='https://api.githubcopilot.com/mcp/x/all'
+              onChange={(e) => setAdres(e.target.value)} data-extern-veld='adres' />
+          </label>
+          <label className='ag-veld'><span>{tr('Назва (для себе)', 'Naam (voor uzelf)')}</span>
+            <input type='text' value={naam} onChange={(e) => setNaam(e.target.value)} maxLength={200} data-extern-veld='naam' />
+          </label>
+          <label className='ag-veld'><span>{tr('Простір', 'Ruimte')}</span>
+            <select value={ruimte} onChange={(e) => setRuimte(e.target.value === 'technisch' ? 'technisch' : 'prive')} data-extern-veld='ruimte'>
+              <option value='prive'>{tr('Приватний (ваші дані)', 'Privé (uw gegevens)')}</option>
+              <option value='technisch'>{tr('Технічний (сайт і сервер)', 'Technisch (site en server)')}</option>
+            </select>
+          </label>
+          <label className='ag-veld ag-veld-vol'><span>{tr('Токен (необовʼязково; піде у ваше сховище, не в адресу)', 'Token (optioneel; gaat naar uw kluis, niet in het adres)')}</span>
+            <GeheimInvoer t={tr} value={token} onChange={setToken} max={4096} autoComplete='off' soort='token' data={{ 'extern-veld': 'token' }} />
+          </label>
+        </div>
+        <p className='ag-meta'>{tr('Простір не змішується: технічне підключення ШІ ніколи не побачить приватний сервер, і навпаки.',
+          'De ruimtes worden niet gemengd: een technische AI-verbinding ziet nooit een privéserver, en omgekeerd.')}</p>
+        <div className='ag-knoppen'>
+          <Knop toon='primary' icoon={<Link2 />} bezig={acties.bezig === 'toevoegen'} disabled={!adres.trim()} onClick={() => void toevoegen()} data='extern-toevoegen'>
+            {tr('Додати', 'Toevoegen')}
+          </Knop>
+        </div>
+      </section>
+
+      {/* Witte lijst beheren zonder SSH: alleen de eigenaar ziet iets zinnigs (de route eist de eigenaarsrol; anderen krijgen de uitleg). */}
+      <ExterneHosts tr={tr} ctx={besluitCtx} onKlaar={() => void laad()} />
 
       {data && !data.oauth.geimplementeerd ? (
-        <section className='ag-kaart' data-extern-oauth='niet-klaar'>
-          <h3><Globe size={16} aria-hidden='true' /> {tr('OAuth 2.1 з динамічною реєстрацією — ще не реалізовано', 'OAuth 2.1 met dynamische registratie — nog niet geïmplementeerd')}</h3>
-          <p>{tr('Сервери, які вимагають саме цього (наприклад MCP-сервер GitHub), поки підключити не вдасться. Кнопки для цього немає навмисно: вона б нічого не робила. Токен у заголовку Authorization працює повністю.',
-            'Servers die juist dit vereisen (bijvoorbeeld de MCP-server van GitHub) zijn nog niet te koppelen. Er staat bewust geen knop: die zou niets doen. Een token in de Authorization-kop werkt volledig.')}</p>
-          <ol className='ag-stappen'>{data.oauth.ontbreekt.map((regel) => <li key={regel}>{regel}</li>)}</ol>
-          <p className='ag-meta'><code>{data.oauth.code}</code></p>
+        <section className='ag-blok' data-extern-oauth='niet-klaar'>
+          <header className='ag-blok-kop'>
+            <h3 className='ag-blok-titel'><Info aria-hidden='true' /> {tr('OAuth 2.1 з динамічною реєстрацією — ще не реалізовано', 'OAuth 2.1 met dynamische registratie — nog niet geïmplementeerd')}</h3>
+            <p className='ag-blok-uitleg'>{tr('Сервери, які вимагають саме цього (наприклад MCP-сервер GitHub), поки підключити не вдасться. Кнопки для цього немає навмисно: вона б нічого не робила. Токен у заголовку Authorization працює повністю.',
+              'Servers die juist dit vereisen (bijvoorbeeld de MCP-server van GitHub) zijn nog niet te koppelen. Er staat bewust geen knop: die zou niets doen. Een token in de Authorization-kop werkt volledig.')}</p>
+          </header>
+          <details className='ag-uitklap'>
+            <summary>{tr('Що для цього ще бракує', 'Wat daarvoor nog ontbreekt')}</summary>
+            <ol className='ag-stappen'>{data.oauth.ontbreekt.map((regel) => <li key={regel}>{regel}</li>)}</ol>
+            <p className='ag-meta'><code>{data.oauth.code}</code></p>
+          </details>
         </section>
       ) : null}
+
+      <details className='ag-blok ag-blok-uitklap' data-extern-uitleg='1'>
+        <summary className='ag-blok-kop'>
+          <h3 className='ag-blok-titel'><Globe aria-hidden='true' /> {tr('Як це працює: протокол, межі, безпека', 'Hoe het werkt: protocol, grenzen, veiligheid')}</h3>
+          <ChevronDown className='ag-chevron' aria-hidden='true' />
+        </summary>
+        <p>{tr('Тут сайт сам виступає клієнтом MCP: він підключається до чужого MCP-сервера і дає його інструменти вашому ШІ так само, як власні — з правами, підтвердженням для дій, що щось змінюють, і записом у журнал.',
+          'Hier is de site zélf MCP-klant: hij verbindt met een vreemde MCP-server en geeft diens hulpmiddelen aan uw AI net als de eigen — met rechten, bevestiging voor wat iets wijzigt, en een regel in het logboek.')}</p>
+        <p className='ag-meta'>{tr('Усе, що віддалений сервер повертає (назви, описи, результати), — це ДАНІ, а не інструкції: описи йдуть до ШІ з явною позначкою «недовірене».',
+          'Alles wat de vreemde server teruggeeft (namen, beschrijvingen, resultaten) is DATA, geen instructie: beschrijvingen gaan naar de AI met een duidelijke markering "onbetrouwbaar".')}</p>
+        {data ? (
+          <Tech rijen={[
+            [tr('Транспорти', 'Vervoer'), <span>{tr('сучасний Streamable HTTP + старий HTTP+SSE; stdio — ні (це локальний процес, не сервер)', 'modern Streamable HTTP + oud HTTP+SSE; stdio niet (dat is een lokaal proces, geen server)')}</span>],
+            [tr('Версії протоколу', 'Protocolversies'), <code>{data.protocol.versies.join(', ')}</code>],
+            [tr('Методи', 'Methoden'), <code>{data.mogelijkheden.methoden.join(', ')}</code>],
+            [tr('Межі', 'Grenzen'), <span>{tr(`${data.grenzen.perMinuut} викликів/хв · ${Math.round(Number(data.grenzen.maxBytes) / 1024)} КБ на відповідь · ${Math.round(Number(data.grenzen.timeoutMs) / 1000)} с на запит · ${data.grenzen.maxVerbindingen} підключень`,
+              `${data.grenzen.perMinuut} aanroepen/min · ${Math.round(Number(data.grenzen.maxBytes) / 1024)} kB per antwoord · ${Math.round(Number(data.grenzen.timeoutMs) / 1000)} s per verzoek · ${data.grenzen.maxVerbindingen} verbindingen`)}</span>],
+            [tr('Білий список хостів', 'Witte lijst van hosts'), <code>{data.witteLijst.hosts.length ? data.witteLijst.hosts.join(', ') : tr('порожній', 'leeg')}</code>],
+          ]} />
+        ) : null}
+      </details>
     </div>
   );
 }

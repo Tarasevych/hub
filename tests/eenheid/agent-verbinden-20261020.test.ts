@@ -124,7 +124,9 @@ export async function main(): Promise<number> {
   const connectors = lees('src/connector-v2/ConnectorsTab.tsx');
   check('«Конектори»: de kaart gebruikt dezelfde ware stand (standVanAgent) en markeert de oude weg (is-oud)', connectors.includes('export const standVanAgent') && connectors.includes('standVanAgent(a)') && connectors.includes("'is-oud'"));
   const overzichtBron = lees('src/agenten/AgentenPagina.tsx');
-  check('«Огляд»: de ingangen per AI tonen de ware stand', overzichtBron.includes('useV2Overzicht') && overzichtBron.includes('data-agent-ingang-stand='));
+  // INTEG-001 (03.11.2026, «блоки не повторюються»): de ware stand per AI staat op één plek — de kaarten van «Конектори»
+  // (data-v2-stand); «Огляд» herhaalde dezelfde zes AI en doet dat niet meer. useV2Overzicht blijft voor de blokkadebanner.
+  check('de ware stand per AI staat één keer: in de kaarten van «Конектори», niet nog eens in «Огляд»', overzichtBron.includes('useV2Overzicht') && !overzichtBron.includes('data-agent-ingang-stand=') && connectors.includes('data-v2-stand={ware.code}'));
 
   // ================================================================ 5. admin → Доступ ШІ: stand per agent, link naar #agent/<slug>, geen eigen tekenblok
   const admin = lees('src/BeheerAiBeleidWeergave.tsx');
@@ -152,7 +154,9 @@ export async function main(): Promise<number> {
 
   // ================================================================ 7. navigatie: alles over AI in het AI-deel, met een directe weg naar #agent/<slug>
   check('ai.*/agents heeft directe ingangen per AI naar de hub (#agent/<slug>)', lees('src/AIDienstWeergave.tsx').includes("hubUrl(`agent/${a.slug}`)") && lees('src/AIDienstWeergave.tsx').includes("data-ai-agent-ingangen='1'"));
-  check('«Підключені ШІ» (hub #ai) en het bord linken naar de plek van de agent', lees('src/agenten/TabAi.tsx').includes("href={`#agent/${a.slug}`}") && lees('src/agenten/AgentBord.tsx').includes("data-knop='agent-pagina'"));
+  // INTEG-001 (03.11.2026, «блоки не повторюються»): «Підключені ШІ» heeft geen eigen zes knoppen «Підключити <ШІ>» meer (dubbel met
+  // «Конектори»); het bord zit nu ín het blok «Підключити новий ШІ» van TabAi en linkt per AI naar zijn plek (data-knop='agent-pagina').
+  check('«Підключені ШІ» (hub #ai) toont het bord, en het bord linkt naar de plek van de agent', lees('src/agenten/TabAi.tsx').includes('<AgentBord tr={tr} ingebed />') && lees('src/agenten/AgentBord.tsx').includes("data-knop='agent-pagina'") && !lees('src/agenten/TabAi.tsx').includes('data-ai-agent-ingangen'));
   const uitleg = V2_AGENTEN.map((a) => `${a.uk} ${a.nl}`).join(' ');
   check('de korte uitleg per agent (shared) noemt geen Customize-pad, geen /mcp en geen /ai/ meer', !/Customize/.test(uitleg) && !/\/mcp\b/.test(uitleg) && !/\/ai\//.test(uitleg) && V2_AGENTEN.every((a) => a.uk !== a.nl));
 
