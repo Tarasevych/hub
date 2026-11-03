@@ -1,11 +1,13 @@
 /* Twee ruimtes (vlag tech-ruimtes-v2): wisselknop, startvenster, «Доступ і терміни», uitlogkeuzes. Kleur per ruimte; licht/donker via
-   html.theme-dark en prefers-color-scheme. Geen vaste hoogtes die kunnen knipperen. */
+   de themaklassen (theme-light/-dark/-plum-…) op <html> en .canonical-chrome — nooit via prefers-color-scheme: het thema is dat van de site, niet
+   van het apparaat (INTEG-001: «Apparaat»/«Авто» wordt eerst tot een klasse omgezet. De oude mediaregel liet de wisselaar het
+   apparaat volgen zodra <html> nog geen themaklasse had, en was een bekende overtreding van de themaregel in tokens.css). Geen vaste
+   hoogtes die kunnen knipperen. */
 /* Schakelaar «Звичайний | Технічний»: één spoor met één schuivend blokje onder de actieve ruimte (geen twee losse knoppen).
    Kleur per thema: licht → donkerteal voor «Звичайний», donker amber voor «Технічний»; donker thema → felle varianten. Tekst op
    het blokje ≥ 4,5:1. De stand staat er altijd onder, in dezelfde stijl in beide standen. */
 :root,.theme-light,.theme-plum-light{--rw-prive:#0f766e;--rw-prive-fg:#ffffff;--rw-tech:#b45309;--rw-tech-fg:#ffffff;--rw-spoor:#e4e8ee;--rw-tekst:#374151;--rw-rand:rgba(92,110,142,.28)}
 .theme-dark,.theme-plum-dark{--rw-prive:#14b8a6;--rw-prive-fg:#04201d;--rw-tech:#f5b400;--rw-tech-fg:#1a1200;--rw-spoor:#222b38;--rw-tekst:#c3cbd5;--rw-rand:rgba(189,201,223,.22)}
-@media (prefers-color-scheme:dark){html:not(.theme-light):not(.theme-plum-light){--rw-prive:#14b8a6;--rw-prive-fg:#04201d;--rw-tech:#f5b400;--rw-tech-fg:#1a1200;--rw-spoor:#222b38;--rw-tekst:#c3cbd5;--rw-rand:rgba(189,201,223,.22)}}
 .rw{display:flex;flex-direction:column;align-items:flex-start;gap:4px;max-width:100%}
 .rw-rij{display:flex;align-items:center;gap:8px;max-width:100%}
 .rw-seg{position:relative;isolation:isolate;display:grid;grid-template-columns:1fr 1fr;min-width:0;max-width:100%;padding:3px;border-radius:999px;background:var(--rw-spoor);box-shadow:inset 0 0 0 1px var(--rw-rand)}
