@@ -12,7 +12,10 @@ import './index.css';
 import './ontwerp/fundament.css'; // фундамент дизайну 20.10.2026: токени → примітиви → мобільна верстка (після preflight)
 import './mobiel-ux.css';
 import './platform/sluitknop.css'; // gecentreerde sluitknoppen (specificiteit 0)
-import './afdruk.css'; // afdrukken (Ctrl+P): de hele pagina op papier, schil weg (zoekronde 02.11.2026)
+import './afdruk.css'; // afdrukken (Ctrl+P): de hele pagina op papier, schil weg (zoekronde 02.11.2026; herzien INTEG-001 print)
+import { installeerAfdruk } from './platform/afdruk'; // vlak vóór het afdrukken: vaste/afgeknipte vakken vrijmaken, knoppen sorteren (INTEG-001 print)
+
+installeerAfdruk(); // beforeprint/afterprint + Ctrl+P; op elke pagina en elk subdomein, ook de gastpagina
 
 // Menu v2 fase B1: als deze pagina vooraf wordt voorbereid (Speculation Rules «prerender», alleen als de eigenaar dat aanzet),
 // start de app — en dus elk API-verzoek, sessie- of tabbladwerk — pas wanneer de gebruiker de pagina echt opent (activering).
