@@ -1392,4 +1392,4 @@ Bij privétoegang gebruikt de site het bestaande, afgeschermde GitHub-token van 
 
 Check bij weigering: juiste taak-commit, `orchestratie/ontwikkelarchieven/<TAAK-ID>.json` op die commit, branch-geschiedenis, Release-tag die gelijk is aan `UITROL-VERSIE`, assetnaam en assetdigest. Een ontbrekende of ontoegankelijke GitHub Release is geen toestemming om door te gaan. De eigenaar blijft de installatie met Passkey goedkeuren; TRACE-001 verleent geen automatische installatierechten.
 
-Canon: `AGENTS.md` §5, `orchestratie/beleid.json` v1.4.0, `orchestratie/BESLUITEN.md` B-007 en `deploy/REGELS-UITROLPAKKET.md` §7.
+Canon: `AGENTS.md` §5, `orchestratie/beleid.json` v1.4.1, `orchestratie/BESLUITEN.md` B-007 en `deploy/REGELS-UITROLPAKKET.md` §7.
