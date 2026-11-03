@@ -1,6 +1,8 @@
 // Meldingen: gedeelde types, de levensduur van de pop-up, en het samenvoegen van herhalingen. Zuiver waar mogelijk, zodat de regels
 // zonder browser getest kunnen worden (tests/eenheid/mededeling-ontdubbelen.test.ts).
 
+import type { MeldingType } from '../shared/melding-typen';
+
 export type CanonicalNoticeKind = 'info' | 'success' | 'warning' | 'error';
 export type CanonicalNoticeAction = { label: string; onAction: () => void | Promise<void> };
 export type CanonicalNoticeDetailIcon = 'scope' | 'query' | 'server' | 'provider' | 'results' | 'durable' | 'request' | 'saved' | 'cursor' | 'duration' | 'accounts' | 'error';
@@ -30,6 +32,10 @@ export type CanonicalNoticeInput = {
    * nog eens als «нова» in het paneel.
    */
   meldingId?: string;
+  /** Het type (voorkeuren per type) als de bron het al weet; anders volgt het uit `source` (shared/melding-soorten.ts typeVanBron). */
+  type?: MeldingType;
+  /** Voorbeeld uit «Типи сповіщень»: altijd tonen (geen samenvoegen), niet bewaren. */
+  voorbeeld?: boolean;
 };
 
 /* `ruimte` (20.10.2026): de gegevenslade van de melding zoals de server haar vaststelde ('prive' ook voor oude rijen zonder veld); ontbreekt het veld, dan beslist shared/meldingen-ruimte.ts op soort en link. */

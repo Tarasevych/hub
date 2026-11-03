@@ -2,15 +2,41 @@
 // tussen tabbladen nagebootst, render met react-dom/server) en waar nodig de bron.
 //   A. dubbele meldingen: oorzaken en herstel (tabbladen, herhaling, twee bronnen, servermelding in twee lijsten)
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { checker } from './hulp/nep-google';
 import { AUTO_SECONDEN, BRON_DUBBEL_MS, GEZIEN_VENSTER_MS, SAMENVOEG_MS, isBronDuplicaat, popupLevensduurMs, samenvoegDoel, uniekOpId, voegHerhalingToe } from '../../src/canoniek-meldingen';
 import { MIN_NA_PAUZE_MS, fractie, gepauzeerd, klaar, nieuweAftelling, pauze, tik, verleng } from '../../src/meldingen/aftelling';
-import { MELDING_TYPE_IDS, MELDING_WEERGAVEN, isKritiekType, metWeergave, normaliseerTypeVoorkeuren, standaardTypeVoorkeur, voorkeurVoor, weergaveVan } from '../../shared/melding-typen';
+import { MELDING_TYPES, MELDING_TYPE_IDS, MELDING_WEERGAVEN, isKritiekType, metWeergave, normaliseerTypeVoorkeuren, standaardTypeVoorkeur, voorkeurVoor, weergaveVan } from '../../shared/melding-typen';
 import { historyKey, readRows, werkRijenBij, type BewaardeRij } from '../../src/meldingen/lokale-rijen';
 import { ontdubbelBronnen, zelfdeGebeurtenis, type V2Melding } from '../../shared/meldingen-v2/groepering';
 
 const lees = (p: string) => readFileSync(p, 'utf8');
 const code = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+/** Minimale nagebootste browser (zoals meldingen-mobiel-20261021): genoeg om de panelen in node te renderen. */
+function nepBrowser(host = 'https://hub.tarasevych.com/'): () => void {
+  const g = globalThis as Record<string, unknown>;
+  const voor = new Map(['window', 'document', 'location', 'sessionStorage', 'localStorage', 'history', 'navigator'].map((k) => [k, Object.getOwnPropertyDescriptor(g, k)]));
+  const opslag = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, String(v)); }, removeItem: (k: string) => { m.delete(k); }, clear: () => m.clear(), key: () => null, length: 0 }; };
+  const u = new URL(host);
+  const maakEl = () => { const attrs = new Map<string, string>(); return { attrs, dataset: {}, style: {}, setAttribute: (k: string, v: string) => { attrs.set(k, String(v)); }, getAttribute: (k: string) => attrs.get(k) ?? null, getContext: () => null }; };
+  const doc = {
+    hidden: false, title: '', cookie: '', head: { appendChild: (el: unknown) => el }, body: null,
+    addEventListener: () => undefined, removeEventListener: () => undefined,
+    querySelector: () => null, querySelectorAll: () => [], getElementById: () => null, createElement: () => maakEl(),
+    documentElement: { lang: 'uk', dataset: {}, style: { setProperty: () => undefined }, classList: { contains: () => false, add: () => undefined, remove: () => undefined } },
+  };
+  Object.defineProperty(g, 'document', { value: doc, configurable: true, writable: true });
+  Object.defineProperty(g, 'location', { value: { href: u.href, origin: u.origin, host: u.host, hostname: u.hostname, pathname: u.pathname, search: u.search, hash: u.hash, protocol: u.protocol, assign: () => undefined, replace: () => undefined, reload: () => undefined }, configurable: true, writable: true });
+  Object.defineProperty(g, 'sessionStorage', { value: opslag(), configurable: true, writable: true });
+  Object.defineProperty(g, 'localStorage', { value: opslag(), configurable: true, writable: true });
+  Object.defineProperty(g, 'history', { value: { pushState: () => undefined, replaceState: () => undefined, state: null }, configurable: true, writable: true });
+  g.window = Object.assign(g, { name: '', addEventListener: () => undefined, removeEventListener: () => undefined, dispatchEvent: () => true, postMessage: () => undefined, setTimeout, clearTimeout, setInterval, clearInterval, requestAnimationFrame: (f: () => void) => setTimeout(f, 0), matchMedia: () => ({ matches: false, addEventListener: () => undefined, removeEventListener: () => undefined }) });
+  runInNewContext(readFileSync('public/canonical-service.js', 'utf8'), { window: g, location: g.location, document: doc, addEventListener: () => undefined, Date, Math, Number, String, Object, Array, JSON, URLSearchParams, URL });
+  return () => { for (const [k, d] of voor) { if (d) Object.defineProperty(g, k, d); else delete g[k]; } delete g.__TSV_CANONICAL_SERVICE__; };
+}
 
 /** localStorage dat door «tabbladen» gedeeld wordt; sessionStorage per tabblad. */
 function nepOpslag() {
@@ -145,6 +171,30 @@ export async function main(): Promise<number> {
   const act = lees('src/connector-activiteit.ts');
   check('B5 activiteit geeft de pop-up haar regel (meldingId a:<id>) en over wie/wat het gaat (context) mee', act.includes('const meldingId = `a:${e.id}`, context = activiteitContext(e, l);') && (act.match(/meldingId, context/g) || []).length >= 2);
   check('B5 pop-up: «Відкрити: …» (ook zonder link: het onderdeel) en «Очистити» → gelezen + Архів', belB.includes('sectieLink(toastStijl.section, p.lang)') && belB.includes("data-qa-id='melding-opruimen' onClick={ruimToastOp}") && belB.includes("status: 'archief'"));
+
+  // ------------------------------------------------------------------ C. instellingen per type (render uk + nl)
+  const herstelC = nepBrowser();
+  try {
+    const Paneel = (await import('../../src/meldingen/MeldingVoorkeurenPaneel')).default;
+    const html = (lang: 'uk' | 'nl') => renderToStaticMarkup(createElement(Paneel, { lang, techTypen: false }));
+    const uk = html('uk'), nl = html('nl');
+    const rijen = (h: string) => (h.match(/class="mv-rij[^"]*" data-mv-type="/g) || []).length;
+    const prive = MELDING_TYPE_IDS.filter((t) => MELDING_TYPES[t].ruimte === 'prive').length;
+    check('C1 elke persoonlijke soort één rij met drie keuzes (як показувати, поведінка, тривалість) + «Приклад»',
+      rijen(uk) === prive && (uk.match(/data-mv-veld="weergave"/g) || []).length === prive && (uk.match(/data-mv-veld="gedrag"/g) || []).length === prive && (uk.match(/data-mv-veld="seconden"/g) || []).length === prive && (uk.match(/data-mv-voorbeeld="/g) || []).length === prive, `${rijen(uk)}/${prive}`);
+    check('C1 vier manieren + «не показувати» in gewone woorden (uk)', ['Спливає зі звуком', 'Лише спливає (без звуку)', 'Лише звук (без спливання)', 'Лише в панелі (тихо)', 'Не показувати'].every((s) => uk.includes(s)));
+    check('C1 поведінка: «Зникає за таймером» / «Висить, доки не закрию»; тривалість «Авто» of seconden', uk.includes('Зникає за таймером') && uk.includes('Висить, доки не закрию') && uk.includes('Авто (за типом і текстом)') && uk.includes('>14 с<'));
+    check('C1 nl: dezelfde keuzes in het Nederlands', ['Pop-up met geluid', 'Alleen pop-up (zonder geluid)', 'Alleen geluid (geen pop-up)', 'Alleen in het paneel (stil)', 'Niet tonen', 'Verdwijnt na de tijd', 'Blijft staan tot ik sluit', 'Auto (volgens soort en tekst)'].every((s) => nl.includes(s)));
+    const bev = uk.slice(uk.indexOf('data-mv-type="beveiliging"'), uk.indexOf('data-mv-type="toegang"'));
+    check('C1 beveiliging: «Не показувати» uitgeschakeld + uitleg; standaard «Зникає за таймером» (niet vast)', /<option value="uit" disabled="">Не показувати<\/option>/.test(bev) && bev.includes('приховати — ні') && /data-mv-veld="gedrag"[^>]*>[\s\S]*?<option value="timer" selected="">/.test(bev));
+    const engels = /\b(Sound|Popup only|Show|Hide|Duration|Behaviour|Behavior|Example|Panel only)\b/;
+    check('C1 geen Engelse tekst in uk of nl', !engels.test(uk.replace(/<[^>]+>/g, ' ')) && !engels.test(nl.replace(/<[^>]+>/g, ' ')));
+  } finally {
+    herstelC();
+  }
+  const v2bron = lees('src/meldingen/v2/MeldingenV2.tsx');
+  check('C2 meldingen v2: dezelfde typekeuzes bovenaan «Правила сповіщень» (één systeem)', v2bron.includes("<MeldingVoorkeurenPaneel lang={lang} techTypen={!!p.techTypen} />") && v2bron.includes("data-mv2-typen='1'"));
+  check('C2 een regel «Тихе/Вимкнене» per bron maakt de pop-up en het geluid stil (beveiliging niet)', belB.includes("const regelStil = !!regel && (regel.modus === 'stil' || regel.modus === 'uit') && !isKritiekType(type);") && belB.includes('!dnd && !dubbel && !regelStil'));
 
   return einde();
 }

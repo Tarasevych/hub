@@ -12,7 +12,9 @@ import { fractie, gepauzeerd, klaar, nieuweAftelling, pauze as pauzeAftelling, t
 // UI-007 (29.10.2026): vlag `meldingen-v2` (standaard UIT) — compact aandachtscentrum in hetzelfde paneel; zonder vlag alles zoals het was.
 import MeldingenV2 from './meldingen/v2/MeldingenV2';
 import { useMeldingenV2, meldingenV2Nu } from './meldingen/v2/vlag';
-import { useLeverRegels, nietStorenActief } from './meldingen/v2/regels-opslag';
+import { useLeverRegels, nietStorenActief, regelsNu } from './meldingen/v2/regels-opslag';
+import { geldendeRegel } from '../shared/meldingen-v2/beleid';
+import { dienstVan } from './meldingen/v2/omzetten';
 import { bouwModel } from './meldingen/v2/model';
 import { useUitlegV3 } from './meldingen/v2/vlag-uitleg';
 import { useStatusStand, wijzigStatus } from './meldingen/v2/status-opslag';
@@ -218,7 +220,7 @@ export default function CanonicalNotificationCenter(p: Props) {
   const receive = (notice: CanonicalNoticeInput, origin: 'prop' | 'event', opties: { type?: MeldingType; geluid?: boolean; serverId?: string } = {}) => {
     const tekst = notice.text.trim();
     if (!tekst) return;
-    const type = opties.type ?? typeVanBron(notice.source);
+    const type = opties.type ?? notice.type ?? typeVanBron(notice.source);
     const kind: CanonicalNoticeKind = notice.kind || 'info';
     const nu = Date.now();
     const sectie = styleOf(notice.source || '', propsRef.current.lang).section;
@@ -226,9 +228,12 @@ export default function CanonicalNotificationCenter(p: Props) {
     // INTEG-001 (oude fout): «Не турбувати» beloofde «без звуку й спливних вікон», maar alleen het geluid zweeg. Nu ook geen pop-up
     // (beveiliging blijft opduiken). En één gebeurtenis die uit twee bronnen binnenkomt (dienst + serveractiviteit) krijgt één pop-up.
     const dnd = meldingenV2Nu() && nietStorenActief() && !isKritiekType(type);
-    const dubbel = isBronDuplicaat(recentePopups.current, { sectie, kind, transient: !!notice.transient }, nu);
-    const voorkeur = { ...basis, opduiken: basis.opduiken && !dnd && !dubbel };
-    const geluid = (opties.geluid ?? voorkeur.geluid) && !dubbel;
+    // Meldingen v2: een regel «Тихе»/«Вимкнене» voor deze bron maakt het stiller (geen pop-up, geen geluid); beveiliging nooit.
+    const regel = meldingenV2Nu() ? geldendeRegel(regelsNu(), { dienst: dienstVan(notice.source || ''), categorie: String(notice.source || '').toLowerCase() }) : null;
+    const regelStil = !!regel && (regel.modus === 'stil' || regel.modus === 'uit') && !isKritiekType(type);
+    const dubbel = !notice.voorbeeld && isBronDuplicaat(recentePopups.current, { sectie, kind, transient: !!notice.transient }, nu);
+    const voorkeur = { ...basis, opduiken: basis.opduiken && !dnd && !dubbel && !regelStil };
+    const geluid = (opties.geluid ?? voorkeur.geluid) && !dubbel && !regelStil;
     if (!voorkeur.tonen) {
       if (origin === 'prop') propsRef.current.onDismissNotice?.(tekst);
       return;
@@ -238,14 +243,14 @@ export default function CanonicalNotificationCenter(p: Props) {
     // Een gelukte stap lost eerdere fouten met hetzelfde onderwerp op, ook als deze melding zelf geen pop-up krijgt.
     if (notice.topic && kind === 'success') saveRetained((rijen) => losOpEerdere(rijen, notice.topic!));
 
-    if (notice.transient) {
+    if (notice.transient && !notice.voorbeeld) {
       // Activiteit en servermeldingen: dezelfde melding binnen het venster geeft maar één pop-up.
       const sleutel = groep || tekst;
       const laatst = toastRecentRef.current.get(sleutel);
       if (laatst && nu - laatst < SAMENVOEG_MS) return;
       toastRecentRef.current.set(sleutel, nu);
       if (toastRecentRef.current.size > 100) toastRecentRef.current.delete(toastRecentRef.current.keys().next().value as string);
-    } else if (groep) {
+    } else if (groep && !notice.transient) {
       // Herhaling: één regel met een teller, geen nieuwe pop-up. Al gelezen → blijft gelezen (ook na uren, zie GEZIEN_VENSTER_MS).
       const bestaand = samenvoegDoel(leesOpslag(propsRef.current.scope) ?? retainedRef.current, groep, nu, notice.dedupeSeconds ? notice.dedupeSeconds * 1000 : SAMENVOEG_MS);
       if (bestaand) {
@@ -794,6 +799,7 @@ export default function CanonicalNotificationCenter(p: Props) {
               geluid={sound}
               onGeluid={toggleSound}
               onSluiten={() => setPanelOpen(false)}
+              techTypen={!!tech.profiel}
               tech={techRegel ? { aantal: techUnread, open: () => { setPanelOpen(false); openTechMeldingen(); }, tekst: techSamenvattingTekst(p.lang, techUnread) } : null}
             />
           ) : (
