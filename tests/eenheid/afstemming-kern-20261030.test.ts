@@ -16,7 +16,7 @@
 //   8. KARTOTHEEK. Zoeken, filters, sorteren, paginering voorbij de oude afkap (120 kaarten → 2 pagina's).
 //   9. ANDERMANS. Een tweede eigenaar heeft zijn eigen seed en ziet kaart A niet.
 import { randomBytes, randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { getPool } from '../../server/platform/pg';
 import { afstemmingKernRoutes } from '../../backend/afstemming-kern';
 import { legacyGezondheid } from '../../backend/afstemming-opslag';
@@ -29,6 +29,13 @@ type Antw = { status: number; uit: Record<string, any> };
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('afstemming-kern-20261030');
+  // INTEG-001: het dossiervoorbeeld (sectie 7) staat NIET in de repository maar in een scratchpad van de dossiermaker. Ontbreekt het,
+  // dan melden we dat luid en slaan alleen de controles over die het nodig hebben; alle andere controles blijven actief.
+  const voorbeeldPad = '/tmp/claude-0/-home-claude/f943cf5d-3cc4-51bc-b43c-9444f1095af1/scratchpad/ui014/Mijn_Ruimte_UI-014_Afstemming_vNext/03_Examples/feature-UI-014-example.json';
+  const heeftVoorbeeld = existsSync(voorbeeldPad);
+  if (!heeftVoorbeeld) console.log(`OVERGESLAGEN afstemming-kern: fixture ontbreekt (${voorbeeldPad})`);
+  // Deze test draait tegen de echte Postgres (zonder stubs); zonder database is er niets te controleren (zelfde stijl als agent-namens).
+  if (!process.env.DATABASE_URL_SYSTEM && !process.env.DATABASE_URL) { console.log('OVERGESLAGEN afstemming-kern (integratie): geen database'); return einde(); }
   const pool = getPool('systeem');
   const sfx = randomBytes(4).toString('hex');
   // In de db staan de testmensen als 'member' (app.records staat maar één echte owner-rij toe — records_een_eigenaar);
@@ -133,18 +140,28 @@ export async function main(): Promise<number> {
     check('verschil met onbekende revisie → 404 REVISIE_ONBEKEND', await roep(rA, 'verschil', { id: k1.id, revisieA: randomUUID(), revisieB: w1.uit.revisie.id }).then((r) => r.status === 404));
 
     // ================================================================ 7. import
-    const voorbeeldJson = readFileSync('/tmp/claude-0/-home-claude/f943cf5d-3cc4-51bc-b43c-9444f1095af1/scratchpad/ui014/Mijn_Ruimte_UI-014_Afstemming_vNext/03_Examples/feature-UI-014-example.json', 'utf8');
-    const impJ = await roep(rA, 'import', { actie: 'voorbeeld', naam: 'feature-UI-014-example.json', formaat: 'json', inhoud: voorbeeldJson });
-    check('import-json (dossiervoorbeeld): titel uk, 4 criteria, P1, externId UI-014, criteria niet onzeker', impJ.status === 200 && impJ.uit.kaart.titel[0].includes('картотека') && impJ.uit.kaart.criteria.length === 4 && impJ.uit.kaart.prioriteit === 'P1' && impJ.uit.kaart.externId === 'UI-014' && !impJ.uit.onzeker.includes('criteria'));
-    check('verificatie «integration + production» → integration (eerste bekende soort)', impJ.uit.kaart.criteria[1].verificatie === 'integration');
-    const vast = await roep(rA, 'import', { actie: 'vastleggen', invoerHash: impJ.uit.invoerHash, kaart: impJ.uit.kaart });
-    check('vastleggen: kaart UI-014, bronSoort import', vast.status === 200 && vast.uit.hergebruikt === false && vast.uit.kaart.externId === 'UI-014' && vast.uit.kaart.bronSoort === 'import');
-    const vast2 = await roep(rA, 'import', { actie: 'vastleggen', invoerHash: impJ.uit.invoerHash, kaart: impJ.uit.kaart });
-    check('zelfde invoer nóg eens vastleggen → hergebruikt, zelfde kaart (scenario 1 van het dossier)', vast2.uit.hergebruikt === true && vast2.uit.kaart.id === vast.uit.kaart.id);
-    const impJ2 = await roep(rA, 'import', { actie: 'voorbeeld', naam: 'feature-UI-014-example.json', formaat: 'json', inhoud: voorbeeldJson });
-    check('voorbeeld van dezelfde inhoud ná vastleggen → bestaand verwijst naar de kaart', impJ2.uit.bestaand?.kaartId === vast.uit.kaart.id);
-    const impVergelijk = await roep(rA, 'import', { actie: 'voorbeeld', naam: 'idee.txt', formaat: 'txt', inhoud: 'Розумна картотека можливостей для команди\nдодаткові деталі' });
-    check('vergelijkbaar: lexicale buur (кartотека можливостей) gevonden met reden', impVergelijk.uit.vergelijkbaar.some((v: any) => v.externId === 'UI-014' && /спільні слова/.test(v.reden)));
+    if (heeftVoorbeeld) {
+      const voorbeeldJson = readFileSync(voorbeeldPad, 'utf8');
+      const impJ = await roep(rA, 'import', { actie: 'voorbeeld', naam: 'feature-UI-014-example.json', formaat: 'json', inhoud: voorbeeldJson });
+      check('import-json (dossiervoorbeeld): titel uk, 4 criteria, P1, externId UI-014, criteria niet onzeker', impJ.status === 200 && impJ.uit.kaart.titel[0].includes('картотека') && impJ.uit.kaart.criteria.length === 4 && impJ.uit.kaart.prioriteit === 'P1' && impJ.uit.kaart.externId === 'UI-014' && !impJ.uit.onzeker.includes('criteria'));
+      check('verificatie «integration + production» → integration (eerste bekende soort)', impJ.uit.kaart.criteria[1].verificatie === 'integration');
+      const vast = await roep(rA, 'import', { actie: 'vastleggen', invoerHash: impJ.uit.invoerHash, kaart: impJ.uit.kaart });
+      check('vastleggen: kaart UI-014, bronSoort import', vast.status === 200 && vast.uit.hergebruikt === false && vast.uit.kaart.externId === 'UI-014' && vast.uit.kaart.bronSoort === 'import');
+      const vast2 = await roep(rA, 'import', { actie: 'vastleggen', invoerHash: impJ.uit.invoerHash, kaart: impJ.uit.kaart });
+      check('zelfde invoer nóg eens vastleggen → hergebruikt, zelfde kaart (scenario 1 van het dossier)', vast2.uit.hergebruikt === true && vast2.uit.kaart.id === vast.uit.kaart.id);
+      const impJ2 = await roep(rA, 'import', { actie: 'voorbeeld', naam: 'feature-UI-014-example.json', formaat: 'json', inhoud: voorbeeldJson });
+      check('voorbeeld van dezelfde inhoud ná vastleggen → bestaand verwijst naar de kaart', impJ2.uit.bestaand?.kaartId === vast.uit.kaart.id);
+      // De lexicale buur «UI-014» bestaat alleen als het voorbeeld hierboven is vastgelegd.
+      const impVergelijk = await roep(rA, 'import', { actie: 'voorbeeld', naam: 'idee.txt', formaat: 'txt', inhoud: 'Розумна картотека можливостей для команди\nдодаткові деталі' });
+      check('vergelijkbaar: lexicale buur (кartотека можливостей) gevonden met reden', impVergelijk.uit.vergelijkbaar.some((v: any) => v.externId === 'UI-014' && /спільні слова/.test(v.reden)));
+    } else {
+      console.log('OVERGESLAGEN afstemming-kern: 6 controles in sectie 7 (import-json, verificatie, vastleggen, hergebruik, bestaand, vergelijkbaar) en 1 in sectie 8 (zoeken op externId UI-014): fixture ontbreekt');
+      // De teller «zonderBewijs» (sectie 9) telde in feite alleen de uit het voorbeeld vastgelegde kaart UI-014 (4 criteria, geen bewijs):
+      // de legacy-kaarten hebben 0 criteria en k1 heeft bewijs. Zonder voorbeeld zorgt deze eigen kaart voor dezelfde voorwaarde,
+      // zodat die controle actief blijft (en niet om een ontbrekend bestand faalt).
+      const zonderBewijsKaart = await roep(rA, 'voorstel', { titel: 'Звіт із критеріями без жодного доказу', criteria: [{ tekst: 'критерій, який ще ніхто не перевірив', verificatie: 'e2e' }] });
+      check('(zonder fixture) eigen kaart met 1 criterium en nog geen bewijs aangemaakt', zonderBewijsKaart.status === 200 && zonderBewijsKaart.uit.kaart.criteriaTotaal === 1 && zonderBewijsKaart.uit.kaart.bewijs === 0);
+    }
     const impMd = await roep(rA, 'import', { actie: 'voorbeeld', naam: 'x.md', formaat: 'md', inhoud: '# Експорт звітів у PDF\n\nОдин клік — готовий файл.\n\n## Критерії\n- кнопка на сторінці звіту\n- файл відкривається в переглядачі\n' });
     check('import-md: titel uit #, samenvatting uit de eerste alinea, 2 criteria (owner)', impMd.uit.kaart.titel[0] === 'Експорт звітів у PDF' && impMd.uit.kaart.samenvatting[0].includes('Один клік') && impMd.uit.kaart.criteria.length === 2 && impMd.uit.kaart.criteria[0].verificatie === 'owner');
     const impTxt = await roep(rA, 'import', { actie: 'voorbeeld', naam: 'y.txt', formaat: 'txt', inhoud: 'Швидкий фільтр за теґами\nщоб не гортати все' });
@@ -162,8 +179,10 @@ export async function main(): Promise<number> {
     check('pagina 1 en 2 overlappen niet', new Set([...p1.uit.kaarten, ...p2.uit.kaarten].map((k: any) => k.id)).size === 120);
     const zoek = await roep(rA, 'kaarten', { zoek: 'нічний режим' });
     check('zoeken (uk, hoofdletterongevoelig) vindt de kaart', zoek.uit.kaarten.some((k: any) => k.id === k1.id));
-    const zoekExtern = await roep(rA, 'kaarten', { zoek: 'ui-014' });
-    check('zoeken op externId werkt', zoekExtern.uit.kaarten.some((k: any) => k.externId === 'UI-014'));
+    if (heeftVoorbeeld) { // zoekt de kaart UI-014 die sectie 7 uit het dossiervoorbeeld vastlegde
+      const zoekExtern = await roep(rA, 'kaarten', { zoek: 'ui-014' });
+      check('zoeken op externId werkt', zoekExtern.uit.kaarten.some((k: any) => k.externId === 'UI-014'));
+    }
     const faseFilter = await roep(rA, 'kaarten', { fase: 'accepted' });
     check('filter op fase: alleen de aanvaarde kaart', faseFilter.uit.totaal === 1 && faseFilter.uit.kaarten[0].id === k1.id);
     const gezFilter = await roep(rA, 'kaarten', { gezondheid: 'regressed' });
