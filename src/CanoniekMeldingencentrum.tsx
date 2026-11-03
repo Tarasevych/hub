@@ -23,7 +23,7 @@ import NotificationPanelBody from './MeldingenpaneelInhoud';
 import { sectieLink, useConnectorActivity } from './connector-activiteit';
 import { activiteitenVanSfeer, type MeldingSfeer } from '../shared/meldingen-soorten';
 import { zetTechActiviteit } from './meldingen/tech-meldingen-opslag';
-import { placeNear } from './melding-positie';
+import { pijlNaarBel, placeNear, zonderDok, type Pijl } from './melding-positie';
 import { zichtbaarKader, volgKader } from './platform/vast-kader';
 import { styleOf } from './melding-stijl';
 // 25.10.2026: de bel staat in een ZONE van de pagina (shared/plaatsing.ts) — standaard rechts van de foto (computer: bovenbalk; telefoon:
@@ -543,7 +543,30 @@ export default function CanonicalNotificationCenter(p: Props) {
     return () => document.removeEventListener('pointerdown', onPointerDown, true);
   }, [panelOpen]);
 
-  const viewport = () => zichtbaarKader(bellRef.current || document.getElementById('root'), !bellRef.current);
+  /** Strook van het vensterdok (CSS-variabelen op <html>): het paneel en de pop-up komen er nooit onder (vroeger regelde de CSS dat met een vol blad). */
+  const dokRanden = () => {
+    try {
+      const s = getComputedStyle(document.documentElement);
+      const n = (k: string) => Math.max(0, parseFloat(s.getPropertyValue(k)) || 0);
+      return { boven: n('--venster-dok-boven'), onder: n('--venster-dok-onder'), links: n('--venster-dok-links'), rechts: n('--venster-dok-rechts') };
+    } catch {
+      return { boven: 0, onder: 0, links: 0, rechts: 0 };
+    }
+  };
+  const viewport = () => zonderDok(zichtbaarKader(bellRef.current || document.getElementById('root'), !bellRef.current), dokRanden());
+
+  /* INTEG-001: een pijltje maakt het paneel en de pop-up zichtbaar vast aan de bel (gemeten NA het plaatsen: op de telefoon zet de CSS
+     links/rechts tussen de veilige randen, dus de echte rechthoek telt). */
+  const [paneelPijl, setPaneelPijl] = useState<Pijl | null>(null);
+  const [toastPijl, setToastPijl] = useState<Pijl | null>(null);
+  const meetPijl = (el: HTMLElement | null): Pijl | null => {
+    const bell = bellRef.current;
+    if (!el || !bell || !bell.isConnected) return null;
+    const v = viewport();
+    const r = el.getBoundingClientRect(), b = bell.getBoundingClientRect();
+    return pijlNaarBel({ left: r.left - v.kx, top: r.top - v.ky, width: r.width, height: r.height }, { left: b.left - v.kx, top: b.top - v.ky, width: b.width, height: b.height });
+  };
+  const zelfdePijl = (a: Pijl | null, b: Pijl | null) => (a === b) || (!!a && !!b && a.left === b.left && a.top === b.top && a.kant === b.kant);
 
   useLayoutEffect(() => {
     if (!panelOpen) return;
@@ -579,6 +602,12 @@ export default function CanonicalNotificationCenter(p: Props) {
     return () => observer.disconnect();
   }, [panelOpen]);
 
+  useLayoutEffect(() => {
+    const volgende = panelOpen ? meetPijl(panelRef.current) : null;
+    setPaneelPijl((huidig) => (zelfdePijl(huidig, volgende) ? huidig : volgende));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panelOpen, panelPos, viewportRev]);
+
   /* De pop-up staat NAAST de bel (kant met de meeste ruimte, binnen het scherm) — nooit midden op het scherm. */
   useLayoutEffect(() => {
     const el = toastRef.current;
@@ -600,6 +629,12 @@ export default function CanonicalNotificationCenter(p: Props) {
     }
     setToastPos((current) => (current && current.left === place.left && current.top === place.top && current.maxHeight === place.maxHeight ? current : place));
   }, [active?.id, active?.expanded, belPlek, viewportRev]);
+
+  useLayoutEffect(() => {
+    const volgende = active && toastPos ? meetPijl(toastRef.current) : null;
+    setToastPijl((huidig) => (zelfdePijl(huidig, volgende) ? huidig : volgende));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.id, active?.expanded, toastPos, viewportRev]);
 
   useEffect(() => {
     const el = toastRef.current;
@@ -751,6 +786,7 @@ export default function CanonicalNotificationCenter(p: Props) {
           ) : null}
         </section>
       )}
+      {active && toastPijl ? <span className='cnc-pijl is-toast' data-kant={toastPijl.kant} style={{ left: toastPijl.left, top: toastPijl.top }} aria-hidden='true' /> : null}
 
       <Plek knop='bel'>
         {(vorm) => (
@@ -866,6 +902,7 @@ export default function CanonicalNotificationCenter(p: Props) {
           )}
         </section>
       )}
+      {panelOpen && paneelPijl ? <span className='cnc-pijl' data-kant={paneelPijl.kant} data-qa-id='melding-paneel-pijl' style={{ left: paneelPijl.left, top: paneelPijl.top }} aria-hidden='true' /> : null}
     </>
   );
 }

@@ -151,9 +151,15 @@ export async function main(): Promise<number> {
 
   // ------------------------------------------------------------------ R10 панель сповіщень в альбомній орієнтації
   const np = zc(lees('src/meldingenpaneel.css'));
-  check('R10 компактний режим (рядок чипів, «Фільтри», «⋯») і на низькому екрані: @media (max-width:560px), (max-height:500px)', np.includes('@media (max-width:560px), (max-height:500px){') && !np.includes('@media (max-width:560px){'));
+  // INTEG-001 (03.11.2026, вимога власника: «панель має відкриватися біля дзвіночка, прив'язана до нього, а не посеред екрана»):
+  // компактний режим лишається спільним для телефону й альбомної орієнтації; окремий блок (max-width:560px) тепер містить ЛИШЕ
+  // ліве/праве поле вікна біля дзвоника (верх і висота — з placeNear), а в альбомній — вузьке вікно біля дзвоника замість бічної
+  // панелі на всю висоту (раніше left:auto + top/bottom від краю до краю).
+  const alleenTel = mediaBlok(np, '@media (max-width:560px){');
+  check('R10 компактний режим (рядок чипів, «Фільтри», «⋯») і на низькому екрані: @media (max-width:560px), (max-height:500px); окремий блок телефону — лише поля вікна',
+    np.includes('@media (max-width:560px), (max-height:500px){') && !/cnc-|footer|header/.test(alleenTel) && /left:calc\(var\(--ruimte-2\) \+ var\(--veilig-links\)\)!important/.test(alleenTel));
   const r10 = mediaBlok(np, '@media (max-height:500px) and (min-width:561px){');
-  check('R10 альбомна: бічна панель праворуч на всю висоту, не ширша за 360 px (не на весь екран 844 px)', /html \.canonical-notification-panel\{left:auto!important;width:min\(360px,calc\(100vw - var\(--ruimte-4\)\)\)!important\}/.test(r10) && np.indexOf(r10) > np.indexOf('@media (max-width:560px), (max-height:500px){'));
+  check('R10 альбомна: вузьке вікно біля дзвоника (≤ 360 px), не на весь екран 844 px і не бічна панель на всю висоту', /html \.canonical-notification-panel\{width:min\(360px,calc\(100vw - var\(--ruimte-4\)\)\)!important\}/.test(r10) && !/left:auto!important/.test(r10) && np.indexOf(r10) > np.indexOf('@media (max-width:560px), (max-height:500px){'));
   check('R10 альбомна: чипи одним рядком із прокруткою (mail-qa-2026-10.css від 561 px переносить їх у 3 рядки = 100+ px)', /html body \.canonical-notification-panel \.cnc-chips\{flex-wrap:nowrap!important;overflow-x:auto!important\}/.test(r10) && /@media \(min-width:561px\)\{html body \.cnc-chips\{flex-wrap:wrap!important;/.test(zc(lees('src/mail-qa-2026-10.css'))));
   // бюджет на 844×390: кадр 390 − 16, заголовок 44 + 8 + 1, рядок чипів 44 + 16 + 1 → список ≥ 260 px (ДО: 0 px)
   const lijst = 390 - 16 - (44 + 8 + 1) - (44 + 16 + 1);

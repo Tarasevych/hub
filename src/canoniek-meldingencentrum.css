@@ -39,3 +39,13 @@
 .canonical-notification-toast-pauze{color:var(--muted);font-size:12px}
 .canonical-notification-toast.is-paused .canonical-notification-toast-balk>i{opacity:.45}
 @media (max-width:700px){.canonical-notification-opruimen{min-height:var(--tik-hoogte)}}
+
+/* INTEG-001 — pijltje van het paneel/de pop-up naar de bel (plaats uit pijlNaarBel, src/melding-positie.ts). Een gedraaid vierkantje
+   in de kleur van het venster, half over de rand: zo hangt het venster zichtbaar aan de bel. Geen knop, vangt geen klikken. */
+.cnc-pijl{position:fixed;z-index:711;width:14px;height:14px;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);transform:rotate(45deg);pointer-events:none}
+.cnc-pijl[data-kant=boven]{border-right-color:transparent;border-bottom-color:transparent}
+.cnc-pijl[data-kant=onder]{border-left-color:transparent;border-top-color:transparent}
+.cnc-pijl.is-toast{z-index:701;background:color-mix(in srgb,var(--panel) 97%,transparent)}
+/* zelfde compensatie als het paneel en de pop-up bij een verborgen technische band (src/tech/tech.css) — anders hangt de pijl ernaast */
+html[data-tech=aan] #root .cnc-pijl{transition:translate .22s ease!important}
+html[data-tech=aan][data-tech-verborgen] #root .cnc-pijl{translate:0 var(--tech-band-h)}
