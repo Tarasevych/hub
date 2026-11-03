@@ -8,13 +8,13 @@ import { api } from '../platform/client';
 import { canonicalNavigationUrl, routeLang } from '../canoniek-navigatie';
 import { HELP_TECH, contrast, maxMinutenVoor, openEindeToegestaan, rolInfo, type BandKleur, type BandPatroon, type TechRol } from '../../shared/tech-rollen';
 import { SSH_CA_VLAG } from '../../shared/ssh-ca';
-import { koppelHeadroom } from './band-inschuiven';
+import { koppelInschuiven } from './band-inschuiven';
 import { neemOpgespaardVenster, openTechVenster, startTech, techActief, techActiveren, techBand, techBeeindigen, techBody, techErfNieuweTabbladen, techErven, techMag, useTech, type TechStatus, type TechVenster } from './tech-opslag';
 import Vraag from './Vraag';
 import DiagnoseLaag from '../diagnose/Diagnose';
 import { OndersteuningVenster, ToestemmingLaag } from '../ondersteuning/Ondersteuning';
 import { ImpersonatieGebruiker, ImpersonatieKnop } from '../impersonatie/Impersonatie';
-import { Suspense, lazy } from 'react';
+import { Suspense } from 'react';
 import { TechBundelGrens, lazyTech } from './tech-bundel';
 const TerminalOpenen = lazyTech(() => import('../terminal/Terminal').then((m) => ({ default: m.TerminalOpenen })));
 const RemoteBureaublad = lazyTech(() => import('../extern/ExternBureaublad'));
@@ -32,14 +32,18 @@ import '../extensie/ExtensieOntgrendeling.css';
 import { laadRuimtesVlag, ruimtesV2Nu, useRuimtesV2 } from './ruimtes/ruimtes-vlag';
 import { startRuimtes } from './ruimtes/ruimtes-opslag';
 import { WOORDEN } from './ruimtes/teksten';
-const RuimteWissel = lazy(() => import('./ruimtes/RuimteWissel'));
-const RuimteStart = lazy(() => import('./ruimtes/StartVenster'));
-const RuimteToegang = lazy(() => import('./ruimtes/ToegangPagina'));
-const RuimteUitloggen = lazy(() => import('./ruimtes/UitloggenKeuze'));
-const RuimteDok = lazy(() => import('./ruimtes/RuimteDok'));
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { bewaarVoorkeur, leesVoorkeur, STROOK_NAMEN, STROOK_STANDAARD_KNOPPEN, verplaats, volgendeModus, zetAan, type StrookVoorkeur } from './strook-voorkeur';
-import { StrookInstelPaneel, StrookKnopMenu, type KnopMenuItem } from './StrookPaneel';
+// 03.11.2026: via lazyTech (zoals terminal/vlaggen/ssh) in plaats van kaal React.lazy — tech-bundels.test.ts eist «nooit kaal lazy» in
+// TechLaag; bij een mislukte lading eerst de status vernieuwen en één keer opnieuw proberen. Alle vijf staan al binnen TechBundelGrens.
+const RuimteWissel = lazyTech(() => import('./ruimtes/RuimteWissel'));
+const RuimteStart = lazyTech(() => import('./ruimtes/StartVenster'));
+const RuimteToegang = lazyTech(() => import('./ruimtes/ToegangPagina'));
+const RuimteUitloggen = lazyTech(() => import('./ruimtes/UitloggenKeuze'));
+const RuimteDok = lazyTech(() => import('./ruimtes/RuimteDok'));
+import { ChevronDown, ChevronUp, Pin } from 'lucide-react';
+// Technische strook (eigenaar 03.11.2026): modi zoals het menu van de site, knoppen kiezen/slepen, vorm, snelmenu per knop.
+import { bewaarVoorkeur, dropPlek, leesVoorkeur, metModus, STROOK_KNOP_IDS, STROOK_NAMEN, STROOK_STANDAARD, STROOK_STANDAARD_KNOPPEN, volgendeModus, zetAan, zetOp, type StrookVoorkeur } from './strook-voorkeur';
+import { knopMenu, type KnopMenuItem } from './strook-menu';
+import { StrookInstelPaneel, StrookKnopMenu } from './StrookPaneel';
 import './strook.css';
 import { zetTabbladMerk } from './ruimtes/tabblad-pictogram';
 
@@ -65,6 +69,14 @@ const resterend = (t: TechStatus, nu: number) => Math.max(0, (t.activatie?.eind 
 const mmss = (ms: number, uk: boolean) => { const m = Math.max(1, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)} ${uk ? 'год' : 'u'} ${m % 60} ${uk ? 'хв' : 'min'}` : `${m} ${uk ? 'хв' : 'min'}`; };
 const rolNaam = (r: string, uk: boolean) => { const i = rolInfo(r); return i ? (uk ? i.naam[0] : i.naam[1]) : r; };
 
+/** Stappen van de aanpassing aan de breedte: minimale breedte van de reden per stand (stand 2 verbergt de reden). */
+const MIN_REDEN = [120, 80, 0];
+/** Volgorde waarin knoppen van de strook naar «⋯» verhuizen als er geen plaats is: eerst de eigen extra's, «Вийти» als laatste. */
+const OVERLOOP_PRIO: Record<string, number> = { wissel: 1, meldingen: 2, uit: 3 };
+/** Toetsenbordfocus in de band (niet de focus die een muisklik op een knop achterlaat): houdt een uitgeschoven band open. */
+const focusZichtbaar = (el: Element | null) => { try { return !!el?.querySelector(':focus-visible'); } catch { return false; } };
+const isMobiel = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width:768px)').matches;
+
 export default function TechLaag() {
   const t = useTech();
   const remoteN = useRemoteAantal();
@@ -83,46 +95,49 @@ export default function TechLaag() {
   const v2 = useRuimtesV2();
   const taal = uk ? 'uk' as const : 'nl' as const;
   useEffect(() => { if (v2) startRuimtes(); }, [v2]);
-  // Technische strook (strook-voorkeur.ts): modus, grootte, tekst en volgorde van de knoppen. Standaard uitgeklapt, zoals vroeger.
+  // Technische strook (strook-voorkeur.ts): modus, grootte, vorm en volgorde van de knoppen. Standaard automatisch (03.11.2026).
   const [voorkeur, setVoorkeur] = useState<StrookVoorkeur>(() => leesVoorkeur());
   const zetVoorkeur = (v: StrookVoorkeur) => { setVoorkeur(v); bewaarVoorkeur(v); };
   const modus = voorkeur.modus;
-  // Ingeklapt (ook automatisch, zolang de muis niet bij de band is): de smalle strook. Alleen met de vlag tech-ruimtes-v2, zoals vroeger.
-  const bandIngeklapt = v2 && modus !== 'uitgeklapt';
-  // Automatisch: tijdelijk open als de muis tegen de bovenrand komt, of de focus of een paneel bij de band is.
+  // 03.11.2026: de modi gelden voor iedereen. Vroeger alleen met de vlag tech-ruimtes-v2 — zonder vlag bleef de band altijd vol
+  // («смуга постійно видна»). Ingeklapt en automatisch = de dunne strook; uitgeschoven ligt de band OVER de pagina (band-inschuiven.ts).
+  const bandIngeklapt = modus !== 'uitgeklapt';
   const [piek, setPiek] = useState(false);
-  const volledig = !bandIngeklapt || (modus === 'auto' && piek);
+  const volledig = !bandIngeklapt || piek;
   const [strookMenu, setStrookMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [instelOpen, setInstelOpen] = useState(false);
   const instelRef = useRef<HTMLButtonElement | null>(null);
   const sluitInstel = useCallback(() => { setInstelOpen(false); window.setTimeout(() => instelRef.current?.focus(), 0); }, []);
+  const sluitMenu = useCallback(() => setStrookMenu(null), []);
+  /** De knop waarop het snelmenu geopend werd (Escape/Tab zet de focus terug). */
+  const menuBron = useRef<HTMLElement | null>(null);
+  // Slepen op de strook zelf (eigenaar: «кнопки можна переставляти в довільному порядку»).
+  const [sleep, setSleep] = useState<string | null>(null);
+  const [doel, setDoel] = useState<{ id: string; na: boolean } | null>(null);
+  // Welke knoppen nu echt op de strook te zien zijn (gemeten); de rest staat in «⋯».
+  const [zicht, setZicht] = useState('');
+  const zichtRef = useRef('');
   const langDruk = useRef(0);
   const stopLangDruk = () => window.clearTimeout(langDruk.current);
-  // Verbergen bij scrollen naar beneden, tonen bij scrollen naar boven (band-inschuiven.ts): alleen translate, nooit geometrie →
-  // geen terugkoppeling, geen knipperen. Niet verbergen zolang de lijst «⋯» of een venster van de band open is.
+  // Uitgeschoven houden zolang de lijst «⋯», het paneel of het snelmenu open is, er gesleept wordt of de toetsenbordfocus in de band staat.
+  // (Een venster van de band houdt hem niet open: dat ligt los op de pagina.)
   const vastRef = useRef(false);
-  vastRef.current = meer || venster !== '' || instelOpen || strookMenu !== null;
+  vastRef.current = meer || instelOpen || strookMenu !== null || sleep !== null;
+  const modusRef = useRef(modus);
+  modusRef.current = modus;
   const bandAan = actief && !!t.activatie;
   const extRegel = useExtensieRegel(bandAan, uk);
-  useEffect(() => (bandAan ? koppelHeadroom({ band: () => bandRef.current, vast: () => vastRef.current }) : undefined), [bandAan]);
-  // Automatisch: de band opent als de muis tegen de bovenrand komt (of de band zelf raakt) en klapt weer in als de muis wegglijdt.
-  // Een open menu of paneel houdt hem open (vastRef). Alleen zolang de band ingeklapt is en de modus «automatisch» staat.
+  // Eén mechanisme voor in- en uitschuiven (band-inschuiven.ts): muis aan de bovenrand, focus, klik, Esc, klik ernaast, scrollen —
+  // met de lusbescherming van headroom. Raakt alleen de band zelf, nooit #root.
+  const inschuif = useRef<ReturnType<typeof koppelInschuiven> | null>(null);
   useEffect(() => {
-    if (!(actief && bandIngeklapt && modus === 'auto')) { setPiek(false); return; }
-    let timer = 0;
-    const binnen = (x: number, y: number) => {
-      if (y <= 4) return true;
-      const r = bandRef.current?.getBoundingClientRect();
-      return !!r && x >= r.left - 6 && x <= r.right + 6 && y >= r.top - 4 && y <= r.bottom + 8;
-    };
-    const beweeg = (e: PointerEvent) => {
-      window.clearTimeout(timer);
-      if (vastRef.current || binnen(e.clientX, e.clientY)) setPiek(true);
-      else timer = window.setTimeout(() => setPiek(false), 500);
-    };
-    document.addEventListener('pointermove', beweeg);
-    return () => { document.removeEventListener('pointermove', beweeg); window.clearTimeout(timer); };
-  }, [actief, bandIngeklapt, modus]);
+    if (!bandAan) return undefined;
+    const k = koppelInschuiven({ band: () => bandRef.current, modus: () => modusRef.current, vast: () => vastRef.current || focusZichtbaar(bandRef.current), zet: setPiek });
+    inschuif.current = k;
+    return () => { k.stop(); inschuif.current = null; setPiek(false); };
+  }, [bandAan]);
+  const vorigeModus = useRef(modus);
+  useEffect(() => { if (vorigeModus.current !== modus) { vorigeModus.current = modus; inschuif.current?.herstel(); } }, [modus]);
 
   useEffect(() => { startTech(); }, []);
   useEffect(() => {
@@ -156,35 +171,57 @@ export default function TechLaag() {
     if (el && mo) mo.observe(el, { childList: true, characterData: true, subtree: true });
     return () => { mo?.disconnect(); document.title = document.title.replace(/^\[(ТЕХ|TECH)\] /, ''); delete html.dataset.tech; if (v2) zetTabbladMerk(false); };
   }, [actief, kleur?.bg, kleur?.fg, t.profiel?.band.patroon, uk, v2]);
+  // Gereserveerde ruimte (--tech-band-h in strook.css) hangt ALLEEN af van de modus en de grootte — nooit van het uitschuiven.
   useEffect(() => { const h = document.documentElement; if (bandIngeklapt && actief) h.dataset.techIngeklapt = '1'; else delete h.dataset.techIngeklapt; }, [bandIngeklapt, actief]);
   useEffect(() => { const h = document.documentElement; if (actief) h.dataset.techGrootte = voorkeur.grootte; else delete h.dataset.techGrootte; }, [actief, voorkeur.grootte]);
 
-  // Past de band niet? Stap voor stap versmallen: 0 = alles met tekst, 1 = alleen pictogrammen, 2 = ook zonder «tot uitloggen»-tekst, 3 = knoppen achter «⋯».
-  // De stand staat als kenmerk op de band zelf (data-pas) zodat React hem niet overschrijft; CSS in tech.css.
+  // Past de band niet? Stap voor stap: 0 = zoals gekozen, 1 = knoppen alleen met pictogram (vorm «tekst» blijft tekst), 2 = ook zonder
+  // rollen, «ще …» en reden; past het dan nog niet, dan verhuizen knoppen één voor één naar «⋯» (data-overvol) — nooit over elkaar.
+  // De stand staat als kenmerk op de band (data-pas) en de knoppen (data-overvol), zodat React ze niet overschrijft; CSS in strook.css.
   const bandStatus = actief && t.activatie ? `${t.activatie.id}|${t.activatie.modus}|${t.activatie.reden}|${(t.activatie.rollen || []).join(',')}|${sshZichtbaar}|${uk}|${Math.round(resterend(t, nu) / 60000)}|${extRegel?.tekst ?? ''}` : '';
+  const knoppenSleutel = `${voorkeur.knoppen.join(',')}|${voorkeur.label}|${voorkeur.grootte}|${volledig}|${v2}`;
   useLayoutEffect(() => {
     const el = bandRef.current;
     if (!el) return;
-    el.querySelectorAll<HTMLButtonElement>('.tech-band-extra button, .tech-band-knoppen > button.is-uit').forEach((b) => {
+    el.querySelectorAll<HTMLButtonElement>('.tech-band-extra button').forEach((b) => {
       const tekst = b.querySelector('span')?.textContent?.trim();
       if (tekst && !b.title) b.title = tekst;
     });
     let bezigMeten = false;
     const redenBreedte = () => { const r = el.querySelector<HTMLElement>('.tech-band-reden'); return r && getComputedStyle(r).display !== 'none' ? r.clientWidth : 9999; };
-    const MIN_REDEN = [120, 100, 80];
+    // Past = de knoppen eindigen binnen de band (rechts van de binnenrand) en de reden houdt genoeg plaats. Bewust niet scrollWidth:
+    // tekstwolkjes en de vergroting bij aanwijzen (transform) mogen de meting niet beïnvloeden.
+    const past = (min: number) => {
+      const kn = el.querySelector<HTMLElement>('.tech-band-knoppen');
+      if (!kn) return true;
+      const pr = parseFloat(getComputedStyle(el).paddingRight) || 0;
+      return kn.getBoundingClientRect().right <= el.getBoundingClientRect().right - pr + 1 && redenBreedte() >= min;
+    };
     const meet = () => {
       if (bezigMeten) return;
       bezigMeten = true;
-      let stand = 0;
-      for (; stand < 3; stand++) {
-        el.dataset.pas = String(stand);
-        if (el.scrollWidth <= el.clientWidth + 1 && redenBreedte() >= MIN_REDEN[stand]) break;
+      const items = Array.from(el.querySelectorAll<HTMLElement>('.tech-band-knoppen > .tech-strook-item[data-strook-id]'));
+      items.forEach((i) => { delete i.dataset.overvol; });
+      if (el.classList.contains('is-ingeklapt')) el.dataset.pas = '0';
+      else {
+        let stand = 0;
+        for (; stand < 3; stand++) {
+          el.dataset.pas = String(stand);
+          if (past(MIN_REDEN[stand])) break;
+        }
+        if (stand === 3) {
+          el.dataset.pas = '2';
+          const volgorde = items.map((it, i) => ({ it, i, p: OVERLOOP_PRIO[it.dataset.strookId || ''] ?? 0 })).sort((a, b) => a.p - b.p || b.i - a.i);
+          for (const { it } of volgorde) { if (past(0)) break; it.dataset.overvol = '1'; }
+        }
       }
-      el.dataset.pas = String(stand);
-      // Alleen sluiten als «⋯» echt weg is (breed genoeg): op de telefoon (≤ 760px) blijft «⋯» staan, ook bij stand 0, en elke meting
-      // (ResizeObserver, lettertypen) sloot de lijst anders meteen weer (18.10.2026).
+      // «⋯» weg (dunne strook op de computer): de lijst sluiten. Op de telefoon blijft «⋯» staan, ook in de strook.
       const meerKnop = el.querySelector<HTMLElement>('.tech-band-meer');
-      if (stand < 3 && (!meerKnop || getComputedStyle(meerKnop).display === 'none')) setMeer(false);
+      if (!meerKnop || meerKnop.getClientRects().length === 0) setMeer(false);
+      const z = Array.from(el.querySelectorAll<HTMLElement>('.tech-band-knoppen > .tech-strook-item'))
+        .filter((i) => !i.dataset.overvol && i.getClientRects().length > 0)
+        .map((i) => i.dataset.strookId || i.dataset.strookVast || '').filter(Boolean).join(',');
+      if (z !== zichtRef.current) { zichtRef.current = z; setZicht(z); }
       bezigMeten = false;
     };
     meet();
@@ -199,10 +236,10 @@ export default function TechLaag() {
     mo?.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'lang', 'data-theme'] });
     if (document.body) mo?.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     return () => { ro?.disconnect(); mo?.disconnect(); window.removeEventListener('resize', meet); window.clearTimeout(laat); };
-  }, [bandStatus, actief]);
+  }, [bandStatus, actief, knoppenSleutel]);
   useEffect(() => {
     if (!meer) return;
-    const buiten = (e: Event) => { const x = e.target as Element | null; if (x && !x.closest('.tech-band-extra, .tech-band-meer')) setMeer(false); };
+    const buiten = (e: Event) => { const x = e.target as Element | null; if (x && !x.closest('.tech-band-extra, .tech-band-meer, .tech-strook-menu')) setMeer(false); };
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { setMeer(false); meerRef.current?.focus(); } };
     window.requestAnimationFrame(() => zoekRef.current?.focus({ preventScroll: true }));
     document.addEventListener('pointerdown', buiten); document.addEventListener('keydown', esc);
@@ -211,20 +248,21 @@ export default function TechLaag() {
 
   const rest = resterend(t, nu);
   const lang = uk ? 'uk' : 'nl';
-  const naar = (dienst: 'admin' | 'api' | 'mcp' | 'hub', tab: string) => { setMeer(false); location.assign(canonicalNavigationUrl(dienst, tab, lang)); };
+  const adres = (dienst: 'admin' | 'api' | 'mcp' | 'hub', tab: string) => canonicalNavigationUrl(dienst, tab, lang);
+  const naar = (dienst: 'admin' | 'api' | 'mcp' | 'hub', tab: string) => { setMeer(false); location.assign(adres(dienst, tab)); };
   // Huidige plek: zelfde host en pad als het doel van de knop (taalvoorvoegsel en schuine streep aan het eind tellen niet).
   const pad = (u: string) => { try { const x = new URL(u, location.href); return `${x.host}${x.pathname.replace(/^\/(uk|nl)(?=\/|$)/, '').replace(/\/+$/, '')}`; } catch { return u; } };
-  const hier = (dienst: 'admin' | 'api' | 'mcp' | 'hub', tab: string) => typeof location !== 'undefined' && pad(canonicalNavigationUrl(dienst, tab, lang)) === pad(location.href);
-  type MenuItem = { k: string; icoon: ReactElement; naam: string; uitleg: string; doe?: () => void; hier?: boolean; aria?: string; alleenMobiel?: boolean; el?: ReactElement };
+  const hier = (dienst: 'admin' | 'api' | 'mcp' | 'hub', tab: string) => typeof location !== 'undefined' && pad(adres(dienst, tab)) === pad(location.href);
+  type MenuItem = { k: string; icoon: ReactElement; naam: string; uitleg: string; doe?: () => void; hier?: boolean; aria?: string; alleenMobiel?: boolean; el?: ReactElement; url?: string };
   const groep = (id: string, naam: string, items: Array<MenuItem | false>) => ({ id, naam, items: items.filter(Boolean) as MenuItem[] });
   const erven = techErfNieuweTabbladen(t);
   const bandMenu = actief && t.activatie ? [
     groep('naar', uk ? 'Розділи' : 'Onderdelen', [
-      { k: 'beheer', icoon: <ShieldCheck aria-hidden='true' />, naam: uk ? 'Адміністрування' : 'Beheer', uitleg: uk ? 'Користувачі, оновлення, журнал' : 'Gebruikers, updates, logboek', doe: () => naar('admin', 'overview'), hier: hier('admin', 'overview') },
-      { k: 'api', icoon: <Network aria-hidden='true' />, naam: 'API', uitleg: uk ? 'Ключі, OAuth, вебхуки' : 'Sleutels, OAuth, webhooks', doe: () => naar('api', 'access'), hier: hier('api', 'access') },
-      { k: 'uitrol', icoon: <Rocket aria-hidden='true' />, naam: uk ? 'Розгортання' : 'Uitrol', uitleg: uk ? 'Випуски й стан сервера' : 'Releases en serverstand', doe: () => naar('mcp', 'dashboard'), hier: hier('mcp', 'dashboard') },
-      { k: 'ai-beleid', icoon: <Bot aria-hidden='true' />, naam: uk ? 'Доступ ШІ' : 'AI-toegang', uitleg: uk ? 'Що можуть агенти ШІ' : 'Wat AI-agents mogen', doe: () => naar('admin', 'ai'), hier: hier('admin', 'ai') },
-      { k: 'account', icoon: <Home aria-hidden='true' />, naam: uk ? 'Обліковий запис' : 'Account', uitleg: uk ? 'Ваш простір (клієнтський)' : 'Uw ruimte (klantprofiel)', doe: () => naar('hub', 'overview'), hier: hier('hub', 'overview') },
+      { k: 'beheer', icoon: <ShieldCheck aria-hidden='true' />, naam: uk ? 'Адміністрування' : 'Beheer', uitleg: uk ? 'Користувачі, оновлення, журнал' : 'Gebruikers, updates, logboek', doe: () => naar('admin', 'overview'), hier: hier('admin', 'overview'), url: adres('admin', 'overview') },
+      { k: 'api', icoon: <Network aria-hidden='true' />, naam: 'API', uitleg: uk ? 'Ключі, OAuth, вебхуки' : 'Sleutels, OAuth, webhooks', doe: () => naar('api', 'access'), hier: hier('api', 'access'), url: adres('api', 'access') },
+      { k: 'uitrol', icoon: <Rocket aria-hidden='true' />, naam: uk ? 'Розгортання' : 'Uitrol', uitleg: uk ? 'Випуски й стан сервера' : 'Releases en serverstand', doe: () => naar('mcp', 'dashboard'), hier: hier('mcp', 'dashboard'), url: adres('mcp', 'dashboard') },
+      { k: 'ai-beleid', icoon: <Bot aria-hidden='true' />, naam: uk ? 'Доступ ШІ' : 'AI-toegang', uitleg: uk ? 'Що можуть агенти ШІ' : 'Wat AI-agents mogen', doe: () => naar('admin', 'ai'), hier: hier('admin', 'ai'), url: adres('admin', 'ai') },
+      { k: 'account', icoon: <Home aria-hidden='true' />, naam: uk ? 'Обліковий запис' : 'Account', uitleg: uk ? 'Ваш простір (клієнтський)' : 'Uw ruimte (klantprofiel)', doe: () => naar('hub', 'overview'), hier: hier('hub', 'overview'), url: adres('hub', 'overview') },
     ]),
     groep('hulpmiddelen', uk ? 'Інструменти' : 'Hulpmiddelen', [
       (techMag('terminal.test', t) || techMag('terminal.servers', t)) && { k: 'terminal', icoon: <SquareTerminal aria-hidden='true' />, naam: uk ? 'Термінал' : 'Terminal', uitleg: uk ? 'Командний рядок із записом' : 'Opdrachtregel met opname', doe: () => kies('terminal') },
@@ -252,20 +290,26 @@ export default function TechLaag() {
       { k: 'band', icoon: <Palette aria-hidden='true' />, naam: uk ? 'Колір смуги' : 'Kleur van de band', uitleg: uk ? 'Колір і візерунок' : 'Kleur en patroon', doe: () => kies('band'), aria: uk ? 'Колір смуги' : 'Kleur van de band', alleenMobiel: true },
     ]),
   ] : [];
-  // De knoppen die op de strook kunnen staan (strook-voorkeur.ts): dezelfde acties als in de ⋯-lijst. Meldingen, ruimte, in- en uitklappen
-  // en afmelden hebben hun eigen weergave. Een knop die voor deze rollen niet mag, wordt overgeslagen.
+  // De knoppen die op de strook kunnen staan (strook-voorkeur.ts): dezelfde acties als in de ⋯-lijst. Meldingen, ruimte en afmelden
+  // hebben hun eigen weergave. Een knop die voor deze rollen niet mag, wordt overgeslagen.
   const knopData: Record<string, MenuItem> = {};
   for (const g of bandMenu) for (const i of g.items) knopData[i.k] = i;
-  const inklapTekst = bandIngeklapt ? (uk ? 'Розгорнути' : 'Uitklappen') : (uk ? 'Згорнути' : 'Inklappen');
   const uitTekst = v2 ? (uk ? 'Вийти…' : 'Afmelden…') : (uk ? 'Вийти з технічного' : 'Technisch verlaten');
   const naamVan = (id: string): string => { const m = STROOK_NAMEN[id]; return m ? (uk ? m.uk : m.nl) : id; };
-  const labelVan = (id: string): string => (id === 'inklap' ? inklapTekst : id === 'uit' ? uitTekst : knopData[id] ? knopData[id].naam : naamVan(id));
+  // Vaste modusknop: ▾ «Розгорнути» (dunne strook), 📌 «Закріпити» (uitgeschoven), ▴ «Згорнути» (uitgeklapt) — zoals het menu.
+  const modusTekst = !bandIngeklapt ? (uk ? 'Згорнути смугу' : 'Strook inklappen') : piek ? (uk ? 'Закріпити смугу' : 'Strook vastzetten') : (uk ? 'Розгорнути смугу' : 'Strook uitklappen');
+  const modusUitleg = !bandIngeklapt
+    ? (voorkeur.laatsteInklap === 'auto' ? (uk ? 'Згорнути смугу в тонку смужку (розгортається, коли наводите вгору)' : 'Strook inklappen tot een dunne lijn (klapt open als u naar boven wijst)') : (uk ? 'Згорнути смугу в тонку смужку' : 'Strook inklappen tot een dunne lijn'))
+    : piek ? (uk ? 'Закріпити: смуга лишається розгорнутою' : 'Vastzetten: de strook blijft uitgeklapt') : (uk ? 'Розгорнути технічну смугу' : 'Technische strook uitklappen');
+  const labelVan = (id: string): string => (id === 'uit' ? uitTekst : id === 'modus' ? modusTekst : id === 'meer' ? (uk ? 'Усі дії' : 'Alle acties')
+    : id === 'instel' ? (uk ? 'Налаштування смуги' : 'Instellingen van de strook') : knopData[id] ? knopData[id].naam : naamVan(id));
+  const klikModus = () => {
+    if (bandIngeklapt && !piek) { inschuif.current?.open(); return; }
+    zetVoorkeur(metModus(voorkeur, volgendeModus(modus, voorkeur.laatsteInklap)));
+  };
   const stripKnop = (id: string): ReactElement | null => {
     if (id === 'meldingen') return <TechMeldingenKnop uk={uk} />;
     if (id === 'wissel') return v2 ? <TechBundelGrens><Suspense fallback={null}><RuimteWissel taal={taal} compact /></Suspense></TechBundelGrens> : null;
-    if (id === 'inklap') return v2 ? <button type='button' className='tech-band-inklap' data-tech-knop='inklappen' aria-expanded={!bandIngeklapt} onClick={() => zetVoorkeur({ ...voorkeur, modus: volgendeModus(modus) })}
-      title={bandIngeklapt ? (uk ? 'Розгорнути технічну смугу' : 'Technische band uitklappen') : (uk ? 'Згорнути технічну смугу (запам’ятовується на цьому пристрої)' : 'Technische band inklappen (onthouden op dit apparaat)')}
-      aria-label={bandIngeklapt ? (uk ? 'Розгорнути технічну смугу' : 'Technische band uitklappen') : (uk ? 'Згорнути технічну смугу' : 'Technische band inklappen')}>{bandIngeklapt ? <ChevronDown aria-hidden='true' /> : <ChevronUp aria-hidden='true' />}<span>{inklapTekst}</span></button> : null;
     if (id === 'uit') return v2
       ? <button type='button' className='is-uit' onClick={() => setVenster('uitloggen')} data-tech-knop='uitloggen'><LogOut aria-hidden='true' /><span>{uitTekst}</span></button>
       : <button type='button' className='is-uit' onClick={() => void techBeeindigen()} data-tech-knop='uit'><LogOut aria-hidden='true' /><span>{uitTekst}</span></button>;
@@ -274,15 +318,61 @@ export default function TechLaag() {
     return <button type='button' onClick={m.doe} data-tech-knop={m.k} aria-label={m.aria} aria-current={m.hier ? 'page' : undefined} className={m.hier ? 'is-hier' : undefined}>{m.icoon}<span>{m.naam}</span></button>;
   };
   const strookItems = voorkeur.knoppen.map(id => ({ id, el: stripKnop(id) })).filter((x): x is { id: string; el: ReactElement } => x.el !== null);
-  // Snelmenu van één knop: verplaatsen, van de strook halen, of de instellingen openen.
+  const zichtbaar = new Set(zicht.split(',').filter(Boolean));
+  /** Hoort deze knop in de lijst «⋯»? Ja als hij niet (zichtbaar) op de strook staat: telefoon, te smal, of niet gekozen. */
+  const nodig = (id: string) => !zichtbaar.has(id);
+  const openMenu = (e: { preventDefault: () => void; stopPropagation: () => void; clientX: number; clientY: number; currentTarget: Element }, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    let x = e.clientX, y = e.clientY;
+    // Toetsenbord (Shift+F10 / menutoets): geen muisplek → onder de knop.
+    if (!x && !y) { const r = e.currentTarget.getBoundingClientRect(); x = r.left; y = r.bottom + 4; }
+    menuBron.current = e.currentTarget.matches('button') ? e.currentTarget as HTMLElement : e.currentTarget.querySelector<HTMLElement>('button');
+    setStrookMenu({ id, x, y });
+  };
+  // Snelmenu van één knop (strook-menu.ts): eerst wat DEZE knop nog kan, dan plaats, vorm en instellingen.
   const menuVoor = (id: string): KnopMenuItem[] => {
-    const i = voorkeur.knoppen.indexOf(id);
-    return [
-      { label: uk ? 'Ліворуч' : 'Naar links', disabled: i <= 0, onKies: () => zetVoorkeur(verplaats(voorkeur, id, -1)) },
-      { label: uk ? 'Праворуч' : 'Naar rechts', disabled: i < 0 || i >= voorkeur.knoppen.length - 1, onKies: () => zetVoorkeur(verplaats(voorkeur, id, 1)) },
-      { label: uk ? 'Прибрати зі смуги' : 'Van de strook halen', onKies: () => zetVoorkeur(zetAan(voorkeur, id, false)) },
-      { label: uk ? 'Налаштування смуги…' : 'Instellingen van de strook…', onKies: () => setInstelOpen(true) },
-    ];
+    const m = knopData[id];
+    const extra: Array<{ label: string; onKies: () => void; disabled?: boolean }> = [];
+    let open: (() => void) | undefined = m?.doe;
+    if (id === 'meldingen') open = () => bandRef.current?.querySelector<HTMLButtonElement>('.tech-strook-item[data-strook-id="meldingen"] .tech-meldingen-knop, .tech-mobiel-onder .tech-meldingen-knop')?.click();
+    if (id === 'wissel') {
+      open = undefined;
+      extra.push({ label: uk ? 'Перейти у звичайний простір (Ctrl+Alt+1)' : 'Naar de gewone ruimte (Ctrl+Alt+1)', onKies: () => { void import('./ruimtes/RuimteWissel').then((x) => x.kiesRuimte('prive', taal)).catch(() => undefined); } });
+    }
+    if (id === 'uit') {
+      open = undefined;
+      if (v2) extra.push({ label: uk ? 'Вийти… (вибір: технічний профіль або акаунт)' : 'Afmelden… (keuze: technisch profiel of account)', onKies: () => setVenster('uitloggen') });
+      else extra.push({ label: uk ? 'Вийти з технічного профілю' : 'Technisch profiel verlaten', onKies: () => void techBeeindigen() });
+      extra.push({ label: v2 ? WOORDEN.wijzigTermijn[taal] : (uk ? 'Подовжити…' : 'Verlengen…'), onKies: () => kies('activeren') });
+    }
+    if (id === 'modus') open = undefined;
+    if (id === 'meer') open = () => setMeer(true);
+    if (id === 'instel') open = () => setInstelOpen(true);
+    const kiesbaar = STROOK_KNOP_IDS.includes(id) && (!!m || id === 'meldingen' || id === 'uit' || (id === 'wissel' && v2));
+    return knopMenu({
+      uk, id, naam: labelVan(id), plek: voorkeur.knoppen.indexOf(id), aantal: voorkeur.knoppen.length, kiesbaar, modus, label: voorkeur.label, open, url: m?.url, extra,
+      acties: {
+        naarPlek: (p) => zetVoorkeur(zetOp(voorkeur, id, p)),
+        wegVanStrook: () => zetVoorkeur(zetAan(voorkeur, id, false)),
+        opStrook: () => zetVoorkeur(zetAan(voorkeur, id, true)),
+        zetModus: (mm) => zetVoorkeur(metModus(voorkeur, mm)),
+        zetLabel: (l) => zetVoorkeur({ ...voorkeur, label: l }),
+        instellingen: () => setInstelOpen(true),
+        nieuwTabblad: (u) => { window.open(u, '_blank', 'noopener'); },
+        kopieer: (u) => { void navigator.clipboard?.writeText(u).catch(() => undefined); },
+        standaard: () => zetVoorkeur({ ...STROOK_STANDAARD, knoppen: [...STROOK_STANDAARD.knoppen] }),
+      },
+    });
+  };
+  const vasteKnop = (id: 'modus' | 'meer' | 'instel', knop: ReactElement) => (
+    <span className={`tech-strook-item is-vast tech-strook-vast-${id}`} data-strook-vast={id} data-label={labelVan(id)} onContextMenu={(e) => openMenu(e, id)}>{knop}</span>
+  );
+  // Dunne strook: een tik of klik ernaast schuift de band uit (telefoon: opent meteen de lijst «⋯», want daar is de band alleen label + menu).
+  const klikStrook = (e: { target: EventTarget }) => {
+    const x = e.target as Element | null;
+    if (x && typeof x.closest === 'function' && x.closest('button, a, input, select')) return;
+    if (isMobiel()) setMeer(true); else inschuif.current?.open();
   };
   const z = zoek.trim().toLocaleLowerCase();
   const past = (i: MenuItem) => !meer || !z || `${i.naam} ${i.uitleg} ${i.k}`.toLocaleLowerCase().includes(z);
@@ -298,11 +388,12 @@ export default function TechLaag() {
     else if (e.key === 'End' && i >= 0) naarKnop(knoppen.length - 1);
     else if (e.key === 'Enter' && document.activeElement === zoekRef.current) { e.preventDefault(); knoppen[0].click(); }
   };
+  const onderNodig = nodig('meldingen') || nodig('modus') || nodig('instel') || nodig('uit');
   return (
     <>
       {actief && t.activatie ? (
-        <div ref={bandRef} className={`tech-band${bandIngeklapt && !volledig ? ' is-ingeklapt' : ''}${modus === 'auto' && bandIngeklapt && piek ? ' is-piek' : ''}`} data-tech-ingeklapt={bandIngeklapt ? '1' : '0'} data-tech-label={voorkeur.label} data-tech-grootte={voorkeur.grootte} data-tech-modus={modus} role='region' aria-label={uk ? 'Технічний режим' : 'Technische modus'} data-tech-band='1'
-          onFocus={() => { if (modus === 'auto') setPiek(true); }} onBlur={(e) => { if (modus === 'auto' && !e.currentTarget.contains(e.relatedTarget as Node | null)) setPiek(false); }}>
+        <div ref={bandRef} className={`tech-band${bandIngeklapt && !volledig ? ' is-ingeklapt' : ''}${bandIngeklapt && volledig ? ' is-piek' : ''}${sleep ? ' is-slepen' : ''}`} data-tech-ingeklapt={bandIngeklapt ? '1' : '0'} data-tech-open={volledig ? '1' : '0'} data-tech-label={voorkeur.label} data-tech-grootte={voorkeur.grootte} data-tech-modus={modus} role='region' aria-label={uk ? 'Технічний режим' : 'Technische modus'} data-tech-band='1'
+          onClick={bandIngeklapt && !volledig ? klikStrook : undefined}>
           <span className='tech-band-merk'><ShieldCheck aria-hidden='true' />{uk ? 'ТЕХНІЧНИЙ' : 'TECHNISCH'}{remoteN > 0 ? <i className='tech-remote-actief' data-tech-remote={remoteN} role='status' title={uk ? 'активний віддалений сеанс' : 'actieve externe sessie'}>●<span className='tech-remote-tekst'>{uk ? 'активний віддалений сеанс' : 'actieve externe sessie'}</span></i> : null}</span>
           <span className='tech-band-id' title={t.activatie.profielId}>{t.activatie.rollen.map((r) => rolNaam(r, uk)).join(' · ')}</span>
           <span className={`tech-band-tijd${rest < 5 * 60000 ? ' is-bijna' : ''}`} data-tech-rest={Math.round(rest / 60000)}><Timer aria-hidden='true' />{t.activatie.modus === 'tot-uitloggen' ? <span className='tech-band-nog'>{v2 ? WOORDEN.bandTotUitloggen[taal] : uk ? 'до виходу з акаунта' : 'tot uitloggen'}</span> : t.activatie.modus === 'tot-verlaten' ? <span className='tech-band-nog'>{v2 ? WOORDEN.bandTotVerlaten[taal] : uk ? 'до виходу з профілю' : 'tot verlaten profiel'}</span> : <><span className='tech-band-nog'>{uk ? 'ще' : 'nog'} </span>{mmss(rest, uk)}</>}</span>
@@ -310,16 +401,17 @@ export default function TechLaag() {
           <span className='tech-band-reden' title={`${uk ? 'Причина' : 'Reden'}: ${t.activatie.reden}`}><span className='tech-band-reden-label'>{uk ? 'Причина:' : 'Reden:'}</span> <q className='tech-band-reden-tekst'>{t.activatie.reden}</q></span>
           <span className='tech-band-knoppen'>
             <span className={`tech-band-extra${meer ? ' is-open' : ''}`} id='tech-band-extra' aria-label={meer ? (uk ? 'Дії технічного профілю' : 'Acties van het technisch profiel') : undefined} role={meer ? 'group' : undefined} onKeyDown={meer ? menuToets : undefined}>
-              {meer && v2 ? <span className='tech-mobiel-wissel' data-tech-mobiel='wissel'><TechBundelGrens><Suspense fallback={null}><RuimteWissel taal={taal} compact /></Suspense></TechBundelGrens></span> : null}
+              {meer && v2 ? <span className={`tech-mobiel-wissel${nodig('wissel') ? ' is-nodig' : ''}`} data-tech-mobiel='wissel'><TechBundelGrens><Suspense fallback={null}><RuimteWissel taal={taal} compact /></Suspense></TechBundelGrens></span> : null}
               {meer ? <label className='tech-menu-zoek'><Search aria-hidden='true' /><input ref={zoekRef} type='search' value={zoek} onChange={(e) => setZoek(e.target.value)} placeholder={uk ? 'Знайти дію…' : 'Actie zoeken…'} aria-label={uk ? 'Знайти дію' : 'Actie zoeken'} data-tech-zoek='1' autoComplete='off' /></label> : null}
               {bandMenu.map((g) => {
-                const zichtbaar = g.items.filter((i) => past(i));
+                const zichtbaarInGroep = g.items.filter((i) => past(i));
                 return (
-                  <span key={g.id} className='tech-menu-groep' data-tech-groep={g.id} role={meer ? 'group' : undefined} aria-label={meer ? g.naam : undefined} hidden={meer && zichtbaar.length === 0}>
+                  <span key={g.id} className='tech-menu-groep' data-tech-groep={g.id} role={meer ? 'group' : undefined} aria-label={meer ? g.naam : undefined} hidden={meer && zichtbaarInGroep.length === 0}>
                     {meer ? <span className='tech-menu-kop' aria-hidden='true'>{g.naam}</span> : null}
                     {g.items.map((i) => i.el
                       ? <span key={i.k} className='tech-menu-los' hidden={meer && !past(i)}>{i.el}</span>
-                      : <button key={i.k} type='button' onClick={i.doe} data-tech-knop={i.k} hidden={meer && !past(i)} aria-label={i.aria} aria-current={i.hier ? 'page' : undefined} className={i.hier ? 'is-hier' : undefined}>
+                      : <button key={i.k} type='button' onClick={i.doe} data-tech-knop={i.k} hidden={meer && !past(i)} aria-label={i.aria} aria-current={i.hier ? 'page' : undefined} className={i.hier ? 'is-hier' : undefined}
+                          onContextMenu={STROOK_KNOP_IDS.includes(i.k) ? (e) => openMenu(e, i.k) : undefined}>
                           {i.icoon}<span className={i.alleenMobiel ? 'tech-alleen-mobiel' : undefined}>{i.naam}</span><small className='tech-menu-uitleg' aria-hidden='true'>{i.uitleg}</small>
                         </button>)}
                   </span>
@@ -327,27 +419,36 @@ export default function TechLaag() {
               })}
               {meer && bandMenu.every((g) => !g.items.some(past)) ? <span className='tech-menu-leeg' role='status'>{uk ? 'Нічого не знайдено' : 'Niets gevonden'}</span> : null}
               {meer ? (
-                <span className='tech-mobiel-onder' data-tech-mobiel='acties'>
-                  <TechMeldingenKnop uk={uk} />
-                  {v2 ? <button type='button' onClick={() => { setMeer(false); zetVoorkeur({ ...voorkeur, modus: volgendeModus(modus) }); }} data-tech-mobiel='inklappen'>{bandIngeklapt ? <ChevronDown aria-hidden='true' /> : <ChevronUp aria-hidden='true' />}<span>{bandIngeklapt ? (uk ? 'Розгорнути смугу' : 'Band uitklappen') : (uk ? 'Згорнути смугу' : 'Band inklappen')}</span></button> : null}
-                  {v2
+                <span className={`tech-mobiel-onder${onderNodig ? ' is-nodig' : ''}`} data-tech-mobiel='acties'>
+                  {nodig('meldingen') ? <TechMeldingenKnop uk={uk} /> : null}
+                  {nodig('modus') ? <button type='button' onClick={() => { setMeer(false); zetVoorkeur(metModus(voorkeur, volgendeModus(modus, voorkeur.laatsteInklap))); }} data-tech-mobiel='inklappen'>{bandIngeklapt ? <ChevronDown aria-hidden='true' /> : <ChevronUp aria-hidden='true' />}<span>{bandIngeklapt ? (uk ? 'Розгорнути смугу' : 'Band uitklappen') : (uk ? 'Згорнути смугу' : 'Band inklappen')}</span></button> : null}
+                  {nodig('instel') ? <button type='button' onClick={() => { setMeer(false); setInstelOpen(true); }} data-tech-mobiel='instellingen'><SlidersHorizontal aria-hidden='true' /><span>{uk ? 'Налаштування смуги…' : 'Instellingen van de strook…'}</span></button> : null}
+                  {!nodig('uit') ? null : v2
                     ? <button type='button' className='is-uit' onClick={() => { setMeer(false); setVenster('uitloggen'); }} data-tech-mobiel='uitloggen'><LogOut aria-hidden='true' /><span>{uk ? 'Вийти з технічного…' : 'Technisch verlaten…'}</span></button>
                     : <button type='button' className='is-uit' onClick={() => { setMeer(false); void techBeeindigen(); }} data-tech-mobiel='uit'><LogOut aria-hidden='true' /><span>{uk ? 'Вийти з технічного' : 'Technisch verlaten'}</span></button>}
                 </span>
               ) : null}
             </span>
+            {vasteKnop('modus', <button type='button' className='tech-band-inklap tech-band-modusknop' data-tech-knop='inklappen' aria-expanded={volledig} aria-label={modusUitleg} onClick={klikModus}>
+              {!bandIngeklapt ? <ChevronUp aria-hidden='true' /> : piek ? <Pin aria-hidden='true' /> : <ChevronDown aria-hidden='true' />}<span>{modusTekst}</span></button>)}
             {strookItems.map(({ id, el }) => (
-              <span key={id} className={`tech-strook-item ${STROOK_STANDAARD_KNOPPEN.includes(id) ? 'tech-band-breed' : 'tech-strook-extra'}`} data-strook-id={id} data-label={labelVan(id)}
-                onContextMenu={(e) => { e.preventDefault(); setStrookMenu({ id, x: e.clientX, y: e.clientY }); }}
+              <span key={id} className={`tech-strook-item ${STROOK_STANDAARD_KNOPPEN.includes(id) ? 'tech-band-breed' : 'tech-strook-extra'}${sleep === id ? ' is-sleept' : ''}${doel?.id === id ? (doel.na ? ' is-doel-na' : ' is-doel-voor') : ''}`} data-strook-id={id} data-label={labelVan(id)}
+                draggable={volledig}
+                onDragStart={(e) => { setSleep(id); try { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; } catch { /* oude browser */ } }}
+                onDragOver={(e) => { if (!sleep || sleep === id) return; e.preventDefault(); const r = e.currentTarget.getBoundingClientRect(); const na = e.clientX > r.left + r.width / 2; if (!doel || doel.id !== id || doel.na !== na) setDoel({ id, na }); }}
+                onDragLeave={() => { if (doel?.id === id) setDoel(null); }}
+                onDrop={(e) => { e.preventDefault(); if (sleep && doel) { const p = dropPlek(voorkeur.knoppen, sleep, id, doel.na); if (p !== null) zetVoorkeur(zetOp(voorkeur, sleep, p)); } setSleep(null); setDoel(null); }}
+                onDragEnd={() => { setSleep(null); setDoel(null); }}
+                onContextMenu={(e) => openMenu(e, id)}
                 onPointerDown={(e) => { if (e.pointerType !== 'touch') return; const x = e.clientX; const y = e.clientY; stopLangDruk(); langDruk.current = window.setTimeout(() => setStrookMenu({ id, x, y }), 500); }}
                 onPointerUp={stopLangDruk} onPointerLeave={stopLangDruk} onPointerCancel={stopLangDruk} onPointerMove={stopLangDruk}>{el}</span>
             ))}
-            <button ref={meerRef} type='button' className='tech-band-meer' aria-expanded={meer} aria-controls='tech-band-extra' aria-label={uk ? 'Меню технічного простору' : 'Menu van de technische ruimte'} onClick={() => setMeer((m) => !m)} data-tech-knop='meer'><Menu aria-hidden='true' /></button>
-            <button ref={instelRef} type='button' className='tech-strook-instel' aria-label={uk ? 'Налаштування технічної смуги' : 'Instellingen van de technische strook'} title={uk ? 'Налаштування смуги: вигляд, розмір, текст і порядок кнопок' : 'Instellingen van de strook: weergave, grootte, tekst en volgorde van de knoppen'} aria-expanded={instelOpen} aria-haspopup='dialog' data-strook-instel-knop='' data-tech-knop='strook-instellingen' onClick={() => setInstelOpen(o => !o)}><SlidersHorizontal aria-hidden='true' /></button>
+            {vasteKnop('meer', <button ref={meerRef} type='button' className='tech-band-meer' aria-expanded={meer} aria-controls='tech-band-extra' aria-label={uk ? 'Меню технічного простору' : 'Menu van de technische ruimte'} onClick={() => setMeer((m) => !m)} data-tech-knop='meer'><Menu aria-hidden='true' /></button>)}
+            {vasteKnop('instel', <button ref={instelRef} type='button' className='tech-strook-instel' aria-label={uk ? 'Налаштування технічної смуги' : 'Instellingen van de technische strook'} aria-expanded={instelOpen} aria-haspopup='dialog' data-strook-instel-knop='' data-tech-knop='strook-instellingen' onClick={() => setInstelOpen(o => !o)}><SlidersHorizontal aria-hidden='true' /></button>)}
           </span>
         </div>
       ) : null}
-      {actief && t.activatie && strookMenu ? <StrookKnopMenu label={uk ? 'Дії для кнопки' : 'Acties voor knop'} items={menuVoor(strookMenu.id)} x={strookMenu.x} y={strookMenu.y} onSluit={() => setStrookMenu(null)} /> : null}
+      {actief && t.activatie && strookMenu ? <StrookKnopMenu label={`${uk ? 'Дії для кнопки' : 'Acties voor knop'}: ${labelVan(strookMenu.id)}`} items={menuVoor(strookMenu.id)} x={strookMenu.x} y={strookMenu.y} onSluit={sluitMenu} terug={menuBron.current} /> : null}
       {actief && t.activatie && instelOpen ? <StrookInstelPaneel uk={uk} voorkeur={voorkeur} onWijzig={zetVoorkeur} top={(bandRef.current?.getBoundingClientRect().bottom ?? 40) + 4} onSluit={sluitInstel} /> : null}
       {venster === 'activeren' && !v2 ? <Activeren uk={uk} t={t} sluit={() => setVenster('')} /> : null}
       {venster === 'activeren' && v2 ? <TechBundelGrens><Suspense fallback={null}><RuimteStart taal={taal} sluit={() => setVenster('')} /></Suspense></TechBundelGrens> : null}
