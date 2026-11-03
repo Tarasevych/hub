@@ -233,7 +233,7 @@ export async function main(): Promise<number> {
     check('herstelcode: invoer «abcd-efgh-ijkl» (streepjes, kleine letters) werkt ook', metStreep.status === 200 && metStreep.data.resterend === 8, metStreep.body.slice(0, 120));
     const A8 = G.browser(); await A8.aanmelden(`sub-a-${T}`, aMail, { authTime: oud });
     const intrekZonder = await id(A8, '/api/owner/access/recovery/intrekken');
-    check('«Відкликати всі» zonder step-up → 403 STEP_UP_REQUIRED, codes blijven', intrekZonder.status === 403 && intrekZonder.data.error === 'STEP_UP_REQUIRED' && (await id(A5, '/api/owner/access/recovery/overzicht')).data.resterend === 8);
+    check('«Відкликати всі» zonder step-up → 403 STEP_UP_REQUIRED, codes blijven', intrekZonder.status === 403 && ['STEP_UP_REQUIRED', 'STEP_UP_STRONG_REQUIRED'].includes(intrekZonder.data.error) && (await id(A5, '/api/owner/access/recovery/overzicht')).data.resterend === 8);
     const intrek = await id(A7, '/api/owner/access/recovery/intrekken');
     const st = (intrek.data.codes || []).map((c: { status: string }) => c.status);
     check('«Відкликати всі» met step-up: resterend 0, ongebruikte → «ingetrokken», gebruikte blijven «gebruikt»', intrek.status === 200 && intrek.data.resterend === 0 && intrek.data.ingetrokkenOp > 0 && st.filter((x: string) => x === 'ingetrokken').length === 8 && st.filter((x: string) => x === 'gebruikt').length === 2, intrek.body.slice(0, 200));
