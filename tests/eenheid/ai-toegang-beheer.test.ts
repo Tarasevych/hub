@@ -22,9 +22,12 @@ function nepBrowser() {
   const g = globalThis as Record<string, unknown>;
   // Een eerdere test in dezelfde run (alle tests laden in één proces) kan al een window zetten zónder het canonieke runtime.
   // Dan krijgt die window het runtime alsnog; het venster zelf blijft van die test.
-  if ((g.window as Record<string, unknown> | undefined)?.__TSV_CANONICAL_SERVICE__) return;
   const u = new URL(`${ORIGIN}/agents#toegang`);
   const location = { href: u.href, origin: u.origin, host: u.host, hostname: u.hostname, pathname: u.pathname, search: u.search, hash: u.hash, protocol: u.protocol, assign: () => undefined, replace: () => undefined, reload: () => undefined };
+  // INTEG-001: deze test zet altijd zijn eigen origin; een location van een eerdere test in dezelfde run mag niet doorwerken
+  // (de extensie-beheer-aanvraag leest service en tabContext daaruit).
+  g.location = location;
+  if ((g.window as Record<string, unknown> | undefined)?.__TSV_CANONICAL_SERVICE__) return;
   if (!g.window) {
     const opslag = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, String(v)); }, removeItem: (k: string) => { m.delete(k); }, clear: () => m.clear(), key: () => null, length: 0 }; };
     g.location = location;

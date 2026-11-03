@@ -30,7 +30,8 @@ export async function main(): Promise<number> {
     const totpRij = async () => (await pool.query("select data from app.records where tbl='identity_totp_v1' and data->>'userId'=$1", [oId])).rows[0]?.data as Record<string, any>;
     const geheimVoor = (await totpRij()).secretEnc;
     const s2zonder = await id('/api/owner/access/totp/start');
-    check('bevestigde TOTP vervangen zonder step-up → 403 STEP_UP_REQUIRED', s2zonder.status === 403 && s2zonder.data.error === 'STEP_UP_REQUIRED', `${s2zonder.status}`);
+    // INTEG-001 (03.11.2026): kritieke acties vragen sterke step-up; de server geeft dan STEP_UP_STRONG_REQUIRED (toegang-context.ts).
+    check('bevestigde TOTP vervangen zonder step-up → 403 STEP_UP(_STRONG)_REQUIRED', s2zonder.status === 403 && ['STEP_UP_REQUIRED', 'STEP_UP_STRONG_REQUIRED'].includes(s2zonder.data.error), `${s2zonder.status} ${s2zonder.data.error}`);
     const so = await id('/api/owner/access/stap-op', { code: totpCode(s1.data.secret, stap) });
     const s2geenCode = await id('/api/owner/access/totp/start');
     check('met step-up maar zonder huidige code → geweigerd, geheim ongewijzigd', so.status === 200 && s2geenCode.status === 400 && s2geenCode.data.error === 'ACCESS_TOTP_CODE_REQUIRED' && (await totpRij()).secretEnc === geheimVoor && !(await totpRij()).pendingSecretEnc, `${so.status} ${s2geenCode.status} ${s2geenCode.body.slice(0, 80)}`);
@@ -60,7 +61,7 @@ export async function main(): Promise<number> {
     const O2 = G.browser(); await O2.aanmelden(`sub-o-${T}`, eigenaar, { authTime: oud });
     const herstelZonder = await id('/api/owner/access/method/herstel', {}, O2);
     const herstelMet = await id('/api/owner/access/method/herstel');
-    check('zelf ontkoppeld → terugzetten vereist step-up, met step-up lukt het', ww.status === 200 && ontk.status === 200 && herstelZonder.status === 403 && herstelZonder.data.error === 'STEP_UP_REQUIRED' && herstelMet.status === 200, `${ww.status} ${ontk.status} ${herstelZonder.status} ${herstelMet.status} ${herstelMet.body.slice(0, 80)}`);
+    check('zelf ontkoppeld → terugzetten vereist step-up, met step-up lukt het', ww.status === 200 && ontk.status === 200 && herstelZonder.status === 403 && ['STEP_UP_REQUIRED', 'STEP_UP_STRONG_REQUIRED'].includes(herstelZonder.data.error) && herstelMet.status === 200, `${ww.status} ${ontk.status} ${herstelZonder.status} ${herstelZonder.data.error} ${herstelMet.status} ${herstelMet.body.slice(0, 80)}`);
     // gebruiker U (approved) met Google + wachtwoord; beheerder ontkoppelt het wachtwoord
     const U = G.browser(); const uMail = `tg-u-${T}@example.test`;
     await U.aanmelden(`sub-u-${T}`, uMail, { authTime: oud });
