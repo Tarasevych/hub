@@ -52,7 +52,7 @@ const ontg = async (soort, dagen) => (await pool.query(`INSERT INTO app.extensie
 const levend = async (id) => !(await pool.query('SELECT ingetrokken_op FROM app.extensie_ontgrendelingen WHERE id=$1', [id])).rows[0].ingetrokken_op;
 async function startViaUI(page, { modus, minuten, reden = 'E2E integratie' }, naam) {
   if (await page.locator('.tech-band').count()) { if (await page.locator('[data-tech-knop="meer"]').isVisible().catch(() => false)) await page.click('[data-tech-knop="meer"]'); await page.click('[data-tech-knop="verlengen"]'); }
-  else { await menu(page); await page.click('[data-ruimtes-menu] .rw [data-ruimte="technisch"]'); }
+  else { await menu(page); await page.click('[data-ruimtes-menu] .rw [data-naar="technisch"]'); }
   await page.waitForSelector('[data-tech-venster="ruimte-start"]', { timeout: 20000, state: 'attached' });
   if (modus === 'tijd') await page.click(`.rs-chip[data-minuten="${minuten}"]`); else await page.click(`.rs-kaart[data-termijn="${modus}"]`);
   if (await page.locator('[data-rs-reden]').count()) await page.fill('[data-rs-reden]', reden);
@@ -93,12 +93,12 @@ try {
   // ── 1. vlag AAN, eigenaar, UA 1280: termijn «на час» met echte stap-op ──
   const sA = await sessieVoor(uid); const { ctx: cA, page: A } = await context(sA);
   await openHub(A); await menu(A);
-  check('vlag aan: wisselknop in accountmenu, Звичайний actief, «Доступ і терміни»', await A.locator('[data-ruimtes-menu] .rw [data-ruimte="prive"][aria-checked="true"]').count() === 1, (await A.textContent('[data-ruimtes-menu]').catch(() => '')).slice(0, 160));
+  check('vlag aan: tumbler «Технічний простір» in accountmenu, uit (gewone ruimte), «Доступ і терміни»', await A.locator('[data-ruimtes-menu] .rw [role="switch"][aria-checked="false"]').count() === 1, (await A.textContent('[data-ruimtes-menu]').catch(() => '')).slice(0, 160));
   await shot(A, '02-vlag-aan-menu');
-  await A.click('[data-ruimtes-menu] .rw [data-ruimte="technisch"]');
+  await A.click('[data-ruimtes-menu] .rw [data-naar="technisch"]');
   const eersteKlik = await A.waitForSelector('[data-tech-venster="ruimte-start"]', { timeout: 10000, state: 'attached' }).then(() => true, async () => { await shot(A, 'debug-eerste-klik'); console.log('DEBUG', JSON.stringify(await A.evaluate(() => ({ venster: [...document.querySelectorAll('[data-tech-venster]')].map((x) => x.getAttribute('data-tech-venster')), stand: document.querySelector('[data-ruimte-stand]')?.textContent, vlag: sessionStorage.getItem('mr-vlag:tech-ruimtes-v2') })))); return false; });
   check('eerste klik op «Технічний простір» opent het startvenster', eersteKlik);
-  if (!eersteKlik) { await menu(A); await A.click('[data-ruimtes-menu] .rw [data-ruimte="technisch"]'); await A.waitForSelector('[data-tech-venster="ruimte-start"]', { timeout: 20000, state: 'attached' }); }
+  if (!eersteKlik) { await menu(A); await A.click('[data-ruimtes-menu] .rw [data-naar="technisch"]'); await A.waitForSelector('[data-tech-venster="ruimte-start"]', { timeout: 20000, state: 'attached' }); }
   const namen = await A.locator('.rs .rs-naam').allTextContents();
   check('startvenster: drie termijnen met exacte woorden', namen.includes('До завершення технічного сеансу') && namen.includes('До виходу з акаунта на сайті'), namen.join(' | '));
   check('eigenaar: alle termijnen beschikbaar', await A.locator('[data-termijn][data-beschikbaar="0"]').count() === 0, String(await A.locator('[data-termijn][data-beschikbaar="0"]').count()));
@@ -110,7 +110,7 @@ try {
   // pauze en terug zonder stap-op
   await A.fill('body', '').catch(() => undefined);
   const herladen0 = await A.evaluate(() => (window.__trId = window.__trId || Math.random()));
-  await menu(A); await A.click('[data-ruimtes-menu] .rw [data-ruimte="prive"]');
+  await menu(A); await A.click('[data-ruimtes-menu] .rw [data-naar="prive"]');
   await A.waitForSelector('[data-ruimte-uitkomst]', { timeout: 6000 }).catch(() => undefined);
   await A.waitForFunction(() => !document.querySelector('.tech-band'), undefined, { timeout: 6000 }).catch(() => undefined);
   const st1 = await inPagina(A, '/api/owner/hub/tech/ruimtes/status');
@@ -118,7 +118,7 @@ try {
   await shot(A, '05-pauze');
   const stapVoor = stapOpTeller;
   await pool.query(`DELETE FROM app.records WHERE tbl='owner_step_up_v1' AND data->>'userId'=$1`, [uid]).catch(() => undefined);
-  await menu(A); await A.click('[data-ruimtes-menu] .rw [data-ruimte="technisch"]');
+  await menu(A); await A.click('[data-ruimtes-menu] .rw [data-naar="technisch"]');
   const gevraagdTerug = await stapOpAlsGevraagd(A, 2500);
   await A.waitForSelector('.tech-band', { timeout: 6000 }).catch(() => undefined);
   check('terug naar Технічний zonder stap-op en zonder startvenster (stap-op-records gewist)', !gevraagdTerug && stapOpTeller === stapVoor && await A.locator('.tech-band').count() === 1 && await A.locator('[data-tech-venster="ruimte-start"]').count() === 0);
@@ -217,7 +217,7 @@ try {
   // ── 6. helper met rol «beheerder» 60 min: uitgegrijsd met reden ──
   { const s = await sessieVoor(uid2); const { ctx, page } = await context(s); await openHub(page); await menu(page);
     const heeft = await page.locator('[data-ruimtes-menu] .rw').count();
-    if (heeft) { await page.click('[data-ruimtes-menu] .rw [data-ruimte="technisch"]'); await page.waitForSelector('[data-tech-venster="ruimte-start"]', { timeout: 20000, state: 'attached' }).catch(() => undefined); }
+    if (heeft) { await page.click('[data-ruimtes-menu] .rw [data-naar="technisch"]'); await page.waitForSelector('[data-tech-venster="ruimte-start"]', { timeout: 20000, state: 'attached' }).catch(() => undefined); }
     const uit = await page.locator('[data-termijn][data-beschikbaar="0"]').count(); const reden = await page.locator('[data-termijn-reden]').allTextContents();
     check('rol met plafond 60 min: onbeschikbare termijnen zichtbaar, uitgegrijsd, met reden', heeft === 1 && uit >= 3 && reden.some((x) => /Недоступно/.test(x)), `rw=${heeft} uit=${uit} reden=${reden.join(' / ').slice(0, 200)}`);
     await shot(page, '17-helper-uitgegrijsd'); await ctx.close(); }
@@ -228,7 +228,7 @@ try {
     const over = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: innerWidth }));
     check('NL 390 px: «Gewone ruimte|Technische ruimte», geen horizontale overloop', nm.join('|') === 'Gewone ruimte|Technische ruimte' && over.sw <= over.w, `${nm.join('|')} ${JSON.stringify(over)}`);
     await shot(page, '18-nl-390-menu');
-    await page.click('[data-ruimtes-menu] .rw [data-ruimte="technisch"]').catch(() => undefined); await page.waitForSelector('[data-tech-venster="ruimte-start"]', { timeout: 20000, state: 'attached' }).catch(() => undefined);
+    await page.click('[data-ruimtes-menu] .rw [data-naar="technisch"]').catch(() => undefined); await page.waitForSelector('[data-tech-venster="ruimte-start"]', { timeout: 20000, state: 'attached' }).catch(() => undefined);
     const nn = await page.locator('.rs .rs-naam').allTextContents(); const past = await page.evaluate(() => { const v = document.querySelector('[data-tech-venster="ruimte-start"]'); if (!v) return false; const r = v.getBoundingClientRect(); return r.left >= -1 && r.right <= innerWidth + 1; });
     check('NL 390 px: startvenster met NL-termijnen past in de breedte', past && nn.includes('Tot het einde van de technische sessie') && nn.includes('Tot afmelden van het account op de site'), nn.join(' | '));
     await shot(page, '19-nl-390-start');
@@ -261,7 +261,7 @@ try {
     const poort = page.locator('[data-tech-poort="activeren"]').first();
     let via = 'menu';
     if (await poort.isVisible().catch(() => false)) { via = 'poort'; await poort.click(); }
-    else { await menu(page); await page.click('[data-ruimtes-menu] .rw [data-ruimte="technisch"]').catch(() => undefined); }
+    else { await menu(page); await page.click('[data-ruimtes-menu] .rw [data-naar="technisch"]').catch(() => undefined); }
     await page.waitForSelector('[data-tech-venster="ruimte-start"], [data-tech-venster="activeren"]', { timeout: 20000, state: 'attached' }).catch(() => undefined);
     await page.waitForTimeout(800);
     const nieuw = await page.locator('[data-tech-venster="ruimte-start"]').count(), oud = await page.locator('[data-tech-venster="activeren"]').count();
