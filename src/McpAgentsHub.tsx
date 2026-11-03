@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Activity, Bell, Globe, KeyRound, LayoutDashboard, Plug, PlugZap, Plus, ShieldCheck, SlidersHorizontal, Wrench } from 'lucide-react';
+import { Activity, Bell, Bot, Globe, KeyRound, LayoutDashboard, Plug, PlugZap, Plus, ShieldCheck, SlidersHorizontal, Wrench } from 'lucide-react';
 import { api } from './platform/client';
 import { agentLogo, Logo, Section, type Tr } from './mcp-ui';
 import { ago, commandLabel, sessionBody, statusLabel, useAgentsData, useToolApprovals } from './agents-data';
@@ -81,12 +81,13 @@ export default function McpAgentsHub({ tr, doors }: { tr: Tr; doors: ReactNode }
 
   return (
     <div className='hub' data-hub-view-current={current}>
-      <div className='hub-top'>
-        <div>
+      <header className='hub-top'>
+        <span className='mcp-page-icon' aria-hidden='true'><Bot /></span>
+        <div className='mcp-page-text'>
           <h1>{tr('Агенти', 'Agenten')}</h1>
-          <p>{tr('Усе, що підключено до вашого сайту: Claude, ваші пристрої та браузери. Оберіть зліва, що налаштувати.', 'Alles wat met uw site verbonden is: Claude, uw apparaten en browsers. Kies links wat u wilt instellen.')}</p>
+          <p className='mcp-lead'>{tr('Усе, що підключено до вашого сайту: Claude, ваші пристрої та браузери. Оберіть зліва, що налаштувати.', 'Alles wat met uw site verbonden is: Claude, uw apparaten en browsers. Kies links wat u wilt instellen.')}</p>
         </div>
-      </div>
+      </header>
 
       <div className='hub-layout'>
         <nav className='hub-rail' aria-label={tr('Розділи сторінки', 'Onderdelen van de pagina')}>
@@ -105,20 +106,20 @@ export default function McpAgentsHub({ tr, doors }: { tr: Tr; doors: ReactNode }
           {current === 'overview' ? (
             <>
               <div className='hub-grid'>
-                <button type='button' className='hub-card hub-stat' style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => go('claude')}>
-                  <Logo kind='claude' size={34} label='Claude' />
+                <button type='button' className='hub-stat' onClick={() => go('claude')}>
+                  <span className='hub-stat-icon' aria-hidden='true'><Logo kind='claude' size={26} label='Claude' /></span>
                   <div><strong>{claudeState === 'on' ? tr('Активний', 'Actief') : claudeState === 'wait' ? tr('Простоює', 'Inactief') : tr('Не підключено', 'Niet verbonden')}</strong><span>{tr('Claude', 'Claude')} · {stats ? `${stats.grants.length} ${tr('доступ(ів)', 'toegang(en)')}` : '…'}</span></div>
                 </button>
-                <button type='button' className='hub-card hub-stat' style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => go(agents[0] ? `dev:${agents[0].id}` : 'pair')}>
-                  <Plug size={34} aria-hidden='true' />
+                <button type='button' className='hub-stat' onClick={() => go(agents[0] ? `dev:${agents[0].id}` : 'pair')}>
+                  <span className='hub-stat-icon' aria-hidden='true'><Plug /></span>
                   <div><strong>{online}/{agents.length}</strong><span>{tr('пристроїв і браузерів у мережі', 'apparaten en browsers online')}</span></div>
                 </button>
-                <button type='button' className='hub-card hub-stat' style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => go('pending')}>
-                  <ShieldCheck size={34} aria-hidden='true' />
+                <button type='button' className='hub-stat' onClick={() => go('pending')}>
+                  <span className='hub-stat-icon' aria-hidden='true'><ShieldCheck /></span>
                   <div><strong>{waiting}</strong><span>{tr('очікують вашого рішення', 'wachten op uw beslissing')}</span></div>
                 </button>
-                <button type='button' className='hub-card hub-stat' style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => go('tools')}>
-                  <Wrench size={34} aria-hidden='true' />
+                <button type='button' className='hub-stat' onClick={() => go('tools')}>
+                  <span className='hub-stat-icon' aria-hidden='true'><Wrench /></span>
                   <div><strong>{stats ? `${stats.active}/${stats.total}` : '…'}</strong><span>{tr('інструментів увімкнено', 'hulpmiddelen aan')}</span></div>
                 </button>
               </div>
@@ -188,7 +189,7 @@ export default function McpAgentsHub({ tr, doors }: { tr: Tr; doors: ReactNode }
 
           {current === 'doors' ? (
             <Section id='doors' icon={<KeyRound />} title={tr('Токени й двері для агентів', 'Tokens en deuren voor agenten')} subtitle={tr('Окремі ключі для зовнішніх агентів і що їм дозволено робити із сайтом.', 'Aparte sleutels voor externe agenten en wat zij met de site mogen doen.')} defaultOpen>
-              <div className='mcp-estate' style={{ padding: 0 }}>{doors}</div>
+              <div className='mcp-doors'>{doors}</div>
             </Section>
           ) : null}
 

@@ -18,6 +18,7 @@ const KIND: Record<string, { uk: string; nl: string; hint: [string, string] }> =
   SHA256SUMS: { uk: 'Контрольні суми', nl: 'Controlesommen', hint: ['перевірка цілісності: sha256sum -c', 'integriteitscontrole: sha256sum -c'] },
 };
 
+/** Blok "Нічні копії сервера": lijst per nachtelijke kopie, met de bestanden die elk downloadbaar zijn. */
 export default function McpBackupsCard({ tr }: { tr: Tr }) {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState('');
@@ -36,23 +37,35 @@ export default function McpBackupsCard({ tr }: { tr: Tr }) {
       const a = document.createElement('a'); a.href = url; a.download = `${stamp}-${name}`; a.click(); URL.revokeObjectURL(url);
     } catch { setError(tr('Файл не вдалося завантажити.', 'Het bestand kon niet worden gedownload.')); } finally { setBusy(''); }
   };
-  return <article className="mcp-card mbk">
-    <header className="mbk-head"><h2><ServerCog size={18} />{tr('Нічні копії сервера', 'Nachtelijke serverkopieën')}</h2>
-      <button type="button" className="mcp-ghost" onClick={() => void load()} aria-label={tr('Оновити', 'Vernieuwen')}><RefreshCw size={14} /></button></header>
-    <p>{tr('Щоночі сервер сам робить зашифровану (age) копію всього, на чому працює сайт: бази, файлів користувачів та системи (код, служби, тунель, міст MCP). Секрети зберігаються окремо. Розшифрувати може лише ваш офлайн-ключ.', 'Elke nacht maakt de server zelf een versleutelde (age) kopie van alles waarop de site draait: database, bestanden van gebruikers en systeem (code, diensten, tunnel, MCP-brug). Geheimen worden apart bewaard. Alleen uw offline sleutel kan ze ontsleutelen.')}</p>
-    {error && <p className="mbk-error" role="alert">{error}</p>}
-    {rows === null && !error ? <p className="mbk-busy"><Loader2 size={14} className="mbk-spin" /> {tr('Завантаження…', 'Laden…')}</p> : rows && rows.length === 0 ? <p>{tr('Копій ще немає.', 'Er zijn nog geen kopieën.')}</p> : (
-      <ul className="mbk-list">{(rows ?? []).map((r, i) => <li key={r.stamp} className={r.ready ? '' : 'is-partial'}>
-        <details open={i === 0}>
-          <summary><span className="mbk-when"><Database size={15} />{stampDate(r.stamp).toLocaleString()}</span>
-            <span className="mbk-meta">{size(r.totalBytes)}{r.release ? ` · ${r.release}` : ''}</span>
-            <span className={`mbk-badge ${r.ready ? 'ok' : 'warn'}`}>{r.ready ? tr('завершено', 'voltooid') : tr('незавершено', 'onvoltooid')}</span>
-            {r.encrypted && <span className="mbk-badge"><ShieldCheck size={12} />age</span>}
-            {!r.hasSystem && <span className="mbk-badge warn" title={tr('Ця копія зроблена до появи системного архіву', 'Deze kopie is gemaakt voordat het systeemarchief bestond')}>{tr('без системи', 'zonder systeem')}</span>}</summary>
-          <ul className="mbk-files">{r.files.map((f) => { const k = KIND[f.name] ?? KIND[f.name.replace(/\.age$/, '') + '.age'] ?? { uk: f.name, nl: f.name, hint: ['', ''] as [string, string] };
-            return <li key={f.name}><FileArchive size={14} /><span><b>{tr(k.uk, k.nl)}</b><small>{tr(k.hint[0], k.hint[1])} · {f.name} · {size(f.bytes)}</small></span>
-              <button type="button" className="mcp-ghost" disabled={!!busy} onClick={() => void save(r.stamp, f.name)}>{busy === `${r.stamp}/${f.name}` ? <Loader2 size={14} className="mbk-spin" /> : <Download size={14} />}{tr('Завантажити', 'Downloaden')}</button></li>; })}</ul>
-        </details></li>)}</ul>)}
-    <p className="mbk-note">{tr('Відновлення: інструкція deploy/HERSTEL.md (розділ «5b. Системний архів»). Після завантаження перевіряйте суми: sha256sum -c SHA256SUMS.', 'Herstel: handleiding deploy/HERSTEL.md (sectie "5b. Systeemarchief"). Controleer na het downloaden de sommen: sha256sum -c SHA256SUMS.')}</p>
-  </article>;
+  return <section className="mcp-block mbk">
+    <header className="mcp-block-head">
+      <span className="mcp-block-icon" aria-hidden="true"><ServerCog /></span>
+      <div className="mcp-block-title">
+        <h2>{tr('Нічні копії сервера', 'Nachtelijke serverkopieën')}</h2>
+        <p>{tr('Щоночі сервер робить зашифровану копію всього сайту. Секрети зберігаються окремо; розшифрувати може лише ваш офлайн-ключ.', 'Elke nacht maakt de server een versleutelde kopie van de hele site. Geheimen worden apart bewaard; alleen uw offline sleutel ontsleutelt ze.')}</p>
+      </div>
+      <div className="mcp-block-actions">
+        <button type="button" className="mcp-btn ghost small" onClick={() => void load()} aria-label={tr('Оновити', 'Vernieuwen')}><RefreshCw />{tr('Оновити', 'Vernieuwen')}</button>
+      </div>
+    </header>
+    <div className="mcp-block-body">
+      {error && <p className="mcp-error" role="alert">{error}</p>}
+      {rows === null && !error ? <p className="mbk-busy"><Loader2 size={14} className="mbk-spin" /> {tr('Завантаження…', 'Laden…')}</p> : rows && rows.length === 0 ? (
+        <div className="mcp-empty"><ServerCog /><p>{tr('Копій ще немає.', 'Er zijn nog geen kopieën.')}</p></div>
+      ) : (
+        <ul className="mbk-list">{(rows ?? []).map((r, i) => <li key={r.stamp} className={r.ready ? '' : 'is-partial'}>
+          <details open={i === 0}>
+            <summary><span className="mbk-when"><Database size={15} />{stampDate(r.stamp).toLocaleString()}</span>
+              <span className="mbk-meta">{size(r.totalBytes)}{r.release ? ` · ${r.release}` : ''}</span>
+              <span className={`mbk-badge ${r.ready ? 'ok' : 'warn'}`}>{r.ready ? tr('завершено', 'voltooid') : tr('незавершено', 'onvoltooid')}</span>
+              {r.encrypted && <span className="mbk-badge"><ShieldCheck size={12} />age</span>}
+              {!r.hasSystem && <span className="mbk-badge warn" title={tr('Ця копія зроблена до появи системного архіву', 'Deze kopie is gemaakt voordat het systeemarchief bestond')}>{tr('без системи', 'zonder systeem')}</span>}</summary>
+            <ul className="mbk-files">{r.files.map((f) => { const k = KIND[f.name] ?? KIND[f.name.replace(/\.age$/, '') + '.age'] ?? { uk: f.name, nl: f.name, hint: ['', ''] as [string, string] };
+              return <li key={f.name}><FileArchive size={14} /><span><b>{tr(k.uk, k.nl)}</b><small>{tr(k.hint[0], k.hint[1])} · {f.name} · {size(f.bytes)}</small></span>
+                <button type="button" className="mcp-btn ghost small" disabled={!!busy} onClick={() => void save(r.stamp, f.name)}>{busy === `${r.stamp}/${f.name}` ? <Loader2 size={14} className="mbk-spin" /> : <Download size={14} />}{tr('Завантажити', 'Downloaden')}</button></li>; })}</ul>
+          </details></li>)}</ul>
+      )}
+      <p className="mbk-note">{tr('Відновлення: інструкція deploy/HERSTEL.md (розділ «5b. Системний архів»). Після завантаження перевіряйте суми: sha256sum -c SHA256SUMS.', 'Herstel: handleiding deploy/HERSTEL.md (sectie "5b. Systeemarchief"). Controleer na het downloaden de sommen: sha256sum -c SHA256SUMS.')}</p>
+    </div>
+  </section>;
 }

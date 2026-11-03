@@ -1,79 +1,87 @@
-/* Meldingencentrum: brede, rustige lijst met zoeken, filters, groepering per dag, stand en duur. Op een telefoon een volle onderlade. */
-.canonical-notification-panel{width:min(480px,calc(100vw - 16px));max-height:min(720px,calc(100dvh - 16px))}
-@media(max-width:560px){.canonical-notification-panel{left:8px!important;right:8px;top:auto!important;bottom:8px;width:auto;max-height:calc(100dvh - 16px)}}
-.cnc-body{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;overflow:hidden}
-.cnc-tools{display:grid;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
-.cnc-search{display:flex;align-items:center;gap:8px;min-height:38px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface,var(--panel))}
-.cnc-search svg{width:16px;height:16px;color:var(--muted);flex:0 0 auto}
-.cnc-search input{flex:1;min-width:0;border:0;background:transparent;color:inherit;font:inherit;outline:none;min-height:36px}
-.cnc-search:focus-within{outline:2px solid var(--accent,#2f6f73)}
-.cnc-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin}
-.cnc-chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:2px 12px;border-radius:99px;border:1px solid var(--line);background:transparent;color:inherit;font:inherit;font-size:.82rem;cursor:pointer;white-space:nowrap}
-.cnc-chip[aria-pressed=true]{background:var(--accent,#2f6f73);border-color:var(--accent,#2f6f73);color:#fff;font-weight:700}
-.cnc-chip:focus-visible{outline:3px solid #f59e0b;outline-offset:1px}
-.cnc-chip-n{padding:0 6px;border-radius:99px;background:rgba(120,140,160,.25);font-size:.72rem}
-.cnc-chip[aria-pressed=true] .cnc-chip-n{background:rgba(255,255,255,.28)}
-.cnc-selects{display:flex;flex-wrap:wrap;gap:8px 12px}
-.cnc-selects label{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted)}
-.cnc-selects select{min-height:32px;border-radius:8px;border:1px solid var(--line);background:var(--surface,var(--panel));color:var(--text);font:inherit;font-size:.82rem;padding:0 6px}
-.cnc-list{overflow:auto;padding:6px 8px 10px;display:grid;align-content:start;gap:6px;min-height:0}
-.cnc-day{position:sticky;top:0;z-index:1;padding:8px 6px 4px;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--panel)}
-.cnc-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px;border-radius:12px;border:1px solid var(--line);border-left-width:4px;background:var(--surface,var(--panel))}
-.cnc-row.kind-success{border-left-color:#1a7f37}.cnc-row.kind-warning{border-left-color:#b45309}.cnc-row.kind-error{border-left-color:#b91c1c}.cnc-row.kind-info{border-left-color:var(--accent,#2f6f73)}
-.cnc-row.is-read{opacity:.78}
-.cnc-row.is-unread strong{font-weight:750}
-.cnc-icon{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--soft,rgba(47,111,115,.12));color:var(--accent,#2f6f73)}
-.cnc-icon svg{width:18px;height:18px}
-.cnc-main{display:grid;gap:4px;min-width:0}
-.cnc-main strong{font-weight:650;line-height:1.3;overflow-wrap:anywhere}
-.cnc-meta{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:.76rem;color:var(--muted)}
-.cnc-cat{padding:0 8px;border-radius:99px;background:var(--soft,rgba(120,140,160,.16));font-weight:650}
-.cnc-status{display:inline-flex;align-items:center;gap:5px;font-weight:700}
-.cnc-status i{width:8px;height:8px;border-radius:99px;background:currentColor}
-.cnc-status.st-waiting{color:#b45309}.cnc-status.st-active{color:#2563eb}.cnc-status.st-done{color:#1a7f37}.cnc-status.st-failed{color:#b91c1c}.cnc-status.st-rejected{color:#6b7280}.cnc-status.st-expired{color:#6b7280}
-.cnc-status.st-waiting i,.cnc-status.st-active i{animation:cnc-pulse 1.4s ease-in-out infinite}
-@keyframes cnc-pulse{50%{opacity:.35}}
-@media(prefers-reduced-motion:reduce){.cnc-status i{animation:none!important}}
-@media(prefers-color-scheme:dark){.cnc-status.st-waiting{color:#fbbf24}.cnc-status.st-active{color:#60a5fa}.cnc-status.st-done{color:#4ac26b}.cnc-status.st-failed{color:#f87171}}
-.cnc-details{display:grid;gap:8px;margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--soft,rgba(120,140,160,.12))}
-.cnc-details p{margin:0;color:var(--muted)}
-.cnc-details dl{display:grid;gap:4px;margin:0}
-.cnc-details dl>div{display:flex;justify-content:space-between;gap:12px;font-size:.82rem}
-.cnc-details dt{color:var(--muted)}.cnc-details dd{margin:0;text-align:right;font-weight:600}
-.cnc-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px;max-width:112px}
-.cnc-actions button{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--muted);cursor:pointer}
-.cnc-actions button:hover{background:var(--soft,rgba(120,140,160,.18));color:var(--text)}
-.cnc-actions button:focus-visible{outline:3px solid #f59e0b;outline-offset:1px}
-.cnc-actions svg{width:17px;height:17px}
-.cnc-done{display:inline-grid;place-items:center;width:34px;height:34px;color:#1a7f37}
-.cnc-done svg{width:16px;height:16px}
+/* Meldingencentrum: de lijst. Elke melding toont wat er gebeurde, de oorzaak, en onderaan kleine pictogramknoppen die niet over elkaar vallen.
+   Gelijke meldingen zijn één groep (de laatste zichtbaar, de rest klapt uit). De instellingen staan in hetzelfde venster. */
 
-.cnc-link{justify-self:start;font-size:.82rem;font-weight:700;color:var(--accent,#2f6f73);text-decoration:none}
-.cnc-link:hover{text-decoration:underline}
-.cnc-link:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+.cnc-list { display: grid; align-content: start; gap: 6px; min-height: 0; overflow: auto; padding: 8px 10px 10px; overscroll-behavior: contain; }
+.cnc-day { position: sticky; top: 0; z-index: 1; padding: 6px 2px 2px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--panel); }
+.cnc-group { display: grid; gap: 4px; min-width: 0; }
 
-/* kleurige sectiepictogrammen met logo van de dienst; lichte toon per soort (geen regenboog: alleen een rand en een zweem achtergrond) */
-.cnc-icon{position:relative;--sec:#2f6f73;background:color-mix(in srgb,var(--sec) 16%,transparent);color:var(--sec)}
-.cnc-provider{position:absolute;right:-5px;bottom:-5px;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--panel,#fff);box-shadow:0 0 0 1px var(--line,#d6dde4)}
-.cnc-provider svg{width:12px;height:12px}
-.cnc-row.sec-mail,.cnc-sec.sec-mail{--sec:#2563eb}.cnc-row.sec-cloud,.cnc-sec.sec-cloud{--sec:#0284c7}.cnc-row.sec-calendar,.cnc-sec.sec-calendar{--sec:#ea580c}
-.cnc-row.sec-ai,.cnc-sec.sec-ai,.cnc-row.sec-claude,.cnc-sec.sec-claude{--sec:#c2603d}.cnc-row.sec-agent,.cnc-sec.sec-agent{--sec:#0f766e}.cnc-row.sec-browser,.cnc-sec.sec-browser{--sec:#7c3aed}
-.cnc-row.sec-github,.cnc-sec.sec-github{--sec:#475569}.cnc-row.sec-mcp,.cnc-sec.sec-mcp{--sec:#0d9488}.cnc-row.sec-hub,.cnc-sec.sec-hub{--sec:#4f46e5}
-.cnc-row.sec-huis,.cnc-sec.sec-huis{--sec:#b45309}.cnc-row.sec-identity,.cnc-sec.sec-identity,.cnc-row.sec-api,.cnc-sec.sec-api{--sec:#be185d}.cnc-row.sec-admin,.cnc-sec.sec-admin{--sec:#dc2626}
-.cnc-row .cnc-icon{--sec:inherit}
-.cnc-row.sec-mail .cnc-icon{--sec:#2563eb}.cnc-row.sec-cloud .cnc-icon{--sec:#0284c7}.cnc-row.sec-calendar .cnc-icon{--sec:#ea580c}.cnc-row.sec-ai .cnc-icon,.cnc-row.sec-claude .cnc-icon{--sec:#c2603d}
-.cnc-row.sec-agent .cnc-icon{--sec:#0f766e}.cnc-row.sec-browser .cnc-icon{--sec:#7c3aed}.cnc-row.sec-github .cnc-icon{--sec:#475569}.cnc-row.sec-mcp .cnc-icon{--sec:#0d9488}.cnc-row.sec-hub .cnc-icon{--sec:#4f46e5}
-.cnc-row.sec-huis .cnc-icon{--sec:#b45309}.cnc-row.sec-identity .cnc-icon,.cnc-row.sec-api .cnc-icon{--sec:#be185d}.cnc-row.sec-admin .cnc-icon{--sec:#dc2626}
-.cnc-row.kind-success{background:color-mix(in srgb,#16a34a 6%,var(--surface,var(--panel)))}
-.cnc-row.kind-warning{background:color-mix(in srgb,#f59e0b 8%,var(--surface,var(--panel)))}
-.cnc-row.kind-error{background:color-mix(in srgb,#dc2626 7%,var(--surface,var(--panel)))}
-.cnc-row.is-nested{margin-left:18px;padding:8px;background:transparent;opacity:.9}
-.cnc-row.is-nested .cnc-icon{width:28px;height:28px}
-.cnc-nested{display:grid;gap:4px;margin-top:4px;padding-left:6px;border-left:2px solid var(--line,#d6dde4)}
-.cnc-more{display:inline-flex;align-items:center;gap:6px;justify-self:start;min-height:28px;padding:2px 10px;border-radius:99px;border:1px dashed var(--line,#cbd5e1);background:transparent;color:var(--muted,#64748b);font:inherit;font-size:.78rem;cursor:pointer}
-.cnc-more:hover{background:var(--soft,rgba(120,140,160,.14))}
-.cnc-more svg{width:14px;height:14px}
-.cnc-sections{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin}
-.cnc-sec{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:2px 10px;border-radius:99px;border:1px solid var(--line,#d6dde4);background:transparent;color:inherit;font:inherit;font-size:.78rem;cursor:pointer;white-space:nowrap}
-.cnc-sec svg{width:14px;height:14px;color:var(--sec,var(--muted))}
-.cnc-sec[aria-pressed=true]{background:color-mix(in srgb,var(--sec,#2f6f73) 16%,transparent);border-color:var(--sec,#2f6f73);font-weight:700}
+.cnc-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; min-width: 0; padding: 10px; border: 1px solid var(--line); border-left: 4px solid var(--sec); border-radius: 12px; background: var(--surface); }
+.cnc-row.kind-error { border-left-color: var(--danger, #b91c1c); }
+.cnc-row.kind-warning { border-left-color: #b45309; }
+.cnc-row.kind-success { border-left-color: var(--good, #1a7f37); }
+.cnc-row.kind-info { border-left-color: var(--sec); }
+.cnc-row.is-unread { background: color-mix(in srgb, var(--accent-soft) 30%, var(--surface)); }
+.cnc-row.is-read { opacity: .8; }
+.cnc-row.st-archived { opacity: .7; }
+.cnc-row.is-nested { margin-left: 14px; padding: 8px; opacity: .92; }
+.cnc-row.is-nested .cnc-icon { width: 28px; height: 28px; }
+
+.cnc-icon { position: relative; display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: color-mix(in srgb, var(--sec) 16%, transparent); color: var(--sec); }
+.cnc-icon > svg { width: 17px; height: 17px; }
+.cnc-provider { position: absolute; right: -5px; bottom: -5px; display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--panel); box-shadow: 0 0 0 1px var(--line); }
+.cnc-provider svg { width: 11px; height: 11px; }
+
+.cnc-main { display: grid; gap: 4px; min-width: 0; }
+.cnc-title { font-size: 13px; line-height: 1.3; font-weight: 650; overflow-wrap: anywhere; }
+.cnc-row.is-unread .cnc-title { font-weight: 750; }
+.cnc-explain { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.cnc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 11px; color: var(--muted); }
+.cnc-cat { padding: 1px 7px; border-radius: 99px; background: color-mix(in srgb, var(--sec) 14%, transparent); color: var(--text); font-weight: 650; }
+.cnc-count { padding: 0 6px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); font-weight: 700; font-variant-numeric: tabular-nums; }
+.cnc-pill { padding: 0 7px; border-radius: 99px; font-weight: 700; }
+.cnc-pill.is-resolved { color: var(--good, #1a7f37); background: color-mix(in srgb, var(--good, #1a7f37) 12%, transparent); }
+.cnc-pill.is-archived { color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent); }
+.cnc-link { justify-self: start; font-size: 12px; font-weight: 700; color: var(--accent); text-decoration: none; }
+.cnc-link:hover { text-decoration: underline; }
+.cnc-link:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; border-radius: 4px; }
+
+.cnc-details { display: grid; gap: 8px; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--panel) 60%, transparent); font-size: 12px; }
+.cnc-detail-block { display: grid; gap: 4px; min-width: 0; }
+.cnc-detail-block h4 { margin: 0; color: var(--muted); font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.cnc-detail-row { display: flex; justify-content: space-between; gap: 10px; min-width: 0; }
+.cnc-detail-row span { color: var(--muted); flex: 0 0 auto; }
+.cnc-detail-row strong { font-weight: 650; text-align: right; overflow-wrap: anywhere; white-space: pre-wrap; }
+.cnc-details dl { display: grid; gap: 3px; margin: 0; }
+.cnc-details dl > div { display: flex; justify-content: space-between; gap: 10px; }
+.cnc-details dt { color: var(--muted); }
+.cnc-details dd { margin: 0; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Knoppenrij onderaan elke melding: pictogrammen met vaste maat, die bij weinig ruimte op een tweede regel gaan. */
+.cnc-row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 2px; margin-top: 2px; padding-top: 4px; border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+
+.cnc-more { display: inline-flex; align-items: center; gap: 6px; justify-self: start; min-height: 28px; padding: 2px 10px; border: 1px dashed var(--line); border-radius: 99px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+.cnc-more:hover { background: color-mix(in srgb, var(--muted) 12%, transparent); color: var(--text); }
+.cnc-more svg { width: 14px; height: 14px; }
+.cnc-nested { display: grid; gap: 4px; min-width: 0; padding-left: 6px; border-left: 2px solid var(--line); }
+.cnc-chip-n { padding: 0 6px; border-radius: 99px; background: color-mix(in srgb, var(--muted) 18%, transparent); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+.cnc-empty { display: grid; place-items: center; gap: 6px; min-height: 180px; padding: 20px; text-align: center; color: var(--muted); }
+.cnc-empty > svg { width: 28px; height: 28px; color: var(--muted); }
+.cnc-empty > strong { color: var(--text); font-size: 13.5px; }
+.cnc-empty > span { max-width: 320px; font-size: 12px; line-height: 1.5; }
+
+/* Instellingen: pop-up, geluid, blijft staan en duur per soort. */
+.cnc-settings { display: grid; align-content: start; gap: 12px; min-width: 0; padding: 12px; overflow: auto; overscroll-behavior: contain; }
+.cnc-settings-lead { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.cnc-switch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; }
+.cnc-switch input { width: 16px; height: 16px; margin: 0; }
+.cnc-settings-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.cnc-settings-table th,
+.cnc-settings-table td { padding: 7px 4px; border-bottom: 1px solid var(--line); text-align: center; vertical-align: middle; }
+.cnc-settings-table thead th { color: var(--muted); font-size: 11px; font-weight: 700; }
+.cnc-settings-table th[scope="row"] { text-align: left; font-weight: 700; white-space: nowrap; }
+.cnc-settings-table input[type="checkbox"] { width: 16px; height: 16px; margin: 0; }
+.cnc-settings-table select { min-height: 30px; padding: 0 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 12px; }
+.cnc-settings-table select:disabled { opacity: .5; }
+.cnc-kind-dot { display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: var(--accent); }
+.cnc-kind-dot.kind-error { background: var(--danger, #b91c1c); }
+.cnc-kind-dot.kind-warning { background: #b45309; }
+.cnc-kind-dot.kind-success { background: var(--good, #1a7f37); }
+.cnc-settings-foot { display: flex; justify-content: flex-end; }
+.cnc-text-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; font-size: 12.5px; font-weight: 650; cursor: pointer; }
+.cnc-text-btn:hover { background: var(--nav-hover); }
+.cnc-text-btn svg { width: 14px; height: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cnc-row { transition: none; }
+}

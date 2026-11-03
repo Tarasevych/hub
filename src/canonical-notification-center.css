@@ -1,14 +1,157 @@
-.canonical-notification-toast{position:fixed;z-index:700;right:18px;bottom:82px;display:grid;grid-template-columns:22px minmax(0,1fr) 44px 44px;align-items:center;gap:8px;width:min(430px,calc(100vw - 36px));box-sizing:border-box;padding:10px;border:1px solid var(--line);border-radius:15px;background:color-mix(in srgb,var(--panel) 97%,transparent);color:var(--text);box-shadow:0 18px 52px var(--shadow);animation:canonical-notice-enter .18s ease-out}.canonical-notification-toast.has-action{grid-template-columns:22px minmax(0,1fr) 44px 44px 44px}.canonical-notification-toast>svg{width:20px;height:20px;color:var(--accent)}.canonical-notification-toast.kind-error>svg{color:var(--danger)}.canonical-notification-toast.kind-warning>svg{color:color-mix(in srgb,var(--danger) 45%,var(--accent))}.canonical-notification-toast.kind-success>svg{color:var(--good)}.canonical-notification-toast>div{display:grid;gap:3px;min-width:0}.canonical-notification-toast>div>span{display:-webkit-box;min-width:0;overflow:hidden;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:2}.canonical-notification-toast.expanded>div>span{display:block;overflow:visible;-webkit-line-clamp:unset}.canonical-notification-toast-meta{color:var(--muted);font-size:10px}.canonical-notification-action-icon,.canonical-notification-icon-button,.canonical-notification-panel button,.canonical-notification-bell{cursor:pointer}.canonical-notification-action-icon,.canonical-notification-icon-button{display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted)}.canonical-notification-action-icon{color:var(--accent)}.canonical-notification-action-icon:hover,.canonical-notification-action-icon:focus-visible,.canonical-notification-icon-button:hover,.canonical-notification-icon-button:focus-visible{background:var(--nav-hover);color:var(--text);outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:-2px}.canonical-notification-action-icon svg,.canonical-notification-icon-button svg{width:18px}.canonical-notification-bell{position:fixed;z-index:690;display:grid;place-items:center;width:48px;height:48px;padding:0;border:1px solid color-mix(in srgb,var(--accent) 36%,var(--line));border-radius:50%;background:var(--panel);color:var(--accent);box-shadow:0 12px 34px var(--shadow);touch-action:none}.canonical-notification-bell:hover,.canonical-notification-bell:focus-visible{background:var(--accent-soft);outline:2px solid color-mix(in srgb,var(--accent) 50%,transparent);outline-offset:2px}.canonical-notification-bell svg{width:21px}.canonical-notification-bell small{position:absolute;right:-3px;top:-4px;display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border:2px solid var(--panel);border-radius:999px;background:var(--accent);color:var(--accentText);font-size:9px;font-weight:800;font-variant-numeric:tabular-nums}.canonical-notification-panel{position:fixed;z-index:710;display:grid;grid-template-rows:auto minmax(0,1fr) auto;width:min(390px,calc(100vw - 16px));max-height:min(560px,calc(100dvh - 16px));overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--text);box-shadow:0 24px 72px var(--shadow)}.canonical-notification-panel>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;border-bottom:1px solid var(--line)}.canonical-notification-panel>header>div{display:grid;min-width:0;max-width:100%;overflow:hidden}.canonical-notification-panel>header small{color:var(--muted);font-size:10px}.canonical-notification-panel>header button,.canonical-notification-row-actions>button{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted)}.canonical-notification-panel button:hover:not(:disabled),.canonical-notification-panel button:focus-visible:not(:disabled){background:var(--nav-hover);color:var(--text);outline:2px solid color-mix(in srgb,var(--accent) 42%,transparent);outline-offset:-2px}.canonical-notification-panel button:disabled{cursor:default;opacity:.48}.canonical-notification-list{display:grid;align-content:start;gap:6px;min-height:0;overflow:auto;padding:8px;overscroll-behavior:contain}.canonical-notification-list article{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:start;gap:8px;min-width:0;max-width:100%;min-height:54px;box-sizing:border-box;overflow:clip;padding:7px 8px;border:1px solid var(--line);border-radius:11px;background:var(--surface)}.canonical-notification-row-actions{display:flex;align-items:center;justify-content:flex-end;gap:2px;min-width:0;max-width:100%;align-self:start}.canonical-notification-list article.is-read{opacity:.72}.canonical-notification-list article.is-unread{border-color:color-mix(in srgb,var(--accent) 38%,var(--line));background:color-mix(in srgb,var(--accent-soft) 26%,var(--surface))}.canonical-notification-list article>svg{width:18px;color:var(--accent)}.canonical-notification-list article>.canonical-notification-copy{display:grid;gap:2px;min-width:0;max-width:100%;overflow:visible;overflow-wrap:anywhere;word-break:normal;hyphens:auto}.canonical-notification-list article>.canonical-notification-copy>strong,.canonical-notification-list article>.canonical-notification-copy>small{display:block;min-width:0;max-width:100%;overflow:visible;overflow-wrap:anywhere;word-break:normal;white-space:normal;hyphens:auto;line-height:1.35}.canonical-notification-list article>span small{color:var(--muted);font-size:10px}.canonical-notification-row-actions>.canonical-notification-action-icon{color:var(--accent)}.canonical-notification-list article.kind-error>svg{color:var(--danger)}.canonical-notification-list article.kind-warning>svg{color:color-mix(in srgb,var(--danger) 45%,var(--accent))}.canonical-notification-list article.kind-success>svg{color:var(--good)}.canonical-notification-details{grid-column:1/-1;display:grid;gap:9px;min-width:0;margin-top:2px;padding:9px 0 2px;border-top:1px solid var(--line)}.canonical-notification-detail-section{display:grid;gap:6px;min-width:0}.canonical-notification-detail-section>h4{margin:0;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}.canonical-notification-detail-section>div{display:grid;gap:4px}.canonical-notification-detail-row{display:grid;grid-template-columns:20px minmax(0,1fr);align-items:start;gap:7px;min-width:0;padding:5px 6px;border-radius:8px;background:color-mix(in srgb,var(--panel) 62%,transparent)}.canonical-notification-detail-row>svg{width:16px;height:16px;margin-top:2px;color:var(--accent)}.canonical-notification-detail-row>span{display:grid;gap:1px;min-width:0}.canonical-notification-detail-row small{color:var(--muted);font-size:9.5px;line-height:1.25}.canonical-notification-detail-row strong{min-width:0;font-size:11px;font-weight:650;line-height:1.35;overflow-wrap:anywhere;word-break:break-word}.canonical-notification-detail-value{white-space:pre-wrap}.canonical-notification-empty{display:grid;place-items:center;gap:6px;min-height:160px;padding:22px;text-align:center;color:var(--muted)}.canonical-notification-empty>svg{width:28px;height:28px;color:var(--muted)}.canonical-notification-empty>strong{color:var(--text)}.canonical-notification-empty>span{max-width:280px;font-size:12px;line-height:1.4}.canonical-notification-panel>footer{display:flex;flex-wrap:wrap;gap:5px;padding:8px;border-top:1px solid var(--line)}.canonical-notification-panel>footer button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font-size:10.5px}.canonical-notification-panel>footer svg{width:15px}@keyframes canonical-notice-enter{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}@media(max-width:520px){.canonical-notification-toast,.canonical-notification-toast.has-action{right:8px;bottom:68px;width:calc(100vw - 16px);grid-template-columns:20px minmax(0,1fr) 44px 44px 44px;grid-template-rows:auto auto}.canonical-notification-toast>svg{grid-column:1;grid-row:1}.canonical-notification-toast>div{grid-column:2/-1;grid-row:1}.canonical-notification-toast>.canonical-notification-action-icon{grid-column:3;grid-row:2}.canonical-notification-toast>.canonical-notification-expand{grid-column:4;grid-row:2}.canonical-notification-toast>.canonical-notification-icon-button:last-child{grid-column:5;grid-row:2}.canonical-notification-list article{grid-template-columns:20px minmax(0,1fr)}.canonical-notification-row-actions{grid-column:2;justify-self:end;max-width:100%}.canonical-notification-panel>footer{display:grid;grid-template-columns:1fr}.canonical-notification-panel>footer button{width:100%}}@media(prefers-reduced-motion:reduce){.canonical-notification-toast{animation:none}}
+/* Meldingencentrum: bel, pop-up naast de bel, venster met tabbladen, pictogramknoppen met tooltip, en de stip met uitleg.
+   De lijst zelf staat in notification-panel.css. Kleuren komen uit de sitevariabelen (zie de rest van de site). */
 
-/* The panel is docked right and the compose window is centred, so on a narrow
-   desktop they landed on top of each other and the panel cut off the compose
-   toolbar. Give the compose window room while the panel is open instead of
-   hiding or moving either one permanently. */
+/* Kleur per sectie (zet --sec; de pictogrammen, randen en de balk van de pop-up volgen die). */
+.cnc-window,
+.cnc-toast { --sec: var(--accent, #2f6f73); }
+.cnc-row.sec-mail,
+.cnc-toast.sec-mail { --sec: #2563eb; }
+.cnc-row.sec-cloud,
+.cnc-toast.sec-cloud { --sec: #0284c7; }
+.cnc-row.sec-calendar,
+.cnc-toast.sec-calendar { --sec: #ea580c; }
+.cnc-row.sec-ai,
+.cnc-toast.sec-ai,
+.cnc-row.sec-claude,
+.cnc-toast.sec-claude { --sec: #c2603d; }
+.cnc-row.sec-agent,
+.cnc-toast.sec-agent { --sec: #0f766e; }
+.cnc-row.sec-browser,
+.cnc-toast.sec-browser { --sec: #7c3aed; }
+.cnc-row.sec-github,
+.cnc-toast.sec-github { --sec: #475569; }
+.cnc-row.sec-mcp,
+.cnc-toast.sec-mcp { --sec: #0d9488; }
+.cnc-row.sec-hub,
+.cnc-toast.sec-hub { --sec: #4f46e5; }
+.cnc-row.sec-huis,
+.cnc-toast.sec-huis { --sec: #b45309; }
+.cnc-row.sec-identity,
+.cnc-toast.sec-identity,
+.cnc-row.sec-api,
+.cnc-toast.sec-api { --sec: #be185d; }
+.cnc-row.sec-admin,
+.cnc-toast.sec-admin { --sec: #dc2626; }
+
+/* Bel */
+.canonical-notification-bell { position: fixed; z-index: 690; display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--line)); border-radius: 50%; background: var(--panel); color: var(--accent); box-shadow: 0 12px 34px var(--shadow); touch-action: none; cursor: pointer; }
+.canonical-notification-bell:hover,
+.canonical-notification-bell:focus-visible { background: var(--accent-soft); outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent); outline-offset: 2px; }
+.canonical-notification-bell svg { width: 21px; }
+.canonical-notification-bell small { position: absolute; right: -3px; top: -4px; display: grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border: 2px solid var(--panel); border-radius: 999px; background: var(--accent); color: var(--accentText); font-size: 9px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* Pop-up: naast de bel, met een tekst, een uitleg, een knop naar de plek om het op te lossen, en een balk met de resterende tijd. */
+.cnc-toast { position: fixed; z-index: 700; box-sizing: border-box; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 10px; width: min(420px, calc(100vw - 16px)); padding: 12px 10px 14px 12px; border: 1px solid var(--line); border-left: 4px solid var(--sec); border-radius: 14px; background: color-mix(in srgb, var(--panel) 97%, transparent); color: var(--text); box-shadow: 0 18px 52px var(--shadow); overflow: hidden; animation: cnc-enter .18s ease-out; }
+.cnc-toast.kind-error { border-left-color: var(--danger, #b91c1c); }
+.cnc-toast.kind-warning { border-left-color: #b45309; }
+.cnc-toast.kind-success { border-left-color: var(--good, #1a7f37); }
+.cnc-toast-icon { position: relative; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: color-mix(in srgb, var(--sec) 16%, transparent); color: var(--sec); }
+.cnc-toast-icon svg { width: 17px; height: 17px; }
+.cnc-toast-body { display: grid; gap: 4px; min-width: 0; padding-bottom: 2px; }
+.cnc-toast-sec { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--sec); overflow-wrap: anywhere; }
+.cnc-toast-title { font-size: 13px; line-height: 1.3; font-weight: 700; overflow-wrap: anywhere; }
+.cnc-toast-explain { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.cnc-toast.is-expanded .cnc-toast-explain { display: block; overflow: visible; -webkit-line-clamp: unset; }
+.cnc-toast-link { justify-self: start; font-size: 12px; font-weight: 700; color: var(--accent); text-decoration: underline; }
+.cnc-toast-side { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.cnc-toast-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: color-mix(in srgb, var(--line) 70%, transparent); }
+.cnc-toast-bar i { display: block; height: 100%; background: var(--sec); transform-origin: left center; transition: transform .1s linear; }
+.cnc-toast.is-paused .cnc-toast-bar i { opacity: .55; }
+.cnc-toast .cnc-provider { position: absolute; right: -6px; bottom: -6px; display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--panel); box-shadow: 0 0 0 1px var(--line); }
+.cnc-toast .cnc-provider svg { width: 11px; height: 11px; }
+@keyframes cnc-enter { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+
+/* Venster: titelbalk, tabbladen, zoeken, lijst, en een statusbalk onderaan. Geen losse knoppen met tekst. */
+.cnc-window { position: fixed; z-index: 710; display: flex; flex-direction: column; box-sizing: border-box; width: min(480px, calc(100vw - 16px)); max-height: min(720px, calc(100dvh - 16px)); border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--text); box-shadow: 0 24px 72px var(--shadow); }
+.cnc-window > .cnc-list,
+.cnc-window > .cnc-settings { flex: 1 1 auto; min-height: 0; }
+.cnc-titlebar,
+.cnc-tabs,
+.cnc-tools,
+.cnc-statusbar { flex: 0 0 auto; }
+.cnc-titlebar { display: flex; align-items: center; gap: 10px; padding: 10px 8px 10px 12px; border-bottom: 1px solid var(--line); border-radius: 14px 14px 0 0; background: color-mix(in srgb, var(--surface) 70%, var(--panel)); }
+.cnc-titlebar-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); flex: 0 0 auto; }
+.cnc-titlebar-icon svg { width: 16px; height: 16px; }
+.cnc-titlebar-text { display: grid; flex: 1; min-width: 0; }
+.cnc-titlebar-text strong { font-size: 14px; line-height: 1.2; }
+.cnc-titlebar-text small { color: var(--muted); font-size: 11px; }
+.cnc-titlebar-actions { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+.cnc-tabs { display: flex; gap: 2px; padding: 0 8px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.cnc-tabs::-webkit-scrollbar { display: none; }
+.cnc-tab { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 9px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; color: var(--muted); font: inherit; font-size: 12.5px; white-space: nowrap; cursor: pointer; }
+.cnc-tab:hover { color: var(--text); }
+.cnc-tab:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: -2px; border-radius: 6px; }
+.cnc-tab.is-active { color: var(--text); border-bottom-color: var(--accent); font-weight: 700; }
+.cnc-tab-n { min-width: 20px; padding: 1px 6px; border-radius: 99px; background: color-mix(in srgb, var(--muted) 16%, transparent); font-size: 11px; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+.cnc-tab.is-active .cnc-tab-n { background: var(--accent-soft); color: var(--accent); }
+.cnc-tools { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.cnc-search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.cnc-search svg { width: 15px; height: 15px; color: var(--muted); flex: 0 0 auto; }
+.cnc-search input { flex: 1; min-width: 0; border: 0; background: transparent; color: inherit; font: inherit; font-size: 13px; outline: none; min-height: 32px; }
+.cnc-search:focus-within { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.cnc-sort { max-width: 150px; min-height: 34px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; font-size: 12px; padding: 0 4px; }
+.cnc-statusbar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; padding: 6px 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; border-radius: 0 0 14px 14px; }
+
+/* Pictogramknop: alleen een icoon; de naam verschijnt als tooltip bij hover of focus, of bij een lange druk. */
+.cnc-ib { position: relative; display: inline-grid; place-items: center; flex: 0 0 auto; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; text-decoration: none; }
+.cnc-ib svg { width: 16px; height: 16px; }
+.cnc-ib:hover,
+.cnc-ib:focus-visible { background: var(--nav-hover); color: var(--text); outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: -2px; }
+.cnc-ib[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
+.cnc-ib.tone-danger:hover { color: var(--danger, #b91c1c); }
+.cnc-ib::after { content: attr(data-tip); position: absolute; z-index: 5; right: 0; top: calc(100% + 6px); padding: 4px 8px; border-radius: 7px; background: var(--text); color: var(--panel); font-size: 11px; font-weight: 600; line-height: 1.3; white-space: nowrap; pointer-events: none; opacity: 0; transform: translateY(-2px); transition: opacity .12s, transform .12s; }
+.cnc-ib:hover::after,
+.cnc-ib:focus-visible::after,
+.cnc-ib[data-held="true"]::after { opacity: 1; transform: none; }
+.cnc-ib:disabled { opacity: .45; cursor: default; }
+
+/* Stip bij een onderdeel van het menu, met uitleg in een klein venster (hover of klik). */
+.cnc-dot-wrap { position: relative; display: inline-flex; vertical-align: middle; }
+.cnc-dot { position: relative; width: 11px; height: 11px; padding: 0; border: 2px solid var(--panel); border-radius: 50%; background: var(--danger, #dc2626); box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger, #dc2626) 45%, transparent); cursor: pointer; }
+.cnc-dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cnc-dot::after { content: attr(data-tip); position: absolute; z-index: 5; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); padding: 4px 8px; border-radius: 7px; background: var(--text); color: var(--panel); font-size: 11px; font-weight: 600; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .12s; }
+.cnc-dot:hover::after,
+.cnc-dot:focus-visible::after { opacity: 1; }
+.cnc-dot-wrap:has(.cnc-dot-pop) .cnc-dot::after { display: none; }
+.cnc-dot-pop { position: absolute; z-index: 720; top: calc(100% + 10px); left: 0; display: grid; gap: 8px; width: min(300px, calc(100vw - 24px)); box-sizing: border-box; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); box-shadow: 0 14px 40px var(--shadow); font-size: 12px; text-align: left; }
+.cnc-dot-pop header { display: grid; gap: 2px; }
+.cnc-dot-pop header small { color: var(--muted); font-size: 11px; }
+.cnc-dot-pop p { margin: 0; color: var(--muted); line-height: 1.45; }
+.cnc-dot-pop ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.cnc-dot-pop li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.cnc-dot-pop li b { margin-left: 4px; padding: 0 6px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+.cnc-dot-actions { display: inline-flex; gap: 4px; flex: 0 0 auto; }
+.cnc-dot-actions button { min-height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); font: inherit; font-size: 11.5px; font-weight: 650; cursor: pointer; }
+.cnc-dot-actions button:hover,
+.cnc-dot-actions button:focus-visible { background: var(--nav-hover); outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: -2px; }
+
+@keyframes cnc-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.cnc-window { animation: cnc-fade-in .12s ease-out; }
+
+@media (max-width: 560px) {
+  .cnc-window { left: 8px !important; right: 8px; top: auto !important; bottom: 8px; width: auto; max-height: calc(100dvh - 16px); }
+  .cnc-toast { right: 8px; width: calc(100vw - 16px); }
+  .cnc-sort { max-width: 120px; }
+}
+@media (max-width: 560px) {
+  .cnc-tab { padding: 0 7px; font-size: 12px; }
+  .cnc-tab-n { font-size: 10px; padding: 1px 5px; }
+}
+@media (max-width: 520px) {
+  .cnc-toast { width: calc(100vw - 16px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cnc-toast,
+  .cnc-window { animation: none; }
+  .cnc-toast-bar i { transition: none; }
+}
+
+/* Op een breed scherm: de pagina van een nieuw bericht schuift opzij zodat het venster niet over de werkbalk valt. */
 @media (min-width: 900px) {
-  body:has(.canonical-notification-panel) .mail-new-message-backdrop {
+  body:has(.cnc-window) .mail-new-message-backdrop {
     justify-content: flex-start;
     padding-left: 24px;
     padding-right: min(430px, 40vw);
   }
 }
-.canonical-notification-link{display:inline-block;margin-top:4px;font-size:.82rem;font-weight:700;color:inherit;text-decoration:underline}
+.canonical-notification-link { display: inline-block; margin-top: 4px; font-size: .82rem; font-weight: 700; color: inherit; text-decoration: underline; }

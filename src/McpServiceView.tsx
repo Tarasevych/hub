@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Activity, Archive, Check, Compass, Copy, Globe, History, KeyRound, Layers, LayoutDashboard, Link2, ListChecks, Plug, Plus, RefreshCw, Rocket, Server, ShieldCheck, StickyNote, Terminal, Wrench, X } from "lucide-react";
 import { api, ApiError } from "./platform/client";
 import { ecosystemTabContext } from "./tab-context";
 import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalog";
@@ -59,6 +60,45 @@ function Tip({ text }: { text: string }) {
       <span className="mcp-tip" role="tooltip">{text}</span>
     </span>
   );
+}
+type Tone = "ok" | "wait" | "bad" | "off";
+/** Statuslabel: een puntje en een kort, gewoon woord. */
+function Badge({ tone = "ok", children }: { tone?: Tone; children: ReactNode }) {
+  return <span className={`mcp-badge ${tone}`}><i aria-hidden="true" />{children}</span>;
+}
+/** Paginakop: icoon, titel, één zin over wat dit is en wat u hier doet, en eventueel knoppen. */
+function PageHead({ icon, title, lead, actions, kicker }: { icon: ReactNode; title: string; lead?: string; actions?: ReactNode; kicker?: string }) {
+  return (
+    <header className="mcp-page-head">
+      <span className="mcp-page-icon" aria-hidden="true">{icon}</span>
+      <div className="mcp-page-text">
+        {kicker ? <p className="mcp-kicker">{kicker}</p> : null}
+        <h1>{title}</h1>
+        {lead ? <p className="mcp-lead">{lead}</p> : null}
+      </div>
+      {actions ? <div className="mcp-page-actions">{actions}</div> : null}
+    </header>
+  );
+}
+/** Blok met eigen kop (icoon, titel, uitleg, acties) en de inhoud eronder. */
+function Block({ icon, title, hint, actions, tone, children }: { icon?: ReactNode; title: string; hint?: string; actions?: ReactNode; tone?: "ok" | "warn" | "bad"; children: ReactNode }) {
+  return (
+    <section className={`mcp-block${tone ? ` tone-${tone}` : ""}`}>
+      <header className="mcp-block-head">
+        {icon ? <span className="mcp-block-icon" aria-hidden="true">{icon}</span> : null}
+        <div className="mcp-block-title">
+          <h2>{title}</h2>
+          {hint ? <p>{hint}</p> : null}
+        </div>
+        {actions ? <div className="mcp-block-actions">{actions}</div> : null}
+      </header>
+      <div className="mcp-block-body">{children}</div>
+    </section>
+  );
+}
+/** Lege staat: zegt wat er nog niet is, zodat de pagina niet leeg lijkt. */
+function Empty({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return <div className="mcp-empty">{icon}<p>{children}</p></div>;
 }
 function fault(err: unknown) {
   if (err instanceof ApiError) return String(err.response.data?.error || err.message);
@@ -289,138 +329,203 @@ export default function McpServiceView({ lang, tab }: Props) {
     return () => { window.clearInterval(id); window.clearInterval(poll); };
   }, [archive.state]);
 
+  const currentTool = DOOR_TOOLS.find((item) => item.name === tool);
+  const wordOf = (status: string) => (({ backlog: t("Заплановано", "Gepland"), doing: t("У роботі", "Mee bezig"), blocked: t("Заблоковано", "Geblokkeerd"), done: t("Готово", "Klaar") }) as Record<string, string>)[status] ?? status;
+  const probed = probes.length;
+  const reachable = probes.filter((item) => item.ok).length;
+  const archiveTitle = archive.state === "ready" ? t("Архів готовий", "Archief klaar") : archive.state === "failed" ? t("Збір зупинився", "Maken gestopt") : archive.state === "building" ? t("Збираю повний архів", "Volledig archief maken") : t("Ще не запускали", "Nog niet gestart");
+  const archiveHint = archive.state === "building" && archive.started ? `${t("Минуло", "Verstreken")} ${clock(Date.now() - new Date(archive.started).getTime() + (tick >= 0 ? 0 : 0))}${remain(archive.started, archive.pct) ? ` · ${t("ще", "nog")} ~${remain(archive.started, archive.pct)}` : ""}` : archive.bytes ? sizeText(archive.bytes) : "";
+  const archiveBar = archive.state === "ready" ? 100 : Math.max(archive.state === "building" ? 4 : 0, archive.pct || 0);
+
   return (
     <div className="mcp-estate" data-mcp-tab={section}>
       <McpConsentModal tr={t} />
-      {error && error !== "Internal server error" ? <p className="mcp-lead">{error}</p> : null}
-      {busy && busy !== "archive" ? <p className="mcp-kicker">{busy}</p> : null}
+      {error && error !== "Internal server error" ? <p className="mcp-note bad" role="alert">{error}</p> : null}
+      {busy && busy !== "archive" ? <p className="mcp-meta" role="status">{t("Виконується…", "Bezig…")}</p> : null}
 
       {section === "overview" && (
         <>
-          <header>
-            <p className="mcp-kicker">Tarasevych MCP · {t("міст до ШІ", "brug naar AI")}</p>
-            <h1>{t("Будь-який агент заходить сюди. Не в браузер.", "Elke agent komt hier binnen. Niet via de browser.")}</h1>
-            <p className="mcp-lead">{t("Маєток tarasevych.com уже живий на домашньому вузлі, але за брамою ідентичності. ШІ не може увійти як людина. Цей MCP-міст — машинний контракт: інструменти, ресурси, спільна дошка.", "Het domein leeft al op de thuisknoop, achter de identiteitspoort. Een agent kan niet als mens inloggen. Deze brug is het machinecontract.")}</p>
-          </header>
-          <section className="mcp-grid2">
-            <article className="mcp-card"><h2>11</h2><p>{t("хостів маєтку", "hosts van het domein")}</p></article>
-            <article className="mcp-card"><h2>{DOOR_TOOLS.length}</h2><p>{t("інструментів дверей", "hulpmiddelen van de deur")}</p></article>
-            <article className="mcp-card"><h2>HTTP</h2><p>{t("JSON-RPC, без SSE", "JSON-RPC, geen SSE")}</p></article>
-          </section>
-          <section className="mcp-card">
-            <h2>{t("Шар мосту", "Laag van de brug")}</h2>
-            {LAYERS.map(([title, uk, nl]) => <p key={title}><strong>{title}.</strong> {t(uk, nl)}</p>)}
-          </section>
-          <section className="mcp-card">
-            <h2>{t("Чому агенти не бачать сайт", "Waarom agenten de site niet zien")}</h2>
-            <p>{t("Кожен публічний хост відповідає, але id тримає браму. Браузерний логін — для людей. Агенту потрібен контракт: JSON-RPC, скоупи, аудит.", "Elke host antwoordt, maar id houdt de poort. Browserlogin is voor mensen. Een agent heeft een contract nodig.")}</p>
-          </section>
-          <article className="mcp-card"><h2>{t("Публічне ім’я", "Publieke naam")}</h2><p className="mcp-url">https://mcp.tarasevych.com/Grok</p></article>
-          <section className="mcp-grid2">
-            {ESTATE.map((row) => (
-              <article key={row.id} className="mcp-card">
-                <div className="mcp-row"><h2>{t(row.uk, row.nl)}</h2><span className={row.id === "mcp" ? "mcp-badge" : "mcp-badge wait"}>{t(row.statusUk, row.statusNl)}</span></div>
-                <p className="mcp-url">{row.url.replace("https://", "")}</p>
-                <p>{t(row.roleUk, row.roleNl)}</p>
-              </article>
-            ))}
-          </section>
-          <form className="mcp-form" onSubmit={(event) => { event.preventDefault(); void run("probe", loadProbes); }}>
-            <button type="submit" disabled={Boolean(busy)}>{t("Перевірити хости", "Hosts controleren")}</button>
-          </form>
-          {probes.map((row) => <article key={row.id} className="mcp-card"><div className="mcp-row"><h2>{row.id}</h2><span className={row.ok ? "mcp-badge" : "mcp-badge wait"}>HTTP {row.status || "—"}</span></div><p className="mcp-url">{row.url}</p></article>)}
+          <PageHead
+            kicker={`Tarasevych MCP · ${t("міст до ШІ", "brug naar AI")}`}
+            icon={<LayoutDashboard />}
+            title={t("Будь-який агент заходить сюди. Не в браузер.", "Elke agent komt hier binnen. Niet via de browser.")}
+            lead={t("Машинний вхід до сайту: агенти працюють через цей міст, а не через браузерний логін.", "De machine-ingang van de site: agenten werken via deze brug, niet via een browserlogin.")}
+          />
+          <div className="mcp-stats">
+            <div className="mcp-stat"><strong>11</strong><span>{t("хостів маєтку", "hosts van het domein")}</span></div>
+            <div className="mcp-stat"><strong>{DOOR_TOOLS.length}</strong><span>{t("інструментів дверей", "hulpmiddelen van de deur")}</span></div>
+            <div className="mcp-stat"><strong>HTTP</strong><span>{t("JSON-RPC, без SSE", "JSON-RPC, geen SSE")}</span></div>
+          </div>
+          <Block icon={<Layers />} title={t("Шар мосту", "Laag van de brug")}>
+            <ol className="mcp-list">
+              {LAYERS.map(([title, uk, nl]) => (
+                <li key={title} className="mcp-item">
+                  <span className="mcp-item-icon" aria-hidden="true"><Layers /></span>
+                  <div className="mcp-item-main"><b>{title}</b><span>{t(uk, nl)}</span></div>
+                </li>
+              ))}
+            </ol>
+          </Block>
+          <div className="mcp-cols two">
+            <Block icon={<ShieldCheck />} title={t("Чому агенти не бачать сайт", "Waarom agenten de site niet zien")}>
+              <p>{t("Кожен публічний хост відповідає, але id тримає браму. Браузерний логін — для людей. Агенту потрібен контракт: JSON-RPC, скоупи, аудит.", "Elke host antwoordt, maar id houdt de poort. Browserlogin is voor mensen. Een agent heeft een contract nodig.")}</p>
+            </Block>
+            <Block icon={<Link2 />} title={t("Публічне ім’я", "Publieke naam")} actions={<button type="button" className="mcp-btn ghost small" onClick={() => void copyText("public", "https://mcp.tarasevych.com/Grok")}><Copy />{copied === "public" ? t("Скопійовано", "Gekopieerd") : t("Копіювати", "Kopiëren")}</button>}>
+              <p className="mcp-url">https://mcp.tarasevych.com/Grok</p>
+            </Block>
+          </div>
+          <Block
+            icon={<Server />}
+            title={t("Стан хостів", "Status van de hosts")}
+            actions={<button type="button" className="mcp-btn ghost small" disabled={Boolean(busy)} onClick={() => void run("probe", loadProbes)}><RefreshCw />{t("Перевірити хости", "Hosts controleren")}</button>}
+          >
+            <div className="mcp-form">
+              {probed ? (
+                <Badge tone={reachable === ESTATE.length ? "ok" : reachable ? "wait" : "bad"}>{t(`${reachable} з ${ESTATE.length} відповідають`, `${reachable} van ${ESTATE.length} antwoorden`)}</Badge>
+              ) : (
+                <Badge tone="off">{t("Ще не перевірено", "Nog niet gecontroleerd")}</Badge>
+              )}
+            </div>
+            <p className="mcp-meta">{t("Деталі по кожному хосту — на вкладці Сервіси.", "Details per host staan op het tabblad Diensten.")}</p>
+          </Block>
         </>
       )}
 
       {section === "services" && (
         <>
-          <header>
-            <h1>{t("Сервіси", "Diensten")}</h1>
-            <p className="mcp-lead">{t("Статус береться з живої перевірки, не з зашитого значка. Посилання відкриває хост.", "De status komt uit een echte controle, niet uit een vaste badge. De link opent de host.")}</p>
-            <form className="mcp-form" onSubmit={(event) => { event.preventDefault(); void run("probe", loadProbes); }}>
-              <button type="submit" disabled={Boolean(busy)}>{t("Перевірити хости", "Hosts controleren")}</button>
-            </form>
-          </header>
-          {ESTATE.map((row) => {
-            const probe = probes.find((item) => item.id === row.id);
-            return (
-              <article key={row.id} className="mcp-card">
-                <div className="mcp-row">
-                  <h2>{t(row.uk, row.nl)}</h2>
-                  <span className={probe?.ok ? "mcp-badge" : "mcp-badge wait"}>{probe ? `HTTP ${probe.status || "—"}` : t("ще не перевірено", "nog niet gecontroleerd")}</span>
-                </div>
-                <p className="mcp-url"><a href={row.url} target="_blank" rel="noreferrer">{row.url}</a></p>
-                <p>{t(row.roleUk, row.roleNl)}</p>
-              </article>
-            );
-          })}
+          <PageHead
+            icon={<Server />}
+            title={t("Сервіси", "Diensten")}
+            lead={t("Статус береться з живої перевірки. Посилання відкриває хост.", "De status komt uit een live controle. De link opent de host.")}
+            actions={<button type="button" className="mcp-btn" disabled={Boolean(busy)} onClick={() => void run("probe", loadProbes)}><RefreshCw />{t("Перевірити хости", "Hosts controleren")}</button>}
+          />
+          <Block icon={<Globe />} title={t("Хости домену", "Hosts van het domein")}>
+            <ul className="mcp-list">
+              {ESTATE.map((row) => {
+                const probe = probes.find((item) => item.id === row.id);
+                return (
+                  <li key={row.id} className="mcp-item">
+                    <span className={`mcp-item-icon${probe ? (probe.ok ? " ok" : " bad") : ""}`} aria-hidden="true"><Globe /></span>
+                    <div className="mcp-item-main">
+                      <b>{t(row.uk, row.nl)}</b>
+                      <span>{t(row.roleUk, row.roleNl)}</span>
+                      <a className="mcp-url" href={row.url} target="_blank" rel="noreferrer">{row.url.replace("https://", "")}</a>
+                    </div>
+                    <div className="mcp-item-aside">
+                      {probe ? (
+                        <>
+                          <Badge tone={probe.ok ? "ok" : "bad"}>{probe.ok ? t("Відповідає", "Antwoordt") : t("Не відповідає", "Antwoordt niet")}</Badge>
+                          <span className="mcp-meta">HTTP {probe.status || "—"} · {probe.ms} ms</span>
+                        </>
+                      ) : (
+                        <Badge tone="off">{t("Ще не перевірено", "Nog niet gecontroleerd")}</Badge>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </Block>
         </>
       )}
 
       {section === "tools" && (
         <>
-          <header><h1>{t("Інструменти", "Hulpmiddelen")}</h1><p className="mcp-lead">{t("Тут лише те, що двері справді виконують. «Викликати» відкриває пісочницю саме з цим інструментом.", "Alleen wat de deur echt uitvoert. Aanroepen opent de zandbak met dat hulpmiddel.")}</p></header>
-          {DOOR_TOOLS.map((item) => (
-            <article key={item.name} className="mcp-card">
-              <div className="mcp-row"><h2>{item.name}</h2><a href={`/playground?tool=${item.name}`}>{t("Викликати", "Aanroepen")}</a></div>
-              <p>{t(item.uk, item.nl)}</p>
-            </article>
-          ))}
-          <article className="mcp-card">
-            <h2>{t("Ще не на дверях", "Nog niet op de deur")}</h2>
-            <p>{TOOL_HELP.filter(([name]) => !DOOR_TOOLS.some((item) => item.name === name)).map(([name]) => name).join(", ")}</p>
-          </article>
+          <PageHead icon={<Wrench />} title={t("Інструменти", "Hulpmiddelen")} lead={t("Тут лише те, що двері справді виконують. «Викликати» відкриває пісочницю з цим інструментом.", "Alleen wat de deur echt uitvoert. Aanroepen opent de zandbak met dat hulpmiddel.")} />
+          <Block icon={<Wrench />} title={t("Працює зараз", "Werkt nu")}>
+            <ul className="mcp-list">
+              {DOOR_TOOLS.map((item) => (
+                <li key={item.name} className="mcp-item">
+                  <span className="mcp-item-icon" aria-hidden="true"><Terminal /></span>
+                  <div className="mcp-item-main"><b>{item.name}</b><span>{t(item.uk, item.nl)}</span></div>
+                  <div className="mcp-item-aside"><a className="mcp-btn ghost small" href={`/playground?tool=${item.name}`}>{t("Викликати", "Aanroepen")}</a></div>
+                </li>
+              ))}
+            </ul>
+          </Block>
+          <Block icon={<Wrench />} title={t("Ще не на дверях", "Nog niet op de deur")} hint={t("Є в каталозі, але ще не доступні через двері.", "Staan al in de catalogus, maar zijn nog niet via de deur bereikbaar.")}>
+            <div className="mcp-chips">
+              {TOOL_HELP.filter(([name]) => !DOOR_TOOLS.some((item) => item.name === name)).map(([name]) => <span key={name}>{name}</span>)}
+            </div>
+          </Block>
         </>
       )}
 
       {section === "board" && (
         <>
-          <header><h1>{t("Дошка", "Bord")}</h1><p className="mcp-lead">{permsReady && !flags.board ? t("Перемикач «Писати дошку» вимкнено. Нові записи й переміщення відмовляються.", "De schakelaar Bord schrijven staat uit. Nieuwe regels en verplaatsingen worden geweigerd.") : t("Задачі й нотатки пишуться у файл на сервері і лишаються після оновлення сторінки.", "Taken en notities worden in een bestand op de server geschreven en blijven staan na verversen.")}</p></header>
-          <form className="mcp-form" onSubmit={(event) => { event.preventDefault(); if (permsReady && !flags.board) return; void run("save", async () => { await api.post("/api/mcp/board", { ...ctx(), kind, title, body }); setTitle(""); setBody(""); await loadBoard(); }); }}>
-            <button type="button" className={kind === "task" ? "on" : ""} onClick={() => setKind("task")}>{t("Задача", "Taak")}</button>
-            <button type="button" className={kind === "note" ? "on" : ""} onClick={() => setKind("note")}>{t("Нотатка", "Notitie")}</button>
-            <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t("Назва", "Naam")} disabled={permsReady && !flags.board} />
-            <textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder={t("Текст", "Tekst")} disabled={permsReady && !flags.board} />
-            <button type="submit" disabled={permsReady && !flags.board}>{t("Записати", "Opslaan")}</button>
-          </form>
-          <section className="mcp-board">
-            {statuses.map((status) => (
-              <article key={status} className="mcp-card">
-                <h2>{status}</h2>
-                {tasks.filter((task) => task.status === status).map((task) => (
-                  <div key={task.id}>
-                    <p>{task.title}</p>
-                    {statuses.filter((next) => next !== status).map((next) => (
-                      <button key={next} type="button" disabled={permsReady && !flags.board} onClick={() => void run("move", async () => { await api.post("/api/mcp/board", { ...ctx(), kind: "move", id: task.id, status: next }); await loadBoard(); })}>{next}</button>
-                    ))}
+          <PageHead
+            icon={<ListChecks />}
+            title={t("Дошка", "Bord")}
+            lead={permsReady && !flags.board ? t("Перемикач «Писати дошку» вимкнено. Нові записи й переміщення відмовляються.", "De schakelaar Bord schrijven staat uit. Nieuwe regels en verplaatsingen worden geweigerd.") : t("Задачі й нотатки зберігаються на сервері й лишаються після оновлення сторінки.", "Taken en notities blijven op de server staan, ook na verversen.")}
+          />
+          <Block icon={<Plus />} title={t("Нове", "Nieuw")}>
+            <form className="mcp-compose" onSubmit={(event) => { event.preventDefault(); if (permsReady && !flags.board) return; void run("save", async () => { await api.post("/api/mcp/board", { ...ctx(), kind, title, body }); setTitle(""); setBody(""); await loadBoard(); }); }}>
+              <div className="mcp-compose-row">
+                <div className="mcp-choice" role="group" aria-label={t("Тип", "Soort")}>
+                  <button type="button" aria-pressed={kind === "task"} onClick={() => setKind("task")}>{t("Задача", "Taak")}</button>
+                  <button type="button" aria-pressed={kind === "note"} onClick={() => setKind("note")}>{t("Нотатка", "Notitie")}</button>
+                </div>
+              </div>
+              <input className="mcp-input" value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t("Назва", "Naam")} aria-label={t("Назва", "Naam")} disabled={permsReady && !flags.board} />
+              <textarea className="mcp-input" value={body} onChange={(event) => setBody(event.target.value)} placeholder={t("Текст", "Tekst")} aria-label={t("Текст", "Tekst")} disabled={permsReady && !flags.board} />
+              <div className="mcp-compose-row">
+                <button type="submit" className="mcp-btn" disabled={permsReady && !flags.board}>{t("Записати", "Opslaan")}</button>
+              </div>
+            </form>
+          </Block>
+          <Block icon={<ListChecks />} title={t("Задачі за статусом", "Taken per status")}>
+            <div className="mcp-board">
+              {statuses.map((status) => {
+                const list = tasks.filter((task) => task.status === status);
+                return (
+                  <div key={status} className="mcp-col">
+                    <div className="mcp-col-head"><h3>{wordOf(status)}</h3><span className="mcp-col-count">{list.length}</span></div>
+                    {list.length ? list.map((task) => (
+                      <div key={task.id} className="mcp-task">
+                        <p>{task.title}</p>
+                        <div className="mcp-moves">
+                          {statuses.filter((next) => next !== status).map((next) => (
+                            <button key={next} type="button" className="mcp-move" disabled={permsReady && !flags.board} onClick={() => void run("move", async () => { await api.post("/api/mcp/board", { ...ctx(), kind: "move", id: task.id, status: next }); await loadBoard(); })}>→ {wordOf(next)}</button>
+                          ))}
+                        </div>
+                      </div>
+                    )) : <p className="mcp-meta">{t("Порожньо", "Leeg")}</p>}
                   </div>
+                );
+              })}
+            </div>
+          </Block>
+          <Block icon={<StickyNote />} title={t("Нотатки", "Notities")}>
+            {notes.length ? (
+              <ul className="mcp-list">
+                {notes.map((note) => (
+                  <li key={note.id} className="mcp-item">
+                    <span className="mcp-item-icon" aria-hidden="true"><StickyNote /></span>
+                    <div className="mcp-item-main"><b>{note.title}</b><span>{note.body}</span><small>{note.author} · {note.updatedAt}</small></div>
+                  </li>
                 ))}
-              </article>
-            ))}
-          </section>
-          {notes.map((note) => <article key={note.id} className="mcp-card"><h2>{note.title}</h2><p>{note.body}</p><p className="mcp-url">{note.author} · {note.updatedAt}</p></article>)}
+              </ul>
+            ) : <Empty icon={<StickyNote />}>{t("Ще немає нотаток. Напишіть одну вище.", "Nog geen notities. Schrijf er hierboven één.")}</Empty>}
+          </Block>
         </>
       )}
 
       {section === "agents" && (
         <McpAgentsHub tr={t} doors={
         <>
-          <header>
-            <h2>{t("Двері для агентів", "Deuren voor agenten")}</h2>
-            <p className="mcp-lead">{t("Перемикач одразу пише дозвіл на сервер. Під ним написано, що зміниться, якщо його ввімкнути і якщо вимкнути.", "De schakelaar schrijft de toestemming meteen op de server. Eronder staat wat aan- en uitzetten verandert.")}</p>
-          </header>
+          <p className="mcp-lead">{t("Перемикач одразу пише дозвіл на сервер. Під ним написано, що зміниться, якщо його ввімкнути і якщо вимкнути.", "De schakelaar schrijft de toestemming meteen op de server. Eronder staat wat aan- en uitzetten verandert.")}</p>
           {(["agent", "release"] as const).map((group) => {
             const items = permRows().filter((item) => item.group === group);
             if (!items.length) return null;
             return (
-              <section key={group} className="mcp-card">
-                <h2>{group === "agent" ? t("Агенту можна", "De agent mag") : t("Випуск", "Release")}</h2>
-                <div className="mcp-switches">
+              <div key={group} className="mcp-group">
+                <div className="mcp-group-head"><h3>{group === "agent" ? t("Агенту можна", "De agent mag") : t("Випуск", "Release")}</h3></div>
+                <div className="mcp-perms">
                   {items.map((item) => {
                     const on = Boolean(flags[item.id]);
                     return (
-                      <div key={item.id} className="mcp-switch">
-                        <div>
+                      <div key={item.id} className="mcp-perm">
+                        <div className="mcp-perm-text">
                           <h3>
                             {t(item.uk, item.nl)}
                             <Tip text={t(item.detailUk, item.detailNl)} />
@@ -448,7 +553,7 @@ export default function McpServiceView({ lang, tab }: Props) {
                     );
                   })}
                 </div>
-              </section>
+              </div>
             );
           })}
           {permsReady ? (
@@ -464,46 +569,65 @@ export default function McpServiceView({ lang, tab }: Props) {
               {!permRows().some((item) => flags[item.id]) ? <span>{t("нічого", "niets")}</span> : null}
             </p>
           ) : null}
-          <section className="mcp-card">
-            <h2>
-              {t("Токен агента", "Agenttoken")}
+          <div className="mcp-group">
+            <div className="mcp-group-head">
+              <h3>{t("Токен агента", "Agenttoken")}</h3>
               <Tip text={t("Окремо від перемикачів. Створює ключ для агента з іменем у полі. Ключ показується один раз і не викладає сайт.", "Los van de schakelaars. Maakt een sleutel voor de agent in het veld. De sleutel verschijnt één keer en plaatst de site niet.")} />
-            </h2>
-            <p>{t("Це не викладання сайту. Кнопка створює ключ, яким агент стукає в двері. Сам ключ видно лише одразу після випуску.", "Dit plaatst de site niet. De knop maakt de sleutel waarmee een agent aan de deur klopt. De sleutel zelf is alleen meteen daarna zichtbaar.")}</p>
+            </div>
+            <p className="mcp-lead">{t("Це не викладання сайту. Кнопка створює ключ, яким агент стукає в двері. Сам ключ видно лише одразу після випуску.", "Dit plaatst de site niet. De knop maakt de sleutel waarmee een agent aan de deur klopt. De sleutel zelf is alleen meteen daarna zichtbaar.")}</p>
             <form className="mcp-form" onSubmit={(event) => { event.preventDefault(); void run("issue", async () => { const res = await api.post("/api/mcp/tokens", { ...ctx(), name: agentName }); const issued = String(res.data.token.token || ""); setFresh(issued); try { sessionStorage.setItem("mcp-fresh-token", issued); } catch { /* private mode */ } await loadTokens(); }); }}>
-              <input value={agentName} onChange={(event) => setAgentName(event.target.value)} placeholder={t("Ім’я агента", "Naam van de agent")} disabled={permsReady && !flags.tokens} />
-              <button type="submit" disabled={permsReady && !flags.tokens}>{t("Випустити токен", "Token uitgeven")}</button>
+              <input className="mcp-input" value={agentName} onChange={(event) => setAgentName(event.target.value)} placeholder={t("Ім’я агента", "Naam van de agent")} aria-label={t("Ім’я агента", "Naam van de agent")} disabled={permsReady && !flags.tokens} />
+              <button type="submit" className="mcp-btn" disabled={permsReady && !flags.tokens}>{t("Випустити токен", "Token uitgeven")}</button>
             </form>
-          </section>
-          {fresh ? <article className="mcp-card"><p className="mcp-url">{fresh}</p></article> : null}
-          {tokens.map((row) => (
-            <article key={row.id} className="mcp-card">
-              <div className="mcp-row"><h2>{row.name}</h2><span className={row.revokedAt ? "mcp-badge wait" : "mcp-badge"}>{row.revokedAt ? t("відкликано", "ingetrokken") : t("дійсний", "geldig")}</span></div>
-              <p className="mcp-url">{row.prefix}… · {row.calls}</p>
-              {!row.revokedAt ? <button type="button" disabled={permsReady && !flags.tokens} onClick={() => void run("revoke", async () => { await api.post("/api/mcp/tokens/revoke", { ...ctx(), id: row.id }); await loadTokens(); })}>{t("Відкликати", "Intrekken")}</button> : null}
-            </article>
-          ))}
+            {fresh ? <pre className="mcp-out" aria-label={t("Новий токен", "Nieuw token")}>{fresh}</pre> : null}
+            {tokens.length ? (
+              <ul className="mcp-list">
+                {tokens.map((row) => (
+                  <li key={row.id} className="mcp-item">
+                    <span className={`mcp-item-icon${row.revokedAt ? "" : " ok"}`} aria-hidden="true"><KeyRound /></span>
+                    <div className="mcp-item-main"><b>{row.name}</b><span className="mcp-url">{row.prefix}…</span></div>
+                    <div className="mcp-item-aside">
+                      <span className="mcp-meta">{row.calls} {t("викликів", "aanroepen")}</span>
+                      <Badge tone={row.revokedAt ? "off" : "ok"}>{row.revokedAt ? t("Відкликано", "Ingetrokken") : t("Чинний", "Geldig")}</Badge>
+                      {!row.revokedAt ? <button type="button" className="mcp-btn ghost small" disabled={permsReady && !flags.tokens} onClick={() => void run("revoke", async () => { await api.post("/api/mcp/tokens/revoke", { ...ctx(), id: row.id }); await loadTokens(); })}>{t("Відкликати", "Intrekken")}</button> : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : <Empty icon={<KeyRound />}>{t("Ще немає токенів. Випустіть токен, щоб агент міг стукати в двері.", "Nog geen tokens. Geef een agent een token om aan de deur te kunnen kloppen.")}</Empty>}
+          </div>
         </>
         } />
       )}
 
       {section === "playground" && (
         <>
-          <header><h1>{t("Пісочниця", "Zandbak")}</h1><p className="mcp-lead">{t("Список збігається з дверима. Аргументи підставляються самі. Вимкнений перемикач дає відмову, а не порожню кнопку.", "De lijst is dezelfde als op de deur. Argumenten worden ingevuld. Een uitgeschakelde schakelaar weigert, in plaats van een lege knop.")}</p></header>
-          <div className="mcp-split-tools">
-            <div className="mcp-card mcp-toolnav">
+          <PageHead icon={<Terminal />} title={t("Пісочниця", "Zandbak")} lead={t("Той самий список, що й на дверях. Вимкнений перемикач дає відмову, а не порожню кнопку.", "Dezelfde lijst als op de deur. Een uitgeschakelde schakelaar weigert, in plaats van een lege knop.")} />
+          <div className="mcp-play">
+            <nav className="mcp-block mcp-toolnav" aria-label={t("Інструменти", "Hulpmiddelen")}>
               {DOOR_TOOLS.map((item) => (
-                <button key={item.name} type="button" className={item.name === tool ? "on" : ""} onClick={() => chooseTool(item.name)}>
-                  {item.name}
+                <button key={item.name} type="button" className={item.name === tool ? "on" : ""} aria-current={item.name === tool} onClick={() => chooseTool(item.name)}>
+                  <b>{item.name}</b>
                   <small>{t(item.uk, item.nl)}</small>
                 </button>
               ))}
-            </div>
-            <form className="mcp-card" onSubmit={(event) => { event.preventDefault(); void run(tool, async () => { const gate = toolGate(tool); if (permsReady && !flags[gate]) throw new Error(`PERMISSION_OFF:${gate}`); const parsed = args.trim() ? JSON.parse(args) : {}; const res = await api.post("/api/mcp/call", { ...ctx(), name: tool, arguments: parsed }); setOut(JSON.stringify(res.data, null, 2)); }); }}>
-              <p className="mcp-url">{tool}</p>
-              <textarea value={args} onChange={(event) => setArgs(event.target.value)} />
-              <button type="submit" disabled={Boolean(busy) || (permsReady && !flags[toolGate(tool)])}>{t("Викликати", "Aanroepen")}</button>
-              {out ? <pre className="mcp-out">{out}</pre> : null}
+            </nav>
+            <form className="mcp-block" onSubmit={(event) => { event.preventDefault(); void run(tool, async () => { const gate = toolGate(tool); if (permsReady && !flags[gate]) throw new Error(`PERMISSION_OFF:${gate}`); const parsed = args.trim() ? JSON.parse(args) : {}; const res = await api.post("/api/mcp/call", { ...ctx(), name: tool, arguments: parsed }); setOut(JSON.stringify(res.data, null, 2)); }); }}>
+              <div className="mcp-block-head">
+                <span className="mcp-block-icon" aria-hidden="true"><Terminal /></span>
+                <div className="mcp-block-title">
+                  <h2>{tool}</h2>
+                  {currentTool ? <p>{t(currentTool.uk, currentTool.nl)}</p> : null}
+                </div>
+              </div>
+              <div className="mcp-block-body">
+                <label className="mcp-meta" htmlFor="mcp-args">{t("Аргументи (JSON)", "Argumenten (JSON)")}</label>
+                <textarea id="mcp-args" className="mcp-input" value={args} onChange={(event) => setArgs(event.target.value)} />
+                <div className="mcp-form">
+                  <button type="submit" className="mcp-btn" disabled={Boolean(busy) || (permsReady && !flags[toolGate(tool)])}>{t("Викликати", "Aanroepen")}</button>
+                </div>
+                {out ? <pre className="mcp-out">{out}</pre> : null}
+              </div>
             </form>
           </div>
         </>
@@ -511,65 +635,96 @@ export default function McpServiceView({ lang, tab }: Props) {
 
       {section === "traffic" && (
         <>
-          <header><h1>{t("Трафік", "Verkeer")}</h1><button type="button" onClick={() => void run("traffic", loadTraffic)}>{t("Оновити", "Verversen")}</button></header>
-          {rows.map((row) => <article key={row.id} className="mcp-card"><div className="mcp-row"><h2>{row.method} {row.detail}</h2><span className={row.ok ? "mcp-badge" : "mcp-badge wait"}>{row.transport} · {row.ms}ms</span></div><p className="mcp-url">{row.at} · {row.agent}</p></article>)}
+          <PageHead
+            icon={<Activity />}
+            title={t("Трафік", "Verkeer")}
+            lead={t("Кожен виклик агента, найновіший зверху.", "Elke aanroep van een agent, nieuwste boven.")}
+            actions={<button type="button" className="mcp-btn ghost" disabled={Boolean(busy)} onClick={() => void run("traffic", loadTraffic)}><RefreshCw />{t("Оновити", "Verversen")}</button>}
+          />
+          <Block icon={<Activity />} title={t("Журнал", "Logboek")} hint={rows.length ? t(`${rows.length} рядків`, `${rows.length} regels`) : undefined}>
+            {rows.length ? (
+              <ul className="mcp-list">
+                {rows.map((row) => (
+                  <li key={row.id} className="mcp-item">
+                    <span className={`mcp-item-icon ${row.ok ? "ok" : "bad"}`} aria-hidden="true">{row.ok ? <Check /> : <X />}</span>
+                    <div className="mcp-item-main"><b>{row.method}{row.detail ? ` · ${row.detail}` : ""}</b><span>{row.at} · {row.agent}</span></div>
+                    <div className="mcp-item-aside">
+                      <Badge tone={row.ok ? "ok" : "bad"}>{row.ok ? t("Успішно", "Gelukt") : t("Помилка", "Mislukt")}</Badge>
+                      <span className="mcp-meta">{row.transport} · {row.ms} ms</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : <Empty icon={<Activity />}>{t("Ще немає трафіку. Щойно агент скористається мостом, це з’явиться тут.", "Nog geen verkeer. Zodra een agent de brug gebruikt, verschijnt het hier.")}</Empty>}
+          </Block>
         </>
       )}
 
       {section === "connect" && (
         <>
-          <header><h1>{t("Підключити", "Verbinden")}</h1><p className="mcp-lead">{t("Grok входить через OAuth на /Grok і токен моста не потрібен. Токен зі сторінки Агенти теж приймається як Bearer, поки перемикач токенів увімкнено.", "Grok komt via OAuth op /Grok binnen en heeft geen brugtoken nodig. Een token van Agenten werkt ook als Bearer, zolang de tokenschakelaar aan staat.")}</p></header>
-          <article className="mcp-card">
-            <h2>https://mcp.tarasevych.com/Grok</h2>
-            <form className="mcp-form"><button type="button" onClick={() => void copyText("url", "https://mcp.tarasevych.com/Grok")}>{copied === "url" ? t("Скопійовано", "Gekopieerd") : t("Копіювати адресу", "Adres kopiëren")}</button></form>
-          </article>
-          <article className="mcp-card">
-            <h2>{t("Клієнт MCP", "MCP-client")}</h2>
+          <PageHead icon={<Plug />} title={t("Підключити", "Verbinden")} lead={t("Grok входить через OAuth, токен не потрібен. Токен зі сторінки Агенти працює як Bearer, поки його перемикач увімкнено.", "Grok logt in via OAuth, geen token nodig. Een token van Agenten werkt als Bearer zolang de tokenschakelaar aan staat.")} />
+          <Block
+            icon={<Link2 />}
+            title={t("Адреса", "Adres")}
+            actions={<button type="button" className="mcp-btn ghost small" onClick={() => void copyText("url", "https://mcp.tarasevych.com/Grok")}><Copy />{copied === "url" ? t("Скопійовано", "Gekopieerd") : t("Копіювати адресу", "Adres kopiëren")}</button>}
+          >
+            <pre className="mcp-out">https://mcp.tarasevych.com/Grok</pre>
+          </Block>
+          <Block
+            icon={<Terminal />}
+            title={t("MCP-client", "MCP-client")}
+            actions={<button type="button" className="mcp-btn ghost small" onClick={() => void copyText("json", connectSample)}><Copy />{copied === "json" ? t("Скопійовано", "Gekopieerd") : t("Копіювати приклад", "Voorbeeld kopiëren")}</button>}
+          >
             <pre className="mcp-out">{connectSample}</pre>
-            <form className="mcp-form"><button type="button" onClick={() => void copyText("json", connectSample)}>{copied === "json" ? t("Скопійовано", "Gekopieerd") : t("Копіювати приклад", "Voorbeeld kopiëren")}</button></form>
-          </article>
-          <article className="mcp-card">
-            <h2>{t("Bearer для агента", "Bearer voor een agent")}</h2>
-            <p>{t("Це ключ зі сторінки Агенти, не пароль сайту. Якщо токен щойно випущено в цьому браузері, він уже підставлений.", "Dit is de sleutel van Agenten, niet het wachtwoord van de site. Als u die net in deze browser hebt uitgegeven, staat hij hier al.")}</p>
+          </Block>
+          <Block
+            icon={<KeyRound />}
+            title={t("Bearer voor een agent", "Bearer voor een agent")}
+            hint={t("Це ключ зі сторінки Агенти, не пароль сайту. Якщо токен щойно випущено в цьому браузері, він уже підставлений.", "Dit is de sleutel van Agenten, niet het wachtwoord van de site. Als u die net in deze browser hebt uitgegeven, staat hij hier al.")}
+            actions={<button type="button" className="mcp-btn ghost small" onClick={() => void copyText("bearer", bearerSample)}><Copy />{copied === "bearer" ? t("Скопійовано", "Gekopieerd") : t("Копіювати заголовок", "Koptekst kopiëren")}</button>}
+          >
             <pre className="mcp-out">{bearerSample}</pre>
-            <form className="mcp-form"><button type="button" onClick={() => void copyText("bearer", bearerSample)}>{copied === "bearer" ? t("Скопійовано", "Gekopieerd") : t("Копіювати заголовок", "Koptekst kopiëren")}</button></form>
-          </article>
+          </Block>
         </>
       )}
 
       {section === "roadmap" && (
         <>
-          <header><h1>{t("Що далі", "Wat hierna")}</h1><p className="mcp-lead">{t("Проєкт живий. Цей міст — шар, через який агент працює з маєтком, а не через браузер людини.", "Het project leeft. Deze brug is de laag waarmee een agent het domein bedient.")}</p></header>
-          <article className="mcp-card"><h2>{t("Уже є", "Er is al")}</h2><p>{t("Каталог хостів, дошка, токени, журнал, пісочниця, двері /Grok.", "Catalogus, bord, tokens, logboek, zandbak, deur /Grok.")}</p></article>
-          <article className="mcp-card"><h2>{t("Щоб агент дістався живого маєтку", "Om het levende domein te bereiken")}</h2><p>{t("Ідентичності з id, гранти з admin, JSON на api, аудит на dashboard. Без пароля людини.", "Identiteiten uit id, toekenningen uit admin, JSON op api, audit op het dashboard. Zonder wachtwoord van een mens.")}</p></article>
-          <article className="mcp-card"><h2>{t("Чого не треба", "Niet doen")}</h2><p>{t("Не давати агенту логін хаба чи пошти. Не парсити HTML за брамою. Не один пароль на всі моделі.", "Geen login van hub of post aan een agent. Geen HTML achter de poort. Geen enkel wachtwoord voor alle modellen.")}</p></article>
+          <PageHead icon={<Compass />} title={t("Що далі", "Wat hierna")} lead={t("Проєкт живий. Цей міст — шар, через який агент працює з маєтком, а не через браузер людини.", "Het project leeft. Deze brug is de laag waarmee een agent het domein bedient.")} />
+          <div className="mcp-cols">
+            <Block tone="ok" icon={<Check />} title={t("Уже є", "Er is al")}>
+              <p>{t("Каталог хостів, дошка, токени, журнал, пісочниця, двері /Grok.", "Catalogus, bord, tokens, logboek, zandbak, deur /Grok.")}</p>
+            </Block>
+            <Block icon={<Rocket />} title={t("Щоб агент дістався живого маєтку", "Om het levende domein te bereiken")}>
+              <p>{t("Ідентичності з id, гранти з admin, JSON на api, аудит на dashboard. Без пароля людини.", "Identiteiten uit id, toekenningen uit admin, JSON op api, audit op het dashboard. Zonder wachtwoord van een mens.")}</p>
+            </Block>
+            <Block tone="bad" icon={<X />} title={t("Чого не треба", "Niet doen")}>
+              <p>{t("Не давати агенту логін хаба чи пошти. Не парсити HTML за брамою. Не один пароль на всі моделі.", "Geen login van hub of post aan een agent. Geen HTML achter de poort. Geen enkel wachtwoord voor alle modellen.")}</p>
+            </Block>
+          </div>
         </>
       )}
 
       {section === "download" && (
         <>
-          <header>
-            <h1>{t("Архів на ПК", "Archief op de pc")}</h1>
-            <p className="mcp-lead">{t("Один файл із усім, на чому працює сайт: код і міст MCP, повна база даних із ролями, усі файли користувачів, служби системи, конфіг тунелю та секрети. База, файли й секрети шифруються вашим наявним age-ключем (нового ключа не створюється), тож без вашого herstelsleutel їх не відкрити — навіть якщо файл потрапить до чужих. У файлі лежить скрипт vidnovyty.sh: розгорнути сайт на новій машині (віртуальній чи справжній, x86-64 чи ARM) однією командою. Збір іде потоково: обсяг і різноманітність даних не мають значення, місце на диску перевіряється заздалегідь.", "Eén bestand met alles waarop de site draait: code en MCP-brug, de volledige database met rollen, alle bestanden van gebruikers, systeemdiensten, tunnelconfiguratie en geheimen. Database, bestanden en geheimen zijn versleuteld met uw bestaande age-sleutel (er komt geen nieuwe sleutel bij), dus zonder uw herstelsleutel niet te openen. In het bestand zit het script vidnovyty.sh: de site op een nieuwe machine (virtueel of fysiek, x86-64 of ARM) terugzetten met één opdracht. Het maken verloopt streamend: omvang en soort data maken niet uit, de schijfruimte wordt vooraf gecontroleerd.")}</p>
-          </header>
-          <form className="mcp-form">
-            <button type="button" disabled={Boolean(busy)} onClick={() => void run("archive", downloadArchive)}>{t("Зібрати повний архів", "Volledig archief maken")}</button>
-          </form>
-          <article className="mcp-card mcp-archive">
-            <div className="mcp-archive-top">
-              <h2>{archive.state === "ready" ? t("Архів готовий", "Archief klaar") : archive.state === "failed" ? t("Збір зупинився", "Maken gestopt") : archive.state === "building" ? t("Збираю повний архів", "Volledig archief maken") : t("Ще не запускали", "Nog niet gestart")}</h2>
-              <p className="mcp-kicker">{archive.state === "building" && archive.started ? `${t("Минуло", "Verstreken")} ${clock(Date.now() - new Date(archive.started).getTime() + (tick >= 0 ? 0 : 0))}${remain(archive.started, archive.pct) ? ` · ${t("ще", "nog")} ~${remain(archive.started, archive.pct)}` : ""}` : archive.bytes ? sizeText(archive.bytes) : ""}</p>
-            </div>
-            <div className="mcp-bar-row"><span>{t("Загальний хід", "Totale voortgang")}</span><b>{archive.state === "ready" ? 100 : Math.max(archive.state === "building" ? 4 : 0, archive.pct || 0)}%</b></div>
-            <div className="mcp-bar" aria-hidden="true"><i style={{ width: `${archive.state === "ready" ? 100 : Math.max(archive.state === "building" ? 4 : 0, archive.pct)}%` }} /></div>
-            <ol className="mcp-steps">
+          <PageHead
+            icon={<Archive />}
+            title={t("Архів на ПК", "Archief op de pc")}
+            lead={t("Один файл з усім сайтом, зашифрований вашим наявним age-ключем.", "Eén bestand met de hele site, versleuteld met uw bestaande age-sleutel.")}
+            actions={<button type="button" className="mcp-btn" disabled={Boolean(busy)} onClick={() => void run("archive", downloadArchive)}><Archive />{t("Зібрати повний архів", "Volledig archief maken")}</button>}
+          />
+          <Block icon={<Archive />} title={archiveTitle} hint={archiveHint || undefined}>
+            <p className="mcp-note">{t("Є код і міст MCP, повна база даних із ролями, усі файли користувачів, служби системи, конфіг тунелю та секрети. База, файли й секрети шифруються вашим наявним age-ключем (нового ключа не створюється), тож без вашого herstelsleutel їх не відкрити — навіть якщо файл потрапить до чужих. У файлі лежить скрипт vidnovyty.sh: розгорнути сайт на новій машині (віртуальній чи справжній, x86-64 чи ARM) однією командою. Збір іде потоково: обсяг і різноманітність даних не мають значення, місце на диску перевіряється заздалегідь.", "Inhoud: code en MCP-brug, de volledige database met rollen, alle bestanden van gebruikers, systeemdiensten, tunnelconfiguratie en geheimen. Database, bestanden en geheimen zijn versleuteld met uw bestaande age-sleutel (er komt geen nieuwe sleutel bij), dus zonder uw herstelsleutel niet te openen. In het bestand zit het script vidnovyty.sh: de site op een nieuwe machine (virtueel of fysiek, x86-64 of ARM) terugzetten met één opdracht. Het maken verloopt streamend: omvang en soort data maken niet uit, de schijfruimte wordt vooraf gecontroleerd.")}</p>
+            <div className="mcp-bar-row"><span>{t("Загальний хід", "Totale voortgang")}</span><b>{archiveBar}%</b></div>
+            <div className="mcp-bar" aria-hidden="true"><i style={{ width: `${archiveBar}%` }} /></div>
+            <ol className="mcp-track">
               {ARCHIVE_STEPS.map((step) => {
                 const done = archive.state === "ready" || archive.stage > step.n;
                 const active = archive.state === "building" && archive.stage === step.n;
                 const pct = archive.state === "ready" ? 100 : stepPct(archive.stage, archive.pct, step.n);
                 const line = active ? t(step.ukd, step.nld) : done ? t("Готово", "Klaar") : t("Чекає", "Wacht");
                 return (
-                  <li key={step.n} className={`mcp-step${done ? " done" : ""}${active ? " on" : ""}`}>
+                  <li key={step.n} className={`mcp-track-step${done ? " done" : ""}${active ? " on" : ""}`}>
                     <span className="mcp-rail" />
                     <Ring pct={pct} done={done} n={step.n} />
                     <div>
@@ -582,30 +737,34 @@ export default function McpServiceView({ lang, tab }: Props) {
             </ol>
             {archive.state === "building" && archive.detail ? <p className="mcp-live" role="status" aria-live="polite">▸ {archive.detail}</p> : null}
             {archive.state === "failed" ? <p className="mcp-error" role="alert">{t("Збір зупинився", "Maken gestopt")}: {archive.error}{archive.detail ? ` — ${archive.detail}` : ""}. {t("Нічого на сайті не змінено. Спробуйте ще раз; якщо повторюється — перегляньте journalctl -u mijn-ruimte-archief на сервері.", "Er is niets op de site gewijzigd. Probeer opnieuw; blijft het gebeuren, kijk dan naar journalctl -u mijn-ruimte-archief op de server.")}</p> : null}
-            {archive.state === "ready" && archive.bytes ? <p>{t("Усередині", "Inhoud")}: {t("код", "code")} {sizeText(archive.kod)}, {t("база (шифр.)", "database (versl.)")} {sizeText(archive.baza)}, {t("файли (шифр.)", "bestanden (versl.)")} {sizeText(archive.fajly)}, {t("секрети (шифр.)", "geheimen (versl.)")} {sizeText(archive.sekrety)}, {t("система", "systeem")} {sizeText(archive.systeem)}. {t("Разом файл", "Totaal")} {sizeText(archive.bytes)}.</p> : null}
+            {archive.state === "ready" && archive.bytes ? <p className="mcp-meta">{t("Усередині", "Inhoud")}: {t("код", "code")} {sizeText(archive.kod)}, {t("база (шифр.)", "database (versl.)")} {sizeText(archive.baza)}, {t("файли (шифр.)", "bestanden (versl.)")} {sizeText(archive.fajly)}, {t("секрети (шифр.)", "geheimen (versl.)")} {sizeText(archive.sekrety)}, {t("система", "systeem")} {sizeText(archive.systeem)}. {t("Разом файл", "Totaal")} {sizeText(archive.bytes)}.</p> : null}
             {archive.name ? <p className="mcp-url">{archive.name}</p> : null}
             {archive.name && (archive.state === "ready" || archive.history.some((row) => row.name === archive.name && row.kept)) ? (
-              <form className="mcp-form">
-                <button type="button" className="mcp-ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob(archive.name))}>{archive.state === "ready" ? t("Завантажити архів (оберіть диск і папку)", "Archief downloaden (kies schijf en map)") : t("Завантажити ще раз", "Opnieuw downloaden")}</button>
-                {downloaded > 0 ? <small className="mcp-live"> {t("записано", "geschreven")} {sizeText(downloaded)}</small> : null}
-              </form>
+              <div className="mcp-form">
+                <button type="button" className="mcp-btn ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob(archive.name))}>{archive.state === "ready" ? t("Завантажити архів (оберіть диск і папку)", "Archief downloaden (kies schijf en map)") : t("Завантажити ще раз", "Opnieuw downloaden")}</button>
+                {downloaded > 0 ? <span className="mcp-live">{t("записано", "geschreven")} {sizeText(downloaded)}</span> : null}
+              </div>
             ) : null}
-          </article>
+          </Block>
           <McpBackupsCard tr={t} />
-          <article className="mcp-card">
-            <h2>{t("Історія", "Geschiedenis")}</h2>
-            <p>{t("Кожен рядок — окремий збір. На сервері лишається лише останній файл, щоб старі копії з секретами не накопичувались. Старі рядки лишаються як запис: коли і якого розміру.", "Elke rij is één keer maken. Op de server blijft alleen het laatste bestand, zodat oude kopieën met geheimen niet blijven liggen. Oudere rijen blijven als notitie: wanneer en hoe groot.")}</p>
+          <Block icon={<History />} title={t("Історія", "Geschiedenis")} hint={t("Кожен рядок — окремий збір. На сервері лишається лише останній файл, щоб старі копії з секретами не накопичувались.", "Elke rij is één keer maken. Op de server blijft alleen het laatste bestand, zodat oude kopieën met geheimen niet blijven liggen.")}>
             {archive.history.length ? (
-              <ul className="mcp-history">
+              <ul className="mcp-list">
                 {archive.history.map((row) => (
-                  <li key={`${row.at}-${row.name}`}>
-                    <span><b>{whenText(row.at)}</b><small>{sizeText(row.bytes)}{row.kod ? ` · ${t("код", "code")} ${sizeText(row.kod)} · ${t("база", "database")} ${sizeText(row.baza)} · ${t("файли", "bestanden")} ${sizeText(row.fajly)}` : ""}</small></span>
-                    {row.kept ? <button type="button" className="mcp-ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob(row.name))}>{t("Завантажити", "Downloaden")}</button> : <small>{t("файл уже замінено", "bestand vervangen")}</small>}
+                  <li key={`${row.at}-${row.name}`} className="mcp-item">
+                    <span className={`mcp-item-icon${row.kept ? " ok" : ""}`} aria-hidden="true"><Archive /></span>
+                    <div className="mcp-item-main">
+                      <b>{whenText(row.at)}</b>
+                      <span>{sizeText(row.bytes)}{row.kod ? ` · ${t("код", "code")} ${sizeText(row.kod)} · ${t("база", "database")} ${sizeText(row.baza)} · ${t("файли", "bestanden")} ${sizeText(row.fajly)}` : ""}</span>
+                    </div>
+                    <div className="mcp-item-aside">
+                      {row.kept ? <button type="button" className="mcp-btn ghost small" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob(row.name))}>{t("Завантажити", "Downloaden")}</button> : <Badge tone="off">{t("Файл замінено", "Bestand vervangen")}</Badge>}
+                    </div>
                   </li>
                 ))}
               </ul>
-            ) : <p>{t("Ще немає жодного зібраного архіву в цьому журналі.", "Nog geen archief in dit logboek.")}</p>}
-          </article>
+            ) : <Empty icon={<History />}>{t("Ще немає жодного архіву. Зберіть перший вище.", "Nog geen archief. Maak hierboven het eerste.")}</Empty>}
+          </Block>
         </>
       )}
     </div>

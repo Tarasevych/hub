@@ -1,55 +1,122 @@
-.mcp-estate{color:var(--text);background:transparent;border-radius:18px;padding:22px 22px 28px;display:grid;gap:22px}
-.mcp-estate h1,.mcp-estate h2,.mcp-estate p{margin:0}
-.mcp-estate h1{font-size:clamp(1.8rem,4vw,2.7rem);line-height:1.08;letter-spacing:-.03em;color:var(--text)}
-.mcp-estate h2{font-size:1.35rem;letter-spacing:-.02em;color:var(--text)}
-.mcp-kicker{color:var(--accent);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase}
-.mcp-lead{max-width:680px;color:var(--muted);line-height:1.55}
-.mcp-grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.mcp-grid2{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
-.mcp-card{background:var(--panel);border-radius:16px;padding:16px 18px;box-shadow:0 0 0 1px var(--line);overflow:visible;color:var(--text)}
-.mcp-card strong{display:block;font-size:1.7rem;color:var(--text)}
-.mcp-card span,.mcp-card p,.mcp-card li{color:var(--muted);line-height:1.5}
-.mcp-card a{color:var(--accent)}
-.mcp-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.mcp-url{margin-top:4px;font-family:ui-monospace,Consolas,monospace;font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
-.mcp-badge{flex:0 0 auto;padding:3px 8px;border-radius:999px;font-size:.72rem;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
-.mcp-badge.wait{background:color-mix(in srgb,var(--danger,#c4a15a) 16%,transparent);color:var(--danger,#c4a15a)}
-.mcp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-.mcp-chips span,.mcp-pills li{font-family:ui-monospace,Consolas,monospace;font-size:.75rem;padding:4px 8px;border-radius:8px;background:var(--surface);color:var(--text)}
-.mcp-scopes{margin-top:10px;font-size:.75rem;color:var(--muted)}
-.mcp-arch{display:grid;gap:0}
-.mcp-arch div{display:grid;grid-template-columns:16px 1fr;gap:10px}
-.mcp-arch i{display:block;width:8px;height:8px;margin-top:6px;border-radius:99px;background:var(--accent)}
-.mcp-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.mcp-form{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.mcp-form input,.mcp-form select,.mcp-form button,.mcp-form textarea{border:0;border-radius:10px;background:var(--surface);color:var(--text);padding:10px 12px}
-.mcp-form button{background:var(--accent);color:var(--accentText);font-weight:650}
-.mcp-form button.on{box-shadow:0 0 0 2px var(--text)}
-.mcp-form button:disabled,.mcp-board button:disabled{opacity:.45}
-.mcp-form textarea,.mcp-out{width:100%;min-height:140px;font-family:ui-monospace,Consolas,monospace;font-size:.8rem}
-.mcp-out{background:var(--surface);color:var(--text);border-radius:12px;padding:12px;white-space:pre-wrap}
-.mcp-split-tools{display:grid;grid-template-columns:220px 1fr;gap:12px}
-.mcp-toolnav{display:grid;gap:4px;max-height:520px;overflow:auto}
-.mcp-toolnav button{text-align:left;background:transparent;color:var(--muted);border:0;border-radius:8px;padding:8px}
-.mcp-toolnav button.on{background:var(--surface);color:var(--text)}
-.mcp-toolnav small{display:block;color:var(--muted);font-size:.68rem}
-.mcp-tabs{display:flex;flex-wrap:wrap;gap:6px}
-.mcp-tabs a{color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:999px;background:var(--surface)}
-.mcp-tabs a.on{color:var(--accentText);background:var(--accent)}
-.mcp-pills{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
-.mcp-switches{display:grid}
-.mcp-switch{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:14px 0;border-top:1px solid var(--line);overflow:visible}
-.mcp-switch:first-of-type{border-top:0;padding-top:4px}
-.mcp-switch h3,.mcp-card h2{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
-.mcp-switch h3{margin:0;font-size:1rem;letter-spacing:0;color:var(--text)}
-.mcp-switch p{margin:4px 0 0;font-size:.85rem;white-space:pre-line}
-.mcp-now{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:0;color:var(--muted);font-size:.85rem}
-.mcp-now b{color:var(--text);font-weight:600}
-.mcp-now-item{display:inline-flex;align-items:center;color:var(--text)}
-.mcp-themes{display:flex;flex-wrap:wrap;gap:8px}
-.mcp-themes button{border:0;border-radius:999px;background:var(--surface);color:var(--text);padding:8px 12px;box-shadow:0 0 0 1px var(--line)}
-.mcp-themes button.on{background:var(--accent);color:var(--accentText);box-shadow:none}
-.mcp-q{position:relative;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:99px;box-shadow:0 0 0 1px var(--line);background:var(--surface);color:var(--muted);font-size:.68rem;font-weight:650;line-height:1;cursor:help;flex:0 0 auto}
+/* Beheerpagina mcp (pad /agents en de andere tabs). Vaste opbouw: pagina-kop, blokken met kop, lijsten met statuslabels,
+   lege staten met de volgende stap. Kleuren komen uit de thema-tokens (canonical-chrome.css); donker via de thema-klasse op <html>.
+   Let op: deze bestanden zijn globaal; nieuwe namen krijgen het voorvoegsel mcp- en geen namen die agents-panel.css al gebruikt. */
+.mcp-estate{--mcp-warn:#9a5b00;--mcp-warn-soft:color-mix(in srgb,#c98a1b 16%,transparent);--mcp-ok-soft:color-mix(in srgb,var(--good) 14%,transparent);--mcp-bad-soft:color-mix(in srgb,var(--danger) 12%,transparent);display:grid;gap:18px;width:100%;max-width:1180px;margin:0 auto;padding:22px 24px 40px;box-sizing:border-box;min-width:0;color:var(--text);background:transparent}
+.theme-dark .mcp-estate,.theme-plum-dark .mcp-estate{--mcp-warn:#f3c46b;--mcp-warn-soft:color-mix(in srgb,#f3c46b 14%,transparent);--mcp-ok-soft:color-mix(in srgb,var(--good) 20%,transparent);--mcp-bad-soft:color-mix(in srgb,var(--danger) 18%,transparent)}
+.mcp-estate h1,.mcp-estate h2,.mcp-estate h3,.mcp-estate p{margin:0}
+.mcp-estate h1{font-size:clamp(1.5rem,3vw,2rem);line-height:1.15;letter-spacing:-.02em;font-weight:750;color:var(--text)}
+.mcp-estate h2{font-size:1.02rem;line-height:1.3;font-weight:700;color:var(--text)}
+.mcp-estate h2,.mcp-estate h3{font-family:inherit}
+.mcp-estate h3{font-size:.96rem;line-height:1.3;font-weight:650;color:var(--text)}
+.mcp-estate p{line-height:1.5}
+.mcp-kicker{color:var(--accent);font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.mcp-lead{color:var(--muted);line-height:1.5;max-width:70ch;font-size:.96rem}
+
+/* pagina-kop: icoon, titel, één zin, en eventueel een knop rechts */
+.mcp-page-head{display:flex;align-items:center;gap:14px 16px;flex-wrap:wrap}
+.mcp-page-icon{display:inline-grid;place-items:center;width:50px;height:50px;border-radius:16px;background:var(--accent-soft);color:var(--accent);flex:0 0 auto}
+.mcp-page-icon svg{width:24px;height:24px}
+.mcp-page-text{display:grid;gap:4px;flex:1 1 200px;min-width:0}
+.mcp-page-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:auto}
+
+/* blokken: één kaart per onderwerp, met kop (icoon, titel, uitleg, acties) en inhoud */
+.mcp-block{display:grid;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:16px}
+.mcp-block-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line)}
+.mcp-block-icon{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--accent-soft);color:var(--accent);flex:0 0 auto}
+.mcp-block-icon svg{width:18px;height:18px}
+.mcp-block-title{display:grid;gap:2px;flex:1 1 220px;min-width:0}
+.mcp-block-title p{color:var(--muted);font-size:.86rem;line-height:1.4}
+.mcp-block-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:auto}
+.mcp-block-body{display:grid;gap:12px;padding:16px 18px 18px;min-width:0}
+.mcp-block.tone-ok{border-color:color-mix(in srgb,var(--good) 45%,var(--line))}
+.mcp-block.tone-warn{border-color:color-mix(in srgb,var(--mcp-warn) 60%,var(--line))}
+.mcp-block.tone-bad{border-color:color-mix(in srgb,var(--danger) 55%,var(--line))}
+.mcp-block-sub{display:grid;gap:10px;padding-top:14px;border-top:1px solid var(--line)}
+.mcp-block-sub:first-child{padding-top:0;border-top:0}
+
+/* getallen: één groot cijfer met een korte uitleg eronder */
+.mcp-stats{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr))}
+.mcp-stat{display:grid;gap:6px;min-width:0;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:16px}
+.mcp-stat strong{font-size:1.6rem;line-height:1;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--text);overflow-wrap:anywhere}
+.mcp-stat span{color:var(--muted);font-size:.86rem;line-height:1.35}
+
+/* drie naast elkaar op breed scherm, onder elkaar op telefoon */
+.mcp-cols{display:grid;gap:12px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.mcp-cols.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mcp-btn svg{width:16px;height:16px;flex:0 0 auto}
+
+/* lijsten: rijen met scheidingslijn, geen losse kaartjes */
+.mcp-list{list-style:none;margin:0;padding:0;display:grid}
+.mcp-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:12px 0;border-top:1px solid var(--line)}
+.mcp-list>.mcp-item:first-child{border-top:0;padding-top:2px}
+.mcp-item-icon{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:11px;background:var(--surface);color:var(--muted);flex:0 0 auto}
+.mcp-item-icon svg{width:18px;height:18px}
+.mcp-item-icon.ok{color:var(--good);background:var(--mcp-ok-soft)}
+.mcp-item-icon.bad{color:var(--danger);background:var(--mcp-bad-soft)}
+.mcp-item-main{display:grid;gap:2px;min-width:0}
+.mcp-item-main b{font-weight:650;color:var(--text);overflow-wrap:anywhere}
+.mcp-item-main small,.mcp-item-main span{color:var(--muted);font-size:.86rem;line-height:1.4;overflow-wrap:anywhere}
+.mcp-item-aside{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:600px){.mcp-item{grid-template-columns:auto minmax(0,1fr)}.mcp-item-aside{grid-column:2;justify-content:flex-start}}
+
+/* statuslabels: korte, gewone woorden met een puntje */
+.mcp-badge{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;padding:3px 10px 3px 8px;border-radius:999px;font-size:.78rem;font-weight:650;line-height:1.3;white-space:nowrap;background:var(--mcp-ok-soft);color:var(--good)}
+.mcp-badge i{display:inline-block;width:7px;height:7px;border-radius:99px;background:currentColor}
+.mcp-badge.ok{background:var(--mcp-ok-soft);color:var(--good)}
+.mcp-badge.wait{background:var(--mcp-warn-soft);color:var(--mcp-warn)}
+.mcp-badge.bad{background:var(--mcp-bad-soft);color:var(--danger)}
+.mcp-badge.off{background:var(--surface);color:var(--muted)}
+
+/* knoppen en velden: één hoogte en één stijl; primair = accent, ghost = omlijnd */
+.mcp-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0}
+.mcp-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 16px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:var(--accentText);font:inherit;font-size:.92rem;font-weight:650;line-height:1.2;text-decoration:none;cursor:pointer;transition:filter .12s,background .12s}
+.mcp-btn:hover:not(:disabled){filter:brightness(1.07)}
+.mcp-btn:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:2px}
+.mcp-btn:disabled{opacity:.5;cursor:not-allowed}
+.mcp-btn.ghost{background:var(--panel);color:var(--text);border-color:var(--line)}
+.mcp-btn.ghost:hover:not(:disabled){background:var(--surface)}
+.mcp-btn.small{min-height:34px;padding:0 12px;font-size:.84rem;border-radius:10px}
+.mcp-input{flex:1 1 220px;min-width:0;min-height:40px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:.94rem}
+textarea.mcp-input{min-height:96px;resize:vertical;line-height:1.45}
+.mcp-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.mcp-input:disabled{opacity:.55}
+.mcp-choice{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.mcp-choice button{min-height:40px;padding:0 14px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:.9rem;font-weight:650;cursor:pointer}
+.mcp-choice button+button{border-left:1px solid var(--line)}
+.mcp-choice button[aria-pressed=true]{background:var(--accent-soft);color:var(--text)}
+.mcp-choice button:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:-3px}
+
+/* teksten en codeblokken */
+.mcp-url{font-family:ui-monospace,Consolas,monospace;font-size:.82rem;color:var(--muted);overflow-wrap:anywhere}
+.mcp-out{margin:0;padding:12px 14px;border-radius:12px;background:var(--surface);color:var(--text);font-family:ui-monospace,Consolas,monospace;font-size:.82rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;max-height:320px}
+.mcp-note{padding:12px 14px;border-radius:12px;background:var(--surface);border-left:3px solid var(--accent);color:var(--text);font-size:.9rem;line-height:1.5}
+.mcp-note.ok{border-left-color:var(--good)}
+.mcp-note.wait{border-left-color:var(--mcp-warn)}
+.mcp-note.bad{border-left-color:var(--danger)}
+.mcp-note b{font-weight:650}
+.mcp-error{margin:4px 0;font-size:.88rem;color:var(--danger);overflow-wrap:anywhere}
+.mcp-live{margin:4px 0;font-size:.88rem;color:var(--accent);font-weight:600;overflow-wrap:anywhere}
+
+/* lege staten: zeggen wat er nog ontbreekt en wat de volgende stap is */
+.mcp-empty{display:grid;justify-items:center;gap:8px;padding:22px 16px;border-radius:14px;background:var(--surface);color:var(--muted);text-align:center;font-size:.92rem;line-height:1.45}
+.mcp-empty svg{width:28px;height:28px;color:var(--accent);opacity:.85}
+.mcp-empty p{max-width:52ch}
+
+/* tegels voor de controles en de lijst met tags */
+.mcp-chips{display:flex;flex-wrap:wrap;gap:6px}
+.mcp-chips span{font-family:ui-monospace,Consolas,monospace;font-size:.78rem;padding:4px 9px;border-radius:9px;background:var(--surface);color:var(--text)}
+
+/* schakelaars per recht */
+.mcp-perms{display:grid}
+.mcp-perm{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:13px 0;border-top:1px solid var(--line)}
+.mcp-perms .mcp-perm:first-child{border-top:0;padding-top:2px}
+.mcp-perm-text{display:grid;gap:4px;min-width:0}
+.mcp-perm-text h3{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.mcp-perm-text p{color:var(--muted);font-size:.86rem;line-height:1.45;white-space:pre-line}
+.mcp-now{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--surface);color:var(--muted);font-size:.88rem}
+.mcp-now b{color:var(--text);font-weight:650;margin-right:2px}
+.mcp-now-item{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:var(--panel);color:var(--text);box-shadow:0 0 0 1px var(--line)}
+.mcp-q{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:99px;box-shadow:0 0 0 1px var(--line);background:var(--panel);color:var(--muted);font-size:.7rem;font-weight:700;line-height:1;cursor:help;flex:0 0 auto}
 .mcp-q:hover,.mcp-q:focus{color:var(--text);outline:none}
 .mcp-estate .mcp-tip{display:none;position:absolute;z-index:20;left:0;top:calc(100% + 6px);width:min(320px,70vw);padding:8px 10px;border-radius:10px;background:var(--panel);color:var(--text);font-size:.8rem;font-weight:450;line-height:1.45;letter-spacing:0;text-transform:none;white-space:pre-line;box-shadow:0 12px 28px var(--shadow),0 0 0 1px var(--line)}
 .mcp-q:hover .mcp-tip,.mcp-q:focus .mcp-tip,.mcp-q:focus-within .mcp-tip{display:block}
@@ -57,33 +124,77 @@
 .mcp-toggle[aria-checked="true"]{background:var(--accent);box-shadow:none}
 .mcp-toggle i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:99px;background:var(--panel);display:block;transition:transform .15s ease}
 .mcp-toggle[aria-checked="true"] i{transform:translateX(18px);background:var(--accentText)}
+.mcp-toggle:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:2px}
 .mcp-toggle:disabled{opacity:.45;cursor:default}
-.theme-plum-light .mcp-estate,.theme-plum-dark .mcp-estate{color:var(--text)}
-.mcp-archive{display:grid;gap:14px}
-.mcp-archive-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
-.mcp-archive-top h2{margin:0}
-.mcp-bar{height:6px;border-radius:99px;background:var(--surface);overflow:hidden}
-.mcp-bar-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline;font-size:.85rem;color:var(--muted)}
-.mcp-bar-row b{color:var(--text);font-variant-numeric:tabular-nums}
-.mcp-bar i{display:block;height:100%;border-radius:99px;background:var(--accent);transition:width .45s ease}
-.mcp-steps{list-style:none;margin:4px 0 0;padding:0;display:grid}
-.mcp-step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;position:relative;padding:2px 8px;border-radius:12px}
-.mcp-step.on{background:color-mix(in srgb,var(--accent) 10%,transparent)}
-.mcp-step .mcp-rail{position:absolute;left:29px;top:46px;bottom:2px;width:2px;background:var(--line)}
-.mcp-step:last-child .mcp-rail{display:none}
-.mcp-step.done .mcp-rail{background:var(--accent)}
-.mcp-ring{position:relative;z-index:1;width:44px;height:44px;background:var(--panel)}
+
+/* kolommen en groepen binnen de Agenten-pagina */
+.mcp-doors{display:grid;gap:18px;min-width:0}
+.mcp-group{display:grid;gap:10px;min-width:0}
+.mcp-group+.mcp-group{padding-top:16px;border-top:1px solid var(--line)}
+.mcp-group-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* speelveld: lijst met hulpmiddelen links, aanroep rechts */
+.mcp-play{display:grid;gap:14px;grid-template-columns:minmax(200px,260px) minmax(0,1fr);align-items:start}
+.mcp-toolnav{display:grid;gap:4px;padding:8px;max-height:560px;overflow:auto}
+.mcp-toolnav button{display:grid;gap:2px;width:100%;text-align:left;padding:9px 11px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--text);font:inherit;cursor:pointer;min-width:0}
+.mcp-toolnav button b{font-family:ui-monospace,Consolas,monospace;font-size:.84rem;font-weight:650;overflow-wrap:anywhere}
+.mcp-toolnav button small{color:var(--muted);font-size:.8rem;line-height:1.35}
+.mcp-toolnav button:hover{background:var(--surface)}
+.mcp-toolnav button.on{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.mcp-toolnav button:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:1px}
+@media(max-width:800px){.mcp-play{grid-template-columns:minmax(0,1fr)}.mcp-toolnav{max-height:none;grid-auto-flow:column;grid-auto-columns:minmax(180px,80%);overflow-x:auto;overflow-y:hidden}}
+
+/* bord: vier kolommen met plat Nederlands/Oekraïens als titel */
+.mcp-board{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr));align-items:start}
+.mcp-col{display:grid;gap:8px;align-content:start;min-width:0;padding:10px;border-radius:14px;background:var(--surface)}
+.mcp-col-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 4px 4px}
+.mcp-col-count{min-width:26px;padding:1px 8px;border-radius:99px;background:var(--panel);color:var(--muted);font-size:.78rem;font-weight:700;text-align:center}
+.mcp-task{display:grid;gap:8px;min-width:0;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+.mcp-task p{color:var(--text);font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.mcp-moves{display:flex;flex-wrap:wrap;gap:6px}
+.mcp-move{min-height:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:.78rem;font-weight:600;cursor:pointer}
+.mcp-move:hover:not(:disabled){color:var(--text);border-color:var(--accent)}
+.mcp-move:disabled{opacity:.45;cursor:not-allowed}
+.mcp-compose{display:grid;gap:10px;min-width:0}
+.mcp-compose-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* archief: stappen met een ring en een verbindingslijn */
+.mcp-track{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.mcp-track-step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;position:relative;padding:6px 8px;border-radius:12px}
+.mcp-track-step.on{background:var(--accent-soft)}
+.mcp-track-step .mcp-rail{position:absolute;left:29px;top:50px;bottom:-4px;width:2px;background:var(--line)}
+.mcp-track-step:last-child .mcp-rail{display:none}
+.mcp-track-step.done .mcp-rail{background:var(--accent)}
+.mcp-track-step h3{margin:0;font-size:.95rem}
+.mcp-track-step p{margin:2px 0 0;color:var(--muted);font-size:.86rem;line-height:1.4}
+.mcp-ring{position:relative;z-index:1;width:44px;height:44px;background:var(--panel);border-radius:99px}
 .mcp-ring svg{display:block;width:44px;height:44px;transform:rotate(-90deg)}
 .mcp-ring circle{fill:none;stroke:var(--line);stroke-width:3}
 .mcp-ring circle:last-of-type{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .45s ease}
-.mcp-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:.68rem;font-weight:700;color:var(--muted)}
+.mcp-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:.7rem;font-weight:700;color:var(--muted)}
 .mcp-ring.on b,.mcp-ring.done b{color:var(--accent)}
-.mcp-step h3{margin:8px 0 0;font-size:1rem;color:var(--text)}
-.mcp-step p{margin:2px 0 16px}
-.mcp-history{list-style:none;margin:12px 0 0;padding:0;display:grid}
-.mcp-history li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
-.mcp-history span{display:grid;min-width:0}
-.mcp-history b{color:var(--text);font-weight:650}
-.mcp-history small,.mcp-history button{font-size:.78rem}
-.mcp-form button.mcp-ghost,.mcp-history button.mcp-ghost{background:transparent;color:var(--text);box-shadow:0 0 0 1px var(--line);font-weight:600}
-@media(max-width:800px){.mcp-grid3,.mcp-grid2,.mcp-board,.mcp-split-tools{grid-template-columns:1fr}}
+.mcp-bar{height:6px;border-radius:99px;background:var(--surface);overflow:hidden}
+.mcp-bar i{display:block;height:100%;border-radius:99px;background:var(--accent);transition:width .45s ease}
+.mcp-bar-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline;font-size:.86rem;color:var(--muted)}
+.mcp-bar-row b{color:var(--text);font-variant-numeric:tabular-nums}
+.mcp-archive-state{font-size:.86rem;color:var(--muted)}
+
+/* kleine tekst onder een lijst, zoals een datum of een bestandsnaam */
+.mcp-meta{color:var(--muted);font-size:.84rem;line-height:1.4}
+
+@media(max-width:900px){.mcp-board{grid-template-columns:repeat(2,minmax(0,1fr))}.mcp-cols,.mcp-cols.two{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:560px){
+  .mcp-estate{padding:16px 16px 32px;gap:14px}
+  .mcp-page-icon{width:44px;height:44px;border-radius:14px}
+  .mcp-page-actions{margin-left:0;width:100%}
+  .mcp-page-actions .mcp-btn{flex:1 1 100%}
+  .mcp-stats>.mcp-stat:last-child:nth-child(odd){grid-column:1 / -1}
+  .mcp-block-head{padding:12px 14px}
+  .mcp-block-actions{margin-left:0;width:100%}
+  .mcp-block-body{padding:14px}
+  .mcp-board{grid-template-columns:minmax(0,1fr)}
+  .mcp-form .mcp-input,.mcp-compose-row .mcp-input{flex-basis:100%}
+  .mcp-form .mcp-btn,.mcp-compose-row .mcp-btn{flex:1 1 100%}
+  .mcp-perm{gap:12px}
+}
+@media(prefers-reduced-motion:reduce){.mcp-estate *{transition:none!important}}

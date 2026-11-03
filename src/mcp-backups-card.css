@@ -1,22 +1,27 @@
-.mbk{display:grid;gap:10px}
-.mbk-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.mbk-head h2{display:flex;align-items:center;gap:8px;margin:0}
-.mbk-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.mbk-list>li{border:1px solid var(--line,#d6dde4);border-radius:12px;padding:8px 12px}
-.mbk-list>li.is-partial{border-color:color-mix(in srgb,#d97706 50%,var(--line,#d6dde4))}
-.mbk-list summary{display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;min-height:32px}
-.mbk-when{display:inline-flex;align-items:center;gap:6px;font-weight:700}
-.mbk-meta{color:var(--muted,#64748b);font-size:.82rem}
-.mbk-badge{display:inline-flex;align-items:center;gap:3px;padding:0 8px;border-radius:99px;border:1px solid var(--line,#cbd5e1);font-size:.72rem}
-.mbk-badge.ok{border-color:#16a34a;color:#15803d}
-.mbk-badge.warn{border-color:#d97706;color:#b45309}
-.mbk-files{list-style:none;margin:8px 0 2px;padding:0;display:grid;gap:6px}
-.mbk-files li{display:flex;align-items:center;gap:10px}
-.mbk-files li>span{display:grid;flex:1;min-width:0}
-.mbk-files small{color:var(--muted,#64748b);word-break:break-all}
-.mbk-error{color:#dc2626;margin:0}
-.mbk-note,.mbk-busy{color:var(--muted,#64748b);font-size:.82rem;margin:0}
-.mcp-live{margin:4px 0;font-size:.86rem;color:#2f6f73;font-weight:600;word-break:break-word}
-.mcp-error{margin:4px 0;font-size:.86rem;color:#b91c1c}
+/* Nachtelijke serverkopieën binnen het archiefblok. De kop, de lege staat en de knoppen komen uit mcp-estate.css. */
+.mbk .mbk-list{list-style:none;margin:0;padding:0;display:grid}
+.mbk .mbk-list>li{border-top:1px solid var(--line);min-width:0}
+.mbk .mbk-list>li:first-child{border-top:0}
+.mbk summary{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;cursor:pointer;min-height:48px;padding:8px 0;list-style:none}
+.mbk summary::-webkit-details-marker{display:none}
+.mbk summary::after{content:'';flex:0 0 auto;width:8px;height:8px;margin-left:auto;margin-right:4px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s}
+.mbk details[open] summary::after{transform:rotate(-135deg)}
+.mbk summary:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:2px;border-radius:10px}
+.mbk-when{display:inline-flex;align-items:center;gap:6px;font-weight:650;color:var(--text)}
+.mbk-when svg{color:var(--accent)}
+.mbk-meta{color:var(--muted);font-size:.84rem}
+.mbk-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:.76rem;font-weight:650;line-height:1.4;background:var(--surface);color:var(--muted);white-space:nowrap}
+.mbk-badge.ok{background:var(--mcp-ok-soft,transparent);color:var(--good)}
+.mbk-badge.warn{background:var(--mcp-warn-soft,transparent);color:var(--mcp-warn,#9a5b00)}
+.mbk-files{list-style:none;margin:0 0 10px;padding:0;display:grid}
+.mbk-files li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)}
+.mbk-files li>svg{color:var(--accent);flex:0 0 auto}
+.mbk-files li>span{display:grid;flex:1 1 220px;min-width:0;gap:2px}
+.mbk-files b{font-weight:650;color:var(--text)}
+.mbk-files small{color:var(--muted);font-size:.82rem;line-height:1.4;overflow-wrap:anywhere}
+.mbk-files .mcp-btn{margin-left:auto}
+.mbk-note,.mbk-busy{color:var(--muted);font-size:.84rem;line-height:1.5;margin:0}
+.mbk-busy{display:flex;align-items:center;gap:8px}
 .mbk-spin{animation:mbk-rot 1s linear infinite}
 @keyframes mbk-rot{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.mbk-spin{animation:none}}
