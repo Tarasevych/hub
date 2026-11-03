@@ -15,9 +15,12 @@ export const PRIVACY_TABEL = 'privacy_voorkeuren_v1';
 export const ANALYTICS_TABEL = 'analytics_tellers_v1';
 // Audit-fix 10: ruimer (liever een veld te veel weglaten dan een geheim exporteren): ook sleutels, API-keys,
 // credentials, refresh/access, sessies, OTP/TOTP/herstel, handtekeningen, JWT en versleutelde velden (…Enc).
-const GEHEIM_SLEUTEL = /(token|secret|hash|cookie|proof|nonce|pkce|pass(word|wd|phrase)?$|password|wachtwoord|cipher|encrypt|sealed|salt|verifier|codes?$|seed|private|key$|keys$|api[-_]?key|credential|authoriz|bearer|jwt|signature|otp|totp|recovery|herstel|session|refresh|grant|^iv$|^tag$|enc$|kid$)/i;
+const GEHEIM_SLEUTEL = /(token|secret|hash|cookie|proof|nonce|pkce|pass(word|wd|phrase)?$|password|wachtwoord|cipher|encrypt|sealed|salt|verifier|codes?$|seed|private|key$|keys$|api[-_]?key|credential|authoriz|bearer|jwt|signature|otp|totp|recovery|herstel|session|refresh|grant|^iv$|^tag$|enc$|kid$|geheim|sleutel)/i;
 const GEBEURTENIS = /^[a-z0-9][a-z0-9_.-]{0,59}$/;
-const EXPORT_MAX = 20000;
+/** Kolommen waarmee een rij bij een account hoort: het account is dan het onderwerp van de rij (zelfde reikwijdte als het wissen). */
+const ACCOUNT_KOLOMMEN = ['user_id', 'owner_id', 'account_id', 'eigenaar_id'];
+/** Een versleutelde envelop (v1.iv.ct.tag of dek1.…) is een geheim en hoort niet in de kopie. */
+const VERSLEUTELD = /^(v1\.[^.\s]+\.[^.\s]+\.[^.\s]+|dek1\.)/;
 
 export async function privacyVoorkeur(userId: string): Promise<{ analyticsConsent: boolean; updatedAt: number }> {
   const r = await getPool().query("SELECT data FROM app.records WHERE tbl = $1 AND data->>'userId' = $2 ORDER BY seq DESC LIMIT 1", [PRIVACY_TABEL, userId]);
@@ -52,6 +55,9 @@ export async function analyticsTellen(userId: string, naam: unknown): Promise<'g
 
 export function zonderGeheimen(waarde: unknown, diepte = 0): unknown {
   if (diepte > 12) return '[diep]';
+  if (waarde instanceof Date) return waarde;
+  if (Buffer.isBuffer(waarde)) return `[binair, ${waarde.length} bytes]`;
+  if (typeof waarde === 'string' && VERSLEUTELD.test(waarde)) return '[versleuteld, niet opgenomen]';
   if (Array.isArray(waarde)) return waarde.map((v) => zonderGeheimen(v, diepte + 1));
   if (waarde && typeof waarde === 'object') {
     return Object.fromEntries(Object.entries(waarde as Record<string, unknown>).filter(([k]) => !GEHEIM_SLEUTEL.test(k)).map(([k, v]) => [k, zonderGeheimen(v, diepte + 1)]));
@@ -59,34 +65,51 @@ export function zonderGeheimen(waarde: unknown, diepte = 0): unknown {
   return waarde;
 }
 
-/** Export van eigen gegevens. Leest bewust via de systeemrol met een expliciet filter op owner_id. */
+/**
+ * Export van alle gegevens die bij dit account horen. Dezelfde reikwijdte als het wissen (wisRecordsVanAccount), plus
+ * elke andere tabel met een accountkolom: een nieuwe tabel komt zo vanzelf mee. Geen afkapping en geen stille fouten:
+ * als een deel niet te lezen is, stopt de export i.p.v. dat er stilzwijgend iets ontbreekt.
+ */
 export async function persoonsgegevensExport(userId: string) {
   const pool = getPool();
-  const rijen = await pool.query('SELECT tbl, id, data, created_at, updated_at FROM app.records WHERE owner_id = $1 ORDER BY tbl, seq LIMIT $2', [userId, EXPORT_MAX + 1]);
-  const bestanden = await pool.query('SELECT path, content_type, size_bytes, created_at FROM app.storage_objects WHERE owner_id = $1 ORDER BY created_at LIMIT 5000', [userId]);
-  const audit = await pool.query('SELECT created_at, action, type, result, service, device FROM app.audit WHERE owner_id = $1 ORDER BY seq DESC LIMIT 5000', [userId]).catch(() => ({ rows: [] as unknown[] }));
-  // SEC-001-13: ook relationele gebruikerstabellen buiten app.records meenemen in de AVG-export (geheimen gefilterd).
-  const [notities, woningen, agendaAbos, mcpItems] = await Promise.all([
-    pool.query('SELECT id, ruimte, titel, inhoud_md, soort, kleur, etiketten, map_id, vast_sinds, gearchiveerd_op, verwijderd_op, created_at, updated_at FROM app.notities WHERE user_id = $1 ORDER BY created_at LIMIT 5000', [userId]).catch(() => ({ rows: [] as Record<string, unknown>[] })),
-    pool.query('SELECT id, naam, tijdzone, taal, verdiepingen, created_at, updated_at FROM app.huis_woningen WHERE user_id = $1 ORDER BY created_at LIMIT 500', [userId]).catch(() => ({ rows: [] as Record<string, unknown>[] })),
-    pool.query('SELECT id, bron, naam, adres, gebruikersnaam, actief, interval_minuten, agendas, aangemaakt_op, bijgewerkt_op FROM app.agenda_abonnement WHERE user_id = $1 ORDER BY aangemaakt_op LIMIT 500', [userId]).catch(() => ({ rows: [] as Record<string, unknown>[] })),
-    pool.query('SELECT id, kind, title, body, status, tags, author, created_at, updated_at FROM app.mcp_console_items WHERE user_id = $1 ORDER BY created_at LIMIT 5000', [userId]).catch(() => ({ rows: [] as Record<string, unknown>[] })),
-  ]);
-  const perTabel: Record<string, unknown[]> = {};
-  for (const r of rijen.rows.slice(0, EXPORT_MAX)) (perTabel[r.tbl] ||= []).push({ id: r.id, aangemaakt: r.created_at, bijgewerkt: r.updated_at, gegevens: zonderGeheimen(r.data) });
-  if (notities.rows.length) perTabel['app.notities'] = notities.rows.map((r) => zonderGeheimen(r));
-  if (woningen.rows.length) perTabel['app.huis_woningen'] = woningen.rows.map((r) => zonderGeheimen(r));
-  if (agendaAbos.rows.length) perTabel['app.agenda_abonnement'] = agendaAbos.rows.map((r) => zonderGeheimen(r));
-  if (mcpItems.rows.length) perTabel['app.mcp_console_items'] = mcpItems.rows.map((r) => zonderGeheimen(r));
+  const account = await pool.query("SELECT data FROM app.records WHERE tbl = 'users' AND id = $1", [userId]);
+  const email = String((account.rows[0]?.data as { email?: unknown } | undefined)?.email || '').toLowerCase();
+  const rijen = await pool.query(
+    `SELECT tbl, id, data, created_at, updated_at FROM app.records
+      WHERE (tbl = 'users' AND id = $1)
+         OR owner_id = $1
+         OR (tbl <> 'users' AND (data->>'accountId' = $1 OR data->>'userId' = $1 OR data->>'recipientUserId' = $1))
+         OR ($2 <> '' AND tbl IN ('workspace_members', 'site_notifications') AND COALESCE(data->>'userId', '') = ''
+             AND COALESCE(data->>'recipientUserId', '') = '' AND lower(COALESCE(data->>'email', data->>'recipientEmail', '')) = $2)
+      ORDER BY tbl, seq`,
+    [userId, email],
+  );
+  const gegevens: Record<string, unknown[]> = {};
+  for (const r of rijen.rows) (gegevens[r.tbl] ||= []).push({ id: r.id, aangemaakt: r.created_at, bijgewerkt: r.updated_at, gegevens: zonderGeheimen(r.data) });
+  // Alle andere tabellen met een accountkolom. records en storage_objects hierboven of hieronder apart.
+  const tabellen = await pool.query(
+    `SELECT table_name::text AS tabel, array_agg(column_name::text ORDER BY column_name) AS kolommen
+       FROM information_schema.columns
+      WHERE table_schema = 'app' AND table_name NOT IN ('records', 'storage_objects') AND column_name = ANY($1::text[])
+      GROUP BY table_name ORDER BY table_name`,
+    [ACCOUNT_KOLOMMEN],
+  );
+  const beveiligingslog: unknown[] = [];
+  for (const t of tabellen.rows as Array<{ tabel: string; kolommen: string[] }>) {
+    const voorwaarde = t.kolommen.map((k) => `"${k}"::text = $1`).join(' OR ');
+    const uit = await pool.query(`SELECT * FROM app."${t.tabel}" WHERE ${voorwaarde}`, [userId]);
+    if (t.tabel === 'audit') beveiligingslog.push(...uit.rows.map((r) => zonderGeheimen(r)));
+    else if (uit.rows.length) gegevens[`app.${t.tabel}`] = uit.rows.map((r) => zonderGeheimen(r));
+  }
+  const bestanden = await pool.query('SELECT path, content_type, size_bytes, created_at FROM app.storage_objects WHERE owner_id = $1 ORDER BY created_at', [userId]);
   return {
     formaat: 'mijn-ruimte-export-v1',
     gemaaktOp: new Date().toISOString(),
     accountId: userId,
-    afgekapt: rijen.rows.length > EXPORT_MAX,
-    toelichting: 'Geheimen, tokens en hashes zijn weggelaten. Bestanden: alleen metadata; inhoud via de cloud-app te downloaden.',
-    gegevens: perTabel,
+    toelichting: 'Geheimen, tokens, sleutels en versleutelde velden zijn niet opgenomen. Bestanden: alleen metadata; de inhoud zelf is via de cloud-app te downloaden.',
+    gegevens,
     bestanden: bestanden.rows,
-    beveiligingslog: audit.rows,
+    beveiligingslog,
   };
 }
 
