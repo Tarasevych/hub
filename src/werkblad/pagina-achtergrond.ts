@@ -32,7 +32,8 @@ export function pasPaginaAchtergrondToe(voorkeur?: { achtergrond?: string; achte
 }
 
 function houdPaginaAchtergrond(): void {
-  if (typeof window === 'undefined') return;
+  // Zonder document (Node-tests, SSR) is er niets te volgen; het interval mag dan niet meer lopen.
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
   const later = () => pasPaginaAchtergrondToe();
   later();
   window.addEventListener('storage', later);
