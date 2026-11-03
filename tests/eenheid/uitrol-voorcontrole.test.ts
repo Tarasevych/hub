@@ -39,6 +39,29 @@ export async function main(): Promise<number> {
     check('metadata uit het pakket: auteur, agent, samenvatting, commit', goed.meta.auteur === 'Claude (Anthropic)' && goed.meta.agent === 'claude' && goed.meta.samenvatting.startsWith('Nieuwe uitrol-pagina') && goed.meta.commit === 'a'.repeat(40), JSON.stringify(goed.meta));
     check('alle controles aanwezig (incl. commit en manifest)', ['manifest', 'structuur', 'versie', 'metadata', 'commit', 'scripts', 'bouwen', 'migraties', 'geheimen', 'tests'].every((id) => niv(goed, id)));
 
+    // TRACE-001: de toekomstige sitevoorcontrole weigert zonder bevestigd GitHub-dossier.
+    const traceVersie = '20261103-215555', traceCommit = 'a'.repeat(40);
+    const traceBasis = { ...opties, versie: traceVersie, actieveVersie: V };
+    const zonderTrace = await pakketVoorcontrole(maak({ versie: traceVersie }), traceBasis);
+    check('TRACE-001: nieuwe versie zonder ONTWIKKELARCHIEF.json geweigerd',
+      niv(zonderTrace,'ontwikkelarchief') === 'fout' &&
+      zonderTrace.resultaat.controles.find((c)=>c.id === 'ontwikkelarchief')?.nl.includes('GEEN_ONTWIKKELARCHIEF'));
+    const tracePad='orchestratie/ontwikkelarchieven/TRACE-001.json';
+    const traceRef={schema:1,taakId:'TRACE-001',repo:'Tarasevych/hub',
+      tak:'feature/trace-001-20261103-214810',commit:traceCommit,pad:tracePad,sha256:'b'.repeat(64),
+      url:`https://github.com/Tarasevych/hub/blob/${traceCommit}/${tracePad}`,
+      release:`https://github.com/Tarasevych/hub/releases/tag/${traceVersie}`,pakket:`mijn-ruimte-${traceVersie}.tar.gz`};
+    const tracePakket=maak({ versie: traceVersie, extra:{ 'ONTWIKKELARCHIEF.json': JSON.stringify(traceRef) }});
+    const traceGoed = await pakketVoorcontrole(tracePakket,{...traceBasis,
+      archiefControle:async()=>({ok:true,code:'OK',reden:'test',url:traceRef.url})});
+    check('TRACE-001: geverifieerd dossier wordt getoond',
+      niv(traceGoed,'ontwikkelarchief')==='ok' && traceGoed.meta.ontwikkelArchiefUrl===traceRef.url);
+    const traceKapot=await pakketVoorcontrole(tracePakket,{...traceBasis,
+      archiefControle:async()=>({ok:false,code:'ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT',reden:'SHA ongelijk'})});
+    check('TRACE-001: afwijkende GitHub SHA-256 → blokkerende fout',
+      niv(traceKapot,'ontwikkelarchief')==='fout' &&
+      traceKapot.resultaat.controles.find((c)=>c.id==='ontwikkelarchief')?.nl.includes('ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT'));
+
     const geenOmschrijving = await pakketVoorcontrole(maak({ zonder: ['SAMENVATTING'] }), opties);
     check('SAMENVATTING ontbreekt → fout «опису змін немає», pakket geblokkeerd', !geenOmschrijving.resultaat.ok && niv(geenOmschrijving, 'metadata') === 'fout' && /опису змін немає/.test(geenOmschrijving.resultaat.controles.find((c) => c.id === 'metadata')!.uk));
     check('SAMENVATTING te kort → fout', niv(await pakketVoorcontrole(maak({ extra: { SAMENVATTING: 'kort' } }), opties), 'metadata') === 'fout');
