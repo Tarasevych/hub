@@ -75,6 +75,14 @@
         "https://github.com/Tarasevych/hub/actions/runs/41727565249",
         "orchestratie/BESLUITEN.md"
       ]
+    },
+    {
+      "volgorde": 8,
+      "stap": "CI після оновлення правил: контроль ORCH, shell, TRACE-001, попередня перевірка, маніфест і коди пройдені. Typecheck server пройдено. Етап typecheck client помилково викликав відсутню npm-команду, виправлено на існуючий npx tsc; розширено регресії пакування.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41727884803",
+        ".github/workflows/trace-001-guard.yml"
+      ]
     }
   ],
   "keuzes": [
@@ -190,6 +198,11 @@
       "status": "afgewezen",
       "resultaat": "CI 41727205002: CONTEXT_TE_GROOT; CI 41727565249: VERSIE_NIET_VERHOOGD — виправлено в окремому наступному коміті; результат наступного CI очікується.",
       "url": "https://github.com/Tarasevych/hub/actions/runs/41727565249"
+    },
+    {
+      "status": "gedeeltelijk",
+      "resultaat": "CI 41727884803: ORCH, bash -n, TRACE-001 unit, site unit, codes, manifest, server TypeScript = success; npm run typecheck script absent; replaced by npx tsc.",
+      "url": "https://github.com/Tarasevych/hub/actions/runs/41727884803"
     }
   ],
   "bronnen": [

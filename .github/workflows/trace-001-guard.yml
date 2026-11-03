@@ -55,9 +55,14 @@ jobs:
         run: |
           node scripts/eenheidstests.mjs uitrol-manifest
           node scripts/eenheidstests.mjs uitrol-codes
+      - name: Pakketbouw en ORCH-regressietests
+        run: |
+          node scripts/eenheidstests.mjs uitrol-pakket-maken
+          node scripts/eenheidstests.mjs orch-pakket
+          node scripts/eenheidstests.mjs orch-uitrol-basis
       - name: Typecheck server
         run: npm run typecheck:server
       - name: Typecheck client
-        run: npm run typecheck
+        run: npx tsc --noEmit -p tsconfig.json
       - name: Build
         run: npm run build
