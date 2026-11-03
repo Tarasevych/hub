@@ -58,6 +58,8 @@ export const resolveCanonicalNoticeAction = (id: string) => canonicalNoticeActio
 export const releaseCanonicalNoticeAction = (id: string) => { if (id) canonicalNoticeActionRegistry.delete(id); };
 
 export const CANONICAL_NOTICE_EVENT = 'tsv:canonical-notice';
+/** INTEG-001: opent het meldingenpaneel aan de bel (bv. «Усі сповіщення» in het venster bij een stip in het menu). */
+export const MELDINGEN_OPENEN_EVENT = 'tsv:meldingen-openen';
 const RECENT_KEY = 'tsv:notice-recent-v1';
 const TAB_KEY = 'tsv:notice-tab-v1';
 
