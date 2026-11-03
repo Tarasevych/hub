@@ -1,32 +1,41 @@
-// Voorkeuren van de technische strook (zoekronde 02.11.2026): modus (uitgeklapt / ingeklapt / automatisch), grootte van de
-// pictogrammen, tekst bij de knoppen, en welke knoppen in welke volgorde op de strook staan. Alleen op dit apparaat (localStorage
-// met try/catch); zonder opslag geldt de standaard. Zuiver en zonder React, zodat het getest kan worden (tests/eenheid).
+// Voorkeuren van de technische strook (zoekronde 02.11.2026, herzien 03.11.2026): modus (uitgeklapt / ingeklapt / automatisch),
+// grootte, vorm van de knoppen (alleen pictogrammen / pictogrammen met tekst / alleen tekst), en welke knoppen in welke volgorde op
+// de strook staan. Alleen op dit apparaat (localStorage met try/catch); zonder opslag geldt de standaard. Zuiver en zonder React,
+// zodat het getest kan worden (tests/eenheid/strook-voorkeur.test.ts).
+//
+// 03.11.2026 (eigenaar): «Смуга зараз постійно видна … має працювати за аналогією з меню сайту: згортатися в тонку смужку … і
+// розгортатися, коли наводжу на верхню область вікна». Daarom:
+//  • standaard «automatisch» (was «uitgeklapt»); een bewaarde keuze blijft gelden;
+//  • de modusknop (▾ / 📌 / ▴) is een VASTE knop van de strook, net als «⋯» en de instellingen: hij moet er ook in de dunne strook
+//    zijn en mag dus niet van de strook gehaald worden. De kiesbare knop «inklap» is daarom vervallen (een bewaarde lijst verliest hem
+//    stil via normaliseer);
+//  • `laatsteInklap`: welke ingeklapte modus «Згорнути» kiest (de laatst gebruikte; standaard automatisch).
 export type StrookModus = 'uitgeklapt' | 'ingeklapt' | 'auto';
 export type StrookGrootte = 'klein' | 'middel' | 'groot';
 export type StrookLabel = 'iconen' | 'beide' | 'tekst';
-export type StrookVoorkeur = { modus: StrookModus; grootte: StrookGrootte; label: StrookLabel; knoppen: string[] };
+export type InklapModus = Exclude<StrookModus, 'uitgeklapt'>;
+export type StrookVoorkeur = { modus: StrookModus; grootte: StrookGrootte; label: StrookLabel; knoppen: string[]; laatsteInklap: InklapModus };
 
 export const STROOK_SLEUTEL = 'mr-tech-strook';
 /** De oude losse schakelaar («ingeklapt» ja/nee): wordt eenmalig gelezen en daarna niet meer geschreven. */
 export const STROOK_OUDE_INKLAP_SLEUTEL = 'mr-tech-band-ingeklapt';
 export const STROOK_MAX_KNOPPEN = 18;
 
-/** Alle knoppen die op de strook kunnen staan. Vaste knop «⋯» (lijst) en «instellingen» staan altijd op de strook en zijn niet kiesbaar. */
+/** Alle knoppen die op de strook kunnen staan. Vaste knoppen (modus, «⋯», instellingen) staan altijd op de strook en zijn niet kiesbaar. */
 export const STROOK_KNOP_IDS: readonly string[] = [
-  'meldingen', 'wissel', 'inklap', 'uit',
+  'meldingen', 'wissel', 'uit',
   'beheer', 'api', 'uitrol', 'ai-beleid', 'account', 'terminal', 'remote', 'ssh', 'vlaggen', 'ondersteuning', 'profielen', 'verlengen', 'toegang', 'band',
 ];
 
-/** Standaard: precies de knoppen die er vroeger al stonden (meldingen, ruimte wisselen, in- en uitklappen, afmelden). */
-export const STROOK_STANDAARD_KNOPPEN: readonly string[] = ['meldingen', 'wissel', 'inklap', 'uit'];
+/** Standaard: de knoppen die er vroeger al stonden (meldingen, ruimte wisselen, afmelden); in- en uitklappen is nu de vaste modusknop. */
+export const STROOK_STANDAARD_KNOPPEN: readonly string[] = ['meldingen', 'wissel', 'uit'];
 
-export const STROOK_STANDAARD: StrookVoorkeur = { modus: 'uitgeklapt', grootte: 'middel', label: 'beide', knoppen: [...STROOK_STANDAARD_KNOPPEN] };
+export const STROOK_STANDAARD: StrookVoorkeur = { modus: 'auto', grootte: 'middel', label: 'beide', knoppen: [...STROOK_STANDAARD_KNOPPEN], laatsteInklap: 'auto' };
 
 /** Namen per knop (uk, nl). De namen van de ⋯-lijst zijn dezelfde als de knoppen zelf. */
 export const STROOK_NAMEN: Readonly<Record<string, { uk: string; nl: string }>> = Object.freeze({
   meldingen: { uk: 'Технічні сповіщення', nl: 'Technische meldingen' },
   wissel: { uk: 'Перемикання простору', nl: 'Ruimte wisselen' },
-  inklap: { uk: 'Згорнути або розгорнути', nl: 'In- of uitklappen' },
   uit: { uk: 'Вийти з технічного', nl: 'Technisch verlaten' },
   beheer: { uk: 'Адміністрування', nl: 'Beheer' },
   api: { uk: 'API', nl: 'API' },
@@ -49,31 +58,39 @@ export const MODUS_NAMEN: Readonly<Record<StrookModus, { uk: string; nl: string 
   ingeklapt: { uk: 'Згорнуто', nl: 'Ingeklapt' },
   auto: { uk: 'Автоматично', nl: 'Automatisch' },
 });
+/** Korte uitleg per modus (zelfde betekenis als de modi van het menu van de site). */
+export const MODUS_UITLEG: Readonly<Record<StrookModus, { uk: string; nl: string }>> = Object.freeze({
+  uitgeklapt: { uk: 'Смуга завжди повна', nl: 'De strook is altijd volledig' },
+  ingeklapt: { uk: 'Тонка смужка; розгортається кнопкою ▾', nl: 'Dunne strook; uitklappen met de knop ▾' },
+  auto: { uk: 'Тонка смужка; розгортається, коли наводите на верх вікна', nl: 'Dunne strook; klapt open als u naar de bovenrand wijst' },
+});
 export const GROOTTE_NAMEN: Readonly<Record<StrookGrootte, { uk: string; nl: string }>> = Object.freeze({
   klein: { uk: 'Малі', nl: 'Klein' },
   middel: { uk: 'Середні', nl: 'Middel' },
   groot: { uk: 'Великі', nl: 'Groot' },
 });
+/** Woorden van de eigenaar (03.11.2026): «лише піктограми / піктограми з написами / лише написи». */
 export const LABEL_NAMEN: Readonly<Record<StrookLabel, { uk: string; nl: string }>> = Object.freeze({
-  iconen: { uk: 'Лише значки', nl: 'Alleen pictogrammen' },
-  beide: { uk: 'Значки з текстом', nl: 'Pictogrammen met tekst' },
-  tekst: { uk: 'Лише текст', nl: 'Alleen tekst' },
+  iconen: { uk: 'Лише піктограми', nl: 'Alleen pictogrammen' },
+  beide: { uk: 'Піктограми з написами', nl: 'Pictogrammen met tekst' },
+  tekst: { uk: 'Лише написи', nl: 'Alleen tekst' },
 });
 
-const MODI: readonly StrookModus[] = ['uitgeklapt', 'ingeklapt', 'auto'];
-const GROOTTES: readonly StrookGrootte[] = ['klein', 'middel', 'groot'];
-const LABELS: readonly StrookLabel[] = ['iconen', 'beide', 'tekst'];
+export const STROOK_MODI: readonly StrookModus[] = ['uitgeklapt', 'ingeklapt', 'auto'];
+export const STROOK_GROOTTES: readonly StrookGrootte[] = ['klein', 'middel', 'groot'];
+export const STROOK_LABELS: readonly StrookLabel[] = ['iconen', 'beide', 'tekst'];
 
 /** Maakt van een willekeurige waarde (opslag, oude versie) een geldige voorkeur. Onbekende knoppen en waarden vallen weg. */
 export function normaliseer(ruw: unknown, oudIngeklapt = false): StrookVoorkeur {
   const r = ruw && typeof ruw === 'object' ? (ruw as Record<string, unknown>) : {};
-  const modus = MODI.includes(r.modus as StrookModus) ? (r.modus as StrookModus) : oudIngeklapt ? 'ingeklapt' : STROOK_STANDAARD.modus;
-  const grootte = GROOTTES.includes(r.grootte as StrookGrootte) ? (r.grootte as StrookGrootte) : STROOK_STANDAARD.grootte;
-  const label = LABELS.includes(r.label as StrookLabel) ? (r.label as StrookLabel) : STROOK_STANDAARD.label;
+  const modus = STROOK_MODI.includes(r.modus as StrookModus) ? (r.modus as StrookModus) : oudIngeklapt ? 'ingeklapt' : STROOK_STANDAARD.modus;
+  const grootte = STROOK_GROOTTES.includes(r.grootte as StrookGrootte) ? (r.grootte as StrookGrootte) : STROOK_STANDAARD.grootte;
+  const label = STROOK_LABELS.includes(r.label as StrookLabel) ? (r.label as StrookLabel) : STROOK_STANDAARD.label;
   const knoppen = Array.isArray(r.knoppen)
     ? [...new Set(r.knoppen.filter((id): id is string => typeof id === 'string' && STROOK_KNOP_IDS.includes(id)))].slice(0, STROOK_MAX_KNOPPEN)
     : [...STROOK_STANDAARD_KNOPPEN];
-  return { modus, grootte, label, knoppen };
+  const laatsteInklap: InklapModus = r.laatsteInklap === 'ingeklapt' || r.laatsteInklap === 'auto' ? r.laatsteInklap : modus === 'ingeklapt' ? 'ingeklapt' : STROOK_STANDAARD.laatsteInklap;
+  return { modus, grootte, label, knoppen, laatsteInklap };
 }
 
 type Opslag = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
@@ -109,6 +126,31 @@ export function verplaats(v: StrookVoorkeur, id: string, richting: -1 | 1): Stro
   return { ...v, knoppen };
 }
 
+/**
+ * Zet een knop op een willekeurige plek (slepen, «На початок», «У кінець»): `plek` is de index in de lijst ZONDER de knop zelf
+ * (0 = vooraan, lengte = achteraan; daarbuiten wordt begrensd). Staat de knop nog niet op de strook, dan komt hij erbij (tot het maximum).
+ */
+export function zetOp(v: StrookVoorkeur, id: string, plek: number): StrookVoorkeur {
+  if (!STROOK_KNOP_IDS.includes(id)) return v;
+  const zonder = v.knoppen.filter((x) => x !== id);
+  if (zonder.length === v.knoppen.length && v.knoppen.length >= STROOK_MAX_KNOPPEN) return v;
+  const p = Math.max(0, Math.min(Math.round(Number.isFinite(plek) ? plek : zonder.length), zonder.length));
+  const knoppen = [...zonder.slice(0, p), id, ...zonder.slice(p)];
+  return knoppen.join() === v.knoppen.join() ? v : { ...v, knoppen };
+}
+
+/**
+ * Slepen: waar komt `sleep` terecht als hij op `doel` wordt losgelaten (`na` = in de tweede helft van het doel)? Geeft de `plek`
+ * voor zetOp, of null als er niets verandert (zelfde knop, onbekend doel).
+ */
+export function dropPlek(knoppen: readonly string[], sleep: string, doel: string, na: boolean): number | null {
+  if (sleep === doel) return null;
+  const zonder = knoppen.filter((x) => x !== sleep);
+  const j = zonder.indexOf(doel);
+  if (j < 0) return null;
+  return na ? j + 1 : j;
+}
+
 /** Zet een knop op de strook (aan: achteraan) of haalt hem eraf (uit). */
 export function zetAan(v: StrookVoorkeur, id: string, aan: boolean): StrookVoorkeur {
   if (!STROOK_KNOP_IDS.includes(id)) return v;
@@ -117,8 +159,14 @@ export function zetAan(v: StrookVoorkeur, id: string, aan: boolean): StrookVoork
   return { ...v, knoppen: [...v.knoppen, id] };
 }
 
-/** Volgende modus bij de snelknop in- en uitklappen: uitgeklapt ↔ ingeklapt; «automatisch» klapt in tot ingeklapt. */
-export const volgendeModus = (m: StrookModus): StrookModus => (m === 'uitgeklapt' ? 'ingeklapt' : 'uitgeklapt');
+/** Zet de modus; een ingeklapte modus wordt ook onthouden als de modus van de knop «Згорнути». */
+export const metModus = (v: StrookVoorkeur, m: StrookModus): StrookVoorkeur => ({ ...v, modus: m, laatsteInklap: m === 'uitgeklapt' ? v.laatsteInklap : m });
+
+/**
+ * Volgende modus bij de vaste modusknop: uitgeklapt → `terug` (de laatst gebruikte ingeklapte modus); ingeklapt of automatisch →
+ * uitgeklapt (vastzetten, «Закріпити»).
+ */
+export const volgendeModus = (m: StrookModus, terug: InklapModus = 'ingeklapt'): StrookModus => (m === 'uitgeklapt' ? terug : 'uitgeklapt');
 
 /** Lijst voor het instellingenpaneel: eerst de zichtbare knoppen in hun volgorde, daarna de rest (uitgeschakeld). */
 export function paneelLijst(v: StrookVoorkeur): Array<{ id: string; aan: boolean }> {

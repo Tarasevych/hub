@@ -4,14 +4,8 @@
    kan geen enkel venster van de dienst de band bedekken. Vensters van het platform (portal naar body, z-index 100000+) blijven erboven. */
 :root{--tech-band-h:40px;--tech-band-bg:#f5b400;--tech-band-fg:#1a1200}
 html[data-tech=aan] #root{position:fixed;top:var(--tech-band-h);left:0;right:0;bottom:0;width:auto;height:auto;min-height:0;transform:translateZ(0);overflow:hidden}
-/* Zijbalk (alleen de verticale; de dock boven/onder en de dichte telefoonknop houden hun eigen hoogte): één bandhoogte langer dan #root,
-   met evenveel extra ruimte onderaan (de gewone onderpadding uit canoniek-omlijsting.css/menu-v2.css + bandhoogte). De inhoud is dus precies
-   zo hoog als vroeger; achtergrond en scheidingslijn lopen tot onderaan door, zodat er geen gat valt als de band verborgen is (alles
-   schuift dan omhoog). Zie «Verbergen bij scrollen» hieronder. */
-html[data-tech=aan] #root .canonical-chrome:not([data-dock='boven']):not([data-dock='onder']):not(.sidebar-drawer-mode) .canonical-sidebar,
-html[data-tech=aan] #root .canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-sidebar{height:calc(100% + var(--tech-band-h));max-height:none;box-sizing:border-box;padding-bottom:calc(12px + var(--tech-band-h))}
-html[data-tech=aan] #root .canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-sidebar{padding-bottom:calc(8px + var(--tech-band-h))}
-@media (min-width:701px){html[data-tech=aan] #root .canonical-chrome:not([data-dock='boven']):not([data-dock='onder']):not(.sidebar-drawer-mode) .canonical-sidebar{padding-bottom:calc(10px + var(--tech-band-h))}}
+/* 03.11.2026: de zijbalk is weer gewoon even hoog als #root. De verlenging met één bandhoogte (18.10.2026) bestond alleen voor het
+   verbergen bij scrollen (de app schoof dan omhoog); dat is vervangen door in- en uitschuiven van de band zelf (band-inschuiven.ts). */
 
 .tech-band{position:fixed;top:0;left:0;right:0;height:var(--tech-band-h);z-index:99000;display:flex;align-items:center;gap:12px;padding:0 10px 0 12px;box-sizing:border-box;
   background-color:var(--tech-band-bg);color:var(--tech-band-fg);font:600 14px/1.2 Inter,ui-sans-serif,system-ui,sans-serif;border-bottom:3px solid var(--tech-band-fg);overflow:hidden}
@@ -138,30 +132,13 @@ html.theme-dark .tech-vraag-laag.is-dev b{color:#c4b5fd}
 .tech-poort button{min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;font-weight:600;cursor:pointer}
 .tech-poort button.is-hoofd{background:var(--info-vlak);border-color:var(--info);color:var(--text-on-vlak)}
 .tech-poort button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-/* Verbergen bij scrollen («headroom», src/tech/band-inschuiven.ts, 18.10.2026). Alleen `translate`: top, hoogte en padding van #root,
-   de werkruimte en de zijbalk zijn in BEIDE standen gelijk, dus scrollHeight/clientHeight veranderen niet en de browser hoeft geen
-   scrollTop te corrigeren (dat gaf de lus van 305 wissels in 15 s). Verborgen: band, ondersteunings-/impersonatieband en de hele app
-   schuiven samen één bandhoogte omhoog (zoals de adresbalk op een telefoon). De bel, haar melding en paneel schuiven even ver terug en
-   staan dus stil (vast-kader.ts rekent met #root zonder translate). De werkruimte loopt één bandhoogte onder #root door (buiten beeld
-   zolang de band zichtbaar is) zodat er onderaan geen gat valt; ::after houdt het laatste stuk inhoud bereikbaar. Mail (volle hoogte)
-   krijgt in plaats daarvan een doorzichtige onderrand: zijn indeling blijft precies zoals ze was. */
-html[data-tech=aan] body>#root{overflow:visible;transition:translate .22s ease}
-html[data-tech=aan][data-tech-verborgen] body>#root{translate:0 calc(-1 * var(--tech-band-h))}
-html[data-tech=aan] #root .canonical-workspace{bottom:calc(-1 * var(--tech-band-h))}
-html[data-tech=aan] #root .canonical-workspace::after{content:'';display:block;height:var(--tech-band-h);pointer-events:none}
-html[data-tech=aan] #root .canonical-chrome:has(.mail-functional.google-workspace-active) .canonical-workspace{border-bottom:var(--tech-band-h) solid transparent}
-html[data-tech=aan] #root .canonical-chrome:has(.mail-functional.google-workspace-active) .canonical-workspace::after{content:none}
-.tech-band{transition:translate .22s ease}
-html[data-tech=aan][data-tech-verborgen] .tech-band{translate:0 -100%}
-html[data-tech=aan] :is(.ond-band,.imp-band){transition:translate .22s ease}
-html[data-tech=aan][data-tech-verborgen] :is(.ond-band,.imp-band){translate:0 calc(-1 * var(--tech-band-h))}
-html[data-tech=aan] #root :is(.canonical-notification-toast,.canonical-notification-panel,.plaats-actiestapel){transition:translate .22s ease!important}
-/* 25.10.2026: de bel staat in een zone van de pagina (schuift mee met #root); de actiestapel blijft aan de onderrand van het scherm */
-html[data-tech=aan][data-tech-verborgen] #root :is(.canonical-notification-toast,.canonical-notification-panel,.plaats-actiestapel){translate:0 var(--tech-band-h)}
-/* 25.10.2026: de melding staat niet meer met left:50% + translate −50% in het midden (QA 12.10), maar op een berekende plek
-   (src/plaatsing/melding-plek.ts): de compensatie hierboven (0, bandhoogte) geldt ook voor de computer — anders schoof ze een halve
-   breedte naar links zodra de band verdween. */
-@media (prefers-reduced-motion:reduce){html[data-tech=aan] body>#root,.tech-band,html[data-tech=aan] :is(.ond-band,.imp-band),html[data-tech=aan] #root :is(.canonical-notification-toast,.canonical-notification-panel,.plaats-actiestapel){transition:none!important}}
+/* In- en uitschuiven van de band (src/tech/band-inschuiven.ts, eigenaar 03.11.2026) — vervangt «verbergen bij scrollen» (18.10.2026).
+   Geometrie van de pagina verandert NOOIT door in- of uitschuiven: #root staat op var(--tech-band-h) en die hangt alleen af van de
+   gekozen modus en grootte (strook.css: volle hoogte bij «Розгорнуто», strookhoogte bij «Згорнуто»/«Автоматично»). Uitgeschoven ligt
+   de band (position:fixed) over de pagina; #root, de werkruimte, de zijbalk, de bel en de actiestapel blijven waar ze zijn, dus
+   scrollHeight/clientHeight veranderen niet en de browser hoeft niets te corrigeren (de lus van 305 wissels in 15 s kan niet meer).
+   De verlenging van de werkruimte onder #root en de translate van #root/bel/actiestapel zijn daarom weg. */
+html[data-tech=aan] body>#root{overflow:visible}
 
 /* Aanpassing aan de breedte (TechLaag meet en zet data-pas op de band):
    0 = alles met tekst · 1 = alleen pictogrammen (tekst alleen voor schermlezers + tooltip) · 2 = idem, zonder «до виходу…»-tekst · 3 = knoppen achter «⋯» in een lijst onder de band.
