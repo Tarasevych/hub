@@ -5,20 +5,32 @@
 //   • aanraking: mousedown op een optie (vóór blur) kiest; het veld blijft gefocust;
 //   • de teller van suggesties wordt één keer per wijziging aangekondigd (role=status, niet bij elke toets).
 // Suggesties komen van de ouder (server /zoek/suggesties + eigen geschiedenis); dit onderdeel raadt niets.
+// INTEG-001 (03.11.2026), voor het uitklapvenster van de bovenbalk: rijen kunnen een KOPJE (groep) hebben (recent · suggesties ·
+// resultaten), er is een soort «resultaat» (een echt zoekresultaat met type en sectie), en `vast` houdt de lijst open als MENU:
+// Enter en een gekozen rij sluiten de lijst dan niet (het menu sluit zelf: Esc, klik ernaast, of een rij die naar een pagina gaat).
+// De actieve rij blijft zichtbaar bij het lopen met de pijltjes (scrollIntoView, block: nearest).
 import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent as RKE, type ReactNode } from 'react';
 import { CircleHelp, FileText, History, Languages, LayoutGrid, Search, Sparkles, X, Zap } from 'lucide-react';
+import type { ZoekRoute } from '../../shared/zoek-model';
+import type { RecenteZoekopdracht } from './zoek-recent';
 import { volgendeIndex } from '../platform/toegankelijk';
 import { highlightParts, norm } from './zoek-kern';
 import type { Lang } from './zoek-kern';
 import type { ZoekSuggestie } from '../../shared/zoek-model';
 
-/** `meta` (bv. «Пошта · 5 хв тому») en `icoon` (type zoekopdracht) zijn alleen voor recente zoekopdrachten van de bovenbalk. */
-export type VeldSuggestie = ZoekSuggestie | { soort: 'geschiedenis'; tekst: string; id: string; aantal?: number; label?: { uk: string; nl: string }; meta?: string; icoon?: typeof Search };
+/**
+ * `meta` (bv. «Запит · Пошта · 5 хв тому») en `icoon` zijn voor de recente zoekopdrachten en de resultaten van het uitklapvenster
+ * (type · sectie · tijd). `recent` = de bewaarde rij zelf (type + route om rechtstreeks te openen). `groep` = het kopje boven de eerste
+ * rij van een groep. Een «resultaat» heeft een `route` (of een externe GitHub-link in `extern`).
+ */
+export type VeldSuggestie = (ZoekSuggestie
+  | { soort: 'geschiedenis'; tekst: string; id: string; aantal?: number; label?: { uk: string; nl: string }; meta?: string; icoon?: typeof Search; recent?: RecenteZoekopdracht }
+  | { soort: 'resultaat'; tekst: string; id: string; aantal?: number; label?: { uk: string; nl: string }; meta?: string; icoon?: typeof Search; route?: ZoekRoute | null; extern?: string }) & { groep?: string };
 export const SUGGESTIE_LABEL: Readonly<Record<VeldSuggestie['soort'], { uk: string; nl: string }>> = Object.freeze({
   aanvulling: { uk: 'Завершення', nl: 'Aanvulling' }, functie: { uk: 'Функція', nl: 'Functie' }, pagina: { uk: 'Сторінка', nl: 'Pagina' }, categorie: { uk: 'Категорія', nl: 'Categorie' },
-  correctie: { uk: 'Виправлення', nl: 'Correctie' }, synoniem: { uk: 'Синонім', nl: 'Synoniem' }, geschiedenis: { uk: 'Нещодавній пошук', nl: 'Recente zoekopdracht' },
+  correctie: { uk: 'Виправлення', nl: 'Correctie' }, synoniem: { uk: 'Синонім', nl: 'Synoniem' }, geschiedenis: { uk: 'Нещодавній пошук', nl: 'Recente zoekopdracht' }, resultaat: { uk: 'Результат', nl: 'Resultaat' },
 });
-const ICOON: Record<VeldSuggestie['soort'], typeof Search> = { aanvulling: Search, functie: Zap, pagina: FileText, categorie: LayoutGrid, correctie: Sparkles, synoniem: Languages, geschiedenis: History };
+const ICOON: Record<VeldSuggestie['soort'], typeof Search> = { aanvulling: Search, functie: Zap, pagina: FileText, categorie: LayoutGrid, correctie: Sparkles, synoniem: Languages, geschiedenis: History, resultaat: FileText };
 
 export const Hl = ({ text, terms }: { text: string; terms: readonly string[] }) => <>{highlightParts(text, terms).map((p, i) => (p.hit ? <mark key={i}>{p.t}</mark> : <Fragment key={i}>{p.t}</Fragment>))}</>;
 
@@ -36,25 +48,29 @@ export type ZoekVeldProps = {
   onEscapeLeeg?: () => void;
   /** Vaste rij onder de lijst (bv. «Wis recente zoekopdrachten»). Zet de lijst dan in een uitklapvenster met die rij. */
   voet?: ReactNode;
+  /** MENU: de lijst blijft open zolang het veld bestaat (Enter en een gekozen rij sluiten haar niet; blur ook niet). De ouder sluit het menu. */
+  vast?: boolean;
 };
 
-export default function ZoekVeld({ lang, value, onChange, onSubmit, onKies, suggesties, placeholder, label, groot, autoFocus, beschrijvingId, rechts, inputRef, onEscapeLeeg, voet }: ZoekVeldProps) {
+export default function ZoekVeld({ lang, value, onChange, onSubmit, onKies, suggesties, placeholder, label, groot, autoFocus, beschrijvingId, rechts, inputRef, onEscapeLeeg, voet, vast = false }: ZoekVeldProps) {
   const uid = useId(); const lb = `${uid}-lb`; const eigenRef = useRef<HTMLInputElement | null>(null); const ref = inputRef || eigenRef;
   const [open, setOpen] = useState(false); const [actief, setActief] = useState(-1);
   const [melding, setMelding] = useState('');
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
-  const toon = open && suggesties.length > 0;
+  const toon = (vast || open) && suggesties.length > 0;
   // Aankondiging: alleen als het AANTAL verandert en de lijst open is (niet bij elke toets).
   const vorigAantal = useRef(-1);
   useEffect(() => {
-    if (!toon) { vorigAantal.current = -1; if (melding) setMelding(''); return; }
+    if (!toon || vast) { vorigAantal.current = -1; if (melding) setMelding(''); return; }
     if (suggesties.length === vorigAantal.current) return;
     vorigAantal.current = suggesties.length;
     const id = window.setTimeout(() => setMelding(lang === 'uk' ? `Підказок: ${suggesties.length}. Стрілки вгору/вниз — вибір, Enter — пошук.` : `${suggesties.length} suggesties. Pijl omhoog/omlaag kiest, Enter zoekt.`), 400);
     return () => window.clearTimeout(id);
-  }, [toon, suggesties.length, lang]);
+  }, [toon, vast, suggesties.length, lang]);
   useEffect(() => { if (actief >= suggesties.length) setActief(-1); }, [suggesties.length, actief]);
-  const kies = (s: VeldSuggestie) => { setOpen(false); setActief(-1); if (onKies && onKies(s) === true) return; onSubmit(s.tekst); };
+  // De lijst scrolt: de actieve rij (pijltjes) moet in beeld blijven.
+  useEffect(() => { if (toon && actief >= 0) document.getElementById(`${uid}-o${actief}`)?.scrollIntoView?.({ block: 'nearest' }); }, [toon, actief, uid]);
+  const kies = (s: VeldSuggestie) => { if (!vast) setOpen(false); setActief(-1); if (onKies && onKies(s) === true) return; onSubmit(s.tekst); };
   const onKey = (e: RKE<HTMLInputElement>) => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || ((e.key === 'Home' || e.key === 'End') && toon && actief >= 0)) {
@@ -63,22 +79,23 @@ export default function ZoekVeld({ lang, value, onChange, onSubmit, onKies, sugg
       const n = volgendeIndex(e.key, actief, suggesties.length, { rond: true }); if (n !== null) setActief(n);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (toon && actief >= 0 && suggesties[actief]) kies(suggesties[actief]); else { setOpen(false); setActief(-1); onSubmit(value); }
+      if (toon && actief >= 0 && suggesties[actief]) kies(suggesties[actief]); else { if (!vast) setOpen(false); setActief(-1); onSubmit(value); }
     } else if (e.key === 'Escape') {
       if (toon) { e.preventDefault(); e.stopPropagation(); setOpen(false); setActief(-1); }
       else if (value) { e.preventDefault(); e.stopPropagation(); onChange(''); onEscapeLeeg?.(); }
-    } else if (e.key === 'Tab') { setOpen(false); setActief(-1); }
+    } else if (e.key === 'Tab') { if (!vast) setOpen(false); setActief(-1); }
   };
   const lijst = (
     <ul id={lb} role='listbox' aria-label={t('Підказки пошуку', 'Zoeksuggesties')} className={voet ? 'zk-pop zk-pop-in-kader' : 'zk-pop'} hidden={!toon}>
       {suggesties.map((s, i) => { const I = ('icoon' in s && s.icoon) || ICOON[s.soort] || CircleHelp; const lbl = s.label && s.label[lang] && s.label[lang] !== s.tekst ? s.label[lang] : SUGGESTIE_LABEL[s.soort][lang]; // label gelijk aan de tekst zegt niets → soort tonen
-        return (
-          <li key={`${s.soort}:${s.tekst}:${'id' in s ? s.id || '' : ''}`} id={`${uid}-o${i}`} role='option' aria-selected={i === actief} className={`zk-optie${i === actief ? ' is-actief' : ''} soort-${s.soort}`}
+        const kop = s.groep && s.groep !== suggesties[i - 1]?.groep ? <li key={`kop:${s.groep}:${i}`} role='presentation' className='zk-groep-titel'>{s.groep}</li> : null;
+        return (<Fragment key={`${s.soort}:${s.tekst}:${'id' in s ? s.id || '' : ''}`}>{kop}
+          <li id={`${uid}-o${i}`} role='option' aria-selected={i === actief} className={`zk-optie${i === actief ? ' is-actief' : ''} soort-${s.soort}`}
             onMouseEnter={() => setActief(i)} onMouseDown={e => { e.preventDefault(); kies(s); }}>
             <I aria-hidden='true' />
             <span className='zk-optie-tekst'><Hl text={s.tekst} terms={norm(value).split(' ')} /></span>
             <span className='zk-optie-soort'>{'meta' in s && s.meta ? s.meta : lbl}{typeof s.aantal === 'number' ? ` · ${s.aantal}` : ''}</span>
-          </li>);
+          </li></Fragment>);
       })}
     </ul>);
   return (
@@ -88,12 +105,12 @@ export default function ZoekVeld({ lang, value, onChange, onSubmit, onKies, sugg
         <Search aria-hidden='true' className='zk-box-ic' />
         <input id={`${uid}-in`} ref={ref} type='text' inputMode='search' enterKeyHint='search' role='combobox' aria-expanded={toon} aria-controls={lb} aria-autocomplete='list' aria-haspopup='listbox'
           aria-activedescendant={toon && actief >= 0 ? `${uid}-o${actief}` : undefined} aria-describedby={beschrijvingId} autoComplete='off' autoCorrect='off' autoCapitalize='off' spellCheck={false} maxLength={300}
-          value={value} placeholder={placeholder} autoFocus={autoFocus} onFocus={() => setOpen(true)} onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+          value={value} placeholder={placeholder} autoFocus={autoFocus} onFocus={() => setOpen(true)} onBlur={() => { if (!vast) window.setTimeout(() => setOpen(false), 120); }}
           onChange={e => { onChange(e.target.value); setOpen(true); setActief(-1); }} onKeyDown={onKey} />
         {value && <button type='button' className='knop-icoon zk-wis' aria-label={t('Очистити поле', 'Veld wissen')} onClick={() => { onChange(''); ref.current?.focus(); }}><X aria-hidden='true' /></button>}
         {rechts}
       </div>
-      {voet ? <div className='zk-pop-kader' hidden={!open}>{lijst}{voet}</div> : lijst}
+      {voet ? <div className='zk-pop-kader' hidden={!(vast || open)}>{lijst}{voet}</div> : lijst}
       <p role='status' aria-live='polite' className='zk-sr'>{melding}</p>
     </div>);
 }
