@@ -1,2 +1,2 @@
-/* Taalvlag als SVG (zie TaalVlag.tsx). Eigen maat en rand; de globale svg-regel van index.css (1rem) wordt hier overschreven. */
-.taal-vlag.taal-vlag{display:inline-block;flex:none;width:1.5em;height:1em;min-width:1.5em;max-width:1.5em;border-radius:2px;box-shadow:0 0 0 1px color-mix(in srgb,currentColor 22%,transparent);overflow:hidden;vertical-align:-0.12em}
+/* Taalvlag (src/MoviPrapor.tsx: <img> met een SVG-bestand uit src/taalvlaggen/). Eigen maat en rand; de globale img-/svg-regels van index.css worden hier overschreven. */
+.taal-vlag.taal-vlag{display:inline-block;flex:none;width:1.5em;height:1em;min-width:1.5em;max-width:1.5em;object-fit:fill;border-radius:2px;box-shadow:0 0 0 1px color-mix(in srgb,currentColor 22%,transparent);overflow:hidden;vertical-align:-0.12em;filter:none;mix-blend-mode:normal;opacity:1;forced-color-adjust:none;-webkit-user-drag:none;user-select:none}

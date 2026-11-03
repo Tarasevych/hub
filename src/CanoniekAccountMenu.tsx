@@ -31,8 +31,8 @@ import {
   X,
 } from 'lucide-react';
 import StableAvatar from './StabielAvatar';
-// LOGIN-001 (taal): echte vlaggen als SVG, geen emoji en geen CSS-gradient-blokjes.
-import LanguageFlag from './TaalVlag';
+// INTEG-001 (taal): één taalvlag-component (SVG-bestanden in src/taalvlaggen/), voor dit menu én het aanmeldscherm; geen emoji, geen CSS-blokjes.
+import MoviPrapor, { MOVA_NAAM, MOVA_VOLLEDIG } from './MoviPrapor';
 import { openTechVenster, techActief, techGebruiker, useTech } from './tech/tech-opslag';
 // Twee ruimtes (vlag tech-ruimtes-v2, standaard uit → precies het oude menu).
 import { useRuimtesV2 } from './tech/ruimtes/ruimtes-vlag';
@@ -63,6 +63,7 @@ import {
   type RememberedAccount,
 } from './canoniek-account-menu-model';
 import './canoniek-account-menu.css';
+import './account-afgemeld-menu.css'; // INTEG-001: afgemeld menu op een telefoon — paneel in het midden, kleine taalknop
 // UI-008 (vlag accountmenu-v2, standaard UIT): verfijnd menu. Zonder vlag blijft alles hieronder letterlijk zoals v6.
 import { avatarTip, useAccountmenuV2 } from './accountmenu-v2/vlag';
 import './accountmenu-v2/accountmenu-v2.css';
@@ -598,10 +599,10 @@ export default function CanonicalAccountMenu({
         <Languages />
         <div className='canonical-segmented language-switch' role='group' aria-label={t.language}>
           <button type='button' className={lang === 'uk' ? 'active' : ''} onClick={() => onLanguage('uk')}>
-            <LanguageFlag lang='uk' /><b>Укр.</b>
+            <MoviPrapor taal='uk' /><b>{MOVA_NAAM.uk}</b>
           </button>
           <button type='button' className={lang === 'nl' ? 'active' : ''} onClick={() => onLanguage('nl')}>
-            <LanguageFlag lang='nl' /><b>NL</b>
+            <MoviPrapor taal='nl' /><b>{MOVA_NAAM.nl}</b>
           </button>
         </div>
       </div>
@@ -647,11 +648,11 @@ export default function CanonicalAccountMenu({
       <div className='am2-rij' role='group' aria-label={t.language}>
         <span className='am2-rij-kop' title={t.language}><Languages aria-hidden='true' /><span className='am2-verborgen'>{t.language}</span></span>
         <div className='canonical-segmented am2-seg language-switch' role='group' aria-label={t.language}>
-          <button type='button' className={lang === 'uk' ? 'active' : ''} aria-pressed={lang === 'uk'} onClick={() => onLanguage('uk')} title='Українська' lang='uk'>
-            <span className='am2-vlag' data-am2-vlag='uk' aria-hidden='true'><LanguageFlag lang='uk' /></span><b>Укр.</b>
+          <button type='button' className={lang === 'uk' ? 'active' : ''} aria-pressed={lang === 'uk'} onClick={() => onLanguage('uk')} title={MOVA_VOLLEDIG.uk} lang='uk'>
+            <span className='am2-vlag' data-am2-vlag='uk' aria-hidden='true'><MoviPrapor taal='uk' /></span><b>{MOVA_NAAM.uk}</b>
           </button>
-          <button type='button' className={lang === 'nl' ? 'active' : ''} aria-pressed={lang === 'nl'} onClick={() => onLanguage('nl')} title='Nederlands' lang='nl'>
-            <span className='am2-vlag' data-am2-vlag='nl' aria-hidden='true'><LanguageFlag lang='nl' /></span><b>NL</b>
+          <button type='button' className={lang === 'nl' ? 'active' : ''} aria-pressed={lang === 'nl'} onClick={() => onLanguage('nl')} title={MOVA_VOLLEDIG.nl} lang='nl'>
+            <span className='am2-vlag' data-am2-vlag='nl' aria-hidden='true'><MoviPrapor taal='nl' /></span><b>{MOVA_NAAM.nl}</b>
           </button>
         </div>
         <Vraag help={V2_HULP.weergave} uk={lang === 'uk'} label={`${t.language} · ${t.theme}`} />
@@ -704,8 +705,8 @@ export default function CanonicalAccountMenu({
     >
       {!displayUser && <div className='mr-sign-in-quick-controls' role='group' aria-label={lang === 'uk' ? 'Мова й тема' : 'Taal en thema'}>
         {/* Taal: echte vlag (SVG) + korte naam; klik wisselt. Dezelfde plek als voorheen, kleiner, met ruimte naast het thema-knopje. */}
-        <button type='button' className='mr-sign-in-taal' aria-label={lang === 'uk' ? 'Укр. · змінити мову на нідерландську' : 'NL · taal wijzigen naar Oekraïens'} title={lang === 'uk' ? 'Мова: українська' : 'Taal: Nederlands'} onClick={() => onLanguage(lang === 'uk' ? 'nl' : 'uk')}>
-          <LanguageFlag lang={lang} /><b>{lang === 'uk' ? 'Укр.' : 'NL'}</b>
+        <button type='button' className='mr-sign-in-taal' aria-label={lang === 'uk' ? `${MOVA_NAAM.uk} · змінити мову на нідерландську` : `${MOVA_NAAM.nl} · taal wijzigen naar Oekraïens`} title={lang === 'uk' ? 'Мова: українська' : 'Taal: Nederlands'} onClick={() => onLanguage(lang === 'uk' ? 'nl' : 'uk')}>
+          <MoviPrapor taal={lang} /><b>{MOVA_NAAM[lang]}</b>
         </button>
         <button type='button' aria-label={lang === 'uk' ? 'Перемкнути тему' : 'Thema wisselen'} title={lang === 'uk' ? 'Перемкнути світлу / темну тему' : 'Licht / donker wisselen'} onClick={() => onTheme(theme === 'dark' ? 'light' : theme === 'plum-dark' ? 'plum-light' : theme === 'plum-light' ? 'plum-dark' : 'dark')}>
           {dark || theme === 'plum-dark' ? <Moon aria-hidden='true'/> : <Sun aria-hidden='true'/>}
