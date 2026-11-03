@@ -67,7 +67,7 @@ jobs:
           node --input-type=module <<'JS'
           import { readFileSync, writeFileSync } from 'node:fs';
           const actual = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/mijn-ruimte-production.json', 'utf8'));
-          const versie = '20261102-092316', commit = 'a860abdfbead7473959d9dc47885cd74ad3c94f9';
+          const versie = '20261103-205438', commit = '15025c3e9c8466b650f0a5488b18c42f54ab9d3a';
           if (actual.versie !== versie || actual.commit !== commit) {
             console.error('BASIS_VEROUDERD: verified production differs from owner-provided installed base', {versie:actual.versie, commit:String(actual.commit||'').slice(0,12)});
             process.exit(1);
@@ -86,7 +86,7 @@ jobs:
           import {execFileSync} from 'node:child_process';
           const versie=process.env.RELEASE_VERSION;
           const sha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
-          const basis='20261102-092316',basisSha='a860abdfbead7473959d9dc47885cd74ad3c94f9';
+          const basis='20261103-205438',basisSha='15025c3e9c8466b650f0a5488b18c42f54ab9d3a';
           const manifest={
             schema:1,versie,aangemaakt:new Date().toISOString(),
             herkomst:'git: feature/mailorbit-001-20261103-205354@'+sha+' (basis '+basis+' '+basisSha+')',
@@ -172,7 +172,7 @@ jobs:
             "uitvoer/mijn-ruimte-$RELEASE_VERSION-chatgpt-overdracht.zip" \
             --target "$(git rev-parse HEAD)" --prerelease --latest=false \
             --title "MAILORBIT-001 · $RELEASE_VERSION (unsigned)" \
-            --notes "Verified CI-built unsigned install package for MAILORBIT-001. Base: 20261102-092316 / a860abdfbead7473959d9dc47885cd74ad3c94f9. SHA-256: $RELEASE_SHA. Not installed, not signed, no PR merge. The owner must authorize install with Passkey."
+            --notes "Verified CI-built unsigned install package for MAILORBIT-001. Base: 20261103-205438 / 15025c3e9c8466b650f0a5488b18c42f54ab9d3a. SHA-256: $RELEASE_SHA. Not installed, not signed, no PR merge. The owner must authorize install with Passkey."
       - name: Summary
         run: |
           echo "MAILORBIT-001 version: $RELEASE_VERSION" >> "$GITHUB_STEP_SUMMARY"
