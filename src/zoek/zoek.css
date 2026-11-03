@@ -312,6 +312,15 @@
 .zk-pop-wis svg{flex:none;width:1rem;height:1rem}
 .zk-pop-wis:hover,.zk-pop-wis:focus-visible{background:var(--surface);color:var(--text)}
 .zk-pop-leeg{color:var(--muted);font-size:var(--tekst-klein)}
+/* INTEG-001 (03.11.2026): het uitklapvenster als MENU — kopjes per groep (recent · suggesties · resultaten), stand van het zoeken onderaan,
+   type · sectie · tijd rechts naast elke rij (kan afgekapt worden: de titel blijft leesbaar). */
+.zk-groep-titel{list-style:none;padding:var(--ruimte-2) var(--ruimte-3) var(--ruimte-1);color:var(--muted);font-size:var(--tekst-mini);font-weight:650;text-transform:uppercase;letter-spacing:.04em}
+.zk-pop-in-kader .zk-groep-titel:first-child{padding-top:var(--ruimte-1)}
+.zk-pop-status{display:inline-flex;align-items:center;gap:var(--ruimte-1);min-height:var(--tik-hoogte);padding:0 var(--ruimte-2);color:var(--muted);font-size:var(--tekst-klein)}
+.zk-pop-status:empty{min-height:0;padding:0}
+.zk-pop-status svg{flex:none;width:1rem;height:1rem}
+.zk-uitklap .zk-optie-soort{max-width:16rem;overflow:hidden;text-overflow:ellipsis}
+.zk-uitklap .zk-optie.soort-resultaat .zk-optie-tekst{font-weight:600}
 .zk-pop-hint{margin-left:auto;color:var(--muted);font-size:var(--tekst-mini)}
 .zk-naar-pagina{flex:none;display:inline-flex;align-items:center;gap:var(--ruimte-1);min-height:var(--tik-hoogte);margin-right:var(--ruimte-1);padding:0 var(--ruimte-2);border:1px solid var(--line);border-radius:var(--straal-s);background:var(--surface);color:var(--text);font:inherit;font-size:var(--tekst-klein);font-weight:600;white-space:nowrap;cursor:pointer}
 .zk-naar-pagina svg{flex:none;width:1rem;height:1rem}
@@ -341,12 +350,15 @@
   .zk-optie{grid-template-columns:1.25rem minmax(0,1fr)}
   .zk-optie-tekst{white-space:normal;overflow-wrap:anywhere}
   .zk-optie-soort{grid-column:2;white-space:normal}
+  .zk-uitklap .zk-optie-soort{max-width:none}
   /* 22.10 (etap F, stand 390): inline-flex maakte van elk tekstdeel en elke <mark> een flex-item dat midden in een woord brak («Інструк|ція», «Outlook.p|df»); inline-block laat de tekst gewoon lopen en houdt de 40 px hoogte. */
   .zk-kaart-titel a{display:inline-block;min-height:2.5rem}
   /* 22.10 (etap F, stand ZOEK-F 390): de zwevende meldingenbel lag over «Показати результати» van het filter-onderblad; zoals bij het opstelvenster (mail) verdwijnt hij zolang het onderblad open is. */
   /* 22.10 (etap F, stand): de voetlink van het palet («Відкрити сторінку пошуку») was 36 px hoog op 390 — tikvlak ≥ 44 px. */
   .zk-uitklap .zk-naar-pagina,.zk-pop-wis{min-height:var(--tik-hoogte-mobiel)}
   .zk-uitklap .zk-naar-pagina span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  /* INTEG-001: de knop «Перейти до пошуку» is op de telefoon alleen een icoon — dan ook minstens 44 px breed; de toetsenbordhint hoort daar niet. */
+  .zk-uitklap .zk-naar-pagina{min-width:var(--tik-hoogte-mobiel);justify-content:center}
   /* zone D: raster op de telefoon = één kolom; ordening/weergave onder de status; indexvenster is daar schermvullend (vensters.css) */
   .zk-lijst.is-raster{grid-template-columns:minmax(0,1fr)}
   /* (stand D 390): de telefoonregel hierboven zette de tegel weer op twee kolommen → icoon over de titel; de tegel blijft één kolom */
@@ -359,6 +371,7 @@
   /* mobiel.css maakt elke <table> zelf scrollbaar (display:block) → axe «scrollable-region-focusable»; hier scrolt de focusbare omslag .zk-iv-tabel-rol */
   .zk-iv-tabel-rol .zk-iv-tabel{display:table;overflow:visible;max-width:none}
 }
+@media (hover:none) and (pointer:coarse){.zk-uitklap .zk-pop-hint{display:none}}
 @media (prefers-reduced-motion:reduce){
   .zk-spin{animation:none}.zk-kaart{transition:none}.is-focus-doel{animation:none}
 }

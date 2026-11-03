@@ -154,7 +154,10 @@ export async function main(): Promise<number> {
     const chrome = lees('src/CanoniekOmlijsting.tsx');
     check('B bovenbalk: ZoekGlobaal (veld-knop + palet ⌘K) op computer én telefoon; focus-doel gestart', chrome.includes("<ZoekGlobaal lang={lang} dienst={current}/>") && chrome.includes('<ZoekGlobaal lang={lang} mobiel dienst={current}/>') && chrome.includes('focusDoelStarten()'));
     const palet = lees('src/zoek/ZoekGlobaal.tsx');
-    check('B uitklapvenster op de plek van het veld (zoekronde 02.11.2026): ⌘K/Ctrl+K, Escape → sluiten + focus terug, Enter zonder keuze → zoekpagina met de tekst, recente zoekopdrachten bewaard', palet.includes("(e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && (e.key === 'k'") && palet.includes('zk-uitklap') && palet.includes('focusTerug(vorigeFocus.current)') && palet.includes('location.assign(zoekPaginaUrl(lang, v') && palet.includes('bewaarRecent(v, sectie)'));
+    // INTEG-001 (03.11.2026) — de eigenaar heeft dit gedrag bewust veranderd: Enter zonder keuze opent NIET meer de zoekpagina maar zoekt in het
+    // menu zelf (zoekNu: tekst bewaard in recent, resultaat meteen in het menu); de aparte knop «Перейти до пошуку» (naarPagina) gaat naar de
+    // zoekpagina met de tekst en het huidige resultaat. Dezelfde bron-zinnen blijven gelden; het volledige gedrag staat in zoek-menu-20261103.
+    check('B uitklapvenster op de plek van het veld (zoekronde 02.11.2026; INTEG-001: menu): ⌘K/Ctrl+K, Escape → sluiten + focus terug, Enter zoekt in het menu (recent bewaard), de knop «Перейти до пошуку» → zoekpagina met de tekst', palet.includes('onSubmit={zoekNu}') && palet.includes('onClick={naarPagina}') && palet.includes("(e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && (e.key === 'k'") && palet.includes('zk-uitklap') && palet.includes('focusTerug(vorigeFocus.current)') && palet.includes('location.assign(zoekPaginaUrl(lang, v') && palet.includes('bewaarRecent(v, sectie)'));
 
     // ================================================================ C. geschiedenis op de server (0103) via de echte routes
     const pool = getPool('systeem');

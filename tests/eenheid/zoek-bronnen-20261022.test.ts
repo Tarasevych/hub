@@ -13,6 +13,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { getPool } from '../../server/platform/pg';
 import { checker } from './hulp/nep-google';
 import { maskeerGeheimen, geheimenIn } from '../../shared/geheim-patronen';
@@ -39,7 +40,7 @@ export async function main(): Promise<number> {
   const echteFetch = globalThis.fetch;
 
   // ------------------------------------------------------------------ 1. catalogus van de interface
-  const { genereer, naarTs } = await import(join(process.cwd(), 'scripts/zoek-ui-catalogus.mjs'));
+  const { genereer, naarTs } = await import(pathToFileURL(join(process.cwd(), 'scripts/zoek-ui-catalogus.mjs')).href);
   const vers = naarTs(genereer(process.cwd()));
   const opSchijf = readFileSync(join(process.cwd(), 'shared/zoek-ui-knoppen.generated.ts'), 'utf8');
   check('de gegenereerde catalogus op schijf is actueel (node scripts/zoek-ui-catalogus.mjs)', vers === opSchijf, `${UI_ELEMENTEN.length} elementen, versie ${UI_ELEMENTEN_VERSIE}`);

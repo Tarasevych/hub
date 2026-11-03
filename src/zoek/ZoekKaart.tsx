@@ -7,20 +7,16 @@
 // (src/afzenders/AfzenderFoto → app.afzender_beeld, zoals in de post), een bestand het formaat onder de icoon, GitHub en Drive het
 // OFFICIËLE merklogo (src/merk, nooit een eigen tekening). `weergave='raster'` = de tegelvorm (verticaal) voor het raster.
 import { Fragment, useMemo } from 'react';
-import { ArrowRight, Calendar, CheckSquare, CircleDot, CircleHelp, ExternalLink, File, FileImage, FileSpreadsheet, FileText, Folder, GitBranch, GitCommitHorizontal, GitPullRequest, Mail, Menu, MessageSquare, Monitor, MousePointerClick, Paperclip, Plug, Settings, StickyNote, TextCursorInput, User, Zap } from 'lucide-react';
+import { ArrowRight, ExternalLink, File, FileImage, FileSpreadsheet, FileText, Folder } from 'lucide-react';
 import Merk from '../merk/Merk';
 import AfzenderFoto from '../afzenders/AfzenderFoto';
 import { formaatVan } from '../../shared/bestandsformaten';
 import FormaatTeken from '../bestand/FormaatTeken';
-import { BRON_NAAM, type ZoekSoort, type ZoekTreffer } from '../../shared/zoek-model';
+import { BRON_NAAM, type ZoekTreffer } from '../../shared/zoek-model';
 import { SOORT_NAAM, TAAL_NAAM, type Markering } from './zoek-logica';
+import { SOORT_ICOON } from './ZoekCategorieIcoon';
 import { ACTIE_LABEL, actieVoor, githubUrl, highlightParts, routeUrl, stukkenUitPosities, type Lang } from './zoek-kern';
 
-const SOORT_ICOON: Record<ZoekSoort, typeof FileText> = {
-  pagina: FileText, knop: MousePointerClick, menu: Menu, actie: Zap, veld: TextCursorInput, instelling: Settings, dialoog: MessageSquare, integratie: Plug, hulp: CircleHelp,
-  bericht: Mail, bijlage: Paperclip, bestand: File, map: Folder, notitie: StickyNote, taak: CheckSquare, afspraak: Calendar, repo: GitBranch, issue: CircleDot, pull: GitPullRequest, commit: GitCommitHorizontal,
-  contact: User, apparaat: Monitor, overig: FileText,
-};
 const MERK_VAN_BRON: Partial<Record<ZoekTreffer['bron'], string>> = { github: 'github', drive: 'google' };
 /** Icoon per bestandsformaat (facet `formaat`, shared/zoek-formaten.ts) — alleen een vorm, de tekst van het formaat staat eronder. */
 const FORMAAT_ICOON: Record<string, typeof FileText> = { pdf: FileText, docx: FileText, doc: FileText, odt: FileText, txt: FileText, md: FileText, html: FileText, xlsx: FileSpreadsheet, xls: FileSpreadsheet, csv: FileSpreadsheet, ods: FileSpreadsheet, png: FileImage, jpg: FileImage, jpeg: FileImage, webp: FileImage, gif: FileImage, heic: FileImage, svg: FileImage, zip: Folder, tar: Folder, gz: Folder, '7z': Folder, rar: Folder };
