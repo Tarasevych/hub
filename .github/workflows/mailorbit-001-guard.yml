@@ -31,6 +31,20 @@ jobs:
           node scripts/orch.mjs versheid --taak MAILORBIT-001 --fase start
       - name: Dependencies
         run: npm ci
+      - name: Regenerate and commit canonical UI button catalogue (generated file only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/zoek-ui-catalogus.mjs
+          if ! git diff --quiet -- shared/zoek-ui-knoppen.generated.ts; then
+            git add shared/zoek-ui-knoppen.generated.ts
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'MAILORBIT-001: werk gegenereerde UI-catalogus bij [skip ci]'
+            git push origin "HEAD:refs/heads/feature/mailorbit-001-20261103-205354"
+          fi
+          git status --short
+          test -z "$(git status --porcelain --untracked-files=no)"
       - name: Verify affected contracts, TypeScript and production build
         shell: bash
         run: |
@@ -42,6 +56,7 @@ jobs:
           npm run typecheck:server
           NODE_OPTIONS=--max-old-space-size=5120 npm run build
           node scripts/orch.mjs controleer
+          git status --short
           node scripts/orch.mjs versheid --taak MAILORBIT-001 --fase overdracht
           test -z "$(git status --porcelain --untracked-files=no)"
       - name: Verify actual installed production base (read-only)
@@ -64,7 +79,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          RELEASE_VERSION="$(date -u +%Y%m%d-%H%M%S)"
+          export RELEASE_VERSION="$(date -u +%Y%m%d-%H%M%S)"
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
           node --input-type=module <<'JS'
           import {readFileSync,writeFileSync} from 'node:fs';
@@ -155,7 +170,7 @@ jobs:
             "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" \
             "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256" \
             "uitvoer/mijn-ruimte-$RELEASE_VERSION-chatgpt-overdracht.zip" \
-            --target "$GITHUB_SHA" --prerelease --latest=false \
+            --target "$(git rev-parse HEAD)" --prerelease --latest=false \
             --title "MAILORBIT-001 · $RELEASE_VERSION (unsigned)" \
             --notes "Verified CI-built unsigned install package for MAILORBIT-001. Base: 20261102-092316 / a860abdfbead7473959d9dc47885cd74ad3c94f9. SHA-256: $RELEASE_SHA. Not installed, not signed, no PR merge. The owner must authorize install with Passkey."
       - name: Summary
