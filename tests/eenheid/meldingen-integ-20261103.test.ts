@@ -3,7 +3,9 @@
 //   A. dubbele meldingen: oorzaken en herstel (tabbladen, herhaling, twee bronnen, servermelding in twee lijsten)
 import { readFileSync } from 'node:fs';
 import { checker } from './hulp/nep-google';
-import { BRON_DUBBEL_MS, GEZIEN_VENSTER_MS, SAMENVOEG_MS, isBronDuplicaat, samenvoegDoel, uniekOpId, voegHerhalingToe } from '../../src/canoniek-meldingen';
+import { AUTO_SECONDEN, BRON_DUBBEL_MS, GEZIEN_VENSTER_MS, SAMENVOEG_MS, isBronDuplicaat, popupLevensduurMs, samenvoegDoel, uniekOpId, voegHerhalingToe } from '../../src/canoniek-meldingen';
+import { MIN_NA_PAUZE_MS, fractie, gepauzeerd, klaar, nieuweAftelling, pauze, tik, verleng } from '../../src/meldingen/aftelling';
+import { MELDING_TYPE_IDS, MELDING_WEERGAVEN, isKritiekType, metWeergave, normaliseerTypeVoorkeuren, standaardTypeVoorkeur, voorkeurVoor, weergaveVan } from '../../shared/melding-typen';
 import { historyKey, readRows, werkRijenBij, type BewaardeRij } from '../../src/meldingen/lokale-rijen';
 import { ontdubbelBronnen, zelfdeGebeurtenis, type V2Melding } from '../../shared/meldingen-v2/groepering';
 
@@ -96,6 +98,53 @@ export async function main(): Promise<number> {
   // A4. Servermelding in de gewone én de technische lijst.
   check('A4 uniekOpId: per id één keer (één pop-up, geen «+1» voor dezelfde melding)', uniekOpId([{ id: 'a' }, { id: 'b' }, { id: 'a' }]).map((x) => x.id).join() === 'a,b' && bel.includes('uniekOpId([...(p.serverItems || []), ...(p.techItems || [])])'));
   check('A4 «Не турбувати»: ook geen pop-up meer (beveiliging wel), niet alleen geen geluid', bel.includes('const dnd = meldingenV2Nu() && nietStorenActief() && !isKritiekType(type);') && bel.includes('opduiken: basis.opduiken && !dnd && !dubbel'));
+
+  // ------------------------------------------------------------------ B. pop-up: tijd per soort en inhoud, pauze, balk, niet vast
+  const ms = (kind: 'success' | 'info' | 'warning' | 'error', tekst = 'kort', uitleg?: string) => popupLevensduurMs({ vast: false, seconden: 0 }, tekst, uitleg, kind)!;
+  check('B1 automatisch (standaard): «готово» kort, fout het langst', ms('success') === AUTO_SECONDEN.success * 1000 && ms('success') < ms('info') && ms('info') < ms('warning') && ms('warning') < ms('error'));
+  check('B1 inhoud telt mee: lange tekst en uitleg geven meer tijd (begrensd)', ms('info', 'x'.repeat(130)) === ms('info') + 2000 && ms('info', 'kort', 'y'.repeat(300)) === ms('info') + 4000 && ms('info', 'x'.repeat(10_000), 'y'.repeat(10_000)) === ms('info') + 10_000);
+  check('B1 een eigen keuze in seconden blijft gelden (3–60 s), «vast» = null', popupLevensduurMs({ vast: false, seconden: 20 }, 'kort', undefined, 'error') === 20_000 && popupLevensduurMs({ vast: true, seconden: 20 }, 'kort') === null);
+
+  let a = nieuweAftelling(6000);
+  a = tik(tik(a, 1000), 1000);
+  check('B2 klok telt af; balk = resterend deel', a.over === 4000 && Math.abs(fractie(a) - 4000 / 6000) < 1e-9 && !klaar(a));
+  a = pauze(a, 'muis', true);
+  const tijdens = tik(tik(tik(a, 1000), 1000), 1000);
+  check('B2 muis op de pop-up: de klok staat stil (lange tekst rustig lezen)', gepauzeerd(tijdens) && tijdens.over === 4000);
+  const bijnaOp = pauze(tik(nieuweAftelling(3000), 2900), 'muis', true);
+  const los = pauze(bijnaOp, 'muis', false);
+  check('B2 muis weg: telt door, maar minstens nog MIN_NA_PAUZE_MS (verdwijnt niet meteen onder de cursor vandaan)', !gepauzeerd(los) && los.over === Math.min(3000, MIN_NA_PAUZE_MS));
+  const twee = pauze(pauze(a, 'toets', true), 'muis', false);
+  check('B2 meerdere pauzes: pas als alle weg zijn telt hij weer', gepauzeerd(twee) && twee.pauzes.join() === 'toets');
+  const verborgen = pauze(pauze(nieuweAftelling(5000), 'verborgen', true), 'verborgen', false);
+  check('B2 tabblad verborgen → pauze; terug zichtbaar → gewoon verder (geen extra tijd nodig)', verborgen.over === 5000 && !gepauzeerd(verborgen));
+  let lang = tik(nieuweAftelling(8000), 7000);
+  lang = verleng(lang, 8000);
+  check('B2 uitklappen geeft de volle tijd terug (balk weer vol) maar is GEEN pauze zonder einde', lang.over === 8000 && fractie(lang) === 1 && !gepauzeerd(lang) && klaar(tik(lang, 8000)));
+  check('B2 na de tijd: klaar → de pop-up sluit en staat daarna in het paneel', klaar(tik(nieuweAftelling(3000), 3000)));
+
+  const std = normaliseerTypeVoorkeuren(null);
+  check('B3 geen enkel type blijft standaard hangen tot u sluit — ook beveiliging niet (eigenaar: «не має висіти»)', MELDING_TYPE_IDS.every((t) => std[t].vast === false) && isKritiekType('beveiliging'));
+  const oud = normaliseerTypeVoorkeuren({ beveiliging: { geluid: false, opduiken: true, tonen: true, vast: true, seconden: 10 }, post: { vast: true, vastGekozen: true, seconden: 2 }, agenda: { seconden: 0 } });
+  check('B3 oude opslag: «vast» zonder eigen keuze (vroeger de standaard van kritiek) telt niet meer; met eigen keuze wel', oud.beveiliging.vast === false && oud.beveiliging.geluid === false && oud.post.vast === true && voorkeurVoor({ beveiliging: { geluid: true, opduiken: true, tonen: true, vast: true, seconden: 10 } }, 'beveiliging').vast === false);
+  check('B3 seconden: 0 = automatisch; 1–2 → 3 (minimum); standaard automatisch', oud.agenda.seconden === 0 && oud.post.seconden === 3 && std.post.seconden === 0);
+
+  check('B4 «hoe» per type: спливає+звук / лише спливає / лише звук / лише в панелі / не показувати',
+    weergaveVan({ geluid: true, opduiken: true, tonen: true }) === 'beide' && weergaveVan({ geluid: false, opduiken: true, tonen: true }) === 'popup'
+    && weergaveVan({ geluid: true, opduiken: false, tonen: true }) === 'geluid' && weergaveVan({ geluid: false, opduiken: false, tonen: true }) === 'paneel' && weergaveVan({ geluid: true, opduiken: true, tonen: false }) === 'uit');
+  const basisV = standaardTypeVoorkeur('post');
+  check('B4 metWeergave zet de drie velden; kritiek kan niet «uit» (wordt «лише в панелі»)',
+    MELDING_WEERGAVEN.every((w) => weergaveVan(metWeergave(basisV, w, 'post')) === w) && weergaveVan(metWeergave(basisV, 'uit', 'beveiliging')) === 'paneel');
+
+  const belB = code(lees('src/CanoniekMeldingencentrum.tsx'));
+  check('B5 pop-up: muis = pauze; focus alleen via het toetsenbord (:focus-visible); geen pauze «uitgeklapt» meer',
+    belB.includes("onPointerEnter={() => pauzeer('muis', true)}") && belB.includes("onPointerLeave={() => pauzeer('muis', false)}") && belB.includes("matches(':focus-visible')") && !belB.includes("pauzeer('uitgeklapt'"));
+  check('B5 de klok gebruikt de aftelling (pauze/verlengen/verborgen) en sluit pas bij klaar', belB.includes('aftelRef.current = tikAftelling(a, nu - vorige);') && belB.includes('if (klaar(aftelRef.current)) { window.clearInterval(timer); dismissRef.current(); return; }') && belB.includes("pauzeer('verborgen', document.hidden);"));
+  check('B5 gezien = gelezen, ook voor de regel in het paneel (activiteit a:, server s:) — niet als het tabblad verborgen is',
+    belB.includes("if (next.meldingId?.startsWith('a:')) activityRef.current.markRead(next.meldingId.slice(2));") && belB.includes('if (typeof document !== \'undefined\' && document.hidden) { leesWachtend.current = next; return; }'));
+  const act = lees('src/connector-activiteit.ts');
+  check('B5 activiteit geeft de pop-up haar regel (meldingId a:<id>) en over wie/wat het gaat (context) mee', act.includes('const meldingId = `a:${e.id}`, context = activiteitContext(e, l);') && (act.match(/meldingId, context/g) || []).length >= 2);
+  check('B5 pop-up: «Відкрити: …» (ook zonder link: het onderdeel) en «Очистити» → gelezen + Архів', belB.includes('sectieLink(toastStijl.section, p.lang)') && belB.includes("data-qa-id='melding-opruimen' onClick={ruimToastOp}") && belB.includes("status: 'archief'"));
 
   return einde();
 }

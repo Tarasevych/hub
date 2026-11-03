@@ -11,11 +11,14 @@ type Veld = Exclude<keyof TypeVoorkeur, 'seconden'>;
 
 export function zetTypeVoorkeur(type: MeldingType, veld: Veld, waarde: boolean): void {
   if (veld === 'tonen' && isKritiekType(type) && !waarde) return; // kritiek: nooit helemaal verbergen
-  zetZijbalk((cur) => ({ ...cur, meldingen: { ...cur.meldingen, soorten: { ...cur.meldingen.soorten, [type]: { ...voorkeurVoor(cur.meldingen.soorten, type), [veld]: waarde } } } }));
+  // INTEG-001: «vast» geldt alleen als de gebruiker het zelf kiest (vastGekozen); zie shared/melding-typen.ts.
+  const extra = veld === 'vast' ? { vastGekozen: waarde } : {};
+  zetZijbalk((cur) => ({ ...cur, meldingen: { ...cur.meldingen, soorten: { ...cur.meldingen.soorten, [type]: { ...voorkeurVoor(cur.meldingen.soorten, type), [veld]: waarde, ...extra } } } }));
 }
 /** Hoe lang de pop-up van dit type staat (3–60 s); zonder «blijft staan». */
 export function zetTypeSeconden(type: MeldingType, seconden: number): void {
-  const veilig = Math.min(60, Math.max(3, Math.round(seconden)));
+  // 0 = automatisch volgens soort en lengte (INTEG-001); anders 3–60 s.
+  const veilig = seconden <= 0 ? 0 : Math.min(60, Math.max(3, Math.round(seconden)));
   zetZijbalk((cur) => ({ ...cur, meldingen: { ...cur.meldingen, soorten: { ...cur.meldingen.soorten, [type]: { ...voorkeurVoor(cur.meldingen.soorten, type), seconden: veilig } } } }));
 }
 export function zetAlleTypen(typen: readonly MeldingType[], veld: Veld, waarde: boolean): void {
@@ -48,7 +51,7 @@ export default function MeldingVoorkeurenPaneel({ lang, techTypen }: Props) {
               <label className='mv-schakel'><input type='checkbox' checked={v.tonen} disabled={kritiek} data-mv-veld='tonen' onChange={(e) => zetTypeVoorkeur(id, 'tonen', e.target.checked)} aria-label={`${naam}: ${t('показувати', 'tonen')}`} aria-describedby={kritiek ? `mv-k-${id}` : undefined} /><span aria-hidden='true' /></label>
               <label className='mv-schakel'><input type='checkbox' checked={v.vast} disabled={!v.tonen} data-mv-veld='vast' onChange={(e) => zetTypeVoorkeur(id, 'vast', e.target.checked)} aria-label={`${naam}: ${t('лишається, доки я не закрию', 'blijft staan tot ik sluit')}`} /><span aria-hidden='true' /></label>
               <select className='mv-duur' data-mv-veld='seconden' value={v.seconden} disabled={!v.tonen || v.vast} onChange={(e) => zetTypeSeconden(id, Number(e.target.value))} aria-label={`${naam}: ${t('скільки секунд показувати спливаюче вікно', 'duur van de pop-up in seconden')}`}>
-                {[...new Set([...TOAST_SECONDEN_KEUZES, v.seconden])].sort((a, b) => a - b).map((s) => <option key={s} value={s}>{s} {t('с', 's')}</option>)}
+                {[...new Set([0, ...TOAST_SECONDEN_KEUZES, v.seconden])].sort((a, b) => a - b).map((s) => <option key={s} value={s}>{s === 0 ? t('Авто', 'Auto') : `${s} ${t('с', 's')}`}</option>)}
               </select>
             </div>
           );
