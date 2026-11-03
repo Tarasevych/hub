@@ -10,6 +10,9 @@ import { checker } from './hulp/nep-google';
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('apparaat-inrichten-20261022');
+  // INTEG-001: het echte bash-script draait hier met nagebootste systemd-run/runuser/systemctl in PATH (':'-gescheiden, /usr/bin/install).
+  // Dat bestaat alleen op Linux; op Windows is «bash» het WSL-startprogramma zonder distributie. Dus niet stil groen, maar expliciet overgeslagen.
+  if (process.platform !== 'linux') { console.log('OVERGESLAGEN apparaat-inrichten: vereist Linux met systemd (voer uit op de VM)'); return einde(); }
   const T = mkdtempSync(join(tmpdir(), 'apparaat-'));
   const bin = join(T, 'bin'), srv = join(T, 'srv'), cur = join(srv, 'current'), home = join(T, 'home', 'beheer'), sysd = join(T, 'systemd'), agentDir = join(T, 'agentdir'), log = join(T, 'log');
   for (const d of [bin, join(cur, 'deploy', 'agent'), join(cur, 'dist-server'), join(cur, 'backend'), home, sysd, log]) mkdirSync(d, { recursive: true });
