@@ -187,7 +187,7 @@ export async function main(): Promise<number> {
   const unit = readFileSync('deploy/mijn-ruimte-ssh-ca.service', 'utf8');
   check('de site importeert geen vlaggen (een vlag is geen recht)', !/from ['"].*flags['"]/.test(site) && !/evalueer\(/.test(site));
   check('uitgifte vraagt stap-op en ssh.host', /stepUp: true/.test(routes) && /includes\('ssh\.host'\)/.test(site) && /vinger: r\.vinger/.test(site) && !/cert: r\.cert/.test(site));
-  check('knop: vlag én ssh.host, met «?»', /sshZichtbaar && techMag\('ssh\.host'/.test(laag) && /SSH_CA_VLAG/.test(laag) && /<HulpVraag k='ssh\.certificaat'/.test(venster) && /<HulpVraag k='ssh\.schakelaar'/.test(venster));
+  check('knop: vlag én ssh.host, met «?»', /sshZichtbaar && techMag\('ssh\.host'/.test(laag) && /SSH_CA_VLAG/.test(laag) && /<HulpVraag k='ssh\.certificaat'/.test(venster) && /meer=\{\[\['ssh\.schakelaar'/.test(venster));
   check('installer zet ssh-ca niet aan en start de path-unit niet', /"ssh-ca": false/.test(inst) && !/"ssh-ca": true/.test(inst) && !/systemctl enable[^\n]*mijn-ruimte-ssh-ca/.test(inst) && /ssh_ca_inrichten "\$doel"/.test(inst) && !/ssh-keygen/.test(inst));
   check('script wist padoverschrijvingen als root, vóór het lezen', bron.indexOf('unset MIJN_RUIMTE_SSH_CA_DIR') < bron.indexOf('CA_DIR="${MIJN_RUIMTE_SSH_CA_DIR'));
   const unitCode = unit.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
