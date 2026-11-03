@@ -294,8 +294,9 @@ export async function main(): Promise<number> {
   const wisId = `sec001-erase-${sfx}`;
   const impId = randomUUID();
   const tmpOpslag = mkdtempSync(join(tmpdir(), 'sec001-opslag-'));
-  const prevStorageDir = process.env.STORAGE_DIR;
-  process.env.STORAGE_DIR = tmpOpslag;
+  // De opslagcode leest UPLOADS_DIR (server/platform/opslag.ts); STORAGE_DIR had hier geen effect en schreef naar /srv/data.
+  const prevUploadsDir = process.env.UPLOADS_DIR;
+  process.env.UPLOADS_DIR = tmpOpslag;
   const ownerMail = (bestaand ? String(bestaand.email) : String(process.env.OWNER_EMAIL || 'eigenaar@example.invalid')).toLowerCase();
 
   try {
@@ -391,7 +392,7 @@ export async function main(): Promise<number> {
     await sys.query("DELETE FROM app.mcp_oauth_clients WHERE client_name = 'Claude' AND redirect_uris::text LIKE '%gemini.google.com%'").catch(() => undefined);
     await sys.query('DELETE FROM app.storage_objects WHERE owner_id = ANY($1::text[])', [wisIds]).catch(() => undefined);
     await sys.query('DELETE FROM app.records WHERE id = ANY($1::text[]) OR owner_id = ANY($1::text[]) OR id LIKE $2', [wisIds, `%${lidId}%`]).catch(() => undefined);
-    if (prevStorageDir === undefined) delete process.env.STORAGE_DIR; else process.env.STORAGE_DIR = prevStorageDir;
+    if (prevUploadsDir === undefined) delete process.env.UPLOADS_DIR; else process.env.UPLOADS_DIR = prevUploadsDir;
     rmSync(tmpOpslag, { recursive: true, force: true });
   }
 
