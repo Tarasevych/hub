@@ -20,14 +20,22 @@ const AL = 'aaaaaaaa-0000-4000-8000-000000000004'; // browser, slot prive (vergr
 
 function nepBrowser() {
   const g = globalThis as Record<string, unknown>;
-  if (g.window) return;
-  const opslag = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, String(v)); }, removeItem: (k: string) => { m.delete(k); }, clear: () => m.clear(), key: () => null, length: 0 }; };
+  // Een eerdere test in dezelfde run (alle tests laden in één proces) kan al een window zetten zónder het canonieke runtime.
+  // Dan krijgt die window het runtime alsnog; het venster zelf blijft van die test.
+  if ((g.window as Record<string, unknown> | undefined)?.__TSV_CANONICAL_SERVICE__) return;
   const u = new URL(`${ORIGIN}/agents#toegang`);
-  g.location = { href: u.href, origin: u.origin, host: u.host, hostname: u.hostname, pathname: u.pathname, search: u.search, hash: u.hash, protocol: u.protocol, assign: () => undefined, replace: () => undefined, reload: () => undefined };
-  g.sessionStorage = opslag(); g.localStorage = opslag();
-  g.window = Object.assign(g, { name: '', addEventListener: () => undefined, removeEventListener: () => undefined, dispatchEvent: () => true, postMessage: () => undefined, setTimeout, clearTimeout, setInterval, clearInterval, requestAnimationFrame: (f: () => void) => setTimeout(f, 0) });
-  if (!g.document) g.document = { hidden: false, title: '', cookie: '', addEventListener: () => undefined, removeEventListener: () => undefined, querySelector: () => null, querySelectorAll: () => [], getElementById: () => null, documentElement: { lang: 'uk', dataset: {}, style: { setProperty: () => undefined }, classList: { contains: () => false, add: () => undefined, remove: () => undefined } }, body: null };
-  runInNewContext(readFileSync('public/canonical-service.js', 'utf8'), { window: g, location: g.location, document: { ...(g.document as object), head: { appendChild: () => undefined }, createElement: () => ({ getContext: () => null, dataset: {} }) }, addEventListener: () => undefined, Date, Math, Number, String, Object, Array, JSON, URLSearchParams, URL });
+  const location = { href: u.href, origin: u.origin, host: u.host, hostname: u.hostname, pathname: u.pathname, search: u.search, hash: u.hash, protocol: u.protocol, assign: () => undefined, replace: () => undefined, reload: () => undefined };
+  if (!g.window) {
+    const opslag = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, String(v)); }, removeItem: (k: string) => { m.delete(k); }, clear: () => m.clear(), key: () => null, length: 0 }; };
+    g.location = location;
+    g.sessionStorage = opslag(); g.localStorage = opslag();
+    g.window = Object.assign(g, { name: '', addEventListener: () => undefined, removeEventListener: () => undefined, dispatchEvent: () => true, postMessage: () => undefined, setTimeout, clearTimeout, setInterval, clearInterval, requestAnimationFrame: (f: () => void) => setTimeout(f, 0) });
+    if (!g.document) g.document = { hidden: false, title: '', cookie: '', addEventListener: () => undefined, removeEventListener: () => undefined, querySelector: () => null, querySelectorAll: () => [], getElementById: () => null, documentElement: { lang: 'uk', dataset: {}, style: { setProperty: () => undefined }, classList: { contains: () => false, add: () => undefined, remove: () => undefined } }, body: null };
+  }
+  const venster = g.window as Record<string, unknown>;
+  const eigen: Record<string, unknown> = { location: g.location ?? location, addEventListener: () => undefined, removeEventListener: () => undefined, dispatchEvent: () => true, postMessage: () => undefined, setTimeout, clearTimeout, setInterval, clearInterval };
+  runInNewContext(readFileSync('public/canonical-service.js', 'utf8'), { window: eigen, location: g.location ?? location, document: { ...(g.document as object), head: { appendChild: () => undefined }, createElement: () => ({ getContext: () => null, dataset: {} }) }, addEventListener: () => undefined, Date, Math, Number, String, Object, Array, JSON, URLSearchParams, URL });
+  for (const sleutel of ['__TSV_CANONICAL_SERVICE__', '__TSV_PARSE_PUBLIC_ROUTE__', '__TSV_ROUTE__']) if (eigen[sleutel] !== undefined) venster[sleutel] = eigen[sleutel];
 }
 
 type Verzoek = { method: string; pad: string; body: Record<string, unknown> | null; query: URLSearchParams };
