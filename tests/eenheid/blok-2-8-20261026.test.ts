@@ -55,7 +55,8 @@ export async function main() {
   check('продовжити не пропонує кінець раніше за поточний', nietKorter([1, 7, 30], D, nuT + 10 * D, nuT).join() === '30' && nietKorter([1, 7, 30], D, 0, nuT).join() === '1,7,30');
   const mini = lees('src/MailBijlageMiniatuur.tsx');
   check('мініатюра не качає файл при економії трафіку', mini.includes('miniatuurBesluit') && mini.includes("saveData:prefetchMode()==='off'") && mini.includes('ensureRef.current?.()'));
-  check('розширення ≥ 0.7.1 (nu 0.8.0, UI-011): без обмеження без «найпізніше», темний червоний текст', lees('extension/manifest.json').includes('"version": "0.8.0"') && lees('extension/ui.js').includes('Без обмеження — доки не відкличете') && lees('extension/ui.css').includes('--rood-tekst:#fca5a5') && lees('extension/ui.css').includes('opacity:1'));
+  // INTEG-001: UI-011 zit in elke 0.8.x-versie; een vaste versie-string liep na de volgende release vanzelf vast (nu 0.8.1, F2).
+  check('розширення ≥ 0.7.1 (UI-011 in 0.8.x): без обмеження без «найпізніше», темний червоний текст', /"version": "0\.8\.\d+"/.test(lees('extension/manifest.json')) &&lees('extension/ui.js').includes('Без обмеження — доки не відкличете') && lees('extension/ui.css').includes('--rood-tekst:#fca5a5') && lees('extension/ui.css').includes('opacity:1'));
   check('сервер поновлює handmatig новим рядком, не eindeZetten', lees('backend/extensie-ontgrendeling.ts').includes('owner.extensie.vernieuwd') && lees('backend/extensie-ontgrendeling.ts').includes("einde_soort = 'handmatig'") && lees('backend/extensie-ontgrendeling.ts').includes('vernieuwOnbeperkt'));
   const lok = leesHash('#extension-lokaal');
   const ruim = leesHash('#ruimte');

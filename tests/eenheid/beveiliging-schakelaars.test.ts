@@ -137,6 +137,9 @@ export async function main(): Promise<number> {
   check('installer: kopieert alleen (install), voert het rollenscript niet uit', fn.length > 50 && !/db-rollen-instellen\.sh (instellen|rls)/.test(fn) && /db_rollen_hulp_inrichten "\$doel"/.test(inst));
   const G = mkdtempSync(join(tmpdir(), 'bvs-geh-'));
   writeFileSync(join(G, 'geheimen.env'), 'DATABASE_URL=postgres://x:y@127.0.0.1:5432/db\nDATABASE_URL_APP=postgres://mijnruimte_app:' + 'a'.repeat(64) + '@127.0.0.1:5432/db\n');
+  // INTEG-001: het rollenscript draait alleen onder Linux (bash). Buiten Linux slaan we deze twee checks expliciet over, niet stil.
+  if (process.platform !== 'linux') console.log('OVERGESLAGEN instellen-als-nodig: vereist Linux (bash) — voer uit op de VM');
+  else {
   const r1 = spawnSync('bash', ['deploy/db-rollen-instellen.sh', 'instellen-als-nodig'], { encoding: 'utf8', env: { ...process.env, ZONDER_ROOT: '1', GEHEIMEN: join(G, 'geheimen.env'), MIGRATIE_ENV: join(G, 'migratie.env'), STATUS_DIR: G, ZONDER_HERSTART: '1' } });
   const res1 = (() => { try { return JSON.parse(readFileSync(join(G, 'db-rollen.json'), 'utf8')); } catch { return {}; } })();
   check('instellen-als-nodig: DATABASE_URL_APP bestaat al → niets, resultaat AL_INGESTELD (zonder waarden)', r1.status === 0 && res1.ok === true && res1.code === 'AL_INGESTELD' && !/a{64}/.test(r1.stdout + r1.stderr + JSON.stringify(res1)), (r1.stdout + r1.stderr).slice(-200));
@@ -145,6 +148,7 @@ export async function main(): Promise<number> {
   const res2 = (() => { try { return JSON.parse(readFileSync(join(G, 'db-rollen.json'), 'utf8')); } catch { return {}; } })();
   check('instellen-als-nodig (neg): instellen faalt → exit ≠ 0, resultaat MISLUKT_TERUGGEZET, geheimen.env ongewijzigd', r2.status !== 0 && res2.ok === false && res2.code === 'MISLUKT_TERUGGEZET' && readFileSync(join(G, 'geheimen.env'), 'utf8') === 'DATABASE_URL=bestaat-niet\n');
 
+  }
   if (!process.env.DATABASE_URL_SYSTEM && !process.env.DATABASE_URL) { console.log('OVERGESLAGEN (integratie): geen database'); herstel(); return einde(); }
 
   // ------------------------------------------------------------ integratie: routes met de echte database

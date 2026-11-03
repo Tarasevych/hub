@@ -732,9 +732,14 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
           const file = event.target.files?.[0];
           event.target.value = '';
           if (!file || !file.type.startsWith('image/') || file.size > 4 * 1024 * 1024) return;
-          const reader = new FileReader();
-          reader.onload = () => { const src = String(reader.result || ''); if (src.startsWith('data:image/')) editorRef.current?.insertImage(src, file.name); };
-          reader.readAsDataURL(file);
+          // Lezen via shared/bestand-lezen.ts (zoals de bijlagen): een leesfout geeft uitleg in plaats van een rauwe browserfout.
+          void leesBase64(file)
+            .then((b64) => { if (file.type.startsWith('image/')) editorRef.current?.insertImage(`data:${file.type};base64,${b64}`, file.name); })
+            .catch((e) => {
+              if (!isLeesfout(e)) throw e;
+              const u = bestandLeesUitleg(lang, bestandLeesfoutCode(e));
+              setFailure(`${t(`Зображення «${file.name}» не додано: браузер не зміг прочитати його з диска.`, `Afbeelding «${file.name}» is niet ingevoegd: de browser kon het niet van de schijf lezen.`)} ${u.waarom} ${u.doen}`);
+            });
         }} />
         {hulpen && <MailInputTools
           lang={lang}
