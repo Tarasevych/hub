@@ -520,7 +520,7 @@ export default function ConnectorsTab({ tr, ingebed = false }: { tr: Tr; ingebed
           <div className='v2b-werkbalk' role='toolbar' aria-label={tr('Фільтри й пошук', 'Filters en zoeken')}>
             <div className='v2b-filters' role='tablist' aria-label={tr('Фільтр агентів', 'Filter van agents')}>
               {([['alle', tr('Усі', 'Alle')], ['verbonden', tr('Підключені', 'Gekoppeld')], ['beschikbaar', tr('Доступні', 'Beschikbaar')], ['wacht', tr('Чекають', 'Wachtend')]] as Array<[Filter, string]>).map(([id, naam]) => (
-                <button key={id} type='button' role='tab' aria-selected={filter === id} className={filter === id ? 'is-actief' : ''} onClick={() => setFilter(id)}>{naam}<span className='v2-teller'>{aantallen[id]}</span></button>
+                <button key={id} type='button' role='tab' aria-selected={filter === id} className={filter === id ? 'is-actief' : ''} onClick={() => setFilter(id)}>{naam}{/* HUB-03: zonder antwoord van de server geen «0» (onbekend ≠ nul) */}{data ? <span className='v2-teller'>{aantallen[id]}</span> : null}</button>
               ))}
             </div>
             <label className='v2b-sorteer'>
