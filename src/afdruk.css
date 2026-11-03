@@ -184,6 +184,10 @@
   .info-tip-tekst,
   .tech-vraag-uitleg,
   #boot-shell,
+  html::before,
+  html::after,
+  body::before,
+  body::after,
   #tech-laag,
   #ext-update-band,
   #nieuwe-versie-band,
@@ -333,6 +337,7 @@
   .venster,
   .venster-achter,
   .modal-backdrop,
+  dialog,
   [role='dialog'],
   [aria-modal='true'],
   [data-zoek-palet] {
