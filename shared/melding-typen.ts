@@ -24,7 +24,8 @@ export const MELDING_TYPES = {
   ai: { ruimte: 'prive', naam: ['ШІ-агенти (мій простір)', 'AI-agenten (mijn ruimte)'] },
   apparaten: { ruimte: 'prive', naam: ['Мої пристрої', 'Mijn apparaten'] },
   'inzage': { ruimte: 'prive', naam: ['Запити на перегляд мого акаунта', 'Verzoeken om mijn account in te zien'], kritiek: true },
-  systeem: { ruimte: 'prive', naam: ['Інше', 'Overig'] },
+  // INTEG-001: niet het vage «Інше» — wat er wel onder valt (meldingen van de site zelf: indeling, ruimte, concepten …).
+  systeem: { ruimte: 'prive', naam: ['Сайт і система (решта)', 'Site en systeem (overige)'] },
   // ---------------------------------------------------------------- technisch (alleen wie een technisch profiel heeft)
   'tech.toegang': { ruimte: 'technisch', naam: ['Запити на доступ до сайту', 'Toegangsverzoeken voor de site'] },
   'tech.uitrol': { ruimte: 'technisch', naam: ['Оновлення сайту', 'Updates van de site'] },
