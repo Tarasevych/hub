@@ -135,6 +135,12 @@ export async function main(): Promise<number> {
   check('telefoon: de menu-CSS importeert het midden-bestand', menu.includes("import './account-afgemeld-menu.css'"));
   check('aanmeldscherm: boven 700 px blijft het paneel onder de avatar (right:0), alleen smalle schermen centreren', /@media\(max-width:700px\)/.test(middenCss) && /canonical-account-panel\{\s*right:0;top:50px/.test(loginCss.replace(/\s+/g, ' ').replace('{ right', '{ right')));
 
+  // het horizontale menu (dock boven/onder, «snelle toegang») staat in het midden van het scherm: left:50% + translateX(-50%) en geen eigen left/margin-left-regel erna
+  const menuV2 = zonderCommentaar(lees('src/menu-v2.css')).replace(/\s+/g, ' ');
+  const dockRegel = /\.canonical-chrome:is\(\[data-dock='boven'\],\[data-dock='onder'\]\) \.canonical-sidebar\{([^}]*)\}/.exec(menuV2)?.[1] || '';
+  check('dock boven/onder (snelle toegang): gecentreerd — left:50% met translateX(-50%), auto breed', /left:50%/.test(dockRegel) && /transform:translateX\(-50%\)/.test(dockRegel) && /right:auto/.test(dockRegel) && /width:auto!important/.test(dockRegel), dockRegel.slice(0, 120));
+  check('dock boven/onder: geen latere regel die het menu naar links zet (margin-left/left/translateX anders dan -50%)', !/\.canonical-chrome:is\(\[data-dock='boven'\],\[data-dock='onder'\]\) \.canonical-sidebar\{[^}]*(margin-left|left:(?!50%))/.test(menuV2.replace(dockRegel, '')));
+
   // ═══ bestanden ═══
   check('bestanden aanwezig: SVG\'s, component, midden-CSS', ['src/taalvlaggen/oekraine.svg', 'src/taalvlaggen/belgie.svg', 'src/MoviPrapor.tsx', 'src/account-afgemeld-menu.css'].every((p) => existsSync(join(process.cwd(), p))));
   return einde();
