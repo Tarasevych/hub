@@ -1,6 +1,7 @@
 // Terminals (13.10.2026): de agent draait de shell ALLEEN in een wegwerpcontainer met harde vlaggen, geheime plekken afgedekt, root
 // alleen uit de toegestane lijst, alleen-lezen roots blijven alleen-lezen; openen alleen als de terminal op het apparaat aan staat;
 // in- en uitvoer stromen per sessie; sluiten en tijdslimiet ruimen op. Plus: de site stuurt 'term.open' nooit via de AI-wachtrij.
+import { pathToFileURL } from 'node:url';
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -18,7 +19,7 @@ export async function main(): Promise<number> {
   const root = join(werk, 'project'), ro = join(werk, 'backups');
   mkdirSync(join(root, 'src'), { recursive: true }); mkdirSync(join(root, 'geheim')); mkdirSync(join(root, 'src', '.ssh'), { recursive: true }); mkdirSync(ro);
   writeFileSync(join(root, '.env'), 'X=1'); writeFileSync(join(root, 'src', 'sleutel.pem'), 'k'); writeFileSync(join(root, 'leesmij.txt'), 'hoi');
-  const agent = await import(resolve('deploy/agent/agent.mjs'));
+  const agent = await import(pathToFileURL(resolve('deploy/agent/agent.mjs')).href);
   const { handlers, termArgs, _termBericht, _termSessies, _termKanaal } = agent;
   const cfgUit = { roots: [root, ro], readonlyRoots: [ro], terminal: { enabled: false } };
   const cfg = { roots: [root, ro], readonlyRoots: [ro], terminal: { enabled: true, runtime: 'podman', maxMinuten: 60 } };
@@ -72,7 +73,7 @@ export async function main(): Promise<number> {
   check('server: alleen eigen apparaten, stap-op, ticket eenmalig, invoer niet opgenomen', /store\.getAgent\(u\.id, agentId\)/.test(tb) && /x\.ticketHash = ''/.test(tb) && !/'i', /.test(tb) && /stepUp: true/.test(readFileSync('backend/terminal-routes.ts', 'utf8')));
 
   // ---------------------------------------------------------------- 14.10: testmachines (--test) en vlaggen zonder waarde
-  const { magApparaat } = await import(resolve('shared/terminal.ts'));
+  const { magApparaat } = await import(pathToFileURL(resolve('shared/terminal.ts')).href);
   const server = { terminal: { enabled: true } }, testm = { terminal: { enabled: true, test: true } };
   check('terminal.servers opent server én testmachine', magApparaat(['terminal.servers'], server) && magApparaat(['terminal.servers'], testm));
   check('terminal.test opent ALLEEN een testmachine (niet de server)', magApparaat(['terminal.test'], testm) && !magApparaat(['terminal.test'], server));
