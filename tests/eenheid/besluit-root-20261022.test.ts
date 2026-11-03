@@ -74,6 +74,8 @@ export function besluitBestand(pk: NepPasskey, b: Besluit) {
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('besluit-root-20261022');
+  // INTEG-001: het echte root-script is bash + python; op Windows niet uitvoerbaar. Expliciet overslaan, niet stil groen.
+  if (process.platform !== 'linux') { console.log('OVERGESLAGEN besluit-root: vereist Linux (bash, python, root-script) — voer uit op de VM'); return einde(); }
   if (ALS_ROOT && !HEEFT_SETPRIV) { console.log('overgeslagen: root zonder setpriv — het root-script negeert als root de testpaden'); return 0; }
   const o = omgeving();
   const { p, run, hulp } = o;
