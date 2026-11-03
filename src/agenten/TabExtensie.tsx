@@ -14,6 +14,7 @@ import { combineer, useExtensieLiveToestand, type LokaalDiagnostiek } from '../e
 import { DIAG_PAKKET } from '../../shared/extensie-ontgrendeling';
 import AgentKleuren from './AgentKleuren';
 import '../extensie/BrowserEnAgenten.css';
+import './agenten-tabs-2.css';
 
 type PanelAgents = Parameters<typeof BrowserExtensionPanel>[0]['agentsExtern'];
 
@@ -58,62 +59,68 @@ export default function TabExtensie({ tr, agents, techAgents, naActie, versie, k
     </li>
   );
 
+  // INTEG-001 (agpag2, 03.11.2026): elk onderdeel is één blok (.ag-blok uit het contract van agenten-pagina.css) met een duidelijke
+  // naam, één zin waarvoor het dient en de knoppen in de kop. Geen kaart-in-kaart meer: het blok is de rand, de inhoud is kaal.
+  // De verwijzing naar «Браузер і агенти» (zone E, 22.10.2026: wat de AI mag staat dáár) is een knop in de kop van «Як користувач».
   return (
-    <div className='ag-tab ag-ext' data-tab-inhoud='extensie' data-tab-profiel={profiel}>
-      {/* Zone E (22.10.2026): dit tabblad is alleen nog INSTALLEREN en KOPPELEN. Wat de AI mag, hoe lang en voor welke agent staat op
-          één scherm «Браузер і агенти» — de oude «Що може ШІ» per browser is daarheen verhuisd. */}
-      <div className='ag-kaart ag-ext-naar-browser' data-ext-naar-browser='1'>
-        <p><b>{tr('Що може ШІ, на який строк і для якого агента — усе на одному екрані «Браузер і агенти».', 'Wat de AI mag, hoe lang en voor welke agent — alles op één scherm «Browser en agenten».')}</b>{' '}
-          {tr('Тут лишаються лише встановлення й підключення розширення.', 'Hier blijven alleen het installeren en koppelen van de extensie.')}</p>
-        <button type='button' className='ag-knop ag-knop-primary' onClick={naarBrowser} data-ext-naar-browser-knop='1'><ArrowRight size={16} aria-hidden='true' />{tr('Відкрити «Браузер і агенти»', 'Open «Browser en agenten»')}</button>
-      </div>
-      <div className='ag-kaart ag-ext-profiel' role='status' data-profiel-tab={profiel}>
-        {profiel === 'technisch' ? <ShieldCheck aria-hidden='true' /> : <User aria-hidden='true' />}
-        <p>{tr('Профіль цієї вкладки: ', 'Profiel van dit tabblad: ')}<b>{profiel === 'technisch' ? tr('Технічний', 'Technisch') : tr('Користувач', 'Gebruiker')}</b>.{' '}
-          {profiel === 'technisch'
-            ? tr('Розширення може виконувати технічні команди лише у вкладках із технічним профілем; ваші власні сторінки — через доступ «як користувач».', 'De extensie voert technische opdrachten alleen uit in tabbladen met het technisch profiel; uw eigen pagina’s via de toegang «als gebruiker».')
-            : tr('ШІ через розширення бачить лише ваше: пошту, диск, хаб — і лише те, що ви дозволили нижче.', 'De AI ziet via de extensie alleen het uwe: mail, drive, hub — en alleen wat u hieronder toestaat.')}</p>
-      </div>
-
-      <section className='ag-ext-sectie' id='extension-lokaal' data-ext-sectie='gebruiker' aria-labelledby='ag-ext-gebruiker'>
-        <h3 id='ag-ext-gebruiker'><Globe aria-hidden='true' /> {tr('Як користувач', 'Als gebruiker')}</h3>
-        <p className='ag-ext-uitleg'>{tr('Підключіть розширення до свого облікового запису, оберіть, що може ШІ, і відкрийте доступ на потрібний строк.', 'Koppel de extensie aan uw account, kies wat de AI mag en open de toegang voor de termijn die u wilt.')}</p>
-        <div className='ag-kaart' data-paneel='extensie'>
+    <div className='ag-tab ag-ext ag2-blokken' data-tab-inhoud='extensie' data-tab-profiel={profiel}>
+      <section className='ag-blok' id='extension-lokaal' data-ext-sectie='gebruiker' data-ag-blok='extensie-gebruiker' aria-labelledby='ag-ext-gebruiker'>
+        <header className='ag-blok-kop'>
+          <h3 className='ag-blok-titel' id='ag-ext-gebruiker'><Globe aria-hidden='true' /> {tr('Як користувач', 'Als gebruiker')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Встановіть розширення й підключіть його до свого облікового запису — тоді ШІ зможе працювати з вашими сторінками.', 'Installeer de extensie en koppel ze aan uw account — dan kan de AI met uw pagina’s werken.')}</p>
+          <div className='ag-knoppen' data-ext-naar-browser='1'>
+            <button type='button' className='ag-knop' onClick={naarBrowser} data-ext-naar-browser-knop='1' title={tr('Що може ШІ, на який строк і для якого агента — усе на одному екрані «Браузер і агенти».', 'Wat de AI mag, hoe lang en voor welke agent — alles op één scherm «Browser en agenten».')}>
+              <ArrowRight size={16} aria-hidden='true' />{tr('Налаштувати, що може ШІ', 'Instellen wat de AI mag')}
+            </button>
+          </div>
+        </header>
+        <p className='ag-rij ag2-rij is-let ag-ext-profiel' role='status' data-profiel-tab={profiel}>
+          {profiel === 'technisch' ? <ShieldCheck aria-hidden='true' /> : <User aria-hidden='true' />}
+          <span>{tr('Профіль цієї вкладки: ', 'Profiel van dit tabblad: ')}<b>{profiel === 'technisch' ? tr('Технічний', 'Technisch') : tr('Користувач', 'Gebruiker')}</b>.{' '}
+            {profiel === 'technisch'
+              ? tr('Розширення може виконувати технічні команди лише у вкладках із технічним профілем; ваші власні сторінки — через доступ «як користувач».', 'De extensie voert technische opdrachten alleen uit in tabbladen met het technisch profiel; uw eigen pagina’s via de toegang «als gebruiker».')
+              : tr('ШІ через розширення бачить лише ваше: пошту, диск, хаб — і лише те, що ви дозволили.', 'De AI ziet via de extensie alleen het uwe: mail, drive, hub — en alleen wat u toestaat.')}</span>
+        </p>
+        <div className='ag2-paneel' data-paneel='extensie'>
           <BrowserExtensionPanel tr={tr} part='install' ruimte='prive' autoKoppel={koppel === 'prive'} agentsExtern={prive as unknown as PanelAgents} reloadExtern={naActie} versie={versie} />
         </div>
-        {prive.length ? <ul className='ag-ext-lijst' data-lijst='extensie-prive'>{prive.map(blok)}</ul> : null}
+        {prive.length ? <ul className='ag-ext-lijst ag2-raster' data-lijst='extensie-prive'>{prive.map(blok)}</ul> : null}
       </section>
 
       {/* 0.6.2: welke kleur hoort bij welke AI — de rand in het tabblad, de badge en de lijst gebruiken dezelfde kleur. */}
-      <AgentKleuren tr={tr} />
+      <AgentKleuren tr={tr} blok />
 
       {techProfiel ? (
-        <section className='ag-ext-sectie' data-ext-sectie='technisch' data-tech-actief={actief ? '1' : '0'} aria-labelledby='ag-ext-technisch'>
-          <h3 id='ag-ext-technisch'><ShieldCheck aria-hidden='true' /> {tr('Технічний профіль', 'Technisch profiel')}</h3>
+        <section className='ag-blok' data-ext-sectie='technisch' data-ag-blok='extensie-technisch' data-tech-actief={actief ? '1' : '0'} aria-labelledby='ag-ext-technisch'>
+          <header className='ag-blok-kop'>
+            <h3 className='ag-blok-titel' id='ag-ext-technisch'><ShieldCheck aria-hidden='true' /> {tr('Технічний профіль', 'Technisch profiel')}</h3>
+            {actief
+              ? <p className='ag-blok-uitleg'>{tr('Окремий слот для адміністрування: власне підключення, розблокування вашим passkey на короткий час, лише в межах технічних ролей.', 'Een apart slot voor beheer: een eigen koppeling, ontgrendelen met uw passkey voor korte tijd, alleen binnen uw technische rollen.')}</p>
+              : <p className='ag-blok-uitleg' data-ext-tech-regel='1'>{tr('Активуйте технічний профіль, щоб підключити технічний слот розширення й розблокувати його своїм passkey.', 'Activeer het technisch profiel om het technische slot van de extensie te koppelen en met uw passkey te ontgrendelen.')}</p>}
+            {actief ? null : (
+              <div className='ag-knoppen'>
+                <button type='button' className='ag-knop ag-knop-primary' data-ext-tech-aan='1' onClick={() => openTechVenster('activeren')}><ShieldCheck size={16} aria-hidden='true' />{tr('Активувати', 'Activeren')}</button>
+              </div>
+            )}
+          </header>
           {actief ? (
             <>
-              <p className='ag-ext-uitleg'>{tr('Окремий слот для адміністрування: власне підключення, розблокування вашим passkey на короткий час, лише в межах технічних ролей.', 'Een apart slot voor beheer: een eigen koppeling, ontgrendelen met uw passkey voor korte tijd, alleen binnen uw technische rollen.')}</p>
-              <div className='ag-kaart' data-paneel='extensie-technisch'>
-                {/* HUB-05: de installatiehulp staat één keer (hierboven); hier alleen de koppelstap van het technische slot. */}
+              <div className='ag2-paneel' data-paneel='extensie-technisch'>
+                {/* HUB-05: de installatiehulp staat één keer (blok «Як користувач»); hier alleen de koppelstap van het technische slot. */}
                 <BrowserExtensionPanel tr={tr} part='koppel' ruimte='technisch' autoKoppel={koppel === 'technisch'} agentsExtern={technisch as unknown as PanelAgents} reloadExtern={naActie} versie={versie} />
               </div>
-              {technisch.length ? <ul className='ag-ext-lijst' data-lijst='extensie-technisch'>{technisch.map(blok)}</ul> : null}
+              {technisch.length ? <ul className='ag-ext-lijst ag2-raster' data-lijst='extensie-technisch'>{technisch.map(blok)}</ul> : null}
               {diag ? (
-                <p className='ag-ext-regel' data-ext-diag={diag.stand} role='status'>
+                <p className='ag-rij ag2-rij is-let' data-ext-diag={diag.stand} role='status'>
                   <Bug size={16} aria-hidden='true' />
                   <span>{tr(DIAG_REGEL[diag.stand][0], DIAG_REGEL[diag.stand][1])}{diag.actief ? tr(' Зараз іде діагностика.', ' Er loopt nu een diagnose.') : ''}</span>
                   {diag.stand === 'niet-aanvraagbaar' || diag.stand === 'geweigerd'
-                    ? <a className='ag-knop' data-ext-diag-pakket='1' href={`/downloads/${DIAG_PAKKET}`}>{tr('Пакет «діагностика»', 'Pakket «diagnose»')}</a>
+                    ? <a className='ag-knop ag2-link-knop' data-ext-diag-pakket='1' href={`/downloads/${DIAG_PAKKET}`}>{tr('Пакет «діагностика»', 'Pakket «diagnose»')}</a>
                     : null}
                 </p>
               ) : null}
             </>
-          ) : (
-            <p className='ag-ext-regel' data-ext-tech-regel='1'>
-              <span>{tr('Активуйте технічний профіль, щоб підключити технічний слот розширення й розблокувати його своїм passkey.', 'Activeer het technisch profiel om het technische slot van de extensie te koppelen en met uw passkey te ontgrendelen.')}</span>
-              <button type='button' className='ag-knop ag-knop-primary' data-ext-tech-aan='1' onClick={() => openTechVenster('activeren')}><ShieldCheck size={16} aria-hidden='true' />{tr('Активувати', 'Activeren')}</button>
-            </p>
-          )}
+          ) : null}
         </section>
       ) : null}
     </div>

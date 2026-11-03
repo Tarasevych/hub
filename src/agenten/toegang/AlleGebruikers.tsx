@@ -48,12 +48,16 @@ export default function AlleGebruikers({ tr, ikEigenaar }: { tr: Tr; ikEigenaar:
   const lijst = filterGebruikers(s.gebruikers, zoek, filter);
 
   return (
-    <section className='tg-blok tg-beheer' aria-labelledby='tg-beheer-kop' data-tg-beheer=''>
-      <div className='tg-blok-kop'>
-        <h3 id='tg-beheer-kop'>{tr('Усі користувачі', 'Alle gebruikers')} <span className='ag-teller'>{s.gebruikers.length}</span> <HulpVraag k='toegang.beheer' meer={[['toegang.beheer.verlengen', 'Продовжити доступ', 'Toegang verlengen']]} uk={uk} label={tr('Усі користувачі', 'Alle gebruikers')} /></h3>
-        <Knop icoon={<RefreshCw />} onClick={() => void laadBeheer()} data='tg-beheer-vernieuw'>{tr('Оновити', 'Vernieuwen')}</Knop>
+    // INTEG-001 (03.11.2026): blok uit het contract van agenten-pagina.css — naam, één zin, de knop «Оновити» in de kop.
+    <section className='tg-blok tg-beheer ag-blok' aria-labelledby='tg-beheer-kop' data-tg-beheer='' data-ag-blok='alle-gebruikers'>
+      <div className='tg-blok-kop ag-blok-kop'>
+        <h3 className='ag-blok-titel' id='tg-beheer-kop'>{tr('Усі користувачі', 'Alle gebruikers')} <span className='ag-teller'>{s.gebruikers.length}</span> <HulpVraag k='toegang.beheer' meer={[['toegang.beheer.verlengen', 'Продовжити доступ', 'Toegang verlengen']]} uk={uk} label={tr('Усі користувачі', 'Alle gebruikers')} /></h3>
+        <p className='ag-blok-uitleg'>{tr('Доступи розширення всіх людей сайту — видно лише власнику та технічному профілю з правом «Керування користувачами».', 'De extensietoegang van alle mensen op de site — alleen zichtbaar voor de eigenaar en een technisch profiel met «Gebruikers beheren».')}</p>
+        <div className='ag-knoppen'>
+          <Knop icoon={<RefreshCw />} onClick={() => void laadBeheer()} data='tg-beheer-vernieuw'>{tr('Оновити', 'Vernieuwen')}</Knop>
+        </div>
       </div>
-      <p className='tg-noot'>{tr('Видно лише власнику та технічному профілю з правом «Керування користувачами». Кожна дія записується в журнал, а людина отримує сповіщення.', 'Alleen zichtbaar voor de eigenaar en een technisch profiel met «Gebruikers beheren». Elke actie komt in het logboek en de persoon krijgt een melding.')}</p>
+      <p className='tg-noot'>{tr('Кожна дія записується в журнал, а людина отримує сповіщення.', 'Elke actie komt in het logboek en de persoon krijgt een melding.')}</p>
       <div className='tg-werkbalk' role='search'>
         <label className='tg-veld tg-zoek'>
           <span><Search aria-hidden='true' size={14} /> {tr('Пошук', 'Zoeken')}</span>

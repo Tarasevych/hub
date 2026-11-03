@@ -8,6 +8,15 @@ import { foutTekst } from './fouten';
 
 type Rij = { sleutel: string; naam: string; groep: string; aan: boolean };
 
+// INTEG-001 (03.11.2026, oude fout): de groepnamen («ШІ», «Способи», de groepen uit shared/ai-beleid/catalogus.ts) en «Токен консолі»
+// stonden ook in de Nederlandse weergave in het Oekraïens. Hier hun Nederlandse naam; de groep blijft intern de Oekraïense sleutel.
+// (De namen van de mogelijkheden zelf hebben in de catalogus nog geen Nederlandse tekst — die blijven ongewijzigd.)
+const GROEP_NL: Readonly<Record<string, string>> = {
+  'ШІ': 'AI', 'Способи': 'Manieren', 'Браузер': 'Browser', 'Пристрої': 'Apparaten', 'Пошта й Google': 'Mail en Google', GitHub: 'GitHub',
+  'Сервер': 'Server', 'Розгортання': 'Uitrollen', 'Додатки': 'Apps', 'Платежі': 'Betalingen', 'Дизайн і медіа': 'Ontwerp en media',
+};
+const NAAM_NL: Readonly<Record<string, string>> = { 'Токен консолі': 'Consoletoken' };
+
 function rijenVan(staat: SiteStaat | null): Rij[] {
   const aan = (sleutel: string, standaard = true) => {
     if (!staat) return standaard;
@@ -48,19 +57,22 @@ export default function SiteSchakelaars({ tr }: { tr: Tr }) {
       .finally(() => setBezig(''));
   };
 
+  // INTEG-001 (agpag2, 03.11.2026): blok (.ag-blok) met naam en één zin; de sitebrede regel staat er meteen onder.
   return (
-    <section className='ag-kaart ag-site' data-site-schakelaars='1'>
-      <div className='ag-kaart-kop'><h3>{tr('Доступність для всіх на сайті', 'Beschikbaarheid voor iedereen op de site')}</h3></div>
+    <section className='ag-blok ag-site' data-ag-blok='site-schakelaars' data-site-schakelaars='1' aria-labelledby='ag2-site-kop'>
+      <header className='ag-blok-kop'>
+        <h3 className='ag-blok-titel' id='ag2-site-kop'>{tr('Доступність для всіх на сайті', 'Beschikbaarheid voor iedereen op de site')}</h3>
+        <p className='ag-blok-uitleg'>{tr('Ці перемикачі керують лише приватними підключеннями людей, а технічний простір сайту не закривають і не відкривають.', 'Deze schakelaars gelden alleen voor privéverbindingen van mensen en sluiten of openen de technische ruimte van de site niet.')}</p>
+      </header>
       <p className='ag-site-regel' data-site-regel='1'>{tr(SITE_REGEL.uk, SITE_REGEL.nl)}</p>
-      <p>{tr('Ці перемикачі керують лише приватними підключеннями людей. Технічний простір сайту вони не закривають і не відкривають.', 'Deze schakelaars gelden alleen voor privéverbindingen van mensen. De technische ruimte van de site sluiten of openen ze niet.')}</p>
       {fout ? <p className='ag-melding ag-melding-fout' role='alert'>{fout}</p> : null}
       {groepen.map((groep) => (
         <fieldset key={groep} className='ag-bord-groep'>
-          <legend>{groep}</legend>
+          <legend>{tr(groep, GROEP_NL[groep] ?? groep)}</legend>
           {rijen.filter((r) => r.groep === groep).map((r) => (
             <label key={r.sleutel} className='ag-bord-cap' data-site-sleutel={r.sleutel}>
               <input type='checkbox' checked={r.aan} disabled={staat === null || bezig === r.sleutel} onChange={(e) => zet(r.sleutel, e.target.checked)} />
-              <span>{r.naam}</span>
+              <span>{tr(r.naam, NAAM_NL[r.naam] ?? r.naam)}</span>
             </label>
           ))}
         </fieldset>

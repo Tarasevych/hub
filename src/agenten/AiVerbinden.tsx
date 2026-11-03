@@ -5,7 +5,7 @@
 //   • «Підключити автоматично (в один клік)» — adres plakken in de AI-klant (die doet OAuth/PKCE en opent het venster «Дозволити»),
 //     of hier meteen een Bearer-token halen met PKCE in de browser (src/agenten/een-klik.ts);
 //   • «Підключити вручну (прямий токен)» — agenttoken tvh_… (30 dagen) voor de Authorization-kop van de klant (zoals vroeger).
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Check, Copy, KeyRound, Link2, ShieldCheck, Zap } from 'lucide-react';
 import { api } from '../platform/client';
 import { sessionBody } from '../agenten-gegevens';
@@ -37,6 +37,7 @@ function Kopieer({ tekst, tr, data }: { tekst: string; tr: Tr; data?: string }) 
 export default function AiVerbinden({ tr, magTokens, naActie, ruimte = 'prive', vastKlant }: { tr: Tr; magTokens: boolean; naActie: () => Promise<void>; ruimte?: AiRuimte; vastKlant?: KlantId }) {
   const uk = tr('uk', 'nl') === 'uk';
   const technisch = ruimte === 'technisch';
+  const titelId = useId();
   const acties = useActies(tr);
   const [klant, setKlant] = useState<KlantId>(vastKlant ?? 'grok');
   useEffect(() => { if (vastKlant) setKlant(vastKlant); }, [vastKlant]);
@@ -104,11 +105,16 @@ export default function AiVerbinden({ tr, magTokens, naActie, ruimte = 'prive', 
   const curl = res ? `curl -s -X POST ${res.endpoint} -H "Authorization: Bearer ${res.token}" -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'` : '';
   const kort = res?.soort === 'oauth' && res.verloopt !== null && res.verloopt - Date.now() < 2 * 86_400_000;
 
+  // INTEG-001 (agpag2, 03.11.2026): een eigen blok (.ag-blok, contract van agenten-pagina.css) met naam, één zin en daaronder de
+  // ruimte. Het id van de kop is uniek per exemplaar: «Токени» (privé) en «Технічне» (technisch) staan op dezelfde lange pagina.
   return (
-    <section className='ag-kaart ag-verbind' data-ai-verbinden='1' data-ruimte={ruimte} aria-labelledby='ag-verbind-titel'>
-      <div className='ag-kaart-kop'><h3 id='ag-verbind-titel'>{vastKlant
-        ? (technisch ? tr(`Підключити ${k.naam} до технічного простору`, `${k.naam} koppelen aan de technische ruimte`) : tr(`Підключити ${k.naam} до вашого простору`, `${k.naam} koppelen aan uw ruimte`))
-        : (technisch ? tr('Підключити ШІ до технічного простору', 'AI koppelen aan de technische ruimte') : tr('Підключити ШІ до вашого простору', 'AI koppelen aan uw ruimte'))}</h3></div>
+    <section className='ag-blok ag-verbind' data-ag-blok='ai-verbinden' data-ai-verbinden='1' data-ruimte={ruimte} aria-labelledby={titelId}>
+      <header className='ag-blok-kop'>
+        <h3 className='ag-blok-titel' id={titelId}><Link2 aria-hidden='true' /> {vastKlant
+          ? (technisch ? tr(`Підключити ${k.naam} до технічного простору`, `${k.naam} koppelen aan de technische ruimte`) : tr(`Підключити ${k.naam} до вашого простору`, `${k.naam} koppelen aan uw ruimte`))
+          : (technisch ? tr('Підключити ШІ до технічного простору', 'AI koppelen aan de technische ruimte') : tr('Підключити ШІ до вашого простору', 'AI koppelen aan uw ruimte'))}</h3>
+        <p className='ag-blok-uitleg'>{tr('Оберіть ШІ, строк доступу й спосіб: автоматично через вхід у браузері або вручну — прямим токеном.', 'Kies de AI, de toegangsduur en de manier: automatisch via aanmelden in de browser of handmatig met een direct token.')}</p>
+      </header>
       <p className='ag-verbind-ruimte' data-ruimte-uitleg={ruimte}><ShieldCheck size={14} aria-hidden='true' /> <b>{uk ? RUIMTE_NAAM[ruimte].uk : RUIMTE_NAAM[ruimte].nl}.</b> {uk ? RUIMTE_UITLEG[ruimte].uk : RUIMTE_UITLEG[ruimte].nl}</p>
       {vastKlant ? null : <div className='ag-verbind-klanten' role='radiogroup' aria-label={tr('Який ШІ', 'Welke AI')}>
         {KLANTEN.map((x) => (
