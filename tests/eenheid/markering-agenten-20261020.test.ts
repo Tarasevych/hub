@@ -13,6 +13,7 @@
 //  7. extension/markering-agenten.js en shared/markering-agenten.ts geven dezelfde waarden en hetzelfde gedrag, en
 //     extension/shared.js blijft gelijk aan shared/extensie-ontgrendeling.ts (MIN_EXTENSIE_VERSIE, markering, badge);
 //  8. de logo's in de extensie komen letterlijk uit het ene merkregister (src/merk/merk-tabel.ts).
+import { pathToFileURL } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { checker } from './hulp/nep-google';
@@ -81,7 +82,7 @@ const schaduwVan = (wortel: NepEl) => hostVan(wortel)?.schaduw ?? null;
 export async function main(): Promise<number> {
   const { check, einde } = checker('markering-agenten-20261020');
   const wortel = zetDom();
-  const mark = await import(join(EXT, 'markering.js'));
+  const mark = await import(pathToFileURL(join(EXT, 'markering.js')).href);
   const nu = 1_800_000_000_000;
 
   // ---------------------------------------------------------------- 1. geen rand zonder werk
@@ -242,11 +243,13 @@ export async function main(): Promise<number> {
     JSON.stringify((extShared as any).MARKERING_KLEUREN) === JSON.stringify(MARKERING_KLEUREN)
     && JSON.stringify((extShared as any).MARKERING_BADGE) === JSON.stringify(MARKERING_BADGE));
   const manifest = JSON.parse(readFileSync(join(EXT, 'manifest.json'), 'utf8'));
-  // 23.10 (zone E, 0.7.0): de server eist nog steeds MINSTENS 0.6.2 (oudere extensies blijven werken, de server haalt de nieuwe
-  // mogelijkheden voor hen weg — capsVoorVersie), maar wat we uitleveren is altijd de nieuwste stand: manifest = EXTENSIE_VERSIE_MATRIX.
+  // 23.10 (zone E, 0.7.0): de server eist MINSTENS 0.6.2 (oudere extensies blijven werken, de server haalt de nieuwe mogelijkheden
+  // voor hen weg — capsVoorVersie). EXTENSIE_VERSIE_MATRIX is de eerste versie die de zeven mogelijkheden kent: een drempel, geen
+  // «nieuwste versie». Latere versies (bv. 0.8.1, F2) zijn daarom wel toegestaan; de test eist alleen dat het manifest niet onder één
+  // van beide drempels zakt. INTEG-001: eerder stond hier een gelijkheid, die na F2 vanzelf faalde.
   const getal = (v: string) => v.split('.').map((x) => Number(x) || 0).reduce((n, x) => n * 1000 + x, 0);
-  check('de versie van het manifest is minstens de minimumversie die de server eist, en gelijk aan de nieuwste stand (matrix)',
-    getal(manifest.version) >= getal(MIN_EXTENSIE_VERSIE) && manifest.version === EXTENSIE_VERSIE_MATRIX, `${manifest.version} / min ${MIN_EXTENSIE_VERSIE} / matrix ${EXTENSIE_VERSIE_MATRIX}`);
+  check('de versie van het manifest is minstens de minimumversie die de server eist en minstens de versie met de zeven mogelijkheden (matrix)',
+    getal(manifest.version) >= getal(MIN_EXTENSIE_VERSIE) && getal(manifest.version) >= getal(EXTENSIE_VERSIE_MATRIX), `${manifest.version} / min ${MIN_EXTENSIE_VERSIE} / matrix ${EXTENSIE_VERSIE_MATRIX}`);
   const war = (manifest.web_accessible_resources?.[0]?.resources ?? []) as string[];
   check('de nieuwe modules zijn web-toegankelijk (anders laadt markering.js niet op de pagina)',
     ['markering.js', 'markering-agenten.js', 'merk-agenten.js'].every((f) => war.includes(f)));
