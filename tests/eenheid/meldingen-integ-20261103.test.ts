@@ -10,7 +10,10 @@ import { AUTO_SECONDEN, BRON_DUBBEL_MS, GEZIEN_VENSTER_MS, SAMENVOEG_MS, isBronD
 import { MIN_NA_PAUZE_MS, fractie, gepauzeerd, klaar, nieuweAftelling, pauze, tik, verleng } from '../../src/meldingen/aftelling';
 import { MELDING_TYPES, MELDING_TYPE_IDS, MELDING_WEERGAVEN, isKritiekType, metWeergave, normaliseerTypeVoorkeuren, standaardTypeVoorkeur, voorkeurVoor, weergaveVan } from '../../shared/melding-typen';
 import { historyKey, readRows, werkRijenBij, type BewaardeRij } from '../../src/meldingen/lokale-rijen';
-import { ontdubbelBronnen, zelfdeGebeurtenis, type V2Melding } from '../../shared/meldingen-v2/groepering';
+import { groepeer, ontdubbelBronnen, tellers, zelfdeGebeurtenis, type V2Melding } from '../../shared/meldingen-v2/groepering';
+import { ARCHIEF_NA_DAGEN, beginSectie, sectieLijst, sectieTellers, sectieVan } from '../../shared/meldingen-v2/secties';
+import { legeRegels } from '../../shared/meldingen-v2/beleid';
+import { pasStatusToe } from '../../shared/meldingen-v2/status';
 import { pijlNaarBel, placeNear, zonderDok } from '../../src/melding-positie';
 
 const lees = (p: string) => readFileSync(p, 'utf8');
@@ -227,6 +230,72 @@ export async function main(): Promise<number> {
     !/canonical-notification-panel\{[^}]*top:calc\(var\(--ruimte-2\) \+ var\(--veilig-boven\)\)!important/.test(npcss) && !/canonical-notification-panel\{[^}]*bottom:calc/.test(vcss) && !/canonical-notification-panel\{left:auto!important/.test(npcss));
   check('D4 bron: pijltje voor paneel én pop-up, gemeten na het plaatsen; de dokstrook gaat uit het kader',
     belB.includes("className='cnc-pijl' data-kant={paneelPijl.kant}") && belB.includes("className='cnc-pijl is-toast'") && belB.includes('const viewport = () => zonderDok(zichtbaarKader(') && lees('scripts/plaatsing-vaste-elementen.json').includes('canoniek-meldingencentrum.css :: .cnc-pijl'));
+
+  // ------------------------------------------------------------------ E. «Нові» / «Прочитані» / «Архів»; gezien = gelezen
+  const DAG = 86400_000;
+  check('E1 sectieVan: ongezien → Нові; gezien → Прочитані; opgeruimd/opgelost/gezien > 7 dagen → Архів; stil ongezien → Прочитані',
+    sectieVan({ gelezen: false, tijd: NU }, NU) === 'nieuw' && sectieVan({ gelezen: true, tijd: NU - DAG }, NU) === 'gelezen' && sectieVan({ gelezen: true, tijd: NU - ARCHIEF_NA_DAGEN * DAG }, NU) === 'archief'
+    && sectieVan({ gelezen: false, toestand: 'archief', tijd: NU }, NU) === 'archief' && sectieVan({ gelezen: true, toestand: 'opgelost', tijd: NU }, NU) === 'archief' && sectieVan({ gelezen: false, tijd: NU, telt: false }, NU) === 'gelezen');
+  const mv = (id: string, x: Partial<V2Melding> = {}): V2Melding => ({ id, dienst: 'post', ernst: 'info', titel: `Titel ${id}`, tijd: NU - 60_000, gelezen: false, herkomst: 'server', ...x });
+  const gs = groepeer([
+    mv('s:fout', { ernst: 'fout', titel: 'Синхронізація пошти не вдалася', tijd: NU - 120_000 }),
+    mv('s:nieuw', { titel: 'Новий лист від банку' }),
+    mv('s:gezien', { gelezen: true, titel: 'Спільний доступ до теки' }),
+    mv('s:oud', { gelezen: true, titel: 'Старе сповіщення', tijd: NU - 8 * DAG }),
+    mv('s:weg', { gelezen: true, toestand: 'archief', titel: 'Очищене' }),
+    mv('a:klaar', { gelezen: true, ernst: 'succes', toestand: 'opgelost', afgerond: true, herkomst: 'activiteit', dienst: 'ai', procesId: 'p1', titel: 'Claude прочитав файл' }),
+    mv('a:stil', { ernst: 'succes', herkomst: 'activiteit', dienst: 'ai', procesId: 'p2', titel: 'Перевірку адрес завершено' }),
+  ], legeRegels(), NU);
+  const titels = (s: 'nieuw' | 'gelezen' | 'archief', o = {}) => sectieLijst(gs, s, NU, o).map((g) => g.hoofd.titel);
+  check('E2 Нові: ongezien, wat aandacht vraagt (fout) bovenaan', titels('nieuw').join('|') === 'Синхронізація пошти не вдалася|Новий лист від банку');
+  check('E2 Прочитані: gezien, gewoon klaar proces (activiteit «виконано») en stil achtergrondwerk — niet leeg, niet in de bel', titels('gelezen').sort().join('|') === ['Claude прочитав файл', 'Перевірку адрес завершено', 'Спільний доступ до теки'].sort().join('|') && tellers(gs).bel === 2);
+  check('E2 Архів: opgeruimd en gezien ouder dan een week (vroeger altijd leeg tenzij u zelf archiveerde)', titels('archief').sort().join('|') === ['Очищене', 'Старе сповіщення'].sort().join('|'));
+  const vast = new Set([gs.find((g) => g.hoofd.titel === 'Спільний доступ до теки')!.sleutel]);
+  check('E2 wat bij het openen nieuw was, blijft tot het sluiten in «Нові» (ook al is het intussen gelezen) en staat niet dubbel', titels('nieuw', { vastNieuw: vast }).includes('Спільний доступ до теки') && !titels('gelezen', { vastNieuw: vast }).includes('Спільний доступ до теки'));
+  const tel = sectieTellers(gs, NU);
+  check('E2 tellers = lijstlengtes; samen precies alle groepen (niets kwijt, niets dubbel)', tel.nieuw === 2 && tel.gelezen === 3 && tel.archief === 2 && tel.nieuw + tel.gelezen + tel.archief === gs.length);
+  check('E2 beginnen in «Нові» als er iets nieuws is, anders in «Прочитані» (nooit een leeg «Важливі»)', beginSectie(gs, NU) === 'nieuw' && beginSectie(gs.filter((g) => g.ongelezen === 0), NU) === 'gelezen');
+  const statusArchief = pasStatusToe([mv('a:klaar2', { afgerond: true, toestand: 'opgelost', herkomst: 'activiteit' })], { versie: 1, items: { 'a:klaar2': { s: 'opgelost', op: NU, door: 'eigenaar', hoe: 'kaart' } }, bewaarDagen: 30, bijgewerkt: NU }, NU)[0];
+  check('E2 een uitdrukkelijk «вирішено» is geen «proces klaar» meer → Архів', statusArchief.afgerond === undefined && statusArchief.toestand === 'opgelost');
+
+  const herstelE = nepBrowser();
+  try {
+    const V2 = (await import('../../src/meldingen/v2/MeldingenV2')).default;
+    const local = [
+      { id: 'n1', text: 'Не вдалося надіслати лист', kind: 'error' as const, createdAt: NU - 60_000, source: 'mail-send', read: false, link: { href: 'https://mail.tarasevych.com/postvak-in', label: 'Відкрити: Пошта' } },
+      { id: 'n2', text: 'Чернетку збережено', kind: 'success' as const, createdAt: NU - 30 * 60_000, source: 'mail', read: true },
+      { id: 'n3', text: 'Помилку синхронізації виправлено', kind: 'error' as const, createdAt: NU - 2 * 3600_000, source: 'cloud', read: true, opgelost: true },
+    ];
+    const props = (lang: 'uk' | 'nl', beginIn?: 'nieuw' | 'gelezen' | 'archief') => ({ lang, local, server: [], events: [], readEvents: new Set<string>(), regels: legeRegels(), onReadLocal: () => undefined, onReadEvent: () => undefined, onMarkAll: () => undefined, geluid: true, onGeluid: () => undefined, onSluiten: () => undefined, nu: NU, uitlegV3: false, beginIn });
+    const ukV = renderToStaticMarkup(createElement(V2, props('uk'))), nlV = renderToStaticMarkup(createElement(V2, props('nl')));
+    const tabs = [...ukV.matchAll(/role="tab" class="mv2-sectie" data-sectie="(\w+)" aria-selected="(true|false)" aria-label="([^"]+)" data-tip="([^"]+)"/g)].map((m) => ({ s: m[1], sel: m[2] === 'true', label: m[3], tip: m[4] }));
+    check('E3 v2: drie kleine pictogrammen «Нові / Прочитані / Архів» met teller in de naam; de naam bij aanwijzen (data-tip)', tabs.map((x) => x.s).join() === 'nieuw,gelezen,archief' && tabs.map((x) => x.tip).join() === 'Нові,Прочитані,Архів' && tabs.map((x) => x.label).join() === 'Нові: 1,Прочитані: 1,Архів: 1', JSON.stringify(tabs));
+    check('E3 v2: opent in «Нові» (er is iets nieuws); de kop zegt in welk deel u bent; korte uitleg van het deel', tabs[0]?.sel === true && ukV.includes('data-mv2-kop-sectie="nieuw"') && ukV.includes('data-mv2-sectie-uitleg="nieuw"') && ukV.includes('стає прочитаним'));
+    check('E3 v2: per melding «Відкрити» (link naar de plek) en «Очистити» (naar Архів), plus «Очистити всі нові»', ukV.includes('data-mv2-openen="1"') && ukV.includes('href="https://mail.tarasevych.com/postvak-in"') && ukV.includes('data-mv2-opruimen="1"') && ukV.includes('aria-label="Очистити: Не вдалося надіслати лист"') && ukV.includes('data-mv2-alles-opruimen="1"'));
+    const arch = renderToStaticMarkup(createElement(V2, props('uk', 'archief')));
+    check('E3 v2: «Архів» toont de door een latere stap opgeloste fout (geen «Очистити» meer; terugzetten alleen voor wat u zelf opruimde)', arch.includes('Помилку синхронізації виправлено') && !arch.includes('Не вдалося надіслати лист') && !arch.includes('data-mv2-opruimen="1"') && !arch.includes('data-mv2-terug="1"'));
+    const v2src = lees('src/meldingen/v2/MeldingenV2.tsx');
+    check('E3 v2: «Повернути з архіву» voor wat u (of de bewaartermijn) opruimde of oploste — status op de server', v2src.includes("const isHerstelbaar = (g: V2Groep) => g.leden.some((x) => { const s = statusStand.items[x.id]?.s; return s === 'archief' || s === 'opgelost'; });") && v2src.includes("const zetTerug = (gs: V2Groep[]) => void zetGroepen(gs, 'nieuw', 'kaart'"));
+    const leegArch = renderToStaticMarkup(createElement(V2, { ...props('uk', 'archief'), local: [local[0]] }));
+    check('E3 v2: een leeg deel zegt wat er normaal staat (geen kaal «нічого»)', leegArch.includes('data-mv2-leeg="archief"') && leegArch.includes('Архів порожній. Сюди потрапляє'));
+    check('E3 v2: voet — kleine pictogrammen (geen brede knop «Уся історія»); naam bij aanwijzen en voor de schermlezer', ukV.includes('data-mv2-historie-knop="1"') && ukV.includes('data-tip="Уся історія"') && ukV.includes('class="mv2-sr">Уся історія<') && !/class="mv2-tekstknop"[^>]*>[^<]*<svg[^>]*lucide-history/.test(ukV));
+    check('E3 nl: dezelfde delen in het Nederlands', nlV.includes('data-tip="Nieuw"') && nlV.includes('data-tip="Gelezen"') && nlV.includes('data-tip="Archief"') && nlV.includes('Alle nieuwe opruimen'));
+    const engelsV = /\b(New|Read|Archive|Clear|Open|History|Settings)\b/;
+    check('E3 geen Engelse tekst in het v2-paneel (uk en nl)', !engelsV.test(ukV.replace(/<[^>]+>/g, ' ')) && !engelsV.test(nlV.replace(/<[^>]+>/g, ' ')));
+
+    const Body = (await import('../../src/MeldingenpaneelInhoud')).default;
+    const bodyProps = (lang: 'uk' | 'nl') => ({ lang, local: [...local, { id: 'o1', text: 'Старе прочитане', kind: 'info' as const, createdAt: NU - 9 * DAG, source: 'mail', read: true }], server: [], events: [], readEvents: new Set<string>(), onReadLocal: () => undefined, onRemoveLocal: () => undefined, onRunAction: () => undefined, onReadEvent: () => undefined, detailIcons: {}, nu: NU, onOpruimen: () => undefined, onTerug: () => undefined });
+    const oud = renderToStaticMarkup(createElement(Body, bodyProps('uk')));
+    check('E4 oud paneel: dezelfde delen (Нові 1, Прочитані 1, Архів 2: opgelost + ouder dan een week) + «Проблеми»', oud.includes('aria-label="Нові: 1"') && oud.includes('aria-label="Прочитані: 1"') && oud.includes('aria-label="Архів: 2"') && oud.includes('data-cnc-deel="problems"'));
+    check('E4 oud paneel: «Очистити» per regel en «Очистити всі нові»; link naar de plek (ook zonder eigen link: het onderdeel)', oud.includes('data-cnc-opruimen="1"') && oud.includes('data-cnc-alles-opruimen="1"') && oud.includes('href="https://mail.tarasevych.com/postvak-in"'));
+  } catch (e) {
+    check('E3/E4 panelen renderen in node', false, String((e as Error).stack || e).slice(0, 600));
+  } finally {
+    herstelE();
+  }
+  const belE = code(lees('src/CanoniekMeldingencentrum.tsx'));
+  check('E5 bron: de status (opgeruimd/opgelost) geldt nu altijd, ook zonder vlag v3; afgehandeld telt niet als ongelezen in de bel',
+    belE.includes("const v3Status = useStatusStand(!!p.scope && p.scope !== 'anon');") && belE.includes('(ms) => pasStatusToe(ms, v3Status))') && belE.includes("!afgehandeld(`s:${item.id}`)"));
 
   return einde();
 }

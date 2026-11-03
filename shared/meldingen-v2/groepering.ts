@@ -54,6 +54,11 @@ export type V2Melding = {
   terugOp?: number;
   /** UI-014 fase 2B: automatisch opgeruimd uit de tab Архів (blijft in «Вся історія»). */
   opgeruimd?: boolean;
+  /**
+   * INTEG-001: een proces dat gewoon klaar is (activiteit «виконано») — telt als afgerond voor de groep, maar is geen OPGELOST probleem:
+   * het hoort in «Прочитані» (en na een week in «Архів»), niet meteen in «Архів» (shared/meldingen-v2/secties.ts).
+   */
+  afgerond?: boolean;
 };
 
 export type V2Groep = {

@@ -52,7 +52,7 @@ export function vanActiviteit(e: ActivityEvent, lang: Lang, gelezen: boolean): V
   const l = activityLink(e, lang);
   return {
     id: `a:${e.id}`, dienst, categorie: `${e.kind}.${e.type}`.toLowerCase(), soort: `${e.kind}.${e.type}`.toLowerCase(), ernst, titel: activityTitle(e, lang), tekst: activityCause(e, lang) || undefined, tijd: e.createdAt, gelezen,
-    vraagtActie: st.group === 'waiting' || undefined, toestand: st.group === 'done' ? 'opgelost' : undefined,
+    vraagtActie: st.group === 'waiting' || undefined, toestand: st.group === 'done' ? 'opgelost' : undefined, afgerond: st.group === 'done' || undefined,
     // Eén proces per (bron, soort, onderwerp): tientallen «gestart/klaar» van dezelfde opdracht worden één item met geschiedenis.
     procesId: `${e.source}|${e.kind}|${e.type}|${e.subject || ''}`.toLowerCase(), link: l.href || undefined, sfeer: e.sfeer, technischeTekst: [e.type, e.code, e.reden, e.tool].filter(Boolean).join(' · ') || undefined,
     // UI-014: wie en waarop — rechtstreeks uit de bron (agentnaam, bestandspad, ruimte), niets verzonnen.

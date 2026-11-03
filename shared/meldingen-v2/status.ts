@@ -90,7 +90,8 @@ export function pasStatusToe(ms: readonly V2Melding[], st: StatusStand, nu = Dat
     if (!it) return m;
     if (it.s === 'gelezen') return { ...m, gelezen: true };
     if (it.s === 'uitgesteld') return (it.tot || 0) > nu ? { ...m, gelezen: true, uitgesteldTot: it.tot } : { ...m, gelezen: false, terugOp: it.tot };
-    return { ...m, gelezen: true, toestand: it.s, opgeruimd: it.opgeruimd || undefined };
+    // INTEG-001: een uitdrukkelijk «вирішено»/«очищено» is nooit meer alleen «proces klaar» (afgerond).
+    return { ...m, gelezen: true, toestand: it.s, opgeruimd: it.opgeruimd || undefined, afgerond: undefined };
   });
 }
 

@@ -114,12 +114,15 @@ export async function main(): Promise<number> {
     const server = Array.from({ length: 6 }, (_, i) => ({ id: `s${i}`, kind: i % 2 ? 'security_warning' : 'workspace_share', title: `Melding ${String.fromCharCode(1072 + i)}`, message: 'tekst', createdAt: nu - i * 60000, read: i % 3 === 0 }));
     const html = (lang: 'uk' | 'nl') => renderToStaticMarkup(createElement(Body, { lang, local: [], server, events: [], readEvents: new Set<string>(), onReadLocal: () => undefined, onRemoveLocal: () => undefined, onRunAction: () => undefined, onReadEvent: () => undefined, detailIcons: {} }));
     const uk = html('uk'), nl = html('nl');
-    check('C statusfilters: één groep (role=group) van aria-pressed-knoppen — geen halve tablist', /class="cnc-chips" role="group" aria-label="Фільтр за станом"/.test(uk) && !uk.includes('role="tab"') && (uk.match(/class="cnc-chip" aria-pressed=/g) || []).length === 5);
-    check('C chip met aantal heet «Непрочитані: 4» (niet «Непрочитані4»); nl «Ongelezen: 4»', uk.includes('aria-label="Непрочитані: 4"') && nl.includes('aria-label="Ongelezen: 4"'));
+    // INTEG-001 (eigenaar: розділи «Нові», «Прочитані», «Архів»): de chiprij heet nu «Розділи сповіщень» en de chips zijn kleine
+    // pictogrammen met teller (naam in aria-label/title); het paneel opent in «Нові» (4 ongelezen van 6). Dezelfde toegankelijkheidsbeloften.
+    check('C delen: één groep (role=group) van aria-pressed-knoppen — geen halve tablist', /class="cnc-chips" role="group" aria-label="Розділи сповіщень"/.test(uk) && !uk.includes('role="tab"') && (uk.match(/class="cnc-chip"[^>]*aria-pressed=/g) || []).length === 5);
+    check('C chip met aantal heet «Нові: 4» (niet «Нові4»); nl «Nieuw: 4»', uk.includes('aria-label="Нові: 4"') && nl.includes('aria-label="Nieuw: 4"') && uk.includes('aria-label="Прочитані: 2"'));
     check('C schuifpijlen van de chiprij niet in de Tab-volgorde (tabindex=-1)', (uk.match(/class="ut-tabs-pijl[^"]*" tabindex="-1"/g) || []).length === 2);
     const ids = [...uk.matchAll(/<strong id="(cnc-t-[^"]+)">/g)].map((m) => m[1]);
-    check('C elke rij heet naar haar titel (article aria-labelledby → <strong id>), knoppen beschreven door die titel', ids.length === 6 && ids.every((id) => uk.includes(`aria-labelledby="${id}"`) && uk.includes(`aria-describedby="${id}"`)), ids.slice(0, 2).join());
-    check('C «Прочитано» is een benoemd beeld (role=img + aria-label), niet alleen een title', /class="cnc-done" role="img" aria-label="Прочитано"/.test(uk) && /class="cnc-done" role="img" aria-label="Gelezen"/.test(nl));
+    check('C elke rij heet naar haar titel (article aria-labelledby → <strong id>), knoppen beschreven door die titel', ids.length === 4 && ids.every((id) => uk.includes(`aria-labelledby="${id}"`) && uk.includes(`aria-describedby="${id}"`)), ids.slice(0, 2).join());
+    const alleGelezen = (lang: 'uk' | 'nl') => renderToStaticMarkup(createElement(Body, { lang, local: [], server: server.map((s) => ({ ...s, read: true })), events: [], readEvents: new Set<string>(), onReadLocal: () => undefined, onRemoveLocal: () => undefined, onRunAction: () => undefined, onReadEvent: () => undefined, detailIcons: {} }));
+    check('C «Прочитано» is een benoemd beeld (role=img + aria-label), niet alleen een title (deel «Прочитані»)', /class="cnc-done" role="img" aria-label="Прочитано"/.test(alleGelezen('uk')) && /class="cnc-done" role="img" aria-label="Gelezen"/.test(alleGelezen('nl')));
     check('C «Фільтри» blijft één disclosure (aria-expanded/aria-controls=cnc-extra)', /class="cnc-filterknop"[^>]*aria-expanded="false"[^>]*aria-controls="cnc-extra"/.test(uk));
   } catch (e) { check('C NotificationPanelBody rendert in node', false, String((e as Error).stack || e).slice(0, 400)); }
 

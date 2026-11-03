@@ -137,6 +137,26 @@
 .mv2u-actie.is-gevaar{color:var(--mv2-fout);border-color:color-mix(in srgb,var(--mv2-fout) 40%,var(--line))}
 .mv2u-actie.is-gevaar.is-bevestigd{background:var(--mv2-fout);color:#fff;border-color:transparent}
 @media (pointer:coarse),(max-width:560px){.mv2u-actie{min-height:44px}}
+/* INTEG-001: drie delen «Нові / Прочитані / Архів» als kleine pictogrammen met teller; de naam staat bij aanwijzen (data-tip) en in de
+   kop («Сповіщення · Нові»). Een korte regel zegt wat er in dit deel staat. Per melding direct «Відкрити» en «Очистити». */
+.mv2-secties{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;margin:6px 10px 2px}
+.mv2 .mv2-sectie{position:relative;display:inline-flex;align-items:center;gap:4px;min-width:44px;height:34px;padding:0 8px;border:0;border-radius:9px;background:transparent;color:var(--muted);font:inherit;cursor:pointer;transition:background-color .12s,color .12s}
+.mv2 .mv2-sectie svg{width:17px;height:17px}
+.mv2 .mv2-sectie:hover,.mv2 .mv2-sectie:focus-visible{background:var(--nav-hover);color:var(--text)}
+.mv2 .mv2-sectie[aria-selected=true]{background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent)}
+.mv2 .mv2-sectie .mv2-n[data-n='0']{background:transparent;color:var(--muted);opacity:.7}
+.mv2 .mv2-sectie[data-tip]:hover::after{left:0;right:auto}
+.mv2-sectie-uitleg{flex:1 1 100%;margin:2px 2px 0;color:var(--muted);font-size:12px;line-height:1.35}
+.mv2-kop-sectie{padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--muted);font-size:12px;font-weight:600}
+.mv2-rij{grid-template-columns:28px minmax(0,1fr) auto}
+.mv2-rij-acties{display:flex;align-items:center;gap:0}
+.mv2 a.mv2-ikoon{text-decoration:none}
+.mv2-meta>.mv2-wie{max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.mv2-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.mv2-voet-ruimte{flex:1 1 auto}
+.mv2-regelbalk:empty{display:none}
+@media (max-width:560px){.mv2-rij{grid-template-columns:28px minmax(0,1fr) auto}.mv2 .mv2-sectie{height:44px;min-width:52px}.mv2-rij-acties .mv2-ikoon.is-klein{width:44px;height:44px;min-width:44px}}
+
 /* INTEG-001: «Типи сповіщень» bovenaan «Правила сповіщень» (één plek voor alle keuzes). */
 .mv2-typen{border:1px solid var(--line);border-radius:12px;padding:0 8px 8px}
 .mv2-typen>summary{display:flex;align-items:center;min-height:44px;padding:0 4px;font-weight:600;cursor:pointer}

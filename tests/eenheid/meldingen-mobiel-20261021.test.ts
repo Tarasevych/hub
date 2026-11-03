@@ -122,7 +122,9 @@ export async function main(): Promise<number> {
   check('D de vier statuschips + «Групувати» in één scrollrij (TabsRij: data-scroll-ok, pijlen als hint)', (chipsDeel.match(/class="cnc-chip"/g) || []).length === 5 && uk.includes('class="ut-tabs-wrap cnc-chips-wrap"') && /class="cnc-chips"[^>]*data-scroll-ok="1"/.test(uk) && uk.includes('ut-tabs-pijl is-rechts'));
   const extra = uk.slice(uk.indexOf('id="cnc-extra"'), uk.indexOf('class="cnc-list"'));
   check('D zoeken staat in de rij; розділи en порядок in #cnc-extra', uk.includes('type="search"') && uk.indexOf('type="search"') < uk.indexOf('id="cnc-extra"') && extra.includes('class="cnc-sections"') && extra.includes('Спершу нові') && !extra.includes('type="search"'));
-  check('D lijst rendert de rijen (30 servermeldingen, niet samengevoegd)', (uk.match(/class="cnc-row /g) || []).length === 30);
+  // INTEG-001 (eigenaar: розділи «Нові», «Прочитані», «Архів»): het paneel opent in «Нові» (er is iets nieuws) en toont daar de 20
+  // ongelezen; de 10 gelezen staan in «Прочитані». Vroeger «Усі» met alle 30 door elkaar.
+  check('D lijst rendert de rijen van het deel «Нові» (20 ongelezen van 30 servermeldingen, niet samengevoegd)', (uk.match(/class="cnc-row /g) || []).length === 20 && (uk.match(/data-deel="nieuw"/g) || []).length === 20);
   const bodyBron = lees('src/MeldingenpaneelInhoud.tsx');
   check('D getal op «Фільтри» = actieve keuzes (розділ, порядок, zoeken)', bodyBron.includes("const actief = (section !== 'all' ? 1 : 0) + (sort !== 'new' ? 1 : 0) + (query.trim() ? 1 : 0);") && bodyBron.includes('Фільтри (активних: ${actief})'));
 
