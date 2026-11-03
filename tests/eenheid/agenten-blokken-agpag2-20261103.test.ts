@@ -71,7 +71,7 @@ export async function main(): Promise<number> {
     const e = ext(uk);
     check('extensie: blok «Як користувач» met naam, één zin en de knop naar «Браузер і агенти» in de kop',
       blokken(e).length >= 1 && zonderKop(e).length === 0 && e.includes('data-ext-sectie="gebruiker"') && e.includes('id="extension-lokaal"')
-      && /class="ag-knoppen ag2-acties" data-ext-naar-browser="1"/.test(e) && e.includes('data-ext-naar-browser-knop="1"'), zonderKop(e).join(' | '));
+      && /class="ag-knoppen" data-ext-naar-browser="1"/.test(e) && e.includes('data-ext-naar-browser-knop="1"'), zonderKop(e).join(' | '));
     check('extensie: de profielregel en het installatiepaneel staan IN het blok, niet als losse kaarten', e.includes('data-profiel-tab="gebruiker"') && e.includes('data-paneel="extensie"') && !/class="ag-kaart[^"]*" data-paneel="extensie"/.test(e) && !e.includes('ag-ext-naar-browser" data-ext-naar-browser'));
     check('extensie (nl): geen Oekraïense tekst', cyrillischIn(ext(nl)).length === 0, cyrillischIn(ext(nl)).join(' | '));
 
@@ -92,7 +92,7 @@ export async function main(): Promise<number> {
     const pc = (id: string, naam: string, status: 'connected' | 'offline') => ({ id, name: naam, platform: 'win32-x64', status, lastSeenAt: 1, createdAt: 1, policy: { autoApprove: [] }, enabled: true, armedUntil: null, version: '1.0.0', ruimte: 'prive' });
     const app = (tr: typeof uk, agents: unknown[]) => renderToString(createElement(TabApparaten, { tr, agents: agents as never, pending: [], last: {}, overzicht: null, naActie: async () => undefined, reload: async () => undefined, item: '', kies: () => undefined, versie: 0, naarExtensie: () => undefined }));
     const leeg = app(uk, []);
-    check('apparaten: één blok met naam, één zin en de knoppen «Підключити ПК» / «Розширення браузера» in de kop', blokken(leeg).length === 1 && zonderKop(leeg).length === 0 && /class="ag-knoppen ag2-acties"[\s\S]*?data-knop="koppelen"[\s\S]*?data-knop="extensie"/.test(leeg));
+    check('apparaten: één blok met naam, één zin en de knoppen «Підключити ПК» / «Розширення браузера» in de kop', blokken(leeg).length === 1 && zonderKop(leeg).length === 0 && /class="ag-knoppen"[\s\S]*?data-knop="koppelen"[\s\S]*?data-knop="extensie"/.test(leeg));
     check('apparaten: geen apparaat → lege staat met wat u kunt doen; geen sorteerkeuze zonder lijst', leeg.includes('data-apparaten-leeg="1"') && leeg.includes('Підключити ПК') && !leeg.includes('data-sorteer'));
     const twee = app(uk, [pc('a1', 'Ноутбук', 'connected'), pc('a2', 'Робочий ПК', 'offline')]);
     check('apparaten: met twee apparaten → teller, sorteren en de lijst (data-lijst="apparaten")', twee.includes('data-apparaten-telling="2"') && twee.includes('у мережі 1') && twee.includes('data-sorteer="apparaten"') && twee.includes('data-lijst="apparaten"') && !twee.includes('data-apparaten-leeg'));
@@ -119,7 +119,7 @@ export async function main(): Promise<number> {
     const tg = (tr: typeof uk) => renderToString(createElement(TabToegang, { tr }));
     const a = tg(uk);
     check('toegang: geen dubbele h2 «Доступи»; bovenaan één regel met de (?) «toegang.overzicht»', !a.includes('<h2') && a.includes('data-tg-intro') && a.includes('tech-vraag-knop') && a.includes('Тут зібрано все, що ви дозволили ШІ'));
-    check('toegang: «Мої доступи» is een blok met naam, één zin en «Оновити» in de kop', /data-ag-blok="mijn-toegang"/.test(a) && zonderKop(a).length === 0 && /class="ag-knoppen ag2-acties"[\s\S]*?data-knop="tg-vernieuw"/.test(a));
+    check('toegang: «Мої доступи» is een blok met naam, één zin en «Оновити» in de kop', /data-ag-blok="mijn-toegang"/.test(a) && zonderKop(a).length === 0 && /class="ag-knoppen"[\s\S]*?data-knop="tg-vernieuw"/.test(a));
     check('toegang (nl): geen Oekraïense tekst', cyrillischIn(tg(nl)).length === 0, cyrillischIn(tg(nl)).join(' | '));
 
     // ================================================================ 6. «Технічне» (zonder technisch profiel: de poort)
@@ -165,5 +165,8 @@ export async function main(): Promise<number> {
   check(`geen <style>-tags (CSP style-src 'self') in ${bestanden.length} bestanden`, bestanden.every((f) => !/<style[\s>]/.test(lees(f))));
   check('de bestanden van deze secties gebruiken het contract (ag-blok-kop + ag-blok-titel + ag-blok-uitleg)', bestanden.filter((f) => f !== 'src/agenten/TabToegang.tsx').every((f) => { const s = lees(f); return s.includes('ag-blok-kop') && s.includes('ag-blok-titel') && s.includes('ag-blok-uitleg'); }));
   check('AgentenPagina.tsx en agenten-pagina.css (agpag1) zijn hier niet aangeraakt: geen ag2-klassen erin', !lees('src/agenten/AgentenPagina.tsx').includes('ag2-'));
+  // Opmaak van de kop zoals in het contract: h3.ag-blok-titel, .ag-knoppen en p.ag-blok-uitleg zijn DIRECTE kinderen van .ag-blok-kop
+  // (agenten-pagina.css zet de uitleg met `.ag-blok-kop>.ag-blok-uitleg` op een eigen regel onder de titel); geen eigen omhulsel.
+  check('kop volgens het contract: geen eigen omhulsel of icoonvakje in de kop', bestanden.every((f) => !/ag2-kop-tekst|ag2-icoon/.test(lees(f))));
   return einde();
 }

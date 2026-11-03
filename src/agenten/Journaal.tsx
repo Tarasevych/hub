@@ -221,11 +221,9 @@ export default function Journaal({ tr, onderwerpen, versie, actief }: { tr: Tr; 
     <div className='ag-journaal-wrap ag-tab ag2-blokken' data-tab-inhoud='journaal'>
       <section className='ag-blok' data-ag-blok='journaal' aria-labelledby='ag2-journaal-kop'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='ag2-journaal-kop'><span className='ag2-icoon' aria-hidden='true'><Activity /></span>{tr('Події', 'Gebeurtenissen')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Оберіть тип або агента, щоб звузити список; натисніть рядок, щоб побачити технічні подробиці.', 'Kies een soort of agent om de lijst te verkleinen; klik op een rij voor de technische details.')}</p>
-          </div>
-          <div className='ag-knoppen ag2-acties ag2-filters' role='group' aria-label={tr('Фільтри журналу', 'Filters van het logboek')}>
+          <h3 className='ag-blok-titel' id='ag2-journaal-kop'><Activity aria-hidden='true' /> {tr('Події', 'Gebeurtenissen')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Оберіть тип або агента, щоб звузити список; натисніть рядок, щоб побачити технічні подробиці.', 'Kies een soort of agent om de lijst te verkleinen; klik op een rij voor de technische details.')}</p>
+          <div className='ag-knoppen ag2-filters' role='group' aria-label={tr('Фільтри журналу', 'Filters van het logboek')}>
             <label className='ag-veld'><span>{tr('Тип', 'Soort')}</span>
               <select value={soort} onChange={(e) => setSoort(e.target.value)} data-filter='soort'>{SOORTEN.map(([id, uk, nl]) => <option key={id} value={id}>{tr(uk, nl)}</option>)}</select>
             </label>

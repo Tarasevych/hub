@@ -69,11 +69,9 @@ export default function MijnToegang({ tr }: { tr: Tr }) {
     // INTEG-001 (03.11.2026): blok uit het contract van agenten-pagina.css — naam, één zin, de knop «Оновити» in de kop.
     <section className='tg-blok ag-blok' aria-labelledby='tg-mijn-kop' data-tg-mijn='' data-ag-blok='mijn-toegang'>
       <div className='tg-blok-kop ag-blok-kop'>
-        <div className='ag2-kop-tekst'>
-          <h3 className='ag-blok-titel' id='tg-mijn-kop'>{tr('Мої доступи', 'Mijn toegang')} <span className='ag-teller'>{aantal}</span> <HulpVraag k='toegang.intrekken' naam={['Відкликати', 'Intrekken']} meer={[['toegang.verlengen', 'Продовжити', 'Verlengen'], ['toegang.beperken', 'Обмежити', 'Beperken']]} uk={uk} label={tr('Мої доступи', 'Mijn toegang')} /></h3>
-          <p className='ag-blok-uitleg'>{tr('Кожна картка — один доступ, який ви дали ШІ, згрупований за способом підключення.', 'Elke kaart is één toegang die u een AI gaf, gegroepeerd per manier van koppelen.')}</p>
-        </div>
-        <div className='ag-knoppen ag2-acties'>
+        <h3 className='ag-blok-titel' id='tg-mijn-kop'>{tr('Мої доступи', 'Mijn toegang')} <span className='ag-teller'>{aantal}</span> <HulpVraag k='toegang.intrekken' naam={['Відкликати', 'Intrekken']} meer={[['toegang.verlengen', 'Продовжити', 'Verlengen'], ['toegang.beperken', 'Обмежити', 'Beperken']]} uk={uk} label={tr('Мої доступи', 'Mijn toegang')} /></h3>
+        <p className='ag-blok-uitleg'>{tr('Кожна картка — один доступ, який ви дали ШІ, згрупований за способом підключення.', 'Elke kaart is één toegang die u een AI gaf, gegroepeerd per manier van koppelen.')}</p>
+        <div className='ag-knoppen'>
           <Knop icoon={<RefreshCw />} onClick={() => void laadMijn()} data='tg-vernieuw'>{tr('Оновити', 'Vernieuwen')}</Knop>
         </div>
       </div>

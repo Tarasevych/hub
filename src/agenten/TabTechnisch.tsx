@@ -19,16 +19,14 @@ export default function TabTechnisch({ tr }: { tr: Tr }) {
     <div className='ag-tab ag2-blokken' data-tab-inhoud='technisch' id='ruimte' data-technisch-poort={tech.profiel ? 'activeren' : tech.fout ? 'netwerkfout' : !tech.geladen ? 'laden' : 'geen-profiel'}>
       <section className='ag-blok' data-ag-blok='technisch-poort' aria-labelledby='ag2-tech-poort-kop'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='ag2-tech-poort-kop'><span className='ag2-icoon' aria-hidden='true'><ShieldCheck /></span>{tr('Технічні підключення', 'Technische verbindingen')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Двері сервера, технічний конектор і токени, агенти на самому сервері — видно лише з технічним профілем, активним у цій вкладці.', 'De serverdeur, de technische connector en tokens, agenten op de server zelf — alleen zichtbaar met een technisch profiel dat in dit tabblad actief is.')}</p>
-          </div>
+          <h3 className='ag-blok-titel' id='ag2-tech-poort-kop'><ShieldCheck aria-hidden='true' /> {tr('Технічні підключення', 'Technische verbindingen')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Двері сервера, технічний конектор і токени, агенти на самому сервері — видно лише з технічним профілем, активним у цій вкладці.', 'De serverdeur, de technische connector en tokens, agenten op de server zelf — alleen zichtbaar met een technisch profiel dat in dit tabblad actief is.')}</p>
           {tech.profiel ? (
-            <div className='ag-knoppen ag2-acties'>
+            <div className='ag-knoppen'>
               <button type='button' className='ag-knop ag-knop-primary' data-technisch-aan='1' onClick={() => openTechVenster('activeren')}><ShieldCheck size={16} aria-hidden='true' />{tr('Активувати технічний профіль', 'Technisch profiel activeren')}</button>
             </div>
           ) : tech.fout ? (
-            <div className='ag-knoppen ag2-acties'>
+            <div className='ag-knoppen'>
               <button type='button' className='ag-knop' onClick={() => void techVernieuwen()}><RefreshCw size={16} aria-hidden='true' />{tr('Повторити', 'Opnieuw')}</button>
             </div>
           ) : null}

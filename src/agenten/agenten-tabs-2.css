@@ -3,20 +3,17 @@
    багато порожніх проміжків, розділи не відділені».
    Het blok zelf komt uit het gedeelde klassencontract van src/agenten/agenten-pagina.css (agpag1): .ag-pagina, .ag-blok, .ag-blok-kop,
    .ag-blok-titel, .ag-blok-uitleg, .ag-rij, .ag-leeg, .ag-knoppen. Die klassen worden hier NIET gedefinieerd; dit bestand heeft alleen
-   eigen ag2-klassen voor wat er in een blok staat (kopje met icoon, statusregel, werkbalk, raster, open paneel, dienstenlijst).
+   eigen ag2-klassen voor wat er in een blok staat (statusregel, werkbalk, raster, open paneel, slotkeuze, dienstenlijst, filters).
    Alleen thema-tokens (src/ontwerp/tokens.css): licht en donker volgen vanzelf. Telefoon (≤ 560 px): geen horizontale scroll,
-   knoppen over de volle breedte en ≥ 44 px hoog; de zijmarge van 16 px geeft de pagina (.ag-pagina). Geen <style>-tags (CSP). */
+   slotkeuze en filters over de volle breedte, tikdoelen ≥ 44 px; de zijmarge van 16 px geeft de pagina (.ag-pagina). Geen <style> (CSP). */
 
 /* Stapel blokken in één sectie: één vaste tussenruimte, geen losse marges per kaart. */
 .ag2-blokken{display:grid;gap:var(--ruimte-4,16px);min-width:0}
 .ag2-blokken>*{min-width:0}
 
-/* Kop van een blok: titel + één zin links, knoppen rechts (op de telefoon eronder). */
-.ag2-kop-tekst{display:grid;gap:4px;flex:1 1 280px;min-width:0}
-.ag2-icoon{display:inline-grid;place-items:center;flex:0 0 auto;width:28px;height:28px;margin-right:8px;border-radius:var(--straal-s,8px);background:var(--accent-soft,var(--surface));color:var(--accent);vertical-align:middle}
-.ag2-icoon svg{width:16px;height:16px}
-.ag2-acties{align-items:center;justify-content:flex-end}
-.ag2-acties .ag-knop,.ag2-acties .eo-knop{text-decoration:none}
+/* De kop van een blok volgt de opmaak van het contract (agenten-pagina.css): h3.ag-blok-titel (met icoon-svg), .ag-knoppen en
+   p.ag-blok-uitleg als directe kinderen van header.ag-blok-kop — hier dus geen eigen kopregels. */
+a.ag2-link-knop{text-decoration:none}
 
 /* Eén regel in een blok: icoon, tekst en eventueel een knop — loopt netjes door op een smal scherm. */
 .ag2-rij{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0;min-width:0;line-height:1.45}
@@ -77,9 +74,7 @@
 .ag2-intro{margin:0;color:var(--muted);line-height:1.5;max-width:76ch}
 
 @media (max-width:560px){
-  .ag2-kop-tekst{flex-basis:100%}
-  .ag2-acties{width:100%;justify-content:stretch}
-  .ag2-acties>:is(.ag-knop,.eo-knop,button,a){flex:1 1 auto;min-height:44px;white-space:normal;text-align:center}
+  .ag2-filters,.ag2-vol-telefoon{width:100%}
   .ag2-slotkeuze{display:flex;width:100%}
   .ag2-slotkeuze button{flex:1;justify-content:center}
   .ag2-werkbalk>*,.ag2-filters>*{flex:1 1 100%}

@@ -66,11 +66,9 @@ export default function TabExtensie({ tr, agents, techAgents, naActie, versie, k
     <div className='ag-tab ag-ext ag2-blokken' data-tab-inhoud='extensie' data-tab-profiel={profiel}>
       <section className='ag-blok' id='extension-lokaal' data-ext-sectie='gebruiker' data-ag-blok='extensie-gebruiker' aria-labelledby='ag-ext-gebruiker'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='ag-ext-gebruiker'><span className='ag2-icoon' aria-hidden='true'><Globe /></span>{tr('Як користувач', 'Als gebruiker')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Встановіть розширення й підключіть його до свого облікового запису — тоді ШІ зможе працювати з вашими сторінками.', 'Installeer de extensie en koppel ze aan uw account — dan kan de AI met uw pagina’s werken.')}</p>
-          </div>
-          <div className='ag-knoppen ag2-acties' data-ext-naar-browser='1'>
+          <h3 className='ag-blok-titel' id='ag-ext-gebruiker'><Globe aria-hidden='true' /> {tr('Як користувач', 'Als gebruiker')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Встановіть розширення й підключіть його до свого облікового запису — тоді ШІ зможе працювати з вашими сторінками.', 'Installeer de extensie en koppel ze aan uw account — dan kan de AI met uw pagina’s werken.')}</p>
+          <div className='ag-knoppen' data-ext-naar-browser='1'>
             <button type='button' className='ag-knop' onClick={naarBrowser} data-ext-naar-browser-knop='1' title={tr('Що може ШІ, на який строк і для якого агента — усе на одному екрані «Браузер і агенти».', 'Wat de AI mag, hoe lang en voor welke agent — alles op één scherm «Browser en agenten».')}>
               <ArrowRight size={16} aria-hidden='true' />{tr('Налаштувати, що може ШІ', 'Instellen wat de AI mag')}
             </button>
@@ -95,14 +93,12 @@ export default function TabExtensie({ tr, agents, techAgents, naActie, versie, k
       {techProfiel ? (
         <section className='ag-blok' data-ext-sectie='technisch' data-ag-blok='extensie-technisch' data-tech-actief={actief ? '1' : '0'} aria-labelledby='ag-ext-technisch'>
           <header className='ag-blok-kop'>
-            <div className='ag2-kop-tekst'>
-              <h3 className='ag-blok-titel' id='ag-ext-technisch'><span className='ag2-icoon' aria-hidden='true'><ShieldCheck /></span>{tr('Технічний профіль', 'Technisch profiel')}</h3>
-              {actief
-                ? <p className='ag-blok-uitleg'>{tr('Окремий слот для адміністрування: власне підключення, розблокування вашим passkey на короткий час, лише в межах технічних ролей.', 'Een apart slot voor beheer: een eigen koppeling, ontgrendelen met uw passkey voor korte tijd, alleen binnen uw technische rollen.')}</p>
-                : <p className='ag-blok-uitleg' data-ext-tech-regel='1'>{tr('Активуйте технічний профіль, щоб підключити технічний слот розширення й розблокувати його своїм passkey.', 'Activeer het technisch profiel om het technische slot van de extensie te koppelen en met uw passkey te ontgrendelen.')}</p>}
-            </div>
+            <h3 className='ag-blok-titel' id='ag-ext-technisch'><ShieldCheck aria-hidden='true' /> {tr('Технічний профіль', 'Technisch profiel')}</h3>
+            {actief
+              ? <p className='ag-blok-uitleg'>{tr('Окремий слот для адміністрування: власне підключення, розблокування вашим passkey на короткий час, лише в межах технічних ролей.', 'Een apart slot voor beheer: een eigen koppeling, ontgrendelen met uw passkey voor korte tijd, alleen binnen uw technische rollen.')}</p>
+              : <p className='ag-blok-uitleg' data-ext-tech-regel='1'>{tr('Активуйте технічний профіль, щоб підключити технічний слот розширення й розблокувати його своїм passkey.', 'Activeer het technisch profiel om het technische slot van de extensie te koppelen en met uw passkey te ontgrendelen.')}</p>}
             {actief ? null : (
-              <div className='ag-knoppen ag2-acties'>
+              <div className='ag-knoppen'>
                 <button type='button' className='ag-knop ag-knop-primary' data-ext-tech-aan='1' onClick={() => openTechVenster('activeren')}><ShieldCheck size={16} aria-hidden='true' />{tr('Активувати', 'Activeren')}</button>
               </div>
             )}
@@ -119,7 +115,7 @@ export default function TabExtensie({ tr, agents, techAgents, naActie, versie, k
                   <Bug size={16} aria-hidden='true' />
                   <span>{tr(DIAG_REGEL[diag.stand][0], DIAG_REGEL[diag.stand][1])}{diag.actief ? tr(' Зараз іде діагностика.', ' Er loopt nu een diagnose.') : ''}</span>
                   {diag.stand === 'niet-aanvraagbaar' || diag.stand === 'geweigerd'
-                    ? <a className='ag-knop' data-ext-diag-pakket='1' href={`/downloads/${DIAG_PAKKET}`}>{tr('Пакет «діагностика»', 'Pakket «diagnose»')}</a>
+                    ? <a className='ag-knop ag2-link-knop' data-ext-diag-pakket='1' href={`/downloads/${DIAG_PAKKET}`}>{tr('Пакет «діагностика»', 'Pakket «diagnose»')}</a>
                     : null}
                 </p>
               ) : null}

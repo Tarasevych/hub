@@ -145,10 +145,8 @@ export default function BrowserEnAgenten({ tr, naarExtensie, openSlot = '' }: { 
       {/* ---------------------------------------------------------------- 1. sloten */}
       <section className='ag-blok' data-ag-blok='browser-sloten' aria-labelledby='bea-sloten-kop'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='bea-sloten-kop'><span className='ag2-icoon' aria-hidden='true'><LockOpen /></span>{tr('Доступ розширення зараз', 'Toegang van de extensie nu')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Приватний слот відкриває ваші сторінки, технічний — адмін-сторінки; кожен відкривається на обраний строк і блокується одним натиском.', 'Het privéslot opent uw pagina’s, het technische de beheerpagina’s; elk gaat open voor de gekozen termijn en gaat met één klik weer dicht.')}</p>
-          </div>
+          <h3 className='ag-blok-titel' id='bea-sloten-kop'><LockOpen aria-hidden='true' /> {tr('Доступ розширення зараз', 'Toegang van de extensie nu')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Приватний слот відкриває ваші сторінки, технічний — адмін-сторінки; кожен відкривається на обраний строк і блокується одним натиском.', 'Het privéslot opent uw pagina’s, het technische de beheerpagina’s; elk gaat open voor de gekozen termijn en gaat met één klik weer dicht.')}</p>
         </header>
         <div className='bea-sloten' aria-label={tr('Слоти розширення', 'Sloten van de extensie')}>
           {RUIMTES.map((r) => <SlotKaart key={r} tr={tr} uk={uk} ruimte={r} live={live[r]} nu={nu} stand={stand} techProfiel={live[r].techProfiel ?? (tech.geladen ? !!tech.profiel : false)} techActief={techActief(tech)} naarExtensie={naarExtensie} naLaden={laden} />)}
@@ -158,11 +156,9 @@ export default function BrowserEnAgenten({ tr, naarExtensie, openSlot = '' }: { 
       {/* ---------------------------------------------------------------- 2. matrix */}
       <section className='ag-blok' aria-labelledby='bea-matrix-kop' data-ag-blok='browser-matrix' data-bea-matrix={ruimte}>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='bea-matrix-kop'><span className='ag2-icoon' aria-hidden='true'><Bot /></span>{tr('Що може кожен агент', 'Wat elke agent mag')} <HulpVraag k='browser.matrix.agent' uk={uk} label={tr('Що може кожен агент', 'Wat elke agent mag')} /></h3>
-            <p className='ag-blok-uitleg'>{tr('Усі агенти (Claude, ChatGPT, Grok, Gemini, Copilot, Cursor) отримують ті самі інструменти браузера — що саме кожен може, вирішує ця матриця.', 'Alle agenten (Claude, ChatGPT, Grok, Gemini, Copilot, Cursor) krijgen dezelfde browserhulpmiddelen — wat elk precies mag, beslist deze matrix.')}</p>
-          </div>
-          <div className='ag-knoppen ag2-acties'>
+          <h3 className='ag-blok-titel' id='bea-matrix-kop'><Bot aria-hidden='true' /> {tr('Що може кожен агент', 'Wat elke agent mag')} <HulpVraag k='browser.matrix.agent' uk={uk} label={tr('Що може кожен агент', 'Wat elke agent mag')} /></h3>
+          <p className='ag-blok-uitleg'>{tr('Усі агенти (Claude, ChatGPT, Grok, Gemini, Copilot, Cursor) отримують ті самі інструменти браузера — що саме кожен може, вирішує ця матриця.', 'Alle agenten (Claude, ChatGPT, Grok, Gemini, Copilot, Cursor) krijgen dezelfde browserhulpmiddelen — wat elk precies mag, beslist deze matrix.')}</p>
+          <div className='ag-knoppen ag2-vol-telefoon'>
             <div className='ag2-slotkeuze' role='radiogroup' aria-label={tr('Слот', 'Slot')}>
               {RUIMTES.map((r) => (
                 <button key={r} type='button' role='radio' aria-checked={ruimte === r} data-hulp-vrij='keuze' data-bea-slotkeuze={r} onClick={() => { if (!dirty || window.confirm(tr('Незбережені зміни буде втрачено. Перейти?', 'Niet-opgeslagen wijzigingen gaan verloren. Doorgaan?'))) setRuimte(r); }}>
@@ -307,10 +303,8 @@ export default function BrowserEnAgenten({ tr, naarExtensie, openSlot = '' }: { 
       {/* ---------------------------------------------------------------- 3. weigeringen */}
       <section className='ag-blok' aria-labelledby='bea-weig-kop' data-ag-blok='browser-weigeringen' data-bea-weigeringen={stand?.weigeringen.length ?? 0}>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='bea-weig-kop'><span className='ag2-icoon' aria-hidden='true'><ShieldOff /></span>{tr('Останні відмови агентам', 'Laatste weigeringen aan agenten')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Коли розширення не пустило агента, тут видно, кого, в чому і чому — звичайними словами.', 'Als de extensie een agent tegenhield, ziet u hier wie, waarbij en waarom — in gewone taal.')}</p>
-          </div>
+          <h3 className='ag-blok-titel' id='bea-weig-kop'><ShieldOff aria-hidden='true' /> {tr('Останні відмови агентам', 'Laatste weigeringen aan agenten')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Коли розширення не пустило агента, тут видно, кого, в чому і чому — звичайними словами.', 'Als de extensie een agent tegenhield, ziet u hier wie, waarbij en waarom — in gewone taal.')}</p>
         </header>
         {stand && stand.weigeringen.length ? (
           <ul className='bea-weig-lijst'>
@@ -329,10 +323,8 @@ export default function BrowserEnAgenten({ tr, naarExtensie, openSlot = '' }: { 
       {/* ---------------------------------------------------------------- 4. voor agenten */}
       <section className='ag-blok' aria-labelledby='bea-ag-kop' data-ag-blok='browser-uitleg'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='bea-ag-kop'><span className='ag2-icoon' aria-hidden='true'><Bot /></span>{tr('Як агент працює з браузером', 'Hoe een agent met de browser werkt')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Чотири кроки, після яких ШІ може працювати у вашому браузері.', 'Vier stappen waarna een AI in uw browser kan werken.')}</p>
-          </div>
+          <h3 className='ag-blok-titel' id='bea-ag-kop'><Bot aria-hidden='true' /> {tr('Як агент працює з браузером', 'Hoe een agent met de browser werkt')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Чотири кроки, після яких ШІ може працювати у вашому браузері.', 'Vier stappen waarna een AI in uw browser kan werken.')}</p>
         </header>
         <ol className='ag2-stappen'>
           <li>{tr('Підключіть агента на його адресі (вкладка «Підключені ШІ») і дозвольте йому групу «Браузер» у приватній і/або технічній частині.', 'Koppel de agent op zijn adres (tab «Verbonden AI’s») en sta hem de groep «Browser» toe in het privé- en/of technische deel.')}</li>
@@ -353,13 +345,11 @@ function Keten({ tr, uk, stand, techProfiel }: { tr: Tr; uk: boolean; stand: Mat
   return (
     <section className='ag-blok' aria-labelledby='bea-keten-kop' data-ag-blok='browser-keten' data-bea-keten={bron}>
       <header className='ag-blok-kop'>
-        <div className='ag2-kop-tekst'>
-          <h3 className='ag-blok-titel' id='bea-keten-kop'><span className='ag2-icoon' aria-hidden='true'><ShieldCheck /></span>{tr('Що ще має бути дозволено', 'Wat er verder nog toegestaan moet zijn')}</h3>
-          <p className='ag-blok-uitleg'>{tr('Окрім матриці, агентові потрібні права конектора й дозвіл режиму сайту — тут видно, чого бракує кожному.', 'Naast de matrix heeft een agent connectorrechten en de toestemming van de sitemodus nodig — hier ziet u wat elk mist.')}</p>
-        </div>
+        <h3 className='ag-blok-titel' id='bea-keten-kop'><ShieldCheck aria-hidden='true' /> {tr('Що ще має бути дозволено', 'Wat er verder nog toegestaan moet zijn')}</h3>
+        <p className='ag-blok-uitleg'>{tr('Окрім матриці, агентові потрібні права конектора й дозвіл режиму сайту — тут видно, чого бракує кожному.', 'Naast de matrix heeft een agent connectorrechten en de toestemming van de sitemodus nodig — hier ziet u wat elk mist.')}</p>
         {bron !== 'site' ? (
-          <div className='ag-knoppen ag2-acties'>
-            <a className='ag-knop' href='https://admin.tarasevych.com/ai' data-bea-beleid-link='1'>{tr('Відкрити «Доступ ШІ»', 'Open «AI-toegang»')}</a>
+          <div className='ag-knoppen'>
+            <a className='ag-knop ag2-link-knop' href='https://admin.tarasevych.com/ai' data-bea-beleid-link='1'>{tr('Відкрити «Доступ ШІ»', 'Open «AI-toegang»')}</a>
           </div>
         ) : null}
       </header>

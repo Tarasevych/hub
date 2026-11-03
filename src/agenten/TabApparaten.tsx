@@ -161,11 +161,9 @@ export default function TabApparaten({ tr, agents, pending, last, overzicht, naA
     <div className='ag-tab ag2-blokken' data-tab-inhoud='apparaten'>
       <section className='ag-blok' data-ag-blok='apparaten' aria-labelledby='ag2-apparaten-kop'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='ag2-apparaten-kop'><span className='ag2-icoon' aria-hidden='true'><Monitor /></span>{tr('Підключені пристрої', 'Gekoppelde apparaten')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Комп’ютери з агентом і браузери з розширенням: натисніть рядок, щоб змінити дозволи або відключити пристрій.', 'Computers met de agent en browsers met de extensie: klik op een rij om de toestemmingen te wijzigen of het apparaat los te koppelen.')}</p>
-          </div>
-          <div className='ag-knoppen ag2-acties'>
+          <h3 className='ag-blok-titel' id='ag2-apparaten-kop'><Monitor aria-hidden='true' /> {tr('Підключені пристрої', 'Gekoppelde apparaten')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Комп’ютери з агентом і браузери з розширенням: натисніть рядок, щоб змінити дозволи або відключити пристрій.', 'Computers met de agent en browsers met de extensie: klik op een rij om de toestemmingen te wijzigen of het apparaat los te koppelen.')}</p>
+          <div className='ag-knoppen'>
             <Knop icoon={<Plus />} toon={item === 'koppelen' || !agents.length ? 'primary' : 'default'} onClick={() => kies(item === 'koppelen' ? '' : 'koppelen')} data='koppelen'>{tr('Підключити ПК', 'Pc koppelen')}</Knop>
             <Knop icoon={<Globe />} onClick={() => (naarExtensie ? naarExtensie() : kies('extensie'))} data='extensie'>{tr('Розширення браузера', 'Browserextensie')}</Knop>
           </div>

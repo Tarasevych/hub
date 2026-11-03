@@ -61,10 +61,8 @@ export default function SiteSchakelaars({ tr }: { tr: Tr }) {
   return (
     <section className='ag-blok ag-site' data-ag-blok='site-schakelaars' data-site-schakelaars='1' aria-labelledby='ag2-site-kop'>
       <header className='ag-blok-kop'>
-        <div className='ag2-kop-tekst'>
-          <h3 className='ag-blok-titel' id='ag2-site-kop'>{tr('Доступність для всіх на сайті', 'Beschikbaarheid voor iedereen op de site')}</h3>
-          <p className='ag-blok-uitleg'>{tr('Ці перемикачі керують лише приватними підключеннями людей, а технічний простір сайту не закривають і не відкривають.', 'Deze schakelaars gelden alleen voor privéverbindingen van mensen en sluiten of openen de technische ruimte van de site niet.')}</p>
-        </div>
+        <h3 className='ag-blok-titel' id='ag2-site-kop'>{tr('Доступність для всіх на сайті', 'Beschikbaarheid voor iedereen op de site')}</h3>
+        <p className='ag-blok-uitleg'>{tr('Ці перемикачі керують лише приватними підключеннями людей, а технічний простір сайту не закривають і не відкривають.', 'Deze schakelaars gelden alleen voor privéverbindingen van mensen en sluiten of openen de technische ruimte van de site niet.')}</p>
       </header>
       <p className='ag-site-regel' data-site-regel='1'>{tr(SITE_REGEL.uk, SITE_REGEL.nl)}</p>
       {fout ? <p className='ag-melding ag-melding-fout' role='alert'>{fout}</p> : null}
