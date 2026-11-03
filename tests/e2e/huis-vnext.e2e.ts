@@ -1,5 +1,5 @@
 // E2E «Huis vNext» (vlag huis-vnext, migratie 0128) tegen de ECHTE lokale server (server/start.ts + Postgres + nep-Google) en een
-// NAGEBOOTSTE Home Assistant op een niet-loopback-adres (tests/eenheid/hulp/nep-home-assistant.ts): huis.tarasevych.com.
+// NAGEBOOTSTE Home Assistant op een niet-loopback-adres (tests/eenheid/hulp/nep-thuis-assistent.ts): huis.tarasevych.com.
 //   1. Vlag UIT → precies de oude informatieve pagina; vlag AAN → eerlijke start (woning aanmaken), lege toestand zonder gateway.
 //   2. Home Assistant koppelen via de wizard (token wordt nooit teruggegeven), apparaten zoeken → importeren → echte toestanden.
 //   3. Opdrachten pas na «Opdrachten toestaan»: een lamp aanzetten → levensloop tot «voltooid» (ACK door waarneming); een slot
@@ -13,7 +13,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { checker } from '../eenheid/hulp/nep-google';
-import { ENTITEITEN, nepHomeAssistant } from '../eenheid/hulp/nep-home-assistant';
+import { ENTITEITEN, nepHomeAssistant } from '../eenheid/hulp/nep-thuis-assistent';
 import { getPool } from '../../server/platform/pg';
 import { startE2eServer, chromeArgs } from './server';
 

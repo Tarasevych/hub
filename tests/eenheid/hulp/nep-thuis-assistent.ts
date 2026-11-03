@@ -1,5 +1,5 @@
 // Testhulp (geen test zelf): een NAGEBOOTSTE Home Assistant op een niet-loopback-adres van deze machine (de adapter weigert
-// loopback), met het stukje REST-API dat backend/huis-adapter-home-assistant.ts gebruikt: /api/, /api/config, /api/states,
+// loopback), met het stukje REST-API dat backend/huis-adapter-thuis-assistent.ts gebruikt: /api/, /api/config, /api/states,
 // /api/states/:id, /api/services/:domein/:dienst, /api/history/period/:van. Een dienst verandert de toestand pas na `vertragingMs`
 // (zo is de ACK-wachttijd echt te toetsen) of nooit (`doof`), en elke aanroep wordt opgenomen.
 import { createServer, type Server } from 'node:http';

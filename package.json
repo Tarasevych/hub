@@ -12,7 +12,7 @@
         "start": "node dist-server/start.mjs",
         "cron": "node dist-server/cron.mjs",
         "preview": "vite preview",
-        "cloud:preflight": "node scripts/cloud-m10-release-preflight.mjs",
+        "cloud:preflight": "node scripts/cloud-m10-uitgave-voorcontrole.mjs",
         "orch:controleer": "node scripts/orch.mjs controleer",
         "orch:test": "node scripts/eenheidstests.mjs orch-"
     },

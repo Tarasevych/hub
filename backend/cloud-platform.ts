@@ -11,10 +11,10 @@ import { createGoogleSuiteOnboardingRoutes, googleSuiteOnboardingSnapshot } from
 import { createCloudIntegratieRoutes } from './cloud-integratie-routes';
 import { createM4CloudRoutes } from './cloud-verbinding-m4-routes';
 import { createM5ProviderCatalogueRoutes } from './cloud-m5-catalogue-routes';
-import { createCloudM6AdminRoutes } from './cloud-m6-admin-routes';
+import { createCloudM6AdminRoutes } from './cloud-m6-beheer-routes';
 import { createM8CloudRoutes } from './cloud-m8-routes';
 import { createM10StagingDirectoryRuntime,createM11StagingPreviewRuntime } from './cloud-m10-runtime';
-import { createM11CloudPreviewRoutes } from './cloud-m11-preview-routes';
+import { createM11CloudPreviewRoutes } from './cloud-m11-voorbeeld-routes';
 
 type CloudUser = { id: string; email: string; name: string; status: string };
 type CloudAuthSuccess = { service: string; user: CloudUser };

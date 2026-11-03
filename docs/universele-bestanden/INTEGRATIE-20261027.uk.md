@@ -76,7 +76,7 @@ openUniverseelBestand({
 
 - ✅ v0.2 isolated core: 34/34 юніт-тестів.
 - ✅ v0.3 bridge: 15/15 інваріантів.
-- ✅ `node scripts/kaart-controle.mjs --stil` — успішно, одне **попередження, що вже існувало** про назву `editor-schil-20261026.test.ts`.
+- ✅ `node scripts/kaart-controle.mjs --stil` — успішно, одне **попередження, що вже існувало** про назву `bewerker-schil-20261026.test.ts`.
 - ✅ TypeScript `transpileModule` перевірив синтаксис 5 дотичних змінених/нових файлів.
 - ⚠️ Повний Vite/React build та e2e **не виконано**: наявний Node.js 22.16.0, а app вимагає 24+, `npm ci` не завершилося, відсутні потрібні dependencies.
 - ⚠️ `plaatsing-controle.mjs` не виконався через відсутній dependency; це не доводить дефект самого коду.

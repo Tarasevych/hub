@@ -28,7 +28,7 @@
 - `backend/cloud-m7-blinde-overdracht.mjs` — переносить тільки `ufw-vault-v1` зашифровані блоки, stage -> verify -> publish, перевіряє власника/простір, повторює authorize на кожному блоці; **MOVE та видалення оригіналу відхиляються**; невизначений стан -> review, ніколи auto-delete. `target` реалізує абстрактний staging contract; реальні провайдерні адаптери ще потрібно підключити.
 - `backend/cloud-m7-privacy-beleid.mjs` — чесна класифікація `encrypted_vault` та `provider_native`, відмова для нативних операцій E2EE Vault, які ще не підтримуються; для нативних файлів потрібна окрема user-presence lease.
 - `backend/cloud-m7-sessie-lease.mjs` — обмеження owner/space/connection, операції, обсягу, терміну і user presence. **Не замінює справжньої серверної авторизації та не захищає від адміністратора з доступом до runtime.**
-- `scripts/cloud-full-release-gate.mjs` — додано 12 нових критичних блокерів. Без доказів повертає `BLOCKED`.
+- `scripts/cloud-volledige-uitgave-poort.mjs` — додано 12 нових критичних блокерів. Без доказів повертає `BLOCKED`.
 
 **Жоден із цих модулів не під'єднаний до публічного API або production OAuth-сховища.** Це свідомо: інтеграція в M4/M6 повинна пройти аудит ACL і меж довіри до активації.
 

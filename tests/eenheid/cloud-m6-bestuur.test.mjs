@@ -19,13 +19,13 @@ const mockRouter=dataJs('export const json=(v)=>({statusCode:200,body:v});export
 const mockTech=dataJs("export const TAB_RE=/^[A-Za-z0-9_-]{8,128}$/;export const isEigenaar=u=>u.role==='owner'&&u.email==='owner@example.test';export const actieveActivatie=async()=>null");
 const mockError=dataJs('export class CloudTransportError extends Error{constructor(code,status=502){super(code);this.code=code;this.status=status}}');
 const catalog=transpile('shared/cloud-m5-catalogus.ts');
-const pg=await import(transpile('backend/cloud-m6-governance-pg.ts',{"'../shared/cloud-m5-catalogus'":`'${catalog}'`,"'../server/platform/pg'":`'${mockPg}'`}));
+const pg=await import(transpile('backend/cloud-m6-bestuur-pg.ts',{"'../shared/cloud-m5-catalogus'":`'${catalog}'`,"'../server/platform/pg'":`'${mockPg}'`}));
 const governor=await import(transpile('backend/cloud-m5-governor.ts',{"'../shared/cloud-m5-catalogus'":`'${catalog}'`,"'./cloud-overdracht-adapters'":`'${mockError}'`}));
-const routes=await import(transpile('backend/cloud-m6-admin-routes.ts',{
+const routes=await import(transpile('backend/cloud-m6-beheer-routes.ts',{
  "'../server/platform'":`'${mockRouter}'`,"'../server/platform/pg'":`'${mockPg}'`,"'./tech-profiel'":`'${mockTech}'`,
  "'./cloud-overdracht-adapters'":`'${mockError}'`,"'../shared/cloud-m5-catalogus'":`'${catalog}'`,
  "'./cloud-m5-governor'":`'${transpile('backend/cloud-m5-governor.ts',{"'../shared/cloud-m5-catalogus'":`'${catalog}'`,"'./cloud-overdracht-adapters'":`'${mockError}'`})}'`,
- "'./cloud-m6-governance-pg'":`'${transpile('backend/cloud-m6-governance-pg.ts',{"'../shared/cloud-m5-catalogus'":`'${catalog}'`,"'../server/platform/pg'":`'${mockPg}'`})}'`
+ "'./cloud-m6-bestuur-pg'":`'${transpile('backend/cloud-m6-bestuur-pg.ts',{"'../shared/cloud-m5-catalogus'":`'${catalog}'`,"'../server/platform/pg'":`'${mockPg}'`})}'`
 }));
 const key='ab'.repeat(32),sha='c'.repeat(40);
 function signed(provider='dropbox'){

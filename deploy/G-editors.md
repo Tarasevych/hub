@@ -1,6 +1,6 @@
 # Звіт G: редактори (7.1–7.4)
 
-Перевірка коду. Браузер і e2e **не запускались**. Юніт — `node scripts/eenheidstests.mjs editor-schil-20261026`.
+Перевірка коду. Браузер і e2e **не запускались**. Юніт — `node scripts/eenheidstests.mjs bewerker-schil-20261026`.
 
 Ядро лишається `src/MailOpstelBewerker.tsx` (ProseMirror, `data-mail-compose-model='prosemirror'`). `Opsteller` кладе `data-opsteller*` на наявний `<section>` через `cloneElement`. Можливості `link`, `image`, `background`, `shortcuts` увімкнені без прапорця. Три екрани (новий лист, відповідь, документ) як і раніше окремі; текст іде через той самий `MailComposeEditor`.
 

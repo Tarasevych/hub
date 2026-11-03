@@ -7,16 +7,16 @@
 1. `backend/cloud-m9-xml.ts` — вузький структурний XML-парсер для метаданих з лімітами 1 MiB, 3000 вузлів, 24 рівні глибини, забороною DTD/ENTITY/CDATA/PI. Читає DAV multistatus та S3 XML за QName і URI namespace. **Не замінює загальнопризначений повний XML-парсер**; потрібен незалежний огляд та provider-fixtures.
 2. `backend/cloud-m9-directory.ts` — `NextcloudDirectory`, `S3CompatibleDirectory('s3')`, `S3CompatibleDirectory('backblaze-b2')`; серверні перевірені резолвери акаунтів; WebDAV PROPFIND Depth:1; AWS S3 ListObjectsV2 з SigV4 і B2 S3-compatible subset; `encoding-type=url`; відокремлені курсори S3; обмеження на розмір, DNS/SSRF для Nextcloud через зовнішню політику й захищену мережеву конфігурацію; `redirect:'error'`.
 3. `backend/cloud-m9-directory-composition.ts` — фабрика для 11 типів каталогів із явним інжектуванням токенів, регіонів, акаунтів і egress policy. Ця фабрика не додає автоматично маршрути у production. Для роботи потрібен чинний M8 coordinator + M4/M6 авторизація та перевірені акаунти.
-4. `backend/cloud-m9-upload-sessions.ts` — контрольована передача одного блока за раз Microsoft Graph і Dropbox; точний `Content-Range` / Dropbox offset; запити не надсилають Graph access token на upload session URL; стан `uploaded_not_verified` після кінцевого коміту, не «успіх»; невизначений мережевий результат вимагає перевірки.
+4. `backend/cloud-m9-upload-sessies.ts` — контрольована передача одного блока за раз Microsoft Graph і Dropbox; точний `Content-Range` / Dropbox offset; запити не надсилають Graph access token на upload session URL; стан `uploaded_not_verified` після кінцевого коміту, не «успіх»; невизначений мережевий результат вимагає перевірки.
 5. `backend/cloud-m9-checkpoints-pg.ts` і `migrations/0122_cloud_m9_upload_checkpoints.sql` — зашифровані на сервері session capabilities, атомарний CAS по попередньому offset + owner/space/account/provider/source revision/lease, карантин прострочених оренд. Не запускати міграцію в production без перевірки ролей і сумісності зі схемою.
 6. Усунено нестабільність тестів M7 та M8: змінювання останнього символу base64url могло не змінити декодований байт. Зміна першого символу дає детерміновану перевірку пошкодження.
-7. Скрипт `scripts/cloud-full-release-gate.mjs` розширено з 73 до **84** live-критеріїв, статус продовжує `BLOCKED`.
+7. Скрипт `scripts/cloud-volledige-uitgave-poort.mjs` розширено з 73 до **84** live-критеріїв, статус продовжує `BLOCKED`.
 
 ## Результат
 
 - `node --test tests/eenheid/cloud-*test.mjs`: **228 PASS / 0 FAIL**, модульні mock-тести.
 - `node scripts/kaart-controle.mjs --stil`: exit 0 (зберігаються історичні warnings).
-- `node scripts/cloud-full-release-gate.mjs`: exit 2 `BLOCKED`, 84/84 непідтверджено.
+- `node scripts/cloud-volledige-uitgave-poort.mjs`: exit 2 `BLOCKED`, 84/84 непідтверджено.
 - TypeScript transpile нових модулів — проходить; **не є повним tsc typecheck**.
 - Немає live OAuth, реальних API E2E, повного Node24 build, staging migration, security audit.
 

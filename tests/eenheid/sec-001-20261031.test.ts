@@ -7,7 +7,7 @@ import DOMPurify from 'dompurify';
 import { checker } from './hulp/nep-google';
 import { adresSoort } from '../../shared/extern-bureaublad';
 import { pinnedFetch } from '../../backend/veilige-fetch';
-import { _zetHaDns, haVerbinden, veiligAdres, zetVertrouwdeToestellenBron } from '../../backend/huis-adapter-home-assistant';
+import { _zetHaDns, haVerbinden, veiligAdres, zetVertrouwdeToestellenBron } from '../../backend/huis-adapter-thuis-assistent';
 import { koppelBindingKlopt, koppelBindingVoorAanmaken, koppelBindingWissen } from '../../backend/koppel-binding';
 import { isPubliek } from '../../server/platform/auth-poort';
 import { routeOordeel } from '../../shared/impersonatie';

@@ -40,7 +40,7 @@ import { verouderdeEigenarenIntrekken } from './eigenaar-opschonen';
 import {MICROSOFT_GRAPH_SCOPES,mailMicrosoftAuthorizationUrl,mailMicrosoftStateParts,mailMicrosoftStateValue,microsoftDeltaLink,microsoftNextLink,microsoftProviderPolicySelfTest,normalizeMicrosoftMessage,type GraphMessage} from './mail-microsoft';
 import {normalizeMailDisplayText} from './mail-tekst-normalisatie';
 import {createCloudRoutes} from './cloud-platform';
-import {createM10CloudAdminRoutes} from './cloud-m10-admin-bridge';
+import {createM10CloudAdminRoutes} from './cloud-m10-beheer-brug';
 import { mcpConsoleRoutes } from './mcp-console';
 import { notitiesRoutes } from './notities-vnext'; /* notities vNext (0127), zelfde poort als het bord */
 import { huisRoutes } from './huis-vnext'; /* huis vNext (0128): Huis Core, Home Assistant-adapter, step-up voor kritieke opdrachten */

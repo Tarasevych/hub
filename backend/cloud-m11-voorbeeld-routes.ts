@@ -2,7 +2,7 @@
 import {error} from '../server/platform';
 import {ladeOf} from './ruimte-cloud-agenda';
 import {CloudTransportError} from './cloud-overdracht-adapters';
-import type {CloudM11PreviewService,PreviewRequest} from './cloud-m11-preview';
+import type {CloudM11PreviewService,PreviewRequest} from './cloud-m11-voorbeeld';
 type Auth={service:string;user:{id:string;status:string}}|{errorCode:string};
 type Authorize=(event:Record<string,unknown>,body:unknown)=>Promise<Auth>;
 type Ctx={event:Record<string,unknown>;body:unknown;params:Record<string,string>};

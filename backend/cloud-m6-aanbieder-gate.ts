@@ -3,7 +3,7 @@
  * Disconnect/list MUST remain available while providers are disabled.
  */
 import {CloudTransportError} from './cloud-overdracht-adapters';
-import {PostgresCloudProviderPolicies,postgresCiVerifier} from './cloud-m6-governance-pg';
+import {PostgresCloudProviderPolicies,postgresCiVerifier} from './cloud-m6-bestuur-pg';
 import {FIRST_WAVE_PROVIDERS,type WaveOneProvider} from '../shared/cloud-m5-catalogus';
 export type PolicyAction='connect'|'operate';
 export type ProviderGuardStore={read:(provider:WaveOneProvider)=>Promise<{allowNewConnections:boolean;allowExistingOperations:boolean}|null>};

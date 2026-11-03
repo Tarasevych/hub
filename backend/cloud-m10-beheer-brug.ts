@@ -8,7 +8,7 @@ import {getPool} from '../server/platform/pg';
 import {isEigenaar,actieveActivatie,TAB_RE} from './tech-profiel';
 import {CloudTransportError} from './cloud-overdracht-adapters';
 import {CloudM5Governor} from './cloud-m5-governor';
-import {PostgresCloudProviderPolicies,postgresCiVerifier} from './cloud-m6-governance-pg';
+import {PostgresCloudProviderPolicies,postgresCiVerifier} from './cloud-m6-bestuur-pg';
 import {FIRST_WAVE_PROVIDERS,type WaveOneProvider} from '../shared/cloud-m5-catalogus';
 
 type Ctx={event:Record<string,unknown>;body:unknown;params?:Record<string,string>};

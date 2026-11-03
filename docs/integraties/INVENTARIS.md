@@ -184,7 +184,7 @@ Prioriteit: 1 = infrastructuur en officiële interface aanwezig, eerst doen; 2 =
 
 | id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
 |---|---|---|---|---|---|---|---|---|---|---|
-| home-assistant | Home Assistant | klaar | werkend | Klaar om te koppelen | Home Assistant REST/WebSocket (long-lived token) | huis | 2 | — |  | `backend/api-platform-verbindingen.ts` `backend/huis-adapter-home-assistant.ts` |
+| home-assistant | Home Assistant | klaar | werkend | Klaar om te koppelen | Home Assistant REST/WebSocket (long-lived token) | huis | 2 | — |  | `backend/api-platform-verbindingen.ts` `backend/huis-adapter-thuis-assistent.ts` |
 | philips-hue | Philips Hue | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | huis | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
 | google-home | Google Home | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | huis | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
 | homekit | Apple Home | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | huis | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. | HomeKit werkt alleen op Apple-apparaten (geen cloud-API). |  |

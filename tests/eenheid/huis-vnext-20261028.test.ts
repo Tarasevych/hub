@@ -1,6 +1,6 @@
-// HUIS vNEXT (28.10.2026, migratie 0128, backend/huis-vnext.ts, backend/huis-adapter-home-assistant.ts, shared/huis-model.ts).
+// HUIS vNEXT (28.10.2026, migratie 0128, backend/huis-vnext.ts, backend/huis-adapter-thuis-assistent.ts, shared/huis-model.ts).
 //
-// WAT DEZE TEST VASTHOUDT — tegen een NAGEBOOTSTE Home Assistant (tests/eenheid/hulp/nep-home-assistant.ts), nooit een echte:
+// WAT DEZE TEST VASTHOUDT — tegen een NAGEBOOTSTE Home Assistant (tests/eenheid/hulp/nep-thuis-assistent.ts), nooit een echte:
 //   1. Zonder integratie: een woning is leeg en zegt dat eerlijk (geen apparaten, geen toestand, geen «armed»).
 //   2. De adapter vertaalt alleen wat het domein/de attributen zeggen: lamp met helderheid, sensor als meting met eenheid,
 //      'unavailable' → onbeschikbaar, 'unknown' → onbekend, automation/sun → geen apparaat, slot/alarm/rook = kritiek.
@@ -17,11 +17,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { getPool } from '../../server/platform/pg';
 import * as huis from '../../backend/huis-vnext';
-import { haDienstVoor, komtOvereen, veiligAdres, vertaalEntiteit } from '../../backend/huis-adapter-home-assistant';
+import { haDienstVoor, komtOvereen, veiligAdres, vertaalEntiteit } from '../../backend/huis-adapter-thuis-assistent';
 import { INTEGRATIE_CATALOGUS, OVERGANGEN, droogloop, magOvergang, plannerStructuur, schoneOpdrachtWaarde, schoneRegel, schoneScene, versheid } from '../../shared/huis-model';
 import { VLAG_UITLEG } from '../../shared/vlaggen';
 import { checker } from './hulp/nep-google';
-import { ENTITEITEN, nepHomeAssistant, nietLoopbackAdres } from './hulp/nep-home-assistant';
+import { ENTITEITEN, nepHomeAssistant, nietLoopbackAdres } from './hulp/nep-thuis-assistent';
 
 const lees = (f: string) => readFileSync(join(process.cwd(), f), 'utf8');
 const wacht = (ms: number) => new Promise((r) => setTimeout(r, ms));

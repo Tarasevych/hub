@@ -11,7 +11,7 @@ import {createHash,verify,createPublicKey} from 'node:crypto';
 
 const root=resolve(import.meta.dirname,'..');
 const source=(name)=>{try{return readFileSync(resolve(root,name),'utf8');}catch{return '';}};
-const gate=source('scripts/cloud-full-release-gate.mjs');
+const gate=source('scripts/cloud-volledige-uitgave-poort.mjs');
 const backend=source('backend/cloud-platform.ts');
 const cloudUi=source('src/CloudFunctioneelWeergave.tsx');
 const nav=source('src/VerenigdDienstApp.tsx');
@@ -33,9 +33,9 @@ const checks=[
  check('bounded-http-json',source('backend/cloud-m8-directory.ts').includes('await boundedText(response)')&&source('backend/cloud-m8-directory.ts').includes('await boundedText(r)'),'Directory response bounded before decoding'),
  check('m8-live-runtime-injected',backend.includes('const stagedDirectory=createM10StagingDirectoryRuntime()')&&backend.includes('createM8CloudRoutes(authorize,stagedDirectory)')&&source('backend/cloud-m10-runtime.ts').includes('store.list('),'Scoped staging runtime is instantiated only after explicit opt-in; this does not prove live providers'),
  check('all-eleven-runtime-resolvers-live',false,'Only five signed-in provider types are wired for directory browsing; other credential and folder resolvers unverified'),
- check('admin-ui-on-protected-admin-host',admin.includes('<CloudM10Governance')&&source('backend/index.ts').includes('createM10CloudAdminRoutes')&&source('backend/cloud-m10-admin-bridge.ts').includes("a.service!=='admin'"),'Operator UI and protected admin routes are staged under admin service'),
+ check('admin-ui-on-protected-admin-host',admin.includes('<CloudM10Governance')&&source('backend/index.ts').includes('createM10CloudAdminRoutes')&&source('backend/cloud-m10-beheer-brug.ts').includes("a.service!=='admin'"),'Operator UI and protected admin routes are staged under admin service'),
  check('server-worker-and-recovery-wired',source('backend/cloud-platform.ts').includes('cloudM9JobWorker')&&source('backend/cloud-platform.ts').includes('cloudTransferRunner'),'Durable job runner, leases and recovery wired'),
- check('actual-binary-preview-route',backend.includes('createM11CloudPreviewRoutes(authorize,createM11StagingPreviewRuntime(stagedDirectory))')&&source('backend/cloud-m11-preview-routes.ts').includes("CLOUD_M11_PREVIEW_STAGING==='enabled'")&&source('backend/cloud-m11-preview.ts').includes('SERVER_DELEGATED_NOT_E2EE'),'Bounded server-authorized binary route exists in staging; no real-account live E2E'),
+ check('actual-binary-preview-route',backend.includes('createM11CloudPreviewRoutes(authorize,createM11StagingPreviewRuntime(stagedDirectory))')&&source('backend/cloud-m11-voorbeeld-routes.ts').includes("CLOUD_M11_PREVIEW_STAGING==='enabled'")&&source('backend/cloud-m11-voorbeeld.ts').includes('SERVER_DELEGATED_NOT_E2EE'),'Bounded server-authorized binary route exists in staging; no real-account live E2E'),
  check('cloud-provider-oauth-live',false,'Requires independent consent, scopes, refresh and revoke verification for every provider'),
  check('cross-provider-copy-move-live',false,'Requires real E2E for streaming, retry, readback checksum, conditional deletion'),
  check('sharing-and-version-restore-live',false,'Requires every declared provider and account-policy variant'),
