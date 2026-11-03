@@ -20,6 +20,7 @@ import MeldingUitleg from './MeldingUitleg';
 import { laterActief, zetLater } from './later';
 import type { Bronnen } from './model';
 import { bouwModel } from './model';
+import MeldingVoorkeurenPaneel from '../MeldingVoorkeurenPaneel';
 import './meldingen-v2.css';
 
 type Lang = 'uk' | 'nl';
@@ -32,16 +33,20 @@ export type MeldingenV2Props = Bronnen & {
   nu?: number;
   /** Tests: vlag meldingen-uitleg-v3 forceren (anders de echte vlag). */
   uitlegV3?: boolean;
+  /** Technische types in «Типи сповіщень» tonen (alleen met technisch profiel). */
+  techTypen?: boolean;
 };
 
 const SECTIE_VAN_DIENST: Record<string, Section> = { post: 'mail', cloud: 'cloud', agenda: 'calendar', huis: 'huis', github: 'github', ai: 'ai', identity: 'identity', browser: 'browser', site: 'site' };
 const LOGO_OK = new Set<string>(['google', 'microsoft', 'github', 'claude', 'windows', 'linux', 'macos', 'chrome', 'edge', 'opera', 'brave', 'firefox', 'docker']);
 const AANBIEDER_NAAM: Record<string, string> = { google: 'Google', microsoft: 'Microsoft', dropbox: 'Dropbox', homeassistant: 'Home Assistant', github: 'GitHub', claude: 'Claude', nextcloud: 'Nextcloud', icloud: 'iCloud' };
 const MODUS_NAAM: Record<LeverModus, [string, string]> = { prioriteit: ['Пріоритетне', 'Prioriteit'], normaal: ['Звичайне', 'Normaal'], stil: ['Тихе', 'Stil'], uit: ['Вимкнене', 'Uit'] };
+// INTEG-001: de modi zeggen nu precies wat ze doen. Pop-up, geluid en duur kiest u per TYPE (bovenaan dit scherm, «Типи сповіщень»);
+// een regel per bron kan het alleen stiller maken (Тихе/Вимкнене → geen pop-up en geen geluid) of vooraan zetten (Пріоритетне).
 const MODUS_UITLEG: Record<LeverModus, [string, string]> = {
-  prioriteit: ['Звук, спливне вікно, лічильник та історія', 'Geluid, pop-up, teller en geschiedenis'],
-  normaal: ['Без звуку; лічильник та історія', 'Geen geluid; teller en geschiedenis'],
-  stil: ['Лише в історії', 'Alleen in de geschiedenis'],
+  prioriteit: ['Завжди вгорі в «Нові» й у лічильнику; спливання та звук — як у типах сповіщень', 'Altijd bovenaan in «Nieuw» en in de teller; pop-up en geluid zoals bij de soorten'],
+  normaal: ['Лічильник і список; спливання та звук — як у типах сповіщень', 'Teller en lijst; pop-up en geluid zoals bij de soorten'],
+  stil: ['Без спливання, звуку й лічильника; лише в списку', 'Geen pop-up, geluid of teller; alleen in de lijst'],
   uit: ['Не показувати в центрі (обов’язкові записи лишаються)', 'Niet in het centrum (verplichte registratie blijft)'],
 };
 const ERNST_ICON: Record<Ernst, typeof Info> = { fout: CircleAlert, aandacht: TriangleAlert, succes: CircleCheck, info: Info };
@@ -259,6 +264,11 @@ export default function MeldingenV2(p: MeldingenV2Props) {
       <div ref={wortel} className='mv2' data-mv2='regels' data-mv2-esc='1' onKeyDown={opEsc}>
         {kop}
         <div className='mv2-regels'>
+          {/* INTEG-001: één plek voor alle keuzes — per type: як показувати (спливає / звук / лише в панелі), поведінка, тривалість. */}
+          <details className='mv2-regel mv2-typen' data-mv2-typen='1' open>
+            <summary>{t('Типи сповіщень: як показувати, звук, тривалість', 'Soorten meldingen: hoe tonen, geluid, duur')}</summary>
+            <MeldingVoorkeurenPaneel lang={lang} techTypen={!!p.techTypen} />
+          </details>
           {v3 ? <fieldset className='mv2-regel mv2-grootte' data-mv2-grootte='1'>
             <legend>{t('Розмір сповіщень', 'Grootte van de meldingen')}<small>{t('Панель збільшується разом із текстом', 'Het paneel groeit mee met de tekst')}</small></legend>
             <div className='mv2-segment is-klein' role='radiogroup' aria-label={t('Розмір тексту', 'Tekstgrootte')}>
@@ -286,7 +296,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
             );
           })}
           <label className='mv2-schakel'><input type='checkbox' checked={volledigAdres} onChange={(e) => setVolledigAdres(e.target.checked)} /><span>{t('Показувати повні адреси акаунтів', 'Volledige accountadressen tonen')}</span></label>
-          <label className='mv2-schakel'><input type='checkbox' checked={p.geluid} onChange={p.onGeluid} /><span>{t('Звук для пріоритетних', 'Geluid bij prioriteit')}</span></label>
+          <label className='mv2-schakel'><input type='checkbox' checked={p.geluid} onChange={p.onGeluid} /><span>{t('Звук сповіщень (загалом, для всіх типів)', 'Geluid van meldingen (algemeen, voor alle soorten)')}</span></label>
           {melding ? <p className='mv2-toast' role='status'>{melding}</p> : null}
         </div>
       </div>
