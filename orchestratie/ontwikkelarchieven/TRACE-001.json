@@ -83,6 +83,13 @@
         "https://github.com/Tarasevych/hub/actions/runs/41727884803",
         ".github/workflows/trace-001-guard.yml"
       ]
+    },
+    {
+      "volgorde": 9,
+      "stap": "Повний CI TRACE-001 завершився успішно: ORCH контроль/актуальність, синтаксис Bash, 136/136 одиничних і регресійних перевірок, TypeScript client і server, повна клієнтська та серверна збірка. Журнал доповнено підтвердженим результатом; після цього коміту необхідний повторний CI.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41728319429"
+      ]
     }
   ],
   "keuzes": [
@@ -203,6 +210,11 @@
       "status": "gedeeltelijk",
       "resultaat": "CI 41727884803: ORCH, bash -n, TRACE-001 unit, site unit, codes, manifest, server TypeScript = success; npm run typecheck script absent; replaced by npx tsc.",
       "url": "https://github.com/Tarasevych/hub/actions/runs/41727884803"
+    },
+    {
+      "status": "geslaagd",
+      "resultaat": "CI 41728319429: 136/136 автоматичних тестів; trace-001 16/16, uitrol-voorcontrole 42/42, uitrol-manifest 18/18, uitrol-codes 17/17, uitrol-pakket-maken 5/5, orch-pakket 23/23, orch-uitrol-basis 15/15. ORCH controleer/versheid, bash -n root + builder, server/client TS, npm run build — success.",
+      "url": "https://github.com/Tarasevych/hub/actions/runs/41728319429"
     }
   ],
   "bronnen": [
@@ -242,7 +254,9 @@
     "Окремі тимчасові чернетки та недоступні внутрішні дані моделі не зберігаються й не можуть бути чесно відновлені заднім числом.",
     "Історія відтворюється за доступними доказами, часовим порядком, комітами, PR, CI і явно позначеними прогалинами.",
     "Створення вимоги й програмного коду в гілці не означає, що правило вже запроваджено на production: потрібні перегляд, об'єднання й схвалення власника.",
-    "GitHub Digest API має підтверджувати SHA-256, а приватному репозиторію потрібен належний серверний доступ."
+    "GitHub Digest API має підтверджувати SHA-256, а приватному репозиторію потрібен належний серверний доступ.",
+    "Наскрізне production E2E із реальними приватними GitHub токенами, GitHub Release asset і Passkey не виконувалося; CI використовує локальні та мережеві mock перевірки.",
+    "На цьому етапі перевіряється конкретний BRON-COMMIT і його належність гілці, документ журналу та точний SHA-256 TAR у GitHub Release. Окреме побайтове зіставлення кожного файлу TAR із Git tree ще не реалізовано; тому застереження щодо повної відтворюваності залишається."
   ],
   "privacy": {
     "geheimenUitgesloten": true,
@@ -253,5 +267,5 @@
     ],
     "beleid": "Фіксуємо операції, коміти, результати і стислий мотив рішення; жодні секрети чи chain-of-thought не публікуємо."
   },
-  "resultaat": "Пропозиція правила B-007 і зміни в окремій гілці. Готовність доводиться тільки після успішних CI та інтеграційного PR. Production не змінюється."
+  "resultaat": "Реалізація TRACE-001 перевірена CI, пропозиція політики v1.4.1 записана у власній гілці та PR #23. Установлення production, merge чи затвердження власником не виконувалися."
 }
