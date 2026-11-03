@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "INTEG-001",
+  "agent": "claude",
+  "tak": "feature/integ-001-20261103-083441",
+  "basisCommit": "067cec9f1f41429763688d9f07a25f1ad29f6635",
+  "basisVersie": "20261031-093842",
+  "regelsVersie": "1.3.0",
+  "regelsHash": "b0429aad47b7177a507745370d829babfcf697f93d386b1e207290d0595a4c72",
+  "staat": "in_progress",
+  "gestart": "2026-11-03T07:34:42.167Z",
+  "bijgewerkt": "2026-11-03T07:34:42.168Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
