@@ -20,6 +20,7 @@ Alle bestanden staan in **één bovenmap** `mijn-ruimte-<VERSIE>/` van `mijn-rui
 | `AGENT` | через якого агента: `claude`, `cursor`, `gpt`… (малі літери) · via welke agent | видно, хто готував · zichtbaar wie voorbereidde | `GEEN_AGENT`, `AGENT_ONGELDIG` |
 | `SAMENVATTING` | що змінено й навіщо, що було/з'явилося/зникло (≥ 20 символів) · wat en waarom | власник бачить, що схвалює · de eigenaar ziet wat hij goedkeurt | `GEEN_SAMENVATTING`, `SAMENVATTING_TE_KORT` |
 | `BRON-COMMIT` | **повний** git-коміт (40 hex) **або** `zonder-git:<причина>` · **volledige** commit **of** `zonder-git:<reden>` | видно, який код працює; збірку можна відтворити · welke code draait; build is te herhalen | `GEEN_BRON_COMMIT` |
+| `ONTWIKKELARCHIEF.json` | з `20261103-211555`: SHA-256 документа історії у GitHub commit + відповідна гілка + посилання на GitHub Release із точною `.tar.gz` | повне, перевірюване походження змін · aantoonbare herkomst | `GEEN_ONTWIKKELARCHIEF`, `ONTWIKKELARCHIEF_ONGELDIG`, `ONTWIKKELARCHIEF_ONBEREIKBAAR`, `ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT` |
 | `deploy/installeer-app.sh` | інсталятор з цього ж коду · de installer uit dezelfde code | встановлення · installatie | `GEEN_INSTALLER` |
 
 Заборонено в архіві · Verboden in het archief: символьні/жорсткі посилання, пристрої, абсолютні шляхи, `..`, більше однієї верхньої теки
@@ -137,3 +138,47 @@ Root-інсталятор (`deploy/uitrol/mijn-ruimte-uitrol.sh`) після п�
 без `node_modules/dist/.git`). Імпорт без git на іншому боці: `node scripts/orch.mjs inleveren --bron <zip>` — спершу цілісність, далі вміст `tar.gz`
 на нову гілку від `basisCommit`; службові файли архіву (`UITROL-*`, `AUTEUR`, `AGENT`, …) у гілку не потрапляють.
 Het overdrachtpakket bundelt het installeerbare archief met zijn SHA-256, metadata, rapport, tests, commits en deelnemers; alleen het `.tar.gz` wordt geïnstalleerd.
+
+## 7. TRACE-001 — обов'язковий архів процесу в GitHub (з 20261103-211555)
+
+**Кожний новий пакет мусить містити `ONTWIKKELARCHIEF.json`.** Цей файл створює штатна команда `node scripts/orch.mjs pakket` із **вже закоміченого** документа `orchestratie/ontwikkelarchieven/<TASK-ID>.json`. Збірка поза Git для наступних версій заборонена.
+
+Документ на GitHub зберігає весь **доступний і безпечний** доказовий матеріал про завдання:
+
+1. Запит користувача та фактичні уточнення — текст/посилання, без персональних секретів;
+2. Хронологія кроків, час, спроби, помилки, успішні й невдалі результати;
+3. Рішення і стислий опис причин, альтернативи, компроміси, відхилені варіанти;
+4. Зміни по файлах та commit SHA, PR, посилання на CI, контрольні суми;
+5. Тести: команди, вихідні результати, обмеження середовища, невиконані перевірки;
+6. Вкладення, чернетки, тимчасові файли — безпечні посилання і хеші; якщо джерело тимчасово недоступне, це явно зазначається;
+7. Розділ приватності: дані, які **свідомо не публікували**, і причина.
+
+Не можна вимагати або зберігати приватний прихований процес мислення ШІ, паролі, токени, ключі, вміст листів чи неочищені приватні файли. Замість цього — рішення, перевірювані кроки, фактичні результати й пояснення.
+
+Формат посилання в `ONTWIKKELARCHIEF.json`:
+
+```json
+{
+  "schema": 1,
+  "taakId": "TRACE-001",
+  "repo": "Tarasevych/hub",
+  "tak": "feature/trace-001-20261103-214810",
+  "commit": "<40-hex git commit (тотожний BRON-COMMIT)>",
+  "pad": "orchestratie/ontwikkelarchieven/TRACE-001.json",
+  "sha256": "<64-hex SHA-256 документа>",
+  "url": "https://github.com/Tarasevych/hub/blob/<commit>/orchestratie/ontwikkelarchieven/TRACE-001.json",
+  "release": "https://github.com/Tarasevych/hub/releases/tag/<UITROL-VERSIE>",
+  "pakket": "mijn-ruimte-<UITROL-VERSIE>.tar.gz"
+}
+```
+
+Сайт і root-інсталятор **без винятків** відхиляють пакет, якщо:
+- документа або посилання немає, JSON невалідний, SHA-256 документа неправильний;
+- commit не відповідає `BRON-COMMIT` або не є предком заявленої гілки;
+- GitHub Release за версією відсутній чи не містить файл `pakket`;
+- `asset.digest` на GitHub не дорівнює SHA-256 **завантаженого** `.tar.gz`;
+- GitHub недоступний, приватний репозиторій без налаштованого доступу або є помилка авторизації.
+
+Перевірка GitHub відбувається **лише за фіксованою адресою API** `api.github.com/repos/Tarasevych/hub`, ніколи за довільною адресою з пакета (захист SSRF). Якщо репозиторій приватний, на сайті потрібен токен із власної захищеної скриньки GitHub; на root-інсталяторі — окремо налаштований root-only `/etc/mijn-ruimte/github-token` (0600). Якщо доступ відсутній, відмова без обходу. Власник окремо підтверджує встановлення Passkey.
+
+Сам TAR.GZ публікується як GitHub Release asset, а вихідні файли та журнал — як git-коміт: так унеможливлюється кругове посилання, коли пакет мусив би містити свій власний SHA.

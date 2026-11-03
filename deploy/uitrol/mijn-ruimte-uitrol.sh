@@ -522,6 +522,96 @@ if [[ "$BRON_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then COMMIT_TEKST="$BRON_COMMIT"
 elif [[ "$BRON_COMMIT" =~ ^zonder-git:[[:space:]]*(.{5,})$ ]]; then COMMIT_TEKST="zonder-git"
 else weiger GEEN_BRON_COMMIT "У пакеті немає дійсного BRON-COMMIT (40-символьний git-коміт або «zonder-git:<причина>»). Без нього неможливо сказати, який код працює. Випуск відхилено — див. deploy/REGELS-UITROLPAKKET.md." "BRON-COMMIT ontbreekt of is ongeldig (40-tekens git-commit of «zonder-git:<reden>»). Zonder commit is niet te zeggen welke code draait. Release geweigerd — zie deploy/REGELS-UITROLPAKKET.md."
 fi
+# TRACE-001: vóór installatie uitsluitend met VASTE GitHub-routes controleren dat
+# (1) het volledige ontwikkeldossier op de aangegeven commit in de taak-tak staat en
+# (2) exact deze pakketbytes als tar.gz in de release van dezelfde versie bestaan.
+# De URL uit het pakket wordt nooit geopend; geen script uit het pakket wordt uitgevoerd.
+if [[ ! "$VERSIE" < "20261103-211555" ]]; then
+  [ -f "$BRON/ONTWIKKELARCHIEF.json" ] || weiger GEEN_ONTWIKKELARCHIEF "Немає ONTWIKKELARCHIEF.json — обов'язкової перевіреної історії GitHub." "ONTWIKKELARCHIEF.json met gecontroleerde GitHub-herkomst ontbreekt."
+  ARCHIEF_UITKOMST="$(timeout 55 python3 - "$BRON/ONTWIKKELARCHIEF.json" "$BRON_COMMIT" "$VERSIE" "$WERK/pakket.tar.gz" <<'PY' 2>/dev/null || true
+import base64, hashlib, json, os, re, stat, sys, urllib.request, urllib.parse
+f, bron, versie, pakket = sys.argv[1:]
+repo='Tarasevych/hub'
+if not re.fullmatch(r'[0-9a-f]{40}', bron):
+    print('ONTWIKKELARCHIEF_ONGELDIG'); sys.exit()
+try:
+    if os.path.getsize(f)>8192: raise ValueError('te groot')
+    ref=json.load(open(f,encoding='utf-8'))
+    taak=ref.get('taakId','')
+    pad=f'orchestratie/ontwikkelarchieven/{taak}.json'
+    commit=ref.get('commit','')
+    tak=ref.get('tak','')
+    if (ref.get('schema')!=1 or not re.fullmatch(r'[A-Z][A-Z0-9]{1,9}-\d{3,5}',taak)
+        or not re.fullmatch(r'(feature|fix|audit|release)/[a-z0-9-]+-\d{8}-\d{6}',tak)
+        or ref.get('repo')!=repo or commit!=bron or ref.get('pad')!=pad
+        or not re.fullmatch(r'[0-9a-f]{64}',ref.get('sha256',''))
+        or ref.get('url')!=f'https://github.com/{repo}/blob/{commit}/{pad}'
+        or ref.get('release')!=f'https://github.com/{repo}/releases/tag/{versie}'
+        or ref.get('pakket')!=f'mijn-ruimte-{versie}.tar.gz'):
+        raise ValueError('ongeldige herkomst')
+except Exception:
+    print('ONTWIKKELARCHIEF_ONGELDIG');sys.exit()
+headers={'Accept':'application/vnd.github+json','User-Agent':'Mijn-Ruimte-Uitrol-TRACE-001',
+         'X-GitHub-Api-Version':'2022-11-28'}
+# Alleen de voor root afgeschermde oude tokenfile; geen geheim in argumenten, log of pakket.
+tokenfile='/etc/mijn-ruimte/github-token'
+try:
+    st=os.stat(tokenfile)
+    if st.st_uid==0 and not (stat.S_IMODE(st.st_mode)&0o077):
+        token=open(tokenfile,encoding='utf-8').read(4096).strip()
+        if token: headers['Authorization']='Bearer '+token
+except OSError: pass
+class GeenOmleiding(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self,*args,**kwargs): raise ValueError('redirect geweigerd')
+opener=urllib.request.build_opener(GeenOmleiding)
+def gh(url):
+    req=urllib.request.Request(url,headers=headers)
+    with opener.open(req,timeout=12) as r:
+        if r.status!=200: raise ValueError('HTTP_'+str(r.status))
+        data=r.read(800001)
+        if len(data)>800000: raise ValueError('te groot')
+        return json.loads(data)
+try:
+    u=f'https://api.github.com/repos/{repo}/contents/{pad}?ref={commit}'
+    item=gh(u)
+    if item.get('type')!='file' or item.get('encoding')!='base64': raise ValueError('geen bestand')
+    raw=base64.b64decode(item['content'])
+    if len(raw)>256000 or hashlib.sha256(raw).hexdigest()!=ref['sha256']:
+        print('ONTWIKKELARCHIEF_SHA_VERSCHILT');sys.exit()
+    doc=json.loads(raw)
+    if (doc.get('schema')!=1 or doc.get('taakId')!=taak or
+        len(str(doc.get('opdracht','')).strip())<40 or
+        not all(isinstance(doc.get(x),list) and doc[x] for x in
+                ('tijdlijn','keuzes','wijzigingen','controles','bronnen','beperkingen')) or
+        doc.get('privacy',{}).get('geheimenUitgesloten') is not True):
+        raise ValueError('onvolledig dossier')
+    branch=gh(f'https://api.github.com/repos/{repo}/branches/{urllib.parse.quote(tak,safe="")}')
+    head=branch.get('commit',{}).get('sha','')
+    if not re.fullmatch(r'[0-9a-f]{40}',head): raise ValueError('geen tak')
+    compare=gh(f'https://api.github.com/repos/{repo}/compare/{commit}...{head}')
+    if compare.get('status') not in ('ahead','identical'):
+        print('ONTWIKKELARCHIEF_TAK_ONGELDIG');sys.exit()
+    release=gh(f'https://api.github.com/repos/{repo}/releases/tags/{versie}')
+    asset=next((a for a in release.get('assets',[]) if a.get('name')==ref['pakket']),None)
+    if not asset or asset.get('state')!='uploaded':
+        print('ONTWIKKELARCHIEF_PAKKET_ONTBREEKT');sys.exit()
+    digest=hashlib.file_digest(open(pakket,'rb'),'sha256').hexdigest()
+    if asset.get('digest')!='sha256:'+digest:
+        print('ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT');sys.exit()
+    print('OK')
+except urllib.error.HTTPError as e:
+    print('ONTWIKKELARCHIEF_NIET_GEVONDEN' if e.code==404 else 'ONTWIKKELARCHIEF_ONBEREIKBAAR')
+except Exception:
+    print('ONTWIKKELARCHIEF_ONBEREIKBAAR')
+PY
+)"
+  case "$ARCHIEF_UITKOMST" in
+    OK) log "TRACE-001: GitHub commit, tak, dossier en exact pakketdigest bevestigd" ;;
+    GEEN_ONTWIKKELARCHIEF|ONTWIKKELARCHIEF_ONGELDIG|ONTWIKKELARCHIEF_SHA_VERSCHILT|ONTWIKKELARCHIEF_TAK_ONGELDIG|ONTWIKKELARCHIEF_PAKKET_ONTBREEKT|ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT|ONTWIKKELARCHIEF_NIET_GEVONDEN|ONTWIKKELARCHIEF_ONBEREIKBAAR)
+      weiger "$ARCHIEF_UITKOMST" "GitHub не підтвердив повну історію розробки й точний архів ($ARCHIEF_UITKOMST). Установлення відхилено." "GitHub kon het ontwikkeldossier en het exacte archief niet bevestigen ($ARCHIEF_UITKOMST). Installatie geweigerd." ;;
+    *) weiger ONTWIKKELARCHIEF_ONBEREIKBAAR "Перевірка GitHub не завершилась. Установлення відхилено." "GitHub-verificatie niet voltooid. Installatie geweigerd." ;;
+  esac
+fi
 log "метадані випуску: автор=$AUTEUR агент=$AGENT commit=${COMMIT_TEKST}"
 stap inhoud ok 40 "Вміст і метадані в порядку (автор: $AUTEUR, агент: $AGENT)." "Inhoud en metadata zijn in orde (auteur: $AUTEUR, agent: $AGENT)."
 publiceer_log

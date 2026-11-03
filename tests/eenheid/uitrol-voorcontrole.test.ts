@@ -7,7 +7,7 @@ import { pakketVoorcontrole } from '../../backend/uitrol-voorcontrole';
 import { checker } from './hulp/nep-google';
 import { manifestVoor } from '../fixtures/uitrol/manifest-voorbeeld';
 
-const V = '20270301-101010';
+const V = '20261103-211554'; // TRACE-001: bestaande testcases testen oude vorm zonder verplicht ontwikkelarchief
 type Opties = { zonder?: string[]; extra?: Record<string, string>; versie?: string; link?: boolean; tweeMappen?: boolean; pad?: string };
 
 export async function main(): Promise<number> {
@@ -31,7 +31,7 @@ export async function main(): Promise<number> {
     else execFileSync('tar', ['-czf', tgz, '-C', join(basis, naam), ...(o.tweeMappen ? ['mijn-ruimte-' + V, 'andere'] : ['mijn-ruimte-' + V])]);
     return tgz;
   };
-  const opties = { versie: V, actieveVersie: '20270101-000000', toegepasteMigraties: new Set(['0001_basis']), tests: { geslaagd: 158, mislukt: 0 } };
+  const opties = { versie: V, actieveVersie: '20261102-000000', toegepasteMigraties: new Set(['0001_basis']), tests: { geslaagd: 158, mislukt: 0 } };
   const niv = (r: Awaited<ReturnType<typeof pakketVoorcontrole>>, id: string) => r.resultaat.controles.find((c) => c.id === id)?.niveau;
   try {
     const goed = await pakketVoorcontrole(maak(), opties);
@@ -55,7 +55,7 @@ export async function main(): Promise<number> {
     check('«zonder-git:<reden>» → waarschuwing (niet blokkerend), reden zichtbaar, commit = «zonder-git:<reden>»', zg.resultaat.ok && niv(zg, 'commit') === 'waarschuwing' && /sandbox zonder git/.test(zg.resultaat.controles.find((c) => c.id === 'commit')!.nl) && zg.meta.commit === 'zonder-git:gebouwd in een sandbox zonder git', JSON.stringify(zg.meta));
     check('«zonder-git:» zonder reden → fout', niv(await pakketVoorcontrole(maak({ extra: { 'BRON-COMMIT': 'zonder-git:\n' } }), opties), 'commit') === 'fout');
     check('versie wijkt af van het voorstel → fout', niv(await pakketVoorcontrole(maak({ versie: '20270301-111111' }), opties), 'versie') === 'fout');
-    check('versie niet nieuwer dan actief → fout', niv(await pakketVoorcontrole(maak(), { ...opties, actieveVersie: '20270301-101010' }), 'versie') === 'fout');
+    check('versie niet nieuwer dan actief → fout', niv(await pakketVoorcontrole(maak(), { ...opties, actieveVersie: V }), 'versie') === 'fout');
     check('UITROL-VERSIE ontbreekt → fout', niv(await pakketVoorcontrole(maak({ zonder: ['UITROL-VERSIE'] }), opties), 'versie') === 'fout');
     check('symbolische link in het pakket → structuur-fout', niv(await pakketVoorcontrole(maak({ link: true }), opties), 'structuur') === 'fout');
     check('twee bovenmappen → structuur-fout', niv(await pakketVoorcontrole(maak({ tweeMappen: true }), opties), 'structuur') === 'fout');

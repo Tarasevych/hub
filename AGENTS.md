@@ -70,6 +70,8 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
   вища, запис у `BESLUITEN.md`, `beleid.json` валідний) → passkey (рішення `orch-regels`; root лише фіксує підтвердження у своєму журналі) →
   гілка `regels/<versie>-<час>` з новим lock і `CONTEXT-COMPACT.md` іде в `origin`. Злиття в `integratie` — лише власник. Сайт/MCP/HTTP викликають
   ті самі функції, що й CLI (`inleveren`, `beoordeelVoorstel`, `vergrendel`) — окремої логіки немає (`beleid.json → site`).
+- **TRACE-001 (з випуску 20261103-211555):** кожен пакет містить `ONTWIKKELARCHIEF.json` із посиланням на `orchestratie/ontwikkelarchieven/<TASK-ID>.json` у тому самому GitHub-коміті й посиланням на реліз `.tar.gz`. Журнал зберігає доступні тексти запитів, покрокові дії та спроби, коміти, результати тестів, вкладення з посиланнями й хешами, тимчасові артефакти (або факт їх відсутності), обґрунтування рішень, компроміси й невиконане; не містить приватних ключів, токенів, вмісту пошти чи прихованих внутрішніх міркувань моделі. Дані з обмеженим доступом — лише опис і хеш без вмісту. Після складання release-asset `mijn-ruimte-<versie>.tar.gz` публікують у GitHub Release з тегом версії. Серверна передперевірка і root-інсталятор окремо перевіряють незмінний коміт, його походження з вказаної гілки, SHA-256 журналу і точний SHA-256 архіву на GitHub; відсутність, помилка посилання, невідповідність чи недоступність GitHub **обов'язково блокують встановлення**. Жодних винятків «продовжити без перевірки» немає. Старіші пакети не змінюються. Потребує затвердження правил власником Passkey/SSH і злиття у захищену інтеграцію.
+  TRACE-001: elk nieuw pakket heeft een commitgebonden dossier én een werkelijk geüploade Release-asset met identieke SHA-256. De site en root weigeren bij ontbrekende, ongeldige of onbereikbare GitHub-herkomst. Geen geheime gegevens of verborgen modelredenering.
 - Випуск збирає лише `node scripts/orch.mjs pakket --taak <ID> --auteur "…" [--manifest …] [--testresultaten …] [--sig …]`: сумісний
   `mijn-ruimte-<versie>.tar.gz` (через `deploy/uitrol/maak-voorstelpakket.sh`, з файлом `UITROL-BASIS` = встановлена версія + commit + відбиток
   правил) і пакет передачі `mijn-ruimte-<versie>-<agent>-overdracht.zip` (архів, `.sha256`, `ORCH-OVERDRACHT.json`, `UITROL-MANIFEST.json`,
@@ -99,6 +101,7 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 | Шаблони передачі | `orchestratie/sjablonen/` |
 | Пакети випуску (локально, не в git) | `uitvoer/` — `mijn-ruimte-<versie>.tar.gz` + `mijn-ruimte-<versie>-<agent>-overdracht.zip` (`orch pakket`) |
 | Стан координації при злитті | `.gitattributes` (`merge=orch-staat`: версія `integratie` перемагає) |
+| Журнал розробки для випуску | `orchestratie/ontwikkelarchieven/<TASK-ID>.json` (у git), `ONTWIKKELARCHIEF.json` (у тар) |
 | Правила пакета випуску | `deploy/REGELS-UITROLPAKKET.md`, `shared/uitrol-manifest.ts`, `shared/uitrol-codes.ts` |
 | Безпечне розгортання, passkey, відкат | `deploy/RUNBOOK-VEILIGE-UITROL.md` (§13 passkey, §15 рішення власника, §18 координація на сервері) |
 | Керування з сайту / HTTP / MCP (та сама логіка, що й CLI) | `src/agenten/TabOrch.tsx`, `backend/orch-routes.ts` (`/api/owner/orch/*`), `backend/orch-opslag.ts`, `backend/orch-hulpmiddelen.ts` (`orch_*`), `shared/orch-model.ts` |
