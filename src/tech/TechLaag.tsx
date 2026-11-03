@@ -14,7 +14,7 @@ import Vraag from './Vraag';
 import DiagnoseLaag from '../diagnose/Diagnose';
 import { OndersteuningVenster, ToestemmingLaag } from '../ondersteuning/Ondersteuning';
 import { ImpersonatieGebruiker, ImpersonatieKnop } from '../impersonatie/Impersonatie';
-import { Suspense, lazy } from 'react';
+import { Suspense } from 'react';
 import { TechBundelGrens, lazyTech } from './tech-bundel';
 const TerminalOpenen = lazyTech(() => import('../terminal/Terminal').then((m) => ({ default: m.TerminalOpenen })));
 const RemoteBureaublad = lazyTech(() => import('../extern/ExternBureaublad'));
@@ -32,11 +32,13 @@ import '../extensie/ExtensieOntgrendeling.css';
 import { laadRuimtesVlag, ruimtesV2Nu, useRuimtesV2 } from './ruimtes/ruimtes-vlag';
 import { startRuimtes } from './ruimtes/ruimtes-opslag';
 import { WOORDEN } from './ruimtes/teksten';
-const RuimteWissel = lazy(() => import('./ruimtes/RuimteWissel'));
-const RuimteStart = lazy(() => import('./ruimtes/StartVenster'));
-const RuimteToegang = lazy(() => import('./ruimtes/ToegangPagina'));
-const RuimteUitloggen = lazy(() => import('./ruimtes/UitloggenKeuze'));
-const RuimteDok = lazy(() => import('./ruimtes/RuimteDok'));
+// 03.11.2026: via lazyTech (zoals terminal/vlaggen/ssh) in plaats van kaal React.lazy — tech-bundels.test.ts eist «nooit kaal lazy» in
+// TechLaag; bij een mislukte lading eerst de status vernieuwen en één keer opnieuw proberen. Alle vijf staan al binnen TechBundelGrens.
+const RuimteWissel = lazyTech(() => import('./ruimtes/RuimteWissel'));
+const RuimteStart = lazyTech(() => import('./ruimtes/StartVenster'));
+const RuimteToegang = lazyTech(() => import('./ruimtes/ToegangPagina'));
+const RuimteUitloggen = lazyTech(() => import('./ruimtes/UitloggenKeuze'));
+const RuimteDok = lazyTech(() => import('./ruimtes/RuimteDok'));
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { bewaarVoorkeur, leesVoorkeur, STROOK_NAMEN, STROOK_STANDAARD_KNOPPEN, verplaats, volgendeModus, zetAan, type StrookVoorkeur } from './strook-voorkeur';
 import { StrookInstelPaneel, StrookKnopMenu, type KnopMenuItem } from './StrookPaneel';
