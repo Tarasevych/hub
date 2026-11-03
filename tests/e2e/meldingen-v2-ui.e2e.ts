@@ -83,13 +83,15 @@ export async function main(): Promise<number> {
     check('v2: belteller klein (items die tellen) en veel lager dan oud', Number(teller || 0) > 0 && Number(teller || 0) <= 10 && Number(teller) < oudeTeller, `oud ${oudeTeller} → nieuw ${teller}`);
     await openPaneel(page);
     const rijen = await page.locator('.mv2-rij').count();
-    check('v2: «Важливі» toont alleen aandacht-items', rijen >= 1 && rijen <= 6, `${rijen} rijen`);
+    // INTEG-001 (eigenaar: розділи «Нові», «Прочитані», «Архів»): het paneel opent in «Нові» (er is iets nieuws), niet in «Важливі».
+    check('v2: opent in «Нові» met de ongelezen meldingen', await page.locator('[data-mv2-secties] [data-sectie="nieuw"][aria-selected="true"]').count() === 1 && rijen >= 1, `${rijen} rijen`);
     check('v2: geen technische ruis (extensie/herhaalpoging) in de lijst', await page.locator('.mv2-rij', { hasText: /Розширення|Повторна спроба/ }).count() === 0);
-    await page.click('.mv2-segment [role=tab]:nth-child(2)');
+    check('v2: «Нові»: aanbieder alleen waar opgegeven (geen Google bij agenda); gemaskeerd adres bij twee Google-accounts', await page.locator('.mv2-rij', { hasText: 'бухгалтером' }).locator('.mv2-aanbieder').count() === 0 && await page.locator('.mv2-account', { hasText: 'p…@gmail.com' }).count() >= 1);
+    // Stil achtergrondwerk (adrescontrole, geslaagde import/synchronisatie) staat in «Прочитані» — zonder teller, niet verborgen.
+    await page.click('[data-mv2-secties] [data-sectie="gelezen"]');
     const alle = await page.locator('.mv2-rij').count();
-    check('v2: «Усі» — 120 adrescontrole-regels = 1 rij met ×120', await page.locator('.mv2-rij', { hasText: 'Перевірку всіх адрес' }).count() === 1 && /×120/.test((await page.locator('.mv2-rij', { hasText: 'Перевірку всіх адрес' }).textContent()) || ''), `${alle} rijen totaal`);
-    check('v2: accountlabel «Робочий» en gemaskeerd adres bij twee Google-accounts', await page.locator('.mv2-account', { hasText: 'Робочий' }).count() >= 1 && await page.locator('.mv2-account', { hasText: 'p…@gmail.com' }).count() >= 1);
-    check('v2: aanbieder alleen waar opgegeven (geen Google bij agenda)', await page.locator('.mv2-rij', { hasText: 'бухгалтером' }).locator('.mv2-aanbieder').count() === 0);
+    check('v2: «Прочитані» — 120 adrescontrole-regels = 1 rij met ×120', await page.locator('.mv2-rij', { hasText: 'Перевірку всіх адрес' }).count() === 1 && /×120/.test((await page.locator('.mv2-rij', { hasText: 'Перевірку всіх адрес' }).textContent()) || ''), `${alle} rijen totaal`);
+    check('v2: accountlabel «Робочий» bij de import (tweede Google-account)', await page.locator('.mv2-account', { hasText: 'Робочий' }).count() >= 1);
     await shot(page, 'na-1440-licht-alle');
     // OneDrive: fout + later succes → opgelost, geen aandacht
     check('v2: OneDrive-fout opgelost door latere synchronisatie (1 rij, geen rood)', await page.locator('.mv2-rij.e-fout', { hasText: 'OneDrive' }).count() === 0 && await page.locator('.mv2-rij', { hasText: 'OneDrive' }).count() === 1);
@@ -105,7 +107,8 @@ export async function main(): Promise<number> {
     await shot(page, 'na-1440-licht-filters');
     check('v2: één contextpaneel met bron/status/periode/volgorde', await page.locator('.mv2-context .mv2-label').count() >= 4);
     await page.click('.mv2-context-voet .is-hoofd');
-    // Contextmenu + regel «тихі» → server
+    // Contextmenu + regel «тихі» → server (de kaarten staan in «Нові»)
+    await page.click('[data-mv2-secties] [data-sectie="nieuw"]');
     const rij = page.locator('.mv2-rij', { hasText: 'Анна поділилася' });
     await rij.locator('[aria-haspopup=menu]').click();
     await shot(page, 'na-1440-licht-menu');
@@ -129,9 +132,9 @@ export async function main(): Promise<number> {
     check('v2: regels-scherm met vier modi', await page.locator('.mv2-regel').count() >= 2 && await page.locator('.mv2-regel').first().locator('[role=radio]').count() === 4);
     await page.click('.mv2-kop [aria-label="Назад"]');
     // Volledige geschiedenis
-    await page.click('.mv2-voet .mv2-tekstknop');
+    await page.click('.mv2-voet [data-mv2-historie-knop]');
     await page.waitForTimeout(200);
-    check('v2: volledige geschiedenis als apart scherm', await page.locator('.canonical-notification-panel.is-v2-volledig').count() === 1);
+    check('v2: volledige geschiedenis als breder venster aan de bel', await page.locator('.canonical-notification-panel.is-v2-volledig').count() === 1);
     await shot(page, 'na-1440-licht-geschiedenis');
     await c.close();
     // Tweede «apparaat»: regels uit de server
@@ -139,7 +142,7 @@ export async function main(): Promise<number> {
       check('tweede apparaat: Не турбувати uit de server zichtbaar', await p2.locator('.mv2-dnd').count() === 1); await shot(p2, 'na-390-licht-tweede-apparaat'); await c2.close(); }
     // Nederlands
     { const { c: c3, page: p3 } = await open({ v2: true, nl: true, breedte: 768, donker: true }); await openPaneel(p3);
-      check('nl: titel «Meldingen» en segment Belangrijk/Alle/Ongelezen', (await p3.locator('.mv2-kop-titel').textContent())?.startsWith('Meldingen') === true && await p3.locator('.mv2-segment', { hasText: 'Belangrijk' }).count() === 1);
+      check('nl: titel «Meldingen» en delen Nieuw/Gelezen/Archief', (await p3.locator('.mv2-kop-titel').textContent())?.startsWith('Meldingen') === true && await p3.locator('[data-mv2-secties] [data-tip="Nieuw"]').count() === 1 && await p3.locator('[data-mv2-secties] [data-tip="Archief"]').count() === 1);
       await shot(p3, 'na-768-donker-nl'); await c3.close(); }
     check('geen enkel verzoek buiten de lokale stand', geweigerd.length === 0, geweigerd.slice(0, 3).join(' '));
     check('geen JavaScript-fouten in de pagina', fouten.length === 0, fouten.slice(0, 3).join(' | '));

@@ -90,9 +90,15 @@ export async function main(): Promise<number> {
     return { hoogte: f.getBoundingClientRect().height, paneel: pnl.getBoundingClientRect().height, tops: kn.map((r) => Math.round(r.top)), min: Math.min(...kn.map((r) => Math.min(r.width, r.height))), richting: getComputedStyle(f).flexDirection };
   });
 
-  const tabs = (p: Page) => p.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-mv2-tabs="v3"] [role="tab"]')].map((b) => ({ tab: b.dataset.tab, n: Number(b.querySelector<HTMLElement>('.mv2-n')?.dataset.n), sel: b.getAttribute('aria-selected') === 'true' })));
+  // INTEG-001 (03.11.2026, eigenaar: розділи «Нові», «Прочитані», «Архів»): de vijf tabs Важливі/Усі/Непрочитані/Вирішені/Архів zijn
+  // drie delen geworden (shared/meldingen-v2/secties.ts). «Усі» bestaat niet meer: een kaart staat in precies één deel — zoekKaart zoekt
+  // het deel, kiesTabMet kiest het eerste deel met genoeg kaarten. Stille meldingen (regel «Тихе», geslaagd achtergrondwerk) zijn niet
+  // meer verborgen maar staan met uitleg in «Прочитані»; «Вирішено» gaat naar «Архів».
+  const tabs = (p: Page) => p.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-mv2-secties] [role="tab"]')].map((b) => ({ tab: b.dataset.sectie, n: Number(b.querySelector<HTMLElement>('.mv2-n')?.dataset.n), sel: b.getAttribute('aria-selected') === 'true' })));
   const lijstN = (p: Page) => p.locator('.mv2-lijst > li.mv2-rij').count();
-  const kiesTab = async (p: Page, tab: string) => { await p.click(`[data-mv2-tabs="v3"] [data-tab="${tab}"]`); await p.waitForTimeout(200); };
+  const kiesTab = async (p: Page, tab: string) => { await p.click(`[data-mv2-secties] [data-sectie="${tab}"]`); await p.waitForTimeout(200); };
+  const kiesTabMet = async (p: Page, min: number, zonder: string[] = ['archief']) => { for (const x of await tabs(p)) if (x.n >= min && !zonder.includes(x.tab!)) { await kiesTab(p, x.tab!); return x.tab!; } return null; };
+  const zoekKaart = async (p: Page, tekst: string) => { for (const x of await tabs(p)) { await kiesTab(p, x.tab!); if (await p.locator('.mv2-rij', { hasText: tekst }).count()) return x.tab!; } return null; };
   const tellersKloppen = async (p: Page, label: string) => {
     const uit: string[] = []; let ok = true;
     for (const x of await tabs(p)) { await kiesTab(p, x.tab!); const n = await lijstN(p); uit.push(`${x.tab}:${x.n}/${n}`); if (n !== x.n) ok = false; }
@@ -103,10 +109,10 @@ export async function main(): Promise<number> {
     for (const breedte of [390, 768, 1440]) for (const donker of [false, true]) {
       const thema = donker ? 'donker' : 'licht';
       const { c, page } = await open({ v3: true, breedte, donker });
-      await openPaneel(page); await kiesTab(page, 'alle');
+      await openPaneel(page); await kiesTabMet(page, 2);
       const t = await tabs(page);
-      check(`${breedte} ${thema}: vijf tabs Важливі/Усі/Непрочитані/Вирішені/Архів`, t.map((x) => x.tab).join() === 'belangrijk,alle,ongelezen,opgelost,archief');
-      check(`${breedte} ${thema}: regel «N прихованих правилами / тихим режимом» zichtbaar`, await page.locator('[data-mv2-verborgen]').count() === 1);
+      check(`${breedte} ${thema}: drie delen Нові/Прочитані/Архів`, t.map((x) => x.tab).join() === 'nieuw,gelezen,archief');
+      check(`${breedte} ${thema}: regelbalk met «Вибрати» zichtbaar`, await page.locator('.mv2-regelbalk button:has-text("Вибрати")').count() === 1);
       const pb = await page.locator('[data-qa-id="canonical-notification-panel"]').boundingBox();
       check(`${breedte} ${thema}: geen horizontale overloop`, !!pb && pb.x + pb.width <= breedte + 1 && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
       await shot(page, `b-${breedte}-${thema}-tabs`);
@@ -122,21 +128,22 @@ export async function main(): Promise<number> {
     // 2) Functioneel (1440 licht)
     { const { c, page } = await open({ v3: true, breedte: 1440 }); await openPaneel(page);
       await tellersKloppen(page, 'begin');
-      await kiesTab(page, 'alle');
+      await zoekKaart(page, 'Запис файлу');
       const schrijf = page.locator('.mv2-rij', { hasText: 'Запис файлу' }).first();
       await schrijf.locator('.mv2-menu-houder button').click(); await page.waitForTimeout(150);
       await page.click('.mv2-menu [role="menuitem"]:has-text("Позначити вирішеним")'); await page.waitForTimeout(500);
       const laatste = statusVerzoeken.at(-1);
       check('kaart: «Вирішено» stuurt ALLE drie ids van de groep ×3 naar de server', laatste?.status === 'opgelost' && ['cmd:w1', 'cmd:w2', 'cmd:w3'].every((x) => (laatste.ids || []).some((i: string) => i.endsWith(x))), JSON.stringify(laatste?.ids));
       check('server: alle drie records dezelfde status', Object.entries(stand.items).filter(([k]) => /cmd:w\d/.test(k)).every(([, v]) => v.s === 'opgelost') && Object.keys(stand.items).filter((k) => /cmd:w\d/.test(k)).length === 3);
-      await kiesTab(page, 'opgelost');
-      check('«Вирішені»: kaart staat erin', await page.locator('.mv2-rij', { hasText: 'Запис файлу' }).count() === 1);
+      await kiesTab(page, 'archief');
+      check('«Вирішено» → «Архів»: kaart staat erin', await page.locator('.mv2-rij', { hasText: 'Запис файлу' }).count() === 1);
       await page.locator('.mv2-rij', { hasText: 'Запис файлу' }).first().locator('.mv2-hoofd').click(); await page.waitForTimeout(200);
       check('kaart toont wie/wanneer/hoe van «Вирішено»', ((await page.locator('[data-mv2-statusinfo]').first().textContent()) || '').includes('у картці'));
       await shot(page, 'b-1440-licht-opgelost');
       await tellersKloppen(page, 'na вирішено');
       // Bulk: twee → архів
-      await kiesTab(page, 'alle');
+      await kiesTabMet(page, 2);
+      const archiefVoor = (await tabs(page)).find((x) => x.tab === 'archief')?.n || 0;
       await page.click('.mv2-regelbalk button:has-text("Вибрати")'); await page.waitForTimeout(150);
       const titels = await page.locator('.mv2-lijst > li.mv2-rij .mv2-titel').evaluateAll((els) => els.slice(0, 2).map((e) => e.textContent || ''));
       await page.locator('.mv2-lijst .mv2-kies input').nth(0).check(); await page.locator('.mv2-lijst .mv2-kies input').nth(1).check();
@@ -144,28 +151,26 @@ export async function main(): Promise<number> {
       await page.click('.mv2-bulk [data-bulk="archief"]'); await page.waitForTimeout(500);
       check('bulk: één verzoek, hoe=bulk', statusVerzoeken.at(-1)?.hoe === 'bulk' && statusVerzoeken.at(-1)?.status === 'archief');
       await kiesTab(page, 'archief');
-      check('bulk: beide in «Архів»', await lijstN(page) >= 2, titels.join(' | '));
+      check('bulk: beide in «Архів»', await lijstN(page) >= archiefVoor + 2, titels.join(' | '));
       await tellersKloppen(page, 'na bulk архів');
       // Uitstellen
-      await kiesTab(page, 'alle'); await page.click('.mv2-regelbalk button:has-text("Готово")').catch(() => undefined);
+      await kiesTabMet(page, 1); await page.click('.mv2-regelbalk button:has-text("Готово")').catch(() => undefined);
       const voor = await lijstN(page);
       await page.locator('.mv2-lijst > li.mv2-rij').first().locator('.mv2-menu-houder button').click(); await page.waitForTimeout(150);
       await page.click('.mv2-menu [role="menuitem"]:has-text("Відкласти на годину")'); await page.waitForTimeout(500);
-      check('uitstellen: kaart weg uit «Усі», «відкладено: 1» zichtbaar', await lijstN(page) === voor - 1 && ((await page.locator('.mv2-regelbalk').textContent()) || '').includes('відкладено: 1'), `${voor} → ${await lijstN(page)}`);
+      check('uitstellen: kaart weg uit het deel, «відкладено: 1» zichtbaar', await lijstN(page) === voor - 1 && ((await page.locator('.mv2-regelbalk').textContent()) || '').includes('відкладено: 1'), `${voor} → ${await lijstN(page)}`);
       check('uitstellen: tot = nu + 1 u', statusVerzoeken.at(-1)?.status === 'uitgesteld' && statusVerzoeken.at(-1)?.tot === NU + 3600_000);
       await tellersKloppen(page, 'na uitstellen');
-      // Verborgen
-      const regel = (await page.locator('[data-mv2-verborgen]').textContent()) || '';
-      check('verborgen: «N прихованих правилами / тихим режимом» met N > 0', /\d+ прихованих правилами \/ тихим режимом/.test(regel), regel);
-      await kiesTab(page, 'alle'); const zonder = await lijstN(page);
-      await page.click('[data-mv2-verborgen] button'); await page.waitForTimeout(250);
-      const met = await lijstN(page);
-      check('verborgen: «Показати» toont ze in de lijst, met reden-label', met > zonder && await page.locator('.mv2-toestand.t-verborgen').count() === met - zonder, `${zonder} → ${met}`);
+      // Stil (regel «Тихе» voor «Сайт» en geslaagd achtergrondwerk): niet meer verborgen, maar in «Прочитані» met de reden erbij.
+      await kiesTab(page, 'gelezen');
+      const stil = await page.locator('.mv2-rij[data-verborgen]').count();
+      check('stil: in «Прочитані» zichtbaar, elk met reden-label (geen teller, geen pop-up)', stil > 0 && await page.locator('.mv2-rij[data-verborgen] .mv2-toestand.t-verborgen').count() === stil, `${stil}`);
+      const met = (await tabs(page)).reduce((s, x) => s + x.n, 0);
       await page.locator('.mv2-rij[data-verborgen]').first().locator('.mv2-hoofd').click(); await page.waitForTimeout(200);
-      check('verborgen: uitleg + knop «Відкрити правило» in de kaart', await page.locator('.mv2-rij[data-verborgen] .mv2-statusinfo button:has-text("Відкрити правило")').count() >= 1);
+      check('stil: uitleg + knop «Відкрити правило» in de kaart', await page.locator('.mv2-rij[data-verborgen] .mv2-statusinfo button:has-text("Відкрити правило")').count() >= 1);
       await shot(page, 'b-1440-licht-verborgen');
-      await tellersKloppen(page, 'met verborgen getoond');
-      await kiesTab(page, 'alle'); if (!await page.locator('.mv2-rij[data-verborgen].is-open').count()) { await page.locator('.mv2-rij[data-verborgen]').first().locator('.mv2-hoofd').click(); await page.waitForTimeout(200); }
+      await tellersKloppen(page, 'met stille meldingen');
+      await kiesTab(page, 'gelezen'); if (!await page.locator('.mv2-rij[data-verborgen].is-open').count()) { await page.locator('.mv2-rij[data-verborgen]').first().locator('.mv2-hoofd').click(); await page.waitForTimeout(200); }
       await page.click('.mv2-rij[data-verborgen] .mv2-statusinfo button:has-text("Відкрити правило")'); await page.waitForTimeout(250);
       check('«Відкрити правило» opent «Правила сповіщень»', await page.locator('[data-mv2="regels"]').count() === 1);
       await page.click('[data-mv2-bewaar] [role="radio"]:has-text("90 дн")'); await page.waitForTimeout(400);
@@ -173,7 +178,7 @@ export async function main(): Promise<number> {
       await shot(page, 'b-1440-licht-bewaartermijn');
       await page.click('.mv2-kop button[aria-label="Назад"]'); await page.waitForTimeout(200);
       // Geschiedenis + export
-      await page.click('.mv2-voet .mv2-tekstknop:has-text("Уся історія")'); await page.waitForSelector('[data-mv2-historie]');
+      await page.click('.mv2-voet [data-mv2-historie-knop]'); await page.waitForSelector('[data-mv2-historie]');
       const alles = Number(await page.locator('[data-mv2-historie]').getAttribute('data-mv2-historie'));
       check('«Уся історія»: ook uitgestelde, gearchiveerde en verborgen records', alles > met, `${alles}`);
       await page.fill('.mv2-historie input[type="search"]', 'Запис'); await page.waitForTimeout(200);
@@ -195,18 +200,18 @@ export async function main(): Promise<number> {
       await c.close(); }
     // 3) Telefoon donker: geschiedenis
     { const { c, page } = await open({ v3: true, breedte: 390, donker: true }); await openPaneel(page);
-      await page.click('.mv2-voet .mv2-tekstknop:has-text("Уся історія")'); await page.waitForSelector('[data-mv2-historie]');
+      await page.click('.mv2-voet [data-mv2-historie-knop]'); await page.waitForSelector('[data-mv2-historie]');
       await shot(page, 'b-390-donker-historie');
       check('390 donker geschiedenis: geen horizontale overloop', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
       await c.close(); }
     // 4) NL
     { const { c, page } = await open({ v3: true, breedte: 1440, nl: true }); await openPaneel(page);
-      const t = ((await page.locator('[data-mv2-tabs="v3"]').textContent()) || '') + ((await page.locator('.mv2-regelbalk').textContent()) || '');
-      check('nl: tabs en regelbalk Nederlands', t.includes('Opgelost') && t.includes('Archief') && t.includes('verborgen door regels') && !/[\u0400-\u04FF]/.test(t), t);
+      const t = ((await page.locator('[data-mv2-secties]').textContent()) || '') + ((await page.locator('.mv2-regelbalk').textContent()) || '');
+      check('nl: delen en regelbalk Nederlands', await page.locator('[data-mv2-secties] [data-tip="Nieuw"]').count() === 1 && await page.locator('[data-mv2-secties] [data-tip="Archief"]').count() === 1 && t.includes('Kiezen') && !/[\u0400-\u04FF]/.test(t), t);
       await shot(page, 'b-1440-licht-nl'); await c.close(); }
     // 5) Vlag UIT: oud gedrag (drie tabs, geen status-verzoeken)
     { const n0 = statusVerzoeken.length; const { c, page } = await open({ v3: false, breedte: 390 }); await openPaneel(page);
-      check('vlag UIT: geen vijf tabs, geen regelbalk', await page.locator('[data-mv2-tabs="v3"]').count() === 0 && await page.locator('[data-mv2-verborgen]').count() === 0 && await page.locator('.mv2-segment [role="tab"]').count() === 3);
+      check('vlag UIT: dezelfde drie delen, maar geen «Вибрати» (bulk) en geen uitleg-kaart', await page.locator('[data-mv2-secties] [role="tab"]').count() === 3 && await page.locator('.mv2-regelbalk button:has-text("Вибрати")').count() === 0 && await page.locator('.mv2u').count() === 0);
       check('vlag UIT: geen statusverzoeken', statusVerzoeken.length === n0 && !aanroepen.includes('/api/owner/meldingen/status'.replace('status', 'status-x')));
       await shot(page, 'b-390-licht-vlag-uit'); await c.close(); }
     check('geen verzoek buiten de lokale stand', geweigerd.length === 0, geweigerd.slice(0, 3).join(' '));

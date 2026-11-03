@@ -82,12 +82,16 @@ export async function main(): Promise<number> {
     const kn = [...f.querySelectorAll<HTMLElement>('button')].filter((b) => b.offsetParent).map((b) => b.getBoundingClientRect());
     return { hoogte: f.getBoundingClientRect().height, paneel: pnl.getBoundingClientRect().height, tops: kn.map((r) => Math.round(r.top)), min: Math.min(...kn.map((r) => Math.min(r.width, r.height))), richting: getComputedStyle(f).flexDirection };
   });
+  // INTEG-001 (eigenaar: розділи «Нові», «Прочитані», «Архів»): geen tab «Усі» meer; zoekKaart zoekt het deel waarin de kaart staat.
+  // De teller van ongelezen = het getal op de bel (de lijst «Нові» houdt wat u in het open paneel zag tot het sluiten).
+  const zoekKaart = async (p: Page, tekst: string | RegExp) => { for (const s of ['nieuw', 'gelezen', 'archief']) { if (await p.locator('.mv2-rij', { hasText: tekst }).count()) return true; await p.click(`[data-mv2-secties] [data-sectie="${s}"]`).catch(() => undefined); await p.waitForTimeout(150); } return !!(await p.locator('.mv2-rij', { hasText: tekst }).count()); };
+  const belN = async (p: Page) => Number(((await p.locator('[data-qa-id="canonical-notification-bell"] small').textContent({ timeout: 500 }).catch(() => '')) || '').replace(/\D/g, '')) || 0;
   try {
     for (const breedte of [390, 768, 1440]) for (const donker of [false, true]) {
       const thema = donker ? 'donker' : 'licht';
       const { c, page } = await open({ v3: !VOOR, breedte, donker });
       await openPaneel(page);
-      await page.click('.mv2-segment button:nth-child(2)').catch(() => undefined); // «Усі»
+      if (!VOOR) await zoekKaart(page, 'Право готувати оновлення відкликано');
       await page.waitForTimeout(200);
       await shot(page, `${VOOR ? 'voor' : 'na'}-${breedte}-${thema}`);
       const v = await voet(page);
@@ -120,15 +124,13 @@ export async function main(): Promise<number> {
     if (!VOOR) {
       // Gelezen: activiteiten (groep ×3) en server
       { const { c, page } = await open({ v3: true, breedte: 1440 }); await openPaneel(page);
-        const tel = async () => Number((await page.locator('.mv2-segment button:nth-child(3)').textContent() || '').replace(/\D/g, '')) || 0;
-        const voor = await tel();
-        await page.click('.mv2-segment button:nth-child(2)'); await page.waitForTimeout(150);
+        const tel = () => belN(page);
+        await zoekKaart(page, 'Запис файлу');
         const schrijf = page.locator('.mv2-rij', { hasText: 'Запис файлу' }).first();
         check('kaart «Запис файлу» ×3 aanwezig', await schrijf.count() === 1 && ((await schrijf.textContent()) || '').includes('×3'));
         await schrijf.locator('.mv2-hoofd').click(); await page.waitForTimeout(700);
         check('Запис файлу: WIE = apparaat, WAT = bestandspad', ((await page.locator('.mv2u').first().textContent()) || '').includes('Pavlo-PC') && ((await page.locator('.mv2u').first().textContent()) || '').includes('bestand-'));
-        const na = await tel();
-        check('gelezen: groep ×3 telt na openen niet meer als ongelezen', na === voor - 1, `${voor} → ${na}`);
+        check('gelezen: groep ×3 is na openen niet meer «нова» (geen stip, geen vette titel)', !((await schrijf.getAttribute('class')) || '').includes('is-nieuw'));
         check('gelezen: alle drie onderliggende regels naar de server', ['cmd:w1', 'cmd:w2', 'cmd:w3'].every((x) => gelezenServer.has(x)), [...gelezenServer].join());
         const ext = page.locator('.mv2-rij', { hasText: 'розширення' }).first();
         check('extensie-kaart: Oekraïense titel, geen «vernieuwing-geblokkeerd»', await ext.count() === 1 && !((await page.locator('.mv2').textContent()) || '').includes('vernieuwing-geblokkeerd'));
@@ -137,7 +139,8 @@ export async function main(): Promise<number> {
         await c.close(); }
       // Tweede «apparaat»: gelezen komt van de server
       { const { c, page } = await open({ v3: true, breedte: 390 }); await openPaneel(page); await page.waitForTimeout(600);
-        const n = Number((await page.locator('.mv2-segment button:nth-child(3)').textContent() || '').replace(/\D/g, '')) || 0;
+        const n = await belN(page);
+        await zoekKaart(page, 'Запис файлу');
         const s = page.locator('.mv2-rij', { hasText: 'Запис файлу' }).first();
         check('tweede apparaat: «Запис файлу» al gelezen (server)', await s.count() === 0 || !(await s.getAttribute('class') || '').includes('is-nieuw'), `${n}`);
         await c.close(); }
@@ -159,7 +162,7 @@ export async function main(): Promise<number> {
         serverRegels = { versie: 1, regels: [], nietStoren: null, bijgewerkt: 0, weergave: { tekst: 'S', dichtheid: 'compact' } };
         await c.close(); }
       { const { c, page } = await open({ v3: true, breedte: 768, nl: true }); await openPaneel(page);
-        await page.click('.mv2-segment button:nth-child(2)'); await page.waitForTimeout(150);
+        await zoekKaart(page, /ingetrokken/i);
         await page.locator('.mv2-rij', { hasText: /ingetrokken/i }).first().locator('.mv2-hoofd').click(); await page.waitForTimeout(250);
         const t = (await page.locator('.mv2u').first().textContent()) || '';
         check('nl: uitleg in het Nederlands (Wie/Wat/Wanneer)', t.includes('Wie') && t.includes('Wanneer') && !/Хто|Коли/.test(t));
