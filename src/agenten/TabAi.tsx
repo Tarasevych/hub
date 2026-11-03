@@ -1,24 +1,28 @@
 // «Підключені ШІ»: OAuth-verbindingen (Claude, Grok, Cursor, elke MCP/OAuth-client) en agenttokens (MCP-token), als GitHub-rijen.
+// INTEG-001 (03.11.2026, «блоки не повторюються»): drie dubbels weg —
+//   • «ШІ чекає вашого рішення» stond hier én in «Огляд → Потрібне ваше рішення»; nu alleen daar, hier één regel met de weg erheen;
+//   • de zes knoppen «Підключити <ШІ>» herhaalden de lijst «Конектори»; de weg per AI loopt nu via het bord «Картки підключення»
+//     (AgentBord, met «Сторінка цього ШІ» → #agent/<slug>), dat hier in «Підключити ШІ» zit in plaats van als los blok erboven;
+//   • de kop van het tabblad staat in de rand van de pagina (AgentenPagina), dus hier geen tweede titel.
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Copy, ExternalLink, KeyRound, SlidersHorizontal, Trash2, Wrench } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, Copy, ExternalLink, KeyRound, SlidersHorizontal, Sparkles, Trash2, Wrench } from 'lucide-react';
 import { api } from '../platform/client';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import { sessionBody, type ToolCall } from '../agenten-gegevens';
 import { Logo, Section, type Tr } from '../mcp-ui';
-import McpToolsPanel, { ToolApprovals } from '../McpHulpmiddelenPaneel';
+import McpToolsPanel from '../McpHulpmiddelenPaneel';
 import AiToegangTab from './AiToegangTab';
+import AgentBord from './AgentBord';
 import { aiEigenaar, aiLogo, isoMs, type DeurToken, type OauthVerbinding, type Overzicht } from './gegevens';
 import { Badge, datum, exact, gebruiktBinnen, GevaarKnop, Groep, Knop, Melding, Rij, Tech, Tijd, useActies } from './ui';
 import { CLAUDE_CONNECTORS_URL } from './verbind-recepten';
-import { V2_AGENTEN } from '../../shared/connector-v2/agenten';
-import AgentLogo from './AgentLogo';
 
 type Item = { sleutel: string; soort: 'oauth' | 'token'; naam: string; laatst: number | null; sinds: number | null; actief: boolean; oauth?: OauthVerbinding; token?: DeurToken };
 // Sinds 2025 heet het in claude.ai en Claude Desktop «Settings → Connectors» (de oude ankerlink naar «Customize» bestaat niet meer).
 const CLAUDE_CONNECTORS = CLAUDE_CONNECTORS_URL;
 
-export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, calls, reloadCalls }: {
-  tr: Tr; overzicht: Overzicht | null; tokens: DeurToken[] | null; naActie: () => Promise<void>; item: string; kies: (id: string) => void; calls: ToolCall[]; reloadCalls: () => Promise<void>;
+export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, calls }: {
+  tr: Tr; overzicht: Overzicht | null; tokens: DeurToken[] | null; naActie: () => Promise<void>; item: string; kies: (id: string) => void; calls: ToolCall[];
 }) {
   const acties = useActies(tr);
   // Is het ondertekende AI-beleid actief? Dan is dat de enige plek voor rechten (zie hieronder).
@@ -123,10 +127,11 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
   return (
     <div className='ag-tab' data-tab-inhoud='ai'>
       {toolPending.length ? (
-        <section className='ag-kaart ag-waarschuwing' data-ai-wacht={toolPending.length}>
-          <h3>{tr('ШІ чекає вашого рішення', 'De AI wacht op uw beslissing')} <span className='ag-teller'>{toolPending.length}</span></h3>
-          <ToolApprovals tr={tr} calls={calls} reload={reloadCalls} />
-        </section>
+        <p className='ag-melding ag-melding-wacht' role='status' data-ai-wacht={toolPending.length}>
+          <AlertTriangle aria-hidden='true' />
+          <span>{tr(`ШІ чекає вашого рішення (${toolPending.length}). Відповісти можна в «Огляді» → «Потрібне ваше рішення».`, `De AI wacht op uw beslissing (${toolPending.length}). Antwoorden kan in «Overzicht» → «Uw beslissing is nodig».`)}</span>
+          <a href='#overzicht' className='ag-link' data-ai-naar-wacht='1'>{tr('До «Огляду»', 'Naar «Overzicht»')} <ArrowRight size={14} aria-hidden='true' /></a>
+        </p>
       ) : null}
 
       <div className='ag-lijstkop'>
@@ -144,28 +149,24 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
       {overzicht === null && tokens === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : actief.length ? <ul className='ag-lijst' data-lijst='ai'>{actief.map((x) => rij(x))}</ul> : <p className='ag-leeg'>{tr('Підключіть Claude чи інший ШІ нижче — він з’явиться тут.', 'Verbind Claude of een andere AI hieronder — hij verschijnt dan hier.')}</p>}
       <Groep titel={tr('Відкликані й завершені (90 днів)', 'Ingetrokken en verlopen (90 dagen)')} aantal={historie.length} data='ai-historie'>{historie.map((x) => rij(x, true))}</Groep>
 
-      {/* HUB-08: ÉÉN wizard «Підключити ШІ» met de keuze van de methode; de andere tabs (#connectors, #tokens) zijn de uitvoering van die keuze. */}
-      <Section id='ag-ai-verbinden' icon={<KeyRound />} title={tr('Підключити ШІ', 'Een AI verbinden')} subtitle={tr('Оберіть спосіб: власна адреса-конектор для кожного ШІ (рекомендовано), токен або стара спільна адреса.', 'Kies de manier: een eigen connectoradres per AI (aanbevolen), een token of het oude gedeelde adres.')} defaultOpen={!actief.length}>
-        <div className='ag-verbinden' data-ai-wizard='methode'>
-          {/* 20.10.2026: de rechtstreekse weg — één knop per AI naar zijn eigen plek (#agent/<slug>) met de grote koppelknop en de stappen. */}
-          <ul className='ag-agent-ingangen' data-ai-agent-ingangen='1'>
-            {V2_AGENTEN.map((a) => (
-              <li key={a.slug}><a className='ag-kaart ag-agent-ingang' href={`#agent/${a.slug}`} data-agent-ingang={a.slug}>
-                <AgentLogo agent={a.slug} naam={a.naam} size={26} /><b>{tr(`Підключити ${a.naam}`, `${a.naam} koppelen`)}</b>
-              </a></li>
-            ))}
-          </ul>
+      {/* HUB-08: ÉÉN wizard «Підключити ШІ» met de keuze van de methode; de andere tabs (#connectors, #tokens) zijn de uitvoering van die keuze.
+          INTEG-001: altijd zichtbaar als één blok (kop + drie manieren); de koppelkaarten per AI (AgentBord) staan ingeklapt eronder. */}
+      <section className='ag-blok' id='ag-ai-verbinden' data-ai-wizard='methode'>
+        <header className='ag-blok-kop'>
+          <h3 className='ag-blok-titel'><KeyRound aria-hidden='true' /> {tr('Підключити новий ШІ', 'Een nieuwe AI koppelen')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Оберіть один зі способів; найпростіше — власна адреса-конектор для кожного ШІ.', 'Kies een van de manieren; het eenvoudigst is een eigen connectoradres per AI.')}</p>
+        </header>
           <div className='ag-methoden' role='list'>
             <a role='listitem' className='ag-kaart ag-methode' href='#connectors' data-ai-methode='connectors'>
               <b>{tr('Окремий конектор для ШІ', 'Eigen connector per AI')}</b> <span className='ag-badge'>{tr('рекомендовано', 'aanbevolen')}</span>
-              <small>{tr('Claude, ChatGPT, Grok, Cursor… — своя адреса, свої права, перепідключення й відкликання на сторінці того ШІ (кнопки вище) або в списку «Конектори».', 'Claude, ChatGPT, Grok, Cursor… — eigen adres, eigen rechten, opnieuw verbinden en intrekken op de plek van die AI (knoppen hierboven) of in de lijst «Connectors».')}</small>
+              <small>{tr('Claude, ChatGPT, Grok, Cursor… — своя адреса й свої права; підключення, перепідключення й відкликання — у блоці «Конектори».', 'Claude, ChatGPT, Grok, Cursor… — eigen adres en eigen rechten; koppelen, opnieuw verbinden en intrekken in het blok «Connectors».')}</small>
             </a>
             <a role='listitem' className='ag-kaart ag-methode' href='#tokens' data-ai-methode='tokens'>
               <b>{tr('Токен або «в один клік»', 'Token of «in één klik»')}</b>
               <small>{tr('Для агентів без OAuth: отримати токен тут і вставити в клієнт (вкладка «Токени»).', 'Voor agents zonder OAuth: hier een token halen en in de client plakken (tabblad «Tokens»).')}</small>
             </a>
             <details className='ag-kaart ag-methode' data-ai-methode='mcp'>
-              <summary><b>{tr('Стара спільна адреса', 'Het oude gedeelde adres')}</b> <small>{tr('працює для вже підключених ШІ й перенаправляє (308) на адресу агента; для нового підключення беріть адресу свого ШІ вище', 'blijft werken voor al gekoppelde AI en leidt door (308) naar het adres van de agent; neem voor een nieuwe koppeling het adres van uw AI hierboven')}</small></summary>
+              <summary><b>{tr('Стара спільна адреса', 'Het oude gedeelde adres')}</b> <small>{tr('працює для вже підключених ШІ й перенаправляє (308) на адресу агента; для нового підключення беріть адресу свого ШІ з «Конекторів»', 'blijft werken voor al gekoppelde AI en leidt door (308) naar het adres van de agent; neem voor een nieuwe koppeling het adres van uw AI uit «Connectors»')}</small></summary>
               <code className='hub-code' data-mcp-url='1'>{overzicht?.mcpUrl ?? '…'}</code>
               <div className='ag-knoppen'>
                 <Knop icoon={gekopieerd ? <Check /> : <Copy />} onClick={() => void kopieer()}>{gekopieerd ? tr('Скопійовано', 'Gekopieerd') : tr('Скопіювати адресу', 'Adres kopiëren')}</Knop>
@@ -178,20 +179,27 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
               </ol>
             </details>
           </div>
-        </div>
-      </Section>
+          {/* Het bord (vroeger op ai.* onder verbindingen#bord): per AI het adres, het token, «Доступ ШІ» en de voorwaarden, met de weg naar #agent/<slug>. */}
+          <details className='ag-kaart ag-bord-uitklap' data-bord='1' open={!actief.length}>
+            <summary><Sparkles size={16} aria-hidden='true' /> {tr('Картки підключення для кожного ШІ (Claude, ChatGPT, Grok…)', 'Koppelkaarten per AI (Claude, ChatGPT, Grok…)')}</summary>
+            <AgentBord tr={tr} ingebed />
+          </details>
+      </section>
       {beleidActief ? (
         // Eén plek: met een ondertekend beleid beslist alleen dat beleid; geen tweede set schakelaars die ermee botst.
-        <section className='ag-kaart' id='ag-ai-hulpmiddelen' data-beleid-actief='1'>
-          <div className='ag-kaart-kop'><h3>{tr('Що ШІ може робити', 'Wat de AI mag')}</h3><a href={canonicalNavigationUrl('admin', 'ai', tr('uk', 'nl') === 'uk' ? 'uk' : 'nl')} className='ag-link' data-beleid-link='admin'>{tr('Доступ ШІ за підписом (технічний профіль)', 'AI-toegang met handtekening (technisch profiel)')} <ExternalLink size={14} aria-hidden='true' /></a></div>
-          <p className='ag-leeg'>{tr('Інструменти сайту (режими «завжди/питати/вимкнено») визначає підписана політика в Адміністрування → «Доступ ШІ» (технічний профіль, лише з вашим passkey); на цій вкладці їх не перемикають. Права кожного окремого ШІ — на вкладці «Конектори».', 'De hulpmiddelen van de site (standen «altijd/vragen/uit») bepaalt het ondertekende beleid in Beheer → «AI-toegang» (technisch profiel, alleen met uw passkey); op dit tabblad schakelt u ze niet. De rechten van elke afzonderlijke AI staan op het tabblad «Connectors».')}</p>
+        <section className='ag-blok' id='ag-ai-hulpmiddelen' data-beleid-actief='1'>
+          <header className='ag-blok-kop'>
+            <h3 className='ag-blok-titel'><SlidersHorizontal aria-hidden='true' /> {tr('Що ШІ може робити', 'Wat de AI mag')}</h3>
+            <div className='ag-knoppen'><a href={canonicalNavigationUrl('admin', 'ai', tr('uk', 'nl') === 'uk' ? 'uk' : 'nl')} className='ag-link' data-beleid-link='admin'>{tr('Доступ ШІ за підписом (технічний профіль)', 'AI-toegang met handtekening (technisch profiel)')} <ExternalLink size={14} aria-hidden='true' /></a></div>
+            <p className='ag-blok-uitleg'>{tr('Інструменти сайту (режими «завжди/питати/вимкнено») визначає підписана політика в Адміністрування → «Доступ ШІ» (технічний профіль, лише з вашим passkey); на цій вкладці їх не перемикають. Права кожного окремого ШІ — на вкладці «Конектори».', 'De hulpmiddelen van de site (standen «altijd/vragen/uit») bepaalt het ondertekende beleid in Beheer → «AI-toegang» (technisch profiel, alleen met uw passkey); op dit tabblad schakelt u ze niet. De rechten van elke afzonderlijke AI staan op het tabblad «Connectors».')}</p>
+          </header>
         </section>
       ) : (
         <Section id='ag-ai-hulpmiddelen' icon={<SlidersHorizontal />} title={tr('Що ШІ може робити на сайті', 'Wat de AI op de site mag')} subtitle={tr('Кожен інструмент: завжди, питати або вимкнено. Діє, доки не встановлено підписану політику доступу ШІ.', 'Elk hulpmiddel: altijd, vragen of uit. Geldt tot het ondertekende AI-beleid is geïnstalleerd.')} defaultOpen={item === 'hulpmiddelen'}>
           <McpToolsPanel tr={tr} />
         </Section>
       )}
-      {!toolPending.length ? <p className='hub-meta ag-voet'><Wrench size={14} aria-hidden='true' /> {tr('Запити ШІ в режимі «питати» з’являються вгорі цієї вкладки та в «Огляді».', 'Verzoeken van de AI in de modus "vragen" verschijnen bovenaan dit tabblad en in "Overzicht".')}</p> : null}
+      {!toolPending.length ? <p className='hub-meta ag-voet'><Wrench size={14} aria-hidden='true' /> {tr('Запити ШІ в режимі «питати» з’являються в «Огляді» → «Потрібне ваше рішення».', 'Verzoeken van de AI in de modus "vragen" verschijnen in "Overzicht" → "Uw beslissing is nodig".')}</p> : null}
     </div>
   );
 }

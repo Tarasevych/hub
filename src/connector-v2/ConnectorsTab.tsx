@@ -380,7 +380,10 @@ function MassaVenster({ tr, uk, voorbeeld, bezig, melding, klaar, onAnnuleer, on
 
 // ---------------------------------------------------------------- tabblad
 
-export default function ConnectorsTab({ tr }: { tr: Tr }) {
+/** `ingebed` (INTEG-001, hub mcp.* → agents): het blok «Конектори» van de pagina geeft al de titel en de ene zin uitleg, de filters
+ *  tonen al «підключено/чекають» per stand en «Останні події» + «Журнал» staan elders op dezelfde pagina. Dan valt hier weg wat
+ *  anders dubbel zou staan: de eigen kop met samenvatting en het paneel «Останні дії». Elders (ai.* → verbindingen) blijft alles. */
+export default function ConnectorsTab({ tr, ingebed = false }: { tr: Tr; ingebed?: boolean }) {
   const uk = tr('uk', 'nl') === 'uk';
   const lang = uk ? 'uk' : 'nl';
   const [data, setData] = useState<Data | null>(null);
@@ -497,8 +500,8 @@ export default function ConnectorsTab({ tr }: { tr: Tr }) {
   const presetNaam = PRESETS.find((p) => p.id === preset);
 
   return (
-    <div className='ag-tab v2-tab v2b' data-v2-tab='connectors'>
-      <div className='v2b-hoofd'>
+    <div className='ag-tab v2-tab v2b' data-v2-tab='connectors' data-ingebed={ingebed ? '1' : undefined}>
+      {ingebed ? null : <div className='v2b-hoofd'>
         <div className='v2b-titel'>
           <h2>{tr('Конектори ШІ', 'AI-connectors')}</h2>
           <p>{tr('Кожен ШІ підключається за своєю адресою. Керуйте доступом одного агента або одразу всіх: вмикайте, обмежуйте, відкликайте.', 'Elke AI verbindt via een eigen adres. Beheer de toegang van één agent of van alle tegelijk: aanzetten, beperken, intrekken.')}</p>
@@ -508,7 +511,7 @@ export default function ConnectorsTab({ tr }: { tr: Tr }) {
           <b data-v2-teller={data ? 'bekend' : 'onbekend'}>{data ? tr(`${aantallen.verbonden} підключено з ${aantallen.alle}`, `${aantallen.verbonden} gekoppeld van ${aantallen.alle}`) : fout ? tr('Стан невідомий', 'Stand onbekend') : tr('Завантаження…', 'Laden…')}</b>
           <small>{!data ? (fout ? tr('сервер не відповів', 'de server antwoordde niet') : '') : aantallen.wacht ? tr(`${aantallen.wacht} чекає перепідключення`, `${aantallen.wacht} wacht op opnieuw verbinden`) : tr('усе актуально', 'alles actueel')}</small>
         </div>
-      </div>
+      </div>}
 
       {fout ? <p className='ag-melding ag-melding-fout' role='alert'>{tr(`Не вдалося завантажити (${fout}).`, `Laden mislukt (${fout}).`)}</p> : null}
 
@@ -541,7 +544,7 @@ export default function ConnectorsTab({ tr }: { tr: Tr }) {
                 ))}
               </ul>
             ) : <p className='v2b-leeg'>{tr('Нічого не знайдено. Змініть фільтр або пошук.', 'Niets gevonden. Pas het filter of de zoekopdracht aan.')}</p>
-          ) : !fout ? <p>{tr('Завантаження…', 'Laden…')}</p> : null}
+          ) : !fout ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : null}
 
           <section className='v2-instelling' aria-label={tr('Захист підключень', 'Beveiliging van koppelingen')}>
             {/* HUB-03: geen gegevens → geen schakelaar «UIT» tonen (dat is een bewering), maar de onbekend-staat. */}
@@ -622,7 +625,7 @@ export default function ConnectorsTab({ tr }: { tr: Tr }) {
             </ul>
           </section>
 
-          <section className='v2b-paneel' data-v2-laatste>
+          {ingebed ? null : <section className='v2b-paneel' data-v2-laatste>
             <header><div><h3>{tr('Останні дії', 'Laatste acties')}</h3><small>{tr('Нові зверху', 'Nieuwste bovenaan')}</small></div><a className='v2b-link' href='#journaal'>{tr('Уся історія', 'Alle geschiedenis')}</a></header>
             {acties.length ? (
               <ul className='v2b-acties'>
@@ -641,7 +644,7 @@ export default function ConnectorsTab({ tr }: { tr: Tr }) {
                 })}
               </ul>
             ) : <p className='v2b-leeg'>{journaal.items === null ? tr('Завантаження…', 'Laden…') : tr('Дій ШІ ще не було.', 'Nog geen acties van AI.')}</p>}
-          </section>
+          </section>}
         </aside>
       </div>
 

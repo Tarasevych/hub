@@ -91,8 +91,12 @@ export async function main(): Promise<number> {
   check('het journaal is gefilterd op juist deze agent', pagina.includes('agentVanItem(e) === slug'));
   check('de kleur komt uit de ene lijst AgentKleuren (geen eigen palet op deze pagina)',
     pagina.includes("import AgentKleuren from './AgentKleuren'") && !pagina.includes('ACCENT_KLEUREN'));
-  check('de hub rendert die plek en linkt ernaartoe vanaf het overzicht',
-    lees('src/agenten/AgentenPagina.tsx').includes('<AgentPagina') && lees('src/agenten/AgentenPagina.tsx').includes('data-agent-ingang={a.slug}'));
+  // INTEG-001 (03.11.2026, eigenaar: «блоки, які не повторюються»): de rij «Керування окремим ШІ» op «Огляд» is weg — exact
+  // dezelfde zes AI met dezelfde ware stand en dezelfde weg naar #agent/<slug> staan één blok lager in «Конектори». De hub rendert
+  // de plek nog steeds; de ingang is de lijst «Конектори» (href naar #agent/<slug>, zie de check hieronder), geen kopie in het overzicht.
+  check('de hub rendert die plek en linkt ernaartoe vanuit «Конектори» (één ingang, geen tweede kopie in «Огляд»)',
+    lees('src/agenten/AgentenPagina.tsx').includes('<AgentPagina') && lees('src/agenten/AgentenPagina.tsx').includes('<ConnectorsTab tr={tr} ingebed />')
+    && !lees('src/agenten/AgentenPagina.tsx').includes('data-agent-ingang={a.slug}'));
 
   // ------------------------------------------------------------------ geen dubbel beheer in de algemene tabbladen
   const connectors = lees('src/connector-v2/ConnectorsTab.tsx');
