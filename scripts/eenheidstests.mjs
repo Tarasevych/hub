@@ -8,7 +8,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 // Binnen de repo (node_modules moet resolvebaar zijn); rapporten/ staat in .gitignore.
 const filter = process.argv[2] || '';
-const bestanden = (await readdir('tests/eenheid')).filter(n => n.endsWith('.test.ts') && n.includes(filter));
+// Een exacte bestandsnaam (eindigt op .test.ts) matcht alleen dat bestand. Zo matcht «beleid.test.ts» niet ook «ai-beleid.test.ts»:
+// dat gaf een oneindige keten van kind-processen (elk kind startte weer hetzelfde bestand).
+const exact = filter.endsWith('.test.ts');
+const bestanden = (await readdir('tests/eenheid')).filter(n => n.endsWith('.test.ts') && (exact ? n === filter : n.includes(filter)));
 // INTEG-001: elk testbestand in een eigen proces. Alle bestanden in één proces lieten globals (window, location, localStorage)
 // en openstaande handles van eerdere tests doorwerken: dat gaf afwijkingen die alleen in de volledige run optraden, en één
 // hangend bestand hield de hele run vast. Een bestand alleen (of met een exacte naam) draait gewoon in het eigen proces.
