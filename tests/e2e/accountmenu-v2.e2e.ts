@@ -117,10 +117,10 @@ export async function main(): Promise<number> {
       check(`${breedte}: diagnose-knop aanwezig`, await page.locator('.am2-acties .canonical-menu-action:has(.lucide-life-buoy)').count() === 1);
       check(`${breedte}: «Доступ і терміни» aanwezig`, await page.locator('.am2-acties .canonical-menu-action:has(.lucide-key-round)').count() === 1);
       check(`${breedte}: fotoknop aanwezig`, await page.locator('.canonical-profile-camera').count() === 1);
-      await page.waitForSelector('.am2-ruimte .rw-seg', { timeout: 5000 }).catch(() => undefined);
+      await page.waitForSelector('.am2-ruimte .rw-schakel', { timeout: 5000 }).catch(() => undefined);
       const volgorde = await page.evaluate(() => [...document.querySelector('.canonical-account-panel')!.children].map((e) => (e as HTMLElement).dataset.am2Blok || e.className.split(' ')[0]));
       check(`${breedte}: ruimtewissel onderaan (vlak boven de juridische links)`, volgorde.at(-2) === 'ruimte' && volgorde.at(-1) === 'canonical-account-legal', volgorde.join(' > '));
-      check(`${breedte}: ruimtewissel heeft twee tabs`, await page.locator('.am2-ruimte .rw-knop').count() === 2);
+      check(`${breedte}: ruimtewissel is één tumbler (INTEG-001)`, await page.locator('.am2-ruimte [role="switch"]').count() === 1);
       // andere accounts
       await page.click('.canonical-other-toggle-main'); await page.waitForTimeout(300);
       check(`${breedte}: andere accounts zichtbaar`, await page.locator('.canonical-account-row').count() === 2);

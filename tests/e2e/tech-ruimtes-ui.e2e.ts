@@ -124,12 +124,13 @@ export async function main(): Promise<number> {
     // ── 2. Vlag AAN, licht, computer, rol met beperking ──
     {
       const { c, page, n } = await open({ vlag: true });
-      await page.waitForSelector('.rw [data-ruimte="prive"][aria-checked="true"]');
-      check('wisselknop: twee segmenten, Звичайний actief', (await page.locator('.rw [role=radio]').allTextContents()).join('|').includes('Звичайний простір'));
+      await page.waitForSelector('.rw [role="switch"][aria-checked="false"]');
+      // INTEG-001 (03.11.2026): één tumbler «Технічний простір» i.p.v. twee segmenten (wens van de eigenaar).
+      check('tumbler: één schakelaar «Технічний простір», uit (gewone ruimte)', await page.locator('.rw [role="switch"]').count() === 1 && ((await page.textContent('.rw .rw-naam')) || '') === 'Технічний простір' && ((await page.textContent('.rw .rw-aanuit')) || '') === 'вимкнено');
       check('stand «не розпочато»', (await page.textContent('.rw-stand')) === 'не розпочато');
       const id0 = await standId(page);
       await page.fill('[data-stand="tekst"]', 'мій текст 42');
-      await page.click('.rw [data-ruimte="technisch"]');
+      await page.click('.rw [data-naar="technisch"]');
       await page.waitForSelector('[data-tech-venster="ruimte-start"]');
       await page.click('.rs-chip[data-minuten="60"]');
       const namen = await page.locator('.rs .rs-naam').allTextContents();
@@ -154,11 +155,11 @@ export async function main(): Promise<number> {
       check('band verschijnt zonder herladen', await standId(page) === id0);
       check('getypte tekst blijft', await page.inputValue('[data-stand="tekst"]') === 'мій текст 42');
       check('band: wisselknop + «Вийти…» (geen «Вийти з технічного»)', await page.locator('.tech-band .rw').count() === 1 && await page.locator('[data-tech-knop="uitloggen"]').count() === 1 && await page.locator('[data-tech-knop="uit"]').count() === 0);
-      check('kop: Технічний actief', await page.locator('.stand-kop [data-ruimte="technisch"][aria-checked="true"]').count() === 1);
+      check('kop: tumbler aan', await page.locator('.stand-kop [role="switch"][aria-checked="true"]').count() === 1);
       await page.waitForTimeout(800);
       await shot(page, 'technisch-licht-1280');
       // pauze via klik
-      await page.click('.stand-kop [data-ruimte="prive"]');
+      await page.click('.stand-kop [data-naar="prive"]');
       await page.waitForSelector('.stand-kop [data-ruimte-uitkomst]');
       check('uitkomst wissel «…технічний сеанс на паузі.»', ((await page.textContent('.stand-kop [data-ruimte-uitkomst]')) || '').includes('на паузі'));
       await page.waitForFunction(() => !document.querySelector('.tech-band'), undefined, { timeout: 5000 }).catch(() => undefined);
@@ -167,15 +168,15 @@ export async function main(): Promise<number> {
       check('wisselen zonder nieuw startvenster/step-up', n.s.aanroepen.filter((x) => x.endsWith('/starten')).length === 1 && n.s.aanroepen.some((x) => x.endsWith('/wisselen')));
       await shot(page, 'pauze-licht-1280');
       // toetsenbord
-      await page.focus('.stand-kop [data-ruimte="prive"]');
+      await page.focus('.stand-kop [role="switch"]');
       await page.keyboard.press('ArrowRight');
-      await page.waitForSelector('.stand-kop [data-ruimte="technisch"][aria-checked="true"]');
-      await page.waitForSelector('.stand-kop .rw-seg:not([aria-busy])');
-      check('toetsenbord →: naar Технічний, focus mee', await page.evaluate(() => document.activeElement?.getAttribute('data-ruimte')) === 'technisch');
+      await page.waitForSelector('.stand-kop [role="switch"][aria-checked="true"]');
+      await page.waitForSelector('.stand-kop .rw-schakel:not([aria-busy])');
+      check('toetsenbord →: tumbler aan, focus blijft op de tumbler', await page.evaluate(() => document.activeElement?.getAttribute('data-ruimte-schakel')) === 'technisch');
       await page.keyboard.press('ArrowLeft');
-      await page.waitForSelector('.stand-kop [data-ruimte="prive"][aria-checked="true"]');
-      check('toetsenbord ←: terug naar Звичайний', true);
-      check('roving tabindex: één tab-stop', await page.locator('.stand-kop .rw [role=radio][tabindex="0"]').count() === 1);
+      await page.waitForSelector('.stand-kop [role="switch"][aria-checked="false"]');
+      check('toetsenbord ←: tumbler uit (gewone ruimte)', true);
+      check('één tab-stop: één schakelaar', await page.locator('.stand-kop .rw [role="switch"]').count() === 1);
       // Доступ і терміни
       await page.click('[data-stand="toegang"]');
       await page.waitForSelector('[data-tech-venster="toegang"]');
@@ -217,7 +218,7 @@ export async function main(): Promise<number> {
     // ── 3. Vlag AAN, open termijnen toegestaan, lopende sessie: «Змінити термін» ──
     {
       const { c, page, n } = await open({ vlag: true, openMag: true });
-      await page.click('.rw [data-ruimte="technisch"]');
+      await page.click('.rw [data-naar="technisch"]');
       await page.waitForSelector('[data-tech-venster="ruimte-start"]');
       check('open termijnen beschikbaar als de rol het toelaat', await page.locator('[data-termijn][data-beschikbaar="0"]').count() === 0);
       await page.click('.rs-kaart[data-termijn="tot-site-uitloggen"]');
@@ -249,18 +250,18 @@ export async function main(): Promise<number> {
     {
       const { c, page } = await open({ vlag: true, recht: false });
       await page.waitForSelector('.rw');
-      check('geen recht: segment aria-disabled + reden zichtbaar', await page.locator('.rw [data-ruimte="technisch"][aria-disabled="true"]').count() === 1 && ((await page.textContent('[data-ruimte-reden]')) || '').startsWith('Немає дозволу'));
+      check('geen recht: tumbler aria-disabled + reden zichtbaar', await page.locator('.rw [role="switch"][aria-disabled="true"]').count() === 1 && ((await page.textContent('[data-ruimte-reden]')) || '').startsWith('Немає дозволу'));
       await c.close();
     }
     // ── 5. NL + donker + 390 px ──
     {
       const { c, page } = await open({ vlag: true, breedte: 390, donker: true, nl: true });
       await page.waitForSelector('.rw');
-      check('NL: «Gewone ruimte | Technische ruimte»', (await page.locator('.stand-kop .rw .rw-naam').allTextContents()).join('|') === 'Gewone ruimte|Technische ruimte');
-      const over = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: innerWidth, rw: document.querySelector('.rw-seg')!.getBoundingClientRect().right }));
+      check('NL: tumbler «Technische ruimte · uit»', (await page.locator('.stand-kop .rw .rw-naam').allTextContents()).join('|') === 'Technische ruimte' && ((await page.textContent('.stand-kop .rw .rw-aanuit')) || '') === 'uit');
+      const over = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: innerWidth, rw: document.querySelector('.rw-schakel')!.getBoundingClientRect().right }));
       check('390 px: geen horizontale overloop', over.sw <= over.w && over.rw <= over.w + 0.5, JSON.stringify(over));
       await shot(page, 'kop-donker-390-nl');
-      await page.click('.rw [data-ruimte="technisch"]');
+      await page.click('.rw [data-naar="technisch"]');
       await page.waitForSelector('[data-tech-venster="ruimte-start"]');
       await page.click('.rs-chip[data-minuten="60"]');
       const namen = await page.locator('.rs .rs-naam').allTextContents();
@@ -270,7 +271,7 @@ export async function main(): Promise<number> {
     }
     {
       const { c, page } = await open({ vlag: true, breedte: 390, donker: true });
-      await page.click('.rw [data-ruimte="technisch"]');
+      await page.click('.rw [data-naar="technisch"]');
       await page.waitForSelector('[data-tech-venster="ruimte-start"]');
       const past = await page.evaluate(() => { const v = document.querySelector('[data-tech-venster="ruimte-start"]')!.getBoundingClientRect(); return v.left >= -1 && v.right <= innerWidth + 1; });
       check('390 px donker: startvenster past in de breedte', past);
@@ -341,13 +342,13 @@ export async function main(): Promise<number> {
         await shot(page, `wissel-technisch-${naam}`);
         await page.click('[data-tech-band] [data-tech-knop="meer"]');
         await page.waitForSelector('[data-tech-mobiel="wissel"] .rw');
-        const binnen = await page.evaluate(() => ['[data-tech-mobiel="wissel"] [data-ruimte="prive"]', '[data-tech-mobiel="wissel"] [data-ruimte="technisch"]', '[data-tech-mobiel="inklappen"]', '[data-tech-mobiel="uitloggen"]', '[data-tech-mobiel="acties"] [data-tech-knop="meldingen"]'].map((q) => { const r = document.querySelector(q)?.getBoundingClientRect(); return !!r && r.width > 0 && r.height >= 40 && r.left >= 0 && r.right <= innerWidth + 0.5; }));
-        check(`${naam}: menu — wissel «Звичайний | Технічний» bovenaan, bel/«Згорнути»/«Вийти…» onderaan, binnen het scherm`, binnen.every(Boolean), JSON.stringify(binnen));
+        const binnen = await page.evaluate(() => ['[data-tech-mobiel="wissel"] [role="switch"]', '[data-tech-mobiel="inklappen"]', '[data-tech-mobiel="uitloggen"]', '[data-tech-mobiel="acties"] [data-tech-knop="meldingen"]'].map((q) => { const r = document.querySelector(q)?.getBoundingClientRect(); return !!r && r.width > 0 && r.height >= 40 && r.left >= 0 && r.right <= innerWidth + 0.5; }));
+        check(`${naam}: menu — tumbler «Технічний простір» bovenaan, bel/«Згорнути»/«Вийти…» onderaan, binnen het scherm`, binnen.every(Boolean), JSON.stringify(binnen));
         await page.waitForTimeout(300);
         await shot(page, `band-menu-${naam}`);
         await page.click('[data-tech-mobiel="inklappen"]');
       } else {
-        const binnen = await page.evaluate(() => ['[data-tech-knop="inklappen"]', '[data-tech-knop="uitloggen"]', '.tech-band .rw [data-ruimte="prive"]'].map((q) => { const r = document.querySelector(q)?.getBoundingClientRect(); return !!r && r.width > 0 && r.left >= 0 && r.right <= innerWidth + 0.5; }));
+        const binnen = await page.evaluate(() => ['[data-tech-knop="inklappen"]', '[data-tech-knop="uitloggen"]', '.tech-band .rw [role="switch"]'].map((q) => { const r = document.querySelector(q)?.getBoundingClientRect(); return !!r && r.width > 0 && r.left >= 0 && r.right <= innerWidth + 0.5; }));
         check(`${naam}: band — «Згорнути», «Вийти…» en wissel binnen het scherm`, binnen.every(Boolean), JSON.stringify(binnen));
         await shot(page, `wissel-technisch-${naam}`);
         await page.click('[data-tech-knop="inklappen"]');

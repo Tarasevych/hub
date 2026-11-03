@@ -77,8 +77,10 @@ export default function ToegangPagina({ taal, sluit, start }: { taal: Taal; slui
                 <dt>{uk ? 'Термін' : 'Termijn'}</dt><dd data-rt-termijn='1'>{s.sessie ? termijnNaam(s.sessie.modus, taal, s.sessie.eindTijd) : (uk ? 'технічний сеанс не розпочато' : 'geen technische sessie')}</dd>
                 <dt>{uk ? 'Ролі' : 'Rollen'}</dt><dd>{s.rollen.map((x) => `${x.naam} (≤ ${x.maxMinuten >= 60 ? `${x.maxMinuten / 60} ${uk ? 'год' : 'u'}` : `${x.maxMinuten} ${uk ? 'хв' : 'min'}`})`).join(' · ') || '—'}</dd>
               </dl>
+              {/* INTEG-001 (03.11.2026): geen aparte knop «Увійти в технічний простір» meer naast de tumbler hierboven — die tumbler IS de
+                  ingang (aanzetten zonder sessie opent hetzelfde startvenster). «Змінити термін» blijft zolang er een sessie loopt. */}
               <div className='tech-knoppen'>
-                <button type='button' onClick={() => openTechVenster('activeren')} data-rt-knop='termijn'>{s.sessie ? WOORDEN.wijzigTermijn[taal] : (uk ? 'Увійти в технічний простір' : 'De technische ruimte openen')}</button>
+                {s.sessie ? <button type='button' onClick={() => openTechVenster('activeren')} data-rt-knop='termijn'>{WOORDEN.wijzigTermijn[taal]}</button> : null}
                 <button type='button' onClick={() => openTechVenster('uitloggen')} data-rt-knop='uitloggen'>{uk ? 'Вийти…' : 'Afmelden…'}</button>
               </div>
             </div>

@@ -55,7 +55,7 @@ const bel = (page) => page.evaluate(() => [...document.querySelectorAll('[class*
 async function naarTechnisch(page, eerste = false) {
   ruimteNu = 'technisch';
   if (await isTechnisch(page)) return true;
-  await menu(page); await page.click('[data-ruimtes-menu] .rw [data-ruimte="technisch"]').catch(() => undefined);
+  await menu(page); await page.click('[data-ruimtes-menu] .rw [data-naar="technisch"]').catch(() => undefined);
   const venster = await page.waitForSelector('[data-tech-venster="ruimte-start"]', { timeout: eerste ? 15000 : 2500, state: 'attached' }).then(() => true, () => false);
   if (venster) { await page.click('.rs-chip[data-minuten="60"]').catch(() => page.click('.rs-chip').catch(() => undefined)); if (await page.locator('[data-rs-reden]').count()) await page.fill('[data-rs-reden]', 'E2E lekkage ruimtes'); await page.click('[data-tech-knop="ruimte-start"]'); }
   await T.stapOp(page, venster ? 5000 : 1500);
@@ -64,7 +64,7 @@ async function naarTechnisch(page, eerste = false) {
 }
 async function naarPrive(page) {
   ruimteNu = 'prive'; if (!(await isTechnisch(page))) return true;
-  await menu(page); await page.click('[data-ruimtes-menu] .rw [data-ruimte="prive"]').catch(() => undefined);
+  await menu(page); await page.click('[data-ruimtes-menu] .rw [data-naar="prive"]').catch(() => undefined);
   await page.waitForFunction(() => !document.querySelector('.tech-band'), undefined, { timeout: 6000 }).catch(() => undefined);
   await page.keyboard.press('Escape').catch(() => undefined); await page.waitForTimeout(900); return !(await isTechnisch(page));
 }

@@ -1,33 +1,57 @@
 /* Twee ruimtes (vlag tech-ruimtes-v2): wisselknop, startvenster, «Доступ і терміни», uitlogkeuzes. Kleur per ruimte; licht/donker via
    html.theme-dark en prefers-color-scheme. Geen vaste hoogtes die kunnen knipperen. */
-/* Schakelaar «Звичайний | Технічний»: één spoor met één schuivend blokje onder de actieve ruimte (geen twee losse knoppen).
-   Kleur per thema: licht → donkerteal voor «Звичайний», donker amber voor «Технічний»; donker thema → felle varianten. Tekst op
-   het blokje ≥ 4,5:1. De stand staat er altijd onder, in dezelfde stijl in beide standen. */
+/* Tumbler «Технічний простір» (INTEG-001, 03.11.2026 — vervangt de tweedelige keuze «Звичайний | Технічний» die als twee losse
+   knoppen las). Eén knop met role=switch: spoor + bolletje + naam + «увімкнено/вимкнено». In beide standen dezelfde vorm, maat en
+   plaats; alleen het bolletje schuift naar rechts en spoor en bolletje kleuren mee. Kleur per thema: licht → donkerteal (uit,
+   gewone ruimte) en donker amber (aan, technisch); donker thema → felle varianten. Tekst/pictogram op het bolletje ≥ 4,5:1. */
 :root,.theme-light,.theme-plum-light{--rw-prive:#0f766e;--rw-prive-fg:#ffffff;--rw-tech:#b45309;--rw-tech-fg:#ffffff;--rw-spoor:#e4e8ee;--rw-tekst:#374151;--rw-rand:rgba(92,110,142,.28)}
 .theme-dark,.theme-plum-dark{--rw-prive:#14b8a6;--rw-prive-fg:#04201d;--rw-tech:#f5b400;--rw-tech-fg:#1a1200;--rw-spoor:#222b38;--rw-tekst:#c3cbd5;--rw-rand:rgba(189,201,223,.22)}
 @media (prefers-color-scheme:dark){html:not(.theme-light):not(.theme-plum-light){--rw-prive:#14b8a6;--rw-prive-fg:#04201d;--rw-tech:#f5b400;--rw-tech-fg:#1a1200;--rw-spoor:#222b38;--rw-tekst:#c3cbd5;--rw-rand:rgba(189,201,223,.22)}}
 .rw{display:flex;flex-direction:column;align-items:flex-start;gap:4px;max-width:100%}
 .rw-rij{display:flex;align-items:center;gap:8px;max-width:100%}
-.rw-seg{position:relative;isolation:isolate;display:grid;grid-template-columns:1fr 1fr;min-width:0;max-width:100%;padding:3px;border-radius:999px;background:var(--rw-spoor);box-shadow:inset 0 0 0 1px var(--rw-rand)}
-.rw-schuif{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);z-index:-1;border-radius:999px;background:var(--rw-prive);box-shadow:0 1px 3px rgba(0,0,0,.18);transition:left .22s ease,background-color .22s ease}
-.rw-seg[data-stand=technisch] .rw-schuif{left:50%;background:var(--rw-tech)}
-.rw-knop{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:36px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:var(--rw-tekst);font-family:inherit;font-size:14px;font-weight:600;line-height:1.15;white-space:nowrap;cursor:pointer;transition:color .22s ease}
-.rw-knop svg{width:16px;height:16px;flex:none}
-.rw-knop:focus-visible{outline:2px solid var(--focus,#2563eb);outline-offset:2px}
-.rw-prive[aria-checked=true]{color:var(--rw-prive-fg)}
-.rw-tech[aria-checked=true]{color:var(--rw-tech-fg)}
-.rw-tech[aria-disabled=true]{opacity:.6;cursor:not-allowed}
+.rw-schakel{display:inline-flex;align-items:center;gap:10px;min-width:0;max-width:100%;min-height:40px;box-sizing:border-box;margin:0;padding:4px 14px 4px 4px;border:1px solid var(--rw-rand);border-radius:999px;background:transparent;color:var(--rw-tekst);font-family:inherit;font-size:14px;font-weight:600;line-height:1.15;text-align:left;cursor:pointer;transition:background-color .2s ease,border-color .2s ease}
+.rw-schakel:hover{background:color-mix(in srgb,var(--rw-spoor) 70%,transparent)}
+.rw-schakel:focus-visible{outline:2px solid var(--focus,#2563eb);outline-offset:2px}
+/* Zonder recht: zichtbaar maar niet bruikbaar; geen globale vervaging (primitieven.css), het slotje en de reden zeggen het. */
+.rw-schakel[aria-disabled=true]{cursor:not-allowed;opacity:1}
+.rw-schakel[aria-disabled=true] .rw-spoor{opacity:.6}
+.rw-schakel[aria-busy=true]{cursor:progress}
+.rw-spoor{position:relative;flex:none;width:54px;height:30px;border-radius:999px;background:var(--rw-spoor);box-shadow:inset 0 0 0 1px var(--rw-rand);transition:background-color .22s ease}
+.rw-bol{position:absolute;top:3px;left:3px;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--rw-prive);color:var(--rw-prive-fg);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .22s ease,background-color .22s ease}
+.rw-bol svg{width:14px;height:14px;flex:none}
+.rw-schakel[aria-checked=true] .rw-spoor{background:color-mix(in srgb,var(--rw-tech) 32%,var(--rw-spoor));box-shadow:inset 0 0 0 1px var(--rw-tech)}
+.rw-schakel[aria-checked=true] .rw-bol{transform:translateX(24px);background:var(--rw-tech);color:var(--rw-tech-fg)}
+.rw-label{display:flex;flex-direction:column;gap:1px;min-width:0}
+.rw-naam{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rw-aanuit{font-size:12px;font-weight:600;opacity:.85;white-space:nowrap}
 .rw-stand{padding-left:4px;color:var(--rw-tekst);font-size:12px;line-height:1.3;white-space:nowrap;opacity:.85}
 .rw-reden,.rw-uitkomst{font-size:12px}
+/* Elke regel onder de tumbler op een eigen regel, ook waar .rw een blok is (accountmenu v2). */
+.rw-stand,.rw-reden,.rw-uitkomst{display:block}
 .rw-uitkomst.is-fout{color:#b91c1c}
-.rw-compact .rw-knop{min-height:30px;padding:0 9px;font-size:13px}
-@media (max-width:480px){.rw-knop{padding:0 8px;font-size:13px}}
-.tech-band .rw-seg{background:rgba(255,255,255,.28);box-shadow:inset 0 0 0 1px var(--tech-band-fg)}
-.tech-band .rw-knop{color:var(--tech-band-fg)}
-.tech-band .rw-seg .rw-knop{border:0;border-radius:999px;box-shadow:none;background-clip:border-box}
-.tech-band .rw-seg .rw-schuif{background:var(--tech-band-fg)}
-.tech-band .rw-prive[aria-checked=true],.tech-band .rw-tech[aria-checked=true]{color:var(--tech-band-bg)}
+.rw-compact .rw-schakel{min-height:34px;gap:8px;padding:3px 12px 3px 3px;font-size:13px}
+.rw-compact .rw-spoor{width:46px;height:26px}
+.rw-compact .rw-bol{width:20px;height:20px}
+.rw-compact .rw-schakel[aria-checked=true] .rw-bol{transform:translateX(20px)}
+.rw-compact .rw-aanuit{font-size:11px}
+/* Accountmenu: de tumbler over de hele breedte van het blok. */
+.am2-ruimte .rw,.canonical-ruimtes .rw{width:100%}
+.am2-ruimte .rw-rij,.canonical-ruimtes .rw-rij{width:100%}
+.am2-ruimte .rw-schakel,.canonical-ruimtes .rw-schakel{flex:1 1 auto;min-height:44px}
+/* In de technische band: dezelfde tumbler in de bandkleuren (aan = bolletje rechts). */
+.tech-band .rw-schakel{border-color:transparent;color:var(--tech-band-fg);background:transparent}
+.tech-band .rw-schakel:hover{background:rgba(255,255,255,.14)}
+.tech-band .rw-spoor,.tech-band .rw-schakel[aria-checked=true] .rw-spoor{background:rgba(255,255,255,.28);box-shadow:inset 0 0 0 1px var(--tech-band-fg)}
+.tech-band .rw-bol,.tech-band .rw-schakel[aria-checked=true] .rw-bol{background:var(--tech-band-fg);color:var(--tech-band-bg)}
 .tech-band .rw-stand{display:none}
+/* Telefoon: in het open ⋯-paneel van de band staat de tumbler op het paneel (niet op de bandkleur), over de hele breedte, ≥ 44 px. */
+.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw,.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-rij{width:100%}
+.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-schakel{flex:1 1 auto;min-height:44px;border-color:var(--line,var(--rw-rand));color:var(--text,var(--rw-tekst));background:var(--surface,transparent)}
+.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-spoor{background:var(--rw-spoor);box-shadow:inset 0 0 0 1px var(--rw-rand)}
+.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-bol{background:var(--rw-prive);color:var(--rw-prive-fg)}
+.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-schakel[aria-checked=true] .rw-spoor{background:color-mix(in srgb,var(--rw-tech) 32%,var(--rw-spoor));box-shadow:inset 0 0 0 1px var(--rw-tech)}
+.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-schakel[aria-checked=true] .rw-bol{background:var(--rw-tech);color:var(--rw-tech-fg)}
+@media (prefers-reduced-motion:reduce){.rw-bol,.rw-spoor,.rw-schakel{transition:none}}
 .rs-groep{border:0;margin:0 0 10px;padding:0}
 .rs-groep legend{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .rs-tijden{display:flex;flex-wrap:wrap;gap:6px}
@@ -93,6 +117,6 @@ html[data-ruimte=technisch][data-tech=aan] #root .canonical-menu-toggle::before{
 html[data-ruimte=technisch][data-tech=aan] .zijbalk-werkbalk-titel::after{content:' · ТЕХ';font-weight:800;color:inherit;background:var(--tech-band-bg);color:var(--tech-band-fg);border-radius:4px;padding:0 4px;margin-left:4px}
 html[data-ruimte=technisch][data-tech=aan][lang=nl] .zijbalk-werkbalk-titel::after{content:' · TECH'}
 @media (prefers-reduced-motion:reduce){.tech-band{transition:none!important}}
-/* Telefoon en tablet (≤1100 px): in de band alleen pictogrammen in de wissel (de naam staat in title/aria), zodat «Згорнути» en «Вийти…» niet buiten beeld vallen. */
-@media (max-width:1100px){.tech-band .rw-stand,.tech-band .rw-naam{display:none}.tech-band .rw-knop{padding:0 8px;min-width:36px;justify-content:center}}
+/* Telefoon en tablet (≤1100 px): in de band alleen het spoor van de tumbler (naam en stand staan in title/aria), zodat «Згорнути» en «Вийти…» niet buiten beeld vallen. */
+@media (max-width:1100px){.tech-band .rw-stand,.tech-band .rw-label{display:none}.tech-band .rw-schakel{padding:3px;gap:0}.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-label{display:flex}.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-schakel{padding:4px 14px 4px 4px;gap:10px}}
 .rw-dok-sluit{margin-left:8px;min-width:32px;min-height:32px;border:0;border-radius:8px;background:rgba(255,255,255,.15);color:inherit;font-size:18px;cursor:pointer}
