@@ -109,6 +109,29 @@ export function ontdubbel(items: readonly V2Melding[]): V2Melding[] {
   return [...m.values()];
 }
 
+/**
+ * INTEG-001 (klacht «сповіщення повторюються»): één gebeurtenis kwam uit twee bronnen in de lijst — de dienst meldt zelf
+ * «Лист надіслано» (lokale melding) en de server zet dezelfde actie in de activiteit («Лист надіслано»). Dat waren twee regels.
+ * Zelfde dienst, zelfde titel (zonder cijfers/leestekens) en hoogstens BRON_VENSTER_MS uit elkaar = dezelfde gebeurtenis.
+ */
+export const BRON_VENSTER_MS = 2 * 60_000;
+export const zelfdeGebeurtenis = (a: { dienst: string; titel: string; tijd: number }, b: { dienst: string; titel: string; tijd: number }) =>
+  a.dienst === b.dienst && normTitel(a.titel) === normTitel(b.titel) && Math.abs(a.tijd - b.tijd) <= BRON_VENSTER_MS;
+/** De lokale kopie valt weg (de server-/activiteitsregel is rijker en geldt op elk apparaat); was de lokale al gelezen, dan ook de andere. */
+export function ontdubbelBronnen(items: readonly V2Melding[]): V2Melding[] {
+  const anderen = items.filter((m) => m.herkomst === 'server' || m.herkomst === 'activiteit');
+  if (!anderen.length) return [...items];
+  const weg = new Set<string>(), gelezen = new Set<string>();
+  for (const m of items) {
+    if (m.herkomst !== 'lokaal') continue;
+    const ander = anderen.find((a) => zelfdeGebeurtenis(a, m));
+    if (!ander) continue;
+    weg.add(m.id);
+    if (m.gelezen) gelezen.add(ander.id);
+  }
+  return items.filter((m) => !weg.has(m.id)).map((m) => (gelezen.has(m.id) && !m.gelezen ? { ...m, gelezen: true } : m));
+}
+
 export function groepeer(items: readonly V2Melding[], regels: LeverRegels, nu = Date.now()): V2Groep[] {
   const map = new Map<string, V2Melding[]>();
   for (const i of ontdubbel(items)) { const k = groepSleutel(i); const l = map.get(k); if (l) l.push(i); else map.set(k, [i]); }
