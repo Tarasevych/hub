@@ -3,6 +3,7 @@
 // vaste -Command-start zonder shell, ook via exec voor de AI) en backend/terminal-opdrachten.ts met de ECHTE database en een nagebootste
 // agentverbinding door de echte gateway (onConnection): eigen apparaat, tech-profiel vereist, bevestiging, uitvoer opgenomen, een andere
 // gebruiker ziet het apparaat noch de rijen (RLS), instelling per apparaat.
+import { pathToFileURL } from 'node:url';
 import { EventEmitter } from 'node:events';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -63,7 +64,7 @@ export async function main(): Promise<number> {
   writeFileSync(join(rw, 'meta.js'), 'console.log(process.argv.slice(2).join("|"))');
   writeFileSync(join(ro, 'current', 'leesmij.txt'), 'hoi');
   writeFileSync(join(rw, '.env'), 'GEHEIM=1');
-  const agent = await import(resolve('deploy/agent/agent.mjs'));
+  const agent = await import(pathToFileURL(resolve('deploy/agent/agent.mjs')).href);
   const { handlers } = agent;
   check('agent: LEZEND-tabel is een exacte spiegel van shared/terminal-opdrachten.ts', JSON.stringify(agent.LEZEND) === JSON.stringify(LEZEND));
   const spiegelMis = [...LEZ, ...WIJZ, 'C:\\x\\git.exe status', 'powershell Get-Date'].filter((r) => { const w = regelSplitsen(r); return agent.opdrachtSoort(w[0], w.slice(1)) !== opdrachtSoort(w[0], w.slice(1)); });
