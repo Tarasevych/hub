@@ -10,6 +10,11 @@
 // categorie naast «за релевантністю», lijst/raster, «Останні пошуки» met relatieve tijd. In het TECHNISCH profiel: een strook die zegt
 // dat hier de technische ruimte doorzocht wordt (+ in welke lade elke bron zit), en de knop «Індексація…» → zwevend venster
 // (ZoekIndexVenster, vensterbeheer van de site) met de geforceerde indexatie. Voor een gewone gebruiker bestaat die knop niet.
+//
+// INTEG-001 (03.11.2026): de knop «Перейти до пошуку» van het uitklapvenster (ZoekGlobaal) opent deze pagina met het HUIDIGE resultaat:
+// (a) is het resultaat van precies deze vraag nog in het geheugen van dit tabblad (zoek-laatste.ts), dan staat het er meteen — geen skelet,
+// geen leeg scherm — en ververst de pagina op de achtergrond; (b) staat de pagina al open, dan neemt ze tekst, categorie en resultaat over
+// uit de melding van het venster (ZOEK_NAAR_PAGINA_EVENT) zonder te herladen.
 import { Suspense, lazy, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, ChevronDown, ChevronRight, Clock, History, Info, LayoutGrid, List, Loader2, Lock, RefreshCw, Search, SlidersHorizontal, Sparkles, Trash2, Wrench, X } from 'lucide-react';
 import TabsRij from '../ontwerp/TabsRij';
@@ -21,9 +26,11 @@ import type { DeelbareDienst } from '../../shared/ruimte-scheiding';
 import { ApiError } from '../platform/client';
 import { BRON_NAAM, BRON_STAND_NAAM, ZOEK_VERSIE, type ZoekBronStand, type ZoekSuggestie, type ZoekTreffer } from '../../shared/zoek-model';
 import { bronStand, geschiedenisBewaren, geschiedenisLijst, geschiedenisOpen, geschiedenisWis, geschiedenisWisAlles, isAfgebroken, suggesties as haalSuggesties, zoeken, type GeschiedenisRij, type Gesloten, type ZoekUitkomst } from './zoek-api';
-import { CATEGORIE_BRONNEN, CATEGORIE_NAAM, LEEG_FILTER, aantalFilters, bewaarWeergave, bouwVraag, categorieTelling, filterLokaal, filtersUitGeschiedenis, filtersVoorGeschiedenis, groepeerPerCategorie, leesUrl, leesWeergave, markeerTegenMomentopname, nietsGeindexeerd, parseQuery, schrijfUrl, zichtbareCategorieen, type Categorie, type Markering, type WeergaveKeuze, type ZoekFilters as Filters } from './zoek-logica';
+import { CATEGORIEEN, CATEGORIE_BRONNEN, CATEGORIE_NAAM, LEEG_FILTER, aantalFilters, bewaarWeergave, bouwVraag, categorieTelling, filterLokaal, filtersUitGeschiedenis, filtersVoorGeschiedenis, groepeerPerCategorie, leesUrl, leesWeergave, markeerTegenMomentopname, nietsGeindexeerd, parseQuery, schrijfUrl, zichtbareCategorieen, type Categorie, type Markering, type WeergaveKeuze, type ZoekFilters as Filters } from './zoek-logica';
 import { norm, oudeGeschiedenisOpruimen, relatiefTijd, routeUrl, type Lang } from './zoek-kern';
 import { CATEGORIE_ICOON } from './ZoekCategorieIcoon';
+import { leesLaatste } from './zoek-laatste';
+import { ZOEK_NAAR_PAGINA_EVENT, type NaarPaginaDetail } from './zoek-menu';
 // Technische bundel (// @tech-asset → /assets/tech/, alleen met de toegangscookie van een actieve activering): mislukt het laden
 // (404: geen cookie meer, nieuwe versie uitgerold), dan een eerlijk venster i.p.v. een kapotte pagina (React.lazy zonder vangnet gooit).
 const ZoekIndexVenster = lazy(() => import('./ZoekIndexVenster').catch(() => ({ default: IndexVensterNietGeladen })));
@@ -76,9 +83,11 @@ const useMobiel = () => { const [m, setM] = useState(() => typeof matchMedia ===
 export default function ZoekPagina({ lang }: { lang: Lang }) {
   const t = T[lang]; const uid = useId(); const mobiel = useMobiel();
   const init = useMemo(() => leesUrl(location.search), []);
+  // Het huidige resultaat van het uitklapvenster (zelfde tabblad, nog geen 10 minuten oud, zelfde vraag en categorie, zonder filters): meteen tonen.
+  const voorvulling = useMemo(() => { const v = parseQuery(init.q).query; return v.length >= 2 && aantalFilters(init.f) === 0 ? leesLaatste(v, init.cat) : null; }, [init]);
   const [input, setInput] = useState(init.q); const [q, setQ] = useState(init.q);
   const [cat, setCat] = useState<Categorie>(init.cat); const [f, setF] = useState<Filters>(init.f);
-  const [antwoord, setAntwoord] = useState<ZoekUitkomst | null>(null); const [items, setItems] = useState<ZoekTreffer[]>([]);
+  const [antwoord, setAntwoord] = useState<ZoekUitkomst | null>(voorvulling); const [items, setItems] = useState<ZoekTreffer[]>(voorvulling?.items ?? []);
   const [loading, setLoading] = useState(false); const [meerLaden, setMeerLaden] = useState(false); const [fout, setFout] = useState<Fout>(null);
   const [stand, setStand] = useState<ZoekBronStand[] | null>(null); const [standFout, setStandFout] = useState(false); const [gesloten, setGesloten] = useState<Gesloten[]>([]);
   const [geschiedenis, setGeschiedenis] = useState<GeschiedenisRij[]>([]); const [geschFout, setGeschFout] = useState(false);
@@ -105,6 +114,18 @@ export default function ZoekPagina({ lang }: { lang: Lang }) {
   // Debounce 250 ms: getypte tekst → uitgevoerde vraag. Enter/knop/keuze zet q meteen (expliciet).
   useEffect(() => { if (input.trim() === q) return; const id = window.setTimeout(() => { expliciet.current = false; setQ(input.trim()); }, DEBOUNCE_MS); return () => window.clearTimeout(id); }, [input]);
   const submit = useCallback((v: string) => { const s = v.trim(); expliciet.current = true; setInput(s); setQ(s); }, []);
+  // «Перейти до пошуку» terwijl deze pagina al open is: tekst, categorie en het resultaat van het venster overnemen, zonder herladen (preventDefault = overgenomen).
+  useEffect(() => {
+    const h = (e: Event) => {
+      const d = (e as CustomEvent<NaarPaginaDetail>).detail; if (!d || typeof d.q !== 'string') return;
+      e.preventDefault();
+      setMomentopname(null); setF(LEEG_FILTER); setCat(CATEGORIEEN.includes(d.cat) ? d.cat : 'all');
+      if (d.uitkomst && d.uitkomst.items.length) { setAntwoord(d.uitkomst); setItems(d.uitkomst.items); setFout(null); }
+      submit(d.q); setHerhaal(n => n + 1);
+    };
+    window.addEventListener(ZOEK_NAAR_PAGINA_EVENT, h);
+    return () => window.removeEventListener(ZOEK_NAAR_PAGINA_EVENT, h);
+  }, [submit]);
 
   // Suggesties (6.1): server + eigen geschiedenis; 250 ms; één lopend verzoek.
   useEffect(() => {
