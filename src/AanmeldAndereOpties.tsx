@@ -1,40 +1,68 @@
-// LOGIN-001 — «Інші способи входу» op de afgemelde pagina: een uitklapbare lijst met merklogo's (Google, Apple, Microsoft, GitHub,
-// passkey). Eerlijk: alleen Google is nu echt bruikbaar; de andere staan er met hun echte stand bij (sleutels van de eigenaar nodig,
-// gepland, of pas na aanmelden). Geen knop die stil niets doet. Logo's komen uit het merkregister (src/merk/Merk.tsx), niet uit eigen tekenwerk.
+// LOGIN-001 / INTEG-001 — «Інші способи входу» op de afgemelde pagina: een uitklapbare lijst met GitHub, Apple, Microsoft en passkey
+// (volgorde en woorden van de eigenaar, 03.11.2026). Google staat hier NIET: dat is de hoofdknop erboven.
+//
+// EERLIJK, nagekeken in de code van 03.11.2026 — vandaag geeft de server ALLEEN via Google een sessie uit:
+//   • GitHub: backend/github-oauth.ts koppelt GitHub na het aanmelden als DIENST (repositories, token in de kluis); een aanmeldweg
+//     «увійти через GitHub» bestaat niet;
+//   • Apple en Microsoft: backend/aanmeld-koppel.ts heeft de volledige OAuth-contour, maar KOPPELT de identiteit alleen aan een al
+//     ingelogd account als extra aanmeldweg en geeft «GEEN sessies uit» (zie de kop van dat bestand); bovendien pas met de sleutels
+//     van de eigenaar (AANMELD_APPLE_* / AANMELD_MICROSOFT_*) en een geslaagde zelftest;
+//   • passkey: backend/toegangssleutels.ts — een passkey bevestigt gevoelige acties ná het aanmelden; «inloggen zonder Google met
+//     alleen een passkey kan (nog) NIET» (RUNBOOK-VEILIGE-UITROL.md §13).
+// Daarom staat elke optie hier als UITGESCHAKELDE knop met de reden eronder, nooit als een knop die stil niets doet of een verzonnen
+// aanmelding. Gaat een weg later echt werken, dan zet men `beschikbaar` op true en geeft men `onKies` mee — de weergave is klaar.
+// Logo's: GitHub en Apple uit het merkregister (simple-icons, CC0), Microsoft het officiële bestand (src/merk/officieel); voor
+// passkey bestaat in de open pakketten van de site geen merklogo — dan een neutraal pictogram (vingerafdruk), niets nagetekend.
 import { useId, useState } from 'react';
-import { ChevronDown, KeyRound } from 'lucide-react';
+import { ChevronDown, Fingerprint } from 'lucide-react';
 import Merk from './merk/Merk';
-import { AANBIEDER_STAND_LABEL } from '../shared/aanmeld-vnext-model';
 
 type Lang = 'uk' | 'nl';
-type Optie = {
-  id: string;
-  naam: string;
-  /** Merksleutel voor Merk; leeg = geen merk (passkey is geen merk, dus een gewoon pictogram). */
+type T2 = readonly [uk: string, nl: string];
+export type AanmeldIngang = {
+  id: 'github' | 'apple' | 'microsoft' | 'passkey';
+  /** Merksleutel voor <Merk>; leeg = geen merklogo (passkey). */
   merk: string;
-  uitleg: readonly [string, string];
-  /** Stand (tweetalig). Weg = de optie werkt nu. */
-  stand?: readonly [string, string];
-  actief: boolean;
+  titel: T2;
+  /** Waarom de weg nu (niet) werkt — staat altijd zichtbaar onder de titel. */
+  reden: T2;
+  beschikbaar: boolean;
 };
 
-// Tekst van de passkey-uitleg: dezelfde woorden als in de bevestigingsstap (src/platform/bevestig-toegang.tsx).
-const PASSKEY_UITLEG: readonly [string, string] = [
-  'Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено passkey.',
-  'Bevestig met vingerafdruk, gezicht, pincode of de telefoon waarop de passkey staat.',
-];
+const NIET_BESCHIKBAAR: T2 = ['Недоступно', 'Niet beschikbaar'];
 
-const OPTIES: readonly Optie[] = [
-  { id: 'google', naam: 'Google', merk: 'google', uitleg: ['Ваш обліковий запис Google. Адресу змінюєте лише в Google.', 'Uw Google-account. Een adres wijzigt u alleen bij Google.'], actief: true },
-  { id: 'apple', naam: 'Apple', merk: 'apple', uitleg: ['Вхід з Apple ID.', 'Aanmelden met Apple ID.'], stand: AANBIEDER_STAND_LABEL['sleutels-nodig'], actief: false },
-  { id: 'microsoft', naam: 'Microsoft', merk: 'microsoft', uitleg: ['Вхід з обліковим записом Microsoft.', 'Aanmelden met een Microsoft-account.'], stand: AANBIEDER_STAND_LABEL['sleutels-nodig'], actief: false },
-  { id: 'github', naam: 'GitHub', merk: 'github', uitleg: ['Вхід з обліковим записом GitHub.', 'Aanmelden met een GitHub-account.'], stand: AANBIEDER_STAND_LABEL.gepland, actief: false },
-  { id: 'passkey', naam: 'Passkey', merk: '', uitleg: PASSKEY_UITLEG, stand: ['Після входу: додайте passkey у налаштуваннях доступу', 'Na aanmelden: voeg een passkey toe bij de toegangsinstellingen'], actief: false },
-];
+/** De vier wegen, in de volgorde van de eigenaar. Puur gegeven: de eenheidstest leest deze lijst. */
+export const AANMELD_INGANGEN: readonly AanmeldIngang[] = Object.freeze([
+  {
+    id: 'github', merk: 'github', titel: ['Увійти через GitHub', 'Aanmelden met GitHub'], beschikbaar: false,
+    reden: ['Сервер не видає вхід через GitHub: GitHub підключається лише після входу — як служба для репозиторіїв.',
+      'De server kent geen aanmelding met GitHub: GitHub wordt pas na het aanmelden gekoppeld, als dienst voor repositories.'],
+  },
+  {
+    id: 'apple', merk: 'apple', titel: ['Увійти через Apple', 'Aanmelden met Apple'], beschikbaar: false,
+    reden: ['Ще не працює для входу: Apple ID можна лише прив’язати до вже відкритого облікового запису, коли власник сервера додасть ключі Apple.',
+      'Werkt nog niet voor aanmelden: een Apple ID kan alleen aan een al geopend account worden gekoppeld, zodra de servereigenaar de Apple-sleutels zet.'],
+  },
+  {
+    id: 'microsoft', merk: 'microsoft', titel: ['Увійти через Microsoft', 'Aanmelden met Microsoft'], beschikbaar: false,
+    reden: ['Ще не працює для входу: обліковий запис Microsoft можна лише прив’язати до вже відкритого облікового запису, коли власник сервера додасть ключі Microsoft.',
+      'Werkt nog niet voor aanmelden: een Microsoft-account kan alleen aan een al geopend account worden gekoppeld, zodra de servereigenaar de Microsoft-sleutels zet.'],
+  },
+  {
+    id: 'passkey', merk: '',
+    // Dezelfde woorden als de bevestigingsstap (src/platform/bevestig-toegang.tsx) en als de eigenaar ze vroeg.
+    titel: ['Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено passkey', 'Bevestig met vingerafdruk, gezicht, pincode of de telefoon waarop de passkey staat'],
+    beschikbaar: false,
+    reden: ['Вхід лише з passkey ще не працює. Зараз passkey підтверджує важливі дії після входу через Google; додати його можна в «Способи входу».',
+      'Aanmelden met alleen een passkey werkt nog niet. Nu bevestigt een passkey belangrijke acties na het aanmelden met Google; toevoegen kan bij «Aanmeldmethoden».'],
+  },
+]);
 
-export default function AanmeldAndereOpties({ lang, onGoogle }: { lang: Lang; onGoogle: () => void }) {
-  const [open, setOpen] = useState(false);
+/** standaardOpen: alleen voor een weergave die meteen uitgeklapt moet zijn (eenheidstest met react-dom/server). */
+export default function AanmeldAndereOpties({ lang, onKies, standaardOpen = false }: { lang: Lang; onKies?: (id: AanmeldIngang['id']) => void; standaardOpen?: boolean }) {
+  const [open, setOpen] = useState(standaardOpen);
   const basis = `mr-andere-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const t = (p: T2) => (lang === 'uk' ? p[0] : p[1]);
   return (
     <div className='mr-sign-in-andere'>
       <button type='button' className='mr-sign-in-alternative' aria-expanded={open} aria-controls={`${basis}-lijst`} onClick={() => setOpen((v) => !v)}>
@@ -42,29 +70,27 @@ export default function AanmeldAndereOpties({ lang, onGoogle }: { lang: Lang; on
         <ChevronDown className='mr-sign-in-alt-pijl' aria-hidden='true' />
       </button>
       {open && (
-        <ul id={`${basis}-lijst`} className='mr-sign-in-opties' aria-label={lang === 'uk' ? 'Способи входу' : 'Aanmeldmethoden'}>
-          {OPTIES.map((o) => {
-            const uitleg = lang === 'uk' ? o.uitleg[0] : o.uitleg[1];
-            const stand = o.stand ? (lang === 'uk' ? o.stand[0] : o.stand[1]) : '';
+        <ul id={`${basis}-lijst`} className='mr-sign-in-opties' aria-label={lang === 'uk' ? 'Інші способи входу' : 'Andere aanmeldmethoden'}>
+          {AANMELD_INGANGEN.map((o) => {
+            const werkt = o.beschikbaar && !!onKies;
             return (
               <li key={o.id}>
                 <button
                   type='button'
-                  className={`mr-sign-in-optie${o.actief ? '' : ' is-uit'}`}
-                  disabled={!o.actief}
+                  className={`mr-sign-in-optie${werkt ? '' : ' is-uit'}`}
+                  data-aanmeld-ingang={o.id}
+                  disabled={!werkt}
                   aria-describedby={`${basis}-${o.id}`}
-                  onClick={o.actief ? onGoogle : undefined}
+                  onClick={werkt ? () => onKies?.(o.id) : undefined}
                 >
                   <span className='mr-sign-in-optie-logo' aria-hidden='true'>
-                    {o.merk ? <Merk merk={o.merk} vorm='gliefje' maat={22} terugval={null} /> : <KeyRound />}
+                    {o.merk ? <Merk merk={o.merk} vorm='gliefje' maat={20} terugval={null} /> : <Fingerprint />}
                   </span>
                   <span className='mr-sign-in-optie-tekst'>
-                    <strong>{o.naam}</strong>
-                    <small id={`${basis}-${o.id}`}>
-                      {uitleg}
-                      {stand ? <em>{stand}</em> : null}
-                    </small>
+                    <strong>{t(o.titel)}</strong>
+                    <small id={`${basis}-${o.id}`}>{t(o.reden)}</small>
                   </span>
+                  {werkt ? null : <em className='mr-sign-in-optie-stand'>{t(NIET_BESCHIKBAAR)}</em>}
                 </button>
               </li>
             );
