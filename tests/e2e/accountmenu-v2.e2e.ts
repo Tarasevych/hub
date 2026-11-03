@@ -137,15 +137,17 @@ export async function main(): Promise<number> {
       check(`${breedte}: Esc sluit en focus terug op avatar`, (await page.locator('.canonical-account-panel').count()) === 0 && await page.evaluate(() => document.activeElement?.classList.contains('canonical-avatar-trigger')));
       await c.close();
     }
-    // 4. Vlaggen: echte emoji, niet door thema gekleurd.
+    // 4. Vlaggen: echte SVG-vlaggen (src/MoviPrapor.tsx; INTEG-001 — emoji-vlaggen tonen op Windows «UA»/«NL»), niet door thema gekleurd.
     for (const donker of [false, true]) {
       const { c, page } = await open({ v2: true, donker });
       await openMenu(page);
       const v = await page.evaluate(() => [...document.querySelectorAll('.am2-vlag')].map((e) => {
         let filt = ''; for (let n: Element | null = e; n; n = n.parentElement) { const s = getComputedStyle(n); if (s.filter !== 'none' || s.mixBlendMode !== 'normal') filt += `${n.className}:${s.filter}/${s.mixBlendMode};`; }
-        const s = getComputedStyle(e); return { tekst: e.textContent, filt, kleurEigen: s.webkitTextFillColor, opacity: s.opacity };
+        const s = getComputedStyle(e); const img = e.querySelector('img');
+        return { tekst: e.textContent, naam: e.parentElement?.querySelector('b')?.textContent, taal: img?.dataset.moviPrapor, geladen: !!img && img.complete && img.naturalWidth > 0, filt, opacity: s.opacity };
       }));
-      check(`vlaggen ${donker ? 'donker' : 'licht'}: 🇺🇦 en 🇳🇱 als emoji`, v.map((x) => x.tekst).join('') === '🇺🇦🇳🇱', JSON.stringify(v));
+      check(`vlaggen ${donker ? 'donker' : 'licht'}: echte SVG-vlaggen (uk en nl), geladen, zonder emoji-tekst`, v.map((x) => x.taal).join('') === 'uknl' && v.every((x) => x.geladen && x.tekst === ''), JSON.stringify(v));
+      check(`vlaggen ${donker ? 'donker' : 'licht'}: korte namen «укр.» en «NL» (nooit «UA»)`, v.map((x) => x.naam).join('|') === 'укр.|NL', JSON.stringify(v));
       check(`vlaggen ${donker ? 'donker' : 'licht'}: geen filter/mengmodus op vlag of ouders`, v.every((x) => !x.filt && x.opacity === '1'), JSON.stringify(v));
       await page.locator('.language-switch').screenshot({ path: join(UIT, `vlaggen-${donker ? 'donker' : 'licht'}.png`) });
       await c.close();
