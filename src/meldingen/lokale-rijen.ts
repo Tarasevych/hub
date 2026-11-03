@@ -101,9 +101,10 @@ export const normalizeRows = (value: unknown): BewaardeRij[] => {
     const groep = typeof item.groep === 'string' && item.groep ? item.groep.slice(0, 300) : undefined;
     const onderwerp = typeof item.onderwerp === 'string' && item.onderwerp ? item.onderwerp.slice(0, 300) : undefined;
     const count = Math.max(1, Math.min(9999, Math.round(Number(item.count) || 1)));
+    const verloopt = Number(item.actionExpiresAt);
     return [{
       id, text, kind, createdAt: Number(item.createdAt || Date.now()), source: String(item.source || ''), read: Boolean(item.read),
-      ...(item.hasAction ? { heeftActie: true } : {}),
+      ...(item.hasAction ? { heeftActie: true } : {}), ...(action && Number.isFinite(verloopt) && verloopt > 0 ? { actionExpiresAt: verloopt } : {}),
       ...(details.length ? { details } : {}), ...(link ? { link } : {}), ...(action ? { action } : {}), ...(explain ? { explain } : {}), ...(context ? { context } : {}),
       ...(groep ? { groep } : {}), ...(onderwerp ? { onderwerp } : {}), ...(count > 1 ? { count } : {}), ...(item.opgelost ? { opgelost: true } : {}),
     }];
@@ -116,7 +117,7 @@ export const writeRows = (scope: string, rows: BewaardeRij[]): boolean => {
     localStorage.setItem(historyKey(scope), JSON.stringify(rows.slice(0, MAX_RIJEN).map((item) => ({
       id: item.id, text: item.text, kind: item.kind, createdAt: item.createdAt, source: item.source, read: item.read, hasAction: Boolean(item.action) || Boolean(item.heeftActie),
       ...(item.link ? { link: item.link } : {}), ...(item.details?.length ? { details: item.details } : {}), ...(item.explain ? { explain: item.explain } : {}),
-      ...(item.context ? { context: item.context } : {}),
+      ...(item.context ? { context: item.context } : {}), ...(item.actionExpiresAt ? { actionExpiresAt: item.actionExpiresAt } : {}),
       ...(item.groep ? { groep: item.groep } : {}), ...(item.onderwerp ? { onderwerp: item.onderwerp } : {}), ...(item.count && item.count > 1 ? { count: item.count } : {}),
       ...(item.opgelost ? { opgelost: true } : {}),
     }))));
