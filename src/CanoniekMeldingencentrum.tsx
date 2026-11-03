@@ -2,11 +2,12 @@ import { ArrowLeft, Bell, CheckCheck, ChevronDown, ChevronUp, CircleCheck, Clock
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { readSharedPreferences, writeSharedPreferences } from './gedeelde-voorkeuren';
 import {
-  CANONICAL_NOTICE_EVENT, SAMENVOEG_MS, losOpEerdere, popupLevensduurMs, registerCanonicalNoticeAction, releaseCanonicalNoticeAction, resolveCanonicalNoticeAction,
-  samenvoegSleutel, zoekSamenvoeging, type CanonicalNoticeAction, type CanonicalNoticeDetailIcon, type CanonicalNoticeInput, type CanonicalNoticeKind,
-  type CanonicalNoticeSection, type CanonicalServerNotification,
+  CANONICAL_NOTICE_EVENT, SAMENVOEG_MS, isBronDuplicaat, losOpEerdere, popupLevensduurMs, registerCanonicalNoticeAction, releaseCanonicalNoticeAction,
+  samenvoegDoel, samenvoegSleutel, uniekOpId, voegHerhalingToe, type CanonicalNoticeAction, type CanonicalNoticeDetailIcon, type CanonicalNoticeInput, type CanonicalNoticeKind,
+  type CanonicalServerNotification, type RecentePopup,
 } from './canoniek-meldingen';
 import './canoniek-meldingencentrum.css';
+import { historyKey, leesOpslag, normalizeDetails, normalizeLink, readRows, werkRijenBij, type BewaardeRij } from './meldingen/lokale-rijen';
 // UI-007 (29.10.2026): vlag `meldingen-v2` (standaard UIT) — compact aandachtscentrum in hetzelfde paneel; zonder vlag alles zoals het was.
 import MeldingenV2 from './meldingen/v2/MeldingenV2';
 import { useMeldingenV2, meldingenV2Nu } from './meldingen/v2/vlag';
@@ -31,7 +32,7 @@ import { zetZijbalk } from './zijbalk-voorkeuren';
 import { focusbaar, focusVerloren, houdTab, menuToets } from './platform/toegankelijk';
 import './toegankelijk.css';
 // Per type geluid/pop-up/tonen/blijft staan/duur (shared/melding-typen.ts) en de ene regel naar het technische paneel (shared/melding-soorten.ts).
-import { voorkeurVoor, type MeldingType, type TypeVoorkeur } from '../shared/melding-typen';
+import { isKritiekType, voorkeurVoor, type MeldingType, type TypeVoorkeur } from '../shared/melding-typen';
 import { soortInfo, typeVanBron } from '../shared/melding-soorten';
 import MeldingVoorkeurenPaneel from './meldingen/MeldingVoorkeurenPaneel';
 import { openTechMeldingen } from './meldingen/tech-meldingen-opslag';
@@ -39,28 +40,7 @@ import { techSamenvattingTekst } from './meldingen/samenvatting';
 import { useTech } from './tech/tech-opslag';
 import { useHuidigeRuimte, ruimteFilterActief } from './tech/ruimtes/ruimte-signaal';
 
-type Retained = {
-  id: string;
-  text: string;
-  kind: CanonicalNoticeKind;
-  createdAt: number;
-  source: string;
-  read: boolean;
-  link?: { href: string; label: string };
-  action?: CanonicalNoticeAction;
-  actionExpiresAt?: number;
-  details?: CanonicalNoticeSection[];
-  /** Uitleg in gewone taal: de oorzaak en wat u nu kunt doen. */
-  explain?: string;
-  /** Samenvoeg-sleutel: dezelfde melding binnen het venster wordt één regel met een teller. */
-  groep?: string;
-  /** Onderwerp van de actie: een latere gelukte stap lost de eerdere fouten met hetzelfde onderwerp op. */
-  onderwerp?: string;
-  /** Hoe vaak deze melding zich herhaalde (samengevoegd tot één regel). */
-  count?: number;
-  /** Opgelost door een latere gelukte stap. */
-  opgelost?: boolean;
-};
+type Retained = BewaardeRij;
 
 type Active = CanonicalNoticeInput & {
   id: string;
@@ -91,107 +71,14 @@ type Props = {
   sfeer?: MeldingSfeer;
 };
 
-/** Hoeveel meldingen de lijst bewaart; ouder dan dit valt er vanzelf af. */
-const MAX_RIJEN = 50;
 /** Uitleg als een fout of waarschuwing geen eigen uitleg meegeeft: de melding blijft niet zonder richting. */
 const UITLEG_STANDAARD: Record<'uk' | 'nl', string> = {
   uk: 'Деталі є в історії. Що зробити: спробуйте ще раз; якщо збій повториться, відкрийте розділ і перевірте з’єднання та вхід.',
   nl: 'De details staan in de geschiedenis. Wat nu: probeer het opnieuw; blijft het mislukken, open dan het onderdeel en controleer de verbinding en de aanmelding.',
 };
 
-const historyKey = (scope: string) => `tsv:canonical-notification-history-v2:${scope || 'anon'}`;
-const legacyKey = (scope: string) => `tsv:canonical-notification-retained-v1:${scope || 'anon'}`;
-const DETAIL_ICONS: CanonicalNoticeDetailIcon[] = ['scope', 'query', 'server', 'provider', 'results', 'durable', 'request', 'saved', 'cursor', 'duration', 'accounts', 'error'];
-
-const normalizeDetails = (value: unknown): CanonicalNoticeSection[] => {
-  if (!Array.isArray(value)) return [];
-  return value.slice(0, 8).flatMap((raw) => {
-    if (!raw || typeof raw !== 'object') return [];
-    const section = raw as Record<string, unknown>;
-    const title = String(section.title || '').trim().slice(0, 120);
-    const items = Array.isArray(section.items)
-      ? section.items.slice(0, 20).flatMap((rawItem) => {
-        if (!rawItem || typeof rawItem !== 'object') return [];
-        const item = rawItem as Record<string, unknown>;
-        const label = String(item.label || '').trim().slice(0, 160);
-        const detailValue = String(item.value || '').trim().slice(0, 2000);
-        const rawIcon = String(item.icon || 'query') as CanonicalNoticeDetailIcon;
-        const icon = DETAIL_ICONS.includes(rawIcon) ? rawIcon : 'query';
-        return label && detailValue ? [{ icon, label, value: detailValue }] : [];
-      })
-      : [];
-    return title && items.length ? [{ title, items }] : [];
-  });
-};
-
 const DETAIL_ICON_COMPONENTS: Record<CanonicalNoticeDetailIcon, typeof Info> = {
   scope: ShieldCheck, query: Search, server: Database, provider: Mail, results: List, durable: History, request: Cloud, saved: Save, cursor: RefreshCw, duration: Clock3, accounts: Users, error: TriangleAlert,
-};
-
-/** Alleen interne paden (/…) of https-adressen op tarasevych.com; alles anders valt weg. */
-const normalizeLink = (value: unknown): { href: string; label: string } | undefined => {
-  if (!value || typeof value !== 'object') return undefined;
-  const raw = value as Record<string, unknown>;
-  const href = String(raw.href || '').trim().slice(0, 300);
-  const label = String(raw.label || '').trim().slice(0, 60);
-  if (!label || !href) return undefined;
-  if (href.startsWith('/') && !href.startsWith('//')) return { href, label };
-  try {
-    const url = new URL(href);
-    return url.protocol === 'https:' && !url.username && !url.password && (url.hostname === 'tarasevych.com' || url.hostname.endsWith('.tarasevych.com'))
-      ? { href: url.toString(), label }
-      : undefined;
-  } catch {
-    return undefined;
-  }
-};
-
-const normalizeRows = (value: unknown): Retained[] => {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((raw) => {
-    if (!raw || typeof raw !== 'object') return [];
-    const item = raw as Record<string, unknown>;
-    const text = String(item.text || '').trim();
-    if (!text) return [];
-    const rawKind = String(item.kind || 'info');
-    const kind: CanonicalNoticeKind = rawKind === 'success' || rawKind === 'warning' || rawKind === 'error' ? rawKind : 'info';
-    const id = String(item.id || `notice-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    const action = Boolean(item.hasAction) ? resolveCanonicalNoticeAction(id) : undefined;
-    const details = normalizeDetails(item.details);
-    const link = normalizeLink(item.link);
-    const explain = typeof item.explain === 'string' && item.explain.trim() ? item.explain.trim().slice(0, 1200) : undefined;
-    const groep = typeof item.groep === 'string' && item.groep ? item.groep.slice(0, 300) : undefined;
-    const onderwerp = typeof item.onderwerp === 'string' && item.onderwerp ? item.onderwerp.slice(0, 300) : undefined;
-    const count = Math.max(1, Math.min(9999, Math.round(Number(item.count) || 1)));
-    return [{
-      id, text, kind, createdAt: Number(item.createdAt || Date.now()), source: String(item.source || ''), read: Boolean(item.read),
-      ...(details.length ? { details } : {}), ...(link ? { link } : {}), ...(action ? { action } : {}), ...(explain ? { explain } : {}),
-      ...(groep ? { groep } : {}), ...(onderwerp ? { onderwerp } : {}), ...(count > 1 ? { count } : {}), ...(item.opgelost ? { opgelost: true } : {}),
-    }];
-  }).sort((a, b) => b.createdAt - a.createdAt).slice(0, MAX_RIJEN);
-};
-
-const writeRows = (scope: string, rows: Retained[]) => {
-  try {
-    localStorage.setItem(historyKey(scope), JSON.stringify(rows.slice(0, MAX_RIJEN).map((item) => ({
-      id: item.id, text: item.text, kind: item.kind, createdAt: item.createdAt, source: item.source, read: item.read, hasAction: Boolean(item.action),
-      ...(item.link ? { link: item.link } : {}), ...(item.details?.length ? { details: item.details } : {}), ...(item.explain ? { explain: item.explain } : {}),
-      ...(item.groep ? { groep: item.groep } : {}), ...(item.onderwerp ? { onderwerp: item.onderwerp } : {}), ...(item.count && item.count > 1 ? { count: item.count } : {}),
-      ...(item.opgelost ? { opgelost: true } : {}),
-    }))));
-  } catch { /* geen opslag: de lijst leeft dan alleen in dit tabblad */ }
-};
-
-const readRows = (scope: string): Retained[] => {
-  try {
-    const saved = localStorage.getItem(historyKey(scope));
-    if (saved !== null) return normalizeRows(JSON.parse(saved));
-    const legacy = normalizeRows(JSON.parse(sessionStorage.getItem(legacyKey(scope)) || '[]'));
-    if (legacy.length) writeRows(scope, legacy);
-    return legacy;
-  } catch {
-    return [];
-  }
 };
 
 /** Lagen met een eigen Esc-afhandeling: zit de focus daarin (of op een menu-item waarvan de «bel» open staat), dan laat het paneel Esc aan hen (één Esc = één laag). */
@@ -230,6 +117,8 @@ export default function CanonicalNotificationCenter(p: Props) {
   const pauseRef = useRef(new Set<string>());
   /** Tijdelijke meldingen (uit de activiteit en de server): dezelfde melding krijgt binnen het venster maar één pop-up. */
   const toastRecentRef = useRef(new Map<string, number>());
+  /** Pop-ups van de laatste minuten (sectie, soort, bron): één gebeurtenis uit twee bronnen → één pop-up (isBronDuplicaat). */
+  const recentePopups = useRef<RecentePopup[]>([]);
   const lastProp = useRef('');
   const unlocked = useRef(false);
   const serverKnown = useRef<Set<string> | null>(null);
@@ -247,11 +136,14 @@ export default function CanonicalNotificationCenter(p: Props) {
 
   /* ---------- Opslag van de lijst (altijd via de ref, zodat herhalingen elkaar direct zien) ---------- */
 
+  /* De opslag is de bron van waarheid (gedeeld door de tabbladen van dit subdomein); het geheugen is alleen een kopie. Elke wijziging
+     begint dus bij wat er NU in de opslag staat, zodat wat een ander tabblad las of wiste niet terugkomt. Zonder bruikbare opslag: het geheugen. */
+  const opslagOk = useRef(true);
   const saveRetained = (updater: (rows: Retained[]) => Retained[]) => {
-    const next = updater(retainedRef.current).sort((a, b) => b.createdAt - a.createdAt).slice(0, MAX_RIJEN);
-    retainedRef.current = next;
-    setRetained(next);
-    writeRows(p.scope, next);
+    const { rijen, opslagOk: ok } = werkRijenBij(p.scope, retainedRef.current, updater, opslagOk.current);
+    retainedRef.current = rijen;
+    setRetained(rijen);
+    opslagOk.current = ok;
   };
   const markRetainedReadMany = (ids: string[]) => {
     const want = new Set(ids);
@@ -305,14 +197,21 @@ export default function CanonicalNotificationCenter(p: Props) {
   const receive = (notice: CanonicalNoticeInput, origin: 'prop' | 'event', opties: { type?: MeldingType; geluid?: boolean; serverId?: string } = {}) => {
     const tekst = notice.text.trim();
     if (!tekst) return;
-    const voorkeur = vk(opties.type ?? typeVanBron(notice.source));
-    const geluid = opties.geluid ?? voorkeur.geluid;
+    const type = opties.type ?? typeVanBron(notice.source);
+    const kind: CanonicalNoticeKind = notice.kind || 'info';
+    const nu = Date.now();
+    const sectie = styleOf(notice.source || '', propsRef.current.lang).section;
+    const basis = vk(type);
+    // INTEG-001 (oude fout): «Не турбувати» beloofde «без звуку й спливних вікон», maar alleen het geluid zweeg. Nu ook geen pop-up
+    // (beveiliging blijft opduiken). En één gebeurtenis die uit twee bronnen binnenkomt (dienst + serveractiviteit) krijgt één pop-up.
+    const dnd = meldingenV2Nu() && nietStorenActief() && !isKritiekType(type);
+    const dubbel = isBronDuplicaat(recentePopups.current, { sectie, kind, transient: !!notice.transient }, nu);
+    const voorkeur = { ...basis, opduiken: basis.opduiken && !dnd && !dubbel };
+    const geluid = (opties.geluid ?? voorkeur.geluid) && !dubbel;
     if (!voorkeur.tonen) {
       if (origin === 'prop') propsRef.current.onDismissNotice?.(tekst);
       return;
     }
-    const kind: CanonicalNoticeKind = notice.kind || 'info';
-    const nu = Date.now();
     const explain = notice.explain?.trim() || (kind === 'error' || kind === 'warning' ? UITLEG_STANDAARD[propsRef.current.lang] : undefined);
     const groep = notice.action ? undefined : samenvoegSleutel(notice.source || '', kind, tekst);
     // Een gelukte stap lost eerdere fouten met hetzelfde onderwerp op, ook als deze melding zelf geen pop-up krijgt.
@@ -326,9 +225,10 @@ export default function CanonicalNotificationCenter(p: Props) {
       toastRecentRef.current.set(sleutel, nu);
       if (toastRecentRef.current.size > 100) toastRecentRef.current.delete(toastRecentRef.current.keys().next().value as string);
     } else if (groep) {
-      const bestaand = zoekSamenvoeging(retainedRef.current, groep, nu, notice.dedupeSeconds ? notice.dedupeSeconds * 1000 : SAMENVOEG_MS);
+      // Herhaling: één regel met een teller, geen nieuwe pop-up. Al gelezen → blijft gelezen (ook na uren, zie GEZIEN_VENSTER_MS).
+      const bestaand = samenvoegDoel(leesOpslag(propsRef.current.scope) ?? retainedRef.current, groep, nu, notice.dedupeSeconds ? notice.dedupeSeconds * 1000 : SAMENVOEG_MS);
       if (bestaand) {
-        saveRetained((rijen) => rijen.map((r) => (r.id === bestaand.id ? { ...r, count: (r.count ?? 1) + 1, createdAt: nu, read: false } : r)));
+        saveRetained((rijen) => voegHerhalingToe(rijen, bestaand.id, nu));
         if (origin === 'prop') propsRef.current.onDismissNotice?.(tekst);
         return;
       }
@@ -339,7 +239,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     if (notice.action) registerCanonicalNoticeAction(id, notice.action);
     if (!notice.transient) {
       saveRetained((rijen) => [{
-        id, text: tekst, kind, createdAt: nu, source: notice.source || '', read: false,
+        id, text: tekst, kind, createdAt: nu, source: notice.source || '', read: false, ...(notice.action ? { heeftActie: true } : {}),
         ...(notice.details?.length ? { details: normalizeDetails(notice.details) } : {}), ...(link ? { link } : {}),
         action: notice.action, actionExpiresAt: notice.actionExpiresAt, explain, groep, onderwerp: notice.topic, count: 1,
       }, ...rijen.filter((row) => row.id !== id)]);
@@ -349,6 +249,7 @@ export default function CanonicalNotificationCenter(p: Props) {
       ...notice, text: tekst, explain, id, kind, createdAt: nu, expanded: false, origin, stil: !geluid,
       levensduurMs: popupLevensduurMs(voorkeur, tekst, explain), serverId: opties.serverId,
     };
+    if (voorkeur.opduiken) recentePopups.current = [...recentePopups.current.filter((r) => nu - r.t <= 120_000), { sectie, kind, transient: !!notice.transient, t: nu }].slice(-20);
     if (!voorkeur.opduiken) {
       // Geen pop-up voor dit type: wel het geluid (als het type dat wil) en de regel in de lijst.
       if (origin === 'prop') propsRef.current.onDismissNotice?.(tekst);
@@ -410,7 +311,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     try {
       await action.onAction();
       releaseCanonicalNoticeAction(id);
-      saveRetained((rows) => rows.map((item) => (item.id === id ? { ...item, read: true, action: undefined, actionExpiresAt: undefined } : item)));
+      saveRetained((rows) => rows.map((item) => (item.id === id ? { ...item, read: true, action: undefined, actionExpiresAt: undefined, heeftActie: false } : item)));
       const current = activeRef.current;
       if (current?.id === id) {
         const next = { ...current, action: undefined, actionExpiresAt: undefined };
@@ -481,6 +382,16 @@ export default function CanonicalNotificationCenter(p: Props) {
     retainedRef.current = rows;
     setRetained(rows);
     serverKnown.current = null;
+    opslagOk.current = true;
+    /* Een ander tabblad (zelfde subdomein) wijzigde de lijst: meteen overnemen — gelezen, opgelost en verwijderd blijven zo gelijk. */
+    const opOpslag = (event: StorageEvent) => {
+      if (event.key !== historyKey(p.scope)) return;
+      const vers = readRows(p.scope);
+      retainedRef.current = vers;
+      setRetained(vers);
+    };
+    window.addEventListener('storage', opOpslag);
+    return () => window.removeEventListener('storage', opOpslag);
   }, [p.scope]);
 
   useEffect(() => {
@@ -527,7 +438,8 @@ export default function CanonicalNotificationCenter(p: Props) {
 
   // Nieuwe servermeldingen (of technische): geluid als een type dat mag; één pop-up met de titel als een type opduiken mag.
   useEffect(() => {
-    const alle = [...(p.serverItems || []), ...(p.techItems || [])].filter((item) => !item.read);
+    // INTEG-001: dezelfde servermelding kan in beide lijsten zitten; per id één keer (anders «+1» en twee keer geluid voor één melding).
+    const alle = uniekOpId([...(p.serverItems || []), ...(p.techItems || [])]).filter((item) => !item.read);
     const unreadIds = new Set(alle.map((item) => item.id));
     if (serverKnown.current === null) { serverKnown.current = unreadIds; return; }
     const added = alle.filter((item) => !serverKnown.current?.has(item.id) && vk(soortInfo(item.kind).type).tonen);

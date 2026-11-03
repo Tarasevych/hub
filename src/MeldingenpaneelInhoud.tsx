@@ -6,6 +6,7 @@ import { Logo } from './mcp-ui';
 import { sectionLabel, styleOf, type Section } from './melding-stijl';
 import './meldingenpaneel.css';
 import { zijbalkScopeNu } from './zijbalk-voorkeuren';
+import { zelfdeGebeurtenis } from '../shared/meldingen-v2/groepering';
 
 type Lang = 'uk' | 'nl';
 type Kind = 'info' | 'success' | 'warning' | 'error';
@@ -99,7 +100,10 @@ export default function NotificationPanelBody(p: Props) {
         link: activityLink(e, p.lang).href ? activityLink(e, p.lang) : undefined, markRead: () => p.onReadEvent(e.id),
       });
     }
-    return out;
+    // INTEG-001: dezelfde gebeurtenis uit de dienst (lokaal) én uit de server/activiteit was twee regels; de lokale kopie valt weg.
+    const sleutel = (i: Item) => ({ dienst: styleOf(i.source, p.lang).section, titel: i.title, tijd: i.createdAt });
+    const anderen = out.filter((i) => i.origin !== 'local').map(sleutel);
+    return anderen.length ? out.filter((i) => i.origin !== 'local' || !anderen.some((a) => zelfdeGebeurtenis(a, sleutel(i)))) : out;
   }, [p.local, p.server, p.events, p.readEvents, p.lang]);
 
   const shown = useMemo(() => {

@@ -123,6 +123,49 @@ export function zoekSamenvoeging<T extends { id: string; groep?: string; created
   return rijen.find((r) => r.groep === groep && !r.opgelost && nu - r.createdAt <= venster);
 }
 
+/**
+ * INTEG-001 (klacht eigenaar «сповіщення повторюються, хоча їх уже бачили»): een melding die u al gelezen hebt en die zich binnen dit
+ * venster herhaalt, gaat stil op in dezelfde regel (teller +1, nieuwste tijd) — geen nieuwe pop-up en ze wordt NIET weer «нова».
+ */
+export const GEZIEN_VENSTER_MS = 6 * 3600_000;
+
+/**
+ * Waarin een herhaling opgaat: de regel met dezelfde sleutel die nog niet opgelost is — ongelezen binnen het gewone venster, of al
+ * gelezen binnen GEZIEN_VENSTER_MS. Een opgeloste fout geeft bij een nieuwe fout een nieuwe regel (echte nieuwe gebeurtenis).
+ */
+export function samenvoegDoel<T extends { id: string; groep?: string; createdAt: number; opgelost?: boolean; read: boolean }>(
+  rijen: readonly T[], groep: string, nu: number, venster: number = SAMENVOEG_MS,
+): T | undefined {
+  return rijen.find((r) => r.groep === groep && !r.opgelost && nu - r.createdAt <= (r.read ? Math.max(venster, GEZIEN_VENSTER_MS) : venster));
+}
+
+/**
+ * Herhaling samenvoegen: teller +1 en de nieuwste tijd. De gelezen-stand blijft zoals hij was. Vroeger zette dit `read: false`, zodat een
+ * melding die u al gezien had bij elke herhaling weer als nieuw in de bel telde (oorzaak van «повторюються»).
+ */
+export function voegHerhalingToe<T extends { id: string; createdAt: number; count?: number }>(rijen: readonly T[], id: string, nu: number): T[] {
+  return rijen.map((r) => (r.id === id ? { ...r, count: (r.count ?? 1) + 1, createdAt: nu } : r));
+}
+
+/**
+ * Eén gebeurtenis, twee bronnen: de dienst meldt zelf «не вдалося …» en een halve minuut later brengt de activiteit van de server
+ * (poll elke 10–30 s) dezelfde mislukking. Dat gaf twee pop-ups voor één fout. Binnen BRON_DUBBEL_MS: dezelfde sectie, dezelfde soort
+ * (fout of waarschuwing), de ene uit de dienst (blijvend) en de andere uit de server (tijdelijk) → geen tweede pop-up; de regel
+ * blijft wel in het paneel.
+ */
+export type RecentePopup = { sectie: string; kind: CanonicalNoticeKind; transient: boolean; t: number };
+export const BRON_DUBBEL_MS = 45_000;
+export function isBronDuplicaat(recent: readonly RecentePopup[], nieuw: Omit<RecentePopup, 't'>, nu: number): boolean {
+  if (nieuw.kind !== 'error' && nieuw.kind !== 'warning') return false;
+  return recent.some((r) => r.sectie === nieuw.sectie && r.kind === nieuw.kind && r.transient !== nieuw.transient && nu - r.t >= 0 && nu - r.t <= BRON_DUBBEL_MS);
+}
+
+/** Dezelfde servermelding kan zowel in de gewone als in de technische lijst zitten: per id één keer (eerste wint). */
+export function uniekOpId<T extends { id: string }>(lijst: readonly T[]): T[] {
+  const gezien = new Set<string>();
+  return lijst.filter((x) => (gezien.has(x.id) ? false : (gezien.add(x.id), true)));
+}
+
 /** Een gelukte stap lost de eerdere, nog openstaande fouten met hetzelfde onderwerp op: er komt geen melding meer over oud nieuws. */
 export function losOpEerdere<T extends { onderwerp?: string; kind: CanonicalNoticeKind; opgelost?: boolean }>(rijen: readonly T[], onderwerp: string): T[] {
   return rijen.map((r) => (r.onderwerp === onderwerp && (r.kind === 'error' || r.kind === 'warning') && !r.opgelost ? { ...r, opgelost: true } : r));
