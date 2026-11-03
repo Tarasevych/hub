@@ -100,7 +100,7 @@ export async function main(): Promise<number> {
       `naam ${contrast(t.text, t.surface).toFixed(2)} e-mail ${contrast(t.muted, t.surface).toFixed(2)} status ${contrast(t.accent, t.surface).toFixed(2)}`);
     check(`thema ${k}: paneel en tekst scheiden (≥ 7) — het paneel kan nooit «altijd donker» zijn zonder lichte tekst`, contrast(t.text, t.panel) >= 7, contrast(t.text, t.panel).toFixed(2));
   }
-  const menuCss = lees('src/canoniek-account-menu.css'), v2Css = lees('src/accountmenu-v2/accountmenu-v2.css'), loginCss = lees('src/aanmeld-herontwerp.css'), middenCss = lees('src/account-paneel-midden.css');
+  const menuCss = lees('src/canoniek-account-menu.css'), v2Css = lees('src/accountmenu-v2/accountmenu-v2.css'), loginCss = lees('src/aanmeld-herontwerp.css'), middenCss = lees('src/account-afgemeld-menu.css');
   const regels = (css: string) => zonderCommentaar(css).split('}').map((r) => r.trim()).filter((r) => r.includes('{'));
   const paneelRegels = regels(menuCss).filter((r) => /canonical-account-panel\s*\{/.test(r));
   const kleurDecl = paneelRegels.flatMap((r) => (r.split('{')[1] || '').split(';')).filter((d) => /^\s*(background|background-color|color)\s*:/.test(d));
@@ -129,11 +129,13 @@ export async function main(): Promise<number> {
   check('telefoon: menu op het aanmeldscherm staat in het midden (anker zo breed als het scherm, paneel left:50% + translateX(-50%))',
     /@media\(max-width:700px\)\{/.test(middenCss) && /\.mr-guest-mobile-account\{left:0;right:0;[^}]*padding:0 24px/.test(middenCss)
     && /\.canonical-account-panel\{left:50%;right:auto;transform:translateX\(-50%\);width:min\(370px,calc\(100% - 24px\)\)\}/.test(middenCss));
+  check('telefoon: taalknop blijft een kleine pil (32 px, niet de 44 px van de globale tikregel) met tikvlak van 44 px via ::after (30 + 7 + 7 binnen de rand = 44)',
+    /\.canonical-chrome \.mr-sign-in-quick-controls button\.mr-sign-in-taal\{min-height:32px;height:32px;position:relative\}/.test(middenCss) && /button\.mr-sign-in-taal::after\{content:'';position:absolute;left:-4px;right:-4px;top:-7px;bottom:-7px\}/.test(middenCss));
   check('telefoon: geen nieuw position:fixed-element (plaatsing-controle) in de nieuwe CSS', !/position\s*:\s*fixed/.test(zonderCommentaar(middenCss)));
-  check('telefoon: de menu-CSS importeert het midden-bestand', menu.includes("import './account-paneel-midden.css'"));
+  check('telefoon: de menu-CSS importeert het midden-bestand', menu.includes("import './account-afgemeld-menu.css'"));
   check('aanmeldscherm: boven 700 px blijft het paneel onder de avatar (right:0), alleen smalle schermen centreren', /@media\(max-width:700px\)/.test(middenCss) && /canonical-account-panel\{\s*right:0;top:50px/.test(loginCss.replace(/\s+/g, ' ').replace('{ right', '{ right')));
 
   // ═══ bestanden ═══
-  check('bestanden aanwezig: SVG\'s, component, midden-CSS', ['src/taalvlaggen/oekraine.svg', 'src/taalvlaggen/belgie.svg', 'src/MoviPrapor.tsx', 'src/account-paneel-midden.css'].every((p) => existsSync(join(process.cwd(), p))));
+  check('bestanden aanwezig: SVG\'s, component, midden-CSS', ['src/taalvlaggen/oekraine.svg', 'src/taalvlaggen/belgie.svg', 'src/MoviPrapor.tsx', 'src/account-afgemeld-menu.css'].every((p) => existsSync(join(process.cwd(), p))));
   return einde();
 }

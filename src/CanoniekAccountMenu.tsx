@@ -63,7 +63,7 @@ import {
   type RememberedAccount,
 } from './canoniek-account-menu-model';
 import './canoniek-account-menu.css';
-import './account-paneel-midden.css'; // INTEG-001: paneel op het aanmeldscherm van een telefoon in het midden (volgt na de aanmeld-CSS van de schil)
+import './account-afgemeld-menu.css'; // INTEG-001: afgemeld menu op een telefoon — paneel in het midden, kleine taalknop
 // UI-008 (vlag accountmenu-v2, standaard UIT): verfijnd menu. Zonder vlag blijft alles hieronder letterlijk zoals v6.
 import { avatarTip, useAccountmenuV2 } from './accountmenu-v2/vlag';
 import './accountmenu-v2/accountmenu-v2.css';

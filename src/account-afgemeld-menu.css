@@ -1,0 +1,20 @@
+/* INTEG-001 — het accountmenu op het aanmeldscherm (afgemeld) op een telefoon: paneel in het MIDDEN en een kleine taalknop.
+   Staat in een eigen bestand (niet in aanmeld-herontwerp.css) omdat dit het MENU is en het aanmeldscherm een andere eigenaar heeft;
+   de selectors zijn specifieker dan die van het aanmeldscherm, dus de volgorde van laden maakt niet uit. */
+
+/* 1. «По центру»: vroeger (LOGIN-001: «geen fixed element») hing het paneel met right:0 aan de knop in de rechterhoek: bij 375 px stond
+   het dan tegen de linkerrand (0 px) met 24 px lucht rechts — «поїхало вліво». Nu is de vaste ankerbalk (canonical-account-anchor, al
+   position:fixed in de schil — dus géén nieuw vast element) zo breed als het scherm; het paneel hangt er gecentreerd in
+   (left:50% + translateX(-50%)), 12 px lucht links en rechts; de knoppen rechtsboven blijven waar ze waren. Boven 700 px verandert
+   niets: daar hangt het paneel onder de avatar. */
+@media(max-width:700px){
+ .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account{left:0;right:0;box-sizing:border-box;padding:0 24px;pointer-events:none}
+ .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account>.canonical-account-menu{position:static;pointer-events:auto}
+ .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor.mr-guest-mobile-account .canonical-account-menu[data-signed-out='true'] .canonical-account-panel{left:50%;right:auto;transform:translateX(-50%);width:min(370px,calc(100% - 24px))}
+
+ /* 2. Taalknop: de globale tikregel van de telefoon (min-height 44 px op elke knop) maakte de pil hoger (44 px) dan de themaknop en de
+    avatar (38 px) ernaast — «занадто велика». Die tikregel heeft specificiteit (0,3,1) (door :not(:has(> svg:only-child))), vandaar de zwaardere
+    selector hier. Zichtbaar blijft de pil 32 px; het tikvlak is nog steeds 44 px hoog (onzichtbare rand via ::after). */
+ .canonical-chrome .mr-sign-in-quick-controls button.mr-sign-in-taal{min-height:32px;height:32px;position:relative}
+ .canonical-chrome .mr-sign-in-quick-controls button.mr-sign-in-taal::after{content:'';position:absolute;left:-4px;right:-4px;top:-7px;bottom:-7px}
+}
