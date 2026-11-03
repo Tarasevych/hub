@@ -16,7 +16,6 @@ import { useLeverRegels, nietStorenActief, regelsNu } from './meldingen/v2/regel
 import { geldendeRegel } from '../shared/meldingen-v2/beleid';
 import { dienstVan } from './meldingen/v2/omzetten';
 import { bouwModel } from './meldingen/v2/model';
-import { useUitlegV3 } from './meldingen/v2/vlag-uitleg';
 import { useStatusStand, wijzigStatus } from './meldingen/v2/status-opslag';
 import { pasStatusToe } from '../shared/meldingen-v2/status';
 import NotificationPanelBody from './MeldingenpaneelInhoud';
@@ -91,7 +90,6 @@ const ANDERE_ESC_LAGEN = '.menu-bellen,.plaats-acties,.menu-acties,.zk-uitklap,[
 export default function CanonicalNotificationCenter(p: Props) {
   const v2 = useMeldingenV2();
   const v2Regels = useLeverRegels(v2);
-  const v3Aan = useUitlegV3();
   // INTEG-001: de blijvende status (archief, opgelost) geldt nu voor elk paneel, niet alleen met de vlag meldingen-uitleg-v3: «Очистити»
   // en «Архів» moeten overal werken. Alleen voor een aangemeld account (anders is er geen server-status).
   const v3Status = useStatusStand(!!p.scope && p.scope !== 'anon');
@@ -651,13 +649,15 @@ export default function CanonicalNotificationCenter(p: Props) {
   const events = vk('ai').tonen ? activiteitenVanSfeer(activity.events, belSfeer) : [];
   const techUnread = (p.techItems || []).filter((item) => !item.read && vk(soortInfo(item.kind).type).tonen).length;
   const techRegel = techUnread > 0 && !!tech.profiel;
-  const serverUnread = server.filter((item) => !item.read).length;
-  const localUnread = zichtbaarLokaal.filter((item) => !item.read).length;
-  const activityUnread = events.filter((event) => !activity.read.has(event.id)).length;
+  // INTEG-001: wat opgeruimd of opgelost is (status op de server), telt niet meer als ongelezen — in geen enkel paneel.
+  const afgehandeld = (id: string) => { const s = v3Status.items[id]?.s; return s === 'archief' || s === 'opgelost' || s === 'gelezen'; };
+  const serverUnread = server.filter((item) => !item.read && !afgehandeld(`s:${item.id}`)).length;
+  const localUnread = zichtbaarLokaal.filter((item) => !item.read && !item.opgelost && !afgehandeld(`l:${item.id}`)).length;
+  const activityUnread = events.filter((event) => !activity.read.has(event.id) && !afgehandeld(`a:${event.id}`)).length;
   const unreadCountOud = localUnread + serverUnread + activityUnread + (techRegel ? techUnread : 0);
   const v2Model = useMemo(() => (v2
-    ? bouwModel({ lang: p.lang, local: zichtbaarLokaal as never, server: server as never, events, readEvents: activity.read }, v2Regels, undefined, v3Aan ? (ms) => pasStatusToe(ms, v3Status) : undefined)
-    : null), [v2, v2Regels, v3Aan, v3Status, p.lang, zichtbaarLokaal, server, events, activity.read]);
+    ? bouwModel({ lang: p.lang, local: zichtbaarLokaal as never, server: server as never, events, readEvents: activity.read }, v2Regels, undefined, (ms) => pasStatusToe(ms, v3Status))
+    : null), [v2, v2Regels, v3Status, p.lang, zichtbaarLokaal, server, events, activity.read]);
   const unreadCount = v2Model ? v2Model.tellers.bel + (techRegel ? techUnread : 0) : unreadCountOud;
   const historyCount = zichtbaarLokaal.length + server.length + events.length;
   const removeRetained = (id: string) => { releaseCanonicalNoticeAction(id); saveRetained((rows) => rows.filter((row) => row.id !== id)); };
@@ -868,7 +868,8 @@ export default function CanonicalNotificationCenter(p: Props) {
               {instellingen ? (
                 <MeldingVoorkeurenPaneel lang={p.lang} techTypen={!!tech.profiel} />
               ) : (
-                <NotificationPanelBody lang={p.lang} local={zichtbaarLokaal} server={server} events={events} readEvents={activity.read} onReadLocal={markLocalRead} onRemoveLocal={removeRetained} onRunAction={(id, action) => runAction(id, action)} onReadServer={p.onReadServer} onReadEvent={activity.markRead} detailIcons={DETAIL_ICON_COMPONENTS as never} />
+                <NotificationPanelBody lang={p.lang} local={zichtbaarLokaal} server={server} events={events} readEvents={activity.read} onReadLocal={markLocalRead} onRemoveLocal={removeRetained} onRunAction={(id, action) => runAction(id, action)} onReadServer={p.onReadServer} onReadEvent={activity.markRead} detailIcons={DETAIL_ICON_COMPONENTS as never}
+                  status={v3Status} onOpruimen={ruimOp} onTerug={(ids) => void wijzigStatus({ ids: [...ids], status: 'nieuw', hoe: ids.length > 1 ? 'bulk' : 'kaart' })} />
               )}
               <footer
                 id='cnc-acties'
