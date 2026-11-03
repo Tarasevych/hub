@@ -34,3 +34,5 @@
 .gast-profiel img{width:48px;height:48px;border-radius:50%}
 .gast-voet{max-width:900px;margin:12px auto 0}
 .gast-laden{text-align:center;color:var(--g-muted)}
+/* INTEG-001: taalknop met echte vlag naast de korte naam (укр. / NL). */
+.gast .gast-taal{display:inline-flex;align-items:center;gap:6px}

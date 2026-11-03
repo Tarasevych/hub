@@ -24,7 +24,7 @@
 [data-account-menu-v2] .am2-sessie-rij>.canonical-menu-action{flex:1 1 0;min-width:0;font-size:.875rem}
 [data-account-menu-v2] .am2-sessie .canonical-menu-action.logout-all{font-size:.875rem}
 /* Weergave: twee rijen [pictogram][gesegmenteerd][extra]. */
-[data-account-menu-v2] .am2-weergave{gap:6px;margin-top:0;padding:8px 0}
+[data-account-menu-v2] .am2-weergave{gap:10px;margin-top:0;padding:10px 0}
 [data-account-menu-v2] .am2-rij{display:flex;align-items:center;gap:8px;min-width:0}
 [data-account-menu-v2] .am2-rij-kop{display:grid;place-items:center;width:28px;flex:none;color:var(--canonical-muted)}
 [data-account-menu-v2] .am2-rij-kop svg{width:18px;height:18px}
@@ -37,8 +37,12 @@
 /* Thema: alleen pictogrammen op smal scherm; naam staat in tooltip en aria-label. */
 [data-account-menu-v2] .am2-thema-naam{font-weight:inherit}
 @media(max-width:520px){[data-account-menu-v2] .am2-thema-naam{display:none}}
-/* Echte vlaggen (emoji): eigen kleuren, nooit door thema of filters veranderd. */
-[data-account-menu-v2] .am2-vlag{display:inline-block;font-family:'Noto Color Emoji','Apple Color Emoji','Segoe UI Emoji','Twemoji Mozilla',sans-serif;font-size:18px;line-height:1;filter:none!important;mix-blend-mode:normal!important;opacity:1!important;color:initial;forced-color-adjust:none;-webkit-text-fill-color:initial}
+/* Echte vlaggen (SVG-bestand via src/MoviPrapor.tsx): eigen kleuren, nooit door thema of filters veranderd. */
+[data-account-menu-v2] .am2-vlag{display:inline-flex;align-items:center;line-height:0;filter:none!important;mix-blend-mode:normal!important;opacity:1!important;color:initial;forced-color-adjust:none}
+/* Taalkeuze (INTEG-001): geen twee halve breedtes meer die tegen de themarij aanliggen, maar een compacte schakelaar naar de inhoud; de tikhoogte blijft 44 px (UI-008). */
+[data-account-menu-v2] .am2-seg.language-switch{flex:0 1 auto;min-width:0}
+[data-account-menu-v2] .am2-seg.language-switch button{flex:0 0 auto;padding:0 16px}
+[data-account-menu-v2] .am2-weergave .am2-rij>.tech-vraag{margin-left:auto}
 [data-account-menu-v2] .am2-ikoon{display:grid;place-items:center;width:44px;height:44px;flex:none;padding:0;border:0;border-radius:12px;background:transparent;color:var(--canonical-muted);cursor:pointer}
 [data-account-menu-v2] .am2-ikoon:hover{background:var(--canonical-surface);color:var(--canonical-text)}
 [data-account-menu-v2] .am2-ikoon[aria-pressed=true]{color:var(--canonical-accent)}

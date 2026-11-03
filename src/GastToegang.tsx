@@ -5,6 +5,7 @@
 import {useEffect,useState,type ReactElement} from 'react';
 import {Clock,Cpu,History,KeyRound,LogOut,ShieldCheck,User} from 'lucide-react';
 import './gast.css';
+import MoviPrapor, { MOVA_NAAM } from './MoviPrapor';
 
 type Lang='uk'|'nl';
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='nl'?nl:uk;
@@ -67,7 +68,7 @@ export default function GastToegang(){
     else setFout(foutTekst(String((r.data as Record<string,unknown>).error||(r.status===429?'RATE_LIMITED':''))));
   };
   const uitloggen=async()=>{await post('/api/gast/uitloggen').catch(()=>undefined);setSessie(null);setInhoud({});setActief('');};
-  const taalKnop=<button type='button' className='gast-taal' onClick={()=>setLang(lang==='uk'?'nl':'uk')} aria-label={tr(lang,'Мова: українська. Перемкнути на нідерландську','Taal: Nederlands. Wissel naar Oekraïens')}>{lang==='uk'?'NL':'UA'}</button>;
+  const taalKnop=<button type='button' className='gast-taal' onClick={()=>setLang(lang==='uk'?'nl':'uk')} aria-label={tr(lang,'Мова: українська. Перемкнути на нідерландську','Taal: Nederlands. Wissel naar Oekraïens')}><MoviPrapor taal={lang==='uk'?'nl':'uk'}/><span>{MOVA_NAAM[lang==='uk'?'nl':'uk']}</span></button>;
   if(laden)return <main className='gast'><p className='gast-laden'>{tr(lang,'Завантаження…','Laden…')}</p></main>;
   if(!sessie)return <main className='gast'>
     <section className='gast-kaart' data-gast-inwisselen>
