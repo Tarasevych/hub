@@ -21,7 +21,7 @@ function Keuze<T extends string>({ uk, label, opties, waarde, naam, onKies }: { 
   return (
     <div className='tech-strook-keuze' role='radiogroup' aria-label={label}>
       {opties.map(v => (
-        <button key={v} type='button' role='radio' aria-checked={v === waarde} className={`tech-strook-optie${v === waarde ? ' is-gekozen' : ''}`} onClick={() => onKies(v)}>{L(uk, naam(v))}</button>
+        <button key={v} type='button' role='radio' data-hulp='tech.band' aria-checked={v === waarde} className={`tech-strook-optie${v === waarde ? ' is-gekozen' : ''}`} onClick={() => onKies(v)}>{L(uk, naam(v))}</button>
       ))}
     </div>
   );
