@@ -132,6 +132,11 @@ export async function main(): Promise<number> {
     const tv = renderToString(createElement(TechVerbindingen, { tr: uk, ingebed: true }));
     check('technisch ingebed: geen eigen h1/h2 (de sectiekop draagt de naam), wel blokken voor regels, verbindingen, deur en serveragenten',
       !tv.includes('<h1') && !tv.includes('<h2') && ['tech-regels', 'site-schakelaars', 'ai-verbinden', 'tech-verbindingen', 'tech-deur', 'tech-server-agenten'].every((x) => tv.includes(`data-ag-blok="${x}"`)) && zonderKop(tv).length === 0, zonderKop(tv).join(' | '));
+    // Oude fout (apart commit): groepnamen en «Токен консолі» van de sitebrede schakelaars stonden ook in het Nederlands in het Oekraïens.
+    const { default: SiteSchakelaars } = await import('../../src/agenten/SiteSchakelaars');
+    const ss = renderToString(createElement(SiteSchakelaars, { tr: nl }));
+    const legendes = [...ss.matchAll(/<legend>([^<]*)<\/legend>/g)].map((m) => m[1]);
+    check('sitebrede schakelaars (nl): groepnamen («AI», «Manieren», …) en «Consoletoken» in het Nederlands', legendes.length >= 3 && legendes.every((l) => !CYRILLISCH.test(l)) && legendes.includes('AI') && legendes.includes('Manieren') && ss.includes('Consoletoken') && !ss.includes('Токен консолі'), legendes.join(', '));
     const { default: RuimteScheiding } = await import('../../src/agenten/RuimteScheiding');
     const rs = renderToString(createElement(RuimteScheiding, { tr: uk }));
     check('«Окремі простори»: blok met naam en één zin (ook tijdens het laden); de diensten zijn rijen, geen <table>', blokken(rs).length === 1 && zonderKop(rs).length === 0 && !lees('src/agenten/RuimteScheiding.tsx').includes('<table') && lees('src/agenten/RuimteScheiding.tsx').includes("className='ag2-diensten' data-ruimte-tabel='1'"));
