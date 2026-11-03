@@ -229,7 +229,7 @@ html[data-tech=aan][data-tech-verborgen] #root :is(.canonical-notification-toast
 @media (max-width:768px){
   :root{--tech-band-h:44px}
   .tech-band{border-bottom-width:0;gap:8px;padding:0 4px 0 10px}
-  .tech-band-merk{font-size:11px;padding:2px 8px;border-radius:999px;letter-spacing:.04em}
+  .tech-band-merk{font-size:12px;padding:2px 8px;border-radius:999px;letter-spacing:.04em} /* 03.11.2026: was kleiner dan de ondergrens voor letters op de telefoon (mobiel-geometrie-20261021) */
   .tech-band-tijd{font-size:12px;font-weight:500;opacity:.9}
   .tech-band-breed{display:none !important}
   .tech-band-knoppen .tech-band-meer{min-width:44px;min-height:44px;border:0;border-radius:10px;justify-content:center;padding:0}
