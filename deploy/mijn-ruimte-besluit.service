@@ -12,6 +12,6 @@ ExecStart=/usr/local/sbin/mijn-ruimte-besluit verwerk
 StandardInput=null
 PrivateTmp=yes
 ProtectHome=yes
-NoNewPrivileges=no
+NoNewPrivileges=yes
 TimeoutStartSec=20min
 Nice=5
