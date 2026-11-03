@@ -1,7 +1,8 @@
 // «Токени»: AI koppelen aan de PRIVÉRUIMTE (automatisch in één klik of handmatig met een token, zie AiVerbinden.tsx) en de eigen
 // agenttokens als rijen. Alles van de serverdeur (verbindingen, schakelaars, technische tokens) is sitebeheer en staat op
 // mcp.*/verbindingen en mcp.*/dashboard (technisch profiel), niet hier in de accountruimte.
-import { Trash2 } from 'lucide-react';
+import { useId } from 'react';
+import { KeyRound, Trash2 } from 'lucide-react';
 import { api } from '../platform/client';
 import { sessionBody } from '../agenten-gegevens';
 import { Logo, type Tr } from '../mcp-ui';
@@ -9,12 +10,15 @@ import { aiLogo, inRuimte, isoMs, type DeurToken } from './gegevens';
 import { Badge, datum, exact, gebruiktBinnen, GevaarKnop, Groep, Melding, Rij, Tech, useActies } from './ui';
 import AiVerbinden from './AiVerbinden';
 import type { KlantId } from '../../shared/ai-verbinding';
+import './agenten-tabs-2.css';
 
 type Data = { tokens: DeurToken[]; rechten: Record<string, boolean>; catalogus: Array<{ id: string; uk: string; nl: string; group?: string }>; bestand: string };
 
 /** `vastKlant`: op de pagina van één agent staat de AI al vast — dan koppelt deze tab alleen die ene AI (geen tweede keuzerij). */
 export default function TabTokens({ tr, data, naActie, item, kies, vastKlant }: { tr: Tr; data: Data | null; naActie: () => Promise<void>; item: string; kies: (id: string) => void; vastKlant?: KlantId }) {
   const acties = useActies(tr);
+  // Eigen id: TabTokens staat op de hub én (met vastKlant) op de pagina van één agent.
+  const kopId = useId();
   const mag = !data || data.rechten.tokens !== false;
   const nu = Date.now();
   // Alleen tokens van de privéruimte: technische tokens (server) staan op mcp.*/verbindingen.
@@ -50,14 +54,27 @@ export default function TabTokens({ tr, data, naActie, item, kies, vastKlant }: 
     );
   };
 
+  // INTEG-001 (agpag2, 03.11.2026): twee blokken (.ag-blok) — «Підключити ШІ» (AiVerbinden, zelf een blok) en «Ваші токени» met de
+  // teller, de lijst of een lege staat, en ingeklapt de geschiedenis.
   return (
-    <div className='ag-tab' data-tab-inhoud='tokens'>
+    <div className='ag-tab ag2-blokken' data-tab-inhoud='tokens'>
       <AiVerbinden tr={tr} magTokens={mag} naActie={naActie} ruimte='prive' vastKlant={vastKlant} />
-      <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
-      <div className='ag-lijstkop'><p className='ag-lijstkop-tekst'>{actief.length ? tr(`Активних токенів: ${actief.length}`, `Actieve tokens: ${actief.length}`) : tr('Активних токенів немає.', 'Geen actieve tokens.')}</p></div>
-      {data === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : actief.length ? <ul className='ag-lijst' data-lijst='tokens'>{actief.map((t) => rij(t))}</ul> : null}
-      <Groep titel={tr('Відкликані й завершені', 'Ingetrokken en verlopen')} aantal={weg.length} data='tokens-historie'>{weg.map((t) => rij(t, true))}</Groep>
-
+      <section className='ag-blok' data-ag-blok='tokens' aria-labelledby={kopId}>
+        <header className='ag-blok-kop'>
+          <div className='ag2-kop-tekst'>
+            <h3 className='ag-blok-titel' id={kopId}><span className='ag2-icoon' aria-hidden='true'><KeyRound /></span>{tr('Ваші токени', 'Uw tokens')}</h3>
+            <p className='ag-blok-uitleg'>{tr('Ключі, з якими ШІ або агент входить без вікна входу; відкликаний ключ перестає діяти одразу.', 'Sleutels waarmee een AI of agent zonder aanmeldvenster binnenkomt; een ingetrokken sleutel werkt meteen niet meer.')}</p>
+          </div>
+        </header>
+        <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
+        {data === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : actief.length ? (
+          <>
+            <p className='ag2-samenvatting' data-tokens-telling={actief.length}>{tr(`Активних токенів: ${actief.length}`, `Actieve tokens: ${actief.length}`)}</p>
+            <ul className='ag-lijst' data-lijst='tokens'>{actief.map((t) => rij(t))}</ul>
+          </>
+        ) : <p className='ag-leeg' data-tokens-leeg='1'>{tr('Активних токенів немає. Новий токен випускається в блоці «Підключити ШІ» вище — спосіб «вручну».', 'Geen actieve tokens. Een nieuw token geeft u uit in het blok «AI koppelen» hierboven — manier «handmatig».')}</p>}
+        <Groep titel={tr('Відкликані й завершені', 'Ingetrokken en verlopen')} aantal={weg.length} data='tokens-historie'>{weg.map((t) => rij(t, true))}</Groep>
+      </section>
     </div>
   );
 }

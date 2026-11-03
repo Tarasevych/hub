@@ -1,0 +1,90 @@
+/* INTEG-001 · agpag2 (03.11.2026) — opmaak BINNEN de blokken van de secties «Розширення браузера», «Браузер і агенти», «Пристрої»,
+   «Токени», «Доступи», «Технічне» en «Журнал» op de pagina /agents van mcp. Melding eigenaar: «сира таблиця, без дизайну і без зрозумілих блоків,
+   багато порожніх проміжків, розділи не відділені».
+   Het blok zelf komt uit het gedeelde klassencontract van src/agenten/agenten-pagina.css (agpag1): .ag-pagina, .ag-blok, .ag-blok-kop,
+   .ag-blok-titel, .ag-blok-uitleg, .ag-rij, .ag-leeg, .ag-knoppen. Die klassen worden hier NIET gedefinieerd; dit bestand heeft alleen
+   eigen ag2-klassen voor wat er in een blok staat (kopje met icoon, statusregel, werkbalk, raster, open paneel, dienstenlijst).
+   Alleen thema-tokens (src/ontwerp/tokens.css): licht en donker volgen vanzelf. Telefoon (≤ 560 px): geen horizontale scroll,
+   knoppen over de volle breedte en ≥ 44 px hoog; de zijmarge van 16 px geeft de pagina (.ag-pagina). Geen <style>-tags (CSP). */
+
+/* Stapel blokken in één sectie: één vaste tussenruimte, geen losse marges per kaart. */
+.ag2-blokken{display:grid;gap:var(--ruimte-4,16px);min-width:0}
+.ag2-blokken>*{min-width:0}
+
+/* Kop van een blok: titel + één zin links, knoppen rechts (op de telefoon eronder). */
+.ag2-kop-tekst{display:grid;gap:4px;flex:1 1 280px;min-width:0}
+.ag2-icoon{display:inline-grid;place-items:center;flex:0 0 auto;width:28px;height:28px;margin-right:8px;border-radius:var(--straal-s,8px);background:var(--accent-soft,var(--surface));color:var(--accent);vertical-align:middle}
+.ag2-icoon svg{width:16px;height:16px}
+.ag2-acties{align-items:center;justify-content:flex-end}
+.ag2-acties .ag-knop,.ag2-acties .eo-knop{text-decoration:none}
+
+/* Eén regel in een blok: icoon, tekst en eventueel een knop — loopt netjes door op een smal scherm. */
+.ag2-rij{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0;min-width:0;line-height:1.45}
+.ag2-rij>svg{flex:0 0 auto;width:18px;height:18px;color:var(--accent)}
+.ag2-rij>span,.ag2-rij>p{flex:1 1 240px;min-width:0;margin:0;overflow-wrap:anywhere}
+.ag2-rij.is-let{padding:10px 12px;border-radius:var(--straal-m,12px);background:var(--surface)}
+.ag2-rij.is-warn{padding:10px 12px;border-radius:var(--straal-m,12px);background:var(--warn-zacht,var(--surface));box-shadow:inset 4px 0 0 var(--warn)}
+
+/* Teller boven een lijst («Підключено 3 · у мережі 1») en een werkbalk (sorteren, filters). */
+.ag2-werkbalk{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 12px;min-width:0}
+.ag2-samenvatting{margin:0 auto 0 0;align-self:center;font-weight:600;color:var(--text);overflow-wrap:anywhere}
+.ag2-werkbalk .ag-veld{min-width:min(100%,180px)}
+.ag2-noot{margin:0;color:var(--muted);font-size:.86rem;line-height:1.45;overflow-wrap:anywhere}
+
+/* Raster van kaarten (browsers, sloten): naast elkaar waar het past, onder elkaar op de telefoon. */
+.ag2-raster{display:grid;gap:var(--ruimte-3,12px);grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));margin:0;padding:0;list-style:none;min-width:0}
+.ag2-raster>*{min-width:0;margin:0}
+
+/* Inhoud van een blok zonder eigen rand (het blok is de rand). Een paneel dat op verzoek opengaat, krijgt wel een accentrand. */
+.ag2-paneel{display:grid;gap:10px;min-width:0;overflow-wrap:anywhere}
+.ag2-paneel.is-open{padding:12px;border:1px solid var(--accent);border-radius:var(--straal-m,12px);background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
+
+/* «Браузер і агенти»: kop van een slot, slotkeuze, groepsknoppen en legenda van de matrix. */
+.ag2-slot-titel{display:flex;align-items:center;gap:6px;margin:0;font-size:1rem;line-height:1.3}
+.ag2-slot-titel svg{width:18px;height:18px;flex:0 0 auto}
+.bea-slot.ag2-slot{margin-top:0}
+.ag2-slotkeuze{display:inline-flex;border:1px solid var(--line);border-radius:var(--straal-m,12px);overflow:hidden}
+.ag2-slotkeuze button{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 14px;border:0;background:var(--surface);color:var(--muted);font:inherit;font-weight:600;cursor:pointer}
+.ag2-slotkeuze button+button{border-left:1px solid var(--line)}
+.ag2-slotkeuze button svg{width:16px;height:16px}
+.ag2-slotkeuze button[aria-checked=true]{background:var(--accent);color:var(--accentText,var(--text-on-accent,#fff))}
+.ag2-slotkeuze button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ag2-matrix{display:grid;gap:12px;min-width:0}
+.bea-snel{align-items:center}
+.bea-snel>.ag2-noot{flex:0 0 auto}
+.ag2-matrix-groepen{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px}
+.ag2-legenda{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:8px 0 0;color:var(--muted);font-size:.84rem;line-height:1.4}
+.ag2-legenda>span{display:inline-flex;align-items:center;gap:4px}
+.ag2-stappen{margin:0;padding-left:1.25em;display:grid;gap:6px;line-height:1.5}
+
+/* «Технічне» → «Окремі простори»: één rij per dienst in plaats van een kale tabel. */
+.ag2-diensten{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--straal-m,12px);background:var(--panel);overflow:hidden}
+.ag2-dienst{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.ag2-dienst:first-child{border-top:0}
+.ag2-dienst[data-stand='bevroren']{background:var(--panel-2,var(--surface))}
+.ag2-dienst-naam{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-width:0;font-weight:600}
+.ag2-dienst-wie{grid-column:1;color:var(--muted);font-size:.84rem;line-height:1.4;overflow-wrap:anywhere}
+.ag2-dienst-verslag{display:block}
+.ag2-dienst-acties{grid-column:2;grid-row:1/span 2;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
+.ag2-regels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px;margin:0;padding:0;list-style:none}
+.ag2-regels li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:var(--straal-m,12px);background:var(--surface);font-size:.88rem;line-height:1.45;min-width:0}
+.ag2-regels li svg{flex:0 0 auto;margin-top:2px;color:var(--accent)}
+
+/* «Журнал»: filters in de kop van het blok. */
+.ag2-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 12px;min-width:0}
+
+/* «Доступи»: de regel bovenaan (wat hier staat + (?)). */
+.ag2-intro{margin:0;color:var(--muted);line-height:1.5;max-width:76ch}
+
+@media (max-width:560px){
+  .ag2-kop-tekst{flex-basis:100%}
+  .ag2-acties{width:100%;justify-content:stretch}
+  .ag2-acties>:is(.ag-knop,.eo-knop,button,a){flex:1 1 auto;min-height:44px;white-space:normal;text-align:center}
+  .ag2-slotkeuze{display:flex;width:100%}
+  .ag2-slotkeuze button{flex:1;justify-content:center}
+  .ag2-werkbalk>*,.ag2-filters>*{flex:1 1 100%}
+  .ag2-werkbalk select,.ag2-filters select{width:100%;min-height:44px}
+  .ag2-dienst{grid-template-columns:minmax(0,1fr)}
+  .ag2-dienst-acties{grid-column:1;grid-row:auto;justify-content:stretch}
+  .ag2-dienst-acties>.ag-knop{flex:1 1 140px;min-height:44px;white-space:normal}
+}

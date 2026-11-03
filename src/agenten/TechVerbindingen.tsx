@@ -21,6 +21,7 @@ import { foutTekst } from './fouten';
 import { Badge, datum, exact, gebruiktBinnen, GevaarKnop, Groep, Melding, Rij, Tech, useActies } from './ui';
 import '../mcp-hub.css';
 import './agenten.css';
+import './agenten-tabs-2.css';
 
 type Item = { sleutel: string; soort: 'oauth' | 'token'; naam: string; laatst: number | null; sinds: number | null; actief: boolean; oauth?: OauthVerbinding; token?: DeurToken };
 
@@ -95,18 +96,30 @@ export default function TechVerbindingen({ tr, ingebed = false }: { tr: Tr; inge
   const mag = !tok.data || tok.data.rechten.tokens !== false;
   const lang = uk ? 'uk' : 'nl';
 
+  // INTEG-001 (agpag2, 03.11.2026): elk onderdeel is een blok (.ag-blok, contract van agenten-pagina.css) met naam, één zin en de
+  // knoppen in de kop. Ingebed in de hub (sectie «Технічне») vervalt de eigen h2: die naam staat al in de sectiekop.
   return (
-    <div className='ag ag-tech' data-tech-verbindingen='1'>
-      <header className='ag-tech-kop'>
-        {ingebed ? <h2>{tr('Технічні підключення', 'Technische verbindingen')}</h2> : <h1>{tr('Технічні підключення', 'Technische verbindingen')}</h1>}
-        <p>{uk ? RUIMTE_UITLEG.technisch.uk : RUIMTE_UITLEG.technisch.nl}</p>
-      </header>
-      <ul className='ag-tech-regels' aria-label={tr('Принципи', 'Regels')}>
-        <li><Lock size={16} aria-hidden='true' /><span>{tr('Простір фіксується на підключенні, коли ви його створюєте тут. ШІ не може змінити свій простір і не бачить інструментів іншого.', 'De ruimte staat vast op de verbinding zodra u ze hier maakt. De AI kan zijn ruimte niet veranderen en ziet de hulpmiddelen van de andere niet.')}</span></li>
-        <li><Eye size={16} aria-hidden='true' /><span>{tr('Технічний ШІ бачить лише сайт і сервер: випуски, стан, двері, агентів на сервері. Жодної пошти, Drive, дошки чи ваших пристроїв.', 'Een technische AI ziet alleen de site en de server: releases, stand, deur, agenten op de server. Geen mail, Drive, bord of uw apparaten.')}</span></li>
-        <li><ShieldCheck size={16} aria-hidden='true' /><span>{tr('Підписана політика ШІ лишається стелею. Схвалення випуску, відкат, резервні копії й секрети — лише ви на сайті.', 'Het ondertekende AI-beleid blijft het plafond. Een release goedkeuren, terugdraaien, back-ups en geheimen — alleen u op de site.')}</span></li>
-        <li><KeyRound size={16} aria-hidden='true' /><span>{tr('Право «готувати оновлення» можна дати лише технічному підключенню: ', 'Het recht «updates voorbereiden» kan alleen naar een technische verbinding: ')}<a className='ag-link' href={canonicalNavigationUrl('admin', 'updates', lang)}>{tr('Адміністрування → Оновлення', 'Beheer → Updates')} <ArrowRight size={12} aria-hidden='true' /></a></span></li>
-      </ul>
+    <div className='ag ag-tech ag2-blokken' data-tech-verbindingen='1'>
+      {ingebed ? null : (
+        <header className='ag-tech-kop'>
+          <h1>{tr('Технічні підключення', 'Technische verbindingen')}</h1>
+          <p>{uk ? RUIMTE_UITLEG.technisch.uk : RUIMTE_UITLEG.technisch.nl}</p>
+        </header>
+      )}
+      <section className='ag-blok' data-ag-blok='tech-regels' aria-labelledby='ag2-tech-regels-kop'>
+        <header className='ag-blok-kop'>
+          <div className='ag2-kop-tekst'>
+            <h3 className='ag-blok-titel' id='ag2-tech-regels-kop'><span className='ag2-icoon' aria-hidden='true'><Lock /></span>{tr('Правила технічного простору', 'Regels van de technische ruimte')}</h3>
+            <p className='ag-blok-uitleg'>{tr('Що бачить і чого не бачить ШІ, підключений до технічного простору.', 'Wat een AI in de technische ruimte wel en niet ziet.')}</p>
+          </div>
+        </header>
+        <ul className='ag2-regels' aria-label={tr('Принципи', 'Regels')}>
+          <li><Lock size={16} aria-hidden='true' /><span>{tr('Простір фіксується на підключенні, коли ви його створюєте тут. ШІ не може змінити свій простір і не бачить інструментів іншого.', 'De ruimte staat vast op de verbinding zodra u ze hier maakt. De AI kan zijn ruimte niet veranderen en ziet de hulpmiddelen van de andere niet.')}</span></li>
+          <li><Eye size={16} aria-hidden='true' /><span>{tr('Технічний ШІ бачить лише сайт і сервер: випуски, стан, двері, агентів на сервері. Жодної пошти, Drive, дошки чи ваших пристроїв.', 'Een technische AI ziet alleen de site en de server: releases, stand, deur, agenten op de server. Geen mail, Drive, bord of uw apparaten.')}</span></li>
+          <li><ShieldCheck size={16} aria-hidden='true' /><span>{tr('Підписана політика ШІ лишається стелею. Схвалення випуску, відкат, резервні копії й секрети — лише ви на сайті.', 'Het ondertekende AI-beleid blijft het plafond. Een release goedkeuren, terugdraaien, back-ups en geheimen — alleen u op de site.')}</span></li>
+          <li><KeyRound size={16} aria-hidden='true' /><span>{tr('Право «готувати оновлення» можна дати лише технічному підключенню: ', 'Het recht «updates voorbereiden» kan alleen naar een technische verbinding: ')}<a className='ag-link' href={canonicalNavigationUrl('admin', 'updates', lang)}>{tr('Адміністрування → Оновлення', 'Beheer → Updates')} <ArrowRight size={12} aria-hidden='true' /></a></span></li>
+        </ul>
+      </section>
 
       {/* Connector v2: één adres per AI met rechten per hulpmiddel — beide ruimtes, dus ook hier (de accountpagina verwijst met actief technisch profiel hierheen). */}
       {ingebed ? null : <ConnectorsTab tr={tr} />}
@@ -116,23 +129,45 @@ export default function TechVerbindingen({ tr, ingebed = false }: { tr: Tr; inge
       {laadFout ? <p className='ag-melding ag-melding-fout' role='alert' data-ag-melding='laden'>{foutTekst(laadFout, tr, ['Не всі дані вдалося завантажити', 'Niet alle gegevens konden worden geladen'])}</p> : null}
 
       <AiVerbinden tr={tr} magTokens={mag} naActie={naActie} ruimte='technisch' />
-      <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
 
-      <section className='ag-kaart' data-lijst='tech-verbindingen'>
-        <div className='ag-kaart-kop'><h3>{tr('Технічні підключення ШІ', 'Technische AI-verbindingen')}</h3></div>
-        <div className='ag-lijstkop'><p className='ag-lijstkop-tekst'>{actief.length ? tr(`Активних: ${actief.length}`, `Actief: ${actief.length}`) : tr('Активних технічних підключень немає.', 'Geen actieve technische verbindingen.')}</p></div>
-        {ov.data === null && tok.data === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : actief.length ? <ul className='ag-lijst'>{actief.map((x) => rij(x))}</ul> : null}
+      <section className='ag-blok' data-ag-blok='tech-verbindingen' data-lijst='tech-verbindingen' aria-labelledby='ag2-tech-verb-kop'>
+        <header className='ag-blok-kop'>
+          <div className='ag2-kop-tekst'>
+            <h3 className='ag-blok-titel' id='ag2-tech-verb-kop'><span className='ag2-icoon' aria-hidden='true'><ShieldCheck /></span>{tr('Технічні підключення ШІ', 'Technische AI-verbindingen')}</h3>
+            <p className='ag-blok-uitleg'>{tr('ШІ, підключені до технічного простору через OAuth або MCP-токен; відкликання діє одразу.', 'AI die via OAuth of een MCP-token aan de technische ruimte gekoppeld zijn; intrekken werkt meteen.')}</p>
+          </div>
+        </header>
+        <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
+        {ov.data === null && tok.data === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : actief.length ? (
+          <>
+            <p className='ag2-samenvatting'>{tr(`Активних: ${actief.length}`, `Actief: ${actief.length}`)}</p>
+            <ul className='ag-lijst'>{actief.map((x) => rij(x))}</ul>
+          </>
+        ) : <p className='ag-leeg'>{tr('Активних технічних підключень немає. Підключіть ШІ в блоці вище.', 'Geen actieve technische verbindingen. Koppel een AI in het blok hierboven.')}</p>}
         <Groep titel={tr('Відкликані й завершені', 'Ingetrokken en verlopen')} aantal={historie.length} data='tech-historie'>{historie.map((x) => rij(x, true))}</Groep>
       </section>
 
-      <section className='ag-kaart' data-lijst='deur'>
-        <div className='ag-kaart-kop'><h3>{tr('Двері сервера', 'Serverdeur')}</h3></div>
+      <section className='ag-blok' data-ag-blok='tech-deur' data-lijst='deur' aria-labelledby='ag2-tech-deur-kop'>
+        <header className='ag-blok-kop'>
+          <div className='ag2-kop-tekst'>
+            <h3 className='ag-blok-titel' id='ag2-tech-deur-kop'><span className='ag2-icoon' aria-hidden='true'><KeyRound /></span>{tr('Двері сервера', 'Serverdeur')}</h3>
+            <p className='ag-blok-uitleg'>{tr('Доступи ШІ через двері сервера (/Grok, /claude…); кожен відкликається окремо.', 'Toegang van AI via de serverdeur (/Grok, /claude…); elk is apart in te trekken.')}</p>
+          </div>
+        </header>
         <DeurVerbindingen tr={tr} item={item} kies={kies} deur={deur} naActie={naActie} />
         {deur.lijst === null && !deur.fout ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : null}
       </section>
 
-      <section className='ag-kaart' data-lijst='server-agenten'>
-        <div className='ag-kaart-kop'><h3>{tr('Агенти на сервері', 'Agenten op de server')}</h3><a className='ag-link' href={canonicalNavigationUrl('mcp', 'apps', lang)}>{tr('Підключити сервер / додатки', 'Server koppelen / apps')} <ArrowRight size={14} aria-hidden='true' /></a></div>
+      <section className='ag-blok' data-ag-blok='tech-server-agenten' data-lijst='server-agenten' aria-labelledby='ag2-tech-server-kop'>
+        <header className='ag-blok-kop'>
+          <div className='ag2-kop-tekst'>
+            <h3 className='ag-blok-titel' id='ag2-tech-server-kop'><span className='ag2-icoon' aria-hidden='true'><Server /></span>{tr('Агенти на сервері', 'Agenten op de server')}</h3>
+            <p className='ag-blok-uitleg'>{tr('Агенти, що працюють на самому сервері й належать технічному простору.', 'Agenten die op de server zelf draaien en bij de technische ruimte horen.')}</p>
+          </div>
+          <div className='ag-knoppen ag2-acties'>
+            <a className='ag-knop' href={canonicalNavigationUrl('mcp', 'apps', lang)}>{tr('Підключити сервер / додатки', 'Server koppelen / apps')} <ArrowRight size={14} aria-hidden='true' /></a>
+          </div>
+        </header>
         {serverAgents.length ? <ul className='ag-lijst'>{serverAgents.map((a) => {
           const sleutel = `server:${a.id}`;
           return (
