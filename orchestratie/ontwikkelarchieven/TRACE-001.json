@@ -66,6 +66,15 @@
       "bewijzen": [
         "https://github.com/Tarasevych/hub/tree/feature/trace-001-20261103-214810"
       ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "Перше CI відхилило надто великий CONTEXT-COMPACT (13 834 > 12 000 байтів); після перенесення повного опису за межі compact ORCH вимагав окремого підвищення версії правил. Зроблено рішення B-008, політику 1.4.1, і повторено перевірки.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41727205002",
+        "https://github.com/Tarasevych/hub/actions/runs/41727565249",
+        "orchestratie/BESLUITEN.md"
+      ]
     }
   ],
   "keuzes": [
@@ -176,6 +185,11 @@
     {
       "status": "niet_uitgevoerd",
       "resultaat": "Ні root-інсталяції, ні production deploy, ні E2E з реальним passkey/GitHub приватними токенами в цьому завданні не виконували."
+    },
+    {
+      "status": "afgewezen",
+      "resultaat": "CI 41727205002: CONTEXT_TE_GROOT; CI 41727565249: VERSIE_NIET_VERHOOGD — виправлено в окремому наступному коміті; результат наступного CI очікується.",
+      "url": "https://github.com/Tarasevych/hub/actions/runs/41727565249"
     }
   ],
   "bronnen": [
