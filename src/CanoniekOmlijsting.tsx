@@ -29,33 +29,77 @@ const parentIds=new Set<MenuItemId>(['hub','ai','mail','cloud','github','huis','
 const readTouchMode=()=>typeof window!=='undefined'&&typeof window.matchMedia==='function'&&window.matchMedia('(max-width:700px)').matches;
 const readSubmenuPreferences=():SubmenuPreferences=>{try{const raw=JSON.parse(sessionStorage.getItem(SUBMENU_STORAGE_KEY)||'{}')as Record<string,unknown>,next:SubmenuPreferences={};for(const id of parentIds){if(typeof raw[id]==='boolean')next[id]=raw[id]as boolean}return next}catch{return{}}};
 const writeSubmenuPreferences=(value:SubmenuPreferences)=>{try{sessionStorage.setItem(SUBMENU_STORAGE_KEY,JSON.stringify(value))}catch{}};
-// LOGIN-001 (aanmelden): knop «Увійти через Google» met merklogo; «Інші способи входу» klapt de andere methoden uit (AanmeldAndereOpties).
-// Het bestaande gedrag blijft: met een opgeslagen account of een open menu gaat «open» naar het menu; de Google-knop gaat direct naar Google.
+// LOGIN-001 / INTEG-001 (aanmelden, 03.11.2026). Wensen van de eigenaar:
+//  • de knop zegt meteen HOE: «Увійти через Google» met het officiële gekleurde Google-«G» (src/merk/google-g-officieel.ts) op een
+//    witte plaat, vast links in de knop; de tekst staat precies in het midden (drie kolommen: logo · tekst · pijl);
+//  • «Інші способи входу» klapt GitHub, Apple, Microsoft en passkey uit (AanmeldAndereOpties), met hun ECHTE stand;
+//  • de kleurrotatie rond de knop loopt ALLEEN tijdens het aanmelden of de controle — van de klik tot het werkprofiel open is,
+//    nooit bij hover. Zo werkt dat:
+//      klik → rotatie + een tijdstempel in sessionStorage (alleen dit tabblad, ≤ 5 min, geen account- of sessiegegevens);
+//      de omleiding naar Google verlaat de pagina (beforeunload) → de rotatie blijft tot de pagina weg is;
+//      terug van Google staat de app even op 'checking' → met dat tijdstempel dezelfde kaart met een draaiende knop
+//      «Перевіряємо вхід…» in plaats van een losse spinner; profiel open → deze kaart verdwijnt en het tijdstempel ook;
+//      afgemeld gebleven (geannuleerd of mislukt) → rotatie uit, tijdstempel weg;
+//      de start mislukt (de pagina vertrekt niet) → rotatie meteen uit, de knop is weer gewoon bruikbaar;
+//      terug met de knop «Назад» van de browser (bfcache) → rotatie uit.
+// De aanmeldlogica zelf (onGoogle/onOpenAccount van App en VerenigdDienstApp) is ongewijzigd; dit is alleen weergave.
+// De knop met het opgeslagen account opent het menu en start GEEN rotatie (dat is nog geen aanmelding — vroeger bleef de
+// Google-knop dan draaien zolang het menu open stond).
 import AanmeldAndereOpties from './AanmeldAndereOpties';
-import Merk from './merk/Merk';
-export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrowser=true,onRememberBrowser,preferredAccount,onGoogle}:{lang:'uk'|'nl';checking?:boolean;onOpenAccount:()=>void;rememberBrowser?:boolean;onRememberBrowser?:(value:boolean)=>void;preferredAccount?:{name?:string|null;email?:string|null}|null;onGoogle?:()=>void}){
+import { GOOGLE_G_DATA_URI } from './merk/google-g-officieel';
+export const AANMELD_BEZIG_SLEUTEL='mr-aanmelden-bezig';
+export const AANMELD_BEZIG_MS=5*60_000;
+/** Loopt er in dit tabblad een aanmelding die op deze pagina begon (klik ≤ 5 min geleden)? */
+export function aanmeldenBezig(nu=Date.now()):boolean{try{const t=Number(sessionStorage.getItem(AANMELD_BEZIG_SLEUTEL)||0);return t>0&&nu-t>=0&&nu-t<AANMELD_BEZIG_MS}catch{return false}}
+export function zetAanmeldenBezig(aan:boolean):void{try{if(aan)sessionStorage.setItem(AANMELD_BEZIG_SLEUTEL,String(Date.now()));else sessionStorage.removeItem(AANMELD_BEZIG_SLEUTEL)}catch{/* privévenster of geen opslag: dan alleen de rotatie op deze pagina */}}
+export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrowser=true,onRememberBrowser,preferredAccount,onGoogle}:{lang:'uk'|'nl';checking?:boolean;onOpenAccount:()=>void;rememberBrowser?:boolean;onRememberBrowser?:(value:boolean)=>void;preferredAccount?:{name?:string|null;email?:string|null}|null;onGoogle?:()=>void|Promise<unknown>}){
+ const uk=lang==='uk';
  const[activating,setActivating]=useState(false);
- if(checking)return <section className='canonical-signed-out mr-sign-in checking' aria-busy='true' aria-live='polite' aria-label={lang==='uk'?'Завантаження':'Laden'}><span className='canonical-checking-spinner' aria-hidden='true'/></section>;
- const open=()=>{setActivating(true);onOpenAccount()};
- const google=()=>{setActivating(true);(onGoogle||onOpenAccount)()};
- const known=rememberBrowser&&preferredAccount&&(preferredAccount.name||preferredAccount.email);
- return <section className='canonical-signed-out mr-sign-in' data-login-design='LOGIN-001' aria-busy='false'>
+ // Terug van Google: alleen bij de EERSTE weergave in 'checking' gelezen (daarna zegt de app zelf of het profiel open is).
+ const[terugVanAanmelden]=useState(()=>checking&&aanmeldenBezig());
+ const vertrekt=useRef(false);
+ useEffect(()=>{if(!checking){vertrekt.current=false;zetAanmeldenBezig(false)}},[checking]);
+ useEffect(()=>{
+  const terug=(e:PageTransitionEvent)=>{if(e.persisted){vertrekt.current=false;setActivating(false);zetAanmeldenBezig(false)}};
+  window.addEventListener('pageshow',terug);
+  // Verdwijnt de kaart (profiel open), dan is de aanmelding klaar.
+  return()=>{window.removeEventListener('pageshow',terug);if(!vertrekt.current)zetAanmeldenBezig(false)};
+ },[]);
+ if(checking&&!terugVanAanmelden)return <section className='canonical-signed-out mr-sign-in checking' aria-busy='true' aria-live='polite' aria-label={uk?'Завантаження':'Laden'}><span className='canonical-checking-spinner' aria-hidden='true'/></section>;
+ const stop=()=>{vertrekt.current=false;setActivating(false);zetAanmeldenBezig(false)};
+ const open=()=>{onOpenAccount()};
+ const google=()=>{
+  if(activating||checking)return;
+  setActivating(true);zetAanmeldenBezig(true);vertrekt.current=false;
+  const vertrek=()=>{vertrekt.current=true};
+  window.addEventListener('beforeunload',vertrek);
+  const klaar=()=>{window.setTimeout(()=>{window.removeEventListener('beforeunload',vertrek);if(!vertrekt.current)stop()},400)};
+  let uitkomst:unknown;
+  try{uitkomst=(onGoogle||onOpenAccount)()}catch{klaar();return}
+  if(uitkomst&&typeof(uitkomst as Promise<unknown>).then==='function')(uitkomst as Promise<unknown>).then(klaar,klaar);
+  else window.setTimeout(klaar,6000);
+ };
+ const known=!checking&&rememberBrowser&&preferredAccount&&(preferredAccount.name||preferredAccount.email);
+ const draait=activating||checking;
+ return <section className={`canonical-signed-out mr-sign-in${checking?' is-controle':''}`} data-login-design='LOGIN-001' aria-busy={draait?'true':'false'} aria-live={checking?'polite':undefined}>
   <div className='mr-sign-in-content'>
-   <h1>{lang==='uk'?'Увійдіть у Мій простір':'Meld u aan bij Mijn Ruimte'}</h1>
-   <p className='mr-sign-in-subtitle'>{lang==='uk'?'Єдиний обліковий запис для вашої роботи, файлів і сервісів.':'Eén account voor uw werk, bestanden en diensten.'}</p>
-   {known&&<button type='button' className='mr-sign-in-account' onClick={open} aria-label={lang==='uk'?'Вибрати збережений обліковий запис':'Opgeslagen account kiezen'}>
+   <h1>{uk?'Увійдіть у Мій простір':'Meld u aan bij Mijn Ruimte'}</h1>
+   <p className='mr-sign-in-subtitle'>{uk?'Єдиний обліковий запис для вашої роботи, файлів і сервісів.':'Eén account voor uw werk, bestanden en diensten.'}</p>
+   {known&&<button type='button' className='mr-sign-in-account' onClick={open} aria-label={uk?'Вибрати збережений обліковий запис':'Opgeslagen account kiezen'}>
     <span className='mr-sign-in-initials' aria-hidden='true'>{String(preferredAccount?.name||preferredAccount?.email||'').trim().slice(0,1).toLocaleUpperCase(lang)}</span>
-    <span className='mr-sign-in-account-copy'><strong>{preferredAccount?.name||preferredAccount?.email}</strong><small>{lang==='uk'?'Збережений на цьому пристрої':'Op dit apparaat bewaard'}</small></span>
+    <span className='mr-sign-in-account-copy'><strong>{preferredAccount?.name||preferredAccount?.email}</strong><small>{uk?'Збережений на цьому пристрої':'Op dit apparaat bewaard'}</small></span>
     <span aria-hidden='true' className='mr-sign-in-chevron'>⌄</span>
    </button>}
-   <button type='button' className='mr-sign-in-main-button' data-activated={activating?'true':'false'} onClick={google} onBlur={()=>setActivating(false)}>
-    <span className='mr-sign-in-logo' aria-hidden='true'><Merk merk='google' vorm='gliefje' maat={16} terugval={null}/></span>
-    <span className='mr-sign-in-main-tekst'>{lang==='uk'?'Увійти':'Aanmelden'} {lang==='uk'?'через Google':'met Google'}</span><span className='mr-sign-in-arrow' aria-hidden='true'>→</span>
+   {/* Focus naar een ander element op de pagina (bv. de accountkeuze die opent) = geen aanmelding meer; het venster verlaten (relatedTarget leeg) niet. */}
+   <button type='button' className='mr-sign-in-main-button' data-activated={draait?'true':'false'} aria-disabled={checking||undefined} onClick={google} onBlur={e=>{if(activating&&!vertrekt.current&&e.relatedTarget)stop()}}>
+    <span className='mr-sign-in-logo' aria-hidden='true'><img src={GOOGLE_G_DATA_URI} alt='' width={18} height={18} draggable={false} data-merk-officieel='google'/></span>
+    <span className='mr-sign-in-main-tekst'>{checking?(uk?'Перевіряємо вхід…':'Aanmelding controleren…'):(uk?'Увійти через Google':'Aanmelden met Google')}</span>
+    <span className='mr-sign-in-arrow' aria-hidden='true'>→</span>
    </button>
-   <AanmeldAndereOpties lang={lang} onGoogle={google}/>
-   {onRememberBrowser&&<label className='mr-sign-in-remember'>
+   {!checking&&<AanmeldAndereOpties lang={lang}/>}
+   {!checking&&onRememberBrowser&&<label className='mr-sign-in-remember'>
     <input type='checkbox' checked={rememberBrowser} onChange={event=>onRememberBrowser(event.target.checked)}/>
-    <span>{lang==='uk'?'Зберегти обліковий запис на цьому пристрої':'Account op dit apparaat bewaren'}</span>
+    <span>{uk?'Зберегти обліковий запис на цьому пристрої':'Account op dit apparaat bewaren'}</span>
    </label>}
   </div>
   <nav className='canonical-signed-out-legal mr-sign-in-legal' aria-label={lang==='uk'?'Правова інформація':'Juridische informatie'}>

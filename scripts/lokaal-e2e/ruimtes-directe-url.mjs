@@ -45,7 +45,7 @@ try {
   // 4: technische sessie echt gestart (TOTP), daarna hoofdsessie beëindigd → zelfde tabblad, zelfde cookie
   const browser = await startBrowser(); const s = await G.sessieVoor(uid); const { ctx, page } = await context(browser, s);
   await page.goto('https://hub.tarasevych.com/', { waitUntil: 'domcontentloaded' }); await wachtShell(page); await page.waitForTimeout(1500);
-  await menu(page); await page.click('[data-ruimtes-menu] .rw [data-ruimte="technisch"]').catch(() => undefined);
+  await menu(page); await page.click('[data-ruimtes-menu] .rw [data-naar="technisch"]').catch(() => undefined);
   await page.waitForSelector('[data-tech-venster="ruimte-start"]', { timeout: 15000, state: 'attached' }).catch(() => undefined);
   await page.click('.rs-chip[data-minuten="60"]').catch(() => undefined); if (await page.locator('[data-rs-reden]').count()) await page.fill('[data-rs-reden]', 'E2E directe URL');
   await page.click('[data-tech-knop="ruimte-start"]').catch(() => undefined); await T.stapOp(page, 5000); await page.waitForSelector('.tech-band', { timeout: 8000 }).catch(() => undefined);
