@@ -115,8 +115,8 @@ export async function wisRecordsVanAccount(userId: string, email: string, nu = D
   return { rijen: weg.rowCount || 0, bestanden: paden.length };
 }
 
-/** Afronden van verwijderingen waarvan de herstelperiode voorbij is. Droog tenzij ACCOUNT_DEFINITIEF_WISSEN=1. */
-export async function verlopenVerwijderingenAfronden(nu = Date.now(), uitvoeren = process.env.ACCOUNT_DEFINITIEF_WISSEN === '1') {
+/** Afronden van verwijderingen waarvan de herstelperiode voorbij is (30 dagen). INTEG-001: standaard aan; uitzetten met ACCOUNT_DEFINITIEF_WISSEN=0. */
+export async function verlopenVerwijderingenAfronden(nu = Date.now(), uitvoeren = process.env.ACCOUNT_DEFINITIEF_WISSEN !== '0') {
   const pool = getPool();
   const kandidaten = await pool.query(
     `SELECT id, data FROM app.records WHERE tbl = 'users' AND data->>'status' = 'deleted'
