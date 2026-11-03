@@ -111,7 +111,7 @@ export async function main() {
   check('обидва маршрути йдуть через матрицю account-verwijderen', zelf.includes("kritiekStapOp") && zelf.includes("'account-verwijderen'") && ident.includes('kritiekStapOp') && ident.includes("'account-verwijderen'"));
   const beheerd = index.match(/async function deleteManagedUser\([\s\S]*?return publicUser\(next\); \}/)?.[0] || '';
   check('beheerder verwijderen loopt ook via deleteRecoverably (30 dagen, alleen de beheerder zet terug)', beheerd.includes('deleteRecoverably') && beheerd.includes('admin') && !beheerd.includes('accountMeteenWissen'));
-  check('deleteRecoverably: 3 aanroepen (zelf, identiteit, beheerder)', (index.match(/await deleteRecoverably(/g) || []).length === 3);
+  check('deleteRecoverably: 3 aanroepen (zelf, identiteit, beheerder)', (index.match(/await deleteRecoverably\(/g) || []).length === 3);
   check('ворота кодового слова не знято', index.includes('CODEWOORD_POORT'));
   check('зворотний Google імпортує googleSuiteStateParts', index.includes("from './google-suite-inrichting'") && index.includes('googleSuiteStateParts') && index.includes('googleSuiteCallbackPost'));
 
