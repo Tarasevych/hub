@@ -1,7 +1,7 @@
 // Agent «Додатки» (apps.*): розгортання на власному залізі з нep-podman — знімок і образ на версію, автоматичний Dockerfile,
 // контейнер з обмеженнями (cap-drop, no-new-privileges, ліміти, лише 127.0.0.1), секрети ніколи не повертаються й маскуються
 // в журналах, відкат, автоматичне повернення попередньої версії, якщо нова не стартує, перевірка вводу (шляхи, імена, env).
-import { mkdtempSync, readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { mkdtempSync, readFileSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -29,7 +29,15 @@ export async function main(): Promise<number> {
       && /python:3\.12-slim[\s\S]*USER app[\s\S]*main\.py/.test(_autoDockerfile([{ path: 'requirements.txt', content: '' }, { path: 'main.py', content: '' }], 0).dockerfile)
       && /nginx-unprivileged/.test(_autoDockerfile([{ path: 'index.html', content: '' }], 0).dockerfile));
 
-    const r1 = await h['apps.deploy'](cfg, { name: 'site', files: [{ path: 'index.html', content: '<h1>v1</h1>' }, { path: 'css/a.css', content: 'b{}' }], env: { MODE: 'prod' } });
+    // INTEG-001: vanaf hier start de agent echt een container via nep-podman.mjs (shebang-script) en luistert op 127.0.0.1;
+    // dat vereist Linux (op Windows: spawn EFTYPE). De controles hierboven starten niets en blijven overal actief.
+    if (process.platform !== 'linux') {
+      console.log('OVERGESLAGEN agent-apps: vereist Linux met Docker');
+      rmSync(basis, { recursive: true, force: true }); // alleen de map die deze test zojuist zelf maakte (op Linux ongewijzigd)
+      return einde();
+    }
+
+    const r1 =await h['apps.deploy'](cfg, { name: 'site', files: [{ path: 'index.html', content: '<h1>v1</h1>' }, { path: 'css/a.css', content: 'b{}' }], env: { MODE: 'prod' } });
     check('deploy v1: klaar, lokale URL', r1.state === 'done' && /^http:\/\/127\.0\.0\.1:20\d{3}$/.test(r1.url), JSON.stringify(r1).slice(0, 300));
     const run = log().find((a) => a[0] === 'run')!;
     const s = run.join(' ');
