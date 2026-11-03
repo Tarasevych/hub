@@ -74,11 +74,13 @@ type Props = {
   sfeer?: MeldingSfeer;
 };
 
-/** Uitleg als een fout of waarschuwing geen eigen uitleg meegeeft: de melding blijft niet zonder richting. */
-const UITLEG_STANDAARD: Record<'uk' | 'nl', string> = {
-  uk: 'Деталі є в історії. Що зробити: спробуйте ще раз; якщо збій повториться, відкрийте розділ і перевірте з’єднання та вхід.',
-  nl: 'De details staan in de geschiedenis. Wat nu: probeer het opnieuw; blijft het mislukken, open dan het onderdeel en controleer de verbinding en de aanmelding.',
-};
+/**
+ * Uitleg als een fout of waarschuwing geen eigen uitleg meegeeft: de melding blijft niet zonder richting. INTEG-001: met het onderdeel erin
+ * (waar u het oplost) en de knop eronder, niet het algemene «відкрийте розділ».
+ */
+const uitlegStandaard = (lang: 'uk' | 'nl', onderdeel: string): string => (lang === 'uk'
+  ? `Що зробити: спробуйте ще раз у розділі «${onderdeel}»; якщо збій повториться, перевірте там підключення та вхід. Подробиці — у панелі сповіщень.`
+  : `Wat nu: probeer het opnieuw in «${onderdeel}»; blijft het mislukken, controleer daar de koppeling en de aanmelding. Details staan in het meldingenpaneel.`);
 
 const DETAIL_ICON_COMPONENTS: Record<CanonicalNoticeDetailIcon, typeof Info> = {
   scope: ShieldCheck, query: Search, server: Database, provider: Mail, results: List, durable: History, request: Cloud, saved: Save, cursor: RefreshCw, duration: Clock3, accounts: Users, error: TriangleAlert,
@@ -236,7 +238,7 @@ export default function CanonicalNotificationCenter(p: Props) {
       if (origin === 'prop') propsRef.current.onDismissNotice?.(tekst);
       return;
     }
-    const explain = notice.explain?.trim() || (kind === 'error' || kind === 'warning' ? UITLEG_STANDAARD[propsRef.current.lang] : undefined);
+    const explain = notice.explain?.trim() || (kind === 'error' || kind === 'warning' ? uitlegStandaard(propsRef.current.lang, styleOf(notice.source || '', propsRef.current.lang).label) : undefined);
     const groep = notice.action ? undefined : samenvoegSleutel(notice.source || '', kind, tekst);
     // Een gelukte stap lost eerdere fouten met hetzelfde onderwerp op, ook als deze melding zelf geen pop-up krijgt.
     if (notice.topic && kind === 'success') saveRetained((rijen) => losOpEerdere(rijen, notice.topic!));
@@ -499,7 +501,7 @@ export default function CanonicalNotificationCenter(p: Props) {
         text: toon.length > 1 ? `${item.title} (+${toon.length - 1})` : item.title,
         kind: info.ernst === 'kritiek' ? 'warning' : 'info',
         source: dienst || 'server', transient: true, meldingId: `s:${item.id}`,
-        context: t(...typeInfo(info.type).naam),
+        ...(info.type !== 'systeem' ? { context: t(...typeInfo(info.type).naam) } : {}),
         ...(item.message ? { explain: item.message } : {}),
         ...(item.link ? { link: { href: item.link, label: plek ? t(`Відкрити: ${plek}`, `Openen: ${plek}`) : t('Відкрити, де це виправити', 'Openen waar u het oplost') } } : {}),
       }, 'event', { type: info.type, geluid: klinkt, serverId: item.id });

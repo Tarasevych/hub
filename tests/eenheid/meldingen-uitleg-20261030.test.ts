@@ -79,7 +79,10 @@ export async function main(): Promise<number> {
   check('kaart «extensie vernieuwing-geblokkeerd»: titel in het Oekraïens, geen Nederlandse code', cyr.test(ext.titel) && !/extensie|vernieuwing/i.test(ext.titel), ext.titel);
   check('… nl-titel zonder code', !/vernieuwing-geblokkeerd/.test(activityTitle({ id: 'a', source: 'site', kind: 'site', type: 'owner.extensie.vernieuwing-geblokkeerd', subject: '', status: 'rejected', createdAt: NU, finishedAt: NU }, 'nl')));
   check('… soort extensie, WAT = ruimte, einde bekend', uitlegVoor(ext).id === 'extensie' && ext.object === 'prive' && !!ext.eind);
-  check('onbekende site-actie: nooit de interne code als titel', activityTitle({ id: 'b', source: 'site', kind: 'site', type: 'owner.iets.nieuw_onbekend', subject: '', status: 'succeeded', createdAt: NU, finishedAt: NU }, 'uk') === 'Дія на сайті');
+  // INTEG-001 (eigenaar: «Не «інша дія»: кажи конкретно, яка і про що»): niet meer het kale «Дія на сайті», maar wel nog steeds nooit
+  // de interne code als titel; de titel zegt dat er geen omschrijving is en waar de code staat.
+  const onbekendTitel = activityTitle({ id: 'b', source: 'site', kind: 'site', type: 'owner.iets.nieuw_onbekend', subject: '', status: 'succeeded', createdAt: NU, finishedAt: NU }, 'uk');
+  check('onbekende site-actie: nooit de interne code als titel, en niet het kale «Дія на сайті»', onbekendTitel !== 'Дія на сайті' && !/iets|nieuw|onbekend/i.test(onbekendTitel) && onbekendTitel.includes('Технічних подробицях'), onbekendTitel);
 
   const schrijf = vanActiviteit({ id: 'cmd:1', source: 'agent', kind: 'command', type: 'fs.write', subject: 'Pavlo-PC', status: 'failed', createdAt: NU - 3 * 86400_000, finishedAt: NU, doel: 'C:\\miy-prostir\\app\\x.ts', reden: 'PAD_NIET_TOEGESTAAN' }, 'uk', false);
   check('kaart «Запис файлу»: soort agent-bestand, WIE = apparaat, WAT = bestandspad', uitlegVoor(schrijf).id === 'agent-bestand' && /Pavlo-PC/.test(schrijf.wie || '') && schrijf.object === 'C:\\miy-prostir\\app\\x.ts', `${schrijf.wie} ${schrijf.object}`);

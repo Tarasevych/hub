@@ -93,9 +93,11 @@ const siteTitle = (e: ActivityEvent, lang: Lang): string => {
 export function activityTitle(e: ActivityEvent, lang: Lang): string {
   if (e.kind === 'site') return siteTitle(e, lang);
   if (e.kind === 'grant') return lang === 'uk' ? `Claude підключено: ${e.subject}` : `Claude verbonden: ${e.subject}`;
-  if (e.kind === 'tool') return textOf(e.type, lang)?.title || e.type;
+  // INTEG-001: zonder eigen naam zeggen WAT het is (een hulpmiddel, een commando op welk apparaat) — niet alleen de kale code.
+  if (e.kind === 'tool') return textOf(e.type, lang)?.title || (lang === 'uk' ? `Інструмент «${e.type}»` : `Hulpmiddel «${e.type}»`);
   const label = COMMAND_LABELS[e.type];
-  return label ? (lang === 'uk' ? label[0] : label[1]) : e.type;
+  if (label) return lang === 'uk' ? label[0] : label[1];
+  return lang === 'uk' ? `Команда «${e.type}» на пристрої${e.subject ? ` «${e.subject}»` : ''}` : `Commando «${e.type}» op apparaat${e.subject ? ` «${e.subject}»` : ''}`;
 }
 /** Waar de gebruiker heen moet om te handelen: een wachtende vraag leidt naar het beslisvenster, de rest naar het overzicht. */
 export function activityLink(e: ActivityEvent, lang: Lang): { href: string; label: string } {

@@ -15,6 +15,8 @@ import { ARCHIEF_NA_DAGEN, beginSectie, sectieLijst, sectieTellers, sectieVan } 
 import { legeRegels } from '../../shared/meldingen-v2/beleid';
 import { pasStatusToe } from '../../shared/meldingen-v2/status';
 import { pijlNaarBel, placeNear, zonderDok } from '../../src/melding-positie';
+import { siteActieTekst } from '../../src/melding-stijl';
+import type { ActivityEvent } from '../../src/connector-activiteit';
 
 const lees = (p: string) => readFileSync(p, 'utf8');
 const code = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -296,6 +298,20 @@ export async function main(): Promise<number> {
   const belE = code(lees('src/CanoniekMeldingencentrum.tsx'));
   check('E5 bron: de status (opgeruimd/opgelost) geldt nu altijd, ook zonder vlag v3; afgehandeld telt niet als ongelezen in de bel',
     belE.includes("const v3Status = useStatusStand(!!p.scope && p.scope !== 'anon');") && belE.includes('(ms) => pasStatusToe(ms, v3Status))') && belE.includes("!afgehandeld(`s:${item.id}`)"));
+
+  // ------------------------------------------------------------------ F. elke melding zegt wat, over wie/wat, en waar u het oplost
+  const herstelF = nepBrowser();
+  const { activiteitContext, activityTitle } = await import('../../src/connector-activiteit');
+  herstelF();
+  check('F1 auditnaam zonder eigen label, alle woorden bekend → gewone zin («Хмара: теку створено»)', siteActieTekst('owner.cloud.folder.created', 'uk') === 'Хмара: теку створено' && siteActieTekst('owner.cloud.folder.created', 'nl') === 'Cloud: map aangemaakt' && siteActieTekst('owner.mail.label.deleted', 'uk') === 'Пошта: мітку видалено');
+  const onb = siteActieTekst('owner.mail.zoekfilter.herberekend', 'uk'), onbGebied = siteActieTekst('owner.zzz.x', 'nl');
+  check('F1 onbekend woord: nooit de interne code en nooit het kale «дія»/«інша дія»; wel het gebied en waar de code staat', onb.startsWith('Пошта:') && !/zoekfilter|herberekend|^Пошта: дія$/.test(onb) && onb.includes('Технічних подробицях') && !/zzz/.test(onbGebied) && onbGebied.includes('Technische details'), `${onb} / ${onbGebied}`);
+  const evt = (x: Partial<ActivityEvent>): ActivityEvent => ({ id: 'e', source: 'agent', kind: 'command', type: 'fs.iets', subject: 'Pavlo-PC', status: 'failed', createdAt: NU, finishedAt: NU, platform: 'win32', ...x });
+  check('F2 commando zonder naam: «Команда «…» на пристрої «Pavlo-PC»» (niet alleen de code)', activityTitle(evt({}), 'uk') === 'Команда «fs.iets» на пристрої «Pavlo-PC»' && activityTitle(evt({}), 'nl') === 'Commando «fs.iets» op apparaat «Pavlo-PC»');
+  check('F2 over wie/wat: apparaat + systeem + doel; AI-verbinding bij een site-actie', activiteitContext(evt({ doel: 'T:\\notes\\a.md' }), 'uk') === 'Пристрій «Pavlo-PC» · Windows · T:\\notes\\a.md' && activiteitContext(evt({ kind: 'site', source: 'mail', client: 'Claude', platform: undefined }), 'uk') === 'Claude');
+  check('F3 type «systeem» heet niet meer het vage «Інше»', MELDING_TYPES.systeem.naam[0] !== 'Інше' && /Сайт/.test(MELDING_TYPES.systeem.naam[0]) && /Site/.test(MELDING_TYPES.systeem.naam[1]));
+  check('F3 standaarduitleg bij een fout noemt het onderdeel (waar u het oplost)', belE.includes("uitlegStandaard(propsRef.current.lang, styleOf(notice.source || '', propsRef.current.lang).label)") && belE.includes('спробуйте ще раз у розділі «${onderdeel}»'));
+  check('F3 servermelding in de pop-up: welk soort (context) en «Відкрити: <onderdeel>» uit de link', belE.includes("...(info.type !== 'systeem' ? { context: t(...typeInfo(info.type).naam) } : {}),") && belE.includes('t(`Відкрити: ${plek}`, `Openen: ${plek}`)'));
 
   return einde();
 }
