@@ -8,16 +8,17 @@ import {
 } from './canoniek-meldingen';
 import './canoniek-meldingencentrum.css';
 import { historyKey, leesOpslag, normalizeDetails, normalizeLink, readRows, werkRijenBij, type BewaardeRij } from './meldingen/lokale-rijen';
+import { fractie, gepauzeerd, klaar, nieuweAftelling, pauze as pauzeAftelling, tik as tikAftelling, verleng, type Aftelling, type PauzeBron } from './meldingen/aftelling';
 // UI-007 (29.10.2026): vlag `meldingen-v2` (standaard UIT) — compact aandachtscentrum in hetzelfde paneel; zonder vlag alles zoals het was.
 import MeldingenV2 from './meldingen/v2/MeldingenV2';
 import { useMeldingenV2, meldingenV2Nu } from './meldingen/v2/vlag';
 import { useLeverRegels, nietStorenActief } from './meldingen/v2/regels-opslag';
 import { bouwModel } from './meldingen/v2/model';
 import { useUitlegV3 } from './meldingen/v2/vlag-uitleg';
-import { useStatusStand } from './meldingen/v2/status-opslag';
+import { useStatusStand, wijzigStatus } from './meldingen/v2/status-opslag';
 import { pasStatusToe } from '../shared/meldingen-v2/status';
 import NotificationPanelBody from './MeldingenpaneelInhoud';
-import { useConnectorActivity } from './connector-activiteit';
+import { sectieLink, useConnectorActivity } from './connector-activiteit';
 import { activiteitenVanSfeer, type MeldingSfeer } from '../shared/meldingen-soorten';
 import { zetTechActiviteit } from './meldingen/tech-meldingen-opslag';
 import { placeNear } from './melding-positie';
@@ -32,7 +33,8 @@ import { zetZijbalk } from './zijbalk-voorkeuren';
 import { focusbaar, focusVerloren, houdTab, menuToets } from './platform/toegankelijk';
 import './toegankelijk.css';
 // Per type geluid/pop-up/tonen/blijft staan/duur (shared/melding-typen.ts) en de ene regel naar het technische paneel (shared/melding-soorten.ts).
-import { isKritiekType, voorkeurVoor, type MeldingType, type TypeVoorkeur } from '../shared/melding-typen';
+import { isKritiekType, typeInfo, voorkeurVoor, type MeldingType, type TypeVoorkeur } from '../shared/melding-typen';
+import { itemVanLink } from '../shared/menu-meldingen';
 import { soortInfo, typeVanBron } from '../shared/melding-soorten';
 import MeldingVoorkeurenPaneel from './meldingen/MeldingVoorkeurenPaneel';
 import { openTechMeldingen } from './meldingen/tech-meldingen-opslag';
@@ -88,7 +90,9 @@ export default function CanonicalNotificationCenter(p: Props) {
   const v2 = useMeldingenV2();
   const v2Regels = useLeverRegels(v2);
   const v3Aan = useUitlegV3();
-  const v3Status = useStatusStand(v2 && v3Aan);
+  // INTEG-001: de blijvende status (archief, opgelost) geldt nu voor elk paneel, niet alleen met de vlag meldingen-uitleg-v3: «Очистити»
+  // en «Архів» moeten overal werken. Alleen voor een aangemeld account (anders is er geen server-status).
+  const v3Status = useStatusStand(!!p.scope && p.scope !== 'anon');
   const t = (uk: string, nl: string) => (p.lang === 'uk' ? uk : nl);
   const formatTime = (value: number) => new Date(value).toLocaleString(p.lang === 'uk' ? 'uk-UA' : 'nl-BE');
   const prefs = readSharedPreferences();
@@ -114,7 +118,8 @@ export default function CanonicalNotificationCenter(p: Props) {
   const activeRef = useRef<Active | null>(null);
   const queueRef = useRef<Active[]>([]);
   const retainedRef = useRef<Retained[]>(retained);
-  const pauseRef = useRef(new Set<string>());
+  /** Aftelling van de pop-up die nu staat (null = blijft staan tot u sluit). */
+  const aftelRef = useRef<Aftelling | null>(null);
   /** Tijdelijke meldingen (uit de activiteit en de server): dezelfde melding krijgt binnen het venster maar één pop-up. */
   const toastRecentRef = useRef(new Map<string, number>());
   /** Pop-ups van de laatste minuten (sectie, soort, bron): één gebeurtenis uit twee bronnen → één pop-up (isBronDuplicaat). */
@@ -128,6 +133,8 @@ export default function CanonicalNotificationCenter(p: Props) {
   const propsRef = useRef(p);
   propsRef.current = p;
   const activity = useConnectorActivity(p.scope, p.lang, (notice) => receiveRef.current(notice, 'event'));
+  const activityRef = useRef(activity);
+  activityRef.current = activity;
 
   /* 22.10.2026: technische activiteiten (beheer, uitrol, diagnose, SIEM, звірка, AI in het technische profiel) horen NIET in deze bel maar in «Технічні сповіщення» in de band. */
   useEffect(() => {
@@ -177,15 +184,29 @@ export default function CanonicalNotificationCenter(p: Props) {
 
   /* ---------- Pop-up ---------- */
 
+  /**
+   * Wat de gebruiker in de pop-up gezien heeft, telt als gelezen — ook de regel in het paneel (lokaal, server of activiteit).
+   * INTEG-001: een pop-up over een activiteit maakte die activiteit vroeger niet gelezen: na de pop-up stond ze nog eens als «нова» in
+   * het paneel en in de bel. Staat het tabblad op de achtergrond, dan pas zodra het weer zichtbaar is (niemand heeft het toen gezien).
+   */
+  const leesWachtend = useRef<Active | null>(null);
+  const markeerGetoond = (next: Active) => {
+    if (typeof document !== 'undefined' && document.hidden) { leesWachtend.current = next; return; }
+    leesWachtend.current = null;
+    if (!next.transient) markRetainedRead(next.id);
+    const serverId = next.serverId || (next.meldingId?.startsWith('s:') ? next.meldingId.slice(2) : '');
+    if (serverId) void propsRef.current.onReadServer?.(serverId);
+    if (next.meldingId?.startsWith('a:')) activityRef.current.markRead(next.meldingId.slice(2));
+  };
+
   /** Toon de pop-up. Wat op het scherm staat, telt als gelezen (ook zonder klik). */
   const activate = (next: Active) => {
     activeRef.current = next;
-    pauseRef.current.clear();
-    setPaused(false);
+    aftelRef.current = next.levensduurMs == null ? null : pauzeAftelling(nieuweAftelling(next.levensduurMs), 'verborgen', typeof document !== 'undefined' && document.hidden);
+    setPaused(!!aftelRef.current && gepauzeerd(aftelRef.current));
     setActive(next);
     if (!next.stil) playChime();
-    if (!next.transient) markRetainedRead(next.id);
-    if (next.serverId) void propsRef.current.onReadServer?.(next.serverId);
+    markeerGetoond(next);
   };
 
   const vk = (type: MeldingType) => voorkeurVoor(typenRef.current, type);
@@ -242,12 +263,14 @@ export default function CanonicalNotificationCenter(p: Props) {
         id, text: tekst, kind, createdAt: nu, source: notice.source || '', read: false, ...(notice.action ? { heeftActie: true } : {}),
         ...(notice.details?.length ? { details: normalizeDetails(notice.details) } : {}), ...(link ? { link } : {}),
         action: notice.action, actionExpiresAt: notice.actionExpiresAt, explain, groep, onderwerp: notice.topic, count: 1,
+        ...(notice.context?.trim() ? { context: notice.context.trim().slice(0, 200) } : {}),
       }, ...rijen.filter((row) => row.id !== id)]);
     }
 
     const next: Active = {
       ...notice, text: tekst, explain, id, kind, createdAt: nu, expanded: false, origin, stil: !geluid,
-      levensduurMs: popupLevensduurMs(voorkeur, tekst, explain), serverId: opties.serverId,
+      levensduurMs: popupLevensduurMs(voorkeur, tekst, explain, kind), serverId: opties.serverId,
+      meldingId: notice.meldingId ?? (notice.transient ? (opties.serverId ? `s:${opties.serverId}` : undefined) : `l:${id}`),
     };
     if (voorkeur.opduiken) recentePopups.current = [...recentePopups.current.filter((r) => nu - r.t <= 120_000), { sectie, kind, transient: !!notice.transient, t: nu }].slice(-20);
     if (!voorkeur.opduiken) {
@@ -290,20 +313,21 @@ export default function CanonicalNotificationCenter(p: Props) {
   const dismissRef = useRef(dismiss);
   dismissRef.current = dismiss;
 
-  /** Hover, focus of uitklappen houdt de pop-up open; loslaten telt de aftelling weer door. */
-  const pauzeer = (bron: string, aan: boolean) => {
-    const set = pauseRef.current;
-    if (aan) set.add(bron); else set.delete(bron);
-    setPaused(set.size > 0);
+  /** Muis erop, toetsenbordfocus erin of tabblad verborgen: de aftelling staat stil; loslaten telt weer door (src/meldingen/aftelling.ts). */
+  const pauzeer = (bron: PauzeBron, aan: boolean) => {
+    if (!aftelRef.current) return;
+    aftelRef.current = pauzeAftelling(aftelRef.current, bron, aan);
+    setPaused(gepauzeerd(aftelRef.current));
   };
 
+  /** Uitklappen geeft weer de volle tijd (balk weer vol), maar pauzeert niet voor altijd: zonder muis erop verdwijnt hij daarna toch. */
   const toggleExpanded = () => {
     const current = activeRef.current;
     if (!current) return;
     const next = { ...current, expanded: !current.expanded };
     activeRef.current = next;
     setActive(next);
-    pauzeer('uitgeklapt', next.expanded);
+    if (next.expanded && aftelRef.current && current.levensduurMs != null) aftelRef.current = verleng(aftelRef.current, current.levensduurMs);
   };
 
   const runAction = async (id: string, action: CanonicalNoticeAction, closeToast = false) => {
@@ -328,20 +352,35 @@ export default function CanonicalNotificationCenter(p: Props) {
   useEffect(() => { if (!panelOpen) { setInstellingen(false); setMeer(false); } }, [panelOpen]);
   useEffect(() => { soundRef.current = sound; }, [sound]);
 
-  // Aftelling van de pop-up: de balk krijgt de resterende tijd rechtstreeks (geen herrendering elke 100 ms).
+  // Aftelling van de pop-up: de balk krijgt de resterende tijd rechtstreeks (geen herrendering elke 100 ms). Pauze, verlengen en de
+  // tijd na een pauze staan in src/meldingen/aftelling.ts; hier alleen de klok.
   useEffect(() => {
     if (barRef.current) barRef.current.style.transform = 'scaleX(1)';
-    const ms = active?.levensduurMs;
-    if (!active || ms == null) return;
-    let over = ms;
+    if (!active || active.levensduurMs == null) return;
+    let vorige = Date.now();
     const timer = window.setInterval(() => {
-      if (pauseRef.current.size) return;
-      over -= 100;
-      if (over <= 0) { window.clearInterval(timer); dismissRef.current(); return; }
-      if (barRef.current) barRef.current.style.transform = `scaleX(${over / ms})`;
+      const nu = Date.now();
+      const a = aftelRef.current;
+      if (!a) return;
+      aftelRef.current = tikAftelling(a, nu - vorige);
+      vorige = nu;
+      if (klaar(aftelRef.current)) { window.clearInterval(timer); dismissRef.current(); return; }
+      if (barRef.current) barRef.current.style.transform = `scaleX(${fractie(aftelRef.current)})`;
     }, 100);
     return () => window.clearInterval(timer);
   }, [active?.id]);
+
+  // Tabblad verborgen: de aftelling staat stil (niemand kan lezen); weer zichtbaar: telt door, en wat toen op het scherm stond telt als gelezen.
+  const zichtRef = useRef(() => undefined as void);
+  zichtRef.current = () => {
+    pauzeer('verborgen', document.hidden);
+    if (!document.hidden && leesWachtend.current && leesWachtend.current.id === activeRef.current?.id) markeerGetoond(leesWachtend.current);
+  };
+  useEffect(() => {
+    const zicht = () => zichtRef.current();
+    document.addEventListener('visibilitychange', zicht);
+    return () => document.removeEventListener('visibilitychange', zicht);
+  }, []);
 
   useEffect(() => {
     if (!panelOpen) return;
@@ -450,12 +489,16 @@ export default function CanonicalNotificationCenter(p: Props) {
     if (toon.length) {
       const item = toon[0];
       const info = soortInfo(item.kind);
+      // INTEG-001: welk onderdeel (uit de link van de server: mail., id., admin. …) en welk soort melding — geen kale «Відкрити».
+      const dienst = /^(?:svc|pg):([a-z]+)/.exec(itemVanLink(item.link) || '')?.[1] || '';
+      const plek = dienst ? styleOf(dienst, p.lang).label : '';
       receiveRef.current({
         text: toon.length > 1 ? `${item.title} (+${toon.length - 1})` : item.title,
         kind: info.ernst === 'kritiek' ? 'warning' : 'info',
-        source: 'server', transient: true,
+        source: dienst || 'server', transient: true, meldingId: `s:${item.id}`,
+        context: t(...typeInfo(info.type).naam),
         ...(item.message ? { explain: item.message } : {}),
-        ...(item.link ? { link: { href: item.link, label: t('Відкрити', 'Openen') } } : {}),
+        ...(item.link ? { link: { href: item.link, label: plek ? t(`Відкрити: ${plek}`, `Openen: ${plek}`) : t('Відкрити, де це виправити', 'Openen waar u het oplost') } } : {}),
       }, 'event', { type: info.type, geluid: klinkt, serverId: item.id });
     } else if (klinkt) {
       playChime();
@@ -617,9 +660,34 @@ export default function CanonicalNotificationCenter(p: Props) {
   /* Telefoon (≤ 560 px): het paneel bedekt het scherm (meldingenpaneel.css) → modaal: Tab blijft erin, aria-modal. Computer: niet-modale popover. */
   const paneelModaal = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 560px)').matches;
   const Icon = active?.kind === 'error' ? TriangleAlert : active?.kind === 'success' ? CircleCheck : active?.kind === 'warning' ? TriangleAlert : Info;
-  const toastLink = active ? normalizeLink(active.link) : undefined;
-  const toastStijl = active?.source ? styleOf(active.source, p.lang) : null;
-  const toastSectie = toastStijl ? (toastStijl.providerLabel && toastStijl.providerLabel !== toastStijl.label ? `${toastStijl.label} · ${toastStijl.providerLabel}` : toastStijl.label) : '';
+  const toastStijl = active ? styleOf(active.source || '', p.lang) : null;
+  // INTEG-001: altijd een weg naar de plek waar u het oplost — de link van de melding, anders het onderdeel zelf («Відкрити: Пошта»).
+  const toastLink = active ? (normalizeLink(active.link) ?? (toastStijl ? sectieLink(toastStijl.section, p.lang) : undefined)) : undefined;
+  // Waar en over wie: onderdeel · dienst (Google, Microsoft …) · account, app of apparaat (alleen wat de bron weet).
+  const toastSectie = toastStijl ? [toastStijl.label, toastStijl.providerLabel && toastStijl.providerLabel !== toastStijl.label ? toastStijl.providerLabel : '', active?.context?.trim() || ''].filter(Boolean).join(' · ') : '';
+
+  /**
+   * «Очистити»: de melding is afgehandeld — gelezen en naar «Архів» (niet gewist; terug te zetten in het paneel). De status staat op de
+   * server (backend/meldingen-status.ts), dus ook op andere subdomeinen en apparaten.
+   */
+  const markeerIdsGelezen = (ids: readonly string[]) => {
+    markRetainedReadMany(ids.filter((id) => id.startsWith('l:')).map((id) => id.slice(2)));
+    for (const id of ids) {
+      if (id.startsWith('s:')) void propsRef.current.onReadServer?.(id.slice(2));
+      else if (id.startsWith('a:')) activityRef.current.markRead(id.slice(2));
+    }
+  };
+  const ruimOp = (ids: readonly string[], beveiliging: readonly string[] = []) => {
+    if (!ids.length) return;
+    markeerIdsGelezen(ids);
+    void wijzigStatus({ ids: [...ids], status: 'archief', hoe: ids.length > 1 ? 'bulk' : 'kaart', beveiliging: [...beveiliging] });
+  };
+  const ruimToastOp = () => {
+    const huidig = activeRef.current;
+    if (!huidig?.meldingId) return;
+    ruimOp([huidig.meldingId], isKritiekType(typeVanBron(huidig.source)) ? [huidig.meldingId] : []);
+    dismiss();
+  };
 
   return (
     <>
@@ -632,18 +700,32 @@ export default function CanonicalNotificationCenter(p: Props) {
             ? { left: toastPos.left, top: toastPos.top, maxHeight: toastPos.maxHeight, right: 'auto', bottom: 'auto', ['--melding-top' as string]: `${toastPos.top}px` }
             : { visibility: 'hidden' }}
           role={active.kind === 'error' ? 'alert' : 'status'}
-          onPointerEnter={() => pauzeer('hover', true)}
-          onPointerLeave={() => pauzeer('hover', false)}
-          onFocus={() => pauzeer('focus', true)}
-          onBlur={() => pauzeer('focus', false)}
+          data-levensduur={active.levensduurMs ?? 'vast'}
+          onPointerEnter={() => pauzeer('muis', true)}
+          onPointerLeave={() => pauzeer('muis', false)}
+          // Alleen toetsenbordfocus pauzeert (een muisklik in de pop-up hield hem vroeger open tot u elders klikte).
+          onFocus={(event) => { let toets = false; try { toets = event.target instanceof Element && event.target.matches(':focus-visible'); } catch { toets = false; } if (toets) pauzeer('toets', true); }}
+          onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) pauzeer('toets', false); }}
         >
           <Icon aria-hidden='true' />
           <div className='canonical-notification-toast-tekst'>
             {toastSectie ? <span className='canonical-notification-toast-sectie'>{toastSectie}</span> : null}
             <span className='canonical-notification-toast-titel'>{active.text}</span>
             {active.explain ? <p className='canonical-notification-toast-uitleg'>{active.explain}</p> : null}
-            {toastLink ? <a className='canonical-notification-link' href={toastLink.href}>{toastLink.label} →</a> : null}
+            {toastLink || active.meldingId ? (
+              <div className='canonical-notification-toast-acties'>
+                {toastLink ? <a className='canonical-notification-link' href={toastLink.href} data-qa-id='melding-openen'>{toastLink.label} →</a> : null}
+                {active.meldingId ? (
+                  <button type='button' className='canonical-notification-opruimen' data-qa-id='melding-opruimen' onClick={ruimToastOp}
+                    title={t('Позначити прочитаним і перенести в «Архів» (можна повернути)', 'Als gelezen markeren en naar «Archief» (terug te zetten)')}>
+                    {t('Очистити', 'Opruimen')}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
             {active.expanded ? <small className='canonical-notification-toast-meta'>{formatTime(active.createdAt)}</small> : null}
+            {active.levensduurMs == null ? <small className='canonical-notification-toast-meta'>{t('Лишається, доки ви не закриєте (так налаштовано для цього типу). Після закриття — у панелі сповіщень.', 'Blijft staan tot u sluit (zo ingesteld voor dit type). Daarna staat hij in het meldingenpaneel.')}</small> : null}
+            {paused && active.levensduurMs != null ? <small className='canonical-notification-toast-pauze' aria-hidden='true'>{t('Пауза — не зникне, поки курсор на сповіщенні', 'Pauze — verdwijnt niet zolang de muis erop staat')}</small> : null}
           </div>
           {active.action ? (
             <button type='button' className='canonical-notification-action-icon' aria-label={active.action.label} title={active.action.label} data-tooltip={active.action.label} onClick={() => void runAction(active.id, active.action!, true)}><Undo2 /></button>

@@ -22,6 +22,14 @@ export type CanonicalNoticeInput = {
   explain?: string;
   /** Onderwerp van de actie (bv. dienst|soort|onderwerp). Een latere gelukte melding met hetzelfde onderwerp lost de eerdere mislukte op. */
   topic?: string;
+  /** INTEG-001: over WIE of WAT het gaat (account, app, apparaat, bestand) — één korte regel boven de titel. Alleen wat de bron echt weet. */
+  context?: string;
+  /**
+   * INTEG-001: bij een tijdelijke melding (activiteit, server) de id van dezelfde regel in het paneel («a:<id>», «s:<id>»): de pop-up
+   * telt dan als gelezen voor die regel, en «Очистити» in de pop-up ruimt die regel op. Zonder dit verscheen de activiteit na de pop-up
+   * nog eens als «нова» in het paneel.
+   */
+  meldingId?: string;
 };
 
 /* `ruimte` (20.10.2026): de gegevenslade van de melding zoals de server haar vaststelde ('prive' ook voor oude rijen zonder veld); ontbreekt het veld, dan beslist shared/meldingen-ruimte.ts op soort en link. */
@@ -171,13 +179,18 @@ export function losOpEerdere<T extends { onderwerp?: string; kind: CanonicalNoti
   return rijen.map((r) => (r.onderwerp === onderwerp && (r.kind === 'error' || r.kind === 'warning') && !r.opgelost ? { ...r, opgelost: true } : r));
 }
 
-/** Hoe lang een pop-up blijft staan: de tijd van het type (null = blijft staan tot u sluit), plus extra tijd voor een lange tekst en een uitleg. */
+/**
+ * Hoe lang een pop-up blijft staan: de tijd van het type (null = blijft staan tot u sluit), plus extra tijd voor een lange tekst en een uitleg.
+ * INTEG-001: seconden 0 = AUTOMATISCH volgens de soort — «готово» kort, een fout het langst (die moet u kunnen lezen) — en de inhoud.
+ */
 export type PopupVoorkeur = { vast: boolean; seconden: number };
-export function popupLevensduurMs(voorkeur: PopupVoorkeur, text: string, explain?: string): number | null {
+export const AUTO_SECONDEN: Record<CanonicalNoticeKind, number> = { success: 5, info: 6, warning: 9, error: 12 };
+export function popupLevensduurMs(voorkeur: PopupVoorkeur, text: string, explain?: string, kind: CanonicalNoticeKind = 'info'): number | null {
   if (voorkeur.vast) return null;
   const lengte = Math.min(4000, Math.floor(text.length / 60) * 1000);
   const uitleg = explain ? Math.min(6000, 2000 + Math.floor(explain.length / 120) * 1000) : 0;
-  return Math.max(3, voorkeur.seconden) * 1000 + lengte + uitleg;
+  const basis = voorkeur.seconden > 0 ? Math.max(3, voorkeur.seconden) : AUTO_SECONDEN[kind] ?? AUTO_SECONDEN.info;
+  return basis * 1000 + lengte + uitleg;
 }
 
 /** HUB-06: servermeldingen zijn tweetalig opgeslagen («Українська / Nederlands»); toon alleen de taal van de site. Alleen gesplitst als

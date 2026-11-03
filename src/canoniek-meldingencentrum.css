@@ -29,3 +29,13 @@
 .canonical-notification-toast.kind-success .canonical-notification-toast-balk>i{background:var(--good)}
 .canonical-notification-toast.is-paused{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
 @media (prefers-reduced-motion:reduce){.canonical-notification-toast-balk>i{transition:none}}
+
+/* INTEG-001 — pop-up: waar/over wie, wat, waarom, en twee duidelijke acties («Відкрити: …» en «Очистити»). De balk staat stil tijdens
+   de pauze (muis erop): dan zachter, met een korte uitleg; een vaste pop-up (zelf gekozen per type) zegt dat ook. */
+.canonical-notification-toast-acties{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:4px}
+.canonical-notification-toast-acties .canonical-notification-link{margin-top:0}
+.canonical-notification-opruimen{display:inline-flex;align-items:center;min-height:30px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);font:inherit;font-size:.82rem;font-weight:650;cursor:pointer}
+.canonical-notification-opruimen:hover,.canonical-notification-opruimen:focus-visible{background:var(--nav-hover);outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:1px}
+.canonical-notification-toast-pauze{color:var(--muted);font-size:12px}
+.canonical-notification-toast.is-paused .canonical-notification-toast-balk>i{opacity:.45}
+@media (max-width:700px){.canonical-notification-opruimen{min-height:var(--tik-hoogte)}}

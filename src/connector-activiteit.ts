@@ -107,6 +107,30 @@ export const sourceLabel = (source: string, lang: Lang): string => ({
   claude: 'Claude', agent: lang === 'uk' ? 'Пристрій' : 'Apparaat', browser: lang === 'uk' ? 'Браузер' : 'Browser',
 } as Record<string, string>)[source] || source;
 
+/** Besturingssysteem van een apparaat in gewone woorden (alleen wat de agent zelf opgeeft). */
+export const platformNaam = (p?: string): string => {
+  const s = String(p || '').toLowerCase();
+  if (!s) return '';
+  return /win/.test(s) ? 'Windows' : /darwin|mac/.test(s) ? 'macOS' : /android/.test(s) ? 'Android' : /linux/.test(s) ? 'Linux' : /ios|iphone|ipad/.test(s) ? 'iOS' : p!.slice(0, 30);
+};
+
+/**
+ * INTEG-001: over WIE of WAT een activiteit gaat — het apparaat («Пристрій «PC-kantoor» · Windows»), de AI-verbinding («Claude»), de
+ * browser, en waarop (bestand, map, repo). Alleen wat de server echt meegeeft; nooit een gok.
+ */
+export function activiteitContext(e: ActivityEvent, lang: Lang): string | undefined {
+  const delen: string[] = [];
+  if (e.kind === 'command') delen.push(`${sourceLabel(e.source, lang)} «${e.subject}»`);
+  else if (e.kind === 'grant') delen.push(`Claude · ${e.subject}`);
+  else if (e.kind === 'tool') delen.push(sourceLabel(e.source, lang));
+  else if (e.client) delen.push(e.client);
+  const os = platformNaam(e.platform);
+  if (os) delen.push(os);
+  if (e.doel) delen.push(e.doel.length > 80 ? `${e.doel.slice(0, 79)}…` : e.doel);
+  const uit = delen.map((d) => d.trim()).filter(Boolean).join(' · ');
+  return uit || undefined;
+}
+
 /** Hoe lang het duurde of al duurt, in mensentaal ("3 с", "2 хв"). */
 export function durationText(e: ActivityEvent, lang: Lang, now = Date.now()): string {
   const end = e.finishedAt ?? now;
@@ -164,20 +188,22 @@ export function useConnectorActivity(scope: string, lang: Lang, toast: (notice: 
           const title = activityTitle(e, l);
           const st = statusInfo(e.status, l);
           const onderwerp = `${e.source}|${e.kind}|${e.type}|${e.subject || ''}`;
+          // INTEG-001: de pop-up weet welke regel in het paneel bij haar hoort (meldingId) en over wie/wat het gaat (context).
+          const meldingId = `a:${e.id}`, context = activiteitContext(e, l);
           if (e.status === 'pending_approval') {
             const who = `${sourceLabel(e.source, l)}${e.kind === 'command' ? `, ${e.subject}` : ''}`;
             say({
               text: l === 'uk' ? `Очікує вашого рішення: ${title} (${who})` : `Wacht op uw beslissing: ${title} (${who})`,
-              explain: meldingUitleg({ groep: 'waiting', sectie: 'mcp', lang: l }), kind: 'warning', source: 'mcp', transient: true, link: activityLink(e, l), topic: onderwerp,
+              explain: meldingUitleg({ groep: 'waiting', sectie: 'mcp', lang: l }), kind: 'warning', source: 'mcp', transient: true, link: activityLink(e, l), topic: onderwerp, meldingId, context,
             });
           } else if (e.kind === 'grant') {
             say({
-              text: title, kind: 'success', source: 'mcp', transient: true,
+              text: title, kind: 'success', source: 'mcp', transient: true, meldingId, context, link: activityLink(e, l),
               explain: l === 'uk' ? 'Claude має доступ. Його можна будь-коли відкликати в розділі «Агенти».' : 'Claude heeft toegang. Die kunt u altijd intrekken onder Agenten.',
             });
           } else if (st.group !== 'active' && st.group !== 'waiting') {
             const m = activiteitMeldingTekst(e, l);
-            say({ text: m.titel, explain: m.uitleg, kind: m.kind, source: m.bron, transient: true, link: m.link, topic: onderwerp });
+            say({ text: m.titel, explain: m.uitleg, kind: m.kind, source: m.bron, transient: true, link: m.link, topic: onderwerp, meldingId, context });
           }
         }
       }
