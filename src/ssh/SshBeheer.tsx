@@ -148,6 +148,7 @@ export default function SshBeheer({ sluit }: { sluit: () => void }) {
                 onClick={() => void (s?.schakelaar ? actie('uit', ['Підпис вимкнено.', 'Ondertekenen staat uit.']) : actie('aan', ['Підпис увімкнено.', 'Ondertekenen staat aan.']))} data-ssh-actie={s?.schakelaar ? 'uit' : 'aan'}>
                 <span className='ssh-schuif' aria-hidden='true' />{s?.schakelaar ? (uk ? 'Увімкнено — вимкнути' : 'Aan — uitzetten') : (uk ? 'Вимкнено — увімкнути (passkey)' : 'Uit — aanzetten (passkey)')}
               </button>
+              <HulpVraag k='ssh.schakelaar' uk={uk} label={uk ? 'Перемикач підпису' : 'Schakelaar ondertekenen'} />
             </span>
             {s?.dropin ? (
               <span className='ssh-actie'>
