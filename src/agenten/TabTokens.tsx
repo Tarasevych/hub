@@ -61,10 +61,8 @@ export default function TabTokens({ tr, data, naActie, item, kies, vastKlant }: 
       <AiVerbinden tr={tr} magTokens={mag} naActie={naActie} ruimte='prive' vastKlant={vastKlant} />
       <section className='ag-blok' data-ag-blok='tokens' aria-labelledby={kopId}>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id={kopId}><span className='ag2-icoon' aria-hidden='true'><KeyRound /></span>{tr('Ваші токени', 'Uw tokens')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Ключі, з якими ШІ або агент входить без вікна входу; відкликаний ключ перестає діяти одразу.', 'Sleutels waarmee een AI of agent zonder aanmeldvenster binnenkomt; een ingetrokken sleutel werkt meteen niet meer.')}</p>
-          </div>
+          <h3 className='ag-blok-titel' id={kopId}><KeyRound aria-hidden='true' /> {tr('Ваші токени', 'Uw tokens')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Ключі, з якими ШІ або агент входить без вікна входу; відкликаний ключ перестає діяти одразу.', 'Sleutels waarmee een AI of agent zonder aanmeldvenster binnenkomt; een ingetrokken sleutel werkt meteen niet meer.')}</p>
         </header>
         <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
         {data === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : actief.length ? (

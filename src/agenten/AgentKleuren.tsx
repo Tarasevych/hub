@@ -56,10 +56,8 @@ export default function AgentKleuren({ tr, blok = false }: { tr: Tr; blok?: bool
     <section className={blok ? 'ag-blok ag-agentkleuren' : 'ag-ext-sectie ag-agentkleuren'} data-ext-sectie='agent-kleuren' data-ag-blok={blok ? 'agent-kleuren' : undefined} aria-labelledby='ag-agentkleuren-kop'>
       {blok ? (
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='ag-agentkleuren-kop'><span className='ag2-icoon' aria-hidden='true'><Palette /></span>{tr('Колір агента', 'Kleur per agent')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Коли ШІ читає або діє у вкладці, сторінка отримує обрамлення цього кольору з назвою агента та його дією.', 'Als een AI in een tabblad leest of handelt, krijgt die pagina een rand in deze kleur met de naam van de agent en wat hij doet.')}</p>
-          </div>
+          <h3 className='ag-blok-titel' id='ag-agentkleuren-kop'><Palette aria-hidden='true' /> {tr('Колір агента', 'Kleur per agent')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Коли ШІ читає або діє у вкладці, сторінка отримує обрамлення цього кольору з назвою агента та його дією.', 'Als een AI in een tabblad leest of handelt, krijgt die pagina een rand in deze kleur met de naam van de agent en wat hij doet.')}</p>
         </header>
       ) : <h3 id='ag-agentkleuren-kop'><Palette aria-hidden='true' /> {tr('Колір агента', 'Kleur per agent')}</h3>}
       {blok ? (

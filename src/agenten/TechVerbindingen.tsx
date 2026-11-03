@@ -108,10 +108,8 @@ export default function TechVerbindingen({ tr, ingebed = false }: { tr: Tr; inge
       )}
       <section className='ag-blok' data-ag-blok='tech-regels' aria-labelledby='ag2-tech-regels-kop'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='ag2-tech-regels-kop'><span className='ag2-icoon' aria-hidden='true'><Lock /></span>{tr('Правила технічного простору', 'Regels van de technische ruimte')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Що бачить і чого не бачить ШІ, підключений до технічного простору.', 'Wat een AI in de technische ruimte wel en niet ziet.')}</p>
-          </div>
+          <h3 className='ag-blok-titel' id='ag2-tech-regels-kop'><Lock aria-hidden='true' /> {tr('Правила технічного простору', 'Regels van de technische ruimte')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Що бачить і чого не бачить ШІ, підключений до технічного простору.', 'Wat een AI in de technische ruimte wel en niet ziet.')}</p>
         </header>
         <ul className='ag2-regels' aria-label={tr('Принципи', 'Regels')}>
           <li><Lock size={16} aria-hidden='true' /><span>{tr('Простір фіксується на підключенні, коли ви його створюєте тут. ШІ не може змінити свій простір і не бачить інструментів іншого.', 'De ruimte staat vast op de verbinding zodra u ze hier maakt. De AI kan zijn ruimte niet veranderen en ziet de hulpmiddelen van de andere niet.')}</span></li>
@@ -132,10 +130,8 @@ export default function TechVerbindingen({ tr, ingebed = false }: { tr: Tr; inge
 
       <section className='ag-blok' data-ag-blok='tech-verbindingen' data-lijst='tech-verbindingen' aria-labelledby='ag2-tech-verb-kop'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='ag2-tech-verb-kop'><span className='ag2-icoon' aria-hidden='true'><ShieldCheck /></span>{tr('Технічні підключення ШІ', 'Technische AI-verbindingen')}</h3>
-            <p className='ag-blok-uitleg'>{tr('ШІ, підключені до технічного простору через OAuth або MCP-токен; відкликання діє одразу.', 'AI die via OAuth of een MCP-token aan de technische ruimte gekoppeld zijn; intrekken werkt meteen.')}</p>
-          </div>
+          <h3 className='ag-blok-titel' id='ag2-tech-verb-kop'><ShieldCheck aria-hidden='true' /> {tr('Технічні підключення ШІ', 'Technische AI-verbindingen')}</h3>
+          <p className='ag-blok-uitleg'>{tr('ШІ, підключені до технічного простору через OAuth або MCP-токен; відкликання діє одразу.', 'AI die via OAuth of een MCP-token aan de technische ruimte gekoppeld zijn; intrekken werkt meteen.')}</p>
         </header>
         <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
         {ov.data === null && tok.data === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : actief.length ? (
@@ -149,10 +145,8 @@ export default function TechVerbindingen({ tr, ingebed = false }: { tr: Tr; inge
 
       <section className='ag-blok' data-ag-blok='tech-deur' data-lijst='deur' aria-labelledby='ag2-tech-deur-kop'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='ag2-tech-deur-kop'><span className='ag2-icoon' aria-hidden='true'><KeyRound /></span>{tr('Двері сервера', 'Serverdeur')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Доступи ШІ через двері сервера (/Grok, /claude…); кожен відкликається окремо.', 'Toegang van AI via de serverdeur (/Grok, /claude…); elk is apart in te trekken.')}</p>
-          </div>
+          <h3 className='ag-blok-titel' id='ag2-tech-deur-kop'><KeyRound aria-hidden='true' /> {tr('Двері сервера', 'Serverdeur')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Доступи ШІ через двері сервера (/Grok, /claude…); кожен відкликається окремо.', 'Toegang van AI via de serverdeur (/Grok, /claude…); elk is apart in te trekken.')}</p>
         </header>
         <DeurVerbindingen tr={tr} item={item} kies={kies} deur={deur} naActie={naActie} />
         {deur.lijst === null && !deur.fout ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : null}
@@ -160,12 +154,10 @@ export default function TechVerbindingen({ tr, ingebed = false }: { tr: Tr; inge
 
       <section className='ag-blok' data-ag-blok='tech-server-agenten' data-lijst='server-agenten' aria-labelledby='ag2-tech-server-kop'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='ag2-tech-server-kop'><span className='ag2-icoon' aria-hidden='true'><Server /></span>{tr('Агенти на сервері', 'Agenten op de server')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Агенти, що працюють на самому сервері й належать технічному простору.', 'Agenten die op de server zelf draaien en bij de technische ruimte horen.')}</p>
-          </div>
-          <div className='ag-knoppen ag2-acties'>
-            <a className='ag-knop' href={canonicalNavigationUrl('mcp', 'apps', lang)}>{tr('Підключити сервер / додатки', 'Server koppelen / apps')} <ArrowRight size={14} aria-hidden='true' /></a>
+          <h3 className='ag-blok-titel' id='ag2-tech-server-kop'><Server aria-hidden='true' /> {tr('Агенти на сервері', 'Agenten op de server')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Агенти, що працюють на самому сервері й належать технічному простору.', 'Agenten die op de server zelf draaien en bij de technische ruimte horen.')}</p>
+          <div className='ag-knoppen'>
+            <a className='ag-knop ag2-link-knop' href={canonicalNavigationUrl('mcp', 'apps', lang)}>{tr('Підключити сервер / додатки', 'Server koppelen / apps')} <ArrowRight size={14} aria-hidden='true' /></a>
           </div>
         </header>
         {serverAgents.length ? <ul className='ag-lijst'>{serverAgents.map((a) => {

@@ -56,10 +56,8 @@ export default function RuimteScheiding({ tr }: { tr: Tr }) {
     return (
       <section className='ag-blok' data-ag-blok='ruimte-scheiding' data-ruimte-scheiding='laden' aria-labelledby='ag2-ruimte-kop'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='ag2-ruimte-kop'><span className='ag2-icoon' aria-hidden='true'><Lock /></span>{tr('Окремі простори', 'Gescheiden ruimtes')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Які дані технічний профіль має окремо від вашого особистого, а які — спільно.', 'Welke gegevens het technische profiel apart van uw persoonlijke heeft, en welke gedeeld.')}</p>
-          </div>
+          <h3 className='ag-blok-titel' id='ag2-ruimte-kop'><Lock aria-hidden='true' /> {tr('Окремі простори', 'Gescheiden ruimtes')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Які дані технічний профіль має окремо від вашого особистого, а які — спільно.', 'Welke gegevens het technische profiel apart van uw persoonlijke heeft, en welke gedeeld.')}</p>
         </header>
         <p className='ag-leeg'>{fout || tr('Завантаження…', 'Laden…')}</p>
       </section>
@@ -71,10 +69,8 @@ export default function RuimteScheiding({ tr }: { tr: Tr }) {
     return (
       <section className='ag-blok' data-ag-blok='ruimte-scheiding' data-ruimte-scheiding='keuze' aria-labelledby='ag2-ruimte-kop'>
         <header className='ag-blok-kop'>
-          <div className='ag2-kop-tekst'>
-            <h3 className='ag-blok-titel' id='ag2-ruimte-kop'><span className='ag2-icoon' aria-hidden='true'><Lock /></span>{tr('Окремі простори: оберіть один раз', 'Gescheiden ruimtes: kies één keer')}</h3>
-            <p className='ag-blok-uitleg'>{tr('Технічний профіль і ваш особистий профіль — це дві різні шухляди даних: своя пошта, своя хмара, свої підключення ШІ, своя дошка.', 'Het technische profiel en uw persoonlijke profiel zijn twee verschillende lades: eigen mail, eigen cloud, eigen AI-verbindingen, eigen bord.')}</p>
-          </div>
+          <h3 className='ag-blok-titel' id='ag2-ruimte-kop'><Lock aria-hidden='true' /> {tr('Окремі простори: оберіть один раз', 'Gescheiden ruimtes: kies één keer')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Технічний профіль і ваш особистий профіль — це дві різні шухляди даних: своя пошта, своя хмара, свої підключення ШІ, своя дошка.', 'Het technische profiel en uw persoonlijke profiel zijn twee verschillende lades: eigen mail, eigen cloud, eigen AI-verbindingen, eigen bord.')}</p>
         </header>
         <p className='ag-rij ag2-rij is-warn'><span>{tr('Доки ви не оберете, технічний простір порожній: служби в ньому відмовляють і нічого не записують.', 'Tot u kiest, is de technische ruimte leeg: de diensten weigeren er en schrijven niets.')} {WEIGERING_UITLEG.KEUZE_ONTBREEKT[taal]}</span></p>
         <div className='ag-keuzes'>
@@ -98,10 +94,8 @@ export default function RuimteScheiding({ tr }: { tr: Tr }) {
   return (
     <section className='ag-blok' data-ag-blok='ruimte-scheiding' data-ruimte-scheiding='standen' aria-labelledby='ag2-ruimte-kop'>
       <header className='ag-blok-kop'>
-        <div className='ag2-kop-tekst'>
-          <h3 className='ag-blok-titel' id='ag2-ruimte-kop'><span className='ag2-icoon' aria-hidden='true'><Lock /></span>{tr('Окремі простори', 'Gescheiden ruimtes')}</h3>
-          <p className='ag-blok-uitleg'>{tr("Кожну службу можна під'єднати або від'єднати окремо: під'єднання вимагає підтвердження, від'єднання спрацьовує одразу.", 'Elke dienst kunt u apart verbinden of losmaken: verbinden vraagt een bevestiging, losmaken werkt onmiddellijk.')}</p>
-        </div>
+        <h3 className='ag-blok-titel' id='ag2-ruimte-kop'><Lock aria-hidden='true' /> {tr('Окремі простори', 'Gescheiden ruimtes')}</h3>
+        <p className='ag-blok-uitleg'>{tr("Кожну службу можна під'єднати або від'єднати окремо: під'єднання вимагає підтвердження, від'єднання спрацьовує одразу.", 'Elke dienst kunt u apart verbinden of losmaken: verbinden vraagt een bevestiging, losmaken werkt onmiddellijk.')}</p>
       </header>
       <p className='ag-rij ag2-rij is-let'><span>{tr(
         `Ваш вибір: «${KEUZE_NAAM[data.keuze.keuze].uk}» (${tijd(data.keuze.op, true)}). Усе потрапляє до журналу.`,

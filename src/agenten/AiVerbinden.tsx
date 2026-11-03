@@ -110,12 +110,10 @@ export default function AiVerbinden({ tr, magTokens, naActie, ruimte = 'prive', 
   return (
     <section className='ag-blok ag-verbind' data-ag-blok='ai-verbinden' data-ai-verbinden='1' data-ruimte={ruimte} aria-labelledby={titelId}>
       <header className='ag-blok-kop'>
-        <div className='ag2-kop-tekst'>
-          <h3 className='ag-blok-titel' id={titelId}><span className='ag2-icoon' aria-hidden='true'><Link2 /></span>{vastKlant
-            ? (technisch ? tr(`Підключити ${k.naam} до технічного простору`, `${k.naam} koppelen aan de technische ruimte`) : tr(`Підключити ${k.naam} до вашого простору`, `${k.naam} koppelen aan uw ruimte`))
-            : (technisch ? tr('Підключити ШІ до технічного простору', 'AI koppelen aan de technische ruimte') : tr('Підключити ШІ до вашого простору', 'AI koppelen aan uw ruimte'))}</h3>
-          <p className='ag-blok-uitleg'>{tr('Оберіть ШІ, строк доступу й спосіб: автоматично через вхід у браузері або вручну — прямим токеном.', 'Kies de AI, de toegangsduur en de manier: automatisch via aanmelden in de browser of handmatig met een direct token.')}</p>
-        </div>
+        <h3 className='ag-blok-titel' id={titelId}><Link2 aria-hidden='true' /> {vastKlant
+          ? (technisch ? tr(`Підключити ${k.naam} до технічного простору`, `${k.naam} koppelen aan de technische ruimte`) : tr(`Підключити ${k.naam} до вашого простору`, `${k.naam} koppelen aan uw ruimte`))
+          : (technisch ? tr('Підключити ШІ до технічного простору', 'AI koppelen aan de technische ruimte') : tr('Підключити ШІ до вашого простору', 'AI koppelen aan uw ruimte'))}</h3>
+        <p className='ag-blok-uitleg'>{tr('Оберіть ШІ, строк доступу й спосіб: автоматично через вхід у браузері або вручну — прямим токеном.', 'Kies de AI, de toegangsduur en de manier: automatisch via aanmelden in de browser of handmatig met een direct token.')}</p>
       </header>
       <p className='ag-verbind-ruimte' data-ruimte-uitleg={ruimte}><ShieldCheck size={14} aria-hidden='true' /> <b>{uk ? RUIMTE_NAAM[ruimte].uk : RUIMTE_NAAM[ruimte].nl}.</b> {uk ? RUIMTE_UITLEG[ruimte].uk : RUIMTE_UITLEG[ruimte].nl}</p>
       {vastKlant ? null : <div className='ag-verbind-klanten' role='radiogroup' aria-label={tr('Який ШІ', 'Welke AI')}>

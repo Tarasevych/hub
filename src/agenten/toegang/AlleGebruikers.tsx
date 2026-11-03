@@ -51,11 +51,9 @@ export default function AlleGebruikers({ tr, ikEigenaar }: { tr: Tr; ikEigenaar:
     // INTEG-001 (03.11.2026): blok uit het contract van agenten-pagina.css — naam, één zin, de knop «Оновити» in de kop.
     <section className='tg-blok tg-beheer ag-blok' aria-labelledby='tg-beheer-kop' data-tg-beheer='' data-ag-blok='alle-gebruikers'>
       <div className='tg-blok-kop ag-blok-kop'>
-        <div className='ag2-kop-tekst'>
-          <h3 className='ag-blok-titel' id='tg-beheer-kop'>{tr('Усі користувачі', 'Alle gebruikers')} <span className='ag-teller'>{s.gebruikers.length}</span> <HulpVraag k='toegang.beheer' meer={[['toegang.beheer.verlengen', 'Продовжити доступ', 'Toegang verlengen']]} uk={uk} label={tr('Усі користувачі', 'Alle gebruikers')} /></h3>
-          <p className='ag-blok-uitleg'>{tr('Доступи розширення всіх людей сайту — видно лише власнику та технічному профілю з правом «Керування користувачами».', 'De extensietoegang van alle mensen op de site — alleen zichtbaar voor de eigenaar en een technisch profiel met «Gebruikers beheren».')}</p>
-        </div>
-        <div className='ag-knoppen ag2-acties'>
+        <h3 className='ag-blok-titel' id='tg-beheer-kop'>{tr('Усі користувачі', 'Alle gebruikers')} <span className='ag-teller'>{s.gebruikers.length}</span> <HulpVraag k='toegang.beheer' meer={[['toegang.beheer.verlengen', 'Продовжити доступ', 'Toegang verlengen']]} uk={uk} label={tr('Усі користувачі', 'Alle gebruikers')} /></h3>
+        <p className='ag-blok-uitleg'>{tr('Доступи розширення всіх людей сайту — видно лише власнику та технічному профілю з правом «Керування користувачами».', 'De extensietoegang van alle mensen op de site — alleen zichtbaar voor de eigenaar en een technisch profiel met «Gebruikers beheren».')}</p>
+        <div className='ag-knoppen'>
           <Knop icoon={<RefreshCw />} onClick={() => void laadBeheer()} data='tg-beheer-vernieuw'>{tr('Оновити', 'Vernieuwen')}</Knop>
         </div>
       </div>
