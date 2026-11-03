@@ -9,7 +9,7 @@
   "regelsHash": "bd7a35e3bfbdab6f330b7b2c1ee19d54df621a514a5d0caacba591d81d528dc9",
   "staat": "in_progress",
   "gestart": "2026-11-03T21:49:08.970Z",
-  "bijgewerkt": "2026-11-03T22:10:32.752Z",
+  "bijgewerkt": "2026-11-03T22:13:49.648Z",
   "omschrijving": "Обов’язкова відтворювана історія розробки у GitHub та перевірка на сайті й в інсталяторі",
   "kanaal": "github_pr",
   "overdrachten": [],
@@ -28,6 +28,11 @@
       "van": "1.4.1",
       "naar": "1.4.1",
       "op": "2026-11-03T22:10:32.752Z"
+    },
+    {
+      "van": "1.4.1",
+      "naar": "1.4.1",
+      "op": "2026-11-03T22:13:49.648Z"
     }
   ]
 }
