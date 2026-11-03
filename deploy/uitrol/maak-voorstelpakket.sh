@@ -60,6 +60,15 @@ if [ -n "${MANIFEST:-}" ]; then
 elif [[ "$versie" > "20261101-000000" || "$versie" == "20261101-000000" ]]; then
   echo "FOUT: встановіть MANIFEST=<шлях до UITROL-MANIFEST.json> (опис uk+nl і учасники; див. deploy/REGELS-UITROLPAKKET.md §5)" >&2; exit 1
 fi
+# TRACE-001: iedere toekomstige uitgave moet een gecommit dossier + exacte GitHub Release verwijzen.
+# Ontbrekend? Stop al bij het bouwen, zodat de site geen misleidend pakket krijgt.
+ARCHIEFJSON=""
+if [[ ! "$versie" < "20261103-211555" ]]; then
+  [ -z "$ZONDER_GIT" ] || { echo "FOUT GEEN_ONTWIKKELARCHIEF: toekomstige pakketten zijn alleen vanuit git toegestaan" >&2; exit 1; }
+  [ -n "${ONTWIKKELARCHIEF_BESTAND:-}" ] && [ -f "$ONTWIKKELARCHIEF_BESTAND" ] || { echo "FOUT GEEN_ONTWIKKELARCHIEF: ontbrekend ONTWIKKELARCHIEF_BESTAND (orch pakket maakt dit zelf)" >&2; exit 1; }
+  ARCHIEFJSON="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); print(json.dumps(d,ensure_ascii=False,separators=(",",":")))' "$ONTWIKKELARCHIEF_BESTAND" | tr -d '\r')" \
+    || { echo "FOUT ONTWIKKELARCHIEF_ONGELDIG: geen JSON" >&2; exit 1; }
+fi
 # TESTRESULTATEN gaat mee in het pakket (JSON {geslaagd, mislukt, samenvatting}): dan toont de voorcontrole «tests» ook bij een
 # upload van het losse .tar.gz via de wizard of SSH, niet alleen via de MCP-weg met het .voorstel.json.
 TESTJSON=""
@@ -85,7 +94,8 @@ if [ -z "$ZONDER_GIT" ]; then
     --add-virtual-file="mijn-ruimte-$versie/SAMENVATTING:$SAMENVATTING" \
     ${BASISTEKST:+--add-virtual-file="mijn-ruimte-$versie/UITROL-BASIS:$BASISTEKST"} \
     ${TESTJSON:+--add-virtual-file="mijn-ruimte-$versie/TESTRESULTATEN:$TESTJSON"} \
-    ${MANIFESTJSON:+--add-virtual-file="mijn-ruimte-$versie/UITROL-MANIFEST.json:$MANIFESTJSON"} -o "$doel" HEAD
+    ${MANIFESTJSON:+--add-virtual-file="mijn-ruimte-$versie/UITROL-MANIFEST.json:$MANIFESTJSON"} \
+    ${ARCHIEFJSON:+--add-virtual-file="mijn-ruimte-$versie/ONTWIKKELARCHIEF.json:$ARCHIEFJSON"} -o "$doel" HEAD
 else
   # Buiten git: de werkmap zelf (zonder bouwresten), met dezelfde metadatabestanden en één bovenmap.
   stage="$(mktemp -d)"; mkdir -p "$stage/mijn-ruimte-$versie"
@@ -96,6 +106,7 @@ else
   [ -z "$BASISTEKST" ] || printf '%s\n' "$BASISTEKST" > "$stage/mijn-ruimte-$versie/UITROL-BASIS"
   [ -z "$TESTJSON" ] || printf '%s' "$TESTJSON" > "$stage/mijn-ruimte-$versie/TESTRESULTATEN"
   [ -z "$MANIFESTJSON" ] || printf '%s' "$MANIFESTJSON" > "$stage/mijn-ruimte-$versie/UITROL-MANIFEST.json"
+  [ -z "$ARCHIEFJSON" ] || printf '%s' "$ARCHIEFJSON" > "$stage/mijn-ruimte-$versie/ONTWIKKELARCHIEF.json"
   tar -C "$stage" -czf "$doel" "mijn-ruimte-$versie"; rm -rf -- "$stage"
 fi
 bytes="$(stat -c %s "$doel" 2>/dev/null || stat -f %z "$doel")"

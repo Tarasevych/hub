@@ -1380,3 +1380,16 @@ wachtrij loopt door), gelijktijdige installaties, terugdraaien. Twee gedragsrege
 - **Terugdraaien en de coördinatie**: na `terugdraaien` schrijft de installer/eigenaar `orchestratie/geinstalleerd.json` terug naar de vorige
   basis; `orch status` toont de taken van de teruggedraaide release dan weer als `released` (niet `installed`), en hetzelfde pakket is opnieuw
   installeerbaar zonder herbouw (`pakket-controleer` OK).
+
+
+## 19. TRACE-001 — controle van GitHub-ontwikkelarchief vóór Passkey en installatie
+
+Vanaf versie `20261103-211555` wordt elk nieuw uitrolpakket geweigerd zonder `ONTWIKKELARCHIEF.json` (verwijzing naar een al gecommit ontwikkeldossier). De reguliere `orch pakket`-opdracht bouwt het verwijzingsbestand uit `HEAD:orchestratie/ontwikkelarchieven/<TAAK-ID>.json`. Het pakket moet eerst als exacte `.tar.gz` op de bijbehorende GitHub Release staan; upload naar de site gebeurt pas daarna.
+
+De site voert tijdens voorcontrole een externe GitHub-check uit: bestand op de vastgelegde 40-hex commit, bron-hash, ancestrie van de taak-tak en `asset.digest=sha256:<hash van de ontvangen tar.gz>`. Het root-installatiescript herhaalt deze controles onafhankelijk. Ontbreekt iets of is GitHub ontoegankelijk, dan wordt **geweigerd** (ook bij GitHub API rate limit of fout token), zonder uitzondering, zonder fallback naar een URL uit het pakket.
+
+Bij privétoegang gebruikt de site het bestaande, afgeschermde GitHub-token van de eigenaar (indien beschikbaar); de root-host kan desgewenst een uitsluitend voor root leesbaar GitHub-token in `/etc/mijn-ruimte/github-token` hebben (eigenaar 0, rechten 0600). **Nooit** het token in de archiefmetadata, GitHub, CI-logs of chat zetten. Laat de beheerder het token via zijn beveiligde procedure configureren.
+
+Check bij weigering: juiste taak-commit, `orchestratie/ontwikkelarchieven/<TAAK-ID>.json` op die commit, branch-geschiedenis, Release-tag die gelijk is aan `UITROL-VERSIE`, assetnaam en assetdigest. Een ontbrekende of ontoegankelijke GitHub Release is geen toestemming om door te gaan. De eigenaar blijft de installatie met Passkey goedkeuren; TRACE-001 verleent geen automatische installatierechten.
+
+Canon: `AGENTS.md` §5, `orchestratie/beleid.json` v1.4.0, `orchestratie/BESLUITEN.md` B-007 en `deploy/REGELS-UITROLPAKKET.md` §7.

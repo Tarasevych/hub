@@ -48,6 +48,11 @@ async function tokenUitKluis(eigenaarId: string) {
   }
   return null;
 }
+/** TRACE-001: alleen intern voor verificatie van privésources. Token nooit loggen of teruggeven aan de browser. */
+export async function uitrolArchiefToken(eigenaarId: string): Promise<string | undefined> {
+  const t = await tokenUitKluis(eigenaarId);
+  return t?.token || undefined;
+}
 let doFetch: typeof fetch = (...a) => fetch(...a);
 let tokenOf: TokenBron = tokenUitKluis;
 let slaap = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
