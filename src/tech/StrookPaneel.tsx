@@ -11,6 +11,7 @@ import { createPortal } from 'react-dom';
 import { ArrowDown, ArrowUp, Check, GripVertical, RotateCcw, X } from 'lucide-react';
 import { GROOTTE_NAMEN, LABEL_NAMEN, MODUS_NAMEN, MODUS_UITLEG, STROOK_GROOTTES, STROOK_LABELS, STROOK_MODI, STROOK_NAMEN, STROOK_STANDAARD, dropPlek, metModus, paneelLijst, verplaats, zetAan, zetOp, type StrookGrootte, type StrookLabel, type StrookModus, type StrookVoorkeur } from './strook-voorkeur';
 import { groepeer, type KnopMenuItem } from './strook-menu';
+import HulpVraag from '../hulp/HulpVraag';
 
 export type { KnopMenuItem } from './strook-menu';
 
@@ -54,6 +55,7 @@ export function StrookInstelInhoud({ uk, voorkeur, onWijzig, onSluit }: InhoudPr
     <>
       <header className='tech-strook-kop'>
         <strong className='tech-strook-titel'>{t('Технічна смуга', 'Technische strook')}</strong>
+        <HulpVraag k='tech.band' uk={uk} label={t('Технічна смуга', 'Technische strook')} />
         <button type='button' className='tech-strook-sluit' aria-label={t('Закрити', 'Sluiten')} title={t('Закрити', 'Sluiten')} onClick={onSluit}><X aria-hidden='true' /></button>
       </header>
       <div className='tech-strook-romp'>
@@ -81,7 +83,7 @@ export function StrookInstelInhoud({ uk, voorkeur, onWijzig, onSluit }: InhoudPr
                   onDrop={(e) => { e.preventDefault(); losOp(r.id); stopSlepen(); }}>
                   <span className='tech-strook-greep' aria-hidden='true' title={t('Перетягніть, щоб змінити порядок', 'Sleep om de volgorde te wijzigen')}><GripVertical /></span>
                   <label className='tech-strook-vink'>
-                    <input type='checkbox' checked={r.aan} onChange={e => onWijzig(zetAan(voorkeur, r.id, e.target.checked))} />
+                    <input type='checkbox' data-hulp='tech.band' checked={r.aan} onChange={e => onWijzig(zetAan(voorkeur, r.id, e.target.checked))} />
                     <span>{naam}</span>
                   </label>
                   <span className='tech-strook-pijlen'>
