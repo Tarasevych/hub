@@ -63,6 +63,14 @@
 .menu-bellen .menu-bellen-paneel:hover{background:var(--nav-hover)}
 @media (pointer:coarse),(max-width:700px){.menu-bellen .menu-bel-openen,.menu-bellen .menu-bel-weg,.menu-bellen .menu-bellen-alles,.menu-bellen .menu-bellen-paneel{min-height:var(--tik-hoogte)}}
 
+/* INTEG-001 (eigenaar: «дзвіночок — піктограма»): in de bovenbalk, de kop van het menu en de zijbalk is de bel een pictogram — geen ronde
+   knop met rand en schaduw. Alleen zwevend in de actiestapel (boven de inhoud) houdt hij zijn rondje, anders verdwijnt hij in de pagina.
+   Open paneel: de bel licht op (zelfde kleur als het pijltje dat naar hem wijst). */
+html .canonical-chrome .plaats-gniezdo>.canonical-notification-bell:not([data-vorm='rij']){border-color:transparent;background:transparent;box-shadow:none;color:var(--text)}
+html .canonical-chrome .plaats-gniezdo>.canonical-notification-bell:not([data-vorm='rij']):hover{background:var(--nav-hover)}
+html .canonical-chrome .plaats-gniezdo>.canonical-notification-bell[aria-expanded='true']{background:var(--accent-soft);color:var(--accent)}
+html .canonical-chrome .plaats-actiestapel .plaats-gniezdo>.canonical-notification-bell:not([data-vorm='rij']){border-color:color-mix(in srgb,var(--accent) 36%,var(--line));background:var(--panel);color:var(--accent);box-shadow:0 12px 34px var(--shadow)}
+
 /* zelfde compensatie als het paneel en de pop-up bij een verborgen technische band (src/tech/tech.css) — anders hangt de pijl ernaast */
 html[data-tech=aan] #root .cnc-pijl{transition:translate .22s ease!important}
 html[data-tech=aan][data-tech-verborgen] #root .cnc-pijl{translate:0 var(--tech-band-h)}

@@ -344,5 +344,12 @@ export async function main(): Promise<number> {
   const mcss = code(lees('src/canoniek-meldingencentrum.css'));
   check('G3 CSS: alleen de klikbare stip vangt klikken (groter tikvlak); de rest van de badge blijft «pointer-events:none»', mcss.includes(".menu-badge[data-klik='ja']{pointer-events:auto;cursor:pointer}") && mcss.includes(".menu-badge[data-klik='ja']::before{content:'';position:absolute;inset:-8px}"));
 
+  // ------------------------------------------------------------------ H. maten: de bel is een pictogram; in het paneel kleine pictogrammen
+  check('H1 bel = pictogram in balk/menu (geen rand, geen schaduw); rondje alleen zwevend in de actiestapel',
+    mcss.includes("html .canonical-chrome .plaats-gniezdo>.canonical-notification-bell:not([data-vorm='rij']){border-color:transparent;background:transparent;box-shadow:none;color:var(--text)}")
+    && mcss.includes("html .canonical-chrome .plaats-actiestapel .plaats-gniezdo>.canonical-notification-bell:not([data-vorm='rij']){border-color:"));
+  const v2cssH = code(lees('src/meldingen/v2/meldingen-v2.css'));
+  check('H2 paneel: delen als kleine pictogrammen (34 px hoog, naam bij aanwijzen links uitgelijnd), geen brede segmentknoppen meer', /\.mv2 \.mv2-sectie\{[^}]*height:34px/.test(v2cssH) && v2cssH.includes('.mv2 .mv2-sectie[data-tip]:hover::after{left:0;right:auto}'));
+
   return einde();
 }
