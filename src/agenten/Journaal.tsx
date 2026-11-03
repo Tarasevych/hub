@@ -2,7 +2,7 @@
 // Dicht: één zin + onderwerp + relatieve tijd (exacte tijd bij aanwijzen). Open: actiecode, id's, ip-hash, apparaat, ruwe details.
 import { duur as duurVan } from '../../shared/ai-verbinding';
 import { useMemo, useState, type ReactElement } from 'react';
-import { Bot, Boxes, Calendar, Camera, CircleHelp, Compass, Container, Eye, FilePen, FileText, Fingerprint, Gauge, GitBranch, Globe, HardDrive, Kanban, KeyRound, Mail, Monitor, MousePointerClick, OctagonX, Rocket, Search, Server, ShieldCheck, Sparkles, Stethoscope, Terminal, Wrench } from 'lucide-react';
+import { Activity, Bot, Boxes, Calendar, Camera, CircleHelp, Compass, Container, Eye, FilePen, FileText, Fingerprint, Gauge, GitBranch, Globe, HardDrive, Kanban, KeyRound, Mail, Monitor, MousePointerClick, OctagonX, Rocket, Search, Server, ShieldCheck, Sparkles, Stethoscope, Terminal, Wrench } from 'lucide-react';
 import { SOORT_INFO, actieSoort, actieZin, groepeerWerk, telling, type ActieSoort, type WerkSessie } from '../../shared/mcp-acties';
 import type { Tr } from '../mcp-ui';
 import { CAP_TEXT } from '../AiToestemmingen';
@@ -11,6 +11,7 @@ import { isWeigercode, weigerUitleg } from '../../shared/extensie-ontgrendeling'
 import { datum, Knop, Rij, Tech, Tijd, exact } from './ui';
 import { foutTekst } from './fouten';
 import { useJournaal, type JournaalItem } from './gegevens';
+import './agenten-tabs-2.css';
 
 export const SOORTEN: Array<[string, string, string]> = [
   ['', 'Усі події', 'Alle gebeurtenissen'], ['werk', 'Дії ШІ (що робив агент)', 'Acties van AI (wat de agent deed)'], ['ai', 'Підключення ШІ', 'AI-verbindingen'], ['token', 'Токени', 'Tokens'], ['apparaat', 'Пристрої', 'Apparaten'],
@@ -214,23 +215,32 @@ export default function Journaal({ tr, onderwerpen, versie, actief }: { tr: Tr; 
   const filter = useMemo(() => ({ soort, onderwerp }), [soort, onderwerp]);
   const j = useJournaal(filter, actief, versie);
   const groepen = [...new Set(onderwerpen.map((o) => o.groep))];
+  // INTEG-001 (agpag2, 03.11.2026): één blok «Події» (.ag-blok) met naam, één zin en de filters in de kop; daaronder de tijdlijn.
+  const gefilterd = !!(soort || onderwerp);
   return (
-    <div className='ag-journaal-wrap ag-tab' data-tab-inhoud='journaal'>
-      <div className='ag-werkbalk' role='group' aria-label={tr('Фільтри журналу', 'Filters van het logboek')}>
-        <label className='ag-veld'><span>{tr('Тип', 'Soort')}</span>
-          <select value={soort} onChange={(e) => setSoort(e.target.value)} data-filter='soort'>{SOORTEN.map(([id, uk, nl]) => <option key={id} value={id}>{tr(uk, nl)}</option>)}</select>
-        </label>
-        <label className='ag-veld'><span>{tr('Агент або пристрій', 'Agent of apparaat')}</span>
-          <select value={onderwerp} onChange={(e) => setOnderwerp(e.target.value)} data-filter='onderwerp'>
-            <option value=''>{tr('Усі', 'Alle')}</option>
-            {groepen.map((g) => <optgroup key={g} label={g}>{onderwerpen.filter((o) => o.groep === g).map((o) => <option key={o.id} value={o.id}>{o.naam}</option>)}</optgroup>)}
-          </select>
-        </label>
-        <small className='hub-meta ag-werkbalk-info'>{tr('Час — відносний; точний час із часовим поясом — при наведенні.', 'Relatieve tijd; de exacte tijd met tijdzone bij aanwijzen.')}</small>
-      </div>
-      {j.fout ? <p className='ag-melding ag-melding-fout' role='alert'>{foutTekst(j.fout, tr, ['Не вдалося завантажити журнал', 'Logboek laden mislukt'])}</p> : null}
-      {j.items === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : <JournaalLijst tr={tr} items={j.items} />}
-      {j.volgende ? <div className='ag-meer'><Knop bezig={j.bezig} onClick={() => void j.laad(j.volgende ?? undefined)}>{tr('Показати старіші', 'Oudere tonen')}</Knop></div> : null}
+    <div className='ag-journaal-wrap ag-tab ag2-blokken' data-tab-inhoud='journaal'>
+      <section className='ag-blok' data-ag-blok='journaal' aria-labelledby='ag2-journaal-kop'>
+        <header className='ag-blok-kop'>
+          <h3 className='ag-blok-titel' id='ag2-journaal-kop'><Activity aria-hidden='true' /> {tr('Події', 'Gebeurtenissen')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Оберіть тип або агента, щоб звузити список; натисніть рядок, щоб побачити технічні подробиці.', 'Kies een soort of agent om de lijst te verkleinen; klik op een rij voor de technische details.')}</p>
+          <div className='ag-knoppen ag2-filters' role='group' aria-label={tr('Фільтри журналу', 'Filters van het logboek')}>
+            <label className='ag-veld'><span>{tr('Тип', 'Soort')}</span>
+              <select value={soort} onChange={(e) => setSoort(e.target.value)} data-filter='soort'>{SOORTEN.map(([id, uk, nl]) => <option key={id} value={id}>{tr(uk, nl)}</option>)}</select>
+            </label>
+            <label className='ag-veld'><span>{tr('Агент або пристрій', 'Agent of apparaat')}</span>
+              <select value={onderwerp} onChange={(e) => setOnderwerp(e.target.value)} data-filter='onderwerp'>
+                <option value=''>{tr('Усі', 'Alle')}</option>
+                {groepen.map((g) => <optgroup key={g} label={g}>{onderwerpen.filter((o) => o.groep === g).map((o) => <option key={o.id} value={o.id}>{o.naam}</option>)}</optgroup>)}
+              </select>
+            </label>
+            {gefilterd ? <Knop onClick={() => { setSoort(''); setOnderwerp(''); }} data='journaal-filter-wis'>{tr('Скинути фільтри', 'Filters wissen')}</Knop> : null}
+          </div>
+        </header>
+        <small className='ag2-noot ag-werkbalk-info'>{tr('Час — відносний; точний час із часовим поясом — при наведенні.', 'Relatieve tijd; de exacte tijd met tijdzone bij aanwijzen.')}</small>
+        {j.fout ? <p className='ag-melding ag-melding-fout' role='alert'>{foutTekst(j.fout, tr, ['Не вдалося завантажити журнал', 'Logboek laden mislukt'])}</p> : null}
+        {j.items === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : <JournaalLijst tr={tr} items={j.items} />}
+        {j.volgende ? <div className='ag-meer'><Knop bezig={j.bezig} onClick={() => void j.laad(j.volgende ?? undefined)}>{tr('Показати старіші', 'Oudere tonen')}</Knop></div> : null}
+      </section>
     </div>
   );
 }

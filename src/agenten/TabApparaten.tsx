@@ -2,7 +2,7 @@
 // tabblad «Розширення браузера» (#extensie); de knop hier en het oude adres #apparaten/extensie leiden daarheen. Dicht: naam, status, één regel; open: alle technische
 // gegevens, wat zonder klik mag, de toestemmingen (presets, tabel, losse toestemming) en voor een browser de extensiestatus.
 import { useEffect, useState } from 'react';
-import { ArrowUpCircle, Download, Globe, Plus, Settings2, Trash2 } from 'lucide-react';
+import { ArrowUpCircle, Download, Globe, Monitor, Plus, Settings2, Trash2 } from 'lucide-react';
 import { api } from '../platform/client';
 import { sessionBody, type Agent, type LastCommand, type Pending } from '../agenten-gegevens';
 import { agentLogo, Logo, StatusDot, type Tr } from '../mcp-ui';
@@ -11,6 +11,7 @@ import BrowserExtensionPanel from '../BrowserExtensiePaneel';
 import AiToestemmingen from '../AiToestemmingen';
 import type { Losgekoppeld, Overzicht } from './gegevens';
 import { Badge, datum, exact, GevaarKnop, Groep, Knop, Melding, Rij, Tech, Tijd, relatief, useActies } from './ui';
+import './agenten-tabs-2.css';
 
 /** 0.4.10 < 0.5.1: numeriek per deel. Onbekend → geen melding. */
 export function ouder(a: string | null | undefined, b: string | null | undefined): boolean {
@@ -154,29 +155,47 @@ export default function TabApparaten({ tr, agents, pending, last, overzicht, naA
     );
   };
 
+  // INTEG-001 (agpag2, 03.11.2026): één blok «Підключені пристрої» (.ag-blok) — naam, één zin, de knoppen in de kop, daaronder de
+  // teller met sorteren, de lijst (of een lege staat met wat u kunt doen) en, ingeklapt, de geschiedenis.
   return (
-    <div className='ag-tab' data-tab-inhoud='apparaten'>
-      <div className='ag-lijstkop'>
-        <p className='ag-lijstkop-tekst'>{agents.length ? tr(`Підключено ${agents.length} · у мережі ${online}`, `${agents.length} gekoppeld · ${online} online`) : tr('Ще жоден пристрій не підключено.', 'Nog geen apparaat gekoppeld.')}</p>
-        <label className='ag-veld ag-veld-inline'><span>{tr('Сортувати', 'Sorteren')}</span>
-          <select value={sorteer} onChange={(e) => setSorteer(e.target.value as typeof sorteer)} data-sorteer='apparaten'>
-            <option value='stand'>{tr('Спершу в мережі', 'Eerst online')}</option><option value='naam'>{tr('Назва', 'Naam')}</option><option value='datum'>{tr('Дата підключення', 'Datum van koppelen')}</option>
-          </select>
-        </label>
-        <Knop icoon={<Plus />} toon={item === 'koppelen' ? 'primary' : 'default'} onClick={() => kies(item === 'koppelen' ? '' : 'koppelen')} data='koppelen'>{tr('Підключити ПК', 'Pc koppelen')}</Knop>
-        <Knop icoon={<Globe />} onClick={() => (naarExtensie ? naarExtensie() : kies('extensie'))} data='extensie'>{tr('Розширення браузера', 'Browserextensie')}</Knop>
-      </div>
-      {item === 'koppelen' ? <div className='ag-kaart' data-paneel='koppelen'><PairCard tr={tr} reload={naActie} agents={agents} /></div> : null}
-      {item === 'extensie' && !naarExtensie ? <div className='ag-kaart' data-paneel='extensie'><BrowserExtensionPanel tr={tr} part='install' ruimte='prive' agentsExtern={agents as unknown as Parameters<typeof BrowserExtensionPanel>[0]['agentsExtern']} reloadExtern={naActie} /></div> : null}
-      <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
-      {lijst.length ? <ul className='ag-lijst' data-lijst='apparaten'>{lijst.map(rij)}</ul> : null}
-      <Groep titel={tr('Відключені й перевстановлені (90 днів)', 'Losgekoppeld en opnieuw geïnstalleerd (90 dagen)')} aantal={weg.length} data='apparaten-historie'
-        acties={<GevaarKnop tr={tr} sleutel='opruimen' icoon={<Trash2 />} acties={acties} onJa={() => void opruimen()} klein
-          label={tr(`Прибрати відключені (${weg.length})`, `Losgekoppelde opruimen (${weg.length})`)}
-          vraag={tr('Видалити всі відключені й перевстановлені записи, а також пристрої, не підключені понад 7 днів? Їхні дозволи й історія команд зникнуть; журнал залишиться.', 'Alle losgekoppelde en vervangen rijen verwijderen, plus apparaten die langer dan 7 dagen niet verbonden waren? Hun toestemmingen en opdrachtgeschiedenis verdwijnen; het journaal blijft.')}
-          ja={tr('Так, прибрати', 'Ja, opruimen')} />}>
-        {weg.map(rijWeg)}
-      </Groep>
+    <div className='ag-tab ag2-blokken' data-tab-inhoud='apparaten'>
+      <section className='ag-blok' data-ag-blok='apparaten' aria-labelledby='ag2-apparaten-kop'>
+        <header className='ag-blok-kop'>
+          <h3 className='ag-blok-titel' id='ag2-apparaten-kop'><Monitor aria-hidden='true' /> {tr('Підключені пристрої', 'Gekoppelde apparaten')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Комп’ютери з агентом і браузери з розширенням: натисніть рядок, щоб змінити дозволи або відключити пристрій.', 'Computers met de agent en browsers met de extensie: klik op een rij om de toestemmingen te wijzigen of het apparaat los te koppelen.')}</p>
+          <div className='ag-knoppen'>
+            <Knop icoon={<Plus />} toon={item === 'koppelen' || !agents.length ? 'primary' : 'default'} onClick={() => kies(item === 'koppelen' ? '' : 'koppelen')} data='koppelen'>{tr('Підключити ПК', 'Pc koppelen')}</Knop>
+            <Knop icoon={<Globe />} onClick={() => (naarExtensie ? naarExtensie() : kies('extensie'))} data='extensie'>{tr('Розширення браузера', 'Browserextensie')}</Knop>
+          </div>
+        </header>
+        {item === 'koppelen' ? <div className='ag2-paneel is-open' data-paneel='koppelen'><PairCard tr={tr} reload={naActie} agents={agents} /></div> : null}
+        {item === 'extensie' && !naarExtensie ? <div className='ag2-paneel is-open' data-paneel='extensie'><BrowserExtensionPanel tr={tr} part='install' ruimte='prive' agentsExtern={agents as unknown as Parameters<typeof BrowserExtensionPanel>[0]['agentsExtern']} reloadExtern={naActie} /></div> : null}
+        <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
+        {lijst.length ? (
+          <>
+            <div className='ag2-werkbalk'>
+              <p className='ag2-samenvatting' data-apparaten-telling={agents.length}>{tr(`Підключено ${agents.length} · у мережі ${online}`, `${agents.length} gekoppeld · ${online} online`)}</p>
+              {lijst.length > 1 ? (
+                <label className='ag-veld ag-veld-inline'><span>{tr('Сортувати', 'Sorteren')}</span>
+                  <select value={sorteer} onChange={(e) => setSorteer(e.target.value as typeof sorteer)} data-sorteer='apparaten'>
+                    <option value='stand'>{tr('Спершу в мережі', 'Eerst online')}</option><option value='naam'>{tr('Назва', 'Naam')}</option><option value='datum'>{tr('Дата підключення', 'Datum van koppelen')}</option>
+                  </select>
+                </label>
+              ) : null}
+            </div>
+            <ul className='ag-lijst' data-lijst='apparaten'>{lijst.map(rij)}</ul>
+          </>
+        ) : (
+          <p className='ag-leeg' data-apparaten-leeg='1'>{tr('Ще жоден пристрій не підключено. Натисніть «Підключити ПК» або встановіть розширення браузера.', 'Nog geen apparaat gekoppeld. Klik «Pc koppelen» of installeer de browserextensie.')}</p>
+        )}
+        <Groep titel={tr('Відключені й перевстановлені (90 днів)', 'Losgekoppeld en opnieuw geïnstalleerd (90 dagen)')} aantal={weg.length} data='apparaten-historie'
+          acties={<GevaarKnop tr={tr} sleutel='opruimen' icoon={<Trash2 />} acties={acties} onJa={() => void opruimen()} klein
+            label={tr(`Прибрати відключені (${weg.length})`, `Losgekoppelde opruimen (${weg.length})`)}
+            vraag={tr('Видалити всі відключені й перевстановлені записи, а також пристрої, не підключені понад 7 днів? Їхні дозволи й історія команд зникнуть; журнал залишиться.', 'Alle losgekoppelde en vervangen rijen verwijderen, plus apparaten die langer dan 7 dagen niet verbonden waren? Hun toestemmingen en opdrachtgeschiedenis verdwijnen; het journaal blijft.')}
+            ja={tr('Так, прибрати', 'Ja, opruimen')} />}>
+          {weg.map(rijWeg)}
+        </Groep>
+      </section>
     </div>
   );
 }

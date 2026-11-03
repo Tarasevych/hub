@@ -20,12 +20,15 @@ import {
 } from '../../shared/ruimte-scheiding';
 import { foutTekst } from './fouten';
 import './agenten.css';
+import './agenten-tabs-2.css';
 
 type DienstRij = { dienst: DeelbareDienst; stand: DienstStand; vorigeStand: DienstStand; gewijzigdOp: number; bevestigdDoor: string; bevrorenOp: number | null; bevrorenOorzaak: Oorzaak | '' };
 type Verslag = { besluit: string; uitvoerders: number; rijen: number; volledig: boolean; regels: Array<{ tabel: string; rijen: number; door: string }> };
 type Overzicht = { keuze: { keuze: Keuze; op: number; door: string } | null; standen: Array<DienstRij & { besluit?: string; verslag?: Verslag | null }>; rechten: { ok: boolean; oorzaak?: Oorzaak; rollen?: string[]; ikEigenaar?: boolean }; nu: number };
 
 const tijd = (ms: number, uk: boolean) => (ms ? new Date(ms).toLocaleString(uk ? 'uk-UA' : 'nl-NL') : '—');
+/** Kleur van de standbadge (statuskleuren van .ag in agenten.css). */
+const STAND_TOON: Readonly<Record<DienstStand, 'ok' | 'info' | 'off' | 'warn'>> = { eigen: 'ok', gedeeld: 'info', uit: 'off', bevroren: 'warn' };
 
 export default function RuimteScheiding({ tr }: { tr: Tr }) {
   const uk = tr('uk', 'nl') === 'uk';
@@ -47,10 +50,15 @@ export default function RuimteScheiding({ tr }: { tr: Tr }) {
     finally { setBezig(''); }
   }, [laad, tr]);
 
+  // INTEG-001 (agpag2, 03.11.2026): in elke toestand één blok (.ag-blok, contract van agenten-pagina.css) met naam en één zin;
+  // de diensten staan als rijen (.ag2-diensten) in plaats van een kale tabel, ook op de telefoon zonder horizontale scroll.
   if (!data) {
     return (
-      <section className='ag-kaart' data-ruimte-scheiding='laden'>
-        <div className='ag-kaart-kop'><h3><Lock size={18} aria-hidden='true' /> {tr('Окремі простори', 'Gescheiden ruimtes')}</h3></div>
+      <section className='ag-blok' data-ag-blok='ruimte-scheiding' data-ruimte-scheiding='laden' aria-labelledby='ag2-ruimte-kop'>
+        <header className='ag-blok-kop'>
+          <h3 className='ag-blok-titel' id='ag2-ruimte-kop'><Lock aria-hidden='true' /> {tr('Окремі простори', 'Gescheiden ruimtes')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Які дані технічний профіль має окремо від вашого особистого, а які — спільно.', 'Welke gegevens het technische profiel apart van uw persoonlijke heeft, en welke gedeeld.')}</p>
+        </header>
         <p className='ag-leeg'>{fout || tr('Завантаження…', 'Laden…')}</p>
       </section>
     );
@@ -59,13 +67,12 @@ export default function RuimteScheiding({ tr }: { tr: Tr }) {
   // De keuze is nog niet gemaakt: één keer vragen, met de gevolgen in gewone taal.
   if (!data.keuze) {
     return (
-      <section className='ag-kaart' data-ruimte-scheiding='keuze'>
-        <div className='ag-kaart-kop'><h3><Lock size={18} aria-hidden='true' /> {tr('Окремі простори: оберіть один раз', 'Gescheiden ruimtes: kies één keer')}</h3></div>
-        <p>{tr(
-          'Технічний профіль і ваш особистий профіль — це дві різні шухляди даних: своя пошта, своя хмара, свої підключення ШІ, своя дошка. Доки ви не оберете, технічний простір порожній: служби в ньому відмовляють і нічого не записують.',
-          'Het technische profiel en uw persoonlijke profiel zijn twee verschillende lades: eigen mail, eigen cloud, eigen AI-verbindingen, eigen bord. Tot u kiest, is de technische ruimte leeg: de diensten weigeren er en schrijven niets.',
-        )}</p>
-        <p className='ag-uitleg'>{WEIGERING_UITLEG.KEUZE_ONTBREEKT[taal]}</p>
+      <section className='ag-blok' data-ag-blok='ruimte-scheiding' data-ruimte-scheiding='keuze' aria-labelledby='ag2-ruimte-kop'>
+        <header className='ag-blok-kop'>
+          <h3 className='ag-blok-titel' id='ag2-ruimte-kop'><Lock aria-hidden='true' /> {tr('Окремі простори: оберіть один раз', 'Gescheiden ruimtes: kies één keer')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Технічний профіль і ваш особистий профіль — це дві різні шухляди даних: своя пошта, своя хмара, свої підключення ШІ, своя дошка.', 'Het technische profiel en uw persoonlijke profiel zijn twee verschillende lades: eigen mail, eigen cloud, eigen AI-verbindingen, eigen bord.')}</p>
+        </header>
+        <p className='ag-rij ag2-rij is-warn'><span>{tr('Доки ви не оберете, технічний простір порожній: служби в ньому відмовляють і нічого не записують.', 'Tot u kiest, is de technische ruimte leeg: de diensten weigeren er en schrijven niets.')} {WEIGERING_UITLEG.KEUZE_ONTBREEKT[taal]}</span></p>
         <div className='ag-keuzes'>
           {KEUZES.map((k) => (
             <div key={k} className='ag-keuze' data-keuze={k}>
@@ -85,12 +92,15 @@ export default function RuimteScheiding({ tr }: { tr: Tr }) {
 
   const bevroren = data.standen.filter((s) => s.stand === 'bevroren');
   return (
-    <section className='ag-kaart' data-ruimte-scheiding='standen'>
-      <div className='ag-kaart-kop'><h3><Lock size={18} aria-hidden='true' /> {tr('Окремі простори', 'Gescheiden ruimtes')}</h3></div>
-      <p>{tr(
-        `Ваш вибір: «${KEUZE_NAAM[data.keuze.keuze].uk}» (${tijd(data.keuze.op, true)}). Кожну службу можна під'єднати або від'єднати окремо: під'єднання вимагає підтвердження, від'єднання спрацьовує одразу. Усе потрапляє до журналу.`,
-        `Uw keuze: «${KEUZE_NAAM[data.keuze.keuze].nl}» (${tijd(data.keuze.op, false)}). Elke dienst kunt u apart verbinden of losmaken: verbinden vraagt een bevestiging, losmaken werkt onmiddellijk. Alles komt in het logboek.`,
-      )}</p>
+    <section className='ag-blok' data-ag-blok='ruimte-scheiding' data-ruimte-scheiding='standen' aria-labelledby='ag2-ruimte-kop'>
+      <header className='ag-blok-kop'>
+        <h3 className='ag-blok-titel' id='ag2-ruimte-kop'><Lock aria-hidden='true' /> {tr('Окремі простори', 'Gescheiden ruimtes')}</h3>
+        <p className='ag-blok-uitleg'>{tr("Кожну службу можна під'єднати або від'єднати окремо: під'єднання вимагає підтвердження, від'єднання спрацьовує одразу.", 'Elke dienst kunt u apart verbinden of losmaken: verbinden vraagt een bevestiging, losmaken werkt onmiddellijk.')}</p>
+      </header>
+      <p className='ag-rij ag2-rij is-let'><span>{tr(
+        `Ваш вибір: «${KEUZE_NAAM[data.keuze.keuze].uk}» (${tijd(data.keuze.op, true)}). Усе потрапляє до журналу.`,
+        `Uw keuze: «${KEUZE_NAAM[data.keuze.keuze].nl}» (${tijd(data.keuze.op, false)}). Alles komt in het logboek.`,
+      )}</span></p>
       {data.rechten.ok && data.rechten.rollen?.length ? (
         <p className='ag-uitleg' data-rollen='1'>{tr(
           `Технічний доступ: ${data.rechten.rollen.join(', ')}. Окремі шухляди даних є в кожного з технічним доступом; технічні права (випуски, сервер, термінали) від цього не змінюються.`,
@@ -103,28 +113,26 @@ export default function RuimteScheiding({ tr }: { tr: Tr }) {
           `Er zijn nu geen technische rechten (${OORZAAK_NAAM[data.rechten.oorzaak || 'rol-weg'].nl}). De technische ruimte is bevroren.`,
         )}</p>
       ) : null}
-      <table className='ag-tabel' data-ruimte-tabel='1'>
-        <thead><tr>
-          <th>{tr('Служба', 'Dienst')}</th><th>{tr('Стан', 'Stand')}</th><th>{tr('Хто і коли', 'Wie en wanneer')}</th><th>{tr('Дії', 'Acties')}</th>
-        </tr></thead>
-        <tbody>
+      <ul className='ag2-diensten' data-ruimte-tabel='1' aria-label={tr('Служби технічного простору', 'Diensten van de technische ruimte')}>
           {data.standen.map((s) => (
-            <tr key={s.dienst} data-dienst={s.dienst} data-stand={s.stand}>
-              <td>{DIENST_NAAM[s.dienst][taal]}</td>
-              <td title={STAND_UITLEG[s.stand][taal]}>
-                {s.stand === 'bevroren' ? <Snowflake size={14} aria-hidden='true' /> : null}
-                {STAND_NAAM[s.stand][taal]}
-              </td>
-              <td>
-                {s.gewijzigdOp ? `${s.bevestigdDoor || '—'} · ${tijd(s.gewijzigdOp, uk)}` : '—'}
+            <li key={s.dienst} className='ag2-dienst' data-dienst={s.dienst} data-stand={s.stand}>
+              <span className='ag2-dienst-naam'>
+                {DIENST_NAAM[s.dienst][taal]}
+                <span className={`ag-badge ag-${STAND_TOON[s.stand]}`} title={STAND_UITLEG[s.stand][taal]} data-badge='stand'>
+                  {s.stand === 'bevroren' ? <Snowflake size={12} aria-hidden='true' /> : null}
+                  {STAND_NAAM[s.stand][taal]}
+                </span>
+              </span>
+              <span className='ag2-dienst-wie'>
+                {s.gewijzigdOp ? `${s.bevestigdDoor || '—'} · ${tijd(s.gewijzigdOp, uk)}` : tr('ще не змінювалося', 'nog niet gewijzigd')}
                 {s.verslag ? (
-                  <div className='ag-uitleg' data-verslag={s.verslag.besluit}>{tr(
+                  <span className='ag-uitleg ag2-dienst-verslag' data-verslag={s.verslag.besluit}>{tr(
                     `Рішення «${s.verslag.besluit}»: ${s.verslag.volledig ? `оброблено рядків — ${s.verslag.rijen}` : 'фізичне перенесення ще не виконано (служба ще не підключила обробник)'}`,
                     `Besluit «${s.verslag.besluit}»: ${s.verslag.volledig ? `${s.verslag.rijen} rijen verwerkt` : 'fysiek verplaatsen nog niet uitgevoerd (de dienst heeft nog geen uitvoerder aangemeld)'}`,
-                  )}</div>
+                  )}</span>
                 ) : null}
-              </td>
-              <td className='ag-acties'>
+              </span>
+              <span className='ag-knoppen ag2-dienst-acties'>
                 {s.stand === 'bevroren' ? (
                   <>
                     <span className='ag-uitleg'>{s.bevrorenOorzaak ? OORZAAK_NAAM[s.bevrorenOorzaak][taal] : ''}</span>
@@ -160,11 +168,10 @@ export default function RuimteScheiding({ tr }: { tr: Tr }) {
                     ) : null}
                   </>
                 )}
-              </td>
-            </tr>
+              </span>
+            </li>
           ))}
-        </tbody>
-      </table>
+      </ul>
       {bevroren.length ? (
         <p className='ag-uitleg' data-bevroren='uitleg'>{STAND_UITLEG.bevroren[taal]}</p>
       ) : null}

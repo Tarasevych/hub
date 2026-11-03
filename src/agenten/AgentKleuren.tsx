@@ -21,7 +21,9 @@ import { AGENT_ACCENT, MARKERING_STAART_MS } from '../../shared/markering-agente
 type Rij = { agent: AgentSlug; accent: Accent; standaard: boolean };
 const naamVan = (slug: AgentSlug) => V2_AGENTEN.find((a) => a.slug === slug)?.naam ?? slug;
 
-export default function AgentKleuren({ tr }: { tr: Tr }) {
+/** `blok` (INTEG-001, 03.11.2026): als eigen blok op «Розширення браузера» (.ag-blok met kop, één zin en de lijst). Zonder `blok`
+ *  blijft de oude weergave, zoals in het uitklapvak op de pagina van één agent (AgentPagina, met een eigen <summary>). */
+export default function AgentKleuren({ tr, blok = false }: { tr: Tr; blok?: boolean }) {
   const [rijen, setRijen] = useState<Rij[] | null>(null);
   const [bezig, setBezig] = useState<AgentSlug | ''>('');
   const [fout, setFout] = useState('');
@@ -48,14 +50,26 @@ export default function AgentKleuren({ tr }: { tr: Tr }) {
 
   if (!rijen) return null;
   const sec = Math.round(MARKERING_STAART_MS / 1000);
+  // Eén return voor beide weergaven: de kop staat in de bron vóór de knoppen, zodat de zoekcatalogus (scripts/zoek-ui-catalogus.mjs)
+  // «Стандарт» bij «Колір агента» blijft plaatsen.
   return (
-    <section className='ag-ext-sectie ag-agentkleuren' data-ext-sectie='agent-kleuren' aria-labelledby='ag-agentkleuren-kop'>
-      <h3 id='ag-agentkleuren-kop'><Palette aria-hidden='true' /> {tr('Колір агента', 'Kleur per agent')}</h3>
-      <p className='ag-ext-uitleg'>
-        {tr(`Коли ШІ читає або діє у вкладці, сторінка отримує обрамлення цього кольору й підпис із назвою агента та його дією. Обрамлення зникає приблизно через ${sec} с після останньої дії. Колір зберігається на вас і діє також у значку розширення.`,
-          `Als een AI in een tabblad leest of handelt, krijgt die pagina een rand in deze kleur met de naam van de agent en wat hij doet. De rand verdwijnt ongeveer ${sec} s na de laatste actie. De kleur hoort bij u en geldt ook voor de badge van de extensie.`)}
-      </p>
-      {fout ? <p className='ag-ext-regel' role='alert' data-kleur-fout='1'>{fout}</p> : null}
+    <section className={blok ? 'ag-blok ag-agentkleuren' : 'ag-ext-sectie ag-agentkleuren'} data-ext-sectie='agent-kleuren' data-ag-blok={blok ? 'agent-kleuren' : undefined} aria-labelledby='ag-agentkleuren-kop'>
+      {blok ? (
+        <header className='ag-blok-kop'>
+          <h3 className='ag-blok-titel' id='ag-agentkleuren-kop'><Palette aria-hidden='true' /> {tr('Колір агента', 'Kleur per agent')}</h3>
+          <p className='ag-blok-uitleg'>{tr('Коли ШІ читає або діє у вкладці, сторінка отримує обрамлення цього кольору з назвою агента та його дією.', 'Als een AI in een tabblad leest of handelt, krijgt die pagina een rand in deze kleur met de naam van de agent en wat hij doet.')}</p>
+        </header>
+      ) : <h3 id='ag-agentkleuren-kop'><Palette aria-hidden='true' /> {tr('Колір агента', 'Kleur per agent')}</h3>}
+      {blok ? (
+        <p className='ag2-noot'>{tr(`Обрамлення зникає приблизно через ${sec} с після останньої дії. Колір зберігається на вас і діє також у значку розширення.`,
+          `De rand verdwijnt ongeveer ${sec} s na de laatste actie. De kleur hoort bij u en geldt ook voor de badge van de extensie.`)}</p>
+      ) : (
+        <p className='ag-ext-uitleg'>
+          {tr(`Коли ШІ читає або діє у вкладці, сторінка отримує обрамлення цього кольору й підпис із назвою агента та його дією. Обрамлення зникає приблизно через ${sec} с після останньої дії. Колір зберігається на вас і діє також у значку розширення.`,
+            `Als een AI in een tabblad leest of handelt, krijgt die pagina een rand in deze kleur met de naam van de agent en wat hij doet. De rand verdwijnt ongeveer ${sec} s na de laatste actie. De kleur hoort bij u en geldt ook voor de badge van de extensie.`)}
+        </p>
+      )}
+      {fout ? <p className={blok ? 'ag-melding ag-melding-fout' : 'ag-ext-regel'} role='alert' data-kleur-fout='1'>{fout}</p> : null}
       <ul className='ag-kleur-lijst' data-lijst='agent-kleuren'>
         {rijen.map((rij) => (
           <li key={rij.agent} className='ag-kaart ag-kleur-rij' data-agent={rij.agent} data-accent={rij.accent} data-standaard={rij.standaard ? '1' : '0'}>
