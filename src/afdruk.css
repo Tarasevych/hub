@@ -1,17 +1,84 @@
-/* Afdrukken (Ctrl+P, zoekronde 02.11.2026): de hele pagina op papier, niet alleen het zichtbare deel.
-   De schil van de app (zijbalk, bovenbalk, lade, meldingen, zoekvenster, technische band) valt weg; de inhoud stroomt van boven naar
-   beneden, zonder afgesneden scrollvensters, met zinnige paginaovergangen. Zonder scherm te zien getest met de printweergave van de
-   browser: zie het verslag van de zoekronde (scheidingen en controles in de bestandskaart). */
+/* Afdrukken (Ctrl+P): de HELE pagina op papier, niet alleen het deel dat op het scherm te zien is.
+   Eerste versie: zoekronde 02.11.2026 (zonder scherm geschreven). Herzien in INTEG-001 / TEMA print (03.11.2026) en nu gemeten met een echte
+   Chrome (printToPDF op de gebouwde CSS, zie scripts/afdruk-proef.mjs). Gevonden en hersteld:
+   - de app is een schil met vaste hoogte (html/body/#root 100 % + overflow:hidden, .canonical-chrome en .canonical-workspace
+     position:fixed + overflow:auto): de browser drukt dan één venster af (productie vóór dit werk: 1 pagina, rest weg);
+   - de eerste versie verborg élke <button>: ook de rijen van /agenten (een rij is één knop met titel + status) vielen weg;
+   - vaste lagen (meldingsband, ⌃-knop, vaste balken) herhalen zich op elke pagina en liggen over de tekst;
+   - donker thema: lichte tekst op wit papier (tokens --text/--panel volgen het thema) = onleesbaar;
+   - herstelcodes afdrukken (body.herstel-afdruk) werd 3 pagina's.
+   Het werkt in twee lagen: deze CSS (algemene klassen, geen pagina-specifieke regels, werkt dus ook op /agenten en elke nieuwe pagina)
+   en src/platform/afdruk.ts, dat vlak vóór het afdrukken de elementen markeert die CSS niet kan raden (data-afdruk-auto="…"):
+   scrollvensters met vaste hoogte, vaste lagen, knoppen met en zonder inhoud. Zonder die JS blijft alles leesbaar (veilige terugval).
+   Algemene hulpklassen voor nieuwe pagina's:
+     .afdruk-verberg / [data-afdruk-verberg]  nooit op papier        .afdruk-alleen        alleen op papier (op het scherm weg)
+     .afdruk-ontgrendel                        scrollvenster uitklappen   .afdruk-nieuwe-pagina begint op een nieuwe pagina
+     .afdruk-blok                              niet midden doorsnijden    [data-afdruk-toon]    knop met inhoud: wél afdrukken */
 
 @page {
   margin: 14mm 12mm 16mm;
 }
 
+@media screen {
+  .afdruk-alleen {
+    display: none !important;
+  }
+}
+
 @media print {
+  /* 0. Papier is wit en de inkt donker, in elk thema. De tokens volgen op het scherm het thema (donker/pruim/palet); op papier
+        dwingen we de lichte waarden af (!important op de variabele wint van elke themaregel op hetzelfde element). Anders staat er
+        lichte tekst op wit papier. Kleurparen blijven kloppen doordat achtergronden altijd mee gedrukt worden (zie * onderaan). */
+  :root,
+  html,
+  body,
+  main.canonical-chrome,
+  .canonical-chrome,
+  [class*='theme-'],
+  [class*='palet-'] {
+    color-scheme: light !important;
+    --bg: #ffffff !important;
+    --panel: #ffffff !important;
+    --surface: #f4f5f7 !important;
+    --surface2: #e9ecef !important;
+    --line: #c4ccd3 !important;
+    --text: #111827 !important;
+    --muted: #374151 !important;
+    --faint: #4b5563 !important;
+    --accent: #2f6f73 !important;
+    --accentText: #ffffff !important;
+    --accent-soft: #e4f0ef !important;
+    --good: #267653 !important;
+    --danger: #b42318 !important;
+    --shadow: transparent !important;
+    --ok: #166534 !important;
+    --ok-zacht: #dcfce7 !important;
+    --ok-vlak: #15803d !important;
+    --warn: #8a4b06 !important;
+    --warn-zacht: #fef3c7 !important;
+    --warn-vlak: #92400e !important;
+    --fout: #b42318 !important;
+    --fout-zacht: #fee2e2 !important;
+    --fout-vlak: #b42318 !important;
+    --info: #1e40af !important;
+    --info-zacht: #dbeafe !important;
+    --info-vlak: #1d4ed8 !important;
+    --text-on-vlak: #ffffff !important;
+    --text-on-licht: #17212b !important;
+    --text-on-donker: #f3f6f8 !important;
+    --papier: #ffffff !important;
+    --papier-zacht: #e5e7eb !important;
+    --overlay: transparent !important;
+    --schaduw-1: none !important;
+    --schaduw-2: none !important;
+    --schaduw-3: none !important;
+  }
+
   /* 1. Geen vaste lagen en geen beperkte hoogte: de documentstroom bepaalt wat er op papier komt. */
   html,
   body,
   #root,
+  #root > main,
   .canonical-chrome,
   .canonical-workspace,
   .canonical-content,
@@ -19,7 +86,30 @@
   .canonical-shell,
   .canonical-workspace > *,
   html[data-tech=aan] #root,
-  html[data-tech=aan] body > #root {
+  html[data-tech=aan] body > #root,
+  [data-afdruk-auto~='ontgrendel'],
+  .afdruk-ontgrendel {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    contain: none !important;
+    -webkit-line-clamp: unset !important;
+    line-clamp: none !important;
+  }
+
+  html,
+  body,
+  #root,
+  #root > main,
+  .canonical-chrome,
+  .canonical-workspace,
+  .canonical-content,
+  .canonical-main,
+  .canonical-shell,
+  html[data-tech=aan] #root,
+  html[data-tech=aan] body > #root,
+  [data-afdruk-auto~='losmaken'] {
     position: static !important;
     inset: auto !important;
     top: auto !important;
@@ -28,10 +118,6 @@
     right: auto !important;
     width: auto !important;
     min-width: 0 !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: visible !important;
     transform: none !important;
     translate: none !important;
     scroll-behavior: auto !important;
@@ -39,16 +125,33 @@
 
   html,
   body {
-    background: #fff !important;
-    color: #000 !important;
+    background: var(--panel) !important;
+    color: var(--text) !important;
     font-size: 11.5pt;
     line-height: 1.4;
-    print-color-adjust: economy;
-    -webkit-print-color-adjust: economy;
   }
 
-  /* 2. De schil die op papier niets toevoegt: zijbalk, bovenbalk, lade, bel, zoeken, menu's, meldingen en vensterlagen. */
+  .canonical-chrome,
+  .canonical-workspace,
+  .canonical-content,
+  .schil-achtergrond {
+    background: var(--panel) !important;
+    background-image: none !important;
+    color: var(--text) !important;
+  }
+
+  /* Alle kleuren (ook vlakken en randen) worden mee gedrukt, onafhankelijk van «Achtergrondafbeeldingen» in het printvenster:
+     zo blijft elk tekst/achtergrond-paar uit de tokens (bv. witte tekst op een groen label) leesbaar. De vlakken zelf zijn licht (zie 0). */
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* 2. De schil die op papier niets toevoegt: zijbalk, bovenbalk, lade, bel, zoeken, menu's, meldingen, vensterlagen en vaste knoppen. */
   .canonical-sidebar,
+  .canonical-sidebar-edge-zone,
+  .canonical-sidebar-scrim,
+  .canonical-sidebar-actions,
   .canonical-topbar,
   .canonical-drawer,
   .canonical-drawer-header,
@@ -58,9 +161,12 @@
   .canonical-notification-center,
   .canonical-notification-toast,
   .canonical-notification-panel,
+  .canonical-connection-banner,
+  .canonical-scroll-top,
   .canonical-viewport-tooltip,
   .canonical-floating-tooltip,
   .canonical-workspace::after,
+  .menu-start,
   .zk-uitklap,
   .zk-trigger,
   .zk-trigger-mobiel,
@@ -77,11 +183,43 @@
   .rw-dok-melding,
   .info-tip-tekst,
   .tech-vraag-uitleg,
-  button,
-  .knop,
+  #boot-shell,
+  #tech-laag,
+  #ext-update-band,
+  #nieuwe-versie-band,
+  nav,
+  [role='navigation'],
+  [role='toolbar'],
+  [role='tablist'],
+  [role='tab'],
+  [role='menu'],
+  [role='menubar'],
   [role='tooltip'],
-  [data-afdruk-verberg] {
+  input[type='button'],
+  input[type='submit'],
+  input[type='reset'],
+  input[type='image'],
+  button[type='submit'],
+  button[type='reset'],
+  .knop,
+  button[class*='knop'],
+  a[class*='knop'],
+  .afdruk-verberg,
+  [data-afdruk-verberg],
+  [data-afdruk-auto~='verberg'],
+  [data-afdruk-auto~='knop'] {
     display: none !important;
+  }
+
+  /* Knoppen die toch mee komen (rijen/kaarten die als één knop gebouwd zijn; afdruk.ts houdt alleen knoppen met inhoud): geen
+     knopvlak, wel de inhoud. De rand blijft (tegels met een kader houden hun kader). */
+  button,
+  [role='button'] {
+    background: transparent;
+    box-shadow: none;
+    outline: none;
+    color: inherit;
+    cursor: auto;
   }
 
   /* 3. Ruimte van de schil terug: geen linkermarge voor de zijbalk, geen bovenmarge voor de bovenbalk. */
@@ -95,18 +233,40 @@
     box-shadow: none !important;
   }
 
-  /* 4. Scrollvensters (lijsten, tabellen, kaarten met eigen hoogte): alle inhoud zichtbaar, geen afkapping. */
+  /* 4. Scrollvensters (lijsten, tabellen, kaarten met eigen hoogte): alle inhoud zichtbaar, geen afkapping. Dit is de terugval op
+        klassenamen; de precieze meting (echt afgekapte vensters) doet afdruk.ts met data-afdruk-auto="ontgrendel". */
   [class*='scroll'],
   [class*='lijst'],
   [class*='tabel'],
   [class*='paneel'],
-  [class*='kaart'],
-  [class*='inhoud'] {
+  [class*='inhoud'],
+  pre,
+  textarea {
     max-height: none !important;
     overflow: visible !important;
   }
 
-  /* 5. Papiergedrag: koppen blijven bij hun tekst, blokken worden niet midden doorgesneden, tabelkoppen herhalen zich. */
+  /* Plaatshouders van lui geladen inhoud die niet is opgebouwd: geen lege blokken van 18 rem op papier. */
+  [data-afdruk-lui='dicht'],
+  [data-ag-lui='dicht'],
+  .ag-lui-plaats {
+    min-height: 0 !important;
+  }
+
+  pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  textarea {
+    height: auto;
+    field-sizing: content;
+    resize: none;
+  }
+
+  /* 5. Papiergedrag: koppen blijven bij hun tekst, blokken worden niet midden doorgesneden, tabelkoppen herhalen zich.
+        Een tabel zelf mag wel over pagina's lopen (alleen een rij blijft heel); een blok hoger dan een pagina wordt door de browser
+        vanzelf toch gebroken. */
   h1,
   h2,
   h3,
@@ -126,18 +286,23 @@
     widows: 3;
   }
 
-  table,
   figure,
   img,
-  pre,
   blockquote,
+  tr,
+  li,
+  dl > div,
   .kaart,
   [class*='kaart'],
   [class*='card'],
-  tr,
-  li {
+  .afdruk-blok {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .afdruk-nieuwe-pagina {
+    break-before: page;
+    page-break-before: always;
   }
 
   thead {
@@ -150,10 +315,12 @@
 
   img,
   video,
-  iframe,
-  canvas,
-  svg {
+  canvas {
     max-width: 100% !important;
+  }
+
+  img,
+  video {
     height: auto;
   }
 
@@ -165,9 +332,17 @@
   /* 6. Open vensters en overlays horen niet op papier: die vallen weg (de inhoud van de pagina zelf blijft). */
   .venster,
   .venster-achter,
+  .modal-backdrop,
   [role='dialog'],
   [aria-modal='true'],
   [data-zoek-palet] {
+    display: none !important;
+  }
+
+  /* 7. Herstelcodes afdrukken (HerstelcodesSectie zet body.herstel-afdruk; src/toegangslaag.css toont daar alleen .herstel-nieuw, vast
+        gepositioneerd op pagina 1). Al het andere valt hier écht weg (display:none, niet alleen onzichtbaar), anders vult de verborgen
+        pagina nog extra lege bladzijden. overflow:hidden op body helpt niet: dat gaat naar de viewport (overflow-doorgifte). */
+  body.herstel-afdruk :not(.herstel-nieuw):not(:has(.herstel-nieuw)):not(.herstel-nieuw *) {
     display: none !important;
   }
 }
