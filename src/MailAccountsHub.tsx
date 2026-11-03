@@ -26,6 +26,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { focusVerloren } from './platform/toegankelijk';
 import { Mail, Settings2, ShieldCheck, Zap } from 'lucide-react';
 import Logo from './merk/MerkLogo';
+import MailOrbitIntro from './mail/MailOrbitIntro';
 import { api } from './platform/client';
 import { mailKoppelenOpenen } from './platform/VensterHerstel';
 import { MAIL_AANBIEDERS, mailAanbieder, mailAanbiederHeeftKnop, mailImapFoutTekst, type MailAanbieder, type MailImapKoppelingPubliek } from '../shared/mail-aanbieders';
@@ -354,6 +355,18 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
       </div>
     );
   };
+
+  // MAILORBIT-001: alleen het lege scherm vervangen; beheer en ontkoppeling bij bestaande accounts blijven onaangeroerd.
+  if (alleKoppelingen.length === 0) {
+    return (
+      <div className='mail-accounts-hub mail-accounts-orbit-mode' data-mail-accounts-empty='true'>
+        <MailOrbitIntro lang={lang} onSelect={openen} />
+        <div ref={hubRef} className='mail-orbit-lege-status' data-mail-gekoppeld>
+          {melding ? <p role={melding.fout ? 'alert' : 'status'} className={'mail-koppeling-melding' + (melding.fout ? ' is-fout' : '')}>{melding.tekst}</p> : null}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='mail-accounts-hub'>
