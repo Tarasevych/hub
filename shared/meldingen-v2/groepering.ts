@@ -54,6 +54,11 @@ export type V2Melding = {
   terugOp?: number;
   /** UI-014 fase 2B: automatisch opgeruimd uit de tab Архів (blijft in «Вся історія»). */
   opgeruimd?: boolean;
+  /**
+   * INTEG-001: een proces dat gewoon klaar is (activiteit «виконано») — telt als afgerond voor de groep, maar is geen OPGELOST probleem:
+   * het hoort in «Прочитані» (en na een week in «Архів»), niet meteen in «Архів» (shared/meldingen-v2/secties.ts).
+   */
+  afgerond?: boolean;
 };
 
 export type V2Groep = {
@@ -107,6 +112,29 @@ export function ontdubbel(items: readonly V2Melding[]): V2Melding[] {
   const m = new Map<string, V2Melding>();
   for (const i of items) { const oud = m.get(i.id); if (!oud || i.tijd >= oud.tijd) m.set(i.id, oud ? { ...i, gelezen: i.gelezen || oud.gelezen } : i); }
   return [...m.values()];
+}
+
+/**
+ * INTEG-001 (klacht «сповіщення повторюються»): één gebeurtenis kwam uit twee bronnen in de lijst — de dienst meldt zelf
+ * «Лист надіслано» (lokale melding) en de server zet dezelfde actie in de activiteit («Лист надіслано»). Dat waren twee regels.
+ * Zelfde dienst, zelfde titel (zonder cijfers/leestekens) en hoogstens BRON_VENSTER_MS uit elkaar = dezelfde gebeurtenis.
+ */
+export const BRON_VENSTER_MS = 2 * 60_000;
+export const zelfdeGebeurtenis = (a: { dienst: string; titel: string; tijd: number }, b: { dienst: string; titel: string; tijd: number }) =>
+  a.dienst === b.dienst && normTitel(a.titel) === normTitel(b.titel) && Math.abs(a.tijd - b.tijd) <= BRON_VENSTER_MS;
+/** De lokale kopie valt weg (de server-/activiteitsregel is rijker en geldt op elk apparaat); was de lokale al gelezen, dan ook de andere. */
+export function ontdubbelBronnen(items: readonly V2Melding[]): V2Melding[] {
+  const anderen = items.filter((m) => m.herkomst === 'server' || m.herkomst === 'activiteit');
+  if (!anderen.length) return [...items];
+  const weg = new Set<string>(), gelezen = new Set<string>();
+  for (const m of items) {
+    if (m.herkomst !== 'lokaal') continue;
+    const ander = anderen.find((a) => zelfdeGebeurtenis(a, m));
+    if (!ander) continue;
+    weg.add(m.id);
+    if (m.gelezen) gelezen.add(ander.id);
+  }
+  return items.filter((m) => !weg.has(m.id)).map((m) => (gelezen.has(m.id) && !m.gelezen ? { ...m, gelezen: true } : m));
 }
 
 export function groepeer(items: readonly V2Melding[], regels: LeverRegels, nu = Date.now()): V2Groep[] {

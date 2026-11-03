@@ -122,7 +122,9 @@ export async function main(): Promise<number> {
   check('D de vier statuschips + «Групувати» in één scrollrij (TabsRij: data-scroll-ok, pijlen als hint)', (chipsDeel.match(/class="cnc-chip"/g) || []).length === 5 && uk.includes('class="ut-tabs-wrap cnc-chips-wrap"') && /class="cnc-chips"[^>]*data-scroll-ok="1"/.test(uk) && uk.includes('ut-tabs-pijl is-rechts'));
   const extra = uk.slice(uk.indexOf('id="cnc-extra"'), uk.indexOf('class="cnc-list"'));
   check('D zoeken staat in de rij; розділи en порядок in #cnc-extra', uk.includes('type="search"') && uk.indexOf('type="search"') < uk.indexOf('id="cnc-extra"') && extra.includes('class="cnc-sections"') && extra.includes('Спершу нові') && !extra.includes('type="search"'));
-  check('D lijst rendert de rijen (30 servermeldingen, niet samengevoegd)', (uk.match(/class="cnc-row /g) || []).length === 30);
+  // INTEG-001 (eigenaar: розділи «Нові», «Прочитані», «Архів»): het paneel opent in «Нові» (er is iets nieuws) en toont daar de 20
+  // ongelezen; de 10 gelezen staan in «Прочитані». Vroeger «Усі» met alle 30 door elkaar.
+  check('D lijst rendert de rijen van het deel «Нові» (20 ongelezen van 30 servermeldingen, niet samengevoegd)', (uk.match(/class="cnc-row /g) || []).length === 20 && (uk.match(/data-deel="nieuw"/g) || []).length === 20);
   const bodyBron = lees('src/MeldingenpaneelInhoud.tsx');
   check('D getal op «Фільтри» = actieve keuzes (розділ, порядок, zoeken)', bodyBron.includes("const actief = (section !== 'all' ? 1 : 0) + (sort !== 'new' ? 1 : 0) + (query.trim() ? 1 : 0);") && bodyBron.includes('Фільтри (активних: ${actief})'));
 
@@ -130,7 +132,12 @@ export async function main(): Promise<number> {
   const css = lees('src/meldingenpaneel.css');
   const blok = css.slice(css.indexOf('/* ---------------------------------------------------------------- KOP, FILTERRIJ, ACTIES'));
   const mob = zc(blok.slice(blok.indexOf('@media (max-width:560px)')));
-  check('E telefoon: vol blad met veilige randen (top/bottom/left/right = --ruimte-2 + --veilig-*), geen max-height van placeNear', /top:calc\(var\(--ruimte-2\) \+ var\(--veilig-boven\)\)!important;bottom:calc\(var\(--ruimte-2\) \+ var\(--veilig-onder\)\)!important/.test(mob) && mob.includes('max-height:none!important') && mob.includes('grid-template-rows:auto minmax(0,1fr)'));
+  // INTEG-001 (03.11.2026, eigenaar: «панель має відкриватися біля дзвіночка, прив'язана до нього, а не посеред екрана»): het volle blad
+  // (top/bottom van rand tot rand, max-height:none) is vervangen door een venster AAN de bel: links/rechts tussen de veilige randen,
+  // bovenkant en maximale hoogte uit placeNear (met een pijltje naar de bel). Deze check legt de nieuwe regel vast.
+  check('E telefoon: venster aan de bel — links/rechts tussen de veilige randen; GEEN vaste top/bottom en geen max-height:none (die komen uit placeNear)',
+    /left:calc\(var\(--ruimte-2\) \+ var\(--veilig-links\)\)!important;right:calc\(var\(--ruimte-2\) \+ var\(--veilig-rechts\)\)!important/.test(mob)
+      && !/html \.canonical-notification-panel\{[^}]*(top|bottom):calc/.test(mob) && !mob.includes('max-height:none!important') && mob.includes('grid-template-rows:auto minmax(0,1fr)'));
   check('E telefoon: actiebalk weg, alleen als menu onder «⋯» (absoluut, niet in de rasterflow)', mob.includes('html .canonical-notification-panel>footer{display:none}') && /html \.canonical-notification-panel>footer\.is-open\{display:grid;[^}]*position:absolute/.test(mob) && mob.includes('html .canonical-notification-panel>header .cnc-meer-knop{display:grid}'));
   check('E telefoon: #cnc-extra verborgen tot «Фільтри» open is; chips/knoppen ≥ tikhoogte', mob.includes('.cnc-extra{display:none}') && mob.includes('.cnc-tools[data-filters-open] .cnc-extra{display:grid') && mob.includes('.cnc-chip{min-height:var(--tik-hoogte)') && mob.includes('.cnc-actions button,.cnc-done{width:var(--tik-hoogte);height:var(--tik-hoogte)}'));
   check('E computer: «⋯» verborgen, «Фільтри» zichtbaar, extra dicht tot de knop open is', /\.canonical-notification-panel>header \.cnc-meer-knop\{display:none\}/.test(zc(blok)) && /\.cnc-filterknop\{display:inline-flex/.test(zc(blok)) && zc(blok).includes('.cnc-extra{display:none') && zc(blok).includes('.cnc-tools[data-filters-open] .cnc-extra{display:grid'));
@@ -138,7 +145,8 @@ export async function main(): Promise<number> {
   const kleine = [...zc(blok).matchAll(/font-size:(\d+(?:\.\d+)?)px/g)].map((m) => Number(m[1])).filter((n) => n < 12);
   check('E nieuw blok: geen letter < 12 px', kleine.length === 0, kleine.join());
   // Hoogtebudget op 390×844 (vaste maten uit de CSS): kop 44 + 2×4 + rand, filterrij 44 + 2×8 + rand → lijst ≥ 70 %.
-  const kop = 44 + 8 + 1, tools = 44 + 16 + 1, blad = 844 - 16;
+  // INTEG-001: het venster begint onder de bel (kop van het menu: bel tot ±52 px + 8 px tussenruimte) en eindigt 8 px boven de rand.
+  const kop = 44 + 8 + 1, tools = 44 + 16 + 1, blad = 844 - (52 + 8) - 8;
   check('E budget 390×844: lijst ≥ 70 % van de schermhoogte (vóór: 150 px = 18 %)', (blad - kop - tools) / 844 >= 0.7, `${blad - kop - tools}px = ${Math.round(((blad - kop - tools) / 844) * 100)}%`);
 
   return einde();

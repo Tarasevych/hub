@@ -44,8 +44,9 @@ html .venster.is-max{inset:calc(8px + var(--venster-dok-boven,0px)) calc(8px + v
 html[data-venster-dok] body .mail-new-message-backdrop{top:var(--venster-dok-boven,0px);right:var(--venster-dok-rechts,0px);bottom:var(--venster-dok-onder,0px);left:var(--venster-dok-links,0px)}
 @media (max-width:560px){html[data-venster-dok] body .mail-new-message{height:auto!important;max-height:100%!important}}
 html[data-venster-dok] body .mail-new-message.groot{top:max(64px,calc(12px + var(--venster-dok-boven,0px)))!important;right:calc(12px + var(--venster-dok-rechts,0px))!important;bottom:calc(12px + var(--venster-dok-onder,0px))!important;left:calc(12px + var(--venster-dok-links,0px))!important}
-/* het meldingenpaneel is op de telefoon een vol blad: ook dat eindigt vóór de strook van het dok (anders de laatste rijen eronder) */
-@media (max-width:560px), (max-height:500px){html[data-venster-dok] body .canonical-notification-panel{top:calc(var(--ruimte-2) + var(--veilig-boven) + var(--venster-dok-boven,0px))!important;right:calc(var(--ruimte-2) + var(--veilig-rechts) + var(--venster-dok-rechts,0px))!important;bottom:calc(var(--ruimte-2) + var(--veilig-onder) + var(--venster-dok-onder,0px))!important;left:calc(var(--ruimte-2) + var(--veilig-links) + var(--venster-dok-links,0px))!important}}
+/* het meldingenpaneel staat (INTEG-001) ook op de telefoon AAN de bel; boven/onder houdt CanoniekMeldingencentrum zelf de strook van het
+   dok vrij (--venster-dok-boven/-onder in de berekening van placeNear). Hier alleen links/rechts naast de strook. */
+@media (max-width:560px){html[data-venster-dok] body .canonical-notification-panel{right:calc(var(--ruimte-2) + var(--veilig-rechts) + var(--venster-dok-rechts,0px))!important;left:calc(var(--ruimte-2) + var(--veilig-links) + var(--venster-dok-links,0px))!important}}
 @media (max-width:700px){html[data-venster-dok] body .mail-new-message.groot{top:max(56px,calc(4px + var(--venster-dok-boven,0px)))!important;right:calc(4px + var(--venster-dok-rechts,0px))!important;bottom:calc(4px + var(--venster-dok-onder,0px))!important;left:calc(4px + var(--venster-dok-links,0px))!important}}
 
 /* ---------------------------------------------------------------- het dok zelf
