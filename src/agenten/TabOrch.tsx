@@ -37,18 +37,21 @@ export default function TabOrch({ tr }: { tr: Tr }) {
   }, [ctx, lang]);
   useEffect(() => { void laden(); }, [laden]);
 
-  if (alleenEigenaar) return <section className='ag-kaart' data-orch='alleen-eigenaar'><h3><GitMerge size={16} aria-hidden='true' /> {tr('Координація агентів', 'Agentcoördinatie')}</h3>
-    <p className='ag-meta'>{tr('Координацію ШІ-агентів (правила, задачі, черга, передачі) веде власник сервера. Агенти бачать той самий стан через інструменти orch_* технічного простору.', 'De coördinatie van AI-agenten (regels, taken, wachtrij, overdrachten) beheert de eigenaar van de server. Agenten zien dezelfde staat via de orch_*-hulpmiddelen van de technische ruimte.')}</p></section>;
+  // INTEG-001 (03.11.2026): elk deel is een blok .ag-blok met één kop (titel + (?) + knoppen) en één zin uitleg. De naam van het
+  // tabblad («Координація») staat al in de rand van de pagina; de eerste kop zegt daarom wat dit blok is: de stand nu.
+  if (alleenEigenaar) return <section className='ag-blok' data-orch='alleen-eigenaar'>
+    <header className='ag-blok-kop'><h3 className='ag-blok-titel'><GitMerge aria-hidden='true' /> {tr('Координація агентів', 'Agentcoördinatie')}</h3>
+      <p className='ag-blok-uitleg'>{tr('Координацію ШІ-агентів (правила, задачі, черга, передачі) веде власник сервера. Агенти бачать той самий стан через інструменти orch_* технічного простору.', 'De coördinatie van AI-agenten (regels, taken, wachtrij, overdrachten) beheert de eigenaar van de server. Agenten zien dezelfde staat via de orch_*-hulpmiddelen van de technische ruimte.')}</p></header></section>;
 
   const r = data?.regels;
   const eig = r?.eigenaar;
-  return <div className='ag-secties' data-orch>
-    <section className='ag-kaart' aria-labelledby='orch-titel'>
-      <div className='ag-kaart-kop'>
-        <h3 id='orch-titel'><GitMerge size={16} aria-hidden='true' /> {tr('Координація агентів', 'Agentcoördinatie')} <HulpVraag k='orch.overzicht' lang={lang} /></h3>
-        <Knop onClick={() => void laden()} icoon={<RefreshCw />} title={tr('Перечитати стан із робочої копії на сервері', 'De staat opnieuw uit de werkkopie op de server lezen')} data='orch-vernieuw'>{tr('Оновити', 'Vernieuwen')}</Knop>
-      </div>
-      <p className='ag-meta'>{tr('Одна пам’ять, одна система правил, одна черга інтеграції, один випуск — для Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor. Джерело правди: AGENTS.md і orchestratie/ у робочій копії на сервері; те саме читає node scripts/orch.mjs.', 'Eén geheugen, één regelsysteem, één integratiewachtrij, één release — voor Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor. Bron van waarheid: AGENTS.md en orchestratie/ in de werkkopie op de server; node scripts/orch.mjs leest hetzelfde.')}</p>
+  return <div className='ag-tab' data-orch>
+    <section className='ag-blok' aria-labelledby='orch-titel'>
+      <header className='ag-blok-kop'>
+        <h3 className='ag-blok-titel' id='orch-titel'><GitMerge aria-hidden='true' /> {tr('Стан зараз', 'Stand nu')} <HulpVraag k='orch.overzicht' lang={lang} /></h3>
+        <div className='ag-knoppen'><Knop onClick={() => void laden()} icoon={<RefreshCw />} title={tr('Перечитати стан із робочої копії на сервері', 'De staat opnieuw uit de werkkopie op de server lezen')} data='orch-vernieuw'>{tr('Оновити', 'Vernieuwen')}</Knop></div>
+        <p className='ag-blok-uitleg'>{tr('Координація агентів: одна пам’ять, одна система правил, одна черга інтеграції, один випуск — для Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor. Джерело правди: AGENTS.md і orchestratie/ у робочій копії на сервері; те саме читає node scripts/orch.mjs.', 'Agentcoördinatie: één geheugen, één regelsysteem, één integratiewachtrij, één release — voor Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor. Bron van waarheid: AGENTS.md en orchestratie/ in de werkkopie op de server; node scripts/orch.mjs leest hetzelfde.')}</p>
+      </header>
       {laadFout && <p className='ag-fout' role='alert'>{laadFout}</p>}
       {!data && !laadFout && <p className='bsl-stil'><Loader2 size={14} className='bsl-spin' aria-hidden='true' /> {tr('Завантаження…', 'Laden…')}</p>}
       {data && !data.repo.aanwezig && <div className='orch-waarsch' role='alert' data-orch-geen-repo><TriangleAlert size={18} aria-hidden='true' /><div>
@@ -80,15 +83,18 @@ export default function TabOrch({ tr }: { tr: Tr }) {
 // ---------------------------------------------------------------- задачі, черга, передачі
 function Taken({ tr, lang, data, open, setOpen }: { tr: Tr; lang: 'uk' | 'nl'; data: OrchOverzicht; open: string; setOpen: (v: string) => void }) {
   const statusTekst = (t: OrchTaak) => ({ in_progress: tr('в роботі', 'in bewerking'), integrated: tr('інтегровано', 'geïntegreerd'), released: tr('випущено', 'uitgebracht'), installed: tr('встановлено', 'geïnstalleerd'), bevroren: tr('заморожено', 'bevroren'), geannuleerd: tr('скасовано', 'geannuleerd') } as Record<string, string>)[t.status] ?? t.status;
-  return <section className='ag-kaart' aria-labelledby='orch-taken'>
-    <h3 id='orch-taken'><FileText size={16} aria-hidden='true' /> {tr('Задачі', 'Taken')} <span className='ag-teller'>{data.taken.length}</span></h3>
+  return <section className='ag-blok' aria-labelledby='orch-taken'>
+    <header className='ag-blok-kop'>
+      <h3 className='ag-blok-titel' id='orch-taken'><FileText aria-hidden='true' /> {tr('Задачі', 'Taken')} <span className='ag-teller'>{data.taken.length}</span></h3>
+      <p className='ag-blok-uitleg'>{tr('Задачі всіх агентів зі статусом; рядок розгортається з гілкою, базою й правилами задачі. Нижче — черга інтеграції й останні передачі.', 'De taken van alle agenten met hun status; een rij klapt open met tak, basis en regels van de taak. Daaronder de integratiewachtrij en de laatste overdrachten.')}</p>
+    </header>
     {!data.taken.length && <p className='ag-leeg'>{tr('Задач ще немає. Агент реєструє задачу через node scripts/orch.mjs taak-start або інструмент orch_taak_start.', 'Nog geen taken. Een agent registreert een taak via node scripts/orch.mjs taak-start of het hulpmiddel orch_taak_start.')}</p>}
-    <ul className='ag-lijst'>{data.taken.map((t) => <Rij key={t.id} id={`taak-${t.id}`} logo={<FileText />} titel={`${t.id} · ${t.agent}`} open={open === t.id} onToggle={() => setOpen(open === t.id ? '' : t.id)}
+    {data.taken.length > 0 && <ul className='ag-lijst'>{data.taken.map((t) => <Rij key={t.id} id={`taak-${t.id}`} logo={<FileText />} titel={`${t.id} · ${t.agent}`} open={open === t.id} onToggle={() => setOpen(open === t.id ? '' : t.id)}
       badges={<><Badge toon={STATUS_TOON[t.status] ?? 'info'} data={t.status}>{statusTekst(t)}</Badge>{t.staat === 'ter_integratie' && <Badge toon='info'>{tr('у черзі', 'in de wachtrij')}</Badge>}{!t.regelsActueel && <Badge toon='warn' data='regels-verouderd'>{tr(`правила ${t.regelsVersie} — застаріли`, `regels ${t.regelsVersie} — verouderd`)}</Badge>}</>}
       status={<>{t.omschrijving || t.tak} · {tr('оновлено', 'bijgewerkt')} {t.bijgewerkt.slice(0, 16).replace('T', ' ')}</>}>
       <Tech rijen={[[tr('Гілка', 'Tak'), <code>{t.tak}</code>], [tr('База', 'Basis'), <code>{t.basisCommit} ({t.basisVersie})</code>], [tr('Правила задачі', 'Regels van de taak'), <code>{t.regelsVersie} {kort(t.regelsHash)}</code>], [tr('Канал', 'Kanaal'), t.kanaal], [tr('Передачі', 'Overdrachten'), t.overdrachten.length ? t.overdrachten.join(', ') : '—']]} />
       {!t.regelsActueel && <p className='ag-meta'>{tr('Агент має перечитати AGENTS.md і виконати node scripts/orch.mjs taak-herlees --id ', 'De agent moet AGENTS.md herlezen en node scripts/orch.mjs taak-herlees --id uitvoeren: ')}{t.id}{tr(' — інакше його передачу відхилить REGELS_VEROUDERD.', ' — anders weigert REGELS_VEROUDERD zijn overdracht.')}</p>}
-    </Rij>)}</ul>
+    </Rij>)}</ul>}
     {data.wachtrij && <Groep titel={tr(`Черга інтеграції → ${data.wachtrij.integratieTak}`, `Integratiewachtrij → ${data.wachtrij.integratieTak}`)} aantal={data.wachtrij.wachtrij.length} data='wachtrij'>
       {data.wachtrij.wachtrij.map((w) => <li key={w.inleveringId} className='ag-rij'><div className='ag-rij-kop'><span className='ag-rij-tekst'><span className='ag-rij-titel'><b>{w.taakId}</b> <Badge toon={w.staat === 'bezig' ? 'warn' : 'info'}>{w.staat}</Badge></span><small className='ag-rij-status'>{w.agent} · {w.tak} · {w.kanaal} · {w.ingediend.slice(0, 16).replace('T', ' ')}</small></span></div></li>)}
     </Groep>}
@@ -115,8 +121,11 @@ function Inleveren({ tr, lang, ctx, data, naKlaar }: { tr: Tr; lang: 'uk' | 'nl'
     catch (e) { setFout(orchFoutTekst(e, lang)); }
     finally { setBezig(false); }
   };
-  return <section className='ag-kaart' aria-labelledby='orch-inleveren'>
-    <h3 id='orch-inleveren'><Upload size={16} aria-hidden='true' /> {tr('Передати результат агента', 'Resultaat van een agent inleveren')} <HulpVraag k='orch.inlevering' lang={lang} /></h3>
+  return <section className='ag-blok' aria-labelledby='orch-inleveren'>
+    <header className='ag-blok-kop'>
+      <h3 className='ag-blok-titel' id='orch-inleveren'><Upload aria-hidden='true' /> {tr('Передати результат агента', 'Resultaat van een agent inleveren')} <HulpVraag k='orch.inlevering' lang={lang} /></h3>
+      <p className='ag-blok-uitleg'>{tr('Пакет від агента з цього пристрою йде в той самий конвеєр приймання, що й на сервері; нічого не зливається й не встановлюється.', 'Een pakket van een agent gaat vanaf dit apparaat door dezelfde inleverpijplijn als op de server; er wordt niets samengevoegd of geïnstalleerd.')}</p>
+    </header>
     <p className='ag-meta'>{tr(`Пакет mijn-ruimte-<versie>-<agent>-overdracht.zip, zip/tar.gz з ORCH-OVERDRACHT.json або git patch (до ${Math.round(data.limieten.uploadMaxBytes / 1048576)} МіБ). Той самий конвеєр, що й node scripts/orch.mjs inleveren: гілка від бази, правила, конфлікти з integratie, тести, запис, черга. Нічого не зливається й не встановлюється.`, `Pakket mijn-ruimte-<versie>-<agent>-overdracht.zip, zip/tar.gz met ORCH-OVERDRACHT.json of git patch (hoogstens ${Math.round(data.limieten.uploadMaxBytes / 1048576)} MiB). Dezelfde pijplijn als node scripts/orch.mjs inleveren: tak vanaf de basis, regels, conflicten met integratie, tests, record, wachtrij. Er wordt niets samengevoegd of geïnstalleerd.`)}</p>
     <div className='ag-formrij'>
       <label className='bsl-veld bsl-groei'><span>{tr('Файл пакета', 'Pakketbestand')}</span><input type='file' accept='.zip,.gz,.patch,application/zip,application/gzip' disabled={bezig} onChange={(e) => setBestand(e.target.files?.[0] ?? null)} data-orch-veld='bestand' /></label>
@@ -186,11 +195,12 @@ function Regels({ tr, lang, ctx, naKlaar, acties }: { tr: Tr; lang: 'uk' | 'nl';
 
   const blok = !ov ? '' : !ov.schakelaar.orchRegelsPasskey ? besluitCodeTekst(lang, 'BESLUIT_UIT') : !ov.repo.schoon ? tr('У робочій копії є незакомічені зміни — спершу наведіть лад через SSH (git status).', 'De werkkopie heeft niet-gecommitte wijzigingen — ruim eerst op via SSH (git status).') : !kanPasskey() ? tr('Відкрийте цю сторінку в браузері з підтримкою passkey.', 'Open deze pagina in een browser die passkeys ondersteunt.') : '';
   const eind = leef.besluit && ['klaar', 'geweigerd', 'mislukt', 'verlopen'].includes(leef.besluit.staat);
-  return <section className='ag-kaart' aria-labelledby='orch-regels-titel' data-orch-regels>
-    <div className='ag-kaart-kop'>
-      <h3 id='orch-regels-titel'><Fingerprint size={16} aria-hidden='true' /> {tr('Правила координації', 'Coördinatieregels')} <HulpVraag k='orch.regels' lang={lang} /></h3>
-      {ov && !bewerk && <Knop onClick={() => { setBewerk(true); setKlaar(null); setTeksten({ ...ov.bestanden }); }} icoon={<FileText />} disabled={!!blok} title={blok || tr('Відкриває редактор AGENTS.md, beleid.json і BESLUITEN.md. Зміна набуде сили лише після перевірки, підпису passkey і злиття гілки.', 'Opent de editor voor AGENTS.md, beleid.json en BESLUITEN.md. De wijziging geldt pas na controle, passkey-handtekening en het samenvoegen van de tak.')} data='orch-regels-bewerk'>{tr('Змінити правила', 'Regels wijzigen')}</Knop>}
-    </div>
+  return <section className='ag-blok' aria-labelledby='orch-regels-titel' data-orch-regels>
+    <header className='ag-blok-kop'>
+      <h3 className='ag-blok-titel' id='orch-regels-titel'><Fingerprint aria-hidden='true' /> {tr('Правила координації', 'Coördinatieregels')} <HulpVraag k='orch.regels' lang={lang} /></h3>
+      {ov && !bewerk && <div className='ag-knoppen'><Knop onClick={() => { setBewerk(true); setKlaar(null); setTeksten({ ...ov.bestanden }); }} icoon={<FileText />} disabled={!!blok} title={blok || tr('Відкриває редактор AGENTS.md, beleid.json і BESLUITEN.md. Зміна набуде сили лише після перевірки, підпису passkey і злиття гілки.', 'Opent de editor voor AGENTS.md, beleid.json en BESLUITEN.md. De wijziging geldt pas na controle, passkey-handtekening en het samenvoegen van de tak.')} data='orch-regels-bewerk'>{tr('Змінити правила', 'Regels wijzigen')}</Knop></div>}
+      <p className='ag-blok-uitleg'>{tr('Правила, за якими працюють усі агенти; змінюються лише через перевірку й ваш підпис passkey.', 'De regels waarnaar alle agenten werken; ze veranderen alleen via controle en uw passkey-handtekening.')}</p>
+    </header>
     <p className='ag-meta'>{tr('Зміна → перевірка (regelsVersie вища, запис у BESLUITEN.md, beleid.json валідний) → підпис passkey (root записує підтвердження) → гілка regels/<versie>-<час> із новим regels.lock.json і CONTEXT-COMPACT.md іде в GitHub; агенти бачать нову версію й мають перечитати правила. Злиття в integratie лишається за вами.', 'Wijziging → controle (regelsVersie hoger, regel in BESLUITEN.md, beleid.json geldig) → passkey-handtekening (root legt de bevestiging vast) → tak regels/<versie>-<tijd> met nieuwe regels.lock.json en CONTEXT-COMPACT.md gaat naar GitHub; agenten zien de nieuwe versie en moeten de regels herlezen. Samenvoegen in integratie blijft aan u.')}</p>
     {blok && <p className='ag-fout' data-orch-blok>{blok}</p>}
     {fout && <p className='ag-fout' role='alert'>{fout}</p>}

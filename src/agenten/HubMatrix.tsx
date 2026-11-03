@@ -1,4 +1,5 @@
 // «Що через який спосіб» (overzicht van de hub): tabel op brede schermen, lijst per methode op de telefoon (geen horizontaal scrollen).
+// INTEG-001 (03.11.2026): een blok .ag-blok met kop + één zin uitleg; de cellen zijn ronde tekens (agenten-pagina.css), geen kale tabel.
 import type { Tr } from '../mcp-ui';
 import { CEL_TEKEN, CEL_TEKST, DOELEN, METHODEN, berekenMatrix, type MatrixInvoer } from './matrix';
 
@@ -8,8 +9,11 @@ export default function HubMatrix({ tr, invoer, ga }: { tr: Tr; invoer: MatrixIn
   const methode = (id: string) => METHODEN.find((x) => x.id === id)!;
   const t2 = (x: readonly [string, string]) => tr(x[0], x[1]);
   return (
-    <section className='ag-kaart ag-matrix' data-matrix={m.kolommen.join(',')} aria-labelledby='ag-matrix-kop'>
-      <div className='ag-kaart-kop'><h3 id='ag-matrix-kop'>{tr('Що через який спосіб', 'Wat via welke weg')}</h3></div>
+    <section className='ag-blok ag-matrix' data-matrix={m.kolommen.join(',')} aria-labelledby='ag-matrix-kop'>
+      <header className='ag-blok-kop'>
+        <h3 className='ag-blok-titel' id='ag-matrix-kop'>{tr('Що через який спосіб', 'Wat via welke weg')}</h3>
+        <p className='ag-blok-uitleg'>{tr('Який спосіб підключення до чого дає доступ саме зараз. Натисніть на спосіб, щоб перейти до нього.', 'Welke manier van koppelen nu waartoe toegang geeft. Klik op een manier om erheen te gaan.')}</p>
+      </header>
       <p className='ag-matrix-legenda'>
         <span><b aria-hidden='true'>{CEL_TEKEN.ja}</b> {t2(CEL_TEKST.ja)}</span>
         <span><b aria-hidden='true'>{CEL_TEKEN.kan}</b> {t2(CEL_TEKST.kan)}</span>

@@ -68,7 +68,9 @@ function useKolommen(ref: { current: HTMLElement | null }) {
   return n;
 }
 
-export default function AgentBord({ tr }: { tr: Tr }) {
+// `ingebed` (INTEG-001): in de hub mcp.* → agents staat het bord in het blok «Підключити новий ШІ»; de eigen kop
+// «Підключення ШІ» (h1) zou daar de paginatitel herhalen en valt dan weg. Op ai.* → verbindingen blijft hij staan.
+export default function AgentBord({ tr, ingebed = false }: { tr: Tr; ingebed?: boolean }) {
   const [bord, setBord] = useState<Bord>(lokaal);
   const [open, setOpen] = useState<BordKlantId | ''>('');
   const [tab, setTab] = useState<TabId>('kaart');
@@ -134,13 +136,17 @@ export default function AgentBord({ tr }: { tr: Tr }) {
   }, [bord.caps]);
 
   return (
-    <section className='ag ag-bord-wrap' data-agent-bord='1'>
-      <header className='ag-kop'>
-        <div>
-          <h1>{tr('Підключення ШІ', 'AI-koppelingen')}</h1>
-          <p>{tr('Оберіть ШІ. Картка розгорнеться під блоком: що він вміє, як підключити і який доступ отримає. Лише ваш простір.', 'Kies een AI. De kaart opent eronder: wat hij kan, hoe u koppelt en welke toegang hij krijgt. Alleen uw ruimte.')}</p>
-        </div>
-      </header>
+    <section className='ag ag-bord-wrap' data-agent-bord='1' data-ingebed={ingebed ? '1' : undefined}>
+      {ingebed ? (
+        <p className='ag-blok-uitleg'>{tr('Оберіть ШІ. Картка розгорнеться під блоком: що він вміє, як підключити і який доступ отримає. Лише ваш простір.', 'Kies een AI. De kaart opent eronder: wat hij kan, hoe u koppelt en welke toegang hij krijgt. Alleen uw ruimte.')}</p>
+      ) : (
+        <header className='ag-kop'>
+          <div>
+            <h1>{tr('Підключення ШІ', 'AI-koppelingen')}</h1>
+            <p>{tr('Оберіть ШІ. Картка розгорнеться під блоком: що він вміє, як підключити і який доступ отримає. Лише ваш простір.', 'Kies een AI. De kaart opent eronder: wat hij kan, hoe u koppelt en welke toegang hij krijgt. Alleen uw ruimte.')}</p>
+          </div>
+        </header>
+      )}
       <div className='ag-bord' ref={rooster} data-kolommen={kolommen}>
         {bord.agenten.map((a, i) => (
           <div key={a.id} className='ag-bord-sleuf' style={{ display: 'contents' }}>
