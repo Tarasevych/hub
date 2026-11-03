@@ -282,7 +282,7 @@ export async function main(): Promise<number> {
     // de UI-code: de bel filtert activiteiten op haar sfeer en geeft technische aan het paneel in de band
     const cnc = lees('src/CanoniekMeldingencentrum.tsx'), tm = lees('src/meldingen/TechMeldingen.tsx'), chrome = lees('src/CanoniekOmlijsting.tsx');
     check('5. UI: de bel toont alleen activiteiten van haar eigen sfeer, geeft technische aan de band door, en CanonicalChrome geeft de sfeer mee',
-      /activiteitenVanSfeer\(activity\.events,belSfeer\)/.test(cnc) && /zetTechActiviteit\(activiteitenVanSfeer\(activity\.events,'technisch'\)/.test(cnc) && /sfeer=\{ruimte\}/.test(chrome) && /data-tm-activiteit/.test(tm) && /ongelezenTechActiviteit/.test(tm));
+      /activiteitenVanSfeer\(activity\.events,\s*belSfeer\)/.test(cnc) && /zetTechActiviteit\(activiteitenVanSfeer\(activity\.events,\s*'technisch'\)/.test(cnc) && /sfeer=\{ruimte\}/.test(chrome) && /data-tm-activiteit/.test(tm) && /ongelezenTechActiviteit/.test(tm));
     const npb = lees('src/MeldingenpaneelInhoud.tsx'), npcss = lees('src/meldingenpaneel.css'), mcss = lees('src/meldingen/meldingen.css');
     check('5. UI: elke rij in de bel draagt data-sfeer van de server; het paneel voegt gelijke activiteiten samen («N×», «Прочитано» voor de groep); op de telefoon geen lijst-in-lijst',
       /data-sfeer=\{item\.sfeer\}/.test(npb) && /origin: 'server', sfeer: r\.sfeer/.test(npb) && /origin: 'activity', sfeer: e\.sfeer/.test(npb)
