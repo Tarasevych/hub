@@ -104,13 +104,14 @@ export async function main() {
   const index = lees('backend/index.ts');
   const zelf = deel(index, "'POST /api/account/delete'", "'POST /api/account/recover'");
   const ident = deel(index, "'POST /api/owner/identity/account/delete'", "'POST /api/owner/identity/account/workspaces");
-  check('маршрут самовидалення знайдено', zelf.includes('accountMeteenWissen') && ident.includes('accountMeteenWissen'));
-  check('самовидалення не кличе deleteRecoverably', !zelf.includes('deleteRecoverably') && !ident.includes('deleteRecoverably'));
+  // INTEG-001 (03.11.2026, besluit eigenaar): zelf verwijderen = 30 dagen herstelbaar, daarna automatisch definitief (opruimen-timer).
+  check('zelf verwijderen (account en identiteit) loopt via deleteRecoverably (30 dagen)', zelf.includes('deleteRecoverably') && ident.includes('deleteRecoverably'));
+  check('zelf verwijderen wist niet meteen (geen accountMeteenWissen in de routes)', !zelf.includes('accountMeteenWissen') && !ident.includes('accountMeteenWissen'));
   check('власника не стирають і кодове слово лишається', zelf.includes('OWNER_NIET_WISSEN') && ident.includes('OWNER_NIET_WISSEN') && zelf.includes('codewoordEis') && ident.includes('codewoordEis'));
   check('обидва маршрути йдуть через матрицю account-verwijderen', zelf.includes("kritiekStapOp") && zelf.includes("'account-verwijderen'") && ident.includes('kritiekStapOp') && ident.includes("'account-verwijderen'"));
   const beheerd = index.match(/async function deleteManagedUser\([\s\S]*?return publicUser\(next\); \}/)?.[0] || '';
-  check('адмін стирає одразу: retiredAt і accountMeteenWissen, без м’якого вікна', beheerd.includes('accountMeteenWissen') && beheerd.includes('retiredAt: now') && beheerd.includes('recoverableUntil: 0') && !beheerd.includes('deleteRecoverably'));
-  check('deleteRecoverably більше ніхто не кличе', (index.match(/deleteRecoverably\(/g) || []).length === 1);
+  check('beheerder verwijderen loopt ook via deleteRecoverably (30 dagen, alleen de beheerder zet terug)', beheerd.includes('deleteRecoverably') && beheerd.includes('admin') && !beheerd.includes('accountMeteenWissen'));
+  check('deleteRecoverably: 3 aanroepen (zelf, identiteit, beheerder)', (index.match(/await deleteRecoverably(/g) || []).length === 3);
   check('ворота кодового слова не знято', index.includes('CODEWOORD_POORT'));
   check('зворотний Google імпортує googleSuiteStateParts', index.includes("from './google-suite-inrichting'") && index.includes('googleSuiteStateParts') && index.includes('googleSuiteCallbackPost'));
 
