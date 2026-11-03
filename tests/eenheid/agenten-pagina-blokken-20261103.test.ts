@@ -41,6 +41,10 @@ export async function main(): Promise<number> {
     /@media \(max-width:700px\)\{[\s\S]*?\.ag-pagina\{padding-inline:4px\}/.test(kaal) && lees('src/mobiel-ux.css').includes('.canonical-workspace{padding-left:12px!important;padding-right:12px!important}'));
   check('geen horizontaal scrollen: blokken en koppen krimpen (min-width:0) en lange woorden breken', /\.ag-blok\{[^}]*min-width:0/.test(kaal) && /\.ag-blok-titel\{[^}]*overflow-wrap:anywhere/.test(kaal) && /\.ag-blok-uitleg\{[^}]*overflow-wrap:anywhere/.test(kaal));
   check('een ingeklapt lui blok houdt geen 18rem hoogte vast', /\.ag-pagina \.ag-sectie\.ag-blok-hoofd\[data-ag-dicht='1'\]\{min-height:0\}/.test(kaal) && /\.ag-blok-inhoud\[hidden\]\{display:none\}/.test(kaal));
+  // Oude fout (gevonden bij INTEG-001, gemeten in Chrome): de «липка смуга» plakte nooit — haar ouder .ag-ankers was even hoog als
+  // zij, en een sticky element kan zijn ouder niet verlaten. Nu is .ag-ankers display:contents (de pagina is het bevattende blok).
+  check('липка смуга прилипає: .ag-ankers is display:contents binnen .ag-pagina; scroll-margin past bij twee rijen tabbladen',
+    /\.ag-pagina>\.ag-ankers\{display:contents\}/.test(kaal) && /\.ag-pagina \.ag-sectie\{scroll-margin-top:7rem\}/.test(kaal) && lees('src/agenten/agenten.css').includes('position:sticky;top:0'));
   const pagina = lees('src/agenten/AgentenPagina.tsx');
   check('AgentenPagina laadt agenten-pagina.css NA agenten.css (de rand heeft het laatste woord)', pagina.indexOf("import './agenten.css';") > 0 && pagina.indexOf("import './agenten-pagina.css';") > pagina.indexOf("import './agenten.css';"));
   check('geen <style>-tag in de rand en de onderdelen van agpag1 (CSP style-src \'self\')',

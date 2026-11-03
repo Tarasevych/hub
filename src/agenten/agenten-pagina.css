@@ -43,6 +43,13 @@
 .ag-pagina-tekst h1{margin:0;font-size:1.6rem;line-height:1.2;overflow-wrap:anywhere}
 .ag-pagina-tekst p{margin:0;color:var(--muted);line-height:1.5;max-width:72ch}
 
+/* Стара помилка (блок 8.4): .ag-tabs-wrap мав position:sticky, але його батько .ag-ankers був рівно такої ж висоти — липкий
+   елемент не може вийти за межі батька, тож смуга ніколи не прилипала (виміряно в Chrome: після прокрутки y=-41). display:contents
+   робить контейнером саму сторінку; відступ прокрутки секцій — під дві лави вкладок на широкому екрані, одну на телефоні. */
+.ag-pagina>.ag-ankers{display:contents}
+.ag-pagina .ag-sectie{scroll-margin-top:7rem}
+@media (max-width:700px){.ag-pagina .ag-sectie{scroll-margin-top:4.5rem}}
+
 /* Липка смуга розділів: «пігулки», вибраний — на м’якому акценті. */
 .ag-pagina .ag-tabs-wrap{padding:6px 0;border-bottom:1px solid var(--line)}
 .ag-pagina .ag-tabs{gap:var(--ruimte-1);border-bottom:0}
