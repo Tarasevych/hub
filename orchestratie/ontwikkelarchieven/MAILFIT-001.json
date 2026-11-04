@@ -73,6 +73,13 @@
       "bewijzen": [
         "https://github.com/Tarasevych/hub/actions/runs/41861096674"
       ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "GitHub Actions перевірив порожню MailFunctionalView: працююче React-дерево, кнопки, розміри, скріншоти та відсутність JS-помилок. Це не підтверджує OAuth.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41862333637"
+      ]
     }
   ],
   "keuzes": [
@@ -137,6 +144,13 @@
       "resultaat": "CI: 64 unit checks, frontend/backend typecheck, production build en echte React mailpagina op 390/768/1280/1920px geslaagd. OAuth en owner Passkey zijn niet getest.",
       "bewijzen": [
         "https://github.com/Tarasevych/hub/actions/runs/41861096674"
+      ]
+    },
+    {
+      "status": "bevestigd",
+      "resultaat": "CI: 64 unit checks, frontend/backend typecheck, production build en echte React mailpagina op 390/768/1280/1920px geslaagd. OAuth en owner Passkey zijn niet getest.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41862333637"
       ]
     }
   ],
