@@ -1264,7 +1264,7 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
 1. Werkkopie van de coördinatie (de installer maakt die bewust niet: hij heeft geen sleutel en hoort die niet te hebben):
    ```bash
    sudo -u mijnruimte git clone --branch integratie git@github.com:Tarasevych/hub.git /srv/mijn-ruimte/orch-repo
-   sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.name "Mijn Ruimte orch" && sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.email "orch@tarasevych.com"
+   sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.name "Mijn Ruimte orch" && sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.email "<orch-adres>"
    ```
    Gebruik een **deploy key met schrijfrecht** (GitHub → repo → Settings → Deploy keys) voor de gebruiker `mijnruimte`, nooit de persoonlijke
    sleutel van de eigenaar. Zonder schrijfrecht blijft alles werken, maar de tak `regels/*` blijft op de server staan (`gepusht: false`,
