@@ -21,7 +21,8 @@
 // naar een ander subdomein.
 import { useEffect, useId, useRef, useState } from 'react';
 import GeheimInvoer from '../geheim/GeheimInvoer';
-import { ExternalLink, Loader2, MailCheck, ShieldAlert } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ExternalLink, Loader2, LockKeyhole, MailCheck, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
+import Logo from '../merk/MerkLogo';
 import { Venster } from '../platform/vensters';
 import './mail-koppel-mobile-sheet.css';
 import { api } from '../platform/client';
@@ -213,42 +214,63 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
       const hoofdWerkt = (googleStand?.accounts || []).some((a) => a.accountRole === 'primary');
       const gekoppeld = (googleStand?.accounts || []).map((a) => a.email).filter(Boolean);
       return (
-        <div style={{ display: 'grid', gap: 12 }} data-mail-google-rol={googleStand ? (hoofdWerkt ? 'additional' : 'keuze') : 'laden'}>
-          <p style={{ margin: 0 }}>{tr(lang,
-            'Gmail підключається через Google: ви надаєте доступ у вікні Google, а пароль не вводите тут узагалі.',
-            'Gmail wordt via Google gekoppeld: u geeft toestemming in het venster van Google en typt hier geen wachtwoord.')}</p>
-          {gekoppeld.length ? (
-            <p style={{ margin: 0, fontSize: '.9rem' }}>{tr(lang, 'Уже підключено:', 'Al gekoppeld:')} <strong>{gekoppeld.join(', ')}</strong>. {tr(lang,
-              'Google покаже вибір акаунта — оберіть ІНШИЙ акаунт, ніж уже підключені.', 'Google toont een accountkeuze — kies een ANDER account dan de al gekoppelde.')}</p>
-          ) : null}
-          {!googleStand ? <p style={{ margin: 0 }} role='status'><Loader2 aria-hidden='true' /> {tr(lang, 'Перевіряємо, що вже підключено…', 'We kijken wat er al gekoppeld is…')}</p>
+        <div className='mail-koppel-google' data-mail-google-rol={googleStand ? (hoofdWerkt ? 'additional' : 'keuze') : 'laden'}>
+          <div className='mail-koppel-vertrouwen' role='list' aria-label={tr(lang, 'Як захищено підключення', 'Zo is de verbinding beveiligd')}>
+            <div className='mail-koppel-vertrouwen-rij' role='listitem'>
+              <ShieldCheck size={26} strokeWidth={1.8} aria-hidden='true' />
+              <span><strong>{tr(lang, 'Вхід на стороні Google', 'Aanmelden bij Google')}</strong><small>{tr(lang,
+                'Ви надаєте доступ на офіційній сторінці Google.',
+                'U geeft toestemming op de officiële Google-pagina.')}</small></span>
+            </div>
+            <div className='mail-koppel-vertrouwen-rij' role='listitem'>
+              <LockKeyhole size={25} strokeWidth={1.8} aria-hidden='true' />
+              <span><strong>{tr(lang, 'Ваш пароль залишається у Google', 'Uw wachtwoord blijft bij Google')}</strong><small>{tr(lang,
+                'Ми не просимо вводити його й не зберігаємо.',
+                'Wij vragen uw wachtwoord niet en bewaren het niet.')}</small></span>
+            </div>
+          </div>
+          {gekoppeld.length ? <p className='mail-koppel-verbonden'>{tr(lang, 'Уже підключено:', 'Al gekoppeld:')} <strong>{gekoppeld.join(', ')}</strong>. {tr(lang,
+            'Для нової скриньки виберіть інший Google-акаунт.', 'Kies een ander Google-account voor een nieuwe mailbox.')}</p> : null}
+          {!googleStand ? <p className='mail-koppel-status' role='status'><Loader2 className='mail-koppel-draait' aria-hidden='true' /> {tr(lang, 'Перевіряємо ваші підключення…', 'Uw verbindingen worden gecontroleerd…')}</p>
             : hoofdWerkt ? (
-              <button type='button' style={knop(true)} disabled={bezig} onClick={() => void googleStarten('additional')} data-mail-koppel-start data-mail-google-start='additional'>
-                {bezig ? <Loader2 aria-hidden='true' /> : null} {tr(lang, 'Вибрати інший акаунт Google', 'Ander Google-account kiezen')}
+              <button type='button' className='mail-koppel-hoofdactie' disabled={bezig} onClick={() => void googleStarten('additional')} data-mail-koppel-start data-mail-google-start='additional'>
+                <span className='mail-koppel-google-embleem' aria-hidden='true'><Logo id='google' naam='Google' logo='google' maat={24} /></span>
+                <span>{tr(lang, 'Додати інший Google-акаунт', 'Ander Google-account toevoegen')}</span>
+                {bezig ? <Loader2 className='mail-koppel-draait' size={21} aria-hidden='true' /> : <ArrowRight size={22} aria-hidden='true' />}
               </button>
             ) : (
-              <div style={{ display: 'grid', gap: 8 }}>
-                <button type='button' style={knop(true)} disabled={bezig} onClick={() => void googleStarten('primary')} data-mail-koppel-start data-mail-google-start='primary'>
-                  {bezig ? <Loader2 aria-hidden='true' /> : null} {googleStand.sessionEmail ? `${tr(lang, 'Підключити основну пошту', 'Hoofdmailbox koppelen')} (${googleStand.sessionEmail})` : tr(lang, 'Перейти до Google', 'Naar Google')}
+              <div className='mail-koppel-google-acties'>
+                <button type='button' className='mail-koppel-hoofdactie' disabled={bezig} onClick={() => void googleStarten('primary')} data-mail-koppel-start data-mail-google-start='primary'>
+                  <span className='mail-koppel-google-embleem' aria-hidden='true'><Logo id='google' naam='Google' logo='google' maat={24} /></span>
+                  <span>{tr(lang, 'Продовжити з Google', 'Doorgaan met Google')}</span>
+                  {bezig ? <Loader2 className='mail-koppel-draait' size={21} aria-hidden='true' /> : <ArrowRight size={22} aria-hidden='true' />}
                 </button>
-                <button type='button' style={knop(false)} disabled={bezig} onClick={() => void googleStarten('additional')} data-mail-google-start='additional'>
-                  {tr(lang, 'Підключити інший акаунт Google', 'Een ander Google-account koppelen')}
+                {googleStand.sessionEmail ? <p className='mail-koppel-email'>{tr(lang, 'Основна скринька:', 'Hoofdmailbox:')} <strong>{googleStand.sessionEmail}</strong></p> : null}
+                <button type='button' className='mail-koppel-andere-account' disabled={bezig} onClick={() => void googleStarten('additional')} data-mail-google-start='additional'>
+                  {tr(lang, 'Підключити інший Google-акаунт', 'Een ander Google-account koppelen')}
                 </button>
               </div>
             )}
-          {googleKlaar ? <p role='status' style={{ margin: 0 }}>{googleKlaar}</p> : null}
+          {googleKlaar ? <p role='status' className='mail-koppel-status'>{googleKlaar}</p> : null}
         </div>
       );
     }
     if (dienst.wijze === 'oauth-microsoft') {
       return (
-        <div style={{ display: 'grid', gap: 12 }}>
-          <p style={{ margin: 0 }}>{tr(lang,
-            'Outlook/Microsoft 365 підключається через Microsoft. Введіть адресу — далі вхід відбувається на боці Microsoft.',
-            'Outlook/Microsoft 365 koppelt via Microsoft. Vul het adres in — het aanmelden gebeurt daarna bij Microsoft.')}</p>
+        <div className='mail-koppel-google'>
+          <div className='mail-koppel-vertrouwen' role='list'>
+            <div className='mail-koppel-vertrouwen-rij' role='listitem'><ShieldCheck size={26} aria-hidden='true' />
+              <span><strong>{tr(lang, 'Вхід на стороні Microsoft', 'Aanmelden bij Microsoft')}</strong><small>{tr(lang,
+                'Ви авторизуєте доступ на офіційній сторінці Microsoft.',
+                'U geeft toestemming op de officiële Microsoft-pagina.')}</small></span></div>
+            <div className='mail-koppel-vertrouwen-rij' role='listitem'><LockKeyhole size={25} aria-hidden='true' />
+              <span><strong>{tr(lang, 'Пароль не вводиться тут', 'Geen wachtwoord op deze pagina')}</strong><small>{tr(lang,
+                'Mijn Ruimte не просить ваш пароль Microsoft.', 'Mijn Ruimte vraagt niet naar uw Microsoft-wachtwoord.')}</small></span></div>
+          </div>
           {adresRegel}
-          <button type='button' style={knop(true)} disabled={bezig} onClick={() => void microsoftStarten()} data-mail-koppel-start>
-            {tr(lang, 'Перейти до Microsoft', 'Naar Microsoft')}
+          <button type='button' className='mail-koppel-hoofdactie' disabled={bezig} onClick={() => void microsoftStarten()} data-mail-koppel-start>
+            <span>{tr(lang, 'Продовжити з Microsoft', 'Doorgaan met Microsoft')}</span>
+            {bezig ? <Loader2 className='mail-koppel-draait' aria-hidden='true' /> : <ArrowRight aria-hidden='true' />}
           </button>
         </div>
       );
@@ -300,9 +322,25 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
 
   return (
     <Venster id={id} titel={titel} breedte={520} className='mail-koppel-mobile-sheet' modaal={false} onSluit={onSluit} lang={lang === 'uk' ? 'uk' : 'nl'}>
-      <div style={{ padding: 16, display: 'grid', gap: 12 }} data-mail-koppel={dienst.id}>
+      <div className='mail-koppel-ervaring' data-mail-koppel={dienst.id}>
+        <header className='mail-koppel-hero'>
+          <span className='mail-koppel-merk' aria-hidden='true'><Logo id={dienst.id} naam={dienst.naam} logo={dienst.merk} maat={64} /></span>
+          <span className='mail-koppel-kicker'><Sparkles size={13} aria-hidden='true' /> {tr(lang, 'ПОШТА · НОВЕ ПІДКЛЮЧЕННЯ', 'E-MAIL · NIEUWE VERBINDING')}</span>
+          <h2>{dienst.wijze === 'nog-niet' ? tr(lang, `${dienst.naam} поки недоступний`, `${dienst.naam} nog niet beschikbaar`) : tr(lang, `Підключити ${dienst.naam}`, `${dienst.naam} koppelen`)}</h2>
+          <p>{dienst.wijze === 'oauth-google' ? tr(lang, 'Безпечне підключення через Google', 'Veilig verbinden via Google')
+            : dienst.wijze === 'oauth-microsoft' ? tr(lang, 'Безпечне підключення через Microsoft', 'Veilig verbinden via Microsoft')
+            : dienst.wijze === 'nog-niet' ? tr(lang, 'Ми чесно показуємо, що ще потрібно реалізувати.', 'Wij laten eerlijk zien wat er nog ontbreekt.')
+            : tr(lang, 'Ваша скринька у спільному поштовому просторі', 'Uw mailbox in één e-mailruimte')}</p>
+        </header>
         {inhoud()}
-        {fout ? <p role='alert' style={{ margin: 0, color: 'var(--fout,#b42318)' }}>{fout}</p> : null}
+        {fout ? <p className='mail-koppel-fout' role='alert'>{fout}</p> : null}
+        <footer className='mail-koppel-voet'>
+          <p><ShieldCheck size={17} strokeWidth={1.7} aria-hidden='true' /> {tr(lang,
+            'Підключення пошти не змінює ваш вхід до Mijn Ruimte.',
+            'Een e-mailverbinding verandert uw aanmelding bij Mijn Ruimte niet.')}</p>
+          <button type='button' className='mail-koppel-terug' onClick={onSluit}><ChevronLeft size={20} aria-hidden='true' />
+            {tr(lang, 'Обрати інший сервіс', 'Een andere dienst kiezen')}</button>
+        </footer>
       </div>
     </Venster>
   );
