@@ -176,3 +176,5 @@ git і підпис SSH на ПК власника. Власник хоче ба
 **Наслідки.** `regelsVersie` 1.4.2 → 1.4.4 (1.4.3 was een concept dat nooit is geïnstalleerd). De inhoud van de regels verandert niet; alleen plaatshouders en verwijzingen. Commit-SHA's veranderen door de herschrijving, `regels.lock.json` is opnieuw vergrendeld. Oude BRON-COMMIT-verwijzingen van eerdere pakketten wijzen naar SHA's die op GitHub niet meer bestaan; de mapping in de back-up koppelt ze aan de nieuwe.
 
 **Хто.** Verzoek van de eigenaar (privacy); uitvoering door agent Claude. Wacht op passkey-bevestiging van de eigenaar.
+
+**Vervolg 1.4.5.** Na het herschrijven van de geschiedenis verwees asis.bronCommit naar een SHA die niet meer bestaat. Bijgewerkt naar de nieuwe SHA uit de mapping oud → nieuw (back-up). Geen inhoudelijke regelwijziging. Wacht op bevestiging van de eigenaar of de productiebasis klopt.

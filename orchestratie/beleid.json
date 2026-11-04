@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "regelsVersie": "1.4.4",
+  "regelsVersie": "1.4.5",
   "bijgewerkt": "2026-11-04",
   "regelBestanden": [
     "AGENTS.md",
@@ -9,7 +9,7 @@
   ],
   "basis": {
     "versie": "20261031-093842",
-    "bronCommit": "b279ccabe31a27139b337822162653ccc13b6a5a",
+    "bronCommit": "0614c8bf94a1adb13ac2c140c7d0d49a8851b73d",
     "verificatie": "opgave_eigenaar",
     "opmerking": "Заявлено власником 31.10.2026; незалежна звірка з production ще не виконана (агент не мав доступу до hub.tarasevych.com/api/version). Після звірки → geverifieerd_productie + запис у BESLUITEN.md."
   },
