@@ -17,6 +17,8 @@
 // (sessie-id → tijdstip) in hetzelfde record: hoogstens STAP_OP_ONTHOUD_MS geldig, onbereikbaar na uitloggen (het sessie-id
 // kan dan niet meer aanmelden), per account apart, en NOOIT genoeg voor «sterke» acties of voor de acties in NOOIT_ONTHOUDEN.
 import { db } from '../server/platform';
+import { actieVoorPad } from '../shared/stap-op-acties';
+export { actieVoorPad } from '../shared/stap-op-acties';
 
 export const STAP_OP_TABEL = 'owner_step_up_v1';
 export const STAP_OP_MS = 5 * 60 * 1000;
@@ -179,31 +181,7 @@ export const onthoudMagVoorActie = (actie: unknown): boolean => {
   const a = typeof actie === 'string' ? actie : '';
   return /^[a-z][a-z0-9-]{1,40}$/.test(a) && !NOOIT_ONTHOUDEN.includes(a);
 };
-/**
- * Pad → actielabel, dezelfde lijst als src/platform/stap-op.ts (ACTIE_PER_PAD) plus extra vangnetten voor paden die altijd
- * moeten vragen (geheimen, verwijderen, SSH, terminal, impersonatie, afstandsbediening). Onbekend pad → 'onbekend' = vragen.
- */
-const ACTIE_PER_PAD: Array<[RegExp, string]> = [
-  [/\/passkeys\/registreren/, 'passkey-toevoegen'], [/\/passkeys\/verwijderen/, 'passkey-verwijderen'],
-  [/\/passkeys\/goedkeuring\/recht-intrekken/, 'goedkeur-recht-intrekken'], [/\/passkeys\/goedkeuring\/(aanvragen|bevestigen)/, 'goedkeur-recht-aanvragen'],
-  [/\/recovery\/rotate/, 'herstelcodes-nieuw'], [/\/recovery\/intrekken/, 'herstelcodes-intrekken'],
-  [/\/toegangscodes\/maken/, 'toegangscode-maken'], [/\/toegangscodes\/wijzigen/, 'toegangscode-verlengen'],
-  [/\/ruimte\/keuze/, 'ruimte-keuze'], [/\/ruimte\/besluit/, 'ruimte-besluit'], [/\/ruimte\/dienst/, 'ruimte-verbinden'],
-  [/\/toegang\/wijziging\/terugdraaien/, 'wijziging-terugdraaien'], [/\/uitrol\/voorbereiders/, 'voorbereider'], [/\/uitrol\//, 'uitrol-goedkeuren'],
-  [/\/totp\/(disable|uitschakelen)/, 'totp-uitschakelen'], [/\/totp\//, 'totp-wijzigen'], [/\/(password|codewoord)\b/, 'wachtwoord'],
-  [/export/, 'export'], [/(account|user)s?\/(delete|verwijder)/, 'account-verwijderen'], [/\/admin\b|\/beheer\b/, 'beheer'],
-  [/\/(geheim|geheimen|secret|secrets|vault|sleutel|sleutels|sleutelkluis)\b/, 'onbekend'],
-  [/\/(verwijderen|verwijder|delete|intrekken|revoke|wissen)\b/, 'onbekend'],
-  [/\/(ssh|ssh-ca|terminal|impersonatie|ondersteuning|tech-ruimtes|remote|bureaublad|ontgrendel|ontgrendeling)\b/, 'onbekend'],
-  [/\/tech\/activeren\b/, 'bevestigen'],
-  [/\/(agents|connectors|mcp-connector|mcp)\b/, 'agenten'],
-];
-export function actieVoorPad(pad: string): string {
-  const p = String(pad || '').split('?')[0];
-  if (!p) return 'onbekend';
-  for (const [re, actie] of ACTIE_PER_PAD) if (re.test(p)) return actie;
-  return 'onbekend';
-}
+/** De enige pad→actielabel-tabel leeft in shared/stap-op-acties.ts (client en server). */
 /** Mag een onthouden bevestiging dit pad doorlaten? Pad onbekend → nee. */
 export const onthoudMagVoorPad = (pad: string): boolean => (pad ? onthoudMagVoorActie(actieVoorPad(pad)) : false);
 

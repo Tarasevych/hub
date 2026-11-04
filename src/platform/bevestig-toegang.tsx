@@ -43,6 +43,8 @@ const T = {
   tip: ['Порада: після підтвердження протягом 5 хвилин важливі дії в цьому вікні не вимагатимуть повторного підтвердження.', 'Tip: na de bevestiging vragen we 5 minuten lang in dit venster niet opnieuw om bevestiging voor belangrijke acties.'],
   onthoudUitleg: ['Ми запам’ятаємо підтвердження лише для цього браузера й цього акаунта. Воно зникає, коли ви виходите з акаунта, і діє щонайбільше {u} год.', 'We onthouden de bevestiging alleen voor deze browser en dit account. Hij verdwijnt zodra je uitlogt en geldt hoogstens {u} uur.'],
   onthoudNooit: ['Цю дію запам’ятати не можна: вона завжди вимагає підтвердження. Це стосується схвалення випусків, видалення, ключів у сховищі, passkey, кодів відновлення та зміни способів входу.', 'Deze actie kan niet onthouden worden: hiervoor vragen we altijd opnieuw. Dat geldt voor het goedkeuren van uitrollen, verwijderen, sleutels in de kluis, passkeys, herstelcodes en het wijzigen van aanmeldmethoden.'],
+  onthoudMislukt: ['Доступ підтверджено на 5 хвилин, але 12-годинне запам’ятовування не збереглося. Для наступної дії доведеться підтвердити доступ знову.', 'Toegang 5 minuten bevestigd, maar 12 uur onthouden is niet opgeslagen. De volgende actie kan opnieuw om bevestiging vragen.'],
+  onthoudCodewoord: ['Запам’ятовування на 12 годин недоступне для кодового слова. Використайте passkey або код автентифікатора.', 'Twaalf uur onthouden is niet beschikbaar met het codewoord. Gebruik een passkey of authenticatorcode.'],
   annuleren: ['Скасувати', 'Annuleren'],
   geenMethode: ['Для цієї дії немає доступного способу підтвердження. Налаштуйте застосунок-автентифікатор або passkey на сторінці «Способи входу».', 'Voor deze actie is geen bevestigingsmethode beschikbaar. Stel een authenticator-app of passkey in op de pagina «Aanmeldmethoden».'],
   doorsturen: ['Перехід до Google…', 'Doorsturen naar Google…'],
@@ -124,7 +126,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
     let weg = false;
     (async () => {
       let i: Info;
-      try { i = ((await opties.post('/api/owner/access/stap-op/methoden', { service: opties.service, tabContext: opties.tabContext, actie: opties.actie || 'bevestigen', sterk: !!opties.sterk })) as { data: Info }).data; }
+      try { i = ((await opties.post('/api/owner/access/stap-op/methoden', { service: opties.service, tabContext: opties.tabContext, actie: opties.actie || 'onbekend', sterk: !!opties.sterk })) as { data: Info }).data; }
       catch { i = { email: '', naam: '', foto: '', methoden: { passkey: false, totp: false, herstelcode: false, google: true }, maxAgeSeconds: 300, onthoudMag: false, onthoudUren: 0 }; }
       if (weg) return;
       setInfo(i);
@@ -138,14 +140,22 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
   const alleenGoogle = beschikbaar.length === 1 && beschikbaar[0] === 'google';
   // Mag deze actie onthouden worden? De server beslist (NOOIT_ONTHOUDEN in backend/stap-op.ts); «sterk» nooit. Kan het niet,
   // dan is er geen vinkje maar een eerlijke regel waarom — nooit een stil uitgeschakeld vinkje.
-  const onthoudMag = !opties.sterk && !!info?.onthoudMag;
+  const onthoudMag = !opties.sterk && !!info?.onthoudMag && weergave !== 'codewoord';
+  const meldOnthoudMislukt = () => {
+    void import('../canoniek-meldingen').then(({ emitCanonicalNotice }) => emitCanonicalNotice({
+      text: t('onthoudMislukt'), kind: 'warning', source: 'stap-op', dedupeSeconds: 30,
+    })).catch(() => undefined);
+  };
   const onthoudAan = onthoud && onthoudMag;
 
   const metPasskey = async () => {
     setBezig('passkey'); setFout('');
     const f = await passkeyStapOpCode(opties.service, opties.tabContext, opties.post, opties.actie, onthoudAan);
     setBezig('');
-    if (!f) klaar({ ok: true, methode: 'passkey' }); else setFout(foutTekst(lang, f));
+    if (!f || f === 'ONTHOUD_NIET_OPGESLAGEN') {
+      klaar({ ok: true, methode: 'passkey' });
+      if (f) meldOnthoudMislukt();
+    } else setFout(foutTekst(lang, f));
   };
   const metCode = async (methode: 'totp' | 'herstelcode') => {
     const c = methode === 'totp' ? code.replace(/\D/g, '') : code.replace(/[\s-]/g, '').toUpperCase();
@@ -153,8 +163,9 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
     if (opties.codeTerug) { klaar({ ok: true, methode, code: c }); return; }
     setBezig(methode); setFout('');
     try {
-      await opties.post('/api/owner/access/stap-op', { service: opties.service, tabContext: opties.tabContext, code: c, actie: opties.actie || 'bevestigen', ...(onthoudAan ? { onthoud: true } : {}), ...(methode === 'herstelcode' ? { methode: 'herstelcode' } : {}) });
+      const antwoord = (await opties.post('/api/owner/access/stap-op', { service: opties.service, tabContext: opties.tabContext, code: c, actie: opties.actie || 'onbekend', ...(onthoudAan ? { onthoud: true } : {}), ...(methode === 'herstelcode' ? { methode: 'herstelcode' } : {}) })) as { data?: { onthouden?: boolean } };
       klaar({ ok: true, methode });
+      if (onthoudAan && antwoord?.data?.onthouden !== true) meldOnthoudMislukt();
     } catch (e) { setFout(foutTekst(lang, foutVan(e))); setCode(''); invoer.current?.focus(); }
     finally { setBezig(''); }
   };
@@ -179,7 +190,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
     if (w.length < 4) return;
     setBezig('codewoord'); setFout('');
     try {
-      await opties.post('/api/owner/access/stap-op/codewoord', { service: opties.service, tabContext: opties.tabContext, woord: w, actie: opties.actie || 'bevestigen' });
+      await opties.post('/api/owner/access/stap-op/codewoord', { service: opties.service, tabContext: opties.tabContext, woord: w, actie: opties.actie || 'onbekend' });
       klaar({ ok: true, methode: 'codewoord' });
     } catch (e) { setFout(foutTekst(lang, foutVan(e))); setCode(''); }
     finally { setBezig(''); }
@@ -245,7 +256,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
               <span>{onthoudLabel}</span>
             </label>
             <p className='bevestig-toegang-uitleg' data-onthoud-uitleg='1'>{t('onthoudUitleg').replace('{u}', String(info.onthoudUren || 12))}</p></>
-          : <p className='bevestig-toegang-uitleg' data-onthoud='nooit'>{t('onthoudNooit')}</p>)}
+          : <p className='bevestig-toegang-uitleg' data-onthoud='nooit'>{weergave === 'codewoord' && info.onthoudMag ? t('onthoudCodewoord') : t('onthoudNooit')}</p>)}
       </div>
 
       {alternatieven.length > 0 && <div className='bevestig-toegang-alt'>

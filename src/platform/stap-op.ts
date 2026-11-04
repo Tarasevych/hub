@@ -9,6 +9,7 @@
 // doen (bijv. {actie:'passkey-toevoegen', gegevens:{naam:'Telefoon'}}) — nooit geheimen of codes. Na terugkeer haalt de pagina die
 // intentie op (neemHervat) en voert de actie zelf opnieuw uit; de server controleert de step-up zoals altijd.
 import { foutCode, kanPasskey, passkeyBevestigen, type AssertieOpties } from './webauthn';
+import { actieVoorPad } from '../../shared/stap-op-acties';
 
 export type StapOpMethode = 'passkey' | 'totp' | 'herstelcode' | 'google' | 'codewoord';
 export type HervatIntentie = { actie: string; gegevens?: Record<string, string | number | boolean> };
@@ -71,8 +72,19 @@ export function neemOnthoudKeuze(): OnthoudKeuze | null {
 export async function onthoudKeuzeVerzenden(post: Post): Promise<boolean> {
   const k = neemOnthoudKeuze();
   if (!k) return false;
-  try { await post('/api/owner/access/stap-op/onthouden', { service: k.service, tabContext: k.tabContext, actie: k.actie }); return true; }
-  catch { return false; }
+  let gelukt = false;
+  try {
+    const antwoord = (await post('/api/owner/access/stap-op/onthouden', { service: k.service, tabContext: k.tabContext, actie: k.actie })) as { data?: { onthouden?: boolean } };
+    gelukt = antwoord?.data?.onthouden === true;
+  } catch { /* melding hieronder; het aanmelden zelf blijft intact */ }
+  if (!gelukt && typeof window !== 'undefined') {
+    const nl = paginaTaal() === 'nl';
+    void import('../canoniek-meldingen').then(({ emitCanonicalNotice }) => emitCanonicalNotice({
+      text: nl ? 'Toegang bevestigd, maar 12 uur onthouden is niet opgeslagen. Bevestig de volgende actie opnieuw.' : 'Доступ підтверджено, але запам’ятовування на 12 годин не збереглося. Наступну дію доведеться підтвердити знову.',
+      kind: 'warning', source: 'stap-op', dedupeSeconds: 30,
+    })).catch(() => undefined);
+  }
+  return gelukt;
 }
 
 let terugVanGoogle = false;
@@ -130,25 +142,10 @@ export function neemAlgemeneHervat(): boolean {
 // ------------------------------------------------------------------------------------------------ actie-label (§13.10)
 // Bij elke step-up sturen we mee WAARVOOR (een label uit de vaste lijst van de server, backend/toegang-context.ts ACTIES). De
 // server neemt alleen labels uit die lijst over (anders «onbekend»); host, apparaat en IP-hash bepaalt de server zelf.
-const ACTIE_PER_PAD: Array<[RegExp, string]> = [
-  [/\/passkeys\/registreren/, 'passkey-toevoegen'], [/\/passkeys\/verwijderen/, 'passkey-verwijderen'],
-  [/\/passkeys\/goedkeuring\/recht-intrekken/, 'goedkeur-recht-intrekken'], [/\/passkeys\/goedkeuring\/(aanvragen|bevestigen)/, 'goedkeur-recht-aanvragen'],
-  [/\/recovery\/rotate/, 'herstelcodes-nieuw'], [/\/recovery\/intrekken/, 'herstelcodes-intrekken'],
-  [/\/toegangscodes\/maken/, 'toegangscode-maken'], [/\/toegangscodes\/wijzigen/, 'toegangscode-verlengen'],
-  // Gescheiden gegevensruimtes (0082): zelfde labels als in backend/stap-op.ts, en ze staan daar in NOOIT_ONTHOUDEN.
-  [/\/ruimte\/keuze/, 'ruimte-keuze'], [/\/ruimte\/besluit/, 'ruimte-besluit'], [/\/ruimte\/dienst/, 'ruimte-verbinden'],
-  [/\/toegang\/wijziging\/terugdraaien/, 'wijziging-terugdraaien'], [/\/uitrol\/voorbereiders/, 'voorbereider'], [/\/uitrol\//, 'uitrol-goedkeuren'],
-  [/\/totp\/(disable|uitschakelen)/, 'totp-uitschakelen'], [/\/totp\//, 'totp-wijzigen'], [/\/password/, 'wachtwoord'],
-  [/export/, 'export'], [/(account|user)s?\/(delete|verwijder)/, 'account-verwijderen'], [/\/(agents|connectors|mcp)\b/, 'agenten'], [/\/admin\b|\/beheer\b/, 'beheer'],
-];
-/** Label voor een verzoek-URL (voor step-ups die client.ts automatisch vraagt). */
-export function actieVoorUrl(url: string): string {
-  const pad = String(url || '').split('?')[0];
-  for (const [re, actie] of ACTIE_PER_PAD) if (re.test(pad)) return actie;
-  return 'bevestigen';
-}
+/** Hetzelfde padbeleid als de server; onbekend blijft onbekend. */
+export const actieVoorUrl = actieVoorPad;
 const ACTIE_RE = /^[a-z][a-z0-9-]{1,40}$/;
-const actieOf = (a?: string) => (a && ACTIE_RE.test(a) ? a : 'bevestigen');
+const actieOf = (a?: string) => (a && ACTIE_RE.test(a) ? a : 'onbekend');
 
 // ------------------------------------------------------------------------------------------------ passkey
 /** Step-up met een eigen passkey. Geeft '' bij succes, anders een foutcode (NotAllowedError, GEEN_PASSKEY, PASSKEY_…). */
@@ -159,8 +156,9 @@ export async function passkeyStapOpCode(service: string, tabContext: string, pos
   catch (c) { return foutCode(c) || 'NETWORK_ERROR'; }
   try {
     const assertie = await passkeyBevestigen(opties.publicKey);
-    await post('/api/owner/access/stap-op/passkey', { service, tabContext, uitdagingId: opties.uitdagingId, assertie, actie: actieOf(actie), ...(onthoud ? { onthoud: true } : {}) });
-    return '';
+    const antwoord = (await post('/api/owner/access/stap-op/passkey', { service, tabContext, uitdagingId: opties.uitdagingId, assertie, actie: actieOf(actie), ...(onthoud ? { onthoud: true } : {}) })) as { data?: { onthouden?: boolean } };
+    // De step-up kan slagen terwijl het 12-uurs-onthouden niet wordt opgeslagen: toon dit eerlijk.
+    return onthoud && antwoord?.data?.onthouden !== true ? 'ONTHOUD_NIET_OPGESLAGEN' : '';
   } catch (c) { return foutCode(c) || 'PASSKEY_FOUT'; }
 }
 /** Oude naam (zonder dialoog): true = bevestigd. */
