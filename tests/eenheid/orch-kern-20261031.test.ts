@@ -98,7 +98,7 @@ export async function main(): Promise<number> {
   check('невідомий статус → TAAK_STAAT', tc({ ...taak, staat: 'klaar' }).includes('TAAK_STAAT'));
 
   // — свіжість перед початком і перед передаванням —
-  const basis = { taak, regelsVersie: beleid.regelsVersie, regelsHash: lock.hash, headIsAfstammeling: true, integratieVoorsprong: [], eigenBestanden: ['src/a.ts'], schoon: true, fase: 'overdracht' };
+  const basis = { taak: { ...taak, regelsVersie: beleid.regelsVersie, regelsHash: lock.hash }, regelsVersie: beleid.regelsVersie, regelsHash: lock.hash, headIsAfstammeling: true, integratieVoorsprong: [], eigenBestanden: ['src/a.ts'], schoon: true, fase: 'overdracht' };
   const vc = (f: unknown) => k.versheid(f).map((z: { code: string }) => z.code);
   check('усе свіже → без зауважень', k.versheid(basis).length === 0, JSON.stringify(k.versheid(basis)));
   check('правила оновились (→ 9.0.0) → REGELS_VEROUDERD', vc({ ...basis, regelsVersie: '9.0.0' }).includes('REGELS_VEROUDERD'));
