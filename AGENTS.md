@@ -24,6 +24,8 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 - Простори користувачів ізольовані й шифровані їхнім методом входу; власник сервера не має змоги їх розшифрувати.
 - Мови: спілкування і звіти — українською; коментарі в коді — українською або нідерландською; тексти UI — українською/нідерландською.
   Англійська лише для неперекладних технічних термінів. Шляхи/адреси — нідерландською (`/verbindingen`, не `/connections`).
+- Стек ВМ `10.77.0.10` (B-009): `Ubuntu 26.04.1 LTS` (`kernel 7.0`, `glibc 2.43`, `systemd 259.9`), `Node.js 26.13.0 LTS`, `PostgreSQL 18.6`,
+  `Caddy 2.11.7` (`admin.sock|0660`), `OPA 1.22.0`, `age 1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2`. У `deploy/*.service` — `RestrictSUIDSGID=no` (інакше seccomp блокує `openat2` у `tar 1.35`).
 
 ## 2. Перед початком роботи · Vóór je begint (обов'язково)
 
@@ -42,6 +44,7 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 - Виявив стару помилку — виправ (окремим комітом), не ігноруй. Нічого не прибирай «щоб запрацювало»: кнопку, вкладку, тест, перевірку.
 - Секрети, токени, приватні ключі, вміст листів — ніколи в чат, лог, коміт чи пакет. Приватні ключі власника агентам не передаються.
 - Production, default branch, резервні копії, критичні дозволи — тільки після явного погодження власника (не іншого агента).
+- Діагностика й час власника (B-009): не просити власника вручну виконувати команди в терміналі (`df -h`, `journalctl`) чи вручну збирати пакети; без доступу до `10.77.0.10` дати стислий висновок (1–2 речення) для інфраструктурного агента на ПК власника. Не вгадувати причину збою `voorcontrole` (не списувати на `.zip`, якщо `structuur` пройдено). Деталі нижче, B-009.
 
 ## 4. Перед передаванням результату · Vóór overdracht
 
@@ -53,7 +56,7 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
    (`git merge-tree`), тести, запис у `orchestratie/inleveringen/`, черга. Передача, що змінює файли стану (`orchestratie/taken`, `inleveringen`,
    `wachtrij.json`, `regels.lock.json`, `geinstalleerd.json`), відхиляється — їх пише лише `orch` або власник. Єдиний виняток — власний
    `orchestratie/taken/<ID>.json` (декларація агента з `taak-start`); при злитті лишається версія `integratie` (`.gitattributes` → `merge=orch-staat`).
-4. Звіт українською: що готово, що перевірено (фактично, не за метаданими), де результат, що наступне, що свідомо не зроблено.
+4. Звіт українською: 1-м рядком — пряме посилання на `mijn-ruimte-<versie>.tar.gz` (окремо від `-overdracht.zip`); далі — що готово, що перевірено (фактично, не за метаданими), де результат, що наступне, що свідомо не зроблено.
 5. Статус задачі: `in_progress` → `ter_integratie` (передано) → `integrated` (злито в `integratie`) → `released` (пакет зібрано) → `installed`
    (встановлено інсталятором на сервері). Статус змінює лише той крок, що його здійснив; агент не ставить `installed` сам.
 
@@ -84,6 +87,11 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 - Інсталятор (root) відхиляє пакет: база старіша за встановлену (`BASIS_VEROUDERD`), інший встановлений commit (`BASIS_COMMIT_VERSCHILT`),
   без `UITROL-BASIS` із версії `20261201` (`GEEN_BASIS`), правила ≠ `regels.lock.json` (`REGELS_NIET_VERGRENDELD`), режим поза політикою
   (`MODUS_NIET_TOEGESTAAN`). GitOps (автоматично) працює лише за `automatisch_beperkt` **і** підписаним lock. Приватні ключі агентам не передаються.
+- **B-009 (з 04.11.2026 · стек Ubuntu 26.04.1 LTS, `RestrictSUIDSGID=no` та правила комунікації з власником):**
+  1. На ВМ `10.77.0.10` працюють `Ubuntu 26.04.1 LTS (Resolute)` (`kernel 7.0.0-42-generic`, `glibc 2.43`, `systemd 259.9`), `Node.js v26.13.0 LTS`, `PostgreSQL 18.6` (`/srv/data/postgresql/18/main` із `--data-checksums`), `Caddy v2.11.7` (`admin unix//run/caddy/admin.sock|0660`), `OPA v1.22.0` (`127.0.0.1:8181`), `age v1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2`. На робочому ПК власника в `T:\mijn-ruimte\hulpmiddelen\` встановлено `Node.js v26.13.0`, `PostgreSQL 18.6-5`, `rclone v1.75.2`.
+  2. У `Ubuntu 26.04.1 LTS` системний `GNU tar 1.35` під час `--extract` використовує системний виклик `openat2(..., RESOLVE_BENEATH)`. У `systemd 259` параметр `RestrictSUIDSGID=yes` у seccomp-фільтрі блокує `openat2` з `-ENOSYS` (`Function not implemented`), через що `voorcontrole` падав на розпакуванні `.tar.gz`. Тому в усіх `deploy/*.service` та серверних drop-in `/etc/systemd/system/<unit>.d/ubuntu2604-openat2.conf` має бути `RestrictSUIDSGID=no` (при збереженні `NoNewPrivileges=yes`, `ProtectSystem=strict`, `PrivateTmp=yes`).
+  3. Якщо агент працює у хмарному/веб-контейнері без прямого доступу до сервера `10.77.0.10`, йому **заборонено** перекладати діагностику на власника (просити виконувати `df -h`, `journalctl` тощо) або вгадувати причину навмання (наприклад, звинувачувати власника у завантаженні `.zip` замість `.tar.gz`, коли `voorcontrole` вже пройшов крок `structuur`). Замість цього агент надає коротку технічну нотатку (1–2 речення) для інфраструктурного агента на ПК власника (Antigravity/Claude), який має прямий SSH-доступ до `beheer@10.77.0.10`.
+  B-009: VM `10.77.0.10` draait op Ubuntu 26.04.1 LTS (`systemd 259.9`, `Node 26.13.0`, `PostgreSQL 18.6`, `Caddy 2.11.7`). In `deploy/*.service` is `RestrictSUIDSGID=no` verplicht omdat `systemd 259` anders `openat2` van `GNU tar 1.35` blokkeert met `-ENOSYS`. Agenten zonder directe servertoegang vragen de eigenaar nooit om handmatig terminalcommando's uit te voeren en gissen nooit blind bij `voorcontrole`-fouten; geef bij elke release op de eerste regel de directe link naar `mijn-ruimte-<versie>.tar.gz`.
 
 
 

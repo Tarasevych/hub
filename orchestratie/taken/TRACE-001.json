@@ -5,11 +5,11 @@
   "tak": "feature/trace-001-20261103-214810",
   "basisCommit": "a643431743eb1e7e64947bf747018aac55d69750",
   "basisVersie": "20261031-093842",
-  "regelsVersie": "1.4.1",
-  "regelsHash": "bd7a35e3bfbdab6f330b7b2c1ee19d54df621a514a5d0caacba591d81d528dc9",
+  "regelsVersie": "1.4.2",
+  "regelsHash": "f5e5f6bc7ddaa067b60f643c16cbeb7510d9b75df5d72ed5178106a8042dbb0a",
   "staat": "in_progress",
   "gestart": "2026-11-03T21:49:08.970Z",
-  "bijgewerkt": "2026-11-03T22:13:49.648Z",
+  "bijgewerkt": "2026-11-04T11:42:07.724Z",
   "omschrijving": "Обов’язкова відтворювана історія розробки у GitHub та перевірка на сайті й в інсталяторі",
   "kanaal": "github_pr",
   "overdrachten": [],
@@ -33,6 +33,11 @@
       "van": "1.4.1",
       "naar": "1.4.1",
       "op": "2026-11-03T22:13:49.648Z"
+    },
+    {
+      "van": "1.4.1",
+      "naar": "1.4.2",
+      "op": "2026-11-04T11:42:07.724Z"
     }
   ]
 }
