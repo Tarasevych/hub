@@ -23,6 +23,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import GeheimInvoer from '../geheim/GeheimInvoer';
 import { ExternalLink, Loader2, MailCheck, ShieldAlert } from 'lucide-react';
 import { Venster } from '../platform/vensters';
+import './mail-koppel-mobile-sheet.css';
 import { api } from '../platform/client';
 import { geldigMailAdres, mailAanbieder, mailImapFoutTekst } from '../../shared/mail-aanbieders';
 import type { VensterStap } from '../../shared/vensters-onthouden-model';
@@ -298,7 +299,7 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
   };
 
   return (
-    <Venster id={id} titel={titel} breedte={520} modaal={false} onSluit={onSluit} lang={lang === 'uk' ? 'uk' : 'nl'}>
+    <Venster id={id} titel={titel} breedte={520} className='mail-koppel-mobile-sheet' modaal={false} onSluit={onSluit} lang={lang === 'uk' ? 'uk' : 'nl'}>
       <div style={{ padding: 16, display: 'grid', gap: 12 }} data-mail-koppel={dienst.id}>
         {inhoud()}
         {fout ? <p role='alert' style={{ margin: 0, color: 'var(--fout,#b42318)' }}>{fout}</p> : null}

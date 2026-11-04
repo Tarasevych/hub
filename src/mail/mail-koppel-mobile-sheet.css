@@ -1,0 +1,28 @@
+/* MAILMOB-001: de gedeelde vensterlaag blijft intact (dok, focus, sluiten),
+   maar het koppelvenster is op een telefoon een afgerond onderpaneel. */
+@media(max-width:559px){
+  html .venster.mail-koppel-mobile-sheet.is-max{
+    inset:auto calc(8px + var(--veilig-rechts,0px) + var(--venster-dok-rechts,0px))
+      calc(8px + env(safe-area-inset-bottom,0px) + var(--venster-dok-onder,0px))
+      calc(8px + var(--veilig-links,0px) + var(--venster-dok-links,0px))!important;
+    width:auto!important;height:min(74dvh,640px)!important;min-height:0!important;
+    max-height:calc(100dvh - 40px - var(--veilig-boven,0px) - var(--venster-dok-boven,0px) - var(--venster-dok-onder,0px))!important;
+    border-radius:25px 25px 18px 18px!important;
+    box-shadow:0 26px 75px rgba(10,29,32,.34);
+    background:var(--panel,#fff);
+  }
+  .venster.mail-koppel-mobile-sheet .venster-kop{
+    position:relative;min-height:53px;padding-top:14px;
+    background:var(--panel,#fff);border-bottom:1px solid var(--line,#dce6e8);cursor:default
+  }
+  .venster.mail-koppel-mobile-sheet .venster-kop::before{
+    content:'';position:absolute;top:6px;left:50%;transform:translateX(-50%);
+    width:42px;height:5px;border-radius:99px;background:var(--line,#c9d4d7);
+  }
+  .venster.mail-koppel-mobile-sheet .venster-inhoud{overflow-y:auto;overscroll-behavior:contain}
+  .venster.mail-koppel-mobile-sheet :is(input,select,textarea,button){max-width:100%;box-sizing:border-box}
+  .venster.mail-koppel-mobile-sheet button{min-height:42px}
+}
+@media(prefers-reduced-motion:reduce){
+  .venster.mail-koppel-mobile-sheet{transition:none!important;animation:none!important}
+}
