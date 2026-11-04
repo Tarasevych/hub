@@ -53,7 +53,7 @@ jobs:
             git commit -m 'MAILFIT-002: werk canonieke knopindex bij [skip ci]'
             git push origin HEAD:refs/heads/fix/mailfit-002-20261104-170000
           fi
-      - name: Unit regressions, both TypeScript targets and production build
+      - name: Unit regressions including current ORCH policy, TypeScript and production build
         shell: bash
         run: |
           set -euo pipefail
