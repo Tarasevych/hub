@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>MAILPOLISH-001 · Реальні компоненти без приватних даних</title>
+    <style>
+      :root{color-scheme:light;--panel:#fff;--surface:#f8fafb;--text:#16343a;--muted:#60767c;--line:#dce7e7;--accent:#08736e;--text-on-accent:#fff;--shadow:#183d3e;--focus:#0a827a;--veilig-links:0px;--veilig-rechts:0px;--veilig-boven:0px;--veilig-onder:0px;--ruimte-2:8px;--ruimte-3:12px;--straal-l:14px;--schaduw-2:0 7px 23px #153d3d20}
+      *{box-sizing:border-box}
+      body{margin:0;min-height:100dvh;font:16px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);background:linear-gradient(140deg,#f8f9f9,#edf5f4 72%,#fff6f0)}
+      #root{min-height:100dvh}
+      .mailpolish-preview{max-width:1150px;margin:0 auto;padding:18px 12px 45px}
+      .mailpolish-preview-label{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:800;text-transform:uppercase;margin:0 0 10px}
+      @media(max-width:559px){.mailpolish-preview{padding:12px 7px 40px}}
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/tests/visueel/mailpolish-preview.tsx"></script>
+  </body>
+</html>
