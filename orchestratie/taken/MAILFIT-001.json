@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MAILFIT-001",
+  "agent": "codex",
+  "tak": "fix/mailfit-001-20261104-110700",
+  "basisCommit": "0ba1fc61f4c2d9a1cba1f45a764982d113cfd8bf",
+  "basisVersie": "20261031-093842",
+  "regelsVersie": "1.4.1",
+  "regelsHash": "bd7a35e3bfbdab6f330b7b2c1ee19d54df621a514a5d0caacba591d81d528dc9",
+  "staat": "in_progress",
+  "gestart": "2026-11-04T15:46:25.199Z",
+  "bijgewerkt": "2026-11-04T15:46:25.200Z",
+  "omschrijving": "Адаптивний центрований екран першого підключення пошти, без зайвої навігації",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
