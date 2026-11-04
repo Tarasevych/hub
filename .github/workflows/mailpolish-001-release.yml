@@ -1,0 +1,227 @@
+name: MAILPOLISH-001 · real responsive mail UI + documented release
+on:
+  push:
+    branches:
+      - feature/mailpolish-001-20261104-084133
+permissions:
+  contents: write
+concurrency:
+  group: mailpolish-001-release
+  cancel-in-progress: false
+jobs:
+  test-visual-build-prerelease:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Checkout the exact branch with its history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Canonical ORCH preflight and own task
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs controleer
+          if ! test -f orchestratie/taken/MAILPOLISH-001.json; then
+            node scripts/orch.mjs taak-start --id MAILPOLISH-001 --agent codex \
+              --basis 90f0d737a6007d401ded790e6a27d018e34eb890 \
+              --tak feature/mailpolish-001-20261104-084133 \
+              --omschrijving 'Відтворення дизайнерської концепції мобільного підключення пошти'
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add orchestratie/taken/MAILPOLISH-001.json
+            git commit -m 'MAILPOLISH-001: registreer ontwerptaak via ORCH [skip ci]'
+            git push origin HEAD:refs/heads/feature/mailpolish-001-20261104-084133
+          fi
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILPOLISH-001 --fase start
+      - name: Install exact dependencies
+        run: npm ci --ignore-scripts
+      - name: Regenerate canonical button registry if needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/zoek-ui-catalogus.mjs
+          if ! git diff --quiet -- shared/zoek-ui-knoppen.generated.ts; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add shared/zoek-ui-knoppen.generated.ts
+            git commit -m 'MAILPOLISH-001: actualiseer canonieke knoppenindex [skip ci]'
+            git push origin HEAD:refs/heads/feature/mailpolish-001-20261104-084133
+          fi
+      - name: Unit regression, types and production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p uitvoer
+          node scripts/eenheidstests.mjs mailpolish-001 | tee uitvoer/mailpolish-tests.log
+          node scripts/eenheidstests.mjs mailmob-001 | tee -a uitvoer/mailpolish-tests.log
+          node scripts/eenheidstests.mjs mail-orbit-001 | tee -a uitvoer/mailpolish-tests.log
+          npx tsc --noEmit -p tsconfig.json
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=5120 npm run build
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILPOLISH-001 --fase overdracht
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - name: Render actual components at 390px, 320px and desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes playwright@1.56.1 install --with-deps chromium
+          npx vite --host 127.0.0.1 --port 4179 > uitvoer/mailpolish-vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for poging in $(seq 1 45); do
+            if curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailpolish-preview.html' > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailpolish-preview.html' > /dev/null
+          npx --yes playwright@1.56.1 screenshot --browser chromium --viewport-size="390,844" --wait-for-timeout=1600 \
+            'http://127.0.0.1:4179/tests/visueel/mailpolish-preview.html' uitvoer/mailpolish-orbit-390.png
+          npx --yes playwright@1.56.1 screenshot --browser chromium --viewport-size="390,844" --wait-for-timeout=1600 \
+            'http://127.0.0.1:4179/tests/visueel/mailpolish-preview.html?provider=gmail' uitvoer/mailpolish-gmail-390.png
+          npx --yes playwright@1.56.1 screenshot --browser chromium --viewport-size="320,640" --wait-for-timeout=1600 \
+            'http://127.0.0.1:4179/tests/visueel/mailpolish-preview.html?provider=gmail' uitvoer/mailpolish-gmail-320.png
+          npx --yes playwright@1.56.1 screenshot --browser chromium --viewport-size="1280,800" --wait-for-timeout=1600 \
+            'http://127.0.0.1:4179/tests/visueel/mailpolish-preview.html?provider=gmail' uitvoer/mailpolish-gmail-desktop.png
+          test -s uitvoer/mailpolish-gmail-390.png
+      - name: Publish screenshots and test evidence for real visual comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: MAILPOLISH-001-actual-react-screenshots
+          path: |
+            uitvoer/mailpolish-*.png
+            uitvoer/mailpolish-tests.log
+            uitvoer/mailpolish-vite.log
+          retention-days: 30
+          if-no-files-found: error
+      - name: Commit verified evidence to the TRACE-001 development journal
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const p='orchestratie/ontwikkelarchieven/MAILPOLISH-001.json';
+          const dossier=JSON.parse(readFileSync(p,'utf8'));
+          const txt=readFileSync('uitvoer/mailpolish-tests.log','utf8');
+          const ok=(txt.match(/^OK\s/gm)||[]).length;
+          const fout=(txt.match(/^FOUT\s/gm)||[]).length;
+          if(ok<22||fout)throw Error('Unit evidence missing or failed: '+ok+' / '+fout);
+          const url='https://github.com/Tarasevych/hub/actions/runs/'+process.env.GITHUB_RUN_ID;
+          dossier.controles.push({status:'bevestigd',resultaat:
+            'GitHub CI: '+ok+' unit checks passed, TypeScript client/server and production build passed. Actual React/CSS screenshots produced at 320, 390 and 1280px. No real OAuth or physical Android here.',bewijzen:[url]});
+          dossier.tijdlijn.push({volgorde:dossier.tijdlijn.length+1,stap:
+            'GitHub CI перевірив тести, TypeScript та production build і згенерував реальні знімки компонентів у Chromium для візуального порівняння.',bewijzen:[url]});
+          writeFileSync(p,JSON.stringify(dossier,null,2)+'\n');
+          JS
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add orchestratie/ontwikkelarchieven/MAILPOLISH-001.json
+          git commit -m 'MAILPOLISH-001: commit geverifieerde CI en React-screenshots [skip ci]'
+          git push origin HEAD:refs/heads/feature/mailpolish-001-20261104-084133
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILPOLISH-001 --fase overdracht
+      - name: Read and verify live installed base before packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --max-time 20 --retry 2 \
+            'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/mailpolish-live.json"
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const p=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/mailpolish-live.json','utf8'));
+          const versie=String(p.versie||'');
+          const commit=String(p.commit||'');
+          if(!/^\d{8}-\d{6}$/.test(versie)||!/^[a-f0-9]{40}$/.test(commit))
+            throw Error('BASIS_ONGELDIG: production did not provide version and 40hex commit');
+          execFileSync('git',['merge-base','--is-ancestor',commit,'HEAD'],{stdio:'inherit'});
+          writeFileSync('orchestratie/geinstalleerd.json',JSON.stringify({versie,bronCommit:commit,bron:'geverifieerd_productie_api'},null,2)+'\n');
+          console.log('Verified live installed base',versie,commit.slice(0,12));
+          JS
+      - name: Create truthful bilingual manifest and v2 test report
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "RELEASE_VERSION=$(date -u +%Y%m%d-%H%M%S)" >> "$GITHUB_ENV"
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const base=JSON.parse(readFileSync('orchestratie/geinstalleerd.json','utf8'));
+          const commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+          const t={
+            uk:{titel:'Дизайнерська мобільна пошта Mijn Ruimte',samenvatting:'Брендовані живі конверти, виразне вікно Google та Microsoft і виправлена висота нижньої панелі без втрати реальних підключень.',
+              wijzigingen:['Плаваючі брендовані конверти й світлові деталі в орбіті','Gmail та Microsoft: великий логотип, дві перевірені переваги безпеки й чіткі дії','Мобільна панель має висоту за вмістом із безпечним прокручуванням'],
+              fixes:['Прибрано порожнє вікно примусової висоти 74dvh','Збережено відмінні режими підключення основного й додаткового Google-акаунта'],
+              beperkingen:['Скріншоти CI отримані на реальних компонентах із вигаданими даними, не на production','Фізичний Passkey та OAuth потрібні для окремої перевірки власником'],
+              instructies:'Перед установкою перегляньте скріншоти і підтвердьте випуск Passkey.'},
+            nl:{titel:'Vormgegeven mobiele e-mail in Mijn Ruimte',samenvatting:'Zwevende merkenveloppen en een helder Google/Microsoft-koppelvenster met een inhoudsafhankelijk onderpaneel, zonder de echte koppeling te verliezen.',
+              wijzigingen:['Lichtgevende merkenveloppen en subtiele diepte in de baan','Gmail en Microsoft met groot logo, eerlijke veiligheidsinformatie en duidelijke acties','Mobiel onderpaneel krijgt inhoudshoogte met veilig scrollen'],
+              fixes:['Lege vaste 74dvh-ruimte verwijderd','Hoofd- en extra Google-account behouden hun afzonderlijke OAuth-rol'],
+              beperkingen:['CI-beelden tonen echte componenten met fictieve data, niet production','Fysieke Passkey en OAuth vragen aparte controle door eigenaar'],
+              instructies:'Bekijk eerst de schermafbeeldingen en keur daarna afzonderlijk via Passkey goed.'}
+          };
+          const m={schema:1,versie:process.env.RELEASE_VERSION,aangemaakt:new Date().toISOString(),
+            herkomst:'git: feature/mailpolish-001-20261104-084133@'+commit+' (basis '+base.versie+' '+base.bronCommit+')',
+            auteur:'Eigenaar Test',zonderAi:false,deelnemers:[
+              {soort:'mens',naam:'Eigenaar Test',rollen:['auteur','controle']},
+              {soort:'ai',naam:'ChatGPT/Codex',platform:'ChatGPT',tool:'GitHub connector + GitHub Actions',model:{id:null,versie:null,bron:'onbekend'},rollen:['ontwikkeling','testen','verpakken']}],
+            beschrijving:t};
+          writeFileSync('uitvoer/MAILPOLISH-001-UITROL-MANIFEST.json',JSON.stringify(m,null,2)+'\n');
+          const log=readFileSync('uitvoer/mailpolish-tests.log','utf8');
+          const geslaagd=(log.match(/^OK\s/gm)||[]).length,mislukt=(log.match(/^FOUT\s/gm)||[]).length;
+          if(geslaagd<22||mislukt)throw Error('Unit evidence missing or failed');
+          writeFileSync('uitvoer/MAILPOLISH-001-TESTRESULTATEN.json',JSON.stringify({geslaagd,mislukt,falend:[],
+            uitleg:{uk:geslaagd+' одиничних перевірок успішні; TypeScript і production build зелені. Фізичний OAuth/Passkey та БД не перевірялися.',
+              nl:geslaagd+' unitcontroles geslaagd; TypeScript en productiebuild geslaagd. Fysieke OAuth/Passkey en database niet getest.'}},null,2)+'\n');
+          JS
+      - name: Build and check TRACE-001 installation and handover archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak MAILPOLISH-001 --auteur 'Eigenaar Test' --agent codex \
+            --versie "$RELEASE_VERSION" \
+            --manifest "$PWD/uitvoer/MAILPOLISH-001-UITROL-MANIFEST.json" \
+            --testresultaten "$PWD/uitvoer/MAILPOLISH-001-TESTRESULTATEN.json" \
+            --samenvatting-uk 'Дизайнерське мобільне підключення Gmail/Microsoft, жива орбіта та правильна висота вікна.' \
+            --samenvatting-nl 'Vormgegeven Gmail/Microsoft-koppeling, levende merkenbaan en inhoudshoogte.' --uit uitvoer
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-$RELEASE_VERSION-codex-overdracht.zip"
+          tar --gzip --list --file "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" | grep 'ONTWIKKELARCHIEF.json'
+          (cd uitvoer && sha256sum "mijn-ruimte-$RELEASE_VERSION.tar.gz" > "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
+          (cd uitvoer && sha256sum -c "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
+          echo "RELEASE_SHA=$(sha256sum "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          echo "RELEASE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Keep the entire unsigned handover for download
+        uses: actions/upload-artifact@v4
+        with:
+          name: MAILPOLISH-001-unsigned-handover
+          path: |
+            uitvoer/mijn-ruimte-*.tar.gz
+            uitvoer/mijn-ruimte-*.tar.gz.sha256
+            uitvoer/mijn-ruimte-*.voorstel.json
+            uitvoer/mijn-ruimte-*-overdracht.zip
+            uitvoer/MAILPOLISH-001-UITROL-MANIFEST.json
+            uitvoer/MAILPOLISH-001-TESTRESULTATEN.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish unsigned immutable GitHub prerelease, never install
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_VERSION" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION-codex-overdracht.zip" \
+            --target "$RELEASE_COMMIT" --prerelease --latest=false \
+            --title "MAILPOLISH-001 · $RELEASE_VERSION (unsigned)" \
+            --notes "Designer-matched React/CSS mail UI; real component screenshots in CI. Source: $RELEASE_COMMIT. SHA-256: $RELEASE_SHA. Separate owner approval required before production installation."
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_VERSION" \
+            --jq '.assets[] | select(.name | endswith(".tar.gz")) | .digest' > "$RUNNER_TEMP/github-mailpolish-digest.txt"
+          test "$(cat "$RUNNER_TEMP/github-mailpolish-digest.txt")" = "sha256:$RELEASE_SHA"
