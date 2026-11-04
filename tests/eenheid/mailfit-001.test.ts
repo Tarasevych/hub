@@ -34,11 +34,11 @@ export async function main(): Promise<number> {
     && css.includes('padding:5px 0 max(76px,env(safe-area-inset-bottom))'));
 
   const traceDossier=JSON.parse(readFileSync('orchestratie/ontwikkelarchieven/MAILFIT-002.json', 'utf8'));
-  const packageCode=readFileSync('scripts/orch/pakket.mjs', 'utf8');
+  const serverValidator=readFileSync('shared/ontwikkelarchief.ts', 'utf8');
   check('TRACE-001 staat alleen complete dossiers met expliciete geheimenuitzondering toe',
     traceDossier.taakId==='MAILFIT-002'
     && traceDossier.privacy?.geheimenUitgesloten===true
-    && packageCode.includes('dossier?.privacy?.geheimenUitgesloten !== true')
+    && serverValidator.includes('geheimenUitgesloten !== true')
     && typeof traceDossier.opdracht==='string'
     && traceDossier.opdracht.trim().length>=40);
 
