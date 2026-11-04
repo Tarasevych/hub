@@ -20,6 +20,10 @@ export async function main(): Promise<number> {
     css.includes(".google-mail-workspace:has(.google-mail-orbit[data-mail-account-resolution-empty='true']) > .mail-pagination-selection-dock")
     && css.includes(".google-mail-workspace:has(.google-mail-orbit[data-mail-account-resolution-empty='true']) > .mail-workspace-heading")
     && css.includes(".mail-functional:has(.google-mail-orbit[data-mail-account-resolution-empty='true']) .mail-top-command-bar"));
+  check('geen dubbel omkaderde site-in-site bij de lege inbox',
+    css.includes(".google-mail-workspace:has(.google-mail-orbit[data-mail-account-resolution-empty='true']){")
+    && css.includes('border:0!important;')
+    && css.includes('background:transparent!important;'));
   check('desktopkaart past zich aan de beschikbare kolombreedte aan',
     css.includes('grid-template-columns:minmax(290px,.93fr) minmax(440px,1.3fr)')
     && css.includes('@container mail-list (max-width:940px)')
