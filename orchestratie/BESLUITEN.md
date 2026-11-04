@@ -178,3 +178,13 @@ git і підпис SSH на ПК власника. Власник хоче ба
 **Хто.** Verzoek van de eigenaar (privacy); uitvoering door agent Claude. Wacht op passkey-bevestiging van de eigenaar.
 
 **Vervolg 1.4.5.** Na het herschrijven van de geschiedenis verwees asis.bronCommit naar een SHA die niet meer bestaat. Bijgewerkt naar de nieuwe SHA uit de mapping oud → nieuw (back-up). Geen inhoudelijke regelwijziging. Wacht op bevestiging van de eigenaar of de productiebasis klopt.
+
+## B-011 · 2026-11-04 · 1.4.6 · pakketcorrectie na tweede herschrijving van de historie
+
+**Контекст.** Власник погодив повторне переписування історії: IP-адреси `10.77.0.x` і залишки персональних даних (ім'я в кирилиці, persoonlijke e-mailadressen, een geboortedatum in een testfixture) verwijderd uit oude commits. De voorcontrole van het pakket op de site meldde: syntaxisfouten in shellscripts (CRLF door `core.autocrlf=true` bij `git archive`), SHA-256 van het journaal wijkt af van de commit, een AWS-voorbeeldsleutel in testcode, en geen TESTRESULTATEN.
+
+**Рішення.** (1) `maak-voorstelpakket.sh` gebruikt `git -c core.autocrlf=false archive`; `.gitattributes` bevat `*.sh text eol=lf`. (2) De AWS-voorbeeldsleutel uit de SigV4-test staat niet meer als één literal. (3) Basis in `beleid.json` → `5a023b41…` (oud `0614c8bf…`, mapping in de back-up). (4) Herkomst-SHA in het journaal PRIVACY-001 bijgewerkt. (5) ONTWIKKELARCHIEF wordt berekend op de blob-hash van het journaal in de nieuwe commit.
+
+**Наслідки.** `regelsVersie` 1.4.5 → 1.4.6. Commit-SHA's veranderen opnieuw. Pakketten van vóór deze versie (20261104-171525) verwijzen naar SHA's die niet meer bestaan en vervallen. Voor de release is een nieuwe GitHub Release-asset nodig.
+
+**Хто.** Verzoek van de eigenaar; uitvoering door agent Claude (Haiku 5.5). Wacht op passkey-bevestiging van de eigenaar.

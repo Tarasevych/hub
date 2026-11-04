@@ -5,3 +5,6 @@ orchestratie/taken/*.json merge=orch-staat
 orchestratie/inleveringen/*.json merge=orch-staat
 orchestratie/wachtrij.json merge=orch-staat
 orchestratie/geinstalleerd.json merge=orch-staat
+
+# Tekstbestanden met shell-syntaxis blijven LF, ook op Windows met core.autocrlf=true (anders breekt bash op de server).
+*.sh text eol=lf

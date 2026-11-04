@@ -7,7 +7,7 @@
     "herkomst":  {
                      "eigenaar":  "eigenaar",
                      "agent":  "claude",
-                     "basis":  "e5473812d547385378a278d91c24fb4e5389467f",
+                     "basis":  "3095e5fcf49ed5ebe3bc464d1d5884c5139723bd",
                      "tak":  "release/persoonsgegevens-20261104-164147",
                      "voorafgaand":  "fix/persoonsgegevens-uit-code-20261104 (eerste poging zonder herschrijving van de historie)",
                      "concept":  false
