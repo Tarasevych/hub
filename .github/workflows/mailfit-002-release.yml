@@ -6,7 +6,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: mailfit-001-release
+  group: mailfit-002-release
   cancel-in-progress: false
 jobs:
   verify-and-create-owner-candidate:
