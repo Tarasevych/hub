@@ -15,6 +15,7 @@ try{
     const facts=await page.evaluate(()=>{
       const $=s=>document.querySelector(s),rect=e=>e?.getBoundingClientRect();
       const intro=$('.mail-orbit-intro.is-inbox'),wrapper=$('.google-mail-orbit[data-mail-account-resolution-empty="true"]');
+      const workspace=$('.google-mail-workspace');
       const heading=$('.mail-workspace-heading'),pager=$('.mail-pagination-selection-dock');
       const main=$('.mail-orbit-desktop-hoofdknop'),mobile=$('.mail-orbit-mobiel-hoofdknop'),repeat=$('.mail-orbit-mobiel-snel');
       const r=rect(intro),w=rect(wrapper),root=$('#root');
@@ -26,6 +27,8 @@ try{
         headingDisplay:heading?getComputedStyle(heading).display:'absent',
         pagerDisplay:pager?getComputedStyle(pager).display:'absent',
         borderRadius:intro?parseFloat(getComputedStyle(intro).borderTopLeftRadius):0,
+        outerBorder:workspace?getComputedStyle(workspace).borderTopWidth:'absent',
+        outerBackground:workspace?getComputedStyle(workspace).backgroundColor:'absent',
         desktopButton:main?getComputedStyle(main).display:'absent',
         mobileButton:mobile?getComputedStyle(mobile).display:'absent',
         repeatedServices:repeat?getComputedStyle(repeat).display:'absent',
@@ -39,6 +42,8 @@ try{
     if(facts.domLength<500||!facts.hasEmpty)errors.push(`${width}: empty inbox did not render`);
     if(facts.headingDisplay!=='none'||facts.pagerDisplay!=='none')errors.push(`${width}: irrelevant mail heading/pager visible`);
     if(facts.borderRadius<23)errors.push(`${width}: square card (${facts.borderRadius}px)`);
+    if(facts.outerBorder!=='0px'||facts.outerBackground!=='rgba(0, 0, 0, 0)')
+      errors.push(`${width}: redundant outer mail panel (${facts.outerBorder}, ${facts.outerBackground})`);
     if(facts.scrollWidth>width+2)errors.push(`${width}: horizontal overflow ${facts.scrollWidth}`);
     if(facts.intro&&facts.wrapper&&Math.abs((facts.intro.x+facts.intro.width/2)-(facts.wrapper.x+facts.wrapper.width/2))>10)
       errors.push(`${width}: onboarding not centered`);
