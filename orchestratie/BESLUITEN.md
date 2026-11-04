@@ -167,12 +167,12 @@ git і підпис SSH на ПК власника. Власник хоче ба
 
 **Хто.** Вимога власника Власника від 04.11.2026, реалізація агентом `antigravity`. Очікує passkey/SSH-підтвердження власника.
 
-## B-010 · 2026-11-04 · 1.4.3 · privacy-correctie: persoonsgegevens uit publieke bronnen
+## B-010 · 2026-11-04 · 1.4.4 · privacy-correctie: persoonsgegevens uit publieke bronnen
 
 **Контекст.** Власник виявив персональні дані (ім'я, e-mailadressen, телефонний номер, адреси сервера) у публічному репозиторії: у коді, тестах, CI, документації, журналах і правилах.
 
 **Рішення.** (1) Персональні дані прибрано з коду й тестів; ім'я та контакт юридичних сторінок читаються із серверної конфігурації (`MR_EIGENAAR_NAAM`, `MR_CONTACT_EMAIL`). (2) Адреси сервера в документації й правилах замінено плейсхолдерами (`<VM-IP>`, `<beheersubnet>`). Beheersubnet voor de HA-beveiliging komt uit `MR_BEHEERSUBNET` (standaard 10.0.0.0/8, faalt dicht). (3) Adminscripts lezen het SSH-doel uit `MR_VM_SSH` of de SSH-alias `mijn-ruimte-vm`. (4) De geschiedenis van de repository is herschreven: persoonsgegevens vervangen door fictieve waarden. De mapping oud → nieuw wordt bewaard.
 
-**Наслідки.** `regelsVersie` 1.4.2 → 1.4.3. De inhoud van de regels verandert niet; alleen plaatshouders en verwijzingen. Commit-SHA's veranderen door de herschrijving, `regels.lock.json` is opnieuw vergrendeld. Oude BRON-COMMIT-verwijzingen van eerdere pakketten wijzen naar SHA's die op GitHub niet meer bestaan; de mapping in de back-up koppelt ze aan de nieuwe.
+**Наслідки.** `regelsVersie` 1.4.2 → 1.4.4 (1.4.3 was een concept dat nooit is geïnstalleerd). De inhoud van de regels verandert niet; alleen plaatshouders en verwijzingen. Commit-SHA's veranderen door de herschrijving, `regels.lock.json` is opnieuw vergrendeld. Oude BRON-COMMIT-verwijzingen van eerdere pakketten wijzen naar SHA's die op GitHub niet meer bestaan; de mapping in de back-up koppelt ze aan de nieuwe.
 
 **Хто.** Verzoek van de eigenaar (privacy); uitvoering door agent Claude. Wacht op passkey-bevestiging van de eigenaar.

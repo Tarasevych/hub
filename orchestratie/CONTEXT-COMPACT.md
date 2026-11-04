@@ -1,8 +1,8 @@
 <!-- GEGENEREERD door node scripts/orch.mjs context — niet met de hand wijzigen · ЗГЕНЕРОВАНО, не редагувати вручну -->
 # Mijn Ruimte — компактний контекст агента · compacte agentcontext
 
-- regelsVersie: `1.4.3`
-- regelsHash: `4027932cee22c99901c258d7616bfcd972b814e64ae814d268675bb1816fb2bc`
+- regelsVersie: `1.4.4`
+- regelsHash: `1d75941b51ced2cf6fd6d40bed4a5b98c8b165a1856ea0f27eb602a40ba1436d`
 - kritiekHash: `15fb72c45e30c0347440c8bc5002934d080b229eb61ce20543f5d1cd49b43bf7` (НЕ підтверджено власником · NIET bevestigd door eigenaar)
 - база · basis: `20261031-093842` @ `b279ccabe31a27139b337822162653ccc13b6a5a` (opgave_eigenaar)
 - інтеграційна гілка · integratietak: `integratie`
