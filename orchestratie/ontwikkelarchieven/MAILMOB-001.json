@@ -14,7 +14,9 @@
     "voorgaandePrs": [
       "https://github.com/Tarasevych/hub/pull/22",
       "https://github.com/Tarasevych/hub/pull/23"
-    ]
+    ],
+    "geverifieerdeProductieVersie": "20261103-211554",
+    "geverifieerdeProductieCommit": "a643431743eb1e7e64947bf747018aac55d69750"
   },
   "tijdlijn": [
     {
@@ -77,6 +79,14 @@
       "stap": "GitHub CI перевірив контроль ORCH, unit-тести UI та Passkey, TypeScript і production build; фактичні результати внесені у комічений журнал.",
       "bewijzen": [
         "https://github.com/Tarasevych/hub/actions/runs/41785803960"
+      ]
+    },
+    {
+      "volgorde": 8,
+      "stap": "Перший GitHub CI успішно виконав тести, перевірку типів і production build, але коректно зупинив випуск: production уже оновлено до 20261103-211554/a643431. Нова встановлена база перевірена як предок гілки через GitHub Compare (ahead=16, behind=0); фіксована база пакета скоригована. Жоден пакет із застарілою базою не випущено.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41785803960",
+        "https://github.com/Tarasevych/hub/compare/a643431743eb1e7e64947bf747018aac55d69750...f583e01bf33b"
       ]
     }
   ],
@@ -167,6 +177,13 @@
       "bewijzen": [
         "https://github.com/Tarasevych/hub/actions/runs/41785803960"
       ]
+    },
+    {
+      "status": "geblokkeerd",
+      "resultaat": "CI 41785803960: unit/UI та TypeScript, production build і ORCH пройшли, але BASIS_VEROUDERD на live сервері: 20261103-211554 / a643431. Захист правильно зупинив публікацію до звірки й нової спроби.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41785803960"
+      ]
     }
   ],
   "bronnen": [
@@ -175,7 +192,7 @@
     "https://github.com/Tarasevych/hub/blob/b20a5b25cb7b640dd636c86bce7ed139a8225fbd/AGENTS.md"
   ],
   "beperkingen": [
-    "Поки CI не завершено, результати тестів і наявність GitHub release невідомі.",
+    "CI кодові тести пройдено під час першого запуску; пакет і GitHub Release ще не зібрано після виявленої зміни встановленої бази.",
     "Реальне завершення Google/Microsoft OAuth, фізичний Passkey і перевірка живого Android потребують ручного E2E власника.",
     "Перед застосуванням TRACE-001 критичні правила 1.4.1 потребують окремого підтвердження власника. Жодного автоматичного встановлення.",
     "Початкове фото та скриншоти користувача не комітяться як приватні вкладення."

@@ -83,7 +83,7 @@ jobs:
           j.controles.push({status:'bevestigd',
             resultaat:'CI: '+geslaagd+'/'+geslaagd+' controlepunten in MAILMOB-001 + MAILORBIT-001; TypeScript client en server plus build geslaagd. Database-test draait alleen indien DATABASE_URL aanwezig.',
             bewijzen:['https://github.com/Tarasevych/hub/actions/runs/'+process.env.GITHUB_RUN_ID]});
-          j.tijdlijn.push({volgorde:7,stap:'GitHub CI перевірив контроль ORCH, unit-тести UI та Passkey, TypeScript і production build; фактичні результати внесені у комічений журнал.',bewijzen:['https://github.com/Tarasevych/hub/actions/runs/'+process.env.GITHUB_RUN_ID]});
+          j.tijdlijn.push({volgorde:Math.max(0,...j.tijdlijn.map((x)=>Number(x.volgorde)||0))+1,stap:'GitHub CI перевірив контроль ORCH, unit-тести UI та Passkey, TypeScript і production build; фактичні результати внесені у комічений журнал.',bewijzen:['https://github.com/Tarasevych/hub/actions/runs/'+process.env.GITHUB_RUN_ID]});
           writeFileSync(pad,JSON.stringify(j,null,2)+'\n');
           JS
           git config user.name 'github-actions[bot]'
@@ -101,8 +101,8 @@ jobs:
           node --input-type=module <<'JS'
           import {readFileSync,writeFileSync} from 'node:fs';
           const actual=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/mijn-ruimte-production.json','utf8'));
-          const commit='15025c3e9c8466b650f0a5488b18c42f54ab9d3a';
-          const versie='20261103-205438';
+          const commit='a643431743eb1e7e64947bf747018aac55d69750';
+          const versie='20261103-211554';
           if(actual.commit!==commit||actual.versie!==versie){
             console.error('BASIS_VEROUDERD: live installation moved; stop, rebase and update the verified base', {versie:actual.versie,commit:String(actual.commit||'').slice(0,12)});
             process.exit(1);
@@ -136,7 +136,7 @@ jobs:
               instructies:'Controleer eerst de Android-ervaring. Installeren alleen met een aparte Passkey-beslissing van de eigenaar.'}
           };
           const manifest={schema:1,versie,aangemaakt:new Date().toISOString(),
-            herkomst:'git: feature/mailmob-001-20261104-073200@'+sha+' (basis 20261103-205438 15025c3e9c8466b650f0a5488b18c42f54ab9d3a)',
+            herkomst:'git: feature/mailmob-001-20261104-073200@'+sha+' (basis 20261103-211554 a643431743eb1e7e64947bf747018aac55d69750)',
             auteur:'Eigenaar Test',zonderAi:false,
             deelnemers:[{soort:'mens',naam:'Eigenaar Test',rollen:['auteur','controle']},
               {soort:'ai',naam:'ChatGPT',platform:'ChatGPT/Codex',tool:'GitHub connector en GitHub Actions',
@@ -197,7 +197,7 @@ jobs:
             "uitvoer/mijn-ruimte-$RELEASE_VERSION-codex-overdracht.zip" \
             --target "$RELEASE_COMMIT" --prerelease --latest=false \
             --title "MAILMOB-001 · $RELEASE_VERSION (unsigned)" \
-            --notes "MOBILEMAIL + Passkey remember: verified in GitHub Actions. Source: $RELEASE_COMMIT. Installed basis: 20261103-205438 / 15025c3e9c8466b650f0a5488b18c42f54ab9d3a. SHA-256: $RELEASE_SHA. The owner must separately approve integration and Passkey installation."
+            --notes "MOBILEMAIL + Passkey remember: verified in GitHub Actions. Source: $RELEASE_COMMIT. Installed basis: 20261103-211554 / a643431743eb1e7e64947bf747018aac55d69750. SHA-256: $RELEASE_SHA. The owner must separately approve integration and Passkey installation."
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_VERSION" --jq '.assets[] | select(.name | endswith(".tar.gz")) | .digest' > "$RUNNER_TEMP/github-asset-digest.txt"
           test "$(cat "$RUNNER_TEMP/github-asset-digest.txt")" = "sha256:$RELEASE_SHA"
       - name: End-of-run summary
