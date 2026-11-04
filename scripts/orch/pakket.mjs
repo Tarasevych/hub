@@ -66,6 +66,14 @@ export function maakOverdrachtPakket(o) {
       if (bytes.length > 256_000) return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG','журнал завеликий','ontwikkeldossier te groot')] };
       let dossier;
       try { dossier=JSON.parse(bytes.toString('utf8')); } catch { return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG','неправильний JSON журналу','ongeldige JSON van dossier')] }; }
+      // Match shared/ontwikkelarchief.ts early, before GitHub Release publication.
+      // A syntactically valid journal can otherwise be rejected only after upload.
+      if (typeof dossier?.opdracht !== 'string' || dossier.opdracht.trim().length < 40) {
+        return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG', 'dossier.opdracht: мінімум 40 символів', 'dossier.opdracht: minstens 40 tekens')] };
+      }
+      if (dossier?.privacy?.geheimenUitgesloten !== true) {
+        return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG', 'dossier.privacy.geheimenUitgesloten має бути true', 'dossier.privacy.geheimenUitgesloten moet true zijn')] };
+      }
       if (dossier?.schema !== 1 || dossier?.taakId !== o.taakId ||
           !['tijdlijn','keuzes','wijzigingen','controles','bronnen','beperkingen'].every((k)=>Array.isArray(dossier[k]) && dossier[k].length)) {
         return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG','журнал без обов’язкових розділів','dossier mist verplichte rubrieken')] };
