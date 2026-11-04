@@ -88,6 +88,13 @@
         "https://github.com/Tarasevych/hub/actions/runs/41785803960",
         "https://github.com/Tarasevych/hub/compare/a643431743eb1e7e64947bf747018aac55d69750...f583e01bf33b"
       ]
+    },
+    {
+      "volgorde": 9,
+      "stap": "GitHub CI перевірив контроль ORCH, unit-тести UI та Passkey, TypeScript і production build; фактичні результати внесені у комічений журнал.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41786254494"
+      ]
     }
   ],
   "keuzes": [
@@ -183,6 +190,13 @@
       "resultaat": "CI 41785803960: unit/UI та TypeScript, production build і ORCH пройшли, але BASIS_VEROUDERD на live сервері: 20261103-211554 / a643431. Захист правильно зупинив публікацію до звірки й нової спроби.",
       "bewijzen": [
         "https://github.com/Tarasevych/hub/actions/runs/41785803960"
+      ]
+    },
+    {
+      "status": "bevestigd",
+      "resultaat": "CI: 37/37 controlepunten in MAILMOB-001 + MAILORBIT-001; TypeScript client en server plus build geslaagd. Database-test draait alleen indien DATABASE_URL aanwezig.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41786254494"
       ]
     }
   ],
