@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MAILPOLISH-001",
+  "agent": "codex",
+  "tak": "feature/mailpolish-001-20261104-084133",
+  "basisCommit": "90f0d737a6007d401ded790e6a27d018e34eb890",
+  "basisVersie": "20261031-093842",
+  "regelsVersie": "1.4.1",
+  "regelsHash": "bd7a35e3bfbdab6f330b7b2c1ee19d54df621a514a5d0caacba591d81d528dc9",
+  "staat": "in_progress",
+  "gestart": "2026-11-04T07:57:54.431Z",
+  "bijgewerkt": "2026-11-04T07:57:54.431Z",
+  "omschrijving": "Відтворення дизайнерської концепції мобільного підключення пошти",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
