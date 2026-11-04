@@ -8,6 +8,10 @@ on:
   push:
     branches:
       - feature/identity-account-20261104-120000
+    paths:
+      - 'docs/ontwerp/identity-account/**'
+      - 'orchestratie/ontwikkelarchieven/IDENTITY-001.json'
+      - '.github/workflows/identity-account-release.yml'
 
 permissions:
   contents: write
@@ -25,7 +29,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Sla over als deze commit al een uitgave heeft
+        id: bestaatal
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          COMMIT="$(git rev-parse HEAD)"
+          BESTAAND="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq ".[] | select((.body // \"\") | contains(\"BRON-COMMIT: $COMMIT\")) | .tag_name" | head -n 1)"
+          if [ -n "$BESTAAND" ]; then
+            echo "bestaat=$BESTAAND" >> "$GITHUB_OUTPUT"
+            echo "deze commit heeft al een uitgave ($BESTAAND) — geen tweede pakket"
+          else
+            echo "bestaat=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Verifieer productiebasis (geen giswerk)
+        if: steps.bestaatal.outputs.bestaat == ''
         run: |
           set -euo pipefail
           TS="$(date -u +%s)"
@@ -47,6 +68,7 @@ jobs:
           ' "$VERSIE" "$COMMIT" orchestratie/geinstalleerd.json
 
       - name: Bouw manifest
+        if: steps.bestaatal.outputs.bestaat == ''
         env:
           SAMENVATTING_UK: "Дизайн сторінки акаунта identity: 12 екранів на одній сторінці, прототип, ТЗ і матриця покриття; код застосунку не змінено."
           SAMENVATTING_NL: "Ontwerp van de identity-accountpagina: twaalf schermen op één pagina, prototype, specificatie en dekkingsmatrix; applicatiecode ongewijzigd."
@@ -99,6 +121,7 @@ jobs:
           PY
 
       - name: Bouw pakket
+        if: steps.bestaatal.outputs.bestaat == ''
         run: |
           set -euo pipefail
           VERSIE="$RELEASE_VERSION"
@@ -155,6 +178,7 @@ jobs:
           PY
 
       - name: Publiceer GitHub Release
+        if: steps.bestaatal.outputs.bestaat == ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -165,7 +189,7 @@ jobs:
             "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256" \
             --target "$COMMIT" \
             --title "IDENTITY-ACCOUNT · $RELEASE_VERSION" \
-            --notes "Дизайн сторінки керування обліковим записом (12 екранів identity): живий прототип, ТЗ, матриця покриття. Лише документація — код застосунку не змінювався. Журнал розробки: orchestratie/ontwikkelarchieven/IDENTITY-001.json. Встановлення — лише за passkey-рішенням власника." \
+            --notes "Дизайн сторінки керування обліковим записом (12 екранів identity): живий прототип, ТЗ, матриця покриття. Лише документація — код застосунку не змінювався. Журнал розробки: orchestratie/ontwikkelarchieven/IDENTITY-001.json. Встановлення — лише за passkey-рішенням власника. BRON-COMMIT: $COMMIT" \
             --prerelease --latest=false
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_VERSION" \
             --jq '.assets[] | select(.name | endswith(".tar.gz")) | "\(.name) \(.digest)"' | tee "$RUNNER_TEMP/digest.txt"
