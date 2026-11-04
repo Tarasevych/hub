@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "taakId": "MAILFIT-001",
+  "datum": "2026-11-04",
+  "taal": "uk",
+  "opdracht": "Власник порівняв центровану заокруглену сторінку входу Google із порожньою поштою Mijn Ruimte: на ПК орбіта не вміщується у вікно, рамка виглядає як сайт у сайті, а Вхідні й 0–0 із ≥0 займають місце до підключення. Потрібна єдина дизайнерська композиція, адаптація до реальної ширини та висоти, дієва основна кнопка Gmail, відсутність повторних списків на смартфоні та перевірений пакет оновлення за правилами TRACE-001.",
+  "herkomst": {
+    "eigenaar": "Eigenaar Test",
+    "agent": "ChatGPT/Codex",
+    "basis": "0ba1fc61f4c2d9a1cba1f45a764982d113cfd8bf",
+    "geinstalleerdeBasis": "e97a58ceaf70f6a4a8d63608541d47e455ddb66a",
+    "geinstalleerdeVersie": "20261104-075953",
+    "tak": "fix/mailfit-001-20261104-110700",
+    "vorigePr": "https://github.com/Tarasevych/hub/pull/26",
+    "pr": "https://github.com/Tarasevych/hub/pull/27"
+  },
+  "bronnen": [
+    {"soort":"beschrijving_eigenaar","omschrijving":"Desktop 1920×1080: Google-login correct gecentreerd en afgerond, lege Mail-onboarding te hoog en extra mailpaginering zichtbaar","inhoudGepubliceerd":false},
+    {"soort":"serverversie","omschrijving":"Live /api/version gecontroleerd op 2026-11-04: 20261104-075953, e97a58ceaf70f6a4a8d63608541d47e455ddb66a","inhoudGepubliceerd":true}
+  ],
+  "tijdlijn": [
+    {"volgorde":1,"stap":"Прочитано AGENTS.md, beleid.json, правила пакування й TRACE-001. З'ясовано, що попередні PR #26 і #27 не інтегровані, а live commit — e97a58ce…; основу змінених компонентів звірено з head PR #26.","bewijzen":["AGENTS.md","deploy/REGELS-UITROLPAKKET.md","https://github.com/Tarasevych/hub/pull/26"]},
+    {"volgorde":2,"stap":"Внесено нову композицію лише для порожньої пошти: центрована картка, desktop grid, адаптивна орбіта, Gmail CTA, приховані неактуальні заголовок, пагінація та пошук; в існуючих скриньках інструменти незмінні.","bewijzen":["src/mail/MailOrbitIntro.tsx","src/mail/mail-orbit-intro.css"]},
+    {"volgorde":3,"stap":"Додано перевірки контрактів, контроль CSS, а також Chromium-fixture реальної MailFunctionalView з вигаданими даними й перевіркою порожнього стану на 390×800, 768×1024, 1280×800, 1920×1080.","bewijzen":["tests/eenheid/mailfit-001.test.ts","tests/visueel/mailfit-preview.tsx","tests/visueel/mailfit-screen.mjs"]},
+    {"volgorde":4,"stap":"Створено окрему гілку та draft PR #27 поверх ще не злитого PR #26. У production жодних змін не вносили.","bewijzen":["https://github.com/Tarasevych/hub/pull/27"]},
+    {"volgorde":5,"stap":"Повторно перевірено встановлену версію через авторизований Chrome: 20261104-075953, commit e97a58ceaf70f6a4a8d63608541d47e455ddb66a. Готується лише непідписаний власником кандидат із перевіркою GitHub Release asset.","bewijzen":["https://mail.tarasevych.com/api/version"]}
+  ],
+  "keuzes": [
+    {"keuze":"Не змінювати OAuth або IMAP у дизайнерській задачі","reden":"Новий дизайн не доводить, що реальний Gmail OAuth повністю працює; проблема callback із MAILFIX-001 вимагає окремого діагностичного коду. PKCE/state/HttpOnly недоторканні."},
+    {"keuze":"Приховувати поштову пагінацію лише в справжньому стані без підключень","reden":"Підключені скриньки зберігають усі інструменти, нічого не зникає в робочому режимі."},
+    {"keuze":"Підлаштовувати верстку через container query та viewport units","reden":"Фактична ширина робочої області відрізняється залежно від бічного меню; фіксовані 450px висоти не вміщалися."},
+    {"keuze":"Не називати джерельний ZIP інсталяційним релізом","reden":"TRACE-001 вимагає окремого пакета з Git-комітом, журналом, підписом власника або Passkey та точною GitHub Release asset SHA-256."}
+  ],
+  "wijzigingen": [
+    "src/mail/MailOrbitIntro.tsx",
+    "src/mail/mail-orbit-intro.css",
+    "tests/eenheid/mailfit-001.test.ts",
+    "tests/visueel/mailfit-preview.html",
+    "tests/visueel/mailfit-preview.tsx",
+    "tests/visueel/mailfit-screen.mjs",
+    ".github/workflows/mailfit-001-release.yml",
+    "orchestratie/ontwikkelarchieven/MAILFIT-001.json"
+  ],
+  "controles": [
+    {"status":"bevestigd","resultaat":"Локальний `node scripts/orch.mjs controleer`: exit 0, regelsVersie 1.4.1, із попередженням KRITIEK_NIET_BEVESTIGD (автоустановлення заборонене).","bewijzen":["orchestratie/beleid.json"]},
+    {"status":"bevestigd","resultaat":"Підтверджено через живий endpoint: встановлена версія 20261104-075953, commit e97a58ceaf70f6a4a8d63608541d47e455ddb66a.","bewijzen":["https://mail.tarasevych.com/api/version"]},
+    {"status":"bevestigd","resultaat":"Контрактні перевірки вихідного коду, баланс дужок CSS, валідність ORCH-OVERDRACHT.json успішні; не замінюють E2E.","bewijzen":["tests/eenheid/mailfit-001.test.ts"]},
+    {"status":"gepland","resultaat":"GitHub Actions мусить довести unit, frontend/backend typecheck, build, справжній DOM React, розміри, відсутність дублювання і не порожні PNG; лише після цього створювати непідписаний Release.","bewijzen":[".github/workflows/mailfit-001-release.yml"]}
+  ],
+  "beperkingen": [
+    "Android Google OAuth не перевірено до завершення: справжня причина callback відмови не встановлена; новий UI не можна рекламувати як виправлення авторизації.",
+    "PR #26 і #27 — чернетки; зміни не інтегровано у захищену гілку і не встановлено на сервері.",
+    "Встановлення — тільки після окремого Passkey/SSH-підтвердження власника; автоінсталяція заборонена непідписаним критичним lock.",
+    "Скріншоти користувача й приватний вміст листів у GitHub не публікувалися."
+  ],
+  "privacy": {
+    "geenGeheimen": true,
+    "geenBrieven": true,
+    "geenVerborgenRedenering": true,
+    "tijdelijkeBestanden": "Локальний MAILFIX-001 source snapshot без .git і тимчасові вихідні файли; без сесій, cookies, токенів та секретних матеріалів."
+  }
+}
