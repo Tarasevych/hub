@@ -1,0 +1,234 @@
+name: MAILFIT-002 · complete empty-Mail QA and unsigned TRACE release
+on:
+  push:
+    branches:
+      - fix/mailfit-002-20261104-170000
+permissions:
+  contents: write
+concurrency:
+  group: mailfit-001-release
+  cancel-in-progress: false
+jobs:
+  verify-and-create-owner-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - name: Checkout exactly this change, with Git history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Register own task and verify project rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs controleer
+          if ! test -f orchestratie/taken/MAILFIT-002.json; then
+            node scripts/orch.mjs taak-start --id MAILFIT-002 --agent codex \
+              --basis 034e34f95a86fed056a545f61c774cd91400dd32 \
+              --tak fix/mailfit-002-20261104-170000 \
+              --omschrijving 'Адаптивний центрований екран першого підключення пошти, без зайвої навігації'
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add orchestratie/taken/MAILFIT-002.json
+            git commit -m 'MAILFIT-002: registreer orkestratietaak [skip ci]'
+            git push origin HEAD:refs/heads/fix/mailfit-002-20261104-170000
+          fi
+          node scripts/orch.mjs versheid --taak MAILFIT-002 --fase start
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Keep the canonical button registry synchronized
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/zoek-ui-catalogus.mjs
+          if ! git diff --quiet -- shared/zoek-ui-knoppen.generated.ts; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add shared/zoek-ui-knoppen.generated.ts
+            git commit -m 'MAILFIT-002: werk canonieke knopindex bij [skip ci]'
+            git push origin HEAD:refs/heads/fix/mailfit-002-20261104-170000
+          fi
+      - name: Unit regressions, both TypeScript targets and production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p uitvoer
+          node scripts/eenheidstests.mjs orch-kern | tee uitvoer/mailfit-tests.log
+          node scripts/eenheidstests.mjs mailfit-001 | tee -a uitvoer/mailfit-tests.log
+          node scripts/eenheidstests.mjs mailfix-001 | tee -a uitvoer/mailfit-tests.log
+          node scripts/eenheidstests.mjs mailpolish-001 | tee -a uitvoer/mailfit-tests.log
+          node scripts/eenheidstests.mjs mail-orbit-001 | tee -a uitvoer/mailfit-tests.log
+          node scripts/eenheidstests.mjs mailmob-001 | tee -a uitvoer/mailfit-tests.log
+          npx tsc --noEmit -p tsconfig.json
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=5120 npm run build
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILFIT-002 --fase overdracht
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - name: Render and assert the real empty inbox at four viewport sizes
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx --yes playwright@1.56.1 install --with-deps chromium
+          npx vite --host 127.0.0.1 --port 4179 > uitvoer/mailfit-vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for poging in $(seq 1 45); do
+            if curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailfit-preview.html' > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailfit-preview.html' > /dev/null
+          node tests/visueel/mailfit-screen.mjs | tee uitvoer/mailfit-geometry.log
+          test -s uitvoer/mailfit-390.png
+          test -s uitvoer/mailfit-1920.png
+      - name: Preserve real, nonempty visual and test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MAILFIT-002-real-empty-inbox-qa
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            uitvoer/mailfit-*.png
+            uitvoer/mailfit-tests.log
+            uitvoer/mailfit-geometry.log
+            uitvoer/mailfit-browser-errors.log
+            uitvoer/mailfit-vite.log
+      - name: Bind verified CI results to TRACE-001 development archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const path='orchestratie/ontwikkelarchieven/MAILFIT-002.json';
+          const dossier=JSON.parse(readFileSync(path,'utf8'));
+          const tests=readFileSync('uitvoer/mailfit-tests.log','utf8');
+          const geometry=readFileSync('uitvoer/mailfit-geometry.log','utf8');
+          const passed=(tests.match(/^OK\s/gm)||[]).length;
+          const failed=(tests.match(/^FOUT\s/gm)||[]).length;
+          if(passed<20||failed)throw Error(`Insufficient unit evidence: ${passed} OK, ${failed} FOUT`);
+          for(const width of [390,768,1280,1920])if(!geometry.includes(`MAILFIT_SCREEN_${width}:`))throw Error('Missing geometry '+width);
+          const url='https://github.com/Tarasevych/hub/actions/runs/'+process.env.GITHUB_RUN_ID;
+          dossier.controles.push({status:'bevestigd',resultaat:`CI: ${passed} unit checks, frontend/backend typecheck, production build en echte React mailpagina op 390/768/1280/1920px geslaagd. OAuth en owner Passkey zijn niet getest.`,bewijzen:[url]});
+          dossier.tijdlijn.push({volgorde:dossier.tijdlijn.length+1,stap:'GitHub Actions перевірив порожню MailFunctionalView: працююче React-дерево, кнопки, розміри, скріншоти та відсутність JS-помилок. Це не підтверджує OAuth.',bewijzen:[url]});
+          writeFileSync(path,JSON.stringify(dossier,null,2)+'\n');
+          JS
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add orchestratie/ontwikkelarchieven/MAILFIT-002.json
+          git commit -m 'MAILFIT-002: verbind echte CI-bewijzen aan TRACE [skip ci]'
+          git push origin HEAD:refs/heads/fix/mailfit-002-20261104-170000
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILFIT-002 --fase overdracht
+      - name: Check live installed version and exact Git ancestor
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --max-time 20 --retry 2 \
+            'https://mail.tarasevych.com/api/version' > "$RUNNER_TEMP/mailfit-live-version.json"
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const live=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/mailfit-live-version.json','utf8'));
+          const version=String(live.versie||''),commit=String(live.commit||'');
+          if(!/^\d{8}-\d{6}$/.test(version)||!/^[a-f0-9]{40}$/.test(commit))throw Error('BASIS_ONGELDIG');
+          if(commit!=='e97a58ceaf70f6a4a8d63608541d47e455ddb66a')throw Error('LIVE_BASIS_GEWIJZIGD: rebuild on latest installed release');
+          execFileSync('git',['merge-base','--is-ancestor',commit,'HEAD'],{stdio:'inherit'});
+          writeFileSync('orchestratie/geinstalleerd.json',JSON.stringify({versie:version,bronCommit:commit,bron:'geverifieerd_productie_api'},null,2)+'\n');
+          console.log('LIVE_BASE',version,commit);
+          JS
+      - name: Assemble accurate bilingual manifest and v2 test report
+        shell: bash
+        run: |
+          set -euo pipefail
+          export RELEASE_VERSION="$(date -u +%Y%m%d-%H%M%S)"
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          if(!/^\d{8}-\d{6}$/.test(process.env.RELEASE_VERSION||'')) throw Error('RELEASE_VERSION_ONTBREEKT');
+          const base=JSON.parse(readFileSync('orchestratie/geinstalleerd.json','utf8'));
+          const commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+          const description={
+            uk:{titel:'Адаптивний старт пошти Mijn Ruimte',samenvatting:'Центрована заокруглена картка, підлаштована орбіта провайдерів, основна кнопка Gmail і чиста порожня пошта без зайвої пагінації.',
+              wijzigingen:['Дизайнерська картка з двома колонками на ПК та однією на смартфоні','Кнопка Gmail і інтерактивні провайдери без дубльованого каталогу','Автоматичне підлаштування до ширини контейнера й висоти вікна'],
+              fixes:['Приховано поштовий лічильник та навігацію лише без підключень','Виправлено TRACE-001 dossier.privacy і додано ранню перевірку архіву','Прибрано зайву ширину й фіксовану висоту початкової орбіти'],
+              beperkingen:['Android Google OAuth залишається неперевіреним; попереднє блокування не оголошується виправленим','Встановлення потребує окремого підтвердження власника через Passkey/SSH'],
+              instructies:'Перед встановленням перевірте знімки, діагностику OAuth та підтвердьте оновлення Passkey.'},
+            nl:{titel:'Responsieve startpagina voor Mijn Ruimte Mail',samenvatting:'Gecentreerde afgeronde kaart, aanpasbare aanbiedersbaan, duidelijke Gmail-knop en een lege inbox zonder zinloze paginering.',
+              wijzigingen:['Ontwerpkaart met twee kolommen op desktop en één op telefoon','Gmail-knop en interactieve aanbieders zonder dubbele catalogus','Automatische aanpassing aan containerbreedte en vensterhoogte'],
+              fixes:['Berichtenteller en navigatie alleen verborgen bij ontbrekende koppelingen','TRACE-001 dossier.privacy hersteld met vroege pakketvalidatie','Overbodige inperking en vaste beginhoogte van de baan verwijderd'],
+              beperkingen:['Android Google OAuth is niet met de eigenaar bevestigd; eerdere storing wordt niet als opgelost gemeld','Installatie vraagt aparte Passkey/SSH-toestemming van de eigenaar'],
+              instructies:'Controleer de schermafbeeldingen en OAuth-status vóór afzonderlijke Passkey-goedkeuring.'}
+          };
+          const manifest={schema:1,versie:process.env.RELEASE_VERSION,aangemaakt:new Date().toISOString(),
+            herkomst:`git: fix/mailfit-002-20261104-170000@${commit} (basis ${base.versie} ${base.bronCommit})`,
+            auteur:'Eigenaar Test',zonderAi:false,
+            deelnemers:[{soort:'mens',naam:'Eigenaar Test',rollen:['auteur','controle']},
+              {soort:'ai',naam:'ChatGPT/Codex',platform:'ChatGPT',tool:'GitHub connector + GitHub Actions',model:{id:null,versie:null,bron:'onbekend'},rollen:['ontwikkeling','testen','verpakken']}],
+            beschrijving:description};
+          writeFileSync('uitvoer/MAILFIT-002-UITROL-MANIFEST.json',JSON.stringify(manifest,null,2)+'\n');
+          const log=readFileSync('uitvoer/mailfit-tests.log','utf8');
+          const geslaagd=(log.match(/^OK\s/gm)||[]).length,mislukt=(log.match(/^FOUT\s/gm)||[]).length;
+          if(geslaagd<20||mislukt)throw Error('Unit tests are not proven successful');
+          writeFileSync('uitvoer/MAILFIT-002-TESTRESULTATEN.json',JSON.stringify({geslaagd,mislukt,falend:[],
+            uitleg:{uk:`${geslaagd} одиничних тестів, TypeScript і build успішні; перевірено 4 реальні viewport у Chromium. Живий OAuth і Passkey не тестувалися.`,
+              nl:`${geslaagd} unitcontroles, TypeScript en build geslaagd; vier echte Chromium-vensters geverifieerd. Live OAuth en Passkey niet getest.`}},null,2)+'\n');
+          JS
+      - name: Create and validate the actual unsigned TRACE-001 release
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak MAILFIT-002 --auteur 'Eigenaar Test' --agent codex \
+            --versie "$RELEASE_VERSION" \
+            --manifest "$PWD/uitvoer/MAILFIT-002-UITROL-MANIFEST.json" \
+            --testresultaten "$PWD/uitvoer/MAILFIT-002-TESTRESULTATEN.json" \
+            --samenvatting-uk 'Компактний заокруглений адаптивний старт пошти, без зайвої навігації та повторень.' \
+            --samenvatting-nl 'Compacte afgeronde responsieve startpagina voor Mail zonder dubbele navigatie.' --uit uitvoer
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-$RELEASE_VERSION-codex-overdracht.zip"
+          tar --gzip --list --file "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" | grep 'ONTWIKKELARCHIEF.json'
+          (cd uitvoer && sha256sum "mijn-ruimte-$RELEASE_VERSION.tar.gz" > "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
+          (cd uitvoer && sha256sum -c "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const m=JSON.parse(readFileSync('uitvoer/MAILFIT-002-UITROL-MANIFEST.json','utf8'));
+          if(m.versie!==process.env.RELEASE_VERSION)throw Error('MANIFEST_VERSIE_VERSCHILT');
+          JS
+          echo "RELEASE_SHA=$(sha256sum "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          echo "RELEASE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Save installable file and full handover as CI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MAILFIT-002-unsigned-handover
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            uitvoer/mijn-ruimte-*.tar.gz
+            uitvoer/mijn-ruimte-*.tar.gz.sha256
+            uitvoer/mijn-ruimte-*.voorstel.json
+            uitvoer/mijn-ruimte-*-overdracht.zip
+            uitvoer/MAILFIT-002-UITROL-MANIFEST.json
+            uitvoer/MAILFIT-002-TESTRESULTATEN.json
+      - name: Publish unsigned GitHub prerelease with verified asset digest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_VERSION" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION-codex-overdracht.zip" \
+            --target "$RELEASE_COMMIT" --prerelease --latest=false \
+            --title "MAILFIT-002 · $RELEASE_VERSION (unsigned)" \
+            --notes "Corrected TRACE-001 privacy dossier and validated responsive empty-mail design. Source $RELEASE_COMMIT; tar SHA-256 $RELEASE_SHA. Google OAuth is not yet confirmed as fixed. Do NOT auto-install; owner must separately review, approve with Passkey/SSH and run the canonical installer."
+          digest="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_VERSION" --jq '.assets[] | select(.name | endswith(".tar.gz")) | .digest')"
+          test "$digest" = "sha256:$RELEASE_SHA"
+
+# No self-install, no auto-merge and no bypass of owner-controlled Passkey/SSH checks.
