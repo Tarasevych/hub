@@ -319,6 +319,14 @@
 /* MAILFIT-001 · Empty inbox is a native, viewport-aware onboarding surface.
    Only the empty-mail state is affected; connected inboxes retain their tools. */
 .mail-orbit-desktop-hoofdknop{display:none}
+/* The empty inbox is a complete surface: do not nest it in another mail panel. */
+.google-mail-workspace:has(.google-mail-orbit[data-mail-account-resolution-empty='true']){
+  border:0!important;
+  border-radius:0;
+  box-shadow:none!important;
+  background:transparent!important;
+  overflow:visible;
+}
 .google-mail-workspace:has(.google-mail-orbit[data-mail-account-resolution-empty='true']) > .mail-workspace-heading,
 .google-mail-workspace:has(.google-mail-orbit[data-mail-account-resolution-empty='true']) > .mail-pagination-selection-dock{
   display:none;
