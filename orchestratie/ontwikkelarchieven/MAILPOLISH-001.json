@@ -16,37 +16,64 @@
     {
       "volgorde": 1,
       "stap": "Порівняно два зображення: концепт має великий логотип Gmail, дві змістовні картки довіри та природну висоту, а на сайті видно технічну шапку, звичайний текст і великі порожні 74dvh.",
-      "bewijzen": ["Зображення надані користувачем у приватному чаті 04.11.2026; не публікуємо"]
+      "bewijzen": [
+        "Зображення надані користувачем у приватному чаті 04.11.2026; не публікуємо"
+      ]
     },
     {
       "volgorde": 2,
       "stap": "Прочитані AGENTS.md, beleid.json, CONTEXT-COMPACT.md, REGELS-UITROLPAKKET, RUNBOOK, BESLUITEN; підтверджено правила TRACE-001, заборону запису в захищені гілки та окреме підтвердження встановлення власником.",
-      "bewijzen": ["AGENTS.md", "orchestratie/beleid.json", "orchestratie/BESLUITEN.md"]
+      "bewijzen": [
+        "AGENTS.md",
+        "orchestratie/beleid.json",
+        "orchestratie/BESLUITEN.md"
+      ]
     },
     {
       "volgorde": 3,
       "stap": "Діагностовано справжню причину порожнечі: висота height:min(74dvh,640px)!important та невідповідність компонента MailKoppelVenster затвердженому дизайну. Попереднє оформлення змінило лише оболонку, а не змістове вікно.",
-      "bewijzen": ["src/mail/mail-koppel-mobile-sheet.css", "src/mail/MailKoppelVenster.tsx"]
+      "bewijzen": [
+        "src/mail/mail-koppel-mobile-sheet.css",
+        "src/mail/MailKoppelVenster.tsx"
+      ]
     },
     {
       "volgorde": 4,
       "stap": "Створена лише власна гілка від MAILMOB-001, жодної зміни в integratie, voornaamst, release/* або production. Перероблено брендовану верхівку й безпечні пояснення Gmail/Microsoft; два різних Google OAuth-режими primary/additional залишені.",
-      "bewijzen": ["https://github.com/Tarasevych/hub/tree/feature/mailpolish-001-20261104-084133", "src/mail/MailKoppelVenster.tsx"]
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/tree/feature/mailpolish-001-20261104-084133",
+        "src/mail/MailKoppelVenster.tsx"
+      ]
     },
     {
       "volgorde": 5,
       "stap": "Виправлено примусову висоту мобільного вікна на висоту контенту з межею та внутрішнім скролом; збережені кнопки згортання, закриття, док, відступи безпеки й 320px.",
-      "bewijzen": ["src/mail/mail-koppel-mobile-sheet.css"]
+      "bewijzen": [
+        "src/mail/mail-koppel-mobile-sheet.css"
+      ]
     },
     {
       "volgorde": 6,
       "stap": "Центральний конверт орбіти тепер має справжній брендований логотип із наявного реєстру, додано тепле світло, дрібні частинки та об’ємні картки без нових фальшивих способів підключення.",
-      "bewijzen": ["src/mail/MailOrbitIntro.tsx", "src/mail/mail-orbit-intro.css"]
+      "bewijzen": [
+        "src/mail/MailOrbitIntro.tsx",
+        "src/mail/mail-orbit-intro.css"
+      ]
     },
     {
       "volgorde": 7,
       "stap": "Локальний orch controleer пройшов із чинними правилами 1.4.1 (попередження: критичні політики власник ще не підтвердив). Локальний запуск TS-тестів не стартував: в ізольованому середовищі немає esbuild; перевірку TypeScript і build доручено відтворюваному GitHub CI.",
-      "bewijzen": ["tests/eenheid/mailpolish-001.test.ts", ".github/workflows/mailpolish-001-release.yml"]
+      "bewijzen": [
+        "tests/eenheid/mailpolish-001.test.ts",
+        ".github/workflows/mailpolish-001-release.yml"
+      ]
+    },
+    {
+      "volgorde": 8,
+      "stap": "GitHub CI перевірив тести, TypeScript та production build і згенерував реальні знімки компонентів у Chromium для візуального порівняння.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41795893685"
+      ]
     }
   ],
   "keuzes": [
@@ -80,17 +107,32 @@
     {
       "status": "bevestigd",
       "resultaat": "Локальний ORCH controleer: exit 0, regelsVersie 1.4.1, regelsHash bd7a35e3bfbdab6f330b7b2c1ee19d54df621a514a5d0caacba591d81d528dc9. Окремо попереджає KRITIEK_NIET_BEVESTIGD.",
-      "bewijzen": ["AGENTS.md", "orchestratie/regels.lock.json"]
+      "bewijzen": [
+        "AGENTS.md",
+        "orchestratie/regels.lock.json"
+      ]
     },
     {
       "status": "omgeving",
       "resultaat": "Локальний tests runner не запустився: ERR_MODULE_NOT_FOUND esbuild, node_modules відсутні. Це не провал перевірки коду; CI має виконати тести після npm ci.",
-      "bewijzen": ["scripts/eenheidstests.mjs", ".github/workflows/mailpolish-001-release.yml"]
+      "bewijzen": [
+        "scripts/eenheidstests.mjs",
+        ".github/workflows/mailpolish-001-release.yml"
+      ]
     },
     {
       "status": "gepland",
       "resultaat": "GitHub CI: ORCH controleer + versheid, MAILPOLISH/MAILMOB/MAILORBIT одиничні тести, TypeScript client/server, build, незалежна перевірка встановленої бази, TRACE-001 manifest і точний Release digest.",
-      "bewijzen": [".github/workflows/mailpolish-001-release.yml"]
+      "bewijzen": [
+        ".github/workflows/mailpolish-001-release.yml"
+      ]
+    },
+    {
+      "status": "bevestigd",
+      "resultaat": "GitHub CI: 47 unit checks passed, TypeScript client/server and production build passed. Actual React/CSS screenshots produced at 320, 390 and 1280px. No real OAuth or physical Android here.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41795893685"
+      ]
     }
   ],
   "bronnen": [
