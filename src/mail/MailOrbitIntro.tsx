@@ -2,7 +2,7 @@
 // Alle namen, logo's en echte koppelwijzen komen uitsluitend uit het bestaande register.
 // Een niet-beschikbare dienst wordt nooit als koppelknop getekend.
 import { useId, useState } from 'react';
-import { ArrowRight, Check, ChevronRight, CircleHelp, LockKeyhole, Mail, MousePointer2, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, ChevronRight, CircleHelp, LockKeyhole, MousePointer2, ShieldCheck, Sparkles } from 'lucide-react';
 import Logo from '../merk/MerkLogo';
 import { MAIL_AANBIEDERS, mailAanbiederHeeftKnop, type MailAanbieder } from '../../shared/mail-aanbieders';
 import './mail-orbit-intro.css';
@@ -25,7 +25,7 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
   const catalogusId = useId();
   const actief = KOPPELBAAR.find((a) => a.id === hover) || null;
   const oauth = actief?.wijze === 'oauth-google' || actief?.wijze === 'oauth-microsoft';
-  const hoofdDienst = actief || KOPPELBAAR[0];
+  const hoofdDienst = actief || KOPPELBAAR[0]!;
 
   return (
     <section className={'mail-orbit-intro' + (variant === 'inbox' ? ' is-inbox' : '')} data-mail-orbit-intro={variant} aria-label={t('Вибір поштового сервісу', 'Een e-maildienst kiezen')}>
@@ -41,8 +41,9 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
         onMouseLeave={() => setHover(null)}
         onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHover(null); }}>
         <div className='mail-orbit-baan' aria-hidden='true'><span /><span /></div>
+        <div className='mail-orbit-lichtpunten' aria-hidden='true'><i /><i /><i /><i /><i /><i /></div>
         <div className='mail-orbit-kern' aria-hidden='true'>
-          <span className='mail-orbit-kern-brief'><Mail size={58} strokeWidth={1.1} /></span>
+          <span className='mail-orbit-kern-brief'><Logo id={hoofdDienst.id} naam={hoofdDienst.naam} logo={hoofdDienst.merk} maat={61} /></span>
           <span className='mail-orbit-kern-schaduw' />
         </div>
 
