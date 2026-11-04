@@ -108,6 +108,13 @@
       "bewijzen": [
         "https://github.com/Tarasevych/hub/actions/runs/41870907375"
       ]
+    },
+    {
+      "volgorde": 11,
+      "stap": "Друга CI-перевірка минула ORCH versheid без конфлікту та зупинилася на двох застарілих очікуваннях у tests/eenheid/orch-kern-20261031.test.ts. Тестові дані приведені до чинних правил 1.4.1, без зміни валідатора.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41873168255"
+      ]
     }
   ],
   "keuzes": [
@@ -147,7 +154,8 @@
     "orchestratie/ontwikkelarchieven/MAILFIT-001.json",
     "scripts/orch/pakket.mjs",
     ".github/workflows/mailfit-002-release.yml",
-    "orchestratie/ontwikkelarchieven/MAILFIT-002.json"
+    "orchestratie/ontwikkelarchieven/MAILFIT-002.json",
+    "tests/eenheid/orch-kern-20261031.test.ts"
   ],
   "controles": [
     {
@@ -211,6 +219,13 @@
       "resultaat": "CI 41870907375 коректно заблокував реліз на BASIS_VEROUDERD_OVERLAP; GitHub Release не створено. Перетин з інтеграцією прибрано без переписування чужої гілки, повторний CI ще попереду.",
       "bewijzen": [
         "https://github.com/Tarasevych/hub/actions/runs/41870907375"
+      ]
+    },
+    {
+      "status": "bevestigd",
+      "resultaat": "GitHub Actions 41873168255 підтвердив відсутність перетину файлів з integratie (лише BASIS_VEROUDERD warning) та зафіксував невідповідність старої тестової фікстури; реліз не публікувався.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41873168255"
       ]
     }
   ],
