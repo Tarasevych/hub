@@ -33,8 +33,16 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
         <span className='mail-orbit-kicker'><Sparkles aria-hidden='true' size={15} /> {t('Пошта · Нове підключення', 'E-mail · Nieuwe koppeling')}</span>
         <h2>{variant === 'inbox' ? t('Ваша пошта починається тут.', 'Uw e-mail begint hier.') : t('Уся пошта. Один простір.', 'Al uw e-mail. Eén ruimte.')}</h2>
         <p>{variant === 'inbox'
-          ? t('Gmail ще не підключено. Оберіть поштовий сервіс — вікно підключення відкриється тут.', 'Gmail is nog niet gekoppeld. Kies een e-maildienst — het koppelvenster opent hier.')
+          ? t('Підключіть скриньку та керуйте всією поштою в одному просторі.', 'Koppel uw mailbox en beheer al uw e-mail op één plek.')
           : t('Підключіть першу скриньку. Листи різних сервісів і керування акаунтами будуть в одному місці.', 'Koppel uw eerste mailbox. E-mail van meerdere diensten en accountbeheer komen samen op één plek.')}</p>
+        {variant === 'inbox' && KOPPELBAAR[0] ? (
+          <button type='button' className='mail-orbit-desktop-hoofdknop' onClick={() => onSelect(KOPPELBAAR[0])}
+            aria-label={t('Підключити ', 'Koppelen: ') + KOPPELBAAR[0].naam}>
+            <Logo id={KOPPELBAAR[0].id} naam={KOPPELBAAR[0].naam} logo={KOPPELBAAR[0].merk} maat={24} />
+            <span>{t('Підключити Gmail', 'Gmail koppelen')}</span>
+            <ArrowRight size={19} aria-hidden='true' />
+          </button>
+        ) : null}
       </div>
 
       <div className='mail-orbit-stage' data-mail-orbit-active={actief ? 'ja' : 'nee'}
