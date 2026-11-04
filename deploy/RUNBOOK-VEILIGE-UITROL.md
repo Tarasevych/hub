@@ -636,7 +636,7 @@ hash:
 | `#overzicht` | Огляд / Overzicht |
 | `#ai` | Підключені ШІ / Verbonden AI |
 | `#apparaten` | Пристрої й браузери / Apparaten en browsers |
-| `#tokens` | Токени й двері / Tokens en deuren |
+| `#tokens` | Токени / Tokens (двері сервера — на mcp/verbindingen, технічний профіль) |
 | `#journaal` | Журнал / Logboek |
 
 - Een open rij staat ook in de hash, bijvoorbeeld `#apparaten/dev:<id>` of `#ai/oauth:<id>`.

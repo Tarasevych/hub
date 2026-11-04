@@ -1,5 +1,7 @@
-// «Підключити ШІ» op mcp.*/agents#tokens: kies de AI, het doel (deur van de server of de connector /mcp), hoe lang de toegang geldt,
-// en daarna één van twee wegen:
+// «Підключити ШІ»: kies de AI, het doel, hoe lang de toegang geldt, en daarna één van twee wegen:
+//   • ruimte 'prive' (mcp.*/agents, accountruimte): altijd de connector /mcp — alleen wat van de gebruiker is (apparaten, mail, Drive, bord);
+//   • ruimte 'technisch' (mcp.*/verbindingen, technisch profiel): de serverdeur (/Grok, /claude, …) of de connector in de technische
+//     ruimte (releases, updates voorbereiden, serverstand, agenten op de server). De ruimte staat vast op de verbinding (0042).
 //   • «Підключити автоматично (в один клік)» — adres plakken in de AI-klant (die doet OAuth/PKCE en opent het venster «Дозволити»),
 //     of hier meteen een Bearer-token halen met PKCE in de browser (src/agenten/een-klik.ts);
 //   • «Підключити вручну (прямий токен)» — agenttoken tvh_… (30 dagen) voor de Authorization-kop van de klant (zoals vroeger).
@@ -9,6 +11,7 @@ import { api } from '../platform/client';
 import { sessionBody } from '../agents-data';
 import { Logo, type Tr } from '../mcp-ui';
 import { DUREN, KLANTEN, duur as duurVan, type DuurId, type KlantId } from '../../shared/ai-verbinding';
+import { RUIMTE_NAAM, RUIMTE_UITLEG, type AiRuimte } from '../../shared/ai-ruimte';
 import { aiLogo } from './data';
 import { adressen, EenKlikFout, verbindInEenKlik, type Doel } from './een-klik';
 import { Knop, Melding, Segment, useActies } from './ui';
@@ -26,7 +29,9 @@ function Kopieer({ tekst, tr, data }: { tekst: string; tr: Tr; data?: string }) 
   return <Knop data={data} icoon={ok ? <Check /> : <Copy />} onClick={() => { void navigator.clipboard?.writeText(tekst).then(() => { setOk(true); window.setTimeout(() => setOk(false), 2000); }).catch(() => undefined); }}>{ok ? tr('Скопійовано', 'Gekopieerd') : tr('Скопіювати', 'Kopiëren')}</Knop>;
 }
 
-export default function AiVerbinden({ tr, magTokens, naActie }: { tr: Tr; magTokens: boolean; naActie: () => Promise<void> }) {
+export default function AiVerbinden({ tr, magTokens, naActie, ruimte = 'prive' }: { tr: Tr; magTokens: boolean; naActie: () => Promise<void>; ruimte?: AiRuimte }) {
+  const uk = tr('uk', 'nl') === 'uk';
+  const technisch = ruimte === 'technisch';
   const acties = useActies(tr);
   const [klant, setKlant] = useState<KlantId>('grok');
   const [duren, setDuren] = useState<Record<string, DuurId> | null>(null);
@@ -36,7 +41,8 @@ export default function AiVerbinden({ tr, magTokens, naActie }: { tr: Tr; magTok
   const [res, setRes] = useState<Resultaat | null>(null);
 
   const k = KLANTEN.find((x) => x.id === klant)!;
-  const deurMogelijk = eigenaar && !!k.deur;
+  // De serverdeur is de technische ruimte: in de accountruimte bestaat die keuze niet.
+  const deurMogelijk = technisch && eigenaar && !!k.deur;
   const doel: Doel = deurMogelijk && doelSoort === 'deur' ? { soort: 'deur', deur: k.deur! } : { soort: 'connector' };
   const adres = useMemo(() => adressen(doel).endpoint, [doel.soort, doel.soort === 'deur' ? doel.deur : '']); // eslint-disable-line react-hooks/exhaustive-deps
   const gekozenDuur = duren?.[klant] ?? '1u';
@@ -46,8 +52,8 @@ export default function AiVerbinden({ tr, magTokens, naActie }: { tr: Tr; magTok
     catch { setDuren({}); }
   }, []);
   useEffect(() => { void laad(); }, [laad]);
-  // Grok standaard naar zijn deur, de rest naar de connector (alles van de gebruiker: apparaten, mail, Drive).
-  useEffect(() => { setDoelSoort(klant === 'grok' ? 'deur' : 'connector'); setRes(null); }, [klant]);
+  // Technisch: Grok standaard naar zijn deur, de rest naar de connector; privé: altijd de connector (alles van de gebruiker).
+  useEffect(() => { setDoelSoort(technisch && klant === 'grok' ? 'deur' : 'connector'); setRes(null); }, [klant, technisch]);
 
   const zetDuur = (d: DuurId) => acties.voerUit('duur', async () => {
     const r = await api.post('/api/owner/mcp-connector/duren/zet', { ...sessionBody(), klant, duur: d });
@@ -60,7 +66,7 @@ export default function AiVerbinden({ tr, magTokens, naActie }: { tr: Tr; magTok
     const venster = window.open('about:blank', 'mr-oauth', 'popup,width=620,height=760');
     void acties.voerUit('auto', async () => {
       try {
-        const t = await verbindInEenKlik(doel, k.naam, venster);
+        const t = await verbindInEenKlik(doel, k.naam, venster, ruimte);
         setRes({ soort: 'oauth', token: t.access_token, refresh: t.refresh_token, verloopt: t.expires_in ? Date.now() + t.expires_in * 1000 : null, endpoint: t.endpoint, naam: k.naam });
         await naActie();
         return tr(`${k.naam} підключено: токен отримано через підтвердження на сайті. Скопіюйте його зараз — потім він не показується.`, `${k.naam} gekoppeld: token ontvangen na bevestiging op de site. Kopieer het nu — daarna wordt het niet meer getoond.`);
@@ -75,7 +81,7 @@ export default function AiVerbinden({ tr, magTokens, naActie }: { tr: Tr; magTok
   };
 
   const handmatig = () => acties.voerUit('handmatig', async () => {
-    const r = await api.post('/api/mcp/tokens', { ...sessionBody(), name: k.id === 'overig' ? 'agent' : k.id });
+    const r = await api.post('/api/mcp/tokens', { ...sessionBody(), name: k.id === 'overig' ? 'agent' : k.id, ...(technisch ? { ruimte: 'technisch' } : {}) });
     const tok = String(r.data?.token?.token || '');
     setRes({ soort: 'token', token: tok, verloopt: Date.now() + 30 * 86_400_000, endpoint: adres, naam: k.naam });
     await naActie();
@@ -87,8 +93,9 @@ export default function AiVerbinden({ tr, magTokens, naActie }: { tr: Tr; magTok
   const kort = res?.soort === 'oauth' && res.verloopt !== null && res.verloopt - Date.now() < 2 * 86_400_000;
 
   return (
-    <section className='ag-kaart ag-verbind' data-ai-verbinden='1' aria-labelledby='ag-verbind-titel'>
-      <div className='ag-kaart-kop'><h3 id='ag-verbind-titel'>{tr('Підключити ШІ', 'AI koppelen')}</h3></div>
+    <section className='ag-kaart ag-verbind' data-ai-verbinden='1' data-ruimte={ruimte} aria-labelledby='ag-verbind-titel'>
+      <div className='ag-kaart-kop'><h3 id='ag-verbind-titel'>{technisch ? tr('Підключити ШІ до технічного простору', 'AI koppelen aan de technische ruimte') : tr('Підключити ШІ до вашого простору', 'AI koppelen aan uw ruimte')}</h3></div>
+      <p className='ag-verbind-ruimte' data-ruimte-uitleg={ruimte}><ShieldCheck size={14} aria-hidden='true' /> <b>{uk ? RUIMTE_NAAM[ruimte].uk : RUIMTE_NAAM[ruimte].nl}.</b> {uk ? RUIMTE_UITLEG[ruimte].uk : RUIMTE_UITLEG[ruimte].nl}</p>
       <div className='ag-verbind-klanten' role='radiogroup' aria-label={tr('Який ШІ', 'Welke AI')}>
         {KLANTEN.map((x) => (
           <button key={x.id} type='button' role='radio' aria-checked={klant === x.id} className='ag-verbind-klant' data-klant={x.id} onClick={() => setKlant(x.id)}>
@@ -101,7 +108,7 @@ export default function AiVerbinden({ tr, magTokens, naActie }: { tr: Tr; magTok
         {deurMogelijk ? (
           <Segment label={tr('Куди підключити', 'Waarheen koppelen')} waarde={doelSoort} onKies={(d) => { setDoelSoort(d); setRes(null); }} opties={[
             { id: 'deur', label: tr(`Двері сервера /${k.deur}`, `Serverdeur /${k.deur}`) },
-            { id: 'connector', label: tr('Конектор /mcp (пристрої, пошта, Drive)', 'Connector /mcp (apparaten, mail, Drive)') },
+            { id: 'connector', label: tr('Конектор /mcp (випуски, оновлення, стан сервера)', 'Connector /mcp (releases, updates, serverstand)') },
           ]} />
         ) : null}
         <label className='ag-veld'>

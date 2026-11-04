@@ -450,7 +450,7 @@ function handmatigePagina(v, rid, error) {
 <h1 style="font-size:1.4rem">Дозволити доступ «${esc(v.clientName)}» до дверей ${esc(deur)}?</h1>
 <p>Після дозволу ви повернетеся на <b>${esc(host)}</b> (${esc(soort[0])}). Клієнт отримає лише читання поточного випуску і стан сайту (а якщо ви ввімкнули це на сервері — завантаження підписаного пакета). База даних і секрети сервера йому не віддаються. Доступ діє 1 годину й поновлюється до 14 днів; відкликати можна будь-коли.</p>
 <p lang="nl">Na toestemming gaat u terug naar <b>${esc(host)}</b> (${esc(soort[1])}). De client krijgt alleen leestoegang tot de actieve release en de stand van de site. Toegang geldt 1 uur en wordt tot 14 dagen vernieuwd; intrekken kan altijd.</p>
-<p><a href="${esc(`${ISSUER}/agents?consent=${rid}`)}" style="display:inline-block;padding:.6rem 1rem;border-radius:.5rem;background:#1f5fbf;color:#fff;text-decoration:none">Підтвердити на сайті в один клік / Op de site bevestigen</a></p>
+<p><a href="${esc(`${ISSUER}/verbindingen?consent=${rid}`)}" style="display:inline-block;padding:.6rem 1rem;border-radius:.5rem;background:#1f5fbf;color:#fff;text-decoration:none">Підтвердити на сайті в один клік / Op de site bevestigen</a></p>
 ${error ? `<p role="alert" style="color:#8a1f1f">${esc(error)}</p>` : ""}
 <form method="post" action="/oauth/authorize">
 <input type="hidden" name="verzoek" value="${esc(rid)}">
@@ -632,8 +632,9 @@ export const server = createServer(async (req, res) => {
       const v = { clientId, clientName: c.name || "MCP-client", redirect, soort: redirectSoort(redirect, extraRedirects()), challenge: q.get("code_challenge"), state: (q.get("state") || "").slice(0, 512), door, exp: Date.now() + VERZOEK_TTL };
       verzoeken.set(rid, v);
       if (q.get("methode") === "token") { send(res, 200, handmatigePagina(v, rid, ""), { "content-security-policy": cspVoor(redirect) }); return; }
-      // Eén klik: het venster «Дозволити» van de site (bestaande aanmelding van de eigenaar).
-      res.writeHead(302, { location: `${ISSUER}/agents?consent=${rid}`, "cache-control": "no-store" }); res.end(); return;
+      // Eén klik: het venster «Дозволити» van de site (bestaande aanmelding van de eigenaar). De deur is de TECHNISCHE ruimte:
+      // de pagina «Технічні підключення» (technisch profiel), nooit de accountpagina Agenten (shared/ai-ruimte.ts).
+      res.writeHead(302, { location: `${ISSUER}/verbindingen?consent=${rid}`, "cache-control": "no-store" }); res.end(); return;
     }
     if (pathName === "/oauth/authorize" && req.method === "POST") {
       if (limited(req, "authorize", 10, 15 * 60_000)) { send(res, 429, "<!doctype html><p>Забагато спроб. / Te veel pogingen.</p>"); return; }

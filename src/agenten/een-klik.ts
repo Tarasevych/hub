@@ -29,7 +29,7 @@ export function adressen(doel: Doel, origin = location.origin) {
  * Start de koppeling. `venster` moet SYNCHROON in de klik geopend zijn (window.open vóór enige await), anders blokkeert de browser
  * de popup. Bij annuleren/sluiten: EenKlikFout('GESLOTEN'); bij weigeren: 'GEWEIGERD'.
  */
-export async function verbindInEenKlik(doel: Doel, klantNaam: string, venster: Window | null): Promise<EenKlikToken> {
+export async function verbindInEenKlik(doel: Doel, klantNaam: string, venster: Window | null, ruimte: 'prive' | 'technisch' = 'prive'): Promise<EenKlikToken> {
   if (!venster) throw new EenKlikFout('POPUP_GEBLOKKEERD');
   const a = adressen(doel);
   try {
@@ -43,7 +43,7 @@ export async function verbindInEenKlik(doel: Doel, klantNaam: string, venster: W
     const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
     const state = willekeurig(18);
     const url = new URL(a.authorize);
-    for (const [k, v] of Object.entries({ response_type: 'code', client_id: clientId, redirect_uri: a.terug, code_challenge: challenge, code_challenge_method: 'S256', state, resource: a.endpoint, scope: doel.soort === 'deur' ? 'read' : 'machines' })) url.searchParams.set(k, v);
+    for (const [k, v] of Object.entries({ response_type: 'code', client_id: clientId, redirect_uri: a.terug, code_challenge: challenge, code_challenge_method: 'S256', state, resource: a.endpoint, scope: doel.soort === 'deur' ? 'read' : 'machines', ...(ruimte === 'technisch' && doel.soort === 'connector' ? { ruimte } : {}) })) url.searchParams.set(k, v);
     venster.location.href = url.toString();
 
     const code = await new Promise<string>((resolve, reject) => {

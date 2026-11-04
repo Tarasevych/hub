@@ -135,7 +135,7 @@ export default function UitrolMeester({ lang, context, sourceOrigin, tabContext,
           <li>{tr(lang, 'У рядку цього passkey увімкніть «Може схвалювати оновлення сервера».', 'Zet in de rij van deze passkey «Mag serverupdates goedkeuren» aan.')}</li>
           <li>{tr(lang, 'Перший такий passkey сервер приймає лише після SSH-команди (крок 2); наступні — підтвердженням уже доданим passkey, без SSH.', 'De eerste zo’n passkey aanvaardt de server pas na de SSH-opdracht (stap 2); volgende met een al toegevoegde passkey, zonder SSH.')}</li>
         </ol>
-        <PasskeysSection lang={lang} context={context} onChange={() => void laden()} />
+        <PasskeysSection lang={lang} context={context} onChange={() => void laden()} beheer />
       </>)}
 
     {stap('server', 2, Server, tr(lang, 'Підтвердити на сервері (один раз, SSH)', 'Bevestigen op de server (één keer, SSH)'),

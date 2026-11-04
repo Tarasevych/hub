@@ -25,6 +25,7 @@ import { rateLimit } from '../server/platform/beveiliging';
 import { getPool } from '../server/platform/pg';
 import type { RouterMiddleware } from '../server/platform/router';
 import { meld } from './melder';
+import { ruimteOf } from '../shared/ai-ruimte';
 import { parseRootGebeurtenissen, toonbareInstallaties } from './server-beheer';
 import { ToegangFout, gebruikVastleggen, redenVan, viaAppIngetrokken, wijzigingVastleggen } from './toegang-context';
 
@@ -107,13 +108,17 @@ async function onderwerpControleren(soort: Soort, onderwerp: string): Promise<{ 
     if (u.status !== 'approved' && u.role !== 'owner') fout('ACCOUNT_NIET_GOEDGEKEURD', 409);
     return { id: String(u.id), accountId: String(u.id), label: tekst(u.email || u.name || u.id, 80) };
   }
+  // Updates voorbereiden raakt de server: alleen een token of koppeling uit de TECHNISCHE ruimte (0042) komt in aanmerking.
+  // Een privéverbinding krijgt dit recht nooit, ook niet van de eigenaar — zo kan een AI in de accountruimte de site niet raken.
   if (soort === 'agenttoken') {
-    const { rows } = await sys().query(`SELECT id, user_id, name, prefix FROM app.mcp_console_tokens WHERE id::text = $1 AND revoked_at IS NULL AND expires_at > now()`, [onderwerp]);
+    const { rows } = await sys().query(`SELECT id, user_id, name, prefix, ruimte FROM app.mcp_console_tokens WHERE id::text = $1 AND revoked_at IS NULL AND expires_at > now()`, [onderwerp]);
     if (!rows[0]) fout('ONDERWERP_ONBEKEND', 404);
+    if (ruimteOf(rows[0].ruimte) !== 'technisch') fout('RUIMTE_PRIVE', 409);
     return { id: String(rows[0].id), accountId: String(rows[0].user_id), label: tekst(`${rows[0].name} (${rows[0].prefix}…)`, 80) };
   }
-  const { rows } = await sys().query(`SELECT id, user_id, client_name FROM app.mcp_oauth_tokens WHERE id::text = $1 AND revoked_at IS NULL AND refresh_expires_at > now()`, [onderwerp]);
+  const { rows } = await sys().query(`SELECT id, user_id, client_name, ruimte FROM app.mcp_oauth_tokens WHERE id::text = $1 AND revoked_at IS NULL AND refresh_expires_at > now()`, [onderwerp]);
   if (!rows[0]) fout('ONDERWERP_ONBEKEND', 404);
+  if (ruimteOf(rows[0].ruimte) !== 'technisch') fout('RUIMTE_PRIVE', 409);
   return { id: String(rows[0].id), accountId: String(rows[0].user_id), label: tekst(rows[0].client_name || 'MCP', 80) };
 }
 
@@ -156,18 +161,18 @@ export async function grantsLijst() {
   const { rows } = await sys().query('SELECT * FROM app.uitrol_voorbereiders ORDER BY gegeven_op DESC LIMIT 100');
   return rows.map(grantUit);
 }
-/** Keuzelijsten voor «Кому дозволено»: goedgekeurde accounts, actieve agenttokens, actieve MCP-koppelingen. */
+/** Keuzelijsten voor «Кому дозволено»: goedgekeurde accounts, actieve agenttokens en MCP-koppelingen — alleen uit de technische ruimte. */
 async function kandidaten() {
   const accounts = (await sys().query(`SELECT id, data->>'email' AS email, data->>'name' AS name FROM app.records
     WHERE tbl = 'users' AND (data->>'status' = 'approved' OR data->>'role' = 'owner') AND COALESCE((data->>'retiredAt')::numeric, 0) = 0 ORDER BY data->>'email' LIMIT 200`)).rows
     .map((r) => ({ id: String(r.id), label: tekst(r.email || r.name || r.id, 80) }));
   const tokens = (await sys().query(`SELECT t.id, t.name, t.prefix, r.data->>'email' AS email FROM app.mcp_console_tokens t LEFT JOIN app.records r ON r.tbl = 'users' AND r.id = t.user_id
-    WHERE t.revoked_at IS NULL AND t.expires_at > now() ORDER BY t.created_at DESC LIMIT 100`)).rows
+    WHERE t.revoked_at IS NULL AND t.expires_at > now() AND t.ruimte = 'technisch' ORDER BY t.created_at DESC LIMIT 100`)).rows
     .map((r) => ({ id: String(r.id), label: tekst(`${r.name} (${r.prefix}…) · ${r.email || ''}`, 120) }));
   let koppelingen: Array<{ id: string; label: string }> = [];
   try {
     koppelingen = (await sys().query(`SELECT o.id, o.client_name, r.data->>'email' AS email FROM app.mcp_oauth_tokens o LEFT JOIN app.records r ON r.tbl = 'users' AND r.id = o.user_id
-      WHERE o.revoked_at IS NULL AND o.refresh_expires_at > now() ORDER BY o.created_at DESC LIMIT 100`)).rows
+      WHERE o.revoked_at IS NULL AND o.refresh_expires_at > now() AND o.ruimte = 'technisch' ORDER BY o.created_at DESC LIMIT 100`)).rows
       .map((r) => ({ id: String(r.id), label: tekst(`${r.client_name || 'MCP'} · ${r.email || ''}`, 120) }));
   } catch { koppelingen = []; }
   return { accounts, agenttokens: tokens, koppelingen };

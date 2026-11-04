@@ -18,7 +18,7 @@ export const standaardModus = (eigenaar: boolean): Modus => (eigenaar ? 'expert'
 
 /** Tabbladen van mcp.* die in «простий» zichtbaar zijn; de rest alleen in «розширений». */
 export const MCP_EENVOUDIG = ['overview', 'agents', 'connect', 'apps'] as const;
-export const MCP_EXPERT = ['dashboard', 'services', 'tools', 'board', 'playground', 'traffic', 'roadmap', 'download'] as const;
+export const MCP_EXPERT = ['dashboard', 'services', 'tools', 'board', 'playground', 'traffic', 'roadmap', 'download', 'verbindingen'] as const;
 export const isExpertTab = (service: string, tab: string) => service === 'mcp' && (MCP_EXPERT as readonly string[]).includes(tab);
 export const zichtbaar = (service: string, tab: string, modus: Modus) => modus === 'expert' || !isExpertTab(service, tab);
 
@@ -55,7 +55,7 @@ export const RICHTING: Record<Richting, { naam: Tekst; pijl: [Tekst, Tekst, Teks
 };
 
 export const HELP_MODUS: HelpLagen = {
-  wat: ['«Простий» показує лише основне: огляд, підключення ШІ, агентів і додатки. «Розширений» — усі розділи.', '«Eenvoudig» toont alleen de basis: overzicht, AI verbinden, agenten en apps. «Uitgebreid» toont alle onderdelen.'],
+  wat: ['«Простий» показує лише основне: огляд, підключення ШІ та агентів. «Розширений» — усі розділи. Сторінки управління сайтом (розгортання, додатки на сервері, архів) в обох режимах видно лише в технічному профілі.', '«Eenvoudig» toont alleen de basis: overzicht, AI verbinden en agenten. «Uitgebreid» toont alle onderdelen. Sitebeheer (uitrol, apps op de server, archief) is in beide modi alleen zichtbaar in het technisch profiel.'],
   gevolg: ['Змінюється лише те, що видно. Права не змінюються: прихований розділ не стає забороненим, а видимий — дозволеним.', 'Alleen wat zichtbaar is verandert. Rechten niet: een verborgen onderdeel wordt niet verboden, een zichtbaar niet toegestaan.'],
   dev: ['Збережено на сервері (app.ui_weergave), щоб вибір діяв на всіх пристроях; localStorage — лише кеш проти мерехтіння. Режим НЕ є межею безпеки — права перевіряє бекенд. Типово: власник «розширений» (нічого не зникає), інші «простий» (поступове розкриття, progressive disclosure).', 'Bewaard op de server (app.ui_weergave), zodat de keuze op elk apparaat geldt; localStorage is alleen een cache tegen flikkeren. De modus is GEEN beveiligingsgrens — rechten controleert de backend. Standaard: eigenaar «uitgebreid», anderen «eenvoudig» (progressive disclosure).'],
 };

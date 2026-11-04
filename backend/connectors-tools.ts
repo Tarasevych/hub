@@ -9,9 +9,10 @@
 //   te proberen en de gebruiker te melden dat er een goedkeuring openstaat.
 // - Inhoud van bestanden en commando-uitvoer is onbetrouwbare invoer (prompt injection): elk resultaat van het apparaat
 //   draagt een kennisgeving mee dat het gegevens zijn en geen instructies.
-import { apiPlatformVaultItems, readOwnerVaultPlaintext } from './api-platform-vault';
+import { readOwnerVaultPlaintext } from './api-platform-vault';
 import { beslissing, strengste, weigerTekst } from './ai-beleid';
-import { huidigeNamens } from './mcp-namens';
+import { huidigeNamens, huidigeRuimte } from './mcp-namens';
+import { apparaatInRuimte } from '../shared/ai-ruimte';
 import { CommandRefused, submitCommand, waitForCommand } from './connectors-commands';
 import { agentOnline } from './connectors-gateway';
 import { maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, vergeetTicket } from './apps-overdracht';
@@ -19,6 +20,16 @@ import { SERVICE_HOSTS } from './deployment-identity';
 import * as store from './connectors-store';
 import { callSite } from './site-dispatch';
 import { explainSiteError, SITE_TOOL_BY_NAME, SITE_TOOLS, type SiteTool } from './site-tools';
+import { githubKoppeling } from './github-platform';
+
+/**
+ * Alleen de apparaten van de ruimte waarin de AI verbonden is (0042): een privéverbinding ziet nooit de server of een beheerapparaat,
+ * een technische verbinding nooit de eigen pc of browser van de gebruiker. Zonder MCP-context (chat op de site) geldt 'prive'.
+ */
+async function apparatenInRuimte(userId: string): Promise<store.AgentRow[]> {
+  const ruimte = huidigeRuimte();
+  return (await store.listAgents(userId)).filter((a) => apparaatInRuimte(a, ruimte));
+}
 
 export type ToolAnnotations = { readOnlyHint?: boolean; destructiveHint?: boolean; idempotentHint?: boolean; openWorldHint?: boolean };
 export type ToolDef = { name: string; title?: string; description: string; inputSchema: Record<string, unknown>; annotations?: ToolAnnotations };
@@ -612,9 +623,16 @@ const untrusted = (data: unknown): ToolResult => {
 };
 
 async function githubTokenName(userId: string): Promise<string | null> {
-  const item = (await apiPlatformVaultItems(userId)).find((row) => row.purpose === 'github');
-  return item ? item.keyName : null;
+  return (await githubKoppeling(userId))?.keyName ?? null;
 }
+
+/** Blijft bij de eigenaar op de site. De connector voert dit nooit uit, ook niet als een oude deur-naam wordt gevraagd. */
+export const BUITEN_BEREIK = new Set([
+  'server_backup', 'server_uitrol_nu', 'server_terugdraaien', 'start_backup', 'install_release', 'write_staging', 'update_door',
+  'deploy_release', 'deploy_rollback', 'deploy_request', 'policy_change', 'archive_download', 'backup_download',
+  'read_secret', 'app_secret_value', 'uitrol_voorstel_goedkeuren',
+]);
+const BUITEN_TEKST = 'OUT_OF_SCOPE: approving a release, rolling back, creating a backup, changing the AI policy, downloading an archive or backup, and reading secret values stay with the owner on the website. Do not try another way.';
 
 // ---- groepen en modi per hulpmiddel ----
 // De gebruiker kiest per hulpmiddel een modus: "always" (geen extra vraag van ons), "ask" (elke aanroep wacht op een klik op de site) of "off".
@@ -639,7 +657,7 @@ export function groupOf(name: string): ToolGroup {
 export function defaultMode(name: string): ToolMode {
   if (RISKY_TOOLS.has(name)) return 'off';
   const site = SITE_TOOL_BY_NAME.get(name);
-  if (site) return site.write ? 'ask' : 'always';
+  if (site) return site.confirm || site.write ? 'ask' : 'always';
   // Voor agent-hulpmiddelen betekent "always": geen EXTRA vraag van ons; het beleid van de agent/browser (aparte schakelaars) geldt dan nog.
   return 'always';
 }
@@ -677,10 +695,13 @@ export async function listTools(userId: string, opts: { alwaysMachine?: boolean 
 
 async function allTools(userId: string, opts: { alwaysMachine?: boolean }): Promise<ToolDef[]> {
   const tools: ToolDef[] = [];
-  const agents = opts.alwaysMachine ? [] : await store.listAgents(userId);
+  const agents = opts.alwaysMachine ? [] : await apparatenInRuimte(userId);
   if (opts.alwaysMachine || agents.some((a) => !isBrowserAgent(a))) tools.push(...MACHINE_TOOLS.map(annotate), ...APP_TOOLS.map(annotate));
   if (opts.alwaysMachine || agents.some(isBrowserAgent)) tools.push(...BROWSER_TOOLS.map(annotate));
-  if (opts.alwaysMachine) tools.push(...SITE_TOOLS.map((s) => s.tool));
+  if (opts.alwaysMachine) {
+    const githubAan = !!(await githubTokenName(userId));
+    tools.push(...SITE_TOOLS.filter((s) => !s.requiresGithub || githubAan).map((s) => s.tool));
+  }
   if (await githubTokenName(userId)) {
     tools.push(annotate({
       name: 'github_get',
@@ -736,6 +757,7 @@ export const KNOWN_TOOL_NAMES: readonly string[] = [...MACHINE_TOOLS, ...APP_TOO
  */
 export async function callTool(userId: string, rawName: string, rawArgs: any = {}, opties: { eigenaarZelf?: boolean } = {}): Promise<ToolResult> {
   const { name, args } = resolveAlias(rawName, rawArgs);
+  if (BUITEN_BEREIK.has(name)) return text(BUITEN_TEKST, true);
   try {
     // Het ondertekende AI-beleid van de eigenaar (§13.12) is een plafond: de strengste van «instelling op de site» en «beleid» wint.
     const beleid = opties.eigenaarZelf ? { mode: 'always' as const, code: 'eigenaar', agentId: null, staat: 'niet-ingesteld' as const } : await beslissing(huidigeNamens(), name);
@@ -752,7 +774,7 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       return text('The owner\'s signed AI policy says to ask every time for this, and this tool has no approval step. Ask the user to allow it with a timer at admin.tarasevych.com → AI access; do not retry.', true);
     }
     if (name === 'machine_list') {
-      const agents = await store.listAgents(userId);
+      const agents = await apparatenInRuimte(userId);
       // Namen komen van het apparaat/de extensie zelf (bij het koppelen): onbetrouwbaar.
       // Diagnose zonder te gissen: voor een browser of AI aan staat en tot wanneer een ingelogde tab het bevestigde;
       // voor een pc/server welke versie en of «Додатки» aan staan.
@@ -778,7 +800,7 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       if (invalid) return text(invalid, true);
       // Alleen eigen apparaten van deze gebruiker; browsers en pc's blijven gescheiden (een browsertool kiest nooit een pc).
       const wantBrowser = isBrowserTool(name);
-      const agents = (await store.listAgents(userId)).filter((a) => isBrowserAgent(a) === wantBrowser);
+      const agents = (await apparatenInRuimte(userId)).filter((a) => isBrowserAgent(a) === wantBrowser);
       const keyRaw = wantBrowser ? args.browser : args.machine;
       const key = keyRaw ? String(keyRaw) : null;
       const candidates = key
@@ -853,14 +875,14 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
     }
 
     if (name === 'github_get') {
-      const keyName = await githubTokenName(userId);
-      if (!keyName) return text('No GitHub token is stored in the user\'s vault.', true);
+      const kop = await githubKoppeling(userId);
+      if (!kop) return text('No GitHub token is stored in the user\'s vault.', true);
       const path = String(args.path ?? '');
       if (!path.startsWith('/') || path.includes('..') || path.includes('//')) return text('Invalid path.', true);
       const url = new URL(GITHUB_API + path);
       if (url.origin !== GITHUB_API) return text('Invalid path.', true);
       for (const [k, v] of Object.entries(args.query ?? {})) url.searchParams.set(k, String(v));
-      const token = await readOwnerVaultPlaintext(userId, keyName, 'github');
+      const token = await readOwnerVaultPlaintext(userId, kop.keyName, kop.purpose);
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'mijn-ruimte' },
         signal: AbortSignal.timeout(15_000),
@@ -898,7 +920,7 @@ const SITE_MCP = `https://${SERVICE_HOSTS.mcp}`;
 async function appSecretRequest(userId: string, args: any): Promise<ToolResult> {
   const invalid = validateApp('app_secret_request', args);
   if (invalid) return text(invalid, true);
-  const agents = (await store.listAgents(userId)).filter((a) => !isBrowserAgent(a));
+  const agents = (await apparatenInRuimte(userId)).filter((a) => !isBrowserAgent(a));
   const key = args.machine ? String(args.machine) : null;
   const candidates = key ? agents.filter((a) => a.id === key || a.name.toLowerCase() === key.toLowerCase()) : agents.filter((a) => agentOnline(a.id) && appsAan(a));
   if (candidates.length !== 1) return text(candidates.length ? 'Several devices match: pass "machine" with the name or id (see machine_list).' : 'No device with apps enabled is online. Use machine_list and app_list.', true);
@@ -953,7 +975,7 @@ async function askSite(userId: string, site: SiteTool, args: any): Promise<ToolR
     if (now.status === 'rejected') return text('The user rejected this action.', true);
     if (now.status === 'timeout') return text('The approval request expired without an answer.', true);
     if (Date.now() >= deadline) {
-      return text('This action is waiting for the user\'s approval on the Mijn Ruimte website (mcp.tarasevych.com → Agents → Tools and permissions). Tell the user and do not retry.', true);
+      return text(JSON.stringify({ status: 'pending', pending: true, message: 'This action is waiting for the user\'s approval on the Mijn Ruimte website (mcp.tarasevych.com → Agents → Tools and permissions). Tell the user and do not retry.' }), true);
     }
     await sleep(500);
   }

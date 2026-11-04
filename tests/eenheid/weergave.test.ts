@@ -14,7 +14,7 @@ export async function main(): Promise<number> {
   const app = readFileSync('src/UnifiedServiceApp.tsx', 'utf8');
   const mcpTabs = [...(/mcp:\[(.*?)\]/.exec(app)?.[1] ?? '').matchAll(/id:'([a-z]+)'/g)].map((m) => m[1]);
   const ingedeeld = [...MCP_EENVOUDIG, ...MCP_EXPERT] as string[];
-  check('elk tabblad van mcp.* is ingedeeld (простий of розширений), geen dubbelen', mcpTabs.length === 12 && mcpTabs.every((t) => ingedeeld.includes(t)) && new Set(ingedeeld).size === ingedeeld.length && ingedeeld.length === mcpTabs.length, mcpTabs.join(','));
+  check('elk tabblad van mcp.* is ingedeeld (простий of розширений), geen dubbelen', mcpTabs.length === 13 && mcpTabs.every((t) => ingedeeld.includes(t)) && new Set(ingedeeld).size === ingedeeld.length && ingedeeld.length === mcpTabs.length, mcpTabs.join(','));
   check('простий: alleen overview, agents, connect, apps', MCP_EENVOUDIG.join() === 'overview,agents,connect,apps' && mcpTabs.filter((t) => zichtbaar('mcp', t, 'eenvoudig')).length === 4);
   check('розширений: alles zichtbaar; andere diensten nooit verborgen', mcpTabs.every((t) => zichtbaar('mcp', t, 'expert')) && zichtbaar('mail', 'dashboard', 'eenvoudig') && !isExpertTab('ai', 'tools'));
   check('standaard: eigenaar розширений, anderen простий', standaardModus(true) === 'expert' && standaardModus(false) === 'eenvoudig');

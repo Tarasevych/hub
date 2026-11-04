@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Clock, DoorOpen, Eye, KeyRound, Pencil, ShieldCheck, Terminal, TriangleAlert, Upload } from 'lucide-react';
+import { ArrowRight, Clock, DoorOpen, Eye, KeyRound, Pencil, ShieldCheck, Terminal, TriangleAlert, Upload, Wrench } from 'lucide-react';
 import { api } from './platform/client';
 import { clearPendingConsent, getPendingConsent } from './mcp-consent-store';
 import { ecosystemTabContext } from './tab-context';
 import { Venster, vensterBeheer } from './platform/vensters';
 import './mcp-consent-modal.css';
 import { DUREN, duur as duurVan, isDuurId, type DuurId } from '../shared/ai-verbinding';
+import { RUIMTE_NAAM, RUIMTE_UITLEG, type AiRuimte } from '../shared/ai-ruimte';
 
 type Tr = (uk: string, nl: string) => string;
 // soort 'deur': verzoek van de MCP-deur (/Grok, /claude, …; rid mrd_…), anders de connector /mcp.
@@ -21,8 +22,14 @@ const mmss = (ms: number) => { const s = Math.max(0, Math.ceil(ms / 1000)); retu
  * Toestemmingsscherm voor Claude (OAuth). Verschijnt als venster boven elk scherm van mcp.* zodra er een openstaand verzoek
  * is (uit ?consent=<id>, ook bewaard over het aanmelden heen, zie mcp-consent-store.ts). Wordt alleen gemount voor een
  * aangemelde gebruiker (McpServiceView), dus na het inloggen verschijnt het meteen.
+ *
+ * `ruimte` = de webruimte van de pagina waarop het venster staat (shared/ai-ruimte.ts): 'prive' op Agenten (accountruimte),
+ * 'technisch' op «Технічні підключення» (technisch profiel). De verbinding krijgt de ruimte van de pagina waar de mens toestaat;
+ * de server controleert dat (technisch = eigenaar + actief technisch profiel). Een verzoek van de serverdeur kan alleen in de
+ * technische ruimte worden toegestaan; vanuit de andere ruimte is er altijd een link naar de juiste, met hetzelfde verzoek.
  */
-export default function McpConsentModal({ tr }: { tr: Tr }) {
+export default function McpConsentModal({ tr, ruimte = 'prive' }: { tr: Tr; ruimte?: AiRuimte }) {
+  const uk = tr('uk', 'nl') === 'uk';
   const [rid, setRid] = useState<string | null>(() => getPendingConsent());
   const [phase, setPhase] = useState<Phase>('loading');
   const [info, setInfo] = useState<Info | null>(null);
@@ -70,7 +77,7 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
     // (vensterbeheer, prioriteit kritiek) en het dok toont dat dit venster erop wacht.
     vensterBeheer.wacht('mcp-toestemming', true);
     try {
-      const res = await api.post('/api/owner/mcp-connector/consent', { ...sessionBody(), rid, approve, ...(approve ? { duur } : {}) });
+      const res = await api.post('/api/owner/mcp-connector/consent', { ...sessionBody(), rid, approve, ...(approve ? { duur, ruimte } : {}) });
       setPhase('redirecting');
       clearPendingConsent();
       location.assign(String(res.data.redirect)); // terug naar de AI-klant (web, loopback of app-schema) met de code
@@ -83,11 +90,13 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
         // Nooit stil terug naar «klaar»: zeggen wat er gebeurde.
         setMelding(code.startsWith('STEP_UP') || code === 'STAP_OP_VENSTER_FOUT'
           ? tr('Доступ не видано: вхід не підтверджено (вікно «Підтвердіть доступ» закрито або не вдалося). Натисніть «Дозволити» ще раз.', 'Geen toegang gegeven: de aanmelding is niet bevestigd (venster «Toegang bevestigen» gesloten of mislukt). Klik nogmaals op «Toestaan».')
-          : tr(`Не вдалося зберегти рішення (${code || status || 'немає зв’язку'}). Спробуйте ще раз.`, `De beslissing kon niet worden opgeslagen (${code || status || 'geen verbinding'}). Probeer het opnieuw.`));
+          : code === 'TECH_PROFIEL_VEREIST' || code === 'OWNER_REQUIRED'
+            ? tr('Технічне підключення може дозволити лише власник з активним технічним профілем. Увімкніть технічний профіль і натисніть «Дозволити» ще раз.', 'Een technische verbinding kan alleen de eigenaar met een actief technisch profiel toestaan. Zet het technisch profiel aan en klik nogmaals op «Toestaan».')
+            : tr(`Не вдалося зберегти рішення (${code || status || 'немає зв’язку'}). Спробуйте ще раз.`, `De beslissing kon niet worden opgeslagen (${code || status || 'geen verbinding'}). Probeer het opnieuw.`));
         setPhase('ready');
       }
     } finally { vensterBeheer.wacht('mcp-toestemming', false); }
-  }, [rid, phase, tr, duur]);
+  }, [rid, phase, tr, duur, ruimte]);
 
   const close = () => { setDismissed(true); };
   const done = () => { clearPendingConsent(); setRid(null); };
@@ -97,6 +106,19 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
   const busy = phase === 'deciding' || phase === 'redirecting';
   const name = info?.clientName || 'Claude';
   const isDeur = info?.soort === 'deur' || (rid ?? '').startsWith('mrd_');
+  const technisch = ruimte === 'technisch';
+  // De serverdeur is per definitie technisch: in de accountruimte is er geen «Дозволити», alleen de weg naar de juiste ruimte.
+  const verkeerdeRuimte = isDeur && !technisch;
+  const andereRuimteUrl = `${location.origin}/${technisch ? 'agents' : 'verbindingen'}?consent=${encodeURIComponent(rid ?? '')}`;
+  const technischGroups: Array<{ id: string; Icon: typeof Eye; title: string; note?: string; items: string[] }> = [
+    { id: 'read', Icon: Eye, title: tr('Читання', 'Lezen'), items: [
+      tr('Поточний випуск сайту, список випусків і файли випуску (без секретів, ключів і бази даних)', 'De actieve release, de lijst van releases en bestanden van de release (zonder geheimen, sleutels en database)'),
+      tr('Стан сервера й служб; агенти, що працюють на самому сервері', 'Stand van de server en de diensten; agenten die op de server zelf draaien'),
+    ] },
+    { id: 'write', Icon: Upload, title: tr('Підготовка оновлень', 'Updates voorbereiden'), note: tr('лише якщо ви дасте це право в Адміністрування → Оновлення', 'alleen als u dat recht geeft onder Beheer → Updates'), items: [
+      tr('Завантажити пакет оновлення для вашого схвалення паролем-ключем; схвалює завжди лише власник на сайті', 'Een updatepakket klaarzetten voor uw passkey-goedkeuring; goedkeuren doet altijd alleen de eigenaar op de site'),
+    ] },
+  ];
 
   const deurGroups: Array<{ id: string; Icon: typeof Eye; title: string; note?: string; items: string[] }> = [
     { id: 'read', Icon: Eye, title: tr('Читання', 'Lezen'), items: [
@@ -107,7 +129,7 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
       tr('Завантажити пакет, підписаний вашим ключем; встановлює root-служба після перевірки підпису', 'Een pakket uploaden dat met uw sleutel is ondertekend; een root-dienst installeert het na controle van de handtekening'),
     ] },
   ];
-  const groups: Array<{ id: string; Icon: typeof Eye; title: string; note?: string; items: string[] }> = isDeur ? deurGroups : [
+  const groups: Array<{ id: string; Icon: typeof Eye; title: string; note?: string; items: string[] }> = isDeur ? deurGroups : technisch ? technischGroups : [
     { id: 'read', Icon: Eye, title: tr('Читання', 'Lezen'), items: [
       tr('Бачити ваші пристрої та їхній стан', 'Uw apparaten en hun status zien'),
       tr('Читати файли й папки в дозволених агентом місцях', 'Bestanden en mappen lezen op de plekken die de agent toestaat'),
@@ -126,12 +148,14 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
     <Venster id='mcp-toestemming' titel={tr(`Доступ для ${name}`, `Toegang voor ${name}`)} breedte={560} labelledBy='mcp-consent-title' describedBy='mcp-consent-desc' className='mcp-consent-venster'>
       <div className='mcp-consent-dialog' data-mcp-consent-modal='true'>
         <div className='mcp-consent-head'>
-          <span className='mcp-consent-icon' aria-hidden='true'>{isDeur ? <DoorOpen size={26} /> : <ShieldCheck size={26} />}</span>
+          <span className='mcp-consent-icon' aria-hidden='true'>{isDeur ? <DoorOpen size={26} /> : technisch ? <Wrench size={26} /> : <ShieldCheck size={26} />}</span>
           <div>
             <h2 id='mcp-consent-title'>
               {isDeur
                 ? tr(`${name} просить доступ до дверей сервера${info?.deur ? ` /${info.deur}` : ''}`, `${name} vraagt toegang tot de serverdeur${info?.deur ? ` /${info.deur}` : ''}`)
-                : tr(`${name} просить доступ до ваших пристроїв / ПК`, `${name} vraagt toegang tot uw apparaten / pc`)}
+                : technisch
+                  ? tr(`${name} просить технічний доступ до сайту й сервера`, `${name} vraagt technische toegang tot de site en de server`)
+                  : tr(`${name} просить доступ до вашого простору`, `${name} vraagt toegang tot uw ruimte`)}
             </h2>
             <p id='mcp-consent-desc' className='mcp-consent-sub'>
               {phase === 'ready' || busy
@@ -174,8 +198,25 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
           </>
         ) : null}
 
-        {(phase === 'ready' || busy) && info ? (
+        {(phase === 'ready' || busy) && info && verkeerdeRuimte ? (
           <>
+            <p className='mcp-consent-warn' role='alert' data-consent-ruimte='verkeerd'>
+              <DoorOpen size={16} aria-hidden='true' /> {tr('Двері сервера — це технічний простір. У приватному просторі цей запит дозволити не можна: тут ШІ ніколи не отримує доступу до сайту чи сервера.', 'De serverdeur is de technische ruimte. In de privéruimte kan dit verzoek niet worden toegestaan: hier krijgt een AI nooit toegang tot de site of de server.')}
+            </p>
+            <p className='mcp-consent-meta'>{tr('Відкрийте запит у технічному просторі (потрібен активний технічний профіль власника) — сам запит збережеться.', 'Open het verzoek in de technische ruimte (actief technisch profiel van de eigenaar nodig) — het verzoek zelf blijft bewaard.')}</p>
+            <div className='mcp-consent-actions'>
+              <button type='button' className='mcp-consent-secondary' disabled={busy} onClick={() => void decide(false)}>{tr('Заборонити', 'Weigeren')}</button>
+              <a className='mcp-consent-primary' href={andereRuimteUrl} data-consent-andere-ruimte='technisch'>{tr('Відкрити в технічному просторі', 'Openen in de technische ruimte')} <ArrowRight size={14} aria-hidden='true' /></a>
+            </div>
+          </>
+        ) : null}
+
+        {(phase === 'ready' || busy) && info && !verkeerdeRuimte ? (
+          <>
+            <p className={`mcp-consent-ruimte${technisch ? ' is-technisch' : ''}`} data-consent-ruimte={ruimte}>
+              <b>{uk ? RUIMTE_NAAM[ruimte].uk : RUIMTE_NAAM[ruimte].nl}.</b> {uk ? RUIMTE_UITLEG[ruimte].uk : RUIMTE_UITLEG[ruimte].nl}
+              {!isDeur ? <> <a href={andereRuimteUrl} data-consent-andere-ruimte={technisch ? 'prive' : 'technisch'}>{technisch ? tr('Це для мого приватного простору →', 'Dit is voor mijn privéruimte →') : tr('Потрібен технічний доступ? Відкрити в технічному просторі →', 'Technische toegang nodig? Openen in de technische ruimte →')}</a></> : null}
+            </p>
             <ul className='mcp-consent-groups' aria-label={tr('Які дозволи запитуються', 'Welke rechten worden gevraagd')}>
               {groups.map(({ id, Icon, title, note, items }) => (
                 <li key={id} className={`mcp-consent-group mcp-consent-${id}`}>
@@ -202,11 +243,11 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
                 {DUREN.map((d) => <option key={d.id} value={d.id}>{tr(d.uk, d.nl)}</option>)}
               </select>
             </label>
-            {duurVan(duur).lang ? <p className='mcp-consent-meta'><TriangleAlert size={14} aria-hidden='true' /> {tr('Довгий доступ: відкликати можна будь-коли в «Агенти → Токени й двері».', 'Lange toegang: intrekken kan altijd onder «Agenten → Tokens en deuren».')}</p> : null}
+            {duurVan(duur).lang ? <p className='mcp-consent-meta'><TriangleAlert size={14} aria-hidden='true' /> {technisch ? tr('Довгий доступ: відкликати можна будь-коли в «Технічні підключення».', 'Lange toegang: intrekken kan altijd onder «Technische verbindingen».') : tr('Довгий доступ: відкликати можна будь-коли в «Агенти → Підключені ШІ».', 'Lange toegang: intrekken kan altijd onder «Agenten → Verbonden AI».')}</p> : null}
 
             <p className='mcp-consent-meta'>
               <Clock size={14} aria-hidden='true' /> {tr('Запит діє ще', 'Verzoek nog geldig')}: <b>{mmss(left)}</b>
-              {' · '}{tr('Доступ можна відкликати будь-коли в розділі «Агенти».', 'U kunt de toegang altijd intrekken onder "Agenten".')}
+              {' · '}{technisch ? tr('Доступ можна відкликати будь-коли в «Технічні підключення».', 'U kunt de toegang altijd intrekken onder «Technische verbindingen».') : tr('Доступ можна відкликати будь-коли в розділі «Агенти».', 'U kunt de toegang altijd intrekken onder "Agenten".')}
             </p>
 
             {melding ? <p className='mcp-consent-warn' role='alert'><TriangleAlert size={16} aria-hidden='true' /> {melding}</p> : null}

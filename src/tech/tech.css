@@ -108,3 +108,12 @@ html.theme-dark .tech-vraag-laag.is-dev b{color:#c4b5fd}
 }
 .tech-alleen-mobiel{display:none}
 @media (max-width:760px){.tech-band-extra .tech-alleen-mobiel{display:inline}}
+
+/* Двері в управління: консоль не показується, доки технічний профіль цієї вкладки вимкнений. */
+.tech-poort{max-width:38rem;margin:48px auto;padding:8px 20px 28px;display:grid;gap:14px}
+.tech-poort h1{margin:0;font-size:1.45rem;font-weight:700}
+.tech-poort p{margin:0;line-height:1.5}
+.tech-poort-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.tech-poort button{min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--line,#c4ccd4);background:var(--panel,#fff);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.tech-poort button.is-hoofd{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.tech-poort button:focus-visible{outline:3px solid #1d4ed8;outline-offset:2px}

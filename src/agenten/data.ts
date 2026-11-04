@@ -4,11 +4,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../platform/client';
 import { sessionBody } from '../agents-data';
 import type { LogoKind } from '../mcp-ui';
+import { ruimteOf, type AiRuimte } from '../../shared/ai-ruimte';
 
-export type OauthVerbinding = { id: string; clientId: string; clientName: string; scope: string; createdAt: number; lastUsedAt: number | null; expiresAt: number; accessExpiresAt: number; revokedAt: number | null; status: 'active' | 'revoked' | 'expired' };
+export type OauthVerbinding = { id: string; clientId: string; clientName: string; scope: string; createdAt: number; lastUsedAt: number | null; expiresAt: number; accessExpiresAt: number; revokedAt: number | null; status: 'active' | 'revoked' | 'expired'; ruimte?: AiRuimte };
 export type Losgekoppeld = { id: string; name: string; platform: string | null; version: string | null; createdAt: number | null; revokedAt: number | null; lastSeenAt: number | null; reason: string; pairingId: string | null };
 export type Overzicht = { oauth: OauthVerbinding[]; losgekoppeld: Losgekoppeld[]; toestemmingen: Record<string, { actief: number; altijd: number; eersteEinde: number | null }>; mcpUrl: string; now: number };
-export type DeurToken = { id: string; name: string; prefix: string; scopes?: string[] | string | null; createdAt: string; expiresAt: string; revokedAt: string; calls: number; lastSeenAt: string };
+export type DeurToken = { id: string; name: string; prefix: string; scopes?: string[] | string | null; createdAt: string; expiresAt: string; revokedAt: string; calls: number; lastSeenAt: string; ruimte?: AiRuimte };
+/** Alleen de rijen van één ruimte (shared/ai-ruimte.ts): de accountruimte toont nooit technische verbindingen, en omgekeerd. */
+export const inRuimte = <T extends { ruimte?: unknown }>(lijst: readonly T[] | null | undefined, ruimte: AiRuimte): T[] => (lijst ?? []).filter((x) => ruimteOf(x.ruimte) === ruimte);
 export type JournaalItem = {
   id: string; at: number; actie: string; soort: string; resultaat: string;
   onderwerp: { id: string; naam: string; soort: 'apparaat' | 'ai' | 'token'; platform: string | null } | null;

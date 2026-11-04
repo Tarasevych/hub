@@ -1,6 +1,6 @@
 // E2E §13.12 «Доступ ШІ за вашим підписом» met een echte Chrome tegen de lokale build (opzet zoals toegang-context.e2e.ts).
-// Eén plek: mcp.*/agents#beleid (bij de AI-verbindingen); admin.*/ai bestaat niet meer.
-// 1. Zonder keten: mcp.*/agents#beleid toont «ще не встановлено» met de SSH-opdracht (beleid-start).
+// Eén plek: admin.*/ai (technisch profiel, sitebeheer); mcp.*/agents#beleid stuurt daarheen en heeft geen eigen tabblad meer.
+// 1. Zonder keten: admin.*/ai toont «ще не встановлено» met de SSH-opdracht (beleid-start).
 // 2. Root installeert genesis.signed.json (herstelsleutel, Ed25519) via beleid-start; de pagina toont versie 0, agents als tabs,
 //    een lopende timer van Grok die bijna voorbij is («Скоро закінчиться»).
 // 3. De eigenaar zet «Claude · Читати файли й стан ПК» op 2 uur (daarna питати) → wachtrij → «Перевірити й підписати» → venster
@@ -21,6 +21,7 @@ import * as bk from '../../deploy/goedkeuring/ai-beleid-kern.mjs';
 import * as kern from '../../deploy/goedkeuring/webauthn-kern.mjs';
 import { beslissing, vergeetCache } from '../../backend/ai-beleid';
 import { startE2eServer, chromeArgs } from './server';
+import { techAan } from './hulp/tech';
 import type { Policy } from '../../shared/ai-beleid/model';
 
 const PW = process.env.PLAYWRIGHT_CORE || '/workspace/e2e-tools/node_modules/playwright-core';
@@ -80,7 +81,7 @@ export async function main(): Promise<number> {
 
     const context = async (scheme: 'dark' | 'light', breedte = 1280) => {
       const ctx = await browser.newContext({ colorScheme: scheme, locale: 'uk-UA', viewport: { width: breedte, height: 900 }, timezoneId: 'Europe/Brussels', serviceWorkers: 'block' });
-      await ctx.addCookies([...b.jar].flatMap(([name, value]) => [ID, MCP].map((url) => ({ name, value, url: `${url}/`, secure: true, httpOnly: true, sameSite: 'Lax' as const }))));
+      await ctx.addCookies([...b.jar].flatMap(([name, value]) => [ID, MCP, ADMIN].map((url) => ({ name, value, url: `${url}/`, secure: true, httpOnly: true, sameSite: 'Lax' as const }))));
       await ctx.addInitScript((t) => { if (!sessionStorage.getItem('tsv-canonical-tab-v1')) sessionStorage.setItem('tsv-canonical-tab-v1', t); }, tab);
       const page = await ctx.newPage();
       const cdp = await ctx.newCDPSession(page);
@@ -97,7 +98,8 @@ export async function main(): Promise<number> {
     };
     const boot: string[] = [];
     const aib = (page: Page) => page.locator('section.aib');
-    const openAdmin = async (page: Page) => { await page.goto(`${MCP}/agents?lang=uk#beleid`, { waitUntil: 'networkidle' }); await page.locator('[data-aib-staat]').waitFor({ timeout: 20000 }).catch(async (e) => { await page.screenshot({ path: `${UIT}/aib-debug.png` }); throw new Error(`${page.url()} ${(await page.locator('body').innerText()).slice(0, 120)} | ${boot.join(' ; ')}`); }); await page.waitForTimeout(300); };
+    // Ondertekend AI-beleid is sitebeheer (audit 14.10): het woont op admin.*/ai in het technisch profiel; mcp/agents#beleid stuurt daarheen.
+    const openAdmin = async (page: Page) => { await techAan(page, { url: ADMIN, tab, service: 'admin', reden: 'E2E ai-beleid' }); await page.goto(`${ADMIN}/ai?lang=uk`, { waitUntil: 'networkidle' }); await page.locator('[data-aib-staat]').waitFor({ timeout: 20000 }).catch(async (e) => { await page.screenshot({ path: `${UIT}/aib-debug.png` }); throw new Error(`${page.url()} ${(await page.locator('body').innerText()).slice(0, 120)} | ${boot.join(' ; ')}`); }); await page.waitForTimeout(300); };
     const axe = async (page: Page) => {
       if (!existsSync(AXE)) return ['axe-core ontbreekt'];
       // Via DevTools (zoals de console), niet als <script>: de CSP van de site (script-src 'self') blijft zo ongewijzigd.
@@ -117,7 +119,9 @@ export async function main(): Promise<number> {
     const staat0 = await A.page.locator('[data-aib-staat]').getAttribute('data-aib-staat');
     const ssh = await A.page.locator('.aib-ssh').innerText().catch(() => '');
     check('zonder keten: «ще не встановлено» + SSH-opdracht beleid-start', staat0 === 'niet-ingesteld' && /sudo mijn-ruimte-passkey beleid-start/.test(ssh), `${staat0} ${ssh}`);
-    check('mcp/agents: tabblad «Доступ ШІ за підписом» actief; in Beheer bestaat geen tweede pagina', await A.page.locator('#ag-tab-beleid[aria-selected="true"]').count() === 1);
+    check('admin/ai: tabblad «Доступ ШІ» actief; mcp/agents heeft geen eigen tabblad meer', await A.page.locator('[role="tab"][aria-selected="true"]').filter({ hasText: 'Доступ ШІ' }).count() >= 1);
+    await A.page.goto(`${MCP}/agents?lang=uk#beleid`, { waitUntil: 'networkidle' });
+    check('mcp/agents#beleid stuurt door naar admin/ai', A.page.url().startsWith(`${ADMIN}/ai`), A.page.url());
     await A.page.screenshot({ path: `${UIT}/aib-0-niet-ingesteld.png`, fullPage: true });
 
     // ---------------------------------------------------------------- 2. genesis via root (herstelsleutel)
@@ -220,7 +224,7 @@ export async function main(): Promise<number> {
     await M.page.goto(`${MCP}/agents?lang=uk#ai`, { waitUntil: 'networkidle' });
     await M.page.locator('[data-beleid-actief="1"]').waitFor({ timeout: 20000 }).catch(() => undefined);
     check('#ai: met actief beleid geen oude schakelaars per hulpmiddel, wel verwijzing naar «Доступ ШІ за підписом»',
-      await M.page.locator('[data-beleid-actief="1"]').count() === 1 && await M.page.locator('#ag-ai-hulpmiddelen a[href="#beleid"]').count() === 1);
+      await M.page.locator('[data-beleid-actief="1"]').count() === 1 && await M.page.locator('#ag-ai-hulpmiddelen a[data-beleid-link="admin"]').count() === 1);
     await M.page.screenshot({ path: `${UIT}/aib-6-mcp-een-plek.png`, fullPage: true });
 
     check('geen consolefouten of onverwachte HTTP-fouten', fouten.length === 0, fouten.slice(0, 8).join('\n'));

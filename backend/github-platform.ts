@@ -9,20 +9,27 @@ const API = 'https://api.github.com';
 const REPO = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\/[A-Za-z0-9._-]{1,100}$/;
 const LOGIN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 
+/** PAT (`github`) of een later toegevoegde alternatieve verbinding (`github-app`). De waarde verlaat de server nooit. */
+const GITHUB_DOELEINDEN = ['github', 'github-app'] as const;
+export async function githubKoppeling(userId: string): Promise<{ keyName: string; purpose: (typeof GITHUB_DOELEINDEN)[number] } | null> {
+  const items = await apiPlatformVaultItems(userId);
+  for (const purpose of GITHUB_DOELEINDEN) {
+    const item = items.find((row) => row.purpose === purpose);
+    if (item) return { keyName: item.keyName, purpose };
+  }
+  return null;
+}
+async function tokenUitKluis(userId: string): Promise<string | null> {
+  const kop = await githubKoppeling(userId);
+  if (!kop) return null;
+  try { return await readOwnerVaultPlaintext(userId, kop.keyName, kop.purpose); } catch { return null; }
+}
 let doFetch: typeof fetch = fetch;
-let tokenOf: (userId: string) => Promise<string | null> = async (userId) => {
-  const item = (await apiPlatformVaultItems(userId)).find((row) => row.purpose === 'github');
-  if (!item) return null;
-  try { return await readOwnerVaultPlaintext(userId, item.keyName, 'github'); } catch { return null; }
-};
+let tokenOf: (userId: string) => Promise<string | null> = tokenUitKluis;
 /** Alleen voor tests. */
 export const setGithubDeps = (deps: { fetch?: typeof fetch; token?: (userId: string) => Promise<string | null> } | null) => {
   doFetch = deps?.fetch ?? fetch;
-  tokenOf = deps?.token ?? (async (userId) => {
-    const item = (await apiPlatformVaultItems(userId)).find((row) => row.purpose === 'github');
-    if (!item) return null;
-    try { return await readOwnerVaultPlaintext(userId, item.keyName, 'github'); } catch { return null; }
-  });
+  tokenOf = deps?.token ?? tokenUitKluis;
 };
 
 export type GhResult<T> = { ok: true; data: T; rate?: { remaining: number; reset: number } } | { ok: false; error: string; status: number };

@@ -19,6 +19,8 @@ import { getPool } from "../server/platform/pg";
 import type { RouterMiddleware } from "../server/platform/router";
 import { alsGebruiker } from "./ai-grants";
 import { huidigeNamens, metNamens } from "./mcp-namens";
+import { ruimteUitVerzoek } from "./ai-ruimte-poort";
+import { RUIMTE_GESCHEIDEN, ruimteOf, toolInRuimte } from "../shared/ai-ruimte";
 import { beslissing, weigerTekst } from "./ai-beleid";
 import { gedelegeerdeSessie } from "./site-dispatch";
 import { OPDRACHT_STANDAARD, OPDRACHT_WERKWOORDEN, isWerkwoord, leesOpdrachtResultaat, voerOpdrachtUit, type Werkwoord } from "./server-beheer";
@@ -46,6 +48,19 @@ const HOSTS = [
   ["huis", "https://huis.tarasevych.com/"],
   ["mcp", "https://mcp.tarasevych.com/overview"],
 ] as const;
+const SERVICE_ROLE: Record<string, string> = {
+  hub: "Home of the personal space.",
+  id: "Who may sign in.",
+  admin: "Access and the signed AI policy. The owner changes those on the website, not through this connector.",
+  api: "Machine API of the estate.",
+  dashboard: "Usage and traffic.",
+  ai: "AI workspace.",
+  mail: "Mailbox.",
+  cloud: "Calendar and files.",
+  github: "GitHub view of the estate.",
+  huis: "The house itself.",
+  mcp: "This connector and its console.",
+};
 
 export const MCP_CONSOLE_LIMITS = Object.freeze({ tokenDays: 30, downloadIdMinutes: 5, logPerUser: 200, tokensPerUser: 20 });
 
@@ -116,9 +131,9 @@ async function logCall(userId: string, row: { method: string; detail: string; tr
   }).catch(() => undefined);
 }
 const iso = (v: unknown) => (v ? new Date(v as string).toISOString() : "");
-const taskOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, status: r.status, service: "mcp", author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at) });
+const taskOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, status: r.status, tags: r.tags || [], service: "mcp", author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at) });
 const noteOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, tags: r.tags || [], author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at) });
-const tokenOut = (r: any) => ({ id: r.id, name: r.name, prefix: r.prefix, scopes: r.scopes, createdAt: iso(r.created_at), expiresAt: iso(r.expires_at), revokedAt: iso(r.revoked_at), calls: Number(r.calls || 0), lastSeenAt: iso(r.last_seen_at) });
+const tokenOut = (r: any) => ({ id: r.id, name: r.name, prefix: r.prefix, scopes: r.scopes, createdAt: iso(r.created_at), expiresAt: iso(r.expires_at), revokedAt: iso(r.revoked_at), calls: Number(r.calls || 0), lastSeenAt: iso(r.last_seen_at), ruimte: ruimteOf(r.ruimte) });
 
 async function board(userId: string) {
   return alsGebruiker(userId, async (q) => {
@@ -126,12 +141,55 @@ async function board(userId: string) {
     return { tasks: rows.filter((r) => r.kind === "task").map(taskOut), notes: rows.filter((r) => r.kind === "note").map(noteOut) };
   });
 }
-async function addItem(userId: string, kind: "task" | "note", title: string, body: string, status: string | null, author: string) {
+const TAG = /^[A-Za-z0-9:_-]{1,32}$/;
+function schoneTags(raw: unknown): string[] | null {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw) || raw.length > 8) return null;
+  const out: string[] = [];
+  for (const t of raw) {
+    if (typeof t !== "string" || !TAG.test(t)) return null;
+    const laag = t.toLowerCase();
+    if (!out.includes(laag)) out.push(laag);
+  }
+  return out;
+}
+async function addItem(userId: string, kind: "task" | "note", title: string, body: string, status: string | null, author: string, tags: string[] = []) {
   return alsGebruiker(userId, async (q) => {
-    const { rows } = await q("INSERT INTO app.mcp_console_items (user_id, kind, title, body, status, author) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-      [userId, kind, title.slice(0, 160), body.slice(0, 4000), kind === "task" ? (status && STATUSES.has(status) ? status : "backlog") : null, author.slice(0, 80)]);
+    const { rows } = await q("INSERT INTO app.mcp_console_items (user_id, kind, title, body, status, author, tags) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      [userId, kind, title.slice(0, 160), body.slice(0, 4000), kind === "task" ? (status && STATUSES.has(status) ? status : "backlog") : null, author.slice(0, 80), tags]);
     return kind === "task" ? { task: taskOut(rows[0]) } : { note: noteOut(rows[0]) };
   });
+}
+async function editItem(userId: string, id: string, patch: { title?: string; body?: string; tags?: string[] }) {
+  return alsGebruiker(userId, async (q) => {
+    const cur = (await q("SELECT * FROM app.mcp_console_items WHERE id::text = $2 AND user_id = $1", [userId, id])).rows[0];
+    if (!cur) return null;
+    const title = patch.title !== undefined ? String(patch.title).slice(0, 160) : cur.title;
+    const body = patch.body !== undefined ? String(patch.body).slice(0, 4000) : cur.body;
+    const tags = patch.tags !== undefined ? patch.tags : (cur.tags || []);
+    const { rows } = await q("UPDATE app.mcp_console_items SET title = $3, body = $4, tags = $5, updated_at = now() WHERE id::text = $2 AND user_id = $1 RETURNING *", [userId, id, title, body, tags]);
+    return rows[0] ? (rows[0].kind === "task" ? { task: taskOut(rows[0]) } : { note: noteOut(rows[0]) }) : null;
+  });
+}
+async function deleteItem(userId: string, id: string) {
+  return alsGebruiker(userId, async (q) => {
+    const row = (await q("DELETE FROM app.mcp_console_items WHERE id::text = $2 AND user_id = $1 RETURNING id, kind", [userId, id])).rows[0];
+    return row ? { deleted: true, id: String(row.id), kind: row.kind } : null;
+  });
+}
+async function searchBoard(userId: string, query: string, tag: string, kind: string) {
+  const b = await board(userId);
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const past = (title: string, body: string, tags: string[]) => {
+    if (tag && !(tags || []).some((t) => String(t).toLowerCase() === tag.toLowerCase())) return false;
+    if (!words.length) return true;
+    const blob = `${title}\n${body}\n${(tags || []).join(" ")}`.toLowerCase();
+    return words.every((w) => blob.includes(w));
+  };
+  return {
+    tasks: kind === "note" ? [] : b.tasks.filter((t) => past(t.title, t.body, t.tags || [])).slice(0, 40),
+    notes: kind === "task" ? [] : b.notes.filter((n) => past(n.title, n.body, n.tags || [])).slice(0, 40),
+  };
 }
 
 /** Eenmalig: het oude gedeelde bestand mcp-console.json overnemen voor de eigenaar (tokens als hash, +30 dagen), daarna hernoemen. */
@@ -382,6 +440,74 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
     return json({ ok: r.ok, code: r.code, gestart: !!r.gestart, resultaat: r.resultaat ?? null }, r.ok ? 200 : r.code === "UIT" ? 403 : 502);
   };
 
+  const bordSchrijven = [gate("member", {}, async (ctx, auth) => {
+    const data = bodyOf(ctx.body);
+    if (data.kind === "move") {
+      const status = String(data.status || "");
+      if (!STATUSES.has(status)) return error("TASK_STATUS", 400);
+      const row = await alsGebruiker(auth.user.id, async (q) => (await q("UPDATE app.mcp_console_items SET status = $3, updated_at = now() WHERE id::text = $2 AND user_id = $1 AND kind = 'task' RETURNING *", [auth.user.id, String(data.id || ""), status])).rows[0]);
+      return row ? json({ task: taskOut(row) }) : error("TASK_NOT_FOUND", 404);
+    }
+    if (data.kind === "edit") {
+      const patch: { title?: string; body?: string; tags?: string[] } = {};
+      if (data.title !== undefined) {
+        const title = String(data.title);
+        if (!title.trim() || title.length > 160) return error("TITLE_INVALID", 400);
+        patch.title = title;
+      }
+      if (data.body !== undefined) {
+        const body = String(data.body);
+        if (body.length > 4000) return error("BODY_INVALID", 400);
+        patch.body = body;
+      }
+      if (data.tags !== undefined) {
+        const tags = schoneTags(data.tags);
+        if (!tags) return error("TAG_INVALID", 400);
+        patch.tags = tags;
+      }
+      if (!patch.title && patch.body === undefined && !patch.tags) return error("PATCH_EMPTY", 400);
+      const row = await editItem(auth.user.id, String(data.id || ""), patch);
+      return row ? json(row) : error("ITEM_NOT_FOUND", 404);
+    }
+    if (data.kind === "delete") {
+      const row = await deleteItem(auth.user.id, String(data.id || ""));
+      return row ? json(row) : error("ITEM_NOT_FOUND", 404);
+    }
+    const kind = data.kind === "note" ? "note" : "task";
+    const tags = schoneTags(data.tags);
+    if (!tags) return error("TAG_INVALID", 400);
+    return json(await addItem(auth.user.id, kind, String(data.title || (kind === "note" ? "Нотатка" : "Задача")), String(data.body || ""), null, "operator", tags));
+  })] as RouterMiddleware[];
+
+  const leesBestand = async (rel: string) => {
+    if (!rel || rel.length > 400 || rel.includes("\0")) return { ok: false as const, error: "PATH_INVALID" };
+    try {
+      if (denied(rel)) return { ok: false as const, error: "PATH_SECRET" };
+      const { target } = await inside(rel);
+      const info = await stat(target);
+      if (!info.isFile()) return { ok: false as const, error: "NOT_A_FILE" };
+      if (info.size > 120_000) return { ok: false as const, error: "FILE_TOO_LARGE" };
+      return { ok: true as const, data: { path: rel.replaceAll("\\", "/"), bytes: info.size, text: await readFile(target, "utf8") } };
+    } catch (err) {
+      const code = err instanceof Error ? err.message : "SPIEGEL_FOUT";
+      return { ok: false as const, error: /^(PATH_|NOT_A_FILE|FILE_TOO_LARGE)/.test(code) ? code : "SPIEGEL_FOUT" };
+    }
+  };
+  const liveRelease = async () => {
+    try {
+      const root = await releaseRoot();
+      const read = async (file: string) => { try { return (await readFile(path.join(root, file), "utf8")).trim(); } catch { return ""; } };
+      return { release: path.basename(root), bron: await read("BRON-COMMIT"), releaseCommit: await read("RELEASE-COMMIT"), versie: await read("UITROL-VERSIE") };
+    } catch {
+      return { release: "", bron: "", releaseCommit: "", versie: "", error: "RELEASE_ONLEESBAAR" };
+    }
+  };
+  const serviceRij = (id: string, url: string) => ({ id, url, host: (() => { try { return new URL(url).host; } catch { return ""; } })(), role: SERVICE_ROLE[id] || "" });
+  const spiegelEigenaar = (run: (data: Record<string, unknown>) => Promise<Resp>): RouterMiddleware[] => [gate("owner", {}, async (ctx) => {
+    if (!(await readPerms()).read) return error("PERMISSION_OFF:read", 403);
+    return run(bodyOf(ctx.body));
+  })];
+
   return {
     "POST /api/mcp/health": [gate("owner", {}, async (ctx, auth) => {
       if (!(await readPerms()).read) return error("PERMISSION_OFF:read", 403);
@@ -390,32 +516,99 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       await logCall(auth.user.id, { method: "probe", detail: String(probes.filter((r) => r.ok).length), ...wie(ctx, auth), ok: true, ms: Date.now() - started });
       return json({ probes });
     })],
-    "POST /api/mcp/board": [gate("member", {}, async (ctx, auth) => {
-      const data = bodyOf(ctx.body);
-      if (data.kind === "move") {
-        const status = String(data.status || "");
-        if (!STATUSES.has(status)) return error("TASK_NOT_FOUND", 404);
-        const row = await alsGebruiker(auth.user.id, async (q) => (await q("UPDATE app.mcp_console_items SET status = $3, updated_at = now() WHERE id::text = $2 AND user_id = $1 AND kind = 'task' RETURNING *", [auth.user.id, String(data.id || ""), status])).rows[0]);
-        return row ? json({ task: taskOut(row) }) : error("TASK_NOT_FOUND", 404);
-      }
-      const kind = data.kind === "note" ? "note" : "task";
-      return json(await addItem(auth.user.id, kind, String(data.title || (kind === "note" ? "Нотатка" : "Задача")), String(data.body || ""), null, "operator"));
-    })],
+    "POST /api/mcp/board": bordSchrijven,
+    "PATCH /api/mcp/board": bordSchrijven,
+    "PUT /api/mcp/board": bordSchrijven,
     "POST /api/mcp/board/list": [gate("member", {}, async (_ctx, auth) => json(await board(auth.user.id)))],
+    "POST /api/mcp/board/search": [gate("member", {}, async (ctx, auth) => {
+      const data = bodyOf(ctx.body);
+      const query = String(data.query || data.q || "").slice(0, 200);
+      const tag = String(data.tag || "");
+      const kind = String(data.kind || "");
+      if (tag && !TAG.test(tag)) return error("TAG_INVALID", 400);
+      if (kind && kind !== "task" && kind !== "note") return error("KIND_INVALID", 400);
+      return json(await searchBoard(auth.user.id, query, tag, kind));
+    })],
+    // Weerspiegeling van de deur: alleen lezen. Geen installatie, rollback, back-up, archiefdownload of geheime waarden.
+    "POST /api/mcp/spiegel/release/live": spiegelEigenaar(async () => json(await liveRelease())),
+    "POST /api/mcp/spiegel/release/list": spiegelEigenaar(async () => {
+      const live = await liveRelease();
+      let releases: string[] = [];
+      const dir = process.env.MCP_RELEASES_DIR || "/srv/mijn-ruimte/releases";
+      try { releases = (await readdir(dir)).filter((row) => /^\d{8}-\d{6}$/.test(row)).sort(); } catch { releases = []; }
+      let catalog: { name: string; kind: string }[] = [];
+      let catalogError = "";
+      try {
+        const { root, target } = await inside(".");
+        const rows = await readdir(target, { withFileTypes: true });
+        catalog = rows.filter((r) => !denied(r.name)).slice(0, 200).map((row) => ({ name: row.name, kind: row.isDirectory() ? "dir" : "file" }));
+        void root;
+      } catch (err) {
+        const code = err instanceof Error ? err.message : "SPIEGEL_FOUT";
+        catalogError = /^(PATH_|NOT_A_FILE|FILE_TOO_LARGE)/.test(code) ? code : "SPIEGEL_FOUT";
+      }
+      return json({ releases, live, catalog, ...(catalogError ? { catalogError } : {}) });
+    }),
+    "POST /api/mcp/spiegel/release/file": spiegelEigenaar(async (data) => {
+      const uit = await leesBestand(String(data.path || ""));
+      return uit.ok ? json(uit.data) : error(uit.error, 400);
+    }),
+    "POST /api/mcp/spiegel/health": spiegelEigenaar(async () => {
+      const flags = await readPerms();
+      const [site, deur] = await Promise.all([
+        probeOne("site", "http://127.0.0.1:8080/__gezondheid"),
+        probeOne("deur", "http://127.0.0.1:8091/health"),
+      ]);
+      let armored: Record<string, unknown> = { available: false, reason: "PERMISSION_OFF:opdracht.status" };
+      if (flags["opdracht.status"]) {
+        try {
+          const r = await voerOpdrachtUit("status");
+          armored = r.ok ? { available: true, code: r.code, data: r.resultaat?.gegevens ?? {} } : { available: false, reason: r.code };
+        } catch { armored = { available: false, reason: "OPDRACHT_FOUT" }; }
+      }
+      return json({
+        site, deur, switches: flags, armored,
+        note: "Read only. After the owner approves a package with a passkey, compare versie from get_live_release with this health. Installing, rolling back and backups stay on the website.",
+      });
+    }),
+    "POST /api/mcp/spiegel/services": spiegelEigenaar(async () => json({
+      services: HOSTS.map(([id, url]) => serviceRij(id, url)),
+      next: "Use these URLs. Call list_services before opening mail, admin, hub or any other web component.",
+    })),
+    "POST /api/mcp/spiegel/service": spiegelEigenaar(async (data) => {
+      const id = String(data.id || "");
+      const hit = HOSTS.find(([name]) => name === id);
+      if (!hit) return error("UNKNOWN_SERVICE", 404);
+      return json({ ...serviceRij(hit[0], hit[1]), probe: await probeOne(hit[0], hit[1]) });
+    }),
+    "POST /api/mcp/spiegel/hub": spiegelEigenaar(async () => json({
+      hub: serviceRij("hub", "https://hub.tarasevych.com/overview"),
+      layers: ["huis", "id/admin", "api", "mcp", "surfaces"],
+      services: HOSTS.map(([id, url]) => serviceRij(id, url)),
+      instruction: "Call list_services before interacting with another web component. URLs here are the ones the estate actually serves.",
+    })),
+    "POST /api/mcp/spiegel/stats": [gate("member", {}, async (_ctx, auth) => {
+      const tokens = await alsGebruiker(auth.user.id, async (q) => (await q("SELECT id, name, prefix, scopes, created_at, expires_at, revoked_at, calls, last_seen_at FROM app.mcp_console_tokens WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100", [auth.user.id])).rows.map(tokenOut));
+      const calls = await alsGebruiker(auth.user.id, async (q) => Number((await q("SELECT count(*)::int AS n FROM app.mcp_console_log WHERE user_id = $1", [auth.user.id])).rows[0].n));
+      return json({ tokens, calls, note: "Prefixes and call counts only. Token secrets and vault values are never included." });
+    })],
     "POST /api/mcp/tokens/list": [gate("member", {}, async (_ctx, auth) =>
       json({ tokens: await alsGebruiker(auth.user.id, async (q) => (await q("SELECT * FROM app.mcp_console_tokens WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100", [auth.user.id])).rows.map(tokenOut)) }))],
     "POST /api/mcp/tokens": [gate("member", { stepUp: true }, async (ctx, auth) => {
       const name = String(bodyOf(ctx.body).name || "Agent").slice(0, 80);
+      // Ruimte van het token (0042): 'prive' (eigen ruimte) of 'technisch' (alleen eigenaar met actief technisch profiel). De AI kiest dit nooit zelf.
+      const poort = await ruimteUitVerzoek(auth.user, bodyOf(ctx.body));
+      if ("fout" in poort) return error(poort.fout, poort.status);
       const raw = `tvh_${randomBytes(24).toString("base64url")}`;
       const row = await alsGebruiker(auth.user.id, async (q) => {
         const active = Number((await q("SELECT count(*)::int AS n FROM app.mcp_console_tokens WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > now()", [auth.user.id])).rows[0].n);
         if (active >= MCP_CONSOLE_LIMITS.tokensPerUser) return null;
-        return (await q(`INSERT INTO app.mcp_console_tokens (user_id, name, prefix, token_hash, expires_at) VALUES ($1, $2, $3, $4, now() + interval '${MCP_CONSOLE_LIMITS.tokenDays} days') RETURNING *`,
-          [auth.user.id, name, raw.slice(0, 12), sha(raw)])).rows[0];
+        return (await q(`INSERT INTO app.mcp_console_tokens (user_id, name, prefix, token_hash, expires_at, ruimte) VALUES ($1, $2, $3, $4, now() + interval '${MCP_CONSOLE_LIMITS.tokenDays} days', $5) RETURNING *`,
+          [auth.user.id, name, raw.slice(0, 12), sha(raw), poort.ruimte])).rows[0];
       });
       if (!row) return error("TOKEN_LIMIT_REACHED", 409);
       await logCall(auth.user.id, { method: "token.issue", detail: name, ...wie(ctx, auth), ok: true, ms: 0 });
-      await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_issued", type: "ai", result: "ok", details: { tokenId: row.id, name } }).catch(() => undefined);
+      await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_issued", type: "ai", result: "ok", details: { tokenId: row.id, name, ruimte: poort.ruimte } }).catch(() => undefined);
       return json({ token: { ...tokenOut(row), token: raw } });
     })],
     "POST /api/mcp/tokens/revoke": [gate("member", {}, async (ctx, auth) => {
@@ -522,7 +715,7 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       if (!/^tvh_[A-Za-z0-9_-]{20,64}$/.test(got)) return error("TOKEN_INVALID", 401);
       const sys = getPool("systeem");
       const { rows } = await sys.query(
-        `SELECT t.id, t.user_id, t.name, r.data->>'role' AS role FROM app.mcp_console_tokens t
+        `SELECT t.id, t.user_id, t.name, t.ruimte, r.data->>'role' AS role FROM app.mcp_console_tokens t
            LEFT JOIN app.records r ON r.tbl = 'users' AND r.id = t.user_id
           WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now()
             AND COALESCE(r.data->>'status', '') NOT IN ('blocked', 'rejected', 'deleted') AND COALESCE((r.data->>'retiredAt')::numeric, 0) = 0
@@ -536,6 +729,12 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       const name = String(data.name || "");
       const args = (data.arguments && typeof data.arguments === "object" ? data.arguments : {}) as Record<string, unknown>;
       const started = Date.now();
+      // Ruimte van het token (0042) vóór alles: een privétoken raakt nooit de server, een technisch token nooit de privé-inhoud.
+      const ruimte = ruimteOf(tok.ruimte);
+      if (!toolInRuimte(name, ruimte) && !isGoedkeurPoging(name)) {
+        await logCall(tok.user_id, { method: "tools/call", detail: `${name} SPACE_SEPARATED:${ruimte}`, transport: "agent", agent: tok.name, ok: false, ms: Date.now() - started });
+        return json({ ok: false, error: "SPACE_SEPARATED", message: RUIMTE_GESCHEIDEN(ruimte, name.slice(0, 80)) }, 403);
+      }
       // Ondertekend AI-beleid van de eigenaar (§13.12): deze deur heeft geen goedkeurstap, dus alleen «дозволено» gaat door.
       const beleid = await beslissing({ client: String(tok.name) }, name);
       if (beleid.mode !== "always") {
@@ -543,7 +742,7 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
         return json({ ok: false, error: `AI_BELEID:${beleid.code}`, message: weigerTekst(beleid) }, 403);
       }
       try {
-        const result = await metNamens({ client: String(tok.name), grantId: `token:${tok.id}` }, () => runTool(tok.user_id, tok.role === "owner", name, args, `agent:${tok.name}`, String(tok.id)));
+        const result = await metNamens({ client: String(tok.name), grantId: `token:${tok.id}`, ruimte }, () => runTool(tok.user_id, tok.role === "owner", name, args, `agent:${tok.name}`, String(tok.id)));
         await logCall(tok.user_id, { method: "tools/call", detail: name, transport: "agent", agent: tok.name, ok: true, ms: Date.now() - started });
         return json({ ok: true, result: text(result) });
       } catch (err) {

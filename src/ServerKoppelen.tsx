@@ -62,7 +62,8 @@ export default function ServerKoppelen({ lang, apparaten, onGekoppeld }: { lang:
   async function maakCodes() {
     setBezig(true); setFout(''); setNieuw([]); setGekopieerd(false);
     try {
-      const een = async () => (await api.post('/api/owner/agents/pairing-code', sessionBody())).data as { code: string; expiresAt: number };
+      // De server zelf is een apparaat van de TECHNISCHE ruimte (0042): alleen een technische AI-verbinding ziet en bestuurt het.
+      const een = async () => (await api.post('/api/owner/agents/pairing-code', { ...sessionBody(), ruimte: 'technisch' })).data as { code: string; expiresAt: number };
       const c1 = console_ ? await een() : null;
       const c2 = apps ? await een() : null;
       bekend.current = new Set(apparaten.map((a) => a.id));

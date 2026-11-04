@@ -9,6 +9,8 @@ export type Agent = {
   enabled?: boolean; armedUntil?: number | null;
   /** Technisch (uitklapbare rij op /agents). */
   version?: string | null; tokenExpiresAt?: number | null; pairingId?: string | null; capabilities?: Record<string, unknown>; enabledCapabilities?: string[];
+  /** Ruimte van het apparaat (0042): 'prive' (eigen pc/browser) of 'technisch' (server/beheer); gezet bij het koppelen. */
+  ruimte?: 'prive' | 'technisch';
 };
 export type Pending = { id: string; agentId: string; agentName: string; type: string; params: unknown; createdAt: number };
 export type LastCommand = { id: string; agentId: string; type: string; status: string; preview: string; createdAt: number };

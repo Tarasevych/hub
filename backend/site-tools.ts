@@ -10,8 +10,12 @@ export type SiteGroup = 'mail' | 'calendar' | 'drive' | 'site' | 'github';
 export type SiteTool = {
   tool: ToolDef;
   group: SiteGroup;
-  service: string;            // dienst waarvoor de sessie wordt opgebouwd (mail, cloud, hub)
+  service: string;            // dienst waarvoor de sessie wordt opgebouwd (mail, cloud, hub, mcp)
   write: boolean;             // wijzigt iets: standaardmodus "vragen"
+  /** Lezen dat tóch op «vragen» staat (bevestiging op de site), zonder iets te wijzigen. */
+  confirm?: boolean;
+  /** Alleen in de lijst als de gebruiker GitHub koppelde (PAT of github-app). */
+  requiresGithub?: boolean;
   validate: (args: any) => string | null;
   request: (args: any) => { route: string; body: Record<string, unknown> };
   shape: (data: any) => unknown;
@@ -298,7 +302,7 @@ SITE_TOOLS.push(
     group: 'site', service: 'mcp', write: true,
     tool: {
       name: 'mcp_board_add', title: 'Add to the task board',
-      description: 'Add a task (kind "task", lands in backlog) or a note (kind "note") to the user\'s Mijn Ruimte board. Changes the board, so the user approves each call on the site.',
+      description: 'Add a task (kind "task", lands in backlog) or a note (kind "note") to the user\'s Mijn Ruimte board. Always call search_board first and ask the user before creating a duplicate. Changes the board, so the user approves each call on the site (status "pending" means wait, do not retry).',
       inputSchema: { type: 'object', properties: { kind: { type: 'string', description: '"task" (default) or "note".' }, title: { type: 'string', description: 'Short title (1-160 characters).' }, body: { type: 'string', description: 'Optional text (up to 4000 characters).' } }, required: ['title'], additionalProperties: false },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
@@ -308,11 +312,247 @@ SITE_TOOLS.push(
   },
 );
 
+// ---- Weerspiegeling van de deur (backend/mcp-console.ts). Geen nieuw recht: dezelfde lees- en bordacties, via de bestaande routes.
+// Kritiek (installeren, rollback, back-up, beleid, archief downloaden, geheime waarden) bestaat hier niet.
+const idProp = { type: 'string', description: 'Id of the task or note, from search_board or mcp_board_list.' };
+const CONFIRM = 'The signed AI policy is the ceiling. When the mode is ask (the default), this returns status "pending" until the owner allows it on the website. Do not retry while it is pending.';
+const NA_GOEDKEURING = 'After the user confirms that a release package was approved with their passkey, call get_system_health and get_live_release. Do not use SSH. This tool does not install anything.';
+
+SITE_TOOLS.push(
+  {
+    group: 'site', service: 'mcp', write: false,
+    tool: {
+      name: 'get_live_release', title: 'Live release',
+      description: `The release that is live now: version, source commit and release commit. Read-only. ${NA_GOEDKEURING}`,
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: () => null,
+    request: () => ({ route: 'POST /api/mcp/spiegel/release/live', body: {} }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: false,
+    tool: {
+      name: 'list_releases', title: 'Releases and catalog',
+      description: 'List of release names on the server, the live release, and the top-level catalog of the live tree. Read-only. Secrets are not listed. Does not install or roll back.',
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: () => null,
+    request: () => ({ route: 'POST /api/mcp/spiegel/release/list', body: {} }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: false,
+    tool: {
+      name: 'read_release_file', title: 'Read a release file',
+      description: 'Read one text file inside the live release. The door already refuses secrets; this tool returns that refusal as an error and does not crash. Read-only. Does not download archives or backups.',
+      inputSchema: { type: 'object', properties: { path: { type: 'string', description: 'Path inside the live release, for example "package.json". No "..".' } }, required: ['path'], additionalProperties: false },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: (a) => (typeof a.path === 'string' && a.path.length > 0 && a.path.length <= 400 && !a.path.includes('..') && !a.path.includes('\0') ? null : 'Invalid "path": a relative path inside the live release, without "..".'),
+    request: (a) => ({ route: 'POST /api/mcp/spiegel/release/file', body: { path: a.path } }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: false,
+    tool: {
+      name: 'get_system_health', title: 'Site, door and server health',
+      description: `Health of the site and the MCP door, the on/off switches, and the armored read-only server check when that switch is on. ${NA_GOEDKEURING}`,
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: () => null,
+    request: () => ({ route: 'POST /api/mcp/spiegel/health', body: {} }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: false,
+    tool: {
+      name: 'search_board', title: 'Search the task board',
+      description: 'Search existing tasks and notes by words or a tag before creating anything. Read-only. Statuses are backlog (waiting), doing (in progress), blocked (deferred), done.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Words to find in the title, text or tags. Empty lists recent items.' }, tag: { type: 'string', description: 'Optional tag, for example "hub" or "calendar-draft".' }, kind: { type: 'string', enum: ['task', 'note'], description: 'Optional: only tasks or only notes.' } }, additionalProperties: false },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: (a) => {
+      if (a.query !== undefined && (typeof a.query !== 'string' || a.query.length > 200)) return 'Invalid "query": up to 200 characters.';
+      if (a.tag !== undefined && (typeof a.tag !== 'string' || !/^[A-Za-z0-9:_-]{1,32}$/.test(a.tag))) return 'Invalid "tag".';
+      if (a.kind !== undefined && !['task', 'note'].includes(a.kind)) return 'Invalid "kind".';
+      return null;
+    },
+    request: (a) => ({ route: 'POST /api/mcp/board/search', body: without({ query: a.query, tag: a.tag, kind: a.kind }) }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: true,
+    tool: {
+      name: 'create_task', title: 'Create a task',
+      description: `Create a task on the board (status backlog). Always call search_board first and ask the user if a matching task or note already exists, so their request is not lost in a duplicate. ${CONFIRM}`,
+      inputSchema: { type: 'object', properties: { title: { type: 'string', description: 'Short title, 1 to 160 characters.' }, body: { type: 'string', description: 'Optional text, up to 4000 characters.' }, tags: { type: 'array', items: { type: 'string' }, description: 'Optional tags, up to 8, letters, digits, colon, underscore or dash.' } }, required: ['title'], additionalProperties: false },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    validate: (a) => (text(a.title, 1, 160) ? null : 'Invalid "title": 1-160 characters.') || (a.body === undefined || (typeof a.body === 'string' && a.body.length <= 4000) ? null : 'Invalid "body".'),
+    request: (a) => ({ route: 'POST /api/mcp/board', body: without({ kind: 'task', title: a.title, body: a.body, tags: a.tags }) }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: true,
+    tool: {
+      name: 'update_task_status', title: 'Update a task status',
+      description: `Move one task. Statuses: backlog (waiting / очікувані), doing (in progress / в опрацюванні), blocked (deferred / відкладено), done (виконано). There is no cancelled status: use delete_board_item to refuse or cancel. ${CONFIRM}`,
+      inputSchema: { type: 'object', properties: { id: idProp, status: { type: 'string', enum: ['backlog', 'doing', 'blocked', 'done'], description: 'backlog, doing, blocked or done.' } }, required: ['id', 'status'], additionalProperties: false },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    validate: (a) => (typeof a.id === 'string' && a.id.length >= 8 && a.id.length <= 80 ? null : 'Invalid "id".') || (['backlog', 'doing', 'blocked', 'done'].includes(a.status) ? null : 'Invalid "status": backlog, doing, blocked or done. To cancel, use delete_board_item.'),
+    request: (a) => ({ route: 'PATCH /api/mcp/board', body: { kind: 'move', id: a.id, status: a.status } }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: true,
+    tool: {
+      name: 'update_board_item', title: 'Correct a task or note',
+      description: `Correct the title, text or tags of one task or note the user already has. Does not change the status; use update_task_status for that. ${CONFIRM}`,
+      inputSchema: { type: 'object', properties: { id: idProp, title: { type: 'string', description: 'Replacement title, 1 to 160 characters.' }, body: { type: 'string', description: 'Replacement text, up to 4000 characters.' }, tags: { type: 'array', items: { type: 'string' }, description: 'Replacement tags. Omit to keep the current tags.' } }, required: ['id'], additionalProperties: false },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    validate: (a) => (typeof a.id === 'string' && a.id.length >= 8 ? null : 'Invalid "id".') || (a.title === undefined && a.body === undefined && a.tags === undefined ? 'Pass title, body or tags to change.' : null) || (a.title === undefined || text(a.title, 1, 160) ? null : 'Invalid "title".'),
+    request: (a) => ({ route: 'PATCH /api/mcp/board', body: without({ kind: 'edit', id: a.id, title: a.title, body: a.body, tags: a.tags }) }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: true,
+    tool: {
+      name: 'delete_board_item', title: 'Delete a task or note',
+      description: `Delete one of the user's own tasks or notes, including a refused or cancelled item (there is no separate cancelled status). ${CONFIRM}`,
+      inputSchema: { type: 'object', properties: { id: idProp }, required: ['id'], additionalProperties: false },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+    },
+    validate: (a) => (typeof a.id === 'string' && a.id.length >= 8 && a.id.length <= 80 ? null : 'Invalid "id".'),
+    request: (a) => ({ route: 'PATCH /api/mcp/board', body: { kind: 'delete', id: a.id } }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: false,
+    tool: {
+      name: 'list_services', title: 'List services',
+      description: 'Structured list of estate services with their real URLs. Call list_services before interacting with mail, admin, the hub or any other web component. Do not guess addresses. Read-only.',
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: () => null,
+    request: () => ({ route: 'POST /api/mcp/spiegel/services', body: {} }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: false,
+    tool: {
+      name: 'get_service', title: 'One service',
+      description: 'One service by id (hub, id, admin, api, dashboard, ai, mail, cloud, github, huis, mcp) with its URL and a short reachability probe. Read-only. Call list_services first if you are not sure of the id.',
+      inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'Service id from list_services, for example "mail" or "admin".' } }, required: ['id'], additionalProperties: false },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: (a) => (typeof a.id === 'string' && /^[a-z]{2,12}$/.test(a.id) ? null : 'Invalid "id": use an id from list_services.'),
+    request: (a) => ({ route: 'POST /api/mcp/spiegel/service', body: { id: a.id } }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: false,
+    tool: {
+      name: 'get_hub_overview', title: 'Hub overview',
+      description: 'The hub URL, the layers of the estate, and every service URL in one object. Read-only. Call list_services before opening another web component.',
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: () => null,
+    request: () => ({ route: 'POST /api/mcp/spiegel/hub', body: {} }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'github', service: 'github', write: false, requiresGithub: true,
+    tool: {
+      name: 'get_github_projects', title: 'GitHub projects',
+      description: 'The user\'s GitHub Projects boards (title, url, open or closed, item count), not only issues and commits. Read-only. Appears only when a GitHub token (purpose github or github-app) is stored in the key vault.',
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    validate: () => null,
+    request: () => ({ route: 'POST /api/owner/github/projects', body: {} }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'mail', service: 'mail', write: true,
+    tool: {
+      name: 'draft_email_reply', title: 'Draft an email reply',
+      description: `Save a draft reply in the user\'s mailbox. It does not send the message. ${CONFIRM}`,
+      inputSchema: { type: 'object', properties: { reply_to_message_id: { type: 'string', description: 'Id of the message being answered, from mail_search_messages or mail_read_message.' }, account_id: { type: 'string', description: 'Optional mail account id from mail_list_accounts.' }, to: { type: 'string', description: 'Optional recipients. A reply can omit this and follow the original message.' }, subject: { type: 'string', description: 'Subject, up to 300 characters. A reply may start with Re:.' }, body: { type: 'string', description: 'Plain-text draft, 1 to 20000 characters. This is not sent.' }, local_id: { type: 'string', description: 'Optional stable id (8-80 letters, digits, _ or -) so a later call updates the same draft.' } }, required: ['body'], additionalProperties: false },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    validate: (a) => (text(a.body, 1, 20000) ? null : 'Invalid "body": 1-20000 characters.') || (a.subject === undefined || (typeof a.subject === 'string' && a.subject.length <= 300) ? null : 'Invalid "subject".') || (a.local_id === undefined || /^[A-Za-z0-9_-]{8,80}$/.test(a.local_id) ? null : 'Invalid "local_id".'),
+    request: (a) => {
+      const basis = String(a.local_id || `reply${String(a.reply_to_message_id || 'new')}`).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+      const localId = basis.length >= 8 ? basis : `${basis}draft0000`.slice(0, 80);
+      const plain = String(a.body);
+      return { route: 'POST /api/owner/mail/compose/draft/save', body: without({ localId, accountId: a.account_id, to: a.to, subject: a.subject, plainText: plain, html: `<p>${plain.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</p>`, replyToMessageId: a.reply_to_message_id }) };
+    },
+    shape: (d) => compact({ id: d?.draft?.localId || d?.draft?.id, syncStatus: d?.draft?.syncStatus, subject: d?.draft?.subject, sent: false }),
+  },
+  {
+    group: 'calendar', service: 'mcp', write: true,
+    tool: {
+      name: 'draft_calendar_event', title: 'Draft a calendar event',
+      description: `Store a calendar-event draft as a hub note tagged calendar-draft. It does not write to Google Calendar and does not invite anyone. The owner copies it into the calendar. ${CONFIRM}`,
+      inputSchema: { type: 'object', properties: { title: { type: 'string', description: 'Event title, 1 to 160 characters.' }, start: { type: 'string', description: 'Start as ISO-8601, for example 2026-10-15T09:00:00+02:00.' }, end: { type: 'string', description: 'Optional end as ISO-8601.' }, body: { type: 'string', description: 'Optional notes, up to 2000 characters.' } }, required: ['title', 'start'], additionalProperties: false },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    validate: (a) => (text(a.title, 1, 160) ? null : 'Invalid "title".') || (typeof a.start === 'string' && !Number.isNaN(Date.parse(a.start)) ? null : 'Invalid "start": use an ISO-8601 time.') || (a.end === undefined || (typeof a.end === 'string' && !Number.isNaN(Date.parse(a.end))) ? null : 'Invalid "end".'),
+    request: (a) => ({ route: 'POST /api/mcp/board', body: { kind: 'note', title: a.title, body: [`start: ${a.start}`, a.end ? `end: ${a.end}` : '', a.body || ''].filter(Boolean).join('\n').slice(0, 4000), tags: ['hub', 'calendar-draft'] } }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: true,
+    tool: {
+      name: 'manage_hub_notes', title: 'Hub notes',
+      description: `Notes tagged hub, separate from ordinary board tasks. action "list" reads them, "add" creates one, "edit" corrects one, "delete" removes one. Call search_board with tag "hub" before add. ${CONFIRM}`,
+      inputSchema: { type: 'object', properties: { action: { type: 'string', enum: ['list', 'add', 'edit', 'delete'], description: 'list, add, edit or delete.' }, id: idProp, title: { type: 'string', description: 'Title for add or edit, 1 to 160 characters.' }, body: { type: 'string', description: 'Note text, up to 4000 characters.' }, query: { type: 'string', description: 'Optional words when action is list.' } }, required: ['action'], additionalProperties: false },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    validate: (a) => {
+      if (!['list', 'add', 'edit', 'delete'].includes(a.action)) return 'Invalid "action".';
+      if ((a.action === 'edit' || a.action === 'delete') && (typeof a.id !== 'string' || a.id.length < 8)) return 'Invalid "id".';
+      if (a.action === 'add' && !text(a.title, 1, 160)) return 'Invalid "title".';
+      return null;
+    },
+    request: (a) => {
+      if (a.action === 'list') return { route: 'POST /api/mcp/board/search', body: without({ query: a.query, tag: 'hub', kind: 'note' }) };
+      if (a.action === 'add') return { route: 'POST /api/mcp/board', body: without({ kind: 'note', title: a.title, body: a.body, tags: ['hub'] }) };
+      if (a.action === 'delete') return { route: 'PATCH /api/mcp/board', body: { kind: 'delete', id: a.id } };
+      return { route: 'PATCH /api/mcp/board', body: without({ kind: 'edit', id: a.id, title: a.title, body: a.body, tags: ['hub'] }) };
+    },
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'mcp', write: false, confirm: true,
+    tool: {
+      name: 'get_connector_stats', title: 'Connector tokens and calls',
+      description: `Call count and the user's connector tokens (name, prefix, expiry, calls). Never returns a token secret or a vault value. ${CONFIRM}`,
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+    },
+    validate: () => null,
+    request: () => ({ route: 'POST /api/mcp/spiegel/stats', body: {} }),
+    shape: (d) => compact(d),
+  },
+);
+
 export const SITE_TOOL_BY_NAME = new Map(SITE_TOOLS.map((t) => [t.tool.name, t]));
 
 /** Een foutcode van de site omzetten naar een duidelijke melding voor het model. */
 export function explainSiteError(status: number, data: any): string {
   const code = String(data?.error || data?.reasonCode || data?.message || `HTTP ${status}`);
+  if (code === 'PATH_SECRET') return 'The connector refused this release file because it looks like a secret (environment file, key, token or certificate). Tell the user; do not try another path to get around it.';
+  if (/^(PATH_|NOT_A_FILE|FILE_TOO_LARGE)/.test(code)) return `The release file could not be read (${code}). This is a refusal, not a crash.`;
+  if (code === 'TASK_STATUS') return 'Status must be backlog, doing, blocked or done. To refuse or cancel a task, use delete_board_item. There is no separate cancelled status.';
   if (/PERMISSION_OFF/.test(code)) return `The user switched this MCP console feature off (${code}). Ask them to enable it on mcp.tarasevych.com under Tools > permissions.`;
   if (/GITHUB_TOKEN_MISSING/.test(code)) return 'GitHub is not connected in Mijn Ruimte. Ask the user to add a GitHub personal access token in the key vault (purpose "github") at mcp.tarasevych.com.';
   if (/GITHUB_TOKEN_INVALID/.test(code)) return 'GitHub rejected the stored token (invalid or expired). Ask the user to replace it in the key vault.';

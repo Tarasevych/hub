@@ -14,13 +14,14 @@ import * as grants from '../../backend/ai-grants';
 import * as store from '../../backend/connectors-store';
 import { callTool } from '../../backend/connectors-tools';
 import { startE2eServer, chromeArgs } from './server';
+import { techAan } from './hulp/tech';
 
 const PW = process.env.PLAYWRIGHT_CORE || '/workspace/e2e-tools/node_modules/playwright-core';
 const TLS = process.env.E2E_TLS || '/workspace/e2e-tools/tls';
 const UIT = process.env.E2E_SCREENSHOTS || '/workspace/audit-20261008';
 const POORT = Number(process.env.E2E_POORT || 8443);
 const CHROME = process.env.CHROME || '/usr/bin/google-chrome';
-const ID = 'https://id.tarasevych.com', MCP = 'https://mcp.tarasevych.com';
+const ID = 'https://id.tarasevych.com', MCP = 'https://mcp.tarasevych.com', ADMIN = 'https://admin.tarasevych.com';
 const wacht = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function main(): Promise<number> {
@@ -57,7 +58,7 @@ export async function main(): Promise<number> {
     check('aanmelden op mcp gaf een sessie', r.cb.data.sessionCreated === true, JSON.stringify(r.cb.data).slice(0, 200));
     uid = String((await pool.query("select id from app.records where tbl='users' and data->>'email'=$1", [eigenaar])).rows[0]?.id || '');
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'uk-UA' });
-    await ctx.addCookies([...b.jar].flatMap(([name, value]) => [ID, MCP].map((url) => ({ name, value, url: `${url}/`, secure: true, httpOnly: true, sameSite: 'Lax' as const }))));
+    await ctx.addCookies([...b.jar].flatMap(([name, value]) => [ID, MCP, ADMIN].map((url) => ({ name, value, url: `${url}/`, secure: true, httpOnly: true, sameSite: 'Lax' as const }))));
     await ctx.addInitScript((t) => { if (!sessionStorage.getItem('tsv-canonical-tab-v1')) sessionStorage.setItem('tsv-canonical-tab-v1', t); }, tab);
     const page = await ctx.newPage();
     const fouten: string[] = [];
@@ -68,6 +69,8 @@ export async function main(): Promise<number> {
     page.on('response', (q) => { if (q.status() === 403 && /\/api\/owner\/agents\/[0-9a-f-]+\/command$/.test(q.url()) && verwacht403++ === 0) return; if (q.status() >= 400) fouten.push(`http ${q.status()} ${q.url()}`); });
 
     // ---------------------------------------------------------------- 1. koppelen (echte agent) en apps aanzetten
+    // Apps op de server zijn sitebeheer (audit 14.10): eerst het technisch profiel aan, anders toont /apps de poort.
+    check('technisch profiel aangezet', await techAan(page, { url: MCP, tab, service: 'mcp', reden: 'E2E apps' }) === 200);
     await page.goto(`${MCP}/apps`, { waitUntil: 'networkidle' });
     await page.locator('[data-apps-pagina]').waitFor({ timeout: 20000 });
     check('pagina mcp.*/apps: kop en uitleg; zonder apparaat met apps: instructies open', /Додатки на вашому залізі/.test(await page.locator('h1').innerText())
@@ -198,7 +201,8 @@ export async function main(): Promise<number> {
       await page.locator('[data-tool="app_deploy"][data-mode="ask"]').waitFor({ timeout: 15000 }).catch(() => undefined);
       check('«Увімкнути групу: питати щоразу» zet ook de riskante app_* op «Питати»', await page.locator('[data-tool="app_deploy"]').getAttribute('data-mode') === 'ask' && await page.locator('[data-tool="app_rollback"]').getAttribute('data-mode') === 'ask');
     } else {
-      await page.goto(`${MCP}/agents#beleid`, { waitUntil: 'networkidle' });
+      await techAan(page, { url: ADMIN, tab, service: 'admin', reden: 'E2E apps' });
+      await page.goto(`${ADMIN}/ai`, { waitUntil: 'networkidle' });
       const tools = page.locator('[data-tools="apps.deploy"]').first();
       await tools.waitFor({ timeout: 20000 }).catch(() => undefined);
       check('beleid: groep «Додатки» met de hulpmiddelen per mogelijkheid (levend van de server)', /Розгорнути додаток/.test(await tools.innerText().catch(() => '')) && /Додатки/.test(await page.locator('.aib-groep h3').allInnerTexts().then((x) => x.join(' ')).catch(() => '')), await tools.innerText().catch(() => ''));
