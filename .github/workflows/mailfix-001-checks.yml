@@ -71,6 +71,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
           npx --yes playwright@1.56.1 install --with-deps chromium
           npx vite --host 127.0.0.1 --port 4179 > uitvoer/mailfix-vite.log 2>&1 &
           server_pid=$!
@@ -80,14 +81,10 @@ jobs:
             sleep 1
           done
           curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailfix-preview.html' > /dev/null
-          npx --yes playwright@1.56.1 screenshot --browser chromium --viewport-size="390,844" --full-page --wait-for-timeout=2100 \
-            'http://127.0.0.1:4179/tests/visueel/mailfix-preview.html' uitvoer/mailfix-full-390.png
-          npx --yes playwright@1.56.1 screenshot --browser chromium --viewport-size="320,640" --full-page --wait-for-timeout=2100 \
-            'http://127.0.0.1:4179/tests/visueel/mailfix-preview.html' uitvoer/mailfix-full-320.png
-          npx --yes playwright@1.56.1 screenshot --browser chromium --viewport-size="1280,800" --full-page --wait-for-timeout=2100 \
-            'http://127.0.0.1:4179/tests/visueel/mailfix-preview.html' uitvoer/mailfix-full-1280.png
+          node tests/visueel/mailfix-screen.mjs
           test -s uitvoer/mailfix-full-390.png
       - name: Upload unaltered visual screenshots and logs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: MAILFIX-001-full-page-evidence
@@ -97,6 +94,7 @@ jobs:
             uitvoer/mailfix-full-*.png
             uitvoer/mailfix-tests.log
             uitvoer/mailfix-vite.log
+            uitvoer/mailfix-browser-errors.log
       - name: Append verified results to TRACE-001 development journal
         shell: bash
         run: |
