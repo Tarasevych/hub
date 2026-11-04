@@ -144,30 +144,94 @@
   .mail-orbit-envelop{width:98px;height:69px}
   .mail-orbit-catalogus-raster{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+/* MAILMOB-001: op een telefoon blijft de envelopbaan levend en aanraakbaar.
+   De globale sitebalk/dok bestaan al; dit is uitsluitend de inhoud van de lege mailbox. */
+.mail-orbit-mobiel-aanwijzing,.mail-orbit-mobiel-hoofdknop,.mail-orbit-mobiel-snel{display:none}
 @media(max-width:620px){
-  .mail-orbit-intro{padding:22px 12px 18px;overflow:visible}
-  .mail-orbit-kop h2{font-size:clamp(1.6rem,7vw,2rem)}
-  .mail-orbit-stage{height:auto;min-height:0;margin:22px 0 6px;display:grid;gap:14px}
-  .mail-orbit-baan,.mail-orbit-kern{display:none}
-  .mail-orbit-diensten{position:relative;inset:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0}
-  .mail-orbit-positie{position:static;width:100%;transform:none}
-  .mail-orbit-dienst{min-height:126px;border-color:var(--line);background:color-mix(in srgb,var(--panel) 93%,var(--surface));gap:8px;justify-content:center}
-  .mail-orbit-dienst:hover,.mail-orbit-dienst:focus-visible,.mail-orbit-positie[data-mail-orbit-gekozen='ja'] .mail-orbit-dienst{transform:none;border-color:var(--orbit-accent)}
-  .mail-orbit-envelop{width:92px;height:65px}
-  .mail-orbit-informatie{position:static;left:auto;top:auto;transform:none;width:100%;animation:none;border-radius:15px}
-  .mail-orbit-onder>p{font-size:12px}
-  .mail-orbit-vertrouwen{display:grid;text-align:left;justify-content:start}
-  .mail-orbit-beperking{text-align:left}
+  .mail-accounts-hub.mail-accounts-orbit-mode{padding:8px clamp(6px,2vw,12px) 20px;max-width:100%;box-sizing:border-box}
+  .mail-orbit-intro{
+    box-sizing:border-box;overflow:hidden;gap:0;padding:22px 12px 23px;border-radius:24px;
+    background:radial-gradient(ellipse 95% 31% at 52% 39%,color-mix(in srgb,var(--orbit-accent) 13%,transparent),transparent 85%),
+      radial-gradient(ellipse 58% 25% at 22% 54%,color-mix(in srgb,#dfb4ae 13%,transparent),transparent 85%),
+      var(--panel,#fff);
+  }
+  .mail-orbit-kop{max-width:360px}
+  .mail-orbit-kicker{font-size:10px;letter-spacing:.12em;line-height:1.4}
+  .mail-orbit-kop h2{font-size:clamp(1.52rem,7.1vw,2.05rem);line-height:1.13;margin:11px 0 9px;letter-spacing:-.045em}
+  .mail-orbit-kop p{font-size:clamp(.81rem,3.5vw,.94rem);line-height:1.44;max-width:330px;margin:0 auto}
+  .mail-orbit-stage{height:clamp(284px,88vw,370px);min-height:0;max-width:400px;width:100%;display:block;margin:8px auto 0}
+  .mail-orbit-baan,.mail-orbit-kern{display:block}
+  .mail-orbit-baan::before{inset:23% 5% 21%;border-width:1.5px}
+  .mail-orbit-baan::after{inset:27% 9% 25%;border-width:1px}
+  .mail-orbit-kern{width:110px;height:94px;top:47%}
+  .mail-orbit-kern-brief{width:100px;height:72px;border-radius:15px}
+  .mail-orbit-kern-brief>svg{width:51px;height:51px}
+  .mail-orbit-diensten{display:block;position:absolute;inset:0;grid-template-columns:none;gap:0;padding:0}
+  .mail-orbit-positie{position:absolute;left:var(--orbit-x);top:var(--orbit-y);width:80px;transform:translate(-50%,-50%);min-width:0}
+  .mail-orbit-positie[data-mail-orbit-provider='gmail']{--orbit-x:77%;--orbit-y:16%}
+  .mail-orbit-positie[data-mail-orbit-provider='outlook']{--orbit-x:19%;--orbit-y:27%}
+  .mail-orbit-positie[data-mail-orbit-provider='icloud']{--orbit-x:82%;--orbit-y:43%}
+  .mail-orbit-positie[data-mail-orbit-provider='ukrnet']{--orbit-x:18%;--orbit-y:67%}
+  .mail-orbit-positie[data-mail-orbit-provider='yahoo']{--orbit-x:78%;--orbit-y:76%}
+  .mail-orbit-positie[data-mail-orbit-provider='iua']{--orbit-x:48%;--orbit-y:91%}
+  .mail-orbit-dienst{min-height:66px;justify-content:center;gap:4px;padding:3px 1px;border-color:transparent;background:transparent}
+  .mail-orbit-dienst:hover,.mail-orbit-dienst:focus-visible,.mail-orbit-positie[data-mail-orbit-gekozen='ja'] .mail-orbit-dienst{
+    transform:translateY(-4px) scale(1.10);border-color:transparent
+  }
+  .mail-orbit-envelop{width:66px;height:46px;border-radius:13px}
+  .mail-orbit-envelop-vouw{border-radius:12px}
+  .mail-orbit-merk :is(img,svg){max-width:31px;max-height:31px}
+  .mail-orbit-dienst-naam{font-size:10px;line-height:1.1;padding:3px 7px;max-width:82px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+  .mail-orbit-stage[data-mail-orbit-active='ja']{height:clamp(430px,118vw,500px)}
+  .mail-orbit-informatie{top:auto;bottom:4px;left:50%;transform:translateX(-50%);width:min(100%,308px);padding:12px 14px;border-radius:15px;animation:none}
+  .mail-orbit-informatie-kop strong{font-size:14px}
+  .mail-orbit-informatie p{margin:8px 0;font-size:11px}
+  .mail-orbit-informatie .mail-orbit-cta{min-height:46px}
+  .mail-orbit-mobiel-aanwijzing{display:flex;align-items:center;justify-content:center;gap:7px;margin:2px 0 12px;color:var(--muted);font-size:11px}
+  .mail-orbit-mobiel-hoofdknop{
+    display:flex;align-items:center;justify-content:center;gap:12px;min-height:50px;
+    width:min(100%,310px);border:0;border-radius:17px;padding:12px 16px;
+    color:var(--text-on-accent,#fff);background:var(--orbit-accent);font:inherit;font-size:15px;font-weight:730;
+    box-shadow:0 9px 22px color-mix(in srgb,var(--orbit-accent) 25%,transparent);
+    cursor:pointer;transition:transform .16s,box-shadow .16s
+  }
+  .mail-orbit-mobiel-hoofdknop:active{transform:scale(.98)}
+  .mail-orbit-mobiel-hoofdknop:focus-visible,.mail-orbit-mobiel-snel-item:focus-visible{outline:3px solid var(--orbit-accent);outline-offset:3px}
+  .mail-orbit-mobiel-snel{display:grid;gap:12px;width:100%;margin:25px 0 0;text-align:left}
+  .mail-orbit-mobiel-snel h3{margin:0 4px;font-size:13px;font-weight:730}
+  .mail-orbit-mobiel-snel-raster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .mail-orbit-mobiel-snel-item{
+    display:flex;align-items:center;gap:8px;min-width:0;min-height:57px;padding:8px 7px;border-radius:15px;
+    border:1px solid var(--line,#d8e0e3);background:var(--panel,#fff);color:var(--text,#14212c);
+    box-shadow:0 4px 11px color-mix(in srgb,var(--shadow,#304850) 7%,transparent);
+    cursor:pointer;font:inherit;font-size:12px;font-weight:700;text-align:left
+  }
+  .mail-orbit-mobiel-snel-item>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mail-orbit-mobiel-snel-item>svg{flex:0 0 auto;color:var(--muted)}
+  .mail-orbit-mobiel-snel-item:active{border-color:var(--orbit-accent)}
+  .mail-orbit-onder{margin-top:14px}
+  .mail-orbit-onder>p{display:none}
+  .mail-orbit-knoppen{gap:8px}
+  .mail-orbit-catalogus-knop,.mail-orbit-beheer-knop{min-height:44px}
+  .mail-orbit-catalogus{padding:12px;margin-top:12px;border-radius:15px}
+  .mail-orbit-catalogus-raster{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .mail-orbit-catalogus-item{min-height:56px;padding:6px}
+  .mail-orbit-catalogus-item small{font-size:10px}
+  .mail-orbit-vertrouwen{display:grid;justify-content:start;text-align:left;margin-top:20px;gap:10px;font-size:11px}
+  .mail-orbit-beperking{max-width:100%;text-align:left;font-size:11px}
 }
 @media(max-width:360px){
-  .mail-orbit-intro{padding:20px 10px 16px}
-  .mail-orbit-diensten{gap:6px}
-  .mail-orbit-dienst{padding:9px 3px;min-height:116px}
-  .mail-orbit-envelop{width:80px;height:59px}
-  .mail-orbit-merk :is(img,svg){max-width:36px;max-height:36px}
-  .mail-orbit-dienst-naam{font-size:11px}
+  .mail-orbit-intro{padding:20px 9px 17px;border-radius:20px}
+  .mail-orbit-stage{height:290px}
+  .mail-orbit-positie{width:70px}
+  .mail-orbit-envelop{width:60px;height:42px}
+  .mail-orbit-merk :is(img,svg){max-width:28px;max-height:28px}
+  .mail-orbit-dienst-naam{font-size:9px}
+  .mail-orbit-mobiel-snel-item{gap:5px;padding:6px 5px}
+  .mail-orbit-mobiel-snel-item>svg:last-child{width:12px}
   .mail-orbit-catalogus-raster{grid-template-columns:1fr}
   .mail-orbit-onbeschikbaar summary{flex-wrap:wrap}
+  .mail-orbit-stage[data-mail-orbit-active='ja']{height:425px}
 }
 @media(prefers-reduced-motion:reduce){
   .mail-orbit-intro *, .mail-orbit-intro *::before,.mail-orbit-intro *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}

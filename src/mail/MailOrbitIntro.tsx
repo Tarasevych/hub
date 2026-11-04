@@ -25,6 +25,7 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
   const catalogusId = useId();
   const actief = KOPPELBAAR.find((a) => a.id === hover) || null;
   const oauth = actief?.wijze === 'oauth-google' || actief?.wijze === 'oauth-microsoft';
+  const hoofdDienst = actief || KOPPELBAAR[0];
 
   return (
     <section className={'mail-orbit-intro' + (variant === 'inbox' ? ' is-inbox' : '')} data-mail-orbit-intro={variant} aria-label={t('Вибір поштового сервісу', 'Een e-maildienst kiezen')}>
@@ -80,6 +81,23 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
         ) : null}
       </div>
 
+      <p className='mail-orbit-mobiel-aanwijzing'><MousePointer2 size={14} aria-hidden='true' /> {t('Торкніться конверта, щоб підключити пошту', 'Tik op een envelop om e-mail te koppelen')}</p>
+      {!actief && hoofdDienst ? <button type='button' className='mail-orbit-mobiel-hoofdknop' onClick={() => onSelect(hoofdDienst)}
+        aria-label={t('Підключити ', 'Koppelen: ') + hoofdDienst.naam}>
+        {t('Підключити ', 'Koppelen: ') + hoofdDienst.naam} <ArrowRight size={19} aria-hidden='true' />
+      </button> : null}
+      <div className='mail-orbit-mobiel-snel' aria-label={t('Популярні поштові сервіси', 'Populaire e-maildiensten')}>
+        <h3>{t('Оберіть поштовий сервіс', 'Kies een e-maildienst')}</h3>
+        <div className='mail-orbit-mobiel-snel-raster'>
+          {KOPPELBAAR.slice(0, 4).map((a) => (
+            <button key={a.id} type='button' className='mail-orbit-mobiel-snel-item' onClick={() => onSelect(a)} aria-label={t('Підключити ', 'Koppelen: ') + a.naam}>
+              <Logo id={a.id} naam={a.naam} logo={a.merk} maat={28} />
+              <span>{a.naam}</span>
+              <ChevronRight size={16} aria-hidden='true' />
+            </button>
+          ))}
+        </div>
+      </div>
       <div className='mail-orbit-onder'>
         <p id={catalogusId + '-hint'}><MousePointer2 size={16} aria-hidden='true' /> {t('Наведіть курсор або натисніть на конверт', 'Beweeg uw aanwijzer naar een envelop of tik erop')}</p>
         <div className='mail-orbit-knoppen'>
