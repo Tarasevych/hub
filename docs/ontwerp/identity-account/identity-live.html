@@ -1,0 +1,637 @@
+﻿<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Identity — 12 сторінок (живий прототип)</title>
+<style>
+:root{--ink:#0f172a;--muted:#64748b;--faint:#94a3b8;--line:rgba(15,23,42,.1);--bg:#f6f7f9;--card:#fff;--soft:rgba(100,116,139,.1);
+--accent:#2f6f73;--accent-soft:#e4f0ef;--ok:#1f7a52;--ok-soft:#dcfce7;--rose:#be123c;--rose-soft:#ffe4e6;--amber:#b45309;--amber-soft:#fef3c7;
+--shadow:0 1px 2px rgba(15,23,42,.05),0 12px 30px rgba(15,23,42,.07);--r:16px}
+html.dark{--ink:#eef4f8;--muted:#a8b4bf;--faint:#7b8792;--line:rgba(255,255,255,.1);--bg:#0f1418;--card:#171e25;--soft:rgba(255,255,255,.06);--accent-soft:#1b3330;--ok:#8fd6b4;--ok-soft:#143021;--rose:#ffa3b5;--rose-soft:#3a1520;--amber:#fcd34d;--amber-soft:#3a2c08;--shadow:0 1px 2px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5}
+.app{display:grid;grid-template-columns:264px minmax(0,1fr);height:100vh;overflow:hidden}
+/* ——— рейка ——— */
+.rail{background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.rail-top{display:flex;align-items:center;gap:9px;padding:14px}
+.mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(140deg,var(--accent),#12b3a0);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none}
+.rail-top b{font-size:14px}
+.rail-top .sp{flex:1}
+.iconbtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--muted);display:grid;place-items:center;cursor:pointer}
+.iconbtn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav{overflow:auto;padding:6px 8px 14px;flex:1;min-height:0}
+.nav .grp{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);font-weight:700;padding:12px 10px 6px}
+.nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:background .15s,color .15s}
+.nav a:hover{background:var(--soft);color:var(--ink)}
+.nav a.on{background:var(--accent-soft);color:var(--ink)}
+.nav a.on .ico{color:var(--accent)}
+.nav .ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;background:var(--soft);color:var(--muted)}
+.nav .ico svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.nav .n{margin-left:auto;font-size:10.5px;color:var(--faint);font-weight:700}
+.nav .svc{display:flex;align-items:center;gap:9px;width:100%;padding:8px 9px;border:0;border-radius:9px;background:none;color:var(--ink);font:inherit;font-size:12.5px;font-weight:650;cursor:pointer;text-align:left}
+.nav .svc:hover{background:var(--soft)}
+.nav .svc .ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;background:var(--soft);color:var(--muted)}
+.nav .svc .ico svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.nav .svc .car{margin-left:auto;color:var(--faint);font-size:12px;transition:.15s}
+.nav .svc.open .car{transform:rotate(90deg)}
+.nav .pages{display:none;padding:2px 0 6px 14px;gap:1px}
+.nav .pages.open{display:grid}
+.nav .pages a{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:12px;font-weight:600}
+.nav .pages a:hover{background:var(--soft);color:var(--ink)}
+.nav .pages a.on{background:var(--accent-soft);color:var(--ink)}
+.nav .pages .slug{color:var(--faint);font-size:10px;font-family:Consolas,monospace}
+
+/* ——— сцена ——— */
+.stage{overflow:auto;padding:18px 22px 40px;min-width:0}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.top h1{margin:0;font-size:22px;letter-spacing:-.02em}
+.top .sp{flex:1}
+.top .pill{height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);font:inherit;font-size:12.5px;font-weight:650;cursor:pointer}
+.page{display:block;max-width:860px;scroll-margin-top:14px;margin-bottom:26px}
+#p-stub{display:none}
+.sec-h{margin:0 0 2px;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.page.on{display:block;animation:fade .22s ease}
+.stage.all .page{display:block;margin-bottom:16px}
+.stage.all .page .lead{display:none}
+.stage.all #p-stub{display:none}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.lead{margin:0 0 14px;color:var(--muted);font-size:13px;max-width:70ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px}
+.card h2{margin:0 0 2px;font-size:15px}
+.card .sub{margin:0 0 12px;color:var(--muted);font-size:12.5px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.row:first-of-type{border-top:0;padding-top:0}
+.row b{font-size:13.5px;display:block}
+.row small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.btn{height:36px;padding:0 13px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:12.5px;font-weight:650;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.sm{height:30px;padding:0 10px;font-size:11.5px;border-radius:8px}
+.btn.danger{color:var(--rose);border-color:rgba(190,18,60,.3)}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.seg{display:inline-flex;padding:3px;background:var(--soft);border-radius:11px;gap:2px;flex-wrap:wrap}
+.seg button{height:30px;padding:0 11px;border:0;border-radius:8px;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.switch{position:relative;width:42px;height:24px;border-radius:999px;background:var(--soft);border:1px solid var(--line);cursor:pointer;flex:none}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--faint);transition:.18s}
+.switch.on{background:var(--accent);border-color:var(--accent)}
+.switch.on::after{left:20px;background:#fff}
+.list{display:grid;gap:8px}
+.item{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:11px;align-items:center;padding:11px;border:1px solid var(--line);border-radius:12px}
+.item .ic{width:34px;height:34px;border-radius:9px;background:var(--soft);display:grid;place-items:center;color:var(--muted)}
+.item .ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8}
+.item b{font-size:13px;display:block}
+.item small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.palettes{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.pal{border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;display:grid;gap:8px;text-align:left;background:var(--card)}
+.pal.on{outline:2px solid var(--accent);outline-offset:1px}
+.pal .sw{height:34px;border-radius:8px}
+.pal b{font-size:12.5px}
+.codes{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.code{height:30px;border-radius:8px;background:var(--soft);border:1px solid var(--line);display:grid;place-items:center;font-family:Consolas,monospace;font-size:11px;color:var(--muted)}
+.code.used{opacity:.45;text-decoration:line-through}
+.photo{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center}
+.ava{width:64px;height:64px;border-radius:50%;background:linear-gradient(140deg,#8b9dfb,#5b5bd6);color:#fff;display:grid;place-items:center;font-weight:750;font-size:20px;overflow:hidden;position:relative;cursor:pointer;flex:none}
+.ava img{width:100%;height:100%;object-fit:cover}
+.ava .cam{position:absolute;inset:0;background:rgba(15,23,42,.5);color:#fff;display:grid;place-items:center;opacity:0;transition:.15s}
+.ava:hover .cam{opacity:1}
+.ava .cam svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+.fld{display:grid;gap:4px;min-width:0}
+.fld label{font-size:11px;color:var(--faint);font-weight:650}
+.fld input{height:36px;border:1px solid var(--line);border-radius:9px;background:var(--soft);color:var(--ink);font:inherit;font-size:13px;padding:0 10px;width:100%}
+details{border:1px solid var(--line);border-radius:12px;padding:0 12px;margin-top:10px}
+summary{cursor:pointer;padding:11px 0;font-size:13px;font-weight:650;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"›";display:inline-block;margin-right:8px;transition:.15s;color:var(--faint)}
+details[open] summary::before{transform:rotate(90deg)}
+details .in{padding:0 0 12px;color:var(--muted);font-size:12.5px}
+/* фото + діалог джерела */
+.photo-wrap{position:relative;width:64px;height:64px;flex:none}
+.photo-wrap .ava{width:64px;height:64px}
+.del-photo{position:absolute;right:-5px;bottom:-5px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--rose);display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 6px rgba(15,23,42,.18);opacity:0;transform:scale(.9);transition:.15s;z-index:2}
+.photo-wrap:hover .del-photo,.photo-wrap:focus-within .del-photo{opacity:1;transform:none}
+.del-photo svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+dialog.pd{border:0;padding:0;background:transparent;max-width:100%}
+dialog.pd::backdrop{background:rgba(15,23,42,.5)}
+.pd-card{width:min(460px,94vw);background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:18px;box-shadow:0 30px 70px rgba(15,23,42,.35);overflow:hidden}
+.pd-h{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.pd-h b{font-size:15px}
+.pd-h .x{margin-left:auto;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.pd-tabs{display:flex;gap:4px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.pd-tabs button{height:32px;padding:0 12px;border:0;border-radius:9px;background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:650;cursor:pointer}
+.pd-tabs button.on{background:var(--soft);color:var(--ink)}
+.pd-body{padding:16px 18px;display:grid;gap:12px}
+.pd-pane{display:none;gap:10px}
+.pd-pane.on{display:grid}
+.dropzone{border:1.5px dashed var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--muted);font-size:12.5px;display:grid;gap:8px;justify-items:center;cursor:pointer;transition:.15s}
+.dropzone:hover,.dropzone.drag{border-color:var(--accent);background:var(--accent-soft)}
+.dropzone svg{width:26px;height:26px;stroke:var(--accent);fill:none;stroke-width:1.8}
+.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.gal{aspect-ratio:1;border-radius:12px;border:1px solid var(--line);cursor:pointer;background-size:cover;background-position:center;position:relative}
+.gal.on{outline:2px solid var(--accent);outline-offset:2px}
+.pd-preview{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid var(--line);border-radius:12px}
+.pd-preview .pv{width:44px;height:44px;border-radius:50%;overflow:hidden;background:var(--soft);display:grid;place-items:center;color:var(--faint);flex:none;font-size:12px}
+.pd-preview .pv img{width:100%;height:100%;object-fit:cover}
+.pd-foot{display:flex;gap:8px;padding:0 18px 18px}
+.pd-foot .btn{flex:1;justify-content:center}
+
+/* стан */
+.state{position:fixed;right:0;top:0;height:100%;width:min(420px,94vw);background:var(--card);border-left:1px solid var(--line);box-shadow:-20px 0 50px rgba(15,23,42,.2);transform:translateX(102%);transition:.25s;z-index:50;display:flex;flex-direction:column}
+.state.open{transform:none}
+.state-h{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.state-h b{font-size:14px}
+.state-h .x{margin-left:auto;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer}
+.state pre{margin:0;padding:14px 16px;overflow:auto;font-family:Consolas,monospace;font-size:11.5px;line-height:1.5;flex:1;white-space:pre-wrap}
+.scrim{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:45;opacity:0;pointer-events:none;transition:.2s}
+.scrim.on{opacity:1;pointer-events:auto}
+#toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);background:#0f172a;color:#fff;padding:10px 15px;border-radius:11px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:60}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:fixed;left:0;top:0;bottom:0;width:min(290px,86vw);transform:translateX(-102%);transition:.24s;z-index:40}
+  .app.open .rail{transform:none}
+  .menuBtn{display:grid}
+  .stage{padding:14px 12px 40px}
+  .palettes{grid-template-columns:1fr 1fr}
+  .codes{grid-template-columns:repeat(4,1fr)}
+}
+.menuBtn{display:none;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--muted);place-items:center;cursor:pointer;flex:none}
+.menuBtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="rail">
+    <div class="rail-top"><span class="mark">MR</span><b>Identity</b><span class="sp"></span>
+      <button class="iconbtn" id="themeBtn" title="Тема"><svg><use href="#i-moon"/></svg></button></div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <main class="stage">
+    <div class="top">
+      <button class="menuBtn" id="menuBtn"><svg><use href="#i-menu"/></svg></button>
+      <h1 id="title">Обліковий запис</h1>
+      <span class="sp"></span>
+      <button class="pill" id="stateBtn">Стан (JSON)</button>
+    </div>
+
+    <!-- 1 ACCOUNT -->
+    <section class="page on" id="p-account">
+      <p class="lead">Профіль, фото, e-mail. Фото змінюється кліком по аватару — як у Google.</p>
+      <div class="card">
+        <h2>Профіль</h2><p class="sub">Дані, які бачать інші служби екосистеми.</p>
+        <div class="photo">
+          <div class="photo-wrap">
+            <div class="ava" id="ava" role="button" tabindex="0" title="Змінити фото" aria-label="Змінити фото">ПТ<span class="cam"><svg><use href="#i-camera"/></svg></span></div>
+            <button class="del-photo" id="delPhoto" title="Видалити фото" aria-label="Видалити фото"><svg><use href="#i-trash"/></svg></button>
+          </div>
+          <div style="display:grid;gap:8px;min-width:0">
+            <div class="fld"><label>Ім'я</label><input id="nameIn" value="Eigenaar Test"></div>
+            <div class="fld"><label>E-mail</label><input value="eigenaar@example.test" readonly></div>
+          </div>
+        </div>
+        <input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden>
+        <details><summary>Деталі акаунта</summary><div class="in">UUID f3a1…9c2e · створено 12.09.2026 · мова й тема прив'язані до акаунта. E-mail — атрибут, не ключ.</div></details>
+      </div>
+      <div class="card">
+        <h2>Небезпечна зона</h2><p class="sub">Видалення власного акаунта.</p>
+        <div class="row"><div><b>Видалити акаунт</b><small>30 днів на відновлення, потім остаточно</small></div><button class="btn danger" disabled title="OWNER_NIET_WISSEN">Заблоковано для власника</button></div>
+      </div>
+    </section>
+
+    <!-- 2 IDENTITY -->
+    <section class="page" id="p-identity">
+      <p class="lead">Кілька ідентичностей на один акаунт: (провайдер, subject). Одна ідентичність — рівно один акаунт.</p>
+      <div class="card"><h2>Прив'язані ідентичності</h2><p class="sub">Основна визначає вхід за замовчуванням.</p>
+        <div class="list" id="identities">
+          <div class="item"><span class="ic"><svg><use href="#g-google"/></svg></span><div><b>Google</b><small>eigenaar@example.test · основна · останній вхід 07:12</small></div><div class="acts"><span class="btn sm" style="cursor:default">Основна</span><button class="btn sm" data-unlink>Відв'язати</button></div></div>
+          <div class="item"><span class="ic"><svg><use href="#g-microsoft"/></svg></span><div><b>Microsoft</b><small>p.tarasevych@company.com · додаткова</small></div><div class="acts"><button class="btn sm" data-primary>Зробити основною</button><button class="btn sm" data-unlink>Відв'язати</button></div></div>
+          <div class="item"><span class="ic"><svg><use href="#g-apple"/></svg></span><div><b>Apple</b><small>не прив'язано</small></div><div class="acts"><button class="btn sm" data-connect>Прив'язати</button></div></div>
+        </div>
+      </div>
+      <div class="card"><h2>Додати ідентичність</h2><p class="sub">Автоматичного об'єднання немає — лише явне підтвердження.</p>
+        <div class="row"><div><b>Google (інший акаунт)</b><small>Окремий профіль, не зливається з поточним</small></div><button class="btn" data-connect>Додати</button></div>
+      </div>
+    </section>
+
+    <!-- 3 METHODS -->
+    <section class="page" id="p-methods">
+      <p class="lead">Способи входу. Passkey чесно вимкнено: серверна перевірка WebAuthn не готова.</p>
+      <div class="card"><h2>Активні способи</h2><p class="sub">Прибрати останній спосіб неможливо.</p>
+        <div class="list" id="methods">
+          <div class="item"><span class="ic"><svg><use href="#g-google"/></svg></span><div><b>Google</b><small>основний · 07:12</small></div><span class="btn sm" style="cursor:default">Підключено</span></div>
+          <div class="item"><span class="ic"><svg><use href="#i-key"/></svg></span><div><b>Пароль + TOTP</b><small>увімкнено · заміна з підтвердженням</small></div><button class="btn sm" data-toast="Зміна пароля — демо">Змінити</button></div>
+          <div class="item"><span class="ic"><svg><use href="#g-microsoft"/></svg></span><div><b>Microsoft</b><small>не підключено</small></div><button class="btn sm" data-connect>Підключити</button></div>
+          <div class="item"><span class="ic"><svg><use href="#g-apple"/></svg></span><div><b>Apple</b><small>не підключено</small></div><button class="btn sm" data-connect>Підключити</button></div>
+          <div class="item"><span class="ic"><svg><use href="#i-shield"/></svg></span><div><b>Passkey</b><small>WebAuthn не реалізовано</small></div><span class="btn sm" style="cursor:default;opacity:.6">Недоступно</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 SESSIONS -->
+    <section class="page" id="p-sessions">
+      <p class="lead">Пристрої, вкладки й дозволи. Поточна сесія не відкликається.</p>
+      <div class="card"><h2>Активні сесії</h2><p class="sub">Відкликання діє одразу.</p>
+        <div class="list" id="sessions">
+          <div class="item"><span class="ic"><svg><use href="#i-monitor"/></svg></span><div><b>Chrome · Windows</b><small>цей пристрій · зараз · 10.77.0.1</small></div><span class="btn sm" style="cursor:default">Поточна</span></div>
+          <div class="item" data-sess><span class="ic"><svg><use href="#i-phone"/></svg></span><div><b>Chrome · Android</b><small>2 години тому</small></div><button class="btn sm danger" data-revoke>Завершити</button></div>
+          <div class="item" data-sess><span class="ic"><svg><use href="#i-monitor"/></svg></span><div><b>Вкладка · mail</b><small>15 хв</small></div><button class="btn sm danger" data-revoke>Завершити</button></div>
+        </div>
+        <div class="row" style="margin-top:8px"><div><b>Завершити всі інші</b><small>Пристрої, вкладки й дозволи одним викликом</small></div><button class="btn danger" id="revokeAll">Завершити всі</button></div>
+      </div>
+    </section>
+
+    <!-- 5 SECURITY -->
+    <section class="page" id="p-security">
+      <p class="lead">Двоетапний вхід, підтвердження чутливих дій, сповіщення про входи.</p>
+      <div class="card"><h2>Двоетапний вхід</h2><p class="sub">TOTP у застосунку.</p>
+        <div class="row"><div><b>Стан</b><small id="totpState">Увімкнено · з 12.10.2026</small></div><div class="acts"><button class="btn sm" id="totpBtn">Переналаштувати</button><button class="btn sm danger" id="totpOff">Вимкнути</button></div></div>
+        <details><summary>Як це працює</summary><div class="in">Секрет зберігається на сервері AES-256-GCM і прив'язаний до користувача. Заміна вимагає поточного коду і step-up.</div></details>
+      </div>
+      <div class="card"><h2>Захист дій</h2>
+        <div class="row"><div><b>Підтвердження для чутливих дій</b><small>Видалення, ключі, експорт</small></div><div class="switch on" data-toggle="stepup"></div></div>
+        <div class="row"><div><b>Сповіщення про нові входи</b><small>Лист і центр сповіщень</small></div><div class="switch on" data-toggle="loginAlerts"></div></div>
+        <div class="row"><div><b>Блокування після 5 помилок</b><small>15 хвилин, далі подвоєння до 24 годин</small></div><div class="switch on" data-toggle="lockout"></div></div>
+      </div>
+    </section>
+
+    <!-- 6 RECOVERY -->
+    <section class="page" id="p-recovery">
+      <p class="lead">Коди відновлення — єдиний спосіб увійти, якщо телефон втрачено. Показуються один раз.</p>
+      <div class="card"><h2>Коди відновлення</h2><p class="sub">Залишилось <b id="left">8</b> із 10 · переглянуто 04.11.2026</p>
+        <div class="codes" id="codes"></div>
+        <div class="row" style="margin-top:12px">
+          <div><b>Згенерувати нові</b><small>Старі коди одразу перестануть діяти</small></div>
+          <div class="acts"><button class="btn sm" id="rotate">Згенерувати</button><button class="btn sm" id="download">Завантажити .txt</button></div>
+        </div>
+        <details><summary>Політика</summary><div class="in">Коди зберігаються як HMAC-SHA256 з пепером; повторне використання блокується атомарно. Без пепера нові коди не видаються (503).</div></details>
+      </div>
+    </section>
+
+    <!-- 7 PERSONALIZATION -->
+    <section class="page" id="p-personalization">
+      <p class="lead">Щільність, анімації, підказки — впливає на весь інтерфейс акаунта.</p>
+      <div class="card"><h2>Інтерфейс</h2>
+        <div class="row"><div><b>Щільність</b><small>Скільки повітря між рядками</small></div><div class="seg" id="density"><button data-v="compact">Щільно</button><button class="on" data-v="normal">Звичайно</button><button data-v="air">Просторо</button></div></div>
+        <div class="row"><div><b>Анімації</b><small>Переходи меню й панелей</small></div><div class="switch on" data-toggle="animations"></div></div>
+        <div class="row"><div><b>Підказки</b><small>Пояснення біля складних дій</small></div><div class="switch on" data-toggle="hints"></div></div>
+        <div class="row"><div><b>Показувати UUID</b><small>Для діагностики й підтримки</small></div><div class="switch" data-toggle="showUuid"></div></div>
+      </div>
+    </section>
+
+    <!-- 8 THEMES -->
+    <section class="page" id="p-themes">
+      <p class="lead">Чотири палітри проєкту і три режими. Вибір зберігається за акаунтом.</p>
+      <div class="card"><h2>Палітра</h2><p class="sub">Змінює акцент, не ламаючи контраст.</p>
+        <div class="palettes" id="palettes">
+          <button class="pal on" data-pal="grifel"><span class="sw" style="background:linear-gradient(135deg,#2f6f73,#12b3a0)"></span><b>Grifel</b></button>
+          <button class="pal" data-pal="puur"><span class="sw" style="background:linear-gradient(135deg,#1f2937,#4b5563)"></span><b>Puur</b></button>
+          <button class="pal" data-pal="violet"><span class="sw" style="background:linear-gradient(135deg,#6d5efc,#8b5cf6)"></span><b>Violet</b></button>
+          <button class="pal" data-pal="kleur"><span class="sw" style="background:linear-gradient(135deg,#be123c,#f59e0b)"></span><b>Kleur</b></button>
+        </div>
+      </div>
+      <div class="card"><h2>Режим</h2>
+        <div class="row"><div><b>Світла / темна / авто</b><small>Авто — за системою</small></div><div class="seg" id="modeSeg"><button data-v="light">Світла</button><button data-v="dark">Темна</button><button class="on" data-v="auto">Авто</button></div></div>
+      </div>
+    </section>
+
+    <!-- 9 LANGUAGES -->
+    <section class="page" id="p-languages">
+      <p class="lead">Мова інтерфейсу й мова листів — окремі налаштування.</p>
+      <div class="card"><h2>Мова</h2>
+        <div class="row"><div><b>Інтерфейс</b><small>Меню, кнопки, підказки</small></div><div class="seg" id="uiLang"><button class="on" data-v="uk">Українська</button><button data-v="nl">Nederlands</button></div></div>
+        <div class="row"><div><b>Листи</b><small>Шаблони й підписи</small></div><div class="seg" id="mailLang"><button data-v="auto">Як інтерфейс</button><button class="on" data-v="uk">Українська</button><button data-v="nl">Nederlands</button></div></div>
+        <div class="row"><div><b>Формат дати</b><small>ДД.ММ.РРРР або РРРР-ММ-ДД</small></div><div class="seg" id="dateFmt"><button class="on" data-v="dmy">ДД.ММ.РРРР</button><button data-v="iso">ISO</button></div></div>
+      </div>
+    </section>
+
+    <!-- 10 MENU -->
+    <section class="page" id="p-menu">
+      <p class="lead">Порядок служб, видимість і док. Перетягнути можна буде після реалізації; тут — стрілки.</p>
+      <div class="card"><h2>Служби в меню</h2><p class="sub">Порядок зверху вниз.</p>
+        <div class="list" id="menuList">
+          <div class="item" data-m="hub"><span class="ic"><svg><use href="#i-home"/></svg></span><div><b>Mijn Ruimte</b><small>/overzicht</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch on" data-vis></div></div></div>
+          <div class="item" data-m="mail"><span class="ic"><svg><use href="#i-mail"/></svg></span><div><b>Пошта</b><small>/postvak-in</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch on" data-vis></div></div></div>
+          <div class="item" data-m="cloud"><span class="ic"><svg><use href="#i-cloud"/></svg></span><div><b>Cloud</b><small>/bestanden</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch on" data-vis></div></div></div>
+          <div class="item" data-m="ai"><span class="ic"><svg><use href="#i-star"/></svg></span><div><b>AI</b><small>/werkgebied</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch on" data-vis></div></div></div>
+          <div class="item" data-m="huis"><span class="ic"><svg><use href="#i-house"/></svg></span><div><b>Дім</b><small>/kamers</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch" data-vis></div></div></div>
+        </div>
+      </div>
+      <div class="card"><h2>Док</h2>
+        <div class="row"><div><b>Позиція</b><small>Де живе панель</small></div><div class="seg" id="dock"><button class="on" data-v="left">Ліворуч</button><button data-v="right">Праворуч</button><button data-v="top">Зверху</button><button data-v="bottom">Знизу</button></div></div>
+        <div class="row"><div><b>Розмір</b><small>Компактний / звичайний / великий</small></div><div class="seg" id="dockSize"><button data-v="s">S</button><button class="on" data-v="m">M</button><button data-v="l">L</button></div></div>
+      </div>
+    </section>
+
+    <!-- 11 WIDGETS -->
+    <section class="page" id="p-widgets">
+      <p class="lead">Віджети на огляді. Вимкнені не зникають зі списку — їх можна повернути.</p>
+      <div class="card"><h2>Віджети</h2><p class="sub">Порядок і видимість.</p>
+        <div class="list" id="widgets">
+          <div class="item" data-w="mail"><span class="ic"><svg><use href="#i-mail"/></svg></span><div><b>Пошта</b><small>Непрочитані й останні листи</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch on" data-vis></div></div></div>
+          <div class="item" data-w="calendar"><span class="ic"><svg><use href="#i-cal"/></svg></span><div><b>Календар</b><small>Найближчі події</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch on" data-vis></div></div></div>
+          <div class="item" data-w="cloud"><span class="ic"><svg><use href="#i-cloud"/></svg></span><div><b>Cloud</b><small>Останні файли</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch" data-vis></div></div></div>
+          <div class="item" data-w="agents"><span class="ic"><svg><use href="#i-plug"/></svg></span><div><b>Агенти</b><small>Стан підключень</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch on" data-vis></div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 SHARING -->
+    <section class="page" id="p-sharing">
+      <p class="lead">Спільний доступ і гостьові сесії. Кожен доступ можна відкликати.</p>
+      <div class="card"><h2>Надані доступи</h2><p class="sub">Хто бачить ваші ресурси.</p>
+        <div class="list" id="shares">
+          <div class="item" data-share><span class="ic"><svg><use href="#i-share"/></svg></span><div><b>Сімейний альбом</b><small>family@outlook.com · перегляд</small></div><div class="acts"><select class="btn sm" data-perm><option>Перегляд</option><option>Редагування</option></select><button class="btn sm danger" data-revoke>Відкликати</button></div></div>
+          <div class="item" data-share><span class="ic"><svg><use href="#i-share"/></svg></span><div><b>Робоча тека</b><small>p.tarasevych@company.com · редагування</small></div><div class="acts"><select class="btn sm" data-perm><option>Перегляд</option><option selected>Редагування</option></select><button class="btn sm danger" data-revoke>Відкликати</button></div></div>
+        </div>
+        <div class="row"><div><b>Запросити доступ</b><small>Надіслати посилання з обмеженим терміном</small></div><button class="btn sm" data-toast="Демо: посилання доступу створено">Створити</button></div>
+      </div>
+      <div class="card"><h2>Гостьові сесії</h2><p class="sub">Тимчасовий доступ без акаунта.</p>
+        <div class="list" id="guests">
+          <div class="item" data-guest><span class="ic"><svg><use href="#i-people"/></svg></span><div><b>Гість · iPad</b><small>до 18:00 · лише перегляд</small></div><button class="btn sm danger" data-revoke>Завершити</button></div>
+        </div>
+      </div>
+    </section>
+      <section class="page" id="p-stub">
+      <p class="lead" id="stubLead"></p>
+      <div class="card">
+        <h2 id="stubTitle"></h2>
+        <p class="sub">Ця сторінка не входить до макета акаунта — тут показано лише навігацію, щоб перевірити меню.</p>
+        <button class="btn" id="stubBack">← До облікового запису</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- стан -->
+<div class="scrim" id="scrim2"></div>
+<aside class="state" id="state">
+  <div class="state-h"><b>Стан налаштувань</b><button class="x" id="stateX">✕</button></div>
+  <pre id="json"></pre>
+</aside>
+<dialog class="pd" id="photoDlg">
+  <div class="pd-card">
+    <div class="pd-h"><b>Фото профілю</b><button class="x" id="pdX" aria-label="Закрити"><svg><use href="#i-x"/></svg></button></div>
+    <div class="pd-tabs" id="pdTabs">
+      <button class="on" data-t="device">З пристрою</button>
+      <button data-t="service">З сервісу</button>
+      <button data-t="link">За посиланням</button>
+    </div>
+    <div class="pd-body">
+      <div class="pd-pane on" id="pd-device">
+        <div class="dropzone" id="dropzone"><svg><use href="#i-camera"/></svg><div><b>Перетягніть фото сюди</b><br>або натисніть, щоб обрати файл</div><div style="font-size:11.5px">PNG, JPEG, WebP · до 4 МБ</div></div>
+      </div>
+      <div class="pd-pane" id="pd-service">
+        <div class="gallery" id="gallery"></div>
+        <div style="font-size:12px;color:var(--muted)">Останні фото з вашого Cloud (демо-набір)</div>
+      </div>
+      <div class="pd-pane" id="pd-link">
+        <input id="urlIn" placeholder="https://…" style="height:38px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--ink);font:inherit;font-size:13px;padding:0 11px;width:100%">
+        <button class="btn" id="urlLoad">Завантажити</button>
+        <div style="font-size:12px;color:var(--muted)">Будь-яке публічне HTTPS-посилання на зображення.</div>
+      </div>
+      <div class="pd-preview"><span class="pv" id="pv">—</span><div><b id="pvName">Нічого не обрано</b><small>Прев'ю перед застосуванням</small></div></div>
+    </div>
+    <div class="pd-foot"><button class="btn" id="pdCancel">Скасувати</button><button class="btn primary" id="pdApply" disabled>Застосувати</button></div>
+  </div>
+</dialog>
+
+<div id="toast"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-id" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.7-1.4 1.7-2 3-2s2.3.6 3 2M14 10h4M14 13h4"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.7 6.3.9-4.6 4.4 1.1 6.2-5.5-3-5.5 3 1.1-6.2L3 9.6l6.3-.9z"/></symbol>
+  <symbol id="i-house" viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17 18a4 4 0 0 0 .5-8A6 6 0 0 0 6 9a4 4 0 0 0 1 9z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M7 8h10v3a5 5 0 0 1-10 0z"/><path d="M12 16v5"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 2.6-5 6-5s6 2 6 5"/><circle cx="17" cy="9" r="2.2"/><path d="M21 19c0-2.2-1.7-3.6-4-3.6"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+  <symbol id="g-google" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z"/></symbol>
+  <symbol id="g-microsoft" viewBox="0 0 24 24"><rect x="2" y="2" width="9.5" height="9.5" fill="#F25022"/><rect x="12.5" y="2" width="9.5" height="9.5" fill="#7FBA00"/><rect x="2" y="12.5" width="9.5" height="9.5" fill="#00A4EF"/><rect x="12.5" y="12.5" width="9.5" height="9.5" fill="#FFB900"/></symbol>
+  <symbol id="g-apple" viewBox="0 0 24 24"><path fill="#111" d="M16.365 12.86c.02 2.36 2.07 3.14 2.1 3.16-.02.05-.33 1.13-1.08 2.23-.65.96-1.33 1.91-2.4 1.93-1.05.02-1.39-.62-2.59-.62-1.2 0-1.58.6-2.57.64-1.03.04-1.82-1.04-2.47-1.99-1.35-1.95-2.38-5.5-.99-7.9.69-1.19 1.92-1.94 3.26-1.96 1.01-.02 1.96.68 2.58.68.62 0 1.78-.84 3-.72.51.02 1.94.21 2.86 1.56-.07.05-1.71 1-1.7 2.99zM14.3 4.2c.55-.67.92-1.6.82-2.53-.79.03-1.75.53-2.32 1.2-.51.59-.96 1.54-.84 2.45.88.07 1.79-.45 2.34-1.12z"/></symbol>
+<symbol id="i-git" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 8.5v7M8.5 6H14a2 2 0 0 1 2 2v2"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12h6l2 6 4-14 2 8h2"/></symbol><symbol id="i-note" viewBox="0 0 24 24"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M8 13h8M8 17h6"/></symbol></defs></svg>
+
+<script>
+const state={
+  account:{name:'Eigenaar Test',photo:false},
+  personalization:{density:'normal',animations:true,hints:true,showUuid:false},
+  themes:{palette:'grifel',mode:'auto'},
+  languages:{ui:'uk',mail:'uk',date:'dmy'},
+  menu:{order:['hub','mail','cloud','ai','huis'],visible:{hub:true,mail:true,cloud:true,ai:true,huis:false},dock:'left',size:'m'},
+  widgets:{order:['mail','calendar','cloud','agents'],visible:{mail:true,calendar:true,cloud:false,agents:true}},
+  security:{stepup:true,loginAlerts:true,lockout:true,totp:true},
+  shares:[{name:'Сімейний альбом',who:'family@outlook.com',perm:'view'},{name:'Робоча тека',who:'p.tarasevych@company.com',perm:'edit'}],
+  guests:1,sessions:3
+};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2000)};
+
+/* служби та сторінки (єдине меню) */
+const SERVICES=[
+ {id:'hub',t:'Mijn Ruimte',ic:'i-home',pages:[['overview','Огляд','overzicht'],['recent','Нещодавні','recent'],['tasks','Завдання','taken'],['calendar','Календар','agenda'],['notes','Нотатки','notities'],['zoek','Пошук','zoek'],['photos','Фото','fotos']]},
+ {id:'ai',t:'AI',ic:'i-star',pages:[['workspace','Робочий простір','werkgebied'],['agents','Агенти','agenten'],['runs','Запуски','processen'],['workflows','Процеси','werkstromen'],['verbindingen','Підключення','verbindingen']]},
+ {id:'mail',t:'Пошта',ic:'i-mail',pages:[['inbox','Вхідні','postvak-in'],['starred','Із зіркою','met-ster'],['snoozed','Відкладені','uitgesteld'],['sent','Надіслані','verzonden'],['drafts','Чернетки','concepten'],['archive','Архів','archief'],['labels','Мітки','etiketten'],['accounts','Акаунти','accounts'],['local','Локальні','prive'],['unread','Непрочитані','ongelezen'],['all','Усі','alles'],['important','Важливі','belangrijk'],['spam','Спам','spam'],['trash','Кошик','prullenbak'],['subscriptions','Підписки','abonnementen'],['scheduled','Заплановані','gepland'],['settings','Налаштування','instellingen'],['contacts','Контакти','contacten']]},
+ {id:'cloud',t:'Cloud',ic:'i-cloud',pages:[['overview','Огляд','overzicht'],['files','Файли','bestanden'],['workspaces','Простори','werkruimtes'],['capture','Захопити','vastleggen'],['inbox','Вхідні','postvak-in'],['search','Пошук','zoeken'],['recent','Нещодавні','recent'],['calendar','Календар','agenda'],['photos','Фото','fotos'],['accounts','Акаунти','accounts'],['google','Google','google'],['onedrive','OneDrive','onedrive'],['dropbox','Dropbox','dropbox']]},
+ {id:'github',t:'GitHub',ic:'i-git',pages:[['overview','Огляд','overzicht'],['repositories','Репозиторії','repositories'],['projects','Проєкти','projecten'],['documentation','Документація','documentatie'],['research','Дослідження','onderzoek'],['accounts','Акаунти','accounts'],['activity','Активність','activiteit']]},
+ {id:'huis',t:'Дім',ic:'i-house',pages:[['overview','Огляд','overzicht'],['rooms','Кімнати','kamers'],['devices','Пристрої','apparaten'],['scenes','Сцени','scenes'],['automations','Автоматизації','automatiseringen'],['security','Безпека','beveiliging'],['energy','Енергія','energie'],['activity','Активність','activiteit'],['integrations','Інтеграції','integraties'],['assistant','Асистент','assistent'],['settings','Налаштування','instellingen'],['showroom','Шоурум','showroom'],['planner','Планувальник','planner']]},
+ {id:'identity',t:'Ідентичність',ic:'i-id',pages:[['account','Обліковий запис','account'],['identity','Ідентичності','identiteit'],['methods','Способи входу','aanmeldmethoden'],['sessions','Сесії','sessies'],['security','Безпека','beveiliging'],['recovery','Відновлення','herstel'],['personalization','Персоналізація','personalisatie'],['themes','Теми','themas'],['languages','Мови','talen'],['menu','Меню','menu'],['widgets','Віджети','blokken'],['sharing','Спільний доступ','delen']]},
+ {id:'api',t:'API',ic:'i-plug',pages:[['verbindingen','Підключення','verbindingen'],['vault','Сховище','kluis'],['access','Доступ','toegang'],['reconciliation','Звірка','afstemming']]},
+ {id:'admin',t:'Адмін',ic:'i-lock',pages:[['overview','Огляд','overzicht'],['access','Доступ','toegang'],['ai','ШІ','ai'],['contour','Контур','contour'],['updates','Оновлення','updates'],['apps','Застосунки','apps'],['devices','Пристрої','apparaten'],['sso','SSO','sso'],['directories','Каталоги','mappen'],['roles','Ролі','rollen'],['diagnostics','Діагностика','diagnostiek'],['audit','Аудит','audit']]},
+ {id:'mcp',t:'MCP',ic:'i-share',pages:[['overview','Огляд','overzicht'],['dashboard','Панель','dashboard'],['services','Сервіси','diensten'],['tools','Інструменти','hulpmiddelen'],['board','Дошка','bord'],['agents','Агенти','agenten'],['apps','Застосунки','apps'],['playground','Пісочниця','zandbak'],['traffic','Трафік','verkeer'],['connect','Підключення','verbinden'],['roadmap','План','routekaart'],['download','Завантаження','downloaden'],['verbindingen','Підключення','verbindingen']]},
+ {id:'tasks',t:'Завдання',ic:'i-check',pages:[]},
+ {id:'calendar',t:'Календар',ic:'i-cal',pages:[]},
+ {id:'notes',t:'Нотатки',ic:'i-note',pages:[]},
+ {id:'social',t:'Соціальне',ic:'i-people',pages:[]}
+];
+const TITLES={account:'Обліковий запис',identity:'Ідентичності',methods:'Способи входу',sessions:'Сесії',security:'Безпека',recovery:'Відновлення',personalization:'Персоналізація',themes:'Теми',languages:'Мови',menu:'Меню',widgets:'Віджети',sharing:'Спільний доступ'};
+const nav=$('#nav');
+function renderNav(){
+  nav.innerHTML='';
+  const allA=document.createElement('a');allA.href='#identity/all';allA.dataset.svc='identity';allA.dataset.page='all';allA.innerHTML='<span>Огляд (усе)</span><span class="slug">/overzicht</span>';allA.style.cssText='margin:2px 6px 6px;padding:8px 10px;border-radius:9px;font-weight:700';nav.appendChild(allA);
+  SERVICES.forEach(s=>{
+    const open=s.id==='identity';
+    const head=document.createElement('button');
+    head.type='button';head.className='svc'+(open?' open':'');
+    head.innerHTML='<span class="ico"><svg><use href="#'+s.ic+'"/></svg></span><span>'+s.t+'</span>'+(s.pages.length?'<span class="car">›</span>':'');
+    head.onclick=()=>head.classList.toggle('open');
+    nav.appendChild(head);
+    if(s.pages.length){
+      const box=document.createElement('div');box.className='pages'+(open?' open':'');
+      s.pages.forEach(([id,label,slug])=>{
+        const a=document.createElement('a');
+        a.href = s.id==='identity' ? '#identity/'+id : '#svc/'+s.id+'/'+id;
+        a.dataset.svc=s.id; a.dataset.page=id;
+        a.innerHTML='<span>'+label+'</span><span class="slug">/'+slug+'</span>';
+        box.appendChild(a);
+      });
+      nav.appendChild(box);
+    }
+  });
+}
+function showPage(id){
+  const el=document.getElementById('p-'+id);
+  if(!el) return false;
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+  $$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.svc==='identity'&&a.dataset.page===id));
+  $('#title').textContent=TITLES[id]||'Акаунт';
+  return true;
+}
+function showStub(svcId,pageId){
+  const svc=SERVICES.find(s=>s.id===svcId);const page=svc&&svc.pages.find(p=>p[0]===pageId);
+  toast((svc?svc.t:'Служба')+' · '+(page?page[1]:pageId)+' — поза макетом акаунта');
+}
+function showAll(){
+  window.scrollTo({top:0,behavior:'smooth'});
+  $$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.page==='all'));
+  $('#title').textContent='Огляд акаунта';
+}
+function route(){
+  const h=(location.hash||'#identity/account').slice(1);
+  const parts=h.split('/');
+  if(parts[0]==='identity'){ (parts[1]==='all')?showAll():showPage(parts[1]||'account'); }
+  else if(parts[0]==='svc'){ showStub(parts[1]||'hub',parts[2]||'overview'); }
+  else { showPage(TITLES[h]?h:'account'); }
+  $('#app').classList.remove('open');
+}
+window.addEventListener('hashchange',route);
+
+
+/* тема/палітра */
+const PALS={grifel:'#2f6f73',puur:'#334155',violet:'#6d5efc',kleur:'#be123c'};
+function applyPalette(p){document.documentElement.style.setProperty('--accent',PALS[p]||PALS.grifel);$$('#palettes .pal').forEach(b=>b.classList.toggle('on',b.dataset.pal===p))}
+function applyMode(m){
+  const dark = m==='dark' || (m==='auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark',dark);
+  $('#themeBtn').innerHTML = dark?'<svg><use href="#i-sun"/></svg>':'<svg><use href="#i-moon"/></svg>';
+  $$('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===m));
+}
+$$('#palettes .pal').forEach(b=>b.onclick=()=>{state.themes.palette=b.dataset.pal;applyPalette(b.dataset.pal);render()});
+$$('#modeSeg button').forEach(b=>b.onclick=()=>{state.themes.mode=b.dataset.v;applyMode(b.dataset.v);render()});
+$('#themeBtn').onclick=()=>{const d=document.documentElement.classList.contains('dark');state.themes.mode=d?'light':'dark';applyMode(state.themes.mode);render()};
+
+/* фото: діалог джерела */
+const file=$('#file'),ava=$('#ava'),dlg=$('#photoDlg'),pv=$('#pv'),pvName=$('#pvName'),applyBtn=$('#pdApply');
+let pending=null;
+function setPreview(src,label){pending=src;pv.innerHTML=src?'<img src="'+src+'" alt="">':'—';pvName.textContent=label||'Нічого не обрано';applyBtn.disabled=!src}
+function openDlg(){setPreview(null);dlg.showModal()}
+function closeDlg(){dlg.close()}
+ava.onclick=()=>openDlg();
+ava.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDlg()}};
+$('#pdX').onclick=closeDlg;$('#pdCancel').onclick=closeDlg;
+$('#pdApply').onclick=()=>{if(!pending)return;ava.innerHTML='<img src="'+pending+'" alt="">';state.account.photo=true;render();closeDlg();toast('Фото оновлено')};
+$('#delPhoto').onclick=e=>{e.stopPropagation();ava.innerHTML='ПТ<span class="cam"><svg><use href="#i-camera"/></svg></span>';state.account.photo=false;render();toast('Фото видалено')};
+$$('#pdTabs button').forEach(b=>b.onclick=()=>{$$('#pdTabs button').forEach(x=>x.classList.remove('on'));b.classList.add('on');$$('.pd-pane').forEach(p=>p.classList.toggle('on',p.id==='pd-'+b.dataset.t))});
+const dz=$('#dropzone');
+dz.onclick=()=>file.click();
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)readPhoto(f)});
+file.onchange=()=>{const f=file.files&&file.files[0];if(f)readPhoto(f)};
+function readPhoto(f){
+  if(!/^image\/(png|jpeg|webp)$/.test(f.type)){toast('Лише PNG, JPEG або WebP');return}
+  if(f.size>4*1024*1024){toast('Файл завеликий (макс. 4 МБ)');return}
+  const r=new FileReader();r.onload=()=>setPreview(String(r.result),f.name);r.readAsDataURL(f);
+}
+/* галерея «з сервісу»: демо-фото, згенеровані локально */
+const GAL=[['#8b9dfb','#5b5bd6'],['#f0a38b','#d64550'],['#8bd6a8','#1f7a52'],['#f2d06b','#b45309']];
+const gallery=$('#gallery');
+GAL.forEach(([a,b],i)=>{const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,160,160);g.addColorStop(0,a);g.addColorStop(1,b);x.fillStyle=g;x.fillRect(0,0,160,160);x.fillStyle='rgba(255,255,255,.9)';x.font='700 54px Segoe UI, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('ПТ',80,86);const el=document.createElement('button');el.className='gal';el.type='button';el.style.backgroundImage='url('+c.toDataURL()+')';el.setAttribute('aria-label','Фото '+(i+1));el.onclick=()=>{$$('#gallery .gal').forEach(g2=>g2.classList.remove('on'));el.classList.add('on');setPreview(c.toDataURL(),'Фото з Cloud #'+(i+1))};gallery.appendChild(el)});
+$('#urlLoad').onclick=()=>{const u=$('#urlIn').value.trim();if(!/^https:\/\//i.test(u)){toast('Потрібне HTTPS-посилання');return}const im=new Image();im.onload=()=>setPreview(u,'Зовнішнє посилання');im.onerror=()=>toast('Не вдалося завантажити зображення');im.src=u};
+$('#nameIn').oninput=e=>{state.account.name=e.target.value;render()};
+
+/* перемикачі */
+function bindSwitch(el,keyObj,key){el.onclick=()=>{el.classList.toggle('on');keyObj[key]=el.classList.contains('on');render()}}
+$$('[data-toggle]').forEach(el=>{const k=el.dataset.toggle;bindSwitch(el,state.security,k)});
+
+/* сегменти */
+function bindSeg(sel,obj,key){$$(sel+' button').forEach(b=>b.onclick=()=>{$$(sel+' button').forEach(x=>x.classList.remove('on'));b.classList.add('on');obj[key]=b.dataset.v;render()})}
+bindSeg('#density',state.personalization,'density');
+bindSeg('#uiLang',state.languages,'ui');
+bindSeg('#mailLang',state.languages,'mail');
+bindSeg('#dateFmt',state.languages,'date');
+bindSeg('#dock',state.menu,'dock');
+bindSeg('#dockSize',state.menu,'size');
+
+/* меню та віджети: порядок/видимість */
+function bindReorder(listSel,orderKey,visKey){
+  const list=$(listSel);
+  list.addEventListener('click',e=>{
+    const item=e.target.closest('.item');if(!item)return;
+    const id=item.dataset.m||item.dataset.w;
+    if(e.target.closest('[data-up]')||e.target.closest('[data-down]')){
+      const arr=state[orderKey];const i=arr.indexOf(id);
+      const j=e.target.closest('[data-up]')?i-1:i+1;
+      if(j<0||j>=arr.length)return;
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+      item.parentNode.insertBefore(item, e.target.closest('[data-up]')?item.previousElementSibling:item.nextElementSibling.nextElementSibling||null);
+      render();return;
+    }
+    if(e.target.closest('[data-vis]')){
+      const sw=e.target.closest('[data-vis]');sw.classList.toggle('on');
+      state[visKey][id]=sw.classList.contains('on');render();
+    }
+  });
+}
+bindReorder('#menuList','menu','visible');
+bindReorder('#widgets','widgets','visible');
+
+/* сесії */
+$$('[data-revoke]').forEach(b=>b.onclick=()=>{const item=b.closest('.item');if(!item)return;item.remove();state.sessions=Math.max(1,$$('#sessions [data-sess]').length+1);render();toast('Доступ відкликано')});
+$('#revokeAll').onclick=()=>{$$('#sessions [data-sess]').forEach(x=>x.remove());state.sessions=1;render();toast('Усі інші сесії завершено')};
+
+/* ідентичності */
+$$('[data-unlink]').forEach(b=>b.onclick=()=>{const item=b.closest('.item');item.querySelector('.acts').innerHTML='<button class="btn sm" data-connect>Прив\'язати</button>';toast('Ідентичність відв\'язано')});
+$$('[data-primary]').forEach(b=>b.onclick=()=>toast('Демо: основну ідентичність змінено'));
+$$('[data-connect]').forEach(b=>b.onclick=()=>toast('Демо: відкриється OAuth-вікно'));
+
+/* recovery */
+const CODES=['7F3A-9C2D','B41E-77AA','C9D2-1F0B','E55A-3C48','1B7D-6E92','9A0C-4D31','D2F8-5B77','6C1E-8A03','4E9B-2D65','A73F-0C18'];
+let used=new Set([8,9]);
+function renderCodes(){const box=$('#codes');box.innerHTML=CODES.map((c,i)=>`<span class="code${used.has(i)?' used':''}">${c.slice(0,4)}-••••</span>`).join('');$('#left').textContent=10-used.size}
+$('#rotate').onclick=()=>{used=new Set();renderCodes();toast('Демо: нові коди згенеровано (показані один раз)')};
+$('#download').onclick=()=>toast('Демо: файл з кодами сформовано');
+renderCodes();
+
+/* вкладки безпеки */
+$('#totpBtn').onclick=()=>toast('Демо: QR + підтвердження коду');
+$('#totpOff').onclick=()=>{$('#totpState').textContent='Вимкнено';state.security.totp=false;render();toast('Демо: TOTP вимкнено')};
+
+/* стан */
+function render(){$('#json').textContent=JSON.stringify(state,null,2)}
+$('#stateBtn').onclick=()=>{$('#state').classList.add('open');$('#scrim2').classList.add('on')};
+$('#stateX').onclick=()=>{$('#state').classList.remove('open');$('#scrim2').classList.remove('on')};
+$('#scrim2').onclick=()=>$('#stateX').click();
+$('#menuBtn').onclick=()=>$('#app').classList.toggle('open');
+$('#scrim').onclick=()=>$('#app').classList.remove('open'); if($('#stubBack'))$('#stubBack').onclick=()=>location.hash='#identity/account';
+
+/* старт */
+applyPalette(state.themes.palette);applyMode(state.themes.mode);renderNav();
+$$('.page').forEach(p=>{const id=p.id.replace('p-','');if(id==='stub')return;const h=document.createElement('p');h.className='sec-h';h.textContent=TITLES[id]||'';p.insertBefore(h,p.firstChild)});
+const stageEl=document.querySelector('.stage');
+stageEl.addEventListener('scroll',()=>{let cur=null;$$('.page').forEach(p=>{if(p.id==='p-stub')return;if(p.getBoundingClientRect().top<140)cur=p});if(cur){const id=cur.id.replace('p-','');$$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.svc==='identity'&&a.dataset.page===id))}},{passive:true});
+route();render();
+</script>
+</body>
+</html>
+
+
+
+
+
