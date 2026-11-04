@@ -1,0 +1,439 @@
+/* IDENTITY-002 · один екран облікового запису: меню-зміст і 12 секцій.
+   Токени — з src/ontwerp/tokens.css (--panel, --line, --accent, --ruimte-*, --straal-*), тому теми
+   theme-light/theme-dark/theme-plum-* і палітри працюють без окремих значень.
+   Перебудова — за контейнером (@container), бо сторінка живе всередині канонічного обрамлення. */
+
+.ia-account {
+  container-type: inline-size;
+  container-name: ia-account;
+  display: grid;
+  gap: var(--ruimte-4);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--ruimte-3) 4px 40px;
+}
+
+/* Меню-зміст: залипає зверху, щоб перехід був завжди під рукою. */
+.ia-toc {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-2);
+  border: 1px solid var(--line);
+  border-radius: var(--straal-l);
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.ia-toc-knop {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  min-height: var(--tik-hoogte);
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--tekst-klein);
+  cursor: pointer;
+}
+
+.ia-toc-knop:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.ia-toc-knop.actief {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.ia-toc-knop:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.ia-toc-nummer {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: inherit;
+  font-size: var(--tekst-mini);
+  font-weight: 700;
+}
+
+.ia-toc-knop.actief .ia-toc-nummer {
+  background: color-mix(in srgb, var(--text-on-accent) 22%, transparent);
+}
+
+.ia-secties {
+  display: grid;
+  gap: var(--ruimte-4);
+}
+
+.ia-sectie {
+  scroll-margin-top: 76px;
+  display: grid;
+  gap: var(--ruimte-3);
+  padding: var(--ruimte-4);
+  border: 1px solid var(--line);
+  border-radius: var(--straal-xl);
+  background: var(--panel);
+  box-shadow: var(--schaduw-1);
+}
+
+.ia-sectie > h2 {
+  margin: 0;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+/* Наявні сторінки всередині секції не мають тягнути власні відступи й рамку. */
+.ia-inhoud > .settings-center.ia-inline {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--ruimte-3);
+}
+
+/* ≤ 640 px за контейнером: кнопки меню на всю ширину, однакові, у дві колонки лише на вузьких. */
+@container ia-account (max-width: 640px) {
+  .ia-toc {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    position: static;
+    backdrop-filter: none;
+  }
+
+  .ia-toc-knop {
+    width: 100%;
+    justify-content: flex-start;
+    border-radius: var(--straal-m);
+  }
+
+  .ia-sectie {
+    padding: var(--ruimte-3);
+  }
+}
+
+@container ia-account (max-width: 420px) {
+  .ia-toc {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Повага до зменшеного руху: без плавної прокрутки. */
+@media (prefers-reduced-motion: reduce) {
+  .ia-sectie {
+    scroll-behavior: auto;
+  }
+}
+
+/* --- Фото профілю (IDENTITY-002) ------------------------------------------------ */
+
+.ia-profiel {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.ia-avatar-wikkel {
+  position: relative;
+  display: inline-block;
+  width: 64px;
+  height: 64px;
+}
+
+.ia-avatar {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.ia-avatar img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+}
+
+.ia-initialen {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.ia-avatar-camera {
+  position: absolute;
+  inset: auto 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  pointer-events: none;
+}
+
+.ia-avatar-camera svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Смітничок — 24 px у куті, камера лишається в центрі. */
+.ia-avatar-prullenbak {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--fout);
+  cursor: pointer;
+}
+
+.ia-avatar-prullenbak svg {
+  width: 13px;
+  height: 13px;
+}
+
+.ia-avatar-prullenbak:hover,
+.ia-avatar-prullenbak:focus-visible {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+}
+
+.ia-dialoog-achtergrond {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: var(--ruimte-4);
+  background: var(--overlay);
+}
+
+.ia-dialoog {
+  display: grid;
+  gap: var(--ruimte-3);
+  width: min(480px, 100%);
+  max-height: min(80vh, 640px);
+  padding: var(--ruimte-4);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--straal-xl);
+  background: var(--panel);
+  box-shadow: var(--schaduw-3);
+}
+
+.ia-dialoog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ruimte-2);
+}
+
+.ia-dialoog h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.ia-dialoog-sluit {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--straal-s);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.ia-dialoog-sluit svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ia-bronnen {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ruimte-2);
+}
+
+.ia-bronnen button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--tik-hoogte);
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--straal-m);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--tekst-klein);
+  cursor: pointer;
+}
+
+.ia-bronnen button.actief {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.ia-bronnen svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ia-bron-inhoud {
+  display: grid;
+  gap: var(--ruimte-2);
+}
+
+.ia-bron-inhoud p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--tekst-klein);
+  line-height: 1.45;
+}
+
+.ia-bestand {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ia-link {
+  width: 100%;
+  min-height: var(--tik-hoogte);
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--straal-m);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+}
+
+.ia-knop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--tik-hoogte);
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--straal-m);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ia-knop svg {
+  width: 17px;
+  height: 17px;
+}
+
+.ia-knop:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ia-knop-zwak {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.ia-voorbeeld {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  padding: var(--ruimte-2);
+  border: 1px dashed var(--line);
+  border-radius: var(--straal-m);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--tekst-klein);
+  text-align: center;
+}
+
+.ia-voorbeeld img {
+  max-width: 140px;
+  max-height: 140px;
+  border-radius: var(--straal-m);
+  object-fit: cover;
+}
+
+.ia-dienst-voorbeeld {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ia-leeg {
+  color: var(--muted);
+}
+
+.ia-fout {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--straal-m);
+  background: var(--fout-zacht);
+  color: var(--fout);
+  font-size: var(--tekst-klein);
+}
+
+.ia-dialoog > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ruimte-2);
+}
+
+/* ≤ 640 px за контейнером: кнопки на всю ширину, однакові; діалог — майже на весь екран. */
+@container ia-account (max-width: 640px) {
+  .ia-bronnen {
+    grid-template-columns: 1fr;
+  }
+
+  .ia-dialoog > footer {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ia-knop,
+  .ia-bronnen button {
+    width: 100%;
+  }
+}
