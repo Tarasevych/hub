@@ -1,0 +1,64 @@
+name: IDENTITY-ACCOUNT · дизайн акаунта (release)
+
+# Реліз документації дизайну сторінки акаунта.
+# Нічого в коді застосунку не змінює; пакет містить docs/ontwerp/identity-account/*.
+# Токен не потрібен: використовується штатний GITHUB_TOKEN із contents: write.
+
+on:
+  push:
+    branches:
+      - feature/identity-account-ui-20261104-1200
+
+permissions:
+  contents: write
+
+concurrency:
+  group: identity-account-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Build package
+        env:
+          AUTEUR: Eigenaar Test
+          AGENT: claude
+          SAMENVATTING: "Дизайн сторінки акаунта identity: 12 екранів, одна сторінка з прокруткою, фото-діалог, палітри й стани; ТЗ і матриця покриття. Код застосунку не змінено."
+        run: |
+          set -euo pipefail
+          VERSION="$(date -u +%Y%m%d-%H%M%S)"
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          mkdir -p uitvoer
+          chmod +x deploy/uitrol/maak-voorstelpakket.sh
+          bash deploy/uitrol/maak-voorstelpakket.sh uitvoer
+          test -f "uitvoer/mijn-ruimte-$VERSION.tar.gz"
+          (cd uitvoer && sha256sum "mijn-ruimte-$VERSION.tar.gz" > "mijn-ruimte-$VERSION.tar.gz.sha256")
+          (cd uitvoer && sha256sum -c "mijn-ruimte-$VERSION.tar.gz.sha256")
+          tar --gzip --list --file "uitvoer/mijn-ruimte-$VERSION.tar.gz" | grep 'docs/ontwerp/identity-account/identity-live.html'
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          COMMIT="$(git rev-parse HEAD)"
+          gh release create "$RELEASE_VERSION" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256" \
+            --target "$COMMIT" \
+            --title "IDENTITY-ACCOUNT · $RELEASE_VERSION" \
+            --notes "Дизайн сторінки акаунта (12 екранів identity): прототип, ТЗ, матриця покриття. Лише документація — код застосунку не змінювався. Встановлення — лише за passkey-рішенням власника." \
+            --prerelease --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_VERSION" \
+            --jq '.assets[] | select(.name | endswith(".tar.gz")) | .digest'
