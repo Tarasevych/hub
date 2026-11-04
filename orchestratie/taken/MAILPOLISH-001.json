@@ -5,12 +5,19 @@
   "tak": "feature/mailpolish-001-20261104-084133",
   "basisCommit": "90f0d737a6007d401ded790e6a27d018e34eb890",
   "basisVersie": "20261031-093842",
-  "regelsVersie": "1.4.1",
-  "regelsHash": "bd7a35e3bfbdab6f330b7b2c1ee19d54df621a514a5d0caacba591d81d528dc9",
+  "regelsVersie": "1.4.2",
+  "regelsHash": "f5e5f6bc7ddaa067b60f643c16cbeb7510d9b75df5d72ed5178106a8042dbb0a",
   "staat": "in_progress",
   "gestart": "2026-11-04T07:57:54.431Z",
-  "bijgewerkt": "2026-11-04T07:57:54.431Z",
+  "bijgewerkt": "2026-11-04T11:42:07.351Z",
   "omschrijving": "Відтворення дизайнерської концепції мобільного підключення пошти",
   "kanaal": "github_pr",
-  "overdrachten": []
+  "overdrachten": [],
+  "regelsHerlezen": [
+    {
+      "van": "1.4.1",
+      "naar": "1.4.2",
+      "op": "2026-11-04T11:42:07.351Z"
+    }
+  ]
 }

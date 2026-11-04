@@ -141,3 +141,28 @@ git і підпис SSH на ПК власника. Власник хоче ба
 **Рішення.** Перенести детальні норми випуску і TRACE-001 поза межі маркерів `compact` у **тому самому канонічному AGENTS.md**, залишивши в компактному блоці коротке, однозначне й обов'язкове правило з посиланнями. Жодну вимогу не вилучено і не послаблено; інсталяційні перевірки незмінні. Дотримуючись процедури змін правил, підвищити `regelsVersie` із 1.4.0 до **1.4.1**, повторити штатні `orch vergrendel`, `orch context`, `orch taak-herlees`, тестування та передавання. Залишити реєстрацію B-007 незмінною.
 
 **Хто.** Агент ChatGPT/Codex. Технічна корекція для відтворюваного компактного контексту; формальне підтвердження змін правил лишається за власником.
+
+## B-009 · 2026-11-04 · 1.4.2 · voorstel
+
+**Контекст.**
+1. 01.11.2026 сервер `203.0.113.10` та інструменти на робочому ПК власника оновлено до найновіших основних серій (`Ubuntu 26.04.1 LTS`, `PostgreSQL 18.6`, `Node.js 26.13.0 LTS`, `Caddy 2.11.7`, `OPA 1.22.0`, `age 1.3.2`).
+2. Після переходу на `Ubuntu 26.04.1 LTS` (`systemd 259.9`, `glibc 2.43`, `GNU tar 1.35`) попередня перевірка пакета (`voorcontrole`) на сайті почала відхиляти коректні архіви `.tar.gz` на кроці `tar --extract` (`VOORCONTROLE_MISLUKT`). Трасуванням (`strace` всередині `mijn-ruimte.service`) встановлено точну причину: `GNU tar 1.35` використовує системний виклик `openat2(..., RESOLVE_BENEATH)`, який seccomp-фільтр `RestrictSUIDSGID=yes` у `systemd 259` блокує з `-ENOSYS` (`Function not implemented`).
+3. Хмарний агент (ChatGPT), не маючи доступу до сервера і бачачи обрізаний рядок `Command failed: /usr/bin/tar --extract ...`, помилково припустив, що власник завантажив `.zip` замість `.tar.gz`, а потім попросив власника вручну виконувати `df -h` та шукати журнали в терміналі. Також з'ясувалося, що гілка `voornaamst` на GitHub відставала від `integratie`, а `/srv/mijn-ruimte/orch-repo` на сервері не був синхронізований із останніми правилами.
+
+**Рішення.**
+1. **Зафіксувати оновлений стек production ВМ `203.0.113.10` у правилах (`AGENTS.md` §1, §5):**
+   - ОС: `Ubuntu 26.04.1 LTS (Resolute)`, ядро `7.0.0-42-generic`, `glibc 2.43`, `systemd 259.9`, LUKS + `clevis-tpm2`.
+   - Середовище та сервіси: `Node.js v26.13.0 LTS` (`npm 11.20.0`), `PostgreSQL 18.6` (`/srv/data/postgresql/18/main` із `--data-checksums`), `Caddy v2.11.7` (сокет `admin unix//run/caddy/admin.sock|0660` для групи `caddy`/`mr-apps`), `OPA v1.22.0`, `age v1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2` (`containerd 2.4.2`).
+   - Інструменти ПК власника (`T:\mijn-ruimte\hulpmiddelen\`): `Node.js v26.13.0 LTS`, `PostgreSQL 18.6-5`, `rclone v1.75.2`.
+2. **Усунути блокування `openat2` у `systemd 259` (`RestrictSUIDSGID=no`):**
+   - На сервері `203.0.113.10` розгорнуто постійні drop-in файли `/etc/systemd/system/<unit>.d/ubuntu2604-openat2.conf` із `RestrictSUIDSGID=no` для всіх 9 сервісів `mijn-ruimte*` та `cloudflared.service`.
+   - У всіх unit-файлах `deploy/*.service` у репозиторії змінено `RestrictSUIDSGID=yes/true` на `RestrictSUIDSGID=no` (при збереженні `NoNewPrivileges=yes`, `ProtectSystem=strict`, `PrivateTmp=yes`).
+3. **Запровадити обов'язкові правила діагностики й передачі результатів для всіх агентів (`AGENTS.md` §3, §4):**
+   - Жоден агент не просить власника вручну виконувати команди в терміналі сервера (`df -h`, `journalctl` тощо) або вручну збирати пакети. Якщо агент у хмарному контейнері не має прямого доступу до `203.0.113.10` (через MCP або SSH), він формулює стислий технічний висновок (1–2 речення) для передачі інфраструктурному агенту на ПК власника (Antigravity/Claude).
+   - Заборонено вгадувати навмання при помилках `voorcontrole` (зокрема припускати завантаження `.zip` замість `.tar.gz`, коли крок `structuur` вже пройдено).
+   - При передачі випуску для встановлення через `Admin → Оновлення` першим рядком завжди надається пряме посилання на `mijn-ruimte-<versie>.tar.gz` (окремо від `-overdracht.zip`).
+4. **Синхронізувати всі канали правил:** оновити `origin/integratie`, `origin/voornaamst` та `/srv/mijn-ruimte/orch-repo` на `203.0.113.10` до `regelsVersie 1.4.2` (поточний встановлений на production випуск на момент синхронізації — `20261104-075953` @ `e97a58ceaf70f6a4a8d63608541d47e455ddb66a`).
+
+**Наслідки.** `regelsVersie` 1.4.1 → 1.4.2; оновлено `AGENTS.md`, `orchestratie/beleid.json`, `orchestratie/BESLUITEN.md`, `orchestratie/regels.lock.json`, `orchestratie/CONTEXT-COMPACT.md` та `deploy/*.service`. Усі агенти (через GitHub `integratie`/`voornaamst`, MCP `orch_context`/`orch_overzicht` або `CONTEXT-COMPACT.md`) отримують актуальні правила 1.4.2.
+
+**Хто.** Вимога власника Власника від 04.11.2026, реалізація агентом `antigravity`. Очікує passkey/SSH-підтвердження власника.
