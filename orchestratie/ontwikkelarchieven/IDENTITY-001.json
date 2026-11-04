@@ -12,6 +12,10 @@
     "vorigeProductieCommit": "e97a58ceaf70f6a4a8d63608541d47e455ddb66a",
     "tak": "feature/identity-account-20261104-120000"
   },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Geen wachtwoorden, tokens, sleutels, cookies of persoonsgegevens van derden; alleen paden, versienummers, commits en openbare URL's."
+  },
   "tijdlijn": [
     {
       "volgorde": 1,

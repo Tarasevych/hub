@@ -115,6 +115,10 @@ jobs:
           ontbreekt = [k for k in verplicht if not isinstance(dossier.get(k), list) or not dossier[k]]
           if dossier.get("schema") != 1 or dossier.get("taakId") != "IDENTITY-001" or ontbreekt:
               sys.exit("FOUT ONTWIKKELARCHIEF_ONGELDIG: rubrieken ontbreken: " + ", ".join(ontbreekt))
+          if not isinstance(dossier.get("opdracht"), str) or len(dossier["opdracht"].strip()) < 40:
+              sys.exit("FOUT ONTWIKKELARCHIEF_ONGELDIG: dossier.opdracht te kort")
+          if not isinstance(dossier.get("privacy"), dict) or dossier["privacy"].get("geheimenUitgesloten") is not True:
+              sys.exit("FOUT ONTWIKKELARCHIEF_ONGELDIG: dossier.privacy.geheimenUitgesloten moet true zijn")
           ref = {"schema": 1, "taakId": "IDENTITY-001", "repo": "Tarasevych/hub", "tak": tak, "commit": commit,
                  "pad": pad, "sha256": hashlib.sha256(ruw).hexdigest(),
                  "url": "https://github.com/Tarasevych/hub/blob/%s/%s" % (commit, pad),
