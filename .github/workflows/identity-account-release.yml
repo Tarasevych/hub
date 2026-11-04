@@ -138,8 +138,10 @@ jobs:
           test -f "uitvoer/mijn-ruimte-$VERSIE.tar.gz"
           (cd uitvoer && sha256sum "mijn-ruimte-$VERSIE.tar.gz" > "mijn-ruimte-$VERSIE.tar.gz.sha256")
           (cd uitvoer && sha256sum -c "mijn-ruimte-$VERSIE.tar.gz.sha256")
-          tar -tzf "uitvoer/mijn-ruimte-$VERSIE.tar.gz" | grep -q "ONTWIKKELARCHIEF.json"
-          tar -tzf "uitvoer/mijn-ruimte-$VERSIE.tar.gz" | grep -q "docs/ontwerp/identity-account/identity-live.html"
+          # geen `tar | grep -q`: під pipefail SIGPIPE дає 141 — спершу зберігаємо перелік у файл
+          tar -tzf "uitvoer/mijn-ruimte-$VERSIE.tar.gz" > "$RUNNER_TEMP/archiefinhoud.txt"
+          grep -qxF "mijn-ruimte-$VERSIE/ONTWIKKELARCHIEF.json" "$RUNNER_TEMP/archiefinhoud.txt"
+          grep -qxF "mijn-ruimte-$VERSIE/docs/ontwerp/identity-account/identity-live.html" "$RUNNER_TEMP/archiefinhoud.txt"
           SCHA="$(sha256sum "uitvoer/mijn-ruimte-$VERSIE.tar.gz" | cut -d' ' -f1)"
           echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
           python3 - "$VERSIE" "$SCHA" "uitvoer/mijn-ruimte-$VERSIE.tar.gz" <<'PY'
