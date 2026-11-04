@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - feature/identity-account-20261104-120000
+      - feature/identity-account-ui-20261104-180000
     paths:
       - 'docs/ontwerp/identity-account/**'
       - 'src/identity/**'
@@ -92,8 +93,8 @@ jobs:
               "schema": 1,
               "versie": versie,
               "aangemaakt": datetime.datetime.now(datetime.timezone.utc).astimezone().isoformat(timespec="seconds"),
-              "herkomst": "git: feature/identity-account-20261104-120000@%s (basis %s @ %s, %s)"
-                          % (commit, basis["versie"], basis["bronCommit"][:12], basis["bron"]),
+              "herkomst": "git: %s@%s (basis %s @ %s, %s)"
+                          % (os.environ.get("GITHUB_REF_NAME", "onbekend"), commit, basis["versie"], basis["bronCommit"][:12], basis["bron"]),
               "auteur": "Pavlo Tarasevych",
               "zonderAi": False,
               "deelnemers": [
@@ -132,7 +133,7 @@ jobs:
           set -euo pipefail
           VERSIE="$RELEASE_VERSION"
           HEAD_SHA="$(git rev-parse HEAD)"
-          TAK="feature/identity-account-20261104-120000"
+          TAK="${GITHUB_REF_NAME}"
           DOSSIE="orchestratie/ontwikkelarchieven/IDENTITY-001.json"
           git show "HEAD:$DOSSIE" > "$RUNNER_TEMP/dossier.json"
           python3 - "$VERSIE" "$HEAD_SHA" "$TAK" "$DOSSIE" "$RUNNER_TEMP" <<'PY'
