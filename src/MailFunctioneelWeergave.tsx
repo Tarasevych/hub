@@ -5,7 +5,7 @@ import {Bell,Check,Clock3,FileText,Inbox,ListChecks,Pencil,ShieldCheck,Sparkles,
 import MailAccountsHub from './MailAccountsHub';import{mailKoppelenOpenen}from'./platform/VensterHerstel';import{mailAanbieder}from'../shared/mail-aanbieders';
 import GoogleMailWorkspace from './GoogleMailWerkruimte';const ContactenWeergave=lazy(()=>import('./afzenders/ContactenWeergave'));const ContactenScanMelding=lazy(()=>import('./afzenders/ContactenScanMelding'));import{emitCanonicalNotice}from'./canoniek-meldingen';
 
-import './mail-functioneel.css';import './mail-ux-beoordeling-20261021.css';
+import './mail-functioneel.css';import './mail-ux-beoordeling-20261021.css';import './mailfix-001-accounts.css';
 
 type Lang='uk'|'nl';
 type Triage='action'|'waiting'|'info'|'later';
