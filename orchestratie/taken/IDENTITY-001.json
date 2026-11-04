@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "IDENTITY-001",
+  "agent": "claude",
+  "tak": "feature/identity-account-20261104-120000",
+  "basisCommit": "c1a4375e091c9b48d4c2a980bd4c70ab47e5a90b",
+  "basisVersie": "20261031-093842",
+  "regelsVersie": "1.4.2",
+  "regelsHash": "f5e5f6bc7ddaa067b60f643c16cbeb7510d9b75df5d72ed5178106a8042dbb0a",
+  "staat": "in_progress",
+  "gestart": "2026-11-04T15:06:40.262Z",
+  "bijgewerkt": "2026-11-04T15:06:40.266Z",
+  "omschrijving": "Дизайн сторінки керування обліковим записом (категорія identity, 12 екранів): живий прототип, ТЗ, матриця покриття; код застосунку не змінюється.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
