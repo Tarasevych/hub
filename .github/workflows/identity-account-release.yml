@@ -94,7 +94,7 @@ jobs:
               "zonderAi": False,
               "deelnemers": [
                   {"soort": "mens", "naam": "Eigenaar Test", "rollen": ["auteur", "controle"]},
-                  {"soort": "ai", "naam": "claude", "platform": "GitHub Actions", "tool": "maak-voorstelpakket.sh",
+                  {"soort": "ai", "naam": "AutoClaw", "platform": "AutoClaw", "tool": "PowerShell, git, GitHub Actions",
                    "model": {"id": None, "versie": None, "bron": "onbekend"},
                    "rollen": ["ontwikkeling", "verpakken"]},
               ],
@@ -154,7 +154,7 @@ jobs:
           BASIS_COMMIT="$(node -e 'process.stdout.write(require("./orchestratie/geinstalleerd.json").bronCommit)')"
           mkdir -p uitvoer
           AUTEUR="Eigenaar Test" \
-          AGENT="claude" \
+          AGENT="autoclaw" \
           SAMENVATTING="Дизайн сторінки акаунта identity: 12 екранів на одній сторінці, прототип, ТЗ і матриця покриття; код застосунку не змінено." \
           BASIS_VERSIE="$BASIS_VERSIE" \
           BASIS_COMMIT="$BASIS_COMMIT" \
