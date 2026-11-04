@@ -10,6 +10,9 @@ import {
   BORD_AGENTEN, MCP_URL, PRIVE_CAPS, SITE_UMOVY, STANDAARD_STAAT, tabsVoor,
   type BordAgent, type BordKlantId, type TabId,
 } from '../../shared/ai-agent-bord';
+import { agentUrl } from '../../shared/connector-v2/agenten';
+import { agentVoorKlant } from '../../shared/connector-v2/agenten';
+import ConnectorsTab from '../connector-v2/ConnectorsTab';
 import { aiLogo } from './data';
 import { foutTekst } from './fouten';
 import AiToegangTab from './AiToegangTab';
@@ -132,10 +135,11 @@ export default function AgentBord({ tr }: { tr: Tr }) {
       <div className='ag-bord' ref={rooster} data-kolommen={kolommen}>
         {bord.agenten.map((a, i) => (
           <div key={a.id} className='ag-bord-sleuf' style={{ display: 'contents' }}>
-            <button type='button' className={`ag-bord-kaart${open === a.id ? ' is-open' : ''}${a.aan ? '' : ' is-uit'}`} data-agent={a.id} data-agent-aan={a.aan ? '1' : '0'} aria-expanded={open === a.id} disabled={!a.aan} onClick={() => openKaart(a.id, a.aan)}>
+            <button type='button' className={`ag-bord-kaart${open === a.id ? ' is-open' : ''}${a.aan ? '' : ' is-uit'}`} data-agent={a.id} data-agent-aan={a.aan ? '1' : '0'} data-agent-url={agentVoorKlant(a.id) ? agentUrl(agentVoorKlant(a.id)!.slug) : bord.mcpUrl} aria-expanded={open === a.id} disabled={!a.aan} onClick={() => openKaart(a.id, a.aan)}>
               <Logo kind={aiLogo(a.naam)} size={36} label={a.naam} />
               <span className='ag-bord-naam'>{a.naam}</span>
               <span className='ag-bord-sub'>{a.aan ? tr('Ваш простір', 'Uw ruimte') : tr('Вимкнено для всіх на сайті', 'Uit voor iedereen op de site')}</span>
+              <code className='ag-bord-url'>{agentVoorKlant(a.id) ? agentUrl(agentVoorKlant(a.id)!.slug) : bord.mcpUrl}</code>
             </button>
             {i === eindeRij && gekozen ? (
               <div className='ag-bord-paneel' data-agent-paneel={gekozen.id} role='region' aria-label={gekozen.naam}>
@@ -162,8 +166,8 @@ export default function AgentBord({ tr }: { tr: Tr }) {
                 {tab === 'mcp' ? (
                   <div className='ag-bord-blad' data-blad='mcp'>
                     <p>{gekozen.mcpUk}</p>
-                    <p className='ag-bord-url'><code>{bord.mcpUrl}</code></p>
-                    <Kopieer tekst={bord.mcpUrl} tr={tr} />
+                    <p className='ag-bord-url'><code>{agentVoorKlant(gekozen.id) ? agentUrl(agentVoorKlant(gekozen.id)!.slug) : bord.mcpUrl}</code></p>
+                    <Kopieer tekst={agentVoorKlant(gekozen.id) ? agentUrl(agentVoorKlant(gekozen.id)!.slug) : bord.mcpUrl} tr={tr} />
                   </div>
                 ) : null}
                 {tab === 'token' ? (
@@ -208,6 +212,7 @@ export default function AgentBord({ tr }: { tr: Tr }) {
           </div>
         ))}
       </div>
+      <ConnectorsTab tr={tr} dienst={dienst()} />
     </section>
   );
 }

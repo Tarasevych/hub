@@ -41,16 +41,19 @@
 .v2-kant-teller.kant-gebruiker{background:var(--v2-g-zacht);color:var(--v2-g)}
 .v2-kant-teller.kant-beheer{background:var(--v2-b-zacht);color:var(--v2-b)}
 
-/* schakelaar: kleur + pictogram */
+/* schakelaar: колір доріжки І значок у бігунку — режим (читання / запис / видалення / вимкнено), ніколи лише колір */
 .v2-schakelaar{flex:none;position:relative;width:44px;height:24px;border-radius:99px;border:1px solid var(--line);background:var(--surface);padding:0;cursor:pointer;transition:background .15s}
 .v2-schakelaar.is-klein{width:36px;height:20px}
 .v2-schakelaar-knop{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--v2-uit);color:#fff;transition:left .15s}
 .v2-schakelaar.is-klein .v2-schakelaar-knop{width:14px;height:14px}
-.v2-schakelaar.is-aan.kant-gebruiker{background:var(--v2-g);border-color:var(--v2-g)}
-.v2-schakelaar.is-aan.kant-beheer{background:var(--v2-b);border-color:var(--v2-b)}
-.v2-schakelaar.is-aan .v2-schakelaar-knop{left:22px;background:#fff;color:var(--v2-g)}
+.v2-schakelaar.is-lezen.is-aan{background:var(--v2-laag);border-color:var(--v2-laag)}
+.v2-schakelaar.is-schrijven.is-aan{background:var(--v2-hoog);border-color:var(--v2-hoog)}
+.v2-schakelaar.is-wissen.is-aan{background:var(--v2-kritiek);border-color:var(--v2-kritiek)}
+.v2-schakelaar.is-aan .v2-schakelaar-knop{left:22px;background:#fff}
 .v2-schakelaar.is-klein.is-aan .v2-schakelaar-knop{left:18px}
-.v2-schakelaar.is-aan.kant-beheer .v2-schakelaar-knop{color:var(--v2-b)}
+.v2-schakelaar.is-lezen.is-aan .v2-schakelaar-knop{color:var(--v2-laag)}
+.v2-schakelaar.is-schrijven.is-aan .v2-schakelaar-knop{color:var(--v2-hoog)}
+.v2-schakelaar.is-wissen.is-aan .v2-schakelaar-knop{color:var(--v2-kritiek)}
 .v2-schakelaar.is-dev{border-style:dashed;cursor:not-allowed;opacity:.7}
 .v2-schakelaar.is-dev .v2-schakelaar-knop{background:var(--v2-midden)}
 .v2-schakelaar:disabled:not(.is-dev){opacity:.5;cursor:not-allowed}

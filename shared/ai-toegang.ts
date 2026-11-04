@@ -55,9 +55,9 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
   },
   {
     id: 'mail.send', groep: 'Пошта', uk: 'Писати й змінювати листи',
-    omschrijvingUk: 'Чернетки відповідей, мітки «прочитано», архів і кошик (без остаточного видалення).',
+    omschrijvingUk: 'Чернетки, надсилання листа з вашої скриньки, мітки, архів і кошик (без остаточного видалення).',
     gevoelig: true, standaardAan: false, agents: ['*'],
-    tools: ['mail_modify_message', 'draft_email_reply'],
+    tools: ['mail_modify_message', 'draft_email_reply', 'mail_send_message'],
   },
   {
     id: 'photos.read', groep: 'Фото', uk: 'Читати фото',
@@ -85,9 +85,9 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
   },
   {
     id: 'files.write', groep: 'Файли', uk: 'Змінювати файли',
-    omschrijvingUk: 'Запис у файли Диска (інструменту ще немає — з’явиться автоматично).',
-    gevoelig: false, standaardAan: false, agents: [],
-    tools: [],
+    omschrijvingUk: 'Новий файл і завантаження на ваш Google Диск. Чужий Диск недоступний.',
+    gevoelig: true, standaardAan: false, agents: ['*'],
+    tools: ['drive_create_file', 'drive_upload_file'],
   },
   {
     id: 'board.read', groep: 'Дошка', uk: 'Читати дошку',

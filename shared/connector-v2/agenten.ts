@@ -1,14 +1,19 @@
-// Connector v2 (15.10.2026): elke AI-agent heeft een EIGEN connectoradres. Een token dat voor /ai/grok is uitgegeven werkt
-// nergens anders (niet op /ai/gpt, niet op het oude /mcp); de agentnaam zit ook in elke hulpmiddelnaam
+// Connector v2: elke AI-agent heeft een EIGEN connectoradres. Een token dat voor /mcp/grok is uitgegeven werkt
+// nergens anders (niet op /mcp/claude, niet op het oude /mcp); de agentnaam zit ook in elke hulpmiddelnaam
 // (…_grok_mail_gmail_tarasevych_com_gebruiker), zodat een AI nooit «per ongeluk» de koppeling van een andere AI gebruikt.
 //
-// Pad: https://mcp.tarasevych.com/ai/<agent>. De korte paden /grok, /claude, /chatgpt, /gemini, /copilot zijn (nog) van de
-// serverdeur (deploy/mcp/server.mjs op poort 8091, tunnelregel in cloudflared-config.yml). Zodra de deur verhuist, volstaat het
-// om AGENT_PAD_PREFIX op '' te zetten — alle code bouwt adressen via agentPad()/agentUrl().
+// Canoniek pad: https://mcp.tarasevych.com/mcp/<agent>.
+// Kale paden /grok, /Grok, /claude, /chatgpt, /gemini en /copilot zijn de technische deuren (poort 8091). De tunnelregel
+// in deploy/cloudflared-config.yml is hoofdletterongevoelig (`(?i:grok|claude|…)`), dus /claude pakt de deur. Daarom staan
+// de gebruikersconnectoren op /mcp/<agent>: dat valt buiten die regel en is niet het exacte oude pad /mcp.
+// /ai/<agent> (etappe 1) blijft een alias naar dezelfde agent, zodat een al gekoppeld token niet breekt.
 // Puur (geen React/DOM/Node): browser en server gebruiken dezelfde lijst.
 import type { KlantId } from '../ai-verbinding';
 
-export const AGENT_PAD_PREFIX = '/ai';
+/** Canoniek pad van de gebruikersconnector. Niet het kale deurpad en niet het oude exacte /mcp. */
+export const AGENT_PAD_PREFIX = '/mcp';
+/** Tijdelijk pad van etappe 1. Blijft dezelfde agent bedienen; nieuwe adressen gebruiken AGENT_PAD_PREFIX. */
+export const AGENT_PAD_ALIAS = '/ai';
 export const MCP_BASIS = 'https://mcp.tarasevych.com';
 
 export type AgentSlug = 'claude' | 'gpt' | 'grok' | 'gemini' | 'copilot' | 'cursor';
@@ -58,15 +63,15 @@ export const agentUrl = (slug: AgentSlug) => `${MCP_BASIS}${agentPad(slug)}`;
 /** Metadata (RFC 9728) van deze agent: onder het eigen pad, zodat de tunnelregel voor /.well-known (serverdeur) niet geraakt wordt. */
 export const agentPrmUrl = (slug: AgentSlug) => `${agentUrl(slug)}/.well-known/oauth-protected-resource`;
 
-/** '/ai/grok' of '/ai/grok/' → 'grok'; alles anders → null. */
+/** '/mcp/grok', '/ai/grok' of met slash aan het eind → 'grok'. Het kale /mcp (oude connector) en de deuren → null. */
 export function slugUitPad(pad: string): AgentSlug | null {
-  const m = new RegExp(`^${AGENT_PAD_PREFIX.replace(/\//g, '\\/')}\\/([a-z]+)\\/?$`).exec(String(pad || ''));
-  return m && isAgentSlug(m[1]) ? m[1] : null;
+  const m = /^\/(mcp|ai)\/([a-z]+)\/?$/.exec(String(pad || ''));
+  return m && isAgentSlug(m[2]) ? m[2] : null;
 }
-/** RFC 8707 resource → agent (slash aan het eind telt niet). */
+/** RFC 8707 resource → agent (slash aan het eind telt niet). Alleen mcp.tarasevych.com. */
 export function slugUitResource(resource: string | null | undefined): AgentSlug | null {
   const r = String(resource || '').replace(/\/+$/, '');
-  if (!r.startsWith(`${MCP_BASIS}${AGENT_PAD_PREFIX}/`)) return null;
+  if (!r.startsWith(`${MCP_BASIS}/`)) return null;
   return slugUitPad(r.slice(MCP_BASIS.length));
 }
 

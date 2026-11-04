@@ -52,7 +52,7 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'GET /api/mcp-connector/rpc': 'MCP-eindpunt: altijd 405 (geen SSE-stroom)',
   'DELETE /api/mcp-connector/rpc': 'MCP-eindpunt: altijd 405 (geen sessies)',
   // Connector v2 (backend/connector-v2.ts): eigen adres per AI-agent; zelfde OAuth, token gebonden aan het pad.
-  'POST /api/connector-v2/:agent/rpc': 'MCP-eindpunt per agent (v2): Bearer-token van DEZE agent verplicht, anders 401 met WWW-Authenticate',
+  'POST /api/connector-v2/:agent/rpc': 'MCP-eindpunt per agent (v2, publiek pad /mcp/<agent>): Bearer-token van DEZE agent verplicht, anders 401; agent uit via ai-site-schakelaars → 403 AGENT_UIT',
   'GET /api/connector-v2/:agent/rpc': 'MCP-eindpunt per agent: altijd 405 (geen SSE-stroom)',
   'DELETE /api/connector-v2/:agent/rpc': 'MCP-eindpunt per agent: altijd 405 (geen sessies)',
   'GET /api/connector-v2/:agent/prm': 'OAuth protected resource metadata per agent (RFC 9728), openbaar',

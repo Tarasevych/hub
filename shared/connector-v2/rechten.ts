@@ -47,7 +47,12 @@ export function schoon(keys: readonly unknown[], ruimtes: Ruimtes): string[] {
 export function pasModusToe(huidig: readonly string[], m: Modus, ruimtes: Ruimtes, filter: { groep?: GroepId; kant?: Kant } = {}): string[] {
   const doel = kiesbaar(ruimtes).filter((o) => (!filter.groep || o.groep === filter.groep) && (!filter.kant || o.kant === filter.kant));
   const set = new Set(huidig);
-  for (const o of doel) { if (modusStaatToe(m, o.soort)) set.add(o.key); else set.delete(o.key); }
+  // Чутливе (пошта, Диск, видалення з позначкою gevoelig) груповий режим не вмикає:
+  // людина вмикає кожен такий інструмент окремо. Вимкнути його режим може.
+  for (const o of doel) {
+    if (modusStaatToe(m, o.soort)) { if (!o.gevoelig) set.add(o.key); }
+    else set.delete(o.key);
+  }
   return schoon([...set], ruimtes);
 }
 

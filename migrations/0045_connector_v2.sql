@@ -1,4 +1,5 @@
--- 0045: connector v2 (shared/connector-v2/*): eigen adres per AI-agent (https://mcp.tarasevych.com/ai/<agent>), Nederlandse
+-- 0045: connector v2 (shared/connector-v2/*): eigen adres per AI-agent (canoniek https://mcp.tarasevych.com/mcp/<agent>,
+-- alias /ai/<agent> van etappe 1). Kale /grok en /claude blijven de technische deuren. Nederlandse
 -- hulpmiddelnamen met agent, subdomein, dienst en kant (gebruiker|beheer), en rechten per hulpmiddel per koppeling.
 --
 --  • mcp_oauth_auth.agent / mcp_oauth_tokens.agent: aan welke agent het verzoek en de koppeling gebonden zijn. NULL = oude

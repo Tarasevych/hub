@@ -28,19 +28,21 @@ const MODUS_ICOON: Record<Modus, ReactElement> = {
 };
 const SOORT_ICOON: Record<Soort, ReactElement> = { lezen: <Eye size={13} />, schrijven: <PencilLine size={13} />, wissen: <Trash2 size={13} /> };
 
-/** Schakelaar met kleur én pictogram (✓ aan, × uit, bouwhek = in ontwikkeling). */
-export function Schakelaar({ aan, kant, disabled, dev, label, onChange, klein }: { aan: boolean; kant: Kant; disabled?: boolean; dev?: boolean; label: string; onChange: (v: boolean) => void; klein?: boolean }) {
+/** Schakelaar: kleur én pictogram in de knop tonen de modus (lezen / schrijven / verwijderen / uit). Nooit alleen kleur. */
+export function Schakelaar({ aan, kant, disabled, dev, label, onChange, klein, soort }: { aan: boolean; kant: Kant; disabled?: boolean; dev?: boolean; label: string; onChange: (v: boolean) => void; klein?: boolean; soort?: Soort }) {
+  const modus = dev ? 'dev' : !aan ? 'uit' : (soort ?? 'lezen');
+  const icoon = modus === 'dev' ? <Construction size={12} /> : modus === 'uit' ? <X size={12} /> : modus === 'schrijven' ? <PencilLine size={12} /> : modus === 'wissen' ? <Trash2 size={12} /> : <Eye size={12} />;
   return (
-    <button type='button' role='switch' aria-checked={aan} aria-label={label} disabled={disabled || dev}
-      className={`v2-schakelaar${aan ? ' is-aan' : ''}${dev ? ' is-dev' : ''}${klein ? ' is-klein' : ''} kant-${kant}`} onClick={() => onChange(!aan)}>
-      <span className='v2-schakelaar-knop' aria-hidden='true'>{dev ? <Construction size={12} /> : aan ? (kant === 'beheer' ? <Wrench size={12} /> : <Check size={12} />) : <X size={12} />}</span>
+    <button type='button' role='switch' aria-checked={aan} aria-label={label} disabled={disabled || dev} data-modus={modus}
+      className={`v2-schakelaar is-${modus}${aan ? ' is-aan' : ''}${dev ? ' is-dev' : ''}${klein ? ' is-klein' : ''} kant-${kant}`} onClick={() => onChange(!aan)}>
+      <span className='v2-schakelaar-knop' aria-hidden='true'>{icoon}</span>
     </button>
   );
 }
 
 /** Kleine schets: AI → handeling → waar (subdomein / dienst). Geen afbeelding van buiten: alleen SVG en tekst. */
 function Schets({ o, agent, uk }: { o: V2Optie; agent: AgentSlug; uk: boolean }) {
-  const doel = `${o.sub}.tarasevych.com${o.dienst ? ` · ${o.dienst}` : ''}`;
+  const doel = `${o.sub}.tarasevych.com${o.dienst && o.dienst !== o.sub ? ` · ${o.dienst}` : ''}`;
   const actie = SOORT_TEKST[o.soort][uk ? 'uk' : 'nl'];
   return (
     <svg className={`v2-schets kant-${o.kant} risico-${o.risico}`} viewBox='0 0 360 64' role='img' aria-label={`${v2Agent(agent).naam} → ${actie} → ${doel}`}>
@@ -52,7 +54,7 @@ function Schets({ o, agent, uk }: { o: V2Optie; agent: AgentSlug; uk: boolean })
       <path d='M226 32 H262' className='v2-schets-lijn' markerEnd='url(#v2pijl)' />
       <rect x='266' y='8' width='92' height='48' rx='8' className='v2-schets-doel' />
       <text x='312' y='29' textAnchor='middle'>{o.sub}</text>
-      <text x='312' y='45' textAnchor='middle' className='v2-schets-klein'>{o.dienst ?? (o.kant === 'beheer' ? 'server' : uk ? 'ваше' : 'van u')}</text>
+      <text x='312' y='45' textAnchor='middle' className='v2-schets-klein'>{o.dienst && o.dienst !== o.sub ? o.dienst : (o.kant === 'beheer' ? 'server' : uk ? 'ваше' : 'van u')}</text>
       <defs><marker id='v2pijl' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0 L10 5 L0 10 z' /></marker></defs>
     </svg>
   );
@@ -68,7 +70,7 @@ function OptieRij({ o, aan, agent, uk, tr, onToggle, uitgeklapt, onKlap, markeri
   return (
     <li className={`v2-optie kant-${o.kant}${dev ? ' is-dev' : ''}${aan ? ' is-aan' : ''}`} data-v2-optie={o.key}>
       <div className='v2-optie-kop'>
-        <Schakelaar aan={aan} kant={o.kant} dev={dev} label={t[0]} onChange={onToggle} />
+        <Schakelaar aan={aan} kant={o.kant} dev={dev} soort={o.soort} label={t[0]} onChange={onToggle} />
         <button type='button' className='v2-optie-naam' aria-expanded={uitgeklapt} onClick={onKlap}>
           <span className='v2-optie-titel'>{t[0]}</span>
           <span className='v2-chips'>
@@ -129,8 +131,11 @@ export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vor
   const [alleenAan, setAlleenAan] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [groepDicht, setGroepDicht] = useState<Record<string, boolean>>({});
+  const [wacht, setWacht] = useState<V2Optie | null>(null);
   const set = useMemo(() => new Set(waarde), [waarde]);
   const zet = (key: string, v: boolean) => { const n = new Set(waarde); if (v) n.add(key); else n.delete(key); onChange([...n].sort()); };
+  const gevoeligAan = (o: V2Optie) => o.gevoelig || (o.soort !== 'lezen' && (o.risico === 'hoog' || o.risico === 'kritiek'));
+  const vraag = (o: V2Optie, v: boolean) => { if (v && o.status === 'actief' && gevoeligAan(o)) setWacht(o); else zet(o.key, v); };
   const q = zoek.trim().toLowerCase();
   const past = (o: V2Optie) => {
     if (!toonDev && o.status !== 'actief') return false;
@@ -161,14 +166,28 @@ export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vor
         {risicoTelling.filter((x) => x.n).map((x) => <span key={x.r} className={`v2-chip risico-${x.r}`}>{RISICO_TEKST[x.r][uk ? 'uk' : 'nl']}: {x.n}</span>)}
       </div>
 
+      {wacht ? (
+        <section className='v2-let' role='alertdialog' aria-labelledby='v2-gevoelig-titel' data-v2-gevoelig-bevestig={wacht.key}>
+          <h4 id='v2-gevoelig-titel'><TriangleAlert size={16} aria-hidden='true' />{tr('Увімкнути чутливу дію?', 'Gevoelige actie aanzetten?')}</h4>
+          <p><b>{(uk ? wacht.uk : wacht.nl)[0]}</b> — {(uk ? wacht.uk : wacht.nl)[2]}</p>
+          <p>{wacht.kant === 'beheer'
+            ? tr('Це технічний доступ: дія стосується сайту чи сервера, не вашої пошти й не вашого Диска. Вимкнено — агент цієї дії не бачить.', 'Dit is technische toegang: de actie gaat over de site of de server, niet over uw mail of Drive. Uit — de agent ziet deze actie niet.')
+            : tr('Це ваш приватний простір. Увімкнено — агент може виконати дію з вашими даними (після підтвердження на сайті, якщо режим так стоїть). Вимкнено — даних він не чіпає.', 'Dit is uw privéruimte. Aan — de agent kan de actie met uw gegevens doen (na bevestiging op de site, als de modus dat vraagt). Uit — hij raakt de gegevens niet aan.')}</p>
+          <div className='v2-agent-acties'>
+            <button type='button' className='v2-knop' onClick={() => setWacht(null)}>{tr('Залишити вимкненим', 'Uit laten')}</button>
+            <button type='button' className='v2-knop is-primair' data-v2-gevoelig-ja='1' onClick={() => { zet(wacht.key, true); setWacht(null); }}>{tr('Увімкнути саме це', 'Alleen dit aanzetten')}</button>
+          </div>
+        </section>
+      ) : null}
+
       {vs ? (
         <section className='v2-verschil' aria-label={tr('Що зміниться після перепідключення', 'Wat er verandert na opnieuw verbinden')}>
-          {([['toegevoegd', tr('Буде додано', 'Wordt toegevoegd'), 'nieuw'], ['behouden', tr('Вже було', 'Had u al'), 'was'], ['vervalt', tr('Не буде додано', 'Wordt niet toegevoegd'), 'weg']] as const).map(([veld, kop, cls]) => (
+          {([['toegevoegd', tr('Буде додано', 'Wordt toegevoegd'), 'nieuw'], ['behouden', tr('Уже діє', 'Al actief'), 'was'], ['vervalt', tr('Буде прибрано', 'Wordt verwijderd'), 'weg']] as const).map(([veld, kop, cls]) => (
             <div key={veld} className={`v2-verschil-deel is-${cls}`} data-v2-verschil={veld}>
               <h4>{kop} <span className='v2-teller'>{vs[veld].length}</span></h4>
               {vs[veld].length ? (
                 <ul>{vs[veld].map((k) => { const o = V2_OPTIES.find((x) => x.key === k); if (!o) return null; return (
-                  <li key={k}><Schakelaar klein aan={set.has(k)} kant={o.kant} label={(uk ? o.uk : o.nl)[0]} onChange={(v) => zet(k, v)} /><span>{(uk ? o.uk : o.nl)[0]}</span></li>
+                  <li key={k}><Schakelaar klein aan={set.has(k)} kant={o.kant} soort={o.soort} label={(uk ? o.uk : o.nl)[0]} onChange={(v) => vraag(o, v)} /><span>{(uk ? o.uk : o.nl)[0]}</span></li>
                 ); })}</ul>
               ) : <p className='v2-leeg'>{tr('Нічого', 'Niets')}</p>}
             </div>
@@ -199,7 +218,7 @@ export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vor
               return (
                 <div key={g.id} className='v2-groep' data-v2-groep={g.id}>
                   <div className='v2-groep-kop'>
-                    <Schakelaar aan={aantalAan > 0} kant={kant} disabled={!actief.length} label={tr(`Категорія «${g.uk}»: увімкнути або вимкнути`, `Categorie «${g.nl}» aan of uit`)}
+                    <Schakelaar aan={aantalAan > 0} kant={kant} soort={actief.filter((o) => set.has(o.key)).some((o) => o.soort === 'wissen') ? 'wissen' : actief.filter((o) => set.has(o.key)).some((o) => o.soort === 'schrijven') ? 'schrijven' : 'lezen'} disabled={!actief.length} label={tr(`Категорія «${g.uk}»: увімкнути або вимкнути`, `Categorie «${g.nl}» aan of uit`)}
                       onChange={(v) => onChange(pasModusToe(waarde, v ? 'lezen' : 'geen', kanten, { kant, groep: g.id as GroepId }))} />
                     <button type='button' className='v2-groep-naam' aria-expanded={!dicht} onClick={() => setGroepDicht((d) => ({ ...d, [`${kant}:${g.id}`]: !dicht }))}>
                       <span className='v2-groep-icoon' aria-hidden='true'>{groepIcoon(g.icoon)}</span>
@@ -213,7 +232,7 @@ export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vor
                   {!dicht ? (
                     <ul className='v2-opties'>
                       {zichtbaar.map((o) => (
-                        <OptieRij key={o.key} o={o} aan={set.has(o.key)} agent={agent} uk={uk} tr={tr} onToggle={(v) => zet(o.key, v)} markering={markering(o.key)}
+                        <OptieRij key={o.key} o={o} aan={set.has(o.key)} agent={agent} uk={uk} tr={tr} onToggle={(v) => vraag(o, v)} markering={markering(o.key)}
                           uitgeklapt={!!open[o.key]} onKlap={() => setOpen((x) => ({ ...x, [o.key]: !x[o.key] }))} />
                       ))}
                     </ul>

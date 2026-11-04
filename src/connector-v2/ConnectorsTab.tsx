@@ -11,13 +11,13 @@ import { KANT_TEKST, V2_OPTIES, type Kant } from '../../shared/connector-v2/cata
 import { toolNaam } from '../../shared/connector-v2/namen';
 import { breidtUit, hoogsteRisico, schoon, STANDAARD } from '../../shared/connector-v2/rechten';
 import { RISICO_TEKST } from '../../shared/connector-v2/catalogus';
-import RechtenKiezer, { Schakelaar } from './RechtenKiezer';
+import RechtenKiezer from './RechtenKiezer';
 import './connector-v2.css';
 
 type Tr = (uk: string, nl: string) => string;
 type Keuze = { kanten: Kant[]; sleutels: string[] };
 type AgentStand = {
-  slug: AgentSlug; url: string;
+  slug: AgentSlug; url: string; uit?: boolean;
   koppelingen: Array<{ id: string; clientName: string; createdAt: number; lastUsedAt: number | null; expiresAt: number; kanten: Kant[]; sleutels: string[] }>;
   voorkeur: (Keuze & { herverbinden: boolean; updatedAt: number }) | null;
   actief: Keuze | null;
@@ -26,7 +26,7 @@ type Data = { agenten: AgentStand[]; instellingen: { extraBevestigen: boolean };
 
 const datum = (ms: number | null, uk: boolean) => (ms ? new Date(ms).toLocaleString(uk ? 'uk-UA' : 'nl-BE', { dateStyle: 'short', timeStyle: 'short' }) : '—');
 
-function AgentKaart({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr; uk: boolean; a: AgentStand; eigenaar: boolean; naWijziging: () => Promise<void> }) {
+function AgentKaart({ tr, uk, a, eigenaar, dienst, naWijziging }: { tr: Tr; uk: boolean; a: AgentStand; eigenaar: boolean; dienst: string; naWijziging: () => Promise<void> }) {
   const info = v2Agent(a.slug);
   const basis: Keuze = a.voorkeur ?? a.actief ?? { kanten: ['gebruiker'], sleutels: STANDAARD() };
   const [open, setOpen] = useState(false);
@@ -44,7 +44,7 @@ function AgentKaart({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr; uk: boolean;
 
   const doe = async (pad: string, extra: Record<string, unknown>, ok: (d: any) => string) => {
     setBezig(true); setMelding('');
-    try { const r = await api.post(pad, { ...sessionBody(), agent: a.slug, ...extra }); setMelding(ok(r.data)); await naWijziging(); }
+    try { const r = await api.post(pad, { ...sessionBody(dienst), agent: a.slug, ...extra }); setMelding(ok(r.data)); await naWijziging(); }
     catch (e) {
       const code = String((e as Error)?.message ?? '');
       setMelding(code === 'TECH_PROFIEL_VEREIST' || code === 'OWNER_REQUIRED' ? tr('Технічний доступ змінює лише власник з активним технічним профілем у цій вкладці.', 'Technische toegang wijzigt alleen de eigenaar met actief technisch profiel in dit tabblad.') : tr(`Не вдалося (${code || 'немає зв’язку'}).`, `Mislukt (${code || 'geen verbinding'}).`));
@@ -67,7 +67,7 @@ function AgentKaart({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr; uk: boolean;
           </code>
           <small>{uk ? info.uk : info.nl}</small>
         </div>
-        <span className={`v2-chip ${verbonden ? 'is-nieuw' : ''}`}>{verbonden ? <><Link2 size={12} />{tr(`підключено: ${a.koppelingen.length}`, `gekoppeld: ${a.koppelingen.length}`)}</> : tr('не підключено', 'niet gekoppeld')}</span>
+        <span className={`v2-chip ${a.uit ? 'is-weg' : verbonden ? 'is-nieuw' : ''}`}>{a.uit ? tr('вимкнено для всіх', 'uit voor iedereen') : verbonden ? <><Link2 size={12} />{tr(`підключено: ${a.koppelingen.length}`, `gekoppeld: ${a.koppelingen.length}`)}</> : tr('не підключено', 'niet gekoppeld')}</span>
       </div>
       {wachtOpHerverbinden ? <p className='v2-let' role='status'><RefreshCw size={15} aria-hidden='true' />{tr('Є зміни, які чекають на перепідключення. Ваш вибір збережено.', 'Er zijn wijzigingen die op opnieuw verbinden wachten. Uw keuze is bewaard.')}</p> : null}
       {a.koppelingen.length ? (
@@ -113,19 +113,15 @@ function AgentKaart({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr; uk: boolean;
   );
 }
 
-export default function ConnectorsTab({ tr }: { tr: Tr }) {
+export default function ConnectorsTab({ tr, dienst = 'mcp' }: { tr: Tr; dienst?: string }) {
   const uk = tr('uk', 'nl') === 'uk';
   const [data, setData] = useState<Data | null>(null);
   const [fout, setFout] = useState('');
   const laad = useCallback(async () => {
-    try { setData((await api.post('/api/owner/connector-v2/overzicht', sessionBody())).data as Data); setFout(''); }
+    try { setData((await api.post('/api/owner/connector-v2/overzicht', sessionBody(dienst))).data as Data); setFout(''); }
     catch (e) { setFout(String((e as Error)?.message ?? 'FOUT')); }
-  }, []);
+  }, [dienst]);
   useEffect(() => { void laad(); }, [laad]);
-  const zetExtra = async (v: boolean) => {
-    try { await api.post('/api/owner/connector-v2/instellingen', { ...sessionBody(), extraBevestigen: v }); await laad(); }
-    catch (e) { setFout(String((e as Error)?.message ?? 'FOUT')); }
-  };
   const lang = uk ? 'uk' : 'nl';
   return (
     <div className='ag-tab v2-tab' data-v2-tab='connectors'>
@@ -135,21 +131,21 @@ export default function ConnectorsTab({ tr }: { tr: Tr }) {
         <p className='v2-uitleg'>{tr('Старий загальний конектор /mcp продовжує працювати для вже підключених ШІ.', 'De oude gezamenlijke connector /mcp blijft werken voor al gekoppelde AI.')}</p>
       </section>
 
-      <section className='v2-instelling' aria-label={tr('Захист підключень', 'Beveiliging van koppelingen')}>
-        <Schakelaar aan={!!data?.instellingen.extraBevestigen} kant='gebruiker' label={tr('Додаткове підтвердження кожного нового підключення', 'Extra bevestiging van elke nieuwe koppeling')} onChange={(v) => void zetExtra(v)} disabled={!data} />
+      <section className='v2-instelling' aria-label={tr('Захист підключень', 'Beveiliging van koppelingen')} data-v2-beveiliging='1'>
+        <ShieldCheck size={22} aria-hidden='true' />
         <div>
-          <b>{tr('Додаткове підтвердження кожного нового підключення', 'Extra bevestiging van elke nieuwe koppeling')}</b>
-          <p>{tr('Перед видачею доступу сайт попросить passkey або код із застосунку-автентифікатора — навіть якщо ви щойно увійшли. Це захищає, якщо хтось заволодів вашою сесією в браузері.', 'Voor toegang vraagt de site een passkey of code uit de authenticator-app — ook als u net aanmeldde. Dat beschermt als iemand uw browsersessie overnam.')}</p>
-          {data && !data.methoden.passkey && !data.methoden.totp ? (
-            <p className='v2-let' role='note'><ShieldQuestion size={15} aria-hidden='true' />{tr('У вас ще немає passkey чи застосунку-автентифікатора, тому зараз підтвердження йде через повторний вхід Google. Додайте сильніший спосіб:', 'U hebt nog geen passkey of authenticator-app, dus nu gaat bevestigen via opnieuw aanmelden bij Google. Voeg een sterkere manier toe:')} <a href={canonicalNavigationUrl('identity', 'methods', lang)}><KeyRound size={13} />{tr('Способи входу', 'Aanmeldmethoden')}</a></p>
-          ) : data ? <p className='v2-ok'><ShieldCheck size={15} />{tr('Сильний спосіб підтвердження є', 'Een sterke bevestigingsmanier is aanwezig')} ({[data.methoden.passkey ? 'passkey' : '', data.methoden.totp ? tr('застосунок', 'app') : ''].filter(Boolean).join(', ')})</p> : null}
+          <b>{tr('Другий фактор при підключенні', 'Tweede factor bij koppelen')}</b>
+          <p>{tr('Якщо в налаштуваннях безпеки ввімкнено passkey, код із застосунку чи запасний код, підключення ШІ просить саме його. Якщо нічого з цього не ввімкнено, підключення не блокується: ви підтверджуєте звичайний вхід. Окремого «додаткового підтвердження» за замовчуванням немає.', 'Als in de beveiliging een passkey, app-code of herstelcode aanstaat, vraagt een AI-koppeling precies die. Staat niets daarvan aan, dan blokkeert koppelen niet: u bevestigt de gewone aanmelding. Een aparte «extra bevestiging» is er standaard niet.')}</p>
+          {data && !data.methoden.passkey && !data.methoden.totp && !data.methoden.herstelcode ? (
+            <p className='v2-let' role='note'><ShieldQuestion size={15} aria-hidden='true' />{tr('Зараз фактора немає, тож викрадена сесія браузера теоретично може підтвердити підключення від вашого імені. Увімкніть passkey або застосунок — наступне підключення спитає його:', 'Nu is er geen factor, dus een gestolen browsersessie kan in theorie een koppeling namens u bevestigen. Zet een passkey of app aan — de volgende koppeling vraagt die:')} <a href={canonicalNavigationUrl('identity', 'methods', lang)}><KeyRound size={13} />{tr('Налаштування → Безпека', 'Instellingen → Beveiliging')}</a></p>
+          ) : data ? <p className='v2-ok'><ShieldCheck size={15} />{tr('Фактор увімкнено: підключення його вимагатиме', 'Factor aan: koppelen zal hem vragen')} ({[data.methoden.passkey ? 'passkey' : '', data.methoden.totp ? tr('застосунок', 'app') : '', data.methoden.herstelcode ? tr('запасний код', 'herstelcode') : ''].filter(Boolean).join(', ')})</p> : null}
         </div>
       </section>
 
       {fout ? <p className='ag-melding ag-melding-fout' role='alert'>{tr(`Не вдалося завантажити (${fout}).`, `Laden mislukt (${fout}).`)}</p> : null}
       {data ? (
         <ul className='v2-agenten'>
-          {data.agenten.map((a) => <AgentKaart key={a.slug} tr={tr} uk={uk} a={a} eigenaar={data.account.eigenaar} naWijziging={laad} />)}
+          {data.agenten.map((a) => <AgentKaart key={a.slug} tr={tr} uk={uk} a={a} eigenaar={data.account.eigenaar} dienst={dienst} naWijziging={laad} />)}
         </ul>
       ) : !fout ? <p>{tr('Завантаження…', 'Laden…')}</p> : null}
     </div>
