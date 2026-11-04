@@ -13,25 +13,115 @@
     "vorigeRelease": "https://github.com/Tarasevych/hub/releases/tag/20261104-075953"
   },
   "bronnen": [
-    {"soort":"privaat_bewijs","omschrijving":"Android Chrome 09:39 — id.tarasevych.com toont mislukte Google-aanmelding","sha256":"82f34889dd78292fd933e6b9f916df4ebb9fa9b4f6196c01c5ff49ad15d58ef9","inhoudGepubliceerd":false},
-    {"soort":"privaat_bewijs","omschrijving":"Android Chrome 09:38 — dubbele koppelingenstrook boven smalle mail-orbit","sha256":"41ae2eee253d74c88fa42ef07b0ecf357078df01ed4222cb2cc9553a0e7cca60","inhoudGepubliceerd":false},
-    {"soort":"privaat_bewijs","omschrijving":"Android Chrome 09:37 — dezelfde smalle orbit en dubbele catalogus","sha256":"10d3c4e96a342dbd087590655e663a9f0a09ceac89124216a5f6e7d1a4099bd7","inhoudGepubliceerd":false}
+    {
+      "soort": "privaat_bewijs",
+      "omschrijving": "Android Chrome 09:39 — id.tarasevych.com toont mislukte Google-aanmelding",
+      "sha256": "82f34889dd78292fd933e6b9f916df4ebb9fa9b4f6196c01c5ff49ad15d58ef9",
+      "inhoudGepubliceerd": false
+    },
+    {
+      "soort": "privaat_bewijs",
+      "omschrijving": "Android Chrome 09:38 — dubbele koppelingenstrook boven smalle mail-orbit",
+      "sha256": "41ae2eee253d74c88fa42ef07b0ecf357078df01ed4222cb2cc9553a0e7cca60",
+      "inhoudGepubliceerd": false
+    },
+    {
+      "soort": "privaat_bewijs",
+      "omschrijving": "Android Chrome 09:37 — dezelfde smalle orbit en dubbele catalogus",
+      "sha256": "10d3c4e96a342dbd087590655e663a9f0a09ceac89124216a5f6e7d1a4099bd7",
+      "inhoudGepubliceerd": false
+    }
   ],
   "tijdlijn": [
-    {"volgorde":1,"stap":"Визнано неповну попередню перевірку: у MAILPOLISH-001 виконувалися 47 одиничних перевірок і ізольовані Chromium-скріншоти, а не реальний Google OAuth на Android.","bewijzen":["https://github.com/Tarasevych/hub/actions/runs/41795893685"]},
-    {"volgorde":2,"stap":"Прочитано канон AGENTS.md, рішення B-007/B-008, політику TRACE-001; створено тільки нову гілку від точного коміту попереднього випуску.","bewijzen":["AGENTS.md","orchestratie/BESLUITEN.md"]},
-    {"volgorde":3,"stap":"Знайдено джерело дублювання: MailFunctioneelWeergave завжди ставить IntegratieStrook над MailAccountsHub; порожній MailAccountsHub уже містить власну повну орбіту й каталог.","bewijzen":["src/MailFunctioneelWeergave.tsx","src/integraties/IntegratieStrook.tsx","src/MailAccountsHub.tsx"]},
-    {"volgorde":4,"stap":"Знайдено джерело вузької композиції: при мобільній ширині зовнішня .mail-provider-view з 28px padding, padding контейнера hub та внутрішні поля орбіти сумуються. Виправлено лише режим порожніх акаунтів, повний менеджер збережено.","bewijzen":["src/mail-functioneel.css","src/mailfix-001-accounts.css"]},
-    {"volgorde":5,"stap":"Підтверджено межу діагностики: скріншот id.tarasevych.com показує тільки загальну відмову; без конкретного reasonCode відповіді сервера або журналу від власника не можна чесно встановити, чи це browser-binding, обмін токена, конфігурація Google або мережа. Додано безпечне відображення reasonCode, обмежене повторення тимчасових мережевих збоїв і правильне повернення до /accounts без послаблення state/PKCE/cookie.","bewijzen":["src/EigenaarIdentiteitTerug.tsx","backend/google-suite-inrichting.ts","backend/koppel-binding.ts"]},
-    {"volgorde":6,"stap":"У Gmail-вікні виправлено окрему реальну помилку: збій завантаження статусу акаунтів раніше маскувався фальшивими порожніми акаунтами та connectEnabled=true; тепер користувач бачить відмову й може повторити запит.","bewijzen":["src/mail/MailKoppelVenster.tsx"]},
-    {"volgorde":7,"stap":"ПЕРШИЙ CI пройшов unit/types/build та записав «успіх», але вручну завантажені PNG full-page виявилися порожніми (390px: тільки тло). Цей візуальний результат відхилено; додано браузерні runtime-асерти для наявності React, орбіти, повної ширини, відсутності дубля і помилок JS, з автоматичною відмовою порожніх PNG.","bewijzen":["https://github.com/Tarasevych/hub/actions/runs/41804012039","tests/visueel/mailfix-screen.mjs"]},
-    {"volgorde":8,"stap":"Другий CI закономірно відхилив порожню сторінку й зібрав точний браузерний стек: CANONICAL_SERVICE_RUNTIME_MISSING. У самостійній тестовій HTML-сторінці був пропущений /canonical-service.js; додано той самий канонічний runtime, який запускається до React в основному застосунку.","bewijzen":["https://github.com/Tarasevych/hub/actions/runs/41804843906","tests/visueel/mailfix-preview.html"]}
+    {
+      "volgorde": 1,
+      "stap": "Визнано неповну попередню перевірку: у MAILPOLISH-001 виконувалися 47 одиничних перевірок і ізольовані Chromium-скріншоти, а не реальний Google OAuth на Android.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41795893685"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Прочитано канон AGENTS.md, рішення B-007/B-008, політику TRACE-001; створено тільки нову гілку від точного коміту попереднього випуску.",
+      "bewijzen": [
+        "AGENTS.md",
+        "orchestratie/BESLUITEN.md"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Знайдено джерело дублювання: MailFunctioneelWeergave завжди ставить IntegratieStrook над MailAccountsHub; порожній MailAccountsHub уже містить власну повну орбіту й каталог.",
+      "bewijzen": [
+        "src/MailFunctioneelWeergave.tsx",
+        "src/integraties/IntegratieStrook.tsx",
+        "src/MailAccountsHub.tsx"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Знайдено джерело вузької композиції: при мобільній ширині зовнішня .mail-provider-view з 28px padding, padding контейнера hub та внутрішні поля орбіти сумуються. Виправлено лише режим порожніх акаунтів, повний менеджер збережено.",
+      "bewijzen": [
+        "src/mail-functioneel.css",
+        "src/mailfix-001-accounts.css"
+      ]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Підтверджено межу діагностики: скріншот id.tarasevych.com показує тільки загальну відмову; без конкретного reasonCode відповіді сервера або журналу від власника не можна чесно встановити, чи це browser-binding, обмін токена, конфігурація Google або мережа. Додано безпечне відображення reasonCode, обмежене повторення тимчасових мережевих збоїв і правильне повернення до /accounts без послаблення state/PKCE/cookie.",
+      "bewijzen": [
+        "src/EigenaarIdentiteitTerug.tsx",
+        "backend/google-suite-inrichting.ts",
+        "backend/koppel-binding.ts"
+      ]
+    },
+    {
+      "volgorde": 6,
+      "stap": "У Gmail-вікні виправлено окрему реальну помилку: збій завантаження статусу акаунтів раніше маскувався фальшивими порожніми акаунтами та connectEnabled=true; тепер користувач бачить відмову й може повторити запит.",
+      "bewijzen": [
+        "src/mail/MailKoppelVenster.tsx"
+      ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "ПЕРШИЙ CI пройшов unit/types/build та записав «успіх», але вручну завантажені PNG full-page виявилися порожніми (390px: тільки тло). Цей візуальний результат відхилено; додано браузерні runtime-асерти для наявності React, орбіти, повної ширини, відсутності дубля і помилок JS, з автоматичною відмовою порожніх PNG.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41804012039",
+        "tests/visueel/mailfix-screen.mjs"
+      ]
+    },
+    {
+      "volgorde": 8,
+      "stap": "Другий CI закономірно відхилив порожню сторінку й зібрав точний браузерний стек: CANONICAL_SERVICE_RUNTIME_MISSING. У самостійній тестовій HTML-сторінці був пропущений /canonical-service.js; додано той самий канонічний runtime, який запускається до React в основному застосунку.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41804843906",
+        "tests/visueel/mailfix-preview.html"
+      ]
+    },
+    {
+      "volgorde": 9,
+      "stap": "GitHub Actions: full page width and duplicate strip evidence rendered from actual React/CSS; Google OAuth still requires server callback reason and real phone validation.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41805481341"
+      ]
+    }
   ],
   "keuzes": [
-    {"keuze":"Не прибирати глобальний каталог із коду","reden":"Він потрібен для інших сервісів і для пошти з уже підключеними акаунтами. При активній орбіті дубль приховується лише CSS-контекстом, сам каталог в орбіті лишається."},
-    {"keuze":"Не оголошувати невідомий OAuth збій виправленим","reden":"Причину не видно зі скріншота. Код дозволить отримати конкретний безпечний діагностичний код; тільки після нього можна виправити серверний дефект, якщо він там."},
-    {"keuze":"Не відключати state, PKCE, HttpOnly browser-binding чи перевірку scope","reden":"Ці бар'єри захищають від підміни акаунта. Навіть якщо проблема у cookie, вимкнення захисту неприпустиме."},
-    {"keuze":"Візуально перевіряти цілу MailFunctionalView з реальною структурою","reden":"Попередні скріншоти лише MailOrbitIntro не могли побачити батьківські поля й повторений блок."}
+    {
+      "keuze": "Не прибирати глобальний каталог із коду",
+      "reden": "Він потрібен для інших сервісів і для пошти з уже підключеними акаунтами. При активній орбіті дубль приховується лише CSS-контекстом, сам каталог в орбіті лишається."
+    },
+    {
+      "keuze": "Не оголошувати невідомий OAuth збій виправленим",
+      "reden": "Причину не видно зі скріншота. Код дозволить отримати конкретний безпечний діагностичний код; тільки після нього можна виправити серверний дефект, якщо він там."
+    },
+    {
+      "keuze": "Не відключати state, PKCE, HttpOnly browser-binding чи перевірку scope",
+      "reden": "Ці бар'єри захищають від підміни акаунта. Навіть якщо проблема у cookie, вимкнення захисту неприпустиме."
+    },
+    {
+      "keuze": "Візуально перевіряти цілу MailFunctionalView з реальною структурою",
+      "reden": "Попередні скріншоти лише MailOrbitIntro не могли побачити батьківські поля й повторений блок."
+    }
   ],
   "wijzigingen": [
     "src/MailFunctioneelWeergave.tsx",
@@ -46,15 +136,51 @@
     "orchestratie/ontwikkelarchieven/MAILFIX-001.json"
   ],
   "controles": [
-    {"status":"bevestigd","resultaat":"Локальний node scripts/orch.mjs controleer: exit 0; regelsVersie 1.4.1, hash bd7a35e3bfbdab6f330b7b2c1ee19d54df621a514a5d0caacba591d81d528dc9. Попередження KRITIEK_NIET_BEVESTIGD.","bewijzen":["AGENTS.md"]},
-    {"status":"afgekeurd","resultaat":"Перший GitHub CI run 41804012039 мав зелені тести/збірку, але фактичні PNG були порожніми. Візуальну перевірку відхилено, незважаючи на success від Actions.","bewijzen":["https://github.com/Tarasevych/hub/actions/runs/41804012039"]},
-    {"status":"afgekeurd","resultaat":"Другий CI run 41804843906 коректно впав на перевірці browser DOM. Першопричина: у preview бракувало канонічного runtime. Попереднє UI-доказування не прийняте.","bewijzen":["https://github.com/Tarasevych/hub/actions/runs/41804843906"]},
-    {"status":"gepland","resultaat":"Оновлений GitHub CI має засвідчити DOM React, видиму орбіту, правильну ширину, відсутність дубля і runtime-помилок; жоден порожній PNG не приймається.","bewijzen":[".github/workflows/mailfix-001-checks.yml"]}
+    {
+      "status": "bevestigd",
+      "resultaat": "Локальний node scripts/orch.mjs controleer: exit 0; regelsVersie 1.4.1, hash bd7a35e3bfbdab6f330b7b2c1ee19d54df621a514a5d0caacba591d81d528dc9. Попередження KRITIEK_NIET_BEVESTIGD.",
+      "bewijzen": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "status": "afgekeurd",
+      "resultaat": "Перший GitHub CI run 41804012039 мав зелені тести/збірку, але фактичні PNG були порожніми. Візуальну перевірку відхилено, незважаючи на success від Actions.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41804012039"
+      ]
+    },
+    {
+      "status": "afgekeurd",
+      "resultaat": "Другий CI run 41804843906 коректно впав на перевірці browser DOM. Першопричина: у preview бракувало канонічного runtime. Попереднє UI-доказування не прийняте.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41804843906"
+      ]
+    },
+    {
+      "status": "gepland",
+      "resultaat": "Оновлений GitHub CI має засвідчити DOM React, видиму орбіту, правильну ширину, відсутність дубля і runtime-помилок; жоден порожній PNG не приймається.",
+      "bewijzen": [
+        ".github/workflows/mailfix-001-checks.yml"
+      ]
+    },
+    {
+      "status": "bevestigd",
+      "resultaat": "59 passed source-unit checks; TypeScript client/server and production build passed; actual full React page rendered at 320/390/1280px in CI Chromium. This does not prove owner Google OAuth.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41805481341"
+      ]
+    }
   ],
   "beperkingen": [
     "Немає доступу до фізичного Android-сеансу власника, захищених server audit logs чи Google OAuth callback reasonCode; першопричину показаного збою не підтверджено.",
     "Не встановлювати зміни у production і не обіцяти справне OAuth до окремої перевірки власником.",
     "Приватні скріншоти згадано лише через SHA-256; зміст листів, секрети й приховані міркування моделі не публікувалися."
   ],
-  "privacy": {"geenGeheimen":true,"geenBrieven":true,"geenVerborgenRedenering":true,"tijdelijkeBestanden":"Тимчасова розпакована копія перевіреного tar.gz з попереднього випуску, поза GitHub; ніякі приватні cookies/токени не створені"}
+  "privacy": {
+    "geenGeheimen": true,
+    "geenBrieven": true,
+    "geenVerborgenRedenering": true,
+    "tijdelijkeBestanden": "Тимчасова розпакована копія перевіреного tar.gz з попереднього випуску, поза GitHub; ніякі приватні cookies/токени не створені"
+  }
 }
