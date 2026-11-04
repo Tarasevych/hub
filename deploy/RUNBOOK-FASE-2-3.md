@@ -4,7 +4,7 @@ Doel: de release met `owner_id`, RLS (eerst in audit-modus), drie databaserollen
 append-only audit, step-up en de fase-3-punten veilig uitrollen — **zonder iemand buiten te sluiten** en met
 een terugweg na elke stap. Elke stap is los te doen; tussen stap 3, 4 en 5 mag gerust dagen zitten.
 
-Alle opdrachten als `root` op de VM (`ssh … beheer@203.0.113.10`, daarna `sudo -i`). Geen waarden van
+Alle opdrachten als `root` op de VM (`ssh … beheer@<VM-IP>`, daarna `sudo -i`). Geen waarden van
 geheimen kopiëren of tonen. Tijden in de logs zijn UTC tenzij anders vermeld.
 
 ## 0. Vooraf
@@ -25,7 +25,7 @@ geheimen kopiëren of tonen. Tijden in de logs zijn UTC tenzij anders vermeld.
 
 Op de pc (of waar de tarball staat):
 ```
-scp mijn-ruimte-beveiliging-fase-2-3-<stempel>-<sha>.tar.gz{,.sha256} beheer@203.0.113.10:/tmp/
+scp mijn-ruimte-beveiliging-fase-2-3-<stempel>-<sha>.tar.gz{,.sha256} beheer@<VM-IP>:/tmp/
 ```
 Op de VM:
 ```

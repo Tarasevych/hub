@@ -1,3 +1,4 @@
+process.env.MR_BEHEERSUBNET = '203.0.113.0/24';
 // SEC-001 (31.10.2026): regressie- en verificatiesuite voor alle bevindingen SEC-001-01 t/m SEC-001-16.
 import { createCipheriv, randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';

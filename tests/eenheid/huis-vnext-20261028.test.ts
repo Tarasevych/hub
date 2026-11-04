@@ -1,3 +1,4 @@
+process.env.MR_BEHEERSUBNET = '203.0.113.0/24';
 // HUIS vNEXT (28.10.2026, migratie 0128, backend/huis-vnext.ts, backend/huis-adapter-thuis-assistent.ts, shared/huis-model.ts).
 //
 // WAT DEZE TEST VASTHOUDT — tegen een NAGEBOOTSTE Home Assistant (tests/eenheid/hulp/nep-thuis-assistent.ts), nooit een echte:

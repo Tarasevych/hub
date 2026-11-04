@@ -11,7 +11,10 @@ import type { RouterResponse, RouterRoutes } from '../server/platform/router';
 // 20.10.2026: de agenda vraagt nu ook de schrijfscope calendar.events, en externe agenda's kunnen via een
 // .ics-abonnement of CalDAV worden gelezen (een CalDAV-wachtwoord staat versleuteld op uw eigen server).
 export const BIJGEWERKT = '2026-10-20';
-export const CONTACT = 'eigenaar@example.test';
+// Eigenaarsgegevens komen uit de serveromgeving (MR_CONTACT_EMAIL, MR_EIGENAAR_NAAM), nooit uit de code. Zie ENV-VARS.md.
+export const CONTACT = process.env.MR_CONTACT_EMAIL || '';
+export const EIGENAAR_NAAM = process.env.MR_EIGENAAR_NAAM || 'власник / eigenaar';
+export const CONTACT_HTML = CONTACT ? `<a href="mailto:${CONTACT}">${CONTACT}</a>` : 'op aanvraag / op aanvraag';
 const GOOGLE_BELEID = 'https://developers.google.com/terms/api-services-user-data-policy';
 const GBA = 'https://www.gegevensbeschermingsautoriteit.be';
 
@@ -42,7 +45,7 @@ ${nl}
 </main>
 <footer class="voet">
 <p><a href="/">Головна / Start</a> · <a href="/privacy">Політика конфіденційності / Privacybeleid</a> · <a href="/terms">Умови користування / Gebruiksvoorwaarden</a></p>
-<p>Eigenaar Test / Eigenaar Test · <a href="mailto:${CONTACT}">${CONTACT}</a> · ${BIJGEWERKT}</p>
+<p>${EIGENAAR_NAAM} · ${CONTACT_HTML} · ${BIJGEWERKT}</p>
 </footer>
 </body>
 </html>
@@ -53,7 +56,7 @@ const PRIVACY_UK = `
 <p class="datum">Чинна з ${BIJGEWERKT}. Українська версія · <a href="#nl">Nederlandse versie</a></p>
 
 <h2>1. Хто відповідає за ваші дані</h2>
-<p>«Мій простір» (hub.tarasevych.com та піддомени tarasevych.com) — приватний особистий онлайн-сервіс. Розпорядник (контролер) даних: <strong>Eigenaar Test</strong>, Бельгія. Контакт з усіх питань щодо даних: <a href="mailto:${CONTACT}">${CONTACT}</a>.</p>
+<p>«Мій простір» (hub.tarasevych.com та піддомени tarasevych.com) — приватний особистий онлайн-сервіс. Розпорядник (контролер) даних: <strong>${EIGENAAR_NAAM}</strong>, Бельгія. Контакт з усіх питань щодо даних: ${CONTACT_HTML}.</p>
 <p>Сервіс не є публічним: обліковий запис можна створити лише через вхід Google, після чого власник вручну схвалює доступ (або ви приєднуєтеся за запрошенням до спільного робочого простору). Сервіс безкоштовний, без реклами, не призначений для дітей до 16 років.</p>
 
 <h2>2. Вхід через Google: які дані і навіщо</h2>
@@ -130,7 +133,7 @@ const PRIVACY_UK = `
 <p>HTTPS/HSTS, сувора політика безпеки вмісту (CSP), захист від CSRF, обмеження кількості спроб, шифрування токенів і секретів, окремі ролі бази даних із захистом на рівні рядків, незмінний журнал безпеки з ланцюжком хешів, повторне підтвердження (Google або TOTP) для чутливих дій, необов'язкова двофакторна автентифікація, зашифровані резервні копії.</p>
 
 <h2>12. Ваші права</h2>
-<p>Ви маєте право на доступ до даних і їх копію (в сервісі є експорт ваших даних у JSON), виправлення (фото профілю можна змінити в сервісі, ім'я та e-mail надходять від Google; інше — на запит), видалення (видалення облікового запису в сервісі або на запит), обмеження обробки, заперечення проти обробки, перенесення даних і відкликання згоди. Напишіть на <a href="mailto:${CONTACT}">${CONTACT}</a> — відповідь протягом одного місяця.</p>
+<p>Ви маєте право на доступ до даних і їх копію (в сервісі є експорт ваших даних у JSON), виправлення (фото профілю можна змінити в сервісі, ім'я та e-mail надходять від Google; інше — на запит), видалення (видалення облікового запису в сервісі або на запит), обмеження обробки, заперечення проти обробки, перенесення даних і відкликання згоди. Напишіть на ${CONTACT_HTML} — відповідь протягом одного місяця.</p>
 <p>Ви також можете подати скаргу до органу захисту даних. У Бельгії це <a href="${GBA}">Gegevensbeschermingsautoriteit / Autorité de protection des données (GBA/APD)</a>, або орган країни, де ви живете.</p>
 
 <h2>13. Зміни</h2>
@@ -142,7 +145,7 @@ const PRIVACY_NL = `
 <p class="datum">Geldig vanaf ${BIJGEWERKT}. Nederlandse versie · <a href="#uk">Українська версія</a></p>
 
 <h2>1. Wie is verantwoordelijk</h2>
-<p>‘Mijn Ruimte’ (hub.tarasevych.com en subdomeinen van tarasevych.com) is een privé, persoonlijke onlinedienst. Verwerkingsverantwoordelijke: <strong>Eigenaar Test</strong>, België. Contact voor alle vragen over gegevens: <a href="mailto:${CONTACT}">${CONTACT}</a>.</p>
+<p>‘Mijn Ruimte’ (hub.tarasevych.com en subdomeinen van tarasevych.com) is een privé, persoonlijke onlinedienst. Verwerkingsverantwoordelijke: <strong>${EIGENAAR_NAAM}</strong>, België. Contact voor alle vragen over gegevens: ${CONTACT_HTML}.</p>
 <p>De dienst is niet openbaar: een account ontstaat alleen via aanmelden met Google, waarna de eigenaar de toegang handmatig goedkeurt (of u sluit aan via een uitnodiging voor een gedeelde werkruimte). De dienst is gratis, zonder advertenties en niet bedoeld voor kinderen jonger dan 16 jaar.</p>
 
 <h2>2. Aanmelden met Google: welke gegevens en waarom</h2>
@@ -219,7 +222,7 @@ const PRIVACY_NL = `
 <p>HTTPS/HSTS, strikte Content Security Policy, CSRF-bescherming, limieten op pogingen, versleuteling van tokens en geheimen, aparte databaserollen met beveiliging op rijniveau, een onveranderlijk beveiligingslogboek met hashketen, herbevestiging (Google of TOTP) voor gevoelige acties, optionele tweestapsverificatie, versleutelde back-ups.</p>
 
 <h2>12. Uw rechten</h2>
-<p>U hebt recht op inzage en een kopie (in de dienst kunt u uw gegevens als JSON exporteren), rectificatie (de profielfoto kunt u in de dienst wijzigen, naam en e-mailadres komen van Google; de rest op verzoek), wissing (account verwijderen in de dienst of op verzoek), beperking, bezwaar, overdraagbaarheid en het intrekken van toestemming. Mail naar <a href="mailto:${CONTACT}">${CONTACT}</a> — u krijgt binnen een maand antwoord.</p>
+<p>U hebt recht op inzage en een kopie (in de dienst kunt u uw gegevens als JSON exporteren), rectificatie (de profielfoto kunt u in de dienst wijzigen, naam en e-mailadres komen van Google; de rest op verzoek), wissing (account verwijderen in de dienst of op verzoek), beperking, bezwaar, overdraagbaarheid en het intrekken van toestemming. Mail naar ${CONTACT_HTML} — u krijgt binnen een maand antwoord.</p>
 <p>U kunt ook een klacht indienen bij een toezichthouder. In België is dat de <a href="${GBA}">Gegevensbeschermingsautoriteit (GBA/APD)</a>, of de toezichthouder van het land waar u woont.</p>
 
 <h2>13. Wijzigingen</h2>
@@ -232,7 +235,7 @@ const TERMS_UK = `
 <ol>
 <li><strong>Сервіс.</strong> «Мій простір» — приватний особистий сервіс Власника (Бельгія), безкоштовний і без реклами. Як ми обробляємо дані — у <a href="/privacy">Політиці конфіденційності</a>.</li>
 <li><strong>Доступ.</strong> Доступ надається лише після схвалення власником або за запрошенням. Права на доступ немає; власник може відмовити, обмежити або припинити доступ, зокрема при порушенні цих умов чи загрозі безпеці.</li>
-<li><strong>Ваш обліковий запис.</strong> Ви відповідаєте за безпеку свого облікового запису Google та додаткових способів входу і повідомляєте про підозрілу активність на <a href="mailto:${CONTACT}">${CONTACT}</a>.</li>
+<li><strong>Ваш обліковий запис.</strong> Ви відповідаєте за безпеку свого облікового запису Google та додаткових способів входу і повідомляєте про підозрілу активність на ${CONTACT_HTML}.</li>
 <li><strong>Допустиме використання.</strong> Заборонено: незаконний вміст чи дії; спроби обійти захист, отримати чужі дані або перевантажити сервіс; автоматизований масовий доступ без дозволу; використання сервісу для спаму чи шкідливого ПЗ. У спільних просторах поважайте дані інших учасників.</li>
 <li><strong>Ваш вміст.</strong> Вміст і дані залишаються вашими. Ви надаєте лише ті права, які потрібні, щоб зберігати й показувати їх вам і тим, з ким ви ними ділитеся.</li>
 <li><strong>Підключені сервіси.</strong> Для Gmail, Google Drive, Google Calendar, Google Photos чи Outlook діють також умови Google або Microsoft. Ви можете від'єднати їх будь-коли.</li>
@@ -240,7 +243,7 @@ const TERMS_UK = `
 <li><strong>Відповідальність.</strong> У межах, дозволених законом, розпорядник не відповідає за непрямі збитки чи втрату даних. Це не обмежує відповідальність за умисел, грубу недбалість чи права, яких закон не дозволяє позбавити.</li>
 <li><strong>Припинення.</strong> Ви можете будь-коли видалити обліковий запис у сервісі (30 днів на відновлення). Сервіс або його частини можуть бути змінені чи припинені; про суттєві зміни ми повідомимо заздалегідь, якщо це можливо.</li>
 <li><strong>Право і спори.</strong> Діє право Бельгії; спори розглядає компетентний суд згідно із законом, без обмеження ваших прав як споживача.</li>
-<li><strong>Контакт.</strong> <a href="mailto:${CONTACT}">${CONTACT}</a>.</li>
+<li><strong>Контакт.</strong> ${CONTACT_HTML}.</li>
 </ol>
 `;
 
@@ -248,9 +251,9 @@ const TERMS_NL = `
 <h1>Gebruiksvoorwaarden</h1>
 <p class="datum">Geldig vanaf ${BIJGEWERKT}. Nederlandse versie · <a href="#uk">Українська версія</a></p>
 <ol>
-<li><strong>De dienst.</strong> ‘Mijn Ruimte’ is een privé, persoonlijke dienst van Eigenaar Test (België), gratis en zonder advertenties. Hoe we met gegevens omgaan, staat in het <a href="/privacy#nl">Privacybeleid</a>.</li>
+<li><strong>De dienst.</strong> ‘Mijn Ruimte’ is een privé, persoonlijke dienst van ${EIGENAAR_NAAM} (België), gratis en zonder advertenties. Hoe we met gegevens omgaan, staat in het <a href="/privacy#nl">Privacybeleid</a>.</li>
 <li><strong>Toegang.</strong> Toegang alleen na goedkeuring door de eigenaar of via een uitnodiging. Er is geen recht op toegang; de eigenaar kan toegang weigeren, beperken of beëindigen, onder meer bij schending van deze voorwaarden of een beveiligingsrisico.</li>
-<li><strong>Uw account.</strong> U bent verantwoordelijk voor de beveiliging van uw Google-account en eventuele extra aanmeldmethoden en meldt verdachte activiteit via <a href="mailto:${CONTACT}">${CONTACT}</a>.</li>
+<li><strong>Uw account.</strong> U bent verantwoordelijk voor de beveiliging van uw Google-account en eventuele extra aanmeldmethoden en meldt verdachte activiteit via ${CONTACT_HTML}.</li>
 <li><strong>Aanvaardbaar gebruik.</strong> Niet toegestaan: onwettige inhoud of handelingen; pogingen om de beveiliging te omzeilen, gegevens van anderen te verkrijgen of de dienst te overbelasten; geautomatiseerde massale toegang zonder toestemming; de dienst gebruiken voor spam of malware. Respecteer in gedeelde werkruimtes de gegevens van andere leden.</li>
 <li><strong>Uw inhoud.</strong> Inhoud en gegevens blijven van u. U geeft alleen de rechten die nodig zijn om ze op te slaan en te tonen aan uzelf en aan wie u ze deelt.</li>
 <li><strong>Gekoppelde diensten.</strong> Voor Gmail, Google Drive, Google Agenda, Google Foto's of Outlook gelden ook de voorwaarden van Google of Microsoft. U kunt ze altijd ontkoppelen.</li>
@@ -258,7 +261,7 @@ const TERMS_NL = `
 <li><strong>Aansprakelijkheid.</strong> Voor zover de wet dat toelaat, is de verantwoordelijke niet aansprakelijk voor indirecte schade of gegevensverlies. Dit beperkt geen aansprakelijkheid voor opzet, grove nalatigheid of rechten die de wet niet laat uitsluiten.</li>
 <li><strong>Beëindiging.</strong> U kunt uw account altijd in de dienst verwijderen (30 dagen herstelbaar). De dienst of onderdelen ervan kunnen wijzigen of stoppen; belangrijke wijzigingen melden we vooraf waar mogelijk.</li>
 <li><strong>Recht en geschillen.</strong> Belgisch recht is van toepassing; geschillen gaan naar de volgens de wet bevoegde rechter, zonder beperking van uw rechten als consument.</li>
-<li><strong>Contact.</strong> <a href="mailto:${CONTACT}">${CONTACT}</a>.</li>
+<li><strong>Contact.</strong> ${CONTACT_HTML}.</li>
 </ol>
 `;
 

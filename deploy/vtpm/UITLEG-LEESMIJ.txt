@@ -24,7 +24,7 @@ UITLEG-LEESMIJ.txt - T:\mijn-ruimte\scripts\vtpm-20261003\
    У консолі введіть пароль LUKS (як завжди).
 2. Після цього асистент встановлює пакети. Потім ще ОДИН раз потрібен ваш пароль:
    у звичайному PowerShell (не адмін):
-     ssh -t -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver beheer@203.0.113.10 sudo bash /root/uitrol/vtpm/luks-tpm-ontgrendelen.sh binden
+     ssh -t -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver beheer@<VM-IP> sudo bash /root/uitrol/vtpm/luks-tpm-ontgrendelen.sh binden
    Введіть пароль LUKS (його не видно на екрані). Скрипт додає НОВИЙ слот з ключем TPM,
    старий слот з паролем НЕ видаляється.
 3. Тестовий перезапуск - тільки разом з вами, коли ви біля консолі VM. Якщо VM сама
@@ -67,7 +67,7 @@ STAPPEN
    Typ in de console de LUKS-wachtwoordzin (zoals altijd).
 2. Daarna installeert de assistent de pakketten. Dan is je wachtwoordzin nog EEN keer nodig,
    in een gewone PowerShell (geen admin):
-     ssh -t -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver beheer@203.0.113.10 sudo bash /root/uitrol/vtpm/luks-tpm-ontgrendelen.sh binden
+     ssh -t -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver beheer@<VM-IP> sudo bash /root/uitrol/vtpm/luks-tpm-ontgrendelen.sh binden
    Typ de LUKS-wachtwoordzin (onzichtbaar). Het script voegt een NIEUW slot met TPM-sleutel
    toe; het oude wachtwoordslot wordt NIET verwijderd.
 3. Proefherstart alleen samen met jou, terwijl je bij de VM-console zit. Ontgrendelt de VM

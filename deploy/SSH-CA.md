@@ -55,7 +55,7 @@ ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519      # якщо ключа ще не�
 cat ~/.ssh/id_ed25519.pub                         # цей рядок вставити на сайті: смуга технічного профілю → «Сертифікат SSH»
 # сертифікат із сайту зберегти поруч із ключем:
 #   ~/.ssh/id_ed25519-cert.pub
-ssh beheer@203.0.113.10                              # SSH підхопить сертифікат сам; через годину він перестане діяти
+ssh beheer@<VM-IP>                              # SSH підхопить сертифікат сам; через годину він перестане діяти
 ssh-keygen -L -f ~/.ssh/id_ed25519-cert.pub       # перевірити: Principals beheer, Extensions permit-pty, Valid …
 ```
 

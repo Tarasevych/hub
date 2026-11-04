@@ -1,3 +1,4 @@
+process.env.MR_BEHEERSUBNET = '203.0.113.0/24';
 // Beheer op afstand zonder root-pad voor de app (methode 1 GitOps-pull, methode 3 gepantserde opdracht):
 //  (a) het GitOps-script weigert niet-ondertekende, verkeerd ondertekende, lichtgewicht en hernoemde tags en installeert alleen
 //      een tag met de juiste handtekening (tijdelijke repo + tijdelijk ondertekenaarsbestand);

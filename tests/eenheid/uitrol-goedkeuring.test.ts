@@ -1,3 +1,4 @@
+process.env.MR_BEHEERSUBNET = '203.0.113.0/24';
 // Updates goedkeuren met de passkey van de eigenaar (RUNBOOK-VEILIGE-UITROL.md §13): WebAuthn-kern, root-hulp (onafhankelijke
 // controle, replay, eerste sleutel via SSH), mijn-ruimte-uitrol --goedkeuring end-to-end, en het contract van de app
 // (grants, voorbereiden, eigenaar-only, eenmalige challenge, agents keuren nooit goed). Echte handtekeningen via nep-passkey.

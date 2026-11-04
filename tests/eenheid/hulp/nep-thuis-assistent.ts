@@ -1,3 +1,4 @@
+process.env.MR_BEHEERSUBNET = '203.0.113.0/24';
 // Testhulp (geen test zelf): een NAGEBOOTSTE Home Assistant op een niet-loopback-adres van deze machine (de adapter weigert
 // loopback), met het stukje REST-API dat backend/huis-adapter-thuis-assistent.ts gebruikt: /api/, /api/config, /api/states,
 // /api/states/:id, /api/services/:domein/:dienst, /api/history/period/:van. Een dienst verandert de toestand pas na `vertragingMs`
