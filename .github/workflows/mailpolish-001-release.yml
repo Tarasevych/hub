@@ -168,8 +168,8 @@ jobs:
           };
           const m={schema:1,versie:process.env.RELEASE_VERSION,aangemaakt:new Date().toISOString(),
             herkomst:'git: feature/mailpolish-001-20261104-084133@'+commit+' (basis '+base.versie+' '+base.bronCommit+')',
-            auteur:'Eigenaar Test',zonderAi:false,deelnemers:[
-              {soort:'mens',naam:'Eigenaar Test',rollen:['auteur','controle']},
+            auteur:'eigenaar',zonderAi:false,deelnemers:[
+              {soort:'mens',naam:'eigenaar',rollen:['auteur','controle']},
               {soort:'ai',naam:'ChatGPT/Codex',platform:'ChatGPT',tool:'GitHub connector + GitHub Actions',model:{id:null,versie:null,bron:'onbekend'},rollen:['ontwikkeling','testen','verpakken']}],
             beschrijving:t};
           writeFileSync('uitvoer/MAILPOLISH-001-UITROL-MANIFEST.json',JSON.stringify(m,null,2)+'\n');
@@ -184,7 +184,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/orch.mjs pakket --taak MAILPOLISH-001 --auteur 'Eigenaar Test' --agent codex \
+          node scripts/orch.mjs pakket --taak MAILPOLISH-001 --auteur 'eigenaar' --agent codex \
             --versie "$RELEASE_VERSION" \
             --manifest "$PWD/uitvoer/MAILPOLISH-001-UITROL-MANIFEST.json" \
             --testresultaten "$PWD/uitvoer/MAILPOLISH-001-TESTRESULTATEN.json" \

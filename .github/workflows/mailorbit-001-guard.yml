@@ -90,9 +90,9 @@ jobs:
           const manifest={
             schema:1,versie,aangemaakt:new Date().toISOString(),
             herkomst:'git: feature/mailorbit-001-20261103-205354@'+sha+' (basis '+basis+' '+basisSha+')',
-            auteur:'Eigenaar Test',zonderAi:false,
+            auteur:'eigenaar',zonderAi:false,
             deelnemers:[
-              {soort:'mens',naam:'Eigenaar Test',rollen:['auteur','controle']},
+              {soort:'mens',naam:'eigenaar',rollen:['auteur','controle']},
               {soort:'ai',naam:'ChatGPT',platform:'ChatGPT',tool:'GitHub connector en GitHub Actions',model:{id:'gpt-6',versie:null,bron:'omgeving'},rollen:['ontwikkeling','testen','verpakken']}
             ],
             beschrijving:{
@@ -132,7 +132,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/orch.mjs pakket \
-            --taak MAILORBIT-001 --auteur 'Eigenaar Test' \
+            --taak MAILORBIT-001 --auteur 'eigenaar' \
             --agent chatgpt \
             --versie "$RELEASE_VERSION" \
             --manifest "$PWD/uitvoer/MAILORBIT-001-UITROL-MANIFEST.json" \

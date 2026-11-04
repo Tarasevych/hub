@@ -23,7 +23,7 @@ const MAX_BYTES = 6_000_000;
 
 const stripBrackets = (host: string): string => host.toLowerCase().replace(/^\[|\]$/g, '');
 const isIpLiteral = (host: string): boolean => isIP(host) !== 0 || ipv6Groepen(host) !== null;
-/** Hyper-V-beheersubnet tussen Windows-host (203.0.113.1) en productieserver (203.0.113.10): altijd verboden voor HA. */
+/** Hyper-V-beheersubnet tussen Windows-host (pc-adres) en productieserver (serveradres): altijd verboden voor HA. */
 export function isHypervBeheerAdres(adres: string): boolean {
   const schoon = stripBrackets(adres);
   const v4 = ipv4UitV6(schoon) ?? schoon;
@@ -47,7 +47,7 @@ function isVerbodenIp(ip: string): boolean {
 /**
  * Ontleedt en valideert één regel uit de gecontroleerde lijst van vertrouwde toestellen
  * (bv. `http://192.168.1.50:8123`, `192.168.1.50:8123`, `192.168.1.50` of `ha.thuis.lan:8123`).
- * Wildcards, loopback, link-local en het Hyper-V-beheersubnet (203.0.113.0/24) worden altijd geweigerd.
+ * Wildcards, loopback, link-local en het Hyper-V-beheersubnet (beheersubnet/24) worden altijd geweigerd.
  */
 export function parseVertrouwdToestel(raw: unknown): VertrouwdToestelRegel | null {
   const tekst = String(raw ?? '').trim();
@@ -118,7 +118,7 @@ let haDns: HaDnsFn = standaardHaDns;
 /** Alleen voor eenheidstests (DNS-rebinding en vertrouwde-toestellen-poort). */
 export function _zetHaDns(fn: HaDnsFn | null): void { haDns = fn ?? standaardHaDns; }
 
-/** Alleen http(s), geen aanmeldgegevens in het adres, geen loopback/link-local/0.0.0.0/203.0.113.0/24 en geen onversleuteld http naar publiek IP. */
+/** Alleen http(s), geen aanmeldgegevens in het adres, geen loopback/link-local/0.0.0.0/beheersubnet/24 en geen onversleuteld http naar publiek IP. */
 export function veiligAdres(raw: unknown): { ok: true; adres: string } | { ok: false; fout: HaFout } {
   let u: URL;
   try { u = new URL(String(raw ?? '').trim()); } catch { return { ok: false, fout: 'ADRES_ONGELDIG' }; }
