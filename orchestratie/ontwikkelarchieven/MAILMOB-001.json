@@ -71,6 +71,13 @@
         "tests/eenheid/mailmob-001.test.ts",
         ".github/workflows/mailmob-001-release.yml"
       ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "GitHub CI перевірив контроль ORCH, unit-тести UI та Passkey, TypeScript і production build; фактичні результати внесені у комічений журнал.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41785803960"
+      ]
     }
   ],
   "keuzes": [
@@ -152,6 +159,13 @@
       "resultaat": "Статичні перевірки MAILMOB-001, MAILORBIT-001, TSC client+server, production build, контроль ORCH та випуск GitHub Release будуть виконані GitHub Actions. До завершення CI нічого не позначене успішним.",
       "bewijzen": [
         ".github/workflows/mailmob-001-release.yml"
+      ]
+    },
+    {
+      "status": "bevestigd",
+      "resultaat": "CI: 37/37 controlepunten in MAILMOB-001 + MAILORBIT-001; TypeScript client en server plus build geslaagd. Database-test draait alleen indien DATABASE_URL aanwezig.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41785803960"
       ]
     }
   ],
