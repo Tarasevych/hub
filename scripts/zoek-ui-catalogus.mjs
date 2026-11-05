@@ -126,13 +126,24 @@ const sluit = (src, van, naam) => { const i = src.indexOf(`</${naam}>`, van); re
  * wel zelf vindbaar, maar geen sectie voor knoppen: welke tekst erboven staat, hangt af van de toestand. Is zo'n kop de laatste
  * kop vóór de knop, dan krijgt de knop GEEN sectie (en niet de kop daarvoor, die bij een vorig blok hoort).
  */
+/** Elementen die een eigen blok met een eigen kop vormen: een kop daarbinnen geldt niet voor knoppen erbuiten. */
+const BLOK_TAGS = new Set(['section', 'article', 'aside', 'fieldset', 'details', 'form', 'li', 'footer', 'nav', 'dialog']);
 function koppen(src) {
   const kopKnopen = new Map();   // begin van een <h1-3>-element → { knoop, boomEinde }
   const sf = ts.createSourceFile('/koppen.tsx', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  // Een kop geldt tot het einde van zijn BLOK: het dichtstbijzijnde omsluitende section/article/aside/fieldset/details/form/li/
+  // footer/nav/dialog (of role='dialog'); zonder zo'n blok tot het einde van de JSX-boom. Na de onafhankelijke controle
+  // (05.11.2026): «Перевірити відправника вручну» in de voet van AfzenderDialoog kreeg de kop van een gesloten <section> erboven.
+  const isBlok = (el) => {
+    if (!ts.isJsxElement(el)) return false;
+    const o = el.openingElement;
+    if (BLOK_TAGS.has(o.tagName.getText(sf))) return true;
+    return o.attributes.properties.some((a) => ts.isJsxAttribute(a) && a.name.getText(sf) === 'role' && !!a.initializer && ts.isStringLiteral(a.initializer) && a.initializer.text === 'dialog');
+  };
   const zoek = (n) => {
     if (ts.isJsxElement(n) && /^h[123]$/.test(n.openingElement.tagName.getText(sf))) {
       let c = n;
-      while (c.parent && (ts.isJsxElement(c.parent) || ts.isJsxFragment(c.parent))) c = c.parent;
+      while (c.parent && (ts.isJsxElement(c.parent) || ts.isJsxFragment(c.parent))) { c = c.parent; if (isBlok(c)) break; }
       kopKnopen.set(n.getStart(sf), { knoop: n, boomEinde: c.end });
     }
     ts.forEachChild(n, zoek);
