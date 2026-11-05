@@ -7,6 +7,11 @@
 // een rechtstreeks gekozen functie/pagina van de site (opent opnieuw rechtstreeks, met de route erbij). Er worden GEEN titels van
 // resultaten uit persoonlijke bronnen (onderwerp van een e-mail, bestandsnaam) bewaard: alleen wat de gebruiker zelf typte en de
 // namen van functies/pagina's van de site zelf. Oudere rijen zonder `soort` gelden als 'zoek'.
+//
+// ORCH-001 (05.11.2026): een lijst PER RUIMTE van het tabblad. In het technische profiel gekozen pagina's (admin.*, api.*, de
+// technische tabbladen van mcp.*) horen niet als rechtstreekse link in de privéruimte van hetzelfde account — de twee ruimtes zijn
+// gescheiden (src/gedeelde-voorkeuren.ts houdt per tabblad bij in welke ruimte het staat). De privéruimte houdt de oude sleutel
+// (`mr-zoek-recent:<id>`, bestaande lijsten blijven), het technische profiel krijgt `mr-zoek-recent:<id>:technisch`.
 import { ZOEK_ROUTE_HOSTS, type ZoekRoute } from '../../shared/zoek-model';
 import type { Categorie } from './zoek-logica';
 
@@ -30,7 +35,14 @@ export function zetZoekGebruiker(id: string | null | undefined): void {
 /** De huidige gebruiker voor de zoekgeheugens (leeg = niet aangemeld). */
 export const zoekGebruiker = (): string => gebruiker;
 
-export const recentSleutel = (id: string): string => (id ? `mr-zoek-recent:${id}` : '');
+/** Ruimte van DIT tabblad, zoals src/gedeelde-voorkeuren.ts (WEERGAVE_RUIMTE_HINT) die in sessionStorage bijhoudt. */
+export const RECENT_RUIMTE_HINT = 'tsv-weergave-ruimte';
+export type RecentRuimte = 'gebruiker' | 'technisch';
+export const recentRuimteNu = (): RecentRuimte => {
+  try { return typeof sessionStorage !== 'undefined' && sessionStorage.getItem(RECENT_RUIMTE_HINT) === 'technisch' ? 'technisch' : 'gebruiker'; } catch { return 'gebruiker'; }
+};
+export const recentSleutel = (id: string, ruimte: RecentRuimte = recentRuimteNu()): string =>
+  (id ? (ruimte === 'technisch' ? `mr-zoek-recent:${id}:technisch` : `mr-zoek-recent:${id}`) : '');
 
 const standaardOpslag = (): Opslag | null => {
   try { return typeof localStorage !== 'undefined' ? localStorage : null; } catch { return null; }

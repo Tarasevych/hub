@@ -1,7 +1,8 @@
 // Recente zoekopdrachten van de bovenbalk (02.11.2026): per account, alleen op dit apparaat, met try/catch rond de opslag.
 // Standalone: geen database, geen netwerk. Een eenvoudige geheugen-opslag vervangt localStorage.
 import { checker } from './hulp/nep-google';
-import { bewaarRecent, leesRecent, recentSleutel, wisRecent, RECENT_MAX, type RecenteZoekopdracht } from '../../src/zoek/zoek-recent';
+import { readFileSync } from 'node:fs';
+import { bewaarRecent, leesRecent, recentSleutel, wisRecent, RECENT_MAX, RECENT_RUIMTE_HINT, type RecenteZoekopdracht } from '../../src/zoek/zoek-recent';
 
 function geheugen(): Storage & { kaart: Map<string, string> } {
   const kaart = new Map<string, string>();
@@ -82,6 +83,36 @@ export async function main(): Promise<number> {
     bewaarRecent('weg', 'all', 1000, A, op);
     wisRecent(A, op);
     check('wissen leegt de lijst van dit account', leesRecent(A, op).length === 0);
+  }
+
+  // ORCH-001 (05.11.2026): een lijst per ruimte van het tabblad. Een in het technische profiel gekozen pagina (admin/sso) mag in de
+  // privéruimte van hetzelfde account niet als rechtstreekse link verschijnen.
+  {
+    const vorige = (globalThis as { sessionStorage?: unknown }).sessionStorage;
+    const tab = geheugen();
+    (globalThis as { sessionStorage?: unknown }).sessionStorage = tab;
+    try {
+      const op = geheugen();
+      bewaarRecent('Приватний запит', 'all', 1000, A, op);
+      tab.setItem(RECENT_RUIMTE_HINT, 'technisch');
+      bewaarRecent('SSO', 'paginas', 2000, A, op, { soort: 'pagina', route: { host: 'admin', pad: 'sso' } });
+      const tech = leesRecent(A, op);
+      tab.setItem(RECENT_RUIMTE_HINT, 'gebruiker');
+      const prive = leesRecent(A, op);
+      check('ruimte: technisch profiel → eigen sleutel; privé houdt de oude sleutel (bestaande lijsten blijven)',
+        recentSleutel(A, 'technisch') === `mr-zoek-recent:${A}:technisch` && recentSleutel(A, 'gebruiker') === `mr-zoek-recent:${A}` && recentSleutel(A) === `mr-zoek-recent:${A}`);
+      check('ruimte: de in het technische profiel gekozen pagina admin/sso staat alleen in de technische lijst, niet in de privéruimte',
+        tech.length === 1 && tech[0].route?.host === 'admin' && prive.length === 1 && prive[0].vraag === 'Приватний запит' && !prive.some((r) => r.route?.host === 'admin'),
+        JSON.stringify({ tech, prive }));
+      tab.setItem(RECENT_RUIMTE_HINT, 'technisch');
+      wisRecent(A, op);
+      tab.setItem(RECENT_RUIMTE_HINT, 'gebruiker');
+      check('ruimte: wissen in het technische profiel laat de privélijst staan', leesRecent(A, op).length === 1);
+    } finally {
+      (globalThis as { sessionStorage?: unknown }).sessionStorage = vorige;
+    }
+    const voorkeuren = readFileSync('src/gedeelde-voorkeuren.ts', 'utf8');
+    check('ruimte: dezelfde hint als src/gedeelde-voorkeuren.ts (WEERGAVE_RUIMTE_HINT)', voorkeuren.includes(`WEERGAVE_RUIMTE_HINT='${RECENT_RUIMTE_HINT}'`));
   }
 
   return einde();
