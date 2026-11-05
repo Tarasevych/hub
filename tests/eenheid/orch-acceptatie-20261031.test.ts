@@ -235,32 +235,32 @@ export async function main(): Promise<number> {
     const manifest = (v: string) => { const p = join(uit, `manifest-${v}.json`); writeFileSync(p, manifestVoor(v)); return p; };
     const testsJson = join(uit, 'tests.json'); writeFileSync(testsJson, JSON.stringify({ geslaagd: 275, mislukt: 0, falend: [], uitleg: { uk: 'усе зелене', nl: 'alles groen' } }));
     orch(R, 'staat-commit');
-    r = orch(R, 'pakket', '--taak', 'CLD-101', '--auteur', 'Test Eigenaar', '--versie', '20261105-120000', '--uit', uit, '--manifest', manifest('20261105-120000'), '--testresultaten', testsJson, '--niet-gedaan', 'нічого не пропущено');
-    const tar1 = join(uit, 'mijn-ruimte-20261105-120000.tar.gz'); const zip1 = join(uit, 'mijn-ruimte-20261105-120000-claude-overdracht.zip');
-    check('3 orch pakket з integratie: tar + пакет передачі; задача CLD-101 → released', r.code === 0 && existsSync(tar1) && existsSync(zip1) && taak(R, 'CLD-101').releaseVersie === '20261105-120000', r.uit);
-    const basisTekst = sh(uit, 'sh', ['-c', `tar -xzOf "${tar1}" mijn-ruimte-20261105-120000/UITROL-BASIS`]);
+    r = orch(R, 'pakket', '--taak', 'CLD-101', '--auteur', 'Test Eigenaar', '--versie', '20261101-120000', '--uit', uit, '--manifest', manifest('20261101-120000'), '--testresultaten', testsJson, '--niet-gedaan', 'нічого не пропущено');
+    const tar1 = join(uit, 'mijn-ruimte-20261101-120000.tar.gz'); const zip1 = join(uit, 'mijn-ruimte-20261101-120000-claude-overdracht.zip');
+    check('3 orch pakket з integratie: tar + пакет передачі; задача CLD-101 → released', r.code === 0 && existsSync(tar1) && existsSync(zip1) && taak(R, 'CLD-101').releaseVersie === '20261101-120000', r.uit);
+    const basisTekst = sh(uit, 'sh', ['-c', `tar -xzOf "${tar1}" mijn-ruimte-20261101-120000/UITROL-BASIS`]);
     check('3 UITROL-BASIS у tar = ВСТАНОВЛЕНА база (geinstalleerd.json), не вершок', basisTekst.includes('versie=20261031-093842') && basisTekst.includes(`commit=${basis0}`), basisTekst);
     check('3 pakket-controleer: гаразд проти встановленої бази', orch(R, 'pakket-controleer', '--bron', zip1).code === 0);
     if (rootKan) {
       const u = uitrolOmgeving('#!/bin/bash\necho "$1 $(cat "$2/UITROL-VERSIE")" >> "__SPOOR__"\n'); tmp.push(u.basisMap);
       u.zetLaatste('20261031-093842', basis0);
       u.leg(tar1); let rr = u.draai();
-      check('3 root-інсталятор: пакет на встановленій базі → OK, інсталятор викликано, laatste-commit = вершок пакета', rr.status === 0 && u.status().code === 'OK' && u.spoorRegels().length === 1 && u.laatste('laatste-versie') === '20261105-120000' && u.laatste('laatste-commit') === git(R, 'rev-parse', 'integratie'), `${rr.status} ${u.status().code} ${rr.stderr.slice(-300)}`);
+      check('3 root-інсталятор: пакет на встановленій базі → OK, інсталятор викликано, laatste-commit = вершок пакета', rr.status === 0 && u.status().code === 'OK' && u.spoorRegels().length === 1 && u.laatste('laatste-versie') === '20261101-120000' && u.laatste('laatste-commit') === git(R, 'rev-parse', 'integratie'), `${rr.status} ${u.status().code} ${rr.stderr.slice(-300)}`);
       // факт установки пише інсталятор/власник → у координації задача стає installed
       const hoofdNu = git(R, 'rev-parse', 'integratie');
-      writeFileSync(join(R, 'orchestratie/geinstalleerd.json'), JSON.stringify({ schema: 1, versie: '20261105-120000', bronCommit: hoofdNu, bron: 'installer', op: '2026-10-31T17:00:00Z' }, null, 2)); orch(R, 'staat-commit');
+      writeFileSync(join(R, 'orchestratie/geinstalleerd.json'), JSON.stringify({ schema: 1, versie: '20261101-120000', bronCommit: hoofdNu, bron: 'installer', op: '2026-10-31T17:00:00Z' }, null, 2)); orch(R, 'staat-commit');
       r = orch(R, 'status');
       check('3 після факту установки status: CLD-101 installed (інші integrated — вони в тому ж вершку, теж installed)', /CLD-101\s+installed/.test(r.uit) && /CDX-101\s+installed/.test(r.uit), r.uit);
-      // інший агент тим часом випустив і встановив 20261106 — пакет, зібраний на 20261105, застарів
-      u.zetLaatste('20261106-000000', sha1('andere agent'));
-      r = orch(R, 'pakket', '--taak', 'CDX-101', '--auteur', 'Test Eigenaar', '--versie', '20261107-000000', '--uit', uit, '--manifest', manifest('20261107-000000'), '--testresultaten', testsJson, '--niet-gedaan', 'нічого не пропущено');
-      const tar2 = join(uit, 'mijn-ruimte-20261107-000000.tar.gz'); const zip2 = join(uit, 'mijn-ruimte-20261107-000000-codex-overdracht.zip');
+      // інший агент тим часом випустив і встановив 20261102 — пакет, зібраний на 20261101, застарів
+      u.zetLaatste('20261102-000000', sha1('andere agent'));
+      r = orch(R, 'pakket', '--taak', 'CDX-101', '--auteur', 'Test Eigenaar', '--versie', '20261103-000000', '--uit', uit, '--manifest', manifest('20261103-000000'), '--testresultaten', testsJson, '--niet-gedaan', 'нічого не пропущено');
+      const tar2 = join(uit, 'mijn-ruimte-20261103-000000.tar.gz'); const zip2 = join(uit, 'mijn-ruimte-20261103-000000-codex-overdracht.zip');
       u.leg(tar2); rr = u.draai();
-      check('3 застарілий випуск: root → BASIS_VEROUDERD, інсталятор НЕ викликано, laatste-* без змін', r.code === 0 && rr.status === 2 && u.status().code === 'BASIS_VEROUDERD' && u.spoorRegels().length === 1 && u.laatste('laatste-versie') === '20261106-000000', `${r.uit}\n${rr.status} ${u.status().code}`);
-      writeFileSync(join(R, 'orchestratie/geinstalleerd.json'), JSON.stringify({ schema: 1, versie: '20261106-000000', bronCommit: sha1('andere agent'), bron: 'installer', op: '2026-10-31T17:30:00Z' }, null, 2));
+      check('3 застарілий випуск: root → BASIS_VEROUDERD, інсталятор НЕ викликано, laatste-* без змін', r.code === 0 && rr.status === 2 && u.status().code === 'BASIS_VEROUDERD' && u.spoorRegels().length === 1 && u.laatste('laatste-versie') === '20261102-000000', `${r.uit}\n${rr.status} ${u.status().code}`);
+      writeFileSync(join(R, 'orchestratie/geinstalleerd.json'), JSON.stringify({ schema: 1, versie: '20261102-000000', bronCommit: sha1('andere agent'), bron: 'installer', op: '2026-10-31T17:30:00Z' }, null, 2));
       r = orch(R, 'pakket-controleer', '--bron', zip2);
       check('3 pakket-controleer каже те саме, що root: BASIS_VEROUDERD (обидва боки узгоджені)', r.code !== 0 && r.uit.includes('BASIS_VEROUDERD'), r.uit);
-      writeFileSync(join(R, 'orchestratie/geinstalleerd.json'), JSON.stringify({ schema: 1, versie: '20261105-120000', bronCommit: hoofdNu, bron: 'installer', op: '2026-10-31T17:00:00Z' }, null, 2)); orch(R, 'staat-commit');
+      writeFileSync(join(R, 'orchestratie/geinstalleerd.json'), JSON.stringify({ schema: 1, versie: '20261101-120000', bronCommit: hoofdNu, bron: 'installer', op: '2026-10-31T17:00:00Z' }, null, 2)); orch(R, 'staat-commit');
 
       // ============================================================ 7. Одночасні установки: flock — друга спроба не чіпає ні інсталятор, ні inbox; потім обидві по черзі
       const c = uitrolOmgeving('#!/bin/bash\necho "start $(cat "$2/UITROL-VERSIE") $(date +%s%N)" >> "__SPOOR__"\nsleep 3\necho "einde $(cat "$2/UITROL-VERSIE") $(date +%s%N)" >> "__SPOOR__"\n'); tmp.push(c.basisMap);
