@@ -293,46 +293,76 @@ afgedekt met tests die op de eerdere code zouden falen.
   samengevoegd in `release/sec-001-20261031-084138`. De vervolgcorrecties en de scheiding van privé- en technische «AI-toegang»
   zijn via PR #17 samengevoegd met merge-commit `4db51b6` (samen met PR #18; vóór het herschrijven `5f84d9d`). Die commit ligt op
   de eerste-ouderlijn van zowel `release/sec-001-20261031-084138` als `integratie`.
-- **Herschrijven van de historie (B-010, B-011).** De commits kregen nieuwe SHA's: `fa50a5b` → `7176e95`, `f8def89` → `d33d068`,
-  `c414fe7` → `eebfdd1`, `8722770` → `3dea7c1`, `5f84d9d` → `4db51b6`. De taakbasis `b279ccab` is nu `5a023b41` — dezelfde commit
-  (auteur, datum en onderwerp gelijk), een voorouder van `integratie`.
+- **Herschrijven van de historie (B-010, B-011).** De historie is twee keer herschreven, dus elke commit heeft drie SHA's. Auteur,
+  datum en onderwerp zijn in alle drie gelijk.
+
+  | Commit | vóór B-010 | tussen B-010 en B-011 | na B-011 (canoniek) |
+  |---|---|---|---|
+  | taakbasis | `b279ccab` | `0614c8b` | `5a023b41` |
+  | adversariële controle | `fa50a5b` | `7c8844a` | `7176e95` |
+  | PR #16 | `f8def89` | `a58579e` | `d33d068` |
+  | PR #17, 1/2 | `c414fe7` | `878e45c` | `eebfdd1` |
+  | PR #17, 2/2 | `8722770` | `a3ae4e6` | `3dea7c1` |
+  | merge PR #17 + PR #18 | `5f84d9d` | `10d5c90` | `4db51b6` |
+
+  De taakbasis `5a023b41` is een voorouder van `integratie`.
 - **Geïnstalleerde versie.** `4db51b6` is een voorouder van de canonieke geïnstalleerde basis `f3f3fab` (`20261105-061659`,
-  `geverifieerd_productie`, B-014) en van de huidige `integratie` en `voornaamst`. De werkelijke servercommit `a318ba0` ligt in de
-  historie vóór het herschrijven, met andere SHA's; de wijzigingen van PR #17 zitten er inhoudelijk in. `/api/version` is vanuit de
-  cloudcontainer niet bereikbaar.
+  `geverifieerd_productie`, B-014) en van de huidige `integratie` en `voornaamst`. De servercommit `a318ba0` (waar de tag
+  `20261105-061659` naar wijst) ligt in de tussenhistorie tussen B-010 en B-011. Zijn voorouder `10d5c90` is dezelfde merge van
+  PR #17 met de tussen-SHA's, dus PR #17 zit erin als voorouder. `/api/version` is vanuit de cloudcontainer niet bereikbaar.
 - **5-11-2026, coördinatiestaat.** De taak stond op `in_progress` onder regels 1.4.2. In de eigen declaratie
   (`orchestratie/taken/ORCH-001.json`, uitzondering AGENTS.md §4.3) staat nu: regels 1.4.9 (`taak-herlees`), `integrated` (`taak-staat`),
   `integratieCommit` `4db51b6`, basis `5a023b41` (oude SHA bewaard). Het wachtrijbestand `wachtrij.json` wijzigt de agent niet: bovenaan
-  staat nog de regel van het gesloten PR #11 (tak `feature/orch-001-20261031-112355`, «wacht»). Die sluit de integrator op
-  `integratie`: `wachtrij volgende`, dan
+  staat nog de regel van het gesloten PR #11 (tak `feature/orch-001-20261031-112355`, «wacht»). Die sluit de integrator op `integratie`.
+  **De volgorde telt: eerst de PR van de taak samenvoegen in `integratie`, daarna** `wachtrij volgende`, dan
   `wachtrij klaar --taak ORCH-001 --uitkomst integrated --hoofd 4db51b6aabe73f295ba4286c4c7557568c0d5e3e`, dan `staat-commit`.
-  Deze stap en het samenvoegen van de PR van de taak kunnen in elke volgorde: orch-kern aanvaardt beide staten van de wachtrij (de
-  regel wacht nog, of staat al in `geschiedenis` als `integrated`).
+  Reden: `wachtrij klaar` herschrijft `orchestratie/taken/ORCH-001.json` op `integratie`, en voor dat bestand geldt `merge=orch-staat`
+  (de versie van `integratie` blijft). Wie de wachtrij eerst sluit, verliest bij een lokale merge van de PR stil de eigen declaratie
+  (regels 1.4.9, basis `5a023b41`, blok `afsluiting`); een merge op GitHub geeft een conflict in dat bestand. Al gebeurd? Dan op
+  `integratie`: `git checkout <kop van de PR> -- orchestratie/taken/ORCH-001.json`, daarna `staat-commit`. Tot de wachtrij gesloten
+  is, meldt `controleer` geen fout: orch-kern aanvaardt beide staten van de regel (wacht nog, of staat al in `geschiedenis` als
+  `integrated`).
   De status `installed` zet alleen de installer via `orchestratie/geinstalleerd.json`, dat nog ontbreekt.
 - **Onderweg gevonden en in aparte commits hersteld:**
   - *Zoekcatalogus van knoppen.* De catalogus was verouderd na AUDIT-001. De generator bepaalde het tabblad uit tekst in de 1500 tekens
     vóór een knop, waardoor «Verwijdering bevestigen» naar «Personalisatie» leidde. Nu leest `scripts/zoek-ui-catalogus.mjs` de
-    syntaxisboom van TypeScript en berekent voor elke plek de mogelijke tabbladen. Na een onafhankelijke controle van elke gewijzigde
-    plek kwam erbij:
+    syntaxisboom van TypeScript en berekent voor elke plek de mogelijke tabbladen. Na twee onafhankelijke controles kwam erbij:
     - waarden van uitdrukkingen (`pages[tab]` in de beheerconsole, `effectiveTab` in de cloud, `section` in MCP), `switch` met
       `break` en het hijsen van functies;
-    - alleen de prop `tab` van de pagina telt als tabblad, niet `useState`, `.map((tab) => …)` of `item.tab`;
+    - alleen de prop `tab` van de pagina telt als tabblad, niet `useState`, `.map((tab) => …)` of `item.tab`. Een pagina telt ook
+      als ze geëxporteerd is via `memo(X)`, `forwardRef(X)`, een alias of met een typeomzetting (`as`, `satisfies`, `!`);
     - een lineair geheugen voor de doorloop (vroeger 2^N paden);
     - de hub «AI-koppelingen» staat op `mcp/agents` (163 elementen);
-    - de sectie van een knop komt alleen uit zijn eigen JSX-boom (142 onjuiste secties weg);
-    - 16 bestanden zonder één import en tabbladen die altijd doorsturen (`mcp`: overview, connect, verbindingen) komen niet in de
-      catalogus; de technische delen van de hub zijn alleen met een technisch profiel zichtbaar.
-    Catalogus: 1333 elementen. Tests zoek-ui-tabblad 45/45, zoek-ui-sectie 12/12, zoek-ui-bereik 18/18; 28/28 mutanten gedood.
+    - de sectie van een knop komt alleen uit zijn eigen JSX-boom en geldt tot het einde van het dichtstbijzijnde blok (`section`,
+      `article`, `footer`, `dialog` enz.). Bij 142 knoppen verdween de sectie. Meestal was die onjuist: een kop uit een andere boom,
+      uit een andere tak of een wisselende kop. Maar minstens 14 juiste secties gingen ook weg (onder meer `Toegangscodes`,
+      `uitrol/Geschiedenis`, `uitrol/Bronnen`, «Стандарт» in `AgentKleuren`). Dat is een voorzichtige keuze: liever geen sectie dan
+      een onjuiste;
+    - 16 bestanden die vanaf `src/main.tsx` onbereikbaar zijn (14 zonder één import en 2 die alleen vanuit andere dode bestanden
+      geïmporteerd worden) en tabbladen die altijd doorsturen (`mcp`: overview, connect, verbindingen) komen niet in de catalogus.
+      De «?»-uitleg uit zulke bestanden biedt het zoeken ook niet aan (`hulp:keys.doel`);
+    - de technische delen van de hub, het overzichtspaneel van de console (`src/overzicht/` → `admin/overview`) en de technische
+      meldingen (`meldingen/TechMeldingen`) zijn alleen met een technisch profiel zichtbaar. Een test vergelijkt dat met de
+      technische modules van `shared/tech-bundels.ts`.
+    Catalogus: 1334 elementen. Tests zoek-ui-tabblad 46/46, zoek-ui-sectie 14/14, zoek-ui-bereik 24/24; alle mutanten gedood (28 vóór
+    de tweede controle en 19 erna).
     Komen er vóór het samenvoegen andere wijzigingen in `src/**/*.tsx` op `integratie`, dan moet de catalogus opnieuw gemaakt worden
     met `node scripts/zoek-ui-catalogus.mjs` (dat doet `npm run build` ook); de actualiteitstest meldt het.
   - *Zoekkaarten openden alleen de hoofdpagina van de dienst.* De routes van de catalogus en de adapters komen nu op het juiste
     tabblad (`zoek-route-tabblad` 10/10).
-  - *Recente zoekopdrachten mengden de ruimtes.* Een pagina die in het technische profiel was gekozen (`admin/sso`), verscheen als
-    link in de privéruimte. Nu is er een lijst per ruimte; bestaande privélijsten blijven behouden.
+  - *Recente zoekopdrachten mengden de ruimtes.* Een pagina die met een actief technisch profiel was gekozen (`admin/sso`), verscheen
+    als link in de privéruimte. Nu is er een lijst per ruimte. De ruimte volgt de technische activering van het tabblad op het
+    moment dat het menu opent, niet het uiterlijk van de pagina. Een route naar `admin.*`, `api.*` of een technisch tabblad van
+    `mcp.*` gaat altijd naar de technische lijst, en zulke rijen uit oude privélijsten worden niet meer getoond. Bestaande
+    privélijsten blijven behouden (`zoek-recent` 31/31, 15 van 15 mutanten gedood).
+  - *Na F5 werd een beheerpagina even privé.* Zolang de status van het technische profiel laadt, blijft het tabblad in de technische
+    ruimte als het daar vóór het herladen was (alleen met een goedgekeurde sessie). De inhoud van de pagina blijft achter de echte
+    activering (`tech-ruimte-f5` 8/8, 7 van 7 mutanten gedood).
   - *Scenario 7 van `orch-acceptatie`.* Een vaste pauze van 1,2 s gaf onder belasting 45/47. Nu houdt de stub de eerste installatie
     onder flock vast tot de test de tweede heeft gecontroleerd.
 
 **Vervolg bij de eigenaar**
+- De PR van de taak samenvoegen in `integratie` en pas daarna de regel van PR #11 in de wachtrij sluiten met de drie opdrachten hierboven.
 - Kritieke beleidsregels bevestigen met passkey of SSH-handtekening: `controleer` meldt nog `KRITIEK_NIET_BEVESTIGD`, B-001…B-006
   staan op `voorstel`, `regels.lock.json → eigenaar` is leeg.
 - Root-bestand `/etc/mijn-ruimte/eigenaar-ondertekenaars` op de server (RUNBOOK §18.1.5), anders weigert GitOps een met SSH
@@ -351,3 +381,11 @@ afgedekt met tests die op de eerdere code zouden falen.
 - In `AiVerbinden` en `TabExtensie` zijn delen alleen met een technisch profiel zichtbaar, terwijl de toegang in de catalogus per
   bestand geldt.
 - Wederzijds recursieve componenten verliezen het tabblad van de pagina. Dat is een voorzichtige keuze: dan geldt de bestandsregel.
+- Een tabblad dat aan een kindcomponent wordt doorgegeven via spread (`{...p}`), onder een andere naam (`tab={sect}`), met een
+  terugvalwaarde (`tab={p.tab ?? 'overview'}`) of via een aanroep `Inner({tab})`, herkent de generator niet; dan geldt ook de
+  bestandsregel.
+- Een kop zonder paar `tr('…','…')` (bijvoorbeeld `<h3>CalDAV</h3>`) beëindigt de vorige sectie niet. Koppen met dynamische tekst
+  komen in het zoeken als secties met de tekst van een badge («Нове», «онлайн», «Без теми»).
+- Recente zoekopdrachten: elementen van het technische tabblad van de hub (RuimteScheiding, TechVerbindingen, SiteSchakelaars) en het
+  indexvenster van het zoeken (`hub/zoek`) hebben dezelfde route als privé-elementen. In de privélijst kunnen ze alleen komen in een
+  nieuw tabblad, zolang de eerste status van het technische profiel er nog niet is.

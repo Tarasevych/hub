@@ -88,7 +88,8 @@ export async function main(): Promise<number> {
   check('4c meldingen: geen knop meer onder de wisselende kop «Правила сповіщень»', mv2.length === 0, mv2.map((e) => e.uk).join(', '));
   const BC = UI_ELEMENTEN.find((e) => e.bestand === 'src/BeheerConsoleWeergave.tsx' && e.uk === 'Застосувати роль');
   check('4d beheerconsole: «Застосувати роль» houdt zijn sectie «Адміністративні ролі» (zelfde boom)', BC?.sectieUk === 'Адміністративні ролі', BC?.sectieUk || '—');
-  // 05.11.2026: 442 → 300 knoppen met een sectie; de 142 zonder stonden onder een kop uit een andere boom of onder een wisselende kop.
+  // 05.11.2026: 442 → 300 knoppen met een sectie (na de blokgrens 297). De meeste van de 142 stonden onder een kop uit een andere
+  // boom, tak of onder een wisselende kop; minstens 14 juiste secties gingen ook weg (voorzichtig: liever geen sectie dan een onjuiste).
   check('4e nog steeds de meeste secties (geen massaal verlies): ≥ 280', UI_ELEMENTEN.filter((e) => e.sectieUk).length >= 280, String(UI_ELEMENTEN.filter((e) => e.sectieUk).length));
   return einde();
 }
