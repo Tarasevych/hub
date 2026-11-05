@@ -1,0 +1,213 @@
+{
+  "schema": 1,
+  "taakId": "AUDIT-001",
+  "datum": "2026-11-05",
+  "taal": "uk",
+  "opdracht": "Виконати повний комплексний аудит проєкту Mijn Ruimte після другого переписування історії Git (B-011) та двомовної документації (f3f3fab), безконфліктно об’єднати чотири паралельні напрями робіт агентів (PRIVACY-001, MAILFIX-001/MAILFIT-001/MAILFIT-002, IDENTITY-001/002 з виправленнями cbeb3d0 і a318ba0, DESIGN-001) на канонічній після-рерайтній історії без втягування до-рерайтного предка e547381, відновити криптографічний замок правил (regelsVersie 1.4.8, B-013), синхронізувати українські та нідерландські версії документації (.uk.md/.nl.md), перевірити повну збірку й тести, оновити гілки integratie та voornaamst і опублікувати канонічний інсталяційний реліз.",
+  "herkomst": {
+    "eigenaar": "Eigenaar Test",
+    "agent": "antigravity",
+    "basis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+    "vorigeProductieversie": "20261104-204906",
+    "vorigeProductieCommit": "6e815a00307dd9c00a0b2907838be099be8c5610",
+    "tak": "audit/audit-2026-11-05-20261105-070523"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Жодних паролів, токенів, приватних ключів, файлів cookie, домашніх адрес або приватних IP-адрес; усі конфігуровані параметри винесено в MR_EIGENAAR_NAAM, MR_CONTACT_EMAIL, MR_BEHEERSUBNET."
+  },
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Проведено повний аудит стану репозиторію, живого продакшн-ендпоінту https://hub.tarasevych.com/api/version (версія 20261104-204906 @ 6e815a00307d) та всіх відкритих PR (#28, #27, #25, #22) і гілок агентів.",
+      "bewijzen": [
+        "orchestratie/beleid.json",
+        "orchestratie/BESLUITEN.md",
+        "orchestratie/taken/AUDIT-001.json"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Інтегровано PRIVACY-001 (3095e5f..d4fb253) поверх канонічної бази f3f3fabb2f3b із збереженням двомовних навігаційних шапок (.uk.md/.nl.md), конфігурованих змінних MR_EIGENAAR_NAAM / MR_CONTACT_EMAIL / MR_BEHEERSUBNET та рішень B-010..B-013; перепідписано замок правил regels.lock.json (regelsVersie 1.4.8) і перегенеровано CONTEXT-COMPACT.md.",
+      "bewijzen": [
+        "AGENTS.md",
+        "ENV-VARS.md",
+        "orchestratie/beleid.json",
+        "orchestratie/BESLUITEN.md",
+        "orchestratie/regels.lock.json",
+        "orchestratie/CONTEXT-COMPACT.md",
+        "backend/index.ts",
+        "deploy/uitrol/maak-voorstelpakket.sh"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Інтегровано MAILFIX-001, MAILFIT-001 та MAILFIT-002 (7ba7a0d..98beb2a620de) без відкату B-009: відновлено безпечний OAuth-потік Google Mail, адаптовано розкладку пошти для мобільних і настільних екранів, виправлено перевірку UITROL-BASIS для до-рерайтних базових комітів при збереженні захисту від даунгрейду версії, а також забезпечено сумісність tarfile.extractall у Python 3.11+.",
+      "bewijzen": [
+        "src/MailFunctioneelWeergave.tsx",
+        "src/mail/MailKoppelVenster.tsx",
+        "src/mail-werkruimte.css",
+        "src/stijlen/mail-mobiel.css",
+        "backend/uitrol-voorcontrole.ts",
+        "deploy/uitrol/mijn-ruimte-uitrol.sh",
+        "tests/eenheid/mailfit-001.test.ts",
+        "tests/eenheid/mailfix-001.test.ts",
+        "tests/eenheid/orch-uitrol-basis-20261031.test.ts"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Інтегровано IDENTITY-001/002 (b0d41b7..a318ba0b1c73) та DESIGN-001 (6e815a00..052fae36d3aa) із виправленнями аудиту 05.11.2026 (центрована камера 22×22 px, смітничок 24×24 px у куті, z-index модального вікна фото 99500 вище шапки та sticky/scroll-margin для меню-змісту і секцій), оновлено каталог UI-кнопок і додано юніт-тести.",
+      "bewijzen": [
+        "src/identity/IdentityAccountPagina.tsx",
+        "src/identity/Profielfoto.tsx",
+        "src/identity/identity-account.css",
+        "src/identity/identity-tabs.ts",
+        "src/ontwerp/tokens.css",
+        "src/ontwerp/fundament.css",
+        "src/ontwerp/modern.css",
+        "src/platform/vensters.css",
+        "shared/zoek-ui-knoppen.generated.ts",
+        "tests/eenheid/identity-account-ui.test.ts",
+        "tests/eenheid/design-001.test.ts"
+      ]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Синхронізовано всі 433 Markdown-файли репозиторію (додано .uk.md та .nl.md версії і двомовні шапки для docs/ontwerp/identity-account/*, оновлено AGENTS.uk.md/nl.md, BESLUITEN.uk.md/nl.md, docs/INDEX.md/nl.md), виправлено 4 регресії в юніт-тестах і виконано повну 11-етапну збірку npm run build.",
+      "bewijzen": [
+        "docs/ontwerp/identity-account/README-account.uk.md",
+        "docs/ontwerp/identity-account/README-account.nl.md",
+        "docs/ontwerp/identity-account/TZ-account-2026-11-04.uk.md",
+        "docs/ontwerp/identity-account/TZ-account-2026-11-04.nl.md",
+        "docs/ontwerp/identity-account/identity-coverage.uk.md",
+        "docs/ontwerp/identity-account/identity-coverage.nl.md",
+        "docs/ontwerp/identity-account/ontwerp-account-samenvatting.uk.md",
+        "docs/ontwerp/identity-account/ontwerp-account-samenvatting.nl.md",
+        "docs/INDEX.md",
+        "docs/INDEX.nl.md"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Портування змін із до-рерайтних гілок (MAILFIT-002, IDENTITY-002, DESIGN-001) поверх після-рерайтної бази f3f3fabb2f3b замість git merge до-рерайтних комітів",
+      "reden": "Прямий git merge гілок, що походять від до-рерайтного дерева e547381, повернув би в історію репозиторію 139 старих комітів із персональними даними та приватними IP-адресами, видаленими в B-010 і B-011.",
+      "альтернатива": "Звичайний git merge гілок PR #28 та PR #27 — відхилено через порушення вимог приватності B-010/B-011."
+    },
+    {
+      "keuze": "Сумісність Python tarfile.extractall у deploy/uitrol/mijn-ruimte-uitrol.sh через hasattr(tarfile, 'data_filter')",
+      "reden": "На середніх версіях Python 3.11 (зокрема 3.11.2 у тестових середовищах) параметр filter='data' ще відсутній, хоча ручні перевірки шляхів і типів членів архіву вже виконуються в циклі перед розпакуванням.",
+      "альтернатива": "Використання filter='data' без перевірки наявності атрибута — ламало юніт-тести orch-uitrol-basis на Python 3.11.2."
+    },
+    {
+      "keuze": "Збереження <small data-rol={p.user.role}> у картці профілю InstellingencentrumWeergave.tsx та Profielfoto.tsx",
+      "reden": "Зберігає контракт доступності та аудиту U-06 (відображення ролі користувача без зайвого дублювання тегів <small>).",
+      "альтернатива": "Немаркований <small> усередині Profielfoto.tsx — порушувало перевірку U-06 у gebruiker-audit-2026-10-19.test.ts."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "bestand": "AGENTS.md",
+      "soort": "змінено",
+      "опис": "Оновлено базову версію (20261104-204906 @ f3f3fabb2f3b) та плейсхолдери <VM-IP> за рішеннями B-010..B-013."
+    },
+    {
+      "bestand": "orchestratie/beleid.json",
+      "soort": "змінено",
+      "опис": "Підвищено regelsVersie до 1.4.8, оновлено basis до 20261104-204906 @ f3f3fabb2f3b5209b1ee8eba3078e403de831844."
+    },
+    {
+      "bestand": "orchestratie/BESLUITEN.md",
+      "soort": "змінено",
+      "опис": "Додано рішення B-010, B-011, B-012 та B-013."
+    },
+    {
+      "bestand": "orchestratie/regels.lock.json",
+      "soort": "змінено",
+      "опис": "Перепідписано замок правил для regelsVersie 1.4.8 (hash 4982a354ae21…)."
+    },
+    {
+      "bestand": "orchestratie/CONTEXT-COMPACT.md",
+      "soort": "змінено",
+      "опис": "Перегенеровано компактний контекст для правил 1.4.8 (11692 байти)."
+    },
+    {
+      "bestand": "backend/uitrol-voorcontrole.ts",
+      "soort": "змінено",
+      "опис": "Сумісність перевірки UITROL-BASIS після переписування історії Git при збереженні захисту від старих версій."
+    },
+    {
+      "bestand": "deploy/uitrol/mijn-ruimte-uitrol.sh",
+      "soort": "змінено",
+      "опис": "Сумісність перевірки UITROL-BASIS та безпечне розпакування tarfile.extractall на Python 3.11+."
+    },
+    {
+      "bestand": "src/MailFunctioneelWeergave.tsx",
+      "soort": "змінено",
+      "опис": "Чистий OAuth-потік Google Mail і адаптивна розкладка списку листів (MAILFIX-001, MAILFIT-001)."
+    },
+    {
+      "bestand": "src/mail/MailKoppelVenster.tsx",
+      "soort": "змінено",
+      "опис": "Керування станом підключення Google та перепідключенням поштової скриньки (MAILFIX-001)."
+    },
+    {
+      "bestand": "src/identity/IdentityAccountPagina.tsx",
+      "soort": "додано",
+      "опис": "Єдина сторінка керування обліковим записом із 12 секціями, меню-змістом (.ia-toc) та scroll-spy (IDENTITY-002)."
+    },
+    {
+      "bestand": "src/identity/Profielfoto.tsx",
+      "soort": "додано",
+      "опис": "Компонент фото профілю з трьома джерелами, центрованою камерою 22px та смітничком 24px у куті (IDENTITY-002)."
+    },
+    {
+      "bestand": "src/identity/identity-account.css",
+      "soort": "додано",
+      "опис": "Стилі сторінки акаунта, z-index 99500 для модального вікна фото та відступи прокрутки під шапкою (IDENTITY-002)."
+    },
+    {
+      "bestand": "src/ontwerp/modern.css",
+      "soort": "додано",
+      "опис": "Сучасні поверхні карток, вікон, полів і робочого столу (DESIGN-001)."
+    },
+    {
+      "bestand": "src/ontwerp/tokens.css",
+      "soort": "змінено",
+      "опис": "Оновлені радіуси --straal-s/m/l/xl (10px/14px/20px/26px) (DESIGN-001)."
+    }
+  ],
+  "controles": [
+    {
+      "controle": "node scripts/orch.mjs controleer && node scripts/orch.mjs versheid --taak AUDIT-001 --fase start",
+      "результат": "ORCH: усе гаразд · alles in orde (regelsVersie 1.4.8, hash 4982a354ae21…); versheid: vers · свіжо.",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "npm run typecheck:server && NODE_OPTIONS=--max-old-space-size=5120 npm run build",
+      "результат": "Усі 11 етапів збірки (каталог UI-кнопок, розміщення фіксованих елементів, колірний контраст 1898 пар, клієнтська збірка Vite, перевірка тех-бандлів, збірка розширення браузера та серверного бандла) пройшли з кодом 0.",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "Юніт-тести (orch-*, mailfit-001, mailfix-001, identity-account-ui, design-001, sec-001, zoek-tekst, meldingen-v2, gebruiker-audit, toegankelijk-mail)",
+      "результат": "Усі запущені юніт-тести без бази даних проходять 100% (0 помилок).",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "Перевірка двомовної документації (.md / .uk.md / .nl.md) та відсутності персональних даних/IP",
+      "результат": "Перевірено 433 Markdown-файли: 0 відсутніх мовних пар (.uk.md/.nl.md), 0 відсутніх навігаційних шапок, 0 витоків приватних IP або персональних даних.",
+      "стан": "пройдено"
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "orchestratie/BESLUITEN.md",
+    "docs/ontwerp/identity-account/TZ-account-2026-11-04.md",
+    "deploy/REGELS-UITROLPAKKET.md"
+  ],
+  "beperkingen": [
+    "Критичні політики в orchestratie/regels.lock.json мають статус «voorstel» до моменту підпису власника приватним SSH-ключем (node scripts/orch.mjs bevestig); автоматичне встановлення без passkey/підпису власника вимкнене за дизайном."
+  ]
+}
