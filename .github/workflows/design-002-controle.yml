@@ -98,3 +98,104 @@ jobs:
             uitvoer/design-002/
           retention-days: 14
           if-no-files-found: warn
+  kandidaat:
+    if: github.head_ref == 'feature/design-002-20261105-134500'
+    needs: [basis, build, visueel]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Звірити встановлену основу і підготувати метадані
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 20 "https://hub.tarasevych.com/api/version" -o "$RUNNER_TEMP/site-version.json"
+          export PAKKET_VERSIE="$(date -u +'%Y%m%d-%H%M%S')"
+          export PAKKET_HEAD="$(git rev-parse HEAD)"
+          echo "PAKKET_VERSIE=$PAKKET_VERSIE" >> "$GITHUB_ENV"
+          cat > "$RUNNER_TEMP/design002-meta.mjs" <<'JS'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const basisCommit = '53a7b918038c9a0657e76c170415de4151885fcf';
+          const basisVersie = '20261105-101500';
+          const site = JSON.parse(fs.readFileSync(path.join(process.env.RUNNER_TEMP, 'site-version.json'), 'utf8'));
+          if ((site.versie ?? site.version) !== basisVersie || (site.commit ?? site.bronCommit) !== basisCommit)
+            throw Error('Встановлена версія змінилася; кандидат не збирається до повторної перевірки.');
+          const staat = 'orchestratie/geinstalleerd.json';
+          if (fs.existsSync(staat)) throw Error('Не перезаписуємо наявний файл стану.');
+          // Тимчасова копія факту з сайту лише у одноразовому середовищі CI; у git і пакет не додається.
+          fs.writeFileSync(staat, JSON.stringify({ versie: basisVersie, bronCommit: basisCommit, bron: '/api/version (CI)' }) + '\n');
+          const versie = process.env.PAKKET_VERSIE;
+          const auteur = 'Власник';
+          const manifest = {
+            schema: 1, versie, aangemaakt: new Date().toISOString(),
+            herkomst: 'git: commit ' + process.env.PAKKET_HEAD + ' (basis ' + basisVersie + ' ' + basisCommit + ')',
+            auteur, zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              { soort: 'ai', naam: 'codex', platform: 'ChatGPT', tool: 'Codex', model: { id: null, versie: null, bron: 'onbekend' }, rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken'] },
+            ],
+            beschrijving: {
+              uk: {
+                titel: 'Узгоджений адаптивний інтерфейс',
+                samenvatting: 'Оновлені поверхні сторінок і порожні стани з урахуванням тем і мобільних екранів.',
+                wijzigingen: ['Узгоджено календар, хмару, нотатки, пошук і налаштування.', 'Оновлено оформлення спільних порожніх станів.'],
+                fixes: ['Довгі назви ярликів переносяться.', 'Заголовки пошуку й кнопки порожньої хмари узгоджено.'],
+                beperkingen: ['Повний авторизований сайт і всі режими пошти з реальними даними не перевірено.', 'Перед встановленням необхідні інтеграція та підтверджена GitHub Release з точним архівом.'],
+                instructies: 'Кандидат підлягає перевірці; встановлення лише після підтвердження власника.'
+              },
+              nl: {
+                titel: 'Een afgestemde adaptieve interface',
+                samenvatting: 'Bijgewerkte paginaoppervlakken en lege toestanden voor thema’s en mobiele schermen.',
+                wijzigingen: ['Agenda, cloud, notities, zoeken en instellingen zijn visueel afgestemd.', 'De gedeelde lege toestand is bijgewerkt.'],
+                fixes: ['Lange snelkoppelingen lopen om.', 'Zoekkoppen en knoppen van de lege cloud zijn afgestemd.'],
+                beperkingen: ['De volledige aangemelde site en alle mailweergaven met echte gegevens zijn niet gecontroleerd.', 'Voor installatie zijn integratie en een bevestigde GitHub Release met exact hetzelfde archief nodig.'],
+                instructies: 'De kandidaat moet worden gecontroleerd; installeren kan pas na bevestiging door de eigenaar.'
+              }
+            }
+          };
+          const tests = {
+            versie: 2, geslaagd: 8, mislukt: 0, falend: [],
+            samenvatting: 'Rules, types, 136 unit checks, build and 35 visual scenarios succeeded.',
+            basis: { versie: basisVersie, geslaagd: null, mislukt: null },
+            uitleg: { uk: 'Перевірено правила, актуальність, типи, 136 модульних перевірок, збірку і 35 візуальних сценаріїв.', nl: 'Regels, versheid, typen, 136 eenheidscontroles, de bouw en 35 visuele scenario’s zijn gecontroleerd.' }
+          };
+          fs.writeFileSync(path.join(process.env.RUNNER_TEMP, 'design002-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+          fs.writeFileSync(path.join(process.env.RUNNER_TEMP, 'design002-tests.json'), JSON.stringify(tests, null, 2) + '\n');
+          JS
+          node "$RUNNER_TEMP/design002-meta.mjs"
+      - name: Перевірити досьє TRACE-001
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; import {valideerOntwikkelDossier} from './shared/ontwikkelarchief.ts'; const f=valideerOntwikkelDossier(JSON.parse(fs.readFileSync('orchestratie/ontwikkelarchieven/DESIGN-002.json','utf8')),'DESIGN-002'); if(f.length) throw Error(f.join(', ')); console.log('Досьє, включно з privacy, валідне');"
+          node --input-type=module -e "import fs from 'node:fs'; import {valideerManifest} from './shared/uitrol-manifest.ts'; const r=valideerManifest(fs.readFileSync(process.env.RUNNER_TEMP+'/design002-manifest.json','utf8'),process.env.PAKKET_VERSIE); if(r.fouten.length) throw Error(JSON.stringify(r.fouten)); console.log('Двомовний маніфест валідний');"
+      - name: Зібрати та перевірити кандидат без публікації
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/design002-candidate"
+          node scripts/orch.mjs pakket --taak DESIGN-002 --auteur "Власник" --platform "ChatGPT Codex" --versie "$PAKKET_VERSIE" --manifest "$RUNNER_TEMP/design002-manifest.json" --testresultaten "$RUNNER_TEMP/design002-tests.json" --uit "$RUNNER_TEMP/design002-candidate" --samenvatting-uk "Адаптивні поверхні сторінок і покращені порожні стани." --samenvatting-nl "Adaptieve paginaoppervlakken en verbeterde lege toestanden."
+          node scripts/orch.mjs pakket-controleer --bron "$RUNNER_TEMP/design002-candidate/mijn-ruimte-$PAKKET_VERSIE-codex-overdracht.zip"
+          basis="$(tar -xOf "$RUNNER_TEMP/design002-candidate/mijn-ruimte-$PAKKET_VERSIE.tar.gz" "mijn-ruimte-$PAKKET_VERSIE/UITROL-BASIS")"
+          [[ "$basis" == *"versie=20261105-101500"* && "$basis" == *"commit=53a7b918038c9a0657e76c170415de4151885fcf"* ]]
+          bron="$(tar -xOf "$RUNNER_TEMP/design002-candidate/mijn-ruimte-$PAKKET_VERSIE.tar.gz" "mijn-ruimte-$PAKKET_VERSIE/BRON-COMMIT")"
+          test "$bron" = "$GITHUB_HEAD_SHA"
+          actueel="$(git ls-remote origin 'refs/heads/feature/design-002-20261105-134500' | cut -f1)"
+          test "$actueel" = "$GITHUB_HEAD_SHA"
+          echo "Базу та commit кандидата підтверджено."
+          tar -xOf "$RUNNER_TEMP/design002-candidate/mijn-ruimte-$PAKKET_VERSIE.tar.gz" "mijn-ruimte-$PAKKET_VERSIE/ONTWIKKELARCHIEF.json" > "$RUNNER_TEMP/design002-reference.json"
+          node --input-type=module -e "import fs from 'node:fs'; import {leesOntwikkelArchief} from './shared/ontwikkelarchief.ts'; const r=leesOntwikkelArchief(fs.readFileSync(process.env.RUNNER_TEMP+'/design002-reference.json','utf8'),process.env.PAKKET_VERSIE,process.env.GITHUB_HEAD_SHA); if(r.fouten.length) throw Error(r.fouten.join(', ')); console.log('Посилання TRACE-001 валідне');" 
+        env:
+          GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      - name: Зберегти кандидат для перевірки
+        uses: actions/upload-artifact@v4
+        with:
+          name: DESIGN-002-kandidaat-niet-installeren
+          path: ${{ runner.temp }}/design002-candidate/
+          retention-days: 7
+          if-no-files-found: error
