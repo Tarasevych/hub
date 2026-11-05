@@ -6,6 +6,8 @@ const browser = await chromium.launch({ headless: true, ...(process.env.CHROME_P
 const url = 'http://127.0.0.1:4179/tests/visueel/design-002-ruimtes.html';
 const delen = [
   { naam: 'agenda', selector: '.agv-leeg', knop: '[data-agenda-v3-koppelen]', actie: 'agenda' },
+  { naam: 'mail-accounts', selector: '.mail-orbit-intro', knop: '.mail-orbit-mobiel-hoofdknop:visible, [data-mail-orbit-knop="gmail"]:visible, .mail-orbit-desktop-hoofdknop:visible', actie: 'gmail' },
+  { naam: 'mail-inbox', selector: '.mail-orbit-intro', knop: '.mail-orbit-mobiel-hoofdknop:visible, [data-mail-orbit-knop="gmail"]:visible, .mail-orbit-desktop-hoofdknop:visible', actie: 'gmail' },
   { naam: 'cloud', selector: '.cvn-leeg', knop: '.cvn-leeg button.is-hoofd', actie: 'files' },
   { naam: 'notities', selector: '.vn-kaart', knop: '.vn-kaart-klik', actie: 'notitie' },
   { naam: 'zoek', selector: '.zk-kaart' },
@@ -35,10 +37,12 @@ try {
             scrollbreedte: document.documentElement.scrollWidth,
             x: box.left, rechts: box.right, radius: parseFloat(getComputedStyle(element).borderTopLeftRadius),
             animatie: getComputedStyle(element).animationName,
+            lettertype: selector === '.zk-kaart' ? getComputedStyle(element.querySelector('h3')).fontFamily : null,
+            omgevingLettertype: selector === '.zk-kaart' ? getComputedStyle(element).fontFamily : null,
           };
         }, deel.selector);
         await pagina.screenshot({ path: 'uitvoer/design-002/' + deel.naam + '-' + g.naam + '.png', fullPage: true });
-        if (fouten.length || stand.radius < 10 || stand.scrollbreedte > stand.breedte + 1 || stand.x < -1 || stand.rechts > stand.breedte + 1) {
+        if (fouten.length || stand.radius < 10 || stand.scrollbreedte > stand.breedte + 1 || stand.x < -1 || stand.rechts > stand.breedte + 1 || (stand.lettertype && stand.lettertype !== stand.omgevingLettertype)) {
           throw new Error(JSON.stringify({ stand, fouten }));
         }
         if (deel.knop) {

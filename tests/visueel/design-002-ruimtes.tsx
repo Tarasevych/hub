@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Search } from 'lucide-react';
 import AgendaLeeg from '../../src/agenda/v3/onderdelen/LegeToestand';
+import MailOrbitIntro from '../../src/mail/MailOrbitIntro';
 import CloudOverzicht from '../../src/cloud-vnext/onderdelen/Overzicht';
 import NotitieKaart from '../../src/notities/NotitieKaart';
 import ZoekKaart from '../../src/zoek/ZoekKaart';
@@ -44,6 +45,8 @@ function Voorbeeld() {
   let inhoud;
   if (deel === 'agenda') {
     inhoud = <div className='agv'><AgendaLeeg lang={lang} onKoppel={() => setActie('agenda')} onIcs={() => setActie('ics')} onAlle={() => setActie('diensten')} /></div>;
+  } else if (deel === 'mail-accounts' || deel === 'mail-inbox') {
+    inhoud = <MailOrbitIntro lang={lang} variant={deel === 'mail-inbox' ? 'inbox' : 'accounts'} onSelect={(aanbieder) => setActie(aanbieder.id)} onManage={() => setActie('beheer')} />;
   } else if (deel === 'cloud') {
     inhoud = <div className='cvn'><CloudOverzicht lang={lang} smal={false} userEmail='' sourceOrigin='' tabContext=''
       ov={{ stats: { aantal: 0, bytes: 0, perSoort: {} }, recent: [], favorieten: [], prullenbak: 0, mappen: [], workspaces: [] } as never}
@@ -52,7 +55,7 @@ function Voorbeeld() {
     inhoud = <div className='vn'><h1>Нотатки</h1><NotitieKaart lang={lang} notitie={notitie} indeling='kaarten' mappen={[]} bezig={false} weergave='alle'
       onOpen={() => setActie('notitie')} onActie={niets} onVink={niets} onEtiket={niets} /></div>;
   } else if (deel === 'zoek') {
-    inhoud = <div className='zk-pagina'><section className='zk-kop kaart'><div className='zk-kop-tekst'><span className='zk-kop-ic' aria-hidden='true'><Search /></span><div><h1>Пошук у вашому просторі</h1><p>Знаходьте файли й нотатки в одному місці.</p></div></div></section><div style={{ marginTop: 16 }}><ZoekKaart r={treffer} lang={lang} terms={[]} /></div></div>;
+    inhoud = <div className='zk-pagina'><section className='zk-kop kaart'><div className='zk-kop-tekst'><span className='zk-kop-ic' aria-hidden='true'><Search /></span><div><h1 className='zk-h'>Пошук у вашому просторі</h1><p className='zk-sub'>Знаходьте файли й нотатки в одному місці.</p></div></div></section><div style={{ marginTop: 16 }}><ZoekKaart r={treffer} lang={lang} terms={[]} /></div></div>;
   } else {
     inhoud = <SettingsCenterView tab='personalization' embedded lang={lang} theme='light' plumEnabled={true}
       user={{ id: 'voorbeeld', email: 'voorbeeld@example.invalid', name: 'Користувач', picture: '', role: 'owner', status: 'active', accessLevel: 'full' }}

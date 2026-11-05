@@ -214,3 +214,9 @@
 @media (forced-colors: active) {
   .canonical-content :is(.agv-leeg, .cvn section.cvn-leeg, .settings-card) { border: 1px solid CanvasText; }
 }
+
+/* Заголовки результатів пошуку успадковують шрифт оболонки, а не шрифт сторінки входу. */
+.canonical-content .zk-pagina :is(h1, h2, h3) { font-family: inherit; }
+/* Кнопки порожньої хмари залишаються вирівняними разом із текстом. */
+.canonical-content .cvn .cvn-overzicht > section.cvn-leeg { border-style: solid; }
+.canonical-content .cvn .cvn-leeg .cvn-snel { justify-content: center; }
