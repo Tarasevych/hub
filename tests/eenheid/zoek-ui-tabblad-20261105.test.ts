@@ -209,6 +209,17 @@ export async function main(): Promise<number> {
     hint(p1, 'Через проп') === 'vault' && hint(p2, 'Анонімна сторінка') === 'menu' && hint(p3, 'Псевдонім пропа') === 'sharing' && hint(p4, 'Мемо-сторінка') === 'widgets',
     `${hint(p1, 'Через проп')}|${hint(p2, 'Анонімна сторінка')}|${hint(p3, 'Псевдонім пропа')}|${hint(p4, 'Мемо-сторінка')}`);
 
+  // 8j. de pagina via memo(X) / forwardRef(X) geëxporteerd, of met `as T` om de functie (na de onafhankelijke controle, 05.11.2026)
+  const j1 = `function J1({tab}){return tab==='vault'?${knop('Мемо за іменем','Memo op naam')}:null;}export default memo(J1);`;
+  const j2 = `function J2({tab}){return tab==='menu'?${knop('Мемо в константі','Memo in constante')}:null;}export const J2m = React.memo(forwardRef(J2));`;
+  const j3 = `const J3 = ((p) => p.tab==='sharing'?${knop('Функція з as','Functie met as')}:null) as FC<P>;export { J3 };`;
+  const j4 = `const J4 = memo(((p) => p.tab==='widgets'?${knop('Мемо з as','Memo met as')}:null) as FC<P>)!;export { J4 };`;
+  const j5 = `function J5({tab}){return tab==='vault'?${knop('Не експортовано','Niet geëxporteerd')}:null;}const J5m = memo(J5);`;
+  const j6 = `function J6({tab}){return tab==='menu'?${knop('Експорт-аліас','Export-alias')}:null;}export const J6a = J6;`;
+  check('8j `export default memo(X)`, `export const Y = React.memo(forwardRef(X))`, `(p => …) as FC`, `memo((p => …) as FC)!`, `export const Y = X` → de pagina; zonder export niet',
+    hint(j1, 'Мемо за іменем') === 'vault' && hint(j2, 'Мемо в константі') === 'menu' && hint(j3, 'Функція з as') === 'sharing' && hint(j4, 'Мемо з as') === 'widgets' && hint(j5, 'Не експортовано') === '' && hint(j6, 'Експорт-аліас') === 'menu',
+    `${hint(j1, 'Мемо за іменем')}|${hint(j2, 'Мемо в константі')}|${hint(j3, 'Функція з as')}|${hint(j4, 'Мемо з as')}|${hint(j5, 'Не експортовано')}|${hint(j6, 'Експорт-аліас')}`);
+
   // 6. de echte catalogus
   const echt = (uk: string) => UI_ELEMENTEN.filter((e) => e.uk === uk).map((e) => `${e.dienst}/${e.tab}`);
   const in_ = (uk: string, bestand: string, soort = '') => UI_ELEMENTEN.filter((e) => e.uk === uk && e.bestand === bestand && (!soort || e.soort === soort)).map((e) => `${e.dienst}/${e.tab}`);

@@ -315,8 +315,19 @@ function tabStructuur(src, tabs) {
   //     `const tab = p.tab`), mits die component geëxporteerd is (de pagina; de app geeft het tabblad mee) of elke plek waar hij
   //     als JSX-tag staat hem `tab={<tabblad van de pagina>}` geeft. Een niet gedeclareerde `tab` (losse fragmenten) telt zoals vroeger.
   const geexporteerd = new Set();
+  // memo(X) / forwardRef(X) / React.memo(X), ook genest of met `as T`: de component X zelf (na de onafhankelijke controle, 05.11.2026:
+  // tot dan telde alleen `export default X`, niet `export default memo(X)`, `export const Y = memo(X)` of `export const Y = X`).
+  const ontpak = (e) => {
+    let x = kaal(e);
+    while (x && ts.isCallExpression(x) && /^(?:React\.)?(?:memo|forwardRef)$/.test(x.expression.getText(sf)) && x.arguments.length) x = kaal(x.arguments[0]);
+    return x;
+  };
+  const voegExportToe = (e) => { const x = ontpak(e); if (x && ts.isIdentifier(x)) { const s = symVan(x); if (s) geexporteerd.add(s); } };
   for (const st of sf.statements) {
-    if (ts.isExportAssignment(st) && ts.isIdentifier(kaal(st.expression))) { const s = symVan(kaal(st.expression)); if (s) geexporteerd.add(s); }
+    if (ts.isExportAssignment(st)) voegExportToe(st.expression);
+    if (ts.isVariableStatement(st) && (ts.getCombinedModifierFlags(st.declarationList.declarations[0] ?? st) & ts.ModifierFlags.Export) !== 0) {
+      for (const d of st.declarationList.declarations) if (d.initializer) voegExportToe(d.initializer);   // ook een alias: export const Y = X
+    }
     if (ts.isExportDeclaration(st) && !st.moduleSpecifier && st.exportClause && ts.isNamedExports(st.exportClause)) {
       for (const e of st.exportClause.elements) { const s = chk.getExportSpecifierLocalTargetSymbol(e); if (s) geexporteerd.add(s); }
     }
@@ -333,12 +344,9 @@ function tabStructuur(src, tabs) {
       const sym = symVan(f.name);
       return { sym, export: metExport(f) || (!!sym && geexporteerd.has(sym)) };
     }
-    let p = f.parent;
-    while (p && ts.isParenthesizedExpression(p)) p = p.parent;
-    if (p && ts.isCallExpression(p) && /^(?:React\.)?(?:memo|forwardRef)$/.test(p.expression.getText(sf)) && kaal(p.arguments[0]) === f) {
-      p = p.parent;
-      while (p && ts.isParenthesizedExpression(p)) p = p.parent;
-    }
+    const omhoog = (x) => { while (x && (ts.isParenthesizedExpression(x) || ts.isAsExpression(x) || ts.isNonNullExpression(x) || ts.isTypeAssertionExpression(x) || (ts.isSatisfiesExpression && ts.isSatisfiesExpression(x)))) x = x.parent; return x; };
+    let p = omhoog(f.parent);
+    while (p && ts.isCallExpression(p) && /^(?:React\.)?(?:memo|forwardRef)$/.test(p.expression.getText(sf)) && p.arguments[0] && ontpak(p.arguments[0]) === f) p = omhoog(p.parent);
     if (p && ts.isExportAssignment(p)) return { sym: null, export: true };
     if (p && ts.isVariableDeclaration(p) && groot(p.name)) {
       const sym = symVan(p.name);
