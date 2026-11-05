@@ -358,6 +358,12 @@ afgedekt met tests die op de eerdere code zouden falen.
   - *Na F5 werd een beheerpagina even privé.* Zolang de status van het technische profiel laadt, blijft het tabblad in de technische
     ruimte als het daar vóór het herladen was (alleen met een goedgekeurde sessie). De inhoud van de pagina blijft achter de echte
     activering (`tech-ruimte-f5` 8/8, 7 van 7 mutanten gedood).
+  - *Witte tekst op het accent en op de rode vlakte in donkere thema's* (gevonden in de volledige ronde, faalde al op `d0e6481`
+    en `10a9278`). Tien CSS-regels zetten `#fff` op `var(--accent)`, op de rode vlakte van de meldingen of op de tegelkleur van de
+    bibliotheek; in donkere paletten zijn die vlakken licht en haalde wit 1,2–2,6:1. Nu staat op het accent `var(--text-on-accent)`,
+    op een bevestigde gevaarlijke actie `var(--fout-vlak)` met `var(--text-on-vlak)`, en de bibliotheektegel kiest kleur en tekst
+    met dezelfde themavlag (`tegel-kleur.ts`; in donker ≥ 7,1:1). `contrast-knoppen-logos` 38/38, nieuw `contrast-tegels` 10/10,
+    10 van 10 mutanten gedood.
   - *Scenario 7 van `orch-acceptatie`.* Een vaste pauze van 1,2 s gaf onder belasting 45/47. Nu houdt de stub de eerste installatie
     onder flock vast tot de test de tweede heeft gecontroleerd.
 
