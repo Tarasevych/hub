@@ -52,14 +52,18 @@ export const PLEKKEN = [
   ['agenten/SiteSchakelaars', 'mcp', 'agents', 'technisch'],
   ['agenten/', 'mcp', 'agents', 'iedereen'], ['connector-v2/', 'mcp', 'agents', 'iedereen'], ['ai-bevestiging/', 'mcp', 'agents', 'iedereen'],
   ['extensie/', 'mcp', 'agents', 'iedereen'], ['McpAgentenHub', 'mcp', 'agents', 'iedereen'], ['McpConnectorPaneel', 'mcp', 'agents', 'iedereen'],
-  ['McpToestemmingVenster', 'mcp', 'agents', 'iedereen'], ['AgentenPaneel', 'mcp', 'agents', 'iedereen'], ['AgentInrichtingWizard', 'mcp', 'agents', 'iedereen'],
+  // McpToestemmingVenster (ZOEKDIEP-001): verschijnt alleen met ?consent=<id> van een lopende OAuth-aanvraag van een AI — geen plek
+  // waar de zoeker heen kan. Niet in de catalogus.
+  ['AgentenPaneel', 'mcp', 'agents', 'iedereen'], ['AgentInrichtingWizard', 'mcp', 'agents', 'iedereen'],
   ['AiToestemmingen', 'mcp', 'agents', 'iedereen'], ['BrowserExtensiePaneel', 'mcp', 'agents', 'iedereen'], ['ExtensieWizard', 'mcp', 'agents', 'iedereen'],
   ['ApparatenWeergave', 'mcp', 'agents', 'iedereen'],
   // ---- technisch profiel: de band (TechLaag) zelf mag wie een profiel heeft; wat erachter zit alleen met een actieve activering
   ['tech/', 'hub', 'overview', 'profiel'], ['ssh/', 'hub', 'overview', 'technisch'], ['terminal/', 'mcp', 'dashboard', 'technisch'],
   ['extern/', 'hub', 'overview', 'technisch'], ['vlaggen/', 'hub', 'overview', 'technisch'],
   // ---- sitebeheer (alleen technisch)
-  ['BeheerConsoleWeergave', 'admin', 'overview', 'technisch'], ['BeheerOverzichtWeergave', 'admin', 'overview', 'technisch'], ['IdentiteitBeheerWeergave', 'admin', 'access', 'technisch'],
+  ['BeheerConsoleWeergave', 'admin', 'overview', 'technisch'], ['BeheerOverzichtWeergave', 'admin', 'overview', 'technisch'],
+  // IdentiteitBeheerWeergave (ZOEKDIEP-001): VerenigdDienstApp toont hem alleen als terugval NA alle diensten (identity, admin … keren
+  // eerder terug) — op geen enkele pagina te zien. Verzoeken en gebruikers staan in de beheerconsole (BeheerConsoleWeergave → admin/access).
   ['BeheerSleutelsWeergave', 'admin', 'contour', 'technisch'], ['geheimen/', 'admin', 'contour', 'technisch'], ['BeheerAiBeleidWeergave', 'admin', 'ai', 'technisch'],
   ['BeheerUitrolWeergave', 'admin', 'updates', 'technisch'], ['UitrolMeester', 'admin', 'updates', 'technisch'], ['uitrol/', 'admin', 'updates', 'technisch'],
   ['BeheerDiagnostiekWeergave', 'admin', 'diagnostics', 'technisch'], ['diagnostiek/', 'admin', 'diagnostics', 'technisch'], ['diagnose/', 'admin', 'diagnostics', 'technisch'],
@@ -70,6 +74,68 @@ export const PLEKKEN = [
   ['McpServerBeheerKaart', 'mcp', 'dashboard', 'technisch'], ['McpHulpmiddelenPaneel', 'mcp', 'tools', 'technisch'], ['mcp-ui', 'mcp', 'dashboard', 'technisch'],
   ['ServerKoppelen', 'mcp', 'apps', 'technisch'] /* McpAppsWeergave → «Підключити цей сервер»; mcp/connect stuurt door naar agents */,
 ];
+
+/**
+ * ZOEKDIEP-001 (05.11.2026): het ONDERDEEL van een pagina met hash-adres. De hub «Підключення ШІ» (mcp/agents) is één lange pagina
+ * met luie secties (#overzicht, #ai, #extensie …; src/agenten/agenten-hash.ts) en de plek van één AI (#agent/<slug>, AgentPagina):
+ * zonder hash landde de zoeker bovenaan en zag het element niet (een luie sectie wordt pas gerenderd als zij in beeld komt; de plek
+ * van één AI zelfs helemaal niet). admin/directories kiest zijn onderdeel uit #catalogus|#mijn|#mappen|#wizard (Integraties.tsx).
+ * [bestandsprefix (zonder «src/»), dienst, tabblad (null = elk), hash]. Eerste match wint; een eigen hash van het element wint altijd.
+ * AgentPagina toont voor elke AI dezelfde elementen; de zoeker gaat naar de eerste AI van de lijst (Claude).
+ */
+export const HASH_REGELS = [
+  ['agenten/TabOrch', 'mcp', 'agents', 'orch'],
+  ['agenten/RuimteScheiding', 'mcp', 'agents', 'technisch'], ['agenten/TechVerbindingen', 'mcp', 'agents', 'technisch'],
+  ['agenten/SiteSchakelaars', 'mcp', 'agents', 'technisch'], ['agenten/DeurVerbindingen', 'mcp', 'agents', 'technisch'], ['agenten/TabTechnisch', 'mcp', 'agents', 'technisch'],
+  ['agenten/TabAi', 'mcp', 'agents', 'ai'], ['agenten/AgentBord', 'mcp', 'agents', 'ai'], ['agenten/AiToegangTab', 'mcp', 'agents', 'ai'],
+  ['agenten/TabExternMcp', 'mcp', 'agents', 'extern'],
+  ['agenten/TabExtensie', 'mcp', 'agents', 'extensie'], ['agenten/AgentKleuren', 'mcp', 'agents', 'extensie'], ['extensie/BrowserEnAgenten', 'mcp', 'agents', 'browser'],
+  ['extensie/', 'mcp', 'agents', 'extensie'], ['BrowserExtensiePaneel', 'mcp', 'agents', 'extensie'], ['ExtensieWizard', 'mcp', 'agents', 'extensie'],
+  ['agenten/TabApparaten', 'mcp', 'agents', 'apparaten'], ['ApparatenWeergave', 'mcp', 'agents', 'apparaten'], ['AgentInrichtingWizard', 'mcp', 'agents', 'apparaten'],
+  ['agenten/TabTokens', 'mcp', 'agents', 'tokens'], ['agenten/AiVerbinden', 'mcp', 'agents', 'tokens'],
+  ['agenten/TabToegang', 'mcp', 'agents', 'toegang'], ['agenten/Journaal', 'mcp', 'agents', 'journaal'], ['agenten/HubMatrix', 'mcp', 'agents', 'overzicht'],
+  ['ai-bevestiging/', 'mcp', 'agents', 'overzicht'], ['connector-v2/', 'mcp', 'agents', 'connectors'],
+  ['agenten/AgentPagina', 'mcp', 'agents', 'agent/claude'], ['agenten/AgentVerbinden', 'mcp', 'agents', 'agent/claude'],
+  ['BeheerConsoleWeergave', 'admin', 'directories', 'mappen'],
+  ['integraties/Wizard', 'admin', 'directories', 'wizard'], ['integraties/CatalogusV2', 'admin', 'directories', 'catalogus'], ['integraties/Detail', 'admin', 'directories', 'catalogus'],
+];
+/** Componenten die zowel in een privé-sectie als in «Технічне» (#technisch, TechVerbindingen) staan: hun technische tak hoort daar. */
+const TECHNISCHE_TAK = ['agenten/AiVerbinden', 'agenten/AiToegangTab'];
+export function hashVan(bestand, dienst, tab, toegang = 'iedereen') {
+  const rel = bestand.replace(/^src\//, '');
+  if (toegang === 'technisch' && dienst === 'mcp' && tab === 'agents' && TECHNISCHE_TAK.some((p) => rel.startsWith(p))) return 'technisch';
+  for (const [prefix, d, t, h] of HASH_REGELS) if (rel.startsWith(prefix) && d === dienst && (t === null || t === tab)) return h;
+  return '';
+}
+
+/**
+ * ZOEKDIEP-001: toegang per ELEMENT. Tot nu toe gold de toegang van het bestand (PLEKKEN): in agenten/TabExtensie.tsx en
+ * agenten/AiVerbinden.tsx staan blokken die alleen met een technisch profiel verschijnen (`techProfiel ? …`, `technisch ? … : …`,
+ * `techActief(…) && …`), maar ook gebruikers zonder profiel kregen ze als zoekresultaat. Nu: staat het element in de «ja»-tak van zo'n
+ * voorwaarde (niet ontkend), dan is zijn toegang minstens 'profiel' (techProfiel) of 'technisch' (actief technisch profiel / ruimte).
+ */
+const PROFIEL_VOORWAARDE = /\btechProfiel\b|\bheeftTechProfiel\b/;
+const TECHNISCH_VOORWAARDE = /\btechActief\b|\btechAan\b|\btechnisch\b|===\s*'technisch'/;
+const TOEGANG_RANG = { iedereen: 0, profiel: 1, technisch: 2 };
+export const strengsteToegang = (a, b) => (TOEGANG_RANG[a] >= TOEGANG_RANG[b] ? a : b);
+export function toegangVoor(src) {
+  if (!PROFIEL_VOORWAARDE.test(src) && !TECHNISCH_VOORWAARDE.test(src)) return () => 'iedereen';
+  const sf = ts.createSourceFile('/toegang.tsx', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const gebieden = [];   // { van, tot, toegang }
+  const soortVan = (c) => {
+    const t = c.getText(sf).trim();
+    if (/^!/.test(t)) return '';
+    return TECHNISCH_VOORWAARDE.test(t) ? 'technisch' : PROFIEL_VOORWAARDE.test(t) ? 'profiel' : '';
+  };
+  const zoek = (n) => {
+    if (ts.isConditionalExpression(n)) { const s = soortVan(n.condition); if (s) gebieden.push({ van: n.whenTrue.getStart(sf), tot: n.whenTrue.end, toegang: s }); }
+    else if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) { const s = soortVan(n.left); if (s) gebieden.push({ van: n.right.getStart(sf), tot: n.right.end, toegang: s }); }
+    else if (ts.isIfStatement(n)) { const s = soortVan(n.expression); if (s) gebieden.push({ van: n.thenStatement.getStart(sf), tot: n.thenStatement.end, toegang: s }); }
+    ts.forEachChild(n, zoek);
+  };
+  zoek(sf);
+  return (i) => gebieden.reduce((acc, g) => (g.van <= i && i < g.tot ? strengsteToegang(acc, g.toegang) : acc), 'iedereen');
+}
 
 const PAAR = String.raw`(?:tr|t|text|txt|vertaal)\(\s*(?:(?:p\.)?lang\s*,\s*|taal\s*,\s*)?(['"])((?:(?!\1)[^\\\n]|\\.){2,140})\1\s*,\s*(['"])((?:(?!\3)[^\\\n]|\\.){2,140})\3\s*\)`;
 const TERNAIR = String.raw`(?:(?:p\.)?lang|taal)\s*===\s*'uk'\s*\?\s*'((?:[^'\\\n]|\\.){2,140})'\s*:\s*'((?:[^'\\\n]|\\.){2,140})'`;
@@ -161,7 +227,7 @@ function koppen(src) {
     PAAR_RE.lastIndex = 0; TERNAIR_RE.lastIndex = 0;
     const a = PAAR_RE.exec(binnen.slice(0, 600)), b = TERNAIR_RE.exec(binnen.slice(0, 600));
     const eerste = Math.min(a ? a.index : Infinity, b ? b.index : Infinity);
-    uit.push({ i: m.index, tot: k.boomEinde, wisselend: Number.isFinite(eerste) && wisselt(k.knoop, e + 1 + eerste), ...p });
+    uit.push({ i: m.index, tekstI: Number.isFinite(eerste) ? e + 1 + eerste : m.index, tot: k.boomEinde, wisselend: Number.isFinite(eerste) && wisselt(k.knoop, e + 1 + eerste), ...p });
   }
   return uit;
 }
@@ -546,8 +612,13 @@ function tabHintVoor(src, bestand, tabs, { zonderGeheugen = false } = {}) {
         const volgende = new Set(gezien).add(b.nr);
         const unie = new Set();
         for (const g of gebruik) {
+          // Wederzijdse recursie (A gebruikt B, B gebruikt A): een gebruik BINNEN een component die al op dit pad ligt, bereik je alleen
+          // via de gebruiken van buiten die hier al worden gevolgd — het voegt niets toe. Vroeger telde zo'n gebruik als «alle tabbladen»
+          // (binnen de kring is geen binding meer over), zodat het element zijn tabblad verloor en de bestandsregel gold (ZOEKDIEP-001).
+          const binnenPad = (j) => eigen.some((x) => volgende.has(x.nr) && x.van <= j && j < x.tot);
+          if (!g.object && binnenPad(g.i)) { kring = true; continue; }
           if (g.object) {
-            for (const a of toegangen.get(g.object.sym)) for (const v of mogelijk(a.i, volgende)) { const k = tekst(a.toegang, v); if (k === ONB || k === g.object.sleutel) unie.add(v); }
+            for (const a of toegangen.get(g.object.sym)) if (binnenPad(a.i)) kring = true; else for (const v of mogelijk(a.i, volgende)) { const k = tekst(a.toegang, v); if (k === ONB || k === g.object.sleutel) unie.add(v); }
           } else for (const v of mogelijk(g.i, volgende)) unie.add(v);
         }
         uit = new Set([...S].filter((v) => unie.has(v)));
@@ -567,9 +638,11 @@ export function elementenUit(src, bestand, tabs = [], opties = {}) {
   const uit = [];
   const tabHint = tabHintVoor(src, bestand, tabs, opties);
   const tabVan = (i) => { const r = tabHint(i); return { tabHint: r.hint, ...(r.mogelijk ? { mogelijkeTabs: r.mogelijk } : {}) }; };
+  const toegangBij = toegangVoor(src);
+  const toegangVan = (i) => { const t = toegangBij(i); return t === 'iedereen' ? {} : { toegang: t }; };
   const secties = koppen(src);
   const sectieBij = (i) => { let s = null; for (const k of secties) { if (k.i >= i) break; if (i < k.tot) s = k; } return s?.wisselend ? null : s; };
-  for (const k of secties) if (!GENERIEK.has(k.uk.toLowerCase())) uit.push({ soort: 'sectie', uk: k.uk, nl: k.nl, sectie: null, bestand, ...tabVan(k.i) });
+  for (const k of secties) if (!GENERIEK.has(k.uk.toLowerCase())) uit.push({ soort: 'sectie', uk: k.uk, nl: k.nl, sectie: null, bestand, ...tabVan(k.i), ...toegangVan(k.tekstI ?? k.i) });   // toegang: waar de TEKST staat (`technisch ? tr(…) : tr(…)` in de kop)
   const re = /<button\b/g; let m;
   while ((m = re.exec(src))) {
     const e = tagEinde(src, m.index); if (e < 0) continue;
@@ -580,7 +653,7 @@ export function elementenUit(src, bestand, tabs = [], opties = {}) {
     if (!p) continue;
     if (GENERIEK.has(p.uk.toLowerCase())) continue;
     const s = sectieBij(m.index);
-    uit.push({ soort: 'knop', ...p, sectie: s ? { uk: s.uk, nl: s.nl } : null, bestand, ...(hulp ? { hulp } : {}), ...tabVan(m.index) });
+    uit.push({ soort: 'knop', ...p, sectie: s ? { uk: s.uk, nl: s.nl } : null, bestand, ...(hulp ? { hulp } : {}), ...tabVan(m.index), ...toegangVan(m.index) });
   }
   // Tabbladen met een eigen hash-adres (src/agenten/AgentenPagina.tsx → tabInfo: { overzicht: { uk, nl, icoon } … }).
   if (/agenten\/AgentenPagina\.tsx$/.test(bestand)) {
@@ -594,7 +667,7 @@ export function elementenUit(src, bestand, tabs = [], opties = {}) {
     // Alleen een eigen naam (aria-label) of de eerste kop in het venster; nooit de eerste knop (dat zou «Sluiten» zijn).
     const kop = /<h[123]\b/.exec(src.slice(e + 1, e + 1500));
     const p = eerstePaar(attribuut(tag, 'aria-label')) || (kop ? eerstePaar(src.slice(e + 1 + kop.index, e + 1 + kop.index + 600)) : null);
-    if (p && !GENERIEK.has(p.uk.toLowerCase())) uit.push({ soort: 'dialoog', ...p, sectie: null, bestand });
+    if (p && !GENERIEK.has(p.uk.toLowerCase())) uit.push({ soort: 'dialoog', ...p, sectie: null, bestand, ...toegangVan(m.index) });
   }
   return uit;
 }
@@ -704,13 +777,16 @@ export function genereer(wortel = process.cwd()) {
       // Het tabblad uit de bron wint van de bestandsregel; alleen doorsturende tabbladen → niet zichtbaar, niet opnemen.
       const tab = kiesTabblad(el, plek0.tab, DOORSTUREND[plek0.dienst]);
       if (tab === null) continue;
-      const plek = { ...plek0, tab };
+      const plek = { ...plek0, tab, toegang: strengsteToegang(plek0.toegang, el.toegang || 'iedereen') };
+      const hash = el.hash || hashVan(bestand, plek.dienst, plek.tab, el.toegang);
       const sleutel = `${plek.dienst}/${plek.tab}|${el.soort}|${el.uk}`;
-      if (items.has(sleutel)) continue;   // dezelfde knop op dezelfde pagina (ander bestand): één keer
+      // dezelfde knop op dezelfde pagina (ander bestand): één keer — de ruimste toegang wint (wie hem ergens ziet, moet hem vinden)
+      const al = items.get(sleutel);
+      if (al && TOEGANG_RANG[al.toegang] <= TOEGANG_RANG[plek.toegang]) continue;
       items.set(sleutel, {
         id: `ui:${el.soort}:${plek.dienst}/${plek.tab}:${hash8(`${el.soort}|${el.uk}|${el.nl}`)}`,
         soort: el.soort, dienst: plek.dienst, tab: plek.tab, toegang: plek.toegang, uk: el.uk, nl: el.nl,
-        sectieUk: el.sectie?.uk || '', sectieNl: el.sectie?.nl || '', bestand, ...(el.hulp ? { hulp: el.hulp } : {}), ...(el.hash ? { hash: el.hash } : {}),
+        sectieUk: el.sectie?.uk || '', sectieNl: el.sectie?.nl || '', bestand, ...(el.hulp ? { hulp: el.hulp } : {}), ...(hash ? { hash } : {}),
       });
     }
   }
