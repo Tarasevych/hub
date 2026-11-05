@@ -88,7 +88,6 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
   .wb-tegel-inhoud{flex:none;min-height:auto;overflow:visible}
   .wb-snel{height:auto;grid-auto-rows:minmax(72px,auto)}
   .wb-balk-acties{margin-left:0;width:100%}
-  .wb-catalogus-lijst{max-height:none;overflow:visible}
 }
 @media (prefers-reduced-motion:reduce){.wb-tegel{transition:none}}
 
@@ -322,6 +321,10 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
   .wb-agenda-vandaag,.wb-alles,.wb-link-knop,.wb-acties button,.wb-zoek-rij,.wb-chips button{min-height:var(--tik-hoogte-mobiel)}
   .wb-balk-acties .knop-stil.is-klein:not(:has(> :not(svg))),.wb-agenda-knoppen .wb-icoonknop{min-width:var(--tik-hoogte-mobiel);width:var(--tik-hoogte-mobiel);height:var(--tik-hoogte-mobiel)}
   .wb-rijen li>a,.wb-snelkoppeling{min-height:var(--tik-hoogte-mobiel)}
+  /* Catalogus in het venster: op de telefoon scrollt alleen het venster (05.11.2026). Stond in het eerste mobiele blok en verloor daar
+     van de basisregel `.wb-catalogus-lijst{max-height:min(58vh,560px);overflow:auto}` verderop (zelfde specificiteit, later):
+     een lijst van 490 px met eigen scroll en ±2,5 kaarten in beeld. */
+  .wb-catalogus-lijst{max-height:none;overflow:visible}
   /* 23.10 (integratie, stand 390): met vier knoppen van 44 px bleef voor de maand maar «Жовтень 20…» over en sprong de laatste pijl naar
      een eigen regel. Op de telefoon: de maand op een eigen volle regel, de knoppen eronder over de hele breedte («Сьогодні» links). */
   .wb-agenda-balk{flex-wrap:wrap;row-gap:var(--ruimte-1)}
