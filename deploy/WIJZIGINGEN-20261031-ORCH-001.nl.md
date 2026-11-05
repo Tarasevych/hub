@@ -291,7 +291,8 @@ afgedekt met tests die op de eerdere code zouden falen.
 
 - **1-11-2026.** De eigenaar heeft PR #11 gesloten als opgenomen en PR #16 (fasen 0–4, controles, MCP-001, MCP-deur op poort 8091)
   samengevoegd in `release/sec-001-20261031-084138`. De vervolgcorrecties en de scheiding van privé- en technische «AI-toegang»
-  zijn via PR #17 samengevoegd; in `integratie` heeft merge `4db51b6` ze opgenomen (samen met PR #18; vóór het herschrijven `5f84d9d`).
+  zijn via PR #17 samengevoegd met merge-commit `4db51b6` (samen met PR #18; vóór het herschrijven `5f84d9d`). Die commit ligt op
+  de eerste-ouderlijn van zowel `release/sec-001-20261031-084138` als `integratie`.
 - **Herschrijven van de historie (B-010, B-011).** De commits kregen nieuwe SHA's: `fa50a5b` → `7176e95`, `f8def89` → `d33d068`,
   `c414fe7` → `eebfdd1`, `8722770` → `3dea7c1`, `5f84d9d` → `4db51b6`. De taakbasis `b279ccab` is nu `5a023b41` — dezelfde commit
   (auteur, datum en onderwerp gelijk), een voorouder van `integratie`.
@@ -303,12 +304,31 @@ afgedekt met tests die op de eerdere code zouden falen.
   (`orchestratie/taken/ORCH-001.json`, uitzondering AGENTS.md §4.3) staat nu: regels 1.4.9 (`taak-herlees`), `integrated` (`taak-staat`),
   `integratieCommit` `4db51b6`, basis `5a023b41` (oude SHA bewaard). Het wachtrijbestand `wachtrij.json` wijzigt de agent niet: bovenaan
   staat nog de regel van het gesloten PR #11 (tak `feature/orch-001-20261031-112355`, «wacht»). Die sluit de integrator op
-  `integratie`: `wachtrij volgende`, dan `wachtrij klaar --taak ORCH-001 --uitkomst integrated --hoofd 4db51b6…`, dan `staat-commit`.
+  `integratie`: `wachtrij volgende`, dan
+  `wachtrij klaar --taak ORCH-001 --uitkomst integrated --hoofd 4db51b6aabe73f295ba4286c4c7557568c0d5e3e`, dan `staat-commit`.
+  Deze stap en het samenvoegen van de PR van de taak kunnen in elke volgorde: orch-kern aanvaardt beide staten van de wachtrij (de
+  regel wacht nog, of staat al in `geschiedenis` als `integrated`).
   De status `installed` zet alleen de installer via `orchestratie/geinstalleerd.json`, dat nog ontbreekt.
 - **Onderweg gevonden en in aparte commits hersteld:**
   - *Zoekcatalogus van knoppen.* De catalogus was verouderd na AUDIT-001. De generator bepaalde het tabblad uit tekst in de 1500 tekens
-    vóór een knop, waardoor «Підтвердити видалення» naar «Персоналізація» leidde. Nu leest de generator de syntaxisboom en leidt de
-    zoeker naar het juiste tabblad (instellingen, GitHub, API-kluis, lokale mail — 52 plekken, elk onafhankelijk gecontroleerd).
+    vóór een knop, waardoor «Verwijdering bevestigen» naar «Personalisatie» leidde. Nu leest `scripts/zoek-ui-catalogus.mjs` de
+    syntaxisboom van TypeScript en berekent voor elke plek de mogelijke tabbladen. Na een onafhankelijke controle van elke gewijzigde
+    plek kwam erbij:
+    - waarden van uitdrukkingen (`pages[tab]` in de beheerconsole, `effectiveTab` in de cloud, `section` in MCP), `switch` met
+      `break` en het hijsen van functies;
+    - alleen de prop `tab` van de pagina telt als tabblad, niet `useState`, `.map((tab) => …)` of `item.tab`;
+    - een lineair geheugen voor de doorloop (vroeger 2^N paden);
+    - de hub «AI-koppelingen» staat op `mcp/agents` (163 elementen);
+    - de sectie van een knop komt alleen uit zijn eigen JSX-boom (142 onjuiste secties weg);
+    - 16 bestanden zonder één import en tabbladen die altijd doorsturen (`mcp`: overview, connect, verbindingen) komen niet in de
+      catalogus; de technische delen van de hub zijn alleen met een technisch profiel zichtbaar.
+    Catalogus: 1333 elementen. Tests zoek-ui-tabblad 45/45, zoek-ui-sectie 12/12, zoek-ui-bereik 18/18; 28/28 mutanten gedood.
+    Komen er vóór het samenvoegen andere wijzigingen in `src/**/*.tsx` op `integratie`, dan moet de catalogus opnieuw gemaakt worden
+    met `node scripts/zoek-ui-catalogus.mjs` (dat doet `npm run build` ook); de actualiteitstest meldt het.
+  - *Zoekkaarten openden alleen de hoofdpagina van de dienst.* De routes van de catalogus en de adapters komen nu op het juiste
+    tabblad (`zoek-route-tabblad` 10/10).
+  - *Recente zoekopdrachten mengden de ruimtes.* Een pagina die in het technische profiel was gekozen (`admin/sso`), verscheen als
+    link in de privéruimte. Nu is er een lijst per ruimte; bestaande privélijsten blijven behouden.
   - *Scenario 7 van `orch-acceptatie`.* Een vaste pauze van 1,2 s gaf onder belasting 45/47. Nu houdt de stub de eerste installatie
     onder flock vast tot de test de tweede heeft gecontroleerd.
 
@@ -320,4 +340,14 @@ afgedekt met tests die op de eerdere code zouden falen.
 - `beleid.json → basis` (`20261105-061659`) vergelijken met de werkelijk geïnstalleerde versie: tag `20261105-101500` wijst naar `53a7b91`.
 - Desgewenst: oude technische verbindingen die ooit rechten uit «AI-toegang» kopieerden terugzetten naar de technische standaard
   (het tabblad «Technisch» markeert ze; in bulk alleen met een apart script en met uw toestemming).
-- Losse vraag voor de mail: de tak `mode==='accounts'` in `GoogleMailWorkspace` wordt nooit getoond, omdat de enige aanroep `mode` niet meegeeft.
+
+**Losse vragen over het zoeken (gevonden bij de controle, in deze taak niet gewijzigd)**
+- De tak `mode==='accounts'` in `GoogleMailWorkspace` wordt nooit getoond, omdat de enige aanroep `mode` niet meegeeft.
+- Diepe links: de zoeker voegt `bericht`/`item` toe, maar de pagina's lezen andere parameters (mail: `open_message_id`). Een resultaat
+  opent daardoor het tabblad, maar niet het bericht, bestand of de notitie zelf.
+- Elementen van de hub «AI-koppelingen» openen de hub zonder onderdeel (`#agent/<slug>`, `?consent=`).
+- «Externe directory’s» op `admin/directories` vragen nog één klik op het subtabblad.
+- `IdentiteitBeheerWeergave` is praktisch onbereikbaar: `VerenigdDienstApp` toont haar alleen als laatste terugval.
+- In `AiVerbinden` en `TabExtensie` zijn delen alleen met een technisch profiel zichtbaar, terwijl de toegang in de catalogus per
+  bestand geldt.
+- Wederzijds recursieve componenten verliezen het tabblad van de pagina. Dat is een voorzichtige keuze: dan geldt de bestandsregel.

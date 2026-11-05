@@ -11,7 +11,7 @@
   "staat": "integrated",
   "integratieCommit": "4db51b6aabe73f295ba4286c4c7557568c0d5e3e",
   "gestart": "2026-10-31T11:32:34.460Z",
-  "bijgewerkt": "2026-11-05T16:34:17.786Z",
+  "bijgewerkt": "2026-11-05T18:28:30.313Z",
   "omschrijving": "Єдина система координації AI-агентів (етапи 0–4)",
   "kanaal": "github_pr",
   "overdrachten": [],
@@ -60,7 +60,7 @@
       "f8def89 (PR #16)": "d33d068e146c1f1487afa63d917d89d8703c1b2f",
       "c414fe7 (PR #17, 1/2)": "eebfdd13c99cc2f9737a78d331458a3732f4515f",
       "8722770 (PR #17, 2/2)": "3dea7c12eb228317fb550ffe5cf9f5215a6b6609",
-      "5f84d9d (merge PR #17 + PR #18 in integratie)": "4db51b6aabe73f295ba4286c4c7557568c0d5e3e"
+      "5f84d9d (merge PR #17 + PR #18; release/sec-001 en integratie)": "4db51b6aabe73f295ba4286c4c7557568c0d5e3e"
     },
     "productie": {
       "versie": "20261105-061659",
@@ -68,8 +68,8 @@
       "serverCommit": "a318ba0b1c731390217458dabadcf0e086d13635",
       "bron": "beleid.json → basis (geverifieerd_productie, B-014); /api/version niet bereikbaar uit de cloudcontainer"
     },
-    "wachtrij": "open: de regel van PR #11 (feature/orch-001-20261031-112355, wacht) sluit de integrator op integratie met orch wachtrij volgende + klaar --uitkomst integrated --hoofd 4db51b6…",
-    "uk": "Етапи 0–4 і перевірки злито через PR #16 (1.11.2026); подальші виправлення й розділення приватного й технічного «Доступу ШІ» — через PR #17 (1.11.2026). В integratie їх об’єднав merge 4db51b6 (до переписування — 5f84d9d, разом із PR #18). Після переписування історії (B-010, B-011) коміти мають нові SHA; база задачі b279ccab тепер 5a023b41 — той самий коміт (автор, дата й тема збігаються), що є предком integratie. 4db51b6 є предком канонічної встановленої бази f3f3fab (20261105-061659); у серверному коміті a318ba0 (до-рерайтна історія, інші SHA) зміни PR #17 присутні за вмістом. Статус integrated записано у власній декларації агента; запис PR #11 у черзі (wachtrij.json) закриває інтегратор на integratie — агент файл черги не змінює (AGENTS.md §4.3). Статус installed ставить лише інсталятор через orchestratie/geinstalleerd.json, якого ще немає.",
-    "nl": "Fasen 0–4 en de controles zijn samengevoegd via PR #16 (1-11-2026); de vervolgcorrecties en de scheiding van privé- en technische «AI-toegang» via PR #17 (1-11-2026). In integratie heeft merge 4db51b6 ze opgenomen (vóór het herschrijven 5f84d9d, samen met PR #18). Na het herschrijven van de historie (B-010, B-011) hebben de commits nieuwe SHA’s; de taakbasis b279ccab is nu 5a023b41 — dezelfde commit (auteur, datum en onderwerp gelijk), een voorouder van integratie. 4db51b6 is een voorouder van de canonieke geïnstalleerde basis f3f3fab (20261105-061659); in de servercommit a318ba0 (historie vóór het herschrijven, andere SHA’s) zitten de wijzigingen van PR #17 inhoudelijk. De status integrated staat in de eigen declaratie van de agent; de wachtrijregel van PR #11 (wachtrij.json) sluit de integrator op integratie — de agent wijzigt het wachtrijbestand niet (AGENTS.md §4.3). De status installed zet alleen de installer via orchestratie/geinstalleerd.json, dat nog ontbreekt."
+    "wachtrij": "open: de regel van PR #11 (feature/orch-001-20261031-112355, wacht) wordt door de integrator gesloten op integratie: orch wachtrij volgende, dan wachtrij klaar --taak ORCH-001 --uitkomst integrated --hoofd 4db51b6aabe73f295ba4286c4c7557568c0d5e3e, dan staat-commit. Volgorde ten opzichte van het samenvoegen van deze PR maakt niet uit (orch-kern aanvaardt beide staten).",
+    "uk": "Етапи 0–4 і перевірки злито через PR #16 (1.11.2026); подальші виправлення й розділення приватного й технічного «Доступу ШІ» — через PR #17 (1.11.2026) merge-комітом 4db51b6 (до переписування — 5f84d9d, разом із PR #18), що лежить на першій батьківській лінії і release/sec-001-20261031-084138, і integratie. Після переписування історії (B-010, B-011) коміти мають нові SHA; база задачі b279ccab тепер 5a023b41 — той самий коміт (автор, дата й тема збігаються), що є предком integratie. 4db51b6 є предком канонічної встановленої бази f3f3fab (20261105-061659); у серверному коміті a318ba0 (до-рерайтна історія, інші SHA) зміни PR #17 присутні за вмістом. Статус integrated записано у власній декларації агента; запис PR #11 у черзі (wachtrij.json) закриває інтегратор на integratie (--hoofd 4db51b6aabe73f295ba4286c4c7557568c0d5e3e) — агент файл черги не змінює (AGENTS.md §4.3). Статус installed ставить лише інсталятор через orchestratie/geinstalleerd.json, якого ще немає.",
+    "nl": "Fasen 0–4 en de controles zijn samengevoegd via PR #16 (1-11-2026); de vervolgcorrecties en de scheiding van privé- en technische «AI-toegang» via PR #17 (1-11-2026) met merge-commit 4db51b6 (vóór het herschrijven 5f84d9d, samen met PR #18), die op de eerste-ouderlijn van zowel release/sec-001-20261031-084138 als integratie ligt. Na het herschrijven van de historie (B-010, B-011) hebben de commits nieuwe SHA’s; de taakbasis b279ccab is nu 5a023b41 — dezelfde commit (auteur, datum en onderwerp gelijk), een voorouder van integratie. 4db51b6 is een voorouder van de canonieke geïnstalleerde basis f3f3fab (20261105-061659); in de servercommit a318ba0 (historie vóór het herschrijven, andere SHA’s) zitten de wijzigingen van PR #17 inhoudelijk. De status integrated staat in de eigen declaratie van de agent; de wachtrijregel van PR #11 (wachtrij.json) wordt door de integrator gesloten op integratie (--hoofd 4db51b6aabe73f295ba4286c4c7557568c0d5e3e) — de agent wijzigt het wachtrijbestand niet (AGENTS.md §4.3). De status installed zet alleen de installer via orchestratie/geinstalleerd.json, dat nog ontbreekt."
   }
 }
