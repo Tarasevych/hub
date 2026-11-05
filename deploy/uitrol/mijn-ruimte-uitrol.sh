@@ -565,12 +565,28 @@ class GeenOmleiding(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs): raise ValueError('redirect geweigerd')
 opener=urllib.request.build_opener(GeenOmleiding)
 def gh(url):
-    req=urllib.request.Request(url,headers=headers)
-    with opener.open(req,timeout=12) as r:
-        if r.status!=200: raise ValueError('HTTP_'+str(r.status))
-        data=r.read(800001)
-        if len(data)>800000: raise ValueError('te groot')
-        return json.loads(data)
+    import time
+    for poging in range(3):
+        try:
+            req=urllib.request.Request(url,headers=headers)
+            with opener.open(req,timeout=12) as r:
+                if r.status!=200: raise ValueError('HTTP_'+str(r.status))
+                data=r.read(800001)
+                if len(data)>800000: raise ValueError('te groot')
+                return json.loads(data)
+        except urllib.error.HTTPError as e:
+            if e.code in (401,403) and 'Authorization' in headers:
+                headers.pop('Authorization',None)
+                continue
+            if e.code in (429,500,502,503,504) and poging<2:
+                time.sleep(1)
+                continue
+            raise
+        except urllib.error.URLError:
+            if poging<2:
+                time.sleep(1)
+                continue
+            raise
 try:
     u=f'https://api.github.com/repos/{repo}/contents/{pad}?ref={commit}'
     item=gh(u)

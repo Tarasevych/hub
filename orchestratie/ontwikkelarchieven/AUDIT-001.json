@@ -90,11 +90,12 @@
     },
     {
       "volgorde": 6,
-      "stap": "Перебазовано метадані випуску UITROL-BASIS та beleid.json (B-014, regelsVersie 1.4.9) на фактично встановлену серверну версію 20261105-061659 (a318ba0b1c731390217458dabadcf0e086d13635) та випущено оновлений пакет 20261105-093500.",
+      "stap": "Перебазовано метадані випуску UITROL-BASIS та beleid.json (B-014, regelsVersie 1.4.9) на фактично встановлену серверну версію 20261105-061659 (a318ba0b1c731390217458dabadcf0e086d13635), забезпечено тотожність BRON-COMMIT та HEAD гілки (commit == head) без пост-релізних комітів і випущено перевірений пакет 20261105-101500.",
       "bewijzen": [
         "orchestratie/beleid.json",
         "orchestratie/BESLUITEN.md",
         "orchestratie/regels.lock.json",
+        "deploy/uitrol/mijn-ruimte-uitrol.sh",
         ".github/workflows/audit-001-release.yml"
       ]
     }
