@@ -29,7 +29,11 @@
     ],
     "toegevoegd": [
       "src/ontwerp/modern.css",
-      "orchestratie/taken/DESIGN-001.json"
+      "orchestratie/taken/DESIGN-001.json",
+      ".github/workflows/design-001-controle.yml",
+      "tests/visueel/design-001-controle.mjs",
+      "tests/visueel/design-001-voorbeeld.html",
+      "tests/visueel/design-001-voorbeeld.tsx"
     ],
     "verwijderd": []
   },
@@ -44,8 +48,8 @@
       "node scripts/eenheidstests.mjs werkblad: серверні тести потребують DATABASE_URL"
     ],
     "uitleg": {
-      "uk": "Пройдено розбір CSS, перевірку контрасту, typecheck:server, orch-kern (78/78) і werkblad-canvas-kern (53/53). Повний набір werkblad потребує бази даних. Повторну повну збірку перервано після тривалої обробки модулів; результат не підтверджено.",
-      "nl": "CSS-parsing, contrastcontrole, typecheck:server, orch-kern (78/78) en werkblad-canvas-kern (53/53) geslaagd. De volledige werkbladreeks vereist een database. De herhaalde volledige build is na een lange moduleverwerking onderbroken; het resultaat is niet bevestigd."
+      "uk": "Пройдено розбір CSS, перевірку контрасту, typecheck:server, orch-kern (78/78) і werkblad-canvas-kern (53/53). Повний набір werkblad потребує бази даних. Повторну повну збірку перервано після тривалої обробки модулів; результат не підтверджено. Додано незалежні перевірки збірки та огляд компонентів у Chromium на GitHub; їхній результат очікується.",
+      "nl": "CSS-parsing, contrastcontrole, typecheck:server, orch-kern (78/78) en werkblad-canvas-kern (53/53) geslaagd. De volledige werkbladreeks vereist een database. De herhaalde volledige build is na een lange moduleverwerking onderbroken; het resultaat is niet bevestigd. Onafhankelijke build- en Chromium-controles op GitHub toegevoegd; resultaat wordt afgewacht."
     }
   },
   "nietGedaan": {

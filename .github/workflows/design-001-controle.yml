@@ -1,0 +1,59 @@
+name: DESIGN-001 · build en visuele controle
+on:
+  push:
+    branches: [feature/design-001-20261105-140000]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Controleer regels, types en relevante eenheidstests
+        run: |
+          mkdir -p rapporten
+          node scripts/orch.mjs controleer
+          npm run typecheck:server
+          node scripts/eenheidstests.mjs orch-kern
+          node scripts/eenheidstests.mjs werkblad-canvas-kern
+      - name: Bouw de toepassing
+        run: NODE_OPTIONS=--max-old-space-size=5120 npm run build
+  visueel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm install --no-save --ignore-scripts --package-lock=false playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - name: Controleer echte werkbladcomponenten in lichte en donkere thema's
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p uitvoer/design-001
+          npx vite --host 127.0.0.1 --port 4179 > uitvoer/design-001/vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for poging in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4179/tests/visueel/design-001-voorbeeld.html > /dev/null; then break; fi
+            sleep 1
+          done
+          node tests/visueel/design-001-controle.mjs
+      - name: Bewaar beelden en logboek
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DESIGN-001-visueel
+          path: uitvoer/design-001/
+          retention-days: 14
+          if-no-files-found: warn
