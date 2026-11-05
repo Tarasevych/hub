@@ -1,0 +1,196 @@
+name: IDENTITY-ACCOUNT · дизайн акаунта (release)
+
+# Реліз документації дизайну сторінки акаунта (категорія identity).
+# Код застосунку не змінюється; пакет містить docs/ontwerp/identity-account/* і журнал задачі IDENTITY-001.
+# Токен у чат не передається: працює штатний GITHUB_TOKEN із contents: write.
+
+on:
+  push:
+    branches:
+      - feature/identity-account-20261104-120000
+    paths:
+      - 'docs/ontwerp/identity-account/**'
+      - 'orchestratie/ontwikkelarchieven/IDENTITY-001.json'
+      - '.github/workflows/identity-account-release.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: identity-account-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sla over als deze commit al een uitgave heeft
+        id: bestaatal
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          COMMIT="$(git rev-parse HEAD)"
+          BESTAAND="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq ".[] | select((.body // \"\") | contains(\"BRON-COMMIT: $COMMIT\")) | .tag_name" | head -n 1)"
+          if [ -n "$BESTAAND" ]; then
+            echo "bestaat=$BESTAAND" >> "$GITHUB_OUTPUT"
+            echo "deze commit heeft al een uitgave ($BESTAAND) — geen tweede pakket"
+          else
+            echo "bestaat=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verifieer productiebasis (geen giswerk)
+        if: steps.bestaatal.outputs.bestaat == ''
+        run: |
+          set -euo pipefail
+          TS="$(date -u +%s)"
+          URL="https://hub.tarasevych.com/api/version?ts=$TS"
+          echo "oproep: $URL"
+          if ! curl --fail --silent --show-error --max-time 30 "$URL" -o "$RUNNER_TEMP/prod.json"; then
+            echo "FOUT: productie /api/version niet bereikbaar ($URL) — basis onbekend, pakket niet gebouwd." >&2
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/prod.json"
+          VERSIE="$(node -e 'const d=require(process.argv[1]);process.stdout.write(String(d.versie||""))' "$RUNNER_TEMP/prod.json")"
+          COMMIT="$(node -e 'const d=require(process.argv[1]);process.stdout.write(String(d.bronCommit||d.commit||""))' "$RUNNER_TEMP/prod.json")"
+          node -e '
+            const [versie, commit, pad] = process.argv.slice(1);
+            if (!/^\d{8}-\d{6}$/.test(versie)) { console.error("FOUT: ongeldige versie in /api/version: " + versie); process.exit(1); }
+            if (!/^[0-9a-f]{40}$/.test(commit)) { console.error("FOUT: ongeldige commit in /api/version: " + commit); process.exit(1); }
+            require("fs").writeFileSync(pad, JSON.stringify({ versie, bronCommit: commit, bron: "geverifieerd_productie_api" }, null, 2) + "\n");
+            console.log("basis: " + versie + " @ " + commit.slice(0, 12));
+          ' "$VERSIE" "$COMMIT" orchestratie/geinstalleerd.json
+
+      - name: Bouw manifest
+        if: steps.bestaatal.outputs.bestaat == ''
+        env:
+          SAMENVATTING_UK: "Дизайн сторінки акаунта identity: 12 екранів на одній сторінці, прототип, ТЗ і матриця покриття; код застосунку не змінено."
+          SAMENVATTING_NL: "Ontwerp van de identity-accountpagina: twaalf schermen op één pagina, prototype, specificatie en dekkingsmatrix; applicatiecode ongewijzigd."
+          BEPERKING_UK: "Екрани не інтегровані в src/identity; тести застосунку не запускалися (лише документація)."
+          BEPERKING_NL: "Schermen zijn niet in src/identity geïntegreerd; applicatietests niet uitgevoerd (alleen documentatie)."
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
+          echo "releaseversie: $VERSIE"
+          COMMIT="$(git rev-parse HEAD)"
+          python3 - "$VERSIE" "$COMMIT" "$RUNNER_TEMP/UITROL-MANIFEST.json" <<'PY'
+          import datetime, json, os, sys
+          versie, commit, uit = sys.argv[1:4]
+          basis = json.load(open("orchestratie/geinstalleerd.json", encoding="utf-8"))
+          m = {
+              "schema": 1,
+              "versie": versie,
+              "aangemaakt": datetime.datetime.now(datetime.timezone.utc).astimezone().isoformat(timespec="seconds"),
+              "herkomst": "git: feature/identity-account-20261104-120000@%s (basis %s @ %s, %s)"
+                          % (commit, basis["versie"], basis["bronCommit"][:12], basis["bron"]),
+              "auteur": "Eigenaar Test",
+              "zonderAi": False,
+              "deelnemers": [
+                  {"soort": "mens", "naam": "Eigenaar Test", "rollen": ["auteur", "controle"]},
+                  {"soort": "ai", "naam": "AutoClaw", "platform": "AutoClaw", "tool": "PowerShell, git, GitHub Actions",
+                   "model": {"id": None, "versie": None, "bron": "onbekend"},
+                   "rollen": ["ontwikkeling", "verpakken"]},
+              ],
+              "beschrijving": {
+                  "uk": {"titel": "Дизайн сторінки акаунта identity",
+                         "samenvatting": os.environ["SAMENVATTING_UK"],
+                         "wijzigingen": ["Додано docs/ontwerp/identity-account: прототип, ТЗ, матриця покриття, README",
+                                         "Зареєстровано задачу IDENTITY-001 і журнал розробки"],
+                         "fixes": [],
+                         "beperkingen": [os.environ["BEPERKING_UK"]],
+                         "instructies": "Перегляньте прототип і підтвердьте дизайн перед інтеграцією."},
+                  "nl": {"titel": "Ontwerp van de accountpagina (identity)",
+                         "samenvatting": os.environ["SAMENVATTING_NL"],
+                         "wijzigingen": ["docs/ontwerp/identity-account toegevoegd: prototype, specificatie, dekkingsmatrix, README",
+                                         "Taak IDENTITY-001 en ontwikkeldossier geregistreerd"],
+                         "fixes": [],
+                         "beperkingen": [os.environ["BEPERKING_NL"]],
+                         "instructies": "Bekijk het prototype en keur het ontwerp goed vóór integratie."},
+              },
+          }
+          with open(uit, "w", encoding="utf-8") as f:
+              f.write(json.dumps(m, ensure_ascii=False, indent=2) + "\n")
+          print("manifest: " + uit)
+          PY
+
+      - name: Bouw pakket
+        if: steps.bestaatal.outputs.bestaat == ''
+        run: |
+          set -euo pipefail
+          VERSIE="$RELEASE_VERSION"
+          HEAD_SHA="$(git rev-parse HEAD)"
+          TAK="feature/identity-account-20261104-120000"
+          DOSSIE="orchestratie/ontwikkelarchieven/IDENTITY-001.json"
+          git show "HEAD:$DOSSIE" > "$RUNNER_TEMP/dossier.json"
+          python3 - "$VERSIE" "$HEAD_SHA" "$TAK" "$DOSSIE" "$RUNNER_TEMP" <<'PY'
+          import hashlib, json, sys
+          versie, commit, tak, pad, temp = sys.argv[1:6]
+          ruw = open(temp + "/dossier.json", "rb").read()
+          dossier = json.loads(ruw.decode("utf-8"))
+          verplicht = ["tijdlijn", "keuzes", "wijzigingen", "controles", "bronnen", "beperkingen"]
+          ontbreekt = [k for k in verplicht if not isinstance(dossier.get(k), list) or not dossier[k]]
+          if dossier.get("schema") != 1 or dossier.get("taakId") != "IDENTITY-001" or ontbreekt:
+              sys.exit("FOUT ONTWIKKELARCHIEF_ONGELDIG: rubrieken ontbreken: " + ", ".join(ontbreekt))
+          if not isinstance(dossier.get("opdracht"), str) or len(dossier["opdracht"].strip()) < 40:
+              sys.exit("FOUT ONTWIKKELARCHIEF_ONGELDIG: dossier.opdracht te kort")
+          if not isinstance(dossier.get("privacy"), dict) or dossier["privacy"].get("geheimenUitgesloten") is not True:
+              sys.exit("FOUT ONTWIKKELARCHIEF_ONGELDIG: dossier.privacy.geheimenUitgesloten moet true zijn")
+          ref = {"schema": 1, "taakId": "IDENTITY-001", "repo": "Tarasevych/hub", "tak": tak, "commit": commit,
+                 "pad": pad, "sha256": hashlib.sha256(ruw).hexdigest(),
+                 "url": "https://github.com/Tarasevych/hub/blob/%s/%s" % (commit, pad),
+                 "release": "https://github.com/Tarasevych/hub/releases/tag/%s" % versie,
+                 "pakket": "mijn-ruimte-%s.tar.gz" % versie}
+          open(temp + "/ONTWIKKELARCHIEF.json", "w", encoding="utf-8").write(json.dumps(ref, ensure_ascii=False, indent=2) + "\n")
+          print("dossier-ref: " + ref["sha256"])
+          PY
+          BASIS_VERSIE="$(node -e 'process.stdout.write(require("./orchestratie/geinstalleerd.json").versie)')"
+          BASIS_COMMIT="$(node -e 'process.stdout.write(require("./orchestratie/geinstalleerd.json").bronCommit)')"
+          mkdir -p uitvoer
+          AUTEUR="Eigenaar Test" \
+          AGENT="autoclaw" \
+          SAMENVATTING="Дизайн сторінки акаунта identity: 12 екранів на одній сторінці, прототип, ТЗ і матриця покриття; код застосунку не змінено." \
+          BASIS_VERSIE="$BASIS_VERSIE" \
+          BASIS_COMMIT="$BASIS_COMMIT" \
+          UITROL_VERSIE_OVERRIDE="$VERSIE" \
+          MANIFEST="$RUNNER_TEMP/UITROL-MANIFEST.json" \
+          ONTWIKKELARCHIEF_BESTAND="$RUNNER_TEMP/ONTWIKKELARCHIEF.json" \
+          bash deploy/uitrol/maak-voorstelpakket.sh uitvoer HEAD
+          test -f "uitvoer/mijn-ruimte-$VERSIE.tar.gz"
+          (cd uitvoer && sha256sum "mijn-ruimte-$VERSIE.tar.gz" > "mijn-ruimte-$VERSIE.tar.gz.sha256")
+          (cd uitvoer && sha256sum -c "mijn-ruimte-$VERSIE.tar.gz.sha256")
+          # geen `tar | grep -q`: під pipefail SIGPIPE дає 141 — спершу зберігаємо перелік у файл
+          tar -tzf "uitvoer/mijn-ruimte-$VERSIE.tar.gz" > "$RUNNER_TEMP/archiefinhoud.txt"
+          grep -qxF "mijn-ruimte-$VERSIE/ONTWIKKELARCHIEF.json" "$RUNNER_TEMP/archiefinhoud.txt"
+          grep -qxF "mijn-ruimte-$VERSIE/docs/ontwerp/identity-account/identity-live.html" "$RUNNER_TEMP/archiefinhoud.txt"
+          SCHA="$(sha256sum "uitvoer/mijn-ruimte-$VERSIE.tar.gz" | cut -d' ' -f1)"
+          echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
+          python3 - "$VERSIE" "$SCHA" "uitvoer/mijn-ruimte-$VERSIE.tar.gz" <<'PY'
+          import json, os, sys
+          versie, scha, pad = sys.argv[1:4]
+          print(json.dumps({"versie": versie, "sha256": scha, "bytes": os.path.getsize(pad)}, ensure_ascii=False))
+          PY
+
+      - name: Publiceer GitHub Release
+        if: steps.bestaatal.outputs.bestaat == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          COMMIT="$(git rev-parse HEAD)"
+          gh release create "$RELEASE_VERSION" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256" \
+            --target "$COMMIT" \
+            --title "IDENTITY-ACCOUNT · $RELEASE_VERSION" \
+            --notes "Дизайн сторінки керування обліковим записом (12 екранів identity): живий прототип, ТЗ, матриця покриття. Лише документація — код застосунку не змінювався. Журнал розробки: orchestratie/ontwikkelarchieven/IDENTITY-001.json. Встановлення — лише за passkey-рішенням власника. BRON-COMMIT: $COMMIT" \
+            --prerelease --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_VERSION" \
+            --jq '.assets[] | select(.name | endswith(".tar.gz")) | "\(.name) \(.digest)"' | tee "$RUNNER_TEMP/digest.txt"
+          grep -q "sha256:$RELEASE_SHA" "$RUNNER_TEMP/digest.txt" || { echo "FOUT: digest op GitHub wijkt af van $RELEASE_SHA" >&2; exit 1; }
