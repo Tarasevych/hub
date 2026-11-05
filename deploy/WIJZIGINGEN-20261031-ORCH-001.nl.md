@@ -364,6 +364,19 @@ afgedekt met tests die op de eerdere code zouden falen.
     op een bevestigde gevaarlijke actie `var(--fout-vlak)` met `var(--text-on-vlak)`, en de bibliotheektegel kiest kleur en tekst
     met dezelfde themavlag (`tegel-kleur.ts`; in donker ≥ 7,1:1). `contrast-knoppen-logos` 38/38, nieuw `contrast-tegels` 10/10,
     10 van 10 mutanten gedood.
+  - *Pagina «E-mailaccounts» zonder eigen stijl* (`mobiel-geometrie` faalde al op `d0e6481`). `mail-accounts-hub.css` werd nergens
+    geladen; nu importeert `MailAccountsHub.tsx` het. Met de stijl kwamen twee oude regels tot leven, die de onafhankelijke visuele
+    controle in Chromium ving: op ≤ 480 px drukte een open bel het adres tot 0 px samen en werd het schild in de noot een stip. Nu
+    hangt het belvenster aan de kaart en krimpt het schild niet.
+  - *Op de telefoon verloor de mobiele laag van latere regels* (dezelfde foutklasse, vier keer). De knoppen van de geheimenkluis
+    waren 38 px (`geheimen.css`), de cataloguslijst van het werkblad had een eigen scroll op 58vh (`werkblad.css`), de actieknoppen
+    van een contact waren 40 px (`contacten.css`). De mobiele lagen staan nu aan het eind van het bestand; op de pc is niets
+    veranderd (gemeten in Chromium). Het commentaar van het vangnet in `ontwerp/mobiel.css` klopt nu: specificiteit (0,3,1), niet 0.
+    Nieuwe test `mobiel-cascade` rekent de cascade na in alle 240 CSS-bestanden (22/22, 16 van 16 mutanten gedood);
+    `mobiel-geometrie` 56/56.
+  - *Drie mailtests faalden niet door de site.* `mail-accounts-beheer` verwachtte de oude lege pagina, die sinds MAILORBIT-001 de
+    orbit is; `merk-bron` en `merk-bron-google` slaagden alleen met een pepper uit de omgeving. Nu zetten de tests zelf een pepper
+    en renderen ze de pagina met een account.
   - *Scenario 7 van `orch-acceptatie`.* Een vaste pauze van 1,2 s gaf onder belasting 45/47. Nu houdt de stub de eerste installatie
     onder flock vast tot de test de tweede heeft gecontroleerd.
 
