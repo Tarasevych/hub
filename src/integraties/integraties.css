@@ -238,7 +238,7 @@
 .ic2-plan p{margin:2px 0}
 .ic2-acties{display:flex;gap:6px;align-items:center;margin-top:auto}
 .ic2-knop{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line,color-mix(in srgb,currentColor 18%,transparent));background:transparent;color:inherit;font:inherit;font-size:.85rem;display:inline-flex;align-items:center;gap:6px;cursor:pointer;text-decoration:none}
-.ic2-knop.is-primair{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:#fff}
+.ic2-knop.is-primair{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:var(--text-on-accent)}
 .ic2-knop.is-icoon{padding:0;min-width:44px;justify-content:center;border-color:transparent}
 .ic2-knop svg{width:16px;height:16px}
 .ic2-knop:focus-visible,.ic2-blokkop:focus-visible,.ic2-groepkop:focus-visible{outline:2px solid var(--accent,#2563eb);outline-offset:2px}
@@ -255,7 +255,7 @@
 .iw2-stappen{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
 .iw2-stappen li{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;opacity:.55}
 .iw2-stappen li b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;border:1px solid currentColor;font-weight:600}
-.iw2-stappen li[data-stand=nu]{opacity:1}.iw2-stappen li[data-stand=nu] b{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:#fff}
+.iw2-stappen li[data-stand=nu]{opacity:1}.iw2-stappen li[data-stand=nu] b{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:var(--text-on-accent)}
 .iw2-stappen li[data-stand=klaar]{opacity:.85}
 .iw2-inhoud{display:flex;flex-direction:column;gap:8px}
 .iw2-inhoud p{margin:0}

@@ -1,9 +1,7 @@
-// Gedeelde stukjes voor ShortcutTegel / MapTegel: accentkleur en badge uit de bestaande menutellers.
-import { ACCENT_KLEUREN, type Accent } from '../../../shared/menu-model';
+// Gedeelde stukjes voor ShortcutTegel / MapTegel: accentkleur (met de tekst daarop, tegel-kleur.ts) en badge uit de bestaande menutellers.
 import { useMenuTellers } from '../../menu-meldingen-opslag';
 
-export const accentStijl = (accent: Accent | undefined, donker: boolean): React.CSSProperties | undefined =>
-  accent ? ({ ['--bib-accent' as string]: ACCENT_KLEUREN[accent][donker ? 'donker' : 'licht'].hoofd } as React.CSSProperties) : undefined;
+export { accentStijl } from './tegel-kleur';
 
 /** Badge uit de bestaande menu-tellerfeed (alleen e-mail heeft er nu een). Weggeklikt aantal telt mee, zoals in het menu. */
 export function useRegisterBadge(itemId: string | undefined): number {
