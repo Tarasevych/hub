@@ -13,11 +13,11 @@
   "omschrijving": "Виправлення проблем аудиту 2026-11-05 та безконфліктна інтеграція PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001",
   "kanaal": "github_pr",
   "overdrachten": [],
-  "releaseVersie": "20261105-080000",
-  "releaseSha256": "4e5877bc50093c7427a9bb8678a5cdb64db27c088ade2bb252e4fd5d793b2270",
-  "releaseCommit": "f20df65232f74d67a1f9a7246c329490282ab984",
-  "releaseZip": "mijn-ruimte-20261105-080000-antigravity-overdracht.zip",
-  "integratieCommit": "f20df65232f74d67a1f9a7246c329490282ab984",
+  "releaseVersie": "20261105-093500",
+  "releaseSha256": "7ba843264e17c56e71c6da590ae0c2d755b4207490719827434a2d19e7c0dfcd",
+  "releaseCommit": "360092fe96fd1fbd5c8bfd1f569937118d34b594",
+  "releaseZip": "mijn-ruimte-20261105-093500-antigravity-overdracht.zip",
+  "integratieCommit": "360092fe96fd1fbd5c8bfd1f569937118d34b594",
   "regelsHerlezen": [
     {
       "van": "1.4.8",
