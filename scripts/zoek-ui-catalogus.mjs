@@ -13,6 +13,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync, writeFileSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import ts from 'typescript';
 
 export const UITVOER = 'shared/zoek-ui-knoppen.generated.ts';
 
@@ -115,20 +116,184 @@ function koppen(src) {
   return uit;
 }
 
-/** Het tabblad waarin een element staat, als de bron dat zegt: de laatste `tab==='x'` (≤ 1500 tekens ervoor) die een echte pagina van de dienst is. */
-function tabHint(src, i, tabs) {
-  if (!tabs?.length) return '';
-  const stuk = src.slice(Math.max(0, i - 1500), i);
-  let laatste = ''; const re = /\btab\s*===\s*'([a-z-]+)'/g; let m;
-  while ((m = re.exec(stuk))) if (tabs.includes(m[1])) laatste = m[1];
-  return laatste;
+// ---- Tabblad van een element: uit de STRUCTUUR van de bron (TypeScript-syntaxisboom), niet uit nabije tekst.
+// Vroeger (tot 05.11.2026) gold «de laatste `tab==='x'` in de 1500 tekens vóór het element». Fouten daarvan:
+//   1. een lange tak verloor zijn tabblad: in InstellingencentrumWeergave.tsx staat «Підтвердити видалення» 1503 tekens na
+//      `p.tab==='account'` (sinds 3b58702) — de catalogus stuurde de zoeker naar «Персоналізація», waar die knop niet bestaat;
+//   2. een element NA een afgesloten tak erfde diens tabblad (`if (tab==='accounts') return …;` en daarna de gewone weergave);
+//   3. `else`-takken, `!==`, `switch (tab)` en eigen componenten (`{tab==='research' && <SearchCard/>}`) zag het niet.
+// Nu: voor elke plek in het bestand rekent de generator uit welke tabbladen daar nog MOGELIJK zijn. Voorwaarden over het tabblad
+// (`tab`/`p.tab` met `===`, `!==`, `!`, `&&`, `||`, en `const`-namen die zo'n voorwaarde zijn) worden per tabblad geëvalueerd
+// (waar / onwaar / onbekend); `if`/`else`, `? :`, `&&`/`||`, vroege `return`/`throw` en `switch (tab)` vernauwen de verzameling.
+// Staat een element in een eigen component, hulpfunctie of JSX-variabele van hetzelfde bestand, dan telt ook de verzameling op de
+// plekken waar die wordt gebruikt (als JSX-tag of aanroep; anders is het gebruik niet te volgen). Blijft er precies één tabblad
+// over, dan is dat de hint; anders geen hint, en de bestandsregel (PLEKKEN) geldt.
+const SK = ts.SyntaxKind;
+const ONBEKEND = 2;   // derde waarde naast true/false
+const isTabNaam = (n) => (ts.isIdentifier(n) && n.text === 'tab') || (ts.isPropertyAccessExpression(n) && n.name.text === 'tab');
+const isLetterlijk = (n) => ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n);
+const isFunctie = (n) => !!n && (ts.isArrowFunction(n) || ts.isFunctionExpression(n));
+const bevatJsx = (n) => ts.isJsxElement(n) || ts.isJsxSelfClosingElement(n) || ts.isJsxFragment(n) || !!ts.forEachChild(n, (k) => bevatJsx(k) || undefined);
+const zelfde = (a, b) => a.size === b.size && [...a].every((x) => b.has(x));
+/** Verlaat deze opdracht altijd de functie (return/throw, ook als laatste opdracht van een blok)? */
+const verlaat = (st) => !!st && (ts.isReturnStatement(st) || ts.isThrowStatement(st) || (ts.isBlock(st) && verlaat(st.statements[st.statements.length - 1])));
+
+/** Leest één bestand: per plek de mogelijke tabbladen, plus eigen componenten/hulpfuncties/JSX-variabelen en hun gebruik. */
+function tabStructuur(src, bestand, tabs) {
+  const sf = ts.createSourceFile(bestand, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const ALLE = new Set(tabs);
+  const bindingen = new Map();       // naam → { van, tot, functie } | null (null = niet eenduidig: niet te volgen)
+  const verwijzingen = new Map();    // naam → [{ i, alsTag, alsAanroep }]
+  const aliassen = new Map();        // const-naam → initializer (voor `const x = tab !== 'a' && …`), null = niet eenduidig
+  const schaduw = new Set();
+
+  // 1. namen: bindingen, aliassen en verwijzingen
+  const binding = (naam, lichaam, functie) => {
+    if (lichaam) bindingen.set(naam, bindingen.has(naam) ? null : { van: lichaam.getStart(sf), tot: lichaam.end, functie });
+  };
+  const namen = (n) => {
+    if (ts.isFunctionDeclaration(n) && n.name) binding(n.name.text, n.body, true);
+    else if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) {
+      const isConst = ts.isVariableDeclarationList(n.parent) && (n.parent.flags & ts.NodeFlags.Const) !== 0;
+      if (isConst) aliassen.set(n.name.text, aliassen.has(n.name.text) ? null : n.initializer);
+      let init = n.initializer;
+      while (ts.isParenthesizedExpression(init) || ts.isAsExpression(init)) init = init.expression;
+      // memo(…)/forwardRef(…) om een functie heen telt als die functie (andere aanroepen, zoals items.map(…), niet)
+      if (ts.isCallExpression(init) && /^(?:React\.)?(?:memo|forwardRef)$/.test(init.expression.getText(sf)) && isFunctie(init.arguments[0])) init = init.arguments[0];
+      if (isFunctie(init)) binding(n.name.text, init.body, true);
+      // JSX als waarde (ook in `x ? <A/> : null` of `items.map(…)`): verschijnt waar de naam wordt gebruikt
+      else if (bevatJsx(init)) binding(n.name.text, init, false);
+    } else if (ts.isIdentifier(n)) {
+      const p = n.parent;
+      const isDeclaratie = (ts.isFunctionDeclaration(p) || ts.isVariableDeclaration(p) || ts.isParameter(p) || ts.isBindingElement(p)) && p.name === n;
+      const isEigenschap = (ts.isPropertyAccessExpression(p) && p.name === n) || (ts.isPropertyAssignment(p) && p.name === n) || ts.isJsxAttribute(p);
+      if (isDeclaratie && (ts.isParameter(p) || ts.isBindingElement(p))) schaduw.add(n.text);   // zelfde naam als parameter: niet te volgen
+      if (!isDeclaratie && !isEigenschap && !ts.isJsxClosingElement(p)) {
+        // Bruikbaar gebruik = de plek waar de uitvoer verschijnt: als JSX-tag of als aanroep (een JSX-variabele: elke verwijzing).
+        const alsTag = (ts.isJsxOpeningElement(p) || ts.isJsxSelfClosingElement(p)) && p.tagName === n;
+        const alsAanroep = ts.isCallExpression(p) && p.expression === n;
+        const lijst = verwijzingen.get(n.text) ?? [];
+        lijst.push({ i: n.getStart(sf), alsTag, alsAanroep });
+        verwijzingen.set(n.text, lijst);
+      }
+    }
+    ts.forEachChild(n, namen);
+  };
+  namen(sf);
+  for (const naam of schaduw) { if (bindingen.has(naam)) bindingen.set(naam, null); if (aliassen.has(naam)) aliassen.set(naam, null); }
+
+  // 2. driewaardige evaluatie van een voorwaarde voor één tabblad v
+  const bezig = new Set();
+  const waarde = (n, v) => {
+    if (ts.isParenthesizedExpression(n) || ts.isAsExpression(n) || ts.isNonNullExpression(n)) return waarde(n.expression, v);
+    if (ts.isPrefixUnaryExpression(n) && n.operator === SK.ExclamationToken) { const w = waarde(n.operand, v); return w === ONBEKEND ? ONBEKEND : !w; }
+    if (n.kind === SK.TrueKeyword) return true;
+    if (n.kind === SK.FalseKeyword) return false;
+    if (ts.isBinaryExpression(n)) {
+      const op = n.operatorToken.kind;
+      if (op === SK.AmpersandAmpersandToken || op === SK.BarBarToken) {
+        const a = waarde(n.left, v), b = waarde(n.right, v);
+        if (op === SK.AmpersandAmpersandToken) return a === false || b === false ? false : a === true && b === true ? true : ONBEKEND;
+        return a === true || b === true ? true : a === false && b === false ? false : ONBEKEND;
+      }
+      const gelijk = op === SK.EqualsEqualsEqualsToken || op === SK.EqualsEqualsToken;
+      const ongelijk = op === SK.ExclamationEqualsEqualsToken || op === SK.ExclamationEqualsToken;
+      if (gelijk || ongelijk) {
+        const [naam, lit] = isLetterlijk(n.right) ? [n.left, n.right] : isLetterlijk(n.left) ? [n.right, n.left] : [null, null];
+        if (naam && isTabNaam(naam)) return gelijk ? lit.text === v : lit.text !== v;
+      }
+      return ONBEKEND;
+    }
+    if (ts.isIdentifier(n) && aliassen.get(n.text) && !bezig.has(n.text)) {
+      bezig.add(n.text);
+      try { return waarde(aliassen.get(n.text), v); } finally { bezig.delete(n.text); }
+    }
+    return ONBEKEND;
+  };
+  const kanWaar = (c, S) => new Set([...S].filter((v) => waarde(c, v) !== false));
+  const kanOnwaar = (c, S) => new Set([...S].filter((v) => waarde(c, v) !== true));
+
+  // 3. plekken met een vernauwde verzameling (de binnenste wint)
+  const gebieden = [];   // { van, tot, S }
+  const gebied = (van, tot, S, ouder) => { if (!zelfde(S, ouder)) gebieden.push({ van, tot, S }); };
+  const knoopGebied = (k, S, ouder) => { if (k) gebied(k.getStart(sf), k.end, S, ouder); };
+  const lijst = (opdrachten, eind, S) => {
+    let huidig = S;
+    for (const st of opdrachten) {
+      if (huidig !== S) gebied(st.getStart(sf), eind, huidig, S);
+      bezoek(st, huidig);
+      // `if (voorwaarde) return …;` zonder else: wat volgt, draait alleen als de voorwaarde onwaar is
+      if (ts.isIfStatement(st) && !st.elseStatement && verlaat(st.thenStatement)) huidig = kanOnwaar(st.expression, huidig);
+    }
+  };
+  const bezoek = (n, S) => {
+    if (ts.isIfStatement(n)) {
+      bezoek(n.expression, S);
+      const ja = kanWaar(n.expression, S), nee = kanOnwaar(n.expression, S);
+      knoopGebied(n.thenStatement, ja, S); bezoek(n.thenStatement, ja);
+      if (n.elseStatement) { knoopGebied(n.elseStatement, nee, S); bezoek(n.elseStatement, nee); }
+      return;
+    }
+    if (ts.isConditionalExpression(n)) {
+      bezoek(n.condition, S);
+      const ja = kanWaar(n.condition, S), nee = kanOnwaar(n.condition, S);
+      knoopGebied(n.whenTrue, ja, S); bezoek(n.whenTrue, ja);
+      knoopGebied(n.whenFalse, nee, S); bezoek(n.whenFalse, nee);
+      return;
+    }
+    if (ts.isBinaryExpression(n) && (n.operatorToken.kind === SK.AmpersandAmpersandToken || n.operatorToken.kind === SK.BarBarToken)) {
+      bezoek(n.left, S);
+      const rechts = n.operatorToken.kind === SK.AmpersandAmpersandToken ? kanWaar(n.left, S) : kanOnwaar(n.left, S);
+      knoopGebied(n.right, rechts, S); bezoek(n.right, rechts);
+      return;
+    }
+    if (ts.isSwitchStatement(n) && isTabNaam(n.expression)) {
+      bezoek(n.expression, S);
+      const genoemd = new Set(n.caseBlock.clauses.filter((c) => ts.isCaseClause(c) && isLetterlijk(c.expression)).map((c) => c.expression.text));
+      let doorval = null;   // lege case-regels vallen door naar de volgende
+      for (const c of n.caseBlock.clauses) {
+        let hier;
+        if (ts.isCaseClause(c)) hier = isLetterlijk(c.expression) ? new Set([...S].filter((v) => v === c.expression.text)) : new Set(S);
+        else hier = new Set([...S].filter((v) => !genoemd.has(v)));
+        if (doorval) for (const v of doorval) hier.add(v);
+        if (c.statements.length) { gebied(c.statements[0].getStart(sf), c.end, hier, S); lijst(c.statements, c.end, hier); }
+        doorval = c.statements.length && verlaat(c.statements[c.statements.length - 1]) ? null : hier;
+      }
+      return;
+    }
+    if (ts.isBlock(n) || ts.isSourceFile(n) || ts.isModuleBlock(n)) { lijst(n.statements, n.end, S); return; }
+    ts.forEachChild(n, (k) => bezoek(k, S));
+  };
+  bezoek(sf, ALLE);
+  return { ALLE, gebieden, bindingen, verwijzingen };
+}
+
+/** Maakt `i → tabblad` voor één bestand (leeg = geen eenduidig tabblad uit de bron). */
+function tabHintVoor(src, bestand, tabs) {
+  if (!tabs?.length || !/\btab\b/.test(src)) return () => '';
+  const { ALLE, gebieden, bindingen, verwijzingen } = tabStructuur(src, bestand, tabs);
+  const kleinste = (lijst, i) => { let b = null; for (const x of lijst) if (x.van <= i && i < x.tot && (!b || x.tot - x.van < b.tot - b.van)) b = x; return b; };
+  const eigen = [...bindingen].filter(([, b]) => b).map(([naam, b]) => ({ naam, ...b }));
+  const mogelijk = (i, gezien) => {
+    const S = kleinste(gebieden, i)?.S ?? ALLE;
+    const b = kleinste(eigen.filter((x) => !gezien.has(x.naam)), i);
+    if (!b) return S;
+    const gebruik = verwijzingen.get(b.naam) ?? [];
+    if (!gebruik.length || !gebruik.every((g) => (b.functie ? g.alsTag || g.alsAanroep : true))) return S;
+    const volgende = new Set(gezien).add(b.naam);
+    const unie = new Set();
+    for (const g of gebruik) for (const v of mogelijk(g.i, volgende)) unie.add(v);
+    return new Set([...S].filter((v) => unie.has(v)));
+  };
+  return (i) => { const S = mogelijk(i, new Set()); return S.size === 1 ? [...S][0] : ''; };
 }
 
 export function elementenUit(src, bestand, tabs = []) {
   const uit = [];
+  const tabHint = tabHintVoor(src, bestand, tabs);
   const secties = koppen(src);
   const sectieBij = (i) => { let s = null; for (const k of secties) { if (k.i < i) s = k; else break; } return s; };
-  for (const k of secties) if (!GENERIEK.has(k.uk.toLowerCase())) uit.push({ soort: 'sectie', uk: k.uk, nl: k.nl, sectie: null, bestand, tabHint: tabHint(src, k.i, tabs) });
+  for (const k of secties) if (!GENERIEK.has(k.uk.toLowerCase())) uit.push({ soort: 'sectie', uk: k.uk, nl: k.nl, sectie: null, bestand, tabHint: tabHint(k.i) });
   const re = /<button\b/g; let m;
   while ((m = re.exec(src))) {
     const e = tagEinde(src, m.index); if (e < 0) continue;
@@ -139,7 +304,7 @@ export function elementenUit(src, bestand, tabs = []) {
     if (!p) continue;
     if (GENERIEK.has(p.uk.toLowerCase())) continue;
     const s = sectieBij(m.index);
-    uit.push({ soort: 'knop', ...p, sectie: s ? { uk: s.uk, nl: s.nl } : null, bestand, ...(hulp ? { hulp } : {}), tabHint: tabHint(src, m.index, tabs) });
+    uit.push({ soort: 'knop', ...p, sectie: s ? { uk: s.uk, nl: s.nl } : null, bestand, ...(hulp ? { hulp } : {}), tabHint: tabHint(m.index) });
   }
   // Tabbladen met een eigen hash-adres (src/agenten/AgentenPagina.tsx → tabInfo: { overzicht: { uk, nl, icoon } … }).
   if (/agenten\/AgentenPagina\.tsx$/.test(bestand)) {
