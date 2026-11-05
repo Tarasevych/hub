@@ -56,7 +56,7 @@
 /* Ритм — не залежить від теми. */
 :root {
   --ruimte-1:4px; --ruimte-2:8px; --ruimte-3:12px; --ruimte-4:16px; --ruimte-5:24px; --ruimte-6:32px;
-  --straal-s:8px; --straal-m:12px; --straal-l:16px; --straal-xl:20px;
+  --straal-s:10px; --straal-m:14px; --straal-l:20px; --straal-xl:26px;
   --tekst-basis:16px; --tekst-klein:14px; --tekst-mini:12px;
   --tik-hoogte:40px; --tik-hoogte-mobiel:44px;
   --veilig-boven:env(safe-area-inset-top,0px); --veilig-onder:env(safe-area-inset-bottom,0px); --veilig-links:env(safe-area-inset-left,0px); --veilig-rechts:env(safe-area-inset-right,0px);

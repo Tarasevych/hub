@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "taakId": "DESIGN-001",
+  "agent": "codex",
+  "agentPlatform": "ChatGPT",
+  "model": {
+    "id": null,
+    "versie": null,
+    "bron": "onbekend"
+  },
+  "basisCommit": "6e815a00307dd9c00a0b2907838be099be8c5610",
+  "basisVersie": "20261104-204906",
+  "installatie": {
+    "versie": "20261104-204906",
+    "commit": "6e815a00307dd9c00a0b2907838be099be8c5610",
+    "bron": "/api/version"
+  },
+  "regelsVersie": "1.4.2",
+  "regelsHash": "f5e5f6bc7ddaa067b60f643c16cbeb7510d9b75df5d72ed5178106a8042dbb0a",
+  "tak": "feature/design-001-20261105-140000",
+  "kanaal": "github_pr",
+  "zonderGit": null,
+  "commits": [],
+  "bestanden": {
+    "gewijzigd": [
+      "src/ontwerp/fundament.css",
+      "src/ontwerp/tokens.css",
+      "src/platform/vensters.css"
+    ],
+    "toegevoegd": [
+      "src/ontwerp/modern.css",
+      "orchestratie/taken/DESIGN-001.json"
+    ],
+    "verwijderd": []
+  },
+  "samenvatting": {
+    "uk": "Оновлено спільні стилі карток, вікон і робочого столу зі збереженням тем та адаптивної верстки.",
+    "nl": "Gedeelde stijlen voor kaarten, vensters en werkblad vernieuwd met behoud van thema's en responsieve indeling."
+  },
+  "tests": {
+    "geslaagd": 5,
+    "mislukt": 1,
+    "falend": [
+      "node scripts/eenheidstests.mjs werkblad: серверні тести потребують DATABASE_URL"
+    ],
+    "uitleg": {
+      "uk": "Пройдено розбір CSS, перевірку контрасту, typecheck:server, orch-kern (78/78) і werkblad-canvas-kern (53/53). Повний набір werkblad потребує бази даних.",
+      "nl": "CSS-parsing, contrastcontrole, typecheck:server, orch-kern (78/78) en werkblad-canvas-kern (53/53) geslaagd. De volledige werkbladreeks vereist een database."
+    }
+  },
+  "nietGedaan": {
+    "uk": "Не перевірено кожну сторінку в браузері; адаптивність і збірку треба підтвердити до інтеграції. Випуск і встановлення не виконані. Гілка integratie на GitHub має іншу історію і помилку відбитків правил.",
+    "nl": "Niet iedere pagina is in de browser gecontroleerd; responsiviteit en build moeten vóór integratie worden bevestigd. Geen release of installatie. De GitHub-integratietak heeft een andere geschiedenis en onjuiste regelafdrukken."
+  },
+  "conflicten": [],
+  "aangemaakt": "2026-11-05T05:50:15.829Z"
+}
