@@ -61,6 +61,9 @@ jobs:
             sleep 1
           done
           node tests/visueel/design-001-controle.mjs
+      - name: Toon Vite-logboek bij een fout
+        if: failure()
+        run: cat uitvoer/design-001/vite.log || true
       - name: Bewaar beelden en logboek
         if: always()
         uses: actions/upload-artifact@v4

@@ -16,9 +16,18 @@ try {
   for (const g of gevallen) {
     const pagina = await browser.newPage({ viewport: { width: g.breedte, height: g.hoogte }, reducedMotion: 'reduce' });
     const fouten = [];
+    const diagnose = [];
     pagina.on('pageerror', (error) => fouten.push(error.message));
-    await pagina.goto(url + (g.donker ? '?donker=1' : ''), { waitUntil: 'networkidle' });
-    await pagina.locator('.wb-begroeting').waitFor();
+    pagina.on('console', (bericht) => { if (bericht.type() === 'error') diagnose.push(bericht.text()); });
+    pagina.on('response', (antwoord) => { if (antwoord.status() >= 400) diagnose.push(`${antwoord.status()} ${antwoord.url()}`); });
+    try {
+      await pagina.goto(url + (g.donker ? '?donker=1' : ''), { waitUntil: 'networkidle' });
+      await pagina.locator('.wb-begroeting').waitFor();
+    } catch (error) {
+      await pagina.screenshot({ path: `uitvoer/design-001/${g.naam}-fout.png`, fullPage: true }).catch(() => {});
+      console.error('Browserdiagnose:', JSON.stringify({ fouten, diagnose, body: (await pagina.locator('body').innerText().catch(() => '')).slice(0, 1500) }));
+      throw error;
+    }
     const stand = await pagina.evaluate(() => {
       const begroeting = document.querySelector('.wb-begroeting');
       const kaart = document.querySelector('.wb-tegel.is-kaart');
