@@ -179,7 +179,7 @@ export function Profielfoto({ naam, email, foto, rolTekst, lang, onFoto }: Props
       <div>
         <strong>{naam}</strong>
         <span>{email}</span>
-        <small>{rolTekst}</small>
+        {rolTekst}
       </div>
 
       {open && (

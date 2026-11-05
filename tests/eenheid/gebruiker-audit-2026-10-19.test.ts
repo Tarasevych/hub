@@ -133,7 +133,7 @@ export async function main(): Promise<number> {
     })());
     let geklikt = '';
     const MailAccountsHub = (await import('../../src/MailAccountsHub')).default;
-    const html = renderToString(createElement(MailAccountsHub, { lang: 'uk', userName: 'Олена', onConnect: (p: string) => { geklikt = p; } }));
+    const html = renderToString(createElement(MailAccountsHub, { lang: 'uk', userName: 'Олена', accounts: [{ id: 'p1', email: 'olena@example.test', provider: 'Google', status: 'connected' }], onConnect: (p: string) => { geklikt = p; } }));
     check('U-01 kaarten dragen data-mail-provider en de begroeting toont de sessienaam', html.includes('data-mail-provider="gmail"') && html.includes('Вітаємо, Олена!') && !html.includes('Власник') && geklikt === '');
     check('U-01 route bestaat en vereist een mail-sessie', bron('backend/index.ts').includes("'POST /api/owner/mail/google-suite/onboarding/start'"));
   }

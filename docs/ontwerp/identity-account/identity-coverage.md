@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./identity-coverage.uk.md) · [🇳🇱 **Nederlandse versie**](./identity-coverage.nl.md) · [🏠 Головна (UK)](../../../README.md) · [🏠 Hoofdpagina (NL)](../../../LEESMIJ.md) · [📚 Каталог статей / Index](../../INDEX.md)
+
 # Покриття категорії `identity` — 12 сторінок (оновлено 2026-11-04)
 
 Джерело переліку: `shared/menu-model.ts → MENU_PAGINAS.identity`.

@@ -51,9 +51,9 @@ async function scanPdf(png: Uint8Array, extraTekstPagina = false): Promise<Uint8
   return pdf.save();
 }
 const emlBytes = (pdf: Uint8Array) => strToU8([
-  'From: =?UTF-8?B?0J/QsNCy0LvQvg==?= <pavlo@example.test>', 'To: boekhouding@example.test', 'Subject: =?utf-8?Q?Factuur_oktober?=', 'Date: Wed, 22 Oct 2026 10:00:00 +0200',
+  'From: =?UTF-8?B?0JLQu9Cw0YHQvdC40Lo=?= <eigenaar@example.test>', 'To: boekhouding@example.test', 'Subject: =?utf-8?Q?Factuur_oktober?=', 'Date: Wed, 22 Oct 2026 10:00:00 +0200',
   'MIME-Version: 1.0', 'Content-Type: multipart/mixed; boundary="GRENS1"', '', '--GRENS1', 'Content-Type: text/plain; charset=utf-8', 'Content-Transfer-Encoding: quoted-printable', '',
-  'Hallo, in de bijlage de factuur. Vriendelijke groet =E2=80=94 Pavlo', '--GRENS1', 'Content-Type: application/pdf; name="factuur.pdf"', 'Content-Disposition: attachment; filename="factuur.pdf"', 'Content-Transfer-Encoding: base64', '',
+  'Hallo, in de bijlage de factuur. Vriendelijke groet =E2=80=94 Eigenaar', '--GRENS1', 'Content-Type: application/pdf; name="factuur.pdf"', 'Content-Disposition: attachment; filename="factuur.pdf"', 'Content-Transfer-Encoding: base64', '',
   Buffer.from(pdf).toString('base64').replace(/(.{76})/g, '$1\n'), '--GRENS1', 'Content-Type: text/plain; name="notitie.txt"', 'Content-Disposition: attachment; filename="notitie.txt"', '', 'afspraak dinsdag 14:00', '--GRENS1--', '',
 ].join('\r\n'));
 const zip64Bytes = () => { const z = zipSync({ 'a.txt': strToU8('a') }); let e = -1; for (let i = z.length - 22; i >= 0; i--) if (z[i] === 0x50 && z[i + 1] === 0x4b && z[i + 2] === 5 && z[i + 3] === 6) { e = i; break; } z[e + 10] = 0xff; z[e + 11] = 0xff; return z; };
@@ -128,7 +128,7 @@ export async function main(): Promise<number> {
 
     // ---- eml ----
     const eml = await tekstUit({ bytes: emlBytes(pdfT), mime: 'message/rfc822', naam: 'bericht.eml' });
-    check('eml: koppen gedecodeerd (RFC 2047) + tekst', eml.status === 'ok' && eml.herkomst === 'eml' && /From: Власник/.test(eml.tekst) && /Subject: Factuur oktober/.test(eml.tekst) && /groet — Pavlo/.test(eml.tekst), JSON.stringify(eml.tekst.slice(0, 200)));
+    check('eml: koppen gedecodeerd (RFC 2047) + tekst', eml.status === 'ok' && eml.herkomst === 'eml' && /From: Власник/.test(eml.tekst) && /Subject: Factuur oktober/.test(eml.tekst) && /groet — Eigenaar/.test(eml.tekst), JSON.stringify(eml.tekst.slice(0, 200)));
     check('eml: bijlagen als onderdelen met pad', eml.onderdelen?.length === 2 && eml.onderdelen.some((d) => d.pad === 'bericht.eml/factuur.pdf' && /2026-0042/.test(d.tekst)) && eml.onderdelen.some((d) => d.pad === 'bericht.eml/notitie.txt' && /dinsdag/.test(d.tekst)), JSON.stringify(eml.onderdelen?.map((d) => [d.pad, d.status])));
 
     // ---- archieven ----

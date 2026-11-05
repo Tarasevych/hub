@@ -40,8 +40,8 @@
 
 | Стаття / Сторінка | Опис | 🇺🇦 Українська версія | 🇳🇱 Нідерландська версія | Канонічний файл (підписаний `regels.lock.json`) |
 |---|---|---|---|---|
-| **Правила агентів (`AGENTS.md`)** | Єдине джерело правил для всіх 8 ШІ-агентів (`ORCH-001`, `TRACE-001`, `B-009`) | [🇺🇦 `AGENTS.uk.md`](../AGENTS.uk.md) | [🇳🇱 `AGENTS.nl.md`](../AGENTS.nl.md) | [`AGENTS.md`](../AGENTS.md) *(двомовний канон)* |
-| **Реєстр рішень (`BESLUITEN.md`)** | Append-only журнал архітектурних і організаційних рішень `B-001`–`B-011` | [🇺🇦 `BESLUITEN.uk.md`](../orchestratie/BESLUITEN.uk.md) | [🇳🇱 `BESLUITEN.nl.md`](../orchestratie/BESLUITEN.nl.md) | [`orchestratie/BESLUITEN.md`](../orchestratie/BESLUITEN.md) |
+| **Правила агентів (`AGENTS.md`)** | Єдине джерело правил для всіх 8 ШІ-агентів (`ORCH-001`, `TRACE-001`, `B-009`, `B-013`) | [🇺🇦 `AGENTS.uk.md`](../AGENTS.uk.md) | [🇳🇱 `AGENTS.nl.md`](../AGENTS.nl.md) | [`AGENTS.md`](../AGENTS.md) *(двомовний канон)* |
+| **Реєстр рішень (`BESLUITEN.md`)** | Append-only журнал архітектурних і організаційних рішень `B-001`–`B-013` | [🇺🇦 `BESLUITEN.uk.md`](../orchestratie/BESLUITEN.uk.md) | [🇳🇱 `BESLUITEN.nl.md`](../orchestratie/BESLUITEN.nl.md) | [`orchestratie/BESLUITEN.md`](../orchestratie/BESLUITEN.md) |
 | **Компактний контекст (`CONTEXT-COMPACT.md`)** | Автогенерований двомовний контекст для агентів без прямого доступу до GitHub | [🇺🇦/🇳🇱 `CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) | [🇳🇱/🇺🇦 `CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) | [`orchestratie/CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) |
 
 ---
@@ -183,6 +183,10 @@
 | **Тестування просторів (`RUIMTES-TESTEN`)** | [🇺🇦 `.uk.md`](./ontwerp/RUIMTES-TESTEN.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/RUIMTES-TESTEN.nl.md) | [`RUIMTES-TESTEN.md`](./ontwerp/RUIMTES-TESTEN.md) |
 | **API-контракт технічних просторів v2 (`TECH-RUIMTES-API`)** | [🇺🇦 `.uk.md`](./ontwerp/TECH-RUIMTES-API.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/TECH-RUIMTES-API.nl.md) | [`TECH-RUIMTES-API.md`](./ontwerp/TECH-RUIMTES-API.md) |
 | **Блоки робочого столу (`WERKBLAD-BLOKKEN`)** | [🇺🇦 `.uk.md`](./ontwerp/WERKBLAD-BLOKKEN.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/WERKBLAD-BLOKKEN.nl.md) | [`WERKBLAD-BLOKKEN.md`](./ontwerp/WERKBLAD-BLOKKEN.md) |
+| **Акаунт Identity: Огляд макета (`identity-account/README-account`)** | [🇺🇦 `.uk.md`](./ontwerp/identity-account/README-account.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/identity-account/README-account.nl.md) | [`README-account.md`](./ontwerp/identity-account/README-account.md) |
+| **Акаунт Identity: Технічне завдання (`TZ-account-2026-11-04`)** | [🇺🇦 `.uk.md`](./ontwerp/identity-account/TZ-account-2026-11-04.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/identity-account/TZ-account-2026-11-04.nl.md) | [`TZ-account-2026-11-04.md`](./ontwerp/identity-account/TZ-account-2026-11-04.md) |
+| **Акаунт Identity: Матриця покриття 12/12 (`identity-coverage`)** | [🇺🇦 `.uk.md`](./ontwerp/identity-account/identity-coverage.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/identity-account/identity-coverage.nl.md) | [`identity-coverage.md`](./ontwerp/identity-account/identity-coverage.md) |
+| **Акаунт Identity: Дизайн-специфікація (`ontwerp-account-samenvatting`)** | [🇺🇦 `.uk.md`](./ontwerp/identity-account/ontwerp-account-samenvatting.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/identity-account/ontwerp-account-samenvatting.nl.md) | [`ontwerp-account-samenvatting.md`](./ontwerp/identity-account/ontwerp-account-samenvatting.md) |
 | **Термінал технічного профілю (`terminal/TERMINAL`)** | [🇺🇦 `.uk.md`](./terminal/TERMINAL.uk.md) | [🇳🇱 `.nl.md`](./terminal/TERMINAL.nl.md) | [`TERMINAL.md`](./terminal/TERMINAL.md) |
 | **Universal File Workspace v0.3 (`INTEGRATIE-20261027`)** | [🇺🇦 `.uk.md`](./universele-bestanden/INTEGRATIE-20261027.uk.md) | [🇳🇱 `.nl.md`](./universele-bestanden/INTEGRATIE-20261027.nl.md) | [`INTEGRATIE-20261027.md`](./universele-bestanden/INTEGRATIE-20261027.md) |
 | **Інтеграція блоків у Werkblad v3 (`BLOKKEN-INTEGRATIE`)** | [🇺🇦 `.uk.md`](./werkblad/BLOKKEN-INTEGRATIE.uk.md) | [🇳🇱 `.nl.md`](./werkblad/BLOKKEN-INTEGRATIE.nl.md) | [`BLOKKEN-INTEGRATIE.md`](./werkblad/BLOKKEN-INTEGRATIE.md) |

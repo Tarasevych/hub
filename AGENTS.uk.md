@@ -23,13 +23,13 @@
 - Простори користувачів ізольовані й шифровані їхнім методом входу; власник сервера не має технічної змоги їх розшифрувати.
 - Мови: спілкування і звіти — українською; коментарі в коді — українською або нідерландською; тексти інтерфейсу (UI) — українською та нідерландською.
   Англійська використовується лише для неперекладних технічних термінів. Шляхи/адреси — нідерландською (`/verbindingen`, а не `/connections`).
-- Стек ВМ `203.0.113.10` (`B-009`): `Ubuntu 26.04.1 LTS` (`kernel 7.0`, `glibc 2.43`, `systemd 259.9`), `Node.js 26.13.0 LTS`, `PostgreSQL 18.6`,
+- Стек ВМ `<VM-IP>` (`B-009`): `Ubuntu 26.04.1 LTS` (`kernel 7.0`, `glibc 2.43`, `systemd 259.9`), `Node.js 26.13.0 LTS`, `PostgreSQL 18.6`,
   `Caddy 2.11.7` (`admin.sock|0660`), `OPA 1.22.0`, `age 1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2`. У `deploy/*.service` — `RestrictSUIDSGID=no` (інакше seccomp блокує `openat2` у `tar 1.35`).
 
 ## 2. Перед початком роботи (обов'язково)
 
 1. Прочитай [`AGENTS.md`](./AGENTS.md) (або `orchestratie/CONTEXT-COMPACT.md`, якщо немає доступу до репозиторію) і [`orchestratie/beleid.json`](./orchestratie/beleid.json).
-2. База коду: `beleid.json → basis.bronCommit` (`b279ccab…`, версія `20261031-093842`, статус `opgave_eigenaar` — заявлено власником; після синхронізації `B-009` головна гілка `voornaamst` та `integratie` синхронізовані). Якщо маєш доступ до сайту — звір `/api/version` і зафіксуй результат у `BESLUITEN.md`.
+2. База коду: `beleid.json → basis.bronCommit` (зараз `f3f3fabb…`, версія `20261104-204906`, статус `geverifieerd_productie` — звірено з `hub.tarasevych.com/api/version`, див. `B-013`; гілки `integratie` та `voornaamst` синхронізовані). Якщо маєш доступ до сайту — звір `/api/version` і зафіксуй результат у `BESLUITEN.md`.
 3. Зареєструй задачу: `node scripts/orch.mjs taak-start --id ORCH-001 --agent claude --basis <sha> --tak feature/orch-001-YYYYMMDD-HHMMSS`
    (без репозиторію — створи `ORCH-OVERDRACHT.json` вручну за зразком `orchestratie/sjablonen/ORCH-OVERDRACHT.json`).
 4. Запусти `node scripts/orch.mjs controleer` і `node scripts/orch.mjs versheid --taak <ID> --fase start`. Якщо червоне — не починай, спершу перебазуйся або перечитай правила.
@@ -42,7 +42,7 @@
 - Виявив стару помилку — виправ (окремим комітом), не ігноруй. Нічого не прибирай «щоб запрацювало»: кнопку, вкладку, тест чи перевірку.
 - Секрети, токени, приватні ключі, вміст листів — ніколи в чат, лог, коміт чи пакет. Приватні ключі власника агентам не передаються.
 - Production, default branch, резервні копії, критичні дозволи — тільки після явного погодження власника (не іншого агента).
-- Діагностика й час власника (`B-009`): не просити власника вручну виконувати команди в терміналі (`df -h`, `journalctl`) чи вручну збирати пакети; без доступу до `203.0.113.10` дати стислий висновок (1–2 речення) для інфраструктурного агента на ПК власника. Не вгадувати причину збою `voorcontrole` (не списувати на `.zip`, якщо крок `structuur` пройдено). Деталі нижче, `B-009`.
+- Діагностика й час власника (`B-009`): не просити власника вручну виконувати команди в терміналі (`df -h`, `journalctl`) чи вручну збирати пакети; без доступу до `<VM-IP>` дати стислий висновок (1–2 речення) для інфраструктурного агента на ПК власника. Не вгадувати причину збою `voorcontrole` (не списувати на `.zip`, якщо крок `structuur` пройдено). Деталі нижче, `B-009`.
 
 ## 4. Перед передаванням результату
 
@@ -85,9 +85,9 @@
   без `UITROL-BASIS` із версії `20261201` (`GEEN_BASIS`), правила ≠ `regels.lock.json` (`REGELS_NIET_VERGRENDELD`), режим поза політикою
   (`MODUS_NIET_TOEGESTAAN`). GitOps (автоматично) працює лише за `automatisch_beperkt` **і** підписаним lock. Приватні ключі агентам не передаються.
 - **B-009 (з 04.11.2026 · стек Ubuntu 26.04.1 LTS, `RestrictSUIDSGID=no` та правила комунікації з власником):**
-  1. На ВМ `203.0.113.10` працюють `Ubuntu 26.04.1 LTS (Resolute)` (`kernel 7.0.0-42-generic`, `glibc 2.43`, `systemd 259.9`), `Node.js v26.13.0 LTS`, `PostgreSQL 18.6` (`/srv/data/postgresql/18/main` із `--data-checksums`), `Caddy v2.11.7` (`admin unix//run/caddy/admin.sock|0660`), `OPA v1.22.0` (`127.0.0.1:8181`), `age v1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2`. На робочому ПК власника в `T:\mijn-ruimte\hulpmiddelen\` встановлено `Node.js v26.13.0`, `PostgreSQL 18.6-5`, `rclone v1.75.2`.
+  1. На ВМ `<VM-IP>` працюють `Ubuntu 26.04.1 LTS (Resolute)` (`kernel 7.0.0-42-generic`, `glibc 2.43`, `systemd 259.9`), `Node.js v26.13.0 LTS`, `PostgreSQL 18.6` (`/srv/data/postgresql/18/main` із `--data-checksums`), `Caddy v2.11.7` (`admin unix//run/caddy/admin.sock|0660`), `OPA v1.22.0` (`127.0.0.1:8181`), `age v1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2`. На робочому ПК власника в `T:\mijn-ruimte\hulpmiddelen\` встановлено `Node.js v26.13.0`, `PostgreSQL 18.6-5`, `rclone v1.75.2`.
   2. У `Ubuntu 26.04.1 LTS` системний `GNU tar 1.35` під час `--extract` використовує системний виклик `openat2(..., RESOLVE_BENEATH)`. У `systemd 259` параметр `RestrictSUIDSGID=yes` у seccomp-фільтрі блокує `openat2` з `-ENOSYS` (`Function not implemented`), через що `voorcontrole` падав на розпакуванні `.tar.gz`. Тому в усіх `deploy/*.service` та серверних drop-in `/etc/systemd/system/<unit>.d/ubuntu2604-openat2.conf` має бути `RestrictSUIDSGID=no` (при збереженні `NoNewPrivileges=yes`, `ProtectSystem=strict`, `PrivateTmp=yes`).
-  3. Якщо агент працює у хмарному/веб-контейнері без прямого доступу до сервера `203.0.113.10`, йому **заборонено** перекладати діагностику на власника (просити виконувати `df -h`, `journalctl` тощо) або вгадувати причину навмання (наприклад, звинувачувати власника у завантаженні `.zip` замість `.tar.gz`, коли `voorcontrole` вже пройшов крок `structuur`). Замість цього агент надає коротку технічну нотатку (1–2 речення) для інфраструктурного агента на ПК власника (Antigravity/Claude), який має прямий SSH-доступ до `beheer@203.0.113.10`.
+  3. Якщо агент працює у хмарному/веб-контейнері без прямого доступу до сервера `<VM-IP>`, йому **заборонено** перекладати діагностику на власника (просити виконувати `df -h`, `journalctl` тощо) або вгадувати причину навмання (наприклад, звинувачувати власника у завантаженні `.zip` замість `.tar.gz`, коли `voorcontrole` вже пройшов крок `structuur`). Замість цього агент надає коротку технічну нотатку (1–2 речення) для інфраструктурного агента на ПК власника (Antigravity/Claude), який має прямий SSH-доступ до `beheer@<VM-IP>`.
 
 ---
 

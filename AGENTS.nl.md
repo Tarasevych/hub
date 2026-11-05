@@ -23,13 +23,13 @@ Wijziging van de regels = een nieuw besluit in [`orchestratie/BESLUITEN.md`](./o
 - Gebruikersruimtes zijn geïsoleerd en versleuteld met hun eigen aanmeldmethode; de servereigenaar kan deze niet ontsleutelen.
 - Talen: communicatie en rapportages in het Oekraïens; commentaar in de code in het Oekraïens of Nederlands; UI-teksten in het Oekraïens en Nederlands.
   Engels uitsluitend voor onvertaalbare technische termen. Paden en URL-adressen in het Nederlands (`/verbindingen`, niet `/connections`).
-- Stack van VM `203.0.113.10` (`B-009`): `Ubuntu 26.04.1 LTS` (`kernel 7.0`, `glibc 2.43`, `systemd 259.9`), `Node.js 26.13.0 LTS`, `PostgreSQL 18.6`,
+- Stack van VM `<VM-IP>` (`B-009`): `Ubuntu 26.04.1 LTS` (`kernel 7.0`, `glibc 2.43`, `systemd 259.9`), `Node.js 26.13.0 LTS`, `PostgreSQL 18.6`,
   `Caddy 2.11.7` (`admin.sock|0660`), `OPA 1.22.0`, `age 1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2`. In `deploy/*.service` staat `RestrictSUIDSGID=no` (anders blokkeert seccomp `openat2` in `tar 1.35`).
 
 ## 2. Vóór je begint (verplicht)
 
 1. Lees [`AGENTS.md`](./AGENTS.md) (of `orchestratie/CONTEXT-COMPACT.md` als er geen toegang tot de repository is) en [`orchestratie/beleid.json`](./orchestratie/beleid.json).
-2. Codebasis: `beleid.json → basis.bronCommit` (`b279ccab…`, versie `20261031-093842`, status `opgave_eigenaar` — opgegeven door de eigenaar; na synchronisatie `B-009` zijn `voornaamst` en `integratie` gelijkgetrokken). Als je toegang hebt tot de site, controleer dan `/api/version` en leg het resultaat vast in `BESLUITEN.md`.
+2. Codebasis: `beleid.json → basis.bronCommit` (nu `f3f3fabb…`, versie `20261104-204906`, status `geverifieerd_productie` — geverifieerd via `hub.tarasevych.com/api/version`, zie `B-013`; de takken `integratie` en `voornaamst` zijn gesynchroniseerd). Als je toegang hebt tot de site, controleer dan `/api/version` en leg het resultaat vast in `BESLUITEN.md`.
 3. Registreer de taak: `node scripts/orch.mjs taak-start --id ORCH-001 --agent claude --basis <sha> --tak feature/orch-001-YYYYMMDD-HHMMSS`
    (zonder repository: maak `ORCH-OVERDRACHT.json` handmatig aan volgens het sjabloon `orchestratie/sjablonen/ORCH-OVERDRACHT.json`).
 4. Draai `node scripts/orch.mjs controleer` en `node scripts/orch.mjs versheid --taak <ID> --fase start`. Bij rood: niet beginnen, eerst rebasen of de regels herlezen.
@@ -42,7 +42,7 @@ Wijziging van de regels = een nieuw besluit in [`orchestratie/BESLUITEN.md`](./o
 - Oude fout gevonden? Los haar op (in een aparte commit) en negeer haar niet. Verwijder nooit iets «om het werkend te krijgen»: geen knop, tabblad, test of controle weghalen.
 - Geheimen, tokens, privésleutels en e-mailinhoud horen nooit in de chat, logs, commits of pakketten. Privésleutels van de eigenaar worden nooit aan agenten gegeven.
 - Productie, de default branch, back-ups en kritieke rechten worden alleen gewijzigd na expliciete toestemming van de eigenaar (niet van een andere agent).
-- Diagnostiek en tijd van de eigenaar (`B-009`): vraag de eigenaar nooit om handmatig terminalcommando's uit te voeren (`df -h`, `journalctl`) of handmatig pakketten te bouwen; geef zonder directe toegang tot `203.0.113.10` een korte technische conclusie (1–2 zinnen) voor de infrastructuuragent op de pc van de eigenaar. Gis nooit naar de oorzaak van een `voorcontrole`-fout (wijt het niet aan een `.zip` als de stap `structuur` al geslaagd is). Details hieronder bij `B-009`.
+- Diagnostiek en tijd van de eigenaar (`B-009`): vraag de eigenaar nooit om handmatig terminalcommando's uit te voeren (`df -h`, `journalctl`) of handmatig pakketten te bouwen; geef zonder directe toegang tot `<VM-IP>` een korte technische conclusie (1–2 zinnen) voor de infrastructuuragent op de pc van de eigenaar. Gis nooit naar de oorzaak van een `voorcontrole`-fout (wijt het niet aan een `.zip` als de stap `structuur` al geslaagd is). Details hieronder bij `B-009`.
 
 ## 4. Vóór overdracht van het resultaat
 
@@ -85,9 +85,9 @@ Wijziging van de regels = een nieuw besluit in [`orchestratie/BESLUITEN.md`](./o
   `UITROL-BASIS` ontbreekt vanaf versie `20261201` (`GEEN_BASIS`), de regels afwijken van `regels.lock.json` (`REGELS_NIET_VERGRENDELD`), of de modus buiten het beleid valt
   (`MODUS_NIET_TOEGESTAAN`). GitOps (automatisch) werkt alleen bij `automatisch_beperkt` **én** een door de eigenaar ondertekend lock. Privésleutels worden nooit aan agenten gegeven.
 - **B-009 (vanaf 04.11.2026 · stack Ubuntu 26.04.1 LTS, `RestrictSUIDSGID=no` en communicatieregels met de eigenaar):**
-  1. Op VM `203.0.113.10` draaien `Ubuntu 26.04.1 LTS (Resolute)` (`kernel 7.0.0-42-generic`, `glibc 2.43`, `systemd 259.9`), `Node.js v26.13.0 LTS`, `PostgreSQL 18.6` (`/srv/data/postgresql/18/main` met `--data-checksums`), `Caddy v2.11.7` (`admin unix//run/caddy/admin.sock|0660`), `OPA v1.22.0` (`127.0.0.1:8181`), `age v1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2`. Op de werk-pc van de eigenaar staat in `T:\mijn-ruimte\hulpmiddelen\` `Node.js v26.13.0`, `PostgreSQL 18.6-5`, `rclone v1.75.2`.
+  1. Op VM `<VM-IP>` draaien `Ubuntu 26.04.1 LTS (Resolute)` (`kernel 7.0.0-42-generic`, `glibc 2.43`, `systemd 259.9`), `Node.js v26.13.0 LTS`, `PostgreSQL 18.6` (`/srv/data/postgresql/18/main` met `--data-checksums`), `Caddy v2.11.7` (`admin unix//run/caddy/admin.sock|0660`), `OPA v1.22.0` (`127.0.0.1:8181`), `age v1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2`. Op de werk-pc van de eigenaar staat in `T:\mijn-ruimte\hulpmiddelen\` `Node.js v26.13.0`, `PostgreSQL 18.6-5`, `rclone v1.75.2`.
   2. In `Ubuntu 26.04.1 LTS` gebruikt `GNU tar 1.35` tijdens `--extract` de syscall `openat2(..., RESOLVE_BENEATH)`. In `systemd 259` blokkeert `RestrictSUIDSGID=yes` in het seccomp-filter `openat2` met `-ENOSYS` (`Function not implemented`), waardoor `voorcontrole` faalde bij het uitpakken van `.tar.gz`. Daarom moet in alle `deploy/*.service` en in de server-drop-ins `/etc/systemd/system/<unit>.d/ubuntu2604-openat2.conf` `RestrictSUIDSGID=no` staan (met behoud van `NoNewPrivileges=yes`, `ProtectSystem=strict`, `PrivateTmp=yes`).
-  3. Als een agent in een cloud-/webcontainer werkt zonder directe toegang tot server `203.0.113.10`, is het hem **verboden** de diagnostiek bij de eigenaar neer te leggen (vragen om `df -h`, `journalctl`, enz. uit te voeren) of blind te gissen naar de oorzaak (bijvoorbeeld de eigenaar ervan beschuldigen een `.zip` i.p.v. een `.tar.gz` te hebben geüpload terwijl `voorcontrole` de stap `structuur` al gepasseerd is). In plaats daarvan geeft de agent een korte technische notitie (1–2 zinnen) voor de infrastructuuragent op de pc van de eigenaar (Antigravity/Claude), die directe SSH-toegang heeft tot `beheer@203.0.113.10`.
+  3. Als een agent in een cloud-/webcontainer werkt zonder directe toegang tot server `<VM-IP>`, is het hem **verboden** de diagnostiek bij de eigenaar neer te leggen (vragen om `df -h`, `journalctl`, enz. uit te voeren) of blind te gissen naar de oorzaak (bijvoorbeeld de eigenaar ervan beschuldigen een `.zip` i.p.v. een `.tar.gz` te hebben geüpload terwijl `voorcontrole` de stap `structuur` al gepasseerd is). In plaats daarvan geeft de agent een korte technische notitie (1–2 zinnen) voor de infrastructuuragent op de pc van de eigenaar (Antigravity/Claude), die directe SSH-toegang heeft tot `beheer@<VM-IP>`.
 
 ---
 

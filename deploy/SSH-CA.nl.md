@@ -57,7 +57,7 @@ ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519      # als u nog geen sleutel hebt
 cat ~/.ssh/id_ed25519.pub                         # plak deze regel op de site: balk technisch profiel → «SSH-certificaat»
 # sla het certificaat van de site op naast de sleutel:
 #   ~/.ssh/id_ed25519-cert.pub
-ssh beheer@203.0.113.10                              # SSH pakt het certificaat automatisch; na een uur verloopt het
+ssh beheer@<VM-IP>                              # SSH pakt het certificaat automatisch; na een uur verloopt het
 ssh-keygen -L -f ~/.ssh/id_ed25519-cert.pub       # controleren: Principals beheer, Extensions permit-pty, Valid …
 ```
 

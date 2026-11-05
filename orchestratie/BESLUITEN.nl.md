@@ -144,24 +144,59 @@ codes `ORCH_CODES` in `shared/orch-model.ts`, hulpteksten `orch.inlevering` / `o
 ## B-009 · 2026-11-04 · 1.4.2 · voorstel
 
 **Context.**
-1. Op 01.11.2026 zijn server `203.0.113.10` en de hulpmiddelen op de werk-pc van de eigenaar bijgewerkt naar de nieuwste hoofdseries (`Ubuntu 26.04.1 LTS`, `PostgreSQL 18.6`, `Node.js 26.13.0 LTS`, `Caddy 2.11.7`, `OPA 1.22.0`, `age 1.3.2`).
+1. Op 01.11.2026 zijn server `<VM-IP>` en de hulpmiddelen op de werk-pc van de eigenaar bijgewerkt naar de nieuwste hoofdseries (`Ubuntu 26.04.1 LTS`, `PostgreSQL 18.6`, `Node.js 26.13.0 LTS`, `Caddy 2.11.7`, `OPA 1.22.0`, `age 1.3.2`).
 2. Na de overstap op `Ubuntu 26.04.1 LTS` (`systemd 259.9`, `glibc 2.43`, `GNU tar 1.35`) begon de voorcontrole van pakketten (`voorcontrole`) op de site geldige `.tar.gz`-archieven te weigeren bij de stap `tar --extract` (`VOORCONTROLE_MISLUKT`). Met tracing (`strace` binnen `mijn-ruimte.service`) is de exacte oorzaak vastgesteld: `GNU tar 1.35` gebruikt de syscall `openat2(..., RESOLVE_BENEATH)`, die door het seccomp-filter `RestrictSUIDSGID=yes` in `systemd 259` wordt geblokkeerd met `-ENOSYS` (`Function not implemented`).
 3. Een cloud-agent (ChatGPT) zonder toegang tot de server zag alleen de afgekapte regel `Command failed: /usr/bin/tar --extract ...`, nam ten onrechte aan dat de eigenaar een `.zip` in plaats van een `.tar.gz` had geüpload en vroeg de eigenaar vervolgens om handmatig `df -h` uit te voeren en logs in de terminal te zoeken. Daarnaast bleek dat de tak `voornaamst` op GitHub achterliep op `integratie`, en dat `/srv/mijn-ruimte/orch-repo` op de server nog niet gesynchroniseerd was met de nieuwste regels.
 
 **Besluit.**
-1. **De bijgewerkte stack van productie-VM `203.0.113.10` vastleggen in de regels (`AGENTS.md` §1, §5):**
+1. **De bijgewerkte stack van productie-VM `<VM-IP>` vastleggen in de regels (`AGENTS.md` §1, §5):**
    - Besturingssysteem: `Ubuntu 26.04.1 LTS (Resolute)`, kernel `7.0.0-42-generic`, `glibc 2.43`, `systemd 259.9`, LUKS + `clevis-tpm2`.
    - Runtime en diensten: `Node.js v26.13.0 LTS` (`npm 11.20.0`), `PostgreSQL 18.6` (`/srv/data/postgresql/18/main` met `--data-checksums`), `Caddy v2.11.7` (socket `admin unix//run/caddy/admin.sock|0660` voor groep `caddy`/`mr-apps`), `OPA v1.22.0`, `age v1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2` (`containerd 2.4.2`).
    - Hulpmiddelen op de pc van de eigenaar (`T:\mijn-ruimte\hulpmiddelen\`): `Node.js v26.13.0 LTS`, `PostgreSQL 18.6-5`, `rclone v1.75.2`.
 2. **De blokkade van `openat2` in `systemd 259` opheffen (`RestrictSUIDSGID=no`):**
-   - Op server `203.0.113.10` zijn permanente drop-in-bestanden `/etc/systemd/system/<unit>.d/ubuntu2604-openat2.conf` met `RestrictSUIDSGID=no` uitgerold voor alle 9 `mijn-ruimte*`-units en `cloudflared.service`.
+   - Op server `<VM-IP>` zijn permanente drop-in-bestanden `/etc/systemd/system/<unit>.d/ubuntu2604-openat2.conf` met `RestrictSUIDSGID=no` uitgerold voor alle 9 `mijn-ruimte*`-units en `cloudflared.service`.
    - In alle unit-bestanden `deploy/*.service` in de repository is `RestrictSUIDSGID=yes/true` gewijzigd in `RestrictSUIDSGID=no` (met behoud van `NoNewPrivileges=yes`, `ProtectSystem=strict`, `PrivateTmp=yes`).
 3. **Verplichte regels voor diagnostiek en resultaatoverdracht invoeren voor alle agenten (`AGENTS.md` §3, §4):**
-   - Geen enkele agent vraagt de eigenaar om handmatig opdrachten in de serverterminal uit te voeren (`df -h`, `journalctl`, enz.) of handmatig pakketten te bouwen. Als een agent in een cloudcontainer geen directe toegang heeft tot `203.0.113.10` (via MCP of SSH), formuleert hij een korte technische conclusie (1–2 zinnen) voor overdracht aan de infrastructuuragent op de pc van de eigenaar (Antigravity/Claude).
+   - Geen enkele agent vraagt de eigenaar om handmatig opdrachten in de serverterminal uit te voeren (`df -h`, `journalctl`, enz.) of handmatig pakketten te bouwen. Als een agent in een cloudcontainer geen directe toegang heeft tot `<VM-IP>` (via MCP of SSH), formuleert hij een korte technische conclusie (1–2 zinnen) voor overdracht aan de infrastructuuragent op de pc van de eigenaar (Antigravity/Claude).
    - Het is verboden om blind te gissen bij `voorcontrole`-fouten (in het bijzonder het aannemen dat een `.zip` i.p.v. een `.tar.gz` is geüpload wanneer de stap `structuur` al geslaagd is).
    - Bij het aanleveren van een release voor installatie via `Admin → Оновлення` staat op de allereerste regel altijd de directe link naar `mijn-ruimte-<versie>.tar.gz` (los van `-overdracht.zip`).
-4. **Alle regelkanalen synchroniseren:** `origin/integratie`, `origin/voornaamst` en `/srv/mijn-ruimte/orch-repo` op `203.0.113.10` bijwerken naar `regelsVersie 1.4.2` (de geïnstalleerde productierelease op het moment van synchronisatie is `20261104-075953` @ `e97a58ceaf70f6a4a8d63608541d47e455ddb66a`).
+4. **Alle regelkanalen synchroniseren:** `origin/integratie`, `origin/voornaamst` en `/srv/mijn-ruimte/orch-repo` op `<VM-IP>` bijwerken naar `regelsVersie 1.4.2` (de geïnstalleerde productierelease op het moment van synchronisatie is `20261104-075953` @ `e97a58ceaf70f6a4a8d63608541d47e455ddb66a`).
 
 **Gevolgen.** `regelsVersie` `1.4.1` → `1.4.2`; bijgewerkt zijn `AGENTS.md`, `orchestratie/beleid.json`, `orchestratie/BESLUITEN.md`, `orchestratie/regels.lock.json`, `orchestratie/CONTEXT-COMPACT.md` en `deploy/*.service`. Alle agenten (via GitHub `integratie`/`voornaamst`, MCP `orch_context`/`orch_overzicht` of `CONTEXT-COMPACT.md`) ontvangen de actuele regels `1.4.2`.
 
 **Wie.** Eis van de Eigenaar op 04.11.2026, geïmplementeerd door agent `antigravity`. Wacht op passkey/SSH-bevestiging van de eigenaar.
+
+## B-010 · 2026-11-04 · 1.4.5 · verwijdering van persoonsgegevens en herschrijven van Git-geschiedenis
+
+**Context.** In de repository en de commitgeschiedenis stonden nog de voor- en achternaam van de eigenaar en een woonadres in testfixtures. De eigenaar gaf toestemming om de werkboom en de volledige Git-geschiedenis op te schonen met een lokale back-up buiten de repository.
+
+**Besluit.** (1) In de code zijn configureerbare omgevingsvariabelen `MR_EIGENAAR_NAAM`, `MR_CONTACT_EMAIL` en `MR_BEHEERSUBNET` ingevoerd; testfixtures gebruiken fictieve gegevens. (2) De geschiedenis van alle takken en tags is herschreven met `git filter-repo`. (3) De basis in `beleid.json` is bijgewerkt naar de herschreven SHA; `regelsVersie` verhoogd naar `1.4.5`.
+
+**Wie.** Verzoek en toestemming van de eigenaar; uitvoering door agent `claude` (`PRIVACY-001`).
+
+## B-011 · 2026-11-05 · 1.4.6 · tweede opschoning van de geschiedenis (IP-adressen, restanten PG) en pakketfixes
+
+**Context.** De eigenaar stemde in met een tweede herschrijving van de geschiedenis om interne IP-adressen en overgebleven persoonsgegevens uit oude commits te verwijderen, en om `git -c core.autocrlf=false archive` in `maak-voorstelpakket.sh` en `.gitattributes` (`*.sh text eol=lf`) vast te leggen.
+
+**Besluit.** (1) `maak-voorstelpakket.sh` gebruikt `git -c core.autocrlf=false archive`. (2) De AWS-voorbeeldsleutel in de SigV4-test staat niet meer als één literal. (3) `regelsVersie` verhoogd van `1.4.5` naar `1.4.6`.
+
+**Wie.** Verzoek van de eigenaar; uitvoering door agent `claude`.
+
+## B-012 · 2026-11-05 · 1.4.7 · basisversie na samenvoeging van identity-documentatie
+
+**Context.** De herschreven commit `50e63737…` (overeenkomend met `b0d41b77…`, tag `20261104-164906`) voegt de ontwerpdocumentatie en het dossier `IDENTITY-001` toe.
+
+**Besluit.** `50e63737…` is samengevoegd in de releasetak van `PRIVACY-001`, de basis in `beleid.json` is bijgewerkt en `regelsVersie` is verhoogd naar `1.4.7`.
+
+**Wie.** Besluit van de eigenaar; uitvoering door agent `claude`.
+
+## B-013 · 2026-11-05 · 1.4.8 · Consolidatie van audit 2026-11-05, tweetalige documentatie en parallelle takken (`PRIVACY-001`, `MAILFIT-002`, `IDENTITY-002`, `DESIGN-001`)
+
+**Context.** Na de tweede geschiedenisherschrijving (`B-011`) en het toevoegen van tweetalige navigatiekoppen (`uk`/`nl`) op tak `voornaamst` (`f3f3fabb2f3b`) ontstond een splitsing tussen vier parallelle agenttakken (`PRIVACY-001` @ `d4fb253`, `MAILFIT-002` @ `98beb2a`, `IDENTITY-002` @ `a318ba0`, `DESIGN-001` @ `052fae3`) en een fout op het regelsslot (`REGELS_NIET_VERGRENDELD` in `node scripts/orch.mjs controleer`). Onafhankelijke controle van het live productie-eindpunt `https://hub.tarasevych.com/api/version` bevestigde de actieve versie `20261104-204906` (in de pre-rewrite geschiedenis commit `6e815a00307dd9c00a0b2907838be099be8c5610`).
+
+**Besluit.** (1) Binnen taak `AUDIT-001` op de canonieke post-rewrite geschiedenis (`voornaamst` @ `f3f3fabb2f3b5209b1ee8eba3078e403de831844`) alle vier actieve stromen zonder conflict en zonder pre-rewrite voorouder `e547381` samenvoegen: `PRIVACY-001`, `MAILFIX-001`/`MAILFIT-001`/`MAILFIT-002`, `IDENTITY-001/002` (inclusief auditfixes `cbeb3d0` en `a318ba0`) en `DESIGN-001`. (2) In `orchestratie/beleid.json → basis` versie `20261104-204906` vastleggen (`verificatie: "geverifieerd_productie"`, basiscommit `f3f3fabb2f3b5209b1ee8eba3078e403de831844`), `regelsVersie` verhogen naar `1.4.8` en `orchestratie/regels.lock.json` en `orchestratie/CONTEXT-COMPACT.md` opnieuw opbouwen. (3) De Oekraïense (`.uk.md`) en Nederlandse (`.nl.md`) documentatie synchroniseren en de takken `integratie` en `voornaamst` samen met de GitHub Release bijwerken.
+
+**Gevolgen.** `regelsVersie` `1.4.7` → `1.4.8`; `node scripts/orch.mjs controleer` slaagt zonder fouten; de takken `integratie` en `voornaamst` bevatten alle fixes uit de audit van 2026-11-05.
+
+**Wie.** Opdracht van de eigenaar op 05-11-2026 (`AUDIT-001`); uitvoering door agent `antigravity`.
+

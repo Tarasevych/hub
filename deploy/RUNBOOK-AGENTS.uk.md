@@ -53,8 +53,8 @@ $naam
 
 ```powershell
 $sleutel = 'T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver'
-scp -i $sleutel "T:\mijn-ruimte\uitrol\$naam" "T:\mijn-ruimte\uitrol\$naam.sha256" beheer@203.0.113.10:/tmp/
-ssh -i $sleutel beheer@203.0.113.10
+scp -i $sleutel "T:\mijn-ruimte\uitrol\$naam" "T:\mijn-ruimte\uitrol\$naam.sha256" beheer@<VM-IP>:/tmp/
+ssh -i $sleutel beheer@<VM-IP>
 ```
 
 ## 1. На ВМ: попередні перевірки

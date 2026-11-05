@@ -83,7 +83,7 @@ export async function main(): Promise<number> {
   const per = accountsPerAanbieder(acc);
   check('twee Google-accounts herkend', per.get('google') === 2);
   check('label wint (privacy)', accountWeergave(acc[1], true, false) === 'Робочий');
-  check('zonder label bij meerdere accounts: gemaskeerd adres', accountWeergave(acc[0], true, false) === 'p…@gmail.com');
+  check('zonder label bij meerdere accounts: gemaskeerd adres', accountWeergave(acc[0], true, false) === 'e…@example.test');
   check('volledig adres alleen op verzoek', accountWeergave(acc[0], true, true) === 'eigenaar@example.test');
   check('één account zonder label: geen adres', accountWeergave(m({ aanbieder: 'google', account: 'a@b.be' }), false, false) === null);
 

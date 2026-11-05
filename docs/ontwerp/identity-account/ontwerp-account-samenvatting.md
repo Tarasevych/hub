@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ontwerp-account-samenvatting.uk.md) · [🇳🇱 **Nederlandse versie**](./ontwerp-account-samenvatting.nl.md) · [🏠 Головна (UK)](../../../README.md) · [🏠 Hoofdpagina (NL)](../../../LEESMIJ.md) · [📚 Каталог статей / Index](../../INDEX.md)
+
 # Сторінка акаунта — дизайн-специфікація (станом на 2026-11-04)
 
 ## Напрям

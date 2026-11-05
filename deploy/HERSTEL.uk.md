@@ -70,7 +70,7 @@ sudo bash ~/hub/deploy/installeer-app.sh inrichten ~/hub
 $age = 'T:\mijn-ruimte\hulpmiddelen\age\age\age.exe'
 $sl  = 'R:\mijn-ruimte-reservekopie\sleutels\herstelsleutel-age.txt'
 $k   = 'T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver'
-$vm  = 'beheer@203.0.113.10'
+$vm  = 'beheer@<VM-IP>'
 $g   = 'R:\mijn-ruimte-reservekopie\geheimen\geheimen-<stempel>\geheimen-<stempel>.tar.age'
 cmd /c "$age -d -i $sl $g | ssh -i $k $vm sudo -n tar -xpf - -C /"
 ```

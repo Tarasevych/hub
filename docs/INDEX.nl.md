@@ -40,8 +40,8 @@ Alle artikelen, specificaties, wijzigingslogboeken (wijzigingen), uitrolhandleid
 
 | Artikel / Pagina | Beschrijving | 🇳🇱 Nederlandse versie | 🇺🇦 Oekraïense versie | Canoniek bestand (vergrendeld via `regels.lock.json`) |
 |---|---|---|---|---|
-| **Agentregels (`AGENTS.md`)** | Enige regelbron voor alle 8 AI-agenten (`ORCH-001`, `TRACE-001`, `B-009`) | [🇳🇱 `AGENTS.nl.md`](../AGENTS.nl.md) | [🇺🇦 `AGENTS.uk.md`](../AGENTS.uk.md) | [`AGENTS.md`](../AGENTS.md) *(tweetalige canon)* |
-| **Besluitenregister (`BESLUITEN.md`)** | Append-only register van architectuur- en organisatiebesluiten `B-001`–`B-011` | [🇳🇱 `BESLUITEN.nl.md`](../orchestratie/BESLUITEN.nl.md) | [🇺🇦 `BESLUITEN.uk.md`](../orchestratie/BESLUITEN.uk.md) | [`orchestratie/BESLUITEN.md`](../orchestratie/BESLUITEN.md) |
+| **Agentregels (`AGENTS.md`)** | Enige regelbron voor alle 8 AI-agenten (`ORCH-001`, `TRACE-001`, `B-009`, `B-013`) | [🇳🇱 `AGENTS.nl.md`](../AGENTS.nl.md) | [🇺🇦 `AGENTS.uk.md`](../AGENTS.uk.md) | [`AGENTS.md`](../AGENTS.md) *(tweetalige canon)* |
+| **Besluitenregister (`BESLUITEN.md`)** | Append-only register van architectuur- en organisatiebesluiten `B-001`–`B-013` | [🇳🇱 `BESLUITEN.nl.md`](../orchestratie/BESLUITEN.nl.md) | [🇺🇦 `BESLUITEN.uk.md`](../orchestratie/BESLUITEN.uk.md) | [`orchestratie/BESLUITEN.md`](../orchestratie/BESLUITEN.md) |
 | **Compacte context (`CONTEXT-COMPACT.md`)** | Automatisch gegenereerde tweetalige context voor agenten zonder directe GitHub-toegang | [🇳🇱/🇺🇦 `CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) | [🇺🇦/🇳🇱 `CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) | [`orchestratie/CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) |
 
 ---
@@ -183,6 +183,10 @@ Alle artikelen, specificaties, wijzigingslogboeken (wijzigingen), uitrolhandleid
 | **Ruimtes testen (`RUIMTES-TESTEN`)** | [🇳🇱 `.nl.md`](./ontwerp/RUIMTES-TESTEN.nl.md) | [🇺🇦 `.uk.md`](./ontwerp/RUIMTES-TESTEN.uk.md) | [`RUIMTES-TESTEN.md`](./ontwerp/RUIMTES-TESTEN.md) |
 | **API-contract technische ruimtes v2 (`TECH-RUIMTES-API`)** | [🇳🇱 `.nl.md`](./ontwerp/TECH-RUIMTES-API.nl.md) | [🇺🇦 `.uk.md`](./ontwerp/TECH-RUIMTES-API.uk.md) | [`TECH-RUIMTES-API.md`](./ontwerp/TECH-RUIMTES-API.md) |
 | **Werkblad-blokken (`WERKBLAD-BLOKKEN`)** | [🇳🇱 `.nl.md`](./ontwerp/WERKBLAD-BLOKKEN.nl.md) | [🇺🇦 `.uk.md`](./ontwerp/WERKBLAD-BLOKKEN.uk.md) | [`WERKBLAD-BLOKKEN.md`](./ontwerp/WERKBLAD-BLOKKEN.md) |
+| **Account Identity: Ontwerpoverzicht (`identity-account/README-account`)** | [🇳🇱 `.nl.md`](./ontwerp/identity-account/README-account.nl.md) | [🇺🇦 `.uk.md`](./ontwerp/identity-account/README-account.uk.md) | [`README-account.md`](./ontwerp/identity-account/README-account.md) |
+| **Account Identity: Technische specificatie (`TZ-account-2026-11-04`)** | [🇳🇱 `.nl.md`](./ontwerp/identity-account/TZ-account-2026-11-04.nl.md) | [🇺🇦 `.uk.md`](./ontwerp/identity-account/TZ-account-2026-11-04.uk.md) | [`TZ-account-2026-11-04.md`](./ontwerp/identity-account/TZ-account-2026-11-04.md) |
+| **Account Identity: Dekkingsmatrix 12/12 (`identity-coverage`)** | [🇳🇱 `.nl.md`](./ontwerp/identity-account/identity-coverage.nl.md) | [🇺🇦 `.uk.md`](./ontwerp/identity-account/identity-coverage.uk.md) | [`identity-coverage.md`](./ontwerp/identity-account/identity-coverage.md) |
+| **Account Identity: Ontwerpsamenvatting (`ontwerp-account-samenvatting`)** | [🇳🇱 `.nl.md`](./ontwerp/identity-account/ontwerp-account-samenvatting.nl.md) | [🇺🇦 `.uk.md`](./ontwerp/identity-account/ontwerp-account-samenvatting.uk.md) | [`ontwerp-account-samenvatting.md`](./ontwerp/identity-account/ontwerp-account-samenvatting.md) |
 | **Terminal van het technisch profiel (`terminal/TERMINAL`)** | [🇳🇱 `.nl.md`](./terminal/TERMINAL.nl.md) | [🇺🇦 `.uk.md`](./terminal/TERMINAL.uk.md) | [`TERMINAL.md`](./terminal/TERMINAL.md) |
 | **Universal File Workspace v0.3 (`INTEGRATIE-20261027`)** | [🇳🇱 `.nl.md`](./universele-bestanden/INTEGRATIE-20261027.nl.md) | [🇺🇦 `.uk.md`](./universele-bestanden/INTEGRATIE-20261027.uk.md) | [`INTEGRATIE-20261027.md`](./universele-bestanden/INTEGRATIE-20261027.md) |
 | **Integratie van blokken in Werkblad v3 (`BLOKKEN-INTEGRATIE`)** | [🇳🇱 `.nl.md`](./werkblad/BLOKKEN-INTEGRATIE.nl.md) | [🇺🇦 `.uk.md`](./werkblad/BLOKKEN-INTEGRATIE.uk.md) | [`BLOKKEN-INTEGRATIE.md`](./werkblad/BLOKKEN-INTEGRATIE.md) |

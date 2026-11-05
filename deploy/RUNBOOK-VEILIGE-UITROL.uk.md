@@ -229,8 +229,8 @@ powershell -ExecutionPolicy Bypass -File deploy\uitrol\maak-uitrolpakket.ps1 -Ui
 
 **B. Через SSH (без Grok)**:
 ```bash
-scp mijn-ruimte-<versie>.tar.gz{,.sig} beheer@203.0.113.10:/tmp/
-ssh beheer@203.0.113.10
+scp mijn-ruimte-<versie>.tar.gz{,.sig} beheer@<VM-IP>:/tmp/
+ssh beheer@<VM-IP>
 sudo install -o mijnruimte -g mijnruimte -m 0640 /tmp/mijn-ruimte-<versie>.tar.gz{,.sig} /srv/mijn-ruimte/uitrol-inbox/
 sudo -u mijnruimte touch /srv/mijn-ruimte/uitrol-inbox/aanvraag
 journalctl -fu mijn-ruimte-uitrol.service
@@ -310,7 +310,7 @@ date +%s%3N > /etc/mijn-ruimte/mcp-intrekken      # відкликати всі 
    Стара пряма кнопка (метод 3, лише якщо `"opdracht": {"terugdraaien": true}`) ще існує, але більше не потрібна.
 3. **Через SSH**:
    ```bash
-   ssh beheer@203.0.113.10
+   ssh beheer@<VM-IP>
    sudo /usr/local/sbin/mijn-ruimte-installeer terugdraaien              # попередній реліз
    sudo /usr/local/sbin/mijn-ruimte-installeer terugdraaien 20261008-193000   # або вказаний реліз
    sudo /usr/local/sbin/mijn-ruimte-installeer lijst
@@ -414,7 +414,7 @@ install -m 0440 -o root -g root deploy/opdracht/mijn-ruimte-opdracht.sudoers /et
 Перший раз виконується через SSH (старий root-шлях тоді ще існує і прибирається цим встановленням):
 
 ```bash
-ssh beheer@203.0.113.10
+ssh beheer@<VM-IP>
 # 0. попередньо: резервна копія та polkit
 sudo systemctl start mijn-ruimte-backup.service
 pkaction --version || sudo apt install -y polkitd
@@ -474,7 +474,7 @@ mijn-ruimte-goedkeuring.path (root) → mijn-ruimte-uitrol --goedkeuring
 ### 13.2 Одноразово: встановлення та перший passkey (bootstrap)
 
 ```bash
-ssh beheer@203.0.113.10
+ssh beheer@<VM-IP>
 sudo git clone --branch aanmeldmethoden https://github.com/Tarasevych/hub.git /root/hub-passkey && cd /root/hub-passkey && git log -1
 sudo bash deploy/installeer-app.sh installeren /root/hub-passkey        # міграції 0022-0023, юніти, допоміжний скрипт, порожній файл ключів (rpId tarasevych.com)
 systemctl status mijn-ruimte-goedkeuring.path mijn-ruimte-goedkeur-sleutels.path --no-pager

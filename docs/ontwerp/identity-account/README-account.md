@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./README-account.uk.md) · [🇳🇱 **Nederlandse versie**](./README-account.nl.md) · [🏠 Головна (UK)](../../../README.md) · [🏠 Hoofdpagina (NL)](../../../LEESMIJ.md) · [📚 Каталог статей / Index](../../INDEX.md)
+
 # Акаунт: один актуальний макет (README)
 
 ## Актуальний файл — тільки цей

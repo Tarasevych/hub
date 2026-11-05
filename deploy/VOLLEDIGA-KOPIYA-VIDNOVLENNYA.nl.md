@@ -41,8 +41,8 @@ Het hoofdscenario is hetzelfde als in `deploy/HERSTEL.md` (dat staat ook in `02-
 2. De versleutelde serverbestanden (configuraties, geheimen, releasecode, overlay, units) worden vanaf de pc als stream teruggezet, zonder tussentijds ontsleutelen naar schijf:
 ```powershell
 $age='T:\mijn-ruimte\hulpmiddelen\age\age\age.exe'; $sl='<pad naar herstelsleutel-age.txt>'; $k='T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver'
-cmd /c "$age -d -i $sl 03-server\server-bestanden.tar.age | ssh -i $k beheer@203.0.113.10 sudo -n tar -xpf - -C /"
-ssh -i $k beheer@203.0.113.10 sudo -n systemctl daemon-reload
+cmd /c "$age -d -i $sl 03-server\server-bestanden.tar.age | ssh -i $k beheer@<VM-IP> sudo -n tar -xpf - -C /"
+ssh -i $k beheer@<VM-IP> sudo -n systemctl daemon-reload
 ```
 3. Database en uploads uit `03-server\vm-back-up-<tijdstempel>\` volgens stap 5 uit `HERSTEL.md` (`database.dump.age`, `uploads.tar.gz.age`).
 4. `sudo systemctl start mijn-ruimte 'mijn-ruimte-*.timer'`, controleer `curl http://127.0.0.1:8080/__gezondheid` → `ok:true`.
