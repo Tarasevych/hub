@@ -35,6 +35,10 @@ const html = (kop: string) => `<!doctype html><html><head><meta charset="utf-8">
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('merk-bron-20261021');
+  // Eigen pepper voor de persoonlijke laag (adresHash): zonder AFZENDER_BEELD_PEPPER/AUDIT_IP_PEPPER uit de omgeving bleef die laag
+  // uit en faalden 3 checks (05.11.2026). Hersteld in het finally-blok.
+  const pepperVoor = process.env.AFZENDER_BEELD_PEPPER;
+  process.env.AFZENDER_BEELD_PEPPER = `eenheidstest-merk-bron-pepper-${randomUUID()}`;
   const mb = await import('../../backend/merk-bron');
   const sk = await import('../../backend/sleutelkluis');
   const { metLade, isPostPad, dienstVoorPad, VRIJ_VAN_POORT } = await import('../../backend/mail-ruimte');
@@ -275,6 +279,7 @@ export async function main(): Promise<number> {
     if (!gmailVoor) await sys().query(`DELETE FROM app.merk_beeld WHERE sleutel = 'gmail.com'`);
     if (schakelaarVoor) await mb.domeinOphalenZetten(schakelaarVoor.aan, 'eenheidstest'); else await sys().query(`DELETE FROM app.merk_bron_instelling WHERE sleutel = 'afzender-domeinen'`);
     await web.sluit();
+    if (pepperVoor === undefined) delete process.env.AFZENDER_BEELD_PEPPER; else process.env.AFZENDER_BEELD_PEPPER = pepperVoor;
   }
   return einde();
 }

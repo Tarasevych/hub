@@ -280,7 +280,8 @@ export async function main(): Promise<number> {
   const html = renderToString(createElement(MailAccountsHub, { lang: 'uk', userName: 'Власник', accounts: [{ id: 'p1', email: 'eigenaar@example.test', provider: 'Google', status: 'connected', accountRole: 'primary' }] }));
   check('«Підключені акаунти»: eigenaar@example.test met stand «Працює», «Основний», «Перепідключити», «Відключити», «Додати ще один Gmail»',
     html.includes('eigenaar@example.test') && html.includes('Працює') && html.includes('Основний') && html.includes('Перепідключити') && html.includes('data-mail-ontkoppel') && html.includes('Додати ще один<!-- --> <!-- -->Gmail'), html.slice(html.indexOf('data-mail-gekoppeld'), html.indexOf('data-mail-gekoppeld') + 400));
-  const htmlNl = renderToString(createElement(MailAccountsHub, { lang: 'nl', accounts: [] }));
+  // Met een account (zoals hierboven): sinds MAILORBIT-001 toont een LEGE pagina de orbit in plaats van de tegels (05.11.2026).
+  const htmlNl = renderToString(createElement(MailAccountsHub, { lang: 'nl', accounts: [{ id: 'p1', email: 'eigenaar@example.test', provider: 'Google', status: 'connected', accountRole: 'primary' }] }));
   check('tegels zonder weg: uitleg ingeklapt onder «Чому недоступно?» / «Waarom niet beschikbaar?»', html.includes('<summary>Чому недоступно?</summary>') && htmlNl.includes('<summary>Waarom niet beschikbaar?</summary>'));
   const css = bron('src/mail-accounts-hub.css');
   check('telefoon ≤ 480 px: één kolom met compacte tegels', /@media \(max-width:480px\)\{[^}]*\.mail-provider-rooster\{grid-template-columns:minmax\(0,1fr\)/.test(css.replace(/\s*\n\s*/g, '')));
