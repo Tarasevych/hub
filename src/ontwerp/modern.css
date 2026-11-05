@@ -95,6 +95,7 @@
     box-shadow var(--ruimte-beweging), transform var(--ruimte-beweging);
 }
 .canonical-content .wb-snel-icoon { border-radius: var(--straal-m); }
+.canonical-content .wb-snel-naam { overflow-wrap: anywhere; }
 .canonical-content .wb-tip {
   border-radius: var(--straal-xl);
   background: linear-gradient(115deg, color-mix(in srgb, var(--accent) 12%, var(--panel)), var(--panel));
@@ -135,3 +136,87 @@
 @media (forced-colors: active) {
   .canonical-content :is(.wb-begroeting, .wb-tegel.is-kaart, .block) { border: 1px solid CanvasText; }
 }
+
+/* Календар, хмара, нотатки, пошук і налаштування користуються тією самою системою поверхонь. */
+.canonical-content .agv { --agv-r: var(--straal-l); min-width: 0; }
+.canonical-content :is(.agenda-komend, .agenda-kaart, .hub-notes, .agv-zijbalk, .agv-kaart,
+  .agv-leeg, .cvn-blok, .cvn-kaart, .cvn-ws-kaart, .vn-kaart, .zk-kop, .zk-kaart,
+  .settings-card, .settings-center > header) {
+  border-radius: var(--straal-l);
+}
+.canonical-content :is(.agenda-kaart, .hub-notes, .agv-zijbalk, .agv-kaart, .cvn-blok, .vn-kaart,
+  .zk-kop, .settings-card, .settings-center > header) {
+  box-shadow: var(--ruimte-schaduw);
+}
+.canonical-content .agenda-kaarten {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+}
+.canonical-content .settings-card-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+.canonical-content .zk-kop-tekst > div { min-width: 0; overflow-wrap: anywhere; }
+
+/* Порожні сторінки пояснюють наступну дію, залишаючи наявний текст і кнопки. */
+.canonical-content .agv-leeg,
+.canonical-content .cvn section.cvn-leeg {
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+  border-radius: var(--straal-xl);
+  background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--accent) 11%, transparent), transparent 60%), var(--panel);
+  box-shadow: var(--ruimte-schaduw);
+}
+.canonical-content .agv-leeg {
+  gap: 16px;
+  padding: clamp(28px, 5vw, 52px) 18px;
+}
+.canonical-content .agv-leeg-icoon {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
+  border-radius: var(--straal-l);
+  background: linear-gradient(145deg, var(--accent-soft), var(--panel));
+  box-shadow: 0 12px 30px -18px var(--shadow);
+}
+.canonical-content .agv-leeg-icoon::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  border-radius: calc(var(--straal-l) + 7px);
+  pointer-events: none;
+}
+.canonical-content .agv-leeg h2 { font-family: inherit; letter-spacing: -.025em; }
+.canonical-content .agv-leeg p { line-height: 1.55; overflow-wrap: anywhere; }
+.canonical-content .cvn section.cvn-leeg { gap: var(--ruimte-3); }
+.canonical-content .cvn section.cvn-leeg > svg {
+  width: 48px;
+  height: 48px;
+  padding: 10px;
+  border-radius: var(--straal-m);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.canonical-content :is(.settings-card, .cvn-kaart, .vn-kaart, .zk-kaart) {
+  transition: border-color var(--ruimte-beweging), box-shadow var(--ruimte-beweging);
+}
+@media (hover: hover) and (pointer: fine) {
+  .canonical-content :is(.settings-card:not(:disabled), .cvn-kaart, .vn-kaart):hover {
+    box-shadow: var(--schaduw-2);
+  }
+}
+@media (max-width: 700px) {
+  .canonical-content .agv-leeg,
+  .canonical-content .cvn section.cvn-leeg { border-radius: var(--straal-l); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .canonical-content :is(.settings-card, .cvn-kaart, .vn-kaart, .zk-kaart) { transition: none; }
+}
+@media (forced-colors: active) {
+  .canonical-content :is(.agv-leeg, .cvn section.cvn-leeg, .settings-card) { border: 1px solid CanvasText; }
+}
+
+/* Заголовки результатів пошуку успадковують шрифт оболонки, а не шрифт сторінки входу. */
+.canonical-content .zk-pagina :is(h1, h2, h3) { font-family: inherit; }
+/* Кнопки порожньої хмари залишаються вирівняними разом із текстом. */
+.canonical-content .cvn .cvn-overzicht > section.cvn-leeg { border-style: solid; }
+.canonical-content .cvn .cvn-leeg .cvn-snel { justify-content: center; }

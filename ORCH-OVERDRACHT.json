@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "taakId": "DESIGN-002",
+  "agent": "codex",
+  "agentPlatform": "ChatGPT Codex",
+  "model": {
+    "id": null,
+    "versie": null,
+    "bron": "onbekend"
+  },
+  "basisCommit": "53a7b918038c9a0657e76c170415de4151885fcf",
+  "basisVersie": "20261105-101500",
+  "installatie": {
+    "versie": "20261105-101500",
+    "commit": "53a7b918038c9a0657e76c170415de4151885fcf",
+    "bron": "/api/version, 2026-11-05"
+  },
+  "regelsVersie": "1.4.9",
+  "regelsHash": "fd7f99f180da62313ee13a1ffe7a99c5e933883419d54efc2d9f4d7bcd7b8dd4",
+  "tak": "feature/design-002-20261105-134500",
+  "kanaal": "github_pr",
+  "zonderGit": null,
+  "commits": [
+    "7216f70e88565ad74157ac132b24a162ac1ffe76",
+    "93cb30ee530833f499ea8db6fcd28ae22d9872d6",
+    "49cdf81a89213754d444f6dd291ace72d5fe5a5a",
+    "984d4e655704dec3901cb2b35240f0ad0387f967",
+    "00ebc6dac4ededc7439b1350745f1b546abdcd63"
+  ],
+  "bestanden": {
+    "gewijzigd": [
+      "src/ontwerp/modern.css",
+      "src/product-lege-toestand.css"
+    ],
+    "toegevoegd": [
+      ".github/workflows/design-002-controle.yml",
+      "orchestratie/taken/DESIGN-002.json",
+      "orchestratie/ontwikkelarchieven/DESIGN-002.json",
+      "ORCH-OVERDRACHT.json",
+      "tests/visueel/design-001-voorbeeld.html",
+      "tests/visueel/design-001-voorbeeld.tsx",
+      "tests/visueel/design-001-controle.mjs",
+      "tests/visueel/design-002-ruimtes.html",
+      "tests/visueel/design-002-ruimtes.tsx",
+      "tests/visueel/design-002-controle.mjs"
+    ],
+    "verwijderd": []
+  },
+  "samenvatting": {
+    "uk": "Узгоджено адаптивні поверхні календаря, хмари, нотаток, пошуку та налаштувань і виправлено перенесення назв та порожні стани.",
+    "nl": "De adaptieve oppervlakken van agenda, cloud, notities, zoeken en instellingen zijn afgestemd; lange labels en lege toestanden zijn verbeterd."
+  },
+  "tests": {
+    "geslaagd": 8,
+    "mislukt": 0,
+    "falend": [],
+    "uitleg": {
+      "uk": "Перевірено правила та актуальність, типи сервера, 136 модульних перевірок, повну збірку і 35 браузерних сценаріїв (320–1280 px, теми та дії) на commit 984d4e6. Повний авторизований сайт і режими пошти з реальними даними не перевірялися.",
+      "nl": "Regels en versheid, servertypen, 136 eenheidscontroles, de volledige bouw en 35 browserscenario’s (320–1280 px, thema’s en acties) zijn gecontroleerd op commit 984d4e6. De volledige aangemelde site en mailweergaven met echte gegevens zijn niet getest."
+    }
+  },
+  "nietGedaan": {
+    "uk": "Зміни не інтегровано і не встановлено. Повний перегляд усіх авторизованих сторінок та всіх режимів пошти з реальними даними залишається окремою перевіркою.",
+    "nl": "De wijzigingen zijn niet geïntegreerd of geïnstalleerd. Een volledige controle van alle aangemelde pagina’s en alle mailweergaven met echte gegevens moet nog gebeuren."
+  },
+  "conflicten": [],
+  "aangemaakt": "2026-11-05T14:03:53.984Z"
+}
