@@ -1,0 +1,69 @@
+name: DESIGN-002 · онлайн-перевірка опублікованого випуску
+on:
+  push:
+    branches: [audit/design-002-trace-20261105-154228]
+
+permissions:
+  contents: read
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSIE: '20261105-140556'
+      BRON: '0909950f0c5e279a379e99b3a362ec9a329c8314'
+      SHA: 'c42858419dc9c8a705ee3642c53787cfd0391781b9ddec6f4ebeb9960062269e'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Отримати опублікований архів
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download "$VERSIE" --repo "$GITHUB_REPOSITORY" --pattern "mijn-ruimte-$VERSIE.tar.gz" --dir "$RUNNER_TEMP"
+          bestand="$RUNNER_TEMP/mijn-ruimte-$VERSIE.tar.gz"
+          test "$(sha256sum "$bestand" | cut -d' ' -f1)" = "$SHA"
+          test "$(tar -xOf "$bestand" "mijn-ruimte-$VERSIE/BRON-COMMIT")" = "$BRON"
+          tar -xOf "$bestand" "mijn-ruimte-$VERSIE/ONTWIKKELARCHIEF.json" > "$RUNNER_TEMP/trace-ref.json"
+      - name: Перевірити реальним кодом передперевірки сайту
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./node_modules/.bin/esbuild backend/uitrol-ontwikkelarchief.ts --bundle --platform=node --format=esm --target=node24 --outfile="$RUNNER_TEMP/trace-backend.mjs"
+          node --input-type=module - <<'JS'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const m = await import(pathToFileURL(process.env.RUNNER_TEMP + '/trace-backend.mjs').href);
+          const ref = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/trace-ref.json', 'utf8'));
+          const result = await m.controleerOntwikkelArchiefOnline(ref, process.env.SHA, { timeoutMs: 12000 });
+          console.log('Site TRACE-001:', result.code, result.reden);
+          if (!result.ok) process.exitCode = 1;
+          JS
+      - name: Перевірити реальним кодом кореневого інсталятора
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('deploy/uitrol/mijn-ruimte-uitrol.sh').read_text(encoding='utf-8')
+          anchor='ARCHIEF_UITKOMST="$(timeout 55 python3 - '
+          part=s.split(anchor,1)[1]
+          content=part.split("<<'PY' 2>/dev/null || true\n",1)[1].split("\nPY\n)",1)[0]
+          import os
+          Path(os.environ['RUNNER_TEMP'],'trace-root.py').write_text(content+'\n',encoding='utf-8')
+          PY
+          uitkomst="$(timeout 55 python3 "$RUNNER_TEMP/trace-root.py" "$RUNNER_TEMP/trace-ref.json" "$BRON" "$VERSIE" "$RUNNER_TEMP/mijn-ruimte-$VERSIE.tar.gz")"
+          echo "Root TRACE-001: $uitkomst"
+          test "$uitkomst" = OK
+      - name: Перевірити доступність особистого оновлювача без сесії
+        if: always()
+        shell: bash
+        run: |
+          code="$(curl --silent --show-error --max-time 20 -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{}' 'https://hub.tarasevych.com/api/owner/uitrol/overzicht' || true)"
+          echo "HTTP для перегляду оновлювача без сесії: $code"
