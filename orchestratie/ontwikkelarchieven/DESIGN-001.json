@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "taakId": "DESIGN-001",
+  "datum": "2026-11-05",
+  "taal": "uk",
+  "opdracht": "Eigenaar Test: адаптивно оновити спільні стилі карток, вікон, кнопок та робочого столу (DESIGN-001) зі збереженням усіх тем, високого контрасту та мобільної верстки.",
+  "herkomst": {
+    "eigenaar": "Eigenaar Test",
+    "agent": "codex",
+    "basis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+    "vorigeProductieversie": "20261104-204906",
+    "vorigeProductieCommit": "6e815a00307dd9c00a0b2907838be099be8c5610",
+    "tak": "feature/design-001-20261105-140000"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Жодних паролів, токенів, приватних ключів, файлів cookie або персональних даних; лише шляхи файлів, версії, SHA комітів і публічні URL."
+  },
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Оновлено радіуси заокруглення у src/ontwerp/tokens.css (--straal-s: 10px, --straal-m: 14px, --straal-l: 20px, --straal-xl: 26px) зі збереженням теми високого контрасту.",
+      "bewijzen": [
+        "src/ontwerp/tokens.css"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Додано модуль візуального оновлення src/ontwerp/modern.css і підключено його в src/ontwerp/fundament.css без зміни HTML-структури чи поведінки кнопок.",
+      "bewijzen": [
+        "src/ontwerp/modern.css",
+        "src/ontwerp/fundament.css"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Оновлено стилі вікон у src/platform/vensters.css (плавні тіні, вкладки, рядки таблиць) та перевірено контраст і повну збірку в рамках AUDIT-001.",
+      "bewijzen": [
+        "src/platform/vensters.css",
+        "tests/eenheid/design-001.test.ts"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Винесення нових стилів у src/ontwerp/modern.css із підключенням через fundament.css",
+      "reden": "Дозволяє централізовано оновити вигляд карток, полів, діалогів і робочого столу, не ламаючи існуючі компонентні класи та теми.",
+      "альтернатива": "Точкове редагування десятків окремих CSS-файлів — відхилено через ризик регресій."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "bestand": "src/ontwerp/tokens.css",
+      "soort": "змінено",
+      "опис": "Оновлені змінні радіусів --straal-s/m/l/xl (10px/14px/20px/26px)."
+    },
+    {
+      "bestand": "src/ontwerp/modern.css",
+      "soort": "додано",
+      "опис": "Сучасні поверхні карток, вікон, кнопок, таблиць і робочого столу з підтримкою темної теми та високого контрасту."
+    },
+    {
+      "bestand": "src/ontwerp/fundament.css",
+      "soort": "змінено",
+      "опис": "Імпорт ./modern.css та оновлені стилі полів і кнопок."
+    },
+    {
+      "bestand": "src/platform/vensters.css",
+      "soort": "змінено",
+      "опис": "Оновлені тіні вікон, вкладок і рядків даних."
+    },
+    {
+      "bestand": "orchestratie/taken/DESIGN-001.json",
+      "soort": "додано",
+      "опис": "Запис задачі DESIGN-001."
+    }
+  ],
+  "controles": [
+    {
+      "controle": "Перевірка контрасту (contrast-controle.mjs) та юніт-тести design-001.test.ts",
+      "результат": "Усі перевірки контрасту тем, токенів і правил modern.css пройдено успішно.",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "Повна збірка npm run build (11 етапів)",
+      "результат": "Повна клієнтська і серверна збірка завершена з кодом 0.",
+      "стан": "пройдено"
+    }
+  ],
+  "bronnen": [
+    "src/ontwerp/tokens.css",
+    "src/ontwerp/modern.css",
+    "src/ontwerp/fundament.css",
+    "src/platform/vensters.css",
+    "https://github.com/Tarasevych/hub/pull/28"
+  ],
+  "beperkingen": [
+    "Візуальні зміни стосуються лише CSS-шару без зміни бізнес-логіки чи маршрутів серверного API."
+  ]
+}

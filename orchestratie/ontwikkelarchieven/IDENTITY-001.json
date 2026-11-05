@@ -56,6 +56,11 @@
       "volgorde": 8,
       "stap": "Замість передавання токена в чат реліз збирає CI самої гілки через штатний GITHUB_TOKEN (contents: write): пакет, .sha256 і GitHub Release з тим самим архівом.",
       "bewijzen": [".github/workflows/identity-account-release.yml"]
+    },
+    {
+      "volgorde": 9,
+      "stap": "12 розділів перенесено в застосунок: оболонка src/identity з меню-змістом і scroll-spy, діалог фото з трьох джерел, адаптивність за контейнером.",
+      "bewijzen": ["src/identity/IdentityAccountPagina.tsx", "src/identity/Profielfoto.tsx", "src/identity/identity-account.css"]
     }
   ],
   "keuzes": [
@@ -162,6 +167,11 @@
       "controle": "Тести застосунку",
       "результат": "не запускалися: змінено лише docs/ і workflow, код застосунку не змінено",
       "стан": "не застосовно"
+    },
+    {
+      "controle": "tsc і збірка застосунку",
+      "результат": "npx tsc -p tsconfig.json --noEmit — 0 помилок; npm run build — успішно, включно з перевірками розміщення, контрасту й каталогу",
+      "стан": "пройдено"
     }
   ],
   "bronnen": [
@@ -177,10 +187,10 @@
     "https://github.com/Tarasevych/hub/tree/feature/identity-account-20261104-120000/docs/ontwerp/identity-account"
   ],
   "beperkingen": [
-    "Екрани не інтегровані в src/identity/*: це дизайн і прототип, а не робочий UI застосунку.",
     "beleid.json → basis лишається 20261031-093842; оновлення до 20261104-075953 потребує окремого BESLUIT і підпису власника.",
     "regels.lock → eigenaar: null: критичні політики без підпису, режим лише «na_bevestiging».",
     "Встановлення через сайт можливе лише після passkey-підтвердження власника; агент цього не робить.",
-    "Тести застосунку не запускалися, бо змінено лише документацію."
+    "Тести застосунку не запускалися, бо змінено лише документацію.",
+    "Юніт-тести застосунку не запускалися: для них потрібні змінні бази й ключів; перевірено tsc і повну збірку."
   ]
 }

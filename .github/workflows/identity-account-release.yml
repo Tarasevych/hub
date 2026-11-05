@@ -8,8 +8,13 @@ on:
   push:
     branches:
       - feature/identity-account-20261104-120000
+      - feature/identity-account-ui-20261104-180000
     paths:
       - 'docs/ontwerp/identity-account/**'
+      - 'src/identity/**'
+      - 'src/InstellingencentrumWeergave.tsx'
+      - 'src/VerenigdDienstApp.tsx'
+      - 'scripts/plaatsing-vaste-elementen.json'
       - 'orchestratie/ontwikkelarchieven/IDENTITY-001.json'
       - '.github/workflows/identity-account-release.yml'
 
@@ -70,10 +75,10 @@ jobs:
       - name: Bouw manifest
         if: steps.bestaatal.outputs.bestaat == ''
         env:
-          SAMENVATTING_UK: "Дизайн сторінки акаунта identity: 12 екранів на одній сторінці, прототип, ТЗ і матриця покриття; код застосунку не змінено."
-          SAMENVATTING_NL: "Ontwerp van de identity-accountpagina: twaalf schermen op één pagina, prototype, specificatie en dekkingsmatrix; applicatiecode ongewijzigd."
-          BEPERKING_UK: "Екрани не інтегровані в src/identity; тести застосунку не запускалися (лише документація)."
-          BEPERKING_NL: "Schermen zijn niet in src/identity geïntegreerd; applicatietests niet uitgevoerd (alleen documentatie)."
+          SAMENVATTING_UK: "Сторінка облікового запису: 12 розділів identity на одній сторінці з меню-змістом і прокруткою, діалог фото з трьох джерел, адаптивність за контейнером."
+          SAMENVATTING_NL: "De accountpagina: twaalf identity-onderdelen op één pagina met inhoudsopgave en scrollen, een fotodialoog met drie bronnen en containerresponsieve opmaak."
+          BEPERKING_UK: "Частини, які вже мали власні екрани, лишилися без змін; юніт-тести застосунку не запускалися — перевірено tsc і повну збірку."
+          BEPERKING_NL: "Onderdelen met een eigen scherm bleven ongewijzigd; applicatietests niet uitgevoerd — wel tsc en de volledige build."
         run: |
           set -euo pipefail
           VERSIE="$(date -u +%Y%m%d-%H%M%S)"
@@ -88,8 +93,8 @@ jobs:
               "schema": 1,
               "versie": versie,
               "aangemaakt": datetime.datetime.now(datetime.timezone.utc).astimezone().isoformat(timespec="seconds"),
-              "herkomst": "git: feature/identity-account-20261104-120000@%s (basis %s @ %s, %s)"
-                          % (commit, basis["versie"], basis["bronCommit"][:12], basis["bron"]),
+              "herkomst": "git: %s@%s (basis %s @ %s, %s)"
+                          % (os.environ.get("GITHUB_REF_NAME", "onbekend"), commit, basis["versie"], basis["bronCommit"][:12], basis["bron"]),
               "auteur": "Eigenaar Test",
               "zonderAi": False,
               "deelnemers": [
@@ -101,15 +106,17 @@ jobs:
               "beschrijving": {
                   "uk": {"titel": "Дизайн сторінки акаунта identity",
                          "samenvatting": os.environ["SAMENVATTING_UK"],
-                         "wijzigingen": ["Додано docs/ontwerp/identity-account: прототип, ТЗ, матриця покриття, README",
-                                         "Зареєстровано задачу IDENTITY-001 і журнал розробки"],
+                         "wijzigingen": ["12 розділів облікового запису на одній сторінці з меню-змістом, scroll-spy і глибокими посиланнями",
+                                         "Діалог фото: пристрій, фото сервісу, https-посилання; смітничок 24 px у куті",
+                                         "Адаптивність за контейнером: кнопки на всю ширину до 640 px, перевірено 320–430 px"],
                          "fixes": [],
                          "beperkingen": [os.environ["BEPERKING_UK"]],
                          "instructies": "Перегляньте прототип і підтвердьте дизайн перед інтеграцією."},
                   "nl": {"titel": "Ontwerp van de accountpagina (identity)",
                          "samenvatting": os.environ["SAMENVATTING_NL"],
-                         "wijzigingen": ["docs/ontwerp/identity-account toegevoegd: prototype, specificatie, dekkingsmatrix, README",
-                                         "Taak IDENTITY-001 en ontwikkeldossier geregistreerd"],
+                         "wijzigingen": ["Twaalf accountonderdelen op één pagina met inhoudsopgave, scroll-spy en directe links",
+                                         "Fotodialoog: apparaat, servicefoto, https-link; prullenbak van 24 px in de hoek",
+                                         "Containerresponsief: knoppen over de volle breedte tot 640 px, getest op 320–430 px"],
                          "fixes": [],
                          "beperkingen": [os.environ["BEPERKING_NL"]],
                          "instructies": "Bekijk het prototype en keur het ontwerp goed vóór integratie."},
@@ -126,7 +133,7 @@ jobs:
           set -euo pipefail
           VERSIE="$RELEASE_VERSION"
           HEAD_SHA="$(git rev-parse HEAD)"
-          TAK="feature/identity-account-20261104-120000"
+          TAK="${GITHUB_REF_NAME}"
           DOSSIE="orchestratie/ontwikkelarchieven/IDENTITY-001.json"
           git show "HEAD:$DOSSIE" > "$RUNNER_TEMP/dossier.json"
           python3 - "$VERSIE" "$HEAD_SHA" "$TAK" "$DOSSIE" "$RUNNER_TEMP" <<'PY'
@@ -155,7 +162,7 @@ jobs:
           mkdir -p uitvoer
           AUTEUR="Eigenaar Test" \
           AGENT="autoclaw" \
-          SAMENVATTING="Дизайн сторінки акаунта identity: 12 екранів на одній сторінці, прототип, ТЗ і матриця покриття; код застосунку не змінено." \
+          SAMENVATTING="Сторінка облікового запису: 12 розділів identity на одній сторінці з меню-змістом і прокруткою, діалог фото з трьох джерел, адаптивність за контейнером." \
           BASIS_VERSIE="$BASIS_VERSIE" \
           BASIS_COMMIT="$BASIS_COMMIT" \
           UITROL_VERSIE_OVERRIDE="$VERSIE" \
@@ -189,7 +196,7 @@ jobs:
             "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256" \
             --target "$COMMIT" \
             --title "IDENTITY-ACCOUNT · $RELEASE_VERSION" \
-            --notes "Дизайн сторінки керування обліковим записом (12 екранів identity): живий прототип, ТЗ, матриця покриття. Лише документація — код застосунку не змінювався. Журнал розробки: orchestratie/ontwikkelarchieven/IDENTITY-001.json. Встановлення — лише за passkey-рішенням власника. BRON-COMMIT: $COMMIT" \
+            --notes "Сторінка керування обліковим записом: 12 розділів identity на одній сторінці з меню-змістом, scroll-spy і прямими посиланнями; клік по аватару відкриває діалог фото (пристрій / фото сервісу / https-посилання), смітничок 24 px у куті; адаптивність за контейнером (кнопки на всю ширину до 640 px, перевірено 320–430 px). Видалення фото на сервері ще не підтримується — смітничок повертає фото сервісу. Журнал розробки: orchestratie/ontwikkelarchieven/IDENTITY-001.json. Встановлення — лише за passkey-рішенням власника. BRON-COMMIT: $COMMIT" \
             --prerelease --latest=false
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_VERSION" \
             --jq '.assets[] | select(.name | endswith(".tar.gz")) | "\(.name) \(.digest)"' | tee "$RUNNER_TEMP/digest.txt"
