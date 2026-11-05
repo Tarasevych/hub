@@ -43,19 +43,23 @@
     "nl": "Gedeelde stijlen voor kaarten, vensters, lege toestanden en werkblad vernieuwd met behoud van thema's en responsieve indeling."
   },
   "tests": {
-    "geslaagd": 5,
+    "geslaagd": 7,
     "mislukt": 1,
     "falend": [
       "node scripts/eenheidstests.mjs werkblad: серверні тести потребують DATABASE_URL"
     ],
     "uitleg": {
-      "uk": "Попередній коміт: повна збірка, typecheck:server, orch-kern і werkblad-canvas-kern пройшли у GitHub Actions. Після додавання ілюстрацій для порожніх станів перевірки запускаються повторно. Повний серверний набір werkblad потребує бази даних.",
-      "nl": "Vorig commit: volledige build, typecheck:server, orch-kern en werkblad-canvas-kern geslaagd in GitHub Actions. Na de illustraties voor lege toestanden worden de controles opnieuw uitgevoerd. De volledige werkblad-serverreeks vereist een database."
-    }
+      "uk": "Коміт 2bb117b9e1aa0969f79672873bf54773cbf1bcc4: у GitHub Actions пройшли повна збірка, перевірка правил, typecheck:server, orch-kern та werkblad-canvas-kern. Chromium перевірив п’ять варіантів 320, 390 і 1280 px у світлій/темній темах: без горизонтального переповнення, заокруглення й зменшений рух працюють. Серверні тести werkblad потребують DATABASE_URL.",
+      "nl": "Commit 2bb117b9e1aa0969f79672873bf54773cbf1bcc4: volledige build, regelcontrole, typecheck:server, orch-kern en werkblad-canvas-kern geslaagd in GitHub Actions. Chromium controleerde vijf combinaties op 320, 390 en 1280 px in lichte/donkere thema's: geen horizontale overloop, afgeronde hoeken en verminderde beweging werken. Werkblad-servertests vereisen DATABASE_URL."
+    },
+    "bewijzen": [
+      "https://github.com/Tarasevych/hub/actions/runs/42034090314",
+      "https://github.com/Tarasevych/hub/actions/runs/42034090314/artifacts/13418140991"
+    ]
   },
   "nietGedaan": {
-    "uk": "Не перевірено кожну сторінку в браузері; адаптивність і збірку треба підтвердити до інтеграції. Випуск і встановлення не виконані. Гілка integratie на GitHub має іншу історію і помилку відбитків правил.",
-    "nl": "Niet iedere pagina is in de browser gecontroleerd; responsiviteit en build moeten vóór integratie worden bevestigd. Geen release of installatie. De GitHub-integratietak heeft een andere geschiedenis en onjuiste regelafdrukken."
+    "uk": "Не виконано ручний візуальний огляд кожної сторінки чи всіх поштових режимів; браузерні перевірки охоплюють тестовий перегляд спільних компонентів. Випуск і встановлення не виконані: GitHub integratie має іншу історію та невідповідність відбитків правил.",
+    "nl": "Geen handmatige visuele inspectie van alle pagina's of e-mailstanden; de browsertests betreffen een testweergave van gedeelde componenten. Geen release of installatie: GitHub integratie heeft een andere geschiedenis en afwijkende regelafdrukken."
   },
   "conflicten": [],
   "aangemaakt": "2026-11-05T05:50:15.829Z"
