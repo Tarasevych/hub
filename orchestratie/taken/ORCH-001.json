@@ -3,13 +3,15 @@
   "id": "ORCH-001",
   "agent": "claude",
   "tak": "feature/orch-001-20261031-112355",
-  "basisCommit": "b279ccabe31a27139b337822162653ccc13b6a5a",
+  "basisCommit": "5a023b41b2c665f130f08ba0c5004c2a286a7672",
+  "basisCommitVoorHerschrijving": "b279ccabe31a27139b337822162653ccc13b6a5a",
   "basisVersie": "20261031-093842",
-  "regelsVersie": "1.4.2",
-  "regelsHash": "f5e5f6bc7ddaa067b60f643c16cbeb7510d9b75df5d72ed5178106a8042dbb0a",
-  "staat": "in_progress",
+  "regelsVersie": "1.4.9",
+  "regelsHash": "fd7f99f180da62313ee13a1ffe7a99c5e933883419d54efc2d9f4d7bcd7b8dd4",
+  "staat": "integrated",
+  "integratieCommit": "4db51b6aabe73f295ba4286c4c7557568c0d5e3e",
   "gestart": "2026-10-31T11:32:34.460Z",
-  "bijgewerkt": "2026-11-04T11:41:48.349Z",
+  "bijgewerkt": "2026-11-05T16:34:17.786Z",
   "omschrijving": "Єдина система координації AI-агентів (етапи 0–4)",
   "kanaal": "github_pr",
   "overdrachten": [],
@@ -38,6 +40,36 @@
       "van": "1.3.0",
       "naar": "1.4.2",
       "op": "2026-11-04T11:41:48.349Z"
+    },
+    {
+      "van": "1.4.2",
+      "naar": "1.4.9",
+      "op": "2026-11-05T16:34:17.740Z"
     }
-  ]
+  ],
+  "afsluiting": {
+    "datum": "2026-11-05",
+    "prs": [
+      16,
+      17
+    ],
+    "integratieCommit": "4db51b6aabe73f295ba4286c4c7557568c0d5e3e",
+    "commitsNaHerschrijving": {
+      "b279ccab (basis van de taak)": "5a023b41b2c665f130f08ba0c5004c2a286a7672",
+      "fa50a5b (адверсарна перевірка / adversariële controle)": "7176e951a1738edc0f3159ba8b695006445d3088",
+      "f8def89 (PR #16)": "d33d068e146c1f1487afa63d917d89d8703c1b2f",
+      "c414fe7 (PR #17, 1/2)": "eebfdd13c99cc2f9737a78d331458a3732f4515f",
+      "8722770 (PR #17, 2/2)": "3dea7c12eb228317fb550ffe5cf9f5215a6b6609",
+      "5f84d9d (merge PR #17 + PR #18 in integratie)": "4db51b6aabe73f295ba4286c4c7557568c0d5e3e"
+    },
+    "productie": {
+      "versie": "20261105-061659",
+      "bronCommit": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+      "serverCommit": "a318ba0b1c731390217458dabadcf0e086d13635",
+      "bron": "beleid.json → basis (geverifieerd_productie, B-014); /api/version niet bereikbaar uit de cloudcontainer"
+    },
+    "wachtrij": "open: de regel van PR #11 (feature/orch-001-20261031-112355, wacht) sluit de integrator op integratie met orch wachtrij volgende + klaar --uitkomst integrated --hoofd 4db51b6…",
+    "uk": "Етапи 0–4 і перевірки злито через PR #16 (1.11.2026); подальші виправлення й розділення приватного й технічного «Доступу ШІ» — через PR #17 (1.11.2026). В integratie їх об’єднав merge 4db51b6 (до переписування — 5f84d9d, разом із PR #18). Після переписування історії (B-010, B-011) коміти мають нові SHA; база задачі b279ccab тепер 5a023b41 — той самий коміт (автор, дата й тема збігаються), що є предком integratie. 4db51b6 є предком канонічної встановленої бази f3f3fab (20261105-061659); у серверному коміті a318ba0 (до-рерайтна історія, інші SHA) зміни PR #17 присутні за вмістом. Статус integrated записано у власній декларації агента; запис PR #11 у черзі (wachtrij.json) закриває інтегратор на integratie — агент файл черги не змінює (AGENTS.md §4.3). Статус installed ставить лише інсталятор через orchestratie/geinstalleerd.json, якого ще немає.",
+    "nl": "Fasen 0–4 en de controles zijn samengevoegd via PR #16 (1-11-2026); de vervolgcorrecties en de scheiding van privé- en technische «AI-toegang» via PR #17 (1-11-2026). In integratie heeft merge 4db51b6 ze opgenomen (vóór het herschrijven 5f84d9d, samen met PR #18). Na het herschrijven van de historie (B-010, B-011) hebben de commits nieuwe SHA’s; de taakbasis b279ccab is nu 5a023b41 — dezelfde commit (auteur, datum en onderwerp gelijk), een voorouder van integratie. 4db51b6 is een voorouder van de canonieke geïnstalleerde basis f3f3fab (20261105-061659); in de servercommit a318ba0 (historie vóór het herschrijven, andere SHA’s) zitten de wijzigingen van PR #17 inhoudelijk. De status integrated staat in de eigen declaratie van de agent; de wachtrijregel van PR #11 (wachtrij.json) sluit de integrator op integratie — de agent wijzigt het wachtrijbestand niet (AGENTS.md §4.3). De status installed zet alleen de installer via orchestratie/geinstalleerd.json, dat nog ontbreekt."
+  }
 }
