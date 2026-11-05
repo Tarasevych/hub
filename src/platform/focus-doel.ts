@@ -21,6 +21,18 @@ export function focusUitUrl(search: string): string {
   return SLEUTEL_OK.test(v) ? v : '';
 }
 
+export const DOEL_PARAM = 'doel';
+/** ?doel=<soort>:<id> uit een zoekreeks (zuiver). */
+export function doelUitUrl(search: string): string {
+  const v = new URLSearchParams(search).get(DOEL_PARAM) || '';
+  return SLEUTEL_OK.test(v) ? v : '';
+}
+/** De CSS-selector voor een doel (data-zoek-doel), zuiver; ongeldig → null. */
+export function doelSelector(doel: string): string | null {
+  if (!SLEUTEL_OK.test(doel)) return null;
+  return `[data-zoek-doel="${doel.replace(/"/g, '')}"]`;
+}
+
 export function markeerEnFocus(el: HTMLElement): void {
   const kort = minderBeweging();
   try { el.scrollIntoView({ block: 'center', behavior: kort ? 'auto' : 'smooth' }); } catch { /* oude browser */ }
@@ -37,9 +49,11 @@ let gestart = false;
 export function focusDoelStarten(): void {
   if (gestart || typeof document === 'undefined') return;
   gestart = true;
-  const sleutel = focusUitUrl(location.search); if (!sleutel) return;
-  const sel = focusSelector(sleutel); if (!sel) return;
-  const url = new URL(location.href); url.searchParams.delete(FOCUS_PARAM); history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  // ZOEKDIEP-001 (05.11.2026): naast ?focus=<hulp-sleutel> ook ?doel=<soort>:<id> — een ITEM op de pagina (bijv. een taak op mcp/board,
+  // gemarkeerd met data-zoek-doel). Zelfde gedrag: zoeken, in beeld scrollen, markeren, focussen, parameter wissen.
+  const sleutel = focusUitUrl(location.search), doel = doelUitUrl(location.search); if (!sleutel && !doel) return;
+  const sel = sleutel ? focusSelector(sleutel) : doelSelector(doel); if (!sel) return;
+  const url = new URL(location.href); url.searchParams.delete(FOCUS_PARAM); url.searchParams.delete(DOEL_PARAM); history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
   const probeer = (): boolean => { const el = document.querySelector<HTMLElement>(sel); if (!el) return false; markeerEnFocus(el); return true; };
   if (probeer()) return;
   const mo = new MutationObserver(() => { if (probeer()) { mo.disconnect(); window.clearTimeout(t); } });
