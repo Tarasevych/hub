@@ -122,6 +122,13 @@ jobs:
           }
           EOF
           mkdir -p uitvoer
+          cat << 'EOF' > orchestratie/geinstalleerd.json
+          {
+            "versie": "20261104-204906",
+            "bronCommit": "6e815a00307dd9c00a0b2907838be099be8c5610",
+            "bron": "geverifieerd_productie_api"
+          }
+          EOF
           node scripts/orch.mjs pakket \
             --taak AUDIT-001 \
             --auteur "Власник" \
@@ -132,6 +139,7 @@ jobs:
             --platform "Antigravity"
           node scripts/orch.mjs pakket-controleer \
             --bron "uitvoer/mijn-ruimte-$VERSIE-antigravity-overdracht.zip"
+          rm -f orchestratie/geinstalleerd.json
           unzip -j -o "uitvoer/mijn-ruimte-$VERSIE-antigravity-overdracht.zip" \
             "mijn-ruimte-$VERSIE.voorstel.json" \
             "mijn-ruimte-$VERSIE.tar.gz.sha256" \
