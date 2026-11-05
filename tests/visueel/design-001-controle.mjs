@@ -2,7 +2,7 @@
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}) });
 const url = 'http://127.0.0.1:4179/tests/visueel/design-001-voorbeeld.html';
 const gevallen = [
   { naam: 'telefoon-licht', breedte: 390, hoogte: 844, donker: false },
