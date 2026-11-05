@@ -24,7 +24,7 @@ export type Overzicht = {
   mappen: CloudMap[]; workspaces: Array<{ id: string; titel: string; aantal: number }>;
 };
 export type Lijst = { bestanden: CloudBestand[]; mappen: CloudMap[]; pad: CloudMap[]; volgende: string | null; totaal: number | null };
-export type LijstVraag = { mapId?: string; zoek?: string; soort?: CloudSoort | ''; tag?: string; favoriet?: boolean; prullenbak?: boolean; workspaceId?: string; sorteer?: CloudSortering; oplopend?: boolean; token?: string };
+export type LijstVraag = { id?: string; mapId?: string; zoek?: string; soort?: CloudSoort | ''; tag?: string; favoriet?: boolean; prullenbak?: boolean; workspaceId?: string; sorteer?: CloudSortering; oplopend?: boolean; token?: string };
 export type UploadBegin = { id: string; stukMax: number };
 
 export const cloudClient = {
@@ -65,7 +65,7 @@ export const cloudClient = {
   googleStart: (accountRole: 'primary' | 'additional' = 'primary') => roep<{ ok?: boolean; authUrl?: string }>('/api/owner/cloud/providers/google/connect/start', { accountRole, returnTo: location.href, locale: document.documentElement.lang === 'nl' ? 'nl' : 'uk' }),
 };
 export type IntegratiesUit = {
-  google: { gekoppeld: boolean; accounts: Array<{ id: string; email: string; actief: boolean; status: string; sync?: { laatstGeluktOp: number; laatstPogingOp: number; foutCode: string; herstelNodig: boolean } }>; fout?: string };
+  google: { gekoppeld: boolean; accounts: Array<{ id: string; email: string; actief: boolean; status: string; principalId?: string; sync?: { laatstGeluktOp: number; laatstPogingOp: number; foutCode: string; herstelNodig: boolean } }>; fout?: string };
   photos: { gekoppeld: boolean };
   m4: { stagingAan: boolean; aanbieders: Array<{ id: string; sleutelsAanwezig: boolean; accounts: Array<{ id: string; label: string; status: string }> }> };
   zoekIndex: { cloud: boolean; drive: boolean };

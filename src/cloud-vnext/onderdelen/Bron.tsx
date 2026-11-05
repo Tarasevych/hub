@@ -14,6 +14,23 @@ import { OVERDRACHT_GRENZEN } from '../../../shared/cloud-overdracht-model';
 import type { OnderdeelProps } from '../CloudPagina';
 import { bytesTekst, foutTekst, tr, type Lang } from '../tekst';
 import { Monogram, SleutelsChecklist, accountStatusTekst } from './Integraties';
+import { sessieLees, sessieZet } from '../hulp';
+
+/**
+ * ZOEKDIEP-001 (05.11.2026): overdracht uit «Пошук» of een diepe link (CloudPagina → 'cvn-drive-open' = { bestand, principal }).
+ * Vóór 05.11 schreef de zoekpagina hier een kale id die niemand las; zo'n waarde telt nog als bestand-id zonder account.
+ * Alleen LEZEN tijdens de render: React kan een eerste render weggooien (Suspense), dan zou een gewiste sleutel verloren zijn.
+ * Gewist wordt pas in het effect dat het bestand opent.
+ */
+function leesDriveOverdracht(): { bestand: string; principal: string } | null {
+  const w = sessieLees('cvn-drive-open');
+  if (!w) return null;
+  try {
+    const p = JSON.parse(w) as { bestand?: unknown; principal?: unknown };
+    if (p && typeof p === 'object' && typeof p.bestand === 'string' && p.bestand) return { bestand: p.bestand.slice(0, 1100), principal: String(p.principal || '').slice(0, 120) };
+  } catch { /* geen JSON */ }
+  return /^[\x21-\x7e]{1,1100}$/.test(w) ? { bestand: w, principal: '' } : null;
+}
 
 type DriveBestand = { id: string; name: string; mimeType: string; modifiedAt: number; size: string; folder: boolean };
 type Kruimel = { id: string; naam: string };
@@ -122,9 +139,13 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
   const wortelNaam = tr(lang, 'Мій диск', 'Mijn Drive');
 
   const verbonden = integr?.google.accounts.filter((a) => a.status === 'connected') || [];
+  const overdracht = useRef<{ bestand: string; principal: string } | null | undefined>(undefined);
+  if (overdracht.current === undefined) overdracht.current = leesDriveOverdracht();
   useEffect(() => {
     if (accountId || !verbonden.length) return;
-    const actief = verbonden.find((a) => a.actief) || verbonden[0];
+    // Een diepe link noemt het account (principalId); anders het actieve account zoals altijd.
+    const gevraagd = overdracht.current?.principal ? verbonden.find((a) => a.principalId === overdracht.current?.principal) : undefined;
+    const actief = gevraagd || verbonden.find((a) => a.actief) || verbonden[0];
     setAccountId(actief.id);
   }, [integr]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -181,6 +202,13 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
     } finally { setVoorbeeldLaden(false); }
   };
   useEffect(() => () => { if (voorbeeld) revokeMailAttachmentPreview(voorbeeld); }, [voorbeeld]);
+  // Overdracht één keer openen zodra het account vaststaat (de map eronder blijft gewoon «Мій диск»).
+  useEffect(() => {
+    const o = overdracht.current;
+    if (!accountId || !o) return;
+    overdracht.current = null; sessieZet('cvn-drive-open', '');
+    void open({ id: o.bestand, name: '', mimeType: '', modifiedAt: 0, size: '', folder: false });
+  }, [accountId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stopPoll = useCallback(() => { if (poll.current) { window.clearInterval(poll.current); poll.current = null; } setWachten(false); }, []);
   useEffect(() => () => { if (poll.current) window.clearInterval(poll.current); }, []);

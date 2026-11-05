@@ -3,12 +3,13 @@
 // Telefoon: standaard «День» met een balk van 7 dagen, maand met stippen + dagenlijst, onderbalk met een zwevende «+».
 // Gegevens en schrijven via de bestaande client en server (agenda-client.ts, shared/agenda-model.ts): RRULE, herinneringen, gasten,
 // RSVP, tijdzones, ETag en idempotentie blijven precies zoals ze waren. Koppelingen staan in «Календарі та сервіси».
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, List, Plus, Settings2, Sun } from 'lucide-react';
 import { huidigeTijdzone, weekDagen, type AgendaItem, type AgendaVorm } from '../../../shared/agenda-model';
 import { foutTekst, nieuweVorm, plaatselijk } from '../AgendaVenster';
 import * as client from '../agenda-client';
-import { agendaSleutel, filterItems, itemsOpDag, kleurVoor, vandaagPlaatselijk } from './agenda-tijd';
+import { agendaSleutel, dagVanItem, filterItems, itemsOpDag, kleurVoor, vandaagPlaatselijk } from './agenda-tijd';
+import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../../shared/zoek-diepe-link';
 import { gebruikAgendaGegevens } from './haken/gebruikAgendaGegevens';
 import { gebruikAgendaWeergave, gebruikSmal } from './haken/gebruikAgendaWeergave';
 import { gebruikAgendaWijzigingen } from './haken/gebruikAgendaWijzigingen';
@@ -60,6 +61,17 @@ export default function AgendaPagina({ lang, ownerUserId }: { lang: Lang; ownerU
 
   // Een mislukte actie uit het voorbeeld (wissen, antwoorden) zonder open formulier: als melding tonen.
   useEffect(() => { if (w.fout && !bewerk) setMelding({ ok: false, tekst: foutTekst(w.fout, lang) }); }, [w.fout]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ZOEKDIEP-001 (05.11.2026): diepe link uit de zoekpagina (?open_event_id=google:<agenda>:<gebeurtenis>, shared/zoek-diepe-link.ts).
+  // Zodra het overzicht er is: naar de dag van de afspraak en haar detail openen; niet gevonden → eerlijke melding. Eén keer.
+  const zoekAfspraak = useRef(typeof location !== 'undefined' ? diepeWaarde(location.search, DIEPE_PARAMS.afspraak) : '');
+  useEffect(() => {
+    const doel = zoekAfspraak.current; if (!doel || !data) return;
+    zoekAfspraak.current = ''; wisDiepeParams(DIEPE_PARAMS.afspraak);
+    const item = alle.find((i) => i.id === doel);
+    if (!item) { setMelding({ ok: false, tekst: tr(lang, 'Подію з пошуку в календарі не знайдено: можливо, її вже видалено або календар ще синхронізується.', 'De afspraak uit de zoekresultaten staat niet in de agenda: misschien is zij verwijderd of wordt de agenda nog gesynchroniseerd.') }); return; }
+    const dag = dagVanItem(item); if (dag) v.zetDatum(dag);
+    setDetail(item);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
   const kalenders: KalenderRegel[] = useMemo(() => {
     const lijst: KalenderRegel[] = (data?.agendas || []).map((a) => ({ sleutel: `google:${a.id}`, naam: a.naam, kleur: kleurVoor(`google:${a.id}`, a.kleur), alleenLezen: !a.schrijfbaar || !schrijfrecht, bron: 'google' }));
     const gezien = new Set(lijst.map((k) => k.sleutel));

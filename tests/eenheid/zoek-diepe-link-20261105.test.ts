@@ -18,6 +18,7 @@ import { routeUitRecord, verrijkDiepeRoutes } from '../../backend/zoek/diepe-lin
 import { agendaGoogleObject, bijlageObject, bordObject, cloudObject, driveObject, mailObject } from '../../backend/zoek/adapters';
 import { UI_ELEMENTEN } from '../../shared/zoek-ui-knoppen.generated';
 import type { ZoekTreffer } from '../../shared/zoek-model';
+import { dagVanItem } from '../../src/agenda/v3/agenda-tijd';
 
 const lees = (f: string) => readFileSync(join(process.cwd(), f), 'utf8');
 
@@ -113,6 +114,21 @@ function B(){return <div><button>{tr('Кнопка Б','Knop B')}</button>{y && 
   // 6. Gmail-beheer
   const mf = lees('src/MailFunctioneelWeergave.tsx');
   check("6 mail/accounts rendert GoogleMailWorkspace mode='accounts' (actieve postbus, «Оновити доступ» voor zoeken), open als toegang nodig is", /<GoogleMailWorkspace lang=\{lang\} tab='inbox' mode='accounts'/.test(mf) && /mailSearchConsentRequired\)\|\|undefined/.test(mf));
+  // 7. deel 2 (vlaggen): cloud vNext en agenda v3
+  const cp = lees('src/cloud-vnext/CloudPagina.tsx'), bron = lees('src/cloud-vnext/onderdelen/Bron.tsx'), zk = lees('src/cloud-vnext/onderdelen/Zoeken.tsx');
+  const best = lees('src/cloud-vnext/onderdelen/Bestanden.tsx'), bb = lees('backend/cloud-vnext-bestanden.ts'), bi = lees('backend/cloud-vnext-integraties.ts');
+  check('7 cloud vNext: diepe link → overdracht (cvn-open / cvn-drive-open) en het juiste tabblad', /DIEPE_PARAMS\.item/.test(cp) && /sessieZet\('cvn-open', item\)/.test(cp) && /sessieZet\('cvn-drive-open'/.test(cp) && /naarTab\(d\)/.test(cp));
+  check('7 cloud vNext Zoeken: leest de nieuwe namen via diepeRoute (oude «drive»/«item» lazen na 05.11 niets meer)', /diepeRoute\(r\.route, r\.soort\)/.test(zk) && /params\[DIEPE_PARAMS\.bestand\]/.test(zk) && !/params\.drive\b/.test(zk));
+  check('7 cloud vNext Bestanden: kale id → één bestand van de server, anders een melding (vroeger stil genegeerd)', /cloudClient\.bestanden\(\{ id: open \}\)/.test(best) && /Файл не знайдено/.test(best));
+  check('7 server: bestanden met id → alleen via eenItem (lade van de gebruiker)', /if \(d\.id !== undefined\) \{\s*const r = await eenItem\(lade, d\.id\);/.test(bb));
+  check('7 integraties geven principalId mee; Bron kiest daarmee het account en wist de overdracht pas in het effect', /principalId: String\(item\.principalId\)/.test(bi) && /a\.principalId === overdracht\.current\?\.principal/.test(bron) && /sessieLees\('cvn-drive-open'\)/.test(bron) && !/sessieNeem\('cvn-drive-open'\)/.test(bron));
+  const ag = lees('src/agenda/v3/AgendaPagina.tsx');
+  check('7 agenda v3: open_event_id opent het detail op de dag van de afspraak, anders een melding', /diepeWaarde\(location\.search, DIEPE_PARAMS\.afspraak\)/.test(ag) && /setDetail\(item\)/.test(ag) && /v\.zetDatum\(dag\)/.test(ag));
+  check('7 dagVanItem: hele dag blijft de datum', dagVanItem({ begin: '2026-12-31', heleDag: true }) === '2026-12-31');
+  check('7 dagVanItem: tijdstip → plaatselijke dag', dagVanItem({ begin: '2026-12-03T10:00:00+01:00', heleDag: false }) === (() => { const d = new Date('2026-12-03T10:00:00+01:00'); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })());
+  check('7 dagVanItem: onzin → leeg', dagVanItem({ begin: 'gisteren', heleDag: false }) === '');
+  const gm = lees('src/GoogleMailWerkruimte.tsx');
+  check('7 Gmail: de bijlage pas beoordelen als de volledige brief er is (de voorlopige rij heeft geen bijlagen)', /detail\.id!==wacht\.bericht\|\|detailLoading\)return;/.test(gm) && /\},\[detail,detailLoading\]\);/.test(gm));
   check('contract: de parameternamen', DIEPE_PARAMS.bericht === 'open_message_id' && DIEPE_PARAMS.item === 'open_item_id' && DIEPE_PARAMS.bestand === 'open_file_id' && DIEPE_PARAMS.afspraak === 'open_event_id');
   return einde();
 }
