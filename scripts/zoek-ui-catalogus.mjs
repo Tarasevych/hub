@@ -105,15 +105,58 @@ function attribuut(tag, naam) {
 }
 const sluit = (src, van, naam) => { const i = src.indexOf(`</${naam}>`, van); return i < 0 ? src.length : i; };
 
-/** Alle koppen (h1-h3) met positie, zodat een knop zijn sectie kent (de laatste kop ervoor). */
+/**
+ * Alle koppen (h1-h3) met positie en BEREIK: een knop hoort bij de laatste kop ervoor waarvan het bereik hem bevat.
+ * Bereik = de JSX-boom waarin de kop staat: omhoog zolang de ouder een JSX-element of -fragment is (dus tot aan `return (…)`,
+ * `cond && (…)`, `c ? (…) : (…)`, `const x = (…)` of `{ … }`). Wat daarin na de kop staat, wordt samen met de kop getoond — ook in
+ * een zustercontainer (`<header><h2/></header><div><button/></div>`) of binnen `{open && …}` / `.map(…)` in die boom.
+ * Vroeger (tot 05.11.2026) gold «de laatste kop ervoor in het bestand», ook uit een andere component of uit een tak die nooit samen
+ * met de knop zichtbaar is: in GoogleMailWerkruimte.tsx kregen 21 knoppen van de inbox de sectie «Підключені Google-акаунти» (een
+ * kop in de tak mode==='accounts'), in CloudFunctioneelWeergave.tsx kreeg «Вийти з фокусу» (werkruimten) «Зберегти без
+ * організації» (vastleggen), in MeldingenV2.tsx kregen de meldingen «Правила сповіщень» (de kop wisselt met de toestand).
+ * Liever geen sectie dan een verkeerde: het pad op de zoekkaart is dan «dienst › pagina».
+ * Een kop waarvan de tekst met de toestand wisselt (`{paneel==='regels' ? t('Правила…') : t('Сповіщення')}` of `{x && t(…)}`) is
+ * wel zelf vindbaar, maar geen sectie voor knoppen: welke tekst erboven staat, hangt af van de toestand. Is zo'n kop de laatste
+ * kop vóór de knop, dan krijgt de knop GEEN sectie (en niet de kop daarvoor, die bij een vorig blok hoort).
+ */
 function koppen(src) {
+  const kopKnopen = new Map();   // begin van een <h1-3>-element → { knoop, boomEinde }
+  const sf = ts.createSourceFile('/koppen.tsx', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const zoek = (n) => {
+    if (ts.isJsxElement(n) && /^h[123]$/.test(n.openingElement.tagName.getText(sf))) {
+      let c = n;
+      while (c.parent && (ts.isJsxElement(c.parent) || ts.isJsxFragment(c.parent))) c = c.parent;
+      kopKnopen.set(n.getStart(sf), { knoop: n, boomEinde: c.end });
+    }
+    ts.forEachChild(n, zoek);
+  };
+  zoek(sf);
+  // `lang === 'uk' ? 'A' : 'B'` is een vertaling, geen wisselende tekst
+  const isTaalKeuze = (n) => ts.isConditionalExpression(n) && /^(?:p\.)?(?:lang|taal)\s*===\s*['"]uk['"]$/.test(kaal(n.condition).getText(sf));
+  /** Staat de tekst op positie `pos` binnen de kop onder een ?:, &&, || of ?? (de kop toont dan niet altijd die tekst)? */
+  const wisselt = (kop, pos) => {
+    let diepste = kop;
+    const daal = (n) => { if (n.getStart(sf) <= pos && pos < n.end) { diepste = n; ts.forEachChild(n, daal); } };
+    ts.forEachChild(kop, daal);
+    for (let n = diepste; n && n !== kop; n = n.parent) {
+      if (ts.isConditionalExpression(n) && !isTaalKeuze(n)) return true;
+      if (ts.isBinaryExpression(n) && [SK.AmpersandAmpersandToken, SK.BarBarToken, SK.QuestionQuestionToken].includes(n.operatorToken.kind)) return true;
+    }
+    return false;
+  };
   const uit = [];
   const re = /<(h[123])\b/g; let m;
   while ((m = re.exec(src))) {
     const e = tagEinde(src, m.index); if (e < 0) continue;
+    // Geen echt JSX-element (bv. «<h2» in een tekst of commentaar): geen kop.
+    const k = kopKnopen.get(m.index); if (!k) continue;
     const binnen = src.slice(e + 1, sluit(src, e, m[1]));
     const p = eerstePaar(binnen.slice(0, 600));
-    if (p) uit.push({ i: m.index, ...p });
+    if (!p) continue;
+    PAAR_RE.lastIndex = 0; TERNAIR_RE.lastIndex = 0;
+    const a = PAAR_RE.exec(binnen.slice(0, 600)), b = TERNAIR_RE.exec(binnen.slice(0, 600));
+    const eerste = Math.min(a ? a.index : Infinity, b ? b.index : Infinity);
+    uit.push({ i: m.index, tot: k.boomEinde, wisselend: Number.isFinite(eerste) && wisselt(k.knoop, e + 1 + eerste), ...p });
   }
   return uit;
 }
@@ -513,7 +556,7 @@ export function elementenUit(src, bestand, tabs = [], opties = {}) {
   const uit = [];
   const tabHint = tabHintVoor(src, bestand, tabs, opties);
   const secties = koppen(src);
-  const sectieBij = (i) => { let s = null; for (const k of secties) { if (k.i < i) s = k; else break; } return s; };
+  const sectieBij = (i) => { let s = null; for (const k of secties) { if (k.i >= i) break; if (i < k.tot) s = k; } return s?.wisselend ? null : s; };
   for (const k of secties) if (!GENERIEK.has(k.uk.toLowerCase())) uit.push({ soort: 'sectie', uk: k.uk, nl: k.nl, sectie: null, bestand, tabHint: tabHint(k.i) });
   const re = /<button\b/g; let m;
   while ((m = re.exec(src))) {
