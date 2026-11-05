@@ -1,0 +1,112 @@
+name: DESIGN-002 · перевірена публікація погодженого пакета
+on:
+  push:
+    branches: [feature/design-002-publish-20261105-153921]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publiceer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSIE: '20261105-140556'
+      BRON: '0909950f0c5e279a379e99b3a362ec9a329c8314'
+      BASIS: '53a7b918038c9a0657e76c170415de4151885fcf'
+      BASIS_VERSIE: '20261105-101500'
+      VERWACHT: 'c42858419dc9c8a705ee3642c53787cfd0391781b9ddec6f4ebeb9960062269e'
+      TAAK_TAK: 'feature/design-002-20261105-134500'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Перевірити інтеграцію та живу базу
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/29" --jq '.merged')" = "true"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/29" --jq '.head.sha')" = "$BRON"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/branches/$TAAK_TAK" --jq '.commit.sha')" = "$BRON"
+          git merge-base --is-ancestor "$BRON" origin/integratie
+          if git rev-parse -q --verify "refs/tags/$VERSIE" > /dev/null; then
+            test "$(git rev-parse "refs/tags/$VERSIE^{commit}")" = "$BRON"
+          fi
+          if gh release view "$VERSIE" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release з таким тегом уже існує; нічого не перезаписано."
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 20 'https://hub.tarasevych.com/api/version' -o "$RUNNER_TEMP/site-version.json"
+          python3 - <<'PY'
+          import json, os
+          with open(os.path.join(os.environ["RUNNER_TEMP"],"site-version.json"),encoding="utf-8") as f: data=json.load(f)
+          if (data.get("versie") or data.get("version")) != os.environ["BASIS_VERSIE"] or (data.get("commit") or data.get("bronCommit")) != os.environ["BASIS"]:
+              raise SystemExit("Встановлена база змінилася: публікацію зупинено.")
+          print("Інтеграція, гілка задачі та встановлена база підтверджені.")
+          PY
+      - name: Отримати вже перевірений кандидат
+        uses: actions/download-artifact@v4
+        with:
+          name: DESIGN-002-kandidaat-niet-installeren
+          path: ${{ runner.temp }}/design002
+          run-id: 42041420148
+          github-token: ${{ github.token }}
+      - name: Повторно звірити архів і досьє
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/design002"
+          pakket="mijn-ruimte-$VERSIE.tar.gz"
+          test -f "$pakket"
+          test -f "mijn-ruimte-$VERSIE-codex-overdracht.zip"
+          test "$(sha256sum "$pakket" | cut -d' ' -f1)" = "$VERWACHT"
+          test "$(tar -xOf "$pakket" "mijn-ruimte-$VERSIE/BRON-COMMIT")" = "$BRON"
+          tar -xOf "$pakket" "mijn-ruimte-$VERSIE/ONTWIKKELARCHIEF.json" > "$RUNNER_TEMP/design002-ref.json"
+          python3 - <<'PY'
+          import json, os
+          with open(os.path.join(os.environ["RUNNER_TEMP"],"design002-ref.json"),encoding="utf-8") as f: ref=json.load(f)
+          expected={"schema":1,"taakId":"DESIGN-002","repo":"Tarasevych/hub","tak":os.environ["TAAK_TAK"],"commit":os.environ["BRON"],"pakket":"mijn-ruimte-"+os.environ["VERSIE"]+".tar.gz"}
+          if any(ref.get(k)!=v for k,v in expected.items()): raise SystemExit("TRACE-001 не збігається")
+          if ref.get("release")!="https://github.com/Tarasevych/hub/releases/tag/"+os.environ["VERSIE"]: raise SystemExit("Посилання release не збігається")
+          if ref.get("pad")!="orchestratie/ontwikkelarchieven/DESIGN-002.json": raise SystemExit("Шлях досьє не збігається")
+          with open(os.path.join(os.environ["RUNNER_TEMP"],"design002-dossier-sha"),"w",encoding="ascii") as f: f.write(ref["sha256"])
+          print("Метадані TRACE-001 збігаються.")
+          PY
+          werkelijk="$(git -C "$GITHUB_WORKSPACE" show "$BRON:orchestratie/ontwikkelarchieven/DESIGN-002.json" | sha256sum | cut -d' ' -f1)"
+          test "$werkelijk" = "$(cat "$RUNNER_TEMP/design002-dossier-sha")"
+          sha256sum "$pakket" > "$pakket.sha256"
+      - name: Опублікувати GitHub Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/design002-release.md" <<'EOF'
+          Погоджений власником випуск DESIGN-002: адаптивне оформлення робочого простору, календаря, хмари, нотаток, пошуку та налаштувань.
+
+          Перевірено правила, типи, 136 модульних перевірок, повну збірку й 35 браузерних сценаріїв. Повний авторизований сайт та всі поштові режими з реальними даними ще не перевірені.
+
+          База: 20261105-101500 @ 53a7b918038c9a0657e76c170415de4151885fcf. Джерело: 0909950f0c5e279a379e99b3a362ec9a329c8314.
+          EOF
+          gh release create "$VERSIE" --repo "$GITHUB_REPOSITORY" --target "$BRON" --latest=false --title "DESIGN-002 · $VERSIE" --notes-file "$RUNNER_TEMP/design002-release.md" "$RUNNER_TEMP/design002/mijn-ruimte-$VERSIE.tar.gz" "$RUNNER_TEMP/design002/mijn-ruimte-$VERSIE.tar.gz.sha256" "$RUNNER_TEMP/design002/mijn-ruimte-$VERSIE-codex-overdracht.zip"
+      - name: Звірити опублікований asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin "refs/tags/$VERSIE:refs/tags/$VERSIE"
+          test "$(git rev-parse "refs/tags/$VERSIE^{commit}")" = "$BRON"
+          for poging in $(seq 1 10); do
+            gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/design002-release.json"
+            if python3 - <<'PY'
+          import json, os
+          with open(os.path.join(os.environ["RUNNER_TEMP"],"design002-release.json"),encoding="utf-8") as f: release=json.load(f)
+          name="mijn-ruimte-"+os.environ["VERSIE"]+".tar.gz"
+          asset=next((a for a in release.get("assets",[]) if a.get("name")==name),None)
+          if not asset or asset.get("state")!="uploaded" or asset.get("digest")!="sha256:"+os.environ["VERWACHT"]: raise SystemExit(1)
+          print("GitHub підтвердив точний SHA-256 опублікованого архіву.")
+          PY
+            then exit 0; fi
+            sleep 3
+          done
+          echo "GitHub ще не підтвердив digest потрібного архіву."
+          exit 1
