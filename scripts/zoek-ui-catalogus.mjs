@@ -673,6 +673,12 @@ export function bereikbaar(wortel = process.cwd()) {
   return gezien;
 }
 
+/** .tsx-bestanden onder src/ die vanaf src/main.tsx NIET geladen worden: de site toont ze nergens. Hun knoppen staan niet in de
+ *  catalogus, en hun «?»-uitleg (HULP_REGISTER → bron) evenmin: backend/zoek/catalogus-ui.ts slaat die over (UI_ONBEREIKBAAR). */
+export function onbereikbaar(wortel = process.cwd(), geladen = bereikbaar(wortel)) {
+  return [...tsxBestanden(join(wortel, 'src'))].filter((p) => !geladen.has(p)).map((p) => relative(wortel, p).replace(/\\/g, '/')).sort();
+}
+
 export function plekVan(bestand) {
   const rel = bestand.replace(/^src\//, '');
   for (const [prefix, dienst, tab, toegang] of PLEKKEN) if (rel.startsWith(prefix)) return { dienst, tab, toegang };
@@ -752,7 +758,7 @@ export function genereer(wortel = process.cwd()) {
   return [...items.values()].sort((a, b) => a.id.localeCompare(b.id));
 }
 
-export function naarTs(lijst, dienstenLijst = diensten()) {
+export function naarTs(lijst, dienstenLijst = diensten(), dood = onbereikbaar()) {
   const kop = `// GEGENEREERD — NIET MET DE HAND BEWERKEN. Bron: scripts/zoek-ui-catalogus.mjs (leest src/**/*.tsx).
 // Knoppen, koppen en dialogen van de interface met hun tweetalige tekst en hun plek; gebruikt door backend/zoek/catalogus-ui.ts.
 // Opnieuw maken: node scripts/zoek-ui-catalogus.mjs   (gebeurt ook in \`npm run build\`; de eenheidstest controleert de actualiteit).
@@ -769,6 +775,8 @@ export function uiPlekVan(bestand: string): { dienst: string; tab: string; toega
   for (const [prefix, dienst, tab, toegang] of UI_PLEKKEN) if (rel.startsWith(prefix)) return { dienst, tab, toegang };
   return null;
 }
+/** .tsx-bestanden die vanaf src/main.tsx niet geladen worden (de site toont ze nergens): geen knoppen en geen «?»-uitleg in het zoeken. */
+export const UI_ONBEREIKBAAR: readonly string[] = Object.freeze(${JSON.stringify(dood)});
 // Als JSON-tekst (één element per regel), niet als objectliteral: 1100+ literals geven TypeScript een te grote unietype.
 const LIJST: GegenereerdUiElement[] = JSON.parse([
 `;

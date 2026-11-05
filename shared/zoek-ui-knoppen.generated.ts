@@ -14,6 +14,8 @@ export function uiPlekVan(bestand: string): { dienst: string; tab: string; toega
   for (const [prefix, dienst, tab, toegang] of UI_PLEKKEN) if (rel.startsWith(prefix)) return { dienst, tab, toegang };
   return null;
 }
+/** .tsx-bestanden die vanaf src/main.tsx niet geladen worden (de site toont ze nergens): geen knoppen en geen «?»-uitleg in het zoeken. */
+export const UI_ONBEREIKBAAR: readonly string[] = Object.freeze(["src/AgentenPaneel.tsx","src/BeheerSleutelsWeergave.tsx","src/CanoniekConsolidatieWeergave.tsx","src/MailSectieKeuze.tsx","src/MailSysteemAandachtGroepen.tsx","src/MailVertalingBalk.tsx","src/McpConnectorPaneel.tsx","src/TaalVlag.tsx","src/agenten/ExtensieTechAanbod.tsx","src/agenten/VerbindingenHub.tsx","src/bureau/Bureau.tsx","src/bureau/Tegels.tsx","src/platform/SluitKnop.tsx","src/ssh/SshCertificaat.tsx","src/werkblad/bibliotheek/stand.tsx","src/werkblad/blokken/EigenschappenProef.tsx"]);
 // Als JSON-tekst (één element per regel), niet als objectliteral: 1100+ literals geven TypeScript een te grote unietype.
 const LIJST: GegenereerdUiElement[] = JSON.parse([
   "{\"id\":\"ui:dialoog:admin/ai:78d2d30f54\",\"soort\":\"dialoog\",\"dienst\":\"admin\",\"tab\":\"ai\",\"toegang\":\"technisch\",\"uk\":\"Обрати строк\",\"nl\":\"Looptijd kiezen\",\"sectieUk\":\"\",\"sectieNl\":\"\",\"bestand\":\"src/BeheerAiBeleidWeergave.tsx\"}",

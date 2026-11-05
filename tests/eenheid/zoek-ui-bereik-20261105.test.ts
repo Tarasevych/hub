@@ -16,7 +16,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { checker } from './hulp/nep-google';
-import { UI_ELEMENTEN } from '../../shared/zoek-ui-knoppen.generated';
+import { UI_ELEMENTEN, UI_ONBEREIKBAAR } from '../../shared/zoek-ui-knoppen.generated';
+import { HULP_REGISTER } from '../../shared/hulp-register';
+import { uiCatalogus } from '../../backend/zoek/catalogus-ui';
 import { mcpIngang } from '../../shared/ai-agent-bord';
 import { MENU_PAGINAS } from '../../shared/menu-model';
 import { isTechModule } from '../../shared/tech-bundels';
@@ -54,6 +56,10 @@ export async function main(): Promise<number> {
   check('3a vanaf src/main.tsx bereikbaar: App, McpDienstWeergave, de hub (AgentenPagina), lazy geladen IdentiteitBeheerWeergave', ['src/main.tsx', 'src/App.tsx', 'src/McpDienstWeergave.tsx', 'src/agenten/AgentenPagina.tsx', 'src/IdentiteitBeheerWeergave.tsx'].every(is));
   const DOOD = ['src/AgentenPaneel.tsx', 'src/McpConnectorPaneel.tsx', 'src/agenten/ExtensieTechAanbod.tsx', 'src/BeheerSleutelsWeergave.tsx', 'src/bureau/Bureau.tsx', 'src/agenten/VerbindingenHub.tsx'];
   check('3b dode bestanden (geen enkele import) zijn niet bereikbaar', DOOD.every((f) => !is(f)), DOOD.filter(is).join(','));
+  const dood3 = gen.onbereikbaar(wortel, geladen) as string[];
+  check('3d UI_ONBEREIKBAAR (gegenereerd) = de onbereikbare .tsx-bestanden; 16 stuks (14 zonder import, 2 alleen vanuit andere dode bestanden)',
+    JSON.stringify(UI_ONBEREIKBAAR) === JSON.stringify(dood3) && dood3.length === 16 && DOOD.every((f) => dood3.includes(f)) && dood3.includes('src/MailSectieKeuze.tsx') && dood3.includes('src/MailSysteemAandachtGroepen.tsx'),
+    `${dood3.length}: ${dood3.join(', ')}`);
   check('3c en ze leveren geen enkel element aan de catalogus', !UI_ELEMENTEN.some((e) => DOOD.includes(e.bestand)), UI_ELEMENTEN.filter((e) => DOOD.includes(e.bestand)).map((e) => `${e.bestand}:${e.uk}`).join(', '));
 
   // 4. bestandsregels
@@ -76,6 +82,12 @@ export async function main(): Promise<number> {
   const op = (uk: string) => CL.filter((e) => e.uk === uk).map((e) => e.tab).sort().join(',');
   check('5c cloud: «Відкрити» niet op overview (wel inbox, accounts, workspaces); Google-accounts («Додати акаунт», «Відключити») → accounts',
     !op('Відкрити').split(',').includes('overview') && op('Відкрити') === 'accounts,inbox,workspaces' && op('Додати акаунт') === 'accounts' && op('Відключити') === 'accounts', `${op('Відкрити')}|${op('Додати акаунт')}|${op('Відключити')}`);
+  const hulp = uiCatalogus().filter((o) => o.id.startsWith('hulp:'));
+  const levend = Object.entries(HULP_REGISTER).filter(([, h]) => !UI_ONBEREIKBAAR.includes(h.bron));
+  const uitDood = hulp.filter((o) => UI_ONBEREIKBAAR.includes(String(o.extra?.bron ?? '')));
+  check('5e geen «?»-uitleg uit een bestand dat de site niet laadt (keys.doel uit BeheerSleutelsWeergave); alle andere wel',
+    !hulp.some((o) => o.id === 'hulp:keys.doel') && uitDood.length === 0 && levend.length > 50 && hulp.length === levend.length && levend.length < Object.keys(HULP_REGISTER).length,
+    `${hulp.length} van ${Object.keys(HULP_REGISTER).length}; levend ${levend.length}; uit dode: ${uitDood.map((o) => o.id).join(',')}`);
   const lees = (f: string) => readFileSync(join(wortel, f), 'utf8');
   const techBreed = UI_ELEMENTEN.filter((e) => isTechModule(e.bestand, '', lees) && e.toegang !== 'technisch');
   const techAantal = UI_ELEMENTEN.filter((e) => isTechModule(e.bestand, '', lees)).length;
