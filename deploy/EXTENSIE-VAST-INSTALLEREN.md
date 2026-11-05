@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./EXTENSIE-VAST-INSTALLEREN.uk.md) · [🇳🇱 **Nederlandse versie**](./EXTENSIE-VAST-INSTALLEREN.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Розширення не зникає після перезапуску Chrome · Extensie blijft staan na een herstart van Chrome
 
 UI-011 / BUG-005 · 29.10.2026 · extensie 0.8.0

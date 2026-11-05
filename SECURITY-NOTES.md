@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./SECURITY-NOTES.uk.md) · [🇳🇱 **Nederlandse versie**](./SECURITY-NOTES.nl.md) · [🏠 Головна (UK)](./README.md) · [🏠 Hoofdpagina (NL)](./LEESMIJ.md) · [📚 Каталог статей / Index](./docs/INDEX.md)
+
 # Beveiligingsnotities
 
 Uitgangspunt: een aanvaller kent de volledige broncode en alle oude (AppDeploy-)geheimen.

@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MCP-CONNECTOR.uk.md) · [🇳🇱 **Nederlandse versie**](./MCP-CONNECTOR.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Конектор Mijn Ruimte для Claude (claude.ai → Customize → Connectors)
 
 Дозволяє підключити **свій акаунт Claude** до сайту: Claude (з хмари Anthropic) отримує інструменти для **ваших власних

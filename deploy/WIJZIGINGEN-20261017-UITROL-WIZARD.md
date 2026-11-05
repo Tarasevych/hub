@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-UITROL-WIZARD.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261017-UITROL-WIZARD.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Wizard «Нове оновлення», voorcontrole, nazorg-bewaker, agent-grants en technisch profiel — 17 oktober 2026 (tweede pakket)
 
 Voortbouwend op `WIJZIGINGEN-20261017-UITROL-DASHBOARD.md`. Alles hieronder is in code en test aangetoond; wat niet kon worden bewezen

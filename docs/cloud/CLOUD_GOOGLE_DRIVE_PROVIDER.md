@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./CLOUD_GOOGLE_DRIVE_PROVIDER.uk.md) · [🇳🇱 **Nederlandse versie**](./CLOUD_GOOGLE_DRIVE_PROVIDER.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Cloud Google Drive Provider — B+ grant integration
 
 Google Drive uses `https://www.googleapis.com/auth/drive`, Google's full restricted Drive scope. The provider foundation requests read, create, update, delete and permission capabilities, but performs no automatic deletion, overwrite, indexing, Changes API processing or background synchronization in this checkpoint.

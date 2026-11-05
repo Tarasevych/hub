@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./INTEGRATIE-20261027.md)) · [🇳🇱 **Nederlandse versie**](./INTEGRATIE-20261027.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей](../../docs/INDEX.md)
+
 # Мій простір · Universal File Workspace v0.3 · інтеграція поверх випуску 2026-10-27 21:14:25
 
 **Джерело:** наданий власником архів `mijn-ruimte-20261027-211425.tar.gz`. **Режим:** нова candidate-збірка без розгортання на сервері.

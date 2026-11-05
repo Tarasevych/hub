@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./CLOUD-M9-IMPLEMENTATION-20261028.md)) · [🇳🇱 **Nederlandse versie**](./CLOUD-M9-IMPLEMENTATION-20261028.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+
 # Cloud Full Integration M9 — каталоги S3/DAV та безпечні великі завантаження
 
 **Основа:** ізольована копія `cloud-full-integration-m8`, що походить від `mijn-ruimte-20261027-212158`. Це DEVELOPMENT ONLY, не production. Поточний стан робочого сервера після цього архіву не перевірений.

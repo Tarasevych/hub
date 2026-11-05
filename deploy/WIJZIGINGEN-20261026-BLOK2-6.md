@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261026-BLOK2-6.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261026-BLOK2-6.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 ## Блоки 2, 3 і 6 — частина (26.10.2026)
 
 Не весь план 2–8. Зроблено те, що вже змінює поведінку і проходить юніт-тести без Postgres.

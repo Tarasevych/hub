@@ -1,6 +1,27 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська (поточна)** ([`README.md`](./README.md) · [`README.uk.md`](./README.uk.md)) · [🇳🇱 **Nederlandse versie (`LEESMIJ.md`)**](./LEESMIJ.md) ([`README.nl.md`](./README.nl.md)) · [📚 **Повний каталог усіх статей (🇺🇦 UK / 🇳🇱 NL)**](./docs/INDEX.md)
+
 # Мій простір · Mijn Ruimte (`Tarasevych/hub`)
 
 > **Приватна self-hosted BYOS (Bring Your Own Server) платформа цифрового робочого простору, пошти, хмарного сховища, ідентичності, розумного дому та мультиагентної координації ШІ.**
+
+---
+
+## Двомовна навігація по сторінках хабу (🇺🇦 Українська ↔ 🇳🇱 Nederlands)
+
+Кожна стаття та сторінка документації в репозиторії має дві повноцінні мовні версії — **українську (`🇺🇦 .uk.md`)** та **нідерландську (`🇳🇱 .nl.md`)** із взаємними посиланнями в шапці кожної сторінки:
+
+| Розділ / Тематична сторінка | 🇺🇦 Українська версія | 🇳🇱 Нідерландська версія (Nederlands) |
+|---|---|---|
+| **Головна робоча сторінка репозиторію** | **[`README.md`](./README.md)** · [`README.uk.md`](./README.uk.md) | **[`LEESMIJ.md`](./LEESMIJ.md)** · [`README.nl.md`](./README.nl.md) |
+| **Повний реєстр усіх статей і сторінок (140+ документів)** | **[`docs/INDEX.md`](./docs/INDEX.md)** · [`docs/INDEX.uk.md`](./docs/INDEX.uk.md) | **[`docs/INDEX.nl.md`](./docs/INDEX.nl.md)** |
+| **1. Архітектура та 11 піддоменів (`*.tarasevych.com`)** | [`docs/hub/ARCHITECTUUR.uk.md`](./docs/hub/ARCHITECTUUR.uk.md) | [`docs/hub/ARCHITECTUUR.nl.md`](./docs/hub/ARCHITECTUUR.nl.md) |
+| **2. Історія розвитку проєкту (Етапи I–VI)** | [`docs/hub/GESCHIEDENIS.uk.md`](./docs/hub/GESCHIEDENIS.uk.md) | [`docs/hub/GESCHIEDENIS.nl.md`](./docs/hub/GESCHIEDENIS.nl.md) |
+| **3. Путівник по 71 гілці, 27 PR та 18 релізах** | [`docs/hub/TAKKEN-EN-PRS.uk.md`](./docs/hub/TAKKEN-EN-PRS.uk.md) | [`docs/hub/TAKKEN-EN-PRS.nl.md`](./docs/hub/TAKKEN-EN-PRS.nl.md) |
+| **4. Структура репозиторію та карта коду** | [`docs/hub/MAP-STRUCTUUR.uk.md`](./docs/hub/MAP-STRUCTUUR.uk.md) | [`docs/hub/MAP-STRUCTUUR.nl.md`](./docs/hub/MAP-STRUCTUUR.nl.md) |
+| **5. Змінні оточення та ключі шифрування** | [`docs/hub/OMGEVINGSVARIABELEN.uk.md`](./docs/hub/OMGEVINGSVARIABELEN.uk.md) · [`ENV-VARS.uk.md`](./ENV-VARS.uk.md) | [`docs/hub/OMGEVINGSVARIABELEN.nl.md`](./docs/hub/OMGEVINGSVARIABELEN.nl.md) · [`ENV-VARS.nl.md`](./ENV-VARS.nl.md) |
+| **6. Оркестрація `ORCH-001`, `TRACE-001`, стек `B-009` та деплой** | [`docs/hub/ORCHESTRATIE-EN-UITROL.uk.md`](./docs/hub/ORCHESTRATIE-EN-UITROL.uk.md) | [`docs/hub/ORCHESTRATIE-EN-UITROL.nl.md`](./docs/hub/ORCHESTRATIE-EN-UITROL.nl.md) |
+| **Канонічні правила агентів та реєстр рішень** | [`AGENTS.uk.md`](./AGENTS.uk.md) · [`orchestratie/BESLUITEN.uk.md`](./orchestratie/BESLUITEN.uk.md) | [`AGENTS.nl.md`](./AGENTS.nl.md) · [`orchestratie/BESLUITEN.nl.md`](./orchestratie/BESLUITEN.nl.md) |
+| **Безпека та план портування (Self-Hosting)** | [`SECURITY-NOTES.uk.md`](./SECURITY-NOTES.uk.md) · [`PORTEERPLAN.uk.md`](./PORTEERPLAN.uk.md) | [`SECURITY-NOTES.nl.md`](./SECURITY-NOTES.nl.md) · [`PORTEERPLAN.nl.md`](./PORTEERPLAN.nl.md) |
 
 ---
 
@@ -13,9 +34,9 @@
 | **Публічна точка входу** | [https://hub.tarasevych.com](https://hub.tarasevych.com) *(основний домен: `tarasevych.com`)* |
 | **Архітектурна модель** | Self-hosted BYOS на власній Ubuntu LTS ВМ за вихідним Cloudflare Tunnel (`127.0.0.1:8080`), без сторонніх хмарних хостингів |
 | **Технологічний стек** | TypeScript 5.7 · React 19 · Vite 6 · Tailwind CSS 3 · Node.js 26 LTS (`node:http` + `esbuild`) · PostgreSQL 18 (JSONB + реляційні таблиці + FORCE RLS) · Systemd · Caddy · OPA · `age` |
-| **Канонічні правила (ORCH-001)** | [`AGENTS.md`](AGENTS.md) (для людей та ШІ) · [`orchestratie/beleid.json`](orchestratie/beleid.json) (машинна політика) · [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) (реєстр рішень `B-001`–`B-011`) |
-| **Мовна конвенція** | Спілкування, документація, звіти — **українською (`uk`)**; шляхи URL/API та назви модулів у коді — **нідерландською (`nl`)**; інтерфейс користувача — **двомовний (`uk` / `nl`)** |
-| **Карта кодової бази** | [`docs/kaart/KAART-BESTANDEN.md`](docs/kaart/KAART-BESTANDEN.md) та [`docs/kaart/bestandskaart.json`](docs/kaart/bestandskaart.json) *(531 перейменований модуль + нові модулі з автоматичною перевіркою збірки)* |
+| **Канонічні правила (ORCH-001)** | [`AGENTS.md`](AGENTS.md) ([🇺🇦 UK](AGENTS.uk.md) · [🇳🇱 NL](AGENTS.nl.md)) · [`orchestratie/beleid.json`](orchestratie/beleid.json) · [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) ([🇺🇦 UK](orchestratie/BESLUITEN.uk.md) · [🇳🇱 NL](orchestratie/BESLUITEN.nl.md)) |
+| **Мовна конвенція** | Спілкування, документація, звіти — **українською (`uk`) та нідерландською (`nl`)**; шляхи URL/API та назви модулів у коді — **нідерландською (`nl`)**; інтерфейс користувача — **двомовний (`uk` / `nl`)** |
+| **Карта кодової бази** | [`docs/kaart/KAART-BESTANDEN.md`](docs/kaart/KAART-BESTANDEN.md) ([🇺🇦 UK](docs/kaart/KAART-BESTANDEN.uk.md) · [🇳🇱 NL](docs/kaart/KAART-BESTANDEN.nl.md)) та [`docs/kaart/bestandskaart.json`](docs/kaart/bestandskaart.json) *(531 перейменований модуль + нові модулі з автоматичною перевіркою збірки)* |
 
 ---
 
@@ -561,14 +582,34 @@ node scripts/orch.mjs wachtrij toon|volgende|klaar|terugtrekken
 
 ---
 
-## Ключова документація в репозиторії (Швидкі посилання)
+## Ключова документація в репозиторії (Двомовні посилання: 🇺🇦 UK ↔ 🇳🇱 NL)
 
-- **Правила та управління:** [`AGENTS.md`](AGENTS.md) · [`orchestratie/beleid.json`](orchestratie/beleid.json) · [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md)
-- **Карта файлів (EN → NL):** [`docs/kaart/KAART-BESTANDEN.md`](docs/kaart/KAART-BESTANDEN.md)
-- **Змінні оточення та секрети:** [`ENV-VARS.md`](ENV-VARS.md) · [`deploy/GEHEIMEN-REGISTER.md`](deploy/GEHEIMEN-REGISTER.md) · [`deploy/KLYUCHI-I-SHYFRUVANNYA.md`](deploy/KLYUCHI-I-SHYFRUVANNYA.md)
-- **Безпека та аудит:** [`SECURITY-NOTES.md`](SECURITY-NOTES.md) · [`docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.md`](docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.md) · [`docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.md`](docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.md)
-- **Розгортання, оновлення та відновлення:** [`deploy/LEESMIJ.md`](deploy/LEESMIJ.md) · [`deploy/REGELS-UITROLPAKKET.md`](deploy/REGELS-UITROLPAKKET.md) · [`deploy/RUNBOOK-VEILIGE-UITROL.md`](deploy/RUNBOOK-VEILIGE-UITROL.md) · [`deploy/HERSTEL.md`](deploy/HERSTEL.md) · [`deploy/VOLLEDIGA-KOPIYA-VIDNOVLENNYA.md`](deploy/VOLLEDIGA-KOPIYA-VIDNOVLENNYA.md)
-- **ШІ-агенти та MCP:** [`deploy/RUNBOOK-AGENTEN-0.4.md`](deploy/RUNBOOK-AGENTEN-0.4.md) · [`deploy/MCP-CONNECTOR.md`](deploy/MCP-CONNECTOR.md) · [`deploy/CONNECTOR-V2.md`](deploy/CONNECTOR-V2.md) · [`deploy/CONNECTOR-EEN-PAD.md`](deploy/CONNECTOR-EEN-PAD.md)
-- **Глобальний пошук `/zoek`:** [`docs/zoek/ZOEKEN.md`](docs/zoek/ZOEKEN.md) · [`docs/zoek/ZOEK-BEHEER.md`](docs/zoek/ZOEK-BEHEER.md) · [`docs/zoek/ZOEK-BEVEILIGING.md`](docs/zoek/ZOEK-BEVEILIGING.md)
-- **Пошта та Хмара:** [`docs/mail/MAIL_PLATFORM_ARCHITECTURE.md`](docs/mail/MAIL_PLATFORM_ARCHITECTURE.md) · [`docs/cloud/CLOUD_PLATFORM_ARCHITECTURE.md`](docs/cloud/CLOUD_PLATFORM_ARCHITECTURE.md) · [`docs/CLOUD-M7-PRIVACY-ARCHITECTURE.uk.md`](docs/CLOUD-M7-PRIVACY-ARCHITECTURE.uk.md)
-- **Ізоляція просторів та Робоче полотно:** [`docs/ontwerp/RUIMTES-ISOLATIE.md`](docs/ontwerp/RUIMTES-ISOLATIE.md) · [`docs/werkblad/WERKBLAD.md`](docs/werkblad/WERKBLAD.md) · [`deploy/RUNBOOK-WERKBLAD-V3-CANVAS.md`](deploy/RUNBOOK-WERKBLAD-V3-CANVAS.md)
+> 📚 **Повний каталог усіх 140+ статей репозиторію:** [🇺🇦 **Український індекс (`docs/INDEX.md`)**](docs/INDEX.md) · [🇳🇱 **Nederlandse index (`docs/INDEX.nl.md`)**](docs/INDEX.nl.md)
+
+- **Головна та тематичні сторінки Хабу:**
+  - Головна сторінка: [🇺🇦 `README.md`](README.md) ([`README.uk.md`](README.uk.md)) ↔ [🇳🇱 `LEESMIJ.md`](LEESMIJ.md) ([`README.nl.md`](README.nl.md))
+  - Архітектура (11 піддоменів): [🇺🇦 UK](docs/hub/ARCHITECTUUR.uk.md) ↔ [🇳🇱 NL](docs/hub/ARCHITECTUUR.nl.md)
+  - Історія розвитку (Етапи I–VI): [🇺🇦 UK](docs/hub/GESCHIEDENIS.uk.md) ↔ [🇳🇱 NL](docs/hub/GESCHIEDENIS.nl.md)
+  - Гілки (71), PR (#1–#27) та Релізи (18): [🇺🇦 UK](docs/hub/TAKKEN-EN-PRS.uk.md) ↔ [🇳🇱 NL](docs/hub/TAKKEN-EN-PRS.nl.md)
+  - Структура репозиторію та карта коду: [🇺🇦 UK](docs/hub/MAP-STRUCTUUR.uk.md) ↔ [🇳🇱 NL](docs/hub/MAP-STRUCTUUR.nl.md)
+  - Змінні оточення та ключі: [🇺🇦 UK](docs/hub/OMGEVINGSVARIABELEN.uk.md) ↔ [🇳🇱 NL](docs/hub/OMGEVINGSVARIABELEN.nl.md)
+  - Оркестрація та розгортання: [🇺🇦 UK](docs/hub/ORCHESTRATIE-EN-UITROL.uk.md) ↔ [🇳🇱 NL](docs/hub/ORCHESTRATIE-EN-UITROL.nl.md)
+- **Правила та управління (`ORCH-001`):**
+  - [`AGENTS.md`](AGENTS.md) ([🇺🇦 UK](AGENTS.uk.md) ↔ [🇳🇱 NL](AGENTS.nl.md)) · [`orchestratie/beleid.json`](orchestratie/beleid.json) · [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) ([🇺🇦 UK](orchestratie/BESLUITEN.uk.md) ↔ [🇳🇱 NL](orchestratie/BESLUITEN.nl.md))
+- **Карта файлів (EN → NL):**
+  - [`docs/kaart/KAART-BESTANDEN.md`](docs/kaart/KAART-BESTANDEN.md) ([🇺🇦 UK](docs/kaart/KAART-BESTANDEN.uk.md) ↔ [🇳🇱 NL](docs/kaart/KAART-BESTANDEN.nl.md))
+- **Змінні оточення та секрети:**
+  - [`ENV-VARS.md`](ENV-VARS.md) ([🇺🇦 UK](ENV-VARS.uk.md) ↔ [🇳🇱 NL](ENV-VARS.nl.md)) · [`deploy/GEHEIMEN-REGISTER.md`](deploy/GEHEIMEN-REGISTER.md) ([🇺🇦 UK](deploy/GEHEIMEN-REGISTER.uk.md) ↔ [🇳🇱 NL](deploy/GEHEIMEN-REGISTER.nl.md)) · [`deploy/KLYUCHI-I-SHYFRUVANNYA.md`](deploy/KLYUCHI-I-SHYFRUVANNYA.md) ([🇺🇦 UK](deploy/KLYUCHI-I-SHYFRUVANNYA.uk.md) ↔ [🇳🇱 NL](deploy/KLYUCHI-I-SHYFRUVANNYA.nl.md))
+- **Безпека, порт-план та аудит:**
+  - [`SECURITY-NOTES.md`](SECURITY-NOTES.md) ([🇺🇦 UK](SECURITY-NOTES.uk.md) ↔ [🇳🇱 NL](SECURITY-NOTES.nl.md)) · [`PORTEERPLAN.md`](PORTEERPLAN.md) ([🇺🇦 UK](PORTEERPLAN.uk.md) ↔ [🇳🇱 NL](PORTEERPLAN.nl.md)) · [`docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.md`](docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.md) ([🇺🇦 UK](docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.uk.md) ↔ [🇳🇱 NL](docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.nl.md)) · [`docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.md`](docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.md) ([🇺🇦 UK](docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.uk.md) ↔ [🇳🇱 NL](docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.nl.md))
+- **Розгортання, оновлення та відновлення:**
+  - [`deploy/LEESMIJ.md`](deploy/LEESMIJ.md) ([🇺🇦 UK](deploy/LEESMIJ.uk.md) ↔ [🇳🇱 NL](deploy/LEESMIJ.nl.md)) · [`deploy/REGELS-UITROLPAKKET.md`](deploy/REGELS-UITROLPAKKET.md) ([🇺🇦 UK](deploy/REGELS-UITROLPAKKET.uk.md) ↔ [🇳🇱 NL](deploy/REGELS-UITROLPAKKET.nl.md)) · [`deploy/RUNBOOK-VEILIGE-UITROL.md`](deploy/RUNBOOK-VEILIGE-UITROL.md) ([🇺🇦 UK](deploy/RUNBOOK-VEILIGE-UITROL.uk.md) ↔ [🇳🇱 NL](deploy/RUNBOOK-VEILIGE-UITROL.nl.md)) · [`deploy/HERSTEL.md`](deploy/HERSTEL.md) ([🇺🇦 UK](deploy/HERSTEL.uk.md) ↔ [🇳🇱 NL](deploy/HERSTEL.nl.md)) · [`deploy/VOLLEDIGA-KOPIYA-VIDNOVLENNYA.md`](deploy/VOLLEDIGA-KOPIYA-VIDNOVLENNYA.md) ([🇺🇦 UK](deploy/VOLLEDIGA-KOPIYA-VIDNOVLENNYA.uk.md) ↔ [🇳🇱 NL](deploy/VOLLEDIGA-KOPIYA-VIDNOVLENNYA.nl.md))
+- **ШІ-агенти та MCP:**
+  - [`deploy/RUNBOOK-AGENTEN-0.4.md`](deploy/RUNBOOK-AGENTEN-0.4.md) ([🇺🇦 UK](deploy/RUNBOOK-AGENTEN-0.4.uk.md) ↔ [🇳🇱 NL](deploy/RUNBOOK-AGENTEN-0.4.nl.md)) · [`deploy/MCP-CONNECTOR.md`](deploy/MCP-CONNECTOR.md) ([🇺🇦 UK](deploy/MCP-CONNECTOR.uk.md) ↔ [🇳🇱 NL](deploy/MCP-CONNECTOR.nl.md)) · [`deploy/CONNECTOR-V2.md`](deploy/CONNECTOR-V2.md) ([🇺🇦 UK](deploy/CONNECTOR-V2.uk.md) ↔ [🇳🇱 NL](deploy/CONNECTOR-V2.nl.md)) · [`deploy/CONNECTOR-EEN-PAD.md`](deploy/CONNECTOR-EEN-PAD.md) ([🇺🇦 UK](deploy/CONNECTOR-EEN-PAD.uk.md) ↔ [🇳🇱 NL](deploy/CONNECTOR-EEN-PAD.nl.md))
+- **Глобальний пошук `/zoek`:**
+  - [`docs/zoek/ZOEKEN.md`](docs/zoek/ZOEKEN.md) ([🇺🇦 UK](docs/zoek/ZOEKEN.uk.md) ↔ [🇳🇱 NL](docs/zoek/ZOEKEN.nl.md)) · [`docs/zoek/ZOEK-BEHEER.md`](docs/zoek/ZOEK-BEHEER.md) ([🇺🇦 UK](docs/zoek/ZOEK-BEHEER.uk.md) ↔ [🇳🇱 NL](docs/zoek/ZOEK-BEHEER.nl.md)) · [`docs/zoek/ZOEK-BEVEILIGING.md`](docs/zoek/ZOEK-BEVEILIGING.md) ([🇺🇦 UK](docs/zoek/ZOEK-BEVEILIGING.uk.md) ↔ [🇳🇱 NL](docs/zoek/ZOEK-BEVEILIGING.nl.md))
+- **Пошта та Хмара:**
+  - [`docs/mail/MAIL_PLATFORM_ARCHITECTURE.md`](docs/mail/MAIL_PLATFORM_ARCHITECTURE.md) ([🇺🇦 UK](docs/mail/MAIL_PLATFORM_ARCHITECTURE.uk.md) ↔ [🇳🇱 NL](docs/mail/MAIL_PLATFORM_ARCHITECTURE.nl.md)) · [`docs/cloud/CLOUD_PLATFORM_ARCHITECTURE.md`](docs/cloud/CLOUD_PLATFORM_ARCHITECTURE.md) ([🇺🇦 UK](docs/cloud/CLOUD_PLATFORM_ARCHITECTURE.uk.md) ↔ [🇳🇱 NL](docs/cloud/CLOUD_PLATFORM_ARCHITECTURE.nl.md)) · [`docs/CLOUD-M7-PRIVACY-ARCHITECTURE.uk.md`](docs/CLOUD-M7-PRIVACY-ARCHITECTURE.uk.md) ↔ [🇳🇱 NL](docs/CLOUD-M7-PRIVACY-ARCHITECTURE.nl.md)
+- **Ізоляція просторів та Робоче полотно:**
+  - [`docs/ontwerp/RUIMTES-ISOLATIE.md`](docs/ontwerp/RUIMTES-ISOLATIE.md) ([🇺🇦 UK](docs/ontwerp/RUIMTES-ISOLATIE.uk.md) ↔ [🇳🇱 NL](docs/ontwerp/RUIMTES-ISOLATIE.nl.md)) · [`docs/werkblad/WERKBLAD.md`](docs/werkblad/WERKBLAD.md) ([🇺🇦 UK](docs/werkblad/WERKBLAD.uk.md) ↔ [🇳🇱 NL](docs/werkblad/WERKBLAD.nl.md)) · [`deploy/RUNBOOK-WERKBLAD-V3-CANVAS.md`](deploy/RUNBOOK-WERKBLAD-V3-CANVAS.md) ([🇺🇦 UK](deploy/RUNBOOK-WERKBLAD-V3-CANVAS.uk.md) ↔ [🇳🇱 NL](deploy/RUNBOOK-WERKBLAD-V3-CANVAS.nl.md))
+

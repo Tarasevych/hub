@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUIMTES-COMPATIBILITEIT.uk.md) · [🇳🇱 **Nederlandse versie**](./RUIMTES-COMPATIBILITEIT.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Ruimtes: compatibiliteit van de browserextensie en de MCP-klanten
 
 > **Коротко українською.** Розширення і MCP-клієнти входять не через cookie сайту, а через власні токени (токен агента

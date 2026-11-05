@@ -1,0 +1,37 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./ZOEK-TESTEN.md)) · [🇳🇱 **Nederlandse versie**](./ZOEK-TESTEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей](../../docs/INDEX.md)
+
+# Пошук «/zoek» — тестування
+
+Стан: 22.10.2026. Усі тести — `tests/eenheid/*.test.ts`, запуск через `node scripts/eenheidstests.mjs <фільтр назви>` з
+`DATABASE_URL` (PostgreSQL 16 із застосованими міграціями), `OWNER_EMAIL`, `TOTP_ENCRYPTION_KEY_V1`, `RECOVERY_CODE_PEPPER`, `AUDIT_IP_PEPPER`.
+RLS-варіант (роль app): додатково `DATABASE_URL_APP=postgres://mijnruimte_app@…` і `DATABASE_URL_SYSTEM`. Нічого не йде в мережу: Google,
+GitHub і OCR-двигуни нагляд (`tests/eenheid/hulp/nep-*.ts`).
+
+| Тест | Зона | Що перевіряє | Потребує |
+|---|---|---|---|
+| `zoek-kern-*` | Z1 | нормалізація (9 мов, трансліт, варіанти суржику), стемінг, синоніми (і небажані злиття), ранжування/відсоток (TS ↔ SQL на живих рядках), tsquery без операторів із введення, ізоляція ядра; власний синтетичний набір `hulp/zoek-evaluatie-kern.json` (P@1, Hit@3, MRR) | БД |
+| `zoek-bronnen-*` | Z2 | адаптери кожного джерела на зразкових рядках, каталог UI (актуальність генерованого файла, доступ `iedereen/profiel/technisch`), черга (lease, повтори, незворотні помилки), стан джерел, `kluisStand`, маскування секретів | БД, нагляд Google/GitHub |
+| `zoek-tekst-*` / `zoek-ocr-*` / `zoek-archief-*` | Z3 | витяг тексту (txt/pdf/docx/xlsx/pptx/html/eml), OCR-план і кеш по користувачу, архіви (zip slip, zip-бомба, глибина, ліміти, symlink), воркер з таймаутом/лімітом пам'яті | — |
+| `zoek-etap-d-*` / `zoek-ui-*` | Z4 | сторінка: стани, фільтри/фасети/пагінація з сервера, автодоповнення ARIA/клавіатура, історія на сервері (0103), мобільний 360/390, 44 px | БД |
+| `zoek-isolatie-20261022` | Z5 | **атакуючі** сценарії: 2 користувачі × 3 лади через справжній роутер і сесії; перетин результатів/фасетів/підказок/виправлень/історії; userId у тілі; технічне ↔ особисте; закрита служба; видалення/відключення; 18 обходів фільтрації й ін'єкцій; секрети в індексі/фрагментах/підказках; логи; RLS прямим SELECT (роль app); OCR-кеш/черга; закритий ключ | БД (+ роль app для RLS-блоку) |
+| `zoek-evaluatie-20261022` | Z5 | **якість**: 82 запити з `hulp/zoek-evaluatie.json` на засіяному індексі (справжній каталог UI + 18 документів + ті самі в користувача B + технічний документ + лист із секретом); метрики P@k, MRR, Recall@20 по категоріях; пороги P@5 ≥ 0,80, MRR ≥ 0,75, Recall@20 ≥ 0,85, 0 витоків | БД |
+| `zoek-prestaties-20261022` | Z5 | 10 000 об'єктів через `indexeer`: об./с, пошук p50/p95 (з/без фасетів), підказки, пагінація, `EXPLAIN ANALYZE` (чи використано GIN); грубі пороги 1 000/400 мс, цілі 300/100 мс | БД |
+
+## Набір оцінки (`tests/eenheid/hulp/zoek-evaluatie.json`)
+
+Формат запиту: `{ q, taal, soort, verwacht: [{bron, id} | {bron, titelRegex}], nietVerwacht?: [...], top, opmerking }`.
+`bron:'ui'` = будь-яке з `ui/pagina/instelling/hulp`. Категорії (`soort`): `exact` 8, `typefout` 7, `synoniem` 6, `meertalig` 15 (uk↔nl↔en↔ru↔de↔fr↔pl↔ro↔bg),
+`translit` 4, `surzhyk` 12 («poshta», «настройки почты», «де поміняти мову», «taal wijzigen», «змінити пароль», «passkey», «вийти з усіх пристроїв»,
+«підключити claude», «темна тема», «згорнуті вікна»), `prefix` 5, `doel` 8 (опис призначення замість назви), `bijlage` 4 (слова лише всередині
+вкладення), `ocr` 2, `inhoud` 7, `onbereikbaar` 3 (чужий/технічний документ не має з'явитися), `geheim` 1.
+
+Метрики: `P@k = |релевантні ∩ top-k| / min(k, |релевантні|)` (при одному релевантному — hit@k), `MRR = mean(1/ранг першого релевантного)`,
+`Recall@20`. Тест друкує загальні числа, по категоріях, і для кожного невдалого запиту — що реально було в top-5 (щоб видно було, чому).
+
+Як додати запит: рядок у `vragen` (uk/nl коментар у `opmerking`); якщо потрібен новий документ — у `zaai.docs` (id `eval-…`; тест сам створить
+копію `-B` для другого користувача). Пороги — `drempels`.
+
+## Регресія після змін у пошуку
+
+`beveiliging-review-20261021`, `ruimte-scheiding-20261020`, `ruimte-projecties-20261020`, `zoek-kern-*`, `zoek-bronnen-*`, `zoek-isolatie-*`,
+`zoek-evaluatie-*`, плюс `tsc -p tsconfig.server.json` і `tsc -p tsconfig.json` (обидва).

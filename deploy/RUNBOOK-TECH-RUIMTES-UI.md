@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-TECH-RUIMTES-UI.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-TECH-RUIMTES-UI.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # RUNBOOK — Twee ruimtes: gebruikersinterface (vlag `tech-ruimtes-v2`)
 
 Werker T-UI, 27.10.2026. Hoort bij de backend van werker T-BACKEND (`backend/tech-ruimtes.ts`, contract

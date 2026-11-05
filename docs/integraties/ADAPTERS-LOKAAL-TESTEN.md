@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ADAPTERS-LOKAAL-TESTEN.uk.md) · [🇳🇱 **Nederlandse versie**](./ADAPTERS-LOKAAL-TESTEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Adapters lokaal testen (UI-013 fase 2)
 
 De adapters in `backend/verbinding-adapters/` doen alleen **leescontroles** (WebDAV PROPFIND Depth 1, S3 ListObjectsV2, MQTT CONNECT→CONNACK→DISCONNECT). Ze schrijven niets extern en bewaren geen gegevens.

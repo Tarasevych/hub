@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WINDOWS-POWERSHELL.uk.md) · [🇳🇱 **Nederlandse versie**](./WINDOWS-POWERSHELL.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # PowerShell на Windows-ПК через «Термінал» сайту / PowerShell op een Windows-pc via de «Terminal» van de site
 
 Агент 0.8.0 (`deploy/agent/agent.mjs`) працює й на Windows під Node.js. У режимі `--powershell` кожен рядок, набраний у «Терміналі»

@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL-DONKER.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL-DONKER.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Donkere mailweergave (MAIL-DONKER)
 
 **Коротко українською.** У темній темі листи більше не показуються на білому аркуші. Модуль `shared/mail-donker.ts` перефарбовує

@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ZOEK-BEVEILIGING.uk.md) · [🇳🇱 **Nederlandse versie**](./ZOEK-BEVEILIGING.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Пошук «/zoek» — ізоляція й безпека
 
 Стан: 22.10.2026. Спирається на специфікацію §9 («критично»). Доведення — атакуючі тести `tests/eenheid/zoek-isolatie-20261022.test.ts`

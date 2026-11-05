@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./AUDIT-BEHEER-OPPERVLAK.uk.md) · [🇳🇱 **Nederlandse versie**](./AUDIT-BEHEER-OPPERVLAK.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Аудит: що на сайті є управлінням, а що — обліковим записом
 
 Дата: 14.10.2026. Обсяг: усі піддомени (admin, ai, api, cloud, dashboard, github, hub, huis, id, mail, mcp), усі вкладки й

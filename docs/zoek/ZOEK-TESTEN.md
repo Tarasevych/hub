@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ZOEK-TESTEN.uk.md) · [🇳🇱 **Nederlandse versie**](./ZOEK-TESTEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Пошук «/zoek» — тестування
 
 Стан: 22.10.2026. Усі тести — `tests/eenheid/*.test.ts`, запуск через `node scripts/eenheidstests.mjs <фільтр назви>` з

@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261029-CLOUD-VNEXT.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261029-CLOUD-VNEXT.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Cloud vNext — модернізація хмарного сервісу (29.10.2026)
 
 Прапорець: `cloud-vnext` (міграція `0130_cloud_vnext.sql` — лише рядок прапорця, даних не чіпає).

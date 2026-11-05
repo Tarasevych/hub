@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./CLOUD-M7-PRIVACY-ARCHITECTURE.md)) · [🇳🇱 **Nederlandse versie**](./CLOUD-M7-PRIVACY-ARCHITECTURE.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+
 # Cloud Full Integration — M7: криптографічний захист власника даних
 
 **28.10.2026 · DEVELOPMENT ONLY · заборона встановлення · base M6**

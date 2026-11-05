@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./EXTENSIE-BIJWERKEN.uk.md) · [🇳🇱 **Nederlandse versie**](./EXTENSIE-BIJWERKEN.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Розширення браузера: оновлення · Browserextensie bijwerken
 
 Станом на 18.10.2026 · Stand 18.10.2026 (audit, punt 9)

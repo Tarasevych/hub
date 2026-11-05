@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-VEILIGE-UITROL.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-VEILIGE-UITROL.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Runbook: beheer op afstand zonder pad van de app naar root (drie methoden, één sleutel)
 
 Stand: 2026-10-08, branch `veilig-agenten-0.4`. Vervangt de oude "deur" (`mijn-ruimte-mcp-doen` + sudo-regel + `patch-*.py`-lader).

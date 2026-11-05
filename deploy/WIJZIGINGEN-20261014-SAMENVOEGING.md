@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261014-SAMENVOEGING.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261014-SAMENVOEGING.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Випуск 14.10.2026 — злиття двох паралельних робіт
 
 Цей випуск збирає в одне ціле:

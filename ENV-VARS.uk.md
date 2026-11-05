@@ -1,0 +1,208 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./ENV-VARS.md)) · [🇳🇱 **Nederlandse versie**](./ENV-VARS.nl.md) · [🏠 Головна (UK)](./README.md) · [🏠 Hoofdpagina (NL)](./LEESMIJ.md) · [📚 Каталог статей](./docs/INDEX.md)
+
+# Змінні оточення та секрети (`ENV-VARS`)
+
+Усі значення зберігаються на ВМ у файлі **`/etc/mijn-ruimte/geheimen.env`** (`0600 root:root` достатньо: systemd читає його від імені root; або `root:mijnruimte 0640`),
+який завантажується через systemd (`EnvironmentFile=` у `deploy/mijn-ruimte.service` та в cron-юнітах).
+Ніколи в git, ніколи у збірці, ніколи в логах. **Згенеруйте УСІ секрети заново**: старі значення з AppDeploy
+слід вважати скомпрометованими (див. [SECURITY-NOTES.uk.md](./SECURITY-NOTES.uk.md) / [SECURITY-NOTES.md](./SECURITY-NOTES.md)).
+
+Формат `geheimen.env`: одна пара `ІМ'Я=значення` на рядок, без лапок і без `export`.
+
+**Створення та підтримка (20.10.2026):** `sudo /usr/local/sbin/mijn-ruimte-installeer geheimen` створює всі ВІДСУТНІ
+ключі (наявні залишаються без змін; показуються лише назва + відбиток), а `mijn-ruimte-installeer installeren` виконує це
+автоматично як перший крок. Реєстр без значень (назва, призначення, де зберігається, відбиток, дата): `mijn-ruimte-installeer
+geheimen-register --uit /etc/mijn-ruimte/GEHEIMEN-REGISTER.md` (шаблон: `deploy/GEHEIMEN-REGISTER.md`). OAuth-клієнти
+Google/Microsoft: `mijn-ruimte-installeer oauth-client google|microsoft` (приховане введення) або — для Google та GitHub — поле
+в `admin` → Інтеграції → **Майстер підключень** (сховище, passkey, без перезапуску).
+
+## Обов'язкові змінні
+
+| Назва | Призначення | Генерація / значення |
+|---|---|---|
+| `DATABASE_URL` | З'єднання з Postgres (база даних `mijnruimte`, роль `mijnruimte`). PostgreSQL **16 або новішої версії** (рекомендовано 17/18; див. `deploy/LEESMIJ.md`). | `postgres://mijnruimte:<пароль>@127.0.0.1:5432/mijnruimte`; пароль: `openssl rand -base64 32 \| tr -d '/+='` |
+| `AUDIT_IP_PEPPER` | Таємний pepper (HMAC-SHA256) для хешування IP у `app.audit` (`ip_hash`). Мін. 32 символи. **Сервер не запускається без нього** (audit-fix 10; більше немає резервного відкату на `RECOVERY_CODE_PEPPER`). Зміна робить старі й нові хеші непорівнюваними (без втрати даних). | `deploy/geheimen-aanvullen.sh` або `openssl rand -base64 48 \| tr -d '\n'` |
+| `OWNER_EMAIL` | Електронна адреса власника (супер-адміністратора). Замінює раніше жорстко закодовану адресу. Сервер не запускається без неї. | Google-адреса власника, малими літерами. |
+| `TOTP_ENCRYPTION_KEY_V1` | Ключ AES-256-GCM для TOTP-секретів (прив'язаний до ідентифікатора користувача). Без ключа: реєстрація TOTP повертає 503. | `openssl rand -base64 32` (32 байти; base64 або 64 hex-символи) |
+| `RECOVERY_CODE_PEPPER` | Таємний pepper (HMAC-SHA256) для кодів відновлення. Мін. 32 символи. Без pepper: нові коди відновлення не генеруються (503). | `openssl rand -base64 48` |
+| `GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1` | Шифрує збережені Google-гранти та refresh-токени. | `openssl rand -base64 32` |
+| `OWNER_VAULT_ENCRYPTION_KEY_V1` | Шифрує елементи у сховищі API-платформи (`admin`/`api`). | `openssl rand -base64 32` |
+| `GITHUB_KOPPELING_SLEUTEL_V1` | Шифрує збережені GitHub-токени інтеграції (OAuth-токен, токен оновлення, токен встановлення GitHub App), прив'язані до користувача + шляху. Необов'язково: без цього ключа сервер використовує `TOTP_ENCRYPTION_KEY_V1`. Власний ключ кращий: тоді ротація TOTP не зачіпає інтеграцію GitHub. | `openssl rand -base64 32` |
+| `HUIS_ADAPTER_SLEUTEL_V1` | Шифрує збережені токени Home Assistant у Huis vNext (міграція 0128, `app.huis_integraties.geheim`), прив'язані до оселі + інтеграції. Необов'язково: без цього ключа сервер використовує `TOTP_ENCRYPTION_KEY_V1`. Власний ключ кращий: тоді ротація TOTP не зачіпає підключення шлюзів. Ротація = повторне підключення всіх інтеграцій (токен ніколи не повертається у відкритому вигляді). | `openssl rand -base64 32` |
+| `MAIL_TOKEN_ENCRYPTION_KEY_V1` | Шифрує токени поштових провайдерів. Має бути рівно 32 байти. | `openssl rand -base64 32` |
+| `MAIL_APP_WACHTWOORD_SLEUTEL_V1` | **Обов'язковий з 20.10.2026.** Шифрує пароль додатка IMAP/SMTP-підключень (iCloud, Ukr.net, Yahoo, I.ua; `backend/mail-imap.ts`), прив'язаний до користувача + рядка + простору. Без ключа підключення відхиляється з кодом помилки (ніколи не зберігається незашифрованим). Жодного резервного відкату на інший ключ. | `mijn-ruimte-installeer geheimen` або `openssl rand -base64 32` |
+| `AGENDA_ABONNEMENT_SLEUTEL_V1` | Шифрує пароль додатка CalDAV-календаря (iCloud, Fastmail, Nextcloud), прив'язаний до користувача + адреси сервера. Потрібен лише якщо хтось підключає CalDAV; без ключа сайт відхиляє підключення з `CALDAV_SLEUTEL_ONTBREEKT` замість збереження пароля незашифрованим. Для ICS-підписок і Google Calendar він не потрібен. | `openssl rand -base64 32` |
+| `SLEUTELKLUIS_SLEUTEL_V1` | **Обов'язковий з 21.10.2026** — створюється через `mijn-ruimte-installeer` перед міграцією 0092 (сховище ключів / sleutelkluis). Не видаляти і не ротувати. Pepper для конвертів ШІ-підключень: ключ даних (DEK) людини обгортається для MCP-підключення через `HKDF(токен агента + цей pepper)`. Сам DEK НІКОЛИ не лежить на диску; цей pepper нічого не відкриває без токена агента. Якщо він відсутній, сховище використовує `TOTP_ENCRYPTION_KEY_V1`; якщо відсутні обидва, ШІ-підключення не отримують конверта (агенти бачать «ключ закритий» на зашифрованих рядках). | `openssl rand -base64 32` |
+
+> Якщо ви зміните будь-який `*_KEY_V1` пізніше, наявні зашифровані дані більше не можна буде прочитати.
+> Тому зберігайте ключі також в офлайн-резервній копії (менеджер паролів), окремо від резервної копії бази даних.
+
+### Необов'язкові окремі ключі з резервним відкатом на `TOTP_ENCRYPTION_KEY_V1`
+
+| Назва | Призначення |
+|---|---|
+| `GITHUB_KOPPELING_SLEUTEL_V1` | Токени інтеграції GitHub (див. вище). |
+| `AGENT_SLEUTEL_V1` | Токени ШІ-агентів (`backend/connectors-crypto.ts`). |
+| `AI_ARCHIEF_SLEUTEL_V1` | Архів браузерної діагностики (`backend/browser-diag-archief.ts`). |
+
+Якщо такий ключ відсутній, код використовує `TOTP_ENCRYPTION_KEY_V1`. **Тому `mijn-ruimte-installeer geheimen` на
+наявній інсталяції НЕ створює їх автоматично** (під TOTP-ключем уже можуть зберігатися дані; новий окремий ключ
+зробив би їх нечитабельними). На новому порожньому `geheimen.env` вони створюються; пізніше свідомо: `… geheimen --ook-optioneel`.
+
+### Ролі бази даних (безпека, фаза 2, необов'язково)
+Записуються виключно скриптом `deploy/db-rollen-instellen.sh instellen` (вручну ніколи не потрібно). Якщо змінна
+відсутня, застосунок повертається до `DATABASE_URL` і все працює як раніше (одна роль, RLS-політики пропускають усе).
+
+**Audit-fix 4: два файли.** Після `db-rollen-instellen.sh env-splitsen` міграційний та legacy-URL
+(`DATABASE_URL`, `DATABASE_URL_MIGRATIE`) залишаються лише у **`/etc/mijn-ruimte/migratie.env`** (`0600 root:root`). Цей
+файл завантажується лише кроком міграції `installeer-app.sh` та скриптом `db-rollen-instellen.sh`, і ніколи сервісами
+`mijn-ruimte.service`/`-cron`/`-backup`. У `geheimen.env` залишаються `DATABASE_URL_APP` та `DATABASE_URL_SYSTEM`. Застосунок
+попереджає під час запуску, якщо міграційний або legacy-URL все ж таки присутній у runtime-оточенні. Повернення назад: `env-samenvoegen`.
+`migratie.env` входить до зашифрованої резервної копії секретів (див. `deploy/HERSTEL.md`).
+
+| Назва | Роль | Ким використовується |
+|---|---|---|
+| `DATABASE_URL_MIGRATIE` | `mijnruimte_migrator` (власник схеми `app`) | `dist-server/migrate.mjs` (`installeer-app.sh`) |
+| `DATABASE_URL_APP` | `mijnruimte_app` (`NOBYPASSRLS`, лише DML на `app.records`) | запити авторизованих користувачів (`SET LOCAL app.user_id`) |
+| `DATABASE_URL_SYSTEM` | `mijnruimte_system` (`BYPASSRLS`) | cron, вебхуки, вхід/сесії, маршрути адміністрування, `backup-maken.sh` |
+
+Примусове застосування RLS зберігається в базі даних (`app.rls_instellingen.afdwingen`), а не у змінній оточення: застосунок не може
+вимкнути його самостійно. Перемикання: `db-rollen-instellen.sh rls-aan|rls-uit`.
+
+### Безпека, фаза 2/3: перемикачі (необов'язково)
+
+| Назва | Типово | Призначення |
+|---|---|---|
+| `AUTH_POORT_AFDWINGEN` | вимк. | `1` = запобіжник у маршрутизаторі відповідає **401** на кожну анонімну 2xx-відповідь маршруту, якого немає в `PUBLIEKE_ROUTES` (`server/platform/auth-poort.ts`). Без цього: лише логування (`[auth-poort]`) і підрахунок у `app.rls_audit` (дія `anoniem-2xx`). Див. `deploy/RUNBOOK-FASE-2-3.md`. |
+| `STAP_OP_UIT` | вимк. | Аварійний вимикач: `1` вимикає вимогу step-up (`STEP_UP_REQUIRED`) для чутливих дій. Використовувати лише тимчасово, напр., якщо фронтенд ще не обробляє step-up, а адміністративна дія є терміновою. |
+| `STAP_OP_GOOGLE_ZONDER_AUTH_TIME` | вимк. | Opt-in резервний шлях (audit-fix 5): `1` = явний step-up вхід через Google (`prompt=login`, `max_age=0`) зараховується навіть без поля `auth_time` в `id_token`, за умови що OAuth-потік завершено протягом 5 хвилин після старту. За замовчуванням Google-step-up зараховується лише з `auth_time` (увімкніть у Google Cloud Console для OAuth-клієнта **"session age claims"**). TOTP-step-up працює завжди. |
+| `ACCOUNT_DEFINITIEF_WISSEN` | вимк. | `1` = фонова задача очищення видаляє акаунти **остаточно** (вміст, ідентичності, файли; залишається лише запис-надгробок без персональних даних), щойно минає 30-денний період відновлення. Без цього: лише сухий звіт у логах cron. **Необоротно** — вмикати лише після успішного тесту резервного копіювання та відновлення. |
+
+## Вхід через Google та Google Suite (необов'язково: без цих значень Google-вхід вимкнено)
+
+| Назва | Призначення | Генерація / значення |
+|---|---|---|
+| `GOOGLE_OAUTH_CLIENT_ID` (аліас `GOOGLE_SUITE_CLIENT_ID`; якщо заданий і він, перемагає `GOOGLE_SUITE_CLIENT_ID` — це має бути той самий клієнт) | OAuth Client ID (публічний). | Google Cloud Console → *APIs & Services* → *Credentials* → *Create credentials* → *OAuth client ID*, тип *Web application*. Redirect URI: **`https://id.<ваш-домен>/`** (точно, зі слешем у кінці); JavaScript origins: `https://id.`, `https://hub.`, `https://mail.`, `https://cloud.<ваш-домен>`. Скоупи та брендинг у *Google Auth Platform* (раніше «OAuth consent screen»). **Майстер підключень** показує ці значення готовими до копіювання для вашого домену. |
+| `GOOGLE_OAUTH_CLIENT_SECRET` (аліас `GOOGLE_SUITE_CLIENT_SECRET`) | OAuth Client Secret. | З того самого клієнта. Встановлення: `mijn-ruimte-installeer oauth-client google` (приховане введення, перезапуск + перевірка). **Або** через майстер у сховищі (призначення `google`, назва `google-oauth-client`, рядки `client_id:`/`client_secret:`): env має пріоритет; якщо в env НЕМАЄ клієнта, діє сховище власника — без перезапуску (вхід через Google протягом 5 хв; Gmail/Drive/Agenda миттєво). Ніколи наполовину: лише id або лише secret в env не доповнюється зі сховища. |
+
+Без клієнта (ні в env, ні у сховищі) вхід через Google відповідає **503 `GOOGLE_NOT_CONFIGURED`** (і не створює рядків стану).
+Майстер перевіряє клієнта без входу: запит до token endpoint із тестовим кодом → `invalid_grant` = дійсний, `invalid_client` = недійсний.
+
+**Фото відправників із Google-контактів (необов'язково, 21.10.2026):** увімкніть у тому самому проєкті Google Cloud також **People API**.
+Сайт запитує `contacts.readonly` та `contacts.other.readonly` лише тоді, коли людина в Пошта → Налаштування → «Відправники» сама
+вмикає «Фото відправників з ваших Google-контактів» (інкрементальна згода на наявному підключенні Gmail; звичайне підключення
+їх не запитує). Якщо API вимкнено, сторінка чесно повідомляє про це, а все інше продовжує працювати.
+
+## Microsoft (пошта Outlook, необов'язково)
+
+| Назва | Призначення | Генерація / значення |
+|---|---|---|
+| `MICROSOFT_GRAPH_CLIENT_ID` / `MICROSOFT_GRAPH_CLIENT_SECRET` / `MICROSOFT_GRAPH_TENANT_ID` | Реєстрація додатка для Microsoft Graph (пошта Outlook). **Лише через env**: поштові маршрути читають виключно ці назви; потрібен перезапуск (команда робить це сама). | Центр адміністрування Microsoft Entra (entra.microsoft.com) → *App registrations* → *New registration*: платформа *Web*, Redirect URI **`https://id.<ваш-домен>/`** (точно, зі слешем); *Certificates & secrets* → client secret (макс. 24 місяці — занотуйте дату в реєстрі); *API permissions* → Microsoft Graph, Delegated: `offline_access openid profile email Mail.Read Mail.ReadWrite Mail.Send`. Tenant: `common` або Directory (tenant) ID. Встановлення: `mijn-ruimte-installeer oauth-client microsoft`. |
+| `MICROSOFT_GRAPH_WEBHOOK_URL` | Кінцева точка для сповіщень про зміни (change notifications, необов'язково). | `https://mail.<ваш-домен>/api/owner/mail/microsoft/webhook` |
+| `MICROSOFT_GRAPH_WEBHOOK_CLIENT_STATE` | Спільний секрет, який надсилає Graph. | `mijn-ruimte-installeer geheimen` створює його автоматично, щойно задано `MICROSOFT_GRAPH_WEBHOOK_URL` (`openssl rand -hex 32`). |
+
+## Gmail-push через Pub/Sub (необов'язково)
+
+| Назва | Призначення | Генерація / значення |
+|---|---|---|
+| `GOOGLE_GMAIL_PUBSUB_TOPIC` | Pub/Sub-топік для Gmail `watch`. | `projects/<project>/topics/<topic>` |
+| `GOOGLE_GMAIL_PUBSUB_AUDIENCE` | Очікуваний `aud` push-JWT токена. | `https://mail.tarasevych.com/api/owner/mail/google/pubsub/push` |
+| `GOOGLE_GMAIL_PUBSUB_SERVICE_ACCOUNT_EMAIL` | Сервісний акаунт, що підписує push-повідомлення. | Із Pub/Sub-підписки (subscription). |
+
+## Інше (необов'язково)
+
+| Назва | Призначення | Генерація / значення |
+|---|---|---|
+| `SCIM_BEARER_TOKEN` | Вхідний SCIM-провижинінг. Порожньо = вимкнено. | `openssl rand -base64 48` |
+| `AFZENDER_BEELD_PEPPER` | Pepper (HMAC-SHA256, мін. 32 символи) для адреси відправника в `app.afzender_beeld` (фото відправників, міграція 0093): адреса зберігається там лише як HMAC. Порожньо = сервер використовує `AUDIT_IP_PEPPER` із власним префіксом. Зміна = збережені фото більше не знаходяться і завантажуються заново (без втрати даних). | `openssl rand -base64 48 \| tr -d '\n'` |
+
+## Параметри часу виконання / Runtime (не секрети; стандартні значення підходять для продакшену)
+
+| Назва | Стандартне значення | Призначення |
+|---|---|---|
+| `HOST` | `127.0.0.1` | Адреса прослуховування. **Не** змінювати: публічний трафік надходить виключно через `cloudflared`. |
+| `PORT` | `8080` | Порт; має збігатися з `deploy/cloudflared-config.yml`. |
+| `DIST_DIR` | `<release>/dist` | Зібраний фронтенд. |
+| `DASHBOARD_DIR` | `/srv/mijn-ruimte/dashboard` | Статичний дашборд для `dashboard.tarasevych.com`. |
+| `UPLOADS_DIR` | `/srv/data/uploads` | Файлове сховище (єдина директорія, відкрита на запис для служби). |
+| `MERK_EIGEN_MAP` | `/srv/mijn-ruimte/merk-eigen` | Офіційні логотипи, які адміністратор розміщує власноруч (`<ключ>.svg` або `.png`, ≤ 200 КБ, SVG очищується) — див. `deploy/LEESMIJ.md`, «Eigen logo's». |
+| `MAX_BODY_BYTES` | `12582912` (12 MiB) | Максимальний розмір тіла HTTP-запиту. |
+| `PG_POOL_MAX` | `10` | Максимальна кількість з'єднань у пулі Postgres. |
+| `MIGRATIONS_DIR` | `<release>/migrations` | Директорія з SQL-міграціями. |
+| `API_RATE_LIMIT_PER_MIN` | `600` | Загальний ліміт на IP за хвилину для `/api/*` (у пам'яті). Суворіші ліміти для входу/MFA/handoff зафіксовані в `server/start.ts`. |
+| `NODE_ENV` | `production` | Встановлюється у systemd-юніті. |
+| `ZOEK_DEBUG` | (порожньо) | Ядро `/zoek`: `aan` логує для кожного пошукового запиту лише тривалість SQL і кількість рядків у stderr (ніколи не логує запит чи вміст). Сам індекс завжди увімкнений; старий прапорець `ZOEK_INDEX=aan` більше не існує (0100): якщо в індексі немає рядків для цієї шухляди (простору), `/api/owner/global-search` шукає в пам'яті й повідомляє `index:false`. |
+| `ZOEK_TEKST_MAX_BYTES` | `26214400` (25 MiB) | `/zoek`: максимальний розмір одного файлу/вкладення для вилучення тексту (більший → статус `te_groot`, індексується лише назва). |
+| `ZOEK_TEKST_TIMEOUT_MS` / `ZOEK_TEKST_WERKER_MB` | `60000` / `512` | `/zoek`: ліміт часу та ліміт купи V8 для робочого потоку (`dist-server/zoek-werker.mjs`), який читає PDF/Office/архіви; при перевищенні потік примусово завершується (статус `fout`: `TIJDSLIMIET`/`GEHEUGENLIMIET`), основний сервер цього навіть не відчуває. |
+| `ZOEK_PDF_MAX_PAGINAS` / `ZOEK_OCR_MAX_PAGINAS` | `500` / `50` | `/zoek`: кількість сторінок PDF для текстового шару та скільки відсканованих сторінок документа проходять через OCR. |
+| `ZOEK_OCR_ENGINE` | `auto` | `/zoek` OCR: `auto` (системний `tesseract` → `tesseract.js` (WASM) → платформний ШІ), `tesseract-cli`, `tesseract-js`, `platform-ai` або `uit`. Без рушія чи мовних файлів статус джерела чесно повідомляє «OCR недоступний». |
+| `ZOEK_OCR_TALEN` / `ZOEK_OCR_TALEN_MAP` | `ukr+nld+eng+rus` / `/srv/mijn-ruimte/ocr/tessdata` | `/zoek` OCR: бажані мови (коди tesseract) та директорія з `.traineddata`. Заповнення: `sudo mijn-ruimte-installeer ocr-talen [--talen …]` (apt `tesseract-ocr` + `poppler-utils`, `tessdata_fast 4.1.0` із SHA-256; ±29 МБ для 9 мов, не входять у релізний tar). Також читається `/usr/share/tesseract-ocr/*/tessdata`. |
+| `ZOEK_OCR_MAX_BYTES` / `ZOEK_OCR_PAGINA_TIMEOUT_MS` / `ZOEK_OCR_PARALLEL` | `20971520` / `45000` / `1` | `/zoek` OCR: обмеження розміру, ліміт часу на сторінку (процес примусово завершується), кількість паралельних OCR-запусків на процес. |
+| `ZOEK_OCR_TESSERACT_PAD` / `ZOEK_OCR_PDFTOPPM_PAD` | (через PATH) | `/zoek` OCR: явний шлях до `tesseract` / `pdftoppm`, якщо їх немає в `PATH`. |
+| `ZOEK_ARCHIEF_MAX_TOTAAL_MB` / `_BESTAND_MB` / `_AANTAL` / `_DIEPTE` / `_VERHOUDING` | `200` / `50` / `2000` / `3` / `200` | `/zoek` архіви (zip/tar/gz): загальний розпакований обсяг, на один файл, кількість файлів, глибина вкладеності, коефіцієнт стиснення (захист від zip-бомб). zip64, паролі, rar/7z: не підтримуються (чесно повідомляється). |
+| `ZOEK_INDEX_RUN_MS` / `ZOEK_INDEX_ITEMS` / `ZOEK_INDEX_SCAN_RIJEN` | `120000` / `60` / `400` | `/zoek` індексація (cron `zoek-index`, кожні 5 хв, + фоновий цикл у серверному процесі за відкритого сховища ключів): бюджет часу на запуск, елементів черги на запуск, рядків джерела за крок сканування (більше рядків → крок планує себе повторно; прогрес видно у стані джерела). |
+| `ZOEK_INDEX_VOLLEDIG_MIN` / `ZOEK_INDEX_GITHUB_MIN` | `15` / `30` | `/zoek`: інтервал у хвилинах між звірками видалених рядків (лише id) та між повними читаннями GitHub (де немає потоку змін). Фактична затримка за джерелом: ui ≤ 5 хв; mail/cloud/drive/agenda/bord ≤ 5 хв після власної синхронізації; github ≤ 30 хв; видалення ≤ 15 хв; вкладення/вміст/OCR: через чергу після цього. |
+| `ZOEK_BEHEER_RUN_MS` / `ZOEK_BEHEER_ITEMS` | `600000` / `2000` | `/zoek`, ручна індексація з технічного профілю (зона D, 22.10.2026; `POST /api/owner/zoek/index/starten`, вікно «Індексація» на `/zoek`): бюджет часу та кількість елементів черги на ручний запуск. Запуск бере лише елементи власних шухляд (просторів) під тим самим advisory lock, що й cron (`cron:zoek-index`); після завершення коректно зупиняється (статус `tijd`/`limiet`), а cron підхоплює решту. Див. `docs/zoek/ZOEK-BEHEER.md` §5. |
+| `ROOK_CHROMIUM` | (шукає `/srv/mijn-ruimte/browser/chrome-headless-shell`, `/usr/bin/chromium`…) | Перевірка рендерингу (22.10.2026): шлях до headless-браузера, який використовує інсталятор; застосунок лише перевіряє, ЧИ він існує («Діагностика» → «Рендеринг сторінок», кнопка «Перевірити рендеринг»). Застосунок сам ніколи не запускає браузер; результат надходить від root через `/var/lib/mijn-ruimte-uitrol-status/rook-controle.json`. Встановлення: `sudo mijn-ruimte-installeer browser-controle`. |
+| `ZOEK_INDEX_INHOUD_MAX_MB` / `ZOEK_INDEX_SLEUTEL_WACHT_MIN` | `25` / `10` | `/zoek`: найбільший розмір вкладення/файлу, вміст якого читається; скільки часу елемент чекає, якщо сховище ключів (0092) закрите (це не помилка: стан «очікує входу»). |
+
+## Лише під час збірки (Build-time)
+
+| Назва | Призначення |
+|---|---|
+| `SOURCEMAP` | `1` = будувати sourcemaps (лише для локального налагодження; сервер ніколи не роздає `*.map`). |
+
+## Швидка генерація всього (на ВМ, від імені root)
+
+Якщо `geheimen.env` уже існує (з `DATABASE_URL`), використовуйте `mijn-ruimte-installeer geheimen --eigenaar <e-mail>`
+(`deploy/geheimen-aanmaken.sh`; стара назва `geheimen-aanvullen.sh` вказує на нього): це додає лише відсутні ключі,
+не показує значень у терміналі й записує назву + відбиток у `geheimen.journaal`. Для повністю нового файлу це можна зробити
+й вручну:
+
+```bash
+install -d -m 0750 -o root -g mijnruimte /etc/mijn-ruimte
+umask 027
+cat > /etc/mijn-ruimte/geheimen.env <<EOT
+DATABASE_URL=postgres://mijnruimte:$(openssl rand -base64 32 | tr -d '/+=')@127.0.0.1:5432/mijnruimte
+OWNER_EMAIL=<eigenaar@gmail.com>
+TOTP_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)
+RECOVERY_CODE_PEPPER=$(openssl rand -base64 48 | tr -d '\n')
+AUDIT_IP_PEPPER=$(openssl rand -base64 48 | tr -d '\n')
+GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)
+OWNER_VAULT_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)
+GITHUB_KOPPELING_SLEUTEL_V1=$(openssl rand -base64 32)
+MAIL_TOKEN_ENCRYPTION_KEY_V1=$(openssl rand -base64 32)
+MAIL_APP_WACHTWOORD_SLEUTEL_V1=$(openssl rand -base64 32)
+AGENDA_ABONNEMENT_SLEUTEL_V1=$(openssl rand -base64 32)
+GOOGLE_OAUTH_CLIENT_ID=
+GOOGLE_OAUTH_CLIENT_SECRET=
+EOT
+chown root:mijnruimte /etc/mijn-ruimte/geheimen.env && chmod 0640 /etc/mijn-ruimte/geheimen.env
+```
+(Пароль бази даних після цього також потрібно встановити через `ALTER ROLE mijnruimte PASSWORD '…'`.)
+
+## Також відкликати або ротувати (зі старого середовища AppDeploy)
+- Кожен `tsv_`-API-токен і кожен елемент сховища (Home Assistant, Telegram-бот, GitHub-PAT, вебхуки).
+- Усі сесії власника (підвищити revocation-epoch) та всі збережені refresh-токени Google/Microsoft (від'єднати й підключити заново).
+- Облікові дані акаунта AppDeploy та API-ключі.
+- Паролі й TOTP усіх користувачів (старі TOTP-секрети зберігалися в базі даних у відкритому вигляді).
+
+## Необов'язкові змінні (не секрети)
+- `CHAT_MODEL` — модель для чату на `ai.*` (за замовчуванням `claude-sonnet-5-5`). Сам ключ Anthropic НЕ зберігається в оточенні:
+  кожен користувач зберігає власний ключ у сховищі власника (`purpose: anthropic`, API → Koppelingen → Kluis).
+- `EXTERNE_MCP_HOSTS` — білий список хостів, куди сайт може звертатися як **MCP-клієнт** (коли сайт сам спілкується зі
+  стороннім MCP-сервером; `backend/mcp-klant/*`, міграція 0078). Розділені комами або пробілами; кожен запис — це ім'я хоста
+  (`api.githubcopilot.com`) або суфікс з однією зірочкою попереду (`*.githubcopilot.com`). Окрема `*` ігнорується.
+  **Якщо нічого не задано: жодних вихідних MCP-з'єднань** — так і задумано (BYOS: лише туди, куди власник свідомо дозволив).
+  Той самий список може також міститися у root-файлі, який уже використовують двері MCP,
+  `/etc/mijn-ruimte/mcp-rechten.json` (шлях налаштовується через `MCP_RECHTEN_PAD`), під ключем `externeMcpHosts`:
+  `{ "externeMcpHosts": ["api.githubcopilot.com"] }`. Якщо задані обидва, діє їхнє об'єднання. Токени тут НЕ зберігаються: їх
+  користувач сам кладе у своє сховище під час підключення (`mcp.*` → Підключення ШІ → «Зовнішні MCP»).
+  З 22.10.2026 власник керує `externeMcpHosts` безпосередньо на тій сторінці за допомогою **passkey-рішення** (root записує файл;
+  RUNBOOK §15); хости з `EXTERNE_MCP_HOSTS` відображаються там як «оточення» і змінюються лише тут.
+- `BESLUIT_INBOX` (типово `/srv/mijn-ruimte/besluit-inbox`), `BESLUIT_APP_ROOT` (типово `/srv/mijn-ruimte`: `current`, `VORIGE`,
+  `releases/`) — рішення власника з passkey (`backend/eigenaar-besluit.ts`, RUNBOOK §15): куди застосунок кладе підписане
+  рішення для root і звідки читає активний/попередній реліз. Результат надходить із `OPDRACHT_STATUS_DIR/besluit-<id>.json`.
+  Використовується лише для тестів і перевірки стану; на сервері діють фіксовані шляхи. Сам root-скрипт (`mijn-ruimte-besluit`) читає `BESLUIT_*`
+  (`BESLUIT_WERK`, `BESLUIT_STATUS`, `BESLUIT_RECHTEN`, `BESLUIT_PASSKEY`, `BESLUIT_INSTALLEER`, `BESLUIT_GROEP`, `BESLUIT_WACHT_TERUG`)
+  виключно поза root і лише зі шляхами всередині `/tmp`.

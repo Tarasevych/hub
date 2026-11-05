@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./REGELS-UITROLPAKKET.uk.md) · [🇳🇱 **Nederlandse versie**](./REGELS-UITROLPAKKET.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Правила пакета оновлення · Regels voor een uitrolpakket
 
 Для кожного, хто збирає пакет для Mijn Ruimte: людини чи ШІ-агента (Claude, GPT, Cursor, …), навіть якщо ви не знаєте історії проєкту.

@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261030-AFSTEMMING-UI014.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261030-AFSTEMMING-UI014.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # UI-014 «Звірка / Розвиток продукту» (Afstemming vNext) — 30.10.2026
 
 Прапорець: `afstemming-vnext` (міграція `0197` — лише рядок прапорця). УВІМК → нова картотека на

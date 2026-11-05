@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL_SYNC_PIPELINE.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL_SYNC_PIPELINE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Mail Sync Pipeline v1
 
 ## 1. State machine

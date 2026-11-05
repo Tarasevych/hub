@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-ADMIN-15-PUNTEN.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261017-ADMIN-15-PUNTEN.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Admin-pakket: 15 punten (17 oktober 2026, derde pakket)
 
 Bouwt voort op `WIJZIGINGEN-20261017-UITROL-WIZARD.md`. Gedetailleerde notities per onderdeel: `WIJZIGINGEN-20261017-INTEGRATIES.md`, `WIJZIGINGEN-20261017-DIAGNOSTIEK.md`.

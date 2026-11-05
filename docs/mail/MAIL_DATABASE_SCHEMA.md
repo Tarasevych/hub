@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL_DATABASE_SCHEMA.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL_DATABASE_SCHEMA.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Mail Database Schema v1
 
 ## 1. Scope

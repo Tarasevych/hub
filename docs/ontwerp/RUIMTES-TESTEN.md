@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUIMTES-TESTEN.uk.md) · [🇳🇱 **Nederlandse versie**](./RUIMTES-TESTEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Ruimtes: testen (agent 4)
 
 > **Українською коротко.** Усі перевірки запускаються локально однією командою:

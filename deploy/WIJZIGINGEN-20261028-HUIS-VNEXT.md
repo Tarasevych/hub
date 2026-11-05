@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261028-HUIS-VNEXT.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261028-HUIS-VNEXT.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 ## Huis vNext — huis.tarasevych.com (28.10.2026)
 
 Реалізація пакета `Mijn_Ruimte_Huis_vNext` (ТЗ `ТЕХНІЧНЕ_ЗАВДАННЯ_HUIS_VNEXT.md`, старт з `00_АГЕНТУ_ПОЧАТИ_ЗВІДСИ.md`) у наявному проєкті. База: архів **`mijn-ruimte-20261028-224316`** + гілка `notities-vnext` (міграція 0127). Гілка **`huis-vnext`**, міграція **`0128_huis_vnext.sql`**, прапорець **`huis-vnext`** (вимкнено за замовчуванням → стара інформаційна сторінка без змін). **Production не змінено й не розгорнуто.**

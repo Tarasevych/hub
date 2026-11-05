@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RELEASE-NOTITIES-TECH-RUIMTES-V2.uk.md) · [🇳🇱 **Nederlandse versie**](./RELEASE-NOTITIES-TECH-RUIMTES-V2.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Release-notities — Technische ruimtes v2
 
 **BRON-COMMIT:** zie het bestand `BRON-COMMIT` in het archief (master, /workspace/werkblad-v3). **Niet uitgerold.** Productie is niet

@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL-PUSH-PUBSUB.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL-PUSH-PUBSUB.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Push-синхронізація Gmail через Google Cloud Pub/Sub
 
 Стан на 07.10.2026: код push **є** (`backend/index.ts`: `mailGoogleWatch`, `mailGooglePush`, перевірка підпису JWT, маршрут

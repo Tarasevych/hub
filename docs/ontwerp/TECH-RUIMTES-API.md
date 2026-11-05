@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./TECH-RUIMTES-API.uk.md) · [🇳🇱 **Nederlandse versie**](./TECH-RUIMTES-API.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Technische ruimtes v2 — API-contract (T-BACKEND ↔ T-UI)
 
 Status: geïmplementeerd in `backend/tech-ruimtes.ts` (routes), `backend/tech-ruimtes-kern.ts` (database, vlag, schaduw)

@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ARCHITECTUUR-UI013.uk.md) · [🇳🇱 **Nederlandse versie**](./ARCHITECTUUR-UI013.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # UI-013 — verspreid verbindingssysteem: architectuur, oorzaken en plan (fase 1)
 
 ## Eén model (etappe B)

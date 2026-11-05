@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WERKBLAD.uk.md) · [🇳🇱 **Nederlandse versie**](./WERKBLAD.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Робочий стіл · Werkblad (hub.*/overzicht)
 
 Зона F, 22.10.2026. Українська версія — спочатку, Nederlandse versie — eronder.

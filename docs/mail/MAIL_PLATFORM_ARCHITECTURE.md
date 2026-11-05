@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL_PLATFORM_ARCHITECTURE.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL_PLATFORM_ARCHITECTURE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Mail Platform Architecture v1
 
 ## 1. Мета і межа

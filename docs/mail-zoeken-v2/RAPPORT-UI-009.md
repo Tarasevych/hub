@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RAPPORT-UI-009.uk.md) · [🇳🇱 **Nederlandse versie**](./RAPPORT-UI-009.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # UI-009 — Eindrapport geavanceerd zoeken en filters in Mail
 
 Basis: 20261029-131639 (claude). Vlag: `mail-zoeken-v2` (migratie **0150**, standaard UIT). Inventaris en diagnose: `INVENTARIS-UI-009.md` (fase 1).

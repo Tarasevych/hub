@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./PORTEERPLAN.uk.md) · [🇳🇱 **Nederlandse versie**](./PORTEERPLAN.nl.md) · [🏠 Головна (UK)](./README.md) · [🏠 Hoofdpagina (NL)](./LEESMIJ.md) · [📚 Каталог статей / Index](./docs/INDEX.md)
+
 # Porteerplan «Мій простір»: zelf hosten zonder AppDeploy
 
 Status: plan, er is nog geen code aangepast. Branch: `zelf-hosten`. Basis: `b161610` (security fixes).

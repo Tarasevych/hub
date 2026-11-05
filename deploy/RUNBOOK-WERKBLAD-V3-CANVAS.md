@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-WERKBLAD-V3-CANVAS.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-WERKBLAD-V3-CANVAS.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Werkblad v3 — canvas
 
 Interactielaag van het vrije werkblad (Etappe C). Nog NIET aangesloten op `src/werkblad/Werkblad.tsx` — dat doet de integrator

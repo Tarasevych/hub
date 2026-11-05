@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./LOGBOEK.uk.md) · [🇳🇱 **Nederlandse versie**](./LOGBOEK.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # BUG-002 — «Перевірка всіх адрес» springt zelf open en dicht
 
 Reproductie: `node --experimental-strip-types tests/e2e/scan-melding.e2e.ts <uitmap>`. Dat is de echte component `ContactenScanMelding` tegen een

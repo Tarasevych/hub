@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ONTWERP-ACCOUNTS-EN-BEVEILIGING.uk.md) · [🇳🇱 **Nederlandse versie**](./ONTWERP-ACCOUNTS-EN-BEVEILIGING.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Проєкт: акаунти, ідентичності та безпека / Ontwerp: accounts, identiteiten en beveiliging
 
 Статус: погоджено власником (2026-10-03). Фазу 1 реалізовано на гілці `auth-fase-1` (локально,

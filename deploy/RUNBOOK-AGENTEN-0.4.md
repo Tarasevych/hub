@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-AGENTEN-0.4.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-AGENTEN-0.4.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Runbook: veilige agenten 0.4 (extensie 0.4.0, toestemmingen per gebruiker, auditfixes)
 
 Branch `veilig-agenten-0.4`. Dit document beschrijft wat er verandert, hoe je het op de VM zet en hoe je controleert dat

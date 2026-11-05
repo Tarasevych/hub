@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./KLYUCHI-I-SHYFRUVANNYA.uk.md) · [🇳🇱 **Nederlandse versie**](./KLYUCHI-I-SHYFRUVANNYA.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Ключі й шифрування: що чим зашифровано (одна сторінка)
 
 ## Головне правило

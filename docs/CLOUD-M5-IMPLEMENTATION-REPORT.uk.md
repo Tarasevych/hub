@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./CLOUD-M5-IMPLEMENTATION-REPORT.md)) · [🇳🇱 **Nederlandse versie**](./CLOUD-M5-IMPLEMENTATION-REPORT.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+
 # Cloud Full Integration M5 — 10-сервісна хвиля, драйверний шар, контроль випуску
 **Статус: DEVELOPMENT ONLY / НЕ ВСТАНОВЛЮВАТИ.**
 База: копія проєкту `20261027-212158` з послідовними M1–M4. Дата: 28.10.2026.

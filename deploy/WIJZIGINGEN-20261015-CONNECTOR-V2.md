@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261015-CONNECTOR-V2.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261015-CONNECTOR-V2.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Випуск 15.10.2026: конектори ШІ v2, етап 1 (поверх a2bbb13)
 
 ## Основа

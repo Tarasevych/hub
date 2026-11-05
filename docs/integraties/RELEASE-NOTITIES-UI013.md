@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RELEASE-NOTITIES-UI013.uk.md) · [🇳🇱 **Nederlandse versie**](./RELEASE-NOTITIES-UI013.nl.md) · [📖 Інструкція UI-013](./ІНСТРУКЦІЯ-UI013.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Release-notities UI-013 (fase 1) — integratiecatalogus als verbindingscentrum
 
 Basis: hoofdarchief 20261029-193103 (branch `integratie`, commit ba499d9). Migratie: **0180** (alleen een vlag).

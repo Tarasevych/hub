@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./INVENTARIS.uk.md) · [🇳🇱 **Nederlandse versie**](./INVENTARIS.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Bijlageviewer mail.* — inventaris en ontwerp v2 (UI-006 / BUG-003, 29.10.2026)
 
 Vlag: `bijlage-viewer-v2` (migratie 0134, standaard UIT). Uit = de oude kop en PDF-balk, ongewijzigd.

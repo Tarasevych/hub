@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./CLOUD_IMPLEMENTATION_SPEC.uk.md) · [🇳🇱 **Nederlandse versie**](./CLOUD_IMPLEMENTATION_SPEC.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Cloud Technical Specification — Workspace Functional
 
 ## 1. Phase 1 scope

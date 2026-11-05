@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./canonical-account-menu-architecture.uk.md) · [🇳🇱 **Nederlandse versie**](./canonical-account-menu-architecture.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # CanonicalAccountMenu: архітектура станів і контракти
 
 ## 1. Призначення

@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261030-AANMELD-UI015.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261030-AANMELD-UI015.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # UI-015 «Способи входу» (Aanmeldmethoden vNext) — 30.10.2026
 
 Прапорець: `aanmeldmethoden-vnext` (міграція `0198` — лише рядок прапорця, вимкнено). УВІМК → нова

@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./VOLLEDIGA-KOPIYA-VIDNOVLENNYA.uk.md) · [🇳🇱 **Nederlandse versie**](./VOLLEDIGA-KOPIYA-VIDNOVLENNYA.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Повна копія «Mijn Ruimte»: що всередині і як відновити
 
 Цей набір створює `T:\mijn-ruimte\scripts\volledige-kopie.ps1` (можна запускати повторно: щоразу нова тека з міткою часу).

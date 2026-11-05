@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL-AUDIT-20261007.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL-AUDIT-20261007.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Аудит поштового клієнта mail.tarasevych.com (07.10.2026)
 
 Метод: читання коду (`backend/google-suite-mail-browser.ts`, `backend/index.ts`, `src/MailNewMessageDialog.tsx`, `src/MailComposeEditor.tsx`), запити до живої бази (лише лічильники й

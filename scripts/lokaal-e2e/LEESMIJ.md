@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./LEESMIJ.uk.md) · [🇳🇱 **Nederlandse versie**](./LEESMIJ.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Lokale browsertest (Playwright) — alleen voor ontwikkeling
 
 Bootst de productieketen na: browser → https (zelfondertekend, `*.tarasevych.com`) → `proxy.mjs`

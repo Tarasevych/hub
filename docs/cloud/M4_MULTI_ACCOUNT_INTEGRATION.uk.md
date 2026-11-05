@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./M4_MULTI_ACCOUNT_INTEGRATION.md)) · [🇳🇱 **Nederlandse versie**](./M4_MULTI_ACCOUNT_INTEGRATION.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей](../../docs/INDEX.md)
+
 # Cloud Full Integration M4 — підключення та робота з кількома акаунтами
 
 Статус: **DEVELOPMENT ONLY / NOT DEPLOYABLE**. База: 20261027-212158 + M1–M3. Жодного live сервера, OAuth-консолі, PostgreSQL, GitHub-проєкту чи адміністративного оновлення не змінено.

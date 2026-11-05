@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-FASE-2-3.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-FASE-2-3.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Runbook: beveiliging fase 2 + 3 uitrollen (branch `beveiliging-fase-2-3`)
 
 Doel: de release met `owner_id`, RLS (eerst in audit-modus), drie databaserollen, centrale auth-poort,

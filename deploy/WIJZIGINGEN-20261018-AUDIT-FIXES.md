@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261018-AUDIT-FIXES.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261018-AUDIT-FIXES.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 
 ## Punt 3 — «Вийти всюди» en sessie-intrekking beëindigen ook het technisch profiel (migratie 0060)
 - **Was:** `revoke-all`, `revoke-others`, `emergency-revoke` en `items/:id/revoke` beëindigden sessies maar lieten `app.tech_activaties` staan; na opnieuw aanmelden in hetzelfde tabblad (zelfde `tab_hash`) was het technisch profiel weer actief zonder stap-op, in open modus tot 366 dagen.

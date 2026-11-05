@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./CONNECTOR-EEN-PAD.uk.md) · [🇳🇱 **Nederlandse versie**](./CONNECTOR-EEN-PAD.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Eén connectoradres per AI — wat er op de server moet gebeuren (20.10.2026)
 
 Tot nu toe: `https://mcp.tarasevych.com/ai/<agent>` voor connector v2, `…/mcp` voor de koppeling van vóór v2, en de korte paden

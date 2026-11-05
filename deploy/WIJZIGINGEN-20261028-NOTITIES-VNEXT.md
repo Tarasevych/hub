@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261028-NOTITIES-VNEXT.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261028-NOTITIES-VNEXT.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 ## Notities vNext — hub.tarasevych.com/notities (28.10.2026)
 
 Реалізація пакета `Mijn_Ruimte_Notes_vNext` (ТЗ від 28.10.2026) у наявному проєкті. База: архів **`mijn-ruimte-20261028-224316`** (`herstel technische modules`, tak `fix-technische-modules`, commit 9d157545528b) — гілку `notities-vnext` перебазовано на нього після того, як власник випустив проміжне оновлення. **Production не змінено й не розгорнуто.**

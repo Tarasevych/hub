@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./BROWSER-EXTENSIE.uk.md) · [🇳🇱 **Nederlandse versie**](./BROWSER-EXTENSIE.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Розширення браузера «Mijn Ruimte»
 
 Дозволяє вашому ШІ-помічнику (Claude через наш MCP-конектор) читати відкриті сторінки сайту й виконувати дії в них. Працює **лише** на `*.tarasevych.com`.

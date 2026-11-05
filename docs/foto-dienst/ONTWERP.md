@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ONTWERP.uk.md) · [🇳🇱 **Nederlandse versie**](./ONTWERP.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # UI-002 — «Фото» en de verhuizing van «Календар»/«Фото» naar «Мій простір»
 
 ## 1. Inventaris (basis 131639)

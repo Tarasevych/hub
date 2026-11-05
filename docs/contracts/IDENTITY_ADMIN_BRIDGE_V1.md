@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./IDENTITY_ADMIN_BRIDGE_V1.uk.md) · [🇳🇱 **Nederlandse versie**](./IDENTITY_ADMIN_BRIDGE_V1.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Identity Admin Bridge v1
 
 ## Source of truth

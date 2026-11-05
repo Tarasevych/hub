@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./README-M7.uk.md) · [🇳🇱 **Nederlandse versie**](./README-M7.nl.md) · [🏠 Головна (UK)](./README.md) · [🏠 Hoofdpagina (NL)](./LEESMIJ.md) · [📚 Каталог статей / Index](./docs/INDEX.md)
+
 # Cloud Full Integration M7 · Security-first development kit
 
 База: M6 DevKit із робочого архіву 20261027-212158 (не потвердження поточної production-версії).

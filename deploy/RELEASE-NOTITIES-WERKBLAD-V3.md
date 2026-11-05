@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RELEASE-NOTITIES-WERKBLAD-V3.uk.md) · [🇳🇱 **Nederlandse versie**](./RELEASE-NOTITIES-WERKBLAD-V3.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Release-notities — Werkblad v3 (mijn-ruimte-20261027-163821)
 
 **Bron-commit:** `1f9028a36b54c0cdfd6438902223d7f0e7cd4582` (branch `master`, /workspace/werkblad-v3). **Niet uitgerold.** Productie is niet aangeraakt;

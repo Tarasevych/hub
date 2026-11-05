@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./INVENTARIS-EN-OORZAKEN.uk.md) · [🇳🇱 **Nederlandse versie**](./INVENTARIS-EN-OORZAKEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # UI-007 — Meldingencentrum: inventaris, oorzaken en ontwerp (29.10.2026)
 
 Basis: release 20261029-131639. Nieuw gedrag achter vlag `meldingen-v2` (standaard UIT, migratie 0142).

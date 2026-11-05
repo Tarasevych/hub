@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-AUDIT-FIXES.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-AUDIT-FIXES.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Runbook: audit-fixes uitrollen (branch `beveiliging-fixes-audit`)
 
 Doel: de release met de audit-fixes (A1–A10, zie `SECURITY-NOTES.md` §3d) uitrollen met na elke stap een

@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ECOSYSTEM_SSO_NAVIGATION_V1.uk.md) · [🇳🇱 **Nederlandse versie**](./ECOSYSTEM_SSO_NAVIGATION_V1.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Ecosystem SSO Navigation v1
 
 ## Goal

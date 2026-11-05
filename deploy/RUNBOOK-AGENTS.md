@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-AGENTS.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-AGENTS.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Runbook: Local Machine Connector (agents) uitrollen
 
 Dit runbook rolt migratie `0009_agents.sql`, het WebSocket-kanaal `/agent/ws`, de API `/api/owner/agents/*` en het

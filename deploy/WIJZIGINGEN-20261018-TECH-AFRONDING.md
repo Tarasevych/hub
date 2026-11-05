@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261018-TECH-AFRONDING.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261018-TECH-AFRONDING.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Afronding technisch profiel en open punten — 18.10.2026
 
 ## A — Technische band zonder knipperen; «Сайт оновлено» voor open tabbladen

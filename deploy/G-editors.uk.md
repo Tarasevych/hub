@@ -1,0 +1,38 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./G-editors.md)) · [🇳🇱 **Nederlandse versie**](./G-editors.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+
+# Звіт G: редактори (7.1–7.4)
+
+Перевірка коду. Браузер і e2e **не запускались**. Юніт — `node scripts/eenheidstests.mjs bewerker-schil-20261026`.
+
+Ядро лишається `src/MailOpstelBewerker.tsx` (ProseMirror, `data-mail-compose-model='prosemirror'`). `Opsteller` кладе `data-opsteller*` на наявний `<section>` через `cloneElement`. Можливості `link`, `image`, `background`, `shortcuts` увімкнені без прапорця. Три екрани (новий лист, відповідь, документ) як і раніше окремі; текст іде через той самий `MailComposeEditor`.
+
+## 7.4
+
+**У коді, без стенду:**
+
+1. Посилання: клас `mail-compose-link-editor`, `position:fixed` у `src/editor/opsteller.css`.
+2. Курсор: `emittedHtmlRef` і `TextSelection`, не стрибок на початок після власного HTML.
+3. Ctrl/Cmd+B, I, Z у `editorPlugins()` і при створенні, і при синхронізації `value`.
+4. Зображення: файл у «Новому листі» (`onChange`, до 4 МБ, data-URL) і `plakBeeld` на paste/drop. Якщо `files` порожній, береться `clipboardData.items` / `dataTransfer.items` через `getAsFile()` (один прохід, без другого `getAsFile` на тому самому буфері). Текст без зображення не перехоплюється.
+5. Фон: `data-mail-bg`, `leesBriefAchtergrond` не бере колір цитати.
+
+## 7.1 Чернетка
+
+`losConceptOp`:
+
+- останній лист треду без `DRAFT` — відповідь на нього;
+- якщо тред порожній або без батька, але клієнт уже має інший id (`ouderId` з видимого рядка того самого `threadId`) — теж відповідь;
+- `ouderId`, рівний самій чернетці, відповіддю не стає;
+- інакше `mail:open-concept` і читач самої чернетки не відкривається.
+
+`GoogleMailWerkruimte` після `loadThread` підставляє `ouderId` з `visibleMessages`, лише якщо в треді батька немає. Окремого Gmail `drafts.get` немає. Якщо і тред, і поточний список без батька (типово вкладка «Чернетки»), лист усе ще відкриється як новий. На живому Gmail це не знімали.
+
+## 7.2–7.3
+
+Шаблони: `height:auto!important` поза `@media`, вибір «Вставити» / «Invoegen». Права кнопка більше не глушиться; `data-native-context='1'`.
+
+## Що ще відкрито
+
+- Немає браузера і e2e: портал посилання, курсор і висота шаблонів видно лише в живому DOM.
+- Немає `drafts.get`. Батько, якого немає ні в треді, ні в поточному списку, відкривається як новий лист.
+- Три екрани композиції не злиті в один продукт.

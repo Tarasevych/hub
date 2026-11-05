@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./INVENTARIS.uk.md) · [🇳🇱 **Nederlandse versie**](./INVENTARIS.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Inventaris integraties (UI-013, gegenereerd)
 
 Bron: `shared/integraties-register.ts` (machineleesbaar) + `shared/integraties-catalogus.ts`. Niet met de hand bewerken: `npx tsx scripts/integraties-inventaris.ts`.

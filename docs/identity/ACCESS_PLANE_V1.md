@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ACCESS_PLANE_V1.uk.md) · [🇳🇱 **Nederlandse versie**](./ACCESS_PLANE_V1.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Access Plane v1 — єдиний контур входу
 
 ## Проблема

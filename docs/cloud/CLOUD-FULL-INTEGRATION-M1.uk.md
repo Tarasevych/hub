@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./CLOUD-FULL-INTEGRATION-M1.md)) · [🇳🇱 **Nederlandse versie**](./CLOUD-FULL-INTEGRATION-M1.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей](../../docs/INDEX.md)
+
 # Cloud Full Integration · M1 (розробка, НЕ реліз)
 
 **Дата:** 2026-10-28. **База:** `mijn-ruimte-20261027-212158.tar.gz` — *інтеграційний кандидат*, НЕ доказ встановлення. Встановлена версія може відрізнятися. **Release gate:** `BLOCKED_PENDING_FULL_PROVIDER_ACCEPTANCE`. Цей документ доповнює `CLOUD-RELEASE-CONTRACT-FULL-INTEGRATION-20261028.uk.md`.

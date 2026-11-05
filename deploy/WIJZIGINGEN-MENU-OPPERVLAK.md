@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-MENU-OPPERVLAK.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-MENU-OPPERVLAK.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Меню: обліковий запис і управління сайтом
 
 Адміністрування та API більше не стоять у тому самому меню, що пошта, простір і міст ШІ.

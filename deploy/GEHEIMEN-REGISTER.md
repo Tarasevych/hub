@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./GEHEIMEN-REGISTER.uk.md) · [🇳🇱 **Nederlandse versie**](./GEHEIMEN-REGISTER.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Реєстр секретів «Mijn Ruimte» / Geheimenregister — ШАБЛОН
 
 > **Тут немає жодного значення — і не має бути.** Значення живуть лише на вашому сервері (`/etc/mijn-ruimte/geheimen.env`,

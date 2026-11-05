@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-INTEGRATIES.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261017-INTEGRATIES.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Admin → /mappen «Інтеграції» (17 oktober 2026)
 
 De tab `directories` (URL /mappen) is een integratiecentrum geworden: 160 kaarten in 21 categorieën, met zoeken, filters en een detailvenster.

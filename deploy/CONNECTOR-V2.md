@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./CONNECTOR-V2.uk.md) · [🇳🇱 **Nederlandse versie**](./CONNECTOR-V2.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Конектори ШІ v2: окрема адреса для кожного агента (етап 1, 15.10.2026)
 
 > **Оновлено 20.10.2026 — етап 2 виконано.** Адреси тепер короткі: `https://mcp.tarasevych.com/<агент>` (`/claude`, `/gpt`,

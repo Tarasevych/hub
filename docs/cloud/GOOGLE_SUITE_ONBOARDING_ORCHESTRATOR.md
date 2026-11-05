@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./GOOGLE_SUITE_ONBOARDING_ORCHESTRATOR.uk.md) · [🇳🇱 **Nederlandse versie**](./GOOGLE_SUITE_ONBOARDING_ORCHESTRATOR.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Primary Google Suite Onboarding Orchestrator — B+
 
 ## Scope

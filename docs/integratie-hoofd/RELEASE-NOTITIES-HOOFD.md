@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RELEASE-NOTITIES-HOOFD.uk.md) · [🇳🇱 **Nederlandse versie**](./RELEASE-NOTITIES-HOOFD.nl.md) · [✅ Перелік перевірки](./ПЕРЕЛІК-ПЕРЕВІРКИ.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Hoofdarchief Mijn Ruimte: integratie van 10 werkpakketten
 
 Basis: `20261029-131639` (claude, Cloud vNext). Er is geen nieuwere release van een andere agent gevonden: in `/workspace/nieuw-andere*` staan alleen 144748, 074233 en 131639, en `a.gz` is hetzelfde 131639-archief. Agent: grok. Auteur: Eigenaar Test. **Niet uitgerold.**

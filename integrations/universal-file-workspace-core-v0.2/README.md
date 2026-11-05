@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./README.uk.md) · [🇳🇱 **Nederlandse versie**](./README.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Universal File Workspace · Mijn Ruimte
 
 Це **локальний початковий інтеграційний пакет**, а не патч production-репозиторію.

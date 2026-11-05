@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-DIAGNOSTIEK.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261017-DIAGNOSTIEK.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Діагностика (/diagnostiek) — wijzigingen 17 oktober 2026
 
 Admin → «Діагностика» is een pagina met controles per categorie (src/diagnostiek/, backend/admin-diagnostiek.ts, shared/admin-diagnostiek.ts; migratie 0056).

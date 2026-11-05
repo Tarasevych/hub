@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUIMTES-ISOLATIE.uk.md) · [🇳🇱 **Nederlandse versie**](./RUIMTES-ISOLATIE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Ruimtes-isolatie — «prive» ↔ «technisch» (28.10.2026, migratie 0123, vlag `ruimtes-scheiding`)
 
 **Коротко українською.** Сервер уже розділяв пошту, сповіщення, хмару, календар, робочий стіл, пошук і ШІ за «шухлядою»

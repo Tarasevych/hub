@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL_IMPLEMENTATION_SPEC.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL_IMPLEMENTATION_SPEC.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Mail Platform Technical Specification v1
 
 ## 1. Status vocabulary

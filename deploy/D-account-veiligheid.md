@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./D-account-veiligheid.uk.md) · [🇳🇱 **Nederlandse versie**](./D-account-veiligheid.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Звіт D: безпека акаунта (4.1–4.4)
 
 Гілка `werk-20261024`. Перший прохід — `agent/rapport-dg`. Цей допис закриває адмін-шлях і дірки 4.4, які лишились після нього.

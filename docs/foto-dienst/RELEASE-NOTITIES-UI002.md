@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RELEASE-NOTITIES-UI002.uk.md) · [🇳🇱 **Nederlandse versie**](./RELEASE-NOTITIES-UI002.nl.md) · [📖 Інструкція UI-002](./ІНСТРУКЦІЯ-UI002.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Release-notities UI-002 — «Фото» en «Календар» in «Мій простір»
 
 Datum: 29.10.2026 · Basis: mijn-ruimte-20261029-131639 · Migratie: 0153 · Niet uitgerold.

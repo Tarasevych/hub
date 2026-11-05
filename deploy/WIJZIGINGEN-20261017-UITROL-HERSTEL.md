@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-UITROL-HERSTEL.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261017-UITROL-HERSTEL.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Herstel van de uitrol (updates), technisch profiel en logboek — 17 oktober 2026
 
 Aanleiding: na de wijzigingen van pakket 20261017-112000 (agent grok) werkten updates vanaf de site, de pagina «Оновлення», de duur van

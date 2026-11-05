@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261029-AGENDA-KOPPELEN-EN-PAKKET.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261029-AGENDA-KOPPELEN-EN-PAKKET.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 ## Agenda: вікно «Підключити календар» + три виправлення перевірки пакетів (29.10.2026)
 
 База: гілка `huis-vnext` (= архів власника **20261028-233308** + Notities vNext 0127 + Huis vNext 0128). Міграцій цей пакет **не додає**. Production не змінено й не розгорнуто.

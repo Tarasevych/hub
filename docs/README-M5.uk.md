@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./README-M5.md)) · [🇳🇱 **Nederlandse versie**](./README-M5.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+
 # M5 Cloud Drivers — DevKit
 
 Це виключно вихідні файли/патч для розробників, НЕ пакет оновлення сайту.

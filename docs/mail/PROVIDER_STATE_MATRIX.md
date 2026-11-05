@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./PROVIDER_STATE_MATRIX.uk.md) · [🇳🇱 **Nederlandse versie**](./PROVIDER_STATE_MATRIX.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # PROVIDER STATE MATRIX — N‑21, кроки 1–3
 
 - Дата фіксації: 2026‑08‑12; OPEN‑015 повторно звірено 2026‑08‑25.

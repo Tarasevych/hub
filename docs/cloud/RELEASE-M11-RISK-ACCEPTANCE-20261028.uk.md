@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./RELEASE-M11-RISK-ACCEPTANCE-20261028.md)) · [🇳🇱 **Nederlandse versie**](./RELEASE-M11-RISK-ACCEPTANCE-20261028.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей](../../docs/INDEX.md)
+
 # Cloud Full Integration M11 — прийняття ризику випуску (28.10.2026)
 
 База: оригінальний `mijn-ruimte-20261028-131829.tar.gz`, із збереженням усіх файлів і функціональності паралельного випуску «Werkblad Blokken», з доданими M1–M11 та M11 QA fixes. 

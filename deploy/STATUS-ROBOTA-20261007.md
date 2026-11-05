@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./STATUS-ROBOTA-20261007.uk.md) · [🇳🇱 **Nederlandse versie**](./STATUS-ROBOTA-20261007.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Mijn Ruimte: що запроваджено, а що ні (стан на 07.10.2026)
 
 Робоча гілка: `feature/connectors-agent-v2` (запушена в GitHub `Tarasevych/hub`). На сервері працює реліз `20261007-091620`, коміт `aa898b5`.

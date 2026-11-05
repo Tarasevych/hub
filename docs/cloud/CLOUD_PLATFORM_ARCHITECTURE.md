@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./CLOUD_PLATFORM_ARCHITECTURE.uk.md) · [🇳🇱 **Nederlandse versie**](./CLOUD_PLATFORM_ARCHITECTURE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Cloud Platform Architecture — Workspace Functional v1
 
 ## 1. Purpose

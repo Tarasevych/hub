@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261031-ORCH-001.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261031-ORCH-001.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # ORCH-001 · Єдина система координації AI-агентів — журнал змін · wijzigingen
 
 Гілка · tak: `feature/orch-001-20261031-112355` (від `b279ccabe31a27139b337822162653ccc13b6a5a` = BRON-COMMIT заявленої встановленої версії `20261031-093842`).

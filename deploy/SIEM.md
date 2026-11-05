@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./SIEM.uk.md) · [🇳🇱 **Nederlandse versie**](./SIEM.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Журнал → ваш SIEM (етап E)
 
 Кожен запис журналу безпеки (`app.audit`) тепер має три поля контексту:

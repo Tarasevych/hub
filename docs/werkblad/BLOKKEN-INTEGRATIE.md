@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./BLOKKEN-INTEGRATIE.uk.md) · [🇳🇱 **Nederlandse versie**](./BLOKKEN-INTEGRATIE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Werkblad «Blokken» — integratie in Werkblad v3
 
 Stand: 28-10-2026. Vlag `werkblad-blokken` (standaard **uit**; werkt alleen samen met `werkblad-v3`).

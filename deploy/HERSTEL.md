@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./HERSTEL.uk.md) · [🇳🇱 **Nederlandse versie**](./HERSTEL.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # HERSTEL — Mijn Ruimte terugzetten na verlies van de VM
 
 > Hele pc kwijt? Gebruik de **offline herstelset** (`R:\mijn-ruimte-reservekopie\herstelset\`, kopie op een

@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./INVENTARIS-UI-009.uk.md) · [🇳🇱 **Nederlandse versie**](./INVENTARIS-UI-009.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # UI-009 — Inventaris geavanceerd zoeken in Mail (fase 1, basis 131639)
 
 Bron: actuele code (geformatteerd gelezen), geen live site. Alles hieronder is uit code vastgesteld, tenzij «niet getest» staat.

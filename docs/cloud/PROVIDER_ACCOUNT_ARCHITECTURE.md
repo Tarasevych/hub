@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./PROVIDER_ACCOUNT_ARCHITECTURE.uk.md) · [🇳🇱 **Nederlandse versie**](./PROVIDER_ACCOUNT_ARCHITECTURE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Provider Account Architecture — canonical B+
 
 ## Core records

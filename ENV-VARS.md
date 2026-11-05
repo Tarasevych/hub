@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ENV-VARS.uk.md) · [🇳🇱 **Nederlandse versie**](./ENV-VARS.nl.md) · [🏠 Головна (UK)](./README.md) · [🏠 Hoofdpagina (NL)](./LEESMIJ.md) · [📚 Каталог статей / Index](./docs/INDEX.md)
+
 # Omgevingsvariabelen en geheimen
 
 Alle waarden staan op de VM in **`/etc/mijn-ruimte/geheimen.env`** (`0600 root:root` volstaat: systemd leest het als root; of `root:mijnruimte 0640`),

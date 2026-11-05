@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./TERMINAL.uk.md) · [🇳🇱 **Nederlandse versie**](./TERMINAL.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Термінал технічного профілю / Terminal van het technisch profiel (зона G, 22.10.2026)
 
 ## Українська
