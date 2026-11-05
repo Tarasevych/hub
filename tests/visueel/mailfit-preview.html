@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>MAILFIT-001 · Порожня пошта</title>
+  <style>
+    :root{color-scheme:light;--panel:#fff;--surface:#f8fafb;--surface2:#f1f5f6;--text:#16343a;--muted:#60767c;--line:#dce7e7;--accent:#08736e;--text-on-accent:#fff;--shadow:#183d3e;--focus:#0a827a;--ruimte-2:8px;--ruimte-3:12px;--ruimte-4:16px;--ruimte-5:24px;--tik-hoogte:44px;--straal-m:12px;--straal-l:14px;--schaduw-2:0 7px 23px #153d3d20}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100dvh;font:16px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);background:#f5f7f8}
+    .mailfit-shell{width:100%;padding:0 clamp(10px,2.2vw,32px) 20px}
+    .mailfit-head{height:65px;display:flex;align-items:center;gap:12px;color:var(--accent);font-size:15px;font-weight:760}
+    .mailfit-head span{color:var(--muted);font-size:12px;font-weight:500}
+    .mailfit-dock{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:1000;width:180px;height:46px;border-radius:999px;background:color-mix(in srgb,var(--panel) 93%,transparent);border:1px solid var(--line);box-shadow:0 8px 24px #153d3d26;pointer-events:none}
+    @media(max-width:620px){.mailfit-shell{padding-inline:8px}.mailfit-head{height:52px}.mailfit-dock{bottom:0;left:0;transform:none;width:100%;height:58px;border-radius:20px 20px 0 0}}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="/canonical-service.js"></script>
+  <script type="module" src="/tests/visueel/mailfit-preview.tsx"></script>
+</body>
+</html>

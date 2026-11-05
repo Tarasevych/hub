@@ -354,7 +354,7 @@ with tarfile.open(pakket, "r:gz") as tf:
         totaal += m.size
         if totaal > maxb * 4:
             sys.exit("uitgepakt te groot")
-    tf.extractall(doel, members=leden, filter="data")
+    tf.extractall(doel, members=leden, **({"filter": "data"} if hasattr(tarfile, "data_filter") else {}))
 PY
 then
   weiger INHOUD_ONVEILIG "Архів містить недозволені елементи (посилання, пристрої, шляхи поза текою)." "Het archief bevat niet-toegestane onderdelen (links, apparaten, paden buiten de map): $(tail -c 200 "$WERK/tar.log" | tr '\n' ' ')"

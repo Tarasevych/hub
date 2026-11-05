@@ -6,6 +6,9 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+const binPad = resolve('node_modules/.bin');
+if (process.env.PATH && !process.env.PATH.split(':').includes(binPad)) process.env.PATH = `${binPad}:${process.env.PATH}`;
+
 // Binnen de repo (node_modules moet resolvebaar zijn); rapporten/ staat in .gitignore.
 const filter = process.argv[2] || '';
 // Een exacte bestandsnaam (eindigt op .test.ts) matcht alleen dat bestand. Zo matcht «beleid.test.ts» niet ook «ai-beleid.test.ts»:
