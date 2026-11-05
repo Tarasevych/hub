@@ -1,0 +1,113 @@
+{
+    "schema":  1,
+    "taakId":  "PRIVACY-001",
+    "datum":  "2026-11-04",
+    "taal":  "uk",
+    "opdracht":  "Прибрати персональні дані з публічного репозиторію (код, тести, CI, документація, правила, журнали, історія), прибрати адреси сервера з коду й скриптів, зробити так, щоб скрипти й сайт брали дані з конфігурації сервера, і підготувати архів для встановлення через сайт.",
+    "herkomst":  {
+                     "eigenaar":  "eigenaar",
+                     "agent":  "claude",
+                     "basis":  "3095e5fcf49ed5ebe3bc464d1d5884c5139723bd",
+                     "tak":  "release/persoonsgegevens-20261104-164147",
+                     "voorafgaand":  "fix/persoonsgegevens-uit-code-20261104 (eerste poging zonder herschrijving van de historie)",
+                     "concept":  false
+                 },
+    "tijdlijn":  [
+                     {
+                         "volgorde":  1,
+                         "stap":  "Персональні дані в коді, тестах, CI, документації, правилах та журналах знайдено сканом по всіх гілках і тегах (alleen lezen)."
+                     },
+                     {
+                         "volgorde":  2,
+                         "stap":  "Юридичні сторінки переведено на серверну конфігурацію (MR_EIGENAAR_NAAM, MR_CONTACT_EMAIL); без waarde tonen ze neutrale tekst."
+                     },
+                     {
+                         "volgorde":  3,
+                         "stap":  "Beheersubnet van de HA-beveiliging uit MR_BEHEERSUBNET (standaard 10.0.0.0/8, faalt dicht)."
+                     },
+                     {
+                         "volgorde":  4,
+                         "stap":  "Adminscripts lezen het SSH-doel uit MR_VM_SSH of de alias mijn-ruimte-vm; nieuwe-vm-maken krijgt PcIp en NatNet als parameters."
+                     },
+                     {
+                         "volgorde":  5,
+                         "stap":  "Serveradressen in documentatie en regels vervangen door plaatshouders (\u003cVM-IP\u003e, \u003cPC-IP\u003e, \u003cbeheersubnet\u003e)."
+                     },
+                     {
+                         "volgorde":  6,
+                         "stap":  "Geschiedenis van alle takken en tags herschreven: persoonsgegevens vervangen door fictieve waarden; alle 570 commits behouden; mapping oud naar nieuw bewaard in een lokale back-up."
+                     },
+                     {
+                         "volgorde":  7,
+                         "stap":  "Regels: B-010, regelsVersie 1.4.3; regels.lock.json vergrendeld en CONTEXT-COMPACT.md opnieuw gegenereerd."
+                     },
+                     {
+                         "volgorde":  8,
+                         "stap":  "Controles: typecheck van de server en de relevante eenheidstests; vergelijking met de basis voor regressies."
+                     }
+                 ],
+    "keuzes":  [
+                   {
+                       "keuze":  "Naam en contact van de eigenaar komen uit de serveromgeving, niet uit de code.",
+                       "reden":  "Een publieke pagina mag alleen tonen wat de server bewust toont, en de code bevat niets persoonlijks."
+                   },
+                   {
+                       "keuze":  "Beheersubnet voor HA-beveiliging uit MR_BEHEERSUBNET met standaard 10.0.0.0/8.",
+                       "reden":  "Faalt dicht: zonder configuratie blijft het beheernetwerk geblokkeerd."
+                   },
+                   {
+                       "keuze":  "Geschiedenis herschreven met force-push, na akkoord van de eigenaar.",
+                       "reden":  "Persoonsgegevens moeten uit de publieke historie. Oude SHA-verwijzingen worden via de mapping gekoppeld."
+                   }
+               ],
+    "wijzigingen":  [
+                        "backend/juridisch.ts",
+                        "backend/huis-adapter-thuis-assistent.ts",
+                        "tests/ (documentatieadressen, MR_BEHEERSUBNET)",
+                        "scripts/rooktest-lokaal.mjs",
+                        "scripts/google-login-instellen.ps1",
+                        "deploy/herstelset/*.ps1",
+                        "deploy/reservekopie-ophalen.ps1",
+                        "deploy/agent/agent.mjs",
+                        ".github/workflows/*.yml",
+                        "ENV-VARS.md",
+                        "AGENTS.md",
+                        "orchestratie/BESLUITEN.md (B-010)",
+                        "orchestratie/beleid.json (1.4.3)",
+                        "orchestratie/regels.lock.json",
+                        "orchestratie/CONTEXT-COMPACT.md",
+                        "documentatie (placeholders)"
+                    ],
+    "controles":  [
+                      {
+                          "status":  "bevestigd",
+                          "resultaat":  "typecheck:server: exit 0"
+                      },
+                      {
+                          "status":  "bevestigd",
+                          "resultaat":  "eenheidstests: juridisch 9/9, sec-001 29/29, geheimen 7/7, uitgave-info 7/7, uitrol-manifest 18/18"
+                      },
+                      {
+                          "status":  "niet uitgevoerd",
+                          "resultaat":  "huis-vnext en mail-accounts vereisen DATABASE_URL; server-beheer (gitops) faalt op Windows-bash; toegankelijk-mail faalt ook op de basis"
+                      },
+                      {
+                          "status":  "bevestigd",
+                          "resultaat":  "orch controleer: exit 0, regelsVersie 1.4.3"
+                      }
+                  ],
+    "bronnen":  [
+                    "Lokale back-up van alle refs vóór het herschrijven (buiten de repository)"
+                ],
+    "beperkingen":  [
+                        "De live-site verandert pas na installatie van dit pakket.",
+                        "MR_EIGENAAR_NAAM en MR_CONTACT_EMAIL moeten door de eigenaar op de server gezet worden; zonder waarden tonen de pagina\u0027s neutrale tekst.",
+                        "Verwijzingen naar oude commit-SHA\u0027s werken niet meer op GitHub; de mapping oud-naar-nieuw staat in de back-up.",
+                        "Adressen op het eigen domein voor dienstdoeleinden en de accountnaam in URL\u0027s blijven staan.",
+                        "Rooktest en database-afhankelijke tests niet gedraaid (vereisen een database)."
+                    ],
+    "privacy":  {
+                    "geheimenUitgesloten":  true,
+                    "onderbouwing":  "Geen wachtwoorden, sleutels of persoonsgegevens in dit journaal; alleen beschrijvingen en fictieve voorbeelden."
+                }
+}

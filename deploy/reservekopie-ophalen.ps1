@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   Haalt de nieuwste VERSLEUTELDE back-up van mijn-ruimte-webserver op naar R:\ (pull-model).
 
@@ -20,7 +20,7 @@
 #>
 [CmdletBinding()]
 param(
-  [string]$Vm = 'beheer@203.0.113.10',
+  [string]$Vm = $(if ($env:MR_VM_SSH) { $env:MR_VM_SSH } else { 'beheer@mijn-ruimte-vm' }),
   [string]$Sleutel = 'T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver',
   [string]$BronMap = '/srv/backups/mijn-ruimte',
   [string]$Doel = 'R:\mijn-ruimte-reservekopie\vm-back-ups',

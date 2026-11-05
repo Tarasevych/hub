@@ -41,8 +41,8 @@ git checkout feature/connectors-agent-v2
 2. Зашифровані файли сервера (конфіги, секрети, код релізу, overlay, юніти) повертаються з ПК потоком, без проміжної розшифровки на диск:
 ```powershell
 $age='T:\mijn-ruimte\hulpmiddelen\age\age\age.exe'; $sl='<шлях до herstelsleutel-age.txt>'; $k='T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver'
-cmd /c "$age -d -i $sl 03-server\server-bestanden.tar.age | ssh -i $k beheer@203.0.113.10 sudo -n tar -xpf - -C /"
-ssh -i $k beheer@203.0.113.10 sudo -n systemctl daemon-reload
+cmd /c "$age -d -i $sl 03-server\server-bestanden.tar.age | ssh -i $k beheer@<VM-IP> sudo -n tar -xpf - -C /"
+ssh -i $k beheer@<VM-IP> sudo -n systemctl daemon-reload
 ```
 3. База й завантаження з `03-server\vm-back-up-<мітка>\` за кроком 5 з `HERSTEL.md` (`database.dump.age`, `uploads.tar.gz.age`).
 4. `sudo systemctl start mijn-ruimte 'mijn-ruimte-*.timer'`, перевірка `curl http://127.0.0.1:8080/__gezondheid` → `ok:true`.

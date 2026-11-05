@@ -6,7 +6,7 @@ Doel: de release met de audit-fixes (A1–A10, zie `SECURITY-NOTES.md` §3d) uit
 terugweg. Deze release bevat ook alles van fase 2 + 3 (`RUNBOOK-FASE-2-3.md`); is die nog niet live, dan lopen
 bij stap 3 ook de migraties 0003–0006 mee en geldt daarnaast §0 (pg_hba) en §4–9 van dat runbook.
 
-Alle opdrachten als `root` op de VM (`ssh … beheer@203.0.113.10`, daarna `sudo -i`). Nooit waarden van
+Alle opdrachten als `root` op de VM (`ssh … beheer@<VM-IP>`, daarna `sudo -i`). Nooit waarden van
 geheimen tonen of kopiëren (`cat geheimen.env` niet doen; de scripts tonen alleen namen en lengtes).
 Tijden in de logs zijn UTC tenzij anders vermeld.
 
@@ -38,7 +38,7 @@ verificatie.** Terugdraaien: §9 (eerst `env-samenvoegen`!).
 
 Op de pc (of waar de tarball staat):
 ```
-scp mijn-ruimte-beveiliging-fixes-audit-<stempel>-<sha>.tar.gz{,.sha256} beheer@203.0.113.10:/tmp/
+scp mijn-ruimte-beveiliging-fixes-audit-<stempel>-<sha>.tar.gz{,.sha256} beheer@<VM-IP>:/tmp/
 ```
 Op de VM:
 ```

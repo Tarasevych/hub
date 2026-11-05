@@ -137,8 +137,8 @@ jobs:
           };
           const manifest={schema:1,versie,aangemaakt:new Date().toISOString(),
             herkomst:'git: feature/mailmob-001-20261104-073200@'+sha+' (basis 20261103-211554 a643431743eb1e7e64947bf747018aac55d69750)',
-            auteur:'Eigenaar Test',zonderAi:false,
-            deelnemers:[{soort:'mens',naam:'Eigenaar Test',rollen:['auteur','controle']},
+            auteur:'eigenaar',zonderAi:false,
+            deelnemers:[{soort:'mens',naam:'eigenaar',rollen:['auteur','controle']},
               {soort:'ai',naam:'ChatGPT',platform:'ChatGPT/Codex',tool:'GitHub connector en GitHub Actions',
                 model:{id:'gpt-6',versie:null,bron:'omgeving'},rollen:['ontwikkeling','testen','verpakken']}],
             beschrijving:texts};
@@ -158,7 +158,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/orch.mjs pakket \
-            --taak MAILMOB-001 --auteur 'Eigenaar Test' --agent codex \
+            --taak MAILMOB-001 --auteur 'eigenaar' --agent codex \
             --versie "$RELEASE_VERSION" \
             --manifest "$PWD/uitvoer/MAILMOB-001-UITROL-MANIFEST.json" \
             --testresultaten "$PWD/uitvoer/MAILMOB-001-TESTRESULTATEN.json" \

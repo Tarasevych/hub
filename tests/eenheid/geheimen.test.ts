@@ -33,7 +33,7 @@ export async function main(): Promise<number> {
   const j = [ev('3', 'K1', 'getoond', 3000), ev('2', 'K2', 'aangemaakt', 2000, 'u2'), ev('1', 'K1', 'aangemaakt', 1000)];
   check('journaal: laatste per naam, filter op actie/wie/datum/zoek', laatstePerNaam(j).get('K1')?.id === '3' && filterJournaal(j, { ...standaardJournaal, actie: 'aangemaakt' }).length === 2
     && filterJournaal(j, { ...standaardJournaal, wie: 'u2' }).length === 1 && filterJournaal(j, { ...standaardJournaal, zoek: 'k2' }).length === 1 && filterJournaal(j, { ...standaardJournaal, van: '2100-01-01' }).length === 0);
-  check('initialen en foutteksten (NL + UK, onbekende code blijft zichtbaar)', initialen('Eigenaar Test', '') === 'PT' && initialen('', 'a@b.c') === 'A' && /passkey/.test(foutTekst('STEP_UP_STRONG_REQUIRED', 'nl')) && /скасовано/.test(foutTekst('STEP_UP_STRONG_REQUIRED', 'uk')) && foutTekst('IETS_RAARS', 'nl') === 'IETS_RAARS');
+  check('initialen en foutteksten (NL + UK, onbekende code blijft zichtbaar)', initialen('Eigenaar Test', '') === 'ET' && initialen('', 'a@b.c') === 'A' && /passkey/.test(foutTekst('STEP_UP_STRONG_REQUIRED', 'nl')) && /скасовано/.test(foutTekst('STEP_UP_STRONG_REQUIRED', 'uk')) && foutTekst('IETS_RAARS', 'nl') === 'IETS_RAARS');
 
   // ------------------------------------------------------------------ routes (echte database, echte versleuteling, echte step-up)
   if (!process.env.OWNER_VAULT_ENCRYPTION_KEY_V1 || (!process.env.DATABASE_URL_SYSTEM && !process.env.DATABASE_URL)) { console.log('OVERGESLAGEN routes: geen database of kluissleutel'); return einde(); }

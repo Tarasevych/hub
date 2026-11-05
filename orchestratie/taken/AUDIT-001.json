@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "AUDIT-001",
+  "agent": "antigravity",
+  "tak": "audit/audit-2026-11-05-20261105-070523",
+  "basisCommit": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+  "basisVersie": "20261104-204906",
+  "regelsVersie": "1.4.8",
+  "regelsHash": "4982a354ae2117208c63d750cb08fe534e42c8321cad2ded981c8730d48b028a",
+  "staat": "in_progress",
+  "gestart": "2026-11-05T07:10:49.603Z",
+  "bijgewerkt": "2026-11-05T07:10:49.605Z",
+  "omschrijving": "Виправлення проблем аудиту 2026-11-05 та безконфліктна інтеграція PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

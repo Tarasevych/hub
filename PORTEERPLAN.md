@@ -525,7 +525,7 @@ Handoff gebonden aan de aanmakende browser (`tsv_handoff_binding`), herstelcode 
 Zie `SECURITY-NOTES.md` §3 (punten 14 en 15). Tests: rooktest 47/47, eenheidstests 19/19, browsertest 10/10.
 
 ### 10.7 Eerste uitrol op de VM (3 okt 2026, commit `0b32ecd`, release `20261003-115704`)
-VM `mijn-ruimte-webserver` (203.0.113.10): `installeer-app.sh inrichten` + `installeren`, geheimen op de VM gegenereerd
+VM `mijn-ruimte-webserver` (<VM-IP>): `installeer-app.sh inrichten` + `installeren`, geheimen op de VM gegenereerd
 (`geheimen-aanvullen.sh`), dashboard in `/srv/mijn-ruimte/dashboard`, dienst + vier timers actief, back-up getest
 (incl. proefherstel). Alleen `127.0.0.1:8080` nieuw; ufw ongewijzigd. Tijdens de uitrol gevonden en opgelost:
 vite-build OOM op 2 GB RAM (build nu in een cgroup met geheugenplafond), zelfverwijzende `current`-symlink bij de

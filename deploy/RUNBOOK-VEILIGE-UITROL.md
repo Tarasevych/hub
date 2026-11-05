@@ -229,8 +229,8 @@ Resultaat: `mijn-ruimte-<versie>.tar.gz`, `.tar.gz.sig`, `mijn-ruimte-<versie>.t
 
 **B. Via SSH (zonder Grok)**:
 ```bash
-scp mijn-ruimte-<versie>.tar.gz{,.sig} beheer@203.0.113.10:/tmp/
-ssh beheer@203.0.113.10
+scp mijn-ruimte-<versie>.tar.gz{,.sig} beheer@<VM-IP>:/tmp/
+ssh beheer@<VM-IP>
 sudo install -o mijnruimte -g mijnruimte -m 0640 /tmp/mijn-ruimte-<versie>.tar.gz{,.sig} /srv/mijn-ruimte/uitrol-inbox/
 sudo -u mijnruimte touch /srv/mijn-ruimte/uitrol-inbox/aanvraag
 journalctl -fu mijn-ruimte-uitrol.service
@@ -310,7 +310,7 @@ of `systemctl disable --now mijn-ruimte-gitops.timer mijn-ruimte-uitrol.path` en
    De oude directe knop (methode 3, alleen als `"opdracht": {"terugdraaien": true}`) bestaat nog, maar is niet meer nodig.
 3. **Via SSH**:
    ```bash
-   ssh beheer@203.0.113.10
+   ssh beheer@<VM-IP>
    sudo /usr/local/sbin/mijn-ruimte-installeer terugdraaien              # vorige release
    sudo /usr/local/sbin/mijn-ruimte-installeer terugdraaien 20261008-193000   # of een genoemde release
    sudo /usr/local/sbin/mijn-ruimte-installeer lijst
@@ -414,7 +414,7 @@ Daarna roept de app `sudo -n /usr/local/sbin/mijn-ruimte-opdracht <werkwoord>` a
 De eerste keer gaat via SSH (het oude root-pad bestaat dan nog en wordt door deze installatie weggezet):
 
 ```bash
-ssh beheer@203.0.113.10
+ssh beheer@<VM-IP>
 # 0. vooraf: back-up en polkit
 sudo systemctl start mijn-ruimte-backup.service
 pkaction --version || sudo apt install -y polkitd
@@ -474,7 +474,7 @@ mijn-ruimte-goedkeuring.path (root) → mijn-ruimte-uitrol --goedkeuring
 ### 13.2 Eenmalig: installeren en de eerste passkey (bootstrap)
 
 ```bash
-ssh beheer@203.0.113.10
+ssh beheer@<VM-IP>
 sudo git clone --branch aanmeldmethoden https://github.com/Tarasevych/hub.git /root/hub-passkey && cd /root/hub-passkey && git log -1
 sudo bash deploy/installeer-app.sh installeren /root/hub-passkey        # migraties 0022-0023, units, hulp, leeg sleutelbestand (rpId tarasevych.com)
 systemctl status mijn-ruimte-goedkeuring.path mijn-ruimte-goedkeur-sleutels.path --no-pager
@@ -1266,7 +1266,7 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
 1. Werkkopie van de coördinatie (de installer maakt die bewust niet: hij heeft geen sleutel en hoort die niet te hebben):
    ```bash
    sudo -u mijnruimte git clone --branch integratie git@github.com:Tarasevych/hub.git /srv/mijn-ruimte/orch-repo
-   sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.name "Mijn Ruimte orch" && sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.email "orch@tarasevych.com"
+   sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.name "Mijn Ruimte orch" && sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.email "<orch-adres>"
    ```
    Gebruik een **deploy key met schrijfrecht** (GitHub → repo → Settings → Deploy keys) voor de gebruiker `mijnruimte`, nooit de persoonlijke
    sleutel van de eigenaar. Zonder schrijfrecht blijft alles werken, maar de tak `regels/*` blijft op de server staan (`gepusht: false`,

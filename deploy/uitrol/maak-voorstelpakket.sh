@@ -86,7 +86,7 @@ PY
 )"
 fi
 if [ -z "$ZONDER_GIT" ]; then
-  git archive --format=tar.gz --prefix="mijn-ruimte-$versie/" \
+  git -c core.autocrlf=false archive --format=tar.gz --prefix="mijn-ruimte-$versie/" \
     --add-virtual-file="mijn-ruimte-$versie/UITROL-VERSIE:$versie" \
     --add-virtual-file="mijn-ruimte-$versie/BRON-COMMIT:$commit" \
     --add-virtual-file="mijn-ruimte-$versie/AUTEUR:$AUTEUR" \
@@ -114,8 +114,8 @@ sha="$(sha256sum "$doel" 2>/dev/null | sed 's/^\\//' | cut -d' ' -f1 || shasum -
 if [ -n "$ZONDER_GIT" ]; then
   wijzigingen="- (buiten git: $ZONDER_GIT) $SAMENVATTING"; diff=""
 elif git rev-parse --verify -q "$basis" >/dev/null; then
-  wijzigingen="$(git log --no-merges --format='- %h %s' "$basis..HEAD" | head -c 7900)"
-  diff="$(git diff --stat "$basis..HEAD" | tail -n 60 | head -c 7900)"
+  wijzigingen="$(git log --no-merges --format='- %h %s' "$basis..HEAD" | head -c 7900 || true)"
+  diff="$(git diff --stat "$basis..HEAD" | tail -n 60 | head -c 7900 || true)"
 else
   wijzigingen="$(git log -1 --format='- %h %s')"; diff=""
 fi

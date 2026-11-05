@@ -50,6 +50,7 @@ function verzoek(method, host, path, body, extraHeaders = {}) {
     req.on('error', reject); if (payload) req.write(payload); req.end();
   });
 }
+const ROOKTEST_TEL = process.env.ROOKTEST_TELEFOON || '+31 6 12345678'; // fictief standaardnummer; echt nummer alleen via omgeving
 const api = (host, path, body, cookie) => verzoek('POST', host, path, body, cookie ? { cookie } : {});
 
 
@@ -229,12 +230,12 @@ try {
 
   // B4b. Fase 3: step-up, telefoon 'pending', ontkoppelen = 7 dagen terug te zetten, TOTP uitzetten vereist code.
   {
-    let t = await api('id.tarasevych.com', '/api/owner/access/phone/save', { ...idBody(), phone: '+31 6 12345678' }, c1);
+    let t = await api('id.tarasevych.com', '/api/owner/access/phone/save', { ...idBody(), phone: ROOKTEST_TEL }, c1);
     check('step-up: telefoon opslaan zonder verse aanmelding → 403 STEP_UP_REQUIRED', t.status === 403 && t.data?.error === 'STEP_UP_REQUIRED', `${t.status} ${t.data?.error || ''}`);
     const stapFout = await api('id.tarasevych.com', '/api/owner/access/stap-op', { ...idBody(), code: '000000' }, c1);
     // Verse Google-aanmelding nabootsen (de zaaisessie is net gemaakt).
     await pool.query("insert into app.records (tbl,id,data) values ('owner_step_up_v1', gen_random_uuid()::text, $1)", [{ userId: eigenaar, googleAt: Date.now(), sessies: {}, updatedAt: Date.now() }]);
-    t = await api('id.tarasevych.com', '/api/owner/access/phone/save', { ...idBody(), phone: '+31 6 12345678' }, c1);
+    t = await api('id.tarasevych.com', '/api/owner/access/phone/save', { ...idBody(), phone: ROOKTEST_TEL }, c1);
     const telMethode = (t.data?.methods || []).find(m => m.id === 'phone');
     check('telefoon na step-up opgeslagen maar "pending" (telt niet als aanmeldmethode); stap-op met foute code 400', t.status === 200 && t.data?.phone?.pending === true && telMethode?.bound === false && (telMethode?.status === 'pending' || telMethode?.enabled === false) && stapFout.status === 400, `${t.status} ${t.data?.error || ''} ${JSON.stringify(telMethode)} stap-op ${stapFout.status}`);
     const usableVoor = t.data?.usableCount;

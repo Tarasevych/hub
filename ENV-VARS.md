@@ -207,3 +207,14 @@ chown root:mijnruimte /etc/mijn-ruimte/geheimen.env && chmod 0640 /etc/mijn-ruim
   Alleen voor tests en de stand; op de server gelden de vaste paden. Het root-script zelf (`mijn-ruimte-besluit`) leest `BESLUIT_*`
   (`BESLUIT_WERK`, `BESLUIT_STATUS`, `BESLUIT_RECHTEN`, `BESLUIT_PASSKEY`, `BESLUIT_INSTALLEER`, `BESLUIT_GROEP`, `BESLUIT_WACHT_TERUG`)
   uitsluitend buiten root en alleen met paden onder /tmp.
+
+## Eigenaarsgegevens op publieke pagina's (`/privacy`, `/terms`)
+
+Deze gegevens staan **niet** in de code of in de repository. Zet ze in `/etc/mijn-ruimte/geheimen.env` en herstart de dienst.
+
+| Variabele | Doel | Zonder waarde |
+|---|---|---|
+| `MR_EIGENAAR_NAAM` | naam van de verwerkingsverantwoordelijke op de juridische pagina's | toont «власник / eigenaar» |
+| `MR_CONTACT_EMAIL` | contactadres op de juridische pagina's | toont «op aanvraag / op aanvraag» (geen adres) |
+
+Voor de lokale rooktest (`scripts/rooktest-lokaal.mjs`): `ROOKTEST_TELEFOON` (optioneel; zonder waarde een fictief nummer).
