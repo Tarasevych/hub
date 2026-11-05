@@ -12,7 +12,7 @@
 //          import { genereer } from './zoek-ui-catalogus.mjs' (test)
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync, writeFileSync, existsSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import ts from 'typescript';
 
 export const UITVOER = 'shared/zoek-ui-knoppen.generated.ts';
@@ -45,6 +45,11 @@ export const PLEKKEN = [
   ['agenten/TabOrch', 'mcp', 'agents', 'technisch'] /* ORCH-001: «Координація» — alleen eigenaar op mcp.* */,
   // «Підключення ШІ» (hub, 19.10.2026) leeft op mcp.*/agents (McpDienstWeergave → McpAgentsHub, voor iedereen). ai.*/agents toont
   // alleen een verwijzing erheen (AIDienstWeergave → AiOnderdeel); tot 05.11.2026 stuurde de catalogus 160+ elementen daarheen.
+  // Twee delen van agenten/ leven NIET in de hub maar in de beheerconsole (BeheerAiBeleidWeergave → admin/ai, ook in UitrolMeester).
+  ['agenten/AgentStandLijst', 'admin', 'ai', 'technisch'], ['agenten/NamensSessies', 'admin', 'ai', 'technisch'],
+  // Het tabblad «Технічне» van de hub toont deze alleen met een ACTIEF technisch profiel (TabTechnisch → techActief).
+  ['agenten/RuimteScheiding', 'mcp', 'agents', 'technisch'], ['agenten/TechVerbindingen', 'mcp', 'agents', 'technisch'],
+  ['agenten/SiteSchakelaars', 'mcp', 'agents', 'technisch'],
   ['agenten/', 'mcp', 'agents', 'iedereen'], ['connector-v2/', 'mcp', 'agents', 'iedereen'], ['ai-bevestiging/', 'mcp', 'agents', 'iedereen'],
   ['extensie/', 'mcp', 'agents', 'iedereen'], ['McpAgentenHub', 'mcp', 'agents', 'iedereen'], ['McpConnectorPaneel', 'mcp', 'agents', 'iedereen'],
   ['McpToestemmingVenster', 'mcp', 'agents', 'iedereen'], ['AgentenPaneel', 'mcp', 'agents', 'iedereen'], ['AgentInrichtingWizard', 'mcp', 'agents', 'iedereen'],
@@ -61,9 +66,9 @@ export const PLEKKEN = [
   ['audit/', 'admin', 'audit', 'technisch'], ['integraties/', 'admin', 'directories', 'technisch'], ['merk/', 'admin', 'directories', 'technisch'],
   ['impersonatie/', 'admin', 'access', 'technisch'], ['ondersteuning/', 'admin', 'access', 'technisch'], ['beveiliging/', 'admin', 'access', 'technisch'],
   ['ApiPlatformWeergave', 'api', 'access', 'technisch'], ['KluisMeta', 'api', 'vault', 'technisch'],
-  ['McpDienstWeergave', 'mcp', 'dashboard', 'technisch'], ['McpAppsWeergave', 'mcp', 'apps', 'technisch'], ['McpBackupsKaart', 'mcp', 'dashboard', 'technisch'],
+  ['McpDienstWeergave', 'mcp', 'dashboard', 'technisch'], ['McpAppsWeergave', 'mcp', 'apps', 'technisch'], ['McpBackupsKaart', 'mcp', 'download', 'technisch'] /* alleen op download (McpDienstWeergave) */,
   ['McpServerBeheerKaart', 'mcp', 'dashboard', 'technisch'], ['McpHulpmiddelenPaneel', 'mcp', 'tools', 'technisch'], ['mcp-ui', 'mcp', 'dashboard', 'technisch'],
-  ['ServerKoppelen', 'mcp', 'connect', 'technisch'],
+  ['ServerKoppelen', 'mcp', 'apps', 'technisch'] /* McpAppsWeergave → «Підключити цей сервер»; mcp/connect stuurt door naar agents */,
 ];
 
 const PAAR = String.raw`(?:tr|t|text|txt|vertaal)\(\s*(?:(?:p\.)?lang\s*,\s*|taal\s*,\s*)?(['"])((?:(?!\1)[^\\\n]|\\.){2,140})\1\s*,\s*(['"])((?:(?!\3)[^\\\n]|\\.){2,140})\3\s*\)`;
@@ -503,9 +508,12 @@ function tabStructuur(src, tabs) {
   return { ALLE, gebieden, bindingen, verwijzingen, objecten, tekst };
 }
 
-/** Maakt `i → tabblad` voor één bestand (leeg = geen eenduidig tabblad uit de bron). */
+/**
+ * Maakt `i → { hint, mogelijk }` voor één bestand: `hint` = het ene mogelijke tabblad ('' als er geen eenduidig is), `mogelijk` = de
+ * mogelijke tabbladen in de volgorde van het menu, alleen als de bron ze vernauwt (anders null: alles kan).
+ */
 function tabHintVoor(src, bestand, tabs, { zonderGeheugen = false } = {}) {
-  if (!tabs?.length || !/\btab\b/.test(src)) return () => '';
+  if (!tabs?.length || !/\btab\b/.test(src)) return () => ({ hint: '', mogelijk: null });
   const { ALLE, gebieden, bindingen, verwijzingen, objecten, tekst } = tabStructuur(src, tabs);
   const kleinste = (lijst, i) => { let b = null; for (const x of lijst) if (x.van <= i && i < x.tot && (!b || x.tot - x.van < b.tot - b.van)) b = x; return b; };
   const eigen = [...bindingen].map(([sleutel, b], nr) => ({ sleutel, nr, ...b }));
@@ -549,15 +557,19 @@ function tabHintVoor(src, bestand, tabs, { zonderGeheugen = false } = {}) {
     kring = kring || buiten;
     return uit;
   };
-  return (i) => { const S = mogelijk(i, new Set()); return S.size === 1 ? [...S][0] : ''; };
+  return (i) => {
+    const S = mogelijk(i, new Set());
+    return { hint: S.size === 1 ? [...S][0] : '', mogelijk: S.size < ALLE.size ? tabs.filter((v) => S.has(v)) : null };
+  };
 }
 
 export function elementenUit(src, bestand, tabs = [], opties = {}) {
   const uit = [];
   const tabHint = tabHintVoor(src, bestand, tabs, opties);
+  const tabVan = (i) => { const r = tabHint(i); return { tabHint: r.hint, ...(r.mogelijk ? { mogelijkeTabs: r.mogelijk } : {}) }; };
   const secties = koppen(src);
   const sectieBij = (i) => { let s = null; for (const k of secties) { if (k.i >= i) break; if (i < k.tot) s = k; } return s?.wisselend ? null : s; };
-  for (const k of secties) if (!GENERIEK.has(k.uk.toLowerCase())) uit.push({ soort: 'sectie', uk: k.uk, nl: k.nl, sectie: null, bestand, tabHint: tabHint(k.i) });
+  for (const k of secties) if (!GENERIEK.has(k.uk.toLowerCase())) uit.push({ soort: 'sectie', uk: k.uk, nl: k.nl, sectie: null, bestand, ...tabVan(k.i) });
   const re = /<button\b/g; let m;
   while ((m = re.exec(src))) {
     const e = tagEinde(src, m.index); if (e < 0) continue;
@@ -568,7 +580,7 @@ export function elementenUit(src, bestand, tabs = [], opties = {}) {
     if (!p) continue;
     if (GENERIEK.has(p.uk.toLowerCase())) continue;
     const s = sectieBij(m.index);
-    uit.push({ soort: 'knop', ...p, sectie: s ? { uk: s.uk, nl: s.nl } : null, bestand, ...(hulp ? { hulp } : {}), tabHint: tabHint(m.index) });
+    uit.push({ soort: 'knop', ...p, sectie: s ? { uk: s.uk, nl: s.nl } : null, bestand, ...(hulp ? { hulp } : {}), ...tabVan(m.index) });
   }
   // Tabbladen met een eigen hash-adres (src/agenten/AgentenPagina.tsx → tabInfo: { overzicht: { uk, nl, icoon } … }).
   if (/agenten\/AgentenPagina\.tsx$/.test(bestand)) {
@@ -585,6 +597,59 @@ export function elementenUit(src, bestand, tabs = [], opties = {}) {
     if (p && !GENERIEK.has(p.uk.toLowerCase())) uit.push({ soort: 'dialoog', ...p, sectie: null, bestand });
   }
   return uit;
+}
+
+/**
+ * Tabbladen die ALTIJD doorsturen en dus nooit zelf iets tonen. mcp.*: overview, connect en verbindingen gaan voor iedereen naar
+ * agents (shared/ai-agent-bord.ts → mcpIngang: NAAR_HUB en verbindingen → #technisch; McpDienstWeergave stopt dan met een vroege
+ * return). Wat alleen daar staat, kan de zoeker niet laten zien. tests/eenheid/zoek-ui-bereik-20261105.test.ts toetst deze lijst
+ * tegen mcpIngang zelf.
+ */
+export const DOORSTUREND = Object.freeze({ mcp: Object.freeze(['overview', 'connect', 'verbindingen']) });
+
+/**
+ * Het tabblad waar de zoeker heen gaat; null = het element is nergens te zien (dan niet in de catalogus).
+ *   • niets bekend (de bron vernauwt niet) → de eenduidige hint of anders de bestandsregel `standaard`;
+ *   • na aftrek van doorsturende tabbladen precies één mogelijk → dat;
+ *   • meerdere mogelijk → de bestandsregel als die erbij is, anders het eerste in de volgorde van het menu. Vroeger (tot 05.11.2026)
+ *     altijd de bestandsregel, ook waar het element niet kan staan: «Відкрити» en de Google-accounts van de cloud stonden op
+ *     «Огляд», terwijl ze alleen op «Акаунти» / «Пошук» / «Недавні» … verschijnen;
+ *   • alleen doorsturende tabbladen mogelijk → null (bv. de takken section==='overview'/'connect' van McpDienstWeergave);
+ *   • geen enkel tabblad mogelijk (de bron noemt alleen onbekende tabbladen) → de bestandsregel, voorzichtig zoals vroeger.
+ */
+export function kiesTabblad(el, standaard, dood = []) {
+  const m = el.mogelijkeTabs;
+  if (!m || !m.length) return el.tabHint && !dood.includes(el.tabHint) ? el.tabHint : standaard;
+  const levend = m.filter((v) => !dood.includes(v));
+  if (!levend.length) return null;
+  if (levend.length === 1) return levend[0];
+  return levend.includes(standaard) ? standaard : levend[0];
+}
+
+/**
+ * Bronbestanden die de site werkelijk laadt: alles wat vanaf src/main.tsx (de enige ingang, index.html) via `import … from`,
+ * `export … from`, `import '…'` of `import('…')` bereikbaar is. Vroeger kwam elk .tsx-bestand in de catalogus, ook dode bestanden
+ * zonder één import (src/AgentenPaneel.tsx, src/McpConnectorPaneel.tsx, src/agenten/ExtensieTechAanbod.tsx …): hun knoppen
+ * bestaan op geen enkele pagina. Een import in commentaar telt ook mee — liever een bestand te veel dan een echte knop kwijt.
+ */
+export function bereikbaar(wortel = process.cwd()) {
+  const los = (map, spec) => {
+    const b = join(map, spec);
+    for (const k of [b, `${b}.tsx`, `${b}.ts`, join(b, 'index.tsx'), join(b, 'index.ts')]) if (existsSync(k) && statSync(k).isFile()) return k;
+    return null;
+  };
+  const re = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(['"])(\.{1,2}\/[^'"\n]+)\1/g;
+  const gezien = new Set();
+  const stapel = [join(wortel, 'src/main.tsx')];
+  while (stapel.length) {
+    const p = stapel.pop();
+    if (gezien.has(p)) continue;
+    gezien.add(p);
+    if (!/\.(?:tsx?|mjs|js)$/.test(p)) continue;
+    const src = readFileSync(p, 'utf8');
+    for (const m of src.matchAll(re)) { const doel = los(dirname(p), m[2]); if (doel && !gezien.has(doel)) stapel.push(doel); }
+  }
+  return gezien;
 }
 
 export function plekVan(bestand) {
@@ -629,13 +694,17 @@ const REGISTERS = [['shared/mail-acties.ts', 'mail', 'inbox', 'iedereen', 'expor
 export function genereer(wortel = process.cwd()) {
   const items = new Map();
   const perDienst = paginas(wortel);
+  const geladen = bereikbaar(wortel);
   for (const pad of tsxBestanden(join(wortel, 'src'))) {
     const bestand = relative(wortel, pad).replace(/\\/g, '/');
     const plek0 = plekVan(bestand); if (!plek0) continue;
+    if (!geladen.has(pad)) continue;   // geen enkele import: dit bestand toont de site nergens
     const src = readFileSync(pad, 'utf8');
     for (const el of elementenUit(src, bestand, perDienst[plek0.dienst] || [])) {
-      // Een expliciete tabblad-hint in de bron («tab==='accounts'» vlak vóór het element) wint van de bestandsregel.
-      const plek = el.tabHint ? { ...plek0, tab: el.tabHint } : plek0;
+      // Het tabblad uit de bron wint van de bestandsregel; alleen doorsturende tabbladen → niet zichtbaar, niet opnemen.
+      const tab = kiesTabblad(el, plek0.tab, DOORSTUREND[plek0.dienst]);
+      if (tab === null) continue;
+      const plek = { ...plek0, tab };
       const sleutel = `${plek.dienst}/${plek.tab}|${el.soort}|${el.uk}`;
       if (items.has(sleutel)) continue;   // dezelfde knop op dezelfde pagina (ander bestand): één keer
       items.set(sleutel, {

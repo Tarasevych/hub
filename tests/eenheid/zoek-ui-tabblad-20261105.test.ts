@@ -231,7 +231,8 @@ export async function main(): Promise<number> {
   const MCP = 'src/McpDienstWeergave.tsx';
   check('6i MCP (section): «Записати» → mcp/board, «Зібрати повний архів» → mcp/download',
     JSON.stringify(in_('Записати', MCP)) === '["mcp/board"]' && JSON.stringify(in_('Зібрати повний архів', MCP)) === '["mcp/download"]', `${in_('Записати', MCP)}|${in_('Зібрати повний архів', MCP)}`);
-  const hub = UI_ELEMENTEN.filter((e) => e.bestand.startsWith('src/agenten/') || e.bestand.startsWith('src/connector-v2/'));
+  // (agenten/AgentStandLijst en agenten/NamensSessies leven in de beheerconsole, admin/ai: zoek-ui-bereik-20261105, 4c)
+  const hub = UI_ELEMENTEN.filter((e) => (e.bestand.startsWith('src/agenten/') || e.bestand.startsWith('src/connector-v2/')) && !/agenten\/(?:AgentStandLijst|NamensSessies)\.tsx$/.test(e.bestand));
   check('6j hub «Підключення ШІ» (agenten/, connector-v2/) staat op mcp/agents, niets meer op ai/agents (daar staat alleen een verwijzing)',
     hub.length > 100 && hub.every((e) => e.dienst === 'mcp' && e.tab === 'agents') && !UI_ELEMENTEN.some((e) => e.dienst === 'ai' && e.tab === 'agents'), `${hub.length}`);
   return einde();
