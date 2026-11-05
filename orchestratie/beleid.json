@@ -1,17 +1,17 @@
 {
   "schema": 1,
-  "regelsVersie": "1.4.6",
-  "bijgewerkt": "2026-11-04",
+  "regelsVersie": "1.4.7",
+  "bijgewerkt": "2026-11-05",
   "regelBestanden": [
     "AGENTS.md",
     "orchestratie/beleid.json",
     "orchestratie/BESLUITEN.md"
   ],
   "basis": {
-    "versie": "20261031-093842",
-    "bronCommit": "5a023b41b2c665f130f08ba0c5004c2a286a7672",
+    "versie": "20261104-164906",
+    "bronCommit": "50e63737ddb3f7b032f8fc74dc343ed28fda0af8",
     "verificatie": "opgave_eigenaar",
-    "opmerking": "Заявлено власником 31.10.2026; незалежна звірка з production ще не виконана (агент не мав доступу до hub.tarasevych.com/api/version). Після звірки → geverifieerd_productie + запис у BESLUITEN.md."
+    "opmerking": "Версія на сервері за статусом власника 04.11.2026. Тег 20261104-164906 на GitHub вказує на 50e63737 (herschreven versie van b0d41b77 uit de oude historie). Установлювач прийме пакет лише коли laatste-commit op de server = 50e63737. Незалежна звірка з production ще не виконана (агент не мав доступу до hub.tarasevych.com/api/version). Після звірки → geverifieerd_productie + запис у BESLUITEN.md."
   },
   "integratie": {
     "tak": "integratie",

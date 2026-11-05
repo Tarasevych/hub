@@ -30,7 +30,7 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 ## 2. Перед початком роботи · Vóór je begint (обов'язково)
 
 1. Прочитай цей файл (або `orchestratie/CONTEXT-COMPACT.md`, якщо нема доступу до репозиторію) і `orchestratie/beleid.json`.
-2. База коду: `beleid.json → basis.bronCommit` (зараз `5a023b41…`, версія `20261031-093842`, статус `opgave_eigenaar` — заявлено власником, ще не звірено
+2. База коду: `beleid.json → basis.bronCommit` (зараз `50e63737…`, версія `20261104-164906`, статус `opgave_eigenaar` — заявлено власником, ще не звірено
    з production). Гілка `voornaamst` — НЕ актуальна база (лише README). Якщо маєш доступ до сайту — звір `/api/version` і зафіксуй результат у BESLUITEN.md.
 3. Зареєструй задачу: `node scripts/orch.mjs taak-start --id ORCH-001 --agent claude --basis <sha> --tak feature/orch-001-YYYYMMDD-HHMMSS`
    (без репозиторію — створи `ORCH-OVERDRACHT.json` вручну за зразком `orchestratie/sjablonen/ORCH-OVERDRACHT.json`).
