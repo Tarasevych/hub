@@ -200,3 +200,12 @@ codes `ORCH_CODES` in `shared/orch-model.ts`, hulpteksten `orch.inlevering` / `o
 
 **Wie.** Opdracht van de eigenaar op 05-11-2026 (`AUDIT-001`); uitvoering door agent `antigravity`.
 
+## B-014 · 2026-11-05 · 1.4.9 · Rebase van release `AUDIT-001` op geïnstalleerde serverversie `20261105-061659` (`a318ba0b1c73`)
+
+**Context.** Bij het installeren van pakket `20261105-080000` stond op de server inmiddels versie `20261105-061659` (`BRON-COMMIT: a318ba0b1c731390217458dabadcf0e086d13635`), waardoor `UITROL-BASIS` het pakket op de oudere basis `20261104-204906` afwees met `BASIS_VEROUDERD`. Alle codewijzigingen uit `20261105-061659` zijn al volledig opgenomen in `AUDIT-001`.
+
+**Besluit.** De basis in `orchestratie/beleid.json` en `AGENTS.md` bijwerken naar `20261105-061659`, `regelsVersie` verhogen naar `1.4.9`, `regels.lock.json` opnieuw vergrendelen en het bijgewerkte pakket `20261105-093500` bouwen met `UITROL-BASIS: versie=20261105-061659, commit=a318ba0b1c731390217458dabadcf0e086d13635`.
+
+**Gevolgen.** `regelsVersie` `1.4.8` → `1.4.9`; het nieuwe pakket `20261105-093500` sluit direct aan op de geïnstalleerde serverversie `20261105-061659`.
+
+**Wie.** Opdracht van de eigenaar op 05-11-2026 (`AUDIT-001`); uitvoering door agent `antigravity`.

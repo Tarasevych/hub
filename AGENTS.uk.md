@@ -29,7 +29,7 @@
 ## 2. Перед початком роботи (обов'язково)
 
 1. Прочитай [`AGENTS.md`](./AGENTS.md) (або `orchestratie/CONTEXT-COMPACT.md`, якщо немає доступу до репозиторію) і [`orchestratie/beleid.json`](./orchestratie/beleid.json).
-2. База коду: `beleid.json → basis.bronCommit` (зараз `f3f3fabb…`, версія `20261104-204906`, статус `geverifieerd_productie` — звірено з `hub.tarasevych.com/api/version`, див. `B-013`; гілки `integratie` та `voornaamst` синхронізовані). Якщо маєш доступ до сайту — звір `/api/version` і зафіксуй результат у `BESLUITEN.md`.
+2. База коду: `beleid.json → basis.bronCommit` (зараз `f3f3fabb…`, версія `20261105-061659`, статус `geverifieerd_productie` — звірено з сервером, див. `B-014`; гілки `integratie` та `voornaamst` синхронізовані). Якщо маєш доступ до сайту — звір `/api/version` і зафіксуй результат у `BESLUITEN.md`.
 3. Зареєструй задачу: `node scripts/orch.mjs taak-start --id ORCH-001 --agent claude --basis <sha> --tak feature/orch-001-YYYYMMDD-HHMMSS`
    (без репозиторію — створи `ORCH-OVERDRACHT.json` вручну за зразком `orchestratie/sjablonen/ORCH-OVERDRACHT.json`).
 4. Запусти `node scripts/orch.mjs controleer` і `node scripts/orch.mjs versheid --taak <ID> --fase start`. Якщо червоне — не починай, спершу перебазуйся або перечитай правила.

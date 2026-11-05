@@ -1,10 +1,10 @@
 <!-- GEGENEREERD door node scripts/orch.mjs context — niet met de hand wijzigen · ЗГЕНЕРОВАНО, не редагувати вручну -->
 # Mijn Ruimte — компактний контекст агента · compacte agentcontext
 
-- regelsVersie: `1.4.8`
-- regelsHash: `4982a354ae2117208c63d750cb08fe534e42c8321cad2ded981c8730d48b028a`
+- regelsVersie: `1.4.9`
+- regelsHash: `fd7f99f180da62313ee13a1ffe7a99c5e933883419d54efc2d9f4d7bcd7b8dd4`
 - kritiekHash: `15fb72c45e30c0347440c8bc5002934d080b229eb61ce20543f5d1cd49b43bf7` (НЕ підтверджено власником · NIET bevestigd door eigenaar)
-- база · basis: `20261104-204906` @ `f3f3fabb2f3b5209b1ee8eba3078e403de831844` (geverifieerd_productie)
+- база · basis: `20261105-061659` @ `f3f3fabb2f3b5209b1ee8eba3078e403de831844` (geverifieerd_productie)
 - інтеграційна гілка · integratietak: `integratie`
 
 Вставте цей файл повністю на початку роботи. У відповіді-передачі вкажіть regelsHash і базовий commit, від якого ви працювали —
@@ -31,7 +31,7 @@
 ## 2. Перед початком роботи · Vóór je begint (обов'язково)
 
 1. Прочитай цей файл (або `orchestratie/CONTEXT-COMPACT.md`, якщо нема доступу до репозиторію) і `orchestratie/beleid.json`.
-2. База коду: `beleid.json → basis.bronCommit` (зараз `f3f3fabb…`, версія `20261104-204906`, статус `geverifieerd_productie` — звірено з `hub.tarasevych.com/api/version`, див. B-013).
+2. База коду: `beleid.json → basis.bronCommit` (зараз `f3f3fabb…`, версія `20261105-061659`, статус `geverifieerd_productie` — звірено з сервером, див. B-014).
    Гілки `integratie` та `voornaamst` синхронізовані. Якщо маєш доступ до сайту — звір `/api/version` і зафіксуй результат у BESLUITEN.md.
 3. Зареєструй задачу: `node scripts/orch.mjs taak-start --id ORCH-001 --agent claude --basis <sha> --tak feature/orch-001-YYYYMMDD-HHMMSS`
    (без репозиторію — створи `ORCH-OVERDRACHT.json` вручну за зразком `orchestratie/sjablonen/ORCH-OVERDRACHT.json`).

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "regelsVersie": "1.4.8",
+  "regelsVersie": "1.4.9",
   "bijgewerkt": "2026-11-05",
   "regelBestanden": [
     "AGENTS.md",
@@ -8,10 +8,10 @@
     "orchestratie/BESLUITEN.md"
   ],
   "basis": {
-    "versie": "20261104-204906",
+    "versie": "20261105-061659",
     "bronCommit": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
     "verificatie": "geverifieerd_productie",
-    "opmerking": "Звірено через https://hub.tarasevych.com/api/version 05.11.2026: встановлена версія 20261104-204906 (у до-рерайтній історії commit 6e815a00307dd9c00a0b2907838be099be8c5610; у канонічній після-рерайтній історії B-011/B-013 база voornaamst f3f3fabb2f3b5209b1ee8eba3078e403de831844 / 50e63737ddb3f7b032f8fc74dc343ed28fda0af8, див. B-012 та B-013)."
+    "opmerking": "Встановлена на сервері версія 20261105-061659 (у до-рерайтній історії commit a318ba0b1c731390217458dabadcf0e086d13635; у канонічній після-рерайтній історії B-011/B-013/B-014 база voornaamst f3f3fabb2f3b5209b1ee8eba3078e403de831844, див. B-014)."
   },
   "integratie": {
     "tak": "integratie",

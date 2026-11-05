@@ -8,8 +8,8 @@
     "eigenaar": "Eigenaar Test",
     "agent": "antigravity",
     "basis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
-    "vorigeProductieversie": "20261104-204906",
-    "vorigeProductieCommit": "6e815a00307dd9c00a0b2907838be099be8c5610",
+    "vorigeProductieversie": "20261105-061659",
+    "vorigeProductieCommit": "a318ba0b1c731390217458dabadcf0e086d13635",
     "tak": "audit/audit-2026-11-05-20261105-070523"
   },
   "privacy": {
@@ -19,7 +19,7 @@
   "tijdlijn": [
     {
       "volgorde": 1,
-      "stap": "Проведено повний аудит стану репозиторію, живого продакшн-ендпоінту https://hub.tarasevych.com/api/version (версія 20261104-204906 @ 6e815a00307d) та всіх відкритих PR (#28, #27, #25, #22) і гілок агентів.",
+      "stap": "Проведено повний аудит стану репозиторію, живого продакшн-ендпоінту https://hub.tarasevych.com/api/version та всіх відкритих PR (#28, #27, #25, #22) і гілок агентів.",
       "bewijzen": [
         "orchestratie/beleid.json",
         "orchestratie/BESLUITEN.md",
@@ -28,7 +28,7 @@
     },
     {
       "volgorde": 2,
-      "stap": "Інтегровано PRIVACY-001 (3095e5f..d4fb253) поверх канонічної бази f3f3fabb2f3b із збереженням двомовних навігаційних шапок (.uk.md/.nl.md), конфігурованих змінних MR_EIGENAAR_NAAM / MR_CONTACT_EMAIL / MR_BEHEERSUBNET та рішень B-010..B-013; перепідписано замок правил regels.lock.json (regelsVersie 1.4.8) і перегенеровано CONTEXT-COMPACT.md.",
+      "stap": "Інтегровано PRIVACY-001 (3095e5f..d4fb253) поверх канонічної бази f3f3fabb2f3b із збереженням двомовних навігаційних шапок (.uk.md/.nl.md), конфігурованих змінних MR_EIGENAAR_NAAM / MR_CONTACT_EMAIL / MR_BEHEERSUBNET та рішень B-010..B-014; перепідписано замок правил regels.lock.json (regelsVersie 1.4.9) і перегенеровано CONTEXT-COMPACT.md.",
       "bewijzen": [
         "AGENTS.md",
         "ENV-VARS.md",
@@ -87,6 +87,16 @@
         "docs/INDEX.md",
         "docs/INDEX.nl.md"
       ]
+    },
+    {
+      "volgorde": 6,
+      "stap": "Перебазовано метадані випуску UITROL-BASIS та beleid.json (B-014, regelsVersie 1.4.9) на фактично встановлену серверну версію 20261105-061659 (a318ba0b1c731390217458dabadcf0e086d13635) та випущено оновлений пакет 20261105-093500.",
+      "bewijzen": [
+        "orchestratie/beleid.json",
+        "orchestratie/BESLUITEN.md",
+        "orchestratie/regels.lock.json",
+        ".github/workflows/audit-001-release.yml"
+      ]
     }
   ],
   "keuzes": [
@@ -110,27 +120,27 @@
     {
       "bestand": "AGENTS.md",
       "soort": "змінено",
-      "опис": "Оновлено базову версію (20261104-204906 @ f3f3fabb2f3b) та плейсхолдери <VM-IP> за рішеннями B-010..B-013."
+      "опис": "Оновлено базову версію (20261105-061659 @ f3f3fabb2f3b) та плейсхолдери <VM-IP> за рішеннями B-010..B-014."
     },
     {
       "bestand": "orchestratie/beleid.json",
       "soort": "змінено",
-      "опис": "Підвищено regelsVersie до 1.4.8, оновлено basis до 20261104-204906 @ f3f3fabb2f3b5209b1ee8eba3078e403de831844."
+      "опис": "Підвищено regelsVersie до 1.4.9, оновлено basis до 20261105-061659 @ f3f3fabb2f3b5209b1ee8eba3078e403de831844."
     },
     {
       "bestand": "orchestratie/BESLUITEN.md",
       "soort": "змінено",
-      "опис": "Додано рішення B-010, B-011, B-012 та B-013."
+      "опис": "Додано рішення B-010, B-011, B-012, B-013 та B-014."
     },
     {
       "bestand": "orchestratie/regels.lock.json",
       "soort": "змінено",
-      "опис": "Перепідписано замок правил для regelsVersie 1.4.8 (hash 4982a354ae21…)."
+      "опис": "Перепідписано замок правил для regelsVersie 1.4.9."
     },
     {
       "bestand": "orchestratie/CONTEXT-COMPACT.md",
       "soort": "змінено",
-      "опис": "Перегенеровано компактний контекст для правил 1.4.8 (11692 байти)."
+      "опис": "Перегенеровано компактний контекст для правил 1.4.9."
     },
     {
       "bestand": "backend/uitrol-voorcontrole.ts",

@@ -29,7 +29,7 @@ Wijziging van de regels = een nieuw besluit in [`orchestratie/BESLUITEN.md`](./o
 ## 2. Vóór je begint (verplicht)
 
 1. Lees [`AGENTS.md`](./AGENTS.md) (of `orchestratie/CONTEXT-COMPACT.md` als er geen toegang tot de repository is) en [`orchestratie/beleid.json`](./orchestratie/beleid.json).
-2. Codebasis: `beleid.json → basis.bronCommit` (nu `f3f3fabb…`, versie `20261104-204906`, status `geverifieerd_productie` — geverifieerd via `hub.tarasevych.com/api/version`, zie `B-013`; de takken `integratie` en `voornaamst` zijn gesynchroniseerd). Als je toegang hebt tot de site, controleer dan `/api/version` en leg het resultaat vast in `BESLUITEN.md`.
+2. Codebasis: `beleid.json → basis.bronCommit` (nu `f3f3fabb…`, versie `20261105-061659`, status `geverifieerd_productie` — geverifieerd met de server, zie `B-014`; de takken `integratie` en `voornaamst` zijn gesynchroniseerd). Als je toegang hebt tot de site, controleer dan `/api/version` en leg het resultaat vast in `BESLUITEN.md`.
 3. Registreer de taak: `node scripts/orch.mjs taak-start --id ORCH-001 --agent claude --basis <sha> --tak feature/orch-001-YYYYMMDD-HHMMSS`
    (zonder repository: maak `ORCH-OVERDRACHT.json` handmatig aan volgens het sjabloon `orchestratie/sjablonen/ORCH-OVERDRACHT.json`).
 4. Draai `node scripts/orch.mjs controleer` en `node scripts/orch.mjs versheid --taak <ID> --fase start`. Bij rood: niet beginnen, eerst rebasen of de regels herlezen.

@@ -212,3 +212,13 @@ Consolidatie van audit 2026-11-05 (`AUDIT-001`), tweetalige documentatie (`uk`/`
 
 **Хто.** Запит власника від 05.11.2026 (`AUDIT-001`); виконання — агент `antigravity`.
 
+## B-014 · 2026-11-05 · 1.4.9 · Перебазування випуску AUDIT-001 на встановлену серверну версію 20261105-061659 (a318ba0b1c73)
+
+**Контекст.** Під час встановлення пакета `20261105-080000` на сервері вже було встановлено новішу версію `20261105-061659` (`BRON-COMMIT: a318ba0b1c731390217458dabadcf0e086d13635`, `IDENTITY-002`), через що перевірка `UITROL-BASIS` відхилила пакет `20261105-080000` із кодом `BASIS_VEROUDERD` (оскільки він був зібраний із `UITROL-BASIS: versie=20261104-204906`). Усі зміни коду з `20261105-061659` (`a318ba0b1c731390217458dabadcf0e086d13635`) вже повністю інтегровані у гілку `AUDIT-001` (`integratie` / `voornaamst`).
+
+**Рішення.** (1) Оновити в `orchestratie/beleid.json → basis.versie` та `AGENTS.md` встановлену серверну версію до `20261105-061659` (фактичний серверний коміт `a318ba0b1c731390217458dabadcf0e086d13635`, канонічна після-рерайтна база `f3f3fabb2f3b5209b1ee8eba3078e403de831844`). (2) Підвищити `regelsVersie` з `1.4.8` до `1.4.9`, перепідписати `orchestratie/regels.lock.json` та перегенерувати `orchestratie/CONTEXT-COMPACT.md`. (3) Перезібрати та опублікувати оновлений випуск `20261105-093500` на базі `20261105-061659` @ `a318ba0b1c731390217458dabadcf0e086d13635`.
+Herbouwen van release `AUDIT-001` (`20261105-093500`) bovenop de op de server geïnstalleerde versie `20261105-061659` (`a318ba0b1c731390217458dabadcf0e086d13635`) met `regelsVersie 1.4.9`.
+
+**Наслідки.** `regelsVersie` 1.4.8 → 1.4.9; новий пакет `20261105-093500` містить `UITROL-BASIS: versie=20261105-061659, commit=a318ba0b1c731390217458dabadcf0e086d13635` і проходить перевірку `voorcontrole` та `mijn-ruimte-uitrol.sh` на сервері без помилки `BASIS_VEROUDERD`.
+
+**Хто.** Запит власника від 05.11.2026 (`AUDIT-001`); виконання — агент `antigravity`.

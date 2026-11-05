@@ -5,11 +5,11 @@
   "tak": "audit/audit-2026-11-05-20261105-070523",
   "basisCommit": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
   "basisVersie": "20261104-204906",
-  "regelsVersie": "1.4.8",
-  "regelsHash": "4982a354ae2117208c63d750cb08fe534e42c8321cad2ded981c8730d48b028a",
+  "regelsVersie": "1.4.9",
+  "regelsHash": "fd7f99f180da62313ee13a1ffe7a99c5e933883419d54efc2d9f4d7bcd7b8dd4",
   "staat": "integrated",
   "gestart": "2026-11-05T07:10:49.603Z",
-  "bijgewerkt": "2026-11-05T08:27:30Z",
+  "bijgewerkt": "2026-11-05T09:33:17.577Z",
   "omschrijving": "Виправлення проблем аудиту 2026-11-05 та безконфліктна інтеграція PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001",
   "kanaal": "github_pr",
   "overdrachten": [],
@@ -17,5 +17,12 @@
   "releaseSha256": "4e5877bc50093c7427a9bb8678a5cdb64db27c088ade2bb252e4fd5d793b2270",
   "releaseCommit": "f20df65232f74d67a1f9a7246c329490282ab984",
   "releaseZip": "mijn-ruimte-20261105-080000-antigravity-overdracht.zip",
-  "integratieCommit": "f20df65232f74d67a1f9a7246c329490282ab984"
+  "integratieCommit": "f20df65232f74d67a1f9a7246c329490282ab984",
+  "regelsHerlezen": [
+    {
+      "van": "1.4.8",
+      "naar": "1.4.9",
+      "op": "2026-11-05T09:33:17.577Z"
+    }
+  ]
 }

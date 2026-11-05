@@ -1,4 +1,4 @@
-name: AUDIT-001 · консолідований реліз 20261105-080000
+name: AUDIT-001 · консолідований реліз 20261105-093500
 
 on:
   push:
@@ -30,17 +30,17 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Bouw en controleer pakket 20261105-080000
+      - name: Bouw en controleer pakket 20261105-093500
         run: |
           set -euo pipefail
-          VERSIE="20261105-080000"
+          VERSIE="20261105-093500"
           echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
           cat << 'EOF' > "$RUNNER_TEMP/manifest.json"
           {
             "schema": 1,
-            "versie": "20261105-080000",
-            "aangemaakt": "2026-11-05T08:00:00Z",
-            "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis 20261104-204906 @ f3f3fabb2f3b",
+            "versie": "20261105-093500",
+            "aangemaakt": "2026-11-05T09:35:00Z",
+            "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis 20261105-061659 @ a318ba0b1c73",
             "auteur": "Власник",
             "zonderAi": false,
             "deelnemers": [
@@ -64,42 +64,42 @@ jobs:
             ],
             "beschrijving": {
               "uk": {
-                "titel": "Аудит 05.11.2026 та консолідація гілок (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001)",
-                "samenvatting": "Повний аудит і безконфліктна консолідація чотирьох паралельних напрямів робіт поверх після-рерайтної бази 20261104-204906 (regelsVersie 1.4.8, B-013).",
+                "titel": "Аудит 05.11.2026 та консолідація гілок (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001) на базі 20261105-061659",
+                "samenvatting": "Повний аудит і безконфліктна консолідація чотирьох паралельних напрямів робіт, перебазована на встановлену серверну версію 20261105-061659 (regelsVersie 1.4.9, B-014).",
                 "wijzigingen": [
-                  "Інтегровано PRIVACY-001 (MR_EIGENAAR_NAAM, MR_CONTACT_EMAIL, MR_BEHEERSUBNET, B-010..B-013) та відновлено замок правил regelsVersie 1.4.8.",
+                  "Інтегровано PRIVACY-001 (MR_EIGENAAR_NAAM, MR_CONTACT_EMAIL, MR_BEHEERSUBNET, B-010..B-014) та відновлено замок правил regelsVersie 1.4.9.",
                   "Інтегровано MAILFIX-001, MAILFIT-001 та MAILFIT-002 (OAuth-потік пошти, мобільна й настільна верстка, сумісність UITROL-BASIS після переписування історії).",
                   "Інтегровано IDENTITY-001/002 (єдина сторінка облікового запису з 12 розділами, меню-зміст .ia-toc, діалог фото Profielfoto з 3 джерелами) та DESIGN-001 (modern.css і токени радіусів).",
                   "Синхронізовано 433 двомовні файли документації (.md / .uk.md / .nl.md) та каталог статей docs/INDEX.md / docs/INDEX.nl.md."
                 ],
                 "fixes": [
-                  "Усунено накладання кнопки смітничка (24px у куті) на центровану іконку камери (22px) в аватарі профілю (cbeb3d0).",
-                  "Піднято z-index модального вікна фото (.ia-dialoog-achtergrond) до 99500 вище шапки (.app-header) та налаштовано sticky top 70px/62px і scroll-margin-top 170px/150px (a318ba0).",
+                  "Перебазовано UITROL-BASIS на встановлену серверну версію 20261105-061659 @ a318ba0b1c731390217458dabadcf0e086d13635 (усунено BASIS_VEROUDERD).",
+                  "Усунено накладання кнопки смітничка (24px у куті) на центровану іконку камери (22px) в аватарі профілю (cbeb3d0) та піднято z-index модального вікна фото (.ia-dialoog-achtergrond) до 99500 (a318ba0).",
                   "Забезпечено сумісність Python tarfile.extractall у mijn-ruimte-uitrol.sh на Python 3.11+ та виправлено 4 регресії в юніт-тестах."
                 ],
                 "beperkingen": [
                   "Критичні політики в orchestratie/regels.lock.json мають статус «voorstel» до підпису власника приватним SSH-ключем."
                 ],
-                "instructies": "Завантажте mijn-ruimte-20261105-080000.tar.gz через майстер «Нове оновлення» в Admin → Оновлення та підтвердіть встановлення passkey власника."
+                "instructies": "Завантажте mijn-ruimte-20261105-093500.tar.gz через майстер «Нове оновлення» в Admin → Оновлення та підтвердіть встановлення passkey власника."
               },
               "nl": {
-                "titel": "Audit 05-11-2026 en consolidatie van takken (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001)",
-                "samenvatting": "Volledige audit en conflictvrije consolidatie van vier parallelle werkstromen bovenop de herschreven basis 20261104-204906 (regelsVersie 1.4.8, B-013).",
+                "titel": "Audit 05-11-2026 en consolidatie van takken (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001) op basis 20261105-061659",
+                "samenvatting": "Volledige audit en conflictvrije consolidatie van vier parallelle werkstromen, gerebased op de geïnstalleerde serverversie 20261105-061659 (regelsVersie 1.4.9, B-014).",
                 "wijzigingen": [
-                  "PRIVACY-001 geïntegreerd (MR_EIGENAAR_NAAM, MR_CONTACT_EMAIL, MR_BEHEERSUBNET, B-010..B-013) en regelsslot regelsVersie 1.4.8 hersteld.",
+                  "PRIVACY-001 geïntegreerd (MR_EIGENAAR_NAAM, MR_CONTACT_EMAIL, MR_BEHEERSUBNET, B-010..B-014) en regelsslot regelsVersie 1.4.9 hersteld.",
                   "MAILFIX-001, MAILFIT-001 en MAILFIT-002 geïntegreerd (mail-OAuth-stroom, mobiele en desktop-opmaak, UITROL-BASIS-compatibiliteit na geschiedenisherschrijving).",
                   "IDENTITY-001/002 (geconsolideerde accountpagina met 12 secties, inhoudsopgave .ia-toc, Profielfoto met 3 bronnen) en DESIGN-001 (modern.css en straaltokens) geïntegreerd.",
                   "Alle 433 tweetalige documentatiebestanden (.md / .uk.md / .nl.md) en de indexen docs/INDEX.md / docs/INDEX.nl.md gesynchroniseerd."
                 ],
                 "fixes": [
-                  "Overlap tussen prullenbakknop (24px op de hoek) en gecentreerd camera-icoon (22px) op de profielavatar verholpen (cbeb3d0).",
-                  "De z-index van het fotodialoogvenster (.ia-dialoog-achtergrond) verhoogd naar 99500 boven .app-header en sticky top 70px/62px + scroll-margin-top 170px/150px ingesteld (a318ba0).",
+                  "UITROL-BASIS gerebased op de geïnstalleerde serverversie 20261105-061659 @ a318ba0b1c731390217458dabadcf0e086d13635 (BASIS_VEROUDERD verholpen).",
+                  "Overlap tussen prullenbakknop (24px op de hoek) en gecentreerd camera-icoon (22px) op de profielavatar verholpen (cbeb3d0) en z-index van .ia-dialoog-achtergrond verhoogd naar 99500 (a318ba0).",
                   "Compatibiliteit van Python tarfile.extractall in mijn-ruimte-uitrol.sh op Python 3.11+ en 4 regressies in eenheidstests hersteld."
                 ],
                 "beperkingen": [
                   "Kritieke beleidsregels in orchestratie/regels.lock.json staan op «voorstel» totdat de eigenaar ondertekent met zijn SSH-sleutel."
                 ],
-                "instructies": "Upload mijn-ruimte-20261105-080000.tar.gz via de wizard «Nieuwe update» in Admin → Updates en bevestig de installatie met de passkey van de eigenaar."
+                "instructies": "Upload mijn-ruimte-20261105-093500.tar.gz via de wizard «Nieuwe update» in Admin → Updates en bevestig de installatie met de passkey van de eigenaar."
               }
             }
           }
@@ -111,7 +111,7 @@ jobs:
             "samenvatting": "Повна 11-етапна збірка npm run build, серверний typecheck:server та юніт-тести (orch-*, mailfit-001, mailfix-001, identity-account-ui, design-001, sec-001, uitrol-weergave-v2, werkblad-canvas-kern, zoek-tekst, meldingen-v2, meldingen-uitleg, ai-vertaling, ai-bronnen, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden): 622/622 перевірок пройдено, 0 помилок.",
             "falend": [],
             "basis": {
-              "versie": "20261104-204906",
+              "versie": "20261105-061659",
               "geslaagd": 588,
               "mislukt": 0
             },
@@ -124,8 +124,8 @@ jobs:
           mkdir -p uitvoer
           cat << 'EOF' > orchestratie/geinstalleerd.json
           {
-            "versie": "20261104-204906",
-            "bronCommit": "6e815a00307dd9c00a0b2907838be099be8c5610",
+            "versie": "20261105-061659",
+            "bronCommit": "a318ba0b1c731390217458dabadcf0e086d13635",
             "bron": "geverifieerd_productie_api"
           }
           EOF
@@ -148,7 +148,7 @@ jobs:
           echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
           echo "pakket sha256: $SCHA"
 
-      - name: Publiceer GitHub Releases (20261105-080000 en v20261105-080000)
+      - name: Publiceer GitHub Releases (20261105-093500 en v20261105-093500)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -160,7 +160,7 @@ jobs:
           - **Інсталяційний архів (\`.tar.gz\`):** \`https://github.com/Tarasevych/hub/releases/download/$VERSIE/mijn-ruimte-$VERSIE.tar.gz\`
           - **SHA-256 (\`.tar.gz\`):** \`$RELEASE_SHA\`
           - **Пакет передачі (\`-overdracht.zip\`):** \`https://github.com/Tarasevych/hub/releases/download/$VERSIE/mijn-ruimte-$VERSIE-antigravity-overdracht.zip\`
-          - **Базова версія:** \`20261104-204906\` @ \`f3f3fabb2f3b5209b1ee8eba3078e403de831844\` (\`regelsVersie 1.4.8\`, \`B-013\`)
+          - **Встановлена серверна база (\`UITROL-BASIS\`):** \`20261105-061659\` @ \`a318ba0b1c731390217458dabadcf0e086d13635\` (канонічна після-рерайтна база \`f3f3fabb2f3b5209b1ee8eba3078e403de831844\`, \`regelsVersie 1.4.9\`, \`B-014\`)
           - **BRON-COMMIT:** $COMMIT (гілка \`audit/audit-2026-11-05-20261105-070523\`, злито в \`integratie\` та \`voornaamst\`)
           - **Журнал розробки (TRACE-001):** \`orchestratie/ontwikkelarchieven/AUDIT-001.json\`
           EOF
@@ -172,7 +172,7 @@ jobs:
             "uitvoer/mijn-ruimte-$VERSIE-antigravity-overdracht.zip" \
             "uitvoer/mijn-ruimte-$VERSIE.voorstel.json" \
             --target "$COMMIT" \
-            --title "AUDIT-001 · $VERSIE (Консолідація аудиту 05.11.2026: PRIVACY-001 + MAILFIT-002 + IDENTITY-002 + DESIGN-001)" \
+            --title "AUDIT-001 · $VERSIE (Консолідація аудиту 05.11.2026 на базі 20261105-061659)" \
             --notes-file "$RUNNER_TEMP/notes.md"
           gh release create "v$VERSIE" \
             "uitvoer/mijn-ruimte-$VERSIE.tar.gz" \
@@ -180,9 +180,10 @@ jobs:
             "uitvoer/mijn-ruimte-$VERSIE-antigravity-overdracht.zip" \
             "uitvoer/mijn-ruimte-$VERSIE.voorstel.json" \
             --target "$COMMIT" \
-            --title "v$VERSIE · AUDIT-001 (Консолідація аудиту 05.11.2026)" \
+            --title "v$VERSIE · AUDIT-001 (Консолідація аудиту 05.11.2026 на базі 20261105-061659)" \
             --notes-file "$RUNNER_TEMP/notes.md" \
             --prerelease --latest=false
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" \
             --jq '.assets[] | select(.name | endswith(".tar.gz")) | "\(.name) \(.digest)"' | tee "$RUNNER_TEMP/digest.txt"
           grep -q "sha256:$RELEASE_SHA" "$RUNNER_TEMP/digest.txt" || { echo "FOUT: digest op GitHub wijkt af van $RELEASE_SHA" >&2; exit 1; }
+
