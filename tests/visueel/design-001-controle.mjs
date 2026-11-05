@@ -39,10 +39,14 @@ try {
         radius: kaart ? parseFloat(getComputedStyle(kaart).borderTopLeftRadius) : 0,
         leegRadius: leeg ? parseFloat(getComputedStyle(leeg).borderTopLeftRadius) : 0,
         animatie: begroeting ? getComputedStyle(begroeting).animationName : '',
+        labelsBuitenKnop: [...document.querySelectorAll('.wb-snel-naam')].filter((label) => {
+          const knop = label.closest('button');
+          return !knop || label.scrollWidth > label.clientWidth + 1 || label.getBoundingClientRect().bottom > knop.getBoundingClientRect().bottom + 1;
+        }).map((label) => label.textContent),
       };
     });
     await pagina.screenshot({ path: `uitvoer/design-001/${g.naam}.png`, fullPage: true });
-    if (fouten.length || !stand.begroeting || stand.radius <= 0 || stand.leegRadius <= 0 || stand.animatie !== 'none' || stand.scrollbreedte > stand.breedte + 1) {
+    if (fouten.length || !stand.begroeting || stand.radius <= 0 || stand.leegRadius <= 0 || stand.labelsBuitenKnop.length > 0 || stand.animatie !== 'none' || stand.scrollbreedte > stand.breedte + 1) {
       throw new Error(`${g.naam}: ${JSON.stringify({ stand, fouten })}`);
     }
     console.log(`OK ${g.naam}: ${JSON.stringify(stand)}`);

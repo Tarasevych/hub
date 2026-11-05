@@ -21,3 +21,6 @@
 @media (hover:hover) and (pointer:fine){.product-empty-state button:hover{filter:brightness(1.05);box-shadow:var(--schaduw-2)}}
 @media (prefers-reduced-motion:reduce){.product-empty-state button{transition:none}}
 @media (forced-colors:active){.product-empty-icon,.product-empty-icon::before{border-color:CanvasText}}
+
+/* Заголовок порожнього стану використовує шрифт поточної оболонки. */
+.product-empty-state h1,.product-empty-state h2{font-family:inherit;letter-spacing:-.02em}

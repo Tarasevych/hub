@@ -94,6 +94,7 @@
   transition: background-color var(--ruimte-beweging), border-color var(--ruimte-beweging),
     box-shadow var(--ruimte-beweging), transform var(--ruimte-beweging);
 }
+.canonical-content .wb-snel-naam { overflow-wrap:anywhere; }
 .canonical-content .wb-snel-icoon { border-radius: var(--straal-m); }
 .canonical-content .wb-tip {
   border-radius: var(--straal-xl);
