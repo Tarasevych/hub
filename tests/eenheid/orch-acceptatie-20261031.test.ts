@@ -263,14 +263,23 @@ export async function main(): Promise<number> {
       writeFileSync(join(R, 'orchestratie/geinstalleerd.json'), JSON.stringify({ schema: 1, versie: '20261101-120000', bronCommit: hoofdNu, bron: 'installer', op: '2026-10-31T17:00:00Z' }, null, 2)); orch(R, 'staat-commit');
 
       // ============================================================ 7. Одночасні установки: flock — друга спроба не чіпає ні інсталятор, ні inbox; потім обидві по черзі
-      const c = uitrolOmgeving('#!/bin/bash\necho "start $(cat "$2/UITROL-VERSIE") $(date +%s%N)" >> "__SPOOR__"\nsleep 3\necho "einde $(cat "$2/UITROL-VERSIE") $(date +%s%N)" >> "__SPOOR__"\n'); tmp.push(c.basisMap);
+      // Стаб тримає першу установку всередині інсталятора (отже, під flock), доки тест не дозволить завершитись: друга спроба
+      // гарантовано приходить під час першої. Раніше тут була фіксована пауза 1,2 с — під навантаженням друга спроба могла
+      // взяти flock раніше за першу, і тест падав без вини коду. Чекає лише перший пакет (20261102-100000): якщо друга спроба
+      // помилково дійде до інсталятора, стаб завершиться одразу, і перевірка нижче впаде без хвилинного очікування.
+      const c = uitrolOmgeving('#!/bin/bash\nv=$(cat "$2/UITROL-VERSIE")\necho "start $v $(date +%s%N)" >> "__SPOOR__"\nif [ "$v" = 20261102-100000 ]; then for _ in $(seq 1 600); do [ -e "__SPOOR__.verder" ] && break; sleep 0.1; done; fi\necho "einde $v $(date +%s%N)" >> "__SPOOR__"\n'); tmp.push(c.basisMap);
       const CA = sha1('a'); const CB = sha1('b');
       c.zetLaatste('20261101-090000', CA);
       c.leg(synthPakket(c.pk, '20261102-100000', `versie=20261101-090000\ncommit=${CA}\n`, CB));
       const eerste = c.draaiAsync();
-      await slaap(1200);
-      c.leg(synthPakket(c.pk, '20261103-100000', `versie=20261102-100000\ncommit=${CB}\n`, sha1('c')));
-      const tweede = await c.draaiAsync();
+      let tweede: Awaited<ReturnType<typeof c.draaiAsync>>;
+      try {
+        for (let i = 0; i < 600 && !c.spoorRegels().some((l) => l.startsWith('start')); i++) await slaap(100);
+        c.leg(synthPakket(c.pk, '20261103-100000', `versie=20261102-100000\ncommit=${CB}\n`, sha1('c')));
+        tweede = await c.draaiAsync();
+      } finally {
+        writeFileSync(join(c.basisMap, 'spoor.verder'), '');   // ook bij een fout: de eerste installatie mag nooit blijven hangen
+      }
       check('7 друга установка під час першої: «er loopt al een uitrol», вихід 0, пакет лишився в inbox, інсталятор не викликано вдруге', tweede.code === 0 && /er loopt al een uitrol/.test(tweede.uit) && c.inboxInhoud().includes('mijn-ruimte-20261103-100000.tar.gz') && c.spoorRegels().filter((l) => l.startsWith('start')).length === 1, `${tweede.code} ${tweede.uit.slice(-300)} ${c.inboxInhoud().join(',')}`);
       const e1 = await eerste;
       check('7 перша завершилась OK: laatste-versie 20261102-100000', e1.code === 0 && c.status().code === 'OK' && c.laatste('laatste-versie') === '20261102-100000', `${e1.code} ${c.status().code}`);
