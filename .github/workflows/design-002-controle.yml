@@ -1,0 +1,38 @@
+name: DESIGN-002 · перевірка основи та інтерфейсу
+
+on:
+  pull_request:
+    branches: [integratie]
+
+permissions:
+  contents: read
+
+jobs:
+  basis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Зареєструвати задачу
+        run: |
+          if [ ! -f orchestratie/taken/DESIGN-002.json ]; then
+            node scripts/orch.mjs taak-start --id DESIGN-002 --agent codex --basis 53a7b918038c9a0657e76c170415de4151885fcf --tak feature/design-002-20261105-134500 --omschrijving "Адаптивний інтерфейс і завершення попередніх покращень" --kanaal github_pr
+          fi
+      - name: Перевірити правила та актуальність
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak DESIGN-002 --fase start
+      - name: Показати декларацію задачі
+        run: cat orchestratie/taken/DESIGN-002.json
+      - name: Звірити встановлену версію
+        run: |
+          if curl --fail --silent --show-error --max-time 20 "https://hub.tarasevych.com/api/version" -o "$RUNNER_TEMP/site-version.json"; then
+            node -e 'const v=require(process.argv[1]); for(const k of ["version","versie","commit","bronCommit","branch","tak"]) if(v[k]!=null) console.log(k+"="+v[k])' "$RUNNER_TEMP/site-version.json"
+          else
+            echo "Встановлену версію зараз не вдалося прочитати."
+          fi
