@@ -44,8 +44,8 @@
       "node scripts/eenheidstests.mjs werkblad: серверні тести потребують DATABASE_URL"
     ],
     "uitleg": {
-      "uk": "Пройдено розбір CSS, перевірку контрасту, typecheck:server, orch-kern (78/78) і werkblad-canvas-kern (53/53). Повний набір werkblad потребує бази даних.",
-      "nl": "CSS-parsing, contrastcontrole, typecheck:server, orch-kern (78/78) en werkblad-canvas-kern (53/53) geslaagd. De volledige werkbladreeks vereist een database."
+      "uk": "Пройдено розбір CSS, перевірку контрасту, typecheck:server, orch-kern (78/78) і werkblad-canvas-kern (53/53). Повний набір werkblad потребує бази даних. Повторну повну збірку перервано після тривалої обробки модулів; результат не підтверджено.",
+      "nl": "CSS-parsing, contrastcontrole, typecheck:server, orch-kern (78/78) en werkblad-canvas-kern (53/53) geslaagd. De volledige werkbladreeks vereist een database. De herhaalde volledige build is na een lange moduleverwerking onderbroken; het resultaat is niet bevestigd."
     }
   },
   "nietGedaan": {
