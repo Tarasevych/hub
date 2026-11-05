@@ -61,6 +61,12 @@ jobs:
             sleep 1
           done
           node tests/visueel/design-001-controle.mjs
+          echo DESIGN_PHONE_BEGIN
+          base64 uitvoer/design-001/telefoon-licht.png
+          echo DESIGN_PHONE_END
+          echo DESIGN_DESKTOP_BEGIN
+          base64 uitvoer/design-001/computer-donker.png
+          echo DESIGN_DESKTOP_END
       - name: Toon Vite-logboek bij een fout
         if: failure()
         run: cat uitvoer/design-001/vite.log || true
