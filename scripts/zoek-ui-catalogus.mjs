@@ -29,7 +29,9 @@ export const PLEKKEN = [
   ['GitHubWeergave', 'github', 'overview', 'iedereen'],
   ['zoek/ZoekIndex', 'hub', 'zoek', 'technisch'] /* zone D 22.10.2026: indexvenster = technisch profiel (ook de «?»-uitleg zoek.index.*) */, ['zoek/', 'hub', 'zoek', 'iedereen'], ['GlobaalZoekPaneel', 'hub', 'zoek', 'iedereen'],
   ['HubNotities', 'hub', 'notes', 'iedereen'], ['HubRecent', 'hub', 'recent', 'iedereen'], ['HubBlokWidget', 'hub', 'overview', 'iedereen'],
-  ['bureau/', 'hub', 'overview', 'iedereen'], ['overzicht/', 'hub', 'overview', 'iedereen'], ['WelkomKaart', 'hub', 'overview', 'iedereen'],
+  ['bureau/', 'hub', 'overview', 'iedereen'], ['WelkomKaart', 'hub', 'overview', 'iedereen'],
+  // Технічні сповіщення: кнопка є лише в технічній смузі (TechLaag → actief && activatie), а не у звичайному дзвонику.
+  ['meldingen/TechMeldingen', 'hub', 'overview', 'technisch'],
   ['meldingen/', 'hub', 'overview', 'iedereen'], ['CanoniekMeldingencentrum', 'hub', 'overview', 'iedereen'], ['MeldingenpaneelInhoud', 'hub', 'overview', 'iedereen'],
   ['CanoniekAccountMenu', 'hub', 'overview', 'iedereen'], ['CanoniekOmlijsting', 'hub', 'overview', 'iedereen'], ['ZijbalkWerkbalk', 'hub', 'overview', 'iedereen'],
   ['RuimteStrook', 'hub', 'overview', 'iedereen'], ['ExtensieUpdateBand', 'hub', 'overview', 'iedereen'], ['CanoniekVerbindingBand', 'hub', 'overview', 'iedereen'],
@@ -59,7 +61,7 @@ export const PLEKKEN = [
   ['tech/', 'hub', 'overview', 'profiel'], ['ssh/', 'hub', 'overview', 'technisch'], ['terminal/', 'mcp', 'dashboard', 'technisch'],
   ['extern/', 'hub', 'overview', 'technisch'], ['vlaggen/', 'hub', 'overview', 'technisch'],
   // ---- sitebeheer (alleen technisch)
-  ['BeheerConsoleWeergave', 'admin', 'overview', 'technisch'], ['BeheerOverzichtWeergave', 'admin', 'overview', 'technisch'], ['IdentiteitBeheerWeergave', 'admin', 'access', 'technisch'],
+  ['BeheerConsoleWeergave', 'admin', 'overview', 'technisch'], ['BeheerOverzichtWeergave', 'admin', 'overview', 'technisch'], ['overzicht/', 'admin', 'overview', 'technisch'] /* Dashboard → BeheerOverzichtWeergave; tot 05.11.2026 per vergissing hub/iedereen */, ['IdentiteitBeheerWeergave', 'admin', 'access', 'technisch'],
   ['BeheerSleutelsWeergave', 'admin', 'contour', 'technisch'], ['geheimen/', 'admin', 'contour', 'technisch'], ['BeheerAiBeleidWeergave', 'admin', 'ai', 'technisch'],
   ['BeheerUitrolWeergave', 'admin', 'updates', 'technisch'], ['UitrolMeester', 'admin', 'updates', 'technisch'], ['uitrol/', 'admin', 'updates', 'technisch'],
   ['BeheerDiagnostiekWeergave', 'admin', 'diagnostics', 'technisch'], ['diagnostiek/', 'admin', 'diagnostics', 'technisch'], ['diagnose/', 'admin', 'diagnostics', 'technisch'],
