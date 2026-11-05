@@ -16,7 +16,9 @@
 /* Меню-зміст: залипає зверху, щоб перехід був завжди під рукою. */
 .ia-toc {
   position: sticky;
-  top: 0;
+  /* 70 px — відступ робочої області під командною смугою (canoniek-omlijsting.css: padding:70px …);
+     без цього меню заїжджає під хедер при прокрутці. */
+  top: 70px;
   z-index: 3;
   display: flex;
   flex-wrap: wrap;
@@ -81,7 +83,7 @@
 }
 
 .ia-sectie {
-  scroll-margin-top: 76px;
+  scroll-margin-top: 170px;
   display: grid;
   gap: var(--ruimte-3);
   padding: var(--ruimte-4);
@@ -238,6 +240,9 @@
   place-items: center;
   padding: var(--ruimte-4);
   background: var(--overlay);
+  /* Вище за хром застосунку: sidebar 160, акаунт-якір 220, тост 210, догори 440, банер 1300.
+     99500 лишає діалог над ними, але під підказками (2·10^9). */
+  z-index: 99500;
 }
 
 .ia-dialoog {
@@ -438,5 +443,17 @@
   .ia-knop,
   .ia-bronnen button {
     width: 100%;
+  }
+}
+
+
+/* Вузькі екрани: робоча область має padding-top 62 px (canoniek-omlijsting.css, max-width:700px). */
+@media (max-width: 700px) {
+  .ia-toc {
+    top: 62px;
+  }
+
+  .ia-sectie {
+    scroll-margin-top: 150px;
   }
 }
