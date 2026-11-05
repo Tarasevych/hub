@@ -9,7 +9,7 @@
 import { api, isAfgebroken } from '../platform/client';
 import { ecosystemTabContext } from '../tab-context';
 import { sessieDienst } from '../canoniek-navigatie';
-import { ZOEK_BRONNEN, ZOEK_SOORTEN, isZoekBron, isZoekSoort, isZoekTaal, type ZoekAntwoord, type ZoekBron, type ZoekBronStand, type ZoekFacets, type ZoekFragment, type ZoekRoute, type ZoekSuggestie, type ZoekTreffer, type ZoekUitleg, type ZoekVraag } from '../../shared/zoek-model';
+import { ZOEK_BRONNEN, ZOEK_ROUTE_HOSTS, ZOEK_SOORTEN, isZoekBron, isZoekSoort, isZoekTaal, type ZoekAntwoord, type ZoekBron, type ZoekBronStand, type ZoekFacets, type ZoekFragment, type ZoekRoute, type ZoekSuggestie, type ZoekTreffer, type ZoekUitleg, type ZoekVraag } from '../../shared/zoek-model';
 
 export type Lang = 'uk' | 'nl';
 export type { ZoekAntwoord, ZoekBron, ZoekBronStand, ZoekFacets, ZoekSuggestie, ZoekTreffer, ZoekVraag, ZoekRoute };
@@ -22,7 +22,8 @@ const obj = (v: unknown): Record<string, unknown> => (v && typeof v === 'object'
 const lijst = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const telling = (v: unknown): Record<string, number> => Object.fromEntries(Object.entries(obj(v)).map(([k, n]) => [k, Math.max(0, Math.floor(num(n)))]));
 
-export const ZOEK_HOSTS = ['hub', 'mail', 'cloud', 'id', 'mcp', 'ai', 'github'] as const;
+// Eén lijst met het contract (shared/zoek-model.ts): een host die hier ontbrak, gaf een kaart zonder link (identity/api/admin/huis).
+export const ZOEK_HOSTS = ZOEK_ROUTE_HOSTS;
 export function leesRoute(v: unknown): ZoekRoute | null {
   const r = obj(v); const host = str(r.host, 16) as ZoekRoute['host'];
   if (!(ZOEK_HOSTS as readonly string[]).includes(host)) return null;

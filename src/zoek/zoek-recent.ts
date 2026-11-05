@@ -7,7 +7,7 @@
 // een rechtstreeks gekozen functie/pagina van de site (opent opnieuw rechtstreeks, met de route erbij). Er worden GEEN titels van
 // resultaten uit persoonlijke bronnen (onderwerp van een e-mail, bestandsnaam) bewaard: alleen wat de gebruiker zelf typte en de
 // namen van functies/pagina's van de site zelf. Oudere rijen zonder `soort` gelden als 'zoek'.
-import type { ZoekRoute } from '../../shared/zoek-model';
+import { ZOEK_ROUTE_HOSTS, type ZoekRoute } from '../../shared/zoek-model';
 import type { Categorie } from './zoek-logica';
 
 export type RecentSoort = 'zoek' | 'functie' | 'pagina';
@@ -18,7 +18,7 @@ export type RecentExtra = { soort?: RecentSoort; route?: ZoekRoute | null };
 export const RECENT_MAX = 8;
 export const RECENT_VRAAG_MAX = 300;
 const CATEGORIEEN: readonly string[] = ['all', 'mail', 'files', 'paginas', 'instellingen', 'agenda', 'github', 'bord', 'overig'];
-const HOSTS: readonly string[] = ['hub', 'mail', 'cloud', 'id', 'mcp', 'ai', 'github'];
+const HOSTS: readonly string[] = ZOEK_ROUTE_HOSTS;
 
 type Opslag = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 let gebruiker = '';

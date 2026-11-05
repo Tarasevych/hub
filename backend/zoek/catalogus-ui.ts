@@ -14,8 +14,10 @@
 // het zegt), de technische lade krijgt alles. Omdat de poort (gegevensRuimteVeilig) de technische lade alleen geeft bij een
 // levende activering, ziet niemand zonder actief technisch profiel ooit een technisch object — ook niet via suggesties.
 //
-// ROUTE. {host: dienst, pad: tabblad-id, hash?: '#<tab>', params?: {focus: '<data-hulp-sleutel>'}}: de pagina opent het tabblad via
-// canonicalServiceUrl(host, pad) en, bij `focus`, scrolt zij naar het element met data-hulp=<sleutel> (afspraak met Z4).
+// ROUTE. {host: dienst, pad: tabblad-id, hash?: '#<tab>', params?: {focus: '<data-hulp-sleutel>'}}: de client (src/zoek/zoek-kern.ts →
+// routeUrl) maakt daar https://<domein van de dienst>/<Nederlandse slug van het tabblad> van, en bij `focus` scrolt de pagina naar
+// het element met data-hulp=<sleutel> (afspraak met Z4). Tot 05.11.2026 kende de client de hosts identity/api/admin/huis niet en
+// las hij een tabblad-id als ongeldig pad: geen enkel object opende zijn tabblad (ORCH-001, oude fout; test zoek-route-tabblad).
 import { createHash } from 'node:crypto';
 import { DIENST_IDS, MENU_PAGINAS } from '../../shared/menu-model';
 import { BEHEER_PAGINAS } from '../../shared/beheer-paginas';
