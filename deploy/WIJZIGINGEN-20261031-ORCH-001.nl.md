@@ -286,3 +286,38 @@ afgedekt met tests die op de eerdere code zouden falen.
 **Beperkingen / vervolg bij de eigenaar**
 - Op de server is het root-bestand `/etc/mijn-ruimte/eigenaar-ondertekenaars` vereist (RUNBOOK §18.1.5), anders weigert GitOps een met SSH ondertekende lock.
 - PR #11 is niet samengevoegd, `integratie` is niet aangemaakt, het beleid is niet ondertekend en productie (`b279ccab…`) is niet aangeraakt — wacht op een afzonderlijk `DEPLOY ПІДТВЕРДЖЕНО`.
+
+## Integratie en afsluiting van de taak (01–05-11-2026)
+
+- **1-11-2026.** De eigenaar heeft PR #11 gesloten als opgenomen en PR #16 (fasen 0–4, controles, MCP-001, MCP-deur op poort 8091)
+  samengevoegd in `release/sec-001-20261031-084138`. De vervolgcorrecties en de scheiding van privé- en technische «AI-toegang»
+  zijn via PR #17 samengevoegd; in `integratie` heeft merge `4db51b6` ze opgenomen (samen met PR #18; vóór het herschrijven `5f84d9d`).
+- **Herschrijven van de historie (B-010, B-011).** De commits kregen nieuwe SHA's: `fa50a5b` → `7176e95`, `f8def89` → `d33d068`,
+  `c414fe7` → `eebfdd1`, `8722770` → `3dea7c1`, `5f84d9d` → `4db51b6`. De taakbasis `b279ccab` is nu `5a023b41` — dezelfde commit
+  (auteur, datum en onderwerp gelijk), een voorouder van `integratie`.
+- **Geïnstalleerde versie.** `4db51b6` is een voorouder van de canonieke geïnstalleerde basis `f3f3fab` (`20261105-061659`,
+  `geverifieerd_productie`, B-014) en van de huidige `integratie` en `voornaamst`. De werkelijke servercommit `a318ba0` ligt in de
+  historie vóór het herschrijven, met andere SHA's; de wijzigingen van PR #17 zitten er inhoudelijk in. `/api/version` is vanuit de
+  cloudcontainer niet bereikbaar.
+- **5-11-2026, coördinatiestaat.** De taak stond op `in_progress` onder regels 1.4.2. In de eigen declaratie
+  (`orchestratie/taken/ORCH-001.json`, uitzondering AGENTS.md §4.3) staat nu: regels 1.4.9 (`taak-herlees`), `integrated` (`taak-staat`),
+  `integratieCommit` `4db51b6`, basis `5a023b41` (oude SHA bewaard). Het wachtrijbestand `wachtrij.json` wijzigt de agent niet: bovenaan
+  staat nog de regel van het gesloten PR #11 (tak `feature/orch-001-20261031-112355`, «wacht»). Die sluit de integrator op
+  `integratie`: `wachtrij volgende`, dan `wachtrij klaar --taak ORCH-001 --uitkomst integrated --hoofd 4db51b6…`, dan `staat-commit`.
+  De status `installed` zet alleen de installer via `orchestratie/geinstalleerd.json`, dat nog ontbreekt.
+- **Onderweg gevonden en in aparte commits hersteld:**
+  - *Zoekcatalogus van knoppen.* De catalogus was verouderd na AUDIT-001. De generator bepaalde het tabblad uit tekst in de 1500 tekens
+    vóór een knop, waardoor «Підтвердити видалення» naar «Персоналізація» leidde. Nu leest de generator de syntaxisboom en leidt de
+    zoeker naar het juiste tabblad (instellingen, GitHub, API-kluis, lokale mail — 52 plekken, elk onafhankelijk gecontroleerd).
+  - *Scenario 7 van `orch-acceptatie`.* Een vaste pauze van 1,2 s gaf onder belasting 45/47. Nu houdt de stub de eerste installatie
+    onder flock vast tot de test de tweede heeft gecontroleerd.
+
+**Vervolg bij de eigenaar**
+- Kritieke beleidsregels bevestigen met passkey of SSH-handtekening: `controleer` meldt nog `KRITIEK_NIET_BEVESTIGD`, B-001…B-006
+  staan op `voorstel`, `regels.lock.json → eigenaar` is leeg.
+- Root-bestand `/etc/mijn-ruimte/eigenaar-ondertekenaars` op de server (RUNBOOK §18.1.5), anders weigert GitOps een met SSH
+  ondertekende lock.
+- `beleid.json → basis` (`20261105-061659`) vergelijken met de werkelijk geïnstalleerde versie: tag `20261105-101500` wijst naar `53a7b91`.
+- Desgewenst: oude technische verbindingen die ooit rechten uit «AI-toegang» kopieerden terugzetten naar de technische standaard
+  (het tabblad «Technisch» markeert ze; in bulk alleen met een apart script en met uw toestemming).
+- Losse vraag voor de mail: de tak `mode==='accounts'` in `GoogleMailWorkspace` wordt nooit getoond, omdat de enige aanroep `mode` niet meegeeft.
