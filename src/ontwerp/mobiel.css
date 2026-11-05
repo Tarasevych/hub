@@ -1,5 +1,8 @@
 /* ФУНДАМЕНТ — мобільна верстка (20.10.2026). Глобальні правила, що не дають жодному контейнеру стати ширшим за екран,
-   без переписування сторінок. Специфічність 0 (:where), тож локальні правила сторінок лишаються сильнішими. */
+   без переписування сторінок. Специфічність 0 (:where), тож локальні правила сторінок лишаються сильнішими — КРІМ правила
+   «кнопки не тонші за 44px» (min-height нижче): його :not(…) стоять поза :where і дають (0,3,1), тож воно перебиває
+   компонентні (0,2,0). Від цієї сили залежать account-afgemeld-menu.css і mail-rij-snelle-acties.css (вони пишуть (0,4,0)),
+   тому специфічність не міняти (05.11.2026). */
 
 /* Медіа ніколи не ширші за контейнер. */
 :where(img, video, canvas, iframe, embed, object) { max-width:100%; }
@@ -23,7 +26,9 @@
   :where(button, [role=button], a.knop, .knop, .knop-primair, .knop-secundair, .knop-stil, .knop-gevaar, select, input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=hidden]), textarea, summary):not(:has(> svg:only-child)):not(.is-icoon):not([role=switch], [role=checkbox], [role=radio]) { min-height:var(--tik-hoogte-mobiel); }
   /* 21.10: schakelaars (role=switch, bv. .v2-schakelaar 44×24) NIET ophogen — min-height won van hun height en maakte er een
      cirkel van 44×44 van. Hun tikvlak vergroten ze zelf met een onzichtbaar ::after (connector-v2.css). */
-  /* іконкові кнопки (лише svg всередині) лишаються своїх розмірів — їхня площа дотику задається сторінкою (44px у меню/вікнах). */
+  /* іконкові кнопки (лише svg всередині) лишаються своїх розмірів — їхня площа дотику задається сторінкою (44px у меню/вікнах).
+     Увага: :has(> svg:only-child) не бачить текстових вузлів, тож кнопка «svg + текст» теж вважається іконковою й 44px звідси
+     НЕ отримує. Такі кнопки задають висоту самі — у мобільному шарі в кінці свого CSS-файла (05.11.2026). */
   /* вікна й діалоги: на всю ширину з безпечними відступами (виріз/жест-смуга), прокрутка всередині */
   :where(.venster, .modal, .mcp-consent-dialog, [role=dialog]) { width:auto; max-width:calc(100vw - var(--ruimte-2) * 2 - var(--veilig-links) - var(--veilig-rechts)); max-height:calc(100dvh - var(--ruimte-2) * 2 - var(--veilig-boven) - var(--veilig-onder)); }
   :where(.modal-backdrop, .mcp-consent-backdrop, .venster-achter) { padding:calc(var(--ruimte-2) + var(--veilig-boven)) calc(var(--ruimte-2) + var(--veilig-rechts)) calc(var(--ruimte-2) + var(--veilig-onder)) calc(var(--ruimte-2) + var(--veilig-links)); }
