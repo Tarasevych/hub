@@ -162,7 +162,7 @@ jobs:
           mkdir -p uitvoer
           AUTEUR="Pavlo Tarasevych" \
           AGENT="autoclaw" \
-          SAMENVATTING="Дизайн сторінки акаунта identity: 12 екранів на одній сторінці, прототип, ТЗ і матриця покриття; код застосунку не змінено." \
+          SAMENVATTING="Сторінка облікового запису: 12 розділів identity на одній сторінці з меню-змістом і прокруткою, діалог фото з трьох джерел, адаптивність за контейнером." \
           BASIS_VERSIE="$BASIS_VERSIE" \
           BASIS_COMMIT="$BASIS_COMMIT" \
           UITROL_VERSIE_OVERRIDE="$VERSIE" \
@@ -196,7 +196,7 @@ jobs:
             "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256" \
             --target "$COMMIT" \
             --title "IDENTITY-ACCOUNT · $RELEASE_VERSION" \
-            --notes "Дизайн сторінки керування обліковим записом (12 екранів identity): живий прототип, ТЗ, матриця покриття. Лише документація — код застосунку не змінювався. Журнал розробки: orchestratie/ontwikkelarchieven/IDENTITY-001.json. Встановлення — лише за passkey-рішенням власника. BRON-COMMIT: $COMMIT" \
+            --notes "Сторінка керування обліковим записом: 12 розділів identity на одній сторінці з меню-змістом, scroll-spy і прямими посиланнями; клік по аватару відкриває діалог фото (пристрій / фото сервісу / https-посилання), смітничок 24 px у куті; адаптивність за контейнером (кнопки на всю ширину до 640 px, перевірено 320–430 px). Видалення фото на сервері ще не підтримується — смітничок повертає фото сервісу. Журнал розробки: orchestratie/ontwikkelarchieven/IDENTITY-001.json. Встановлення — лише за passkey-рішенням власника. BRON-COMMIT: $COMMIT" \
             --prerelease --latest=false
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_VERSION" \
             --jq '.assets[] | select(.name | endswith(".tar.gz")) | "\(.name) \(.digest)"' | tee "$RUNNER_TEMP/digest.txt"

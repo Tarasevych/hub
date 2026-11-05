@@ -182,14 +182,17 @@
 }
 
 .ia-avatar-camera {
+  /* Камера — по центру аватара (так у прототипі); смітничок 24 px сидить у куті й її не перекриває. */
   position: absolute;
-  inset: auto 0 0 auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--accent);
+  background: color-mix(in srgb, var(--accent) 88%, transparent);
   color: var(--text-on-accent);
   pointer-events: none;
 }
@@ -202,8 +205,8 @@
 /* Смітничок — 24 px у куті, камера лишається в центрі. */
 .ia-avatar-prullenbak {
   position: absolute;
-  top: -2px;
-  right: -2px;
+  top: -6px;
+  right: -6px;
   display: grid;
   place-items: center;
   width: 24px;
