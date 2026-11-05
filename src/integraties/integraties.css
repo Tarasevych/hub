@@ -182,10 +182,6 @@
 .il-w-sleutels[data-sleutels-missen]:not([data-sleutels-missen="0"]){border-color:color-mix(in srgb,var(--il-warn) 45%,var(--line))}
 .il-d-noot[data-let-op=ja]{color:var(--il-warn)}
 @media (max-width:640px){.il-w-acties .il-knop{flex:1 1 100%}.il-w-formulier .il-knop.is-primair{justify-self:stretch}}
-/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
-@media (max-width:700px){
-  .il-ververs,.il-groep button,.il-wens,.il-reset{min-height:var(--tik-hoogte)}
-}
 
 /* UI-013: vernieuwde catalogus (vlag integraties-catalogus-v2). Rustig, compact, licht/donker via currentColor en bestaande variabelen. */
 .ic2{display:flex;flex-direction:column;gap:12px}
@@ -279,3 +275,8 @@
 .is2-lijst li[data-groep=verbonden] i{background:#16a34a}.is2-lijst li[data-groep=aandacht] i{background:#dc2626}.is2-lijst li[data-groep=instellen] i{background:#d97706}.is2-lijst li[data-groep=beschikbaar] i{background:var(--accent,#2563eb)}
 @media (max-width:600px){.iw2-stappen li span{display:none}}
 .ic2-wizardknop{margin-left:auto}
+/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen.
+   Laatste laag van dit bestand (stond vóór de catalogus van UI-013; 05.11.2026 naar het einde, inhoud ongewijzigd). */
+@media (max-width:700px){
+  .il-ververs,.il-groep button,.il-wens,.il-reset{min-height:var(--tik-hoogte)}
+}
