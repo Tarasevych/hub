@@ -25,7 +25,8 @@
     "gewijzigd": [
       "src/ontwerp/fundament.css",
       "src/ontwerp/tokens.css",
-      "src/platform/vensters.css"
+      "src/platform/vensters.css",
+      "src/product-lege-toestand.css"
     ],
     "toegevoegd": [
       "src/ontwerp/modern.css",
@@ -38,8 +39,8 @@
     "verwijderd": []
   },
   "samenvatting": {
-    "uk": "Оновлено спільні стилі карток, вікон і робочого столу зі збереженням тем та адаптивної верстки.",
-    "nl": "Gedeelde stijlen voor kaarten, vensters en werkblad vernieuwd met behoud van thema's en responsieve indeling."
+    "uk": "Оновлено спільні стилі карток, вікон, порожніх станів і робочого столу зі збереженням тем та адаптивної верстки.",
+    "nl": "Gedeelde stijlen voor kaarten, vensters, lege toestanden en werkblad vernieuwd met behoud van thema's en responsieve indeling."
   },
   "tests": {
     "geslaagd": 5,
@@ -48,8 +49,8 @@
       "node scripts/eenheidstests.mjs werkblad: серверні тести потребують DATABASE_URL"
     ],
     "uitleg": {
-      "uk": "Пройдено розбір CSS, перевірку контрасту, typecheck:server, orch-kern (78/78) і werkblad-canvas-kern (53/53). Повний набір werkblad потребує бази даних. Повторну повну збірку перервано після тривалої обробки модулів; результат не підтверджено. Додано незалежні перевірки збірки та огляд компонентів у Chromium на GitHub; їхній результат очікується.",
-      "nl": "CSS-parsing, contrastcontrole, typecheck:server, orch-kern (78/78) en werkblad-canvas-kern (53/53) geslaagd. De volledige werkbladreeks vereist een database. De herhaalde volledige build is na een lange moduleverwerking onderbroken; het resultaat is niet bevestigd. Onafhankelijke build- en Chromium-controles op GitHub toegevoegd; resultaat wordt afgewacht."
+      "uk": "Попередній коміт: повна збірка, typecheck:server, orch-kern і werkblad-canvas-kern пройшли у GitHub Actions. Після додавання ілюстрацій для порожніх станів перевірки запускаються повторно. Повний серверний набір werkblad потребує бази даних.",
+      "nl": "Vorig commit: volledige build, typecheck:server, orch-kern en werkblad-canvas-kern geslaagd in GitHub Actions. Na de illustraties voor lege toestanden worden de controles opnieuw uitgevoerd. De volledige werkblad-serverreeks vereist een database."
     }
   },
   "nietGedaan": {

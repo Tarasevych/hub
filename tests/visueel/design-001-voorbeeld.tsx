@@ -2,6 +2,7 @@
 import { createRoot } from 'react-dom/client';
 import { CalendarDays, ListTodo, Mail } from 'lucide-react';
 import { Begroeting, SnelToegang, SnelleActies, Tip } from '../../src/werkblad/widgets/Start';
+import ProductEmptyState from '../../src/ProductLegeToestand';
 import type { WidgetProps } from '../../src/werkblad/soorten';
 import '../../src/index.css';
 import '../../src/ontwerp/fundament.css';
@@ -24,6 +25,7 @@ function Voorbeeld() {
         <article className='wb-tegel is-kaart' style={{ gridColumn: 'span 6', gridRow: 'span 2' }}><header className='wb-tegel-kop'><Mail className='wb-tegel-icoon' /><span className='wb-tegel-titel'>Пошта</span></header><div className='wb-tegel-inhoud'><p className='wb-leeg'>Підключіть пошту до свого простору.</p><button type='button' className='knop-primair'>Підключити</button></div></article>
         <article className='wb-tegel is-kaal' style={{ gridColumn: 'span 12' }}><Tip {...props} /></article>
       </div></div>
+      <ProductEmptyState icon={Mail} title='Тут поки порожньо' description='Підключіть потрібний сервіс, щоб почати роботу.' compact actionLabel='Підключити' onAction={() => {}} />
     </div>
   </main>;
 }

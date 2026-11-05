@@ -22,16 +22,18 @@ try {
     const stand = await pagina.evaluate(() => {
       const begroeting = document.querySelector('.wb-begroeting');
       const kaart = document.querySelector('.wb-tegel.is-kaart');
+      const leeg = document.querySelector('.product-empty-icon');
       return {
         breedte: document.documentElement.clientWidth,
         scrollbreedte: document.documentElement.scrollWidth,
         begroeting: Boolean(begroeting && begroeting.getBoundingClientRect().width > 0),
         radius: kaart ? parseFloat(getComputedStyle(kaart).borderTopLeftRadius) : 0,
+        leegRadius: leeg ? parseFloat(getComputedStyle(leeg).borderTopLeftRadius) : 0,
         animatie: begroeting ? getComputedStyle(begroeting).animationName : '',
       };
     });
     await pagina.screenshot({ path: `uitvoer/design-001/${g.naam}.png`, fullPage: true });
-    if (fouten.length || !stand.begroeting || stand.radius <= 0 || stand.animatie !== 'none' || stand.scrollbreedte > stand.breedte + 1) {
+    if (fouten.length || !stand.begroeting || stand.radius <= 0 || stand.leegRadius <= 0 || stand.animatie !== 'none' || stand.scrollbreedte > stand.breedte + 1) {
       throw new Error(`${g.naam}: ${JSON.stringify({ stand, fouten })}`);
     }
     console.log(`OK ${g.naam}: ${JSON.stringify(stand)}`);
