@@ -1,4 +1,4 @@
-name: DESIGN-002 · перевірка основи та інтерфейсу
+name: DESIGN-002 · збірка та візуальна перевірка
 
 on:
   pull_request:
@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   basis:
+    if: github.head_ref == 'feature/design-002-20261105-134500'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,22 +18,83 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      - name: Зареєструвати задачу
-        run: |
-          if [ ! -f orchestratie/taken/DESIGN-002.json ]; then
-            node scripts/orch.mjs taak-start --id DESIGN-002 --agent codex --basis 53a7b918038c9a0657e76c170415de4151885fcf --tak feature/design-002-20261105-134500 --omschrijving "Адаптивний інтерфейс і завершення попередніх покращень" --kanaal github_pr
-          fi
-      - name: Перевірити правила та актуальність
+          node-version: '24'
+      - name: Перевірити правила й актуальність
         run: |
           node scripts/orch.mjs controleer
-          node scripts/orch.mjs versheid --taak DESIGN-002 --fase start
-      - name: Показати декларацію задачі
-        run: cat orchestratie/taken/DESIGN-002.json
-      - name: Звірити встановлену версію
+          node scripts/orch.mjs versheid --taak DESIGN-002 --fase overdracht
+  build:
+    if: github.head_ref == 'feature/design-002-20261105-134500'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Перевірити типи й відповідні тести
         run: |
-          if curl --fail --silent --show-error --max-time 20 "https://hub.tarasevych.com/api/version" -o "$RUNNER_TEMP/site-version.json"; then
-            node -e 'const v=require(process.argv[1]); for(const k of ["version","versie","commit","bronCommit","branch","tak"]) if(v[k]!=null) console.log(k+"="+v[k])' "$RUNNER_TEMP/site-version.json"
-          else
-            echo "Встановлену версію зараз не вдалося прочитати."
-          fi
+          npm run typecheck:server
+          node scripts/eenheidstests.mjs orch-kern
+          node scripts/eenheidstests.mjs design-001
+          node scripts/eenheidstests.mjs werkblad-canvas-kern
+      - name: Зібрати застосунок
+        run: NODE_OPTIONS=--max-old-space-size=5120 npm run build
+  visueel:
+    if: github.head_ref == 'feature/design-002-20261105-134500'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm install --no-save --ignore-scripts --package-lock=false playwright@1.56.1
+      - name: Знайти браузер
+        id: browser
+        shell: bash
+        run: |
+          for kandidaat in google-chrome-stable google-chrome chromium-browser chromium; do
+            if command -v "$kandidaat" > /dev/null; then
+              echo "path=$(command -v "$kandidaat")" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          npx playwright install chromium
+      - name: Перевірити робочий стіл і сторінки
+        env:
+          CHROME_PATH: ${{ steps.browser.outputs.path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p uitvoer/design-001 uitvoer/design-002
+          npx vite --host 127.0.0.1 --port 4179 > uitvoer/design-002/vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for poging in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4179/tests/visueel/design-002-ruimtes.html > /dev/null; then break; fi
+            sleep 1
+          done
+          node tests/visueel/design-001-controle.mjs
+          node tests/visueel/design-002-controle.mjs
+      - name: Показати журнал при помилці
+        if: failure()
+        run: cat uitvoer/design-002/vite.log || true
+      - name: Зберегти зображення
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DESIGN-002-visueel
+          path: |
+            uitvoer/design-001/
+            uitvoer/design-002/
+          retention-days: 14
+          if-no-files-found: warn
