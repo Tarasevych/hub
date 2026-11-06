@@ -102,7 +102,7 @@ export async function main(): Promise<number> {
   }
   // 0.5: debugger is een OPTIONELE permissie (de opties vragen hem met een gebruikersgebaar); vroeger vast in permissions.
   // 0.8.1: het standaardpakket heeft GEEN debugger (bewuste keuze); alleen het pakket «diagnose» voegt hem vast toe (zie scripts/bouw-extensie.mjs).
-  check('manifest 0.8.1: debugger NIET in het standaardpakket, alleen nativeMessaging optioneel, sidePanel, externally_connectable alleen tarasevych.com, Chrome ≥ 116',
+  check('manifest 0.9.1: debugger NIET in het standaardpakket, alleen nativeMessaging optioneel, sidePanel, externally_connectable alleen tarasevych.com, Chrome ≥ 116',
     JSON.stringify(manifest.optional_permissions) === '["nativeMessaging"]' && !manifest.permissions.includes('debugger') && manifest.permissions.includes('sidePanel') && manifest.minimum_chrome_version === '116'
     && JSON.stringify(manifest.externally_connectable) === '{"matches":["https://*.tarasevych.com/*"]}' && manifest.side_panel?.default_path === 'sidepanel.html'
     && manifest.options_ui?.page === 'options.html' && vergelijkVersie(manifest.version, EXT_MIN_VERSIE) >= 0); // 0.4.1 sinds audit 18.10.2026 (update-melding)
@@ -110,10 +110,10 @@ export async function main(): Promise<number> {
     manifest.content_scripts.some((c: any) => c.js.includes('bridge.js') && c.world === 'ISOLATED') && manifest.content_scripts.some((c: any) => c.js.includes('collector.js') && c.world === 'MAIN' && c.run_at === 'document_start'));
   // 0.5: webRequest (niet-blokkerend) is bewust toegevoegd: netwerkverzameling in de achtergrond, alleen voor *.tarasevych.com
   // (host_permissions) en alleen als ontgrendeld. Permissions zijn nu exact de lijst uit het contract.
-  check('manifest 0.8.1: Manifest V3, alleen tarasevych.com, exact storage/alarms/scripting/activeTab/sidePanel/webRequest (geen debugger, tabs/cookies/history/<all_urls>), CSP en vaste sleutel (extensie-id)',
+  check('manifest 0.9.1: Manifest V3, alleen tarasevych.com, exact storage/alarms/scripting/activeTab/sidePanel/webRequest (geen debugger, tabs/cookies/history/<all_urls>), CSP en vaste sleutel (extensie-id)',
     JSON.stringify(manifest.permissions) === '["storage","alarms","scripting","activeTab","sidePanel","webRequest"]'
     && manifest.content_security_policy?.extension_pages === "script-src 'self'; object-src 'none'; base-uri 'none'"
-    && manifest.key === JSON.parse(readFileSync(join(process.cwd(), 'extension', 'signed', 'crx-info.json'), 'utf8')).publicKeyBase64 && manifest.version === '0.8.1'
+    && manifest.key === JSON.parse(readFileSync(join(process.cwd(), 'extension', 'signed', 'crx-info.json'), 'utf8')).publicKeyBase64 && manifest.version === '0.9.1'
     && manifest.description.length <= 132 &&
     manifest.manifest_version === 3 && JSON.stringify(manifest.host_permissions) === '["https://*.tarasevych.com/*"]'
     && manifest.content_scripts.every((c: any) => c.matches.every((m: string) => m === 'https://*.tarasevych.com/*'))

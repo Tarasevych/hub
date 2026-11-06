@@ -13,6 +13,7 @@ import { openTechVenster, profielVan, techActief, useTech } from '../tech/tech-o
 import { combineer, useExtensieLiveToestand, type LokaalDiagnostiek } from '../extensie/extensie-live';
 import { DIAG_PAKKET } from '../../shared/extensie-ontgrendeling';
 import AgentKleuren from './AgentKleuren';
+import LokaleAiPaneel from '../extensie/LokaleAiPaneel';
 import '../extensie/BrowserEnAgenten.css';
 import './agenten-tabs-2.css';
 
@@ -89,6 +90,9 @@ export default function TabExtensie({ tr, agents, techAgents, naActie, versie, k
 
       {/* 0.6.2: welke kleur hoort bij welke AI — de rand in het tabblad, de badge en de lijst gebruiken dezelfde kleur. */}
       <AgentKleuren tr={tr} blok />
+
+      {/* EXT090-001: ingebouwde AI van Chrome (extensie 0.9.0) — wat Chrome hier aanbiedt en wat de extensie mag; tekst blijft lokaal. */}
+      <LokaleAiPaneel tr={tr} keuze={live.extensie?.lokaleAi ?? null} extVersie={live.extensie?.versie ?? ''} />
 
       {techProfiel ? (
         <section className='ag-blok' data-ext-sectie='technisch' data-ag-blok='extensie-technisch' data-tech-actief={actief ? '1' : '0'} aria-labelledby='ag-ext-technisch'>

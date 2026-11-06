@@ -280,7 +280,7 @@ export default function ExtensionWizard(p: WizardProps) {
     list.push({
       id: 'found', title: tr('Розширення знайдено', 'Extensie gevonden'), done: present,
       body: present ? <p className='wiz-ok'>{tr('Готово: цей браузер бачить розширення.', 'Klaar: deze browser ziet de extensie.')}</p>
-        : <p className='wiz-wait'><LoaderCircle className='wiz-spin' aria-hidden='true' />{p.presence === 'checking' ? tr('Перевіряємо…', 'Controleren…') : tr('Ще не бачимо розширення. Щойно ви його додасте, цей крок позначиться сам; сторінку оновлювати не треба. Якщо не з’являється, перезавантажте цю сторінку (F5).', 'We zien de extensie nog niet. Zodra u hem toevoegt, wordt deze stap vanzelf afgevinkt; vernieuwen is niet nodig. Verschijnt hij niet, vernieuw dan deze pagina (F5).')}</p>,
+        : <p className='wiz-wait'><LoaderCircle className='wiz-spin' aria-hidden='true' />{p.presence === 'checking' ? tr('Перевіряємо…', 'Controleren…') : tr('Ще не бачимо розширення. Щойно ви його додасте, цей крок позначиться сам — розширення 0.9.1+ саме під’єднується до вже відкритих сторінок, оновлювати не треба.', 'We zien de extensie nog niet. Zodra u hem toevoegt, wordt deze stap vanzelf afgevinkt — extensie 0.9.1+ koppelt zich zelf aan al open pagina’s, vernieuwen is niet nodig.')}</p>,
     });
     list.push({
       id: 'pair', title: tr('Підключіть до облікового запису', 'Koppel aan uw account'), done: p.paired && p.hasAgent,

@@ -14,7 +14,8 @@ const EXT = join(process.cwd(), 'extension');
 const GEHEIM = 'Wachtwoord-GEHEIM-9f3a';
 const GEHEIMQ = 'GEHEIMQ7731';
 // 0.6.1: 'diagnostiek' (stand van het debuggerrecht, vier velden) hoort er nu bij — zie extensie-debugger-markering-20261019.test.ts.
-const PUBLIEK = ['versie', 'profielTab', 'account', 'prive', 'technisch', 'lokaalVerbonden', 'diagnostiek', 'gekoppeld', 'verbonden', 'staat', 'exp', 'caps', 'domeinen', 'aiVerbonden', 'agentId'];
+// 0.9.0 (EXT090-001): 'lokaleAi' (alleen de keuzes voor de ingebouwde AI van Chrome: aan + API-namen) hoort er ook bij.
+const PUBLIEK = ['versie', 'profielTab', 'account', 'prive', 'technisch', 'lokaalVerbonden', 'diagnostiek', 'gekoppeld', 'verbonden', 'staat', 'exp', 'caps', 'domeinen', 'aiVerbonden', 'agentId', 'lokaleAi'];
 const SLOT = ['gekoppeld', 'verbonden', 'staat', 'exp', 'caps', 'domeinen', 'aiVerbonden', 'agentId'];
 const DIAG = ['stand', 'optIn', 'actief', 'aanvraagbaar'];
 const T = 'technisch';
@@ -360,6 +361,22 @@ export async function main(): Promise<number> {
   check('mrExtPing: hello met de oude velden (paired/connected/agentId/account/extensionId/version) plus precies de publieke velden, geen geheimen',
     posts.filter((p) => p.type === 'hello').length === hellosVoor + 1 && hello.paired === true && hello.connected === true && hello.extensionId === chrome.runtime.id && hello.version === '0.6.0'
     && PUBLIEK.every((k) => k in hello) && Object.keys(hello).every((k) => ['mrExt', 'type', 'paired', 'connected', 'extensionId', 'version', ...PUBLIEK].includes(k)) && !JSON.stringify(hello).includes('GEHEIM'), JSON.stringify(hello));
+
+  // ---- 6. 0.9.0 (EXT090-001): ingebouwde AI van Chrome, levensteken en verweesde brug ----
+  await naarBrug({ op: 'status-push', status: { versie: '0.9.0', lokaleAi: { aan: true, apis: ['prompt', 'translator', 'rm -rf', 'prompt'], tekst: 'GEHEIME-INVOER', uitvoer: 'GEHEIME-UITVOER' } } });
+  await rust();
+  const lai = statusPosts().at(-1);
+  check('lokaleAi: alleen {aan, apis} met bekende API-namen (ontdubbeld); invoer/uitvoer gaan nooit naar de pagina',
+    alleenPubliek(lai) && JSON.stringify(lai.lokaleAi) === '{"aan":true,"apis":["prompt","translator"]}' && !JSON.stringify(posts).includes('GEHEIME-'), JSON.stringify(lai.lokaleAi));
+  const lev = await naarBrug({ op: 'brug?' });
+  check("op 'brug?' (zorgVoorBrug): levensteken zonder gegevens", lev?.ok === true && JSON.stringify(Object.keys(lev.data)) === '["versie"]', JSON.stringify(lev));
+  const echtId = chrome.runtime.id;
+  (chrome.runtime as any).id = undefined; // extensie bijgewerkt/herladen: deze brug is nu verweesd
+  const hellosWees = posts.filter((p) => p.type === 'hello').length;
+  vanPagina({ mrExtPing: true }); vanPagina({ mrExtStatus: true }); await rust(40);
+  check('verweesde brug (chrome.runtime.id weg) antwoordt de pagina niet meer — geen «niet gekoppeld» naast de nieuwe brug',
+    posts.filter((p) => p.type === 'hello').length === hellosWees);
+  (chrome.runtime as any).id = echtId;
 
   for (const t of intervallen) clearInterval(t);
   return einde();

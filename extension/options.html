@@ -24,6 +24,7 @@
     <a href="#tabbladen" data-sectie="tabbladen" data-nl="Browser en tabbladen">Браузер і вкладки</a>
     <a href="#diagnose" data-sectie="diagnose" data-nl="Diagnose">Діагностика</a>
     <a href="#agenten" data-sectie="agenten" data-nl="AI-agenten en koppelingen">ШІ-агенти та інтеграції</a>
+    <a href="#lokale-ai" data-sectie="lokale-ai" data-nl="Ingebouwde AI (Chrome)">Вбудований ШІ (Chrome)</a>
     <a href="#extra" data-sectie="extra" data-nl="Extra">Додатково</a>
   </nav>
   <main>
@@ -87,6 +88,16 @@
       <div class="knoppen-rij"><button type="button" id="naar-agenten" data-nl="Agenten op de site">Агенти на сайті</button></div>
     </section>
 
+    <!-- 0.9.0: ingebouwde AI van Chrome (Gemini Nano op dit apparaat); inhoud wordt door options-lokale-ai.js gebouwd -->
+    <section id="lokale-ai" class="sectie" aria-labelledby="kop-lokale-ai" hidden>
+      <div class="sectie-kop"><h2 id="kop-lokale-ai" data-nl="Ingebouwde AI van Chrome">Вбудований ШІ Chrome</h2><button type="button" class="help" data-help="uitleg-lokale-ai"></button></div>
+      <div id="uitleg-lokale-ai" hidden>
+        <p class="zacht" data-nl="Chrome heeft een eigen AI-model (Gemini Nano) dat volledig op deze computer draait: samenvatten, schrijven, herschrijven, vertalen, taal herkennen, proeflezen en een vrij gesprek. Tekst verlaat het apparaat niet — ook de server van Mijn Ruimte ziet hem niet. Gebruik: zijpaneel → «Lokale AI».">Chrome має власну модель ШІ (Gemini Nano), що повністю працює на цьому комп’ютері: стислий виклад, написання, переписування, переклад, визначення мови, коректура й вільний діалог. Текст не залишає пристрій — навіть сервер Mijn Ruimte його не бачить. Використання: бічна панель → «Локальний ШІ».</p>
+        <p class="zacht" data-nl="Vereisten: Windows 10/11, macOS 13+, Linux of ChromeOS (Chromebook Plus); ≥22 GB vrij op de schijf van het Chrome-profiel; GPU met meer dan 4 GB of 16 GB RAM en 4 kernen; een onbeperkte verbinding voor de eerste download. Het model kent Engels, Spaans, Japans, Duits en Frans; Oekraïens en Nederlands gaan via de vertaler.">Вимоги: Windows 10/11, macOS 13+, Linux або ChromeOS (Chromebook Plus); ≥22 ГБ вільного місця на диску профілю Chrome; GPU понад 4 ГБ або 16 ГБ RAM і 4 ядра; безлімітне з’єднання для першого завантаження. Модель знає англійську, іспанську, японську, німецьку й французьку; українська та нідерландська — через перекладач.</p>
+      </div>
+      <div id="lokale-ai-inhoud"></div>
+    </section>
+
     <section id="extra" class="sectie" aria-labelledby="kop-extra" hidden>
       <div class="sectie-kop"><h2 id="kop-extra" data-nl="Extra">Додатково</h2><button type="button" class="help" data-help="native-let-op"></button></div>
       <h3 id="kop-lokaal" data-nl="Lokale AI-agent (Native Messaging)">Локальний ШІ-агент (Native Messaging)</h3>
@@ -111,5 +122,7 @@
 </div>
 <script src="ui.js"></script>
 <script src="options.js"></script>
+<script src="lokale-ai.js"></script>
+<script src="options-lokale-ai.js"></script>
 </body>
 </html>
