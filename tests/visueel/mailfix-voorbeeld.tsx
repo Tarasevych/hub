@@ -1,5 +1,6 @@
 // MAILFIX-001: de ECHTE volledige MailFunctionalView met MailAccountsHub én IntegratieStrook,
 // niet enkel een geïsoleerde orbit. Alle API-antwoorden hieronder zijn fictief en bevatten geen privésessie.
+import '../../src/ontwerp/tokens.css'; // tokens van de site (DESIGN-001): de echte component-CSS gebruikt ze zonder terugval
 import { createRoot } from 'react-dom/client';
 import MailFunctionalView from '../../src/MailFunctioneelWeergave';
 

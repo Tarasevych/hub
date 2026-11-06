@@ -298,6 +298,29 @@ function oudePython(c: { pk: string; basis: string; goed: string; env: NodeJS.Pr
   const oudeRegels = existsSync(spoorOud) ? readFileSync(spoorOud, 'utf8').trim().split('\n').filter(Boolean).length : 0;
   check('nagebootste 3.11.2 nam echt de terugval-tak (precies één oude extractall)', oudeRegels === 1, String(oudeRegels));
   check('terugval en data-filter geven precies dezelfde boom', !!uitkomst['20261010-100000'] && uitkomst['20261010-100000'] === uitkomst['20261010-110000']);
+  // Eigenaar uit het archief: extractall zet die alleen als root (chown bij euid 0). Het script zelf draait hier als nobody, dus
+  // draaien we als root het uitpakfragment van het script direct (dezelfde tekst, geen kopie). Zonder root niet te toetsen.
+  if (ALS_ROOT) {
+    const fragment = /# ---- 4\. inhoud[^\n]*\n[\s\S]*?<<'PY'\n([\s\S]*?)\nPY\n/.exec(readFileSync(SCRIPT, 'utf8'));
+    check('als root: uitpakfragment van het script gevonden', !!fragment);
+    if (fragment) {
+      const frag = join(basis, 'uitpak-fragment.py'); writeFileSync(frag, `${fragment[1]}\n`);
+      const versie = '20261010-120000'; const p = pakket(pk, versie, { lastig: true });
+      const spoorRoot = join(basis, 'oud-python-spoor-root');
+      const verwachtRoot = verwacht.split('\n').map((r) => r.replace(/ \d+ \d+$/, ' 0 0')).join('\n');
+      const bomen: Record<string, string> = {};
+      for (const oudePy of [false, true]) {
+        const naam = oudePy ? 'nagebootste python 3.11.2' : 'python met data-filter';
+        const doel = join(basis, `als-root-${oudePy ? 'oud' : 'filter'}`); mkdirSync(doel);
+        const r = spawnSync('bash', ['-c', 'umask 077 && exec python3 "$0" "$1" "$2" 1000000000', frag, p, doel],
+          { env: { ...process.env, PYTHONPATH: oudePy ? oud : '', OUDPY_SPOOR: oudePy ? spoorRoot : '' }, encoding: 'utf8' });
+        bomen[naam] = spawnSync('bash', ['-c', `cd "$0/mijn-ruimte-${versie}" && find lastig -printf '%p %m %U %G\\n' | LC_ALL=C sort`, doel], { encoding: 'utf8' }).stdout.trim();
+        check(`als root, ${naam}: eigenaar root (niet 1234 uit het archief), modi zoals het data-filter`, r.status === 0 && bomen[naam] === verwachtRoot, `${r.status} ${String(r.stderr).slice(-200)} ${bomen[naam]} ≠ ${verwachtRoot}`);
+      }
+      const oudRoot = existsSync(spoorRoot) ? readFileSync(spoorRoot, 'utf8').trim().split('\n').filter(Boolean).length : 0;
+      check('als root: nagebootste 3.11.2 nam echt de terugval-tak', oudRoot === 1, String(oudRoot));
+    }
+  }
 }
 
 type NooitStilCtx = {
@@ -540,7 +563,10 @@ function plafond(check: (n: string, ok: boolean, i?: string) => void) {
   const unit = lees('deploy/mcp/mijn-ruimte-mcp.service');
   check('plafond: MCP-unit met NoNewPrivileges=yes', /^NoNewPrivileges=yes/m.test(unit));
   const uitrol = lees(SCRIPT);
-  check('plafond: uitrol controleert handtekening vóór uitpakken', uitrol.indexOf('ssh-keygen -Y verify') > 0 && uitrol.indexOf('ssh-keygen -Y verify') < uitrol.indexOf('extractall'));
+  // Echte aanroepen, niet de commentaarkop bovenaan (die noemt «ssh-keygen -Y verify» ook; met indexOf was deze check altijd groen).
+  const uitrolCode = zonderCommentaar(uitrol);
+  const verifieerOp = uitrolCode.search(/\bssh-keygen -Y verify\b/), uitpakOp = uitrolCode.search(/^\s*tf\.extractall\(/m);
+  check('plafond: uitrol controleert handtekening vóór uitpakken', verifieerOp > 0 && uitpakOp > 0 && verifieerOp < uitpakOp, `${verifieerOp} ${uitpakOp}`);
   check('plafond: uitrol pakt uit met filter="data"', /^\s*tf\.extractall\(doel, members=leden, filter="data"\)\s*$/m.test(uitrol));
   check('plafond: uitrol negeert pad-overrides als root', /id -u\)" -eq 0 \]; then\s*\n?\s*unset UITROL_INBOX/.test(uitrol) || /unset UITROL_INBOX UITROL_WERK/.test(uitrol));
   const archief = lees('deploy/archief-maken.sh');

@@ -1,7 +1,7 @@
 // Etap D (/zoek): pure zoeklogica (categorieën, filters, URL-staat, markering) + route 'zoek' in beide tabbladlijsten.
 // 22.10.2026 (Z4): bijgewerkt naar het contract zoek-kern-2 (shared/zoek-model.ts): 13 bronnen, filters gaan naar de server
 // (bouwVraag), typo-correcties komen van de server (suggesties soort 'correctie'), geschiedenis op de server (0103).
-// De uitgebreide tests staan in zoek-ui-20261022.test.ts; dit bestand bewaakt de basis. Draaien: node scripts/eenheidstests.mjs zoek-etap-d
+// De uitgebreide tests staan in zoek-ui-20261022.test.ts; dit bestand bewaakt de basis. Draaien: node scripts/eenheidstests.mjs zoek-etappe-d
 import { readFileSync } from 'node:fs';
 import { CATEGORIE_BRONNEN, CATEGORIEEN, LEEG_FILTER, bouwVraag, effectieveBronnen, filterLokaal, leesUrl, schrijfUrl, sindsVoor } from '../../src/zoek/zoek-logica';
 import { highlightParts, stukkenUitPosities } from '../../src/zoek/zoek-kern';

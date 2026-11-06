@@ -413,9 +413,24 @@ afgedekt met tests die op de eerdere code zouden falen.
     nagekeken suites groen.
   - *Scenario 7 van `orch-acceptatie`.* Een vaste pauze van 1,2 s gaf onder belasting 45/47. Nu houdt de stub de eerste installatie
     onder flock vast tot de test de tweede heeft gecontroleerd.
+- **6-11-2026, na het samenvoegen van PR #30.** In opdracht van de eigenaar is PR #30 met merge-commit `c9d7ffd` in
+  `integratie` samengevoegd. Daarna sloten de drie `orch`-opdrachten de regel van PR #11 in de wachtrij (`29e785f`): de wachtrij is
+  leeg, ORCH-001 staat in `geschiedenis` als `integrated` @ `4db51b6`. `controleer` meldt «alles in orde», alleen
+  `KRITIEK_NIET_BEVESTIGD` blijft. De controle vóór het samenvoegen vond 8 kleine oude fouten in de tests. Die zijn in een aparte PR
+  met vijf commits opgelost:
+  - `uitrol-deur`: het plafond «handtekening vóór uitpakken» vond de commentaarkop, niet de echte aanroep `ssh-keygen -Y verify`.
+    De eigenaar-reset van de terugval-tak (Python < 3.11.4) wordt nu als root getoetst met het fragment uit het script zelf (109/109);
+  - `hulp/node-test-main.ts`: een late fout staat nu in stderr. In plaats van een pauze van 25 ms wacht de uitvoerder op
+    kortlevende timers en verzoeken, maximaal 2 s. De echte timers worden bij het laden vastgelegd, dus `mock.timers` laat een suite
+    niet meer hangen (`eenheidstests-uitvoerder` 15/15);
+  - `ai-kluis-een-plek`: tijdelijke submappen zijn als root van `nobody` met 0700 in plaats van 0777 (31/31 met rollen en Chromium);
+  - `ontwerp-fundament`: lezen (`getPropertyValue`) en commentaar tellen niet meer als definitie van een CSS-variabele. De
+    voorbeeldpagina's van de mail laden `tokens.css`, hun eigen `:root` is `html:root`. In Chromium zijn op `:root` nu 40/40/8
+    tokens gedefinieerd die eerst leeg waren; de waarden van de pagina's zijn niet veranderd (40/40).
+  14 van de 14 mutanten gedood. De site is niet bijgewerkt.
 
 **Vervolg bij de eigenaar**
-- De PR van de taak samenvoegen in `integratie` en pas daarna de regel van PR #11 in de wachtrij sluiten met de drie opdrachten hierboven.
+- ~~De PR van de taak samenvoegen in `integratie` en pas daarna de regel van PR #11 in de wachtrij sluiten~~ — gedaan op 6-11-2026 (`c9d7ffd`, `29e785f`).
 - Kritieke beleidsregels bevestigen met passkey of SSH-handtekening: `controleer` meldt nog `KRITIEK_NIET_BEVESTIGD`, B-001…B-006
   staan op `voorstel`, `regels.lock.json → eigenaar` is leeg.
 - Root-bestand `/etc/mijn-ruimte/eigenaar-ondertekenaars` op de server (RUNBOOK §18.1.5), anders weigert GitOps een met SSH
