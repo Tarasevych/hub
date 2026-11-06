@@ -86,6 +86,16 @@ export async function main(): Promise<number> {
       && agentUitrol.status === 400 && agentUitrol.data.error === 'GEEN_VOORBEREIDER_GRANT', JSON.stringify([agentGoedkeur.data, agentUitrolPrive.data, agentUitrol.data]));
     const lijstRuimte = (await call('POST /api/mcp/tokens/list', USER)).data.tokens as any[];
     check('tokenlijst toont de ruimte per token', lijstRuimte.length === 1 && lijstRuimte[0].ruimte === 'technisch');
+    // SEC-001 (fd52dca): een token geldt alleen voor een bestaand, goedgekeurd account. U tijdelijk op «pending»: hetzelfde, nog
+    // geldige token moet dan TOKEN_INVALID (401) geven; weer goedgekeurd → het token geldt weer (deze voorwaarde was onbewaakt).
+    const zetStatus = (st: string) => sys.query("UPDATE app.records SET data = jsonb_set(data, '{status}', to_jsonb($2::text)) WHERE tbl = 'users' AND id = $1", [USER, st]);
+    await zetStatus('pending');
+    const nietGoedgekeurd = await call('POST /api/mcp/agent', '', { name: 'list_tasks', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
+    await zetStatus('approved');
+    const weerGoedgekeurd = await call('POST /api/mcp/agent', '', { name: 'list_tasks', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
+    check('agenttoken: account niet (meer) goedgekeurd → TOKEN_INVALID (401); weer goedgekeurd → het token geldt weer',
+      nietGoedgekeurd.status === 401 && nietGoedgekeurd.data?.error === 'TOKEN_INVALID' && weerGoedgekeurd.status !== 401 && weerGoedgekeurd.data?.error !== 'TOKEN_INVALID',
+      JSON.stringify([nietGoedgekeurd.status, nietGoedgekeurd.data, weerGoedgekeurd.status, weerGoedgekeurd.data]));
     await sys.query("UPDATE app.mcp_console_tokens SET expires_at = now() - interval '1 second' WHERE user_id = $1", [USER]);
     check('verlopen token: 401', (await call('POST /api/mcp/agent', '', { name: 'list_tasks' }, { headers: { authorization: `Bearer ${raw}` } })).status === 401);
 
