@@ -357,16 +357,22 @@ with tarfile.open(pakket, "r:gz") as tf:
     if hasattr(tarfile, "data_filter"):
         tf.extractall(doel, members=leden, filter="data")
     else:
-        # python3 < 3.11.4 kent filter="data" niet: hetzelfde effect met de hand (alleen gewone bestanden/mappen, zie boven):
-        # geen setuid/setgid/sticky, geen schrijfrecht voor groep/anderen, eigenaar = wie uitpakt (niet uit het archief).
+        # python3 < 3.11.4 heeft nog geen data-filter (PEP 706): hetzelfde effect met de hand (alleen gewone bestanden en mappen,
+        # zie boven). Eigenaar = wie uitpakt, niet die uit het archief. Bestanden: geen setuid/setgid/sticky, geen schrijfrecht voor
+        # groep/anderen, de eigenaar mag lezen en schrijven, uitvoerbaar alleen als de eigenaar het al was. Mappen: de modus uit het
+        # archief telt niet; zoals bij het filter krijgen ze de umask van dit script (077, dus 0700).
         import os
+        um = os.umask(0)
+        os.umask(um)
         for m in leden:
             m.uid, m.gid, m.uname, m.gname = os.geteuid(), os.getegid(), "", ""
             if m.isfile():
-                m.mode |= 0o600
+                m.mode &= 0o755
                 if not m.mode & 0o100:
                     m.mode &= ~0o111
-            m.mode &= 0o755
+                m.mode |= 0o600
+            else:
+                m.mode = 0o777 & ~um
         tf.extractall(doel, members=leden)
 PY
 then
