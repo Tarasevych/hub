@@ -447,6 +447,12 @@ a.ag-knop{text-decoration:none}
 .ag-ext-regel{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0;padding:12px;border:1px dashed var(--line);border-radius:var(--ag-r,10px)}
 .ag-ext-regel span{flex:1 1 240px;min-width:0;line-height:1.5}
 .ag-ext-regel .ag-knop{min-height:44px}
+/* EXT090-001 (0.9.2): «Вбудований ШІ Chrome» → gebruik door pagina's van de site (siteToegang) en proefformulier. */
+.ag-ext-lai-site{display:grid;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.ag-ext-lai-site .ag-knop{min-height:44px;justify-self:start;white-space:normal}
+.ag-ext-lai-site .ag-veld{display:grid;gap:4px;font-size:.85rem;font-weight:600}
+.ag-ext-lai-site :is(select,textarea){width:100%;max-width:100%;box-sizing:border-box;font:inherit;font-weight:400;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--text)}
+.ag-ext-lai-uit{margin:0;padding:8px;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--text);font:inherit}
 .ext-toestemmingen{margin-top:12px;min-width:0}
 .ext-toestemmingen>h4{margin:0 0 8px;font-size:.95rem}
 .ag-ext [data-paneel],.ag-ext .ag-kaart{min-width:0;overflow-wrap:anywhere}

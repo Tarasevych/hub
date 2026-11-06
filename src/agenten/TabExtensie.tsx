@@ -92,7 +92,7 @@ export default function TabExtensie({ tr, agents, techAgents, naActie, versie, k
       <AgentKleuren tr={tr} blok />
 
       {/* EXT090-001: ingebouwde AI van Chrome (extensie 0.9.0) — wat Chrome hier aanbiedt en wat de extensie mag; tekst blijft lokaal. */}
-      <LokaleAiPaneel tr={tr} keuze={live.extensie?.lokaleAi ?? null} extVersie={live.extensie?.versie ?? ''} />
+      <LokaleAiPaneel tr={tr} keuze={live.extensie?.lokaleAi ?? null} extVersie={live.extensie?.versie ?? ''} extId={live.extensie?.extensieId ?? ''} />
 
       {techProfiel ? (
         <section className='ag-blok' data-ext-sectie='technisch' data-ag-blok='extensie-technisch' data-tech-actief={actief ? '1' : '0'} aria-labelledby='ag-ext-technisch'>

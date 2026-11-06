@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Mijn Ruimte",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Mijn Ruimte: uw AI werkt alleen op uw eigen diensten (of, met technisch profiel, beheerpagina's) die u op de site opent.",
   "minimum_chrome_version": "116",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzcZnxA1QZm6Y5DXSOiWvNTIy+FsNKxIQEQ/lirLjWnKAYTfuQCCnBxNqLihLeu5+mKLc9CQoN4+si2WceYzeSpEUpJD75+abVEgqg3runJ6O8XFko+cWmmDpVpSQin4HBylp0o50SUoi14u75Y5U4JW6v681Cr4lxMpyRE6qO1Msx6pAyJo/1ayOuZvYf5jq5Ge+2iE2Igt9R8EoaYsaGBZwhr7bYLJHlmarQe//Z4XQ2jU/XsPghhf944i4n4MEd2GEM2dWDwPg/CZIM5dj8JO7Vu4FlGYFfC2BzDf7N2Ia/Sfp8NovUZ11gVrvy181tXirtPVg/qey5EqrFed/xwIDAQAB",
@@ -11,7 +11,8 @@
     "scripting",
     "activeTab",
     "sidePanel",
-    "webRequest"
+    "webRequest",
+    "offscreen"
   ],
   "optional_permissions": [
     "nativeMessaging"

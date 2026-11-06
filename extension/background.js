@@ -431,7 +431,41 @@ async function lokaleAiKeuze() {
   const v = o.lokaleAi && typeof o.lokaleAi === 'object' ? o.lokaleAi : {};
   const apis = v.apis && typeof v.apis === 'object' ? v.apis : {};
   // Standaard (nog nooit opgeslagen): alles aan, net als STANDAARD in lokale-ai.js.
-  return { aan: v.aan !== false, apis: LAI_APIS.filter((id) => apis[id] !== false) };
+  const aan = v.aan !== false;
+  // 0.9.1: stand per API zoals Chrome die IN DE EXTENSIE meldt (offscreen.html meet availability(), nooit create()). Nooit wachten:
+  // de status gebruikt de laatste meting; een nieuwe meting loopt op de achtergrond en meldt daarna statusWijziging().
+  if (aan) laiMeetAls();
+  // siteToegang («!», standaard uit): mogen pagina's van de site zelf de lokale AI gebruiken (LOKALE_AI via externally_connectable).
+  return { aan, apis: LAI_APIS.filter((id) => apis[id] !== false), siteToegang: v.siteToegang === true, ...(aan && laiMeting.data ? { stand: { ...laiMeting.data } } : {}) };
+}
+// ---- 0.9.2: stand per API voor de status (eigen pagina's en de site) via hetzelfde offscreen.html als de site-aanvragen ----
+// Стан кожної API для статусу: той самий offscreen-документ (naarOffscreen нижче), лише availability(), без завантаження.
+const LAI_STANDEN = ['available', 'downloadable', 'downloading', 'unavailable', 'ontbreekt', 'stil', 'fout'];
+const LAI_GELDIG_MS = 5 * 60_000;
+const laiMeting = { data: null, t: 0, bezig: null };
+/** Zuiver: alleen bekende API's en stand-namen uit het offscreen-antwoord ({apis}); 'uit' zegt de keuze al. Anders null. */
+function laiStandFilter(d) {
+  const a = d && typeof d === 'object' && d.apis && typeof d.apis === 'object' && !Array.isArray(d.apis) ? d.apis : null;
+  if (!a) return null;
+  const uit = {};
+  for (const id of LAI_APIS) if (LAI_STANDEN.includes(a[id])) uit[id] = a[id];
+  return Object.keys(uit).length ? uit : null;
+}
+async function meetLokaleAi() {
+  // naarOffscreen staat lager in dit bestand (function-declaratie, dus hier al bruikbaar); het document sluit zelf na een minuut.
+  const r = await Promise.race([naarOffscreen({ op: 'lokale-ai-stand' }).catch(() => null), new Promise((ok) => setTimeout(() => ok(null), 20_000))]);
+  return r && r.ok ? laiStandFilter(r) : null;
+}
+/** Start een meting als de vorige ouder is dan LAI_GELDIG_MS; nooit twee tegelijk. Na afloop: statusWijziging(). */
+function laiMeetAls(forceer = false) {
+  if (laiMeting.bezig || (!forceer && Date.now() - laiMeting.t < LAI_GELDIG_MS)) return laiMeting.bezig;
+  laiMeting.t = Date.now();
+  laiMeting.bezig = meetLokaleAi().then((d) => {
+    const anders = JSON.stringify(d) !== JSON.stringify(laiMeting.data);
+    laiMeting.data = d;
+    if (anders) void statusWijziging();
+  }, () => undefined).finally(() => { laiMeting.bezig = null; });
+  return laiMeting.bezig;
 }
 /** ExtStatus 0.6 voor eigen pagina's: geen sleutels of tokens. sloten.technisch = null als die kaart niet mag bestaan. */
 async function statusKern() {
@@ -1376,6 +1410,71 @@ async function pair(code, name) {
   return { ok: true, agentId: data.agentId, ruimte };
 }
 
+// ---------------------------------------------------------------- 0.9.1: lokale AI via offscreen.html
+// De ingebouwde AI van Chrome bestaat niet in de service worker. Voor aanvragen van de site (en later andere achtergrondtaken)
+// opent de worker één onzichtbaar document (offscreen.html) en sluit het weer na een minuut zonder werk.
+// Site-aanvragen alleen als de gebruiker «!» siteToegang aanzette (standaard uit); nooit een modeldownload zonder klik.
+const OFFSCREEN_URL = 'offscreen.html';
+let offscreenBezig = null;
+let offscreenSluiter = null;
+async function offscreenOpen() {
+  if (!chrome.offscreen || typeof chrome.offscreen.createDocument !== 'function') throw Object.assign(new Error('OFFSCREEN_ONTBREEKT'), { code: 'OFFSCREEN_ONTBREEKT' });
+  const url = chrome.runtime.getURL(OFFSCREEN_URL);
+  let bestaat = false;
+  try {
+    if (chrome.runtime.getContexts) bestaat = (await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'], documentUrls: [url] })).length > 0;
+    else if (chrome.offscreen.hasDocument) bestaat = await chrome.offscreen.hasDocument();
+  } catch { bestaat = false; }
+  if (bestaat) return;
+  if (!offscreenBezig) {
+    offscreenBezig = chrome.offscreen.createDocument({ url: OFFSCREEN_URL, reasons: ['WORKERS'], justification: 'Ingebouwde AI van Chrome (Gemini Nano, Translator, Summarizer…) bestaat alleen in een document, niet in de service worker.' })
+      .catch((e) => { if (!/single offscreen|already/i.test(String(e && e.message))) throw e; })
+      .finally(() => { offscreenBezig = null; });
+  }
+  await offscreenBezig;
+}
+function offscreenLaterSluiten() {
+  if (offscreenSluiter) clearTimeout(offscreenSluiter);
+  offscreenSluiter = setTimeout(() => { offscreenSluiter = null; if (lokaleAiLopend.size === 0) { try { void chrome.offscreen.closeDocument().catch(() => undefined); } catch { /* al dicht */ } } }, 60_000);
+}
+const lokaleAiLopend = new Set();
+const lokaleAiTeller = new Map(); // origin → [tijdstempels] (max 20 per minuut)
+async function lokaleAiInstellingen() {
+  try { const o = await chrome.storage.local.get('lokaleAi'); return o && o.lokaleAi && typeof o.lokaleAi === 'object' ? o.lokaleAi : {}; } catch { return {}; }
+}
+async function naarOffscreen(bericht) {
+  await offscreenOpen();
+  offscreenLaterSluiten();
+  const r = await chrome.runtime.sendMessage({ ...bericht, doel: 'offscreen' });
+  offscreenLaterSluiten();
+  return r && typeof r === 'object' ? r : { ok: false, reason: 'OFFSCREEN_GEEN_ANTWOORD' };
+}
+const LOKALE_AI_MODI = ['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt'];
+async function lokaleAiVoorSite(message, origin) {
+  const inst = await lokaleAiInstellingen();
+  if (inst.aan === false) return { ok: false, reason: 'UIT' };
+  if (inst.siteToegang !== true) return { ok: false, reason: 'SITE_TOEGANG_UIT' };
+  if (message.type === 'LOKALE_AI_STAND') return naarOffscreen({ op: 'lokale-ai-stand' });
+  const modus = String(message.modus || '');
+  if (!LOKALE_AI_MODI.includes(modus)) return { ok: false, reason: 'MODUS' };
+  const tekst = typeof message.tekst === 'string' ? message.tekst : '';
+  if (!tekst.trim()) return { ok: false, reason: 'LEEG' };
+  if (tekst.length > 20000) return { ok: false, reason: 'TE_LANG', max: 20000 };
+  const nu = Date.now();
+  const lijst = (lokaleAiTeller.get(origin) || []).filter((x) => nu - x < 60_000);
+  if (lijst.length >= 20) return { ok: false, reason: 'TE_VEEL' };
+  if (lokaleAiLopend.size >= 2) return { ok: false, reason: 'BEZIG' };
+  lijst.push(nu); lokaleAiTeller.set(origin, lijst);
+  const id = `${nu}-${Math.random().toString(36).slice(2)}`;
+  lokaleAiLopend.add(id);
+  try {
+    const taal = (v) => (typeof v === 'string' && /^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(v) ? v : undefined);
+    return await naarOffscreen({ op: 'lokale-ai-voer', id, modus, tekst, vanTaal: taal(message.bron), naarTaal: taal(message.doel), limietMs: 120000 });
+  } catch (e) {
+    return { ok: false, reason: (e && e.code) || 'OFFSCREEN_FOUT', detail: String((e && e.message) || e).slice(0, 200) };
+  } finally { lokaleAiLopend.delete(id); }
+}
+
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   (async () => {
     let origin = '';
@@ -1390,10 +1489,14 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     if (type === 'PING') {
       await geladen;
       const s = await selfStatus();
+      const vt = await voorTab(s);
+      // lokaleAi: publieke keuzes (aan/apis/stand) PLUS het PING-contract {ondersteund, siteToegang}; na de spread, anders overschreven.
       return sendResponse({ ok: true, version: VERSION, selfHosted: ZELF_GEHOST, latest: laatsteBekend || null, paired: s.gekoppeld, connected: s.verbonden,
-        diagOptIn: s.diagOptIn, ...(await voorTab(s)) });
+        diagOptIn: s.diagOptIn, ...vt, lokaleAi: { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: (await lokaleAiInstellingen()).siteToegang === true } });
     }
     if (type === 'STATUS') { await geladen; return sendResponse({ ok: true, ...(await voorTab(await statusKern())) }); }
+    // 0.9.1: lokale AI voor pagina's van de eigen site (alleen met «!» siteToegang; tekst blijft op dit apparaat)
+    if (type === 'LOKALE_AI' || type === 'LOKALE_AI_STAND') return sendResponse(await lokaleAiVoorSite(message, origin));
     const beheerOrigin = ['mcp.tarasevych.com', 'admin.tarasevych.com'].includes(new URL(origin).hostname);
     if ((type === 'SELF_TEST' || type === 'UPDATE_CHECK') && !beheerOrigin) return sendResponse({ ok: false, reason: 'WRONG_HOST' });
     if (type === 'SELF_TEST') return sendResponse({ ok: true, ...(await selfTest()) });
@@ -1610,6 +1713,6 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 chrome.runtime.onStartup.addListener(() => { connect(); void versieOphalen(); });
 // 0.9.1: andere keuze voor de lokale AI in opties/zijpaneel → de site ziet het meteen.
-if (chrome.storage.onChanged) chrome.storage.onChanged.addListener((wijz, gebied) => { if (gebied === 'local' && wijz && wijz.lokaleAi) void statusWijziging(); });
+if (chrome.storage.onChanged) chrome.storage.onChanged.addListener((wijz, gebied) => { if (gebied === 'local' && wijz && wijz.lokaleAi) { laiMeting.t = 0; void statusWijziging(); } });
 void versieOphalen();
 connect();
