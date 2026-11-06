@@ -1,8 +1,8 @@
-name: AGPLUGIN-001 · випуск 20261106-101200
+name: AGPLUGIN-001 · випуск 20261106-131500
 
 # AGPLUGIN-001 + UITROL-UTF8-001: збирає й публікує пакет оновлення сайту за TRACE-001 поверх встановленого випуску 20261106-092612
 # та актуальної голови integratie (fb6c79dc6347, вкл. PR №40 від claude). Нічого не встановлює автоматично:
-# власник сам завантажує mijn-ruimte-20261106-101200.tar.gz у Admin → Оновлення і схвалює passkey.
+# власник сам завантажує mijn-ruimte-20261106-131500.tar.gz у Admin → Оновлення і схвалює passkey.
 
 on:
   push:
@@ -22,11 +22,11 @@ concurrency:
 env:
   TAAK: AGPLUGIN-001
   TAK: 'feature/agplugin-001-20261106-072500'
-  VERSIE: '20261106-101200'
+  VERSIE: '20261106-131500'
   BASIS: '49760d814be61c460a219070471407534e1829f2'
   INTEGRATIE_HOOFD: 'fb6c79dc634796482d2823fdff26b94d28222738'
-  PAKKET: 'mijn-ruimte-20261106-101200.tar.gz'
-  OVERDRACHT: 'mijn-ruimte-20261106-101200-antigravity-overdracht.zip'
+  PAKKET: 'mijn-ruimte-20261106-131500.tar.gz'
+  OVERDRACHT: 'mijn-ruimte-20261106-131500-antigravity-overdracht.zip'
 
 jobs:
   controle:
@@ -263,7 +263,7 @@ jobs:
                 "Три набори тестів не запускаються в хмарному контейнері (@iconify-json/logos, тестовий Home Assistant на IP контейнера, Playwright-core).",
                 "Повний авторизований сайт із реальними даними не перевірено; перевірено модульні тести, браузерні стенди й повну збірку."
               ],
-              "instructies": "Admin → Оновлення → «Нове оновлення»: завантажте саме mijn-ruimte-20261106-101200.tar.gz з GitHub Release (не zip), дочекайтеся зеленої попередньої перевірки й натисніть «Схвалити й встановити» з passkey. Між збіркою і цим встановленням не встановлюйте інших пакетів, інакше root відхилить базу (BASIS_VEROUDERD)."
+              "instructies": "Admin → Оновлення → «Нове оновлення»: завантажте саме mijn-ruimte-20261106-131500.tar.gz з GitHub Release (не zip), дочекайтеся зеленої попередньої перевірки й натисніть «Схвалити й встановити» з passkey. Між збіркою і цим встановленням не встановлюйте інших пакетів, інакше root відхилить базу (BASIS_VEROUDERD)."
             },
             "nl": {
               "titel": "Plug-in en tweerichtingsconnector Google Antigravity (AGPLUGIN-001) + UTF-8-herstel in root-installer (claude)",
@@ -290,7 +290,7 @@ jobs:
                 "Drie testsuites draaien niet in de cloudcontainer (@iconify-json/logos, test-Home Assistant op het IP van de container, Playwright-core).",
                 "De volledige aangemelde site met echte gegevens is niet gecontroleerd; eenheidstests, browseropstellingen en de volledige bouw wel."
               ],
-              "instructies": "Admin → Updates → «Nieuwe update»: upload precies mijn-ruimte-20261106-101200.tar.gz uit de GitHub Release (geen zip), wacht op een groene voorcontrole en klik «Goedkeuren en installeren» met een passkey. Installeer tussen de bouw en deze installatie geen ander pakket, anders weigert root de basis (BASIS_VEROUDERD)."
+              "instructies": "Admin → Updates → «Nieuwe update»: upload precies mijn-ruimte-20261106-131500.tar.gz uit de GitHub Release (geen zip), wacht op een groene voorcontrole en klik «Goedkeuren en installeren» met een passkey. Installeer tussen de bouw en deze installatie geen ander pakket, anders weigert root de basis (BASIS_VEROUDERD)."
             }
           }
           JSON
