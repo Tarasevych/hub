@@ -168,6 +168,14 @@ export async function main(): Promise<number> {
   loopSrc('src');
   const zonderTerugval = ongedefinieerdeVars([...bronnen, 'index.html'].map((pad) => ({ pad, tekst: lees(pad) })));
   check('geen var(--x) zonder terugval op een custom property die nergens in src/ of index.html bestaat', zonderTerugval.length === 0, zonderTerugval.slice(0, 8).join(' | '));
+  // Voorbeeldpagina's in tests/visueel renderen echte componenten met hun echte CSS. Zonder tokens.css bleven daar var(--x) zonder
+  // terugval leeg (mailfit/mailfix 38 namen, mailpolish 8: o.a. --fout, --ok-vlak, --overlay, --straal-m), dus zagen de schermafdrukken
+  // er anders uit dan de site. Een eigen :root van zo'n pagina moet html:root zijn, anders wint tokens.css (komt later) van de paginawaarden.
+  const voorbeelden = readdirSync('tests/visueel').filter((n) => n.endsWith('.tsx')).map((n) => `tests/visueel/${n}`);
+  const zonderTokens = voorbeelden.filter((q) => !/^import\s+['"](?:\.\.\/)+src\/ontwerp\/(?:tokens|fundament)\.css['"]/m.test(lees(q)));
+  check(`voorbeeldpagina's in tests/visueel (${voorbeelden.length}) laden de sitetokens (src/ontwerp/tokens.css of fundament.css)`, voorbeelden.length >= 5 && zonderTokens.length === 0, zonderTokens.join(', '));
+  const kaleRoot = readdirSync('tests/visueel').filter((n) => n.endsWith('.html')).filter((n) => /(?:^|[\s}>])(?<!html):root\s*\{/.test(zonderCommentaar(lees(`tests/visueel/${n}`))));
+  check("voorbeeldpagina's: eigen tokens staan in html:root (0,1,1), zodat tokens.css de paginawaarden niet overschrijft", kaleRoot.length === 0, kaleRoot.join(', '));
   const kleurStreep = alle.filter((q) => /var\(\s*--kleur-/.test(zonderCommentaar(lees(q))));
   check('geen --kleur-*-namen in de CSS (die bestaan niet; het thema heet --panel/--text/--focus …)', kleurStreep.length === 0, kleurStreep.join(','));
   check('werkbladcanvas: menu en status op --panel/--text, focus en grepen op --focus (volgen het thema)', /\.wbc-menu\{[^}]*background:var\(--panel\);color:var\(--text\)/.test(lees('src/werkblad/canvas/canvas.css')) && /\.wbc-status\{[^}]*background:var\(--panel\);color:var\(--text\)/.test(lees('src/werkblad/canvas/canvas.css')) && /\.wbc-greep\{[^}]*background:var\(--focus\)/.test(lees('src/werkblad/canvas/canvas.css')));
