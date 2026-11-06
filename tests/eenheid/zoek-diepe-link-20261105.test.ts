@@ -129,6 +129,8 @@ function B(){return <div><button>{tr('Кнопка Б','Knop B')}</button>{y && 
   check('7 dagVanItem: onzin → leeg', dagVanItem({ begin: 'gisteren', heleDag: false }) === '');
   const gm = lees('src/GoogleMailWerkruimte.tsx');
   check('7 Gmail: de bijlage pas beoordelen als de volledige brief er is (de voorlopige rij heeft geen bijlagen)', /detail\.id!==wacht\.bericht\|\|detailLoading\)return;/.test(gm) && /\},\[detail,detailLoading\]\);/.test(gm));
+  const db = lees('src/DriveBrowser.tsx');
+  check('7 oude Drive-browser: met een diepe link geen hervatting van de vorige sessie (die zou het bestand vervangen); principalId getypeerd', /if\(startAtRoot\|\|initialOpenFileId\)/.test(db) && /principalId\?:string\}/.test(db) && /item\.principalId===principal/.test(db));
   check('contract: de parameternamen', DIEPE_PARAMS.bericht === 'open_message_id' && DIEPE_PARAMS.item === 'open_item_id' && DIEPE_PARAMS.bestand === 'open_file_id' && DIEPE_PARAMS.afspraak === 'open_event_id');
   return einde();
 }
