@@ -58,7 +58,7 @@
 .foto-tegel-video, .foto-tegel-hart, .foto-tegel-weg { position: absolute; display: inline-flex; padding: 3px; border-radius: 999px; background: rgb(0 0 0 / .45); color: #fff; }
 .foto-tegel-video { right: 6px; bottom: 6px; } .foto-tegel-hart { left: 6px; bottom: 6px; } .foto-tegel-weg { right: 6px; top: 6px; }
 .foto-tegel-video svg, .foto-tegel-hart svg, .foto-tegel-weg svg { width: 13px; height: 13px; }
-.foto-tegel-kies { position: absolute; left: 6px; top: 6px; width: 24px; height: 24px; border-radius: 999px; border: 2px solid #fff; background: rgb(0 0 0 / .25); color: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: opacity .12s; padding: 0; }
+.foto-tegel-kies { position: absolute; left: 6px; top: 6px; width: 24px; height: 24px; border-radius: 999px; border: 2px solid var(--papier); background: rgb(0 0 0 / .25); color: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: opacity .12s; padding: 0; }
 .foto-tegel:hover .foto-tegel-kies, .foto-tegel-kies:focus-visible, .foto-tegel.is-gekozen .foto-tegel-kies { opacity: 1; }
 @media (pointer: coarse) { .foto-tegel-kies { opacity: .85; width: 28px; height: 28px; } .foto-tegel-kies::before { content: ''; position: absolute; inset: -8px; } }
 .foto-tegel.is-gekozen { box-shadow: inset 0 0 0 3px var(--accent); }
@@ -85,7 +85,7 @@
 .foto-viewer-beeld img, .foto-viewer-beeld video { max-width: 100%; max-height: 100%; object-fit: contain; }
 .foto-pijl { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 999px; border: 0; background: rgb(255 255 255 / .1); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .foto-pijl.is-links { left: 10px; } .foto-pijl.is-rechts { right: 10px; }
-.foto-spinner { width: 28px; height: 28px; border-radius: 999px; border: 3px solid rgb(255 255 255 / .2); border-top-color: #fff; animation: foto-draai 1s linear infinite; }
+.foto-spinner { width: 28px; height: 28px; border-radius: 999px; border: 3px solid rgb(255 255 255 / .2); border-top-color: var(--papier); animation: foto-draai 1s linear infinite; }
 @keyframes foto-draai { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .foto-spinner { animation: none; } }
 .foto-info { overflow: auto; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); background: var(--panel); color: var(--text); border-left: 1px solid var(--line); display: grid; align-content: start; gap: 12px; }

@@ -11,7 +11,7 @@
    Текст на заливці:                        --text-on-accent (= --accentText) --text-on-vlak --text-on-licht --text-on-donker
    Завжди світле (лист, PDF, логотип):      --papier --papier-zacht (текст на них — --text-on-licht)
    Інше:                                    --focus (кільце фокуса) --overlay (затемнення під вікном)
-   Ритм:                                    --ruimte-1…6 = 4/8/12/16/24/32px   --straal-s/m/l/xl = 8/12/16/20px
+   Ритм:                                    --ruimte-1…6 = 4/8/12/16/24/32px   --straal-s/m/l/xl = 10/14/20/26px
                                             --schaduw-1/2/3   --tekst-basis 16px --tekst-klein 14px --tekst-mini 12px (менше — ніде)
                                             --tik-hoogte 44px на дотику / 40px з мишею
    Контраст усіх пар перевіряє scripts/kleur-contrast-controle.mjs (падає збірка, якщо пара < вимоги). */

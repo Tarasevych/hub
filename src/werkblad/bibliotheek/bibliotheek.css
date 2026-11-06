@@ -54,7 +54,7 @@
 .bib-tegel-stand{font-size:.7rem;opacity:.8}
 .bib-tegel.bib-uit{cursor:not-allowed}
 .bib-tegel.bib-uit .bib-tegel-icoon{filter:grayscale(1);opacity:.55}
-.bib-badge{position:absolute;top:-6px;right:-8px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:.7rem;font-weight:700;display:grid;place-items:center;box-sizing:border-box}
+.bib-badge{position:absolute;top:-6px;right:-8px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--fout-vlak);color:var(--text-on-vlak);font-size:.7rem;font-weight:700;display:grid;place-items:center;box-sizing:border-box}
 .bib-map{position:relative;width:100%;height:100%}
 .bib-map-icoon{display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:6px;box-sizing:border-box;background:color-mix(in srgb,currentColor 18%,transparent);color:inherit}
 .bib-map-icoon svg{width:16px;height:16px}

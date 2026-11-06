@@ -90,7 +90,7 @@
 /* Merklogo's staan op een altijd witte plaat: de merkkleur blijft die van het licht (ook in het donker thema), zodat een zwart Apple-logo zichtbaar blijft. */
 .mr-sign-in-logo,.mr-sign-in-optie-logo{--text:#17212b;--merk-in-licht:;--merk-in-donker:initial}
 /* Verhouding als bij Google zelf: «G» van 18 px op een witte plaat van 34 px (≈ 53 %), precies in het midden. */
-.mr-sign-in-logo{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.mr-sign-in-logo{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:var(--papier);box-shadow:0 0 0 1px rgba(0,0,0,.08)}
 .mr-sign-in-logo img{display:block;width:18px;height:18px;object-fit:contain}
 .mr-sign-in-main-tekst{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:focus-visible{outline:2px solid var(--mr-login-ink);outline-offset:4px}
@@ -112,12 +112,12 @@
 .mr-sign-in-andere{width:100%;display:grid;justify-items:center}
 .mr-sign-in-opties{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px;width:100%;max-width:460px;text-align:left}
 .canonical-signed-out.mr-sign-in .mr-sign-in-optie{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;min-height:62px;box-sizing:border-box;padding:10px 14px;border:1px solid var(--mr-login-border);border-radius:16px;background:var(--mr-login-card);color:var(--mr-login-ink);font:inherit;font-weight:500;text-align:left;cursor:pointer}
-.canonical-signed-out.mr-sign-in .mr-sign-in-optie:hover:not(:disabled),.canonical-signed-out.mr-sign-in .mr-sign-in-optie:focus-visible{background:color-mix(in srgb,var(--mr-login-card) 80%,#ffffff);border-color:rgba(115,139,171,.38)}
+.canonical-signed-out.mr-sign-in .mr-sign-in-optie:hover:not(:disabled),.canonical-signed-out.mr-sign-in .mr-sign-in-optie:focus-visible{background:color-mix(in srgb,var(--mr-login-card) 80%,var(--papier));border-color:rgba(115,139,171,.38)}
 .canonical-signed-out.mr-sign-in .mr-sign-in-optie:focus-visible{outline:2px solid var(--mr-login-ink);outline-offset:2px}
 /* Nog niet beschikbaar: gestippelde rand en een duidelijk label «Недоступно»; de tekst blijft volledig leesbaar (de globale
    :disabled-vervaging uit primitieven.css zou hem grijs maken) en het merklogo houdt zijn eigen kleur. */
 .canonical-signed-out.mr-sign-in .mr-sign-in-optie:disabled{cursor:default;opacity:1;background:transparent;border-style:dashed;border-color:var(--mr-login-border)}
-.mr-sign-in-optie-logo{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.08);color:#222b39}
+.mr-sign-in-optie-logo{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:var(--papier);box-shadow:0 0 0 1px rgba(0,0,0,.08);color:#222b39}
 .mr-sign-in-optie-logo svg{width:20px;height:20px}
 .mr-sign-in-optie-tekst{display:grid;gap:3px;min-width:0}
 .mr-sign-in-optie-tekst strong{font-size:.9rem;font-weight:650;line-height:1.3;color:var(--mr-login-ink)}
@@ -143,7 +143,7 @@
 /* Taal: kleine pil met echte vlag en «Укр.» — duidelijk kleiner dan de themaknop en met ruimte ernaast. */
 .mr-sign-in-quick-controls .mr-sign-in-taal{display:inline-flex;align-items:center;justify-content:center;width:auto;height:32px;gap:7px;padding:0 12px 0 10px;border:1px solid var(--mr-login-border);border-radius:999px;background:var(--mr-login-card);color:var(--mr-login-ink);font-size:.78rem;font-weight:650;letter-spacing:.01em;white-space:nowrap}
 .mr-sign-in-quick-controls .mr-sign-in-taal .taal-vlag{width:1.35em;height:.9em;font-size:14px}
-.mr-sign-in-quick-controls .mr-sign-in-taal:hover,.mr-sign-in-quick-controls .mr-sign-in-taal:focus-visible{background:color-mix(in srgb,var(--mr-login-card) 80%,#ffffff)}
+.mr-sign-in-quick-controls .mr-sign-in-taal:hover,.mr-sign-in-quick-controls .mr-sign-in-taal:focus-visible{background:color-mix(in srgb,var(--mr-login-card) 80%,var(--papier))}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-account-panel{
  right:0;top:50px;width:min(370px,calc(100vw - 28px));max-height:min(650px,calc(100dvh - 90px));
  padding:20px!important;border:1px solid var(--mr-login-border);border-radius:22px;
