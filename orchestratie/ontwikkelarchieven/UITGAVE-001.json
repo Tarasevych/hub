@@ -60,10 +60,17 @@
     },
     {
       "volgorde": 6,
-      "stap": "Гілку feature/uitgave-001-20261106-081134 створено від integratie c9b4e6fb8b2e: задача (orch taak-start), цей журнал і workflow. Workflow перевіряє, збирає пакет через orch pakket і публікує GitHub Release лише після всіх перевірок.",
+      "stap": "Гілку feature/uitgave-001-20261106-081134 створено від integratie c9b4e6fb8b2e: задача (orch taak-start), цей журнал і workflow. Пробна збірка orch pakket у контейнері (з тимчасовою базою) пройшла pakket-controleer і попередню перевірку сайту без помилок.",
       "bewijzen": [
         ".github/workflows/uitgave-001-release.yml",
         "orchestratie/taken/UITGAVE-001.json"
+      ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "Незалежна перевірка workflow і журналу до push (три погляди, кожне зауваження перевірено спробою спростування). Виправлено: asset .sha256 не створювався (прогін упав би до публікації); збій перевірок після публікації тепер відкликає Release; підсумок тестів для екрана схвалення — українською; журнал узгоджено з workflow.",
+      "bewijzen": [
+        ".github/workflows/uitgave-001-release.yml"
       ]
     }
   ],
@@ -82,7 +89,7 @@
     },
     {
       "keuze": "Fail-closed: Release створюється лише після всіх перевірок",
-      "reden": "Будь-яке відхилення (integratie посунулась, тег зайнятий, база змінилась, тест, збірка, журнал, пакет, digest) зупиняє прогін до публікації. Release не draft, бо сайт і root шукають його через /releases/tags; --latest=false, як у DESIGN-002."
+      "reden": "Будь-яке відхилення (integratie посунулась, тег зайнятий, база змінилась, тест, збірка, журнал, пакет) зупиняє прогін до публікації. Digest asset, root-фрагмент TRACE-001 і онлайн-перевірка сайту можливі лише після публікації: у разі збою Release позначається «НЕ ВСТАНОВЛЮВАТИ» і стає чернеткою, яку сайт і root не знаходять. Release не draft, бо сайт і root шукають його через /releases/tags; --latest=false, як у DESIGN-002."
     },
     {
       "keuze": "Ідентифікатор моделі в маніфесті не записано (bron = onbekend)",
@@ -138,7 +145,7 @@
       "staat": "uitgevoerd"
     },
     {
-      "controle": "CI: гілка, рівно один коміт поверх integratie, integratie = база, вільний тег",
+      "controle": "CI: гілка = TAK; поверх integratie лише коміти задачі без merge-комітів, разом рівно три файли задачі; integratie = база; вільний тег",
       "resultaat": "обов’язково; інакше без Release",
       "staat": "vereist"
     },
@@ -164,7 +171,7 @@
     },
     {
       "controle": "CI після публікації: digest asset = SHA-256 архіву, root-фрагмент TRACE-001 = OK, перевірка сайту з онлайн-TRACE",
-      "resultaat": "обов’язково; результат у звіті власнику",
+      "resultaat": "обов’язково; у разі збою Release позначається «НЕ ВСТАНОВЛЮВАТИ» і стає чернеткою; результат у звіті власнику",
       "staat": "vereist"
     }
   ],

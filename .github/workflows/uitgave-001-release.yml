@@ -4,7 +4,8 @@ name: UITGAVE-001 · випуск 20261106-081134 з integratie
 # власник сам завантажує mijn-ruimte-20261106-081134.tar.gz у Admin → Оновлення і схвалює passkey.
 # UITGAVE-001: bouwt en publiceert het updatepakket uit integratie volgens TRACE-001. Installeert niets; de eigenaar
 # uploadt het archief zelf in Admin → Updates en keurt het goed met een passkey.
-# Fail-closed: elke afwijking (tak, basis, live versie, regels, tests, bouw, dossier, pakket, digest, root-/sitecontrole) stopt de run.
+# Fail-closed: elke afwijking (tak, basis, live versie, regels, tests, bouw, dossier, pakket) stopt de run vóór publicatie.
+# Faalt de digest-, root- of sitecontrole ná publicatie, dan wordt de release «NIET INSTALLEREN» en een concept (site en root vinden hem niet).
 
 on:
   push:
@@ -52,8 +53,9 @@ jobs:
           test "$GITHUB_REF" = "refs/heads/$TAK"
           test "$(git branch --show-current)" = "$TAK"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          # Рівно один коміт поверх integratie, і в ньому лише три файли задачі · precies één commit met drie taakbestanden
-          test "$(git rev-parse HEAD^)" = "$BASIS"
+          # Поверх integratie лише коміти задачі, і разом вони змінюють рівно три файли · alleen de drie taakbestanden boven integratie
+          git merge-base --is-ancestor "$BASIS" HEAD
+          test -z "$(git rev-list --merges "$BASIS..HEAD")"
           diff <(git diff --name-only "$BASIS" HEAD | sort) \
                <(printf '%s\n' .github/workflows/uitgave-001-release.yml orchestratie/ontwikkelarchieven/UITGAVE-001.json orchestratie/taken/UITGAVE-001.json | sort)
           git fetch --quiet origin integratie
@@ -116,8 +118,12 @@ jobs:
           NODE_ENV=production NODE_OPTIONS=--max-old-space-size=5120 npm run build
           test -f dist/index.html
           test -f dist-server/start.mjs
-          # Збірка перегенеровує каталог пошуку; відхилення від закоміченого — помилка · bouw mag geen gevolgde bestanden wijzigen
-          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then git status --porcelain --untracked-files=no; git diff --stat; echo "FOUT BOUW_WIJZIGT_BESTANDEN" >&2; exit 1; fi
+          # Збірка на сервері робить те саме; якщо вона змінює відстежуваний файл (напр. каталог пошуку), закомічене застаріло
+          # Wijzigt de bouw een gevolgd bestand, dan is wat gecommit is verouderd: geen release
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            git status --porcelain --untracked-files=no; git diff --stat
+            echo "FOUT BOUW_WIJZIGT_BESTANDEN: npm run build змінив відстежувані файли" >&2; exit 1
+          fi
 
       - name: Журнал TRACE-001 · ontwikkeldossier
         run: |
@@ -139,7 +145,7 @@ jobs:
             import fs from 'node:fs';
             const g = Number(process.env.UITGAVE_TESTS_GESLAAGD), n = Number(process.env.UITGAVE_TESTS_SUITES);
             const t = { versie: 2, geslaagd: g, mislukt: 0, falend: [],
-              samenvatting: 'CI: ' + n + ' unit suites (' + g + ' checks), typecheck:server, bash -n, zoek-ui-catalogus --controle and the full production build passed.',
+              samenvatting: 'CI: пройшли ' + n + ' наборів модульних тестів (' + g + ' перевірок), typecheck:server, bash -n, каталог пошуку й повна збірка.',
               basis: null,
               uitleg: { uk: 'У CI пройшли ' + n + ' наборів модульних тестів (' + g + ' перевірок), typecheck:server, bash -n скриптів розгортання, перевірка каталогу пошуку й повна production-збірка.',
                         nl: 'In CI zijn ' + n + ' eenheidstestsuites (' + g + ' controles), typecheck:server, bash -n van de deployscripts, de zoekcatalogus en de volledige productiebouw geslaagd.' } };
@@ -297,6 +303,9 @@ jobs:
           if grep -Eq '^(FOUT|LET OP (BASIS_ONBEKEND|INSTALLATIE_NIET_IN_HEAD))' "$RUNNER_TEMP/pakket.log"; then echo "FOUT: orch pakket meldde een fout" >&2; exit 1; fi
           test -f "uitvoer/$PAKKET"
           test -f "uitvoer/$OVERDRACHT"
+          # pakket кладе .sha256 лише в zip передачі; той самий запис стає asset релізу й звіряється з архівом
+          unzip -p "uitvoer/$OVERDRACHT" "$PAKKET.sha256" > "uitvoer/$PAKKET.sha256"
+          (cd uitvoer && sha256sum -c --strict "$PAKKET.sha256")
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/$OVERDRACHT"
           # Стан лише для пакета: прибрати, нічого не комітити (ніколи staat-commit) · niets van de staat committen
           rm -f orchestratie/geinstalleerd.json
@@ -364,6 +373,7 @@ jobs:
           test "$(git rev-parse origin/integratie)" = "$BASIS"
 
       - name: Опублікувати GitHub Release · release publiceren
+        id: release
         shell: bash
         run: |
           set -euo pipefail
@@ -436,6 +446,16 @@ jobs:
         run: |
           set -euo pipefail
           node "$RUNNER_TEMP/voorcontrole-draai.mjs" "$RUNNER_TEMP/voorcontrole.mjs" "$RUNNER_TEMP/download/$PAKKET" "$VERSIE" "$LIVE_VERSIE" online
+
+      - name: Збій після публікації → Release непридатний · mislukt na publicatie
+        if: failure() && steps.release.outcome == 'success'
+        shell: bash
+        run: |
+          set -uo pipefail
+          # Чернетку сайт і root не знаходять через /releases/tags/<versie> → установлення відхиляється (ONTWIKKELARCHIEF_NIET_GEVONDEN).
+          { echo "**НЕ ВСТАНОВЛЮВАТИ · NIET INSTALLEREN** — перевірка після публікації не пройшла: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; echo; cat "$RUNNER_TEMP/notities.md"; } > "$RUNNER_TEMP/notities-mislukt.md"
+          gh release edit "$VERSIE" --repo "$GITHUB_REPOSITORY" --notes-file "$RUNNER_TEMP/notities-mislukt.md" --draft=true
+          echo "::error title=RELEASE_INGETROKKEN::Release $VERSIE позначено НЕ ВСТАНОВЛЮВАТИ й переведено в чернетку"
 
       - uses: actions/upload-artifact@v4
         if: always()
