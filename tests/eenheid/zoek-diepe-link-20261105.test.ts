@@ -131,6 +131,10 @@ function B(){return <div><button>{tr('Кнопка Б','Knop B')}</button>{y && 
   check('7 Gmail: de bijlage pas beoordelen als de volledige brief er is (de voorlopige rij heeft geen bijlagen)', /detail\.id!==wacht\.bericht\|\|detailLoading\)return;/.test(gm) && /\},\[detail,detailLoading\]\);/.test(gm));
   const db = lees('src/DriveBrowser.tsx');
   check('7 oude Drive-browser: met een diepe link geen hervatting van de vorige sessie (die zou het bestand vervangen); principalId getypeerd', /if\(startAtRoot\|\|initialOpenFileId\)/.test(db) && /principalId\?:string\}/.test(db) && /item\.principalId===principal/.test(db));
+  // 8. Bugbot op PR #31: de oude cloudpagina zocht open_item_id alleen in de bootstrap (een deel van een grote bibliotheek)
+  const cf = lees('src/CloudFunctioneelWeergave.tsx'), cpl = lees('backend/cloud-platform.ts');
+  check('8 oude cloud: item buiten de bootstrap → /items/:id/open bij de server, «niet gevonden» pas als de server het niet kent', /void openItem\(stub, true\)/.test(cf) && /uitZoek && \/NOT_FOUND\|ANDERE_RUIMTE\/\.test/.test(cf) && /encodeURIComponent\(gegeven\.id\)/.test(cf));
+  check('8 server: /items/:id/open geeft titel en werkruimte mee (eigenaar via ownerItem)', /const kop = \{ title: String\(item\.title \|\| ''\), workspaceId/.test(cpl) && /ownerItem\(auth\.user\.id, ctx\.params\.id\)/.test(cpl));
   check('contract: de parameternamen', DIEPE_PARAMS.bericht === 'open_message_id' && DIEPE_PARAMS.item === 'open_item_id' && DIEPE_PARAMS.bestand === 'open_file_id' && DIEPE_PARAMS.afspraak === 'open_event_id');
   return einde();
 }
