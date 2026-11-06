@@ -4,7 +4,7 @@
 
 **Datum:** 2026-11-04 (bijgewerkt na implementatie van `IDENTITY-002` en audit 2026-11-05)
 **Interactief prototype:** [`identity-live.html`](./identity-live.html)
-**Implementatie in de applicatie:** `src/identity/IdentityAccountPagina.tsx`, `src/identity/Profielfoto.tsx`, `src/identity/identity-account.css`, `src/identity/identity-tabs.ts`
+**Implementatie in de applicatie:** `src/identiteit/IdentiteitAccountPagina.tsx`, `src/identiteit/Profielfoto.tsx`, `src/identiteit/identiteit-account.css`, `src/identiteit/identiteit-tabs.ts`
 **Ontwerpbron:** `src/ontwerp/tokens.css` (uitsluitend tokens, geen losse hex-kleuren)
 
 ---
@@ -13,14 +13,14 @@
 
 **Doel:** één geconsolideerde pagina voor de categorie `identity` waarop de eigenaar en gebruikers alle 12 onderdelen van het account op één scherm kunnen bekijken en beheren: personalisatie, menu, thema's, talen, widgets, delen, identiteiten, account en gegevens, sessies en apparaten, aanmeldmethoden, beveiliging en toegangsherstel.
 
-**Binnen scope:** `src/identity/IdentityAccountPagina.tsx` met inhoudsopgave (`.ia-toc`), profielfotocomponent `src/identity/Profielfoto.tsx` met drie bronnen, tweetalige teksten (`uk`/`nl`) en eenheidstests (`tests/eenheid/identity-account-ui.test.ts`).
+**Binnen scope:** `src/identiteit/IdentiteitAccountPagina.tsx` met inhoudsopgave (`.ia-toc`), profielfotocomponent `src/identiteit/Profielfoto.tsx` met drie bronnen, tweetalige teksten (`uk`/`nl`) en eenheidstests (`tests/eenheid/identiteit-account-ui.test.ts`).
 **Buiten scope:** wijzigingen in serverauthenticatiebeleid, nieuwe databasetabellen of het verwijderen van het eigenaarsaccount (`OWNER_NIET_WISSEN`).
 
 ---
 
 ## 2. Schermopbouw en de 12 secties
 
-Alle 12 secties uit `IDENTITY_TABS` (`src/identity/identity-tabs.ts`) staan onder elkaar op één pagina:
+Alle 12 secties uit `IDENTITY_TABS` (`src/identiteit/identiteit-tabs.ts`) staan onder elkaar op één pagina:
 
 | # | ID | Titel (🇳🇱 NL) | Titel (🇺🇦 UK) |
 |---|---|---|---|
@@ -71,4 +71,4 @@ Alle 12 secties uit `IDENTITY_TABS` (`src/identity/identity-tabs.ts`) staan onde
 
 - Alle 12 secties zijn op één pagina bereikbaar op breedtes van 320–1440 px zonder horizontaal scrollen (`@container ia-account`).
 - Geen enkele kleur buiten `src/ontwerp/tokens.css`; `node scripts/kleur-contrast-controle.mjs` en `node scripts/plaatsing-controle.mjs` slagen zonder fouten.
-- De eenheidstests `node scripts/eenheidstests.mjs identity-account-ui.test.ts` bevestigen alle 6 invarianten.
+- De eenheidstests `node scripts/eenheidstests.mjs identiteit-account-ui.test.ts` bevestigen alle 6 invarianten.
