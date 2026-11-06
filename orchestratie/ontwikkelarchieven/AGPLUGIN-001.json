@@ -1,90 +1,134 @@
 {
   "schema": 1,
   "taakId": "AGPLUGIN-001",
-  "agent": "antigravity",
-  "tak": "feature/agplugin-001-20261106-072500",
-  "basisCommit": "29e785fa5ddf990e3789bc989ff893450a6da4f9",
-  "regelsVersie": "1.4.9",
-  "samenvatting": {
-    "uk": "Плагін і двосторонній конектор Google Antigravity (/antigravity) з веб-інтерфейсом і CLI/MCP-мостом для керування сайтом, браузером, ПК та сервером.",
-    "nl": "Plug-in en tweerichtingsconnector Google Antigravity (/antigravity) met webinterface en CLI/MCP-brug voor beheer van site, browser, pc en server."
+  "titel": "Випуск 20261106-101200: плагін і двосторонній конектор Google Antigravity (AGPLUGIN-001, antigravity) + виправлення UTF-8 у root-інсталяторі (UITROL-UTF8-001, claude) поверх 20261106-092612",
+  "opdracht": "Створити двосторонній плагін і конектор Google Antigravity (/antigravity) з інтерактивним інтерфейсом 4-канального мосту (Сайт, Браузер, ПК, Сервер) та зібрати випуск оновлення сайту поверх 20261106-092612 із включенням і явною атрибуцією наступного виправлення Claude (UITROL-UTF8-001, PR №40).",
+  "herkomst": {
+    "tak": "feature/agplugin-001-20261106-072500",
+    "basis": "49760d814be61c460a219070471407534e1829f2",
+    "integratie": "fb6c79dc634796482d2823fdff26b94d28222738",
+    "regelsVersie": "1.4.9",
+    "regelsHash": "fd7f99f180da62313ee13a1ffe7a99c5e933883419d54efc2d9f4d7bcd7b8dd4"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "opmerking": "Журнал не містить токенів, паролів, приватних ключів, сесій чи сирого ланцюжка міркувань; лише перевірювані посилання, SHA та результати перевірок."
   },
   "tijdlijn": [
     {
       "tijd": "2026-11-06T07:24:53Z",
-      "stap": "Реєстрація задачі AGPLUGIN-001 на гілці feature/agplugin-001-20261106-072500 від origin/integratie (29e785fa5ddf) та паралельне дослідження 81 гілки репозиторію 4 субагентами."
+      "stap": "[antigravity · AGPLUGIN-001] Реєстрація задачі AGPLUGIN-001 на гілці feature/agplugin-001-20261106-072500 та паралельне дослідження 81 гілки репозиторію 4 субагентами."
     },
     {
-      "tijd": "2026-11-06T07:45:00Z",
-      "stap": "Інтеграція клієнта 'antigravity' у систему конекторів v2 (/antigravity), офіційний логотип із @iconify-json/logos@1.2.17 (CC0-1.0), розширення браузера, матрицю дозволів та каталог інтеграцій."
+      "tijd": "2026-11-06T08:06:27Z",
+      "stap": "[antigravity · AGPLUGIN-001] Реалізація конектора v2 (/antigravity), офіційного знака з @iconify-json/logos@1.2.17 (CC0-1.0, контраст 4.60:1), двомовної інтерактивної панелі AntigravityBrugPaneel в AgentPagina.tsx, навички .agents/skills/mijn-ruimte/* з виконуваним CLI/MCP-мостом та пакета deploy/antigravity-plugin/* (коміт d5fbd5cbb400)."
     },
     {
-      "tijd": "2026-11-06T08:00:00Z",
-      "stap": "Створення інтерактивної панелі AntigravityBrugPaneel в AgentPagina.tsx, пакета плагіна deploy/antigravity-plugin/*, навички .agents/skills/mijn-ruimte/* з виконуваним двостороннім CLI/MCP-мостом та проходження модульних і будівельних перевірок."
+      "tijd": "2026-11-06T09:31:17Z",
+      "stap": "[claude · UITGAVE-001] Опубліковано та встановлено на сайті випуск 20261106-092612 (коміт 49760d814be6 з integratie 413d726dba5a): ORCH-001 (PR №30, №33, №36), ZOEKDIEP-001 (PR №32, №34, №35), DESIGN-002 (PR №29) і PR №38."
+    },
+    {
+      "tijd": "2026-11-06T09:46:21Z",
+      "stap": "[claude · UITROL-UTF8-001] Наступне виправлення Claude після випуску 20261106-092612 (коміт 113df5a572fc, злито в integratie як PR №40 @ fb6c79dc6347): root-інсталятор deploy/uitrol/mijn-ruimte-uitrol.sh обрізає AUTEUR/SAMENVATTING по цілому символу UTF-8 і захищає JSON-журнал встановлення від невалідних байтів."
+    },
+    {
+      "tijd": "2026-11-06T10:12:00Z",
+      "stap": "[antigravity + claude] Об'єднання origin/integratie (fb6c79dc6347 з UITROL-UTF8-001 від claude) та бази встановленого випуску 20261106-092612 (49760d814be6) у гілку feature/agplugin-001-20261106-072500, перегенерація пошукового каталогу (1319 елементів), оновлення інтеграційного тесту (161 картка) та підготовка випуску 20261106-101200 з явною атрибуцією авторства claude та antigravity."
     }
   ],
   "keuzes": [
     {
-      "onderwerp": "Власна адреса конектора v2 (/antigravity) замість спільного /mcp",
-      "reden": "Відповідно до архітектури connector-v2 кожен ШІ-агент має ізольовану адресу (https://mcp.tarasevych.com/antigravity), власну OAuth-метаінформацію RFC 9728 та імена інструментів із суфіксом _antigravity_<subdomein>_tarasevych_com_<gebruiker|beheer> ≤ 64 символів."
+      "onderwerp": "Власна адреса конектора v2 (/antigravity) та чотириканальний двосторонній міст (antigravity · AGPLUGIN-001)",
+      "reden": "Забезпечує ізольовану адресу https://mcp.tarasevych.com/antigravity, OAuth RFC 9728, інструменти ≤ 64 символів, інтерактивну панель AntigravityBrugPaneel на #agent/antigravity та виконуваний міст mijn-ruimte для керування сайтом, браузером, локальним ПК і сервером."
     },
     {
-      "onderwerp": "Офіційний вектор логотипа Antigravity з @iconify-json/logos@1.2.17",
-      "reden": "Пакет @iconify-json/logos@1.2.17 (CC0-1.0) вже входить у залежності проєкту й містить офіційну форму іконки Antigravity (24x24), що забезпечує 100% проходження merk-officieel, merk-register, markering-agenten та контрасту 4.60:1 (#FFFFFF на #027FBD)."
+      "onderwerp": "Безпечне обрізання UTF-8 у root-інсталяторі (claude · UITROL-UTF8-001, PR №40)",
+      "reden": "Функція meta() в deploy/uitrol/mijn-ruimte-uitrol.sh використовувала побайтовий head -c, що могло розрізати кириличний символ посередині й викликати UnicodeEncodeError у json.dump під час запису журналу встановлення; замінено на відступ по межі кодової точки UTF-8 із санітизацією в status(), gebeurtenis() і stap()."
     },
     {
-      "onderwerp": "Чотирикаanальний двосторонній міст (Сайт/Orch, Браузер, ПК, Сервер)",
-      "reden": "Поєднує UI-панель на сторінці агента (#agent/antigravity) з виконуваним мостом mijn-ruimte (HTTP + McpStdio) для взаємодії в обох напрямках."
+      "onderwerp": "Спільна історія предків (49760d814be6 + fb6c79dc6347) та прозора атрибуція учасників у UITROL-MANIFEST.json",
+      "reden": "Злиття і 49760d814be6 (база випуску 20261106-092612), і fb6c79dc6347 (голова integratie з PR №40) гарантує, що git merge-base --is-ancestor проходить для будь-якої живої бази з /api/version, а deelnemers і опис у UITROL-MANIFEST.json чітко розмежовують внесок claude та antigravity."
     }
   ],
   "wijzigingen": [
     {
-      "pad": "shared/connector-v2/agenten.ts",
-      "wat": "Додано агент 'antigravity' до AgentSlug та V2_AGENTEN."
+      "bestand": "deploy/uitrol/mijn-ruimte-uitrol.sh, tests/eenheid/uitrol-deur.test.ts",
+      "soort": "claude · UITROL-UTF8-001 (PR №40, 113df5a572fc / fb6c79dc6347)",
+      "omschrijving": "[Автор: claude · Claude Code] Інсталятор обрізає AUTEUR (200 Б) і SAMENVATTING (8000 Б) по цілому символу UTF-8 без розриву кирилиці та захищає status(), gebeurtenis() і stap() від невалідних байтів; регресійний тест 122/122."
     },
     {
-      "pad": "shared/connector-v2/namen.ts",
-      "wat": "Додано скорочення KORT_ESSENTIE при перевищенні ліміту 64 символів для довгих slug та динамічний розбір за V2_AGENTEN."
+      "bestand": "integratie: PR №30 (c9d7ffd), PR №32 (10d95ee), PR №33 (c30b27c), PR №34 (d4217e9), PR №35 (e056d50), PR №36 (c9b4e6f), PR №38 (413d726), PR №29 (d0e6481)",
+      "soort": "claude · ORCH-001, ZOEKDIEP-001, UITGAVE-001 + codex · DESIGN-002",
+      "omschrijving": "[Автор: claude · Claude Code] Закриття ORCH-001, глибокі посилання пошуку ZOEKDIEP-001, виправлення пакувальника UTF-8 (PR №38), виправлення старих помилок контрасту, мобільної верстки й тестів та оформлення DESIGN-002."
     },
     {
-      "pad": "src/merk/merk-tabel.ts",
-      "wat": "Додано офіційну форму antigravity та запис у VORM_HERKOMST (@iconify-json/logos@1.2.17, CC0-1.0)."
+      "bestand": "shared/connector-v2/agenten.ts, shared/connector-v2/namen.ts, shared/connector-v2/catalogus.ts, shared/ai-verbinding.ts, backend/connector-v2.ts, server/start.ts, deploy/mcp/server.mjs",
+      "soort": "antigravity · AGPLUGIN-001 (d5fbd5cbb400)",
+      "omschrijving": "[Автор: antigravity · Google Antigravity] Додано агент 'antigravity' до Connector v2 (/antigravity), OAuth-метадані RFC 9728, редірект 308 із /ai/antigravity, SSE-потік і скорочення KORT_ESSENTIE для дотримання ліміту 64 символів."
     },
     {
-      "pad": "src/agenten/AgentPagina.tsx",
-      "wat": "Додано двомовну інтерактивну панель AntigravityBrugPaneel для керування 4 каналами мосту (site, browser, pc, server)."
+      "bestand": "src/agenten/AgentPagina.tsx, src/agenten/gegevens.ts, src/agenten/verbind-recepten.ts, src/connector-v2/ConnectorsTab.tsx, src/mcp-ui.tsx, src/merk/merk-tabel.ts, src/merk/merk-register.ts",
+      "soort": "antigravity · AGPLUGIN-001 (d5fbd5cbb400)",
+      "omschrijving": "[Автор: antigravity · Google Antigravity] Двомовна інтерактивна панель 4-канального мосту AntigravityBrugPaneel (Сайт, Браузер, ПК, Сервер) на #agent/antigravity, 1-клік рецепт підключення та офіційний логотип Google Antigravity (@iconify-json/logos@1.2.17, CC0-1.0, контраст 4.60:1)."
     },
     {
-      "pad": "server/start.ts",
-      "wat": "Додано маршрутизацію /antigravity, /.well-known/oauth-protected-resource/antigravity, редірект 308 із /ai/antigravity та потік SSE."
+      "bestand": "shared/markering-agenten.ts, extension/markering-agenten.js, extension/merk-agenten.js, shared/extensie-matrix.ts, shared/ai-agent-bord.ts, shared/beheer-journaal.ts, shared/integraties-catalogus.ts, shared/integraties-detail.ts, shared/integraties-register.ts, migrations/0043_ai_site_schakelaars.sql, migrations/0045_connector_v2.sql, migrations/0088_agent_kleuren.sql, migrations/0110_extensie_matrix_termijn.sql",
+      "soort": "antigravity · AGPLUGIN-001 (d5fbd5cbb400)",
+      "omschrijving": "[Автор: antigravity · Google Antigravity] Підтримка Antigravity в розширенні браузера Chrome MV3 (колір рамки hemel #027FBD), матриці дозволів, дошці ШІ, журналі аудиту, каталозі інтеграцій (161 позиція) та CHECK-обмеженнях міграцій."
     },
     {
-      "pad": ".agents/skills/mijn-ruimte/scripts/mijn-ruimte",
-      "wat": "Створено виконуваний двосторонній CLI та MCP stdio/HTTP-міст для Google Antigravity."
+      "bestand": ".agents/skills/mijn-ruimte/SKILL.md, .agents/skills/mijn-ruimte/scripts/mijn-ruimte, deploy/antigravity-plugin/plugin.json, deploy/antigravity-plugin/LEESMIJ.md",
+      "soort": "antigravity · AGPLUGIN-001 (d5fbd5cbb400)",
+      "omschrijving": "[Автор: antigravity · Google Antigravity] Автономний плагін і навичка Google Antigravity з виконуваним двостороннім CLI та MCP stdio/HTTP-мостом."
+    },
+    {
+      "bestand": ".github/workflows/agplugin-001-release.yml, orchestratie/taken/AGPLUGIN-001.json, orchestratie/ontwikkelarchieven/AGPLUGIN-001.json, shared/zoek-ui-knoppen.generated.ts, tests/eenheid/integraties-catalogus-v2-20261029.test.ts",
+      "soort": "antigravity · випуск 20261106-101200",
+      "omschrijving": "[Автор: antigravity · Google Antigravity] Перегенерація пошукового каталогу (1319 елементів), оновлення інтеграційного тесту (161 картка), цей журнал TRACE-001 та CI-workflow збірки й публікації випуску 20261106-101200."
     }
   ],
   "controles": [
     {
-      "opdracht": "npm run typecheck:server",
-      "uitkomst": "geslaagd (0 fouten)"
+      "controle": "Локальна перевірка 23 релізних наборів модульних тестів (TRACE-001, uitrol-*, uitrol-deur 122/122, orch-*, пошук, дизайн, connector-v2, merk-*, integraties-*, ai-agent-bord)",
+      "resultaat": "усі 23 набори зелені (0 помилок)",
+      "staat": "uitgevoerd"
     },
     {
-      "opdracht": "node scripts/eenheidstests.mjs (connector-v2, connector-instructies, merk-officieel, merk-register, contrast-knoppen-logos, agent-verbinden, agent-een-plek, integraties-catalogus, ai-agent-bord, mcp-orch-integratie, orch-site)",
-      "uitkomst": "geslaagd (alle controles groen)"
+      "controle": "Локальна перевірка typecheck:server, zoek-ui-catalogus --controle (1319 елементів), orch controleer, versheid start/overdracht і повної production-збірки npm run build",
+      "resultaat": "0 помилок, робоче дерево чисте",
+      "staat": "uitgevoerd"
     },
     {
-      "opdracht": "npm run build",
-      "uitkomst": "geslaagd (kaart-controle, plaatsing-controle, hulp-vraagtekens, zoek-ui-catalogus, l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle, vite build, tech-bundels-controle, bouw-extensie, build:server)"
+      "controle": "CI: перевірка предків (49760d814be6 і fb6c79dc6347 у HEAD), orch controleer, versheid, bash -n deploy/**/*.sh, zoek-ui-catalogus --controle, typecheck:server, 23 набори тестів і повна production-збірка",
+      "resultaat": "обов'язково перед публікацією GitHub Release",
+      "staat": "vereist"
+    },
+    {
+      "controle": "CI після публікації: жива база з /api/version, pakket-controleer, digest asset = SHA-256 архіву, root-фрагмент TRACE-001 = OK, онлайн-передперевірка сайту (0 помилок)",
+      "resultaat": "обов'язково; у разі збою Release позначається «НЕ ВСТАНОВЛЮВАТИ» і переводиться в чернетку",
+      "staat": "vereist"
     }
   ],
   "bronnen": [
-    "AGENTS.md",
+    "https://github.com/Tarasevych/hub/pull/40",
+    "https://github.com/Tarasevych/hub/pull/39",
+    "https://github.com/Tarasevych/hub/pull/38",
+    "https://github.com/Tarasevych/hub/pull/36",
+    "https://github.com/Tarasevych/hub/pull/35",
+    "https://github.com/Tarasevych/hub/pull/34",
+    "https://github.com/Tarasevych/hub/pull/33",
+    "https://github.com/Tarasevych/hub/pull/32",
+    "https://github.com/Tarasevych/hub/pull/30",
+    "https://github.com/Tarasevych/hub/pull/29",
+    "https://github.com/Tarasevych/hub/releases/tag/20261106-092612",
+    "AGENTS.md §4–5",
     "ANTIGRAVITY.md",
-    "orchestratie/beleid.json",
-    "shared/connector-v2/agenten.ts",
-    "node_modules/@iconify-json/logos/icons.json"
+    "deploy/REGELS-UITROLPAKKET.md",
+    "deploy/uitrol/mijn-ruimte-uitrol.sh (TRACE-001 & UITROL-UTF8-001)"
   ],
   "beperkingen": [
-    "Очікування живого OAuth-входу власника на https://mcp.tarasevych.com/agenten#agent/antigravity після розгортання гілки на сервері."
+    "Критичні політики не підписані власником (KRITIEK_NIET_BEVESTIGD): встановлення виконується вручну власником через Admin → Оновлення з passkey, GitOps вимкнено.",
+    "Пакет не встановлювався автоматично на сервер: власник завантажує mijn-ruimte-20261106-101200.tar.gz у Admin → Оновлення.",
+    "Три набори тестів (aanmelden-integ, huis-vnext, mail-donker-browser) потребують локального оточення поза хмарним контейнером."
   ]
 }
