@@ -354,7 +354,26 @@ with tarfile.open(pakket, "r:gz") as tf:
         totaal += m.size
         if totaal > maxb * 4:
             sys.exit("uitgepakt te groot")
-    tf.extractall(doel, members=leden, **({"filter": "data"} if hasattr(tarfile, "data_filter") else {}))
+    if hasattr(tarfile, "data_filter"):
+        tf.extractall(doel, members=leden, filter="data")
+    else:
+        # python3 < 3.11.4 heeft nog geen data-filter (PEP 706): hetzelfde effect met de hand (alleen gewone bestanden en mappen,
+        # zie boven). Eigenaar = wie uitpakt, niet die uit het archief. Bestanden: geen setuid/setgid/sticky, geen schrijfrecht voor
+        # groep/anderen, de eigenaar mag lezen en schrijven, uitvoerbaar alleen als de eigenaar het al was. Mappen: de modus uit het
+        # archief telt niet; zoals bij het filter krijgen ze de umask van dit script (077, dus 0700).
+        import os
+        um = os.umask(0)
+        os.umask(um)
+        for m in leden:
+            m.uid, m.gid, m.uname, m.gname = os.geteuid(), os.getegid(), "", ""
+            if m.isfile():
+                m.mode &= 0o755
+                if not m.mode & 0o100:
+                    m.mode &= ~0o111
+                m.mode |= 0o600
+            else:
+                m.mode = 0o777 & ~um
+        tf.extractall(doel, members=leden)
 PY
 then
   weiger INHOUD_ONVEILIG "Архів містить недозволені елементи (посилання, пристрої, шляхи поза текою)." "Het archief bevat niet-toegestane onderdelen (links, apparaten, paden buiten de map): $(tail -c 200 "$WERK/tar.log" | tr '\n' ' ')"

@@ -12,7 +12,7 @@ try {
     const page = await browser.newPage({ viewport: { width: breedte, height: hoogte }, deviceScaleFactor: 1 });
     page.on('pageerror', (error) => problemen.push(`${breedte}: ${error.stack || error.message}`));
     page.on('console', (message) => { if (message.type() === 'error') problemen.push(`${breedte} console: ${message.text()}`); });
-    await page.goto('http://127.0.0.1:4179/tests/visueel/mailfix-preview.html', { waitUntil: 'networkidle', timeout: 30000 });
+    await page.goto('http://127.0.0.1:4179/tests/visueel/mailfix-voorbeeld.html', { waitUntil: 'networkidle', timeout: 30000 });
     await page.waitForTimeout(1600);
     const geometrie = await page.evaluate(() => {
       const root = document.getElementById('root');

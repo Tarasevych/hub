@@ -4,7 +4,7 @@
 // passkey-bevestiging, het eigenaar-only recht «Може схвалювати оновлення сервера», rpId/origins en root rp-bijwerken.
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import * as kern from '../../deploy/goedkeuring/webauthn-kern.mjs';
@@ -23,10 +23,17 @@ export async function main(): Promise<number> {
   const sleutels = join(basis, 'goedkeur-passkeys.json'); const rechten = join(basis, 'mcp-rechten.json');
   writeFileSync(sleutels, JSON.stringify({ versie: 1, rpId: 'tarasevych.com', origins: ['https://admin.tarasevych.com', 'https://id.tarasevych.com'], sleutels: [] }));
   writeFileSync(rechten, JSON.stringify({ 'passkey-goedkeuring': true }));
-  const ENV = ['GOEDKEUR_SLEUTELS', 'GOEDKEUR_INBOX', 'MCP_RECHTEN_PAD', 'OPDRACHT_STATUS_DIR', 'PASSKEY_RP_ID', 'PASSKEY_ORIGINS', 'OWNER_EMAIL', 'GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_OAUTH_CLIENT_SECRET'] as const;
+  // Als root (cloud-sessie) negeert de root-hulp bewust de testpaden (GOEDKEUR_*) en zou hij de ECHTE /etc-, /srv- en /var-paden raken.
+  // Dan draait de hulp als nobody (65534; zelfde patroon als ai-beleid en besluit-root): de testmap wordt van 65534 en de inbox krijgt
+  // setgid, zodat de bestanden die de app (root) er met 0640 neerlegt groep 65534 krijgen en voor de hulp leesbaar zijn.
+  const alsNobody: { uid?: number; gid?: number } = process.getuid?.() === 0 ? { uid: 65534, gid: 65534 } : {};
+  if (alsNobody.uid) { spawnSync('chown', ['-R', '65534:65534', basis]); chmodSync(inbox, 0o2770); }
+  const ENV = ['GOEDKEUR_SLEUTELS', 'GOEDKEUR_INBOX', 'MCP_RECHTEN_PAD', 'OPDRACHT_STATUS_DIR', 'PASSKEY_RP_ID', 'PASSKEY_ORIGINS', 'OWNER_EMAIL', 'GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_OAUTH_CLIENT_SECRET', 'AUDIT_IP_PEPPER'] as const;
   const vorige = Object.fromEntries(ENV.map((k) => [k, process.env[k]]));
   Object.assign(process.env, { GOEDKEUR_SLEUTELS: sleutels, GOEDKEUR_INBOX: inbox, MCP_RECHTEN_PAD: rechten, OPDRACHT_STATUS_DIR: statusDir });
   delete process.env.PASSKEY_RP_ID; delete process.env.PASSKEY_ORIGINS;
+  // Eigen pepper voor de IP-hash (Audit-fix 10: geen terugval meer op RECOVERY_CODE_PEPPER): niet afhankelijk van de geheimen van de machine.
+  if (String(process.env.AUDIT_IP_PEPPER || '').length < 32) process.env.AUDIT_IP_PEPPER = randomBytes(48).toString('base64');
   const eigenaar = `pk-eig-${T}@example.test`;
   const G = await nepGoogle({ ownerEmail: eigenaar });
   const pool = getPool();
@@ -82,7 +89,7 @@ export async function main(): Promise<number> {
 
     const root = (bestand: unknown) => {
       const f = join(basis, `rp-${randomBytes(3).toString('hex')}.json`); writeFileSync(f, JSON.stringify(bestand));
-      const r = spawnSync(process.execPath, [HULP, 'rp-bijwerken'], { env: { ...process.env, GOEDKEUR_SLEUTELS: f, GOEDKEUR_STAAT: join(basis, 'staat'), GOEDKEUR_INBOX: inbox, GOEDKEUR_STATUS_DIR: statusDir, GOEDKEUR_RECHTEN: rechten, GOEDKEUR_GROEP: 'nogroup' }, encoding: 'utf8' });
+      const r = spawnSync(process.execPath, [HULP, 'rp-bijwerken'], { env: { ...process.env, GOEDKEUR_SLEUTELS: f, GOEDKEUR_STAAT: join(basis, 'staat'), GOEDKEUR_INBOX: inbox, GOEDKEUR_STATUS_DIR: statusDir, GOEDKEUR_RECHTEN: rechten, GOEDKEUR_GROEP: 'nogroup' }, encoding: 'utf8', ...alsNobody });
       return { status: r.status, na: JSON.parse(readFileSync(f, 'utf8')), err: r.stderr };
     };
     const leeg = root({ versie: 1, rpId: 'admin.tarasevych.com', origins: ['https://admin.tarasevych.com'], sleutels: [] });
@@ -261,7 +268,7 @@ export async function main(): Promise<number> {
     const aanv = await id(O, `${P}/goedkeuring/aanvragen`, { id: rO.reg.data.passkey.id });
     check('eigenaar: aanvragen → alleen een aanmelding voor root (eerste: SSH-opdracht)', aanv.status === 200 && aanv.data.eerste === true && readdirSync(inbox).some((f) => f.startsWith('sleutel-aanmelding-')) && JSON.parse(readFileSync(sleutels, 'utf8')).sleutels.length === 0, aanv.body.slice(0, 120));
     // Een niet-eigenaar-passkey kan nooit goedkeuren: root vertrouwt alleen zijn eigen bestand.
-    const rootHulp = (...args: string[]) => spawnSync(process.execPath, [HULP, ...args], { env: { ...process.env, GOEDKEUR_SLEUTELS: sleutels, GOEDKEUR_STAAT: join(basis, 'staat'), GOEDKEUR_INBOX: inbox, GOEDKEUR_STATUS_DIR: statusDir, GOEDKEUR_RECHTEN: rechten, GOEDKEUR_GROEP: 'nogroup' }, encoding: 'utf8' });
+    const rootHulp = (...args: string[]) => spawnSync(process.execPath, [HULP, ...args], { env: { ...process.env, GOEDKEUR_SLEUTELS: sleutels, GOEDKEUR_STAAT: join(basis, 'staat'), GOEDKEUR_INBOX: inbox, GOEDKEUR_STATUS_DIR: statusDir, GOEDKEUR_RECHTEN: rechten, GOEDKEUR_GROEP: 'nogroup' }, encoding: 'utf8', ...alsNobody });
     const ssh = rootHulp('toevoegen', String(aanv.data.sshOpdracht).split(' ').pop() || '');
     const b = kern.normaliseerSleutelbestand(JSON.parse(readFileSync(sleutels, 'utf8')));
     const u = kern.uitdagingVoor('goedkeuren', { voorstelId: '00000000-0000-4000-8000-000000000000', versie: '20261009-120000', sha256: 'a'.repeat(64), nonce: randomBytes(32).toString('base64url'), verloopt: Date.now() + 200000 });

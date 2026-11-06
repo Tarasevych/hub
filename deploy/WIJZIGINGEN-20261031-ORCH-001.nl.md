@@ -286,3 +286,159 @@ afgedekt met tests die op de eerdere code zouden falen.
 **Beperkingen / vervolg bij de eigenaar**
 - Op de server is het root-bestand `/etc/mijn-ruimte/eigenaar-ondertekenaars` vereist (RUNBOOK §18.1.5), anders weigert GitOps een met SSH ondertekende lock.
 - PR #11 is niet samengevoegd, `integratie` is niet aangemaakt, het beleid is niet ondertekend en productie (`b279ccab…`) is niet aangeraakt — wacht op een afzonderlijk `DEPLOY ПІДТВЕРДЖЕНО`.
+
+## Integratie en afsluiting van de taak (01–05-11-2026)
+
+- **1-11-2026.** De eigenaar heeft PR #11 gesloten als opgenomen en PR #16 (fasen 0–4, controles, MCP-001, MCP-deur op poort 8091)
+  samengevoegd in `release/sec-001-20261031-084138`. De vervolgcorrecties en de scheiding van privé- en technische «AI-toegang»
+  zijn via PR #17 samengevoegd met merge-commit `4db51b6` (samen met PR #18; vóór het herschrijven `5f84d9d`). Die commit ligt op
+  de eerste-ouderlijn van zowel `release/sec-001-20261031-084138` als `integratie`.
+- **Herschrijven van de historie (B-010, B-011).** De historie is twee keer herschreven, dus elke commit heeft drie SHA's. Auteur,
+  datum en onderwerp zijn in alle drie gelijk.
+
+  | Commit | vóór B-010 | tussen B-010 en B-011 | na B-011 (canoniek) |
+  |---|---|---|---|
+  | taakbasis | `b279ccab` | `0614c8b` | `5a023b41` |
+  | adversariële controle | `fa50a5b` | `7c8844a` | `7176e95` |
+  | PR #16 | `f8def89` | `a58579e` | `d33d068` |
+  | PR #17, 1/2 | `c414fe7` | `878e45c` | `eebfdd1` |
+  | PR #17, 2/2 | `8722770` | `a3ae4e6` | `3dea7c1` |
+  | merge PR #17 + PR #18 | `5f84d9d` | `10d5c90` | `4db51b6` |
+
+  De taakbasis `5a023b41` is een voorouder van `integratie`.
+- **Geïnstalleerde versie.** `4db51b6` is een voorouder van de canonieke geïnstalleerde basis `f3f3fab` (`20261105-061659`,
+  `geverifieerd_productie`, B-014) en van de huidige `integratie` en `voornaamst`. De servercommit `a318ba0` (waar de tag
+  `20261105-061659` naar wijst) ligt in de tussenhistorie tussen B-010 en B-011. Zijn voorouder `10d5c90` is dezelfde merge van
+  PR #17 met de tussen-SHA's, dus PR #17 zit erin als voorouder. `/api/version` is vanuit de cloudcontainer niet bereikbaar.
+- **5-11-2026, coördinatiestaat.** De taak stond op `in_progress` onder regels 1.4.2. In de eigen declaratie
+  (`orchestratie/taken/ORCH-001.json`, uitzondering AGENTS.md §4.3) staat nu: regels 1.4.9 (`taak-herlees`), `integrated` (`taak-staat`),
+  `integratieCommit` `4db51b6`, basis `5a023b41` (oude SHA bewaard). Het wachtrijbestand `wachtrij.json` wijzigt de agent niet: bovenaan
+  staat nog de regel van het gesloten PR #11 (tak `feature/orch-001-20261031-112355`, «wacht»). Die sluit de integrator op `integratie`.
+  **De volgorde telt: eerst de PR van de taak samenvoegen in `integratie`, daarna** `wachtrij volgende`, dan
+  `wachtrij klaar --taak ORCH-001 --uitkomst integrated --hoofd 4db51b6aabe73f295ba4286c4c7557568c0d5e3e`, dan `staat-commit`.
+  Reden: `wachtrij klaar` herschrijft `orchestratie/taken/ORCH-001.json` op `integratie`, en voor dat bestand geldt `merge=orch-staat`
+  (de versie van `integratie` blijft). Wie de wachtrij eerst sluit, verliest bij een lokale merge van de PR stil de eigen declaratie
+  (regels 1.4.9, basis `5a023b41`, blok `afsluiting`); een merge op GitHub geeft een conflict in dat bestand. Al gebeurd? Dan op
+  `integratie`: `git checkout <kop van de PR> -- orchestratie/taken/ORCH-001.json`, daarna `staat-commit`. Tot de wachtrij gesloten
+  is, meldt `controleer` geen fout: orch-kern aanvaardt beide staten van de regel (wacht nog, of staat al in `geschiedenis` als
+  `integrated`).
+  De status `installed` zet alleen de installer via `orchestratie/geinstalleerd.json`, dat nog ontbreekt.
+- **Onderweg gevonden en in aparte commits hersteld:**
+  - *Zoekcatalogus van knoppen.* De catalogus was verouderd na AUDIT-001. De generator bepaalde het tabblad uit tekst in de 1500 tekens
+    vóór een knop, waardoor «Verwijdering bevestigen» naar «Personalisatie» leidde. Nu leest `scripts/zoek-ui-catalogus.mjs` de
+    syntaxisboom van TypeScript en berekent voor elke plek de mogelijke tabbladen. Na twee onafhankelijke controles kwam erbij:
+    - waarden van uitdrukkingen (`pages[tab]` in de beheerconsole, `effectiveTab` in de cloud, `section` in MCP), `switch` met
+      `break` en het hijsen van functies;
+    - alleen de prop `tab` van de pagina telt als tabblad, niet `useState`, `.map((tab) => …)` of `item.tab`. Een pagina telt ook
+      als ze geëxporteerd is via `memo(X)`, `forwardRef(X)`, een alias of met een typeomzetting (`as`, `satisfies`, `!`);
+    - een lineair geheugen voor de doorloop (vroeger 2^N paden);
+    - de hub «AI-koppelingen» staat op `mcp/agents` (163 elementen);
+    - de sectie van een knop komt alleen uit zijn eigen JSX-boom en geldt tot het einde van het dichtstbijzijnde blok (`section`,
+      `article`, `footer`, `dialog` enz.). Bij 142 knoppen verdween de sectie. Meestal was die onjuist: een kop uit een andere boom,
+      uit een andere tak of een wisselende kop. Maar minstens 14 juiste secties gingen ook weg (onder meer `Toegangscodes`,
+      `uitrol/Geschiedenis`, `uitrol/Bronnen`, «Стандарт» in `AgentKleuren`). Dat is een voorzichtige keuze: liever geen sectie dan
+      een onjuiste;
+    - 16 bestanden die vanaf `src/main.tsx` onbereikbaar zijn (14 zonder één import en 2 die alleen vanuit andere dode bestanden
+      geïmporteerd worden) en tabbladen die altijd doorsturen (`mcp`: overview, connect, verbindingen) komen niet in de catalogus.
+      De «?»-uitleg uit zulke bestanden biedt het zoeken ook niet aan (`hulp:keys.doel`);
+    - de technische delen van de hub, het overzichtspaneel van de console (`src/overzicht/` → `admin/overview`) en de technische
+      meldingen (`meldingen/TechMeldingen`) zijn alleen met een technisch profiel zichtbaar. Een test vergelijkt dat met de
+      technische modules van `shared/tech-bundels.ts`.
+    Catalogus: 1334 elementen. Tests zoek-ui-tabblad 46/46, zoek-ui-sectie 14/14, zoek-ui-bereik 24/24; alle mutanten gedood (28 vóór
+    de tweede controle en 19 erna).
+    Komen er vóór het samenvoegen andere wijzigingen in `src/**/*.tsx` op `integratie`, dan moet de catalogus opnieuw gemaakt worden
+    met `node scripts/zoek-ui-catalogus.mjs` (dat doet `npm run build` ook); de actualiteitstest meldt het.
+  - *Zoekkaarten openden alleen de hoofdpagina van de dienst.* De routes van de catalogus en de adapters komen nu op het juiste
+    tabblad (`zoek-route-tabblad` 10/10).
+  - *Recente zoekopdrachten mengden de ruimtes.* Een pagina die met een actief technisch profiel was gekozen (`admin/sso`), verscheen
+    als link in de privéruimte. Nu is er een lijst per ruimte. De ruimte volgt de technische activering van het tabblad op het
+    moment dat het menu opent, niet het uiterlijk van de pagina. Een route naar `admin.*`, `api.*` of een technisch tabblad van
+    `mcp.*` gaat altijd naar de technische lijst, en zulke rijen uit oude privélijsten worden niet meer getoond. Bestaande
+    privélijsten blijven behouden (`zoek-recent` 31/31, 15 van 15 mutanten gedood).
+  - *Na F5 werd een beheerpagina even privé.* Zolang de status van het technische profiel laadt, blijft het tabblad in de technische
+    ruimte als het daar vóór het herladen was (alleen met een goedgekeurde sessie). De inhoud van de pagina blijft achter de echte
+    activering (`tech-ruimte-f5` 8/8, 7 van 7 mutanten gedood).
+  - *Witte tekst op het accent en op de rode vlakte in donkere thema's* (gevonden in de volledige ronde, faalde al op `d0e6481`
+    en `10a9278`). Tien CSS-regels zetten `#fff` op `var(--accent)`, op de rode vlakte van de meldingen of op de tegelkleur van de
+    bibliotheek; in donkere paletten zijn die vlakken licht en haalde wit 1,2–2,6:1. Nu staat op het accent `var(--text-on-accent)`,
+    op een bevestigde gevaarlijke actie `var(--fout-vlak)` met `var(--text-on-vlak)`, en de bibliotheektegel kiest kleur en tekst
+    met dezelfde themavlag (`tegel-kleur.ts`; in donker ≥ 7,1:1). `contrast-knoppen-logos` 38/38, nieuw `contrast-tegels` 10/10,
+    10 van 10 mutanten gedood.
+  - *Pagina «E-mailaccounts» zonder eigen stijl* (`mobiel-geometrie` faalde al op `d0e6481`). `mail-accounts-hub.css` werd nergens
+    geladen; nu importeert `MailAccountsHub.tsx` het. Met de stijl kwamen twee oude regels tot leven, die de onafhankelijke visuele
+    controle in Chromium ving: op ≤ 480 px drukte een open bel het adres tot 0 px samen en werd het schild in de noot een stip. Nu
+    hangt het belvenster aan de kaart en krimpt het schild niet.
+  - *Op de telefoon verloor de mobiele laag van latere regels* (dezelfde foutklasse, vier keer). De knoppen van de geheimenkluis
+    waren 38 px (`geheimen.css`), de cataloguslijst van het werkblad had een eigen scroll op 58vh (`werkblad.css`), de actieknoppen
+    van een contact waren 40 px (`contacten.css`). De mobiele lagen staan nu aan het eind van het bestand; op de pc is niets
+    veranderd (gemeten in Chromium). Het commentaar van het vangnet in `ontwerp/mobiel.css` klopt nu: specificiteit (0,3,1), niet 0.
+    Nieuwe test `mobiel-cascade` rekent de cascade na in alle 240 CSS-bestanden (22/22, 16 van 16 mutanten gedood);
+    `mobiel-geometrie` 56/56.
+  - *Drie mailtests faalden niet door de site.* `mail-accounts-beheer` verwachtte de oude lege pagina, die sinds MAILORBIT-001 de
+    orbit is; `merk-bron` en `merk-bron-google` slaagden alleen met een pepper uit de omgeving. Nu zetten de tests zelf een pepper
+    en renderen ze de pagina met een account.
+  - *32 suites waren ook rood op basis `d0e6481`.* Voor elk apart uitgezocht of het de omgeving van de cloudcontainer is of een
+    echte oude fout, en elk oordeel onafhankelijk nagekeken. Hersteld in aparte commits:
+    - tests die hun omgeving van de machine leenden, zetten die nu zelf en zetten hem daarna terug: `AUDIT_IP_PEPPER` (`fase3`,
+      `toegangscodes`, `dev-rechten-beheer`, `beveiliging`, `toegangssleutels`, `toegang-context`), `OWNER_EMAIL` (`mcp-spiegel`,
+      `mcp-console-c2`, `server-beheer`), `TZ=Europe/Brussels` (`agenda-v3`) en het pad van `playwright-core`
+      (`scripts/visueel-mail.mjs`);
+    - root-scripts negeren als root bewust de testpaden, dus zeven suites lieten ze op de echte `/etc/mijn-ruimte`, `/srv`,
+      `/var/lib` en de echte `systemctl` los. Als root draait het script nu als `nobody` op de map van de test (`server-beheer`,
+      `uitrol-deur`, `uitrol-goedkeuring`, `uitrol-bron`, `toegangssleutels`, `toegang-context`, `ai-kluis-een-plek`);
+    - verouderde tests. `mcp-console-c2` maakt na SEC-001 een echt goedgekeurd account aan, met een nieuwe check dat het token
+      vervalt zodra het account niet meer goedgekeurd is (een mutatie van die voorwaarde werd door niets opgemerkt).
+      `strook-menu` roept eerst nepBrowser aan en hangt niet meer af van de volgorde van attributen. `cloud-integratie-contract`
+      had geen `main()`, en `verbindingen-centrum` verborg falen met `return 0`. Beide gebruiken nu de gedeelde
+      `hulp/node-test-main.ts`;
+    - code. Op Python zonder `tarfile.data_filter` pakte de root-`mijn-ruimte-uitrol.sh` (5978f3b) zonder filter uit, met setuid
+      en eigenaar uit het archief. Nu gebeurt hetzelfde met de hand, en 3.11.2 blijft werken. Elf bestanden met Engelse namen
+      (`identity`, `mobile`, `preview`) zijn volgens de regel van de eigenaar hernoemd, met de paren in `bestandskaart.json`. Rauwe
+      hex in acht pagina-CSS-bestanden is vervangen door thematokens («wit op wit» wordt `--papier`). De fundamenttest verwacht
+      nu de stralen van DESIGN-001;
+    - een onafhankelijke review van die fixes gaf nog 11 punten, alle hersteld in zeven commits. Het handmatige uitpakken op
+      Python < 3.11.4 geeft mappen nu volgens de umask, net als het data-filter. Een gedragstest op een nagebootste 3.11.2
+      bewijst dat (`uitrol-deur` 105/105), en een verweesde `sleep` in de test houdt de uitrolvergrendeling niet meer vast. De
+      runner `eenheidstests` meldt geen «groen» meer als een filter niets vindt of een kindproces door een signaal sterft
+      (nieuwe suite `eenheidstests-uitvoerder-20261106`). `hulp/node-test-main.ts` telt ook fouten die pas na het eind van een
+      test komen. Het werkbladcanvas en cloud staan op thematokens: het canvasmenu bleef wit in het donkere thema en
+      «Видалити» stond lichtroze op wit. `ontwerp-fundament` vangt ongedefinieerde CSS-variabelen. De mail-voorbeeldpagina's
+      hebben `--papier` (nagekeken in Chromium), en de accountdocumentatie wijst naar `src/identiteit`. Tests zetten de pepper
+      terug en openen de map alleen als root op 0711.
+    Mutatietests: 25 van de 25 mutanten gedood. Zonder enige wijziging van de omgeving zijn 14 suites groen (`agenda-v3`,
+    `bestandskaart`, `beveiliging`, `cloud-integratie-contract`, `dev-rechten-beheer`, `fase3`, `mcp-console-c2`, `mcp-spiegel`,
+    `ontwerp-fundament`, `server-beheer`, `strook-menu`, `toegangssleutels`, `uitrol-bron`, `uitrol-deur`). De rest heeft
+    terecht iets nodig dat de container niet heeft: een aparte app-rol `DATABASE_URL_APP` (13 suites), een gebouwde `dist`,
+    `PLAYWRIGHT_CORE`, een volledige `npm ci`, sshd of een LAN-adres. Met die rol, `dist` en `PLAYWRIGHT_CORE` erbij zijn alle 15
+    nagekeken suites groen.
+  - *Scenario 7 van `orch-acceptatie`.* Een vaste pauze van 1,2 s gaf onder belasting 45/47. Nu houdt de stub de eerste installatie
+    onder flock vast tot de test de tweede heeft gecontroleerd.
+
+**Vervolg bij de eigenaar**
+- De PR van de taak samenvoegen in `integratie` en pas daarna de regel van PR #11 in de wachtrij sluiten met de drie opdrachten hierboven.
+- Kritieke beleidsregels bevestigen met passkey of SSH-handtekening: `controleer` meldt nog `KRITIEK_NIET_BEVESTIGD`, B-001…B-006
+  staan op `voorstel`, `regels.lock.json → eigenaar` is leeg.
+- Root-bestand `/etc/mijn-ruimte/eigenaar-ondertekenaars` op de server (RUNBOOK §18.1.5), anders weigert GitOps een met SSH
+  ondertekende lock.
+- `beleid.json → basis` (`20261105-061659`) vergelijken met de werkelijk geïnstalleerde versie: tag `20261105-101500` wijst naar `53a7b91`.
+- Desgewenst: oude technische verbindingen die ooit rechten uit «AI-toegang» kopieerden terugzetten naar de technische standaard
+  (het tabblad «Technisch» markeert ze; in bulk alleen met een apart script en met uw toestemming).
+
+**Losse vragen over het zoeken (gevonden bij de controle, in deze taak niet gewijzigd)**
+- De tak `mode==='accounts'` in `GoogleMailWorkspace` wordt nooit getoond, omdat de enige aanroep `mode` niet meegeeft.
+- Diepe links: de zoeker voegt `bericht`/`item` toe, maar de pagina's lezen andere parameters (mail: `open_message_id`). Een resultaat
+  opent daardoor het tabblad, maar niet het bericht, bestand of de notitie zelf.
+- Elementen van de hub «AI-koppelingen» openen de hub zonder onderdeel (`#agent/<slug>`, `?consent=`).
+- «Externe directory’s» op `admin/directories` vragen nog één klik op het subtabblad.
+- `IdentiteitBeheerWeergave` is praktisch onbereikbaar: `VerenigdDienstApp` toont haar alleen als laatste terugval.
+- In `AiVerbinden` en `TabExtensie` zijn delen alleen met een technisch profiel zichtbaar, terwijl de toegang in de catalogus per
+  bestand geldt.
+- Wederzijds recursieve componenten verliezen het tabblad van de pagina. Dat is een voorzichtige keuze: dan geldt de bestandsregel.
+- Een tabblad dat aan een kindcomponent wordt doorgegeven via spread (`{...p}`), onder een andere naam (`tab={sect}`), met een
+  terugvalwaarde (`tab={p.tab ?? 'overview'}`) of via een aanroep `Inner({tab})`, herkent de generator niet; dan geldt ook de
+  bestandsregel.
+- Een kop zonder paar `tr('…','…')` (bijvoorbeeld `<h3>CalDAV</h3>`) beëindigt de vorige sectie niet. Koppen met dynamische tekst
+  komen in het zoeken als secties met de tekst van een badge («Нове», «онлайн», «Без теми»).
+- Recente zoekopdrachten: elementen van het technische tabblad van de hub (RuimteScheiding, TechVerbindingen, SiteSchakelaars) en het
+  indexvenster van het zoeken (`hub/zoek`) hebben dezelfde route als privé-elementen. In de privélijst kunnen ze alleen komen in een
+  nieuw tabblad, zolang de eerste status van het technische profiel er nog niet is.

@@ -13,7 +13,7 @@
 .mail-koppel-merk{
   display:grid;place-items:center;width:95px;height:93px;margin-bottom:8px;
   border-radius:28px;border:1px solid color-mix(in srgb,var(--mail-koppel-groen) 13%,var(--line,#e4e7e8));
-  background:linear-gradient(147deg,var(--panel,#fff) 5%,color-mix(in srgb,#fff 75%,var(--panel,#fff)) 65%,color-mix(in srgb,var(--mail-koppel-groen) 7%,var(--panel,#fff)));
+  background:linear-gradient(147deg,var(--panel,#fff) 5%,color-mix(in srgb,var(--papier) 75%,var(--panel,#fff)) 65%,color-mix(in srgb,var(--mail-koppel-groen) 7%,var(--panel,#fff)));
   box-shadow:0 12px 35px color-mix(in srgb,var(--mail-koppel-groen) 12%,transparent),0 2px 10px color-mix(in srgb,var(--shadow,#183b3b) 8%,transparent),inset 0 1px 1px rgba(255,255,255,.75);
   animation:mail-koppel-inzicht .65s cubic-bezier(.18,.89,.28,1.18) both;
 }
@@ -59,7 +59,7 @@
 .mail-koppel-hoofdactie>svg{flex:none}
 .mail-koppel-google-embleem{
   flex:0 0 auto;display:grid;place-items:center;width:33px;height:33px;
-  border-radius:50%;background:#fff;
+  border-radius:50%;background:var(--papier);
 }
 .mail-koppel-google-embleem :is(svg,img){max-height:24px;max-width:24px}
 .mail-koppel-hoofdactie:hover:not(:disabled){filter:brightness(1.07);box-shadow:0 15px 30px color-mix(in srgb,var(--mail-koppel-groen) 27%,transparent);transform:translateY(-1px)}

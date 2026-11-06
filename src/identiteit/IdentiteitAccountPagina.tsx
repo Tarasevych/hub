@@ -1,8 +1,8 @@
 // IDENTITY-002 · оболонка одного екрана: меню-зміст, 12 секцій, scroll-spy.
 // Секції наповнює наявний код сторінок identity — тут лише розкладка й перехід до розділу.
 import { useEffect, useState, type ReactNode } from 'react';
-import './identity-account.css';
-import { IDENTITY_TABS } from './identity-tabs';
+import './identiteit-account.css';
+import { IDENTITY_TABS } from './identiteit-tabs';
 
 export type IdentitySectie = { id: string; titel: string; inhoud: ReactNode };
 

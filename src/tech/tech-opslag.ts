@@ -76,6 +76,14 @@ export async function techBand(kleur: BandKleur, patroon: BandPatroon) { neem((a
 export async function techErven(aan: boolean) { neem((await api.post('/api/owner/tech/erven', { ...techBody(), aan })).data); }
 export const techErfNieuweTabbladen = (t: TechStatus = toestand) => t.profiel?.ervenNieuweTabbladen === true;
 export const techActief = (t: TechStatus = toestand) => !!t.activatie && t.activatie.eind > Date.now() + t.scheef;
+/** Technische ruimte van dit tabblad, ook net na F5 (ORCH-001, 05.11.2026, oude fout). Zolang de EERSTE status nog laadt, blijft het
+ *  tabblad technisch als het dat vóór het herladen was (hint per tabblad: src/gedeelde-voorkeuren.ts → weergaveRuimteNu). Anders
+ *  sprongen menu en uiterlijk van een beheerpagina na F5 even naar de privéruimte en terug, en zette CanoniekOmlijsting de hint al
+ *  op 'gebruiker'. Alleen het eerste beeld: de server beslist wat de pagina toont. Zonder goedgekeurde sessie (afgemeld, wacht op
+ *  goedkeuring, geblokkeerd, fout: dan vraagt dit tabblad geen status en blijft `geladen` false) of zodra de status er is → alleen
+ *  techActief. */
+export const techRuimteBijLaden = (t: TechStatus, vorigeRuimte: string, zonderSessie: boolean): boolean =>
+  techActief(t) || (!t.geladen && !zonderSessie && vorigeRuimte === 'technisch');
 export const techMag = (m: TechMogelijkheid, t: TechStatus = toestand) => techActief(t) && !!t.activatie?.mogelijkheden.includes(m);
 
 // Vensters openen vanuit elk scherm (accountmenu, band): één gebeurtenis, de laag (TechLaag) luistert.

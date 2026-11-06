@@ -5,7 +5,7 @@
 ## Actueel prototype en implementatie
 
 **[`identity-live.html`](./identity-live.html)** — **één pagina**: alle 12 `identity`-onderdelen staan onder elkaar op één scherm; het menu wisselt geen losse pagina's meer maar **scrollt vloeiend naar de gekozen sectie** (met automatische `scroll-spy`-markering).
-De productie-implementatie in de applicatie staat in `src/identity/IdentityAccountPagina.tsx`, `src/identity/Profielfoto.tsx`, `src/identity/identity-account.css` en `src/identity/identity-tabs.ts` (`IDENTITY-002`).
+De productie-implementatie in de applicatie staat in `src/identiteit/IdentiteitAccountPagina.tsx`, `src/identiteit/Profielfoto.tsx`, `src/identiteit/identiteit-account.css` en `src/identiteit/identiteit-tabs.ts` (`IDENTITY-002`).
 
 ## Wat is verwerkt
 

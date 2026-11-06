@@ -30,7 +30,7 @@
 .rw-reden,.rw-uitkomst{font-size:12px}
 /* Elke regel onder de tumbler op een eigen regel, ook waar .rw een blok is (accountmenu v2). */
 .rw-stand,.rw-reden,.rw-uitkomst{display:block}
-.rw-uitkomst.is-fout{color:#b91c1c}
+.rw-uitkomst.is-fout{color:var(--fout)}
 .rw-compact .rw-schakel{min-height:34px;gap:8px;padding:3px 12px 3px 3px;font-size:13px}
 .rw-compact .rw-spoor{width:46px;height:26px}
 .rw-compact .rw-bol{width:20px;height:20px}
@@ -61,7 +61,7 @@
 .rs-chip input{margin:0}
 .rs-chip.is-gekozen{border-color:var(--rw-prive);background:color-mix(in srgb,var(--rw-prive) 14%,transparent)}
 .rs-chip.is-uit{opacity:.5;cursor:not-allowed;border-style:dashed}
-.rs-chip:focus-within{outline:3px solid #2563eb;outline-offset:2px}
+.rs-chip:focus-within{outline:3px solid var(--focus);outline-offset:2px}
 .rs-keuze{margin:8px 0 2px;display:flex;flex-direction:column;gap:2px}
 .rs .rs-reden{display:block;margin-top:4px;font-size:13px}
 .rs{max-height:min(78dvh,760px);overflow:auto;overscroll-behavior:contain}
@@ -73,15 +73,15 @@
 .rs-kaart input{margin-top:3px}
 .rs-kaart-tekst{display:flex;flex-direction:column;gap:2px;min-width:0}
 .rs-uitleg{opacity:.85;line-height:1.35}
-.rs-reden{color:#92400e}
-html.theme-dark .rs-reden{color:#fbbf24}
+.rs-reden{color:var(--warn)}
+html.theme-dark .rs-reden{color:var(--warn)}
 .rs-soort{display:flex;flex-direction:column;gap:4px;margin:6px 0}
 .rs-meta{font-size:13px;opacity:.85}
 .rt-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;border-bottom:1.5px solid var(--rw-rand);margin-bottom:10px}
 .rt-tabs::-webkit-scrollbar{display:none}
 .rt-tabs [role=tab]{flex:none;min-height:40px;padding:0 12px;border:0;border-bottom:3px solid transparent;background:transparent;color:inherit;font:600 14px inherit;cursor:pointer;white-space:nowrap}
 .rt-tabs [role=tab][aria-selected=true]{border-bottom-color:var(--rw-prive)}
-.rt-tabs [role=tab]:focus-visible{outline:3px solid #2563eb;outline-offset:-3px}
+.rt-tabs [role=tab]:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
 .rt-feiten{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:12px 0}
 .rt-feiten dt{font-weight:700}
 .rt-lijst{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
@@ -92,22 +92,22 @@ html.theme-dark .rs-reden{color:#fbbf24}
 .ru-keuzes li{display:flex;flex-direction:column;gap:3px}
 .ru-knop{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1.5px solid var(--rw-rand);border-radius:10px;background:transparent;color:inherit;font:600 15px inherit;cursor:pointer;align-self:flex-start}
 .ru-knop svg{width:18px;height:18px}
-.ru-knop.is-gevaar{border-color:#b91c1c;color:#b91c1c}
-html.theme-dark .ru-knop.is-gevaar{border-color:#f87171;color:#f87171}
+.ru-knop.is-gevaar{border-color:var(--fout);color:var(--fout)}
+html.theme-dark .ru-knop.is-gevaar{border-color:var(--fout);color:var(--fout)}
 .ru-knop:disabled{opacity:.55;cursor:not-allowed}
 .ru-gevolg{opacity:.85;line-height:1.35}
 .rs-sjablonen{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .rs-sjabloon{min-height:32px;padding:0 10px;border:1px solid var(--rw-rand);border-radius:999px;background:transparent;color:inherit;font:13px inherit;cursor:pointer}
 /* ── Wissel altijd zichtbaar, inklappen, afbakening van de ruimte (vlag tech-ruimtes-v2, 28.10.2026) ── */
 .rw-dok-melding{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(66px + env(safe-area-inset-bottom,0px) + var(--venster-dok-onder,0px));z-index:98901;max-width:min(360px,calc(100vw - 24px));padding:8px 12px;border-radius:10px;background:#111827;color:#fff;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
-.rw-dok-melding.is-fout{background:#7f1d1d}
+.rw-dok-melding.is-fout{background:var(--fout-vlak);color:var(--text-on-vlak)}
 /* Ingeklapte band: smalle strook (28 px) met merk, resttijd en «Розгорнути»; de rest verborgen. #root schuift mee via --tech-band-h. */
 html[data-tech-ingeklapt='1']{--tech-band-h:28px}
 .tech-band.is-ingeklapt .tech-band-id,.tech-band.is-ingeklapt .tech-band-reden,.tech-band.is-ingeklapt .tech-band-extra,.tech-band.is-ingeklapt .tech-band-meer,
 .tech-band.is-ingeklapt .tech-meldingen-knop,.tech-band.is-ingeklapt .rw,.tech-band.is-ingeklapt [data-tech-knop=uitloggen]{display:none!important}
 .tech-band.is-ingeklapt{font-size:12px}
 .tech-band-inklap{display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:0 8px;border:1.5px solid currentColor;border-radius:8px;background:transparent;color:var(--tech-band-fg);font:600 13px inherit;cursor:pointer}
-.tech-band-inklap:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+.tech-band-inklap:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 @media (max-width:700px){.tech-band-inklap span{display:none}.tech-band-inklap{min-width:36px;min-height:36px;justify-content:center}}
 /* Afbakening: in de technische ruimte een dun kader rond de pagina en een gekleurde rand langs het menu, in de bandkleur.
    Geen beweging, geen knipperen; pointer-events uit zodat niets eronder onklikbaar wordt. Niet alleen kleur: titel «[ТЕХ]», merk in de band,

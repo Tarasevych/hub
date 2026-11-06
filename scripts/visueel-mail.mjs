@@ -15,7 +15,9 @@ import { mkdir, readFile, readdir, writeFile, access } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const PW = '/usr/local/lib/pnpm/5/.pnpm/playwright-core@1.59.1/node_modules/playwright-core/index.mjs';
+// PLAYWRIGHT_CORE = map van playwright-core (zoals de andere browserscripts, bv. scripts/werkblad-plekken-stand.mjs); zonder die
+// variabele het oude vaste pad van de ontwikkelmachine.
+const PW = join(process.env.PLAYWRIGHT_CORE || '/usr/local/lib/pnpm/5/.pnpm/playwright-core@1.59.1/node_modules/playwright-core', 'index.mjs');
 const CHROME = process.env.CHROME_PAD || '/usr/bin/google-chrome';
 const MAILS = 'tests/hulp/mails';
 

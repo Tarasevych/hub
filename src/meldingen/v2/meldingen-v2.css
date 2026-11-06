@@ -135,7 +135,7 @@
 .mv2u-actie svg{width:15px;height:15px;flex:0 0 auto}
 .mv2u-actie:hover{background:var(--nav-hover)}
 .mv2u-actie.is-gevaar{color:var(--mv2-fout);border-color:color-mix(in srgb,var(--mv2-fout) 40%,var(--line))}
-.mv2u-actie.is-gevaar.is-bevestigd{background:var(--mv2-fout);color:#fff;border-color:transparent}
+.mv2u-actie.is-gevaar.is-bevestigd{background:var(--fout-vlak);color:var(--text-on-vlak);border-color:transparent}
 @media (pointer:coarse),(max-width:560px){.mv2u-actie{min-height:44px}}
 /* INTEG-001: drie delen «Нові / Прочитані / Архів» als kleine pictogrammen met teller; de naam staat bij aanwijzen (data-tip) en in de
    kop («Сповіщення · Нові»). Een korte regel zegt wat er in dit deel staat. Per melding direct «Відкрити» en «Очистити». */

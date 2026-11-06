@@ -58,8 +58,19 @@ export const SOORT_RANG: Readonly<Record<string, number>> = Object.freeze({ pagi
 export const ZOEK_FORMATEN = ['pdf', 'docx', 'xlsx', 'pptx', 'txt', 'csv', 'md', 'html', 'json', 'zip', 'afbeelding', 'audio', 'video', 'overig'] as const;
 
 // ------------------------------------------------------------------------------------------------ het object
-/** Veilige overgang: host = dienst van de site (hub/mail/cloud/id/mcp/ai), pad = route binnen die dienst. Nooit een vrije URL. */
-export type ZoekRoute = { host: 'hub' | 'mail' | 'cloud' | 'id' | 'mcp' | 'ai' | 'github'; pad: string; hash?: string; params?: Record<string, string> };
+/**
+ * Hosts van een route: de diensten van de site (public/canonical-service.js → domains). 'id' en 'identity' zijn dezelfde dienst
+ * (id.*): de UI-catalogus (backend/zoek/catalogus-ui.ts) schrijft de dienst-id, de oudere bronnen 'id'. 'huis', 'api' en 'admin'
+ * ontbraken tot 05.11.2026, waardoor de client elk catalogusobject van die diensten zonder link toonde (ORCH-001, oude fout).
+ */
+export const ZOEK_ROUTE_HOSTS = ['hub', 'mail', 'cloud', 'id', 'identity', 'mcp', 'ai', 'github', 'huis', 'api', 'admin'] as const;
+/**
+ * Veilige overgang: host = dienst van de site, pad = waar binnen die dienst. Nooit een vrije URL.
+ * `pad` is een pad («/instellingen») OF een tabblad-id van die dienst («account», «local»: zo schrijven de UI-catalogus en de
+ * adapters het). De client (src/zoek/zoek-kern.ts → routeUrl) maakt van een tabblad-id het canonieke Nederlandse pad
+ * (/<slug>, public/canonical-service.js → tabSlug); een onbekend tabblad of onveilig pad → «/».
+ */
+export type ZoekRoute = { host: typeof ZOEK_ROUTE_HOSTS[number]; pad: string; hash?: string; params?: Record<string, string> };
 
 export type ZoekRechten = { userId: string; ruimte: AiRuimte; integratie?: string };
 

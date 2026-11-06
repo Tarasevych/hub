@@ -14,8 +14,10 @@
 // het zegt), de technische lade krijgt alles. Omdat de poort (gegevensRuimteVeilig) de technische lade alleen geeft bij een
 // levende activering, ziet niemand zonder actief technisch profiel ooit een technisch object — ook niet via suggesties.
 //
-// ROUTE. {host: dienst, pad: tabblad-id, hash?: '#<tab>', params?: {focus: '<data-hulp-sleutel>'}}: de pagina opent het tabblad via
-// canonicalServiceUrl(host, pad) en, bij `focus`, scrolt zij naar het element met data-hulp=<sleutel> (afspraak met Z4).
+// ROUTE. {host: dienst, pad: tabblad-id, hash?: '#<tab>', params?: {focus: '<data-hulp-sleutel>'}}: de client (src/zoek/zoek-kern.ts →
+// routeUrl) maakt daar https://<domein van de dienst>/<Nederlandse slug van het tabblad> van, en bij `focus` scrolt de pagina naar
+// het element met data-hulp=<sleutel> (afspraak met Z4). Tot 05.11.2026 kende de client de hosts identity/api/admin/huis niet en
+// las hij een tabblad-id als ongeldig pad: geen enkel object opende zijn tabblad (ORCH-001, oude fout; test zoek-route-tabblad).
 import { createHash } from 'node:crypto';
 import { DIENST_IDS, MENU_PAGINAS } from '../../shared/menu-model';
 import { BEHEER_PAGINAS } from '../../shared/beheer-paginas';
@@ -23,7 +25,7 @@ import { HULP_REGISTER } from '../../shared/hulp-register';
 import { V2_GROEPEN, V2_OPTIES, KANT_TEKST } from '../../shared/connector-v2/catalogus';
 import { CATEGORIEEN, INTEGRATIES, STATUS_LABEL } from '../../shared/integraties-catalogus';
 import { MAIL_AANBIEDERS } from '../../shared/mail-aanbieders';
-import { UI_DIENSTEN, UI_ELEMENTEN, UI_ELEMENTEN_VERSIE, uiPlekVan, type UiToegang } from '../../shared/zoek-ui-knoppen.generated';
+import { UI_DIENSTEN, UI_ELEMENTEN, UI_ELEMENTEN_VERSIE, UI_ONBEREIKBAAR, uiPlekVan, type UiToegang } from '../../shared/zoek-ui-knoppen.generated';
 import { serviceTabLabel } from '../../src/dienst-tab-labels';
 import type { ZoekObject, ZoekRoute, ZoekSoort, ZoekBron } from '../../shared/zoek-model';
 import type { Lade } from '../../shared/ruimte-scheiding';
@@ -36,6 +38,8 @@ export type UiObject = {
   pad: { uk: string; nl: string }; route: ZoekRoute; trefwoorden: string[]; extra: Record<string, unknown>;
 };
 
+/** Wat mensen typen als ze AI willen koppelen (hub «Підключення ШІ»). */
+const AI_KOPPELEN: readonly string[] = ['підключити шi', 'підключити claude', 'підключити chatgpt', 'конектор', 'mcp', 'доступи шi', 'що може шi', 'відкликати доступ', 'ai koppelen', 'claude koppelen', 'connector', 'ai-toegang', 'toegang intrekken', 'connect ai', 'connect claude', 'revoke access', 'подключить ии', 'подключить claude', 'коннектор', 'доступы ии'];
 /**
  * Bedoelingen («наміри»): wat mensen TYPEN als ze een pagina zoeken zonder de naam te kennen — uk / nl / en / ru, surzhyk en
  * vertalingen inbegrepen. Sleutel = 'dienst/tab' (of een object-id voor één element). Gewicht B (trefwoorden) in de kern.
@@ -72,7 +76,9 @@ const INTENTIES: Readonly<Record<string, readonly string[]>> = Object.freeze({
   'hub/zoek': ['пошук', 'знайти', 'шукати', 'zoeken', 'vinden', 'search', 'find', 'поиск', 'найти'],
   'hub/overview': ['головна', 'мій простір', 'огляд', 'startpagina', 'mijn ruimte', 'overzicht', 'home', 'dashboard', 'главная'],
   'hub/recent': ['останні', 'нещодавні', 'recent', 'recente', 'недавние'],
-  'ai/agents': ['підключити шi', 'підключити claude', 'підключити chatgpt', 'конектор', 'mcp', 'доступи шi', 'що може шi', 'відкликати доступ', 'ai koppelen', 'claude koppelen', 'connector', 'ai-toegang', 'toegang intrekken', 'connect ai', 'connect claude', 'revoke access', 'подключить ии', 'подключить claude', 'коннектор', 'доступы ии'],
+  // De hub «Підключення ШІ» staat op mcp.*/agents; ai.*/agents verwijst ernaar. Dezelfde bedoelingen voor beide.
+  'ai/agents': AI_KOPPELEN,
+  'mcp/agents': AI_KOPPELEN,
   'ai/workspace': ['чат з шi', 'робочий простір шi', 'ai-chat', 'werkruimte', 'ai chat', 'чат с ии'],
   'github/overview': ['github', 'репозиторії', 'код', 'issues', 'pull requests', 'repositories', 'code', 'репозитории', 'код'],
   'github/accounts': ['підключити github', 'github koppelen', 'connect github', 'подключить github'],
@@ -159,7 +165,11 @@ function bouw(): UiObject[] {
   }
 
   // ---------------------------------------------------------------- «?»-uitleg: elke optie/schakelaar met wat/gevolg/risico
+  // Een «?» uit een bestand dat de site nergens laadt (UI_ONBEREIKBAAR, bv. src/BeheerSleutelsWeergave.tsx → keys.doel) is op geen
+  // enkele pagina te vinden: niet aanbieden (ORCH-001, na de onafhankelijke controle van 05.11.2026).
+  const dood = new Set(UI_ONBEREIKBAAR);
   for (const [sleutel, h] of Object.entries(HULP_REGISTER)) {
+    if (dood.has(h.bron)) continue;
     const plek = uiPlekVan(h.bron) || (h.bron.startsWith('deploy/') ? { dienst: 'admin', tab: 'updates', toegang: 'technisch' as UiToegang } : { dienst: 'hub', tab: 'overview', toegang: 'technisch' as UiToegang });
     const toegang = strenger(plek.toegang, dienstToegang(plek.dienst, plek.tab));
     const [watUk, watNl] = h.wat, [gevolgUk, gevolgNl] = h.gevolg, [risicoUk, risicoNl] = h.risico;
@@ -182,8 +192,9 @@ function bouw(): UiObject[] {
       id: `recht:${o.key}`, bron: 'instelling', soort: 'instelling', toegang,
       titels: { uk: knip(o.uk[0], 160), nl: knip(o.nl[0], 160) },
       omschrijving: { uk: knip(`${o.uk[1]} ${o.uk[2]} ${o.uk[3] || ''}`, 600), nl: knip(`${o.nl[1]} ${o.nl[2]} ${o.nl[3] || ''}`, 600) },
-      pad: { uk: `${dienstNaam('ai').uk} › Агенти › Конектори › ${groep?.uk || o.groep} › ${kant.uk}`, nl: `${dienstNaam('ai').nl} › Agenten › Connectors › ${groep?.nl || o.groep} › ${kant.nl}` },
-      route: route('ai', 'agents', { hash: 'connectors' }),
+      // De connectors staan in de hub op mcp.*/agents#connectors (tot 05.11.2026: ai.*/agents, alleen een verwijzing naar de hub).
+      pad: { uk: `${dienstNaam('mcp').uk} › ${tabNaam('agents').uk} › Конектори › ${groep?.uk || o.groep} › ${kant.uk}`, nl: `${dienstNaam('mcp').nl} › ${tabNaam('agents').nl} › Connectors › ${groep?.nl || o.groep} › ${kant.nl}` },
+      route: route('mcp', 'agents', { hash: 'connectors' }),
       trefwoorden: [o.id, o.essentie, o.weergave, o.groep, o.kant, o.soort, o.risico, ...(o.intern ? [o.intern] : [])],
       extra: { recht: o.key, groep: o.groep, kant: o.kant, risico: o.risico, soort: o.soort },
     });

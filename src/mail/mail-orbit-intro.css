@@ -398,7 +398,7 @@
   display:inline-flex;align-items:center;justify-content:center;gap:11px;
   width:100%;max-width:310px;min-height:52px;
   margin-top:24px;padding:11px 17px;
-  border:1px solid color-mix(in srgb,var(--orbit-accent) 76%,#fff);
+  border:1px solid color-mix(in srgb,var(--orbit-accent) 76%,var(--papier));
   border-radius:16px;
   color:#fff;background:linear-gradient(117deg,color-mix(in srgb,var(--orbit-accent) 83%,#053d42),var(--orbit-accent));
   box-shadow:0 13px 27px color-mix(in srgb,var(--orbit-accent) 25%,transparent);
