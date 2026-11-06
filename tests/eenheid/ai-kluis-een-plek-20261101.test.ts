@@ -312,7 +312,9 @@ export async function main(): Promise<number> {
   const werk = mkdtempSync(join(tmpdir(), 'mr-ux-ai-vault-'));
   // mkdtemp maakt 0700: draait de test als root, dan draait goedkeur-hulp.mjs hieronder als nobody (alsNobody) en kan die de
   // submappen (0777) niet bereiken («inbox … ontbreekt»). Doorgang (x) volstaat; de bestanden zelf blijven van root.
-  chmodSync(werk, 0o711);
+  // Alleen als root: als gewone gebruiker draait alles als die gebruiker, en dan zou 0711 andere lokale gebruikers toegang geven
+  // tot de 0777-submappen (zoals de goedkeur-inbox) van deze test.
+  if (process.getuid?.() === 0) chmodSync(werk, 0o711);
   const maakMap = (n: string) => { const p = join(werk, n); mkdirSync(p, { recursive: true }); chmodSync(p, 0o777); return p; };
   const dirs = {
     beleid: maakMap('ai-beleid'),
