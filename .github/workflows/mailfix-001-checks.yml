@@ -77,10 +77,10 @@ jobs:
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           for poging in $(seq 1 45); do
-            if curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailfix-preview.html' > /dev/null; then break; fi
+            if curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailfix-voorbeeld.html' > /dev/null; then break; fi
             sleep 1
           done
-          curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailfix-preview.html' > /dev/null
+          curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailfix-voorbeeld.html' > /dev/null
           node tests/visueel/mailfix-screen.mjs
           test -s uitvoer/mailfix-full-390.png
       - name: Upload unaltered visual screenshots and logs

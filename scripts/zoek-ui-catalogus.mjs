@@ -29,7 +29,9 @@ export const PLEKKEN = [
   ['GitHubWeergave', 'github', 'overview', 'iedereen'],
   ['zoek/ZoekIndex', 'hub', 'zoek', 'technisch'] /* zone D 22.10.2026: indexvenster = technisch profiel (ook de «?»-uitleg zoek.index.*) */, ['zoek/', 'hub', 'zoek', 'iedereen'], ['GlobaalZoekPaneel', 'hub', 'zoek', 'iedereen'],
   ['HubNotities', 'hub', 'notes', 'iedereen'], ['HubRecent', 'hub', 'recent', 'iedereen'], ['HubBlokWidget', 'hub', 'overview', 'iedereen'],
-  ['bureau/', 'hub', 'overview', 'iedereen'], ['overzicht/', 'hub', 'overview', 'iedereen'], ['WelkomKaart', 'hub', 'overview', 'iedereen'],
+  ['bureau/', 'hub', 'overview', 'iedereen'], ['WelkomKaart', 'hub', 'overview', 'iedereen'],
+  // Технічні сповіщення: кнопка є лише в технічній смузі (TechLaag → actief && activatie), а не у звичайному дзвонику.
+  ['meldingen/TechMeldingen', 'hub', 'overview', 'technisch'],
   ['meldingen/', 'hub', 'overview', 'iedereen'], ['CanoniekMeldingencentrum', 'hub', 'overview', 'iedereen'], ['MeldingenpaneelInhoud', 'hub', 'overview', 'iedereen'],
   ['CanoniekAccountMenu', 'hub', 'overview', 'iedereen'], ['CanoniekOmlijsting', 'hub', 'overview', 'iedereen'], ['ZijbalkWerkbalk', 'hub', 'overview', 'iedereen'],
   ['RuimteStrook', 'hub', 'overview', 'iedereen'], ['ExtensieUpdateBand', 'hub', 'overview', 'iedereen'], ['CanoniekVerbindingBand', 'hub', 'overview', 'iedereen'],
@@ -61,7 +63,7 @@ export const PLEKKEN = [
   ['tech/', 'hub', 'overview', 'profiel'], ['ssh/', 'hub', 'overview', 'technisch'], ['terminal/', 'mcp', 'dashboard', 'technisch'],
   ['extern/', 'hub', 'overview', 'technisch'], ['vlaggen/', 'hub', 'overview', 'technisch'],
   // ---- sitebeheer (alleen technisch)
-  ['BeheerConsoleWeergave', 'admin', 'overview', 'technisch'], ['BeheerOverzichtWeergave', 'admin', 'overview', 'technisch'],
+  ['BeheerConsoleWeergave', 'admin', 'overview', 'technisch'], ['BeheerOverzichtWeergave', 'admin', 'overview', 'technisch'], ['overzicht/', 'admin', 'overview', 'technisch'] /* Dashboard → BeheerOverzichtWeergave; tot 05.11.2026 per vergissing hub/iedereen */,
   // IdentiteitBeheerWeergave (ZOEKDIEP-001): VerenigdDienstApp toont hem alleen als terugval NA alle diensten (identity, admin … keren
   // eerder terug) — op geen enkele pagina te zien. Verzoeken en gebruikers staan in de beheerconsole (BeheerConsoleWeergave → admin/access).
   ['BeheerSleutelsWeergave', 'admin', 'contour', 'technisch'], ['geheimen/', 'admin', 'contour', 'technisch'], ['BeheerAiBeleidWeergave', 'admin', 'ai', 'technisch'],
@@ -190,13 +192,24 @@ const sluit = (src, van, naam) => { const i = src.indexOf(`</${naam}>`, van); re
  * wel zelf vindbaar, maar geen sectie voor knoppen: welke tekst erboven staat, hangt af van de toestand. Is zo'n kop de laatste
  * kop vóór de knop, dan krijgt de knop GEEN sectie (en niet de kop daarvoor, die bij een vorig blok hoort).
  */
+/** Elementen die een eigen blok met een eigen kop vormen: een kop daarbinnen geldt niet voor knoppen erbuiten. */
+const BLOK_TAGS = new Set(['section', 'article', 'aside', 'fieldset', 'details', 'form', 'li', 'footer', 'nav', 'dialog']);
 function koppen(src) {
   const kopKnopen = new Map();   // begin van een <h1-3>-element → { knoop, boomEinde }
   const sf = ts.createSourceFile('/koppen.tsx', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  // Een kop geldt tot het einde van zijn BLOK: het dichtstbijzijnde omsluitende section/article/aside/fieldset/details/form/li/
+  // footer/nav/dialog (of role='dialog'); zonder zo'n blok tot het einde van de JSX-boom. Na de onafhankelijke controle
+  // (05.11.2026): «Перевірити відправника вручну» in de voet van AfzenderDialoog kreeg de kop van een gesloten <section> erboven.
+  const isBlok = (el) => {
+    if (!ts.isJsxElement(el)) return false;
+    const o = el.openingElement;
+    if (BLOK_TAGS.has(o.tagName.getText(sf))) return true;
+    return o.attributes.properties.some((a) => ts.isJsxAttribute(a) && a.name.getText(sf) === 'role' && !!a.initializer && ts.isStringLiteral(a.initializer) && a.initializer.text === 'dialog');
+  };
   const zoek = (n) => {
     if (ts.isJsxElement(n) && /^h[123]$/.test(n.openingElement.tagName.getText(sf))) {
       let c = n;
-      while (c.parent && (ts.isJsxElement(c.parent) || ts.isJsxFragment(c.parent))) c = c.parent;
+      while (c.parent && (ts.isJsxElement(c.parent) || ts.isJsxFragment(c.parent))) { c = c.parent; if (isBlok(c)) break; }
       kopKnopen.set(n.getStart(sf), { knoop: n, boomEinde: c.end });
     }
     ts.forEachChild(n, zoek);
@@ -368,8 +381,19 @@ function tabStructuur(src, tabs) {
   //     `const tab = p.tab`), mits die component geëxporteerd is (de pagina; de app geeft het tabblad mee) of elke plek waar hij
   //     als JSX-tag staat hem `tab={<tabblad van de pagina>}` geeft. Een niet gedeclareerde `tab` (losse fragmenten) telt zoals vroeger.
   const geexporteerd = new Set();
+  // memo(X) / forwardRef(X) / React.memo(X), ook genest of met `as T`: de component X zelf (na de onafhankelijke controle, 05.11.2026:
+  // tot dan telde alleen `export default X`, niet `export default memo(X)`, `export const Y = memo(X)` of `export const Y = X`).
+  const ontpak = (e) => {
+    let x = kaal(e);
+    while (x && ts.isCallExpression(x) && /^(?:React\.)?(?:memo|forwardRef)$/.test(x.expression.getText(sf)) && x.arguments.length) x = kaal(x.arguments[0]);
+    return x;
+  };
+  const voegExportToe = (e) => { const x = ontpak(e); if (x && ts.isIdentifier(x)) { const s = symVan(x); if (s) geexporteerd.add(s); } };
   for (const st of sf.statements) {
-    if (ts.isExportAssignment(st) && ts.isIdentifier(kaal(st.expression))) { const s = symVan(kaal(st.expression)); if (s) geexporteerd.add(s); }
+    if (ts.isExportAssignment(st)) voegExportToe(st.expression);
+    if (ts.isVariableStatement(st) && (ts.getCombinedModifierFlags(st.declarationList.declarations[0] ?? st) & ts.ModifierFlags.Export) !== 0) {
+      for (const d of st.declarationList.declarations) if (d.initializer) voegExportToe(d.initializer);   // ook een alias: export const Y = X
+    }
     if (ts.isExportDeclaration(st) && !st.moduleSpecifier && st.exportClause && ts.isNamedExports(st.exportClause)) {
       for (const e of st.exportClause.elements) { const s = chk.getExportSpecifierLocalTargetSymbol(e); if (s) geexporteerd.add(s); }
     }
@@ -386,12 +410,9 @@ function tabStructuur(src, tabs) {
       const sym = symVan(f.name);
       return { sym, export: metExport(f) || (!!sym && geexporteerd.has(sym)) };
     }
-    let p = f.parent;
-    while (p && ts.isParenthesizedExpression(p)) p = p.parent;
-    if (p && ts.isCallExpression(p) && /^(?:React\.)?(?:memo|forwardRef)$/.test(p.expression.getText(sf)) && kaal(p.arguments[0]) === f) {
-      p = p.parent;
-      while (p && ts.isParenthesizedExpression(p)) p = p.parent;
-    }
+    const omhoog = (x) => { while (x && (ts.isParenthesizedExpression(x) || ts.isAsExpression(x) || ts.isNonNullExpression(x) || ts.isTypeAssertionExpression(x) || (ts.isSatisfiesExpression && ts.isSatisfiesExpression(x)))) x = x.parent; return x; };
+    let p = omhoog(f.parent);
+    while (p && ts.isCallExpression(p) && /^(?:React\.)?(?:memo|forwardRef)$/.test(p.expression.getText(sf)) && p.arguments[0] && ontpak(p.arguments[0]) === f) p = omhoog(p.parent);
     if (p && ts.isExportAssignment(p)) return { sym: null, export: true };
     if (p && ts.isVariableDeclaration(p) && groot(p.name)) {
       const sym = symVan(p.name);
@@ -725,6 +746,12 @@ export function bereikbaar(wortel = process.cwd()) {
   return gezien;
 }
 
+/** .tsx-bestanden onder src/ die vanaf src/main.tsx NIET geladen worden: de site toont ze nergens. Hun knoppen staan niet in de
+ *  catalogus, en hun «?»-uitleg (HULP_REGISTER → bron) evenmin: backend/zoek/catalogus-ui.ts slaat die over (UI_ONBEREIKBAAR). */
+export function onbereikbaar(wortel = process.cwd(), geladen = bereikbaar(wortel)) {
+  return [...tsxBestanden(join(wortel, 'src'))].filter((p) => !geladen.has(p)).map((p) => relative(wortel, p).replace(/\\/g, '/')).sort();
+}
+
 export function plekVan(bestand) {
   const rel = bestand.replace(/^src\//, '');
   for (const [prefix, dienst, tab, toegang] of PLEKKEN) if (rel.startsWith(prefix)) return { dienst, tab, toegang };
@@ -807,7 +834,7 @@ export function genereer(wortel = process.cwd()) {
   return [...items.values()].sort((a, b) => a.id.localeCompare(b.id));
 }
 
-export function naarTs(lijst, dienstenLijst = diensten()) {
+export function naarTs(lijst, dienstenLijst = diensten(), dood = onbereikbaar()) {
   const kop = `// GEGENEREERD — NIET MET DE HAND BEWERKEN. Bron: scripts/zoek-ui-catalogus.mjs (leest src/**/*.tsx).
 // Knoppen, koppen en dialogen van de interface met hun tweetalige tekst en hun plek; gebruikt door backend/zoek/catalogus-ui.ts.
 // Opnieuw maken: node scripts/zoek-ui-catalogus.mjs   (gebeurt ook in \`npm run build\`; de eenheidstest controleert de actualiteit).
@@ -824,6 +851,8 @@ export function uiPlekVan(bestand: string): { dienst: string; tab: string; toega
   for (const [prefix, dienst, tab, toegang] of UI_PLEKKEN) if (rel.startsWith(prefix)) return { dienst, tab, toegang };
   return null;
 }
+/** .tsx-bestanden die vanaf src/main.tsx niet geladen worden (de site toont ze nergens): geen knoppen en geen «?»-uitleg in het zoeken. */
+export const UI_ONBEREIKBAAR: readonly string[] = Object.freeze(${JSON.stringify(dood)});
 // Als JSON-tekst (één element per regel), niet als objectliteral: 1100+ literals geven TypeScript een te grote unietype.
 const LIJST: GegenereerdUiElement[] = JSON.parse([
 `;

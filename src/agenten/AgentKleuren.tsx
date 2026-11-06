@@ -50,8 +50,9 @@ export default function AgentKleuren({ tr, blok = false }: { tr: Tr; blok?: bool
 
   if (!rijen) return null;
   const sec = Math.round(MARKERING_STAART_MS / 1000);
-  // Eén return voor beide weergaven: de kop staat in de bron vóór de knoppen, zodat de zoekcatalogus (scripts/zoek-ui-catalogus.mjs)
-  // «Стандарт» bij «Колір агента» blijft plaatsen.
+  // Eén return voor beide weergaven. De kop «Колір агента» staat in een tak van `blok ? … : …`; sinds 05.11.2026 (ORCH-001) laat
+  // de zoekcatalogus (scripts/zoek-ui-catalogus.mjs) een kop uit een tak niet gelden voor knoppen erbuiten, dus «Стандарт» heeft in
+  // het zoeken geen sectie. Wie die terug wil: de <h3> buiten de tak zetten (de tekst is in beide weergaven dezelfde).
   return (
     <section className={blok ? 'ag-blok ag-agentkleuren' : 'ag-ext-sectie ag-agentkleuren'} data-ext-sectie='agent-kleuren' data-ag-blok={blok ? 'agent-kleuren' : undefined} aria-labelledby='ag-agentkleuren-kop'>
       {blok ? (

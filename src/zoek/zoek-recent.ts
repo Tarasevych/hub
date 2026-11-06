@@ -12,6 +12,16 @@
 // technische tabbladen van mcp.*) horen niet als rechtstreekse link in de privéruimte van hetzelfde account — de twee ruimtes zijn
 // gescheiden (src/gedeelde-voorkeuren.ts houdt per tabblad bij in welke ruimte het staat). De privéruimte houdt de oude sleutel
 // (`mr-zoek-recent:<id>`, bestaande lijsten blijven), het technische profiel krijgt `mr-zoek-recent:<id>:technisch`.
+//
+// Na de onafhankelijke controle (05.11.2026): de ruimte volgt de TECHNISCHE ACTIVERING van dit tabblad, niet het uiterlijk.
+// Het uiterlijk (tsv-weergave-ruimte) is alleen op beheerpagina's technisch; op hub, mail, id of mcp/agents met een actief profiel
+// toont de zoeker toch technische resultaten (admin/sso), en die kwamen zo in de privélijst. Daarom:
+//  1. ZoekGlobaal bepaalt de ruimte bij het OPENEN van het menu (recentRuimteVoor: de activering; terwijl de status na F5 nog
+//     laadt, de laatst bekende ruimte van dit tabblad) en gebruikt die ene ruimte voor lezen, bewaren en wissen;
+//  2. een route naar een technische plek (isTechRoute: admin.*, api.*, elk tabblad van mcp.* buiten de hub «Підключення ШІ», het
+//     tabblad #technisch van die hub) komt ALTIJD in de technische lijst, ook als de ruimte op dat moment 'gebruiker' is;
+//  3. zulke rijen in de privélijst (bewaard vóór de scheiding, toen er één lijst was) worden daar niet meer getoond en verdwijnen
+//     bij het volgende bewaren.
 import { ZOEK_ROUTE_HOSTS, type ZoekRoute } from '../../shared/zoek-model';
 import type { Categorie } from './zoek-logica';
 
@@ -35,14 +45,44 @@ export function zetZoekGebruiker(id: string | null | undefined): void {
 /** De huidige gebruiker voor de zoekgeheugens (leeg = niet aangemeld). */
 export const zoekGebruiker = (): string => gebruiker;
 
-/** Ruimte van DIT tabblad, zoals src/gedeelde-voorkeuren.ts (WEERGAVE_RUIMTE_HINT) die in sessionStorage bijhoudt. */
-export const RECENT_RUIMTE_HINT = 'tsv-weergave-ruimte';
+/** Per tabblad (sessionStorage): de laatst bekende ruimte van de zoeker. Alleen voor het eerste beeld na F5, zolang de status van het
+ *  technische profiel nog laadt; daarna beslist de activering zelf (recentRuimteVoor). Niet de hint van het uiterlijk: die is op
+ *  privépagina's 'gebruiker', ook met een actief technisch profiel. */
+export const RECENT_RUIMTE_HINT = 'mr-zoek-ruimte';
 export type RecentRuimte = 'gebruiker' | 'technisch';
-export const recentRuimteNu = (): RecentRuimte => {
-  try { return typeof sessionStorage !== 'undefined' && sessionStorage.getItem(RECENT_RUIMTE_HINT) === 'technisch' ? 'technisch' : 'gebruiker'; } catch { return 'gebruiker'; }
+/** Wat de zoeker van het technische profiel van DIT tabblad weet (src/tech/tech-opslag.ts: `geladen` en profielVan()). */
+export type RecentTechStand = { geladen: boolean; technisch: boolean };
+type SessieOpslag = Pick<Storage, 'getItem' | 'setItem'>;
+const sessieOpslag = (): SessieOpslag | null => {
+  try { return typeof sessionStorage !== 'undefined' ? sessionStorage : null; } catch { return null; }
 };
+/** De laatst bekende ruimte van dit tabblad; zonder hint (of geblokkeerde opslag) de privéruimte. */
+export const recentRuimteNu = (opslag: Pick<Storage, 'getItem'> | null = sessieOpslag()): RecentRuimte => {
+  try { return opslag?.getItem(RECENT_RUIMTE_HINT) === 'technisch' ? 'technisch' : 'gebruiker'; } catch { return 'gebruiker'; }
+};
+/** De ruimte voor de lijst. Status geladen → de activering van dit tabblad (en die wordt onthouden voor F5); status nog niet geladen
+ *  (net na F5) → de laatst bekende. Een technische route gaat daarnaast altijd naar de technische lijst (bewaarRecent). */
+export function recentRuimteVoor(t: RecentTechStand, opslag: SessieOpslag | null = sessieOpslag()): RecentRuimte {
+  if (!t.geladen) return recentRuimteNu(opslag);
+  const r: RecentRuimte = t.technisch ? 'technisch' : 'gebruiker';
+  try { if (opslag && opslag.getItem(RECENT_RUIMTE_HINT) !== r) opslag.setItem(RECENT_RUIMTE_HINT, r); } catch { /* privémodus: alleen niet onthouden */ }
+  return r;
+}
 export const recentSleutel = (id: string, ruimte: RecentRuimte = recentRuimteNu()): string =>
   (id ? (ruimte === 'technisch' ? `mr-zoek-recent:${id}:technisch` : `mr-zoek-recent:${id}`) : '');
+
+/** Tabbladen van mcp.* voor iedereen: de hub «Підключення ШІ» (agents) en wat daarheen doorstuurt (overview, connect; shared/ai-agent-bord.ts
+ *  → mcpIngang). Als tabblad-id of als pad (slug uit public/canonical-service.js). Elk ander tabblad van mcp.* is technisch. */
+const MCP_PRIVE: ReadonlySet<string> = new Set(['', '/', 'agents', '/agenten', 'overview', '/overzicht', 'connect', '/verbinden']);
+/** Een route naar een technische plek: admin.*, api.*, mcp.* buiten de hub, of het tabblad #technisch van de hub. Twijfel → technisch
+ *  (dan ontbreekt de rij hooguit in de privélijst; omgekeerd zou een technische link in de privéruimte staan). */
+export function isTechRoute(r: ZoekRoute | null | undefined): boolean {
+  if (!r) return false;
+  if (r.host === 'admin' || r.host === 'api') return true;
+  if (r.host !== 'mcp') return false;
+  const hash = String(r.hash || '').replace(/^#/, '').split(/[/?]/)[0];
+  return !MCP_PRIVE.has(String(r.pad || '')) || hash === 'technisch';
+}
 
 const standaardOpslag = (): Opslag | null => {
   try { return typeof localStorage !== 'undefined' ? localStorage : null; } catch { return null; }
@@ -76,38 +116,41 @@ const leesRij = (v: unknown): RecenteZoekopdracht | null => {
 const dubbelSleutel = (r: Pick<RecenteZoekopdracht, 'vraag' | 'soort' | 'route'>): string =>
   `${r.soort}|${r.vraag.toLocaleLowerCase()}|${r.soort === 'zoek' ? '' : JSON.stringify(r.route || null)}`;
 
-/** Recente zoekopdrachten, nieuwste eerst. Geen id, geen opslag of een kapotte waarde → lege lijst. */
-export function leesRecent(id: string = gebruiker, opslag: Pick<Storage, 'getItem'> | null = standaardOpslag()): RecenteZoekopdracht[] {
-  const sleutel = recentSleutel(id);
+/** Recente zoekopdrachten van één ruimte, nieuwste eerst. Geen id, geen opslag of een kapotte waarde → lege lijst. De privéruimte toont
+ *  nooit een technische route (isTechRoute), ook niet uit een lijst van vóór de scheiding. */
+export function leesRecent(id: string = gebruiker, opslag: Pick<Storage, 'getItem'> | null = standaardOpslag(), ruimte: RecentRuimte = recentRuimteNu()): RecenteZoekopdracht[] {
+  const sleutel = recentSleutel(id, ruimte);
   if (!sleutel || !opslag) return [];
   try {
     const ruw = opslag.getItem(sleutel);
     if (!ruw) return [];
     const lijst: unknown = JSON.parse(ruw);
     if (!Array.isArray(lijst)) return [];
-    return lijst.map(leesRij).filter((x): x is RecenteZoekopdracht => x !== null).slice(0, RECENT_MAX);
+    return lijst.map(leesRij).filter((x): x is RecenteZoekopdracht => x !== null && (ruimte === 'technisch' || !isTechRoute(x.route))).slice(0, RECENT_MAX);
   } catch {
     return [];
   }
 }
 
-/** Voegt een rij vooraan toe (zonder dubbel) en geeft de nieuwe lijst terug. Zonder `extra` is het een gewone zoekopdracht. */
-export function bewaarRecent(vraag: string, sectie: Categorie, nu: number = Date.now(), id: string = gebruiker, opslag: Opslag | null = standaardOpslag(), extra: RecentExtra = {}): RecenteZoekopdracht[] {
+/** Voegt een rij vooraan toe (zonder dubbel) en geeft de lijst van `ruimte` terug. Zonder `extra` is het een gewone zoekopdracht.
+ *  Een technische route gaat altijd naar de technische lijst; de privélijst blijft dan zoals hij was. */
+export function bewaarRecent(vraag: string, sectie: Categorie, nu: number = Date.now(), id: string = gebruiker, opslag: Opslag | null = standaardOpslag(), extra: RecentExtra = {}, ruimte: RecentRuimte = recentRuimteNu()): RecenteZoekopdracht[] {
   const v = vraag.trim().slice(0, RECENT_VRAAG_MAX);
-  const sleutel = recentSleutel(id);
-  if (!v || !sleutel || !opslag) return leesRecent(id, opslag);
   const route = extra.route ? leesRoute(extra.route) : undefined;
+  const doel: RecentRuimte = isTechRoute(route) ? 'technisch' : ruimte;
+  const sleutel = recentSleutel(id, doel);
+  if (!v || !sleutel || !opslag) return leesRecent(id, opslag, ruimte);
   const soort: RecentSoort = (extra.soort === 'functie' || extra.soort === 'pagina') && route ? extra.soort : 'zoek';
   const rij: RecenteZoekopdracht = soort === 'zoek' ? { vraag: v, sectie, tijd: nu, soort } : { vraag: v, sectie, tijd: nu, soort, route };
   const sl = dubbelSleutel(rij);
-  const lijst = [rij, ...leesRecent(id, opslag).filter(r => dubbelSleutel(r) !== sl)].slice(0, RECENT_MAX);
+  const lijst = [rij, ...leesRecent(id, opslag, doel).filter(r => dubbelSleutel(r) !== sl)].slice(0, RECENT_MAX);
   try { opslag.setItem(sleutel, JSON.stringify(lijst)); } catch { /* vol of geblokkeerd: deze keer niets bewaard */ }
-  return lijst;
+  return doel === ruimte ? lijst : leesRecent(id, opslag, ruimte);
 }
 
-/** Alle recente zoekopdrachten van dit account op dit apparaat wissen. */
-export function wisRecent(id: string = gebruiker, opslag: Pick<Storage, 'removeItem'> | null = standaardOpslag()): void {
-  const sleutel = recentSleutel(id);
+/** Alle recente zoekopdrachten van dit account op dit apparaat wissen — alleen die van `ruimte` (de andere lijst blijft). */
+export function wisRecent(id: string = gebruiker, opslag: Pick<Storage, 'removeItem'> | null = standaardOpslag(), ruimte: RecentRuimte = recentRuimteNu()): void {
+  const sleutel = recentSleutel(id, ruimte);
   if (!sleutel || !opslag) return;
   try { opslag.removeItem(sleutel); } catch { /* geblokkeerd: niets te wissen */ }
 }

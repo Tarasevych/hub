@@ -68,7 +68,7 @@ export async function main(): Promise<number> {
   const gelijk = (a: string, b: string) => ['--bg', '--panel', '--surface', '--surface2', '--line', '--text', '--muted', '--faint', '--accent', '--accentText', '--accent-soft'].every((k) => hexVan(a, k) === hexVan(b, k));
   check('grifel/violet op <html> (tokens.css) = .canonical-chrome.theme-* (canoniek-omlijsting.css): geen dubbele standaard', gelijk(tokBlok(':root, .theme-light'), chromeBlok('theme-light')) && gelijk(tokBlok('.theme-dark'), chromeBlok('theme-dark')) && gelijk(tokBlok('.theme-plum-light'), chromeBlok('theme-plum-light')) && gelijk(tokBlok('.theme-plum-dark'), chromeBlok('theme-plum-dark')));
   check('index.css en ecosysteem-productie.css definiëren geen eigen --bg/--accent meer (vroeger drie sets)', !/\.theme-dark\s*\{[^}]*--accent:/.test(indexCss) && !/\.theme-light\s*\{[^}]*--accent:/.test(indexCss) && !/\.theme-dark\{[^}]*--accent:/.test(eco) && !/\.theme-light\{[^}]*--accent:/.test(eco));
-  check('ritme-tokens: ruimte 4/8/12/16/24, stralen, tekst 16/14/12, tikhoogte 40 + 44 op aanraking', ['--ruimte-1:4px', '--ruimte-2:8px', '--ruimte-3:12px', '--ruimte-4:16px', '--ruimte-5:24px', '--straal-s:8px', '--straal-m:12px', '--straal-l:16px', '--tekst-basis:16px', '--tekst-klein:14px', '--tekst-mini:12px', '--tik-hoogte:40px', '--tik-hoogte-mobiel:44px'].every((s) => tokens.includes(s)) && /@media \(pointer:coarse\), \(max-width:700px\)\s*\{\s*:root\s*\{\s*--tik-hoogte:44px/.test(tokens));
+  check('ritme-tokens: ruimte 4/8/12/16/24, stralen 10/14/20/26 (DESIGN-001), tekst 16/14/12, tikhoogte 40 + 44 op aanraking', ['--ruimte-1:4px', '--ruimte-2:8px', '--ruimte-3:12px', '--ruimte-4:16px', '--ruimte-5:24px', '--straal-s:10px', '--straal-m:14px', '--straal-l:20px', '--straal-xl:26px', '--tekst-basis:16px', '--tekst-klein:14px', '--tekst-mini:12px', '--tik-hoogte:40px', '--tik-hoogte-mobiel:44px'].every((s) => tokens.includes(s)) && /@media \(pointer:coarse\), \(max-width:700px\)\s*\{\s*:root\s*\{\s*--tik-hoogte:44px/.test(tokens));
   check('aliassen voor vroeger ongedefinieerde namen (--soft, --canonical-*, --fout/--warn/--ok, --border) op :where(*)', ['--soft:var(--surface)', '--canonical-panel:var(--panel)', '--canonical-muted:var(--muted)', '--border:var(--line)', '--text-on-accent:var(--accentText)', '--venster-actief:var(--focus)'].every((s) => tokens.includes(s)) && /:where\(\*\)\s*\{/.test(tokens));
   check('fundament.css bundelt tokens → primitieven → mobiel en wordt ná index.css (Tailwind preflight) geladen', /tokens\.css[\s\S]*primitieven\.css[\s\S]*mobiel\.css/.test(fundament) && main.indexOf("import './index.css'") < main.indexOf("import './ontwerp/fundament.css'") && main.indexOf("import './ontwerp/fundament.css'") > 0);
   check('tokens/primitieven/mobiel: nergens prefers-color-scheme (thema = klasse op <html>)', !/prefers-color-scheme/.test(tokens + prim + mobiel));
@@ -121,6 +121,25 @@ export async function main(): Promise<number> {
     for (const m of css.matchAll(/(?:^|[;{\s])(min-)?width:\s*(\d{3,})px/g)) if (Number(m[2]) > 360 && !(m[1] && scrolt)) breed.push(`${p}: ${m[0].trim()}`);
   }
   check('geen vaste width > 360px in src/**/*.css; min-width > 360 alleen waar een scrollcontainer (overflow:auto) is', breed.length === 0, breed.slice(0, 8).join(' | '));
+  // Rev'ю 06.11.2026 (ORCH-001): var(--x) zonder terugval op een naam die nergens bestaat, maakt de hele declaratie ongeldig
+  // (achtergrond of rand verdwijnt stil). Zo hadden het werkbladcanvas (--kleur-oppervlak/-tekst/-focus) en cloud (--cf-line) geen
+  // thema: het canvasmenu bleef wit in het donker. Gedefinieerd telt: «--x:» in CSS, of '--x' als string in TS/TSX (style-object,
+  // setProperty) en in index.html.
+  const bronnen: string[] = [];
+  const loopSrc = (d: string) => { for (const n of readdirSync(d)) { const q = join(d, n); if (statSync(q).isDirectory()) loopSrc(q); else if (/\.(css|tsx?)$/.test(n)) bronnen.push(q.replace(/\\/g, '/')); } };
+  loopSrc('src');
+  const gedefinieerd = new Set<string>();
+  for (const q of [...bronnen, 'index.html']) {
+    const t = zonderCommentaar(lees(q));
+    for (const m of t.matchAll(/(?:^|[;{\s(])(--[A-Za-z0-9_-]+)\s*:/g)) gedefinieerd.add(m[1]);
+    for (const m of t.matchAll(/['"`](--[A-Za-z0-9_-]+)['"`]/g)) gedefinieerd.add(m[1]);
+  }
+  const zonderTerugval: string[] = [];
+  for (const q of bronnen) for (const m of zonderCommentaar(lees(q)).matchAll(/var\(\s*(--[A-Za-z0-9_-]+)\s*\)/g)) if (!gedefinieerd.has(m[1])) zonderTerugval.push(`${q}: ${m[1]}`);
+  check('geen var(--x) zonder terugval op een custom property die nergens in src/ of index.html bestaat', zonderTerugval.length === 0, [...new Set(zonderTerugval)].slice(0, 8).join(' | '));
+  const kleurStreep = alle.filter((q) => /var\(\s*--kleur-/.test(zonderCommentaar(lees(q))));
+  check('geen --kleur-*-namen in de CSS (die bestaan niet; het thema heet --panel/--text/--focus …)', kleurStreep.length === 0, kleurStreep.join(','));
+  check('werkbladcanvas: menu en status op --panel/--text, focus en grepen op --focus (volgen het thema)', /\.wbc-menu\{[^}]*background:var\(--panel\);color:var\(--text\)/.test(lees('src/werkblad/canvas/canvas.css')) && /\.wbc-status\{[^}]*background:var\(--panel\);color:var\(--text\)/.test(lees('src/werkblad/canvas/canvas.css')) && /\.wbc-greep\{[^}]*background:var\(--focus\)/.test(lees('src/werkblad/canvas/canvas.css')));
   // consent: tokens, geen hex, geen prefers; kaarten op surface/text; TSX zonder inline kleuren
   check('toestemmingsscherm: kaarten «Читання»/«Підписаний випуск» op var(--surface) + var(--text), icoon op var(--panel), waarschuwing op var(--warn-zacht)', /\.mcp-consent-group\{[^}]*background:var\(--surface\)[^}]*color:var\(--text\)/.test(consentCss) && /\.mcp-consent-group-icon\{[^}]*background:var\(--panel\)/.test(consentCss) && /\.mcp-consent-warn\{[^}]*background:var\(--warn-zacht\);color:var\(--text\)/.test(consentCss));
   check('toestemmingsscherm: geen hex, geen --soft, geen prefers-color-scheme; knoppen op --accent/--text-on-accent; focus op --focus', !HEX.test(consentCss) && !consentCss.includes('--soft') && !consentCss.includes('prefers-color-scheme') && consentCss.includes('.mcp-consent-primary{background:var(--accent);color:var(--text-on-accent)}') && consentCss.includes('outline:3px solid var(--focus)'));

@@ -25,7 +25,7 @@ import { HULP_REGISTER } from '../../shared/hulp-register';
 import { V2_GROEPEN, V2_OPTIES, KANT_TEKST } from '../../shared/connector-v2/catalogus';
 import { CATEGORIEEN, INTEGRATIES, STATUS_LABEL } from '../../shared/integraties-catalogus';
 import { MAIL_AANBIEDERS } from '../../shared/mail-aanbieders';
-import { UI_DIENSTEN, UI_ELEMENTEN, UI_ELEMENTEN_VERSIE, uiPlekVan, type UiToegang } from '../../shared/zoek-ui-knoppen.generated';
+import { UI_DIENSTEN, UI_ELEMENTEN, UI_ELEMENTEN_VERSIE, UI_ONBEREIKBAAR, uiPlekVan, type UiToegang } from '../../shared/zoek-ui-knoppen.generated';
 import { serviceTabLabel } from '../../src/dienst-tab-labels';
 import type { ZoekObject, ZoekRoute, ZoekSoort, ZoekBron } from '../../shared/zoek-model';
 import type { Lade } from '../../shared/ruimte-scheiding';
@@ -165,7 +165,11 @@ function bouw(): UiObject[] {
   }
 
   // ---------------------------------------------------------------- «?»-uitleg: elke optie/schakelaar met wat/gevolg/risico
+  // Een «?» uit een bestand dat de site nergens laadt (UI_ONBEREIKBAAR, bv. src/BeheerSleutelsWeergave.tsx → keys.doel) is op geen
+  // enkele pagina te vinden: niet aanbieden (ORCH-001, na de onafhankelijke controle van 05.11.2026).
+  const dood = new Set(UI_ONBEREIKBAAR);
   for (const [sleutel, h] of Object.entries(HULP_REGISTER)) {
+    if (dood.has(h.bron)) continue;
     const plek = uiPlekVan(h.bron) || (h.bron.startsWith('deploy/') ? { dienst: 'admin', tab: 'updates', toegang: 'technisch' as UiToegang } : { dienst: 'hub', tab: 'overview', toegang: 'technisch' as UiToegang });
     const toegang = strenger(plek.toegang, dienstToegang(plek.dienst, plek.tab));
     const [watUk, watNl] = h.wat, [gevolgUk, gevolgNl] = h.gevolg, [risicoUk, risicoNl] = h.risico;

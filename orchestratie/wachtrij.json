@@ -2,9 +2,21 @@
   "schema": 1,
   "toelichting": "Єдина послідовна черга інтеграції (FIFO за базою). Наступний у черзі перебазовується на поточний integratie перед злиттям; лише один запис може бути «bezig». Enige, seriële integratiewachtrij.",
   "integratieTak": "integratie",
-  "integratieHoofd": null,
+  "integratieHoofd": "4db51b6aabe73f295ba4286c4c7557568c0d5e3e",
   "bezig": null,
-  "wachtrij": [
-    { "taakId": "ORCH-001", "agent": "claude", "tak": "feature/orch-001-20261031-112355", "basisCommit": "b279ccabe31a27139b337822162653ccc13b6a5a", "ingediend": "2026-10-31T11:30:00Z", "kanaal": "github_pr", "staat": "wacht" }
+  "wachtrij": [],
+  "geschiedenis": [
+    {
+      "taakId": "ORCH-001",
+      "agent": "claude",
+      "tak": "feature/orch-001-20261031-112355",
+      "basisCommit": "b279ccabe31a27139b337822162653ccc13b6a5a",
+      "ingediend": "2026-10-31T11:30:00Z",
+      "kanaal": "github_pr",
+      "staat": "integrated",
+      "begonnen": "2026-11-06T06:46:11.362Z",
+      "afgerond": "2026-11-06T06:46:18.896Z",
+      "integratieHoofd": "4db51b6aabe73f295ba4286c4c7557568c0d5e3e"
+    }
   ]
 }

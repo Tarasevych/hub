@@ -1,4 +1,8 @@
-import test from 'node:test';
+// Runnercontract (scripts/eenheidstests.mjs roept main() aan): zie tests/eenheid/hulp/node-test-main.ts. Zonder main() was deze suite
+// onder de runner altijd rood («mod.main is not a function»), ook als alle 15 tests slaagden (05.11.2026).
+import { nodeTestSuite } from './hulp/node-test-main.ts';
+const { test, main } = nodeTestSuite();
+export { main };
 import { CloudProviderRegister, CloudAdapterNietBeschikbaar } from '../../shared/cloud-aanbieder-register.ts';
 import assert from 'node:assert/strict';
 import { CLOUD_AKTIES, alleGeblokkeerd, beoordeelOverdracht, geenSteun, googleBestandMogelijkheden,

@@ -106,8 +106,11 @@ export async function main(): Promise<number> {
     const o = { getItem: (k: string) => opslag.get(k) ?? null, setItem: (k: string, v: string) => { opslag.set(k, v); }, removeItem: (k: string) => { opslag.delete(k); } };
     bewaarRecent('видалити акаунт', 'all', 1_800_000_000_000, 'u1', o, { soort: 'functie', route: { host: 'identity', pad: 'account' } });
     bewaarRecent('кейчейн', 'all', 1_800_000_000_001, 'u1', o, { soort: 'functie', route: { host: 'api', pad: 'vault' } });
-    const terug = leesRecent('u1', o);
-    check('F recente functies met een route naar identity/api blijven een functie (vroeger: route weggegooid → gewone zoekopdracht)',
+    // api.* is technisch: die rij staat in de technische lijst (src/zoek/zoek-recent.ts → isTechRoute), niet in de privélijst.
+    const prive = leesRecent('u1', o, 'gebruiker');
+    const terug = [...prive, ...leesRecent('u1', o, 'technisch')];
+    check('F recente functies met een route naar identity/api blijven een functie (vroeger: route weggegooid → gewone zoekopdracht); api.* alleen in de technische lijst',
+      prive.length === 1 && prive[0].route?.host === 'identity' &&
       terug.length === 2 && terug.every((r) => r.soort === 'functie' && r.route) && routeUrl(terug.find((r) => r.route?.host === 'api')!.route, 'uk') === 'https://api.tarasevych.com/kluis?lang=uk', JSON.stringify(terug));
   } finally {
     herstel();

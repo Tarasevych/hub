@@ -2,9 +2,9 @@
 
 # Dekking van categorie `identity` — 12 secties (`identity-coverage.nl.md`)
 
-- **Bron van de lijst:** `shared/menu-model.ts → MENU_PAGINAS.identity` en `src/identity/identity-tabs.ts`.
+- **Bron van de lijst:** `shared/menu-model.ts → MENU_PAGINAS.identity` en `src/identiteit/identiteit-tabs.ts`.
 - **Interactief prototype:** [`identity-live.html`](./identity-live.html).
-- **Productie-UI in de applicatie:** `src/identity/IdentityAccountPagina.tsx`, `src/identity/Profielfoto.tsx`, `src/identity/identity-account.css` (`IDENTITY-002`).
+- **Productie-UI in de applicatie:** `src/identiteit/IdentiteitAccountPagina.tsx`, `src/identiteit/Profielfoto.tsx`, `src/identiteit/identiteit-account.css` (`IDENTITY-002`).
 - **Technische specificatie:** [`TZ-account-2026-11-04.nl.md`](./TZ-account-2026-11-04.nl.md).
 
 | # | Sectie | Dekking in prototype en applicatie | Status |

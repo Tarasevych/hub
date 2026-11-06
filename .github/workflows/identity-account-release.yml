@@ -11,7 +11,7 @@ on:
       - feature/identity-account-ui-20261104-180000
     paths:
       - 'docs/ontwerp/identity-account/**'
-      - 'src/identity/**'
+      - 'src/identiteit/**'
       - 'src/InstellingencentrumWeergave.tsx'
       - 'src/VerenigdDienstApp.tsx'
       - 'scripts/plaatsing-vaste-elementen.json'

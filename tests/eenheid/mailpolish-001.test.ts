@@ -7,7 +7,7 @@ export async function main(): Promise<number> {
   const { check, einde } = checker('mailpolish-001');
   const bron = (pad: string) => readFileSync(pad, 'utf8');
   const modal = bron('src/mail/MailKoppelVenster.tsx');
-  const sheet = bron('src/mail/mail-koppel-mobile-sheet.css');
+  const sheet = bron('src/mail/mail-koppel-mobiel-sheet.css');
   const orbit = bron('src/mail/MailOrbitIntro.tsx');
   const orbitCss = bron('src/mail/mail-orbit-intro.css');
 

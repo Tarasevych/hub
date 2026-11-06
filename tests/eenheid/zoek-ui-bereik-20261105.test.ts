@@ -10,13 +10,18 @@
 //      ExtensieTechAanbod, BeheerSleutelsWeergave, bureau/Bureau …) leveren geen knoppen meer;
 //   4. bestandsregels: ServerKoppelen → mcp/apps, McpBackupsKaart → mcp/download, AgentStandLijst en NamensSessies → admin/ai,
 //      de technische delen van de hub (RuimteScheiding, TechVerbindingen, SiteSchakelaars) alleen met technisch profiel;
-//   5. de echte catalogus.
+//      overzicht/ (Dashboard van de beheerconsole) → admin/overview, TechMeldingen (alleen in de technische strook) → technisch;
+//   5. de echte catalogus; geen element uit een technische module (shared/tech-bundels.ts) is breder zichtbaar dan «technisch».
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { checker } from './hulp/nep-google';
-import { UI_ELEMENTEN } from '../../shared/zoek-ui-knoppen.generated';
+import { UI_ELEMENTEN, UI_ONBEREIKBAAR } from '../../shared/zoek-ui-knoppen.generated';
+import { HULP_REGISTER } from '../../shared/hulp-register';
+import { uiCatalogus } from '../../backend/zoek/catalogus-ui';
 import { mcpIngang } from '../../shared/ai-agent-bord';
 import { MENU_PAGINAS } from '../../shared/menu-model';
+import { isTechModule } from '../../shared/tech-bundels';
 
 type El = { soort: string; uk: string; tabHint?: string; mogelijkeTabs?: string[] };
 
@@ -51,6 +56,10 @@ export async function main(): Promise<number> {
   check('3a vanaf src/main.tsx bereikbaar: App, McpDienstWeergave, de hub (AgentenPagina), lazy geladen IdentiteitBeheerWeergave', ['src/main.tsx', 'src/App.tsx', 'src/McpDienstWeergave.tsx', 'src/agenten/AgentenPagina.tsx', 'src/IdentiteitBeheerWeergave.tsx'].every(is));
   const DOOD = ['src/AgentenPaneel.tsx', 'src/McpConnectorPaneel.tsx', 'src/agenten/ExtensieTechAanbod.tsx', 'src/BeheerSleutelsWeergave.tsx', 'src/bureau/Bureau.tsx', 'src/agenten/VerbindingenHub.tsx'];
   check('3b dode bestanden (geen enkele import) zijn niet bereikbaar', DOOD.every((f) => !is(f)), DOOD.filter(is).join(','));
+  const dood3 = gen.onbereikbaar(wortel, geladen) as string[];
+  check('3d UI_ONBEREIKBAAR (gegenereerd) = de onbereikbare .tsx-bestanden; 16 stuks (14 zonder import, 2 alleen vanuit andere dode bestanden)',
+    JSON.stringify(UI_ONBEREIKBAAR) === JSON.stringify(dood3) && dood3.length === 16 && DOOD.every((f) => dood3.includes(f)) && dood3.includes('src/MailSectieKeuze.tsx') && dood3.includes('src/MailSysteemAandachtGroepen.tsx'),
+    `${dood3.length}: ${dood3.join(', ')}`);
   check('3c en ze leveren geen enkel element aan de catalogus', !UI_ELEMENTEN.some((e) => DOOD.includes(e.bestand)), UI_ELEMENTEN.filter((e) => DOOD.includes(e.bestand)).map((e) => `${e.bestand}:${e.uk}`).join(', '));
 
   // 4. bestandsregels
@@ -60,6 +69,10 @@ export async function main(): Promise<number> {
   check('4b McpBackupsKaart («Нічні копії сервера») → mcp/download', allemaal('src/McpBackupsKaart.tsx', 'mcp/download', 'technisch'));
   check('4c AgentStandLijst en NamensSessies → admin/ai (technisch), niet de hub', allemaal('src/agenten/AgentStandLijst.tsx', 'admin/ai', 'technisch') && allemaal('src/agenten/NamensSessies.tsx', 'admin/ai', 'technisch'));
   check('4d technische delen van de hub → mcp/agents, alleen technisch profiel', ['src/agenten/RuimteScheiding.tsx', 'src/agenten/TechVerbindingen.tsx', 'src/agenten/SiteSchakelaars.tsx'].every((f) => allemaal(f, 'mcp/agents', 'technisch')));
+  const OVERZICHT = ['src/overzicht/Dashboard.tsx', 'src/overzicht/GebruikerKaart.tsx', 'src/overzicht/widgets.tsx', 'src/overzicht/grafieken.tsx'];
+  check('4e overzicht/ (Dashboard van BeheerOverzichtWeergave) → admin/overview, technisch — niet de persoonlijke hub', OVERZICHT.every((f) => allemaal(f, 'admin/overview', 'technisch')), OVERZICHT.map((f) => `${f}:${van(f).map((e) => `${e.dienst}/${e.tab}/${e.toegang}`).join('|')}`).join(' '));
+  check('4f TechMeldingen (knop alleen in de actieve technische strook) → technisch', allemaal('src/meldingen/TechMeldingen.tsx', 'hub/overview', 'technisch'));
+  check('4g de gewone meldingen blijven voor iedereen (geen te brede regel)', allemaal('src/meldingen/v2/MeldingenV2.tsx', 'hub/overview', 'iedereen'));
 
   // 5. de echte catalogus
   check('5a geen enkel element op een doorsturend tabblad van mcp', !UI_ELEMENTEN.some((e) => e.dienst === 'mcp' && dood.includes(e.tab)), UI_ELEMENTEN.filter((e) => e.dienst === 'mcp' && dood.includes(e.tab)).map((e) => `${e.tab}:${e.uk}`).join(', '));
@@ -69,5 +82,15 @@ export async function main(): Promise<number> {
   const op = (uk: string) => CL.filter((e) => e.uk === uk).map((e) => e.tab).sort().join(',');
   check('5c cloud: «Відкрити» niet op overview (wel inbox, accounts, workspaces); Google-accounts («Додати акаунт», «Відключити») → accounts',
     !op('Відкрити').split(',').includes('overview') && op('Відкрити') === 'accounts,inbox,workspaces' && op('Додати акаунт') === 'accounts' && op('Відключити') === 'accounts', `${op('Відкрити')}|${op('Додати акаунт')}|${op('Відключити')}`);
+  const hulp = uiCatalogus().filter((o) => o.id.startsWith('hulp:'));
+  const levend = Object.entries(HULP_REGISTER).filter(([, h]) => !UI_ONBEREIKBAAR.includes(h.bron));
+  const uitDood = hulp.filter((o) => UI_ONBEREIKBAAR.includes(String(o.extra?.bron ?? '')));
+  check('5e geen «?»-uitleg uit een bestand dat de site niet laadt (keys.doel uit BeheerSleutelsWeergave); alle andere wel',
+    !hulp.some((o) => o.id === 'hulp:keys.doel') && uitDood.length === 0 && levend.length > 50 && hulp.length === levend.length && levend.length < Object.keys(HULP_REGISTER).length,
+    `${hulp.length} van ${Object.keys(HULP_REGISTER).length}; levend ${levend.length}; uit dode: ${uitDood.map((o) => o.id).join(',')}`);
+  const lees = (f: string) => readFileSync(join(wortel, f), 'utf8');
+  const techBreed = UI_ELEMENTEN.filter((e) => isTechModule(e.bestand, '', lees) && e.toegang !== 'technisch');
+  const techAantal = UI_ELEMENTEN.filter((e) => isTechModule(e.bestand, '', lees)).length;
+  check('5d geen element uit een technische module (TECH_MAPPEN, TECH_BESTANDEN, // @tech-asset) is breder zichtbaar dan technisch', techAantal > 100 && techBreed.length === 0, `${techAantal} technisch; te breed: ${techBreed.map((e) => `${e.bestand}:${e.uk}:${e.toegang}`).join(', ')}`);
   return einde();
 }

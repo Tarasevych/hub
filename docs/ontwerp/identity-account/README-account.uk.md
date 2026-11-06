@@ -5,7 +5,7 @@
 ## Актуальний файл — тільки цей
 
 **[`identity-live.html`](./identity-live.html)** — **одна сторінка**: усі 12 блоків `identity` розташовані послідовно один за одним, а ліве меню не перемикає окремі сторінки, а **плавно прокручує до відповідного блоку** (з автоматичним підсвічуванням активного розділу).
-Робоча реалізація в коді застосунку — `src/identity/IdentityAccountPagina.tsx`, `src/identity/Profielfoto.tsx`, `src/identity/identity-account.css` та `src/identity/identity-tabs.ts` (`IDENTITY-002`).
+Робоча реалізація в коді застосунку — `src/identiteit/IdentiteitAccountPagina.tsx`, `src/identiteit/Profielfoto.tsx`, `src/identiteit/identiteit-account.css` та `src/identiteit/identiteit-tabs.ts` (`IDENTITY-002`).
 
 ## Що враховано
 

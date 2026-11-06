@@ -4,7 +4,7 @@
 
 **Дата:** 2026-11-04 (оновлено після реалізації `IDENTITY-002` та аудиту 2026-11-05)
 **Живий прототип:** [`identity-live.html`](./identity-live.html)
-**Реалізація в застосунку:** `src/identity/IdentityAccountPagina.tsx`, `src/identity/Profielfoto.tsx`, `src/identity/identity-account.css`, `src/identity/identity-tabs.ts`
+**Реалізація в застосунку:** `src/identiteit/IdentiteitAccountPagina.tsx`, `src/identiteit/Profielfoto.tsx`, `src/identiteit/identiteit-account.css`, `src/identiteit/identiteit-tabs.ts`
 **Дизайн-джерело:** `src/ontwerp/tokens.css` (лише токени, без сторонніх hex-кольорів)
 
 ---
@@ -13,14 +13,14 @@
 
 **Мета:** єдина сторінка категорії `identity`, де власник і користувачі бачать та змінюють усі 12 розділів облікового запису: персоналізацію, меню, теми, мови, віджети, спільний доступ, ідентичності, профіль і дані, сесії та пристрої, способи входу, безпеку та відновлення доступу.
 
-**У межах:** єдиний екран `src/identity/IdentityAccountPagina.tsx` із меню-змістом (`.ia-toc`), компонент фото профілю `src/identity/Profielfoto.tsx` з трьома джерелами, двомовні підписи (`uk`/`nl`) та юніт-тести (`tests/eenheid/identity-account-ui.test.ts`).
+**У межах:** єдиний екран `src/identiteit/IdentiteitAccountPagina.tsx` із меню-змістом (`.ia-toc`), компонент фото профілю `src/identiteit/Profielfoto.tsx` з трьома джерелами, двомовні підписи (`uk`/`nl`) та юніт-тести (`tests/eenheid/identiteit-account-ui.test.ts`).
 **Поза межами:** зміна серверних політик автентифікації, нові таблиці БД, примусове видалення облікового запису власника (`OWNER_NIET_WISSEN`).
 
 ---
 
 ## 2. Структура екрана та 12 розділів
 
-Усі 12 розділів `IDENTITY_TABS` (`src/identity/identity-tabs.ts`) відображаються послідовно на одній сторінці:
+Усі 12 розділів `IDENTITY_TABS` (`src/identiteit/identiteit-tabs.ts`) відображаються послідовно на одній сторінці:
 
 | # | Ідентифікатор | Заголовок (🇺🇦 UK) | Заголовок (🇳🇱 NL) |
 |---|---|---|---|
@@ -71,4 +71,4 @@
 
 - Усі 12 секцій доступні на одній сторінці на ширинах 320–1440 px без горизонтального прокручування (`@container ia-account`).
 - Жодного кольору поза `src/ontwerp/tokens.css`; `node scripts/kleur-contrast-controle.mjs` та `node scripts/plaatsing-controle.mjs` проходять без помилок.
-- Юніт-тести `node scripts/eenheidstests.mjs identity-account-ui.test.ts` підтверджують усі 6 інваріантів.
+- Юніт-тести `node scripts/eenheidstests.mjs identiteit-account-ui.test.ts` підтверджують усі 6 інваріантів.

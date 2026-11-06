@@ -19,7 +19,8 @@ import type { ZoekSuggestie } from '../../shared/zoek-model';
 import { isAfgebroken, suggesties as haalSuggesties, zoeken, type ZoekUitkomst } from './zoek-api';
 import { routeUrl, type Lang } from './zoek-kern';
 import { LEEG_FILTER, bouwVraag, filterLokaal, parseQuery, type Categorie } from './zoek-logica';
-import { bewaarRecent, leesRecent, wisRecent, type RecenteZoekopdracht } from './zoek-recent';
+import { bewaarRecent, leesRecent, recentRuimteVoor, wisRecent, type RecentRuimte, type RecenteZoekopdracht } from './zoek-recent';
+import { profielVan, techToestand, useTech } from '../tech/tech-opslag';
 import { bewaarLaatste } from './zoek-laatste';
 import { MENU_MIN_TEKENS, bouwMenuRijen, keuzeActie, meldZoekPagina, menuToets, paginaDoel, uitkomstVoor } from './zoek-menu';
 import ZoekVeld, { type VeldSuggestie } from './ZoekVeld';
@@ -74,7 +75,17 @@ export default function ZoekGlobaal({ lang, mobiel = false, dienst = '', zonderK
   const vorigeFocus = useRef<HTMLElement | null>(null); const anker = useRef<HTMLDivElement | null>(null); const paneel = useRef<HTMLDivElement | null>(null); const input = useRef<HTMLInputElement | null>(null);
   const direct = useRef(0); // > 0: de eerstvolgende zoekopdracht zonder wachttijd (Enter, een recente rij)
   const sectie = sectieVan(dienst);
-  const doOpen = useCallback(() => { vorigeFocus.current = document.activeElement as HTMLElement | null; setRecent(leesRecent()); setOpen(true); }, []);
+  // Ruimte van de recente lijst (ORCH-001): vastgelegd bij het OPENEN, volgens de technische activering van dit tabblad; lezen, bewaren
+  // en wissen gebruiken die ene ruimte, ook als de status intussen verandert. De hint voor F5 volgt elke statuswijziging.
+  const tech = useTech();
+  useEffect(() => { recentRuimteVoor({ geladen: tech.geladen, technisch: profielVan(tech) === 'technisch' }); }, [tech]);
+  const ruimte = useRef<RecentRuimte>('gebruiker');
+  const doOpen = useCallback(() => {
+    vorigeFocus.current = document.activeElement as HTMLElement | null;
+    const st = techToestand();
+    ruimte.current = recentRuimteVoor({ geladen: st.geladen, technisch: profielVan(st) === 'technisch' });
+    setRecent(leesRecent(undefined, undefined, ruimte.current)); setOpen(true);
+  }, []);
   const doClose = useCallback(() => { setOpen(false); setQ(''); setServer([]); setUitkomst(null); setStand('rust'); window.setTimeout(() => { if (!focusTerug(vorigeFocus.current) && !focusTerug(document.querySelector<HTMLElement>(TERUG_ALS_KNOP_WEG))) document.body.focus(); }, 0); }, []);
 
   // Positie van het uitklapvenster: op de plek van de veldknop (zoals Windows-zoeken), in het beeld gehouden. Het venster is
@@ -146,7 +157,7 @@ export default function ZoekGlobaal({ lang, mobiel = false, dienst = '', zonderK
   // ENTER (en een recente zoekopdracht kiezen): zoeken in het menu zelf — bewaren op dit apparaat, meteen het resultaat tonen. Geen navigatie.
   const zoekNu = (tekst: string) => {
     const v = tekst.trim();
-    if (v) { bewaarRecent(v, sectie); setRecent(leesRecent()); }
+    if (v) setRecent(bewaarRecent(v, sectie, Date.now(), undefined, undefined, {}, ruimte.current));
     direct.current = 1; setQ(tekst); setVers(n => n + 1);
   };
   // Een gekozen rij: resultaat, functie of pagina met een route gaat rechtstreeks daarheen (zoek-menu.ts: keuzeActie); alles anders is een zoekopdracht (ZoekVeld → zoekNu).
@@ -155,20 +166,20 @@ export default function ZoekGlobaal({ lang, mobiel = false, dienst = '', zonderK
     if (a.type !== 'open') return false;
     const url = a.extern || routeUrl(a.route, lang);
     if (!url) return false;
-    if (a.bewaar) bewaarRecent(a.bewaar.tekst, a.bewaar.sectie, Date.now(), undefined, undefined, { soort: a.bewaar.soort, route: a.bewaar.route });
+    if (a.bewaar) bewaarRecent(a.bewaar.tekst, a.bewaar.sectie, Date.now(), undefined, undefined, { soort: a.bewaar.soort, route: a.bewaar.route }, ruimte.current);
     if (a.extern) { window.open(url, '_blank', 'noopener,noreferrer'); doClose(); } else location.assign(url);
     return true;
   };
   // «Перейти до пошуку»: de zoekpagina met het HUIDIGE resultaat. Leeg veld → de laatste zoekopdracht (paginaDoel); staat de pagina al open → zonder herladen.
   const naarPagina = () => {
     const doel = paginaDoel(q, sectie, recent); const v = doel.q; const vraag = parseQuery(v).query;
-    if (v) bewaarRecent(v, doel.cat);
+    if (v) bewaarRecent(v, doel.cat, Date.now(), undefined, undefined, {}, ruimte.current);
     const huidig = uitkomst && uitkomstVoor(uitkomst, vraag, doel.cat) ? uitkomst.a : null;
     if (v) bewaarLaatste(vraag, doel.cat, huidig);
     if (meldZoekPagina({ q: v, cat: doel.cat, uitkomst: huidig })) { doClose(); return; }
     location.assign(zoekPaginaUrl(lang, v, doel.cat === 'all' ? {} : { cat: doel.cat }));
   };
-  const wisRecentKlik = () => { wisRecent(); setRecent([]); input.current?.focus(); };
+  const wisRecentKlik = () => { wisRecent(undefined, undefined, ruimte.current); setRecent([]); input.current?.focus(); };
 
   // Esc sluit het menu in ÉÉN keer (ook met de focus op een knop in het venster) en Ctrl/⌘+Enter opent de zoekpagina: vóór ZoekVeld (capture),
   // zodat de lijst/het veld er niet eerst zelf iets mee doet. Pijltjes en Enter op een rij zijn van ZoekVeld.

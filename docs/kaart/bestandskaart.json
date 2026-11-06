@@ -5,7 +5,8 @@
  "mappen": {
   "src/search": "src/zoek",
   "src/flags": "src/vlaggen",
-  "src/remote": "src/extern"
+  "src/remote": "src/extern",
+  "src/identity": "src/identiteit"
  },
  "bestanden": [
   {
@@ -2131,6 +2132,54 @@
   {
    "oud": "tests/eenheid/zoek-etap-d-20261021.test.ts",
    "nieuw": "tests/eenheid/zoek-etappe-d-20261021.test.ts"
+  },
+  {
+   "oud": "src/identity/IdentityAccountPagina.tsx",
+   "nieuw": "src/identiteit/IdentiteitAccountPagina.tsx"
+  },
+  {
+   "oud": "src/identity/identity-account.css",
+   "nieuw": "src/identiteit/identiteit-account.css"
+  },
+  {
+   "oud": "src/identity/identity-tabs.ts",
+   "nieuw": "src/identiteit/identiteit-tabs.ts"
+  },
+  {
+   "oud": "src/identity/Profielfoto.tsx",
+   "nieuw": "src/identiteit/Profielfoto.tsx"
+  },
+  {
+   "oud": "src/mail/mail-koppel-mobile-sheet.css",
+   "nieuw": "src/mail/mail-koppel-mobiel-sheet.css"
+  },
+  {
+   "oud": "tests/eenheid/identity-account-ui.test.ts",
+   "nieuw": "tests/eenheid/identiteit-account-ui.test.ts"
+  },
+  {
+   "oud": "tests/visueel/mailfit-preview.html",
+   "nieuw": "tests/visueel/mailfit-voorbeeld.html"
+  },
+  {
+   "oud": "tests/visueel/mailfit-preview.tsx",
+   "nieuw": "tests/visueel/mailfit-voorbeeld.tsx"
+  },
+  {
+   "oud": "tests/visueel/mailfix-preview.html",
+   "nieuw": "tests/visueel/mailfix-voorbeeld.html"
+  },
+  {
+   "oud": "tests/visueel/mailfix-preview.tsx",
+   "nieuw": "tests/visueel/mailfix-voorbeeld.tsx"
+  },
+  {
+   "oud": "tests/visueel/mailpolish-preview.html",
+   "nieuw": "tests/visueel/mailpolish-voorbeeld.html"
+  },
+  {
+   "oud": "tests/visueel/mailpolish-preview.tsx",
+   "nieuw": "tests/visueel/mailpolish-voorbeeld.tsx"
   }
  ],
  "behouden": [

@@ -1,4 +1,4 @@
-// Agenda v3 (vlag agenda-v3, 28.10.2026): pure rekenhulp en sleutels. Loopt met TZ=Europe/Brussels (zie scripts/eenheidstests.mjs-aanroep).
+// Agenda v3 (vlag agenda-v3, 28.10.2026): pure rekenhulp en sleutels. Zet zelf TZ=Europe/Brussels (de runner doet dat niet; 05.11.2026) en zet hem aan het einde terug.
 import { readFileSync } from 'node:fs';
 import type { AgendaItem } from '../../shared/agenda-model';
 import { VLAG_UITLEG } from '../../shared/vlaggen';
@@ -11,6 +11,9 @@ const item = (o: Partial<AgendaItem>): AgendaItem => ({ id: 'google:hoofd:x', br
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('agenda-v3-20261028');
+  // De test zet zijn tijdzone zelf (Node leest TZ opnieuw bij toewijzing): de DST-toetsen hangen niet af van de machine of de runner.
+  const tzVoor = process.env.TZ;
+  process.env.TZ = 'Europe/Brussels';
   const brussel = Intl.DateTimeFormat().resolvedOptions().timeZone === 'Europe/Brussels';
   check('tijdzone van de test is Europe/Brussels (anders zeggen de DST-toetsen niets)', brussel);
 
@@ -75,5 +78,6 @@ export async function main(): Promise<number> {
   const v3 = ['AgendaPagina.tsx', 'onderdelen/GebeurtenisBewerker.tsx', 'onderdelen/VerbindingenLade.tsx', 'onderdelen/Terugkoppeling.tsx'].map((f) => readFileSync(`src/agenda/v3/${f}`, 'utf8')).join('\n');
   check('v3: niets verzonnen (geen Math.random, geen voorbeelddata)', !/Math\.random/.test(v3) && !/lorem|dummy/i.test(v3));
   check('v3: conflictpaneel, uitbreiding en sync-merken bestaan', ["data-agenda-conflict='1'", 'data-agenda-conflict-overnemen', 'data-agenda-conflict-overschrijven', 'data-agenda-uitbreiden', 'data-agenda-sync'].every((m) => v3.includes(m)));
+  if (tzVoor === undefined) delete process.env.TZ; else process.env.TZ = tzVoor;
   return einde();
 }

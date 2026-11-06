@@ -12,9 +12,9 @@ import {MENU_CATALOG,MENU_ICON_OPTIONS,MenuGlyph,isSiteBeheer,normalizeMenuPrefe
 import './instellingencentrum.css';
 import AccessPlaneView from './ToegangslaagWeergave';
 import MijnDiensten from './instellingen/MijnDiensten';
-import { IdentityAccountPagina } from './identity/IdentityAccountPagina';
-import { IDENTITY_TABS } from './identity/identity-tabs';
-import { Profielfoto } from './identity/Profielfoto';
+import { IdentityAccountPagina } from './identiteit/IdentiteitAccountPagina';
+import { IDENTITY_TABS } from './identiteit/identiteit-tabs';
+import { Profielfoto } from './identiteit/Profielfoto';
 
 type Lang='uk'|'nl';
 type Theme=ThemePreference;

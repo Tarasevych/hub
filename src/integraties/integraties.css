@@ -182,10 +182,6 @@
 .il-w-sleutels[data-sleutels-missen]:not([data-sleutels-missen="0"]){border-color:color-mix(in srgb,var(--il-warn) 45%,var(--line))}
 .il-d-noot[data-let-op=ja]{color:var(--il-warn)}
 @media (max-width:640px){.il-w-acties .il-knop{flex:1 1 100%}.il-w-formulier .il-knop.is-primair{justify-self:stretch}}
-/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
-@media (max-width:700px){
-  .il-ververs,.il-groep button,.il-wens,.il-reset{min-height:var(--tik-hoogte)}
-}
 
 /* UI-013: vernieuwde catalogus (vlag integraties-catalogus-v2). Rustig, compact, licht/donker via currentColor en bestaande variabelen. */
 .ic2{display:flex;flex-direction:column;gap:12px}
@@ -207,7 +203,7 @@
 .ic2-groepkop{font-weight:500;font-size:.9rem;opacity:.85;padding-left:12px}
 .ic2-blokkop:hover,.ic2-groepkop:hover{background:color-mix(in srgb,currentColor 5%,transparent)}
 .ic2-blokkop b,.ic2-groepkop b{font-weight:500;font-size:.78rem;opacity:.6}
-.ic2-blokkop em{font-style:normal;font-size:.75rem;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,#16a34a 16%,transparent)}
+.ic2-blokkop em{font-style:normal;font-size:.75rem;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--ok-vlak) 16%,transparent)}
 .ic2-pijl{margin-left:auto;width:18px;height:18px;transition:transform .15s}
 [aria-expanded=false]>.ic2-pijl{transform:rotate(-90deg)}
 .ic2-raster{list-style:none;margin:4px 0 10px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
@@ -222,15 +218,15 @@
 .ic2-titel h4{margin:0;font-size:.95rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ic2-titel span{font-size:.75rem;opacity:.65}
 .ic2-ster{min-width:44px;min-height:44px;border:0;background:transparent;color:inherit;cursor:pointer;display:grid;place-items:center;opacity:.5}
-.ic2-ster[aria-pressed=true]{opacity:1;color:#d97706}
+.ic2-ster[aria-pressed=true]{opacity:1;color:var(--warn)}
 .ic2-ster svg{width:18px;height:18px}
 .ic2-ster[aria-pressed=true] svg{fill:currentColor}
 .ic2-uitleg{margin:0;font-size:.85rem;opacity:.85}
 .ic2-stand{margin:0;font-size:.8rem;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .ic2-stand i{width:8px;height:8px;border-radius:50%;background:#9ca3af;flex:none}
-.ic2-stand[data-groep=verbonden] i{background:#16a34a}
-.ic2-stand[data-groep=aandacht] i{background:#dc2626}
-.ic2-stand[data-groep=instellen] i{background:#d97706}
+.ic2-stand[data-groep=verbonden] i{background:var(--ok-vlak)}
+.ic2-stand[data-groep=aandacht] i{background:var(--fout-vlak)}
+.ic2-stand[data-groep=instellen] i{background:var(--warn-vlak)}
 .ic2-stand[data-groep=beschikbaar] i{background:var(--accent,#2563eb)}
 .ic2-acc{opacity:.7}
 .ic2-tijd{margin:0;font-size:.72rem;opacity:.6}
@@ -238,13 +234,13 @@
 .ic2-plan p{margin:2px 0}
 .ic2-acties{display:flex;gap:6px;align-items:center;margin-top:auto}
 .ic2-knop{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line,color-mix(in srgb,currentColor 18%,transparent));background:transparent;color:inherit;font:inherit;font-size:.85rem;display:inline-flex;align-items:center;gap:6px;cursor:pointer;text-decoration:none}
-.ic2-knop.is-primair{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:#fff}
+.ic2-knop.is-primair{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:var(--text-on-accent)}
 .ic2-knop.is-icoon{padding:0;min-width:44px;justify-content:center;border-color:transparent}
 .ic2-knop svg{width:16px;height:16px}
 .ic2-knop:focus-visible,.ic2-blokkop:focus-visible,.ic2-groepkop:focus-visible{outline:2px solid var(--accent,#2563eb);outline-offset:2px}
-.ic2-fouten{border:1px solid color-mix(in srgb,#dc2626 40%,transparent);border-radius:12px;padding:8px 10px;background:color-mix(in srgb,#dc2626 6%,transparent)}
+.ic2-fouten{border:1px solid color-mix(in srgb,var(--fout) 40%,transparent);border-radius:12px;padding:8px 10px;background:color-mix(in srgb,var(--fout-vlak) 6%,transparent)}
 .ic2-fouten h4{display:flex;gap:6px;align-items:center;margin:4px 0;font-size:.9rem}
-.ic2-fouten h4 svg{width:16px;height:16px;color:#dc2626}
+.ic2-fouten h4 svg{width:16px;height:16px;color:var(--fout)}
 .ic2-leeg{opacity:.7}
 @media (max-width:600px){.ic2-balk select{flex:1 1 45%}.ic2-raster{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.ic2-pijl,.ic2-kaart{transition:none}}
@@ -255,7 +251,7 @@
 .iw2-stappen{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
 .iw2-stappen li{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;opacity:.55}
 .iw2-stappen li b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;border:1px solid currentColor;font-weight:600}
-.iw2-stappen li[data-stand=nu]{opacity:1}.iw2-stappen li[data-stand=nu] b{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:#fff}
+.iw2-stappen li[data-stand=nu]{opacity:1}.iw2-stappen li[data-stand=nu] b{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb);color:var(--text-on-accent)}
 .iw2-stappen li[data-stand=klaar]{opacity:.85}
 .iw2-inhoud{display:flex;flex-direction:column;gap:8px}
 .iw2-inhoud p{margin:0}
@@ -266,7 +262,7 @@
 .iw2-keuzes button[aria-pressed=true],.iw2-wijzen button[aria-checked=true]{border-color:var(--accent,#2563eb);box-shadow:inset 0 0 0 1px var(--accent,#2563eb)}
 .iw2-wijzen{display:flex;flex-wrap:wrap;gap:6px}.iw2-wijzen button{width:auto}
 .iw2-noot{font-size:.8rem;opacity:.7}
-.iw2-uitslag{display:flex;gap:6px;align-items:center;font-size:.9rem}.iw2-uitslag[data-ok=false]{color:var(--danger,#dc2626)}.iw2-uitslag svg{width:18px;height:18px;color:#16a34a}
+.iw2-uitslag{display:flex;gap:6px;align-items:center;font-size:.9rem}.iw2-uitslag[data-ok=false]{color:var(--danger,#dc2626)}.iw2-uitslag svg{width:18px;height:18px;color:var(--ok)}
 .iw2-lijst{margin:0;padding-left:18px;font-size:.88rem}
 .iw2-voet{display:flex;flex-direction:row;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
 .iw2-voet>*{flex:0 0 auto;width:auto;margin:0}
@@ -276,6 +272,11 @@
 .is2-lijst{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
 .is2-lijst li{display:flex;align-items:center;gap:6px;border:1px solid var(--line,#ddd);border-radius:999px;padding:4px 10px 4px 4px;font-size:.8rem}
 .is2-lijst li i{width:8px;height:8px;border-radius:50%;background:#9ca3af}
-.is2-lijst li[data-groep=verbonden] i{background:#16a34a}.is2-lijst li[data-groep=aandacht] i{background:#dc2626}.is2-lijst li[data-groep=instellen] i{background:#d97706}.is2-lijst li[data-groep=beschikbaar] i{background:var(--accent,#2563eb)}
+.is2-lijst li[data-groep=verbonden] i{background:var(--ok-vlak)}.is2-lijst li[data-groep=aandacht] i{background:var(--fout-vlak)}.is2-lijst li[data-groep=instellen] i{background:var(--warn-vlak)}.is2-lijst li[data-groep=beschikbaar] i{background:var(--accent,#2563eb)}
 @media (max-width:600px){.iw2-stappen li span{display:none}}
 .ic2-wizardknop{margin-left:auto}
+/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen.
+   Laatste laag van dit bestand (stond vóór de catalogus van UI-013; 05.11.2026 naar het einde, inhoud ongewijzigd). */
+@media (max-width:700px){
+  .il-ververs,.il-groep button,.il-wens,.il-reset{min-height:var(--tik-hoogte)}
+}

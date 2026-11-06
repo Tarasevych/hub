@@ -2,9 +2,9 @@
 
 # Покриття категорії `identity` — 12 розділів (`identity-coverage.uk.md`)
 
-- **Джерело переліку:** `shared/menu-model.ts → MENU_PAGINAS.identity` та `src/identity/identity-tabs.ts`.
+- **Джерело переліку:** `shared/menu-model.ts → MENU_PAGINAS.identity` та `src/identiteit/identiteit-tabs.ts`.
 - **Живий прототип:** [`identity-live.html`](./identity-live.html).
-- **Робочий UI у застосунку:** `src/identity/IdentityAccountPagina.tsx`, `src/identity/Profielfoto.tsx`, `src/identity/identity-account.css` (`IDENTITY-002`).
+- **Робочий UI у застосунку:** `src/identiteit/IdentiteitAccountPagina.tsx`, `src/identiteit/Profielfoto.tsx`, `src/identiteit/identiteit-account.css` (`IDENTITY-002`).
 - **Технічне завдання:** [`TZ-account-2026-11-04.uk.md`](./TZ-account-2026-11-04.uk.md).
 
 | # | Розділ | Що реалізовано в прототипі та застосунку | Стан |

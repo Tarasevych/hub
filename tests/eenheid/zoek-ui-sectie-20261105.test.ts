@@ -65,6 +65,17 @@ export async function main(): Promise<number> {
     sectie(wissel, 'Шукати в панелі') === '' && sectie(wissel, 'Дія під умовним') === '' && sectie(wissel, 'Дія під мовним') === 'Мовний заголовок' && els.some((e) => e.soort === 'sectie' && e.uk === 'Правила панелі'),
     `${sectie(wissel, 'Шукати в панелі')}|${sectie(wissel, 'Дія під умовним')}|${sectie(wissel, 'Дія під мовним')}`);
 
+  // 3d. een kop geldt tot het einde van zijn blok (section, footer, dialog, …), niet tot het einde van de hele boom (05.11.2026)
+  const blok = `export function H(){return <div className='venster'><section>${kop('h3', 'Закритий розділ', 'Gesloten sectie')}${knop('Дія в розділі', 'Actie in sectie')}</section>` +
+    `<footer>${knop('Дія в підвалі', 'Actie in voet')}</footer><div>${knop('Дія після розділу', 'Actie na sectie')}</div>` +
+    `<div role='dialog'><header>${kop('h2', 'Діалог', 'Dialoog')}</header>${knop('Дія в діалозі', 'Actie in dialoog')}</div>${knop('Дія після діалогу', 'Actie na dialoog')}` +
+    `<article><header>${kop('h3', 'Стаття', 'Artikel')}</header><div className='rij'>${knop('Дія в статті', 'Actie in artikel')}</div></article><div>${knop('Дія після статті', 'Actie na artikel')}</div></div>;}`;
+  const s3d = ['Дія в розділі', 'Дія в підвалі', 'Дія після розділу', 'Дія в діалозі', 'Дія після діалогу', 'Дія в статті', 'Дія після статті'].map((u) => sectie(blok, u));
+  check('3d kop binnen een gesloten blok (section, role=dialog, article) geldt binnen dat blok, niet voor knoppen erna (voet, volgende div)',
+    JSON.stringify(s3d) === JSON.stringify(['Закритий розділ', '', '', 'Діалог', '', 'Стаття', '']), s3d.join('|'));
+  const zonderBlok = `export function I(){return <div><div className='kop'><header>${kop('h2', 'Шапка', 'Kop')}</header></div><div className='rij'>${knop('Дія без блоку', 'Actie zonder blok')}</div></div>;}`;
+  check('3e zonder blok (alleen div/header, ook als die eerder sluiten) blijft de kop gelden voor de hele boom', sectie(zonderBlok, 'Дія без блоку') === 'Шапка', sectie(zonderBlok, 'Дія без блоку'));
+
   // 4. de echte catalogus
   const GMW = UI_ELEMENTEN.filter((e) => e.bestand === 'src/GoogleMailWerkruimte.tsx' && e.soort === 'knop');
   const metGa = GMW.filter((e) => e.sectieUk === 'Підключені Google-акаунти').map((e) => e.uk);
@@ -77,7 +88,8 @@ export async function main(): Promise<number> {
   check('4c meldingen: geen knop meer onder de wisselende kop «Правила сповіщень»', mv2.length === 0, mv2.map((e) => e.uk).join(', '));
   const BC = UI_ELEMENTEN.find((e) => e.bestand === 'src/BeheerConsoleWeergave.tsx' && e.uk === 'Застосувати роль');
   check('4d beheerconsole: «Застосувати роль» houdt zijn sectie «Адміністративні ролі» (zelfde boom)', BC?.sectieUk === 'Адміністративні ролі', BC?.sectieUk || '—');
-  // 05.11.2026: 442 → 300 knoppen met een sectie; de 142 zonder stonden onder een kop uit een andere boom of onder een wisselende kop.
+  // 05.11.2026: 442 → 300 knoppen met een sectie (na de blokgrens 297). De meeste van de 142 stonden onder een kop uit een andere
+  // boom, tak of onder een wisselende kop; minstens 14 juiste secties gingen ook weg (voorzichtig: liever geen sectie dan een onjuiste).
   check('4e nog steeds de meeste secties (geen massaal verlies): ≥ 280', UI_ELEMENTEN.filter((e) => e.sectieUk).length >= 280, String(UI_ELEMENTEN.filter((e) => e.sectieUk).length));
   return einde();
 }
