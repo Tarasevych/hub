@@ -79,6 +79,7 @@ elif [ -n "${TESTS_GESLAAGD:-}${TESTS_MISLUKT:-}${TESTS_SAMENVATTING:-}" ]; then
   TESTJSON="$(python3 - "${TESTS_GESLAAGD:-}" "${TESTS_MISLUKT:-}" "${TESTS_SAMENVATTING:-}" <<'PY'
 import json, sys
 ok, mis, sam = sys.argv[1:4]
+sam = sam.encode("utf-8", "surrogateescape").decode("utf-8", "replace")  # UITGAVE-001: geen los surrogaat naar stdout / без сурогатів
 uit = {k: int(v) for k, v in (("geslaagd", ok), ("mislukt", mis)) if v.strip().isdigit()}
 if sam.strip(): uit["samenvatting"] = sam.strip()[:2000]
 print(json.dumps(uit, ensure_ascii=False))
@@ -114,8 +115,11 @@ sha="$(sha256sum "$doel" 2>/dev/null | sed 's/^\\//' | cut -d' ' -f1 || shasum -
 if [ -n "$ZONDER_GIT" ]; then
   wijzigingen="- (buiten git: $ZONDER_GIT) $SAMENVATTING"; diff=""
 elif git rev-parse --verify -q "$basis" >/dev/null; then
-  wijzigingen="$(git log --no-merges --format='- %h %s' "$basis..HEAD" | head -c 7900 || true)"
-  diff="$(git diff --stat "$basis..HEAD" | tail -n 60 | head -c 7900 || true)"
+  # UITGAVE-001: 7901 bytes = grens + 1, zodat Python ziet dát er geknipt is; het eigenlijke knippen (op een heel teken en een
+  # hele regel) gebeurt hieronder in Python. / 7901 байт = межа + 1, щоб Python бачив, що текст обрізано; саме обрізання
+  # (по цілому символу й цілому рядку) — нижче в Python.
+  wijzigingen="$(git log --no-merges --format='- %h %s' "$basis..HEAD" | head -c 7901 || true)"
+  diff="$(git diff --stat "$basis..HEAD" | tail -n 60 | head -c 7901 || true)"
 else
   wijzigingen="$(git log -1 --format='- %h %s')"; diff=""
 fi
@@ -123,10 +127,28 @@ python3 - "$uit/mijn-ruimte-$versie.voorstel.json" "$versie" "$bytes" "$sha" "$c
   "${TESTS_GESLAAGD:-}" "${TESTS_MISLUKT:-}" "${TESTS_SAMENVATTING:-}" "$AUTEUR" "$AGENT" "$SAMENVATTING" <<'PY'
 import json, sys
 pad, versie, n, sha, commit, wijz, diff, ok, mis, sam, auteur, agent, samenvatting = sys.argv[1:14]
+# UITGAVE-001 (06.11.2026): `head -c` knipt bytes, geen tekens. Viel de grens midden in een Cyrillisch teken (git log van een
+# echte release: 11 430 bytes), dan kwam er een los surrogaat in argv en faalde json.dump (UnicodeEncodeError →
+# PAKKET_BOUW_MISLUKT, geen pakket). Nu: onvolledige tekens vallen weg en een afgeknipte lijst eindigt op een hele regel + «- …».
+# `head -c` ріже байти, а не символи: межа посеред кириличного символу давала сурогат в argv, і json.dump падав. Тепер неповні
+# символи відкидаються, а обрізаний список закінчується цілим рядком і «- …».
+GRENS = 7900
+def schoon(tekst):
+    return tekst.encode("utf-8", "surrogateescape").decode("utf-8", "replace")
+def knip(tekst):
+    ruw = tekst.encode("utf-8", "surrogateescape")
+    if len(ruw) <= GRENS:
+        return ruw.decode("utf-8", "replace")
+    deel = ruw[:GRENS].decode("utf-8", "ignore")
+    if "\n" in deel:
+        deel = deel[:deel.rindex("\n")]
+    return deel + "\n- …"
+wijz, diff = knip(wijz), knip(diff)
+sam, auteur, agent, samenvatting = schoon(sam), schoon(auteur), schoon(agent), schoon(samenvatting)
 tests = {k: int(v) for k, v in (("passed", ok), ("failed", mis)) if v.strip().isdigit()}
 if sam.strip(): tests["summary"] = sam.strip()[:2000]
 json.dump({"version": versie, "bytes": int(n), "sha256": sha, "commit": commit, "auteur": auteur, "agent": agent, "samenvatting": samenvatting, "changelog": wijz, "tests": tests, "diff_summary": diff},
-          open(pad, "w"), ensure_ascii=False, indent=2)
+          open(pad, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 PY
 echo "klaar: $doel (+ .voorstel.json)  versie=$versie bytes=$bytes sha256=$sha"
 echo "volgende stap: uitrol_voorstel_begin met de inhoud van mijn-ruimte-$versie.voorstel.json (vereist een grant «Кому дозволено»)."
