@@ -11,7 +11,7 @@ export async function main(): Promise<number> {
   const orbit = lees('src/mail/MailOrbitIntro.tsx');
   const stijl = lees('src/mail/mail-orbit-intro.css');
   const modal = lees('src/mail/MailKoppelVenster.tsx');
-  const sheet = lees('src/mail/mail-koppel-mobile-sheet.css');
+  const sheet = lees('src/mail/mail-koppel-mobiel-sheet.css');
   const passCss = lees('src/platform/bevestig-toegang.css');
   const client = lees('src/platform/stap-op.ts');
   const ui = lees('src/platform/bevestig-toegang.tsx');

@@ -1,13 +1,13 @@
 // IDENTITY-002 / AUDIT-001 · Перевірка єдиної сторінки облікового запису (12 розділів), діалогу фото та 4 виправлень аудиту 05.11.2026.
 import { readFileSync } from 'node:fs';
-import { IDENTITY_TABS, identityTitel, isIdentityTab } from '../../src/identity/identity-tabs';
+import { IDENTITY_TABS, identityTitel, isIdentityTab } from '../../src/identiteit/identiteit-tabs';
 import { checker } from './hulp/nep-google';
 
 export async function main(): Promise<number> {
-  const { check, einde } = checker('identity-account-ui');
-  const pagina = readFileSync('src/identity/IdentityAccountPagina.tsx', 'utf8');
-  const foto = readFileSync('src/identity/Profielfoto.tsx', 'utf8');
-  const css = readFileSync('src/identity/identity-account.css', 'utf8');
+  const { check, einde } = checker('identiteit-account-ui');
+  const pagina = readFileSync('src/identiteit/IdentiteitAccountPagina.tsx', 'utf8');
+  const foto = readFileSync('src/identiteit/Profielfoto.tsx', 'utf8');
+  const css = readFileSync('src/identiteit/identiteit-account.css', 'utf8');
   const plaatsing = JSON.parse(readFileSync('scripts/plaatsing-vaste-elementen.json', 'utf8'));
 
   check('IDENTITY_TABS містить рівно 12 розділів у канонічному порядку з двомовними назвами (uk/nl)',

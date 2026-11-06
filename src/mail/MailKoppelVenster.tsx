@@ -24,7 +24,7 @@ import GeheimInvoer from '../geheim/GeheimInvoer';
 import { ArrowRight, ChevronLeft, ExternalLink, Loader2, LockKeyhole, MailCheck, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
 import Logo from '../merk/MerkLogo';
 import { Venster } from '../platform/vensters';
-import './mail-koppel-mobile-sheet.css';
+import './mail-koppel-mobiel-sheet.css';
 import { api } from '../platform/client';
 import { geldigMailAdres, mailAanbieder, mailImapFoutTekst } from '../../shared/mail-aanbieders';
 import type { VensterStap } from '../../shared/vensters-onthouden-model';

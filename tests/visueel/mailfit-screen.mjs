@@ -10,7 +10,7 @@ try{
     const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
     page.on('pageerror',error=>errors.push(`${width}: ${error.stack||error.message}`));
     page.on('console',message=>{if(message.type()==='error')errors.push(`${width}: ${message.text()}`)});
-    await page.goto('http://127.0.0.1:4179/tests/visueel/mailfit-preview.html',{waitUntil:'networkidle',timeout:30000});
+    await page.goto('http://127.0.0.1:4179/tests/visueel/mailfit-voorbeeld.html',{waitUntil:'networkidle',timeout:30000});
     await page.waitForTimeout(1200);
     const facts=await page.evaluate(()=>{
       const $=s=>document.querySelector(s),rect=e=>e?.getBoundingClientRect();
