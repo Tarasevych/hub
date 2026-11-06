@@ -338,7 +338,7 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 .wb3 .wb3-widget{width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden}
 .wb3 .wb3-widget .wb-tegel-inhoud{flex:1;min-height:0;overflow:auto}
 .wb3-niet{margin:.5rem;font-size:.85rem;opacity:.8}
-.wb3-bibliotheek{max-height:min(60vh,36rem);overflow:auto;margin:0 0 .75rem;border-radius:14px;border:1px solid color-mix(in srgb,currentColor 18%,transparent);background:var(--kleur-oppervlak)}
+.wb3-bibliotheek{max-height:min(60vh,36rem);overflow:auto;margin:0 0 .75rem;border-radius:14px;border:1px solid color-mix(in srgb,currentColor 18%,transparent);background:var(--panel)}
 .wb3-instellingen{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:0 0 .75rem}
 .wb3-veld{display:inline-flex;gap:.4rem;align-items:center;min-height:44px}
 .wb3-veld select{min-height:36px}

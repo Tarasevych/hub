@@ -1,33 +1,33 @@
 /* Werkblad v3 — vrij canvas. z-index-schaal: zie Canvas.tsx (alles binnen .wbc; isolation:isolate houdt CanonicalChrome erboven).
    Geen position:fixed (scripts/plaatsing-controle.mjs). Posities komen uit logische px × schaal (ResizeObserver). */
 .wbc{position:relative;isolation:isolate;width:100%;min-height:12rem;overflow-x:clip;overflow-y:visible;outline:none;contain:layout}
-.wbc:focus-visible{box-shadow:0 0 0 2px var(--kleur-focus,#2563eb)}
+.wbc:focus-visible{box-shadow:0 0 0 2px var(--focus)}
 .wbc-item{position:absolute;box-sizing:border-box;border-radius:var(--radius-2,12px);touch-action:auto}
 .wbc-inhoud{width:100%;height:100%;overflow:hidden;border-radius:inherit}
 .wbc-bewerken{background-image:radial-gradient(color-mix(in srgb,currentColor 14%,transparent) 1px,transparent 1px);background-size:16px 16px}
 .wbc-bewerken .wbc-item{touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:grab;outline:1px dashed color-mix(in srgb,currentColor 35%,transparent);outline-offset:2px}
 .wbc-bewerken .wbc-item img{-webkit-user-drag:none}
-.wbc-bewerken .wbc-item:focus-visible,.wbc-gekozen{outline:3px solid var(--kleur-focus,#2563eb)!important;outline-offset:2px}
+.wbc-bewerken .wbc-item:focus-visible,.wbc-gekozen{outline:3px solid var(--focus)!important;outline-offset:2px}
 .wbc-vast{cursor:default!important}
 .wbc-bezig{cursor:grabbing!important;box-shadow:0 12px 32px rgb(0 0 0/.28);opacity:.94}
 .wbc-gebaar,.wbc-gebaar *{user-select:none;-webkit-user-select:none}
-.wbc-geest{position:absolute;z-index:8000;border:2px dashed var(--kleur-focus,#2563eb);border-radius:var(--radius-2,12px);background:color-mix(in srgb,var(--kleur-focus,#2563eb) 12%,transparent);pointer-events:none}
+.wbc-geest{position:absolute;z-index:8000;border:2px dashed var(--focus);border-radius:var(--radius-2,12px);background:color-mix(in srgb,var(--focus) 12%,transparent);pointer-events:none}
 .wbc-geest-ongeldig{border-color:var(--fout);background:color-mix(in srgb,var(--fout-vlak) 12%,transparent)}
 .wbc-plaatsen{cursor:crosshair}
 /* Grepen: zichtbaar 12 px, tikvlak ≥ 44 px (::before), alleen in de instelmodus. touch-action:none = direct formaat wijzigen. */
-.wbc-greep{position:absolute;z-index:2;width:12px;height:12px;border-radius:50%;background:var(--kleur-focus,#2563eb);border:2px solid var(--papier);box-sizing:border-box;touch-action:none}
+.wbc-greep{position:absolute;z-index:2;width:12px;height:12px;border-radius:50%;background:var(--focus);border:2px solid var(--papier);box-sizing:border-box;touch-action:none}
 .wbc-greep::before{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
 .wbc-greep-n{top:-6px;left:calc(50% - 6px);cursor:ns-resize}.wbc-greep-s{bottom:-6px;left:calc(50% - 6px);cursor:ns-resize}
 .wbc-greep-e{right:-6px;top:calc(50% - 6px);cursor:ew-resize}.wbc-greep-w{left:-6px;top:calc(50% - 6px);cursor:ew-resize}
 .wbc-greep-ne{top:-6px;right:-6px;cursor:nesw-resize}.wbc-greep-sw{bottom:-6px;left:-6px;cursor:nesw-resize}
 .wbc-greep-nw{top:-6px;left:-6px;cursor:nwse-resize}.wbc-greep-se{bottom:-6px;right:-6px;cursor:nwse-resize}
 .wbc-slot{position:absolute;top:4px;right:4px;font-size:14px;pointer-events:none}
-.wbc-menu{position:absolute;z-index:9000;min-width:13rem;max-width:calc(100% - 16px);padding:4px;display:flex;flex-direction:column;background:var(--kleur-oppervlak,#fff);color:var(--kleur-tekst,#111);border:1px solid color-mix(in srgb,currentColor 20%,transparent);border-radius:12px;box-shadow:0 12px 32px rgb(0 0 0/.22)}
+.wbc-menu{position:absolute;z-index:9000;min-width:13rem;max-width:calc(100% - 16px);padding:4px;display:flex;flex-direction:column;background:var(--panel);color:var(--text);border:1px solid color-mix(in srgb,currentColor 20%,transparent);border-radius:12px;box-shadow:0 12px 32px rgb(0 0 0/.22)}
 .wbc-menu button{min-height:44px;padding:0 12px;text-align:left;background:none;border:0;border-radius:8px;color:inherit;font:inherit;cursor:pointer}
-.wbc-menu button:hover,.wbc-menu button:focus-visible{background:color-mix(in srgb,currentColor 10%,transparent);outline:2px solid var(--kleur-focus,#2563eb);outline-offset:-2px}
+.wbc-menu button:hover,.wbc-menu button:focus-visible{background:color-mix(in srgb,currentColor 10%,transparent);outline:2px solid var(--focus);outline-offset:-2px}
 .wbc-menu .wbc-gevaar{color:var(--fout)}
 .wbc-menu-achter{position:absolute;inset:0;z-index:8999}
-.wbc-status{position:sticky;top:8px;z-index:9100;display:flex;gap:12px;align-items:center;justify-content:space-between;margin:8px;padding:8px 12px;border-radius:10px;background:var(--kleur-oppervlak,#fff);color:var(--kleur-tekst,#111);border:1px solid color-mix(in srgb,currentColor 20%,transparent);box-shadow:0 4px 12px rgb(0 0 0/.12)}
+.wbc-status{position:sticky;top:8px;z-index:9100;display:flex;gap:12px;align-items:center;justify-content:space-between;margin:8px;padding:8px 12px;border-radius:10px;background:var(--panel);color:var(--text);border:1px solid color-mix(in srgb,currentColor 20%,transparent);box-shadow:0 4px 12px rgb(0 0 0/.12)}
 .wbc-status-error,.wbc-status-conflict{border-color:var(--fout)}
 .wbc-status button{min-height:44px;padding:0 14px;border-radius:8px;border:1px solid currentColor;background:none;color:inherit;font:inherit;cursor:pointer}
 .wbc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
