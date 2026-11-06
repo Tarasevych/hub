@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "taakId": "DESIGN-003",
+  "titel": "Адаптивна дошка підключень ШІ й панель Antigravity",
+  "opdracht": "Продовжити оформлення робочого простору й зібрати новий пакет поверх фактично встановленої версії, зберігши роботу інших агентів.",
+  "herkomst": {
+    "tak": "feature/design-003-20261106-103743",
+    "basis": "b14a59e3c4b259b57d413be498281d49f1e6969c",
+    "broncode": "6f4af07eaa151eba445a124ba7d02083ba226653",
+    "regelsVersie": "1.4.9",
+    "regelsHash": "fd7f99f180da62313ee13a1ffe7a99c5e933883419d54efc2d9f4d7bcd7b8dd4"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Лише відкриті адреси репозиторію, версії, описи та результати перевірок із тестовими даними."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-06T10:38:52Z",
+      "stap": "Зареєстровано DESIGN-003. У вузькій панелі на ПК розрахунок колонок дошки відрізнявся від CSS."
+    },
+    {
+      "tijd": "2026-11-06T14:26:04.381Z",
+      "stap": "Перенесено правки поверх AUDIT-001. Власник і /api/version підтвердили версію 20261106-141500 та її коміт. У Chromium пройшли всі чотири канали й геометрія рядка."
+    }
+  ],
+  "keuzes": [
+    "Визначати кількість колонок за фактичною сіткою CSS, не дублюючи її мінімальну ширину в JavaScript.",
+    "Використати токени теми, режим зменшеного руху та ширину контейнера для профілю. Команди й адреси отримувати з чинного компонента."
+  ],
+  "wijzigingen": [
+    "src/agenten/AgentBord.tsx",
+    "src/agenten/agenten.css"
+  ],
+  "controles": [
+    "node scripts/orch.mjs controleer; versheid DESIGN-003",
+    "npm run typecheck:server",
+    "Chromium: UK/NL, 320–1280 px, клавіатура, чотири канали, локальне копіювання команд.",
+    "GitHub Actions звіряє повний вміст обох архівів, SHA-256, TRACE-001 та попередню перевірку сайту. Остаточні результати прив’язані до запуску та TESTRESULTATEN у пакеті."
+  ],
+  "bronnen": [
+    "https://github.com/Tarasevych/hub/commit/6f4af07eaa151eba445a124ba7d02083ba226653",
+    "https://github.com/Tarasevych/hub/releases/tag/20261106-141500",
+    "https://github.com/Tarasevych/hub/releases/tag/20261106-131500",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Стенд працює з тестовими даними та ізольованим буфером обміну. Підключення справжніх акаунтів і фізичних пристроїв належить власникові.",
+    "Установлення проходить вручну з passkey."
+  ]
+}
