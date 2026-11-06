@@ -13,6 +13,7 @@
 // app.notities en het bord (deze pagina) als spiegel gelijk, dus aan- of uitzetten verliest niets.
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNotitiesVnext } from './notities/notities-vlag';
+import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../shared/zoek-diepe-link';
 const NotitiesPagina = lazy(() => import('./notities/NotitiesPagina'));
 import { AlertCircle, Check, Code2, Link2, ListChecks, NotebookPen, Pencil, Pin, PinOff, Plus, Search, Store, Tag, Trash2, Type, X, type LucideIcon } from 'lucide-react';
 import { api, ApiError } from './platform/client';
@@ -81,6 +82,15 @@ function HubNotesOud({ lang }: { lang: 'uk' | 'nl' }) {
     setNieuwEtiket('');
   };
   const sluit = () => { setOpen(''); setVorm(leegVorm()); setNieuwEtiket(''); };
+  // ZOEKDIEP-001 (05.11.2026): diepe link uit de zoekpagina (?open_item_id=<id van de notitie>, shared/zoek-diepe-link.ts) → de notitie
+  // meteen in de bewerker. Niet (meer) gevonden → eerlijke melding in plaats van een stille lijst.
+  const [zoekNotitie, setZoekNotitie] = useState(() => (typeof location !== 'undefined' ? diepeWaarde(location.search, DIEPE_PARAMS.item) : ''));
+  useEffect(() => {
+    if (!zoekNotitie || notes === null) return;
+    const n = notes.find((x) => x.id === zoekNotitie);
+    setZoekNotitie(''); wisDiepeParams(DIEPE_PARAMS.item);
+    if (n) start(n); else setFout(t('Нотатку з пошуку не знайдено: можливо, її вже видалено.', 'De notitie uit de zoekresultaten is niet gevonden: misschien is zij verwijderd.'));
+  }, [notes, zoekNotitie]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const bewaar = async () => {
     if (!vorm.titel.trim() || bezig) return;

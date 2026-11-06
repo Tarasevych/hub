@@ -26,13 +26,13 @@ function sleutel(map: string, naam: string) {
 }
 
 /** Bouwt een pakket zoals maak-uitrolpakket.sh (één bovenmap met UITROL-VERSIE en deploy/installeer-app.sh). */
-function pakket(werk: string, versie: string, opties: { inhoudVersie?: string; symlink?: boolean; extra?: string; zonder?: string[]; meta?: Record<string, string>; lastig?: boolean } = {}) {
+function pakket(werk: string, versie: string, opties: { inhoudVersie?: string; symlink?: boolean; extra?: string; zonder?: string[]; meta?: Record<string, string | Buffer>; lastig?: boolean } = {}) {
   const top = join(werk, `bron-${versie}-${randomBytes(3).toString('hex')}`);
   const binnen = join(top, `mijn-ruimte-${versie}`);
   mkdirSync(join(binnen, 'deploy'), { recursive: true });
   writeFileSync(join(binnen, 'UITROL-VERSIE'), `${opties.inhoudVersie ?? versie}\n`);
   // Verplichte metadata (regel 2 en 3): standaard aanwezig; `zonder` laat bestanden weg, `meta` overschrijft de inhoud.
-  const meta: Record<string, string> = { AUTEUR: 'Test Auteur\n', AGENT: 'claude\n', SAMENVATTING: 'Testpakket voor de uitrol: wat en waarom, wat was en wat er bijkwam.\n',
+  const meta: Record<string, string | Buffer> = { AUTEUR: 'Test Auteur\n', AGENT: 'claude\n', SAMENVATTING: 'Testpakket voor de uitrol: wat en waarom, wat was en wat er bijkwam.\n',
     'BRON-COMMIT': `${createHash('sha1').update(versie).digest('hex')}\n`, ...(opties.meta || {}) };
   for (const z of opties.zonder || []) delete meta[z];
   for (const [n, v] of Object.entries(meta)) writeFileSync(join(binnen, n), v);
@@ -258,6 +258,9 @@ export async function main(): Promise<number> {
     // ---------------------------------------------------------------- rev'ю 06.11.2026: uitpakken zonder data-filter = met data-filter
     oudePython({ pk, basis, goed, env, status, leg, check });
 
+    // ---------------------------------------------------------------- UITROL-UTF8-001 (06.11.2026): meta() knipt op een heel teken
+    kyrillischeMeta({ pk, inbox, statusMap, werk, basis, goed, env, draai, status, audit, spoorRegels, leg, check });
+
     // ---------------------------------------------------------------- MCP-deur: OAuth + alleen inbox
     await deurTests(basis, check, goed);
 
@@ -298,6 +301,72 @@ function oudePython(c: { pk: string; basis: string; goed: string; env: NodeJS.Pr
   const oudeRegels = existsSync(spoorOud) ? readFileSync(spoorOud, 'utf8').trim().split('\n').filter(Boolean).length : 0;
   check('nagebootste 3.11.2 nam echt de terugval-tak (precies één oude extractall)', oudeRegels === 1, String(oudeRegels));
   check('terugval en data-filter geven precies dezelfde boom', !!uitkomst['20261010-100000'] && uitkomst['20261010-100000'] === uitkomst['20261010-110000']);
+  // Eigenaar uit het archief: extractall zet die alleen als root (chown bij euid 0). Het script zelf draait hier als nobody, dus
+  // draaien we als root het uitpakfragment van het script direct (dezelfde tekst, geen kopie). Zonder root niet te toetsen.
+  if (ALS_ROOT) {
+    const fragment = /# ---- 4\. inhoud[^\n]*\n[\s\S]*?<<'PY'\n([\s\S]*?)\nPY\n/.exec(readFileSync(SCRIPT, 'utf8'));
+    check('als root: uitpakfragment van het script gevonden', !!fragment);
+    if (fragment) {
+      const frag = join(basis, 'uitpak-fragment.py'); writeFileSync(frag, `${fragment[1]}\n`);
+      const versie = '20261010-120000'; const p = pakket(pk, versie, { lastig: true });
+      const spoorRoot = join(basis, 'oud-python-spoor-root');
+      const verwachtRoot = verwacht.split('\n').map((r) => r.replace(/ \d+ \d+$/, ' 0 0')).join('\n');
+      const bomen: Record<string, string> = {};
+      for (const oudePy of [false, true]) {
+        const naam = oudePy ? 'nagebootste python 3.11.2' : 'python met data-filter';
+        const doel = join(basis, `als-root-${oudePy ? 'oud' : 'filter'}`); mkdirSync(doel);
+        const r = spawnSync('bash', ['-c', 'umask 077 && exec python3 "$0" "$1" "$2" 1000000000', frag, p, doel],
+          { env: { ...process.env, PYTHONPATH: oudePy ? oud : '', OUDPY_SPOOR: oudePy ? spoorRoot : '' }, encoding: 'utf8' });
+        bomen[naam] = spawnSync('bash', ['-c', `cd "$0/mijn-ruimte-${versie}" && find lastig -printf '%p %m %U %G\\n' | LC_ALL=C sort`, doel], { encoding: 'utf8' }).stdout.trim();
+        check(`als root, ${naam}: eigenaar root (niet 1234 uit het archief), modi zoals het data-filter`, r.status === 0 && bomen[naam] === verwachtRoot, `${r.status} ${String(r.stderr).slice(-200)} ${bomen[naam]} ≠ ${verwachtRoot}`);
+      }
+      const oudRoot = existsSync(spoorRoot) ? readFileSync(spoorRoot, 'utf8').trim().split('\n').filter(Boolean).length : 0;
+      check('als root: nagebootste 3.11.2 nam echt de terugval-tak', oudRoot === 1, String(oudRoot));
+    }
+  }
+}
+
+/**
+ * UITROL-UTF8-001 (06.11.2026): meta() knipte AUTEUR (200) en SAMENVATTING (8000) met `head -c`, dus per BYTE. Viel de grens midden
+ * in een Cyrillisch teken (2 bytes), dan kwam er een half teken in $AUTEUR. Python decodeert argv dan met surrogateescape en
+ * json.dumps(..., ensure_ascii=False) + schrijven als UTF-8 faalde: stap() verloor de stapregel «inhoud» stil, en gebeurtenis() stierf
+ * onder `set -e` vóór de OK-regel, zodat een geslaagde installatie in de audit ontbrak. Ongeldige bytes midden in de tekst gaven
+ * hetzelfde. Nu: knippen op een heel teken, ongeldige bytes worden U+FFFD — zichtbaar, nooit stil weggelaten, nooit kapotte JSON.
+ * meta() різала AUTEUR/SAMENVATTING побайтово: пів кириличного символу ламало JSON у stap() і gebeurtenis(). Тепер — по цілому
+ * символу, а невалідні байти стають U+FFFD.
+ */
+function kyrillischeMeta(c: NooitStilCtx) {
+  const { pk, statusMap, goed, draai, status, audit, leg, check } = c;
+  const runStappen = () => { const a = leesStappen(statusMap); const run = a.length ? a[a.length - 1].run : ''; return a.filter((s) => s.run === run); };
+  // Elke regel moet geldige JSON zijn (audit() en leesStappen() zouden anders gooien) en mag geen U+FFFD bevatten tenzij verwacht.
+  const regelsGeldig = (bestand: string) => {
+    const pad = join(statusMap, bestand);
+    if (!existsSync(pad)) return false;
+    try { readFileSync(pad, 'utf8').trim().split('\n').filter(Boolean).forEach((l) => JSON.parse(l)); return true; } catch { return false; }
+  };
+  // 'A' + 100 × «Ж» = 201 bytes: de grens van 200 valt midden in de laatste «Ж». Verwacht: 'A' + 99 × «Ж» (heel teken, niets verzonnen).
+  const auteurLang = `A${'Ж'.repeat(100)}`;
+  const auteurGeknipt = `A${'Ж'.repeat(99)}`;
+  // SAMENVATTING: 'x' + 4000 × «я» = 8001 bytes, grens 8000 midden in het laatste teken.
+  const samenvattingLang = `x${'я'.repeat(4000)}`;
+  const gevallen: Array<{ versie: string; naam: string; meta: Record<string, string | Buffer>; auteur: string }> = [
+    { versie: '20261011-100000', naam: 'AUTEUR 201 bytes (grens 200 midden in «Ж»)', meta: { AUTEUR: `${auteurLang}\n` }, auteur: auteurGeknipt },
+    { versie: '20261011-110000', naam: 'SAMENVATTING 8001 bytes (grens 8000 midden in «я»)', meta: { AUTEUR: 'Тарасевич Павло\n', SAMENVATTING: `${samenvattingLang}\n` }, auteur: 'Тарасевич Павло' },
+    { versie: '20261011-120000', naam: 'ongeldige byte 0xFF midden in AUTEUR', meta: { AUTEUR: Buffer.concat([Buffer.from('Автор '), Buffer.from([0xff]), Buffer.from(' Тест\n')]) }, auteur: 'Автор � Тест' },
+  ];
+  for (const g of gevallen) {
+    const auditVoor = audit().length;
+    const p = pakket(pk, g.versie, { meta: g.meta }); onderteken(p, goed); leg(p);
+    const r = draai();
+    check(`${g.naam}: geïnstalleerd (klaar)`, r.status === 0 && status().staat === 'klaar' && status().versie === g.versie, `${r.status} ${JSON.stringify(status())} ${String(r.stderr).slice(-400)}`);
+    check(`${g.naam}: gebeurtenissen.jsonl en stappen.jsonl blijven geldige JSON per regel`, regelsGeldig('gebeurtenissen.jsonl') && regelsGeldig('stappen.jsonl'));
+    const ok = audit().filter((e) => e.code === 'OK' && e.tag === g.versie).pop();
+    check(`${g.naam}: OK-gebeurtenis in de audit met de auteur op een heel teken`, !!ok && ok.uk.includes(`Автор: ${g.auteur},`) && ok.nl.includes(`Auteur: ${g.auteur},`), JSON.stringify(ok));
+    check(`${g.naam}: eerdere auditregels niet gewist`, audit().length > auditVoor, `${auditVoor} → ${audit().length}`);
+    const inhoud = runStappen().find((s) => s.stap === 'inhoud' && s.staat === 'ok');
+    check(`${g.naam}: stap «inhoud» ok aanwezig en noemt de auteur op een heel teken`, !!inhoud && String(inhoud.uk).includes(`(автор: ${g.auteur},`), JSON.stringify(runStappen().map((s) => `${s.stap}:${s.staat}`)));
+    if (!g.auteur.includes('�')) check(`${g.naam}: geen U+FFFD verzonnen bij een geldige tekst`, !!ok && !ok.uk.includes('�') && !String(inhoud?.uk ?? '').includes('�'));
+  }
 }
 
 type NooitStilCtx = {
@@ -540,7 +609,10 @@ function plafond(check: (n: string, ok: boolean, i?: string) => void) {
   const unit = lees('deploy/mcp/mijn-ruimte-mcp.service');
   check('plafond: MCP-unit met NoNewPrivileges=yes', /^NoNewPrivileges=yes/m.test(unit));
   const uitrol = lees(SCRIPT);
-  check('plafond: uitrol controleert handtekening vóór uitpakken', uitrol.indexOf('ssh-keygen -Y verify') > 0 && uitrol.indexOf('ssh-keygen -Y verify') < uitrol.indexOf('extractall'));
+  // Echte aanroepen, niet de commentaarkop bovenaan (die noemt «ssh-keygen -Y verify» ook; met indexOf was deze check altijd groen).
+  const uitrolCode = zonderCommentaar(uitrol);
+  const verifieerOp = uitrolCode.search(/\bssh-keygen -Y verify\b/), uitpakOp = uitrolCode.search(/^\s*tf\.extractall\(/m);
+  check('plafond: uitrol controleert handtekening vóór uitpakken', verifieerOp > 0 && uitpakOp > 0 && verifieerOp < uitpakOp, `${verifieerOp} ${uitpakOp}`);
   check('plafond: uitrol pakt uit met filter="data"', /^\s*tf\.extractall\(doel, members=leden, filter="data"\)\s*$/m.test(uitrol));
   check('plafond: uitrol negeert pad-overrides als root', /id -u\)" -eq 0 \]; then\s*\n?\s*unset UITROL_INBOX/.test(uitrol) || /unset UITROL_INBOX UITROL_WERK/.test(uitrol));
   const archief = lees('deploy/archief-maken.sh');

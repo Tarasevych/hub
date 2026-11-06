@@ -67,6 +67,9 @@ status() { # status <staat> <code> <uk> <nl> [versie]
   python3 - "$tmp" "$1" "$2" "$3" "$4" "${5:-}" "$MODUS" "$REDEN_TEKST" "$CONTEXT_BESTAND" <<'PY'
 import json, sys, datetime, os
 path, staat, code, uk, nl, versie, methode, reden, ctx = sys.argv[1:10]
+# UITROL-UTF8-001: tekst uit argv kan ongeldige UTF-8 bevatten (los surrogaat → json.dump faalt); maak er U+FFFD van.
+# Текст з argv може містити невалідний UTF-8 (сурогат ламає json.dump) — замінюємо на U+FFFD.
+uk, nl, reden = (os.fsencode(t).decode("utf-8", "replace") for t in (uk, nl, reden))
 d = {"staat": staat, "code": code, "uk": uk, "nl": nl, "versie": versie, "methode": methode,
      "tijd": datetime.datetime.now(datetime.timezone.utc).isoformat()}
 if reden.strip():
@@ -76,7 +79,8 @@ if ctx and os.path.isfile(ctx):
         d["context"] = [r[:300] for r in open(ctx, encoding="utf-8", errors="replace").read().splitlines() if r.strip()][:8]
     except OSError:
         pass
-json.dump(d, open(path, "w"), ensure_ascii=False)
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(d, f, ensure_ascii=False)
 PY
   chgrp "$GROEP" "$tmp" 2>/dev/null || true
   chmod 0640 "$tmp"
@@ -90,6 +94,9 @@ gebeurtenis() { # gebeurtenis <code> <niveau> <uk> <nl>  (zelfde vorm als gitops
     python3 - "$STATUS_DIR/gebeurtenissen.jsonl" "$tmp" uitrol "$1" "$2" "$3" "$4" "${VERSIE:-}" "$MODUS" "$REDEN_TEKST" "$CONTEXT_BESTAND" <<'PY'
 import json, sys, datetime, secrets, os
 pad, tmp, bron, code, niveau, uk, nl, tag, herkomst, reden, ctx = sys.argv[1:12]
+# UITROL-UTF8-001: zonder dit liet één ongeldig teken (bv. half Cyrillisch teken uit AUTEUR) python falen → onder `set -e` stierf het
+# script vóór de OK-regel. Невалідні байти → U+FFFD, щоб журнал подій ніколи не ламався.
+uk, nl, tag, reden = (os.fsencode(t).decode("utf-8", "replace") for t in (uk, nl, tag, reden))
 nu = datetime.datetime.now(datetime.timezone.utc)
 regel_d = {"id": nu.strftime("%Y%m%dT%H%M%S%fZ") + "-" + secrets.token_hex(4), "tijd": nu.isoformat(), "bron": bron,
            "code": code, "niveau": niveau, "uk": uk, "nl": nl, "tag": tag}
@@ -137,8 +144,11 @@ stap() { # stap <id> <bezig|ok|fout> <pct> <uk> <nl>
     flock 7
     tmp="$(mktemp "$STATUS_DIR/.stap.XXXXXX")" || exit 0
     python3 - "$STATUS_DIR/stappen.jsonl" "$tmp" "$RUN" "${VERSIE:-}" "$MODUS" "$1" "$2" "$3" "$4" "$5" <<'PY' || { rm -f -- "$tmp"; exit 0; }
-import json, sys, datetime
+import json, sys, datetime, os
 pad, tmp, run, versie, methode, stap, staat, pct, uk, nl = sys.argv[1:11]
+# UITROL-UTF8-001: ongeldige UTF-8 in de tekst → U+FFFD (vroeger ging de stapregel dan stil verloren).
+# Невалідний UTF-8 у тексті → U+FFFD (раніше рядок кроку мовчки губився).
+uk, nl, versie = (os.fsencode(t).decode("utf-8", "replace") for t in (uk, nl, versie))
 try:
     pct = max(0, min(100, int(pct)))
 except ValueError:
@@ -483,7 +493,33 @@ fi
 # джерела (passkey/підпис/gitops/мобільний додаток). Файли додає скрипт збирання (deploy/uitrol/maak-*pakket).
 # Een ontbrekend bestand geeft een LEGE tekst, geen fout: `head` op een ontbrekend pad gaf rc 1 en onder pipefail stierf het hele script
 # vóór `weiger GEEN_AUTEUR` (status bleef «bezig CONTROLE»). Het `|| true` binnen de accolades houdt de pijplijn op 0.
-meta() { { head -c "$2" -- "$BRON/$1" 2>/dev/null || true; } | tr -d '\000' | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
+# UITROL-UTF8-001 (06.11.2026): vroeger `head -c "$2"`, dus knippen per BYTE. Viel de grens midden in een Cyrillisch teken (AUTEUR
+# van 200+ bytes), dan kwam er een half teken in $AUTEUR; python3 in stap()/gebeurtenis() kreeg een los surrogaat en faalde bij het
+# schrijven van de JSON (stapregel «inhoud» stil weg, OK-gebeurtenis ontbrak en het script stierf ná de installatie). Nu knipt Python
+# op het begin van een heel UTF-8-teken (hoogstens 3 vervolgbytes terug) en worden ongeldige bytes U+FFFD: zichtbaar, niet stil weg.
+# Раніше `head -c` різав побайтово: пів кириличного символу ламало JSON у stap()/gebeurtenis(). Тепер обрізання — по цілому
+# символу UTF-8, а невалідні байти стають U+FFFD (видно, а не зникають мовчки). Відсутній файл, як і раніше, дає порожній текст.
+meta() { # meta <bestand> <max-bytes>
+  { python3 - "$BRON/$1" "$2" <<'PY' 2>/dev/null || true
+import sys
+pad, grens = sys.argv[1], int(sys.argv[2])
+try:
+    with open(pad, "rb") as f:
+        ruw = f.read(grens + 1)  # grens + 1: zo is te zien of er geknipt wordt en of byte <grens> een vervolgbyte is
+except OSError:
+    sys.exit(0)
+if len(ruw) > grens:
+    k = grens
+    # terug naar het begin van het teken dat de grens overschrijdt (vervolgbytes zijn 10xxxxxx; een UTF-8-teken heeft er hoogstens 3)
+    while k > max(0, grens - 3) and (ruw[k] & 0xC0) == 0x80:
+        k -= 1
+    if (ruw[k] & 0xC0) == 0x80:
+        k = grens  # geen geldig begin binnen 3 bytes: ongeldige bytes, knip gewoon op de grens (die worden hieronder U+FFFD)
+    ruw = ruw[:k]
+sys.stdout.buffer.write(ruw.replace(b"\0", b"").decode("utf-8", "replace").encode("utf-8"))
+PY
+  } | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
 AUTEUR="$(meta AUTEUR 200)"
 AGENT="$(meta AGENT 40)"
 SAMENVATTING="$(meta SAMENVATTING 8000 | tr '\n' ' ')"

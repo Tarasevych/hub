@@ -163,8 +163,11 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
   useEffect(() => { if ((effectiveTab === 'overview' || effectiveTab === 'accounts') && driveAccess && drivePreview === null && !previewLoading) void loadDrivePreview(); }, [effectiveTab, driveAccess, drivePreview, previewLoading]);
   useEffect(() => { if (!activeWorkspaceId && focus) { setFocus(false); onFocusChange(false); } }, [activeWorkspaceId, focus]);
 
+  // ZOEKDIEP-001: een item dat via een diepe link of zoekresultaat buiten de bootstrap is geopend, staat niet in data.items.
+  // Het resume heeft het dan al (gezet door openItem en door /items/:id/open op de server) — dat item mag een energie-, focus-
+  // of tabwissel niet stilletjes wissen. De server controleert de eigenaar opnieuw (ownerItem).
   const saveResume = async (patch: Partial<Resume>) => {
-    const requestedItemId = patch.currentItemId ?? data.resume?.currentItemId ?? '', item = requestedItemId ? data.items.find(value => value.id === requestedItemId) : undefined, requestedWorkspaceId = patch.currentWorkspaceId ?? (activeWorkspaceId || data.resume?.currentWorkspaceId || ''), workspaceId = item ? item.workspaceId : data.workspaces.some(value => value.id === requestedWorkspaceId) ? requestedWorkspaceId : '', itemId = item?.id || '', next = { currentWorkspaceId: workspaceId, currentItemId: itemId, focus: Boolean((patch.focus ?? focus) && workspaceId), energy: patch.energy ?? energy }, fingerprint = JSON.stringify([next.currentWorkspaceId, next.currentItemId, next.focus, next.energy]);
+    const requestedItemId = patch.currentItemId ?? data.resume?.currentItemId ?? '', item = requestedItemId ? data.items.find(value => value.id === requestedItemId) : undefined, uitResume = !item && Boolean(requestedItemId) && requestedItemId === data.resume?.currentItemId, requestedWorkspaceId = patch.currentWorkspaceId ?? (activeWorkspaceId || data.resume?.currentWorkspaceId || ''), workspaceId = item ? item.workspaceId : uitResume ? data.resume?.currentWorkspaceId || '' : data.workspaces.some(value => value.id === requestedWorkspaceId) ? requestedWorkspaceId : '', itemId = item?.id || (uitResume ? requestedItemId : ''), next = { currentWorkspaceId: workspaceId, currentItemId: itemId, focus: Boolean((patch.focus ?? focus) && workspaceId), energy: patch.energy ?? energy }, fingerprint = JSON.stringify([next.currentWorkspaceId, next.currentItemId, next.focus, next.energy]);
     if (resumeFingerprint.current === fingerprint) return;
     resumeFingerprint.current = fingerprint;
     setData(current => ({ ...current, resume: { ...next, updatedAt: Date.now() } }));
@@ -236,14 +239,20 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
     catch (caught) { notify(t(`Статус не збережено (${errorCode(caught)}).`, `De status is niet opgeslagen (${errorCode(caught)}).`),'error'); }
   };
 
-  const openItem = async (item: CloudItem) => {
+  // ZOEKDIEP-001: uitZoek = een diepe link naar een item dat niet in de bootstrap zat (grote bibliotheek). Dan komen titel en
+  // werkruimte uit het antwoord van de server (die controleert de eigenaar), en «niet gevonden» krijgt een eigen melding.
+  const openItem = async (gegeven: CloudItem, uitZoek = false) => {
     try {
-      const response = await post<{ kind: 'file' | 'link' | 'note'; url?: string; text?: string; name?:string; mimeType?:string; sizeBytes?:number; data?:string }>(`/api/owner/cloud/items/${item.id}/open`);
+      const response = await post<{ kind: 'file' | 'link' | 'note'; url?: string; text?: string; name?:string; mimeType?:string; sizeBytes?:number; data?:string; title?: string; workspaceId?: string }>(`/api/owner/cloud/items/${encodeURIComponent(gegeven.id)}/open`);
+      const item: CloudItem = { ...gegeven, title: gegeven.title || response.data.title || response.data.name || '', workspaceId: gegeven.workspaceId || response.data.workspaceId || '' };
       const localResume = { currentWorkspaceId: item.workspaceId, currentItemId: item.id, focus, energy, updatedAt: Date.now() }; resumeFingerprint.current = JSON.stringify([localResume.currentWorkspaceId, localResume.currentItemId, localResume.focus, localResume.energy]); setData(current => ({ ...current, resume: localResume }));
       if (response.data.kind === 'note') setOpenedNote({ title: item.title, text: response.data.text || '' });
       else if (response.data.kind === 'file' && response.data.data && isMermaidBestand(response.data.name || item.originalName)) setOpenedSchema({ title: item.title, code: new TextDecoder().decode(Uint8Array.from(atob(response.data.data), (c) => c.charCodeAt(0))) });
       else if(response.data.kind==='file'&&response.data.data){const raw:CloudRawFile={name:response.data.name||item.originalName||item.title,mimeType:response.data.mimeType||item.mimeType||'application/octet-stream',sizeBytes:Number(response.data.sizeBytes||item.sizeBytes||0),data:response.data.data};setOpenedFile(await loadCloudFilePreview(raw))}else if (response.data.url) window.open(response.data.url, '_blank', 'noopener,noreferrer');
-    } catch (caught) { notify(t(`Не вдалося відкрити (${errorCode(caught)}).`, `Openen lukte niet (${errorCode(caught)}).`),'error'); }
+    } catch (caught) {
+      if (uitZoek && /NOT_FOUND|ANDERE_RUIMTE/.test(errorCode(caught))) notify(t('Елемент із пошуку не знайдено в хмарі: можливо, його вже видалено або переміщено.', 'Het item uit de zoekresultaten staat niet in de cloud: misschien is het verwijderd of verplaatst.'),'error');
+      else notify(t(`Не вдалося відкрити (${errorCode(caught)}).`, `Openen lukte niet (${errorCode(caught)}).`),'error');
+    }
   };
 
   const openItemConsumed = useRef(false);
@@ -253,8 +262,15 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
     try { requested = new URL(location.href).searchParams.get('open_item_id') || ''; } catch { requested = ''; }
     if (!requested) return;
     const known = [...data.items, ...data.inbox, ...data.recent].find(value => value.id === requested);
-    if (!known) return;
     openItemConsumed.current = true;
+    // ZOEKDIEP-001: staat het item niet in de bootstrap (die bevat alleen een deel van een grote bibliotheek), dan vraagt de pagina
+    // het bij de server op via /items/:id/open (eigenaar gecontroleerd). Pas als de server het niet kent: een eerlijke melding.
+    if (!known) {
+      try { const current = new URL(location.href); current.searchParams.delete('open_item_id'); history.replaceState({}, '', `${current.pathname}${current.search}${current.hash}`); } catch {}
+      if (!/^[\x21-\x7e]{1,200}$/.test(requested)) { notify(t('Елемент із пошуку не знайдено в хмарі: можливо, його вже видалено або переміщено.', 'Het item uit de zoekresultaten staat niet in de cloud: misschien is het verwijderd of verplaatst.'), 'error'); return; }
+      const stub: CloudItem = { id: requested, workspaceId: '', suggestedWorkspaceId: '', kind: 'file', title: '', originalName: '', description: '', sourceUrl: '', mimeType: '', sizeBytes: 0, tags: [], people: [], status: 'captured', aiState: 'fallback', aiConfidence: 0, createdAt: 0, updatedAt: 0, openedAt: 0, excerpt: '', downloadable: false };
+      void openItem(stub, true); return;
+    }
     try { const current = new URL(location.href); current.searchParams.delete('open_item_id'); history.replaceState({}, '', `${current.pathname}${current.search}${current.hash}`); } catch {}
     void openItem(known);
   }, [loading, data.items, data.inbox, data.recent]);

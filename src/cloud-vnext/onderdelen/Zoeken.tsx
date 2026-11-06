@@ -4,13 +4,15 @@
 // en de markering gebruikt de posities van de SERVER via stukkenUitPosities (tekstknopen + <mark>, nooit innerHTML).
 // De stijl leunt op de gedeelde bouwstenen uit cloud-vnext.css (blok, knop, leeg, melding); de eigen regels hieronder zijn
 // alleen lay-out met ontwerp-tokens. Overgangen: eigen bestand → sessionStorage 'cvn-open' + tabblad files;
-// Drive-bestand → sessionStorage 'cvn-drive-open' + tabblad google (de projectie-id uit route.params.drive).
+// Drive-bestand → sessionStorage 'cvn-drive-open' ({ bestand, principal }) + tabblad google. Sinds ZOEKDIEP-001 (05.11.2026) staan
+// de ids onder de namen van shared/zoek-diepe-link.ts (open_item_id, open_file_id + open_drive_principal); de server vertaalt oude routes.
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ExternalLink, File, FileArchive, FileCode, FileImage, FileMusic, FileSpreadsheet, FileText, FileVideo, Folder, Link2, Presentation, Search, StickyNote, X } from 'lucide-react';
 import { bronStand, isAfgebroken, zoeken, type Gesloten, type ZoekBron, type ZoekBronStand, type ZoekTreffer, type ZoekUitkomst } from '../../zoek/zoek-api';
 import { highlightParts, stukkenUitPosities } from '../../zoek/zoek-kern';
 import { canonicalNavigationUrl } from '../../canoniek-navigatie';
 import { BRON_STAND_NAAM } from '../../../shared/zoek-model';
+import { DIEPE_PARAMS, diepeRoute } from '../../../shared/zoek-diepe-link';
 import { CLOUD_VNEXT_LIMIETEN, cloudSoort, type CloudSoort } from '../../../shared/cloud-vnext-model';
 import { foutTekst, locale, tr, type Lang } from '../tekst';
 import type { OnderdeelProps } from '../CloudPagina';
@@ -110,14 +112,14 @@ export default function Zoeken({ lang, naarTab }: OnderdeelProps) {
   }, [schoon, actief, voer]);
 
   const openTreffer = useCallback((r: ZoekTreffer) => {
-    const params = (r.route?.params || {}) as Record<string, string>;
+    const params = (diepeRoute(r.route, r.soort)?.params || {}) as Record<string, string>;
     if (r.bron === 'drive') {
-      const driveId = typeof params.drive === 'string' && params.drive ? params.drive : '';
-      if (driveId) { try { sessionStorage.setItem('cvn-drive-open', driveId); } catch { /* opslag dicht (privévenster): gewoon navigeren */ } }
+      const driveId = params[DIEPE_PARAMS.bestand] || '';
+      if (driveId) { try { sessionStorage.setItem('cvn-drive-open', JSON.stringify({ bestand: driveId, principal: params[DIEPE_PARAMS.drivePrincipal] || '' })); } catch { /* opslag dicht (privévenster): gewoon navigeren */ } }
       naarTab('google');
       return;
     }
-    const itemId = typeof params.item === 'string' && params.item ? params.item : r.id.split(':')[0];
+    const itemId = params[DIEPE_PARAMS.item] || r.id.split(':')[0];
     try { sessionStorage.setItem('cvn-open', itemId); } catch { /* opslag dicht: gewoon navigeren */ }
     naarTab('files');
   }, [naarTab]);

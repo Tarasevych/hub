@@ -1,5 +1,6 @@
 // MAILFIT-001: echte MailFunctionalView met een volledig fictieve, nog niet gekoppelde mailbox.
 // De tests werken niet met een eigenaarssessie of een echte OAuth-doorvoer.
+import '../../src/ontwerp/tokens.css'; // tokens van de site (DESIGN-001): de echte component-CSS gebruikt ze zonder terugval
 import { createRoot } from 'react-dom/client';
 import MailFunctionalView from '../../src/MailFunctioneelWeergave';
 

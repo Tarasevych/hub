@@ -1,5 +1,6 @@
 // MAILPOLISH-001 · Vite/Chromium-pagina met ECHTE React-componenten, uitsluitend fictieve data.
 // Dit is geen tweede implementatie of productiepagina. OAuth blijft een simulatie in de preview.
+import '../../src/ontwerp/tokens.css'; // tokens van de site (DESIGN-001): de echte component-CSS gebruikt ze zonder terugval
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import MailKoppelVenster from '../../src/mail/MailKoppelVenster';
