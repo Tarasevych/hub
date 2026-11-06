@@ -368,6 +368,12 @@ export async function main(): Promise<number> {
   const lai = statusPosts().at(-1);
   check('lokaleAi: alleen {aan, apis} met bekende API-namen (ontdubbeld); invoer/uitvoer gaan nooit naar de pagina',
     alleenPubliek(lai) && JSON.stringify(lai.lokaleAi) === '{"aan":true,"apis":["prompt","translator"]}' && !JSON.stringify(posts).includes('GEHEIME-'), JSON.stringify(lai.lokaleAi));
+  // 0.9.1: offscreen.html mat de stand per API in de extensie; alleen bekende API's en stand-namen gaan door, nooit tekst of fouten.
+  await naarBrug({ op: 'status-push', status: { versie: '0.9.1', lokaleAi: { aan: true, apis: ['prompt'], stand: { prompt: 'available', writer: 'stil', summarizer: 'GEHEIME-FOUT', '__proto__x': 'available', vreemd: 'available' } } } });
+  await rust();
+  const lai2 = statusPosts().at(-1);
+  check('lokaleAi.stand (offscreen, 0.9.1): alleen bekende API\'s met bekende standen; onbekende waarden weg',
+    alleenPubliek(lai2) && JSON.stringify(lai2.lokaleAi) === '{"aan":true,"apis":["prompt"],"stand":{"prompt":"available","writer":"stil"}}' && !JSON.stringify(posts).includes('GEHEIME-'), JSON.stringify(lai2.lokaleAi));
   const lev = await naarBrug({ op: 'brug?' });
   check("op 'brug?' (zorgVoorBrug): levensteken zonder gegevens", lev?.ok === true && JSON.stringify(Object.keys(lev.data)) === '["versie"]', JSON.stringify(lev));
   const echtId = chrome.runtime.id;

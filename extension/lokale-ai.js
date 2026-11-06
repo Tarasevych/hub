@@ -33,6 +33,7 @@
     autoDownload: false,             // «!» model (≈ GB's) automatisch downloaden zonder aparte klik
     tabTekst: false,                 // «!» tekst van het actieve tarasevych.com-tabblad aan de lokale AI geven
     multimodaal: false,              // «!» afbeeldingen als invoer voor de Prompt API (experimenteel)
+    siteToegang: false,              // «!» pagina's van *.tarasevych.com mogen de lokale AI gebruiken (via offscreen.html)
     chatHulp: true,                  // knoppen in de zijpaneelchat (proeflezen/herschrijven invoer, antwoord vertalen)
     vertaalInvoer: true,             // invoer in een taal die het model niet kent eerst naar het Engels vertalen
     vertaalUitvoer: true,            // uitvoer terugvertalen naar de taal van de interface (uk/nl)
@@ -76,7 +77,7 @@
     const p = sub('prompt'), s = sub('summarizer'), w = sub('writer'), rw = sub('rewriter'), tr = sub('translator'), pr = sub('proofreader');
     return {
       aan: bool(r.aan, STANDAARD.aan), apis,
-      autoDownload: bool(r.autoDownload, false), tabTekst: bool(r.tabTekst, false), multimodaal: bool(r.multimodaal, false),
+      autoDownload: bool(r.autoDownload, false), tabTekst: bool(r.tabTekst, false), multimodaal: bool(r.multimodaal, false), siteToegang: bool(r.siteToegang, false),
       chatHulp: bool(r.chatHulp, true), vertaalInvoer: bool(r.vertaalInvoer, true), vertaalUitvoer: bool(r.vertaalUitvoer, true),
       doelTaal: r.doelTaal === 'auto' ? 'auto' : taal(r.doelTaal, 'auto', VERTAAL_TALEN),
       prompt: { systeem: str(p.systeem, ''), temperatuur: getalTekst(p.temperatuur), topK: getalTekst(p.topK), taal: taal(p.taal, 'en', MODEL_TALEN), schema: str(p.schema, '', 8000) },

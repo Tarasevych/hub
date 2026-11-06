@@ -155,6 +155,9 @@
       schakel('ai-multimodaal', 'Зображення як вхід для діалогу (Prompt API, експериментально)', 'Afbeeldingen als invoer voor het gesprek (Prompt API, experimenteel)', c.multimodaal, zet('multimodaal'),
         { gevaar: true, uitlegUk: 'Експериментальна можливість: потребує GPU, може бути недоступна або працювати нестабільно.', uitlegNl: 'Experimentele mogelijkheid: vraagt een GPU, kan ontbreken of onstabiel werken.' }),
 
+      schakel('ai-site-toegang', 'Дозволити сторінкам Mijn Ruimte (*.tarasevych.com) використовувати локальний ШІ через розширення', 'Pagina’s van Mijn Ruimte (*.tarasevych.com) de lokale AI via de extensie laten gebruiken', c.siteToegang, zet('siteToegang'),
+        { gevaar: true, uitlegUk: 'Сторінка сайту зможе надсилати текст локальній моделі (через невидимий документ offscreen.html) і отримувати результат. Текст обробляється лише на цьому пристрої, але сторінка використовує ресурси вашого комп’ютера (GPU/RAM). Модель ніколи не завантажується без вашого натискання; не більше 20 запитів за хвилину.', uitlegNl: 'Een pagina van de site kan tekst naar het lokale model sturen (via het onzichtbare document offscreen.html) en het resultaat terugkrijgen. De tekst wordt alleen op dit apparaat verwerkt, maar de pagina gebruikt de middelen van uw computer (GPU/RAM). Het model wordt nooit zonder uw klik gedownload; hoogstens 20 verzoeken per minuut.' }),
+
       maak('h3', null, t('Мова й інтеграція', 'Taal en integratie')),
       schakel('ai-vertaal-in', 'Перекладати вхід мовою моделі, якщо модель не знає мови тексту (українська, нідерландська…)', 'Invoer naar de modeltaal vertalen als het model de taal niet kent (Oekraïens, Nederlands…)', c.vertaalInvoer, zet('vertaalInvoer')),
       schakel('ai-vertaal-uit', 'Перекладати відповідь мовою інтерфейсу', 'Antwoord naar de taal van de interface vertalen', c.vertaalUitvoer, zet('vertaalUitvoer')),

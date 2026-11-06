@@ -61,9 +61,20 @@
     'gekoppeld', 'verbonden', 'staat', 'exp', 'caps', 'domeinen', 'aiVerbonden', 'agentId', 'lokaleAi']);
   /** 0.9.1: ingebouwde AI van Chrome — alleen de KEUZES van de gebruiker (hoofdschakelaar + welke API's aan), nooit tekst of uitvoer. */
   const LAI_APIS = Object.freeze(['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader']);
+  // 0.9.1: plus de stand per API die de extensie zelf mat (offscreen.html, alleen availability()); alleen namen uit deze lijst.
+  const LAI_STANDEN = Object.freeze(['available', 'downloadable', 'downloading', 'unavailable', 'ontbreekt', 'stil', 'fout']);
   function laiPubliek(bron) {
     const d = bron && typeof bron === 'object' ? bron : null;
-    return d ? { aan: d.aan === true, apis: Array.isArray(d.apis) ? [...new Set(d.apis.filter((x) => LAI_APIS.includes(x)))] : [] } : null;
+    if (!d) return null;
+    const uit = { aan: d.aan === true, apis: Array.isArray(d.apis) ? [...new Set(d.apis.filter((x) => LAI_APIS.includes(x)))] : [] };
+    if (typeof d.siteToegang === 'boolean') uit.siteToegang = d.siteToegang; // 0.9.2: «!» toegang voor pagina's van de site
+    const st = d.stand && typeof d.stand === 'object' && !Array.isArray(d.stand) ? d.stand : null;
+    if (st) {
+      const s = {};
+      for (const id of LAI_APIS) if (LAI_STANDEN.includes(st[id])) s[id] = st[id];
+      if (Object.keys(s).length) uit.stand = s;
+    }
+    return uit;
   }
   /** 0.6.1 (punt 7): alleen deze vier velden over het debuggerrecht gaan naar de pagina; nooit paden, opslag of foutteksten. */
   const DIAG_STANDEN = Object.freeze(['ja', 'nee', 'geweigerd', 'ingetrokken', 'niet-aanvraagbaar']);

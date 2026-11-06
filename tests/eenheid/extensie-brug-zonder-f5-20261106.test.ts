@@ -103,8 +103,8 @@ export async function main(): Promise<number> {
   // ---- 2. na installeren/bijwerken/herladen (onInstalled): opnieuw, voor tabbladen die intussen hun brug verloren ----
   nep.metBrug.delete(11); nep.metBrug.delete(12);
   const voor = nep.geplaatst.length;
-  await nep.luister.installed[0]({ reason: 'update', previousVersion: '0.9.0' });
-  check('onInstalled (update 0.9.0 → 0.9.1): beide eigen tabbladen krijgen de brug terug, zonder dat de gebruiker iets doet',
+  await nep.luister.installed[0]({ reason: 'update', previousVersion: '0.9.1' });
+  check('onInstalled (update 0.9.1 → 0.9.2): beide eigen tabbladen krijgen de brug terug, zonder dat de gebruiker iets doet',
     await tot(() => nep.metBrug.has(11) && nep.metBrug.has(12)) && nep.geplaatst.slice(voor).filter((g) => g.files.includes('bridge.js')).length === 2, JSON.stringify(nep.geplaatst.slice(voor)));
 
   // ---- 3. zelftest (opties): ontbreekt de brug, dan plaatst de test hem eerst — «bridge» slaagt zonder F5 ----
@@ -124,8 +124,8 @@ export async function main(): Promise<number> {
   // ---- 4. status voor eigen pagina's: geen oude e-mail zonder koppeling; keuzes van de lokale AI (geen tekst) ----
   const st = await vraag(intern, { op: 'status' }, optiesTab);
   check('status zonder koppeling: accountEmail leeg (de kop toont «Увійти», nooit een oude e-mail)', st && st.accountEmail === '' && st.sloten?.prive?.gekoppeld === false, JSON.stringify(st && { accountEmail: st.accountEmail }));
-  check('status: lokaleAi = alleen hoofdschakelaar + ingeschakelde API-namen uit de opties (summarizer en proofreader uit)',
-    JSON.stringify(st?.lokaleAi) === '{"aan":true,"apis":["prompt","writer","rewriter","translator","detector"]}', JSON.stringify(st?.lokaleAi));
+  check('status: lokaleAi = alleen hoofdschakelaar + ingeschakelde API-namen uit de opties (summarizer en proofreader uit) + «!» siteToegang (standaard uit)',
+    JSON.stringify(st?.lokaleAi) === '{"aan":true,"apis":["prompt","writer","rewriter","translator","detector"],"siteToegang":false}', JSON.stringify(st?.lokaleAi));
   delete opslag.lokaleAi;
   const st2 = await vraag(intern, { op: 'status' }, optiesTab);
   check('status: nog nooit opgeslagen → standaard van lokale-ai.js (alles aan)', st2?.lokaleAi?.aan === true && st2.lokaleAi.apis.length === 7, JSON.stringify(st2?.lokaleAi));

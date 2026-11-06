@@ -27,17 +27,41 @@ export const LOKALE_AI_INFO: Readonly<Record<LokaleAiApi, LokaleAiInfo>> = Objec
   proofreader: { glob: 'Proofreader', uk: 'Коректура (Proofreader)', nl: 'Proeflezen (Proofreader)', vlag: 'proofreader-api-for-gemini-nano', proef: true },
 });
 
-/** Wat Chrome op de pagina zegt (availability()) of 'ontbreekt' (geen globale API) / 'fout' (availability() gooide). */
-export type PaginaStand = 'available' | 'downloadable' | 'downloading' | 'unavailable' | 'ontbreekt' | 'fout';
-const PAGINA_STANDEN: readonly PaginaStand[] = ['available', 'downloadable', 'downloading', 'unavailable', 'ontbreekt', 'fout'];
+/**
+ * Wat Chrome zegt (availability()) of 'ontbreekt' (geen globale API) / 'fout' (availability() gooide) / 'stil' (availability()
+ * antwoordde niet binnen de tijd: modelcomponent nog niet geregistreerd — alleen gemeten door de extensie, 0.9.1 offscreen.html).
+ */
+export type PaginaStand = 'available' | 'downloadable' | 'downloading' | 'unavailable' | 'ontbreekt' | 'stil' | 'fout';
+const PAGINA_STANDEN: readonly PaginaStand[] = ['available', 'downloadable', 'downloading', 'unavailable', 'ontbreekt', 'stil', 'fout'];
 export const paginaStandVan = (v: unknown): PaginaStand => (typeof v === 'string' && (PAGINA_STANDEN as readonly string[]).includes(v) ? v as PaginaStand : 'fout');
 
-/** Keuzes uit de extensie (publieke status 0.9.0): hoofdschakelaar + ingeschakelde API's. null = extensie meldt niets. */
-export type LokaleAiKeuze = { aan: boolean; apis: LokaleAiApi[] };
+/**
+ * Keuzes uit de extensie (publieke status 0.9.0): hoofdschakelaar + ingeschakelde API's. null = extensie meldt niets.
+ * 0.9.1: `stand` = wat Chrome IN DE EXTENSIE meldt (offscreen.html meet availability(), nooit create()); ontbreekt bij 0.9.0.
+ */
+export type LokaleAiKeuze = { aan: boolean; apis: LokaleAiApi[]; siteToegang?: boolean; stand?: Partial<Record<LokaleAiApi, PaginaStand>> };
 export function filterLokaleAiKeuze(v: unknown): LokaleAiKeuze | null {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
   const d = v as Record<string, unknown>;
-  return { aan: d.aan === true, apis: Array.isArray(d.apis) ? [...new Set(d.apis.filter(isLokaleAiApi))] : [] };
+  const uit: LokaleAiKeuze = { aan: d.aan === true, apis: Array.isArray(d.apis) ? [...new Set(d.apis.filter(isLokaleAiApi))] : [] };
+  if (typeof d.siteToegang === 'boolean') uit.siteToegang = d.siteToegang;
+  const st = d.stand && typeof d.stand === 'object' && !Array.isArray(d.stand) ? d.stand as Record<string, unknown> : null;
+  if (st) {
+    const s: Partial<Record<LokaleAiApi, PaginaStand>> = {};
+    for (const api of LOKALE_AI_APIS) if (typeof st[api] === 'string' && (PAGINA_STANDEN as readonly string[]).includes(st[api] as string)) s[api] = st[api] as PaginaStand;
+    if (Object.keys(s).length) uit.stand = s;
+  }
+  return uit;
+}
+
+/**
+ * Welke meting telt voor een API: de meting van de extensie (offscreen.html) gaat vóór die van de pagina, want de extensie is
+ * waar de functies echt draaien (zijpaneel/opties) en sommige API's bestaan in Chrome alleen voor extensies. null = nog niets.
+ */
+export function kiesStand(api: LokaleAiApi, pagina: Record<LokaleAiApi, PaginaStand> | null, keuze: LokaleAiKeuze | null): { stand: PaginaStand; bron: 'extensie' | 'pagina' } | null {
+  const ext = keuze?.stand?.[api];
+  if (ext) return { stand: ext, bron: 'extensie' };
+  return pagina ? { stand: pagina[api], bron: 'pagina' } : null;
 }
 
 export type LaiRegel = { stand: 'ja' | 'let-op' | 'nee'; uk: string; nl: string };
@@ -45,15 +69,18 @@ export type LaiRegel = { stand: 'ja' | 'let-op' | 'nee'; uk: string; nl: string 
  * Eén regel per API, zuiver: combineert wat Chrome meldt met wat de extensie mag. Nooit groen als één van beide ontbreekt.
  * `extVersie` leeg = geen extensie op deze pagina; onder 0.9.0 kent de extensie de lokale AI niet.
  */
-export function laiRegel(api: LokaleAiApi, pagina: PaginaStand, keuze: LokaleAiKeuze | null, extVersie: string, versieOuder: (a: string, b: string) => boolean): LaiRegel {
+export function laiRegel(api: LokaleAiApi, pagina: PaginaStand, keuze: LokaleAiKeuze | null, extVersie: string, versieOuder: (a: string, b: string) => boolean, bron: 'pagina' | 'extensie' = 'pagina'): LaiRegel {
   const i = LOKALE_AI_INFO[api];
+  // 0.9.1: «Chrome (у розширенні)» = gemeten door de extensie in offscreen.html; «Chrome» = gemeten op deze pagina.
+  const [cu, cn] = bron === 'extensie' ? ['Chrome (у розширенні)', 'Chrome (in de extensie)'] : ['Chrome', 'Chrome'];
   const chrome: Record<PaginaStand, [LaiRegel['stand'], string, string]> = {
-    available: ['ja', 'Chrome: модель готова на цьому пристрої', 'Chrome: model staat klaar op dit apparaat'],
-    downloadable: ['let-op', 'Chrome: модель можна завантажити (кілька ГБ, лише після вашого натискання в розширенні)', 'Chrome: model kan gedownload worden (enkele GB, alleen na uw klik in de extensie)'],
-    downloading: ['let-op', 'Chrome: модель зараз завантажується', 'Chrome: model wordt nu gedownload'],
-    unavailable: ['nee', 'Chrome: цей пристрій не підтримує (вимоги до пам’яті, GPU або диска)', 'Chrome: dit apparaat ondersteunt het niet (eisen aan geheugen, GPU of schijf)'],
-    ontbreekt: ['nee', `Chrome: API немає в цій версії — оновіть Chrome або ввімкніть chrome://flags/#${i.vlag}${i.proef ? ' (експериментальна функція)' : ''}`, `Chrome: API ontbreekt in deze versie — werk Chrome bij of zet chrome://flags/#${i.vlag} aan${i.proef ? ' (experimentele functie)' : ''}`],
-    fout: ['nee', 'Chrome: не відповів на перевірку доступності', 'Chrome: antwoordde niet op de beschikbaarheidscontrole'],
+    available: ['ja', `${cu}: модель готова на цьому пристрої`, `${cn}: model staat klaar op dit apparaat`],
+    downloadable: ['let-op', `${cu}: модель можна завантажити (кілька ГБ, лише після вашого натискання в розширенні)`, `${cn}: model kan gedownload worden (enkele GB, alleen na uw klik in de extensie)`],
+    downloading: ['let-op', `${cu}: модель зараз завантажується`, `${cn}: model wordt nu gedownload`],
+    unavailable: ['nee', `${cu}: цей пристрій не підтримує (вимоги до пам’яті, GPU або диска)`, `${cn}: dit apparaat ondersteunt het niet (eisen aan geheugen, GPU of schijf)`],
+    ontbreekt: ['nee', `${cu}: API немає в цій версії — оновіть Chrome або ввімкніть chrome://flags/#${i.vlag}${i.proef ? ' (експериментальна функція)' : ''}`, `${cn}: API ontbreekt in deze versie — werk Chrome bij of zet chrome://flags/#${i.vlag} aan${i.proef ? ' (experimentele functie)' : ''}`],
+    stil: ['let-op', `${cu}: не відповідає — компонент моделі ще не зареєстровано, перевірте chrome://on-device-internals`, `${cn}: antwoordt niet — modelcomponent nog niet geregistreerd, controleer chrome://on-device-internals`],
+    fout: ['nee', `${cu}: не відповів на перевірку доступності`, `${cn}: antwoordde niet op de beschikbaarheidscontrole`],
   };
   const [cStand, cUk, cNl] = chrome[pagina];
   let ext: [LaiRegel['stand'], string, string];
@@ -83,3 +110,38 @@ export async function meetPagina(g: Record<string, unknown> = globalThis as unkn
   }));
   return uit;
 }
+
+// ---------------------------------------------------------------- 0.9.2: de site zelf laat de extensie lokaal werken
+// Contract (extensie 0.9.1+, externally_connectable, alleen *.tarasevych.com):
+//   {type:'LOKALE_AI_STAND'} → {ok, aan, apis:{id: stand|'uit'}}
+//   {type:'LOKALE_AI', modus, tekst ≤ 20000, bron?, doel?} → {ok:true, tekst, notities, correcties?} | {ok:false, reason, detail?}
+// Alleen als de gebruiker in de extensie «!» siteToegang aanzette (standaard uit). Tekst blijft op het apparaat.
+export const LOKALE_AI_SITE_MIN_EXTENSIE = '0.9.1';
+export const LOKALE_AI_MAX_TEKST = 20000;
+export type LokaleAiAntwoord = { ok: true; tekst: string; notities: string[]; correcties: unknown[] } | { ok: false; reden: string };
+/** Zuiver: antwoord van de extensie → veilig object (alleen tekst en korte notities; reden uit een vaste lijst of 'FOUT'). */
+export function filterLokaleAiAntwoord(v: unknown): LokaleAiAntwoord {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return { ok: false, reden: 'GEEN_ANTWOORD' };
+  const d = v as Record<string, unknown>;
+  if (d.ok === true && typeof d.tekst === 'string') {
+    return { ok: true, tekst: d.tekst.slice(0, 200_000), notities: Array.isArray(d.notities) ? d.notities.filter((x): x is string => typeof x === 'string').map((x) => x.slice(0, 500)).slice(0, 20) : [], correcties: Array.isArray(d.correcties) ? d.correcties.slice(0, 500) : [] };
+  }
+  const r = typeof d.reason === 'string' ? d.reason : '';
+  return { ok: false, reden: r in LOKALE_AI_REDENEN ? r : 'FOUT' };
+}
+/** Uitleg per reden (uk, nl): wat er gebeurde en wat de gebruiker kan doen. */
+export const LOKALE_AI_REDENEN: Readonly<Record<string, [string, string]>> = Object.freeze({
+  UIT: ['У розширенні вимкнено вбудований ШІ (головний перемикач).', 'In de extensie staat de ingebouwde AI uit (hoofdschakelaar).'],
+  SITE_TOEGANG_UIT: ['Сторінкам сайту не дозволено користуватися локальним ШІ. Увімкніть «!» перемикач у налаштуваннях розширення → «Локальний ШІ».', 'Pagina’s van de site mogen de lokale AI niet gebruiken. Zet de «!»-schakelaar aan in de instellingen van de extensie → «Lokale AI».'],
+  MODUS: ['Невідома функція.', 'Onbekende functie.'],
+  LEEG: ['Введіть текст.', 'Voer tekst in.'],
+  TE_LANG: ['Текст задовгий (понад 20 000 символів).', 'Tekst te lang (meer dan 20 000 tekens).'],
+  TE_VEEL: ['Забагато запитів: не більше 20 за хвилину. Зачекайте хвилину.', 'Te veel verzoeken: hoogstens 20 per minuut. Wacht een minuut.'],
+  BEZIG: ['Вже виконуються два запити. Дочекайтеся їх завершення.', 'Er lopen al twee verzoeken. Wacht tot ze klaar zijn.'],
+  MODEL_NIET_GELADEN: ['Модель ще не завантажена. Завантаження (кілька ГБ) запускається лише вашим натисканням у налаштуваннях розширення.', 'Het model is nog niet gedownload. De download (enkele GB) start alleen met uw klik in de instellingen van de extensie.'],
+  NIET_BESCHIKBAAR: ['Ця функція недоступна в цьому Chrome або на цьому пристрої.', 'Deze functie is niet beschikbaar in deze Chrome of op dit apparaat.'],
+  AbortError: ['Перервано: перевищено ліміт 120 секунд.', 'Afgebroken: limiet van 120 seconden overschreden.'],
+  OFFSCREEN_ONTBREEKT: ['Цей Chrome не підтримує прихований документ offscreen.html — оновіть Chrome.', 'Deze Chrome ondersteunt het verborgen document offscreen.html niet — werk Chrome bij.'],
+  GEEN_ANTWOORD: ['Розширення не відповіло. Перевірте, що воно ввімкнене, і спробуйте ще раз.', 'De extensie antwoordde niet. Controleer of ze aan staat en probeer opnieuw.'],
+  FOUT: ['Не вдалося виконати на цьому пристрої.', 'Uitvoeren op dit apparaat mislukt.'],
+});

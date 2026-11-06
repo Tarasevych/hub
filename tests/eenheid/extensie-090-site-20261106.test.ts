@@ -96,7 +96,7 @@ export async function main(): Promise<number> {
       && LOKALE_AI_APIS.every((a) => html.includes(`data-lai-api="${a}"`)) && html.includes('<details'), html.slice(0, 300));
     check('blok: geen knop die iets downloadt of start (alleen informatie)', !/<button/.test(html));
     const tab = readFileSync(join(process.cwd(), 'src', 'agenten', 'TabExtensie.tsx'), 'utf8');
-    check('TabExtensie toont het blok met de keuzes en versie uit de live status', /<LokaleAiPaneel tr=\{tr\} keuze=\{live\.extensie\?\.lokaleAi \?\? null\} extVersie=\{live\.extensie\?\.versie \?\? ''\} \/>/.test(tab));
+    check('TabExtensie toont het blok met de keuzes, versie en extensie-id uit de live status', /<LokaleAiPaneel tr=\{tr\} keuze=\{live\.extensie\?\.lokaleAi \?\? null\} extVersie=\{live\.extensie\?\.versie \?\? ''\} extId=\{live\.extensie\?\.extensieId \?\? ''\} \/>/.test(tab));
   }
 
   // ---------------------------------------------------------------- 6. spiegel met extension/lokale-ai.js
