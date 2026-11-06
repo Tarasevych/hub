@@ -1,0 +1,227 @@
+{
+  "schema": 1,
+  "taakId": "EXT090-001",
+  "datum": "2026-11-06",
+  "taal": "uk",
+  "titel": "Випуск 20261106-164109: розширення 0.9.2 (вбудований ШІ Chrome, offscreen.html, під'єднання без F5, кнопка «Увійти») і підтримка на сайті",
+  "opdracht": "Запит власника (06.11.2026, тред проєкту): «онови технічну підтримку повних цих опцій та функцій в нас на сайті, відповідно випустивши оновлення для сайту для взаємної підтримки сайту, але змінивши вимоги до розширення щоб то не скидалося, прибравши вимогу «Розширення активне на сторінці — не пройшло — Оновіть сторінку tarasevych.com (F5), щоб розширення під'єдналося до неї», а на профілі просто додати кнопку увійти авторизації розширення, щоб не світилося «Обліковий запис: —» і «Активна вкладка не на tarasevych.com»». Контекст від координатора: власник отримав локальне розширення 0.9.0 з вбудованими ШІ-API Chrome (Prompt, Summarizer, Writer, Rewriter, Translator, Language Detector, Proofreader); Release дозволено публікувати. Друге повідомлення власника (14:32): «offscreen.html також має підтримуватися в нас на сайті та в наступному оновленні розширення».",
+  "herkomst": {
+    "eigenaar": "Власник",
+    "agent": "claude",
+    "tak": "feature/ext090-001-20261106-163840",
+    "basis": "b14a59e3c4b259b57d413be498281d49f1e6969c",
+    "integratie": "b14a59e3c4b259b57d413be498281d49f1e6969c",
+    "geinstalleerdeBron": "3b64d1d3c8474f6279005ea8555a5f80e750aac9 (випуск 20261106-142434, DESIGN-003; містить integratie)",
+    "vorigeProductieversie": "визначає CI з https://hub.tarasevych.com/api/version під час збірки; значення записане в UITROL-BASIS і в нотатках релізу",
+    "bronExtensie": "локальна папка власника T:\\mijn-ruimte\\MijnRuimte-extension (manifest 0.9.0, файли від 06.11.2026 13:15–13:30), прочитана через доступ до папки з погодження власника"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "opmerking": "Журнал не містить токенів, паролів, приватних ключів, сесій, вмісту пошти чи прихованих міркувань моделі; лише перевірювані факти, SHA та результати перевірок. Тестові облікові дані PostgreSQL у хмарному контейнері — лише локальні й тимчасові."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-06T14:08:45Z",
+      "stap": "[claude · EXT090-001] Отримано запит власника й нотатку координатора; база — integratie b14a59e3c4b2 (AUDIT-001)."
+    },
+    {
+      "tijd": "2026-11-06T14:10:00Z",
+      "stap": "[claude · EXT090-001] Знайдено, що вимога «Розширення активне на сторінці / F5» і порожній «Обліковий запис: —» живуть у самому розширенні (extension/options.js, ui.js), яке сайт роздає з репозиторію (scripts/bouw-extensie.mjs → /downloads)."
+    },
+    {
+      "tijd": "2026-11-06T14:12:00Z",
+      "stap": "[claude · EXT090-001] Прочитано локальне розширення 0.9.0 власника (23 файли) і порівняно з extension/ 0.8.1 у репозиторії: 0.9.0 збудовано на 0.8.0 (без Antigravity, з debugger у маніфесті). Перенесено лише нові частини (lokale-ai.js, options-lokale-ai.js, sidepanel-lokale-ai.js, options.html, sidepanel.html, ui.css, null-перевірка в options.js); рішення 0.8.1 збережено."
+    },
+    {
+      "tijd": "2026-11-06T14:15:00Z",
+      "stap": "[claude · EXT090-001] Причина F5: Chrome ставить content scripts лише в сторінки, відкриті після завантаження розширення. Додано zorgVoorBrug у background.js (chrome.scripting, лише https://*.tarasevych.com, лише без живого мосту), захист від подвійного мосту й мовчання осиротілого мосту в bridge.js."
+    },
+    {
+      "tijd": "2026-11-06T14:18:00Z",
+      "stap": "[claude · EXT090-001] Кнопка «Увійти» в шапці (ui.js) замість «Обліковий запис: —»; e-mail у chrome.storage.session; accountEmail порожній без підключення."
+    },
+    {
+      "tijd": "2026-11-06T14:22:00Z",
+      "stap": "[claude · EXT090-001] Сайт: shared/lokale-ai-model.ts, src/extensie/LokaleAiPaneel.tsx у вкладці «Розширення браузера», поле lokaleAi у публічному статусі, ігнор повідомлень нижчої версії в extensie-live.ts; текст майстра без F5."
+    },
+    {
+      "tijd": "2026-11-06T14:24:48Z",
+      "stap": "[claude · EXT090-001] Гілка feature/ext090-001-20261106-163840 від integratie, orch taak-start, controleer і versheid (start) — свіжо."
+    },
+    {
+      "tijd": "2026-11-06T14:28:00Z",
+      "stap": "[claude · EXT090-001] Версію розширення спершу піднято до 0.9.1, щоб сайт запропонував оновлення поверх локальної 0.9.0 власника (та сама версія з іншим вмістом інакше не відрізнялася б)."
+    },
+    {
+      "tijd": "2026-11-06T14:32:00Z",
+      "stap": "[claude · EXT090-001] Друге повідомлення власника: offscreen.html має підтримуватися на сайті й у наступному оновленні розширення."
+    },
+    {
+      "tijd": "2026-11-06T14:37:21Z",
+      "stap": "[claude · EXT090-001] Координатор передав контракт треду розширення (локальна 0.9.1: offscreen.html, LOKALE_AI, LOKALE_AI_STAND, PING.lokaleAi, «!» siteToegang)."
+    },
+    {
+      "tijd": "2026-11-06T14:40:00Z",
+      "stap": "[claude · EXT090-001] Локальну 0.9.1 (6 змінених файлів) прочитано з папки власника й перенесено в extension/ поверх виправлень F5/«Увійти»; власна спрощена offscreen-реалізація замінена на код треду розширення, щоб лишився один шлях."
+    },
+    {
+      "tijd": "2026-11-06T14:43:00Z",
+      "stap": "[claude · EXT090-001] Знайдено й виправлено: PING перезаписував поле lokaleAi публічного статусу; запит сторінки з «!» autoDownload міг почати завантаження моделі."
+    },
+    {
+      "tijd": "2026-11-06T14:47:00Z",
+      "stap": "[claude · EXT090-001] Справжній Chromium із розширенням 0.9.2: offscreen.html створюється, LOKALE_AI_STAND без доступу → SITE_TOEGANG_UIT, з доступом — 7 станів, LOKALE_AI → NIET_BESCHIKBAAR (без моделі), стан у публічному статусі; під'єднання без F5 — ok."
+    },
+    {
+      "tijd": "2026-11-06T14:53:49Z",
+      "stap": "[claude · EXT090-001] Перший випуск 20261106-145013 опубліковано на базі 20261106-141500 (гілка feature/ext090-001-20261106-142448, PR #42)."
+    },
+    {
+      "tijd": "2026-11-06T16:37:37Z",
+      "stap": "[claude · EXT090-001] Сервер відхилив 20261106-145013: між збіркою й встановленням Павло встановив 20261106-142434 (DESIGN-003 @ 3b64d1d). Павло: «треба перезібрати пакет»."
+    },
+    {
+      "tijd": "2026-11-06T16:38:40Z",
+      "stap": "[claude · EXT090-001] Нова гілка feature/ext090-001-20261106-163840 від 3b64d1d (встановлена версія); три коміти EXT090-001 перенесено cherry-pick без конфліктів; стару гілку й випуск не змінено."
+    },
+    {
+      "tijd": "2026-11-06T16:41:00Z",
+      "stap": "[claude · EXT090-001] Повний прогін усіх наборів модульних тестів на базі integratie і на гілці в одному контейнері; 361 наборів на integratie b14a59e і на першій гілці: однаково, крім нових і розширених наборів (2 нові 12/12 і 21/21, extensie-ui 83→91, extensie-verzamelaar 36→39); 10 наборів із частковими збоями й 125, що потребують БД, однакові на обох деревах; після offscreen і після перебазування на 3b64d1d повторно 23 набори — усі зелені (extensie-offscreen 31/31)."
+    }
+  ],
+  "keuzes": [
+    {
+      "onderwerp": "Чому не просто прибрати перевірку «Розширення активне на сторінці»",
+      "reden": "Без мосту на сторінці сайт справді не бачить розширення (сесія «скидається»), тож лише сховати рядок означало б приховати ваду. Розширення тепер саме ставить міст на відкриті вкладки; рядок лишився інформаційним і більше не є умовою."
+    },
+    {
+      "onderwerp": "Стандартний пакет без debugger, хоча локальна 0.9.0 його мала",
+      "reden": "Репозиторій з 0.8.1 свідомо тримає мінімальні дозволи; глибоку діагностику дає окремий пакет «діагностика» (scripts/bouw-extensie.mjs). Локальна 0.9.0 повернула debugger, бо була збудована на 0.8.0."
+    },
+    {
+      "onderwerp": "Сайт міряє вбудований ШІ лише availability(), ніколи create()",
+      "reden": "create() може почати завантаження моделі на кілька ГБ без кліку користувача; небезпечні дії лишаються в розширенні з позначкою «!» і за замовчуванням вимкнені."
+    },
+    {
+      "onderwerp": "Повідомлення нижчої версії ігноруються",
+      "reden": "Після оновлення розширення осиротілий міст старої версії відповідав «не підключено» поруч із новим; сайт тепер приймає лише найвищу бачену версію на цій сторінці."
+    },
+    {
+      "onderwerp": "Версія 0.9.2",
+      "reden": "У власника вже стоїть локальна 0.9.1 треду розширення (без виправлень F5 і «Увійти»); лише вища версія дає сайту підставу запропонувати оновлення."
+    },
+    {
+      "onderwerp": "Один offscreen-шлях",
+      "reden": "Код треду розширення (naarOffscreen, lokale-ai-stand) використано і для стану в статусі, і для запитів сайту; моя перша спрощена версія прибрана, щоб не було двох документів чи протоколів."
+    },
+    {
+      "onderwerp": "Запити сторінок ніколи не завантажують модель",
+      "reden": "Контракт обіцяє MODEL_NIET_GELADEN; код дозволяв завантаження з «!» autoDownload. Для запитів сайту autoDownload тепер примусово вимкнено."
+    },
+    {
+      "onderwerp": "Форма на сайті лише з увімкненим «!» siteToegang",
+      "reden": "Небезпечний режим за замовчуванням вимкнений і не блокується жорстко: сайт пояснює наслідки й відкриває налаштування розширення, вмикає лише користувач."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "bestand": "extension/lokale-ai.js, extension/options-lokale-ai.js, extension/sidepanel-lokale-ai.js, extension/options.html, extension/sidepanel.html, extension/ui.css",
+      "soort": "nieuw/gewijzigd",
+      "omschrijving": "Вбудований ШІ Chrome з локальної 0.9.0 власника; виправлено sel.options у бічній панелі."
+    },
+    {
+      "bestand": "extension/background.js",
+      "soort": "gewijzigd",
+      "omschrijving": "zorgVoorBrug/zorgVoorBruggen (без F5), самоперевірка ставить міст, 'bridge' інформаційний, accountEmail лише з підключенням, e-mail у storage.session, lokaleAi у статусі."
+    },
+    {
+      "bestand": "extension/bridge.js",
+      "soort": "gewijzigd",
+      "omschrijving": "Захист від подвійного мосту, мовчання осиротілого мосту, op «brug?», поле lokaleAi у білому списку."
+    },
+    {
+      "bestand": "extension/ui.js, extension/options.js, extension/manifest.json",
+      "soort": "gewijzigd",
+      "omschrijving": "Кнопка «Увійти» в шапці; тексти відновлення без F5; виправлений текст про debugger; версія 0.9.2 (offscreen)."
+    },
+    {
+      "bestand": "shared/lokale-ai-model.ts, src/extensie/LokaleAiPaneel.tsx, src/agenten/TabExtensie.tsx, src/extensie/extensie-live.ts, src/ExtensieWizard.tsx, shared/zoek-ui-knoppen.generated.ts",
+      "soort": "nieuw/gewijzigd",
+      "omschrijving": "Підтримка на сайті: блок «Вбудований ШІ Chrome», lokaleAi у статусі, ігнор нижчої версії, текст майстра, каталог пошуку."
+    },
+    {
+      "bestand": "extension/offscreen.html, extension/offscreen.js, extension/options-lokale-ai.js, extension/lokale-ai.js (siteToegang)",
+      "soort": "nieuw/gewijzigd",
+      "omschrijving": "З локальної 0.9.1 треду розширення; autoDownload для запитів сторінок вимкнено."
+    },
+    {
+      "bestand": "tests/eenheid/extensie-offscreen-20261106.test.ts",
+      "soort": "tests",
+      "omschrijving": "31 перевірка: маніфест, offscreen.js зі справжнім lokale-ai.js, background з нео-offscreen, PING/LOKALE_AI, сайт (стан, «!» доступ, форма, причини)."
+    },
+    {
+      "bestand": "tests/eenheid/extensie-brug-zonder-f5-20261106.test.ts, tests/eenheid/extensie-090-site-20261106.test.ts та оновлені набори розширення",
+      "soort": "tests",
+      "omschrijving": "Нові перевірки (12 + 21), +8 в extensie-ui, +3 в extensie-verzamelaar; стара вада тесту blok-2-8 (шаблон 0.8.x)."
+    },
+    {
+      "bestand": "orchestratie/taken/EXT090-001.json, orchestratie/ontwikkelarchieven/EXT090-001.json, .github/workflows/ext090-001-release.yml",
+      "soort": "nieuw",
+      "omschrijving": "Декларація задачі, цей журнал і workflow збірки й публікації випуску (за зразком UITGAVE-001; обсяг рахується від встановленої версії ONDER = 3b64d1d; у нотатках релізу коротко вказано учасників)."
+    }
+  ],
+  "controles": [
+    {
+      "controle": "Повний прогін усіх наборів tests/eenheid на integratie b14a59e і на гілці (без БД, однакове середовище)",
+      "resultaat": "361 наборів на integratie b14a59e і на першій гілці: однаково, крім нових і розширених наборів (2 нові 12/12 і 21/21, extensie-ui 83→91, extensie-verzamelaar 36→39); 10 наборів із частковими збоями й 125, що потребують БД, однакові на обох деревах; після offscreen і після перебазування на 3b64d1d повторно 23 набори — усі зелені (extensie-offscreen 31/31)",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "34 набори, що стосуються розширення й сайту (з PostgreSQL)",
+      "resultaat": "усі як на базі або краще; нові набори 12/12 і 21/21; markering-agenten-20261020 68/69 однаково на базі (середовище)",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "Справжній Chromium (Playwright, розширення 0.9.2): offscreen.html, LOKALE_AI_STAND/LOKALE_AI, стан у публічному статусі; під'єднання без F5",
+      "resultaat": "обидва сценарії RESULTAAT OK",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "Після перебазування на 3b64d1d: 23 набори (розширення, сайт, пошук, дизайн, TRACE, uitrol, orch) і візуальна перевірка DESIGN-003 у Chromium (320–1280 px, uk/nl, світла/темна)",
+      "resultaat": "усі зелені",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "tsc -p tsconfig.json",
+      "resultaat": "лише 9 відомих помилок через відсутній пакет xlsx у контейнері, нових немає",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "Перевірки збірки: kaart-, plaatsing-, hulp-vraagtekens-, kleur-contrast-controle, zoek-ui-catalogus, l002-audit, mail-slimme-inbox-audit",
+      "resultaat": "пройшли; каталог пошуку оновлено (+1 розділ)",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "orch controleer, versheid start",
+      "resultaat": "усе гаразд, свіжо",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "CI-workflow ext090-001-release: typecheck:server, модульні набори, повна production-збірка, пакет, TRACE-001 root- і онлайн-перевірка",
+      "resultaat": "див. прогін GitHub Actions у нотатках релізу",
+      "staat": "in CI"
+    }
+  ],
+  "bronnen": [
+    "https://developer.chrome.com/docs/ai/built-in-apis",
+    "https://developer.chrome.com/docs/extensions/reference/api/scripting#method-executeScript",
+    "https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts",
+    "https://developer.chrome.com/docs/extensions/reference/api/offscreen"
+  ],
+  "beperkingen": [
+    "Розпаковане розширення Chrome не оновлює сам: власник має завантажити 0.9.2 із сайту й натиснути ↻ у chrome://extensions; локальну папку T:\\mijn-ruimte\\MijnRuimte-extension цей тред лише читав, не змінював.",
+    "Справжній Chrome із вбудованим ШІ та авторизований сайт не перевірено в хмарі; перевірено модульними тестами з реальним кодом розширення й сайту.",
+    "Набори, яким потрібна мігрована БД, ролі чи браузер, у повному прогоні без БД червоні однаково на базі й на гілці.",
+    "Критичні політики не підписані власником: встановлення лише вручну з passkey; агент нічого не встановлював і production не змінював."
+  ]
+}
