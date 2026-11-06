@@ -1,5 +1,9 @@
 // UI-003: pure logica van het verbindingencentrum (src/verbindingen/verbindingen-logica.ts) + vlagmigratie 0151.
-import test from 'node:test';
+// Runnercontract: zie tests/eenheid/hulp/node-test-main.ts. De oude «export async function main() { return 0; }» liet een falende
+// test onder scripts/eenheidstests.mjs groen eindigen (05.11.2026).
+import { nodeTestSuite } from './hulp/node-test-main.ts';
+const { test, main } = nodeTestSuite();
+export { main };
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { accountStand, isLevend, probleemUitleg, soortVan, wanneer } from '../../src/verbindingen/verbindingen-logica.ts';
@@ -46,4 +50,3 @@ test('migratie 0151 zet alleen de vlag, standaard UIT', () => {
   assert.match(sql, /'verbindingen-centrum-v2'.*false, false\)/s);
   assert.doesNotMatch(sql, /CREATE|ALTER|DROP|DELETE|UPDATE/i);
 });
-export async function main() { return 0; }
