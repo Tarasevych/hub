@@ -377,6 +377,40 @@ afgedekt met tests die op de eerdere code zouden falen.
   - *Drie mailtests faalden niet door de site.* `mail-accounts-beheer` verwachtte de oude lege pagina, die sinds MAILORBIT-001 de
     orbit is; `merk-bron` en `merk-bron-google` slaagden alleen met een pepper uit de omgeving. Nu zetten de tests zelf een pepper
     en renderen ze de pagina met een account.
+  - *32 suites waren ook rood op basis `d0e6481`.* Voor elk apart uitgezocht of het de omgeving van de cloudcontainer is of een
+    echte oude fout, en elk oordeel onafhankelijk nagekeken. Hersteld in aparte commits:
+    - tests die hun omgeving van de machine leenden, zetten die nu zelf en zetten hem daarna terug: `AUDIT_IP_PEPPER` (`fase3`,
+      `toegangscodes`, `dev-rechten-beheer`, `beveiliging`, `toegangssleutels`, `toegang-context`), `OWNER_EMAIL` (`mcp-spiegel`,
+      `mcp-console-c2`, `server-beheer`), `TZ=Europe/Brussels` (`agenda-v3`) en het pad van `playwright-core`
+      (`scripts/visueel-mail.mjs`);
+    - root-scripts negeren als root bewust de testpaden, dus zeven suites lieten ze op de echte `/etc/mijn-ruimte`, `/srv`,
+      `/var/lib` en de echte `systemctl` los. Als root draait het script nu als `nobody` op de map van de test (`server-beheer`,
+      `uitrol-deur`, `uitrol-goedkeuring`, `uitrol-bron`, `toegangssleutels`, `toegang-context`, `ai-kluis-een-plek`);
+    - verouderde tests. `mcp-console-c2` maakt na SEC-001 een echt goedgekeurd account aan, met een nieuwe check dat het token
+      vervalt zodra het account niet meer goedgekeurd is (een mutatie van die voorwaarde werd door niets opgemerkt).
+      `strook-menu` roept eerst nepBrowser aan en hangt niet meer af van de volgorde van attributen. `cloud-integratie-contract`
+      had geen `main()`, en `verbindingen-centrum` verborg falen met `return 0`. Beide gebruiken nu de gedeelde
+      `hulp/node-test-main.ts`;
+    - code. Op Python zonder `tarfile.data_filter` pakte de root-`mijn-ruimte-uitrol.sh` (5978f3b) zonder filter uit, met setuid
+      en eigenaar uit het archief. Nu gebeurt hetzelfde met de hand, en 3.11.2 blijft werken. Elf bestanden met Engelse namen
+      (`identity`, `mobile`, `preview`) zijn volgens de regel van de eigenaar hernoemd, met de paren in `bestandskaart.json`. Rauwe
+      hex in acht pagina-CSS-bestanden is vervangen door thematokens («wit op wit» wordt `--papier`). De fundamenttest verwacht
+      nu de stralen van DESIGN-001;
+    - een onafhankelijke review van die fixes gaf nog 11 punten, alle hersteld in zeven commits. Het handmatige uitpakken op
+      Python < 3.11.4 geeft mappen nu volgens de umask, net als het data-filter. Een gedragstest op een nagebootste 3.11.2
+      bewijst dat (`uitrol-deur` 105/105), en een verweesde `sleep` in de test houdt de uitrolvergrendeling niet meer vast. De
+      runner `eenheidstests` meldt geen «groen» meer als een filter niets vindt of een kindproces door een signaal sterft
+      (nieuwe suite `eenheidstests-uitvoerder-20261106`). `hulp/node-test-main.ts` telt ook fouten die pas na het eind van een
+      test komen. Het werkbladcanvas en cloud staan op thematokens: het canvasmenu bleef wit in het donkere thema en
+      «Видалити» stond lichtroze op wit. `ontwerp-fundament` vangt ongedefinieerde CSS-variabelen. De mail-voorbeeldpagina's
+      hebben `--papier` (nagekeken in Chromium), en de accountdocumentatie wijst naar `src/identiteit`. Tests zetten de pepper
+      terug en openen de map alleen als root op 0711.
+    Mutatietests: 25 van de 25 mutanten gedood. Zonder enige wijziging van de omgeving zijn 14 suites groen (`agenda-v3`,
+    `bestandskaart`, `beveiliging`, `cloud-integratie-contract`, `dev-rechten-beheer`, `fase3`, `mcp-console-c2`, `mcp-spiegel`,
+    `ontwerp-fundament`, `server-beheer`, `strook-menu`, `toegangssleutels`, `uitrol-bron`, `uitrol-deur`). De rest heeft
+    terecht iets nodig dat de container niet heeft: een aparte app-rol `DATABASE_URL_APP` (13 suites), een gebouwde `dist`,
+    `PLAYWRIGHT_CORE`, een volledige `npm ci`, sshd of een LAN-adres. Met die rol, `dist` en `PLAYWRIGHT_CORE` erbij zijn alle 15
+    nagekeken suites groen.
   - *Scenario 7 van `orch-acceptatie`.* Een vaste pauze van 1,2 s gaf onder belasting 45/47. Nu houdt de stub de eerste installatie
     onder flock vast tot de test de tweede heeft gecontroleerd.
 
