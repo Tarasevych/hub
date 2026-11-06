@@ -45,7 +45,7 @@
 | «OCR недоступний» | немає `tesseract`/мов | `mijn-ruimte-installeer ocr-talen`; cron перевіряє доступність знову при наступному повному скані |
 | елементи черги `fout` з `TIJDSLIMIET`/`GEHEUGENLIMIET` | великий/пошкоджений файл | нічого робити не треба: документ індексується лише за назвою; за потреби підняти `ZOEK_TEKST_TIMEOUT_MS`/`ZOEK_TEKST_WERKER_MB` |
 | `KLUIS_GESLOTEN` у `laatste_fout` | ключ людини закритий (людина не входила) | норма: індексація пошти/Drive продовжиться після входу |
-| пошук повертає `bron:'live'` (fallback) | індекс лади порожній | дочекатися cron, «Оновити індекс» (`POST /api/owner/zoek/bronnen/vernieuwen`) або ручна індексація з технічного профілю (§5) |
+| пошук повертає `bron:'live'` | індекс лади порожній | дочекатися cron, «Оновити індекс» (`POST /api/owner/zoek/bronnen/vernieuwen`) або ручна індексація з технічного профілю (§5) |
 | повна переіндексація потрібна (зміна нормалізації/синонімів) | нова версія ядра | `UPDATE app.zoek_bron_stand SET versie=''` для потрібних лад (або `TRUNCATE app.zoek_objecten` — безпечно: індекс похідний); cron перебудує; `app.zoek_geschiedenis.stand` стане `verouderd` |
 | черга «зависла» у `bezig` | процес убито під час обробки | lease 5 хв спливає сам; елемент повертається у `wachtend` |
 
@@ -73,7 +73,7 @@
 Навіщо: не чекати cron (5 хв) і бачити, що саме робить індексатор — повна або часткова переіндексація з живим ходом і результатом.
 
 **Де**: `/zoek` → кнопка «Індексація…» (лише коли в цій вкладці активний технічний профіль; звичайний користувач кнопки не має, сервер
-відповідає `403 ZOEK_INDEX_TECH_PROFIEL_VEREIST`). Відкривається плаваюче вікно (`src/zoek/ZoekIndexVenster.tsx` на спільній системі
+відповідає `403 ZOEK_INDEX_TECH_PROFIEL_VEREIST`). Відкривається рухоме вікно (`src/zoek/ZoekIndexVenster.tsx` на спільній системі
 вікон `src/platform/vensters.tsx`): перетягування за заголовок, «Згорнути» у док, «Розгорнути», закриття, позиція/розмір запам'ятовуються;
 на телефоні (< 560 px) вікно на весь екран, повернутись — через док. `modaal=false`: сторінка пошуку працює далі, індексація триває на сервері.
 
@@ -156,7 +156,7 @@
 
 Висновок з `EXPLAIN (ANALYZE, BUFFERS)` справжнього SQL ядра (перехоплено тестом, перший прогін): планувальник ішов через
 `zoek_objecten_lade_soort_idx` → **усі 10 000 рядків лади**, фільтр відкидав лише ~1 500; GIN-індекси (vector/stam/trgm) **не використовувались**,
-бо умова `… OR $q <% titel_norm` (нечіткість у тому ж WHERE) і сполучення з ладою не покриті одним індексом; для ~3 500 кандидатів рахувались
+бо умова `… OR $q <% titel_norm` (нечіткість у тому ж ДЕ) і сполучення з ладою не покриті одним індексом; для ~3 500 кандидатів рахувались
 6 tsquery-перевірок, `word_similarity`, `to_tsvector('simple', titel_norm)` і переносився `left(tekst, 20000)` у сортування. Після оптимізації Z1
 (CTE лише з id + сигналами, текст лише для сторінки) p95 упав утричі, але сканування всієї лади лишається: ціль 300 мс p95 на 10k **ще не
 досягнута** (463 мс). Третій крок (Z1, міграція **0104**): `btree_gin` + складені GIN-індекси `(user_id, ruimte, zoek_vector)` і `(user_id, ruimte, zoek_stam)` —
@@ -176,16 +176,3 @@ p50 68 / p95 83 мс ✓, індексація 1 635 об./с ✓. Пагіна�
 - Один запуск cron обробляє обмежену кількість елементів (ліміт у `backend/zoek/bronnen.ts`); при великих скриньках перший повний прохід
   триває години — це нормально й видно в «Стан джерел» як прогрес.
 - `TimeoutStartSec=15min` у `mijn-ruimte-cron@.service`: один запуск не триває довше; незавершене лишається в черзі.
-
----
-
-## NL — kort
-
-Installatie: PostgreSQL 16+ (`pg_trgm`, `unaccent`), Node 24; optioneel `tesseract` + traineddata en `pdftoppm` via
-`mijn-ruimte-installeer ocr-talen`. Stand bekijken: pagina `/zoek` → «Stand van bronnen», `POST /api/owner/zoek/stand`, tabellen
-`app.zoek_bron_stand` / `app.zoek_wachtrij` / `app.cron_runs`, `journalctl -u mijn-ruimte-cron@zoek-index`. De index is afgeleide data:
-`TRUNCATE app.zoek_objecten` is altijd veilig, de cron bouwt hem opnieuw. Migraties 0100–0104 zijn idempotent en in hun kop
-terugdraaibaar; terugdraaien van de code (`mijn-ruimte-installeer terugdraaien`) vereist géén migratie-terugdraai. Handmatig indexeren (zone D): `/zoek`
-→ «Indexeren…» in het technisch profiel → zwevend venster (volledig / gedeeltelijk, voortgang, uitkomst, journaal); zelfde advisory lock als de cron,
-alleen de eigen laden, grenzen `ZOEK_BEHEER_RUN_MS` / `ZOEK_BEHEER_ITEMS` (§5). Doelen: zoeken p95
-< 300 ms bij 10k objecten, suggesties < 100 ms; gemeten waarden staan in §8.

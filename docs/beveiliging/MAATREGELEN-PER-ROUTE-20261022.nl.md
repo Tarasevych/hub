@@ -6,8 +6,8 @@ Gegenereerd door `node scripts/beveiliging-routes-inventaris.mjs` op basis van s
 
 - **Poort (Gate)** — welke controle de route opent (gebruikerssessie, alleen eigenaar, technisch profiel, agenttoken, systeemroute met eigen rechtencontrole, openbaar).
 - **Lade** — of de route de lade (`userId` + `ruimte`) op de server berekent (`bordLade`, `mailLade`, `gegevensRuimteVeilig`, …) in plaats van die uit de request-body te lezen.
-- **RLS** — queries lopen via `db.*`/`gebruiker()` in de gebruikerscontext (`zetGebruiker` na de poort): policies op `app.records` (0007/0033) en tabel-RLS zijn van kracht; **systeem** = bewuste `alsSysteem` of systeemroute (`BYPASSRLS`, rechtencontrole in code).
-- **WHERE** — expliciet filter op eigenaar (`userId`/`ownerUserId`/`recipientUserId`/`user_id = $n`) in de handler zelf.
+- **RLS** — zoekopdrachten lopen via `db.*`/`gebruiker()` in de gebruikerscontext (`zetGebruiker` na de poort): policies op `app.records` (0007/0033) en tabel-RLS zijn van kracht; **systeem** = bewuste `alsSysteem` of systeemroute (`BYPASSRLS`, rechtencontrole in code).
+- **WAAR** — expliciet filter op eigenaar (`userId`/`ownerUserId`/`recipientUserId`/`user_id = $n`) in de handler zelf.
 - **Step-up** — de route vereist een verse bevestiging (passkey/Google step-up) voor gevoelige acties.
 - **Test 2 gebr.** — test die de route namens twee accounts aanroept en controleert dat toegang tot andermans gegevens wordt geweigerd (aanvalstest). «Tests» — elke test waarin de route voorkomt.
 - **Persoonlijke tabellen** — tabellen uit de RLS-groepen (0033) of persoonlijke app-tabellen die door de handler worden geraakt.
@@ -16,7 +16,7 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 
 ## 1. Routetabel
 
-| Route | Bestand | Poort | Lade | RLS | WHERE | Step-up | Schrijft | Persoonlijke tabellen | Test 2 gebr. | Tests |
+| Route | Bestand | Poort | Lade | RLS | WAAR | Step-up | Schrijft | Persoonlijke tabellen | Test 2 gebr. | Tests |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `DELETE /api/connector-v2/:agent/rpc` | mcp-connector-routes.ts | zonder sessie (leest verzoek niet: catalogus/status/410) | — | gebruiker | — | — | — | — | — | — |
 | `DELETE /api/mcp-connector/rpc` | mcp-connector-routes.ts | zonder sessie (leest verzoek niet: catalogus/status/410) | — | gebruiker | — | — | — | — | — | — |
@@ -42,7 +42,7 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `GET /api/owner/system/manifest` | index.ts | systeemroute (rechtencontrole in code) | — | systeem | — | — | — | — | — | — |
 | `GET /api/v1/me` | api-platform-tokens.ts | sessie/recht (weigering 401/403 in module) | — | gebruiker | — | — | — | — | — | — |
 | `GET /api/version` | index.ts | gedelegeerd aan module (zie bestand) | — | gebruiker | — | — | — | — | — | foutuitleg-20261019, nieuwe-versie, release-info +1 |
-| `POST /api/access/request` | index.ts | sessie (sessionContext) | — | gebruiker + alsSysteem | ja | — | ja | users, notification_jobs | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
+| `POST /api/access/request` | index.ts | sessie (sessionContext) | — | gebruiker + alsSysteem | ja | — | ja | gebruikers, notification_jobs | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
 | `POST /api/account/delete` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | — | ja | — | — | audit-account, audit-rls | audit-account, audit-rls |
 | `POST /api/account/overview` | index.ts | sessie (sessionContext) | — | gebruiker | — | — | — | — | — | — |
 | `POST /api/account/recover` | index.ts | sessie (sessionContext) | — | gebruiker | — | — | — | — | audit-account, audit-rls | audit-account, audit-rls |
@@ -145,7 +145,7 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `POST /api/owner/access/recovery/intrekken` | toegangslaag.ts | sessie (lokale poort van module) | — | gebruiker | — | ja | ja | — | passkeys | passkeys |
 | `POST /api/owner/access/recovery/overzicht` | toegangslaag.ts | sessie (lokale poort van module) | — | gebruiker | — | — | — | — | passkeys | passkeys |
 | `POST /api/owner/access/recovery/rotate` | toegangslaag.ts | sessie (lokale poort van module) | — | gebruiker | — | ja | ja | — | passkeys | passkeys |
-| `POST /api/owner/access/request` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker + alsSysteem | ja | — | ja | users, notification_jobs | audit-rls | audit-rls |
+| `POST /api/owner/access/request` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker + alsSysteem | ja | — | ja | gebruikers, notification_jobs | audit-rls | audit-rls |
 | `POST /api/owner/access/snapshot` | toegangslaag.ts | sessie (lokale poort van module) | — | gebruiker | — | — | — | — | passkeys | passkeys |
 | `POST /api/owner/access/stap-op` | toegangslaag.ts | sessie (lokale poort van module) | — | gebruiker | — | ja | — | — | herstelcodes.e2e, audit-toegang | herstelcodes.e2e, audit-pad, audit-toegang +5 |
 | `POST /api/owner/access/stap-op/methoden` | toegangslaag.ts | sessie (lokale poort van module) | — | gebruiker | — | ja | — | — | passkeys, stap-op-onthouden-20261020 | passkeys, stap-op-onthouden-20261020 |
@@ -155,7 +155,7 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `POST /api/owner/access/totp/confirm` | toegangslaag.ts | sessie (lokale poort van module) | — | gebruiker | — | — | ja | — | audit-toegang, passkeys | audit-toegang, passkeys, stap-op-onthouden-20261020 |
 | `POST /api/owner/access/totp/disable` | toegangslaag.ts | sessie (lokale poort van module) | — | gebruiker | — | — | ja | — | — | — |
 | `POST /api/owner/access/totp/start` | toegangslaag.ts | sessie (lokale poort van module) | — | gebruiker | ja | ja | ja | — | audit-toegang, passkeys | audit-toegang, passkeys, stap-op-onthouden-20261020 |
-| `POST /api/owner/access/user/:id/method` | toegangslaag.ts | sessie + recht api-platform (ownerGate) | — | systeem | ja | ja | ja | users | audit-toegang | audit-toegang |
+| `POST /api/owner/access/user/:id/method` | toegangslaag.ts | sessie + recht api-platform (ownerGate) | — | systeem | ja | ja | ja | gebruikers | audit-toegang | audit-toegang |
 | `POST /api/owner/access/user/:id/reset-password` | toegangslaag.ts | sessie + recht api-platform (ownerGate) | — | systeem | ja | ja | ja | — | — | — |
 | `POST /api/owner/access/webauthn/options` | toegangslaag.ts | zonder sessie (leest verzoek niet: catalogus/status/410) | — | gebruiker | — | — | — | — | — | — |
 | `POST /api/owner/access/webauthn/register` | toegangslaag.ts | zonder sessie (leest verzoek niet: catalogus/status/410) | — | gebruiker | — | — | — | — | — | — |
@@ -192,12 +192,12 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `POST /api/owner/admin/overview/layout/save` | beheer-overzicht.ts | systeemroute (rechtencontrole in code) | — | systeem | — | — | — | — | — | — |
 | `POST /api/owner/admin/overview/snapshots` | beheer-overzicht.ts | systeemroute (rechtencontrole in code) | — | systeem | — | — | — | — | — | admin-overzicht |
 | `POST /api/owner/admin/overview/user` | beheer-overzicht.ts | systeemroute (rechtencontrole in code) | — | systeem | — | — | — | — | — | admin-overzicht |
-| `POST /api/owner/admin/roles/save` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | ja | ja | ja | users | — | — |
+| `POST /api/owner/admin/roles/save` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | ja | ja | ja | gebruikers | — | — |
 | `POST /api/owner/admin/sso-policy/save` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | — | ja | — | — | — | — |
-| `POST /api/owner/admin/users/:id` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | — | ja | — | users | audit-account, audit-rls | audit-account, audit-rls, impersonatie +1 |
-| `POST /api/owner/admin/users/:id/delete` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | — | ja | — | users | audit-account | audit-account |
+| `POST /api/owner/admin/users/:id` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | — | ja | — | gebruikers | audit-account, audit-rls | audit-account, audit-rls, impersonatie +1 |
+| `POST /api/owner/admin/users/:id/delete` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | — | ja | — | gebruikers | audit-account | audit-account |
 | `POST /api/owner/admin/users/:id/recover` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | — | ja | — | — | audit-account | audit-account |
-| `POST /api/owner/admin/users/pagina` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | — | — | — | users | — | — |
+| `POST /api/owner/admin/users/pagina` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | — | — | — | gebruikers | — | — |
 | `POST /api/owner/agenda/caldav/koppelen` | agenda-routes.ts | sessie (authorize van module) | — | gebruiker | — | — | — | — | — | — |
 | `POST /api/owner/agenda/caldav/vernieuwen` | agenda-routes.ts | sessie (authorize van module) | — | gebruiker | — | — | — | — | — | — |
 | `POST /api/owner/agenda/caldav/verwijderen` | agenda-routes.ts | sessie (authorize van module) | — | gebruiker | — | — | — | — | — | — |
@@ -300,7 +300,7 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `POST /api/owner/apps/geheimen/:id/invullen` | connectors-routes.ts | sessie + recht api-platform (ownerGate) | — | gebruiker | — | ja | — | — | — | apps-overdracht |
 | `POST /api/owner/apps/overzicht` | connectors-routes.ts | sessie + recht api-platform (ownerGate) | — | gebruiker | — | — | — | — | — | — |
 | `POST /api/owner/audit/beheer/controle` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | ja | — | — | — | — | — |
-| `POST /api/owner/audit/beheer/lijst` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | — | — | — | users | — | — |
+| `POST /api/owner/audit/beheer/lijst` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | — | — | — | gebruikers | — | — |
 | `POST /api/owner/audit/beheer/verwijderen` | index.ts | beheerdersbevoegdheid (adminContext) | — | systeem | ja | ja | — | — | — | — |
 | `POST /api/owner/auth/google/callback` | index.ts | openbaar (zonder sessie) | — | — (zonder sessie) | — | — | — | — | hulp/nep-google | hulp/nep-google, tabbladen |
 | `POST /api/owner/auth/password/login` | toegangslaag.ts | openbare aanmelding (wachtwoord + TOTP, rate-limiting) | — | gebruiker | — | — | — | — | — | — |
@@ -313,7 +313,7 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `POST /api/owner/beveiliging/app-rol-maken` | beveiliging-schakelaars.ts | dienstpoort (lade) | — | gebruiker | — | ja | — | — | — | beveiliging-schakelaars |
 | `POST /api/owner/beveiliging/stand` | beveiliging-schakelaars.ts | dienstpoort (lade) | — | gebruiker | — | — | — | — | — | beveiliging-schakelaars |
 | `POST /api/owner/beveiliging/uitzetten` | beveiliging-schakelaars.ts | dienstpoort (lade) | — | gebruiker | — | — | — | — | — | beveiliging-schakelaars |
-| `POST /api/owner/browser/accounts` | index.ts | alleen id.* (identity authority) | — | — (zonder sessie) | — | — | — | users | — | — |
+| `POST /api/owner/browser/accounts` | index.ts | alleen id.* (identity authority) | — | — (zonder sessie) | — | — | — | gebruikers | — | — |
 | `POST /api/owner/cloud/bootstrap` | cloud-platform.ts | sessie/recht (weigering 401/403 in module) | — | gebruiker | — | — | — | — | ruimte-cloud-agenda-20261020 | ruimte-cloud-agenda-20261020, tech-ruimte-pagina-20261020 |
 | `POST /api/owner/cloud/capture` | cloud-platform.ts | sessie/recht (weigering 401/403 in module) | — | gebruiker | — | — | ja | — | — | — |
 | `POST /api/owner/cloud/google-suite/calendar/calendars` | google-suite-agenda-fotos.ts | sessie/recht (weigering 401/403 in module) | — | gebruiker | — | — | — | — | — | — |
@@ -385,7 +385,7 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `POST /api/owner/google-contour/keys` | google-contour.ts | systeemroute (rechtencontrole in code) | — | systeem | — | — | — | — | — | — |
 | `POST /api/owner/google-contour/reveal` | google-contour.ts | systeemroute (rechtencontrole in code) | — | systeem | — | — | — | — | — | — |
 | `POST /api/owner/google-contour/save` | google-contour.ts | systeemroute (rechtencontrole in code) | — | systeem | — | — | — | — | — | — |
-| `POST /api/owner/google-suite/callback` | index.ts | OAuth-callback (state + sessie in handler) | — | gebruiker | — | — | — | — | beveiliging-review-20261021, mail-accounts-beheer-20261021 | beveiliging-review-20261021, mail-accounts-beheer-20261021, merk-bron-google-20261021 |
+| `POST /api/owner/google-suite/callback` | index.ts | OAuth-callback (toestand + sessie in handler) | — | gebruiker | — | — | — | — | beveiliging-review-20261021, mail-accounts-beheer-20261021 | beveiliging-review-20261021, mail-accounts-beheer-20261021, merk-bron-google-20261021 |
 | `POST /api/owner/hub/blocks/data` | hub-block-data.ts | sessie (authorize van module) | ja | gebruiker | — | — | — | — | — | hulp/stand-werkblad, ruimte-drive-projectie-20261020, tech-ruimte-pagina-20261020 |
 | `POST /api/owner/hub/bureau/load` | hub-bureau.ts | bureaulade (bordLade) | ja | gebruiker | ja | — | — | — | — | hub-bureau-20261019 |
 | `POST /api/owner/hub/bureau/save` | hub-bureau.ts | bureaulade (bordLade) | ja | gebruiker | ja | — | — | — | — | hub-bureau-20261019 |
@@ -402,7 +402,7 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `POST /api/owner/identity/admin/users/:id` | index.ts | systeemroute (rechtencontrole in code) | — | systeem | — | — | — | — | — | — |
 | `POST /api/owner/identity/admin/users/:id/delete` | index.ts | systeemroute (rechtencontrole in code) | — | systeem | — | — | — | — | — | — |
 | `POST /api/owner/identity/admin/users/:id/recover` | index.ts | systeemroute (rechtencontrole in code) | — | systeem | — | — | — | — | — | — |
-| `POST /api/owner/identity/redirect/finalize` | index.ts | ankersessie van browser | — | gebruiker | ja | ja | ja | users | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
+| `POST /api/owner/identity/redirect/finalize` | index.ts | ankersessie van browser | — | gebruiker | ja | ja | ja | gebruikers | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
 | `POST /api/owner/identity/security/emergency-revoke` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | ja | — | ja | — | — | tech-sessies |
 | `POST /api/owner/identity/security/items/:id/revoke` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | — | — | ja | — | — | tech-sessies |
 | `POST /api/owner/identity/security/items/:id/stap-op-vergeten` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | — | ja | — | — | stap-op-onthouden-20261020 | stap-op-onthouden-20261020 |
@@ -412,9 +412,9 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `POST /api/owner/identity/security/revoke-others` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | ja | — | ja | — | toegangscodes | tech-sessies, toegangscodes |
 | `POST /api/owner/identity/transactions/attach` | index.ts | alleen id.* (identity authority) | — | gebruiker | — | ja | ja | — | — | — |
 | `POST /api/owner/identity/transactions/cancel` | index.ts | sessie/recht (weigering 401/403 in module) | — | gebruiker | — | — | ja | — | — | — |
-| `POST /api/owner/identity/transactions/complete-remembered` | index.ts | alleen id.* (identity authority) | — | — (zonder sessie) | — | — | ja | users | — | — |
+| `POST /api/owner/identity/transactions/complete-remembered` | index.ts | alleen id.* (identity authority) | — | — (zonder sessie) | — | — | ja | gebruikers | — | — |
 | `POST /api/owner/identity/transactions/create` | index.ts | ankersessie van browser | — | — (zonder sessie) | — | ja | ja | — | audit-account, hulp/nep-google | audit-account, hulp/nep-google, tabbladen |
-| `POST /api/owner/identity/transactions/redeem` | index.ts | ankersessie van browser | — | gebruiker | ja | ja | ja | users | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
+| `POST /api/owner/identity/transactions/redeem` | index.ts | ankersessie van browser | — | gebruiker | ja | ja | ja | gebruikers | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
 | `POST /api/owner/identity/transactions/status` | index.ts | sessie/recht (weigering 401/403 in module) | — | gebruiker | — | — | — | — | — | — |
 | `POST /api/owner/integraties/beschikbaar` | beheer-integraties.ts | sessie (deps.requireSession) | — | gebruiker | — | — | — | — | admin-integraties | admin-integraties |
 | `POST /api/owner/journaal/beheer/export` | beheer-journaal-routes.ts | beheerdersbevoegdheid (wrapper metAdmin()) | — | gebruiker | — | — | — | — | — | — |
@@ -569,7 +569,7 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `POST /api/owner/privacy/gebeurtenis` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | — | — | — | — | — | — |
 | `POST /api/owner/privacy/status` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | — | — | — | — | — | — |
 | `POST /api/owner/privacy/toestemming` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | — | — | — | — | — | — |
-| `POST /api/owner/profile/photo` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | — | — | ja | users | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
+| `POST /api/owner/profile/photo` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | — | — | ja | gebruikers | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
 | `POST /api/owner/remote/hosts/opslaan` | extern-routes.ts | sessie/recht (wrapper gate()) | — | gebruiker | — | ja | — | — | — | — |
 | `POST /api/owner/remote/openen` | extern-routes.ts | sessie | — | gebruiker | — | ja | — | — | remote-bureaublad | remote-bureaublad |
 | `POST /api/owner/remote/sessies` | extern-routes.ts | sessie/recht (wrapper gate()) | — | gebruiker | — | — | — | — | — | — |
@@ -586,13 +586,13 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `POST /api/owner/session/accounts/:id/forget` | index.ts | ankersessie van browser | — | gebruiker | — | — | ja | — | — | — |
 | `POST /api/owner/session/bootstrap` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker + alsSysteem | ja | — | ja | — | audit-account, audit-rls | vault-meta.e2e, agent-namens, audit-account +8 |
 | `POST /api/owner/session/handoff/create` | eigenaar-sessie-overdracht.ts | sessie (deps.requireSession) | — | gebruiker | ja | — | ja | — | audit-rls | audit-rls |
-| `POST /api/owner/session/handoff/redeem` | eigenaar-sessie-overdracht.ts | sessie (deps.requireSession) | — | gebruiker | ja | — | ja | users | audit-rls | audit-rls |
+| `POST /api/owner/session/handoff/redeem` | eigenaar-sessie-overdracht.ts | sessie (deps.requireSession) | — | gebruiker | ja | — | ja | gebruikers | audit-rls | audit-rls |
 | `POST /api/owner/session/logout-account-browser` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | — | — | — | — | beveiliging-review-20261021, sessie-tabbladen-20261020 | beveiliging-review-20261021, sessie-tabbladen-20261020 |
 | `POST /api/owner/session/logout-account-everywhere` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | ja | — | — | — | — | — |
 | `POST /api/owner/session/logout-browser-all` | index.ts | ankersessie van browser | — | gebruiker | — | — | — | — | beveiliging-review-20261021 | beveiliging-review-20261021 |
 | `POST /api/owner/session/logout-current` | index.ts | eigenaars-/gebruikerssessie (ownerRequireSession) | — | gebruiker | — | — | ja | — | beveiliging-review-20261021, sleutelkluis-20261020 | beveiliging-review-20261021, sleutelkluis-20261020, stap-op-onthouden-20261020 |
 | `POST /api/owner/session/refresh` | index.ts | sessie/recht (weigering 401/403 in module) | — | gebruiker | — | — | ja | — | — | — |
-| `POST /api/owner/session/replace-tab-remembered` | index.ts | ankersessie van browser | — | gebruiker | ja | — | ja | users | account-wisselen-tech-20261020 | account-wisselen-tech-20261020 |
+| `POST /api/owner/session/replace-tab-remembered` | index.ts | ankersessie van browser | — | gebruiker | ja | — | ja | gebruikers | account-wisselen-tech-20261020 | account-wisselen-tech-20261020 |
 | `POST /api/owner/tech/activeren` | tech-routes.ts | sessie | — | gebruiker | — | ja | — | — | ai-hub, impersonatie | diagnose.e2e, flags.e2e, hulp/tech +10 |
 | `POST /api/owner/tech/band` | tech-routes.ts | sessie/recht (wrapper gate()) | — | gebruiker | — | — | — | — | — | — |
 | `POST /api/owner/tech/beeindigen` | tech-routes.ts | sessie | — | gebruiker | — | — | — | — | ai-hub, tech-tabbladen | tech-assets.e2e, ai-hub, tech-tabbladen |
@@ -670,7 +670,7 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 | `POST /api/service/security/sessions` | index.ts | — (verouderde route, 410) | — | gebruiker | — | — | — | — | — | — |
 | `POST /api/service/security/sessions/:id/revoke` | index.ts | — (verouderde route, 410) | — | gebruiker | — | — | — | — | — | — |
 | `POST /api/service/security/sessions/revoke-all` | index.ts | — (verouderde route, 410) | — | gebruiker | — | — | — | — | — | — |
-| `POST /api/share/email` | index.ts | sessie (sessionContext) | — | gebruiker | ja | — | ja | workspace_members, users | audit-rls | audit-rls |
+| `POST /api/share/email` | index.ts | sessie (sessionContext) | — | gebruiker | ja | — | ja | workspace_members, gebruikers | audit-rls | audit-rls |
 | `POST /api/share/join` | index.ts | sessie (sessionContext) | — | gebruiker + alsSysteem | ja | — | ja | workspaces, workspace_members | audit-rls | audit-rls |
 | `POST /api/share/link` | index.ts | sessie (sessionContext) | — | gebruiker | ja | — | — | — | audit-rls | audit-rls |
 | `POST /api/share/link/revoke` | index.ts | sessie (sessionContext) | — | gebruiker | ja | — | — | — | audit-rls | audit-rls |
@@ -705,7 +705,7 @@ Routes: **682** (POST 658, GET 22, overige 2). Met persoonlijke tabellen: **33**
 
 Routes buiten admin-/systeemroutes die persoonlijke tabellen raken en waarvoor geen enkele test ze namens twee accounts aanroept. Op 22-10-2026 waren dat er 23; na de tests in `ruimte-aanvallen-20261022` (§1–§5) staat de lijst hieronder (doel: leeg).
 
-| Route | Poort | Tabellen | WHERE | RLS-groep |
+| Route | Poort | Tabellen | WAAR | RLS-groep |
 |---|---|---|---|---|
 | — (geen: elke route met persoonlijke tabellen heeft een aanvalstest) | | | | |
 
@@ -718,7 +718,7 @@ Routes buiten admin-/systeemroutes die persoonlijke tabellen raken en waarvoor g
 ## 4. Hoe isolatie werkt (samenvatting voor de eigenaar)
 
 1. **Sessie → gebruikerscontext.** Elke poort roept na een geslaagde controle `zetGebruiker(userId)` aan; alle volgende `db.*`/`gebruiker()`-queries van dit verzoek draaien onder de rol `mijnruimte_app` met `SET LOCAL app.user_id` (`server/platform/db.ts`). De RLS-policies (0004/0007/0033) zien alleen `owner_id = app.huidige_gebruiker()` of werkruimtes waarvan de gebruiker lid is. Zolang een RLS-groep in de modus «audit» staat, worden rijen die door RLS zouden zijn geweigerd geteld in `app.rls_audit` — dat is de pagina «Controle» («Звірка»).
-2. **Expliciete WHERE in de code.** Los van RLS filtert elke handler op `userId`/`ownerUserId`/`recipientUserId` (kolom «WHERE»), en `workspaceAccess()` controleert het lidmaatschap van de werkruimte voordat blokken worden gelezen.
+2. **Expliciete WAAR in de code.** Los van RLS filtert elke handler op `userId`/`ownerUserId`/`recipientUserId` (kolom «WAAR»), en `workspaceAccess()` controleert het lidmaatschap van de werkruimte voordat blokken worden gelezen.
 3. **Lade van de server.** De persoonlijke/technische ruimte (`ruimte`) wordt op de server berekend uit de activering van het technisch profiel in het tabblad (`gegevensRuimteVeilig`); de request-body kan deze hooguit inperken, nooit verruimen.
 4. **Systeemstappen zijn expliciet.** `alsSysteem(...)` wordt uitsluitend gebruikt waar een actie rechtmatig betrekking heeft op een ander account (melding aan de eigenaar, ankersessie van de browser), voorzien van het commentaar «bewuste systeemstap» en een aanvalstest (`ruimte-aanvallen-20261022`).
 5. **Beheerroutes** (`/api/owner/admin/*`, `/api/admin/*`, `/api/owner/audit/beheer/*`) — systeemcontext met eigen controle op bevoegdheden (`adminContext(…, "users.manage")` enz.) en step-up; deze worden afgedekt door de tests `audit-toegang`, `gebruiker-audit-2026-10-19` en `impersonatie`.
@@ -733,7 +733,7 @@ Volledige lijst van routes met aanvalstests die op 22-10-2026 zijn toegevoegd: z
 | `POST /api/access/request` · notification_jobs · toevoegen · 2× | E-mail-/telegramtaken «nieuw toegangsverzoek» werden aangemaakt ZONDER ontvanger (`owner_id` NULL) namens de aanvrager: onder RLS mag de aanvrager geen rij invoegen die aan niemand toebehoort. | Ontvanger = eigenaar (`recipientUserId` → `owner_id`), `sfeer: technisch`, invoegen als bewuste systeemstap (zoals `notify()`); zonder eigenaarsaccount wordt er geen taak aangemaakt. | `ruimte-aanvallen-20261022` §2 (aanvrager C → 2 taken met `owner_id` van eigenaar, 0 in controle; geen enkele taak met `owner_id` C) |
 | `POST /api/workspace/load` · workspace_blocks · toevoegen · 6× | FOUT-POSITIEF van de emulatie (geen lek): de eigenaar (die al een persoonlijke ruimte had) opende voor het eerst de hub in een TECHNISCH tabblad → `load` maakte «Mijn ruimte — technisch» + 6 blokken aan. De werkruimtecache van het verzoek (`c.werkruimtes`) was berekend VÓÓR het invoegen van de ruimte en kende het nieuwe id nog niet → 6 «schendingen». De echte policy (`app.mijn_werkruimtes`, live) staat deze inserts gewoon toe. | `server/platform/rls-audit.ts`: na elke schrijfactie in `workspaces`/`workspace_members` vergeet het verzoek de cache (synchroon, vóór de eerste `await`) → de volgende controle leest na de commit uit de database. | `ruimte-aanvallen-20261022` §3 (A met persoonlijke ruimte + technische activering → technische ruimte + 6 blokken, 0 in controle; op oude code — 6) |
 
-**Oude tellers.** Migratie `0108_zvirka_verholpen.sql` verwijdert uit `app.rls_audit` precies deze drie combinaties (alleen records die op het moment van migratie al bestonden; alle overige tellers blijven behouden). Zonder deze migratie zou de pagina «Er zijn nog schendingen: 74/2/6» blijven tonen en zou `db-rollen-instellen.sh rls-groep … aan` weigeren de groepen «verbindingen», «meldingen» en «werkruimtes» in te schakelen. Verschijnt er na de update nog een teller met een tijdstip VÓÓR de activering van de nieuwe release, dan betreft het een oud proces in het tijdsvenster tussen migratie en herstart; met een tijdstip ERNA is het een echte melding die onderzocht moet worden (`sudo deploy/db-rollen-instellen.sh status`).
+**Oude tellers.** Migratie `0108_zvirka_verholpen.sql` verwijdert uit `app.rls_audit` precies deze drie combinaties (alleen items die op het moment van migratie al bestonden; alle overige tellers blijven behouden). Zonder deze migratie zou de pagina «Er zijn nog schendingen: 74/2/6» blijven tonen en zou `db-rollen-instellen.sh rls-groep … aan` weigeren de groepen «verbindingen», «meldingen» en «werkruimtes» in te schakelen. Verschijnt er na de update nog een teller met een tijdstip VÓÓR de activering van de nieuwe release, dan betreft het een oud proces in het tijdsvenster tussen migratie en herstart; met een tijdstip ERNA is het een echte melding die onderzocht moet worden (`sudo deploy/db-rollen-instellen.sh status`).
 
 **Wat de controle nog meer toont en GEEN codefout is.** In de modus «audit» telt de teller ook aanvalspogingen die door de code zijn afgewezen: bijvoorbeeld wanneer B `blocks/<id-A>/update` aanroept → de handler leest de rij op id (om 403 terug te geven) en de RLS-emulatie telt «lezen workspace_blocks». Met ingeschakelde RLS geeft datzelfde verzoek direct 404 zonder te lezen. Na het inschakelen van de groep verdwijnen zulke meldingen dus; tot die tijd kunnen incidentele «lezen»-regels op routes met `:id` sporen zijn van afgewezen pogingen en geen datalekken (de pagina toont alleen de teller zonder inhoud).
 

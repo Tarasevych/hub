@@ -45,7 +45,7 @@ Alle geheimen op de productie-VM van het platform "Mijn Ruimte / Мій прос
 | `AUTH_POORT_AFDWINGEN` | Beveiliging | `0` (log) | `1` = centrale poort `auth-poort.ts` blokkeert (`401`) elk anoniem 2xx-antwoord buiten `PUBLIEKE_ROUTES`. |
 | `STAP_OP_UIT` | Beveiliging | `0` | Nooduitschakeling van de Step-Up vereiste (`STEP_UP_REQUIRED`) voor gevoelige acties. |
 | `STAP_OP_GOOGLE_ZONDER_AUTH_TIME` | Beveiliging | `0` | `1` = sta Google Step-Up toe zonder `auth_time` in het token als de OAuth-flow binnen 5 min is voltooid. |
-| `ACCOUNT_DEFINITIEF_WISSEN` | Privacy | `0` (dry-run) | `1` = achtergrondtaak `opruimen` verwijdert accounts definitief na afloop van de herstelperiode van 30 dagen. |
+| `ACCOUNT_DEFINITIEF_WISSEN` | Gegevensbescherming | `0` (dry-run) | `1` = achtergrondtaak `opruimen` verwijdert accounts definitief na afloop van de herstelperiode van 30 dagen. |
 
 ---
 
@@ -61,7 +61,7 @@ Alle geheimen op de productie-VM van het platform "Mijn Ruimte / Мій прос
 
 ---
 
-## 4. Runtime-parameters, Zoeken `/zoek`, Coördinatie en Privacy (`PRIVACY-001`)
+## 4. Runtime-parameters, Zoeken `/zoek`, Coördinatie en Gegevensbescherming (`PRIVACY-001`)
 
 | Variabele | Standaardwaarde | Doel |
 |---|---|---|
@@ -72,7 +72,7 @@ Alle geheimen op de productie-VM van het platform "Mijn Ruimte / Мій прос
 | `MERK_EIGEN_MAP` | `/srv/mijn-ruimte/merk-eigen` | Map voor eigen officiële merklogo's (`.svg`/`.png` ≤ 200 KB). |
 | `MAX_BODY_BYTES` / `PG_POOL_MAX` | `12582912` (12 MiB) / `10` | Limiet voor HTTP-requestbody en grootte van de PostgreSQL-verbindingspool. |
 | `API_RATE_LIMIT_PER_MIN` | `600` | Algemene verzoeklimiet voor `/api/*` per IP per minuut (voor login/MFA gelden strengere limieten: 10–20/min). |
-| `ZOEK_TEKST_MAX_BYTES` / `ZOEK_TEKST_TIMEOUT_MS` / `ZOEK_TEKST_WERKER_MB` | `26214400` (25 MiB) / `60000` / `512` | Limieten voor de worker `zoek-werker.mjs` bij tekstextractie uit PDF-, Office- en archiefbestanden. |
+| `ZOEK_TEKST_MAX_BYTES` / `ZOEK_TEKST_TIMEOUT_MS` / `ZOEK_TEKST_WERKER_MB` | `26214400` (25 MiB) / `60000` / `512` | Limieten voor de achtergrondproces `zoek-werker.mjs` bij tekstextractie uit PDF-, Office- en archiefbestanden. |
 | `ZOEK_OCR_ENGINE` / `ZOEK_OCR_TALEN` / `ZOEK_OCR_TALEN_MAP` | `auto` / `ukr+nld+eng+rus` / `/srv/mijn-ruimte/ocr/tessdata` | Instellingen voor de OCR-engine (`tesseract-cli` / `tesseract-js` / `platform-ai`) en taalpakketten. |
 | `ZOEK_INDEX_RUN_MS` / `ZOEK_INDEX_ITEMS` / `ZOEK_INDEX_SCAN_RIJEN` | `120000` / `60` / `400` | Tijdsbudget en aantal items per run van de indexer `zoek-index` (elke 5 min). |
 | `CHAT_MODEL` | `claude-sonnet-5-5` | Standaard chatmodel op `ai.*` (elke gebruiker bewaart zijn eigen API-sleutel in zijn persoonlijke kluis). |

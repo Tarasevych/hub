@@ -71,7 +71,7 @@ sudo systemctl disable --now mijn-ruimte-ssh-ca.path
 Reeds uitgegeven certificaten verlopen vanzelf na uiterlijk 65 minuten. Om alle certificaten direct in te trekken, verwijdert u het vertrouwen in `sshd`.
 
 ## Waarom zo
-- Geen permanente sleutels: toegang is eenmalig, tijdelijk en gekoppeld aan een persoon (Key ID = naam uit e-mail, zichtbaar in het logboek van `sshd`).
+- Geen permanente sleutels: toegang is eenmalig, tijdelijk en gekoppeld aan een persoon (Sleutel ID = naam uit e-mail, zichtbaar in het logboek van `sshd`).
 - Het root-script kiest zelf de principal, geldigheidsduur en opties; het verzoek van de site heeft daar geen invloed op.
 - Het script bewerkt `sshd` nooit en zet de schakelaar niet aan: het vertrouwen wordt uitsluitend handmatig door de eigenaar ingesteld.
 - Alleen toegankelijk vanuit het profiel van de Eigenaar: toegang tot de host gaat verder dan een terminal in een container (etappe C, deel 1).

@@ -2,7 +2,7 @@
 
 # Primaire Google Suite Onboarding-orchestrator — B+
 
-## Scope
+## Bereik
 
 De primaire Google-identiteit wordt gekoppeld via één Google Cloud-project en één Web OAuth Client. Toestemming blijft contextueel en opeenvolgend:
 
@@ -49,7 +49,7 @@ requiredScopes ⊆ grantedScopes
 
 De Google-identiteit die overeenkomt met de aanmelding bij het ecosysteem is de primaire provider-principal. Aanvullende Drive-accounts blijven expliciet en vallen buiten de primaire reeks. Elke aanvullende Google-identiteit krijgt een eigen provider-principal en een eigen canonieke `google_oauth_grant_v1`-rij, terwijl dezelfde Web OAuth Client-configuratie wordt hergebruikt.
 
-Het ontkoppelen van één Drive-handle trekt een gedeelde primaire Google-grant niet in zolang een andere service-handle actief is. Intrekking bij de provider wordt alleen geprobeerd wanneer geen enkele andere actieve handle afhankelijk is van die principal-grant.
+Het ontkoppelen van één Drive-handle trekt een gedeelde primaire Google-grant niet in zolang een andere service-handle actief is. Intrekking bij de aanbieder wordt alleen geprobeerd wanneer geen enkele andere actieve handle afhankelijk is van die principal-grant.
 
 ## Persistente tabellen
 

@@ -3,7 +3,7 @@
 # Браузер через конектор «Мій простір» — для будь-якого ШІ-агента
 
 Стан: 23.10.2026 (розширення 0.7.0, міграція 0110). Для власника BYOS-сервера і для розробників агентів. Усе працює на сервері
-власника і в його браузері; жодних зовнішніх служб, жодного стороннього хостингу. Нідерландська версія — нижче (§ NL).
+власника і в його браузері; жодних зовнішніх служб, жодного стороннього хостингу.
 
 ## 1. Що це
 
@@ -126,49 +126,3 @@ Anthropic у сховищі сайту, для технічного слота �
 ## 9. Що не відбувається ніколи
 Розширення не читає паролі, платіжні поля, cookie, сховище, вміст запитів; не відкриває сторонні сайти; приватний агент не бачить
 технічних вкладок; технічний — приватних; агент одного користувача не дістає слот іншого (тест `extensie-matrix-20261022`).
-
----
-
-## § NL — De browser via de connector van «Mijn Ruimte», voor elke AI-agent
-
-**Wat.** Elke agent op `https://mcp.<domein>/<agent>` (claude, gpt, grok, gemini, copilot, cursor) krijgt **dezelfde browserhulpmiddelen**,
-via de extensie in de browser van de eigenaar, in twee gescheiden sloten: **privé** (`…_gebruiker`; alleen uw eigen pagina’s, nooit
-admin.\*/api.\*; openen met een bevestiging van de aanmelding) en **technisch** (`…_beheer`; alleen tabbladen met een ACTIEF technisch
-profiel op de gekozen beheerhosts; ontgrendelen met uw passkey). Het verschil tussen agenten zit alleen in uw toestemmingen.
-
-**Eén plek: mcp.\*/agents → «Browser en agenten» (`#browser`).** Sloten (stand, termijn: 15 min, 1 u, 4 u, tot het einde van de
-technische activering, tot de browser sluit, tot uitloggen, tot intrekken, 1 week, 1 maand, 6 maanden, 1 jaar), de matrix mogelijkheid × agent per slot
-(lezen, navigatie, klikken/typen, schermafdruk, console/netwerk, diepe diagnose en scripts alleen technisch), snelle sets («Alles toestaan
-voor ontwikkeling» met waarschuwing, «Alleen lezen», «Blokkeren»), «zonder bevestiging per actie», «namen zoals chrome-devtools-mcp»,
-«Wat er verder nog toegestaan moet zijn» (connectorrechten en modi per hulpmiddel; opslaan van de matrix zet riskante browserhulpmiddelen
-aan voor de toegestane mogelijkheden — met een geldig ondertekend AI-beleid beslist dat beleid) en de laatste weigeringen in gewone taal.
-Ruimer opslaan vraagt een bevestiging; een lopende ontgrendeling wordt meteen opnieuw ondertekend.
-
-**Termijn en technisch profiel.** Een technische ontgrendeling die langer loopt dan de activering, overleeft die — maar elk technisch
-hulpmiddel eist bij gebruik toch een actief technisch profiel in het tabblad. Een herstart van de browser maakt geen einde aan «tot
-uitloggen», «tot intrekken» en een week tot een jaar (de server stuurt de ontgrendeling opnieuw); korte termijnen (15 min, 1 u, 4 u, tot
-het einde van de activering) en «tot de browser sluit» eindigen als de browser sluit — de extensie 0.7.0 meldt bij elke verbinding een
-browsersessie-id (`chrome.storage.session`), een andere id betekent een herstart (of een update van de extensie) en de server trekt in
-(`browser-gesloten`). **Uitloggen op de site maakt altijd een einde — aan elke termijn**, in beide sloten.
-
-**Stappen.** Extensie 0.7.0 installeren en sloten koppelen → agent koppelen op zijn adres en in het venster «Toestaan» de groep
-**Browser** aanzetten → in «Browser en agenten» vinkjes zetten en opslaan → slot openen voor de gewenste termijn (technisch: profiel
-activeren) → de agent roept `tools/list` aan.
-
-**Namen.** `<essentie>_<agent>_mcp_tarasevych_com_<gebruiker|beheer>`; zie de tabel in §4 (essentie, chrome-devtools-mcp-naam, mogelijkheid).
-Voorbeelden: zie §5. `uid` komt uit `controls[].uid` van de snapshot (`<index>_<hash>`), `name` kan ook. Een kale devtools-naam gaat naar
-het technische slot als dat leeft en is toegestaan, anders naar privé; `"slot":"prive"|"technisch"` of het achtervoegsel kiest zelf.
-Onbekende argumenten van chrome-devtools-mcp vallen weg en staan als «Ignored arguments» in het antwoord.
-
-**Weigeringen** (§6): EXTENSIE_VERGRENDELD, EXTENSIE_CAP, EXTENSIE_AGENT, EXTENSIE_HOST, EXTENSIE_PROFIEL, EXTENSIE_RUIMTE/TECH_PROFILE_OFF,
-EXTENSIE_SCRIPT, PERMISSION_OFF, NOT_SUPPORTED, TERMIJN_VEREIST_UPDATE — elk met het exacte adres `https://mcp.tarasevych.com/agents#browser`.
-
-**chrome-devtools-mcp** (§7): ondersteund en bewust niet ondersteund zoals hierboven; snapshot is JSON in plaats van een tekstboom;
-`evaluate_script` alleen technisch en zonder element-args. **Niet online geverifieerd:** de lijst komt uit kennis van de openbare
-repository ChromeDevTools/chrome-devtools-mcp (versies tot 2025).
-
-**Zijpaneel** (§8): chat «AI voor u — bij dit tabblad», met het token van het slot, alleen browserhulpmiddelen, alleen deze browser,
-dezelfde poorten; vereist een open slot, het recht «API-platform», een Anthropic-sleutel in de kluis en voor technisch een actief profiel.
-
-**Nooit** (§9): wachtwoorden, betaalvelden, cookies, opslag of inhoud van verzoeken; vreemde sites; kruisen tussen de sloten; het slot van
-een andere gebruiker.

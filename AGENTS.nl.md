@@ -16,7 +16,7 @@ Wijziging van de regels = een nieuw besluit in [`orchestratie/BESLUITEN.md`](./o
 
 ## 1. Platform (onveranderlijk)
 
-- **Mijn Ruimte** is een self-hosted BYOS-platform (Ubuntu-VM op de eigen hardware van de gebruiker). Geen externe clouds voor hosting of uitrol.
+- **Mijn Ruimte** is een zelfstandig BYOS-platform (Ubuntu-VM op de eigen hardware van de gebruiker). Geen externe clouds voor hosting of uitrol.
 - Releases zijn atomisch: `mijn-ruimte-YYYYMMDD-HHMMSS.tar.gz`, SHA-256, installatie uitsluitend via `/usr/local/sbin/mijn-ruimte-installeer`
   (`deploy/uitrol/mijn-ruimte-uitrol.sh`). Pakketregels: [`deploy/REGELS-UITROLPAKKET.nl.md`](./deploy/REGELS-UITROLPAKKET.nl.md) / [`deploy/REGELS-UITROLPAKKET.md`](./deploy/REGELS-UITROLPAKKET.md) (`UITROL-VERSIE`, `AUTEUR`, `AGENT`, `SAMENVATTING`, `BRON-COMMIT`, `UITROL-MANIFEST.json` vanaf `20261101`).
 - Geen ruwe root-acties met de hand: acties lopen via de werkgebruiker (`beheer`), systeemwijzigingen via vooraf geschreven configuraties en systemd-units. Niets uitpakken in `/root`.
@@ -41,7 +41,7 @@ Wijziging van de regels = een nieuw besluit in [`orchestratie/BESLUITEN.md`](./o
 - Stil overschrijven van andermans wijzigingen is verboden: bij een conflict rebasen op de integratietak, conflicten expliciet oplossen en vermelden in het rapport.
 - Oude fout gevonden? Los haar op (in een aparte commit) en negeer haar niet. Verwijder nooit iets «om het werkend te krijgen»: geen knop, tabblad, test of controle weghalen.
 - Geheimen, tokens, privésleutels en e-mailinhoud horen nooit in de chat, logs, commits of pakketten. Privésleutels van de eigenaar worden nooit aan agenten gegeven.
-- Productie, de default branch, back-ups en kritieke rechten worden alleen gewijzigd na expliciete toestemming van de eigenaar (niet van een andere agent).
+- Productie, de standaardtak, back-ups en kritieke rechten worden alleen gewijzigd na expliciete toestemming van de eigenaar (niet van een andere agent).
 - Diagnostiek en tijd van de eigenaar (`B-009`): vraag de eigenaar nooit om handmatig terminalcommando's uit te voeren (`df -h`, `journalctl`) of handmatig pakketten te bouwen; geef zonder directe toegang tot `<VM-IP>` een korte technische conclusie (1–2 zinnen) voor de infrastructuuragent op de pc van de eigenaar. Gis nooit naar de oorzaak van een `voorcontrole`-fout (wijt het niet aan een `.zip` als de stap `structuur` al geslaagd is). Details hieronder bij `B-009`.
 
 ## 4. Vóór overdracht van het resultaat

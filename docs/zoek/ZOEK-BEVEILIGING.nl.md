@@ -22,11 +22,11 @@ activering zelfs niet in de suggesties zichtbaar zijn.
 - `ruimte` komt uit de live status van het technisch profiel / de tabbladactivering (`gegevensRuimteVeilig`); een tabblad kan de ruimte alleen **inperken**.
 - AI-verzoeken (`site_search` via de connector) doorlopen dezelfde poort met de `aiRuimte` van de grant.
 
-## 3. Autorisatie op databaseniveau (RLS) + expliciete WHERE
+## 3. Autorisatie op databaseniveau (RLS) + expliciete WAAR
 
 - `app.zoek_objecten` (0094), `app.zoek_geschiedenis` (0103), `app.zoek_ocr_tekst` (0102), `app.zoek_wachtrij` / `app.zoek_bron_stand`
   (0096/0100): policy `USING (current_user <> 'mijnruimte_app' OR user_id = app.huidige_gebruiker())` + `WITH CHECK`.
-- Elke query van de kern draait onder `alsGebruiker(userId)` (rol `mijnruimte_app`, `set_config('app.user_id')`) **én** bevat
+- Elke zoekopdracht van de kern draait onder `alsGebruiker(userId)` (rol `mijnruimte_app`, `set_config('app.user_id')`) **én** bevat
   `user_id = $1 AND ruimte = $2` — dubbel beveiligd, zodat ook de systeemrol (`BYPASSRLS`, cron) nooit laden doorkruist.
 - Een directe `SELECT` vanuit de rol `app` met `app.user_id = B` op rijen van A levert 0 rijen op; `UPDATE` → 0; `INSERT` met andermans `user_id` → geweigerd (RLS-test,
   uitgevoerd via `run-test-rls.sh` met `DATABASE_URL_APP`).
@@ -53,7 +53,7 @@ activering zelfs niet in de suggesties zichtbaar zijn.
 
 ## 6. Geen lekken via suggesties, correcties, facetten, geschiedenis of logs
 
-- Aanvullingen en correcties komen uitsluitend uit `titel_norm`/synoniemen van **de eigen lade** (dezelfde `alsGebruiker` + WHERE); woorden uit het lexicon van een andere
+- Aanvullingen en correcties komen uitsluitend uit `titel_norm`/synoniemen van **de eigen lade** (dezelfde `alsGebruiker` + WAAR); woorden uit het lexicon van een andere
   gebruiker worden nooit voorgesteld (getest met een uniek woord van gebruiker B).
 - Facetten en `totaal` worden berekend over exact dezelfde selectie als de zoekresultaten.
 - De geschiedenis staat per lade in de database (0103); `localStorage` wordt niet meer gebruikt voor zoekgeschiedenis (voorkomt lekken tussen accounts in dezelfde browser).
@@ -81,7 +81,7 @@ lijst (het strikte deel) wordt gebruikt door de pre-deploy pakketcontrole (`back
 ## 9. Wat als restrisico overblijft (en waarom dat aanvaardbaar is)
 
 - De systeempool (`getPool('systeem')`, `BYPASSRLS`) wordt door de cron-indexering gebruikt om te schrijven; de bescherming daar bestaat uit expliciete `user_id/ruimte` in
-  elke query + `ZOEK_LADE_MISMATCH` in de kern. Lezen voor gebruikersroutes gebeurt altijd onder de rol `app`.
+  elke zoekopdracht + `ZOEK_LADE_MISMATCH` in de kern. Lezen voor gebruikersroutes gebeurt altijd onder de rol `app`.
 - De index bewaart **platte** tekst van documenten onder RLS (net als de projecties van post en cloud); de DEK van de sleutelkluis beschermt tokens en instellingen,
   niet de rijen zelf. De servereigenaar met databasetoegang ziet de index op dezelfde manier als de projecties. Volledige versleuteling van de index met de sleutel van de mens
   zou zoeken zonder geopende sleutelkluis onmogelijk maken — dit is in deze release bewust niet geïmplementeerd en gedocumenteerd als beperking.

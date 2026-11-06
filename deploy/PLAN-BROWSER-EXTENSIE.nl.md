@@ -14,7 +14,7 @@ Doel: de gebruiker zet in zijn accountomgeving één schakelaar om, installeert 
 ## Architectuur (hergebruik van wat er al is)
 1. **Koppelen (Pairing)**: code uit de accountomgeving → extensie (zoals `agent pair`). Nieuw soort agent `browser` in de tabel `agents`.
 2. **Kanaal**: WSS `/agent/ws` (bestaat al, 4401 zonder authenticatie). De achtergrondpagina van de extensie houdt de verbinding open, het contentscript voert acties op de pagina uit.
-3. **Opdrachten**: `browser.snapshot` (tekst en beschikbare acties), `browser.navigate` (alleen onze eigen adressen), `browser.invoke` (aanroepen van een gedeclareerde actie), `browser.click`/`browser.type` (op naam, uitsluitend met bevestiging). Worden toegevoegd aan `COMMAND_TYPES` en CHECK (nieuwe migratie).
+3. **Opdrachten**: `browser.snapshot` (tekst en beschikbare acties), `browser.navigate` (alleen onze eigen adressen), `browser.invoke` (aanroepen van een gedeclareerde actie), `browser.click`/`browser.type` (op naam, uitsluitend met bevestiging). Worden toegevoegd aan `COMMAND_TYPES` en CONTROLE (nieuwe migratie).
 4. **MCP-hulpmiddelen**: `browser_snapshot`, `browser_open`, `browser_invoke_action` enz. via de bestaande opdrachtenwachtrij en goedkeuringsregels.
 5. **WebMCP**: de site declareert zijn acties via `navigator.modelContext`, indien de browser dit ondersteunt. De extensie gebruikt dezelfde declaratie, zodat acties gestructureerd zijn in plaats van «blind klikken».
 

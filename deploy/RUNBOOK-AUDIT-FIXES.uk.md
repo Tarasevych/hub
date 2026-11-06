@@ -29,7 +29,7 @@
 - [ ] Лише якщо ролі бази даних ще не існують (етап 2 ще не розгорнуто): перевірка `pg_hba` з
       `RUNBOOK-FASE-2-3.md` §0.
 - [ ] Google (рекомендовано, можна й пізніше): Google Auth Platform → проєкт → **Settings** → **Advanced Settings** →
-      увімкнути **Session age claims**. Без цього Google не надсилає `auth_time`, і повторний вхід через
+      увімкнути **Сесія age claims**. Без цього Google не надсилає `auth_time`, і повторний вхід через
       Google **не** зараховується як step-up (безпечна відмова / fail-closed); водночас step-up за допомогою TOTP-коду працює. Google може
       передавати `auth_time` лише для опублікованого/верифікованого OAuth-застосунку.
 - [ ] Не вмикати під час розгортання: `AUTH_POORT_AFDWINGEN`, `ACCOUNT_DEFINITIEF_WISSEN`, RLS (`rls-aan`).
@@ -72,7 +72,7 @@ grep -c '^AUDIT_IP_PEPPER=' /etc/mijn-ruimte/geheimen.env                       
   (коротке ексклюзивне блокування; за поточного обсягу — лічені секунди). Далі політики, тригер `users`, допоміжні функції.
 - `0008`: `app.audit_beheerders`, нові `audit_toevoegen`/`audit_verwijderen`. Лише додавання.
 - `rechten.sql` забирає право INSERT на `app.audit`/`audit_kop`/`audit_beheerders` у ролей застосунку та системи й створює
-  унікальний індекс `records_een_eigenaar`. Якщо у виводі є **WARNING про кількох власників**, створення індексу
+  унікальний індекс `records_een_eigenaar`. Якщо у виводі є **ПОПЕРЕДЖЕННЯ про кількох власників**, створення індексу
   пропускається; сервер під час запуску переводить застарілого власника назад у `member`, а крок 4
   (`instellen`) достворює індекс.
 
@@ -184,7 +184,7 @@ systemctl list-timers 'mijn-ruimte-*'
   після вирішення приберіть рядок (`sed -i '/^STAP_OP_UIT=/d' /etc/mijn-ruimte/geheimen.env`) і перезапустіть службу.
 - **Step-up через Google не працює, бо Google не надсилає `auth_time`**, а TOTP не налаштовано: тимчасово додайте
   `STAP_OP_GOOGLE_ZONDER_AUTH_TIME=1` (у такий самий спосіб; слабший захист: зараховує явний прохід `prompt=login` протягом
-  5 хвилин). Краще: увімкнути Session age claims (§0).
+  5 хвилин). Краще: увімкнути Сесія age claims (§0).
 - **Власника випадково заблоковано** (адреса власника більше не є винятком):
   ```
   runuser -u postgres -- psql -d mijnruimte -c "update app.records set data = jsonb_set(data, '{status}', '\"approved\"') where tbl = 'users' and lower(data->>'email') = lower('<OWNER_EMAIL>')"

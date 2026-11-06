@@ -16,10 +16,10 @@ Claude Desktop / Claude Code ⇄ mr-native-mcp.mjs ⇄ локальний сок
   | Інструмент MCP     | Команда розширення     | Що повертає |
   |--------------------|------------------------|-------------|
   | `lokaal_status`    | `browser.self_test`    | стан розширення (заблоковано/розблоковано, до коли, права) і самоперевірка |
-  | `lokaal_snapshot`  | `browser.snapshot`     | адреса (без query), заголовок, видимий текст, назви елементів |
+  | `lokaal_snapshot`  | `browser.snapshot`     | адреса (без запит), заголовок, видимий текст, назви елементів |
   | `lokaal_diagnose`  | `browser.diagnostics`  | помилки JavaScript, консолі, невдалі запити, базові метрики |
-  | `lokaal_console`   | `browser.console`      | останні повідомлення консолі (`types`: error, warn, log, info, debug) |
-  | `lokaal_netwerk`   | `browser.network`      | останні запити: метод, адреса без query, статус, тривалість (`failed_only`) |
+  | `lokaal_console`   | `browser.console`      | останні повідомлення консолі (`types`: помилка, warn, log, info, debug) |
+  | `lokaal_netwerk`   | `browser.network`      | останні запити: метод, адреса без запит, статус, тривалість (`failed_only`) |
   | `lokaal_audit`     | `browser.audit`        | продуктивність, знахідки безпеки, структура DOM (`soort`: alles, prestaties, beveiliging, dom) |
 
 - Працює **тільки** після розблокування на сайті вашим passkey з позначкою **«локальний агент»** і лише до кінця вибраного часу
@@ -46,7 +46,7 @@ Claude Desktop / Claude Code ⇄ mr-native-mcp.mjs ⇄ локальний сок
 ### Windows (без прав адміністратора)
 
 ```powershell
-cd <папка з цими файлами>
+cd <тека з цими файлами>
 powershell -ExecutionPolicy Bypass -File .\installeer-windows.ps1 -ClaudeDesktop
 ```
 

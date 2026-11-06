@@ -25,7 +25,7 @@ zijn uitsluitend adapters van ≤ 25 regels met de markering `<!-- orch-adapter 
 ## B-002 · 2026-10-31 · 1.0.0 · voorstel
 
 **Context.** De laatst opgegeven geïnstalleerde versie op dat moment was `20261031-093842`, `BRON-COMMIT` `b279ccabe31a27139b337822162653ccc13b6a5a`
-(tak `release/sec-001-20261031-084138`, auteur van de commit Antigravity). De tak `voornaamst` (default) bevatte op dat moment alleen de README en was een voorouder van deze commit.
+(tak `release/sec-001-20261031-084138`, auteur van de commit Antigravity). De tak `voornaamst` (standaard) bevatte op dat moment alleen de README en was een voorouder van deze commit.
 
 **Besluit.** De basis voor alle nieuwe taken is `b279ccab…`, totdat de eigenaar een andere bevestigt. De status van de basis is `opgave_eigenaar`
 (opgegeven door de eigenaar): de agent had geen netwerktoegang tot `hub.tarasevych.com/api/version`, waardoor de controle tegen productie nog niet was uitgevoerd.

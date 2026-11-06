@@ -2,11 +2,11 @@
 
 # Mail Database Schema v1
 
-## 1. Toepassingsgebied (Scope)
+## 1. Toepassingsgebied
 
-Dit is het productie-doelschema voor PostgreSQL. Het vormt het normatieve model voor identiteit (identity), beperkingen (constraints), indexen (indexes), eigenaarsafbakening (owner scoping), idempotentie (idempotency) en gegevensbewaring (retention). De huidige AppDeploy `mail_*_v1`-tabellen vormen een compatibiliteitsfundament en worden niet gelijkwaardig verklaard aan SQL-transacties.
+Dit is het productie-doelschema voor PostgreSQL. Het vormt het normatieve model voor identiteit (identity), beperkingen (constraints), indexen (indexes), eigenaarsafbakening (eigenaar scoping), idempotentie (idempotency) en gegevensbewaring (retention). De huidige AppDeploy `mail_*_v1`-tabellen vormen een compatibiliteitsfundament en worden niet gelijkwaardig verklaard aan SQL-transacties.
 
-## 2. Extensies en enumeraties (Extensions and enums)
+## 2. Extensies en enumeraties
 
 ```sql
 create extension if not exists pgcrypto;
@@ -22,7 +22,7 @@ create type mail_command_status as enum ('prepared','confirmed','executing','suc
 create type mail_source_type as enum ('provider','manual','qa');
 ```
 
-## 3. Kernaccounts en tokenkluis (Core accounts and token vault)
+## 3. Kernaccounts en tokenkluis
 
 ```sql
 create table mail_accounts (
@@ -94,7 +94,7 @@ create table mail_oauth_states (
 create index mail_oauth_states_expiry_idx on mail_oauth_states(status,expires_at);
 ```
 
-## 4. Provider-abonnementen en cursors (Provider subscriptions and cursors)
+## 4. Provider-abonnementen en cursors
 
 ```sql
 create table mail_provider_subscriptions (
@@ -137,7 +137,7 @@ create table mail_sync_state (
 create index mail_sync_state_due_idx on mail_sync_state(recovery_required,last_success_at);
 ```
 
-## 5. Berichten, berichtinhoud, conversaties en labels (Messages, bodies, threads and labels)
+## 5. Berichten, berichtinhoud, conversaties en etiketten
 
 ```sql
 create table mail_threads (
@@ -232,7 +232,7 @@ create table mail_message_labels (
 create index mail_message_labels_label_idx on mail_message_labels(label_id,message_id);
 ```
 
-## 6. Bijlagen (Attachments)
+## 6. Bijlagen
 
 ```sql
 create table mail_attachments (
@@ -256,7 +256,7 @@ create index mail_attachments_message_idx on mail_attachments(message_id);
 create index mail_attachments_scan_idx on mail_attachments(scan_status,download_status);
 ```
 
-## 7. Wachtrij, webhook-deduplicatie en uitvoeringspogingen (Queue, webhook dedupe and attempts)
+## 7. Wachtrij, webhook-deduplicatie en uitvoeringspogingen
 
 ```sql
 create table mail_webhook_events (
@@ -310,7 +310,7 @@ create table mail_job_attempts (
 );
 ```
 
-## 8. Neuro-inclusieve status en AI-herkomst (Neuroinclusive state and AI provenance)
+## 8. Neuro-inclusieve status en AI-herkomst
 
 ```sql
 create table mail_triage (
@@ -383,7 +383,7 @@ create table mail_notification_preferences (
 );
 ```
 
-## 9. Concept- en verzendopdrachtmodel (Draft and send command model)
+## 9. Concept- en verzendopdrachtmodel
 
 ```sql
 create table mail_drafts (
@@ -422,7 +422,7 @@ create table mail_outbox_commands (
 create index mail_outbox_commands_owner_status_idx on mail_outbox_commands(owner_user_id,status,prepared_at desc);
 ```
 
-## 10. Audit en gegevensbewaring (Audit and retention)
+## 10. Audit en gegevensbewaring
 
 ```sql
 create table mail_audit_log (
@@ -444,9 +444,9 @@ create index mail_audit_owner_time_idx on mail_audit_log(owner_user_id,created_a
 
 Gegevensbewaring (retention) wordt gestuurd door beleid. Tokenrecords worden onmiddellijk verwijderd bij het ontkoppelen; webhook-payloads hebben een korte levensduur; berichtinhoud en bijlagen volgen het bewaar-, export- en verwijderbeleid van de eigenaar. Het auditlogboek slaat geen tokens, cookies, ruwe autorisatieheaders, volledige berichtinhoud of bijlage-inhoud op.
 
-## 11. Queryregel voor eigenaarsafbakening (Owner-scoping query rule)
+## 11. Queryregel voor eigenaarsafbakening
 
-Elke afgeschermde query bevat zowel de eigenaar- als de bronidentiteit:
+Elke afgeschermde zoekopdracht bevat zowel de eigenaar- als de bronidentiteit:
 
 ```sql
 select * from mail_messages
@@ -455,9 +455,9 @@ where owner_user_id = :actor_owner
   and deleted_at is null;
 ```
 
-Een bron-ID (Resource ID) alleen geldt nooit als autorisatie. Vreemde sleutels (foreign keys) voorkomen verweesde records; de service-autorisatie valideert daarnaast altijd het eigenaars- en werkruimtelidmaatschap vóórdat SQL wordt uitgevoerd.
+Een bron-ID (Resource ID) alleen geldt nooit als autorisatie. Vreemde sleutels (foreign sleutels) voorkomen verweesde items; de service-autorisatie valideert daarnaast altijd het eigenaars- en werkruimtelidmaatschap vóórdat SQL wordt uitgevoerd.
 
-## 12. AppDeploy-compatibiliteitsmapping (AppDeploy compatibility mapping)
+## 12. AppDeploy-compatibiliteitsmapping
 
 Huidige tabellen:
 
@@ -467,4 +467,4 @@ Huidige tabellen:
 - `mail_metrics_v1` → projectie voor productanalyse
 - `mail_notification_preferences_v1` → voorlopige voorkeur op eigenaarsniveau
 
-Toekomstige afgebakende fundamenttabellen mogen `_v2`-namen gebruiken, maar migratie moet plaatsvinden via dual-read/dual-write met bewijsvoering en terugdraaimogelijkheid (rollback). Geen enkel bestaand record wordt verwijderd louter omdat het doel-SQL-schema is gedocumenteerd.
+Toekomstige afgebakende fundamenttabellen mogen `_v2`-namen gebruiken, maar migratie moet plaatsvinden via dual-read/dual-write met bewijsvoering en terugdraaimogelijkheid. Geen enkel bestaand item wordt verwijderd louter omdat het doel-SQL-schema is gedocumenteerd.

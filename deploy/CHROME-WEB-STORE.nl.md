@@ -18,8 +18,8 @@ Chrome staat niet toe dat externe extensies buiten de winkel om «met één klik
 ## Verantwoording van de machtigingen (voor de winkelbeoordeling)
 - `host_permissions: https://*.tarasevych.com/*`: lezen en bedienen van pagina's op de eigen site van de gebruiker, inclusief de lijst met tabbladen en een schermafbeelding van een tabblad van deze site. Andere websites zijn voor de extensie onzichtbaar.
 - `storage`: bewaart het koppeltoken (niet zichtbaar voor webpagina's).
-- `alarms`: controleert elke minuut of de verbinding nog actief is (de service worker valt in slaap).
-- `optional_permissions: debugger`: **optioneel**. Chrome accepteert deze machtiging niet als optioneel (het aanvragen geeft altijd «Only permissions specified in the manifest may be requested»); daarom is diepe diagnostiek via CDP niet beschikbaar in het winkelpakket. Daarvoor bestaat een apart pakket `mijn-ruimte-extension-diagnose.zip` buiten de winkel waarin `debugger` in `permissions` staat. In alle gevallen is de debugger alleen beschikbaar in het technische profiel, alleen op beheerpagina's van de eigen site en alleen met een actieve ondertekende ontgrendeling; inhoud en kopteksten van verzoeken worden niet gelezen.
+- `alarms`: controleert elke minuut of de verbinding nog actief is (de service achtergrondproces valt in slaap).
+- `optional_permissions: debugger`: **optioneel**. Chrome accepteert deze machtiging niet als optioneel (het aanvragen geeft altijd «Alleen permissions specified in de manifest may be requested»); daarom is diepe diagnostiek via CDP niet beschikbaar in het winkelpakket. Daarvoor bestaat een apart pakket `mijn-ruimte-extension-diagnose.zip` buiten de winkel waarin `debugger` in `permissions` staat. In alle gevallen is de debugger alleen beschikbaar in het technische profiel, alleen op beheerpagina's van de eigen site en alleen met een actieve ondertekende ontgrendeling; inhoud en kopteksten van verzoeken worden niet gelezen.
 - Externe code: geen (alle code zit in het pakket). Gegevens worden niet verkocht of gedeeld met derden.
 
 ## Privacybeleid (kort, voor de winkelpagina)

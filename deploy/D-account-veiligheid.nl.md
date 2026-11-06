@@ -14,8 +14,8 @@ Zelfverwijdering en verwijdering door een beheerder roepen `deleteRecoverably` n
 
 - `POST /api/account/delete` en `POST /api/owner/identity/account/delete`: `kritiekStapOp(..., 'account-verwijderen')`, `codewoordEis`, `OWNER_NIET_WISSEN`, `accountMeteenWissen`.
 - `deleteManagedUser` / `POST /api/owner/admin/users/:id/delete`: hetzelfde moment. De gebruiker krijgt `status: deleted`, `recoverableUntil: 0`, `retiredAt: now`, sessies worden ingetrokken, gevolgd door `accountMeteenWissen`. `recoverDeletedAccount` gooit `RECOVERY_WINDOW_EXPIRED` omdat `retiredAt` al is ingesteld. Logboek: `admin_user_deleted` met `{meteen:true}`. De eigenaar blijft zoals voorheen beschermd (`OWNER_PROTECTED` / `ADMIN_OWNER_ACCOUNT_PROTECTED` en `OWNER_NIET_WISSEN` bij zelfverwijdering).
-- De functie `deleteRecoverably` is in het bestand gebleven voor oude zachte records en opruimtaken. Nieuwe routes roepen haar niet aan (in `index.ts` staat precies één `deleteRecoverably(` — de declaratie zelf).
-- In het beheerpaneel meldt een rij met `retiredAt` «direct gewist, kan niet worden hersteld» in plaats van «onbeperkt in de tijd». Het oude zachte venster (wel `recoverableUntil`, geen `retiredAt`) blijft in de tekst bestaan zolang zo'n record nog aanwezig is.
+- De functie `deleteRecoverably` is in het bestand gebleven voor oude zachte items en opruimtaken. Nieuwe routes roepen haar niet aan (in `index.ts` staat precies één `deleteRecoverably(` — de declaratie zelf).
+- In het beheerpaneel meldt een rij met `retiredAt` «direct gewist, kan niet worden hersteld» in plaats van «onbeperkt in de tijd». Het oude zachte venster (wel `recoverableUntil`, geen `retiredAt`) blijft in de tekst bestaan zolang zo'n item nog aanwezig is.
 - Het `DELETE`-register in `accountMeteenWissen` loopt binnen één `BEGIN` / `COMMIT` (`ROLLBACK` als een stap faalt). `wisRecordsVanAccount` (tombstone en bestanden) blijft de tweede stap na de commit: dit is niet uitsluitend SQL.
 - `users`, `records`, `audit` zijn uitgesloten van het SQL-register. `app.audit` is append-only. Handtekeningen (`actor_id`, `gewijzigd_door`, …) en `app.uitrol_runs` zijn geen rij van dit account.
 

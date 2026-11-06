@@ -1,486 +1,486 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261018-TECH-AFRONDING.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261018-TECH-AFRONDING.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-# Afronding technisch profiel en open punten — 18.10.2026
+# Завершення технічного профілю та відкриті питання — 18.10.2026
 
-## A — Technische band zonder knipperen; «Сайт оновлено» voor open tabbladen
-- **Oorzaak knipperen (live gemeten):** 305 wissels van `data-tech-verborgen` in 15 s. Verbergen bij scrollen zette `#root` van top 40 → 0 px; de scrollcontainer werd hoger, de browser corrigeerde `scrollTop`, dat gaf een scroll-event, de band kwam terug, `#root` schoof weer… De meldingenbel (vast in `#root`) schokte mee (in de test tot 80–88 px).
-- **Oplossing — verbergen bij scrollen zonder geometrie («headroom», `src/tech/band-headroom.ts`).** De knop «Згорнути смугу» (eerste herziening) is op verzoek van de eigenaar weer weg, samen met `band-inklappen.ts`. Verbergen verandert nu **alleen `translate`**: `top`, hoogte en padding van `#root`, werkruimte en zijbalk zijn in beide standen gelijk, dus `scrollHeight`/`clientHeight` veranderen niet en de browser heeft niets te corrigeren. Verborgen schuiven band, ondersteunings-/impersonatieband en de hele app samen één bandhoogte omhoog (0,22 s, zoals de adresbalk op een telefoon); zichtbaar is alles exact zoals vroeger. Werkruimte en zijbalk lopen één bandhoogte onder `#root` door (buiten beeld zolang de band zichtbaar is) zodat er onderaan geen gat valt: de werkruimte met een lege strook (`::after`) zodat ook de laatste rij bereikbaar blijft, de zijbalk met evenveel extra onderpadding (inhoud even hoog, achtergrond en scheidingslijn tot onderaan); mail (volle hoogte) houdt zijn indeling via een doorzichtige onderrand. `#root` kreeg `overflow:visible` (geen scrollcontainer meer — kan dus ook niet ‘ongemerkt’ verschuiven). **Bel, haar melding en paneel schuiven even ver terug en staan stil**; `vast-kader.ts` rekent met `#root` zonder zijn translate (en herkent de losse `translate`-eigenschap als kader), dus «Написати лист» naast de bel springt ook niet. Beslissing (zuiver, getest): één echte scrollcontainer (`scroll` met capture, `e.target`; alleen verticaal en ≥ 50 % van de vensterhoogte), afgelegde weg in één richting ≥ 24 px, ≥ 300 ms tussen wissels (een wissel die moet wachten wordt na 300 ms opnieuw beoordeeld), alles binnen 220 ms na een wissel genegeerd, rubberband begrensd; bovenaan (≤ bandhoogte) altijd zichtbaar; tonen ook bij muis tegen de bovenrand, focus in de band en Esc; niet verbergen zolang «⋯» of een venster van de band open is; `prefers-reduced-motion` → zonder animatie. Terloops: de dock boven/onder en de dichte telefoonknop van het menu kregen in technische modus ten onrechte de volle hoogte — de zijbalkregel geldt nu alleen voor de verticale zijbalk.
-- **«Сайт оновлено до <versie>»** (`src/platform/nieuwe-versie.ts`, `NieuweVersieBand.tsx`, eigen root in `main.tsx`): de build zet zijn versie in de bundel (`vite.config.ts` → `__MR_BOUW_VERSIE__` uit `UITROL-VERSIE`); de site vraagt `/api/version` (no-store) bij terugkeer naar het tabblad en elke 60 s zolang het zichtbaar is (nooit vaker dan elke 15 s). Andere versie → niet-blokkerende strook linksonder (bel blijft vrij) met «Оновити сторінку» en «Пізніше» (tot de volgende versie). Vanzelf herladen alleen als het tabblad verborgen is én er niets ingevuld is (gewijzigde velden, concepten, contenteditable). De service worker was al network-first voor HTML en laat `/api/` met rust; bij een nieuwe versie vraagt de site hem ook om bij te werken.
-- **Tests:** nieuw `band-headroom` 32/32 — o.a. **de oude lus nagebootst** (oude regel + klemmende geometrie: 1876 wissels in 15 s; nieuwe regel in dezelfde geometrie: 0), drempel 23/24 px, 220/300 ms, bovenaan, rubberband, andere container, «⋯» open, 15 s intensief (≤ echte richtingswissels; 0 bij trillingen < 24 px), CSS: verborgen-regels zetten alleen `translate`. `ui-audit-g` 42/42 (8a op het nieuwe gedrag), `vast-kader` 22/22, `menu-snelheid` 29/29 (vijfde root), `nieuwe-versie` 20/20. Browser (Chromium, echte TechLaag + tech.css + canonical-chrome.css + CanonicalNotificationCenter, zijbalk, plakkende kop, klein en horizontaal lijstje; 1280 en 390 px) **29/29**: 15 s intensief scrollen (wiel, rukken, naar het einde, rubberband nagebootst, trillingen) → 24 wissels bij 45 echte richtingswissels, 0 bij trillingen/rubberband; `scrollHeight`/`clientHeight` van de werkruimte, hoogte van de zijbalk en `top` van `#root` elk één waarde; bel in rust zichtbaar ±0,00, verborgen ±0,00, verschil 0,00 px, ook tijdens de animatie 0,00 px; omlaag → band uit beeld, werkruimte en zijbalk tot de onderrand; omhoog → terug, zijbalk/plakkende kop onder de band, onderste menuknop in beeld; muis bovenrand, Esc, focus → zichtbaar; klein/horizontaal lijstje → blijft; onderaan met zichtbare band → laatste rij in beeld; document scrolt niet; reduced-motion → 0 s. **Dezelfde test op het pakket 20261018-153026 reproduceert het probleem:** 64/74 wissels bij 45 richtingswissels (ook 9–10 in de rubberband-fase), 227/230 verschillende `top`-waarden van `#root`, bel 79/86 px. Browser «Сайт оновлено» 14/14.
+## A — Технічна смуга без миготіння; «Сайт оновлено» для відкритих вкладок
+- **Причина миготіння (виміряно наживо):** 305 перемикань `data-tech-verborgen` за 15 с. Приховування під час прокрутки виставляло `#root` із top 40 → 0 px; контейнер прокрутки ставав вищим, браузер коригував `scrollTop`, це породжувало подію прокрутки, смуга поверталася, `#root` знову зсувався… Дзвіночок сповіщень (закріплений у `#root`) сіпався разом із ним (у тесті до 80–88 px).
+- **Рішення — приховування під час прокрутки без зміни геометрії («headroom», `src/tech/band-headroom.ts`).** Кнопку «Згорнути смугу» (перша ревізія) на прохання власника знову прибрано разом із `band-inklappen.ts`. Приховування тепер змінює **лише `translate`**: `top`, висота й внутрішні відступи `#root`, робочого простору та бічної панелі в обох станах однакові, тож `scrollHeight`/`clientHeight` не змінюються і браузеру немає чого коригувати. У прихованому стані смуга, смуга підтримки/імперсонації та весь застосунок разом зсуваються на одну висоту смуги вгору (0,22 с, як адресний рядок на телефоні); у видимому стані все точно як раніше. Робочий простір і бічна панель продовжуються на одну висоту смуги нижче `#root` (поза кадром, доки смуга видима), щоб унизу не утворювалася щілина: робочий простір із порожньою смужкою (`::after`), аби останній рядок також лишався досяжним, бічна панель із таким самим додатковим нижнім відступом (вміст тієї самої висоти, тло й розділювальна лінія до самого низу); пошта (на повну висоту) зберігає свою верстку через прозору нижню рамку. `#root` отримав `overflow:visible` (більше не контейнер прокрутки — отже не може й «непомітно» зсуватися). **Дзвіночок, його сповіщення й панель зсуваються на таку саму відстань назад і стоять нерухомо**; `vast-kader.ts` рахує відносно `#root` без його translate (і розпізнає окрему властивість `translate` як рамку), тож «Написати лист» поруч із дзвіночком теж не стрибає. Рішення (чисте, протестоване): один справжній контейнер прокрутки (`scroll` із capture, `e.target`; лише вертикальний і ≥ 50 % висоти вікна), пройдений шлях в одному напрямку ≥ 24 px, ≥ 300 мс між перемиканнями (перемикання, яке мусить зачекати, через 300 мс оцінюється повторно), усе в межах 220 мс після перемикання ігнорується, ефект пружності (rubberband) обмежено; угорі (≤ висоти смуги) завжди видима; показувати також при наведенні миші до верхнього краю, фокусі в смузі та Esc; не ховати, доки відкрито «⋯» або вікно смуги; `prefers-reduced-motion` → без анімації. Принагідно: верхній/нижній док і закрита телефонна кнопка меню в технічному режимі помилково отримували повну висоту — правило бічної панелі тепер діє лише для вертикальної бічної панелі.
+- **«Сайт оновлено до <versie>»** (`src/platform/nieuwe-versie.ts`, `NieuweVersieBand.tsx`, власний root у `main.tsx`): збірка записує свою версію в бандл (`vite.config.ts` → `__MR_BOUW_VERSIE__` із `UITROL-VERSIE`); сайт опитує `/api/version` (no-store) при поверненні на вкладку й кожні 60 с, доки вона видима (ніколи не частіше ніж раз на 15 с). Інша версія → неблокувальна смужка зліва внизу (дзвіночок лишається вільним) із «Оновити сторінку» та «Пізніше» (до наступної версії). Автоматичне перезавантаження лише коли вкладка прихована І нічого не введено (змінені поля, чернетки, contenteditable). Service фоновий обробник уже був network-first для HTML і не чіпає `/api/`; при появі нової версії сайт також просить його оновитися.
+- **Тести:** новий `band-headroom` 32/32 — зокрема **відтворено старий цикл** (старе правило + затиснута геометрія: 1876 перемикань за 15 с; нове правило в тій самій геометрії: 0), поріг 23/24 px, 220/300 мс, угорі, rubberband, інший контейнер, відкрите «⋯», 15 с інтенсивно (≤ справжніх змін напрямку; 0 при тремтінні < 24 px), CSS: правила прихованого стану виставляють лише `translate`. `ui-audit-g` 42/42 (8a на нову поведінку), `vast-kader` 22/22, `menu-snelheid` 29/29 (п'ятий root), `nieuwe-versie` 20/20. Браузер (Chromium, справжні TechLaag + tech.css + canonical-chrome.css + CanonicalNotificationCenter, бічна панель, липка шапка, малий і горизонтальний список; 1280 і 390 px) **29/29**: 15 с інтенсивної прокрутки (коліщатко, ривки, до кінця, імітація rubberband, тремтіння) → 24 перемикання при 45 справжніх змінах напрямку, 0 при тремтінні/rubberband; `scrollHeight`/`clientHeight` робочого простору, висота бічної панелі й `top` у `#root` — кожне має одне значення; дзвіночок у спокої видимий ±0,00, прихований ±0,00, різниця 0,00 px, під час анімації також 0,00 px; униз → смуга за кадром, робочий простір і бічна панель до нижнього краю; угору → повертається, бічна панель/липка шапка під смугою, нижня кнопка меню в кадрі; миша біля верхнього краю, Esc, фокус → видима; малий/горизонтальний список → лишається; унизу з видимою смугою → останній рядок у кадрі; документ не прокручується; reduced-motion → 0 с. **Той самий тест на пакеті 20261018-153026 відтворює проблему:** 64/74 перемикання при 45 змінах напрямку (зокрема 9–10 у фазі rubberband), 227/230 різних значень `top` у `#root`, дзвіночок 79/86 px. Браузер «Сайт оновлено» 14/14.
 
-## C — «Захист»: auth-poort, OPA fail-closed en RLS met één beslissing van de eigenaar (migratie 0066)
+## C — «Захист»: auth-шлюз, OPA fail-closed і RLS одним рішенням власника (міграція 0066)
 
-**Waar:** /diagnostiek → tabblad «Захист» (`src/beveiliging/Beveiliging.tsx`). Per bescherming een kaart: stand (вимкнено / тінь / увімкнено),
-gereedheid (controles die de server op de echte database en dienst doet), «Увімкнути» en «Вимкнути».
+**Де:** /diagnostiek → вкладка «Захист» (`src/beveiliging/Beveiliging.tsx`). На кожен механізм захисту — картка: стан (вимкнено / тінь / увімкнено),
+готовність (перевірки, які сервер виконує на справжній базі даних і службі), «Увімкнути» та «Вимкнути».
 
-**Mechanisme zonder SSH:** `app.beveiliging_schakelaars` (0066). De site leest de stand bij de start en daarna hoogstens elke 5 s
-(`server/platform/schakelaars.ts`); wie schakelt, werkt het geheugen meteen bij → aan/uit zonder herstart.
-Voorrang blijft: `AUTH_POORT_AFDWINGEN` / `OPA_AFDWINGEN` = 1|0 (geforceerd) en voor OPA het root-bestand (`"beheer-alleen-tech": true`).
-RLS: de stand blijft `app.rls_instellingen`; de systeemrol schrijft die niet zelf, alleen via `app.rls_afdwingen_zetten()` (SECURITY DEFINER,
-EXECUTE alleen voor mijnruimte_system; veilig omdat die rol BYPASSRLS heeft — de stand beperkt alleen mijnruimte_app).
+**Механізм без SSH:** `app.beveiliging_schakelaars` (0066). Сайт читає стан під час запуску й далі щонайбільше раз на 5 с
+(`server/platform/schakelaars.ts`); той, хто перемикає, одразу оновлює пам'ять → увімк./вимк. без перезапуску.
+Пріоритет зберігається: `AUTH_POORT_AFDWINGEN` / `OPA_AFDWINGEN` = 1|0 (примусово) і для OPA — root-файл (`"beheer-alleen-tech": true`).
+RLS: стан лишається в `app.rls_instellingen`; системна роль не записує його напряму, лише через `app.rls_afdwingen_zetten()` (БЕЗПЕКА DEFINER,
+EXECUTE лише для mijnruimte_system; безпечно, бо ця роль має BYPASSRLS — стан обмежує лише mijnruimte_app).
 
-**Gereedheid (blokkerend, server controleert opnieuw bij het aanzetten):**
-- auth-poort: schaduw loopt; geen anonieme 2xx buiten `PUBLIEKE_ROUTES` in de gekozen periode (`app.rls_audit` 'anoniem-2xx').
-- OPA: OPA gezond; schaduwbesluiten in de periode; geen «verschil»; geen «zou geweigerd zijn» (doel-weigert/onbereikbaar, per actie);
-  eigenaar in een technisch profiel (ontbrekende mogelijkheden = waarschuwing).
-- RLS: `DATABASE_URL_APP` gezet; rol mijnruimte_app LOGIN zonder BYPASSRLS/SUPERUSER; verbinding werkt als die rol; RLS + policy op elke
-  tabel met een accountkolom die de app mag raken; isolatieproef als app-rol in één transactie met ROLLBACK (`app.rls_proef` = strenger-alleen
-  GUC: synthetisch account A schrijft, B ziet/wijzigt/wist niets en ziet in geen tabel rijen van anderen; controle dat de proef echt test);
-  schaduwaudit RLS leeg.
+**Готовність (блокувальна, сервер перевіряє повторно під час увімкнення):**
+- auth-шлюз: тіньовий режим працює; жодних анонімних 2xx поза `PUBLIEKE_ROUTES` за вибраний період (`app.rls_audit` 'anoniem-2xx').
+- OPA: OPA справний; є тіньові рішення за період; жодних «розбіжностей»; жодних «було б відхилено» (ціль відмовляє/недоступна, по кожній дії);
+  власник у технічному профілі (відсутні можливості = попередження).
+- RLS: `DATABASE_URL_APP` задано; роль mijnruimte_app LOGIN без BYPASSRLS/SUPERUSER; з'єднання працює під цією роллю; RLS + політика на кожній
+  таблиці з колонкою акаунта, якої може торкатися застосунок; проба ізоляції під роллю застосунку в одній транзакції з ROLLBACK (`app.rls_proef` = лише-суворіший
+  GUC: синтетичний акаунт A пише, B нічого не бачить/не змінює/не видаляє і в жодній таблиці не бачить чужих рядків; перевірка, що проба справді тестує);
+  тіньовий аудит RLS порожній.
 
-**Hekken:** aanzetten = eigenaar + actief technisch profiel in dit tabblad + passkey (STEP_UP_REQUIRED, eenmalig verbruikt) + reden.
-Uitzetten = eigenaar, meteen, zonder passkey/techprofiel. Routes `/api/owner/beveiliging/*` hangen bewust niet achter `afdwingAdmin`
-(noodrem werkt ook als OPA stuk is) en staan in `AGENT_VERBODEN`. Alles in het beheerjournaal (`admin.beveiliging.*`) met reden.
+**Бар'єри:** увімкнення = власник + активний технічний профіль у цій вкладці + passkey (STEP_UP_REQUIRED, одноразово споживається) + причина.
+Вимкнення = власник, миттєво, без passkey/техпрофілю. Маршрути `/api/owner/beveiliging/*` свідомо не стоять за `afdwingAdmin`
+(аварійне гальмо працює, навіть якщо OPA зламаний) і внесені до `AGENT_VERBODEN`. Усе записується в журнал адміністрування (`admin.beveiliging.*`) із причиною.
 
-**Zekering:** 10 min na het aanzetten, hoogstens elke 15 s na een antwoord (`server/platform/antwoord-teller.ts`, geen timer):
-401-piek van de poort (≥ 5/2 min), OPA onbereikbaar (≥ 3), 403-piek, RLS-fouten 42501 (≥ 3), of 5xx-piek boven max(5 %, 3× basis) →
-automatisch uit + journaal `admin.beveiliging.zekering` + melding aan de eigenaar (link /diagnostiek).
+**Запобіжник:** 10 хв після увімкнення, щонайбільше раз на 15 с після відповіді (`server/platform/antwoord-teller.ts`, без таймера):
+сплеск 401 від шлюзу (≥ 5/2 хв), OPA недоступний (≥ 3), сплеск 403, помилки RLS 42501 (≥ 3) або сплеск 5xx понад max(5 %, 3× база) →
+автоматичне вимкнення + журнал `admin.beveiliging.zekering` + сповіщення власнику (посилання /diagnostiek).
 
-**DATABASE_URL_APP zonder SSH:** knop «Створити роль застосунку» (passkey) start `mijn-ruimte-db-rollen.service` (polkit: alleen «start»
-van die vaste naam). Root-kopie van het script (`installeer-app.sh` → `db_rollen_hulp_inrichten`, kopieert alleen) voert
-`db-rollen-instellen.sh instellen-als-nodig` uit: bestaat de variabele al → niets; anders `instellen` (rollen, SCRAM, geheimen.env, herstart,
-gezondheidscontrole, bij een fout alles terug). Uitkomst zonder waarden in `/var/lib/mijn-ruimte-uitrol-status/db-rollen.json`.
-Bewust niet automatisch tijdens elke installatie: een terugdraai van de release haalt omgevingsvariabelen niet weg.
+**DATABASE_URL_APP без SSH:** кнопка «Створити роль застосунку» (passkey) запускає `mijn-ruimte-db-rollen.service` (polkit: лише «start»
+цієї фіксованої назви). Root-копія скрипту (`installeer-app.sh` → `db_rollen_hulp_inrichten`, лише копіює) виконує
+`db-rollen-instellen.sh instellen-als-nodig`: якщо змінна вже існує → нічого; інакше `instellen` (ролі, SCRAM, geheimen.env, перезапуск,
+перевірка стану здоров'я, у разі помилки повний відкат). Результат без значень у `/var/lib/mijn-ruimte-uitrol-status/db-rollen.json`.
+Свідомо не автоматично під час кожного встановлення: відкат випуску не прибирає змінні середовища.
 
-**Bestanden:** migrations/0066_beveiliging_schakelaars.sql, migrations/rechten.sql (punt), server/platform/{schakelaars,antwoord-teller}.ts (nieuw),
-server/platform/{auth-poort,router}.ts (punt), backend/beleid.ts (punt), backend/beveiliging-schakelaars.ts (nieuw), backend/index.ts,
-backend/agent-namens.ts, shared/beheer-journaal.ts (punt), src/beveiliging/* (nieuw), src/diagnostiek/Diagnostiek.tsx (punt, tab),
-deploy/mijn-ruimte-db-rollen.service (nieuw), deploy/db-rollen-instellen.sh, deploy/opdracht/50-mijn-ruimte-opdracht.rules, deploy/installeer-app.sh (punt).
-**Tests:** tests/eenheid/beveiliging-schakelaars.test.ts — 72/72 (gewoon), 76/76 met rollen (run-test-rls.sh, echte RLS aan/uit + zekering);
-toegang-context 54/54 met rollen; rls 11/11, rls-groepen, routes, server-beheer 99/99, beleid-afdwingen, agent-namens 45/45, beheer-journaal, ssh-ca ongewijzigd groen.
+**Файли:** migrations/0066_beveiliging_schakelaars.sql, migrations/rechten.sql (точково), server/platform/{schakelaars,antwoord-teller}.ts (нові),
+server/platform/{auth-poort,router}.ts (точково), backend/beleid.ts (точково), backend/beveiliging-schakelaars.ts (новий), backend/index.ts,
+backend/agent-namens.ts, shared/beheer-journaal.ts (точково), src/beveiliging/* (нові), src/diagnostiek/Diagnostiek.tsx (точково, вкладка),
+deploy/mijn-ruimte-db-rollen.service (новий), deploy/db-rollen-instellen.sh, deploy/opdracht/50-mijn-ruimte-opdracht.rules, deploy/installeer-app.sh (точково).
+**Тести:** tests/eenheid/beveiliging-schakelaars.test.ts — 72/72 (звичайно), 76/76 з ролями (run-test-rls.sh, справжній RLS увімк./вимк. + запобіжник);
+toegang-context 54/54 з ролями; rls 11/11, rls-groepen, routes, server-beheer 99/99, beleid-afdwingen, agent-namens 45/45, beheer-journaal, ssh-ca незмінно зелені.
 
-## D — «Віддалений стіл»: RDP/VNC/SSH via Apache Guacamole (migratie 0067)
+## D — «Віддалений стіл»: RDP/VNC/SSH через Apache Guacamole (міграція 0067)
 
-Melding: «Guacamole (RDP/VNC) — не впроваджено, зараз лише текстовий термінал». Nu: technisch profiel → menu → «Віддалений стіл».
+Повідомлення: «Guacamole (RDP/VNC) — не впроваджено, зараз лише текстовий термінал». Тепер: технічний профіль → меню → «Віддалений стіл».
 
-**Keten.** Browser (`guacamole-common-js` 1.5.0, eigen chunk, laadt pas bij een sessie) —WSS `/api/owner/remote/tunnel`→ app
-(`backend/remote-bureaublad.ts`, eigen tunnel, geen guacamole-lite) —TCP `127.0.0.1:4822`→ **guacd** —RDP/VNC/SSH→ doel.
-De browser praat nooit met guacd. WS-pad via `registreerWsPad` in `backend/connectors-gateway.ts` (zelfde host-controle,
-`?ticket`/`?token` geweigerd) plus Origin = Host.
+**Ланцюжок.** Браузер (`guacamole-common-js` 1.5.0, окремий чанк, завантажується лише під час сесії) —WSS `/api/owner/remote/tunnel`→ застосунок
+(`backend/remote-bureaublad.ts`, власний тунель, без guacamole-lite) —TCP `127.0.0.1:4822`→ **guacd** —RDP/VNC/SSH→ ціль.
+Браузер ніколи не спілкується з guacd напряму. WS-шлях через `registreerWsPad` у `backend/connectors-gateway.ts` (та сама перевірка хоста,
+`?ticket`/`?token` відхиляються) плюс Origin = Host.
 
-**Regels.**
-- Openen: alleen de eigenaar (rol + eigenaarsadres), technisch profiel actief in DIT tabblad, verse **passkey** (geen Google/TOTP;
-  één bevestiging = één handeling). Ook verbinding opslaan/verwijderen en «Дозволені хости» vragen passkey.
-- Ticket: 60 s, eenmalig (nonce), HMAC; bevat sessie-id + vervaltijd + nonce, nooit het wachtwoord; gaat als eerste
-  Guacamole-bericht `mr-auth`, niet in de URL.
-- Wachtwoord/sleutel: alleen in de kluis (`owner_vault_v1`, naam `remote-<id>`), komt pas bij de guacd-handshake uit de kluis
-  en wordt daarna uit het geheugen gewist; nooit in antwoorden of logboek.
-- Doelen: privénetwerken, loopback, CGNAT; publiek alleen van de lijst van de eigenaar; link-local/metadata (169.254.*, fe80::),
-  multicast, 0.0.0.0/8, 240/4 altijd verboden (ook `::ffff:`-vormen). De server lost DNS op, controleert ELK adres (gemengd
-  antwoord = geweigerd) en geeft guacd het IP → geen DNS-rebinding. «Перевірити» = TCP-connect (3 s), alleen binnen deze regels.
-- Bestandsoverdracht standaard UIT (ook gefilterd in de tunnel: `file`/`put`/`pipe`), klembord per verbinding, opname optioneel
-  naar `/srv/data/guac-opnames` (30 dagen, tmpfiles.d).
-- Einde: zelf, 15 min zonder invoer, eindtijd (≤ 8 u en ≤ einde activering), technisch profiel weg (uitloggen, intrekken,
-  verlaten, opnieuw activeren — meteen via haak `bijTechEinde` in `backend/tech-profiel.ts`, plus controle elke 20 s), browser of
-  guacd weg. Max. 3 sessies. Elke sessie in `app.remote_sessies` + audit `owner.remote.geopend/verbonden/mislukt/gesloten`
-  (wie, wanneer, waarheen, duur, reden, bytes).
-- AI: geen MCP-tool; `/api/owner/remote/*` staat in `AGENT_VERBODEN`.
-- Band: «● активний віддалений сеанс» zolang dit tabblad een sessie heeft; het sessievenster blijft onder de band.
+**Правила.**
+- Відкриття: лише власник (роль + адреса власника), технічний профіль активний у ЦІЙ вкладці, свіжий **passkey** (без Google/TOTP;
+  одне підтвердження = одна дія). Збереження/видалення підключення та «Дозволені хости» також вимагають passkey.
+- Квиток (ticket): 60 с, одноразовий (nonce), HMAC; містить id сесії + час дії + nonce, ніколи не містить пароля; передається першим
+  повідомленням Guacamole `mr-auth`, а не в URL.
+- Пароль/ключ: лише в сховищі (`owner_vault_v1`, назва `remote-<id>`), дістається зі сховища лише під час рукостискання з guacd
+  і одразу після цього стирається з пам'яті; ніколи не потрапляє у відповіді чи журнал.
+- Цілі: приватні мережі, loopback, CGNAT; публічні — лише зі списку власника; link-local/metadata (169.254.*, fe80::),
+  multicast, 0.0.0.0/8, 240/4 завжди заборонені (включно з формами `::ffff:`). Сервер розв'язує DNS, перевіряє КОЖНУ адресу (змішана
+  відповідь = відмова) і передає guacd саме IP → жодного DNS-rebinding. «Перевірити» = TCP-connect (3 с), лише в межах цих правил.
+- Передача файлів типово ВИМКНЕНА (також фільтрується в тунелі: `file`/`put`/`pipe`), буфер обміну — на кожне підключення окремо, запис екрана опційно
+  в `/srv/data/guac-opnames` (30 днів, tmpfiles.d).
+- Завершення: вручну, 15 хв без вводу, граничний час (≤ 8 год і ≤ кінця активації), втрата технічного профілю (вихід, відкликання,
+  залишення, повторна активація — миттєво через хук `bijTechEinde` у `backend/tech-profiel.ts`, плюс перевірка кожні 20 с), закриття браузера або
+  guacd. Макс. 3 сесії. Кожна сесія в `app.remote_sessies` + аудит `owner.remote.geopend/verbonden/mislukt/gesloten`
+  (хто, коли, куди, тривалість, причина, байти).
+- ШІ: жодного MCP-інструменту; `/api/owner/remote/*` внесено до `AGENT_VERBODEN`.
+- Смуга: «● активний віддалений сеанс», доки ця вкладка має сесію; вікно сесії лишається під смугою.
 
-**guacd op de server (moet geïnstalleerd zijn — doet de installer).** `deploy/installeer-app.sh` → `guacamole_inrichten`:
-- alleen als `"guacamole": true` in `/etc/mijn-ruimte/mcp-rechten.json` (nieuwe installaties: `"guacamole": false`; ontbreekt =
-  uit). Uit: niets geïnstalleerd, een eerder gestarte guacd wordt gestopt; de site meldt «вимкнено на сервері».
-- aan: `apt-get install guacd libguac-client-rdp0 libguac-client-vnc0 libguac-client-ssh0`, systeemgebruiker
-  `mijnruimte-guacd`, eigen verharde unit `mijn-ruimte-guacd.service` (`guacd -b 127.0.0.1 -l 4822`, ProtectSystem=strict,
-  geen capabilities, IPAddressDeny link-local/multicast); de pakketunit `guacd.service` gaat uit. Geen apt-pakket maar wel
-  docker → `mijn-ruimte-guacd-docker.service` (image `guacamole/guacd:1.5.5`, host-netwerk, `-b 127.0.0.1`, read-only,
-  cap-drop ALL). Daarna controle met `ss`: luistert guacd op iets anders dan loopback → meteen gestopt.
-- Aanzetten: `"guacamole": true` in mcp-rechten.json, installer opnieuw draaien (of de gewone uitrol). Migratie 0067 zoals altijd.
+**guacd на сервері (має бути встановлений — це робить інсталятор).** `deploy/installeer-app.sh` → `guacamole_inrichten`:
+- лише якщо `"guacamole": true` у `/etc/mijn-ruimte/mcp-rechten.json` (нові інсталяції: `"guacamole": false`; відсутнє =
+  вимкнено). Вимкнено: нічого не встановлюється, раніше запущений guacd зупиняється; сайт повідомляє «вимкнено на сервері».
+- увімкнено: `apt-get install guacd libguac-client-rdp0 libguac-client-vnc0 libguac-client-ssh0`, системний користувач
+  `mijnruimte-guacd`, власний захищений юніт `mijn-ruimte-guacd.service` (`guacd -b 127.0.0.1 -l 4822`, ProtectSystem=strict,
+  жодних capabilities, IPAddressDeny link-local/multicast); пакетний юніт `guacd.service` вимикається. Немає apt-пакета, але є
+  docker → `mijn-ruimte-guacd-docker.service` (образ `guacamole/guacd:1.5.5`, мережа хоста, `-b 127.0.0.1`, лише для читання,
+  cap-drop УСІ). Після цього перевірка через `ss`: якщо guacd слухає щось окрім loopback → негайно зупиняється.
+- Увімкнення: `"guacamole": true` в mcp-rechten.json, повторний запуск інсталятора (або звичайне розгортання). Міграція 0067 як зазвичай.
 
-**Getest.** `tests/eenheid/remote-bureaublad.test.ts` 67/67: tickets (handtekening, eenmalig, verlopen), SSRF (publiek,
-169.254.*, `::ffff:`, octaal, DNS-rebinding), rechten (geen eigenaar, nep-«owner», geen techprofiel, ander tabblad, geen passkey,
-agent), tunnel tegen een nep-guacd (echte TCP-handshake, IP + kluiswachtwoord in `connect`, bestanden geblokkeerd, ticket
-eenmalig, 5 s zonder ticket dicht), inactiviteit, techprofiel verlaten (haak), logboek zonder wachtwoord. Regressie:
-agent-namens, tech-sessies, tech-profiel, terminal, beheer-journaal groen. Harness `/tmp/h-D2` (lijst, formulier, sessievenster
-met nep-tunnel en echte guacamole-common-js) uk/nl × licht/donker × 1280/390: 124/124.
-**Niet geverifieerd:** een echte RDP/VNC/SSH-verbinding via een echte guacd (geen guacd en geen doelmachine in de testomgeving),
-de installatie op de live server (niet uitgerold), en emoji/tekens buiten het BMP in het klembord (de client telt lengtes in
-UTF-16, guacd in codepunten).
+**Протестовано.** `tests/eenheid/remote-bureaublad.test.ts` 67/67: квитки (підпис, одноразовість, прострочення), SSRF (публічні,
+169.254.*, `::ffff:`, вісімкові, DNS-rebinding), права (не власник, підроблений «власник», без техпрофілю, інша вкладка, без passkey,
+агент), тунель проти імітованого guacd (справжнє TCP-рукостискання, IP + пароль зі сховища в `connect`, файли заблоковано, квиток
+одноразовий, 5 с без квитка — закриття), неактивність, вихід із техпрофілю (хук), журнал без пароля. Регресія:
+agent-namens, tech-sessies, tech-profiel, terminal, beheer-journaal зелені. Стенд `/tmp/h-D2` (список, форма, вікно сесії
+з імітованим тунелем і справжнім guacamole-common-js) uk/nl × світла/темна × 1280/390: 124/124.
+**Не перевірено:** справжнє з'єднання RDP/VNC/SSH через справжній guacd (немає guacd і цільової машини в тестовому середовищі),
+встановлення на живому сервері (не розгорнуто) та емодзі/символи поза межами BMP у буфері обміну (клієнт рахує довжину в
+UTF-16, guacd — у кодових точках).
 
-## E · «Подивитися як користувач» (impersonatie met toestemming, migratie 0068)
+## E · «Подивитися як користувач» (імперсонація за згодою, міграція 0068)
 
-**Wat:** een beheerder (technisch profiel met `impersonatie.aanvragen`: rol «ondersteuning» of de eigenaar) vraagt in de technische
-band («Подивитися як користувач») met e-mail, reden en duur 5–60 min (standaard 15). De gebruiker krijgt een melding en een venster
-met wie, waarom, hoe lang, wat zichtbaar en wat nooit; «Дозволити» vraagt een verse **sterke** bevestiging (passkey/TOTP/herstelcode,
-daarna verbruikt), optioneel «ook acties». Daarna toont het tabblad van de beheerder de site van de gebruiker onder een rode band
-«Ви переглядаєте як … · залишилось mm:ss · Завершити» (gestreept met acties). Gebruiker: rode pil + «Хто зараз має доступ до мого
-акаунта» (`#wie-heeft-toegang`) met «Завершити негайно» en het journaal van de sessie.
-**Hoe (geen cookie of token van de gebruiker):** elke same-origin `/api/…`-fetch in dat tabblad gaat via `POST /api/impersonatie/aanroep`
-met de eigen sessie van de beheerder; de server controleert per aanroep de rij (actief, eind_op, dezelfde beheerder, hetzelfde tabblad,
-technisch profiel loopt) en voert de route in-process uit als de gebruiker (`site-dispatch.roepAlsImpersonatie`). Drie hekken «alleen
-lezen»: routeregel (`shared/impersonatie.ts`), `ownerRequireSession` (gedelegeerde tak), `db.ts` (schrijven in app.records geweigerd).
-Vaste verbodslijst ook met acties: identity/*, access/*, admin/beheer/security, tech, uitrol, geheimen/vault/tokens, export, betalingen,
-uitloggen, impersonatie/ondersteuning. Einde: tijd, gebruiker, beheerder, uitloggen/einde technisch profiel (lui bij elke aanroep).
-Journaal: elke regel binnen een sessie met actor = beheerder, `actorType: 'impersonatie'`, `namensId` = gebruiker, «від імені» = sessie;
-leesaanroepen 1×/route/min, elke actie en weigering apart. AI-agenten: `/api/impersonatie/*` en `/api/ondersteuning/*` in AGENT_VERBODEN.
-**Bestanden:** `migrations/0068_impersonatie.sql`, `migrations/rechten.sql` (SELECT-only voor app-rol), `backend/impersonatie.ts`,
+**Що:** адміністратор (технічний профіль із `impersonatie.aanvragen`: роль «ondersteuning» або власник) запитує в технічній
+смузі («Подивитися як користувач») із e-mail, причиною та тривалістю 5–60 хв (стандартно 15). Користувач отримує сповіщення й вікно:
+хто, чому, на скільки, що видно, а що ніколи; «Дозволити» вимагає свіжого **сильного** підтвердження (passkey/TOTP/код відновлення,
+після чого споживається), опційно «також дії». Після цього вкладка адміністратора показує сайт користувача під червоною смугою
+«Ви переглядаєте як … · залишилось mm:ss · Завершити» (смугаста, якщо дозволено дії). Користувач: червона пігулка + «Хто зараз має доступ до мого
+акаунта» (`#wie-heeft-toegang`) із «Завершити негайно» та журналом сесії.
+**Як (без cookie чи токена користувача):** кожен same-origin `/api/…`-fetch у цій вкладці йде через `POST /api/impersonatie/aanroep`
+із власною сесією адміністратора; сервер при кожному виклику перевіряє рядок (активний, eind_op, той самий адміністратор, та сама вкладка,
+технічний профіль триває) і виконує маршрут in-process від імені користувача (`site-dispatch.roepAlsImpersonatie`). Три бар'єри «лише
+читання»: правило маршруту (`shared/impersonatie.ts`), `ownerRequireSession` (делегована гілка), `db.ts` (запис у app.records відхиляється).
+Фіксований список заборон навіть із дозволеними діями: identity/*, access/*, admin/beheer/security, tech, uitrol, geheimen/vault/tokens, export, betalingen,
+uitloggen, impersonatie/ondersteuning. Завершення: час, користувач, адміністратор, вихід/кінець технічного профілю (ліниво при кожному виклику).
+Журнал: кожен запис у межах сесії має actor = адміністратор, `actorType: 'impersonatie'`, `namensId` = користувач, «від імені» = сесія;
+виклики читання 1×/маршрут/хв, кожна дія та відмова окремо. ШІ-агенти: `/api/impersonatie/*` та `/api/ondersteuning/*` в AGENT_VERBODEN.
+**Файли:** `migrations/0068_impersonatie.sql`, `migrations/rechten.sql` (SELECT-only для ролі застосунку), `backend/impersonatie.ts`,
 `backend/impersonatie-routes.ts`, `shared/impersonatie.ts`, `src/impersonatie/{modus,herschrijf}.ts`, `src/impersonatie/{Band,Impersonatie}.tsx`,
-`src/impersonatie/impersonatie.css`; puntwijzigingen in `backend/index.ts` (hek 2 + routes), `backend/site-dispatch.ts`,
-`backend/agent-namens.ts`, `server/platform/{context,audit,db}.ts`, `src/main.tsx` (modus vóór de app, geen extra createRoot),
-`src/tech/TechLaag.tsx` (knop + gebruikerslaag), `shared/beheer-journaal.ts` (labels).
-**Tests:** `tests/eenheid/impersonatie.test.ts` 71/71 (echte DB, echte routes: geen toestemming → geen sessie; toestemming zonder sterke
-step-up → geweigerd; alleen lezen blokkeert 7 echte schrijfroutes + hek 2 + hek 3; lezen toont de gegevens van de gebruiker; verbodslijst
-met acties; tijd/gebruiker/uitloggen beëindigen meteen; journaal met actorType; beheerder zonder rol → 403; agenten geweigerd);
-beheer-journaal 44/44, tech-profiel 36/36, menu-snelheid 29/29. Harness `/tmp/h-E2` uk/nl × licht/donker × 390/1280: 104/104.
-**Niet geverifieerd:** de volledige app (bootstrap, alle diensten) in impersonatiemodus tegen een echte server; `<img src="/api/…">`,
-XHR, EventSource en WebSockets worden niet doorgestuurd (alleen fetch); routes die rechtstreeks via `getPool` schrijven vallen alleen
-onder hek 1+2; meldingen alleen in de site (er is geen mailmechanisme). Twee bestaande controles faalden al in deze testomgeving
-(ondersteuning «app-rol»: zonder DATABASE_URL_APP is de app-pool de systeemrol; agent-namens «gewone sessie»: gewone cookie-sessie,
-raakt de gewijzigde gedelegeerde tak niet — niet tegen een schone kopie nagegaan).
+`src/impersonatie/impersonatie.css`; точкові зміни в `backend/index.ts` (бар'єр 2 + маршрути), `backend/site-dispatch.ts`,
+`backend/agent-namens.ts`, `server/platform/{context,audit,db}.ts`, `src/main.tsx` (режим перед застосунком, без зайвого createRoot),
+`src/tech/TechLaag.tsx` (кнопка + шар користувача), `shared/beheer-journaal.ts` (мітки).
+**Тести:** `tests/eenheid/impersonatie.test.ts` 71/71 (справжня БД, справжні маршрути: без згоди → немає сесії; згода без сильного
+step-up → відхилено; лише читання блокує 7 справжніх маршрутів запису + бар'єр 2 + бар'єр 3; читання показує дані користувача; список заборон
+із діями; час/користувач/вихід завершують миттєво; журнал із actorType; адміністратор без ролі → 403; агенти відхилені);
+beheer-journaal 44/44, tech-profiel 36/36, menu-snelheid 29/29. Стенд `/tmp/h-E2` uk/nl × світла/темна × 390/1280: 104/104.
+**Не перевірено:** повний застосунок (bootstrap, усі служби) у режимі імперсонації проти справжнього сервера; `<img src="/api/…">`,
+XHR, EventSource та WebSockets не перенаправляються (лише fetch); маршрути, що пишуть напряму через `getPool`, підпадають лише
+під бар'єри 1+2; сповіщення лише на сайті (поштового механізму немає). Дві наявні перевірки вже падали в цьому тестовому середовищі
+(ondersteuning «app-rol»: без DATABASE_URL_APP пул застосунку є системною роллю; agent-namens «gewone sessie»: звичайна cookie-сесія,
+не зачіпає змінену делеговану гілку — проти чистої копії не звірялося).
 
-## G — Technische bundels alleen voor een tech-sessie; diagnose «для всіх / лише для мене» (migratie 0070)
+## G — Технічні бандли лише для tech-сесії; діагностика «для всіх / лише для мене» (міграція 0070)
 
-### G1 — /assets/tech/* alleen met actief technisch profiel
-- **Indeling** (`shared/tech-assets.ts`): technisch = `src/uitrol|geheimen|diagnostiek|overzicht|audit|integraties|terminal|flags|ssh|remote|guacamole|beheer|beveiliging|bescherming/`, `src/Admin*.tsx`, `src/admin-*.{ts,tsx,css}`, `src/UitrolMeester.tsx`, of een bestand dat begint met `// @tech-asset` (voor nieuwe beheerpagina's zonder de lijst te wijzigen). Bewust openbaar: `src/tech/*` (band, poort, activeervenster), `src/diagnose/`, `src/ondersteuning/`, `src/agenten/`, `src/instellingen/`.
-- **Bouw** (`vite.config.ts`, alleen `rollupOptions.output.chunkFileNames/assetFileNames`): een lazy chunk waarvan de ingang (of alle eigen modules) technisch is → `dist/assets/tech/` (+ zijn CSS). Lazy blijft lazy; gedeelde chunks met openbare code blijven openbaar. Nu: AdminConsoleView (met alle beheerpagina's), Terminal, Vlaggen, SshBeheer, RemoteBureaublad, integratielogo's.
-- **Bouwcontrole** `scripts/tech-assets-controle.mjs` (in `npm run build`, direct na `vite build`): faalt als een openbare bundel een technische STATISCH importeert, als `index.html` naar `assets/tech/` verwijst, of als er geen enkele technische bundel is.
-- **Server** (`server/start.ts` → `backend/tech-assets.ts`): elk pad onder `/assets/tech/` alleen met een geldige toegangscookie `__Secure-tsv_tech_assets` (HttpOnly, Secure, SameSite=Strict, Domain=.tarasevych.com, Path=/), anders **404** (ook voor niet-bestaande namen). Antwoord altijd `Cache-Control: private, no-store` + `Vary: Cookie` (nooit `immutable`). De cookie komt uit `/api/owner/tech/status|activeren` bij een actieve activering in dat tabblad; in `app.tech_asset_toegang` staat alleen de SHA-256, gekoppeld aan de activering (verloopt/stopt mee; 15 s cache). `beeindigen` en een status zonder geldige activering wissen hem.
-- **Grens (bewust):** een cookie geldt per browser, niet per tabblad: een ander tabblad van dezelfde browser en gebruiker kan de bundel laden zolang de activering loopt. De beheer-API's blijven per tabblad gecontroleerd. Doel: wie geen technisch profiel heeft of niet aangemeld is, krijgt de beheercode niet.
-- **Service worker:** `/assets/tech/` wordt nooit onderschept of gecachet (één regel; `VERSION` niet verhoogd — dat doet A bij de volgende versie).
-- **Frontend:** `src/tech/tech-bundel.tsx` → `lazyTech()` (bij 404: status vernieuwen → nieuwe cookie als de activering hier nog loopt → één keer opnieuw) en `TechBundelGrens` (melding «Технічні модулі не завантажено … оновіть сторінку» i.p.v. witte pagina). Gebruikt voor AdminConsoleView, Terminal, Vlaggen, SSH, Віддалений стіл. `preloadCurrentView` laadt de beheerbundel niet meer vooraf (dat zou nu 404 geven). **Nieuwe beheerpagina's: laden via `lazyTech`** (de eenheidstest controleert dat).
+### G1 — /assets/tech/* лише з активним технічним профілем
+- **Класифікація** (`shared/tech-assets.ts`): технічне = `src/uitrol|geheimen|diagnostiek|overzicht|audit|integraties|terminal|flags|ssh|remote|guacamole|beheer|beveiliging|bescherming/`, `src/Admin*.tsx`, `src/admin-*.{ts,tsx,css}`, `src/UitrolMeester.tsx` або файл, що починається з `// @tech-asset` (для нових сторінок адміністрування без зміни списку). Свідомо публічні: `src/tech/*` (смуга, шлюз, вікно активації), `src/diagnose/`, `src/ondersteuning/`, `src/agenten/`, `src/instellingen/`.
+- **Збірка** (`vite.config.ts`, лише `rollupOptions.output.chunkFileNames/assetFileNames`): лінивий чанк, чия точка входу (або всі власні модулі) є технічною → `dist/assets/tech/` (+ його CSS). Ліниве лишається лінивим; спільні чанки з публічним кодом лишаються публічними. Зараз: AdminConsoleView (з усіма сторінками адміністрування), Terminal, Vlaggen, SshBeheer, RemoteBureaublad, логотипи інтеграцій.
+- **Перевірка збірки** `scripts/tech-assets-controle.mjs` (у `npm run build`, одразу після `vite build`): падає, якщо публічний бандл СТАТИЧНО імпортує технічний, якщо `index.html` посилається на `assets/tech/` або якщо немає жодного технічного бандла.
+- **Сервер** (`server/start.ts` → `backend/tech-assets.ts`): будь-який шлях під `/assets/tech/` доступний лише з дійсним cookie доступу `__Secure-tsv_tech_assets` (HttpOnly, Secure, SameSite=Strict, Domain=.tarasevych.com, Path=/), інакше **404** (також для відсутніх назв). Відповідь завжди `Cache-Control: private, no-store` + `Vary: Cookie` (ніколи не `immutable`). Cookie видається з `/api/owner/tech/status|activeren` за наявності активної активації в цій вкладці; в `app.tech_asset_toegang` зберігається лише SHA-256, прив'язаний до активації (спливає/зупиняється разом із нею; кеш 15 с). `beeindigen` і статус без дійсної активації стирають його.
+- **Межа (свідомо):** cookie діє на браузер, а не на вкладку: інша вкладка того самого браузера й користувача може завантажити бандл, доки триває активація. API адміністрування й далі перевіряються по кожній вкладці. Мета: хто не має технічного профілю або не увійшов у систему, не отримує код адміністрування.
+- **Service фоновий обробник:** `/assets/tech/` ніколи не перехоплюється й не кешується (одне правило; `VERSION` не піднято — це робить пункт A при наступній версії).
+- **Фронтенд:** `src/tech/tech-bundel.tsx` → `lazyTech()` (при 404: оновити статус → новий cookie, якщо активація тут ще триває → одна повторна спроба) та `TechBundelGrens` (повідомлення «Технічні модулі не завантажено … оновіть сторінку» замість білої сторінки). Використовується для AdminConsoleView, Terminal, Vlaggen, SSH, Віддалений стіл. `preloadCurrentView` більше не підвантажує бандл адміністрування заздалегідь (тепер це давало б 404). **Нові сторінки адміністрування: завантажувати через `lazyTech`** (модульний тест це перевіряє).
 
 ### G2 — «Сервер (для всіх) / Цей акаунт»
-- **Zuiver** (`shared/diagnostiek-account.ts`): 7 diensten (Пошта, Календар, Drive, GitHub, ШІ, Пристрої, Мої налаштування), koppeling dienst → servercontroles, beoordeling uit feiten (alleen tellingen/ja-nee), conclusie `server` (iedereen) / `account` (alleen dit account) / `beide`, advies uk/nl per code.
-- **Backend** (`backend/diagnostiek-account.ts`, routes in `backend/admin-diagnostiek.ts`): Google-status per dienst + bij «Перевірити» of Google een toegangstoken uitgeeft (token nooit bewaard/teruggegeven; Google-foutteksten worden nooit een code), postvakken, wachtrij, GitHub gekoppeld (niet welke sleutel), AI-koppelingen, apparaten, accountstatus. Opslag `app.diagnostiek_account_uitslagen` (30 d). `POST /api/owner/admin/diagnostiek/account` (eigenaar of `diagnose.lezen`; eigen account of `gebruikerId`; beide kolommen; audit `diag.account.bekeken|uitgevoerd`). `POST /api/owner/diagnostiek/mijn-diensten` (iedere goedgekeurde gebruiker; ALLEEN eigen account, `gebruikerId` genegeerd, geen serverkolom; 10/10 min; audit `diag.account.zelf`).
-- **Planning:** serverronde elke 15 min (`cron.json` «diagnostiek-server» → `diagnostiekServerCron` → dezelfde `serverRonde` als de knop; `deploy/mijn-ruimte-diagnostiek-server.timer`, in `TIMERS` van `installeer-app.sh`). Account: op verzoek, met geschiedenis.
-- **UI:** Діагностика → tab «Для всіх / цей акаунт» (eigen account) en dezelfde tabel bij «Скарга користувача» (gekozen gebruiker). Налаштування → Акаунт → «Стан моїх служб» (kolom «Мій акаунт» + advies). Op ≤ 560 px worden rijen kaarten (390 px zonder horizontaal scrollen); kleuren uit het thema.
+- **Чиста логіка** (`shared/diagnostiek-account.ts`): 7 служб (Пошта, Календар, Drive, GitHub, ШІ, Пристрої, Мої налаштування), прив'язка служба → серверні перевірки, оцінка за фактами (лише лічильники/так-ні), висновок `server` (для всіх) / `account` (лише цей акаунт) / `beide` (обидва), порада uk/nl для кожного коду.
+- **Бекенд** (`backend/diagnostiek-account.ts`, маршрути в `backend/admin-diagnostiek.ts`): статус Google по кожній службі + при натисканні «Перевірити» перевірка, чи видає Google токен доступу (токен ніколи не зберігається/не повертається; тексти помилок Google ніколи не стають кодом), поштові скриньки, черга, чи прив'язано GitHub (без уточнення, який саме ключ), підключення ШІ, пристрої, стан акаунта. Зберігання в `app.diagnostiek_account_uitslagen` (30 дн.). `POST /api/owner/admin/diagnostiek/account` (власник або `diagnose.lezen`; власний акаунт або `gebruikerId`; обидві колонки; аудит `diag.account.bekeken|uitgevoerd`). `POST /api/owner/diagnostiek/mijn-diensten` (будь-який схвалений користувач; ЛИШЕ власний акаунт, `gebruikerId` ігнорується, без колонки сервера; 10/10 хв; аудит `diag.account.zelf`).
+- **Планувальник:** серверний раунд кожні 15 хв (`cron.json` «diagnostiek-server» → `diagnostiekServerCron` → той самий `serverRonde`, що й кнопка; `deploy/mijn-ruimte-diagnostiek-server.timer`, у `TIMERS` скрипту `installeer-app.sh`). Акаунт: за запитом, з історією.
+- **Інтерфейс:** Діагностика → вкладка «Для всіх / цей акаунт» (власний акаунт) і та сама таблиця в «Скарга користувача» (вибраний користувач). Налаштування → Акаунт → «Стан моїх служб» (колонка «Мій акаунт» + порада). На ≤ 560 px рядки стають картками (390 px без горизонтальної прокрутки); кольори з теми.
 
-### Tests
-- `tests/eenheid/tech-assets.test.ts` 34/34: indeling, bouwcontrole (goed/slecht/leeg), SW, frontend-aansluiting (alle tech-imports via `lazyTech`), en de ECHTE server tegen PG: zonder sessie 404, verzonnen sleutel 404, sessie zonder tech 404, actieve activering 200 met `private, no-store` + `Vary: Cookie`, alleen hash in DB, geen nieuwe sleutel per status, ander tabblad wist niets, na beëindigen/verlopen 404, cookie gewist.
-- `tests/eenheid/diagnostiek-account.test.ts` 46/46: beoordeling, tabel «server ok / account niet» → «account», nagebootste bronnen (token geweigerd, GitHub-fout), privacy (geen token/adres/Google-tekst in DB, antwoord, logboek), rechten via de echte routes (gebruiker alleen zichzelf, geen serverkolom; beheerroute geweigerd; eigenaar beide kolommen), cron/timer/bedrading.
-- `tests/e2e/tech-assets.e2e.ts` 13/13 (Chromium, lokale build): mail + hub zonder tech vragen niets onder `/assets/tech/`; zelf ophalen 404; admin zonder tech = poort; met tech 200 + juiste koppen; na uitzetten 404; «Стан моїх служб» op 390 px. Bestaand groen: admin-diagnostiek 94, tech-profiel 36, tech-sessies 18, routes, menu-snelheid, nieuwe-versie, beheer-journaal.
-- **Uitrol:** migratie 0070 loopt automatisch; de nieuwe timer installeert `installeer-app.sh`. Na uitrol eenmalig in een tech-tabblad «Оновити сторінку» (de oude beheerbundel stond onder `assets/`).
+### Тести
+- `tests/eenheid/tech-assets.test.ts` 34/34: класифікація, перевірка збірки (добре/погано/порожньо), SW, підключення фронтенду (усі tech-імпорти через `lazyTech`) і СПРАВЖНІЙ сервер проти PG: без сесії 404, вигаданий ключ 404, сесія без tech 404, активна активація 200 із `private, no-store` + `Vary: Cookie`, у БД лише хеш, жодного нового ключа на кожен запит статусу, інша вкладка нічого не стирає, після завершення/прострочення 404, cookie стерто.
+- `tests/eenheid/diagnostiek-account.test.ts` 46/46: оцінка, таблиця «сервер ок / акаунт ні» → «account», імітовані джерела (токен відхилено, помилка GitHub), приватність (жодного токена/адреси/тексту Google у БД, відповіді, журналі), права через справжні маршрути (користувач лише себе, без колонки сервера; маршрут адміністрування відхилено; власник — обидві колонки), cron/таймер/обв'язка.
+- `tests/e2e/tech-assets.e2e.ts` 13/13 (Chromium, локальна збірка): пошта + хаб без tech нічого не запитують під `/assets/tech/`; прямий запит 404; адмінка без tech = шлюз; із tech 200 + правильні заголовки; після вимкнення 404; «Стан моїх служб» на 390 px. Наявні зелені: admin-diagnostiek 94, tech-profiel 36, tech-sessies 18, routes, menu-snelheid, nieuwe-versie, beheer-journaal.
+- **Розгортання:** міграція 0070 виконується автоматично; новий таймер встановлює `installeer-app.sh`. Після розгортання одноразово в tech-вкладці натиснути «Оновити сторінку» (старий бандл адміністрування лежав під `assets/`).
 
-## F — SSH-CA «aan te zetten vanaf de site» + verplichte «?» uit één register (migratie 0069)
+## F — SSH-CA «вмикається з сайту» + обов'язкові «?» з єдиного реєстру (міграція 0069)
 
-**SSH-сертифікати (kaart in het technisch profiel, `src/ssh/SshBeheer.tsx`, vervangt het losse venster).**
-- Stand (root schrijft `/var/lib/mijn-ruimte/ssh-ca-uit/beheer-status.json`): CA-sleutel ja/nee, sshd vertrouwt de CA (effectieve
-  `TrustedUserCAKeys` uit `sshd -T`), KRL actief, schakelaar, Include aanwezig.
-- «Підготувати» en «Увімкнути»: passkey, die **root zelf** controleert (`mijn-ruimte-passkey verifieer-ssh-ca <bestand> <actie>`,
-  doel `ssh-ca`, actie in de challenge, nonce eenmalig; nieuw in `deploy/goedkeuring/webauthn-kern.mjs` + `goedkeur-hulp.mjs`).
-  «Вимкнути», «Прибрати довіру sshd» en intrekken nemen alleen rechten weg: zonder root-passkey (site vraagt wel stap-op).
-- Root-kant: `mijn-ruimte-ssh-ca beheer|status` (nieuw in `deploy/ssh-ca/mijn-ruimte-ssh-ca.sh`), unit
-  `deploy/mijn-ruimte-ssh-ca-beheer.service` (polkit: alleen `start`, regel toegevoegd in `deploy/opdracht/50-mijn-ruimte-opdracht.rules`),
-  inbox `/srv/mijn-ruimte/ssh-ca-beheer` (installer: `ssh_ca_inrichten`). Geen shell van de site; inbox, verplaatsen en opruimen in Python.
-- sshd: `sshd_config` wordt nooit herschreven; alleen `/etc/ssh/sshd_config.d/50-mijn-ruimte-ssh-ca.conf` (TrustedUserCAKeys, RevokedKeys,
-  AuthorizedPrincipalsFile). Zonder Include → `SSH_CA_SSHD_GEEN_INCLUDE`. `sshd -t` vóór `systemctl reload ssh`; bij een fout of mislukt
-  herladen terug naar de vorige drop-in (`SSH_CA_SSHD_ONGELDIG` / `SSH_CA_SSHD_HERLADEN`).
-- Uitgifte 5–60 min (`-V -5m:+Nm`), principals per rol (`SSH_CA_PRINCIPALS_PER_ROL`, alleen eigenaar → `beheer`) ∩ root-lijst
-  `/etc/mijn-ruimte/ssh-ca/toegestaan.json`; serienummer `-z` voor de KRL. Lijst in `app.ssh_ca_certificaten` (0069: serie, door, wanneer,
-  tot, principals, ingetrokken; geen certificaat). Intrekken: `ssh-keygen -k` op `/etc/mijn-ruimte/ssh-ca/krl`, sshd weigert meteen.
-- Routes (`backend/ssh-ca-beheer.ts`, `backend/ssh-ca-routes.ts`): `/api/ssh-ca/{stand,lijst,beheer/uitdaging,beheer,intrekken}` —
-  eigenaar + `ssh.host` in dit tabblad + stap-op; `/api/ssh-ca/` staat in `AGENT_VERBODEN`. Journaal `owner.ssh-ca.*` (labels in
+**SSH-сертифікати (картка в технічному профілі, `src/ssh/SshBeheer.tsx`, замінює окреме вікно).**
+- Стан (root пише `/var/lib/mijn-ruimte/ssh-ca-uit/beheer-status.json`): ключ CA так/ні, sshd довіряє CA (чинний
+  `TrustedUserCAKeys` із `sshd -T`), KRL активний, перемикач, наявність Include.
+- «Підготувати» та «Увімкнути»: passkey, який перевіряє **сам root** (`mijn-ruimte-passkey verifieer-ssh-ca <bestand> <actie>`,
+  ціль `ssh-ca`, дія у виклику-challenge, одноразовий nonce; нове в `deploy/goedkeuring/webauthn-kern.mjs` + `goedkeur-hulp.mjs`).
+  «Вимкнути», «Прибрати довіру sshd» та відкликання лише забирають права: без root-passkey (сайт все одно вимагає step-up).
+- Сторона root: `mijn-ruimte-ssh-ca beheer|status` (нове в `deploy/ssh-ca/mijn-ruimte-ssh-ca.sh`), юніт
+  `deploy/mijn-ruimte-ssh-ca-beheer.service` (polkit: лише `start`, правило додано в `deploy/opdracht/50-mijn-ruimte-opdracht.rules`),
+  вхідна скринька `/srv/mijn-ruimte/ssh-ca-beheer` (інсталятор: `ssh_ca_inrichten`). Жодного shell від сайту; вхідна скринька, переміщення й очищення — на Python.
+- sshd: `sshd_config` ніколи не перезаписується; лише `/etc/ssh/sshd_config.d/50-mijn-ruimte-ssh-ca.conf` (TrustedUserCAKeys, RevokedKeys,
+  AuthorizedPrincipalsFile). Без Include → `SSH_CA_SSHD_GEEN_INCLUDE`. `sshd -t` перед `systemctl reload ssh`; у разі помилки або невдалого
+  перезавантаження — повернення до попереднього drop-in (`SSH_CA_SSHD_ONGELDIG` / `SSH_CA_SSHD_HERLADEN`).
+- Видача на 5–60 хв (`-V -5m:+Nm`), principals за роллю (`SSH_CA_PRINCIPALS_PER_ROL`, лише власник → `beheer`) ∩ root-список
+  `/etc/mijn-ruimte/ssh-ca/toegestaan.json`; серійний номер `-z` для KRL. Список в `app.ssh_ca_certificaten` (0069: серія, ким, коли,
+  до, principals, відкликано; без самого сертифіката). Відкликання: `ssh-keygen -k` на `/etc/mijn-ruimte/ssh-ca/krl`, sshd відмовляє миттєво.
+- Маршрути (`backend/ssh-ca-beheer.ts`, `backend/ssh-ca-routes.ts`): `/api/ssh-ca/{stand,lijst,beheer/uitdaging,beheer,intrekken}` —
+  власник + `ssh.host` у цій вкладці + step-up; `/api/ssh-ca/` внесено до `AGENT_VERBODEN`. Журнал `owner.ssh-ca.*` (мітки в
   `shared/beheer-journaal.ts`).
-- 0069 verbreedt ook `goedkeur_uitdagingen_doel_check` met `'ssh-ca'`. Wie later die CHECK opnieuw zet, moet `'ssh-ca'` meenemen.
+- 0069 також розширює `goedkeur_uitdagingen_doel_check` значенням `'ssh-ca'`. Хто пізніше переозначатиме цей ПЕРЕВІРКА, мусить включити `'ssh-ca'`.
 
-**Na installatie (eigenaar):** technisch profiel → «SSH-сертифікати» (vlag `ssh-certificaat` toont de knop) → «Підготувати» (passkey)
-→ «Увімкнути» (passkey). Vereist: `Include /etc/ssh/sshd_config.d/*.conf` in `sshd_config` (Debian/Ubuntu standaard) en een passkey in
+**Після встановлення (власник):** технічний профіль → «SSH-сертифікати» (прапорець `ssh-certificaat` показує кнопку) → «Підготувати» (passkey)
+→ «Увімкнути» (passkey). Вимагається: `Include /etc/ssh/sshd_config.d/*.conf` у `sshd_config` (стандарт Debian/Ubuntu) і passkey в
 `/etc/mijn-ruimte/goedkeur-passkeys.json`.
 
-**«?» verplicht (`shared/hulp-register.ts`, `src/hulp/HulpVraag.tsx`).** Eén register met lagen wat/gevolg/risico/dev (uk/nl) + bron.
-`tests/eenheid/hulp-register.test.ts` faalt met de lijst van wat ontbreekt: elk `<select>`, checkbox, radio en `role=switch` in de mappen
-van het technisch profiel en het beheer moet `data-hulp='<sleutel>'` hebben (of `data-hulp-vrij='filter|sortering|keuze'`), de sleutel moet
-volledig in het register staan en in hetzelfde bestand moet `<HulpVraag k='<sleutel>' />` staan; ook catalogi (rollen, root-schakelaars
-uit de standaard `mcp-rechten.json` van de installer, beveiligingsschakelaars 0066, SSH-CA). «Для розробників» is nu ingeklapt
-(`<details>` in `src/tech/Vraag.tsx`) en toont sleutel en bestand. Nieuwe optie → item toevoegen in het register (of `hulpRegistreren`).
+**«?» обов'язковий (`shared/hulp-register.ts`, `src/hulp/HulpVraag.tsx`).** Єдиний реєстр із шарами що/наслідок/ризик/dev (uk/nl) + джерело.
+`tests/eenheid/hulp-register.test.ts` падає зі списком того, чого бракує: кожен `<select>`, checkbox, radio та `role=switch` у теках
+технічного профілю й адміністрування мусить мати `data-hulp='<sleutel>'` (або `data-hulp-vrij='filter|sortering|keuze'`), ключ мусить
+повністю бути в реєстрі, а в тому самому файлі має стояти `<HulpVraag k='<sleutel>' />`; також каталоги (ролі, root-перемикачі
+зі стандартного `mcp-rechten.json` інсталятора, перемикачі захисту 0066, SSH-CA). «Для розробників» тепер згорнуто
+(`<details>` у `src/tech/Vraag.tsx`) і показує ключ та файл. Нова опція → додати запис у реєстр (або `hulpRegistreren`).
 
-Tests: `ssh-ca-beheer` (echte sshd, echte passkey-hulp, ssh-keygen/KRL; 34), `ssh-ca-site` (rechten 403, passkey, routes, 0069; 40),
-`ssh-ca` (33), `hulp-register` (17); harness `/tmp/h-F2` (52 controles: 1280/390, licht/donker, uk/nl).
+Тести: `ssh-ca-beheer` (справжній sshd, справжній допоміжний скрипт passkey, ssh-keygen/KRL; 34), `ssh-ca-site` (права 403, passkey, маршрути, 0069; 40),
+`ssh-ca` (33), `hulp-register` (17); стенд `/tmp/h-F2` (52 перевірки: 1280/390, світла/темна, uk/nl).
 
-## N — Meldingen: gebruiker los van beheer; paneel in de technische band; geluid/pop-up per type (geen migratie)
+## N — Сповіщення: користувацькі окремо від адмінських; панель у технічній смузі; звук/спливання для кожного типу (без міграції)
 
-Verzoek eigenaar: «панель Сповіщення має бути розділена для користувача від адмін сповіщень … лише одна графа … можна обеззвучити,
-вимкнути спливаючі сповіщення для будь-якого типу».
+Запит власника: «панель Сповіщення має бути розділена для користувача від адмін сповіщень … лише одна графа … можна обеззвучити,
+вимкнути спливні сповіщення для будь-якого типу».
 
-- **Eén classificatie** (`shared/melding-typen.ts` + `shared/melding-soorten.ts`): elke soort (kind) → type (10 persoonlijk, 13 technisch),
-  ernst (kritiek/belangrijk/info) en voor technische soorten de vereiste mogelijkheid (`users.manage`, `diagnose.lezen`, `journaal.lezen`,
-  `uitrol.voorbereiden`, `diensten.beheren`, `impersonatie.aanvragen`, …). `shared/meldingen-ruimte.ts` gebruikt die tabel; link-regel
-  (admin./api./beheerpagina) blijft. Nieuw/hernoemd: `impersonatie.beheerder` (antwoord van de gebruiker aan de beheerder; was
-  `impersonatie` en stond in de gewone bel), `uitrol.mislukt` (mislukte of zonder uitkomst afgesloten installatie → melding aan wie
-  goedkeurde, `backend/uitrol-goedkeuring.ts` → `meldMislukt`). `beveiliging.zekering` is nu technisch (stond vroeger in de gewone bel).
-- **Server filtert** (`backend/index.ts`): `meldingOntvanger(user)` (eigenaar → alles; technisch profiel niet ingetrokken → de mogelijkheden
-  van zijn rollen; fout → niets technisch). `siteNotificationOverview` levert technische meldingen alleen aan wie ze aangaan; de teller telt
-  ze ook niet voor anderen; `POST /api/owner/notifications/read` markeert alleen wat de ontvanger mag zien.
-- **Gewone bel** (`src/CanonicalNotificationCenter.tsx`): alleen persoonlijke meldingen + één regel «У технічній панелі N нових
-  сповіщень» (alleen met technisch profiel). Klik: actief → paneel in de band; niet actief → venster «Увімкнути технічний профіль», daarna
-  opent het paneel vanzelf (sessionStorage `mr-tech-na-activeren`, 10 min geldig).
-- **Paneel in de band** (`src/meldingen/TechMeldingen.tsx`, knop met teller in `TechLaag`): filters type / важливість / прочитані,
-  «Позначити все прочитаним», links naar admin. Bron: `src/meldingen/tech-meldingen-store.ts` (CanonicalChrome → TechLaag-root).
-- **Per type** (bel → «Типи сповіщень», `src/meldingen/MeldingVoorkeurenPaneel.tsx`): звук / спливає / видно, ook technische types voor
-  wie een profiel heeft. Opslag: `sidebar.meldingen.soorten` (owner_ui_preferences_v1 via `/api/owner/ui/sidebar/save`, localStorage
-  alleen cache) — oude opslag zonder `soorten` = alles aan. Kritiek (`beveiliging`, `inzage`, `tech.uitrol-mislukt`, `tech.bescherming`):
-  geluid en pop-up mogen uit, verbergen niet (UI uitgeschakeld + uitleg; normalisatie dwingt `tonen: true`). Nieuwe servermeldingen
-  krijgen nu ook een pop-up met de titel (als het type dat toestaat); geluid alleen als het type geluid mag.
+- **Єдина класифікація** (`shared/melding-typen.ts` + `shared/melding-soorten.ts`): кожен вид (kind) → тип (10 особистих, 13 технічних),
+  важливість (критичне/важливе/інфо) і для технічних видів — необхідна можливість (`users.manage`, `diagnose.lezen`, `journaal.lezen`,
+  `uitrol.voorbereiden`, `diensten.beheren`, `impersonatie.aanvragen`, …). `shared/meldingen-ruimte.ts` використовує цю таблицю; правило посилань
+  (admin./api./сторінка адміністрування) зберігається. Нове/перейменоване: `impersonatie.beheerder` (відповідь користувача адміністратору; було
+  `impersonatie` і потрапляло у звичайний дзвіночок), `uitrol.mislukt` (невдале або завершене без результату встановлення → сповіщення тому, хто
+  схвалив, `backend/uitrol-goedkeuring.ts` → `meldMislukt`). `beveiliging.zekering` тепер технічне (раніше було у звичайному дзвіночку).
+- **Сервер фільтрує** (`backend/index.ts`): `meldingOntvanger(user)` (власник → усе; технічний профіль не відкликано → можливості
+  його ролей; помилка → нічого технічного). `siteNotificationOverview` віддає технічні сповіщення лише тим, кого вони стосуються; лічильник також не рахує
+  їх для інших; `POST /api/owner/notifications/read` позначає прочитаним лише те, що одержувач має право бачити.
+- **Звичайний дзвіночок** (`src/CanonicalNotificationCenter.tsx`): лише особисті сповіщення + один рядок «У технічній панелі N нових
+  сповіщень» (лише за наявності технічного профілю). Клік: активний → панель у смузі; не активний → вікно «Увімкнути технічний профіль», після чого
+  панель відкривається сама (sessionStorage `mr-tech-na-activeren`, діє 10 хв).
+- **Панель у смузі** (`src/meldingen/TechMeldingen.tsx`, кнопка з лічильником у `TechLaag`): фільтри тип / важливість / прочитані,
+  «Позначити все прочитаним», посилання на адмінку. Джерело: `src/meldingen/tech-meldingen-store.ts` (CanonicalChrome → TechLaag-root).
+- **За типом** (дзвіночок → «Типи сповіщень», `src/meldingen/MeldingVoorkeurenPaneel.tsx`): звук / спливає / видно, включно з технічними типами для
+  тих, хто має профіль. Зберігання: `sidebar.meldingen.soorten` (owner_ui_preferences_v1 через `/api/owner/ui/sidebar/save`, localStorage
+  лише кеш) — старий запис без `soorten` = усе увімкнено. Критичні (`beveiliging`, `inzage`, `tech.uitrol-mislukt`, `tech.bescherming`):
+  звук і спливання можна вимкнути, приховати не можна (елемент UI вимкнено + пояснення; нормалізація примусово ставить `tonen: true`). Нові серверні сповіщення
+  тепер також отримують спливне вікно із заголовком (якщо тип це дозволяє); звук — лише якщо типу дозволено звук.
 
-Tests: `melding-soorten` (50: scanner van alle `notify()/meld()`-soorten in backend/ → 23 gevonden, alle in de tabel; echte DB:
-gewoon account / auditor / ingetrokken profiel), `menu-meldingen` 40, `notice-dedupe` 6, `notification-position` 5, `ai-ruimte` 16,
-`vast-kader` 22, `hulp-register` 17. Harness `/tmp/h-N` (126 controles: bel + regel, paneel in de band met filters, voorkeuren met
-echt geteld geluid/pop-up, activeren en terug, zonder profiel; uk/nl, licht/donker, 1280/390).
+Тести: `melding-soorten` (50: сканер усіх видів `notify()/meld()` у backend/ → знайдено 23, усі в таблиці; справжня БД:
+звичайний акаунт / аудитор / відкликаний профіль), `menu-meldingen` 40, `notice-dedupe` 6, `notification-position` 5, `ai-ruimte` 16,
+`vast-kader` 22, `hulp-register` 17. Стенд `/tmp/h-N` (126 перевірок: дзвіночок + рядок, панель у смузі з фільтрами, налаштування зі
+справжнім підрахунком звуку/спливань, активація й повернення, без профілю; uk/nl, світла/темна, 1280/390).
 
-## T · Technisch profiel over tabbladen, lijst «⋯», extensie 0.4.2 (18.10.2026)
+## T · Технічний профіль між вкладками, список «⋯», розширення 0.4.2 (18.10.2026)
 
-**1. Profiel valt niet meer weg in een nieuw tabblad** (migratie **0071** `tech_activatie_erven`: `ouder_id`, `herkomst` eigen/geerfd/gedeeld).
-- Open activering («до виходу з акаунта/профілю») = hele browsersessie: elk tabblad van dezelfde ankersessie krijgt bij zijn eerste
-  `/api/owner/tech/status` een eigen kopie (`ervenOpen`, zonder stap-op, logboek `owner.tech.geerfd` «успадковано вкладкою»). Andere
-  sessie/browser: nooit. Een tabblad waarvan de eigen activering ná het begin van de open activering eindigde, erft niet stil opnieuw.
-- Op tijd = eigen tabblad. Nieuw tabblad geopend vanuit een technisch tabblad (link in nieuw tabblad, middelklik, `window.open`): eenmalig
-  kaartje (localStorage, 15 s) → BroadcastChannel `mr-tech` → het BRON-tabblad roept `POST /api/owner/tech/delen` (zelfde sessie, doel
-  nieuw, zelfde einde; `owner.tech.gedeeld`). Verlopen = alleen die rij.
-- «Вийти з технічного профілю» in elk tabblad → alle rijen van de sessie (`beeindigen(u, tab, sessie)`, logboek `via: ander tabblad`);
-  andere tabbladen meteen via `mr-tech` (`aan`/`uit`), andere subdomeinen bij zichtbaar worden / minuutcontrole. Uitloggen/revoke: zoals
-  0060 (per `sessie_id`, kopieën inbegrepen). Bron schakelt open → op tijd: kopieën eindigen (`vervangen`).
-- Tekst in «Увімкнути»: legt beide modi uit. Agents (`/api/owner/tech/*`) blijven geblokkeerd (agent-namens).
+**1. Профіль більше не губиться в новій вкладці** (міграція **0071** `tech_activatie_erven`: `ouder_id`, `herkomst` eigen/geerfd/gedeeld).
+- Відкрита активація («до виходу з акаунта/профілю») = уся сесія браузера: кожна вкладка тієї самої якірної сесії при своєму першому
+  `/api/owner/tech/status` отримує власну копію (`ervenOpen`, без step-up, журнал `owner.tech.geerfd` «успадковано вкладкою»). Інша
+  сесія/браузер: ніколи. Вкладка, чия власна активація завершилася ПІСЛЯ початку відкритої активації, не успадковує повторно по-тихому.
+- На час = власна вкладка. Нова вкладка, відкрита з технічної вкладки (посилання в новій вкладці, середній клік, `window.open`): одноразовий
+  квиток (localStorage, 15 с) → BroadcastChannel `mr-tech` → вкладка-ДЖЕРЕЛО викликає `POST /api/owner/tech/delen` (та сама сесія, ціль
+  нова, той самий кінець; `owner.tech.gedeeld`). Прострочення = лише той рядок.
+- «Вийти з технічного профілю» в будь-якій вкладці → усі рядки сесії (`beeindigen(u, tab, sessie)`, журнал `via: ander tabblad`);
+  інші вкладки миттєво через `mr-tech` (`aan`/`uit`), інші піддомени — при появі у фокусі / щохвилинній перевірці. Вихід/revoke: як у
+  0060 (за `sessie_id`, включно з копіями). Джерело перемикає відкриту → на час: копії завершуються (`vervangen`).
+- Текст в «Увімкнути»: пояснює обидва режими. Агенти (`/api/owner/tech/*`) лишаються заблокованими (agent-namens).
 
-**2. Lijst «⋯» van de band** (TechLaag/tech.css, puntwijzigingen): groepen Розділи / Інструменти / Люди й підтримка / Цей сеанс met kop,
-korte uitleg per knop, zoekveld (focus bij openen), ↑/↓/Home/End/Enter, Esc → focus terug op «⋯», huidige plek gemarkeerd
-(`aria-current`), raakvlak 44 px; brede band (data-pas 0–2) ongewijzigd. Eigen fout gevonden en opgelost: elke meting
-(ResizeObserver) sloot de lijst op de telefoon meteen weer — sluiten nu alleen als «⋯» echt verborgen is.
+**2. Список «⋯» смуги** (TechLaag/tech.css, точкові зміни): групи Розділи / Інструменти / Люди й підтримка / Цей сеанс із заголовком,
+коротке пояснення біля кожної кнопки, поле пошуку (фокус при відкритті), ↑/↓/Home/End/Enter, Esc → фокус назад на «⋯», поточне місце позначено
+(`aria-current`), зона дотику 44 px; широка смуга (data-pas 0–2) без змін. Знайдено й виправлено власну помилку: кожне вимірювання
+(ResizeObserver) на телефоні одразу закривало список — тепер закриття лише тоді, коли «⋯» справді приховано.
 
-**3. Extensie 0.4.2** (MIN blijft 0.4.0). Oorzaak «активація в налаштуваннях не працює»: opties openen in een tabblad
-(`open_in_tab`), `ownPage` eiste `!sender.tab` → `set-diag`/`self-test` geweigerd (schakelaar sprong terug, «Тест» brak). Nu: eigen
-id + `chrome-extension://<id>/`-adres (content scripts blijven geweigerd); opties melden mislukken. Site: `mcpIngang(…, extensie)`
-laat `agents#extension` / `?extension=welcome|update` staan; met profiel-uit toont `ExtensieTechAanbod` «Увімкнути технічний профіль
-(і підключити)» → activeervenster (stap-op), zelfde pagina; daarna koppelt/zet de installatiehulp zelf aan (eenmalig, `mr.ext.doorgaan`).
-Zonder technisch profiel: zoals vroeger naar ai.*/verbindingen. Popup: «Увімкнути технічний профіль і підключити». Pakket opnieuw bouwen
-(`scripts/build-extension.mjs`) bij de volgende uitrol.
+**3. Розширення 0.4.2** (MIN лишається 0.4.0). Причина «активація в налаштуваннях не працює»: налаштування відкриваються у вкладці
+(`open_in_tab`), `ownPage` вимагав `!sender.tab` → `set-diag`/`self-test` відхилялися (перемикач відстрибував назад, «Тест» падав). Тепер: власний
+id + адреса `chrome-extension://<id>/` (content scripts лишаються відхиленими); налаштування повідомляють про невдачу. Сайт: `mcpIngang(…, extensie)`
+залишає `agents#extension` / `?extension=welcome|update`; при вимкненому профілі `ExtensieTechAanbod` показує «Увімкнути технічний профіль
+(і підключити)» → вікно активації (посилене підтвердження), та сама сторінка; після цього майстер встановлення сам прив'язує/вмикає (одноразово, `mr.ext.doorgaan`).
+Без технічного профілю: як і раніше, на ai.*/verbindingen. Попап: «Увімкнути технічний профіль і підключити». Пакет перезібрати
+(`scripts/build-extension.mjs`) при наступному розгортанні.
 
-Tests: nieuw `tech-tabbladen` 31 (echte routes + PG), `extensie-opties` 22 (echte background.js met nep-chrome; oud gedrag nagebootst);
+Тести: новий `tech-tabbladen` 31 (справжні маршрути + PG), `extensie-opties` 22 (справжній background.js із імітованим chrome; відтворено стару поведінку);
 `tech-profiel` 36, `tech-sessies` 18, `browser-extensie` 21, `extensie-toestand` 14, `ui-audit-g` 42, `ai-agent-bord` 20, `impersonatie` 71
-(regex aangepast aan de lijst) en 20 andere raakvlak-tests groen. Harness `/tmp/h-T` 43/43: twee tabbladen (erven 0,01 s, verlaten in B →
-A en C uit < 0,2 s), op tijd + tabblad vanuit A (zelfde einde), lijst 390 px licht/donker, welkomstpagina, options.html met uitgepakte
-extensie in echte Chromium (oud gedrag: schakelaar springt terug). Lokaal toegepast: 0071.
+(регулярний вираз адаптовано до списку) та 20 інших суміжних тестів зелені. Стенд `/tmp/h-T` 43/43: дві вкладки (успадкування 0,01 с, вихід у B →
+A і C вимкнені < 0,2 с), на час + вкладка з A (той самий кінець), список 390 px світла/темна, вітальна сторінка, options.html із розпакованим
+розширенням у справжньому Chromium (стара поведінка: перемикач відстрибує назад). Локально застосовано: 0071.
 
-## Pakket uit git (geen «zonder-git»-waarschuwing meer)
-- Vanaf dit pakket wordt gebouwd met `deploy/uitrol/maak-voorstelpakket.sh` → `git archive` van een echte commit; `BRON-COMMIT` is die commit (40 hex). De voorcontrole toont «Коміт … — випуск відтворюваний з git».
-- Bij het pakket hoort `mijn-ruimte-<versie>.bundle` (git bundle): de geschiedenis van de geïnstalleerde pakketten als commits met tags (`pakket-20261017-221747` … `pakket-20261018-153026`) plus de nieuwe commit. Importeren in de eigen repository:
-  `git fetch /pad/mijn-ruimte-<versie>.bundle 'refs/heads/main:refs/heads/claude/<versie>' 'refs/tags/*:refs/tags/*'` en daarna naar GitHub pushen.
-- Reproduceerbaar: dezelfde commit + dezelfde versie/metadata geven bit voor bit hetzelfde archief (dubbel gebouwd: identieke sha256). Gecontroleerd: het archief bouwt (`npm run build`) zonder bestanden van buiten git.
-- `.gitignore` aangevuld: testhulpmiddelen (`harness/`, `harness-*.config.*`, `tsconfig.?-*.json`) en de pakketmetadata (`UITROL-VERSIE`, `AUTEUR`, `AGENT`, `SAMENVATTING`) — die komen als virtuele bestanden uit het script, nooit uit de boom.
-- Typecontrole van de server (`tsc -p tsconfig.server.json`) is voor het eerst schoon (was 41 fouten, alle al vóór deze wijzigingen: dubbele `Eigenaar` in uitrol-goedkeuring.ts, `as const`-routes in beheer-journaal-routes.ts).
+## Пакет із git (більше ніякого попередження «zonder-git»)
+- Починаючи з цього пакета, збірка виконується через `deploy/uitrol/maak-voorstelpakket.sh` → `git archive` зі справжнього коміту; `BRON-COMMIT` містить цей коміт (40 hex). Попередня перевірка показує «Коміт … — випуск відтворюваний з git».
+- До пакета додається `mijn-ruimte-<versie>.bundle` (git bundle): історія встановлених пакетів у вигляді комітів із тегами (`pakket-20261017-221747` … `pakket-20261018-153026`) плюс новий коміт. Імпорт у власний репозиторій:
+  `git fetch /pad/mijn-ruimte-<versie>.bundle 'refs/heads/main:refs/heads/claude/<versie>' 'refs/tags/*:refs/tags/*'` і далі push на GitHub.
+- Відтворюваність: той самий коміт + та сама версія/метадані дають біт у біт той самий архів (подвійна збірка: однаковий sha256). Перевірено: архів збирається (`npm run build`) без файлів поза межами git.
+- `.gitignore` доповнено: тестові інструменти (`harness/`, `harness-*.config.*`, `tsconfig.?-*.json`) та метадані пакета (`UITROL-VERSIE`, `AUTEUR`, `AGENT`, `SAMENVATTING`) — вони надходять як віртуальні файли зі скрипту, ніколи з робочого дерева.
+- Перевірка типів сервера (`tsc -p tsconfig.server.json`) уперше чиста (була 41 помилка, усі ще до цих змін: дубльований `Eigenaar` в uitrol-goedkeuring.ts, маршрути `as const` у beheer-journaal-routes.ts).
 
-## X · Extensie 0.5.0: standaard vergrendeld, ontgrendelen met passkey, AI-brug, verzamelaar (migratie 0072)
+## X · Розширення 0.5.0: типово заблоковане, розблокування через passkey, ШІ-міст, збирач (міграція 0072)
 
-**Kernregel.** Zonder een door de server ondertekende ontgrendeling voert de extensie geen enkele opdracht van een AI uit en verzamelt ze niets
-(console, netwerk, DOM, archief). Ontgrendelen kan alleen op de site (mcp.*/agents#extension, ook via `?ontgrendelen=1`):
-ingelogd → technisch profiel met **lopende activering** in dit tabblad → assertie (UV) van een **eigen passkey** van dit account.
-Zonder profiel/activering/passkey: knop uit + uitleg + actie (`WEIGER_UITLEG` in `shared/extensie-ontgrendeling.ts`).
+**Основне правило.** Без підписаного сервером розблокування розширення не виконує жодної команди від ШІ й нічого не збирає
+(консоль, мережа, DOM, архів). Розблокувати можна лише на сайті (mcp.*/agents#extension, також через `?ontgrendelen=1`):
+вхід виконано → технічний профіль із **активною активацією** в цій вкладці → твердження (UV) **власного passkey** цього акаунта.
+Без профілю/активації/passkey: кнопка неактивна + пояснення + дія (`WEIGER_UITLEG` у `shared/extensie-ontgrendeling.ts`).
 
-**Keten (wie controleert wat).**
-1. Site → `POST /api/owner/agents/ontgrendeling/uitdaging` (sessie + tabcontext): server toetst tech-recht, rollen → caps (`CAPS_PER_ROL`),
-   duur ≤ einde activering (max 480 min), domeinen ⊂ eigen hosts (exact, zonder poort/userinfo) → challenge gebonden aan agentId, caps, domeinen,
-   eind, nonce, activering, sessie (eenmalig, ≤ 5 min).
-2. Browser → `navigator.credentials.get` (UV verplicht) → `POST …/ontgrendeling`: server controleert met de eigen passkey (rpIdHash, origin = alleen
-   de dienst van de sessie, signCount) → rij in `app.extensie_ontgrendelingen` (vorige van die agent ingetrokken) → push over de bestaande WSS
-   `{t:'ontgrendeling', grant, sig}` met `sig = HMAC-SHA256(opdrachtsleutel van de koppeling, ontgrendelTekst(grant))`.
-3. Extensie (`extension/shared.js` `verifyOntgrendeling`): handtekening (constante tijd), eigen agentId/userId, tijd (ook t.o.v. ontvangstmoment),
-   duur, caps, domeinen; bewaard in `chrome.storage.session` (TRUSTED_CONTEXTS; weg bij herstart van de browser). Ingetrokken gids en oudere grants
-   worden nooit opnieuw aanvaard.
-4. Elke opdracht: bekend type → HMAC per opdracht (bestaand) → ontgrendeling geldig → cap ∈ grant ∩ instellingen → `valideerOpdracht` (schema per type,
-   onbekende sleutels/`__proto__`/control- en bidi-tekens/te lang = weigeren) → host ∈ domeinen (ook ná navigatie) → accountclaim van het tabblad → uitvoeren.
-   De server dwingt hetzelfde af vóór verzenden (`dispatchCommand`: `EXTENSIE_VERGRENDELD` / `EXTENSIE_CAP`), alleen voor browseragenten.
-5. Einde: duur voorbij, einde/vervanging van de technische activering, uitloggen, noodstop, intrekken op de site («Відкликати зараз»), in de pop-up,
-   het zijpaneel of de opties (wachtrij tot de server bevestigt), herverbinden zonder actieve rij (server stuurt `vergrendel` zonder gid).
+**Ланцюжок (хто що перевіряє).**
+1. Сайт → `POST /api/owner/agents/ontgrendeling/uitdaging` (сесія + контекст вкладки): сервер перевіряє tech-право, ролі → можливості (`CAPS_PER_ROL`),
+   тривалість ≤ кінця активації (макс. 480 хв), домени ⊂ власних хостів (точно, без порту/userinfo) → challenge, прив'язаний до agentId, caps, доменів,
+   кінця, nonce, активації, сесії (одноразовий, ≤ 5 хв).
+2. Браузер → `navigator.credentials.get` (UV обов'язковий) → `POST …/ontgrendeling`: сервер перевіряє за власним passkey (rpIdHash, origin = лише
+   служба сесії, signCount) → рядок в `app.extensie_ontgrendelingen` (попередній для цього агента відкликається) → push через наявний WSS
+   `{t:'ontgrendeling', grant, sig}` із `sig = HMAC-SHA256(ключ команд прив'язки, ontgrendelTekst(grant))`.
+3. Розширення (`extension/shared.js` `verifyOntgrendeling`): підпис (за сталий час), власний agentId/userId, час (також відносно моменту отримання),
+   тривалість, caps, домени; зберігається в `chrome.storage.session` (TRUSTED_CONTEXTS; зникає при перезапуску браузера). Відкликані gid та старіші дозволи (grants)
+   ніколи не приймаються повторно.
+4. Кожна команда: відомий тип → HMAC на команду (наявний) → розблокування дійсне → cap ∈ grant ∩ налаштування → `valideerOpdracht` (схема за типом,
+   невідомі ключі/`__proto__`/керівні та bidi-символи/занадто довге = відмова) → host ∈ домени (також ПІСЛЯ навігації) → твердження акаунта вкладки → виконання.
+   Сервер примусово перевіряє те саме перед надсиланням (`dispatchCommand`: `EXTENSIE_VERGRENDELD` / `EXTENSIE_CAP`), лише для браузерних агентів.
+5. Завершення: сплив час, завершення/заміна технічної активації, вихід, аварійна зупинка, відкликання на сайті («Відкликати зараз»), у попапі,
+   бічній панелі чи налаштуваннях (черга до підтвердження сервером), перепідключення без активного рядка (сервер надсилає `vergrendel` без gid).
 
-**Status altijd actueel zonder herladen.** Extensie duwt bij elke wijziging de publieke status naar eigen pagina's en naar open tabbladen
-(bridge → `window.postMessage`, alleen whitelist-velden, nooit sleutels/tokens); de site combineert dat met `GET /api/owner/agents/extensie-status`
-(elke 5 s zolang zichtbaar) — `src/extensie/extensie-live.ts`. Staten: «Не підключено до сайту», «Очікування Passkey», «Доступ відкрито»,
-«ШІ-агент підключено» (AI-opdracht in de laatste 120 s of lokale agent verbonden). Ook als regel in het «⋯»-menu van de technische band.
+**Статус завжди актуальний без перезавантаження.** Розширення при кожній зміні штовхає публічний статус на власні сторінки й у відкриті вкладки
+(міст → `window.postMessage`, лише поля з білого списку, ніколи ключі/токени); сайт поєднує це з `GET /api/owner/agents/extensie-status`
+(кожні 5 с, доки видимий) — `src/extensie/extensie-live.ts`. Стани: «Не підключено до сайту», «Очікування Passkey», «Доступ відкрито»,
+«ШІ-агент підключено» (команда ШІ за останні 120 с або підключено локального агента). Також як рядок у меню «⋯» технічної смуги.
 
-**Verzamelaar (alleen ontgrendeld én host ∈ domeinen).** Netwerk via `chrome.webRequest` (methode, pad zonder query, status, ms, type; nooit headers
-of bodies); console/uitzonderingen/LCP/CLS/long tasks via collector.js (passief tot de brug hem aanzet); DOM/prestaties/beveiliging via de nieuwe
-opdracht `browser.audit` (MCP-tool `browser_audit`): bevindingen als FORM_HTTP_ACTIE, SCRIPT_ZONDER_SRI_EXTERN, TARGET_BLANK_ZONDER_NOOPENER,
-INLINE_HANDLERS, IFRAME_ZONDER_SANDBOX_EXTERN, MIXED_CONTENT, CSP_UNSAFE_INLINE… Nooit veldwaarden, cookies, opslag of querystrings.
+**Збирач (лише коли розблоковано І host ∈ домени).** Мережа через `chrome.webRequest` (метод, шлях без запит, статус, мс, тип; ніколи заголовки
+чи тіла); консоль/винятки/LCP/CLS/long tasks через collector.js (пасивний, доки міст його не ввімкне); DOM/продуктивність/безпека через нову
+команду `browser.audit` (MCP-інструмент `browser_audit`): знахідки на кшталт FORM_HTTP_ACTIE, SCRIPT_ZONDER_SRI_EXTERN, TARGET_BLANK_ZONDER_NOOPENER,
+INLINE_HANDLERS, IFRAME_ZONDER_SANDBOX_EXTERN, MIXED_CONTENT, CSP_UNSAFE_INLINE… Ніколи значення полів, cookies, сховища чи querystrings.
 
-**Lokale AI-agent (optioneel, alleen lezen).** Native Messaging-host `com.tarasevych.mijnruimte` (`deploy/extensie-native/`, download
-`/downloads/mijn-ruimte-extensie-native.zip`) + MCP-server voor Claude Desktop/Code. Werkt alleen met optionele permissie `nativeMessaging`, een
-ontgrendeling met «локальний агент» aangevinkt, en 6 leesopdrachten. Host ↔ MCP: wederzijdse HMAC over nonces met een token (0600) dat bij elke
-start nieuw is; `allowed_origins` exact het extensie-id.
+**Локальний ШІ-агент (опційно, лише читання).** Хост Native Messaging `com.tarasevych.mijnruimte` (`deploy/extensie-native/`, завантаження
+`/downloads/mijn-ruimte-extensie-native.zip`) + MCP-сервер для Claude Desktop/Code. Працює лише з опційним дозволом `nativeMessaging`,
+розблокуванням із позначкою «локальний агент» та 6 командами читання. Хост ↔ MCP: взаємний HMAC над nonces із токеном (0600), що генерується заново при кожному
+запуску; `allowed_origins` містить точно id розширення.
 
-**Manifest 0.5.0.** `storage, alarms, scripting, activeTab, sidePanel, webRequest`; optioneel `debugger` (diepe diagnose, gevraagd in de opties) en
-`nativeMessaging`; `host_permissions` alleen `https://*.tarasevych.com/*`; CSP `script-src 'self'; object-src 'none'; base-uri 'none'`; `key` = publieke
-CRX-sleutel → ook «Load unpacked» heeft id `ofpffonakgjioahgfejmiblfmbkobmmi`. agentToken en opdrachtsleutel staan nu in IndexedDB van de extensie
-(niet meer in `storage.local`).
+**Маніфест 0.5.0.** `storage, alarms, scripting, activeTab, sidePanel, webRequest`; опційно `debugger` (глибока діагностика, запитується в налаштуваннях) і
+`nativeMessaging`; `host_permissions` лише `https://*.tarasevych.com/*`; CSP `script-src 'self'; object-src 'none'; base-uri 'none'`; `key` = публічний
+ключ CRX → навіть «Load unpacked» отримує id `ofpffonakgjioahgfejmiblfmbkobmmi`. agentToken і ключ команд тепер лежать в IndexedDB розширення
+(більше не в `storage.local`).
 
-**Gevolg.** Ook in de privéruimte voert de browser niets meer uit zonder ontgrendeling door een account met technisch profiel.
+**Наслідок.** Навіть у приватному просторі браузер більше нічого не виконує без розблокування акаунтом із технічним профілем.
 
-**Plan en verdeling (parallel).** A: background.js, shared.js, manifest · B: bridge.js, collector.js · C: pop-up, zijpaneel, opties · D: server
-(0072, routes, gateway, afdwinging, `browser_audit`) · E: site (ontgrendelblok, live status, toestandsmachine, band) · F: Native Messaging · daarna
-onafhankelijke securityreview (9 bevindingen, alle gerepareerd met test) en een end-to-end-proef in echte Chromium met nep-server (70/70; vond en
-repareerde: accountclaim na het wekken van de service worker).
+**План і розподіл (паралельно).** A: background.js, shared.js, маніфест · B: bridge.js, collector.js · C: попап, бічна панель, налаштування · D: сервер
+(0072, маршрути, шлюз, примусове виконання, `browser_audit`) · E: сайт (блок розблокування, живий статус, скінченний автомат, смуга) · F: Native Messaging · далі
+незалежний огляд безпеки (9 знахідок, усі виправлено з тестом) і наскрізна проба в справжньому Chromium із імітованим сервером (70/70; знайшла й
+виправила: твердження акаунта після пробудження service фоновий обробник).
 
-**Tests.** extensie-vergrendeling 108, extensie-validatie 11, extensie-verzamelaar 27, extensie-ui 67, extensie-native 56, extensie-ontgrendeling 52,
-extensie-ontgrendeling-crypto 12 (vaste testvector server = extensie), extensie-site 71, browser-extensie 21, browser-keten 41.
+**Тести.** extensie-vergrendeling 108, extensie-validatie 11, extensie-verzamelaar 27, extensie-ui 67, extensie-native 56, extensie-ontgrendeling 52,
+extensie-ontgrendeling-crypto 12 (фіксований тестовий вектор сервер = розширення), extensie-site 71, browser-extensie 21, browser-keten 41.
 
-## Y · 19.10.2026 — extensie 0.6 met twee profielen, hub «Підключення ШІ», «Доступи», contacten, mobiele mail (migraties 0073, 0074)
+## Y · 19.10.2026 — розширення 0.6 із двома профілями, хаб «Підключення ШІ», «Доступи», контакти, мобільна пошта (міграції 0073, 0074)
 
-**Waarom.** 0.5 maakte de extensie alleen-technisch: zonder tech-profiel verdween «Розширення браузера» van mcp.*/agents#apparaten/extensie.
-Nu: één extensie, twee profielen; de aangemelde sessie op de site is de enige bron van gezag (pakket 20261018-184832 vervalt, nooit geïnstalleerd).
+**Чому.** Версія 0.5 зробила розширення суто технічним: без tech-профілю з mcp.*/agents#apparaten/extensie зникло «Розширення браузера».
+Тепер: одне розширення, два профілі; авторизована сесія на сайті — єдине джерело повноважень (пакет 20261018-184832 скасовується, ніколи не встановлювався).
 
-**Extensie 0.6.0 — twee sloten.** `prive` (koppeling in de accountruimte) en `technisch` (tweede koppeling, alleen te maken met lopende tech-activering). Elk slot:
-eigen sleutels (IndexedDB), eigen WSS, eigen ondertekende ontgrendeling (v2, met `ruimte` in de tekst). Profiel van een tabblad komt van de site:
-`<meta name="mjn-profiel" content="gebruiker|technisch">` (live bij activeren/beëindigen). Technisch slot werkt alleen op tabbladen met profiel technisch
-(admin/mcp…, passkey zoals 0.5); prive slot alleen op eigen diensten (hub, mail, cloud, ai, id, github, huis, mcp — nooit admin.*), niet op een
-technisch tabblad; buffers per slot gescheiden. UI: account + profiel van het actieve tabblad, kaart «Як користувач» en — alleen bij tech-recht —
-«Технічний профіль»; wie tech-modus verlaat ziet meteen zijn gebruikersrechten, zonder prive-koppeling het aanbod «Додати доступ як користувач».
-Prive ontgrendelen: `POST /api/owner/agents/ontgrendeling/prive` (1/7/30 dagen) met step-up van deze sessie (elke methode); rechten = de eigen
-AI-toestemmingen van die browser ∩ beleid. AI-verbindingen: browser-tools volgen de ruimte van het apparaat — een prive-verbinding bedient alleen het
-prive-slot, een technische alleen het technische (nooit kruislings).
+**Розширення 0.6.0 — два слоти.** `prive` (прив'язка в просторі акаунта) і `technisch` (друга прив'язка, створюється лише за активної tech-активації). Кожен слот:
+власні ключі (IndexedDB), власний WSS, власне підписане розблокування (v2, з полем `ruimte` в тексті). Профіль вкладки надходить від сайту:
+`<meta name="mjn-profiel" content="gebruiker|technisch">` (наживо при активації/завершенні). Технічний слот працює лише на вкладках із технічним профілем
+(admin/mcp…, passkey як у 0.5); приватний слот — лише на власних службах (hub, mail, cloud, ai, id, github, huis, mcp — ніколи не admin.*), не на
+технічній вкладці; буфери розділені по слотах. Інтерфейс: акаунт + профіль активної вкладки, картка «Як користувач» і — лише за наявності tech-права —
+«Технічний профіль»; хто виходить із tech-режиму, одразу бачить свої права користувача, а без приватної прив'язки — пропозицію «Додати доступ як користувач».
+Приватне розблокування: `POST /api/owner/agents/ontgrendeling/prive` (1/7/30 днів) зі step-up цієї сесії (будь-який метод); права = власні
+дозволи ШІ цього браузера ∩ політика. Підключення ШІ: браузерні інструменти слідують за простором пристрою — приватне підключення керує лише
+приватним слотом, технічне — лише технічним (ніколи навхрест).
 
-**Beleid en beheer (0073).** `app.extensie_beleid` per gebruiker (prive/technisch aan, caps per ruimte, max dagen/minuten, lokaal). Routes
-`/api/owner/agents/extensie-beheer` (+ `/beleid`, `/intrekken`, `/verlengen`) voor eigenaar of activering met users.manage; eigenaar onaantastbaar
-voor anderen; nieuw beleid trekt wat erbuiten valt meteen in; melding aan de gebruiker; alles in audit.
+**Політика й адміністрування (0073).** `app.extensie_beleid` на кожного користувача (приватний/технічний увімк., можливості на простір, макс. днів/хвилин, локальний). Маршрути
+`/api/owner/agents/extensie-beheer` (+ `/beleid`, `/intrekken`, `/verlengen`) для власника або активації з users.manage; власник недоторканний
+для інших; нова політика миттєво відкликає все, що виходить за її межі; сповіщення користувачу; усе в аудиті.
 
-**Hub «Підключення ШІ» (mcp.*/agents).** Tabbladen Огляд · Конектори · Підключені ШІ · Розширення браузера · Пристрої · Токени · Доступи ·
-Технічне (alleen tech-modus) · Журнал. Oude adressen (#apparaten/extensie, #extension, mcp.*/verbindingen, ai.*/verbindingen) leiden hierheen;
-niets verwijderd. Огляд: matrix «Що через який спосіб» uit echte gegevens. Доступи: «Мої доступи» (alles wat ik gaf, per methode: intrekken,
-verlengen, beperken) en voor beheerders in tech-modus «Усі користувачі» (beleid, intrekken, verlengen).
+**Хаб «Підключення ШІ» (mcp.*/agents).** Вкладки Огляд · Конектори · Підключені ШІ · Розширення браузера · Пристрої · Токени · Доступи ·
+Технічне (лише tech-режим) · Журнал. Старі адреси (#apparaten/extensie, #extension, mcp.*/verbindingen, ai.*/verbindingen) ведуть сюди;
+нічого не видалено. Огляд: матриця «Що через який спосіб» зі справжніх даних. Доступи: «Мої доступи» (усе, що я надав, за методом: відкликати,
+продовжити, обмежити) і для адміністраторів у tech-режимі — «Усі користувачі» (політика, відкликання, продовження).
 
-**Contacten en afzenders (0074).** Пошта → «Контакти й відправники»: alle adressen uit alle mailboxen en mappen (ook «ви писали»), per adres status,
-vertrouwen en «чому» met bronnen: Authentication-Results (DKIM aligned, SPF, DMARC, ARC), DNS van het domein (MX, SPF, DMARC-policy, BIMI/VMC),
-lijst officiële domeinen (banken NL/UA, overheid, betaal- en techdiensten), imitatie (lookalike, homoglief, gemengd schrift). Volledige controle start
-vanzelf bij het eerste openen van de mail, hervatbaar, Пауза/Зупинити, daarna incrementeel. Alleen metadata; logboek zonder adressen.
+**Контакти й відправники (0074).** Пошта → «Контакти й відправники»: усі адреси з усіх поштових скриньок і тек (включно з «ви писали»), для кожної адреси — статус,
+рівень довіри й «чому» з джерелами: Authentication-Results (DKIM aligned, SPF, DMARC, ARC), DNS домену (MX, SPF, політика DMARC, BIMI/VMC),
+список офіційних доменів (банки NL/UA, державні органи, платіжні й техслужби), імітація (схожі написання, омогліфи, змішана абетка). Повна перевірка стартує
+сама при першому відкритті пошти, відновлювана, Пауза/Зупинити, далі інкрементально. Лише метадані; журнал без адрес.
 
-**Mobiele mail.** Brede HTML-mail wordt binnen zijn kader passend geschaald (knop «Оригінальний розмір» → alleen het kader scrolt); globale
-`footer`-regel lekte in bijlagekaarten; werkbank/voorbeeldvenster schermvullend met safe-area en 44 px doelen; PDF-balk wikkelt; donker thema:
-mail op wit papier, rond PDF themakleur, ШІ-balk volgt het site-thema. Echte Chromium 320–414/1280 px: elementen buiten beeld 150 → 0, max.
-overloop 472 → 0 px, doelen < 44 px 294 → 0.
+**Мобільна пошта.** Широкий HTML-лист пропорційно масштабується всередині своєї рамки (кнопка «Оригінальний розмір» → прокручується лише рамка); глобальне
+правило `footer` протікало в картки вкладень; робоча панель/вікно попереднього перегляду на весь екран із safe-area та цілями 44 px; панель PDF переноситься; темна тема:
+лист на білому папері, навколо PDF колір теми, панель ШІ слідує за темою сайту. Справжній Chromium 320–414/1280 px: елементів поза кадром 150 → 0, макс.
+переповнення 472 → 0 px, цілей < 44 px 294 → 0.
 
-**Tests (volledige set).** 4365/4378; de 13 die falen zijn dezelfde als altijd (geen app-rol in de testomgeving). Nieuw o.a.: extensie-profielen 42,
-extensie-vergrendeling 114, extensie-ontgrendeling 80, -crypto 19 (v2-vector server = extensie), extensie-beheer 31, ai-hub 42, ai-toegang-beheer 59,
-mail-contacten 70, mobiel-mail 27. Echte Chromium: extensie e2e 41/41, hub 76/76, «Доступи» (320–1280), contacten 53/53, mobiele mail 150 metingen.
+**Тести (повний набір).** 4365/4378; ті 13, що падають — ті самі, що й завжди (немає ролі застосунку в тестовому середовищі). Нові, зокрема: extensie-profielen 42,
+extensie-vergrendeling 114, extensie-ontgrendeling 80, -crypto 19 (вектор v2 сервер = розширення), extensie-beheer 31, ai-hub 42, ai-toegang-beheer 59,
+mail-contacten 70, mobiel-mail 27. Справжній Chromium: розширення e2e 41/41, хаб 76/76, «Доступи» (320–1280), контакти 53/53, мобільна пошта 150 вимірювань.
 
-## Z · 19.10.2026 — live-audit (eigenaar + nieuwe gebruiker) en reparaties (geen nieuwe migratie)
+## Z · 19.10.2026 — живий аудит (власник + новий користувач) і виправлення (без нової міграції)
 
-**Methode.** Crawl van alle 10 subdomeinen in de Chrome van de eigenaar (technisch profiel), daarna extensie, noodstop, journaal, «Захист», en een
-tweede account (Google) als Учасник via «Додати інший обліковий запис». 5 crawlers + 2 gebruikerscrawlers + 6 reparatieagenten. Details: scratchpad/audit/*.
+**Метод.** Обхід усіх 10 піддоменів у Chrome власника (технічний профіль), далі розширення, аварійна зупинка, журнал, «Захист» і
+другий акаунт (Google) як Учасник через «Додати інший обліковий запис». 5 краулерів + 2 краулери користувача + 6 агентів виправлення. Деталі: scratchpad/audit/*.
 
-**Kritiek, gerepareerd.** Mail: iframe-hoogtelus (mail-body-passend: offsetHeight i.p.v. scrollHeight, frame niet observeren); bijlagevoorbeeld onder het
-iframe + Esc; bijlagekaarten zonder naam; contacten-melding onder de zijbalk; scan vals «Бракує дозволу Gmail» bij 502 (gmailFoutVan); vals «Підозрілий»
-voor subdomein van hetzelfde organisatiedomein; «Відкрити листи від нього» zonder filter; «Зняти позначку»; NL-codes in historie; thread zonder laatste
-antwoord; Drive-zoeken per woord; cloud-viewer onder zijbalk. Gebruiker: Пошта → Акаунти deed niets (MailAccountsHub zonder onConnect) → Google-OAuth
-start; «Сесія закінчилася» voor Учасник op mcp.* → nieuwe code API_RECHT_VEREIST met uitleg, geen polling, geen «Стоп»; entitlement «Доступ до ШІ-мосту»
-nu in admin/access; welkomstkaart «Що далі» na goedkeuring; pending account ziet alleen het modaal; extensie «прив'язане до іншого акаунта»-kaart;
-accountwissel beëindigt het tech-profiel van het vorige account. Noodstop «Стоп» trekt nu ook alle MCP-connectorverbindingen en tokens in (vroeger
-bleven Claude-tools in beide ruimtes werken). Admin-journaal toonde alleen service='admin' (sessieveld als filter) → filterveld `dienst`.
+**Критичне, виправлено.** Пошта: нескінченний цикл висоти iframe (mail-body-passend: offsetHeight замість scrollHeight, фрейм не спостерігається); попередній перегляд вкладення під
+iframe + Esc; картки вкладень без назви; сповіщення контактів під бічною панеллю; сканування хибно видавало «Бракує дозволу Gmail» при 502 (gmailFoutVan); хибний «Підозрілий»
+для піддомену того самого домену організації; «Відкрити листи від нього» без фільтра; «Зняти позначку»; NL-коди в історії; ланцюжок без останньої
+відповіді; пошук у Drive по словах; переглядач хмари під бічною панеллю. Користувач: Пошта → Акаунти нічого не робило (MailAccountsHub без onConnect) → запуск Google-OAuth;
+«Сесія закінчилася» для Учасника на mcp.* → новий код API_RECHT_VEREIST із поясненням, без опитування, без «Стоп»; право (entitlement) «Доступ до ШІ-мосту»
+тепер в admin/access; вітальна картка «Що далі» після схвалення; акаунт в очікуванні бачить лише модальне вікно; картка розширення «прив'язане до іншого акаунта»;
+перемикання акаунта завершує tech-профіль попереднього акаунта. Аварійна зупинка «Стоп» тепер також відкликає всі підключення й токени MCP-конектора (раніше
+інструменти Claude в обох просторах продовжували працювати). Адмін-журнал показував лише service='admin' (поле сесії як фільтр) → поле фільтра `dienst`.
 
-**Hoog, gerepareerd.** Tech-band verdween bij 5xx (tech-store reset alleen bij 401/403/404); extensie-status 403-spam op alle diensten; polling-storm hub
-(één poller, 10 s); #extensie dubbele wizard en tegenstrijdige termijnen; zelftest-verdict; tellers/matrix uit echte gegevens; «Усі користувачі» voor eigenaar;
-journaalvertalingen; /Grok → /mcp; board-knoppen; ai.* eigen inhoud; 404-pagina op alle diensten; /recent en /notes echte inhoud; hub-dialogen Esc/focus;
-sessiekaarten; sticky HTTP_530-banner; healthcheck Host-header; audit-filter niet onthouden; «до 31.12.99» → «до відкликання»; api.* dode tabs weg;
-«Увімкнути» zonder reden geeft nu een melding; wizard-toast na intrekken; schakelaar-contrast; «Причина:» in de band; opruimknop voor 37 dode koppelingen.
+**Висока важливість, виправлено.** Tech-смуга зникала при 5xx (tech-store скидається лише при 401/403/404); спам 403 від extensie-status на всіх службах; шторм опитувань хаба
+(один оanoвлювач, 10 с); #extensie подвійний майстер і суперечливі терміни; вердикт самотестування; лічильники/матриця зі справжніх даних; «Усі користувачі» для власника;
+переклади журналу; /Grok → /mcp; кнопки дошки; власний вміст на ai.*; сторінка 404 на всіх службах; справжній вміст на /recent та /notes; діалоги хаба Esc/фокус;
+картки сесій; липкий банер HTTP_530; заголовок Host у healthcheck; фільтр аудиту не запам'ятовувався; «до 31.12.99» → «до відкликання»; мертві вкладки на api.* прибрано;
+«Увімкнути» без причини тепер видає повідомлення; спливне сповіщення майстра після відкликання; контраст перемикача; «Причина:» у смузі; кнопка очищення для 37 мертвих прив'язок.
 
-**Niet gerepareerd / beslissing eigenaar.** Of Учасник standaard AI-connectors/extensie (prive) mag: nu alleen met entitlement «api-platform» (toggle in
-admin/access). Inschakelen van Шлюз/OPA/RLS op de live server (RLS: 343 schaduwweigeringen in mail state-bulk → eerst die routes). GitHub-PAT ontbreekt in
-de kluis (alle github.*-tabs leeg). tarasevych.com/www zonder DNS. CRX 0.6 niet ondertekend. Popup/zijpaneel/opties en SW-herstart van de extensie alleen in
-testchromium bewezen, niet in de Chrome van de eigenaar.
+**Не виправлено / рішення власника.** Чи дозволено Учаснику типово ШІ-конектори/розширення (приватні): зараз лише з правом «api-platform» (перемикач в
+admin/access). Увімкнення Шлюзу/OPA/RLS на живому сервері (RLS: 343 тіньові відмови в mail state-bulk → спершу ці маршрути). У сховищі бракує GitHub-PAT
+(усі вкладки github.* порожні). tarasevych.com/www без DNS. CRX 0.6 не підписано. Попап/бічна панель/налаштування та перезапуск SW розширення доведені лише в
+тестовому Chromium, а не в Chrome власника.
 
-**Tests.** 4572/4586 (145 sets); 13 vallen alleen zonder app-rol in de testomgeving, 1 (ssh-ca-site) door migratievolgorde in de gedeelde test-DB.
+**Тести.** 4572/4586 (145 наборів); 13 падають лише через відсутність ролі застосунку в тестовому середовищі, 1 (ssh-ca-site) — через порядок міграцій у спільній тестовій БД.
 
-## AA · 19.10.2026 — 17 punten van de eigenaar (migratie 0075; extensie 0.6.1)
+## AA · 19.10.2026 — 17 пунктів власника (міграція 0075; розширення 0.6.1)
 
-Uitgevoerd in parallelle sporen; elk punt heeft een eigen eenheidstest. Volgorde = de lijst van de eigenaar.
+Виконано паралельними потоками; кожен пункт має власний модульний тест. Порядок = список власника.
 
-**1. «Хрестики» naast «Огляд» (admin.*/updates).** Bewezen in de Chrome van de eigenaar: `src/AdminUitrolView.tsx` rendert
-`<div class="admin-uitrol ut-root">`, en de OUDE regel `.admin-uitrol button{display:inline-flex…}` (0,1,1) in `src/admin-uitrol.css` won van
-`.ut-tabs-pijl{display:none}` (0,1,0). Daardoor stonden BEIDE schuifpijlen van de tabbalk zichtbaar op precies dezelfde plek (118,15,28×28) terwijl de
-balk niet eens overliep (scrollWidth = clientWidth = 1320): «‹» over «›» = een kruisje in een rondje. Live bewezen door die ene regel te verwijderen —
-computed display van beide pijlen werd `none` en het kruisje was weg. Reparatie: de oude knopstijl geldt alleen nog binnen de oude containers
-(`:is(.admin-uitrol-knoppen,.admin-uitrol-lijst,.admin-uitrol-form,.admin-uitrol-voorstel,.admin-uitrol-intrek)`) en de pijlregel kreeg twee klassen
-(`.ut-tabs-wrap .ut-tabs-pijl`), zodat geen enkele paginabrede knopregel hem ooit nog kan aanzetten. Test `ut-tabs-pijlen-20261019` (9/9) bewaakt beide kanten.
+**1. «Хрестики» поруч із «Огляд» (admin.*/updates).** Доведено в Chrome власника: `src/AdminUitrolView.tsx` рендерить
+`<div class="admin-uitrol ut-root">`, і СТАРЕ правило `.admin-uitrol button{display:inline-flex…}` (0,1,1) у `src/admin-uitrol.css` перемагало
+`.ut-tabs-pijl{display:none}` (0,1,0). Через це ОБИДВІ стрілки прокрутки панелі вкладок були видимі на точно тому самому місці (118,15,28×28), тоді як
+панель навіть не переповнювалася (scrollWidth = clientWidth = 1320): «‹» поверх «›» = хрестик у кружечку. Доведено наживо видаленням цього одного правила —
+computed display обох стрілок став `none`, і хрестик зник. Виправлення: старий стиль кнопок діє тепер лише всередині старих контейнерів
+(`:is(.admin-uitrol-knoppen,.admin-uitrol-lijst,.admin-uitrol-form,.admin-uitrol-voorstel,.admin-uitrol-intrek)`), а правило стрілки отримало два класи
+(`.ut-tabs-wrap .ut-tabs-pijl`), щоб жодне загальносторінкове правило для кнопок ніколи більше не могло його увімкнути. Тест `ut-tabs-pijlen-20261019` (9/9) пильнує обидва боки.
 
-**2 + 17. Menu, snelle toegang, volgorde en kleur — per gebruiker.** Echte fout gevonden: de browsercache van de menu-indeling lag onder één sleutel
-`tsv-zijbalk-v2`, zonder account. Met twee accounts in dezelfde browser zag een nieuw account de indeling van het vorige, en een wijziging schreef die
-indeling onder de NIEUWE gebruiker naar de server. Nu `tsv-zijbalk-v2:<scope>` (scope synchroon uit de bootstrap, vóór de bootstrap uit sessionStorage per
-tabblad); uitgestelde opslagacties worden bij accountwissel geannuleerd en vóór verzending nogmaals op scope gecontroleerd. Zelfde behandeling voor
-`mr-weergave-modus-v1` en `mr.notif.group`. Nieuw: kleur per menupunt (`ItemOverride.kleur`/`ItemKopie.kleur` uit `ACCENTEN`), zichtbaar in de snelbalk én in
-de ingeklapte zijbalk (kleurstip), in beide icoonstijlen; het al bestaande maar nooit gebruikte veld `icoon` werkt nu echt. Nieuw `src/SnelleToegangEditor.tsx`:
-toevoegen, weghalen, volgorde met knoppen en toetsenbord, icoon, kleur, «terug naar standaard» — bereikbaar uit het «⋯»-menu van de balk en uit
-Налаштування → Меню (op de telefoon alleen daar, want slepen is daar onhandig).
+**2 + 17. Меню, швидкий доступ, порядок і колір — для кожного користувача окремо.** Знайдено справжню помилку: браузерний кеш розкладки меню лежав під одним ключем
+`tsv-zijbalk-v2`, без прив'язки до акаунта. Із двома акаунтами в тому самому браузері новий акаунт бачив розкладку попереднього, а зміна записувала цю
+розкладку під НОВИМ користувачем на сервер. Тепер `tsv-zijbalk-v2:<scope>` (область дії синхронно з bootstrap, до bootstrap — із sessionStorage на кожну
+вкладку); відкладені дії збереження при перемиканні акаунта скасовуються й перед відправленням ще раз перевіряються на scope. Та сама обробка для
+`mr-weergave-modus-v1` і `mr.notif.group`. Нове: колір для кожного пункту меню (`ItemOverride.kleur`/`ItemKopie.kleur` із `ACCENTEN`), видимий у панелі швидкого доступу ТА в
+згорнутій бічній панелі (кольорова крапка), в обох стилях іконок; поле `icoon`, яке вже існувало, але ніколи не використовувалося, тепер справді працює. Новий `src/SnelleToegangEditor.tsx`:
+додавання, прибирання, зміна порядку кнопками й клавіатурою, іконка, колір, «повернути типово» — доступний із меню «⋯» панелі та з
+Налаштування → Меню (на телефоні лише там, бо перетягування там незручне).
 
-**3. Foutmeldingen zonder houvast.** «Сервер тимчасово недоступний — імовірно, встановлюється оновлення» was een gok. Eén bron van waarheid:
-`shared/foutuitleg.ts` maakt uit code/HTTP-status + dienst + route + tijd + pogingnummer een concrete tekst; onbekende code → eerlijk «причина невідома»
-met de ruwe code, nooit een verzonnen oorzaak. De plakkaat toont nu operatie, dienst, code, tijdstip, poging, en «Повторити» / «Відкрити журнал» /
-«Деталі» met één knop «alles kopiëren». Over een installatie wordt alleen gesproken als `POST /api/owner/uitrol/live` dat bevestigt (versie + stap).
+**3. Повідомлення про помилки без опори.** «Сервер тимчасово недоступний — імовірно, встановлюється оновлення» було здогадкою. Єдине джерело істини:
+`shared/foutuitleg.ts` формує з коду/HTTP-статусу + служби + маршруту + часу + номера спроби конкретний текст; невідомий код → чесно «причина невідома»
+із сирим кодом, ніколи не вигадана причина. Плакат тепер показує операцію, службу, код, час, спробу та «Повторити» / «Відкрити журнал» /
+«Деталі» з однією кнопкою «скопіювати все». Про встановлення оновлення згадується лише тоді, коли `POST /api/owner/uitrol/live` це підтверджує (версія + крок).
 
-**4. Strikte scheiding gebruiker ↔ technisch.** Menu, volgorde, snelle toegang, iconen en kleuren zijn nu per RUIMTE opgeslagen
-(`ZijbalkRuimtes{gebruiker,technisch}`, oude waarde leest als `gebruiker`). De server dwingt het af, niet alleen de browser: `ruimte:'technisch'` mag
-alleen bij een lopende activering van het technisch profiel in dat tabblad (`techActieveActivatie`), anders 403 `TECH_PROFIEL_VEREIST` — ook voor
-beheerders en de eigenaar; de bootstrap geeft uitsluitend de gebruikersindeling mee. Welke diensten überhaupt in een profiel mogen staan blijft
-`dienstToegestaan` (geen nieuwe regels bedacht).
+**4. Суворе розділення користувач ↔ технічний.** Меню, порядок, швидкий доступ, іконки та кольори тепер зберігаються окремо на ПРОСТІР
+(`ZijbalkRuimtes{gebruiker,technisch}`, старе значення читається як `gebruiker`). Це примусово контролює сервер, а не лише браузер: `ruimte:'technisch'` дозволено
+лише за активної активації технічного профілю в цій вкладці (`techActieveActivatie`), інакше 403 `TECH_PROFIEL_VEREIST` — включно з
+адміністраторами та власником; bootstrap передає виключно розкладку користувача. Які служби взагалі можуть бути в профілі, як і раніше визначає
+`dienstToegestaan` (нових правил не вигадано).
 
-**5. Twee grote «enge» knoppen.** «Поділитися» en «Налаштувати поверхню» stonden als grote kaders onderaan de zijbalk (onder «Персоналізація»). Ze zijn
-gewone regels in het «⋯»-menu van de sectiekop geworden; in de zijbalk blijft alleen de werkruimtekeuze, en alleen als er meer dan één is.
+**5. Дві великі «страшні» кнопки.** «Поділитися» та «Налаштувати поверхню» стояли великими рамками внизу бічної панелі (під «Персоналізація»). Вони стали
+звичайними рядками в меню «⋯» заголовка секції; у бічній панелі лишається лише вибір робочого простору, і то лише якщо їх більше ніж один.
 
-**6. github.*/accounts — koppelkaart.** Echte koppelkaart met logo uit het merkregister, status uit de server («niet gekoppeld / @gebruiker / token
-verlopen / door GitHub geweigerd»), rechtenlijst, veld **Server-URL** (`https://api.githubcopilot.com/mcp/x/all`) met kopiëren en https-validatie, en
-«Підключити» dat naar de kluis leidt — de enige weg die de server echt heeft. OAuth, GitHub App en de externe MCP-server staan er eerlijk bij als «nog
-niet gebouwd», zonder knop. Nieuw: `POST /api/owner/github/koppeling` (geeft nooit het token terug).
+**6. github.*/accounts — картка прив'язки.** Справжня картка прив'язки з логотипом із реєстру брендів, статусом від сервера («не прив'язано / @користувач / токен
+прострочено / відхилено GitHub»), списком прав, полем **URL сервера** (`https://api.githubcopilot.com/mcp/x/all`) із копіюванням та валідацією https, і кнопкою
+«Підключити», яка веде до сховища ключів — єдиного шляху, який справді має сервер. OAuth, GitHub App і зовнішній MCP-сервер чесно вказані поруч як «ще
+не реалізовано», без кнопки. Нове: `POST /api/owner/github/koppeling` (ніколи не повертає сам токен).
 
-**7 + 8. Extensie 0.6.1.** Oorzaak van «Chrome не надав дозвіл налагоджувача» gevonden: Chrome accepteert `debugger` niet als optioneel recht — het
-verzoek kon dus nooit slagen, ongeacht de klik. Nu: verzoek strikt vanuit een klik in popup/zijpaneel/opties, vijf onderscheiden toestanden met uitleg, en
-een tweede pakket `mijn-ruimte-extension-diagnose.zip` (zelfde id en sleutel, `debugger` in `permissions`) als de echte weg om CDP aan te zetten. De
-beveiliging ging strenger, niet losser: `debuggerToegestaan()` eist tegelijk Chrome-recht + opt-in + slot `technisch` + geldige ondertekende ontgrendeling
-met `browser.debug` + host in `ADMIN_HOSTS_TOEGESTAAN` ∩ de domeinen van de grant. Zichtbare markering van een actieve verbinding: dunne rand in de kleur
-van het profiel (gebruiker groen, technisch amber) in een gesloten shadow DOM, badge en tooltip op het extensiepictogram, en een korte flits wanneer de AI
-echt iets doet (niet bij schermafbeeldingen) — weg zodra «Стоп», intrekking of verbreking komt. `prefers-reduced-motion` wordt gerespecteerd.
+**7 + 8. Розширення 0.6.1.** Знайдено причину «Chrome не надав дозвіл налагоджувача»: Chrome не приймає `debugger` як опційний дозвіл — тому
+запит ніколи не міг завершитися успішно, незалежно від кліку. Тепер: запит суворо з кліку в попапі/бічній панелі/налаштуваннях, п'ять розрізнених станів із поясненням і
+другий пакет `mijn-ruimte-extension-diagnose.zip` (той самий id і ключ, `debugger` у `permissions`) як справжній спосіб увімкнути CDP.
+Безпека стала суворішою, а не слабшою: `debuggerToegestaan()` вимагає одночасно дозволу Chrome + opt-in + слоту `technisch` + дійсного підписаного розблокування
+з `browser.debug` + хоста в `ADMIN_HOSTS_TOEGESTAAN` ∩ доменів дозволу (grant). Видиме маркування активного з'єднання: тонка рамка кольору
+профілю (користувач — зелений, технічний — бурштиновий) у закритому shadow DOM, бейдж і підказка на піктограмі розширення та короткий спалах, коли ШІ
+справді щось робить (не під час знімків екрана) — зникає щойно надходить «Стоп», відкликання або розрив з'єднання. Дотримується `prefers-reduced-motion`.
 
-**9. Eén beeldbasis.** Er waren vier parallelle logobases plus een dode map: `src/agenten/logos.ts` (6), `src/sessies/merk-iconen.ts` (13),
-een blok in `src/mcp-ui.tsx` (21) en `src/integraties/logos.ts` (137), én `public/agent-logos/` waar niemand naar verwees — daarom zag hetzelfde merk er
-per pagina anders uit. Nu één register `src/merk/` (lazy tabel, 41 merken) waarop `AgentLogo`, `integraties/Logo`, `SessieIconen` en `mcp-ui.Logo` draaien;
-de dubbele bronnen zijn weg, 9 dubbele records uit de grote tabel verwijderd, en 15 ontbrekende emblemen bijgetekend (alle 157 catalogusitems hebben er nu
-één). Netto −30,4 kB raw / ≈−10,6 kB gzip over de betrokken chunks; 21 getekende glyphs uit de hoofdbundel weg.
+**9. Єдина база зображень.** Було чотири паралельні бази логотипів плюс мертва тека: `src/agenten/logos.ts` (6), `src/sessies/merk-iconen.ts` (13),
+блок у `src/mcp-ui.tsx` (21) і `src/integraties/logos.ts` (137), а також `public/agent-logos/`, на яку ніхто не посилався — через це той самий бренд
+на різних сторінках виглядав по-різному. Тепер єдиний реєстр `src/merk/` (лінива таблиця, 41 бренд), на якому працюють `AgentLogo`, `integraties/Logo`, `SessieIconen` і `mcp-ui.Logo`;
+дубльовані джерела прибрано, 9 дубльованих записів із великої таблиці видалено і 15 відсутніх емблем домальовано (усі 157 елементів каталогу тепер мають
+власну). Чиста економія −30,4 кБ raw / ≈−10,6 кБ gzip по зачеплених чанках; 21 намальований гліф прибрано з головного бандла.
 
-**10. /agenda — winkel voor agenda's.** Komende afspraken uit echte gegevens plus een winkel met zes aanbieders. Google Calendar staat op «beschikbaar,
-alleen lezen» met erbij wat ontbreekt (de server vraagt `calendar.readonly`, er zijn alleen leesroutes); Microsoft/Outlook, CalDAV/iCloud, Proton, Fastmail
-en ICS staan op «binnenkort» met de concrete reden. Tweerichtingskoppeling bestaat nergens op de server — dat is niet nagespeeld maar benoemd.
+**10. /agenda — магазин календарів.** Найближчі події зі справжніх даних плюс магазин із шістьма провайдерами. Google Calendar має статус «доступно,
+лише читання» із зазначенням того, чого бракує (сервер запитує `calendar.readonly`, є лише маршрути читання); Microsoft/Outlook, CalDAV/iCloud, Proton, Fastmail
+та ICS мають статус «незабаром» із конкретною причиною. Двосторонньої синхронізації на сервері ніде не існує — це не імітовано, а прямо названо.
 
-**11. Notities.** Soorten (tekst, checklist met aanvinkbare regels, code, link), kleur, vastzetten, zoeken op woorden, filter op soort en tags; catalogus
-van externe apps (Keep, Notion, Obsidian, Apple Notes, Markdown-import) met per stuk wat ontbreekt. Geen nieuwe tabel: soort/kleur/vast leven in de tags van
-het borditem, binnen de grenzen die `backend/mcp-console.ts` al afdwingt.
+**11. Нотатки.** Види (текст, чекліст із рядками для позначки, код, посилання), колір, закріплення, пошук за словами, фільтр за видом і тегами; каталог
+зовнішніх застосунків (Зберігати, Notion, Obsidian, Apple Нотатки, імпорт Markdown) із зазначенням для кожного, чого бракує. Без нової таблиці: вид/колір/закріплення живуть у тегах
+елемента дошки, у межах обмежень, які вже примусово контролює `backend/mcp-console.ts`.
 
-**12. hub.*/overzicht als bureaublad.** Let op: `hub.tarasevych.com/overzicht` is het tabblad `overview` in `src/App.tsx`; `src/overzicht/` is het overzicht
-van **admin**.tarasevych.com. Nieuw bureaublad met 12-koloms raster, slepen en formaat wijzigen met de bestaande vensterlaag (`src/platform/vensters.*`),
-catalogus «+ Додати блок» met acht categorieën, toetsenbordbediening, en een indeling die PER GEBRUIKER op de server staat
-(`POST /api/owner/hub/bureau/load|save`). Tegels die nog niet kunnen (GitHub, AI-rechten) staan in de catalogus met uitleg maar worden door de normalisatie
-geweigerd — ze kunnen niet op het bureaublad terechtkomen, ook niet via de database.
+**12. hub.*/overzicht як робочий стіл.** Увага: `hub.tarasevych.com/overzicht` — це вкладка `overview` у `src/App.tsx`; `src/overzicht/` — це огляд
+**admin**.tarasevych.com. Новий робочий стіл із 12-колонковою сіткою, перетягуванням і зміною розміру за допомогою наявного шару вікон (`src/platform/vensters.*`),
+каталогом «+ Додати блок» із вісьмома категоріями, керуванням із клавіатури та розкладкою, яка зберігається ОКРЕМО ДЛЯ КОЖНОГО КОРИСТУВАЧА на сервері
+(`POST /api/owner/hub/bureau/load|save`). Плитки, які ще не працюють (GitHub, права ШІ), є в каталозі з поясненням, але відхиляються нормалізацією —
+вони не можуть потрапити на робочий стіл, навіть через базу даних.
 
-**13. ai.* — echte beginpagina.** Wat dit onderdeel is, wat het in DIT account nu kan (recht, sleutel, model, gereedschappen — alles van de server),
-een werkend chatvenster met stoppen, modelkeuze uit wat de server echt heeft en concrete foutredenen, 14 startvragen die alleen klikbaar zijn als het
-benodigde gereedschap er is, en één scherm «alle gereedschappen» met status en directe links. Zonder recht `api-platform` volgt een uitleg in plaats van
-«Сесія закінчилася». Eerlijk benoemd: de chat op ai.* heeft nog geen post-, agenda- of Drive-gereedschap (dat zit alleen in de MCP-connector).
+**13. ai.* — справжня початкова сторінка.** Що це за розділ, що він зараз вміє в ЦЬОМУ акаунті (право, ключ, модель, інструменти — усе від сервера),
+робоче вікно чату із зупинкою, вибором моделі з тих, які справді має сервер, і конкретними причинами помилок, 14 стартових запитань, які можна натиснути лише за наявності
+потрібного інструменту, та один екран «усі інструменти» зі статусом і прямими посиланнями. Без права `api-platform` показується пояснення замість
+«Сесія закінчилася». Чесно вказано: чат на ai.* ще не має інструментів пошти, календаря чи Drive (вони є лише в MCP-конекторі).
 
-**14. AI-knoppen in een geopend bericht.** Echte oorzaak: `.google-mail-reader` is een raster met twee rijen, en `MailReaderAi` was het derde kind — de
-balk nam de flexibele rij en het bericht viel in een impliciete rij buiten `overflow:hidden`. Opgelost met `:has(> .mra)` plus reset van de inhoudsregel.
-Elke knop draagt nu dezelfde klasse als de rest van de rij (44 px, radius 999, identieke maten staan nog maar op één plek) en heeft een icoon
-(`Sparkles`, `TextQuote`, `CornerUpLeft`, …). Op ≤430 px alleen iconen.
+**14. Кнопки ШІ у відкритому листі.** Справжня причина: `.google-mail-reader` — це сітка з двома рядками, а `MailReaderAi` був третім дочірнім елементом —
+панель забирала гнучкий рядок, і лист випадав у неявний рядок поза `overflow:hidden`. Вирішено за допомогою `:has(> .mra)` плюс скидання правила вмісту.
+Кожна кнопка тепер має той самий клас, що й решта ряду (44 px, радіус 999, однакові розміри задані лише в одному місці), і має іконку
+(`Sparkles`, `TextQuote`, `CornerUpLeft`, …). На ≤430 px — лише іконки.
 
-**15. «Перевірка всіх адрес» (HTTP_502 bij 5 050 van ≈19 731).** `HTTP_502` werd door de browser zelf gemaakt (antwoord zonder foutcode) en stond niet in
-de herhaallijst van de server, die alleen Gmail-codes kende → meteen «mislukt», en 5 050/50 = 101 pagina's, dus 101 klikken. Nu één herhaalladder voor elke
-tijdelijke fout (`shared/mail-scan-beleid.ts`: 2→4→8→…→120 s, max 12 pogingen), met `poging` en `wacht_tot` in de database zodat «повторюю через N с, спроба
-X» een herlaadactie overleeft; beleid «automatisch doorgaan / problematische overslaan / telkens vragen» per gebruiker; het venster is een echt
-verplaatsbaar en opvouwbaar venster uit `src/platform/vensters.tsx` (op smalle schermen een strook met z-index 270 — de zijlade is 260, de scrim 250,
-daarom lag 240 eronder). Doorgaan «vanaf het punt van stoppen» is echt: de cursor stond al in dezelfde transactie als de contactregels (bewezen in de test).
+**15. «Перевірка всіх адрес» (HTTP_502 на 5 050 із ≈19 731).** `HTTP_502` створював сам браузер (відповідь без коду помилки), і його не було в
+серверному списку повторних спроб, який знав лише коди Gmail → миттєво «невдача», а 5 050/50 = 101 сторінка, тобто 101 клік. Тепер єдина драбина повторів для будь-якої
+тимчасової помилки (`shared/mail-scan-beleid.ts`: 2→4→8→…→120 с, макс. 12 спроб), із `poging` та `wacht_tot` у базі даних, щоб «повторюю через N с, спроба
+X» переживало перезавантаження сторінки; політика «автоматично продовжувати / пропускати проблемні / щоразу питати» для кожного користувача; вікно є справжнім
+рухомим і згортаним вікном із `src/platform/vensters.tsx` (на вузьких екранах — смужка з z-index 270; бічна шухляда має 260, scrim — 250,
+тому 240 лежало під ними). Продовження «з місця зупинки» справжнє: курсор уже стояв у тій самій транзакції, що й рядки контактів (доведено в тесті).
 
-**16. Vertaalpaneel.** In `backend/ai-vertaling-routes.ts` stond `deterministicTranslateText()` met drie woordenlijstjes die bij een leeg modelantwoord
-`[Переклад → УКР] <origineel>` IN de brieftekst zetten — dat waren de markers en dat was een imitatie. Verwijderd: onvertaalde stukken blijven nu gewoon
-origineel (geteld als `onvertaald`), en als er niets vertaald is volgt een eerlijke weigering. Boven de tekst een strook «Перекладено з … рушієм …» met
-«показати оригінал». Catalogus van motoren met echte status (de eigen AI-agent werkt als die gekoppeld is en `mail.read` heeft; LibreTranslate, Google,
-Microsoft en DeepL staan op «nog niet gebouwd», zonder knop). Nieuwe modus «naast elkaar» (op ≤860 px onder elkaar). De knop «ШІ» is uitgelegd met een
-InfoTip; de echte motorkeuze heet nu «Рушії перекладу».
+**16. Панель перекладу.** У `backend/ai-vertaling-routes.ts` була функція `deterministicTranslateText()` із трьома словничками, яка при порожній відповіді моделі
+вставляла `[Переклад → УКР] <оригінал>` У текст листа — це й були маркери, і це була імітація. Видалено: неперекладені фрагменти тепер просто лишаються
+оригіналом (вважаються `onvertaald`), а якщо не перекладено нічого — надходить чесна відмова. Над текстом смужка «Перекладено з … рушієм …» із
+«показати оригінал». Каталог рушіїв зі справжнім статусом (власний ШІ-агент працює, якщо він прив'язаний і має `mail.read`; LibreTranslate, Google,
+Microsoft і DeepL мають статус «ще не реалізовано», без кнопки). Новий режим «поруч» (на ≤860 px — одне під одним). Кнопку «ШІ» пояснено через
+InfoTip; справжній вибір рушія тепер називається «Рушії перекладу».
 
-**Opgeruimd.** `src/ChatPanel.tsx` verwijderd (nergens meer gebruikt sinds het nieuwe chatvenster); `src/agenten/logos.ts`, `src/sessies/merk-iconen.ts`,
-`public/agent-logos/` en `scripts/agent-logos-maken.mjs` verwijderd.
+**Прибрано.** Видалено `src/ChatPanel.tsx` (ніде не використовувався після появи нового вікна чату); видалено `src/agenten/logos.ts`, `src/sessies/merk-iconen.ts`,
+`public/agent-logos/` і `scripts/agent-logos-maken.mjs`.
 
-**Migratie.** 0075 (`mail_contacten_scan`: `poging`, `wacht_tot`, status `overgeslagen`; nieuwe tabel `app.mail_contacten_scan_beleid` met RLS en rechten).
-De bureaublad-indeling en de notitiesoorten hebben geen nieuwe tabel nodig.
+**Міграція.** 0075 (`mail_contacten_scan`: `poging`, `wacht_tot`, статус `overgeslagen`; нова таблиця `app.mail_contacten_scan_beleid` із RLS і правами).
+Розкладка робочого столу й види нотаток нової таблиці не потребують.
 
-**Nog open (beslissing eigenaar).** Thema en palet staan nog in één cookie voor alle accounts en beide profielen
-(`src/shared-preferences.ts`) — dat is het laatste stuk van punt 2/4 en vraagt serveropslag per account + ruimte. Tweerichtingsagenda, OAuth voor GitHub,
-een GitHub-App en een MCP-client op de server bestaan niet. De chat op ai.* heeft nog geen post-/agenda-/Drive-gereedschap. `EXT_MIN_VERSIE` staat nu op
-0.6.1: elke oudere extensie krijgt direct een verplichte updatebalk. Het diagnosepakket van de extensie is niet als CRX ondertekend (handmatig laden).
+**Ще відкрито (рішення власника).** Тема й палітра досі лежать в одному спільному cookie для всіх акаунтів і обох профілів
+(`src/shared-preferences.ts`) — це останній шматок пунктів 2/4, який вимагає серверного зберігання на акаунт + простір. Двостороннього календаря, OAuth для GitHub,
+GitHub-App і MCP-клієнта на сервері не існує. Чат на ai.* ще не має інструментів пошти/календаря/Drive. `EXT_MIN_VERSIE` тепер стоїть на
+0.6.1: кожне старіше розширення одразу отримує обов'язкову смугу оновлення. Діагностичний пакет розширення не підписано як CRX (завантаження вручну).
 
-**Tests.** 5090/5090 (148 sets): 8 sets draaien met de app-rol (`run-test-rls.sh`), de rest gewoon. Beide typecontroles schoon, `npm run build` in orde.
-Nieuw in deze ronde: `ut-tabs-pijlen-20261019`, `menu-per-account-20261019`, `menu-per-profiel-20261019`, `profiel-isolatie-20261019`, `merk-register`,
+**Тести.** 5090/5090 (148 наборів): 8 наборів виконуються з роллю застосунку (`run-test-rls.sh`), решта — звичайно. Обидві перевірки типів чисті, `npm run build` успішний.
+Нові в цьому раунді: `ut-tabs-pijlen-20261019`, `menu-per-account-20261019`, `menu-per-profiel-20261019`, `profiel-isolatie-20261019`, `merk-register`,
 `hub-bureau-20261019`, `hub-agenda-notities-20261019`, `ai-werkruimte-20261019`, `mail-ai-knoppen-20261019`, `contacten-hervatten-20261019`,
 `vertaalpaneel-20261019`, `extensie-debugger-markering-20261019`, `github-koppelkaart-20261019`, `foutuitleg-20261019`.
 
@@ -504,7 +504,7 @@ Nieuw in deze ronde: `ut-tabs-pijlen-20261019`, `menu-per-account-20261019`, `me
 - Знайдено й другу ваду: `connectors-tools.listTools()` наприкінці підміняє внутрішні `browser_*` на devtools-псевдоніми
   (`take_snapshot`, `click`, …), а `v2Lijst` шукав базу за ВНУТРІШНЬОЮ назвою — і не знаходив. Через це в конекторі v2 бракувало
   більшості браузерних інструментів **в обох** просторах; видно було лише ті, що не мають псевдоніма.
-- Додатково: нова вкладка успадковувала технічний профіль (міграція 0071), тож за замовчуванням усі вкладки були технічними і
+- Додатково: нова вкладка успадковувала технічний профіль (міграція 0071), тож типово усі вкладки були технічними і
   користувацький ШІ отримував відмову скрізь.
 
 **Зроблено.** Браузерні опції отримали `kanten: BEIDE`; v2 бере перелік із `aliassen: false`; нова чиста порота
@@ -512,7 +512,7 @@ Nieuw in deze ronde: `ut-tabs-pijlen-20261019`, `menu-per-account-20261019`, `me
 можливість → хост → профіль вкладки, плюс дозвіл налагоджувача) і кожна дає власне пояснення з кроками, а не «403». Відмова без
 дозволу Chrome прямо називає пакет «diagnose» і дає п'ять кроків. Технічні дії браузера пишуться в журнал як `owner.tech.browser`.
 Успадкування профілю новими вкладками стало керованим (міграція **0080**, `app.tech_profielen.erven_nieuwe_tabbladen`) і
-**за замовчуванням вимкнене** — нові вкладки тепер користувацькі.
+**типово вимкнене** — нові вкладки тепер користувацькі.
 
 ### Один конектор на агента, права за поточним станом
 
@@ -547,16 +547,16 @@ Google Calendar тепер і читання, і запис: області `cal
 ICS-підписка — справжній завантажувач (лише https, DNS-pinning, тайм-аут, межа 4 МБ, `If-None-Match`, розклад від 15 хв), тож
 Outlook і Proton працюють через опубліковане посилання вже сьогодні. CalDAV — **читання** (PROPFIND/REPORT, пароль застосунку
 шифрований); запис не зроблено, і перелік того, чого бракує, їде у відповіді маршруту, на сторінці й на картці. ШІ отримав шість
-інструментів календаря, усі з підтвердженням власника; `calendar.write` і `calendar.delete` **вимкнені за замовчуванням**.
+інструментів календаря, усі з підтвердженням власника; `calendar.write` і `calendar.delete` **вимкнені типово**.
 
 ### GitHub: OAuth і GitHub App (міграція 0077)
 
-Повний OAuth web application flow: `state` зберігається лише як SHA-256, прив'язаний до користувача, сесії, хоста й часу (10 хв),
+Повний OAuth web application потік: `state` зберігається лише як SHA-256, прив'язаний до користувача, сесії, хоста й часу (10 хв),
 видаляється при першому читанні, плюс PKCE S256; зворотний маршрут приймається лише на хості github цієї інсталяції; обмін коду,
 перевірка областей, оновлення через refresh token, відключення з реальним відкликанням (`DELETE /applications/{client_id}/token`).
-GitHub App: App ID + приватний ключ зі сховища → підписаний JWT RS256 → токен встановлення з оновленням, перелік установок і
+GitHub App: App ID + приватний ключ зі сховища → підписаний JWT RS256 → токен встановлення з оновленням, перелік інсталяцій і
 репозиторіїв. Єдина точка `backend/github-toegang.ts` сама обирає шлях **OAuth → GitHub App → PAT** і оновлює прострочене, тож решта
-коду не змінювалась. Значення `Homepage URL` і `Authorization callback URL` рахуються з домену інсталяції — у цих файлах немає жодної
+коду не змінювалась. Значення `Homepage URL` і `Authorization callback URL` обчислюються з домену інсталяції — у цих файлах немає жодної
 згадки tarasevych.com (це перевіряє тест), бо платформа BYOS.
 
 ### MCP-клієнт на сервері (міграція 0078)
@@ -595,7 +595,7 @@ OAuth 2.1 з динамічною реєстрацією — **не зробле
 «Технічні підключення» більше немає — її злито в хаб «Підключення ШІ» (вкладка `#technisch`). Тому вікно завжди вважало себе приватним, а посилання вело на
 адресу, яка редиректить назад. Це залишок старої моделі: 20.10 сам конектор уже перевели на живий стан (`effectieveRuimte`), а вікно — ні.
 
-Виправлено: простір рахується лише з живого `techActief()`; замість посилання — **дія** «Увімкнути технічний профіль» (той самий потік, що в технічній смузі),
+Виправлено: простір визначається лише з живого `techActief()`; замість посилання — **дія** «Увімкнути технічний профіль» (той самий потік, що в технічній смузі),
 після якої вікно саме перемальовується на «Дозволити» без переходу й без втрати запиту. Заразом: `?consent=` більше не губиться при переході
 (`canonicalNavigationUrl` зрізав querystring), а `/verbindingen` зникло з посилань у `backend/mcp-connector.ts` і `deploy/mcp/server.mjs`.
 
@@ -612,20 +612,20 @@ OAuth 2.1 з динамічною реєстрацією — **не зробле
 акаунтів, через що вкладки іншого акаунта втрачали «який акаунт тут діє». Тепер забувається лише той акаунт, що виходить. Сам сервер робив правильно:
 `logout-account-browser` чіпає лише один акаунт і переанкерує cookie на інший живий.
 
-Галочка «Зберегти цей акаунт для наступних сесій» була напівсправжньою: значення йшло на сервер при вході (і справді керувало приватним кешем пошти), але
-**ніде не зберігалося** — `useState(true)` щоразу повертав «увімкнено», вимкнути свідомо було неможливо, а на хабі галочки не було зовсім. Тепер вибір живе
+Прапорець «Зберегти цей акаунт для наступних сесій» була напівсправжньою: значення йшло на сервер при вході (і справді керувало приватним кешем пошти), але
+**ніде не зберігалося** — `useState(true)` щоразу повертав «увімкнено», вимкнути свідомо було неможливо, а на хабі позначки не було зовсім. Тепер вибір живе
 на пристрої, надсилається й з хаба, синхронізується з відповіддю сервера і видимий у «Налаштування → Сесії та пристрої».
 
 **3. «Запамʼятати цей браузер (не питати знову до виходу)» не працювала — взагалі.** Вибір не зберігався ніде: `useState(false)` у вікні, TOTP і код
 відновлення не надсилали його на сервер, passkey теж, а в гілці Google надсилався **інший** параметр (`remember` керує запамʼятовуванням *входу*), який у
 `identity/transactions/create` для step-up жорстко перетирався на `false`. На сервері не було куди це писати. Напис був порожньою обіцянкою на всіх шляхах.
-Додатково галочка рендерилася всередині блоку «Виникли проблеми?» — при одному доступному методі її не було видно.
+Додатково прапорець рендерилася всередині блоку «Виникли проблеми?» — при одному доступному методі її не було видно.
 
 Тепер: памʼять у `owner_step_up_v1.onthoudSessies`, ключ — сесія браузера цього акаунта (інший акаунт у тому ж браузері не зачеплений), межа **12 годин**,
 очищення при кожному виході й відкликанні. Вибір доходить з усіх чотирьох методів. Список «питати завжди» (`NOOIT_ONTHOUDEN`): схвалення випуску, права
 готувати випуски, passkey, коди відновлення, TOTP, пароль, способи входу, видалення акаунта, експорт, адміністрування, коди доступу — плюс сітки за шляхом
 (сховище/ключі, видалення, SSH, термінал, імперсонація, розблокування розширення) і **невідомий шлях теж означає «питати»**. Де запамʼятати не можна,
-галочки немає зовсім, а замість неї — видиме пояснення. У «Налаштування → Безпека» видно, які браузери запамʼятані, і є кнопка «забути».
+позначки немає зовсім, а замість неї — видиме пояснення. У «Налаштування → Безпека» видно, які браузери запамʼятані, і є кнопка «забути».
 
 **Тести.** 5624/5624. Нові: `consent-ruimte-cyclus-20261020` (26), `sessie-tabbladen-20261020` (21), `stap-op-onthouden-20261020` (27). Міграцій не знадобилося.
 
@@ -638,7 +638,7 @@ OAuth 2.1 з динамічною реєстрацією — **не зробле
 **Перевірено: пакет був цілий.** sha256 архіву збігається з `.voorstel.json`, 1550 файлів, `UITROL-VERSIE` і `BRON-COMMIT` на місці. Отже
 проблема не в оновленні й не на сервері.
 
-**Справжня причина.** `NotReadableError` — це `DOMException` з File API **браузера**, а не код нашого сервера. Він виникає, коли браузер більше
+**Справжня причина.** `NotReadableError` — це `DOMException` з Файл API **браузера**, а не код нашого сервера. Він виникає, коли браузер більше
 не може прочитати вже обраний файл: файл перемістили, перейменували або перезаписали після вибору; він лежить у хмарній теці (OneDrive /
 Google Drive «файли на вимогу») і не матеріалізований локально; його тримає антивірус; або це мережевий диск. У коді читання стояло **поза**
 `try/catch`: `src/uitrol/Upload.tsx` ловив лише `stuurStuk`, а `await f.slice(offset, …).arrayBuffer()` у тому самому циклі — ні. Тому помилка
@@ -786,7 +786,7 @@ cursor→індиго), а не hex, тому тема й палітра дал�
 (`google_suite_drive_projection_v1`, `google_suite_sync_state_v1`) внесені до реєстру «передати собі»/«видалити». Міграція не потрібна:
 проєкція лежить у `app.records`, де `ruimte` — поле, а частковий індекс уже дає 0086.
 
-Попутно закрито ще дві дрібніші речі того ж роду: `spiegelLeeg` у календарі робив **DELETE** з фільтром без шухляди, а сесії кіоску
+Попутно закрито ще дві дрібніші речі того ж роду: `spiegelLeeg` у календарі робив **ВИДАЛИТИ** з фільтром без шухляди, а сесії кіоску
 Google Photos перевіряли лише власника — у межах 10-хвилинного вікна id сесії з технічного простору можна було відіграти в особистому.
 
 ### 4. Хмара в технічному профілі: порожня сторінка без меню
@@ -914,7 +914,7 @@ OAuth-метадані) один-в-один у застосунок (`127.0.0.1
 
 Тепер кожна сторінка `#agent/<slug>` починається з «Підключити <ШІ>» (`src/agenten/verbind-recepten.ts`, uk+nl):
 **Cursor** і **VS Code/Copilot** — справжній один клік (deeplink); **Claude** — «Відкрити Claude → Connectors» + команда для Claude Code;
-**ChatGPT** — Developer mode → Create (з чесною вимогою платного плану); **Gemini** і **Grok** — чесно: споживчі версії власних MCP не
+**ChatGPT** — Developer режим → Створити (з чесною вимогою платного плану); **Gemini** і **Grok** — чесно: споживчі версії власних MCP не
 приймають, є конфіг для CLI-клієнтів. Стан правдивий: v2 / старий `/mcp` / двері / немає — з міткою й кнопкою «Відкликати старе».
 admin `/ai` показує стан по агентах у всіх станах політики, з посиланням на сторінку агента. Застарілі інструкції прибрано
 (`claude.ai/code#customize`, «Customize → Connectors», картка ручного Bearer-токена).
@@ -1040,7 +1040,7 @@ passkey, без перезапуску; Microsoft — поки лише серв
 
 ### 5. Новий лист: меню ховалося, кнопки овальні, прокрутка не помітна
 
-- Випадаючі меню (з «⋯» і списків) обрізалися контейнером — на 390 px з 15 пунктів не було видно жодного. Тепер — поверх усього.
+- Розкривні меню (з «⋯» і списків) обрізалися контейнером — на 390 px з 15 пунктів не було видно жодного. Тепер — поверх усього.
 - Іконкові кнопки: правило `width:auto !important` з'їдало ширину (скріпка була 19×36). Тепер усі 44×44.
 - Ряд інструментів: на телефоні вміщується повністю (рідкісні дії — в «⋯»), а коли не вміщується — видно стрілку й тінь.
 - **Шаблони на телефоні** — першим розділом у «⋯» (були там і раніше, але меню обрізалося). Окремо: у темній темі блоки шаблонів
@@ -1111,7 +1111,7 @@ Outlook, Ukr.net, I.ua, Online.ua, Yahoo та ще 16 (OneDrive, Teams, Windows,
 | 6 | Очищення SVG перевіряло сирий текст — 9 обхідних шляхів через сутності й CSS-екранування | низька |
 | 7–8 | Необмежений запис власних логотипів; заголовки дверей | низька / посилення |
 
-Кожна знахідка — атакуючий тест: на коді до огляду **16/41**, після **41/41**.
+Кожна знахідка — зловмисник тест: на коді до огляду **16/41**, після **41/41**.
 
 ### 2. Огляд доступності (WCAG 2.2 AA)
 
@@ -1121,7 +1121,7 @@ Outlook, Ukr.net, I.ua, Online.ua, Yahoo та ще 16 (OneDrive, Teams, Windows,
 
 - **14 брендів** узято з відкритих пакетів офіційних логотипів з чесною ліцензією (`@iconify-json/logos` — CC0; `@iconify-json/vscode-icons` — MIT): Windows, Edge, Microsoft, Node.js, OneDrive, Teams, Azure, Yahoo, monday.com, Pipedrive, Webhook, OAuth, Outlook, OneNote. Скрипт `scripts/merk-officieel-maken.mjs` нічого не малює — вставляє файл як є, проганяє очищення SVG і записує походження (пакет, версія, ліцензія, sha256) у `src/merk/officieel/HERKOMST.json`.
 - **База логотипів сайту** (`app.merk_beeld`, міграція 0097): для домену сервер **сам** отримує офіційний логотип — спершу BIMI (DNS `default._bimi.<домен>`, саме для цього компанії й публікують знак), далі значки з сайту домену, далі `favicon.ico`; кеш 30 днів. Так приходять Ukr.net, I.ua, Online.ua, Entra, Fastmail, Freshdesk, Mollie, Tuya — з їхніх власних доменів на сервері власника. Нейтральна плитка лише до першого успішного отримання. Захист вихідних запитів: лише https, лише публічні IP з прив'язкою з'єднання, ≤3 редиректи, 5 с, 256 КБ.
-- **Фото відправників** (`app.afzender_beeld`, окремо для людини й простору, адреса лише як HMAC, під ключем людини): логотип організації відправника (BIMI/значок домену), фото з Google-контактів (People API, вимкнено за замовчуванням, інкрементна згода; стандартні «порожні» фото пропускаються), vCard, Gravatar (вимкнено за замовчуванням). Браузер нічого не вантажить ззовні — усе через сервер.
+- **Фото відправників** (`app.afzender_beeld`, окремо для людини й простору, адреса лише як HMAC, під ключем людини): логотип організації відправника (BIMI/значок домену), фото з Google-контактів (People API, вимкнено типово, інкрементна згода; стандартні «порожні» фото пропускаються), vCard, Gravatar (вимкнено типово). Браузер нічого не вантажить ззовні — усе через сервер.
 - Пріоритет: власний файл власника → вбудований офіційний → форма з відкритого набору → база сайту → нейтральна плитка.
 
 ### 4. Док згорнутих вікон більше не лежить на кнопках
@@ -1136,10 +1136,10 @@ Outlook, Ukr.net, I.ua, Online.ua, Yahoo та ще 16 (OneDrive, Teams, Windows,
 |---|---|---|
 | Надсилати листи | `mail_send` | завжди, passkey |
 | Створювати / завантажувати файли на Диск | `drive_create_file`, `drive_upload_file` | типово так |
-| Ділитися файлами | `drive_share_file` («будь-хто з посиланням» — лише окремою галочкою, ніколи з правом редагування) | завжди, passkey |
+| Ділитися файлами | `drive_share_file` («будь-хто з посиланням» — лише окремою позначкою, ніколи з правом редагування) | завжди, passkey |
 | Фото, які ви вибрали | `photos_picked_media` (Google Photos Picker — вибирає людина) | завжди |
 | Події з iCloud | `icloud_list_events` (CalDAV, пароль застосунку) | ні (читання) |
-| Pull request | `github_pr` (без злиття, без змін у `.github/workflows`) | passkey |
+| Pull запит | `github_pr` (без злиття, без змін у `.github/workflows`) | passkey |
 | Журнали CI | `github_ci_logs` | ні |
 | Власний домен для додатка | `app_domain` (технічний) | passkey + серверна команда |
 | Зображення | `image_generate` (локальний генератор на вашому сервері; без нього — чесна помилка) | «питати» |
@@ -1169,7 +1169,7 @@ Outlook, Ukr.net, I.ua, Online.ua, Yahoo та ще 16 (OneDrive, Teams, Windows,
 
 ## AH. Глобальний пошук «/zoek» за специфікацією власника: аудит, ядро, джерела, OCR, історія, ізоляція (22.10.2026)
 
-Завдання власника — «MIJN RUIMTE GLOBAL SEARCH» (19 розділів): одне поле, яке знаходить **функцію сайту без знання його структури**
+Завдання власника — «MIJN RUIMTE GLOBAL ПОШУК» (19 розділів): одне поле, яке знаходить **функцію сайту без знання його структури**
 («змінити мову», «хто входив у мій акаунт», «коди відновлення якщо загублю телефон»), листи й вкладення, файли, події, дошку, GitHub —
 дев'ятьма мовами, з помилками, суржиком і транслітом, з чесним відсотком відповідності, автодоповненням, виправленням, історією на
 сервері та повною ізоляцією просторів. Працювало п'ять зон паралельно (Z1 ядро, Z2 джерела й каталог інтерфейсу, Z3 текст/OCR/архіви,
@@ -1229,10 +1229,10 @@ Z4 сторінка й палітра, Z5 оцінка якості, проду�
 
 - `backend/zoek/tekst-extractie.ts`: шлях до worker-бандла `dist-server/zoek-werker.mjs` був відносним — `new Worker()` відкидав його
   (`ERR_WORKER_PATH`), і **кожен** файл отримував статус «помилка», щойно поряд з кодом є зібраний `dist-server/`. Тепер шлях завжди
-  абсолютний (`zoek-bronnen-etap-c` 39/40 → 40/40, `zoek-tekst` 79/79 через справжній worker).
+  абсолютний (`zoek-bronnen-etap-c` 39/40 → 40/40, `zoek-tekst` 79/79 через справжній фоновий обробник).
 - `src/search/ZoekPagina.tsx`: закрита служба показується тим самим `RuimteGeslotenVlak`, що й блоки хаба; `1 об'єкт / 2 об'єкти /
   5 об'єктів` замість «1 об'єктів» (nl: `1 object / 2 objecten`).
-- `src/search/zoek.css`: на телефоні плаваючий дзвіночок сповіщень лежав на кнопці «Показати результати» нижнього листа фільтрів —
+- `src/search/zoek.css`: на телефоні рухомий дзвіночок сповіщень лежав на кнопці «Показати результати» нижнього листа фільтрів —
   ховається, доки лист відкритий (як у вікні листа).
 - `tests/eenheid/tech-ruimte-pagina-20261020`: два статичні контролі вказували на старі файли (`GlobalSearchPanel` став обгорткою;
   `herkomstUitBody` обчислюється окремим рядком), а дві перевірки звіряли **весь** JSON відповіді, що містить сам запит — тепер звіряються
@@ -1276,7 +1276,7 @@ mcp.* та hub.* — теж, бо це інший бандл. Юніт-тест�
 
 Новий тест `tests/eenheid/browser-gedeeld-20261022.test.ts`: кожен `shared/*.ts`, який імпортує `src/`, збирається esbuild для браузера
 й виконується в голому `vm`-контексті **без** `Buffer`, `process`, `require`, `fs` (78 модулів). На коді 221718 падає з
-«shared/merk-eigen: Buffer is not defined», на виправленому — 3/3.
+«shared/merk-eigen: Buffer is не defined», на виправленому — 3/3.
 
 ### 3. «Відкат до попереднього» на mcp.*/dashboard — працює як задумано
 
@@ -1299,10 +1299,10 @@ mcp.* та hub.* — теж, бо це інший бандл. Юніт-тест�
 `sudo mijn-ruimte-installeer installeren ~/uitrol/mijn-ruimte-<версія>` (копія бази → міграції → збірка → перемикання → `/__gezondheid`).
 
 ## AJ. Рендер-контроль і автовідкат (22.10.2026)
-Після 20261021-221718 («Buffer is not defined», білі admin-сторінки при HTTP 200) інсталятор після gezond/nabewaking відкриває ключові
+Після 20261021-221718 («Buffer is не defined», білі admin-сторінки при HTTP 200) інсталятор після gezond/nabewaking відкриває ключові
 сторінки нового випуску у headless Chromium на сервері (`scripts/rook-controle.mjs`): одноразова копія сайту (`dist-server/rook.mjs`) на
 одноразовій базі `mijnruimte_rook_<stempel>` із тестовим власником і технічним профілем, 13 сторінок + імпорт усіх бандлів; зламано
-(pageerror, ReferenceError/TypeError, порожній `#root`, бандл ≠ 200, «Internal server error») → автоматичний відкат на попередній випуск
+(pageerror, ReferenceError/TypeError, порожній `#root`, бандл ≠ 200, «внутрішня помилка сервера») → автоматичний відкат на попередній випуск
 із подією `ROOK_TERUGGEDRAAID` і причиною на «Оновлення»; попередній перевіряється один раз, без другого відкату; міграції не
 відкочуються. Без браузера — модульна перевірка в Node (vm без Buffer/process/require) із чесним «рендеринг не перевірено».
 Браузер: `sudo mijn-ruimte-installeer browser-controle` (chrome-headless-shell 156.0.8078.47, SHA-256). nazorg: live-перевірка через 2 хв
@@ -1339,7 +1339,7 @@ uitrol-geschiedenis-tijdlijn-20261022 20/20; стенд besluit-* зі спра�
   отримувачем, системний крок), workspace/load (хибне спрацювання кешу просторів). Міграція `0108_zvirka_verholpen.sql` прибирає ці три
   старі лічильники, щоб групи RLS можна було вмикати.
 - **Аудит маршрутів:** `docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.md` (генератор `scripts/beveiliging-routes-inventaris.mjs`):
-  682 маршрути, у всіх гейт; 33 з особистими даними — усі з атакуючим тестом (`ruimte-aanvallen-20261022`). Витоку між акаунтами не знайдено.
+  682 маршрути, у всіх гейт; 33 з особистими даними — усі з зловмисником тестом (`ruimte-aanvallen-20261022`). Витоку між акаунтами не знайдено.
 - Дзвоник: прочитані рядки більше не напівпрозорі (контраст AA); на телефоні кнопки панелі ≥ 44 px, без вкладеної прокрутки.
 - Тести: `meldingen-sferen-20261022` 40/40, `ruimte-aanvallen-20261022` 31/31 (+ RLS-варіанти); оновлено `melding-soorten`, `ruimte-meldingen-20261020`.
 - Після встановлення: нічого вручну; за бажанням — `sudo deploy/db-rollen-instellen.sh status` і вмикання груп RLS по одній.
@@ -1347,7 +1347,7 @@ uitrol-geschiedenis-tijdlijn-20261022 20/20; стенд besluit-* зі спра�
 
 ## AM. Пошук: ручна індексація в технічному профілі + вигляд результатів за макетом (22–23.10.2026)
 
-- /zoek, технічний профіль: кнопка «Індексація…» → плаваюче вікно (спільна система вікон: перетягування, згортання в док з відсотком,
+- /zoek, технічний профіль: кнопка «Індексація…» → рухоме вікно (спільна система вікон: перетягування, згортання в док з відсотком,
   розгортання, закриття, позиція запам'ятовується; не блокує сторінку). Повна (усі джерела з нуля) або часткова (вибрані джерела —
   повністю, або «лише змінені з дати»; джерело, яке ще не сканувалося, завжди читається повністю). Живий хід, таблиця за джерелами,
   результат (нових / оновлених / видалених / без змін / OCR / помилки з кодами), журнал ручних і фонових запусків, «Зупинити».
@@ -1401,14 +1401,14 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
 ## AO. Робочий стіл (hub /overzicht) — новий головний екран хаба
 
 - Нове: `src/werkblad/*` — «Робочий стіл» / «Werkblad» замість старого «Bureau» на /overzicht (адреса й меню ті самі; h1 «Робочий стіл»).
-  Сітка 12/6/1 колонок без перекриттів (`shared/werkblad-indeling.ts plaatsen`), режим «Налаштувати»: перетягування (pointer events,
+  Сітка 12/6/1 колонок без перекриттів (`shared/werkblad-indeling.ts plaatsen`), режим «Налаштувати»: перетягування (pointer події,
   живий перегляд), розмір, каталог віджетів, фон (градієнти з токенів або власне зображення ≤ 400 КБ), «Скинути»; клавіатура (стрілки,
-  Shift+стрілки, Delete) з aria-live; телефон — «вище/нижче», тап ≥ 44 px.
+  Shift+стрілки, Видалити) з aria-live; телефон — «вище/нижче», тап ≥ 44 px.
 - Віджети лише з наявних маршрутів: привітання, швидкий доступ (з лічильниками), пошта, календар, завдання, нотатки, дошка, файли,
   хмарні сховища (квота, яку сервер уже має), нещодавні пошуки, швидкі дії, ШІ для вас, статус служб (кнопка «Перевірити»), системна
   інформація (замість погоди — без зовнішніх хмар), підказка; технічна лада: сервер, оновлення, діагностика. GitHub — «скоро».
 - База: міграція 0112 `app.werkblad_indeling` (user_id + ruimte, RLS; GRANT у rechten.sql). Маршрути
-  `POST /api/owner/hub/werkblad/{laden,bewaren,terugzetten,tech}` (`backend/werkblad.ts`): лада лише з сервера, явний WHERE, нормалізація
+  `POST /api/owner/hub/werkblad/{laden,bewaren,terugzetten,tech}` (`backend/werkblad.ts`): лада лише з сервера, явний ДЕ, нормалізація
   на сервері, версія проти перезапису (409), `/tech` лише з технічним профілем.
 - Сумісність: при першому відкритті старий стіл переноситься, змінені старі блоки додаються як «старий блок»/посилання, приховані — у
   каталозі; старі дані не змінюються. `hub/blocks/data` віддає `opslag` (квота сховищ).
@@ -1460,12 +1460,12 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
 кожен спершу здав проміжний звіт. Під час злиття виправлено:
 
 - **Збірка впиралась у ліміт пам'яті інсталятора.** `vite build` на злитому дереві при `BOUW_HEAP_MB=2560` (як на сервері) падав із
-  «JavaScript heap out of memory» уже після «✓ built» (пік ~3,1 ГБ RSS). Причина — два вже зібрані сторонні файли, які Rollup розбирав
+  «JavaScript heap зовні of memory» уже після «✓ built» (пік ~3,1 ГБ RSS). Причина — два вже зібрані сторонні файли, які Rollup розбирав
   заново: `officeparser.browser.slim.mjs` (5,5 МБ) і h5wasm (4,2 МБ). Новий плагін `scripts/vendor-ongebundeld.mjs` кладе їх без змін у
   `dist/assets/vendor/<назва>-<хеш>/` і підключає як зовнішні модулі (`/assets/vendor/…`); плюс `rollupOptions.cache: false` і
   `maxParallelFileOps: 32`. Тепер збірка проходить із 2048 МБ (запас ~500 МБ до ліміту інсталятора) і вдвічі швидша (≈35 с замість 66 с).
   Тест `vendor-ongebundeld-20261023` (26/26) стежить, щоб ці файли лишались самодостатніми ES-модулями і завантажувались лише динамічно.
-- **Перегляд вкладень .mdb/.accdb у пошті** падав у браузері з «process is not defined» (знайшов рендер-контроль зони AJ): перед
+- **Перегляд вкладень .mdb/.accdb у пошті** падав у браузері з «process is не defined» (знайшов рендер-контроль зони AJ): перед
   завантаженням `mdb-reader` тепер ставиться мінімальна заглушка `process`/`Buffer` (окремий модуль `src/platform/node-shim.ts`, який
   завантажується першим у тому самому чанку), нічого наявного не перезаписуючи. Рендер-контроль зони AJ на остаточній збірці у справжньому
   Chromium: **13 сторінок рендеряться, 506/506 бандлів завантажуються** (до виправлення — 506/507 із попередженням).
@@ -1576,11 +1576,11 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
 ## AT. Одне вікно листа для всіх режимів — адаптивна рамка (24.10.2026, пакет 1 «Adaptive Mail Canvas», крок 2)
 
 Запит власника: «один переглядач, який виглядає як професійна поштова програма на комп'ютері, залишається простим на телефоні та не
-втрачає можливостей під час зміни розміру вікна»; повний, розділений, плаваючий і мобільний режими «поводяться однаково».
+втрачає можливостей під час зміни розміру вікна»; повний, розділений, рухомий і мобільний режими «поводяться однаково».
 `GoogleMailWorkspace`, `MailThreadContent`, `MailReaderToolbar`, `MailMessageBody` і профілі щільності лишились — змінилась рамка навколо них.
 
 - **Рамка.** Новий компонент `src/mail/LeesVenster.tsx` замість власної «підкладки» в `GoogleMailWerkruimte.tsx`. Правила без DOM —
-  у `src/mail/lees-modus.ts`, CSS за формою — у `src/mail/lees-venster.css`. П'ять форм: повний, праворуч, знизу, плаваюче вікно,
+  у `src/mail/lees-modus.ts`, CSS за формою — у `src/mail/lees-venster.css`. П'ять форм: повний, праворуч, знизу, рухоме вікно,
   телефон. Форму видно в атрибуті `data-lees-modus`, клас ширини самого вікна (не екрана) — у `data-lees-breedte`. Межа телефону
   одна: 721 px. Раніше межі були вперемішку: 559/560, 700/701, 720/721 і 760 px.
 - **Знайдено новим стендом `mail-lezer-*` і виправлено** (8 розмірів: 360, 390, 640×400, 852×480, 740, 768, 1280, 1704):
@@ -1595,20 +1595,20 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
      рахує саме вікно листа, не екран. Раніше «праворуч» на 852 px кнопки шапки налазили на «⋮» і сусідні кнопки.
   5. **Escape закривав згорнутий (тобто невидимий) лист** разом із відповіддю, яку ви в ньому писали. Тепер у згорнутого листа Escape
      нічого не робить.
-  6. Escape у **списку** закривав лист у режимах «праворуч/знизу». Тепер поруч зі списком і в плаваючому вікні Escape діє лише
+  6. Escape у **списку** закривав лист у режимах «праворуч/знизу». Тепер поруч зі списком і в рухомому вікні Escape діє лише
      тоді, коли фокус у листі.
   7. **Фокус.** Після відкриття фокус лишався на сторінці, і читач екрана не оголошував лист. Тепер фокус переходить у лист (повний
-     режим, телефон, плаваюче вікно). Після закриття він повертається на рядок листа, а якщо лист прибрано (архів) — на рядок, що став
+     режим, телефон, рухоме вікно). Після закриття він повертається на рядок листа, а якщо лист прибрано (архів) — на рядок, що став
      на його місце.
   8. **«Назад» на телефоні виходив із пошти.** Тепер він закриває лист: одна позначка в історії браузера, поки лист закриває список
      (і в повному режимі на комп'ютері). Якщо закрити лист кнопкою, позначка зникає, тож наступне «Назад» працює як звичайно.
-  9. Для читача екрана: «праворуч/знизу» — це область сторінки (`region`), а не модальне вікно; плаваюче вікно — немодальне.
+  9. Для читача екрана: «праворуч/знизу» — це область сторінки (`region`), а не модальне вікно; рухоме вікно — немодальне.
   10. **«Зменшити вікно» між 560 і 760 px нічого не робило.** Тепер вікно плаває від 721 px, а на телефоні кнопки немає. Клавіатура:
-      у плаваючому вікні є ручка — стрілки пересувають на 16 px (Alt — на 2 px), Shift+стрілки змінюють розмір, як у вікнах сайту.
+      у рухомому вікні є ручка — стрілки пересувають на 16 px (Alt — на 2 px), Shift+стрілки змінюють розмір, як у вікнах сайту.
       Після зміни розміру браузера вікно повертається в межі екрана.
-  11. Плаваюче вікно заїжджало під бічне меню: на 768 px смуга меню малювалась поверх листа. Тепер воно тримається праворуч від меню
+  11. Рухоме вікно заїжджало під бічне меню: на 768 px смуга меню малювалась поверх листа. Тепер воно тримається праворуч від меню
       чи доку й під верхньою панеллю. Якщо місця мало, вікно зменшується до 360×300, а не лізе під меню.
-  12. **Панель «⋮» завжди стояла вгорі праворуч екрана** — далеко від кнопки, коли лист знизу чи в плаваючому вікні. Тепер вона біля
+  12. **Панель «⋮» завжди стояла вгорі праворуч екрана** — далеко від кнопки, коли лист знизу чи в рухомому вікні. Тепер вона біля
       своєї кнопки; якщо знизу немає місця, відкривається вгору.
   13. **Меню праворуч або док зверху/знизу** (Налаштування → Меню). Лист рахував лівий край від правого краю меню, а зміну
       розташування меню не помічав:
@@ -1624,7 +1624,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
       лише тоді, коли лист його закривав. Поруч зі списком рядок відкритого листа лишається видно, зокрема під час «Попередній/Наступний».
   16. Нове: позиція прокрутки запам'ятовується для кожного листа, поки відкрита сторінка. Повернувшись до листа, ви там, де були
       (раніше — завжди на початку), навіть коли текст листа ще довантажується.
-  17. Поруч зі списком і в плаваючому вікні шапка більше не резервує 4.75rem під верхню панель сайту — там її немає.
+  17. Поруч зі списком і в рухомому вікні шапка більше не резервує 4.75rem під верхню панель сайту — там її немає.
   18. **«Пошук у відкритій гілці» знаходив збіг, але не прокручував до нього.** Перша `<section>` листа — це смуга ШІ, і пошук
       прокручував саме її. Та сама помилка була в автопрокрутці під час перетягування дій (редагування розміщення).
 - **Тести:**
@@ -1641,11 +1641,11 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   - збірка: карта, каталог інтерфейсу 1149, L002, розумні вхідні, контраст, 6 технічних і 497 звичайних бандлів;
   - тести: 237 файлів, 8 859 перевірок, 0 провалів (12 перевірок RLS проходять у 8 RLS-варіантах; 4 файли пропущено, як завжди);
   - стенд `mail-lezer-*`:
-    - ДО: у старій версії дефекти мали всі 40 вимірювань — повний, праворуч, знизу й плаваюче на 8 розмірах (на телефоні це
+    - ДО: у старій версії дефекти мали всі 40 вимірювань — повний, праворуч, знизу й рухоме на 8 розмірах (на телефоні це
       телефонна форма) і згорнутий лист; меню праворуч і док — 6 із 6;
-    - ПІСЛЯ: 55 із 55 без дефектів — ті самі 40 (тепер разом із пошуком у листі, клавіатурою плаваючого вікна й позицією
+    - ПІСЛЯ: 55 із 55 без дефектів — ті самі 40 (тепер разом із пошуком у листі, клавіатурою рухомого вікна й позицією
       прокрутки) і меню праворуч / док зверху / док знизу на 5 розмірах комп'ютера;
-  - e2e у Chromium: `mail-lijst-ux` 26/26 (разом із перетягуванням плаваючого вікна), `mail-opstel-venster` 25/25,
+  - e2e у Chromium: `mail-lijst-ux` 26/26 (разом із перетягуванням рухомого вікна), `mail-opstel-venster` 25/25,
     `mail-verkenning` 1/1, `vensters` 11/11;
   - рендер-контроль — 13 сторінок, 506/506 бандлів;
   - стенд інших сторінок (хаб, пошта, меню, ідентичність, технічний простір; 40 знімків, 390 і 1280 px) проти попереднього
@@ -1714,7 +1714,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
     розділу, мітки, «Вигляд», клавіші, Esc і «Назад», панель телефона, а також те, що до «Показати» немає жодного запиту назовні.
 - **Карта «що де»:** +10 файлів пакета 2 у розділі «Додані після перейменування» (усього 17).
 - **Що змінилось для вас:**
-  - зовнішні зображення приховано за замовчуванням. Повернути як було: «Вигляд» → «Зовнішні зображення» → «Завжди показувати»;
+  - зовнішні зображення приховано типово. Повернути як було: «Вигляд» → «Зовнішні зображення» → «Завжди показувати»;
   - на телефоні «Згорнути лист» — у «Ще»;
   - у вузькому вікні «Вигляд», «Згорнути» й «Зменшити вікно» — у «⋮».
 - **Не зроблено (чесно):**
@@ -1787,7 +1787,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   - **Порівняти** — таблиця абзаців «оригінал ↔ переклад ШІ» (§1, §2 …). Абзаци-джерела пунктів позначено «Джерело для 2 пунктів
     · знайдено дослівно». На телефоні — одне під одним. Лист із форматуванням — одним натисканням «Оригінал»;
   - без агента доступний лише «Оригінал», і смуга пише чому; лист нікуди не надсилається.
-- **«Вигляд» → «Мова листа»** (`src/mail/WeergaveKeuze.tsx`, `src/mail/lees-modus.ts`): «Оригінал» (за замовчуванням) або
+- **«Вигляд» → «Мова листа»** (`src/mail/WeergaveKeuze.tsx`, `src/mail/lees-modus.ts`): «Оригінал» (типово) або
   «Перекладати» — тоді лист іншою мовою перекладається одразу під час відкриття. Під вибором прямо написано, що текст іде вашому
   ШІ-агенту (з назвою). Діє лише на цьому пристрої.
 - **Панель контексту** (`src/mail/ContextPaneel.tsx`):
@@ -1839,7 +1839,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   - простий розбір шукає питання, прохання й терміни за словами-ознаками. Непряме прохання без таких слів він може пропустити;
   - справжню модель тут не викликано: у цьому середовищі немає ключа, тож стенд імітує приватного агента. Один з його пунктів
     навмисно вигаданий, і перевірка його відкинула;
-  - «Мова листа: Перекладати» надсилає агенту кожен відкритий лист іншою мовою — тому за замовчуванням «Оригінал»;
+  - «Мова листа: Перекладати» надсилає агенту кожен відкритий лист іншою мовою — тому типово «Оригінал»;
   - «Порівняти версії» порівнює лише текст, без OCR сканів;
   - Safari й Firefox не перевірено.
 - **Знайдено стендом і тестами й виправлено до випуску:**
@@ -1887,12 +1887,12 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   - стенд інших сторінок проти збірки пакета 2 — 54 знімки, 390 і 1280 px (хаб, пошта, хмара, ідентичність, дім, адміністрування,
     MCP, GitHub): відрізняються лише дані (час, тестовий акаунт, час відповіді сервера, список служб, що довантажується).
 
-## AW. Плаваючі кнопки: зони й гнізда (25.10.2026)
+## AW. Рухомі кнопки: зони й гнізда (25.10.2026)
 
 Еталон — затверджена пропозиція `claude/omlijsting/MAKET-PLAVAYUCHI-KNOPKY-2026-10-25.md` (рішення власника: стос дій плаває над
 списком; повна зона не приймає кнопку й підказує; лічильник сповіщень і на ☰; усе одним пакетом). Кнопки більше не рахують своє
 місце від країв екрана чи одна від одної: кожна стоїть у гнізді зони, а зону розставляє браузер (flex). Нічого не прибрано —
-дзвоник, панель, звук, лічильник, «Написати», «Вгору» й спливаючі сповіщення лишились; змінилось, де вони стоять і як їх переносити.
+дзвоник, панель, звук, лічильник, «Написати», «Вгору» й спливні сповіщення лишились; змінилось, де вони стоять і як їх переносити.
 
 - **Модель без DOM** (`shared/plaatsing.ts`):
   - класи пристроїв: телефон ≤ 700 px, планшет ≤ 1099 px, комп'ютер;
@@ -1919,7 +1919,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   відкривається над дзвоником (дзвоник у стосі), її висота не більша за ту, з якої рахувався верх. Пункт «Повернути в кут» тепер
   називається «Повернути на типове місце». Лічильник непрочитаних — і на ☰ (`.plaats-menu-teller`, також у назві кнопки), коли
   дзвоник у меню.
-- **Спливаюче сповіщення — на вільному місці** (`src/plaatsing/melding-plek.ts`). Дві ваші умови: з пропозиції — «на комп'ютері під
+- **Спливне сповіщення — на вільному місці** (`src/plaatsing/melding-plek.ts`). Дві ваші умови: з пропозиції — «на комп'ютері під
   дзвоником, на телефоні вгорі під панеллю, не над стосом»; з QA 12.10 (№11 / M7) — сповіщення ніколи не лягає на кнопки (тоді клік після
   автозникнення потрапив на приховану кнопку рядка). Стенд показав, що під дзвоником на Пошті сповіщення лягало на «‹ 1–10 із 18 ›».
   Тепер — кандидати за порядком, перемагає перший, під яким немає малої кнопки (кнопки, посилання, поля; великі клікові області на
@@ -1947,7 +1947,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
     до…» (`PlaatsActies` у `Plek.tsx`): зони з лічильниками, «Лівіше / Правіше» або «Вище / Нижче», «Повернути на типове місце»,
     «Скинути всі кнопки до типового», «Закрити»; фокус у меню, Esc повертає на кнопку; результат — у `aria-live`.
 - **Один шар CSS** (`src/plaatsing/plaatsing.css`): зони, гнізда, стос, ховання під вікнами («Новий лист», шухляда, палітра пошуку,
-  відкритий лист, панель сповіщень — `visibility`, нічого не зсувається), спливаюче сповіщення на телефоні, вигляд тяги й
+  відкритий лист, панель сповіщень — `visibility`, нічого не зсувається), спливне сповіщення на телефоні, вигляд тяги й
   «Перемістити до…». З інших файлів прибрано правила, які тепер у шарі: `canoniek-omlijsting.css` (запас 140 px і 6 зсувів «Вгору»
   через `:has()`), `menu-v2.css`, `mail-qa-2026-10.css` (ховання FAB і дзвоника, позиції сповіщення), `mail-ux-beoordeling-20261021.css`,
   `mail-nieuw-bericht.css`, `zoek/zoek.css`; `tech/tech.css` компенсує технічну смугу для стосу, а не для дзвоника. Умовних правил
@@ -1996,7 +1996,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   - натискання на кнопку в «Редагувати меню» перевірено на телефоні; на комп'ютері режим відкривається з налаштувань меню, там те
     саме меню — через правий клік чи Shift+F10;
   - перевірка в збірці бачить лише CSS: фіксована кнопка, поставлена стилем просто в коді компонента, нею не ловиться;
-  - 2 правила спливаючого сповіщення лишились у `mail-qa-2026-10.css` (див. «Один шар CSS»);
+  - 2 правила спливного сповіщення лишились у `mail-qa-2026-10.css` (див. «Один шар CSS»);
   - масштаб браузера (Ctrl +) змінює клас пристрою разом із розкладкою сайту: 1280 px при 200 % — це розкладка телефона, і кнопки
     стають туди, де їх поставлено для телефона;
   - адресний рядок і щипок на стенді імітовано (висота вікна ±56 px, `Emulation.setPageScaleFactor`); свайп через CDP в емуляції не

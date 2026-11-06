@@ -23,7 +23,7 @@ Aan de repository `Tarasevych/hub` werken **8 AI-agenten** parallel samen: **Cla
 - Elke taak krijgt een unieke identificatie (`ABC-001`), een eigen tak `feature|fix|audit|release/<onderwerp>-YYYYMMDD-HHMMSS` en een declaratiebestand `orchestratie/taken/<TASK-ID>.json`.
 - Agenten schrijven nooit rechtstreeks naar `voornaamst`, `integratie`, `release/*` of de takken van andere agenten.
 - Er worden **8 inleverkanalen** ondersteund die allemaal samenkomen in één commando `node scripts/orch.mjs inleveren`:
-  1. `git-pr` (tak of Pull Request op GitHub)
+  1. `git-pr` (tak of Pull Verzoek op GitHub)
   2. `tar.gz` (installatiepakket `mijn-ruimte-<versie>.tar.gz`)
   3. `overdracht-zip` (universeel archief `mijn-ruimte-<versie>-<agent>-overdracht.zip` met patch, bundle en rapport)
   4. `git-bundle` (`.bundle`)

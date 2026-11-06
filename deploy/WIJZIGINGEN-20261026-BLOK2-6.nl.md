@@ -7,8 +7,8 @@ Niet het volledige plan 2–8. Uitgevoerd is wat het gedrag al wijzigt en slaagt
 - **2.1** Zoeken in meldingen blijft op één rij. Secties en volgorde zijn ook op desktop verborgen achter "Filters" (`Фільтри`), niet alleen op de telefoon (`MeldingenpaneelInhoud.tsx`, `meldingenpaneel.css`).
 - **2.2** De onderste balk van het paneel is één rij: drie icoonknoppen met tooltip; de tekst "Alles als gelezen markeren" (`Позначити все прочитаним`) blijft behouden. De globale `footer{margin}` duwt het paneel niet langer uit elkaar.
 - **3 / 6.2** `shared/bijlage-voorbeeld-maat.ts` berekent de breedte van het zwevende voorbeeld. Momenteel staat de kaart nog op formaat S (zoals voorheen); het muiswiel vergroot dit naar L. Het veld in de serverinstellingen is nog niet gekoppeld. — **in het tweede deel is het veld gekoppeld.**
-- **3 / 6.5** `shared/bestandsformaten.ts`: 13 families, label ≤ 5 tekens, zonder merklogo's. De oude 14 plekken in de interface kijken nog naar hun eigen tabellen. — **in het tweede deel is `FormaatTeken` toegevoegd.**
-- **5** Het label `onbekend`: "Niet bevestigd" (`Не підтверджено` / `Не підтверджені`), niet "Ongecontroleerd" (`Неперевірений`).
+- **3 / 6.5** `shared/bestandsformaten.ts`: 13 families, etiket ≤ 5 tekens, zonder merklogo's. De oude 14 plekken in de interface kijken nog naar hun eigen tabellen. — **in het tweede deel is `FormaatTeken` toegevoegd.**
+- **5** Het etiket `onbekend`: "Niet bevestigd" (`Не підтверджено` / `Не підтверджені`), niet "Ongecontroleerd" (`Неперевірений`).
 - **6 / 8.5** Aan de lijst met extensietermijnen is "1 dag" (`1d`) toegevoegd. — **in het vierde deel wordt "Onbeperkt" vernieuwd met een nieuwe rij.**
 
 ## Blokken 2–8 — tweede deel (26-10-2026)
@@ -63,7 +63,7 @@ Nog open: één ProseMirror-schil (7.4), één lange agentenpagina (8.4), zip-wa
 ## Negende deel (26-10-2026)
 
 - **3.5** "Eigen foto": in de contactdetails zit de knop "Eigen foto" (`Своє фото` / `Eigen foto`). De browser verkleint de afbeelding naar ≤ 320 px WebP en stuurt een data-URI. De server slaat deze op onder de bron `eigen` (voorrang boven Google/vCard/Gravatar). "Eigen foto verwijderen" verwijdert alleen deze rij. Geen nieuwe verzoeken naar externe domeinen.
-- **4.3** Codewoord als manier om toegang te bevestigen (step-up). Indien ingesteld, verschijnt het in het venster "Toegang bevestigen" naast passkey/TOTP/herstelcode. Werkt ook voor zware acties. Tweede inlogstap nog niet.
+- **4.3** Codewoord als manier om toegang te bevestigen (extra bevestiging). Indien ingesteld, verschijnt het in het venster "Toegang bevestigen" naast passkey/TOTP/herstelcode. Werkt ook voor zware acties. Tweede inlogstap nog niet.
 
 ## Tiende deel (26-10-2026)
 

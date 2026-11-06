@@ -7,7 +7,7 @@ Basis: 20261029-131639 (claude). Vlag: `mail-zoeken-v2` (migratie **0150**, stan
 ## Wat er verandert (alleen met vlag AAN)
 De filterknop in de zoekbalk en «Ще умови» openen hetzelfde, nieuwe paneel `src/mail-zoeken-v2/MailZoekenV2.tsx`:
 1. **Kop** (titel, terug, sluiten) · **actieve chips** van het concept (elk apart weg, «Очистити все» wist het concept) · **één scrollend werkgebied** · **voet** «Скинути / Зберегти / Шукати» blijft altijd zichtbaar.
-2. **Overzicht**: zoekveld met operator-aanvulling en geschiedenis, snelfilters (segment Усі/Непрочитані/Прочитані, ★, 📎) en vijf groepen: *Текст і учасники* (Текст, Люди, Тема), *Стан і місце листа* (Стан, Папка/мітка, Область), *Час* (Період), *Файли* (Вкладення і тип вмісту, Розмір), *Додатково* (Збережені). Een rij toont alleen een korte waarde als er iets gekozen is.
+2. **Overzicht**: zoekveld met operator-aanvulling en geschiedenis, snelfilters (segment Усі/Непрочитані/Прочитані, ★, 📎) en vijf groepen: *Текст і учасники* (Текст, Люди, Тема), *Стан і місце листа* (Стан, Тека/мітка, Область), *Час* (Період), *Файли* (Вкладення і тип вмісту, Розмір), *Додатково* (Збережені). Een rij toont alleen een korte waarde als er iets gekozen is.
 3. **Concept-model**: elke keuze verandert alleen het concept; precies **één** zoekopdracht bij «Шукати» (of Enter). Waarden blijven bewaard bij wisselen van editor. Sluiten (✕/Esc/buiten) = concept weggooien, zoals V1.
 4. **Editors**
    - Текст: Gmail-operators (aanvulling `from:`, `has:attachment`… met ↑/↓/Enter), «усі слова», «не містить», recente zoekopdrachten als compacte lijst met markering en «Очистити», onderwerp-suggesties; syntaxisuitleg achter ⓘ.
@@ -15,7 +15,7 @@ De filterknop in de zoekbalk en «Ще умови» openen hetzelfde, nieuwe pan
    - Тема: zoek/eigen invoer, lijst met markering, vinkje bij selectie, datum/aantal secundair.
    - Стан: exclusief segment + slanke schakelaar «лише із зірочкою».
    - Період: gekozen periode bovenaan, presets Будь-коли/7/30 днів/Пів року/Рік, Від/До + kalender **altijd bruikbaar**; grenzen beperken alleen als ze bevestigd zijn; grensstatus in één regel met vernieuwen; maand/jaar/kwartaal/seizoen pas na uitklappen.
-   - Папка/мітка: zoeken, groepen «Папки» (eigen pictogrammen) en «Мої мітки»; geen herhaald «Системна папка»; lange namen wrappen.
+   - Тека/мітка: zoeken, groepen «Теки» (eigen pictogrammen) en «Мої мітки»; geen herhaald «Системна тека»; lange namen wrappen.
    - Вкладення і тип вмісту: schakelaar, segment inhoudstype, bestandsnaam, formaten als compact raster met pictogram en teller (multi), gekozen formaten als chips, beperking (inhoud niet geïndexeerd) achter ⓘ.
    - Розмір: segment Будь-який/Більше/Менше + getal + eenheid in één groep; validatie (leeg, ≤0, tekst), komma wordt punt; «Шукати» uit bij ongeldige waarde.
    - Область: segment Поточний розділ/Уся пошта met één zin uitleg, schakelaars «Без Спаму/Кошика».
@@ -31,7 +31,7 @@ De filterknop in de zoekbalk en «Ще умови» openen hetzelfde, nieuwe pan
 | 4 | Deels direct, deels bij «Шукати» | overal concept |
 | 5 | Twee editorsystemen | één paneel |
 | 6 | Geneste scrolls (lijst 360px, chips 76/92px, jaren horizontaal) | één scrollgebied (e2e-controle op alle editors en breedtes) |
-| 7 | Herhaalde labels per rij | groepering |
+| 7 | Herhaalde etiketten per rij | groepering |
 | 8 | «Кому» niet handmatig | Enter voegt toe |
 | 9 | Opgeslagen zoekopdracht starten zoekt niet (in «Ще умови») | starten = zoeken |
 | 10 | Grootte zonder validatie | validatie + melding |

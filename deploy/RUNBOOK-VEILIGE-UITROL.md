@@ -1,28 +1,28 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-VEILIGE-UITROL.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-VEILIGE-UITROL.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-# Runbook: beheer op afstand zonder pad van de app naar root (drie methoden, één sleutel)
+# Runbook: віддалене керування без шляху від застосунку до root (три методи, один ключ)
 
-Stand: 2026-10-08, branch `veilig-agenten-0.4`. Vervangt de oude "deur" (`mijn-ruimte-mcp-doen` + sudo-regel + `patch-*.py`-lader).
+Стан: 2026-10-08, гілка `veilig-agenten-0.4`. Замінює старі «двері» (`mijn-ruimte-mcp-doen` + правило sudo + завантажувач `patch-*.py`).
 
-## 0. De drie methoden en hoe ze samenhangen
+## 0. Три методи та як вони пов'язані
 
-Een AI (Grok, Claude, een agent) of jij zelf kan de server op afstand beheren, maar **niets** wat de app (gebruiker `mijnruimte`)
-kan schrijven, wordt ooit als root uitgevoerd. Nieuwe code komt er alleen in als die met **jouw** ed25519-sleutel
-(`T:\mijn-ruimte\geheim\uitrol-sleutel`, met wachtwoordzin) is ondertekend.
+ШІ (Grok, Claude, агент) або ви самі можете керувати сервером віддалено, але **ніщо** з того, що може записати застосунок (користувач `mijnruimte`),
+ніколи не виконується від імені root. Новий код потрапляє на сервер лише тоді, коли він підписаний **вашим** ключем ed25519
+(`T:\mijn-ruimte\geheim\uitrol-sleutel`, із парольною фразою).
 
-| | Methode 1: GitOps-pull | Methode 2: ondertekend pakket | Methode 3: gepantserde opdracht |
+| | Метод 1: GitOps-pull | Метод 2: підписаний пакет | Метод 3: броньована команда |
 |---|---|---|---|
-| Wie start | root-timer op de VM, elke 5 min | path-unit zodra er een pakket in de inbox ligt | de app: `systemctl start mijn-ruimte-opdracht@<werkwoord>.service` |
-| Invoer | ondertekende tag `uitrol-JJJJMMDD-UUMM` in GitHub | `mijn-ruimte-<versie>.tar.gz` + `.sig` (via Grok of SSH) | één werkwoord uit een vaste lijst |
-| Controle | `git verify-tag` (gpg.format=ssh) met `/etc/mijn-ruimte/uitrol-ondertekenaars` | `ssh-keygen -Y verify` met hetzelfde bestand | polkit (alleen 5 units, alleen `start`) + het root-script |
-| Kan nieuwe code installeren | ja, alleen ondertekend | ja, alleen ondertekend | **nee**; `uitrol-nu` start alleen methode 1 en 2 |
-| Schakelaar | `"gitops"` (standaard uit) | `"uitrol"` (standaard uit) | `"opdracht": {…}` per werkwoord |
-| Script (root) | `/usr/local/sbin/mijn-ruimte-gitops` | `/usr/local/sbin/mijn-ruimte-uitrol` | `/usr/local/sbin/mijn-ruimte-opdracht` |
+| Хто запускає | root-таймер на ВМ, кожні 5 хв | path-юніт щойно в inbox з'являється пакет | застосунок: `systemctl start mijn-ruimte-opdracht@<werkwoord>.service` |
+| Вхідні дані | підписаний тег `uitrol-JJJJMMDD-UUMM` у GitHub | `mijn-ruimte-<versie>.tar.gz` + `.sig` (через Grok або SSH) | одне дієслово з фіксованого списку |
+| Перевірка | `git verify-tag` (gpg.format=ssh) з `/etc/mijn-ruimte/uitrol-ondertekenaars` | `ssh-keygen -Y verify` з тим самим файлом | polkit (лише 5 юнітів, лише `start`) + root-скрипт |
+| Може встановити новий код | так, лише підписаний | так, лише підписаний | **ні**; `uitrol-nu` лише запускає методи 1 і 2 |
+| Перемикач | `"gitops"` (типово вимкнено) | `"uitrol"` (типово вимкнено) | `"opdracht": {…}` для кожного дієслова |
+| Скрипт (root) | `/usr/local/sbin/mijn-ruimte-gitops` | `/usr/local/sbin/mijn-ruimte-uitrol` | `/usr/local/sbin/mijn-ruimte-opdracht` |
 
-Alle schakelaars staan in **één root-bestand**: `/etc/mijn-ruimte/mcp-rechten.json` (`root:mijnruimte 0640`; de app kan het lezen, niet wijzigen).
-Alle uitkomsten staan in `/var/lib/mijn-ruimte-uitrol-status/` (`root:mijnruimte 0750`): `status.json` (methode 2), `gitops.json` (methode 1),
-`opdracht-<werkwoord>.json` (methode 3) en `gebeurtenissen.jsonl`. De app neemt `gebeurtenissen.jsonl` elke 5 minuten op in de audit
-(actie `server.gitops.*` / `server.opdracht.*`); root leest nooit iets terug van de app.
+Усі перемикачі містяться в **одному root-файлі**: `/etc/mijn-ruimte/mcp-rechten.json` (`root:mijnruimte 0640`; застосунок може його читати, але не змінювати).
+Усі результати записуються в `/var/lib/mijn-ruimte-uitrol-status/` (`root:mijnruimte 0750`): `status.json` (метод 2), `gitops.json` (метод 1),
+`opdracht-<werkwoord>.json` (метод 3) та `gebeurtenissen.jsonl`. Застосунок кожні 5 хвилин імпортує `gebeurtenissen.jsonl` в аудит
+(дія `server.gitops.*` / `server.opdracht.*`); root ніколи нічого не читає назад від застосунку.
 
 ```
 PC eigenaar: uitrol-sleutel (T:\mijn-ruimte\geheim, wachtwoordzin via ssh-agent)
@@ -34,106 +34,106 @@ Site/agent (mijnruimte, NoNewPrivileges=yes) ── systemctl start mijn-ruimte-
                                                └─ polkit: alleen deze 5 units ─► mijn-ruimte-opdracht (root, vaste lijst, geen invoer)
 ```
 
-**Wat een aanvaller met volledige controle over de app wél kan:** de vijf opdrachten starten (voor zover aan): status lezen, een back-up
-starten (die draait als `mijnruimte`), een controle op ondertekende releases starten, en (alleen als `"terugdraaien": true`) hooguit één keer
-per 10 minuten terug naar de vorige, al geïnstalleerde release. Dat is hooguit hinder of een terugrol naar eerdere eigen code, **nooit eigen
-code als root**. Daarom staat `terugdraaien` standaard uit. polkit kan de app en de MCP-deur niet uit elkaar houden (beide draaien als
-`mijnruimte`); de deur gebruikt de opdrachten niet, maar de grens is dezelfde.
+**Що МОЖЕ зробити зловмисник із повним контролем над застосунком:** запустити п'ять команд (якщо вони увімкнені): прочитати статус, запустити
+резервне копіювання (воно виконується як `mijnruimte`), запустити перевірку підписаних релізів і (лише якщо `"terugdraaien": true`) щонайбільше раз на
+10 хвилин відкотити до попереднього, вже встановленого релізу. Це максимум перешкода в роботі або відкат до старішого власного коду, **ніколи не власний
+код від імені root**. Тому `terugdraaien` типово вимкнено. polkit не розрізняє застосунок і MCP-двері (обидва працюють як
+`mijnruimte`); двері не використовують ці команди, але межа безпеки однакова.
 
-**Aanvulling (branch `passkey-schvalennya`): methode 2b, goedkeuren met de passkey van de eigenaar.** Naast methode 2 (pakket ondertekend
-op de PC) kan een voorbereider (agent of account met een tijdelijke grant) een **onondertekend** pakket uploaden; het wordt pas geïnstalleerd
-als de eigenaar het op zijn telefoon met een passkey goedkeurt, en root controleert die passkey-handtekening zelf. Zie §13. Schakelaar
-`"passkey-goedkeuring"` (standaard `false`). Methode 2 blijft ongewijzigd werken.
+**Доповнення (гілка `passkey-schvalennya`): метод 2b, схвалення за допомогою passkey власника.** Окрім методу 2 (пакет, підписаний
+на ПК), підготовник (агент або акаунт із тимчасовим дозволом-грантом) може завантажити **непідписаний** пакет; він буде встановлений лише
+тоді, коли власник схвалить його на своєму телефоні за допомогою passkey, і root сам перевірить цей підпис passkey. Див. §13. Перемикач
+`"passkey-goedkeuring"` (типово `false`). Метод 2 продовжує працювати без змін.
 
-## 1. Wat er veranderd is ten opzichte van de oude deur (en waarom)
+## 1. Що змінилося порівняно зі старими дверима (і чому)
 
-| Vroeger (audit C1/C3/C4) | Nu |
+| Раніше (аудит C1/C3/C4) | Зараз |
 |---|---|
-| `mijnruimte ALL=(root) NOPASSWD: /usr/local/sbin/mijn-ruimte-mcp-doen *` | **geen sudo-regel**; de installer zet een oude regel in quarantaine en waarschuwt als er nog een NOPASSWD-regel voor `mijnruimte` staat |
-| root-hulp met werkwoorden die gestagede code uitvoerden (`kit`, `povnyj-arkhiv`, `patch-*.py` via runpy) | **geen enkel werkwoord**; de MCP-dienst kan alleen een pakket + losse handtekening in een inbox zetten |
-| toestemmingen in `/srv/data/uploads/mcp-permissions.json` (schrijfbaar voor de app) | `/etc/mijn-ruimte/mcp-rechten.json`, eigendom van root (`root:mijnruimte 0640`); alleen via SSH te wijzigen |
-| drop-in `mijn-ruimte-mcp.service.d/write.conf` met `NoNewPrivileges=no` | weg; de unit heeft `NoNewPrivileges=yes`, `RestrictSUIDSGID=yes`; de drop-in gaat bij het installeren naar quarantaine |
-| archief deels leesbaar (code, units, sudoers, git) in een app-map | **hele archief age-versleuteld**, in een root-map, vaste naam, download alleen door de eigenaar na step-up via een eenmalige id |
-| beheer via `sudo` vanuit de app | **methode 3**: polkit + `mijn-ruimte-opdracht@.service`, app houdt `NoNewPrivileges=yes` |
-| geen automatische uitrol uit git | **methode 1**: root-timer, alleen ondertekende tags, alleen-lezen deploy key |
-| OAuth-tokens van de deur in klare tekst, vaste client `grok`, 30 dagen | alleen sha256-hashes, toegang 1 uur, refresh 14 dagen met rotatie + hergebruikdetectie, `/oauth/revoke`, DCR met unieke client-id |
+| `mijnruimte ALL=(root) NOPASSWD: /usr/local/sbin/mijn-ruimte-mcp-doen *` | **жодного правила sudo**; інсталятор переносить старе правило в карантин і попереджає, якщо для `mijnruimte` ще залишилося правило NOPASSWD |
+| root-помічник із дієсловами, які виконували підготовлений код (`kit`, `povnyj-arkhiv`, `patch-*.py` через runpy) | **жодного дієслова**; служба MCP може лише покласти пакет + окремий підпис у теку inbox |
+| дозволи в `/srv/data/uploads/mcp-permissions.json` (доступні для запису застосунком) | `/etc/mijn-ruimte/mcp-rechten.json`, власність root (`root:mijnruimte 0640`); змінюється лише через SSH |
+| drop-in `mijn-ruimte-mcp.service.d/write.conf` із `NoNewPrivileges=no` | прибрано; юніт має `NoNewPrivileges=yes`, `RestrictSUIDSGID=yes`; drop-in під час встановлення переноситься в карантин |
+| архів частково доступний для читання (код, юніти, sudoers, git) у теці застосунку | **весь архів зашифровано через age**, у root-теці, фіксована назва, завантаження лише власником після step-up через одноразовий id |
+| керування через `sudo` із застосунку | **метод 3**: polkit + `mijn-ruimte-opdracht@.service`, застосунок зберігає `NoNewPrivileges=yes` |
+| немає автоматичного розгортання з git | **метод 1**: root-таймер, лише підписані теги, deploy ключ лише для читання |
+| OAuth-токени дверей у відкритому тексті, фіксований клієнт `grok`, 30 днів | лише sha256-хеші, доступ 1 год, refresh 14 днів із ротацією + виявленням повторного використання, `/oauth/revoke`, DCR з унікальним client-id |
 
-## 2. Eenmalig: ondertekeningssleutel maken op Windows (`T:\mijn-ruimte\geheim\uitrol-sleutel`)
+## 2. Одноразово: створення ключа підпису на Windows (`T:\mijn-ruimte\geheim\uitrol-sleutel`)
 
-PowerShell (gewone gebruiker):
+PowerShell (звичайний користувач):
 
 ```powershell
 New-Item -ItemType Directory -Force T:\mijn-ruimte\geheim | Out-Null
 ssh-keygen -t ed25519 -a 100 -C "uitrol@mijn-ruimte" -f T:\mijn-ruimte\geheim\uitrol-sleutel
-#   → vraagt twee keer een wachtwoordzin: kies een lange (≥ 5 woorden), bewaar die in je wachtwoordbeheerder, NIET op T:\
+#   → двічі запитає парольний вираз: оберіть довгий (≥ 5 слів), збережіть у менеджері паролів, НЕ на T:\
 Get-Content T:\mijn-ruimte\geheim\uitrol-sleutel.pub
 ```
 
-Eenmalig de Windows-ssh-agent aanzetten (PowerShell **als beheerder**), zodat de wachtwoordzin per sessie maar één keer nodig is:
+Одноразово увімкнути службу Windows `ssh-agent` (PowerShell **від імені адміністратора**), щоб парольний вираз потрібно було вводити лише раз за сесію:
 
 ```powershell
 Set-Service ssh-agent -StartupType Manual
 Start-Service ssh-agent
 ```
 
-- `uitrol-sleutel` (privé) blijft op T:\ en gaat nooit naar de VM, naar Grok, naar GitHub of in een repo. Haal de wachtwoordzin er nooit af.
-- Maak een tweede kopie van `T:\mijn-ruimte\geheim` op een offline schijf (zelfde wachtwoordzin).
-- Leg `UITLEG-LEESMIJ.txt` naast de sleutel: de tekst staat in `deploy/pc-uitleg/T-geheim-uitrol-sleutel-UITLEG-LEESMIJ.txt` (Oekraïens, daarna Nederlands).
-- Een oude sleutel op `T:\mijn-ruimte-uitrol\uitrolsleutel` mag blijven werken (zelfde publieke sleutel op de VM) of je maakt een nieuwe en
-  vervangt de regel op de VM (§10).
+- `uitrol-sleutel` (приватний) залишається на `T:\` і ніколи не передається на ВМ, у Grok, у GitHub чи в репозиторій. Ніколи не знімайте з нього парольний вираз.
+- Зробіть другу копію `T:\mijn-ruimte\geheim` на офлайн-носії (з тим самим парольним виразом).
+- Покладіть `UITLEG-LEESMIJ.txt` поруч із ключем: текст міститься в `deploy/pc-uitleg/T-geheim-uitrol-sleutel-UITLEG-LEESMIJ.txt` (спочатку українською, потім нідерландською).
+- Старий ключ у `T:\mijn-ruimte-uitrol\uitrolsleutel` може продовжувати працювати (той самий публічний ключ на ВМ), або ви можете створити новий і
+  замінити рядок на ВМ (§10).
 
-## 3. Eenmalig op de VM (via SSH, als root)
+## 3. Одноразово на ВМ (через SSH, від імені root)
 
 ```bash
-# 1. publieke sleutel als enige ondertekenaar, voor pakketten (mijn-ruimte-uitrol) EN tags (git)
+# 1. публічний ключ як єдиний підписант, для пакетів (mijn-ruimte-uitrol) ТА тегів (git)
 install -d -o root -g root -m 0755 /etc/mijn-ruimte
 printf 'uitrol@mijn-ruimte namespaces="mijn-ruimte-uitrol,git" %s\n' 'ssh-ed25519 AAAA…' > /etc/mijn-ruimte/uitrol-ondertekenaars
 chown root:root /etc/mijn-ruimte/uitrol-ondertekenaars && chmod 0644 /etc/mijn-ruimte/uitrol-ondertekenaars
-#    (alleen "ssh-ed25519 AAAA…" uit uitrol-sleutel.pub; het commentaar mag weg)
+#    (лише "ssh-ed25519 AAAA…" з uitrol-sleutel.pub; коментар можна опустити)
 
-# 2. polkit aanwezig? (Ubuntu 24.04: polkitd 124 met JavaScript-regels)
+# 2. чи встановлено polkit? (Ubuntu 24.04: polkitd 124 з правилами JavaScript)
 pkaction --version || apt install -y polkitd
 ```
 
-`installeer-app.sh installeren` zet daarna zelf neer: de drie root-scripts, de units (`mijn-ruimte-uitrol.{path,service}`,
-`mijn-ruimte-gitops.{service,timer}`, `mijn-ruimte-opdracht@.service`), de polkit-regel
-`/etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules`, de root-kopie `/usr/local/sbin/mijn-ruimte-installeer`, de mappen
-(`/var/lib/mijn-ruimte/{gitops,opdracht}` root 0700) en een standaard `mcp-rechten.json`. De ondertekenaarslijst, `gitops.env` en de
-schakelaars komen **nooit** uit een pakket of tag.
+`installeer-app.sh installeren` після цього сам встановлює: три root-скрипти, юніти (`mijn-ruimte-uitrol.{path,service}`,
+`mijn-ruimte-gitops.{service,timer}`, `mijn-ruimte-opdracht@.service`), правило polkit
+`/etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules`, root-копію `/usr/local/sbin/mijn-ruimte-installeer`, теки
+(`/var/lib/mijn-ruimte/{gitops,opdracht}` root 0700) і стандартний `mcp-rechten.json`. Список підписантів, `gitops.env` та
+перемикачі **ніколи** не беруться з пакета чи тегу.
 
-Na het bouwen haalt de installer `deploy/` opnieuw uit de (gecontroleerde) bron: wat een npm-script tijdens de build in `deploy/` zou wijzigen,
-wordt nooit als root-script, unit of polkit-regel geïnstalleerd.
+Після збирання інсталятор повторно витягує `deploy/` із (перевіреного) джерела: те, що npm-скрипт міг би змінити в `deploy/` під час build,
+ніколи не встановлюється як root-скрипт, юніт або правило polkit.
 
-### Controleren dat het oude root-pad weg is
+### Перевірка того, що старий root-шлях прибрано
 
 ```bash
-ls -l /etc/sudoers.d/                         # geen mijn-ruimte-mcp (en geen mijn-ruimte-opdracht: polkit, geen sudo)
+ls -l /etc/sudoers.d/                         # немає mijn-ruimte-mcp (і немає mijn-ruimte-opdracht: polkit, без sudo)
 sudo -l -U mijnruimte                         # "is not allowed to run sudo"
 ls /usr/local/sbin/ | grep -E 'mcp-doen|povnyj' || echo "weg"
-systemctl cat mijn-ruimte-mcp.service | grep -E 'NoNewPrivileges'   # alleen NoNewPrivileges=yes, geen drop-in write.conf
+systemctl cat mijn-ruimte-mcp.service | grep -E 'NoNewPrivileges'   # лише NoNewPrivileges=yes, без drop-in write.conf
 ls -A /srv/mijn-ruimte/mcp-staging 2>/dev/null || echo "staging weg"
-ls -ld /var/lib/mijn-ruimte-quarantaine/*     # wat de installer heeft weggezet (bewijsmateriaal; niet wissen vóór het onderzoek)
+ls -ld /var/lib/mijn-ruimte-quarantaine/*     # що інсталятор переніс у карантин (докази; не видаляти до завершення розслідування)
 ```
 
-`oude_deur_opruimen` verplaatst `/etc/sudoers.d/mijn-ruimte-mcp`, `/usr/local/sbin/mijn-ruimte-mcp-doen`, `/usr/local/sbin/mijn-ruimte-povnyj-arkhiv`,
-de drop-in `/etc/systemd/system/mijn-ruimte-mcp.service.d/write.conf` (`NoNewPrivileges=no`), `/srv/mijn-ruimte/mcp-staging` en de oude
-app-schrijfbare schakelaars naar `/var/lib/mijn-ruimte-quarantaine/<tijd>/` (root 0700) en doet `daemon-reload`.
+`oude_deur_opruimen` переміщує `/etc/sudoers.d/mijn-ruimte-mcp`, `/usr/local/sbin/mijn-ruimte-mcp-doen`, `/usr/local/sbin/mijn-ruimte-povnyj-arkhiv`,
+drop-in `/etc/systemd/system/mijn-ruimte-mcp.service.d/write.conf` (`NoNewPrivileges=no`), `/srv/mijn-ruimte/mcp-staging` та старі
+доступні для запису застосунком перемикачі до `/var/lib/mijn-ruimte-quarantaine/<tijd>/` (root 0700) і виконує `daemon-reload`.
 
-## 4. Methode 1: GitOps-pull (ondertekende tags uit GitHub)
+## 4. Метод 1: GitOps-pull (підписані теги з GitHub)
 
-### 4.1 Alleen-lezen toegang tot GitHub (nooit je persoonlijke token)
+### 4.1 Доступ до GitHub лише для читання (ніколи не використовуйте особистий токен)
 
-**Voorkeur: deploy key** (alleen deze repository, alleen lezen):
+**Рекомендовано: deploy ключ** (лише цей репозиторій, лише читання):
 
 ```bash
-# op de VM, als root; zonder wachtwoordzin (de timer draait onbeheerd), maar alleen leesrecht op één repository
+# на ВМ, як root; без парольної фрази (таймер працює автономно), але лише з правом читання одного репозиторію
 ssh-keygen -t ed25519 -N '' -C 'gitops@mijn-ruimte (alleen lezen)' -f /etc/mijn-ruimte/gitops-deploykey
 chown root:root /etc/mijn-ruimte/gitops-deploykey*; chmod 0600 /etc/mijn-ruimte/gitops-deploykey; chmod 0644 /etc/mijn-ruimte/gitops-deploykey.pub
 cat /etc/mijn-ruimte/gitops-deploykey.pub
 ```
 
-GitHub → repository **Tarasevych/hub** → *Settings* → *Deploy keys* → *Add deploy key*: titel `mijn-ruimte VM (alleen lezen)`, plak de `.pub`,
-laat **"Allow write access" UIT**. Daarna:
+GitHub → репозиторій **Tarasevych/hub** → *Settings* → *Deploy ключі* → *Add deploy ключ*: назва `mijn-ruimte VM (alleen lezen)`, вставте `.pub`,
+залиште **"Allow запис access" ВИМКНЕНИМ**. Після цього:
 
 ```bash
 cat > /etc/mijn-ruimte/gitops.env <<'EOT'
@@ -143,46 +143,46 @@ EOT
 chown root:root /etc/mijn-ruimte/gitops.env && chmod 0600 /etc/mijn-ruimte/gitops.env
 ```
 
-`/etc/mijn-ruimte/gitops-known_hosts` (hostsleutels van github.com) zet de installer neer; vingerafdruk Ed25519
-`SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU` (zie GitHub-documentatie "GitHub's SSH key fingerprints").
+`/etc/mijn-ruimte/gitops-known_hosts` (ключі хостів github.com) встановлює інсталятор; відбиток Ed25519
+`SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU` (див. документацію GitHub «GitHub's SSH ключ fingerprints»).
 
-**Alternatief: fine-grained token** (GitHub → *Settings* → *Developer settings* → *Fine-grained tokens*): *Resource owner* Tarasevych,
-*Repository access* → **Only select repositories** → `hub`, *Permissions* → *Repository* → **Contents: Read-only** (Metadata: read gaat vanzelf),
-vervaldatum ≤ 1 jaar. In `gitops.env`:
+**Альтернатива: fine-grained token** (GitHub → *Settings* → *Developer settings* → *Fine-grained tokens*): *Resource власник* Tarasevych,
+*Repository access* → **Лише select repositories** → `hub`, *Permissions* → *Repository* → **Contents: Read-only** (Metadata: read встановлюється автоматично),
+термін дії ≤ 1 рік. У `gitops.env`:
 
 ```
 GITOPS_REPO=https://github.com/Tarasevych/hub.git
 GITOPS_TOKEN=github_pat_…
 ```
 
-Het token gaat via de omgeving naar git (niet zichtbaar in `ps`), alleen naar github.com. `gitops.env` wordt niet als shell uitgevoerd: alleen
-de drie sleutels hierboven worden gelezen; root 0600 is verplicht, anders weigert het script.
+Токен передається в git через оточення (не видимий у `ps`), лише до github.com. `gitops.env` не виконується як shell: читаються лише
+три ключі вище; права root 0600 обов'язкові, інакше скрипт відмовляє.
 
-### 4.2 Aanzetten en controleren
+### 4.2 Увімкнення та перевірка
 
 ```bash
-# in /etc/mijn-ruimte/mcp-rechten.json: "gitops": true   (zie §7)
+# у /etc/mijn-ruimte/mcp-rechten.json: "gitops": true   (див. §7)
 systemctl enable --now mijn-ruimte-gitops.timer
-systemctl start mijn-ruimte-gitops.service            # meteen één ronde
+systemctl start mijn-ruimte-gitops.service            # одразу один цикл
 journalctl -u mijn-ruimte-gitops -n 30
 cat /var/lib/mijn-ruimte-uitrol-status/gitops.json
 ```
 
-Bij het eerste installeren schrijft de installer `/var/lib/mijn-ruimte/gitops/laatste-tag` = `uitrol-<nu in UTC>`: alleen tags die daarna
-gemaakt zijn, komen in aanmerking.
+Під час першого встановлення інсталятор записує `/var/lib/mijn-ruimte/gitops/laatste-tag` = `uitrol-<зараз в UTC>`: розглядаються лише теги,
+створені після цього моменту.
 
-### 4.3 Een tag ondertekenen en pushen (PC)
+### 4.3 Підписання та пуш тегу (ПК)
 
 ```powershell
-cd C:\pad\naar\repo      # schone checkout op de commit die je wilt uitrollen
-powershell -ExecutionPolicy Bypass -File scripts\onderteken-uitrol.ps1            # of: -Ref <commit>  -ZonderPush
+cd C:\pad\naar\repo      # чистий checkout на коміті, який ви хочете розгорнути
+powershell -ExecutionPolicy Bypass -File scripts\onderteken-uitrol.ps1            # або: -Ref <commit>  -ZonderPush
 ```
 
-Het script: controleert de werkmap, laat `ssh-add -t 600` om de wachtwoordzin vragen (het script ziet of bewaart hem nooit), maakt
-`git tag -s uitrol-JJJJMMDD-UUMM` (UTC) met `gpg.format=ssh`, controleert de handtekening zelf met `verify-tag`, pusht de tag met
-je eigen git-toegang op de pc en haalt de sleutel weer uit de agent.
+Скрипт: перевіряє робочу теку, просить `ssh-add -t 600` запитати парольний вираз (скрипт ніколи його не бачить і не зберігає), створює
+`git tag -s uitrol-JJJJMMDD-UUMM` (UTC) з `gpg.format=ssh`, сам перевіряє підпис через `verify-tag`, пушить тег із
+вашим власним git-доступом на ПК і видаляє ключ з агента.
 
-Handmatig kan ook:
+Можна також вручну:
 
 ```powershell
 ssh-add -t 600 T:\mijn-ruimte\geheim\uitrol-sleutel
@@ -191,43 +191,43 @@ git -c gpg.format=ssh -c user.signingkey=T:\mijn-ruimte\geheim\uitrol-sleutel.pu
 git push origin "refs/tags/${tag}:refs/tags/${tag}"
 ```
 
-### 4.4 Wat de server controleert
+### 4.4 Що перевіряє сервер
 
-1. alleen refs `refs/tags/uitrol-*` worden opgehaald (kale spiegel in `/var/lib/mijn-ruimte/gitops`, hooks uit, `transfer.fsckObjects`,
-   alleen https/ssh);
-2. kandidaten: `uitrol-JJJJMMDD-UUMM` **nieuwer** dan `laatste-tag`, nieuwste eerst;
-3. geannoteerde tag; de naam **in** het ondertekende tag-object moet gelijk zijn aan de ref (een oude ondertekende tag kan niet onder een nieuwe
-   naam worden teruggezet); doel is een commit;
-4. `git -c gpg.format=ssh -c gpg.ssh.allowedSignersFile=/etc/mijn-ruimte/uitrol-ondertekenaars verify-tag` moet
-   `Good "git" signature for uitrol@mijn-ruimte` geven;
-5. `git archive` van die commit → uitpakken in een root-map met het tarfile-filter `data`, alleen gewone bestanden en mappen;
-6. `installeer-app.sh installeren` uit die bron. Mislukt dat, dan blijft de huidige release actief en wordt die tag niet opnieuw geprobeerd.
+1. завантажуються лише посилання `refs/tags/uitrol-*` (голе дзеркало у `/var/lib/mijn-ruimte/gitops`, хуки вимкнено, `transfer.fsckObjects`,
+   лише https/ssh);
+2. кандидати: `uitrol-JJJJMMDD-UUMM`, **новіші** за `laatste-tag`, спочатку найновіші;
+3. анотований тег; назва **всередині** підписаного об'єкта тегу має збігатися з ref (старий підписаний тег не можна повторно використати під новою
+   назвою); ціллю має бути коміт;
+4. `git -c gpg.format=ssh -c gpg.ssh.allowedSignersFile=/etc/mijn-ruimte/uitrol-ondertekenaars verify-tag` має видати
+   `Good "git" signature for uitrol@mijn-ruimte`;
+5. `git archive` цього коміту → розпакування в root-теку з фільтром tarfile `data`, лише звичайні файли та теки;
+6. `installeer-app.sh installeren` із цього джерела. Якщо встановлення завершується помилкою, поточний реліз залишається активним, а цей тег повторно не пробується.
 
-Codes (`gitops.json` en audit): `UIT`, `GEEN_SLEUTEL`, `ENV_RECHTEN`, `REPO_ONGELDIG`, `TOKEN_ONGELDIG`, `SLEUTEL_RECHTEN`, `KNOWN_HOSTS`,
+Коди (`gitops.json` та аудит): `UIT`, `GEEN_SLEUTEL`, `ENV_RECHTEN`, `REPO_ONGELDIG`, `TOKEN_ONGELDIG`, `SLEUTEL_RECHTEN`, `KNOWN_HOSTS`,
 `OPHALEN_MISLUKT`, `NIET_ONDERTEKEND`, `NAAM_VERSCHILT`, `GEEN_COMMIT`, `HANDTEKENING_ONGELDIG`, `INHOUD_ONVEILIG`, `TE_GROOT`,
-`GEEN_INSTALLER`, `INSTALLATIE_MISLUKT`, `GEEN_NIEUWE`, `OK`. Een geweigerde tag wordt één keer gemeld en daarna genegeerd.
+`GEEN_INSTALLER`, `INSTALLATIE_MISLUKT`, `GEEN_NIEUWE`, `OK`. Відхилений тег фіксується один раз і надалі ігнорується.
 
-## 5. Methode 2: ondertekend pakket (Grok of SSH)
+## 5. Метод 2: підписаний пакет (Grok або SSH)
 
-### 5.1 Pakket maken (PC)
+### 5.1 Створення пакета (ПК)
 
 ```powershell
 cd C:\pad\naar\repo
 powershell -ExecutionPolicy Bypass -File deploy\uitrol\maak-uitrolpakket.ps1 -Uit $env:USERPROFILE\Desktop
-#   standaard -Sleutel T:\mijn-ruimte\geheim\uitrol-sleutel; vraagt de wachtwoordzin en controleert de handtekening zelf
+#   типово -Sleutel T:\mijn-ruimte\geheim\uitrol-sleutel; запитує парольний вираз і сам перевіряє підпис
 ```
 
-Resultaat: `mijn-ruimte-<versie>.tar.gz`, `.tar.gz.sig`, `mijn-ruimte-<versie>.txt` (versie, bytes, sha256).
+Результат: `mijn-ruimte-<versie>.tar.gz`, `.tar.gz.sig`, `mijn-ruimte-<versie>.txt` (версія, байти, sha256).
 
-### 5.2 Uitrollen
+### 5.2 Розгортання
 
-**A. Via Grok (mcp.tarasevych.com)**, alleen als `"uitrol": true`:
-1. Geef Grok het pakket, de `.sig`-tekst en de waarden uit `.txt`.
-2. Grok roept `rollout_upload_begin {version, bytes, sha256}`, dan `rollout_upload_chunk` (stukken ≤ 512 KiB) en `rollout_upload_finish {version, signature}`.
-3. `rollout_status` toont: `bezig` → `klaar` of `geweigerd`/`mislukt` met een code.
-4. Zet daarna `"uitrol": false` terug (aanbevolen).
+**A. Через Grok (mcp.tarasevych.com)**, лише якщо `"uitrol": true`:
+1. Надайте Grok пакет, текст `.sig` та значення з `.txt`.
+2. Grok викликає `rollout_upload_begin {version, bytes, sha256}`, потім `rollout_upload_chunk` (фрагменти ≤ 512 КіБ) та `rollout_upload_finish {version, signature}`.
+3. `rollout_status` показує: `bezig` → `klaar` або `geweigerd`/`mislukt` із кодом.
+4. Після цього поверніть `"uitrol": false` (рекомендовано).
 
-**B. Via SSH (zonder Grok)**:
+**B. Через SSH (без Grok)**:
 ```bash
 scp mijn-ruimte-<versie>.tar.gz{,.sig} beheer@<VM-IP>:/tmp/
 ssh beheer@<VM-IP>
@@ -237,42 +237,42 @@ journalctl -fu mijn-ruimte-uitrol.service
 cat /var/lib/mijn-ruimte-uitrol-status/status.json
 ```
 
-Statuscodes: `SIG_ONTBREEKT`, `HANDTEKENING_ONGELDIG`, `GEEN_SLEUTEL`, `INHOUD_ONVEILIG`, `VERSIE_VERSCHILT`, `NIET_NIEUWER`,
-`TE_GROOT`, `GEEN_INSTALLER`, `INSTALLATIE_MISLUKT`. Een geweigerd pakket wordt uit de inbox verwijderd en nooit uitgevoerd.
+Коди статусу: `SIG_ONTBREEKT`, `HANDTEKENING_ONGELDIG`, `GEEN_SLEUTEL`, `INHOUD_ONVEILIG`, `VERSIE_VERSCHILT`, `NIET_NIEUWER`,
+`TE_GROOT`, `GEEN_INSTALLER`, `INSTALLATIE_MISLUKT`. Відхилений пакет видаляється з inbox і ніколи не виконується.
 
-## 6. Methode 3: gepantserde opdracht (polkit + `mijn-ruimte-opdracht@.service`)
+## 6. Метод 3: броньована команда (polkit + `mijn-ruimte-opdracht@.service`)
 
-| Werkwoord | Wat root doet | Standaard | Op de site |
+| Дієслово | Що робить root | Типово | На сайті |
 |---|---|---|---|
-| `status` | actieve/vorige release, stand van de diensten, laatste uitkomst van methode 1 en 2 | aan | eigenaar (alleen lezen) |
-| `releases` | lijst van releases met commit | aan | eigenaar (alleen lezen) |
-| `backup` | `systemctl start mijn-ruimte-backup.service` (draait als mijnruimte) | aan | eigenaar |
-| `uitrol-nu` | `systemctl start mijn-ruimte-gitops.service` en `mijn-ruimte-uitrol.service` (installeren alleen ondertekende code) | aan | eigenaar + **step-up** |
-| `terugdraaien` | `/usr/local/sbin/mijn-ruimte-installeer terugdraaien` (vorige release), hooguit 1× per 10 min | **uit** | eigenaar + **step-up** + bevestiging |
+| `status` | активний/попередній реліз, стан служб, останній результат методів 1 і 2 | увімк. | власник (лише читання) |
+| `releases` | список релізів із комітом | увімк. | власник (лише читання) |
+| `backup` | `systemctl start mijn-ruimte-backup.service` (працює як mijnruimte) | увімк. | власник |
+| `uitrol-nu` | `systemctl start mijn-ruimte-gitops.service` та `mijn-ruimte-uitrol.service` (встановлюють лише підписаний код) | увімк. | власник + **step-up** |
+| `terugdraaien` | `/usr/local/sbin/mijn-ruimte-installeer terugdraaien` (попередній реліз), не частіше 1× на 10 хв | **вимк.** | власник + **step-up** + підтвердження |
 
-- Het script (`/usr/local/sbin/mijn-ruimte-opdracht`, root 0755) neemt precies één argument uit deze lijst, wist de hele omgeving, leest geen
-  stdin en leest geen enkel bestand of map die de app kan schrijven (geen uploads, geen inbox, geen staging; een release die nog gebouwd wordt
-  en dus van `mijnruimte` is, wordt overgeslagen). Uitkomst: `/var/lib/mijn-ruimte-uitrol-status/opdracht-<werkwoord>.json`.
-- `terugdraaien` voert nooit iets uit `/srv/mijn-ruimte/…/deploy` uit, maar de root-kopie van de installer die bij het installeren
-  (uit de gecontroleerde bron) naar `/usr/local/sbin/mijn-ruimte-installeer` is gezet. Stempel: `/var/lib/mijn-ruimte/opdracht/terugdraaien.stempel`.
-- De polkit-regel `/etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules` geeft `mijnruimte` alleen `start` op precies die vijf units; elke
-  andere systemd-actie van `mijnruimte` (stop, restart, enable, daemon-reload, set-environment, andere units) krijgt uitdrukkelijk **nee**.
-- Op de site: MCP → kaart **Serverbeheer**. Voor agents: hulpmiddelen `server_status` en `server_releases` (alleen lezen); schrijvende opdrachten
-  gaan nooit via een agenttoken, alleen via de site met step-up.
+- Скрипт (`/usr/local/sbin/mijn-ruimte-opdracht`, root 0755) приймає рівно один аргумент із цього списку, очищує все оточення, не читає
+  stdin і не читає жодного файлу чи теки, куди може писати застосунок (жодних uploads, inbox чи staging; реліз, який ще збирається
+  і тому належить `mijnruimte`, пропускається). Результат: `/var/lib/mijn-ruimte-uitrol-status/opdracht-<werkwoord>.json`.
+- `terugdraaien` ніколи не виконує нічого з `/srv/mijn-ruimte/…/deploy`, а використовує root-копію інсталятора, яка під час встановлення
+  (із перевіреного джерела) була покладена в `/usr/local/sbin/mijn-ruimte-installeer`. Мітка часу: `/var/lib/mijn-ruimte/opdracht/terugdraaien.stempel`.
+- Правило polkit `/etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules` надає `mijnruimte` лише право `start` рівно на ці п'ять юнітів; будь-яка
+  інша дія systemd від `mijnruimte` (stop, restart, enable, daemon-reload, set-environment, інші юніти) явно отримує **відмову**.
+- На сайті: MCP → картка **Serverbeheer** (Керування сервером). Для агентів: інструменти `server_status` і `server_releases` (лише читання); команди запису
+  ніколи не проходять через токен агента, лише через сайт зі step-up.
 
-Controleren (als root, onder dezelfde beperkingen als de app):
+Перевірка (від імені root, з тими самими обмеженнями, що й у застосунку):
 
 ```bash
 systemd-run --uid=mijnruimte --gid=mijnruimte -p NoNewPrivileges=yes --pipe --wait \
   systemctl start --no-ask-password mijn-ruimte-opdracht@status.service && cat /var/lib/mijn-ruimte-uitrol-status/opdracht-status.json
 systemd-run --uid=mijnruimte --gid=mijnruimte -p NoNewPrivileges=yes --pipe --wait \
-  systemctl restart --no-ask-password ssh.service          # moet "Access denied" geven
+  systemctl restart --no-ask-password ssh.service          # має видати "Access denied"
 journalctl -u 'mijn-ruimte-opdracht@*' -n 20
 ```
 
-## 7. Schakelaars (aan/uit)
+## 7. Перемикачі (увімк./вимк.)
 
-Alles in `/etc/mijn-ruimte/mcp-rechten.json` (root:mijnruimte 0640). Volledig voorbeeld met de standaardwaarden:
+Усе в `/etc/mijn-ruimte/mcp-rechten.json` (root:mijnruimte 0640). Повний приклад зі значеннями типово:
 
 ```json
 {
@@ -287,155 +287,155 @@ Alles in `/etc/mijn-ruimte/mcp-rechten.json` (root:mijnruimte 0640). Volledig vo
 }
 ```
 
-`terugdraaien-passkey`, `externe-hosts-passkey` en `externeMcpHosts` horen bij de **besluiten van de eigenaar met passkey** (§15):
-ontbreekt een `…-passkey`-sleutel, dan is dat kanaal OPEN (de passkey-handtekening is de poort); `false` sluit het. `externeMcpHosts`
-schrijft root zelf op zo'n besluit; met de hand bewerken mag ook.
+`terugdraaien-passkey`, `externe-hosts-passkey` та `externeMcpHosts` належать до **рішень власника з passkey** (§15):
+якщо ключ `…-passkey` відсутній, цей канал ВІДКРИТИЙ (підпис passkey є захисним шлюзом); `false` закриває його. `externeMcpHosts`
+root записує сам за таким рішенням; редагувати вручну також дозволено.
 
 ```bash
 nano /etc/mijn-ruimte/mcp-rechten.json && python3 -m json.tool /etc/mijn-ruimte/mcp-rechten.json >/dev/null && echo geldig
 chown root:mijnruimte /etc/mijn-ruimte/mcp-rechten.json && chmod 0640 /etc/mijn-ruimte/mcp-rechten.json
-date +%s%3N > /etc/mijn-ruimte/mcp-intrekken      # alle sessies van de MCP-deur in één keer intrekken
+date +%s%3N > /etc/mijn-ruimte/mcp-intrekken      # відкликати всі сесії MCP-дверей одночасно
 ```
 
-Wijzigingen gelden meteen (de scripts lezen het bestand bij elke start). Is het bestand onleesbaar of niet van root, dan weigert methode 1 en
-staat methode 3 alleen `status` en `releases` toe. Alles uit in één keer: `"uitrol": false, "gitops": false` en alle opdrachten `false`;
-of `systemctl disable --now mijn-ruimte-gitops.timer mijn-ruimte-uitrol.path` en de polkit-regel weghalen.
+Зміни діють миттєво (скрипти читають файл при кожному запуску). Якщо файл неможливо прочитати або він не належить root, метод 1 відмовляє, а
+метод 3 дозволяє лише `status` і `releases`. Вимкнути все одразу: `"uitrol": false, "gitops": false` та всі команди `false`;
+або `systemctl disable --now mijn-ruimte-gitops.timer mijn-ruimte-uitrol.path` і прибрати правило polkit.
 
-## 8. Terugdraaien (rollback)
+## 8. Відкат
 
-1. **Automatisch**: mislukt de gezondheidscontrole na het activeren, dan zet `installeer-app.sh` zelf de vorige release terug (methode 1 en 2).
-   Sinds 22.10.2026 ook als de pagina's **niet renderen** terwijl HTTP 200 is — zie §8a (rendercontrole).
-2. **Via de site met een passkey-besluit** (22.10.2026, §15, standaard AAN): mcp → Панель розгортання → *Відкат до попереднього* →
-   de wizard toont van → naar, u tekent met uw passkey, root controleert de handtekening zelf en voert de terugdraaiing uit (1× per 10 min).
-   De oude directe knop (methode 3, alleen als `"opdracht": {"terugdraaien": true}`) bestaat nog, maar is niet meer nodig.
-3. **Via SSH**:
+1. **Автоматично**: якщо перевірка працездатності після активації не проходить, `installeer-app.sh` сам повертає попередній реліз (методи 1 і 2).
+   З 22.10.2026 також якщо сторінки **не рендеряться**, хоча HTTP повертає 200 — див. §8a (рендер-контроль).
+2. **Через сайт із рішенням passkey** (22.10.2026, §15, типово УВІМКНЕНО): mcp → Панель розгортання → *Відкат до попереднього* →
+   майстер показує з якої на яку версію, ви підписуєте своїм passkey, root сам перевіряє підпис і виконує відкат (1× на 10 хв).
+   Стара пряма кнопка (метод 3, лише якщо `"opdracht": {"terugdraaien": true}`) ще існує, але більше не потрібна.
+3. **Через SSH**:
    ```bash
    ssh beheer@<VM-IP>
-   sudo /usr/local/sbin/mijn-ruimte-installeer terugdraaien              # vorige release
-   sudo /usr/local/sbin/mijn-ruimte-installeer terugdraaien 20261008-193000   # of een genoemde release
+   sudo /usr/local/sbin/mijn-ruimte-installeer terugdraaien              # попередній реліз
+   sudo /usr/local/sbin/mijn-ruimte-installeer terugdraaien 20261008-193000   # або вказаний реліз
    sudo /usr/local/sbin/mijn-ruimte-installeer lijst
    curl -fsS http://127.0.0.1:8080/__gezondheid
    ```
 
-Een oudere versie opnieuw via een tag of pakket uitrollen kan niet (`NIET_NIEUWER` / niet nieuwer dan `laatste-tag`). Wil je oude code als nieuwe
-release, onderteken dan een **nieuwe** tag op die oude commit (`onderteken-uitrol.ps1 -Ref <commit>`).
-Databasemigraties zijn vooruit-only; bij een terugrol blijven nieuwe tabellen bestaan (ze zijn additief).
+Повторно розгорнути старішу версію через тег або пакет не можна (`NIET_NIEUWER` / не новіший за `laatste-tag`). Якщо потрібен старий код як новий
+реліз, підпишіть **новий** тег на тому старому коміті (`onderteken-uitrol.ps1 -Ref <commit>`).
+Міграції бази даних працюють лише вперед; під час відкату нові таблиці залишаються (вони є адитивними).
 
-## 8a. Rendercontrole en automatisch terugdraaien bij een witte pagina (22.10.2026)
+## 8a. Рендер-контроль та автоматичний відкат при білій сторінці (22.10.2026)
 
-**Wat er misging.** Release 20261021-221718 deed `Buffer.from(…)` op moduleniveau in de technische bundel (`shared/merk-eigen.ts`). De browser
-kent geen `Buffer`: de technische bundel gooide «Buffer is not defined» en ELKE admin.*-pagina (ook /updates) bleef wit. `/__gezondheid` was
-groen, «HTTP 200» was groen, de nabewaking en de nazorg zagen niets, «Діагностика» zei «Сторінка «Оновлення» HTTP 200 · Справно» — en de
-beloofde autoterugdraai bleef uit. De eigenaar moest via SSH een pakket installeren.
+**Що пішло не так.** Реліз 20261021-221718 викликав `Buffer.from(…)` на рівні модуля в технічному бандлі (`shared/merk-eigen.ts`). Браузер
+не має `Buffer`: технічний бандл викидав «Buffer is не defined», і КОЖНА сторінка `admin.*` (включно з `/updates`) залишалася білою. `/__gezondheid` був
+зеленим, «HTTP 200» був зеленим, післямоніторинг і нагляд нічого не помітили, «Діагностика» писала «Сторінка «Оновлення» HTTP 200 · Справно» — і
+обіцяний автовідкат не спрацював. Власнику довелося встановлювати пакет через SSH.
 
-**Wat er nu gebeurt bij elke installatie** (`installeer-app.sh installeren` → `activeren`):
+**Що тепер відбувається при кожному встановленні** (`installeer-app.sh installeren` → `activeren`):
 
-1. omzetten → herstart → `/__gezondheid` → nabewaking (zoals vroeger);
-2. **rendercontrole** (`scripts/rook-controle.mjs`, stap «rook 97 %»):
-   - met een browser op de server: een **wegwerpkopie** van de nieuwe release wordt gestart (`dist-server/rook.mjs`) op een eigen,
-     lege database `mijnruimte_rook_<stempel>` (aangemaakt als postgres met de migratierol als eigenaar; migraties van de release erin;
-     daarna `DROP DATABASE`). Daarin wordt een testeigenaar aangemeld (nagebootste Google, alles in het proces) met een actief technisch
-     profiel, en een headless Chromium (alleen loopback, `--host-resolver-rules` → ~NOTFOUND voor al het andere) opent de sleutelpagina's:
-     hub /overzicht /zoek, mail /postvak-in, cloud /overzicht, admin /overzicht /updates /diagnostiek /toegang, mcp /dashboard /agenten,
-     id (aanmelden, zonder cookies), github /overzicht, ai. Daarna wordt **elke bundel** uit `dist/assets/**` in de browser geïmporteerd.
-     Een pagina is **kapot** bij: pageerror/onopgevangen fout, `console.error` met ReferenceError/TypeError, `#root` leeg of alleen een
-     strook (geen main/sectie/formulier), een JS-bundel ≠ 200, tekst «Internal server error». De productiedatabase wordt nooit geraakt:
-     `rook.mjs` weigert elke databasenaam die niet met `mijnruimte_rook_` begint. Alles draait als `mijnruimte` (systemd-run,
-     NoNewPrivileges, ProtectSystem=strict), nooit als root;
-   - zonder browser: alleen de **modulecontrole** in Node — elke bundel wordt als ES-module uitgevoerd in een vm-context zonder
-     `Buffer`/`process`/`require` (met een lichte DOM-schim). Dat vangt precies de fout van 20261021 in het «paginaskelet» (entry,
-     lazy routes van het eerste niveau, tech-chunks en wat die statisch importeren); een lazy bibliotheek dieper (bv. `mdb-reader` bij het
-     openen van een Access-bijlage) is een **waarschuwing**, geen terugdraai. Het logboek en «Діагностика» zeggen dan eerlijk
+1. перемикання → перезапуск → `/__gezondheid` → післямоніторинг (як раніше);
+2. **рендер-контроль** (`scripts/rook-controle.mjs`, крок «rook 97 %»):
+   - з браузером на сервері: запускається **одноразова копія** нового релізу (`dist-server/rook.mjs`) на окремій,
+     порожній базі даних `mijnruimte_rook_<stempel>` (створюється як postgres із роллю міграції як власником; у ній виконуються міграції релізу;
+     після цього `DROP DATABASE`). У ній авторизується тестовий власник (імітований Google, усе всередині процесу) з активним технічним
+     профілем, а headless Chromium (лише loopback, `--host-resolver-rules` → `~NOTFOUND` для всього іншого) відкриває ключові сторінки:
+     hub `/overzicht` `/zoek`, mail `/postvak-in`, cloud `/overzicht`, admin `/overzicht` `/updates` `/diagnostiek` `/toegang`, mcp `/dashboard` `/agenten`,
+     id (вхід, без куків), github `/overzicht`, ai. Після цього **кожен бандл** із `dist/assets/**` імпортується в браузері.
+     Сторінка вважається **зламаною** у разі: `pageerror`/неперехопленої помилки, `console.error` із ReferenceError/TypeError, порожнього `#root` або лише
+     смужки (без main/секції/форми), JS-бандла ≠ 200, тексту «внутрішня помилка сервера». Продуктивна база даних ніколи не зачіпається:
+     `rook.mjs` відхиляє будь-яку назву бази даних, яка не починається з `mijnruimte_rook_`. Усе працює як `mijnruimte` (`systemd-run`,
+     `NoNewPrivileges`, `ProtectSystem=strict`), ніколи як root;
+   - без браузера: лише **модульний контроль** у Node — кожен бандл виконується як ES-модуль у vm-контексті без
+     `Buffer`/`process`/`require` (із легкою імітацією DOM). Це ловить саме помилку 20261021 у «скелеті сторінки» (entry,
+     lazy-маршрути першого рівня, tech-чанки та все, що вони статично імпортують); глибша lazy-бібліотека (напр., `mdb-reader` при
+     відкритті вкладення Access) дає **попередження**, а не відкат. Журнал і «Діагностика» тоді чесно пишуть
      «рендеринг не перевірено (встановіть browser-controle)»;
-3. uitkomst **0** (in orde) → «actief»; **2** (niet uitgevoerd: geen browser, geen postgres-rol, time-out) → ook actief, met een duidelijke
-   waarschuwing — nooit terugdraaien op een infrastructuurfout; **1** (kapot) → **automatisch terug** naar de vorige release, herstart,
-   gezondheidscontrole, gebeurtenis `ROOK_TERUGGEDRAAID` (warn) met de reden («сторінка admin-updates не рендериться (pageerror: Error:
-   Buffer is not defined)») in `gebeurtenissen.jsonl` → zichtbaar op «Оновлення» als «Відкочено автоматично: сторінка не рендериться», en
-   de installatie eindigt met `FOUT: installatie van … mislukt: rendercontrole — …` (bij passkey/handtekening neemt `mijn-ruimte-uitrol.sh`
-   die regel over als oorzaak: stap «рендер-контроль», code INSTALLATIE_MISLUKT).
-4. **Geen lus**: de vorige release wordt na de terugdraai nog **één keer live** nagekeken (publieke pagina's, geen aanmelding) — alleen
-   gemeld (`ROOK_MISLUKT` als ook die kapot is), nooit nog een terugdraai. Zonder vorige release: `ROOK_MISLUKT` (error) met de SSH-aanwijzing.
-5. **Migraties worden niet teruggedraaid** (zoals altijd: het schema blijft op de nieuwste stand; de rook-stand gebruikt een eigen database
-   en laat het productieschema met rust). Houd migraties dus uitbreidend.
+3. результат **0** (усе гаразд) → «активний»; **2** (не виконано: немає браузера, немає ролі postgres, тайм-аут) → також активний, із чітким
+   попередженням — ніколи не відкочувати через інфраструктурну помилку; **1** (зламано) → **автоматичний відкат** до попереднього релізу, перезапуск,
+   перевірка працездатності, подія `ROOK_TERUGGEDRAAID` (warn) із причиною («сторінка admin-updates не рендериться (pageerror: Помилка:
+   Buffer is не defined)») у `gebeurtenissen.jsonl` → видима на «Оновлення» як «Відкочено автоматично: сторінка не рендериться», а
+   встановлення завершується з `FOUT: installatie van … mislukt: rendercontrole — …` (при passkey/підписі `mijn-ruimte-uitrol.sh`
+   переймає цей рядок як причину: крок «рендер-контроль», код `INSTALLATIE_MISLUKT`).
+4. **Без нескінченного циклу**: попередній реліз після відкату перевіряється ще **один раз наживо** (публічні сторінки, без входу) — лише
+   повідомляється (`ROOK_MISLUKT`, якщо він теж зламаний), повторний відкат ніколи не виконується. Якщо попереднього релізу немає: `ROOK_MISLUKT` (помилка) із підказкою SSH.
+5. **Міграції не відкочуються** (як завжди: схема залишається на найновішому стані; димовий стенд використовує власну базу даних
+   і не чіпає продуктивну схему). Тож робіть міграції лише розширювальними (адитивними).
 
-**Nazorg (`mijn-ruimte-nazorg.sh`, root, elke minuut).** Naast de gezondheidscontrole: 120 s na de activering (`NAZORG_ROOK_NA`) één keer
-`mijn-ruimte-installeer rook-controle --live` tegen de draaiende dienst (publieke pagina's + publieke bundels, via een lokale TLS-proxy omdat
-de app-CSP `upgrade-insecure-requests` heeft). Kapot = storing → dezelfde terugdraai als bij drie gezondheidsfouten, gebeurtenis
-`NAZORG_TERUGGEDRAAID` met `reden: rook`. Nooit twee keer (markering `nazorg-rook`).
+**Післянагляд (`mijn-ruimte-nazorg.sh`, root, щохвилини).** Окрім перевірки працездатності: через 120 с після активації (`NAZORG_ROOK_NA`) один раз
+виконується `mijn-ruimte-installeer rook-controle --live` проти робочої служби (публічні сторінки + публічні бандли, через локальний TLS-проксі, оскільки
+CSP застосунку має `upgrade-insecure-requests`). Зламано = збій → такий самий відкат, як і при трьох помилках працездатності, подія
+`NAZORG_TERUGGEDRAAID` із `reden: rook`. Ніколи не виконується двічі (мітка `nazorg-rook`).
 
-**«Діагностика» → «Сторінки й маршрути».** Elke pagina-controle toont naast de HTTP-schil wat de laatste browsercontrole over DIE pagina zei
-(`рендеринг ок у браузері (tijd)` / `рендеринг ЗЛАМАНО: …` → fout ROOK_KAPOT / `лише HTTP, рендеринг не перевірено (встановіть
-browser-controle)`). Het item «Рендеринг сторінок» leest `/var/lib/mijn-ruimte-uitrol-status/rook-controle.json` (ok / kapot / verouderd /
-niet gecontroleerd / nooit). De knop «Перевірити рендеринг» zet een **leeg** verzoekbestand in de goedkeur-inbox; de nazorg-timer ziet dat,
-verwijdert het en voert `rook-controle` uit (stand met testeigenaar; hoogstens 1× per 10 min; nooit terugdraaien). De site start zelf geen browser.
-Een kapotte uitslag blijft apart bewaard als `rook-controle-kapot.json`.
+**«Діагностика» → «Сторінки й маршрути».** Кожна перевірка сторінки поруч з HTTP-статусом показує, що сказала остання браузерна перевірка про ЦЮ сторінку
+(`рендеринг ок у браузері (tijd)` / `рендеринг ЗЛАМАНО: …` → помилка `ROOK_KAPOT` / `лише HTTP, рендеринг не перевірено (встановіть
+browser-controle)`). Пункт «Рендеринг сторінок» читає `/var/lib/mijn-ruimte-uitrol-status/rook-controle.json` (ok / kapot / verouderd /
+niet gecontroleerd / nooit). Кнопка «Перевірити рендеринг» кладе **порожній** файл запиту в inbox схвалення; таймер нагляду бачить його,
+видаляє і запускає `rook-controle` (стенд із тестовим власником; щонайбільше 1× на 10 хв; ніколи не відкочує). Сайт сам браузер не запускає.
+Зламаний результат зберігається окремо як `rook-controle-kapot.json`.
 
-**Browser installeren (eenmalig, BYOS):**
+**Встановлення браузера (одноразово, BYOS):**
 ```bash
-sudo /usr/local/sbin/mijn-ruimte-installeer browser-controle            # apt-bibliotheken + chrome-headless-shell 156.0.8078.47 (SHA-256) in /srv/mijn-ruimte/browser
+sudo /usr/local/sbin/mijn-ruimte-installeer browser-controle            # apt-бібліотеки + chrome-headless-shell 156.0.8078.47 (SHA-256) у /srv/mijn-ruimte/browser
 sudo /usr/local/sbin/mijn-ruimte-installeer browser-controle --controleer
-sudo /usr/local/sbin/mijn-ruimte-installeer rook-controle               # handmatig: stand met testeigenaar (1–2 min), schrijft rook-controle.json
-sudo /usr/local/sbin/mijn-ruimte-installeer rook-controle --live        # alleen publieke pagina's van de draaiende dienst
+sudo /usr/local/sbin/mijn-ruimte-installeer rook-controle               # вручну: стенд із тестовим власником (1–2 хв), записує rook-controle.json
+sudo /usr/local/sbin/mijn-ruimte-installeer rook-controle --live        # лише публічні сторінки робочої служби
 ```
-Geen `curl | bash`, geen snap: één vastgepind archief met bekende hash, root-eigen, leesbaar voor de dienst. Een distributie-Chromium op
-`/usr/bin/chromium` wordt ook gevonden (op Ubuntu is dat een snap die onder systemd niet werkt — gebruik het script).
-Omgeving van de installer: `ROOK_UIT=1` (overslaan), `ROOK_CHROMIUM`, `ROOK_GEHEUGEN_MAX` (1500M), `ROOK_TIJD_SEC` (600), `ROOK_PAGINA_SEC` (20).
+Жодного `curl | bash`, жодного snap: один зафіксований архів із відомим хешем, власність root, доступний для читання службою. Дистрибутивний Chromium у
+`/usr/bin/chromium` також розпізнається (в Ubuntu це snap, який під systemd не працює — використовуйте скрипт).
+Змінні оточення інсталятора: `ROOK_UIT=1` (пропустити), `ROOK_CHROMIUM`, `ROOK_GEHEUGEN_MAX` (1500M), `ROOK_TIJD_SEC` (600), `ROOK_PAGINA_SEC` (20).
 
-Tests: `tests/eenheid/rook-controle-20261022.test.ts` (beoordeling, modulecontrole op een synthetische dist met `Buffer.from` → kapot),
-`uitrol-rook-terugdraai-20261022.test.ts` (bash-logica van activeren/terugdraaien met nagebootste commando's), `uitrol-nazorg-rook-20261022.test.ts`,
+Тести: `tests/eenheid/rook-controle-20261022.test.ts` (оцінювання, модульний контроль на синтетичному dist із `Buffer.from` → зламано),
+`uitrol-rook-terugdraai-20261022.test.ts` (bash-логіка активації/відкату з імітованими командами), `uitrol-nazorg-rook-20261022.test.ts`,
 `beheer-diagnostiek-rook-20261022.test.ts`.
 
-## 9. Waarom polkit en geen sudo (en de noodoplossing)
+## 9. Чому polkit, а не sudo (та аварійне рішення)
 
-`sudo` werkt niet onder `NoNewPrivileges=yes` (setuid wordt genegeerd). Met sudo zou de app-dienst `NoNewPrivileges=no` nodig hebben, en daarmee
-werkt elke setuid-binary weer voor een aanvaller in de app. Met polkit vraagt de app via D-Bus aan systemd (dat al root is) om een vaste unit te
-starten; de app houdt `NoNewPrivileges=yes`, `RestrictSUIDSGID=yes` en een lege `CapabilityBoundingSet`. Ubuntu 24.04 heeft polkitd 124 met
-JavaScript-regels, dus polkit is hier geschikt; de installer installeert **geen** sudo-regel.
+`sudo` не працює за умови `NoNewPrivileges=yes` (setuid ігнорується). Зі sudo службі застосунку знадобилося б `NoNewPrivileges=no`, а з цим
+будь-який setuid-бінарник знову стає доступним для зловмисника в застосунку. З polkit застосунок через D-Bus просить systemd (який вже є root)
+запустити фіксований юніт; застосунок зберігає `NoNewPrivileges=yes`, `RestrictSUIDSGID=yes` і порожній `CapabilityBoundingSet`. Ubuntu 24.04 має polkitd 124 з
+правилами JavaScript, тому polkit тут ідеально підходить; інсталятор **не** встановлює правило sudo.
 
-Alleen als polkit op de VM echt niet bruikbaar is: `deploy/opdracht/mijn-ruimte-opdracht.sudoers` (exact vijf commando's met elk één vast
-werkwoord, `env_reset`, `secure_path`):
+Лише якщо polkit на ВМ справді неможливо використати: `deploy/opdracht/mijn-ruimte-opdracht.sudoers` (рівно п'ять команд, кожна з одним фіксованим
+дієсловом, `env_reset`, `secure_path`):
 
 ```bash
 install -m 0440 -o root -g root deploy/opdracht/mijn-ruimte-opdracht.sudoers /etc/sudoers.d/mijn-ruimte-opdracht && visudo -c
 ```
 
-Daarna roept de app `sudo -n /usr/local/sbin/mijn-ruimte-opdracht <werkwoord>` aan; dat vraagt een drop-in met `NoNewPrivileges=no` voor
-`mijn-ruimte.service` (en de app-code zou daarop moeten worden aangepast). Dit is een bewuste verzwakking; liever polkitd installeren.
+Після цього застосунок викликає `sudo -n /usr/local/sbin/mijn-ruimte-opdracht <werkwoord>`; це вимагає drop-in із `NoNewPrivileges=no` для
+`mijn-ruimte.service` (і код застосунку довелося б під це адаптувати). Це свідоме послаблення захисту; краще встановити `polkitd`.
 
-## 10. Sleutel kwijt of gelekt
+## 10. Ключ втрачено або скомпрометовано
 
-1. Nieuw sleutelpaar maken (§2).
-2. Op de VM `/etc/mijn-ruimte/uitrol-ondertekenaars` vervangen door de nieuwe publieke sleutel (oude regel weg).
-3. `date +%s%3N > /etc/mijn-ruimte/mcp-intrekken`, `"uitrol": false` en `"gitops": false` tot je klaar bent.
-4. Deploy key gelekt: in GitHub (*Settings* → *Deploy keys*) verwijderen, nieuwe maken (§4.1). Token gelekt: intrekken in GitHub.
+1. Створіть нову пару ключів (§2).
+2. На ВМ замініть вміст `/etc/mijn-ruimte/uitrol-ondertekenaars` новим публічним ключем (старий рядок видаліть).
+3. Виконайте `date +%s%3N > /etc/mijn-ruimte/mcp-intrekken`, встановіть `"uitrol": false` та `"gitops": false`, доки все не налаштуєте.
+4. Якщо скомпрометовано deploy ключ: у GitHub (*Settings* → *Deploy ключі*) видаліть його та створіть новий (§4.1). Якщо скомпрометовано токен: відкличте в GitHub.
 
-## 11. Definitieve stappen op de VM (eerste installatie van deze branch)
+## 11. Остаточні кроки на ВМ (перше встановлення цієї гілки)
 
-De eerste keer gaat via SSH (het oude root-pad bestaat dan nog en wordt door deze installatie weggezet):
+Перший раз виконується через SSH (старий root-шлях тоді ще існує і прибирається цим встановленням):
 
 ```bash
 ssh beheer@<VM-IP>
-# 0. vooraf: back-up en polkit
+# 0. попередньо: резервна копія та polkit
 sudo systemctl start mijn-ruimte-backup.service
 pkaction --version || sudo apt install -y polkitd
-# 1. bron op de VM: schone checkout van de gereviewde en daarna gepushte commit (NIET via de app)
+# 1. джерело на ВМ: чистий checkout перевіреного й запушеного коміту (НЕ через застосунок)
 sudo git clone --branch veilig-agenten-0.4 https://github.com/Tarasevych/hub.git /root/hub-veilig && cd /root/hub-veilig && git log -1
-# 2. ondertekenaarsbestand (§3), daarna installeren
+# 2. файл підписантів (§3), після цього встановлення
 sudo bash deploy/installeer-app.sh installeren /root/hub-veilig
-# 3. controleren dat het oude root-pad weg is (§3) en dat de nieuwe units er zijn
+# 3. перевірити, що старий root-шлях прибрано (§3) і що нові юніти на місці
 systemctl list-unit-files 'mijn-ruimte-*' | grep -E 'gitops|opdracht|uitrol'
 ls -l /etc/polkit-1/rules.d/50-mijn-ruimte-opdracht.rules /usr/local/sbin/mijn-ruimte-{gitops,opdracht,installeer,uitrol}
-# 4. methode 3 testen (§6), daarna desgewenst GitOps inrichten (§4) en aanzetten (§7)
+# 4. протестувати метод 3 (§6), потім за бажанням налаштувати GitOps (§4) і увімкнути (§7)
 ```
 
-## 12. Tekst voor `T:\mijn-ruimte\geheim\UITLEG-LEESMIJ.txt`
+## 12. Текст для `T:\mijn-ruimte\geheim\UITLEG-LEESMIJ.txt`
 
-Zie `deploy/pc-uitleg/T-geheim-uitrol-sleutel-UITLEG-LEESMIJ.txt` (eerst Oekraïens, daarna Nederlands). Kopieer dat bestand als
-`UITLEG-LEESMIJ.txt` naast de sleutel.
+Див. `deploy/pc-uitleg/T-geheim-uitrol-sleutel-UITLEG-LEESMIJ.txt` (спочатку українською, потім нідерландською). Скопіюйте цей файл як
+`UITLEG-LEESMIJ.txt` поруч із ключем.
 
-## 13. Updates goedkeuren met een passkey op de telefoon (methode 2b)
+## 13. Схвалення оновлень за допомогою passkey на телефоні (метод 2b)
 
-### 13.1 Hoe het werkt
+### 13.1 Як це працює
 
 ```
 Voorbereider (agent tvh_…, MCP-koppeling of account met grant «Кому дозволено», ≤ 30 dagen, intrekbaar)
@@ -452,262 +452,261 @@ mijn-ruimte-goedkeuring.path (root) → mijn-ruimte-uitrol --goedkeuring
   └─ daarna precies dezelfde stappen als methode 2: inhoudscontrole, uitpakken, installeer-app.sh, gezondheid, rollback
 ```
 
-* **Root vertrouwt de app niet.** Alles wat de app schrijft (pakket, `.goedkeuring.json`, aanmeldingen) is invoer. De sha256 komt uit root's
-  eigen kopie, de publieke sleutels uit het root-bestand, de replay-opslag staat in een root-map. Een gecompromitteerde app kan dus geen
-  pakket laten installeren (geen passkey-handtekening over díe sha256) en geen sleutel toevoegen (het root-bestand is alleen-lezen voor de app;
-  een nieuwe sleutel vraagt een assertie van een bestaande sleutel of SSH). Wat ze wél kan: verzoeken weggooien of weigeren (hinder).
-* **Eenmalig en gebonden.** De challenge bevat voorstel-id, versie, sha256, nonce en vervaltijd (≤ 5 min, CHECK in de database). De app
-  verbruikt de challenge atomisch; root registreert de nonce vóór de installatie. Dezelfde assertie werkt nooit twee keer, ook niet na een
-  mislukte installatie.
-* **Alleen de eigenaar.** Goedkeuren: sessie op admin.tarasevych.com + rol owner + OWNER_EMAIL. Passkeys registreert elke gebruiker
-  zelf in Instellingen → «Способи входу» (§13.6, step-up); alleen de eigenaar ziet daar per passkey «Може схвалювати оновлення сервера»
-  (alleen op id./admin.). Grants geven vraagt step-up. Agents (MCP-console `/api/mcp/agent` en de MCP-connector) zien alleen `uitrol_voorstel_begin|stuk|klaar|status|annuleren`, en
-  alleen met een geldige grant; elke naam die op goedkeuren lijkt, wordt geweigerd (`ALLEEN_EIGENAAR_MET_PASSKEY`).
-* **rpId = `tarasevych.com`** (sinds branch `aanmeldmethoden`; daarvoor `admin.tarasevych.com`). Eén passkey werkt zo op
-  id.tarasevych.com («Способи входу») én admin.tarasevych.com («Оновлення»). De app accepteert origins id/admin/hub; **root accepteert alleen
-  `https://admin.tarasevych.com` en `https://id.tarasevych.com`** (hub hoeft nooit iets bij root te bevestigen: kleiner oppervlak). Instelbaar
-  in het root-bestand (`rpId`, `origins`; origins buiten het rpId-domein, met poort of zonder https worden genegeerd). Een passkey is aan
-  zijn rpId gebonden: sleutels van de oude rpId werken niet meer (zie §13.6 voor de overgang).
-* Attestation = `none`: het type authenticator wordt niet gecontroleerd; het vertrouwen komt uit de bevestiging via SSH (eerste sleutel) of
-  een bestaande sleutel. Gesynchroniseerde passkeys (iCloud/Google) geven vaak signCount 0; dat is toegestaan (0/0).
+* **Root не довіряє застосунку.** Усе, що пише застосунок (пакет, `.goedkeuring.json`, заявки), вважається вхідними даними. SHA-256 обчислюється з власної
+  root-копії, публічні ключі беруться з root-файлу, захист від повторів (replay) зберігається в root-теці. Отже, скомпрометований застосунок не може
+  проштовхнути встановлення пакета (немає підпису passkey над цим sha256) і не може додати ключ (root-файл доступний застосунку лише для читання;
+  новий ключ вимагає асерції від наявного ключа або SSH). Що він МОЖЕ зробити: видаляти або відхиляти запити (перешкоджання роботі).
+* **Одноразовість і прив'язка.** Challenge містить id пропозиції, версію, sha256, nonce і час дії (≤ 5 хв, ПЕРЕВІРКА у базі даних). Застосунок
+  споживає challenge атомарно; root реєструє nonce перед встановленням. Та сама асерція ніколи не спрацює двічі, навіть після
+  невдалого встановлення.
+* **Лише власник.** Схвалення: сесія на `admin.tarasevych.com` + роль `owner` + `OWNER_EMAIL`. Passkeys кожен користувач реєструє
+  самостійно в Налаштування → «Способи входу» (§13.6, step-up); лише власник бачить там біля кожного passkey «Може схвалювати оновлення сервера»
+  (лише на `id.`/`admin.`). Надання грантів вимагає step-up. Агенти (MCP-консоль `/api/mcp/agent` і MCP-конектор) бачать лише `uitrol_voorstel_begin|stuk|klaar|status|annuleren`, і
+  лише за наявності дійсного гранту; будь-яка назва, схожа на схвалення, відхиляється (`ALLEEN_EIGENAAR_MET_PASSKEY`).
+* **rpId = `tarasevych.com`** (починаючи з гілки `aanmeldmethoden`; раніше `admin.tarasevych.com`). Завдяки цьому один passkey працює і на
+  `id.tarasevych.com` («Способи входу»), і на `admin.tarasevych.com` («Оновлення»). Застосунок приймає origins `id`/`admin`/`hub`; **root приймає лише
+  `https://admin.tarasevych.com` та `https://id.tarasevych.com`** (hub ніколи не повинен нічого підтверджувати в root: менша поверхня атаки). Налаштовується
+  в root-файлі (`rpId`, `origins`; origins поза доменом rpId, з портом або без https ігноруються). Passkey прив'язаний до
+  свого rpId: ключі від старого rpId більше не працюють (див. §13.6 щодо переходу).
+* Attestation = `none`: тип автентифікатора не перевіряється; довіра ґрунтується на підтвердженні через SSH (перший ключ) або
+  наявним ключем. Синхронізовані passkeys (iCloud/Google) часто повертають `signCount` 0; це дозволено (0/0).
 
-### 13.2 Eenmalig: installeren en de eerste passkey (bootstrap)
+### 13.2 Одноразово: встановлення та перший passkey (bootstrap)
 
 ```bash
 ssh beheer@<VM-IP>
 sudo git clone --branch aanmeldmethoden https://github.com/Tarasevych/hub.git /root/hub-passkey && cd /root/hub-passkey && git log -1
-sudo bash deploy/installeer-app.sh installeren /root/hub-passkey        # migraties 0022-0023, units, hulp, leeg sleutelbestand (rpId tarasevych.com)
+sudo bash deploy/installeer-app.sh installeren /root/hub-passkey        # міграції 0022-0023, юніти, допоміжний скрипт, порожній файл ключів (rpId tarasevych.com)
 systemctl status mijn-ruimte-goedkeuring.path mijn-ruimte-goedkeur-sleutels.path --no-pager
-sudo mijn-ruimte-passkey lijst                                          # rpId tarasevych.com, schakelaar uit, (geen sleutels)
+sudo mijn-ruimte-passkey lijst                                          # rpId tarasevych.com, перемикач вимкнено, (немає ключів)
 ```
 
-Daarna op de **telefoon** (ingelogd als eigenaar): `id.tarasevych.com/methods` = **«Налаштування → Способи входу»** → «Passkeys» → naam
-invullen → «Додати passkey» (step-up: TOTP of opnieuw Google) → passkey maken met vingerafdruk/gezicht. De passkey staat dan als «Лише вхід».
-Vink bij die passkey «Може схвалювати оновлення сервера» aan (step-up): status «Чекає підтвердження сервером», met de **vingerafdruk**
-(`ab12 cd34 …`) en de SSH-opdracht. Op de VM:
+Після цього на **телефоні** (увійшовши як власник): `id.tarasevych.com/methods` = **«Налаштування → Способи входу»** → «Passkeys» → введіть
+назву → «Додати passkey» (step-up: TOTP або повторний вхід через Google) → створіть passkey за допомогою відбитка пальця/обличчя. Passkey з'явиться зі статусом «Лише вхід».
+Позначте біля цього passkey «Може схвалювати оновлення сервера» (посилене підтвердження): статус зміниться на «Чекає підтвердження сервером», з **відбитком**
+(`ab12 cd34 …`) та SSH-командою. На ВМ:
 
 ```bash
-sudo mijn-ruimte-passkey wachtend                    # root rekent de vingerafdruk zelf uit uit de publieke sleutel
-sudo mijn-ruimte-passkey toevoegen ab12cd34ef56…     # ≥ 16 hex-tekens, ZOALS OP DE TELEFOON; alleen bij exact één treffer
+sudo mijn-ruimte-passkey wachtend                    # root сам обчислює відбиток із публічного ключа
+sudo mijn-ruimte-passkey toevoegen ab12cd34ef56…     # ≥ 16 hex-символів, ЯК НА ТЕЛЕФОНІ; лише за наявності рівно одного збігу
 sudo nano /etc/mijn-ruimte/mcp-rechten.json          # "passkey-goedkeuring": true
 ```
 
-Vergelijk de vingerafdruk op de telefoon met die van `wachtend`. **Beperking:** tijdens deze ene stap vertrouw je erop dat de pagina op de
-telefoon echt is (een al gecompromitteerde app zou een eigen sleutel met een eigen vingerafdruk kunnen tonen). Doe de bootstrap dus direct
-na een installatie uit een gereviewde commit, of controleer met `wachtend` dat er precies één aanmelding is met het label dat je net invoerde.
+Порівняйте відбиток на телефоні з тим, що показує `wachtend`. **Обмеження:** під час цього єдиного кроку ви довіряєте тому, що сторінка на
+телефоні справжня (вже скомпрометований застосунок міг би показати власний ключ із власним відбитком). Тому виконуйте bootstrap одразу
+після встановлення з перевіреного коміту або перевірте через `wachtend`, що є рівно одна заявка з міткою, яку ви щойно ввели.
 
-Daarna toont «Способи входу» bij die passkey «Може схвалювати оновлення». Volgende passkeys (tweede telefoon, laptop): «Додати passkey»,
-vinkje «Може схвалювати оновлення сервера», dan «Підтвердити ключем, що вже може схвалювати» — geen SSH meer nodig; root voegt hem toe na
-een assertie van een al bekende sleutel (`mijn-ruimte-goedkeur-sleutels.path`). Advies: minstens twee passkeys met dit recht.
+Після цього «Способи входу» показує біля цього passkey «Може схвалювати оновлення». Наступні passkeys (другий телефон, ноутбук): «Додати passkey»,
+позначка «Може схвалювати оновлення сервера», далі «Підтвердити ключем, що вже може схвалювати» — SSH більше не потрібен; root додає його після
+асерції від уже відомого ключа (`mijn-ruimte-goedkeur-sleutels.path`). Порада: майте щонайменше два passkeys із цим правом.
 
-### 13.3 Voorbereiders toestaan of intrekken
+### 13.3 Дозвіл або відкликання підготовників
 
-Admin → «Оновлення» → «Кому дозволено готувати оновлення»: soort (акаунт / токен агента / MCP-підключення), wie, aantal dagen (1–30),
-«Дозволити» (step-up). «Відкликати» trekt meteen in en breekt lopende uploads af. Alles staat in de audit (`uitrol_voorbereider_*`). Een
-grant vervalt ook als het account geblokkeerd of met pensioen is of als AI voor dat account geblokkeerd is.
+Admin → «Оновлення» → «Кому дозволено готувати оновлення»: тип (акаунт / токен агента / MCP-підключення), хто, кількість днів (1–30),
+«Дозволити» (посилене підтвердження). «Відкликати» миттєво скасовує дозвіл і перериває активні завантаження. Усе записується в аудит (`uitrol_voorbereider_*`). Грант
+також втрачає чинність, якщо акаунт заблоковано, переведено в архів (пенсію) або якщо для цього акаунта заблоковано ШІ.
 
-Voor een agent: pakket maken met `deploy/uitrol/maak-voorstelpakket.sh` (geen sleutel nodig), dan `uitrol_voorstel_begin` met de inhoud
-van `.voorstel.json`, `uitrol_voorstel_stuk` (base64, ≤ 512 KiB per stuk, offset = ontvangen bytes) en `uitrol_voorstel_klaar`.
-Grenzen: 300 MB, 3 open voorstellen per grant, uploads verlopen na 24 uur, wachtende voorstellen na 7 dagen.
+Для агента: створіть пакет за допомогою `deploy/uitrol/maak-voorstelpakket.sh` (ключ не потрібен), потім викличте `uitrol_voorstel_begin` із вмістом
+`.voorstel.json`, `uitrol_voorstel_stuk` (base64, ≤ 512 КіБ на фрагмент, offset = отримані байти) та `uitrol_voorstel_klaar`.
+Ліміти: 300 МБ, 3 відкриті пропозиції на грант, завантаження прострочуються через 24 години, очікувані пропозиції — через 7 днів.
 
-### 13.4 Intrekken en telefoon kwijt
+### 13.4 Відкликання та втрата телефона
 
-* **Recht intrekken (je hebt nog een andere):** «Способи входу» → bij de passkey «Забрати право схвалювати» en bevestigen met een
-  passkey die het recht heeft; root verwerkt het. Pas daarna kan «Видалити» (de app weigert een passkey te verwijderen die root nog vertrouwt).
-* **Telefoon kwijt (en geen andere passkey):** via SSH:
+* **Відкликати право (коли у вас є інший passkey):** «Способи входу» → біля passkey натисніть «Забрати право схвалювати» і підтвердьте
+  іншим passkey, який має це право; root обробить запит. Лише після цього стане доступною кнопка «Видалити» (застосунок відмовляється видаляти passkey, якому root ще довіряє).
+* **Втрачено телефон (і немає іншого passkey):** через SSH:
   ```bash
   sudo mijn-ruimte-passkey lijst
-  sudo mijn-ruimte-passkey verwijderen <≥16 hex-tekens van de vingerafdruk>
-  sudo mijn-ruimte-passkey alles-intrekken             # alles weg; daarna opnieuw §13.2
+  sudo mijn-ruimte-passkey verwijderen <≥16 hex-символів відбитка>
+  sudo mijn-ruimte-passkey alles-intrekken             # видалити всі; після цього повторити §13.2
   ```
-  Goedkeuren is daarna onmogelijk tot er weer een sleutel is; methode 2 (PC-ondertekening) blijft werken.
-* **Alles uit:** `"passkey-goedkeuring": false` in `mcp-rechten.json` (meteen), of
+  Схвалення через passkey після цього неможливе, доки не буде додано новий ключ; метод 2 (підпис на ПК) продовжує працювати.
+* **Вимкнути все:** `"passkey-goedkeuring": false` у `mcp-rechten.json` (миттєво), або
   `systemctl disable --now mijn-ruimte-goedkeuring.path mijn-ruimte-goedkeur-sleutels.path`.
 
-### 13.5 Bestanden
+### 13.5 Файли
 
-| Pad | Eigenaar / modus | Wie schrijft |
+| Шлях | Власник / права | Хто пише |
 |---|---|---|
-| `/etc/mijn-ruimte/goedkeur-passkeys.json` | root:mijnruimte 0640 | alleen root (`mijn-ruimte-passkey`) |
-| `/var/lib/mijn-ruimte/goedkeuring/staat.json` | root 0600 (map 0700) | alleen root (nonces 24 u, tellers) |
-| `/srv/mijn-ruimte/goedkeur-inbox/` | mijnruimte 0750 | de app (onbetrouwbaar voor root) |
-| `/srv/data/uploads/uitrol-voorstellen/` | mijnruimte | de app (uploads van voorbereiders) |
-| `/usr/local/lib/mijn-ruimte/goedkeuring/{webauthn-kern,goedkeur-hulp}.mjs` | root 0644 | installer |
-| `/usr/local/sbin/mijn-ruimte-passkey` | root 0755 | installer |
+| `/etc/mijn-ruimte/goedkeur-passkeys.json` | root:mijnruimte 0640 | лише root (`mijn-ruimte-passkey`) |
+| `/var/lib/mijn-ruimte/goedkeuring/staat.json` | root 0600 (тека 0700) | лише root (nonces 24 год, лічильники) |
+| `/srv/mijn-ruimte/goedkeur-inbox/` | mijnruimte 0750 | застосунок (недовірений для root) |
+| `/srv/data/uploads/uitrol-voorstellen/` | mijnruimte | застосунок (завантаження від підготовників) |
+| `/usr/local/lib/mijn-ruimte/goedkeuring/{webauthn-kern,goedkeur-hulp}.mjs` | root 0644 | інсталятор |
+| `/usr/local/sbin/mijn-ruimte-passkey` | root 0755 | інсталятор |
 | `/var/lib/mijn-ruimte-uitrol-status/{status.json,goedkeur-sleutels.json,gebeurtenissen.jsonl}` | root:mijnruimte 0640 | root |
 
-Database (migratie 0023, RLS per gebruiker): `app.passkeys` (publieke sleutel, naam, AAGUID, BE/BS, teller, laatst gebruikt) en
-`app.passkey_uitdagingen` (≤ 5 min, eenmalig, per gebruiker én sessie). Deze tabellen bepalen **niet** wie mag goedkeuren; dat doet alleen
-het root-bestand.
+База даних (міграція 0023, RLS на користувача): `app.passkeys` (публічний ключ, назва, AAGUID, BE/BS, лічильник, останнє використання) та
+`app.passkey_uitdagingen` (≤ 5 хв, одноразові, на користувача ТА сесію). Ці таблиці **не** визначають, хто може схвалювати оновлення; це визначає лише
+root-файл.
 
-Uitleg voor op de PC (geen geheimen): `deploy/pc-uitleg/passkey-goedkeuring-UITLEG-LEESMIJ.txt`.
+Пояснення для ПК (без секретів): `deploy/pc-uitleg/passkey-goedkeuring-UITLEG-LEESMIJ.txt`.
 
-### 13.6 «Способи входу» / «Aanmeldmethoden» en de overgang naar rpId tarasevych.com
+### 13.6 «Способи входу» / «Aanmeldmethoden» і перехід на rpId tarasevych.com
 
-**Pagina.** Ідентичність → «Способи входу» (`id.tarasevych.com/methods`; menu «Налаштування → Способи входу»). Eén pagina zoals bij GitHub:
-e-mail en Google (alleen lezen), passkeys (toevoegen met `residentKey: preferred` + UV verplicht, hernoemen, verwijderen met step-up; per
-passkey aanbieder (AAGUID-hint), «синхронізується» (BE/BS), toegevoegd, laatst gebruikt), tweefactor (TOTP instellen/uitschakelen; geen
-sms) en herstelcodes (status «збережено», nieuwe codes met TOTP-code of een verse passkey-bevestiging, eenmalig getoond). De tabbladen
-«Безпека» en «Відновлення» tonen dezelfde pagina, gescrold naar hun sectie. Admin «Оновлення» toont alleen nog de stand en een link.
+**Сторінка.** Ідентичність → «Способи входу» (`id.tarasevych.com/methods`; меню «Налаштування → Способи входу»). Єдина сторінка, як у GitHub:
+ел. пошта та Google (лише читання), passkeys (додавання з `residentKey: preferred` + обов'язковий UV, перейменування, видалення зі step-up; для кожного
+passkey провайдер (підказка AAGUID), «синхронізується» (BE/BS), коли додано, коли востаннє використано), двофакторна автентифікація (налаштування/вимкнення TOTP; без
+SMS) та коди відновлення (статус «збережено», нові коди з кодом TOTP або свіжим підтвердженням passkey, показуються один раз). Вкладки
+«Безпека» та «Відновлення» відкривають ту саму сторінку, прокручену до відповідної секції. Admin «Оновлення» показує лише поточний стан і посилання.
 
-**Step-up: venster «Підтвердіть доступ» / «Toegang bevestigen».** Elke gevoelige actie die 403 `STEP_UP_REQUIRED` geeft, opent een eigen
-venster (zoals GitHub «Confirm access»), nooit meer `window.prompt/alert/confirm`. Eén taal tegelijk (de taal van de pagina), met
-«Ви ввійшли як <e-mail>» en alleen de manieren die de gebruiker heeft (`POST /api/owner/access/stap-op/methoden`, alleen ja/nee):
-passkey (grote knop), code uit de authenticator-app, herstelcode (`POST /api/owner/access/stap-op` met `methode: 'herstelcode'`:
-eenmalig verbruikt, zelfde lockout als TOTP, melding naar de gebruiker) en altijd «Підтвердити повторним входом через Google»
-(`prompt=login`, `max_age=0`, auth_time verplicht). Wie alleen Google heeft, krijgt meteen de Google-knop met uitleg. De bevestiging
-geldt 5 minuten en alleen voor die sessie. Niet verzwakt: herstelcodes vervangen met TOTP vraagt nog steeds de TOTP-code of een verse
-passkey; TOTP uitschakelen vraagt de TOTP-code of een herstelcode.
+**Step-up: вікно «Підтвердіть доступ» / «Toegang bevestigen».** Будь-яка чутлива дія, яка повертає 403 `STEP_UP_REQUIRED`, відкриває власне
+модальне вікно (як «Confirm access» у GitHub), більше жодних `window.prompt/alert/confirm`. Однією мовою (мовою сторінки), з написом
+«Ви ввійшли як <e-mail>» і лише тими способами, які налаштовані в користувача (`POST /api/owner/access/stap-op/methoden`, лише так/ні):
+passkey (велика кнопка), код із застосунку-автентифікатора, код відновлення (`POST /api/owner/access/stap-op` із `methode: 'herstelcode'`:
+одноразове використання, таке саме блокування перебору, як і для TOTP, сповіщення користувачу) і завжди «Підтвердити повторним входом через Google»
+(`prompt=login`, `max_age=0`, обов'язковий `auth_time`). Хто має лише Google, одразу бачить кнопку Google з поясненням. Підтвердження
+діє 5 хвилин і лише для цієї сесії. Без послаблення безпеки: заміна кодів відновлення при увімкненому TOTP, як і раніше, вимагає коду TOTP або свіжого
+passkey; вимкнення TOTP вимагає коду TOTP або коду відновлення.
 
-**Hervatten na Google.** Vóór het doorsturen bewaart de pagina in `sessionStorage` alleen de actie (bv. `passkey-toevoegen` met de
-gekozen naam, `herstelcodes-maken`), nooit codes of wachtwoorden; 10 minuten geldig, alleen op hetzelfde pad. Een step-up vanaf
-`id.tarasevych.com` komt terug op dezelfde pagina (vroeger: hub); de server controleert dat het dezelfde origin is. Na terugkeer voert
-de pagina de actie zelf opnieuw uit. Andere acties: korte melding «Доступ підтверджено — повторіть дію».
+**Відновлення дії після Google.** Перед перенаправленням сторінка зберігає в `sessionStorage` лише дію (напр., `passkey-toevoegen` з
+обраною назвою, `herstelcodes-maken`), ніколи не коди чи паролі; дійсне 10 хвилин, лише на тому самому шляху. Step-up із
+`id.tarasevych.com` повертає на ту саму сторінку (раніше — на hub); сервер перевіряє, що це той самий origin. Після повернення
+сторінка сама повторно виконує дію. Інші дії: коротке повідомлення «Доступ підтверджено — повторіть дію».
 
-**Passkeys op de telefoon (QR / hybrid).** Registratie zonder `authenticatorAttachment`, `residentKey: preferred`,
-`hints: ['client-device','hybrid']`; bij bevestigen krijgt elke sleutel zijn opgeslagen transports plus `hybrid`, zodat Windows/Chrome
-«Використовувати телефон або планшет» met een QR-code toont (Bluetooth aan). Per passkey: soort (wachtwoordbeheerder, telefoon,
-beveiligingssleutel, apparaat), «Синхронізовано» (BE/BS), toegevoegd, laatst gebruikt. De kern (ook root) leest BE/BS alleen als
-informatie; UP en UV blijven verplicht, teller 0 → 0 (gesynchroniseerde passkeys) is geldig.
+**Passkeys на телефоні (QR / hybrid).** Реєстрація без `authenticatorAttachment`, `residentKey: preferred`,
+`hints: ['client-device','hybrid']`; під час підтвердження кожен ключ отримує свої збережені транспорти плюс `hybrid`, щоб Windows/Chrome
+показував «Використовувати телефон або планшет» із QR-кодом (Bluetooth має бути увімкнений). Для кожного passkey: тип (менеджер паролів, телефон,
+ключ безпеки, пристрій), «Синхронізовано» (BE/BS), коли додано, коли востаннє використано. Ядро (включно з root) читає BE/BS лише як
+інформацію; UP і UV залишаються обов'язковими, лічильник 0 → 0 (синхронізовані passkeys) є дійсним.
 
-**Inloggen met alleen een passkey: (nog) niet.** Bewust: de sessie-opbouw (tabbladen, overdracht, login-CSRF-binding) is complex en niet op
-echte toestellen te testen, en minder vaak een passkey aanraken verkleint de kans dat een gekaapte pagina een goedkeur-challenge in een
-gewone aanmelding verstopt. Passkeys dienen nu voor bevestigen en voor updates goedkeuren; Google blijft de aanmelding.
+**Вхід лише за допомогою passkey: (поки що) ні.** Свідоме рішення: побудова сесії (вкладки, передача стану, прив'язка login-CSRF) є складною і не може бути
+протестована на реальних пристроях автоматично, а рідше використання passkey зменшує ризик того, що захоплена сторінка підмінить запит схвалення (goedkeur-challenge)
+у звичайному вікні входу. Зараз passkeys слугують для підтвердження дії (посилене підтвердження) та схвалення оновлень; Google залишається способом входу.
 
-**Overgang op de VM (eenmalig, als root):**
+**Перехід на ВМ (одноразово, як root):**
 ```bash
-sudo mijn-ruimte-passkey lijst          # staat er nog rpId admin.tarasevych.com?
-sudo mijn-ruimte-passkey rp-bijwerken   # leeg bestand → rpId tarasevych.com + origins admin/id (de installer doet dit ook)
+sudo mijn-ruimte-passkey lijst          # чи ще вказано rpId admin.tarasevych.com?
+sudo mijn-ruimte-passkey rp-bijwerken   # порожній файл → rpId tarasevych.com + origins admin/id (інсталятор також це робить)
 ```
-`rp-bijwerken` weigert (exit 1) als er al sleutels voor de oude rpId in staan: die werken met de nieuwe pagina niet meer. Dan eerst
-`sudo mijn-ruimte-passkey alles-intrekken` (of `verwijderen <vingerafdruk>` per sleutel), daarna `rp-bijwerken`, en §13.2 opnieuw vanaf
-«Способи входу». Tot dan toont de pagina bij de eigenaar een waarschuwing dat root nog op de oude rpId staat.
+`rp-bijwerken` відмовляє (exit 1), якщо у файлі вже є ключі для старого rpId: з новою сторінкою вони більше не працюватимуть. У такому разі спочатку виконайте
+`sudo mijn-ruimte-passkey alles-intrekken` (або `verwijderen <відбиток>` для кожного ключа), потім `rp-bijwerken`, і повторіть §13.2 зі сторінки
+«Способи входу». До того часу сторінка показує власнику попередження, що root ще налаштований на старий rpId.
 
 
+### 13.7 «Додати passkey» → «Продовжити» нічого не робило (реліз 20261009-052551) та e2e-тест
 
-### 13.7 «Додати passkey» → «Продовжити» deed niets (release 20261009-052551) en de e2e-test
+**Причина.** Після натискання «Продовжити» сторінка завантажує опції реєстрації та викликає `navigator.credentials.create()`. Якщо
+step-up ще був дійсним (свіжий вхід через Google < 5 хв, напр., одразу після розгортання), то вікно
+«Підтвердіть доступ» справедливо не з'являлося, і сторінка чекала на вікно passkey від браузера/Windows. Якщо це вікно не з'являлося (або зависало;
+опції реєстрації містили `hints: ['client-device','hybrid']`), сторінка залишалася чекати на цей проміс без жодного повідомлення, без кнопки
+«Скасувати» та без ліміту часу: кнопка була `disabled`, а в темній темі (світлий
+`--boot-accent` `#8dbab7` із білим текстом) вона вже виглядала блідою/вимкненою. До того ж будь-яка помилка завантаження самого вікна
+(чанк після нового релізу, помилка рендеру) тихо перетворювалася на `false`.
 
-**Oorzaak.** Na «Продовжити» haalt de pagina de registratie-opties op en roept `navigator.credentials.create()` aan. Was de
-step-up nog geldig (verse Google-aanmelding < 5 min, bv. direct na de uitrol), dan verschijnt er terecht geen venster
-«Підтвердіть доступ» en wacht de pagina op het passkey-venster van de browser/Windows. Verscheen dat venster niet (of hing
-het; de registratie-opties droegen `hints: ['client-device','hybrid']`), dan bleef de pagina zonder melding, zonder
-«Скасувати» en zonder tijdslimiet op die belofte wachten: de knop was `disabled` en in het donkere thema (lichte
-`--boot-accent` #8dbab7 met witte tekst) zag hij er al bleek/uitgeschakeld uit. Elke fout in het laden van het venster zelf
-(chunk na een nieuwe release, renderfout) werd bovendien stil `false`.
+**Виправлення.**
+- Під час очікування відображається рядок стану («Готуємо запит…» → «Відкрито вікно passkey браузера або Windows…», через 25 с —
+  підказка) з робочою кнопкою «Скасувати» (`AbortController` → «Додавання passkey скасовано.»). Будь-яка помилка виводиться як повідомлення в
+  секції та в консолі.
+- Якщо вікно «Підтвердіть доступ» не вдається відкрити, `client.ts` повертає помилку `STAP_OP_VENSTER_FOUT` («оновіть сторінку»);
+  помилка рендеру у вікні перехоплюється (помилка boundary) і не проковтується тихо.
+- У параметрах реєстрації більше немає `hints`: браузер показує свій повний вибір (цей пристрій, телефон через QR,
+  ключ безпеки).
+- Акцентні кнопки в темних темах мають темний текст (`--ap-op-accent`).
+- `deploy/installeer-app.sh` тепер збирає проєкт із `NODE_ENV=production` (лише `npm ci` працює в режимі development). До релізу
+  20261009-052551 включно продакшн містив dev-версію React.
 
-**Herstel.**
-- Tijdens het wachten staat er een statusregel («Готуємо запит…» → «Відкрито вікно passkey браузера або Windows…», na 25 s
-  een hint) met een werkende «Скасувати» (AbortController → «Додавання passkey скасовано.»). Elke fout komt als melding in
-  de sectie en in de console.
-- Kan «Підтвердіть доступ» niet openen, dan geeft `client.ts` de fout `STAP_OP_VENSTER_FOUT` («оновіть сторінку»); een
-  renderfout in het venster wordt opgevangen (error boundary) en niet stil geslikt.
-- Geen `hints` meer in de registratie-opties: de browser toont zijn volledige keuze (dit apparaat, telefoon via QR,
-  beveiligingssleutel).
-- Accentknoppen hebben in de donkere thema's donkere tekst (`--ap-op-accent`).
-- `deploy/installeer-app.sh` bouwt nu met `NODE_ENV=production` (alleen `npm ci` draait met development). Tot en met
-  20261009-052551 bevatte productie de ontwikkelversie van React.
+**Компонування.** Passkeys розміщені в одному місці (під «Вхід»), і біля кожного passkey є перемикач власника «Може схвалювати
+оновлення сервера». Під 2FA залишилися лише застосунок-автентифікатор і примітка, що passkeys також зараховуються; коди відновлення
+мають власну секцію. Пояснення та підказка щодо QR винесені в `(?)` поруч із заголовком (`src/InfoTip.tsx`, поповер із
+`role=tooltip`/`aria-describedby`, наведення/фокус/дотик, Esc).
 
-**Indeling.** Passkeys staan op één plek (onder «Вхід»), met per passkey de eigenaarsschakelaar «Може схвалювати
-оновлення сервера». Onder 2FA staan alleen de authenticator-app en een regel dat passkeys ook tellen; de herstelcodes
-hebben een eigen sectie. Uitleg en de QR-hint staan in een (?) naast de titel (`src/InfoTip.tsx`, popover met
-role=tooltip/aria-describedby, hover/focus/tik, Esc).
+**E2E.** `npx vite build && node scripts/e2e-lokaal.mjs` із тим самим оточенням, що й модульні тести, плюс
+playwright-core (`PLAYWRIGHT_CORE`), Chrome (`CHROME`) і тестовий CA у `$HOME/.pki/nssdb` із сертифікатом для
+`*.tarasevych.com` (`E2E_TLS`: `srv.key`/`srv.crt`). Справжній headless Chrome, `--host-resolver-rules` на локальний сервер, віртуальний
+автентифікатор CDP (internal, usb, hybrid/cable), Google імітовано через `page.route`. Скриншоти зберігаються в `E2E_SCREENSHOTS`.
+Тест прибирає створених ним користувачів (унікальний індекс `records_een_eigenaar`).
 
-**E2E.** `npx vite build && node scripts/e2e-lokaal.mjs` met dezelfde omgeving als de eenheidstests, plus
-playwright-core (`PLAYWRIGHT_CORE`), Chrome (`CHROME`) en een test-CA in `$HOME/.pki/nssdb` met een certificaat voor
-`*.tarasevych.com` (`E2E_TLS`: srv.key/srv.crt). Echte Chrome headless, `--host-resolver-rules` naar de lokale server, CDP
-virtual authenticator (internal, usb, hybrid/cable), Google gestubd via `page.route`. Screenshots naar `E2E_SCREENSHOTS`.
-De test ruimt zijn gebruikers op (de unieke index `records_een_eigenaar`).
+### 13.8 Google-step-up: цикл «Підтвердіть доступ» після повернення (реліз 20261009-055320) та коди відновлення
 
-### 13.8 Google-step-up: lus «Підтвердіть доступ» na terugkeer (release 20261009-055320) en herstelcodes
+**Причина циклу.** URL для step-up запитував `prompt=login` + `max_age=0` + запит claims на `auth_time`. Google
+не підтримує `prompt=login` і не примушує повторно вводити пароль: за наявності активної сесії Google він показує лише
+вибір акаунта і повертає `id_token` зі **старим** `auth_time` (або без `auth_time`, якщо «сесія age claims» в
+OAuth-клієнті вимкнено). Сервер зараховував step-up лише за умови `auth_time`, молодшого за 5 хвилин, а інакше
+**тихо** не зберігав його; callback просто повідомляв «вхід виконано». Повернувшись на `/methods`, сторінка відновлювала дію, знову отримувала
+`403 STEP_UP_REQUIRED` і відкривала те саме вікно: нескінченний цикл без жодного повідомлення.
 
-**Oorzaak van de lus.** De step-up-URL vroeg `prompt=login` + `max_age=0` + een claims-verzoek om `auth_time`. Google
-kent `prompt=login` niet en dwingt geen nieuw wachtwoord af: met een bestaande Google-sessie toont het alleen de
-accountkiezer en levert het een id_token met de **oude** `auth_time` (of zonder `auth_time` als «session age claims» in de
-OAuth-client uitstaan). De server telde de step-up alleen bij een `auth_time` jonger dan 5 minuten en sloeg hem anders
-**stil** niet op; de callback meldde gewoon «aangemeld». Terug op `/methods` hervatte de pagina de actie, kreeg weer
-`403 STEP_UP_REQUIRED` en opende hetzelfde venster: eindeloze lus zonder melding.
+**Нове правило (`backend/index.ts` `ownerStapOpAuthTijd`, `backend/stap-op.ts` `googleUitgifteVoorStapOpVers`).**
+Google-step-up зараховується, якщо:
+1. `auth_time` із підписаного `id_token` молодший за 5 хвилин (як раніше; залишається найсильнішою формою), **або**
+2. ідеться про **явну транзакцію step-up** (запущену з модального вікна, `intent: step-up`, лише за наявності
+   активної сесії) ТА:
+   - `id_token` **щойно виданий**: `iat` ≤ 2 хвилин тому, не раніше кліку (початку транзакції, з допуском годинника 60 с),
+     а сама транзакція молодша за 10 хвилин;
+   - **nonce** збігається з nonce, який був створений під час кліку саме для цієї транзакції та збережений на сервері
+     (`takeOAuthMaterial`, одноразовий), разом з одноразовим `state`, PKCE-verifier та кукою прив'язки входу (той самий
+     браузер);
+   - Google-**subject** (`sub`) належить акаунту, який запустив step-up (`account_identities`, інакше `users.sub`);
+   - `email_verified` дорівнює true (`verifyGoogle`/`ensureUser` вже цього вимагають).
 
-**Nieuwe regel (backend/index.ts `ownerStapOpAuthTijd`, backend/stap-op.ts `googleUitgifteVoorStapOpVers`).** Een
-Google-step-up telt als:
-1. `auth_time` uit het ondertekende id_token jonger is dan 5 minuten (zoals voorheen; blijft de sterkste vorm), **of**
-2. het om een **expliciete step-up-transactie** gaat (gestart vanuit het venster, `intent: step-up`, alleen met een
-   levende sessie) én:
-   - het id_token **net is uitgegeven**: `iat` ≤ 2 minuten oud, niet vóór de klik (start van de transactie, 60 s
-     klokspeling) en de transactie zelf < 10 minuten oud;
-   - de **nonce** klopt met de nonce die bij de klik voor déze transactie is gemaakt en server-side bewaard
-     (`takeOAuthMaterial`, eenmalig), samen met de eenmalige `state`, PKCE-verifier en de aanmeld-binding-cookie (zelfde
-     browser);
-   - het Google-**subject** (`sub`) hoort bij het account dat de step-up startte (`account_identities`, anders `users.sub`);
-   - `email_verified` waar is (verifyGoogle/ensureUser eisen dat al).
+Тоді step-up діє 5 хвилин від моменту завершення, лише для цієї сесії (tab-overlay/якір), як і TOTP та passkey.
 
-De step-up geldt dan 5 minuten vanaf het afronden, alleen voor die sessie (tab-overlay/anker), zoals TOTP en passkey.
-
-**Waarom dit verantwoord is.** Google biedt geen manier om opnieuw het wachtwoord af te dwingen; ook GitHub e.d. kunnen bij
-een externe IdP niet meer bewijzen dan «de gebruiker heeft nu, in deze browser, actief dit Google-account gekozen». Dat
-bewijzen punt 2a–d: zonder klik in de accountkiezer komt er geen code terug; een oude code of een id_token uit een andere
-transactie faalt op state/nonce/PKCE/iat; een ander Google-account faalt op `sub`. Wat het níet bewijst is dat de persoon
-het Google-wachtwoord kent als Google al aangemeld was — dezelfde grens als bij de gewone aanmelding. Voor acties waar dat
-te zwak is blijven de strengere paden: passkey-step-up (`passkeyStapOpGeldig`, root-goedkeuring), TOTP-code bij herstelcodes
-vervangen en TOTP uitschakelen (die accepteren Google bewust niet). Een gewone aanmelding (geen step-up-transactie) met een
-vers `iat` telt nog steeds **niet** (alleen `auth_time`). Noodpad `STAP_OP_GOOGLE_ZONDER_AUTH_TIME=1` blijft bestaan maar is
-niet meer nodig. De autorisatie-URL gebruikt nu altijd `prompt=select_account` (+ `max_age=0` en het claims-verzoek bij
+**Чому це обґрунтовано.** Google не надає способу примусово запитати пароль повторно; GitHub та інші сервіси із
+зовнішнім IdP також не можуть довести більше, ніж «користувач щойно, у цьому браузері, активно обрав цей акаунт Google». Саме це
+доводять пункти 2a–d: без кліку у виборі акаунта код не повернеться; старий код або `id_token` з іншої
+транзакції не пройде перевірку `state`/`nonce`/PKCE/`iat`; інший акаунт Google не пройде перевірку `sub`. Чого це НЕ доводить, так це того, що особа
+знає пароль від Google, якщо вхід у Google вже був виконаний — це та сама межа, що й при звичайному вході. Для дій, де цього
+замало, залишаються суворіші шляхи: passkey-step-up (`passkeyStapOpGeldig`, схвалення root), код TOTP при заміні кодів відновлення
+та вимкненні TOTP (вони свідомо не приймають Google). Звичайний вхід (не транзакція step-up) зі
+свіжим `iat`, як і раніше, **не** зараховується (лише `auth_time`). Аварійний прапорець `STAP_OP_GOOGLE_ZONDER_AUTH_TIME=1` залишається, але
+більше не потрібен. Авторизаційний URL тепер завжди використовує `prompt=select_account` (+ `max_age=0` і запит claims під час
 step-up).
 
-**Nooit stil.**
-- Ander Google-account: `STEP_UP_ACCOUNT_MISMATCH` vóór `ensureUser` — geen nieuw account, geen sessiewissel, audit
-  `owner.step_up.google rejected`. Geen verse bevestiging: `STEP_UP_NOT_FRESH`.
-- De callback-antwoorden van een step-up dragen `stepUp: true`; bij een fout zet `OwnerIdentityCallback` de reden in
-  `sessionStorage` (`mijn-ruimte-stap-op-fout`, alleen een foutcode) en stuurt terug naar de pagina. Het venster toont de
-  reden («Ви вибрали інший акаунт Google…», «Google не підтвердив новий вхід…»). Opent het venster opnieuw direct na een
-  hervatting zonder bewaarde reden, dan toont het «Повторний вхід через Google не підтвердив доступ…».
+**Ніколи не мовчки.**
+- Інший акаунт Google: `STEP_UP_ACCOUNT_MISMATCH` перед `ensureUser` — жодного створення нового акаунта, жодної зміни сесії, запис в аудит
+  `owner.step_up.google rejected`. Немає свіжого підтвердження: `STEP_UP_NOT_FRESH`.
+- Відповіді callback для step-up містять `stepUp: true`; у разі помилки `OwnerIdentityCallback` записує причину в
+  `sessionStorage` (`mijn-ruimte-stap-op-fout`, лише код помилки) і повертає на сторінку. Вікно показує
+  причину («Ви вибрали інший акаунт Google…», «Google не підтвердив новий вхід…»). Якщо вікно знову відкривається одразу після
+  відновлення без збереженої причини, воно показує «Повторний вхід через Google не підтвердив доступ…».
 
-**Herstelcodes (GitHub-achtig).**
-- Na het maken één keer de codes (`XXXX-XXXX-XXXX`) met Завантажити (.txt), Копіювати, Друкувати en «Я зберіг коди» →
-  «Готово» (zet `bekekenOp`).
-- Daarna alleen `POST /api/owner/access/recovery/overzicht`: per code volgnummer, de laatste 2 tekens (hint), status
-  (`ongebruikt` / `gebruikt` + datum / `ingetrokken`), «Залишилося N з 10». De codes zelf blijven alleen als HMAC met pepper
-  bewaard; de hint verkleint de zoekruimte van 2^48 naar 2^40 per code, met lockout ruim voldoende. Nooit hashes in een
-  antwoord.
-- «Відкликати всі»: `POST /api/owner/access/recovery/intrekken` (step-up vereist) → `hashes: []`, `remaining: 0`,
-  `ingetrokkenOp`; alle wegen (aanmelden met wachtwoord+code, step-up, TOTP uitschakelen) gebruiken `herstelcodeGebruiken`,
-  dat ingetrokken sets weigert. Melding aan de gebruiker.
-- «Створити нові» vervangt de set (oude vervallen meteen; melding als er nog ongebruikte waren).
-- Gebruik wordt atomisch vastgelegd: `takeArrayValue` (hash weg, teller) en daarna `zetEenmaligInMap` (`gebruikt[hash] = tijd`),
-  zonder de rest van het record te overschrijven.
-- Invoer mag streepjes, spaties en kleine letters bevatten.
-- Geen migratie nodig: alles staat in het bestaande jsonb-record `identity_recovery_codes_v1`. Oude sets (zonder
-  `overzicht`) tonen alleen de teller met de hint «створіть нові, щоб бачити стан кожного коду».
-- `/recovery/overzicht` valt niet onder de strikte MFA-limiet (10/min per IP); de andere herstelcode-routes wel.
+**Коди відновлення (у стилі GitHub).**
+- Після створення коди (`XXXX-XXXX-XXXX`) показуються один раз із кнопками Завантажити (`.txt`), Копіювати, Друкувати та «Я зберіг коди» →
+  «Готово» (встановлює `bekekenOp`).
+- Надалі доступний лише `POST /api/owner/access/recovery/overzicht`: для кожного коду порядковий номер, останні 2 символи (підказка), статус
+  (`ongebruikt` / `gebruikt` + дата / `ingetrokken`), «Залишилося N з 10». Самі коди зберігаються лише як HMAC із перцем (pepper);
+  підказка зменшує простір перебору з $2^{48}$ до $2^{40}$ на код, чого з блокуванням спроб цілком достатньо. Хеші ніколи не передаються у
+  відповіді.
+- «Відкликати всі»: `POST /api/owner/access/recovery/intrekken` (вимагає step-up) → `hashes: []`, `remaining: 0`,
+  `ingetrokkenOp`; усі шляхи (вхід із паролем+кодом, step-up, вимкнення TOTP) використовують `herstelcodeGebruiken`,
+  яка відхиляє відкликані набори. Користувачу надсилається сповіщення.
+- «Створити нові» замінює набір (старі миттєво втрачають чинність; виводиться повідомлення, якщо залишалися невикористані).
+- Використання фіксується атомарно: `takeArrayValue` (видалення хешу, лічильник), а потім `zetEenmaligInMap` (`gebruikt[hash] = tijd`),
+  без перезапису решти запису.
+- Введення може містити дефіси, пробіли та малі літери.
+- Міграція не потрібна: усе зберігається в наявному jsonb-записі `identity_recovery_codes_v1`. Старі набори (без
+  `overzicht`) показують лише лічильник із підказкою «створіть нові, щоб бачити стан кожного коду».
+- `/recovery/overzicht` не підпадає під суворий ліміт MFA (10/хв на IP); інші маршрути кодів відновлення підпадають.
 
-**E2E.** `tests/e2e/herstelcodes.e2e.ts`: step-up met oude `auth_time` maar vers `iat` → codes gemaakt; downloaden,
-kopiëren, afdrukken, bevestigen; code gebruiken in het venster (andere sessie) → doorgestreept, teller 9; intrekken →
-onbruikbaar; ander account → melding in het venster; oud `iat` → melding.
+**E2E.** `tests/e2e/herstelcodes.e2e.ts`: step-up зі старим `auth_time`, але свіжим `iat` → коди створено; завантаження,
+копіювання, друк, підтвердження; використання коду у вікні (інша сесія) → закреслено, лічильник 9; відкликання →
+непридатні до використання; інший акаунт → повідомлення у вікні; старий `iat` → повідомлення.
 
-### 13.9 mcp.*/agents opnieuw opgezet (GitHub-stijl) en de losse «RATE_LIMITED» boven de titel
+### 13.9 mcp.*/agents перебудовано (у стилі GitHub) та прибрано самотнє «RATE_LIMITED» над заголовком
 
-**Oorzaak van «RATE_LIMITED».** Een renderlus op de oude agentenpagina. `AiToestemmingen` laadde
-`/api/owner/ai/grants/list` in een `useEffect` met `onChange` als afhankelijkheid. De ouder
-(`BrowserExtensionPanel`/`McpAgentsHub`) gaf bij elke render een nieuwe `onChange` mee en zette daarin state. Dat gaf
-een nieuwe render, een nieuwe `onChange` en een nieuwe aanvraag, zonder einde: met een browseragent open waren dat
-honderden aanvragen per minuut. De algemene limiet (`API_RATE_LIMIT_PER_MIN`, 600/min per IP) gaf daarna 429
-`{error:'RATE_LIMITED'}` op álle `/api/*` van die browser, ook op `/api/mcp/tokens/list` en `/api/mcp/permissions`.
-Die twee werden geladen door `McpServiceView` (`run('agents', loadTokens)`). Die toonde de kale foutcode in
-`<p class="mcp-lead">{error}</p>` boven de titel.
+**Причина «RATE_LIMITED».** Нескінченний цикл рендеру на старій сторінці агентів. Компонент `AiToestemmingen` завантажував
+`/api/owner/ai/grants/list` у `useEffect` із залежністю `onChange`. Батьківський компонент
+(`BrowserExtensionPanel`/`McpAgentsHub`) при кожному рендері передавав нову функцію `onChange` і всередині неї оновлював стан. Це викликало
+новий рендер, новий `onChange` і новий запит без кінця: з відкритим браузерним агентом це породжувало
+сотні запитів на хвилину. Загальний ліміт (`API_RATE_LIMIT_PER_MIN`, 600/хв на IP) після цього повертав 429
+`{error:'RATE_LIMITED'}` на ВСІ `/api/*` із цього браузера, включно з `/api/mcp/tokens/list` та `/api/mcp/permissions`.
+Ці два маршрути завантажувалися через `McpServiceView` (`run('agents', loadTokens)`), який виводив сирий код помилки в
+`<p class="mcp-lead">{error}</p>` над заголовком.
 
-**Herstel.**
-- `onChange` loopt via een ref. Laden hangt alleen af van `agentId`/`versie`, en state verandert alleen als de waarde
-  echt verandert.
-- `BrowserExtensionPanel.onGrants` is een stabiele `useCallback`.
-- Er is nog één poller (apparaten en wachtende acties, 5 s). De rest laadt bij openen, na een actie en daarna rustig
-  (60 s, alleen een zichtbaar tabblad). Het journaal ververst elke 30 s, alleen op het open tabblad.
-- `McpServiceView` laadt voor «agents» niets meer zelf en toont fouten via `foutTekst()` (`src/agenten/fouten.ts`).
-  Bij een 429 staat er een zin met de wachttijd, zonder code. Voor andere fouten staat de code klein erachter.
-- De e2e-test meet dit: met een apparaat open komen er in 8 s hoogstens 3 aanvragen naar `grants/list`.
+**Виправлення.**
+- `onChange` передається через `ref`. Завантаження залежить лише від `agentId`/`versie`, а стан оновлюється лише тоді, коли значення
+  справді змінилося.
+- `BrowserExtensionPanel.onGrants` обгорнуто в стабільний `useCallback`.
+- Залишився лише один поллер (пристрої та очікувані дії, 5 с). Решта завантажується під час відкриття, після дії та далі спокійно
+  (60 с, лише у видимій вкладці). Журнал оновлюється кожні 30 с, лише на відкритій вкладці.
+- `McpServiceView` більше нічого сам не завантажує для «agents» і показує помилки через `foutTekst()` (`src/agenten/fouten.ts`).
+  При 429 виводиться зрозуміле речення з часом очікування, без технічного коду. Для інших помилок код відображається дрібним шрифтом поруч.
+- E2E-тест вимірює це: з відкритим пристроєм за 8 с надходить щонайбільше 3 запити до `grants/list`.
 
-**De pagina** (`src/agenten/`, de ingang `src/McpAgentenHub.tsx` blijft) heeft deze tabbladen, adresseerbaar via de
-hash:
+**Сторінка** (`src/agenten/`, точка входу `src/McpAgentenHub.tsx` зберігається) має такі вкладки, доступні через
+хеш в URL:
 
-| Hash | Tabblad |
+| Хеш | Вкладка |
 |---|---|
 | `#overzicht` | Огляд / Overzicht |
 | `#ai` | Підключені ШІ / Verbonden AI |
@@ -715,10 +714,10 @@ hash:
 | `#tokens` | Токени / Tokens (двері сервера — на mcp/verbindingen, технічний профіль) |
 | `#journaal` | Журнал / Logboek |
 
-- Een open rij staat ook in de hash, bijvoorbeeld `#apparaten/dev:<id>` of `#ai/oauth:<id>`.
-- Oude adressen worden omgezet:
+- Відкритий рядок також відображається в хеші, наприклад `#apparaten/dev:<id>` або `#ai/oauth:<id>`.
+- Старі адреси автоматично перенаправляються:
 
-  | Oud adres | Nieuw adres |
+  | Стара адреса | Нова адреса |
   |---|---|
   | `#overview`, `#pending` | `#overzicht` |
   | `#claude` | `#ai` |
@@ -728,314 +727,314 @@ hash:
   | `#pair` | `#apparaten/koppelen` |
   | `#dev:<id>` | `#apparaten/dev:<id>` |
 
-- `?extension=welcome` blijft werken.
-- Rijen zijn standaard dicht: titel, één statusregel en een knop rechts. Open zie je alle technische gegevens.
-- Acties die iets weghalen, vragen eerst om een bevestiging op de pagina (geen `window.confirm`). Daarna volgen een
-  spinner en een melding met wat er veranderde en hoe laat.
-- Ingetrokken of losgekoppelde items blijven zichtbaar in een dichte groep «Відкликані / Відключені» (90 dagen).
+- `?extension=welcome` продовжує працювати.
+- Рядки типово згорнуті: назва, один рядок стану та кнопка праворуч. У розгорнутому вигляді видно всі технічні деталі.
+- Дії, які щось видаляють, спочатку просять підтвердження прямо на сторінці (без `window.confirm`). Після цього з'являються
+  індикатор завантаження (спінер) і повідомлення про те, що змінилося і о котрій годині.
+- Відкликані або відключені елементи залишаються видимими у згорнутій групі «Відкликані / Відключені» (протягом 90 днів).
 
-**Nieuwe server-endpoints** (eigenaar, `ownerGate`):
-- `POST /api/owner/agents/overzicht` geeft:
-  - OAuth-verbindingen met hun status (`active`/`revoked`/`expired`);
-  - losgekoppelde agents van de laatste 90 dagen, met hun reden (`user`/`repaired`/`blocked`);
-  - het aantal toestemmingen per agent;
-  - de MCP-URL.
-- `POST /api/owner/agents/journaal` met body `{soort, onderwerp, voor, limit}` geeft één tijdlijn uit `app.audit`.
-  - De regels gaan door `JOURNAAL_ACTIES` en `journaalItem()`: velden die op een geheim lijken (token, hash, cookie,
-    nonce, code, key…) vallen weg, en het IP staat er alleen als een hash van 12 tekens.
-  - Verlopen toestemmingen en verlopen OAuth-verbindingen zijn **afgeleid**, niet opgeslagen. Ze staan alleen op de
-    eerste pagina (90 dagen).
-- `auditLijst()` kent nu een filter `acties: string[]`.
-- `POST /api/owner/agents/:id/revoke` geeft nu `revokedAt` terug.
+**Нові серверні ендпоїнти** (власник, `ownerGate`):
+- `POST /api/owner/agents/overzicht` повертає:
+  - OAuth-з'єднання з їхнім статусом (`active`/`revoked`/`expired`);
+  - відключені агенти за останні 90 днів із причиною (`user`/`repaired`/`blocked`);
+  - кількість дозволів на кожного агента;
+  - URL MCP.
+- `POST /api/owner/agents/journaal` із тілом `{soort, onderwerp, voor, limit}` повертає єдину хронологію з `app.audit`.
+  - Записи проходять через `JOURNAAL_ACTIES` та `journaalItem()`: поля, схожі на секрети (token, hash, cookie,
+    nonce, code, ключ…), відкидаються, а IP-адреса представлена лише як 12-символьний хеш.
+  - Прострочені дозволи та прострочені OAuth-з'єднання **обчислюються динамічно**, а не зберігаються в БД. Вони показуються лише на
+    першій сторінці (90 днів).
+- `auditLijst()` тепер підтримує фільтр `acties: string[]`.
+- `POST /api/owner/agents/:id/revoke` тепер повертає `revokedAt`.
 
-**Nieuwe of aangevulde auditregels:**
+**Нові або доповнені записи аудиту:**
 
-| Actie | Wanneer of wat |
+| Дія | Коли або що |
 |---|---|
-| `owner.mcp.grant.connected` | Een OAuth-client krijgt tokens. |
-| `owner.mcp.grant.revoked` | Nu met de clientnaam en een reden: `user`, `client` (de client trok zelf in) of `refresh_reuse` (automatisch, bij hergebruik van een refresh-token). |
-| `owner.agent.updated` | Een pc-agent of extensie meldt een andere versie bij het verbinden (`from` → `to`). |
-| `owner.agent.paired` | Nu met naam, versie en `replacedIds`: een herinstallatie is zichtbaar als «Перевстановлено». |
-| `owner.agent.revoked` | Nu met naam, platform, versie en `reason: 'user'`. In de tabel staat nu ook `revoke_reason = 'user'`. |
-| `mcp_console_token_revoked` | Nu met naam en prefix. |
+| `owner.mcp.grant.connected` | OAuth-клієнт отримує токени. |
+| `owner.mcp.grant.revoked` | Тепер із назвою клієнта та причиною: `user`, `client` (клієнт сам відкликав) або `refresh_reuse` (автоматично, при повторному використанні refresh-токена). |
+| `owner.agent.updated` | ПК-агент або розширення повідомляє іншу версію під час підключення (`from` → `to`). |
+| `owner.agent.paired` | Тепер із назвою, версією та `replacedIds`: перевстановлення відображається як «Перевстановлено». |
+| `owner.agent.revoked` | Тепер із назвою, платформою, версією та `reason: 'user'`. У таблиці також записується `revoke_reason = 'user'`. |
+| `mcp_console_token_revoked` | Тепер із назвою та префіксом. |
 
-**Beperkingen.**
-- Het verwijderen van de browserextensie ziet de server niet. Je merkt het pas als het token wordt ingetrokken of
-  geweigerd, of als de extensie offline blijft.
-- Het land wordt niet opgeslagen, alleen de IP-hash.
-- «Відкликати всі» trekt de items één voor één in via de bestaande endpoints (er is geen endpoint dat alles in één
-  keer doet). Lukt er één niet, dan stopt het daar. De lijst wordt bijgewerkt, en wat al was ingetrokken staat bij
+**Обмеження.**
+- Видалення розширення в браузері сервер не бачить миттєво. Ви помітите це лише тоді, коли токен буде відкликано чи
+  відхилено, або коли розширення залишатиметься офлайн.
+- Країна не зберігається, лише хеш IP-адреси.
+- «Відкликати всі» відкликає елементи по одному через наявні ендпоїнти (немає ендпоїнта, який робить усе одним
+  запитом). Якщо один не вдається, процес зупиняється на ньому. Список оновлюється, а те, що вже було відкликано, переходить у
   «Відкликані».
 
-**Tests.**
-- Eenheidstest: `tests/eenheid/agenten-journaal.test.ts`. Die toetst het weglaten van geheimen, de onderwerpen, het
-  `acties`-filter, de geschiedenis met reden, de foutteksten en de broncontrole tegen de lus.
-- E2E: `tests/e2e/agenten.e2e.ts`. Die toetst:
-  - tabbladen en oude deep links;
-  - dichte rijen en uitklappen;
-  - intrekken (bevestigen, spinner, melding, groep «Відкликані», zonder herladen);
-  - loskoppelen met de geschiedenis «Перевстановлено»;
-  - het journaal met filters;
-  - een nagebootste 429 (vriendelijke tekst, nergens `RATE_LIMITED`);
-  - 390 px zonder overloop, en licht en donker.
+**Тести.**
+- Модульний тест: `tests/eenheid/agenten-journaal.test.ts`. Перевіряє видалення секретів, теми, фільтр
+  `acties`, історію з причиною, тексти помилок і перевірку вихідного коду проти нескінченного циклу.
+- E2E: `tests/e2e/agenten.e2e.ts`. Перевіряє:
+  - вкладки та старі глибокі посилання (deep links);
+  - згорнуті рядки та розгортання;
+  - відкликання (підтвердження, спінер, повідомлення, група «Відкликані», без перезавантаження сторінки);
+  - відключення з історією «Перевстановлено»;
+  - журнал із фільтрами;
+  - імітовану помилку 429 (дружній текст, ніде немає сирого `RATE_LIMITED`);
+  - ширину 390 px без горизонтального переповнення, у світлій і темній темах.
 
-### 13.10 Toegang in context: gebruik, notities, intrekken met reden, «Це був не я» (migratie 0024)
+### 13.10 Доступ у контексті: використання, нотатки, відкликання з причиною, «Це був не я» (міграція 0024)
 
-**Gebruik.** Elke herstelcode en elk passkey-gebruik wordt vastgelegd in `app.toegang_gebruik` (RLS: alleen de eigen rijen):
-actie (vaste lijst `ACTIES` in `backend/toegang-context.ts`, onbekend → `bevestigen`), host, apparaat (browser · OS uit de
-User-Agent), korte IP-hash (`AUDIT_IP_PEPPER`, nooit het IP zelf). De step-up stuurt een actielabel mee (`actieVoorUrl` in
-`src/platform/stap-op.ts`); de server accepteert alleen labels uit de allowlist. Per sleutel de laatste 20, uitklapbaar.
+**Використання.** Кожне використання коду відновлення та passkey фіксується в `app.toegang_gebruik` (RLS: лише власні рядки):
+дія (фіксований список `ACTIES` у `backend/toegang-context.ts`, невідоме → `bevestigen`), хост, пристрій (браузер · ОС із
+User-Agent), короткий хеш IP (`AUDIT_IP_PEPPER`, ніколи не сама IP-адреса). Step-up передає мітку дії (`actieVoorUrl` у
+`src/platform/stap-op.ts`); сервер приймає лише мітки з білого списку. Для кожного ключа показуються останні 20 записів у розгорнутому списку.
 
-**Notities.** Privé, ≤ 500 tekens, `app.toegang_notities` (RLS), voor passkeys, codesets, losse codes en (later) toegangscodes.
-Route `POST /api/owner/access/notities/{lijst,opslaan}`.
+**Нотатки.** Приватні, ≤ 500 символів, `app.toegang_notities` (RLS), для passkeys, наборів кодів, окремих кодів і (пізніше) кодів доступу.
+Маршрут `POST /api/owner/access/notities/{lijst,opslaan}`.
 
-**Recht intrekken / goedkeur-passkey verwijderen.** Alleen de eigenaar. Reden ≥ 10 tekens verplicht en een *sterke* step-up
-(passkey, TOTP of herstelcode); Google alleen volstaat niet zodra de gebruiker iets sterkers heeft (403
-`STEP_UP_STRONG_REQUIRED`, het venster toont dan geen Google-knop). Vastgelegd in `app.toegang_wijzigingen` + audit: wie,
-sessie, apparaat, IP-hash, wanneer, reden, sleutel, hoe bevestigd. Melding in de bel («Це були ви?», link
-`/methods?wijziging=<id>`), op /agents → Журнал onder «Права й ключі». Voorbereiders (admin → Uitrol) volgen dezelfde regel;
-de betrokken gebruiker krijgt een melding en geschiedenis.
+**Відкликання права / видалення passkey для схвалення.** Лише власник. Обов'язкова причина ≥ 10 символів і *сильний* step-up
+(passkey, TOTP або код відновлення); самого лише Google недостатньо, щойно в користувача є щось сильніше (403
+`STEP_UP_STRONG_REQUIRED`, вікно тоді не показує кнопку Google). Записується в `app.toegang_wijzigingen` + аудит: хто,
+сесія, пристрій, хеш IP, коли, причина, ключ, як підтверджено. Сповіщення в дзвіночку («Це були ви?», посилання
+`/methods?wijziging=<id>`), на `/agents` → Журнал під «Права й ключі». Підготовники (admin → Оновлення) підпорядковуються тому самому правилу;
+задіяний користувач отримує сповіщення та запис в історії.
 
-**Hoe het intrekken bij root komt.** De app schrijft `sleutel-intrekken-<fp32>.json` in de inbox (geen assertion nodig:
-verwijderen is de veilige richting). `mijn-ruimte-goedkeur-sleutels.path` ziet het bestand en start `goedkeur-hulp.mjs verwerk`
-als root: die controleert reden en vingerafdruk, noteert `staat.ingetrokken[fp] = {op, door, sessie, wijziging, reden}`,
-haalt de sleutel uit `/etc/mijn-ruimte/goedkeur-passkeys.json`, schrijft de status en de gebeurtenis `PASSKEY_INGETROKKEN`.
-Een eenmaal ingetrokken vingerafdruk kan **niet** via de app (assertion) terugkomen (`OPNIEUW_VIA_SSH`), alleen met
-`sudo mijn-ruimte-passkey toevoegen <fp>` — dat wist de markering.
+**Як відкликання потрапляє до root.** Застосунок записує `sleutel-intrekken-<fp32>.json` в inbox (асерція не потрібна:
+видалення є безпечним напрямком). `mijn-ruimte-goedkeur-sleutels.path` бачить файл і запускає `goedkeur-hulp.mjs verwerk`
+від імені root: той перевіряє причину та відбиток, записує `staat.ingetrokken[fp] = {op, door, sessie, wijziging, reden}`,
+видаляє ключ із `/etc/mijn-ruimte/goedkeur-passkeys.json`, записує статус і подію `PASSKEY_INGETROKKEN`.
+Один раз відкликаний відбиток **не може** повернутися через застосунок (асерцією) (`OPNIEUW_VIA_SSH`), лише через
+`sudo mijn-ruimte-passkey toevoegen <fp>` — це очищує позначку відкликання.
 
-**«Це був не я — скасувати та захистити акаунт».** Sterke step-up. Ligt het verzoek nog in de inbox: verzoek weg, recht
-blijft. Heeft root al verwerkt: nieuwe aanmelding + de UI toont eerlijk de SSH-opdracht. Een verwijderde passkey wordt in de
-app hersteld. De sessie die de wijziging deed wordt beëindigd (tenzij het de huidige is). Alles in audit + geschiedenis.
+**«Це був не я — скасувати та захистити акаунт».** Сильний step-up. Якщо запит ще лежить в inbox: запит видаляється, право
+залишається. Якщо root уже обробив: створюється нова заявка + інтерфейс чесно показує SSH-команду. Видалений passkey відновлюється в
+застосунку. Сесія, яка виконала зміну, завершується (якщо це не поточна сесія). Усе фіксується в аудиті та історії.
 
-**E-mail.** Er is geen systeem-mailer: mail kan alleen via de eigen Gmail-koppeling van een gebruiker. De melding staat dus
-altijd in de bel; e-mail wordt (nog) niet verstuurd.
+**Ел. пошта.** Системного поштового сервера немає: листи можуть надсилатися лише через власне підключення Gmail користувача. Тому сповіщення
+завжди з'являється в дзвіночку; ел. пошта (поки що) не надсилається.
 
-Tests: `tests/eenheid/toegang-context.test.ts`, `uitrol-goedkeuring`, `passkeys`; e2e `tests/e2e/toegang-context.e2e.ts`
-(screenshots `notities-*.png`, `intrekken-*.png`). Let op: de step-up-limiet is per IP — draai de e2e-bestanden met een
-pauze (≥ 2 min) of los, anders 429 op `/api/owner/access/stap-op`.
+Тести: `tests/eenheid/toegang-context.test.ts`, `uitrol-goedkeuring`, `passkeys`; e2e `tests/e2e/toegang-context.e2e.ts`
+(скриншоти `notities-*.png`, `intrekken-*.png`). Увага: ліміт step-up діє на IP — запускайте e2e-файли з
+паузою (≥ 2 хв) або окремо, інакше отримаєте 429 на `/api/owner/access/stap-op`.
 
-### 13.11 Коди доступу для інших / toegangscodes, gastsessies en «Сесії» (migratie 0025)
+### 13.11 Коди доступу для інших / коди доступу, гостьові сесії та «Сесії» (міграція 0025)
 
-**Wat.** Op `id.tarasevych.com/methods` staat de sectie «Коди доступу для інших» (alleen de eigenaar; anderen krijgen
-`OWNER_REQUIRED` en zien de sectie niet). «Створити код доступу» vraagt naam, privénotitie, wat de gast mag bekijken,
-geldigheid (безстроково / 1 uur / 1 dag / 7 dagen / 30 dagen / eigen datum + tijd, ≥ 5 min en ≤ 366 dagen) en eenmalig of
-herbruikbaar (optioneel max. 1–1000×). Aanmaken vraagt een **sterke** step-up (passkey, app-code of herstelcode; een verse
-Google-step-up volstaat niet → `STEP_UP_STRONG_REQUIRED`). Maximaal 50 codes per eigenaar, 20 aanmaakpogingen per uur.
+**Що.** На `id.tarasevych.com/methods` є секція «Коди доступу для інших» (лише власник; інші отримують
+`OWNER_REQUIRED` і не бачать секції). «Створити код доступу» запитує назву, приватну нотатку, що гість може переглядати,
+термін дії (безстроково / 1 год / 1 день / 7 днів / 30 днів / власна дата + час, ≥ 5 хв і ≤ 366 днів) та одноразовий чи
+багаторазовий (опційно макс. 1–1000×). Створення вимагає **сильного** step-up (passkey, код із застосунку або код відновлення; свіжого
+Google-step-up недостатньо → `STEP_UP_STRONG_REQUIRED`). Максимум 50 кодів на власника, 20 спроб створення на годину.
 
-**Scopes (allowlist in `backend/toegangscodes.ts`, alleen lezen, standaard weigeren):**
-`profiel.lezen` (naam + Google-foto, nooit e-mail), `apparaten.lezen` (naam, platform, laatst gezien, actief),
-`journaal.lezen` (agentjournaal **zonder** regels over rechten/sleutels/codes/tokens). Bij het laden van de module wordt
-gecontroleerd dat elke scope op `.lezen` eindigt en niets uit de lijst «nooit» raakt: aanmeldmethoden, passkeys,
-goedkeurrechten, beheer/admin, tokens, root/updates, account verwijderen/exporteren. Een onbekende scope → `SCOPE_NIET_TOEGESTAAN`.
+**Області доступу (scopes, білий список у `backend/toegangscodes.ts`, лише читання, типово відмова):**
+`profiel.lezen` (ім'я + фото Google, ніколи не ел. пошта), `apparaten.lezen` (назва, платформа, востаннє бачили, чи активний),
+`journaal.lezen` (журнал агентів **без** записів про права/ключі/коди/токени). Під час завантаження модуля
+перевіряється, що кожен область дії закінчується на `.lezen` і не зачіпає нічого зі списку «ніколи»: способи входу, passkeys,
+права схвалення, адміністрування, токени, root/оновлення, видалення/експорт акаунта. Невідомий область дії → `SCOPE_NIET_TOEGESTAAN`.
 
-**Code.** 80 bits (Crockford base32, `XXXX-XXXX-XXXX-XXXX`; O→0, I/L→1, spaties/kleine letters toegestaan). Eén keer getoond
-met kopiëren / QR / delen; de deellink is `https://id.tarasevych.com/toegang#code=…` (fragment → komt nooit in serverlogs; de
-pagina haalt het meteen uit de adresbalk). In de database alleen `sha256('mijn-ruimte-toegangscode\0'+code)` + 4 tekens hint.
+**Код.** 80 бітів (Crockford base32, `XXXX-XXXX-XXXX-XXXX`; O→0, I/L→1, пробіли/малі літери дозволені). Показується один раз
+із кнопками копіювання / QR / поділитися; посилання для поширення має вигляд `https://id.tarasevych.com/toegang#code=…` (фрагмент `#` → ніколи не потрапляє в логи сервера;
+сторінка одразу прибирає його з адресного рядка). У базі даних зберігається лише `sha256('mijn-ruimte-toegangscode\0'+code)` + 4 символи підказки.
 
-**Gastsessie (isolatie).** `/api/gast/inwisselen` geeft een aparte cookie `tsv_gast` (HttpOnly, Secure, SameSite=Strict,
-**Path=/api/gast**, alleen host `id.tarasevych.com`; Origin moet `https://id.tarasevych.com` zijn). Het is nooit de sessie
-van de eigenaar: geen enkele `/api/owner/*`-route leest deze cookie (getest: 401). Elk gastverzoek controleert opnieuw sessie,
-code (ingetrokken? verlopen?) en eigenaar (geblokkeerd?) → intrekken/verkorten/verlopen werkt meteen. Een gastsessie duurt
-hoogstens tot het verloop van de code en nooit langer dan **24 uur** per inwisseling. Elke gastactie (bekeken / geweigerd)
-staat in `app.toegangscode_log` en in de audit met actor `gast:<code-id>`; het journaal op /agents toont ze onder «Права й ключі».
-Bij het **eerste** gebruik van een code krijgt de eigenaar een melding in de bel (link naar de code). Er is **geen e-mail**
-(geen systeem-mailer, zie §13.10).
+**Гостьова сесія (ізоляція).** `/api/gast/inwisselen` видає окрему куку `tsv_gast` (`HttpOnly`, `Secure`, `SameSite=Strict`,
+**`Path=/api/gast`**, лише хост `id.tarasevych.com`; `Origin` має бути `https://id.tarasevych.com`). Це ніколи не сесія
+власника: жоден маршрут `/api/owner/*` не читає цю куку (протестовано: 401). Кожен гостьовий запит заново перевіряє сесію,
+код (відкликано? прострочено?) та власника (заблоковано?) → відкликання/скорочення/закінчення терміну діє миттєво. Гостьова сесія триває
+щонайбільше до закінчення дії коду і ніколи не довше **24 годин** на одне погашення коду. Кожна дія гостя (переглянуто / відмовлено)
+записується в `app.toegangscode_log` та в аудит з актором `gast:<code-id>`; журнал на `/agents` показує їх під «Права й ключі».
+При **першому** використанні коду власник отримує сповіщення в дзвіночку (із посиланням на код). **Ел. пошта не надсилається**
+(немає системного поштового сервера, див. §13.10).
 
-**Raden/limieten.** Per IP strikte bucket `gast-inwisselen` 10/min (Postgres) + blokkade na 5 mislukte pogingen
-(`gast-inwisselen:<ip-hash>`, 15 min, verdubbelend) → 429 `GAST_GEBLOKKEERD`, ook met een geldige code. Foutmelding is altijd
-algemeen (`CODE_ONGELDIG`); pogingen op een bestaande code worden bij die code gelogd als «geweigerd».
+**Підбір/ліміти.** На кожен IP суворий бакет `gast-inwisselen` 10/хв (Postgres) + блокування після 5 невдалих спроб
+(`gast-inwisselen:<ip-hash>`, 15 хв, із подвоєнням) → 429 `GAST_GEBLOKKEERD`, навіть із дійсним кодом. Повідомлення про помилку завжди
+загальне (`CODE_ONGELDIG`); спроби на наявному коді логуються біля цього коду як «geweigerd» (відхилено).
 
-**Beheer.** Lijst met status Діє / Використано / Закінчився / Відкликано, gebruik (x з max), laatste gebruik (tijd, apparaat,
-IP-hash) en een uitklapbare geschiedenis. «Відкликати» vraagt een reden (≥ 10 tekens, geen step-up: veilige richting) en
-beëindigt alle gastsessies van die code meteen. «Змінити строк»: inkorten mag zonder step-up (lopende gastsessies worden ook
-korter), verlengen of безстроково vraagt een sterke step-up.
+**Керування.** Список зі статусом Діє / Використано / Закінчився / Відкликано, використанням (`x` з `max`), останнім використанням (час, пристрій,
+хеш IP) та розгорнутою історією. «Відкликати» запитує причину (≥ 10 символів, без step-up: безпечний напрямок) і
+миттєво завершує всі гостьові сесії цього коду. «Змінити строк»: скоротити можна без step-up (активні гостьові сесії також
+скорочуються), продовжити або зробити безстроковим вимагає сильного step-up.
 
-**«Сесії та пристрої»** (`id.tarasevych.com/sessions`, geen nieuw menu-item): eigen sessies tonen nu de echte aanmeldmethode
-(`authMethod`; tot passkey-aanmelden bestaat is dat meestal Google) en de duur; daaronder «Гостьові сесії» (code-naam, apparaat,
-gestart, laatst actief, duur, IP-hash) met per sessie «Завершити гостьову сесію». «Завершити всі інші» →
-`POST /api/owner/identity/security/revoke-others {gast:true}`: alle andere eigen sessies, tabbladen buiten deze sessie,
-onthouden browsers en alle levende gastsessies; deze aanmelding blijft.
+**«Сесії та пристрої»** (`id.tarasevych.com/sessions`, без нового пункту меню): власні сесії тепер показують справжній спосіб входу
+(`authMethod`; доки немає входу за passkey, це зазвичай Google) та тривалість; нижче — «Гостьові сесії» (назва коду, пристрій,
+початок, остання активність, тривалість, хеш IP) із кнопкою «Завершити гостьову сесію» для кожної сесії. «Завершити всі інші» →
+`POST /api/owner/identity/security/revoke-others {gast:true}`: завершує всі інші власні сесії, вкладки поза цією сесією,
+запам'ятовані браузери та всі активні гостьові сесії; поточний вхід залишається.
 
-**Ook.** «Відхилити» bij een updatevoorstel (admin «Оновлення») gebruikt nu een inline redenveld i.p.v. `window.prompt`.
-Nieuwe afhankelijkheid: `qrcode-generator@2.0.4` (MIT, zonder afhankelijkheden) voor de QR (SVG-paden, geen innerHTML).
+**Також.** «Відхилити» біля пропозиції оновлення (admin «Оновлення») тепер використовує вбудоване поле причини замість `window.prompt`.
+Нова залежність: `qrcode-generator@2.0.4` (MIT, без залежностей) для генерації QR (SVG-шляхи, без `innerHTML`).
 
-**Database (0025).** `app.toegangscodes`, `app.gast_sessies`, `app.toegangscode_log`, met RLS `user_id = app.huidige_gebruiker()`
-voor `mijnruimte_app`; de app-rol heeft alleen SELECT (schrijven via de systeemrol). Uitrol: `migreer` vóór de herstart.
+**База даних (0025).** `app.toegangscodes`, `app.gast_sessies`, `app.toegangscode_log`, із RLS `user_id = app.huidige_gebruiker()`
+для `mijnruimte_app`; роль застосунку має лише `SELECT` (запис через системну роль). Розгортання: `migreer` перед перезапуском.
 
-**Tests.** `tests/eenheid/toegangscodes.test.ts`; e2e `tests/e2e/gast-toegang.e2e.ts` (screenshots `gast-*.png`).
-De e2e-server zet `E2E_LOKALE_LIMIETEN=1` (alleen `tests/e2e/server.ts`): dan zijn de strikte per-IP-buckets ×20, zodat
-e2e-bestanden achter elkaar kunnen draaien zonder 429 op `/api/owner/access/stap-op`. De server logt een waarschuwing als dit
-aan staat; **nooit** in productie zetten (`/etc/mijn-ruimte/*.env` bevat het niet).
+**Тести.** `tests/eenheid/toegangscodes.test.ts`; e2e `tests/e2e/gast-toegang.e2e.ts` (скриншоти `gast-*.png`).
+E2E-сервер встановлює `E2E_LOKALE_LIMIETEN=1` (лише `tests/e2e/server.ts`): тоді суворі бакети на IP збільшуються ×20, щоб
+e2e-файли могли виконуватися послідовно без 429 на `/api/owner/access/stap-op`. Сервер логує попередження, якщо цей прапорець
+увімкнено; **ніколи** не вмикайте його в продакшні (`/etc/mijn-ruimte/*.env` його не містить).
 
-## 14. Menu v2 (branch `menu-v2`) — zijbalk stage 1 + datamodel stage 2
+## 14. Меню v2 (гілка `menu-v2`) — бічна панель етап 1 + модель даних етап 2
 
-**Geen migratie.** De voorkeuren staan als JSON-veld `sidebar` in de bestaande rij van `owner_ui_preferences_v1`
-(bootstrap → `uiPreferences.sidebar`; opslaan via `POST /api/owner/ui/sidebar/save`, alleen goedgekeurde sessie,
-max. 20 000 tekens → anders `413 SIDEBAR_TOO_LARGE`; de server normaliseert alles met `normaliseerZijbalk`).
-Zonder goedgekeurd account: alleen `localStorage` (`tsv-zijbalk-v2`).
+**Без міграції.** Налаштування зберігаються як JSON-поле `sidebar` в наявному рядку `owner_ui_preferences_v1`
+(bootstrap → `uiPreferences.sidebar`; збереження через `POST /api/owner/ui/sidebar/save`, лише схвалена сесія,
+макс. 20 000 символів → інакше `413 SIDEBAR_TOO_LARGE`; сервер нормалізує все за допомогою `normaliseerZijbalk`).
+Без схваленого акаунта: лише `localStorage` (`tsv-zijbalk-v2`).
 
-Wat verandert voor de gebruiker:
-- Werkbalk bovenin de zijbalk: **Завжди розгорнута** / **Завжди згорнута** (nieuw: nooit openklappen bij aanwijzen) / **Автоматично**.
-  Smal: één knop die een paneeltje opent. Mobiel (≤ 700 px) blijft de hamburger + lade.
-- Scrollpijlen ▲/▼ met vervaging, alleen als er meer is; klik = vloeiend een stuk, ingedrukt houden = doorlopend.
-- Smalle rail 60 px, zonder zichtbare scrollbalk (de pijlen zijn de aanwijzing); cirkels als markering; brede stand: pil om icoon+tekst.
-- Site-tooltips (rechts) op elk item in de smalle stand, ook bij toetsenbordfocus; geen native `title`.
-- Instellingen → Меню: **Стиль іконок** (Класичний / Кольоровий) en de zijbalkmodus.
-- Nieuwe standaardiconen (Налаштування = tandwiel, MCP = kabel); een bewust gekozen icoon blijft.
+Що змінюється для користувача:
+- Панель інструментів угорі бічної панелі: **Завжди розгорнута** / **Завжди згорнута** (нове: ніколи не розгортається при наведенні) / **Автоматично**.
+  У вузькому режимі: одна кнопка, яка відкриває компактну панель. На мобільних (≤ 700 px) залишається гамбургер + висувна панель (drawer).
+- Стрілки прокручування ▲/▼ із плавним загасанням, лише коли є куди прокручувати; клік = плавний крок, утримання = безперервна прокрутка.
+- Вузька рейка 60 px, без видимої смуги прокручування (орієнтиром слугують стрілки); кружальця як маркери; широкий режим: пігулка навколо іконки+тексту.
+- Спливні підказки сайту (праворуч) на кожному пункті у вузькому режимі, включно з фокусом із клавіатури; без нативного `title`.
+- Налаштування → Меню: **Стиль іконок** (Класичний / Кольоровий) та режим бічної панелі.
+- Нові стандартні іконки (Налаштування = шестерня, MCP = кабель); свідомо обрана користувачем іконка зберігається.
 
-Controle na uitrol: `/menu` openen → «Кольоровий» kiezen → in een tweede browser hetzelfde account → kleur staat er ook.
+Перевірка після розгортання: відкрити `/menu` → обрати «Кольоровий» → у другому браузері під тим самим акаунтом → кольоровий стиль також застосовано.
 
-### 14.1 Fase A (na review van Pavlo, 9-10-2026) — cirkels, e-mailsubmenu, kleuren per onderdeel
+### 14.1 Фаза A (після рев'ю Павла, 9-10-2026) — кружальця, підменю пошти, кольори за розділами
 
-**Geen migratie, geen serverwijziging** (alleen CSS/TS in de frontend + tests).
-- Smal: ELK item is een cirkel zonder tekst — ook het actieve subitem en «Написати лист» (36 px, gevuld in de kleur van E-mail;
-  de animatie envelop → pen bij aanwijzen blijft). Oorzaak van de oude «pil met afgekapte tekst»: de e-mailknop had geen smalle stand.
-- Smal: de iconen van het e-mailsubmenu waren verborgen (CSS verborg elk kind behalve `.canonical-menu-icon-slot`) en stonden
-  verschoven (de 119 px brede knop maakte de kolom breder). Nu: alleen tekst/tellers verborgen, icoon gecentreerd in de strook.
-- Kleuren per onderdeel (conventies): Мій простір teal, ШІ violet, Пошта blauw, Хмара hemelsblauw, GitHub grafiet (donker: lichtgrijs),
-  Розумний будинок oranje, MCP groen, Налаштування grijs, API roze, Адміністрування rood (+ taken limoen, agenda indigo, notities oker).
-  Bron: `ACCENT_KLEUREN` in `shared/menu-model.ts` (= palet in `src/menu-v2.css`, test bewaakt), `--a` hoofd, `--a2` sub (lichtere tint).
-  Класичний: kleur alleen bij aanwijzen en actief; Кольоровий: altijd. Kleur hoort bij de HERKOMST (`itemAccent(id)`), dus kopieën
-  en verplaatste items houden in fase 2 hun oorspronkelijke kleur.
-- Breed: de verbindingslijn van submenu's is 2 px in een tint van het onderdeel, nu ook bij E-mail.
-- Tests: `tests/eenheid/menu-v2.test.ts` (contrast ≥ 3:1 licht/donker, CIEDE2000 ≥ 12 tussen hoofdonderdelen en ≥ 7 tussen alle,
-  zelfde kleurtoon sub/hoofd, herkomst), `tests/e2e/menu-v2-kleuren.e2e.ts` (cirkels ≤ 44 px binnen de rail, iconen zichtbaar en
-  gecentreerd, geen tekst, kleuren uit het model; screenshots menu-12…menu-18).
+**Без міграції, без змін на сервері** (лише CSS/TS у фронтенді + тести).
+- Вузький режим: КОЖЕН пункт є кружальцем без тексту — включно з активним підпунктом і кнопкою «Написати лист» (36 px, заповнена кольором Пошти;
+  анімація конверт → ручка при наведенні зберігається). Причина старої «пігулки з обрізаним текстом»: кнопка пошти не мала вузького стану.
+- Вузький режим: іконки підменю пошти були приховані (CSS ховав кожен дочірній елемент, крім `.canonical-menu-icon-slot`) і стояли
+  зміщеними (кнопка завширшки 119 px розширювала колонку). Тепер: приховано лише текст/лічильники, іконка відцентрована у смужці.
+- Кольори за розділами (конвенції): Мій простір — бірюзовий (teal), ШІ — фіолетовий, Пошта — синій, Хмара — небесно-блакитний, GitHub — графітовий (у темній: світло-сірий),
+  Розумний будинок — помаранчевий, MCP — зелений, Налаштування — сірий, API — рожевий, Адміністрування — червоний (+ завдання — лаймовий, календар — індиго, нотатки — вохра).
+  Джерело: `ACCENT_KLEUREN` у `shared/menu-model.ts` (= палітра в `src/menu-v2.css`, контролюється тестом), `--a` головний, `--a2` підпункт (світліший відтінок).
+  Класичний: колір лише при наведенні та для активного пункту; Кольоровий: завжди. Колір належить ДЖЕРЕЛУ походження (`itemAccent(id)`), тому копії
+  та переміщені пункти у фазі 2 зберігають свій початковий колір.
+- Широкий режим: з'єднувальна лінія підменю має товщину 2 px у відтінку розділу, тепер також і в Пошті.
+- Тести: `tests/eenheid/menu-v2.test.ts` (контраст ≥ 3:1 у світлій/темній темах, CIEDE2000 ≥ 12 між головними розділами та ≥ 7 між усіма,
+  однаковий тон кольору підпункту/головного пункту, походження), `tests/e2e/menu-v2-kleuren.e2e.ts` (кружальця ≤ 44 px усередині рейки, іконки видимі та
+  відцентровані, без тексту, кольори з моделі; скриншоти `menu-12`…`menu-18`).
 
-Controle na uitrol: Ctrl+F5 → menu «Завжди згорнута» → Пошта: alle subitems als cirkels met icoon; «Налаштування → Меню» → Кольоровий.
+Перевірка після розгортання: Ctrl+F5 → меню «Завжди згорнута» → Пошта: всі підпункти як кружальця з іконкою; «Налаштування → Меню» → Кольоровий.
 
-### 14.2 Fase B3 + B2 (9-10-2026) — ⚙ in de werkbalk, «levend» menu (badges + sms-bellen)
+### 14.2 Фаза B3 + B2 (9-10-2026) — ⚙ у панелі інструментів, «живе» меню (бейджі + бульбашки сповіщень)
 
-**Geen migratie.** Nieuwe recordtabel `menu_tellers_v1` (generieke RLS op `data.userId`, zoals migratie 0007), twee nieuwe routes:
-- `POST /api/owner/menu/tellers` — eigen tellers lezen; alleen goedgekeurde sessie (anders 403 `OWNER_APPROVED_SESSION_REQUIRED`).
-- `POST /api/owner/menu/tellers/zet` — `{bron:'mail', ongelezen:<geheel getal 0…99999>}`; alleen goedgekeurd, alleen vanaf
-  mail.tarasevych.com (de dienst wordt aan de host gebonden door `ownerService`), anders 400 `MENU_TELLER_BRON_ONGELDIG` /
-  `MENU_TELLER_WAARDE_ONGELDIG`. Er wordt ALLEEN een getal opgeslagen (geen onderwerpen, afzenders of inhoud); één rij per gebruiker,
-  alleen geschreven bij een wijziging (E-mail bundelt 1,2 s).
+**Без міграції.** Нова таблиця записів `menu_tellers_v1` (універсальний RLS за `data.userId`, як у міграції 0007), два нові маршрути:
+- `POST /api/owner/menu/tellers` — читання власних лічильників; лише схвалена сесія (інакше 403 `OWNER_APPROVED_SESSION_REQUIRED`).
+- `POST /api/owner/menu/tellers/zet` — `{bron:'mail', ongelezen:<ціле число 0…99999>}`; лише схвалена сесія, лише з
+  `mail.tarasevych.com` (служба прив'язується до хоста через `ownerService`), інакше 400 `MENU_TELLER_BRON_ONGELDIG` /
+  `MENU_TELLER_WAARDE_ONGELDIG`. Зберігається ЛИШЕ число (жодних тем, відправників чи вмісту); один рядок на користувача,
+  записується лише при зміні (Пошта групує зміни за 1,2 с).
 
-B3 — ⚙ (`Settings2`) als 4e knop in de werkbalk (breed én in het smalle paneel), een echte link naar
-`https://id.tarasevych.com/menu#menu-meldingen` (op id.* zelf: binnen de pagina naar de sectie). Налаштування → Меню kreeg de sectie
-«Сповіщення в меню»: aan/uit, getal of gekleurde stip, bellen bij aanwijzen, «aandacht voor nieuw» (puls), herinneren (nooit/15/30/60/120
-min), stille uren (geen puls/herinnering, badges blijven), per soort aan/uit (Пошта, Безпека, Доступ і запити, Спільний доступ, ШІ та
-агенти, Система). Opgeslagen in het bestaande `sidebar`-veld (`meldingen`, strikt genormaliseerd op browser én server).
+B3 — ⚙ (`Settings2`) як 4-та кнопка в панелі інструментів (у широкому режимі ТА у вузькій панелі), справжнє посилання на
+`https://id.tarasevych.com/menu#menu-meldingen` (на самому `id.*`: прокрутка всередині сторінки до секції). Налаштування → Меню отримало секцію
+«Сповіщення в меню»: увімк./вимк., число або кольорова крапка, бульбашки при наведенні, «увага до нового» (пульсація), нагадування (ніколи/15/30/60/120
+хв), тихі години (без пульсації/нагадувань, бейджі залишаються), увімк./вимк. за типами (Пошта, Безпека, Доступ і запити, Спільний доступ, ШІ та
+агенти, Система). Зберігається в наявному полі `sidebar` (`meldingen`, суворо нормалізується в браузері ТА на сервері).
 
-B2 — bronnen: de bestaande bel-meldingen (`site_notifications`, alleen ongelezen) + de e-mailteller. Soort → menu-item en kleur
-(`shared/menu-meldingen.ts`): access_request → Адмін › Доступ (oranje), account_email_conflict → Налаштування › Акаунт (rood),
-workspace_share → Мій простір › Огляд (groen), google_login_config → Адмін › Контур (grijs), ongelezen e-mail → Пошта › Вхідні (blauw).
-Een badge op een pagina telt ook op het hoofditem. Aanwijzen/focus → bellen (max. 5, nieuwste eerst; tekst via React, geen HTML);
-× bij een servermelding = «gelezen» via de bestaande route `notifications/read` (met id, nooit «alles»); × bij de e-mailteller =
-verbergen in deze browser tot er MEER ongelezen zijn. Links in bellen alleen https op *.tarasevych.com of een relatief pad.
-Toetsenbord: Tab op een item opent de bellen, → gaat erin, Esc terug. `prefers-reduced-motion` zet alle animaties uit.
+B2 — джерела: наявні сповіщення дзвіночка (`site_notifications`, лише непрочитані) + лічильник пошти. Тип → пункт меню та колір
+(`shared/menu-meldingen.ts`): `access_request` → Адмін › Доступ (помаранчевий), `account_email_conflict` → Налаштування › Акаунт (червоний),
+`workspace_share` → Мій простір › Огляд (зелений), `google_login_config` → Адмін › Контур (сірий), непрочитана пошта → Пошта › Вхідні (синій).
+Бейдж на сторінці також підсумовується на головному пункті розділу. Наведення/фокус → бульбашки (макс. 5, спочатку найновіші; текст через React, без сирого HTML);
+`×` біля серверного сповіщення = «прочитано» через наявний маршрут `notifications/read` (за `id`, ніколи не «всі»); `×` біля лічильника пошти =
+приховати в цьому браузері, доки непрочитаних не стане БІЛЬШЕ. Посилання в бульбашках дозволені лише з `https` на `*.tarasevych.com` або відносний шлях.
+Клавіатура: `Tab` на пункті відкриває бульбашки, `→` переходить всередину, `Esc` повертає назад. `prefers-reduced-motion` вимикає всі анімації.
 
-Afscherming: badges/bellen alleen bij een goedgekeurde sessie (`zijbalkServerDienst() !== ''`); aria-label bevat alleen het aantal;
-gasten (toegangscodes, `/toegang`, cookie `tsv_gast`) hebben geen menu en geen `/api/owner`-toegang en krijgen dus niets
-(e2e gast-toegang blijft groen). Beperkingen: de e-mailteller wordt alleen bijgewerkt wanneer E-mail open is geweest; in de mobiele
-lade staat geen werkbalk en dus geen ⚙ (Налаштування → Меню blijft bereikbaar via het menu).
+Захист: бейджі/бульбашки працюють лише за наявності схваленої сесії (`zijbalkServerDienst() !== ''`); `aria-label` містить лише кількість;
+гості (коди доступу, `/toegang`, кука `tsv_gast`) не мають меню та доступу до `/api/owner`, тому нічого не отримують
+(e2e гостьового доступу залишається зеленим). Обмеження: лічильник пошти оновлюється лише тоді, коли Пошта була відкрита; у мобільній
+висувній панелі немає панелі інструментів і тому немає ⚙ (Налаштування → Меню залишається доступним через саме меню).
 
-Tests: `tests/eenheid/menu-meldingen.test.ts` (35: normalisatie, stille uren, doel/links, badges, routes incl. weigeringen en isolatie),
-`tests/e2e/menu-v2-meldingen.e2e.ts` (30; screenshots menu-20…menu-24). Opruimen op exact e-mailadres.
+Тести: `tests/eenheid/menu-meldingen.test.ts` (35: нормалізація, тихі години, ціль/посилання, бейджі, маршрути включно з відмовами та ізоляцією),
+`tests/e2e/menu-v2-meldingen.e2e.ts` (30; скриншоти `menu-20`…`menu-24`). Очищення за точною адресою ел. пошти.
 
-Controle na uitrol: Ctrl+F5 → werkbalk: ⚙ zichtbaar → klik → «Сповіщення в меню». E-mail openen → badge op Пошта met het aantal
-ongelezen; op een andere dienst aanwijzen → bel «Непрочитані листи: N» → × → badge weg.
+Перевірка після розгортання: Ctrl+F5 → панель інструментів: ⚙ видима → клік → «Сповіщення в меню». Відкрити Пошту → бейдж на Пошті з кількістю
+непрочитаних; на іншому сервісі навести курсор → бульбашка «Непрочитані листи: N» → `×` → бейдж зникає.
 
-### 14.3 Fase B1 (9-10-2026) — snelle overgangen, leescache, vooruitladen, versleutelde concepten
+### 14.3 Фаза B1 (9-10-2026) — швидкі переходи, кеш читання, попереднє завантаження, зашифровані чернетки
 
-Wat er verandert:
+Що змінюється:
 
-- **Voortgangsbalk** (`src/navigatie-snel.ts`, `#tsv-voortgang`): dunne balk bovenaan in de kleur van het onderdeel
-  waar je heen gaat (lichte/donkere tint). Start via de Navigation API (`navigate`-event) of bij een klik in het menu;
-  wordt pas na 120 ms zichtbaar (geen geflikker); binnen een onderdeel klaar zodra er ≥ 220 ms geen API-verzoek meer
-  loopt; bij een wissel naar een ander subdomein blijft hij lopen tot de pagina wisselt (max. 12 s).
-- **Overgangen binnen een onderdeel**: `document.startViewTransition` alleen op de werkruimte
-  (`view-transition-name: tsv-werkruimte`), niet bij «minder beweging». Tussen subdomeinen kan dat niet (andere origin);
-  daar voorkomen `html{background:var(--boot-bg)}` en vooruitladen de witte flits.
-- **Leescache + afbreken** (`src/lees-cache.ts`, `src/platform/client.ts`): stale-while-revalidate, alleen in het
-  geheugen, per account (wisselt het account, dan wordt de cache gewist), max. 40 items / 10 min, alleen
-  `/api/owner/...`-leesroutes. Toegangscodes, passkeys en sessies tonen direct de vorige stand en verversen op de
-  achtergrond; bij het verlaten van een pagina wordt het lopende verzoek afgebroken (`AbortController`).
-- **Vooruitladen tussen subdomeinen**: HTTP-header `Speculation-Rules: "/speculatie.json"` op HTML-antwoorden
-  (géén inline-script, dus de CSP blijft exact `script-src 'self' 'wasm-unsafe-eval'`). De regels werken alleen op
-  onzichtbare links met `data-tsv-vooruit` in `#tsv-vooruit`; die maakt de app bij aanwijzen (90 ms) of focus van een
-  menu-item. Alleen `https`, alleen eigen hosts, nooit links met `code/state/token/proof/transaction/redeem/handoff/
-  auth_broker/oauth_*/consent/invite`. HTML krijgt ook `Supports-Loading-Mode: credentialed-prerender`
-  (nodig voor prerender over subdomeinen). API-antwoorden krijgen deze headers niet.
-- **Service worker v10**: bij installatie worden de JS/CSS-ingangsbestanden uit de start-HTML in de cache gezet
-  (max. 24). Oude caches (v9 enz.) worden bij activeren opgeruimd zoals voorheen.
-- **Versleutelde concepten** (`src/concepten.ts`): alleen velden met `data-concept` (AI-chat, mailantwoord,
-  GitHub-issue, MCP-bord, notitie bij toegangscode); nooit wachtwoord- of eenmalige-codevelden. AES-GCM 256 met een
-  **niet-exporteerbare** sleutel in IndexedDB `tsv-concepten`, per account (rij-id = eerste 32 hex van
-  SHA-256(`tsv-concept|<id>`), dus geen e-mail/id in de opslag), AAD = rij-id, IV 12 bytes, 7 dagen geldig,
-  max. 50 concepten / 20 000 tekens. Herstel na herladen met melding «Чернетку відновлено» en knop «Відкинути».
-  Uitzetten wist alle concepten én sleutels. Niets gaat naar de server.
+- **Смужка прогресу** (`src/navigatie-snel.ts`, `#tsv-voortgang`): тонка смужка вгорі сторінки в кольорі розділу,
+  куди ви переходите (світлий/темний відтінок). Запускається через Navigation API (подія `navigate`) або при кліку в меню;
+  стає видимою лише через 120 мс (без мерехтіння); усередині розділу завершується, щойно протягом ≥ 220 мс немає активних API-запитів;
+  при переході на інший піддомен триває, доки сторінка не зміниться (макс. 12 с).
+- **Переходи всередині розділу**: `document.startViewTransition` лише на робочій області
+  (`view-transition-name: tsv-werkruimte`), вимкнено за умови «менше руху». Між піддоменами це неможливо (інший origin);
+  там білий спалах усувають `html{background:var(--boot-bg)}` та попереднє завантаження (prefetch).
+- **Кеш читання + скасування запитів** (`src/lees-cache.ts`, `src/platform/client.ts`): stale-while-revalidate, лише в
+  оперативній пам'яті, окремо для кожного акаунта (при зміні акаунта кеш очищується), макс. 40 елементів / 10 хв, лише
+  маршрути читання `/api/owner/...`. Коди доступу, passkeys та сесії миттєво показують попередній стан і оновлюються у
+  фоновому режимі; при виході зі сторінки активний запит скасовується (`AbortController`).
+- **Попереднє завантаження між піддоменами**: HTTP-заголовок `Speculation-Rules: "/speculatie.json"` на HTML-відповідях
+  (жодного inline-скрипту, тому CSP залишається точно `script-src 'self' 'wasm-unsafe-eval'`). Правила працюють лише на
+  невидимих посиланнях із `data-tsv-vooruit` у `#tsv-vooruit`; застосунок створює їх при наведенні курсора (90 мс) або фокусі на
+  пункті меню. Лише `https`, лише власні хости, ніколи не посилання з `code/state/token/proof/transaction/redeem/handoff/
+  auth_broker/oauth_*/consent/invite`. HTML також отримує `Supports-Loading-Mode: credentialed-prerender`
+  (необхідно для prerender між піддоменами). API-відповіді цих заголовків не отримують.
+- **Service фоновий обробник v10**: під час встановлення вхідні JS/CSS-файли зі стартового HTML додаються в кеш
+  (макс. 24). Старі кеші (v9 тощо) під час активації прибираються, як і раніше.
+- **Зашифровані чернетки** (`src/concepten.ts`): лише поля з атрибутом `data-concept` (чат ШІ, відповідь у пошті,
+  GitHub-issue, дошка MCP, нотатка до коду доступу); ніколи не поля паролів чи одноразових кодів. AES-GCM 256 із
+  **неекспортованим** ключем в IndexedDB `tsv-concepten`, окремо для кожного акаунта (id рядка = перші 32 hex-символи від
+  SHA-256(`tsv-concept|<id>`), отже жодної ел. пошти/id у сховищі), AAD = id рядка, IV 12 байтів, термін дії 7 днів,
+  макс. 50 чернеток / 20 000 символів. Відновлення після перезавантаження з повідомленням «Чернетку відновлено» та кнопкою «Відкинути».
+  Вимкнення функції видаляє всі чернетки ТА ключі. Нічого не передається на сервер.
 
-Instellingen (Налаштування → Меню → «Швидкість переходів і чернетки», `#menu-snelheid`, opgeslagen in de zijbalk-
-voorkeur `snelheid`):
+Налаштування (Налаштування → Меню → «Швидкість переходів і чернетки», `#menu-snelheid`, зберігається в налаштуванні бічної
+панелі `snelheid`):
 
-| Schakelaar | Standaard |
+| Перемикач | Типово |
 |---|---|
-| Смужка завантаження (voortgang) | aan |
-| Плавна зміна сторінок (overgangen) | aan |
-| Підвантажувати розділ при наведенні (vooruitladen) | aan |
-| Повністю готувати розділ заздалегідь (prerender) — experimenteel | **uit** |
-| Зберігати чернетки (зашифровано) (concepten) — experimenteel | **uit** |
+| Смужка завантаження (прогрес) | увімк. |
+| Плавна зміна сторінок (переходи) | увімк. |
+| Підвантажувати розділ при наведенні (попереднє завантаження) | увімк. |
+| Повністю готувати розділ заздалегідь (prerender) — експериментально | **вимк.** |
+| Зберігати чернетки (зашифровано) (чернетки) — експериментально | **вимк.** |
 
-Beperkingen: geen View Transition tussen subdomeinen; vooruitladen kan in oudere Chrome-versies vervallen als de doelpagina
-een service worker heeft; concepten alleen voor de 5 gemarkeerde velden (niet de Gmail-editor) en per subdomein
-(IndexedDB is per origin); Firefox/Safari zonder Speculation Rules laden gewoon zonder vooruitladen.
+Обмеження: немає View Transition між піддоменами; попереднє завантаження у старіших версіях Chrome може пропускатися, якщо цільова сторінка
+має service фоновий обробник; чернетки працюють лише для 5 позначених полів (не для редактора Gmail) і окремо для кожного піддомену
+(IndexedDB ізольована за origin); Firefox/Safari без підтримки Speculation Правила просто завантажують сторінки без попереднього завантаження.
 
-Controle na uitrol:
+Перевірка після розгортання:
 
 1. `curl -sI https://id.tarasevych.com/menu | grep -i -E 'speculation-rules|supports-loading-mode|content-security'` →
-   `"/speculatie.json"`, `credentialed-prerender`, CSP ongewijzigd.
+   `"/speculatie.json"`, `credentialed-prerender`, CSP без змін.
 2. `curl -sI https://id.tarasevych.com/speculatie.json` → `application/speculationrules+json`.
 3. `curl -s https://id.tarasevych.com/service-worker.js | grep "VERSION='v10'"`.
-4. In de browser: klik Налаштування → Мови: balk in grijs; aanwijzen Пошта → in DevTools (Application → Speculative
-   loads) staat mail.tarasevych.com als prefetch; daarna openen = direct en aangemeld.
-5. Concepten blijven uit tot ze in de instellingen worden aangezet.
+4. У браузері: клік Налаштування → Мови: сіра смужка прогресу; навести курсор на Пошта → у DevTools (Application → Speculative
+   loads) з'являється `mail.tarasevych.com` як prefetch; після цього відкриття відбувається миттєво і вже з виконаним входом.
+5. Чернетки залишаються вимкненими, доки їх не увімкнуть у налаштуваннях.
 
-### 14.4 Stage 2 (9-10-2026) — indeling van het menu, dock rechts/boven/onder, bewerkmodus
+### 14.4 Етап 2 (9-10-2026) — компонування меню, док праворуч/вгорі/внизу, режим редагування
 
-Wat er is:
-- **Plaatsen**: «Швидкий доступ» (snelbalk, boven in het menu), het hoofdmenu, de secties (submenu per onderdeel) en «Стартова
-  сторінка» (snelkoppelingen op Мій простір → Огляд). Onderdelen (`svc:`) alleen op het bovenste niveau; pagina's (`pg:`) overal.
-  Alleen onderdelen waartoe de gebruiker toegang heeft verschijnen (ook kopieën). Logica: `shared/menu-indeling.ts` (puur, getest).
-- **Bewerkmodus** (✎ in de werkbalk, in de lade op mobiel, of Налаштування → Меню → «Редагувати меню»): slepen met de muis,
-  op aanraakschermen lang indrukken (450 ms); Alt/Ctrl/⌘ tijdens slepen = kopie (geest toont «+»), Esc = annuleren.
-  Klik/Enter op een item = actiemenu (Вище/Нижче, «Перемістити до…», «Дублювати до…», kopie verwijderen, terugzetten);
-  Alt+pijltjes = verplaatsen, Ctrl/⌘+Z = ongedaan maken. Elke wijziging: melding met «Скасувати» + schermlezerstatus.
-- **Kopieën** houden de kleur van hun herkomst-onderdeel (`itemAccent`) en tonen de herkomst als label.
-- **Terugzetten**: per item (override + alle kopieën weg) in het actiemenu en in Налаштування → Меню («Змінені пункти»);
-  «Скинути все» zet ook de positie/het dock terug. Beide met «Скасувати».
-- **Positie** (Налаштування → Меню → «Розташування й порядок меню»): Ліворуч / Праворуч (gespiegeld) / Вгорі / Внизу.
-  Boven/onder = zwevend dock (iconen) met transparantie 0–60 % (met vervaging) en optionele vergroting zoals macOS
-  (alleen muis; niet bij «minder beweging», niet tijdens bewerken). Klik op het actieve onderdeel opent een paneel met de
-  pagina's. Op een telefoon (≤ 700 px) blijft het altijd de lade links.
-- Bewaard in `owner_ui_preferences_v1.sidebar` (`items`, `kopieen`, `dock`), genormaliseerd op server en browser; de server wint.
+Що реалізовано:
+- **Місця розміщення**: «Швидкий доступ» (панель швидкого доступу вгорі меню), головне меню, секції (підменю кожного розділу) та «Стартова
+  сторінка» (ярлики на Мій простір → Огляд). Розділи (`svc:`) лише на верхньому рівні; сторінки (`pg:`) будь-де.
+  Відображаються лише ті розділи, до яких користувач має доступ (включно з копіями). Логіка: `shared/menu-indeling.ts` (чиста, покрита тестами).
+- **Режим редагування** (✎ у панелі інструментів, у висувній панелі на мобільних або Налаштування → Меню → «Редагувати меню»): перетягування мишею,
+  на сенсорних екранах — довге натискання (450 мс); `Alt`/`Ctrl`/`⌘` під час перетягування = створення копії (фантом показує «+»), `Esc` = скасування.
+  Клік/`Enter` на пункті = меню дій (Вище/Нижче, «Перемістити до…», «Дублювати до…», видалити копію, скинути);
+  `Alt`+стрілки = переміщення, `Ctrl`/`⌘`+`Z` = скасування останньої дії. Кожна зміна супроводжується повідомленням із кнопкою «Скасувати» + статусом для екранного диктора.
+- **Копії** зберігають колір свого початкового розділу (`itemAccent`) і показують походження як мітку.
+- **Скидання**: для окремого пункту (скидає override + видаляє всі копії) у меню дій та в Налаштування → Меню («Змінені пункти»);
+  «Скинути все» також повертає стандартне розташування/док. Обидві дії мають кнопку «Скасувати».
+- **Розташування** (Налаштування → Меню → «Розташування й порядок меню»): Ліворуч / Праворуч (віддзеркалено) / Вгорі / Внизу.
+  Вгорі/внизу = рухомий док (іконки) з прозорістю 0–60 % (із розмиттям фону) та опційним збільшенням як у macOS
+  (лише для миші; вимкнено при «менше руху» та під час редагування). Клік на активному розділі відкриває панель зі
+  сторінками. На телефоні (≤ 700 px) меню завжди залишається висувною панеллю ліворуч.
+- Зберігається в `owner_ui_preferences_v1.sidebar` (`items`, `kopieen`, `dock`), нормалізується на сервері та в браузері; пріоритет має сервер.
 
-E2E alleen lokaal (eis Pavlo): `scripts/e2e-lokaal.mjs` weigert e2e-bestanden met Playwright-API-verzoeken vanuit Node
-(`ctx.request`/`page.request`/`request.newContext`) of zonder `chromeArgs()`, en blokkeert in het testproces elke socket/DNS
-buiten loopback. Chrome krijgt `chromeArgs()` uit `tests/e2e/server.ts`: `*.tarasevych.com` (alle poorten) → 127.0.0.1:<poort>,
-al het andere `~NOTFOUND`. De nieuwe test controleert daarnaast dat elk paginaverzoek naar *.tarasevych.com (= lokaal) gaat.
+E2E лише локально (вимога Павла): `scripts/e2e-lokaal.mjs` відхиляє e2e-файли із запитами Playwright API з Node
+(`ctx.request`/`page.request`/`request.newContext`) або без `chromeArgs()`, і блокує в тестовому процесі будь-які сокети/DNS
+поза loopback. Chrome отримує `chromeArgs()` із `tests/e2e/server.ts`: `*.tarasevych.com` (усі порти) → `127.0.0.1:<poort>`,
+усе інше — `~NOTFOUND`. Новий тест додатково перевіряє, що кожен запит сторінки йде на `*.tarasevych.com` (= локально).
 
-Na de uitrol controleren:
-1. Налаштування → Меню: blok «Розташування й порядок меню»; kies «Внизу» → dock onderaan; schuif transparantie; vergroting aan.
-2. ✎ → sleep een item; melding «Скасувати» werkt; Ctrl+slepen van een pagina naar «Швидкий доступ» = kopie in de kleur van
-   het onderdeel; «Скинути все» → standaard.
-3. Op de telefoon: lade, ✎ in de kop, lang indrukken + slepen; lade sluiten = bewerkmodus uit.
+Перевірка після розгортання:
+1. Налаштування → Меню: блок «Розташування й порядок меню»; оберіть «Внизу» → док знизу; посуньте повзунок прозорості; увімкніть збільшення.
+2. ✎ → перетягніть пункт; кнопка «Скасувати» в повідомленні працює; `Ctrl`+перетягування сторінки у «Швидкий доступ» = копія в кольорі
+   розділу; «Скинути все» → повернення до стандарту.
+3. На телефоні: висувна панель, ✎ у заголовку, довге натискання + перетягування; закриття панелі = вихід із режиму редагування.
 
-Datamodel stage 2: `shared/menu-model.ts` — stabiele ids `svc:<dienst>` / `pg:<dienst>/<pagina>`, standaardplaatsing uit
-`MENU_PAGINAS` (gelijk aan `canonical-service.js`, door een test bewaakt), overrides per item (`zichtbaar`, `volgorde`, `plaats`,
-`ouder`, `icoon`), kopieën (`k-…` → `zijbalk`/`snelbalk`/`start`), dock (`links|rechts|boven|onder`, transparantie 0–60, vergroting),
+Модель даних етапу 2: `shared/menu-model.ts` — стабільні ідентифікатори `svc:<dienst>` / `pg:<dienst>/<pagina>`, стандартне розміщення з
+`MENU_PAGINAS` (ідентичне `canonical-service.js`, контролюється тестом), перевизначення (overrides) для кожного пункту (`zichtbaar`, `volgorde`, `plaats`,
+`ouder`, `icoon`), копії (`k-…` → `zijbalk`/`snelbalk`/`start`), док (`links|rechts|boven|onder`, прозорість 0–60, збільшення),
 `itemTerugzetten`, `allesTerugzetten`, `menuSamenstellen`.
 
-## 15. Besluiten van de eigenaar met een passkey-handtekening: terugdraaien en externe MCP-hosts zonder SSH (22.10.2026)
+## 15. Рішення власника з підписом passkey: відкат і зовнішні MCP-хости без SSH (22.10.2026)
 
-**Waarom.** «Відкат до попереднього» op mcp.*/dashboard werkte alleen met `"opdracht": {"terugdraaien": true}` in het root-bestand
-(standaard uit, met reden: een gekaapte app mag de site niet terugdraaien), en de witte lijst van externe MCP-hosts (`externeMcpHosts`)
-was alleen via SSH te wijzigen. De eigenaar wil beide beslissen op de site — met dezelfde zekerheid als het goedkeuren van updates (§13).
+**Чому.** «Відкат до попереднього» на `mcp.*/dashboard` працював лише за умови `"opdracht": {"terugdraaien": true}` у root-файлі
+(типово вимкнено, і не дарма: захоплений застосунок не повинен мати змоги відкотити сайт), а білий список зовнішніх MCP-хостів (`externeMcpHosts`)
+можна було змінити лише через SSH. Власник хоче ухвалювати обидва рішення прямо на сайті — з таким самим рівнем надійності, як і схвалення оновлень (§13).
 
-**Principe.** `/etc/mijn-ruimte/mcp-rechten.json` blijft van root en wordt NIET schrijfbaar voor de app. Een besluit gaat hetzelfde pad als
-een update-goedkeuring:
+**Принцип.** `/etc/mijn-ruimte/mcp-rechten.json` залишається власністю root і НЕ стає доступним для запису застосунком. Рішення проходить той самий шлях, що й
+схвалення оновлення:
 
 ```
 browser (mcp.*)  ── WebAuthn-assertie over challenge = H(doel 'eigenaar-besluit', sha256(canonieke inhoud), nonce, verloopt ≤ 5 min)
@@ -1052,50 +1051,50 @@ mijn-ruimte-besluit.path ─► mijn-ruimte-besluit.service ─► /usr/local/sb
 gebeurtenissen.jsonl (bron «besluit»), /var/lib/mijn-ruimte/besluit/journaal.jsonl (root), app.audit (eigenaar_besluit_*)
 ```
 
-Zonder de passkey van de eigenaar gebeurt er niets: een gecompromitteerde app kan hoogstens een bestand in de inbox leggen dat root
-weigert (SLEUTEL_ONBEKEND, HANDTEKENING_ONGELDIG, UITDAGING_ONJUIST bij gewijzigde inhoud, HERGEBRUIKT bij een tweede keer, VERLOPEN).
-Root leest nooit iets anders uit de inbox dan dat ene JSON-bestand (geen symlinks, ≤ 64 KiB), haalt het eerst uit de inbox en vertrouwt
-alleen zijn eigen normalisatie van de inhoud.
+Без passkey власника нічого не відбувається: скомпрометований застосунок може щонайбільше покласти файл в inbox, який root
+відхилить (`SLEUTEL_ONBEKEND`, `HANDTEKENING_ONGELDIG`, `UITDAGING_ONJUIST` при зміненому вмісті, `HERGEBRUIKT` при повторній спробі, `VERLOPEN`).
+Root ніколи не читає з inbox нічого іншого, крім цього єдиного JSON-файлу (без симлінків, ≤ 64 КіБ), спочатку забирає його з inbox і довіряє
+лише власній нормалізації вмісту.
 
-### 15.1 Drie standen voor terugdraaien (mcp-rechten.json)
+### 15.1 Три режими відкату (`mcp-rechten.json`)
 
-| `"opdracht": {"terugdraaien": …}` | `"terugdraaien-passkey"` | Gevolg |
+| `"opdracht": {"terugdraaien": …}` | `"terugdraaien-passkey"` | Наслідок |
 |---|---|---|
-| `true` | ontbreekt of `true` | de oude directe knop (step-up) werkt **én** het passkey-besluit |
-| ontbreekt / `false` (standaard) | ontbreekt of `true` (standaard) | **alleen via het passkey-besluit** (de wizard op mcp.*/dashboard) |
-| (wat dan ook) | `false` | terugdraaien vanaf de site is **dicht**; alleen SSH (`mijn-ruimte-installeer terugdraaien`) |
+| `true` | відсутній або `true` | працює стара пряма кнопка (посилене підтвердження) **ТА** рішення з passkey |
+| відсутній / `false` (типово) | відсутній або `true` (типово) | **лише через рішення з passkey** (майстер на `mcp.*/dashboard`) |
+| (будь-що) | `false` | відкат із сайту **закрито**; лише через SSH (`mijn-ruimte-installeer terugdraaien`) |
 
-Voor de witte lijst: `"externe-hosts-passkey": false` sluit het kanaal; anders open. Migraties worden bij geen enkele terugdraaiing
-teruggedraaid (zie §8); de wizard zegt dat er expliciet bij.
+Для білого списку: `"externe-hosts-passkey": false` закриває канал; інакше відкритий. Міграції БД не відкочуються при жодному
+відкаті (див. §8); майстер явно про це попереджає.
 
-### 15.2 Bediening
+### 15.2 Керування в інтерфейсі
 
-- **mcp.*/dashboard → Керування сервером → «Відкат до попереднього»**: wizard met «Зараз активний» → «Повернути на» (standaard de vorige,
-  elke volledige release uit `/srv/mijn-ruimte/releases` kan), waarschuwing over migraties en de 10-minutenlimiet, «Підписати passkey й
-  відкотити» → «Рішення передано, root перевіряє підпис…» → live stand (de dienst herstart; de pagina wacht daar doorheen) →
-  «Виконано» / «Відхилено root-ом» met code en reden / «Не вдалося».
-- **mcp.*/agenten → Зовнішні MCP → «Дозволені хости»**: de lijst uit het bestand (chips), hosts uit `EXTERNE_MCP_HOSTS` apart
-  (niet te wijzigen), toevoegen/weghalen, «Підписати passkey й зберегти список» → root schrijft → de pagina herlaadt de witte lijst.
-- Beide tonen eerlijk waarom het niet kan: `BESLUIT_UIT` (schakelaar), `GEEN_PASSKEY` (geen root-passkey; «Способи входу» → «Може
-  схвалювати оновлення сервера»), geen passkey-browser, geen andere volledige release.
+- **`mcp.*/dashboard` → Керування сервером → «Відкат до попереднього»**: майстер із вибором «Зараз активний» → «Повернути на» (типово попередній,
+  можна обрати будь-який повний реліз із `/srv/mijn-ruimte/releases`), попередження про міграції та 10-хвилинний ліміт, «Підписати passkey й
+  відкотити» → «Рішення передано, root перевіряє підпис…» → живий статус (служба перезапускається; сторінка перечікує перезапуск) →
+  «Виконано» / «Відхилено root-ом» із кодом і причиною / «Не вдалося».
+- **`mcp.*/agenten` → Зовнішні MCP → «Дозволені хости»**: список із файлу (чипси), хости з `EXTERNE_MCP_HOSTS` окремо
+  (не змінюються), додавання/видалення, «Підписати passkey й зберегти список» → root записує → сторінка перезавантажує білий список.
+- Обидва інтерфейси чесно показують, чому дія неможлива: `BESLUIT_UIT` (перемикач вимкнено), `GEEN_PASSKEY` (немає root-passkey; «Способи входу» → «Може
+  схвалювати оновлення сервера»), браузер без підтримки passkey, немає іншого повного релізу.
 
-### 15.3 Bestanden, units, omgeving
+### 15.3 Файли, юніти, оточення
 
-- `deploy/goedkeuring/besluit-kern.mjs` (normalisatie + hash, gedeeld door app en root; geïnstalleerd naast de WebAuthn-kern in
-  `/usr/local/lib/mijn-ruimte/goedkeuring/`), `goedkeur-hulp.mjs verifieer-besluit`, `webauthn-kern.mjs` doel `eigenaar-besluit`;
-- `deploy/besluit/mijn-ruimte-besluit.sh` → `/usr/local/sbin/mijn-ruimte-besluit` (`verwerk` | `status`), units `mijn-ruimte-besluit.path`
-  (PathChanged `/srv/mijn-ruimte/besluit-inbox/aanvraag`) en `mijn-ruimte-besluit.service`; de installer (`besluit_inrichten`) zet alles
-  neer en maakt `/srv/mijn-ruimte/besluit-inbox` (mijnruimte 0750) en `/var/lib/mijn-ruimte/besluit` (root 0700: journaal, stempel,
-  reservekopieën `mcp-rechten.<tijd>.<id>.bak`, installerlogs);
-- `backend/eigenaar-besluit.ts` (routes `/api/owner/besluit/{overzicht,starten,ondertekenen,status}`, alleen eigenaar op mcp/admin),
-  migratie `0105_eigenaar_besluiten.sql` (RLS: eigen rijen; app-rol alleen lezen), `shared/eigenaar-besluit.ts` (teksten, «?»),
-  `src/besluit/*` (wizard, hosts), `src/McpServerBeheerKaart.tsx`, `src/agenten/TabExternMcp.tsx`;
-- omgeving (alleen tests/stand): `BESLUIT_INBOX`, `BESLUIT_APP_ROOT`, `OPDRACHT_STATUS_DIR`, `MCP_RECHTEN_PAD`, `GOEDKEUR_SLEUTELS`;
-  root-script buiten root: `BESLUIT_*` alleen met paden onder /tmp.
-- Terugdraaien op een besluit schrijft de installer als `TERUG_OK` met herkomst `besluit` (wie = `passkey`); in «Історія» staat die als
-  methode «Опрацювання завдання» met «Відкочено».
+- `deploy/goedkeuring/besluit-kern.mjs` (нормалізація + хеш, спільні для застосунку та root; встановлюється поруч із ядром WebAuthn у
+  `/usr/local/lib/mijn-ruimte/goedkeuring/`), `goedkeur-hulp.mjs verifieer-besluit`, `webauthn-kern.mjs` ціль `eigenaar-besluit`;
+- `deploy/besluit/mijn-ruimte-besluit.sh` → `/usr/local/sbin/mijn-ruimte-besluit` (`verwerk` | `status`), юніти `mijn-ruimte-besluit.path`
+  (`PathChanged` `/srv/mijn-ruimte/besluit-inbox/aanvraag`) та `mijn-ruimte-besluit.service`; інсталятор (`besluit_inrichten`) розгортає все
+  і створює `/srv/mijn-ruimte/besluit-inbox` (`mijnruimte` 0750) та `/var/lib/mijn-ruimte/besluit` (`root` 0700: журнал, мітка часу,
+  резервні копії `mcp-rechten.<tijd>.<id>.bak`, логи інсталятора);
+- `backend/eigenaar-besluit.ts` (маршрути `/api/owner/besluit/{overzicht,starten,ondertekenen,status}`, лише власник на `mcp`/`admin`),
+  міграція `0105_eigenaar_besluiten.sql` (RLS: власні рядки; роль застосунку лише читання), `shared/eigenaar-besluit.ts` (тексти, «?»),
+  `src/besluit/*` (майстер, хости), `src/McpServerBeheerKaart.tsx`, `src/agenten/TabExternMcp.tsx`;
+- змінні оточення (лише тести/стенд): `BESLUIT_INBOX`, `BESLUIT_APP_ROOT`, `OPDRACHT_STATUS_DIR`, `MCP_RECHTEN_PAD`, `GOEDKEUR_SLEUTELS`;
+  root-скрипт поза root: `BESLUIT_*` лише зі шляхами всередині `/tmp`.
+- Відкат за рішенням інсталятор записує як `TERUG_OK` із походженням `besluit` (хто = `passkey`); в «Історія» він відображається як
+  метод «Опрацювання завдання» зі статусом «Відкочено».
 
-### 15.4 Controle en problemen
+### 15.4 Перевірка та усунення проблем
 
 ```bash
 systemctl status mijn-ruimte-besluit.path; journalctl -u mijn-ruimte-besluit -n 50 --no-pager
@@ -1103,150 +1102,151 @@ sudo mijn-ruimte-besluit status && sudo cat /var/lib/mijn-ruimte-uitrol-status/b
 sudo tail -n 5 /var/lib/mijn-ruimte/besluit/journaal.jsonl
 ```
 
-Geen antwoord binnen 15 min → de site sluit het besluit af als «verlopen / GEEN_UITKOMST» en noemt deze opdrachten. Tests:
-`besluit-root-20261022.test.ts` (echte root-hulp + root-script met testpaden en een installer-stub; 47 aanvallen en goede wegen),
-`besluit-app-20261022.test.ts` (routes, RLS), `uitrol-geschiedenis-tijdlijn-20261022.test.ts`; stand `besluit-*` (virtuele passkey via CDP).
+Немає відповіді протягом 15 хв → сайт закриває рішення як «прострочено / `GEEN_UITKOMST`» і підказує ці команди. Тести:
+`besluit-root-20261022.test.ts` (справжній root-помічник + root-скрипт із тестовими шляхами та стабом інсталятора; 47 атак і коректних сценаріїв),
+`besluit-app-20261022.test.ts` (маршрути, RLS), `uitrol-geschiedenis-tijdlijn-20261022.test.ts`; стенд `besluit-*` (віртуальний passkey через CDP).
 
-## 16. Werkblad v3 — data
+## 16. Робочий стіл v3 (Werkblad v3) — дані
 
-Etappe A (data-laag) van het vrije werkblad. Bestanden: `migrations/0114_werkblad_v3.sql`, `shared/werkblad-v3.ts`,
-`backend/werkblad-v3.ts`, `src/werkblad/api-v3.ts`, tests `tests/eenheid/werkblad-v3-*.test.ts`.
+Етап A (рівень даних) вільного робочого столу. Файли: `migrations/0114_werkblad_v3.sql`, `shared/werkblad-v3.ts`,
+`backend/werkblad-v3.ts`, `src/werkblad/api-v3.ts`, тести `tests/eenheid/werkblad-v3-*.test.ts`.
 
-**Wat 0114 doet.** Drie nieuwe tabellen onder RLS (zelfde vorm als 0112): `app.werkblad_v3_lade` (per user_id + ruimte:
-achtergrond, herkomst, `v2_backup`), `app.werkblad_layout` (per user_id + ruimte + apparaat: modus, canvasmaat, versie) en
-`app.werkblad_items` (één rij per object: x, y, w, h, z, kind, item_id, overrides, config ≤ 6000 bytes). Hoogstens 400 objecten
-per laag. Voegt de vlag `werkblad-v3` toe met `aan=false`. Raakt `app.werkblad_indeling` (v2) niet aan. Idempotent.
+**Що робить 0114.** Три нові таблиці під RLS (така сама форма, як у 0112): `app.werkblad_v3_lade` (на `user_id` + простір:
+фон, походження, `v2_backup`), `app.werkblad_layout` (на `user_id` + простір + пристрій: режим, розмір полотна, версія) та
+`app.werkblad_items` (один рядок на об'єкт: `x`, `y`, `w`, `h`, `z`, `kind`, `item_id`, `overrides`, `config` ≤ 6000 байтів). Щонайбільше 400 об'єктів
+на шар. Додає прапорець `werkblad-v3` зі значенням `aan=false`. Не чіпає `app.werkblad_indeling` (v2). Ідемпотентна.
 
-**Vlag.** `werkblad-v3` staat standaard UIT. Uit = de v3-routes doen niets (laden → `{aan:false}`, bewaren → 403
-`WERKBLAD_V3_UIT`), het werkblad werkt exact als v2. Aanzetten voor één persoon: in «Прапорці» de gebruiker toevoegen
-(of `UPDATE app.feature_flags SET aan=true, gebruikers=ARRAY['<user-id>'] WHERE sleutel='werkblad-v3'`).
-Uitzetten wist GEEN v3-gegevens; weer aanzetten toont precies wat er stond.
+**Прапорець.** `werkblad-v3` типово ВИМКНЕНО. Вимкнено = маршрути v3 нічого не роблять (завантаження → `{aan:false}`, збереження → 403
+`WERKBLAD_V3_UIT`), робочий стіл працює точно як v2. Увімкнення для однієї особи: у «Прапорці» додати користувача
+(або `UPDATE app.feature_flags SET aan=true, gebruikers=ARRAY['<user-id>'] WHERE sleutel='werkblad-v3'`).
+Вимкнення НЕ видаляє дані v3; повторне увімкнення покаже саме те, що там було.
 
-**Overzetting v2 → v3.** Lui en eenmalig: bij het eerste `v3/laden` met de vlag aan, per lade, in één transactie
-(`INSERT … ON CONFLICT DO NOTHING`). De v2-rij blijft ongewijzigd; een kopie staat in `werkblad_v3_lade.v2_backup`.
-Computer = `plaatsen(v2.items, 12)` omgerekend naar px (canvas 1280), tablet = eigen laag op 768 px (6 kolommen),
-telefoon = eigen flow-laag op 390 px.
+**Перенесення v2 → v3.** Ліниве й одноразове: при першому `v3/laden` з увімкненим прапорцем, окремо для кожної шухляди (простору), в одній транзакції
+(`INSERT … ON CONFLICT DO NOTHING`). Рядок v2 залишається без змін; копія зберігається у `werkblad_v3_lade.v2_backup`.
+Комп'ютер = `plaatsen(v2.items, 12)`, перераховане в px (полотно 1280), планшет = власний шар на 768 px (6 колонок),
+телефон = власний потоковий (потік) шар на 390 px.
 
-**Terugdraaien (per persoon).** `POST /api/owner/hub/werkblad/v3/terugdraaien` (werkt ook met de vlag uit): zet de
-v2-backup terug in `app.werkblad_indeling` (versie +1). Met `{"v3Wissen":true}` ook de v3-lade van die ruimte wissen;
-dan wordt bij het volgende laden opnieuw eenmalig overgezet.
+**Відкат (для окремої особи).** `POST /api/owner/hub/werkblad/v3/terugdraaien` (працює навіть із вимкненим прапорцем): повертає
+резервну копію v2 в `app.werkblad_indeling` (версія +1). Із `{"v3Wissen":true}` також очищує шухляду v3 цього простору;
+тоді при наступному завантаженні одноразове перенесення виконається заново.
 
-**Terugdraaien (alles).** 1) vlag uit (volstaat altijd); 2) alleen als het echt moet:
-`DROP TABLE app.werkblad_items, app.werkblad_layout, app.werkblad_v3_lade; DROP FUNCTION app.werkblad_items_limiet();
-DELETE FROM app.feature_flags WHERE sleutel='werkblad-v3';` en de rij `0114_werkblad_v3` uit `app.schema_migrations`. v2 blijft werken.
+**Відкат (повний).** 1) вимкнути прапорець (цього завжди достатньо); 2) лише якщо справді потрібно видалити таблиці:
+`DROP ТАБЛИЦЯ app.werkblad_items, app.werkblad_layout, app.werkblad_v3_lade; DROP FUNCTION app.werkblad_items_limiet();
+ВИДАЛИТИ З app.feature_flags ДЕ sleutel='werkblad-v3';` та видалити рядок `0114_werkblad_v3` з `app.schema_migrations`. v2 продовжить працювати.
 
-**Controle na uitrol.** `SELECT sleutel, aan FROM app.feature_flags WHERE sleutel='werkblad-v3';` → `werkblad-v3 | f`.
-`SELECT relrowsecurity FROM pg_class WHERE relname IN ('werkblad_v3_lade','werkblad_layout','werkblad_items');` → drie keer `t`.
-Eenheidstests: `node scripts/eenheidstests.mjs werkblad-v3`.
+**Перевірка після розгортання.** `SELECT sleutel, aan FROM app.feature_flags WHERE sleutel='werkblad-v3';` → `werkblad-v3 | f`.
+`SELECT relrowsecurity FROM pg_class WHERE relname IN ('werkblad_v3_lade','werkblad_layout','werkblad_items');` → тричі `t`.
+Модульні тести: `node scripts/eenheidstests.mjs werkblad-v3`.
 
-**Bekende grenzen.** De eigen achtergrondafbeelding blijft in de v2-tabel (`achtergrond_eigen`); v3 bewaart alleen de keuze.
-Sinds etappe D (integratie) geeft `backend/index.ts` het register mee (`REGISTER_V3_HAKEN` uit `shared/werkblad-register.ts`):
-de server bewaart alleen items die in het register bestaan, met de juiste soort, in de juiste ruimte en voor het apparaat (zie §16-D).
-## Werkblad v3 — bibliotheek
+**Відомі межі.** Власне фонове зображення залишається в таблиці v2 (`achtergrond_eigen`); v3 зберігає лише вибір.
+Починаючи з етапу D (інтеграція), `backend/index.ts` передає реєстр (`REGISTER_V3_HAKEN` із `shared/werkblad-register.ts`):
+сервер зберігає лише ті елементи, які існують у реєстрі, з правильним типом, у правильному просторі та для відповідного пристрою (див. §16-D).
 
-**Wat:** het register «Все на сайті / Alles op de site» (`shared/werkblad-register.ts`) en de bibliotheek-UI (`src/werkblad/bibliotheek/*`).
-Nog NIET aangesloten op `/overzicht`: het canvas (Etappe C) en de datalaag (Etappe A) koppelen het achter de vlag `werkblad-v3`.
+## Робочий стіл v3 — бібліотека
 
-**Bronnen (niets met de hand):** diensten/pagina's uit `shared/menu-model.ts` (14 diensten, 90 pagina's) + `shared/beheer-paginas.ts`;
-widgets uit `shared/werkblad-indeling.ts` (21, zelfde id's met voorvoegsel `wdg:`); 7 veilige opdrachten (`cmd:`) die alleen de plek
-openen waar je iets doet (geen verzenden/verwijderen); persoonlijke snelkoppelingen `usr:` (eigen naam/icoon op een bestaand item);
-mappen `map:` (één niveau). Een nieuwe menupagina komt automatisch in het register; de eenheidstest faalt als een icoon of titel ontbreekt.
+**Що:** реєстр «Все на сайті / Alles op de site» (`shared/werkblad-register.ts`) та інтерфейс бібліотеки (`src/werkblad/bibliotheek/*`).
+Ще НЕ підключено до `/overzicht`: полотно (Етап C) і рівень даних (Етап A) підключають його за прапорцем `werkblad-v3`.
 
-**Veiligheid:** geen enkel item heeft een URL. `launchDoel()` geeft `{dienst, tab}`; de browser maakt het adres met de canonieke router.
-`toegestaanVoor()` wordt bij tonen, toevoegen én bij elke klik opnieuw berekend (zelfde regel als `dienstToegestaan`): api/admin en
-beheerpagina's alleen in de technische ruimte, mcp alleen met recht `api-platform` of technisch profiel. `planned`/`denied` blijven
-zichtbaar met reden maar zijn niet toe te voegen of te openen. Eigen iconen alleen uit `ICOON_PRESETS`. De server moet elk v3-item
-opnieuw tegen `registerItem()` + `toegestaanVoor()` valideren (taak van Etappe A).
+**Джерела (нічого вручну):** сервіси/сторінки з `shared/menu-model.ts` (14 сервісів, 90 сторінок) + `shared/beheer-paginas.ts`;
+віджети з `shared/werkblad-indeling.ts` (21, ті самі id з префіксом `wdg:`); 7 безпечних команд (`cmd:`), які лише відкривають місце,
+де ви щось робите (без автоматичного надсилання/видалення); особисті ярлики `usr:` (власна назва/іконка на наявний елемент);
+теки `map:` (один рівень вкладеності). Нова сторінка меню автоматично потрапляє до реєстру; модульний тест падає, якщо бракує іконки чи назви.
 
-**Contract naar het canvas:** `CustomEvent('werkblad-bibliotheek:toevoegen', {detail:{itemId, kind, point?}})` op `window`, en bij slepen
-`dataTransfer` type `application/x-werkblad-bibliotheek` (zelfde JSON, zonder point). Lezen altijd met `leesVerzoek()` (strikt).
+**Безпека:** жоден елемент не містить прямого URL. `launchDoel()` повертає `{dienst, tab}`; браузер формує адресу через канонічний роутер.
+`toegestaanVoor()` обчислюється заново під час показу, додавання ТА при кожному кліку (те саме правило, що й `dienstToegestaan`): `api`/`admin` і
+сторінки керування доступні лише в технічному просторі, `mcp` — лише з правом `api-platform` або технічним профілем. Елементи `planned`/`denied` залишаються
+видимими з поясненням причини, але їх не можна додати чи відкрити. Власні іконки беруться лише з `ICOON_PRESETS`. Сервер має повторно валідувати кожен елемент v3
+проти `registerItem()` + `toegestaanVoor()` (завдання Етапу A).
 
-**Testen (alleen lokaal):**
-- `node scripts/eenheidstests.mjs werkblad-register` — 30 controles.
-- `node scripts/e2e-werkblad-bibliotheek.mjs` — Playwright op een eigen 127.0.0.1-server met de ontwikkelstand
-  `src/werkblad/bibliotheek/stand.tsx`; elk verzoek naar een andere host wordt afgebroken en geteld (eis 0). Schermafdrukken
-  `bib-*.png` in `E2E_SCREENSHOTS` (standaard `/workspace/audit-werkblad`).
+**Контракт із полотном:** `CustomEvent('werkblad-bibliotheek:toevoegen', {detail:{itemId, kind, point?}})` на `window`, а при перетягуванні —
+`dataTransfer` типу `application/x-werkblad-bibliotheek` (той самий JSON, без `point`). Читання завжди через `leesVerzoek()` (суворе).
 
-**Terugdraaien:** de bibliotheek wordt alleen gebruikt achter de vlag `werkblad-v3`; vlag uit = oude werkblad v2, niets te migreren.
+**Тестування (лише локально):**
+- `node scripts/eenheidstests.mjs werkblad-register` — 30 перевірок.
+- `node scripts/e2e-werkblad-bibliotheek.mjs` — Playwright на власному сервері `127.0.0.1` з dev-стендом
+  `src/werkblad/bibliotheek/stand.tsx`; будь-який запит до іншого хоста переривається й підраховується (вимога: 0). Скриншоти
+  `bib-*.png` у `E2E_SCREENSHOTS` (типово `/workspace/audit-werkblad`).
 
-## 16-D. Werkblad v3 — integratie (etappe D)
+**Відкат:** бібліотека використовується лише за прапорцем `werkblad-v3`; прапорець вимкнено = старий робочий стіл v2, нічого мігрувати не потрібно.
 
-**Wat.** `src/werkblad/Werkblad.tsx` is nu een poort: vlag `werkblad-v3` uit → exact de v2-code (`WerkbladV2`, ongewijzigd);
-vlag aan → `src/werkblad/WerkbladV3.tsx` (aparte chunk, alleen dan geladen). De poort vraagt `v3/laden` (vlag uit → `{aan:false}`,
-niets overgezet) en onthoudt de uitkomst per gebruiker in `localStorage` (`tsv:werkblad-v3-aan:<id>`) tegen knipperen.
+## 16-D. Робочий стіл v3 — інтеграція (етап D)
 
-**WerkbladV3.** Apparaatklasse uit de echte containerbreedte (ResizeObserver; < 600 telefoon, < 1024 tablet). Elke klasse een eigen
-laag; ontbreekt die (bijv. na `v3Wissen`), dan één keer `aanpassenVanaf(PC)` (telefoon in flow-modus) en bewaren. Canvas met de live
-v2-widgets (zelfde `Inhoud`, lui), `ShortcutTegel`, `MapTegel`. Werkbalk «Налаштувати робочий стіл» → «Бібліотека», «Параметри»
-(achtergrond, reset met bevestiging, eigenaar: «Повернути розкладку v2»), «Готово». Toevoegen via het contract
-`werkblad-bibliotheek:toevoegen` (knop/toetsenbord) en HTML5-slepen uit het paneel. Bewaren: één keten, versie per laag;
-409 → conflictbalk «Перезавантажити», niets overschreven; netwerkfout → «Повторити».
+**Що.** `src/werkblad/Werkblad.tsx` тепер є шлюзом: прапорець `werkblad-v3` вимкнено → виконується точно код v2 (`WerkbladV2`, без змін);
+прапорець увімкнено → `src/werkblad/WerkbladV3.tsx` (окремий чанк, завантажується лише тоді). Шлюз запитує `v3/laden` (прапорець вимкнено → `{aan:false}`,
+нічого не переноситься) і запам'ятовує результат для користувача в `localStorage` (`tsv:werkblad-v3-aan:<id>`) для уникнення мерехтіння.
 
-**Servervalidatie.** `REGISTER_V3_HAKEN`: `map:<naam>` = map (sjabloon `map:nieuw`), `usr:<id>` alleen met `config.basis` = bestaande
-snelkoppeling, overige id's moeten in het register staan; soort, ruimte (privé/technisch) en apparaat moeten kloppen; w/h binnen
-de registergrenzen (minimum nooit breder dan het canvas). planned/legacy-items blijven bewaard (getoond als «скоро»/oud);
-persoonlijke rechten (mcp/api-platform) worden bij elke klik gecontroleerd en door de doeldienst zelf — een plek op het werkblad is geen recht.
+**WerkbladV3.** Клас пристрою визначається зі справжньої ширини контейнера (`ResizeObserver`; < 600 телефон, < 1024 планшет). Кожен клас має власний
+шар; якщо він відсутній (напр., після `v3Wissen`), один раз виконується `aanpassenVanaf(PC)` (телефон у потоковому режимі) і зберігається. Полотно з живими
+віджетами v2 (той самий `Inhoud`, ліниве завантаження), `ShortcutTegel`, `MapTegel`. Панель інструментів «Налаштувати робочий стіл» → «Бібліотека», «Параметри»
+(фон, скидання з підтвердженням, для власника: «Повернути розкладку v2»), «Готово». Додавання через контракт
+`werkblad-bibliotheek:toevoegen` (кнопка/клавіатура) та HTML5-перетягування з панелі. Збереження: один ланцюжок, версія на кожен шар;
+409 → панель конфлікту «Перезавантажити», нічого не перезаписується; помилка мережі → «Повторити».
 
-**Mappen en eigen snelkoppelingen.** Een snelkoppeling die op een map wordt neergezet krijgt `parent` (bewaard in `werkblad_items.parent`);
-«Вийняти» in de geopende map zet hem terug. Map weg → inhoud terug op het werkblad. Eigen snelkoppelingen (`usr:`) worden bewaard
-zodra ze op het werkblad staan (`titleOverride`, `iconOverride`, `config.basis`); nog niet geplaatste alleen lokaal in de browser.
+**Серверна валідація.** `REGISTER_V3_HAKEN`: `map:<naam>` = тека (шаблон `map:nieuw`), `usr:<id>` лише з `config.basis` = наявний
+ярлик, решта id мають існувати в реєстрі; тип, простір (особистий/технічний) і пристрій мають збігатися; `w`/`h` у межах
+лімітів реєстру (мінімум ніколи не ширший за полотно). Елементи `planned`/legacy зберігаються (показуються як «скоро»/старі);
+особисті права (`mcp`/`api-platform`) перевіряються при кожному кліку та самим цільовим сервісом — наявність ярлика на робочому столі не надає прав доступу.
 
-**Testen (alleen lokaal).** Eenheid: `node scripts/eenheidstests.mjs werkblad` (incl. routes met register op de echte router + DB).
-Interactief tegen de echte server + DB: start server/proxy zoals `scripts/lokaal-e2e/test-alles.sh` (eigen db, poort), dan
-`PLAYWRIGHT_CORE=… PROXY_PORT=… DATABASE_URL=… node scripts/lokaal-e2e/werkblad-v3-integratie.mjs` (zaait een testaccount + sessie,
-zet de vlag alleen voor dat account, ruimt alles op; elk verzoek buiten *.tarasevych.com→127.0.0.1 wordt geblokkeerd en geteld).
+**Теки та власні ярлики.** Ярлик, перетягнутий на теку, отримує `parent` (зберігається в `werkblad_items.parent`);
+«Вийняти» у відкритій теці повертає його назад. Видалення теки → її вміст повертається на робочий стіл. Власні ярлики (`usr:`) зберігаються,
+щойно вони розміщені на робочому столі (`titleOverride`, `iconOverride`, `config.basis`); ще не розміщені зберігаються лише локально в браузері.
 
-**Aanzetten voor één persoon.** `UPDATE app.feature_flags SET aan=true, gebruikers=ARRAY['<user-id>'] WHERE sleutel='werkblad-v3';`
-(of via «Прапорці»). Uitzetten: `aan=false` / persoon uit de lijst — v2 werkt meteen weer, v3-gegevens blijven.
+**Тестування (лише локально).** Модульні: `node scripts/eenheidstests.mjs werkblad` (включно з маршрутами з реєстром на справжньому роутері + БД).
+Інтерактивні проти справжнього сервера + БД: запустіть сервер/проксі як у `scripts/lokaal-e2e/test-alles.sh` (власна БД, порт), потім
+`PLAYWRIGHT_CORE=… PROXY_PORT=… DATABASE_URL=… node scripts/lokaal-e2e/werkblad-v3-integratie.mjs` (створює тестовий акаунт + сесію,
+вмикає прапорець лише для цього акаунта, прибирає все за собою; будь-який запит поза `*.tarasevych.com`→`127.0.0.1` блокується і підраховується).
 
-## 17. Technische ruimtes v2 (vlag `tech-ruimtes-v2`, migratie 0115)
+**Увімкнення для однієї особи.** `UPDATE app.feature_flags SET aan=true, gebruikers=ARRAY['<user-id>'] WHERE sleutel='werkblad-v3';`
+(або через «Прапорці»). Вимкнення: `aan=false` / прибрати особу зі списку — v2 миттєво знову працює, дані v3 залишаються.
 
-Wat: twee parallelle ruimtes van één account («Звичайний» / «Технічний»), drie termijnen (`tijd`, `tot-technisch-einde`,
-`tot-site-uitloggen`), pauze (wisselen zonder opnieuw aanmelden), één beslisfunctie (`shared/ruimte-toegang.ts`) voor site, AI/MCP en
-extensie. Contract: `docs/ontwerp/TECH-RUIMTES-API.md`. Vlag UIT = exact het oude gedrag.
+## 17. Технічні простори v2 (прапорець `tech-ruimtes-v2`, міграція 0115)
 
-### 17.1 Uitrol
-1. Archief uitrollen zoals gewoonlijk; `npm run migrate` voert `0115_tech_ruimtes_v2` uit (idempotent, mag opnieuw).
-   Controle: `SELECT sleutel, aan FROM app.feature_flags WHERE sleutel LIKE 'tech-ruimtes-v2%';` → twee rijen, beide `false`.
-2. Er verandert niets tot een vlag aangaat.
+Що: два паралельні простори одного акаунта («Звичайний» / «Технічний»), три режими тривалості (`tijd`, `tot-technisch-einde`,
+`tot-site-uitloggen`), пауза (перемикання без повторного входу), єдина функція ухвалення рішення (`shared/ruimte-toegang.ts`) для сайту, ШІ/MCP та
+розширення. Контракт: `docs/ontwerp/TECH-RUIMTES-API.md`. Прапорець ВИМКНЕНО = точно стара поведінка.
 
-### 17.2 Stap 0 — schaduw (aanbevolen eerst, enkele dagen)
-- Zet `tech-ruimtes-v2-schaduw` aan (venster «Прапорці» → «Змінити» → hoofdschakelaar aan) of env `TECH_RUIMTES_V2_SCHADUW=1`.
-- Gedrag blijft het oude. Verschillen tussen de oude controles en de strenge regel komen in het logboek als
-  `owner.tech.schaduw.verschil` (punt: `tab-zonder-sessie`, `mcp-account-breed`, `eigenaar-definitie`), hoogstens één per 10 min per soort.
-- Controle: `SELECT details, created_at FROM app.audit WHERE action = 'owner.tech.schaduw.verschil' ORDER BY id DESC LIMIT 50;`
+### 17.1 Розгортання
+1. Розгорніть архів як зазвичай; `npm run migrate` виконає `0115_tech_ruimtes_v2` (ідемпотентна, можна запускати повторно).
+   Перевірка: `SELECT sleutel, aan FROM app.feature_flags WHERE sleutel LIKE 'tech-ruimtes-v2%';` → два рядки, обидва `false`.
+2. Нічого не змінюється, доки не буде увімкнено прапорець.
 
-### 17.3 Aanzetten — eerst alleen voor de eigenaar
-- `UPDATE app.feature_flags SET aan = true, gebruikers = ARRAY['<user-id eigenaar>'] WHERE sleutel = 'tech-ruimtes-v2';`
-  (of «Прапорці» → `tech-ruimtes-v2` → «Тест: так» = alleen voor u tot 03:00 / einde technisch profiel).
-- Gevolgen voor wie de vlag heeft:
-  - `/api/owner/tech/activeren` → 409 `GEBRUIK_RUIMTES_V2`; starten via de nieuwe UI (`/api/owner/hub/tech/ruimtes/starten`).
-  - Lopende OUDE activeringen tellen niet meer: na aanzetten opnieuw starten.
-  - AI/MCP is pas technisch na een expliciete keuze in «Доступ і терміни» (`ai-zetten`) én met een lopende, niet-gepauzeerde sessie.
-  - Uitloggen in één tabblad laat ontgrendelingen van de extensie staan; uitloggen van de site / «вийти всюди» trekt ze in.
-- De root-schakelaar `beheer-alleen-tech` en de noodschakelaar blijven precies zoals ze zijn; v2 leest bij afdwingen alleen de nieuwe sessie.
-  De eigenaar kan zijn profiel niet verliezen en mag altijd starten.
+### 17.2 Крок 0 — тіньовий режим (рекомендовано спочатку, на кілька днів)
+- Увімкніть `tech-ruimtes-v2-schaduw` (вікно «Прапорці» → «Змінити» → головний перемикач увімк.) або змінну оточення `TECH_RUIMTES_V2_SCHADUW=1`.
+- Поведінка залишається старою. Розбіжності між старими перевірками та суворим правилом записуються в журнал як
+  `owner.tech.schaduw.verschil` (точка: `tab-zonder-sessie`, `mcp-account-breed`, `eigenaar-definitie`), щонайбільше один раз на 10 хв для кожного типу.
+- Перевірка: `SELECT details, created_at FROM app.audit WHERE action = 'owner.tech.schaduw.verschil' ORDER BY id DESC LIMIT 50;`
 
-### 17.4 Terugdraaien
-- `UPDATE app.feature_flags SET aan = false, gebruikers = '{}' WHERE sleutel = 'tech-ruimtes-v2';` → binnen 3 s weer het oude gedrag
-  (cache per gebruiker). Rijen in `app.tech_ruimte_*` blijven staan maar worden niet gelezen; opnieuw technisch = oude activering.
-- Volledig verwijderen is niet nodig. Indien toch: `DROP TABLE app.tech_ruimte_tabs, app.tech_ruimte_ai, app.tech_ruimte_sessies;`
-  en `DELETE FROM app.feature_flags WHERE sleutel LIKE 'tech-ruimtes-v2%';` (eerst de vlag uit).
+### 17.3 Увімкнення — спочатку лише для власника
+- `UPDATE app.feature_flags SET aan = true, gebruikers = ARRAY['<user-id власника>'] WHERE sleutel = 'tech-ruimtes-v2';`
+  (або «Прапорці» → `tech-ruimtes-v2` → «Тест: так» = лише для вас до 03:00 / закінчення технічного профілю).
+- Наслідки для тих, у кого увімкнено прапорець:
+  - `/api/owner/tech/activeren` → 409 `GEBRUIK_RUIMTES_V2`; запуск відбувається через новий інтерфейс (`/api/owner/hub/tech/ruimtes/starten`).
+  - Активні СТАРІ активації більше не враховуються: після увімкнення потрібно запустити технічний простір заново.
+  - ШІ/MCP стає технічним лише після явного вибору в «Доступ і терміни» (`ai-zetten`) ТА за наявності активної, не поставленої на паузу сесії.
+  - Вихід в одній вкладці залишає розблокування розширення чинними; вихід із сайту / «вийти всюди» відкликає їх.
+- Root-перемикач `beheer-alleen-tech` та аварійний вимикач залишаються точно такими, як є; v2 під час примусової перевірки читає лише нову сесію.
+  Власник не може втратити свій профіль і завжди має право запустити технічний простір.
 
-### 17.5 Bekende grenzen
-- Pauze geldt per aanmelding (alle tabbladen van die browser-aanmelding samen), niet per tabblad.
-- AI-instelling `verbindingId` wordt nu per account toegepast (de MCP-poort kent de verbinding-id niet); per verbinding = volgende stap.
-- Adminpagina's vragen de technische ruimte alleen als de bestaande afdwinging (root/site-schakelaar, §OPA) aan staat.
+### 17.4 Відкат
+- `UPDATE app.feature_flags SET aan = false, gebruikers = '{}' WHERE sleutel = 'tech-ruimtes-v2';` → протягом 3 с повертається стара поведінка
+  (кеш на користувача). Рядки в `app.tech_ruimte_*` залишаються, але не читаються; повторний вхід у технічний режим = стара активація.
+- Повне видалення таблиць не потрібне. Якщо все ж необхідно: `DROP TABLE app.tech_ruimte_tabs, app.tech_ruimte_ai, app.tech_ruimte_sessies;`
+  та `DELETE FROM app.feature_flags WHERE sleutel LIKE 'tech-ruimtes-v2%';` (спочатку вимкніть прапорець).
 
-## 18. Coördinatie van AI-agenten op de server (ORCH-001 etappe 3, 31.10.2026)
+### 17.5 Відомі межі
+- Пауза діє на сесію входу (усі вкладки цього браузерного входу разом), а не на окрему вкладку.
+- Налаштування ШІ `verbindingId` зараз застосовується на рівні акаунта (MCP-шлюз не знає id з'єднання); прив'язка до окремого з'єднання — наступний етап.
+- Адмін-сторінки вимагають технічного простору лише тоді, коли увімкнено наявне примусове обмеження (root/сайт-перемикач, §OPA).
 
-**Waarom.** De coördinatie (taken, wachtrij, inleveringen, regels — `AGENTS.md`, `orchestratie/*`, `scripts/orch.mjs`) was alleen vanaf de
-opdrachtregel te bedienen en de regels alleen via git + SSH-handtekening op de pc van de eigenaar te wijzigen. De eigenaar wil het overzicht
-op de site, pakketten van agenten zonder SSH aannemen en regels wijzigen met dezelfde zekerheid als het goedkeuren van updates (§13, §15).
+## 18. Координація ШІ-агентів на сервері (ORCH-001 етап 3, 31.10.2026)
 
-**Principe.** Site, HTTP en MCP hebben géén eigen logica: `backend/orch-opslag.ts` roept dezelfde functies aan als de CLI
-(`scripts/orch/inleveren.mjs` → `inleveren`, `scripts/orch/kern.mjs` → `beoordeelVoorstel`, `vergrendel`, `compacteContext`). De app werkt
-op een eigen werkkopie van de repository en schrijft nooit naar `/etc`, `/var/lib/mijn-ruimte` of de productie-release.
+**Чому.** Координацією (завдання, черга, здачі робіт, правила — `AGENTS.md`, `orchestratie/*`, `scripts/orch.mjs`) можна було керувати лише з
+командного рядка, а змінювати правила — лише через git + SSH-підпис на ПК власника. Власник хоче бачити огляд
+на сайті, приймати пакети від агентів без SSH і змінювати правила з такою самою надійністю, як і схвалення оновлень (§13, §15).
+
+**Принцип.** Сайт, HTTP та MCP не мають власної окремої логіки: `backend/orch-opslag.ts` викликає ті самі функції, що й CLI
+(`scripts/orch/inleveren.mjs` → `inleveren`, `scripts/orch/kern.mjs` → `beoordeelVoorstel`, `vergrendel`, `compacteContext`). Застосунок працює
+з власною робочою копією репозиторію і ніколи не пише в `/etc`, `/var/lib/mijn-ruimte` чи в продуктивний реліз.
 
 ```
 agent / eigenaar ── mcp.*/agents «Координація» · /api/owner/orch/* (alleen eigenaar) · MCP orch_* (zie beleid.json → site)
@@ -1262,136 +1262,136 @@ app (regels/toepassen): bevestiging aanwezig + voorstel past + werkkopie schoon 
 gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (besluit/regelsVersie/hash/kritiekHash/voorstel) in het root-journaal staat
 ```
 
-### 18.1 Eenmalig inrichten (eigenaar, via SSH)
-1. Werkkopie van de coördinatie (de installer maakt die bewust niet: hij heeft geen sleutel en hoort die niet te hebben):
+### 18.1 Одноразове налаштування (власник, через SSH)
+1. Робоча копія координації (інсталятор свідомо її не створює: він не має ключа і не повинен його мати):
    ```bash
    sudo -u mijnruimte git clone --branch integratie git@github.com:Tarasevych/hub.git /srv/mijn-ruimte/orch-repo
-   sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.name "Mijn Ruimte orch" && sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.email "<orch-adres>"
+   sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.name "Mijn Ruimte orch" && sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.email "orch@tarasevych.com"
    ```
-   Gebruik een **deploy key met schrijfrecht** (GitHub → repo → Settings → Deploy keys) voor de gebruiker `mijnruimte`, nooit de persoonlijke
-   sleutel van de eigenaar. Zonder schrijfrecht blijft alles werken, maar de tak `regels/*` blijft op de server staan (`gepusht: false`,
-   `PUSH_MISLUKT`) tot u hem zelf pusht. Zonder werkkopie toont de site eerlijk `ORCH_GEEN_REPO` en doet niets alsof.
-2. Inbox voor uploads: `install -d -o mijnruimte -g mijnruimte -m 0750 /srv/mijn-ruimte/orch-inbox` (de installer `installeer-app.sh` doet dit
-   ook, `orch_inrichten`).
-3. Omgevingsvariabelen van de app (alleen als de paden afwijken): `ORCH_WORTEL`, `ORCH_INBOX`; de app leest verder `OPDRACHT_STATUS_DIR`
-   (standaard `/var/lib/mijn-ruimte-uitrol-status`) en `MCP_RECHTEN_PAD` (`/etc/mijn-ruimte/mcp-rechten.json`), beide alleen lezen.
-4. De besluit-dienst (§15) kent het soort `orch-regels` na het uitrollen van `deploy/besluit/mijn-ruimte-besluit.sh` en `besluit-kern.mjs`.
-   Schakelaar in `/etc/mijn-ruimte/mcp-rechten.json`: `"orch-regels-passkey": false` zet alleen de regelbevestiging dicht (standaard open;
-   de pagina toont dan `BESLUIT_UIT`). `terugdraaien` en `externe-hosts` blijven onafhankelijk.
-5. **Publieke sleutels van de eigenaar voor de regels — root-kopie (verplicht voor GitOps met SSH-handtekening).** Sinds de onafhankelijke
-   review van 31.10.2026 verifieert `gitops-ophalen.sh` een SSH-ondertekende `regels.lock.json` (eigenaar zonder passkey) écht:
-   `ssh-keygen -Y find-principals` + `ssh-keygen -Y verify -n mijn-ruimte-regels` tegen `/etc/mijn-ruimte/eigenaar-ondertekenaars` — nooit tegen
-   `orchestratie/eigenaar-ondertekenaars` uit de release, want dat bestand kan een agent meesturen. Zet het bestand zelf, net als §3; de
-   installer kopieert het bewust niet uit het pakket:
+   Використовуйте **deploy ключ із правом запису** (GitHub → repo → Settings → Deploy ключі) для користувача `mijnruimte`, ніколи не особистий
+   ключ власника. Без права запису все продовжить працювати, але гілка `regels/*` залишиться на сервері (`gepusht: false`,
+   `PUSH_MISLUKT`), доки ви самі її не запушите. Без робочої копії сайт чесно показує `ORCH_GEEN_REPO` і нічого не імітує.
+2. Inbox для завантажень: `install -d -o mijnruimte -g mijnruimte -m 0750 /srv/mijn-ruimte/orch-inbox` (інсталятор `installeer-app.sh` також це
+   робить у `orch_inrichten`).
+3. Змінні оточення застосунку (лише якщо шляхи відрізняються від стандартних): `ORCH_WORTEL`, `ORCH_INBOX`; крім того, застосунок читає `OPDRACHT_STATUS_DIR`
+   (типово `/var/lib/mijn-ruimte-uitrol-status`) та `MCP_RECHTEN_PAD` (`/etc/mijn-ruimte/mcp-rechten.json`), обидва лише для читання.
+4. Служба рішень (§15) розпізнає тип `orch-regels` після розгортання `deploy/besluit/mijn-ruimte-besluit.sh` та `besluit-kern.mjs`.
+   Перемикач у `/etc/mijn-ruimte/mcp-rechten.json`: `"orch-regels-passkey": false` закриває лише підтвердження правил (типово відкрито;
+   сторінка тоді показує `BESLUIT_UIT`). `terugdraaien` та `externe-hosts` залишаються незалежними.
+5. **Публічні ключі власника для правил — root-копія (обов'язково для GitOps із SSH-підписом).** Після незалежного
+   рев'ю від 31.10.2026 `gitops-ophalen.sh` по-справжньому перевіряє підписаний через SSH `regels.lock.json` (коли власник без passkey):
+   `ssh-keygen -Y find-principals` + `ssh-keygen -Y verify -n mijn-ruimte-regels` проти `/etc/mijn-ruimte/eigenaar-ondertekenaars` — ніколи не проти
+   `orchestratie/eigenaar-ondertekenaars` із самого релізу, оскільки той файл може підмінити агент. Створіть цей файл власноруч, так само як у §3;
+   інсталятор свідомо не копіює його з пакета:
    ```bash
    printf 'eigenaar@mijn-ruimte namespaces="mijn-ruimte-regels" %s\n' 'ssh-ed25519 AAAA…' > /etc/mijn-ruimte/eigenaar-ondertekenaars
    chown root:root /etc/mijn-ruimte/eigenaar-ondertekenaars && chmod 0644 /etc/mijn-ruimte/eigenaar-ondertekenaars
    ```
-   Zonder dit bestand weigert GitOps automatisch installeren met «eigenaar-ondertekenaars op de server ontbreekt»; de passkey-weg
-   (root-journaal, stap 4) heeft het niet nodig. Dezelfde regels (`namespaces="mijn-ruimte-regels"`, geen `cert-authority`) gelden voor
-   `node scripts/orch.mjs controleer` en `bevestig` op de pc van de eigenaar.
-6. **Schrijfrechten van de app-dienst.** `deploy/mijn-ruimte.service` draait met `ProtectSystem=strict`; sinds de adversariële review van
-   31.10.2026 staan `ReadWritePaths=-/srv/mijn-ruimte/orch-inbox` en `ReadWritePaths=-/srv/mijn-ruimte/orch-repo` erin (zonder: de eerste upload
-   faalt met `EROFS`). De installer zet de unit mee neer; bij een eigen kopie van de unit: beide regels toevoegen en
-   `systemctl daemon-reload && systemctl restart mijn-ruimte`. Controle: `systemctl show mijn-ruimte -p ReadWritePaths`.
+   Без цього файлу GitOps відмовляється від автоматичного встановлення з повідомленням «eigenaar-ondertekenaars op de server ontbreekt»; шлях через passkey
+   (root-журнал, крок 4) його не потребує. Ті самі правила (`namespaces="mijn-ruimte-regels"`, без `cert-authority`) діють для
+   `node scripts/orch.mjs controleer` та `bevestig` на ПК власника.
+6. **Права запису служби застосунку.** `deploy/mijn-ruimte.service` працює з `ProtectSystem=strict`; після змагального (adversarial) рев'ю від
+   31.10.2026 до нього додано `ReadWritePaths=-/srv/mijn-ruimte/orch-inbox` та `ReadWritePaths=-/srv/mijn-ruimte/orch-repo` (без них перше завантаження
+   падає з `EROFS`). Інсталятор оновлює юніт автоматично; якщо у вас власна копія юніта — додайте обидва рядки та виконайте
+   `systemctl daemon-reload && systemctl restart mijn-ruimte`. Перевірка: `systemctl show mijn-ruimte -p ReadWritePaths`.
 
-### 18.2 Dagelijks gebruik
-- **Overzicht**: regelsversie + lock, basis, integratietak, geïnstalleerde versie, agenten, taken (met «regels verouderd»), wachtrij, laatste
-  inleveringen, uitslag van `controleer`. MCP: `orch_overzicht`, `orch_context` (de compacte context voor een agent zonder GitHub).
-- **Inleveren vanaf de site**: pakket `mijn-ruimte-<versie>-<agent>-overdracht.zip`, zip/tar.gz met `ORCH-OVERDRACHT.json` of git patch
-  (≤ 300 MiB, 20 uploads per uur per persoon). Dezelfde pijplijn als `node scripts/orch.mjs inleveren --kanaal web_upload|mcp`: tak vanaf de
-  basis, regels, conflicten met `integratie`, tests, record in `orchestratie/inleveringen/`, wachtrij. Er wordt niets samengevoegd of
-  geïnstalleerd. Een geweigerde inlevering laat geen tak achter (wel het record).
-  **Veiligheid van de inlevering (review 31.10.2026).** Via de site en MCP voert de server nooit code uit het pakket en nooit opgegeven
-  shell-opdrachten uit: als «test» draait alleen `node scripts/orch.mjs controleer` uit de **eigen werkkopie** (`--wortel` wijst naar het
-  tijdelijke werkboom van de inlevering) in een schone omgeving zonder `DATABASE_URL`, sleutels of pepers. Een `tests`-parameter met iets
-  anders geeft `TESTS_NIET_TOEGESTAAN` (400). Archieven worden vóór het uitpakken gecontroleerd — symlinks, speciale bestanden, `..`,
-  absolute paden of een `.git`-map geven `INHOUD_ONVEILIG`; een `github_pr`-bron die met «-» begint geeft `REF_ONGELDIG`. Een upload hoort bij
-  wie hem begon (de eigenaar via de site, of een agent via zijn MCP-verbinding — client, agent én grant-id, dus niet een tweede verbinding met
-  dezelfde naam): een ander krijgt op `stuk`, `klaar` en `annuleren` `UPLOAD_ONBEKEND`, alsof de upload niet bestaat.
-  **Aanvullingen na de adversariële review (31.10.2026).**
-  - De vertrouwde `controleer` draait **altijd**, ook met `zonderTests` / `--zonder-tests`: die notitie slaat alleen de tests van de agent over
-    (het record toont «agenttests overgeslagen» naast de uitslag van de regelcontrole). Een pakket dat `AGENTS.md` wijzigt zonder nieuwe lock
-    wordt dus altijd geweigerd (`TESTS_MISLUKT`, regelcontrole).
-  - **CLI op uw pc**: `node scripts/orch.mjs inleveren` voert standaard ALLEEN die vertrouwde `controleer` uit — geen code uit het pakket.
-    Shell-tests (`--tests "cmd"` of `--standaardtests` = `beleid.inlevering.standaardTests`) draaien code UIT HET PAKKET met uw `HOME`
-    (wel zonder `DATABASE_URL`, sleutels en pepers); de CLI waarschuwt dan («LET OP: виконую КОД ІЗ ПАКЕТА АГЕНТА»). Gebruik ze alleen voor
-    pakketten die u vertrouwt, liefst in een wegwerp-VM. Is de inlevering al geweigerd (conflict, verouderde basis/regels), dan draait er niets.
-  - **Archiefbommen**: per archief hoogstens 1 GiB uitgepakt (`INHOUD_TE_GROOT`). Gemeten worden de **werkelijke** bytes (stroom via
-    `unzip -p` / `gzip -dc`, niets op schijf) — vervalste groottes in zip-koppen helpen niet — plus de groottes uit de tar-koppen (sparse
-    bestanden met hun volle grootte), en na het uitpakken nog eens de zichtbare omvang van alle bestanden.
-  - **Agent op eigen naam**: een MCP-verbinding van agent X kan geen taak voor agent Y registreren en geen pakket met `"agent": "Y"` in
-    `ORCH-OVERDRACHT.json` inleveren (`AGENT_VERSCHILT`); het record bewaart `door` (wie het werkelijk deed, met grant-id).
-  - **MCP-limiet**: `orch_inleveren_begin` en `orch_inleveren_klaar` elk hoogstens 20 per uur per eigenaar over al zijn MCP-verbindingen
-    (`RATE_LIMITED`); teller in het geheugen van de app, los van de HTTP-teller, leeg na een herstart. `klaar` blokkeert de app zolang de
-    pijplijn loopt (git + `controleer`, gewoonlijk seconden, hoogstens 120 s) — bekend en bewust, de limiet begrenst het.
-  - **`orch_overzicht` voor agenten**: alleen eigen uploads; het e-mailadres van de eigenaar wordt «eigenaar», grant-id's van andere
-    verbindingen vallen weg, bevestigingen tonen geen passkey-vingerafdruk, label of besluit-id.
-- **Regels wijzigen**: «Regels wijzigen» → bewerk `AGENTS.md` / `orchestratie/beleid.json` / `orchestratie/BESLUITEN.md` → «Voorstel controleren»
-  (codes: `GEEN_WIJZIGING`, `VERSIE_NIET_VERHOOGD`, `BESLUIT_ONTBREEKT`, `BELEID_JSON`, `REGELBESTANDEN_GEWIJZIGD`) → «Ondertekenen met passkey
-  en tak maken». Bij gewijzigde `kritiek`-regels toont de pagina een waarschuwing: uw passkey bevestigt precies die. Daarna: de tak
-  `regels/<versie>-<tijd>` staat in GitHub (link naar de compare-pagina) — samenvoegen in `integratie` doet u zelf; agenten met de oude
-  `regelsVersie` krijgen `REGELS_VEROUDERD` en moeten `taak-herlees` uitvoeren.
+### 18.2 Щоденне використання
+- **Огляд**: версія правил + lock, база, гілка інтеграції, встановлена версія, агенти, завдання (із позначкою «правила застаріли»), черга, останні
+  здачі робіт, результат `controleer`. MCP: `orch_overzicht`, `orch_context` (компактний контекст для агента без доступу до GitHub).
+- **Здача роботи із сайту**: пакет `mijn-ruimte-<versie>-<agent>-overdracht.zip`, zip/tar.gz із `ORCH-OVERDRACHT.json` або git-патч
+  (≤ 300 МіБ, 20 завантажень на годину на особу). Той самий конвеєр, що й `node scripts/orch.mjs inleveren --kanaal web_upload|mcp`: гілка від
+  бази, правила, конфлікти з `integratie`, тести, запис в `orchestratie/inleveringen/`, черга. Нічого автоматично не зливається (merge) і не
+  встановлюється. Відхилена здача не залишає гілки (але залишає запис).
+  **Безпека здачі (рев'ю 31.10.2026).** Через сайт і MCP сервер ніколи не виконує код із пакета і ніколи не запускає передані
+  shell-команди: як «тест» виконується лише `node scripts/orch.mjs controleer` із **власної робочої копії** (`--wortel` вказує на
+  тимчасове робоче дерево здачі) у чистому оточенні без `DATABASE_URL`, ключів чи перців (peppers). Параметр `tests` із будь-чим
+  іншим повертає `TESTS_NIET_TOEGESTAAN` (400). Архіви перевіряються перед розпакуванням — симлінки, спеціальні файли, `..`,
+  абсолютні шляхи або тека `.git` повертають `INHOUD_ONVEILIG`; джерело `github_pr`, що починається з «`-`», повертає `REF_ONGELDIG`. Завантаження прив'язане до
+  того, хто його розпочав (власник через сайт або агент через своє MCP-з'єднання — клієнт, агент ТА grant-id, тобто не друге з'єднання з
+  тією самою назвою): інший учасник на `stuk`, `klaar` та `annuleren` отримає `UPLOAD_ONBEKEND`, ніби завантаження не існує.
+  **Доповнення після змагального рев'ю (31.10.2026).**
+  - Довірений `controleer` виконується **завжди**, навіть із `zonderTests` / `--zonder-tests`: ця позначка пропускає лише тести агента
+    (запис показує «тести агента пропущено» поруч із результатом перевірки правил). Отже, пакет, який змінює `AGENTS.md` без нового lock-файлу,
+    завжди відхиляється (`TESTS_MISLUKT`, перевірка правил).
+  - **CLI на вашому ПК**: `node scripts/orch.mjs inleveren` типово виконує ЛИШЕ цей довірений `controleer` — жодного коду з пакета.
+    Shell-тести (`--tests "cmd"` або `--standaardtests` = `beleid.inlevering.standaardTests`) виконують код ІЗ ПАКЕТА з вашим `HOME`
+    (хоча й без `DATABASE_URL`, ключів і перців); CLI при цьому попереджає («LET OP: виконую КОД ІЗ ПАКЕТА АГЕНТА»). Використовуйте їх лише для
+    пакетів, яким ви довіряєте, бажано в одноразовій ВМ. Якщо здачу вже відхилено (конфлікт, застаріла база/правила), нічого не запускається.
+  - **Архівні бомби**: на кожен архів щонайбільше 1 ГіБ у розпакованому вигляді (`INHOUD_TE_GROOT`). Вимірюються **фактичні** байти (потік через
+    `unzip -p` / `gzip -dc`, нічого на диску) — підроблені розміри в заголовках zip не допоможуть — плюс розміри із заголовків tar (розріджені/sparse
+    файли з їхнім повним розміром), а після розпакування ще раз перевіряється видимий обсяг усіх файлів.
+  - **Агент від власного імені**: MCP-з'єднання агента X не може зареєструвати завдання для агента Y і не може здати пакет із `"agent": "Y"` в
+    `ORCH-OVERDRACHT.json` (`AGENT_VERSCHILT`); запис зберігає поле `door` (хто фактично це зробив, разом із grant-id).
+  - **Ліміт MCP**: `orch_inleveren_begin` та `orch_inleveren_klaar` — кожен щонайбільше 20 разів на годину на власника через усі його MCP-з'єднання
+    (`RATE_LIMITED`); лічильник зберігається в пам'яті застосунку, окремо від HTTP-лічильника, і скидається після перезапуску. `klaar` блокує потік застосунку, доки
+    триває конвеєр (git + `controleer`, зазвичай секунди, максимум 120 с) — це відомо і свідомо, ліміт обмежує частоту.
+  - **`orch_overzicht` для агентів**: показує лише власні завантаження; адреса ел. пошти власника замінюється на «eigenaar», grant-id інших
+    з'єднань прибираються, підтвердження не показують відбиток passkey, мітку чи id рішення.
+- **Зміна правил**: «Regels wijzigen» (Змінити правила) → відредагуйте `AGENTS.md` / `orchestratie/beleid.json` / `orchestratie/BESLUITEN.md` → «Voorstel controleren» (Перевірити пропозицію)
+  (коди: `GEEN_WIJZIGING`, `VERSIE_NIET_VERHOOGD`, `BESLUIT_ONTBREEKT`, `BELEID_JSON`, `REGELBESTANDEN_GEWIJZIGD`) → «Ondertekenen met passkey
+  en tak maken» (Підписати passkey і створити гілку). При зміні правил `kritiek` сторінка показує попередження: ваш passkey підтверджує саме їх. Після цього: гілка
+  `regels/<versie>-<tijd>` з'являється в GitHub (посилання на сторінку compare) — злиття в `integratie` ви виконуєте самі; агенти зі старою
+  `regelsVersie` отримують `REGELS_VEROUDERD` і мусять виконати `taak-herlees`.
 
-### 18.3 Controle en storingen
-- Journaal root: `sudo tail -n 5 /var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl`; gebeurtenis `BESLUIT_ORCH_REGELS_OK` in
-  `gebeurtenissen.jsonl`; app-audit `eigenaar_besluit_*` en `orch.*`.
-- `ORCH_GEEN_REPO` — geen werkkopie op `ORCH_WORTEL` (stap 18.1.1). `ORCH_REPO_VUIL` — niet-gecommitte wijzigingen in de werkkopie: opruimen
-  via SSH (`git status`), de app ruimt nooit zelf op.
-- `NIET_BEVESTIGD_DOOR_ROOT` — het besluit is ondertekend maar root heeft (nog) niet geschreven: controleer `systemctl status
-  mijn-ruimte-besluit.path` en het journaal; de pagina probeert het zelf opnieuw zolang het besluit niet verlopen is.
-- `BESLUIT_PAST_NIET` / `VOORSTEL_VEROUDERD` — de regels zijn intussen gewijzigd (andere `hash`): maak een nieuw voorstel; een oude bevestiging
-  is nooit herbruikbaar (root-journaal is per `voorstel`).
-- GitOps weigert met «passkey-bevestiging staat niet in het root-journaal» — iemand heeft `regels.lock.json` met de hand bewerkt of het
-  journaal ontbreekt op deze server: alleen een echte bevestiging via de site (of een SSH-handtekening) maakt de lock weer geldig.
-- GitOps weigert met «eigenaar-ondertekenaars op de server ontbreekt» — stap 18.1.5 is niet gedaan; met «SSH-handtekening van eigenaar voor
-  mijn-ruimte-regels is ongeldig» — de handtekening hoort bij een andere `regelsVersie`/`kritiekHash` of bij een sleutel die niet (met
-  `namespaces="mijn-ruimte-regels"`) in het root-bestand staat: onderteken opnieuw (`node scripts/orch.mjs bevestig`).
-- `NIET_BEVESTIGD_DOOR_ROOT` terwijl het journaal wél een regel heeft — het besluit-id van de pagina moet exact het id in het root-journaal
-  zijn (een tweede besluit voor hetzelfde voorstel telt niet); start de bevestiging opnieuw vanaf de pagina.
-- Een regelwijziging via de site gebeurt in een tijdelijke `git worktree`: `ORCH_WORTEL` blijft op `integratie` en wordt nooit omgeschakeld;
-  blijft er na een storing een `regels/*`-tak zonder commit achter, verwijder die via SSH (`git branch -D`, `git worktree prune`).
-- `TESTS_NIET_TOEGESTAAN` — een client stuurde eigen testopdrachten mee (zie 18.2); `INHOUD_ONVEILIG` — het archief is vóór het uitpakken
-  geweigerd (record met de reden, geen tak); `UPLOAD_ONBEKEND` op een bestaand id — een andere actor dan de starter probeert de upload te
-  gebruiken.
-- `INHOUD_TE_GROOT` — het archief pakt uit tot meer dan 1 GiB (of een sparse bestand is groter): splits het pakket of stuur alleen de
-  gewijzigde bestanden. `AGENT_VERSCHILT` — de MCP-verbinding van één agent probeert iets op naam van een andere agent; de agent moet zijn eigen
-  verbinding gebruiken. `CONTEXT_PAD` — `compactContext.bestand` in `beleid.json` moet `orchestratie/<naam>.md` zijn (orch schrijft dat bestand).
-- GitOps weigert met «kritieke regels in beleid.json wijken af van regels.lock.json (kritiekHash)» — iemand heeft `kritiek` in `beleid.json`
-  gewijzigd onder een eerder bevestigde lock; met «regels gewijzigd zonder lock bij te werken: …» — `AGENTS.md`/`BESLUITEN.md`/`beleid.json`
-  wijken af van `lock.hash`; met «regelsVersie van de lock … wijkt af» — versie niet doorgevoerd. Sinds 31.10.2026 vergelijkt GitOps (net als
-  de root-installer) de lock met de werkelijke bestanden van de release; oplossing: `vergrendel`, en bij gewijzigde `kritiek` opnieuw bevestigen.
-- Terugdraaien van een regelwijziging = de tak `regels/*` niet samenvoegen (of een nieuw voorstel met hogere versie). Niets op de server
-  verandert tot de tak in `integratie` zit en een pakket is geïnstalleerd.
-- Tests die dit afdekken: `node scripts/eenheidstests.mjs orch-site` (74, echte git-repo's + routes + MCP), `orch-besluit-root` (49, het echte
-  root-script onder een onbevoorrechte gebruiker + de GitOps-controle, met echte `ssh-keygen`-handtekeningen en een echte release: lock ↔
-  bestanden), `besluit-root` (47), `orch-beoordeling` (49, de regressietests van de onafhankelijke en de adversariële review van 31.10.2026:
-  RCE-blokkade, schone omgeving, SEC-001-05, zoekcatalogus, SSHSIG, archief-voorcontrole en archiefbommen, actor-binding van uploads, agent op
-  eigen naam, MCP-limiet en maskering, zonderTests, besluit-id, worktree en opruimen bij regels/toepassen), `orch-inleveren` (41, o.a. CLI zonder
-  pakketcode).
+### 18.3 Перевірка та усунення збоїв
+- Журнал root: `sudo tail -n 5 /var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl`; подія `BESLUIT_ORCH_REGELS_OK` у
+  `gebeurtenissen.jsonl`; аудит застосунку `eigenaar_besluit_*` та `orch.*`.
+- `ORCH_GEEN_REPO` — немає робочої копії в `ORCH_WORTEL` (крок 18.1.1). `ORCH_REPO_VUIL` — незакомічені зміни в робочій копії: приберіть їх
+  через SSH (`git status`), застосунок ніколи не очищує репозиторій сам.
+- `NIET_BEVESTIGD_DOOR_ROOT` — рішення підписано, але root (ще) не записав результат: перевірте `systemctl status
+  mijn-ruimte-besluit.path` та журнал; сторінка сама повторює спробу, доки рішення не прострочилося.
+- `BESLUIT_PAST_NIET` / `VOORSTEL_VEROUDERD` — правила тим часом змінилися (інший `hash`): створіть нову пропозицію; старе підтвердження
+  ніколи не можна використати повторно (root-журнал прив'язаний до конкретного `voorstel`).
+- GitOps відмовляє з «passkey-bevestiging staat niet in het root-journaal» — хтось відредагував `regels.lock.json` вручну або
+  журнал відсутній на цьому сервері: лише справжнє підтвердження через сайт (або SSH-підпис) робить lock знову дійсним.
+- GitOps відмовляє з «eigenaar-ondertekenaars op de server ontbreekt» — не виконано крок 18.1.5; з «SSH-handtekening van eigenaar voor
+  mijn-ruimte-regels is ongeldig» — підпис належить до іншої `regelsVersie`/`kritiekHash` або зроблений ключем, якого немає (з
+  `namespaces="mijn-ruimte-regels"`) у root-файлі: підпишіть заново (`node scripts/orch.mjs bevestig`).
+- `NIET_BEVESTIGD_DOOR_ROOT`, хоча в журналі є запис — id рішення зі сторінки має точно збігатися з id у root-журналі
+  (друге рішення для тієї самої пропозиції не зараховується); почніть підтвердження заново зі сторінки.
+- Зміна правил через сайт відбувається в тимчасовому `git worktree`: `ORCH_WORTEL` залишається на гілці `integratie` і ніколи не перемикається;
+  якщо після збою залишилася гілка `regels/*` без коміту, видаліть її через SSH (`git branch -D`, `git worktree prune`).
+- `TESTS_NIET_TOEGESTAAN` — клієнт передав власні тестові команди (див. 18.2); `INHOUD_ONVEILIG` — архів відхилено до розпакування
+  (створюється запис із причиною, без гілки); `UPLOAD_ONBEKEND` на наявному id — інший актор, ніж той, хто почав завантаження, намагається його
+  використати.
+- `INHOUD_TE_GROOT` — архів розпаковується у понад 1 ГіБ (або sparse-файл більший): розділіть пакет або надішліть лише
+  змінені файли. `AGENT_VERSCHILT` — MCP-з'єднання одного агента намагається виконати дію від імені іншого агента; агент мусить використовувати власне
+  з'єднання. `CONTEXT_PAD` — `compactContext.bestand` у `beleid.json` має бути `orchestratie/<naam>.md` (orch записує цей файл).
+- GitOps відмовляє з «kritieke regels in beleid.json wijken af van regels.lock.json (kritiekHash)» — хтось змінив `kritiek` у `beleid.json`
+  під раніше підтвердженим lock-файлом; з «regels gewijzigd zonder lock bij te werken: …» — `AGENTS.md`/`BESLUITEN.md`/`beleid.json`
+  відрізняються від `lock.hash`; з «regelsVersie van de lock … wijkt af» — версію не оновлено. З 31.10.2026 GitOps (як і
+  root-інсталятор) порівнює lock зі справжніми файлами релізу; рішення: виконати `vergrendel`, а при зміненому `kritiek` — підтвердити заново.
+- Відкат зміни правил = просто не зливати гілку `regels/*` (або створити нову пропозицію з вищою версією). Нічого на сервері
+  не змінюється, доки гілка не потрапить в `integratie` і пакет не буде встановлено.
+- Тести, які це покривають: `node scripts/eenheidstests.mjs orch-site` (74, справжні git-репозиторії + маршрути + MCP), `orch-besluit-root` (49, справжній
+  root-скрипт під непривілейованим користувачем + перевірка GitOps, зі справжніми підписами `ssh-keygen` і справжнім релізом: lock ↔
+  файли), `besluit-root` (47), `orch-beoordeling` (49, регресійні тести незалежного та змагального рев'ю від 31.10.2026:
+  блокування RCE, чисте оточення, SEC-001-05, пошуковий каталог, SSHSIG, попередня перевірка архівів та архівні бомби, прив'язка завантажень до актора, агент від
+  власного імені, ліміт MCP і маскування, `zonderTests`, id рішення, worktree та очищення при `regels/toepassen`), `orch-inleveren` (41, зокрема CLI без
+  виконання коду з пакета).
 
-### 18.4 Acceptatietests (etappe 4) en wat ze over de werking vastleggen
-`node scripts/eenheidstests.mjs orch-acceptatie` (47) speelt de acht scenario's uit de opdracht na op echte repo's en de echte root-scripts:
-parallelle agenten, git-conflicten bij inleveren én bij samenvoegen (herstel via rebase), verouderde release (`BASIS_VEROUDERD` bij root én
-`pakket-controleer`), import zonder git, beleidswijziging (`REGELS_VEROUDERD` → `taak-herlees`), bevroren agent (`terugtrekken` + `taak-staat bevroren`,
-wachtrij loopt door), gelijktijdige installaties, terugdraaien. Twee gedragsregels die daaruit volgen en die u mag verwachten:
-- **Gelijktijdige installaties**: `mijn-ruimte-uitrol.sh` houdt een `flock`; een tweede start tijdens een installatie logt «er loopt al een uitrol»
-  en doet niets. Na een geslaagde installatie ruimt het script alleen pakketten op die **niet nieuwer** zijn dan de zojuist geïnstalleerde versie;
-  een nieuwer pakket dat intussen in de inbox kwam blijft staan en wordt in de volgende ronde gewoon gecontroleerd (versie, `UITROL-BASIS`,
-  regels). Vóór 31.10.2026 werd zo'n pakket stil gewist.
-- **Terugdraaien en de coördinatie**: na `terugdraaien` schrijft de installer/eigenaar `orchestratie/geinstalleerd.json` terug naar de vorige
-  basis; `orch status` toont de taken van de teruggedraaide release dan weer als `released` (niet `installed`), en hetzelfde pakket is opnieuw
-  installeerbaar zonder herbouw (`pakket-controleer` OK).
+### 18.4 Приймальні тести (етап 4) та що вони фіксують щодо роботи системи
+`node scripts/eenheidstests.mjs orch-acceptatie` (47) відтворює вісім сценаріїв із технічного завдання на справжніх репозиторіях і справжніх root-скриптах:
+паралельні агенти, git-конфлікти під час здачі ТА під час злиття (відновлення через rebase), застарілий реліз (`BASIS_VEROUDERD` у root ТА
+`pakket-controleer`), імпорт без git, зміна політики (`REGELS_VEROUDERD` → `taak-herlees`), заморожений агент (`terugtrekken` + `taak-staat bevroren`,
+черга рухається далі), одночасні встановлення, відкат. Два правила поведінки, які з цього випливають і на які можна розраховувати:
+- **Одночасні встановлення**: `mijn-ruimte-uitrol.sh` утримує блокування `flock`; другий запуск під час активного встановлення записує в лог «er loopt al een uitrol» (розгортання вже виконується)
+  і нічого не робить. Після успішного встановлення скрипт прибирає лише ті пакети, які **не новіші** за щойно встановлену версію;
+  новіший пакет, який тим часом надійшов в inbox, залишається на місці й у наступному циклі проходить звичайну перевірку (версія, `UITROL-BASIS`,
+  правила). До 31.10.2026 такий пакет тихо видалявся.
+- **Відкат і координація**: після `terugdraaien` інсталятор/власник повертає `orchestratie/geinstalleerd.json` до попередньої
+  бази; `orch status` тоді знову показує завдання відкоченого релізу як `released` (а не `installed`), і той самий пакет можна встановити повторно
+  без перезбирання (`pakket-controleer` OK).
 
 
-## 19. TRACE-001 — controle van GitHub-ontwikkelarchief vóór Passkey en installatie
+## 19. TRACE-001 — перевірка архіву розробки GitHub перед Passkey та встановленням
 
-Vanaf versie `20261103-211555` wordt elk nieuw uitrolpakket geweigerd zonder `ONTWIKKELARCHIEF.json` (verwijzing naar een al gecommit ontwikkeldossier). De reguliere `orch pakket`-opdracht bouwt het verwijzingsbestand uit `HEAD:orchestratie/ontwikkelarchieven/<TAAK-ID>.json`. Het pakket moet eerst als exacte `.tar.gz` op de bijbehorende GitHub Release staan; upload naar de site gebeurt pas daarna.
+Починаючи з версії `20261103-211555`, кожен новий пакет розгортання відхиляється без `ONTWIKKELARCHIEF.json` (посилання на вже закомічене досьє розробки). Штатна команда `orch pakket` формує файл посилання з `HEAD:orchestratie/ontwikkelarchieven/<TAAK-ID>.json`. Пакет повинен спочатку бути опублікований як точний `.tar.gz` у відповідному GitHub Release; завантаження на сайт відбувається лише після цього.
 
-De site voert tijdens voorcontrole een externe GitHub-check uit: bestand op de vastgelegde 40-hex commit, bron-hash, ancestrie van de taak-tak en `asset.digest=sha256:<hash van de ontvangen tar.gz>`. Het root-installatiescript herhaalt deze controles onafhankelijk. Ontbreekt iets of is GitHub ontoegankelijk, dan wordt **geweigerd** (ook bij GitHub API rate limit of fout token), zonder uitzondering, zonder fallback naar een URL uit het pakket.
+Під час попередньої перевірки сайт виконує зовнішню перевірку в GitHub: наявність файлу на зафіксованому 40-символьному hex-коміті, хеш джерела, спорідненість (ancestry) гілки завдання та `asset.digest=sha256:<хеш отриманого tar.gz>`. Root-скрипт встановлення незалежно повторює ці перевірки. Якщо чогось бракує або GitHub недоступний, пакет **відхиляється** (навіть при перевищенні ліміту запитів GitHub API або помилковому токені), без винятків і без резервного переходу на URL із самого пакета.
 
-Bij privétoegang gebruikt de site het bestaande, afgeschermde GitHub-token van de eigenaar (indien beschikbaar); de root-host kan desgewenst een uitsluitend voor root leesbaar GitHub-token in `/etc/mijn-ruimte/github-token` hebben (eigenaar 0, rechten 0600). **Nooit** het token in de archiefmetadata, GitHub, CI-logs of chat zetten. Laat de beheerder het token via zijn beveiligde procedure configureren.
+Для приватного доступу сайт використовує наявний захищений GitHub-токен власника (якщо він доступний); на root-хості за потреби може лежати доступний лише для root GitHub-токен у `/etc/mijn-ruimte/github-token` (власник `0`, права `0600`). **Ніколи** не додавайте токен у метадані архіву, GitHub, логи CI чи чат. Адміністратор має налаштовувати токен виключно за своєю захищеною процедурою.
 
-Check bij weigering: juiste taak-commit, `orchestratie/ontwikkelarchieven/<TAAK-ID>.json` op die commit, branch-geschiedenis, Release-tag die gelijk is aan `UITROL-VERSIE`, assetnaam en assetdigest. Een ontbrekende of ontoegankelijke GitHub Release is geen toestemming om door te gaan. De eigenaar blijft de installatie met Passkey goedkeuren; TRACE-001 verleent geen automatische installatierechten.
+Що перевірити у разі відмови: правильність коміту завдання, наявність `orchestratie/ontwikkelarchieven/<TAAK-ID>.json` у цьому коміті, історію гілки, збіг тегу Release з `UITROL-VERSIE`, назву ассета та дайджест ассета. Відсутній або недоступний GitHub Release не є дозволом продовжувати. Власник, як і раніше, схвалює встановлення за допомогою Passkey; TRACE-001 не надає автоматичних прав на встановлення.
 
-Canon: `AGENTS.md` §5, `orchestratie/beleid.json` v1.4.1, `orchestratie/BESLUITEN.md` B-007 en `deploy/REGELS-UITROLPAKKET.md` §7.
+Канон: `AGENTS.md` §5, `orchestratie/beleid.json` v1.4.1, `orchestratie/BESLUITEN.md` B-007 та `deploy/REGELS-UITROLPAKKET.md` §7.

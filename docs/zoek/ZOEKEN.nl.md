@@ -21,8 +21,8 @@ De pagina `hub.<domein>/zoek` (menu «Zoeken») biedt één zoekfunctie over all
 | Contacten, apparaten | `contact`, `apparaat` | gereserveerd in het model; op 22-10-2026 **niet geïndexeerd** |
 
 De gebruiker hoeft de exacte naam van een functie niet te kennen: exacte treffers, prefixen (aanvullen), volledige tekst, normalisatie (hoofd-/kleine letters,
-diacritica, Cyrillisch ↔ Latijn), lichte morfologie, fuzzy zoeken (trigram, typefouten van 1–2 letters), synoniemen en meertalige
-equivalenten (uk, ru, nl, en, de, fr, pl, ro, bg), surzhyk/transliteratie (`poshta`, «настройки почты») en de beschrijving van het doel van een knop werken allemaal.
+diacritica, Cyrillisch ↔ Latijn), lichte morfologie, benaderend zoeken (trigrammen, typefouten van 1–2 letters), synoniemen en meertalige
+equivalenten (`uk`, `nl`, `de`, `fr`, `pl`, `ro`, `bg`), spreektaal/transliteratie (`poshta`, «налаштування пошти») en de beschrijving van het doel van een knop werken allemaal.
 Elke resultaatkaart legt uit **waarom** ze is gevonden (`uitleg`), toont het pad, een fragment met markering, een overeenkomstpercentage
 (0–100, methodiek hieronder) en een veilige navigatie (`route`: uitsluitend diensthost + pad, nooit een willekeurige URL).
 
@@ -51,49 +51,49 @@ indexering (backend/zoek/bronnen.ts + adapters.ts + wachtrij.ts): wachtrij app.z
 
 Principes:
 - **Één index** (`app.zoek_objecten`) voor alle bronnen; de tabel `app.zoek_document` (0096) is verouderd en wordt niet gebruikt.
-- **Lade van de server.** `userId` + `ruimte` worden nooit uit de request-body gelezen. De poort is dezelfde als voor post/cloud/agenda.
+- **Lade van de server.** `userId` + `ruimte` worden nooit uit de aanvraaginhoud gelezen. De poort is dezelfde als voor post/cloud/agenda.
 - **Niets wordt tijdens het zoeken gescand.** Zoeken leest uitsluitend de index; OCR, archieven en het doorlopen van bronnen gebeuren in de achtergrondwachtrij.
 - **Geen externe diensten.** Alles draait op de server van de eigenaar: PostgreSQL (`pg_trgm`, `unaccent`, ingebouwde stemmers), Node en optioneel `tesseract`.
-- **Terugval (fallback).** Als de index voor een lade leeg is (`aantalInLade = 0`, bijv. eerste start vóór de cron), retourneert `/api/owner/global-search`
+- **Terugval.** Als de index voor een lade leeg is (`aantalInLade = 0`, bijv. eerste start vóór de `cron`), retourneert `/api/owner/global-search`
   resultaten uit het geheugen (zoals vóór 22-10-2026) met `bron:'live'`, `index:false`; `/api/owner/zoek` toont eerlijk de bronstatus «indexeert».
 
 ## 3. Indexschema (`migrations/0100_zoek_kern.sql` breidt 0093 uit)
 
 | Kolom | Type | Doel |
 |---|---|---|
-| `user_id`, `ruimte` | text NOT NULL | lade; CHECK `ruimte IN ('prive','technisch')`; RLS 0094: `user_id = app.huidige_gebruiker()` voor rol `mijnruimte_app` |
-| `bron` | text `~ '^[a-z_]{2,32}$'` | bron (`ZOEK_BRONNEN` in `shared/zoek-model.ts`) |
-| `bron_id` | text ≤700 | stabiele id in de bron (id van bericht, bestand, `pagina:mail/inbox`, `hulp:tech.duur` …) |
-| `soort`, `formaat`, `taal` | text | type (`ZOEK_SOORTEN`), bestandsformaat (facet), taal van de inhoud (`uk ru nl en de fr pl ro bg` of `''`) |
-| `titel`, `titels` (jsonb) | text | canonieke titel + titels per taal (uk/nl voor de interface); alle vormen hebben gewicht A |
-| `omschrijving` | text | wat een knop/pagina doet; gewicht C |
-| `tekst` | text ≤200 000 | volledige tekst (bericht, document, OCR); gewicht D |
-| `trefwoorden` | text | trefwoorden/alternatieve namen, samengevoegd met ` ; `; gewicht B |
-| `pad`, `route` (jsonb) | | pad voor op de kaart («Instellingen › Talen»); veilige navigatie `{host, pad, hash?, params?}` |
-| `extra` (jsonb ≤8 KiB) | | metadata (afzender, MIME, grootte, repo, PDF-pagina …). **Zonder geheimen** |
-| `versie` | text | sha256 van de inhoud of versie van de bron → herindexering van een ongewijzigd object wordt overgeslagen |
-| `titel_norm`, `trefwoorden_norm`, `omschrijving_norm`, `tekst_norm`, `stam_norm` | text | genormaliseerde vormen, **berekend in Node** (`zoekNorm`, `lichteStam`) — de SQL-functie `app.zoek_norm` uit 0093 is verwijderd omdat zij faalde bij `datctype = C` |
-| `zoek_vector` | tsvector GENERATED | `simple` op `*_norm` met gewichten A/B/C/D |
-| `zoek_stam` | tsvector GENERATED | PostgreSQL-stemmer per `taal` (dutch, english, german, french, romanian, russian) op de originele tekst; voor uk/bg/pl — `simple` op `stam_norm` |
-| `aangemaakt_op`, `bijgewerkt_op` | timestamptz | brondatums (versheid als ondersteunend signaal) |
+| `user_id`, `ruimte` | `text` verplicht | lade; voorwaarde `ruimte IN ('prive','technisch')`; RLS 0094: `user_id = app.huidige_gebruiker()` voor rol `mijnruimte_app` |
+| `bron` | `text` `~ '^[a-z_]{2,32}$'` | bron (`ZOEK_BRONNEN` in `shared/zoek-model.ts`) |
+| `bron_id` | `text` ≤700 | stabiele id in de bron (id van e-mail, bestand, `pagina:mail/inbox`, `hulp:tech.duur` …) |
+| `soort`, `formaat`, `taal` | `text` | type (`ZOEK_SOORTEN`), bestandsformaat (facet), taal van de inhoud (`uk nl de fr pl ro bg` of `''`) |
+| `titel`, `titels` (`jsonb`) | `text` | canonieke titel + titels per taal (`uk`/`nl` voor de interface); alle vormen hebben gewicht A |
+| `omschrijving` | `text` | wat een knop/pagina doet; gewicht C |
+| `tekst` | `text` ≤200 000 | volledige inhoud (e-mail, artikel, OCR); gewicht D |
+| `trefwoorden` | `text` | trefwoorden/alternatieve namen, samengevoegd met ` ; `; gewicht B |
+| `pad`, `route` (`jsonb`) | | pad voor op de kaart («Instellingen › Talen»); veilige navigatie `{host, pad, hash?, params?}` |
+| `extra` (`jsonb` ≤8 KiB) | | metadata (afzender, MIME, omvang, repo, PDF-pagina …). **Zonder geheimen** |
+| `versie` | `text` | `sha256` van de inhoud of versie van de bron → herindexering van een ongewijzigd object wordt overgeslagen |
+| `titel_norm`, `trefwoorden_norm`, `omschrijving_norm`, `tekst_norm`, `stam_norm` | `text` | genormaliseerde vormen, **berekend in Node** (`zoekNorm`, `lichteStam`) — de SQL-functie `app.zoek_norm` uit 0093 is verwijderd omdat zij faalde bij `datctype = C` |
+| `zoek_vector` | `tsvector GENERATED` | `simple` op `*_norm` met gewichten A/B/C/D |
+| `zoek_stam` | `tsvector GENERATED` | PostgreSQL-stemmer per `taal` op de originele inhoud; voor `uk`/`bg`/`pl` — `simple` op `stam_norm` |
+| `aangemaakt_op`, `bijgewerkt_op` | `timestamptz` | brondatums (versheid als ondersteunend signaal) |
 
 Indexen: GIN(`zoek_vector`), GIN(`zoek_stam`), GIN trigram(`titel_norm`), btree(`user_id`,`ruimte`,`bron`,`bijgewerkt_op DESC`).
 Uniciteit: `(user_id, ruimte, bron, bron_id)`.
 
 Bijbehorende tabellen: `app.zoek_bron_stand` (bronstatus per lade: `niet_gekoppeld | indexeert | gedeeltelijk | fout | klaar`, `voortgang` 0–100,
-`documenten`, laatste poging/succes/fout), `app.zoek_wachtrij` (indexeringswachtrij: `wachtend/bezig/klaar/fout/geannuleerd`, lease,
+`documenten`, laatste poging/succes/fout), `app.zoek_wachtrij` (indexeringswachtrij: `wachtend/bezig/klaar/fout/geannuleerd`, claimtijd,
 exponentiële herhalingen), `app.zoek_ocr_tekst` (0102: OCR-cache **per gebruiker en ruimte**), `app.zoek_geschiedenis` (0103: geschiedenis per
 lade — alleen `(bron,id)` van het gevondene, zonder titels/tekst), `app.zoek_synoniemen_eigenaar` (eigen woordenboek van de eigenaar, zonder UI op 22-10-2026).
 
 ## 4. API (contract `scratchpad/zoek-API.md` → code `shared/zoek-model.ts`)
 
-Alle routes gebruiken POST, JSON en een eigenaarssessie; in de body zijn `service` en `tabContext` verplicht (zoals bij alle owner-routes; zonder deze velden volgt 403
+Alle routes gebruiken POST, JSON en een eigenaarssessie; in de aanvraag zijn `service` en `tabContext` verplicht (zoals bij alle eigenaarsroutes; zonder deze velden volgt 403
 `OWNER_SESSION_CONTEXT_REQUIRED`).
 
-### `POST /api/owner/zoek` — body `ZoekVraag`
+### `POST /api/owner/zoek` — aanvraag `ZoekVraag`
 `{ q, bronnen?, soorten?, formaten?, talen?, sinds?, tot?, sorteer?: 'relevantie'|'nieuwste'|'oudste'|'titel', pagina? (1…), perPagina? (1–100, standaard 20), vaag? (true), synoniemen? (true), facets? (true) }`
 Antwoord `ZoekAntwoord` + `gesloten: ProjectieGesloten[]` + `laden: {bron → ruimte}`:
-`{ q, qNorm, items: ZoekTreffer[], facets?: {bron, soort, formaat, taal → count}, suggesties: ZoekSuggestie[], totaal, pagina, perPagina, bron: 'index'|'live', duurMs, versie: 'zoek-kern-2' }`
+`{ q, qNorm, items: ZoekTreffer[], facets?: {bron, soort, formaat, taal → aantal}, suggesties: ZoekSuggestie[], totaal, pagina, perPagina, bron: 'index'|'live', duurMs, versie: 'zoek-kern-2' }`
 `ZoekTreffer = { id, bron, soort, titel, titels, omschrijving, pad, route, taal, formaat, bijgewerktOp, extra, integratie, score, percent (0–100), uitleg: [{code, uk, nl}], fragment: {tekst, bron, posities:[[van,tot]]} }`.
 Onbekende filterwaarden (`bronnen:['*']`, `sorteer:'user_id'`) worden genegeerd of geven 400 — ze verruimen de selectie nooit.
 
@@ -103,35 +103,34 @@ De bronnen voor suggesties komen uitsluitend uit de lade van de gebruiker (woord
 correcties via `similarity` op woorden in de lade + ingebouwde synoniemen). Een correctie **vervangt** de zoekopdracht niet stilzwijgend: de UI toont «Bedoelde u misschien» en laat beide keuzes toe.
 
 ### `POST /api/owner/zoek/stand` → `{ standen: ZoekBronStand[], gesloten }`
-`ZoekBronStand = { bron, stand, voortgang, aantal (echte count), laatsteOk, laatstePoging, fout, versie, bijgewerktOp }`.
+`ZoekBronStand = { bron, stand, voortgang, aantal (werkelijke telling), laatsteOk, laatstePoging, fout, versie, bijgewerktOp }`.
 
 ### `POST /api/owner/zoek/geschiedenis/lijst|open|bewaren|wis|wis-alles` (Z4, 0103)
-Geschiedenisrecord: zoekopdracht, genormaliseerde zoekopdracht, filters, datum, versies van algoritme/index, `(bron,id)` van de resultaten (≤200), `totaal`, status
+Geschiedenisitem: zoekopdracht, genormaliseerde zoekopdracht, filters, datum, versies van algoritme/index, `(bron,id)` van de resultaten (≤200), `totaal`, status
 `vers|verouderd|vernieuwd|fout`. Bij opnieuw openen voert de client de zoekopdracht opnieuw uit en geeft de server `nieuw`/`weg` (nieuw / verdwenen) terug —
 zonder duplicaten, terwijl de datum wordt bijgewerkt. Er staan geen titels of teksten in de tabel.
 
 ### `POST /api/owner/zoek/index/starten|stand|stoppen|geschiedenis` (zone D, technisch profiel)
-Handmatige volledige of gedeeltelijke indexering van de eigen laden met live voortgang — zie `ZOEK-BEHEER.nl.md` §5. Alleen beschikbaar met een actieve technische tabbladactivering
+Handmatige volledige of gedeeltelijke indexering van de eigen laden met directe voortgang — zie `ZOEK-BEHEER.nl.md` §5. Alleen beschikbaar met een actieve technische tabbladactivering
 (`backend/tech-profiel.ts` → `actieveActivatie`), anders `403 ZOEK_INDEX_TECH_PROFIEL_VEREIST`.
 
-### `POST /api/owner/global-search` (oude route; tevens AI-tool `site_search`)
+### `POST /api/owner/global-search` (oude route; tevens AI-hulpmiddel `site_search`)
 Hetzelfde antwoordformaat als voorheen (`groups[{source, items[{id, title, subtitle, excerpt, relevance …}]}]`), nu boven op de index
 (`mode:'zoek_kern_2'`); valt terug op geheugen als de index van de lade leeg is (`index:false`).
 
 ## 5. Normalisatie, talen, synoniemen (`shared/zoek-normalisatie.ts`, `shared/zoek-synoniemen.ts`)
 
-- `zoekNorm(s)`: NFC → kleine letters → Cyrillisch uk/ru/bg → Latijn (één tabel: х→kh, г→g, и→y, і→i, ї→yi, є→ye, щ→shch, ю→yu,
-  я→ya; ь/ъ/apostrof → ∅) → ł/ß/ø/æ/œ/đ/ı → NFKD zonder diacritica → alleen `\p{L}\p{N}@._-` → enkele spaties. Geen fonetische
+- `zoekNorm(s)`: NFC → kleine letters → Cyrillisch → Latijn (één tabel: х→kh, г→g, ґ→g, и→y, і→i, ї→yi, є→ye, щ→shch, ю→yu,
+  я→ya; zacht teken en apostrof → ∅) → ł/ß/ø/æ/œ/đ/ı → NFKD zonder diacritica → alleen `\p{L}\p{N}@._-` → enkele spaties. Geen fonetische
   samenvoeging (`Jan de Wijk` blijft `jan de wijk`). Identiek op server en client.
 - `zoekTokens(s)`: unieke tokens ≥2 tekens (splitst ook op `-_.@`), ≤12. Stopwoorden worden alleen verwijderd wanneer er andere tokens overblijven.
-- `varianten(token)` (alleen voor de **zoekopdracht**): surzhyk/transliteratie — `y↔i`, `kh↔h`, `g↔h`, `ts↔c`, `ye↔e`, `yi↔i`, `iu↔yu`, `ia↔ya`, `w↔v`,
+- `varianten(token)` (alleen voor de **zoekopdracht**): transliteratie — `y↔i`, `kh↔h`, `g↔h`, `ts↔c`, `ye↔e`, `yi↔i`, `iu↔yu`, `ia↔ya`, `w↔v`,
   `j↔y`, `shch↔sch↔sht`, `ii→i`; tot 8 varianten, elk als OR-alternatief met prefix `:*`.
-- `lichteStam(token)`: gesloten lijst van achtervoegsels (uk/ru/bg/pl in Latijnse schrijfwijze: `-amy -ami -akh -iv -oyu -ovi -ykh -ymy -oho -omu
+- `lichteStam(token)`: gesloten lijst van achtervoegsels (in Latijnse schrijfwijze: `-amy -ami -akh -iv -oyu -ovi -ykh -ymy -oho -omu
   -ty -la -sia …`, éénletterige `-a -y -i -u -o -e` voor woorden ≥5). **Grenzen**: geen stamwisseling (кінь/коня), geen voorvoegsels, geen woordenboek.
-  Voor nl/en/de/fr/ro/ru draait de echte PostgreSQL-stemmer (`zoek_stam`).
-- `taalRaden(s)`: Cyrillisch (і/ї/є/ґ → uk; ы/э → ru; ъ zonder ы → bg), Latijn — stemming op basis van stopwoorden nl/en/de/fr/pl/ro.
-- Synoniemen: `SYNONIEM_GROEPEN` ≥120 groepen `{canoniek, taal:'multi', domein, synoniemen[]}` met leden in 9 talen («пошта/почта/mail/e-mail/
-  post/courrier/poczta/poștă/поща», «налаштування/settings/instellingen/Einstellungen/paramètres/ustawienia/setări/настройки» …).
+  Voor West-Europese talen draait de ingebouwde PostgreSQL-stemmer (`zoek_stam`).
+- `taalRaden(s)`: Cyrillisch (`і/ї/є/ґ` → `uk`), Latijn — stemming op basis van stopwoorden `nl/de/fr/pl/ro`.
+- Synoniemen: `SYNONIEM_GROEPEN` ≥120 groepen `{canoniek, taal:'multi', domein, synoniemen[]}` met leden in meerdere talen («пошта/post/courrier/poczta/poștă/поща», «налаштування/instellingen/Einstellungen/paramètres/ustawienia/setări» …).
   In `tsquery` gaan synoniemen **zonder** prefix `:*` (zodat `post` geen `postcode` vangt); letterlijke zoektokens en hun varianten krijgen wel een prefix.
   Identificatoren, bestandsnamen en productnamen (`mijn-ruimte`, `passkey`, `Claude`) worden niet vertaald.
 - Woordenboek van de eigenaar: `app.zoek_synoniemen_eigenaar` (RLS; `eigenSynoniemen(lade)`, `eigenSynoniemZetten`) wordt tijdens de zoekopdracht

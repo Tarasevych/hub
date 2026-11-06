@@ -7,16 +7,16 @@
 - **Гейт** — яка перевірка відкриває маршрут (сесія користувача, лише власник, технічний профіль, токен агента, системний маршрут з власним контролем прав, публічний).
 - **Лада** — чи маршрут обчислює ладу (userId + ruimte) на сервері (`bordLade`, `mailLade`, `gegevensRuimteVeilig`, …), а не бере її з тіла запиту.
 - **RLS** — запити йдуть через `db.*`/`gebruiker()` у контексті користувача (`zetGebruiker` після гейта): політики `app.records` (0007/0033) і RLS таблиць застосовуються; **системна** = свідомий `alsSysteem` або системний маршрут (BYPASSRLS, контроль прав у коді).
-- **WHERE** — явний фільтр за власником (`userId`/`ownerUserId`/`recipientUserId`/`user_id = $n`) у самому обробнику.
+- **ДЕ** — явний фільтр за власником (`userId`/`ownerUserId`/`recipientUserId`/`user_id = $n`) у самому обробнику.
 - **Step-up** — маршрут вимагає свіжого підтвердження (passkey/Google step-up) для чутливих дій.
-- **Тест 2 користувачі** — тест, що викликає маршрут від імені двох акаунтів і перевіряє відмову для чужого (атакуючий тест). «Тести» — будь-який тест, що згадує маршрут.
+- **Тест 2 користувачі** — тест, що викликає маршрут від імені двох акаунтів і перевіряє відмову для чужого (зловмисник тест). «Тести» — будь-який тест, що згадує маршрут.
 - **Особисті таблиці** — таблиці з груп RLS (0033) чи особистих app-таблиць, яких торкається обробник.
 
-Маршрутів: **682** (POST 658, GET 22, інші 2). З особистими таблицями: **33**, з них без атакуючого тесту (поза admin/системними): **0** (список у §2). Без розпізнаного гейта: **0** (§3 — перевірені вручну).
+Маршрутів: **682** (POST 658, GET 22, інші 2). З особистими таблицями: **33**, з них без зловмисника тесту (поза admin/системними): **0** (список у §2). Без розпізнаного гейта: **0** (§3 — перевірені вручну).
 
 ## 1. Таблиця маршрутів
 
-| Маршрут | Файл | Гейт | Лада | RLS | WHERE | Step-up | Пише | Особисті таблиці | Тест 2 корист. | Тести |
+| Маршрут | Файл | Гейт | Лада | RLS | ДЕ | Step-up | Пише | Особисті таблиці | Тест 2 корист. | Тести |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `DELETE /api/connector-v2/:agent/rpc` | mcp-connector-routes.ts | без сесії (не читає запит: каталог/стан/410) | — | користувач | — | — | — | — | — | — |
 | `DELETE /api/mcp-connector/rpc` | mcp-connector-routes.ts | без сесії (не читає запит: каталог/стан/410) | — | користувач | — | — | — | — | — | — |
@@ -42,7 +42,7 @@
 | `GET /api/owner/system/manifest` | index.ts | системний маршрут (контроль прав у коді) | — | системний | — | — | — | — | — | — |
 | `GET /api/v1/me` | api-platform-tokens.ts | сесія/право (відмова 401/403 у модулі) | — | користувач | — | — | — | — | — | — |
 | `GET /api/version` | index.ts | делеговано модулю (див. файл) | — | користувач | — | — | — | — | — | foutuitleg-20261019, nieuwe-versie, release-info +1 |
-| `POST /api/access/request` | index.ts | сесія (sessionContext) | — | користувач + alsSysteem | так | — | так | users, notification_jobs | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
+| `POST /api/access/request` | index.ts | сесія (sessionContext) | — | користувач + alsSysteem | так | — | так | користувачі, notification_jobs | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
 | `POST /api/account/delete` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | — | так | — | — | audit-account, audit-rls | audit-account, audit-rls |
 | `POST /api/account/overview` | index.ts | сесія (sessionContext) | — | користувач | — | — | — | — | — | — |
 | `POST /api/account/recover` | index.ts | сесія (sessionContext) | — | користувач | — | — | — | — | audit-account, audit-rls | audit-account, audit-rls |
@@ -145,7 +145,7 @@
 | `POST /api/owner/access/recovery/intrekken` | toegangslaag.ts | сесія (локальний гейт модуля) | — | користувач | — | так | так | — | passkeys | passkeys |
 | `POST /api/owner/access/recovery/overzicht` | toegangslaag.ts | сесія (локальний гейт модуля) | — | користувач | — | — | — | — | passkeys | passkeys |
 | `POST /api/owner/access/recovery/rotate` | toegangslaag.ts | сесія (локальний гейт модуля) | — | користувач | — | так | так | — | passkeys | passkeys |
-| `POST /api/owner/access/request` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач + alsSysteem | так | — | так | users, notification_jobs | audit-rls | audit-rls |
+| `POST /api/owner/access/request` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач + alsSysteem | так | — | так | користувачі, notification_jobs | audit-rls | audit-rls |
 | `POST /api/owner/access/snapshot` | toegangslaag.ts | сесія (локальний гейт модуля) | — | користувач | — | — | — | — | passkeys | passkeys |
 | `POST /api/owner/access/stap-op` | toegangslaag.ts | сесія (локальний гейт модуля) | — | користувач | — | так | — | — | herstelcodes.e2e, audit-toegang | herstelcodes.e2e, audit-pad, audit-toegang +5 |
 | `POST /api/owner/access/stap-op/methoden` | toegangslaag.ts | сесія (локальний гейт модуля) | — | користувач | — | так | — | — | passkeys, stap-op-onthouden-20261020 | passkeys, stap-op-onthouden-20261020 |
@@ -155,7 +155,7 @@
 | `POST /api/owner/access/totp/confirm` | toegangslaag.ts | сесія (локальний гейт модуля) | — | користувач | — | — | так | — | audit-toegang, passkeys | audit-toegang, passkeys, stap-op-onthouden-20261020 |
 | `POST /api/owner/access/totp/disable` | toegangslaag.ts | сесія (локальний гейт модуля) | — | користувач | — | — | так | — | — | — |
 | `POST /api/owner/access/totp/start` | toegangslaag.ts | сесія (локальний гейт модуля) | — | користувач | так | так | так | — | audit-toegang, passkeys | audit-toegang, passkeys, stap-op-onthouden-20261020 |
-| `POST /api/owner/access/user/:id/method` | toegangslaag.ts | сесія + право api-platform (ownerGate) | — | системний | так | так | так | users | audit-toegang | audit-toegang |
+| `POST /api/owner/access/user/:id/method` | toegangslaag.ts | сесія + право api-platform (ownerGate) | — | системний | так | так | так | користувачі | audit-toegang | audit-toegang |
 | `POST /api/owner/access/user/:id/reset-password` | toegangslaag.ts | сесія + право api-platform (ownerGate) | — | системний | так | так | так | — | — | — |
 | `POST /api/owner/access/webauthn/options` | toegangslaag.ts | без сесії (не читає запит: каталог/стан/410) | — | користувач | — | — | — | — | — | — |
 | `POST /api/owner/access/webauthn/register` | toegangslaag.ts | без сесії (не читає запит: каталог/стан/410) | — | користувач | — | — | — | — | — | — |
@@ -192,12 +192,12 @@
 | `POST /api/owner/admin/overview/layout/save` | beheer-overzicht.ts | системний маршрут (контроль прав у коді) | — | системний | — | — | — | — | — | — |
 | `POST /api/owner/admin/overview/snapshots` | beheer-overzicht.ts | системний маршрут (контроль прав у коді) | — | системний | — | — | — | — | — | admin-overzicht |
 | `POST /api/owner/admin/overview/user` | beheer-overzicht.ts | системний маршрут (контроль прав у коді) | — | системний | — | — | — | — | — | admin-overzicht |
-| `POST /api/owner/admin/roles/save` | index.ts | адмін-здатність (adminContext) | — | системний | так | так | так | users | — | — |
+| `POST /api/owner/admin/roles/save` | index.ts | адмін-здатність (adminContext) | — | системний | так | так | так | користувачі | — | — |
 | `POST /api/owner/admin/sso-policy/save` | index.ts | адмін-здатність (adminContext) | — | системний | — | так | — | — | — | — |
-| `POST /api/owner/admin/users/:id` | index.ts | адмін-здатність (adminContext) | — | системний | — | так | — | users | audit-account, audit-rls | audit-account, audit-rls, impersonatie +1 |
-| `POST /api/owner/admin/users/:id/delete` | index.ts | адмін-здатність (adminContext) | — | системний | — | так | — | users | audit-account | audit-account |
+| `POST /api/owner/admin/users/:id` | index.ts | адмін-здатність (adminContext) | — | системний | — | так | — | користувачі | audit-account, audit-rls | audit-account, audit-rls, impersonatie +1 |
+| `POST /api/owner/admin/users/:id/delete` | index.ts | адмін-здатність (adminContext) | — | системний | — | так | — | користувачі | audit-account | audit-account |
 | `POST /api/owner/admin/users/:id/recover` | index.ts | адмін-здатність (adminContext) | — | системний | — | так | — | — | audit-account | audit-account |
-| `POST /api/owner/admin/users/pagina` | index.ts | адмін-здатність (adminContext) | — | системний | — | — | — | users | — | — |
+| `POST /api/owner/admin/users/pagina` | index.ts | адмін-здатність (adminContext) | — | системний | — | — | — | користувачі | — | — |
 | `POST /api/owner/agenda/caldav/koppelen` | agenda-routes.ts | сесія (authorize модуля) | — | користувач | — | — | — | — | — | — |
 | `POST /api/owner/agenda/caldav/vernieuwen` | agenda-routes.ts | сесія (authorize модуля) | — | користувач | — | — | — | — | — | — |
 | `POST /api/owner/agenda/caldav/verwijderen` | agenda-routes.ts | сесія (authorize модуля) | — | користувач | — | — | — | — | — | — |
@@ -300,7 +300,7 @@
 | `POST /api/owner/apps/geheimen/:id/invullen` | connectors-routes.ts | сесія + право api-platform (ownerGate) | — | користувач | — | так | — | — | — | apps-overdracht |
 | `POST /api/owner/apps/overzicht` | connectors-routes.ts | сесія + право api-platform (ownerGate) | — | користувач | — | — | — | — | — | — |
 | `POST /api/owner/audit/beheer/controle` | index.ts | адмін-здатність (adminContext) | — | системний | так | — | — | — | — | — |
-| `POST /api/owner/audit/beheer/lijst` | index.ts | адмін-здатність (adminContext) | — | системний | — | — | — | users | — | — |
+| `POST /api/owner/audit/beheer/lijst` | index.ts | адмін-здатність (adminContext) | — | системний | — | — | — | користувачі | — | — |
 | `POST /api/owner/audit/beheer/verwijderen` | index.ts | адмін-здатність (adminContext) | — | системний | так | так | — | — | — | — |
 | `POST /api/owner/auth/google/callback` | index.ts | публічний (без сесії) | — | — (без сесії) | — | — | — | — | hulp/nep-google | hulp/nep-google, tabbladen |
 | `POST /api/owner/auth/password/login` | toegangslaag.ts | публічний вхід (пароль + TOTP, обмеження частоти) | — | користувач | — | — | — | — | — | — |
@@ -313,7 +313,7 @@
 | `POST /api/owner/beveiliging/app-rol-maken` | beveiliging-schakelaars.ts | поорт служби (lade) | — | користувач | — | так | — | — | — | beveiliging-schakelaars |
 | `POST /api/owner/beveiliging/stand` | beveiliging-schakelaars.ts | поорт служби (lade) | — | користувач | — | — | — | — | — | beveiliging-schakelaars |
 | `POST /api/owner/beveiliging/uitzetten` | beveiliging-schakelaars.ts | поорт служби (lade) | — | користувач | — | — | — | — | — | beveiliging-schakelaars |
-| `POST /api/owner/browser/accounts` | index.ts | лише id.* (identity authority) | — | — (без сесії) | — | — | — | users | — | — |
+| `POST /api/owner/browser/accounts` | index.ts | лише id.* (identity authority) | — | — (без сесії) | — | — | — | користувачі | — | — |
 | `POST /api/owner/cloud/bootstrap` | cloud-platform.ts | сесія/право (відмова 401/403 у модулі) | — | користувач | — | — | — | — | ruimte-cloud-agenda-20261020 | ruimte-cloud-agenda-20261020, tech-ruimte-pagina-20261020 |
 | `POST /api/owner/cloud/capture` | cloud-platform.ts | сесія/право (відмова 401/403 у модулі) | — | користувач | — | — | так | — | — | — |
 | `POST /api/owner/cloud/google-suite/calendar/calendars` | google-suite-agenda-fotos.ts | сесія/право (відмова 401/403 у модулі) | — | користувач | — | — | — | — | — | — |
@@ -385,7 +385,7 @@
 | `POST /api/owner/google-contour/keys` | google-contour.ts | системний маршрут (контроль прав у коді) | — | системний | — | — | — | — | — | — |
 | `POST /api/owner/google-contour/reveal` | google-contour.ts | системний маршрут (контроль прав у коді) | — | системний | — | — | — | — | — | — |
 | `POST /api/owner/google-contour/save` | google-contour.ts | системний маршрут (контроль прав у коді) | — | системний | — | — | — | — | — | — |
-| `POST /api/owner/google-suite/callback` | index.ts | OAuth-callback (state + сесія в обробнику) | — | користувач | — | — | — | — | beveiliging-review-20261021, mail-accounts-beheer-20261021 | beveiliging-review-20261021, mail-accounts-beheer-20261021, merk-bron-google-20261021 |
+| `POST /api/owner/google-suite/callback` | index.ts | OAuth-callback (стан + сесія в обробнику) | — | користувач | — | — | — | — | beveiliging-review-20261021, mail-accounts-beheer-20261021 | beveiliging-review-20261021, mail-accounts-beheer-20261021, merk-bron-google-20261021 |
 | `POST /api/owner/hub/blocks/data` | hub-block-data.ts | сесія (authorize модуля) | так | користувач | — | — | — | — | — | hulp/stand-werkblad, ruimte-drive-projectie-20261020, tech-ruimte-pagina-20261020 |
 | `POST /api/owner/hub/bureau/load` | hub-bureau.ts | лада бюро (bordLade) | так | користувач | так | — | — | — | — | hub-bureau-20261019 |
 | `POST /api/owner/hub/bureau/save` | hub-bureau.ts | лада бюро (bordLade) | так | користувач | так | — | — | — | — | hub-bureau-20261019 |
@@ -402,7 +402,7 @@
 | `POST /api/owner/identity/admin/users/:id` | index.ts | системний маршрут (контроль прав у коді) | — | системний | — | — | — | — | — | — |
 | `POST /api/owner/identity/admin/users/:id/delete` | index.ts | системний маршрут (контроль прав у коді) | — | системний | — | — | — | — | — | — |
 | `POST /api/owner/identity/admin/users/:id/recover` | index.ts | системний маршрут (контроль прав у коді) | — | системний | — | — | — | — | — | — |
-| `POST /api/owner/identity/redirect/finalize` | index.ts | якірна сесія браузера | — | користувач | так | так | так | users | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
+| `POST /api/owner/identity/redirect/finalize` | index.ts | якірна сесія браузера | — | користувач | так | так | так | користувачі | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
 | `POST /api/owner/identity/security/emergency-revoke` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | так | — | так | — | — | tech-sessies |
 | `POST /api/owner/identity/security/items/:id/revoke` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | — | — | так | — | — | tech-sessies |
 | `POST /api/owner/identity/security/items/:id/stap-op-vergeten` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | — | так | — | — | stap-op-onthouden-20261020 | stap-op-onthouden-20261020 |
@@ -412,9 +412,9 @@
 | `POST /api/owner/identity/security/revoke-others` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | так | — | так | — | toegangscodes | tech-sessies, toegangscodes |
 | `POST /api/owner/identity/transactions/attach` | index.ts | лише id.* (identity authority) | — | користувач | — | так | так | — | — | — |
 | `POST /api/owner/identity/transactions/cancel` | index.ts | сесія/право (відмова 401/403 у модулі) | — | користувач | — | — | так | — | — | — |
-| `POST /api/owner/identity/transactions/complete-remembered` | index.ts | лише id.* (identity authority) | — | — (без сесії) | — | — | так | users | — | — |
+| `POST /api/owner/identity/transactions/complete-remembered` | index.ts | лише id.* (identity authority) | — | — (без сесії) | — | — | так | користувачі | — | — |
 | `POST /api/owner/identity/transactions/create` | index.ts | якірна сесія браузера | — | — (без сесії) | — | так | так | — | audit-account, hulp/nep-google | audit-account, hulp/nep-google, tabbladen |
-| `POST /api/owner/identity/transactions/redeem` | index.ts | якірна сесія браузера | — | користувач | так | так | так | users | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
+| `POST /api/owner/identity/transactions/redeem` | index.ts | якірна сесія браузера | — | користувач | так | так | так | користувачі | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
 | `POST /api/owner/identity/transactions/status` | index.ts | сесія/право (відмова 401/403 у модулі) | — | користувач | — | — | — | — | — | — |
 | `POST /api/owner/integraties/beschikbaar` | beheer-integraties.ts | сесія (deps.requireSession) | — | користувач | — | — | — | — | admin-integraties | admin-integraties |
 | `POST /api/owner/journaal/beheer/export` | beheer-journaal-routes.ts | адмін-здатність (обгортка metAdmin()) | — | користувач | — | — | — | — | — | — |
@@ -569,7 +569,7 @@
 | `POST /api/owner/privacy/gebeurtenis` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | — | — | — | — | — | — |
 | `POST /api/owner/privacy/status` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | — | — | — | — | — | — |
 | `POST /api/owner/privacy/toestemming` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | — | — | — | — | — | — |
-| `POST /api/owner/profile/photo` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | — | — | так | users | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
+| `POST /api/owner/profile/photo` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | — | — | так | користувачі | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
 | `POST /api/owner/remote/hosts/opslaan` | extern-routes.ts | сесія/право (обгортка gate()) | — | користувач | — | так | — | — | — | — |
 | `POST /api/owner/remote/openen` | extern-routes.ts | сесія | — | користувач | — | так | — | — | remote-bureaublad | remote-bureaublad |
 | `POST /api/owner/remote/sessies` | extern-routes.ts | сесія/право (обгортка gate()) | — | користувач | — | — | — | — | — | — |
@@ -586,13 +586,13 @@
 | `POST /api/owner/session/accounts/:id/forget` | index.ts | якірна сесія браузера | — | користувач | — | — | так | — | — | — |
 | `POST /api/owner/session/bootstrap` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач + alsSysteem | так | — | так | — | audit-account, audit-rls | vault-meta.e2e, agent-namens, audit-account +8 |
 | `POST /api/owner/session/handoff/create` | eigenaar-sessie-overdracht.ts | сесія (deps.requireSession) | — | користувач | так | — | так | — | audit-rls | audit-rls |
-| `POST /api/owner/session/handoff/redeem` | eigenaar-sessie-overdracht.ts | сесія (deps.requireSession) | — | користувач | так | — | так | users | audit-rls | audit-rls |
+| `POST /api/owner/session/handoff/redeem` | eigenaar-sessie-overdracht.ts | сесія (deps.requireSession) | — | користувач | так | — | так | користувачі | audit-rls | audit-rls |
 | `POST /api/owner/session/logout-account-browser` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | — | — | — | — | beveiliging-review-20261021, sessie-tabbladen-20261020 | beveiliging-review-20261021, sessie-tabbladen-20261020 |
 | `POST /api/owner/session/logout-account-everywhere` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | так | — | — | — | — | — |
 | `POST /api/owner/session/logout-browser-all` | index.ts | якірна сесія браузера | — | користувач | — | — | — | — | beveiliging-review-20261021 | beveiliging-review-20261021 |
 | `POST /api/owner/session/logout-current` | index.ts | сесія власника/користувача (ownerRequireSession) | — | користувач | — | — | так | — | beveiliging-review-20261021, sleutelkluis-20261020 | beveiliging-review-20261021, sleutelkluis-20261020, stap-op-onthouden-20261020 |
 | `POST /api/owner/session/refresh` | index.ts | сесія/право (відмова 401/403 у модулі) | — | користувач | — | — | так | — | — | — |
-| `POST /api/owner/session/replace-tab-remembered` | index.ts | якірна сесія браузера | — | користувач | так | — | так | users | account-wisselen-tech-20261020 | account-wisselen-tech-20261020 |
+| `POST /api/owner/session/replace-tab-remembered` | index.ts | якірна сесія браузера | — | користувач | так | — | так | користувачі | account-wisselen-tech-20261020 | account-wisselen-tech-20261020 |
 | `POST /api/owner/tech/activeren` | tech-routes.ts | сесія | — | користувач | — | так | — | — | ai-hub, impersonatie | diagnose.e2e, flags.e2e, hulp/tech +10 |
 | `POST /api/owner/tech/band` | tech-routes.ts | сесія/право (обгортка gate()) | — | користувач | — | — | — | — | — | — |
 | `POST /api/owner/tech/beeindigen` | tech-routes.ts | сесія | — | користувач | — | — | — | — | ai-hub, tech-tabbladen | tech-assets.e2e, ai-hub, tech-tabbladen |
@@ -670,7 +670,7 @@
 | `POST /api/service/security/sessions` | index.ts | — (застарілий маршрут, 410) | — | користувач | — | — | — | — | — | — |
 | `POST /api/service/security/sessions/:id/revoke` | index.ts | — (застарілий маршрут, 410) | — | користувач | — | — | — | — | — | — |
 | `POST /api/service/security/sessions/revoke-all` | index.ts | — (застарілий маршрут, 410) | — | користувач | — | — | — | — | — | — |
-| `POST /api/share/email` | index.ts | сесія (sessionContext) | — | користувач | так | — | так | workspace_members, users | audit-rls | audit-rls |
+| `POST /api/share/email` | index.ts | сесія (sessionContext) | — | користувач | так | — | так | workspace_members, користувачі | audit-rls | audit-rls |
 | `POST /api/share/join` | index.ts | сесія (sessionContext) | — | користувач + alsSysteem | так | — | так | workspaces, workspace_members | audit-rls | audit-rls |
 | `POST /api/share/link` | index.ts | сесія (sessionContext) | — | користувач | так | — | — | — | audit-rls | audit-rls |
 | `POST /api/share/link/revoke` | index.ts | сесія (sessionContext) | — | користувач | так | — | — | — | audit-rls | audit-rls |
@@ -701,13 +701,13 @@
 | `POST /api/workspace/load` | index.ts | сесія (sessionContext) | так | користувач | так | — | — | workspace_blocks | audit-rls, ruimte-aanvallen-20261022 | audit-rls, ruimte-aanvallen-20261022 |
 | `POST /api/workspaces/:id/blocks/reset` | index.ts | сесія (sessionContext) | так | користувач | так | — | так | workspace_blocks | ruimte-aanvallen-20261022 | ruimte-aanvallen-20261022 |
 
-## 2. Маршрути з особистими таблицями без атакуючого тесту (статичний аналіз)
+## 2. Маршрути з особистими таблицями без зловмисника тесту (статичний аналіз)
 
 Маршрути поза admin-/системними, які торкаються особистих таблиць і для яких жоден тест не викликає їх від імені двох акаунтів. 22.10.2026 таких було 23; після тестів `ruimte-aanvallen-20261022` (§1–§5) — список нижче (ціль: порожній).
 
-| Маршрут | Гейт | Таблиці | WHERE | RLS-група |
+| Маршрут | Гейт | Таблиці | ДЕ | RLS-група |
 |---|---|---|---|---|
-| — (немає: кожен маршрут з особистими таблицями має атакуючий тест) | | | | |
+| — (немає: кожен маршрут з особистими таблицями має зловмисник тест) | | | | |
 
 ## 3. Маршрути без розпізнаного гейта (ручна перевірка)
 
@@ -718,12 +718,12 @@
 ## 4. Як працює ізоляція (узагальнення для власника)
 
 1. **Сесія → контекст користувача.** Кожен гейт після успішної перевірки викликає `zetGebruiker(userId)`; усі подальші `db.*`/`gebruiker()`-запити цього запиту йдуть від ролі `mijnruimte_app` із `SET LOCAL app.user_id` (server/platform/db.ts). Політики RLS (0004/0007/0033) бачать лише `owner_id = app.huidige_gebruiker()` або руімти, де користувач є учасником. Поки група RLS у режимі «аудит», рядки, які RLS відхилив би, рахуються в `app.rls_audit` — це і є сторінка «Звірка».
-2. **Явний WHERE у коді.** Незалежно від RLS кожен обробник фільтрує за `userId`/`ownerUserId`/`recipientUserId` (стовпець «WHERE»), і `workspaceAccess()` перевіряє членство в робочому просторі перед читанням блоків.
+2. **Явний ДЕ у коді.** Незалежно від RLS кожен обробник фільтрує за `userId`/`ownerUserId`/`recipientUserId` (стовпець «ДЕ»), і `workspaceAccess()` перевіряє членство в робочому просторі перед читанням блоків.
 3. **Лада з сервера.** Особистий/технічний простір (`ruimte`) обчислюється на сервері з активації технічного профілю у вкладці (`gegevensRuimteVeilig`); тіло запиту може лише звузити її, ніколи не розширити.
-4. **Системні кроки — явні.** `alsSysteem(...)` вживається лише там, де запис законно стосується іншого акаунта (сповіщення власнику, якірна сесія браузера), з коментарем «бевуста системна стап» і атакуючим тестом (`ruimte-aanvallen-20261022`).
+4. **Системні кроки — явні.** `alsSysteem(...)` вживається лише там, де запис законно стосується іншого акаунта (сповіщення власнику, якірна сесія браузера), з коментарем «бевуста системна стап» і зловмисником тестом (`ruimte-aanvallen-20261022`).
 5. **Адміністративні маршрути** (`/api/owner/admin/*`, `/api/admin/*`, `/api/owner/audit/beheer/*`) — системний контекст із власною перевіркою здатностей (`adminContext(…, "users.manage")` тощо) і step-up; їх покривають тести `audit-toegang`, `gebruiker-audit-2026-10-19`, `impersonatie`.
 
-Повний список маршрутів з атакуючими тестами, доданими 22.10.2026: див. `tests/eenheid/ruimte-aanvallen-20261022.test.ts` (шапка файла).
+Повний список маршрутів з зловмисниками тестами, доданими 22.10.2026: див. `tests/eenheid/ruimte-aanvallen-20261022.test.ts` (шапка файла).
 
 ## 5. Три порушення зі сторінки «Звірка» (22.10.2026) — причина і виправлення
 
@@ -737,4 +737,4 @@
 
 **Що ще показує звірка і НЕ є помилкою коду.** У режимі «аудит» лічильник рахує й спроби атаки, які код відхилив: наприклад, B викликає `blocks/<id-A>/update` → обробник читає рядок за id (щоб відповісти 403) і RLS-емуляція рахує «lezen workspace_blocks». Під увімкненим RLS той самий запит дасть 404 без читання. Тож після ввімкнення групи такі записи зникають; до того — одиничні «lezen» на маршрутах з `:id` можуть бути слідами відхилених спроб, не витоків (сторінка показує лише лічильник без вмісту).
 
-**Межі цієї таблиці.** Стовпці «Таблиці/WHERE/Пише» відображають лише тіло обробника; доступ до даних у модулях (пошта, хмара, агенда, пошук, агенти) відбувається в їхніх функціях і покривається їхніми тестами (`ruimte-mail-20261020`, `ruimte-cloud-agenda-20261020`, `ruimte-drive-projectie-20261020`, `ruimte-bord-github-20261020`, `ruimte-ai-20261020`, `rls-groepen`, `audit-rls`, `zoek-*`). Маршрути потоку входу (`identity/redirect/finalize`, `identity/transactions/redeem`) працюють на одноразових транзакціях, прив’язаних до вкладки, походження, секрету й cookie браузера; атакуючий тест із двома акаунтами — `ruimte-aanvallen-20261022` §5 (чужа транзакція з іншої вкладки → OWNER_TAB_MISMATCH, з чужою вкладкою без секрету → OWNER_REDEEM_SECRET_MISMATCH, повтор → 409, finalize без/з підробленою cookie → 401; браузер B лишається B).
+**Межі цієї таблиці.** Стовпці «Таблиці/WHERE/Пише» відображають лише тіло обробника; доступ до даних у модулях (пошта, хмара, агенда, пошук, агенти) відбувається в їхніх функціях і покривається їхніми тестами (`ruimte-mail-20261020`, `ruimte-cloud-agenda-20261020`, `ruimte-drive-projectie-20261020`, `ruimte-bord-github-20261020`, `ruimte-ai-20261020`, `rls-groepen`, `audit-rls`, `zoek-*`). Маршрути потоку входу (`identity/redirect/finalize`, `identity/transactions/redeem`) працюють на одноразових транзакціях, прив’язаних до вкладки, походження, секрету й cookie браузера; зловмисник тест із двома акаунтами — `ruimte-aanvallen-20261022` §5 (чужа транзакція з іншої вкладки → OWNER_TAB_MISMATCH, з чужою вкладкою без секрету → OWNER_REDEEM_SECRET_MISMATCH, повтор → 409, finalize без/з підробленою cookie → 401; браузер B лишається B).

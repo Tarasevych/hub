@@ -1,159 +1,159 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./LEESMIJ.uk.md) · [🇳🇱 **Nederlandse versie**](./LEESMIJ.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# Hub Agent (Local Machine Connector) — 0.8.0
+# Hub Agent (Конектор локального пристрою) — 0.8.0
 
-Het programma dat een pc of VM van een gebruiker koppelt aan de site. De agent belt zelf naar buiten (WSS via de
-Cloudflare Tunnel); er hoeft geen poort open en geen router te worden ingesteld.
+Програма, яка підключає ПК або віртуальну машину користувача до сайту. Агент сам встановлює вихідне з’єднання (WSS через
+Cloudflare Tunnel); відкривати порти чи налаштовувати роутер не потрібно.
 
-## Gebruik
+## Використання
 
-1. mcp.tarasevych.com → Agenten → "Pc / virtuele machine koppelen": toont een code (10 minuten, één keer bruikbaar).
-2. Op de machine (Node.js 22 of nieuwer, `agent.mjs` erbij):
+1. `mcp.tarasevych.com` → Агенти → «Підключити ПК / віртуальну машину»: показує код (діє 10 хвилин, одноразовий).
+2. На пристрої (Node.js 22 або новіший, поруч `agent.mjs`):
 
    ```
    node agent.mjs pair --server https://mcp.tarasevych.com --code XXXXXXXX --name "Mijn pc" --root D:\projecten --allow git,node
    node agent.mjs run
    ```
 
-   `--root` (herhaalbaar) = de enige mappen waar de agent bij kan; `--allow` = de enige programma's die hij mag starten.
-   `--readonly-root` (herhaalbaar, 0.3.1+) = een map die de agent alleen mag lezen en tonen (nooit schrijven, nooit als
-   werkmap voor een commando), bijvoorbeeld de back-ups: `--root T:\ --readonly-root R:\`.
-   Voor Docker-gereedschap (`docker_list_containers`, `docker_manage_container`) voegt u `docker` toe aan `--allow` (bijv. `--allow git,node,docker`). `system_metrics` heeft geen extra rechten nodig; containers starten/stoppen vraagt altijd uw goedkeuring op de site.
-3. Status verschijnt als Connected in de UI. Schrijven en commando's uitvoeren wachten op uw goedkeuring op de site.
+   `--root` (можна вказувати кілька разів) = єдині теки, до яких агент має доступ; `--allow` = єдині програми, які він може запускати.
+   `--readonly-root` (можна кілька разів, 0.3.1+) = тека, яку агент може лише читати й показувати (ніколи не писати і не використовувати як
+   робочу теку для команди), наприклад резервні копії: `--root T:\ --readonly-root R:\`.
+   Для інструментів Docker (`docker_list_containers`, `docker_manage_container`) додайте `docker` до `--allow` (напр., `--allow git,node,docker`). `system_metrics` не потребує додаткових прав; запуск/зупинка контейнерів завжди чекає вашого схвалення на сайті.
+3. Статус з’явиться як Connected в інтерфейсі. Запис файлів і виконання команд чекають вашого схвалення на сайті.
 
-## Apps (0.5+, «Додатки», BYOS)
+## Додатки (Apps, 0.5+, «Додатки», BYOS)
 
-Optioneel: de agent kan webapps bouwen en draaien op dit apparaat, voor een AI die de eigenaar daarvoor toestemming gaf
-(MCP-hulpmiddelen `app_*`, standaard uit). Alles blijft op de eigen hardware; er is geen externe hosting.
+Необов’язково: агент може збирати й запускати вебдодатки на цьому пристрої для ШІ, якому власник дав на це дозвіл
+(інструменти MCP `app_*`, типово вимкнені). Усе залишається на власному обладнанні; зовнішнього хостингу немає.
 
 ```
 node agent.mjs apps-config --apps-root ./apps --runtime podman [--domain "{app}.apps.example.com"] [--caddy-admin unix:/run/caddy/admin.sock] [--caddy-server srv0] [--memory 512m]
 node agent.mjs apps-config --disable
 ```
 
-- Containers: rootless Podman (aanbevolen; de docker-groep staat gelijk aan root), `--cap-drop ALL`, `no-new-privileges`,
-  geheugen- en proceslimiet, poort alleen op `127.0.0.1` (20000–20999).
-- Elke uitrol: snapshot (tar.gz) + image per versie, laatste 5 bewaard; start de nieuwe versie niet binnen 30 s, dan komt de
-  vorige automatisch terug. `apps.rollback` zet een eerdere versie terug zonder te bouwen.
-- Bestanden van een uitrol en waarden van geheimen staan nooit in de opdracht (die bewaart de server): de agent haalt ze één
-  keer op met zijn eigen token (`POST /api/owner/agents/overdracht`, eenmalig ticket, 10 min, alleen voor deze agent).
-- Geheimen: `<apps-root>/secrets/<app>.env` (0600), als omgevingsvariabelen aan de container; waarden worden in logboeken
-  gemaskeerd (`***`) en nooit teruggegeven. De eigenaar typt ze zelf op `mcp.*/apps?geheim=…`.
-- Caddy (optioneel): routes via de admin-API (unix-socket of lokaal), vooraan ingevoegd, na een herstart van Caddy elke
-  5 minuten teruggezet. Zonder Caddy blijft een app alleen lokaal bereikbaar.
-- Op de server van «Mijn Ruimte» richt de installer dit in: `sudo /usr/local/sbin/mijn-ruimte-installeer apps-inrichten
-  /srv/mijn-ruimte/current --caddy tunnel` en daarna `... apps-koppelen <KOPPELCODE> --domein '{app}.apps.<domein>'`.
+- Контейнери: безрутовий (rootless) Podman (рекомендовано; група `docker` рівнозначна `root`), `--cap-drop ALL`, `no-new-privileges`,
+  ліміти пам’яті й процесів, порт лише на `127.0.0.1` (20000–20999).
+- Кожне розгортання: знімок (`tar.gz`) + образ на кожну версію, зберігаються останні 5; якщо нова версія не запуститься за 30 с,
+  автоматично повертається попередня. `apps.rollback` повертає попередню версію без повторного збирання.
+- Файли розгортання та значення секретів ніколи не передаються в самій команді (яку зберігає сервер): агент забирає їх один
+  раз власним токеном (`POST /api/owner/agents/overdracht`, одноразовий квиток на 10 хв, лише для цього агента).
+- Секрети: `<apps-root>/secrets/<app>.env` (`0600`), передаються контейнеру як змінні середовища; у журналах значення
+  маскуються (`***`) і ніколи не повертаються. Власник вводить їх власноруч на `mcp.*/apps?geheim=…`.
+- Caddy (необов’язково): маршрути через admin-API (unix-сокет або локально), вставляються на початок і відновлюються кожні
+  5 хвилин після перезапуску Caddy. Без Caddy додаток залишається доступним лише локально.
+- На сервері «Мій простір» інсталятор налаштовує це командою: `sudo /usr/local/sbin/mijn-ruimte-installeer apps-inrichten
+  /srv/mijn-ruimte/current --caddy tunnel`, а потім `... apps-koppelen <KOPPELCODE> --domein '{app}.apps.<domein>'`.
 
-## Deze server als apparaat (0.5.1+)
+## Цей сервер як пристрій (0.5.1+)
 
-Op de site: mcp.* → «Додатки» of «Агенти → Пристрої → Цей сервер» maakt de koppelcodes en ÉÉN commando, bv.:
+На сайті: `mcp.*` → «Додатки» або «Агенти → Пристрої → Цей сервер» створює коди підключення та ОДНУ команду, напр.:
 
 ```
 sudo /usr/local/sbin/mijn-ruimte-installeer beheer-koppelen <CODE> --gebruiker beheer --root '/home/beheer' --readonly-root /srv/mijn-ruimte/current --allow git
 ```
 
-De agent draait dan als `beheer` (systemd `mijn-ruimte-agent-beheer.service`) met `NoNewPrivileges=yes` (geen sudo, ook niet via
-node/python), `ProtectSystem=strict` en schrijven alleen in de gekozen mappen. De eerste koppeling gebeurt bewust in de
-console: de site geeft zichzelf geen toegang tot haar eigen host. Daarna regelt de eigenaar alles op de site. Bij elke
-release (`installeren`) werkt de installer de agent op de server bij en herstart hem (`agenten_bijwerken`).
+Тоді агент працює як користувач `beheer` (systemd `mijn-ruimte-agent-beheer.service`) з `NoNewPrivileges=yes` (без `sudo`, у тому числі через
+`node`/`python`), `ProtectSystem=strict` і правом запису лише у вибрані теки. Перше підключення свідомо виконується в
+консолі: сайт сам собі не дає доступу до власного хоста. Після цього власник керує всім на сайті. Під час кожного
+випуску (`installeren`) інсталятор оновлює агента на сервері й перезапускає його (`agenten_bijwerken`).
 
-## Rechten per opdracht (0.7.0)
+## Права на кожну команду (0.7.0)
 
-Elke opdracht die de agent kan uitvoeren, kunt u apart aan- of uitzetten. Zo houdt u alleen over wat u wilt.
+Кожну команду, яку вміє виконувати агент, можна окремо увімкнути або вимкнути. Так ви залишаєте лише те, що вам потрібно.
 
 ```
-node agent.mjs rechten                       # overzicht: aan / uit per opdracht
-node agent.mjs rechten set exec off          # zet één opdracht uit
+node agent.mjs rechten                       # огляд: увімкнено / вимкнено для кожної команди
+node agent.mjs rechten set exec off          # вимкнути одну команду
 node agent.mjs rechten set exec on
 ```
 
-- Bestand: `~/.hub-agent/rechten.json` (0600). Voorbeeld met alle sleutels: `deploy/agent/rechten-voorbeeld.json`.
-- Een ontbrekende sleutel = aan (zoals vóór 0.7.0). `false` = uit: de opdracht verdwijnt uit de lijst van de agent en wordt geweigerd.
-- De agent leest het bestand bij elke verbinding; na een wijziging herstart u de agent (`node agent.mjs run`).
-- Sleutels: `sys.info`, `sys.metrics`, `fs.list`, `fs.stat`, `fs.search`, `fs.read`, `fs.write`, `exec`, `docker.ps`, `docker.manage`.
-  De apps- en terminalopdrachten hebben hun eigen aan/uit (`apps-config`, `terminal-config`).
-- Nieuw in 0.7.0 (alleen lezen): `fs.stat` (grootte, datum, type van één pad) en `fs.search` (zoeken op naam, optioneel in tekst;
-  max. 200 treffers, 5000 items, diepte 8, tekstbestanden tot 256 KB; geen symlinks, geheime plekken overgeslagen).
+- Файл: `~/.hub-agent/rechten.json` (`0600`). Приклад з усіма ключами: `deploy/agent/rechten-voorbeeld.json`.
+- Відсутній ключ = увімкнено (як до 0.7.0). `false` = вимкнено: команда зникає зі списку можливостей агента й відхиляється.
+- Агент перечитує файл під час кожного з’єднання; після зміни перезапустіть агента (`node agent.mjs run`).
+- Ключі: `sys.info`, `sys.metrics`, `fs.list`, `fs.stat`, `fs.search`, `fs.read`, `fs.write`, `exec`, `docker.ps`, `docker.manage`.
+  Команди додатків і термінала мають власні перемикачі (`apps-config`, `terminal-config`).
+- Нове в 0.7.0 (лише читання): `fs.stat` (розмір, дата, тип одного шляху) та `fs.search` (пошук за назвою, необов’язково в тексті;
+  макс. 200 збігів, 5000 елементів, глибина 8, текстові файли до 256 КБ; без симлінків, секретні місця пропускаються).
 
-Bewust NIET toegevoegd (ook niet met rechten.json aan te zetten):
-- Shells (`cmd`, `powershell`, `bash`, `sudo`, `runas`, …) en interpreters met code-vlaggen (`node -e`, `python -c`): daarmee kan elk pad om de mapgrenzen heen.
-- Bestanden verwijderen of hernoemen: geen opdracht ervoor. Een verwijderopdracht zou eerst een verse goedkeuring op de site vragen.
-- Het wijzigen van de agent, zijn rechten of zijn toegangsbeleid vanaf de site: dat blijft bij de eigenaar op het apparaat.
+Свідомо НЕ додано (і не можна увімкнути через `rechten.json`):
+- Оболонки (`cmd`, `powershell`, `bash`, `sudo`, `runas`, …) та інтерпретатори з прапорцями коду (`node -e`, `python -c`): через них будь-який шлях міг би обійти межі дозволених тек.
+- Видалення або перейменування файлів: такої команди немає. Команда видалення вимагала б спершу свіжого підтвердження на сайті.
+- Зміна самого агента, його прав чи політики доступу із сайту: це залишається за власником безпосередньо на пристрої.
 
-## Terminal in de browser (0.6.0+)
+## Термінал у браузері (0.6.0+)
 
-Een shell draait NOOIT op het apparaat zelf (shells blijven verboden op de allow-list), alleen in een wegwerpcontainer:
-rootless podman (of docker), `--network none`, `--cap-drop ALL`, `no-new-privileges`, `--read-only`, limieten (512 MB, 128 processen),
-één toegestane root op `/werk` (standaard alleen-lezen), geheime plekken binnen die root afgedekt (tmpfs of `/dev/null`).
-Uitvoer wordt op de site opgenomen (asciicast), invoer niet. Openen alleen vanuit een technisch profiel met terminalrecht, met reden
-en verse bevestiging van de aanmelding, en alleen op EIGEN apparaten; een AI kan geen terminal openen.
+Оболонка НІКОЛИ не запускається на самому пристрої (оболонки залишаються забороненими в allow-списку), а лише в одноразовому контейнері:
+безрутовий `podman` (або `docker`), `--network none`, `--cap-drop ALL`, `no-new-privileges`, `--read-only`, ліміти (512 МБ, 128 процесів),
+одна дозволена коренева тека на `/werk` (типово лише читання), секретні місця всередині цієї теки перекриті (`tmpfs` або `/dev/null`).
+Вивід записується на сайті (asciicast), ввід — ні. Відкриття лише з технічного профілю з правом на термінал, із зазначенням причини
+та свіжим підтвердженням входу, і лише на ВЛАСНИХ пристроях; ШІ відкрити термінал не може.
 
 ```
 node agent.mjs terminal-config on [--runtime podman|docker] [--image docker.io/library/debian:12-slim] [--max-minuten 60] [--test]
 node agent.mjs terminal-config off
 ```
 
-`--test` (0.7.1) markeert het apparaat als testmachine. Wie mag openen:
-- rol met `terminal.servers` (Адміністратор, Власник): elk eigen apparaat;
-- rol met alleen `terminal.test` (Розробник): alleen testmachines. Zonder `--test` is het apparaat een server.
+`--test` (0.7.1) позначає пристрій як тестову машину. Хто може відкривати:
+- роль із правом `terminal.servers` (Адміністратор, Власник): будь-який власний пристрій;
+- роль лише з правом `terminal.test` (Розробник): лише тестові машини. Без `--test` пристрій вважається сервером.
 
-Vlaggen zonder waarde (`--test`, `--disable`) nemen sinds 0.7.1 het volgende woord niet meer als waarde. Daardoor werkt
-`apps-config --disable` nu echt (daarvoor bleven de apps aan).
+Прапорці без значення (`--test`, `--disable`) починаючи з 0.7.1 більше не захоплюють наступне слово як значення. Завдяки цьому
+`apps-config --disable` тепер справді працює (раніше додатки залишалися увімкненими).
 
-Op de server van «Mijn Ruimte» (apps-agent als `mr-apps`): `sudo /usr/local/sbin/mijn-ruimte-installeer apps-terminal on|off`.
+На сервері «Мій простір» (агент додатків як `mr-apps`): `sudo /usr/local/sbin/mijn-ruimte-installeer apps-terminal on|off`.
 
-## Opdracht-terminal op het apparaat zelf en PowerShell (0.8.0, zone G 22.10.2026)
+## Командний термінал на самому пристрої та PowerShell (0.8.0, зона G 22.10.2026)
 
-Naast de container kan de «Термінал» van het technisch profiel nu ÉÉN programma per regel op dit apparaat zelf uitvoeren, als de
-gebruiker van de agent (op de server: `beheer`, zonder sudo). Geen shell: de site splitst de regel in programma + argumenten
-(`shared/terminal-opdrachten.ts`; `| ; && > <` buiten aanhalingstekens worden geweigerd), de agent voert `term.exec` uit met dezelfde
-grenzen als `exec` (allow-lijst, geen shells, geen `node -e`/`python -c`, werkmap binnen de roots, nooit geheime plekken). Verschil met
-`exec`: een alleen-lezen root mag werkmap zijn voor een LEZENDE opdracht (`git log` in `/srv/mijn-ruimte`); de tabel «lezend/wijzigend»
-(`LEZEND`) is een spiegel van die op de site. Wijzigende opdrachten vragen op de site eerst een bevestiging; alle uitvoer wordt opgenomen
-(`app.terminal_opdrachten`). `cd <map>` wisselt de werkmap (binnen de roots).
+Крім контейнера, «Термінал» технічного профілю тепер може виконувати ОДНУ програму на рядок безпосередньо на цьому пристрої від імені
+користувача агента (на сервері: `beheer`, без `sudo`). Без оболонки: сайт розбиває рядок на програму + аргументи
+(`shared/terminal-opdrachten.ts`; `| ; && > <` поза лапками відхиляються), агент виконує `term.exec` із тими самими
+обмеженнями, що й `exec` (allow-список, без оболонок, без `node -e`/`python -c`, робоча тека в межах roots, жодних секретних місць). Відмінність від
+`exec`: коренева тека «лише для читання» може бути робочою текою для ЧИТАЛЬНОЇ команди (`git log` у `/srv/mijn-ruimte`); таблиця «читання/зміна»
+(`LEZEND`) є дзеркалом таблиці на сайті. Команди, що вносять зміни, спершу вимагають підтвердження на сайті; увесь вивід записується
+(`app.terminal_opdrachten`). `cd <тека>` змінює робочу теку (у межах дозволених roots).
 
 ```
-node agent.mjs terminal-config on --opdrachten [--geen-container]        # vereist een allow-lijst (pair … --allow git,systemctl,…)
-node agent.mjs terminal-config on --powershell [--geen-container]        # Windows: de regel gaat als -Command-tekst naar powershell.exe
-node agent.mjs terminal-config on --opdrachten --powershell              # beide
-node agent.mjs pair … --code -                                           # koppelcode van stdin (installer: nooit in de procestabel)
+node agent.mjs terminal-config on --opdrachten [--geen-container]        # вимагає allow-список (pair … --allow git,systemctl,…)
+node agent.mjs terminal-config on --powershell [--geen-container]        # Windows: рядок передається як текст -Command у powershell.exe
+node agent.mjs terminal-config on --opdrachten --powershell              # обидва режими
+node agent.mjs pair … --code -                                           # код підключення зі stdin (інсталятор: ніколи не світиться в таблиці процесів)
 ```
 
-- **PowerShell** is de enige «shell» die kan, en alleen als vast programma: `powershell.exe -NoProfile -NonInteractive -Command <tekst>`
-  (op Linux/macOS `pwsh`), `shell:false`, nooit via `cmd.exe`; de hele regel is één argument. Binnen PowerShell is de tekst willekeurig —
-  daarom bevestigt de site ELKE PowerShell-opdracht, ook via de AI-weg (`uitvoeren_opdracht`/`machine_exec` met `command: "powershell"`
-  gaat door dezelfde `exec` en vraagt altijd goedkeuring — de server forceert dat in `submitCommand`, ook met een «altijd»-grant). Zonder `--powershell` blijven `powershell`/`pwsh` geweigerd zoals alle shells.
-  Stap voor stap voor Windows: `deploy/agent/WINDOWS-POWERSHELL.md`.
-- **De server als apparaat zonder code overtypen**: `sudo mijn-ruimte-installeer terminal-inrichten` (ook stil aan het einde van
-  `installeren`, alleen de eerste keer). De installer vraagt als dienstgebruiker een koppelcode voor de eigenaar
-  (`dist-server/apparaat-koppelcode.mjs`, ruimte «technisch»), geeft hem via stdin aan `pair --code -` als `beheer`, zet
-  `terminal-config on --opdrachten --geen-container` en start `mijn-ruimte-apparaat.service` (User=beheer, NoNewPrivileges,
-  ProtectSystem=strict; sjabloon `deploy/mijn-ruimte-apparaat.service`). Standaard roots: `/home/beheer` (schrijven), `/srv/mijn-ruimte`
-  en `/var/log` (alleen lezen); standaard allow-lijst: `STANDAARD_ALLOW_SERVER` in `shared/terminal-opdrachten.ts`. Dit vervangt
-  `beheer-koppelen` voor dezelfde gebruiker (die unit wordt uitgezet).
-- Capabilities melden nu ook `gebruiker` en `host` (statusregel «підключено як beheer@host») en `terminal.{container,opdrachten,powershell}`.
+- **PowerShell** — єдина можлива «оболонка», і лише як фіксована програма: `powershell.exe -NoProfile -NonInteractive -Command <текст>`
+  (на Linux/macOS `pwsh`), `shell:false`, ніколи через `cmd.exe`; увесь рядок є одним аргументом. Усередині PowerShell текст довільний —
+  тому сайт підтверджує КОЖНУ команду PowerShell, у тому числі через ШІ (`uitvoeren_opdracht`/`machine_exec` із `command: "powershell"`
+  проходить через той самий `exec` і завжди вимагає схвалення — сервер примусово вимагає цього в `submitCommand`, навіть за наявності дозволу «завжди»). Без `--powershell` команди `powershell`/`pwsh` відхиляються, як і всі інші оболонки.
+  Покрокова інструкція для Windows: `deploy/agent/WINDOWS-POWERSHELL.md`.
+- **Сервер як пристрій без ручного введення коду**: `sudo mijn-ruimte-installeer terminal-inrichten` (також тихо наприкінці
+  `installeren`, лише вперше). Інсталятор від імені сервісного користувача запитує код підключення для власника
+  (`dist-server/apparaat-koppelcode.mjs`, простір «technisch»), передає його через `stdin` у `pair --code -` від імені `beheer`, вмикає
+  `terminal-config on --opdrachten --geen-container` і запускає `mijn-ruimte-apparaat.service` (`User=beheer`, `NoNewPrivileges`,
+  `ProtectSystem=strict`; шаблон `deploy/mijn-ruimte-apparaat.service`). Стандартні roots: `/home/beheer` (запис), `/srv/mijn-ruimte`
+  та `/var/log` (лише читання); стандартний allow-список: `STANDAARD_ALLOW_SERVER` у `shared/terminal-opdrachten.ts`. Це замінює
+  `beheer-koppelen` для того самого користувача (старий юніт вимикається).
+- Можливості (`capabilities`) тепер також повідомляють `gebruiker` і `host` (рядок стану «підключено як beheer@host») та `terminal.{container,opdrachten,powershell}`.
 
-## Veiligheid
+## Безпека
 
-- Agenttoken: alleen de sha256-hash staat in de database; het token zelf in `~/.hub-agent/config.json` (modus 0600).
-- Koppelcode: gehasht, één keer bruikbaar, 10 minuten, maximaal 5 per 10 minuten per gebruiker.
-- De agent controleert zelf mappen (realpath, geen symlink-ontsnapping) en commando's (geen shell; programma + argumenten).
-- Een schijfwortel als root (`T:\`, `/`) werkt voor alle submappen (0.3.1; daarvoor gaf elke submap «path outside allowed roots»).
-- Geheime plekken zijn nooit bereikbaar, ook niet binnen een root (0.3.1): mappen `geheim`, `geheimen`, `secrets`, `.ssh`,
-  `.gnupg`, `.hub-agent`, `.aws`, `.azure`, `.kube`, `.docker` en bestanden `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.ppk`,
-  `*.kdbx`, `.env*`, `id_rsa*`/`id_ed25519*`, `uitrol-sleutel*`, `recovery.key*`, `access-seal.key`. Ze staan in `fs.list`
-  met `protected: true`; lezen, schrijven, werkmap of een argument dat ernaar wijst wordt geweigerd.
-- Let op: `node`/`python` op de allow-list betekent dat een (goedgekeurd) script alles kan wat uw gebruikersaccount kan;
-  de mapgrenzen gelden voor de agent-opdrachten, niet voor de code in zo'n script. Zet ze alleen aan als het nodig is.
-- Zelftest zonder server: `node agent.mjs selftest --root <lege map>` (ook in `tests/eenheid/agent-opdrachten.test.ts`).
-- Op Windows kunnen `.cmd`-scripts (`npm`, `npx`) niet zonder shell worden gestart; gebruik `node`, `git`, `python`. Voor `npm` op Windows: de opdracht-terminal met `--powershell` (`powershell npm ls`, bevestigd).
+- Токен агента: у базі даних зберігається лише sha256-хеш; сам токен лежить у `~/.hub-agent/config.json` (режим `0600`).
+- Код підключення: хешований, одноразовий, діє 10 хвилин, максимум 5 кодів за 10 хвилин на користувача.
+- Агент сам перевіряє теки (`realpath`, без виходу через симлінки) та команди (без оболонки; програма + аргументи).
+- Корінь диска як root (`T:\`, `/`) працює для всіх підтек (0.3.1; раніше будь-яка підтека видавала «path outside дозволено roots»).
+- Секретні місця ніколи не доступні, навіть усередині дозволеного root (0.3.1): теки `geheim`, `geheimen`, `secrets`, `.ssh`,
+  `.gnupg`, `.hub-agent`, `.aws`, `.azure`, `.kube`, `.docker` та файли `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.ppk`,
+  `*.kdbx`, `.env*`, `id_rsa*`/`id_ed25519*`, `uitrol-sleutel*`, `recovery.key*`, `access-seal.key`. У `fs.list` вони позначені
+  `protected: true`; читання, запис, використання як робочої теки або передавання їх в аргументах відхиляється.
+- Зверніть увагу: `node`/`python` в allow-списку означає, що (схвалений) скрипт може робити все, що може ваш обліковий запис користувача;
+  межі тек діють для команд агента, але не для коду всередині такого скрипту. Вмикайте їх лише за потреби.
+- Самоперевірка без сервера: `node agent.mjs selftest --root <порожня тека>` (також у `tests/eenheid/agent-opdrachten.test.ts`).
+- На Windows `.cmd`-скрипти (`npm`, `npx`) не можуть запускатися без оболонки; використовуйте `node`, `git`, `python`. Для `npm` на Windows: командний термінал із `--powershell` (`powershell npm ls`, з підтвердженням).
 
-## Server
+## Сервер
 
-- WebSocket: `wss://<app-host>/agent/ws` (alleen bekende hostnamen uit `SERVICE_HOSTS`), afgehandeld in
-  `backend/connectors-gateway.ts`. Agents gebruiken `mcp.tarasevych.com` (rol van dit domein: MCP-instellingen,
-  agenten, sleutels en tools). Daarvoor splitst de tunnel die hostnaam op pad: de MCP-brug (poort 8091, alleen-lezen)
-  houdt zijn eigen paden, al het andere (schermen, `/api/*`, `wss://…/agent/ws`) gaat naar de hoofdapp op 8080.
-  Zie `deploy/cloudflared-config.yml` en `deploy/MCP-SERVICE.txt`. Eerst testen, daarna pas de live-config vervangen.
-- Verbindingen leven in het geheugen van het proces: draai één app-proces (zoals nu).
-- Migratie `0009_agents.sql` (+ rechten in `rechten.sql`), nieuwe runtime-afhankelijkheid: `ws`.
+- WebSocket: `wss://<app-host>/agent/ws` (лише відомі імена хостів із `SERVICE_HOSTS`), обробляється в
+  `backend/connectors-gateway.ts`. Агенти використовують `mcp.tarasevych.com` (роль цього домену: налаштування MCP,
+  агенти, ключі та інструменти). Для цього тунель розділяє цей хост за шляхом: міст MCP (порт 8091, лише читання)
+  зберігає власні шляхи, а все інше (екрани, `/api/*`, `wss://…/agent/ws`) іде до головного додатка на порт 8080.
+  Див. `deploy/cloudflared-config.yml` та `deploy/MCP-SERVICE.txt`. Спершу протестуйте, і лише потім замінюйте робочу конфігурацію.
+- З’єднання живуть у пам’яті процесу: запускайте один процес додатка (як зараз).
+- Міграція `0009_agents.sql` (+ права в `rechten.sql`), нова залежність часу виконання: `ws`.

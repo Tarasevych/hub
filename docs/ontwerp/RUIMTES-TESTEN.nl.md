@@ -31,7 +31,7 @@ Basislijn: eerste run legt vast (`visueel/basislijn/`), `--bijwerken` legt opnie
 | Directe URL zonder (geldige) hoofdsessie → 401/403 | ruimtes-directe-url: geen sessie, verlopen, ingetrokken, andere gebruiker, vlag uit/aan, technische sessie zonder hoofdsessie |
 | Wissel in één klik zonder wachtwoord/TOTP | ruimtes-lekkage (wissel via menu, geen stap-op-vraag) |
 | Donkere brieven: geen wit vlak, WCAG-contrast, opmaak gelijk | ruimtes-visueel-mail (site) + ruimtes-visueel-zuiver (omzetting) op 390/768/1440 |
-| Extensie en MCP onder scope en sessiebinding | tests/eenheid/ruimtes-compatibiliteit-{puur,db} (agent 5) |
+| Extensie en MCP onder bereik en sessiebinding | tests/eenheid/ruimtes-compatibiliteit-{puur,db} (agent 5) |
 
 ## Basislijn op master 1f0078c (vóór samenvoegen, 28.10.2026)
 

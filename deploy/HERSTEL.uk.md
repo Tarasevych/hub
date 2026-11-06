@@ -7,7 +7,7 @@
 > `scripts\herstel-vm.sh` та `scripts\ontsleutel-naar-vm.ps1`. Цей файл — коротка версія.
 >
 > Зовнішній диск теж втрачено? Щодня ті самі **зашифровані** резервні копії та весь набір для відновлення
-> (`herstelset-<дата>.zip.age`) зберігаються на Google Диску в папці `mijn-ruimte-reservekopie/` (див. `deploy/cloud/UITLEG-LEESMIJ.txt`
+> (`herstelset-<дата>.zip.age`) зберігаються на Google Диску в теці `mijn-ruimte-reservekopie/` (див. `deploy/cloud/UITLEG-LEESMIJ.txt`
 > і розділ 4 файлу `00-BEGIN-HIER-NL.txt`). Там лежать лише файли `.age` + SHA256; ключа відновлення там ніколи немає.
 
 Вам потрібні чотири речі. Без **ключа відновлення** пункти 3 і 4 непридатні до використання.
@@ -26,9 +26,9 @@
 
 ## Найшвидший шлях: повний архів (один файл, одна команда)
 На сайті `mcp.tarasevych.com` → «Архів на ПК» → «Зібрати повний архів» створює `mijn-ruimte-<штамп>-volledig.tar.age` (root-скрипт
-`/usr/local/sbin/mijn-ruimte-archief`, запускається через `mijn-ruimte-archief.path`; перебіг у `kit-status.txt`; результат у root-папці
+`/usr/local/sbin/mijn-ruimte-archief`, запускається через `mijn-ruimte-archief.path`; перебіг у `kit-status.txt`; результат у root-теці
 `/var/lib/mijn-ruimte-archief/uitgifte` під постійною назвою `archief-laatste.tar.age`; зберігаються два останні покоління, найстаріше
-видаляється; кількість регулює `ARCHIEF_BEWAAR` у скрипті). Завантажити його може лише власник, після додаткового підтвердження (step-up), через
+видаляється; кількість регулює `ARCHIEF_BEWAAR` у скрипті). Завантажити його може лише власник, після додаткового підтвердження (посилене підтвердження), через
 одноразовий ідентифікатор завантаження. **Увесь архів** зашифровано за допомогою age для наявного публічного ключа (починаючи з 2026-10; раніше шифрувалися лише база даних,
 файли та секрети). Вміст: код, MCP-двері, git-бандли, база даних + ролі, файли, системні юніти/конфігурація тунелю (без sudoers), секрети,
 `LEES-MIJ.txt`, `SHA256SUMS` і `vidnovyty.sh`. На новій машині з Ubuntu/Debian (віртуальній або фізичній, x86-64 чи ARM64):
@@ -102,14 +102,14 @@ curl -s http://127.0.0.1:8080/__gezondheid
 ```
 
 ### 5b. Системний архів (код, юніти, конфігурація тунелю, MCP-міст)
-Кожна папка резервної копії містить також `systeem.tar.gz.age` і `systeem-info.txt` (відкритий текст: версії node/postgres/cloudflared/age, служби, порти
+Кожна тека резервної копії містить також `systeem.tar.gz.age` і `systeem-info.txt` (відкритий текст: версії node/postgres/cloudflared/age, служби, порти
 та шляхи, які не вдалося прочитати). Архів містить активний реліз, systemd-юніти й таймери, `/etc/cloudflared/config.yml` (без
 облікових даних), MCP-міст з оверлеєм та `/etc/mijn-ruimte` без секретів. Це потрібно, якщо втрачено реліз чи юніт, або щоб
 точно відновити міст (порт 8091) і конфігурацію тунелю після повної втрати:
 ```powershell
 cmd /c "$age -d -i $sl $b\systeem.tar.gz.age | ssh -i $k $vm sudo -n sh -c 'mkdir -p /var/tmp/systeem-herstel && tar -xzpf - -C /var/tmp/systeem-herstel'"
 ```
-Далі свідомо скопіюйте потрібні компоненти окремо (юніти в `/etc/systemd/system`, `systemctl daemon-reload`); ніколи не перезаписуйте наосліп працюючий сервер.
+Далі свідомо скопіюйте потрібні компоненти окремо (юніти в `/etc/systemd/system`, `systemctl daemon-reload`); ніколи не перезаписуйте наосліп робочий сервер.
 
 ## 6. Тунель
 Із відновленими обліковими даними: встановіть `deploy/cloudflared.service` і виконайте `systemctl enable --now cloudflared`

@@ -20,12 +20,12 @@ De kern blijft `src/MailOpstelBewerker.tsx` (ProseMirror, `data-mail-compose-mod
 
 `losConceptOp`:
 
-- het laatste bericht in de thread zonder `DRAFT` — antwoord daarop;
-- als de thread leeg is of geen bovenliggend bericht heeft, maar de client al een ander id kent (`ouderId` uit de zichtbare rij van dezelfde `threadId`) — eveneens een antwoord;
+- het laatste bericht in de gesprek zonder `DRAFT` — antwoord daarop;
+- als de gesprek leeg is of geen bovenliggend bericht heeft, maar de client al een ander id kent (`ouderId` uit de zichtbare rij van dezelfde `threadId`) — eveneens een antwoord;
 - een `ouderId` dat gelijk is aan het concept zelf, wordt geen antwoord;
 - anders `mail:open-concept` en de lezer van het concept zelf wordt niet geopend.
 
-`GoogleMailWerkruimte` vult na `loadThread` het `ouderId` aan vanuit `visibleMessages`, uitsluitend als er in de thread geen bovenliggend bericht zit. Er is geen aparte Gmail `drafts.get`. Als zowel de thread als de huidige lijst geen bovenliggend bericht bevat (typisch het tabblad «Concepten»), opent het bericht nog steeds als nieuw bericht. Op een live Gmail-omgeving is dit niet vastgelegd.
+`GoogleMailWerkruimte` vult na `loadThread` het `ouderId` aan vanuit `visibleMessages`, uitsluitend als er in de gesprek geen bovenliggend bericht zit. Er is geen aparte Gmail `drafts.get`. Als zowel de gesprek als de huidige lijst geen bovenliggend bericht bevat (typisch het tabblad «Concepten»), opent het bericht nog steeds als nieuw bericht. Op een live Gmail-omgeving is dit niet vastgelegd.
 
 ## 7.2–7.3
 
@@ -34,5 +34,5 @@ Sjablonen: `height:auto!important` buiten `@media`, actie «Invoegen». De recht
 ## Wat nog openstaat
 
 - Geen browser- en e2e-run: het linkportaal, het cursorgedrag en de sjabloonhoogte zijn alleen in een live DOM zichtbaar.
-- Geen `drafts.get`. Een bovenliggend bericht dat noch in de thread noch in de huidige lijst voorkomt, opent als een nieuw bericht.
+- Geen `drafts.get`. Een bovenliggend bericht dat noch in de gesprek noch in de huidige lijst voorkomt, opent als een nieuw bericht.
 - De drie opstelschermen zijn niet samengevoegd tot één enkel product.

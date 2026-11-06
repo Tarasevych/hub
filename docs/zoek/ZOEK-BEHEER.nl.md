@@ -45,7 +45,7 @@ indexeringlimieten Z2 (`ZOEK_INDEX_*`, zie `backend/zoek/bronnen.ts`). De oude v
 | «OCR niet beschikbaar» | `tesseract`/talen ontbreken | `mijn-ruimte-installeer ocr-talen`; cron controleert beschikbaarheid opnieuw bij de volgende volledige scan |
 | wachtrij-items op `fout` met `TIJDSLIMIET`/`GEHEUGENLIMIET` | groot/beschadigd bestand | niets doen nodig: het document wordt alleen op naam geïndexeerd; verhoog zo nodig `ZOEK_TEKST_TIMEOUT_MS`/`ZOEK_TEKST_WERKER_MB` |
 | `KLUIS_GESLOTEN` in `laatste_fout` | sleutel van de mens is gesloten (mens niet ingelogd) | normaal: indexeren van post/Drive gaat verder na inloggen |
-| zoekopdracht retourneert `bron:'live'` (terugval) | index van de lade is leeg | wacht op cron, klik op «Index vernieuwen» (`POST /api/owner/zoek/bronnen/vernieuwen`) of start handmatige indexering vanuit het technisch profiel (§5) |
+| zoekopdracht retourneert `bron:'live'` | index van de lade is leeg | wacht op cron, klik op «Index vernieuwen» (`POST /api/owner/zoek/bronnen/vernieuwen`) of start handmatige indexering vanuit het technisch profiel (§5) |
 | volledige herindexering nodig (wijziging in normalisatie/synoniemen) | nieuwe kernversie | `UPDATE app.zoek_bron_stand SET versie=''` voor de betreffende laden (of `TRUNCATE app.zoek_objecten` — veilig: de index is afgeleide data); de cron bouwt opnieuw op; `app.zoek_geschiedenis.stand` wordt `verouderd` |
 | wachtrij «hangt» op `bezig` | proces afgebroken tijdens verwerking | lease van 5 min verloopt vanzelf; item keert terug naar `wachtend` |
 
@@ -156,7 +156,7 @@ woordenboek van 30 woorden). Twee runs op kern `zoek-kern-2`: de eerste (~09:30,
 
 Conclusie uit `EXPLAIN (ANALYZE, BUFFERS)` van de echte kern-SQL (onderschept door de test, eerste run): de planner liep via
 `zoek_objecten_lade_soort_idx` → **alle 10 000 rijen van de lade**, het filter viel slechts ~1 500 rijen af; GIN-indexen (vector/stam/trgm) **werden niet gebruikt**,
-omdat de voorwaarde `… OR $q <% titel_norm` (fuzzy in dezelfde WHERE) en de combinatie met de lade niet door één index werden gedekt; voor ~3 500 kandidaten werden
+omdat de voorwaarde `… OR $q <% titel_norm` (fuzzy in dezelfde WAAR) en de combinatie met de lade niet door één index werden gedekt; voor ~3 500 kandidaten werden
 6 tsquery-controles, `word_similarity` en `to_tsvector('simple', titel_norm)` berekend en werd `left(tekst, 20000)` meegenomen in de sortering. Na de Z1-optimalisatie
 (CTE met alleen id + signalen, tekst pas voor de huidige pagina) daalde p95 met een factor drie, maar de scan van de volledige lade bleef: het doel van 300 ms p95 bij 10k was **nog niet
 gehaald** (463 ms). Derde stap (Z1, migratie **0104**): `btree_gin` + samengestelde GIN-indexen `(user_id, ruimte, zoek_vector)` en `(user_id, ruimte, zoek_stam)` —

@@ -48,26 +48,26 @@ Conclusie: er is geen enkele plek waar de gebruiker icoongrootte of positie per 
 - WerkbladV3 blijft `v:3`; additief optioneel veld `blok?: BlokInhoud` op een DesktopEntry (widget of map).
 - Migratie 0116: kolom `blok jsonb NULL` op `app.werkblad_items`, plus menu/pagina-plekken in een nieuwe tabel `app.werkblad_plekken` (RLS, zelfde versie-per-laag en 409 `WERKBLAD_V3_VEROUDERD`).
 - Lui: een widget zonder `blok` wordt pas bij de eerste bewerking omgezet (`blokUitWidget`, `bron:'widget-standaard'`). Mappen blijven mappen tot ze een tweede niveau krijgen; `mapUitBlok` maakt het verliesvrij terug.
-- Vlag uit → kolom wordt genegeerd (niet gewist), oude weergave. Oud release terug → oude code leest de kolom niet; **risico**: oude code schrijft items opnieuw (DELETE+INSERT) en zou `blok` dan verliezen → stroom A bewaart vóór elke schrijf een kopie in `werkblad_v3_lade.blokken_backup` en de knop «Відновити блоки» zet die terug.
+- Vlag uit → kolom wordt genegeerd (niet gewist), oude weergave. Oud release terug → oude code leest de kolom niet; **risico**: oude code schrijft items opnieuw (VERWIJDEREN+INSERT) en zou `blok` dan verliezen → stroom A bewaart vóór elke schrijf een kopie in `werkblad_v3_lade.blokken_backup` en de knop «Відновити блоки» zet die terug.
 - Server valideert met dezelfde `valideerBlok` (limieten, kleurvorm, itemIds uit register, ruimte).
 
 ## 3. Eigenschappenpaneel
-Klein zijpaneel (telefoon: onderblad) naast de selectie; tabbladen «Розмір», «Вигляд», «Розташування», «Пристрої». Elke optie: gewone Oekraïense naam, (?)-uitleg, live voorbeeld, «Скинути» per eigenschap (terug naar авто). Bovenaan voorinstellingen: «Автоматично (як зараз)», «Великі значки», «Компактний ряд», «Колонка», «Вільно». Eenheden altijd zichtbaar («пікселів», «% ширини блоку», «частка вільного місця»). Elke handeling toont «Зберігаю…» → «Збережено» of een duidelijke fout met «Спробувати знову».
+Klein zijpaneel (telefoon: onderblad) naast de selectie; tabbladen «Grootte» («Розмір»), «Weergave» («Вигляд»), «Indeling» («Розташування»), «Apparaten» («Пристрої»). Elke optie: duidelijke naam, (?)-uitleg, direct voorbeeld, «Herstellen» («Скинути») per eigenschap (terug naar automatisch). Bovenaan voorinstellingen: «Automatisch (zoals nu)», «Grote pictogrammen», «Compacte rij», «Kolom», «Vrij». Eenheden altijd zichtbaar («pixels», «% van blokbreedte», «aandeel vrije ruimte»). Elke handeling toont «Opslaan…» → «Opgeslagen» of een duidelijke foutmelding met «Opnieuw proberen».
 
-## 4. Vijf hoofdgevallen (klik voor klik)
-1. **Значки більші:** «Редагувати стіл» → клік на «Швидкий доступ» → панель «Вигляд» → «Великі значки» (або «Розмір значка: 56 пікселів») → видно одразу → «Збережено».
-2. **Один значок більший, інші менші:** у режимі редагування клік на «Пошта» → «Розмір значка» 72 → «Ширина: 2 клітинки» → інші не змінюються.
-3. **Блок у блоці:** виділити «Пошта», «Календар», «Завдання» (Shift+клік) → «Згрупувати» → «Колонка» → новий внутрішній блок, ширина «30 %»; решта лишається сіткою.
-4. **Перетягнути значок з блоку на стіл / в інший блок:** потягнути «GitHub» (телефон: довге натискання) за межі блоку → підсвічується стіл → відпустити → став окремим ярликом того ж вигляду. Без миші: «Перемістити в…» → «Робочий стіл».
-5. **Значок у меню або на сторінку:** потягнути «Нотатки» на бічне меню → підсвічене місце → відпустити → пункт меню з малим значком. Або «Перемістити в…» → «Меню» / «Сторінка Пошта, верхня панель». «Скасувати» (Ctrl+Z) повертає назад.
+## 4. Vijf hoofdgevallen (stap voor stap)
+1. **Grotere pictogrammen:** «Werkblad bewerken» → klik op «Snelle toegang» → paneel «Weergave» → «Grote pictogrammen» (of «Pictogramgrootte: 56 pixels») → direct zichtbaar → «Opgeslagen».
+2. **Één pictogram groter, andere kleiner:** klik in de bewerkingsmodus op «Post» → «Pictogramgrootte» 72 → «Breedte: 2 cellen» → de overige veranderen niet.
+3. **Blok in een blok:** selecteer «Post», «Agenda», «Taken» (Shift+klik) → «Groeperen» → «Kolom» → nieuw binnenblok, breedte «30 %»; de rest blijft een raster.
+4. **Pictogram uit een blok naar het werkblad of een ander blok slepen:** sleep «GitHub» (telefoon: lang indrukken) buiten het blok → het werkblad licht op → laat los → het is nu een afzonderlijke snelkoppeling met hetzelfde uiterlijk. Zonder muis: «Verplaatsen naar…» → «Werkblad».
+5. **Pictogram naar de zijbalk of naar een pagina:** sleep «Notities» naar de zijbalk → gemarkeerde plek → laat los → onderdeel in de zijbalk met klein pictogram. Of via «Verplaatsen naar…» → «Zijbalk» / «Pagina Post, bovenbalk». «Ongedaan maken» (`Ctrl+Z`) zet alles terug.
 
 ## 5. Parallelle stromen (bestandseigendom)
 | Stroom | Inhoud | Eigen bestanden (alleen deze stroom wijzigt) |
 |---|---|---|
-| A — data | `valideerBlok`, blokUitWidget/Map, boombewerkingen, migratie 0116, API `/api/owner/hub/werkblad/v3/blokken/*`, plekken-tabel, backup/herstel, vlag in register | `shared/werkblad-blokken.ts` (contract), `shared/werkblad-blokken-boom.ts`, `backend/werkblad-blokken.ts`, `backend/migraties/0116_*`, `src/werkblad/blokken/api.ts` |
+| A — gegevens | `valideerBlok`, blokUitWidget/Map, boombewerkingen, migratie 0116, API `/api/owner/hub/werkblad/v3/blokken/*`, plekken-tabel, reservekopie/herstel, vlag in register | `shared/werkblad-blokken.ts` (contract), `shared/werkblad-blokken-boom.ts`, `backend/werkblad-blokken.ts`, `backend/migraties/0116_*`, `src/werkblad/blokken/api.ts` |
 | B — rekenmachine | `bereken`, `icoonPx`, geneste maten, doelzones berekenen (puur) + weergave-component | `shared/werkblad-blokken-rekenen.ts`, `src/werkblad/blokken/BlokWeergave.tsx`, `src/werkblad/blokken/blokken.css` |
-| C — eigenschappenpaneel | paneel, voorinstellingen, (?)-uitleg, Скинути, voortgang | `src/werkblad/blokken/Eigenschappen*.tsx`, `src/werkblad/blokken/eigenschappen.css`, teksten in `shared/werkblad-blokken-teksten.ts` |
-| D — slepen en plekken | `beoordeelNeerzetting`, sleepregelaar over blok/canvas/menu/pagina, toetsenbord «Перемістити в…», aanraken; koppeling met `menu-slepen.ts` via een adapter (niet erin schrijven) | `shared/werkblad-plekken.ts`, `src/werkblad/blokken/slepen.ts`, `src/werkblad/blokken/PlekKiezer.tsx`, `src/werkblad/blokken/menu-adapter.ts` |
+| C — eigenschappenpaneel | paneel, voorinstellingen, (?)-uitleg, «Herstellen», voortgang | `src/werkblad/blokken/Eigenschappen*.tsx`, `src/werkblad/blokken/eigenschappen.css`, teksten in `shared/werkblad-blokken-teksten.ts` |
+| D — slepen en plekken | `beoordeelNeerzetting`, sleepregelaar over blok/canvas/zijbalk/pagina, toetsenbord «Verplaatsen naar…», aanraken; koppeling met `menu-slepen.ts` via een adapter (niet erin schrijven) | `shared/werkblad-plekken.ts`, `src/werkblad/blokken/slepen.ts`, `src/werkblad/blokken/PlekKiezer.tsx`, `src/werkblad/blokken/menu-adapter.ts` |
 | E — tests en release | eenheidstests per pure functie, E2E (1280/390, donker/licht, vlag aan/uit = oude weergave pixelgelijk), archief .tar.gz+.sha256+BRON-COMMIT | `tests/eenheid/werkblad-blokken-*.test.ts`, `tests/e2e/werkblad-blokken*.spec.ts`, releasenotities |
 
 Integratie (één persoon, laatste): kleine haken in `src/werkblad/WerkbladV3.tsx` (widget met `blok` → `BlokWeergave`) en `src/werkblad/widgets/Start.tsx` (`SnelToegang` levert zijn tegels als itemIds). Niemand anders raakt die twee bestanden aan.

@@ -29,7 +29,7 @@
 
 | Компонент | Знахідка |
 |---|---|
-| Фронтенд | Vite 6 + React 19 + Tailwind 3. Точка входу `index.html` → `src/main.tsx`. `base: './'`, вивід у `dist/` (`APPDEPLOY_VITE_OUT_DIR`). Є service worker (`public/service-worker.js`, пропускає `/api/`). |
+| Фронтенд | Vite 6 + React 19 + Tailwind 3. Точка входу `index.html` → `src/main.tsx`. `base: './'`, вивід у `dist/` (`APPDEPLOY_VITE_OUT_DIR`). Є service фоновий обробник (`public/service-worker.js`, пропускає `/api/`). |
 | Pre-build скрипти | `scripts/l002-audit.mjs` (статичний аудит, який лише записує `public/l002-diagnostic.json` і ніколи не падає), `scripts/beveiliging-bouw.mjs` та `scripts/mail-slimme-inbox-audit.mjs`. **Увага:** `beveiliging-bouw.mjs` перезаписує `index.html` **безпосередньо в робочому дереві**: вбудовані скрипти та стилі виносяться в `public/canonical-*.js/css`. Тому запускайте збірку в чистій копії або адаптуйте скрипт, щоб він писав у директорію збірки. |
 | Runtime-конфігурація фронтенду | `public/canonical-service.js` містить імена хостів 9 служб: `hub`, `id`, `mail`, `cloud`, `ai`, `github`, `huis`, `api` та `admin` (`*.tarasevych.com`). «Технічний хост» розпізнавався за суфіксом `*.v2.appdeploy.ai`. |
 | CSP | Встановлювався лише через тег `<meta>` скриптом `public/canonical-security.js`. Продакшен: `script-src 'self'`, `connect-src` із `api-v2.appdeploy.ai`. Технічний хост: `'unsafe-inline' 'unsafe-eval'`. |
@@ -47,9 +47,9 @@
 
 | Файл | Імпорт | Використання (кількість викликів) |
 |---|---|---|
-| `backend/index.ts` | `db, error, invites, isInviteError, json, router, secrets` | db 344, secrets 33, invites 2, router 1 |
+| `backend/index.ts` | `db, error, invites, isInviteError, json, router, secrets` | db 344, секрети 33, invites 2, router 1 |
 | `backend/toegangslaag.ts` | `db` | db 34 |
-| `backend/google-suite-inrichting.ts` | `db, error, json, secrets` | db 37, secrets 6 |
+| `backend/google-suite-inrichting.ts` | `db, error, json, secrets` | db 37, секрети 6 |
 | `backend/mail-zoek-duurzaam.ts` | `db` | db 13 |
 | `backend/cloud-platform.ts` | `ai, db, error, json, storage` | db 10, storage 6, ai.extract 1 |
 | `backend/google-suite-mail-browser.ts` | `ai, db, error, json` | db 9, ai.extract 1 (переклад) |
@@ -58,10 +58,10 @@
 | `backend/google-suite-agenda-sync.ts` | `db` | db 6 |
 | `backend/google-suite-sync.ts` | `db` | db 6 |
 | `backend/mail-uitstel.ts` | `db, error, json` | db 5 |
-| `backend/api-platform-kluis.ts` | `db, secrets` | db 4, secrets 2 |
+| `backend/api-platform-kluis.ts` | `db, secrets` | db 4, секрети 2 |
 | `backend/eigenaar-sessie-overdracht.ts` | `db` | db 4 |
 | `backend/realtime-subscribers.ts` | `db, ws, json, error` | db 4, ws.send 1 (мертвий код) |
-| `backend/google-contour.ts` | `db, secrets` | db 3, secrets 2 + **глобальне перевизначення `secrets.readSecret`** (рядки 162–163) |
+| `backend/google-contour.ts` | `db, secrets` | db 3, секрети 2 + **глобальне перевизначення `secrets.readSecret`** (рядки 162–163) |
 | `backend/api-platform-tokens.ts` | `db, error, json` | db 3 |
 | `backend/api-platform-verbindingen.ts`, `cognitief-context.ts`, `hub-indeling-voorkeuren.ts`, `mail-pmid-opstart.ts` | `db` (+ `error/json`) | db 1–2 на файл |
 | `backend/mail-periode-grenzen-cache.ts` | `db` | db 1 (динамічна таблиця `mail_period_bounds_v2:<hash>`) |
@@ -78,14 +78,14 @@
 
 ### 2.3 Заміна за кожною функцією
 
-| Функція AppDeploy | Використання в застосунку | Заміна у власному хостингу (self-hosted) |
+| Функція AppDeploy | Використання в застосунку | Заміна у власному хостингу (автономна) |
 |---|---|---|
 | `db.add/get/list/update/delete` | ±770 викликів, 82 фіксовані та ±10 динамічних логічних таблиць, фільтри на рівність полів верхнього рівня (`{userId}`, `{ownerUserId, mailAccountId}`, `{email}`, ...), `limit` і `nextToken` | **Шар сумісності `server/platform/db.ts`** з тими самими сигнатурами поверх `pg` (`node-postgres`, пул з'єднань). Єдина універсальна таблиця `app.records(tbl, id, seq, data jsonb, ...)`. Фільтр перетворюється на `data @> $1::jsonb` (GIN-індекс `jsonb_path_ops`). Порядок за `seq`. `nextToken` = `base64(останній seq)`, тобто keyset-пагінація. `update` замінює весь запис, як і в AppDeploy. Ліміти (500 елементів і 1 MiB за виклик, 256 KiB на запис) контролюються з тими самими повідомленнями про помилки. **Відмінність у поведінці (покращення):** AppDeploy при `limit` рахував *прочитані* елементи, а не *знайдені*. Через це пошуки на зразок `db.list('users',{filter:{email},limit:5})` могли пропускати записи. Postgres повертає справжні збіги. Крім того, додаються методи для атомарних дій (`takeOne`/`deleteWhere ... RETURNING`), необхідні для усунення гонитви (race condition) у handoff (§5). |
 | `storage.write/read/delete` (вміст у base64) | Завантаження в Хмару (`cloud/<hash>/<ts>-<rand>.<ext>`, макс. 6 МБ) та аватари відправників (webp) | **Шар сумісності `server/platform/opslag.ts`** поверх `/srv/data/uploads` (`UPLOADS_DIR`). Base64 декодується під час запису і знову кодується під час читання. Сувора валідація шляху: `^[a-zA-Z0-9/_.-]+$`, жодних `..`, і після `path.resolve` шлях повинен залишатися всередині кореневої директорії. Атомарний запис (`tmp` + `rename`), права файлів `0640` і директорій `0750`. Опціонально метадані зберігаються в `app.storage_objects`. `storage.url` не використовується, тому ми його не реалізуємо (кидається чітка помилка). |
 | `secrets.readSecret / listSecretNames` | ±40 викликів, 15+ назв (§4.3) | **Шар сумісності `server/platform/geheimen.ts`:** читає з `process.env`, заповненого через `EnvironmentFile=/etc/mijn-ruimte/geheimen.env`. Діє білий список дозволених назв. `listSecretNames` повертає лише ті назви зі списку, які фактично задані. `readSecret` кидає помилку, якщо назва відсутня, як і в AppDeploy. Перевизначення в `google-contour.ts` (рядки 162–163) **видалити**. |
 | `router/json/error` | 1 маршрутизатор, ±285 маршрутів `'POST /api/...'` із `:params`, `ctx = {body, query, params, event}` | **Власний `router()` із тією самою семантикою** плюс HTTP-адаптер на `node:http`. Адаптер формує Lambda-подібну подію (`headers` у нижньому регістрі, `body` як рядок, `queryStringParameters`, `requestContext.http.sourceIp` = `cf-connecting-ip`). `json(data,status)` та `error(msg,status)` повертають `{"error": msg}`. Встановлюється ліміт тіла запиту ±12 МБ (6 МБ файл як base64 у JSON). |
 | `invites.create/join` (+ `isInviteError`) | Спільний доступ до робочих просторів (`resourceType:'workspace_share'`, `authMode:'anonymous'`, із терміном дії) | **Власний модуль і таблиця `app.invites`.** Код — 128 біт випадкових даних (`base64url`). Поля: `status`, `expires_at`, `revoked_at` та `context jsonb`. `InviteError` отримує ті самі значення `code`. `resolve`/`revoke` — лише за потреби. |
-| `ai.extract` (2×) та `ai.ocr` (1×) | Пропозиція метаданих для елементів хмари (з детермінованим резервним варіантом), переклад листів та OCR рукописного тексту | **Адаптер `server/platform/ai.ts`** із `AI_PROVIDER=none|openai|anthropic|gemini|xai|ollama`. `extract` означає виклик чату з JSON-схемою (structured output) плюс валідацію. `ocr` означає vision-виклик. При `none` кидається `AI_UNAVAILABLE` (`AI_NOT_CONFIGURED`). Тоді хмара переходить на детерміновану логіку, а переклад і рукописне введення показують охайне повідомлення. Це **рішення власника** (§9). |
+| `ai.extract` (2×) та `ai.ocr` (1×) | Пропозиція метаданих для елементів хмари (з детермінованим резервним варіантом), переклад листів та OCR рукописного тексту | **Адаптер `server/platform/ai.ts`** із `AI_PROVIDER=none|openai|anthropic|gemini|xai|ollama`. `extract` означає виклик чату з JSON-схемою (structured виведення) плюс валідацію. `ocr` означає vision-виклик. При `none` кидається `AI_UNAVAILABLE` (`AI_NOT_CONFIGURED`). Тоді хмара переходить на детерміновану логіку, а переклад і рукописне введення показують охайне повідомлення. Це **рішення власника** (§9). |
 | `ws.send` + `realtime.ts` | Не підключено | **Видалити**: `backend/realtime.ts`, `backend/realtime-subscribers.ts` та невикористовуваний маршрут `/api/subscriptions`. |
 | Cron (`cron.json`, обробники в `index.ts`) | 2 задачі, кожні 5 хвилин | **systemd-таймери**, які викликають невеликий CLI (`node dist-server/cron.mjs <назва>`) із тим самим корисним навантаженням, що й у `cron.json`. `Type=oneshot` запобігає накладанню запусків. Логування йде в `journald`. Додатково: `pg_advisory_lock` на кожну задачу. Альтернатива: внутрішньопроцесний `croner` (простіше, але менш ізольовано). |
 | `@appdeploy/client` `api` | ±200 викликів | **`src/platform/client.ts`:** `fetch` на same-origin `/api/...`, `credentials:'same-origin'`, JSON, axios-подібна відповідь `{data}` та об'єкт помилки з `response:{status,statusText,data}`, `status`, `responseText` і `message`. |
@@ -264,7 +264,7 @@ COMMIT;
 
 | # | Пункт | Де в коді | Рішення |
 |---|---|---|---|
-| 1 | **Відсутність rate limit або lockout** на вході за паролем (brute force пароля, TOTP і кодів відновлення; перебір користувачів) | `backend/toegangslaag.ts:203` `verifyPasswordLogin`. Маршрути р. 273 (`/api/owner/access/password/login`) та р. 279 (`/api/owner/auth/password/login`). Також `totp/confirm` (р. 403) і `account/recover`. | Проміжний шар `rateLimit(bucket, max, window)` на `app.rate_limits` (атомарний `INSERT ... ON CONFLICT DO UPDATE SET hits=hits+1 RETURNING hits`). На IP напр. 10/15 хв, на e-mail (sha256) 5/15 хв, і прогресивне блокування в `app.login_lockouts`. TOTP: запам'ятовувати використаний часовий крок (захист від повтору / replay). Відповіді й таймінги тримати однаковими для наявних і неіснуючих користувачів (фіктивний хеш). IP клієнта береться **виключно** з `cf-connecting-ip` (`requestMeta` в `index.ts` раніше дивився спершу на `x-forwarded-for`, який легко підробити). Додатковий шар: правило rate-limit у Cloudflare WAF на `/api/*/password/login`. |
+| 1 | **Відсутність rate limit або lockout** на вході за паролем (brute force пароля, TOTP і кодів відновлення; перебір користувачів) | `backend/toegangslaag.ts:203` `verifyPasswordLogin`. Маршрути р. 273 (`/api/owner/access/password/login`) та р. 279 (`/api/owner/auth/password/login`). Також `totp/confirm` (р. 403) і `account/recover`. | Проміжний шар `rateLimit(bucket, max, window)` на `app.rate_limits` (атомарний `INSERT ... ON CONFLICT DO UPDATE SET hits=hits+1 RETURNING hits`). На IP напр. 10/15 хв, на e-mail (sha256) 5/15 хв, і прогресивне блокування в `app.login_lockouts`. TOTP: запам'ятовувати використаний часовий крок (захист від повтору / replay). Відповіді й таймінги тримати однаковими для наявних і відсутніх користувачів (фіктивний хеш). IP клієнта береться **виключно** з `cf-connecting-ip` (`requestMeta` в `index.ts` раніше дивився спершу на `x-forwarded-for`, який легко підробити). Додатковий шар: правило rate-limit у Cloudflare WAF на `/api/*/password/login`. |
 | 2 | **PKCE-verifier та nonce виводилися** через HMAC від клієнтського секрету | `backend/index.ts:321` `ownerOAuthMaterial`, `backend/mail-platform.ts:17` `mailGoogleOAuthMaterial`, `backend/mail-microsoft.ts:1` `mailMicrosoftOAuthMaterial`, `backend/google-suite-inrichting.ts:110` `oauthMaterial` | При старті генерувати `randomBytes(32)` для verifier та nonce, зберігати на сервері в записі стану (`owner_auth_transactions_v1`, `mail_oauth_states_v2`, `google_suite_oauth_states_v1`, `google_oauth_states` / `oauth_pkce_v1`) із TTL ≤ 10 хв та одноразовим використанням (атомарно видаляти під час callback). Поле `nonce` перевіряється в ID-токені. |
 | 3 | **`SameSite=None/Partitioned` без перевірки CSRF** | Конструктори кук у `backend/index.ts` (екосистемні, грант-, identity- та redirect-куки) і `backend/eigenaar-sessie-overdracht.ts`. Немає перевірки `Origin` на POST-запитах. | Same-origin API із `SameSite=Lax/Strict` (§4.2), плюс **глобальний білий список Origin** в HTTP-адаптері: для кожного не-GET `/api/*` заголовок `Origin` (або `Referer`) повинен дорівнювати `https://<Host>` і входити до списку служб. Винятки: вебхуки (`/api/owner/mail/microsoft/webhook`, `/api/owner/mail/google/pubsub/push`, які мають власну криптографічну перевірку), `/api/v1/*` із Bearer та SCIM. `Content-Type` має бути `application/json`. |
 | 4 | **Довіра до `x-forwarded-host`** | `backend/index.ts:278` `ownerHost`, `backend/eigenaar-sessie-overdracht.ts:17` `hostOf`, `backend/api-platform-kluis.ts:69` `requestHost` | Використовувати лише `Host` і валідувати за списком дозволених хостів (інакше 421/400). Сервер слухає на `127.0.0.1`. У `cloudflared` **не** встановлювати `httpHostHeader`. Адаптер видаляє вхідний `x-forwarded-host` із `event.headers`. **Також:** `revealHostAllowed` (`api-platform-kluis.ts:73`) дозволяв `localhost`, `127.0.0.1` та `internal.appdeploy.runtime`. Це небезпечно при власному хостингу, бо будь-який локальний процес міг би звернутися до сховища секретів. Ці значення потрібно прибрати. |
@@ -310,7 +310,7 @@ COMMIT;
 | HTTP-сервер + сумісний маршрутизатор + статика + білий список хостів + заголовки + перевірка здоров'я | 2 дні |
 | db-shim на Postgres + виконавець міграцій + модульні тести проти справжньої PG | 1,5–2 дні |
 | storage-shim (ФС) + тести | 0,5 дня |
-| secrets (env) + валідація конфігурації під час запуску | 0,5 дня |
+| секрети (env) + валідація конфігурації під час запуску | 0,5 дня |
 | invites + клієнтські хелпери (`api`, `image`, `invitesClient`) | 1 день |
 | ai-адаптер (1 провайдер) або охайне вимкнення | 0,5–1 день |
 | cron-CLI + systemd-таймери | 0,5 дня |
@@ -533,9 +533,9 @@ Handoff прив'язано до браузера, який його створ�
 в `R:\mijn-ruimte-reservekopie\sleutels\herstelsleutel-age.txt` (ACL лише для власника), а ВМ має лише публічний ключ
 `/etc/mijn-ruimte/backup-ontvanger.age.pub`. Скрипт `backup-maken.sh` передає потік `pg_dump` та архів завантажень безпосередньо через
 `age -R` (реліз `20261003-123345`, коміт `c4429df`); сама ВМ не може розшифрувати створені нею резервні копії. Зашифрований
-архів секретів (`geheimen.env` + облікові дані тунелю) збережено на `R:\`; пробне розшифрування та пробне відновлення (через конвеєр із ПК у тимчасову базу даних) пройшли успішно. Скрипт `deploy/reservekopie-ophalen.ps1` завантажує найновішу резервну копію на `R:\`; [`deploy/HERSTEL.md`](./deploy/HERSTEL.md) — план аварійного відновлення. Пояснення по кожній папці (українською + нідерландською): `deploy/pc-uitleg/`.
+архів секретів (`geheimen.env` + облікові дані тунелю) збережено на `R:\`; пробне розшифрування та пробне відновлення (через конвеєр із ПК у тимчасову базу даних) пройшли успішно. Скрипт `deploy/reservekopie-ophalen.ps1` завантажує найновішу резервну копію на `R:\`; [`deploy/HERSTEL.md`](./deploy/HERSTEL.md) — план аварійного відновлення. Пояснення по кожній теці (українською + нідерландською): `deploy/pc-uitleg/`.
 
 ### 10.10 Подальші кроки (виконані у жовтні–листопаді 2026)
-- Офлайн-копія ключа відновлення (USB/папір); заплановане завдання для автоматичного завантаження бекапів; Cloudflare: Always Use HTTPS.
+- Офлайн-копія ключа відновлення (USB/папір); заплановане завдання для автоматичного завантаження бекапів; Cloudflare: Завжди Use HTTPS.
 - Старі незашифровані тестові резервні копії `20261003-115845`/`-115908` на ВМ автоматично видалені за 7-денною ротацією.
 - Новий Google OAuth-клієнт (`redirect_uri: https://id.tarasevych.com/`), повноцінне WebAuthn-ядро (`passkey-schvalennya` та `aanmeldmethoden`), інтеграція ШІ-агентів через MCP (`mcp.tarasevych.com`), глобальний пошук `/zoek` та мультиагентна оркестрація `ORCH-001` / `TRACE-001` повністю реалізовані на наступних етапах (див. [Історію проєкту](./docs/hub/GESCHIEDENIS.uk.md)).

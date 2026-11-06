@@ -1,8 +1,8 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL-DONKER.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL-DONKER.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# Donkere mailweergave (MAIL-DONKER)
+# Темне подання листів (MAIL-DONKER)
 
-**Коротко українською.** У темній темі листи більше не показуються на білому аркуші. Модуль `shared/mail-donker.ts` перефарбовує
+**Коротко.** У темній темі листи більше не показуються на білому аркуші. Модуль `shared/mail-donker.ts` перефарбовує
 лист: білі й майже білі фони стають темними (як фон сайту), світлі пастельні — темними того ж відтінку, фірмові кольори кнопок
 залишаються. Колір тексту, посилань, рамок цитат підбирається за WCAG (≥ 4,5:1, великий текст ≥ 3:1). Розміри й розташування
 не змінюються ніколи — лише кольори. Логотипи отримують світлу підкладку, якщо можуть бути прозорими (не інвертуються). Листи з
@@ -10,50 +10,50 @@
 «Оригінал / Темний вигляд» (запам'ятовується для кожного листа). Якщо перетворення не вдалося — показується простий текст.
 У світлій темі нічого не змінюється.
 
-## Waar
+## Де розташовано
 
-| Bestand | Wat |
+| Файл | Що робить |
 |---|---|
-| `shared/mail-donker.ts` | zuivere kleurwiskunde (`leesKleur`, `contrast`, `pasTekstAan`, `donkereAchtergrond`, `donkerVerloop`, `heeftEigenDonkerOntwerp`) en de omzetting `maakMailDonker(doc, opties, eigenDonker)` |
-| `src/mail-donker/logo-toets.ts` | na het laden: pixels van een beeld meten (zelfde oorsprong: data:/blob:) → plaatje weg bij foto's en lichte logo's |
-| `src/mail-donker/weergave.ts` | `useDonkerThema`, keuze per bericht (`localStorage` `mail-donker-weergave:<id>`), themakleuren |
-| `src/mail-donker/mail-donker.css` | donker kader i.p.v. wit papier, de wissel, en de veiligheidsstrook (tekst breekt af, niets meer afgekapt) |
-| `src/MailBerichtTekst.tsx` | `prepareHtml(bron, label, donker)` roept de omzetting aan ná alle opschoning (DOMPurify, stijl-inline, beelden via server) |
-| `tests/hulp/mails/*.html` | 26 synthetische brieven (geen echte post) |
+| `shared/mail-donker.ts` | чиста математика кольорів (`leesKleur`, `contrast`, `pasTekstAan`, `donkereAchtergrond`, `donkerVerloop`, `heeftEigenDonkerOntwerp`) і перетворення `maakMailDonker(doc, opties, eigenDonker)` |
+| `src/mail-donker/logo-toets.ts` | після завантаження: вимірювання пікселів зображення (однакове походження: `data:`/`blob:`) → підкладка прибирається для фотографій і світлих логотипів |
+| `src/mail-donker/weergave.ts` | `useDonkerThema`, вибір для кожного листа (`localStorage` `mail-donker-weergave:<id>`), кольори теми |
+| `src/mail-donker/mail-donker.css` | темна рамка замість білого аркуша, перемикач і захисна смуга (текст переноситься, більше нічого не обрізається) |
+| `src/MailBerichtTekst.tsx` | `prepareHtml(bron, label, donker)` викликає перетворення ПІСЛЯ всього очищення (DOMPurify, inline-стилі, зображення через сервер) |
+| `tests/hulp/mails/*.html` | 26 синтетичних листів (жодної справжньої пошти) |
 
-Volgorde in `prepareHtml`: opschonen → (eigen donker ontwerp: `@media (prefers-color-scheme: dark)`-regels verzamelen) →
-stijlen inline → veiligheid → citaten → **omzetting**. De iframe blijft `sandbox` zonder `allow-scripts`; de module voegt geen
-scripts, bronnen of URL's toe.
+Порядок у `prepareHtml`: очищення → (власний темний дизайн: збір правил `@media (prefers-color-scheme: dark)`) →
+inline-стилі → безпека → цитати → **перетворення**. Iframe залишається у `sandbox` без `allow-scripts`; модуль не додає
+жодних скриптів, ресурсів чи URL-адрес.
 
-## Regels van de omzetting
+## Правила перетворення
 
-- Achtergrond (inline, `bgcolor`, verloopstops): licht (luminantie ≥ 0,4, niet fel-verzadigd) → donker; (bijna-)wit → precies `--panel`.
-- Tekst: eigen kleur, `<font color>`, koppelingen (zonder kleur → lichtblauw), en geërfde kleur waar de achtergrond verandert.
-  Gewone grijze/zwarte tekst → `--text`; gekleurde tekst → kleinste lichtheidsverschuiving in dezelfde tint (+0,15 marge).
-- Randen ≥ 3:1 (citaatbalken), witte scheidingslijnen worden donker.
-- Tekst op een achtergrondafbeelding die licht gemaakt moest worden → `text-shadow` (scrim), de afbeelding blijft.
-- `img` (geen jpeg): lichte achtergrondkleur + `border-radius` (geen maat); de logo-toets haalt hem weg als hij niet nodig is.
-- Lineair: één doorloop zonder `getComputedStyle`; 1 MB ≈ 90–140 ms (omzetting), ≈ 350 ms hele voorbereiding incl. DOMPurify.
+- Фон (inline, `bgcolor`, зупинки градієнта): світлий (світність ≥ 0,4, не яскраво-насичений) → темний; (майже) білий → точно `--panel`.
+- Текст: власний колір, `<font color>`, посилання (без кольору → світло-синій) та успадкований колір там, де змінюється фон.
+  Звичайний сірий/чорний текст → `--text`; кольоровий текст → найменший зсув світлоти в тому самому відтінку (+0,15 запасу).
+- Рамки ≥ 3:1 (смужки цитат), білі розділювальні лінії стають темними.
+- Текст на фоновому зображенні, який довелося зробити світлим → `text-shadow` (затемнення-scrim), саме зображення залишається.
+- `img` (не jpeg): світлий колір фону + `border-radius` (без зміни розміру); перевірка логотипа (`logo-toets`) прибирає підкладку, якщо вона не потрібна.
+- Лінійно: один прохід без `getComputedStyle`; 1 МБ ≈ 90–140 мс (перетворення), ≈ 350 мс уся підготовка включно з DOMPurify.
 
-## Visuele controle — `scripts/visueel-mail.mjs` (ook voor agent 4)
+## Візуальна перевірка — `scripts/visueel-mail.mjs` (також для агента 4)
 
 ```
-node scripts/visueel-mail.mjs                 # meten + vergelijken met de basislijn (exit 1 bij fout)
-node scripts/visueel-mail.mjs --bijwerken     # basislijn vastleggen
+node scripts/visueel-mail.mjs                 # виміряти + порівняти з базовою лінією (exit 1 при помилці)
+node scripts/visueel-mail.mjs --bijwerken     # зафіксувати базову лінію
   --breedtes 390,768,1440   --themas licht,donker   --filter 05-knop
-  --uit /workspace/audit-ruimtes   --basislijn <map> (standaard <uit>/mail-basislijn)
-  --drempel 0.5   (% pixels anders)   --json rapport.json   --zonder-afdrukken
+  --uit /workspace/audit-ruimtes   --basislijn <тека> (типово <uit>/mail-basislijn)
+  --drempel 0.5   (% відмінних пікселів)   --json rapport.json   --zonder-afdrukken
 ```
 
-Per brief × breedte: schermafdruk `mail-<brief>-<breedte>-<thema>.png`, WCAG-contrast van alle zichtbare tekst (donker),
-vakken (x/y/breedte/hoogte) van alle elementen licht ↔ donker identiek, pixelvergelijking met de basislijn, en snelheid (1 MB).
-Alleen lokaal: alle verzoeken buiten `data:`/`blob:`/`about:` worden geblokkeerd. Programmatisch: `import { meet } from './visueel-mail.mjs'`.
+Для кожного листа × ширини: знімок екрана `mail-<лист>-<ширина>-<тема>.png`, контраст WCAG усього видимого тексту (темна тема),
+прямокутники (`x`/`y`/ширина/висота) всіх елементів світла ↔ темна тема ідентичні, попіксельне порівняння з базовою лінією та швидкість (1 МБ).
+Лише локально: усі запити поза `data:`/`blob:`/`about:` блокуються. Програмно: `import { meet } from './visueel-mail.mjs'`.
 
-Tests: `node scripts/eenheidstests.mjs mail-donker` (kleurwiskunde + browsertest over het hele corpus).
+Тести: `node scripts/eenheidstests.mjs mail-donker` (математика кольорів + браузерний тест по всьому корпусу).
 
-## Grenzen
+## Межі
 
-- Contrast voor grote tekst gebruikt alleen inline `font-size`/vet; onbekend → strengste doel (4,5:1).
-- Tekst over een externe achtergrondafbeelding: beeld niet gemeten (alleen scrim als de tekst licht werd).
-- Logo-toets alleen voor beelden van dezelfde oorsprong; anders blijft het lichte plaatje (veilig).
-- Eigen donker ontwerp: alleen eenvoudige regels uit de media-query (geen geneste `@supports`).
+- Контраст для великого тексту враховує лише inline `font-size`/жирність; якщо невідомо → найсуворіша ціль (4,5:1).
+- Текст поверх зовнішнього фонового зображення: саме зображення не вимірюється (лише scrim, якщо текст став світлим).
+- Перевірка логотипа працює лише для зображень того самого походження; інакше світла підкладка залишається (безпечний варіант).
+- Власний темний дизайн: лише прості правила з медіа-запиту (без вкладених `@supports`).

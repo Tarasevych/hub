@@ -1,25 +1,25 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RELEASE-NOTITIES-UI002.uk.md) · [🇳🇱 **Nederlandse versie**](./RELEASE-NOTITIES-UI002.nl.md) · [📖 Інструкція UI-002](./ІНСТРУКЦІЯ-UI002.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# Release-notities UI-002 — «Фото» en «Календар» in «Мій простір»
+# Примітки до випуску UI-002 — «Фото» і «Календар» у «Мій простір»
 
-Datum: 29.10.2026 · Basis: mijn-ruimte-20261029-131639 · Migratie: 0153 · Niet uitgerold.
+Дата: 29.10.2026 · База: mijn-ruimte-20261029-131639 · Міграція: 0153 · Не розгорнуто.
 
-## Vlaggen (standaard UIT)
-- `foto-dienst` — nieuwe fotodienst op hub/photos (UI + `/api/owner/foto/*`; UIT → API 404 `FOTO_DIENST_UIT`).
-- `menu-kalender-foto-eigen` — Календар en Фото uit het cloudmenu naar «Мій простір»; cloud/calendar → hub/calendar, cloud/photos → hub/photos (behalve `?kiezer=1` voor de Google Photos-kiezer). Bestaande agenda wordt hergebruikt.
+## Прапорці (типово ВИМКНЕНО)
+- `foto-dienst` — нова фотослужба на hub/photos (UI + `/api/owner/foto/*`; ВИМКНЕНО → API 404 `FOTO_DIENST_UIT`).
+- `menu-kalender-foto-eigen` — Календар і Фото з меню хмари переносяться до «Мій простір»; cloud/calendar → hub/calendar, cloud/photos → hub/photos (крім `?kiezer=1` для вибору Google Photos). Наявний календар використовується повторно.
 
-## Gebouwd en getest
-- Tijdlijn per maand, albums (nieuw/hernoem/verwijder), collecties per bron en jaar, zoeken, filters + chips, favorieten, tags, verbergen.
-- Exacte duplicaten (sha256) en gelijkende foto's (dHash), herkomst per bron gekoppeld i.p.v. dubbel opgeslagen.
-- Kijker (portal): foto + video, toetsenbord/vegen, info (datum, bestand, herkomst, opslag/back-upstatus), download origineel, Web Share, eigen kopie controleren.
-- Import: ZIP-archieven Google Takeout, Instagram, Facebook, Telegram, Flickr, generiek (VK/OK via generiek ZIP); losse bestanden; EXIF-datum/camera/GPS; metadata uit JSON-zijbestanden; mojibake-herstel.
-- Indexeren van bestaande cloudbestanden (virtueel, met sha/EXIF voor ≤64 MB).
-- Export ZIP met originelen; eigen kopie maken; «wissen» alleen voor eigen kopieën met bevestiging WISSEN. Nooit wissen bij externe diensten.
+## Побудовано й протестовано
+- Хронологічна стрічка за місяцями, альбоми (створити/перейменувати/видалити), колекції за джерелом і роком, пошук, фільтри + чипи, обране, теги, приховування.
+- Точні дублікати (sha256) і схожі фото (dHash), походження за джерелом прив'язується замість подвійного збереження.
+- Переглядач (портал): фото + відео, клавіатура/свайп, відомості (дата, файл, походження, стан зберігання/резервної копії), завантаження оригіналу, Web Share, перевірка власної копії.
+- Імпорт: ZIP-архіви Google Takeout, Instagram, Facebook, Telegram, Flickr, загальний (VK/OK через загальний ZIP); окремі файли; EXIF-дата/камера/GPS; метадані із супровідних JSON-файлів; відновлення mojibake.
+- Індексація наявних хмарних файлів (віртуально, із sha/EXIF для ≤64 МБ).
+- Експорт ZIP з оригіналами; створення власної копії; «видалити» лише для власних копій із підтвердженням WISSEN. Ніколи не видаляється у зовнішніх сервісах.
 
-## Alleen ontworpen / niet gebouwd
-Kaartweergave, gezichtsherkenning, externe deellinks, live Drive/OneDrive/Dropbox/WebDAV, server-miniaturen voor HEIC/RAW/video, streaming >64 MB. ZIP-import houdt media in browsergeheugen. Geen synchronisatie beloofd.
+## Лише спроєктовано / не побудовано
+Перегляд на карті, розпізнавання облич, зовнішні посилання для спільного доступу, живі підключення Drive/OneDrive/Dropbox/WebDAV, серверні мініатюри для HEIC/RAW/відео, потокове передавання >64 МБ. Імпорт ZIP тримає медіафайли в пам'яті браузера. Жодної синхронізації не обіцяно.
 
-## Tests
-- Eenheid: `foto-dienst-20261029` 54/54. Volledige suite: zie rapport (vooraf bestaande fouten, ook op basis).
-- E2E (lokaal, Chrome): `scripts/lokaal-e2e/foto-dienst-ui.mjs` 24/24.
-- `NODE_ENV=production npm run build` exit 0. Migraties op lege DB t/m 0153 OK.
+## Тести
+- Модульні: `foto-dienst-20261029` 54/54. Повний набір: див. звіт (помилки, що існували раніше, також на базі).
+- E2E (локально, Chrome): `scripts/lokaal-e2e/foto-dienst-ui.mjs` 24/24.
+- `NODE_ENV=production npm run build` exit 0. Міграції на порожній БД включно з 0153 OK.

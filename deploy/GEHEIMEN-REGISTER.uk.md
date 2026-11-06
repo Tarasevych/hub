@@ -37,9 +37,9 @@ sudo cat /etc/mijn-ruimte/GEHEIMEN-REGISTER.md      # перегляд; файл
 | `AGENDA_ABONNEMENT_SLEUTEL_V1` | AES-256 паролів CalDAV | geheimen.env | `xxxxxxxx` | 2026-… | не ротувати |
 | `GITHUB_KOPPELING_SLEUTEL_V1` | AES-256 токенів GitHub (необов’язковий; без нього — TOTP-ключ) | geheimen.env | `xxxxxxxx` | 2026-… | не ротувати |
 | `GOOGLE_OAUTH_CLIENT_ID` | Client ID Google (публічний) | geheimen.env **або** сховище (doel `google`) | публічне | 2026-… | Google Cloud Console → Credentials |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | client secret Google | geheimen.env **або** сховище | `xxxxxxxx` | 2026-… | Console → Reset secret → `mijn-ruimte-installeer oauth-client google` або Майстер |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | client секрет Google | geheimen.env **або** сховище | `xxxxxxxx` | 2026-… | Console → Reset секрет → `mijn-ruimte-installeer oauth-client google` або Майстер |
 | `MICROSOFT_GRAPH_CLIENT_ID` / `…_TENANT_ID` | Entra Application (client) ID, tenant | geheimen.env | публічне | 2026-… | Entra → App registrations |
-| `MICROSOFT_GRAPH_CLIENT_SECRET` | client secret Entra (**термін ≤ 24 міс.** — занотуйте дату!) | geheimen.env | `xxxxxxxx` | 2026-… | Entra → Certificates & secrets → `… oauth-client microsoft` |
+| `MICROSOFT_GRAPH_CLIENT_SECRET` | client секрет Entra (**термін ≤ 24 міс.** — занотуйте дату!) | geheimen.env | `xxxxxxxx` | 2026-… | Entra → Certificates & секрети → `… oauth-client microsoft` |
 | `MICROSOFT_GRAPH_WEBHOOK_CLIENT_STATE` | спільний секрет вебхука Graph | geheimen.env | `xxxxxxxx` | 2026-… | `mijn-ruimte-installeer geheimen` |
 | `DATABASE_URL_APP` / `DATABASE_URL_SYSTEM` / `DATABASE_URL_MIGRATIE` | паролі ролей PostgreSQL | geheimen.env / migratie.env | `xxxxxxxx` | 2026-… | `db-rollen-instellen.sh` |
 | `SCIM_BEARER_TOKEN` | вхідний SCIM | geheimen.env | `xxxxxxxx` або порожнє | 2026-… | вручну + у каталозі |

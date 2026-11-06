@@ -1,8 +1,8 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261031-ORCH-001.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261031-ORCH-001.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-# ORCH-001 · Єдина система координації AI-агентів — журнал змін · wijzigingen
+# ORCH-001 · Єдина система координації AI-агентів — журнал змін
 
-Гілка · tak: `feature/orch-001-20261031-112355` (від `b279ccabe31a27139b337822162653ccc13b6a5a` = BRON-COMMIT заявленої встановленої версії `20261031-093842`).
+Гілка: `feature/orch-001-20261031-112355` (від `b279ccabe31a27139b337822162653ccc13b6a5a` = BRON-COMMIT заявленої встановленої версії `20261031-093842`).
 Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestratie/taken/ORCH-001.json`.
 
 ## Етап 0 — спільна пам'ять і правила (31.10.2026)
@@ -26,7 +26,7 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 
 **Перевірено**
 - `node scripts/eenheidstests.mjs orch-` → 69/69. `node scripts/orch.mjs controleer` → зелено (попередження `KRITIEK_NIET_BEVESTIGD` — очікуване до підпису власника).
-- `uitrol-manifest` (18/18) — існуючі перевірки пакета не зачеплено.
+- `uitrol-manifest` (18/18) — наявні перевірки пакета не зачеплено.
 
 **Свідомо не зроблено / обмеження**
 - Базу `20261031-093842 @ b279ccab…` **не звірено з production**: із середовища агента `hub.tarasevych.com` недоступний (proxy 403), а MCP-інструменти
@@ -56,7 +56,7 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 - `tests/eenheid/orch-inleveren-20261031.test.ts` — 36/36 на справжніх git-репозиторіях: ZIP від агента без git, TAR.GZ через MCP з видаленням файла,
   git patch (`git am`), застаріла база з перетином (`BASIS_VEROUDERD_OVERLAP` + `CONFLICT`, гілки не лишилось, `integratie` не перезаписано),
   без ORCH-OVERDRACHT, застарілі правила, впалі тести, свідомий пропуск тестів з причиною, підміна черги, git-гілка зареєстрованої задачі,
-  werkruimte, послідовна черга (bezig → конфлікт при злитті → afgewezen → наступна → integrated), статус `installed` з факту установки, staat-commit.
+  werkruimte, послідовна черга (bezig → конфлікт при злитті → afgewezen → наступна → integrated), статус `installed` з факту встановлення, staat-commit.
 - Разом `orch-*`: kern 53 + cli 16 + inleveren 36 = **105**.
 
 **Свідомо не зроблено / обмеження**
@@ -73,12 +73,12 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 **Додано**
 - `UITROL-BASIS` у пакеті (`maak-voorstelpakket.sh`, `maak-uitrolpakket.sh`: `BASIS_VERSIE` + `BASIS_COMMIT`, + `regelsVersie`/`regelsHash` з lock;
   обов'язково з `20261201-000000`). Root-інсталятор `mijn-ruimte-uitrol.sh`: `BASIS_ONGELDIG`, `BASIS_VEROUDERD`, `BASIS_COMMIT_VERSCHILT`, `GEEN_BASIS`,
-  `REGELS_NIET_VERGRENDELD` (python-відбиток = JS `regelsAfdruk`), `MODUS_NIET_TOEGESTAAN`; після вдалої установки пише `$WERK_ROOT/laatste-commit`.
+  `REGELS_NIET_VERGRENDELD` (python-відбиток = JS `regelsAfdruk`), `MODUS_NIET_TOEGESTAAN`; після вдалої встановлення пише `$WERK_ROOT/laatste-commit`.
   `gitops-ophalen.sh` (автоматично) — лише за `automatisch_beperkt` і підписаним lock.
 - `scripts/orch/pakket.mjs` + `orch pakket`: `mijn-ruimte-<versie>.tar.gz` (через наявний `maak-voorstelpakket.sh`) + `mijn-ruimte-<versie>-<agent>-overdracht.zip`
   (архів, `.sha256`, `.voorstel.json`, `ORCH-OVERDRACHT.json` з `installatie` і `sindsInstallatie`, `UITROL-MANIFEST.json`, `TESTRESULTATEN.json`,
   `RAPPORT.md` uk+nl, `COMMITS.txt` + `commits.bundle`, `AGENTEN.json`, `LEESMIJ.txt`, `.sig` якщо є); задача → `released`.
-  `orch pakket-controleer --bron <zip>` — перевірка без установки. `inleveren --bron <overdracht.zip>` — цілісність, потім вміст tar.gz.
+  `orch pakket-controleer --bron <zip>` — перевірка без встановлення. `inleveren --bron <overdracht.zip>` — цілісність, потім вміст tar.gz.
 - Виправлено (стан координації): власний `orchestratie/taken/<taakId>.json` дозволено в передачі; `.gitattributes` `merge=orch-staat` + драйвер у
   `wachtrij volgende`; `UITROL-BASIS` у `UITGESLOTEN_PADEN` (службові файли архіву не потрапляють у гілку).
 - `beleid.json` 1.1.0 → **1.2.0** (`pakket`, `inlevering.eigenTaakBestandToegestaan`, статуси з `ter_integratie`), B-005, `REGELS-UITROLPAKKET.md` §6,
@@ -87,18 +87,18 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 **Перевірено**
 - `tests/eenheid/orch-pakket-20261031.test.ts` — 23/23: справжній `orch pakket` на тимчасовому репозиторії (tar через `maak-voorstelpakket.sh`, вміст zip і tar,
   `UITROL-BASIS`, `ORCH-OVERDRACHT` з двома базами, `RAPPORT.md`, справжній `git bundle`, статус `released`), `pakket-controleer` (гаразд / підроблений
-  tar → `INTEGRITEIT` / новіша встановлена → `BASIS_VEROUDERD` / інший commit → `BASIS_COMMIT_VERSCHILT`), імпорт zip через `inleveren` (існуюча гілка →
+  tar → `INTEGRITEIT` / новіша встановлена → `BASIS_VEROUDERD` / інший commit → `BASIS_COMMIT_VERSCHILT`), імпорт zip через `inleveren` (наявна гілка →
   `TAK_BESTAAT`; потім прийнято, гілка відтворена від бази), відмови `maak-voorstelpakket.sh` без/з некоректними `BASIS_*`.
 - `tests/eenheid/orch-uitrol-basis-20261031.test.ts` — 14/14: справжній root-скрипт під непривілейованим користувачем (`setpriv`, uid 65534) зі стабом
   інсталятора: старий формат OK + `laatste-commit`, правильна база OK, `BASIS_VEROUDERD`, `BASIS_COMMIT_VERSCHILT`, `BASIS_ONGELDIG`,
-  `REGELS_NIET_VERGRENDELD`, `MODUS_NIET_TOEGESTAAN` з lock, пораховaним у JS (python-відбиток root = JS), CRLF, `GEEN_BASIS`; стаб викликано рівно 4 рази.
+  `REGELS_NIET_VERGRENDELD`, `MODUS_NIET_TOEGESTAAN` з lock, порахованим у JS (python-відбиток root = JS), CRLF, `GEEN_BASIS`; стаб викликано рівно 4 рази.
 - Разом `orch-*`: kern 67 + cli 16 + inleveren 36 + pakket 23 + uitrol-basis 14 = **156**; `uitrol-codes` 17, `uitrol-manifest` 18, `uitrol-pakket-maken` 5,
   `uitrol-weergave-v2` 29 — зелені. `uitrol-deur` пропущено (немає `ssh-keygen` у середовищі), `server-beheer`/`uitrol-goedkeuring` — немає `pg`.
 
 **Свідомо не зроблено / обмеження**
 - Підпис пакета справжнім ключем власника не перевірявся (ключа в агента немає й не має бути) — root-перевірка підпису лишається тією, що й була
   (`uitrol-deur`). Тести етапу 2 покривають усе після підпису.
-- Виклик на production не виконувався; `laatste-commit` на сервері з'явиться після першої установки новим скриптом (до того `BASIS_COMMIT_VERSCHILT`
+- Виклик на production не виконувався; `laatste-commit` на сервері з'явиться після першої встановлення новим скриптом (до того `BASIS_COMMIT_VERSCHILT`
   не спрацьовує — лише версія).
 - Сайт/MCP для завантаження пакета передачі — етап 3.
 
@@ -156,7 +156,7 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 - Production не чіпалося; гілка `regels/*` після passkey лише відправляється в `origin`, злиття в `integratie` — за власником.
 
 **Наступне** — етап 4: приймальні тести (паралельні агенти, конфлікти git, застарілий випуск, імпорт архіву без git, зміна політики, відновлення
-«замороженого» агента, одночасні установки, відкат).
+«замороженого» агента, одночасні встановлення, відкат).
 
 ## Етап 4 — приймальні тести (31.10.2026)
 
@@ -169,7 +169,7 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
   2. **Конфлікти git** — при здачі (gemini на застарілій базі чіпає той самий файл → `BASIS_VEROUDERD_OVERLAP` + `CONFLICT`, гілки немає,
      `integratie` незмінна) і при злитті (grok і antigravity прийняті від однієї бази, другий конфліктує лише при `merge` → abort,
      `klaar afgewezen`, задача назад у `in_progress`); обидва агенти після rebase на свіжу базу з новою міткою гілки прийняті й злиті.
-  3. **Застарілий випуск** — `orch pakket` з `integratie` (`UITROL-BASIS` = встановлена база); root встановлює (OK, `laatste-commit`), факт установки
+  3. **Застарілий випуск** — `orch pakket` з `integratie` (`UITROL-BASIS` = встановлена база); root встановлює (OK, `laatste-commit`), факт встановлення
      робить задачі `installed`; після того як «інший агент» установив новішу версію, пакет на старій базі root відхиляє (`BASIS_VEROUDERD`,
      інсталятор не викликано) — і `pakket-controleer` каже те саме.
   4. **Імпорт без git** — агент працює з `CONTEXT-COMPACT.md` (містить версію й відбиток правил) та експортом бази без `.git`, повертає zip;
@@ -179,12 +179,12 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
   6. **«Заморожений» агент** — задача `bezig` у черзі, агент зник: `wachtrij terugtrekken --reden` + `taak-staat bevroren` → черга йде далі
      (`WACHTRIJ_LEEG`, не `WACHTRIJ_BEZIG`), `status` показує `bevroren`, передача → `TAAK_BEVROREN`, `controleer` зелений; після `in_progress`
      нова передача прийнята, стара гілка не перезаписана.
-  7. **Одночасні установки** — друга установка під час першої: `flock` → «er loopt al een uitrol», вихід 0, інсталятор не викликано вдруге,
+  7. **Одночасні встановлення** — друга інсталяція під час першої: `flock` → «er loopt al een uitrol», вихід 0, інсталятор не викликано вдруге,
      пакет лишається в inbox; наступний прохід ставить його; у стабі старт другого ПІСЛЯ кінця першого.
   8. **Відкат** — passkey-рішення `terugdraaien` → root-скрипт → інсталятор `terugdraaien <vorige>`, `current` → попередній випуск; у координації
-     факт установки повертається на попередню базу → задачі знову `released` (не `installed`), той самий пакет знову валідний проти бази.
-- Виправлено старе (знайдено сценарієм 7): `mijn-ruimte-uitrol.sh` після вдалої установки **стирав усі** `mijn-ruimte-*.tar.gz` з inbox — і новіший
-  пакет, що надійшов під час установки, тихо зникав. Тепер прибираються лише пакети не новіші за встановлену версію; новіший лишається на
+     факт встановлення повертається на попередню базу → задачі знову `released` (не `installed`), той самий пакет знову валідний проти бази.
+- Виправлено старе (знайдено сценарієм 7): `mijn-ruimte-uitrol.sh` після вдалої встановлення **стирав усі** `mijn-ruimte-*.tar.gz` з inbox — і новіший
+  пакет, що надійшов під час встановлення, тихо зникав. Тепер прибираються лише пакети не новіші за встановлену версію; новіший лишається на
   наступний прохід, де його судять звичайні перевірки (версія, `UITROL-BASIS`, правила).
 
 **Перевірено**
@@ -226,7 +226,7 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 **Прийнято з PR #13 (ChatGPT) — чого не було в `a5f2741`**
 - **Прив'язка завантаження до актора-ініціатора.** `uploadStuk`/`uploadKlaar`/`uploadAnnuleren` отримують `actor` (HTTP: email власника; MCP:
   `clientName (agent) via mcp [grant/token-id]`) і порівнюють із `door`, записаним у `uploadBegin`; інший актор отримує `UPLOAD_ONBEKEND` (404), як
-  для неіснуючого. Інакше будь-який агент, що дізнався 16-hex `id`, міг завершити або скасувати чуже завантаження. Серверний id grant-у/токена
+  для відсутнього. Інакше будь-який агент, що дізнався 16-hex `id`, міг завершити або скасувати чуже завантаження. Серверний id grant-у/токена
   додано свідомо (ChatGPT сам позначив це як залишковий ризик): дві підключення з однаковою назвою «Grok (grok)» — різні актори. Покрито 5
   перевірками в `orch-beoordeling` (MCP↔HTTP, інший агент, та сама назва через інший grant, скасування лише ініціатором, `door` містить id).
 - **Не прийнято:** `TESTS_NIET_GEISOLEERD` (409) із повним пропуском перевірок і забороною `zonderTests` — перекрито безпечнішим варіантом Antigravity
@@ -258,7 +258,7 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
   emoji, `1.0`, `1e20` — перевірено тестом на збіг байт у байт), і вимагає рівності `kritiekHash`, `hash`, `regelsVersie`; `regelBestanden` —
   безпечні шляхи, з `AGENTS.md` і `beleid.json`; `NaN` у JSON відхиляється; `python3 -I`. Тести `orch-besluit-root` і 5e в `orch-beoordeling`
   раніше подавали фіктивні відбитки — тепер справжній реліз.
-- **CLI `inleveren` виконував код пакета за замовчуванням** (`standaardTests[1]` = `node scripts/eenheidstests.mjs orch-kern` у дереві пакета,
+- **CLI `inleveren` виконував код пакета типово** (`standaardTests[1]` = `node scripts/eenheidstests.mjs orch-kern` у дереві пакета,
   з `HOME` оператора). Тепер — лише довірений `controleer`; shell-тести тільки за явним `--tests`/`--standaardtests` з попередженням; після
   помилок кроку 6 (конфлікт, застарілість) тести не запускаються взагалі.
 - **Розпакувальна бомба.** Передперевірки обмежували кількість записів, але не обсяг: 408 КіБ → 400 МіБ на диску. Тепер ≤ 1 ГіБ на архів за

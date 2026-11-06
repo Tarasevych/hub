@@ -1,8 +1,8 @@
 > 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./CLOUD-M9-IMPLEMENTATION-20261028.uk.md) · **🇳🇱 Nederlands** ([origineel](./CLOUD-M9-IMPLEMENTATION-20261028.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
 
-# Cloud Full Integration M9 — S3/DAV-mappen en veilige grote uploads
+# Volledige Cloud-integratie M9 — S3/DAV-mappen en veilige grote uploads
 
-**Basis:** geïsoleerde kopie `cloud-full-integration-m8`, afgeleid van `mijn-ruimte-20261027-212158`. Dit is DEVELOPMENT ONLY, geen productie. De huidige status van de productieserver na dit archief is niet geverifieerd.
+**Basis:** geïsoleerde kopie `cloud-full-integration-m8`, afgeleid van `mijn-ruimte-20261027-212158`. Dit is DEVELOPMENT ALLEEN, geen productie. De huidige status van de productieserver na dit archief is niet geverifieerd.
 
 ## Wat er daadwerkelijk is gebouwd
 
@@ -25,7 +25,7 @@
 ## Beveiligingsgrenzen en openstaande taken
 
 - De server kan technisch toegang hebben tot OAuth-tokens en systeemeigen onversleutelde bestanden. AES-256-GCM-versleuteling van de upload-capability in PostgreSQL biedt geen garantie tegen een beheerder met controle over de server. Voor de privékluis (Vault) zijn een onafhankelijke client, controle van codeherkomst en een afzonderlijk sleutelherstelmodel vereist.
-- De volgende fase moet na een onderbreking een gecontroleerde hercontrole van `nextExpectedRanges` en de Dropbox-offset bij de providers toevoegen, in plaats van blindelings te hervatten. Verlopen leases worden momenteel alleen in quarantaine geplaatst.
+- De volgende fase moet na een onderbreking een gecontroleerde hercontrole van `nextExpectedRanges` en de Dropbox-offset bij de aanbieders toevoegen, in plaats van blindelings te hervatten. Verlopen leases worden momenteel alleen in quarantaine geplaatst.
 - De achtergrondworker die uploadsessies aanmaakt, grote bestanden gestreamd inleest en M9 koppelt aan M4-accountgrants, is **nog niet aangesloten**. M9 vormt een gefaseerde kern, geen live bestandsengine.
 - De eindstatus `uploaded_not_verified` moet een onafhankelijke read-back/checksum doorlopen en mag pas daarna overgaan naar een geverifieerde kopie; het origineel mag niet worden verwijderd zonder voorwaardelijke verwijdering met bevestigde revisie.
 - De systeemeigen `NextcloudTransport.stat` uit het oude M3 gebruikt reguliere expressies voor het parsen van WebDAV-XML. Deze moet vóór een live-uitgave worden overgezet naar de geverifieerde XML-module. **De aanwezigheid van M9-directory lost deze technische schuld niet automatisch op.**
@@ -39,14 +39,14 @@
 - Backblaze B2 S3-subset: https://www.backblaze.com/apidocs/introduction-to-the-s3-compatible-api
 - Nextcloud WebDAV: https://docs.nextcloud.com/server/latest/developer_manual/client_apis/WebDAV/index.html
 - Microsoft Graph uploadsessies: https://learn.microsoft.com/en-us/graph/api/driveitem-createuploadsession?view=graph-rest-1.0
-- Dropbox session append: https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/upload-session-append-v-2
-- Dropbox session finish: https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/upload-session-finish
+- Dropbox sessie append: https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/upload-session-append-v-2
+- Dropbox sessie finish: https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/upload-session-finish
 
 ## Aanbevolen vervolg (M10)
 
 1. Voer op een afzonderlijke staging-omgeving met Node.js 24+ en een test-PostgreSQL alle migraties M1–M9, de rollback en een volledige `npm ci; npm run typecheck:server; npm run build` uit.
 2. Vervang de M3 DAV regex-stat door de structurele parser en voer provider-fixtures uit.
-3. Koppel het PostgreSQL-sessiecheckpoint aan een trust-scoped worker, versleutelde sessie-bootstrap, throttling/rate limits, retry-beleid en herstelreconciliatie.
-4. Autoriseer twee verschillende accounts van dezelfde provider en voer echte COPY-bewerkingen uit met read-back SHA-256 en intrekking tijdens overdracht; bevestig move-conflicten.
+3. Koppel het PostgreSQL-sessiecheckpoint aan een trust-scoped achtergrondproces, versleutelde sessie-bootstrap, throttling/rate limits, retry-beleid en herstelreconciliatie.
+4. Autoriseer twee verschillende accounts van dezelfde aanbieder en voer echte COPY-bewerkingen uit met read-back SHA-256 en intrekking tijdens overdracht; bevestig move-conflicten.
 5. Verifieer de uitwisseling tussen browsers, tabbladen en apparaten, de rol van het technische profiel en nul datalekken tussen gebruikers.
 6. Externe cryptografische en beveiligingsaudit. Sta pas daarna een kandidaat voor één volledige Cloud-release toe.

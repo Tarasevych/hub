@@ -231,7 +231,7 @@ vertrekken vanaf `d4c2ae9`; `a5f2741` is ongewijzigd samengevoegd in `feature/or
   controles in `orch-beoordeling` (MCP↔HTTP, andere agent, dezelfde naam via andere grant, annuleren uitsluitend door initiatiefnemer, `door` bevat id).
 - **Niet overgenomen:** `TESTS_NIET_GEISOLEERD` (409) met het volledig overslaan van controles en een verbod op `zonderTests` — dit wordt overtroffen door de veiligere variant van Antigravity
   (de vertrouwde `controleer` wordt wél uitgevoerd, zonder code uit het pakket); `zonderTests` blijft toegestaan — na de adversariële controle (hieronder) alleen nog als
-  kanttekening in het record: de vertrouwde `controleer` draait altijd.
+  kanttekening in het item: de vertrouwde `controleer` draait altijd.
 
 **Bestaand probleem opgelost (gevonden tijdens integratie)**
 - `orch-uitrol-basis` en `orch-acceptatie` plaatsten alleen een `ssh-keygen`-shim wanneer een echte ontbrak; op een machine met een echte `ssh-keygen` gaven hun fictieve

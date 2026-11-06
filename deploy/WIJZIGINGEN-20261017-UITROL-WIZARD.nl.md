@@ -23,7 +23,7 @@ geeft de hoofdknop focus en pulseert de stap (met `prefers-reduced-motion`-terug
 
 ## 3. Voorcontrole vóór de goedkeuring (migratie 0049, `backend/uitrol-voorcontrole.ts`)
 Na het uploaden pakt de site het archief in een tijdelijke map uit en controleert (zonder iets uit te voeren): structuur, versie, AUTEUR/AGENT/SAMENVATTING,
-`bash -n` van alle shell-scripts, bouwbestanden (package.json, lock, vite, serverbundel), nieuwe migraties (waarschuwing bij DROP/TRUNCATE/DELETE zonder WHERE…),
+`bash -n` van alle shell-scripts, bouwbestanden (package.json, lock, vite, serverbundel), nieuwe migraties (waarschuwing bij DROP/TRUNCATE/DELETE zonder WAAR…),
 geheimen (alleen bestandsnamen), en de tests die de voorbereider meldde. Faalt het: status `afgebroken` (`VOORCONTROLE_MISLUKT`), nooit goedkeurbaar.
 Het resultaat staat als lijst met pictogrammen, uitleg per controle en details in stap 4 en in «Чекають схвалення».
 Bewust **niet** in de voorcontrole: `npm ci`/build (dat gebeurt geïsoleerd in de installer) en een proefrun van migraties.
@@ -31,7 +31,7 @@ Bewust **niet** in de voorcontrole: `npm ci`/build (dat gebeurt geïsoleerd in d
 ## 4. Terugdraaien als u niet bij de server bent (`deploy/uitrol/mijn-ruimte-nazorg.sh`)
 - `installeer-app.sh`: na activering 40 s bewaking (pid-wissel of 3 mislukte gezondheidscontroles → automatisch terugdraaien).
 - Daarna 30 minuten een aparte root-timer (`mijn-ruimte-nazorg.timer`): 3 mislukte `/__gezondheid`-controles → `mijn-ruimte-installeer terugdraaien <vorige release>`; resultaat in `gebeurtenissen.jsonl` (`NAZORG_TERUGGEDRAAID` / `NAZORG_MISLUKT`) en op de pagina.
-- De site kan zichzelf niet terugdraaien als hij down is; daarom is de bewaker een root-dienst buiten de site.
+- De site kan zichzelf niet terugdraaien als hij omlaag is; daarom is de bewaker een root-dienst buiten de site.
 - **Databasemigraties worden bij terugdraaien niet teruggedraaid** (alleen de code); daarom de waarschuwing in de voorcontrole en de back-up vóór migratie.
 
 ## 5. Wie bereidt updates voor
@@ -47,7 +47,7 @@ Bewust **niet** in de voorcontrole: `npm ci`/build (dat gebeurt geïsoleerd in d
 - Goedkeuren kan **alleen** met een passkey (WebAuthn, ≤ 5 min, gebonden aan de sha256). Google-login, wachtwoord, sms of 2FA keuren geen uitrol goed; dat is bewust zo.
 
 ## 6. Overig
-- Terminal: kleuren voor labels `[uitrol]`/`[installeer]`, commando's, paden, vlaggen, versies, aantallen, strings en sleutelwoorden; ANSI-codes worden omgezet (`terminal-kleur.ts`, 18 tests). Op aanraakschermen lager (geen scrollval).
+- Terminal: kleuren voor etiketten `[uitrol]`/`[installeer]`, commando's, paden, vlaggen, versies, aantallen, strings en sleutelwoorden; ANSI-codes worden omgezet (`terminal-kleur.ts`, 18 tests). Op aanraakschermen lager (geen scrollval).
 - Regeltijden: een run die laat in beeld komt krijgt verdeelde tijden (geen identieke); deelstappen tonen begin en duur.
 - Pagina ververst in pakketten van 2000 regels zonder wachttijd; foutmelding bij 502/503/504 («сервер перезапускається») verdwijnt vanzelf en heeft een sluitknop; succesmeldingen verdwijnen na 12 s.
 - Журнал-tabblad kiest de lopende run; gebeurteniscodes (GOEDGEKEURD, OK, …) zijn vertaald.

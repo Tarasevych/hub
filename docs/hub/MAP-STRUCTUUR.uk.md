@@ -68,7 +68,7 @@ Tarasevych/hub
 │   ├── GoogleMailWerkruimte.tsx     # Головний робочий простір пошти
 │   ├── mail/                        # Модулі Adaptive Mail Canvas (LeesVenster, ContextPaneel, WatNodigBlok, MailOrbitIntro, MailKoppelVenster)
 │   ├── Mail*Bewerker.tsx / Mail*Voorbeeld.tsx # 147 спеціалізованих переглядачів і редакторів форматів вкладень
-│   ├── plaatsing/                   # Система плаваючих кнопок «Зони й гнізда» (Plek.tsx, plaats-slepen.ts)
+│   ├── plaatsing/                   # Система рухомих кнопок «Зони й гнізда» (Plek.tsx, plaats-slepen.ts)
 │   ├── agenten/                     # Інтерфейс керування ШІ-агентами, дозволами та вкладка «Координація» (TabOrch.tsx)
 │   ├── afstemming-vnext/            # Інтерфейс узгодження задач, конфліктів і випусків
 │   ├── merk/                        # Система офіційних та власних логотипів брендів (CC0/MIT + санітизований SVG)
@@ -78,7 +78,7 @@ Tarasevych/hub
 │   ├── orch-model.ts                # Модель даних та коди помилок координації агентів (ORCH_CODES)
 │   ├── ontwikkelarchief.ts          # Схема та валідатор журналу розробки TRACE-001 (ONTWIKKELARCHIEF.json)
 │   ├── uitrol-manifest.ts / uitrol-codes.ts # Маніфест пакета розгортання та коди відмов інсталятора
-│   ├── plaatsing.ts                 # Математична модель зон і гнізд плаваючих кнопок
+│   ├── plaatsing.ts                 # Математична модель зон і гнізд рухомих кнопок
 │   ├── mail-acties.ts               # Єдиний реєстр 39 дій над листами (тексти uk/nl, клавіші, кольорові тони)
 │   ├── ai-bronnen.ts                # Верифікація цитат і дат ШІ за оригінальним текстом листа
 │   ├── sleutelkluis.ts              # Типи та константи Сховища ключів (Sleutelkluis)

@@ -1,16 +1,16 @@
 > 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./M4_MULTI_ACCOUNT_INTEGRATION.uk.md) · **🇳🇱 Nederlands** ([origineel](./M4_MULTI_ACCOUNT_INTEGRATION.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
 
-# Cloud Full Integration M4 — koppeling en werken met meerdere accounts
+# Volledige Cloud-integratie M4 — koppeling en werken met meerdere accounts
 
-Status: **DEVELOPMENT ONLY / NOT DEPLOYABLE**. Basis: 20261027-212158 + M1–M3. Er zijn geen wijzigingen aangebracht aan live servers, OAuth-consoles, PostgreSQL, het GitHub-project of beheerdersupdates.
+Status: **DEVELOPMENT ALLEEN / NIET DEPLOYABLE**. Basis: 20261027-212158 + M1–M3. Er zijn geen wijzigingen aangebracht aan live servers, OAuth-consoles, PostgreSQL, het GitHub-project of beheerdersupdates.
 
 ## 1. Inhoud van de implementatie
 
-- Server-side koppeling van Microsoft OneDrive Personal/Business, SharePoint, Dropbox en Box met OAuth 2.0 authorization code. Microsoft en Dropbox gebruiken PKCE S256; Box gebruikt de confidential-code flow met een server-side client secret en een willekeurige eenmalige state. Microsoft `prompt=select_account` ondersteunt de bewuste keuze van een volgend account. Dropbox en Box gebruiken de eigen interface van de provider.
-- Gescheiden koppelingsrecords per `(owner, ruimte, provider, external_subject)`. Eén gebruiker kan meerdere accounts van dezelfde provider hebben. Het opnieuw koppelen van hetzelfde externe subject werkt het bestaande record bij en maakt geen duplicaat aan.
+- Server-side koppeling van Microsoft OneDrive Personal/Business, SharePoint, Dropbox en Box met OAuth 2.0 authorization code. Microsoft en Dropbox gebruiken PKCE S256; Box gebruikt de confidential-code stroom met een server-side client geheim en een willekeurige eenmalige state. Microsoft `prompt=select_account` ondersteunt de bewuste keuze van een volgend account. Dropbox en Box gebruiken de eigen interface van de provider.
+- Gescheiden koppelingsrecords per `(owner, ruimte, provider, external_subject)`. Eén gebruiker kan meerdere accounts van dezelfde aanbieder hebben. Het opnieuw koppelen van hetzelfde externe subject werkt het bestaande item bij en maakt geen duplicaat aan.
 - Modus voor alleen-lezen of lezen+schrijven. De backend-tokenbroker controleert de aanwezigheid van de vereiste scopes (Microsoft/Dropbox), de status en de aanvullende lokale machtiging; deze vertrouwt niet op het vanuit de browser gewenste operatietype. Box stelt OAuth-scopes in binnen de eigen developer-console, waardoor 'alleen-lezen' in onze eigen UI een lokale beperking is en **geen belofte van een beperkte externe toestemming**.
 - De browser ontvangt nooit refresh- of access-tokens. Tokens en eenmalige OAuth-gegevens worden met AES-256-GCM opgeslagen in PostgreSQL, waarbij de AAD `owner+space+account record id` bevat. De database is uitsluitend toegankelijk voor de systeemrol van de server.
-- Vóór de start van OAuth bepalen we `owner` en `ruimte` in `ladePoort('cloud',...)`; na de callback vergelijken we deze met de opgeslagen eigenaar en ruimte, en wordt de state eenmalig verbruikt. De callback stuurt uitsluitend een resultaatcode terug naar `/overzicht`.
+- Vóór de start van OAuth bepalen we `owner` en `ruimte` in `ladePoort('cloud',...)`; na de callback vergelijken we deze met de opgeslagen eigenaar en ruimte, en wordt de toestand eenmalig verbruikt. De callback stuurt uitsluitend een resultaatcode terug naar `/overzicht`.
 - Ontkoppelen blokkeert direct de lokale toegang en probeert vervolgens het token bij Dropbox/Box in te trekken. Microsoft heeft geen gelijkwaardig gegarandeerd per-grant endpoint: de lokale grant wordt geblokkeerd en de UI moet uitleggen waar de externe toestemming kan worden ingetrokken. Als externe intrekking niet is bevestigd, wordt de status `disconnect_pending` (niet 'alles ingetrokken').
 - Een refresh-lock in PostgreSQL voorkomt dat twee browsers tegelijkertijd hetzelfde Box refresh-token gebruiken. Bij een onbepaald resultaat van een verlopen lease volgt `reauth_required` in plaats van een onveilige herhaalpoging.
 - De canonieke Google Suite B+ grant blijft behouden; M4 wijst geen nieuwe primaire Gmail/Drive toe.
@@ -19,7 +19,7 @@ Status: **DEVELOPMENT ONLY / NOT DEPLOYABLE**. Basis: 20261027-212158 + M1–M3.
 ## 2. Wijzigingen
 
 - `backend/cloud-verbinding-m4.ts`: eenmalige OAuth, validatie van eigenaar en ruimte, koppelen, opnieuw koppelen, hernoemen en ontkoppelen.
-- `backend/cloud-verbinding-m4-providers.ts`: OAuth-URL's van providers, tokenwisseling, `/me`, vernieuwen (refresh) en intrekken (revoke).
+- `backend/cloud-verbinding-m4-providers.ts`: OAuth-URL's van aanbieders, tokenwisseling, `/me`, vernieuwen (refresh) en intrekken (revoke).
 - `backend/cloud-verbinding-m4-pg.ts`: flow-/accountrepository, AES-GCM, multi-account-identiteit, PostgreSQL refresh-lease.
 - `backend/cloud-verbinding-m4-token.ts`: tokenbroker op basis van `accountId` en operatie, serialisatie van refresh-acties.
 - `backend/cloud-verbinding-m4-config.ts`: omgevingsconfiguratie (env), vastgelegde callback-host en -pad.
@@ -63,13 +63,13 @@ Er zijn geen API's voor het uitvoeren van MOVE/COPY via de frontend; de M2/M3-tr
 
 ## 6. Harde blokkades vóór volledige release
 
-1. Geregistreerde OAuth-apps bij providers en server-secrets, succesvolle auth-code/PKCE-callbacks, daadwerkelijk 2 accounts van dezelfde provider én zakelijk+privé tegelijk.
-2. Box confidential OAuth zonder de schijn van beperkte scopes; verificatie van least privilege, admin-consent voor Microsoft, refresh/revoke per provider; daadwerkelijke rotatie van de Vault-encryptiesleutel.
-3. Nextcloud Login Flow v2 met bescherming tegen egress/SSRF/DNS-rebinding, S3 IAM-/rol-credentials zonder willekeurige access keys in de browser; deze wizards zijn **NIET geschreven** in M4.
-4. Daadwerkelijke inschakeling van de achtergrondworker, hervatten van grote bestanden, COPY/MOVE E2E voor alle aangekondigde providers. Voorwaardelijke DELETE, crash/reconciliatie; M2/M3 werken momenteel niet in productie.
-5. Echte provider-deelrechten (share permissions) met opgave van vervaldatum/rol/intrekking en versiebeheer met herstel; volledige controle van de Universal File Workspace.
+1. Geregistreerde OAuth-apps bij aanbieders en server-secrets, succesvolle auth-code/PKCE-callbacks, daadwerkelijk 2 accounts van dezelfde aanbieder én zakelijk+privé tegelijk.
+2. Box confidential OAuth zonder de schijn van beperkte scopes; verificatie van least privilege, admin-consent voor Microsoft, refresh/revoke per aanbieder; daadwerkelijke rotatie van de Vault-encryptiesleutel.
+3. Nextcloud Login Stroom v2 met bescherming tegen egress/SSRF/DNS-rebinding, S3 IAM-/rol-credentials zonder willekeurige access sleutels in de browser; deze wizards zijn **NIET geschreven** in M4.
+4. Daadwerkelijke inschakeling van de achtergrondworker, hervatten van grote bestanden, COPY/MOVE E2E voor alle aangekondigde providers. Voorwaardelijke VERWIJDEREN, crash/reconciliatie; M2/M3 werken momenteel niet in productie.
+5. Echte provider-deelrechten (share permissions) met opgave van vervaldatum/rol/intrekking en versiebeheer met herstel; volledige controle van de Universal Bestand Workspace.
 6. Staging PostgreSQL-migratie 0119 + test van sleutelbeheer/RLS; Node.js 24+ volledige typecheck/build, desktop/mobiel en E2E met 2 browsers / 2 tabbladen / 2 apparaten.
-7. Definitieve lijst van ondersteunde providers vaststellen. Providers zonder volwaardige API of onboarding mogen niet worden gemarkeerd als 'koppeling beschikbaar'.
+7. Definitieve lijst van ondersteunde aanbieders vaststellen. Aanbieders zonder volwaardige API of onboarding mogen niet worden gemarkeerd als 'koppeling beschikbaar'.
 8. Afstemming met de **nieuwste** productiebasis. Onze basis is 20261027-212158; als er al een latere uitgave bestaat, is eerst een drieweg-merge (three-way merge) vereist.
 
 Technische releasecontrole — `node scripts/cloud-volledige-uitgave-poort.mjs`. Momenteel is het resultaat BLOCKED met 36/36 onvervulde bewijsstukken. Deze lokale poort zelf is nog **niet ingebouwd in het beheerdersinstallatieprogramma**. Omzeil deze niet handmatig: er zijn echte CI-artefacten en live E2E-tests nodig.

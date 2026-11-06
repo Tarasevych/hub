@@ -2,7 +2,7 @@
 
 # Cloud-databaseschema — v1
 
-Alle records zijn standaard privé en gebonden aan de eigenaar (`owner-scoped`). Database-ID's worden door het platform gegenereerd.
+Alle items zijn standaard privé en gebonden aan de eigenaar (`owner-scoped`). Database-ID's worden door het platform gegenereerd.
 
 ## `cloud_workspaces_v1`
 
@@ -31,18 +31,18 @@ Conceptueel vereiste indexen/querysleutels:
 | `workspaceId` | string | leeg betekent Quick Capture |
 | `suggestedWorkspaceId` | string | uitsluitend een bestaande werkruimte van de eigenaar |
 | `kind` | enum | `file`, `note`, `link` |
-| `title` | string | AI of deterministische terugvaloptie (fallback), max. 120 |
-| `originalName` | string | alleen label van de bestandsbron |
+| `title` | string | AI of deterministische terugvaloptie, max. 120 |
+| `originalName` | string | alleen etiket van de bestandsbron |
 | `description` | string | max. 500 |
 | `textContent` | string | notitie-inhoud, max. 50k |
 | `sourceUrl` | string | genormaliseerde HTTP(S)-URL |
 | `mimeType` | string | door de server gevalideerd veilig type |
-| `sizeBytes` | number | gedecodeerde bytes |
+| `sizeBytes` | aantal | gedecodeerde bytes |
 | `storagePath` | string | door de server gegenereerd, nooit openbaar |
 | `tags`, `people` | string[] | begrensd en ontdubbeld |
 | `status` | enum | `captured`, `waiting_review`, `in_progress`, `done` |
 | `aiState` | enum | `suggested`, `fallback` |
-| `aiConfidence` | number | begrensd op 0–1 |
+| `aiConfidence` | aantal | begrensd op 0–1 |
 | `createdAt`, `updatedAt`, `openedAt` | epoch ms | beheerd door de server |
 
 Conceptueel vereiste indexen/querysleutels:
@@ -53,7 +53,7 @@ Conceptueel vereiste indexen/querysleutels:
 
 ## `cloud_resume_v1`
 
-Eén effectief recentste record per eigenaar.
+Eén effectief recentste item per eigenaar.
 
 | Veld | Type |
 |---|---|
@@ -75,7 +75,7 @@ Slaat begrensd bewijsmateriaal op zonder de ruwe iteminhoud te dupliceren.
 | `inputFingerprint` | SHA-256 hex |
 | `state` | `suggested`, `fallback` |
 | `reasonCode` | string |
-| `confidence` | number |
+| `confidence` | aantal |
 | `suggestedWorkspaceId` | string |
 | `createdAt` | epoch ms |
 
@@ -104,7 +104,7 @@ Initiële acties:
 - `cloud_search_documents_v1` — hybride indexdocumenten;
 - `cloud_provider_accounts_v1` — status van eigenaar-/provideraccounts;
 - `cloud_oauth_tokens_v1` — versleutelde refresh-token-enveloppen;
-- `cloud_sync_state_v1` — cursor-/deltastatus van providers;
+- `cloud_sync_state_v1` — cursor-/deltastatus van aanbieders;
 - `cloud_provider_items_v1` — projecties van externe objecten;
 - `cloud_shares_v1` — kortlevend, herroepbaar en scope-gebonden delen;
 - `cloud_item_links_v1` — gekoppelde opnames / relatiegraaf;

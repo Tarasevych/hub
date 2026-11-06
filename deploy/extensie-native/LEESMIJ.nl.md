@@ -16,10 +16,10 @@ Claude Desktop / Claude Code ⇄ mr-native-mcp.mjs ⇄ lokale socket (alleen u) 
   | MCP-hulpmiddel     | Extensie-opdracht      | Wat het teruggeeft |
   |--------------------|------------------------|--------------------|
   | `lokaal_status`    | `browser.self_test`    | status van de extensie (vergrendeld/ontgrendeld, tot wanneer, rechten) en zelftest |
-  | `lokaal_snapshot`  | `browser.snapshot`     | adres (zonder query), titel, zichtbare tekst, namen van elementen |
+  | `lokaal_snapshot`  | `browser.snapshot`     | adres (zonder zoekopdracht), titel, zichtbare tekst, namen van elementen |
   | `lokaal_diagnose`  | `browser.diagnostics`  | JavaScript-fouten, consolemeldingen, mislukte verzoeken, basismetrieken |
-  | `lokaal_console`   | `browser.console`      | laatste consoleberichten (`types`: error, warn, log, info, debug) |
-  | `lokaal_netwerk`   | `browser.network`      | laatste verzoeken: methode, adres zonder query, status, duur (`failed_only`) |
+  | `lokaal_console`   | `browser.console`      | laatste consoleberichten (`types`: fout, warn, log, info, debug) |
+  | `lokaal_netwerk`   | `browser.network`      | laatste verzoeken: methode, adres zonder zoekopdracht, status, duur (`failed_only`) |
   | `lokaal_audit`     | `browser.audit`        | prestaties, beveiligingsbevindingen, DOM-structuur (`soort`: alles, prestaties, beveiliging, dom) |
 
 - Werkt **uitsluitend** na ontgrendeling op de site met uw passkey en het vinkje **«lokale agent»**, en alleen tot het einde van de gekozen tijdsduur

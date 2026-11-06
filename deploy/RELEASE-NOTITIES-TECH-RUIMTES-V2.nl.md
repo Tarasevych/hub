@@ -74,7 +74,7 @@ gedrag. Tabellen `app.tech_ruimte_*` blijven staan en worden niet gelezen. Vorig
 - Echte browserextensie en echte MCP-client: ontgrendelingen en een MCP-verbinding zijn in de DB gezaaid; MCP-poortgedrag alleen in de
   eenheidstest (58).
 - Schaduwmodus alleen in de eenheidstest; adminpagina's met afdwinging (`beheer-alleen-tech`) niet in de browser getest.
-- Andere subdomeinen dan hub.* (mail, id, …) niet in de echte E2E; dark mode alleen met de nepserver.
+- Andere subdomeinen dan hub.* (mail, id, …) niet in de echte E2E; dark modus alleen met de nepserver.
 - Geen test tegen productie of de productiedatabase.
 
 ## Bekende grenzen

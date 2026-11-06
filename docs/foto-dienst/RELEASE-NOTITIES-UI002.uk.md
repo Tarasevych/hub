@@ -4,7 +4,7 @@
 
 Дата: 29.10.2026 · База: mijn-ruimte-20261029-131639 · Міграція: 0153 · Не розгорнуто.
 
-## Прапорці (за замовчуванням ВИМКНЕНО)
+## Прапорці (типово ВИМКНЕНО)
 - `foto-dienst` — нова фотослужба на hub/photos (UI + `/api/owner/foto/*`; ВИМКНЕНО → API 404 `FOTO_DIENST_UIT`).
 - `menu-kalender-foto-eigen` — Календар і Фото з меню хмари переносяться до «Мій простір»; cloud/calendar → hub/calendar, cloud/photos → hub/photos (крім `?kiezer=1` для вибору Google Photos). Наявний календар використовується повторно.
 

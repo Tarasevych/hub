@@ -11,7 +11,7 @@ uitrol alleen na de exacte owner-bevestiging en passkey volgens het runbook.
   dat met de vlag uit alleen `{aan:false}` antwoordt en niets wijzigt.
 - **Vrij canvas**: elk object (widget, snelkoppeling, map) heeft eigen x/y/w/h/z in logische px; geen raster van 96 px, geen
   auto-compactie. Slepen (muis na 5 px, aanraken na ±500 ms vasthouden), formaat aan alle randen/hoeken, toetsenbord (pijltjes,
-  Shift, Enter-menu, Delete, Ctrl+Z/Y), één bewaaractie per afgerond gebaar; Escape/pointercancel bewaart niets.
+  Shift, Enter-menu, Verwijderen, Ctrl+Z/Y), één bewaaractie per afgerond gebaar; Escape/pointercancel bewaart niets.
 - **Drie indelingen**: computer/tablet/telefoon volgens de ECHTE containerbreedte (ResizeObserver). Ontbreekt een laag, dan één
   keer afgeleid van de computerindeling (telefoon in flow-modus = geen overlap) en daarna onafhankelijk.
 - **Bibliotheek «Все на сайті»** (werkbalk «Налаштувати робочий стіл» → «Бібліотека»): 131 items — 14 diensten, 90 pagina's

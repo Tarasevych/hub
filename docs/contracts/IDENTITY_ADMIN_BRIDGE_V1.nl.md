@@ -5,7 +5,7 @@
 ## Bron van waarheid
 De Hub-backend blijft de enige bron van waarheid voor gebruikers, toegangsverzoeken, rollen, werkruimtes, verwijdering, herstel en audit.
 
-## Stroom (Flow)
+## Stroom (Stroom)
 1. Een geauthenticeerd Hub-tabblad maakt een eenmalige overdrachtscode (`handoff code`) aan voor `identity`.
 2. De code verloopt na twee minuten en kan slechts één keer worden gebruikt.
 3. Identity wisselt de code server-naar-server in.

@@ -7,18 +7,18 @@
 - `confirmed`: ondersteund door toegepaste broncode en bewijs uit het besturingsvlak (control-plane).
 - `partial`: implementatie bestaat, maar extern bewijs of browserbewijs is onvolledig.
 - `unverified`: doel of configuratie is nog niet in de praktijk beproefd.
-- `blocked`: vereiste externe configuratie of beveiligingspoort (security gate) ontbreekt.
-- `deprecated`: uitsluitend behouden voor terugdraaien (rollback) of migratie.
+- `blocked`: vereiste externe configuratie of beveiligingspoort ontbreekt.
+- `deprecated`: uitsluitend behouden voor terugdraaien of migratie.
 
 Huidige basislijn (baseline):
 
 - Mail Fase 1 handmatige/QA-UI: confirmed.
 - M-110 providerregister/gereedheid, AES-256-GCM envelop-zelftests en op eigenaar afgebakende (owner-scoped) lege uniforme leesfacade: confirmed.
 - Geauthenticeerde Gmail Pub/Sub-invoer, deduplicatie/samenvoeging (coalescing), tokenverversing, watch-verlenging, begrensde initiële/historische leessynchronisatie en provider-naar-Inbox-projectie: geïmplementeerd achter runtime- en externe-eindpuntpoorten; nog niet extern beproefd.
-- Duurzame externe taakplanner (scheduler) en gegevensinname (ingestion) vanaf de provider: niet actief.
+- Duurzame externe taakplanner (scheduler) en gegevensinname (ingestion) vanaf de aanbieder: niet actief.
 - Broncodepad voor Google-mailbox OAuth-status/PKCE/offline-toestemming/callback/tokenvastlegging: geïmplementeerd achter fail-closed productiepoorten; externe toestemming nog niet beproefd.
-- Op eigenaar afgebakende Gmail-labelmutatie en expliciete tweefasige verzendopdracht-broncodepaden: geïmplementeerd achter verbonden-runtimepoorten; schrijfgedrag bij de provider nog niet extern beproefd.
-- Microsoft Graph OAuth, versleutelde vastlegging van refresh-tokens, `/me`-mailboxverificatie, webhookvalidatie/`clientState`, delta-linksynchronisatie en via de provider verstuurde labels/berichten: geïmplementeerd achter fail-closed externe/runtimepoorten; nog niet extern beproefd.
+- Op eigenaar afgebakende Gmail-labelmutatie en expliciete tweefasige verzendopdracht-broncodepaden: geïmplementeerd achter verbonden-runtimepoorten; schrijfgedrag bij de aanbieder nog niet extern beproefd.
+- Microsoft Graph OAuth, versleutelde vastlegging van refresh-tokens, `/me`-mailboxverificatie, webhookvalidatie/`clientState`, delta-linksynchronisatie en via de aanbieder verstuurde labels/berichten: geïmplementeerd achter fail-closed externe/runtimepoorten; nog niet extern beproefd.
 - Providerspecifieke runtime-/scope-afhandeling, ontkoppeling/intrekking (disconnect/revocation), opschoning van tokens/abonnementen, synchronisatiegezondheid, herstel van verlopen leases (stale-lease recovery), onderhoudsplanningsconventie en migratie-inventaris voor handmatige/providergegevens: geïmplementeerd. Bestaande handmatige/QA-records blijven behouden tot acceptatie met een echte provider.
 - Provider-tokenkluis (token vault): niet actief.
 - Gmail watch/Pub/Sub: niet actief.
@@ -29,11 +29,11 @@ Huidige basislijn (baseline):
 
 ### M-100 Architectuur en contracten
 
-Opleveringen (Deliverables):
+Opleveringen:
 
 - platformarchitectuur;
 - databaseschema;
-- synchronisatiepijplijn (sync pipeline);
+- synchronisatiepijplijn;
 - provider- en beveiligingscontracten;
 - implementatieplan en acceptatiepoorten;
 - blokkerende build-audit.
@@ -42,7 +42,7 @@ Acceptatiecriteria:
 
 - documentatie is aanwezig in de repository;
 - releasemanifest vermeldt naar waarheid dat de providerruntime inactief is;
-- terugdraaiactie (rollback) verwijst naar de vorige toegepaste versie;
+- terugdraaiactie verwijst naar de vorige toegepaste versie;
 - geen gedragsveranderingen in authenticatie, sessie of UI;
 - terminalbewijs van build/E2E is vastgelegd.
 
@@ -73,13 +73,13 @@ Opleveringen:
 
 - afzonderlijke provider-OAuth-status, gescheiden van de identiteitsstatus;
 - exacte Gmail-scopes;
-- PKCE, state, veilige terugkeerroute (safe return), offline-toegang;
+- PKCE, toestand, veilige terugkeerroute, offline-toegang;
 - server-side uitwisseling van autorisatiecode;
 - verificatie van het providerprofiel;
 - versleutelde opslag van het refresh-token;
 - opslag van toegekende scopes;
-- intrekken/ontkoppelen (revoke/disconnect);
-- knop gekoppeld vanuit Mailaccounts (Mail Accounts).
+- intrekken/ontkoppelen;
+- knop gekoppeld vanuit Mailaccounts.
 
 Acceptatiecriteria:
 
@@ -110,7 +110,7 @@ Opleveringen:
 - deduplicatie van Pub/Sub-berichten;
 - aanmaken/verlengen/stoppen van `users.watch`;
 - dagelijkse cron voor verlenging;
-- terugval-cron voor synchronisatie (fallback sync);
+- terugval-cron voor synchronisatie;
 - gezondheids- en gereedheidsstatus.
 
 Acceptatiecriteria:
@@ -137,9 +137,9 @@ Opleveringen:
 - lease voor tokenverversing;
 - labelsynchronisatie;
 - initiële berichtpaginering;
-- incrementele geschiedenissynchronisatie (history sync);
+- incrementele geschiedenissynchronisatie;
 - MIME-parser;
-- upsert van berichten, conversaties en labels;
+- upsert van berichten, conversaties en etiketten;
 - metadata en download van bijlagen;
 - herstel-reset van de cursor;
 - revisiemelding via websocket.
@@ -148,8 +148,8 @@ Acceptatiecriteria:
 
 - herstarten tijdens het verwerken van een pagina is idempotent;
 - de cursor schuift pas op nadat wijzigingen duurzaam zijn vastgelegd (commit);
-- dubbele provider-ID's leiden niet tot dubbele records;
-- toevoegen/verwijderen van labels en verwijderen van berichten worden correct doorgevoerd;
+- dubbele provider-ID's leiden niet tot dubbele items;
+- toevoegen/verwijderen van etiketten en verwijderen van berichten worden correct doorgevoerd;
 - ongeldige MIME laat de accountsynchronisatie niet crashen;
 - een ongeldige geschiedeniscursor activeert een begrensd herstelproces;
 - negatieve tests op eigenaarsafbakening slagen;
@@ -161,8 +161,8 @@ Normatieve operaties:
 
 - accounts oplijsten;
 - berichten oplijsten/ophalen;
-- conversaties (threads) oplijsten/ophalen;
-- labels oplijsten;
+- conversaties (gesprekken) oplijsten/ophalen;
+- etiketten oplijsten;
 - providerlabels/leesstatus wijzigen;
 - concept opslaan;
 - verzenden voorbereiden/bevestigen;
@@ -191,7 +191,7 @@ Opleveringen:
 
 Acceptatiecriteria:
 
-- onderwerp, inhoud en broncitaten van de provider komen overeen met het origineel;
+- onderwerp, inhoud en broncitaten van de aanbieder komen overeen met het origineel;
 - de huidige accountcontext blijft stabiel bij verversen en wisselen;
 - er treedt geen lay-outverschuiving (layout shift) op;
 - weergave voor lage energie toont hooguit drie primaire acties;
@@ -218,7 +218,7 @@ Acceptatiecriteria weerspiegelen de beveiligings-, eigenaars- en idempotentiepoo
 
 Opleveringen:
 
-- migratieplan voor handmatige records in `mail_items_v1`;
+- migratieplan voor handmatige items in `mail_items_v1`;
 - compatibiliteitsleesacties;
 - feature-vlaggen;
 - inventarisatie van dode code;
@@ -228,9 +228,9 @@ Opleveringen:
 Acceptatiecriteria:
 
 - geen gegevensverlies;
-- handmatige records blijven onderscheidbaar;
+- handmatige items blijven onderscheidbaar;
 - oude routes worden pas verwijderd na een gebruiks- en bewijsaudit;
-- terugdraaien herstelt de vorige code zonder nieuwe records te beschadigen.
+- terugdraaien herstelt de vorige code zonder nieuwe items te beschadigen.
 
 ## 3. API-contract
 
@@ -253,7 +253,7 @@ De accountrespons bevat uitsluitend veilige mogelijkheidsstatussen:
 - redencode voor herautorisatie of fout;
 - nooit een token, ciphertext, IV of authenticatietag.
 
-### Berichten en conversaties (Messages and threads)
+### Berichten en conversaties
 
 ```text
 GET /mail/{accountId}/messages?cursor=&triage=&label=&unread=
@@ -264,7 +264,7 @@ GET /mail/{accountId}/threads/{threadId}
 
 De pagineringscursor is ondertekend/ondoorzichtig en bevat een vingerafdruk van eigenaar, account en filters.
 
-### Labels
+### Etiketten
 
 ```text
 POST /mail/{accountId}/labels
@@ -276,7 +276,7 @@ POST /mail/{accountId}/labels
 }
 ```
 
-### Verzenden (Send)
+### Verzenden
 
 Normatieve veilige stroom:
 
@@ -339,7 +339,7 @@ Vereiste negatieve tests:
 1. Eerste Gmail-koppeling: geslaagd / geannuleerd / geweigerd.
 2. Bestaand identiteitsaccount vereist nog steeds expliciete mailboxtoestemming.
 3. Twee Gmail-accounts voor één eigenaar.
-4. Hetzelfde e-mailadres bij een provider kan niet dubbel worden toegevoegd.
+4. Hetzelfde e-mailadres bij een aanbieder kan niet dubbel worden toegevoegd.
 5. Eigenaar A heeft geen toegang tot account, bericht, token of taak van Eigenaar B.
 6. Initiële synchronisatie pagineert en hervat na een herstart van de worker.
 7. Dubbele Gmail-push, hiaat in meldingen en ongeldige geschiedeniscursor.
@@ -351,7 +351,7 @@ Vereiste negatieve tests:
 13. Projecties voor lage, gemiddelde en hoge energie.
 14. Hervatten na F5 en navigatie tussen services.
 15. Concept opslaan versus expliciete verzendbevestiging.
-16. Provider 429/5xx, backoff en dead-letter-afhandeling.
+16. Aanbieder 429/5xx, backoff en dead-letter-afhandeling.
 17. Ontkoppelen en opnieuw autoriseren.
 18. Microsoft-validatietoken, `clientState`, delta en abonnementsverlenging.
 19. Mobiel 375×667 en desktop 1280×800.
@@ -374,13 +374,13 @@ Vereiste negatieve tests:
 - herhalen in een smalle viewport;
 - Network/Console en afleverbewijs in het providerdashboard controleren.
 
-## 8. Uitrolpoorten (Rollout gates)
+## 8. Uitrolpoorten
 
-- Feature-vlaggen per provider en per account.
+- Feature-vlaggen per aanbieder en per account.
 - Fundament → canary voor eigenaar → begrensde echte mailbox → bredere activering.
-- Elke stap heeft een directe Version ID voor terugdraaien (rollback).
+- Elke stap heeft een directe Versie ID voor terugdraaien.
 - Databasemigraties zijn voorwaarts compatibel en waar mogelijk omkeerbaar.
-- Schrijven/verzenden bij de provider blijft uitgeschakeld totdat het bewijs voor leessynchronisatie en isolatie is geleverd.
+- Schrijven/verzenden bij de aanbieder blijft uitgeschakeld totdat het bewijs voor leessynchronisatie en isolatie is geleverd.
 - Microsoft start pas nadat het lees-/synchronisatiepad van Google stabiel is, tenzij volledig geïsoleerd achter een onafhankelijke vlag.
 
 ## 9. Huidige blokkades vóór live Gmail
