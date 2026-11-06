@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "UITGAVE-001",
+  "agent": "claude",
+  "tak": "feature/uitgave-001-20261106-092612",
+  "basisCommit": "413d726dba5a1e8cf8b1ffc44afcec87839eb107",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.9",
+  "regelsHash": "fd7f99f180da62313ee13a1ffe7a99c5e933883419d54efc2d9f4d7bcd7b8dd4",
+  "staat": "in_progress",
+  "gestart": "2026-11-06T09:26:12.647Z",
+  "bijgewerkt": "2026-11-06T09:26:12.647Z",
+  "omschrijving": "Випуск оновлення сайту з integratie: ORCH-001 (PR №30, №33, №36), ZOEKDIEP-001 (PR №32, №34, №35), DESIGN-002 (PR №29) і виправлення пакувальника (PR №38)",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
