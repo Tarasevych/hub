@@ -1,21 +1,22 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-DIAGNOSTIEK.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261017-DIAGNOSTIEK.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-# Діагностика (/diagnostiek) — wijzigingen 17 oktober 2026
+# Діагностика (/diagnostiek) — зміни від 17 жовтня 2026
 
-Admin → «Діагностика» is een pagina met controles per categorie (src/diagnostiek/, backend/admin-diagnostiek.ts, shared/admin-diagnostiek.ts; migratie 0056).
+Admin → «Діагностика» — це сторінка з перевірками за категоріями (`src/diagnostiek/`, `backend/admin-diagnostiek.ts`, `shared/admin-diagnostiek.ts`; міграція 0056).
 
-## Wat er nu is
-- 11 categorieën, 42 alleen-lezen controles: Сервіси (9 subdomeinen), Сторінки (6 adminpagina's, interfacebestand, API), Підключення (Google, GitHub, OAuth, MCP-deur), **Пошта** (Gmail-API, wachtrij), **Хмара й Drive** (opslag, Drive-API), **ШІ-агенти й MCP** (OAuth-verbindingen, toestemmingen «Хто готує оновлення» — vindt «weesgrants»), **Пристрої** (lokale agenten, hun opdrachten), Дані, Сервер, Мережа й сертифікати, Фонові завдання (met link naar «Оновлення»).
-- Per controle: «Перевірити» (één, categorie, alles), status, reactietijd, wat is gecontroleerd, waarom het nodig is, oorzaak van de fout, stappen om het op te lossen, geschiedenis.
-- «Потребує уваги» bovenaan: storingen → waarschuwingen → «recent gefaald, nu weer in orde»; nooit uitgevoerd staat er niet in (geen verzonnen groen).
-- **Storingsgeschiedenis + trend**: 14 dagen balkjes, weektotalen, «faalde het vaakst», sinds wanneer iets faalt, laatste succes. Bewaartermijn 30 dagen.
-- **«Скарга користувача»**: zoek een gebruiker op naam/e-mail en zie wat die op de site ervaart — sessies, mislukte acties (alleen labels), koppelingen, mail-wachtrij, en de diagnosestand van de diensten die hij de laatste 24 uur gebruikte, met advies. Geen mailtekst, bestanden, IP of tokens.
-- Logboek (admin /audit): `diag.uitgevoerd` (per klik), `diag.storing` en `diag.hersteld` (bij overgang), `diag.gebruiker.bekeken` (elke inzage in een gebruiker).
+## Що тепер є
+- 11 категорій, 42 перевірки лише для читання: Сервіси (9 піддоменів), Сторінки (6 адмін-сторінок, файл інтерфейсу, API), Підключення (Google, GitHub, OAuth, двері MCP), **Пошта** (Gmail API, черга), **Хмара й Drive** (сховище, Drive API), **ШІ-агенти й MCP** (OAuth-підключення, дозволи «Хто готує оновлення» — знаходить «осиротілі» дозволи), **Пристрої** (локальні агенти, їхні команди), Дані, Сервер, Мережа й сертифікати, Фонові завдання (із посиланням на «Оновлення»).
+- Для кожної перевірки: «Перевірити» (одну, категорію, усе), статус, час відгуку, що перевірено, навіщо це потрібно, причина помилки, кроки для усунення, історія.
+- «Потребує уваги» зверху: збої → попередження → «нещодавно падало, тепер знову гаразд»; те, що жодного разу не запускалося, сюди не потрапляє (жодного вигаданого «зеленого» стану).
+- **Історія збоїв + тренд**: стовпчики за 14 днів, підсумки за тиждень, «падало найчастіше», відколи триває збій, останній успіх. Термін зберігання — 30 днів.
+- **«Скарга користувача»**: пошук користувача за ім'ям/e-mail і перегляд того, що він бачить на сайті — сесії, невдалі дії (лише мітки), підключення, поштова черга та стан діагностики сервісів, якими він користувався за останні 24 години, з порадами. Жодних текстів листів, файлів, IP чи токенів.
+- Журнал (admin /audit): `diag.uitgevoerd` (за кожен клік), `diag.storing` і `diag.hersteld` (при зміні стану), `diag.gebruiker.bekeken` (кожен перегляд стану користувача).
 
-## Veiligheid
-Alleen vaste controle-id's uit het register (geen URL/opdracht van de browser); uitgaand verkeer alleen naar eigen subdomeinen, 127.0.0.1, accounts.google.com, www.googleapis.com en api.github.com, met time-outs en zonder redirects; geen shell; geheimen worden gemaskeerd; één batch tegelijk en een limiet per gebruiker.
+## Безпека
+Лише фіксовані ідентифікатори перевірок із реєстру (жодних URL чи команд із браузера); вихідний трафік лише до власних піддоменів, `127.0.0.1`, `accounts.google.com`, `www.googleapis.com` та `api.github.com`, із таймаутами та без перенаправлень; жодного shell; секрети маскуються; один пакет одночасно та ліміт на користувача.
 
-## Getest
-`admin-diagnostiek` 94/94 (database, routes, nieuwe categorieën, overgangen, gebruiker). Browser (Chromium, uk/nl, licht/donker, 390 px): 69/69.
-## Niet bewezen
-Gedrag tegen de echte subdomeinen, TLS en Google op de productieserver; de controles zijn hier met nagebootste netwerkantwoorden getest.
+## Перевірено
+`admin-diagnostiek` 94/94 (база даних, маршрути, нові категорії, переходи станів, користувач). Браузер (Chromium, uk/nl, світла/темна тема, 390 px): 69/69.
+
+## Не доведено
+Поведінка проти справжніх піддоменів, TLS і Google на продуктивному сервері; тут перевірки протестовано з імітованими мережевими відповідями.

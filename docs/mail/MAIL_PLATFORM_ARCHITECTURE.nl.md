@@ -6,19 +6,19 @@
 
 Dit document definieert de productie-doelarchitectuur van het echte mailplatform `mail.tarasevych.com`, geïntegreerd met het canonieke identiteits- en sessiemodel. De huidige Mail Fase 1 blijft een eerlijke handmatige/QA-omgeving. Deze release activeert geen Gmail- of Microsoft-OAuth, slaat geen providertokens op en verklaart push/synchronisatie niet als verbonden.
 
-Het centrale productmodel is **Inbox Functional**: het systeem vermindert uitvoeringsfrictie in plaats van Inbox Zero af te dwingen. Synchronisatie levert betrouwbare providergegevens; de neuro-inclusieve laag zet deze om in één eerstvolgende actie, een samenvatting met broncitaten (cited summary), stille opslag van de hervattingscontext (silent resume-context persistence) en een energiebewuste interface.
+Het centrale productmodel is **Inbox Functional**: het systeem vermindert uitvoeringsfrictie in plaats van Inbox Zero af te dwingen. Synchronisatie levert betrouwbare providergegevens; de neuro-inclusieve laag zet deze om in één eerstvolgende actie, een samenvatting met broncitaten (cited samenvatting), stille opslag van de hervattingscontext (silent resume-context persistence) en een energiebewuste interface.
 
 ## 2. Architecturale invarianten
 
 1. De canonieke ecosysteemsessie en mailboxautorisatie zijn verschillende mogelijkheden (capabilities). Inloggen via Google Identity betekent geen toegang tot Gmail.
 2. Elk mailboxrecord heeft een `owner_user_id`; een provider-payload kan nooit de eigenaar bepalen.
 3. Refresh-tokens worden uitsluitend aan serverzijde opgeslagen in een AES-256-GCM-envelop; access-tokens komen nooit terecht in browseropslag, URL's, logs of auditdetails.
-4. De callback-status van de provider is eenmalig bruikbaar (single-use), kortlevend en gekoppeld aan de eigenaar, het mailaccount, de provider, de initiërende service, de taal (locale) en het veilige terugkeerpad.
+4. De callback-status van de aanbieder is eenmalig bruikbaar (single-use), kortlevend en gekoppeld aan de eigenaar, het mailaccount, de aanbieder, de initiërende service, de taal (locale) en het veilige terugkeerpad.
 5. Een webhook/push is slechts een signaal. De gezaghebbende status wordt opgehaald via Gmail History of Microsoft Delta.
 6. Elke inname- (ingestion) en mutatie-operatie heeft een idempotentiesleutel.
 7. De synchronisatiecursor schuift pas op na een duurzame vastlegging (commit) van alle bijbehorende wijzigingen.
 8. Hoog-risico verzenden verloopt uitsluitend via prepare → expliciete confirm → commit, met idempotentie en audit.
-9. Externe e-mail-HTML, bijlagen en AI-uitvoer worden als onvertrouwd (untrusted) beschouwd.
+9. Externe e-mail-HTML, bijlagen en AI-uitvoer worden als onvertrouwd beschouwd.
 10. AI voert geen instructies uit e-mails uit, verstuurt geen berichten en verbergt nooit de bron.
 11. Een geciteerde samenvatting behoudt de herkomst (provenance) tot op specifieke berichtonderdelen en tekstfragmenten.
 12. De lage-energiemodus vermindert het aantal beslissingen; het is niet slechts een visueel thema.
@@ -32,7 +32,7 @@ Het centrale productmodel is **Inbox Functional**: het systeem vermindert uitvoe
 Op eigenaar afgebakende (owner-scoped) facade bovenop de provideradapters:
 
 - accounts en verbindingsstatus;
-- berichten, conversaties (threads) en labels;
+- berichten, conversaties (gesprekken) en etiketten;
 - levenscyclus van concept- en verzendopdrachten;
 - synchronisatiegezondheid;
 - neuro-inclusieve status;
@@ -59,14 +59,14 @@ Eén register beschrijft `google_gmail` en `microsoft_graph`:
 - levenscyclus van watch/abonnement;
 - initiële synchronisatie;
 - incrementele synchronisatie;
-- normalisatie van berichten, conversaties en labels;
+- normalisatie van berichten, conversaties en etiketten;
 - mogelijkheden voor verzenden en wijzigen;
 - classificatie van provider-specifieke rate-limits;
 - ontkoppelen/intrekken (disconnect/revoke).
 
 Providerspecifieke code wordt niet aangeroepen zonder de mogelijkheidsstatus `configured` en een actieve accounttoekenning.
 
-### 3.3 Tokenkluis (Token vault)
+### 3.3 Tokenkluis
 
 Envelopformaat:
 
@@ -79,7 +79,7 @@ Envelopformaat:
 
 `MAIL_TOKEN_ENCRYPTION_KEY_V1` wordt bewaard als AppDeploy-geheim of door KMS ondersteunde sleutel. Een ontbrekende of ongeldige sleutel blokkeert elke providerverbinding. Tokenverversing maakt gebruik van een lease op accountniveau, sleutelrotatie en vergelijking-vóór-schrijven (compare-before-write).
 
-### 3.4 Push-invoer (Push ingress)
+### 3.4 Push-invoer
 
 #### Gmail
 
@@ -91,7 +91,7 @@ Geauthenticeerd push-eindpunt voor Google Pub/Sub:
 - ontdubbelt `messageId`;
 - vergelijkt `emailAddress` met het verbonden account;
 - maakt een samengevoegde (coalesced) taak aan voor incrementele synchronisatie;
-- antwoordt snel, zonder gegevens bij de provider op te halen binnen het verzoekpad.
+- antwoordt snel, zonder gegevens bij de aanbieder op te halen binnen het verzoekpad.
 
 #### Microsoft
 
@@ -103,9 +103,9 @@ Graph-webhookeindpunt:
 - ondersteunt levenscyclusmeldingen (lifecycle notifications);
 - plaatst een delta-synchronisatietaak in de wachtrij en laadt de mailbox niet tijdens het webhookverzoek.
 
-### 3.5 Duurzame wachtrij en workers
+### 3.5 Duurzame wachtrij en achtergrondprocessen
 
-Taaktypen (Job types):
+Taaktypen:
 
 - `token.refresh`
 - `provider.watch.renew`
@@ -123,9 +123,9 @@ Taaktypen (Job types):
 - `send.commit`
 - `provider.disconnect.cleanup`
 
-Elke taak heeft een idempotentiesleutel, lease, pogingenteller, exponentiële backoff met jitter, `available_at`, eindstatus en dead-letter-reden. Gmail-gebeurtenissen worden per account samengevoegd omdat de meldingsfrequentie begrensd is en meldingen kunnen wegvallen. Periodieke terugvalsynchronisatie (fallback sync) is verplicht.
+Elke taak heeft een idempotentiesleutel, lease, pogingenteller, exponentiële backoff met jitter, `available_at`, eindstatus en dead-letter-reden. Gmail-gebeurtenissen worden per account samengevoegd omdat de meldingsfrequentie begrensd is en meldingen kunnen wegvallen. Periodieke terugvalsynchronisatie is verplicht.
 
-### 3.6 Opslag (Storage)
+### 3.6 Opslag
 
 - Metadata, cursors, opdrachten, triage en citaten: relationele database.
 - Opgeschoonde platte tekst en begrensde HTML: database of gecomprimeerde objectopslag volgens het groottebeleid.
@@ -137,13 +137,13 @@ Elke taak heeft een idempotentiesleutel, lease, pogingenteller, exponentiële ba
 1. Initiële HTTP-bootstrap.
 2. Frontend zet een AppDeploy WS-verbinding op.
 3. Abonneert zich op `mail_account:{accountId}` of de mailfeed op eigenaarsniveau.
-4. Na een commit verstuurt de worker `entity.update` met revisie/cursor, zonder de volledige gevoelige payload.
+4. Na een commit verstuurt de achtergrondproces `entity.update` met revisie/cursor, zonder de volledige gevoelige payload.
 5. Frontend maakt de op eigenaar afgebakende API ongeldig en haalt deze opnieuw op, of past een begrensde genormaliseerde delta toe.
 6. Afmelden (unsubscribe) bij het verlaten van de Mail-weergave; de socket wordt niet bij elk tabblad opnieuw opgebouwd.
 
 ## 4. Google-adapter
 
-### 4.1 Toestemming (Consent)
+### 4.1 Toestemming
 
 Mailbox-OAuth is een afzonderlijke incrementele autorisatietransactie. Beoogd scopecontract:
 
@@ -170,13 +170,13 @@ Na het vastleggen van het token:
 
 ### 4.3 Initiële synchronisatie
 
-- lijst met labels ophalen;
+- lijst met etiketten ophalen;
 - gepagineerde berichtenlijst ophalen volgens begrensd beleid;
 - berichtmetadata en volledige MIME ophalen;
 - headers, inhoudsdelen en bijlagen normaliseren;
 - berichten upserten;
-- conversatielidmaatschap (thread membership) opbouwen;
-- labels koppelen;
+- conversatielidmaatschap opbouwen;
+- etiketten koppelen;
 - downloads van bijlagen in de wachtrij plaatsen volgens beleid;
 - initiële cursor vastleggen;
 - triage en samenvatting alleen in de wachtrij plaatsen voor nieuwe of gewijzigde inhoud.
@@ -184,8 +184,8 @@ Na het vastleggen van het token:
 ### 4.4 Incrementele synchronisatie
 
 - opgeslagen geschiedeniscursor lezen;
-- geschiedenislijst (history list) aanroepen;
-- toegevoegde/verwijderde berichten en toegevoegde/verwijderde labels verwerken;
+- geschiedenislijst aanroepen;
+- toegevoegde/verwijderde berichten en toegevoegde/verwijderde etiketten verwerken;
 - gewijzigde berichten ophalen;
 - wijzigingen en de volgende cursor atomair vastleggen;
 - bij een ongeldige of verlopen cursor een begrensde herstel-bootstrap uitvoeren;
@@ -216,9 +216,9 @@ Pijplijn na het vastleggen van een genormaliseerd bericht:
 8. beoordelen van de drempel voor rustige meldingen (calm notifications);
 9. publiceren van de UI-revisie.
 
-Lage energie: maximaal 2–3 veilige opties, geen batchdruk. Gemiddelde energie: samenvatting, concept en onderbouwing. Hoge energie: achterstand wegwerken (backlog rescue), regels en batchverwerking. AI roept nooit rechtstreeks verzend- of labeltools van de provider aan.
+Lage energie: maximaal 2–3 veilige opties, geen batchdruk. Gemiddelde energie: samenvatting, concept en onderbouwing. Hoge energie: achterstand wegwerken (backlog rescue), regels en batchverwerking. AI roept nooit rechtstreeks verzend- of labeltools van de aanbieder aan.
 
-## 7. Beveiliging en privacy
+## 7. Beveiliging en gegevensbescherming
 
 - minimale rechten (least privilege) en expliciete mailboxtoestemming;
 - versleuteling van providertokens en sleutelrotatie;
@@ -235,14 +235,14 @@ Lage energie: maximaal 2–3 veilige opties, geen batchdruk. Gemiddelde energie:
 
 ## 8. Mogelijkheidsgrens van AppDeploy
 
-De AppDeploy-database is geschikt voor het huidige besturingsvlak en begrensde fundamentrecords, maar bewijst op zichzelf geen SQL-uniciteit, referentiële integriteit (foreign keys), transactionele commits van cursor+bericht, duurzame wachtrijen met hoge doorvoer of mailboxschaal op productieniveau. Het productiedoel vereist daarom ofwel:
+De AppDeploy-database is geschikt voor het huidige besturingsvlak en begrensde fundamentrecords, maar bewijst op zichzelf geen SQL-uniciteit, referentiële integriteit (foreign sleutels), transactionele commits van cursor+bericht, duurzame wachtrijen met hoge doorvoer of mailboxschaal op productieniveau. Het productiedoel vereist daarom ofwel:
 
 - een beheerde relationele database + duurzame wachtrij/objectopslag; ofwel
 - een expliciet geverifieerde AppDeploy-implementatie die gelijkwaardige garanties biedt voor idempotentie, leases en foutafhandeling.
 
 Zolang dat bewijs ontbreekt, blijft de UI-status `not_connected`/`foundation_only`, en niet `production_ready`.
 
-## 9. Faalscenario's (Failure modes)
+## 9. Faalscenario's
 
 - ontbrekende versleutelingssleutel → verbinding geblokkeerd;
 - toestemming geweigerd → account blijft op `authorization_required` staan;
@@ -251,11 +251,11 @@ Zolang dat bewijs ontbreekt, blijft de UI-status `not_connected`/`foundation_onl
 - ongeldige geschiedenis-/deltacursor → begrensde herstelsynchronisatie;
 - dubbele webhooks → idempotente no-op;
 - hiaat in pushmeldingen → periodieke terugvalsynchronisatie haalt achterstand in;
-- beschadigde MIME → parsinresultaat in quarantaine plaatsen, metadata van provider behouden;
+- beschadigde MIME → parsinresultaat in quarantaine plaatsen, metadata van aanbieder behouden;
 - fout bij malwarescan van bijlage → niet beschikbaar maken, nooit automatisch openen;
 - onduidelijkheid bij verzenden → idempotentiecontrole vóór opnieuw proberen;
-- ontkoppeling van provider → verlengingen en synchronisatie onmiddellijk stopzetten.
+- ontkoppeling van aanbieder → verlengingen en synchronisatie onmiddellijk stopzetten.
 
-## 10. Definitie van Gereed (Definition of Done)
+## 10. Definitie van Gereed
 
-Een provider heeft pas de status `connected` wanneer de tests voor toestemming, versleutelde opslag van het refresh-token, verificatie van de mailboxidentiteit, aanmaken van watch/abonnement, initiële synchronisatie, incrementele terugval en ontkoppeling zijn geslaagd. Geautomatiseerde tests vervangen nooit de echte OAuth-acceptatie in Chrome of het bewijs van cloud-webhooks.
+Een aanbieder heeft pas de status `connected` wanneer de tests voor toestemming, versleutelde opslag van het refresh-token, verificatie van de mailboxidentiteit, aanmaken van watch/abonnement, initiële synchronisatie, incrementele terugval en ontkoppeling zijn geslaagd. Geautomatiseerde tests vervangen nooit de echte OAuth-acceptatie in Chrome of het bewijs van cloud-webhooks.

@@ -13,12 +13,12 @@
 3. UI: `src/zoek/ZoekKaart.tsx` — іконка й підпис типу (uk + nl), дія переходу; `src/zoek/zoek-logica.ts` — фільтр «Тип» бере значення з
    `ZOEK_SOORTEN`, тож нова назва з'явиться сама, але підпис uk/nl треба додати.
 4. Тести: `tests/eenheid/zoek-kern-*.test.ts` (модель), додати 1–2 запити в `tests/eenheid/hulp/zoek-evaluatie.json` з очікуваним `soort`.
-5. Міграція **не потрібна** (`soort` — вільний text).
+5. Міграція **не потрібна** (`soort` — вільний текст).
 
 ## B. Нове джерело (`bron`), напр. «контакти» або «пристрої»
 
 1. **Модель** — `shared/zoek-model.ts`:
-   - `ZOEK_BRONNEN`: додати ім'я (`^[a-z_]{2,32}$` — це CHECK у 0100; міграція не потрібна);
+   - `ZOEK_BRONNEN`: додати ім'я (`^[a-z_]{2,32}$` — це ПЕРЕВІРКА у 0100; міграція не потрібна);
    - `DIENST_VAN_BRON`: до якої ділимої служби належить (`mail | cloud | agenda | contacten | ai | bord | github`) або `null`
      (лежить у базовій ладі вкладки). Це визначає, **яка брама** вирішує доступ;
    - `BRON_NAAM` (uk/nl), `SOORT_VAN_BRON`.
@@ -56,15 +56,5 @@ JSX із текстом uk/nl у `src/**/*.tsx` (генератор `scripts/zoe
 ## D. Нова мова запиту
 
 `shared/zoek-normalisatie.ts`: транслітерація (якщо нова абетка), `STOPWOORDEN`, `taalRaden`; `shared/zoek-model.ts` → `ZOEK_TALEN`,
-`PG_STEMMER` (лише стемери, що **існують** у PG: `select cfgname from pg_ts_config`); `0100` → CHECK `zoek_objecten_taal_check` (міграція
+`PG_STEMMER` (лише стемери, що **існують** у PG: `select cfgname from pg_ts_config`); `0100` → ПЕРЕВІРКА `zoek_objecten_taal_check` (міграція
 `01xx`: `DROP CONSTRAINT`/`ADD CONSTRAINT`) і гілка в `zoek_stam`; групи синонімів доповнити формами нової мови; запити в наборі оцінки.
-
----
-
-## NL — kort
-
-Nieuw `soort`: `ZOEK_SOORTEN` (+ `ACTIE_SOORTEN`), adapter, kaart-icoon, test — geen migratie. Nieuwe `bron`: `ZOEK_BRONNEN` +
-`DIENST_VAN_BRON` (welke poort beslist), adapter in `adapters.ts` (tekst alleen via `tekstUit`, geen geheimen in `extra`), lezen in
-`bronnen.ts` uitsluitend via de poort (`projectieLade` + `hoortBij`), `koppelFeit`, `standZetten`, wachtrij-events, UI-categorie, synoniemen,
-tests (bronnen, isolatie met twee gebruikers, evaluatieset) en documentatie. Nieuwe interface-elementen komen vanzelf in de catalogus
-(menu-model, tab-labels, JSX-knoppen, `data-hulp` + hulp-register).

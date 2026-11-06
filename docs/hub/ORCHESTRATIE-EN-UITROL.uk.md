@@ -23,7 +23,7 @@
 - Кожна задача отримує унікальний ідентифікатор (`ABC-001`), окрему гілку `feature|fix|audit|release/<тема>-YYYYMMDD-HHMMSS` та файл декларації `orchestratie/taken/<TASK-ID>.json`.
 - Агенти ніколи не пишуть напряму у `voornaamst`, `integratie`, `release/*` або чужі гілки.
 - Підтримуються **8 каналів здачі результатів**, які сходяться в єдину команду `node scripts/orch.mjs inleveren`:
-  1. `git-pr` (гілка або Pull Request на GitHub)
+  1. `git-pr` (гілка або Pull Запит на GitHub)
   2. `tar.gz` (інсталяційний пакет `mijn-ruimte-<versie>.tar.gz`)
   3. `overdracht-zip` (універсальний архів `mijn-ruimte-<versie>-<agent>-overdracht.zip` з патчем, бандлом і звітом)
   4. `git-bundle` (`.bundle`)
@@ -104,7 +104,7 @@ npm run typecheck:server                             # Перевірка тип
 # 2. Запуск модульних та візуальних тестів
 node scripts/eenheidstests.mjs                       # Усі модульні тести (або з фільтром, напр.: node scripts/eenheidstests.mjs orch)
 node scripts/kaart-controle.mjs                      # Перевірка цілісності карти нідерландських назв файлів
-node scripts/plaatsing-controle.mjs                  # Перевірка зон і гнізд плаваючих кнопок та відсутності несанкціонованих position:fixed
+node scripts/plaatsing-controle.mjs                  # Перевірка зон і гнізд рухомих кнопок та відсутності несанкціонованих position:fixed
 node scripts/kleur-contrast-controle.mjs             # Перевірка контрастності кольорових палітр
 
 # 3. Команди оркестрації ШІ-агентів (ORCH-001)

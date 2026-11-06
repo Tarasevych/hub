@@ -12,7 +12,7 @@
 ## B-001 · 2026-10-31 · 1.0.0 · voorstel
 
 **Контекст.** Над Mijn Ruimte паралельно працюють Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor. Правила були розсипані по
-`deploy/REGELS-UITROLPAKKET.md`, `RUNBOOK-*.md`, спільній папці знань і чатах; кожен агент мав власне уявлення про базу коду.
+`deploy/REGELS-UITROLPAKKET.md`, `RUNBOOK-*.md`, спільній теці знань і чатах; кожен агент мав власне уявлення про базу коду.
 
 **Рішення.** Єдине джерело правил — [`AGENTS.md`](../AGENTS.md) (для людини й агента) + [`orchestratie/beleid.json`](./beleid.json) (для машини) + цей реєстр. `CLAUDE.md`, `GEMINI.md` та інші файли
 середовищ — лише адаптери ≤ 25 рядків із маркером `<!-- orch-adapter -->`. Відбиток правил фіксується в [`orchestratie/regels.lock.json`](./regels.lock.json);
@@ -25,7 +25,7 @@
 ## B-002 · 2026-10-31 · 1.0.0 · voorstel
 
 **Контекст.** Остання заявлена встановлена версія `20261031-093842`, `BRON-COMMIT` `b279ccabe31a27139b337822162653ccc13b6a5a`
-(гілка `release/sec-001-20261031-084138`, автор коміту Antigravity). Гілка `voornaamst` (default) на той момент містила лише README і була предком цього коміту.
+(гілка `release/sec-001-20261031-084138`, автор коміту Antigravity). Гілка `voornaamst` (типово) на той момент містила лише README і була предком цього коміту.
 
 **Рішення.** Базою для всіх нових задач є `b279ccab…`, доки власник не підтвердить іншу. Статус бази — `opgave_eigenaar`
 (заявлено власником): агент не мав мережевого доступу до `hub.tarasevych.com/api/version`, звірку з production не виконано.
@@ -74,7 +74,7 @@
 1. У пакеті `mijn-ruimte-<versie>.tar.gz` з'являється `UITROL-BASIS` (встановлена версія + commit + відбиток правил). Root-інсталятор звіряє його з
    `$WERK_ROOT/laatste-versie` і `laatste-commit` (`BASIS_VEROUDERD`, `BASIS_COMMIT_VERSCHILT`, `BASIS_ONGELDIG`), з `20261201-000000` — обов'язково
    (`GEEN_BASIS`). Якщо в пакеті є `orchestratie/regels.lock.json`, відбиток правил і `regelsVersie` мають збігатися (`REGELS_NIET_VERGRENDELD`),
-   а режим установки — бути дозволеним у `kritiek.installatieModi` (`MODUS_NIET_TOEGESTAAN`). GitOps (`gitops-ophalen.sh`, автоматично) працює лише
+   а режим встановлення — бути дозволеним у `kritiek.installatieModi` (`MODUS_NIET_TOEGESTAAN`). GitOps (`gitops-ophalen.sh`, автоматично) працює лише
    за `automatisch_beperkt` **і** підписаним власником lock.
 2. Єдиний пакет передачі `mijn-ruimte-<versie>-<agent>-overdracht.zip` збирає `node scripts/orch.mjs pakket` (через `maak-voorstelpakket.sh`, без
    дублювання): архів, SHA-256, `ORCH-OVERDRACHT.json`, `UITROL-MANIFEST.json`, тести, `RAPPORT.md`, коміти (`COMMITS.txt` + `commits.bundle`),

@@ -70,7 +70,7 @@ of de matrix «zonder bevestiging» aanstaat (`backend/connectors-opdrachten.ts`
 
 ## Technisch
 - Routes: `POST /api/terminal/apparaten` (modi, allow, gebruiker@host, bevestiging), `/opdracht` (geeft `{bevestiging:true}` of
-  resultaatrij terug; na 20 s — `{klaar:false,id}` + `/opdracht-stand`), `/opdrachten` (geschiedenis), `/instelling` (step-up).
+  resultaatrij terug; na 20 s — `{klaar:false,id}` + `/opdracht-stand`), `/opdrachten` (geschiedenis), `/instelling` (extra bevestiging).
 - Server → agent: met HMAC ondertekende opdracht `term.exec` (`connectors-gateway.stuurTerminalOpdracht`), niet via de AI-wachtrij (`app.agent_commands`).
 - Agent: `handlers['term.exec']` (0.8.0), `LEZEND` is een spiegel van de sitetabel (een test houdt ze gelijk).
 - Migratie `0113_terminal_opdrachten.sql` (RLS: alleen eigen rijen; schrijven alleen door de systeemrol).

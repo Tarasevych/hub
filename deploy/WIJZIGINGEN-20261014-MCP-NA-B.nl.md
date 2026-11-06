@@ -13,7 +13,7 @@ De vingerafdruk van de live frontend en de routes komt overeen met de tak `claud
 - Het SSH-certificaat voor één uur zit in de interface (`Сертифікат SSH`, recht `ssh.host`). De route `POST /api/ssh-ca/uitgifte` bestaat (antwoordt zonder sessie met `OWNER_SESSION_CONTEXT_REQUIRED`, niet met 404).
 - Schakelaar B is aanwezig: in de scripts van de beheeromgeving en het technisch profiel zitten `beheer-alleen-tech` en de formulering over beheerrechten uitsluitend in een actief technisch profiel.
 - De diagnostiektabbladen «Журнал і SIEM» (Logboek en SIEM), «Правила (OPA)» (Regels (OPA)) en «Ізоляція даних» (Gegevensisolatie) zijn aanwezig. De vlaggenroute `POST /api/flags` bestaat.
-- OAuth van de connector is live: `https://mcp.tarasevych.com/mcp` vereist aanmelding, scope `machines`.
+- OAuth van de connector is live: `https://mcp.tarasevych.com/mcp` vereist aanmelding, bereik `machines`.
 
 Eerdere archieven zijn als voorouders in deze release opgenomen; hun code is niet weggesneden:
 

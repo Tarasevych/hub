@@ -21,29 +21,29 @@ Alle Engelse bestandsnamen van de sitecode (src, backend, shared, server, tests,
 | view | weergave | 28 |
 | admin | beheer | 22 |
 | canonical | canoniek | 19 |
-| search | zoek | 17 |
+| zoeken | zoek | 17 |
 | reader | lezer | 16 |
 | store | opslag | 11 |
 | compose | opstel | 10 |
-| panel | paneel | 10 |
-| attachment | bijlage | 10 |
+| paneel | paneel | 10 |
+| bijlage | bijlage | 10 |
 | dialog | dialoog | 10 |
-| message | bericht | 10 |
+| bericht | bericht | 10 |
 | extension | extensie | 9 |
 | settings | instellingen | 9 |
 | tools | hulpmiddelen | 8 |
 | data | gegevens | 8 |
-| security | beveiliging | 7 |
+| beveiliging | beveiliging | 7 |
 | service | dienst | 7 |
 | notification | melding | 7 |
 | access | toegang | 6 |
 | vault | kluis | 6 |
-| commands | opdrachten | 6 |
+| opdrachten | opdrachten | 6 |
 | flags | vlaggen | 6 |
 | layout | indeling | 6 |
 | preferences | voorkeuren | 6 |
 | remote | extern | 6 |
-| row | rij | 6 |
+| rij | rij | 6 |
 | music | muziek | 6 |
 | plane | laag | 5 |
 | assets | bundels | 5 |
@@ -67,11 +67,11 @@ Alle Engelse bestandsnamen van de sitecode (src, backend, shared, server, tests,
 | scientific | wetenschappelijk | 5 |
 | spreadsheet | rekenblad | 5 |
 | threat | dreiging | 5 |
-| state | toestand | 5 |
+| toestand | toestand | 5 |
 | calendar | agenda | 4 |
 | center | centrum | 4 |
 | workspace | werkruimte | 4 |
-| card | kaart | 4 |
+| kaart | kaart | 4 |
 | finance | financien | 4 |
 | font | lettertype | 4 |
 
@@ -287,7 +287,7 @@ Eveneens ongewijzigd: `migrations/` (migratienamen zijn vastgelegd in de databas
 | `src/mail-presentatie-mogelijkheden.ts` | `src/mail-presentation-capabilities.ts` | export: `mailPresentationCapability`, `isMailPresentationAttachment` |
 | `src/mail-rekenblad-inhoud.ts` | `src/mail-spreadsheet-content.ts` | export: `loadMailSpreadsheetContent`, `exportMailSpreadsheet` |
 | `src/mail-rekenblad-mogelijkheden.ts` | `src/mail-spreadsheet-capabilities.ts` | export: `mailSpreadsheetCapability`, `isMailSpreadsheetAttachment` |
-| `src/mail-ruim-raster.ts` | `src/mail-bulky-raster.ts` | export: `mailBulkyRaster`, `BULKY_MIN_TEKST`, `BULKY_AVATAR` — Modus «Ruim» (mailaudit 18.10.2026, thread «Taak: modus Ruim op orde brengen»). |
+| `src/mail-ruim-raster.ts` | `src/mail-bulky-raster.ts` | export: `mailBulkyRaster`, `BULKY_MIN_TEKST`, `BULKY_AVATAR` — Modus «Ruim» (mailaudit 18.10.2026, gesprek «Taak: modus Ruim op orde brengen»). |
 | `src/mail-ruim-voorbeeld-voorladen.ts` | `src/mail-bulky-preview-prefetch.ts` | export: `queueMailBulkyPreview`, `cancelMailBulkyPreviewGroup` |
 | `src/mail-spelontwikkeling-inhoud.ts` | `src/mail-gamedev-content.ts` | export: `detectMailGameDevContentType`, `loadMailGameDevContent`, `validateMailGameDevSource`, `exportMailGameDev` |
 | `src/mail-spelontwikkeling-mogelijkheden.ts` | `src/mail-gamedev-capabilities.ts` | export: `mailGameDevCapability`, `isMailGameDevAttachment` |
@@ -420,7 +420,7 @@ Eveneens ongewijzigd: `migrations/` (migratienamen zijn vastgelegd in de databas
 | `tests/eenheid/ai-mail-assistent.test.ts` | `tests/eenheid/ai-mail-assistant.test.ts` | export: `main` — AI-assistent in e-mail: beveiliging tegen prompt injection (onvertrouwde e-mails), juiste prompts per actie, afhandeling van providerfouten. |
 | `tests/eenheid/mail-opstel.test.ts` | `tests/eenheid/mail-compose.test.ts` | export: `main` — Mail opstellen op de server: MIME, concepten (eerst lokaal, daarna Gmail), direct verzenden, uitgestelde verzending en de wachtrij. |
 | `tests/eenheid/mail-ux-beoordeling-20261021.test.ts` | `tests/eenheid/mail-ux-review-20261021.test.ts` | export: `main`, `AI_BALK_KLEIN_SCHERM`, `MAIL_ZOEK_SMAL` — Eenheidstest 21.10.2026 (UX-beoordelaar, frisse blik na vier agenten) — e-mail op telefoon (360/390 px) en in liggende stand |
-| `tests/eenheid/mail-wachtrij.test.ts` | `tests/eenheid/mail-queue.test.ts` | export: `main` — Mailtaken (provider.sync.*): de uitvoerlus mag niet blijven hangen op de eerste (oudste) 100 jobs van een eigenaar, en klaar-jobs worden opgeruimd. |
+| `tests/eenheid/mail-wachtrij.test.ts` | `tests/eenheid/mail-queue.test.ts` | export: `main` — Mailtaken (provider.sync.*): de uitvoerlus mag niet blijven hangen op de eerste (oudste) 100 taken van een eigenaar, en klaar-jobs worden opgeruimd. |
 
 ## Siteschil, menu, meldingen (52)
 
@@ -546,7 +546,7 @@ Eveneens ongewijzigd: `migrations/` (migratienamen zijn vastgelegd in de databas
 | `src/beheer-console.css` | `src/admin-console.css` |  |
 | `src/beheer-termen.tsx` | `src/admin-terms.tsx` | export: `termLabel`, `termKnown`, `Term`, `TermList` +1 |
 | `src/beheer-uitrol.css` | `src/admin-uitrol.css` | Admin → «Updates» (passkey-goedkeuring) |
-| `src/extensie-map-installeer.ts` | `src/extension-folder-install.ts` | export: `PickerFailure`, `folderPickerSupported`, `SUBFOLDER`, `installExtensionToPickedFolder` — Installatie van de extensie rechtstreeks vanuit de browser in een map die de gebruiker zelf kiest in het systeemvenster (File System Access API, Chromium). |
+| `src/extensie-map-installeer.ts` | `src/extension-folder-install.ts` | export: `PickerFailure`, `folderPickerSupported`, `SUBFOLDER`, `installExtensionToPickedFolder` — Installatie van de extensie rechtstreeks vanuit de browser in een map die de gebruiker zelf kiest in het systeemvenster (Bestand System Access API, Chromium). |
 | `src/extern/ExternBureaublad.tsx` | `src/remote/RemoteBureaublad.tsx` | export: `RemoteBureaublad (default)`, `RemoteSessie` — «Extern bureaublad» (technisch profiel, alleen eigenaar): RDP/VNC/SSH via Apache Guacamole. Eigen chunk (lazyTech in TechLaag); |
 | `src/extern/extern-opslag.ts` | `src/remote/remote-store.ts` | export: `remoteSessieBegin`, `remoteAantal`, `useRemoteAantal` — Hoeveel externe-bureaubladsessies dit tabblad open heeft — voor de aanduiding «actieve externe sessie» op de technische band. |
 | `src/extern/extern.css` | `src/remote/remote.css` | «Extern bureaublad» (src/extern/ExternBureaublad.tsx). Lichte en donkere thema's (html.theme-dark / theme-plum-dark), 390 px. |
@@ -562,12 +562,12 @@ Eveneens ongewijzigd: `migrations/` (migratienamen zijn vastgelegd in de databas
 | `tests/eenheid/beheer-diagnostiek-rook-20261022.test.ts` | `tests/eenheid/admin-diagnostiek-rook-20261022.test.ts` | export: `main` — «Diagnostiek» + RENDERCONTROLE + ZOEKINDEX (zone A, 22.10.2026). Vroeger stond er «Pagina 'Updates' HTTP 200 · Gezond» terwijl de pagina wit |
 | `tests/eenheid/beheer-diagnostiek.test.ts` | `tests/eenheid/admin-diagnostiek.test.ts` | export: `main` — Admin → «Diagnostiek» (/diagnostiek): register ↔ uitvoerders, zuivere beoordelingen, sortering van «Aandacht vereist», whitelist van de route, |
 | `tests/eenheid/beheer-integraties.test.ts` | `tests/eenheid/admin-integraties.test.ts` | export: `main` — Admin → /mappen «Integraties»: detailgegevens (eerlijk), populair/nieuw, beleid voor gebruikers, statuscontrole, loskoppelen, toegang en logboek. |
-| `tests/eenheid/beheer-overzicht.test.ts` | `tests/eenheid/admin-overzicht.test.ts` | export: `main` — Admin → «Overzicht» (/overzicht): widgets/indeling (normalisatie, verplaatsen, formaat), privacy van gebeurtenissen en gebruikersgeschiedenis, |
+| `tests/eenheid/beheer-overzicht.test.ts` | `tests/eenheid/admin-overzicht.test.ts` | export: `main` — Admin → «Overzicht» (/overzicht): widgets/indeling (normalisatie, verplaatsen, formaat), gegevensbescherming van gebeurtenissen en gebruikersgeschiedenis, |
 | `tests/eenheid/extensie-map-installeer.test.ts` | `tests/eenheid/extension-folder-install.test.ts` | export: `main` — Installatie van de extensie via de systeemeigen mapkiezer: schrijven pas na SHA-256-controle, bescherming tegen onveilige paden, annuleren. |
 | `tests/eenheid/extern-bureaublad.test.ts` | `tests/eenheid/remote-bureaublad.test.ts` | export: `main` — Extern bureaublad via Apache Guacamole (uitvoerder D, 18.10.2026). Melding van de eigenaar: «Guacamole (RDP/VNC) — niet geïmplementeerd, |
 | `tests/eenheid/installeer-opdrachten.test.ts` | `tests/eenheid/install-commands.test.ts` | export: `main` — Opties voor Node.js per systeem/architectuur en de installatiecommando's voor de extensie (zonder .cmd/.ps1-download: Smart App Control blokkeert die)… |
 | `tests/eenheid/site-activiteit.test.ts` | `tests/eenheid/site-activity.test.ts` | export: `main` — Auditlogboek -> meldingen: juiste sectie/dienst per actie, ruis eruit, mislukkingen herkenbaar. |
-| `tests/eenheid/site-hulpmiddelen.test.ts` | `tests/eenheid/site-tools.test.ts` | export: `main` — Site-hulpmiddelen van de MCP-connector (mail, agenda, schijf, zoeken), modi per hulpmiddel (always / ask / off), de wachtrij voor |
+| `tests/eenheid/site-hulpmiddelen.test.ts` | `tests/eenheid/site-tools.test.ts` | export: `main` — Site-hulpmiddelen van de MCP-connector (mail, agenda, schijf, zoeken), modi per hulpmiddel (altijd / ask / off), de wachtrij voor |
 | `tests/eenheid/tech-bundels.test.ts` | `tests/eenheid/tech-assets.test.ts` | export: `main`, `geheimeBeheercode` — Technische bundels alleen voor een sessie met actief technisch profiel (verslag van de eigenaar 18.10.2026: «Technische assets alleen |
 | `tests/eenheid/uitgave-info.test.ts` | `tests/eenheid/release-info.test.ts` | export: `main` — /api/version: backend/uitgave-info.ts leest de releasemetadata (versie, commit, auteur, agent, samenvatting) uit de |
 | `tests/eenheid/vlaggen.test.ts` | `tests/eenheid/flags.test.ts` | export: `main` — Etap F (14.10.2026): feature flags. Pure berekening (shared/vlaggen.ts) en echte database + regels (backend/vlaggen.ts). |
@@ -671,7 +671,7 @@ Eveneens ongewijzigd: `migrations/` (migratienamen zijn vastgelegd in de databas
 | `backend/api-platform-verbindingen.ts` | `backend/api-platform-connections.ts` | export: `OWNER_CONNECTIONS_TABLE`, `API_PLATFORM_CONNECTIONS`, `apiPlatformConnectionCards`, `zetVerbindingStatus` +2 |
 | `backend/google-suite-inrichting.ts` | `backend/google-suite-onboarding.ts` | export: `AGENDA_LEES_SCOPE`, `AGENDA_SCHRIJF_SCOPE`, `googleGrantNogServerSleutel`, `googleSuiteMailSearchScopeStatus` +27 |
 | `backend/overdracht-binding.ts` | `backend/handoff-binding.ts` | export: `HANDOFF_BINDING_COOKIE`, `handoffBindingVoorAanmaken`, `handoffBindingVanBrowser`, `metBindingCookie` — Browserbinding voor sessie-handoffs (?handoff=<code>), tegen login-CSRF. |
-| `server/platform/geheimen.ts` | `server/platform/secrets.ts` | export: `SECRET_ALLOW_LIST`, `secrets` — Compatibiliteitslaag voor de vroegere AppDeploy 'secrets'-API. |
+| `server/platform/geheimen.ts` | `server/platform/secrets.ts` | export: `SECRET_ALLOW_LIST`, `secrets` — Compatibiliteitslaag voor de vroegere AppDeploy 'geheimen'-API. |
 | `server/platform/opslag.ts` | `server/platform/storage.ts` | export: `resolveStoragePath`, `padHoortBijAnder`, `storage`, `storageReady` — Compatibiliteitslaag voor de vroegere AppDeploy 'storage'-API, op het lokale bestandssysteem |
 | `server/platform/uitnodigingen.ts` | `server/platform/invites.ts` | export: `InviteError`, `isInviteError`, `invites` — Compatibiliteitslaag voor de vroegere AppDeploy 'invites'-API (tabel app.invites). |
 | `src/ApiPlatformWeergave.tsx` | `src/ApiPlatformView.tsx` | export: `ApiPlatformView (default)` |
@@ -721,7 +721,7 @@ Nieuwe bestanden verschijnen direct met Nederlandse namen; de kaart weet waar ze
 | `src/mail/VergelijkTabel.tsx` | «Vergelijken»: bericht als tabel per alinea (origineel ↔ vertaling), de bronalinea van punten gemarkeerd; op telefoon onder elkaar. | pakket 3 «Adaptive Mail Canvas» |
 | `src/mail/ai-blok.css` | CSS voor AI in het bericht: blok, chips, deadlines, onderwerpregel, vertaalstrook, vergelijkingstabel, blad «Waar komt dit vandaan?», antwoordregel; alleen tokens (--info = AI). | pakket 3 «Adaptive Mail Canvas» |
 | `src/mail/VersieVergelijk.tsx` | Venster «Versies vergelijken» (vanuit het contextpaneel): twee versies van een bijlage, alleen tekst, verschil per alinea en zin met gemarkeerde woorden; eerlijke meldingen. | pakket 3 «Adaptive Mail Canvas» |
-| `src/mail/versie-vergelijk.css` | CSS «Versies vergelijken»: laag boven het leesvenster, naast of onder elkaar (container query), alleen tokens. | pakket 3 «Adaptive Mail Canvas» |
+| `src/mail/versie-vergelijk.css` | CSS «Versies vergelijken»: laag boven het leesvenster, naast of onder elkaar (container zoekopdracht), alleen tokens. | pakket 3 «Adaptive Mail Canvas» |
 | `src/mail/tekst-verschil.ts` | Verschil tussen twee teksten zonder DOM: blokken (alinea's, lijstitems, zinnen), LCS met ankers, verplaatste en gewijzigde blokken, woordverschil. | pakket 3 «Adaptive Mail Canvas» |
 | `src/mail/bijlage-tekst.ts` | Tekst uit een bijlage voor «Versies vergelijken»: PDF via pdf.js (tot 60 pagina's, zonder kop-/voetteksten), tekst/CSV met decodering, DOCX/ODT/RTF via de bestaande documentlader. | pakket 3 «Adaptive Mail Canvas» |
 | `tests/eenheid/ai-bronnen-20261024.test.ts` | Test van shared/ai-bronnen.ts: alinea's, letterlijk zoeken, controle, datums en deadlines (nl/uk/en/pl), eenvoudige analyse, «Antwoord verwacht», markering. | pakket 3 «Adaptive Mail Canvas» |

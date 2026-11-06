@@ -1,69 +1,69 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ONTWERP.uk.md) · [🇳🇱 **Nederlandse versie**](./ONTWERP.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# UI-002 — «Фото» en de verhuizing van «Календар»/«Фото» naar «Мій простір»
+# UI-002 — «Фото» та перенесення «Календар»/«Фото» до «Мій простір»
 
-## 1. Inventaris (basis 131639)
-- «Мій простір» (hub) had al een tabblad **calendar** (`src/App.tsx` → `src/agenda/*`, agenda v3). Er is dus geen tweede kalender
-  nodig: de verhuizing is alleen menu + doorverwijzing.
-- «Хмарне сховище» had tabbladen **calendar** en **photos** (`src/cloud-vnext/onderdelen/AgendaFotos.tsx` en de oude
-  `CloudFunctioneelWeergave`), beide schil om `src/GoogleSuiteMediaWeergave.tsx`.
-- Google Photos: alleen de officiële **Picker API** (`backend/google-suite-agenda-fotos.ts`), die gekozen beelden in de cloud
-  (`cloud_items_v1`) bewaart. Volledig lezen van een Google Photos-bibliotheek kan voor derden niet meer (Google, 31.03.2025).
-- Bestandsopslag: `server/platform/opslag.ts`; cloudrecords `cloud_items_v1`; lades (prive/technisch) via `backend/ruimte-cloud-agenda.ts`.
-- `fflate` zit al in de afhankelijkheden (ZIP lezen/schrijven in de browser).
-- UFW-bestanden (src/DriveBrowser.tsx, src/bestand/*, integrations/…) zijn NIET aangeraakt.
+## 1. Інвентар (база 131639)
+- «Мій простір» (hub) уже мав вкладку **calendar** (`src/App.tsx` → `src/agenda/*`, календар v3). Отже, другий календар не
+  потрібен: перенесення — це лише меню + перенаправлення.
+- «Хмарне сховище» мало вкладки **calendar** і **photos** (`src/cloud-vnext/onderdelen/AgendaFotos.tsx` і стара
+  `CloudFunctioneelWeergave`), обидві — обгортки навколо `src/GoogleSuiteMediaWeergave.tsx`.
+- Google Photos: лише офіційний **Picker API** (`backend/google-suite-agenda-fotos.ts`), який зберігає вибрані зображення у хмарі
+  (`cloud_items_v1`). Повне читання бібліотеки Google Photos для сторонніх застосунків більше неможливе (Google, 31.03.2025).
+- Сховище файлів: `server/platform/opslag.ts`; хмарні записи `cloud_items_v1`; лади (особиста/технічна) через `backend/ruimte-cloud-agenda.ts`.
+- `fflate` вже є в залежностях (читання/запис ZIP у браузері).
+- Файли UFW (`src/DriveBrowser.tsx`, `src/bestand/*`, `integrations/…`) НЕ змінювалися.
 
-## 2. Vlaggen (migratie 0153, beide standaard UIT)
-| vlag | AAN | UIT |
+## 2. Прапорці (міграція 0153, обидва типово ВИМКНЕНО)
+| прапорець | УВІМКНЕНО | ВИМКНЕНО |
 |---|---|---|
-| `menu-kalender-foto-eigen` | cloudmenu zonder Календар/Фото; hub krijgt «Фото»; `cloud/calendar` → `hub/calendar`, `cloud/photos` → `hub/photos` (behalve `?kiezer=1`, de Google-kiezer) | menu zoals nu |
-| `foto-dienst` | hub/photos = de nieuwe fotodienst; server-API `/api/owner/foto/*` open | API antwoordt 404 `FOTO_DIENST_UIT`; tabblad verborgen |
+| `menu-kalender-foto-eigen` | меню хмари без Календар/Фото; hub отримує «Фото»; `cloud/calendar` → `hub/calendar`, `cloud/photos` → `hub/photos` (крім `?kiezer=1`, вибір Google) | меню як зараз |
+| `foto-dienst` | hub/photos = нова фотослужба; серверний API `/api/owner/foto/*` відкритий | API відповідає 404 `FOTO_DIENST_UIT`; вкладка прихована |
 
-Menu: `paginaVerborgen()` (src/foto/foto-vlaggen.ts) filtert in `CanoniekOmlijsting` (menu v2), in de tabbladen van
-`VerenigdDienstApp` (cloud) en in de mobiele «Ще»-lijst van `CloudPagina`. `hub/photos` staat in `MENU_PAGINAS` en
-`public/canonical-service.js` (de route moet bestaan), maar is verborgen zolang beide vlaggen UIT staan.
+Меню: `paginaVerborgen()` (`src/foto/foto-vlaggen.ts`) фільтрує в `CanoniekOmlijsting` (меню v2), у вкладках
+`VerenigdDienstApp` (cloud) та в мобільному списку «Ще» в `CloudPagina`. `hub/photos` є в `MENU_PAGINAS` і
+`public/canonical-service.js` (маршрут має існувати), але прихований, доки обидва прапорці ВИМКНЕНІ.
 
-## 3. Model
-Records (geen nieuwe tabellen): `foto_media_v1`, `foto_albums_v1`, `foto_import_v1`. Bytes: bestaande opslag, pad
-`<cloudvoorvoegsel>/foto-<uuid>.<ext>`. Twee soorten items:
-- **eigen** — kopie op deze server (upload, archiefimport, of «Зберегти власну копію» van een cloudfoto);
-- **cloud** — virtueel: verwijst naar `cloud_items_v1`, geen kopie. Beschikbaarheid volgt de cloud (prullenbak = niet beschikbaar).
+## 3. Модель
+Записи (без нових таблиць): `foto_media_v1`, `foto_albums_v1`, `foto_import_v1`. Байти: наявне сховище, шлях
+`<cloudvoorvoegsel>/foto-<uuid>.<ext>`. Два види елементів:
+- **eigen** — власна копія на цьому сервері (завантаження, імпорт архіву або «Зберегти власну копію» хмарного фото);
+- **cloud** — віртуальний: посилається на `cloud_items_v1`, без копії. Доступність слідує за хмарою (кошик = недоступно).
 
-Eén inhoud = één item (sha256). Een tweede import van dezelfde bytes schrijft alleen **herkomst** bij (bron, pad, archief, tijd),
-voegt albums toe en vult ontbrekende metadata aan; overschrijft nooit.
+Один вміст = один елемент (sha256). Повторний імпорт тих самих байтів лише дописує **походження** (джерело, шлях, архів, час),
+додає альбоми й доповнює відсутні метадані; ніколи не перезаписує.
 
-## 4. Bronnen — eerlijk per bron (wat vandaag in de code zit)
-| bron | vandaag | niet beloofd |
+## 4. Джерела — чесно по кожному джерелу (що сьогодні є в коді)
+| джерело | сьогодні | не обіцяно |
 |---|---|---|
-| Mijn Ruimte (upload) | live | — |
-| Хмарне сховище | live (virtueel, EXIF en sha door de server gelezen bij indexeren, ≤64 MB, ≤300 per keer) | — |
-| Google Photos | kiezer (bestaande Picker → cloud → Фото) + Takeout-import (datum, plaats, beschrijving, albums uit JSON) | automatische sync van de hele bibliotheek (Google staat dat niet toe) |
-| Google Drive | Takeout/ZIP/map | live indexeren via bestaande Google-koppeling: gepland |
-| OneDrive, Dropbox | map/ZIP | live: gepland (sleutels van de eigenaar nodig) |
-| iCloud | archief (privacy.apple.com) | live: geen publieke API |
-| Nextcloud, NAS | map/ZIP | WebDAV/SMB: gepland |
-| Instagram, Facebook | archief (JSON-export, Meta-mojibake hersteld) | API voor persoonlijke accounts bestaat niet meer |
-| ВКонтакте, Однокласники, Pinterest | archief/map (album = mapnaam, datum uit EXIF) | API: gepland/niet |
-| Flickr | archief (titel, datum, tags, albums, geo) | API: gepland |
-| Telegram | Desktop-export JSON (chat = album, datum, tekst) | — |
+| Мій простір (завантаження) | наживо | — |
+| Хмарне сховище | наживо (віртуально, EXIF і sha читаються сервером під час індексації, ≤64 МБ, ≤300 за раз) | — |
+| Google Photos | вибір (наявний Picker → хмара → Фото) + імпорт Takeout (дата, місце, опис, альбоми з JSON) | автоматична синхронізація всієї бібліотеки (Google цього не дозволяє) |
+| Google Drive | Takeout/ZIP/тека | жива індексація через наявне підключення Google: заплановано |
+| OneDrive, Dropbox | тека/ZIP | наживо: заплановано (потрібні ключі власника) |
+| iCloud | архів (privacy.apple.com) | наживо: немає публічного API |
+| Nextcloud, NAS | тека/ZIP | WebDAV/SMB: заплановано |
+| Instagram, Facebook | архів (експорт JSON, виправлено Meta-mojibake) | API для особистих акаунтів більше не існує |
+| Pinterest, архіви соцмереж | архів/тека (альбом = назва теки, дата з EXIF) | API: заплановано/немає |
+| Flickr | архів (назва, дата, теги, альбоми, гео) | API: заплановано |
+| Telegram | експорт JSON із Desktop (чат = альбом, дата, текст) | — |
 
-## 5. Import (browser)
-`src/foto/foto-import.ts`: ZIP (stromend uitgepakt), map (`webkitdirectory`) of losse bestanden → archief herkennen →
-metadata uit sidecars → EXIF → miniatuur ≤24 KB + dHash (canvas) → sha256 → `begin` (al bekend? klaar) → stukken van 4 MB → `klaar`.
-Beperking: bij ZIP blijven de uitgepakte media tot hun upload in het geheugen; grote archieven (>2 GB) beter uitpakken en als map importeren (de UI zegt dat).
+## 5. Імпорт (браузер)
+`src/foto/foto-import.ts`: ZIP (потокове розпакування), тека (`webkitdirectory`) або окремі файли → розпізнати архів →
+метадані із супровідних файлів (sidecars) → EXIF → мініатюра ≤24 КБ + dHash (canvas) → sha256 → `begin` (уже відомо? готово) → частини по 4 МБ → `klaar`.
+Обмеження: при ZIP розпаковані медіафайли залишаються в пам'яті до їх завантаження; великі архіви (>2 ГБ) краще розпакувати й імпортувати як теку (інтерфейс про це повідомляє).
 
-## 6. Veiligheid
-- Geen enkele schrijfweg naar een externe dienst. «Прибрати з бібліотеки» = ontkoppelen (cloudbestand blijft).
-- Een eigen kopie kan niet «ontkoppeld» worden (anders weesbestand); wissen vraagt het woord `WISSEN` en raakt alleen de eigen kopie.
-- Alles per lade; dubbele `hoortBij`-controle; server-poort op de vlag.
+## 6. Безпека
+- Жодного шляху запису до зовнішнього сервісу. «Прибрати з бібліотеки» = від'єднання (файл у хмарі залишається).
+- Власну копію не можна «від'єднати» (інакше залишиться файл-сирота); видалення вимагає слова `WISSEN` і зачіпає лише власну копію.
+- Усе ізольовано за ладою; подвійна перевірка `hoortBij`; серверний гейт за прапорцем.
 
-## 7. UI
-Segment: Стрічка · Альбоми · Джерела · Упорядкувати. Zoekveld + één knop «Фільтри» (jaar, maand, bron, soort, formaat, camera,
-van/tot, volgorde, обране, з місцем, без дати, приховані), actieve filters als chips. Tijdlijn per maand, tegels 1:1, selectie
-(vinkje, rechtsklik) met balk: обране, альбом, експорт ZIP (originelen + metadata.json), власні копії, приховати.
-Viewer op volledig scherm (pijlen, veeg, Esc), paneel «Про файл»: datum + waar die vandaan komt, camera, plaats (OSM-link),
-herkomst, bewaring/back-up, albums, tags.
+## 7. Інтерфейс (UI)
+Сегмент: Стрічка · Альбоми · Джерела · Упорядкувати. Поле пошуку + одна кнопка «Фільтри» (рік, місяць, джерело, вид, формат, камера,
+від/до, порядок, обране, з місцем, без дати, приховані), активні фільтри у вигляді чипів. Хронологія за місяцями, плитки 1:1, виділення
+(прапорець, правий клік) із панеллю: обране, альбом, експорт ZIP (оригінали + metadata.json), власні копії, приховати.
+Переглядач на весь екран (стрілки, свайп, Esc), панель «Про файл»: дата + звідки вона взята, камера, місце (посилання OSM),
+походження, зберігання/резервна копія, альбоми, теги.
 
-## 8. Gepland (niet gebouwd)
-Kaartweergave, gezichten/objecten (AI), deellinks naar buiten (nu: Web Share van het apparaat en ZIP-export), live koppelingen
-Drive/OneDrive/Dropbox/WebDAV, server-miniaturen voor HEIC/RAW/video (nu: icoon), stromende download >64 MB.
+## 8. Заплановано (не реалізовано)
+Перегляд на карті, обличчя/об'єкти (ШІ), посилання для спільного доступу назовні (зараз: Web Share пристрою та експорт ZIP), живі підключення
+Drive/OneDrive/Dropbox/WebDAV, серверні мініатюри для HEIC/RAW/відео (зараз: значок), потокове завантаження >64 МБ.

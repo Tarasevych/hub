@@ -4,7 +4,7 @@
 
 Featureflag: `cloud-vnext` (migratie `0130_cloud_vnext.sql` — alleen de rij voor de vlag, raakt geen gegevens aan).
 Vlag AAN → nieuwe pagina in dezelfde canonieke schil; UIT → oude pagina zonder enige wijziging.
-Beide lezen dezelfde records (`app.records: cloud_items_v1` + nieuwe collectie `cloud_mappen_v1`, bytes via
+Beide lezen dezelfde items (`app.records: cloud_items_v1` + nieuwe collectie `cloud_mappen_v1`, bytes via
 `server/platform/opslag.ts`) — in- en uitschakelen kan op elk moment veilig gebeuren.
 
 ## Wat is er nieuw (achter de vlag)
@@ -20,7 +20,7 @@ downloaden tot 32 MiB. Lijsten worden gepagineerd gelezen — de oude limiet van
 **Overzicht.** Live tellers (bestanden, omvang, favorieten, prullenbak), verdeling per type, recente en favoriete bestanden,
 snelle acties. Geen verzonnen cijfers — uitsluitend afkomstig uit de echte backend.
 
-**Integratiecentrum — eerlijk.** 12 providers met hun werkelijke status van vandaag:
+**Integratiecentrum — eerlijk.** 12 aanbieders met hun werkelijke status van vandaag:
 - **werkt**: Google Drive (lezen+schrijven, multi-account), Google Photos (officiële Picker), Gmail-bijlagen;
 - **sleutels van eigenaar vereist**: OneDrive, Dropbox, Box — de code is aanwezig (M4), de kaart toont een checklist van env-sleutels
   (live ✓/✗ vanaf de server); zonder sleutels is er eerlijk geen koppelknop;
@@ -40,14 +40,14 @@ tikdoelen ≥44 px, details op volledig scherm, 320–1440 px zonder horizontale
 **Bestendigheid.** Een uploadsessie leeft op de SCHIJF van de server (`.vnext-sessies/`): een herstart van de server, een gesloten
 tabblad of een netwerkonderbreking betekent geen verlies, maar een pauze. Hervatten gebeurt precies vanaf de ontbrekende blokken (`status`/`zoek`);
 na het herladen van de pagina volstaat het om hetzelfde bestand opnieuw te kiezen — alleen de ontbrekende blokken worden nagehaald
-(geverifieerd met een end-to-end-test in een echte browser: onderbreking → automatische retry; pagina herladen → 1 van de 3 blokken nagehaald).
+(geverifieerd met een end-to-end-test in een echte browser: onderbreking → automatische herhaling; pagina herladen → 1 van de 3 blokken nagehaald).
 
 **Snelheid.** Blokken van 4 MiB lopen via 3 parallelle stromen en in willekeurige volgorde; sha-controle en opslag
 op de server werken streaming (een groot bestand wordt nooit in zijn geheel in het geheugen gehouden).
 
 **Achtergrondverwerking.** Overdrachten tussen diensten (eigen opslag ↔ Google Drive) zijn achtergrondtaken op de server
 (`cloud_taken_v1`): u kunt direct verder werken terwijl het paneel "Overdrachten" eerlijk de voortgang toont; "verplaatsen"
-verwijdert de bron pas NA een geslaagde schrijfactie naar het doel. Pauzeren/hervatten/annuleren; automatische retry met oplopende
+verwijdert de bron pas NA een geslaagde schrijfactie naar het doel. Pauzeren/hervatten/annuleren; automatische herhaling met oplopende
 wachttijd; status "wachten op netwerk" met automatische hervatting zodra de verbinding terugkeert.
 
 **Grenzen — uitsluitend vanuit de echte bron.** Eigen opslag: de enige grens is de vrije schijfruimte (eerlijke `SCHIJF_VOL`
@@ -62,7 +62,7 @@ basis `114141`); conflicten zijn opgelost ten gunste van de tussentijdse wijzigi
 ## Opgeloste fouten (buiten de vlag om, crash-fixes)
 
 De base64-regex `(?:[A-Za-z0-9+/]{4})*` veroorzaakte een V8-stackoverflow bij inhoud vanaf ~4–8 MB
-("Maximum call stack size exceeded") op drie plekken: de nieuwe uploadroutering,
+("Maximum call stack omvang exceeded") op drie plekken: de nieuwe uploadroutering,
 **`server/platform/opslag.ts` (een oude bug — precies deze beperkte voorheen de oude uploads)** en
 `backend/cloud-m5-github.ts`. Vervangen door een lineaire controle met exact dezelfde reeks toegestane tekens;
 regressietest 2×4 MiB + download van 8 MiB byte-voor-byte.

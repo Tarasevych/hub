@@ -33,7 +33,7 @@ uitsluitend `ZoekObject`-items aan de centrale kern en doorloopt dezelfde ruimte
      met een filter op alleen `ownerUserId`; geef ze door aan `indexeer(lade, objecten)`; verwijderde items → `verwijder`; ontkoppeld → `verwijderBron`;
    - respecteer `kluisStand(lade)`: als de bron een DEK nodig heeft (OAuth-tokens), geef bij `gesloten` direct `KLUIS_GESLOTEN` terug zonder pogingen.
 4. **Bronstatus**: roep `standZetten(lade, bron, {...})` aan bij de start (`indexeert`, `voortgang`) en aan het einde (`klaar`/`gedeeltelijk`/`fout`, `laatsteOk`).
-5. **Incrementeel bijwerken**: waar de bron events heeft (webhook, push, projectiesynchronisatie) — plaats een item in de wachtrij (`zoekMelden` in `wachtrij.ts`)
+5. **Incrementeel bijwerken**: waar de bron gebeurtenissen heeft (webhook, push, projectiesynchronisatie) — plaats een item in de wachtrij (`zoekMelden` in `wachtrij.ts`)
    in plaats van te wachten op een volledige scan; gebruik anders een periodieke volledige scan (documenteer de werkelijke vertraging in `ZOEKEN.md` §7).
 6. **UI**: `src/zoek/zoek-logica.ts` (categorie, teller wordt alleen getoond wanneer de bron gekoppeld is), `ZoekKaart.tsx` (icoon, actie),
    statuspaneel (naam uit `BRON_NAAM`).
@@ -56,5 +56,5 @@ JSX met uk/nl-tekst in `src/**/*.tsx` is (de generator `scripts/zoek-ui-catalogu
 ## D. Nieuwe zoektaal
 
 `shared/zoek-normalisatie.ts`: transliteratie (bij een nieuw alfabet), `STOPWOORDEN`, `taalRaden`; `shared/zoek-model.ts` → `ZOEK_TALEN`,
-`PG_STEMMER` (alleen stemmers die **bestaan** in PG: `select cfgname from pg_ts_config`); `0100` → CHECK `zoek_objecten_taal_check` (migratie
+`PG_STEMMER` (alleen stemmers die **bestaan** in PG: `select cfgname from pg_ts_config`); `0100` → CONTROLE `zoek_objecten_taal_check` (migratie
 `01xx`: `DROP CONSTRAINT`/`ADD CONSTRAINT`) en een tak in `zoek_stam`; vul de synoniemgroepen aan met vormen in de nieuwe taal; voeg vragen toe aan de evaluatieset.

@@ -1,8 +1,8 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUIMTES-ISOLATIE.uk.md) · [🇳🇱 **Nederlandse versie**](./RUIMTES-ISOLATIE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# Ruimtes-isolatie — «prive» ↔ «technisch» (28.10.2026, migratie 0123, vlag `ruimtes-scheiding`)
+# Ізоляція просторів — «prive» ↔ «technisch» (28.10.2026, міграція 0123, прапорець `ruimtes-scheiding`)
 
-**Коротко українською.** Сервер уже розділяв пошту, сповіщення, хмару, календар, робочий стіл, пошук і ШІ за «шухлядою»
+**Коротко.** Сервер уже розділяв пошту, сповіщення, хмару, календар, робочий стіл, пошук і ШІ за «шухлядою» (ладою)
 (`ruimte`). Знайдені прогалини: (1) технічний простір визнавався за одним лише кодом вкладки, навіть з іншого входу на сайт;
 (2) відповіді API не мали `no-store`/`Vary: Cookie`; (3) журнал MCP-консолі був спільним; (4) після виходу з сайту MCP казав
 «немає технічного сеансу» замість «основний акаунт не активний». Усе виправлено за прапорцем `ruimtes-scheiding` (за
@@ -11,52 +11,52 @@
 Лист приватної пошти в технічній вкладці на скріншоті — це стан інтерфейсу (браузер), сервер його технічній вкладці не віддає
 (тому й тост «не вдалося оновити»); це виправляє Агент 2 за контрактом `shared/ruimte-sleutel.ts`.
 
-## Naamgeving
-De opdracht noemde `scope`/`owner_scope`/`tech_scope`; dat zijn Engelse woorden. De codebase heeft sinds 0082 al één Nederlands
-veld voor precies dit: **`ruimte`** (`'prive' | 'technisch'`, NULL = `prive`). Daarom geen tweede kolom: de helper heet
-`ruimteVanSessie()` en het sleutelcontract `ruimteSleutel()` in `shared/ruimte-sleutel.ts`.
+## Іменування
+У завданні згадувалися `scope`/`owner_scope`/`tech_scope`; це англійські слова. Кодова база вже з міграції 0082 має одне нідерландське
+поле саме для цього: **`ruimte`** (`'prive' | 'technisch'`, NULL = `prive`). Тому друга колонка не створювалася: допоміжна функція називається
+`ruimteVanSessie()`, а контракт ключів — `ruimteSleutel()` у `shared/ruimte-sleutel.ts`.
 
-## Eén vlag
-`ruimtes-scheiding` (nieuw, naast `tech-ruimtes-v2`). Reden: v2 is al uitgerold en getest; de verharding moet apart terug te
-draaien zijn zonder de ruimtes zelf uit te zetten. De binding werkt alleen samen met v2 (zonder v2 bestaat er geen v2-sessie).
-Aanbeveling: eerst `tech-ruimtes-v2`, dan «Тест: так» op `ruimtes-scheiding`.
+## Один прапорець
+`ruimtes-scheiding` (новий, поруч із `tech-ruimtes-v2`). Причина: v2 вже розгорнуто й протестовано; посилення захисту має відкочуватися
+окремо без вимкнення самих просторів. Прив'язка працює лише разом із v2 (без v2 не існує сесії v2).
+Рекомендація: спершу увімкнути `tech-ruimtes-v2`, а потім «Тест: так» на `ruimtes-scheiding`.
 
-## Tabel: gegevenssoort → vandaag → gat → oplossing
-| Soort | Hoe vandaag gescheiden | Gat | Oplossing (0123) |
+## Таблиця: тип даних → сьогодні → прогалина → рішення
+| Тип | Як розділено сьогодні | Прогалина | Рішення (0123) |
 |---|---|---|---|
-| Post: lijst, berichten, inhoud, bijlagen, concepten, wachtrij, labels | poort `metMailRuimte` voor elke `/api/owner/mail/*`, lade in AsyncLocalStorage, `mail_ruimte_account`; Google-principals via `ladeOf` | ruimte van het tabblad werd geloofd via alleen een geregistreerde tabbladcode (ook vanuit een andere aanmelding) | ruimte alleen via de ankersessie van het verzoek + HMAC-binding (`besluit`) |
-| Post-zoekindex, globaal zoeken, zoekgeschiedenis | `gegevensRuimteVeilig`, `zoek_*`.`ruimte` | idem | idem; RLS-hek op `zoek_geschiedenis` |
-| Meldingen (bel 99+) | `meldingen-ruimte.ts`: lade + sfeer, lezen/tellen/gelezen per tabblad | idem | idem |
-| Werkblad (v3, blokken, plekken), vensters | `werkbladLade` → `gegevensRuimteVeilig`; kolom `ruimte` | idem | idem; RLS-hek op werkblad_*, venster_stand |
-| Hmara, agenda, bord, GitHub | `ruimte-cloud-agenda.ts`, `ruimte-projecties.ts` | idem | idem |
-| Sleutelkluis | `gegevensRuimteVeilig` | idem | idem |
-| AI/MCP-hulpmiddelen | `effectieveRuimte`, `tech_ruimte_ai`, `mcp_namens` | na sluiten wegens site-uitloggen code `GEEN_TECH_SESSIE` | code `SITE_SESSIE_WEG` blijft (reden bewaard) |
-| MCP-consolelogboek | geen ruimte | technische aanroepen zichtbaar in privé | kolom `ruimte` (standaard prive), schrijven met ruimte van de verbinding, lezen gefilterd |
-| connector_tool_calls | geen ruimte, bewust altijd technisch (connectors-routes.ts) | geen | ongewijzigd |
-| UI-voorkeuren (menu, taal, zijbalk, thema) | per account | gedeeld tussen ruimtes | **besluit Pavlo** (zie onder); niet gewijzigd |
-| HTTP-cache | alles POST, service worker slaat `/api/` over | geen `no-store`/`Vary` | `Cache-Control: no-store`, `Vary: Cookie`, `X-Ruimte` op elk ingelogd `/api/`-antwoord |
-| Browsercache (localStorage, IndexedDB, geheugen) | sleutels zonder ruimte | leesvenster toont privélief in technisch tabblad | contract `ruimteSleutel(ruimte, sleutel)` voor Agent 2 |
-| WebSocket/SSE (terminal, extensie, extern) | eigen tokens/ontgrendelingen per ruimte | ankercontrole per opdracht (Agent 5 §4.2) | niet in deze tak — zie «niet gedaan» |
-| Exporten (privacy-export) | identity-sessie, per account | bevat beide ruimtes van dezelfde mens | bewust (eigen gegevens van de mens); geen wijziging |
+| Пошта: список, листи, вміст, вкладення, чернетки, черга, мітки | брама `metMailRuimte` для кожного `/api/owner/mail/*`, лада в AsyncLocalStorage, `mail_ruimte_account`; Google-принципали через `ladeOf` | простору вкладки довіряли за одним лише зареєстрованим кодом вкладки (навіть з іншого входу) | простір визначається лише через якірну сесію запиту + прив'язку HMAC (`besluit`) |
+| Пошуковий індекс пошти, глобальний пошук, історія пошуку | `gegevensRuimteVeilig`, `zoek_*`.`ruimte` | те саме | те саме; RLS-захист на `zoek_geschiedenis` |
+| Сповіщення (дзвіночок 99+) | `meldingen-ruimte.ts`: лада + сфера, читання/підрахунок/прочитане на вкладку | те саме | те саме |
+| Робочий стіл (v3, блоки, місця), вікна | `werkbladLade` → `gegevensRuimteVeilig`; колонка `ruimte` | те саме | те саме; RLS-захист на `werkblad_*`, `venster_stand` |
+| Хмара, календар, дошка, GitHub | `ruimte-cloud-agenda.ts`, `ruimte-projecties.ts` | те саме | те саме |
+| Сховище ключів (sleutelkluis) | `gegevensRuimteVeilig` | те саме | те саме |
+| Інструменти ШІ/MCP | `effectieveRuimte`, `tech_ruimte_ai`, `mcp_namens` | після закриття через вихід із сайту повертався код `GEEN_TECH_SESSIE` | залишається код `SITE_SESSIE_WEG` (причина збережена) |
+| Журнал консолі MCP | без простору | технічні виклики видимі в особистому просторі | колонка `ruimte` (типово `prive`), запис із простором з'єднання, читання відфільтроване |
+| `connector_tool_calls` | без простору, свідомо завжди технічний (`connectors-routes.ts`) | немає | без змін |
+| Налаштування UI (меню, мова, бічна панель, тема) | на акаунт | спільні між просторами | **рішення Павла** (див. нижче); без змін |
+| Кеш HTTP | усе POST, service фоновий обробник пропускає `/api/` | немає `no-store`/`Vary` | `Cache-Control: no-store`, `Vary: Cookie`, `X-Ruimte` на кожній авторизованій відповіді `/api/` |
+| Кеш браузера (`localStorage`, `IndexedDB`, пам'ять) | ключі без простору | вікно читання показує приватний лист у технічній вкладці | контракт `ruimteSleutel(ruimte, sleutel)` для Агента 2 |
+| WebSocket/SSE (термінал, розширення, зовнішні) | власні токени/розблокування на простір | перевірка якоря на кожну команду (Агент 5 §4.2) | не в цій гілці — див. «не зроблено» |
+| Експорти (експорт приватності) | сесія ідентичності, на акаунт | містить обидва простори однієї людини | свідомо (власні дані людини); без змін |
 
-## Binding (punt 3)
-- `app.tech_ruimte_sessies.binding_hmac` = HMAC-SHA256(sleutel, `v1|ankersessie|technische sessie|generatie`); vergelijking met
-  `timingSafeEqual`. Sleutel: `RUIMTE_BINDING_SLEUTEL_V1` (≥ 32 tekens) of afgeleid van het bestaande `TOTP_ENCRYPTION_KEY_V1`.
-  Geen sleutel = geen technische ruimte (veilige kant). Geen geheim in repo of chat.
-- Roteert bij `starten` en `verlengen` (beide met stap-op): generatie +1.
-- Elk verzoek: de ankersessie wordt gezet door de sessiecontrole (`zetGebruiker(..., sessieId)`); de besluitfunctie vindt de rij
-  via die sessie, controleert dat de site-sessie leeft (niet ingetrokken/verlopen) én de HMAC. Ingetrokken site-sessie → meteen
-  privé (zonder op opruimen te wachten), directe link → 401; geldige sessie zonder technische toegang → 403 met `uitleg`.
-- Rijen van vóór 0123 (zonder binding) worden gebonden bij het eerste verzoek van hun EIGEN aanmelding.
+## Прив'язка (пункт 3)
+- `app.tech_ruimte_sessies.binding_hmac` = HMAC-SHA256(ключ, `v1|якірна сесія|технічна сесія|покоління`); порівняння через
+  `timingSafeEqual`. Ключ: `RUIMTE_BINDING_SLEUTEL_V1` (≥ 32 символів) або похідний від наявного `TOTP_ENCRYPTION_KEY_V1`.
+  Немає ключа = немає технічного простору (безпечна сторона). Жодного секрету в репозиторії чи чаті.
+- Ротується під час `starten` і `verlengen` (обидва зі step-up): покоління +1.
+- Кожен запит: якірна сесія встановлюється перевіркою сесії (`zetGebruiker(..., sessieId)`); функція рішення знаходить рядок
+  за цією сесією, перевіряє, що сесія сайту жива (не відкликана і не прострочена), А ТАКОЖ перевіряє HMAC. Відкликана сесія сайту → миттєво
+  особистий простір (не чекаючи очищення), пряме посилання → 401; дійсна сесія без технічного доступу → 403 з `uitleg`.
+- Рядки до міграції 0123 (без прив'язки) прив'язуються під час першого запиту їхнього ВЛАСНОГО входу.
 
-## Contract voor de andere agenten
-- `POST /api/owner/hub/tech/ruimtes/controle` → 200 `{ruimte:'technisch', eindTijd}` | 401 (geen sessie) | 403 `{error, uitleg:{uk,nl}}`
-  (codes: `SITE_SESSIE_WEG`, `BINDING_ONGELDIG`, `GEEN_TECH_SESSIE`, `PAUZE`, `VERLOPEN`, `GRENS_VOORBIJ`, `NIET_GEBONDEN`, `GEEN_ROLLEN`, `GEEN_TECH_PROFIEL`); 401 `ACCOUNT_NIET_ACTIEF`.
-- Kop `X-Ruimte: prive|technisch` (vlag aan) — de client wist bij een andere waarde alle cache van de andere ruimte.
+## Контракт для інших агентів
+- `POST /api/owner/hub/tech/ruimtes/controle` → 200 `{ruimte:'technisch', eindTijd}` | 401 (немає сесії) | 403 `{error, uitleg:{uk,nl}}`
+  (коди: `SITE_SESSIE_WEG`, `BINDING_ONGELDIG`, `GEEN_TECH_SESSIE`, `PAUZE`, `VERLOPEN`, `GRENS_VOORBIJ`, `NIET_GEBONDEN`, `GEEN_ROLLEN`, `GEEN_TECH_PROFIEL`); 401 `ACCOUNT_NIET_ACTIEF`.
+- Заголовок `X-Ruimte: prive|technisch` (коли прапорець увімкнено) — у разі іншого значення клієнт очищує весь кеш іншого простору.
 - `shared/ruimte-sleutel.ts`: `ruimteSleutel`, `sleutelVanRuimte`, `ruimteDatabank`, `RUIMTE_KOP`.
 - `backend/ruimte-sessie.ts`: `ruimteVanSessie()`, `scheidingAan()`, `bindingWaarde/bindingKlopt`.
 
-## Niet gedaan / open
-- Extensie (Agent 5 §4.2): ankercontrole bij elke technische extensieopdracht met intrekken `site-sessie-weg` en WebSocket 4401 — niet in deze tak.
-- RLS-hek werkt alleen voor de app-rol; de meeste diensten lezen via de systeemrol en filteren in code (`sqlLadeWaar`/`hoortBij`).
-- UI-voorkeuren per ruimte: besluit van Pavlo.
+## Не зроблено / відкрито
+- Розширення (Агент 5 §4.2): перевірка якоря під час кожної технічної команди розширення з відкликанням `site-sessie-weg` і WebSocket 4401 — не в цій гілці.
+- Захист RLS працює лише для ролі `app`; більшість служб читають через системну роль і фільтрують у коді (`sqlLadeWaar`/`hoortBij`).
+- Налаштування UI на простір: за рішенням Павла.

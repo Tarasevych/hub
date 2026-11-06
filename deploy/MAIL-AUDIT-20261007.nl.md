@@ -2,12 +2,12 @@
 
 # Audit van de e-mailclient mail.tarasevych.com (07-10-2026)
 
-Methode: lezen van de code (`backend/google-suite-mail-browser.ts`, `backend/index.ts`, `src/MailNewMessageDialog.tsx`, `src/MailComposeEditor.tsx`), query's op de live database (alleen tellers en
+Methode: lezen van de code (`backend/google-suite-mail-browser.ts`, `backend/index.ts`, `src/MailNewMessageDialog.tsx`, `src/MailComposeEditor.tsx`), zoekopdracht's op de live database (alleen tellers en
 statussen, geen inhoud van berichten), live verzoeken namens de eigenaar naar routes op productie, en cron-logboeken. Integratie met Gmail: **officiële REST API via fetch** (de bibliotheek `googleapis`
 is niet nodig en werd niet toegevoegd); IMAP/SMTP wordt niet gebruikt.
 
 ## Wat werkt
-- Lezen: lijst, threads, labels, zoeken, datumgrenzen, bijlagen (`google-suite/*`, principal-token).
+- Lezen: lijst, gesprekken, etiketten, zoeken, datumgrenzen, bijlagen (`google-suite/*`, principal-token).
 - Archiveren: `message/modify` voor de actie `archive` roept `POST /gmail/v1/users/me/messages/{id}/modify` aan met `{"addLabelIds":[],"removeLabelIds":["INBOX"]}` (gecontroleerd in de code; voor de prullenbak zijn er aparte `trash/untrash`-acties). **Er hoefde niets hersteld te worden.**
 - Uitstellen van een bericht («snooze», `mail-snooze.ts`) bestaat als afzonderlijke functie.
 - Cron: `mail-provider-maintenance` (5 min) en `google-suite-bplus-sync` (5 min) draaien zonder fouten.
@@ -33,8 +33,8 @@ is niet nodig en werd niet toegevoegd); IMAP/SMTP wordt niet gebruikt.
 - **Push (Pub/Sub)**: de code is aanwezig, maar in de geheimen ontbreken `GOOGLE_GMAIL_PUBSUB_TOPIC/AUDIENCE/SERVICE_ACCOUNT_EMAIL`; voor het nieuwe accounttype (grant) was push bewust uitgeschakeld (`bplus_history_fallback`).
   Deze schakelt zichzelf nu automatisch in na configuratie; zie de instructie in `deploy/MAIL-PUSH-PUBSUB.md`. Een echte push vanuit Google is **niet gecontroleerd** (vereist handelingen in Google Cloud).
 - Het account in het oude platform blijft op de status `initial_sync` / `bplus_grant_waiting_initial_sync` staan (er zijn enkele cron-cycli nodig om de initiële synchronisatie af te ronden; gecontroleerd moet worden of de status naar `connected` gaat).
-- Het daadwerkelijk verzenden van een e-mail vanaf productie heb ik **niet** uitgevoerd (dat is een handeling uit uw naam). Getest: MIME, concepten, wachtrij, herstelpogingen, parallelle workers (25 controles met een gesimuleerde Gmail) en de AI-assistent (18 controles).
-- De AI-knoppen in het opstelvenster werken alleen met uw eigen Anthropic-sleutel; zonder sleutel wordt een hint getoond. Samenvatting van een thread, antwoord op basis van context en toonbeoordeling zijn op de server aanwezig
+- Het daadwerkelijk verzenden van een e-mail vanaf productie heb ik **niet** uitgevoerd (dat is een handeling uit uw naam). Getest: MIME, concepten, wachtrij, herstelpogingen, parallelle achtergrondprocessen (25 controles met een gesimuleerde Gmail) en de AI-assistent (18 controles).
+- De AI-knoppen in het opstelvenster werken alleen met uw eigen Anthropic-sleutel; zonder sleutel wordt een hint getoond. Samenvatting van een gesprek, antwoord op basis van context en toonbeoordeling zijn op de server aanwezig
   (`compose/ai/summarize|reply|tone`), maar de knoppen in het leesvenster ontbreken nog (het leesvenster is een afzonderlijke grote geminificeerde component; dit vereist een aparte stap).
 - Er resteren nog 173 typefouten in de frontend (e-mailweergaven).
-- Selectielimieten (`limit:`) elders in `index.ts` beperken eveneens tot de «eerste N» records; het is aan te raden ook de overige `db.list`-aanroepen voor grote tabellen na te lopen.
+- Selectielimieten (`limit:`) elders in `index.ts` beperken eveneens tot de «eerste N» items; het is aan te raden ook de overige `db.list`-aanroepen voor grote tabellen na te lopen.

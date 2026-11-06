@@ -2,7 +2,7 @@
 
 # Mijn Ruimte · Мій простір (`Tarasevych/hub`)
 
-> **Privé self-hosted BYOS (Bring Your Own Server) platform voor digitale werkruimte, e-mail, cloudopslag, identiteit, slim huis en multi-agent AI-coördinatie.**
+> **Privé zelfstandig BYOS (eigen server) platform voor digitale werkruimte, e-mail, cloudopslag, identiteit, slim huis en multi-agent AI-coördinatie.**
 
 ---
 
@@ -30,7 +30,7 @@ Elk artikel en elke documentatiepagina in de repository heeft twee volwaardige t
 | Parameter | Waarde |
 |---|---|
 | **Repository** | [`Tarasevych/hub`](https://github.com/Tarasevych/hub) |
-| **Hoofdtak (Default Branch)** | [`voornaamst`](https://github.com/Tarasevych/hub/tree/voornaamst) *(gesynchroniseerd met de integratietak [`integratie`](https://github.com/Tarasevych/hub/tree/integratie))* |
+| **Hoofdtak (Standaardtak)** | [`voornaamst`](https://github.com/Tarasevych/hub/tree/voornaamst) *(gesynchroniseerd met de integratietak [`integratie`](https://github.com/Tarasevych/hub/tree/integratie))* |
 | **Publiek toegangspunt** | [https://hub.tarasevych.com](https://hub.tarasevych.com) *(hoofddomein: `tarasevych.com`)* |
 | **Architectuurmodel** | Self-hosted BYOS op eigen Ubuntu LTS VM achter uitgaande Cloudflare Tunnel (`127.0.0.1:8080`), zonder externe cloudhosting |
 | **Technologiestack** | TypeScript 5.7 · React 19 · Vite 6 · Tailwind CSS 3 · Node.js 26 LTS (`node:http` + `esbuild`) · PostgreSQL 18 (JSONB + relationele tabellen + FORCE RLS) · Systemd · Caddy · OPA · `age` |
@@ -59,7 +59,7 @@ Elk artikel en elke documentatiepagina in de repository heeft twee volwaardige t
 
 ## 1. Over het project en de ecosysteemarchitectuur (11 dienst-subdomeinen)
 
-**Mijn Ruimte (Мій простір)** is een zelfstandig platform voor persoonlijke en gezamenlijke digitale werkruimte, gebouwd volgens het principe van **BYOS (Bring Your Own Server)** en **Zero-Knowledge / strikte ruimte-isolatie**. Het platform verenigt het werkblad (hub), een e-mailclient met ondersteuning voor tientallen technische en mediabijlageformaten, beveiligde cloudopslag, een agenda, slimme woningbediening, GitHub-integratie en een beheercentrum voor AI-agenten via het Model Context Protocol (MCP).
+**Mijn Ruimte (Мій простір)** is een zelfstandig platform voor persoonlijke en gezamenlijke digitale werkruimte, gebouwd volgens het principe van **BYOS (eigen server)** en **Zero-Knowledge / strikte ruimte-isolatie**. Het platform verenigt het werkblad (hub), een e-mailclient met ondersteuning voor tientallen technische en mediabijlageformaten, beveiligde cloudopslag, een agenda, slimme woningbediening, GitHub-integratie en een beheercentrum voor AI-agenten via het Model Context Protocol (MCP).
 
 ### Dienst-hosts van het ecosysteem (`*.tarasevych.com`)
 
@@ -70,7 +70,7 @@ Alle subdomeinen (gedefinieerd in [`backend/deployment-identity.ts`](backend/dep
 | **[`hub.tarasevych.com`](https://hub.tarasevych.com)** | **Hub (`hub`)** | Hoofdwerkblad (**Werkblad v3**), widgets, snelle acties, borden, meldingen (**Meldingen v2/v3**), globaal **Menu v2** (dock rechts/boven/onder), globaal zoeken `/zoek`. | [`src/VerenigdDienstApp.tsx`](src/VerenigdDienstApp.tsx), [`backend/werkblad-v3.ts`](backend/werkblad-v3.ts), [`shared/menu-model.ts`](shared/menu-model.ts) |
 | **[`mail.tarasevych.com`](https://mail.tarasevych.com)** | **Mail (`mail`)** | **Adaptive Mail Canvas**: Gmail (OAuth + Pub/Sub), Outlook (Microsoft Graph), IMAP/SMTP (iCloud, Ukr.net, Yahoo, I.ua). Diensten-orbit, mobiele bladen, **147 gespecialiseerde bijlageviewers en -bewerkers** (CAD, DICOM/medisch, bio-informatica, financiën, muziek, archieven, databases, PDF/Office), draadcontext zonder AI en geverifieerde AI-vertaling/samenvatting met letterlijke citaten. | [`src/GoogleMailWerkruimte.tsx`](src/GoogleMailWerkruimte.tsx), [`src/mail/`](src/mail/), [`backend/mail-imap.ts`](backend/mail-imap.ts), [`backend/mail-microsoft.ts`](backend/mail-microsoft.ts) |
 | **[`id.tarasevych.com`](https://id.tarasevych.com)** | **Identiteit (`id`)** | Centraal aanmeld- en accountbeveiligingspunt: Google OIDC (PKCE + nonce + `__Secure-tsv_aanmeld_binding`), wachtwoord + TOTP (`AES-256-GCM`) + herstelcodes, **WebAuthn Passkeys**, gasttoegangscodes (`/toegang`), Step-Up bevestiging voor gevoelige acties, accountwisselaar en **12 profielonderdelen**. | [`src/ToegangslaagWeergave.tsx`](src/ToegangslaagWeergave.tsx), [`backend/toegangslaag.ts`](backend/toegangslaag.ts), [`backend/toegangssleutels.ts`](backend/toegangssleutels.ts), [`backend/stap-op.ts`](backend/stap-op.ts) |
-| **[`cloud.tarasevych.com`](https://cloud.tarasevych.com)** | **Cloud (`cloud`)** | **Cloud vNext (M1–M11)**: bestandswerkruimten, Google Drive-projectie, client-side zero-knowledge versleuteling (**M7 Privacy Architecture** op basis van WebAuthn PRF en herstelsleutel), universele bestandsviewer, fotodienst. | [`backend/cloud-platform.ts`](backend/cloud-platform.ts), [`backend/cloud-google-drive.ts`](backend/cloud-google-drive.ts), [`docs/CLOUD-M7-PRIVACY-ARCHITECTURE.nl.md`](docs/CLOUD-M7-PRIVACY-ARCHITECTURE.nl.md) |
+| **[`cloud.tarasevych.com`](https://cloud.tarasevych.com)** | **Cloud (`cloud`)** | **Cloud vNext (M1–M11)**: bestandswerkruimten, Google Drive-projectie, client-side zero-knowledge versleuteling (**M7 architectuur voor gegevensbescherming** op basis van WebAuthn PRF en herstelsleutel), universele bestandsviewer, fotodienst. | [`backend/cloud-platform.ts`](backend/cloud-platform.ts), [`backend/cloud-google-drive.ts`](backend/cloud-google-drive.ts), [`docs/CLOUD-M7-PRIVACY-ARCHITECTURE.nl.md`](docs/CLOUD-M7-PRIVACY-ARCHITECTURE.nl.md) |
 | **[`ai.tarasevych.com`](https://ai.tarasevych.com)** | **AI-ruimte (`ai`)** | Werken met privé- en technische AI-modellen, AI-agentenbord, fijnmazige **«AI-toegang»**-rechten (scopes per hulpmiddel en gevoelige gegevens), centraal verbindingspunt `/verbindingen`. | [`src/agenten/`](src/agenten/), [`backend/ai-beleid.ts`](backend/ai-beleid.ts), [`backend/connector-v2.ts`](backend/connector-v2.ts) |
 | **[`mcp.tarasevych.com`](https://mcp.tarasevych.com)** | **MCP-poort (`mcp`)** | Aparte connectoradressen per agent (`/claude`, `/gpt`, `/grok`, `/gemini`, `/copilot`, `/cursor`), OAuth 2.0-metadata, koppeling van externe MCP-servers (`backend/mcp-klant/`), webpaneel **«Coördinatie»** (`/agents` → `TabOrch.tsx`) en geïsoleerde deur op poort `8091`. | [`src/agenten/TabOrch.tsx`](src/agenten/TabOrch.tsx), [`backend/orch-routes.ts`](backend/orch-routes.ts), [`deploy/CONNECTOR-EEN-PAD.nl.md`](deploy/CONNECTOR-EEN-PAD.nl.md) |
 | **[`github.tarasevych.com`](https://github.tarasevych.com)** | **GitHub (`github`)** | Koppeling met GitHub OAuth / GitHub App, overzicht van repositories, takken, Pull Requests, commits en releases, indexering van code en issues in globaal zoeken `/zoek`. | [`shared/github-koppeling.ts`](shared/github-koppeling.ts), [`backend/uitrol-github.ts`](backend/uitrol-github.ts) |
@@ -128,7 +128,7 @@ Om de structuur van de code en de herkomst van alle 71 takken in de repository t
 - Er is een compatibele platformlaag `@platform/server` ([`server/platform/`](server/platform/)) en `@platform/client` ([`src/platform/`](src/platform/)) gebouwd bovenop PostgreSQL (`app.records` met GIN JSONB-indexen), het bestandssysteem `/srv/data/uploads` en omgevingsvariabelen in `/etc/mijn-ruimte/geheimen.env` (takken [`basis-voor-zelf-hosten`](https://github.com/Tarasevych/hub/tree/basis-voor-zelf-hosten), [`zelf-hosten`](https://github.com/Tarasevych/hub/tree/zelf-hosten), [`sync-actief`](https://github.com/Tarasevych/hub/tree/sync-actief)).
 - **Beveiligingshervorming (Fasen A, B, Auth Fase 1, Fase 2–3, Audit Fixes — zie [`SECURITY-NOTES.md`](SECURITY-NOTES.md) / [`SECURITY-NOTES.nl.md`](SECURITY-NOTES.nl.md)):**
   - Tak [`auth-fase-1`](https://github.com/Tarasevych/hub/tree/auth-fase-1) (03.10.2026): legacy-aanmeldroutes verwijderd, strikte PKCE (`oauth_pkce_v1`), tabbladgebonden aanmeldtransacties (`__Secure-tsv_aanmeld_binding_*`) en eenmalige atomaire handoff tussen subdomeinen (`tsv_handoff_binding`) ingevoerd.
-  - Tak [`beveiliging-fase-2-3`](https://github.com/Tarasevych/hub/tree/beveiliging-fase-2-3) (03.10.2026): **Row-Level Security (RLS)** op PostgreSQL-niveau ingevoerd, splitsing in 3 DB-rollen (`mijnruimte_migrator`, `mijnruimte_app` met `NOBYPASSRLS`, `mijnruimte_system`), centrale autorisatiepoort `auth-poort.ts` en Step-Up bevestiging (`STEP_UP_REQUIRED`).
+  - Tak [`beveiliging-fase-2-3`](https://github.com/Tarasevych/hub/tree/beveiliging-fase-2-3) (03.10.2026): **rijniveaubeveiliging (RLS)** op PostgreSQL-niveau ingevoerd, splitsing in 3 DB-rollen (`mijnruimte_migrator`, `mijnruimte_app` met `NOBYPASSRLS`, `mijnruimte_system`), centrale autorisatiepoort `auth-poort.ts` en Step-Up bevestiging (`STEP_UP_REQUIRED`).
   - Tak [`beveiliging-fixes-audit`](https://github.com/Tarasevych/hub/tree/beveiliging-fixes-audit) (04.10.2026): auditlogboek `app.audit` beveiligd met een cryptografische hashketen (`SECURITY DEFINER`-functie `app.audit_toevoegen`), `geheimen.env` en `migratie.env` gescheiden, en tweetalige statische pagina's `/privacy` en `/terms` zonder JS toegevoegd.
 
 ### Fase III. WebAuthn Passkeys, Menu v2, Technische Ruimte en AI-connectors (7–16 oktober 2026)
@@ -181,16 +181,16 @@ De repository `Tarasevych/hub` telt **71 takken**. Zodat elke deelnemer of AI-ag
 
 | Tak | Commit | Datum | Status | Rol en bestemming |
 |---|---|---|---|---|
-| **[`voornaamst`](https://github.com/Tarasevych/hub/tree/voornaamst)** | `e9d1218` | 2026-11-04 | 🌟 **Default Branch** | Publieke hoofdtak van de repository. Bevat de volledige samengevoegde platformcode, het coördinatiesysteem `ORCH-001`, `TRACE-001`, `INTEG-001`, `MAILORBIT/MOB/POLISH-001` en de regels `B-009` (`regelsVersie 1.4.2`). |
+| **[`voornaamst`](https://github.com/Tarasevych/hub/tree/voornaamst)** | `e9d1218` | 2026-11-04 | 🌟 **Standaardtak** | Publieke hoofdtak van de repository. Bevat de volledige samengevoegde platformcode, het coördinatiesysteem `ORCH-001`, `TRACE-001`, `INTEG-001`, `MAILORBIT/MOB/POLISH-001` en de regels `B-009` (`regelsVersie 1.4.2`). |
 | **[`integratie`](https://github.com/Tarasevych/hub/tree/integratie)** | `3095e5f` | 2026-11-04 | 🛡️ **Integratietak** | Doeltak van de opeenvolgende integratiewachtrij voor agenten (`orchestratie/wachtrij.json`). Samenvoegen gebeurt uitsluitend met `--no-ff` zonder force-push. |
 
 ---
 
 ### 3.2. Actieve takken in uitvoering en fusiekandidaten (november 2026)
 
-Deze **9 takken** bevatten nieuw werk van **04.11.2026** dat voorloopt op de basis van `voornaamst` (`3095e5f`) en wordt voorbereid op integratie binnen drie sporen: **Privacy (`PRIVACY-001`)**, **Mail (`MAILFIX` / `MAILFIT`)** en **Account (`IDENTITY-ACCOUNT`)**:
+Deze **9 takken** bevatten nieuw werk van **04.11.2026** dat voorloopt op de basis van `voornaamst` (`3095e5f`) en wordt voorbereid op integratie binnen drie sporen: **Gegevensbescherming (`PRIVACY-001`)**, **Mail (`MAILFIX` / `MAILFIT`)** en **Account (`IDENTITY-ACCOUNT`)**:
 
-#### A. Privacy, opschoning van persoonsgegevens en regels `1.4.6` (`PRIVACY-001`)
+#### A. Gegevensbescherming, opschoning van persoonsgegevens en regels `1.4.6` (`PRIVACY-001`)
 | Tak | Commit | T.o.v. `3095e5f` | Agent / Auteur | Wat erin zit en waar te zoeken |
 |---|---|---|---|---|
 | **[`release/persoonsgegevens-20261104-164147`](https://github.com/Tarasevych/hub/tree/release/persoonsgegevens-20261104-164147)** | `6483f3f` | **+7 commits** (0 achter) | Claude | **Hoofd-releasekandidaat `PRIVACY-001` (besluiten `B-010` en `B-011`, `regelsVersie 1.4.6`).** Volledige verwijdering van persoonsgegevens en IP-adressen uit code, tests en documentatie; variabelen `MR_EIGENAAR_NAAM`, `MR_CONTACT_EMAIL`, `MR_BEHEERSUBNET`, `MR_VM_SSH`; vastlegging van `*.sh text eol=lf` in `.gitattributes` en `git -c core.autocrlf=false archive` in `maak-voorstelpakket.sh`; bijgewerkte `regels.lock.json` en dossier `orchestratie/ontwikkelarchieven/PRIVACY-001.json`. |
@@ -244,22 +244,22 @@ Alle **28 onderstaande takken** (`✅ Samengevoegd`) zijn directe voorouders van
 | Tak | Commit | Status in `voornaamst` | PR | Inhoud van de tak |
 |---|---|---|---|---|
 | **[`feature/login-001-plus-hub`](https://github.com/Tarasevych/hub/tree/feature/login-001-plus-hub)** | `3be89e0` | ✅ **Samengevoegd** | — | Integratie van `LOGIN-001` met de kernwijzigingen van de hub en testherstel. |
-| **[`feature/login-001-20261101-184800-chatgpt`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-184800-chatgpt)** | `6952f8e` | ✅ **Samengevoegd** | [PR #20](https://github.com/Tarasevych/hub/pull/20) (Merged) | Minimalistisch meertalig aanmeldscherm zonder overbodige logo's en veilige GitHub CI voor het bouwen van ongetekende kandidaten. |
-| **[`feature/login-001-20261101-195230`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-195230)** | `8209000` | 📦 *Gesloten kandidaat* | [PR #21](https://github.com/Tarasevych/hub/pull/21) (Closed) | Alternatieve concepttak voor `LOGIN-001` (het werk aan het accountmenu en de kleuren van de technische balk is overgenomen in `feature/login-001-plus-hub`). |
+| **[`feature/login-001-20261101-184800-chatgpt`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-184800-chatgpt)** | `6952f8e` | ✅ **Samengevoegd** | [PR #20](https://github.com/Tarasevych/hub/pull/20) (Samengevoegd) | Minimalistisch meertalig aanmeldscherm zonder overbodige logo's en veilige GitHub CI voor het bouwen van ongetekende kandidaten. |
+| **[`feature/login-001-20261101-195230`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-195230)** | `8209000` | 📦 *Gesloten kandidaat* | [PR #21](https://github.com/Tarasevych/hub/pull/21) (Gesloten) | Alternatieve concepttak voor `LOGIN-001` (het werk aan het accountmenu en de kleuren van de technische balk is overgenomen in `feature/login-001-plus-hub`). |
 
 #### 4. Beveiliging `SEC-001`, Coördinatie `ORCH-001`, `MCP-ACCESS-001` en `UX-AI-VAULT-001` (30.10–01.11.2026)
 | Tak | Commit | Status in `voornaamst` | PR | Inhoud van de tak |
 |---|---|---|---|---|
-| **[`release/ux-ai-vault-001-20261101-160600`](https://github.com/Tarasevych/hub/tree/release/ux-ai-vault-001-20261101-160600)** | `80716ac` | ✅ **Samengevoegd** | [PR #19](https://github.com/Tarasevych/hub/pull/19) (Merged) | **`UX-AI-VAULT-001`:** AI-agentbeheer op één plek met directe Passkey-bevestiging en uniforme adaptieve Sleutelkluis. |
-| **[`release/sec-001-20261031-084138`](https://github.com/Tarasevych/hub/tree/release/sec-001-20261031-084138)** | `80716ac` | ✅ **Samengevoegd** | [PR #12](https://github.com/Tarasevych/hub/pull/12) (Merged) | Basisreleasetak na samenvoeging van `SEC-001`, `ORCH-001`, `MCP-ACCESS-001` en `UX-AI-VAULT-001`. |
-| **[`claude/project-thread-99x4j9`](https://github.com/Tarasevych/hub/tree/claude/project-thread-99x4j9)** | `3dea7c1` | ✅ **Samengevoegd** | [PR #17](https://github.com/Tarasevych/hub/pull/17) (Merged) | Verfijning van `ORCH-001` na PR #16: verbod op inleveren van andermans taak, isolatie van technische MCP-verbindingen van privé «AI-toegang». |
-| **[`fix/mcp-access-001-20261101-125530`](https://github.com/Tarasevych/hub/tree/fix/mcp-access-001-20261101-125530)** | `b864308` | ✅ **Samengevoegd** | [PR #18](https://github.com/Tarasevych/hub/pull/18) (Merged) | **`MCP-ACCESS-001`:** exacte serverdiagnostiek voor AI-toegang, isolatie per verbinding, directe één-klik-acties en live bijwerken van rechten. |
-| **[`release/orch-001-mcp-20261031`](https://github.com/Tarasevych/hub/tree/release/orch-001-mcp-20261031)** | `d33d068` | ✅ **Samengevoegd** | [PR #16](https://github.com/Tarasevych/hub/pull/16) (Merged) | Gezamenlijke integratiekandidaat `ORCH-001` (PR #11 + PR #13) + `MCP-001` (PR #14) + `MCP-DEUR 8091` (PR #15). |
+| **[`release/ux-ai-vault-001-20261101-160600`](https://github.com/Tarasevych/hub/tree/release/ux-ai-vault-001-20261101-160600)** | `80716ac` | ✅ **Samengevoegd** | [PR #19](https://github.com/Tarasevych/hub/pull/19) (Samengevoegd) | **`UX-AI-VAULT-001`:** AI-agentbeheer op één plek met directe Passkey-bevestiging en uniforme adaptieve Sleutelkluis. |
+| **[`release/sec-001-20261031-084138`](https://github.com/Tarasevych/hub/tree/release/sec-001-20261031-084138)** | `80716ac` | ✅ **Samengevoegd** | [PR #12](https://github.com/Tarasevych/hub/pull/12) (Samengevoegd) | Basisreleasetak na samenvoeging van `SEC-001`, `ORCH-001`, `MCP-ACCESS-001` en `UX-AI-VAULT-001`. |
+| **[`claude/project-thread-99x4j9`](https://github.com/Tarasevych/hub/tree/claude/project-thread-99x4j9)** | `3dea7c1` | ✅ **Samengevoegd** | [PR #17](https://github.com/Tarasevych/hub/pull/17) (Samengevoegd) | Verfijning van `ORCH-001` na PR #16: verbod op inleveren van andermans taak, isolatie van technische MCP-verbindingen van privé «AI-toegang». |
+| **[`fix/mcp-access-001-20261101-125530`](https://github.com/Tarasevych/hub/tree/fix/mcp-access-001-20261101-125530)** | `b864308` | ✅ **Samengevoegd** | [PR #18](https://github.com/Tarasevych/hub/pull/18) (Samengevoegd) | **`MCP-ACCESS-001`:** exacte serverdiagnostiek voor AI-toegang, isolatie per verbinding, directe één-klik-acties en live bijwerken van rechten. |
+| **[`release/orch-001-mcp-20261031`](https://github.com/Tarasevych/hub/tree/release/orch-001-mcp-20261031)** | `d33d068` | ✅ **Samengevoegd** | [PR #16](https://github.com/Tarasevych/hub/pull/16) (Samengevoegd) | Gezamenlijke integratiekandidaat `ORCH-001` (PR #11 + PR #13) + `MCP-001` (PR #14) + `MCP-DEUR 8091` (PR #15). |
 | **[`fix/mcp-deur-uitrol-20261031-204604`](https://github.com/Tarasevych/hub/tree/fix/mcp-deur-uitrol-20261031-204604)** | `ebc3736` | ✅ **Samengevoegd** | [PR #15](https://github.com/Tarasevych/hub/pull/15) | Synchronisatie van `deploy/mcp/server.mjs` en automatische herstart van de dienst op poort `8091` bij installatie en rollback. |
 | **[`fix/mcp-tools-catalog-20261031-192004`](https://github.com/Tarasevych/hub/tree/fix/mcp-tools-catalog-20261031-192004)** | `0b0b67c` | ✅ **Samengevoegd** | [PR #14](https://github.com/Tarasevych/hub/pull/14) | **`MCP-001`:** herstel van de MCP-gereedschapscatalogus voor Cursor Cloud / GitHub OAuth / Streamable HTTP. |
 | **[`feature/orch-001-20261031-112355`](https://github.com/Tarasevych/hub/tree/feature/orch-001-20261031-112355)** | `7176e95` | ✅ **Samengevoegd** | [PR #11](https://github.com/Tarasevych/hub/pull/11) | **`ORCH-001` (fasen 0–4):** oprichting van `AGENTS.md`, `orchestratie/*`, `scripts/orch.mjs`, beheer vanaf de site/MCP en passkey-goedkeuring van regels. |
 | **[`fix/orch-001-review-20261031-165744`](https://github.com/Tarasevych/hub/tree/fix/orch-001-review-20261031-165744)** | `1203048` | ✅ **Samengevoegd** | — | Beveiligingsherstel voor `ORCH-001`: blokkering van willekeurige testcommando's uit een pakket (RCE), verificatie van SSHSIG in GitOps. |
-| **[`fix/orch-001-audit-20261031-170250`](https://github.com/Tarasevych/hub/tree/fix/orch-001-audit-20261031-170250)** | `315cebf` | 📦 *Opgenomen in PR #16* | [PR #13](https://github.com/Tarasevych/hub/pull/13) (Closed) | Beveiligingstests voor `ORCH-001` (overgebracht naar `fix/orch-001-review-20261031-165744` en `release/orch-001-mcp-20261031`). |
+| **[`fix/orch-001-audit-20261031-170250`](https://github.com/Tarasevych/hub/tree/fix/orch-001-audit-20261031-170250)** | `315cebf` | 📦 *Opgenomen in PR #16* | [PR #13](https://github.com/Tarasevych/hub/pull/13) (Gesloten) | Beveiligingstests voor `ORCH-001` (overgebracht naar `fix/orch-001-review-20261031-165744` en `release/orch-001-mcp-20261031`). |
 | **[`fix/sec-001-20261031-000224`](https://github.com/Tarasevych/hub/tree/fix/sec-001-20261031-000224)** | `fd52dca` | ✅ **Samengevoegd** | — | Oplossing van kwetsbaarheden uit de `SEC-001`-audit en verificatietestsuite. |
 | **[`audit/sec-001-20261030`](https://github.com/Tarasevych/hub/tree/audit/sec-001-20261030)** | `016093f` | ✅ **Samengevoegd** | — | Import van de volledige productieopname van 30.10.2026 voor de uitvoering van audit `SEC-001`. |
 
@@ -478,7 +478,7 @@ Alle geheimen op de productie-VM worden uitsluitend bewaard in **`/etc/mijn-ruim
 | `AUTH_POORT_AFDWINGEN` | Beveiliging | `0` (log) | `1` = centrale poort `auth-poort.ts` blokkeert (`401`) elke anonieme 2xx-respons buiten `PUBLIEKE_ROUTES`. |
 | `STAP_OP_UIT` | Beveiliging | `0` | Nooduitschakeling van de Step-Up-eis (`STEP_UP_REQUIRED`) voor gevoelige acties. |
 | `STAP_OP_GOOGLE_ZONDER_AUTH_TIME` | Beveiliging | `0` | `1` = Google Step-Up toestaan zonder `auth_time` in het token als de OAuth-flow minder dan 5 min geleden is voltooid. |
-| `ACCOUNT_DEFINITIEF_WISSEN` | Privacy | `0` (dry-run) | `1` = achtergrondtaak `opruimen` wist accounts definitief na afloop van de herstelperiode van 30 dagen. |
+| `ACCOUNT_DEFINITIEF_WISSEN` | Gegevensbescherming | `0` (dry-run) | `1` = achtergrondtaak `opruimen` wist accounts definitief na afloop van de herstelperiode van 30 dagen. |
 
 ### 6.3. Externe integraties (Google, Microsoft Graph, Gmail Pub/Sub)
 
@@ -490,7 +490,7 @@ Alle geheimen op de productie-VM worden uitsluitend bewaard in **`/etc/mijn-ruim
 | `MICROSOFT_GRAPH_CLIENT_ID` / `_CLIENT_SECRET` / `_TENANT_ID` | App-registratiegegevens in Microsoft Entra ID voor Outlook-mail (`mijn-ruimte-installeer oauth-client microsoft`). |
 | `MICROSOFT_GRAPH_WEBHOOK_URL` / `_WEBHOOK_CLIENT_STATE` | URL en gedeeld geheim voor webhook-meldingen van nieuwe berichten via Microsoft Graph. |
 
-### 6.4. Runtime-instellingen, Zoeken `/zoek`, Coördinatie en Privacy
+### 6.4. Runtime-instellingen, Zoeken `/zoek`, Coördinatie en Gegevensbescherming
 
 | Variabele | Standaardwaarde | Doel |
 |---|---|---|

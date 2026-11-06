@@ -2,11 +2,11 @@
 
 # Схема бази даних Пошти v1
 
-## 1. Межі та призначення (Scope)
+## 1. Межі та призначення
 
-Це цільова production-схема PostgreSQL. Вона є нормативною моделлю для ідентичності (identity), обмежень (constraints), індексів (indexes), ізоляції за власником (owner scoping), ідемпотентності (idempotency) та політики зберігання даних (retention). Поточні таблиці AppDeploy `mail_*_v1` є базою сумісності (compatibility foundation) і не оголошуються еквівалентними SQL-транзакціям.
+Це цільова production-схема PostgreSQL. Вона є нормативною моделлю для ідентичності (identity), обмежень (constraints), індексів (indexes), ізоляції за власником (власник scoping), ідемпотентності (idempotency) та політики зберігання даних (retention). Поточні таблиці AppDeploy `mail_*_v1` є базою сумісності (compatibility foundation) і не оголошуються еквівалентними SQL-транзакціям.
 
-## 2. Розширення та перелічувані типи (Extensions and enums)
+## 2. Розширення та перелічувані типи
 
 ```sql
 create extension if not exists pgcrypto;
@@ -22,7 +22,7 @@ create type mail_command_status as enum ('prepared','confirmed','executing','suc
 create type mail_source_type as enum ('provider','manual','qa');
 ```
 
-## 3. Основні акаунти та сховище токенів (Core accounts and token vault)
+## 3. Основні акаунти та сховище токенів
 
 ```sql
 create table mail_accounts (
@@ -94,7 +94,7 @@ create table mail_oauth_states (
 create index mail_oauth_states_expiry_idx on mail_oauth_states(status,expires_at);
 ```
 
-## 4. Підписки провайдера та курсори (Provider subscriptions and cursors)
+## 4. Підписки провайдера та курсори
 
 ```sql
 create table mail_provider_subscriptions (
@@ -137,7 +137,7 @@ create table mail_sync_state (
 create index mail_sync_state_due_idx on mail_sync_state(recovery_required,last_success_at);
 ```
 
-## 5. Повідомлення, тіла листів, ланцюжки та мітки (Messages, bodies, threads and labels)
+## 5. Повідомлення, тіла листів, ланцюжки та мітки
 
 ```sql
 create table mail_threads (
@@ -232,7 +232,7 @@ create table mail_message_labels (
 create index mail_message_labels_label_idx on mail_message_labels(label_id,message_id);
 ```
 
-## 6. Вкладення (Attachments)
+## 6. Вкладення
 
 ```sql
 create table mail_attachments (
@@ -256,7 +256,7 @@ create index mail_attachments_message_idx on mail_attachments(message_id);
 create index mail_attachments_scan_idx on mail_attachments(scan_status,download_status);
 ```
 
-## 7. Черга, дедуплікація вебхуків та спроби виконання (Queue, webhook dedupe and attempts)
+## 7. Черга, дедуплікація вебхуків та спроби виконання
 
 ```sql
 create table mail_webhook_events (
@@ -310,7 +310,7 @@ create table mail_job_attempts (
 );
 ```
 
-## 8. Нейроінклюзивний стан та походження ШІ-артефактів (Neuroinclusive state and AI provenance)
+## 8. Нейроінклюзивний стан та походження ШІ-артефактів
 
 ```sql
 create table mail_triage (
@@ -383,7 +383,7 @@ create table mail_notification_preferences (
 );
 ```
 
-## 9. Модель чернеток і команд відправлення (Draft and send command model)
+## 9. Модель чернеток і команд відправлення
 
 ```sql
 create table mail_drafts (
@@ -422,7 +422,7 @@ create table mail_outbox_commands (
 create index mail_outbox_commands_owner_status_idx on mail_outbox_commands(owner_user_id,status,prepared_at desc);
 ```
 
-## 10. Аудит і політика зберігання (Audit and retention)
+## 10. Аудит і політика зберігання
 
 ```sql
 create table mail_audit_log (
@@ -444,7 +444,7 @@ create index mail_audit_owner_time_idx on mail_audit_log(owner_user_id,created_a
 
 Зберігання даних (retention) керується політиками. Записи токенів видаляються негайно при відключенні акаунта; корисні навантаження вебхуків (webhook payloads) є короткоживучими; тіла повідомлень і вкладення підпорядковуються політиці власника щодо зберігання/експорту/видалення. Журнал аудиту не зберігає токени, cookie, сирі заголовки авторизації, повні тіла листів або вміст вкладень.
 
-## 11. Правило запитів з ізоляцією за власником (Owner-scoping query rule)
+## 11. Правило запитів з ізоляцією за власником
 
 Кожен захищений запит обов’язково містить як ідентифікатор власника, так і ідентифікатор ресурсу:
 
@@ -455,9 +455,9 @@ where owner_user_id = :actor_owner
   and deleted_at is null;
 ```
 
-Сам по собі ідентифікатор ресурсу (Resource ID) ніколи не є авторизацією. Зовнішні ключі (foreign keys) запобігають появі осиротілих записів; авторизація на рівні сервісу додатково перевіряє належність власника/робочого простору перед виконанням SQL.
+Сам по собі ідентифікатор ресурсу (Resource ID) ніколи не є авторизацією. Зовнішні ключі (foreign ключі) запобігають появі осиротілих записів; авторизація на рівні сервісу додатково перевіряє належність власника/робочого простору перед виконанням SQL.
 
-## 12. Відображення сумісності з AppDeploy (AppDeploy compatibility mapping)
+## 12. Відображення сумісності з AppDeploy
 
 Поточні таблиці:
 
@@ -467,4 +467,4 @@ where owner_user_id = :actor_owner
 - `mail_metrics_v1` → проєкція продуктової аналітики
 - `mail_notification_preferences_v1` → попередні налаштування на рівні власника
 
-Майбутні обмежені базові таблиці можуть використовувати імена з суфіксом `_v2`, але міграція повинна виконуватися за схемою подвійного читання/подвійного запису (dual-read/dual-write) з доказами та можливістю відкату (rollback). Жоден наявний запис не видаляється лише тому, що задокументовано цільову SQL-схему.
+Майбутні обмежені базові таблиці можуть використовувати імена з суфіксом `_v2`, але міграція повинна виконуватися за схемою подвійного читання/подвійного запису (dual-read/dual-write) з доказами та можливістю відкату. Жоден наявний запис не видаляється лише тому, що задокументовано цільову SQL-схему.

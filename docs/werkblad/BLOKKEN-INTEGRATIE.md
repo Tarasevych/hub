@@ -1,32 +1,32 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./BLOKKEN-INTEGRATIE.uk.md) · [🇳🇱 **Nederlandse versie**](./BLOKKEN-INTEGRATIE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# Werkblad «Blokken» — integratie in Werkblad v3
+# Робочий стіл «Блоки» — інтеграція в Робочий стіл v3
 
-Stand: 28-10-2026. Vlag `werkblad-blokken` (standaard **uit**; werkt alleen samen met `werkblad-v3`).
+Стан: 28-10-2026. Прапорець `werkblad-blokken` (типово **вимкнено**; працює лише разом із `werkblad-v3`).
 
-## Wat nu via blokken loopt (vlag aan)
-- Widget **«Швидкий доступ»** (`wdg:snel-toegang`): de tegels worden door `BlokWeergave` getekend. Zonder bewaard blok
-  is er een standaardblok met dezelfde tegels en volgorde als de widget (`koppeling.ts`, `standaardSnelToegang`).
-- **Mappen** op het werkblad: de inhoud van de map is een blok (raster, automatische maten).
-- Bewerkmodus: kiezen (klik, Shift+klik), eigenschappenpaneel (zijpaneel; onderblad op de telefoon), vertraagd bewaren
-  (400 ms), versieconflict (409 → nieuwste versie laden + melding), groeperen in rij/kolom, ontgroeperen, icoon of blok
-  toevoegen, icoon vervangen, verwijderen, slepen (blok↔blok, blok→werkblad met stijl in `config.blokStijl`,
-  werkblad→blok, blok→menu), «Перемістити в…» (knop of M/F2), Ctrl+Z / Ctrl+Shift+Z.
-- De server controleert elke wijziging opnieuw (register, ruimte: technische items alleen in de technische ruimte).
+## Що вже працює через блоки (прапорець увімкнено)
+- Віджет **«Швидкий доступ»** (`wdg:snel-toegang`): плитки малюються через `BlokWeergave`. Якщо збереженого блока немає,
+  використовується стандартний блок із тими самими плитками й порядком, що й у віджеті (`koppeling.ts`, `standaardSnelToegang`).
+- **Теки** на робочому столі: вміст теки є блоком (сітка, автоматичні розміри).
+- Режим редагування: вибір (клік, Shift+клік), панель властивостей (бічна панель; нижній аркуш на телефоні), відкладене збереження
+  (400 мс), конфлікт версій (409 → завантаження найновішої версії + повідомлення), групування в рядок/колонку, розгрупування, додавання
+  іконки або блока, заміна іконки, видалення, перетягування (блок↔блок, блок→робочий стіл зі стилем у `config.blokStijl`,
+  робочий стіл→блок, блок→меню), «Перемістити в…» (кнопка або M/F2), Ctrl+Z / Ctrl+Shift+Z.
+- Сервер повторно перевіряє кожну зміну (реєстр, простір: технічні елементи — лише в технічному просторі).
 
-## Vlag uit
-Alles is zoals vóór de integratie (pixelgelijk gecontroleerd op 1280 en 390 px, licht en donker).
+## Прапорець вимкнено
+Усе працює так само, як до інтеграції (перевірено попіксельно на 1280 і 390 px, у світлій і темній темах).
 
-## Andere vensters (volgende stap, nu niet omgezet)
-Deze delen gebruiken nog hun eigen weergave. Ze werken ongewijzigd met de vlag aan en uit:
-- andere widgets op het werkblad (Календар, Нещодавні, Хмарне сховище, Статус служб, Системна інформація, Швидкі дії, ШІ для вас …);
-- het menu (zijbalk/dock): ontvangt alleen sleepacties uit blokken via de gewone menuregels;
-- bibliotheek «Мій ярлик», mappaneel bij vlag uit, admin- en id-sites (geen werkblad).
-Volgende stap per venster: een standaardblok afleiden (zoals `standaardSnelToegang`), `vakVoor` gebruiken in de widget,
-en een E2E-stap toevoegen in `scripts/lokaal-e2e/werkblad-blokken-integratie.mjs`.
+## Інші вікна (наступний крок, наразі не переведені)
+Ці частини все ще використовують власне подання. Вони працюють без змін як із увімкненим, так і з вимкненим прапорцем:
+- інші віджети на робочому столі (Календар, Нещодавні, Хмарне сховище, Статус служб, Системна інформація, Швидкі дії, ШІ для вас …);
+- меню (бічна панель/док): приймає лише перетягування з блоків за звичайними правилами меню;
+- бібліотека «Мій ярлик», панель теки при вимкненому прапорці, сайти `admin` та `id` (не робочий стіл).
+Наступний крок для кожного вікна: вивести стандартний блок (як `standaardSnelToegang`), використати `vakVoor` у віджеті
+та додати E2E-крок у `scripts/lokaal-e2e/werkblad-blokken-integratie.mjs`.
 
-## Bekende beperkingen
-- Blokken horen bij een **apparaatlaag** (computer/tablet/telefoon). Wordt het werkgebied smaller dan de computerbreedte
-  (bijv. door een breder menu), dan toont het werkblad de tabletlaag — met zijn eigen (standaard)blok.
-- `svc:mcp` heet in het blok «Міст ШІ → сайт» (registernaam) in plaats van de widgetnaam.
-- Het voorbeeldicoon in het eigenschappenpaneel is algemeen.
+## Відомі обмеження
+- Блоки належать до **шару пристрою** (комп'ютер/планшет/телефон). Якщо робоча область стає вужчою за ширину комп'ютера
+  (наприклад, через ширше меню), робочий стіл показує планшетний шар — зі своїм (стандартним) блоком.
+- `svc:mcp` у блоці називається «Міст ШІ → сайт» (назва з реєстру) замість назви у віджеті.
+- Іконка попереднього перегляду в панелі властивостей є загальною.

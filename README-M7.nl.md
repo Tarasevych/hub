@@ -14,6 +14,6 @@ node scripts/kaart-controle.mjs --stil
 
 Verwacht resultaat: eenheidstests slagen; de vrijgavepoort (release gate) geeft `BLOCKED` terug (exitcode `2`); de bestandskaartcontrole geeft geen fouten.
 
-**Niet installeren** in productie, GitHub `main`/`voornaamst` niet bijwerken en geen migraties toepassen zonder staging. Zet de herstelsleutel van de gebruiker (user recovery key) of de WebAuthn PRF-uitvoer nooit in een log, analyse, netwerkverzoek of door de server gegenereerde HTML.
+**Niet installeren** in productie, GitHub `main`/`voornaamst` niet bijwerken en geen migraties toepassen zonder staging. Zet de herstelsleutel van de gebruiker (gebruiker recovery sleutel) of de WebAuthn PRF-uitvoer nooit in een log, analyse, netwerkverzoek of door de server gegenereerde HTML.
 
 Beschrijving van vertrouwensgrenzen en openstaande vragen: [`docs/CLOUD-M7-PRIVACY-ARCHITECTURE.nl.md`](./docs/CLOUD-M7-PRIVACY-ARCHITECTURE.nl.md) ([🇺🇦 UK](./docs/CLOUD-M7-PRIVACY-ARCHITECTURE.uk.md)).

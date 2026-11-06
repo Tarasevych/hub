@@ -20,7 +20,7 @@
 
 | Гілка | Коміт | Дата | Статус | Роль та призначення |
 |---|---|---|---|---|
-| **[`voornaamst`](https://github.com/Tarasevych/hub/tree/voornaamst)** | `3095e5f` | 2026-11-04 | 🌟 **Default Branch** | Головна публічна гілка репозиторію. Містить повний злитий код платформи (179 комітів після консолідації), систему оркестрації `ORCH-001`, `TRACE-001`, `INTEG-001`, `MAILORBIT/MOB/POLISH-001` та правила `B-009` (`regelsVersie 1.4.2`). |
+| **[`voornaamst`](https://github.com/Tarasevych/hub/tree/voornaamst)** | `3095e5f` | 2026-11-04 | 🌟 **Основна гілка** | Головна публічна гілка репозиторію. Містить повний злитий код платформи (179 комітів після консолідації), систему оркестрації `ORCH-001`, `TRACE-001`, `INTEG-001`, `MAILORBIT/MOB/POLISH-001` та правила `B-009` (`regelsVersie 1.4.2`). |
 | **[`integratie`](https://github.com/Tarasevych/hub/tree/integratie)** | `3095e5f` | 2026-11-04 | 🛡️ **Інтеграційна** | Цільова гілка послідовної черги інтеграції агентів (`orchestratie/wachtrij.json`). Злиття відбувається виключно через `--no-ff` без force-push. |
 
 ---
@@ -71,7 +71,7 @@
 | **[`feature/integ-001-login-20261103-083803`](https://github.com/Tarasevych/hub/tree/feature/integ-001-login-20261103-083803)** | `6bbb685` | ✅ **Злито** | Перегенерація канонічного UI-каталогу після інтеграції нового екрана входу. |
 | **[`feature/integ-001-menu-20261103-083746`](https://github.com/Tarasevych/hub/tree/feature/integ-001-menu-20261103-083746)** | `ed46b36` | ✅ **Злито** | Виправлення відображення прапорця мови в меню (`object-fit: fill`, без обрізання). |
 | **[`feature/integ-001-print-20261103-083745`](https://github.com/Tarasevych/hub/tree/feature/integ-001-print-20261103-083745)** | `4de3780` | ✅ **Злито** | Статичні тести друку (76 перевірок) та перевірка друку у реальному Chrome (`scripts/afdruk-proef.mjs`). |
-| **[`feature/integ-001-zoek-20261103-083752`](https://github.com/Tarasevych/hub/tree/feature/integ-001-zoek-20261103-083752)** | `c15e6ae` | ✅ **Злито** | Випадаюче меню пошуку у верхній панелі (нещодавні запити, миттєві результати, навігація клавіатурою `Esc`/`Enter`/стрілки). |
+| **[`feature/integ-001-zoek-20261103-083752`](https://github.com/Tarasevych/hub/tree/feature/integ-001-zoek-20261103-083752)** | `c15e6ae` | ✅ **Злито** | Розкривне меню пошуку у верхній панелі (нещодавні запити, миттєві результати, навігація клавіатурою `Esc`/`Enter`/стрілки). |
 | **[`feature/integ-001-test-20261103-083753`](https://github.com/Tarasevych/hub/tree/feature/integ-001-test-20261103-083753)** | `feb9f1b` | ✅ **Злито** | Стабілізація модульних тестів (`afstemming-kern`, `agent-apps`, `apparaat-inrichten`). |
 | **[`wip/hub-voor-integratie-20261103`](https://github.com/Tarasevych/hub/tree/wip/hub-voor-integratie-20261103)** | `0ca4cad` | 📌 *Резервний знімок* | Страхувальний коміт незафіксованої локальної роботи (сповіщення, MCP) перед стартом інтеграції `INTEG-001`. |
 
@@ -79,22 +79,22 @@
 | Гілка | Коміт | Статус у `voornaamst` | PR | Зміст гілки |
 |---|---|---|---|---|
 | **[`feature/login-001-plus-hub`](https://github.com/Tarasevych/hub/tree/feature/login-001-plus-hub)** | `3be89e0` | ✅ **Злито** | — | Інтеграція `LOGIN-001` із основними змінами хабу та виправлення тестів. |
-| **[`feature/login-001-20261101-184800-chatgpt`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-184800-chatgpt)** | `6952f8e` | ✅ **Злито** | [PR #20](https://github.com/Tarasevych/hub/pull/20) (Merged) | Мінімалістичний багатомовний екран входу без зайвих логотипів та безпечний GitHub CI для збірки непідписаних кандидатів. |
-| **[`feature/login-001-20261101-195230`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-195230)** | `8209000` | 📦 *Закритий кандидат* | [PR #21](https://github.com/Tarasevych/hub/pull/21) (Closed) | Альтернативна draft-гілка кандидата `LOGIN-001` (її напрацювання по меню акаунтів та кольорах технічної смуги перенесено у `feature/login-001-plus-hub`). |
+| **[`feature/login-001-20261101-184800-chatgpt`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-184800-chatgpt)** | `6952f8e` | ✅ **Злито** | [PR #20](https://github.com/Tarasevych/hub/pull/20) (об’єднано) | Мінімалістичний багатомовний екран входу без зайвих логотипів та безпечний GitHub CI для збірки непідписаних кандидатів. |
+| **[`feature/login-001-20261101-195230`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-195230)** | `8209000` | 📦 *Закритий кандидат* | [PR #21](https://github.com/Tarasevych/hub/pull/21) (закрито) | Альтернативна draft-гілка кандидата `LOGIN-001` (її напрацювання по меню акаунтів та кольорах технічної смуги перенесено у `feature/login-001-plus-hub`). |
 
 #### 4. Безпека `SEC-001`, Оркестрація `ORCH-001`, `MCP-ACCESS-001` та `UX-AI-VAULT-001` (30.10–01.11.2026 — 12 гілок)
 | Гілка | Коміт | Статус у `voornaamst` | PR | Зміст гілки |
 |---|---|---|---|---|
-| **[`release/ux-ai-vault-001-20261101-160600`](https://github.com/Tarasevych/hub/tree/release/ux-ai-vault-001-20261101-160600)** | `80716ac` | ✅ **Злито** | [PR #19](https://github.com/Tarasevych/hub/pull/19) (Merged) | **`UX-AI-VAULT-001`:** керування ШІ-агентом в одному місці з підтвердженням Passkey на місці та єдине адаптивне Сховище секретів. |
-| **[`release/sec-001-20261031-084138`](https://github.com/Tarasevych/hub/tree/release/sec-001-20261031-084138)** | `80716ac` | ✅ **Злито** | [PR #12](https://github.com/Tarasevych/hub/pull/12) (Merged) | Базова релізна гілка після злиття `SEC-001`, `ORCH-001`, `MCP-ACCESS-001` та `UX-AI-VAULT-001`. |
-| **[`claude/project-thread-99x4j9`](https://github.com/Tarasevych/hub/tree/claude/project-thread-99x4j9)** | `3dea7c1` | ✅ **Злито** | [PR #17](https://github.com/Tarasevych/hub/pull/17) (Merged) | Доопрацювання `ORCH-001` після PR #16: заборона здачі чужої задачі, ізоляція технічних MCP-підключень від приватного «Доступу ШІ». |
-| **[`fix/mcp-access-001-20261101-125530`](https://github.com/Tarasevych/hub/tree/fix/mcp-access-001-20261101-125530)** | `b864308` | ✅ **Злито** | [PR #18](https://github.com/Tarasevych/hub/pull/18) (Merged) | **`MCP-ACCESS-001`:** точна серверна діагностика доступу ШІ, ізоляція за підключенням, прямі дії в 1 клік та живе оновлення дозволів. |
-| **[`release/orch-001-mcp-20261031`](https://github.com/Tarasevych/hub/tree/release/orch-001-mcp-20261031)** | `d33d068` | ✅ **Злито** | [PR #16](https://github.com/Tarasevych/hub/pull/16) (Merged) | Спільний інтеграційний кандидат `ORCH-001` (PR #11 + PR #13) + `MCP-001` (PR #14) + `MCP-DEUR 8091` (PR #15). |
+| **[`release/ux-ai-vault-001-20261101-160600`](https://github.com/Tarasevych/hub/tree/release/ux-ai-vault-001-20261101-160600)** | `80716ac` | ✅ **Злито** | [PR #19](https://github.com/Tarasevych/hub/pull/19) (об’єднано) | **`UX-AI-VAULT-001`:** керування ШІ-агентом в одному місці з підтвердженням Passkey на місці та єдине адаптивне Сховище секретів. |
+| **[`release/sec-001-20261031-084138`](https://github.com/Tarasevych/hub/tree/release/sec-001-20261031-084138)** | `80716ac` | ✅ **Злито** | [PR #12](https://github.com/Tarasevych/hub/pull/12) (об’єднано) | Базова релізна гілка після злиття `SEC-001`, `ORCH-001`, `MCP-ACCESS-001` та `UX-AI-VAULT-001`. |
+| **[`claude/project-thread-99x4j9`](https://github.com/Tarasevych/hub/tree/claude/project-thread-99x4j9)** | `3dea7c1` | ✅ **Злито** | [PR #17](https://github.com/Tarasevych/hub/pull/17) (об’єднано) | Доопрацювання `ORCH-001` після PR #16: заборона здачі чужої задачі, ізоляція технічних MCP-підключень від приватного «Доступу ШІ». |
+| **[`fix/mcp-access-001-20261101-125530`](https://github.com/Tarasevych/hub/tree/fix/mcp-access-001-20261101-125530)** | `b864308` | ✅ **Злито** | [PR #18](https://github.com/Tarasevych/hub/pull/18) (об’єднано) | **`MCP-ACCESS-001`:** точна серверна діагностика доступу ШІ, ізоляція за підключенням, прямі дії в 1 клік та живе оновлення дозволів. |
+| **[`release/orch-001-mcp-20261031`](https://github.com/Tarasevych/hub/tree/release/orch-001-mcp-20261031)** | `d33d068` | ✅ **Злито** | [PR #16](https://github.com/Tarasevych/hub/pull/16) (об’єднано) | Спільний інтеграційний кандидат `ORCH-001` (PR #11 + PR #13) + `MCP-001` (PR #14) + `MCP-DEUR 8091` (PR #15). |
 | **[`fix/mcp-deur-uitrol-20261031-204604`](https://github.com/Tarasevych/hub/tree/fix/mcp-deur-uitrol-20261031-204604)** | `ebc3736` | ✅ **Злито** | [PR #15](https://github.com/Tarasevych/hub/pull/15) | Синхронізація `deploy/mcp/server.mjs` та автоматичний перезапуск служби порту `8091` під час встановлення і відкату. |
 | **[`fix/mcp-tools-catalog-20261031-192004`](https://github.com/Tarasevych/hub/tree/fix/mcp-tools-catalog-20261031-192004)** | `0b0b67c` | ✅ **Злито** | [PR #14](https://github.com/Tarasevych/hub/pull/14) | **`MCP-001`:** відновлення каталогу MCP-інструментів для Cursor Cloud / GitHub OAuth / Streamable HTTP. |
 | **[`feature/orch-001-20261031-112355`](https://github.com/Tarasevych/hub/tree/feature/orch-001-20261031-112355)** | `7176e95` | ✅ **Злито** | [PR #11](https://github.com/Tarasevych/hub/pull/11) | **`ORCH-001` (етапи 0–4):** створення `AGENTS.md`, `orchestratie/*`, `scripts/orch.mjs`, керування з сайту/MCP та затвердження правил через Passkey. |
 | **[`fix/orch-001-review-20261031-165744`](https://github.com/Tarasevych/hub/tree/fix/orch-001-review-20261031-165744)** | `1203048` | ✅ **Злито** | — | Виправлення безпеки `ORCH-001`: блокування виконання довільних тестових команд з пакета (RCE), перевірка SSHSIG у GitOps. |
-| **[`fix/orch-001-audit-20261031-170250`](https://github.com/Tarasevych/hub/tree/fix/orch-001-audit-20261031-170250)** | `315cebf` | 📦 *Включено в PR #16* | [PR #13](https://github.com/Tarasevych/hub/pull/13) (Closed) | Тести перевірки безпеки `ORCH-001` (перенесені в `fix/orch-001-review-20261031-165744` та `release/orch-001-mcp-20261031`). |
+| **[`fix/orch-001-audit-20261031-170250`](https://github.com/Tarasevych/hub/tree/fix/orch-001-audit-20261031-170250)** | `315cebf` | 📦 *Включено в PR #16* | [PR #13](https://github.com/Tarasevych/hub/pull/13) (закрито) | Тести перевірки безпеки `ORCH-001` (перенесені в `fix/orch-001-review-20261031-165744` та `release/orch-001-mcp-20261031`). |
 | **[`fix/sec-001-20261031-000224`](https://github.com/Tarasevych/hub/tree/fix/sec-001-20261031-000224)** | `fd52dca` | ✅ **Злито** | — | Усунення вразливостей за результатами аудиту `SEC-001` та набір верифікаційних тестів. |
 | **[`audit/sec-001-20261030`](https://github.com/Tarasevych/hub/tree/audit/sec-001-20261030)** | `016093f` | ✅ **Злито** | — | Імпорт повного production-знімка від 30.10.2026 для проведення аудиту `SEC-001`. |
 
@@ -129,7 +129,7 @@
 |---|---|---|---|---|
 | **[`claude/plan-2026-10-09`](https://github.com/Tarasevych/hub/tree/claude/plan-2026-10-09)** | `0c18e79` | 2026-10-12 | — | Виправлення пошти за QA-звітами від 12.10 (десктоп і мобільний телефон). |
 | **[`claude/mcp-een-klik-2026-10-13`](https://github.com/Tarasevych/hub/tree/claude/mcp-een-klik-2026-10-13)** | `c503db1` | 2026-10-13 | — | Підключення ШІ по MCP «в один клік» або вручну, підтвердження дверей на сайті з вибором терміну дії. |
-| **[`cursor/terminal-etap-c-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/terminal-etap-c-8d4d)** | `e9128e4` | 2026-10-13 | [PR #1](https://github.com/Tarasevych/hub/pull/1) | **Етап C:** вбудований термінал у браузері на базі `@xterm/xterm` (вимкнений за замовчуванням). |
+| **[`cursor/terminal-etap-c-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/terminal-etap-c-8d4d)** | `e9128e4` | 2026-10-13 | [PR #1](https://github.com/Tarasevych/hub/pull/1) | **Етап C:** вбудований термінал у браузері на базі `@xterm/xterm` (вимкнений типово). |
 | **[`cursor/ssh-uitrol-audit-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/ssh-uitrol-audit-8d4d)** | `596cd4a` | 2026-10-13 | [PR #2](https://github.com/Tarasevych/hub/pull/2) | Запис SSH-встановлення в історію оновлень та журнал аудиту. |
 | **[`cursor/mcp-spiegel-tools-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/mcp-spiegel-tools-8d4d)** | `30b45a4` | 2026-10-14 | [PR #3](https://github.com/Tarasevych/hub/pull/3) | Відображення інструментів дверей у MCP-конекторі (випуск, дошка, карта сервісів). |
 | **[`claude/tech-profiel-2026-10-13`](https://github.com/Tarasevych/hub/tree/claude/tech-profiel-2026-10-13)** | `363fa72` | 2026-10-14 | — | **Етап B:** ізоляція адмін-прав виключно в активному Технічному профілі (`deploy/BEHEER-ALLEEN-TECH.md`). |
@@ -142,7 +142,7 @@
 | **[`cursor/connector-functies-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/connector-functies-8d4d)** | `9d5a4be` | 2026-10-15 | [PR #10](https://github.com/Tarasevych/hub/pull/10) | Повний каталог конектора як реальні дії (Figma, Notion, GitHub, Wix, Stripe, випуски). |
 | **[`cursor/release-tar-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/release-tar-8d4d)** | `63a7d48` | 2026-10-15 | — | Гілка пакета випуску `mijn-ruimte-20261015-123546` (реальні дії конекторів). |
 | **[`claude/connector-v2-2026-10-15`](https://github.com/Tarasevych/hub/tree/claude/connector-v2-2026-10-15)** | `4135dfd` | 2026-10-15 | — | Зведення A2/A3: `ai/verbindingen` як єдиний хаб підключень ШІ з підвкладками (`deploy/CONNECTOR-V2.md`). |
-| **[`fix/mail-compose-float-independent`](https://github.com/Tarasevych/hub/tree/fix/mail-compose-float-independent)** | `f7de4d8` | 2026-10-16 | — | Незалежне плаваюче вікно написання листа та автооновлення статусів адмін-панелі кожні 10 с. |
+| **[`fix/mail-compose-float-independent`](https://github.com/Tarasevych/hub/tree/fix/mail-compose-float-independent)** | `f7de4d8` | 2026-10-16 | — | Незалежне рухоме вікно написання листа та автооновлення статусів адмін-панелі кожні 10 с. |
 
 ---
 
@@ -176,7 +176,7 @@
 | **[#4](https://github.com/Tarasevych/hub/pull/4)** | 📦 OPEN (Архів) | `Дві веб-простори: обліковий запис без управління, технічний профіль без користувацького` | `cursor/mcp-spiegel-na-b-8d4d` → `claude/tech-profiel-2026-10-13` | 📦 Історичний PR від 14.10.2026 (код у знімку `016093f`). |
 | **[#3](https://github.com/Tarasevych/hub/pull/3)** | 📦 OPEN (Архів) | `MCP-конектор: відображення дверей (випуск, дошка, карта сервісів)` | `cursor/mcp-spiegel-tools-8d4d` → `claude/tech-profiel-2026-10-13` | 📦 Історичний PR від 14.10.2026 (код у знімку `016093f`). |
 | **[#2](https://github.com/Tarasevych/hub/pull/2)** | 📦 OPEN (Архів) | `SSH-встановлення з’являється в історії й аудиті` | `cursor/ssh-uitrol-audit-8d4d` → `cursor/terminal-etap-c-8d4d` | 📦 Історичний PR від 13.10.2026 (код у знімку `016093f`). |
-| **[#1](https://github.com/Tarasevych/hub/pull/1)** | 📦 OPEN (Архів) | `Etap C: термінал у браузері (xterm), вимкнений за замовчуванням` | `cursor/terminal-etap-c-8d4d` → `claude/tech-profiel-2026-10-13` | 📦 Історичний PR від 13.10.2026 (код у знімку `016093f`). |
+| **[#1](https://github.com/Tarasevych/hub/pull/1)** | 📦 OPEN (Архів) | `Etap C: термінал у браузері (xterm), вимкнений типово` | `cursor/terminal-etap-c-8d4d` → `claude/tech-profiel-2026-10-13` | 📦 Історичний PR від 13.10.2026 (код у знімку `016093f`). |
 
 ---
 
@@ -186,22 +186,22 @@
 
 | № | Тег випуску | Назва випуску | Дата (UTC) | Задача / Контекст |
 |---|---|---|---|---|
-| 1 | [`20261105-003823`](https://github.com/Tarasevych/hub/releases/tag/20261105-003823) | `IDENTITY-ACCOUNT · 20261105-003823` | 2026-11-05 00:38 | `IDENTITY-ACCOUNT` (Pre-release) |
+| 1 | [`20261105-003823`](https://github.com/Tarasevych/hub/releases/tag/20261105-003823) | `IDENTITY-ACCOUNT · 20261105-003823` | 2026-11-05 00:38 | `IDENTITY-ACCOUNT` (попередній випуск) |
 | 2 | [`20261104-204906`](https://github.com/Tarasevych/hub/releases/tag/20261104-204906) | `IDENTITY-ACCOUNT · 20261104-204906` | 2026-11-04 20:49 | `IDENTITY-002` (`feature/identity-account-ui-20261104-180000`) |
 | 3 | [`20261104-191935`](https://github.com/Tarasevych/hub/releases/tag/20261104-191935) | `IDENTITY-ACCOUNT · 20261104-191935` | 2026-11-04 19:19 | `IDENTITY-001` (`feature/identity-account-20261104-120000`) |
-| 4 | [`20261104-164906`](https://github.com/Tarasevych/hub/releases/tag/20261104-164906) | `IDENTITY-ACCOUNT · 20261104-164906` | 2026-11-04 16:49 | `IDENTITY-ACCOUNT` (Pre-release) |
-| 5 | [`20261104-160343`](https://github.com/Tarasevych/hub/releases/tag/20261104-160343) | `IDENTITY-ACCOUNT · 20261104-160343` | 2026-11-04 16:03 | `IDENTITY-ACCOUNT` (Pre-release) |
+| 4 | [`20261104-164906`](https://github.com/Tarasevych/hub/releases/tag/20261104-164906) | `IDENTITY-ACCOUNT · 20261104-164906` | 2026-11-04 16:49 | `IDENTITY-ACCOUNT` (попередній випуск) |
+| 5 | [`20261104-160343`](https://github.com/Tarasevych/hub/releases/tag/20261104-160343) | `IDENTITY-ACCOUNT · 20261104-160343` | 2026-11-04 16:03 | `IDENTITY-ACCOUNT` (попередній випуск) |
 | 6 | [`20261104-160049`](https://github.com/Tarasevych/hub/releases/tag/20261104-160049) | `MAILFIT-001 · 20261104-160049 (unsigned)` | 2026-11-04 16:00 | `MAILFIT-001` (`fix/mailfit-001-20261104-110700`) |
-| 7 | [`20261104-155548`](https://github.com/Tarasevych/hub/releases/tag/20261104-155548) | `MAILFIT-001 · 20261104-155548 (unsigned)` | 2026-11-04 15:55 | `MAILFIT-001` (CI Pre-release) |
-| 8 | [`20261104-154942`](https://github.com/Tarasevych/hub/releases/tag/20261104-154942) | `MAILFIT-001 · 20261104-154942 (unsigned)` | 2026-11-04 15:49 | `MAILFIT-001` (CI Pre-release) |
-| 9 | [`20261104-154114`](https://github.com/Tarasevych/hub/releases/tag/20261104-154114) | `IDENTITY-ACCOUNT · 20261104-154114` | 2026-11-04 15:41 | `IDENTITY-ACCOUNT` (Pre-release) |
-| 10 | [`20261104-153759`](https://github.com/Tarasevych/hub/releases/tag/20261104-153759) | `IDENTITY-ACCOUNT · 20261104-153759` | 2026-11-04 15:38 | `IDENTITY-ACCOUNT` (Pre-release) |
+| 7 | [`20261104-155548`](https://github.com/Tarasevych/hub/releases/tag/20261104-155548) | `MAILFIT-001 · 20261104-155548 (unsigned)` | 2026-11-04 15:55 | `MAILFIT-001` (попередній випуск CI) |
+| 8 | [`20261104-154942`](https://github.com/Tarasevych/hub/releases/tag/20261104-154942) | `MAILFIT-001 · 20261104-154942 (unsigned)` | 2026-11-04 15:49 | `MAILFIT-001` (попередній випуск CI) |
+| 9 | [`20261104-154114`](https://github.com/Tarasevych/hub/releases/tag/20261104-154114) | `IDENTITY-ACCOUNT · 20261104-154114` | 2026-11-04 15:41 | `IDENTITY-ACCOUNT` (попередній випуск) |
+| 10 | [`20261104-153759`](https://github.com/Tarasevych/hub/releases/tag/20261104-153759) | `IDENTITY-ACCOUNT · 20261104-153759` | 2026-11-04 15:38 | `IDENTITY-ACCOUNT` (попередній випуск) |
 | 11 | [`20261104-075953`](https://github.com/Tarasevych/hub/releases/tag/20261104-075953) | `MAILPOLISH-001 · 20261104-075953 (unsigned)` | 2026-11-04 08:00 | `MAILPOLISH-001` (`feature/mailpolish-001-20261104-084133` — у `voornaamst`) |
 | 12 | [`20261104-063430`](https://github.com/Tarasevych/hub/releases/tag/20261104-063430) | `MAILMOB-001 · 20261104-063430 (unsigned)` | 2026-11-04 06:34 | `MAILMOB-001` (`feature/mailmob-001-20261104-073200` — у `voornaamst`) |
 | 13 | [`20261103-211554`](https://github.com/Tarasevych/hub/releases/tag/20261103-211554) | `MAILORBIT-001 · 20261103-211554 (unsigned)` | 2026-11-03 21:16 | `MAILORBIT-001` (`feature/mailorbit-001-20261103-205354` — у `voornaamst`) |
 | 14 | [`login-001-candidate-20261102-092316`](https://github.com/Tarasevych/hub/releases/tag/login-001-candidate-20261102-092316) | `LOGIN-001 · Непідписаний кандидат 20261102-092316` | 2026-11-02 09:23 | `LOGIN-001` (`feature/login-001-20261101-184800-chatgpt`) |
-| 15 | [`login-001-candidate-20261102-070214`](https://github.com/Tarasevych/hub/releases/tag/login-001-candidate-20261102-070214) | `LOGIN-001 · Непідписаний кандидат 20261102-070214` | 2026-11-02 07:02 | `LOGIN-001` (CI Pre-release) |
-| 16 | [`login-001-candidate-20261102-062359`](https://github.com/Tarasevych/hub/releases/tag/login-001-candidate-20261102-062359) | `LOGIN-001 · Непідписаний кандидат 20261102-062359` | 2026-11-02 06:24 | `LOGIN-001` (CI Pre-release) |
-| 17 | [`login-001-candidate-20261102-053006`](https://github.com/Tarasevych/hub/releases/tag/login-001-candidate-20261102-053006) | `LOGIN-001 · Непідписаний кандидат 20261102-053006` | 2026-11-02 05:30 | `LOGIN-001` (CI Pre-release) |
-| 18 | [`login-001-candidate-20261102-010425`](https://github.com/Tarasevych/hub/releases/tag/login-001-candidate-20261102-010425) | `LOGIN-001 · Непідписаний кандидат 20261102-010425` | 2026-11-02 01:04 | `LOGIN-001` (CI Pre-release) |
+| 15 | [`login-001-candidate-20261102-070214`](https://github.com/Tarasevych/hub/releases/tag/login-001-candidate-20261102-070214) | `LOGIN-001 · Непідписаний кандидат 20261102-070214` | 2026-11-02 07:02 | `LOGIN-001` (попередній випуск CI) |
+| 16 | [`login-001-candidate-20261102-062359`](https://github.com/Tarasevych/hub/releases/tag/login-001-candidate-20261102-062359) | `LOGIN-001 · Непідписаний кандидат 20261102-062359` | 2026-11-02 06:24 | `LOGIN-001` (попередній випуск CI) |
+| 17 | [`login-001-candidate-20261102-053006`](https://github.com/Tarasevych/hub/releases/tag/login-001-candidate-20261102-053006) | `LOGIN-001 · Непідписаний кандидат 20261102-053006` | 2026-11-02 05:30 | `LOGIN-001` (попередній випуск CI) |
+| 18 | [`login-001-candidate-20261102-010425`](https://github.com/Tarasevych/hub/releases/tag/login-001-candidate-20261102-010425) | `LOGIN-001 · Непідписаний кандидат 20261102-010425` | 2026-11-02 01:04 | `LOGIN-001` (попередній випуск CI) |
 | 19 | [`20261010-ux`](https://github.com/Tarasevych/hub/releases/tag/20261010-ux) | `mijn-ruimte-20261010-ux` | 2026-10-10 19:30 | Перший базовий реліз після переходу на self-hosting (`Latest`) |

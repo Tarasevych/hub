@@ -10,7 +10,7 @@ het werkt. De uitrol van de deur zelf (ondertekende pakketten, geen root-pad) st
 - **Toestemmingen (grants) per gebruiker en per apparaat.** Zonder geldige toestemming wordt elke opdracht geweigerd
   (`NO_GRANT`). Sets: **Спостерігач / Waarnemer** (alleen lezen, 30 dagen), **Помічник / Helper** (ook openen en klikken,
   elke actie met akkoord, 7 dagen), **Разово / Eenmalig** (bijna alles, 1 uur). Losse toestemmingen met duur en domeinen.
-- **'Altijd'** (zonder akkoord per actie) kan alleen na een nieuwe bevestiging van de aanmelding (step-up), verloopt altijd
+- **'Altijd'** (zonder akkoord per actie) kan alleen na een nieuwe bevestiging van de aanmelding (extra bevestiging), verloopt altijd
   (standaard 30 dagen, maximaal 90 — ook in de database afgedwongen), staat in het logboek en heeft op de site een stopknop.
 - **Destructieve acties** (klikken/typen, schermafbeelding, debugger, schrijven, uitvoeren, Docker) vragen een verse
   goedkeuring (5 minuten geldig), behalve met een geldige 'altijd'-toestemming.

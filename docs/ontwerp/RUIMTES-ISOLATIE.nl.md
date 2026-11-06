@@ -24,7 +24,7 @@ Aanbeveling: eerst `tech-ruimtes-v2`, dan «Тест: так» op `ruimtes-schei
 ## Tabel: gegevenssoort → vandaag → gat → oplossing
 | Soort | Hoe vandaag gescheiden | Gat | Oplossing (0123) |
 |---|---|---|---|
-| Post: lijst, berichten, inhoud, bijlagen, concepten, wachtrij, labels | poort `metMailRuimte` voor elke `/api/owner/mail/*`, lade in AsyncLocalStorage, `mail_ruimte_account`; Google-principals via `ladeOf` | ruimte van het tabblad werd geloofd via alleen een geregistreerde tabbladcode (ook vanuit een andere aanmelding) | ruimte alleen via de ankersessie van het verzoek + HMAC-binding (`besluit`) |
+| Post: lijst, berichten, inhoud, bijlagen, concepten, wachtrij, etiketten | poort `metMailRuimte` voor elke `/api/owner/mail/*`, lade in AsyncLocalStorage, `mail_ruimte_account`; Google-principals via `ladeOf` | ruimte van het tabblad werd geloofd via alleen een geregistreerde tabbladcode (ook vanuit een andere aanmelding) | ruimte alleen via de ankersessie van het verzoek + HMAC-binding (`besluit`) |
 | Post-zoekindex, globaal zoeken, zoekgeschiedenis | `gegevensRuimteVeilig`, `zoek_*`.`ruimte` | idem | idem; RLS-hek op `zoek_geschiedenis` |
 | Meldingen (bel 99+) | `meldingen-ruimte.ts`: lade + sfeer, lezen/tellen/gelezen per tabblad | idem | idem |
 | Werkblad (v3, blokken, plekken), vensters | `werkbladLade` → `gegevensRuimteVeilig`; kolom `ruimte` | idem | idem; RLS-hek op werkblad_*, venster_stand |
@@ -34,7 +34,7 @@ Aanbeveling: eerst `tech-ruimtes-v2`, dan «Тест: так» op `ruimtes-schei
 | MCP-consolelogboek | geen ruimte | technische aanroepen zichtbaar in privé | kolom `ruimte` (standaard prive), schrijven met ruimte van de verbinding, lezen gefilterd |
 | connector_tool_calls | geen ruimte, bewust altijd technisch (connectors-routes.ts) | geen | ongewijzigd |
 | UI-voorkeuren (menu, taal, zijbalk, thema) | per account | gedeeld tussen ruimtes | **besluit Pavlo** (zie onder); niet gewijzigd |
-| HTTP-cache | alles POST, service worker slaat `/api/` over | geen `no-store`/`Vary` | `Cache-Control: no-store`, `Vary: Cookie`, `X-Ruimte` op elk ingelogd `/api/`-antwoord |
+| HTTP-cache | alles POST, service achtergrondproces slaat `/api/` over | geen `no-store`/`Vary` | `Cache-Control: no-store`, `Vary: Cookie`, `X-Ruimte` op elk ingelogd `/api/`-antwoord |
 | Browsercache (localStorage, IndexedDB, geheugen) | sleutels zonder ruimte | leesvenster toont privélief in technisch tabblad | contract `ruimteSleutel(ruimte, sleutel)` voor Agent 2 |
 | WebSocket/SSE (terminal, extensie, extern) | eigen tokens/ontgrendelingen per ruimte | ankercontrole per opdracht (Agent 5 §4.2) | niet in deze tak — zie «niet gedaan» |
 | Exporten (privacy-export) | identity-sessie, per account | bevat beide ruimtes van dezelfde mens | bewust (eigen gegevens van de mens); geen wijziging |

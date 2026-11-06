@@ -23,7 +23,7 @@ API-маршрути, step-up, lockout-захист, шифрування.
   сесії — ті самі компоненти секцій всередині деталь-панелей; TOTP-секрет видно лише в деталі.
 - **Останній робочий шлях входу захищено** від вимкнення — з поясненням на картці (beschermd).
 - **Справжні контури нових провайдерів (бекенд уже в коді, вмикається ключами власника)**:
-  - Microsoft, Discord: OAuth2 code flow + PKCE S256, одноразовий state (TTL 10 хв, спалюється ДО обміну),
+  - Microsoft, Discord: OAuth2 code потік + PKCE S256, одноразовий стан (TTL 10 хв, спалюється ДО обміну),
     перевірка id_token підписом із JWKS (iss/aud/exp/nonce) або /users/@me;
   - Telegram: Login Widget із серверною перевіркою HMAC-SHA256 і свіжості auth_date (≤10 хв);
   - Apple: клієнтський секрет = ES256-JWT із p8-ключа (потрібен платний Apple Developer);
@@ -41,14 +41,14 @@ API-маршрути, step-up, lockout-захист, шифрування.
 ## Нові маршрути (усе під сесією власника, фіксований перелік сервісів)
 
 - POST /api/owner/aanmeld/vnext/aanbieders — живий стан 6 провайдерів (ключі-назви, самотест, гекоппельд).
-- POST /api/owner/aanmeld/vnext/zelftest { id } — read-only самотест власного контуру + аудит.
+- POST /api/owner/aanmeld/vnext/zelftest { id } — лише для читання самотест власного контуру + аудит.
 - POST /api/owner/aanmeld/vnext/start { id } — authorize-URL (або параметри віджета Telegram); 409 без
   klaarVoorKoppeling.
-- GET /api/aanmeld/koppel/:aanbieder/terug — колбек: state+PKCE / HMAC / id_token → прив'язка + подія.
+- GET /api/aanmeld/koppel/:aanbieder/terug — колбек: стан+PKCE / HMAC / id_token → прив'язка + подія.
 - POST /api/owner/aanmeld/vnext/ontkoppel { id } — відв'язати (з step-up, останній шлях не чіпається).
 
 Колекції: `aanmeld_koppelingen_v1` (ownerUserId, aanbieder, subject, маскована мітка),
-`aanmeld_states_v1` (одноразові state, TTL), `aanmeld_zelftest_v1`. Ключі середовища:
+`aanmeld_states_v1` (одноразові стан, TTL), `aanmeld_zelftest_v1`. Ключі середовища:
 AANMELD_MICROSOFT_CLIENT_ID/_CLIENT_SECRET, AANMELD_DISCORD_CLIENT_ID/_CLIENT_SECRET,
 AANMELD_TELEGRAM_BOT_TOKEN/_BOT_NAAM, AANMELD_APPLE_CLIENT_ID/_TEAM_ID/_KEY_ID/_PRIVATE_KEY
 (+ AANMELD_<ID>_BASIS і AANMELD_TERUG_BASIS лише для тестових середовищ).
@@ -56,7 +56,7 @@ AANMELD_TELEGRAM_BOT_TOKEN/_BOT_NAAM, AANMELD_APPLE_CLIENT_ID/_TEAM_ID/_KEY_ID/_
 ## Тести
 
 - Юніт: aanmeld-koppel-20261030 (64) — повні контури проти нагобудованого провайдера (PKCE, JWKS, ES256,
-  HMAC, антиповтор state, маскування); aanmeld-ui-20261030 (105) — мапер карток, контракт, чесність станів.
+  HMAC, антиповтор стан, маскування); aanmeld-ui-20261030 (105) — мапер карток, контракт, чесність станів.
 - E2E aanmeldmethoden-vnext (37): прапорець вимк/увімк; чесні картки; деталі зі справжніми секціями;
   TOTP start→confirm→disable через СПРАВЖНІЙ step-up-діалог (RFC-6238 у тесті, антиреплей сервера
   шановано); каталог без кнопки до самотесту; повний цикл підключення Microsoft із доказом PKCE;

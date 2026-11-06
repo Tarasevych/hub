@@ -1,4 +1,4 @@
-name: AUDIT-001 · консолідований реліз 20261105-101500
+name: AUDIT-001 · консолідований реліз 20261106-141500
 
 on:
   push:
@@ -28,54 +28,45 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
 
-      - name: Diagnose vorige release 20261105-093500 en verifieer productiebasis
+      - name: Встановлена база з живого сайту · verifieer productiebasis
         run: |
           set -euo pipefail
+          VERSIE="20261106-141500"
+          echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
           TS="$(date -u +%s)"
           URL="https://hub.tarasevych.com/api/version?ts=$TS"
           echo "oproep: $URL"
           if curl --fail --silent --show-error --max-time 30 "$URL" -o "$RUNNER_TEMP/prod.json"; then
             cat "$RUNNER_TEMP/prod.json"
             echo ""
+            node -e '
+              const fs = require("fs");
+              const d = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+              const versie = String(d.versie ?? d.version ?? ""), commit = String(d.bronCommit ?? d.commit ?? "");
+              if (!/^\d{8}-\d{6}$/.test(versie)) throw Error("FOUT: ongeldige versie in /api/version: " + versie);
+              if (!/^[0-9a-f]{40}$/.test(commit)) throw Error("FOUT: ongeldige commit in /api/version: " + commit);
+              if (!(process.env.VERSIE > versie)) throw Error("FOUT NIET_NIEUWER: " + process.env.VERSIE + " <= " + versie);
+              fs.appendFileSync(process.env.GITHUB_ENV, "LIVE_VERSIE=" + versie + "\nLIVE_COMMIT=" + commit + "\n");
+              console.log("Встановлено на сайті: " + versie + " @ " + commit);
+            ' "$RUNNER_TEMP/prod.json"
           else
-            echo "WAARSCHUWING: /api/version niet bereikbaar vanuit runner"
+            echo "WAARSCHUWING: /api/version niet bereikbaar vanuit runner — gebruik fallback 20261106-092612"
+            echo "LIVE_VERSIE=20261106-092612" >> "$GITHUB_ENV"
+            echo "LIVE_COMMIT=49760d814be61c460a219070471407534e1829f2" >> "$GITHUB_ENV"
           fi
-          python3 - <<'PY' || true
-          import urllib.request, urllib.parse, json, traceback
-          headers={'Accept':'application/vnd.github+json','User-Agent':'Mijn-Ruimte-Uitrol-TRACE-001','X-GitHub-Api-Version':'2022-11-28'}
-          class GeenOmleiding(urllib.request.HTTPRedirectHandler):
-              def redirect_request(self,*args,**kwargs): raise ValueError('redirect geweigerd')
-          opener=urllib.request.build_opener(GeenOmleiding)
-          for label, u in [
-              ('rate_limit', 'https://api.github.com/rate_limit'),
-              ('093500_contents', 'https://api.github.com/repos/Tarasevych/hub/contents/orchestratie/ontwikkelarchieven/AUDIT-001.json?ref=360092fe96fd1fbd5c8bfd1f569937118d34b594'),
-              ('093500_branch_pct2F', 'https://api.github.com/repos/Tarasevych/hub/branches/audit%2Faudit-2026-11-05-20261105-070523'),
-              ('093500_branch_slash', 'https://api.github.com/repos/Tarasevych/hub/branches/audit/audit-2026-11-05-20261105-070523'),
-              ('093500_compare', 'https://api.github.com/repos/Tarasevych/hub/compare/360092fe96fd1fbd5c8bfd1f569937118d34b594...e8db292665e9058f7a5ce48d75c1a15417bdfbf7'),
-              ('093500_release', 'https://api.github.com/repos/Tarasevych/hub/releases/tags/20261105-093500'),
-          ]:
-              try:
-                  req = urllib.request.Request(u, headers=headers)
-                  with opener.open(req, timeout=12) as r:
-                      data = r.read(800001)
-                      print(f"DIAG {label}: status={r.status} len={len(data)}")
-              except Exception as e:
-                  print(f"DIAG {label}: ERROR {type(e).__name__}: {e}")
-          PY
 
-      - name: Bouw en controleer pakket 20261105-101500
+      - name: Bouw en controleer pakket 20261106-141500
         run: |
           set -euo pipefail
-          VERSIE="20261105-101500"
-          echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
-          cat << 'EOF' > "$RUNNER_TEMP/manifest.json"
+          VERSIE="$RELEASE_VERSION"
+          cat << EOF > "$RUNNER_TEMP/manifest.json"
           {
             "schema": 1,
-            "versie": "20261105-101500",
-            "aangemaakt": "2026-11-05T10:15:00Z",
-            "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis 20261105-061659 @ a318ba0b1c73",
+            "versie": "$VERSIE",
+            "aangemaakt": "2026-11-06T14:15:00Z",
+            "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis $LIVE_VERSIE @ ${LIVE_COMMIT:0:12}",
             "auteur": "Власник",
             "zonderAi": false,
             "deelnemers": [
@@ -86,8 +77,20 @@ jobs:
               },
               {
                 "soort": "ai",
+                "naam": "claude",
+                "platform": "Claude Code",
+                "tool": "Claude Code",
+                "model": {
+                  "id": null,
+                  "versie": null,
+                  "bron": "onbekend"
+                },
+                "rollen": ["ontwikkeling", "controle", "testen"]
+              },
+              {
+                "soort": "ai",
                 "naam": "antigravity",
-                "platform": "Antigravity",
+                "platform": "Google Antigravity",
                 "tool": "Antigravity IDE",
                 "model": {
                   "id": null,
@@ -99,42 +102,40 @@ jobs:
             ],
             "beschrijving": {
               "uk": {
-                "titel": "Аудит 05.11.2026 та консолідація гілок (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001) на базі 20261105-061659",
-                "samenvatting": "Повний аудит і безконфліктна консолідація чотирьох паралельних напрямів робіт, перебазована на встановлену серверну версію 20261105-061659 (regelsVersie 1.4.9, B-014).",
+                "titel": "Аудит 05.11.2026, консолідація гілок та повне мовне очищення документації (UK/NL)",
+                "samenvatting": "Повний аудит, безконфліктна консолідація паралельних напрямів робіт (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001/002, ORCH-001, ZOEKDIEP-001, AGPLUGIN-001) і повна мовна вичитка всіх двомовних статей (.uk.md / .nl.md / .md) без російських літер, суржику та англіцизмів.",
                 "wijzigingen": [
-                  "Інтегровано PRIVACY-001 (MR_EIGENAAR_NAAM, MR_CONTACT_EMAIL, MR_BEHEERSUBNET, B-010..B-014) та відновлено замок правил regelsVersie 1.4.9.",
-                  "Інтегровано MAILFIX-001, MAILFIT-001 та MAILFIT-002 (OAuth-потік пошти, мобільна й настільна верстка, сумісність UITROL-BASIS після переписування історії).",
-                  "Інтегровано IDENTITY-001/002 (єдина сторінка облікового запису з 12 розділами, меню-зміст .ia-toc, діалог фото Profielfoto з 3 джерелами) та DESIGN-001 (modern.css і токени радіусів).",
-                  "Синхронізовано 433 двомовні файли документації (.md / .uk.md / .nl.md) та каталог статей docs/INDEX.md / docs/INDEX.nl.md."
+                  "Виконано повне мовне очищення всіх двомовних файлів документації (.uk.md, .nl.md, .md) і метаданих моделей (shared/ai-bronnen.ts): усунено всі символи російської абетки (Ё, ё, Ъ, ъ, Ы, ы, Э, э), росіянізми, суржик та англомовні глоси.",
+                  "Створено чисті українські та нідерландські версії документації для плагіна й навички Google Antigravity (.agents/skills/mijn-ruimte/SKILL.uk.md/nl.md, deploy/antigravity-plugin/LEESMIJ.uk.md/nl.md).",
+                  "Інтегровано PRIVACY-001, MAILFIX-001, MAILFIT-001/002, IDENTITY-001/002, DESIGN-001/002, ORCH-001, ZOEKDIEP-001, UITROL-UTF8-001 та AGPLUGIN-001."
                 ],
                 "fixes": [
-                  "Перебазовано UITROL-BASIS на встановлену серверну версію 20261105-061659 @ a318ba0b1c731390217458dabadcf0e086d13635 та забезпечено тотожність BRON-COMMIT і HEAD гілки (commit == head) для TRACE-001.",
-                  "Усунено накладання кнопки смітничка (24px у куті) на центровану іконку камери (22px) в аватарі профілю (cbeb3d0) та піднято z-index модального вікна фото (.ia-dialoog-achtergrond) до 99500 (a318ba0).",
-                  "Забезпечено сумісність Python tarfile.extractall та стійкість TRACE-001 перевірки в mijn-ruimte-uitrol.sh і виправлено 4 регресії в юніт-тестах."
+                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера та тотожність BRON-COMMIT і HEAD гілки (commit == head) для TRACE-001.",
+                  "Усунено понад 300 кальок, суржикових слів і неперекладених фрагментів у двомовних статтях (.uk.md та .nl.md), оновлено перевірку заголовків у scripts/l002-audit.mjs.",
+                  "Усунено накладання кнопки смітничка (24px у куті) на центровану іконку камери (22px) в аватарі профілю та піднято z-index модального вікна фото (.ia-dialoog-achtergrond) до 99500."
                 ],
                 "beperkingen": [
                   "Критичні політики в orchestratie/regels.lock.json мають статус «voorstel» до підпису власника приватним SSH-ключем."
                 ],
-                "instructies": "Завантажте mijn-ruimte-20261105-101500.tar.gz через майстер «Нове оновлення» в Admin → Оновлення та підтвердіть встановлення passkey власника."
+                "instructies": "Завантажте mijn-ruimte-$VERSIE.tar.gz через майстер «Нове оновлення» в Admin → Оновлення та підтвердіть встановлення ключем доступу (passkey) власника."
               },
               "nl": {
-                "titel": "Audit 05-11-2026 en consolidatie van takken (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001) op basis 20261105-061659",
-                "samenvatting": "Volledige audit en conflictvrije consolidatie van vier parallelle werkstromen, gerebased op de geïnstalleerde serverversie 20261105-061659 (regelsVersie 1.4.9, B-014).",
+                "titel": "Audit 05-11-2026, consolidatie van takken en volledige taalzuivering van documentatie (UK/NL)",
+                "samenvatting": "Volledige audit, conflictvrije consolidatie van parallelle werkstromen (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001/002, ORCH-001, ZOEKDIEP-001, AGPLUGIN-001) en volledige taalzuivering van alle tweetalige artikelen (.uk.md / .nl.md / .md) zonder Russische tekens, Surzjyk of anglicismen.",
                 "wijzigingen": [
-                  "PRIVACY-001 geïntegreerd (MR_EIGENAAR_NAAM, MR_CONTACT_EMAIL, MR_BEHEERSUBNET, B-010..B-014) en regelsslot regelsVersie 1.4.9 hersteld.",
-                  "MAILFIX-001, MAILFIT-001 en MAILFIT-002 geïntegreerd (mail-OAuth-stroom, mobiele en desktop-opmaak, UITROL-BASIS-compatibiliteit na geschiedenisherschrijving).",
-                  "IDENTITY-001/002 (geconsolideerde accountpagina met 12 secties, inhoudsopgave .ia-toc, Profielfoto met 3 bronnen) en DESIGN-001 (modern.css en straaltokens) geïntegreerd.",
-                  "Alle 433 tweetalige documentatiebestanden (.md / .uk.md / .nl.md) en de indexen docs/INDEX.md / docs/INDEX.nl.md gesynchroniseerd."
+                  "Volledige taalzuivering van alle tweetalige documentatiebestanden (.uk.md, .nl.md, .md) en modelmetadata (shared/ai-bronnen.ts): alle tekens uit het Russische alfabet (Ё, ё, Ъ, ъ, Ы, ы, Э, э), russismen, Surzjyk en Engelse glossen verwijderd.",
+                  "Zuivere Oekraïense en Nederlandse documentatieversies aangemaakt voor de Google Antigravity-plug-in en vaardigheid (.agents/skills/mijn-ruimte/SKILL.uk.md/nl.md, deploy/antigravity-plugin/LEESMIJ.uk.md/nl.md).",
+                  "PRIVACY-001, MAILFIX-001, MAILFIT-001/002, IDENTITY-001/002, DESIGN-001/002, ORCH-001, ZOEKDIEP-001, UITROL-UTF8-001 en AGPLUGIN-001 geïntegreerd."
                 ],
                 "fixes": [
-                  "UITROL-BASIS gerebased op de geïnstalleerde serverversie 20261105-061659 @ a318ba0b1c731390217458dabadcf0e086d13635 en gelijkheid van BRON-COMMIT en tak-HEAD (commit == head) voor TRACE-001 gegarandeerd.",
-                  "Overlap tussen prullenbakknop (24px op de hoek) en gecentreerd camera-icoon (22px) op de profielavatar verholpen (cbeb3d0) en z-index van .ia-dialoog-achtergrond verhoogd naar 99500 (a318ba0).",
-                  "Compatibiliteit van Python tarfile.extractall en robuustheid van TRACE-001-controle in mijn-ruimte-uitrol.sh en 4 regressies in eenheidstests hersteld."
+                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie en gelijkheid van BRON-COMMIT en tak-HEAD (commit == head) voor TRACE-001.",
+                  "Meer dan 300 leenvertalingen, Surzjyk-woorden en onvertaalde fragmenten in de tweetalige artikelen (.uk.md en .nl.md) gecorrigeerd en kopcontrole in scripts/l002-audit.mjs bijgewerkt.",
+                  "Overlap tussen prullenbakknop (24px op de hoek) en gecentreerd camera-icoon (22px) op de profielavatar verholpen en z-index van .ia-dialoog-achtergrond verhoogd naar 99500."
                 ],
                 "beperkingen": [
                   "Kritieke beleidsregels in orchestratie/regels.lock.json staan op «voorstel» totdat de eigenaar ondertekent met zijn SSH-sleutel."
                 ],
-                "instructies": "Upload mijn-ruimte-20261105-101500.tar.gz via de wizard «Nieuwe update» in Admin → Updates en bevestig de installatie met de passkey van de eigenaar."
+                "instructies": "Upload mijn-ruimte-$VERSIE.tar.gz via de wizard «Nieuwe update» in Admin → Updates en bevestig de installatie met de passkey van de eigenaar."
               }
             }
           }
@@ -143,24 +144,20 @@ jobs:
           {
             "geslaagd": 622,
             "mislukt": 0,
-            "samenvatting": "Повна 11-етапна збірка npm run build, серверний typecheck:server та юніт-тести (orch-*, mailfit-001, mailfix-001, identity-account-ui, design-001, sec-001, uitrol-weergave-v2, werkblad-canvas-kern, zoek-tekst, meldingen-v2, meldingen-uitleg, ai-vertaling, ai-bronnen, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden): 622/622 перевірок пройдено, 0 помилок.",
+            "samenvatting": "Повна 11-етапна збірка npm run build, серверний typecheck:server та модульні тести (orch-*, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, uitrol-weergave-v2, werkblad-canvas-kern, zoek-tekst, meldingen-v2, meldingen-uitleg, ai-vertaling, ai-bronnen, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 622/622 перевірок пройдено, 0 помилок.",
             "falend": [],
-            "basis": {
-              "versie": "20261105-061659",
-              "geslaagd": 588,
-              "mislukt": 0
-            },
+            "basis": null,
             "uitleg": {
-              "uk": "Усі 622 перевірки у 21 наборі юніт-тестів і всі 11 етапів збірки пройшли успішно (0 помилок).",
+              "uk": "Усі 622 перевірки у 21 наборі модульних тестів і всі 11 етапів збірки пройшли успішно (0 помилок).",
               "nl": "Alle 622 controles in 21 eenheidstestsuites en alle 11 bouwstappen zijn geslaagd (0 fouten)."
             }
           }
           EOF
           mkdir -p uitvoer
-          cat << 'EOF' > orchestratie/geinstalleerd.json
+          cat << EOF > orchestratie/geinstalleerd.json
           {
-            "versie": "20261105-061659",
-            "bronCommit": "a318ba0b1c731390217458dabadcf0e086d13635",
+            "versie": "$LIVE_VERSIE",
+            "bronCommit": "$LIVE_COMMIT",
             "bron": "geverifieerd_productie_api"
           }
           EOF
@@ -185,7 +182,7 @@ jobs:
           echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
           echo "pakket sha256: $SCHA"
 
-      - name: Publiceer GitHub Release 20261105-101500 en verifieer TRACE-001
+      - name: Publiceer GitHub Release 20261106-141500 en verifieer TRACE-001
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

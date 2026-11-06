@@ -1,56 +1,56 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./CLOUD_IMPLEMENTATION_SPEC.uk.md) · [🇳🇱 **Nederlandse versie**](./CLOUD_IMPLEMENTATION_SPEC.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# Cloud Technical Specification — Workspace Functional
+# Технічна специфікація Cloud — Функціонал робочого простору
 
-## 1. Phase 1 scope
+## 1. Обсяг Фази 1
 
-### Implemented core
+### Реалізоване ядро
 
-- separate Cloud workspace aggregate;
-- Project Starter with four templates and generated shallow sections;
-- Smart Capture for notes, links and safe files;
-- optional placement: Quick Capture is the default;
-- AI naming, metadata and existing-workspace suggestion;
-- deterministic fallback when AI is unavailable;
-- own private object storage;
-- one-click placement from Quick Capture;
-- item states: saved, waiting review, in progress, done;
-- weighted context search;
-- Resume pointer;
-- low/medium/high energy density;
-- workspace Focus mode integrated with CanonicalChrome;
-- truthful provider-account boundary.
+- окремий агрегат робочого простору Cloud;
+- Project Starter із чотирма шаблонами та згенерованими поверхневими секціями;
+- Smart Capture для нотаток, посилань і безпечних файлів;
+- необов'язкове розміщення: Quick Capture використовується типово;
+- іменування за допомогою ШІ, метадані та пропозиція наявного робочого простору;
+- детермінований резервний варіант, коли ШІ недоступний;
+- власне приватне об'єктне сховище;
+- розміщення в один клік із Quick Capture;
+- стани елементів: збережено (`captured`), очікує перегляду (`waiting_review`), у роботі (`in_progress`), виконано (`done`);
+- зважений контекстний пошук;
+- вказівник продовження роботи (Resume pointer);
+- низька/середня/висока щільність інтерфейсу відповідно до рівня енергії;
+- режим концентрації (Focus режим) робочого простору, інтегрований із CanonicalChrome;
+- чесна межа облікових записів провайдерів.
 
-### Explicitly not active
+### Явно не активовано
 
-- Google Drive, OneDrive or Dropbox OAuth/sync;
-- background deep-content workers;
-- OCR and photo sorting;
-- vector embeddings;
-- sharing;
-- reminders/notifications;
-- version history UI;
-- destructive deletion.
+- OAuth/синхронізація для Google Drive, OneDrive або Dropbox;
+- фонові воркери глибокого аналізу вмісту;
+- OCR та сортування фотографій;
+- векторні ембедінги;
+- спільний доступ (sharing);
+- нагадування/сповіщення;
+- інтерфейс історії версій;
+- деструктивне видалення.
 
-## 2. Unified Cloud API
+## 2. Єдиний Cloud API (Unified Cloud API)
 
-All requests use canonical Cloud session context and POST transport to preserve the existing ecosystem contract.
+Усі запити використовують канонічний контекст сесії Cloud і транспорт POST для збереження чинного контракту екосистеми.
 
-| Endpoint | Purpose |
+| Ендпоінт | Призначення |
 |---|---|
-| `/api/owner/cloud/bootstrap` | owner-scoped workspaces, items, Quick Capture, Resume and truthful capabilities |
-| `/api/owner/cloud/workspaces/create` | create workspace and template sections |
-| `/api/owner/cloud/capture` | capture note/link/file; AI + fallback metadata |
-| `/api/owner/cloud/items/:id/place` | confirm workspace placement |
-| `/api/owner/cloud/items/:id/status` | update functional state |
-| `/api/owner/cloud/items/:id/open` | update Resume and issue signed file URL or return note/link |
-| `/api/owner/cloud/search` | weighted context search |
-| `/api/owner/cloud/resume` | persist workspace/item/focus/energy context |
-| `/api/owner/cloud/platform-status` | evidence-oriented actual-state contract |
+| `/api/owner/cloud/bootstrap` | ізольовані за власником робочі простори, елементи, Quick Capture, Resume та реальні можливості (capabilities) |
+| `/api/owner/cloud/workspaces/create` | створення робочого простору та секцій шаблону |
+| `/api/owner/cloud/capture` | захоплення нотатки/посилання/файлу; ШІ + резервні метадані |
+| `/api/owner/cloud/items/:id/place` | підтвердження розміщення в робочому просторі |
+| `/api/owner/cloud/items/:id/status` | оновлення функціонального стану |
+| `/api/owner/cloud/items/:id/open` | оновлення Resume та видача підписаного URL файлу або повернення нотатки/посилання |
+| `/api/owner/cloud/search` | зважений контекстний пошук |
+| `/api/owner/cloud/resume` | збереження контексту робочого простору/елемента/фокусу/енергії |
+| `/api/owner/cloud/platform-status` | орієнтований на докази контракт фактичного стану |
 
-## 3. Validation and error contract
+## 3. Контракт валідації та помилок
 
-Stable error codes include:
+Стабільні коди помилок включають:
 
 - `OWNER_CLOUD_SESSION_REQUIRED`;
 - `CLOUD_WORKSPACE_TITLE_REQUIRED`;
@@ -66,56 +66,56 @@ Stable error codes include:
 - `CLOUD_ITEM_STATUS_INVALID`;
 - `CLOUD_SEARCH_QUERY_REQUIRED`.
 
-User-facing copy translates failures into calm, non-punitive messages and confirms that input/data was not discarded whenever true.
+Тексти для користувача перетворюють збої на спокійні, некаральні повідомлення та підтверджують, що введені дані не було втрачено, коли це відповідає дійсності.
 
-## 4. UX information architecture
+## 4. Інформаційна архітектура UX
 
-Canonical local tabs:
+Канонічні локальні вкладки:
 
-1. Overview;
-2. Workspaces;
-3. Smart Capture;
-4. Quick Capture;
-5. Search;
-6. Recent;
-7. Accounts.
+1. Огляд (Огляд);
+2. Робочі простори (Workspaces);
+3. Розумне захоплення (Smart Capture);
+4. Швидке захоплення (Quick Capture);
+5. Пошук (Пошук);
+6. Нещодавні (Recent);
+7. Облікові записи.
 
-Low-energy mode removes secondary metrics and reduces visible context. Focus mode hides only the Canonical sidebar while preserving account/session controls.
+Режим низької енергії прибирає другорядні метрики та зменшує обсяг видимого контексту. Режим фокусу приховує лише бічну панель Canonical, зберігаючи елементи керування обліковим записом і сесією.
 
-## 5. Accessibility requirements
+## 5. Вимоги до доступності (Accessibility)
 
-- labels or explicit accessible names on every input/control;
-- visible keyboard focus;
-- `role=alert` for identified errors and `role=status` for success;
-- no color-only status communication;
-- minimum touch target follows the canonical shell sizing;
-- dialogs are modal, labelled and closeable;
-- reduced-motion preference disables nonessential animation;
-- consistent placement and bilingual UA/NL copy;
-- no mandatory naming or workspace selection during capture.
+- підписи (`labels`) або явні доступні імена на кожному полі введення / елементі керування;
+- видимий фокус клавіатури;
+- `role=alert` для виявлених помилок та `role=status` для успішних дій;
+- жодної передачі статусу виключно кольором;
+- мінімальна область дотику відповідає канонічним розмірам оболонки;
+- діалогові вікна є модальними, мають підписи та можуть бути закриті;
+- налаштування зменшення руху (`reduced-motion`) вимикає необов'язкову анімацію;
+- послідовне розташування елементів і двомовні тексти (UA/NL);
+- відсутність обов'язкового іменування чи вибору робочого простору під час захоплення.
 
-## 6. Acceptance tests
+## 6. Приймальні тести (Acceptance tests)
 
-### Core sanity
-Create a workspace, capture a note without placement, observe an AI/fallback title and place it with one action.
+### Базова перевірка ядра (Core sanity)
+Створити робочий простір, захопити нотатку без розміщення, побачити заголовок від ШІ або резервний варіант і розмістити її однією дією.
 
-### Resume
-Open an item, refresh, use “You stopped here”, and return to the same item/workspace.
+### Відновлення роботи (Resume)
+Відкрити елемент, оновити сторінку, скористатися блоком «Ви зупинилися тут» (“Ви stopped тут”) і повернутися до того самого елемента/робочого простору.
 
-### Guardrail
-Attempt unsupported/oversized file capture; show a calm error and create no item.
+### Захисні обмеження (Guardrail)
+Спробувати захопити непідтримуваний або завеликий файл; отримати спокійне повідомлення про помилку без створення елемента.
 
-### Isolation regression
-Cloud changes must not alter Mail routes, Mail source modules, provider token tables, CanonicalChrome, AccountMenu or OAuth behavior.
+### Регресія ізоляції (Isolation regression)
+Зміни в Cloud не повинні змінювати маршрути Mail, вихідні модулі Mail, таблиці токенів провайдерів, CanonicalChrome, AccountMenu або поведінку OAuth.
 
-### Responsive/accessibility
-At 375×667, Smart Capture, workspace creation, Quick Capture placement, Focus exit and account control remain reachable by keyboard/touch.
+### Адаптивність і доступність (Responsive/accessibility)
+При роздільній здатності 375×667 Smart Capture, створення робочого простору, розміщення з Quick Capture, вихід із режиму фокусу та керування обліковим записом залишаються доступними з клавіатури та на дотик.
 
-## 7. Rollout gates
+## 7. Контрольні ворота розгортання
 
-1. source validation and TypeScript build;
-2. automated E2E terminal pass;
-3. zero frontend/backend runtime errors;
-4. rollback Version ID recorded;
-5. owner browser check on `cloud.tarasevych.com`;
-6. provider OAuth remains disabled until a separate accepted slice.
+1. валідація вихідного коду та збірка TypeScript;
+2. успішне проходження автоматизованих термінальних E2E-тестів;
+3. нуль помилок часу виконання (runtime помилки) на фронтенді й бекенді;
+4. зафіксований Версія ID для відкату;
+5. перевірка власником у браузері на `cloud.tarasevych.com`;
+6. OAuth провайдерів залишається вимкненим до окремого прийнятого етапу.

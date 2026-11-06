@@ -22,12 +22,12 @@ API-routes, step-up, lockout-bescherming en versleuteling.
 - **Bestaande stromen worden hergebruikt**: passkeys, herstelcodes, TOTP, wachtwoord, sleutelkluis, vertrouwde apparaten
   en sessies gebruiken dezelfde sectiecomponenten binnen de detailpanelen; het TOTP-geheim is alleen zichtbaar in het detailpaneel.
 - **Het laatste werkende aanmeldpad is beschermd** tegen uitschakelen — met toelichting op de kaart (`beschermd`).
-- **Echte ketens voor nieuwe providers (backend zit al in de code, wordt geactiveerd met sleutels van de eigenaar)**:
-  - Microsoft, Discord: OAuth2 code flow + PKCE S256, eenmalige `state` (TTL 10 min, wordt verbrand VÓÓR de tokenuitwisseling),
+- **Echte ketens voor nieuwe aanbieders (backend zit al in de code, wordt geactiveerd met sleutels van de eigenaar)**:
+  - Microsoft, Discord: OAuth2 code stroom + PKCE S256, eenmalige `state` (TTL 10 min, wordt verbrand VÓÓR de tokenuitwisseling),
     verificatie van `id_token`-handtekening via JWKS (`iss`/`aud`/`exp`/`nonce`) of `/users/@me`;
   - Telegram: Login Widget met server-side controle van HMAC-SHA256 en versheid van `auth_date` (≤10 min);
-  - Apple: client secret = ES256-JWT uit p8-sleutel (vereist een betaald Apple Developer-account);
-  - koppeling UITSLUITEND aan het reeds ingelogde account (geen nieuwe accounts via deze paden), gemaskeerde labels,
+  - Apple: client geheim = ES256-JWT uit p8-sleutel (vereist een betaald Apple Developer-account);
+  - koppeling UITSLUITEND aan het reeds ingelogde account (geen nieuwe accounts via deze paden), gemaskeerde etiketten,
     audit van elke stap en rate-limiting.
 - **Weergaveregel (bestek §4) nageleefd**: de knop "Koppelen" verschijnt pas wanneer de server `klaarVoorKoppeling`
   teruggeeft (alle sleutels van de eigenaar zijn aanwezig ÉN de zelftest van de keten is geslaagd). Tot dat moment toont de kaart eerlijk
@@ -40,22 +40,22 @@ API-routes, step-up, lockout-bescherming en versleuteling.
 
 ## Nieuwe routes (alles onder de eigenaarsessie, vaste lijst met diensten)
 
-- `POST /api/owner/aanmeld/vnext/aanbieders` — live status van 6 providers (sleutelnamen, zelftest, `gekoppeld`).
-- `POST /api/owner/aanmeld/vnext/zelftest { id }` — read-only zelftest van de eigen keten + audit.
+- `POST /api/owner/aanmeld/vnext/aanbieders` — live status van 6 aanbieders (sleutelnamen, zelftest, `gekoppeld`).
+- `POST /api/owner/aanmeld/vnext/zelftest { id }` — alleen-lezen zelftest van de eigen keten + audit.
 - `POST /api/owner/aanmeld/vnext/start { id }` — authorize-URL (of parameters voor de Telegram-widget); 409 zonder
   `klaarVoorKoppeling`.
 - `GET /api/aanmeld/koppel/:aanbieder/terug` — callback: `state`+PKCE / HMAC / `id_token` → koppeling + gebeurtenis.
 - `POST /api/owner/aanmeld/vnext/ontkoppel { id }` — ontkoppelen (met step-up, het laatste pad blijft onaangeroerd).
 
-Collecties: `aanmeld_koppelingen_v1` (`ownerUserId`, `aanbieder`, `subject`, gemaskeerd label),
-`aanmeld_states_v1` (eenmalige states, TTL), `aanmeld_zelftest_v1`. Omgevingsvariabelen:
+Collecties: `aanmeld_koppelingen_v1` (`ownerUserId`, `aanbieder`, `subject`, gemaskeerd etiket),
+`aanmeld_states_v1` (eenmalige toestanden, TTL), `aanmeld_zelftest_v1`. Omgevingsvariabelen:
 `AANMELD_MICROSOFT_CLIENT_ID`/`_CLIENT_SECRET`, `AANMELD_DISCORD_CLIENT_ID`/`_CLIENT_SECRET`,
 `AANMELD_TELEGRAM_BOT_TOKEN`/`_BOT_NAAM`, `AANMELD_APPLE_CLIENT_ID`/`_TEAM_ID`/`_KEY_ID`/`_PRIVATE_KEY`
 (+ `AANMELD_<ID>_BASIS` en `AANMELD_TERUG_BASIS` uitsluitend voor testomgevingen).
 
 ## Tests
 
-- Unit: `aanmeld-koppel-20261030` (64) — volledige ketens tegen een nagebouwde provider (PKCE, JWKS, ES256,
+- Unit: `aanmeld-koppel-20261030` (64) — volledige ketens tegen een nagebouwde aanbieder (PKCE, JWKS, ES256,
   HMAC, anti-replay van `state`, maskering); `aanmeld-ui-20261030` (105) — kaartmapper, contract, eerlijkheid van statussen.
 - E2E `aanmeldmethoden-vnext` (37): vlag uit/aan; eerlijke kaarten; details met echte secties;
   TOTP `start→confirm→disable` via de ECHTE step-up-dialoog (RFC-6238 in de test, anti-replay van de server

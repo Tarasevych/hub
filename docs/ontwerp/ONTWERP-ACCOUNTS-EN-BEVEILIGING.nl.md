@@ -11,7 +11,7 @@ Status: vastgesteld door de eigenaar (2026-10-03). Fase 1 is gebouwd op branch `
 is een eigenschap, geen sleutel.
 
 **Login-identiteiten** — Google, Microsoft, Apple, e-maillink, telefoon (sms), passkey, wachtwoord.
-Elke identiteit is een paar *(provider, subject)*, bijvoorbeeld `(google, 1234567890)`. **Eén
+Elke identiteit is een paar *(aanbieder, subject)*, bijvoorbeeld `(google, 1234567890)`. **Eén
 identiteit hoort bij precies één account.** Eén account kan meerdere inlogmethoden hebben.
 
 **Gekoppelde diensten** — geen inlogmethoden maar bronnen waarmee een account werkt: meerdere
@@ -35,7 +35,7 @@ beide accounts). **Nooit stil samenvoegen op e-mailadres.**
 
 **Klasse 2 — dienstgegevens** (mail, bestanden, agenda, zoekindexen).
 - Server-side versleuteld met per-gebruiker envelopsleutels, ingepakt door een hoofdsleutel.
-- Toegang tot databaserijen begrensd door RLS (row-level security) op `owner_id`.
+- Toegang tot databaserijen begrensd door RLS (row-level beveiliging) op `owner_id`.
 - Elke dienst-toegang (bijv. ondersteuning) wordt in het auditlog vastgelegd.
 
 ## 3. Bescherming tegen accountovername
@@ -185,7 +185,7 @@ de code zit, geeft de database geen rijen van anderen terug.
   uitnodigingslinks eenmalig (desgewenst alleen voor één e-mailadres); e-mailuitnodigingen 7 dagen geldig;
   kijkers zien geen volledige e-mailadressen van andere leden.
 - **Beheer**: nieuwste eerst, gebruikers per pagina, onderdelen alleen met de bijbehorende rechten.
-- **Privacy**: toestemming voor analyse staat **standaard uit**; met toestemming alleen anonieme
+- **Gegevensbescherming**: toestemming voor analyse staat **standaard uit**; met toestemming alleen anonieme
   dagtellers. Export van eigen gegevens (JSON, zonder geheimen). Account verwijderen: 30 dagen te herstellen;
   daarna wist de opruimjob definitief — alleen met `ACCOUNT_DEFINITIEF_WISSEN=1` (anders alleen een verslag).
 - Nog niet gedaan: UI voor step-up en terugzetten van ontkoppelen (voorlopig: opnieuw met Google aanmelden

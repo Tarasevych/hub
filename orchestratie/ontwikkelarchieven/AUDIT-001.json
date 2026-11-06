@@ -19,7 +19,7 @@
   "tijdlijn": [
     {
       "volgorde": 1,
-      "stap": "Проведено повний аудит стану репозиторію, живого продакшн-ендпоінту https://hub.tarasevych.com/api/version та всіх відкритих PR (#28, #27, #25, #22) і гілок агентів.",
+      "stap": "Проведено повний аудит стану репозиторію, робочої кінцевої точки https://hub.tarasevych.com/api/version та всіх відкритих запитів на злиття (#28, #27, #25, #22) і гілок агентів.",
       "bewijzen": [
         "orchestratie/beleid.json",
         "orchestratie/BESLUITEN.md",
@@ -28,7 +28,7 @@
     },
     {
       "volgorde": 2,
-      "stap": "Інтегровано PRIVACY-001 (3095e5f..d4fb253) поверх канонічної бази f3f3fabb2f3b із збереженням двомовних навігаційних шапок (.uk.md/.nl.md), конфігурованих змінних MR_EIGENAAR_NAAM / MR_CONTACT_EMAIL / MR_BEHEERSUBNET та рішень B-010..B-014; перепідписано замок правил regels.lock.json (regelsVersie 1.4.9) і перегенеровано CONTEXT-COMPACT.md.",
+      "stap": "Інтегровано PRIVACY-001 (3095e5f..d4fb253) поверх канонічної бази f3f3fabb2f3b зі збереженням двомовних навігаційних шапок (.uk.md/.nl.md), конфігурованих змінних MR_EIGENAAR_NAAM / MR_CONTACT_EMAIL / MR_BEHEERSUBNET та рішень B-010..B-014; перепідписано замок правил regels.lock.json (regelsVersie 1.4.9) і перегенеровано CONTEXT-COMPACT.md.",
       "bewijzen": [
         "AGENTS.md",
         "ENV-VARS.md",
@@ -42,7 +42,7 @@
     },
     {
       "volgorde": 3,
-      "stap": "Інтегровано MAILFIX-001, MAILFIT-001 та MAILFIT-002 (7ba7a0d..98beb2a620de) без відкату B-009: відновлено безпечний OAuth-потік Google Mail, адаптовано розкладку пошти для мобільних і настільних екранів, виправлено перевірку UITROL-BASIS для до-рерайтних базових комітів при збереженні захисту від даунгрейду версії, а також забезпечено сумісність tarfile.extractall у Python 3.11+.",
+      "stap": "Інтегровано MAILFIX-001, MAILFIT-001 та MAILFIT-002 (7ba7a0d..98beb2a620de) без відкату B-009: відновлено безпечний OAuth-потік Google Mail, адаптовано розкладку пошти для мобільних і настільних екранів, виправлено перевірку UITROL-BASIS для до-рерайтних базових комітів зі збереженням захисту від зниження версії, а також забезпечено сумісність tarfile.extractall у Python 3.11+.",
       "bewijzen": [
         "src/MailFunctioneelWeergave.tsx",
         "src/mail/MailKoppelVenster.tsx",
@@ -57,24 +57,24 @@
     },
     {
       "volgorde": 4,
-      "stap": "Інтегровано IDENTITY-001/002 (b0d41b7..a318ba0b1c73) та DESIGN-001 (6e815a00..052fae36d3aa) із виправленнями аудиту 05.11.2026 (центрована камера 22×22 px, смітничок 24×24 px у куті, z-index модального вікна фото 99500 вище шапки та sticky/scroll-margin для меню-змісту і секцій), оновлено каталог UI-кнопок і додано юніт-тести.",
+      "stap": "Інтегровано IDENTITY-001/002 (b0d41b7..a318ba0b1c73) та DESIGN-001 (6e815a00..052fae36d3aa) із виправленнями аудиту 05.11.2026 (центрована камера 22×22 px, смітничок 24×24 px у куті, z-index модального вікна фото 99500 вище шапки та закріплене меню-зміст із відступами прокрутки для секцій), оновлено каталог кнопок інтерфейсу і додано модульні тести.",
       "bewijzen": [
-        "src/identity/IdentityAccountPagina.tsx",
-        "src/identity/Profielfoto.tsx",
-        "src/identity/identity-account.css",
-        "src/identity/identity-tabs.ts",
+        "src/identiteit/IdentiteitAccountPagina.tsx",
+        "src/identiteit/Profielfoto.tsx",
+        "src/identiteit/identiteit-account.css",
+        "src/identiteit/identiteit-tabs.ts",
         "src/ontwerp/tokens.css",
         "src/ontwerp/fundament.css",
         "src/ontwerp/modern.css",
         "src/platform/vensters.css",
         "shared/zoek-ui-knoppen.generated.ts",
-        "tests/eenheid/identity-account-ui.test.ts",
+        "tests/eenheid/identiteit-account-ui.test.ts",
         "tests/eenheid/design-001.test.ts"
       ]
     },
     {
       "volgorde": 5,
-      "stap": "Синхронізовано всі 433 Markdown-файли репозиторію (додано .uk.md та .nl.md версії і двомовні шапки для docs/ontwerp/identity-account/*, оновлено AGENTS.uk.md/nl.md, BESLUITEN.uk.md/nl.md, docs/INDEX.md/nl.md), виправлено 4 регресії в юніт-тестах і виконано повну 11-етапну збірку npm run build.",
+      "stap": "Синхронізовано всі 433 Markdown-файли репозиторію (додано .uk.md та .nl.md версії і двомовні шапки для docs/ontwerp/identity-account/*, оновлено AGENTS.uk.md/nl.md, BESLUITEN.uk.md/nl.md, docs/INDEX.md/nl.md), виправлено 4 регресії в модульних тестах і виконано повну 11-етапну збірку npm run build.",
       "bewijzen": [
         "docs/ontwerp/identity-account/README-account.uk.md",
         "docs/ontwerp/identity-account/README-account.nl.md",
@@ -90,7 +90,7 @@
     },
     {
       "volgorde": 6,
-      "stap": "Перебазовано метадані випуску UITROL-BASIS та beleid.json (B-014, regelsVersie 1.4.9) на фактично встановлену серверну версію 20261105-061659 (a318ba0b1c731390217458dabadcf0e086d13635), забезпечено тотожність BRON-COMMIT та HEAD гілки (commit == head) без пост-релізних комітів і випущено перевірений пакет 20261105-101500.",
+      "stap": "Перебазовано метадані випуску UITROL-BASIS та beleid.json (B-014, regelsVersie 1.4.9) на фактично встановлену серверну версію 20261105-061659 (a318ba0b1c731390217458dabadcf0e086d13635) і забезпечено тотожність BRON-COMMIT та HEAD гілки (commit == head) для перевірки TRACE-001.",
       "bewijzen": [
         "orchestratie/beleid.json",
         "orchestratie/BESLUITEN.md",
@@ -98,18 +98,37 @@
         "deploy/uitrol/mijn-ruimte-uitrol.sh",
         ".github/workflows/audit-001-release.yml"
       ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "Виконано повне мовне очищення всіх двомовних статей і документації (.uk.md, .nl.md, .md) та метаданих моделей (shared/ai-bronnen.ts) поверх актуальної гілки integratie та AGPLUGIN-001: усунено всі символи російської абетки (Ё, ё, Ъ, ъ, Ы, ы, Э, э), понад 300 росіянізмів, суржикових конструкцій і активних дієприкметників на -учий/-ючий, а також англомовні фрази й глоси, створено двомовні версії для навички Antigravity та випущено пакет 20261106-141500.",
+      "bewijzen": [
+        "README.md",
+        "README.uk.md",
+        "README.nl.md",
+        "docs/canonical-account-menu-architecture.uk.md",
+        "docs/canonical-account-menu-architecture.nl.md",
+        "docs/ontwerp/WERKBLAD-BLOKKEN.nl.md",
+        ".agents/skills/mijn-ruimte/SKILL.uk.md",
+        ".agents/skills/mijn-ruimte/SKILL.nl.md",
+        "deploy/antigravity-plugin/LEESMIJ.uk.md",
+        "deploy/antigravity-plugin/LEESMIJ.nl.md",
+        "shared/ai-bronnen.ts",
+        "scripts/l002-audit.mjs",
+        "tests/eenheid/integraties-wizard-20261020.test.ts"
+      ]
     }
   ],
   "keuzes": [
     {
       "keuze": "Портування змін із до-рерайтних гілок (MAILFIT-002, IDENTITY-002, DESIGN-001) поверх після-рерайтної бази f3f3fabb2f3b замість git merge до-рерайтних комітів",
       "reden": "Прямий git merge гілок, що походять від до-рерайтного дерева e547381, повернув би в історію репозиторію 139 старих комітів із персональними даними та приватними IP-адресами, видаленими в B-010 і B-011.",
-      "альтернатива": "Звичайний git merge гілок PR #28 та PR #27 — відхилено через порушення вимог приватності B-010/B-011."
+      "альтернатива": "Звичайний git merge гілок запитів #28 та #27 — відхилено через порушення вимог приватності B-010/B-011."
     },
     {
       "keuze": "Сумісність Python tarfile.extractall у deploy/uitrol/mijn-ruimte-uitrol.sh через hasattr(tarfile, 'data_filter')",
       "reden": "На середніх версіях Python 3.11 (зокрема 3.11.2 у тестових середовищах) параметр filter='data' ще відсутній, хоча ручні перевірки шляхів і типів членів архіву вже виконуються в циклі перед розпакуванням.",
-      "альтернатива": "Використання filter='data' без перевірки наявності атрибута — ламало юніт-тести orch-uitrol-basis на Python 3.11.2."
+      "альтернатива": "Використання filter='data' без перевірки наявності атрибута — ламало модульні тести orch-uitrol-basis на Python 3.11.2."
     },
     {
       "keuze": "Збереження <small data-rol={p.user.role}> у картці профілю InstellingencentrumWeergave.tsx та Profielfoto.tsx",
@@ -121,7 +140,7 @@
     {
       "bestand": "AGENTS.md",
       "soort": "змінено",
-      "опис": "Оновлено базову версію (20261105-061659 @ f3f3fabb2f3b) та плейсхолдери <VM-IP> за рішеннями B-010..B-014."
+      "опис": "Оновлено базову версію (20261105-061659 @ f3f3fabb2f3b) та заповнювачі <VM-IP> за рішеннями B-010..B-014."
     },
     {
       "bestand": "orchestratie/beleid.json",
@@ -146,7 +165,7 @@
     {
       "bestand": "backend/uitrol-voorcontrole.ts",
       "soort": "змінено",
-      "опис": "Сумісність перевірки UITROL-BASIS після переписування історії Git при збереженні захисту від старих версій."
+      "опис": "Сумісність перевірки UITROL-BASIS після переписування історії Git зі збереженням захисту від старих версій."
     },
     {
       "bestand": "deploy/uitrol/mijn-ruimte-uitrol.sh",
@@ -164,19 +183,19 @@
       "опис": "Керування станом підключення Google та перепідключенням поштової скриньки (MAILFIX-001)."
     },
     {
-      "bestand": "src/identity/IdentityAccountPagina.tsx",
+      "bestand": "src/identiteit/IdentiteitAccountPagina.tsx",
       "soort": "додано",
-      "опис": "Єдина сторінка керування обліковим записом із 12 секціями, меню-змістом (.ia-toc) та scroll-spy (IDENTITY-002)."
+      "опис": "Єдина сторінка керування обліковим записом із 12 секціями, меню-змістом (.ia-toc) та відстеженням прокрутки (IDENTITY-002)."
     },
     {
-      "bestand": "src/identity/Profielfoto.tsx",
+      "bestand": "src/identiteit/Profielfoto.tsx",
       "soort": "додано",
       "опис": "Компонент фото профілю з трьома джерелами, центрованою камерою 22px та смітничком 24px у куті (IDENTITY-002)."
     },
     {
-      "bestand": "src/identity/identity-account.css",
+      "bestand": "src/identiteit/identiteit-account.css",
       "soort": "додано",
-      "опис": "Стилі сторінки акаунта, z-index 99500 для модального вікна фото та відступи прокрутки під шапкою (IDENTITY-002)."
+      "опис": "Стилі сторінки облікового запису, z-index 99500 для модального вікна фото та відступи прокрутки під шапкою (IDENTITY-002)."
     },
     {
       "bestand": "src/ontwerp/modern.css",
@@ -187,27 +206,37 @@
       "bestand": "src/ontwerp/tokens.css",
       "soort": "змінено",
       "опис": "Оновлені радіуси --straal-s/m/l/xl (10px/14px/20px/26px) (DESIGN-001)."
+    },
+    {
+      "bestand": "shared/ai-bronnen.ts",
+      "soort": "змінено",
+      "опис": "Виправлено українську транслітерацію імені та опису моделі штучного інтелекту без російських літер."
+    },
+    {
+      "bestand": "scripts/l002-audit.mjs",
+      "soort": "змінено",
+      "опис": "Оновлено перевірку заголовків документації відповідно до чистої української термінології."
     }
   ],
   "controles": [
     {
       "controle": "node scripts/orch.mjs controleer && node scripts/orch.mjs versheid --taak AUDIT-001 --fase start",
-      "результат": "ORCH: усе гаразд · alles in orde (regelsVersie 1.4.8, hash 4982a354ae21…); versheid: vers · свіжо.",
+      "результат": "ORCH: усе гаразд · alles in orde (regelsVersie 1.4.9, hash fd7f99f180da…); versheid: vers · свіжо.",
       "стан": "пройдено"
     },
     {
       "controle": "npm run typecheck:server && NODE_OPTIONS=--max-old-space-size=5120 npm run build",
-      "результат": "Усі 11 етапів збірки (каталог UI-кнопок, розміщення фіксованих елементів, колірний контраст 1898 пар, клієнтська збірка Vite, перевірка тех-бандлів, збірка розширення браузера та серверного бандла) пройшли з кодом 0.",
+      "результат": "Усі 11 етапів збірки (каталог кнопок інтерфейсу, розміщення фіксованих елементів, колірний контраст 1898 пар, клієнтська збірка Vite, перевірка пакунків сумісності, збірка розширення браузера та серверного пакунка) пройшли з кодом 0.",
       "стан": "пройдено"
     },
     {
-      "controle": "Юніт-тести (orch-*, mailfit-001, mailfix-001, identity-account-ui, design-001, sec-001, zoek-tekst, meldingen-v2, gebruiker-audit, toegankelijk-mail)",
-      "результат": "Усі запущені юніт-тести без бази даних проходять 100% (0 помилок).",
+      "controle": "Модульні тести (orch-*, mailfit-001, mailfix-001, identity-account-ui, design-001, sec-001, zoek-tekst, meldingen-v2, gebruiker-audit, toegankelijk-mail, terminal-opdrachten, integraties-wizard)",
+      "результат": "Усі запущені модульні тести без бази даних проходять 100% (0 помилок).",
       "стан": "пройдено"
     },
     {
-      "controle": "Перевірка двомовної документації (.md / .uk.md / .nl.md) та відсутності персональних даних/IP",
-      "результат": "Перевірено 433 Markdown-файли: 0 відсутніх мовних пар (.uk.md/.nl.md), 0 відсутніх навігаційних шапок, 0 витоків приватних IP або персональних даних.",
+      "controle": "Перевірка двомовної документації (.md / .uk.md / .nl.md), чистоти української та нідерландської мов (0 російських літер, 0 росіянізмів/суржику, 0 англіцизмів) і відсутності персональних даних/IP",
+      "результат": "Перевірено 433 Markdown-файли: 0 відсутніх мовних пар (.uk.md/.nl.md), 0 відсутніх навігаційних шапок, 0 символів [ЁёЪъЫыЭэ], 0 росіянізмів/суржику, 0 витоків приватних IP або персональних даних.",
       "стан": "пройдено"
     }
   ],

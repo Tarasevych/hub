@@ -13,8 +13,8 @@
 
 **Doel:** één geconsolideerde pagina voor de categorie `identity` waarop de eigenaar en gebruikers alle 12 onderdelen van het account op één scherm kunnen bekijken en beheren: personalisatie, menu, thema's, talen, widgets, delen, identiteiten, account en gegevens, sessies en apparaten, aanmeldmethoden, beveiliging en toegangsherstel.
 
-**Binnen scope:** `src/identiteit/IdentiteitAccountPagina.tsx` met inhoudsopgave (`.ia-toc`), profielfotocomponent `src/identiteit/Profielfoto.tsx` met drie bronnen, tweetalige teksten (`uk`/`nl`) en eenheidstests (`tests/eenheid/identiteit-account-ui.test.ts`).
-**Buiten scope:** wijzigingen in serverauthenticatiebeleid, nieuwe databasetabellen of het verwijderen van het eigenaarsaccount (`OWNER_NIET_WISSEN`).
+**Binnen bereik:** `src/identiteit/IdentiteitAccountPagina.tsx` met inhoudsopgave (`.ia-toc`), profielfotocomponent `src/identiteit/Profielfoto.tsx` met drie bronnen, tweetalige teksten (`uk`/`nl`) en eenheidstests (`tests/eenheid/identiteit-account-ui.test.ts`).
+**Buiten bereik:** wijzigingen in serverauthenticatiebeleid, nieuwe databasetabellen of het verwijderen van het eigenaarsaccount (`OWNER_NIET_WISSEN`).
 
 ---
 

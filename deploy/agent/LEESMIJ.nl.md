@@ -127,7 +127,7 @@ node agent.mjs pair … --code -                                           # kop
 - **De server als apparaat zonder code overtypen**: `sudo mijn-ruimte-installeer terminal-inrichten` (ook stil aan het einde van
   `installeren`, alleen de eerste keer). De installer vraagt als dienstgebruiker een koppelcode voor de eigenaar
   (`dist-server/apparaat-koppelcode.mjs`, ruimte «technisch»), geeft hem via stdin aan `pair --code -` als `beheer`, zet
-  `terminal-config on --opdrachten --geen-container` en start `mijn-ruimte-apparaat.service` (User=beheer, NoNewPrivileges,
+  `terminal-config on --opdrachten --geen-container` en start `mijn-ruimte-apparaat.service` (Gebruiker=beheer, NoNewPrivileges,
   ProtectSystem=strict; sjabloon `deploy/mijn-ruimte-apparaat.service`). Standaard roots: `/home/beheer` (schrijven), `/srv/mijn-ruimte`
   en `/var/log` (alleen lezen); standaard allow-lijst: `STANDAARD_ALLOW_SERVER` in `shared/terminal-opdrachten.ts`. Dit vervangt
   `beheer-koppelen` voor dezelfde gebruiker (die unit wordt uitgezet).
@@ -138,7 +138,7 @@ node agent.mjs pair … --code -                                           # kop
 - Agenttoken: alleen de sha256-hash staat in de database; het token zelf in `~/.hub-agent/config.json` (modus 0600).
 - Koppelcode: gehasht, één keer bruikbaar, 10 minuten, maximaal 5 per 10 minuten per gebruiker.
 - De agent controleert zelf mappen (realpath, geen symlink-ontsnapping) en commando's (geen shell; programma + argumenten).
-- Een schijfwortel als root (`T:\`, `/`) werkt voor alle submappen (0.3.1; daarvoor gaf elke submap «path outside allowed roots»).
+- Een schijfwortel als root (`T:\`, `/`) werkt voor alle submappen (0.3.1; daarvoor gaf elke submap «path outside toegestaan roots»).
 - Geheime plekken zijn nooit bereikbaar, ook niet binnen een root (0.3.1): mappen `geheim`, `geheimen`, `secrets`, `.ssh`,
   `.gnupg`, `.hub-agent`, `.aws`, `.azure`, `.kube`, `.docker` en bestanden `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.ppk`,
   `*.kdbx`, `.env*`, `id_rsa*`/`id_ed25519*`, `uitrol-sleutel*`, `recovery.key*`, `access-seal.key`. Ze staan in `fs.list`

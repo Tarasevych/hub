@@ -28,7 +28,7 @@ Geschiedenis en Bronnen.
   `koppel stel-voor`) met actor-audit.
 - **Relaties en conflicten**: 11 typen; kandidaten (lexicaal+graaf) zijn uitsluitend voorstellen, zonder auto-merge; het besluit
   van de eigenaar wordt vastgelegd als `Besluit` + gebeurtenis.
-- **Releases**: worden read-only gelezen uit de echte installatiegeschiedenis (`app.uitrol_runs`); koppeling van kaarten;
+- **Releases**: worden alleen-lezen gelezen uit de echte installatiegeschiedenis (`app.uitrol_runs`); koppeling van kaarten;
   de postflight vermeldt eerlijk "uitgerold ≠ bevestigd", met regressies apart. Niets voert vanaf hier een uitrol uit.
 - **Statische inventaris**: tabbladen/vlaggen/routes van de site zelf vergeleken met de kaarten → "functie zonder kaart"
   (met één klik een concept) en "kaart zonder spoor".
@@ -40,7 +40,7 @@ Geschiedenis en Bronnen.
 ## Eerlijk niet gedaan (in de UI aangeduid als "gepland")
 MCP-wrappers `afstemming.*` (het agentpad loopt vandaag via de HTTP-API van de kaartenbak); semantisch zoeken op gelijkenis
 (nu lexicaal+graaf); diff-analyse van een release voor "niet-geregistreerde wijzigingen" (het veld bestaat en is eerlijk leeg); live
-read-only-probes op productie; AI-ontleding van ideetekst (de mens bepaalt de structuur); audio/video/afbeeldingen bij import;
+alleen-lezen-probes op productie; AI-ontleding van ideetekst (de mens bepaalt de structuur); audio/video/afbeeldingen bij import;
 volledige gebeurtenissenstroom van alle kaarten in één verzoek (nu: laatste gebeurtenissen + volledige geschiedenis van elke afzonderlijke kaart).
 
 ## Tests

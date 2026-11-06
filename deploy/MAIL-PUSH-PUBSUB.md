@@ -11,15 +11,15 @@
 
 ## 1. Увімкнути API
 У проєкті, де створений OAuth-клієнт `google_suite_web_oauth_client`: **APIs & Services → Library**: увімкніть **Gmail API** і **Cloud Pub/Sub API**.
-Перевірте OAuth-згоду: scope `https://www.googleapis.com/auth/gmail.modify` (покриває читання, архів, чернетки і watch), `gmail.send`, `gmail.labels`.
+Перевірте OAuth-згоду: область дії `https://www.googleapis.com/auth/gmail.modify` (покриває читання, архів, чернетки і watch), `gmail.send`, `gmail.labels`.
 Повний доступ `https://mail.google.com/` **не потрібен** і не рекомендований (ширший за потреби).
 
 ## 2. Тема Pub/Sub
-Pub/Sub → **Topics → Create topic**: наприклад `gmail-push`. Повне ім'я: `projects/<PROJECT_ID>/topics/gmail-push`.
+Pub/Sub → **Topics → Створити topic**: наприклад `gmail-push`. Повне ім'я: `projects/<PROJECT_ID>/topics/gmail-push`.
 Дайте Gmail право публікувати: у темі **Permissions → Add principal** `gmail-api-push@system.gserviceaccount.com`, роль **Pub/Sub Publisher**.
 
 ## 3. Push-підписка
-Pub/Sub → **Subscriptions → Create**: тема `gmail-push`, **Delivery type = Push**, endpoint:
+Pub/Sub → **Subscriptions → Створити**: тема `gmail-push`, **Delivery type = Push**, endpoint:
 `https://mail.tarasevych.com/api/owner/mail/google/pubsub/push`.
 Увімкніть **Authentication** (OIDC-токен): виберіть/створіть service account (наприклад `gmail-push-sender@<PROJECT_ID>.iam.gserviceaccount.com`),
 **Audience** = точно `https://mail.tarasevych.com/api/owner/mail/google/pubsub/push`.

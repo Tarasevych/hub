@@ -1,12 +1,12 @@
 > 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./2026-07-30_OWNER_BROWSER_ACCEPTANCE_V52.uk.md) · **🇳🇱 Nederlands** ([origineel](./2026-07-30_OWNER_BROWSER_ACCEPTANCE_V52.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
 
-# Browseracceptatie door eigenaar v52 (Owner Browser Acceptance v52)
+# Browseracceptatie door eigenaar v52 (Eigenaar Browser Acceptance v52)
 
-## Reikwijdte (Scope)
+## Reikwijdte
 
-- B-003 Sessierotatie en verharding van tokenverversing (Session Rotation and Refresh Hardening)
+- B-003 Sessierotatie en verharding van tokenverversing (Sessie Rotation en Refresh Hardening)
 - B-004 Doorgifte van intrekkingen (Revocation Propagation)
-- B-005 Browseracceptatie door eigenaar (Owner Browser Acceptance)
+- B-005 Browseracceptatie door eigenaar (Eigenaar Browser Acceptance)
 - L-002 Voortzetting van tweetalige verharding (Bilingual Hardening Continuation)
 
 ## Gecontroleerde uitrol

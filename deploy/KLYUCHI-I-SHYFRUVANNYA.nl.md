@@ -34,4 +34,4 @@ Al het overige in de map is **niet versleuteld** (code, plannen, status, control
 ```powershell
 cmd /c "T:\mijn-ruimte\hulpmiddelen\age\age\age.exe -d -i <pad naar herstelsleutel-age.txt> <bestand.age> | tar -xf - -C <doelmap>"
 ```
-Let op: op deze pc **blokkeert het Windows-beleid (Device Guard) momenteel het starten van `age.exe`** vanaf `T:`. Dit moet vooraf worden opgelost (het programma toestaan, of ontsleutelen op een andere computer/Linux-machine met `age`). Geef het aan als er een ontsleutelingsvariant zonder `age.exe` moet worden klaargezet.
+Let op: op deze pc **blokkeert het Windows-beleid (Apparaat Guard) momenteel het starten van `age.exe`** vanaf `T:`. Dit moet vooraf worden opgelost (het programma toestaan, of ontsleutelen op een andere computer/Linux-machine met `age`). Geef het aan als er een ontsleutelingsvariant zonder `age.exe` moet worden klaargezet.

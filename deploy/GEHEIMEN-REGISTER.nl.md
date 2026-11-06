@@ -37,9 +37,9 @@ Dezelfde stap wordt automatisch uitgevoerd aan het begin van elke `mijn-ruimte-i
 | `AGENDA_ABONNEMENT_SLEUTEL_V1` | AES-256 voor CalDAV-wachtwoorden | geheimen.env | `xxxxxxxx` | 2026-… | niet roteren |
 | `GITHUB_KOPPELING_SLEUTEL_V1` | AES-256 voor GitHub-tokens (optioneel; zonder deze sleutel wordt de TOTP-sleutel gebruikt) | geheimen.env | `xxxxxxxx` | 2026-… | niet roteren |
 | `GOOGLE_OAUTH_CLIENT_ID` | Client ID van Google (openbaar) | geheimen.env **of** kluis (doel `google`) | openbaar | 2026-… | Google Cloud Console → Credentials |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | client secret van Google | geheimen.env **of** kluis | `xxxxxxxx` | 2026-… | Console → Reset secret → `mijn-ruimte-installeer oauth-client google` of Koppelwizard |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | client geheim van Google | geheimen.env **of** kluis | `xxxxxxxx` | 2026-… | Console → Reset geheim → `mijn-ruimte-installeer oauth-client google` of Koppelwizard |
 | `MICROSOFT_GRAPH_CLIENT_ID` / `…_TENANT_ID` | Entra Application (client) ID, tenant | geheimen.env | openbaar | 2026-… | Entra → App registrations |
-| `MICROSOFT_GRAPH_CLIENT_SECRET` | client secret van Entra (**geldigheid ≤ 24 mnd.** — noteer de vervaldatum!) | geheimen.env | `xxxxxxxx` | 2026-… | Entra → Certificates & secrets → `… oauth-client microsoft` |
+| `MICROSOFT_GRAPH_CLIENT_SECRET` | client geheim van Entra (**geldigheid ≤ 24 mnd.** — noteer de vervaldatum!) | geheimen.env | `xxxxxxxx` | 2026-… | Entra → Certificates & geheimen → `… oauth-client microsoft` |
 | `MICROSOFT_GRAPH_WEBHOOK_CLIENT_STATE` | gedeeld geheim voor de Graph-webhook | geheimen.env | `xxxxxxxx` | 2026-… | `mijn-ruimte-installeer geheimen` |
 | `DATABASE_URL_APP` / `DATABASE_URL_SYSTEM` / `DATABASE_URL_MIGRATIE` | wachtwoorden van de PostgreSQL-rollen | geheimen.env / migratie.env | `xxxxxxxx` | 2026-… | `db-rollen-instellen.sh` |
 | `SCIM_BEARER_TOKEN` | inkomende SCIM | geheimen.env | `xxxxxxxx` of leeg | 2026-… | handmatig + in de directory |
@@ -59,4 +59,4 @@ waarden). Ze worden uitsluitend via de site ingevoerd met passkey/TOTP en worden
 ### Regel
 
 Geen enkel geheim gaat ooit via de chat, bestanden van AI of instructies: het wordt op de server gegenereerd (`openssl rand`) of in de console
-van de provider aangemaakt en direct op de server gezet (verborgen invoer). De AI-assistent ziet uitsluitend namen en vingerafdrukken.
+van de aanbieder aangemaakt en direct op de server gezet (verborgen invoer). De AI-assistent ziet uitsluitend namen en vingerafdrukken.

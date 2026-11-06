@@ -1,6 +1,6 @@
 > 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./INTEGRATIE-20261027.uk.md) · **🇳🇱 Nederlands** ([origineel](./INTEGRATIE-20261027.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
 
-# Mijn Ruimte · Universal File Workspace v0.3 · integratie boven op release 2026-10-27 21:14:25
+# Mijn Ruimte · Universal Bestand Workspace v0.3 · integratie boven op release 2026-10-27 21:14:25
 
 **Bron:** door de eigenaar aangeleverde archief `mijn-ruimte-20261027-211425.tar.gz`. **Modus:** nieuwe kandidaat-build zonder uitrol op de server.
 
@@ -22,7 +22,7 @@ Let op: de aanwezigheid van bronmodules **bewijst niet** dat alle afzonderlijke 
 
 ### Identiteitswijziging (belangrijk)
 
-In het nieuwe `backend/deployment-identity.ts` is de canonieke toestand **self-hosted**, `APP_ID='migrated-bg2v4h'`, `API_COOKIE_PATH='/'`, subdomeinen `*.tarasevych.com`. Historische waarden `app-8ppuax` en `c28444ec7eb73654e9` **niet terugzetten**. Bestanden voor authenticatie, OAuth, beleid, proxyconfiguratie, DB-migraties, Service Worker en de installer zelf zijn ongewijzigd gebleven.
+In het nieuwe `backend/deployment-identity.ts` is de canonieke toestand **zelfstandig**, `APP_ID='migrated-bg2v4h'`, `API_COOKIE_PATH='/'`, subdomeinen `*.tarasevych.com`. Historische waarden `app-8ppuax` en `c28444ec7eb73654e9` **niet terugzetten**. Bestanden voor authenticatie, OAuth, beleid, proxyconfiguratie, DB-migraties, Service Achtergrondproces en de installer zelf zijn ongewijzigd gebleven.
 
 ## 1. Wijzigingen in v0.3
 

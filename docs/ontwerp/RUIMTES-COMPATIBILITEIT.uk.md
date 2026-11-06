@@ -50,7 +50,7 @@ MCP: `/mcp` (JSON-RPC `initialize`, `tools/list`, `tools/call`) через `back
 
 ## 4. Контракт, який має виконати Агент 1
 
-1. **Простір (scope) у кожному гранті розблокування.** `extensie_ontgrendelingen.ruimte` залишається обов'язковим (`prive`|`technisch`), а
+1. **Простір (область дії) у кожному гранті розблокування.** `extensie_ontgrendelingen.ruimte` залишається обов'язковим (`prive`|`technisch`), а
    технічний грант ПОВИНЕН мати `activatie_id` = id рядка `tech_ruimte_sessies`. `scopeVanSessie(req)` ніколи не може використовувати
    грант в іншому просторі, ніж простір слота (WebSocket слота X ⇒ лише грант X).
 2. **Перевірка якоря під час кожної технічної команди розширення** (не лише під час розблокування): `siteSessieLeeft` false ⇒ відкликати
