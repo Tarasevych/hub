@@ -94,12 +94,12 @@ export function aiTeller(oauth: readonly { clientName: string; status?: string }
  * als de logo's en de markering (shared/markering-agenten.ts), zodat Gemini en Copilot geen «pseudo-logo» (sterretje) meer krijgen
  * maar hun merk uit het ene register (src/merk). De sleutels zijn die van het merkregister (`gpt` heet daar 'openai' als alias).
  */
-const LOGO_PER_SLUG: Readonly<Record<AgentSlug, LogoKind>> = Object.freeze({ claude: 'claude', gpt: 'openai', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor' });
+const LOGO_PER_SLUG: Readonly<Record<AgentSlug, LogoKind>> = Object.freeze({ claude: 'claude', gpt: 'openai', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor', antigravity: 'antigravity' });
 export function aiLogo(naam: string): LogoKind {
   const slug = agentSlugUitNaam(naam);
   return slug ? LOGO_PER_SLUG[slug] : 'aiclient';
 }
-const EIGENAAR_PER_SLUG: Readonly<Record<AgentSlug, string>> = Object.freeze({ claude: 'Anthropic', gpt: 'OpenAI', grok: 'xAI', gemini: 'Google', copilot: 'GitHub / Microsoft', cursor: 'Anysphere' });
+const EIGENAAR_PER_SLUG: Readonly<Record<AgentSlug, string>> = Object.freeze({ claude: 'Anthropic', gpt: 'OpenAI', grok: 'xAI', gemini: 'Google', copilot: 'GitHub / Microsoft', cursor: 'Anysphere', antigravity: 'Google DeepMind' });
 export function aiEigenaar(naam: string): string {
   const slug = agentSlugUitNaam(naam);
   return slug ? EIGENAAR_PER_SLUG[slug] : '';

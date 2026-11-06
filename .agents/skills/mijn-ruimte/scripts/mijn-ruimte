@@ -1,0 +1,341 @@
+#!/usr/bin/env node
+// Tweerichtingsbrug en CLI-plug-in voor Google Antigravity ↔ Mijn Ruimte (https://mcp.tarasevych.com/antigravity).
+// Bedient alle vier de kanalen:
+//   1. Site & Coördinatie (mail, agenda, bestanden, bord, GitHub, orch_*)
+//   2. Browserextensie (browser_open, browser_snapshot, browser_click, browser_type, browser_screenshot, browser_get_deep_diagnostics, …)
+//   3. Lokale pc / computer via agent.mjs (machine_status, machine_processes, machine_read_file, machine_write_file, machine_exec, machine_docker)
+//   4. Server & releases in _beheer (server_health, deploy_status, deploy_logs, db_query_readonly, audit_tail, security_overview)
+// En kan tevens als MCP stdio-brug draaien (`McpStdio`) voor clients die stdio-JSON-RPC spreken.
+
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
+import * as readline from 'node:readline';
+
+const STANDAARD_URL = process.env.MIJN_RUIMTE_URL || 'https://mcp.tarasevych.com/antigravity';
+const CONFIG_PAD = join(homedir(), '.config', 'mijn-ruimte', 'antigravity.json');
+const GEMINI_SETTINGS_PAD = join(homedir(), '.gemini', 'settings.json');
+
+// Korte hulpmiddel-id → volledige v2-naam voor agent `antigravity`
+const KORT_NAAR_V2 = Object.freeze({
+  whoami: {
+    gebruiker: 'tonen_mijn_account_antigravity_ai_tarasevych_com_gebruiker',
+    beheer: 'tonen_mijn_account_antigravity_ai_tarasevych_com_beheer',
+  },
+  // Coördinatie (orch_*)
+  orch_overzicht: { beheer: 'tonen_orch_overzicht_antigravity_admin_tarasevych_com_beheer' },
+  orch_context: { beheer: 'lezen_orch_context_antigravity_admin_tarasevych_com_beheer' },
+  orch_taak_start: { beheer: 'starten_orch_taak_antigravity_admin_tarasevych_com_beheer' },
+  orch_inleveren_begin: { beheer: 'starten_orch_inlevering_antigravity_admin_tarasevych_com_beheer' },
+  orch_inleveren_stuk: { beheer: 'sturen_orch_inleverstuk_antigravity_admin_tarasevych_com_beheer' },
+  orch_inleveren_klaar: { beheer: 'afronden_orch_inlevering_antigravity_admin_tarasevych_com_beheer' },
+  // Browserextensie
+  browser_list_tabs: {
+    gebruiker: 'tonen_open_tabbladen_antigravity_ai_browser_tarasevych_com_gebruiker',
+    beheer: 'tonen_open_tabbladen_antigravity_ai_browser_tarasevych_com_beheer',
+  },
+  browser_open: {
+    gebruiker: 'openen_webpagina_antigravity_ai_browser_tarasevych_com_gebruiker',
+    beheer: 'openen_webpagina_antigravity_ai_browser_tarasevych_com_beheer',
+  },
+  browser_snapshot: {
+    gebruiker: 'lezen_pagina_opname_antigravity_ai_browser_tarasevych_com_gebruiker',
+    beheer: 'lezen_pagina_opname_antigravity_ai_browser_tarasevych_com_beheer',
+  },
+  browser_click: {
+    gebruiker: 'klikken_element_antigravity_ai_browser_tarasevych_com_gebruiker',
+    beheer: 'klikken_element_antigravity_ai_browser_tarasevych_com_beheer',
+  },
+  browser_type: {
+    gebruiker: 'typen_in_veld_antigravity_ai_browser_tarasevych_com_gebruiker',
+    beheer: 'typen_in_veld_antigravity_ai_browser_tarasevych_com_beheer',
+  },
+  browser_screenshot: {
+    gebruiker: 'maken_schermafdruk_antigravity_ai_browser_tarasevych_com_gebruiker',
+    beheer: 'maken_schermafdruk_antigravity_ai_browser_tarasevych_com_beheer',
+  },
+  browser_get_deep_diagnostics: {
+    gebruiker: 'doen_diepe_diagnose_antigravity_ai_browser_tarasevych_com_gebruiker',
+    beheer: 'doen_diepe_diagnose_antigravity_ai_browser_tarasevych_com_beheer',
+  },
+  // Lokale pc / computer (agent.mjs)
+  machine_status: {
+    gebruiker: 'tonen_systeemstatus_antigravity_ai_pc_tarasevych_com_gebruiker',
+    beheer: 'tonen_systeemstatus_antigravity_ai_pc_tarasevych_com_beheer',
+  },
+  machine_processes: {
+    gebruiker: 'tonen_processen_antigravity_ai_pc_tarasevych_com_gebruiker',
+    beheer: 'tonen_processen_antigravity_ai_pc_tarasevych_com_beheer',
+  },
+  machine_list_dir: {
+    gebruiker: 'tonen_mapinhoud_antigravity_ai_pc_tarasevych_com_gebruiker',
+    beheer: 'tonen_mapinhoud_antigravity_ai_pc_tarasevych_com_beheer',
+  },
+  machine_read_file: {
+    gebruiker: 'lezen_bestand_op_pc_antigravity_ai_pc_tarasevych_com_gebruiker',
+    beheer: 'lezen_bestand_op_pc_antigravity_ai_pc_tarasevych_com_beheer',
+  },
+  machine_write_file: {
+    gebruiker: 'schrijven_bestand_op_pc_antigravity_ai_pc_tarasevych_com_gebruiker',
+    beheer: 'schrijven_bestand_op_pc_antigravity_ai_pc_tarasevych_com_beheer',
+  },
+  machine_exec: {
+    gebruiker: 'uitvoeren_opdracht_antigravity_ai_pc_tarasevych_com_gebruiker',
+    beheer: 'uitvoeren_opdracht_antigravity_ai_pc_tarasevych_com_beheer',
+  },
+  machine_docker: {
+    gebruiker: 'tonen_containers_antigravity_ai_pc_tarasevych_com_gebruiker',
+    beheer: 'tonen_containers_antigravity_ai_pc_tarasevych_com_beheer',
+  },
+  // Server & releases (_beheer)
+  server_health: { beheer: 'tonen_servergezondheid_antigravity_admin_tarasevych_com_beheer' },
+  deploy_status: { beheer: 'tonen_uitrolstatus_antigravity_admin_tarasevych_com_beheer' },
+  deploy_logs: { beheer: 'lezen_dienstlogboek_antigravity_admin_tarasevych_com_beheer' },
+  db_query_readonly: { beheer: 'uitvoeren_leesvraag_db_antigravity_admin_tarasevych_com_beheer' },
+  audit_tail: { beheer: 'lezen_auditlogboek_antigravity_admin_tarasevych_com_beheer' },
+});
+
+function leesConfig() {
+  try {
+    if (existsSync(CONFIG_PAD)) return JSON.parse(readFileSync(CONFIG_PAD, 'utf8'));
+  } catch { /* negeer */ }
+  return {};
+}
+
+function schrijfConfig(data) {
+  mkdirSync(dirname(CONFIG_PAD), { recursive: true });
+  writeFileSync(CONFIG_PAD, JSON.stringify(data, null, 2) + '\n', { mode: 0o600 });
+}
+
+function ontleedArgs(argv) {
+  const pos = [];
+  const vlaggen = {};
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a.startsWith('--')) {
+      const sleutel = a.slice(2);
+      const volgende = argv[i + 1];
+      if (volgende !== undefined && !volgende.startsWith('--')) {
+        vlaggen[sleutel] = volgende;
+        i += 1;
+      } else {
+        vlaggen[sleutel] = 'true';
+      }
+    } else {
+      pos.push(a);
+    }
+  }
+  return { opdracht: pos[0] || 'Help', pos: pos.slice(1), vlaggen };
+}
+
+function losHulpmiddelOp(naamOfId, kant = 'gebruiker') {
+  if (KORT_NAAR_V2[naamOfId]) {
+    return KORT_NAAR_V2[naamOfId][kant] || KORT_NAAR_V2[naamOfId].gebruiker || KORT_NAAR_V2[naamOfId].beheer;
+  }
+  return naamOfId;
+}
+
+async function stuurRpc(url, token, method, params = {}, id = 1) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json, text/event-stream',
+    'User-Agent': 'Google-Antigravity-MijnRuimte-Bridge/1.0',
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ jsonrpc: '2.0', id, method, params }),
+  });
+  const tekst = await res.text();
+  let json = null;
+  try { json = JSON.parse(tekst); } catch { json = { raw: tekst }; }
+  return { status: res.status, wwwAuth: res.headers.get('www-authenticate'), body: json };
+}
+
+async function voerUit() {
+  const { opdracht, vlaggen } = ontleedArgs(process.argv.slice(2));
+  const cfg = leesConfig();
+  const url = vlaggen.url || cfg.url || STANDAARD_URL;
+  const token = vlaggen.token || process.env.MIJN_RUIMTE_TOKEN || cfg.token || '';
+  const kant = vlaggen.kant === 'beheer' ? 'beheer' : 'gebruiker';
+
+  if (opdracht === 'Verbind') {
+    const nieuw = {
+      url,
+      ...(vlaggen.token ? { token: vlaggen.token } : cfg.token ? { token: cfg.token } : {}),
+      bijgewerktOp: new Date().toISOString(),
+    };
+    schrijfConfig(nieuw);
+    let geminiBijgewerkt = false;
+    try {
+      const bestaand = existsSync(GEMINI_SETTINGS_PAD) ? JSON.parse(readFileSync(GEMINI_SETTINGS_PAD, 'utf8')) : {};
+      bestaand.mcpServers = bestaand.mcpServers || {};
+      bestaand.mcpServers['mijn-ruimte'] = {
+        httpUrl: url,
+        ...(nieuw.token ? { headers: { Authorization: `Bearer ${nieuw.token}` } } : {}),
+      };
+      mkdirSync(dirname(GEMINI_SETTINGS_PAD), { recursive: true });
+      writeFileSync(GEMINI_SETTINGS_PAD, JSON.stringify(bestaand, null, 2) + '\n');
+      geminiBijgewerkt = true;
+    } catch { /* ~/.gemini niet schrijfbaar of afwezig */ }
+    console.log(JSON.stringify({
+      ok: true,
+      agent: 'antigravity',
+      endpoint: url,
+      configPad: CONFIG_PAD,
+      geminiSettingsBijgewerkt: geminiBijgewerkt,
+      webPaneel: 'https://mcp.tarasevych.com/agenten#agent/antigravity',
+      kanalen: ['site', 'browser', 'pc', 'server'],
+    }, null, 2));
+    return;
+  }
+
+  if (opdracht === 'Status') {
+    const prmUrl = new URL('/.well-known/oauth-protected-resource/antigravity', url).toString();
+    const uit = {
+      agent: 'antigravity',
+      endpoint: url,
+      prmUrl,
+      heeftToken: Boolean(token),
+      prm: null,
+      rpc: null,
+    };
+    try {
+      const prmRes = await fetch(prmUrl, { headers: { Accept: 'application/json' } });
+      uit.prm = { status: prmRes.status, data: await prmRes.json().catch(() => null) };
+    } catch (e) {
+      uit.prm = { fout: String(e?.message || e) };
+    }
+    try {
+      const init = await stuurRpc(url, token, 'initialize', {
+        protocolVersion: '2025-06-18',
+        capabilities: {},
+        clientInfo: { name: 'Google Antigravity', version: '1.0.0' },
+      });
+      if (init.status === 200 && token) {
+        const lijst = await stuurRpc(url, token, 'tools/list', {});
+        const tools = lijst.body?.result?.tools || [];
+        uit.rpc = {
+          status: 200,
+          verbonden: true,
+          totaalHulpmiddelen: tools.length,
+          perKanaal: {
+            browser: tools.filter((t) => t.name.includes('_browser_')).length,
+            pc: tools.filter((t) => t.name.includes('_pc_')).length,
+            server: tools.filter((t) => t.name.endsWith('_beheer')).length,
+            prive: tools.filter((t) => t.name.endsWith('_gebruiker')).length,
+          },
+        };
+      } else {
+        uit.rpc = {
+          status: init.status,
+          verbonden: false,
+          wwwAuthenticate: init.wwwAuth,
+          bericht: 'Gebruik OAuth in Google Antigravity of geef --token / MIJN_RUIMTE_TOKEN mee.',
+        };
+      }
+    } catch (e) {
+      uit.rpc = { fout: String(e?.message || e) };
+    }
+    console.log(JSON.stringify(uit, null, 2));
+    return;
+  }
+
+  if (opdracht === 'Lijst') {
+    const r = await stuurRpc(url, token, 'tools/list', {});
+    const tools = (r.body?.result?.tools || []).filter((t) => {
+      if (vlaggen.kant && !t.name.endsWith(`_${vlaggen.kant}`)) return false;
+      if (vlaggen.groep && !t.name.includes(`_${vlaggen.groep}_`)) return false;
+      return true;
+    });
+    console.log(JSON.stringify({ status: r.status, aantal: tools.length, hulpmiddelen: tools.map((t) => ({ name: t.name, description: t.description })) }, null, 2));
+    return;
+  }
+
+  if (opdracht === 'McpStdio') {
+    const rl = readline.createInterface({ input: process.stdin, terminal: false });
+    rl.on('line', async (regel) => {
+      const schoon = regel.trim();
+      if (!schoon) return;
+      let msg;
+      try { msg = JSON.parse(schoon); } catch { return; }
+      try {
+        const r = await stuurRpc(url, token, msg.method, msg.params || {}, msg.id);
+        if (msg.id !== undefined && r.body) {
+          process.stdout.write(JSON.stringify(r.body) + '\n');
+        }
+      } catch (e) {
+        if (msg.id !== undefined) {
+          process.stdout.write(JSON.stringify({
+            jsonrpc: '2.0',
+            id: msg.id,
+            error: { code: -32000, message: String(e?.message || e) },
+          }) + '\n');
+        }
+      }
+    });
+    return;
+  }
+
+  // Kanaalspecifieke snelkoppelingen
+  const snel = {
+    OrchOverzicht: () => ({ naam: losHulpmiddelOp('orch_overzicht', 'beheer'), args: {} }),
+    OrchContext: () => ({ naam: losHulpmiddelOp('orch_context', 'beheer'), args: {} }),
+    OrchTaakStart: () => ({
+      naam: losHulpmiddelOp('orch_taak_start', 'beheer'),
+      args: { id: vlaggen.id, samenvatting: vlaggen.samenvatting || '' },
+    }),
+    BrowserTabs: () => ({ naam: losHulpmiddelOp('browser_list_tabs', kant), args: {} }),
+    BrowserOpen: () => ({ naam: losHulpmiddelOp('browser_open', kant), args: { url: vlaggen.doelUrl || vlaggen.openUrl || 'https://tarasevych.com' } }),
+    BrowserSnapshot: () => ({ naam: losHulpmiddelOp('browser_snapshot', kant), args: {} }),
+    BrowserKlik: () => ({ naam: losHulpmiddelOp('browser_click', kant), args: { selector: vlaggen.selector, text: vlaggen.tekst } }),
+    BrowserTyp: () => ({ naam: losHulpmiddelOp('browser_type', kant), args: { selector: vlaggen.selector, text: vlaggen.tekst || '' } }),
+    BrowserSchermafdruk: () => ({ naam: losHulpmiddelOp('browser_screenshot', kant), args: {} }),
+    BrowserDiagnose: () => ({ naam: losHulpmiddelOp('browser_get_deep_diagnostics', 'beheer'), args: {} }),
+    PcStatus: () => ({ naam: losHulpmiddelOp('machine_status', kant), args: {} }),
+    PcProcessen: () => ({ naam: losHulpmiddelOp('machine_processes', kant), args: {} }),
+    PcBestanden: () => ({ naam: losHulpmiddelOp('machine_list_dir', kant), args: { path: vlaggen.pad || '.' } }),
+    PcLees: () => ({ naam: losHulpmiddelOp('machine_read_file', kant), args: { path: vlaggen.pad || 'README.md' } }),
+    PcSchrijf: () => ({ naam: losHulpmiddelOp('machine_write_file', kant), args: { path: vlaggen.pad, content: vlaggen.inhoud || '' } }),
+    PcOpdracht: () => ({ naam: losHulpmiddelOp('machine_exec', kant), args: { command: vlaggen.opdracht || 'uptime' } }),
+    PcDocker: () => ({ naam: losHulpmiddelOp('machine_docker', kant), args: {} }),
+    ServerGezondheid: () => ({ naam: losHulpmiddelOp('server_health', 'beheer'), args: {} }),
+    ServerUitrolStatus: () => ({ naam: losHulpmiddelOp('deploy_status', 'beheer'), args: {} }),
+    ServerLogs: () => ({ naam: losHulpmiddelOp('deploy_logs', 'beheer'), args: { service: vlaggen.dienst || 'hub', lines: Number(vlaggen.regels || 80) } }),
+    ServerSql: () => ({ naam: losHulpmiddelOp('db_query_readonly', 'beheer'), args: { query: vlaggen.query || 'SELECT 1 AS ok' } }),
+    ServerAudit: () => ({ naam: losHulpmiddelOp('audit_tail', 'beheer'), args: { limit: Number(vlaggen.limiet || 25) } }),
+    RoepAan: () => ({
+      naam: losHulpmiddelOp(vlaggen.hulpmiddel || 'whoami', kant),
+      args: vlaggen.args ? JSON.parse(vlaggen.args) : {},
+    }),
+  };
+
+  if (snel[opdracht]) {
+    const { naam, args } = snel[opdracht]();
+    const res = await stuurRpc(url, token, 'tools/call', { name: naam, arguments: args });
+    console.log(JSON.stringify({ status: res.status, hulpmiddel: naam, antwoord: res.body }, null, 2));
+    return;
+  }
+
+  console.log(JSON.stringify({
+    naam: 'Mijn Ruimte — Google Antigravity Tweerichtingsbrug',
+    endpoint: url,
+    opdrachten: [
+      'Verbind --url https://mcp.tarasevych.com/antigravity [--token <TOKEN>]',
+      'Status [--url ...]',
+      'Lijst [--kant gebruiker|beheer] [--groep browser|pc|mail|...]',
+      'OrchOverzicht | OrchContext | OrchTaakStart --id <ID> --samenvatting <TEKST>',
+      'BrowserTabs | BrowserOpen --doelUrl <URL> | BrowserSnapshot | BrowserKlik --selector <S> | BrowserTyp --selector <S> --tekst <T> | BrowserSchermafdruk | BrowserDiagnose',
+      'PcStatus | PcProcessen | PcBestanden --pad <PAD> | PcLees --pad <PAD> | PcSchrijf --pad <PAD> --inhoud <TEKST> | PcOpdracht --opdracht <CMD> | PcDocker',
+      'ServerGezondheid | ServerUitrolStatus | ServerLogs --dienst hub | ServerSql --query "SELECT 1" | ServerAudit',
+      'RoepAan --hulpmiddel <NAAM_OF_ID> [--args \'{"k":"v"}\'] [--kant gebruiker|beheer]',
+      'McpStdio',
+    ],
+  }, null, 2));
+}
+
+voerUit().catch((e) => {
+  console.error(JSON.stringify({ ok: false, fout: String(e?.message || e) }, null, 2));
+  process.exit(1);
+});

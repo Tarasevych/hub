@@ -100,7 +100,7 @@ export function clientIp(req: http.IncomingMessage): string {
 }
 
 /** Uitgaand verkeer van Anthropic (Claude-connectors): 160.79.104.0/21 (IPv4). */
-const CONNECTOR_LOG_PATH = /^\/(mcp|ai\/|claude|gpt|grok|gemini|copilot|cursor|oauth2\/|\.well-known\/oauth-)/;
+const CONNECTOR_LOG_PATH = /^\/(mcp|ai\/|claude|gpt|grok|gemini|copilot|cursor|antigravity|oauth2\/|\.well-known\/oauth-)/;
 function isAnthropicIp(ip: string): boolean {
   const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(ip);
   if (!m) return false;
@@ -356,10 +356,10 @@ const CONNECTOR_PADEN: Record<string, string> = {
 //
 // Het OUDE pad /ai/<agent> blijft bereikbaar met 308 Permanent Redirect — niet 301/302: MCP praat over POST, en 301/302 mag een
 // client in een GET veranderen (RFC 9110 §15.4), waardoor elke bestaande koppeling zou breken. 308 houdt methode én body.
-const V2_KORT = /^\/(claude|gpt|grok|gemini|copilot|cursor)(\/\.well-known\/oauth-protected-resource)?\/?$/;
-const V2_KORT_PRM = /^\/\.well-known\/oauth-protected-resource\/(claude|gpt|grok|gemini|copilot|cursor)\/?$/;
-const V2_OUD = /^\/ai\/(claude|gpt|grok|gemini|copilot|cursor)(\/\.well-known\/oauth-protected-resource)?\/?$/;
-const V2_OUD_PRM = /^\/\.well-known\/oauth-protected-resource\/ai\/(claude|gpt|grok|gemini|copilot|cursor)\/?$/;
+const V2_KORT = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)(\/\.well-known\/oauth-protected-resource)?\/?$/;
+const V2_KORT_PRM = /^\/\.well-known\/oauth-protected-resource\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)\/?$/;
+const V2_OUD = /^\/ai\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)(\/\.well-known\/oauth-protected-resource)?\/?$/;
+const V2_OUD_PRM = /^\/\.well-known\/oauth-protected-resource\/ai\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)\/?$/;
 
 /** Oud connectoradres → het nieuwe, korte adres (of null). Alleen een pad: query en host blijven van het verzoek. */
 export function oudConnectorPad(pathname: string): string | null {
@@ -457,7 +457,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   // kan geen open verbinding vasthouden, dus hier, vóór de routering (backend/connector-v2-stroom.ts).
   if (host === SERVICE_HOSTS.mcp && req.method === 'GET' && /text\/event-stream/i.test(String(req.headers.accept || ''))) {
     if (url.pathname === '/mcp' || url.pathname === '/mcp/') { await stroomVerzoekMcp(req, res); return; }
-    const m = /^\/(claude|gpt|grok|gemini|copilot|cursor)\/?$/.exec(url.pathname);
+    const m = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)\/?$/.exec(url.pathname);
     if (m) { await stroomVerzoek(req, res, m[1]); return; }
   }
   // MCP-connector voor Claude: nette URL's op mcp.* worden onder /api/mcp-connector/* gerouteerd (zie connectorPad).

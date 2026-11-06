@@ -4,7 +4,7 @@
 -- перемикачами не керуються. Підписана політика ШІ лишається вищою стелею.
 -- Пише лише системна роль. Роль застосунку рядків не бачить.
 CREATE TABLE IF NOT EXISTS app.ai_site_schakelaars (
-  sleutel        text        PRIMARY KEY CHECK (sleutel ~ '^(agent:(grok|claude|chatgpt|gemini|copilot|cursor)|methode:(mcp|token)|cap:[a-z][a-z0-9.]{1,40})$'),
+  sleutel        text        PRIMARY KEY CHECK (sleutel ~ '^(agent:(grok|claude|chatgpt|gemini|copilot|cursor|antigravity)|methode:(mcp|token)|cap:[a-z][a-z0-9.]{1,40})$'),
   aan            boolean     NOT NULL,
   gewijzigd_door text,
   gewijzigd_op   timestamptz NOT NULL DEFAULT now()
@@ -19,7 +19,7 @@ CREATE POLICY ai_site_schakelaars_geen_app ON app.ai_site_schakelaars
 -- Відсутній рядок = увімкнено. Стельовий перемикач сайту все одно сильніший.
 CREATE TABLE IF NOT EXISTS app.ai_gebruiker_caps (
   user_id      text        NOT NULL,
-  klant        text        NOT NULL CHECK (klant IN ('grok', 'claude', 'chatgpt', 'gemini', 'copilot', 'cursor')),
+  klant        text        NOT NULL CHECK (klant IN ('grok', 'claude', 'chatgpt', 'gemini', 'copilot', 'cursor', 'antigravity')),
   cap          text        NOT NULL CHECK (cap ~ '^[a-z][a-z0-9.]{1,40}$'),
   aan          boolean     NOT NULL,
   gewijzigd_op timestamptz NOT NULL DEFAULT now(),

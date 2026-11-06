@@ -35,7 +35,7 @@ export type AgentKleur = { licht: string; donker: string };
  * onderscheiden blijven. Nooit een eigen hexwaarde: de kleuren zelf komen uit ACCENT_KLEUREN.
  */
 export const AGENT_ACCENT: Readonly<Record<AgentSlug, Accent>> = Object.freeze({
-  claude: 'oranje', gpt: 'teal', grok: 'grafiet', gemini: 'blauw', copilot: 'violet', cursor: 'indigo',
+  claude: 'oranje', gpt: 'teal', grok: 'grafiet', gemini: 'blauw', copilot: 'violet', cursor: 'indigo', antigravity: 'hemel',
 });
 /** Accent voor een lezer waarvan de extensie de agent NIET kent (en voor een onbekend accent in de opslag). */
 export const ONBEKEND_ACCENT: Accent = 'grijs';
@@ -52,10 +52,11 @@ export const ONBEKENDE_KLEUR: AgentKleur = Object.freeze(kleurVanAccent(ONBEKEND
 export function agentSlugUitNaam(v: unknown): AgentSlug | null {
   const t = String(v ?? '').trim().toLowerCase();
   if (!t) return null;
-  if (t === 'claude' || t === 'gpt' || t === 'grok' || t === 'gemini' || t === 'copilot' || t === 'cursor') return t;
+  if (t === 'claude' || t === 'gpt' || t === 'grok' || t === 'gemini' || t === 'copilot' || t === 'cursor' || t === 'antigravity') return t;
   if (/chatgpt|openai|\bgpt/.test(t)) return 'gpt';
   if (/claude|anthropic/.test(t)) return 'claude';
   if (/grok|\bxai\b|x\.ai/.test(t)) return 'grok';
+  if (/antigravity|jetski/.test(t)) return 'antigravity';
   if (/gemini|google ai|bard/.test(t)) return 'gemini';
   if (/copilot|vscode|visual studio code/.test(t)) return 'copilot';
   if (/cursor/.test(t)) return 'cursor';
@@ -75,7 +76,7 @@ export function kleurVoorAgent(slug: AgentSlug | null, accent?: unknown): AgentK
 
 /** Naam van de agent zoals een mens die leest; leeg = de extensie weet het niet (het opschrift zegt dan alleen «ШІ»/«AI»). */
 export const AGENT_NAAM: Readonly<Record<AgentSlug, string>> = Object.freeze({
-  claude: 'Claude', gpt: 'ChatGPT', grok: 'Grok', gemini: 'Gemini', copilot: 'Copilot', cursor: 'Cursor',
+  claude: 'Claude', gpt: 'ChatGPT', grok: 'Grok', gemini: 'Gemini', copilot: 'Copilot', cursor: 'Cursor', antigravity: 'Antigravity',
 });
 
 // ---------------------------------------------------------------- wat doet die AI nu? (tweetalig, [uk, nl])

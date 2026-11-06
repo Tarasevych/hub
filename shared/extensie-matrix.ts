@@ -24,7 +24,7 @@ export const BROWSER_BEHEER_PAD_EN = `mcp.tarasevych.com → AI connections → 
 
 export const MATRIX_AGENT_ALLE = '*' as const;
 export type MatrixAgent = AgentSlug | typeof MATRIX_AGENT_ALLE;
-export const MATRIX_AGENTEN: readonly MatrixAgent[] = Object.freeze(['*', 'claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor']);
+export const MATRIX_AGENTEN: readonly MatrixAgent[] = Object.freeze(['*', 'claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity']);
 export const isMatrixAgent = (v: unknown): v is MatrixAgent => typeof v === 'string' && (MATRIX_AGENTEN as readonly string[]).includes(v);
 
 /** Teksten per mogelijkheid: naam, wat het toelaat, risico (uk, nl). Volgorde = BROWSER_CAPS. */

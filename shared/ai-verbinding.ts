@@ -25,7 +25,7 @@ export const accessSeconden = (d: Duur) => (d.accessSec > 0 ? d.accessSec : NOOI
 export const refreshSeconden = (d: Duur) => (d.refreshDagen > 0 ? d.refreshDagen * 86400 : NOOIT_SEC);
 
 // ---------------------------------------------------------------- welke AI-klant
-export type KlantId = 'grok' | 'claude' | 'chatgpt' | 'gemini' | 'copilot' | 'cursor' | 'overig';
+export type KlantId = 'grok' | 'claude' | 'chatgpt' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'overig';
 export type Klant = { id: KlantId; naam: string; deur: string | null };
 /** deur = pad van de MCP-deur op mcp.* (zoals in de tunnelregel); null = alleen via de connector /mcp. */
 export const KLANTEN: readonly Klant[] = Object.freeze([
@@ -35,6 +35,7 @@ export const KLANTEN: readonly Klant[] = Object.freeze([
   { id: 'gemini', naam: 'Gemini', deur: 'gemini' },
   { id: 'copilot', naam: 'Copilot', deur: 'copilot' },
   { id: 'cursor', naam: 'Cursor', deur: null },
+  { id: 'antigravity', naam: 'Antigravity', deur: null },
   { id: 'overig', naam: 'Інший клієнт', deur: null },
 ]);
 const normaal = (s: string) => s.toLowerCase().normalize('NFKC').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -48,6 +49,7 @@ export function klantVan(naam: string | null | undefined): KlantId {
   if (/\b(anthropic)\b/.test(n)) return 'claude';
   if (/\b(anysphere|cursormcp)\b/.test(n)) return 'cursor';
   if (/\b(vscode|vs code|visual studio|github)\b/.test(n)) return 'copilot';
+  if (/\b(antigravity|jetski)\b/.test(n)) return 'antigravity';
   return 'overig';
 }
 export const klant = (id: unknown): Klant => KLANTEN.find((k) => k.id === id) ?? KLANTEN[KLANTEN.length - 1];

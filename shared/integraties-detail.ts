@@ -26,7 +26,7 @@ export const POPULAIR: ReadonlySet<string> = new Set([
   'zapier', 'make', 'n8n', 'cloudflare', 'aws', 'home-assistant', 'openai-api', 'microsoft-teams', 'wordpress', 'mailchimp',
 ]);
 /** Recent toegevoegde koppelingen (filter «Нові»): de zes AI-agenten van de v2-connector en de eigen MCP-client (oktober 2026). */
-export const NIEUW: ReadonlySet<string> = new Set(['claude', 'chatgpt', 'grok', 'gemini', 'copilot', 'cursor', 'mcp-server']);
+export const NIEUW: ReadonlySet<string> = new Set(['claude', 'chatgpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity', 'mcp-server']);
 
 const MCP_STAPPEN = (naam: string): readonly Tekst[] => [
   [`Відкрийте «Технічні підключення» → «Підключити» і скопіюйте адресу ${naam}.`, `Open «Technische verbindingen» → «Verbinden» en kopieer het adres van ${naam}.`],
@@ -68,7 +68,7 @@ const DETAILS: Record<string, IntegratieDetail> = {
   'rest-api': { rechten: [['Кожен токен має власні обмежені права й термін дії', 'Elk token heeft eigen beperkte rechten en een looptijd']], stappen: [['Відкрийте API → Доступ і створіть токен із мінімальними правами.', 'Open API → Toegang en maak een token met minimale rechten.']], docs: 'https://api.tarasevych.com' },
   'oauth-clients': { rechten: [['Застосунки бачать лише ті дозволи, які ви схвалили', 'Apps zien alleen de toestemmingen die u hebt goedgekeurd']], stappen: [['Відкрийте «Додатки та OAuth» і оберіть політику для нових застосунків.', 'Open «Apps en OAuth» en kies het beleid voor nieuwe apps.']], docs: 'https://oauth.net/2/' },
 };
-for (const slug of ['claude', 'chatgpt', 'grok', 'gemini', 'copilot', 'cursor']) {
+for (const slug of ['claude', 'chatgpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity']) {
   const i = integratie(slug);
   if (i) DETAILS[slug] = { rechten: MCP_RECHTEN, stappen: MCP_STAPPEN(i.naam), docs: i.site };
 }

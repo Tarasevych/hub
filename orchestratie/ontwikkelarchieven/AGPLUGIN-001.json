@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "taakId": "AGPLUGIN-001",
+  "agent": "antigravity",
+  "tak": "feature/agplugin-001-20261106-072500",
+  "basisCommit": "29e785fa5ddf990e3789bc989ff893450a6da4f9",
+  "regelsVersie": "1.4.9",
+  "samenvatting": {
+    "uk": "Плагін і двосторонній конектор Google Antigravity (/antigravity) з веб-інтерфейсом і CLI/MCP-мостом для керування сайтом, браузером, ПК та сервером.",
+    "nl": "Plug-in en tweerichtingsconnector Google Antigravity (/antigravity) met webinterface en CLI/MCP-brug voor beheer van site, browser, pc en server."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-06T07:24:53Z",
+      "stap": "Реєстрація задачі AGPLUGIN-001 на гілці feature/agplugin-001-20261106-072500 від origin/integratie (29e785fa5ddf) та паралельне дослідження 81 гілки репозиторію 4 субагентами."
+    },
+    {
+      "tijd": "2026-11-06T07:45:00Z",
+      "stap": "Інтеграція клієнта 'antigravity' у систему конекторів v2 (/antigravity), офіційний логотип із @iconify-json/logos@1.2.17 (CC0-1.0), розширення браузера, матрицю дозволів та каталог інтеграцій."
+    },
+    {
+      "tijd": "2026-11-06T08:00:00Z",
+      "stap": "Створення інтерактивної панелі AntigravityBrugPaneel в AgentPagina.tsx, пакета плагіна deploy/antigravity-plugin/*, навички .agents/skills/mijn-ruimte/* з виконуваним двостороннім CLI/MCP-мостом та проходження модульних і будівельних перевірок."
+    }
+  ],
+  "keuzes": [
+    {
+      "onderwerp": "Власна адреса конектора v2 (/antigravity) замість спільного /mcp",
+      "reden": "Відповідно до архітектури connector-v2 кожен ШІ-агент має ізольовану адресу (https://mcp.tarasevych.com/antigravity), власну OAuth-метаінформацію RFC 9728 та імена інструментів із суфіксом _antigravity_<subdomein>_tarasevych_com_<gebruiker|beheer> ≤ 64 символів."
+    },
+    {
+      "onderwerp": "Офіційний вектор логотипа Antigravity з @iconify-json/logos@1.2.17",
+      "reden": "Пакет @iconify-json/logos@1.2.17 (CC0-1.0) вже входить у залежності проєкту й містить офіційну форму іконки Antigravity (24x24), що забезпечує 100% проходження merk-officieel, merk-register, markering-agenten та контрасту 4.60:1 (#FFFFFF на #027FBD)."
+    },
+    {
+      "onderwerp": "Чотирикаanальний двосторонній міст (Сайт/Orch, Браузер, ПК, Сервер)",
+      "reden": "Поєднує UI-панель на сторінці агента (#agent/antigravity) з виконуваним мостом mijn-ruimte (HTTP + McpStdio) для взаємодії в обох напрямках."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "pad": "shared/connector-v2/agenten.ts",
+      "wat": "Додано агент 'antigravity' до AgentSlug та V2_AGENTEN."
+    },
+    {
+      "pad": "shared/connector-v2/namen.ts",
+      "wat": "Додано скорочення KORT_ESSENTIE при перевищенні ліміту 64 символів для довгих slug та динамічний розбір за V2_AGENTEN."
+    },
+    {
+      "pad": "src/merk/merk-tabel.ts",
+      "wat": "Додано офіційну форму antigravity та запис у VORM_HERKOMST (@iconify-json/logos@1.2.17, CC0-1.0)."
+    },
+    {
+      "pad": "src/agenten/AgentPagina.tsx",
+      "wat": "Додано двомовну інтерактивну панель AntigravityBrugPaneel для керування 4 каналами мосту (site, browser, pc, server)."
+    },
+    {
+      "pad": "server/start.ts",
+      "wat": "Додано маршрутизацію /antigravity, /.well-known/oauth-protected-resource/antigravity, редірект 308 із /ai/antigravity та потік SSE."
+    },
+    {
+      "pad": ".agents/skills/mijn-ruimte/scripts/mijn-ruimte",
+      "wat": "Створено виконуваний двосторонній CLI та MCP stdio/HTTP-міст для Google Antigravity."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "npm run typecheck:server",
+      "uitkomst": "geslaagd (0 fouten)"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs (connector-v2, connector-instructies, merk-officieel, merk-register, contrast-knoppen-logos, agent-verbinden, agent-een-plek, integraties-catalogus, ai-agent-bord, mcp-orch-integratie, orch-site)",
+      "uitkomst": "geslaagd (alle controles groen)"
+    },
+    {
+      "opdracht": "npm run build",
+      "uitkomst": "geslaagd (kaart-controle, plaatsing-controle, hulp-vraagtekens, zoek-ui-catalogus, l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle, vite build, tech-bundels-controle, bouw-extensie, build:server)"
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "ANTIGRAVITY.md",
+    "orchestratie/beleid.json",
+    "shared/connector-v2/agenten.ts",
+    "node_modules/@iconify-json/logos/icons.json"
+  ],
+  "beperkingen": [
+    "Очікування живого OAuth-входу власника на https://mcp.tarasevych.com/agenten#agent/antigravity після розгортання гілки на сервері."
+  ]
+}

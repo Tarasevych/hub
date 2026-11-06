@@ -2,15 +2,32 @@
 // Eén functie maakt de naam, één functie leest hem terug; de server vertrouwt alleen de catalogus (nooit wat de AI «bedoelt»).
 // Puur.
 import { V2_OPTIES, type Kant, type V2Optie } from './catalogus';
-import { isAgentSlug, type AgentSlug } from './agenten';
+import { V2_AGENTEN, isAgentSlug, type AgentSlug } from './agenten';
 
 export const DOMEIN_DEEL = 'tarasevych_com';
 /** Grens van Claude, ChatGPT en de MCP-specificatie (SEP-986): ^[a-zA-Z0-9_-]{1,64}$ — wij gebruiken alleen a-z0-9_. */
 export const MAX_NAAM = 64;
 export const NAAM_RE = /^[a-z0-9_]{1,64}$/;
 
+const KORT_ESSENTIE: Readonly<Record<string, string>> = Object.freeze({
+  tonen_mail_labels: 'tonen_labels',
+  opstellen_antwoord: 'maken_antwoord',
+  versturen_bericht: 'zenden_bericht',
+  verplaatsen_afspraak: 'verplaats_afspraak',
+  verwijderen_afspraak: 'wissen_afspraak',
+  antwoorden_afspraak: 'antwoord_afspraak',
+  creeren_bestand: 'maken_bestand',
+  uploaden_bestand: 'laden_bestand',
+  tonen_github_koppeling: 'tonen_gh_koppeling',
+  tonen_mijn_activiteit: 'tonen_activiteit',
+  lezen_workflow_logboek: 'lezen_ci_logboek',
+  annuleren_update_voorstel: 'annuleren_voorstel',
+});
+
 export function toolNaam(o: Pick<V2Optie, 'essentie' | 'sub' | 'dienst' | 'kant'>, agent: AgentSlug): string {
-  return [o.essentie, agent, o.sub, ...(o.dienst ? [o.dienst] : []), DOMEIN_DEEL, o.kant].join('_');
+  const staart = [agent, o.sub, ...(o.dienst ? [o.dienst] : []), DOMEIN_DEEL, o.kant].join('_');
+  const lang = `${o.essentie}_${staart}`;
+  return lang.length <= MAX_NAAM ? lang : `${KORT_ESSENTIE[o.essentie] ?? o.essentie}_${staart}`;
 }
 
 // Index per agent: naam → optie (alleen actieve opties krijgen een naam die werkt).
@@ -39,7 +56,7 @@ export function ontleed(naam: string, agent: AgentSlug): Ontleed {
   if (eigen) return { ok: true, optie: eigen };
   const kant: Kant | undefined = n.endsWith(`_${DOMEIN_DEEL}_gebruiker`) ? 'gebruiker' : n.endsWith(`_${DOMEIN_DEEL}_beheer`) ? 'beheer' : undefined;
   if (!kant) return { ok: false, reden: n.includes('_tarasevych_') || /_[a-z]+_com_(gebruiker|beheer)$/.test(n) ? 'ANDERE_SITE' : 'ONBEKEND' };
-  for (const a of ['claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor'] as const) {
+  for (const { slug: a } of V2_AGENTEN) {
     if (a !== agent && isAgentSlug(a) && index(a).has(n)) return { ok: false, reden: 'ANDERE_AGENT', agent: a, kant };
   }
   return { ok: false, reden: 'ONBEKEND', kant };

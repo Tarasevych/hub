@@ -10,15 +10,15 @@
 --  • app.connector_v2_instellingen: «extra bevestiging bij elke nieuwe koppeling» (verse aanmelding, ook als de sessie jong is).
 -- RLS zoals 0044: mijnruimte_app ziet alleen eigen rijen; de server werkt met de systeemrol.
 
-ALTER TABLE app.mcp_oauth_auth   ADD COLUMN IF NOT EXISTS agent text CHECK (agent IS NULL OR agent IN ('claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor'));
+ALTER TABLE app.mcp_oauth_auth   ADD COLUMN IF NOT EXISTS agent text CHECK (agent IS NULL OR agent IN ('claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity'));
 ALTER TABLE app.mcp_oauth_auth   ADD COLUMN IF NOT EXISTS v2_keuze jsonb;
-ALTER TABLE app.mcp_oauth_tokens ADD COLUMN IF NOT EXISTS agent text CHECK (agent IS NULL OR agent IN ('claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor'));
+ALTER TABLE app.mcp_oauth_tokens ADD COLUMN IF NOT EXISTS agent text CHECK (agent IS NULL OR agent IN ('claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity'));
 CREATE INDEX IF NOT EXISTS mcp_oauth_tokens_agent_idx ON app.mcp_oauth_tokens (user_id, agent) WHERE agent IS NOT NULL AND revoked_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS app.connector_v2_rechten (
   grant_id   uuid        PRIMARY KEY REFERENCES app.mcp_oauth_tokens(id) ON DELETE CASCADE,
   user_id    text        NOT NULL,
-  agent      text        NOT NULL CHECK (agent IN ('claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor')),
+  agent      text        NOT NULL CHECK (agent IN ('claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity')),
   kanten     text[]      NOT NULL CHECK (kanten <@ ARRAY['gebruiker', 'beheer']::text[] AND cardinality(kanten) BETWEEN 1 AND 2),
   sleutels   text[]      NOT NULL DEFAULT '{}' CHECK (cardinality(sleutels) <= 400),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -27,7 +27,7 @@ CREATE INDEX IF NOT EXISTS connector_v2_rechten_user_idx ON app.connector_v2_rec
 
 CREATE TABLE IF NOT EXISTS app.connector_v2_voorkeur (
   user_id      text        NOT NULL,
-  agent        text        NOT NULL CHECK (agent IN ('claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor')),
+  agent        text        NOT NULL CHECK (agent IN ('claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity')),
   kanten       text[]      NOT NULL CHECK (kanten <@ ARRAY['gebruiker', 'beheer']::text[] AND cardinality(kanten) BETWEEN 1 AND 2),
   sleutels     text[]      NOT NULL DEFAULT '{}' CHECK (cardinality(sleutels) <= 400),
   -- true = de gebruiker wijzigde iets wat een nieuwe toestemming vraagt; het venster toont dan het verschil.

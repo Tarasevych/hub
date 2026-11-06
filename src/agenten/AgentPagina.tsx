@@ -449,6 +449,172 @@ function AgentToegangGereedheid({
   );
 }
 
+type BrugKanaal = 'site' | 'browser' | 'pc' | 'server';
+
+function AntigravityBrugPaneel({
+  tr, uk, adres, diag, hulpmiddelenNu, naWijziging,
+}: {
+  tr: Tr; uk: boolean; adres: string; diag: AgentToegangDiagnose | null; hulpmiddelenNu: number; naWijziging: () => Promise<void>;
+}) {
+  const [kanaal, setKanaal] = useState<BrugKanaal>('site');
+  const [gekopieerd, setGekopieerd] = useState('');
+  const [verversBezig, setVerversBezig] = useState(false);
+  const kopieer = (sleutel: string, tekst: string) => {
+    void navigator.clipboard?.writeText(tekst).then(() => {
+      setGekopieerd(sleutel);
+      window.setTimeout(() => setGekopieerd(''), 1800);
+    }).catch(() => undefined);
+  };
+  const techAan = !!diag?.effectiveTechnicalAccess;
+  const verbonden = !!diag?.connectionGranted.verbonden;
+
+  const kanalen: Record<BrugKanaal, {
+    titel: [string, string];
+    uitleg: [string, string];
+    opdracht: string;
+    rpcVoorbeeld: string;
+    href: string;
+    hrefLabel: [string, string];
+  }> = {
+    site: {
+      titel: ['1. Сайт і координація (GitOps / MCP)', '1. Site en coördinatie (GitOps / MCP)'],
+      uitleg: [
+        'Двостороннє створення й оновлення сайту через власну адресу /antigravity: пошта, календар, файли, дошка, GitHub та 6 інструментів оркестрації (orch_overzicht, orch_context, orch_taak_start, orch_inleveren_*).',
+        'Tweerichtingsbouw en -beheer van de site via /antigravity: mail, agenda, bestanden, bord, GitHub en de 6 orkestratiehulpmiddelen (orch_overzicht, orch_context, orch_taak_start, orch_inleveren_*).',
+      ],
+      opdracht: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Status --url ${adres}`,
+      rpcVoorbeeld: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte RoepAan --hulpmiddel tonen_orch_overzicht_antigravity_admin_tarasevych_com_beheer',
+      href: '#orch',
+      hrefLabel: ['Відкрити «Координація»', 'Open «Coördinatie»'],
+    },
+    browser: {
+      titel: ['2. Браузер (розширення Mijn Ruimte)', '2. Browser (Mijn Ruimte-extensie)'],
+      uitleg: [
+        'Керування вкладками в реальному часі (21 інструмент): відкриття сторінок, знімок DOM, клік, введення тексту, форми, скріншоти, консоль, мережа та глибока діагностика Chrome Debugger.',
+        'Realtime tabbladbeheer (21 hulpmiddelen): pagina’s openen, DOM-opname, klikken, typen, formulieren, schermafdrukken, console, netwerk en diepe Chrome Debugger-diagnose.',
+      ],
+      opdracht: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserTabs --kant gebruiker',
+      rpcVoorbeeld: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserOpen --doelUrl https://tarasevych.com',
+      href: '#browser',
+      hrefLabel: ['Відкрити «Браузер і агенти»', 'Open «Browser en agenten»'],
+    },
+    pc: {
+      titel: ['3. Локальний ПК / Комп’ютер (agent.mjs)', '3. Lokale pc / computer (agent.mjs)'],
+      uitleg: [
+        'Двосторонній міст із вашим комп’ютером: стан системи, процеси, читання й запис файлів у дозволених коренях, безпечне виконання команд із списку дозволених і перегляд контейнерів Docker.',
+        'Tweerichtingsbrug met uw computer: systeemstatus, processen, bestanden lezen en schrijven in toegestane mappen, veilige opdrachten van de witte lijst en Docker-containers bekijken.',
+      ],
+      opdracht: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcStatus --kant gebruiker',
+      rpcVoorbeeld: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcBestanden --pad . --kant gebruiker',
+      href: '#apparaten',
+      hrefLabel: ['Відкрити «Пристрої»', 'Open «Apparaten»'],
+    },
+    server: {
+      titel: ['4. Сервер і випуски (_beheer)', '4. Server en releases (_beheer)'],
+      uitleg: [
+        'Керування сервером у технічному просторі: стан служб, журнали випусків, перевірка БД (SELECT), хвіст аудиту, безпека та підписані випуски.',
+        'Serverbeheer in de technische ruimte: dienststatus, releaselogboeken, DB-controle (SELECT), auditstaart, beveiliging en ondertekende releases.',
+      ],
+      opdracht: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerGezondheid',
+      rpcVoorbeeld: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerUitrolStatus',
+      href: '#technisch',
+      hrefLabel: ['Відкрити «Технічне»', 'Open «Technisch»'],
+    },
+  };
+
+  const actiefKanaal = kanalen[kanaal];
+
+  return (
+    <section className='ag-kaart' data-agent-sectie='brug' aria-labelledby='ag-antigravity-brug-kop'>
+      <div className='ag-kaart-kop'>
+        <h3 id='ag-antigravity-brug-kop'><Zap size={16} aria-hidden='true' /> {tr('Двосторонній міст Google Antigravity (Сайт · Браузер · ПК · Сервер)', 'Tweerichtingsbrug Google Antigravity (Site · Browser · Pc · Server)')}</h3>
+        <span className={`ag-badge ${verbonden ? 'ag-ok' : 'ag-warn'}`} data-brug-verbonden={verbonden ? '1' : '0'}>
+          <Check size={12} aria-hidden='true' />
+          {verbonden
+            ? tr(`Активний міст · ${hulpmiddelenNu} інструментів`, `Actieve brug · ${hulpmiddelenNu} hulpmiddelen`)
+            : tr('Готовий до підключення', 'Klaar om te verbinden')}
+        </span>
+      </div>
+      <p className='hub-meta'>
+        {tr(
+          'Плагін і конектор працюють у двох напрямках: ви керуєте дозволами, браузером, ПК і сервером із цього інтерфейсу, а агент Antigravity виконує дії та повертає живий стан назад на сайт.',
+          'De plug-in en connector werken in twee richtingen: u beheert rechten, browser, pc en server vanuit dit scherm, en de Antigravity-agent voert acties uit en stuurt de levende stand terug naar de site.',
+        )}
+      </p>
+
+      <div className='ag-verbind-knoppen' role='tablist' aria-label={tr('Канали мосту Antigravity', 'Brugkanalen van Antigravity')}>
+        {(['site', 'browser', 'pc', 'server'] as const).map((k) => (
+          <button
+            key={k}
+            type='button'
+            role='tab'
+            aria-selected={kanaal === k}
+            className={`ag-knop${kanaal === k ? ' ag-knop-primary' : ''}`}
+            data-brug-kanaal={k}
+            onClick={() => setKanaal(k)}
+          >
+            {uk ? kanalen[k].titel[0] : kanalen[k].titel[1]}
+          </button>
+        ))}
+      </div>
+
+      <ul className='ag-diagnose-lijst' data-brug-actief-kanaal={kanaal}>
+        <li className='ag-diagnose-rij'>
+          <div className='ag-diagnose-info'>
+            <div className='ag-diagnose-titel'>
+              <b>{uk ? actiefKanaal.titel[0] : actiefKanaal.titel[1]}</b>
+              {kanaal === 'server' ? (
+                <span className={`ag-badge ${techAan ? 'ag-ok' : 'ag-warn'}`}>
+                  {techAan ? tr('Технічний простір активний', 'Technische ruimte actief') : tr('Потрібен технічний сеанс', 'Technische sessie vereist')}
+                </span>
+              ) : (
+                <span className='ag-badge ag-ok'>{tr('Двосторонній канал', 'Tweerichtingskanaal')}</span>
+              )}
+            </div>
+            <small className='hub-meta'>{uk ? actiefKanaal.uitleg[0] : actiefKanaal.uitleg[1]}</small>
+            <p className='hub-meta'>
+              <code>{actiefKanaal.opdracht}</code>
+            </p>
+          </div>
+          <div className='ag-diagnose-acties'>
+            <button
+              type='button'
+              className='ag-knop ag-knop-primary'
+              data-brug-kopieer={`cmd-${kanaal}`}
+              onClick={() => kopieer(`cmd-${kanaal}`, actiefKanaal.opdracht)}
+            >
+              {gekopieerd === `cmd-${kanaal}` ? tr('Скопійовано', 'Gekopieerd') : tr('Скопіювати команду CLI', 'CLI-opdracht kopiëren')}
+            </button>
+            <button
+              type='button'
+              className='ag-knop'
+              data-brug-kopieer={`rpc-${kanaal}`}
+              onClick={() => kopieer(`rpc-${kanaal}`, actiefKanaal.rpcVoorbeeld)}
+            >
+              {gekopieerd === `rpc-${kanaal}` ? tr('Скопійовано', 'Gekopieerd') : tr('Приклад виклику', 'Voorbeeldaanroep')}
+            </button>
+            <a className='ag-knop' href={actiefKanaal.href} data-brug-open={kanaal}>
+              {uk ? actiefKanaal.hrefLabel[0] : actiefKanaal.hrefLabel[1]} <ExternalLink size={13} aria-hidden='true' />
+            </a>
+            <button
+              type='button'
+              className='ag-knop'
+              disabled={verversBezig}
+              data-brug-ververs='1'
+              onClick={() => {
+                setVerversBezig(true);
+                void naWijziging().finally(() => setVerversBezig(false));
+              }}
+            >
+              {verversBezig ? tr('Оновлення…', 'Vernieuwen…') : tr('Перевірити зв’язок', 'Verbinding testen')}
+            </button>
+          </div>
+        </li>
+      </ul>
+    </section>
+  );
+}
+
 export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSlug; terug: () => void }) {
   // De open rij is PLAATSELIJK: het adres (#agent/<slug>) wijst de agent aan, niet een geopende rij — anders zou het openen van
   // een tokenrij de slug uit de hash duwen en de pagina kwijtraken.
@@ -583,6 +749,10 @@ export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSl
 
       {/* 1b (21.10.2026): wat DEZE AI voorstelde en op uw «Підтвердити» wacht (mail verzenden, delen, foto's …). */}
       <BevestigingenPaneel tr={tr} agent={slug} />
+
+      {slug === 'antigravity' ? (
+        <AntigravityBrugPaneel tr={tr} uk={uk} adres={adres} diag={diag} hulpmiddelenNu={hulpmiddelenNu} naWijziging={naWijziging} />
+      ) : null}
 
       {/* 2: дозволи — dezelfde kiezer als in het toestemmingsvenster, met herverbinden en intrekken. */}
       <section className='ag-kaart' data-agent-sectie='rechten' aria-labelledby={`ag-agent-rechten-${slug}`}>

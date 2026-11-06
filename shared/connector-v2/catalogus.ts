@@ -320,7 +320,7 @@ const DEFS: readonly Def[] = [
   { id: 'browser_audit', essentie: 'tonen_pagina_audit', sub: 'mcp', kanten: BEIDE, soort: 'lezen', groep: 'browser', risico: 'laag',
     uk: ['Аудит сторінки', 'Швидкодія, знахідки безпеки й структура відкритої сторінки (розширення 0.5).', 'Без значень полів, cookie й рядків запиту; лише коли розширення розблоковано вашим passkey.'],
     nl: ['Audit van de pagina', 'Snelheid, beveiligingsbevindingen en opbouw van de open pagina (extensie 0.5).', 'Zonder veldwaarden, cookies of querystrings; alleen als de extensie met uw passkey is ontgrendeld.'] },
-  { id: 'browser_get_deep_diagnostics', essentie: 'uitvoeren_diepe_diagnose', sub: 'mcp', kanten: BEIDE, soort: 'schrijven', groep: 'browser', risico: 'midden',
+  { id: 'browser_get_deep_diagnostics', essentie: 'doen_diepe_diagnose', sub: 'mcp', kanten: BEIDE, soort: 'schrijven', groep: 'browser', risico: 'midden',
     uk: ['Глибока діагностика', 'Розширений звіт зі станом сторінки й сховища.', 'Може показати більше технічних деталей; ви підтверджуєте.'],
     nl: ['Diepe diagnose', 'Uitgebreid rapport met de staat van pagina en opslag.', 'Kan meer technische details tonen; u bevestigt.'] },
   { id: 'browser_screenshot', essentie: 'maken_schermafdruk', sub: 'mcp', kanten: BEIDE, soort: 'schrijven', groep: 'browser', risico: 'midden',

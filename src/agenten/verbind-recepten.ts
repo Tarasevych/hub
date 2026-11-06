@@ -159,6 +159,18 @@ export function recept(slug: AgentSlug): Recept {
       ],
       grens: ['Чесно: у споживчому Grok (grok.com, застосунок X) станом на жовтень 2026 немає поля для власного MCP-сервера з OAuth — тут нема кнопки «відкрити Grok», бо вона нічого б не підключила. Якщо клієнт на моделі Grok приймає лише заголовок Authorization, випустіть токен у розділі «Токени» нижче.', 'Eerlijk: consumenten-Grok (grok.com, de X-app) heeft in oktober 2026 geen veld voor een eigen MCP-server met OAuth — er staat hier geen knop «Grok openen», want die zou niets koppelen. Neemt een client op een Grok-model alleen een Authorization-kop aan, geef dan hieronder bij «Tokens» een token uit.'],
     };
+    case 'antigravity': return {
+      slug, serverNaam: SERVER_NAAM,
+      knoppen: [
+        { soort: 'opdracht', label: ['Скопіювати команду плагіна Antigravity', 'Opdracht voor Antigravity-plug-in kopiëren'], kopieer: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Verbind --url ${url}`, uitleg: ['Термінал робочого простору Google Antigravity: одна команда налаштовує двосторонній міст із сайтом, браузером, ПК та сервером.', 'Terminal van de Google Antigravity-werkruimte: één opdracht stelt de tweerichtingsbrug met site, browser, pc en server in.'] },
+        { soort: 'config', label: ['Скопіювати settings.json для Antigravity', 'settings.json voor Antigravity kopiëren'], kopieer: geminiCliConfig(slug), uitleg: ['~/.gemini/settings.json або mcp.json: підключення за власною адресою /antigravity з автовиявленням OAuth (RFC 9728).', '~/.gemini/settings.json of mcp.json: koppeling op het eigen adres /antigravity met automatische OAuth-ontdekking (RFC 9728).'] },
+      ],
+      stappen: [
+        [`Виконайте скопійовану команду в терміналі Google Antigravity або додайте конфігурацію з адресою ${url} у ~/.gemini/settings.json.`, `Voer de gekopieerde opdracht uit in de terminal van Google Antigravity of zet de configuratie met het adres ${url} in ~/.gemini/settings.json.`],
+        ['Плагін Mijn Ruimte увімкне двосторонній зв’язок: керування сайтом, браузерним розширенням, локальним ПК (agent.mjs) та сервером.', 'De Mijn Ruimte-plug-in activeert de tweerichtingsverbinding: beheer van site, browserextensie, lokale pc (agent.mjs) en server.'],
+        DOZVIL, KLAAR,
+      ],
+    };
   }
   // Onbereikbaar (alle slugs staan hierboven), maar TypeScript wil een pad: zonder knop, met het kale adres.
   return { slug, serverNaam: SERVER_NAAM, knoppen: [{ soort: 'config', label: ['Скопіювати mcp.json', 'mcp.json kopiëren'], kopieer: mcpJsonConfig(slug) }], stappen: [PLAK(url), DOZVIL, KLAAR] };
