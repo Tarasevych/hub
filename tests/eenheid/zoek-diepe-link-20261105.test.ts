@@ -134,6 +134,10 @@ function B(){return <div><button>{tr('Кнопка Б','Knop B')}</button>{y && 
   // 8. Bugbot op PR #31: de oude cloudpagina zocht open_item_id alleen in de bootstrap (een deel van een grote bibliotheek)
   const cf = lees('src/CloudFunctioneelWeergave.tsx'), cpl = lees('backend/cloud-platform.ts');
   check('8 oude cloud: item buiten de bootstrap → /items/:id/open bij de server, «niet gevonden» pas als de server het niet kent', /void openItem\(stub, true\)/.test(cf) && /uitZoek && \/NOT_FOUND\|ANDERE_RUIMTE\/\.test/.test(cf) && /encodeURIComponent\(gegeven\.id\)/.test(cf));
+  // Bugbot (2e ronde): het item buiten de bootstrap staat niet in data.items, dus saveResume stuurde bij een energie-/focuswissel
+  // currentItemId '' en wiste het resume. Nu blijft het resume-item staan (de server controleert de eigenaar opnieuw).
+  const sr = cf.slice(cf.indexOf('const saveResume'), cf.indexOf('const toggleFocus'));
+  check('8 oude cloud: saveResume houdt het resume-item buiten data.items vast (geen stil wissen na een diepe link)', /uitResume = !item && Boolean\(requestedItemId\) && requestedItemId === data\.resume\?\.currentItemId/.test(sr) && /itemId = item\?\.id \|\| \(uitResume \? requestedItemId : ''\)/.test(sr) && /uitResume \? data\.resume\?\.currentWorkspaceId/.test(sr));
   check('8 server: /items/:id/open geeft titel en werkruimte mee (eigenaar via ownerItem)', /const kop = \{ title: String\(item\.title \|\| ''\), workspaceId/.test(cpl) && /ownerItem\(auth\.user\.id, ctx\.params\.id\)/.test(cpl));
   check('contract: de parameternamen', DIEPE_PARAMS.bericht === 'open_message_id' && DIEPE_PARAMS.item === 'open_item_id' && DIEPE_PARAMS.bestand === 'open_file_id' && DIEPE_PARAMS.afspraak === 'open_event_id');
   return einde();
