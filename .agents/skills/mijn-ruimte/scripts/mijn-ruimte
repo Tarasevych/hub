@@ -17,82 +17,92 @@ const CONFIG_PAD = join(homedir(), '.config', 'mijn-ruimte', 'antigravity.json')
 const GEMINI_SETTINGS_PAD = join(homedir(), '.gemini', 'settings.json');
 
 // Korte hulpmiddel-id → volledige v2-naam voor agent `antigravity`
-const KORT_NAAR_V2 = Object.freeze({
+export const KORT_NAAR_V2 = Object.freeze({
   whoami: {
     gebruiker: 'tonen_mijn_account_antigravity_ai_tarasevych_com_gebruiker',
-    beheer: 'tonen_mijn_account_antigravity_ai_tarasevych_com_beheer',
+    beheer: 'tonen_mijn_account_antigravity_ai_tarasevych_com_gebruiker',
   },
   // Coördinatie (orch_*)
-  orch_overzicht: { beheer: 'tonen_orch_overzicht_antigravity_admin_tarasevych_com_beheer' },
-  orch_context: { beheer: 'lezen_orch_context_antigravity_admin_tarasevych_com_beheer' },
-  orch_taak_start: { beheer: 'starten_orch_taak_antigravity_admin_tarasevych_com_beheer' },
-  orch_inleveren_begin: { beheer: 'starten_orch_inlevering_antigravity_admin_tarasevych_com_beheer' },
-  orch_inleveren_stuk: { beheer: 'sturen_orch_inleverstuk_antigravity_admin_tarasevych_com_beheer' },
-  orch_inleveren_klaar: { beheer: 'afronden_orch_inlevering_antigravity_admin_tarasevych_com_beheer' },
+  orch_overzicht: { beheer: 'tonen_agent_coordinatie_antigravity_admin_tarasevych_com_beheer' },
+  orch_context: { beheer: 'lezen_agent_context_antigravity_admin_tarasevych_com_beheer' },
+  orch_taak_start: { beheer: 'registreren_agent_taak_antigravity_admin_tarasevych_com_beheer' },
+  orch_inleveren_begin: { beheer: 'starten_overdracht_antigravity_admin_tarasevych_com_beheer' },
+  orch_inleveren_stuk: { beheer: 'uploaden_overdracht_deel_antigravity_admin_tarasevych_com_beheer' },
+  orch_inleveren_klaar: { beheer: 'afronden_overdracht_antigravity_admin_tarasevych_com_beheer' },
   // Browserextensie
   browser_list_tabs: {
-    gebruiker: 'tonen_open_tabbladen_antigravity_ai_browser_tarasevych_com_gebruiker',
-    beheer: 'tonen_open_tabbladen_antigravity_ai_browser_tarasevych_com_beheer',
+    gebruiker: 'tonen_tabbladen_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'tonen_tabbladen_antigravity_mcp_tarasevych_com_beheer',
   },
   browser_open: {
-    gebruiker: 'openen_webpagina_antigravity_ai_browser_tarasevych_com_gebruiker',
-    beheer: 'openen_webpagina_antigravity_ai_browser_tarasevych_com_beheer',
+    gebruiker: 'openen_pagina_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'openen_pagina_antigravity_mcp_tarasevych_com_beheer',
   },
   browser_snapshot: {
-    gebruiker: 'lezen_pagina_opname_antigravity_ai_browser_tarasevych_com_gebruiker',
-    beheer: 'lezen_pagina_opname_antigravity_ai_browser_tarasevych_com_beheer',
+    gebruiker: 'lezen_pagina_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'lezen_pagina_antigravity_mcp_tarasevych_com_beheer',
   },
   browser_click: {
-    gebruiker: 'klikken_element_antigravity_ai_browser_tarasevych_com_gebruiker',
-    beheer: 'klikken_element_antigravity_ai_browser_tarasevych_com_beheer',
+    gebruiker: 'klikken_element_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'klikken_element_antigravity_mcp_tarasevych_com_beheer',
   },
   browser_type: {
-    gebruiker: 'typen_in_veld_antigravity_ai_browser_tarasevych_com_gebruiker',
-    beheer: 'typen_in_veld_antigravity_ai_browser_tarasevych_com_beheer',
+    gebruiker: 'typen_tekst_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'typen_tekst_antigravity_mcp_tarasevych_com_beheer',
   },
   browser_screenshot: {
-    gebruiker: 'maken_schermafdruk_antigravity_ai_browser_tarasevych_com_gebruiker',
-    beheer: 'maken_schermafdruk_antigravity_ai_browser_tarasevych_com_beheer',
+    gebruiker: 'maken_schermafdruk_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'maken_schermafdruk_antigravity_mcp_tarasevych_com_beheer',
   },
   browser_get_deep_diagnostics: {
-    gebruiker: 'doen_diepe_diagnose_antigravity_ai_browser_tarasevych_com_gebruiker',
-    beheer: 'doen_diepe_diagnose_antigravity_ai_browser_tarasevych_com_beheer',
+    gebruiker: 'doen_diepe_diagnose_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'doen_diepe_diagnose_antigravity_mcp_tarasevych_com_beheer',
   },
   // Lokale pc / computer (agent.mjs)
   machine_status: {
-    gebruiker: 'tonen_systeemstatus_antigravity_ai_pc_tarasevych_com_gebruiker',
-    beheer: 'tonen_systeemstatus_antigravity_ai_pc_tarasevych_com_beheer',
+    gebruiker: 'tonen_systeem_belasting_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'tonen_systeem_belasting_antigravity_mcp_tarasevych_com_beheer',
+  },
+  machine_list: {
+    gebruiker: 'tonen_apparaten_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'tonen_apparaten_antigravity_mcp_tarasevych_com_beheer',
   },
   machine_processes: {
-    gebruiker: 'tonen_processen_antigravity_ai_pc_tarasevych_com_gebruiker',
-    beheer: 'tonen_processen_antigravity_ai_pc_tarasevych_com_beheer',
+    gebruiker: 'tonen_apparaat_info_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'tonen_apparaat_info_antigravity_mcp_tarasevych_com_beheer',
   },
   machine_list_dir: {
-    gebruiker: 'tonen_mapinhoud_antigravity_ai_pc_tarasevych_com_gebruiker',
-    beheer: 'tonen_mapinhoud_antigravity_ai_pc_tarasevych_com_beheer',
+    gebruiker: 'tonen_map_inhoud_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'tonen_map_inhoud_antigravity_mcp_tarasevych_com_beheer',
   },
   machine_read_file: {
-    gebruiker: 'lezen_bestand_op_pc_antigravity_ai_pc_tarasevych_com_gebruiker',
-    beheer: 'lezen_bestand_op_pc_antigravity_ai_pc_tarasevych_com_beheer',
+    gebruiker: 'lezen_bestand_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'lezen_bestand_antigravity_mcp_tarasevych_com_beheer',
   },
   machine_write_file: {
-    gebruiker: 'schrijven_bestand_op_pc_antigravity_ai_pc_tarasevych_com_gebruiker',
-    beheer: 'schrijven_bestand_op_pc_antigravity_ai_pc_tarasevych_com_beheer',
+    gebruiker: 'schrijven_bestand_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'schrijven_bestand_antigravity_mcp_tarasevych_com_beheer',
   },
   machine_exec: {
-    gebruiker: 'uitvoeren_opdracht_antigravity_ai_pc_tarasevych_com_gebruiker',
-    beheer: 'uitvoeren_opdracht_antigravity_ai_pc_tarasevych_com_beheer',
+    gebruiker: 'uitvoeren_opdracht_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'uitvoeren_opdracht_antigravity_mcp_tarasevych_com_beheer',
   },
   machine_docker: {
-    gebruiker: 'tonen_containers_antigravity_ai_pc_tarasevych_com_gebruiker',
-    beheer: 'tonen_containers_antigravity_ai_pc_tarasevych_com_beheer',
+    gebruiker: 'tonen_containers_antigravity_mcp_tarasevych_com_gebruiker',
+    beheer: 'tonen_containers_antigravity_mcp_tarasevych_com_beheer',
   },
   // Server & releases (_beheer)
-  server_health: { beheer: 'tonen_servergezondheid_antigravity_admin_tarasevych_com_beheer' },
-  deploy_status: { beheer: 'tonen_uitrolstatus_antigravity_admin_tarasevych_com_beheer' },
-  deploy_logs: { beheer: 'lezen_dienstlogboek_antigravity_admin_tarasevych_com_beheer' },
-  db_query_readonly: { beheer: 'uitvoeren_leesvraag_db_antigravity_admin_tarasevych_com_beheer' },
-  audit_tail: { beheer: 'lezen_auditlogboek_antigravity_admin_tarasevych_com_beheer' },
+  server_health: { beheer: 'tonen_server_gezondheid_antigravity_admin_tarasevych_com_beheer' },
+  deploy_status: {
+    beheer: 'tonen_update_status_antigravity_admin_tarasevych_com_beheer',
+    gebruiker: 'tonen_uitrol_status_antigravity_mcp_tarasevych_com_gebruiker',
+  },
+  deploy_logs: {
+    beheer: 'lezen_app_logboek_antigravity_mcp_tarasevych_com_beheer',
+    gebruiker: 'lezen_app_logboek_antigravity_mcp_tarasevych_com_gebruiker',
+  },
+  live_release: { beheer: 'tonen_live_release_antigravity_admin_tarasevych_com_beheer' },
+  audit_tail: { beheer: 'lezen_audit_journaal_antigravity_admin_tarasevych_com_beheer' },
 });
 
 function leesConfig() {
@@ -216,13 +226,15 @@ async function voerUit() {
       if (init.status === 200 && token) {
         const lijst = await stuurRpc(url, token, 'tools/list', {});
         const tools = lijst.body?.result?.tools || [];
+        const browserRe = /(tabbladen|pagina|schermafdruk|element|tekst|formulier|optie|toets|script|site_actie|console|netwerk|diagnose)_antigravity_mcp_/;
+        const pcRe = /(apparaten|apparaat_info|map_inhoud|bestand|bestanden|systeem_belasting|opdracht|containers|container)_antigravity_mcp_/;
         uit.rpc = {
           status: 200,
           verbonden: true,
           totaalHulpmiddelen: tools.length,
           perKanaal: {
-            browser: tools.filter((t) => t.name.includes('_browser_')).length,
-            pc: tools.filter((t) => t.name.includes('_pc_')).length,
+            browser: tools.filter((t) => browserRe.test(t.name)).length,
+            pc: tools.filter((t) => pcRe.test(t.name)).length,
             server: tools.filter((t) => t.name.endsWith('_beheer')).length,
             prive: tools.filter((t) => t.name.endsWith('_gebruiker')).length,
           },
@@ -303,7 +315,7 @@ async function voerUit() {
     ServerGezondheid: () => ({ naam: losHulpmiddelOp('server_health', 'beheer'), args: {} }),
     ServerUitrolStatus: () => ({ naam: losHulpmiddelOp('deploy_status', 'beheer'), args: {} }),
     ServerLogs: () => ({ naam: losHulpmiddelOp('deploy_logs', 'beheer'), args: { service: vlaggen.dienst || 'hub', lines: Number(vlaggen.regels || 80) } }),
-    ServerSql: () => ({ naam: losHulpmiddelOp('db_query_readonly', 'beheer'), args: { query: vlaggen.query || 'SELECT 1 AS ok' } }),
+    ServerRelease: () => ({ naam: losHulpmiddelOp('live_release', 'beheer'), args: {} }),
     ServerAudit: () => ({ naam: losHulpmiddelOp('audit_tail', 'beheer'), args: { limit: Number(vlaggen.limiet || 25) } }),
     RoepAan: () => ({
       naam: losHulpmiddelOp(vlaggen.hulpmiddel || 'whoami', kant),
@@ -328,14 +340,16 @@ async function voerUit() {
       'OrchOverzicht | OrchContext | OrchTaakStart --id <ID> --samenvatting <TEKST>',
       'BrowserTabs | BrowserOpen --doelUrl <URL> | BrowserSnapshot | BrowserKlik --selector <S> | BrowserTyp --selector <S> --tekst <T> | BrowserSchermafdruk | BrowserDiagnose',
       'PcStatus | PcProcessen | PcBestanden --pad <PAD> | PcLees --pad <PAD> | PcSchrijf --pad <PAD> --inhoud <TEKST> | PcOpdracht --opdracht <CMD> | PcDocker',
-      'ServerGezondheid | ServerUitrolStatus | ServerLogs --dienst hub | ServerSql --query "SELECT 1" | ServerAudit',
+      'ServerGezondheid | ServerUitrolStatus | ServerRelease | ServerLogs --dienst hub | ServerAudit',
       'RoepAan --hulpmiddel <NAAM_OF_ID> [--args \'{"k":"v"}\'] [--kant gebruiker|beheer]',
       'McpStdio',
     ],
   }, null, 2));
 }
 
-voerUit().catch((e) => {
-  console.error(JSON.stringify({ ok: false, fout: String(e?.message || e) }, null, 2));
-  process.exit(1);
-});
+if (process.argv[1] && process.argv[1].endsWith('mijn-ruimte')) {
+  voerUit().catch((e) => {
+    console.error(JSON.stringify({ ok: false, fout: String(e?.message || e) }, null, 2));
+    process.exit(1);
+  });
+}

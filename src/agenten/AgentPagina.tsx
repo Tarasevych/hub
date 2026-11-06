@@ -483,7 +483,7 @@ function AntigravityBrugPaneel({
         'Tweerichtingsbouw en -beheer van de site via /antigravity: mail, agenda, bestanden, bord, GitHub en de 6 orkestratiehulpmiddelen (orch_overzicht, orch_context, orch_taak_start, orch_inleveren_*).',
       ],
       opdracht: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Status --url ${adres}`,
-      rpcVoorbeeld: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte RoepAan --hulpmiddel tonen_orch_overzicht_antigravity_admin_tarasevych_com_beheer',
+      rpcVoorbeeld: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte RoepAan --hulpmiddel tonen_agent_coordinatie_antigravity_admin_tarasevych_com_beheer',
       href: '#orch',
       hrefLabel: ['Відкрити «Координація»', 'Open «Coördinatie»'],
     },

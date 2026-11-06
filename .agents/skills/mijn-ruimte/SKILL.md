@@ -91,12 +91,12 @@ node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcDocker [--kant gebruiker|b
 # Check server health, services, and database status
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerGezondheid
 
-# Check deployment status and service logs
+# Check deployment status, live release, and service logs
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerUitrolStatus
+node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerRelease
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerLogs --dienst hub --regels 100
 
-# Run a read-only SQL query or tail the audit log
-node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerSql --query "SELECT count(*) FROM app.mcp_oauth_tokens WHERE agent = 'antigravity'"
+# Tail the audit log
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerAudit --limiet 25
 ```
 
