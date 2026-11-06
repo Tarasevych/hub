@@ -28,7 +28,7 @@ export const CATEGORIEEN: readonly Categorie[] = [
     waarom: ['Збій пошти користувач помічає першим: лист «відправлено», а він не пішов.', 'Een mailstoring merkt de gebruiker het eerst: de mail is «verzonden» maar vertrok niet.'] },
   { id: 'cloud', icoon: 'cloud', naam: ['Хмара й Drive', 'Cloud en Drive'],
     wat: ['Сховище файлів сайту та досяжність Google Drive API.', 'De bestandsopslag van de site en de bereikbaarheid van de Google Drive-API.'],
-    waarom: ['Без сховища не завантажуються файли й архіви, без Drive не відкриваються підключені папки.', 'Zonder opslag laden bestanden en archieven niet, zonder Drive openen gekoppelde mappen niet.'] },
+    waarom: ['Без сховища не завантажуються файли й архіви, без Drive не відкриваються підключені теки.', 'Zonder opslag laden bestanden en archieven niet, zonder Drive openen gekoppelde mappen niet.'] },
   { id: 'ai', icoon: 'sparkles', naam: ['ШІ-агенти й MCP', 'AI-agenten en MCP'],
     wat: ['Активні підключення ШІ-агентів (OAuth) та дозволи «Хто готує оновлення».', 'Actieve verbindingen van AI-agenten (OAuth) en de toestemmingen «Хто готує оновлення».'],
     waarom: ['Агент може бути в списку, але без чинного дозволу — тоді він мовчки не працює.', 'Een agent kan in de lijst staan maar zonder geldige toestemming — dan werkt hij stilzwijgend niet.'] },
@@ -190,7 +190,7 @@ export const CONTROLES: readonly ControleDef[] = [
   { id: 'cloud-drive-api', cat: 'cloud', icoon: 'cloud', host: 'cloud',
     naam: ['Google Drive API', 'Google Drive-API'],
     wat: ['Чи відповідає публічний опис Drive API із сервера.', 'Of de openbare beschrijving van de Drive-API vanaf de server antwoordt.'],
-    waarom: ['Без Drive не відкриваються підключені папки й не зберігаються вкладення на диск.', 'Zonder Drive openen gekoppelde mappen niet en worden bijlagen niet op schijf bewaard.'],
+    waarom: ['Без Drive не відкриваються підключені теки й не зберігаються вкладення на диск.', 'Zonder Drive openen gekoppelde mappen niet en worden bijlagen niet op schijf bewaard.'],
     oplossing: [['Перевірте вихідний доступ до www.googleapis.com (DNS, брандмауер, проксі).', 'Controleer uitgaand verkeer naar www.googleapis.com (DNS, firewall, proxy).'], ['Якщо збій лише в одного користувача — він мав би перепідключити Google у налаштуваннях.', 'Gaat het alleen bij één gebruiker mis, dan moet die Google opnieuw koppelen in de instellingen.']],
     hoe: ['GET https://www.googleapis.com/discovery/v1/apis/drive/v3/rest без авторизації (таймаут 5 с).', 'GET https://www.googleapis.com/discovery/v1/apis/drive/v3/rest zonder aanmelding (time-out 5 s).'] },
 

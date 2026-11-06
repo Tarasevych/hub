@@ -248,7 +248,7 @@ function toonOverig(s, sl) {
   const m = chrome.runtime.getManifest();
   document.getElementById('extra-info').replaceChildren(
     regel('ja', `${UI.t('Версія', 'Versie')} ${m.version} · ID ${chrome.runtime.id}`),
-    regel(m.update_url ? 'ja' : 'let-op', m.update_url ? UI.t('Встановлено з підписаного пакета (оновлюється сама)', 'Geïnstalleerd uit het ondertekende pakket (werkt zichzelf bij)') : UI.t('Завантажено з папки («розпаковане»). Папка має лишатися на місці: якщо її видалити чи перемістити, Chrome прибере розширення після перезапуску.', 'Geladen uit een map («uitgepakt»). De map moet blijven staan: wordt hij verwijderd of verplaatst, dan haalt Chrome de extensie na een herstart weg.')));
+    regel(m.update_url ? 'ja' : 'let-op', m.update_url ? UI.t('Встановлено з підписаного пакета (оновлюється сама)', 'Geïnstalleerd uit het ondertekende pakket (werkt zichzelf bij)') : UI.t('Завантажено з теки («розпаковане»). Тека має лишатися на місці: якщо її видалити чи перемістити, Chrome прибере розширення після перезапуску.', 'Geladen uit een map («uitgepakt»). De map moet blijven staan: wordt hij verwijderd of verplaatst, dan haalt Chrome de extensie na een herstart weg.')));
   const d = s && s.diagnostiek ? s.diagnostiek : {};
   document.getElementById('tech-details').textContent = JSON.stringify({ versie: m.version, id: chrome.runtime.id, rechten: m.permissions, optioneel: m.optional_permissions, diagnostiek: { recht: d.recht, optIn: d.optIn, stand: d.stand, actief: d.actief, laatsteFout: d.laatsteFout || null }, profielTab: p }, null, 2);
 }

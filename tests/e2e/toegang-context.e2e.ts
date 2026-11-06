@@ -148,7 +148,7 @@ export async function main(): Promise<number> {
       await waar.locator('.toegang-notitie-tekst').first().waitFor({ timeout: 8000 }).catch(() => undefined);
     };
     await zetNotitie(rij.locator('[data-notitie]'), 'Основний телефон, лежить удома в сейфі');
-    await zetNotitie(page.locator('[data-herstel-set-notitie]'), 'Роздруківка в папці «Документи», конверт 2');
+    await zetNotitie(page.locator('[data-herstel-set-notitie]'), 'Роздруківка в теці «Документи», конверт 2');
     await zetNotitie(c4.locator('[data-notitie]'), 'Використано на ноутбуці');
     const teLang = rij.locator('[data-notitie]');
     await teLang.locator('.toegang-potlood').click();

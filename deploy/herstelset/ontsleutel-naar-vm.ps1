@@ -4,7 +4,7 @@
   (PowerShell 5.1 beschadigt binaire pijpen met |; daarom koppelt dit script de twee processen zelf.)
   Розшифровує .age-файл ключем відновлення і одразу передає вміст через SSH на VM. На диск ПК нічого не пишеться.
 
-  Voorbeelden / приклади (in de map van de herstelset / у папці набору):
+  Voorbeelden / приклади (in de map van de herstelset / у теці набору):
     .\scripts\ontsleutel-naar-vm.ps1 -Bestand $g -Sleutel F:\herstelsleutel-age.txt -Stap controle-sleutel
     .\scripts\ontsleutel-naar-vm.ps1 -Bestand $g -Sleutel F:\herstelsleutel-age.txt -Stap geheimen
     .\scripts\ontsleutel-naar-vm.ps1 -Bestand "$b\database.dump.age" -Sleutel F:\herstelsleutel-age.txt -Stap db-terugzetten

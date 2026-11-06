@@ -209,3 +209,13 @@ codes `ORCH_CODES` in `shared/orch-model.ts`, hulpteksten `orch.inlevering` / `o
 **Gevolgen.** `regelsVersie` `1.4.8` → `1.4.9`; het nieuwe pakket `20261105-093500` sluit direct aan op de geïnstalleerde serverversie `20261105-061659`.
 
 **Wie.** Opdracht van de eigenaar op 05-11-2026 (`AUDIT-001`); uitvoering door agent `antigravity`.
+
+## B-015 · 2026-11-06 · 1.4.10 · Volledige taalopschoning van broncode, zoekcatalogi en tweetalige documentatie (uk + nl)
+
+**Context.** Bij controle van PR #30 en alle actieve takken zijn overblijfselen van Russische en Engelse zoektermen aangetroffen in `backend/zoek/catalogus-ui.ts`, `shared/zoek-synoniemen.ts`, `shared/zoek-normalisatie.ts`, evenals Surzjyk-vormen in componenten onder `src/`, `backend/`, `shared/`, `deploy/` en in de tests.
+
+**Besluit.** Alle Russische letters, Russische woorden, Surzjyk en Engelse zoekintenties verwijderen uit alle broncode-, test- en documentatiebestanden in alle actieve takken; `shared/zoek-ui-knoppen.generated.ts` opnieuw opbouwen, `regelsVersie` verhogen naar `1.4.10`, en `orchestratie/regels.lock.json` en `orchestratie/CONTEXT-COMPACT.md` bijwerken.
+
+**Gevolgen.** `regelsVersie` 1.4.9 → 1.4.10; 0 Russische tekens of Surzjyk-treffers in de gehele repository.
+
+**Wie.** Verzoek van de eigenaar op 06-11-2026 (`AUDIT-001`); uitvoering door agent `antigravity`.

@@ -1,5 +1,5 @@
 UITLEG-LEESMIJ.txt - щоденна копія в Google Drive / dagelijkse kopie naar Google Drive
-Map / Папка: T:\mijn-ruimte\scripts\cloud\   (копія / kopie: R:\mijn-ruimte-reservekopie\cloud\)
+Map / Тека: T:\mijn-ruimte\scripts\cloud\   (копія / kopie: R:\mijn-ruimte-reservekopie\cloud\)
 (Спочатку українською, далі нідерландською / Eerst Oekraiens, daarna Nederlands)
 У цьому файлі НЕМАЄ секретів. / Dit bestand bevat GEEN geheimen.
 
@@ -20,29 +20,29 @@ Map / Папка: T:\mijn-ruimte\scripts\cloud\   (копія / kopie: R:\mijn-r
   Раз на тиждень скрипт також оновлює набір відновлення R:\...\herstelset\ і кладе його
   в Drive (як один зашифрований файл). Змінився набір раніше - теж вивантажує.
 
-ЩО ЛЕЖИТЬ У GOOGLE DRIVE (папка mijn-ruimte-reservekopie)
+ЩО ЛЕЖИТЬ У GOOGLE DRIVE (тека mijn-ruimte-reservekopie)
   dagelijks\<дата-час>\        database.dump.age, uploads.tar.gz.age, SHA256SUMS
   geheimen\geheimen-<дата>\    *.tar.age (секрети сервера, зашифровані), *.sha256, SHA256SUMS
   herstelset\                  herstelset-<дата>.zip.age + .sha256 (весь набір, зашифрований)
   ЛИШЕ файли .age (перевіряється справжній заголовок age) і контрольні суми SHA256.
   info.txt, KLAAR, INFO.txt НЕ вивантажуються (вони не зашифровані).
   НІКОЛИ не вивантажуються: herstelsleutel-age.txt, SSH-ключі, *.pfx, rclone.conf, нічого з
-  R:\...\sleutels\. Якщо в папці копії знайдеться незашифрований або незнайомий файл,
-  скрипт ВІДМОВЛЯЄТЬСЯ вивантажувати цю папку і пише FOUT у журнал.
+  R:\...\sleutels\. Якщо в теці копії знайдеться незашифрований або незнайомий файл,
+  скрипт ВІДМОВЛЯЄТЬСЯ вивантажувати цю теку і пише FOUT у журнал.
   Після кожного вивантаження розмір і SHA256 у Drive порівнюються з файлом на ПК.
 
 СКІЛЬКИ ЗБЕРІГАЄТЬСЯ
   - останні 30 щоденних копій + найновіша копія кожного місяця за 12 місяців;
   - набір відновлення: 4 останні версії; секрети: усі (вони маленькі).
   Видаляє скрипт лише всередині mijn-ruimte-reservekopie\dagelijks\<дата> і
-  herstelset\herstelset-*.zip.age, не більше 5 папок за раз і лише тоді, коли найновіша
+  herstelset\herstelset-*.zip.age, не більше 5 тек за раз і лише тоді, коли найновіша
   копія вже точно в Drive. Видалене 30 днів лежить у кошику Drive.
   На R:\ нічого не видаляється.
 
 ДОСТУП ДО GOOGLE (drive.file)
   rclone отримує обмежений доступ "drive.file": бачить і змінює ЛИШЕ файли, які створив
   сам. Решту вашого Drive (фото, документи) він НЕ бачить. Тому:
-  - НЕ створюйте папку mijn-ruimte-reservekopie вручну і НЕ перейменовуйте/переносьте її.
+  - НЕ створюйте теку mijn-ruimte-reservekopie вручну і НЕ перейменовуйте/переносьте її.
   - Файли в ній можна переглядати й завантажувати у браузері.
 
 ОДНОРАЗОВО: ПІДКЛЮЧИТИ GOOGLE DRIVE (робить Власник, ~15 хвилин)
@@ -94,12 +94,12 @@ Map / Папка: T:\mijn-ruimte\scripts\cloud\   (копія / kopie: R:\mijn-r
   - Google пише "invalid_grant"/токен недійсний: ще раз cloud-koppelen.ps1 -Opnieuw
     (той самий Client ID/secret з Google Cloud -> Clients).
   - Windows перевстановлено / новий ПК: rclone знову в T:\mijn-ruimte\hulpmiddelen\rclone\,
-    папку C:\Users\t\AppData\Local\mijn-ruimte\rclone видалити, cloud-koppelen.ps1 з ТИМ САМИМ
+    теку C:\Users\t\AppData\Local\mijn-ruimte\rclone видалити, cloud-koppelen.ps1 з ТИМ САМИМ
     OAuth-клієнтом (тоді rclone бачить старі файли в Drive).
   - ПК ЗЛАМАЛИ: https://myaccount.google.com/permissions -> mijn-ruimte-backup -> видалити
     доступ; у Google Cloud -> Clients видалити rclone-pc; змініть пароль Google. Копії в Drive
     зашифровані - без herstelsleutel-age.txt їх не прочитати.
-  - Вимкнути: у планувальнику нічого міняти не треба - видаліть папку
+  - Вимкнути: у планувальнику нічого міняти не треба - видаліть теку
     C:\Users\t\AppData\Local\mijn-ruimte\rclone (тоді "NIET GEKOPPELD") і відкличте доступ.
 
 ВІДНОВЛЕННЯ З DRIVE: розділ 4 у 00-BEGIN-HIER-UA.txt / .pdf (набір відновлення).
@@ -108,7 +108,7 @@ Map / Папка: T:\mijn-ruimte\scripts\cloud\   (копія / kopie: R:\mijn-r
   cloud-reservekopie.ps1   щоденне вивантаження (запускає reservekopie-ophalen.ps1)
   cloud-koppelen.ps1       одноразове підключення Google (крок Б)
   cloud-wachtwoord.ps1     допоміжний: дає rclone пароль до зашифрованого rclone.conf (DPAPI)
-  config-UITLEG-LEESMIJ.txt  пояснення для папки C:\Users\t\AppData\Local\mijn-ruimte\rclone
+  config-UITLEG-LEESMIJ.txt  пояснення для теки C:\Users\t\AppData\Local\mijn-ruimte\rclone
   Код: GitHub Tarasevych/hub, гілка zelf-hosten, deploy/cloud/.
 
 ##############################################################################

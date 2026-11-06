@@ -26,7 +26,7 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 
 **Перевірено**
 - `node scripts/eenheidstests.mjs orch-` → 69/69. `node scripts/orch.mjs controleer` → зелено (попередження `KRITIEK_NIET_BEVESTIGD` — очікуване до підпису власника).
-- `uitrol-manifest` (18/18) — існуючі перевірки пакета не зачеплено.
+- `uitrol-manifest` (18/18) — наявні перевірки пакета не зачеплено.
 
 **Свідомо не зроблено / обмеження**
 - Базу `20261031-093842 @ b279ccab…` **не звірено з production**: із середовища агента `hub.tarasevych.com` недоступний (proxy 403), а MCP-інструменти
@@ -87,7 +87,7 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 **Перевірено**
 - `tests/eenheid/orch-pakket-20261031.test.ts` — 23/23: справжній `orch pakket` на тимчасовому репозиторії (tar через `maak-voorstelpakket.sh`, вміст zip і tar,
   `UITROL-BASIS`, `ORCH-OVERDRACHT` з двома базами, `RAPPORT.md`, справжній `git bundle`, статус `released`), `pakket-controleer` (гаразд / підроблений
-  tar → `INTEGRITEIT` / новіша встановлена → `BASIS_VEROUDERD` / інший commit → `BASIS_COMMIT_VERSCHILT`), імпорт zip через `inleveren` (існуюча гілка →
+  tar → `INTEGRITEIT` / новіша встановлена → `BASIS_VEROUDERD` / інший commit → `BASIS_COMMIT_VERSCHILT`), імпорт zip через `inleveren` (наявна гілка →
   `TAK_BESTAAT`; потім прийнято, гілка відтворена від бази), відмови `maak-voorstelpakket.sh` без/з некоректними `BASIS_*`.
 - `tests/eenheid/orch-uitrol-basis-20261031.test.ts` — 14/14: справжній root-скрипт під непривілейованим користувачем (`setpriv`, uid 65534) зі стабом
   інсталятора: старий формат OK + `laatste-commit`, правильна база OK, `BASIS_VEROUDERD`, `BASIS_COMMIT_VERSCHILT`, `BASIS_ONGELDIG`,
@@ -226,7 +226,7 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
 **Прийнято з PR #13 (ChatGPT) — чого не було в `a5f2741`**
 - **Прив'язка завантаження до актора-ініціатора.** `uploadStuk`/`uploadKlaar`/`uploadAnnuleren` отримують `actor` (HTTP: email власника; MCP:
   `clientName (agent) via mcp [grant/token-id]`) і порівнюють із `door`, записаним у `uploadBegin`; інший актор отримує `UPLOAD_ONBEKEND` (404), як
-  для неіснуючого. Інакше будь-який агент, що дізнався 16-hex `id`, міг завершити або скасувати чуже завантаження. Серверний id grant-у/токена
+  для ненаявного. Інакше будь-який агент, що дізнався 16-hex `id`, міг завершити або скасувати чуже завантаження. Серверний id grant-у/токена
   додано свідомо (ChatGPT сам позначив це як залишковий ризик): дві підключення з однаковою назвою «Grok (grok)» — різні актори. Покрито 5
   перевірками в `orch-beoordeling` (MCP↔HTTP, інший агент, та сама назва через інший grant, скасування лише ініціатором, `door` містить id).
 - **Не прийнято:** `TESTS_NIET_GEISOLEERD` (409) із повним пропуском перевірок і забороною `zonderTests` — перекрито безпечнішим варіантом Antigravity
@@ -258,7 +258,7 @@ Task ID: `ORCH-001`. Агент: `claude`. Статус задачі: `orchestra
   emoji, `1.0`, `1e20` — перевірено тестом на збіг байт у байт), і вимагає рівності `kritiekHash`, `hash`, `regelsVersie`; `regelBestanden` —
   безпечні шляхи, з `AGENTS.md` і `beleid.json`; `NaN` у JSON відхиляється; `python3 -I`. Тести `orch-besluit-root` і 5e в `orch-beoordeling`
   раніше подавали фіктивні відбитки — тепер справжній реліз.
-- **CLI `inleveren` виконував код пакета за замовчуванням** (`standaardTests[1]` = `node scripts/eenheidstests.mjs orch-kern` у дереві пакета,
+- **CLI `inleveren` виконував код пакета типово** (`standaardTests[1]` = `node scripts/eenheidstests.mjs orch-kern` у дереві пакета,
   з `HOME` оператора). Тепер — лише довірений `controleer`; shell-тести тільки за явним `--tests`/`--standaardtests` з попередженням; після
   помилок кроку 6 (конфлікт, застарілість) тести не запускаються взагалі.
 - **Розпакувальна бомба.** Передперевірки обмежували кількість записів, але не обсяг: 408 КіБ → 400 МіБ на диску. Тепер ≤ 1 ГіБ на архів за

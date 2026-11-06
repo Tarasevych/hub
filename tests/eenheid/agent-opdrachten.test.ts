@@ -12,7 +12,7 @@ export async function main(): Promise<number> {
   check('Windows-quote: drive-root T:\\ krijgt een verdubbelde backslash vóór de sluitende aanhalingsteken (anders eet het teken de quote op)', winQuote('T:\\') === '"T:\\\\"' && winQuote('C:\\Projects') === '"C:\\Projects"' && winQuote('C:\\Mijn map\\') === '"C:\\Mijn map\\\\"');
   check('Windows-quote: aanhalingstekens in de invoer verdwijnen (geen uitbreken uit het argument)', winQuote('x" --root "/etc') === '"x --root /etc"');
   check('POSIX-quote: enkele aanhalingstekens veilig, spaties en $ blijven letterlijk', posixQuote("it's $HOME") === `'it'\\''s $HOME'`);
-  check('placeholder-detectie: <T:\\> en <ДОЗВОЛЕНА_ПАПКА> zijn fout, T:\\ en /home/ik zijn goed', looksLikePlaceholder('<T:\\>') && looksLikePlaceholder('<ДОЗВОЛЕНА_ПАПКА>') && !looksLikePlaceholder('T:\\') && !looksLikePlaceholder('/home/ik/projecten'));
+  check('placeholder-detectie: <T:\\> en <ДОЗВОЛЕНА_ТЕКА> zijn fout, T:\\ en /home/ik zijn goed', looksLikePlaceholder('<T:\\>') && looksLikePlaceholder('<ДОЗВОЛЕНА_ТЕКА>') && !looksLikePlaceholder('T:\\') && !looksLikePlaceholder('/home/ik/projecten'));
   const ps = buildAgentCommands({ shell: 'powershell', server: 'https://mcp.tarasevych.com', code: 'GMH4NF3H', name: 'Мій ПК', roots: ['T:\\', 'C:\\Projects'], allow: ['git', 'node'] });
   check('PowerShell-opdracht: twee regels, geen punthaken, beide roots gequoot, allow-lijst, en een aparte regel voor "run" (niet aan elkaar geplakt)',
     ps.length === 2 && !/[<>]/.test(ps.join('')) && ps[0] === 'node agent.mjs pair --server https://mcp.tarasevych.com --code GMH4NF3H --name "Мій ПК" --root "T:\\\\" --root "C:\\Projects" --allow git,node' && ps[1] === 'node agent.mjs run', ps[0]);

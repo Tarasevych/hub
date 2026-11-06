@@ -184,16 +184,16 @@ export default function NotitieBewerker({ lang, smal, notitie, mappen, startMap,
 
         <div className='vn-vorm-rij'>
           <label className='vn-veld'>
-            <span>{tr(lang, 'Папка', 'Map')}</span>
+            <span>{tr(lang, 'Тека', 'Map')}</span>
             <select value={v.mapId ?? ''} onChange={(e) => zet({ mapId: e.target.value || null })}>
-              <option value=''>{tr(lang, '— без папки —', '— geen map —')}</option>
+              <option value=''>{tr(lang, '— без теки —', '— geen map —')}</option>
               {mappen.map((m) => <option key={m.id} value={m.id}>{m.naam}</option>)}
             </select>
           </label>
           <div className='vn-veld vn-nieuwe-map'>
-            <span>{tr(lang, 'Нова папка', 'Nieuwe map')}</span>
+            <span>{tr(lang, 'Нова тека', 'Nieuwe map')}</span>
             <span className='vn-rij'>
-              <input value={nieuweMap} maxLength={80} placeholder={tr(lang, 'назва…', 'naam…')} onChange={(e) => setNieuweMap(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void maakMap(); } }} aria-label={tr(lang, 'Назва нової папки', 'Naam van de nieuwe map')} />
+              <input value={nieuweMap} maxLength={80} placeholder={tr(lang, 'назва…', 'naam…')} onChange={(e) => setNieuweMap(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void maakMap(); } }} aria-label={tr(lang, 'Назва нової теки', 'Naam van de nieuwe map')} />
               <button type='button' className='vn-knop is-klein' disabled={!nieuweMap.trim()} onClick={() => void maakMap()}><Plus aria-hidden='true' />{tr(lang, 'Створити', 'Maken')}</button>
             </span>
           </div>

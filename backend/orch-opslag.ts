@@ -225,7 +225,7 @@ export function uploadBegin(input: Record<string, unknown>, door: string, kanaal
   schrijfUpload(u);
   return u;
 }
-/** Завантаження належить тому, хто його почав: знання id (16 hex) — не повноваження. Інший актор (інший агент, інша сесія) бачить 404, як для неіснуючого. */
+/** Завантаження належить тому, хто його почав: знання id (16 hex) — не повноваження. Інший актор (інший агент, інша сесія) бачить 404, як для ненаявного. */
 function eisEigenUpload(u: OrchUpload, actor: string): void {
   if (!actor || u.door !== tekst(actor, 120)) fout('UPLOAD_ONBEKEND', 404);
 }

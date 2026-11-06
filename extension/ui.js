@@ -96,7 +96,7 @@
     geweigerd: ['Chrome не підтвердив дозвіл. Відкрийте chrome://extensions і ввімкніть «Mijn Ruimte» знову.', 'Chrome heeft het recht niet bevestigd. Open chrome://extensions en zet «Mijn Ruimte» weer aan.'],
     ingetrokken: ['Дозвіл налагоджувача зараз не діє. Перезавантажте розширення в chrome://extensions (кнопка ↻). Нічого не збирається.',
       'Het debuggerrecht werkt nu niet. Herlaad de extensie in chrome://extensions (knop ↻). Er wordt niets verzameld.'],
-    'niet-aanvraagbaar': ['Стандартний пакет навмисно не має дозволу налагоджувача (його має лише пакет «діагностика»). Для глибокої діагностики встановіть пакет «діагностика» (посилання нижче) в окрему постійну папку. Усе інше працює й без цього дозволу.',
+    'niet-aanvraagbaar': ['Стандартний пакет навмисно не має дозволу налагоджувача (його має лише пакет «діагностика»). Для глибокої діагностики встановіть пакет «діагностика» (посилання нижче) в окрему постійну теку. Усе інше працює й без цього дозволу.',
       'Het standaardpakket heeft bewust geen debuggerrecht (dat heeft alleen het pakket «diagnose»). Voor diepe diagnose installeert u het pakket «diagnose» (link hieronder) in een aparte vaste map. Al het andere werkt ook zonder dit recht.'],
   });
   /** Waarom dit recht nodig is (altijd zichtbaar bij de knop, zodat niemand het blind aanzet). */

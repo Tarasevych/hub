@@ -226,11 +226,11 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
   const groups: Array<{ id: string; Icon: typeof Eye; title: string; note?: string; items: string[] }> = isDeur ? deurGroups : technisch ? technischGroups : [
     { id: 'read', Icon: Eye, title: tr('Читання', 'Lezen'), items: [
       tr('Бачити ваші пристрої та їхній стан', 'Uw apparaten en hun status zien'),
-      tr('Читати файли й папки в дозволених агентом місцях', 'Bestanden en mappen lezen op de plekken die de agent toestaat'),
+      tr('Читати файли й теки в дозволених агентом місцях', 'Bestanden en mappen lezen op de plekken die de agent toestaat'),
       tr('Список контейнерів Docker та метрики системи (ЦП, пам’ять, диск)', 'Docker-containers en systeemmetrics (cpu, geheugen, schijf)'),
     ] },
     { id: 'write', Icon: Pencil, title: tr('Запис', 'Schrijven'), note: tr('кожен запис — лише після вашого «Дозволити»', 'elke schrijfactie pas na uw "Toestaan"'), items: [
-      tr('Створювати й змінювати файли в дозволених папках', 'Bestanden maken en wijzigen in de toegestane mappen'),
+      tr('Створювати й змінювати файли в дозволених теках', 'Bestanden maken en wijzigen in de toegestane mappen'),
     ] },
     { id: 'run', Icon: Terminal, title: tr('Виконання', 'Uitvoeren'), note: tr('кожна дія — лише після вашого «Дозволити»', 'elke actie pas na uw "Toestaan"'), items: [
       tr('Запускати команди зі списку, дозволеного агентом (без shell)', 'Commando\'s uit de lijst van de agent starten (zonder shell)'),

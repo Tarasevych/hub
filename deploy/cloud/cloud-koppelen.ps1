@@ -51,7 +51,7 @@ try {
   if ($LASTEXITCODE -ne 0) { throw "icacls mislukt op $ConfigMap" }
   $uitleg = Join-Path $PSScriptRoot 'config-UITLEG-LEESMIJ.txt'
   if (Test-Path -LiteralPath $uitleg) { Copy-Item -LiteralPath $uitleg -Destination (Join-Path $ConfigMap 'UITLEG-LEESMIJ.txt') -Force }
-  Zeg "2/6 папка налаштувань: $ConfigMap (доступ лише $ik)" "configmap met ACL alleen voor $ik"
+  Zeg "2/6 тека налаштувань: $ConfigMap (доступ лише $ik)" "configmap met ACL alleen voor $ik"
 
   # 3. DPAPI-wachtwoord voor de config.
   if (-not (Test-Path -LiteralPath $WwBlob)) {
@@ -97,7 +97,7 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'map op Google Drive aanmaken mislukt' }
   $zie = @(Rc lsf "${Naam}:" --dirs-only)
   if ($zie -notcontains "$Map/") { throw "map $Map niet zichtbaar op Drive" }
-  Zeg "6/6 OK: Google Drive підключено, папка '$Map' існує (rclone бачить лише свої файли)." "OK: gekoppeld, map '$Map' bestaat (rclone ziet alleen zijn eigen bestanden)." 'Green'
+  Zeg "6/6 OK: Google Drive підключено, тека '$Map' існує (rclone бачить лише свої файли)." "OK: gekoppeld, map '$Map' bestaat (rclone ziet alleen zijn eigen bestanden)." 'Green'
   Log "GEKOPPELD: ${Naam}: (drive.file) door $ik"
 
   $a = Read-Host 'Зробити перше вивантаження зараз? / Nu de eerste upload doen? (J/n)'

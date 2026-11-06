@@ -145,7 +145,7 @@ export default function AiToestemmingen({ tr, agentId, platform, onChange, versi
               {mine.map((g) => (
                 <tr key={g.id} data-grant={g.capability}>
                   <td><b>{capNaam(g.capability)}</b>{g.always ? <span className='ag-badge ag-warn'><AlwaysIcon size={12} aria-hidden='true' /> {tr('завжди', 'altijd')}</span> : null}</td>
-                  <td className='hub-meta'>{g.domains.length ? g.domains.join(', ') : platform === 'browser' ? tr('сайти tarasevych.com', 'sites van tarasevych.com') : tr('дозволені папки й програми', 'toegestane mappen en programma\'s')}{destructive.has(g.capability) && !g.always ? ` · ${tr('кожна дія з підтвердженням', 'elke actie met akkoord')}` : ''}</td>
+                  <td className='hub-meta'>{g.domains.length ? g.domains.join(', ') : platform === 'browser' ? tr('сайти tarasevych.com', 'sites van tarasevych.com') : tr('дозволені теки й програми', 'toegestane mappen en programma\'s')}{destructive.has(g.capability) && !g.always ? ` · ${tr('кожна дія з підтвердженням', 'elke actie met akkoord')}` : ''}</td>
                   <td><time dateTime={new Date(g.expiresAt).toISOString()} title={when(g.expiresAt)}>{when(g.expiresAt)}</time></td>
                   <td className='ai-tabel-actie'><IconButton tone='danger' icon={busy === g.id ? <Loader2 className='ag-spin' /> : <Square />} disabled={!!busy} onClick={() => void act(g.id, () => api.post('/api/owner/ai/grants/revoke', { ...body(), grantId: g.id }), () => tr(`Дозвіл «${capNaam(g.capability)}» зупинено.`, `Toestemming "${capNaam(g.capability)}" gestopt.`), ['Не вдалося зупинити дозвіл', 'Stoppen mislukt'])}>{tr('Стоп', 'Stop')}</IconButton></td>
                 </tr>

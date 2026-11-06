@@ -5,7 +5,7 @@ import type { Os } from './agent-opdrachten';
 export type Arch = 'x64' | 'arm64';
 export type NodeMethod = { id: string; label: string; official: boolean; commands: string[]; link?: { href: string; label: string }; note: [string, string] };
 
-/** Архітектура з підказок браузера (достатньо для вибору за замовчуванням; користувач може змінити). */
+/** Архітектура з підказок браузера (достатньо для вибору типово; користувач може змінити). */
 export function guessArch(ua: string, platform = ''): Arch { return /arm64|aarch64|\barm\b/i.test(`${ua} ${platform}`) ? 'arm64' : 'x64'; }
 
 export function nodeInstallMethods(os: Os, arch: Arch): NodeMethod[] {
@@ -16,7 +16,7 @@ export function nodeInstallMethods(os: Os, arch: Arch): NodeMethod[] {
     { id: 'fnm', label: 'fnm', official: true, commands: ['winget install Schniz.fnm', 'fnm install 24', 'fnm default 24'], note: ['Керування кількома версіями Node.js.', 'Beheer van meerdere Node.js-versies.'] },
     { id: 'nvm', label: 'nvm-windows', official: true, commands: ['winget install CoreyButler.NVMforWindows', 'nvm install lts', 'nvm use lts'], note: ['Керування кількома версіями; потрібно відкрити новий термінал.', 'Beheer van meerdere versies; open een nieuwe terminal.'] },
     { id: 'choco', label: 'Chocolatey', official: false, commands: ['choco install nodejs-lts -y'], note: ['Лише якщо Chocolatey у вас уже встановлений; потрібен термінал від імені адміністратора.', 'Alleen als Chocolatey al is geïnstalleerd; vereist een terminal als beheerder.'] },
-    { id: 'zip', label: arch === 'arm64' ? 'ZIP (ARM64)' : 'ZIP (x64)', official: true, commands: [], link: dl, note: ['Автономний архів без встановлення: розпакуйте й додайте папку в PATH.', 'Zelfstandig archief zonder installatie: uitpakken en de map aan PATH toevoegen.'] },
+    { id: 'zip', label: arch === 'arm64' ? 'ZIP (ARM64)' : 'ZIP (x64)', official: true, commands: [], link: dl, note: ['Автономний архів без встановлення: розпакуйте й додайте теку в PATH.', 'Zelfstandig archief zonder installatie: uitpakken en de map aan PATH toevoegen.'] },
   ];
   if (os === 'macos') return [
     { id: 'pkg', label: 'Інсталятор (.pkg)', official: true, commands: [], link: dl, note: [`Офіційний інсталятор для macOS (${arch === 'arm64' ? 'Apple Silicon / ARM64' : 'Intel / x64'}).`, `Officieel installatieprogramma voor macOS (${arch === 'arm64' ? 'Apple Silicon / ARM64' : 'Intel / x64'}).`] },
@@ -32,7 +32,7 @@ export function nodeInstallMethods(os: Os, arch: Arch): NodeMethod[] {
   ];
 }
 
-/** Команда, що завантажує розширення в папку, перевіряє SHA-256 і розпаковує: усе в терміналі, без завантаження виконуваного файлу (Smart App Control блокує .cmd/.ps1/.js). */
+/** Команда, що завантажує розширення в теку, перевіряє SHA-256 і розпаковує: усе в терміналі, без завантаження виконуваного файлу (Smart App Control блокує .cmd/.ps1/.js). */
 export function extensionInstallCommands(opts: { os: Os; shell: 'powershell' | 'cmd' | 'bash'; folder: string; sha256: string; origin: string; file?: string }): string[] {
   const url = `${opts.origin}/downloads/${opts.file || 'mijn-ruimte-extension.zip'}`;
   if (opts.os === 'windows') {

@@ -174,9 +174,9 @@ function widgetRegel(w: WerkbladWidgetDef): RegisterRegel {
 }
 
 export const MAP_ITEM: RegisterRegel = Object.freeze({
-  id: 'map:nieuw', kind: 'folder', titel: { uk: 'Нова папка', nl: 'Nieuwe map' }, icoon: 'folder', categorie: 'map', ruimtes: BEIDE, beschikbaarheid: 'ready',
+  id: 'map:nieuw', kind: 'folder', titel: { uk: 'Нова тека', nl: 'Nieuwe map' }, icoon: 'folder', categorie: 'map', ruimtes: BEIDE, beschikbaarheid: 'ready',
   standaardAfm: { ...SNELKOPPELING_AFM.standaard }, minAfm: { ...SNELKOPPELING_AFM.min }, maxAfm: { ...SNELKOPPELING_AFM.max },
-  apparaten: ALLE_APPARATEN, zoekwoorden: ['folder', 'map', 'папка'],
+  apparaten: ALLE_APPARATEN, zoekwoorden: ['folder', 'map', 'тека'],
 }) as RegisterRegel;
 
 function bouwRegister(): readonly RegisterRegel[] {
@@ -309,7 +309,7 @@ export const REGISTER_CATEGORIEEN: ReadonlyArray<{ id: RegisterCategorie; titel:
   { id: 'opdracht', titel: { uk: 'Дії', nl: 'Opdrachten' } },
   { id: 'widget', titel: { uk: 'Віджети', nl: 'Widgets' } },
   { id: 'persoonlijk', titel: { uk: 'Мої ярлики', nl: 'Mijn snelkoppelingen' } },
-  { id: 'map', titel: { uk: 'Папки', nl: 'Mappen' } },
+  { id: 'map', titel: { uk: 'Теки', nl: 'Mappen' } },
   { id: 'technisch', titel: { uk: 'Технічні', nl: 'Technisch' } },
 ]);
 

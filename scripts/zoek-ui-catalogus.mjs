@@ -145,7 +145,7 @@ const PAAR_RE = new RegExp(PAAR, 'g');
 const TERNAIR_RE = new RegExp(TERNAIR, 'g');
 
 /** Knoppen zonder eigen betekenis (elk venster heeft ze): niet vindbaar, anders verdringen ze echte functies. */
-const GENERIEK = new Set(['закрити', 'скасувати', 'так', 'ні', 'гаразд', 'добре', 'назад', 'далі', 'готово', 'ок', 'зрозуміло', 'відміна', 'закрити вікно', 'сховати', 'показати', 'ще', 'менше', 'більше']);
+const GENERIEK = new Set(['закрити', 'скасувати', 'так', 'ні', 'гаразд', 'добре', 'назад', 'далі', 'готово', 'ок', 'зрозуміло', 'закрити вікно', 'сховати', 'показати', 'ще', 'менше', 'більше']);
 const schoon = (s) => String(s || '').replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/\s+/g, ' ').trim();
 /** Eerste tweetalige tekst in een stuk bron; null als er geen letterlijk paar in staat (variabelen slaan we over). */
 function eerstePaar(stuk) {

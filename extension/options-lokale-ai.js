@@ -45,7 +45,7 @@
     inp.checked = !!waarde;
     inp.addEventListener('change', () => opWijzig(inp.checked));
     const tekst = maak('span', null, t(uk, nl));
-    const lab = maak('label', { class: 'schakel slank' }, inp, gevaar ? maak('span', { class: 'gevaar-teken', title: t('Ризикована функція — за замовчуванням вимкнена', 'Riskante functie — standaard uit'), 'aria-label': t('Увага', 'Let op') }, '!') : null, tekst);
+    const lab = maak('label', { class: 'schakel slank' }, inp, gevaar ? maak('span', { class: 'gevaar-teken', title: t('Ризикована функція — типово вимкнена', 'Riskante functie — standaard uit'), 'aria-label': t('Увага', 'Let op') }, '!') : null, tekst);
     const blok = maak('div', { class: `instelling${gevaar ? ' gevaar-instelling' : ''}` }, lab);
     if (uitlegUk) blok.append(maak('p', { id: `${id}-uitleg`, class: gevaar ? 'let-op' : 'zacht' }, t(uitlegUk, uitlegNl)));
     return blok;
@@ -147,7 +147,7 @@
         maak('span', { id: 'lokale-ai-opgeslagen', role: 'status', 'aria-live': 'polite' })),
 
       maak('h3', null, t('Ризиковані функції', 'Riskante functies')),
-      maak('p', { class: 'zacht' }, t('Позначені «!» — за замовчуванням вимкнені. Їх не заблоковано: вмикайте свідомо.', 'Gemarkeerd met «!» — standaard uit. Ze zijn niet geblokkeerd: zet ze bewust aan.')),
+      maak('p', { class: 'zacht' }, t('Позначені «!» — типово вимкнені. Їх не заблоковано: вмикайте свідомо.', 'Gemarkeerd met «!» — standaard uit. Ze zijn niet geblokkeerd: zet ze bewust aan.')),
       schakel('ai-auto-download', 'Завантажувати модель автоматично, без окремого натискання', 'Model automatisch downloaden, zonder aparte klik', c.autoDownload, zet('autoDownload'),
         { gevaar: true, uitlegUk: 'Модель займає кілька ГБ (потрібно ≥22 ГБ вільного місця на диску профілю Chrome) і завантажується з серверів Google. Без цього перемикача завантаження починається лише кнопкою «Завантажити модель».', uitlegNl: 'Het model is enkele GB groot (≥22 GB vrij nodig op de schijf van het Chrome-profiel) en komt van de servers van Google. Zonder deze schakelaar start de download alleen met de knop «Model downloaden».' }),
       schakel('ai-tab-tekst', 'Дозволити локальному ШІ читати текст активної вкладки tarasevych.com (виділення або вся сторінка)', 'De lokale AI de tekst van het actieve tarasevych.com-tabblad laten lezen (selectie of hele pagina)', c.tabTekst, zet('tabTekst'),

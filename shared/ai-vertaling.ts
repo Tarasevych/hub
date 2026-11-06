@@ -25,7 +25,7 @@ export const AI_VERTALING_TALEN: readonly AiVertalingTaal[] = [
   { code: 'cs', labelUk: 'Чеська', nativeLabel: 'Čeština' },
   { code: 'sk', labelUk: 'Словацька', nativeLabel: 'Slovenčina' },
   { code: 'ro', labelUk: 'Румунська', nativeLabel: 'Română' },
-  { code: 'bg', labelUk: 'Болгарська', nativeLabel: 'Български' },
+  { code: 'bg', labelUk: 'Болгарська', nativeLabel: 'Болгарська' },
   { code: 'lt', labelUk: 'Литовська', nativeLabel: 'Lietuvių' },
   { code: 'lv', labelUk: 'Латвійська', nativeLabel: 'Latviešu' },
   { code: 'et', labelUk: 'Естонська', nativeLabel: 'Eesti' },

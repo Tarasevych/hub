@@ -200,7 +200,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
             {m.wie ? <span className='mv2-wie' data-mv2-wie='1'>{m.wie}</span> : null}
             {toestandTekst ? <span className={`mv2-toestand t-${g.toestand}`}>{toestandTekst}</span> : null}
             {g.hoofd.terugOp ? <span className='mv2-toestand t-terug'>{t('Повернулось після відкладення', 'Terug na uitstel')}</span> : null}
-            {verborgenReden(g) ? <span className='mv2-toestand t-verborgen'><EyeOff aria-hidden='true' />{verborgenReden(g) === 'stil-standaard' ? t('Тихе за замовчуванням', 'Standaard stil') : verborgenReden(g) === 'regel-uit' ? t('Вимкнено правилом', 'Uit door regel') : t('Тихе за правилом', 'Stil door regel')}</span> : null}
+            {verborgenReden(g) ? <span className='mv2-toestand t-verborgen'><EyeOff aria-hidden='true' />{verborgenReden(g) === 'stil-standaard' ? t('Тихе типово', 'Standaard stil') : verborgenReden(g) === 'regel-uit' ? t('Вимкнено правилом', 'Uit door regel') : t('Тихе за правилом', 'Stil door regel')}</span> : null}
             <time dateTime={new Date(m.tijd).toISOString()} title={tijdLang(m.tijd, lang)}>{relatief(m.tijd, nu, lang)}</time>
             {g.hoofd.herhaald && g.hoofd.herhaald > 1 ? <span className='mv2-aantal' title={t('Та сама подія, об’єднано', 'Dezelfde gebeurtenis, samengevoegd')}>×{g.hoofd.herhaald}</span> : null}{g.aantal > 1 ? <span className='mv2-aantal' title={t(`${g.aantal} подій цього процесу`, `${g.aantal} gebeurtenissen van dit proces`)}>×{g.aantal}</span> : null}
           </span>

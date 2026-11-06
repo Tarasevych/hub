@@ -102,7 +102,7 @@
   .venster.mail-koppel-mobile-sheet .venster-inhoud{overscroll-behavior:contain}
   .mail-koppel-ervaring{padding:27px 32px 22px}
 }
-/* Мобільне вікно підлаштовується під ВМІСТ, а не займає 74dvh за замовчуванням. */
+/* Мобільне вікно підлаштовується під ВМІСТ, а не займає 74dvh типово. */
 @media(max-width:559px){
   html .venster.mail-koppel-mobile-sheet.is-max{
     inset:auto calc(8px + var(--veilig-rechts,0px) + var(--venster-dok-rechts,0px))

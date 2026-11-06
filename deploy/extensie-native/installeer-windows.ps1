@@ -97,7 +97,7 @@ try {
   $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
   & icacls.exe $dataMap /inheritance:r /grant:r "*${sid}:(OI)(CI)F" "*S-1-5-18:(OI)(CI)F" | Out-Null
   Write-Host "Права на $dataMap : лише ви та SYSTEM"
-} catch { Write-Warning "icacls не вдалося: $($_.Exception.Message) (папка у вашому профілі все одно недоступна іншим користувачам)" }
+} catch { Write-Warning "icacls не вдалося: $($_.Exception.Message) (тека у вашому профілі все одно недоступна іншим користувачам)" }
 
 # ---- 6. MCP-instelling
 $mcpPad = Join-Path $Doelmap 'mr-native-mcp.mjs'

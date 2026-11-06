@@ -1,5 +1,5 @@
 // OFFICIËLE LOGO'S IN DE INGEBOUWDE BASIS (21.10.2026, besluit van de eigenaar: «знайди публічні фото їх логотипів і збережи в
-// базу … Логотипи існуючих систем не треба видумувати … Без імітації, а справжні»).
+// базу … Логотипи наявних систем не треба видумувати … Без імітації, а справжні»).
 //
 // Wat dit script doet — en wat NIET:
 //   • het NEEMT het SVG-bestand van een merk uit een npm-pakket met een open licentie (CC0-1.0 / MIT / Apache-2.0) en met een

@@ -108,7 +108,7 @@ export default function TerugdraaiMeester({ tr, ctx, open, onSluit, onKlaar }: P
     log('info', 'Крок 4: чекаю підтвердження passkey на телефоні або ключі…', 'Stap 4: wacht op de passkey-bevestiging op telefoon of sleutel…');
     try {
       const b: BesluitUit = await besluitOndertekenen(ctx, g);
-      log('ok', 'Підпис прийнято. Рішення покладено в папку для служби сервера.', 'Handtekening aanvaard. Het besluit ligt in de map voor de dienst op de server.');
+      log('ok', 'Підпис прийнято. Рішення покладено в теку для служби сервера.', 'Handtekening aanvaard. Het besluit ligt in de map voor de dienst op de server.');
       setLeef({ besluit: b });
       log('info', 'Крок 5: сервер перевіряє підпис і перемикає версію…', 'Stap 5: de server controleert de handtekening en wisselt de versie…');
       if (b.staat === 'ondertekend') await volg(b.id); else { setBezig(''); if (b.staat === 'klaar') klaarRef.current?.(); }

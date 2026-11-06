@@ -21,7 +21,7 @@ export const SOORT_NAAM: Readonly<Record<ZoekSoort, { uk: string; nl: string }>>
   taak: { uk: 'Задача', nl: 'Taak' }, afspraak: { uk: 'Подія', nl: 'Afspraak' }, repo: { uk: 'Репозиторій', nl: 'Repository' }, issue: { uk: 'Issue', nl: 'Issue' }, pull: { uk: 'Pull request', nl: 'Pull request' },
   commit: { uk: 'Коміт', nl: 'Commit' }, contact: { uk: 'Контакт', nl: 'Contact' }, apparaat: { uk: 'Пристрій', nl: 'Apparaat' }, overig: { uk: 'Інше', nl: 'Overig' },
 });
-export const TAAL_NAAM: Readonly<Record<ZoekTaal, string>> = Object.freeze({ uk: 'Українська', ru: 'Русский', nl: 'Nederlands', en: 'English', de: 'Deutsch', fr: 'Français', pl: 'Polski', ro: 'Română', bg: 'Български' });
+export const TAAL_NAAM: Readonly<Record<ZoekTaal, string>> = Object.freeze({ uk: 'Українська', ru: 'Інша', nl: 'Nederlands', en: 'English', de: 'Deutsch', fr: 'Français', pl: 'Polski', ro: 'Română', bg: 'Болгарська' });
 
 /** Bron → categorie (elke bron zit in precies één categorie; zie de test zoek-etap-d). */
 export const categorieVanBron = (b: ZoekBron): Categorie => (Object.keys(CATEGORIE_BRONNEN) as Categorie[]).find(c => c !== 'all' && CATEGORIE_BRONNEN[c].includes(b)) || 'overig';

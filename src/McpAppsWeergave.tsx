@@ -258,7 +258,7 @@ export default function McpAppsView({ lang }: { lang: Lang }) {
               <span className='mapps-hint'>{tr(`Домен і Caddy — необовʼязково: --domain "{app}-app.${domein}" --caddy-admin unix:/run/caddy/admin.sock. Без них додатки доступні лише на цьому ПК (127.0.0.1).`, `Domein en Caddy zijn optioneel: --domain "{app}-app.${domein}" --caddy-admin unix:/run/caddy/admin.sock. Zonder zijn apps alleen op deze pc bereikbaar (127.0.0.1).`)}</span></li>
             <li>{tr('Перезапустіть агента (node agent.mjs run). Вимкнути: node agent.mjs apps-config --disable.', 'Herstart de agent (node agent.mjs run). Uitzetten: node agent.mjs apps-config --disable.')}</li>
           </ol>
-          <p className='mapps-hint'>{tr('Група docker дорівнює правам root на хості — тому за замовчуванням Podman без root.', 'De docker-groep staat gelijk aan root op de host — daarom standaard Podman zonder root.')}</p>
+          <p className='mapps-hint'>{tr('Група docker дорівнює правам root на хості — тому типово Podman без root.', 'De docker-groep staat gelijk aan root op de host — daarom standaard Podman zonder root.')}</p>
         </details>
         <ul className='mapps-regels'>
           <li>{tr('Код ШІ працює лише в контейнері: без root, без додаткових прав (cap-drop ALL), з лімітом памʼяті, порт лише на 127.0.0.1.', 'AI-code draait alleen in een container: zonder root, zonder extra rechten (cap-drop ALL), met geheugenlimiet, poort alleen op 127.0.0.1.')}</li>

@@ -116,7 +116,7 @@ export function Bibliotheek(p: BibliotheekProps) {
                 {!t.ok && <small className='bib-reden'>{t.beschikbaarheid === 'planned' ? tr(lang, 'Скоро: ', 'Binnenkort: ') : tr(lang, 'Недоступно: ', 'Niet beschikbaar: ')}{t.reden[lang]}</small>}
               </span>
               <span className='bib-acties'>
-                {kanAlsSnelkoppeling(r) && <button type='button' className='bib-knop' disabled={!t.ok} onClick={() => enkel(r, r.kind === 'folder' ? 'folder' : 'shortcut')}>{r.kind === 'folder' ? tr(lang, 'Додати папку', 'Map toevoegen') : tr(lang, 'Як ярлик', 'Als snelkoppeling')}</button>}
+                {kanAlsSnelkoppeling(r) && <button type='button' className='bib-knop' disabled={!t.ok} onClick={() => enkel(r, r.kind === 'folder' ? 'folder' : 'shortcut')}>{r.kind === 'folder' ? tr(lang, 'Додати теку', 'Map toevoegen') : tr(lang, 'Як ярлик', 'Als snelkoppeling')}</button>}
                 {kanAlsWidget(r) && <button type='button' className='bib-knop' disabled={!t.ok} onClick={() => enkel(r, 'widget')}>{tr(lang, 'Як віджет', 'Als widget')}</button>}
                 {r.kind === 'shortcut' && p.onPersoonlijk && <button type='button' className='bib-ikoonknop' disabled={!t.ok} onClick={() => dupliceer(r)} aria-label={tr(lang, `Дублювати «${r.titel.uk}»`, `«${r.titel.nl}» dupliceren`)}><Copy aria-hidden='true' /></button>}
                 {r.kind === 'shortcut' && p.onPersoonlijk && <button type='button' className='bib-ikoonknop' onClick={() => setBewerk(r)} aria-label={tr(lang, `Перейменувати або змінити значок «${r.titel.uk}»`, `Naam of icoon van «${r.titel.nl}» wijzigen`)}><Pencil aria-hidden='true' /></button>}

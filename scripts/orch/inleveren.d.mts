@@ -15,6 +15,6 @@ export function inleveren(o: {
   tests?: string[] | null; standaardTests?: boolean; zonderTests?: string | null; alleenVeiligeControle?: boolean; integratieRef?: string | null; push?: boolean; nu?: string;
   /** Сервер: агент MCP-підключення — пакет мусить бути від його імені (AGENT_VERSCHILT). */ verwachteAgent?: string | null;
   /** Хто фактично доставив (власник / MCP-підключення з grant-id) — у записі передачі. */ door?: string | null;
-  /** Межа розпакованого обсягу на архів (за замовчуванням 1 ГіБ). */ maxUitgepaktBytes?: number;
+  /** Межа розпакованого обсягу на архів (типово 1 ГіБ). */ maxUitgepaktBytes?: number;
 }): InleverRecord;
 export function registreerInlevering(wortel: string, record: InleverRecord): { recordPad: string; taakBijgewerkt: boolean; wachtrij: unknown };

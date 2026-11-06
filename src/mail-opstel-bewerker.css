@@ -12,7 +12,7 @@
 .mail-compose-more-menu .mail-sjabloon-item,.mail-compose-more-menu .mail-sjabloon-item span{text-align:left;justify-items:start}
 
 /* ---- 21.10.2026 (телефон 390 px, «Новий лист»): балка = ряд, що прокручується (src/ontwerp/TabsRij: тінь + стрілки), і «⋯»,
-   закріплена праворуч. Випадаючі меню — у порталі під <body> (.mail-compose-zwevend, position:fixed, шар над вікном), тож
+   закріплена праворуч. Розкривні меню — у порталі під <body> (.mail-compose-zwevend, position:fixed, шар над вікном), тож
    overflow балки чи вікна їх більше не обрізає. Іконкові кнопки — квадрат var(--tik-hoogte) (40 з мишею, 44 на дотику),
    усі сегменти однієї висоти. Лише токени. Що рідко потрібне на телефоні — у «⋯» (MailComposeEditor: smal). */
 .mail-compose-editor .mail-compose-balk{display:flex;align-items:center;gap:var(--ruimte-1);min-width:0;padding:var(--ruimte-1) var(--ruimte-2);border-bottom:1px solid var(--line);background:var(--surface);color:var(--text);position:relative;z-index:2;border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0}

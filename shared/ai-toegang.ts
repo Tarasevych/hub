@@ -253,7 +253,7 @@ export const scopeVoorTool = (tool: string): string | undefined =>
  */
 export const scopeBruikbaar = (scope: AiToegangScope, inRuimte: (tool: string) => boolean): boolean =>
   (scope.id === EXTERN_MCP_SCOPE ? inRuimte(`${EXTERN_MCP_PREFIX}voorbeeld_hulpmiddel`) : scope.tools.some(inRuimte));
-/** Скоупи за замовчуванням для нового підключення: нечутливі й підтримувані бодай кимось. */
+/** Скоупи типово для нового підключення: нечутливі й підтримувані бодай кимось. */
 export const STANDAARD_SCOPES: readonly string[] = AI_TOEGANG_SCOPES.filter((s) => s.standaardAan && s.agents.length > 0).map((s) => s.id);
 /**
  * Технічний стандарт (рішення власника 1.11.2026): стандарт без чутливих. Єдине джерело для нового технічного підключення

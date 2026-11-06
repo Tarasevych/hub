@@ -477,7 +477,7 @@ export function useWerkbladBlokken(o: WerkbladBlokkenOpties) {
     const a = o.klasse; const l = a && o.lagenRef.current[a]?.layout;
     for (const [inst, b] of Object.entries(alle)) {
       const e = l?.items.find((x) => x.instanceId === inst);
-      const basis = e?.itemId === SNEL_TOEGANG ? tr(lang, 'Швидкий доступ', 'Snelle toegang') : (e?.titleOverride || tr(lang, 'Папка', 'Map'));
+      const basis = e?.itemId === SNEL_TOEGANG ? tr(lang, 'Швидкий доступ', 'Snelle toegang') : (e?.titleOverride || tr(lang, 'Тека', 'Map'));
       const loop = (blk: Blok, pad: string) => {
         uit.push({ plek: maakPlek('blok', samen(inst, blk.id)), titel: pad, kinderen: blk.kinderen.map((c) => ({ id: samen(inst, c.id), titel: c.soort === 'onderdeel' ? (c.label?.tekst || naamVan(c.itemId)) : `▦ ${c.titel || tr(lang, 'Блок', 'Blok')}` })) });
         blk.kinderen.forEach((c) => { if (c.soort === 'blok') loop(c, `${pad} › ${c.titel || tr(lang, 'Блок', 'Blok')}`); });

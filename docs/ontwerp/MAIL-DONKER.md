@@ -42,7 +42,7 @@ node scripts/visueel-mail.mjs                 # виміряти + порівн�
 node scripts/visueel-mail.mjs --bijwerken     # зафіксувати базову лінію
   --breedtes 390,768,1440   --themas licht,donker   --filter 05-knop
   --uit /workspace/audit-ruimtes   --basislijn <тека> (типово <uit>/mail-basislijn)
-  --drempel 0.5   (% відмінних пікселів)   --json rapport.json   --zonder-afdrukken
+  --drempel 0.5   (% різних пікселів)   --json rapport.json   --zonder-afdrukken
 ```
 
 Для кожного листа × ширини: знімок екрана `mail-<лист>-<ширина>-<тема>.png`, контраст WCAG усього видимого тексту (темна тема),

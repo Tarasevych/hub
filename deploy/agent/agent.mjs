@@ -57,7 +57,7 @@ async function pair(args) {
   // --readonly-root: ook een root, maar alleen lezen/tonen (bv. de back-ups op R:\ — een agent mag ze nooit wijzigen).
   const readonlyRoots = args['readonly-root'].map((r) => path.resolve(r));
   const roots = [...args.root.map((r) => path.resolve(r)), ...readonlyRoots];
-  if (!roots.length) die('вкажіть хоча б одну дозволену папку: --root <DIR> (або --readonly-root <DIR>)');
+  if (!roots.length) die('вкажіть хоча б одну дозволену теку: --root <DIR> (або --readonly-root <DIR>)');
   const allow = (args.allow ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const name = args.name ?? os.hostname();
   const server = args.server.replace(/\/$/, '');
@@ -246,7 +246,7 @@ async function sampleCpuPercent(ms = 500) {
 // ---------- Додатки (PaaS на власному залізі, BYOS) ----------
 // Вмикається лише явно: `node agent.mjs apps-config --apps-root DIR [--runtime podman|docker] [--domain "{app}.apps.example.com"]
 // [--caddy-admin unix:/run/caddy/admin.sock | http://127.0.0.1:2019] [--caddy-server mijn-ruimte-apps] [--memory 512m]`.
-// Кожен додаток — контейнер (rootless Podman за замовчуванням; Docker — якщо так налаштовано), без capabilities, no-new-privileges,
+// Кожен додаток — контейнер (rootless Podman типово; Docker — якщо так налаштовано), без capabilities, no-new-privileges,
 // з лімітами пам'яті/процесів, порт лише на 127.0.0.1; назовні — через Caddy (маршрут за доменом). Код ШІ ніколи не виконується
 // на хості: лише всередині контейнера. Перед кожним розгортанням — знімок (tar.gz) і окремий образ; 5 останніх версій для відкату.
 // Секрети: <apps-root>/secrets/<app>.env (0600), значення ніколи не повертаються; у журналах вони замінюються на «***».

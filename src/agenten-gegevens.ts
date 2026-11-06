@@ -20,7 +20,7 @@ export const sessionBody = (service = 'mcp') => ({ service, tabContext: ecosyste
 
 /** Leesbare naam van een opdrachttype van een agent, in de taal van de site. */
 export const COMMAND_LABELS: Record<string, [string, string]> = {
-  'fs.read': ['Читання файлу', 'Bestand lezen'], 'fs.list': ['Перегляд папки', 'Map bekijken'], 'fs.write': ['Запис файлу', 'Bestand schrijven'],
+  'fs.read': ['Читання файлу', 'Bestand lezen'], 'fs.list': ['Перегляд теки', 'Map bekijken'], 'fs.write': ['Запис файлу', 'Bestand schrijven'],
   exec: ['Виконання команди', 'Commando uitvoeren'], 'sys.info': ['Інформація про пристрій', 'Apparaatinformatie'], 'sys.metrics': ['Метрики системи', 'Systeemmetrics'],
   'docker.ps': ['Список контейнерів', 'Containerlijst'], 'docker.manage': ['Керування контейнером', 'Container beheren'],
   'apps.deploy': ['Розгортання додатка', 'App uitrollen'], 'apps.status': ['Хід розгортання', 'Voortgang uitrol'], 'apps.list': ['Список додатків', 'Lijst van apps'],

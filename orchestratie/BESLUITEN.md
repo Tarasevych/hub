@@ -13,7 +13,7 @@ Alleen toevoegen. Elke wijziging van de regels = nieuw besluit hier + hogere `re
 ## B-001 · 2026-10-31 · 1.0.0 · voorstel
 
 **Контекст.** Над Mijn Ruimte паралельно працюють Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor. Правила були розсипані по
-`deploy/REGELS-UITROLPAKKET.md`, `RUNBOOK-*.md`, спільній папці знань і чатах; кожен агент мав власне уявлення про базу коду.
+`deploy/REGELS-UITROLPAKKET.md`, `RUNBOOK-*.md`, спільній теці знань і чатах; кожен агент мав власне уявлення про базу коду.
 
 **Рішення.** Єдине джерело правил — `AGENTS.md` (людиною) + `orchestratie/beleid.json` (машиною) + цей реєстр. `CLAUDE.md`, `GEMINI.md` та інші файли
 середовищ — лише адаптери ≤ 25 рядків із маркером `<!-- orch-adapter -->`. Відбиток правил фіксується в `orchestratie/regels.lock.json`;
@@ -222,3 +222,13 @@ Herbouwen van release `AUDIT-001` (`20261105-093500`) bovenop de op de server ge
 **Наслідки.** `regelsVersie` 1.4.8 → 1.4.9; новий пакет `20261105-093500` містить `UITROL-BASIS: versie=20261105-061659, commit=a318ba0b1c731390217458dabadcf0e086d13635` і проходить перевірку `voorcontrole` та `mijn-ruimte-uitrol.sh` на сервері без помилки `BASIS_VEROUDERD`.
 
 **Хто.** Запит власника від 05.11.2026 (`AUDIT-001`); виконання — агент `antigravity`.
+
+## B-015 · 2026-11-06 · 1.4.10 · Повне мовне очищення вихідного коду, каталогів пошуку та двомовної документації (uk + nl)
+
+**Контекст.** Під час ревізії PR #30 та всіх активних гілок виявлено залишки російських та англійських пошукових фраз у `backend/zoek/catalogus-ui.ts`, `shared/zoek-synoniemen.ts`, `shared/zoek-normalisatie.ts`, а також суржикові кальки у компонентах `src/`, `backend/`, `shared/`, `deploy/` та тестах.
+
+**Рішення.** Вилучити всі російські літери, російські слова, суржик та англійські пошукові інтенції з усіх файлів коду, тестів та документації у всіх активних гілках репозиторію; перегенерувати `shared/zoek-ui-knoppen.generated.ts`, підвищити `regelsVersie` до `1.4.10`, оновити `orchestratie/regels.lock.json` та `orchestratie/CONTEXT-COMPACT.md`.
+
+**Наслідки.** `regelsVersie` 1.4.9 → 1.4.10; 0 збігів російського алфавіту та суржику в усьому репозиторії.
+
+**Хто.** Запит власника від 06.11.2026 (`AUDIT-001`); виконання — агент `antigravity`.

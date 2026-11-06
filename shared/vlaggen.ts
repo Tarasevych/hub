@@ -118,7 +118,7 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
   },
   'notities-vnext': {
     naam: ['Нові нотатки (Notities vNext)', 'Nieuwe notities (Notities vNext)'],
-    wat: ['Нова сторінка «Нотатки»: папки, теги, закріплення, архів і кошик, редактор Markdown із чеклістами, імпорт/експорт файлів.', 'Nieuwe pagina «Notities»: mappen, etiketten, vastzetten, archief en prullenbak, Markdown-editor met checklists, bestandsimport/-export.'],
+    wat: ['Нова сторінка «Нотатки»: теки, теги, закріплення, архів і кошик, редактор Markdown із чеклістами, імпорт/експорт файлів.', 'Nieuwe pagina «Notities»: mappen, etiketten, vastzetten, archief en prullenbak, Markdown-editor met checklists, bestandsimport/-export.'],
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати нові нотатки.', 'Zet eerst alleen voor uzelf aan om de nieuwe notities te proberen.'],
     gevolg: ['Записи ті самі (старі нотатки перенесено без втрат, дошка й інструмент manage_hub_notes працюють як раніше). Вимкнено — стара сторінка, усі нотатки на місці.', 'Dezelfde notities (oude zijn zonder verlies overgezet; het bord en manage_hub_notes werken als voorheen). Uit = de oude pagina, alle notities blijven.'],
   },

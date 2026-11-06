@@ -450,7 +450,7 @@ const slaap = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /**
  * Oranje «не перевірено»-pastilles pas na de eerste VOLLEDIGE controle van bestaande berichten (artefact-draad f252547a, punt 4:
- * «перед тим як увімкнути позначки, пройтися по існуючих листах»). Vóór die tijd zou bijna elke rij oranje zijn, ook voor
+ * «перед тим як увімкнути позначки, пройтися по наявних листах»). Vóór die tijd zou bijna elke rij oranje zijn, ook voor
  * afzenders die de controle zo dadelijk als bekend markeert. Geverifieerd (✓) en verdacht (rood) gelden per bericht en zijn
  * altijd zichtbaar: een vervalsing mag nooit wachten op een audit.
  */

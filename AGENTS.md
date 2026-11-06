@@ -124,7 +124,7 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 | Підтвердження правил passkey (пише лише root) | `/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl`; копія для застосунку `/var/lib/mijn-ruimte-uitrol-status/orch-regels-bevestigd.json` |
 | Доступи агентів, MCP | `deploy/RUNBOOK-AGENTEN-0.4.md`, `deploy/MCP-CONNECTOR.md`, `deploy/CONNECTOR-V2.md` |
 | Afstemming (задачі/конфлікти/випуски на сайті) | `shared/afstemming-model.ts`, `backend/afstemming-*.ts`, `src/afstemming-vnext/` |
-| Спільна папка знань (поза репозиторієм) | проєктна папка `knowledge/claude/` — довідка, не джерело правил |
+| Спільна тека знань (поза репозиторієм) | проєктна тека `knowledge/claude/` — довідка, не джерело правил |
 
 ## 7. Команди · Opdrachten
 

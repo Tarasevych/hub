@@ -56,7 +56,7 @@ import{Check,Paperclip,Star}from'lucide-react';import{lazy,Suspense,useEffect,us
         month: "short",
       }).format(stamp),
       // Точний варіант — завжди показується при наведенні/фокусі, незалежно
-      // від того, яка коротка (відносна) мітка видна за замовчуванням.
+      // від того, яка коротка (відносна) мітка видна типово.
       alternate = `${weekdayLong}, ${dayMonth}${sameYear ? "" : " " + stamp.getFullYear()} · ${time}`;
     if (dayDiff <= 0) {
       const minutesAgo = Math.floor((now.getTime() - stamp.getTime()) / 60000),

@@ -24,7 +24,7 @@
     },
     {
       "volgorde": 2,
-      "stap": "Прочитані правила інсталяційного пакета, runbook, існуючі перевірки сайту/інсталятора й штатний пакувальник.",
+      "stap": "Прочитані правила інсталяційного пакета, runbook, наявні перевірки сайту/інсталятора й штатний пакувальник.",
       "bewijzen": [
         "deploy/REGELS-UITROLPAKKET.md",
         "deploy/RUNBOOK-VEILIGE-UITROL.md",
@@ -78,7 +78,7 @@
     },
     {
       "volgorde": 8,
-      "stap": "CI після оновлення правил: контроль ORCH, shell, TRACE-001, попередня перевірка, маніфест і коди пройдені. Typecheck server пройдено. Етап typecheck client помилково викликав відсутню npm-команду, виправлено на існуючий npx tsc; розширено регресії пакування.",
+      "stap": "CI після оновлення правил: контроль ORCH, shell, TRACE-001, попередня перевірка, маніфест і коди пройдені. Typecheck server пройдено. Етап typecheck client помилково викликав відсутню npm-команду, виправлено на наявний npx tsc; розширено регресії пакування.",
       "bewijzen": [
         "https://github.com/Tarasevych/hub/actions/runs/41727884803",
         ".github/workflows/trace-001-guard.yml"

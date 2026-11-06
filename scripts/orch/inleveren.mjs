@@ -153,7 +153,7 @@ export function inleveren(o) {
     if (z.some((x) => x.ernst === 'fout')) return record;
 
     // 3. База існує? Правила чинні?
-    if (git('cat-file', '-e', `${od.basisCommit}^{commit}`) === null) { z.push(fout('BASIS_ONBEKEND', `базовий commit ${od.basisCommit.slice(0, 12)} невідомий у цьому репозиторії — зробіть git fetch або агент працював від неіснуючої бази`, `basiscommit ${od.basisCommit.slice(0, 12)} onbekend in deze repository`)); return record; }
+    if (git('cat-file', '-e', `${od.basisCommit}^{commit}`) === null) { z.push(fout('BASIS_ONBEKEND', `базовий commit ${od.basisCommit.slice(0, 12)} невідомий у цьому репозиторії — зробіть git fetch або агент працював від ненаявної бази`, `basiscommit ${od.basisCommit.slice(0, 12)} onbekend in deze repository`)); return record; }
     const integratieRef = o.integratieRef ?? [`origin/${o.beleid.integratie.tak}`, o.beleid.integratie.tak, `origin/${o.beleid.integratie.basisTak}`, o.beleid.integratie.basisTak].find((r) => r && git('rev-parse', '--verify', '-q', r) !== null) ?? null;
     record.integratieRef = integratieRef;
     const taakVoorVersheid = { id: od.taakId, basisCommit: od.basisCommit, regelsVersie: od.regelsVersie, regelsHash: od.regelsHash, staat: 'ter_integratie' };
@@ -219,7 +219,7 @@ export function inleveren(o) {
     //   - ЗАВЖДИ виконується довірений controleer: scripts/orch.mjs із o.wortel з --wortel <map>, без sh -c і без жодного коду з пакета агента.
     //     Його не вимикає й --zonder-tests / zonderTests — інакше пакет зі зміненими правилами без нового lock пройшов би неперевіреним.
     //   - Shell-тести виконують КОД ІЗ ПАКЕТА АГЕНТА (scripts/eenheidstests.mjs, tests/… — усе з пакета) з HOME оператора. Тому лише за явним
-    //     вибором оператора CLI: --tests "cmd" або --standaardtests (beleid.inlevering.standaardTests). За замовчуванням — ні; на сервері
+    //     вибором оператора CLI: --tests "cmd" або --standaardtests (beleid.inlevering.standaardTests). Типово — ні; на сервері
     //     (alleenVeiligeControle) — ніколи. --zonder-tests пропускає лише shell-тести; причина лишається в записі.
     // Altijd de vertrouwde controleer; shell-tests (code uit het pakket!) alleen op uitdrukkelijke keuze van de operator, nooit op de server.
     const VEILIGE_CONTROLE_CMD = 'node scripts/orch.mjs controleer';

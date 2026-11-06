@@ -1,5 +1,5 @@
 // Besluit van de eigenaar (21.10.2026): «Замість перемальовувати… знайди в інтернеті публічні фото їх логотипів і збережи в базу …
-// Логотипи існуючих систем/компаній/людей не треба видумувати … Без імітації, а справжні.»
+// Логотипи наявних систем/компаній/людей не треба видумувати … Без імітації, а справжні.»
 //
 // Wat deze test bewijst over de INGEBOUWDE basis (src/merk/officieel/, scripts/merk-officieel-maken.mjs):
 //   1. elk bestand heeft precies één regel in HERKOMST.json: pakket + versie + integriteit (zoals package-lock.json) en een open

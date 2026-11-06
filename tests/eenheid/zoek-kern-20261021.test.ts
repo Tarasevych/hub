@@ -14,7 +14,7 @@ export async function main(): Promise<number> {
   // normalisatie
   check('kleine letters + diacritica', zoekNorm('Café Ÿ Łódź Straße') === 'cafe y lodz strasse', zoekNorm('Café Ÿ Łódź Straße'));
   check('uk ↔ Latijn: Харків == Kharkiv', zoekNorm('Харків') === zoekNorm('Kharkiv'), `${zoekNorm('Харків')} / ${zoekNorm('Kharkiv')}`);
-  check('ru: Москва == moskva', zoekNorm('Москва') === 'moskva' && zoekNorm('Ростов') === zoekNorm('Rostov'));
+  check('uk: Львів == lviv, Полтава == Poltava', zoekNorm('Львів') === 'lviv' && zoekNorm('Полтава') === zoekNorm('Poltava'));
   check('bg: Пловдив → plovdyv (één schema; «plovdiv» is een vraagvariant y↔i)', zoekNorm('Пловдив') === 'plovdyv' && varianten('plovdiv').includes('plovdyv'));
   check('Київ → kyyiv; «Kyiv» en «Kiev» zijn VARIANTEN van de vraag (geen fonetische vouw meer)', zoekNorm('Київ') === 'kyyiv' && varianten('kyyiv').includes('kyiv') && varianten('kiev').includes('kyev'), `${zoekNorm('Київ')} ${varianten('kyyiv').join(',')}`);
   check('geen vouw: Jan de Wijk blijft Jan de Wijk', zoekNorm('Jan de Wijk ijsje') === 'jan de wijk ijsje' && VOUW.length === 0);

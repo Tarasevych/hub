@@ -15,8 +15,8 @@
     "commit": "b14a59e3c4b259b57d413be498281d49f1e6969c",
     "bron": "/api/version · 2026-11-06"
   },
-  "regelsVersie": "1.4.9",
-  "regelsHash": "fd7f99f180da62313ee13a1ffe7a99c5e933883419d54efc2d9f4d7bcd7b8dd4",
+  "regelsVersie": "1.4.10",
+  "regelsHash": "beb437706865e56735ee15f56f75422968d3b133221148282986b23645078847",
   "tak": "feature/design-003-20261106-103743",
   "kanaal": "github_pr",
   "zonderGit": null,

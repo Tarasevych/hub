@@ -75,7 +75,7 @@ function BronLaag({ lang, titel, onSluit, children }: { lang: Lang; titel: strin
 }
 
 const mimeNaam = (lang: Lang, b: DriveBestand): string => {
-  if (b.folder) return tr(lang, 'Папка', 'Map');
+  if (b.folder) return tr(lang, 'Тека', 'Map');
   const g = /^application\/vnd\.google-apps\.(\w+)$/.exec(String(b.mimeType || ''));
   if (g) { const soort: Record<string, string> = { document: 'Google Docs', spreadsheet: 'Google Sheets', presentation: 'Google Slides', form: 'Google Forms', drawing: 'Google Drawings', shortcut: tr(lang, 'Ярлик', 'Snelkoppeling') }; return soort[g[1]] || `Google ${g[1]}`; }
   return String(b.mimeType || '').split(';')[0] || tr(lang, 'Файл', 'Bestand');
@@ -186,7 +186,7 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
     finally { setTaakBezig(''); }
   };
   const open = async (b: DriveBestand) => {
-    if (b.folder) { void blader(b.id, [...kruimels, { id: b.id, naam: b.name || tr(lang, 'Папка', 'Map') }], ''); setZoekVeld(''); return; }
+    if (b.folder) { void blader(b.id, [...kruimels, { id: b.id, naam: b.name || tr(lang, 'Тека', 'Map') }], ''); setZoekVeld(''); return; }
     if (!accountId || voorbeeldLaden) return;
     setVoorbeeldLaden(true); setFout('');
     try {
@@ -300,7 +300,7 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
             </div>
             {token ? <button type='button' className='cvn-knop cvi-meer' disabled={meerLaden} onClick={() => void meer()} data-cvi-actie='meer'>{meerLaden ? <LoaderCircle className='cvi-draai' aria-hidden='true' /> : null}{meerLaden ? tr(lang, 'Завантажуємо ще…', 'Meer laden…') : tr(lang, 'Показати ще', 'Meer tonen')}</button> : null}
           </>
-        ) : <section className='cvn-leeg'><Folder aria-hidden='true' /><strong>{zoek ? tr(lang, 'Нічого не знайдено. Можна змінити запит.', 'Niets gevonden. Pas de zoekopdracht aan.') : tr(lang, 'У цій папці зараз немає файлів.', 'Deze map bevat nu geen bestanden.')}</strong></section>}
+        ) : <section className='cvn-leeg'><Folder aria-hidden='true' /><strong>{zoek ? tr(lang, 'Нічого не знайдено. Можна змінити запит.', 'Niets gevonden. Pas de zoekopdracht aan.') : tr(lang, 'У цій теці зараз немає файлів.', 'Deze map bevat nu geen bestanden.')}</strong></section>}
         <p className='cvn-hint'>{tr(lang, 'Тут — читання: навігація, пошук і безпечне прев’ю. Перейменування, переміщення та кошик Google Drive — у класичному провіднику (сторінка Хмари без прапорця vNext) або на drive.google.com.', 'Hier alleen lezen: bladeren, zoeken en een veilige preview. Hernoemen, verplaatsen en de prullenbak van Google Drive: in de klassieke verkenner (de cloudpagina zonder vNext-vlag) of op drive.google.com.')}</p>
       </section>
       {voorbeeldLaden ? <BronLaag lang={lang} titel={tr(lang, 'Готуємо безпечний перегляд…', 'Veilige weergave voorbereiden…')} onSluit={() => setVoorbeeldLaden(false)}><p className='cvn-hint' role='status' aria-busy='true'><LoaderCircle className='cvi-draai' aria-hidden='true' />{tr(lang, 'Завантажуємо вміст…', 'Inhoud laden…')}</p></BronLaag> : null}

@@ -196,7 +196,7 @@ function McpAdresVeld({ tr, ruimte }: { tr: Tr; ruimte: 'prive' | 'technisch' })
       <input id='gh-mcp-url' value={adres} onChange={(e) => wijzig(e.target.value)} spellCheck={false} autoComplete='off' inputMode='url'
         aria-invalid={!geldig} aria-describedby='gh-mcp-uitleg' />
       <button type='button' className='gh-btn' onClick={kopieer} disabled={!geldig}>{gekopieerd ? <Check size={14} /> : <Copy size={14} />}{gekopieerd ? tr('Скопійовано', 'Gekopieerd') : tr('Копіювати', 'Kopiëren')}</button>
-      <button type='button' className='gh-btn' onClick={() => wijzig(GITHUB_MCP_URL)} disabled={adres === GITHUB_MCP_URL}><RefreshCw size={14} />{tr('За замовчуванням', 'Standaard')}</button>
+      <button type='button' className='gh-btn' onClick={() => wijzig(GITHUB_MCP_URL)} disabled={adres === GITHUB_MCP_URL}><RefreshCw size={14} />{tr('Типово', 'Standaard')}</button>
     </div>
     {!geldig && <p className='gh-sub gh-bad' role='alert'>{tr('Адреса має бути https, без логіна, пароля й параметрів у посиланні.', 'Het adres moet https zijn, zonder gebruikersnaam, wachtwoord of parameters.')}</p>}
     <p className='gh-sub' id='gh-mcp-uitleg'>{tr('Куди вставляти: у ваш ШІ-клієнт як віддалений MCP-сервер — Claude (Settings → Connectors → Add custom connector), VS Code / Copilot (mcp.json, поле "url"), або будь-який інший клієнт з підтримкою MCP через HTTP. Там же клієнт попросить увійти в GitHub — цей сайт при цьому не бере участі й токена не бачить.',

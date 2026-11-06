@@ -1,4 +1,4 @@
-// Встановлення розширення через рідний вибір папки: запис лише після перевірки SHA-256, захист від небезпечних шляхів, скасування.
+// Встановлення розширення через рідний вибір теки: запис лише після перевірки SHA-256, захист від небезпечних шляхів, скасування.
 import { createHash } from 'node:crypto';
 import { zipSync, strToU8 } from 'fflate';
 import { installExtensionToPickedFolder, PickerFailure } from '../../src/extensie-map-installeer';

@@ -285,7 +285,7 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
       return (
         <div style={{ display: 'grid', gap: 10 }} ref={klaarRef} tabIndex={-1} role='status'>
           <p style={{ margin: 0, display: 'flex', gap: 8, alignItems: 'center' }}><MailCheck aria-hidden='true' /><strong>{tr(lang, 'Скриньку підключено', 'Mailbox gekoppeld')}</strong></p>
-          <p style={{ margin: 0 }}>{tr(lang, 'Сервер справді увійшов у скриньку й побачив папок:', 'De server heeft zich echt aangemeld en zag mappen:')} <strong>{klaar.mappen}</strong></p>
+          <p style={{ margin: 0 }}>{tr(lang, 'Сервер справді увійшов у скриньку й побачив тек:', 'De server heeft zich echt aangemeld en zag mappen:')} <strong>{klaar.mappen}</strong></p>
           <p style={{ margin: 0 }}>{klaar.smtpGoed
             ? tr(lang, 'Надсилання (SMTP) також прийняло пароль застосунку.', 'Verzenden (SMTP) accepteerde het app-wachtwoord ook.')
             : tr(lang, 'Надсилання (SMTP) пароль не прийняло — читати пошту можна, надсилати поки ні.', 'Verzenden (SMTP) accepteerde het wachtwoord niet — lezen kan, verzenden nog niet.')}</p>

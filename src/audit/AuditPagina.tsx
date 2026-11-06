@@ -234,7 +234,7 @@ export default function AuditPagina({ lang, sourceOrigin, tabContext }: Props) {
       {!laden && !rijen.length && !fout ? <div className='aj-leeg-blok'>
         <ListFilter size={30} aria-hidden='true' />
         <b>{nFilters ? tr(lang, 'За цими фільтрами нічого немає', 'Niets voor deze filters') : tr(lang, 'Журнал поки порожній', 'Het logboek is nog leeg')}</b>
-        <p>{nFilters ? tr(lang, 'Спробуйте ширший період або скиньте фільтри. Службові події приховано за замовчуванням.', 'Probeer een ruimere periode of wis de filters. Technische ruis is standaard verborgen.') : tr(lang, 'Нові дії (ролі, доступ ШІ, оновлення, секрети) з’являться тут одразу.', 'Nieuwe acties (rollen, AI-toegang, updates, geheimen) verschijnen hier meteen.')}</p>
+        <p>{nFilters ? tr(lang, 'Спробуйте ширший період або скиньте фільтри. Службові події приховано типово.', 'Probeer een ruimere periode of wis de filters. Technische ruis is standaard verborgen.') : tr(lang, 'Нові дії (ролі, доступ ШІ, оновлення, секрети) з’являться тут одразу.', 'Nieuwe acties (rollen, AI-toegang, updates, geheimen) verschijnen hier meteen.')}</p>
         {nFilters ? <button type='button' className='aj-knop' onClick={reset}>{tr(lang, 'Скинути фільтри', 'Filters wissen')}</button> : null}
       </div> : null}
 

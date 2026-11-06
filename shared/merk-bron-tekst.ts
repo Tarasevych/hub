@@ -15,7 +15,7 @@ export const MERK_BRON_TEKST = Object.freeze({
     nl: 'Foto\'s van afzenders zoeken bij Gravatar',
   },
   gravatarUitleg: {
-    uk: 'Вимкнено за замовчуванням. Якщо увімкнути, сервер надсилає до Gravatar (Automattic) SHA-256 від адреси кожного відправника, якого ви бачите у списку, — Gravatar дізнається, що ваш сервер шукав цю адресу.',
+    uk: 'Вимкнено типово. Якщо увімкнути, сервер надсилає до Gravatar (Automattic) SHA-256 від адреси кожного відправника, якого ви бачите у списку, — Gravatar дізнається, що ваш сервер шукав цю адресу.',
     nl: 'Standaard uit. Zet u dit aan, dan stuurt de server de SHA-256 van het adres van elke afzender die u in de lijst ziet naar Gravatar (Automattic) — Gravatar ziet dan dat uw server dat adres zocht.',
   },
   google: {

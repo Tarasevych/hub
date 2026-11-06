@@ -24,7 +24,7 @@ export async function main(): Promise<number> {
     foutCodeUit('SPIEGEL_FOUT') === 'SPIEGEL_FOUT' && foutCodeUit('SITE_CAP: AI_UIT. This private connection …') === 'AI_UIT' && foutCodeUit('{"ok":false,"error":"SPIEGEL_FOUT"}') === 'SPIEGEL_FOUT'
     && foutCodeUit('{"error":{"code":"PATH_NIET_GEVONDEN"}}') === 'PATH_NIET_GEVONDEN' && foutCodeUit('Mijn Ruimte reported: SPIEGEL_FOUT') === 'SPIEGEL_FOUT' && foutCodeUit('The release file could not be read (PATH_INVALID). This is a refusal, not a crash.') === 'PATH_INVALID'
     && foutCodeUit('The connector refused this release file because it looks like a secret (environment file)') === 'PATH_SECRET' && foutCodeUit('The user rejected this action.') === 'DOOR_EIGENAAR_GEWEIGERD'
-    && foutCodeUit('Ошибка: wachtwoord=hunter2') === undefined && foutCodeUit('HTTP 404 not found') === undefined && foutCodeUit('file not found') === undefined && foutCodeUit('') === undefined && foutCodeUit(42) === undefined);
+    && foutCodeUit('Помилка: wachtwoord=hunter2') === undefined && foutCodeUit('HTTP 404 not found') === undefined && foutCodeUit('file not found') === undefined && foutCodeUit('') === undefined && foutCodeUit(42) === undefined);
   const mislukt = siteEventsFromAudit([
     { id: '9', action: 'owner.mcp.tool', result: 'failure', createdAt: 5000, details: { tool: 'read_release_file', client: 'Claude', doel: 'src/AdminUitrolModern.tsx', fout: 'SPIEGEL_FOUT', ruimte: 'technisch' } },
     { id: '10', action: 'owner.mcp.tool', result: 'denied', createdAt: 6000, details: { tool: 'machine_exec', client: 'Claude', reden: 'ruimte' } },
