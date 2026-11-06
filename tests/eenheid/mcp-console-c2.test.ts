@@ -14,7 +14,8 @@ export async function main(): Promise<number> {
   const dir = path.join(process.cwd(), 'rapporten', `c2-${Date.now()}`);
   const uploads = path.join(dir, 'uploads'); const uit = path.join(dir, 'uitgifte');
   await mkdir(uploads, { recursive: true }); await mkdir(uit, { recursive: true });
-  const oud = { UPLOADS_DIR: process.env.UPLOADS_DIR, ARCHIEF_UIT: process.env.ARCHIEF_UIT, MCP_RECHTEN_PAD: process.env.MCP_RECHTEN_PAD };
+  const oud = { UPLOADS_DIR: process.env.UPLOADS_DIR, ARCHIEF_UIT: process.env.ARCHIEF_UIT, MCP_RECHTEN_PAD: process.env.MCP_RECHTEN_PAD, OWNER_EMAIL: process.env.OWNER_EMAIL };
+  process.env.OWNER_EMAIL = 'o@x'; // eigenaar = rol owner + OWNER_EMAIL (isOwner); de test bepaalt dat zelf
   process.env.UPLOADS_DIR = uploads; process.env.ARCHIEF_UIT = uit; process.env.MCP_RECHTEN_PAD = path.join(dir, 'mcp-rechten.json');
   await writeFile(process.env.MCP_RECHTEN_PAD, JSON.stringify({ read: true, uitrol: false }));
   const legacyHash = 'a'.repeat(64);
@@ -25,6 +26,9 @@ export async function main(): Promise<number> {
     [OWNER]: { id: OWNER, role: 'owner', status: 'approved', email: 'o@x' }, [USER]: { id: USER, role: 'user', status: 'approved', email: 'u@x' },
     [PENDING]: { id: PENDING, role: 'user', status: 'pending', email: 'p@x' },
   };
+  // SEC-001 (fd52dca): /api/mcp/agent JOINt app.records — een agenttoken geldt alleen voor een bestaand, goedgekeurd account.
+  // Alleen U (de enige met een agenttoken); geen eigenaar-record: records_een_eigenaar staat er maar één per database toe.
+  await sys.query("INSERT INTO app.records (tbl, id, data) VALUES ('users', $1, $2::jsonb)", [USER, JSON.stringify({ email: 'u@x', role: 'user', status: 'approved', name: 'U' })]);
   let steppedUp = false;
   const routes = mcpConsoleRoutes(async (event: any) => ({ user: users[event.who], service: event.service ?? 'mcp' }),
     { stepUp: async () => (steppedUp ? null : { statusCode: 403, headers: {}, body: JSON.stringify({ error: 'STEP_UP_REQUIRED' }) } as any) });
@@ -122,6 +126,7 @@ export async function main(): Promise<number> {
     check('onverwachte fout', false, String((err as Error)?.stack || err).slice(0, 400));
   } finally {
     for (const u of [OWNER, USER, PENDING]) for (const t of ['mcp_console_items', 'mcp_console_tokens', 'mcp_console_log']) await sys.query(`DELETE FROM app.${t} WHERE user_id = $1`, [u]).catch(() => undefined);
+    await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = $1", [USER]).catch(() => undefined);
     for (const [k, v] of Object.entries(oud)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
     await closePool();
   }
