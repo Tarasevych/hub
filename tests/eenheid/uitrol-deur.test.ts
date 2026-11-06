@@ -26,13 +26,13 @@ function sleutel(map: string, naam: string) {
 }
 
 /** Bouwt een pakket zoals maak-uitrolpakket.sh (één bovenmap met UITROL-VERSIE en deploy/installeer-app.sh). */
-function pakket(werk: string, versie: string, opties: { inhoudVersie?: string; symlink?: boolean; extra?: string; zonder?: string[]; meta?: Record<string, string>; lastig?: boolean } = {}) {
+function pakket(werk: string, versie: string, opties: { inhoudVersie?: string; symlink?: boolean; extra?: string; zonder?: string[]; meta?: Record<string, string | Buffer>; lastig?: boolean } = {}) {
   const top = join(werk, `bron-${versie}-${randomBytes(3).toString('hex')}`);
   const binnen = join(top, `mijn-ruimte-${versie}`);
   mkdirSync(join(binnen, 'deploy'), { recursive: true });
   writeFileSync(join(binnen, 'UITROL-VERSIE'), `${opties.inhoudVersie ?? versie}\n`);
   // Verplichte metadata (regel 2 en 3): standaard aanwezig; `zonder` laat bestanden weg, `meta` overschrijft de inhoud.
-  const meta: Record<string, string> = { AUTEUR: 'Test Auteur\n', AGENT: 'claude\n', SAMENVATTING: 'Testpakket voor de uitrol: wat en waarom, wat was en wat er bijkwam.\n',
+  const meta: Record<string, string | Buffer> = { AUTEUR: 'Test Auteur\n', AGENT: 'claude\n', SAMENVATTING: 'Testpakket voor de uitrol: wat en waarom, wat was en wat er bijkwam.\n',
     'BRON-COMMIT': `${createHash('sha1').update(versie).digest('hex')}\n`, ...(opties.meta || {}) };
   for (const z of opties.zonder || []) delete meta[z];
   for (const [n, v] of Object.entries(meta)) writeFileSync(join(binnen, n), v);
@@ -258,6 +258,9 @@ export async function main(): Promise<number> {
     // ---------------------------------------------------------------- rev'ю 06.11.2026: uitpakken zonder data-filter = met data-filter
     oudePython({ pk, basis, goed, env, status, leg, check });
 
+    // ---------------------------------------------------------------- UITROL-UTF8-001 (06.11.2026): meta() knipt op een heel teken
+    kyrillischeMeta({ pk, inbox, statusMap, werk, basis, goed, env, draai, status, audit, spoorRegels, leg, check });
+
     // ---------------------------------------------------------------- MCP-deur: OAuth + alleen inbox
     await deurTests(basis, check, goed);
 
@@ -320,6 +323,49 @@ function oudePython(c: { pk: string; basis: string; goed: string; env: NodeJS.Pr
       const oudRoot = existsSync(spoorRoot) ? readFileSync(spoorRoot, 'utf8').trim().split('\n').filter(Boolean).length : 0;
       check('als root: nagebootste 3.11.2 nam echt de terugval-tak', oudRoot === 1, String(oudRoot));
     }
+  }
+}
+
+/**
+ * UITROL-UTF8-001 (06.11.2026): meta() knipte AUTEUR (200) en SAMENVATTING (8000) met `head -c`, dus per BYTE. Viel de grens midden
+ * in een Cyrillisch teken (2 bytes), dan kwam er een half teken in $AUTEUR. Python decodeert argv dan met surrogateescape en
+ * json.dumps(..., ensure_ascii=False) + schrijven als UTF-8 faalde: stap() verloor de stapregel «inhoud» stil, en gebeurtenis() stierf
+ * onder `set -e` vóór de OK-regel, zodat een geslaagde installatie in de audit ontbrak. Ongeldige bytes midden in de tekst gaven
+ * hetzelfde. Nu: knippen op een heel teken, ongeldige bytes worden U+FFFD — zichtbaar, nooit stil weggelaten, nooit kapotte JSON.
+ * meta() різала AUTEUR/SAMENVATTING побайтово: пів кириличного символу ламало JSON у stap() і gebeurtenis(). Тепер — по цілому
+ * символу, а невалідні байти стають U+FFFD.
+ */
+function kyrillischeMeta(c: NooitStilCtx) {
+  const { pk, statusMap, goed, draai, status, audit, leg, check } = c;
+  const runStappen = () => { const a = leesStappen(statusMap); const run = a.length ? a[a.length - 1].run : ''; return a.filter((s) => s.run === run); };
+  // Elke regel moet geldige JSON zijn (audit() en leesStappen() zouden anders gooien) en mag geen U+FFFD bevatten tenzij verwacht.
+  const regelsGeldig = (bestand: string) => {
+    const pad = join(statusMap, bestand);
+    if (!existsSync(pad)) return false;
+    try { readFileSync(pad, 'utf8').trim().split('\n').filter(Boolean).forEach((l) => JSON.parse(l)); return true; } catch { return false; }
+  };
+  // 'A' + 100 × «Ж» = 201 bytes: de grens van 200 valt midden in de laatste «Ж». Verwacht: 'A' + 99 × «Ж» (heel teken, niets verzonnen).
+  const auteurLang = `A${'Ж'.repeat(100)}`;
+  const auteurGeknipt = `A${'Ж'.repeat(99)}`;
+  // SAMENVATTING: 'x' + 4000 × «я» = 8001 bytes, grens 8000 midden in het laatste teken.
+  const samenvattingLang = `x${'я'.repeat(4000)}`;
+  const gevallen: Array<{ versie: string; naam: string; meta: Record<string, string | Buffer>; auteur: string }> = [
+    { versie: '20261011-100000', naam: 'AUTEUR 201 bytes (grens 200 midden in «Ж»)', meta: { AUTEUR: `${auteurLang}\n` }, auteur: auteurGeknipt },
+    { versie: '20261011-110000', naam: 'SAMENVATTING 8001 bytes (grens 8000 midden in «я»)', meta: { AUTEUR: 'Тарасевич Павло\n', SAMENVATTING: `${samenvattingLang}\n` }, auteur: 'Тарасевич Павло' },
+    { versie: '20261011-120000', naam: 'ongeldige byte 0xFF midden in AUTEUR', meta: { AUTEUR: Buffer.concat([Buffer.from('Автор '), Buffer.from([0xff]), Buffer.from(' Тест\n')]) }, auteur: 'Автор � Тест' },
+  ];
+  for (const g of gevallen) {
+    const auditVoor = audit().length;
+    const p = pakket(pk, g.versie, { meta: g.meta }); onderteken(p, goed); leg(p);
+    const r = draai();
+    check(`${g.naam}: geïnstalleerd (klaar)`, r.status === 0 && status().staat === 'klaar' && status().versie === g.versie, `${r.status} ${JSON.stringify(status())} ${String(r.stderr).slice(-400)}`);
+    check(`${g.naam}: gebeurtenissen.jsonl en stappen.jsonl blijven geldige JSON per regel`, regelsGeldig('gebeurtenissen.jsonl') && regelsGeldig('stappen.jsonl'));
+    const ok = audit().filter((e) => e.code === 'OK' && e.tag === g.versie).pop();
+    check(`${g.naam}: OK-gebeurtenis in de audit met de auteur op een heel teken`, !!ok && ok.uk.includes(`Автор: ${g.auteur},`) && ok.nl.includes(`Auteur: ${g.auteur},`), JSON.stringify(ok));
+    check(`${g.naam}: eerdere auditregels niet gewist`, audit().length > auditVoor, `${auditVoor} → ${audit().length}`);
+    const inhoud = runStappen().find((s) => s.stap === 'inhoud' && s.staat === 'ok');
+    check(`${g.naam}: stap «inhoud» ok aanwezig en noemt de auteur op een heel teken`, !!inhoud && String(inhoud.uk).includes(`(автор: ${g.auteur},`), JSON.stringify(runStappen().map((s) => `${s.stap}:${s.staat}`)));
+    if (!g.auteur.includes('�')) check(`${g.naam}: geen U+FFFD verzonnen bij een geldige tekst`, !!ok && !ok.uk.includes('�') && !String(inhoud?.uk ?? '').includes('�'));
   }
 }
 
