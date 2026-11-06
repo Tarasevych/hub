@@ -17,6 +17,10 @@ export async function main() {
   const sys = getPool('systeem');
   const a = randomUUID(), beheerder = randomUUID(), gewoon = randomUUID();
   const recordIds: string[] = [];
+  // Eigen pepper voor de IP-hash (audit-fix 10, ≥ 32 tekens): zonder AUDIT_IP_PEPPER uit de omgeving gaf ipHash() null en faalde
+  // de auditcheck «ip alleen gehasht». Hersteld in het finally-blok.
+  const pepperVoor = process.env.AUDIT_IP_PEPPER;
+  if (String(pepperVoor || '').length < 32) process.env.AUDIT_IP_PEPPER = `eenheidstest-fase3-pepper-${randomUUID()}`;
   try {
     // ---- audit ----
     await metVerzoek('POST /api/eenheid/audit', async () => {
@@ -126,6 +130,7 @@ export async function main() {
   } finally {
     await sys.query('DELETE FROM app.records WHERE id = ANY($1)', [recordIds]).catch(() => undefined);
     await sys.query('DELETE FROM app.records WHERE tbl = $1 AND data->>\'userId\' = $2', [STAP_OP_TABEL, a]).catch(() => undefined);
+    if (pepperVoor === undefined) delete process.env.AUDIT_IP_PEPPER; else process.env.AUDIT_IP_PEPPER = pepperVoor;
   }
   const ok = resultaten.filter((x) => x.ok).length;
   console.log(`\n${ok}/${resultaten.length} geslaagd (fase3)`);

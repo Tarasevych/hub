@@ -1,6 +1,6 @@
 // Eenheidstests voor beveiligingsbouwstenen die niet via HTTP te testen zijn (PKCE, SSRF, sleutels, lockout).
 // Draaien: DATABASE_URL=... node scripts/eenheidstests.mjs   (bundelt dit bestand met esbuild en voert het uit)
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
 import os from 'node:os';
@@ -80,7 +80,7 @@ export async function main() {
     const link = path.join(tmp, 'current');
     symlinkSync(path.resolve('.'), link);
     const poort = 18000 + Math.floor(Math.random() * 1000);
-    const kind = spawn(process.execPath, [path.join(link, 'dist-server/start.mjs')], { env: { ...process.env, PORT: String(poort), HOST: '127.0.0.1', OWNER_EMAIL: process.env.OWNER_EMAIL || 'eigenaar@example.invalid' }, stdio: 'ignore' });
+    const kind = spawn(process.execPath, [path.join(link, 'dist-server/start.mjs')], { env: { ...process.env, PORT: String(poort), HOST: '127.0.0.1', OWNER_EMAIL: process.env.OWNER_EMAIL || 'eigenaar@example.invalid', AUDIT_IP_PEPPER: process.env.AUDIT_IP_PEPPER || randomBytes(32).toString('hex') }, stdio: 'ignore' });
     let gezond = '';
     for (let i = 0; i < 50 && !gezond; i++) {
       await new Promise(r => setTimeout(r, 200));

@@ -46,6 +46,8 @@ const ontleedJson = (r: { content: Array<{ text: string }> } | undefined) => { t
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('dev-rechten-beheer-20261021');
+  // Eigen pepper voor de IP-hash (Audit-fix 10: geen terugval meer op RECOVERY_CODE_PEPPER): niet afhankelijk van de geheimen van de machine.
+  if (String(process.env.AUDIT_IP_PEPPER || '').length < 32) process.env.AUDIT_IP_PEPPER = randomBytes(48).toString('base64');
 
   // ============================================================== 1. puur
   const opties = NAMEN.map((n) => v2Optie(`${n}:beheer`));
