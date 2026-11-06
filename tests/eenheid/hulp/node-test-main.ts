@@ -6,11 +6,24 @@ import nodeTest from 'node:test';
 export function nodeTestSuite() {
   let gefaald = 0;
   const lopend: Promise<void>[] = [];
+  // Een fout die pas ná het eind van een test komt (timer die gooit, niet-afgewachte promise), ziet try/catch niet. node:test
+  // meldt hem wel, maar zet alleen process.exitCode, en de uitvoerder overschrijft dat met process.exit(main()). Hier telt hij mee.
+  const telFout = () => { gefaald += 1; };
+  process.on('uncaughtException', telFout);
+  process.on('unhandledRejection', telFout);
   const test = (naam: string, fn: () => unknown) => {
     lopend.push(nodeTest(naam, async () => {
       try { await fn(); } catch (e) { gefaald += 1; throw e; }
     }));
   };
-  const main = async (): Promise<number> => { await Promise.all(lopend); return gefaald ? 1 : 0; };
+  const main = async (): Promise<number> => {
+    await Promise.all(lopend);
+    // Late callbacks (timers, I/O) nog een kans geven om te falen vóór de uitslag vastligt.
+    await new Promise((r) => setTimeout(r, 25));
+    await new Promise((r) => setImmediate(r));
+    process.off('uncaughtException', telFout);
+    process.off('unhandledRejection', telFout);
+    return gefaald ? 1 : 0;
+  };
   return { test, main };
 }
