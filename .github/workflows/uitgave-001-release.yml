@@ -1,0 +1,479 @@
+name: UITGAVE-001 · випуск 20261106-092612 з integratie
+
+# UITGAVE-001: збирає й публікує пакет оновлення сайту з integratie (413d726dba5a) за TRACE-001. Нічого не встановлює:
+# власник сам завантажує mijn-ruimte-20261106-092612.tar.gz у Admin → Оновлення і схвалює passkey.
+# UITGAVE-001: bouwt en publiceert het updatepakket uit integratie volgens TRACE-001. Installeert niets; de eigenaar
+# uploadt het archief zelf in Admin → Updates en keurt het goed met een passkey.
+# Fail-closed: elke afwijking (tak, basis, live versie, regels, tests, bouw, dossier, pakket) stopt de run vóór publicatie.
+# Faalt de digest-, root- of sitecontrole ná publicatie, dan wordt de release «NIET INSTALLEREN» en een concept (site en root vinden hem niet).
+
+on:
+  push:
+    branches:
+      - 'feature/uitgave-001-20261106-092612'
+    paths:
+      - '.github/workflows/uitgave-001-release.yml'
+      - 'orchestratie/ontwikkelarchieven/UITGAVE-001.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uitgave-001-release
+  cancel-in-progress: false
+
+env:
+  TAAK: UITGAVE-001
+  TAK: 'feature/uitgave-001-20261106-092612'
+  VERSIE: '20261106-092612'
+  BASIS: '413d726dba5a1e8cf8b1ffc44afcec87839eb107'
+  PAKKET: 'mijn-ruimte-20261106-092612.tar.gz'
+  OVERDRACHT: 'mijn-ruimte-20261106-092612-claude-overdracht.zip'
+
+jobs:
+  controle:
+    name: Перевірка й збірка · controle en bouw
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Гілка, база й вільний тег · tak, basis en vrije tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$TAK"
+          test "$(git branch --show-current)" = "$TAK"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          # Поверх integratie лише коміти задачі, і разом вони змінюють рівно три файли · alleen de drie taakbestanden boven integratie
+          git merge-base --is-ancestor "$BASIS" HEAD
+          test -z "$(git rev-list --merges "$BASIS..HEAD")"
+          diff <(git diff --name-only "$BASIS" HEAD | sort) \
+               <(printf '%s\n' .github/workflows/uitgave-001-release.yml orchestratie/ontwikkelarchieven/UITGAVE-001.json orchestratie/taken/UITGAVE-001.json | sort)
+          git fetch --quiet origin integratie
+          if [ "$(git rev-parse origin/integratie)" != "$BASIS" ]; then
+            echo "FOUT INTEGRATIE_VERDER: integratie ($(git rev-parse --short origin/integratie)) ≠ BASIS — випуск зупинено, потрібна нова версія від актуальної голови." >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSIE" > /dev/null; then echo "FOUT TAG_BESTAAT: $VERSIE" >&2; exit 1; fi
+          if gh release view "$VERSIE" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then echo "FOUT RELEASE_BESTAAT: $VERSIE" >&2; exit 1; fi
+          echo "Гілка $TAK @ $(git rev-parse --short HEAD), база integratie $BASIS, тег $VERSIE вільний."
+
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Правила й актуальність · regels en versheid
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase start
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+
+      - name: Скрипти розгортання й каталог пошуку · deployscripts en zoekcatalogus
+        shell: bash
+        run: |
+          set -euo pipefail
+          n=0
+          while IFS= read -r -d '' f; do bash -n "$f"; n=$((n+1)); done < <(git ls-files -z -- 'deploy/*.sh' 'deploy/**/*.sh')
+          test "$n" -gt 0
+          echo "bash -n: $n скриптів без помилок"
+          node scripts/zoek-ui-catalogus.mjs --controle
+
+      - name: Типи сервера · servertypen
+        run: npm run typecheck:server
+
+      - name: Модульні перевірки · eenheidstests
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p "$RUNNER_TEMP/uitgave/tests"
+          SUITES=(trace-001-ontwikkelarchief uitrol-voorcontrole uitrol-manifest uitrol-pakket-maken orch-kern orch-beoordeling-20261031
+                  zoek-diepe-link-20261105 zoek-ui-tabblad ontwerp-fundament-20261020 mobiel-cascade-20261105 design-001 eenheidstests-uitvoerder-20261106)
+          geslaagd=0; mislukt=0; falend=""
+          for s in "${SUITES[@]}"; do
+            log="$RUNNER_TEMP/uitgave/tests/$s.log"
+            node scripts/eenheidstests.mjs "$s" > "$log" 2>&1; code=$?
+            regel="$(grep -Eo '[0-9]+/[0-9]+ geslaagd' "$log" | tail -1 || true)"
+            ok="${regel%%/*}"; rest="${regel#*/}"; tot="${rest%% *}"
+            if [ "$code" -ne 0 ] || [ -z "$regel" ] || [ "$ok" != "$tot" ]; then
+              mislukt=$((mislukt+1)); falend="$falend $s"; echo "FOUT $s (exit=$code, ${regel:-geen telling})"; tail -40 "$log"
+            else
+              geslaagd=$((geslaagd+ok)); echo "OK   $s $regel"
+            fi
+          done
+          echo "UITGAVE_TESTS_GESLAAGD=$geslaagd" >> "$GITHUB_ENV"
+          echo "UITGAVE_TESTS_SUITES=${#SUITES[@]}" >> "$GITHUB_ENV"
+          if [ "$mislukt" -ne 0 ]; then echo "FOUT: $mislukt набір(и) червоні:$falend" >&2; exit 1; fi
+
+      - name: Повна збірка · volledige bouw
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE_ENV=production NODE_OPTIONS=--max-old-space-size=5120 npm run build
+          test -f dist/index.html
+          test -f dist-server/start.mjs
+          # Збірка на сервері робить те саме; якщо вона змінює відстежуваний файл (напр. каталог пошуку), закомічене застаріло
+          # Wijzigt de bouw een gevolgd bestand, dan is wat gecommit is verouderd: geen release
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            git status --porcelain --untracked-files=no; git diff --stat
+            echo "FOUT BOUW_WIJZIGT_BESTANDEN: npm run build змінив відстежувані файли" >&2; exit 1
+          fi
+
+      - name: Журнал TRACE-001 · ontwikkeldossier
+        run: |
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            import { valideerOntwikkelDossier } from './shared/ontwikkelarchief.ts';
+            const d = JSON.parse(fs.readFileSync('orchestratie/ontwikkelarchieven/UITGAVE-001.json', 'utf8'));
+            const f = valideerOntwikkelDossier(d, 'UITGAVE-001');
+            if (f.length) throw Error(f.join(', '));
+            if (d.privacy?.geheimenUitgesloten !== true) throw Error('privacy.geheimenUitgesloten ≠ true');
+            if (d.herkomst?.tak !== process.env.TAK || d.herkomst?.basis !== process.env.BASIS) throw Error('herkomst ≠ TAK/BASIS');
+            console.log('Журнал UITGAVE-001 валідний, privacy.geheimenUitgesloten = true');"
+
+      - name: Результати тестів · testresultaten
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            const g = Number(process.env.UITGAVE_TESTS_GESLAAGD), n = Number(process.env.UITGAVE_TESTS_SUITES);
+            const t = { versie: 2, geslaagd: g, mislukt: 0, falend: [],
+              samenvatting: 'CI: пройшли ' + n + ' наборів модульних тестів (' + g + ' перевірок), typecheck:server, bash -n, каталог пошуку й повна збірка.',
+              basis: null,
+              uitleg: { uk: 'У CI пройшли ' + n + ' наборів модульних тестів (' + g + ' перевірок), typecheck:server, bash -n скриптів розгортання, перевірка каталогу пошуку й повна production-збірка.',
+                        nl: 'In CI zijn ' + n + ' eenheidstestsuites (' + g + ' controles), typecheck:server, bash -n van de deployscripts, de zoekcatalogus en de volledige productiebouw geslaagd.' } };
+            fs.writeFileSync(process.env.RUNNER_TEMP + '/uitgave/testresultaten.json', JSON.stringify(t, null, 2) + '\n');"
+          cat "$RUNNER_TEMP/uitgave/testresultaten.json"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UITGAVE-001-controle
+          path: ${{ runner.temp }}/uitgave/
+          retention-days: 30
+          if-no-files-found: error
+
+  publiceer:
+    name: Пакет і GitHub Release · pakket en release
+    needs: controle
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - uses: actions/download-artifact@v4
+        with:
+          name: UITGAVE-001-controle
+          path: ${{ runner.temp }}/controle
+
+      - name: Встановлена база з живого сайту · live basis
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "$TAK"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git fetch --quiet origin integratie
+          test "$(git rev-parse origin/integratie)" = "$BASIS"
+          curl --fail --silent --show-error --max-time 20 "https://hub.tarasevych.com/api/version?ts=$(date -u +%s)" -o "$RUNNER_TEMP/site-versie.json"
+          node -e '
+            const fs = require("fs");
+            const d = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            const versie = String(d.versie ?? d.version ?? ""), commit = String(d.bronCommit ?? d.commit ?? "");
+            if (!/^\d{8}-\d{6}$/.test(versie)) throw Error("FOUT: ongeldige versie in /api/version: " + versie);
+            if (!/^[0-9a-f]{40}$/.test(commit)) throw Error("FOUT: ongeldige commit in /api/version: " + commit);
+            if (!(process.env.VERSIE > versie)) throw Error("FOUT NIET_NIEUWER: " + process.env.VERSIE + " <= " + versie);
+            fs.appendFileSync(process.env.GITHUB_ENV, "LIVE_VERSIE=" + versie + "\nLIVE_COMMIT=" + commit + "\n");
+            console.log("Встановлено на сайті: " + versie + " @ " + commit);
+          ' "$RUNNER_TEMP/site-versie.json"
+
+      - name: Тимчасовий стан встановлення лише в CI · tijdelijke installatiestaat
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "$LIVE_COMMIT^{commit}"
+          git merge-base --is-ancestor "$LIVE_COMMIT" HEAD
+          if git ls-files --error-unmatch orchestratie/geinstalleerd.json > /dev/null 2>&1 || [ -e orchestratie/geinstalleerd.json ]; then
+            echo "FOUT: orchestratie/geinstalleerd.json bestaat al — niet overschreven" >&2; exit 1
+          fi
+          # Лише в одноразовому runner, ніколи не комітиться й не потрапляє в архів (git archive бере тільки HEAD).
+          node -e 'require("fs").writeFileSync("orchestratie/geinstalleerd.json", JSON.stringify({ versie: process.env.LIVE_VERSIE, bronCommit: process.env.LIVE_COMMIT, bron: "/api/version (CI " + process.env.GITHUB_SERVER_URL + "/" + process.env.GITHUB_REPOSITORY + "/actions/runs/" + process.env.GITHUB_RUN_ID + ")" }, null, 2) + "\n")'
+          cat orchestratie/geinstalleerd.json
+
+      - name: Маніфест · manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/maak-manifest.mjs" <<'JS'
+          import fs from 'node:fs';
+          const e = process.env;
+          const { valideerManifest } = await import(e.GITHUB_WORKSPACE + '/shared/uitrol-manifest.ts');
+          const manifest = {
+            schema: 1, versie: e.VERSIE, aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} op ${e.TAK} (integratie ${e.BASIS}; basis ${e.LIVE_VERSIE} ${e.LIVE_COMMIT})`,
+            auteur: 'Власник', zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: 'Власник', rollen: ['auteur'] },
+              { soort: 'ai', naam: 'claude', platform: 'Claude Code', tool: 'Claude Code', model: { id: null, versie: null, bron: 'onbekend' }, rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken'] },
+            ],
+            beschrijving: JSON.parse(fs.readFileSync(e.RUNNER_TEMP + '/beschrijving.json', 'utf8')),
+          };
+          const tekst = JSON.stringify(manifest, null, 2) + '\n';
+          const r = valideerManifest(tekst, e.VERSIE);
+          if (r.fouten.length) throw Error(JSON.stringify(r.fouten));
+          fs.writeFileSync(e.RUNNER_TEMP + '/manifest.json', tekst);
+          console.log('Двомовний маніфест валідний');
+          JS
+          cat > "$RUNNER_TEMP/beschrijving.json" <<'JSON'
+          {
+            "uk": {
+              "titel": "Глибокі посилання пошуку й закриття ORCH-001",
+              "samenvatting": "Пошук відкриває сам лист, файл, подію, нотатку чи завдання; ORCH-001 закрито, виправлено старі помилки пошуку, контрасту, мобільної верстки й тестів.",
+              "wijzigingen": [
+                "Пошук: результат відкриває потрібний лист у правильній скриньці (з вкладенням), файл Drive у потрібному акаунті, подію календаря, нотатку чи завдання на дошці.",
+                "Пошук у меню веде до потрібного розділу довгих сторінок «Підключення ШІ» й адміністрування та враховує доступ (приватний чи технічний профіль).",
+                "Стара сторінка хмари відкриває елемент із пошуку й за посиланням ?open_item_id= навіть поза першим завантаженням.",
+                "Координація агентів (ORCH-001): задачу закрито, черга інтеграції порожня.",
+                "Оформлення (DESIGN-002): календар, хмара, нотатки, пошук і налаштування мають однакові заокруглені поверхні й тіні, сітки карток підлаштовуються під ширину екрана, порожні сторінки пояснюють наступну дію."
+              ],
+              "fixes": [
+                "Пакет оновлення збирається й тоді, коли список змін кирилицею довший за межу: обрізання більше не ламає символ.",
+                "Хмара більше не затирає місце продовження (resume) після відкриття елемента з пошуку.",
+                "Gmail: вкладення з пошуку знаходиться після повного завантаження листа; mail/accounts показує блок Gmail з оновленням доступу для пошуку.",
+                "Старі помилки пошуку, контрасту, мобільної верстки й розпакування оновлень на Python < 3.11.4.",
+                "Старі вади в тестах: права тимчасових тек, CSS-токени сторінок-прикладів пошти, Chrome-перевірка «Координація агентів»."
+              ],
+              "beperkingen": [
+                "Критичні політики не підписані власником: встановлення лише вручну з passkey, GitOps вимкнено.",
+                "Три набори тестів не запускаються в хмарному контейнері (@iconify-json/logos, тестовий Home Assistant на IP контейнера, Playwright-core).",
+                "Повний авторизований сайт із реальними даними не перевірено; перевірено модульні тести, браузерні стенди й повну збірку."
+              ],
+              "instructies": "Admin → Оновлення → «Нове оновлення»: завантажте саме mijn-ruimte-20261106-092612.tar.gz з GitHub Release (не zip), дочекайтеся зеленої попередньої перевірки й натисніть «Схвалити й встановити» з passkey. Між збіркою і цим встановленням не встановлюйте інших пакетів, інакше root відхилить базу (BASIS_VEROUDERD)."
+            },
+            "nl": {
+              "titel": "Diepe zoeklinks en afsluiting van ORCH-001",
+              "samenvatting": "Zoeken opent het bericht, bestand, de afspraak, notitie of taak zelf; ORCH-001 is afgesloten en oude fouten in zoeken, contrast, mobiele opmaak en tests zijn hersteld.",
+              "wijzigingen": [
+                "Zoeken: een resultaat opent het juiste bericht in de juiste mailbox (met bijlage), het Drive-bestand in het juiste account, de agenda-afspraak, de notitie of de taak op het bord.",
+                "Zoeken in het menu leidt naar het juiste onderdeel van de lange pagina’s «AI-koppelingen» en beheer en houdt rekening met de toegang (privé- of technisch profiel).",
+                "De oude cloudpagina opent een item uit zoeken en via ?open_item_id= ook buiten de eerste lading.",
+                "Agentcoördinatie (ORCH-001): de taak is afgesloten, de integratiewachtrij is leeg.",
+                "Vormgeving (DESIGN-002): agenda, cloud, notities, zoeken en instellingen hebben dezelfde afgeronde vlakken en schaduwen, kaartrasters passen zich aan de schermbreedte aan en lege pagina’s leggen de volgende stap uit."
+              ],
+              "fixes": [
+                "Het updatepakket wordt ook gebouwd als de Cyrillische wijzigingslijst langer is dan de grens: inkorten breekt geen teken meer.",
+                "De cloud overschrijft de hervatplek (resume) niet meer na het openen van een item uit zoeken.",
+                "Gmail: een bijlage uit zoeken wordt gevonden na het volledig laden van het bericht; mail/accounts toont het Gmail-blok met het vernieuwen van de zoektoegang.",
+                "Oude fouten in zoeken, contrast, mobiele opmaak en het uitpakken van updates op Python < 3.11.4.",
+                "Oude fouten in tests: rechten van tijdelijke mappen, CSS-tokens van de voorbeeldpagina’s van de mail, de Chrome-controle «Agentcoördinatie»."
+              ],
+              "beperkingen": [
+                "Kritieke beleidsregels zijn niet door de eigenaar ondertekend: installeren alleen handmatig met een passkey, GitOps staat uit.",
+                "Drie testsuites draaien niet in de cloudcontainer (@iconify-json/logos, test-Home Assistant op het IP van de container, Playwright-core).",
+                "De volledige aangemelde site met echte gegevens is niet gecontroleerd; eenheidstests, browseropstellingen en de volledige bouw wel."
+              ],
+              "instructies": "Admin → Updates → «Nieuwe update»: upload precies mijn-ruimte-20261106-092612.tar.gz uit de GitHub Release (geen zip), wacht op een groene voorcontrole en klik «Goedkeuren en installeren» met een passkey. Installeer tussen de bouw en deze installatie geen ander pakket, anders weigert root de basis (BASIS_VEROUDERD)."
+            }
+          }
+          JSON
+          node "$RUNNER_TEMP/maak-manifest.mjs"
+
+      - name: Зібрати пакет через orch pakket · pakket bouwen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p uitvoer
+          env -u MANIFEST -u TESTS_GESLAAGD -u TESTS_MISLUKT -u TESTS_SAMENVATTING \
+            node scripts/orch.mjs pakket --taak "$TAAK" --auteur "Власник" --agent claude --platform "Claude Code" \
+              --versie "$VERSIE" --manifest "$RUNNER_TEMP/manifest.json" --testresultaten "$RUNNER_TEMP/controle/testresultaten.json" \
+              --samenvatting-uk "Глибокі посилання пошуку (ZOEKDIEP-001), адаптивне оформлення (DESIGN-002), закриття ORCH-001 і виправлення старих помилок." \
+              --samenvatting-nl "Diepe zoeklinks (ZOEKDIEP-001), responsieve vormgeving (DESIGN-002), afsluiting van ORCH-001 en herstel van oude fouten." \
+              --uit uitvoer 2>&1 | tee "$RUNNER_TEMP/pakket.log"
+          if grep -Eq '^(FOUT|LET OP (BASIS_ONBEKEND|INSTALLATIE_NIET_IN_HEAD))' "$RUNNER_TEMP/pakket.log"; then echo "FOUT: orch pakket meldde een fout" >&2; exit 1; fi
+          test -f "uitvoer/$PAKKET"
+          test -f "uitvoer/$OVERDRACHT"
+          # pakket кладе .sha256 лише в zip передачі; той самий запис стає asset релізу й звіряється з архівом
+          unzip -p "uitvoer/$OVERDRACHT" "$PAKKET.sha256" > "uitvoer/$PAKKET.sha256"
+          (cd uitvoer && sha256sum -c --strict "$PAKKET.sha256")
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/$OVERDRACHT"
+          # Стан лише для пакета: прибрати, нічого не комітити (ніколи staat-commit) · niets van de staat committen
+          rm -f orchestratie/geinstalleerd.json
+          git checkout -- "orchestratie/taken/$TAAK.json"
+          test -z "$(git status --porcelain --untracked-files=no)"
+
+      - name: Звірити вміст архіву · inhoud van het archief
+        shell: bash
+        run: |
+          set -euo pipefail
+          d="mijn-ruimte-$VERSIE"
+          test "$(tar -xzOf "uitvoer/$PAKKET" "$d/UITROL-VERSIE" | tr -d '\n')" = "$VERSIE"
+          test "$(tar -xzOf "uitvoer/$PAKKET" "$d/BRON-COMMIT" | tr -d '\n')" = "$GITHUB_SHA"
+          basis="$(tar -xzOf "uitvoer/$PAKKET" "$d/UITROL-BASIS")"
+          echo "$basis"
+          grep -qx "versie=$LIVE_VERSIE" <<< "$basis"
+          grep -qx "commit=$LIVE_COMMIT" <<< "$basis"
+          tar -xzOf "uitvoer/$PAKKET" "$d/ONTWIKKELARCHIEF.json" > "$RUNNER_TEMP/ONTWIKKELARCHIEF.json"
+          cat "$RUNNER_TEMP/ONTWIKKELARCHIEF.json"; echo
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            import { leesOntwikkelArchief } from './shared/ontwikkelarchief.ts';
+            const e = process.env;
+            const r = leesOntwikkelArchief(fs.readFileSync(e.RUNNER_TEMP + '/ONTWIKKELARCHIEF.json', 'utf8'), e.VERSIE, e.GITHUB_SHA);
+            if (r.fouten.length) throw Error(r.fouten.join(', '));
+            if (r.ref.tak !== e.TAK || r.ref.taakId !== e.TAAK) throw Error('tak/taakId wijken af');
+            console.log('TRACE-001-посилання в архіві валідне');"
+          git show "HEAD:orchestratie/ontwikkelarchieven/$TAAK.json" | sha256sum | cut -d' ' -f1 > "$RUNNER_TEMP/dossier.sha"
+          test "$(cat "$RUNNER_TEMP/dossier.sha")" = "$(node -p 'require(process.argv[1]).sha256' "$RUNNER_TEMP/ONTWIKKELARCHIEF.json")"
+          SHA="$(sha256sum "uitvoer/$PAKKET" | cut -d' ' -f1)"
+          test "$(cut -d' ' -f1 "uitvoer/$PAKKET.sha256")" = "$SHA"
+          echo "RELEASE_SHA=$SHA" >> "$GITHUB_ENV"
+          echo "SHA-256 $PAKKET: $SHA"
+
+      - name: Попередня перевірка сайту (без мережі) · voorcontrole van de site
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx esbuild backend/uitrol-voorcontrole.ts --bundle --platform=node --format=esm --packages=external --outfile="$RUNNER_TEMP/voorcontrole.mjs" --log-level=warning
+          cat > "$RUNNER_TEMP/voorcontrole-draai.mjs" <<'JS'
+          const [mod, pakket, versie, actief, online] = process.argv.slice(2);
+          const { pakketVoorcontrole } = await import(mod);
+          const opties = { versie, actieveVersie: actief };
+          if (online !== 'online') opties.archiefControle = async () => ({ ok: true, code: 'OK', reden: 'offline vooraf · онлайн-перевірка після публікації' });
+          const { resultaat, meta } = await pakketVoorcontrole(pakket, opties);
+          for (const c of resultaat.controles) console.log(`${c.niveau.padEnd(12)} ${c.id}: ${c.uk}${c.details?.length ? ' — ' + c.details.slice(0, 5).join('; ') : ''}`);
+          console.log(`fouten=${resultaat.fouten} waarschuwingen=${resultaat.waarschuwingen} commit=${meta.commit} agent=${meta.agent}`);
+          if (!resultaat.ok || resultaat.fouten) process.exit(1);
+          JS
+          node "$RUNNER_TEMP/voorcontrole-draai.mjs" "$RUNNER_TEMP/voorcontrole.mjs" "$PWD/uitvoer/$PAKKET" "$VERSIE" "$LIVE_VERSIE" offline
+
+      - name: Живу базу ще раз · live basis opnieuw
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 20 "https://hub.tarasevych.com/api/version?ts=$(date -u +%s)" -o "$RUNNER_TEMP/site-versie-2.json"
+          node -e '
+            const d = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+            if (String(d.versie ?? d.version) !== process.env.LIVE_VERSIE || String(d.bronCommit ?? d.commit) !== process.env.LIVE_COMMIT)
+              throw Error("FOUT: встановлена версія змінилася під час збірки — нічого не опубліковано");
+            console.log("База без змін: " + process.env.LIVE_VERSIE);
+          ' "$RUNNER_TEMP/site-versie-2.json"
+          git fetch --quiet origin "$TAK" integratie
+          test "$(git rev-parse "origin/$TAK")" = "$GITHUB_SHA"
+          test "$(git rev-parse origin/integratie)" = "$BASIS"
+
+      - name: Опублікувати GitHub Release · release publiceren
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          D="https://github.com/$GITHUB_REPOSITORY/releases/download/$VERSIE"
+          {
+            echo "**Архів для встановлення (Admin → Оновлення):** $D/$PAKKET"
+            echo
+            echo "- SHA-256 (\`.tar.gz\`): \`$RELEASE_SHA\`"
+            echo "- Пакет передачі (не для сайту): $D/$OVERDRACHT"
+            echo "- Встановлена база (\`UITROL-BASIS\`): \`$LIVE_VERSIE\` @ \`$LIVE_COMMIT\`"
+            echo "- BRON-COMMIT: \`$GITHUB_SHA\` (гілка \`$TAK\`, integratie \`$BASIS\`)"
+            echo "- Журнал розробки (TRACE-001): \`orchestratie/ontwikkelarchieven/$TAAK.json\`"
+            echo "- Збірка й перевірки: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            cat <<'MD'
+          ### Що ввійшло · Inhoud
+          - PR #30 — ORCH-001: закриття задачі; старі помилки пошуку, контрасту, мобільної верстки й тестів · afsluiting ORCH-001 en oude fouten
+          - PR #32, #34, #35 — ZOEKDIEP-001: глибокі посилання пошуку, підрозділи хабу, доступ у каталозі, стара хмара й resume · diepe zoeklinks
+          - PR #33, #36 — старі вади в тестах, правах тимчасових тек і CSS-токенах · oude fouten in tests, maprechten en CSS-tokens
+          - PR #29 — DESIGN-002: адаптивне оформлення сторінок (Release 20261105-140556 не встановлювався, тому його зміст тут) · responsieve vormgeving
+          - PR #38 — пакувальник обрізає кириличний список змін по цілому символу · pakketbouwer knipt de wijzigingslijst op een heel teken
+
+          ### Перша спроба · Eerste poging
+          Гілка `feature/uitgave-001-20261106-081134` (PR #37) зупинилась до публікації на старій ваді пакувальника; Release і тег 20261106-081134 не створено. · Gestopt vóór publicatie; geen release of tag.
+
+          ### Як встановити · Installeren
+          Admin → Оновлення → «Нове оновлення» → завантажити саме `.tar.gz` вище → зелена попередня перевірка → «Схвалити й встановити» з passkey. Пакет передачі (`-overdracht.zip`) сайт не приймає.
+          Admin → Updates → upload exact het `.tar.gz` hierboven → groene voorcontrole → goedkeuren met een passkey. Het overdrachtspakket (`-overdracht.zip`) is niet voor de site.
+
+          ### Свідомо не зроблено · Bewust niet gedaan
+          Не встановлено, production не змінено, критичні політики не підписано, beleid.json і BESLUITEN.md не змінено. · Niet geïnstalleerd, productie ongewijzigd, kritieke regels niet ondertekend.
+          MD
+          } > "$RUNNER_TEMP/notities.md"
+          cat "$RUNNER_TEMP/notities.md"
+          gh release create "$VERSIE" "uitvoer/$PAKKET" "uitvoer/$PAKKET.sha256" "uitvoer/$OVERDRACHT" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "UITGAVE-001 · $VERSIE" \
+            --notes-file "$RUNNER_TEMP/notities.md" --latest=false
+
+      - name: Звірити опублікований asset · gepubliceerde asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin "refs/tags/$VERSIE:refs/tags/$VERSIE"
+          test "$(git rev-parse "refs/tags/$VERSIE^{commit}")" = "$GITHUB_SHA"
+          for poging in $(seq 1 20); do
+            gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/release.json"
+            if node -e '
+              const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+              const a = (r.assets || []).find((x) => x.name === process.env.PAKKET);
+              if (r.draft || !a || a.state !== "uploaded" || a.digest !== "sha256:" + process.env.RELEASE_SHA) process.exit(1);
+              console.log("GitHub bevestigt digest sha256:" + process.env.RELEASE_SHA);
+            ' "$RUNNER_TEMP/release.json"; then break; fi
+            if [ "$poging" -eq 20 ]; then echo "FOUT: digest niet bevestigd" >&2; exit 1; fi
+            sleep 3
+          done
+          mkdir -p "$RUNNER_TEMP/download"
+          gh release download "$VERSIE" --repo "$GITHUB_REPOSITORY" --pattern "$PAKKET" --dir "$RUNNER_TEMP/download"
+          test "$(sha256sum "$RUNNER_TEMP/download/$PAKKET" | cut -d' ' -f1)" = "$RELEASE_SHA"
+          cmp "$RUNNER_TEMP/download/$PAKKET" "uitvoer/$PAKKET"
+
+      - name: Перевірка TRACE-001 самим root-скриптом · root-controle
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Точний Python-фрагмент із deploy/uitrol/mijn-ruimte-uitrol.sh цього коміту, анонімно (без токена), на завантажених байтах.
+          awk 'f && /^PY$/ {exit} f {print} /^  ARCHIEF_UITKOMST=.*<<.PY./ {f=1}' deploy/uitrol/mijn-ruimte-uitrol.sh > "$RUNNER_TEMP/root-trace.py"
+          grep -q "releases/tags/{versie}" "$RUNNER_TEMP/root-trace.py"
+          test "$(wc -l < "$RUNNER_TEMP/root-trace.py")" -gt 50
+          UITKOMST="$(timeout 55 python3 "$RUNNER_TEMP/root-trace.py" "$RUNNER_TEMP/ONTWIKKELARCHIEF.json" "$GITHUB_SHA" "$VERSIE" "$RUNNER_TEMP/download/$PAKKET")"
+          echo "root TRACE-001: $UITKOMST"
+          test "$UITKOMST" = "OK"
+
+      - name: Попередня перевірка сайту з онлайн-TRACE · voorcontrole online
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$RUNNER_TEMP/voorcontrole-draai.mjs" "$RUNNER_TEMP/voorcontrole.mjs" "$RUNNER_TEMP/download/$PAKKET" "$VERSIE" "$LIVE_VERSIE" online
+
+      - name: Збій після публікації → Release непридатний · mislukt na publicatie
+        if: failure() && steps.release.outcome == 'success'
+        shell: bash
+        run: |
+          set -uo pipefail
+          # Чернетку сайт і root не знаходять через /releases/tags/<versie> → установлення відхиляється (ONTWIKKELARCHIEF_NIET_GEVONDEN).
+          { echo "**НЕ ВСТАНОВЛЮВАТИ · NIET INSTALLEREN** — перевірка після публікації не пройшла: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; echo; cat "$RUNNER_TEMP/notities.md"; } > "$RUNNER_TEMP/notities-mislukt.md"
+          gh release edit "$VERSIE" --repo "$GITHUB_REPOSITORY" --notes-file "$RUNNER_TEMP/notities-mislukt.md" --draft=true
+          echo "::error title=RELEASE_INGETROKKEN::Release $VERSIE позначено НЕ ВСТАНОВЛЮВАТИ й переведено в чернетку"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: UITGAVE-001-pakket
+          path: |
+            uitvoer/
+            ${{ runner.temp }}/pakket.log
+            ${{ runner.temp }}/ONTWIKKELARCHIEF.json
+            ${{ runner.temp }}/notities.md
+          retention-days: 30
+          if-no-files-found: warn

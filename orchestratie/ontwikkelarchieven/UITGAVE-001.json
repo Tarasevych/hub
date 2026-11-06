@@ -1,0 +1,257 @@
+{
+  "schema": 1,
+  "taakId": "UITGAVE-001",
+  "datum": "2026-11-06",
+  "taal": "uk",
+  "opdracht": "Власник: «Тепер треба випустити випуск для оновлення на сайт, яке я встановлю через сайт». Про PR №33 і №34: «Так, злий їх і випусти в оновленні». Злиття PR №36 перед випуском, окрему гілку випуску і злиття виправлення пакувальника (PR №38), знайденого першим прогоном CI, власник погодив картками рішень у треді.",
+  "herkomst": {
+    "eigenaar": "Власник",
+    "agent": "claude",
+    "tak": "feature/uitgave-001-20261106-092612",
+    "basis": "413d726dba5a1e8cf8b1ffc44afcec87839eb107",
+    "integratie": "413d726dba5a1e8cf8b1ffc44afcec87839eb107",
+    "vorigeProductieversie": "визначає CI з https://hub.tarasevych.com/api/version під час збірки (06.11.2026: 20261105-101500 @ 53a7b918038c9a0657e76c170415de4151885fcf); значення записане в UITROL-BASIS і в нотатках релізу",
+    "vorigeGitHubRelease": "20261105-140556 @ 0909950f0c5e279a379e99b3a362ec9a329c8314 (DESIGN-002, не встановлено; його зміст входить у цей випуск)",
+    "vorigePoging": "feature/uitgave-001-20261106-081134 @ 0e00f8638973fcb2788c31194baedbd9423153df (PR №37): прогін CI 42189548306 зупинився до публікації, Release і тег 20261106-081134 не створено; гілку збережено без змін"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "У журналі, workflow і пакеті немає паролів, токенів, ключів, cookies, вмісту листів, особистих файлів, адрес чи приватних IP; хід міркувань моделі не записано. orchestratie/geinstalleerd.json існує лише в одноразовому CI runner і не комітиться."
+  },
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "PR №30 (ORCH-001: закриття задачі, старі помилки пошуку, контрасту, мобільної верстки й тестів) злито в integratie --no-ff (c9d7ffd); запис PR №11 у черзі закрито командами orch (29e785f), черга порожня.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/pull/30",
+        "orchestratie/wachtrij.json"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "PR №32 (ZOEKDIEP-001: глибокі посилання пошуку, підрозділи хабу, доступ у каталозі) злито (10d95ee).",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/pull/32",
+        "shared/zoek-diepe-link.ts"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "PR №33 (8 дрібних старих вад із перевірки перед злиттям PR №30: тести, права тимчасових тек, CSS-токени сторінок-прикладів пошти) і PR №34 (стара хмара відкриває ?open_item_id= поза bootstrap) злито на прохання власника (c30b27c, d4217e9).",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/pull/33",
+        "https://github.com/Tarasevych/hub/pull/34"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Нове зауваження Bugbot (resume хмари затирався після діплінка поза bootstrap) відтворено в браузері й виправлено в PR №35 (e056d50).",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/pull/35",
+        "src/CloudFunctioneelWeergave.tsx"
+      ]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Регресія на d4217e9: кожен набір окремо на свіжій PostgreSQL-базі з ролями й RLS. Знайдено стару ваду: Chrome-перевірка «Координація агентів» чекала жорстко вписану версію правил 1.3.0 і без Chrome мовчки пропускалась. Виправлено в PR №36 (c9b4e6f), у Chromium 17/17.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/pull/36",
+        "tests/eenheid/mcp-scherm-lokale-controle-20261031.test.ts"
+      ]
+    },
+    {
+      "volgorde": 6,
+      "stap": "Перша гілка feature/uitgave-001-20261106-081134 створена від integratie c9b4e6fb8b2e: задача (orch taak-start), журнал і workflow. Пробна збірка orch pakket у контейнері (з тимчасовою базою integratie) пройшла pakket-controleer і попередню перевірку сайту.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/pull/37",
+        "orchestratie/taken/UITGAVE-001.json"
+      ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "Незалежна перевірка workflow і журналу до push (три погляди, кожне зауваження перевірено спробою спростування). Виправлено: asset .sha256 не створювався (прогін упав би до публікації); збій перевірок після публікації тепер відкликає Release; підсумок тестів для екрана схвалення — українською; журнал узгоджено з workflow.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/pull/37",
+        ".github/workflows/uitgave-001-release.yml"
+      ]
+    },
+    {
+      "volgorde": 8,
+      "stap": "Прогін CI 42189548306: усі перевірки, 12 наборів тестів і production-збірка пройшли; жива база 20261105-101500 @ 53a7b918. Крок orch pakket упав: git log від цієї бази (11 320 байт кирилиці) обрізався через head -c 7900 посеред символу, і json.dump у maak-voorstelpakket.sh видав UnicodeEncodeError (PAKKET_BOUW_MISLUKT). Fail-closed спрацював: Release і тег не створено. Помилку відтворено локально з тією самою базою.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/42189548306",
+        "deploy/uitrol/maak-voorstelpakket.sh"
+      ]
+    },
+    {
+      "volgorde": 9,
+      "stap": "Стару ваду виправлено в PR №38 (злиття 413d726, погоджено власником): обрізання по цілому символу й рядку з позначкою «- …», без сурогатів в інших полях. Незалежна перевірка PR (три погляди зі спробою спростування) знайшла й відтворила ще три вади: межа рівно на кінці рядка губила позначку, python3 у не-UTF-8 локалі падав на кирилиці (і в старому коді), тест брав еталон без ізольованого env; також diff --stat тепер зберігає підсумковий рядок. Усе виправлено. uitrol-pakket-maken: 16/16 (старий скрипт 8/16, перша версія виправлення 13/16); пробна збірка на реальній історії від 53a7b918 дала changelog 7851 байт, 49 цілих рядків.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/pull/38",
+        "tests/eenheid/uitrol-pakket-maken.test.ts"
+      ]
+    },
+    {
+      "volgorde": 10,
+      "stap": "Нову гілку feature/uitgave-001-20261106-092612 створено від оновленої integratie 413d726dba5a з новою версією 20261106-092612: задача, цей журнал і той самий перевірений workflow. Пробна збірка orch pakket з живою базою 20261105-101500 пройшла pakket-controleer і попередню перевірку сайту.",
+      "bewijzen": [
+        ".github/workflows/uitgave-001-release.yml",
+        "orchestratie/taken/UITGAVE-001.json"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Окрема задача-консолідація UITGAVE-001",
+      "reden": "Випуск охоплює дві задачі (ORCH-001 і ZOEKDIEP-001) і шість злитих PR; як і AUDIT-001, пакет збирає одна власна задача з власним журналом."
+    },
+    {
+      "keuze": "Префікс гілки feature/ замість release/",
+      "reden": "release/* — захищені гілки (beleid.json → kritiek.beschermdeTakken); сайт і root приймають feature/<тема>-YYYYMMDD-HHMMSS. Гілку погодив власник."
+    },
+    {
+      "keuze": "Встановлена база береться з живого /api/version у CI",
+      "reden": "beleid.json → basis (20261105-061659) застарів, а root звіряє UITROL-BASIS з laatste-versie/laatste-commit. Тимчасовий невідстежуваний orchestratie/geinstalleerd.json існує лише в runner; beleid.json під lock і без нової regelsVersie не змінюється."
+    },
+    {
+      "keuze": "Fail-closed: Release створюється лише після всіх перевірок",
+      "reden": "Будь-яке відхилення (integratie посунулась, тег зайнятий, база змінилась, тест, збірка, журнал, пакет) зупиняє прогін до публікації. Digest asset, root-фрагмент TRACE-001 і онлайн-перевірка сайту можливі лише після публікації: у разі збою Release позначається «НЕ ВСТАНОВЛЮВАТИ» і стає чернеткою, яку сайт і root не знаходять. Release не draft, бо сайт і root шукають його через /releases/tags; --latest=false, як у DESIGN-002."
+    },
+    {
+      "keuze": "Ідентифікатор моделі в маніфесті не записано (bron = onbekend)",
+      "reden": "Правило середовища: ідентифікатори моделей не потрапляють в артефакти репозиторію; учасник — claude (Claude Code)."
+    },
+    {
+      "keuze": "Друга спроба — нова гілка й нова версія, а не нові коміти в першу гілку",
+      "reden": "Workflow першої гілки прив’язаний до бази c9b4e6f і версії 20261106-081134, а виправлення пакувальника мало спершу потрапити в integratie (PR №38). Перша гілка лишається незмінною як слід невдалого прогону; історія не переписується."
+    },
+    {
+      "keuze": "Зміст DESIGN-002 (PR №29) входить у цей випуск",
+      "reden": "Встановлена база 20261105-101500 @ 53a7b918 старша за DESIGN-002 (d0e6481); GitHub Release 20261105-140556 не встановлювався. Пакет від integratie містить усе між встановленою базою і головою integratie."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "bestand": "orchestratie/taken/UITGAVE-001.json",
+      "soort": "nieuw",
+      "omschrijving": "Декларація задачі з orch taak-start (база = голова integratie)."
+    },
+    {
+      "bestand": "orchestratie/ontwikkelarchieven/UITGAVE-001.json",
+      "soort": "nieuw",
+      "omschrijving": "Цей журнал розробки (TRACE-001) із privacy.geheimenUitgesloten = true."
+    },
+    {
+      "bestand": ".github/workflows/uitgave-001-release.yml",
+      "soort": "nieuw",
+      "omschrijving": "Перевірка, збірка, orch pakket, pakket-controleer, GitHub Release, звірка digest, перевірка TRACE-001 root-фрагментом і попередня перевірка сайту."
+    },
+    {
+      "bestand": "integratie: PR №30 (c9d7ffd), черга (29e785f)",
+      "soort": "inhoud",
+      "omschrijving": "ORCH-001: закриття задачі; старі помилки пошуку, контрасту, мобільної верстки, тестів і розпаковки оновлень на Python < 3.11.4."
+    },
+    {
+      "bestand": "integratie: PR №32 (10d95ee), PR №34 (d4217e9), PR №35 (e056d50)",
+      "soort": "inhoud",
+      "omschrijving": "ZOEKDIEP-001: глибокі посилання пошуку на лист, файл, подію, нотатку й завдання; підрозділи хабу; доступ у каталозі; стара хмара й resume."
+    },
+    {
+      "bestand": "integratie: PR №33 (c30b27c), PR №36 (c9b4e6f)",
+      "soort": "inhoud",
+      "omschrijving": "Старі вади в тестах, правах тимчасових тек, CSS-токенах сторінок-прикладів пошти й Chrome-перевірці «Координація агентів»."
+    },
+    {
+      "bestand": "integratie: PR №29 (d0e6481)",
+      "soort": "inhoud",
+      "omschrijving": "DESIGN-002: календар, хмара, нотатки, пошук і налаштування в одній системі заокруглених поверхонь; адаптивні сітки карток; порожні сторінки пояснюють наступну дію."
+    },
+    {
+      "bestand": "integratie: PR №38 (413d726) — deploy/uitrol/maak-voorstelpakket.sh",
+      "soort": "inhoud",
+      "omschrijving": "Пакувальник обрізає список змін і diff по цілому UTF-8-символу й рядку; регресійний тест у tests/eenheid/uitrol-pakket-maken.test.ts."
+    }
+  ],
+  "controles": [
+    {
+      "controle": "Регресія на d4217e9 (кожен набір на свіжій базі з ролями й RLS)",
+      "resultaat": "усе зелене, крім трьох наборів, які в хмарному контейнері не запускаються: aanmelden-integ (@iconify-json/logos), huis-vnext (тестовий Home Assistant на IP контейнера), mail-donker-browser (PLAYWRIGHT_CORE)",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "mcp-scherm-lokale-controle у Chromium після PR №36",
+      "resultaat": "17/17",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "PR №35: браузерний стенд resume, zoek-diepe-link 51/51, zoek-ui-tabblad 46/46",
+      "resultaat": "зелене (тред пошуку)",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "Перший прогін CI 42189548306 (гілка feature/uitgave-001-20261106-081134)",
+      "resultaat": "перевірки, тести й збірка зелені; orch pakket — UnicodeEncodeError; Release не створено",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "PR №38: uitrol-pakket-maken на старому скрипті, першій версії виправлення й остаточній; orch-pakket-20261031; trace-001-ontwikkelarchief; uitrol-voorcontrole; фаз-тест на 90 позиціях межі; пробна збірка на реальній історії від 53a7b918",
+      "resultaat": "8/16 → 13/16 → 16/16; 23/23; 16/16; 42/42; без пропущених позначок; changelog 7851 байт без «�», diff з підсумком",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "CI: гілка = TAK; поверх integratie лише коміти задачі без merge-комітів, разом рівно три файли задачі; integratie = база; вільний тег",
+      "resultaat": "обов’язково; інакше без Release",
+      "staat": "vereist"
+    },
+    {
+      "controle": "CI: orch controleer, versheid start/overdracht, bash -n deploy/**/*.sh, zoek-ui-catalogus --controle, typecheck:server",
+      "resultaat": "обов’язково; інакше без Release",
+      "staat": "vereist"
+    },
+    {
+      "controle": "CI: 12 наборів модульних тестів без бази (TRACE-001, uitrol-*, orch-*, пошук, дизайн, раннер)",
+      "resultaat": "обов’язково; кількість у TESTRESULTATEN.json",
+      "staat": "vereist"
+    },
+    {
+      "controle": "CI: повна production-збірка (dist/index.html, dist-server/start.mjs) без зміни відстежуваних файлів",
+      "resultaat": "обов’язково; інакше без Release",
+      "staat": "vereist"
+    },
+    {
+      "controle": "CI: жива база з /api/version (до збірки й перед публікацією), UITROL-BASIS, BRON-COMMIT, ONTWIKKELARCHIEF.json, pakket-controleer, попередня перевірка сайту",
+      "resultaat": "обов’язково; інакше без Release",
+      "staat": "vereist"
+    },
+    {
+      "controle": "CI після публікації: digest asset = SHA-256 архіву, root-фрагмент TRACE-001 = OK, перевірка сайту з онлайн-TRACE",
+      "resultaat": "обов’язково; у разі збою Release позначається «НЕ ВСТАНОВЛЮВАТИ» і стає чернеткою; результат у звіті власнику",
+      "staat": "vereist"
+    }
+  ],
+  "bronnen": [
+    "https://github.com/Tarasevych/hub/pull/29",
+    "https://github.com/Tarasevych/hub/pull/30",
+    "https://github.com/Tarasevych/hub/pull/32",
+    "https://github.com/Tarasevych/hub/pull/33",
+    "https://github.com/Tarasevych/hub/pull/34",
+    "https://github.com/Tarasevych/hub/pull/35",
+    "https://github.com/Tarasevych/hub/pull/36",
+    "https://github.com/Tarasevych/hub/pull/37",
+    "https://github.com/Tarasevych/hub/pull/38",
+    "https://github.com/Tarasevych/hub/actions/runs/42189548306",
+    "AGENTS.md §4–5",
+    "deploy/REGELS-UITROLPAKKET.md",
+    "deploy/uitrol/mijn-ruimte-uitrol.sh (TRACE-001)",
+    "shared/ontwikkelarchief.ts",
+    "backend/uitrol-voorcontrole.ts"
+  ],
+  "beperkingen": [
+    "Критичні політики не підписані власником (KRITIEK_NIET_BEVESTIGD): встановлення лише вручну з passkey, GitOps недоступний.",
+    "Пакет не встановлено й production не змінено: встановлює власник через Admin → Оновлення.",
+    "beleid.json → basis (20261105-061659) застарів і свідомо не змінювався (файл під lock); фактичну базу визначає CI з /api/version.",
+    "Три набори тестів не запускаються в хмарному контейнері; повний авторизований сайт із реальними даними не перевірено.",
+    "Задачі ORCH-001 і ZOEKDIEP-001 не отримують статусу released автоматично; для ZOEKDIEP-001 файлу задачі немає.",
+    "Root-скрипт mijn-ruimte-uitrol.sh (meta()) теж обрізає AUTEUR/SAMENVATTING побайтово; у цьому випуску межі не досягаються (AUTEUR «Власник» — 14 байт), виправлення — окремою задачею, бо це root-інсталятор."
+  ]
+}
