@@ -4,6 +4,7 @@
 // (mr.search.history.v1 stond zonder gebruiker/ruimte: die wordt gewist en nooit meer geschreven — de geschiedenis staat
 // nu op de server, migratie 0103).
 import type { ZoekBron, ZoekRoute, ZoekSoort } from '../../shared/zoek-model';
+import { diepeRoute } from '../../shared/zoek-diepe-link';
 export type Lang = 'uk' | 'nl';
 export type Range = [number, number];
 
@@ -67,6 +68,8 @@ function padVan(dienst: string, pad: string | undefined, c: Canoniek): string {
  * `focus` (sleutel van data-hulp) → ?focus=<sleutel>: src/platform/focus-doel.ts scrolt, markeert en focust het element op de pagina.
  */
 export function routeUrl(route: ZoekRoute | null | undefined, lang: Lang): string {
+  // ZOEKDIEP-001: oude parameternamen (bericht/item/drive/afspraak) → de namen die de pagina's lezen (shared/zoek-diepe-link.ts).
+  route = diepeRoute(route);
   if (!route) return '';
   const c = canoniek();
   const dienst = HOST_DIENST[route.host]; const host = dienst ? c.domains?.[dienst] || '' : '';

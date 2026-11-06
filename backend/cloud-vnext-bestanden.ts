@@ -311,6 +311,12 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
 
   // ---------------------------------------------------------------- bestanden (lijst met filters, sortering, paginering)
   const bestanden: Run = async (_c, auth, lade, d) => {
+    // ZOEKDIEP-001 (05.11.2026): één bestand op id (diepe link ?open_item_id= uit de zoekindex). eenItem controleert de lade,
+    // dus een id van iemand anders geeft gewoon een lege lijst.
+    if (d.id !== undefined) {
+      const r = await eenItem(lade, d.id);
+      return json({ bestanden: r ? [naarBuiten(r)] : [], mappen: [], pad: [], volgende: null, totaal: r ? 1 : 0 });
+    }
     const [itemsRauw, mappen] = await Promise.all([eigenItems(lade), eigenMappen(lade)]);
     const prullenbak = d.prullenbak === true;
     const items = prullenbak && can(auth.user, 'cloud.write') && !isAlleenLezen() ? await prullenbakOpruimen(lade, itemsRauw) : itemsRauw;

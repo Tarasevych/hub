@@ -73,7 +73,11 @@ const suiteSleutel = (id: string): string => {
 export default function Integraties({ lang, context, ssoActief, directories, mappen }: IntegratiesProps) {
   const tr = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const begin = useMemo(leesOpslag, []);
-  const [weergave, setWeergave] = useState<Weergave>(begin.weergave);
+  // ZOEKDIEP-001 (05.11.2026): een diepe link (zoekpagina, admin/directories#mappen) kiest het onderdeel zelf; vroeger opende de
+  // pagina het laatst bewaarde onderdeel en moest de zoeker nog eens klikken op «Зовнішні каталоги».
+  const uitHash = (): Weergave | null => { try { const h = location.hash.replace(/^#/, ''); return (['catalogus', 'mijn', 'mappen', 'wizard'] as const).includes(h as Weergave) ? h as Weergave : null; } catch { return null; } };
+  const [weergave, setWeergave] = useState<Weergave>(() => uitHash() ?? begin.weergave);
+  useEffect(() => { const bij = () => { const w = uitHash(); if (w) setWeergave(w); }; window.addEventListener('hashchange', bij); return () => window.removeEventListener('hashchange', bij); }, []);
   const [zoek, setZoek] = useState('');
   const [cat, setCat] = useState<IntegratieCategorie | ''>('');
   const [methodes, setMethodes] = useState<IntegratieMethode[]>([]);

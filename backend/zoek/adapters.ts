@@ -17,6 +17,7 @@ import type { Lade } from '../../shared/ruimte-scheiding';
 import type { ZoekObject, ZoekRoute, ZoekSoort } from '../../shared/zoek-model';
 import { maskeerGeheimen } from '../../shared/geheim-patronen';
 import { formaatVan as formaatVanZ3 } from '../../shared/zoek-formaten';
+import { DIEPE_PARAMS, agendaItemId, bordDoel } from '../../shared/zoek-diepe-link';
 
 type Rij = Record<string, unknown>;
 export const MAX_TEKST = 200000;
@@ -35,6 +36,11 @@ export function formaatVan(mime: unknown, naam: unknown, kop?: Uint8Array): stri
 }
 
 // ---------------------------------------------------------------- mail
+/** ZOEKDIEP-001: de mailpagina opent een bericht met het Gmail-id en kiest de postbus via mail_accounts_v1 (shared/zoek-diepe-link.ts). */
+const mailParams = (r: Rij, id: string): Record<string, string> => ({
+  [DIEPE_PARAMS.bericht]: s(r.providerMessageId, 300) || id,
+  ...(s(r.mailAccountId, 120) ? { [DIEPE_PARAMS.mailAccount]: s(r.mailAccountId, 120) } : {}),
+});
 export const mailObject = (lade: Lade, r: Rij): ZoekObject => {
   const id = s(r.id, 300), afzender = [s(r.senderName, 200), s(r.senderEmail, 320)].filter(Boolean).join(' · ');
   const tekst = veiligeTekst(r.body, 80000);
@@ -43,7 +49,7 @@ export const mailObject = (lade: Lade, r: Rij): ZoekObject => {
     omschrijving: afzender, tekst, fragmentBron: 'tekst',
     trefwoorden: [...lijst(r.labelIds), s(r.taskTitle, 300), ...lijst(r.attachmentTypes), s(r.senderEmail, 320)].filter(Boolean),
     pad: `${s(r.mailAccountEmail || r.accountEmail || '', 200) || 'Пошта'} › ${s(r.folder || r.mailbox || 'inbox', 60)}`,
-    route: { host: 'mail', pad: 'inbox', params: { bericht: id } },
+    route: { host: 'mail', pad: 'inbox', params: mailParams(r, id) },
     taal: '', formaat: '', bijgewerktOp: n(r.updatedAt) || n(r.receivedAt), aangemaaktOp: n(r.receivedAt) || undefined,
     versie: sha256Hex(`${s(r.subject, 500)}|${afzender}|${tekst}|${lijst(r.labelIds).join(',')}`),
     extra: { afzender: s(r.senderEmail, 320), afzenderNaam: s(r.senderName, 200), bijlagen: Boolean(r.hasAttachments), mailAccountId: s(r.mailAccountId, 120), ontvangenOp: n(r.receivedAt) },
@@ -62,7 +68,7 @@ export const bijlageObject = (lade: Lade, mail: Rij, bijlage: { providerAttachme
     tekst: veiligeTekst(inhoud.tekst), fragmentBron: inhoud.ocr ? 'ocr' : 'bijlage',
     trefwoorden: [s(bijlage.filename, 200), s(mail.senderEmail, 320)].filter(Boolean),
     pad: `Пошта › ${s(mail.subject, 120) || mailId} › ${s(bijlage.filename, 120)}${inhoud.pad ? ` › ${s(inhoud.pad, 160)}` : ''}`,
-    route: { host: 'mail', pad: 'inbox', params: { bericht: mailId, bijlage: deel } },
+    route: { host: 'mail', pad: 'inbox', params: { ...mailParams(mail, mailId), [DIEPE_PARAMS.bijlage]: deel } },
     taal: '', formaat: formaatVan(bijlage.contentType, naam), bijgewerktOp: n(mail.updatedAt) || n(mail.receivedAt) || Date.now(),
     versie: inhoud.sha256 || sha256Hex(inhoud.tekst),
     extra: { mailId, bestandsnaam: s(bijlage.filename, 200), mime: s(bijlage.contentType, 120), bytes: Number(bijlage.sizeBytes || 0), ...(inhoud.pad ? { archiefPad: s(inhoud.pad, 300) } : {}), ocr: Boolean(inhoud.ocr) },
@@ -82,7 +88,7 @@ export const cloudObject = (lade: Lade, r: Rij, inhoud: { pad?: string; tekst?: 
     fragmentBron: inhoud.ocr ? 'ocr' : 'tekst',
     trefwoorden: [naam, ...lijst(r.tags), ...lijst(r.people), mime].filter(Boolean),
     pad: `Хмара › ${s(r.workspaceName || r.workspaceId || '', 120) || 'Файли'}${inhoud.pad ? ` › ${naam || id} › ${s(inhoud.pad, 160)}` : ''}`,
-    route: { host: 'cloud', pad: 'search', params: { item: id } },
+    route: { host: 'cloud', pad: 'search', params: { [DIEPE_PARAMS.item]: id } },
     taal: '', formaat: formaatVan(mime, inhoud.pad || naam), bijgewerktOp: n(r.updatedAt) || n(r.createdAt), aangemaaktOp: n(r.createdAt) || undefined,
     versie: inhoud.sha256 || sha256Hex(`${s(r.title, 500)}|${naam}|${s(r.description, 500)}|${eigen}|${lijst(r.tags).join(',')}`),
     extra: { bestandsnaam: naam, mime, bytes: Number(r.sizeBytes || 0), opslagPad: s(r.storagePath, 300) ? 'ja' : 'nee', ...(inhoud.pad ? { archiefPad: s(inhoud.pad, 300) } : {}), ocr: Boolean(inhoud.ocr) },
@@ -101,7 +107,7 @@ export const driveObject = (lade: Lade, r: Rij, inhoud: { pad?: string; tekst?: 
     omschrijving: s(r.description, 500), tekst: veiligeTekst(inhoud.tekst || ''), fragmentBron: inhoud.ocr ? 'ocr' : 'tekst',
     trefwoorden: [mime, ...lijst(r.parentIds, 300)].filter(Boolean),
     pad: `Google Drive${inhoud.pad ? ` › ${naam} › ${s(inhoud.pad, 160)}` : ''}`,
-    route: { host: 'cloud', pad: 'accounts', params: { drive: id } },
+    route: { host: 'cloud', pad: 'google', params: { [DIEPE_PARAMS.bestand]: s(r.providerFileId, 300) || id, ...(s(r.principalId, 120) ? { [DIEPE_PARAMS.drivePrincipal]: s(r.principalId, 120) } : {}) } },
     taal: '', formaat: formaatVan(mime, inhoud.pad || naam), bijgewerktOp: n(r.modifiedAt) || n(r.updatedAt), aangemaaktOp: n(r.createdAt) || undefined,
     versie: inhoud.sha256 || sha256Hex(`${naam}|${mime}|${s(r.description, 500)}|${n(r.modifiedAt)}`),
     extra: { mime, bytes: Number(r.size || 0), webViewLink: s(r.webViewLink, 1200), principalId: s(r.principalId, 120), ...(inhoud.pad ? { archiefPad: s(inhoud.pad, 300) } : {}), ocr: Boolean(inhoud.ocr) },
@@ -118,7 +124,7 @@ export const agendaGoogleObject = (lade: Lade, r: Rij): ZoekObject => {
     tekst: veiligeTekst(r.description, 8000), fragmentBron: 'tekst',
     trefwoorden: [s(r.location, 300), ...lijst(r.attendees, 120)].filter(Boolean),
     pad: `Календар › ${s(r.calendarName || r.calendarId || 'Google', 120)}`,
-    route: { host: 'cloud', pad: 'calendar', params: { afspraak: id } },
+    route: s(r.providerEventId, 1024) ? { host: 'hub', pad: 'calendar', params: { [DIEPE_PARAMS.afspraak]: agendaItemId(s(r.calendarId, 500), s(r.providerEventId, 1024)) } } : { host: 'hub', pad: 'calendar' },
     taal: '', formaat: '', bijgewerktOp: n(r.providerUpdatedAt) || n(r.updatedAt), aangemaaktOp: n(r.createdAt) || undefined,
     versie: sha256Hex(`${s(r.summary, 500)}|${s(r.start, 100)}|${s(r.end, 100)}|${s(r.location, 300)}|${s(r.description, 8000)}`),
     extra: { begin: s(r.start, 100), einde: s(r.end, 100), locatie: s(r.location, 300), bron: 'google' },
@@ -130,7 +136,7 @@ export const agendaExternObject = (lade: Lade, r: Rij): ZoekObject => ({
   id: `x:${s(r.abonnement_id, 120)}:${s(r.agenda_url, 300)}:${s(r.uid, 250)}`.slice(0, 700), bron: 'agenda', soort: 'afspraak',
   titel: s(r.titel, 300) || '(без назви)', omschrijving: [s(r.begin_waarde, 40), s(r.locatie, 300)].filter(Boolean).join(' · '),
   tekst: veiligeTekst(r.beschrijving, 4000), fragmentBron: 'tekst', trefwoorden: [s(r.locatie, 300)].filter(Boolean),
-  pad: 'Календар › ICS/CalDAV', route: { host: 'cloud', pad: 'calendar' },
+  pad: 'Календар › ICS/CalDAV', route: { host: 'hub', pad: 'calendar' },
   taal: '', formaat: '', bijgewerktOp: n(r.gewijzigd_op) || n(r.gezien_op),
   versie: sha256Hex(`${s(r.titel, 300)}|${s(r.begin_waarde, 40)}|${s(r.eind_waarde, 40)}|${s(r.locatie, 300)}|${s(r.beschrijving, 4000)}`),
   extra: { begin: s(r.begin_waarde, 40), einde: s(r.eind_waarde, 40), locatie: s(r.locatie, 300), url: s(r.url, 1200), bron: 'extern', abonnement: s(r.abonnement_id, 120) },
@@ -145,7 +151,7 @@ export const bordObject = (lade: Lade, r: Rij): ZoekObject => {
     omschrijving: [notitie ? 'нотатка' : 'завдання', s(r.status, 20)].filter(Boolean).join(' · '),
     tekst: veiligeTekst(r.body, 4000), fragmentBron: 'tekst', trefwoorden: [...lijst(r.tags), s(r.status, 20), s(r.author, 40)].filter(Boolean),
     pad: notitie ? 'Мій простір › Нотатки' : 'Мій простір › Завдання',
-    route: { host: 'hub', pad: notitie ? 'notes' : 'tasks', params: { item: id } },
+    route: notitie ? { host: 'hub', pad: 'notes', params: { [DIEPE_PARAMS.item]: id } } : { host: 'mcp', pad: 'board', params: { [DIEPE_PARAMS.doel]: bordDoel(id) } },
     taal: '', formaat: '', bijgewerktOp: n(r.updated_at) || n(r.created_at), aangemaaktOp: n(r.created_at) || undefined,
     versie: sha256Hex(`${s(r.title, 160)}|${s(r.body, 4000)}|${s(r.status, 20)}|${lijst(r.tags).join(',')}`),
     extra: { kind: notitie ? 'note' : 'task', status: s(r.status, 20) },

@@ -48,7 +48,8 @@ export async function main(): Promise<number> {
   check('A 300 ms debounce en het vorige verzoek wordt afgebroken', /, 300\)/.test(zoeken) && /AbortController/.test(zoeken) && /isAfgebroken/.test(zoeken));
   check('A vraaglimiet uit het contract (zoekMax = 120), niet hardgecodeerd', /CLOUD_VNEXT_LIMIETEN\.zoekMax/.test(zoeken) && CLOUD_VNEXT_LIMIETEN.zoekMax === 120 && !/maxLength=\{?120\}?/.test(zoeken));
   check('A overgang eigen bestand: cvn-open + tabblad files; Drive: cvn-drive-open + tabblad google', /'cvn-open'/.test(zoeken) && /naarTab\('files'\)/.test(zoeken) && /'cvn-drive-open'/.test(zoeken) && /naarTab\('google'\)/.test(zoeken));
-  check('A Drive-overgang alleen met een echte id uit het antwoord (route.params.drive), anders kale navigatie', /params\.drive/.test(zoeken) && /if \(driveId\)/.test(zoeken));
+  // ZOEKDIEP-001 (05.11.2026): de route draagt open_file_id (+ open_drive_principal) in plaats van «drive»; oude routes vertaalt diepeRoute.
+  check('A Drive-overgang alleen met een echte id uit het antwoord (route → open_file_id), anders kale navigatie', /params\[DIEPE_PARAMS\.bestand\]/.test(zoeken) && /diepeRoute\(r\.route/.test(zoeken) && /if \(driveId\)/.test(zoeken));
   check('A eerlijke lege staat: noemt OCR en de indexvernieuwing (~5 хв) + link naar de volledige zoekpagina', /OCR/.test(zoeken) && /5 хвилин/.test(zoeken) && /canonicalNavigationUrl\('hub', 'zoek'/.test(zoeken));
   check('A fout- en gesloten-staten zijn eerlijk (foutTekst + uitleg van de server), met een uitweg', /foutTekst\(lang, fout\)/.test(zoeken) && /gesloten/.test(zoeken) && /Спробувати ще раз/.test(zoeken));
   check('A icoon per soort via cloudSoort uit het gedeelde contract; map blijft een map', /cloudSoort\(mime, naam\)/.test(zoeken) && /r\.soort === 'map' \? Folder/.test(zoeken));

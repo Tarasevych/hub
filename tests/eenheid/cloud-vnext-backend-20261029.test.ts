@@ -212,6 +212,11 @@ export async function main(): Promise<number> {
     check('een ander account ziet niets en kan niets (overzicht leeg, download 404)', (await roep(rB, 'overzicht', {}, ander)).uit.stats.aantal === 0
       && (await roep(rB, 'download', { id: up1.uit.bestand.id }, ander)).status === 404
       && (await roep(rB, 'bestand', { actie: 'verwijder', ids: [up1.uit.bestand.id] }, ander)).status === 404);
+    // ZOEKDIEP-001 (05.11.2026): één bestand op id (diepe link ?open_item_id=) — alleen in de eigen lade.
+    const opId = await roep(rA, 'bestanden', { id: up1.uit.bestand.id });
+    check('bestanden { id } → precies dat bestand voor de eigenaar', opId.status === 200 && opId.uit.totaal === 1 && opId.uit.bestanden[0]?.id === up1.uit.bestand.id && opId.uit.bestanden[0]?.naam === up1.uit.bestand.naam);
+    check('bestanden { id } uit een andere lade of van een ander account → lege lijst, geen lek', (await roep(rA, 'bestanden', { id: up1.uit.bestand.id }, tech)).uit.totaal === 0
+      && (await roep(rB, 'bestanden', { id: up1.uit.bestand.id }, ander)).uit.bestanden.length === 0 && (await roep(rA, 'bestanden', { id: 'bestaat-niet' })).uit.totaal === 0);
     check('een onbekende actie → ACTIE_ONGELDIG (map, bestand en upload)', (await roep(rA, 'map', { actie: 'x' })).uit.error === 'ACTIE_ONGELDIG'
       && (await roep(rA, 'bestand', { actie: 'x', id: up1.uit.bestand.id })).uit.error === 'ACTIE_ONGELDIG'
       && (await roep(rA, 'upload', { actie: 'x' })).uit.error === 'ACTIE_ONGELDIG');
