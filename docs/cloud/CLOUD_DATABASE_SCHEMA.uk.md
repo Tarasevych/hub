@@ -2,7 +2,7 @@
 
 # Схема бази даних Cloud — v1
 
-Усі записи за замовчуванням є приватними та ізольованими в межах власника (`owner-scoped`). Ідентифікатори бази даних генеруються платформою.
+Усі записи типово є приватними та ізольованими в межах власника (`owner-scoped`). Ідентифікатори бази даних генеруються платформою.
 
 ## `cloud_workspaces_v1`
 
@@ -13,7 +13,7 @@
 | `normalizedTitle` | string | NFKC + нижній регістр; унікальність у межах власника |
 | `description` | string | до 500 символів |
 | `template` | enum | `project`, `documentation`, `meeting`, `personal` |
-| `sections` | array | стабільні поверхневі візуальні орієнтири; не папки |
+| `sections` | array | стабільні поверхневі візуальні орієнтири; не теки |
 | `status` | enum | `active`, `archived` |
 | `createdAt`, `updatedAt` | epoch ms | керується сервером |
 | `archivedAt` | epoch ms | `0`, поки активний |
@@ -31,18 +31,18 @@
 | `workspaceId` | string | порожнє значення означає Quick Capture |
 | `suggestedWorkspaceId` | string | лише наявний робочий простір власника |
 | `kind` | enum | `file`, `note`, `link` |
-| `title` | string | ШІ або детермінований резервний варіант (fallback), макс. 120 |
+| `title` | string | ШІ або детермінований резервний варіант, макс. 120 |
 | `originalName` | string | лише початкова назва файлу |
 | `description` | string | макс. 500 |
 | `textContent` | string | вміст нотатки, макс. 50 тис. |
 | `sourceUrl` | string | нормалізований HTTP(S) URL |
 | `mimeType` | string | перевірений сервером безпечний тип |
-| `sizeBytes` | number | декодовані байти |
+| `sizeBytes` | кількість | декодовані байти |
 | `storagePath` | string | згенерований сервером, ніколи не публічний |
 | `tags`, `people` | string[] | обмежені за розміром та дедупліковані |
 | `status` | enum | `captured`, `waiting_review`, `in_progress`, `done` |
 | `aiState` | enum | `suggested`, `fallback` |
-| `aiConfidence` | number | у межах 0–1 |
+| `aiConfidence` | кількість | у межах 0–1 |
 | `createdAt`, `updatedAt`, `openedAt` | epoch ms | керується сервером |
 
 Концептуально необхідні індекси / ключі запитів:
@@ -75,7 +75,7 @@
 | `inputFingerprint` | SHA-256 hex |
 | `state` | `suggested`, `fallback` |
 | `reasonCode` | string |
-| `confidence` | number |
+| `confidence` | кількість |
 | `suggestedWorkspaceId` | string |
 | `createdAt` | epoch ms |
 

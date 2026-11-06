@@ -113,7 +113,7 @@ Root-інсталятор (`deploy/uitrol/mijn-ruimte-uitrol.sh`) після п�
 |---|---|
 | `BASIS_ONGELDIG` | `UITROL-BASIS` є, але без коректних `versie`/`commit` |
 | `BASIS_VEROUDERD` | `versie` у `UITROL-BASIS` старіша за `$WERK_ROOT/laatste-versie` — хтось установив між збіркою й цим пакетом; rebase і зібрати знову |
-| `BASIS_COMMIT_VERSCHILT` | `commit` ≠ `$WERK_ROOT/laatste-commit` (root пише його після кожної вдалої установки з 40-hex `BRON-COMMIT`) |
+| `BASIS_COMMIT_VERSCHILT` | `commit` ≠ `$WERK_ROOT/laatste-commit` (root пише його після кожної вдалої встановлення з 40-hex `BRON-COMMIT`) |
 | `GEEN_BASIS` | версія ≥ `20261201-000000` без `UITROL-BASIS` |
 | `REGELS_NIET_VERGRENDELD` | у пакеті є `orchestratie/regels.lock.json`, але відбиток правил (`AGENTS.md`, `beleid.json`, `BESLUITEN.md`; LF, без кінцевих пробілів) або `regelsVersie` не збігається |
 | `MODUS_NIET_TOEGESTAAN` | `beleid.json → kritiek.installatieModi.toegestaan` не містить потрібного режиму (`na_bevestiging` для passkey/підпису; `automatisch_beperkt` + підписаний lock для GitOps `gitops-ophalen.sh`) |
@@ -124,7 +124,7 @@ Root-інсталятор (`deploy/uitrol/mijn-ruimte-uitrol.sh`) після п�
 (той самий сумісний архів, встановлюється ЛИШЕ він), `.tar.gz.sha256`, `.voorstel.json`, `ORCH-OVERDRACHT.json` (taakId, agent, `basisCommit` = база
 гілки задачі, `installatie` = встановлена база, коміти, файли, тести, `pakket.sha256`/`bronCommit`/`modus`), `UITROL-MANIFEST.json`, `TESTRESULTATEN.json`,
 `RAPPORT.md` (uk+nl), `COMMITS.txt` + `commits.bundle`, `AGENTEN.json`, `LEESMIJ.txt`, і `.tar.gz.sig` лише якщо власник підписав на своєму ПК
-(приватні ключі агентам не передаються). Перевірка без установки: `node scripts/orch.mjs pakket-controleer --bron <zip>` (назва, цілісність,
+(приватні ключі агентам не передаються). Перевірка без встановлення: `node scripts/orch.mjs pakket-controleer --bron <zip>` (назва, цілісність,
 `UITROL-VERSIE`/`BRON-COMMIT`/`AGENT`/`UITROL-BASIS` ↔ метадані, база ↔ `geinstalleerd.json`, правила ↔ lock, `deploy/installeer-app.sh`,
 без `node_modules/dist/.git`). Імпорт без git на іншому боці: `node scripts/orch.mjs inleveren --bron <zip>` — спершу цілісність, далі вміст `tar.gz`
 на нову гілку від `basisCommit`; службові файли архіву (`UITROL-*`, `AUTEUR`, `AGENT`, …) у гілку не потрапляють.

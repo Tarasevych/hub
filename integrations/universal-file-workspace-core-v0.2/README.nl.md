@@ -1,6 +1,6 @@
 > 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./README.uk.md) · **🇳🇱 Nederlands** ([origineel](./README.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
 
-# Universal File Workspace · Mijn Ruimte
+# Universal Bestand Workspace · Mijn Ruimte
 
 Dit is een **lokaal startpakket voor integratie**, geen patch voor de productierepository.
 

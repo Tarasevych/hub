@@ -2,7 +2,7 @@
 
 # Technische specificatie Cloud — Werkruimtefunctionaliteit
 
-## 1. Scope van Fase 1
+## 1. Bereik van Fase 1
 
 ### Geïmplementeerde kern
 
@@ -11,7 +11,7 @@
 - Smart Capture voor notities, links en veilige bestanden;
 - optionele plaatsing: Quick Capture is de standaard;
 - AI-naamgeving, metadata en suggestie voor bestaande werkruimtes;
-- deterministische terugvaloptie (fallback) wanneer AI niet beschikbaar is;
+- deterministische terugvaloptie wanneer AI niet beschikbaar is;
 - eigen private objectopslag;
 - plaatsing met één klik vanuit Quick Capture;
 - itemstatussen: opgeslagen (`captured`), wacht op beoordeling (`waiting_review`), in uitvoering (`in_progress`), gereed (`done`);
@@ -72,19 +72,19 @@ Gebruikersgerichte teksten vertalen storingen naar kalme, niet-bestraffende meld
 
 Canonieke lokale tabbladen:
 
-1. Overzicht (Overview);
+1. Overzicht (Overzicht);
 2. Werkruimtes (Workspaces);
 3. Slim vastleggen (Smart Capture);
 4. Snel vastleggen (Quick Capture);
-5. Zoeken (Search);
+5. Zoeken (Zoeken);
 6. Recent (Recent);
-7. Accounts (Accounts).
+7. Accounts.
 
 De lage-energiemodus verwijdert secundaire statistieken en beperkt de zichtbare context. De focusmodus verbergt uitsluitend de Canonical-zijbalk terwijl de bedieningselementen voor account en sessie behouden blijven.
 
 ## 5. Toegankelijkheidseisen
 
-- labels of expliciete toegankelijke namen op elk invoerveld/bedieningselement;
+- etiketten of expliciete toegankelijke namen op elk invoerveld/bedieningselement;
 - zichtbare toetsenbordfocus;
 - `role=alert` voor geïdentificeerde fouten en `role=status` voor succes;
 - geen statuscommunicatie uitsluitend op basis van kleur;
@@ -100,7 +100,7 @@ De lage-energiemodus verwijdert secundaire statistieken en beperkt de zichtbare 
 Maak een werkruimte aan, leg een notitie vast zonder plaatsing, bekijk een AI-/fallback-titel en plaats deze met één actie.
 
 ### Hervatten (Resume)
-Open een item, vernieuw de pagina, gebruik “Je bent hier gebleven” (“You stopped here”) en keer terug naar hetzelfde item en dezelfde werkruimte.
+Open een item, vernieuw de pagina, gebruik “Je bent hier gebleven” (“U stopped hier”) en keer terug naar hetzelfde item en dezelfde werkruimte.
 
 ### Begrenzing (Guardrail)
 Probeer een niet-ondersteund of te groot bestand vast te leggen; toon een kalme foutmelding en maak geen item aan.
@@ -111,7 +111,7 @@ Cloud-wijzigingen mogen geen wijzigingen aanbrengen in Mail-routes, Mail-bronmod
 ### Responsiviteit en toegankelijkheid (Responsive/accessibility)
 Op 375×667 blijven Smart Capture, het aanmaken van werkruimtes, plaatsing vanuit Quick Capture, het verlaten van de focusmodus en accountbeheer bereikbaar via toetsenbord en aanraking.
 
-## 7. Uitrolpoorten (Rollout gates)
+## 7. Uitrolpoorten
 
 1. broncodevalidatie en TypeScript-build;
 2. geautomatiseerde E2E-terminalslag;

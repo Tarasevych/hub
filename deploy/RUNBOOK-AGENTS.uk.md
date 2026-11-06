@@ -83,7 +83,7 @@ bash /root/bron-agents/mijn-ruimte/deploy/installeer-app.sh installeren /root/br
 
 Що відбувається (у такому порядку): копіювання вихідного коду → збірка від імені користувача `mijnruimte` (`npm ci`, аудити, vite,
 серверний бандл; кілька хвилин) → резервна копія → міграції (`0009_agents` + `rechten.sql`) від імені `mijnruimte_migrator` →
-атомарне перемикання `current` → перезапуск → перевірка працездатності (health check). Якщо перевірка не проходить, скрипт **сам виконує відкат**
+атомарне перемикання `current` → перезапуск → перевірка працездатності (health перевірка). Якщо перевірка не проходить, скрипт **сам виконує відкат**
 до попереднього випуску. Невдала збірка чи міграція залишає активний випуск недоторканим.
 
 Очікуваний підсумковий рядок: `[installeer] klaar: release <stempel> (commit <sha>)`.
@@ -223,7 +223,7 @@ node /srv/mijn-ruimte/current/deploy/agent/ws-check.mjs wss://mcp.tarasevych.com
    New-Item -ItemType Directory -Force $t | Out-Null
    Copy-Item T:\mijn-ruimte\ontwikkeling\hub\deploy\agent\agent.mjs $t\agent.mjs
    node $t\agent.mjs selftest --root $t                    # має завершитися з "alles OK" та exit 0
-   $env:HUB_AGENT_CONFIG = "$t\agent-config.json"        # за замовчуванням це потрапило б у C:\Users\...
+   $env:HUB_AGENT_CONFIG = "$t\agent-config.json"        # типово це потрапило б у C:\Users\...
    ```
 3. В інтерфейсі: **+ Підключити ПК або віртуальну машину (+ Pc of virtuele machine koppelen)** → з'являється код (10 хв). На ПК:
 

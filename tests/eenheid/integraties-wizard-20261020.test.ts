@@ -236,7 +236,7 @@ export async function main(): Promise<number> {
       inst.indexOf('geheimen_controleren "$(readlink -f "$bron")"') > 0 && inst.indexOf('geheimen_controleren "$(readlink -f "$bron")"') < inst.indexOf('migreren "$doel"') && /hulpscripts_installeren "\$doel"/.test(inst) && /^\s+geheimen\) vereis_root;/m.test(inst) && /^\s+oauth-client\) vereis_root;/m.test(inst) && /^\s+geheimen-register\) vereis_root;/m.test(inst) && !/geheimen-aanvullen/.test(inst));
     // ENV-VARS.md staat in de wortel van de repo; een testkopie zonder dat bestand slaat deze controle eerlijk over.
     let envDoc = ''; try { envDoc = bron('ENV-VARS.md'); } catch { envDoc = ''; }
-    check('ENV-VARS.md: MAIL_APP_WACHTWOORD_SLEUTEL_V1 verplicht, de wizard en de nieuwe opdrachten staan erin; Entra en Google Auth Platform (niet «Azure-app»)', !envDoc || (/MAIL_APP_WACHTWOORD_SLEUTEL_V1.*Verplicht/.test(envDoc) && /Майстер підключень/.test(envDoc) && /oauth-client google\|microsoft/.test(envDoc) && /Google Auth Platform/.test(envDoc) && /entra\.microsoft\.com/.test(envDoc) && !/Azure-app/.test(envDoc)), envDoc ? '' : 'ENV-VARS.md niet in de testkopie: overgeslagen');
+    check('ENV-VARS.md: MAIL_APP_WACHTWOORD_SLEUTEL_V1 verplicht, de wizard en de nieuwe opdrachten staan erin; Entra en Google Auth Platform (niet «Azure-app»)', !envDoc || (/MAIL_APP_WACHTWOORD_SLEUTEL_V1.*(?:Verplicht|Обов['’]язковий)/.test(envDoc) && /Майстер підключень/.test(envDoc) && /oauth-client google\|microsoft/.test(envDoc) && /Google Auth Platform/.test(envDoc) && /entra\.microsoft\.com/.test(envDoc) && !/Azure-app/.test(envDoc)), envDoc ? '' : 'ENV-VARS.md niet in de testkopie: overgeslagen');
   } finally {
     globalThis.fetch = fetchOud;
     setIntegratiesKluis(null); setKoppelingKluis(null);

@@ -1,240 +1,240 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL_IMPLEMENTATION_SPEC.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL_IMPLEMENTATION_SPEC.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# Mail Platform Technical Specification v1
+# Технічна специфікація платформи Пошти v1
 
-## 1. Status vocabulary
+## 1. Словник статусів
 
-- `confirmed`: supported by applied source/control-plane evidence.
-- `partial`: implementation exists but external/browser evidence incomplete.
-- `unverified`: target or configuration not yet exercised.
-- `blocked`: required external configuration/security gate absent.
-- `deprecated`: retained only for rollback/migration.
+- `confirmed`: підтверджено застосованим вихідним кодом та доказами на рівні панелі керування (control-plane).
+- `partial`: реалізація існує, але зовнішні/браузерні докази неповні.
+- `unverified`: цільовий стан або конфігурація ще не були випробувані на практиці.
+- `blocked`: відсутній необхідний зовнішній конфігураційний або безпековий шлюз (gate).
+- `deprecated`: зберігається виключно для відкату або міграції.
 
-Current baseline:
+Поточна базова лінія (baseline):
 
-- Mail Phase 1 manual/QA UI: confirmed.
-- M-110 provider registry/readiness, AES-256-GCM envelope self-tests and owner-scoped empty unified read facade: confirmed.
-- Authenticated Gmail Pub/Sub ingress, dedupe/coalescing, token refresh, watch renewal, bounded initial/history read sync and provider-to-Inbox projection: implemented behind runtime and external-endpoint gates; not externally exercised.
-- Durable external scheduler and provider data ingestion: not active.
-- Google mailbox OAuth state/PKCE/offline-consent/callback/token-commit source path: implemented behind fail-closed production gates; external consent not yet exercised.
-- Owner-scoped Gmail label mutation and explicit two-phase send command source paths: implemented behind connected-runtime gates; provider write behavior not externally exercised.
-- Microsoft Graph OAuth, encrypted refresh-token commit, mailbox `/me` verification, webhook validation/clientState, delta-link sync and provider-dispatched labels/send: implemented behind fail-closed external/runtime gates; not externally exercised.
-- Provider-specific runtime/scope dispatch, disconnect/revocation, token/subscription cleanup, sync health, stale-lease recovery, maintenance scheduling contract and manual/provider migration inventory: implemented. Legacy manual/QA records are retained until real-provider acceptance.
-- Provider token vault: not active.
-- Gmail watch/Pub/Sub: not active.
-- Microsoft Graph webhooks/delta: not active.
-- High-risk send: disabled.
+- Ручний/QA інтерфейс Пошта (фаза 1): confirmed.
+- Реєстр/готовність провайдерів M-110, самотестування конвертів AES-256-GCM та порожній уніфікований фасад читання з ізоляцією за власником (owner-scoped): confirmed.
+- Автентифікований вхідний потік Gmail Pub/Sub, дедуплікація/коалесценція, оновлення токенів, поновлення watch, обмежена початкова/історична синхронізація читання та проєкція провайдера у Вхідні (Inbox): реалізовано за шлюзами середовища виконання (runtime) та зовнішніх кінцевих точок; зовнішньо не випробувано.
+- Надійний зовнішній планувальник та поглинання даних провайдера (ingestion): не активні.
+- Кодовий шлях стану OAuth поштової скриньки Google / PKCE / офлайн-згоди / callback / фіксації токена: реалізовано за захищеними (fail-closed) production-шлюзами; зовнішня згода ще не випробувана.
+- Мутація міток Gmail з ізоляцією за власником та явні двофазні кодові шляхи команди відправлення: реалізовано за шлюзами підключеного середовища виконання; поведінка запису у провайдера зовнішньо не випробувана.
+- Microsoft Graph OAuth, фіксація зашифрованого refresh-токена, перевірка поштової скриньки `/me`, валідація вебхуків/`clientState`, синхронізація за delta-посиланнями та відправлення/мітки через провайдера: реалізовано за захищеними (fail-closed) зовнішніми/runtime-шлюзами; зовнішньо не випробувано.
+- Диспетчеризація середовища виконання та областей доступу (scopes) для конкретного провайдера, відключення/відкликання (disconnect/revocation), очищення токенів/підписок, стан здоров’я синхронізації, відновлення застарілих оренд (stale-lease recovery), контракт планування обслуговування та інвентаризація міграції ручних/провайдерських даних: реалізовано. Застарілі ручні/QA записи зберігаються до приймання реального провайдера.
+- Сховище токенів провайдера (token vault): не активне.
+- Gmail watch/Pub/Sub: не активні.
+- Вебхуки/дельта Microsoft Graph: не активні.
+- Високоризикове відправлення листів: вимкнено.
 
-## 2. Work packages
+## 2. Робочі пакети
 
-### M-100 Architecture and contracts
+### M-100 Архітектура та контракти
 
-Deliverables:
+Результати:
 
-- platform architecture;
-- database schema;
-- sync pipeline;
-- provider/security contracts;
-- implementation plan and acceptance gates;
-- blocking build audit.
+- архітектура платформи;
+- схема бази даних;
+- конвеєр синхронізації;
+- контракти провайдерів та безпеки;
+- план реалізації та шлюзи приймання;
+- блокувальний аудит збірки.
 
-Acceptance:
+Критерії приймання:
 
-- docs exist in repository;
-- release manifest truthfully says provider runtime inactive;
-- rollback points to previous applied version;
-- no auth/session/UI behavior changes;
-- build/E2E terminal evidence recorded.
+- документація наявна в репозиторії;
+- маніфест релізу правдиво зазначає, що середовище виконання провайдера неактивне;
+- відкат вказує на попередню застосовану версію;
+- жодних змін у поведінці авторизації/сесії/інтерфейсу;
+- зафіксовані термінальні докази збірки/E2E.
 
-### M-110 Mail provider foundation
+### M-110 Фундамент поштових провайдерів
 
-Deliverables:
+Результати:
 
-- provider registry types;
-- account status model;
-- secret/readiness evaluator;
-- AES-256-GCM token envelope helper with deterministic self-tests;
-- owner-scoped queue record and idempotency helper;
-- unified read API facade over current data;
-- admin/system truth readiness surface.
+- типи реєстру провайдерів;
+- модель статусів акаунта;
+- оцінювач секретів/готовності;
+- допоміжний модуль конвертів токенів AES-256-GCM із детермінованими самотестами;
+- запис черги з ізоляцією за власником та допоміжний модуль ідемпотентності;
+- уніфікований фасад API читання поверх поточних даних;
+- поверхня правдивої готовності для адміністратора/системи.
 
-Acceptance:
+Критерії приймання:
 
-- missing encryption secret fails closed;
-- no raw token appears in DB/public response/audit;
-- owner A cannot read owner B account/message;
-- duplicate job idempotency key produces one logical job;
-- current manual Phase 1 remains functional;
-- provider status is never connected without a token/subscription/sync proof.
+- відсутність секрету шифрування призводить до безпечної відмови (fails closed);
+- жоден сирий токен не з’являється в БД, публічній відповіді або журналі аудиту;
+- власник A не може прочитати акаунт/повідомлення власника B;
+- дубльований ключ ідемпотентності завдання створює одне логічне завдання;
+- поточна ручна Фаза 1 залишається функціональною;
+- статус провайдера ніколи не стає `connected` без доказу наявності токена/підписки/синхронізації.
 
-### M-120 Google mailbox OAuth
+### M-120 OAuth поштової скриньки Google
 
-Deliverables:
+Результати:
 
-- separate provider OAuth state, not identity state;
-- exact Gmail scopes;
-- PKCE, state, safe return, offline access;
-- server-side code exchange;
-- provider profile verification;
-- encrypted refresh token persistence;
-- scope persistence;
-- revoke/disconnect;
-- button wired from Mail Accounts.
+- окремий стан OAuth провайдера, відмінний від стану ідентичності;
+- точні області доступу (scopes) Gmail;
+- PKCE, стан, безпечне повернення, офлайн-доступ;
+- серверний обмін коду;
+- перевірка профілю провайдера;
+- збереження зашифрованого refresh-токена;
+- збереження наданих областей доступу;
+- відкликання/відключення;
+- кнопка, підключена з розділу Поштові акаунти.
 
-Acceptance:
+Критерії приймання:
 
-- explicit user click is the only start trigger;
-- one click creates one state;
-- callback replay is idempotent;
-- state mismatch/expiry/wrong owner rejected;
-- refresh token encrypted with valid GCM tag/AAD;
-- browser receives no token;
-- consent denial leaves authorization required;
-- real Chrome consent and return accepted by owner;
-- Google restricted-scope verification status documented.
+- явний клік користувача є єдиним тригером запуску;
+- один клік створює один стан;
+- повторний виклик callback є ідемпотентним;
+- невідповідність стану / закінчення терміну дії / неправильний власник відхиляються;
+- refresh-токен зашифрований із валідним тегом GCM та AAD;
+- браузер не отримує жодного токена;
+- відмова у згоді залишає статус `authorization_required`;
+- реальна згода в Chrome та повернення підтверджені власником;
+- задокументовано статус верифікації обмежених областей доступу (restricted scopes) Google.
 
-External prerequisites:
+Зовнішні передумови:
 
-- OAuth client allows exact callback;
-- consent screen/scopes configured;
-- restricted-scope verification/security assessment as required;
-- `MAIL_TOKEN_ENCRYPTION_KEY_V1` configured.
+- OAuth-клієнт дозволяє точний URI зворотного виклику (callback);
+- налаштовано екран згоди та області доступу;
+- пройдено верифікацію обмежених областей доступу / оцінку безпеки за потреби;
+- налаштовано `MAIL_TOKEN_ENCRYPTION_KEY_V1`.
 
-### M-130 Gmail watch and Pub/Sub
+### M-130 Gmail watch та Pub/Sub
 
-Deliverables:
+Результати:
 
-- topic/subscription configuration records;
-- authenticated push endpoint;
-- JWT audience/issuer validation;
-- Pub/Sub message dedupe;
-- `users.watch` creation/renewal/stop;
-- daily renew cron;
-- fallback sync cron;
-- health/readiness status.
+- записи конфігурації теми/підписки (topic/subscription);
+- автентифікована push-кінцева точка;
+- валідація аудиторії/емітента (audience/issuer) JWT;
+- дедуплікація повідомлень Pub/Sub;
+- створення/поновлення/зупинка `users.watch`;
+- щоденний cron поновлення;
+- резервний cron синхронізації;
+- статус здоров’я/готовності.
 
-Acceptance:
+Критерії приймання:
 
-- spoofed/unsigned/wrong-audience push rejected;
-- valid test push queues one coalesced account job;
-- duplicate messageId is no-op;
-- webhook handler performs no mailbox fetch inline;
-- watch expiration persisted and renewed;
-- push gap recovered by fallback;
-- real Google Pub/Sub delivery observed.
+- підроблений/непідписаний push або push із неправильною аудиторією відхиляється;
+- валідний тестовий push ставить у чергу одне об’єднане (coalesced) завдання для акаунта;
+- дубльований `messageId` ігнорується без побічних ефектів (no-op);
+- обробник вебхука не виконує вбудованого (inline) завантаження поштової скриньки;
+- час закінчення дії watch зберігається та поновлюється;
+- пропуск push-сповіщень відновлюється резервним механізмом;
+- зафіксовано реальну доставку через Google Pub/Sub.
 
-External prerequisites:
+Зовнішні передумови:
 
-- Google Cloud project/topic;
-- Gmail publisher service account permission;
-- authenticated push subscription and audience;
-- AppDeploy/custom-domain external POST route verified.
+- проєкт/тема Google Cloud;
+- дозвіл сервісного акаунта публікатора Gmail;
+- автентифікована push-підписка та аудиторія;
+- перевірений зовнішній POST-маршрут AppDeploy/власного домену.
 
-### M-140 Gmail sync workers
+### M-140 Воркери синхронізації Gmail
 
-Deliverables:
+Результати:
 
-- token refresh lease;
-- label sync;
-- initial message pagination;
-- incremental history sync;
-- MIME parser;
-- message/thread/label upsert;
-- attachment metadata/download;
-- recovery cursor reset;
-- websocket revision.
+- оренда оновлення токена;
+- синхронізація міток;
+- початкова пагінація повідомлень;
+- інкрементальна синхронізація історії;
+- парсер MIME;
+- upsert повідомлень/ланцюжків/міток;
+- метадані/завантаження вкладень;
+- скидання курсора відновлення;
+- ревізія через websocket.
 
-Acceptance:
+Критерії приймання:
 
-- restart during a page is idempotent;
-- cursor advances only after commit;
-- duplicate provider IDs do not duplicate records;
-- label add/remove and deletion reflected;
-- malformed MIME does not crash account sync;
-- invalid history cursor triggers bounded recovery;
-- owner scoping negative tests pass;
-- UI receives a real message without manual import.
+- перезапуск під час обробки сторінки є ідемпотентним;
+- курсор просувається лише після фіксації змін (commit);
+- дубльовані ідентифікатори провайдера не створюють дублікатів записів;
+- додавання/видалення міток та видалення листів відображаються коректно;
+- пошкоджений MIME не призводить до аварійного завершення синхронізації акаунта;
+- невалідний курсор історії запускає обмежене відновлення;
+- негативні тести ізоляції за власником проходять успішно;
+- інтерфейс отримує реальний лист без ручного імпорту.
 
-### M-150 Unified Mail API
+### M-150 Уніфікований API Пошти
 
-Normative operations:
+Нормативні операції:
 
-- list accounts;
-- list/get messages;
-- list/get threads;
-- list labels;
-- modify provider labels/read state;
-- save draft;
-- send prepare/confirm;
-- disconnect;
-- sync health.
+- список акаунтів;
+- список/отримання повідомлень;
+- список/отримання ланцюжків;
+- список міток;
+- зміна міток провайдера / стану прочитання;
+- збереження чернетки;
+- підготовка/підтвердження відправлення;
+- відключення акаунта;
+- стан здоров’я синхронізації.
 
-Acceptance:
+Критерії приймання:
 
-- pagination cursors opaque and owner-bound;
-- account IDs cannot cross owners;
-- query filters bounded/allowlisted;
-- mutations idempotent and audited;
-- send requires explicit short-lived confirmation;
-- API errors use stable reason codes and never expose provider tokens.
+- курсори пагінації непрозорі (opaque) та прив’язані до власника;
+- ідентифікатори акаунтів не можуть перетинати межі власників;
+- фільтри запитів обмежені та перевіряються за білим списком (allowlisted);
+- мутації ідемпотентні та записуються в аудит;
+- відправлення вимагає явного короткоживучого підтвердження;
+- помилки API використовують стабільні коди причин і ніколи не розкривають токени провайдера.
 
-### M-160 Real-data Inbox Functional
+### M-160 Функціональні Вхідні (Функціональні Вхідні) на реальних даних
 
-Deliverables:
+Результати:
 
-- current Phase 1 maps to canonical real messages/threads;
-- Focus View, four-state triage, cited Trust Layer and silent resume-context persistence operate on provider data;
-- manual source remains visibly distinct;
-- websocket refresh;
-- energy-aware projection;
-- calm notification eligibility.
+- поточна Фаза 1 відображається на канонічні реальні повідомлення/ланцюжки;
+- режим фокусування (Focus View), чотиристаноружий тріаж, рівень довіри з цитуванням (cited Trust Layer) та тихе збереження контексту відновлення працюють на даних провайдера;
+- ручне джерело залишається візуально відмінним;
+- оновлення через websocket;
+- проєкція з урахуванням рівня енергії (energy-aware);
+- відповідність критеріям спокійних сповіщень (calm notifications).
 
-Acceptance:
+Критерії приймання:
 
-- provider subject/body/source citations match original;
-- current account context is stable across refresh/switch;
-- no layout shift introduced;
-- low-energy view exposes no more than three primary actions;
-- no punitive counters/copy;
-- AI absence degrades to deterministic cited output;
-- external content cannot cause a tool/send action.
+- тема/тіло/цитати джерела провайдера збігаються з оригіналом;
+- контекст поточного акаунта стабільний під час оновлення сторінки/перемикання;
+- не виникає зсувів макета (layout shift);
+- подання з низьким рівнем енергії показує не більше трьох основних дій;
+- відсутні каральні лічильники чи формулювання;
+- за відсутності ШІ система деградує до детермінованого виводу з цитатами;
+- зовнішній вміст не може викликати інструмент або дію відправлення.
 
 ### M-170 Microsoft Graph
 
-Deliverables:
+Результати:
 
-- Microsoft app registration configuration;
-- OAuth/PKCE/offline token vault;
-- `/me` identity verification;
-- folder/message delta;
-- webhook/clientState/lifecycle validation;
-- renewal;
-- Graph send/label-folder mappings;
-- disconnect.
+- конфігурація реєстрації застосунку Microsoft;
+- сховище токенів OAuth/PKCE/офлайн;
+- перевірка ідентичності через `/me`;
+- дельта тек/повідомлень;
+- валідація вебхуків/`clientState`/життєвого циклу;
+- поновлення підписок;
+- відображення відправлення та міток/тек Graph;
+- відключення акаунта.
 
-Acceptance mirrors Google security/owner/idempotency gates plus real Graph webhook and delta evidence.
+Критерії приймання дзеркально повторюють шлюзи безпеки/власника/ідемпотентності Google плюс реальні докази роботи вебхуків і дельти Graph.
 
-### M-180 Cleanup and migration
+### M-180 Очищення та міграція
 
-Deliverables:
+Результати:
 
-- migration plan for `mail_items_v1` manual records;
-- compatibility reads;
-- feature flags;
-- dead code inventory;
-- retention/export/delete;
-- rollback rehearsal.
+- план міграції ручних записів `mail_items_v1`;
+- сумісне читання (compatibility reads);
+- прапорці функціональності (feature flags);
+- інвентаризація мертвого коду;
+- зберігання/експорт/видалення даних;
+- репетиція відкату (rollback rehearsal).
 
-Acceptance:
+Критерії приймання:
 
-- no data loss;
-- manual records remain distinguishable;
-- old routes removed only after usage/evidence audit;
-- rollback restores previous code without corrupting new records.
+- жодної втрати даних;
+- ручні записи залишаються розрізнюваними;
+- старі маршрути видаляються лише після аудиту використання та доказів;
+- відкат відновлює попередній код без пошкодження нових записів.
 
-## 3. API contract
+## 3. Контракт API
 
-### Accounts
+### Акаунти
 
 ```text
 GET /mail/accounts
@@ -243,17 +243,17 @@ POST /mail/accounts/{id}/disconnect
 GET /mail/accounts/{id}/sync-health
 ```
 
-Account response contains safe capability status only:
+Відповідь акаунта містить лише безпечний статус спроможностей:
 
-- id/provider/email/display name;
-- granted scope names;
-- status;
-- last sync;
-- watch/subscription expiry;
-- reauth/error reason code;
-- never token/ciphertext/IV/tag.
+- id/провайдер/email/відображуване ім’я;
+- назви наданих областей доступу (scopes);
+- статус;
+- час останньої синхронізації;
+- час закінчення дії watch/підписки;
+- код причини повторної авторизації/помилки;
+- ніколи не містить токен/шифротекст/IV/тег.
 
-### Messages and threads
+### Повідомлення та ланцюжки
 
 ```text
 GET /mail/{accountId}/messages?cursor=&triage=&label=&unread=
@@ -262,9 +262,9 @@ GET /mail/{accountId}/threads?cursor=
 GET /mail/{accountId}/threads/{threadId}
 ```
 
-Pagination cursor is signed/opaque and includes owner/account/filter fingerprint.
+Курсор пагінації є підписаним/непрозорим і містить відбиток власника/акаунта/фільтрів.
 
-### Labels
+### Мітки
 
 ```text
 POST /mail/{accountId}/labels
@@ -276,18 +276,18 @@ POST /mail/{accountId}/labels
 }
 ```
 
-### Send
+### Відправлення
 
-Normative safe flow:
+Нормативний безпечний потік:
 
 ```text
 POST /mail/{accountId}/send/prepare
 POST /mail/{accountId}/send/confirm
 ```
 
-The requested single endpoint `/mail/{accountId}/send` may be exposed as a facade, but it must reject calls lacking a valid prepared command and explicit confirmation. AI cannot supply confirmation.
+Запитана єдина кінцева точка `/mail/{accountId}/send` може бути відкрита як фасад, але вона зобов’язана відхиляти виклики без валідної підготовленої команди та явного підтвердження. ШІ не може надати підтвердження.
 
-## 4. Provider registry interface
+## 4. Інтерфейс реєстру провайдерів
 
 ```ts
 interface MailProviderAdapter {
@@ -309,87 +309,87 @@ interface MailProviderAdapter {
 }
 ```
 
-Adapters return provider-neutral values and stable error classification; they do not write UI state directly.
+Адаптери повертають нейтральні щодо провайдера значення та стабільну класифікацію помилок; вони не записують стан UI напряму.
 
-## 5. Security acceptance suite
+## 5. Набір приймальних тестів безпеки
 
-Required negative tests:
+Обов’язкові негативні тести:
 
-- wrong owner/account id;
-- missing canonical Mail session;
-- OAuth state replay/expiry/tamper;
-- wrong callback origin/return path;
-- missing/invalid encryption key;
-- GCM AAD mismatch;
-- refresh concurrency race;
-- spoofed Pub/Sub JWT;
-- wrong Graph clientState;
-- duplicate webhook event;
-- invalid cursor recovery;
-- MIME depth/size overflow;
-- HTML script/remote image sanitization;
-- attachment size/type/hash mismatch;
-- prompt injection asking AI to send/reveal secrets;
-- send without confirmation;
-- duplicate send confirmation;
-- disconnect during queued sync.
+- неправильний ідентифікатор власника/акаунта;
+- відсутня канонічна сесія Пошти;
+- повторне відтворення / закінчення терміну дії / підробка стану OAuth;
+- неправильне джерело (origin) або шлях повернення callback;
+- відсутній/невалідний ключ шифрування;
+- невідповідність AAD у GCM;
+- стан гонитви (race condition) при одночасному оновленні токена;
+- підроблений JWT у Pub/Sub;
+- неправильний `clientState` у Graph;
+- дубльована подія вебхука;
+- відновлення після невалідного курсора;
+- переповнення глибини/розміру MIME;
+- санітизація HTML-скриптів / зовнішніх зображень;
+- невідповідність розміру/типу/хешу вкладення;
+- prompt-ін’єкція з вимогою до ШІ надіслати листа або розкрити секрети;
+- відправлення без підтвердження;
+- дубльоване підтвердження відправлення;
+- відключення акаунта під час синхронізації, що перебуває в черзі.
 
-## 6. Test matrix
+## 6. Матриця тестування
 
-1. First Gmail connection success/cancel/denied.
-2. Existing identity account still requires mailbox consent.
-3. Two Gmail accounts for one owner.
-4. Same provider email cannot be duplicated.
-5. Owner A cannot access Owner B account/message/token/job.
-6. Initial sync pages and resumes after worker restart.
-7. Gmail push duplicate, gap, invalid history cursor.
-8. Watch renewal and expiration.
-9. Broken MIME and large attachment.
-10. Thread and label reconciliation.
-11. Focus View on real Gmail data.
-12. Citation links resolve to original source segments.
-13. Low/medium/high energy projections.
-14. Resume after F5 and service navigation.
-15. Draft save vs explicit send confirmation.
-16. Provider 429/5xx/backoff/dead letter.
-17. Disconnect and reauth.
-18. Microsoft validation token/clientState/delta/subscription renewal.
-19. Mobile 375×667 and desktop 1280×800.
-20. FE/BE/network logs clean after full E2E.
+1. Перше підключення Gmail: успіх / скасування / відмова в доступі.
+2. Наявний акаунт ідентичності все одно вимагає окремої згоди для поштової скриньки.
+3. Два акаунти Gmail для одного власника.
+4. Один і той самий email провайдера не може бути продубльований.
+5. Власник A не має доступу до акаунта/повідомлення/токена/завдання Власника B.
+6. Початкова синхронізація розбиває дані на сторінки та відновлюється після перезапуску воркера.
+7. Дублікат push-сповіщення Gmail, пропуск (gap), невалідний курсор історії.
+8. Поновлення та закінчення терміну дії watch.
+9. Пошкоджений MIME та велике вкладення.
+10. Узгодження (reconciliation) ланцюжків та міток.
+11. Режим фокусування (Focus View) на реальних даних Gmail.
+12. Посилання на цитати вказують на оригінальні сегменти джерела.
+13. Проєкції низького/середнього/високого рівня енергії.
+14. Відновлення стану (resume) після F5 та навігації між сервісами.
+15. Збереження чернетки проти явного підтвердження відправлення.
+16. Відповіді провайдера 429/5xx, експоненційна затримка (backoff), черга недоставлених завдань (dead letter).
+17. Відключення та повторна авторизація.
+18. Токен валідації Microsoft / `clientState` / дельта / поновлення підписки.
+19. Мобільний екран 375×667 та десктоп 1280×800.
+20. Чисті журнали FE/BE/мережі після повного прогону E2E.
 
-## 7. Chrome acceptance checklist per provider release
+## 7. Контрольний список приймання в Chrome для кожного релізу провайдера
 
-- hard refresh Mail Accounts;
-- connect from one explicit click;
-- inspect exact consent scopes;
-- cancel and retry;
-- return to same Mail account context;
-- verify no token/code remains in URL/storage;
-- verify account progress status;
-- receive a real test email;
-- observe UI update without manual import;
-- F5 and silent resume-context restoration without an unsolicited prompt;
-- switch account and confirm isolation;
-- disconnect and verify sync stops;
-- repeat in narrow viewport;
-- check Network/Console and provider dashboard delivery evidence.
+- жорстке оновлення (hard refresh) сторінки Поштові акаунти;
+- підключення з одного явного кліку;
+- перевірка точних областей доступу (scopes) на екрані згоди;
+- скасування та повторна спроба;
+- повернення до того самого контексту поштового акаунта;
+- перевірка відсутності токена/коду в URL або сховищі браузера;
+- перевірка статусу прогресу акаунта;
+- отримання реального тестового листа;
+- спостереження за оновленням інтерфейсу без ручного імпорту;
+- натискання F5 та тихе відновлення контексту без нав’язливих запитів;
+- перемикання акаунта та підтвердження ізоляції даних;
+- відключення акаунта та перевірка зупинки синхронізації;
+- повторення перевірки у вузькому вікні перегляду (viewport);
+- перевірка вкладок Network/Console та доказів доставки в панелі керування провайдера.
 
-## 8. Rollout gates
+## 8. Шлюзи розгортання
 
-- Feature flags per provider/account.
-- Foundation → owner canary → bounded real mailbox → wider activation.
-- Each slice has direct rollback Version ID.
-- Database migrations are forward-compatible and reversible where possible.
-- Provider write/send remains disabled until read sync and isolation evidence pass.
-- Microsoft starts only after Google read/sync path is stable unless isolated behind an independent flag.
+- Прапорці функціональності (feature flags) на рівні провайдера/акаунта.
+- Фундамент → канарковий реліз для власника → обмежена реальна поштова скринька → ширша активація.
+- Кожен етап має прямий ідентифікатор версії для відкату.
+- Міграції бази даних є прямо сумісними (forward-compatible) та оборотними, де це можливо.
+- Запис/відправлення через провайдера залишаються вимкненими, доки не пройдуть докази синхронізації читання та ізоляції.
+- Інтеграція Microsoft запускається лише після стабілізації шляху читання/синхронізації Google, якщо вона не ізольована за незалежним прапорцем.
 
-## 9. Current blockers before live Gmail
+## 9. Поточні блокери перед запуском живого Gmail
 
-- dedicated mailbox encryption secret;
-- exact Google consent/restricted-scope verification state;
-- Pub/Sub project/topic/subscription and authenticated push audience;
-- externally reachable push route evidence;
-- production-grade durable DB/queue equivalence or managed infrastructure;
-- owner Chrome acceptance.
+- виділений секрет шифрування поштової скриньки;
+- точний стан верифікації екрана згоди та обмежених областей доступу Google;
+- проєкт/тема/підписка Pub/Sub та аудиторія автентифікованого push-потоку;
+- докази зовнішньої досяжності маршруту для push-запитів;
+- еквівалентність надійної production-БД/черги або керована інфраструктура;
+- приймання власником у браузері Chrome.
 
-These blockers do not prevent implementation of pure contracts, token-envelope tests, owner-scoped queue foundation and truthful readiness APIs. They do prevent an honest `connected` claim.
+Ці блокери не заважають реалізації чистих контрактів, тестів конвертів токенів, фундаменту черги з ізоляцією за власником та правдивих API готовності. Проте вони унеможливлюють чесне оголошення статусу `connected`.

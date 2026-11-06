@@ -1,21 +1,21 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./2026-07-28_IDENTITY_ADMIN_BRIDGE_V1.uk.md) · [🇳🇱 **Nederlandse versie**](./2026-07-28_IDENTITY_ADMIN_BRIDGE_V1.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# Checkpoint — Identity Admin Bridge v1
+# Контрольна точка — Міст адміністрування Identity v1
 
-## Completed in Hub
-- One-time service handoff creation and consumption.
-- Service-scoped sessions for Identity.
-- Shared admin business functions for Hub and Identity routes.
-- Service account overview, deletion and workspace restoration contracts.
-- Service-session revocation during recoverable account deletion.
-- Visible Hub account/admin controls moved to Identity navigation.
-- Emergency owner-only legacy admin query retained for rollback.
+## Виконано в Hub
+- Створення та використання одноразової передачі сесії сервісу (`service handoff`).
+- Сервісно-обмежені сесії для Identity.
+- Спільні бізнес-функції адміністрування для маршрутів Hub та Identity.
+- Контракти огляду облікового запису сервісу, видалення та відновлення робочого простору.
+- Відкликання сервісних сесій під час зворотного видалення облікового запису.
+- Видимі елементи керування обліковим записом та адмініструванням у Hub перенесено до навігації Identity.
+- Аварійний legacy-запит адміністрування лише для власника збережено для відкату (`rollback`).
 
-## Still verified in the Identity application
-- Host-only HttpOnly tab session cookie.
-- Real participant list and access-request actions.
-- Full/limited/block/delete/recover controls.
-- Self account overview and deletion.
+## Додатково перевірено в застосунку Identity
+- Сесійний cookie вкладки `HttpOnly` лише для хоста (`Host-only`).
+- Реальний список учасників та дії із запитами на доступ.
+- Елементи керування повним/обмеженим доступом, блокуванням, видаленням та відновленням.
+- Огляд і видалення власного облікового запису.
 
-## Rollback
-Apply the previous AppDeploy version if the service bridge cannot be accepted.
+## Відкат (Rollback)
+Застосуйте попередню версію AppDeploy, якщо сервісний міст не може бути прийнятий.

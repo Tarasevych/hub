@@ -42,11 +42,11 @@ Prioriteit: 1 = infrastructuur en officiële interface aanwezig, eerst doen; 2 =
 |---|---|---|---|---|---|---|---|---|---|---|
 | google-drive | Google Drive | klaar | werkend | Klaar om te koppelen | Google OAuth 2.0 + Drive API | cloud | 1 | — |  | `backend/google-suite-inrichting.ts` |
 | google-photos | Google Photos | klaar | werkend | Klaar om te koppelen | Google Photos Picker API | foto | 1 | — | Google staat alleen handmatige keuze toe (Picker), niet de hele bibliotheek. | `backend/google-suite-inrichting.ts` |
-| onedrive | OneDrive | binnenkort | basis | Instellen nodig | Microsoft Graph Files (OAuth + PKCE) | cloud | 1 | Sleutels van de eigenaar, daarna echte controle. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
+| onedrive | OneDrive | binnenkort | basis | Instellen nodig | Microsoft Graph Bestanden (OAuth + PKCE) | cloud | 1 | Sleutels van de eigenaar, daarna echte controle. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
 | dropbox | Dropbox | binnenkort | basis | Instellen nodig | Dropbox API v2 (OAuth + PKCE) | cloud | 1 | Sleutels van de eigenaar. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
 | box | Box | binnenkort | basis | Instellen nodig | Box API (OAuth 2.0) | cloud | 1 | Sleutels van de eigenaar. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
 | icloud-drive | iCloud Drive | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | cloud | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. | Apple heeft geen openbare API voor iCloud Drive. |  |
-| nextcloud | Nextcloud | binnenkort | basis | Instellen nodig | WebDAV + Login Flow v2 (app-wachtwoord) | cloud | 1 | Koppelwizard en PROPFIND-controle. |  | `backend/cloud-integratie-routes.ts` `backend/cloud-overdracht-m3-providers.ts` |
+| nextcloud | Nextcloud | binnenkort | basis | Instellen nodig | WebDAV + Login Stroom v2 (app-wachtwoord) | cloud | 1 | Koppelwizard en PROPFIND-controle. |  | `backend/cloud-integratie-routes.ts` `backend/cloud-overdracht-m3-providers.ts` |
 | mega | MEGA | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | cloud | 1 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
 | s3 | S3-compatibele opslag | binnenkort | basis | Instellen nodig | S3 API (Signature V4, toegangssleutel) | cloud | 1 | Wizard en ListObjectsV2-controle. |  | `backend/cloud-integratie-routes.ts` `backend/cloud-m9-xml.ts` |
 
@@ -98,7 +98,7 @@ Prioriteit: 1 = infrastructuur en officiële interface aanwezig, eerst doen; 2 =
 
 | id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
 |---|---|---|---|---|---|---|---|---|---|---|
-| github-actions | GitHub Actions | binnenkort | geen | In ontwikkeling | Webhook / API-sleutel | github | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| github-actions | GitHub Acties | binnenkort | geen | In ontwikkeling | Webhook / API-sleutel | github | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
 | circleci | CircleCI | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | github | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
 | jenkins | Jenkins | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | github | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
 | argocd | Argo CD | binnenkort | geen | In ontwikkeling | API-sleutel | github | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |

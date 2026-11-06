@@ -1,51 +1,51 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RELEASE-NOTITIES-UI013.uk.md) · [🇳🇱 **Nederlandse versie**](./RELEASE-NOTITIES-UI013.nl.md) · [📖 Інструкція UI-013](./ІНСТРУКЦІЯ-UI013.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# Release-notities UI-013 (fase 1) — integratiecatalogus als verbindingscentrum
+# Примітки до випуску UI-013 (фаза 1) — каталог інтеграцій як центр підключень
 
-Basis: hoofdarchief 20261029-193103 (branch `integratie`, commit ba499d9). Migratie: **0180** (alleen een vlag).
+База: головний архів 20261029-193103 (гілка `integratie`, коміт ba499d9). Міграція: **0180** (лише прапорець).
 
-## Nieuw (achter vlag `integraties-catalogus-v2`, standaard UIT)
-- Catalogus op Admin → Інтеграції per **thema**, binnen elk thema groepen uit de **echte stand**: Потребують уваги · Підключені · Можна підключити ·
-  Потребують налаштування · У розробці. Thema’s en groepen in-/uitklapbaar; klaptoestand, weergave (raster/lijst), themavolgorde, thema- en
-  wijzefilter per account in deze browser bewaard. «У розробці» standaard ingeklapt.
-- Koppelfouten staan **altijd** bovenaan («Потребують уваги зараз»), los van filters en ingeklapte blokken.
-- Kaart: logo, naam, thema + koppelwijze, wat Mijn Ruimte werkelijk kan, stand, account/aantal (vertaald via code), laatste controle of «stand gelezen; nog
-  geen controle». Hoofdactie: Підключити / Керувати / Відновити / Налаштувати / **План** (in plaats van de uitgeschakelde «Скоро»).
-  «План» toont: officiële wijze, wat nodig is, wat nog te doen is, beperking van de aanbieder.
-- Favorieten («Обране») bovenaan zonder de echte categorie te wijzigen (de bestaande ster).
-- Eén «?» per blok (hulpregister `integraties.v2-catalogus`). Zoeken op naam, thema, mogelijkheid, aanbieder/protocol.
-- Open catalogustabbladen vernieuwen elkaar via `BroadcastChannel('mr-integraties-stand')`.
+## Нове (за прапорцем `integraties-catalogus-v2`, типово ВИМКНЕНО)
+- Каталог у Адмін → Інтеграції за **темами**, усередині кожної теми — групи зі **справжнього стану**: Потребують уваги · Підключені · Можна підключити ·
+  Потребують налаштування · У розробці. Теми й групи можна згортати/розгортати; стан згортання, вигляд (сітка/список), порядок тем, фільтр теми та
+  способу зберігаються для кожного акаунта в цьому браузері. Група «У розробці» типово згорнута.
+- Помилки підключень стоять **завжди** вгорі («Потребують уваги зараз»), незалежно від фільтрів і згорнутих блоків.
+- Картка: логотип, назва, тема + спосіб підключення, що «Мій простір» реально вміє, стан, акаунт/кількість (перекладено в коді), остання перевірка або «стан прочитано; ще
+  немає перевірки». Головна дія: Підключити / Керувати / Відновити / Налаштувати / **План** (замість неактивної кнопки «Скоро»).
+  «План» показує: офіційний спосіб, що потрібно, що ще зробити, обмеження провайдера.
+- Обране («Обране») вгорі без зміни справжньої категорії (наявна зірочка).
+- Один «?» на блок (реєстр довідки `integraties.v2-catalogus`). Пошук за назвою, темою, можливістю, провайдером/протоколом.
+- Відкриті вкладки каталогу оновлюють одна одну через `BroadcastChannel('mr-integraties-stand')`.
 
-## Direct (zonder vlag)
-- **BUG Google-melding**: nieuwe lichte route `POST /api/owner/admin/integraties/google-stand` (admin.read, alleen `googleSuiteOnboardingSnapshot`).
-  De catalogus gebruikt die eerst; de zware diagnostiek alleen nog als terugval. De melding toont nu de foutcode. Oorzaak: zie ARCHITECTUUR-UI013.md.
-- `POST /api/owner/admin/integraties/stand` bevat nu ook de **IMAP-koppelingen** van het eigen account (iCloud, Yahoo, Proton, Outlook, overige → IMAP),
-  met de tijd van de laatste geslaagde serveraanmelding en de foutcode. Gevolg ook in de oude weergave: IMAP-kaarten krijgen de chip «Підключено»/«Помилка».
+## Одразу (без прапорця)
+- **BUG повідомлення Google**: новий легкий маршрут `POST /api/owner/admin/integraties/google-stand` (`admin.read`, лише `googleSuiteOnboardingSnapshot`).
+  Каталог спершу використовує його; важку діагностику — лише як резервний варіант. Повідомлення тепер показує код помилки. Причина: див. `ARCHITECTUUR-UI013.md`.
+- `POST /api/owner/admin/integraties/stand` тепер також містить **підключення IMAP** власного акаунта (iCloud, Yahoo, Proton, Outlook, інші → IMAP)
+  із часом останнього успішного входу сервера та кодом помилки. Наслідок також у старому поданні: картки IMAP отримують чип «Підключено»/«Помилка».
 
-## Audit en plan
-- `shared/integraties-register.ts`: machineleesbaar register van alle 160 posities (werkend 21, basis 12, geen 127) met bewijsbestanden (test controleert
-  dat ze bestaan). `docs/integraties/INVENTARIS.md` (gegenereerd, `npx tsx scripts/integraties-inventaris.ts`). Plan in `docs/integraties/ARCHITECTUUR-UI013.md`.
+## Аудит і план
+- `shared/integraties-register.ts`: машиночитаний реєстр усіх 160 позицій (`werkend` 21, `basis` 12, `geen` 127) із файлами-доказами (тест перевіряє,
+  що вони існують). `docs/integraties/INVENTARIS.md` (згенеровано, `npx tsx scripts/integraties-inventaris.ts`). План у `docs/integraties/ARCHITECTUUR-UI013.md`.
 
-## Gewijzigde bestanden
-backend/beheer-integraties.ts · shared/integraties-detail.ts · shared/hulp-register.ts · shared/vlaggen.ts · shared/zoek-ui-knoppen.generated.ts (door build) ·
-src/integraties/Integraties.tsx · src/integraties/Detail.tsx (alleen type) · src/integraties/integraties.css · nieuw: shared/integraties-register.ts,
-src/integraties/CatalogusV2.tsx, src/integraties/catalogus-v2-logica.ts, src/integraties/catalogus-vlag.ts, scripts/integraties-inventaris.ts,
-migrations/0180_integraties_catalogus_v2_vlag.sql, tests/eenheid/integraties-catalogus-v2-20261029.test.ts, docs/integraties/*.
-UFW-bestanden en `integrations/` niet aangeraakt.
+## Змінені файли
+`backend/beheer-integraties.ts` · `shared/integraties-detail.ts` · `shared/hulp-register.ts` · `shared/vlaggen.ts` · `shared/zoek-ui-knoppen.generated.ts` (під час збірки) ·
+`src/integraties/Integraties.tsx` · `src/integraties/Detail.tsx` (лише тип) · `src/integraties/integraties.css` · нові: `shared/integraties-register.ts`,
+`src/integraties/CatalogusV2.tsx`, `src/integraties/catalogus-v2-logica.ts`, `src/integraties/catalogus-vlag.ts`, `scripts/integraties-inventaris.ts`,
+`migrations/0180_integraties_catalogus_v2_vlag.sql`, `tests/eenheid/integraties-catalogus-v2-20261029.test.ts`, `docs/integraties/*`.
+Файли UFW та `integrations/` не змінювалися.
 
-## Niet in deze fase
-Wizard-stappen, gedeelde strook op themapagina’s, nieuwe adapters (Nextcloud/S3/MQTT), periodieke controles, cloud-vnext op het register. Zie plan.
+## Не у цій фазі
+Кроки майстра, спільна смужка на тематичних сторінках, нові адаптери (Nextcloud/S3/MQTT), періодичні перевірки, `cloud-vnext` на базі реєстру. Див. план.
 
 ---
 
-## UI-013 fase 2 (achter vlag `integraties-catalogus-v2`, standaard UIT; geen nieuwe migratie nodig)
+## UI-013 фаза 2 (за прапорцем `integraties-catalogus-v2`, типово ВИМКНЕНО; нова міграція не потрібна)
 
-- **Koppelwizard (6 stappen)** `src/integraties/WizardV2.tsx` + `wizard-v2-logica.ts`: kiezen → wijze → autorisatie → controle → rechten → klaar. Hergebruikt de bestaande OAuth-pagina's (state/PKCE in de bestaande flows) en de bestaande IMAP-flow; geen nieuwe OAuth-implementatie. Geheimen gaan via GeheimInvoer, worden alleen voor de controle verstuurd, niet bewaard en daarna gewist. Stap «rechten» meldt dat AI-agenten geen automatische toegang krijgen.
-- **Gedeelde strook** `src/integraties/IntegratieStrook.tsx` op Mail, Cloud, Foto, Agenda, AI (api/verbindingen), Huis en GitHub. Leest `doelDienst` uit `shared/integraties-register.ts`, toont gereedheid (geen accountstand) met één «?» (`integraties.strook`) en een link naar de catalogus.
-- **Periodieke controles** `POST /api/owner/admin/integraties/controleer-alle` (admin.read): hoogstens 1× per 30 min per gebruiker, alleen leescontroles, schrijft `app.integratie_controles`. De catalogus roept het hoogstens 1× per uur aan. Controles ouder dan 24 u worden «verouderd» getoond.
-- **Adapters (alleen lezen)** `backend/verbinding-adapters/`: WebDAV/Nextcloud (PROPFIND), S3 (SigV4, ListObjectsV2), MQTT (CONNECT/CONNACK, alleen TLS, geen privé-adressen via de route). Route `POST /api/owner/admin/integraties/adapter-controle` (apps.manage, 10/min, audit zonder geheimen, niets bewaard).
-- **Register**: veld `adapter`; nextcloud/s3 met adapter; nieuwe basisrijen mqtt en zigbee2mqtt. Blijven «basis» (niet «Працює»): er wordt nog geen verbinding bewaard.
-- **cloud-vnext** leest uit het register via `src/cloud-vnext/register-koppeling.ts` (extra badge «Catalogus: …», achter dezelfde vlag).
-- **Outlook/Graph**: niet gebouwd. Een nagebootste server bewijst niets over de echte Graph-OAuth; blijft «потребує ключів власника».
-- Tests: `tests/eenheid/integraties-fase2-20261029.test.ts` (15/15), lokaal `tests/lokaal/verbinding-adapters-lokaal.ts` (8/8 tegen webdav-server, moto_server, aedes), zie `ADAPTERS-LOKAAL-TESTEN.md`.
-- Ongewijzigd: `integrations/`, UFW-bestanden, bestaande kaarten.
+- **Майстер підключень (6 кроків)** `src/integraties/WizardV2.tsx` + `wizard-v2-logica.ts`: вибір → спосіб → авторизація → перевірка → дозволи → готово. Повторно використовує наявні сторінки OAuth (state/PKCE в наявних потоках) і наявний потік IMAP; жодної нової реалізації OAuth. Секрети вводяться через `GeheimInvoer`, надсилаються лише для перевірки, не зберігаються й після цього очищуються. Крок «дозволи» повідомляє, що ШІ-агенти не отримують автоматичного доступу.
+- **Спільна смужка** `src/integraties/IntegratieStrook.tsx` на сторінках Пошта, Хмара, Фото, Календар, ШІ (`api/verbindingen`), Будинок і GitHub. Читає `doelDienst` із `shared/integraties-register.ts`, показує готовність у каталозі (не стан акаунта) з одним «?» (`integraties.strook`) і посиланням на каталог.
+- **Періодичні перевірки** `POST /api/owner/admin/integraties/controleer-alle` (`admin.read`): щонайбільше 1× на 30 хв на користувача, лише перевірки на читання, записує `app.integratie_controles`. Каталог викликає його щонайбільше 1× на годину. Перевірки, старіші за 24 год, показуються як «застарілі».
+- **Адаптери (лише читання)** `backend/verbinding-adapters/`: WebDAV/Nextcloud (PROPFIND), S3 (SigV4, ListObjectsV2), MQTT (CONNECT/CONNACK, лише TLS, без приватних адрес через маршрут). Маршрут `POST /api/owner/admin/integraties/adapter-controle` (`apps.manage`, 10/хв, аудит без секретів, нічого не зберігається).
+- **Реєстр**: поле `adapter`; `nextcloud`/`s3` з адаптером; нові базові рядки `mqtt` і `zigbee2mqtt`. Залишаються `basis` (не «Працює»): з'єднання ще не зберігається.
+- **cloud-vnext** читає з реєстру через `src/cloud-vnext/register-koppeling.ts` (додатковий бейдж «Каталог: …», за тим самим прапорцем).
+- **Outlook/Graph**: не побудовано. Імітований сервер нічого не доводить щодо справжнього Graph-OAuth; залишається «потребує ключів власника».
+- Тести: `tests/eenheid/integraties-fase2-20261029.test.ts` (15/15), локально `tests/lokaal/verbinding-adapters-lokaal.ts` (8/8 проти `webdav-server`, `moto_server`, `aedes`), див. `ADAPTERS-LOKAAL-TESTEN.md`.
+- Без змін: `integrations/`, файли UFW, наявні картки.

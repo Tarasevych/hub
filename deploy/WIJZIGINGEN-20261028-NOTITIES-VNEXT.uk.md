@@ -13,16 +13,16 @@
 
 | Модуль | Стан | Де |
 |---|---|---|
-| Окреме сховище нотаток (title 300, Markdown до 200 000 знаків, 24 теги в т.ч. українські, папки, закріплення, архів, кошик 30 днів, версія, ревізії) | **implemented** | `migrations/0127_notities_vnext.sql`, `backend/notities-vnext.ts` |
+| Окреме сховище нотаток (title 300, Markdown до 200 000 знаків, 24 теги в т.ч. українські, теки, закріплення, архів, кошик 30 днів, версія, ревізії) | **implemented** | `migrations/0127_notities_vnext.sql`, `backend/notities-vnext.ts` |
 | Перенесення старих hub-нотаток (`mcp_console_items`, kind=note, тег hub) без втрат — **той самий id**, простір, дати, sha256 у `herkomst` | **implemented** | 0127 (ON CONFLICT DO NOTHING, без UPDATE/DELETE старих рядків) |
 | Дзеркало в старий бордер (ті самі id; title ≤ 160, body ≤ 4000, ≤ 8 тегів за старим правилом) — тому `manage_hub_notes`, `/api/mcp/board*`, стара сторінка та відкат на старий реліз працюють без змін | **implemented** | `backend/notities-vnext.ts` (spiegelSchrijf/spiegelWis), гачки в `backend/mcp-console.ts` |
 | API `/api/notities/*` (lijst з пагінацією/фільтрами/пошуком, een, nieuw, wijzig з 409 `VERSIE_VEROUDERD`, actie, revisies, revisie-herstel, mappen, import/voorbeeld, import/uitvoeren, export) через **ту саму поворітню бордера** (`bordLade`: простір prive/technisch з вкладки, RLS через `alsGebruiker`) | **implemented** | `backend/notities-vnext.ts`, реєстрація в `backend/index.ts` |
-| React UI за прапорцем `notities-vnext` (вимкнено): рейл (усі/сьогодні/закріплені/чеклісти/архів/кошик/інтеграції, папки, теги), картки/список, чипи, пошук, колонка «Сьогодні» (мінікалендар, чеклісти), редактор Markdown (панель справа / весь екран на телефоні, тулбар, перегляд, чеклісти, тип/колір/папка/теги/закріплення, чернетка в браузері, 409-конфлікт із порівнянням, історія з поверненням), імпорт з попереднім переглядом і дублікатами, експорт JSON/Markdown, нижня панель + «+» на телефоні | **implemented** | `src/notities/*`, перемикач у `src/HubNotities.tsx` |
+| React UI за прапорцем `notities-vnext` (вимкнено): рейл (усі/сьогодні/закріплені/чеклісти/архів/кошик/інтеграції, теки, теги), картки/список, чипи, пошук, колонка «Сьогодні» (мінікалендар, чеклісти), редактор Markdown (панель справа / весь екран на телефоні, тулбар, перегляд, чеклісти, тип/колір/тека/теги/закріплення, чернетка в браузері, 409-конфлікт із порівнянням, історія з поверненням), імпорт з попереднім переглядом і дублікатами, експорт JSON/Markdown, нижня панель + «+» на телефоні | **implemented** | `src/notities/*`, перемикач у `src/HubNotities.tsx` |
 | uk/nl, клавіатура (`/`, Ctrl+N, Ctrl+S, Esc, Tab-пастка), aria, тик-цілі ≥ 44 px, safe-area, світла/темна тема через токени | **implemented** | `src/notities/notities-vnext.css` |
 | Безпечний рендер Markdown (усе екранується, лише https-посилання, DOMPurify другим шаром) | **implemented** | `shared/notities-vnext-model.ts` → `markdownNaarHtml`, `src/notities/NotitieKaart.tsx` |
 | Екран «Інтеграції» з чесними станами (`beschikbaar` лише файли; `alleen-invoer`; `beperkt`; `gepland`) — жодної кнопки «Підключити» без конектора | **implemented** | `shared/notities-vnext-model.ts` → `NOTITIE_BRONNEN`, `src/notities/NotitiesBronnen.tsx` |
 
-Матриця інтеграцій: Markdown/TXT/JSON — **implemented**; Obsidian, Apple Notes, HONOR/HUAWEI, Samsung — **import-only** (через ті самі файли); Google Keep — **restricted** (Workspace); Google Calendar link, OneNote Graph, Evernote (MCP/ENEX), Notion, ColorNote — **planned** (конекторів немає, кнопок немає). Вкладення, бек-лінки, нагадування, OCR/голос, ШІ, спільне редагування, PWA offline — **не реалізовано** (P1/P2 за ТЗ).
+Матриця інтеграцій: Markdown/TXT/JSON — **implemented**; Obsidian, Apple Нотатки, HONOR/HUAWEI, Samsung — **import-only** (через ті самі файли); Google Зберігати — **restricted** (Workspace); Google Calendar link, OneNote Graph, Evernote (MCP/ENEX), Notion, ColorNote — **planned** (конекторів немає, кнопок немає). Вкладення, бек-лінки, нагадування, OCR/голос, ШІ, спільне редагування, PWA offline — **не реалізовано** (P1/P2 за ТЗ).
 
 ### Поведінка старої дороги після 0127
 
@@ -38,7 +38,7 @@
 
 | Набір | Результат |
 |---|---|
-| `tests/eenheid/notities-vnext-20261028.test.ts` (міграція 0 втрат ×2 ідемпотентно, дзеркало, стара дорога, простори/RLS, 409, ревізії, архів/папки/пошук/сьогодні/пагінація, імпорт/експорт/дублікати/XSS, модель, каталог) | **62/62 PASS** |
+| `tests/eenheid/notities-vnext-20261028.test.ts` (міграція 0 втрат ×2 ідемпотентно, дзеркало, стара дорога, простори/RLS, 409, ревізії, архів/теки/пошук/сьогодні/пагінація, імпорт/експорт/дублікати/XSS, модель, каталог) | **62/62 PASS** |
 | `tests/e2e/notities-vnext.e2e.ts` (справжній сервер + Postgres + nep-Google; прапорець вимк/увімк, створення Ctrl+N/Ctrl+S, перегляд з `<script>` як текст, конфлікт версій, `/`-пошук, архів, кошик/відновлення, імпорт з попереднім переглядом, інтеграції, 320/390/768/1024/1440 × світла/темна без горизонтальної прокрутки, мобільний редактор на весь екран, тик-цілі 44 px, 0 помилок консолі/сторінки/4xx/зовнішніх запитів) | **39/39 PASS** |
 | `ruimte-bord-github-20261020`, `hub-agenda-notities-20261019`, `dev-rechten-media-github-20261021` (регресія бордера/старої сторінки) | 45/45, 64/64, 67/67 PASS |
 | `npm run build` (kaart-controle, plaatsing-controle, zoek-ui-catalogus, l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle, vite, tech-bundels, extensie, server) | **PASS** (exit 0) |
@@ -48,7 +48,7 @@
 | `ontwerp-fundament` 31/34, `vlaggen` 53/54, `tech-bundels` 33/34, `account-wissen` 19/20 | **ті самі 4 збої на базовому архіві без моїх змін** (ruimtes.css/werkblad CSS, app-rol vlaggen, TechLaag, cloud_provider_policy_audit_m6) — жоден не стосується файлів нотаток |
 | Відкат (`deploy/notities-vnext-terugdraaien.sql`) | SOURCE-ONLY: не проганявся на живій БД; логіка: кошик → бордер, DROP трьох таблиць, зняття прапорця й запису 0127 |
 
-NOT TESTED: зовнішні інтеграції (їх немає в коді), RLS із ролями `mijnruimte_app/system` (у цьому середовищі одна суперроль; policies ідентичні 0019), screen reader, zoom 400 %, навантаження.
+НЕ TESTED: зовнішні інтеграції (їх немає в коді), RLS із ролями `mijnruimte_app/system` (у цьому середовищі одна суперроль; policies ідентичні 0019), screen reader, zoom 400 %, навантаження.
 
 ### План відкату
 

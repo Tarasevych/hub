@@ -8,7 +8,7 @@
 
 ## Що працює
 - Читання: список, потоки, мітки, пошук, період-межі, вкладення (`google-suite/*`, токен principal).
-- Архівування: `message/modify` для дії `archive` викликає `POST /gmail/v1/users/me/messages/{id}/modify` з `{"addLabelIds":[],"removeLabelIds":["INBOX"]}` (перевірено в коді; для корзини окремі `trash/untrash`). **Виправляти не довелось.**
+- Архівування: `message/modify` для дії `archive` викликає `POST /gmail/v1/users/me/messages/{id}/modify` з `{"addLabelIds":[],"removeLabelIds":["INBOX"]}` (перевірено в коді; для кошика окремі `trash/untrash`). **Виправляти не довелось.**
 - Відкладання листа «snooze» (`mail-snooze.ts`) існує як окрема функція.
 - Cron: `mail-provider-maintenance` (5 хв) і `google-suite-bplus-sync` (5 хв) відпрацьовують без помилок.
 

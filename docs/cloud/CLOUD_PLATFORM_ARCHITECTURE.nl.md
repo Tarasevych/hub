@@ -131,7 +131,7 @@ Delen is geblokkeerd totdat er vijandige isolatietests (Actor A / Actor B) besta
 
 ### Fase 1 — actief
 - synchrone, begrensde naamgeving en suggestie voor een bestaande werkruimte;
-- deterministische terugvaloptie (fallback);
+- deterministische terugvaloptie;
 - uitvoervalidatie en beslissingsvingerafdruk (`decision fingerprint`).
 
 ### Fase 2 — geplande worker-runtime
@@ -157,7 +157,7 @@ Een release wordt afgekeurd wanneer deze het volgende introduceert:
 - taalgebruik rond schaamte, achterstand, falen of reeksen (streaks);
 - meer dan één dominante eerstvolgende actie in de lage-energiemodus;
 - verlies van Resume na vernieuwen van de pagina;
-- ontoegankelijke labels, toetsenbordfocus of foutidentificatie;
+- ontoegankelijke etiketten, toetsenbordfocus of foutidentificatie;
 - gesimuleerde providerconnectiviteit;
 - verborgen fouten in de eigenaar-afbakening (`owner-scope`).
 
@@ -170,4 +170,4 @@ Cloud-ontwikkeling is geïsoleerd van de parallelle Mail-implementatie:
 - bewerkingen in gedeelde bestanden zijn uitsluitend contextrijke, chirurgische diffs;
 - de nieuwste toegepaste snapshot wordt vóór uitrol opnieuw ingelezen;
 - een gewijzigd gedeeld anker leidt tot een rebase/fail-safe en nooit tot het overschrijven van het hele bestand;
-- rollback vindt plaats naar het direct voorafgaande toegepaste Version ID.
+- rollback vindt plaats naar het direct voorafgaande toegepaste Versie ID.

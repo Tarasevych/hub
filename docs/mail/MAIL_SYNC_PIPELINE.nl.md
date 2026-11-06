@@ -2,7 +2,7 @@
 
 # Mail-synchronisatiepijplijn v1
 
-## 1. Toestandsmachine (State machine)
+## 1. Toestandsmachine
 
 ```text
 authorization_required
@@ -21,7 +21,7 @@ De status `connected` vereist: een geverifieerde provideridentiteit, een versleu
 2. De backend valideert de canonieke Mailsessie en het eigenaarschap van het account.
 3. De gereedheidspoort (readiness gate) controleert clientconfiguratie, versleutelingssleutel, witte lijst voor callbacks en het providerbeleid.
 4. Er wordt een gehashte, tijdelijk geldige provider-OAuth-status aangemaakt met PKCE en exacte scopes.
-5. Navigatie in hetzelfde tabblad of een goedgekeurde pop-up start de toestemmingsstroom bij de provider; er staat geen token of bewijs in de URL behalve de code en status van de provider.
+5. Navigatie in hetzelfde tabblad of een goedgekeurde pop-up start de toestemmingsstroom bij de aanbieder; er staat geen token of bewijs in de URL behalve de code en status van de provider.
 6. De callback claimt de status met een verwerkingslease (processing lease).
 7. De autorisatiecode wordt aan serverzijde ingewisseld.
 8. Er wordt gecontroleerd of de provideridentiteit overeenkomt met het beleid voor het geselecteerde of nieuwe account.
@@ -29,7 +29,7 @@ De status `connected` vereist: een geverifieerde provideridentiteit, een versleu
 10. Accountscopes, status en token worden atomair vastgelegd.
 11. De watch of het abonnement wordt aangemaakt.
 12. De initiële synchronisatie wordt in de wachtrij geplaatst.
-13. De gebruiker keert terug naar Mailaccounts (Mail Accounts) met een eerlijke voortgangsstatus.
+13. De gebruiker keert terug naar Mailaccounts met een eerlijke voortgangsstatus.
 14. De accountrevisie wordt via websocket gepubliceerd.
 
 Een fout vóór het vastleggen van het token laat het account op `authorization_required` staan; een fout ná het vastleggen van het token maar vóór de synchronisatie laat de status op `degraded`/`initial_sync` staan, nooit ten onrechte op `connected`.
@@ -72,10 +72,10 @@ De body van een pushmelding wordt niet behandeld als berichtinhoud. Dubbele of b
 - verloopdatum van de watch en de geschiedenis-basislijn (history baseline) opslaan;
 - één taak voor initiële synchronisatie aanmaken met de idempotentiesleutel van het account.
 
-### 4.2 Labels
+### 4.2 Etiketten
 
-- labels ophalen;
-- systeem- en gebruikerslabels van de provider koppelen;
+- etiketten ophalen;
+- systeem- en gebruikerslabels van de aanbieder koppelen;
 - upserten op `(account, provider_label_id)`;
 - onbekende providerlabels behouden in plaats van ze weg te gooien.
 
@@ -89,8 +89,8 @@ De body van een pushmelding wordt niet behandeld als berichtinhoud. Dubbele of b
 - voorkeur geven aan `text/plain`; HTML opschonen; externe afbeeldingen blokkeren;
 - bijlagemetadata vastleggen; bytes van grote bijlagen worden verwerkt via uitgestelde (lazy) taken;
 - bericht upserten op basis van provider-ID;
-- koppelen aan de conversatie (thread) van de provider;
-- labels toewijzen;
+- koppelen aan de conversatie van de aanbieder;
+- etiketten toewijzen;
 - aantallen en tijdstempel van het nieuwste bericht in de conversatie bijwerken.
 
 ### 4.4 Voltooiing
@@ -109,10 +109,10 @@ Herstartveiligheid: de taak kan een pagina opnieuw verwerken zonder dubbele beri
 Afgehandelde geschiedeniswijzigingen:
 
 - `messagesAdded`: volledige metadata en inhoud ophalen en upserten;
-- `messagesDeleted`: verwijdering bij provider / tombstone markeren;
+- `messagesDeleted`: verwijdering bij aanbieder / tombstone markeren;
 - `labelsAdded`: relatie upserten;
 - `labelsRemoved`: relatie verwijderen;
-- wijzigingen met alleen een bericht-ID: huidige status bij de provider ophalen.
+- wijzigingen met alleen een bericht-ID: huidige status bij de aanbieder ophalen.
 
 Cursorregels:
 
@@ -121,7 +121,7 @@ Cursorregels:
 - de cursor wordt niet vooruitgezet bij een mislukte pagina;
 - de uiteindelijke cursor gebruikt het gezaghebbende resultaat uit de geschiedenisrespons;
 - een ongeldige `startHistoryId` zet de herstelvlag en plant een begrensde her-bootstrap in;
-- periodieke terugvalsynchronisatie (fallback) draait zelfs wanneer push actief is.
+- periodieke terugvalsynchronisatie draait zelfs wanneer push actief is.
 
 ## 6. Levenscyclus van Gmail watch
 
@@ -158,7 +158,7 @@ Abonnementen worden vóór de verloopdatum verlengd. Levenscyclusgebeurtenissen 
 
 ## 8. Contract van de MIME-parser
 
-Invoer wordt als onvertrouwd (untrusted) beschouwd. Limieten:
+Invoer wordt als onvertrouwd beschouwd. Limieten:
 
 - maximaal aantal ruwe berichtbytes;
 - maximale MIME-diepte;
@@ -175,20 +175,20 @@ Invoer wordt als onvertrouwd (untrusted) beschouwd. Limieten:
 
 Het parsinresultaat slaat waarschuwingen op. Een beschadigde berichtinhoud gooit de basisgegevens zoals afzender, onderwerp, datum en provideridentiteit niet weg.
 
-## 9. Conversatiebouwer (Thread builder)
+## 9. Conversatiebouwer
 
 De primaire sleutel is de conversatie- of thread-ID van de provider. De interne bouwer:
 
 - voert een upsert uit van de conversatie;
 - koppelt berichten;
 - berekent het nieuwste tijdstempel, het aantal ongelezen/totale berichten en de deelnemers;
-- behoudt de semantiek van de provider;
+- behoudt de semantiek van de aanbieder;
 - voegt niet-gerelateerde providerconversaties nooit heuristisch samen;
 - handmatig geïmporteerde berichten kunnen een afzonderlijke synthetische conversatie-ID gebruiken.
 
-## 10. Labelkoppelaar (Label mapper)
+## 10. Labelkoppelaar
 
-Interne labels behouden de identiteit van de provider en bieden genormaliseerde mogelijkheden:
+Interne etiketten behouden de identiteit van de aanbieder en bieden genormaliseerde mogelijkheden:
 
 - postvak IN (inbox);
 - ongelezen/gelezen (unread/read);
@@ -199,9 +199,9 @@ Interne labels behouden de identiteit van de provider en bieden genormaliseerde 
 - met ster/vlag (starred/flagged);
 - gebruikerslabel, map of categorie.
 
-Schrijfacties naar de provider zijn adapteropdrachten met idempotentie en audit. Triage in de UI staat los van providerlabels, tenzij de gebruiker expliciet een koppelingsregel inschakelt.
+Schrijfacties naar de aanbieder zijn adapteropdrachten met idempotentie en audit. Triage in de UI staat los van providerlabels, tenzij de gebruiker expliciet een koppelingsregel inschakelt.
 
-## 11. Bijlagepijplijn (Attachment pipeline)
+## 11. Bijlagepijplijn
 
 1. Metadata opslaan tijdens het parsen van het bericht.
 2. Beleid bepaalt directe (eager) versus uitgestelde (lazy) download.
@@ -223,7 +223,7 @@ Schrijfacties naar de provider zijn adapteropdrachten met idempotentie en audit.
 - conservatieve triagesuggestie;
 - inhoudshash.
 
-### 12.2 AI-verwerkingsslag (AI pass)
+### 12.2 AI-verwerkingsslag
 
 Uitsluitend op gewijzigde, opgeschoonde en begrensde tekst:
 
@@ -243,7 +243,7 @@ Uitsluitend op gewijzigde, opgeschoonde en begrensde tekst:
 - zachte herinneringen gebruiken rustige drempelwaarden;
 - geen rode achterstandstellers.
 
-## 13. Verzendpijplijn (Send pipeline)
+## 13. Verzendpijplijn
 
 ```text
 user edits draft
@@ -261,9 +261,9 @@ user edits draft
 → audit and publish revision
 ```
 
-Een time-out na een provideraanroep is dubbelzinnig: de worker controleert eerst het bericht en het idempotentiebewijs bij de provider voordat een nieuwe poging wordt ondernomen. Er vindt nooit automatische verzending plaats vanuit AI, herinneringen, achtergrondwachtrijen of snelkoppelingen voor lage energie.
+Een time-out na een provideraanroep is dubbelzinnig: de achtergrondproces controleert eerst het bericht en het idempotentiebewijs bij de aanbieder voordat een nieuwe poging wordt ondernomen. Er vindt nooit automatische verzending plaats vanuit AI, herinneringen, achtergrondwachtrijen of snelkoppelingen voor lage energie.
 
-## 14. Beleid voor herhaling en rate-limits (Retry and rate-limit policy)
+## 14. Beleid voor herhaling en rate-limits
 
 - providerspecifieke classificatie (`401`, `403`, `404 cursor`, `409`, `429`, `5xx`);
 - exponentiële backoff + jitter;
@@ -271,10 +271,10 @@ Een time-out na een provideraanroep is dubbelzinnig: de worker controleert eerst
 - gelijktijdigheidslimieten op accountniveau;
 - vergrendeling (lock) bij tokenverversing;
 - lichte synchronisatie scheiden van AI-verrijking;
-- verouderde UI blijft leesbaar tijdens een storing bij de provider;
+- verouderde UI blijft leesbaar tijdens een storing bij de aanbieder;
 - dead-letter-records bewaren alleen een veilige foutcode, nooit berichtinhoud of tokens.
 
-## 15. Herstelmatrix (Recovery matrix)
+## 15. Herstelmatrix
 
 | Storing | Herstelactie |
 |---|---|
@@ -284,20 +284,20 @@ Een time-out na een provideraanroep is dubbelzinnig: de worker controleert eerst
 | Verlopen Graph `deltaLink` | Her-bootstrap op mapniveau |
 | Ingetrokken refresh-token | Status `reauth_required` |
 | Watch/abonnement verlopen | Opnieuw aanmaken; gegevens behouden |
-| Fout bij MIME-parsen | Record met alleen metadata + waarschuwing |
+| Fout bij MIME-parsen | Item met alleen metadata + waarschuwing |
 | AI niet beschikbaar | Deterministische geciteerde samenvatting blijft beschikbaar |
 | Crash van wachtrijworker | Verlopen van lease en nieuwe poging |
-| Verzending onzeker | Afstemming met provider, niet blind opnieuw proberen |
+| Verzending onzeker | Afstemming met aanbieder, niet blind opnieuw proberen |
 | Ontkoppelen | Abonnement stoppen, token intrekken/verwijderen, taken opschonen |
 
-## 16. Waarneembaarheid (Observability)
+## 16. Waarneembaarheid
 
 Per account:
 
 - laatste push en laatste terugvalsynchronisatie;
 - verloopdatum van watch/abonnement;
 - ouderdom van de cursor;
-- wachtrijdiepte, herhaalpogingen en vastgelopen taken (dead jobs);
+- wachtrijdiepte, herhaalpogingen en vastgelopen taken;
 - aantal gewijzigde berichten;
 - parsinwaarschuwingen;
 - resultaat van tokenverversing;

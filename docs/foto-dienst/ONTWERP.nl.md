@@ -24,7 +24,7 @@ Menu: `paginaVerborgen()` (src/foto/foto-vlaggen.ts) filtert in `CanoniekOmlijst
 `public/canonical-service.js` (de route moet bestaan), maar is verborgen zolang beide vlaggen UIT staan.
 
 ## 3. Model
-Records (geen nieuwe tabellen): `foto_media_v1`, `foto_albums_v1`, `foto_import_v1`. Bytes: bestaande opslag, pad
+Items (geen nieuwe tabellen): `foto_media_v1`, `foto_albums_v1`, `foto_import_v1`. Bytes: bestaande opslag, pad
 `<cloudvoorvoegsel>/foto-<uuid>.<ext>`. Twee soorten items:
 - **eigen** — kopie op deze server (upload, archiefimport, of «Зберегти власну копію» van een cloudfoto);
 - **cloud** — virtueel: verwijst naar `cloud_items_v1`, geen kopie. Beschikbaarheid volgt de cloud (prullenbak = niet beschikbaar).
@@ -37,13 +37,13 @@ voegt albums toe en vult ontbrekende metadata aan; overschrijft nooit.
 |---|---|---|
 | Mijn Ruimte (upload) | live | — |
 | Хмарне сховище | live (virtueel, EXIF en sha door de server gelezen bij indexeren, ≤64 MB, ≤300 per keer) | — |
-| Google Photos | kiezer (bestaande Picker → cloud → Фото) + Takeout-import (datum, plaats, beschrijving, albums uit JSON) | automatische sync van de hele bibliotheek (Google staat dat niet toe) |
+| Google Photos | kiezer (bestaande Picker → cloud → Фото) + Takeout-import (datum, plaats, beschrijving, albums uit JSON) | automatische synchronisatie van de hele bibliotheek (Google staat dat niet toe) |
 | Google Drive | Takeout/ZIP/map | live indexeren via bestaande Google-koppeling: gepland |
 | OneDrive, Dropbox | map/ZIP | live: gepland (sleutels van de eigenaar nodig) |
 | iCloud | archief (privacy.apple.com) | live: geen publieke API |
 | Nextcloud, NAS | map/ZIP | WebDAV/SMB: gepland |
 | Instagram, Facebook | archief (JSON-export, Meta-mojibake hersteld) | API voor persoonlijke accounts bestaat niet meer |
-| ВКонтакте, Однокласники, Pinterest | archief/map (album = mapnaam, datum uit EXIF) | API: gepland/niet |
+| Pinterest, archieven van sociale media | archief/map (album = mapnaam, datum uit EXIF) | API: gepland/niet |
 | Flickr | archief (titel, datum, tags, albums, geo) | API: gepland |
 | Telegram | Desktop-export JSON (chat = album, datum, tekst) | — |
 

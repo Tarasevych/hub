@@ -52,7 +52,7 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
 | `backup-maken.sh` | `pg_dump` (custom-formaat) en uploads-tar, rechtstreeks door `age -R` (alleen de publieke sleutel staat op de VM) → `database.dump.age`, `uploads.tar.gz.age` + `info.txt`, `SHA256SUMS`, `KLAAR` in `/srv/backups/mijn-ruimte/<datum>/`; bewaart 7 dagen op de VM. |
 | `reservekopie-ophalen.ps1` | Windows-host: haalt de nieuwste versleutelde back-up via SSH op naar `R:\mijn-ruimte-reservekopie\vm-back-ups\` (weigert onversleutelde) en start daarna `cloud/cloud-reservekopie.ps1` (Google Drive; `-ZonderCloud` slaat dat over). |
 | `HERSTEL.md` | Noodplan: terugzetten vanaf GitHub + versleutelde back-up + age-herstelsleutel. |
-| `cloud/` | Windows-host: `cloud-reservekopie.ps1` zet dagelijks (na het ophalen, zelfde taak 09:00) alleen `.age` + SHA256 naar Google Drive met rclone (scope `drive.file`, map `mijn-ruimte-reservekopie`; 30 dagelijks + 12 maandelijks; herstelset als `herstelset-<stempel>.zip.age`). `cloud-koppelen.ps1` = eenmalige Google-login; `cloud-wachtwoord.ps1` = DPAPI-wachtwoord voor de versleutelde rclone.conf. Zie `cloud/UITLEG-LEESMIJ.txt`. |
+| `cloud/` | Windows-host: `cloud-reservekopie.ps1` zet dagelijks (na het ophalen, zelfde taak 09:00) alleen `.age` + SHA256 naar Google Drive met rclone (bereik `drive.file`, map `mijn-ruimte-reservekopie`; 30 dagelijks + 12 maandelijks; herstelset als `herstelset-<stempel>.zip.age`). `cloud-koppelen.ps1` = eenmalige Google-login; `cloud-wachtwoord.ps1` = DPAPI-wachtwoord voor de versleutelde rclone.conf. Zie `cloud/UITLEG-LEESMIJ.txt`. |
 | `herstelset/` | Offline herstelset voor een externe schijf: handleiding (UA/NL), `herstel-vm.sh` (stappen op een nieuwe VM), `ontsleutel-naar-vm.ps1` (age-pijp pc→VM zonder klare tekst op schijf), `nieuwe-vm-maken.ps1`, `controleer-herstelset.ps1`, `herstelset-bijwerken.ps1`. |
 | `vtpm/` | Automatisch LUKS-ontgrendelen via de Hyper-V-vTPM: `stap1-admin.ps1` (host, admin) en `luks-tpm-ontgrendelen.sh` (clevis tpm2, PCR 7; wachtwoordslot blijft). |
 | `cloudflared.service` | Gehardende unit voor de tunnel (`tunnel run` met `/etc/cloudflared/config.yml`). |
@@ -66,7 +66,7 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
 | `geheimen-register.sh` | Register van alle geheimen zonder waarden (naam, doel, waar, vingerafdruk, datum, wie roteert): `mijn-ruimte-installeer geheimen-register --uit /etc/mijn-ruimte/GEHEIMEN-REGISTER.md`. Sjabloon voor de eigenaar: `GEHEIMEN-REGISTER.md`. |
 | `oauth-client-zetten.sh` | OAuth-client van Google of Microsoft in `geheimen.env` zetten met VERBORGEN invoer (terminal) of via stdin (pc-script), formaatcontrole, atomisch schrijven, herstart + `/__gezondheid`-controle: `mijn-ruimte-installeer oauth-client google|microsoft`. `google-login-zetten.sh` (oude naam) verwijst ernaar. De waarden zelf staan in admin → Integraties → Koppelwizard. |
 | `google-login-zetten.sh` | Installeren als `/usr/local/sbin/google-login-zetten` (`install -o root -g root -m 0755`). Leest twee regels van stdin (client-ID, client-secret), controleert het formaat, zet `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` in `geheimen.env` (eigenaar/rechten blijven, atomisch via tijdelijk bestand + `mv`), verwijdert een afwijkende `GOOGLE_SUITE_CLIENT_ID` (die wint anders), herstart `mijn-ruimte`, eist `is-active` + HTTP 200 voor `Host: hub.tarasevych.com` op `127.0.0.1:8080`. Back-up (root, 0600) wordt na succes geshred; bij falen oud bestand terug + herstart. Toont nooit waarden. |
-| `../scripts/google-login-instellen.ps1` | Windows-pc: vraagt Client ID (zichtbaar) en Client secret (`Read-Host -AsSecureString`) en stuurt ze via de **stdin** van `ssh -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver -o BatchMode=yes beheer@<VM-IP> sudo -n /usr/local/sbin/google-login-zetten`; toont alleen OK/mislukt. Vereist dat `beheer` dit zonder wachtwoord mag (`sudo -n`, zoals in `HERSTEL.md`). |
+| `../scripts/google-login-instellen.ps1` | Windows-pc: vraagt Client ID (zichtbaar) en Client geheim (`Read-Host -AsSecureString`) en stuurt ze via de **stdin** van `ssh -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver -o BatchMode=yes beheer@<VM-IP> sudo -n /usr/local/sbin/google-login-zetten`; toont alleen OK/mislukt. Vereist dat `beheer` dit zonder wachtwoord mag (`sudo -n`, zoals in `HERSTEL.md`). |
 
 ## Opties (omgevingsvariabelen van de scripts)
 Dit zijn geen app-geheimen (die staan in `ENV-VARS.md`), alleen instellingen van de deployscripts:
@@ -130,7 +130,7 @@ regels: `shared/merk-bron.ts`; tests: `tests/eenheid/merk-bron-20261021.test.ts`
 
 ## Tunnel (Cloudflare) — ingericht op 3 okt 2026
 Tunnel `mijn-ruimte`, ID `a176c08b-29e7-47b0-95d9-9ec9383572f2` (het ID is niet geheim). Alle tien hostnamen zijn
-CNAME's naar `<ID>.cfargotunnel.com` (aangemaakt met `cloudflared tunnel route dns`; er bestonden nog geen records).
+CNAME's naar `<ID>.cfargotunnel.com` (aangemaakt met `cloudflared tunnel route dns`; er bestonden nog geen items).
 
 Op de VM:
 - `/etc/cloudflared/config.yml` (root, 0644): ingress zoals `deploy/cloudflared-config.yml`, ingevuld met het ID.
@@ -153,7 +153,7 @@ for h in hub id mail cloud ai github huis api admin dashboard; do cloudflared tu
 install -m 0644 deploy/cloudflared.service /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now cloudflared
 shred -u /root/.cloudflared/cert.pem
 ```
-Aanbevolen in het Cloudflare-dashboard: SSL/TLS **Full**, **Always Use HTTPS** aan (nu antwoordt `http://` nog met 200;
+Aanbevolen in het Cloudflare-dashboard: SSL/TLS **Full**, **Altijd Use HTTPS** aan (nu antwoordt `http://` nog met 200;
 HSTS van de app dekt browsers pas na het eerste https-bezoek). Daarna in Google Cloud de redirect-URI's op
 `https://id.tarasevych.com/…` zetten (ENV-VARS.md).
 
@@ -165,7 +165,7 @@ terugdraaien, prestaties), `docs/zoek/ZOEK-BEVEILIGING.md` (isolatie), `docs/zoe
 Omgevingsvariabelen `ZOEK_*`: `ENV-VARS.md`. De index is afgeleide data: `TRUNCATE app.zoek_objecten` is altijd veilig.
 
 ## Rendercontrole (22.10.2026)
-HTTP 200 is geen bewijs dat een pagina rendert (release 20261021-221718: «Buffer is not defined», elke admin-pagina wit). Na het activeren
+HTTP 200 is geen bewijs dat een pagina rendert (release 20261021-221718: «Buffer is niet defined», elke admin-pagina wit). Na het activeren
 opent de installer de sleutelpagina's in een headless Chromium op de server (wegwerpkopie van de release op een eigen database
 `mijnruimte_rook_<stempel>`, testeigenaar + technisch profiel) en importeert elke bundel; kapot → automatisch terug naar de vorige release
 (gebeurtenis `ROOK_TERUGGEDRAAID` op «Updates»). Zonder browser alleen de modulecontrole in Node, eerlijk gemeld als «renderen niet gecontroleerd».

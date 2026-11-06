@@ -62,8 +62,8 @@ Worden nooit geëxporteerd:
   ```
   De gebruiker `wazuh` moet in de groep `adm` zitten.
 - **Promtail** (naar Loki): `job_name: mijn-ruimte`, `__path__: /var/log/mijn-ruimte/audit.ndjson`, `pipeline_stages: [json: {expressions: {action: event.action}}]`.
-- **Loki rechtstreeks**: `--loki http://127.0.0.1:3100`; labels `app="mijn-ruimte"`, `bron="audit"`, `categorie=<type>`.
-  Query: `{app="mijn-ruimte"} | json | profiel != ""` — acties vanuit een technisch profiel.
+- **Loki rechtstreeks**: `--loki http://127.0.0.1:3100`; etiketten `app="mijn-ruimte"`, `bron="audit"`, `categorie=<type>`.
+  Zoekopdracht: `{app="mijn-ruimte"} | json | profiel != ""` — acties vanuit een technisch profiel.
 
 ## Waarom zo
 - Geen externe clouds (BYOS): export vindt uitsluitend op deze machine plaats; doorsturen is de keuze van de eigenaar en diens agent.

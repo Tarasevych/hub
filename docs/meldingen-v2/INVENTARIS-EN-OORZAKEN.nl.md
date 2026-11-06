@@ -45,7 +45,7 @@ Vastgesteld uit de code; de live-aantallen zelf kon ik niet nameten (geen toegan
 - **Tellers:** bel = ongelezen ITEMS met modus prioriteit/normaal; aandacht apart.
 - **Leveringsregels** (`shared/meldingen-v2/beleid.ts`, `backend/meldingen-regels.ts`): per dienst/account/categorie, 4 modi, Не турбувати (max. 7 dagen), server-side per gebruiker (`melding_regels_v1`, RLS-groep voorkeuren, 0143). Beschermd: beveiliging/inzage (kritieke types), bevestigingsverzoeken, verplicht.
 - **Technisch:** ruis (herhaalpogingen, extensie-teksten, interne codes, agent-service) gaat niet in het gewone centrum; een fout met actie blijft, met technische details in uitklap. Teller verwijst naar de bestaande technische lade.
-- **Bron:** aanbieder/account alleen als de bron ze opgeeft; adres gemaskeerd (p…@gmail.com) tenzij label of «Показувати повні адреси».
+- **Bron:** aanbieder/account alleen als de bron ze opgeeft; adres gemaskeerd (p…@gmail.com) tenzij etiket of «Показувати повні адреси».
 
 ## 4. Grenzen (eerlijk)
 

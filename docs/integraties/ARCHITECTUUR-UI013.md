@@ -1,52 +1,52 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ARCHITECTUUR-UI013.uk.md) · [🇳🇱 **Nederlandse versie**](./ARCHITECTUUR-UI013.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# UI-013 — verspreid verbindingssysteem: architectuur, oorzaken en plan (fase 1)
+# UI-013 — розподілена система підключень: архітектура, причини та план (фаза 1)
 
-## Eén model (etappe B)
-- **Aanbieders/posities**: `shared/integraties-catalogus.ts` (160, ongewijzigd) = enige bron van waarheid voor wat er bestaat.
-- **Register**: `shared/integraties-register.ts` — per positie: `uitvoering` (werkend/basis/geen) met bewijsbestanden, officiële wijze,
-  vereisten, operaties, nog te doen, beperking van de aanbieder, doeldienst, prioriteit. Inventaris: `docs/integraties/INVENTARIS.md` (gegenereerd).
-- **Accounts/stand**: bestaande serverroutes, geen nieuwe tokenopslag: `POST /api/owner/admin/integraties/stand` (kluis, AI-agenten, beleid,
-  laatste controles), nieuw `POST /api/owner/admin/integraties/google-stand` (alleen de canonieke Google-grant), `…/controleer`, `…/loskoppelen`.
-- **Groep** (`groepVan`): fout → «Потребують уваги»; verbonden → «Підключені»; sleutel aanwezig maar niet gecontroleerd → «Потребують налаштування»;
-  klaar of werkende stroom elders → «Можна підключити»; basis aanwezig → «Потребують налаштування»; anders «У розробці». Nooit «Працює».
-- **Hoofdactie** (`actieVan`): Підключити / Керувати / Відновити / Налаштувати / План (in plaats van de uitgeschakelde «Скоро»).
-- **Levenscyclus** (doel): Доступна → Налаштовується → Авторизується → Перевіряється → Підключена → Працює / Потребує уваги / Відключена.
-  Fase 1 dekt: Доступна, Підключена (gelezen), Потребує уваги (fout), Налаштовується (sleutel zonder controle). De rest volgt met de wizard (fase 3).
-- **Synchronisatie tussen tabbladen**: `BroadcastChannel('mr-integraties-stand')` — na elk vernieuwen lezen andere open catalogustabbladen opnieuw;
-  het bericht bevat geen gegevens.
+## Єдина модель (етап B)
+- **Провайдери/позиції**: `shared/integraties-catalogus.ts` (160, без змін) = єдине джерело правди про те, що існує.
+- **Реєстр**: `shared/integraties-register.ts` — для кожної позиції: `uitvoering` (`werkend`/`basis`/`geen`) із файлами-доказами, офіційним способом,
+  вимогами, операціями, що ще зробити, обмеженням провайдера, цільовою службою, пріоритетом. Інвентар: `docs/integraties/INVENTARIS.md` (згенерований).
+- **Акаунти/стан**: наявні маршрути сервера, без нового сховища токенів: `POST /api/owner/admin/integraties/stand` (сховище ключів, ШІ-агенти, політика,
+  останні перевірки), новий `POST /api/owner/admin/integraties/google-stand` (лише канонічний Google-грант), `…/controleer`, `…/loskoppelen`.
+- **Група** (`groepVan`): помилка → «Потребують уваги»; підключено → «Підключені»; ключ є, але не перевірений → «Потребують налаштування»;
+  готово або робочий потік в іншому місці → «Можна підключити»; є база → «Потребують налаштування»; інакше «У розробці». Ніколи «Працює».
+- **Головна дія** (`actieVan`): Підключити / Керувати / Відновити / Налаштувати / План (замість неактивної кнопки «Скоро»).
+- **Життєвий цикл** (ціль): Доступна → Налаштовується → Авторизується → Перевіряється → Підключена → Працює / Потребує уваги / Відключена.
+  Фаза 1 покриває: Доступна, Підключена (прочитано), Потребує уваги (помилка), Налаштовується (ключ без перевірки). Решта — з майстром (фаза 3).
+- **Синхронізація між вкладками**: `BroadcastChannel('mr-integraties-stand')` — після кожного оновлення інші відкриті вкладки каталогу перечитують стан;
+  повідомлення не містить жодних даних.
 
-## Oorzaak «Стан Google-підключень не вдалося прочитати» (BUG, direct opgelost, geen vlag)
-Vastgesteld uit de code (niet in productie gereproduceerd — geen toegang tot *.tarasevych.com, bewust):
-1. De catalogus las de Google-stand uit `POST /api/owner/admin/diagnostics` (backend/index.ts).
-2. Die route doet `Promise.all([mailPlatformStatus(), googleSuiteOnboardingSnapshot(), adminLatest(cron)])` plus een auditregel.
-3. `mailPlatformStatus()` → `mailEndpointVerification()` doet **externe HTTP-probes** naar het Gmail-push- en Microsoft-webhookadres (met time-out)
-   en **schrijft** in `mail_endpoint_verifications_v1`. Een time-out, een geweigerde schrijfactie (RLS/rol) of een ontbrekende tabel laat de hele
-   `Promise.all` falen → HTTP 500 → de catalogus toonde «Google onleesbaar», ook als de Google-grant zelf leesbaar was.
-4. Oplossing: aparte, lichte route `/api/owner/admin/integraties/google-stand` (admin.read) die alleen `googleSuiteOnboardingSnapshot()` aanroept,
-   zonder externe aanroep en zonder schrijven. Faalt ook die, dan valt de pagina terug op de diagnostiek, en de melding toont nu de code
-   (`GOOGLE_STAND_ONLEESBAAR` / `GOOGLE_STAND_ROUTE_FOUT`) zodat de echte oorzaak in productie zichtbaar wordt.
-Niet bewezen: welk van de drie onderdelen in productie precies faalt. Dat toont de code na uitrol, of de serverlog (`[admin-integraties] google-stand`).
+## Причина «Стан Google-підключень не вдалося прочитати» (BUG, виправлено одразу, без прапорця)
+Встановлено з коду (не відтворено на продакшені — доступу до `*.tarasevych.com` немає свідомо):
+1. Каталог читав стан Google із `POST /api/owner/admin/diagnostics` (`backend/index.ts`).
+2. Цей маршрут виконує `Promise.all([mailPlatformStatus(), googleSuiteOnboardingSnapshot(), adminLatest(cron)])` плюс запис аудиту.
+3. `mailPlatformStatus()` → `mailEndpointVerification()` робить **зовнішні HTTP-перевірки** на адреси Gmail-push і Microsoft-webhook (із таймаутом)
+   і **пише** в `mail_endpoint_verifications_v1`. Таймаут, відхилений запис (RLS/роль) або відсутня таблиця призводять до падіння всього
+   `Promise.all` → HTTP 500 → каталог показував «Google не вдалося прочитати», навіть коли сам Google-грант читався без проблем.
+4. Рішення: окремий легкий маршрут `/api/owner/admin/integraties/google-stand` (`admin.read`), який викликає лише `googleSuiteOnboardingSnapshot()`,
+   без зовнішніх запитів і без запису в БД. Якщо впаде і він, сторінка повертається до діагностики, а повідомлення тепер показує код
+   (`GOOGLE_STAND_ONLEESBAAR` / `GOOGLE_STAND_ROUTE_FOUT`), щоб справжня причина на продакшені була видимою.
+Не доведено: яка саме з трьох частин падає на продакшені. Це покаже код після розгортання або серверний журнал (`[admin-integraties] google-stand`).
 
-## Gevonden tegenstrijdigheden (audit, etappe A)
-- IMAP/SMTP, iCloud Mail en Yahoo Mail hebben een **volledige** stroom (backend/mail-imap.ts: inloggen IMAP+SMTP vóór opslaan, AES-GCM, controleren,
-  ontkoppelen) maar de catalogus noemde ze «Скоро». In de nieuwe weergave staan ze bij «Можна підключити» met een link naar Пошта → Акаунти.
-- OneDrive/Dropbox/Box: leesadapter bestaat (cloud-verbinding-m4-*), alleen app-sleutels van de aanbieder ontbreken → «Потребують налаштування».
-- Apple Calendar/Fastmail: CalDAV-lezen bestaat (backend/agenda-caldav.ts); schrijven niet.
-- Nextcloud/S3: basis in cloud-integratie-routes; geen wizard/controle.
-- Twee catalogi naast elkaar: admin `/mappen` (160) en cloud-vnext `AANBIEDERS` (shared/cloud-vnext-model.ts, opslag). Fase 2: cloud-vnext leest
-  zijn stand uit het register i.p.v. eigen `stand`-velden.
+## Знайдені суперечності (аудит, етап A)
+- IMAP/SMTP, iCloud Mail та Yahoo Mail мають **повний** потік (`backend/mail-imap.ts`: вхід IMAP+SMTP перед збереженням, AES-GCM, перевірка,
+  від'єднання), але каталог називав їх «Скоро». У новому поданні вони стоять у «Можна підключити» з посиланням на Пошта → Акаунти.
+- OneDrive/Dropbox/Box: адаптер читання існує (`cloud-verbinding-m4-*`), бракує лише ключів застосунку від провайдера → «Потребують налаштування».
+- Apple Calendar/Fastmail: читання CalDAV існує (`backend/agenda-caldav.ts`); запису немає.
+- Nextcloud/S3: основа є в `cloud-integratie-routes`; немає майстра/перевірки.
+- Два каталоги поруч: адмінка `/mappen` (160) і `cloud-vnext` `AANBIEDERS` (`shared/cloud-vnext-model.ts`, сховище). Фаза 2: `cloud-vnext` читає
+  свій стан із реєстру замість власних полів `stand`.
 
-## Geprioriteerd plan
-| Prio | Wat | Afhankelijkheid |
+## Пріоритезований план
+| Пріо | Що | Залежність |
 |---|---|---|
-| 1 | IMAP-stand (mail_imap) in `/integraties/stand`, zodat IMAP/iCloud/Yahoo «Підключені» kunnen worden | geen (code-only) |
-| 1 | Nextcloud/WebDAV-wizard + PROPFIND-controle, S3 + ListObjectsV2-controle (testen tegen lokale WebDAV/MinIO) | geen |
-| 1 | Fastmail aan de IMAP-aanbieders | geen |
-| 1 | OneDrive/Dropbox/Box: wizard → bestaande kluis | app-sleutels van de eigenaar |
-| 1 | Outlook-mail/agenda via Graph | Microsoft-app-registratie |
-| 2 | Gedeelde `IntegratieStrook` op themapagina's (Пошта, Хмара, Фото, Агенда, ШІ, Будинок, GitHub) op dit register | — |
-| 2 | Wizard: stappen Kies → Wijze → Autorisatie → Controle → Rechten → Klaar, met terug/annuleren/herstel | — |
-| 2 | MQTT/Zigbee2MQTT-adapter voor Huis (testen tegen lokale broker) | broker van de eigenaar |
-| 2 | Periodieke controle met frequentiegrens (cron, 1×/uur per koppeling) | — |
-| 3 | WhatsApp, Instagram/Facebook, X, TikTok, Signal, iCloud Drive, HomeKit | betaald/app-review/geen publieke API (zie register) |
+| 1 | Стан IMAP (`mail_imap`) у `/integraties/stand`, щоб IMAP/iCloud/Yahoo могли ставати «Підключені» | немає (лише код) |
+| 1 | Майстер Nextcloud/WebDAV + перевірка PROPFIND, S3 + перевірка ListObjectsV2 (тести проти локальних WebDAV/MinIO) | немає |
+| 1 | Додати Fastmail до провайдерів IMAP | немає |
+| 1 | OneDrive/Dropbox/Box: майстер → наявне сховище ключів | ключі застосунку від власника |
+| 1 | Пошта/календар Outlook через Graph | реєстрація застосунку Microsoft |
+| 2 | Спільна смужка `IntegratieStrook` на тематичних сторінках (Пошта, Хмара, Фото, Календар, ШІ, Будинок, GitHub) на базі цього реєстру | — |
+| 2 | Майстер: кроки Вибір → Спосіб → Авторизація → Перевірка → Дозволи → Готово, з поверненням/скасуванням/відновленням | — |
+| 2 | Адаптер MQTT/Zigbee2MQTT для Розумного будинку (тести проти локального брокера) | брокер власника |
+| 2 | Періодична перевірка з обмеженням частоти (cron, 1×/год на підключення) | — |
+| 3 | WhatsApp, Instagram/Facebook, X, TikTok, Signal, iCloud Drive, HomeKit | платний API / перевірка застосунку / немає публічного API (див. реєстр) |

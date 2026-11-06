@@ -22,7 +22,7 @@ Schakel «Ontwikkelaarsmodus» niet uit: Chrome schakelt uitgepakte extensies da
 
 ## Technische details en vergelijking van methoden
 
-**Oorzaak (bewezen mechanisme).** Een uitgepakte extensie bestaat in Chrome alleen als verwijzing naar haar map. Ontbreekt die map bij de start van Chrome, dan haalt Chrome de extensie stil uit `chrome://extensions` (het record blijft in `Preferences` staan, de extensie is weg). Getest in Google Chrome 156 op Linux met een echte «Uitgepakt laden» via het mapvenster: vaste map → 5+ herstarts aanwezig; map weg → na de eerste herstart volledig verdwenen. Ontwikkelaarsmodus uit → extensie UITGESCHAKELD (`unsupportedDeveloperExtension`), niet verwijderd: dat verklaart het «helemaal weg» dus niet.
+**Oorzaak (bewezen mechanisme).** Een uitgepakte extensie bestaat in Chrome alleen als verwijzing naar haar map. Ontbreekt die map bij de start van Chrome, dan haalt Chrome de extensie stil uit `chrome://extensions` (het item blijft in `Preferences` staan, de extensie is weg). Getest in Google Chrome 156 op Linux met een echte «Uitgepakt laden» via het mapvenster: vaste map → 5+ herstarts aanwezig; map weg → na de eerste herstart volledig verdwenen. Ontwikkelaarsmodus uit → extensie UITGESCHAKELD (`unsupportedDeveloperExtension`), niet verwijderd: dat verklaart het «helemaal weg» dus niet.
 
 Het id is stabiel: `key` staat in `manifest.json` → altijd `ofpffonakgjioahgfejmiblfmbkobmmi`. Een tweede map met hetzelfde id (bv. het pakket «diagnose» uit Downloads) vervangt de registratie van de eerste map.
 
@@ -30,7 +30,7 @@ Het id is stabiel: `key` staat in `manifest.json` → altijd `ofpffonakgjioahgfe
 | Methode | Werkt op de pc van de eigenaar? | Opmerking |
 |---|---|---|
 | Uitgepakt laden uit een VASTE lokale map (`%LOCALAPPDATA%\MijnRuimte\extensie`) | ja | aanbevolen; ontwikkelaarsmodus moet aan blijven |
-| Eigen CRX + `ExtensionInstallForcelist` (register) | **nee**, tenzij de pc lid is van een AD-/Entra-domein of ingeschreven in Chrome Enterprise Core | Chrome-beleidsdefinitie: «On Microsoft Windows instances, apps and extensions from outside the Chrome Web Store can only be forced installed if the instance is joined to … Active Directory … Azure Active Directory or enrolled in Chrome Enterprise Core.» |
+| Eigen CRX + `ExtensionInstallForcelist` (register) | **nee**, tenzij de pc lid is van een AD-/Entra-domein of ingeschreven in Chrome Enterprise Core | Chrome-beleidsdefinitie: «On Microsoft Windows instances, apps en extensions uit outside de Chrome Web Store can alleen be forced installed if de instance is joined to … Active Directory … Azure Active Directory or enrolled in Chrome Enterprise Core.» |
 | Chrome Web Store (ook «verborgen/unlisted») | ja, na publicatie | vraagt ontwikkelaarsaccount en beoordeling; `debugger` maakt de beoordeling strenger |
 | CRX slepen naar `chrome://extensions` | nee | op Windows schakelt Chrome niet-Store-CRX's uit |
 

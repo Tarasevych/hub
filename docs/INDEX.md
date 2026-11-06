@@ -32,7 +32,7 @@
 | **Змінні оточення (`ENV-VARS`)** | Повний реєстр змінних `/etc/mijn-ruimte/geheimen.env` та `migratie.env` | [🇺🇦 `ENV-VARS.uk.md`](../ENV-VARS.uk.md) | [🇳🇱 `ENV-VARS.nl.md`](../ENV-VARS.nl.md) | [`ENV-VARS.md`](../ENV-VARS.md) |
 | **Нотатки з безпеки (`SECURITY-NOTES`)** | Звіт аудиту безпеки, виправлення фаз A/B/1/2/3/Audit/Zoek/Werkblad | [🇺🇦 `SECURITY-NOTES.uk.md`](../SECURITY-NOTES.uk.md) | [🇳🇱 `SECURITY-NOTES.nl.md`](../SECURITY-NOTES.nl.md) | [`SECURITY-NOTES.md`](../SECURITY-NOTES.md) |
 | **План портування (`PORTEERPLAN`)** | Архітектурний план переходу з AppDeploy на власний сервер (BYOS) | [🇺🇦 `PORTEERPLAN.uk.md`](../PORTEERPLAN.uk.md) | [🇳🇱 `PORTEERPLAN.nl.md`](../PORTEERPLAN.nl.md) | [`PORTEERPLAN.md`](../PORTEERPLAN.md) |
-| **Cloud M7 Security DevKit (`README-M7`)** | Набір розробки криптографічного захисту власника даних M7 | [🇺🇦 `README-M7.uk.md`](../README-M7.uk.md) | [🇳🇱 `README-M7.nl.md`](../README-M7.nl.md) | [`README-M7-UK.md`](../README-M7-UK.md) |
+| **Cloud M7 Безпека DevKit (`README-M7`)** | Набір розробки криптографічного захисту власника даних M7 | [🇺🇦 `README-M7.uk.md`](../README-M7.uk.md) | [🇳🇱 `README-M7.nl.md`](../README-M7.nl.md) | [`README-M7-UK.md`](../README-M7-UK.md) |
 
 ---
 
@@ -40,8 +40,8 @@
 
 | Стаття / Сторінка | Опис | 🇺🇦 Українська версія | 🇳🇱 Нідерландська версія | Канонічний файл (підписаний `regels.lock.json`) |
 |---|---|---|---|---|
-| **Правила агентів (`AGENTS.md`)** | Єдине джерело правил для всіх 8 ШІ-агентів (`ORCH-001`, `TRACE-001`, `B-009`, `B-013`) | [🇺🇦 `AGENTS.uk.md`](../AGENTS.uk.md) | [🇳🇱 `AGENTS.nl.md`](../AGENTS.nl.md) | [`AGENTS.md`](../AGENTS.md) *(двомовний канон)* |
-| **Реєстр рішень (`BESLUITEN.md`)** | Append-only журнал архітектурних і організаційних рішень `B-001`–`B-013` | [🇺🇦 `BESLUITEN.uk.md`](../orchestratie/BESLUITEN.uk.md) | [🇳🇱 `BESLUITEN.nl.md`](../orchestratie/BESLUITEN.nl.md) | [`orchestratie/BESLUITEN.md`](../orchestratie/BESLUITEN.md) |
+| **Правила агентів (`AGENTS.md`)** | Єдине джерело правил для всіх 8 ШІ-агентів (`ORCH-001`, `TRACE-001`, `B-009`) | [🇺🇦 `AGENTS.uk.md`](../AGENTS.uk.md) | [🇳🇱 `AGENTS.nl.md`](../AGENTS.nl.md) | [`AGENTS.md`](../AGENTS.md) *(двомовний канон)* |
+| **Реєстр рішень (`BESLUITEN.md`)** | Append-only журнал архітектурних і організаційних рішень `B-001`–`B-011` | [🇺🇦 `BESLUITEN.uk.md`](../orchestratie/BESLUITEN.uk.md) | [🇳🇱 `BESLUITEN.nl.md`](../orchestratie/BESLUITEN.nl.md) | [`orchestratie/BESLUITEN.md`](../orchestratie/BESLUITEN.md) |
 | **Компактний контекст (`CONTEXT-COMPACT.md`)** | Автогенерований двомовний контекст для агентів без прямого доступу до GitHub | [🇺🇦/🇳🇱 `CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) | [🇳🇱/🇺🇦 `CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) | [`orchestratie/CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) |
 
 ---
@@ -127,7 +127,7 @@
 | **Архітектура приватності Cloud M7 (`CLOUD-M7-PRIVACY-ARCHITECTURE`)** | [🇺🇦 `.uk.md`](./CLOUD-M7-PRIVACY-ARCHITECTURE.uk.md) | [🇳🇱 `.nl.md`](./CLOUD-M7-PRIVACY-ARCHITECTURE.nl.md) | [`CLOUD-M7-PRIVACY-ARCHITECTURE.md`](./CLOUD-M7-PRIVACY-ARCHITECTURE.md) |
 | **Реалізація Cloud M9 (`CLOUD-M9-IMPLEMENTATION-20261028`)** | [🇺🇦 `.uk.md`](./CLOUD-M9-IMPLEMENTATION-20261028.uk.md) | [🇳🇱 `.nl.md`](./CLOUD-M9-IMPLEMENTATION-20261028.nl.md) | [`CLOUD-M9-IMPLEMENTATION-20261028.md`](./CLOUD-M9-IMPLEMENTATION-20261028.md) |
 | **Драйвери Cloud M5 (`README-M5`)** | [🇺🇦 `.uk.md`](./README-M5.uk.md) | [🇳🇱 `.nl.md`](./README-M5.nl.md) | [`README-M5.md`](./README-M5.md) |
-| **Cloud Full Integration M1 (`CLOUD-FULL-INTEGRATION-M1`)** | [🇺🇦 `.uk.md`](./cloud/CLOUD-FULL-INTEGRATION-M1.uk.md) | [🇳🇱 `.nl.md`](./cloud/CLOUD-FULL-INTEGRATION-M1.nl.md) | [`CLOUD-FULL-INTEGRATION-M1.md`](./cloud/CLOUD-FULL-INTEGRATION-M1.md) |
+| **Повна інтеграція Хмари M1 (`CLOUD-FULL-INTEGRATION-M1`)** | [🇺🇦 `.uk.md`](./cloud/CLOUD-FULL-INTEGRATION-M1.uk.md) | [🇳🇱 `.nl.md`](./cloud/CLOUD-FULL-INTEGRATION-M1.nl.md) | [`CLOUD-FULL-INTEGRATION-M1.md`](./cloud/CLOUD-FULL-INTEGRATION-M1.md) |
 | **Схема БД Хмари (`CLOUD_DATABASE_SCHEMA`)** | [🇺🇦 `.uk.md`](./cloud/CLOUD_DATABASE_SCHEMA.uk.md) | [🇳🇱 `.nl.md`](./cloud/CLOUD_DATABASE_SCHEMA.nl.md) | [`CLOUD_DATABASE_SCHEMA.md`](./cloud/CLOUD_DATABASE_SCHEMA.md) |
 | **Провайдер Google Drive (`CLOUD_GOOGLE_DRIVE_PROVIDER`)** | [🇺🇦 `.uk.md`](./cloud/CLOUD_GOOGLE_DRIVE_PROVIDER.uk.md) | [🇳🇱 `.nl.md`](./cloud/CLOUD_GOOGLE_DRIVE_PROVIDER.nl.md) | [`CLOUD_GOOGLE_DRIVE_PROVIDER.md`](./cloud/CLOUD_GOOGLE_DRIVE_PROVIDER.md) |
 | **Технічна специфікація Хмари (`CLOUD_IMPLEMENTATION_SPEC`)** | [🇺🇦 `.uk.md`](./cloud/CLOUD_IMPLEMENTATION_SPEC.uk.md) | [🇳🇱 `.nl.md`](./cloud/CLOUD_IMPLEMENTATION_SPEC.nl.md) | [`CLOUD_IMPLEMENTATION_SPEC.md`](./cloud/CLOUD_IMPLEMENTATION_SPEC.md) |
@@ -176,19 +176,15 @@
 | **Інструкція каталогу інтеграцій (`ІНСТРУКЦІЯ-UI013`)** | [🇺🇦 `.uk.md`](./integraties/ІНСТРУКЦІЯ-UI013.uk.md) | [🇳🇱 `.nl.md`](./integraties/ІНСТРУКЦІЯ-UI013.nl.md) | [`ІНСТРУКЦІЯ-UI013.md`](./integraties/ІНСТРУКЦІЯ-UI013.md) |
 | **Центр сповіщень UI-007 (`INVENTARIS-EN-OORZAKEN`)** | [🇺🇦 `.uk.md`](./meldingen-v2/INVENTARIS-EN-OORZAKEN.uk.md) | [🇳🇱 `.nl.md`](./meldingen-v2/INVENTARIS-EN-OORZAKEN.nl.md) | [`INVENTARIS-EN-OORZAKEN.md`](./meldingen-v2/INVENTARIS-EN-OORZAKEN.md) |
 | **Темна тема пошти (`MAIL-DONKER`)** | [🇺🇦 `.uk.md`](./ontwerp/MAIL-DONKER.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/MAIL-DONKER.nl.md) | [`MAIL-DONKER.md`](./ontwerp/MAIL-DONKER.md) |
-| **Тимчасова read-only діагностика MCP (`MCP-ALLEEN-LEZEN-DIAGNOSE`)** | [🇺🇦 `.uk.md`](./ontwerp/MCP-ALLEEN-LEZEN-DIAGNOSE.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/MCP-ALLEEN-LEZEN-DIAGNOSE.nl.md) | [`MCP-ALLEEN-LEZEN-DIAGNOSE.md`](./ontwerp/MCP-ALLEEN-LEZEN-DIAGNOSE.md) |
+| **Тимчасова лише для читання діагностика MCP (`MCP-ALLEEN-LEZEN-DIAGNOSE`)** | [🇺🇦 `.uk.md`](./ontwerp/MCP-ALLEEN-LEZEN-DIAGNOSE.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/MCP-ALLEEN-LEZEN-DIAGNOSE.nl.md) | [`MCP-ALLEEN-LEZEN-DIAGNOSE.md`](./ontwerp/MCP-ALLEEN-LEZEN-DIAGNOSE.md) |
 | **Проєкт: Акаунти, ідентичності та безпека (`ONTWERP-ACCOUNTS-EN-BEVEILIGING`)** | [🇺🇦 `.uk.md`](./ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.nl.md) | [`ONTWERP-ACCOUNTS-EN-BEVEILIGING.md`](./ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.md) |
 | **Сумісність просторів з розширенням і MCP (`RUIMTES-COMPATIBILITEIT`)** | [🇺🇦 `.uk.md`](./ontwerp/RUIMTES-COMPATIBILITEIT.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/RUIMTES-COMPATIBILITEIT.nl.md) | [`RUIMTES-COMPATIBILITEIT.md`](./ontwerp/RUIMTES-COMPATIBILITEIT.md) |
 | **Ізоляція просторів `prive` ↔ `technisch` (`RUIMTES-ISOLATIE`)** | [🇺🇦 `.uk.md`](./ontwerp/RUIMTES-ISOLATIE.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/RUIMTES-ISOLATIE.nl.md) | [`RUIMTES-ISOLATIE.md`](./ontwerp/RUIMTES-ISOLATIE.md) |
 | **Тестування просторів (`RUIMTES-TESTEN`)** | [🇺🇦 `.uk.md`](./ontwerp/RUIMTES-TESTEN.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/RUIMTES-TESTEN.nl.md) | [`RUIMTES-TESTEN.md`](./ontwerp/RUIMTES-TESTEN.md) |
 | **API-контракт технічних просторів v2 (`TECH-RUIMTES-API`)** | [🇺🇦 `.uk.md`](./ontwerp/TECH-RUIMTES-API.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/TECH-RUIMTES-API.nl.md) | [`TECH-RUIMTES-API.md`](./ontwerp/TECH-RUIMTES-API.md) |
 | **Блоки робочого столу (`WERKBLAD-BLOKKEN`)** | [🇺🇦 `.uk.md`](./ontwerp/WERKBLAD-BLOKKEN.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/WERKBLAD-BLOKKEN.nl.md) | [`WERKBLAD-BLOKKEN.md`](./ontwerp/WERKBLAD-BLOKKEN.md) |
-| **Акаунт Identity: Огляд макета (`identity-account/README-account`)** | [🇺🇦 `.uk.md`](./ontwerp/identity-account/README-account.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/identity-account/README-account.nl.md) | [`README-account.md`](./ontwerp/identity-account/README-account.md) |
-| **Акаунт Identity: Технічне завдання (`TZ-account-2026-11-04`)** | [🇺🇦 `.uk.md`](./ontwerp/identity-account/TZ-account-2026-11-04.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/identity-account/TZ-account-2026-11-04.nl.md) | [`TZ-account-2026-11-04.md`](./ontwerp/identity-account/TZ-account-2026-11-04.md) |
-| **Акаунт Identity: Матриця покриття 12/12 (`identity-coverage`)** | [🇺🇦 `.uk.md`](./ontwerp/identity-account/identity-coverage.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/identity-account/identity-coverage.nl.md) | [`identity-coverage.md`](./ontwerp/identity-account/identity-coverage.md) |
-| **Акаунт Identity: Дизайн-специфікація (`ontwerp-account-samenvatting`)** | [🇺🇦 `.uk.md`](./ontwerp/identity-account/ontwerp-account-samenvatting.uk.md) | [🇳🇱 `.nl.md`](./ontwerp/identity-account/ontwerp-account-samenvatting.nl.md) | [`ontwerp-account-samenvatting.md`](./ontwerp/identity-account/ontwerp-account-samenvatting.md) |
 | **Термінал технічного профілю (`terminal/TERMINAL`)** | [🇺🇦 `.uk.md`](./terminal/TERMINAL.uk.md) | [🇳🇱 `.nl.md`](./terminal/TERMINAL.nl.md) | [`TERMINAL.md`](./terminal/TERMINAL.md) |
-| **Universal File Workspace v0.3 (`INTEGRATIE-20261027`)** | [🇺🇦 `.uk.md`](./universele-bestanden/INTEGRATIE-20261027.uk.md) | [🇳🇱 `.nl.md`](./universele-bestanden/INTEGRATIE-20261027.nl.md) | [`INTEGRATIE-20261027.md`](./universele-bestanden/INTEGRATIE-20261027.md) |
+| **Universal Файл Workspace v0.3 (`INTEGRATIE-20261027`)** | [🇺🇦 `.uk.md`](./universele-bestanden/INTEGRATIE-20261027.uk.md) | [🇳🇱 `.nl.md`](./universele-bestanden/INTEGRATIE-20261027.nl.md) | [`INTEGRATIE-20261027.md`](./universele-bestanden/INTEGRATIE-20261027.md) |
 | **Інтеграція блоків у Werkblad v3 (`BLOKKEN-INTEGRATIE`)** | [🇺🇦 `.uk.md`](./werkblad/BLOKKEN-INTEGRATIE.uk.md) | [🇳🇱 `.nl.md`](./werkblad/BLOKKEN-INTEGRATIE.nl.md) | [`BLOKKEN-INTEGRATIE.md`](./werkblad/BLOKKEN-INTEGRATIE.md) |
 | **Робочий стіл Werkblad (`werkblad/WERKBLAD`)** | [🇺🇦 `.uk.md`](./werkblad/WERKBLAD.uk.md) | [🇳🇱 `.nl.md`](./werkblad/WERKBLAD.nl.md) | [`WERKBLAD.md`](./werkblad/WERKBLAD.md) |
 | **Глобальний пошук `/zoek`: Архітектура (`zoek/ZOEKEN`)** | [🇺🇦 `.uk.md`](./zoek/ZOEKEN.uk.md) | [🇳🇱 `.nl.md`](./zoek/ZOEKEN.nl.md) | [`ZOEKEN.md`](./zoek/ZOEKEN.md) |
@@ -196,5 +192,5 @@
 | **Пошук `/zoek`: Ізоляція й безпека (`zoek/ZOEK-BEVEILIGING`)** | [🇺🇦 `.uk.md`](./zoek/ZOEK-BEVEILIGING.uk.md) | [🇳🇱 `.nl.md`](./zoek/ZOEK-BEVEILIGING.nl.md) | [`ZOEK-BEVEILIGING.md`](./zoek/ZOEK-BEVEILIGING.md) |
 | **Пошук `/zoek`: Тестування (`zoek/ZOEK-TESTEN`)** | [🇺🇦 `.uk.md`](./zoek/ZOEK-TESTEN.uk.md) | [🇳🇱 `.nl.md`](./zoek/ZOEK-TESTEN.nl.md) | [`ZOEK-TESTEN.md`](./zoek/ZOEK-TESTEN.md) |
 | **Пошук `/zoek`: Розширення джерел (`zoek/ZOEK-UITBREIDEN`)** | [🇺🇦 `.uk.md`](./zoek/ZOEK-UITBREIDEN.uk.md) | [🇳🇱 `.nl.md`](./zoek/ZOEK-UITBREIDEN.nl.md) | [`ZOEK-UITBREIDEN.md`](./zoek/ZOEK-UITBREIDEN.md) |
-| **Ядро Universal File Workspace v0.2 (`integrations/.../README`)** | [🇺🇦 `.uk.md`](../integrations/universal-file-workspace-core-v0.2/README.uk.md) | [🇳🇱 `.nl.md`](../integrations/universal-file-workspace-core-v0.2/README.nl.md) | [`README.md`](../integrations/universal-file-workspace-core-v0.2/README.md) |
+| **Ядро Universal Файл Workspace v0.2 (`integrations/.../README`)** | [🇺🇦 `.uk.md`](../integrations/universal-file-workspace-core-v0.2/README.uk.md) | [🇳🇱 `.nl.md`](../integrations/universal-file-workspace-core-v0.2/README.nl.md) | [`README.md`](../integrations/universal-file-workspace-core-v0.2/README.md) |
 | **Локальні браузерні тести Playwright (`scripts/lokaal-e2e/LEESMIJ`)** | [🇺🇦 `.uk.md`](../scripts/lokaal-e2e/LEESMIJ.uk.md) | [🇳🇱 `.nl.md`](../scripts/lokaal-e2e/LEESMIJ.nl.md) | [`LEESMIJ.md`](../scripts/lokaal-e2e/LEESMIJ.md) |

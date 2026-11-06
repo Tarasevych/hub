@@ -36,7 +36,7 @@ achter de feature-flag `werkblad-v3`. Niets in dit onderdeel praat met de server
   of rechtermuisknop → menu «Додати / Розмістити тут… / Змінити розмір / Вперед / На передній план / Зафіксувати / Видалити».
 - Grepen alleen in de instelmodus, tikvlak 44 px. Buiten de instelmodus geen gebaren: de inhoud werkt gewoon (links, scroll).
 - Toetsenbord (WCAG 2.5.7): pijltjes = 8 px (raster bij snap), Ctrl = 1 px, Shift = formaat, Enter / Shift+F10 / menutoets = menu,
-  Delete = verwijderen, PageUp = vooruit, Ctrl+Z / Ctrl+Y = ongedaan/opnieuw, Escape = annuleren. Aankondigingen via aria-live.
+  Verwijderen = verwijderen, PageUp = vooruit, Ctrl+Z / Ctrl+Y = ongedaan/opnieuw, Escape = annuleren. Aankondigingen via aria-live.
 
 ## z-index
 Alles binnen `.wbc` (`isolation:isolate`): items 1…n, geest 8000, gesleept item 8100, menu 9000, statusbalk 9100. Het canvas is

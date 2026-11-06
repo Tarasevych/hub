@@ -21,29 +21,29 @@
 | view | weergave | 28 |
 | admin | beheer | 22 |
 | canonical | canoniek | 19 |
-| search | zoek | 17 |
+| пошук | zoek | 17 |
 | reader | lezer | 16 |
 | store | opslag | 11 |
 | compose | opstel | 10 |
-| panel | paneel | 10 |
-| attachment | bijlage | 10 |
+| панель | paneel | 10 |
+| вкладення | bijlage | 10 |
 | dialog | dialoog | 10 |
-| message | bericht | 10 |
+| повідомлення | bericht | 10 |
 | extension | extensie | 9 |
 | settings | instellingen | 9 |
 | tools | hulpmiddelen | 8 |
 | data | gegevens | 8 |
-| security | beveiliging | 7 |
+| безпека | beveiliging | 7 |
 | service | dienst | 7 |
 | notification | melding | 7 |
 | access | toegang | 6 |
 | vault | kluis | 6 |
-| commands | opdrachten | 6 |
+| команди | opdrachten | 6 |
 | flags | vlaggen | 6 |
 | layout | indeling | 6 |
 | preferences | voorkeuren | 6 |
 | remote | extern | 6 |
-| row | rij | 6 |
+| рядок | rij | 6 |
 | music | muziek | 6 |
 | plane | laag | 5 |
 | assets | bundels | 5 |
@@ -67,11 +67,11 @@
 | scientific | wetenschappelijk | 5 |
 | spreadsheet | rekenblad | 5 |
 | threat | dreiging | 5 |
-| state | toestand | 5 |
+| стан | toestand | 5 |
 | calendar | agenda | 4 |
 | center | centrum | 4 |
 | workspace | werkruimte | 4 |
-| card | kaart | 4 |
+| картка | kaart | 4 |
 | finance | financien | 4 |
 | font | lettertype | 4 |
 
@@ -287,7 +287,7 @@
 | `src/mail-presentatie-mogelijkheden.ts` | `src/mail-presentation-capabilities.ts` | експорт: `mailPresentationCapability`, `isMailPresentationAttachment` |
 | `src/mail-rekenblad-inhoud.ts` | `src/mail-spreadsheet-content.ts` | експорт: `loadMailSpreadsheetContent`, `exportMailSpreadsheet` |
 | `src/mail-rekenblad-mogelijkheden.ts` | `src/mail-spreadsheet-capabilities.ts` | експорт: `mailSpreadsheetCapability`, `isMailSpreadsheetAttachment` |
-| `src/mail-ruim-raster.ts` | `src/mail-bulky-raster.ts` | експорт: `mailBulkyRaster`, `BULKY_MIN_TEKST`, `BULKY_AVATAR` — Режим «Громіздкий» (аудит пошти 18.10.2026, тред «Задача: привести до ладу режим Громіздкий»). |
+| `src/mail-ruim-raster.ts` | `src/mail-bulky-raster.ts` | експорт: `mailBulkyRaster`, `BULKY_MIN_TEKST`, `BULKY_AVATAR` — Режим «Громіздкий» (аудит пошти 18.10.2026, тред «Задача: спричинити ладу режим Громіздкий»). |
 | `src/mail-ruim-voorbeeld-voorladen.ts` | `src/mail-bulky-preview-prefetch.ts` | експорт: `queueMailBulkyPreview`, `cancelMailBulkyPreviewGroup` |
 | `src/mail-spelontwikkeling-inhoud.ts` | `src/mail-gamedev-content.ts` | експорт: `detectMailGameDevContentType`, `loadMailGameDevContent`, `validateMailGameDevSource`, `exportMailGameDev` |
 | `src/mail-spelontwikkeling-mogelijkheden.ts` | `src/mail-gamedev-capabilities.ts` | експорт: `mailGameDevCapability`, `isMailGameDevAttachment` |
@@ -351,7 +351,7 @@
 | `src/MailSnelleInstellingen.tsx` | `src/MailQuickSettings.tsx` | експорт: `mailInboxPriorityIds`, `mailReaderToolbarActionIds`, `defaultMailReaderToolbarPreference`, `mailRowQuickActionIds` +10 |
 | `src/MailSpecialistVerkenner.tsx` | `src/MailSpecialistExplorer.tsx` | експорт: `MailSpecialistExplorer (default)` |
 | `src/MailSysteemAandachtGroepen.tsx` | `src/MailSystemAttentionBuckets.tsx` | експорт: `MailSystemAttentionBuckets (default)` |
-| `src/MailZijbalkNavigatie.tsx` | `src/MailSidebarNavigation.tsx` | експорт: `MailSidebarNavigation (default)` — Аудит 18.10.2026 (8b): плаваюча кнопка «Написати лист» і вікно листа тепер живуть лише в MailOpstelZwevend.tsx (одна кнопка, одна зона 'mail-comp… |
+| `src/MailZijbalkNavigatie.tsx` | `src/MailSidebarNavigation.tsx` | експорт: `MailSidebarNavigation (default)` — Аудит 18.10.2026 (8b): рухома кнопка «Написати лист» і вікно листа тепер живуть лише в MailOpstelZwevend.tsx (одна кнопка, одна зона 'mail-comp… |
 | `src/MailZoekActiefChips.tsx` | `src/MailSearchActiveChips.tsx` | експорт: `MailSearchActiveChips (default)` |
 | `src/MailZoekFilters.tsx` | `src/MailSearchFilters.tsx` | експорт: `MailSearchFilters (default)` |
 | `src/MailZoekVeld.tsx` | `src/MailSearchField.tsx` | експорт: `MAIL_ZOEK_SMAL`, `MailSearchField (default)` |
@@ -391,8 +391,8 @@
 | `src/mail-ongelezen-focus.css` | `src/mail-unread-focus.css` |  |
 | `src/mail-opstel-api.ts` | `src/mail-compose-api.ts` | експорт: `composeErrorText`, `saveDraftRemote`, `listDraftsRemote`, `getDraftRemote` +10 |
 | `src/mail-opstel-bewerker.css` | `src/mail-compose-editor.css` |  |
-| `src/mail-opstel-menu-plaats.ts` | `src/mail-compose-menu-plaats.ts` | експорт: `MENU_MARGE`, `MENU_AFSTAND`, `MENU_MIN_HOOGTE`, `menuPlaats` +1 — Де на екрані з'являється випадаюче меню панелі редактора («Стиль», «Список», «⋯») — чиста функція, з тестами |
-| `src/mail-opstel-plaats.ts` | `src/mail-compose-plaats.ts` | експорт: `GAT`, `RAND`, `BEL`, `BEL_RAND` +5 — Розташування плаваючої кнопки «Написати лист» (FAB) відносно дзвоника сповіщень. |
+| `src/mail-opstel-menu-plaats.ts` | `src/mail-compose-menu-plaats.ts` | експорт: `MENU_MARGE`, `MENU_AFSTAND`, `MENU_MIN_HOOGTE`, `menuPlaats` +1 — Де на екрані з'являється розкривне меню панелі редактора («Стиль», «Список», «⋯») — чиста функція, з тестами |
+| `src/mail-opstel-plaats.ts` | `src/mail-compose-plaats.ts` | експорт: `GAT`, `RAND`, `BEL`, `BEL_RAND` +5 — Розташування рухомої кнопки «Написати лист» (FAB) відносно дзвоника сповіщень. |
 | `src/mail-overlay-oppervlak.css` | `src/mail-overlay-surface.css` |  |
 | `src/mail-pdf-profiel.ts` | `src/mail-pdf-profile.ts` | експорт: `readPdfProfileClaims` |
 | `src/mail-periode-cache.ts` | `src/mail-period-cache.ts` | експорт: `mailPeriodAccountKey`, `readMailPeriodCache`, `writeMailPeriodCache`, `clearMailPeriodCache` +5 |
@@ -456,7 +456,7 @@
 | `src/dienst-tab-labels.ts` | `src/service-tab-labels.ts` | експорт: `serviceTabLabel` — Назви сторінок (вкладок) кожного сервісу, щоб бічне меню могло показувати сторінки ІНШОГО сервісу |
 | `src/domein-weergave-cache.ts` | `src/domain-view-cache.ts` | експорт: `stableSignature`, `applyIfChanged`, `makeViewCacheKey`, `readCachedViewModel` +8 |
 | `src/gedeelde-voorkeuren.ts` | `src/shared-preferences.ts` | експорт: `HUB_LAYOUTS_STORAGE_KEY`, `WEERGAVE_ACCOUNT_HINT`, `MAX_COOKIE`, `sleutelVoor` +28 — Спільні налаштування вигляду всіх піддоменів — ОКРЕМО ДЛЯ АКАУНТА І ОКРЕМО ДЛЯ ВЕБПРОСТОРУ (профілю). Пункт 2 і пункт 4, аудит 20.10.2026. |
-| `src/melding-positie.ts` | `src/notification-position.ts` | експорт: `placeNear` — Розумне розташування вікна сповіщень і спливаючого вікна біля дзвоника: завжди повністю в межах екрана, з боку, де найбільше місця (зверху або знизу… |
+| `src/melding-positie.ts` | `src/notification-position.ts` | експорт: `placeNear` — Розумне розташування вікна сповіщень і спливного вікна біля дзвоника: завжди повністю в межах екрана, з боку, де найбільше місця (зверху або знизу… |
 | `src/melding-stijl.tsx` | `src/notification-style.tsx` | експорт: `styleOf`, `sectionLabel`, `allSections` |
 | `src/meldingenpaneel.css` | `src/notification-panel.css` | Центр сповіщень: широкий, спокійний список із пошуком, фільтрами, групуванням за днями, станом і тривалістю. На телефоні — повноцінна нижня шухляда. |
 | `src/menu-meldingen-opslag.ts` | `src/menu-meldingen-store.ts` | експорт: `menuTellers`, `useMenuTellers`, `tellersScope`, `tellersOphalen` +3 — Лічильники для «живого» меню (фаза B2). Пошта публікує кількість непрочитаних у «Вхідні» (лише число); це передається — згруповано |
@@ -546,7 +546,7 @@
 | `src/beheer-console.css` | `src/admin-console.css` |  |
 | `src/beheer-termen.tsx` | `src/admin-terms.tsx` | експорт: `termLabel`, `termKnown`, `Term`, `TermList` +1 |
 | `src/beheer-uitrol.css` | `src/admin-uitrol.css` | Адмін → «Оновлення» / «Updates» (підтвердження через passkey) |
-| `src/extensie-map-installeer.ts` | `src/extension-folder-install.ts` | експорт: `PickerFailure`, `folderPickerSupported`, `SUBFOLDER`, `installExtensionToPickedFolder` — Встановлення розширення прямо з браузера в папку, яку користувач обирає сам у рідному вікні (File System Access API, Chromium). |
+| `src/extensie-map-installeer.ts` | `src/extension-folder-install.ts` | експорт: `PickerFailure`, `folderPickerSupported`, `SUBFOLDER`, `installExtensionToPickedFolder` — Встановлення розширення прямо з браузера в теку, яку користувач обирає сам у рідному вікні (Файл System Access API, Chromium). |
 | `src/extern/ExternBureaublad.tsx` | `src/remote/RemoteBureaublad.tsx` | експорт: `RemoteBureaublad (default)`, `RemoteSessie` — «Віддалений стіл» (технічний профіль, лише власник): RDP/VNC/SSH через Apache Guacamole. Власний чанк (lazyTech у TechLaag); |
 | `src/extern/extern-opslag.ts` | `src/remote/remote-store.ts` | експорт: `remoteSessieBegin`, `remoteAantal`, `useRemoteAantal` — Скільки сеансів віддаленого робочого столу відкрито у цій вкладці — для позначки «активний віддалений сеанс» на технічній смузі. |
 | `src/extern/extern.css` | `src/remote/remote.css` | «Віддалений стіл» (src/extern/ExternBureaublad.tsx). Світла й темна теми (html.theme-dark / theme-plum-dark), 390 px. |
@@ -563,11 +563,11 @@
 | `tests/eenheid/beheer-diagnostiek.test.ts` | `tests/eenheid/admin-diagnostiek.test.ts` | експорт: `main` — Адмін → «Діагностика» (/diagnostiek): реєстр ↔ виконавці, чисті оцінки, сортування «Потребує уваги», білий список маршруту, |
 | `tests/eenheid/beheer-integraties.test.ts` | `tests/eenheid/admin-integraties.test.ts` | експорт: `main` — Адмін → /mappen «Інтеграції»: детальні дані (чесні), популярні/нові, політика для користувачів, перевірка стану, відключення, доступ і журнал. |
 | `tests/eenheid/beheer-overzicht.test.ts` | `tests/eenheid/admin-overzicht.test.ts` | експорт: `main` — Адмін → «Огляд» (/overzicht): віджети/розкладка (нормалізація, переміщення, розмір), приватність подій та історії користувачів, |
-| `tests/eenheid/extensie-map-installeer.test.ts` | `tests/eenheid/extension-folder-install.test.ts` | експорт: `main` — Встановлення розширення через рідний вибір папки: запис лише після перевірки SHA-256, захист від небезпечних шляхів, скасування. |
+| `tests/eenheid/extensie-map-installeer.test.ts` | `tests/eenheid/extension-folder-install.test.ts` | експорт: `main` — Встановлення розширення через рідний вибір теки: запис лише після перевірки SHA-256, захист від небезпечних шляхів, скасування. |
 | `tests/eenheid/extern-bureaublad.test.ts` | `tests/eenheid/remote-bureaublad.test.ts` | експорт: `main` — Віддалений робочий стіл через Apache Guacamole (виконавець D, 18.10.2026). Повідомлення власника: «Guacamole (RDP/VNC) — не впроваджено, |
 | `tests/eenheid/installeer-opdrachten.test.ts` | `tests/eenheid/install-commands.test.ts` | експорт: `main` — Опції для Node.js за системою/архітектурою та команди встановлення розширення (без завантаження .cmd/.ps1: Smart App Control їх блокує)… |
 | `tests/eenheid/site-activiteit.test.ts` | `tests/eenheid/site-activity.test.ts` | експорт: `main` — Журнал аудиту -> сповіщення: правильний розділ/сервіс для кожної дії, відсіювання шуму, розпізнавання збоїв. |
-| `tests/eenheid/site-hulpmiddelen.test.ts` | `tests/eenheid/site-tools.test.ts` | експорт: `main` — Інструменти сайту в MCP-конекторі (пошта, календар, диск, пошук), режими для кожного інструмента (always / ask / off), черга для |
+| `tests/eenheid/site-hulpmiddelen.test.ts` | `tests/eenheid/site-tools.test.ts` | експорт: `main` — Інструменти сайту в MCP-конекторі (пошта, календар, диск, пошук), режими для кожного інструмента (завжди / ask / вимкнено), черга для |
 | `tests/eenheid/tech-bundels.test.ts` | `tests/eenheid/tech-assets.test.ts` | експорт: `main`, `geheimeBeheercode` — Технічні бандли лише для сеансу з активним технічним профілем (звіт власника 18.10.2026: «Технічні ассети лише |
 | `tests/eenheid/uitgave-info.test.ts` | `tests/eenheid/release-info.test.ts` | експорт: `main` — /api/version: backend/uitgave-info.ts читає метадані випуску (версія, коміт, автор, агент, підсумок) із |
 | `tests/eenheid/vlaggen.test.ts` | `tests/eenheid/flags.test.ts` | експорт: `main` — Етап F (14.10.2026): прапорці функцій (feature flags). Чисте обчислення (shared/vlaggen.ts) та справжня база даних + правила (backend/vlaggen.ts). |
@@ -671,7 +671,7 @@
 | `backend/api-platform-verbindingen.ts` | `backend/api-platform-connections.ts` | експорт: `OWNER_CONNECTIONS_TABLE`, `API_PLATFORM_CONNECTIONS`, `apiPlatformConnectionCards`, `zetVerbindingStatus` +2 |
 | `backend/google-suite-inrichting.ts` | `backend/google-suite-onboarding.ts` | експорт: `AGENDA_LEES_SCOPE`, `AGENDA_SCHRIJF_SCOPE`, `googleGrantNogServerSleutel`, `googleSuiteMailSearchScopeStatus` +27 |
 | `backend/overdracht-binding.ts` | `backend/handoff-binding.ts` | експорт: `HANDOFF_BINDING_COOKIE`, `handoffBindingVoorAanmaken`, `handoffBindingVanBrowser`, `metBindingCookie` — Прив'язка до браузера для передачі сеансів (?handoff=<code>), захист від login-CSRF. |
-| `server/platform/geheimen.ts` | `server/platform/secrets.ts` | експорт: `SECRET_ALLOW_LIST`, `secrets` — Шар сумісності для колишнього API 'secrets' в AppDeploy. |
+| `server/platform/geheimen.ts` | `server/platform/secrets.ts` | експорт: `SECRET_ALLOW_LIST`, `secrets` — Шар сумісності для колишнього API 'секрети' в AppDeploy. |
 | `server/platform/opslag.ts` | `server/platform/storage.ts` | експорт: `resolveStoragePath`, `padHoortBijAnder`, `storage`, `storageReady` — Шар сумісності для колишнього API 'storage' в AppDeploy, на локальній файловій системі |
 | `server/platform/uitnodigingen.ts` | `server/platform/invites.ts` | експорт: `InviteError`, `isInviteError`, `invites` — Шар сумісності для колишнього API 'invites' в AppDeploy (таблиця app.invites). |
 | `src/ApiPlatformWeergave.tsx` | `src/ApiPlatformView.tsx` | експорт: `ApiPlatformView (default)` |
@@ -697,9 +697,9 @@
 |---|---|---|
 | `scripts/kaart-controle.mjs` | Перевірка цієї карти під час збірки (перший крок `npm run build`): старі шляхи, відсутні нові, англійські назви, відсутні додані файли. | 86fd409 |
 | `tests/eenheid/bestandskaart-20261024.test.ts` | Тест карти й `kaart-controle`. | 86fd409 |
-| `src/mail/lees-modus.ts` | Вікно листа — правила без DOM: яка форма (повний / праворуч / знизу / плаваюче / телефон), роль для читача екрана, фокус, Escape, «Назад», межі поруч із меню й доком, «priority+» шапки. | пакет 1 «Adaptive Mail Canvas» |
-| `src/mail/LeesVenster.tsx` | Вікно листа — рамка навколо відкритого листа: одна для всіх форм; дає панелі дій (`MailLezerWerkbalk`) форму, плаваюче вікно й Escape. | пакет 1 «Adaptive Mail Canvas» |
-| `src/mail/lees-venster.css` | Вікно листа — CSS за формою (`data-lees-modus`, `data-lees-breedte`): шапка «priority+», «знизу» без окремої прокрутки, ручка плаваючого вікна. | пакет 1 «Adaptive Mail Canvas» |
+| `src/mail/lees-modus.ts` | Вікно листа — правила без DOM: яка форма (повний / праворуч / знизу / рухоме / телефон), роль для читача екрана, фокус, Escape, «Назад», межі поруч із меню й доком, «priority+» шапки. | пакет 1 «Adaptive Mail Canvas» |
+| `src/mail/LeesVenster.tsx` | Вікно листа — рамка навколо відкритого листа: одна для всіх форм; дає панелі дій (`MailLezerWerkbalk`) форму, рухоме вікно й Escape. | пакет 1 «Adaptive Mail Canvas» |
+| `src/mail/lees-venster.css` | Вікно листа — CSS за формою (`data-lees-modus`, `data-lees-breedte`): шапка «priority+», «знизу» без окремої прокрутки, ручка рухомого вікна. | пакет 1 «Adaptive Mail Canvas» |
 | `tests/eenheid/lees-venster-20261024.test.ts` | Тест вікна листа: правила, структура в кожній формі, джерело, CSS. | пакет 1 «Adaptive Mail Canvas» |
 | `tests/e2e/hulp/stand-lezer.ts` | Стенд `mail-lezer-*`: геометрія й поведінка вікна листа в кожній формі й розмірі, меню праворуч і док. | пакет 1 «Adaptive Mail Canvas» |
 | `src/mail/gesprek-context.ts` | Контекст гілки — правила без DOM і без ШІ: версії вкладень, хронологія, пов'язані листи з причиною, перевірка відправника (SPF/DKIM/DMARC), «N попередні листи», кому/копія, підрахунок зовнішніх зображень і пікселів, час із .ics з TZID. | пакет 2 «Adaptive Mail Canvas» |
@@ -721,7 +721,7 @@
 | `src/mail/VergelijkTabel.tsx` | «Порівняти»: лист таблицею по абзацах (оригінал ↔ переклад), абзац-джерело пунктів виділено; на телефоні — одне під одним. | пакет 3 «Adaptive Mail Canvas» |
 | `src/mail/ai-blok.css` | CSS ШІ в листі: блок, чипи, терміни, рядок теми, смуга перекладу, таблиця порівняння, аркуш «Звідки це?», рядок відповіді; лише токени (--info = ШІ). | пакет 3 «Adaptive Mail Canvas» |
 | `src/mail/VersieVergelijk.tsx` | Вікно «Порівняти версії» (з панелі контексту): дві версії вкладення, лише текст, різниця за абзацами й реченнями з виділеними словами; чесні повідомлення. | пакет 3 «Adaptive Mail Canvas» |
-| `src/mail/versie-vergelijk.css` | CSS «Порівняти версії»: шар над вікном листа, поруч або одне під одним (container query), лише токени. | пакет 3 «Adaptive Mail Canvas» |
+| `src/mail/versie-vergelijk.css` | CSS «Порівняти версії»: шар над вікном листа, поруч або одне під одним (container запит), лише токени. | пакет 3 «Adaptive Mail Canvas» |
 | `src/mail/tekst-verschil.ts` | Різниця двох текстів без DOM: блоки (абзаци, пункти списку, речення), LCS з якорями, переміщені й змінені блоки, різниця слів. | пакет 3 «Adaptive Mail Canvas» |
 | `src/mail/bijlage-tekst.ts` | Текст із вкладення для «Порівняти версії»: PDF через pdf.js (до 60 сторінок, без колонтитулів), текст/CSV із декодуванням, DOCX/ODT/RTF через наявний завантажувач документів. | пакет 3 «Adaptive Mail Canvas» |
 | `tests/eenheid/ai-bronnen-20261024.test.ts` | Тест shared/ai-bronnen.ts: абзаци, дослівний пошук, перевірка, дати й терміни (nl/uk/en/pl), простий розбір, «Потребує відповіді», виділення. | пакет 3 «Adaptive Mail Canvas» |
@@ -729,17 +729,17 @@
 | `tests/eenheid/ai-acties-20261024.test.ts` | Тест серверного режиму «acties» у /ai-vertaling/run: вхід, перевірка за оригіналом, чесні відмови, кеш. | пакет 3 «Adaptive Mail Canvas» |
 | `tests/eenheid/versie-vergelijk-20261024.test.ts` | Тест «Порівняти версії»: різниця, текст із вкладень (і справжній pdf), структура вікна, CSS. | пакет 3 «Adaptive Mail Canvas» |
 | `tests/e2e/hulp/stand-lezer-ai.ts` | Стенд `mail-lezer-ai-*`: ШІ в листі з імітованим приватним агентом (один пункт вигаданий) — блок, «Звідки це?», «Показати абзац у листі», смуга перекладу й «Порівняти», панель контексту (пункти, «Порівняти версії» зі справжніми PDF), рядок відповіді, «Мова листа», axe. | пакет 3 «Adaptive Mail Canvas» |
-| `shared/plaatsing.ts` | Плаваючі кнопки — модель без DOM: зони (верхня панель, шапка меню, список меню, стос дій), гнізда для телефона / планшета / комп'ютера, типові місця, розкладка, перенесення з відмовою, якщо зона повна, повернення на типове місце, розміри стосу, тексти uk/nl. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `src/plaatsing/plaatsing-staat.ts` | Спільний стан зон і гнізд: розкладка від оболонки, гнізда кнопок, перенесення, меню «Перемістити до…», лічильник дзвоника для ☰, висота нижніх смуг. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `src/plaatsing/Plek.tsx` | Зони й гнізда в React: `useZone`, `<Gniezda>`, `<Plek knop>` (кнопка малюється у своєму гнізді), `<Actiestapel>` (над нижніми смугами), `<PlaatsActies>` («Перемістити до…», клавіатура, повернення), тип пристрою за шириною. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `src/plaatsing/plaats-slepen.ts` | Розставлення: утримання 0,45 с (дотик) або 5 px мишею, «привид», зони з лічильником, повна зона відмовляє з підказкою, меню розгортається на ☰, Esc / скасування, права кнопка / клавіша меню → «Перемістити до…». | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `src/plaatsing/plaats-flip.ts` | Плавне розсування сусідів у зоні під час перенесення (160 мс; без руху при «зменшити анімацію»). | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `src/plaatsing/plaatsing.css` | Один шар CSS для плаваючих кнопок: зони, гнізда, стос дій (розміри = модель), вікна над зонами (visibility), спливаюче сповіщення вгорі на телефоні, лічильник на ☰, перенесення, «Перемістити до…». | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `src/plaatsing/melding-plek.ts` | Місце спливаючого сповіщення: кандидати за порядком (комп'ютер — під дзвоником, унизу чи вгорі посередині; телефон — угорі під панеллю чи над стосом), перемагає перший, під яким немає малої кнопки (QA 12.10 №11). | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `scripts/plaatsing-controle.mjs` | Перевірка під час збірки: каталог і місткість для кожного типу пристрою, розміри CSS = модель, кожна кнопка рівно один `<Plek>`, жодного нового `position:fixed` поза шаром. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `scripts/plaatsing-vaste-elementen.json` | Список CSS-правил із `position:fixed`, що були до шару (25.10.2026), і дозволені вікна/смуги з причиною — для `plaatsing-controle`. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `tests/eenheid/plaatsing-20261025.test.ts` | Тест моделі й перевірки збірки: типи пристроїв, типові місця, місткість (43 200 комбінацій), перенесення й відмови, нормалізація, повернення, розміри, тексти, налаштування меню. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `tests/e2e/hulp/stand-plaatsing.ts` | Стенд `plaatsing-*`: виміри «до» (`plaatsing-nu`) і приймання «після» (`plaatsing-na`): прокрутка, адресний рядок, «Вгору», свайп, зум, комп'ютер → телефон, перезавантаження, перенесення, повна зона, розгортання меню, «Перемістити до…», вільне місце сповіщення; `plaatsing-dok` (док праворуч / угорі / унизу) і `plaatsing-lagen` (лічильники, підказка й меню у світлій і темній темі, з axe). | плаваючі кнопки «зони й гнізда» (25.10.2026) |
+| `shared/plaatsing.ts` | Рухомі кнопки — модель без DOM: зони (верхня панель, шапка меню, список меню, стос дій), гнізда для телефона / планшета / комп'ютера, типові місця, розкладка, перенесення з відмовою, якщо зона повна, повернення на типове місце, розміри стосу, тексти uk/nl. | рухомі кнопки «зони й гнізда» (25.10.2026) |
+| `src/plaatsing/plaatsing-staat.ts` | Спільний стан зон і гнізд: розкладка від оболонки, гнізда кнопок, перенесення, меню «Перемістити до…», лічильник дзвоника для ☰, висота нижніх смуг. | рухомі кнопки «зони й гнізда» (25.10.2026) |
+| `src/plaatsing/Plek.tsx` | Зони й гнізда в React: `useZone`, `<Gniezda>`, `<Plek knop>` (кнопка малюється у своєму гнізді), `<Actiestapel>` (над нижніми смугами), `<PlaatsActies>` («Перемістити до…», клавіатура, повернення), тип пристрою за шириною. | рухомі кнопки «зони й гнізда» (25.10.2026) |
+| `src/plaatsing/plaats-slepen.ts` | Розставлення: утримання 0,45 с (дотик) або 5 px мишею, «привид», зони з лічильником, повна зона відмовляє з підказкою, меню розгортається на ☰, Esc / скасування, права кнопка / клавіша меню → «Перемістити до…». | рухомі кнопки «зони й гнізда» (25.10.2026) |
+| `src/plaatsing/plaats-flip.ts` | Плавне розсування сусідів у зоні під час перенесення (160 мс; без руху при «зменшити анімацію»). | рухомі кнопки «зони й гнізда» (25.10.2026) |
+| `src/plaatsing/plaatsing.css` | Один шар CSS для рухомих кнопок: зони, гнізда, стос дій (розміри = модель), вікна над зонами (visibility), спливне сповіщення вгорі на телефоні, лічильник на ☰, перенесення, «Перемістити до…». | рухомі кнопки «зони й гнізда» (25.10.2026) |
+| `src/plaatsing/melding-plek.ts` | Місце спливного сповіщення: кандидати за порядком (комп'ютер — під дзвоником, унизу чи вгорі посередині; телефон — угорі під панеллю чи над стосом), перемагає перший, під яким немає малої кнопки (QA 12.10 №11). | рухомі кнопки «зони й гнізда» (25.10.2026) |
+| `scripts/plaatsing-controle.mjs` | Перевірка під час збірки: каталог і місткість для кожного типу пристрою, розміри CSS = модель, кожна кнопка рівно один `<Plek>`, жодного нового `position:fixed` поза шаром. | рухомі кнопки «зони й гнізда» (25.10.2026) |
+| `scripts/plaatsing-vaste-elementen.json` | Список CSS-правил із `position:fixed`, що були до шару (25.10.2026), і дозволені вікна/смуги з причиною — для `plaatsing-controle`. | рухомі кнопки «зони й гнізда» (25.10.2026) |
+| `tests/eenheid/plaatsing-20261025.test.ts` | Тест моделі й перевірки збірки: типи пристроїв, типові місця, місткість (43 200 комбінацій), перенесення й відмови, нормалізація, повернення, розміри, тексти, налаштування меню. | рухомі кнопки «зони й гнізда» (25.10.2026) |
+| `tests/e2e/hulp/stand-plaatsing.ts` | Стенд `plaatsing-*`: виміри «до» (`plaatsing-nu`) і приймання «після» (`plaatsing-na`): прокрутка, адресний рядок, «Вгору», свайп, зум, комп'ютер → телефон, перезавантаження, перенесення, повна зона, розгортання меню, «Перемістити до…», вільне місце сповіщення; `plaatsing-dok` (док праворуч / угорі / унизу) і `plaatsing-lagen` (лічильники, підказка й меню у світлій і темній темі, з axe). | рухомі кнопки «зони й гнізда» (25.10.2026) |
 | `shared/mail-acties.ts` | Один реєстр усіх дій з листами (39): група, тон, тексти uk/nl у шести формах, клавіша й стани; джерело для панелі рядка, меню ⋮, панелі виділення, вікна листа, нижньої смуги телефона, свайпу й підказки клавіш. | блок 1 «швидкі виправлення» (25.10.2026) |
 | `src/mail/MailActieKnop.tsx` | Піктограми й кнопка дії з реєстру (data-mail-actie, data-toon). | блок 1 «швидкі виправлення» (25.10.2026) |
 | `src/mail/mail-acties.css` | Єдине місце, де тон стає кольором (небезпека → --fout, інфо → --info, увага → --warn …) для всіх поверхонь. | блок 1 «швидкі виправлення» (25.10.2026) |
@@ -749,6 +749,6 @@
 | `tests/eenheid/bevestig-toegang-opmaak-20261025.test.ts` | Тест вікна «Підтвердіть доступ» і чипів згоди: прапорець не розтягнуто, підпис у межах вікна, контраст підпису й пояснення на всіх 26 палітрах. | блок 1 «швидкі виправлення» (25.10.2026) |
 | `tests/e2e/hulp/stand-blok1.ts` | Стенд блоку 1: збирає кроки blok1-* чотирьох команд (кожна у своєму файлі). | блок 1 «швидкі виправлення» (25.10.2026) |
 | `tests/e2e/hulp/stand-blok1-acties.ts` | Стенд blok1-acties-*: панель у межах рядка в кожній густині, нічого не перекрито; однаковий колір дії на всіх поверхнях (світла й темна). | блок 1 «швидкі виправлення» (25.10.2026) |
-| `tests/e2e/hulp/stand-blok1-geminimaliseerd.ts` | Стенд blok1-geminimaliseerd-*: док ≤ 60 px згорнутим, перетягування без розтягування, F5; картка не росте від колеса, список прокручується, спливаючий перегляд більшає. | блок 1 «швидкі виправлення» (25.10.2026) |
+| `tests/e2e/hulp/stand-blok1-geminimaliseerd.ts` | Стенд blok1-geminimaliseerd-*: док ≤ 60 px згорнутим, перетягування без розтягування, F5; картка не росте від колеса, список прокручується, спливний перегляд більшає. | блок 1 «швидкі виправлення» (25.10.2026) |
 | `tests/e2e/hulp/stand-blok1-vensters.ts` | Стенд blok1-vensters: кожна кнопка кожного вікна (лист у чотирьох режимах, вкладення, «Новий лист», вікно платформи) і кожна [data-plaats-knop] «влучає» в себе за будь-якого місця дзвоника. | блок 1 «швидкі виправлення» (25.10.2026) |
 | `tests/e2e/hulp/stand-blok1-toegang.ts` | Стенд blok1-toegang-*: вікно «Підтвердіть доступ» (підпис у межах, контраст), чипи згоди на 390 px, сторінка ChatGPT з новими кроками й попередженням про план. | блок 1 «швидкі виправлення» (25.10.2026) |

@@ -2,7 +2,7 @@
 
 # Porteerplan «Мій простір»: zelf hosten zonder AppDeploy
 
-Status: plan, er is nog geen code aangepast. Branch: `zelf-hosten`. Basis: `b161610` (security fixes).
+Status: plan, er is nog geen code aangepast. Branch: `zelf-hosten`. Basis: `b161610` (beveiliging fixes).
 Datum van de analyse: 3 oktober 2026.
 Doelomgeving: Ubuntu 24.04.5, Node.js 24.21 / npm 11, PostgreSQL 17 op 127.0.0.1:5432 (db en rol `mijnruimte`), uploads in `/srv/data/uploads`, app in `/srv/mijn-ruimte`, systeemgebruiker `mijnruimte`, systemd en een Cloudflare Tunnel (`cloudflared`, alleen uitgaand) naar een localhost-poort.
 
@@ -13,7 +13,7 @@ Doelomgeving: Ubuntu 24.04.5, Node.js 24.21 / npm 11, PostgreSQL 17 op 127.0.0.1
 * De app is een React/Vite-SPA met één grote TypeScript-backend (`backend/index.ts`, 415 KB, ±285 routes: 278× POST en 8× GET). AppDeploy draaide de backend als Lambda-achtige handler (`export const handler = router({...})`) en twee cron-handlers.
 * **61 bestanden** importeren de SDK: 28 in `backend/` (`@appdeploy/sdk`) en 33 in `src/` (`@appdeploy/client`).
 * De afhankelijkheid zit vooral in **`db`**: ±770 aanroepen van `db.add/get/list/update/delete` op **82 vaste logische tabellen** en ±10 families van dynamische tabellen met een prefix.
-  Daarnaast gebruikt de code `secrets` (±40×), `storage` (2 bestanden), `ai` (3 aanroepen), `invites` (1 flow), `ws` (dode code) en `router/json/error`.
+  Daarnaast gebruikt de code `secrets` (±40×), `storage` (2 bestanden), `ai` (3 aanroepen), `invites` (1 stroom), `ws` (dode code) en `router/json/error`.
   Aan de frontend-kant zijn het `api.post/get` (±200 aanroepen), `image.resizeIfNeeded` (3×) en `invitesClient` (4×).
 * **AppDeploy-auth wordt niet gebruikt.** De app heeft een eigen authenticatielaag: Google OIDC voor de eigenaar, wachtwoord met TOTP en herstelcodes, eigen sessiecookies en eigen RBAC. Er moet dus geen auth-provider vervangen worden.
 * **Aanbevolen aanpak: een compatibiliteitslaag ("shim").** We schrijven eigen modules met precies dezelfde API (`db`, `storage`, `secrets`, `ai`, `invites`, `router/json/error`; client: `api`, `image`, `invitesClient`) bovenop Postgres (JSONB), het lokale bestandssysteem en env-variabelen.
@@ -29,7 +29,7 @@ Doelomgeving: Ubuntu 24.04.5, Node.js 24.21 / npm 11, PostgreSQL 17 op 127.0.0.1
 
 | Onderdeel | Bevinding |
 |---|---|
-| Frontend | Vite 6 + React 19 + Tailwind 3. Entry `index.html` → `src/main.tsx`. `base: './'`, output `dist/` (`APPDEPLOY_VITE_OUT_DIR`). Er is een service worker (`public/service-worker.js`, slaat `/api/` over). |
+| Frontend | Vite 6 + React 19 + Tailwind 3. Entry `index.html` → `src/main.tsx`. `base: './'`, uitvoer `dist/` (`APPDEPLOY_VITE_OUT_DIR`). Er is een service achtergrondproces (`public/service-worker.js`, slaat `/api/` over). |
 | Pre-build scripts | `scripts/l002-audit.mjs` (statische audit die alleen `public/l002-diagnostic.json` schrijft en nooit faalt), `scripts/beveiliging-bouw.mjs` en `scripts/mail-slimme-inbox-audit.mjs`. **Let op:** `beveiliging-bouw.mjs` herschrijft `index.html` **in de werkboom**: de inline scripts en styles worden geëxternaliseerd naar `public/canonical-*.js/css`. Draai de build daarom in een schone kopie of pas het script aan zodat het naar een build-map schrijft. |
 | Runtime-config frontend | `public/canonical-service.js` bevat de hostnamen van 9 diensten: `hub`, `id`, `mail`, `cloud`, `ai`, `github`, `huis`, `api` en `admin` (`*.tarasevych.com`). Een "technische host" wordt herkend aan `*.v2.appdeploy.ai`. |
 | CSP | Wordt alleen via een `<meta>`-tag gezet door `public/canonical-security.js`. Productie: `script-src 'self'`, `connect-src` met `api-v2.appdeploy.ai`. Technische host: `'unsafe-inline' 'unsafe-eval'`. |
@@ -47,27 +47,27 @@ Doelomgeving: Ubuntu 24.04.5, Node.js 24.21 / npm 11, PostgreSQL 17 op 127.0.0.1
 
 | Bestand | Import | Gebruik (aantal aanroepen) |
 |---|---|---|
-| backend/index.ts | db, error, invites, isInviteError, json, router, secrets | db 344, secrets 33, invites 2, router 1 |
+| backend/index.ts | db, fout, invites, isInviteError, json, router, geheimen | db 344, geheimen 33, invites 2, router 1 |
 | backend/toegangslaag.ts | db | db 34 |
-| backend/google-suite-inrichting.ts | db, error, json, secrets | db 37, secrets 6 |
+| backend/google-suite-inrichting.ts | db, fout, json, geheimen | db 37, geheimen 6 |
 | backend/mail-zoek-duurzaam.ts | db | db 13 |
-| backend/cloud-platform.ts | ai, db, error, json, storage | db 10, storage 6, ai.extract 1 |
-| backend/google-suite-mail-browser.ts | ai, db, error, json | db 9, ai.extract 1 (vertalen) |
-| backend/mail-weergave-voorkeuren.ts | db, error, json, storage | db 6, storage 4 (avatars van afzenders) |
-| backend/google-suite-agenda-fotos.ts | db, error, json | db 6 |
+| backend/cloud-platform.ts | ai, db, fout, json, storage | db 10, storage 6, ai.extract 1 |
+| backend/google-suite-mail-browser.ts | ai, db, fout, json | db 9, ai.extract 1 (vertalen) |
+| backend/mail-weergave-voorkeuren.ts | db, fout, json, storage | db 6, storage 4 (avatars van afzenders) |
+| backend/google-suite-agenda-fotos.ts | db, fout, json | db 6 |
 | backend/google-suite-agenda-sync.ts | db | db 6 |
 | backend/google-suite-sync.ts | db | db 6 |
-| backend/mail-uitstel.ts | db, error, json | db 5 |
-| backend/api-platform-kluis.ts | db, secrets | db 4, secrets 2 |
+| backend/mail-uitstel.ts | db, fout, json | db 5 |
+| backend/api-platform-kluis.ts | db, geheimen | db 4, geheimen 2 |
 | backend/eigenaar-sessie-overdracht.ts | db | db 4 |
-| backend/realtime-subscribers.ts | db, ws, json, error | db 4, ws.send 1 (dood) |
-| backend/google-contour.ts | db, secrets | db 3, secrets 2 + **globale override van `secrets.readSecret`** (r. 162–163) |
-| backend/api-platform-tokens.ts | db, error, json | db 3 |
+| backend/realtime-subscribers.ts | db, ws, json, fout | db 4, ws.send 1 (dood) |
+| backend/google-contour.ts | db, geheimen | db 3, geheimen 2 + **globale override van `secrets.readSecret`** (r. 162–163) |
+| backend/api-platform-tokens.ts | db, fout, json | db 3 |
 | backend/api-platform-verbindingen.ts, cognitief-context.ts, hub-indeling-voorkeuren.ts, mail-pmid-opstart.ts | db (+ error/json) | db 1–2 per bestand |
 | backend/mail-periode-grenzen-cache.ts | db | db 1 (dynamische tabel `mail_period_bounds_v2:<hash>`) |
-| backend/mail-handschrift.ts | ai, error, json | ai.ocr 1 (handschriftherkenning) |
-| backend/globaal-zoek.ts, hub-block-data.ts, mail-search.ts | db, error, json | db via helpers |
-| backend/cloud-google-drive.ts, google-suite-browser.ts, rbac.ts | error, json | alleen response-helpers |
+| backend/mail-handschrift.ts | ai, fout, json | ai.ocr 1 (handschriftherkenning) |
+| backend/globaal-zoek.ts, hub-block-data.ts, mail-search.ts | db, fout, json | db via helpers |
+| backend/cloud-google-drive.ts, google-suite-browser.ts, rbac.ts | fout, json | alleen response-helpers |
 
 ### 2.2 Frontend (`@appdeploy/client`): 33 bestanden
 
@@ -80,17 +80,17 @@ Doelomgeving: Ubuntu 24.04.5, Node.js 24.21 / npm 11, PostgreSQL 17 op 127.0.0.1
 
 | AppDeploy-functie | Gebruik in de app | Zelf-gehoste vervanging |
 |---|---|---|
-| `db.add/get/list/update/delete` | ±770 aanroepen, 82 vaste en ±10 dynamische logische tabellen, filters op gelijkheid van velden op het hoogste niveau (`{userId}`, `{ownerUserId, mailAccountId}`, `{email}`, ...), `limit` en `nextToken` | **Shim `server/platform/db.ts`** met dezelfde signaturen, op `pg` (node-postgres, pool). Eén generieke tabel `app.records(tbl, id, seq, data jsonb, ...)`. `filter` wordt `data @> $1::jsonb` (GIN-index `jsonb_path_ops`). Volgorde op `seq`. `nextToken` = base64(laatste `seq`), dus keyset-paginering. `update` vervangt het hele record, net als AppDeploy. Limieten (500 items en 1 MiB per aanroep, 256 KiB per record) worden gehandhaafd met dezelfde foutmeldingen. **Gedragsverschil (een verbetering):** AppDeploy telde bij `limit` de *gelezen* items, niet de *gevonden* items. Lookups zoals `db.list('users',{filter:{email},limit:5})` konden dus records missen. Postgres geeft echte matches terug. Daarnaast komen er extra methodes voor atomaire acties (`takeOne`/`deleteWhere ... RETURNING`), nodig voor de handoff-race (§5). |
+| `db.add/get/list/update/delete` | ±770 aanroepen, 82 vaste en ±10 dynamische logische tabellen, filters op gelijkheid van velden op het hoogste niveau (`{userId}`, `{ownerUserId, mailAccountId}`, `{email}`, ...), `limit` en `nextToken` | **Shim `server/platform/db.ts`** met dezelfde signaturen, op `pg` (node-postgres, pool). Eén generieke tabel `app.records(tbl, id, seq, data jsonb, ...)`. `filter` wordt `data @> $1::jsonb` (GIN-index `jsonb_path_ops`). Volgorde op `seq`. `nextToken` = base64(laatste `seq`), dus keyset-paginering. `update` vervangt het hele item, net als AppDeploy. Limieten (500 items en 1 MiB per aanroep, 256 KiB per item) worden gehandhaafd met dezelfde foutmeldingen. **Gedragsverschil (een verbetering):** AppDeploy telde bij `limit` de *gelezen* items, niet de *gevonden* items. Lookups zoals `db.list('users',{filter:{email},limit:5})` konden dus items missen. Postgres geeft echte matches terug. Daarnaast komen er extra methodes voor atomaire acties (`takeOne`/`deleteWhere ... RETURNING`), nodig voor de handoff-race (§5). |
 | `storage.write/read/delete` (content base64) | Cloud-uploads (`cloud/<hash>/<ts>-<rand>.<ext>`, max 6 MB) en afzender-avatars (webp) | **Shim `server/platform/opslag.ts`** op `/srv/data/uploads` (`UPLOADS_DIR`). Base64 wordt bij het schrijven gedecodeerd en bij het lezen weer gecodeerd. Strenge padvalidatie: `^[a-zA-Z0-9/_.-]+$`, geen `..`, en na `path.resolve` moet het pad binnen de root vallen. Atomisch schrijven (tmp + `rename`), bestanden 0640 en mappen 0750. Optioneel komt er metadata in `app.storage_objects`. `storage.url` wordt niet gebruikt, dus implementeren we die niet (er komt een duidelijke fout). |
 | `secrets.readSecret / listSecretNames` | ±40 aanroepen, 15+ namen (§4.3) | **Shim `server/platform/geheimen.ts`:** leest uit `process.env`, gevuld via `EnvironmentFile=/etc/mijn-ruimte/geheimen.env`. Er komt een allow-list van toegestane namen. `listSecretNames` geeft alleen de namen uit die lijst die gezet zijn. `readSecret` gooit een fout als een naam ontbreekt, net als AppDeploy. De override in `google-contour.ts` (r. 162–163) **verwijderen**. |
-| `router/json/error` | 1 router, ±285 routes `'POST /api/...'` met `:params`, ctx = `{body, query, params, event}` | **Eigen `router()` met dezelfde semantiek** plus een HTTP-adapter op `node:http`. De adapter bouwt een Lambda-achtig event (`headers` in kleine letters, `body` als string, `queryStringParameters`, `requestContext.http.sourceIp` = `cf-connecting-ip`). `json(data,status)` en `error(msg,status)` geven `{"error": msg}` terug. Er komt een body-limiet van ±12 MB (6 MB bestand als base64 in JSON). |
+| `router/json/error` | 1 router, ±285 routes `'POST /api/...'` met `:params`, ctx = `{body, query, params, event}` | **Eigen `router()` met dezelfde semantiek** plus een HTTP-adapter op `node:http`. De adapter bouwt een Lambda-achtig gebeurtenis (`headers` in kleine letters, `body` als string, `queryStringParameters`, `requestContext.http.sourceIp` = `cf-connecting-ip`). `json(data,status)` en `error(msg,status)` geven `{"error": msg}` terug. Er komt een body-limiet van ±12 MB (6 MB bestand als base64 in JSON). |
 | `invites.create/join` (+ `isInviteError`) | Delen van workspaces (`resourceType:'workspace_share'`, `authMode:'anonymous'`, met verloopdatum) | **Eigen module en tabel `app.invites`.** De code is 128 bits willekeurig (`base64url`). Er zijn `status`, `expires_at`, `revoked_at` en `context jsonb`. `InviteError` krijgt dezelfde `code`-waarden. `resolve`/`revoke` alleen als ze nodig zijn. |
-| `ai.extract` (2×) en `ai.ocr` (1×) | Metadata-suggestie voor cloud-items (met een deterministische fallback), vertaling van mails, en handschrift-OCR | **Adapter `server/platform/ai.ts`** met `AI_PROVIDER=none|openai|anthropic|gemini|xai|ollama`. `extract` betekent: een chat-call met JSON-schema (structured output) plus validatie. `ocr` betekent: een vision-call. Bij `none` wordt `AI_UNAVAILABLE` gegooid. Dan valt cloud terug op de deterministische logica, en tonen vertaling en handschrift een nette melding. Dit is een **beslissing** (§9). |
+| `ai.extract` (2×) en `ai.ocr` (1×) | Metadata-suggestie voor cloud-items (met een deterministische fallback), vertaling van mails, en handschrift-OCR | **Adapter `server/platform/ai.ts`** met `AI_PROVIDER=none|openai|anthropic|gemini|xai|ollama`. `extract` betekent: een chat-call met JSON-schema (structured uitvoer) plus validatie. `ocr` betekent: een vision-call. Bij `none` wordt `AI_UNAVAILABLE` gegooid. Dan valt cloud terug op de deterministische logica, en tonen vertaling en handschrift een nette melding. Dit is een **beslissing** (§9). |
 | `ws.send` + `realtime.ts` | Niet aangesloten | **Verwijderen**: `backend/realtime.ts`, `backend/realtime-subscribers.ts` en de ongebruikte `/api/subscriptions`. |
-| Cron (`cron.json`, handlers in index.ts) | 2 jobs, elke 5 minuten | **systemd-timers** die een kleine CLI aanroepen (`node dist-server/cron.mjs <naam>`), met dezelfde payload als in `cron.json`. `Type=oneshot` voorkomt overlap. Logging gaat naar journald. Extra: een `pg_advisory_lock` per job. Alternatief: in-process `croner` (eenvoudiger, maar minder geïsoleerd). |
-| `@appdeploy/client` `api` | ±200 aanroepen | **`src/platform/client.ts`:** `fetch` naar same-origin `/api/...`, `credentials:'same-origin'`, JSON, een axios-achtige response `{data}` en een error-object met `response:{status,statusText,data}`, `status`, `responseText` en `message`. |
+| Cron (`cron.json`, handlers in index.ts) | 2 taken, elke 5 minuten | **systemd-timers** die een kleine CLI aanroepen (`node dist-server/cron.mjs <naam>`), met dezelfde payload als in `cron.json`. `Type=oneshot` voorkomt overlap. Logging gaat naar journald. Extra: een `pg_advisory_lock` per job. Alternatief: in-process `croner` (eenvoudiger, maar minder geïsoleerd). |
+| `@appdeploy/client` `api` | ±200 aanroepen | **`src/platform/client.ts`:** `fetch` naar same-origin `/api/...`, `credentials:'same-origin'`, JSON, een axios-achtige antwoord `{data}` en een error-object met `response:{status,statusText,data}`, `status`, `responseText` en `message`. |
 | `image.resizeIfNeeded` | 3× | Een eigen implementatie (±60 regels) met `createImageBitmap` + canvas/`OffscreenCanvas` → `toBlob` → base64. Retourvorm `{data,mimeType,width,height,bytes,resized}`. |
-| `invitesClient` | 4× | Een eigen helper die de URL bouwt met de parameter `invite`. Een pending code wordt bewaard in `sessionStorage`. |
+| `invitesClient` | 4× | Een eigen helper die de URL bouwt met de parameter `invite`. Een wachtend code wordt bewaard in `sessionStorage`. |
 | Hosting en statische bestanden | AppDeploy CDN | Dezelfde Node-server serveert `dist/` (bijv. met `sirv`). Hashed assets krijgen `immutable` caching. SPA-fallback naar `index.html`. `base` wordt `'/'` in plaats van `'./'`, want URL's met een tab-pad zoals `/inbox` mogen niet stuk gaan. |
 
 **Importstrategie:** vervang `'@appdeploy/sdk'` door een alias `'@platform/server'` en `'@appdeploy/client'` door `'@platform/client'` (tsconfig `paths` + Vite `resolve.alias` + esbuild `alias`). Dat is een mechanische wijziging van 61 regels. Gebruik niet de oude pakketnamen: dat geeft verwarring en botst als iemand het echte pakket later installeert.
@@ -101,7 +101,7 @@ Doelomgeving: Ubuntu 24.04.5, Node.js 24.21 / npm 11, PostgreSQL 17 op 127.0.0.1
 
 ### 3.1 Wat de app verwacht
 
-* Records zijn **JSON-documenten zonder schema** in een "tabel" (een string). Het `id` (uuid als string) wordt door de database gegenereerd. `db.list` voegt `id` toe, `db.get` niet.
+* Items zijn **JSON-documenten zonder schema** in een "tabel" (een string). Het `id` (uuid als string) wordt door de database gegenereerd. `db.list` voegt `id` toe, `db.get` niet.
 * Tijden zijn epoch-ms (`createdAt`, `updatedAt`, `expiresAt`, ...) in het document zelf.
 * Alles is owner-scoped via velden zoals `userId`, `ownerUserId` en `tenantKey`.
 * Dynamische "tabellen" met een prefix (cachepagina's, checkpoints) zijn: `mail_period_bounds_v2:*`, `mail_search_cursor_v1:*`, `mail_search_manifest_v1:*`, `mail_search_result_page_v1:*`, `mail_pmid_map_v1:*`, `mail_pmid_bootstrap_v1:*`, `hub_layout_preferences_v1:*`, `mail_state_bulk_active_v1:*`, `mail_state_bulk_operation_v1:*` en `mail_state_bulk_page_v1:*`.
@@ -117,7 +117,7 @@ Doelomgeving: Ubuntu 24.04.5, Node.js 24.21 / npm 11, PostgreSQL 17 op 127.0.0.1
 | API-platform | `owner_vault_v1`, `owner_connections_v1` |
 | Hub en workspaces | `workspaces`, `workspace_members`, `workspace_blocks`, `site_notifications`, `notification_jobs`, `cognitive_resume_context_v1` |
 | Cloud | `cloud_workspaces_v1`, `cloud_items_v1`, `cloud_resume_v1`, `cloud_audit_v1`, `cloud_ai_decisions_v1`, `cloud_provider_accounts_v1`, `cloud_provider_selections_v1`, `cloud_provider_tokens_v1` |
-| Google Suite / providers | `google_oauth_grant_v1`, `google_suite_onboarding_v1`, `google_suite_oauth_states_v1`, `google_suite_sync_state_v1`, `google_suite_calendar_sync_state_v1`, `google_suite_calendar_events_v1`, `google_suite_drive_projection_v1`, `google_suite_mail_selections_v1`, `google_photos_picker_sessions_v1`, `google_photos_picker_selections_v1`, `provider_principals_v1`, `provider_service_grants_v1`, `provider_service_tokens_v1`, `provider_endpoint_verifications_v1` |
+| Google Suite / aanbieders | `google_oauth_grant_v1`, `google_suite_onboarding_v1`, `google_suite_oauth_states_v1`, `google_suite_sync_state_v1`, `google_suite_calendar_sync_state_v1`, `google_suite_calendar_events_v1`, `google_suite_drive_projection_v1`, `google_suite_mail_selections_v1`, `google_photos_picker_sessions_v1`, `google_photos_picker_selections_v1`, `provider_principals_v1`, `provider_service_grants_v1`, `provider_service_tokens_v1`, `provider_endpoint_verifications_v1` |
 | Mail | `mail_accounts_v1`, `mail_items_v1`, `mail_oauth_states_v2`, `mail_oauth_tokens_v2`, `mail_jobs_v2`, `mail_commands_v2`, `mail_sync_state_v2`, `mail_provider_labels_v2`, `mail_provider_threads_v2`, `mail_provider_subscriptions_v2`, `mail_webhook_events_v2`, `mail_endpoint_verifications_v1`, `mail_metrics_v1`, `mail_notification_preferences_v1`, `mail_view_preferences_v1`, `mail_resume_v1`, `mail_snoozes_v1`, `mail_state_intents_v1`, `mail_state_intent_events_v1` |
 | Dood | `entity_subscriptions` (realtime) |
 
@@ -229,11 +229,11 @@ Er is geen exportfunctie voor de AppDeploy-database of -storage (ook niet via de
 
 ---
 
-## 4. Frontend, authenticatie en secrets
+## 4. Frontend, authenticatie en geheimen
 
 ### 4.1 Frontend build en serving
 * De build blijft `vite build` → `dist/`, met de pre-build scripts. Pas `vite.config.ts` aan: `outDir` vast op `dist`, `APPDEPLOY_*` eruit (eventueel `SOURCEMAP=hidden`), `base: '/'`.
-* `beveiliging-bouw.mjs` moet de output in een build-map zetten (nu herschrijft het `index.html` in git). Anders blijft de werkboom na elke build vuil.
+* `beveiliging-bouw.mjs` moet de uitvoer in een build-map zetten (nu herschrijft het `index.html` in git). Anders blijft de werkboom na elke build vuil.
 * `public/canonical-service.js`: `isTechnicalHost` wordt `false` in productie (de AppDeploy-host verdwijnt). De lijst met domeinen moet configureerbaar worden, zodat we lokaal kunnen testen (zie §7.3). Zet hem bijvoorbeeld in een door de server gegenereerde `/canonical-config.js`, of in een build-time `VITE_PUBLIC_DOMAIN`. Dezelfde lijst staat ook in `backend/index.ts` (`SERVICE_ORIGINS`), `backend/eigenaar-sessie-overdracht.ts`, `backend/google-suite-inrichting.ts` (`CALLBACK`), `backend/api-platform-kluis.ts` (`revealHostAllowed`) en enkele `src/*`. Dit wordt **één bron** in `backend/deployment-identity.ts` (`TECH_ORIGIN`, `API_COOKIE_PATH`, cookienamen).
 * De Node-server serveert alle hostnamen vanuit één proces. De dienst wordt bepaald door de `Host`-header (`ownerCustomHostService`), en die werkt al zo.
 
@@ -242,21 +242,21 @@ Er is geen exportfunctie voor de AppDeploy-database of -storage (ook niet via de
 * **Wachtwoordlogin** (`/api/owner/access/password/login` en `/api/owner/auth/password/login`) met optionele TOTP en herstelcodes (`backend/toegangslaag.ts`). Passkeys/WebAuthn slaan alleen een `credentialId` op, zonder publieke sleutel of verificatie. Dat is dus geen echte loginmethode: niet inschakelen totdat het goed geïmplementeerd is (bijv. `@simplewebauthn/server`).
 * **Sessies** zijn eigen cookies: `__Secure-tsv_ecosystem_<APP_ID>` (gedeelde sessie), per-tab cookies per dienst (`SameSite=Strict`), browser-grants (`tsv_bg_*`, `tsv_bp_*`, `SameSite=Lax`), plus handoff tussen diensten (`eigenaar-sessie-overdracht.ts`). De opslag gebeurt in `owner_service_sessions_v1` en verwante tabellen (token-hash), met een revocation-epoch.
 * **Machine-API:** Bearer-tokens `tsv_...` (`api_machine_tokens_v1`, `GET /api/v1/me`). SCIM-inbound gebeurt met `SCIM_BEARER_TOKEN`.
-* **Providers voor koppelingen:** Google (Gmail, Drive, Calendar, Photos Picker, Tasks via de "Google Suite"-onboarding) en Microsoft Graph (Outlook-mail). Push gaat via Gmail Pub/Sub (`/api/owner/mail/google/pubsub/push`, JWT-verificatie) en Graph-webhooks (`/api/owner/mail/microsoft/webhook`).
+* **Aanbieders voor koppelingen:** Google (Gmail, Drive, Calendar, Photos Picker, Tasks via de "Google Suite"-onboarding) en Microsoft Graph (Outlook-mail). Push gaat via Gmail Pub/Sub (`/api/owner/mail/google/pubsub/push`, JWT-verificatie) en Graph-webhooks (`/api/owner/mail/microsoft/webhook`).
 * **Cookies bij zelf hosten:** de API wordt *same-origin*. `SameSite=None; Partitioned` en `Path=/app/<id>/` zijn niet meer nodig. Voorstel:
   * De ecosysteem-cookie wordt `__Secure-tsv_ecosystem; Domain=tarasevych.com; Path=/api/; HttpOnly; Secure; SameSite=Lax`. Zo houden alle subdomeinen één sessie, net als met de gepartitioneerde cookie nu.
   * Cookies per dienst/tab worden host-only `__Host-...; Path=/; SameSite=Strict`.
   * De ingebouwde self-tests die op `SameSite=None`/`Partitioned` controleren, moeten mee aangepast worden.
 
-### 4.3 Secrets en env-variabelen (alle **nieuw** genereren)
+### 4.3 Geheimen en env-variabelen (alle **nieuw** genereren)
 In `/etc/mijn-ruimte/geheimen.env` (0640 root:mijnruimte):
 `DATABASE_URL` (bestaat al), `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` (aliassen `GOOGLE_SUITE_CLIENT_ID` en `GOOGLE_SUITE_CLIENT_SECRET`), `GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1`, `OWNER_VAULT_ENCRYPTION_KEY_V1`, `MAIL_TOKEN_ENCRYPTION_KEY_V1`, `MICROSOFT_GRAPH_CLIENT_ID`, `MICROSOFT_GRAPH_CLIENT_SECRET`, `MICROSOFT_GRAPH_TENANT_ID`, `MICROSOFT_GRAPH_WEBHOOK_URL`, `MICROSOFT_GRAPH_WEBHOOK_CLIENT_STATE`, `GOOGLE_GMAIL_PUBSUB_TOPIC`, `GOOGLE_GMAIL_PUBSUB_AUDIENCE`, `GOOGLE_GMAIL_PUBSUB_SERVICE_ACCOUNT_EMAIL`, `SCIM_BEARER_TOKEN` (optioneel).
 **Nieuw door de port:** `OWNER_EMAIL`, `OWNER_GOOGLE_SUB` (aanbevolen), `IDENTITY_TOTP_ENCRYPTION_KEY_V1`, `IDENTITY_RECOVERY_PEPPER_V1`, `SESSION_TOKEN_PEPPER_V1` (optioneel), `AI_PROVIDER` en `AI_API_KEY` (afhankelijk van de keuze), `PUBLIC_DOMAIN=tarasevych.com`, `PORT=8080`, `HOST=127.0.0.1`, `UPLOADS_DIR=/srv/data/uploads`.
 **Vervalt:** `APPDEPLOY_VITE_OUT_DIR`, `APPDEPLOY_VITE_SOURCEMAP` en de AppDeploy-accountsleutels (wel intrekken bij AppDeploy).
 Daarnaast intrekken en opnieuw aanmaken: alle `tsv_`-tokens, vault-items (Home Assistant, Telegram, GitHub PAT, webhooks), alle Google- en Microsoft-refresh-tokens, wachtwoorden en TOTP.
 **OAuth-apps die nieuw moeten:**
-* Google Cloud: een **nieuwe OAuth-client** (de oude secret is gelekt, en de standaard-client-ID staat hardcoded in `google-contour.ts:5` en `src/CanoniekImplementatieWaarheidMatrix.tsx`). Redirect-URI `https://id.tarasevych.com/`, JS-origins voor de gebruikte hosts. Verder een Pub/Sub-topic met een push-subscription naar `https://<host>/api/owner/mail/google/pubsub/push` en een service-account.
-* Microsoft Entra: een nieuwe client secret (of een nieuwe app-registratie), redirect `https://id.tarasevych.com/`, en een Graph-webhook-URL op een publieke host.
+* Google Cloud: een **nieuwe OAuth-client** (de oude geheim is gelekt, en de standaard-client-ID staat hardcoded in `google-contour.ts:5` en `src/CanoniekImplementatieWaarheidMatrix.tsx`). Redirect-URI `https://id.tarasevych.com/`, JS-origins voor de gebruikte hosts. Verder een Pub/Sub-topic met een push-subscription naar `https://<host>/api/owner/mail/google/pubsub/push` en een service-account.
+* Microsoft Entra: een nieuwe client geheim (of een nieuwe app-registratie), redirect `https://id.tarasevych.com/`, en een Graph-webhook-URL op een publieke host.
 
 ---
 
@@ -265,14 +265,14 @@ Daarnaast intrekken en opnieuw aanmaken: alle `tsv_`-tokens, vault-items (Home A
 | # | Punt | Waar | Oplossing |
 |---|---|---|---|
 | 1 | **Geen rate limit of lockout** op wachtwoordlogin (brute force van wachtwoord, TOTP en herstelcodes; user-enumeratie) | `backend/toegangslaag.ts:203` `verifyPasswordLogin`. Routes r. 273 (`/api/owner/access/password/login`) en r. 279 (`/api/owner/auth/password/login`). Ook `totp/confirm` (r. 403) en `account/recover`. | Middleware `rateLimit(bucket, max, window)` op `app.rate_limits` (atomische `INSERT ... ON CONFLICT DO UPDATE SET hits=hits+1 RETURNING hits`). Per IP bijv. 10/15 min, per e-mail (sha256) 5/15 min, en een progressieve lockout in `app.login_lockouts`. TOTP: een gebruikte tijdstap onthouden (replay-bescherming). Antwoorden en timing gelijk houden voor bestaande en onbestaande gebruikers (dummy-hash). Het client-IP komt **alleen** uit `cf-connecting-ip` (`requestMeta` in index.ts kijkt nu eerst naar `x-forwarded-for`, en die is te vervalsen). Extra laag: een Cloudflare WAF rate-limit-regel op `/api/*/password/login`. |
-| 2 | **PKCE-verifier en nonce afgeleid** met HMAC van de client secret | `backend/index.ts:321` `ownerOAuthMaterial`, `backend/mail-platform.ts:17` `mailGoogleOAuthMaterial`, `backend/mail-microsoft.ts:1` `mailMicrosoftOAuthMaterial`, `backend/google-suite-inrichting.ts:110` `oauthMaterial` | Bij de start `randomBytes(32)` voor verifier en nonce, opgeslagen in de bestaande state-record (`owner_auth_transactions_v1`, `mail_oauth_states_v2`, `google_suite_oauth_states_v1`, `google_oauth_states`), met TTL ≤10 min en eenmalig gebruik (atomisch verwijderen bij de callback). De nonce wordt gecontroleerd in het ID-token. |
+| 2 | **PKCE-verifier en nonce afgeleid** met HMAC van de client geheim | `backend/index.ts:321` `ownerOAuthMaterial`, `backend/mail-platform.ts:17` `mailGoogleOAuthMaterial`, `backend/mail-microsoft.ts:1` `mailMicrosoftOAuthMaterial`, `backend/google-suite-inrichting.ts:110` `oauthMaterial` | Bij de start `randomBytes(32)` voor verifier en nonce, opgeslagen in de bestaande state-record (`owner_auth_transactions_v1`, `mail_oauth_states_v2`, `google_suite_oauth_states_v1`, `google_oauth_states`), met TTL ≤10 min en eenmalig gebruik (atomisch verwijderen bij de callback). De nonce wordt gecontroleerd in het ID-token. |
 | 3 | **SameSite=None/Partitioned zonder CSRF-check** | Cookie-builders in `backend/index.ts` (ecosysteem-, grant-, identity- en redirect-cookies) en `backend/eigenaar-sessie-overdracht.ts`. Er is geen Origin-check op POST. | Same-origin API met `SameSite=Lax/Strict` (§4.2), plus een **globale Origin-allow-list** in de HTTP-adapter: voor elke niet-GET `/api/*` moet `Origin` (of `Referer`) gelijk zijn aan `https://<Host>` en in de lijst van diensten staan. Uitzonderingen: de webhooks (`/api/owner/mail/microsoft/webhook`, `/api/owner/mail/google/pubsub/push`, die eigen verificatie hebben), `/api/v1/*` met Bearer, en SCIM. Content-Type moet `application/json` zijn. |
 | 4 | **`x-forwarded-host` vertrouwd** | `backend/index.ts:278` `ownerHost`, `backend/eigenaar-sessie-overdracht.ts:17` `hostOf`, `backend/api-platform-kluis.ts:69` `requestHost` | Alleen `Host` gebruiken, en valideren tegen de lijst van hostnamen (anders 421/400). De server bindt op `127.0.0.1`. In cloudflared **geen** `httpHostHeader` instellen. De adapter verwijdert een inkomende `x-forwarded-host` uit `event.headers`. **Ook:** `revealHostAllowed` (`api-platform-kluis.ts:73`) staat `localhost`, `127.0.0.1` en `internal.appdeploy.runtime` toe. Dat is gevaarlijk bij zelf hosten, want elk lokaal proces kan dan bij de vault. Die waarden moeten weg. |
 | 5 | **CSP `unsafe-inline`/`unsafe-eval`** | `public/canonical-security.js` (qa/technische policy). Een HTML-callbackpagina met `script-src 'unsafe-inline'` in `backend/index.ts:321`. CSP staat nu alleen in een meta-tag. | De technische host verdwijnt, en daarmee de qa-policy. De CSP komt als **HTTP-header** vanuit de Node-server: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'self'`. `'wasm-unsafe-eval'` is nodig omdat sql.js, h5wasm en pdf.js WebAssembly gebruiken. Testen. De callbackpagina krijgt een per-request `nonce` of een sha256-hash. De meta-tag blijft eventueel als tweede laag, zonder AppDeploy-hosts. De overige headers (HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, COOP) komen ook op statische responses. |
-| 6 | **DOMPurify ontbreekt** | `src/MailOpgemaaktDocumentVoorbeeld.tsx:1` `dangerouslySetInnerHTML={{__html:content.html}}`. Daarnaast nakijken: `src/mail-document-inhoud.ts` en `src/mail-docx-kopie.ts` (`template.innerHTML`, inert maar de output wordt gerenderd). | `dompurify` toevoegen. `DOMPurify.sanitize(html,{USE_PROFILES:{html:true}, FORBID_TAGS:['style','form','input','iframe','object','embed'], FORBID_ATTR:['style'], ALLOW_DATA_ATTR:false})` en een hook die externe `src`/`href` blokkeert of herschrijft. Eén helper `sanitizeHtml()` gebruiken op alle plaatsen. |
+| 6 | **DOMPurify ontbreekt** | `src/MailOpgemaaktDocumentVoorbeeld.tsx:1` `dangerouslySetInnerHTML={{__html:content.html}}`. Daarnaast nakijken: `src/mail-document-inhoud.ts` en `src/mail-docx-kopie.ts` (`template.innerHTML`, inert maar de uitvoer wordt gerenderd). | `dompurify` toevoegen. `DOMPurify.sanitize(html,{USE_PROFILES:{html:true}, FORBID_TAGS:['style','form','input','iframe','object','embed'], FORBID_ATTR:['style'], ALLOW_DATA_ATTR:false})` en een hook die externe `src`/`href` blokkeert of herschrijft. Eén helper `sanitizeHtml()` gebruiken op alle plaatsen. |
 | 7 | **TOTP-geheimen in plaintext. Herstelcodes HMAC'd met een vaste sleutel** | `backend/toegangslaag.ts:30` (`createHmac('sha256','mij-prostir-access-v1')`). TOTP-record `identity_totp_v1.secret` (base32, gebruikt op r. 216 en 409). | TOTP-geheim versleutelen met AES-256-GCM (`IDENTITY_TOTP_ENCRYPTION_KEY_V1`, AAD = userId). Herstelcodes: HMAC-SHA256 met `IDENTITY_RECOVERY_PEPPER_V1` (of scrypt), eenmalig gebruik. Omdat we schoon beginnen, is er geen datamigratie nodig. Iedereen stelt TOTP opnieuw in. |
-| 8 | **Hardcoded eigenaar** | `backend/index.ts:30` `OWNER`, `backend/rbac.ts:8` `OWNER_EMAIL` | Komt uit env `OWNER_EMAIL`, en bij voorkeur ook `OWNER_GOOGLE_SUB` (de stabiele Google-`sub`, sterker dan e-mail). Een check bij het opstarten: zonder deze waarden start de server niet. Los daarvan het Google-account beveiligen (zie SECURITY-NOTES). |
-| 9 | Override van secrets via de database in google-contour | `backend/google-contour.ts:162–163` (`mutable.readSecret=...`) | Verwijderen. Secrets komen alleen uit env. De UI-tekst over "contour"-opslag aanpassen. |
+| 8 | **Hardcoded eigenaar** | `backend/index.ts:30` `OWNER`, `backend/rbac.ts:8` `OWNER_EMAIL` | Komt uit env `OWNER_EMAIL`, en bij voorkeur ook `OWNER_GOOGLE_SUB` (de stabiele Google-`sub`, sterker dan e-mail). Een controle bij het opstarten: zonder deze waarden start de server niet. Los daarvan het Google-account beveiligen (zie SECURITY-NOTES). |
+| 9 | Override van geheimen via de database in google-contour | `backend/google-contour.ts:162–163` (`mutable.readSecret=...`) | Verwijderen. Geheimen komen alleen uit env. De UI-tekst over "contour"-opslag aanpassen. |
 | 10 | Handoff redeem is list-then-delete (race) en login-CSRF via `?handoff=` | `backend/eigenaar-sessie-overdracht.ts:48` (`POST /api/owner/session/handoff/redeem`) | Atomisch: `DELETE FROM app.records WHERE tbl='service_handoffs' AND data @> {...} RETURNING data` (via `db.takeOne`). Het handoff-token wordt gebonden aan een browser-nonce of -cookie die bij het aanmaken gezet is, en de redeem vraagt een POST met Origin-check. |
 | 11 | DNS-rebinding TOCTOU in de SSRF-guard voor remote images | `backend/google-suite-mail-browser.ts:26` (`publicHttpsTarget` doet `lookup()` en daarna `fetch()`) | Een `undici` `Agent` met een eigen `connect.lookup` die het geresolvede publieke IP vastpint en private ranges weigert bij het connecten. Geen redirects volgen (of elke hop opnieuw valideren). Limieten op grootte en tijd. |
 | 12 | Ongebruikte `/api/subscriptions` en realtime-code | `backend/realtime*.ts` | Verwijderen. |
@@ -310,9 +310,9 @@ Conclusie: wat door de SDK faalt, is alleen de import-resolutie (`@appdeploy/cli
 | HTTP-server + router-compat + statische bestanden + host-allow-list + headers + healthcheck | 2 d |
 | db-shim op Postgres + migratierunner + unit-tests tegen echte PG | 1,5–2 d |
 | storage-shim (fs) + tests | 0,5 d |
-| secrets (env) + config-validatie bij opstarten | 0,5 d |
+| geheimen (env) + config-validatie bij opstarten | 0,5 d |
 | invites + client-helpers (`api`, `image`, `invitesClient`) | 1 d |
-| ai-adapter (1 provider) of netjes uitschakelen | 0,5–1 d |
+| ai-adapter (1 aanbieder) of netjes uitschakelen | 0,5–1 d |
 | cron-CLI + systemd-timers | 0,5 d |
 | Domeinen/cookies/technische host centraliseren, self-tests bijwerken | 1,5 d |
 | Beveiligingspunten 1–11 (§5) | 4–5 d |
@@ -333,7 +333,7 @@ Conclusie: wat door de SDK faalt, is alleen de import-resolutie (`@appdeploy/cli
 9. **Cron** omzetten naar CLI en timers, met daarbij een TTL-opruimjob voor de dynamische tabellen, `rate_limits` en verlopen sessies.
 10. **Lokaal testen** (§7.3).
 11. **Deploy op de VM** (§8). Eerst alleen `hub` en `id` via de tunnel, dan de overige hosts.
-12. **Nieuwe OAuth-clients en secrets** instellen, dan opnieuw koppelen (Google, Microsoft, vault). Daarna de AppDeploy-app uitzetten en de AppDeploy-sleutels intrekken.
+12. **Nieuwe OAuth-clients en geheimen** instellen, dan opnieuw koppelen (Google, Microsoft, vault). Daarna de AppDeploy-app uitzetten en de AppDeploy-sleutels intrekken.
 
 ### 7.3 Lokaal testen op deze box (later, nu niets geïnstalleerd)
 * **Node 24:** `npx -y -p node@24 -p npm@11 ...` (al getest, werkt) of nvm.
@@ -414,9 +414,9 @@ De webhooks (`/api/owner/mail/microsoft/webhook`, `/api/owner/mail/google/pubsub
 1. **Hostnamen.** De code kent 9 diensten: `hub`, `id`, `mail`, `cloud`, `ai`, `github`, `huis`, `api` en `admin`. **`dashboard` bestaat niet in de code.** Minimaal nodig zijn `hub` en `id` (de OAuth-redirect is `https://id.tarasevych.com/`). Is `dashboard` een alias voor `hub`, een hernoemde `admin`, of iets nieuws? Welke hosts zetten we in de eerste release in de tunnel?
 2. **Gedeelde sessie over subdomeinen:** een cookie met `Domain=tarasevych.com` (aanbevolen, gelijk aan het huidige gedrag) of per host plus handoff. Bij `Domain=` krijgt **elk** subdomein van tarasevych.com de cookie. Zijn er subdomeinen die door anderen of door derde partijen gehost worden?
 3. **Data:** schoon beginnen (aanbevolen) of een eenmalige export via een tijdelijk endpoint op AppDeploy (§3.3).
-4. **AI-functies** (cloud-metadata, mailvertaling, handschrift-OCR): welke provider en API-sleutel (OpenAI, Anthropic, Gemini, xAI of lokaal met Ollama/Tesseract), of voorlopig uitzetten?
-5. **Google OAuth:** een nieuwe client aanmaken. De Gmail- en Drive-scopes zijn *restricted*. In de status "Testing" van een External-app verlopen refresh-tokens na 7 dagen. Dus: de app "In production" zetten (verificatie of security-assessment voor restricted scopes), of een Workspace-"Internal"-app gebruiken als er een Workspace-domein is. Dit bepaalt of de mailsync stabiel blijft.
-6. **Microsoft Graph (Outlook):** nodig in de eerste release? Zo ja, dan een nieuwe client secret en een publieke webhook-URL.
+4. **AI-functies** (cloud-metadata, mailvertaling, handschrift-OCR): welke aanbieder en API-sleutel (OpenAI, Anthropic, Gemini, xAI of lokaal met Ollama/Tesseract), of voorlopig uitzetten?
+5. **Google OAuth:** een nieuwe client aanmaken. De Gmail- en Drive-scopes zijn *restricted*. In de status "Testen" van een External-app verlopen refresh-tokens na 7 dagen. Dus: de app "In production" zetten (verificatie of security-assessment voor restricted scopes), of een Workspace-"Internal"-app gebruiken als er een Workspace-domein is. Dit bepaalt of de mailsync stabiel blijft.
+6. **Microsoft Graph (Outlook):** nodig in de eerste release? Zo ja, dan een nieuwe client geheim en een publieke webhook-URL.
 7. **Cron:** systemd-timers (aanbevolen) of in-process.
 8. **Passkeys (WebAuthn):** voorlopig uitzetten (aanbevolen) of goed implementeren.
 9. **Fase 2** (relationeel schema voor mail) nu of later.
@@ -437,7 +437,7 @@ Beslissingen van de eigenaar die zijn toegepast:
    - Ontbreekt de map, dan geeft hij 404. Er is daar geen API.
    - Nog niet geïntegreerd. Het herstelde materiaal staat buiten de repo (`/workspace/dashboard-patch/`, `qa.html`, `qa-id.html`).
 4. **Google alleen via env.**
-   - De hardcoded client-ID en de database-override van secrets zijn weg.
+   - De hardcoded client-ID en de database-override van geheimen zijn weg.
    - Zonder `GOOGLE_OAUTH_CLIENT_ID`/`_SECRET` geldt `configured:false` en is er geen crash.
    - Microsoft/Outlook is uit zolang de env ontbreekt.
 5. **Eén aanmelding voor alle `*.tarasevych.com`-subdomeinen.**
@@ -455,7 +455,7 @@ Wat er nu is:
 - **Server** `server/start.ts` (`node:http`, `127.0.0.1:PORT`):
   - Host-allow-list: 421 voor onbekende hosts.
   - Gezondheidscheck `/__gezondheid` (inclusief DB).
-  - Lambda-achtig event voor de bestaande router.
+  - Lambda-achtig gebeurtenis voor de bestaande router.
   - Client-IP alleen uit `cf-connecting-ip`. `x-forwarded-*`, `forwarded` en `x-real-ip` worden genegeerd of overschreven.
   - `dist/` met SPA-fallback, ETag/304 en immutable assets.
   - CSP als HTTP-header (gelijk aan de meta-CSP, plus `frame-ancestors 'none'`), HSTS, nosniff, Referrer-Policy, X-Frame-Options en Permissions-Policy.
@@ -547,7 +547,7 @@ nieuwste back-up op naar R:\; `deploy/HERSTEL.md` is het noodplan. Uitleg per ma
 `deploy/pc-uitleg/`.
 
 ### 10.10 Nog open
-- Offline kopie van de herstelsleutel (USB/papier); geplande taak voor het ophalen; Cloudflare: Always Use HTTPS aanzetten.
+- Offline kopie van de herstelsleutel (USB/papier); geplande taak voor het ophalen; Cloudflare: Altijd Use HTTPS aanzetten.
 - Oude onversleutelde test-back-ups 20261003-115845/-115908 op de VM (verdwijnen na 7 dagen vanzelf).
 - Nieuwe Google OAuth-client (redirect `https://id.tarasevych.com/`).
 - Echte WebAuthn-implementatie; AI-provider; dashboardintegratie.

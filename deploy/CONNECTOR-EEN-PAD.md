@@ -1,12 +1,12 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./CONNECTOR-EEN-PAD.uk.md) · [🇳🇱 **Nederlandse versie**](./CONNECTOR-EEN-PAD.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-# Eén connectoradres per AI — wat er op de server moet gebeuren (20.10.2026)
+# Одна адреса конектора для кожного ШІ — що потрібно зробити на сервері (20.10.2026)
 
-Tot nu toe: `https://mcp.tarasevych.com/ai/<agent>` voor connector v2, `…/mcp` voor de koppeling van vóór v2, en de korte paden
-`/claude`, `/grok`, `/chatgpt`, `/gemini`, `/copilot` voor de MCP-**deur** (een apart proces, `deploy/mcp/server.mjs`, poort 8091).
-Drie «deuren» naar hetzelfde huis.
+Дотепер: `https://mcp.tarasevych.com/ai/<agent>` для конектора v2, `…/mcp` для підключення до появи v2 та короткі шляхи
+`/claude`, `/grok`, `/chatgpt`, `/gemini`, `/copilot` для MCP-**дверей** (окремий процес, `deploy/mcp/server.mjs`, порт 8091).
+Три «двері» до одного дому.
 
-Vanaf nu: **één adres per agent, bediend door de hoofdapp**:
+Відтепер: **одна адреса для кожного агента, яку обслуговує основний застосунок**:
 
 ```
 https://mcp.tarasevych.com/claude
@@ -17,152 +17,152 @@ https://mcp.tarasevych.com/copilot
 https://mcp.tarasevych.com/cursor
 ```
 
-En de rechten zitten niet meer in het adres: de connector toont zowel de privé- als de technische hulpmiddelen, en bij **elke**
-`tools/list` en `tools/call` berekent de server opnieuw wat er op dat moment bestaat (eigenaar + actief technisch profiel →
-`backend/ai-ruimte-poort.ts`, `effectieveRuimte`). Technische toegang verdwijnt dus op het moment dat u het profiel verlaat.
+І права більше не зашиті в саму адресу: конектор показує як приватні, так і технічні інструменти, а під час **кожного**
+виклику `tools/list` і `tools/call` сервер заново обчислює, що доступно в цей момент (власник + активний технічний профіль →
+`backend/ai-ruimte-poort.ts`, `effectieveRuimte`). Отже, технічний доступ зникає тієї ж миті, коли ви виходите з профілю.
 
-> `/gpt` is het adres van ChatGPT. De deur heette `/chatgpt`; dat pad is nooit een v2-adres geweest en wordt er ook geen.
+> `/gpt` — це адреса ChatGPT. Двері називалися `/chatgpt`; цей шлях ніколи не був адресою v2 і нею не стане.
 
 ---
 
 ## 1. Cloudflare Tunnel (`/etc/cloudflared/config.yml`)
 
-Het sjabloon in `deploy/cloudflared-config.yml` is al bijgewerkt. Neem de blokken voor `mcp.tarasevych.com` daaruit over. De
-regels worden van boven naar beneden gematcht, dus de volgorde is de helft van het werk:
+Шаблон у `deploy/cloudflared-config.yml` уже оновлено. Перенесіть із нього блоки для `mcp.tarasevych.com`. Правила
+перевіряються зверху вниз, тому порядок — це половина справи:
 
 ```yaml
-  # Alleen nog de eigen OAuth en gezondheid van de deur gaan naar 8091 …
+  # Лише власний OAuth і перевірка стану дверей ідуть на 8091 …
   - hostname: mcp.tarasevych.com
     path: ^/(oauth|health)(/|$)
     service: http://127.0.0.1:8091
-  # … al het andere naar de hoofdapp: /claude /gpt /grok /gemini /copilot /cursor, /mcp, /oauth2/*, /.well-known/*, de schermen, /api/*.
+  # … усе інше — в основний застосунок: /claude /gpt /grok /gemini /copilot /cursor, /mcp, /oauth2/*, /.well-known/*, екрани, /api/*.
   - hostname: mcp.tarasevych.com
     service: http://127.0.0.1:8080
 ```
 
-Wat er verdwijnt is de oude regel
+Зникає старе правило:
 
 ```yaml
     path: ^/((?i:grok|claude|chatgpt|gemini|copilot)|oauth|health|\.well-known)(/|$)
     service: http://127.0.0.1:8091
 ```
 
-Zolang die regel bestaat komt `POST /claude` bij de **deur** en niet bij de app: het nieuwe adres geeft dan de antwoorden van de
-deur en de koppeling mislukt. De aparte `.well-known`-regel naar 8080 is niet meer nodig (alles valt nu onder de laatste regel).
+Доки це правило існує, `POST /claude` потрапляє у **двері**, а не в застосунок: нова адреса тоді віддає відповіді
+дверей, і підключення не вдається. Окреме правило `.well-known` на 8080 більше не потрібне (усе підпадає під останнє правило).
 
-Toepassen zonder de tunnel te verliezen:
+Застосувати без втрати тунелю:
 
 ```bash
-sudo cloudflared tunnel ingress validate            # eerst controleren
+sudo cloudflared tunnel ingress validate            # спершу перевірити
 sudo systemctl reload cloudflared || sudo systemctl restart cloudflared
 ```
 
-Controle (van buiten, met een geldig token van een bestaande koppeling):
+Перевірка (ззовні, з дійсним токеном наявного підключення):
 
 ```bash
-# 1. nieuw adres: 401 met de metadata-pointer naar /claude/.well-known/…
+# 1. нова адреса: 401 із вказівником метаданих на /claude/.well-known/…
 curl -si -X POST https://mcp.tarasevych.com/claude -H 'content-type: application/json' \
      -d '{"jsonrpc":"2.0","id":1,"method":"initialize"}' | head -20
 
-# 2. oud adres: 308 (NIET 301/302) naar /claude, methode en body blijven
+# 2. стара адреса: 308 (НЕ 301/302) на /claude, метод і тіло зберігаються
 curl -si -X POST https://mcp.tarasevych.com/ai/claude -H 'content-type: application/json' \
      -d '{"jsonrpc":"2.0","id":1,"method":"initialize"}' | head -5
 
-# 3. metadata in beide vormen
+# 3. метадані в обох формах
 curl -s https://mcp.tarasevych.com/claude/.well-known/oauth-protected-resource
 curl -s https://mcp.tarasevych.com/.well-known/oauth-protected-resource/claude
 ```
 
-## 2. De deur (`mijn-ruimte-mcp.service`, poort 8091)
+## 2. Двері (`mijn-ruimte-mcp.service`, порт 8091)
 
-De deur doet niets meer wat de app niet beter doet; haar enige reden om te blijven draaien zijn **bestaande deur-verbindingen**
-(`/oauth/*`, zichtbaar op mcp.*/verbindingen → «Токени й двері»). Stappenplan:
+Двері більше не роблять нічого такого, чого застосунок не робить краще; єдина причина тримати їх увімкненими — **наявні підключення через двері**
+(`/oauth/*`, видимі на mcp.*/verbindingen → «Токени й двері»). План дій:
 
 ```bash
-# a) kijken of er nog iets van de deur gebruikt wordt
+# a) перевірити, чи ще використовується щось від дверей
 sudo journalctl -u mijn-ruimte-mcp --since '7 days ago' | grep -c ' /oauth/'
 
-# b) elke deurverbinding intrekken op de site (mcp.* → Технічні підключення → Токени й двері → «Відкликати»),
-#    of in één keer alles wat de deur ooit uitgaf:
+# b) відкликати кожне підключення дверей на сайті (mcp.* → Технічні підключення → Токени й двері → «Відкликати»),
+#    або одним махом усе, що двері будь-коли видавали:
 sudo sh -c 'date +%s%3N > /etc/mijn-ruimte/mcp-intrekken'
 
-# c) daarna de dienst stoppen en uitzetten
+# c) після цього зупинити й вимкнути службу
 sudo systemctl disable --now mijn-ruimte-mcp
 sudo systemctl is-enabled mijn-ruimte-mcp   # → disabled
 ```
 
-Is de dienst uit, haal dan ook de `^/(oauth|health)` -regel uit de tunnelconfig weg en herlaad `cloudflared`. De app antwoordt dan
-404 op `/oauth/*`; `/oauth2/*` (de OAuth van de app zelf) blijft ongemoeid — let op het verschil van die ene **2**.
+Коли службу вимкнено, приберіть також правило `^/(oauth|health)` з конфігурації тунелю і перезавантажте `cloudflared`. Застосунок тоді відповідатиме
+404 на `/oauth/*`; `/oauth2/*` (OAuth самого застосунку) лишається недоторканим — зверніть увагу на різницю в цій одній цифрі **2**.
 
-`deploy/mcp/server.mjs` en `deploy/mcp/mijn-ruimte-mcp.service` blijven in het pakket staan zolang de BYOS-installatie de deur als
-optie aanbiedt; ze worden alleen niet meer geactiveerd.
+`deploy/mcp/server.mjs` і `deploy/mcp/mijn-ruimte-mcp.service` залишаються в пакеті, доки встановлення BYOS пропонує двері як
+опцію; вони просто більше не активуються.
 
-## 3. Wat NIET wordt omgeleid: `/mcp`
+## 3. Що НЕ перенаправляється: `/mcp`
 
-`/mcp` blijft bestaan en blijft de app. Daar hangen twee dingen aan die geen agent-slug hebben:
+`/mcp` залишається і надалі обслуговується застосунком. До нього прив'язані дві речі, які не мають slug агента:
 
-* OAuth-koppelingen van vóór connector v2 (`app.mcp_oauth_tokens` met `agent IS NULL`);
-* de agenttokens van de site (`tvh_…`, «Підключити вручну», `app.mcp_console_tokens`).
+* OAuth-підключення, створені до конектора v2 (`app.mcp_oauth_tokens` з `agent IS NULL`);
+* агентські токени сайту (`tvh_…`, «Підключити вручну», `app.mcp_console_tokens`).
 
-Een 308 van `/mcp` naar `/claude` zou die allemaal een 401 geven, want een v2-adres accepteert alleen een token dat aan dat adres
-gebonden is. `/mcp` krijgt daarom dezelfde **levende** rechtenberekening als de nieuwe adressen (een technische koppeling zonder
-actief profiel toont niets en voert niets uit) en gaat pas weg als er geen zulke koppelingen meer zijn:
+Перенаправлення 308 з `/mcp` на `/claude` дало б їм усім 401, оскільки адреса v2 приймає лише токен, прив'язаний до цієї конкретної адреси.
+Тому `/mcp` отримує такий самий **живий** розрахунок прав, як і нові адреси (технічне підключення без
+активного профілю нічого не показує і нічого не виконує), і буде прибраний лише тоді, коли таких підключень більше не залишиться:
 
 ```sql
 SELECT count(*) FROM app.mcp_oauth_tokens WHERE agent IS NULL AND revoked_at IS NULL AND refresh_expires_at > now();
 SELECT count(*) FROM app.mcp_console_tokens WHERE revoked_at IS NULL AND expires_at > now();
 ```
 
-Zijn beide 0, dan kan `/mcp` uit `CONNECTOR_PADEN` in `server/start.ts`.
+Коли обидва запити повернуть 0, `/mcp` можна буде прибрати з `CONNECTOR_PADEN` у `server/start.ts`.
 
-## 4. Wat de gebruiker merkt
+## 4. Що помітить користувач
 
-* Op mcp.*/agents → «Конектори» staat per AI **één** adres. Kopiëren en in de AI-client plakken, zoals altijd.
-* Bestaande koppelingen op `/ai/<agent>` blijven werken (308) en hoeven niet opnieuw te worden gelegd.
-* Toestemming geven vraagt **geen** actief technisch profiel meer. Wie technische hulpmiddelen aanvinkt, geeft ze «zolang mijn
-  technische profiel actief is»; staat het profiel uit, dan staan die regels grijs met «зараз недоступно» en ziet de AI ze niet.
-* Zet de eigenaar het technische profiel aan of uit, dan is dat **meteen** zichtbaar in `tools/list` — zonder opnieuw verbinden.
+* На mcp.*/agents → «Конектори» для кожного ШІ вказана **одна** адреса. Скопіювати і вставити в клієнт ШІ, як завжди.
+* Наявні підключення на `/ai/<agent>` продовжують працювати (308) і не потребують повторного налаштування.
+* Надання дозволу більше **не** вимагає активного технічного профілю. Хто позначає технічні інструменти, надає їх «доки мій
+  технічний профіль активний»; якщо профіль вимкнено, ці рядки відображаються сірим із позначкою «зараз недоступно», і ШІ їх не бачить.
+* Коли власник вмикає або вимикає технічний профіль, це **одразу** видно в `tools/list` — без перепідключення.
 
 ---
 
-## 5. Wat er op 20.10.2026 (avond) misging, en wat de deur sindsdien zelf doet
+## 5. Що пішло не так 20.10.2026 (вечір), і що двері відтоді роблять самі
 
-Na release 20261020-173704 koppelde de eigenaar Claude aan `https://mcp.tarasevych.com/claude` en kreeg **het oude deurvenster**
-(«Читання» + «Підписаний випуск», kop «Технічний простір … Жодної пошти, Drive чи особистих пристроїв») en daarna een connector
-met precies **elf** technische hulpmiddelen (`site_health … rollout_upload_finish`). Dat zijn de `TOOLS` van `deploy/mcp/server.mjs`:
-het verzoek was dus bij de **deur** (poort 8091) beland, niet bij connector v2. Oorzaak: de tunnelregel uit §1 stond nog op de
-server (`/etc/cloudflared/config.yml` zit niet in het uitrolpakket). Het venster, de rechten en de levende filtering van connector
-v2 zijn nooit aan bod gekomen; er is dus ook geen grant «met alleen beheer» ontstaan — er is een **deurtoken** ontstaan.
+Після релізу 20261020-173704 власник підключив Claude до `https://mcp.tarasevych.com/claude` і отримав **старе вікно дверей**
+(«Читання» + «Підписаний випуск», заголовок «Технічний простір … Жодної пошти, Drive чи особистих пристроїв»), а потім конектор
+із рівно **одинадцятьма** технічними інструментами (`site_health … rollout_upload_finish`). Це `TOOLS` із `deploy/mcp/server.mjs`:
+отже, запит потрапив у **двері** (порт 8091), а не в конектор v2. Причина: правило тунелю з §1 ще залишалося на
+сервері (`/etc/cloudflared/config.yml` не входить у пакет розгортання). Вікно, права й жива фільтрація конектора
+v2 взагалі не були задіяні; отже, не виник і грант «лише з управлінням» — натомість виник **токен дверей**.
 
-Sinds deze release is dat niet meer mogelijk, ongeacht de tunnelregel:
+Починаючи з цього релізу, таке більше неможливо, незалежно від правила тунелю:
 
-* **De deur geeft agentadressen door aan de app.** `deploy/mcp/server.mjs` stuurt `/claude`, `/gpt`, `/grok`, `/gemini`, `/copilot`,
-  `/cursor` (ook `/ai/<agent>` en de metadata eronder), `/.well-known/oauth-protected-resource/<agent|mcp>`, elke RFC 8414/OpenID-
-  ontdekkingsvorm van de autorisatieserver van de app, `/oauth2/*` en `/mcp` één-op-één door naar `http://127.0.0.1:8080`
-  (zelfde Host, koppen en body). De installer zet het nieuwe bestand neer en herstart `mijn-ruimte-mcp.service` (`try-restart`).
-  Alleen `MCP_AGENTPADEN=deur` in de omgeving laat de deur die paden nog zelf bedienen (tests, noodgeval).
-* **De deur geeft geen toestemming en geen token meer voor een agentadres**: `resource=https://mcp.…/claude` op `/oauth/authorize`
-  van de deur → `invalid_target`. Een AI-klant die de OAuth van de deur nog onthield, loopt dus niet rond maar meldt zich opnieuw
-  aan via de metadata van de app.
-* **Het deurvenster zegt het eerlijk**: komt het venster «двері сервера» voor een agentadres, dan staat erbij dat dit de oude
-  weg is, dat er via de deur nooit privéhulpmiddelen komen, en wat te doen (weigeren, tunnelregel bijwerken, opnieuw verbinden).
+* **Двері передають адреси агентів у застосунок.** `deploy/mcp/server.mjs` пересилає `/claude`, `/gpt`, `/grok`, `/gemini`, `/copilot`,
+  `/cursor` (а також `/ai/<agent>` і метадані під ними), `/.well-known/oauth-protected-resource/<agent|mcp>`, кожну форму виявлення RFC 8414/OpenID
+  сервера авторизації застосунку, `/oauth2/*` та `/mcp` один-в-один на `http://127.0.0.1:8080`
+  (ті самі Host, заголовки й тіло). Інсталятор кладе новий файл і перезапускає `mijn-ruimte-mcp.service` (`try-restart`).
+  Лише `MCP_AGENTPADEN=deur` в оточенні дозволяє дверям і далі обслуговувати ці шляхи самостійно (тести, аварійний випадок).
+* **Двері більше не видають дозвіл і токен для адреси агента**: `resource=https://mcp.…/claude` на `/oauth/authorize`
+  дверей → `invalid_target`. Тож клієнт ШІ, який ще пам'ятав OAuth дверей, не ходить по колу, а реєструється заново
+  через метадані застосунку.
+* **Вікно дверей чесно попереджає**: якщо вікно «двері сервера» відкривається для адреси агента, у ньому зазначено, що це старий
+  шлях, що через двері ніколи не надходять приватні інструменти, і що слід зробити (відхилити, оновити правило тунелю, підключитися знову).
 
-Wat de eigenaar na deze release moet doen:
+Що власнику потрібно зробити після цього релізу:
 
-1. In de AI-app (claude.ai → Connectors) de connector `mcp.tarasevych.com/claude` **verwijderen en opnieuw toevoegen** (of
-   «Reconnect»): het deurtoken is waardeloos op de app en de app antwoordt er 401 op, waarna de klant opnieuw aanmeldt — nu via
-   het v2-venster met **beide** ruimtes (privé én technisch) en rechten per hulpmiddel.
-2. Toch §1 toepassen (tunnelregel), zodat de deur niet als onnodig tussenstation blijft draaien; daarna §2.
-3. Op mcp.*/verbindingen → «Токени й двері» de oude deurverbinding van 20.10 intrekken.
+1. У застосунку ШІ (claude.ai → Connectors) **видалити й додати заново** конектор `mcp.tarasevych.com/claude` (або натиснути
+   «Reconnect»): токен дверей недійсний у застосунку, і застосунок відповідає на нього 401, після чого клієнт проходить авторизацію заново — тепер через
+   вікно v2 з **обома** просторами (приватним і технічним) та правами для кожного інструмента.
+2. Усе ж застосувати §1 (правило тунелю), щоб двері не працювали зайвою проміжною ланкою; потім §2.
+3. На mcp.*/verbindingen → «Токени й двері» відкликати старе підключення дверей від 20.10.
 
-## 6. Erfenis van `/mcp` en `tools/list_changed`
+## 6. Спадщина `/mcp` і `tools/list_changed`
 
-* Een token van het oude `/mcp` van **dezelfde** AI-klant werkt ook op `/<agent>` (`backend/connector-v2-erfenis.ts`): de kanten
-  zijn de vereniging van wat de mens die AI op `/mcp` toestond (`ruimte` prive → gebruiker, technisch → beheer), de sleutels
-  volgen de scopes van dat token. Geen migratie, geen nieuwe toestemming; de levende filtering is dezelfde als voor een v2-grant.
-  Het v2-venster start met die erfenis aangevinkt als er nog geen v2-koppeling of onthouden keuze is.
-* `GET /<agent>` met `Accept: text/event-stream` opent de SSE-stroom van Streamable HTTP (`backend/connector-v2-stroom.ts`).
-  Daarover stuurt de server `notifications/tools/list_changed` zodra de levende staat (technisch profiel, dienst «ai», rol) de
-  lijst verandert; `initialize` meldt `tools.listChanged: true`. Houdt de AI-app geen stroom open (claude.ai doet dat op dit
-  moment niet), dan verandert er niets aan de rechten — alleen de lijst in dat gesprek is verouderd tot een nieuw gesprek of
-  «Opnieuw verbinden»; de pagina Agenten → Connectors zegt dat.
+* Токен старого `/mcp` від **того самого** клієнта ШІ працює також на `/<agent>` (`backend/connector-v2-erfenis.ts`): сторони
+  є об'єднанням того, що користувач дозволив цьому ШІ на `/mcp` (`ruimte` prive → gebruiker, technisch → beheer), а ключі
+  відповідають скоупам цього токена. Жодної міграції, жодного нового запиту дозволу; жива фільтрація така сама, як і для гранту v2.
+  Вікно v2 відкривається з уже позначеною спадщиною, якщо ще немає підключення v2 або збереженого вибору.
+* `GET /<agent>` із `Accept: text/event-stream` відкриває SSE-потік Streamable HTTP (`backend/connector-v2-stroom.ts`).
+  Через нього сервер надсилає `notifications/tools/list_changed`, щойно живий стан (технічний профіль, служба «ai», роль) змінює
+  список; `initialize` повідомляє `tools.listChanged: true`. Якщо клієнт ШІ не тримає потік відкритим (claude.ai наразі цього
+  не робить), у правах нічого не змінюється — лише список у поточній розмові залишається застарілим до початку нової розмови або
+  натискання «Перепідключити»; сторінка Агенти → Конектори повідомляє про це.

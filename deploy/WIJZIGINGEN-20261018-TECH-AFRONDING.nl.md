@@ -5,7 +5,7 @@
 ## A — Technische band zonder knipperen; «Сайт оновлено» voor open tabbladen
 - **Oorzaak knipperen (live gemeten):** 305 wissels van `data-tech-verborgen` in 15 s. Verbergen bij scrollen zette `#root` van top 40 → 0 px; de scrollcontainer werd hoger, de browser corrigeerde `scrollTop`, dat gaf een scroll-event, de band kwam terug, `#root` schoof weer… De meldingenbel (vast in `#root`) schokte mee (in de test tot 80–88 px).
 - **Oplossing — verbergen bij scrollen zonder geometrie («headroom», `src/tech/band-headroom.ts`).** De knop «Згорнути смугу» (eerste herziening) is op verzoek van de eigenaar weer weg, samen met `band-inklappen.ts`. Verbergen verandert nu **alleen `translate`**: `top`, hoogte en padding van `#root`, werkruimte en zijbalk zijn in beide standen gelijk, dus `scrollHeight`/`clientHeight` veranderen niet en de browser heeft niets te corrigeren. Verborgen schuiven band, ondersteunings-/impersonatieband en de hele app samen één bandhoogte omhoog (0,22 s, zoals de adresbalk op een telefoon); zichtbaar is alles exact zoals vroeger. Werkruimte en zijbalk lopen één bandhoogte onder `#root` door (buiten beeld zolang de band zichtbaar is) zodat er onderaan geen gat valt: de werkruimte met een lege strook (`::after`) zodat ook de laatste rij bereikbaar blijft, de zijbalk met evenveel extra onderpadding (inhoud even hoog, achtergrond en scheidingslijn tot onderaan); mail (volle hoogte) houdt zijn indeling via een doorzichtige onderrand. `#root` kreeg `overflow:visible` (geen scrollcontainer meer — kan dus ook niet ‘ongemerkt’ verschuiven). **Bel, haar melding en paneel schuiven even ver terug en staan stil**; `vast-kader.ts` rekent met `#root` zonder zijn translate (en herkent de losse `translate`-eigenschap als kader), dus «Написати лист» naast de bel springt ook niet. Beslissing (zuiver, getest): één echte scrollcontainer (`scroll` met capture, `e.target`; alleen verticaal en ≥ 50 % van de vensterhoogte), afgelegde weg in één richting ≥ 24 px, ≥ 300 ms tussen wissels (een wissel die moet wachten wordt na 300 ms opnieuw beoordeeld), alles binnen 220 ms na een wissel genegeerd, rubberband begrensd; bovenaan (≤ bandhoogte) altijd zichtbaar; tonen ook bij muis tegen de bovenrand, focus in de band en Esc; niet verbergen zolang «⋯» of een venster van de band open is; `prefers-reduced-motion` → zonder animatie. Terloops: de dock boven/onder en de dichte telefoonknop van het menu kregen in technische modus ten onrechte de volle hoogte — de zijbalkregel geldt nu alleen voor de verticale zijbalk.
-- **«Сайт оновлено до <versie>»** (`src/platform/nieuwe-versie.ts`, `NieuweVersieBand.tsx`, eigen root in `main.tsx`): de build zet zijn versie in de bundel (`vite.config.ts` → `__MR_BOUW_VERSIE__` uit `UITROL-VERSIE`); de site vraagt `/api/version` (no-store) bij terugkeer naar het tabblad en elke 60 s zolang het zichtbaar is (nooit vaker dan elke 15 s). Andere versie → niet-blokkerende strook linksonder (bel blijft vrij) met «Оновити сторінку» en «Пізніше» (tot de volgende versie). Vanzelf herladen alleen als het tabblad verborgen is én er niets ingevuld is (gewijzigde velden, concepten, contenteditable). De service worker was al network-first voor HTML en laat `/api/` met rust; bij een nieuwe versie vraagt de site hem ook om bij te werken.
+- **«Сайт оновлено до <versie>»** (`src/platform/nieuwe-versie.ts`, `NieuweVersieBand.tsx`, eigen root in `main.tsx`): de build zet zijn versie in de bundel (`vite.config.ts` → `__MR_BOUW_VERSIE__` uit `UITROL-VERSIE`); de site vraagt `/api/version` (no-store) bij terugkeer naar het tabblad en elke 60 s zolang het zichtbaar is (nooit vaker dan elke 15 s). Andere versie → niet-blokkerende strook linksonder (bel blijft vrij) met «Оновити сторінку» en «Пізніше» (tot de volgende versie). Vanzelf herladen alleen als het tabblad verborgen is én er niets ingevuld is (gewijzigde velden, concepten, contenteditable). De service achtergrondproces was al network-first voor HTML en laat `/api/` met rust; bij een nieuwe versie vraagt de site hem ook om bij te werken.
 - **Tests:** nieuw `band-headroom` 32/32 — o.a. **de oude lus nagebootst** (oude regel + klemmende geometrie: 1876 wissels in 15 s; nieuwe regel in dezelfde geometrie: 0), drempel 23/24 px, 220/300 ms, bovenaan, rubberband, andere container, «⋯» open, 15 s intensief (≤ echte richtingswissels; 0 bij trillingen < 24 px), CSS: verborgen-regels zetten alleen `translate`. `ui-audit-g` 42/42 (8a op het nieuwe gedrag), `vast-kader` 22/22, `menu-snelheid` 29/29 (vijfde root), `nieuwe-versie` 20/20. Browser (Chromium, echte TechLaag + tech.css + canonical-chrome.css + CanonicalNotificationCenter, zijbalk, plakkende kop, klein en horizontaal lijstje; 1280 en 390 px) **29/29**: 15 s intensief scrollen (wiel, rukken, naar het einde, rubberband nagebootst, trillingen) → 24 wissels bij 45 echte richtingswissels, 0 bij trillingen/rubberband; `scrollHeight`/`clientHeight` van de werkruimte, hoogte van de zijbalk en `top` van `#root` elk één waarde; bel in rust zichtbaar ±0,00, verborgen ±0,00, verschil 0,00 px, ook tijdens de animatie 0,00 px; omlaag → band uit beeld, werkruimte en zijbalk tot de onderrand; omhoog → terug, zijbalk/plakkende kop onder de band, onderste menuknop in beeld; muis bovenrand, Esc, focus → zichtbaar; klein/horizontaal lijstje → blijft; onderaan met zichtbare band → laatste rij in beeld; document scrolt niet; reduced-motion → 0 s. **Dezelfde test op het pakket 20261018-153026 reproduceert het probleem:** 64/74 wissels bij 45 richtingswissels (ook 9–10 in de rubberband-fase), 227/230 verschillende `top`-waarden van `#root`, bel 79/86 px. Browser «Сайт оновлено» 14/14.
 
 ## C — «Захист»: auth-poort, OPA fail-closed en RLS met één beslissing van de eigenaar (migratie 0066)
@@ -16,7 +16,7 @@ gereedheid (controles die de server op de echte database en dienst doet), «Ув
 **Mechanisme zonder SSH:** `app.beveiliging_schakelaars` (0066). De site leest de stand bij de start en daarna hoogstens elke 5 s
 (`server/platform/schakelaars.ts`); wie schakelt, werkt het geheugen meteen bij → aan/uit zonder herstart.
 Voorrang blijft: `AUTH_POORT_AFDWINGEN` / `OPA_AFDWINGEN` = 1|0 (geforceerd) en voor OPA het root-bestand (`"beheer-alleen-tech": true`).
-RLS: de stand blijft `app.rls_instellingen`; de systeemrol schrijft die niet zelf, alleen via `app.rls_afdwingen_zetten()` (SECURITY DEFINER,
+RLS: de stand blijft `app.rls_instellingen`; de systeemrol schrijft die niet zelf, alleen via `app.rls_afdwingen_zetten()` (BEVEILIGING DEFINER,
 EXECUTE alleen voor mijnruimte_system; veilig omdat die rol BYPASSRLS heeft — de stand beperkt alleen mijnruimte_app).
 
 **Gereedheid (blokkerend, server controleert opnieuw bij het aanzetten):**
@@ -83,12 +83,12 @@ De browser praat nooit met guacd. WS-pad via `registreerWsPad` in `backend/conne
 - aan: `apt-get install guacd libguac-client-rdp0 libguac-client-vnc0 libguac-client-ssh0`, systeemgebruiker
   `mijnruimte-guacd`, eigen verharde unit `mijn-ruimte-guacd.service` (`guacd -b 127.0.0.1 -l 4822`, ProtectSystem=strict,
   geen capabilities, IPAddressDeny link-local/multicast); de pakketunit `guacd.service` gaat uit. Geen apt-pakket maar wel
-  docker → `mijn-ruimte-guacd-docker.service` (image `guacamole/guacd:1.5.5`, host-netwerk, `-b 127.0.0.1`, read-only,
-  cap-drop ALL). Daarna controle met `ss`: luistert guacd op iets anders dan loopback → meteen gestopt.
+  docker → `mijn-ruimte-guacd-docker.service` (image `guacamole/guacd:1.5.5`, host-netwerk, `-b 127.0.0.1`, alleen-lezen,
+  cap-drop ALLE). Daarna controle met `ss`: luistert guacd op iets anders dan loopback → meteen gestopt.
 - Aanzetten: `"guacamole": true` in mcp-rechten.json, installer opnieuw draaien (of de gewone uitrol). Migratie 0067 zoals altijd.
 
 **Getest.** `tests/eenheid/remote-bureaublad.test.ts` 67/67: tickets (handtekening, eenmalig, verlopen), SSRF (publiek,
-169.254.*, `::ffff:`, octaal, DNS-rebinding), rechten (geen eigenaar, nep-«owner», geen techprofiel, ander tabblad, geen passkey,
+169.254.*, `::ffff:`, octaal, DNS-rebinding), rechten (geen eigenaar, nep-«eigenaar», geen techprofiel, ander tabblad, geen passkey,
 agent), tunnel tegen een nep-guacd (echte TCP-handshake, IP + kluiswachtwoord in `connect`, bestanden geblokkeerd, ticket
 eenmalig, 5 s zonder ticket dicht), inactiviteit, techprofiel verlaten (haak), logboek zonder wachtwoord. Regressie:
 agent-namens, tech-sessies, tech-profiel, terminal, beheer-journaal groen. Harness `/tmp/h-D2` (lijst, formulier, sessievenster
@@ -117,7 +117,7 @@ leesaanroepen 1×/route/min, elke actie en weigering apart. AI-agenten: `/api/im
 `backend/impersonatie-routes.ts`, `shared/impersonatie.ts`, `src/impersonatie/{modus,herschrijf}.ts`, `src/impersonatie/{Band,Impersonatie}.tsx`,
 `src/impersonatie/impersonatie.css`; puntwijzigingen in `backend/index.ts` (hek 2 + routes), `backend/site-dispatch.ts`,
 `backend/agent-namens.ts`, `server/platform/{context,audit,db}.ts`, `src/main.tsx` (modus vóór de app, geen extra createRoot),
-`src/tech/TechLaag.tsx` (knop + gebruikerslaag), `shared/beheer-journaal.ts` (labels).
+`src/tech/TechLaag.tsx` (knop + gebruikerslaag), `shared/beheer-journaal.ts` (etiketten).
 **Tests:** `tests/eenheid/impersonatie.test.ts` 71/71 (echte DB, echte routes: geen toestemming → geen sessie; toestemming zonder sterke
 step-up → geweigerd; alleen lezen blokkeert 7 echte schrijfroutes + hek 2 + hek 3; lezen toont de gegevens van de gebruiker; verbodslijst
 met acties; tijd/gebruiker/uitloggen beëindigen meteen; journaal met actorType; beheerder zonder rol → 403; agenten geweigerd);
@@ -136,7 +136,7 @@ raakt de gewijzigde gedelegeerde tak niet — niet tegen een schone kopie nagega
 - **Bouwcontrole** `scripts/tech-assets-controle.mjs` (in `npm run build`, direct na `vite build`): faalt als een openbare bundel een technische STATISCH importeert, als `index.html` naar `assets/tech/` verwijst, of als er geen enkele technische bundel is.
 - **Server** (`server/start.ts` → `backend/tech-assets.ts`): elk pad onder `/assets/tech/` alleen met een geldige toegangscookie `__Secure-tsv_tech_assets` (HttpOnly, Secure, SameSite=Strict, Domain=.tarasevych.com, Path=/), anders **404** (ook voor niet-bestaande namen). Antwoord altijd `Cache-Control: private, no-store` + `Vary: Cookie` (nooit `immutable`). De cookie komt uit `/api/owner/tech/status|activeren` bij een actieve activering in dat tabblad; in `app.tech_asset_toegang` staat alleen de SHA-256, gekoppeld aan de activering (verloopt/stopt mee; 15 s cache). `beeindigen` en een status zonder geldige activering wissen hem.
 - **Grens (bewust):** een cookie geldt per browser, niet per tabblad: een ander tabblad van dezelfde browser en gebruiker kan de bundel laden zolang de activering loopt. De beheer-API's blijven per tabblad gecontroleerd. Doel: wie geen technisch profiel heeft of niet aangemeld is, krijgt de beheercode niet.
-- **Service worker:** `/assets/tech/` wordt nooit onderschept of gecachet (één regel; `VERSION` niet verhoogd — dat doet A bij de volgende versie).
+- **Service achtergrondproces:** `/assets/tech/` wordt nooit onderschept of gecachet (één regel; `VERSION` niet verhoogd — dat doet A bij de volgende versie).
 - **Frontend:** `src/tech/tech-bundel.tsx` → `lazyTech()` (bij 404: status vernieuwen → nieuwe cookie als de activering hier nog loopt → één keer opnieuw) en `TechBundelGrens` (melding «Технічні модулі не завантажено … оновіть сторінку» i.p.v. witte pagina). Gebruikt voor AdminConsoleView, Terminal, Vlaggen, SSH, Віддалений стіл. `preloadCurrentView` laadt de beheerbundel niet meer vooraf (dat zou nu 404 geven). **Nieuwe beheerpagina's: laden via `lazyTech`** (de eenheidstest controleert dat).
 
 ### G2 — «Сервер (для всіх) / Цей акаунт»
@@ -147,7 +147,7 @@ raakt de gewijzigde gedelegeerde tak niet — niet tegen een schone kopie nagega
 
 ### Tests
 - `tests/eenheid/tech-assets.test.ts` 34/34: indeling, bouwcontrole (goed/slecht/leeg), SW, frontend-aansluiting (alle tech-imports via `lazyTech`), en de ECHTE server tegen PG: zonder sessie 404, verzonnen sleutel 404, sessie zonder tech 404, actieve activering 200 met `private, no-store` + `Vary: Cookie`, alleen hash in DB, geen nieuwe sleutel per status, ander tabblad wist niets, na beëindigen/verlopen 404, cookie gewist.
-- `tests/eenheid/diagnostiek-account.test.ts` 46/46: beoordeling, tabel «server ok / account niet» → «account», nagebootste bronnen (token geweigerd, GitHub-fout), privacy (geen token/adres/Google-tekst in DB, antwoord, logboek), rechten via de echte routes (gebruiker alleen zichzelf, geen serverkolom; beheerroute geweigerd; eigenaar beide kolommen), cron/timer/bedrading.
+- `tests/eenheid/diagnostiek-account.test.ts` 46/46: beoordeling, tabel «server ok / account niet» → «account», nagebootste bronnen (token geweigerd, GitHub-fout), gegevensbescherming (geen token/adres/Google-tekst in DB, antwoord, logboek), rechten via de echte routes (gebruiker alleen zichzelf, geen serverkolom; beheerroute geweigerd; eigenaar beide kolommen), cron/timer/bedrading.
 - `tests/e2e/tech-assets.e2e.ts` 13/13 (Chromium, lokale build): mail + hub zonder tech vragen niets onder `/assets/tech/`; zelf ophalen 404; admin zonder tech = poort; met tech 200 + juiste koppen; na uitzetten 404; «Стан моїх служб» op 390 px. Bestaand groen: admin-diagnostiek 94, tech-profiel 36, tech-sessies 18, routes, menu-snelheid, nieuwe-versie, beheer-journaal.
 - **Uitrol:** migratie 0070 loopt automatisch; de nieuwe timer installeert `installeer-app.sh`. Na uitrol eenmalig in een tech-tabblad «Оновити сторінку» (de oude beheerbundel stond onder `assets/`).
 
@@ -169,9 +169,9 @@ raakt de gewijzigde gedelegeerde tak niet — niet tegen een schone kopie nagega
   `/etc/mijn-ruimte/ssh-ca/toegestaan.json`; serienummer `-z` voor de KRL. Lijst in `app.ssh_ca_certificaten` (0069: serie, door, wanneer,
   tot, principals, ingetrokken; geen certificaat). Intrekken: `ssh-keygen -k` op `/etc/mijn-ruimte/ssh-ca/krl`, sshd weigert meteen.
 - Routes (`backend/ssh-ca-beheer.ts`, `backend/ssh-ca-routes.ts`): `/api/ssh-ca/{stand,lijst,beheer/uitdaging,beheer,intrekken}` —
-  eigenaar + `ssh.host` in dit tabblad + stap-op; `/api/ssh-ca/` staat in `AGENT_VERBODEN`. Journaal `owner.ssh-ca.*` (labels in
+  eigenaar + `ssh.host` in dit tabblad + stap-op; `/api/ssh-ca/` staat in `AGENT_VERBODEN`. Journaal `owner.ssh-ca.*` (etiketten in
   `shared/beheer-journaal.ts`).
-- 0069 verbreedt ook `goedkeur_uitdagingen_doel_check` met `'ssh-ca'`. Wie later die CHECK opnieuw zet, moet `'ssh-ca'` meenemen.
+- 0069 verbreedt ook `goedkeur_uitdagingen_doel_check` met `'ssh-ca'`. Wie later die CONTROLE opnieuw zet, moet `'ssh-ca'` meenemen.
 
 **Na installatie (eigenaar):** technisch profiel → «SSH-сертифікати» (vlag `ssh-certificaat` toont de knop) → «Підготувати» (passkey)
 → «Увімкнути» (passkey). Vereist: `Include /etc/ssh/sshd_config.d/*.conf` in `sshd_config` (Debian/Ubuntu standaard) en een passkey in
@@ -190,7 +190,7 @@ Tests: `ssh-ca-beheer` (echte sshd, echte passkey-hulp, ssh-keygen/KRL; 34), `ss
 ## N — Meldingen: gebruiker los van beheer; paneel in de technische band; geluid/pop-up per type (geen migratie)
 
 Verzoek eigenaar: «панель Сповіщення має бути розділена для користувача від адмін сповіщень … лише одна графа … можна обеззвучити,
-вимкнути спливаючі сповіщення для будь-якого типу».
+вимкнути спливні сповіщення для будь-якого типу».
 
 - **Eén classificatie** (`shared/melding-typen.ts` + `shared/melding-soorten.ts`): elke soort (kind) → type (10 persoonlijk, 13 technisch),
   ernst (kritiek/belangrijk/info) en voor technische soorten de vereiste mogelijkheid (`users.manage`, `diagnose.lezen`, `journaal.lezen`,
@@ -286,7 +286,7 @@ Zonder profiel/activering/passkey: knop uit + uitleg + actie (`WEIGER_UITLEG` in
 (elke 5 s zolang zichtbaar) — `src/extensie/extensie-live.ts`. Staten: «Не підключено до сайту», «Очікування Passkey», «Доступ відкрито»,
 «ШІ-агент підключено» (AI-opdracht in de laatste 120 s of lokale agent verbonden). Ook als regel in het «⋯»-menu van de technische band.
 
-**Verzamelaar (alleen ontgrendeld én host ∈ domeinen).** Netwerk via `chrome.webRequest` (methode, pad zonder query, status, ms, type; nooit headers
+**Verzamelaar (alleen ontgrendeld én host ∈ domeinen).** Netwerk via `chrome.webRequest` (methode, pad zonder zoekopdracht, status, ms, type; nooit headers
 of bodies); console/uitzonderingen/LCP/CLS/long tasks via collector.js (passief tot de brug hem aanzet); DOM/prestaties/beveiliging via de nieuwe
 opdracht `browser.audit` (MCP-tool `browser_audit`): bevindingen als FORM_HTTP_ACTIE, SCRIPT_ZONDER_SRI_EXTERN, TARGET_BLANK_ZONDER_NOOPENER,
 INLINE_HANDLERS, IFRAME_ZONDER_SANDBOX_EXTERN, MIXED_CONTENT, CSP_UNSAFE_INLINE… Nooit veldwaarden, cookies, opslag of querystrings.
@@ -306,7 +306,7 @@ CRX-sleutel → ook «Load unpacked» heeft id `ofpffonakgjioahgfejmiblfmbkobmmi
 **Plan en verdeling (parallel).** A: background.js, shared.js, manifest · B: bridge.js, collector.js · C: pop-up, zijpaneel, opties · D: server
 (0072, routes, gateway, afdwinging, `browser_audit`) · E: site (ontgrendelblok, live status, toestandsmachine, band) · F: Native Messaging · daarna
 onafhankelijke securityreview (9 bevindingen, alle gerepareerd met test) en een end-to-end-proef in echte Chromium met nep-server (70/70; vond en
-repareerde: accountclaim na het wekken van de service worker).
+repareerde: accountclaim na het wekken van de service achtergrondproces).
 
 **Tests.** extensie-vergrendeling 108, extensie-validatie 11, extensie-verzamelaar 27, extensie-ui 67, extensie-native 56, extensie-ontgrendeling 52,
 extensie-ontgrendeling-crypto 12 (vaste testvector server = extensie), extensie-site 71, browser-extensie 21, browser-keten 41.
@@ -356,10 +356,10 @@ tweede account (Google) als Учасник via «Додати інший обл�
 
 **Kritiek, gerepareerd.** Mail: iframe-hoogtelus (mail-body-passend: offsetHeight i.p.v. scrollHeight, frame niet observeren); bijlagevoorbeeld onder het
 iframe + Esc; bijlagekaarten zonder naam; contacten-melding onder de zijbalk; scan vals «Бракує дозволу Gmail» bij 502 (gmailFoutVan); vals «Підозрілий»
-voor subdomein van hetzelfde organisatiedomein; «Відкрити листи від нього» zonder filter; «Зняти позначку»; NL-codes in historie; thread zonder laatste
+voor subdomein van hetzelfde organisatiedomein; «Відкрити листи від нього» zonder filter; «Зняти позначку»; NL-codes in historie; gesprek zonder laatste
 antwoord; Drive-zoeken per woord; cloud-viewer onder zijbalk. Gebruiker: Пошта → Акаунти deed niets (MailAccountsHub zonder onConnect) → Google-OAuth
 start; «Сесія закінчилася» voor Учасник op mcp.* → nieuwe code API_RECHT_VEREIST met uitleg, geen polling, geen «Стоп»; entitlement «Доступ до ШІ-мосту»
-nu in admin/access; welkomstkaart «Що далі» na goedkeuring; pending account ziet alleen het modaal; extensie «прив'язане до іншого акаунта»-kaart;
+nu in admin/access; welkomstkaart «Що далі» na goedkeuring; wachtend account ziet alleen het modaal; extensie «прив'язане до іншого акаунта»-kaart;
 accountwissel beëindigt het tech-profiel van het vorige account. Noodstop «Стоп» trekt nu ook alle MCP-connectorverbindingen en tokens in (vroeger
 bleven Claude-tools in beide ruimtes werken). Admin-journaal toonde alleen service='admin' (sessieveld als filter) → filterveld `dienst`.
 
@@ -390,8 +390,8 @@ computed display van beide pijlen werd `none` en het kruisje was weg. Reparatie:
 
 **2 + 17. Menu, snelle toegang, volgorde en kleur — per gebruiker.** Echte fout gevonden: de browsercache van de menu-indeling lag onder één sleutel
 `tsv-zijbalk-v2`, zonder account. Met twee accounts in dezelfde browser zag een nieuw account de indeling van het vorige, en een wijziging schreef die
-indeling onder de NIEUWE gebruiker naar de server. Nu `tsv-zijbalk-v2:<scope>` (scope synchroon uit de bootstrap, vóór de bootstrap uit sessionStorage per
-tabblad); uitgestelde opslagacties worden bij accountwissel geannuleerd en vóór verzending nogmaals op scope gecontroleerd. Zelfde behandeling voor
+indeling onder de NIEUWE gebruiker naar de server. Nu `tsv-zijbalk-v2:<scope>` (bereik synchroon uit de bootstrap, vóór de bootstrap uit sessionStorage per
+tabblad); uitgestelde opslagacties worden bij accountwissel geannuleerd en vóór verzending nogmaals op bereik gecontroleerd. Zelfde behandeling voor
 `mr-weergave-modus-v1` en `mr.notif.group`. Nieuw: kleur per menupunt (`ItemOverride.kleur`/`ItemKopie.kleur` uit `ACCENTEN`), zichtbaar in de snelbalk én in
 de ingeklapte zijbalk (kleurstip), in beide icoonstijlen; het al bestaande maar nooit gebruikte veld `icoon` werkt nu echt. Nieuw `src/SnelleToegangEditor.tsx`:
 toevoegen, weghalen, volgorde met knoppen en toetsenbord, icoon, kleur, «terug naar standaard» — bereikbaar uit het «⋯»-menu van de balk en uit
@@ -427,7 +427,7 @@ echt iets doet (niet bij schermafbeeldingen) — weg zodra «Стоп», intrekk
 **9. Eén beeldbasis.** Er waren vier parallelle logobases plus een dode map: `src/agenten/logos.ts` (6), `src/sessies/merk-iconen.ts` (13),
 een blok in `src/mcp-ui.tsx` (21) en `src/integraties/logos.ts` (137), én `public/agent-logos/` waar niemand naar verwees — daarom zag hetzelfde merk er
 per pagina anders uit. Nu één register `src/merk/` (lazy tabel, 41 merken) waarop `AgentLogo`, `integraties/Logo`, `SessieIconen` en `mcp-ui.Logo` draaien;
-de dubbele bronnen zijn weg, 9 dubbele records uit de grote tabel verwijderd, en 15 ontbrekende emblemen bijgetekend (alle 157 catalogusitems hebben er nu
+de dubbele bronnen zijn weg, 9 dubbele items uit de grote tabel verwijderd, en 15 ontbrekende emblemen bijgetekend (alle 157 catalogusitems hebben er nu
 één). Netto −30,4 kB raw / ≈−10,6 kB gzip over de betrokken chunks; 21 getekende glyphs uit de hoofdbundel weg.
 
 **10. /agenda — winkel voor agenda's.** Komende afspraken uit echte gegevens plus een winkel met zes aanbieders. Google Calendar staat op «beschikbaar,
@@ -435,7 +435,7 @@ alleen lezen» met erbij wat ontbreekt (de server vraagt `calendar.readonly`, er
 en ICS staan op «binnenkort» met de concrete reden. Tweerichtingskoppeling bestaat nergens op de server — dat is niet nagespeeld maar benoemd.
 
 **11. Notities.** Soorten (tekst, checklist met aanvinkbare regels, code, link), kleur, vastzetten, zoeken op woorden, filter op soort en tags; catalogus
-van externe apps (Keep, Notion, Obsidian, Apple Notes, Markdown-import) met per stuk wat ontbreekt. Geen nieuwe tabel: soort/kleur/vast leven in de tags van
+van externe apps (Behouden, Notion, Obsidian, Apple Notities, Markdown-import) met per stuk wat ontbreekt. Geen nieuwe tabel: soort/kleur/vast leven in de tags van
 het borditem, binnen de grenzen die `backend/mcp-console.ts` al afdwingt.
 
 **12. hub.*/overzicht als bureaublad.** Let op: `hub.tarasevych.com/overzicht` is het tabblad `overview` in `src/App.tsx`; `src/overzicht/` is het overzicht
@@ -522,7 +522,7 @@ Op verzoek van de eigenaar: de ruimte wordt op het moment van toestemming niet m
   (`/ai/<agent>` en hun metadata) antwoorden met **308** (behoudt methode en body — 301/302 zouden POST in GET veranderen en MCP breken),
   en worden nog steeds **gelezen** in `slugUitResource`, zodat tokens die zijn uitgegeven met `resource=…/ai/claude` geldig blijven.
 - `/mcp` **wordt bewust niet doorgestuurd**: het bedient grants zonder agent en `tvh_…`-tokens die op een agentadres 401 zouden krijgen. Het
-  kreeg dezelfde live-berekening en is gemarkeerd als overgangspad; in `deploy/CONNECTOR-EEN-PAD.md` staan de query's waarmee te zien is wanneer het
+  kreeg dezelfde live-berekening en is gemarkeerd als overgangspad; in `deploy/CONNECTOR-EEN-PAD.md` staan de zoekopdracht's waarmee te zien is wanneer het
   weg kan.
 - Nieuwe `effectieveRuimte(userId, rol, tabContext)` in `backend/ai-ruimte-poort.ts`: geen eigenaar → `prive`; eigenaar zonder actief
   technisch profiel → `prive`; anders `technisch`. Een aanroep vanuit een AI komt **zonder tabblad** binnen, daarom is `lopendeActivatie(userId)` toegevoegd —
@@ -551,7 +551,7 @@ agendahulpmiddelen, allemaal met bevestiging van de eigenaar; `calendar.write` e
 
 ### GitHub: OAuth en GitHub App (migratie 0077)
 
-Volledige OAuth web application flow: `state` wordt uitsluitend als SHA-256 opgeslagen, gebonden aan gebruiker, sessie, host en tijd (10 min),
+Volledige OAuth web application stroom: `state` wordt uitsluitend als SHA-256 opgeslagen, gebonden aan gebruiker, sessie, host en tijd (10 min),
 bij de eerste lezing verwijderd, plus PKCE S256; de callback-route wordt alleen op de github-host van deze installatie geaccepteerd; code-inwisseling,
 scopecontrole, vernieuwing via refresh token, ontkoppelen met echte intrekking (`DELETE /applications/{client_id}/token`).
 GitHub App: App ID + privésleutel uit de kluis → ondertekende JWT RS256 → installatietoken met vernieuwing, lijst van installaties en
@@ -638,7 +638,7 @@ het herladen van de pagina) werd het pakket geïnstalleerd.
 **Gecontroleerd: het pakket was intact.** De sha256 van het archief komt overeen met `.voorstel.json`, 1550 bestanden, `UITROL-VERSIE` en `BRON-COMMIT` aanwezig. Het
 probleem zat dus niet in de update en niet op de server.
 
-**De echte oorzaak.** `NotReadableError` is een `DOMException` uit de File API van de **browser**, geen code van onze server. Hij treedt op wanneer de browser een
+**De echte oorzaak.** `NotReadableError` is een `DOMException` uit de Bestand API van de **browser**, geen code van onze server. Hij treedt op wanneer de browser een
 eerder gekozen bestand niet meer kan lezen: het bestand is na het kiezen verplaatst, hernoemd of overschreven; het ligt in een cloudmap (OneDrive /
 Google Drive «bestanden op aanvraag») en is lokaal niet gematerialiseerd; een virusscanner houdt het vast; of het is een netwerkschijf. In de code stond het lezen **buiten**
 de `try/catch`: `src/uitrol/Upload.tsx` ving alleen `stuurStuk` op, maar `await f.slice(offset, …).arrayBuffer()` in dezelfde lus niet. Daardoor vloog de browserfout
@@ -657,14 +657,14 @@ lopen nu via één poort `shared/bestand-lezen.ts`, en `shared/foutuitleg.ts` kr
 de server had geen kanaal waarmee de browser een afbreking kon melden; een half geüpload pakket bleef hangen op `uploaden` zonder fase, percentage of oorzaak, en
 het opruimen werd alleen bij het openen van de pagina aangeroepen (zonder dat bleef het pakket eeuwig hangen); een geslaagde tweede poging liet in de geschiedenis alleen zichzelf achter.
 
-Nu laat elke poging een spoor achter. Nieuwe tabel `app.uitrol_pogingen` (migratie **0081**) met twee soorten records die nooit door elkaar lopen:
+Nu laat elke poging een spoor achter. Nieuwe tabel `app.uitrol_pogingen` (migratie **0081**) met twee soorten items die nooit door elkaar lopen:
 «gemeld door de browser» en «ontdekt door de server». De route `POST /api/uitrol/poging/afgebroken` accepteert de fase (bestand kiezen, lezen, controleren,
 starten, uploaden, afronden, goedkeuren, installeren), offset, oorzaakcode, tijd en pogingnummer — met limieten op frequentie (60/uur) en grootte,
 alleen van wie het recht heeft om releases voor te bereiden; **de server herberekent zelf het percentage** en haalt het account uit de sessie, zodat liegen over de voortgang onmogelijk is.
 Het sluiten van een tabblad wordt via `pagehide` opgevangen en vastgelegd als een eerlijk «afgebroken zonder reden», onderscheiden van een bekende oorzaak. De oorzaken komen uit
 dezelfde `shared/foutuitleg.ts` — er is geen tweede teksttabel. In «Recente uitrollen» en «Volledige geschiedenis» is het blok «Afgebroken pogingen» verschenen met
 de actie «Hervatten» (wanneer er echt iets te hervatten valt) of «Opnieuw beginnen». Hetzelfde komt in het beheerjournaal (`uitrol_poging_afgebroken`).
-Opruimen: 30 dagen en maximaal 200 records per account. Een achtergelaten `uploaden` wordt nu door de uurlijkse cron afgesloten en niet alleen door een geopende pagina, en de codes
+Opruimen: 30 dagen en maximaal 200 items per account. Een achtergelaten `uploaden` wordt nu door de uurlijkse cron afgesloten en niet alleen door een geopende pagina, en de codes
 `UPLOAD_STIL` / `UPLOAD_TE_OUD` hebben eindelijk een vertaling — eerder werd de kale code getoond.
 
 **Tests.** 5698/5698. Nieuw: `bestand-lezen-fout-20261020` (36), `uitrol-pogingen-20261020` (38).
@@ -786,7 +786,7 @@ elke lade heeft **zijn eigen synchronisatiecursor**; de cron slaat een gesloten 
 (`google_suite_drive_projection_v1`, `google_suite_sync_state_v1`) zijn opgenomen in het register voor «aan mijzelf overdragen»/«verwijderen». Geen migratie nodig:
 de projectie leeft in `app.records`, waar `ruimte` een veld is en migratie 0086 al een partiële index levert.
 
-Terloops zijn nog twee kleinere zaken van dezelfde soort gedicht: `spiegelLeeg` in de agenda deed een **DELETE** met een filter zonder lade, en kiosksessies
+Terloops zijn nog twee kleinere zaken van dezelfde soort gedicht: `spiegelLeeg` in de agenda deed een **VERWIJDEREN** met een filter zonder lade, en kiosksessies
 van Google Photos controleerden alleen de eigenaar — binnen het venster van 10 minuten kon een sessie-id uit de technische ruimte in de persoonlijke worden afgespeeld.
 
 ### 4. Cloud in het technische profiel: lege pagina zonder menu
@@ -914,8 +914,8 @@ telde alleen v2-grants mee, waardoor een koppeling via de deur of het oude `/mcp
 
 Nu begint elke pagina `#agent/<slug>` met «Підключити <ШІ>» (`src/agenten/verbind-recepten.ts`, uk+nl):
 **Cursor** en **VS Code/Copilot** — echt één klik (deeplink); **Claude** — «Open Claude → Connectors» + opdracht voor Claude Code;
-**ChatGPT** — Developer mode → Create (met eerlijke vermelding van het vereiste betaalde abonnement); **Gemini** en **Grok** — eerlijk: de consumentenversies accepteren geen eigen MCP's,
-er staat een configuratie voor CLI-clients. De status is waarheidsgetrouw: v2 / oud `/mcp` / deur / geen — met label en knop «Oude intrekken».
+**ChatGPT** — Developer modus → Aanmaken (met eerlijke vermelding van het vereiste betaalde abonnement); **Gemini** en **Grok** — eerlijk: de consumentenversies accepteren geen eigen MCP's,
+er staat een configuratie voor CLI-clients. De status is waarheidsgetrouw: v2 / oud `/mcp` / deur / geen — met etiket en knop «Oude intrekken».
 admin `/ai` toont de status per agent in alle beleidsstaten, met een link naar de agentpagina. Verouderde instructies zijn verwijderd
 (`claude.ai/code#customize`, «Customize → Connectors», kaart voor handmatig Bearer-token).
 
@@ -961,7 +961,7 @@ met een passkey (WebAuthn PRF — in de browser) of met een herstelcode (scrypt,
 er een sessie open is of er een geldige AI-grant loopt, zit de sleutel in het servergeheugen — achtergrondsynchronisatie en agenten blijven werken. **Een beheerder met database, back-up en
 env kan zonder inlog van de persoon niets onder de DEK lezen.** De technische DEK is een aparte sleutel; het technische profiel kan de persoonlijke niet uitpakken.
 
-Onder de DEK in deze release (nieuwe records; oude worden via het oude pad gelezen, de knop «Перешифрувати мої дані зараз» zet ze om):
+Onder de DEK in deze release (nieuwe items; oude worden via het oude pad gelezen, de knop «Перешифрувати мої дані зараз» zet ze om):
 refresh-token van Google, IMAP/SMTP-wachtwoorden, CalDAV-wachtwoord, GitHub-tokens, ingeklapte vensters. Wat nog niet eronder valt staat met reden in het register op de pagina
 («Шифрування моїх даних», id.* → Способи входу).
 
@@ -987,7 +987,7 @@ Daarnaast: een vaste 404 op `/downloads/extension-version.json` — `vite build`
 admin → «Інтеграції» → **«Майстер підключень»**: voor Google, Microsoft, GitHub OAuth en GitHub App — knop «Відкрити консоль», kant-en-klare
 waarden om te kopiëren (redirect URI, origins, scopes uit `SERVICE_HOSTS`), veld voor client id/secret (Google en GitHub — direct op de site met
 passkey, zonder herstart; Microsoft — voorlopig alleen met een serveropdracht met verborgen invoer), en een **echte** controle via het token endpoint.
-Klikken in de console van de provider blijft onvermijdelijk — daar zijn inlog en toestemming van de eigenaar vereist.
+Klikken in de console van de aanbieder blijft onvermijdelijk — daar zijn inlog en toestemming van de eigenaar vereist.
 
 `deploy/geheimen-aanmaken.sh` (installatiestap vóór de migraties) genereert **alleen ontbrekende** sleutels en print uitsluitend namen en vingerafdrukken;
 `deploy/geheimen-register.sh` stelt het register **zonder waarden** samen. Nu verplicht en automatisch gegenereerd:
@@ -1050,7 +1050,7 @@ past de tekst erin en kruipt het bolletje «ongelezen» niet meer onder ⋮. De 
 ### 6. Ingevoerde tekst verdween
 
 De tekst werd wel opgeslagen, maar na herladen ging het venster niet vanzelf open, en tikken op «Чернетка» opende een **nieuw** leeg bericht.
-Bovendien werd er niet weggeschreven bij `visibilitychange` — terwijl een mobiele browser bij het uit het geheugen halen van een tabblad vaak alleen dat event stuurt.
+Bovendien werd er niet weggeschreven bij `visibilitychange` — terwijl een mobiele browser bij het uit het geheugen halen van een tabblad vaak alleen dat gebeurtenis stuurt.
 Nu: een lokale kopie apart per account en ruimte (alleen geadresseerden, onderwerp en tekst — geen bijlagen of wachtwoorden), opslaan na
 300 ms en synchroon bij het verlaten van de pagina; serverconcept met herhaalpogingen; na herladen opent het venster met dezelfde
 tekst. Indicator: «Збережено локально · на сервері о HH:MM».
@@ -1139,7 +1139,7 @@ Het dock had een z-index **boven alle vensters**, stond altijd uitgeklapt en was
 | Bestanden delen | `drive_share_file` («iedereen met de link» alleen via een apart vinkje, nooit met schrijfrechten) | altijd, passkey |
 | Door u gekozen foto's | `photos_picked_media` (Google Photos Picker — de gebruiker kiest) | altijd |
 | Afspraken uit iCloud | `icloud_list_events` (CalDAV, app-wachtwoord) | nee (lezen) |
-| Pull request | `github_pr` (geen merge, geen wijzigingen in `.github/workflows`) | passkey |
+| Pull verzoek | `github_pr` (geen merge, geen wijzigingen in `.github/workflows`) | passkey |
 | CI-logboeken | `github_ci_logs` | nee |
 | Eigen domein voor een app | `app_domain` (technisch) | passkey + serveropdracht |
 | Afbeeldingen | `image_generate` (lokale generator op uw server; zonder die volgt een eerlijke foutmelding) | «vragen» |
@@ -1169,7 +1169,7 @@ Terwijl deze release werd voorbereid, zijn er op de server drie pakketten van ag
 
 ## AH. Globaal zoeken «/zoek» volgens de specificatie van de eigenaar: audit, kern, bronnen, OCR, geschiedenis, isolatie (22.10.2026)
 
-Opdracht van de eigenaar — «MIJN RUIMTE GLOBAL SEARCH» (19 hoofdstukken): één veld dat **een functie van de site vindt zonder de structuur ervan te kennen**
+Opdracht van de eigenaar — «MIJN RUIMTE GLOBAL ZOEKEN» (19 hoofdstukken): één veld dat **een functie van de site vindt zonder de structuur ervan te kennen**
 («taal wijzigen», «wie is er op mijn account ingelogd geweest», «herstelcodes als ik mijn telefoon kwijtraak»), berichten en bijlagen, bestanden, afspraken, het bord, GitHub —
 in negen talen, met typefouten, soerzjyk en transliteratie, met een eerlijk overeenkomstpercentage, aanvullen, correctie, geschiedenis op
 de server en volledige isolatie tussen ruimtes. Vijf zones werkten parallel (Z1 kern, Z2 bronnen en UI-catalogus, Z3 tekst/OCR/archieven,
@@ -1229,7 +1229,7 @@ draait met de systeempool en een expliciete `WHERE user_id AND ruimte`.
 
 - `backend/zoek/tekst-extractie.ts`: het pad naar de workerbundel `dist-server/zoek-werker.mjs` was relatief — `new Worker()` wees het af
   (`ERR_WORKER_PATH`), en **elk** bestand kreeg de status «fout» zodra er naast de code een gebouwde `dist-server/` stond. Het pad is nu altijd
-  absoluut (`zoek-bronnen-etap-c` 39/40 → 40/40, `zoek-tekst` 79/79 via de echte worker).
+  absoluut (`zoek-bronnen-etap-c` 39/40 → 40/40, `zoek-tekst` 79/79 via de echte achtergrondproces).
 - `src/search/ZoekPagina.tsx`: een gesloten dienst wordt met hetzelfde `RuimteGeslotenVlak` getoond als de hubblokken; `1 об'єкт / 2 об'єкти /
   5 об'єктів` in plaats van «1 об'єктів» (nl: `1 object / 2 objecten`).
 - `src/search/zoek.css`: op de telefoon lag het zwevende meldingsbelletje over de knop «Показати результати» van het onderste filterblad —
@@ -1276,7 +1276,7 @@ binnen serverfuncties. Testopstelling van alle 12 pagina's van admin.* (1280 en 
 
 Nieuwe test `tests/eenheid/browser-gedeeld-20261022.test.ts`: elk bestand `shared/*.ts` dat door `src/` wordt geïmporteerd, wordt door esbuild gebundeld voor de browser
 en uitgevoerd in een kale `vm`-context **zonder** `Buffer`, `process`, `require`, `fs` (78 modules). Op code 221718 faalt deze met
-«shared/merk-eigen: Buffer is not defined», op de herstelde versie — 3/3.
+«shared/merk-eigen: Buffer is niet defined», op de herstelde versie — 3/3.
 
 ### 3. «Terugdraaien naar vorige» op mcp.*/dashboard — werkt zoals bedoeld
 
@@ -1299,10 +1299,10 @@ gegevens worden niet verplaatst.
 `sudo mijn-ruimte-installeer installeren ~/uitrol/mijn-ruimte-<versie>` (databasekopie → migraties → build → omschakelen → `/__gezondheid`).
 
 ## AJ. Rendercontrole en automatisch terugdraaien (22-10-2026)
-Na 20261021-221718 («Buffer is not defined», witte admin-pagina's bij HTTP 200) opent de installer na gezond/nabewaking de belangrijkste
+Na 20261021-221718 («Buffer is niet defined», witte admin-pagina's bij HTTP 200) opent de installer na gezond/nabewaking de belangrijkste
 pagina's van de nieuwe release in headless Chromium op de server (`scripts/rook-controle.mjs`): eenmalige instantie van de site (`dist-server/rook.mjs`) op
 een eenmalige database `mijnruimte_rook_<stempel>` met een testeigenaar en technisch profiel, 13 pagina's + import van alle bundels; kapot
-(pageerror, ReferenceError/TypeError, lege `#root`, bundel ≠ 200, «Internal server error») → automatisch terugdraaien naar de vorige release
+(pageerror, ReferenceError/TypeError, lege `#root`, bundel ≠ 200, «interne serverfout») → automatisch terugdraaien naar de vorige release
 met gebeurtenis `ROOK_TERUGGEDRAAID` en opgave van reden onder «Updates»; de vorige versie wordt eenmalig gecontroleerd, zonder tweede terugdraaiactie; migraties worden niet
 teruggedraaid. Zonder browser — modulecontrole in Node (vm zonder Buffer/process/require) met een eerlijke melding «rendering niet gecontroleerd».
 Browser: `sudo mijn-ruimte-installeer browser-controle` (chrome-headless-shell 156.0.8078.47, SHA-256). nazorg: live-controle 2 min
@@ -1329,7 +1329,7 @@ uitrol-geschiedenis-tijdlijn-20261022 20/20; testopstelling besluit-* met echte 
 
 
 ## AL. Meldingen per sfeer, drie schendingen in «Verificatie», beveiligingsaudit van routes (zone C, 22–23-10-2026)
-- **Sfeer van elke melding** `prive | technisch` (register `shared/meldingen-soorten.ts`, migratie `0107_meldingen_sfeer.sql`: label op
+- **Sfeer van elke melding** `prive | technisch` (register `shared/meldingen-soorten.ts`, migratie `0107_meldingen_sfeer.sql`: etiket op
   bestaande rijen van `site_notifications`/`notification_jobs` per soort, er wordt niets verplaatst). De server levert, telt en markeert als gelezen
   uitsluitend binnen de sfeer van het tabblad: het belletje van de gebruiker toont alleen privé, «Technische meldingen» op de balk alleen technisch (actief profiel in het tabblad).
 - **Acties op de site** (`/api/owner/agents/activity`) hebben eveneens een sfeer: beheer, updates, diagnostiek, SIEM, AI-acties via de technische
@@ -1401,14 +1401,14 @@ Naast het huidige tabblad, met het recht «API-platform» en uw eigen modelsleut
 ## AO. Werkblad (hub /overzicht) — nieuw hoofdscherm van de hub
 
 - Nieuw: `src/werkblad/*` — «Werkblad» in plaats van het oude «Bureau» op /overzicht (adres en menu blijven hetzelfde; h1 «Werkblad»).
-  Raster van 12/6/1 kolommen zonder overlap (`shared/werkblad-indeling.ts plaatsen`), modus «Instellen»: verslepen (pointer events,
+  Raster van 12/6/1 kolommen zonder overlap (`shared/werkblad-indeling.ts plaatsen`), modus «Instellen»: verslepen (pointer gebeurtenissen,
   live-voorbeeld), formaat wijzigen, widgetcatalogus, achtergrond (kleurverlopen uit tokens of eigen afbeelding ≤ 400 KB), «Terugzetten»; toetsenbord (pijltjestoetsen,
-  Shift+pijltjestoetsen, Delete) met aria-live; telefoon — «hoger/lager», tikdoel ≥ 44 px.
+  Shift+pijltjestoetsen, Verwijderen) met aria-live; telefoon — «hoger/lager», tikdoel ≥ 44 px.
 - Widgets uitsluitend op basis van bestaande routes: begroeting, snelle toegang (met tellers), mail, agenda, taken, notities, bord, bestanden,
   cloudopslag (quota die de server al kent), recente zoekopdrachten, snelle acties, AI voor u, status van diensten (knop «Controleren»), systeeminformatie
   (in plaats van het weer — zonder externe clouds), tip; technische kluis: server, updates, diagnostiek. GitHub — «binnenkort».
 - Database: migratie 0112 `app.werkblad_indeling` (user_id + ruimte, RLS; GRANT in rechten.sql). Routes
-  `POST /api/owner/hub/werkblad/{laden,bewaren,terugzetten,tech}` (`backend/werkblad.ts`): kluis uitsluitend vanaf de server, expliciete WHERE, normalisatie
+  `POST /api/owner/hub/werkblad/{laden,bewaren,terugzetten,tech}` (`backend/werkblad.ts`): kluis uitsluitend vanaf de server, expliciete WAAR, normalisatie
   op de server, versienummer tegen overschrijven (409), `/tech` alleen met technisch profiel.
 - Compatibiliteit: bij het eerste openen wordt het oude bureaublad gemigreerd, gewijzigde oude blokken worden toegevoegd als «oud blok»/koppeling, verborgen blokken staan in
   de catalogus; oude gegevens blijven ongewijzigd. `hub/blocks/data` levert `opslag` (opslagquota).
@@ -1465,7 +1465,7 @@ leverden elk eerst een tussentijds verslag in. Tijdens het samenvoegen is het vo
   `dist/assets/vendor/<naam>-<hash>/` en koppelt ze als externe modules (`/assets/vendor/…`); daarnaast `rollupOptions.cache: false` en
   `maxParallelFileOps: 32`. Nu slaagt de build met 2048 MB (circa ~500 MB marge tot de limiet van de installer) en is deze twee keer zo snel (≈35 s in plaats van 66 s).
   De test `vendor-ongebundeld-20261023` (26/26) bewaakt dat deze bestanden zelfstandige ES-modules blijven en uitsluitend dynamisch worden geladen.
-- **Weergave van .mdb/.accdb-bijlagen in mail** crashte in de browser met «process is not defined» (gevonden door de rendercontrole van zone AJ): vóór
+- **Weergave van .mdb/.accdb-bijlagen in mail** crashte in de browser met «process is niet defined» (gevonden door de rendercontrole van zone AJ): vóór
   het laden van `mdb-reader` wordt nu een minimale `process`/`Buffer`-shim geplaatst (aparte module `src/platform/node-shim.ts`, die als eerste
   in dezelfde chunk wordt geladen), zonder iets bestaands te overschrijven. Rendercontrole van zone AJ op de definitieve build in echte
   Chromium: **13 pagina's renderen, 506/506 bundels laden** (vóór de oplossing — 506/507 met een waarschuwing).
@@ -1711,7 +1711,7 @@ de kaart «wat staat waar».
   - nieuw: `gesprek-context-20261024` — 19 controles;
   - `lees-venster-20261024` — bijgewerkt;
   - testopstelling: nieuwe stappen `mail-lezer-context-volledig` en `mail-lezer-context-rechts`. Deze meten de kolom of het blad, de inhoud van elke
-    sectie, labels, «Weergave», sneltoetsen, Esc en «Terug», de telefoonbalk, en verifiëren dat er vóór «Tonen» geen enkel verzoek naar buiten gaat.
+    sectie, etiketten, «Weergave», sneltoetsen, Esc en «Terug», de telefoonbalk, en verifiëren dat er vóór «Tonen» geen enkel verzoek naar buiten gaat.
 - **Kaart «wat staat waar»:** +10 bestanden van pakket 2 in de sectie «Toegevoegd na hernoeming» (in totaal 17).
 - **Wat er voor u is gewijzigd:**
   - externe afbeeldingen zijn standaard verborgen. Terugzetten naar hoe het was: «Weergave» → «Externe afbeeldingen» → «Altijd tonen»;
@@ -1738,7 +1738,7 @@ de kaart «wat staat waar».
     8 formaten);
   - e2e in Chromium: `mail-lijst-ux` 26/26, `mail-opstel-venster` 25/25, `mail-verkenning` 1/1, `vensters` 11/11;
   - rendercontrole — 13 pagina's, 505/505 bundels;
-  - testopstelling van overige pagina's vergeleken met de build van pakket 1 — 54 opnames, 390 en 1280 px: hub, mail (inbox, labels, instellingen, contacten, lijst,
+  - testopstelling van overige pagina's vergeleken met de build van pakket 1 — 54 opnames, 390 en 1280 px: hub, mail (inbox, etiketten, instellingen, contacten, lijst,
     zoeken in menu), cloud, identiteit, thuis, beheer, MCP, GitHub. Alleen de gegevens verschillen: tijd, testaccount, responstijd
     van de server, lijst van diensten die nog wordt nageladen.
 
@@ -1759,7 +1759,7 @@ zijn gebleven; nieuwe onderdelen staan in afzonderlijke bestanden in `src/mail/`
       dezelfde volgorde);
     - een deadline moet in dezelfde alinea van het **origineel** staan, niet van de vertaling;
     - een punt zonder bevestiging wordt niet getoond. De voettekst meldt «Woordelijk in origineel: 4 van 5; de rest wordt niet getoond», en «Niet-gevonden
-      tonen» klapt zulke punten open met het label «niet gevonden in het bericht»;
+      tonen» klapt zulke punten open met het etiket «niet gevonden in het bericht»;
   - bij elk punt staat een bronchip «bericht 3 · §3» en een deadline «vóór ma 26 okt.»; «Kort» heeft eveneens bronvermeldingen;
   - acties: **Conceptantwoord** (met AI — het concept van de agent in het antwoordveld; zonder AI — citaten van de punten in het antwoordveld) ·
     **Naar taken** (het taakvenster is al ingevuld: titel en punten met deadlines en bronnen) · **Naar Agenda** (datum en tijd uit het punt);
@@ -1981,7 +1981,7 @@ het belletje, het paneel, het geluid, de teller, «Opstellen», «Naar boven» e
   - op de telefoon staat het belletje in het menu rechts van de foto en toont ☰ het aantal ongelezen meldingen; naar de pagina verplaatsen kan door ingedrukt te houden of via «Verplaatsen naar…»;
   - de oude positie van het belletje (x,y) is niet overgenomen: iedereen begint op de standaardplekken, waarna elke apparaatklasse zijn eigen indeling onthoudt. Op de computer
     en tablet levert de regel uit het voorstel («rechtsboven → bovenbalk, anders standaard») precies dezelfde plek op als de standaardplek; op de telefoon
-    zou die regel het belletje in de bovenbalk plaatsen — precies waarover geklaagd werd. Het veld `belPositie` in het record is niet verwijderd;
+    zou die regel het belletje in de bovenbalk plaatsen — precies waarover geklaagd werd. Het veld `belPositie` in het item is niet verwijderd;
   - een veegbeweging die op een knop begint, scrolt de pagina; verplaatsen doet u door de knop ingedrukt te houden;
   - de melding op de computer verschijnt op een vrije plek: onder het belletje of, als daar knoppen staan, onderaan of bovenaan in het midden (op de test-Mail —
     bovenaan in het midden, tussen «Postvak IN» en de paginering); op de telefoon — op één regel, bovenaan onder de balk, en als daar knoppen staan in de eerste vrije
@@ -2019,7 +2019,7 @@ het belletje, het paneel, het geluid, de teller, «Opstellen», «Naar boven» e
   - testopstelling: de controle voor het dock onderaan ging ervan uit dat het dock de volledige breedte besloeg (het is een gecentreerde capsule) → horizontale overlap plus een aparte test voor een uitgerekt
     dock; tijdsdrempel voor adresbalk → aantal posities; een muis die boven een menubadge achterbleef opende in de volgende stap de tekstballon →
     muis wordt geparkeerd; `a11y-meldingen` drukte op Esc nadat de focus al uit het (op de computer niet-modale) paneel was verdwenen → eerst focus terug in het
-    paneel; de QA-zoekstap op de telefoon zocht het veld op het label «Zoeken in mail», terwijl daar op de telefoon «Zoeken» staat → nu op veldnaam.
+    paneel; de QA-zoekstap op de telefoon zocht het veld op het etiket «Zoeken in mail», terwijl daar op de telefoon «Zoeken» staat → nu op veldnaam.
 - Controles:
   - `tsc` (frontend en server) — 0 fouten;
   - build: kaart, `plaatsing-controle`, interfacecatalogus 1.194 elementen (ongewijzigd), L002 (47 bestaande bevindingen, geen nieuwe), slimme

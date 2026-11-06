@@ -2,7 +2,7 @@
 
 # Cloud Google Drive-provider — B+ grant-integratie
 
-Google Drive gebruikt `https://www.googleapis.com/auth/drive`, de volledige beperkte (restricted) Drive-scope van Google. De providerbasis vraagt rechten aan voor lezen, aanmaken, bijwerken, verwijderen en machtigingen, maar voert in dit checkpoint geen automatische verwijdering, overschrijving, indexering, Changes API-verwerking of achtergrondsynchronisatie uit.
+Google Drive gebruikt `https://www.googleapis.com/auth/drive`, de volledige beperkte (restricted) Drive-scope van Google. De providerbasis vraagt rechten aan voor lezen, aanmaken, bijwerken, verwijderen en machtigingen, maar voert in dit checkpoint geen automatische verwijdering, overschrijving, indexering, Wijzigingen API-verwerking of achtergrondsynchronisatie uit.
 
 ## Accountmodel
 
@@ -52,4 +52,4 @@ Ontkoppelen deactiveert alleen de Drive-handle en het Drive-account. Als Mail, C
 
 Inbegrepen: incrementele toestemming via gedeelde client, PKCE S256, één versleutelde principal-grant, logische Drive-handle, primaire/aanvullende accounts, selectie, audit en expliciete ontkoppeling.
 
-Niet actief: initiële lijstweergave, Changes API, workers, automatische bestandsmutaties, conflictoplossing, delen (sharing), OneDrive, Dropbox, Mail-runtimemigratie, Calendar-runtime of Photos-runtime.
+Niet actief: initiële lijstweergave, Wijzigingen API, achtergrondprocessen, automatische bestandsmutaties, conflictoplossing, delen (sharing), OneDrive, Dropbox, Mail-runtimemigratie, Calendar-runtime of Photos-runtime.

@@ -37,7 +37,7 @@ connector v2 (backend/connector-v2*.ts) en de MCP-klant naar buiten (backend/mcp
 
 | Situatie | Extensie prive | Extensie technisch | MCP prive-hulpmiddel | MCP technisch hulpmiddel |
 |---|---|---|---|---|
-| Sitesessie leeft, technische ruimte actief | werkt | werkt | werkt, scope `prive` | werkt, scope `technisch` |
+| Sitesessie leeft, technische ruimte actief | werkt | werkt | werkt, bereik `prive` | werkt, bereik `technisch` |
 | Technische ruimte op pauze | werkt | geweigerd `PAUZE` (403) | werkt | verdwijnt uit `tools/list`; call → 403 `PAUZE` |
 | Uitloggen in ÉÉN tabblad | werkt | ontgrendeling «1 рік/Без обмеження» blijft; «до кінця активації» eindigt met de sessie | werkt | volgt de technische sessie |
 | Uitloggen van de site / «Вийти всюди» | agenttoken blijft (koppeling), maar `naUitloggen` trekt alle ontgrendelingen in | ingetrokken, 403 `SITE_SESSIE_WEG` | werkt (OAuth-grant is geen sitesessie) — zie besluit B | 403 `SITE_SESSIE_WEG` |
@@ -50,13 +50,13 @@ aanroep zonder levende ankersessie wordt geweigerd, ook als het token zelf nog g
 
 ## 4. Contract dat Agent 1 moet waarmaken
 
-1. **Scope in elke ontgrendelingsgrant.** `extensie_ontgrendelingen.ruimte` blijft verplicht (`prive`|`technisch`) en
+1. **Bereik in elke ontgrendelingsgrant.** `extensie_ontgrendelingen.ruimte` blijft verplicht (`prive`|`technisch`) en
    een technische grant MOET `activatie_id` = id van een `tech_ruimte_sessies`-rij hebben. `scopeVanSessie(req)` mag een
    grant nooit in een andere ruimte gebruiken dan de ruimte van het slot (WebSocket van slot X ⇒ alleen grant van X).
 2. **Ankercontrole bij elke technische extensieopdracht** (niet alleen bij ontgrendelen): `siteSessieLeeft` false ⇒ grant
    intrekken met reden `site-sessie-weg` en WebSocket-bericht `{t:'vergrendeld', code:'SITE_SESSIE_WEG'}`.
-3. **MCP-scopeverklaring.** Elk hulpmiddel heeft een vaste scope: namen in `BEHEER_TOOL_NAMEN` en `BEHEER_ALLEEN_V2` = `technisch`,
-   al het andere = `prive`. Gegevens (mail, meldingen, instellingen) van een `prive`-hulpmiddel komen ALTIJD uit scope
+3. **MCP-scopeverklaring.** Elk hulpmiddel heeft een vaste bereik: namen in `BEHEER_TOOL_NAMEN` en `BEHEER_ALLEEN_V2` = `technisch`,
+   al het andere = `prive`. Gegevens (mail, meldingen, instellingen) van een `prive`-hulpmiddel komen ALTIJD uit bereik
    `prive`, ook als de technische ruimte actief is (geen menging). Lade bij `gedeeld` blijft zoals in `aiPoortNu`.
 4. **Foutcodes** (JSON `{ error: <code>, uitleg: {uk, nl} }`), status:
    - 401 `ACCOUNT_NIET_ACTIEF` — hoofdaccount niet actief; de klant ontkoppelt.

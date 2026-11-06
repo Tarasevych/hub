@@ -1,55 +1,55 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-TECH-RUIMTES-UI.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-TECH-RUIMTES-UI.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-# RUNBOOK — Twee ruimtes: gebruikersinterface (vlag `tech-ruimtes-v2`)
+# RUNBOOK — Два простори: інтерфейс користувача (прапорець `tech-ruimtes-v2`)
 
-Werker T-UI, 27.10.2026. Hoort bij de backend van werker T-BACKEND (`backend/tech-ruimtes.ts`, contract
-`docs/ontwerp/TECH-RUIMTES-API.md`). Dit bestand is bewust apart gehouden van `RUNBOOK-VEILIGE-UITROL.md` (geen samenvoegconflicten).
+Воркер T-UI, 27.10.2026. Працює разом із бекендом воркера T-BACKEND (`backend/tech-ruimtes.ts`, контракт
+`docs/ontwerp/TECH-RUIMTES-API.md`). Цей файл свідомо винесено окремо від `RUNBOOK-VEILIGE-UITROL.md` (щоб уникнути конфліктів під час злиття).
 
-## 1. Wat verandert er (alleen met de vlag AAN)
-- **Wisselknop** «Звичайний простір | Технічний простір» in het accountmenu en in de technische band. Wisselen gebeurt in het
-  tabblad zelf (geen herladen; getypte tekst en open vensters blijven). Naar «Звичайний» = de technische sessie **pauzeert**.
-  Toetsenbord: ←/→, Home/End; één tab-stop.
-- **Startvenster** «Вхід у технічний простір» met precies drie termijnen:
+## 1. Що змінюється (лише з УВІМКНЕНИМ прапорцем)
+- **Перемикач** «Звичайний простір | Технічний простір» у меню акаунта та у верхній технічній смузі. Перемикання відбувається в
+  самій вкладці (без перезавантаження; набраний текст і відкриті вікна зберігаються). Перехід у «Звичайний» = технічний сеанс **стає на паузу**.
+  Клавіатура: ←/→, Home/End; одна зупинка Tab.
+- **Стартове вікно** «Вхід у технічний простір» із рівно трьома термінами:
   «На час (до HH:MM)», «До завершення технічного сеансу», «До виходу з акаунта на сайті» (NL: «Voor een tijd (tot HH:MM)»,
-  «Tot het einde van de technische sessie», «Tot afmelden van het account op de site»), elk met één regel uitleg.
-  Niet-beschikbare keuzes blijven zichtbaar, uitgegrijsd, met de reden van de server. Loopt er al een sessie: «Змінити термін»
-  (telt vanaf nu) of «Додати час» (bijtellen) — het woord «Подовжити» verdwijnt.
-- **Eén pagina «Доступ і терміни»** (venster met tabbladen: Мій технічний доступ / Вхід і підтвердження / Доступ ШІ /
-  Люди з технічним доступом / Коди доступу і гості / Прапорці-тести), gevoed door `…/ruimtes/toegang`. AI heeft één
-  termijnenset (1 година … «До відкликання вручну»). Laatst gekozen tabblad blijft bewaard.
-- **Uitloggen in drie duidelijke keuzes** met gevolg: «Вийти з технічного сеансу» (blijft aangemeld; extensie-ontgrendelingen
-  blijven), «Вийти з акаунта на сайті» (sluit ook technisch; extensie-ontgrendelingen in deze browser vervallen), «Вийти всюди»
-  (opent Безпека → Сесії om te bevestigen). Plus: «Закриття однієї вкладки не знімає довгі дозволи розширення» (besluit t330u).
-- **Woorden** (audit): band en Сесії zeggen «до виходу з акаунта на сайті» / «до завершення технічного сеансу»; het
-  bevestigvenster zegt «Не питати знову, доки я не вийду з акаунта на сайті (не довше N год)».
-- Versheid tussen subdomeinen: status elke 15 s zolang het tabblad zichtbaar is + meteen bij focus/zichtbaar (was tot 60 s).
+  «Tot het einde van de technische sessie», «Tot afmelden van het account op de site»), кожен з одним рядком пояснення.
+  Недоступні варіанти залишаються видимими, неактивними (сірими), з причиною від сервера. Якщо сеанс уже триває: «Змінити термін»
+  (рахує від поточного моменту) або «Додати час» (додавання часу) — слово «Подовжити» зникає.
+- **Єдина сторінка «Доступ і терміни»** (вікно з вкладками: Мій технічний доступ / Вхід і підтвердження / Доступ ШІ /
+  Люди з технічним доступом / Коди доступу і гості / Прапорці-тести), що живиться від `…/ruimtes/toegang`. ШІ має єдиний
+  набір термінів (1 година … «До відкликання вручну»). Остання вибрана вкладка зберігається.
+- **Вихід у трьох чітких варіантах** із поясненням наслідків: «Вийти з технічного сеансу» (залишається в системі; розблокування розширення
+  зберігаються), «Вийти з акаунта на сайті» (закриває також технічний сеанс; розблокування розширення в цьому браузері втрачають чинність), «Вийти всюди»
+  (відкриває Безпека → Сесії для підтвердження). Плюс примітка: «Закриття однієї вкладки не знімає довгі дозволи розширення» (рішення t330u).
+- **Формулювання** (аудит): смуга та розділ Сесії кажуть «до виходу з акаунта на сайті» / «до завершення технічного сеансу»;
+  вікно підтвердження каже «Не питати знову, доки я не вийду з акаунта на сайті (не довше N год)».
+- Актуальність стану між піддоменами: перевірка статусу кожні 15 с, доки вкладка видима + миттєво при отриманні фокуса/видимості (раніше було до 60 с).
 
-Met de vlag **UIT** is alles precies zoals vóór deze wijziging (oude venster, oude woorden, oude knoppen).
+Коли прапорець **ВИМКНЕНО**, усе працює точно так само, як до цієї зміни (старе вікно, старі формулювання, старі кнопки).
 
-## 2. Bestanden
-- `src/tech/ruimtes-api.ts` — getypeerde client; `src/tech/ruimtes-contract.ts` — types + pure omzetting van het serverantwoord (ISO-tijden → ms, `toegang` → rijen per tabblad).
-- `src/tech/ruimtes/teksten.ts` (UA+NL + pure hulpfuncties), `ruimtes-opslag.ts`, `ruimtes-vlag.ts`, `RuimteWissel.tsx`,
+## 2. Файли
+- `src/tech/ruimtes-api.ts` — типізований клієнт; `src/tech/ruimtes-contract.ts` — типи + чисте перетворення відповіді сервера (ISO-час → мс, `toegang` → рядки по вкладках).
+- `src/tech/ruimtes/teksten.ts` (UA+NL + чисті допоміжні функції), `ruimtes-opslag.ts`, `ruimtes-vlag.ts`, `RuimteWissel.tsx`,
   `StartVenster.tsx`, `ToegangPagina.tsx`, `UitloggenKeuze.tsx`, `ruimtes.css`.
-- Kleine haken: `src/tech/TechLaag.tsx`, `src/tech/tech-opslag.ts` (venstertypes), `src/CanoniekAccountMenu.tsx`,
+- Невеликі хуки: `src/tech/TechLaag.tsx`, `src/tech/tech-opslag.ts` (типи вікон), `src/CanoniekAccountMenu.tsx`,
   `src/BeveiligingSessiesPaneel.tsx`, `src/platform/bevestig-toegang.tsx`.
-- Tests: `tests/eenheid/tech-ruimtes-ui.test.ts`, `tests/e2e/tech-ruimtes-ui.e2e.ts`, stand `tests/e2e/hulp/ruimtes-stand/`,
-  starter `scripts/e2e-tech-ruimtes-ui.mjs`.
-- `src/tech/ruimtes/` staat NIET in de technische bundels (`shared/tech-bundels.ts`): het startvenster moet werken vóór er een
-  technische sessie is. De vlag wordt via OFREP gelezen (`/api/ofrep/v1/evaluate/flags/tech-ruimtes-v2`), niet via `src/vlaggen/`.
+- Тести: `tests/eenheid/tech-ruimtes-ui.test.ts`, `tests/e2e/tech-ruimtes-ui.e2e.ts`, стенд `tests/e2e/hulp/ruimtes-stand/`,
+  запускач `scripts/e2e-tech-ruimtes-ui.mjs`.
+- `src/tech/ruimtes/` НЕ входить до технічних бандлів (`shared/tech-bundels.ts`): стартове вікно має працювати ще до того, як з'явиться
+  технічний сеанс. Прапорець читається через OFREP (`/api/ofrep/v1/evaluate/flags/tech-ruimtes-v2`), а не через `src/vlaggen/`.
 
-## 3. Aanzetten (na uitrol van UI + backend)
-1. Uitrollen zoals gewoonlijk; `npm run migrate` (de backend levert de vlag aan, standaard UIT).
-2. «Прапорці» → `tech-ruimtes-v2` → «Тест: так» (alleen voor u), Ctrl+F5.
-3. Controle: accountmenu toont de wisselknop; klik «Технічний простір» → startvenster met drie termijnen.
-4. Terug: vlag uit → oude weergave, zonder gegevensverlies.
+## 3. Увімкнення (після розгортання UI + бекенду)
+1. Розгорнути як зазвичай; `npm run migrate` (бекенд додає прапорець, типово ВИМКНЕНО).
+2. «Прапорці» → `tech-ruimtes-v2` → «Тест: так» (лише для вас), Ctrl+F5.
+3. Перевірка: меню акаунта показує перемикач; натисніть «Технічний простір» → відкриється стартове вікно з трьома термінами.
+4. Повернення назад: вимкнути прапорець → старий вигляд, без втрати даних.
 
-## 4. Tests (alleen lokaal)
-- `node scripts/eenheidstests.mjs tech-ruimtes-ui` (geen DB nodig).
-- `node scripts/e2e-tech-ruimtes-ui.mjs` — echte TechLaag in Chrome tegen een nepserver in het geheugen; elk verzoek naar een
-  andere host wordt afgebroken en geteld (eis 0). Screenshots: `E2E_SCREENSHOTS` (standaard `/workspace/audit-technisch/ui-*.png`).
+## 4. Тести (лише локально)
+- `node scripts/eenheidstests.mjs tech-ruimtes-ui` (БД не потрібна).
+- `node scripts/e2e-tech-ruimtes-ui.mjs` — справжній TechLaag у Chrome проти фейкового сервера в пам'яті; кожен запит до
+  іншого хоста переривається і підраховується (вимога: 0). Знімки екрана: `E2E_SCREENSHOTS` (типово `/workspace/audit-technisch/ui-*.png`).
 
-## 5. Bekende grenzen
-- De stand gebruikt een vereenvoudigd accountmenu; het echte `CanoniekAccountMenu` is alleen via typecontrole en build gedekt.
-- De e2e draait tegen de nep-implementatie van het contract; tegen de echte backend opnieuw draaien zodra die er is.
-- «Технічний простір ще порожній» (aparte gegevens): backendzaak (ruimtepoort); de UI toont nu dezelfde gegevens zodra de server
-  dat doet, maar `RuimteStrook.tsx` is ongewijzigd gelaten.
+## 5. Відомі обмеження
+- Стенд використовує спрощене меню акаунта; справжнє `CanoniekAccountMenu` покрито лише перевіркою типів і збіркою.
+- E2E запускається проти фейкової реалізації контракту; потрібно повторно запустити проти справжнього бекенду, щойно він буде готовий.
+- «Технічний простір ще порожній» (окремі дані): завдання бекенду (шлюз просторів); інтерфейс покаже ці дані, щойно сервер
+  почне їх віддавати, але `RuimteStrook.tsx` залишено без змін.

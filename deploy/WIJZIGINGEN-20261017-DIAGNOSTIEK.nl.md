@@ -9,7 +9,7 @@ Admin → «Діагностика» is een pagina met controles per categorie (
 - Per controle: «Перевірити» (één, categorie, alles), status, reactietijd, wat is gecontroleerd, waarom het nodig is, oorzaak van de fout, stappen om het op te lossen, geschiedenis.
 - «Потребує уваги» bovenaan: storingen → waarschuwingen → «recent gefaald, nu weer in orde»; nooit uitgevoerd staat er niet in (geen verzonnen groen).
 - **Storingsgeschiedenis + trend**: 14 dagen balkjes, weektotalen, «faalde het vaakst», sinds wanneer iets faalt, laatste succes. Bewaartermijn 30 dagen.
-- **«Скарга користувача»**: zoek een gebruiker op naam/e-mail en zie wat die op de site ervaart — sessies, mislukte acties (alleen labels), koppelingen, mail-wachtrij, en de diagnosestand van de diensten die hij de laatste 24 uur gebruikte, met advies. Geen mailtekst, bestanden, IP of tokens.
+- **«Скарга користувача»**: zoek een gebruiker op naam/e-mail en zie wat die op de site ervaart — sessies, mislukte acties (alleen etiketten), koppelingen, mail-wachtrij, en de diagnosestand van de diensten die hij de laatste 24 uur gebruikte, met advies. Geen mailtekst, bestanden, IP of tokens.
 - Logboek (admin /audit): `diag.uitgevoerd` (per klik), `diag.storing` en `diag.hersteld` (bij overgang), `diag.gebruiker.bekeken` (elke inzage in een gebruiker).
 
 ## Veiligheid

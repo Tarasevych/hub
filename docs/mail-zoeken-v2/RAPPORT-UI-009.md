@@ -1,56 +1,56 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RAPPORT-UI-009.uk.md) · [🇳🇱 **Nederlandse versie**](./RAPPORT-UI-009.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# UI-009 — Eindrapport geavanceerd zoeken en filters in Mail
+# UI-009 — Підсумковий звіт: розширений пошук і фільтри в Пошті
 
-Basis: 20261029-131639 (claude). Vlag: `mail-zoeken-v2` (migratie **0150**, standaard UIT). Inventaris en diagnose: `INVENTARIS-UI-009.md` (fase 1).
+База: 20261029-131639 (claude). Прапорець: `mail-zoeken-v2` (міграція **0150**, типово ВИМКНЕНО). Інвентаризація та діагностика: `INVENTARIS-UI-009.md` (фаза 1).
 
-## Wat er verandert (alleen met vlag AAN)
-De filterknop in de zoekbalk en «Ще умови» openen hetzelfde, nieuwe paneel `src/mail-zoeken-v2/MailZoekenV2.tsx`:
-1. **Kop** (titel, terug, sluiten) · **actieve chips** van het concept (elk apart weg, «Очистити все» wist het concept) · **één scrollend werkgebied** · **voet** «Скинути / Зберегти / Шукати» blijft altijd zichtbaar.
-2. **Overzicht**: zoekveld met operator-aanvulling en geschiedenis, snelfilters (segment Усі/Непрочитані/Прочитані, ★, 📎) en vijf groepen: *Текст і учасники* (Текст, Люди, Тема), *Стан і місце листа* (Стан, Папка/мітка, Область), *Час* (Період), *Файли* (Вкладення і тип вмісту, Розмір), *Додатково* (Збережені). Een rij toont alleen een korte waarde als er iets gekozen is.
-3. **Concept-model**: elke keuze verandert alleen het concept; precies **één** zoekopdracht bij «Шукати» (of Enter). Waarden blijven bewaard bij wisselen van editor. Sluiten (✕/Esc/buiten) = concept weggooien, zoals V1.
-4. **Editors**
-   - Текст: Gmail-operators (aanvulling `from:`, `has:attachment`… met ↑/↓/Enter), «усі слова», «не містить», recente zoekopdrachten als compacte lijst met markering en «Очистити», onderwerp-suggesties; syntaxisuitleg achter ⓘ.
-   - Люди: segment «Від кого / Кому» met teller, korte uitleg van het verschil, doorzoekbare lijst met avatar, naam, e-mail (wrapt), aantal; Enter voegt een eigen adres toe (nu ook voor «Кому»); gekozen adressen als chips.
-   - Тема: zoek/eigen invoer, lijst met markering, vinkje bij selectie, datum/aantal secundair.
-   - Стан: exclusief segment + slanke schakelaar «лише із зірочкою».
-   - Період: gekozen periode bovenaan, presets Будь-коли/7/30 днів/Пів року/Рік, Від/До + kalender **altijd bruikbaar**; grenzen beperken alleen als ze bevestigd zijn; grensstatus in één regel met vernieuwen; maand/jaar/kwartaal/seizoen pas na uitklappen.
-   - Папка/мітка: zoeken, groepen «Папки» (eigen pictogrammen) en «Мої мітки»; geen herhaald «Системна папка»; lange namen wrappen.
-   - Вкладення і тип вмісту: schakelaar, segment inhoudstype, bestandsnaam, formaten als compact raster met pictogram en teller (multi), gekozen formaten als chips, beperking (inhoud niet geïndexeerd) achter ⓘ.
-   - Розмір: segment Будь-який/Більше/Менше + getal + eenheid in één groep; validatie (leeg, ≤0, tekst), komma wordt punt; «Шукати» uit bij ongeldige waarde.
-   - Область: segment Поточний розділ/Уся пошта met één zin uitleg, schakelaars «Без Спаму/Кошика».
-   - Збережені: starten (= zoeken), **hernoemen** (bestaande opslagfunctie), verwijderen; compacte lege staat zonder knoppen.
-5. **Ruimte**: hoogte volgt de inhoud tot `min(720px, 100dvh − 72px)`; lijsten hebben geen eigen scroll; geen horizontale scroll; telefoon: volle breedte, «Шукати» bovenaan de voet over de volle breedte, tikdoelen 36–44 px.
+## Що змінюється (лише з увімкненим прапорцем)
+Кнопка фільтрів у рядку пошуку та «Ще умови» відкривають одну й ту саму нову панель `src/mail-zoeken-v2/MailZoekenV2.tsx`:
+1. **Шапка** (заголовок, назад, закрити) · **активні чипи** чернетки (кожен видаляється окремо, «Очистити все» очищує чернетку) · **одна прокручувана робоча область** · **нижній колонтитул** «Скинути / Зберегти / Шукати» завжди залишається видимим.
+2. **Огляд**: поле пошуку з автодоповненням операторів та історією, швидкі фільтри (сегмент Усі/Непрочитані/Прочитані, ★, 📎) та п’ять груп: *Текст і учасники* (Текст, Люди, Тема), *Стан і місце листа* (Стан, Тека/мітка, Область), *Час* (Період), *Файли* (Вкладення і тип вмісту, Розмір), *Додатково* (Збережені). Рядок показує коротке значення лише тоді, коли щось вибрано.
+3. **Модель чернетки**: кожен вибір змінює лише чернетку; рівно **один** пошуковий запит при натисканні «Шукати» (або Enter). Значення зберігаються при перемиканні редактора. Закриття (✕/Esc/зовні) = відкидання чернетки, як у V1.
+4. **Редактори**
+   - Текст: оператори Gmail (автодоповнення `from:`, `has:attachment`… за допомогою ↑/↓/Enter), «усі слова», «не містить», останні пошуки як компактний список із підсвічуванням та «Очистити», підказки тем; пояснення синтаксису за ⓘ.
+   - Люди: сегмент «Від кого / Кому» з лічильником, коротке пояснення різниці, список із пошуком, аватаром, ім’ям, e-mail (переноситься) та кількістю; Enter додає власну адресу (тепер також для «Кому»); вибрані адреси у вигляді чипів.
+   - Тема: пошук/власне введення, список із підсвічуванням, прапорець при виборі, дата/кількість вторинні.
+   - Стан: взаємовиключний сегмент + компактний перемикач «лише із зірочкою».
+   - Період: вибраний період зверху, пресети Будь-коли/7/30 днів/Пів року/Рік, Від/До + календар **завжди доступні**; межі обмежують лише тоді, коли вони підтверджені; статус меж в один рядок з оновленням; місяць/рік/квартал/сезон лише після розгортання.
+   - Тека/мітка: пошук, групи «Теки» (власні іконки) та «Мої мітки»; без повторюваного «Системна тека»; довгі назви переносяться.
+   - Вкладення і тип вмісту: перемикач, сегмент типу вмісту, назва файлу, формати у вигляді компактної сітки з іконкою та лічильником (мульти), вибрані формати у вигляді чипів, обмеження (вміст не індексується) за ⓘ.
+   - Розмір: сегмент Будь-який/Більше/Менше + число + одиниця в одній групі; валідація (порожнє, ≤0, текст), кома перетворюється на крапку; «Шукати» вимкнено при некоректному значенні.
+   - Область: сегмент Поточний розділ/Уся пошта з одним реченням пояснення, перемикачі «Без Спаму/Кошика».
+   - Збережені: запуск (= пошук), **перейменування** (наявна функція збереження), видалення; компактний порожній стан без кнопок.
+5. **Простір**: висота підлаштовується під вміст до `min(720px, 100dvh − 72px)`; списки не мають власної прокрутки; немає горизонтальної прокрутки; телефон: повна ширина, «Шукати» зверху нижнього колонтитула на всю ширину, зони дотику 36–44 px.
 
-## Bevestigde defecten → oplossing
-| # | Defect (uit code) | V2 |
+## Підтверджені дефекти → рішення
+| # | Дефект (з коду) | V2 |
 |---|---|---|
-| 1 | Periode: datumvelden/maanden/kwartalen uit zonder bevestigde grenzen | altijd kiesbaar; grenzen alleen als beperking wanneer bevestigd (anders 1.1.2004–vandaag) |
-| 2 | «Межі не підтверджені» dekt laden/fout/leeg/onbekend | `grensStand()` met vier aparte teksten, foutcode zichtbaar |
-| 3 | Elke klik in een lijst = volledige zoekopdracht (e2e: 3 afzenders = 3 zoekopdrachten) | concept; 1 zoekopdracht (e2e bevestigd) |
-| 4 | Deels direct, deels bij «Шукати» | overal concept |
-| 5 | Twee editorsystemen | één paneel |
-| 6 | Geneste scrolls (lijst 360px, chips 76/92px, jaren horizontaal) | één scrollgebied (e2e-controle op alle editors en breedtes) |
-| 7 | Herhaalde labels per rij | groepering |
-| 8 | «Кому» niet handmatig | Enter voegt toe |
-| 9 | Opgeslagen zoekopdracht starten zoekt niet (in «Ще умови») | starten = zoeken |
-| 10 | Grootte zonder validatie | validatie + melding |
+| 1 | Період: поля дат/місяці/квартали вимкнені без підтверджених меж | завжди доступні для вибору; межі діють як обмеження лише коли підтверджені (інакше 1.1.2004–сьогодні) |
+| 2 | «Межі не підтверджені» покриває завантаження/помилку/порожньо/невідомо | `grensStand()` із чотирма окремими текстами, код помилки видимий |
+| 3 | Кожен клік у списку = повний пошуковий запит (e2e: 3 відправники = 3 запити) | чернетка; 1 пошуковий запит (підтверджено e2e) |
+| 4 | Частково одразу, частково при «Шукати» | всюди чернетка |
+| 5 | Дві системи редакторів | одна панель |
+| 6 | Вкладені прокрутки (список 360px, чипи 76/92px, роки горизонтально) | одна область прокрутки (e2e-перевірка на всіх редакторах і ширинах) |
+| 7 | Повторювані підписи в кожному рядку | групування |
+| 8 | «Кому» не вводиться вручну | Enter додає |
+| 9 | Запуск збереженого пошуку не шукає (у «Ще умови») | запуск = пошук |
+| 10 | Розмір без валідації | валідація + повідомлення |
 
-Niet gewijzigd (vastgesteld juist): leessemantiek (beide = geen filter), zoekmotor, API's, facetten, grenzen-probe, `CanonicalChrome`, oude panelen zonder vlag.
+Не змінено (встановлено як коректне): семантика прочитання (обидва = без фільтра), пошуковий рушій, API, фасети, зонд меж, `CanonicalChrome`, старі панелі без прапорця.
 
-## Diagnose (zie inventaris)
-Gedeeltelijk afgerond zoeken: accountfout, plafond 200 Gmail-pagina's per account, gepauzeerde cursor (rate-limit), of afgebroken door een nieuwere zoekopdracht — de laatste wordt door V2 sterk verminderd. Tellers = geïndexeerde berichten (nu eerlijk benoemd in ⓘ). Filters en paginering: tijdens een zoekopdracht geen «meer laden» uit de map; resultaten komen uit de zoekrun.
+## Діагностика (див. інвентаризацію)
+Частково завершений пошук: помилка акаунта, ліміт 200 сторінок Gmail на акаунт, призупинений курсор (rate-limit) або переривання новішим пошуковим запитом — останнє суттєво зменшується завдяки V2. Лічильники = проіндексовані листи (тепер чесно вказано в ⓘ). Фільтри та пагінація: під час пошукового запиту немає «завантажити ще» з теки; результати надходять із пошукового прогону.
 
-## Gewijzigde bestanden
-- nieuw: `src/mail-zoeken-v2/{MailZoekenV2.tsx, logica.ts, vlag.ts, mail-zoeken-v2.css}`, `migrations/0150_mail_zoeken_v2_vlag.sql`, `docs/mail-zoeken-v2/*`, `tests/eenheid/mail-zoeken-v2-20261029.test.ts`, `tests/e2e/mail-zoeken-v2.e2e.ts`, `tests/e2e/hulp/zoeken-stand/{stand.tsx,bouw.mjs}`
-- gewijzigd: `src/GoogleMailWerkruimte.tsx` (2 imports, 1 hook, keuze V2/V1 achter vlag, `open` van het oude filterpaneel), `src/mail-zoek-cache.ts` (+ `clearMailRecentSearches`), `shared/vlaggen.ts` (+ uitleg vlag)
-- **niet** aangeraakt: `src/MailBijlage*.tsx`, `src/DriveBrowser.tsx`, `src/bestand/*`, `docs/universele-bestanden/`, `integrations/`, oude zoekcomponenten.
-- Geen nieuwe `position:fixed`-regels (positie via bestaande `.mail-advanced-search`), dus `plaatsing-vaste-elementen.json` ongewijzigd.
+## Змінені файли
+- нові: `src/mail-zoeken-v2/{MailZoekenV2.tsx, logica.ts, vlag.ts, mail-zoeken-v2.css}`, `migrations/0150_mail_zoeken_v2_vlag.sql`, `docs/mail-zoeken-v2/*`, `tests/eenheid/mail-zoeken-v2-20261029.test.ts`, `tests/e2e/mail-zoeken-v2.e2e.ts`, `tests/e2e/hulp/zoeken-stand/{stand.tsx,bouw.mjs}`
+- змінені: `src/GoogleMailWerkruimte.tsx` (2 імпорти, 1 хук, вибір V2/V1 за прапорцем, `open` старої панелі фільтрів), `src/mail-zoek-cache.ts` (+ `clearMailRecentSearches`), `shared/vlaggen.ts` (+ опис прапорця)
+- **не** зачеплені: `src/MailBijlage*.tsx`, `src/DriveBrowser.tsx`, `src/bestand/*`, `docs/universele-bestanden/`, `integrations/`, старі пошукові компоненти.
+- Жодних нових правил `position:fixed` (позиціонування через наявний `.mail-advanced-search`), тому `plaatsing-vaste-elementen.json` без змін.
 
-## Tests (echt uitgevoerd)
-- Eenheid `mail-zoeken-v2-20261029`: 33/33.
-- E2E-stand `mail-zoeken-v2` (echte Chrome, echte oude + nieuwe componenten, nagebootste facetten, geen server/Google): 172/172 — per editor × 390/768/1440 × licht/donker: binnen scherm, voet zichtbaar, één scrollgebied, geen horizontale scroll; tikdoelen 390; gedrag (concept, één zoekopdracht, waarden bewaard, Enter-adres, Кому, grensfout niet blokkerend, presets, uitklappen, kwartaal, grootte-validatie, operators met toetsenbord, geschiedenis wissen, ⓘ, labelgroepen, hernoemen/starten, lege staat, Esc-gedrag, nl).
-- Volledige productiebuild, migraties op lege DB en serverstart: zie RELEASE-NOTITIES.
+## Тести (реально виконані)
+- Модульні `mail-zoeken-v2-20261029`: 33/33.
+- E2E-стенд `mail-zoeken-v2` (справжній Chrome, справжні старі + нові компоненти, імітовані фасети, без сервера/Google): 172/172 — для кожного редактора × 390/768/1440 × світла/темна тема: у межах екрана, нижній колонтитул видимий, одна область прокрутки, без горизонтальної прокрутки; зони дотику 390; поведінка (чернетка, один пошуковий запит, збереження значень, адреса через Enter, Кому, помилка меж не блокує, пресети, розгортання, квартал, валідація розміру, оператори з клавіатури, очищення історії, ⓘ, групи міток, перейменування/запуск, порожній стан, поведінка Esc, nl).
+- Повна продакшн-збірка, міграції на порожній БД та запуск сервера: див. RELEASE-NOTITIES.
 
-## Niet getest
-Live site en echte Gmail; echte facet-/grenzen-API in de werkruimte (alleen stand); de werkruimte zelf met vlag AAN (alleen statisch: typecheck + koppelingstest); iOS Safari; schermlezers (alleen ARIA-rollen/labels gezet, geen test met NVDA/VoiceOver); samenspel met de zwevende samenvattingschips van het oude filterpaneel terwijl V2 open is.
+## Не протестовано
+Живий сайт і справжній Gmail; справжні API фасетів/меж у робочому просторі (лише стенд); сам робочий простір з увімкненим прапорцем (лише статично: typecheck + тест зв’язування); iOS Safari; скрінрідери (лише встановлено ARIA-ролі/мітки, без тестування з NVDA/VoiceOver); взаємодія з рухомими підсумковими чипами старої панелі фільтрів, коли відкрито V2.

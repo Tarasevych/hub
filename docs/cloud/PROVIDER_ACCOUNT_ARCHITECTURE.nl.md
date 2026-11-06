@@ -32,7 +32,7 @@ De vier Suite-namen zijn logische handles, geen vier kopieën van refresh-tokens
 
 ## OAuth- en scopegrens
 
-Mail, Drive, Calendar en Photos gebruiken één Web OAuth Client en één Google Cloud-project. Incrementele autorisatie verzamelt door de provider goedgekeurde scopes in de canonieke principal-grant. Vóór elke service-aanroep dwingt de backend het volgende af:
+Mail, Drive, Calendar en Photos gebruiken één Web OAuth Client en één Google Cloud-project. Incrementele autorisatie verzamelt door de aanbieder goedgekeurde scopes in de canonieke principal-grant. Vóór elke service-aanroep dwingt de backend het volgende af:
 
 ```text
 requiredScopes ⊆ grantedScopes

@@ -15,9 +15,9 @@ Claude ──MCP──▶ mcp.tarasevych.com ──opdrachtenwachtrij (beleid/«
   - Lezen en bekijken: `snapshot`, `diagnostics`, `tabs`, `scroll`, `wait`.
   - Navigatie: `navigate`, `history` (terug, vooruit, vernieuwen).
   - Acties op de pagina: `click`, `type`, `select`, `key` (alleen navigatietoetsen), `invoke` (acties die de site aanbiedt).
-  - Uitgebreid: `screenshot` (JPEG; wordt teruggegeven als MCP-afbeelding), `deep_diagnostics` (vanaf 0.3.3 zonder `chrome.debugger`: gedurende enkele seconden wordt een passieve verzamelaar `diag-hook.js` in de pagina geïnjecteerd via `chrome.scripting`; geen extra rechten of balk nodig. Chrome staat `debugger` niet toe als optionele machtiging — het verzoek eindigde altijd met de fout «Only permissions specified in the manifest may be requested»).
+  - Uitgebreid: `screenshot` (JPEG; wordt teruggegeven als MCP-afbeelding), `deep_diagnostics` (vanaf 0.3.3 zonder `chrome.debugger`: gedurende enkele seconden wordt een passieve verzamelaar `diag-hook.js` in de pagina geïnjecteerd via `chrome.scripting`; geen extra rechten of balk nodig. Chrome staat `debugger` niet toe als optionele machtiging — het verzoek eindigde altijd met de fout «Alleen permissions specified in de manifest may be requested»).
 - Elke mogelijkheid schakelt de gebruiker **afzonderlijk per browser** in of uit met een schakelaar en uitleg «?» (wat er gebeurt bij in- en uitschakelen). Een extra schakelaar «zonder bevestiging» bestaat alleen voor lezen/bekijken en navigatie. Standaard staat alleen lezen en bekijken aan.
-- Het opdrachttype wordt gecontroleerd door een CHECK in de database, de mogelijkheid door `policy.enabled` op de server (`browserGate`), en het adres door zowel de server als de extensie (`isOwnSiteUrl`).
+- Het opdrachttype wordt gecontroleerd door een CONTROLE in de database, de mogelijkheid door `policy.enabled` op de server (`browserGate`), en het adres door zowel de server als de extensie (`isOwnSiteUrl`).
 - Standaardbeleid: ingeschakeld en zonder bevestiging geldt alleen voor lezen en bekijken. Klikken, typen, selecteren, toetsen, site-acties, schermafbeelding en diepe diagnostiek **kunnen niet** automatisch zijn (de server weigert zo'n verzoek).
 - Pagina-inhoud wordt voor het model gemarkeerd als onvertrouwd (`untrusted()`); wachtwoord- en betaalvelden worden door de extensie nooit gelezen of ingevuld.
 - Hulpmiddelinstellingen (een afzonderlijk hulpmiddel uitschakelen) worden op de server bewaard (`app.connector_tool_settings`), niet alleen in de interface.
@@ -38,11 +38,11 @@ Wat dit oplevert:
 
 ## Debuggermachtiging: waarom «Chrome heeft geen toestemming verleend» (0.6.1, 19.10.2026)
 
-Chrome **staat niet toe** dat `debugger` een optionele machtiging is. Het staat in `optional_permissions`, maar Chrome verwijdert het bij het inlezen van het manifest, waardoor een machtigingsverzoek vanuit de extensie altijd eindigt met de fout «Only permissions specified in the manifest may be requested» — ongeacht of het verzoek uit een gebruikersgebaar komt. Daarom kwam de schakelaar «diepe diagnostiek» altijd terug met de tekst «Chrome heeft geen debuggermachtiging verleend».
+Chrome **staat niet toe** dat `debugger` een optionele machtiging is. Het staat in `optional_permissions`, maar Chrome verwijdert het bij het inlezen van het manifest, waardoor een machtigingsverzoek vanuit de extensie altijd eindigt met de fout «Alleen permissions specified in de manifest may be requested» — ongeacht of het verzoek uit een gebruikersgebaar komt. Daarom kwam de schakelaar «diepe diagnostiek» altijd terug met de tekst «Chrome heeft geen debuggermachtiging verleend».
 
 Wat er in 0.6.1 is gedaan:
 
-- het machtigingsverzoek loopt nog steeds **strikt vanuit een klik** in popup / sidepanel / options (synchroon, in de handler zelf, vóór elke `await`); de service worker vraagt nooit om machtigingen (daar is geen gebruikersgebaar);
+- het machtigingsverzoek loopt nog steeds **strikt vanuit een klik** in popup / sidepanel / options (synchroon, in de handler zelf, vóór elke `await`); de service achtergrondproces vraagt nooit om machtigingen (daar is geen gebruikersgebaar);
 - het resultaat wordt **geclassificeerd**: `ja` (machtiging aanwezig) · `nee` (nog niet gevraagd / geen gebaar) · `geweigerd` (gebruiker weigerde in het Chrome-venster) · `ingetrokken` (machtiging ingetrokken terwijl diepe diagnostiek aanstaat) · `niet-aanvraagbaar` (Chrome weigerde het verzoek zelf te accepteren). Voor elke status is er een eigen uitleg in twee talen en een concrete volgende stap;
 - de status wordt doorgegeven aan zowel de UI van de extensie (popup, sidepanel, options) als de site (openbaar veld `diagnostiek`: `stand`, `optIn`, `actief`, `aanvraagbaar`) — de hub «AI-koppelingen → Browserextensie» toont dit op een aparte regel;
 - de echte manier om CDP in te schakelen is een apart pakket **`mijn-ruimte-extension-diagnose.zip`** (`scripts/bouw-extensie.mjs`, veld `diagnose` in `extension-version.json`): dezelfde bestanden en dezelfde `key` (dus hetzelfde id), maar `debugger` staat in `permissions`. Het standaardpakket behoudt minimale rechten en geeft geen brede waarschuwing bij installatie;
@@ -55,7 +55,7 @@ Wanneer een slot daadwerkelijk ontgrendeld **én** verbonden is (WSS `ready`), e
 
 ## Diagnostiek zonder `chrome.debugger`
 
-`browser_get_diagnostics` leest het korte logboek van de site zelf (`src/ai-site-acties.ts`): JS-fouten, `console.error/warn`, mislukte verzoeken (alleen methode, pad zonder query en status) en paginametrieken. De machtiging `chrome.debugger` (CDP) wordt bewust **niet** standaard gebruikt: die geeft toegang tot al het verkeer van het tabblad, toont de balk «extensie debugt de browser» en druist in tegen het principe van minimale rechten. Diepere analyse (`deep_diagnostics`) wordt uitgevoerd door de enkele seconden ingebouwde verzamelaar `diag-hook.js` (alleen console, uitzonderingen, adres/status/duur van verzoeken; nooit inhoud of kopteksten).
+`browser_get_diagnostics` leest het korte logboek van de site zelf (`src/ai-site-acties.ts`): JS-fouten, `console.error/warn`, mislukte verzoeken (alleen methode, pad zonder zoekopdracht en status) en paginametrieken. De machtiging `chrome.debugger` (CDP) wordt bewust **niet** standaard gebruikt: die geeft toegang tot al het verkeer van het tabblad, toont de balk «extensie debugt de browser» en druist in tegen het principe van minimale rechten. Diepere analyse (`deep_diagnostics`) wordt uitgevoerd door de enkele seconden ingebouwde verzamelaar `diag-hook.js` (alleen console, uitzonderingen, adres/status/duur van verzoeken; nooit inhoud of kopteksten).
 
 ## Site-acties: register en hook
 

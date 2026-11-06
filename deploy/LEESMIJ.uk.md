@@ -15,7 +15,7 @@
    резервне копіювання відмовить у роботі (а отже й `installeren`, який спершу робить резервну копію). Див. `HERSTEL.md`.
 2. **Початкове налаштування**: `deploy/installeer-app.sh inrichten /pad/naar/checkout`
    - системний користувач `mijnruimte` (без оболонки), група `mijnruimte-backup` (для хоста, який забирає резервні копії);
-   - папки `/srv/mijn-ruimte/{releases,dashboard}`, `/srv/data/uploads`, `/srv/backups/mijn-ruimte`, `/etc/mijn-ruimte`;
+   - теки `/srv/mijn-ruimte/{releases,dashboard}`, `/srv/data/uploads`, `/srv/backups/mijn-ruimte`, `/etc/mijn-ruimte`;
    - юніти й таймери systemd у `/etc/systemd/system/` та їх увімкнення.
 3. **База даних**: створити роль і базу даних `mijnruimte` (команду показує `inrichten`).
 4. **Секрети**: `/etc/mijn-ruimte/geheimen.env` із `DATABASE_URL`, після чого згенерувати решту обов'язкових ключів на самій VM:
@@ -52,7 +52,7 @@
 | `backup-maken.sh` | `pg_dump` (custom-формат) і tar завантажень, напряму через `age -R` (на VM лежить лише публічний ключ) → `database.dump.age`, `uploads.tar.gz.age` + `info.txt`, `SHA256SUMS`, `KLAAR` у `/srv/backups/mijn-ruimte/<дата>/`; зберігає на VM за 7 днів. |
 | `reservekopie-ophalen.ps1` | Хост Windows: забирає найновішу зашифровану резервну копію через SSH у `R:\mijn-ruimte-reservekopie\vm-back-ups\` (відхиляє незашифровані), а потім запускає `cloud/cloud-reservekopie.ps1` (Google Диск; `-ZonderCloud` пропускає цей крок). |
 | `HERSTEL.md` | Аварійний план: відновлення з GitHub + зашифрованої резервної копії + age-ключа відновлення. |
-| `cloud/` | Хост Windows: `cloud-reservekopie.ps1` щодня (після отримання копії, те саме завдання о 09:00) вивантажує лише `.age` + SHA256 на Google Диск через rclone (скоуп `drive.file`, папка `mijn-ruimte-reservekopie`; 30 щоденних + 12 щомісячних; набір для відновлення як `herstelset-<штамп>.zip.age`). `cloud-koppelen.ps1` = одноразовий вхід у Google; `cloud-wachtwoord.ps1` = DPAPI-пароль для зашифрованого `rclone.conf`. Див. `cloud/UITLEG-LEESMIJ.txt`. |
+| `cloud/` | Хост Windows: `cloud-reservekopie.ps1` щодня (після отримання копії, те саме завдання о 09:00) вивантажує лише `.age` + SHA256 на Google Диск через rclone (скоуп `drive.file`, тека `mijn-ruimte-reservekopie`; 30 щоденних + 12 щомісячних; набір для відновлення як `herstelset-<штамп>.zip.age`). `cloud-koppelen.ps1` = одноразовий вхід у Google; `cloud-wachtwoord.ps1` = DPAPI-пароль для зашифрованого `rclone.conf`. Див. `cloud/UITLEG-LEESMIJ.txt`. |
 | `herstelset/` | Офлайн-набір для відновлення на зовнішньому диску: інструкція (UA/NL), `herstel-vm.sh` (кроки на новій VM), `ontsleutel-naar-vm.ps1` (потік age ПК→VM без відкритого тексту на диску), `nieuwe-vm-maken.ps1`, `controleer-herstelset.ps1`, `herstelset-bijwerken.ps1`. |
 | `vtpm/` | Автоматичне розблокування LUKS через Hyper-V vTPM: `stap1-admin.ps1` (хост, адміністратор) і `luks-tpm-ontgrendelen.sh` (clevis tpm2, PCR 7; слот пароля зберігається). |
 | `cloudflared.service` | Посилений юніт для тунелю (`tunnel run` із `/etc/cloudflared/config.yml`). |
@@ -66,22 +66,22 @@
 | `geheimen-register.sh` | Реєстр усіх секретів без значень (назва, призначення, де лежить, відбиток, дата, хто ротує): `mijn-ruimte-installeer geheimen-register --uit /etc/mijn-ruimte/GEHEIMEN-REGISTER.md`. Шаблон для власника: `GEHEIMEN-REGISTER.md`. |
 | `oauth-client-zetten.sh` | Запис OAuth-клієнта Google або Microsoft у `geheimen.env` із ПРИХОВАНИМ вводом (термінал) або через stdin (скрипт на ПК), перевірка формату, атомарний запис, перезапуск + перевірка `/__gezondheid`: `mijn-ruimte-installeer oauth-client google|microsoft`. `google-login-zetten.sh` (стара назва) посилається на нього. Самі значення вказані в admin → Інтеграції → Майстер підключень. |
 | `google-login-zetten.sh` | Встановити як `/usr/local/sbin/google-login-zetten` (`install -o root -g root -m 0755`). Читає два рядки зі stdin (client-ID, client-secret), перевіряє формат, записує `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` у `geheimen.env` (власник і права зберігаються, атомарно через тимчасовий файл + `mv`), видаляє відмінний `GOOGLE_SUITE_CLIENT_ID` (інакше він матиме пріоритет), перезапускає `mijn-ruimte`, вимагає `is-active` + HTTP 200 для `Host: hub.tarasevych.com` на `127.0.0.1:8080`. Резервна копія (root, 0600) після успіху знищується через `shred`; у разі збою повертається старий файл + перезапуск. Ніколи не показує значень. |
-| `../scripts/google-login-instellen.ps1` | ПК з Windows: запитує Client ID (видимий) і Client secret (`Read-Host -AsSecureString`) та передає їх через **stdin** команди `ssh -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver -o BatchMode=yes beheer@<VM-IP> sudo -n /usr/local/sbin/google-login-zetten`; показує лише OK/помилку. Вимагає, щоб `beheer` мав право виконувати це без пароля (`sudo -n`, як у `HERSTEL.md`). |
+| `../scripts/google-login-instellen.ps1` | ПК з Windows: запитує Client ID (видимий) і Client секрет (`Read-Host -AsSecureString`) та передає їх через **stdin** команди `ssh -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver -o BatchMode=yes beheer@<VM-IP> sudo -n /usr/local/sbin/google-login-zetten`; показує лише OK/помилку. Вимагає, щоб `beheer` мав право виконувати це без пароля (`sudo -n`, як у `HERSTEL.md`). |
 
 ## Опції (змінні середовища скриптів)
 Це не секрети застосунку (вони описані в `ENV-VARS.md`), а лише налаштування скриптів розгортання:
 
-| Змінна | Скрипт | За замовчуванням | Значення |
+| Змінна | Скрипт | Типово | Значення |
 |---|---|---|---|
 | `BEWAAR_RELEASES` | `installeer-app.sh` | `5` | Кількість релізів, які зберігаються (старіші видаляються, активний і попередній — ніколи). |
 | `ZONDER_BACKUP=1` | `installeer-app.sh` | вимкнено | Пропустити резервне копіювання перед міграцією (лише якщо щойно зроблено свіжу резервну копію). |
 | `NODE` | `installeer-app.sh` | `/usr/bin/node` | Шлях до Node 24. |
 | `PORT` | `installeer-app.sh`, `mijn-ruimte.service` | `8080` | Локальний порт (перевірка працездатності на `http://127.0.0.1:$PORT/__gezondheid`); тримайте однаковим з юнітом і `cloudflared-config.yml`. |
-| `UPLOADS_DIR` | `backup-maken.sh`, юніти | `/srv/data/uploads` | Папка із завантаженими файлами. |
+| `UPLOADS_DIR` | `backup-maken.sh`, юніти | `/srv/data/uploads` | Тека із завантаженими файлами. |
 | `BOUW_GEHEUGEN_MAX` / `BOUW_SWAP_MAX` / `BOUW_HEAP_MB` | `installeer-app.sh` | `1400M` / `2G` / `2048` | Ліміт пам'яті (cgroup) і купа (heap) Node для збірки. Збірці vite потрібно ~1,5 ГБ купи; на VM з 2 ГБ ОЗП вона використовує swap. Нестача пам'яті зупиняє лише збірку. |
 | `ROOK_UIT` / `ROOK_CHROMIUM` / `ROOK_GEHEUGEN_MAX` / `ROOK_TIJD_SEC` / `ROOK_PAGINA_SEC` | `installeer-app.sh` | вимкнено / (шукає сам) / `1500M` / `600` / `20` | Перевірка рендерингу після активації (22.10.2026, RUNBOOK-VEILIGE-UITROL §8a): `ROOK_UIT=1` пропускає її; шлях до браузера; ліміт пам'яті й часу стенду; секунд на сторінку. |
 | `NAZORG_ROOK_NA` / `NAZORG_ROOK_TUSSEN` | `mijn-ruimte-nazorg.sh` | `120` / `600` | Секунд після активації перед живою перевіркою рендерингу; мінімальний інтервал для запитів із сайту («Перевірити рендеринг»). |
-| `BACKUP_DIR` | `backup-maken.sh` | `/srv/backups/mijn-ruimte` | Цільова папка резервних копій на VM. |
+| `BACKUP_DIR` | `backup-maken.sh` | `/srv/backups/mijn-ruimte` | Цільова тека резервних копій на VM. |
 | `BACKUP_BEWAAR_DAGEN` | `backup-maken.sh` | `7` | Скільки днів резервні копії зберігаються на VM. |
 | `BACKUP_ONTVANGER` | `backup-maken.sh` | `/etc/mijn-ruimte/backup-ontvanger.age.pub` | Публічний age-ключ, на який виконується шифрування. |
 | `BACKUP_ONVERSLEUTELD` | `backup-maken.sh` | вимкнено | `1` = без шифрування (лише для тестів). |
@@ -95,14 +95,14 @@ lobehub, MIT), показують цю форму; усі інші (Outlook, Ukr
 
 | | |
 |---|---|
-| Папка | `/srv/mijn-ruimte/merk-eigen` (змінюється через `MERK_EIGEN_MAP` у `geheimen.env`). `installeer-app.sh` створює папку (власник `mijnruimte`, 0755); юніт має `ReadWritePaths=-/srv/mijn-ruimte/merk-eigen`. |
+| Тека | `/srv/mijn-ruimte/merk-eigen` (змінюється через `MERK_EIGEN_MAP` у `geheimen.env`). `installeer-app.sh` створює теку (власник `mijnruimte`, 0755); юніт має `ReadWritePaths=-/srv/mijn-ruimte/merk-eigen`. |
 | Назва файла | `<ключ>.svg` або `<ключ>.png`, малими літерами — ключ із реєстру брендів: `microsoftoutlook`, `ukrnet`, `iua`, `onlineua`, `yahoo`, `windows`, `edge`, `microsoft`, `microsoftteams`, `microsoftonedrive`, … (див. `src/merk/merk-tabel.ts`). Якщо є обидва, діє перший за алфавітом, а інший позначається як дублікат. |
 | Розмір | ≤ **200 КБ** на файл, щонайбільше 64 файли. |
 | PNG | має бути справжнім PNG (сигнатура + IHDR). |
 | SVG | **очищується (санітизується)**: XML-пролог, коментарі, `<metadata>` та простори назв редакторів (inkscape, sodipodi, …) видаляються. **Відхиляється** (із зазначенням причини) кожен файл зі `<script>`, `<foreignObject>`, `<image>`, `<a>`, елементами анімації, атрибутами `on…`, `javascript:`, `href`/`url()` на будь-що крім `#…`, `@import`, `DOCTYPE`/`ENTITY` або невідомим елементом. Браузер отримує файл як data-URI всередині `<img>` (там SVG ніколи не виконує скрипти). |
-| Завантаження через сайт | admin → **Інтеграції** → «Майстер підключень» → «Власні логотипи сервісів»: вибрати сервіс, вибрати файл. Лише власник, зі свіжим підтвердженням **passkey**; кожна зміна записується в журнал адміністрування (`integration.merk-eigen.*`). Там само показуються файли з папки, які НЕ були прийняті, із причиною. |
-| Вручну | від імені `beheer`: спершу скопіювати файл у домашню папку (`scp`), потім `sudo -u mijnruimte install -m 0644 ~/ukrnet.svg /srv/mijn-ruimte/merk-eigen/ukrnet.svg`. Перезапуск не потрібен: сервер перечитує папку (кеш 30 с); відкрита сторінка побачить зміни після оновлення. |
-| Видалення | в admin натиснути «Видалити» або видалити файл із папки. Тоді повертається нейтральна плашка (або вбудована форма). |
+| Завантаження через сайт | admin → **Інтеграції** → «Майстер підключень» → «Власні логотипи сервісів»: вибрати сервіс, вибрати файл. Лише власник, зі свіжим підтвердженням **passkey**; кожна зміна записується в журнал адміністрування (`integration.merk-eigen.*`). Там само показуються файли з теки, які НЕ були прийняті, із причиною. |
+| Вручну | від імені `beheer`: спершу скопіювати файл у домашню теку (`scp`), потім `sudo -u mijnruimte install -m 0644 ~/ukrnet.svg /srv/mijn-ruimte/merk-eigen/ukrnet.svg`. Перезапуск не потрібен: сервер перечитує теку (кеш 30 с); відкрита сторінка побачить зміни після оновлення. |
+| Видалення | в admin натиснути «Видалити» або видалити файл із теки. Тоді повертається нейтральна плашка (або вбудована форма). |
 
 API: `POST /api/owner/merk-eigen/lijst` (будь-яка підтверджена сесія; список відхилених файлів — лише для власника),
 `POST /api/owner/admin/merk-eigen/zetten` та `…/wissen` (власник, адмін, passkey).
@@ -113,19 +113,19 @@ API: `POST /api/owner/merk-eigen/lijst` (будь-яка підтверджен�
 Microsoft, Node.js, Outlook, OneDrive, OneNote, Teams, Azure, Yahoo, monday.com, Pipedrive, Webhooks, OAuth — з npm-пакетів із
 ліцензією CC0/MIT, походження і sha256 у `HERKOMST.json`; працює без інтернету) → форма з походженням (simple-icons/lobehub) →
 **логотип із бази даних сайту** (`app.merk_beeld`) → нейтральна плашка. Оновлення вбудованої бази: `node scripts/merk-officieel-maken.mjs`
-(з `--ua <папка>` для файлів з власного вебсайту сервісу, разом із `bron.json`).
+(з `--ua <тека>` для файлів з власного вебсайту сервісу, разом із `bron.json`).
 
 Базу даних наповнює **сам сервер** (ніколи не браузер): для домену бренду без вбудованого логотипа (Ukr.net, I.ua, Online.ua,
 Entra, Fastmail, Freshdesk, Mollie, Tuya) і для домену відправника організації: спершу запис **BIMI**
 (`default._bimi.<домен>`), потім **власний вебсайт** (`<link rel=icon>`, маніфест ≥ 128 px), наостанок `/favicon.ico`; також
 домен організації. Лише https, лише публічні адреси (DNS-pinning), ≤ 3 перенаправлень, 5 с, ≤ 256 КБ, SVG очищується; успішно = 30 днів,
 невдало = 1 день. Для цього сервер має мати вихід назовні по порту **443** (і DNS). Вимкнути: admin → **Інтеграції** → «Логотипи відправників»
-(за замовчуванням увімкнено; домен тоді бачить лише IP сервера). Адреса безкоштовної поштової служби (gmail.com, ukr.net …) ніколи не отримує
+(типово увімкнено; домен тоді бачить лише IP сервера). Адреса безкоштовної поштової служби (gmail.com, ukr.net …) ніколи не отримує
 логотип цієї служби як фото відправника.
 
 Фото **людей** (`app.afzender_beeld`, окремо для користувача й простору, адреса лише як HMAC, під власним ключем, якщо сховище ключів
 увімкнено) беруться лише з того, що людина сама ввімкнула в Пошта → Налаштування → «Відправники»: власні **контакти Google** (People API,
-лише читання; у проєкті Google Cloud також увімкніть People API) і **Gravatar** (за замовчуванням вимкнено). Сервер: `backend/merk-bron.ts`;
+лише читання; у проєкті Google Cloud також увімкніть People API) і **Gravatar** (типово вимкнено). Сервер: `backend/merk-bron.ts`;
 правила: `shared/merk-bron.ts`; тести: `tests/eenheid/merk-bron-20261021.test.ts`, `merk-bron-google-20261021.test.ts`, `merk-officieel-20261021.test.ts`.
 
 ## Тунель (Cloudflare) — налаштовано 3 жовт. 2026
@@ -153,7 +153,7 @@ for h in hub id mail cloud ai github huis api admin dashboard; do cloudflared tu
 install -m 0644 deploy/cloudflared.service /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now cloudflared
 shred -u /root/.cloudflared/cert.pem
 ```
-Рекомендовано в панелі Cloudflare: SSL/TLS **Full**, увімкнути **Always Use HTTPS** (зараз `http://` ще відповідає 200;
+Рекомендовано в панелі Cloudflare: SSL/TLS **Full**, увімкнути **Завжди Use HTTPS** (зараз `http://` ще відповідає 200;
 HSTS застосунку захищає браузери лише після першого https-відвідування). Після цього в Google Cloud установіть URI перенаправлення на
 `https://id.tarasevych.com/…` (`ENV-VARS.md`).
 
@@ -165,7 +165,7 @@ cron-завданням `zoek-index` (таймер `mijn-ruimte-zoek-index.timer
 Змінні середовища `ZOEK_*`: `ENV-VARS.md`. Індекс є похідними даними: `TRUNCATE app.zoek_objecten` завжди безпечний.
 
 ## Перевірка рендерингу (22.10.2026)
-HTTP 200 не є доказом того, що сторінка справді рендериться (реліз 20261021-221718: «Buffer is not defined», кожна адмін-сторінка біла). Після активації
+HTTP 200 не є доказом того, що сторінка справді рендериться (реліз 20261021-221718: «Buffer is не defined», кожна адмін-сторінка біла). Після активації
 інсталятор відкриває ключові сторінки в headless Chromium на сервері (одноразова копія релізу на окремій базі даних
 `mijnruimte_rook_<штамп>`, тестовий власник + технічний профіль) та імпортує кожен бандл; якщо зламано — автоматичний відкат до попереднього релізу
 (подія `ROOK_TERUGGEDRAAID` на сторінці «Оновлення»). Без браузера виконується лише перевірка модулів у Node, про що чесно повідомляється як «рендеринг не перевірено».
@@ -186,7 +186,7 @@ sudo /usr/local/sbin/mijn-ruimte-installeer rook-controle [--live]  # вручн
 
 ## Отримання резервних копій (pull із хоста)
 Сама VM нікуди не виштовхує копії. Хост Windows забирає їх скриптом `deploy/reservekopie-ophalen.ps1` (SSH як `beheer`, учасник групи
-`mijnruimte-backup`): найновіша папка з маркером `KLAAR`, лише файли `.age`, перевірка `SHA256SUMS`, у
+`mijnruimte-backup`): найновіша тека з маркером `KLAAR`, лише файли `.age`, перевірка `SHA256SUMS`, у
 `R:\mijn-ruimte-reservekopie\vm-back-ups\<штамп>\`. Хост Linux може робити те саме за допомогою rsync:
 ```bash
 rsync -a vm:/srv/backups/mijn-ruimte/ /pad/op/host/mijn-ruimte/

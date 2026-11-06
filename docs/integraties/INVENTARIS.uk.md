@@ -42,11 +42,11 @@
 |---|---|---|---|---|---|---|---|---|---|---|
 | google-drive | Google Drive | готово (`klaar`) | працює (`werkend`) | Готово до підключення | Google OAuth 2.0 + Drive API | cloud | 1 | — |  | `backend/google-suite-inrichting.ts` |
 | google-photos | Google Photos | готово (`klaar`) | працює (`werkend`) | Готово до підключення | Google Photos Picker API | foto | 1 | — | Google дозволяє лише ручний вибір (Picker), а не всю бібліотеку. | `backend/google-suite-inrichting.ts` |
-| onedrive | OneDrive | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | Microsoft Graph Files (OAuth + PKCE) | cloud | 1 | Ключі від власника, після цього реальна перевірка. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
+| onedrive | OneDrive | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | Microsoft Graph Файли (OAuth + PKCE) | cloud | 1 | Ключі від власника, після цього реальна перевірка. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
 | dropbox | Dropbox | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | Dropbox API v2 (OAuth + PKCE) | cloud | 1 | Ключі від власника. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
 | box | Box | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | Box API (OAuth 2.0) | cloud | 1 | Ключі від власника. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
 | icloud-drive | iCloud Drive | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | cloud | 3 | Серверний адаптер, перевірка з'єднання, відключення, показ у цільовій службі, тести. | Apple не має публічного API для iCloud Drive. |  |
-| nextcloud | Nextcloud | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | WebDAV + Login Flow v2 (пароль застосунку) | cloud | 1 | Майстер підключення та перевірка PROPFIND. |  | `backend/cloud-integratie-routes.ts` `backend/cloud-overdracht-m3-providers.ts` |
+| nextcloud | Nextcloud | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | WebDAV + Login Потік v2 (пароль застосунку) | cloud | 1 | Майстер підключення та перевірка PROPFIND. |  | `backend/cloud-integratie-routes.ts` `backend/cloud-overdracht-m3-providers.ts` |
 | mega | MEGA | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | cloud | 1 | Серверний адаптер, перевірка з'єднання, відключення, показ у цільовій службі, тести. |  |  |
 | s3 | S3-сумісне сховище | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | S3 API (Signature V4, ключ доступу) | cloud | 1 | Майстер підключення та перевірка ListObjectsV2. |  | `backend/cloud-integratie-routes.ts` `backend/cloud-m9-xml.ts` |
 
@@ -98,7 +98,7 @@
 
 | id | назва | каталог | реалізація | група (без акаунта) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| github-actions | GitHub Actions | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Webhook / API-ключ | github | 3 | Серверний адаптер, перевірка з'єднання, відключення, показ у цільовій службі, тести. |  |  |
+| github-actions | GitHub Дії | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Webhook / API-ключ | github | 3 | Серверний адаптер, перевірка з'єднання, відключення, показ у цільовій службі, тести. |  |  |
 | circleci | CircleCI | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | github | 3 | Серверний адаптер, перевірка з'єднання, відключення, показ у цільовій службі, тести. |  |  |
 | jenkins | Jenkins | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | github | 3 | Серверний адаптер, перевірка з'єднання, відключення, показ у цільовій службі, тести. |  |  |
 | argocd | Argo CD | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | github | 3 | Серверний адаптер, перевірка з'єднання, відключення, показ у цільовій службі, тести. |  |  |

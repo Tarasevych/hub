@@ -105,7 +105,7 @@ Voer daarna `sudo systemctl restart cloudflared` uit. Ook zonder deze wijziging 
 
 ## Wat volgt (fase 3+)
 - ~~De serverdeuren verplaatsen en `/grok`, `/gpt`, … aan de connectors geven.~~ **Voltooid op 20.10.2026** (`deploy/CONNECTOR-EEN-PAD.md`).
-- `/mcp` en het deurproces zelf verwijderen zodra er geen verbindingen zonder agent en geen `tvh_…`-tokens meer over zijn (query's staan in datzelfde bestand).
+- `/mcp` en het deurproces zelf verwijderen zodra er geen verbindingen zonder agent en geen `tvh_…`-tokens meer over zijn (zoekopdracht's staan in datzelfde bestand).
 - Schakelaar op domeinniveau «agent volledig uitschakelen». Nu werken intrekken en siteschakelaars op verbindingsniveau.
 - Echte functies voor onderdelen «in ontwikkeling»: e-mail verzenden met bevestiging, bestanden aanmaken en uploaden naar Drive, foto's,
   iCloud, pull requests, beveiligingslogboek, beheer van gebruikers en feature-flags met passkey, genereren van afbeeldingen en schema's, Stripe.

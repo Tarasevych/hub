@@ -55,7 +55,7 @@ als de eigenaar het op zijn telefoon met een passkey goedkeurt, en root controle
 | drop-in `mijn-ruimte-mcp.service.d/write.conf` met `NoNewPrivileges=no` | weg; de unit heeft `NoNewPrivileges=yes`, `RestrictSUIDSGID=yes`; de drop-in gaat bij het installeren naar quarantaine |
 | archief deels leesbaar (code, units, sudoers, git) in een app-map | **hele archief age-versleuteld**, in een root-map, vaste naam, download alleen door de eigenaar na step-up via een eenmalige id |
 | beheer via `sudo` vanuit de app | **methode 3**: polkit + `mijn-ruimte-opdracht@.service`, app houdt `NoNewPrivileges=yes` |
-| geen automatische uitrol uit git | **methode 1**: root-timer, alleen ondertekende tags, alleen-lezen deploy key |
+| geen automatische uitrol uit git | **methode 1**: root-timer, alleen ondertekende tags, alleen-lezen deploy sleutel |
 | OAuth-tokens van de deur in klare tekst, vaste client `grok`, 30 dagen | alleen sha256-hashes, toegang 1 uur, refresh 14 dagen met rotatie + hergebruikdetectie, `/oauth/revoke`, DCR met unieke client-id |
 
 ## 2. Eenmalig: ondertekeningssleutel maken op Windows (`T:\mijn-ruimte\geheim\uitrol-sleutel`)
@@ -123,7 +123,7 @@ app-schrijfbare schakelaars naar `/var/lib/mijn-ruimte-quarantaine/<tijd>/` (roo
 
 ### 4.1 Alleen-lezen toegang tot GitHub (nooit je persoonlijke token)
 
-**Voorkeur: deploy key** (alleen deze repository, alleen lezen):
+**Voorkeur: deploy sleutel** (alleen deze repository, alleen lezen):
 
 ```bash
 # op de VM, als root; zonder wachtwoordzin (de timer draait onbeheerd), maar alleen leesrecht op één repository
@@ -132,8 +132,8 @@ chown root:root /etc/mijn-ruimte/gitops-deploykey*; chmod 0600 /etc/mijn-ruimte/
 cat /etc/mijn-ruimte/gitops-deploykey.pub
 ```
 
-GitHub → repository **Tarasevych/hub** → *Settings* → *Deploy keys* → *Add deploy key*: titel `mijn-ruimte VM (alleen lezen)`, plak de `.pub`,
-laat **"Allow write access" UIT**. Daarna:
+GitHub → repository **Tarasevych/hub** → *Settings* → *Deploy sleutels* → *Add deploy sleutel*: titel `mijn-ruimte VM (alleen lezen)`, plak de `.pub`,
+laat **"Allow schrijven access" UIT**. Daarna:
 
 ```bash
 cat > /etc/mijn-ruimte/gitops.env <<'EOT'
@@ -144,10 +144,10 @@ chown root:root /etc/mijn-ruimte/gitops.env && chmod 0600 /etc/mijn-ruimte/gitop
 ```
 
 `/etc/mijn-ruimte/gitops-known_hosts` (hostsleutels van github.com) zet de installer neer; vingerafdruk Ed25519
-`SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU` (zie GitHub-documentatie "GitHub's SSH key fingerprints").
+`SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU` (zie GitHub-documentatie "GitHub's SSH sleutel fingerprints").
 
-**Alternatief: fine-grained token** (GitHub → *Settings* → *Developer settings* → *Fine-grained tokens*): *Resource owner* Tarasevych,
-*Repository access* → **Only select repositories** → `hub`, *Permissions* → *Repository* → **Contents: Read-only** (Metadata: read gaat vanzelf),
+**Alternatief: fine-grained token** (GitHub → *Settings* → *Developer settings* → *Fine-grained tokens*): *Resource eigenaar* Tarasevych,
+*Repository access* → **Alleen select repositories** → `hub`, *Permissions* → *Repository* → **Contents: Read-only** (Metadata: read gaat vanzelf),
 vervaldatum ≤ 1 jaar. In `gitops.env`:
 
 ```
@@ -301,7 +301,7 @@ Wijzigingen gelden meteen (de scripts lezen het bestand bij elke start). Is het 
 staat methode 3 alleen `status` en `releases` toe. Alles uit in één keer: `"uitrol": false, "gitops": false` en alle opdrachten `false`;
 of `systemctl disable --now mijn-ruimte-gitops.timer mijn-ruimte-uitrol.path` en de polkit-regel weghalen.
 
-## 8. Terugdraaien (rollback)
+## 8. Terugdraaien
 
 1. **Automatisch**: mislukt de gezondheidscontrole na het activeren, dan zet `installeer-app.sh` zelf de vorige release terug (methode 1 en 2).
    Sinds 22.10.2026 ook als de pagina's **niet renderen** terwijl HTTP 200 is — zie §8a (rendercontrole).
@@ -324,7 +324,7 @@ Databasemigraties zijn vooruit-only; bij een terugrol blijven nieuwe tabellen be
 ## 8a. Rendercontrole en automatisch terugdraaien bij een witte pagina (22.10.2026)
 
 **Wat er misging.** Release 20261021-221718 deed `Buffer.from(…)` op moduleniveau in de technische bundel (`shared/merk-eigen.ts`). De browser
-kent geen `Buffer`: de technische bundel gooide «Buffer is not defined» en ELKE admin.*-pagina (ook /updates) bleef wit. `/__gezondheid` was
+kent geen `Buffer`: de technische bundel gooide «Buffer is niet defined» en ELKE admin.*-pagina (ook /updates) bleef wit. `/__gezondheid` was
 groen, «HTTP 200» was groen, de nabewaking en de nazorg zagen niets, «Діагностика» zei «Сторінка «Оновлення» HTTP 200 · Справно» — en de
 beloofde autoterugdraai bleef uit. De eigenaar moest via SSH een pakket installeren.
 
@@ -339,7 +339,7 @@ beloofde autoterugdraai bleef uit. De eigenaar moest via SSH een pakket installe
      hub /overzicht /zoek, mail /postvak-in, cloud /overzicht, admin /overzicht /updates /diagnostiek /toegang, mcp /dashboard /agenten,
      id (aanmelden, zonder cookies), github /overzicht, ai. Daarna wordt **elke bundel** uit `dist/assets/**` in de browser geïmporteerd.
      Een pagina is **kapot** bij: pageerror/onopgevangen fout, `console.error` met ReferenceError/TypeError, `#root` leeg of alleen een
-     strook (geen main/sectie/formulier), een JS-bundel ≠ 200, tekst «Internal server error». De productiedatabase wordt nooit geraakt:
+     strook (geen main/sectie/formulier), een JS-bundel ≠ 200, tekst «interne serverfout». De productiedatabase wordt nooit geraakt:
      `rook.mjs` weigert elke databasenaam die niet met `mijnruimte_rook_` begint. Alles draait als `mijnruimte` (systemd-run,
      NoNewPrivileges, ProtectSystem=strict), nooit als root;
    - zonder browser: alleen de **modulecontrole** in Node — elke bundel wordt als ES-module uitgevoerd in een vm-context zonder
@@ -349,12 +349,12 @@ beloofde autoterugdraai bleef uit. De eigenaar moest via SSH een pakket installe
      «рендеринг не перевірено (встановіть browser-controle)»;
 3. uitkomst **0** (in orde) → «actief»; **2** (niet uitgevoerd: geen browser, geen postgres-rol, time-out) → ook actief, met een duidelijke
    waarschuwing — nooit terugdraaien op een infrastructuurfout; **1** (kapot) → **automatisch terug** naar de vorige release, herstart,
-   gezondheidscontrole, gebeurtenis `ROOK_TERUGGEDRAAID` (warn) met de reden («сторінка admin-updates не рендериться (pageerror: Error:
-   Buffer is not defined)») in `gebeurtenissen.jsonl` → zichtbaar op «Оновлення» als «Відкочено автоматично: сторінка не рендериться», en
+   gezondheidscontrole, gebeurtenis `ROOK_TERUGGEDRAAID` (warn) met de reden («сторінка admin-updates не рендериться (pageerror: Fout:
+   Buffer is niet defined)») in `gebeurtenissen.jsonl` → zichtbaar op «Оновлення» als «Відкочено автоматично: сторінка не рендериться», en
    de installatie eindigt met `FOUT: installatie van … mislukt: rendercontrole — …` (bij passkey/handtekening neemt `mijn-ruimte-uitrol.sh`
    die regel over als oorzaak: stap «рендер-контроль», code INSTALLATIE_MISLUKT).
 4. **Geen lus**: de vorige release wordt na de terugdraai nog **één keer live** nagekeken (publieke pagina's, geen aanmelding) — alleen
-   gemeld (`ROOK_MISLUKT` als ook die kapot is), nooit nog een terugdraai. Zonder vorige release: `ROOK_MISLUKT` (error) met de SSH-aanwijzing.
+   gemeld (`ROOK_MISLUKT` als ook die kapot is), nooit nog een terugdraai. Zonder vorige release: `ROOK_MISLUKT` (fout) met de SSH-aanwijzing.
 5. **Migraties worden niet teruggedraaid** (zoals altijd: het schema blijft op de nieuwste stand; de rook-stand gebruikt een eigen database
    en laat het productieschema met rust). Houd migraties dus uitbreidend.
 
@@ -407,7 +407,7 @@ Daarna roept de app `sudo -n /usr/local/sbin/mijn-ruimte-opdracht <werkwoord>` a
 1. Nieuw sleutelpaar maken (§2).
 2. Op de VM `/etc/mijn-ruimte/uitrol-ondertekenaars` vervangen door de nieuwe publieke sleutel (oude regel weg).
 3. `date +%s%3N > /etc/mijn-ruimte/mcp-intrekken`, `"uitrol": false` en `"gitops": false` tot je klaar bent.
-4. Deploy key gelekt: in GitHub (*Settings* → *Deploy keys*) verwijderen, nieuwe maken (§4.1). Token gelekt: intrekken in GitHub.
+4. Deploy sleutel gelekt: in GitHub (*Settings* → *Deploy sleutels*) verwijderen, nieuwe maken (§4.1). Token gelekt: intrekken in GitHub.
 
 ## 11. Definitieve stappen op de VM (eerste installatie van deze branch)
 
@@ -456,10 +456,10 @@ mijn-ruimte-goedkeuring.path (root) → mijn-ruimte-uitrol --goedkeuring
   eigen kopie, de publieke sleutels uit het root-bestand, de replay-opslag staat in een root-map. Een gecompromitteerde app kan dus geen
   pakket laten installeren (geen passkey-handtekening over díe sha256) en geen sleutel toevoegen (het root-bestand is alleen-lezen voor de app;
   een nieuwe sleutel vraagt een assertie van een bestaande sleutel of SSH). Wat ze wél kan: verzoeken weggooien of weigeren (hinder).
-* **Eenmalig en gebonden.** De challenge bevat voorstel-id, versie, sha256, nonce en vervaltijd (≤ 5 min, CHECK in de database). De app
+* **Eenmalig en gebonden.** De challenge bevat voorstel-id, versie, sha256, nonce en vervaltijd (≤ 5 min, CONTROLE in de database). De app
   verbruikt de challenge atomisch; root registreert de nonce vóór de installatie. Dezelfde assertie werkt nooit twee keer, ook niet na een
   mislukte installatie.
-* **Alleen de eigenaar.** Goedkeuren: sessie op admin.tarasevych.com + rol owner + OWNER_EMAIL. Passkeys registreert elke gebruiker
+* **Alleen de eigenaar.** Goedkeuren: sessie op admin.tarasevych.com + rol eigenaar + OWNER_EMAIL. Passkeys registreert elke gebruiker
   zelf in Instellingen → «Способи входу» (§13.6, step-up); alleen de eigenaar ziet daar per passkey «Може схвалювати оновлення сервера»
   (alleen op id./admin.). Grants geven vraagt step-up. Agents (MCP-console `/api/mcp/agent` en de MCP-connector) zien alleen `uitrol_voorstel_begin|stuk|klaar|status|annuleren`, en
   alleen met een geldige grant; elke naam die op goedkeuren lijkt, wordt geweigerd (`ALLEEN_EIGENAAR_MET_PASSKEY`).
@@ -483,7 +483,7 @@ sudo mijn-ruimte-passkey lijst                                          # rpId t
 
 Daarna op de **telefoon** (ingelogd als eigenaar): `id.tarasevych.com/methods` = **«Налаштування → Способи входу»** → «Passkeys» → naam
 invullen → «Додати passkey» (step-up: TOTP of opnieuw Google) → passkey maken met vingerafdruk/gezicht. De passkey staat dan als «Лише вхід».
-Vink bij die passkey «Може схвалювати оновлення сервера» aan (step-up): status «Чекає підтвердження сервером», met de **vingerafdruk**
+Vink bij die passkey «Може схвалювати оновлення сервера» aan (extra bevestiging): status «Чекає підтвердження сервером», met de **vingerafdruk**
 (`ab12 cd34 …`) en de SSH-opdracht. Op de VM:
 
 ```bash
@@ -494,7 +494,7 @@ sudo nano /etc/mijn-ruimte/mcp-rechten.json          # "passkey-goedkeuring": tr
 
 Vergelijk de vingerafdruk op de telefoon met die van `wachtend`. **Beperking:** tijdens deze ene stap vertrouw je erop dat de pagina op de
 telefoon echt is (een al gecompromitteerde app zou een eigen sleutel met een eigen vingerafdruk kunnen tonen). Doe de bootstrap dus direct
-na een installatie uit een gereviewde commit, of controleer met `wachtend` dat er precies één aanmelding is met het label dat je net invoerde.
+na een installatie uit een gereviewde commit, of controleer met `wachtend` dat er precies één aanmelding is met het etiket dat je net invoerde.
 
 Daarna toont «Способи входу» bij die passkey «Може схвалювати оновлення». Volgende passkeys (tweede telefoon, laptop): «Додати passkey»,
 vinkje «Може схвалювати оновлення сервера», dan «Підтвердити ключем, що вже може схвалювати» — geen SSH meer nodig; root voegt hem toe na
@@ -503,7 +503,7 @@ een assertie van een al bekende sleutel (`mijn-ruimte-goedkeur-sleutels.path`). 
 ### 13.3 Voorbereiders toestaan of intrekken
 
 Admin → «Оновлення» → «Кому дозволено готувати оновлення»: soort (акаунт / токен агента / MCP-підключення), wie, aantal dagen (1–30),
-«Дозволити» (step-up). «Відкликати» trekt meteen in en breekt lopende uploads af. Alles staat in de audit (`uitrol_voorbereider_*`). Een
+«Дозволити» (extra bevestiging). «Відкликати» trekt meteen in en breekt lopende uploads af. Alles staat in de audit (`uitrol_voorbereider_*`). Een
 grant vervalt ook als het account geblokkeerd of met pensioen is of als AI voor dat account geblokkeerd is.
 
 Voor een agent: pakket maken met `deploy/uitrol/maak-voorstelpakket.sh` (geen sleutel nodig), dan `uitrol_voorstel_begin` met de inhoud
@@ -600,7 +600,7 @@ het; de registratie-opties droegen `hints: ['client-device','hybrid']`), dan ble
   een hint) met een werkende «Скасувати» (AbortController → «Додавання passkey скасовано.»). Elke fout komt als melding in
   de sectie en in de console.
 - Kan «Підтвердіть доступ» niet openen, dan geeft `client.ts` de fout `STAP_OP_VENSTER_FOUT` («оновіть сторінку»); een
-  renderfout in het venster wordt opgevangen (error boundary) en niet stil geslikt.
+  renderfout in het venster wordt opgevangen (fout boundary) en niet stil geslikt.
 - Geen `hints` meer in de registratie-opties: de browser toont zijn volledige keuze (dit apparaat, telefoon via QR,
   beveiligingssleutel).
 - Accentknoppen hebben in de donkere thema's donkere tekst (`--ap-op-accent`).
@@ -622,7 +622,7 @@ De test ruimt zijn gebruikers op (de unieke index `records_een_eigenaar`).
 
 **Oorzaak van de lus.** De step-up-URL vroeg `prompt=login` + `max_age=0` + een claims-verzoek om `auth_time`. Google
 kent `prompt=login` niet en dwingt geen nieuw wachtwoord af: met een bestaande Google-sessie toont het alleen de
-accountkiezer en levert het een id_token met de **oude** `auth_time` (of zonder `auth_time` als «session age claims» in de
+accountkiezer en levert het een id_token met de **oude** `auth_time` (of zonder `auth_time` als «sessie age claims» in de
 OAuth-client uitstaan). De server telde de step-up alleen bij een `auth_time` jonger dan 5 minuten en sloeg hem anders
 **stil** niet op; de callback meldde gewoon «aangemeld». Terug op `/methods` hervatte de pagina de actie, kreeg weer
 `403 STEP_UP_REQUIRED` en opende hetzelfde venster: eindeloze lus zonder melding.
@@ -673,7 +673,7 @@ step-up).
   dat ingetrokken sets weigert. Melding aan de gebruiker.
 - «Створити нові» vervangt de set (oude vervallen meteen; melding als er nog ongebruikte waren).
 - Gebruik wordt atomisch vastgelegd: `takeArrayValue` (hash weg, teller) en daarna `zetEenmaligInMap` (`gebruikt[hash] = tijd`),
-  zonder de rest van het record te overschrijven.
+  zonder de rest van het item te overschrijven.
 - Invoer mag streepjes, spaties en kleine letters bevatten.
 - Geen migratie nodig: alles staat in het bestaande jsonb-record `identity_recovery_codes_v1`. Oude sets (zonder
   `overzicht`) tonen alleen de teller met de hint «створіть нові, щоб бачити стан кожного коду».
@@ -695,7 +695,7 @@ Die twee werden geladen door `McpServiceView` (`run('agents', loadTokens)`). Die
 `<p class="mcp-lead">{error}</p>` boven de titel.
 
 **Herstel.**
-- `onChange` loopt via een ref. Laden hangt alleen af van `agentId`/`versie`, en state verandert alleen als de waarde
+- `onChange` loopt via een ref. Laden hangt alleen af van `agentId`/`versie`, en toestand verandert alleen als de waarde
   echt verandert.
 - `BrowserExtensionPanel.onGrants` is een stabiele `useCallback`.
 - Er is nog één poller (apparaten en wachtende acties, 5 s). De rest laadt bij openen, na een actie en daarna rustig
@@ -742,7 +742,7 @@ hash:
   - de MCP-URL.
 - `POST /api/owner/agents/journaal` met body `{soort, onderwerp, voor, limit}` geeft één tijdlijn uit `app.audit`.
   - De regels gaan door `JOURNAAL_ACTIES` en `journaalItem()`: velden die op een geheim lijken (token, hash, cookie,
-    nonce, code, key…) vallen weg, en het IP staat er alleen als een hash van 12 tekens.
+    nonce, code, sleutel…) vallen weg, en het IP staat er alleen als een hash van 12 tekens.
   - Verlopen toestemmingen en verlopen OAuth-verbindingen zijn **afgeleid**, niet opgeslagen. Ze staan alleen op de
     eerste pagina (90 dagen).
 - `auditLijst()` kent nu een filter `acties: string[]`.
@@ -784,7 +784,7 @@ hash:
 **Gebruik.** Elke herstelcode en elk passkey-gebruik wordt vastgelegd in `app.toegang_gebruik` (RLS: alleen de eigen rijen):
 actie (vaste lijst `ACTIES` in `backend/toegang-context.ts`, onbekend → `bevestigen`), host, apparaat (browser · OS uit de
 User-Agent), korte IP-hash (`AUDIT_IP_PEPPER`, nooit het IP zelf). De step-up stuurt een actielabel mee (`actieVoorUrl` in
-`src/platform/stap-op.ts`); de server accepteert alleen labels uit de allowlist. Per sleutel de laatste 20, uitklapbaar.
+`src/platform/stap-op.ts`); de server accepteert alleen etiketten uit de allowlist. Per sleutel de laatste 20, uitklapbaar.
 
 **Notities.** Privé, ≤ 500 tekens, `app.toegang_notities` (RLS), voor passkeys, codesets, losse codes en (later) toegangscodes.
 Route `POST /api/owner/access/notities/{lijst,opslaan}`.
@@ -825,8 +825,8 @@ Google-step-up volstaat niet → `STEP_UP_STRONG_REQUIRED`). Maximaal 50 codes p
 **Scopes (allowlist in `backend/toegangscodes.ts`, alleen lezen, standaard weigeren):**
 `profiel.lezen` (naam + Google-foto, nooit e-mail), `apparaten.lezen` (naam, platform, laatst gezien, actief),
 `journaal.lezen` (agentjournaal **zonder** regels over rechten/sleutels/codes/tokens). Bij het laden van de module wordt
-gecontroleerd dat elke scope op `.lezen` eindigt en niets uit de lijst «nooit» raakt: aanmeldmethoden, passkeys,
-goedkeurrechten, beheer/admin, tokens, root/updates, account verwijderen/exporteren. Een onbekende scope → `SCOPE_NIET_TOEGESTAAN`.
+gecontroleerd dat elke bereik op `.lezen` eindigt en niets uit de lijst «nooit» raakt: aanmeldmethoden, passkeys,
+goedkeurrechten, beheer/admin, tokens, root/updates, account verwijderen/exporteren. Een onbekende bereik → `SCOPE_NIET_TOEGESTAAN`.
 
 **Code.** 80 bits (Crockford base32, `XXXX-XXXX-XXXX-XXXX`; O→0, I/L→1, spaties/kleine letters toegestaan). Eén keer getoond
 met kopiëren / QR / delen; de deellink is `https://id.tarasevych.com/toegang#code=…` (fragment → komt nooit in serverlogs; de
@@ -959,7 +959,7 @@ Wat er verandert:
   menu-item. Alleen `https`, alleen eigen hosts, nooit links met `code/state/token/proof/transaction/redeem/handoff/
   auth_broker/oauth_*/consent/invite`. HTML krijgt ook `Supports-Loading-Mode: credentialed-prerender`
   (nodig voor prerender over subdomeinen). API-antwoorden krijgen deze headers niet.
-- **Service worker v10**: bij installatie worden de JS/CSS-ingangsbestanden uit de start-HTML in de cache gezet
+- **Service achtergrondproces v10**: bij installatie worden de JS/CSS-ingangsbestanden uit de start-HTML in de cache gezet
   (max. 24). Oude caches (v9 enz.) worden bij activeren opgeruimd zoals voorheen.
 - **Versleutelde concepten** (`src/concepten.ts`): alleen velden met `data-concept` (AI-chat, mailantwoord,
   GitHub-issue, MCP-bord, notitie bij toegangscode); nooit wachtwoord- of eenmalige-codevelden. AES-GCM 256 met een
@@ -980,8 +980,8 @@ voorkeur `snelheid`):
 | Зберігати чернетки (зашифровано) (concepten) — experimenteel | **uit** |
 
 Beperkingen: geen View Transition tussen subdomeinen; vooruitladen kan in oudere Chrome-versies vervallen als de doelpagina
-een service worker heeft; concepten alleen voor de 5 gemarkeerde velden (niet de Gmail-editor) en per subdomein
-(IndexedDB is per origin); Firefox/Safari zonder Speculation Rules laden gewoon zonder vooruitladen.
+een service achtergrondproces heeft; concepten alleen voor de 5 gemarkeerde velden (niet de Gmail-editor) en per subdomein
+(IndexedDB is per origin); Firefox/Safari zonder Speculation Regels laden gewoon zonder vooruitladen.
 
 Controle na uitrol:
 
@@ -1061,7 +1061,7 @@ alleen zijn eigen normalisatie van de inhoud.
 
 | `"opdracht": {"terugdraaien": …}` | `"terugdraaien-passkey"` | Gevolg |
 |---|---|---|
-| `true` | ontbreekt of `true` | de oude directe knop (step-up) werkt **én** het passkey-besluit |
+| `true` | ontbreekt of `true` | de oude directe knop (extra bevestiging) werkt **én** het passkey-besluit |
 | ontbreekt / `false` (standaard) | ontbreekt of `true` (standaard) | **alleen via het passkey-besluit** (de wizard op mcp.*/dashboard) |
 | (wat dan ook) | `false` | terugdraaien vanaf de site is **dicht**; alleen SSH (`mijn-ruimte-installeer terugdraaien`) |
 
@@ -1132,8 +1132,8 @@ v2-backup terug in `app.werkblad_indeling` (versie +1). Met `{"v3Wissen":true}` 
 dan wordt bij het volgende laden opnieuw eenmalig overgezet.
 
 **Terugdraaien (alles).** 1) vlag uit (volstaat altijd); 2) alleen als het echt moet:
-`DROP TABLE app.werkblad_items, app.werkblad_layout, app.werkblad_v3_lade; DROP FUNCTION app.werkblad_items_limiet();
-DELETE FROM app.feature_flags WHERE sleutel='werkblad-v3';` en de rij `0114_werkblad_v3` uit `app.schema_migrations`. v2 blijft werken.
+`DROP TABEL app.werkblad_items, app.werkblad_layout, app.werkblad_v3_lade; DROP FUNCTION app.werkblad_items_limiet();
+VERWIJDEREN UIT app.feature_flags WAAR sleutel='werkblad-v3';` en de rij `0114_werkblad_v3` uit `app.schema_migrations`. v2 blijft werken.
 
 **Controle na uitrol.** `SELECT sleutel, aan FROM app.feature_flags WHERE sleutel='werkblad-v3';` → `werkblad-v3 | f`.
 `SELECT relrowsecurity FROM pg_class WHERE relname IN ('werkblad_v3_lade','werkblad_layout','werkblad_items');` → drie keer `t`.
@@ -1268,7 +1268,7 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
    sudo -u mijnruimte git clone --branch integratie git@github.com:Tarasevych/hub.git /srv/mijn-ruimte/orch-repo
    sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.name "Mijn Ruimte orch" && sudo -u mijnruimte git -C /srv/mijn-ruimte/orch-repo config user.email "orch@tarasevych.com"
    ```
-   Gebruik een **deploy key met schrijfrecht** (GitHub → repo → Settings → Deploy keys) voor de gebruiker `mijnruimte`, nooit de persoonlijke
+   Gebruik een **deploy sleutel met schrijfrecht** (GitHub → repo → Settings → Deploy sleutels) voor de gebruiker `mijnruimte`, nooit de persoonlijke
    sleutel van de eigenaar. Zonder schrijfrecht blijft alles werken, maar de tak `regels/*` blijft op de server staan (`gepusht: false`,
    `PUSH_MISLUKT`) tot u hem zelf pusht. Zonder werkkopie toont de site eerlijk `ORCH_GEEN_REPO` en doet niets alsof.
 2. Inbox voor uploads: `install -d -o mijnruimte -g mijnruimte -m 0750 /srv/mijn-ruimte/orch-inbox` (de installer `installeer-app.sh` doet dit
@@ -1300,8 +1300,8 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
   inleveringen, uitslag van `controleer`. MCP: `orch_overzicht`, `orch_context` (de compacte context voor een agent zonder GitHub).
 - **Inleveren vanaf de site**: pakket `mijn-ruimte-<versie>-<agent>-overdracht.zip`, zip/tar.gz met `ORCH-OVERDRACHT.json` of git patch
   (≤ 300 MiB, 20 uploads per uur per persoon). Dezelfde pijplijn als `node scripts/orch.mjs inleveren --kanaal web_upload|mcp`: tak vanaf de
-  basis, regels, conflicten met `integratie`, tests, record in `orchestratie/inleveringen/`, wachtrij. Er wordt niets samengevoegd of
-  geïnstalleerd. Een geweigerde inlevering laat geen tak achter (wel het record).
+  basis, regels, conflicten met `integratie`, tests, item in `orchestratie/inleveringen/`, wachtrij. Er wordt niets samengevoegd of
+  geïnstalleerd. Een geweigerde inlevering laat geen tak achter (wel het item).
   **Veiligheid van de inlevering (review 31.10.2026).** Via de site en MCP voert de server nooit code uit het pakket en nooit opgegeven
   shell-opdrachten uit: als «test» draait alleen `node scripts/orch.mjs controleer` uit de **eigen werkkopie** (`--wortel` wijst naar het
   tijdelijke werkboom van de inlevering) in een schone omgeving zonder `DATABASE_URL`, sleutels of pepers. Een `tests`-parameter met iets
@@ -1311,7 +1311,7 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
   dezelfde naam): een ander krijgt op `stuk`, `klaar` en `annuleren` `UPLOAD_ONBEKEND`, alsof de upload niet bestaat.
   **Aanvullingen na de adversariële review (31.10.2026).**
   - De vertrouwde `controleer` draait **altijd**, ook met `zonderTests` / `--zonder-tests`: die notitie slaat alleen de tests van de agent over
-    (het record toont «agenttests overgeslagen» naast de uitslag van de regelcontrole). Een pakket dat `AGENTS.md` wijzigt zonder nieuwe lock
+    (het item toont «agenttests overgeslagen» naast de uitslag van de regelcontrole). Een pakket dat `AGENTS.md` wijzigt zonder nieuwe lock
     wordt dus altijd geweigerd (`TESTS_MISLUKT`, regelcontrole).
   - **CLI op uw pc**: `node scripts/orch.mjs inleveren` voert standaard ALLEEN die vertrouwde `controleer` uit — geen code uit het pakket.
     Shell-tests (`--tests "cmd"` of `--standaardtests` = `beleid.inlevering.standaardTests`) draaien code UIT HET PAKKET met uw `HOME`
@@ -1321,12 +1321,12 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
     `unzip -p` / `gzip -dc`, niets op schijf) — vervalste groottes in zip-koppen helpen niet — plus de groottes uit de tar-koppen (sparse
     bestanden met hun volle grootte), en na het uitpakken nog eens de zichtbare omvang van alle bestanden.
   - **Agent op eigen naam**: een MCP-verbinding van agent X kan geen taak voor agent Y registreren en geen pakket met `"agent": "Y"` in
-    `ORCH-OVERDRACHT.json` inleveren (`AGENT_VERSCHILT`); het record bewaart `door` (wie het werkelijk deed, met grant-id).
+    `ORCH-OVERDRACHT.json` inleveren (`AGENT_VERSCHILT`); het item bewaart `door` (wie het werkelijk deed, met grant-id).
   - **MCP-limiet**: `orch_inleveren_begin` en `orch_inleveren_klaar` elk hoogstens 20 per uur per eigenaar over al zijn MCP-verbindingen
     (`RATE_LIMITED`); teller in het geheugen van de app, los van de HTTP-teller, leeg na een herstart. `klaar` blokkeert de app zolang de
     pijplijn loopt (git + `controleer`, gewoonlijk seconden, hoogstens 120 s) — bekend en bewust, de limiet begrenst het.
   - **`orch_overzicht` voor agenten**: alleen eigen uploads; het e-mailadres van de eigenaar wordt «eigenaar», grant-id's van andere
-    verbindingen vallen weg, bevestigingen tonen geen passkey-vingerafdruk, label of besluit-id.
+    verbindingen vallen weg, bevestigingen tonen geen passkey-vingerafdruk, etiket of besluit-id.
 - **Regels wijzigen**: «Regels wijzigen» → bewerk `AGENTS.md` / `orchestratie/beleid.json` / `orchestratie/BESLUITEN.md` → «Voorstel controleren»
   (codes: `GEEN_WIJZIGING`, `VERSIE_NIET_VERHOOGD`, `BESLUIT_ONTBREEKT`, `BELEID_JSON`, `REGELBESTANDEN_GEWIJZIGD`) → «Ondertekenen met passkey
   en tak maken». Bij gewijzigde `kritiek`-regels toont de pagina een waarschuwing: uw passkey bevestigt precies die. Daarna: de tak
@@ -1352,7 +1352,7 @@ gitops-ophalen.sh (root): vertrouwt een passkey-lock alleen als dezelfde regel (
 - Een regelwijziging via de site gebeurt in een tijdelijke `git worktree`: `ORCH_WORTEL` blijft op `integratie` en wordt nooit omgeschakeld;
   blijft er na een storing een `regels/*`-tak zonder commit achter, verwijder die via SSH (`git branch -D`, `git worktree prune`).
 - `TESTS_NIET_TOEGESTAAN` — een client stuurde eigen testopdrachten mee (zie 18.2); `INHOUD_ONVEILIG` — het archief is vóór het uitpakken
-  geweigerd (record met de reden, geen tak); `UPLOAD_ONBEKEND` op een bestaand id — een andere actor dan de starter probeert de upload te
+  geweigerd (item met de reden, geen tak); `UPLOAD_ONBEKEND` op een bestaand id — een andere actor dan de starter probeert de upload te
   gebruiken.
 - `INHOUD_TE_GROOT` — het archief pakt uit tot meer dan 1 GiB (of een sparse bestand is groter): splits het pakket of stuur alleen de
   gewijzigde bestanden. `AGENT_VERSCHILT` — de MCP-verbinding van één agent probeert iets op naam van een andere agent; de agent moet zijn eigen
@@ -1392,6 +1392,6 @@ De site voert tijdens voorcontrole een externe GitHub-check uit: bestand op de v
 
 Bij privétoegang gebruikt de site het bestaande, afgeschermde GitHub-token van de eigenaar (indien beschikbaar); de root-host kan desgewenst een uitsluitend voor root leesbaar GitHub-token in `/etc/mijn-ruimte/github-token` hebben (eigenaar 0, rechten 0600). **Nooit** het token in de archiefmetadata, GitHub, CI-logs of chat zetten. Laat de beheerder het token via zijn beveiligde procedure configureren.
 
-Check bij weigering: juiste taak-commit, `orchestratie/ontwikkelarchieven/<TAAK-ID>.json` op die commit, branch-geschiedenis, Release-tag die gelijk is aan `UITROL-VERSIE`, assetnaam en assetdigest. Een ontbrekende of ontoegankelijke GitHub Release is geen toestemming om door te gaan. De eigenaar blijft de installatie met Passkey goedkeuren; TRACE-001 verleent geen automatische installatierechten.
+Controle bij weigering: juiste taak-commit, `orchestratie/ontwikkelarchieven/<TAAK-ID>.json` op die commit, branch-geschiedenis, Release-tag die gelijk is aan `UITROL-VERSIE`, assetnaam en assetdigest. Een ontbrekende of ontoegankelijke GitHub Release is geen toestemming om door te gaan. De eigenaar blijft de installatie met Passkey goedkeuren; TRACE-001 verleent geen automatische installatierechten.
 
 Canon: `AGENTS.md` §5, `orchestratie/beleid.json` v1.4.1, `orchestratie/BESLUITEN.md` B-007 en `deploy/REGELS-UITROLPAKKET.md` §7.

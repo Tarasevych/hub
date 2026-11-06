@@ -13,13 +13,13 @@ https://mcp.tarasevych.com/mcp
 ```
 
 MCP-server: Streamable HTTP (JSON-antwoorden). Authenticatie: **OAuth 2.x + PKCE (S256) + dynamische clientregistratie**.
-Statische sleutels in «Request headers» zijn niet nodig (in Claude is dat een bètafunctie voor een beperkte groep organisaties).
+Statische sleutels in «Verzoek headers» zijn niet nodig (in Claude is dat een bètafunctie voor een beperkte groep organisaties).
 
 ## Toevoegen in Claude
 
 1. Claude → **Customize → Connectors → Add custom connector**.
 2. **Name**: `Mijn Ruimte` (willekeurig). **MCP server URL**: het adres hierboven. Klik op **Continue**.
-3. **Authentication**: **Sign in now**. **OAuth client**: **Register automatically** (DCR). Laat Request headers leeg. Klik op **Add**.
+3. **Authentication**: **Sign in now**. **OAuth client**: **Register automatically** (DCR). Laat Verzoek headers leeg. Klik op **Add**.
 4. Claude opent de site: meld u aan (recht `api-platform` vereist), controleer het verzoek en klik op **Дозволити** (Toestaan).
 5. In de chat: **+ → Connectors** → schakel de connector in en typ bijvoorbeeld: «toon mijn apparaten».
 
@@ -33,34 +33,34 @@ Beheer op de site: `mcp.tarasevych.com` → **Агенти** (Agenten) → «Н�
 | `machine_info` | alleen-lezen | Besturingssysteem, toegestane mappen en opdrachten van de agent |
 | `machine_list_dir` | alleen-lezen | Mapinhoud (uitsluitend binnen toegestane mappen) |
 | `machine_read_file` | alleen-lezen | Tekstbestand tot 2 MB |
-| `machine_write_file` | schrijven (destructive) | Bestand schrijven. **Vereist uw «Дозволити» (Toestaan) op de site** |
-| `machine_exec` | uitvoeren (destructive) | Opdracht uit de lijst van de agent, zonder shell. **Vereist bevestiging** |
-| `docker_list_containers` | lezen (read-only) | `docker ps` (parameter `include_stopped`). Vereist `docker` in `--allow` van de agent |
-| `docker_manage_container` | uitvoeren (destructive) | `start`/`stop`/`restart` van een container op naam. **Vereist altijd bevestiging** |
-| `system_metrics` | lezen (read-only) | CPU, geheugen, schijven (Windows: PowerShell; anders `os`) |
+| `machine_write_file` | schrijven (destructief) | Bestand schrijven. **Vereist uw «Дозволити» (Toestaan) op de site** |
+| `machine_exec` | uitvoeren (destructief) | Opdracht uit de lijst van de agent, zonder shell. **Vereist bevestiging** |
+| `docker_list_containers` | lezen (alleen-lezen) | `docker ps` (parameter `include_stopped`). Vereist `docker` in `--allow` van de agent |
+| `docker_manage_container` | uitvoeren (destructief) | `start`/`stop`/`restart` van een container op naam. **Vereist altijd bevestiging** |
+| `system_metrics` | lezen (alleen-lezen) | CPU, geheugen, schijven (Windows: PowerShell; anders `os`) |
 | `app_deploy` | uitvoeren (destructive, standaard uit) | Webapplicatie bouwen en starten op het **eigen** apparaat in een rootless container; bestanden lopen via een eenmalig ticket, niet via de DB. Snapshot van elke versie, automatische terugrol naar de vorige |
 | `app_deploy_status` / `app_list` / `app_logs` / `app_versions` / `app_secret_list` | lezen | Voortgang van uitrol, lijst van apps (status, geheugen), laatste logregels (geheimen gemaskeerd), versies, **namen** van geheimen |
 | `app_rollback` / `app_control` / `app_route` / `app_secret_delete` | uitvoeren (destructive, standaard uit) | Terugrollen, start/stop/restart/remove, domein via lokale Caddy, geheim verwijderen |
 | `app_secret_request` | schrijven | Eenmalige link `mcp.*/apps?geheim=…`, waar de **eigenaar** zelf de waarde invoert; de AI ziet deze nooit |
-| `browser_snapshot` | lezen (read-only) | Adres, tekst, bedieningselementen en site-acties van de geopende pagina (browserextensie) |
+| `browser_snapshot` | lezen (alleen-lezen) | Adres, tekst, bedieningselementen en site-acties van de geopende pagina (browserextensie) |
 | `browser_open` | navigatie | Pagina `*.tarasevych.com` openen in een tabblad. Alleen zonder bevestiging als de gebruiker dit voor deze browser heeft toegestaan |
-| `browser_invoke_action` | actie op pagina (destructive) | Een actie uitvoeren die de site zelf aanbiedt (`open_service`, `list_services`). **Vereist altijd bevestiging** |
-| `browser_click` / `browser_type` | actie op pagina (destructive) | Klikken of typen op naam van het element; nooit voor wachtwoord- of betaalvelden. **Vereist altijd bevestiging** |
+| `browser_invoke_action` | actie op pagina (destructief) | Een actie uitvoeren die de site zelf aanbiedt (`open_service`, `list_services`). **Vereist altijd bevestiging** |
+| `browser_click` / `browser_type` | actie op pagina (destructief) | Klikken of typen op naam van het element; nooit voor wachtwoord- of betaalvelden. **Vereist altijd bevestiging** |
 
 **Hulpmiddelen van de site zelf** (via bestaande siteroutes, namens de gebruiker; `backend/site-hulpmiddelen.ts`, `backend/site-aanroep.ts`):
 
 | Hulpmiddel | Standaardmodus | Wat het doet |
 |---|---|---|
 | `site_search` | Altijd | Gecombineerd zoeken in alles wat Mijn Ruimte heeft geïndexeerd (mail, bestanden, Drive, agenda) |
-| `mail_list_accounts`, `mail_list_labels` | Altijd | Gekoppelde Gmail-accounts, labels |
+| `mail_list_accounts`, `mail_list_labels` | Altijd | Gekoppelde Gmail-accounts, etiketten |
 | `mail_search_messages`, `mail_read_message` | Altijd | Berichten zoeken (Gmail-syntaxis) en één bericht lezen (tekst tot 20.000 tekens, gemarkeerd als onvertrouwde gegevens) |
 | `mail_modify_message` | **Vragen** | Gelezen/ongelezen, archiveren, ster, spam, prullenbak (verwijdert niet definitief) |
 | `calendar_list_calendars`, `calendar_list_events` | Altijd | Agenda's en afspraken van Google Calendar |
 | `drive_browse`, `drive_read_file` | Altijd | Mappen/zoeken op naam en lezen van tekstbestanden uit Google Drive |
 
-**Modus per hulpmiddel** (op de pagina «Агенти → Інструменти й дозволи», opgeslagen op de server, `app.connector_tool_settings.modes`): «Завжди» (Altijd — zonder extra verzoek op de site), «Питати» (Vragen — elke aanroep wacht op «Дозволити» op de site; voor site-hulpmiddelen is dit de wachtrij `app.connector_tool_calls`, voor apparaten en browser is dit een verplichte goedkeuring bovenop het agentbeleid), «Вимк.» (Uit — verborgen voor Claude en geweigerd op de server). Er zijn knoppen voor «Усі інструменти» (Alle hulpmiddelen), «Вимкнути групу» (Groep uitschakelen) en «За замовчуванням» (Standaard). Risicovolle hulpmiddelen (`RISKY_TOOLS`: bestanden schrijven, opdrachten uitvoeren, Docker-beheer, klikken/typen/selecteren/toetsen/site-acties, schermafbeelding, diepe diagnose) staan **standaard uit** en zijn niet zichtbaar voor Claude. De gebruiker kan deze zelf op «Питати» of «Завжди» zetten (met een «!»-teken, uitleg van de risico's en bevestiging op de pagina). «Завжди» betekent hier: zonder klik bij elke afzonderlijke aanroep, terwijl de grenzen van de agent (mappen, opdrachtenlijst) en de schakelaars van de extensie van kracht blijven. De bulkactie «Усі інструменти → Завжди/Питати» raakt deze risicovolle hulpmiddelen niet aan.
+**Modus per hulpmiddel** (op de pagina «Агенти → Інструменти й дозволи», opgeslagen op de server, `app.connector_tool_settings.modes`): «Завжди» (Altijd — zonder extra verzoek op de site), «Питати» (Vragen — elke aanroep wacht op «Дозволити» op de site; voor site-hulpmiddelen is dit de wachtrij `app.connector_tool_calls`, voor apparaten en browser is dit een verplichte goedkeuring bovenop het agentbeleid), «Вимк.» (Uit — verborgen voor Claude en geweigerd op de server). Er zijn knoppen voor «Усі інструменти» (Alle hulpmiddelen), «Вимкнути групу» (Groep uitschakelen) en «Standaard» (Standaard). Risicovolle hulpmiddelen (`RISKY_TOOLS`: bestanden schrijven, opdrachten uitvoeren, Docker-beheer, klikken/typen/selecteren/toetsen/site-acties, schermafbeelding, diepe diagnose) staan **standaard uit** en zijn niet zichtbaar voor Claude. De gebruiker kan deze zelf op «Питати» of «Завжди» zetten (met een «!»-teken, uitleg van de risico's en bevestiging op de pagina). «Завжди» betekent hier: zonder klik bij elke afzonderlijke aanroep, terwijl de grenzen van de agent (mappen, opdrachtenlijst) en de schakelaars van de extensie van kracht blijven. De bulkactie «Усі інструменти → Завжди/Питати» raakt deze risicovolle hulpmiddelen niet aan.
 
-**Beveiliging van interne aanroepen:** site-hulpmiddelen roepen siteroutes aan in hetzelfde proces via een event dat uitsluitend door `site-aanroep.ts` wordt aangemaakt (gemarkeerd in een `WeakMap`); `ownerRequireSession` geeft de sessie terug van exact de gebruiker uit het OAuth-token van Claude. Een extern HTTP-verzoek kan nooit «gedelegeerd» zijn (wordt gecontroleerd door een test). Alleen routes uit de lijst `TOEGESTANE_ROUTES` zijn toegankelijk. Nieuw hulpmiddel = nieuw item in `SITE_TOOLS` + route in deze lijst.
+**Beveiliging van interne aanroepen:** site-hulpmiddelen roepen siteroutes aan in hetzelfde proces via een gebeurtenis dat uitsluitend door `site-aanroep.ts` wordt aangemaakt (gemarkeerd in een `WeakMap`); `ownerRequireSession` geeft de sessie terug van exact de gebruiker uit het OAuth-token van Claude. Een extern HTTP-verzoek kan nooit «gedelegeerd» zijn (wordt gecontroleerd door een test). Alleen routes uit de lijst `TOEGESTANE_ROUTES` zijn toegankelijk. Nieuw hulpmiddel = nieuw item in `SITE_TOOLS` + route in deze lijst.
 
 De gebruiker kan elk hulpmiddel uitschakelen onder «Інструменти й дозволи» (de server verbergt het dan uit `tools/list` en weigert de aanroep). Details over de extensie: `deploy/BROWSER-EXTENSIE.md`.
 
@@ -149,13 +149,13 @@ Tunnelregel (moet **vóór** de brugregel voor `mcp.` staan; controleer met `clo
 
 ## Cloudflare: controleer dat niets Anthropic blokkeert
 
-Verzoeken komen vanuit `160.79.104.0/21` (niet vanuit een browser). In het Cloudflare-dashboard voor `mcp.tarasevych.com`: schakel Bot Fight Mode / Browser Integrity Check uit
+Verzoeken komen vanuit `160.79.104.0/21` (niet vanuit een browser). In het Cloudflare-dashboard voor `mcp.tarasevych.com`: schakel Bot Fight Modus / Browser Integrity Controle uit
 voor de paden `/mcp`, `/oauth2/*`, `/.well-known/*`, of voeg een Skip-regel toe voor het IP-bereik van Anthropic; zorg dat er geen WAF-challenges optreden.
-Symptoom: «Couldn't reach the MCP server», terwijl er in het applicatielogboek geen enkel verzoek binnenkomt.
+Symptoom: «Couldn't reach de MCP server», terwijl er in het applicatielogboek geen enkel verzoek binnenkomt.
 
 ## Diagnose
 
-- **Couldn't reach the MCP server** → tunnel/WAF (zie hierboven); `curl -i -X POST https://mcp.tarasevych.com/mcp` moet `401` met `WWW-Authenticate` teruggeven.
+- **Couldn't reach de MCP server** → tunnel/WAF (zie hierboven); `curl -i -X POST https://mcp.tarasevych.com/mcp` moet `401` met `WWW-Authenticate` teruggeven.
 - **Authorization failed** → `curl https://mcp.tarasevych.com/.well-known/oauth-authorization-server/oauth2` moet JSON met `registration_endpoint` teruggeven.
 - **Na «Дозволити» gebeurt er niets** → bekijk het logboek `journalctl -u mijn-ruimte -n 50`; de code is 2 min geldig.
 - **Geen hulpmiddelen zichtbaar** → u hebt geen gekoppelde agent (`machine_*`) en geen GitHub-PAT in de kluis.
@@ -167,7 +167,7 @@ Symptoom: «Couldn't reach the MCP server», terwijl er in het applicatielogboek
 Site: `mcp.<domein>` → **Агенти → Токени → «Підключити ШІ»** (privéruimte) of **Технічні підключення → «Підключити ШІ»** (technische ruimte, alleen eigenaar met profiel). Kies de AI (Grok, Claude, ChatGPT, Gemini, Copilot, Cursor, overige),
 waarheen u wilt koppelen (**serverdeuren** `/Grok`, `/claude`, … — alleen servereigenaar; of **connector** `/mcp` — uw apparaten, mail, Drive)
 en de **toegangsduur** voor deze AI: 1 uur (wordt vernieuwd tot 14 dagen, aanbevolen), 8 uur, 1 dag, 7 dagen, 30 dagen, onbeperkt (tot intrekking).
-Lange termijnen (7 dagen en langer) vereisen een nieuwe aanmeldingsbevestiging (step-up). De termijn kan nogmaals worden aangepast in het venster «Дозволити».
+Lange termijnen (7 dagen en langer) vereisen een nieuwe aanmeldingsbevestiging (extra bevestiging). De termijn kan nogmaals worden aangepast in het venster «Дозволити».
 
 **1. «Підключити автоматично (в один клік)» (Automatisch koppelen met één klik)** — OAuth 2.1 + PKCE (S256) + dynamische registratie:
 - plak het adres (`https://mcp.<domein>/Grok` of `/mcp`) in de AI-client; de client opent zelf de site — u bent al aangemeld, klik op **«Дозволити»**;

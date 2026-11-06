@@ -1,10 +1,8 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./EXTENSIE-BIJWERKEN.uk.md) · [🇳🇱 **Nederlandse versie**](./EXTENSIE-BIJWERKEN.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-# Розширення браузера: оновлення · Browserextensie bijwerken
+# Розширення браузера: оновлення
 
-Станом на 18.10.2026 · Stand 18.10.2026 (audit, punt 9)
-
-## Українською
+Станом на 18.10.2026 (аудит, пункт 9)
 
 **Що було.** Код розширення на сайті мав версію 0.4.0, а опублікований підписаний пакет (CRX) — 0.3.4. Збірка (`scripts/bouw-extensie.mjs`) правильно не публікувала застарілий CRX, але й не казала чому; сайт не показував, що є нова версія. Скрипт підпису мовчки створював **новий** ключ, якщо старого не було поруч — це дало б інший ідентифікатор розширення, і всі наявні встановлення більше ніколи не отримали б оновлення.
 
@@ -25,16 +23,4 @@ node scripts/onderteken-extensie.mjs T:\mijn-ruimte\geheim\extension-signing-key
 
 Хто зараз має 0.3.4 з CRX: Chrome оновить сам, щойно буде опубліковано CRX 0.4.1 (`update_url` у старому пакеті вказує на той самий `updates.xml`). Хто має «розпаковане» 0.4.0: смуга покаже ручні кроки.
 
-## Nederlands
-
-**Wat was er.** De extensiecode op de site was 0.4.0, de gepubliceerde ondertekende CRX 0.3.4. De build publiceerde de verouderde CRX terecht niet, maar zei niet waarom; de site meldde geen nieuwe versie. Het ondertekenscript maakte stil een **nieuwe** sleutel als de oude ontbrak — dat geeft een ander extensie-id, waarna bestaande installaties nooit meer een update krijgen.
-
-**Wat nu.**
-- Extensie **0.4.1** (`UPDATE_CHECK`, eigen versiecontrole, badge «↑»). Minimale werkende versie **0.4.0** (`shared/extensie-update.ts`, één bron voor site en build).
-- `extension-version.json` bevat `minVersion`, `crxStatus` en `ondertekendeVersie`; een verouderde crx/updates.xml uit een eerdere build wordt verwijderd.
-- Strook **«Update van de extensie beschikbaar X → Y»** op elke pagina: «Automatisch bijwerken» (alleen CRX-installatie met `update_url` en een nieuwere gepubliceerde CRX), «Handmatig bijwerken» (stappen voor «Uitgepakt laden»), «Later herinneren» (24 u; niet bij een verplichte update onder 0.4.0).
-- De extensie controleert zelf elke 6 uur en zet «↑» op het pictogram.
-
-**Nodig van de eigenaar (eenmalig, op de pc met de sleutel):** `node scripts/onderteken-extensie.mjs <pad-naar-sleutel.pem>`. Het script controleert dat de sleutel hetzelfde id `ofpffonakgjioahgfejmiblfmbkobmmi` geeft (anders exit 3, niets geschreven); zonder sleutel exit 2 met uitleg; een nieuwe sleutel alleen bewust met `--nieuwe-sleutel`. Daarna een nieuw pakket bouwen: `crx` + `updates.xml` verschijnen, `crxStatus: actueel`.
-
-Tests: `tests/eenheid/ui-audit-g.test.ts` (updatebeleid, consistentie build ↔ manifest, ondertekenscript), `browser-extensie`, `extensie-toestand`; harness `/tmp/h-G/test.py` (strook in uk/nl, licht/donker, 390 px).
+Тести: `tests/eenheid/ui-audit-g.test.ts` (політика оновлення, узгодженість збірки ↔ маніфесту, скрипт підпису), `browser-extensie`, `extensie-toestand`; стенд `/tmp/h-G/test.py` (смуга uk/nl, світла/темна тема, 390 px).

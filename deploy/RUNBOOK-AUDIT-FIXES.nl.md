@@ -29,7 +29,7 @@ verificatie.** Terugdraaien: §9 (eerst `env-samenvoegen`!).
 - [ ] Alleen als de databaserollen nog niet bestaan (fase 2 nog niet uitgerold): pg_hba-controle uit
       `RUNBOOK-FASE-2-3.md` §0.
 - [ ] Google (aanbevolen, kan ook later): Google Auth Platform → project → **Settings** → **Advanced Settings** →
-      **Session age claims** aanzetten. Zonder dit stuurt Google geen `auth_time` en telt opnieuw aanmelden bij
+      **Sessie age claims** aanzetten. Zonder dit stuurt Google geen `auth_time` en telt opnieuw aanmelden bij
       Google **niet** als step-up (faalt dicht); step-up met een TOTP-code werkt dan wel. Google levert
       `auth_time` mogelijk alleen voor een gepubliceerde/geverifieerde OAuth-app.
 - [ ] Niet aanzetten bij de uitrol: `AUTH_POORT_AFDWINGEN`, `ACCOUNT_DEFINITIEF_WISSEN`, RLS (`rls-aan`).
@@ -72,7 +72,7 @@ naar de vorige release.
   (korte exclusieve lock; bij de huidige omvang seconden). Verder policy's, `users`-trigger, hulpfuncties.
 - `0008`: `app.audit_beheerders`, nieuwe `audit_toevoegen`/`audit_verwijderen`. Alleen toevoegend.
 - `rechten.sql` haalt INSERT op `app.audit`/`audit_kop`/`audit_beheerders` weg bij app- en systeemrol en maakt de
-  unieke index `records_een_eigenaar`. Staat er in de uitvoer een **WARNING over meerdere eigenaren**, dan wordt de
+  unieke index `records_een_eigenaar`. Staat er in de uitvoer een **WAARSCHUWING over meerdere eigenaren**, dan wordt de
   index overgeslagen; de server zet de verouderde eigenaar bij het starten terug naar `member` en stap 4
   (`instellen`) maakt de index alsnog.
 
@@ -184,7 +184,7 @@ Volgorde is belangrijk: **eerst de omgeving samenvoegen, dan de app.** De vorige
   daarna de regel weer weghalen (`sed -i '/^STAP_OP_UIT=/d' /etc/mijn-ruimte/geheimen.env`) en herstarten.
 - **Google-step-up werkt niet omdat Google geen `auth_time` stuurt** en TOTP is niet ingesteld: tijdelijk
   `STAP_OP_GOOGLE_ZONDER_AUTH_TIME=1` (zelfde manier; zwakker: telt een expliciete `prompt=login`-ronde binnen
-  5 minuten). Liever: Session age claims aanzetten (§0).
+  5 minuten). Liever: Sessie age claims aanzetten (§0).
 - **Eigenaar per ongeluk geblokkeerd** (het eigenaarsadres is niet meer uitgezonderd):
   ```
   runuser -u postgres -- psql -d mijnruimte -c "update app.records set data = jsonb_set(data, '{status}', '\"approved\"') where tbl = 'users' and lower(data->>'email') = lower('<OWNER_EMAIL>')"

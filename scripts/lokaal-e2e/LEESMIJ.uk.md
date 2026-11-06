@@ -21,6 +21,6 @@ DATABASE_URL=... node e2e.mjs   # Chrome: --host-resolver-rules=MAP *.tarasevych
 ## Усе за один раз
 `scripts/lokaal-e2e/test-alles.sh` перезапускає сервер і проксі та виконує димовий тест (включно з безпекою фази B),
 юніт-тести (`scripts/eenheidstests.mjs`: PKCE, SSRF/DNS-pinning, ключі, блокування) і цей браузерний тест.
-У файлі секретів (`GEHEIMEN=…`, за замовчуванням `/workspace/.lokaal/geheimen.env`) потрібні: `DATABASE_URL`,
+У файлі секретів (`GEHEIMEN=…`, типово `/workspace/.lokaal/geheimen.env`) потрібні: `DATABASE_URL`,
 `TOTP_ENCRYPTION_KEY_V1`, `RECOVERY_CODE_PEPPER` (лише локальні тестові значення). Проксі прибирає `:8443` із
 заголовка `Origin`, як справжній тунель (порт 443), щоб перевірка CSRF працювала так само, як у production.

@@ -50,7 +50,7 @@ Kop (één regel, 53 px): `[naam][ⓘ]  [‹ 2/3 ›] [− 100% +]* | [✦ ШІ]
   - Modus, zoom en «balk verborgen» worden per apparaat bewaard (localStorage `mr-bijlage-v2-weergave`, alleen weergave).
 * Gedeeld paneel (rechts 360 px op computer, onderblad op telefoon ≤ 760 px): «ШІ і переклад» (de echte `AiVertalingBalk` wordt erin geplaatst)
   of «Про файл» (naam, type, grootte, weergave, bewerkingssoort, plus PDF-profiel en grafische metadata). Esc sluit eerst menu, dan paneel.
-* Breedteniveaus (gemeten op de kop, niet op het scherm): ≥ 900 px met label «Завантажити»; 620–899 px alleen pictogrammen;
+* Breedteniveaus (gemeten op de kop, niet op het scherm): ≥ 900 px met etiket «Завантажити»; 620–899 px alleen pictogrammen;
   < 620 px: ⓘ, ШІ, bewerken, afdrukken, opslaan, delen (en bij afbeeldingen ook minimaliseren) naar «•••», zoom van afbeeldingen compact
   (alleen de waarde, − en + in het venster), teller naast de naam. Nooit een tweede regel.
 * `prefers-reduced-motion`: alle animaties/overgangen uit.

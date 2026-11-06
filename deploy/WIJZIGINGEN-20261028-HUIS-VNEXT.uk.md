@@ -2,12 +2,12 @@
 
 ## Huis vNext — huis.tarasevych.com (28.10.2026)
 
-Реалізація пакета `Mijn_Ruimte_Huis_vNext` (ТЗ `ТЕХНІЧНЕ_ЗАВДАННЯ_HUIS_VNEXT.md`, старт з `00_АГЕНТУ_ПОЧАТИ_ЗВІДСИ.md`) у наявному проєкті. База: архів **`mijn-ruimte-20261028-224316`** + гілка `notities-vnext` (міграція 0127). Гілка **`huis-vnext`**, міграція **`0128_huis_vnext.sql`**, прапорець **`huis-vnext`** (вимкнено за замовчуванням → стара інформаційна сторінка без змін). **Production не змінено й не розгорнуто.**
+Реалізація пакета `Mijn_Ruimte_Huis_vNext` (ТЗ `ТЕХНІЧНЕ_ЗАВДАННЯ_HUIS_VNEXT.md`, старт з `00_АГЕНТУ_ПОЧАТИ_ЗВІДСИ.md`) у наявному проєкті. База: архів **`mijn-ruimte-20261028-224316`** + гілка `notities-vnext` (міграція 0127). Гілка **`huis-vnext`**, міграція **`0128_huis_vnext.sql`**, прапорець **`huis-vnext`** (вимкнено типово → стара інформаційна сторінка без змін). **Production не змінено й не розгорнуто.**
 
 > **Перебазовано 29.10.2026:** база тепер **`mijn-ruimte-20261028-233308`** (сторінка «Відкат», tak fix-technische-modules, commit f7eafb075585) — проміжний випуск іншого агента. Перетину файлів немає (той випуск міняв відкат/огляд/здоров'я, цей — notities/huis); перебазування чисте, без жодної зміни у файлах цього пакета. Повторно на новій базі: huis-vnext 53/53, notities-vnext 62/62, terugdraai-controle 25/25, e2e huis 49/49, e2e notities 39/39, `npm run build` PASS, tsc 3/20 (базові).
 
 
-Пріоритет за ТЗ дотримано: 1) identity/access + Huis Core state model → 2) read-only адаптер → 3) UI → 4) confirmed command path → 5) сцени/правила (правила — лише чернетка+симуляція) → 6) реальні інтеграції (лише Home Assistant) → 7) showroom/калькулятор (без цін).
+Пріоритет за ТЗ дотримано: 1) identity/access + Huis Core стан model → 2) лише для читання адаптер → 3) UI → 4) confirmed команда path → 5) сцени/правила (правила — лише чернетка+симуляція) → 6) реальні інтеграції (лише Home Assistant) → 7) showroom/калькулятор (без цін).
 
 ### Принципи, зафіксовані в коді (shared/huis-model.ts, backend/huis-vnext.ts)
 
@@ -26,17 +26,17 @@
 | Кімнати: поверхи, схематичний 2D-план (SVG, клавіатура, завжди є список), додати/перейменувати/прибрати, зсув/розмір кнопками, панель кімнати з керуванням, перенесення пристроїв | **implemented** (без 3D, без сканування) | `Kamers.tsx`, `Plattegrond.tsx` |
 | Пристрої: пошук/фільтри (тип, кімната, актуальність), картки з реальною величиною + актуальність, інспектор (стани, можливості, джерело, перейменувати/кімната/приховати), керування з життєвим циклом команди | **implemented** | `Apparaten.tsx`, `ApparaatBediening.tsx` |
 | Сцени: редактор (лише керовані некритичні пристрої), виконання з ACK по кроках, результат `voltooid/gedeeltelijk/mislukt`, кореляція | **implemented** | `Scenes.tsx`, `sceneUitvoeren` |
-| Автоматизації: редактор Коли/Якщо/Тоді (час+дні, стан, поріг; вікно часу, стан, присутність; сцена/команда/сповіщення), запобіжники (охолодження, макс/день, затримка), **droogloop** без I/O на реальних спостереженнях з поясненням кожної умови та попередженнями (петля, без охолодження, критичне в «Тоді») | **implemented як чернетка+симуляція**; **виконання правил сервером — NOT IMPLEMENTED** (стан `aan` чесно відхиляється: `NOG_NIET_UITVOERBAAR`) | `Automatiseringen.tsx`, `droogloop()` |
+| Автоматизації: редактор Коли/Якщо/Тоді (час+дні, стан, поріг; вікно часу, стан, присутність; сцена/команда/сповіщення), запобіжники (охолодження, макс/день, затримка), **droogloop** без I/O на реальних спостереженнях з поясненням кожної умови та попередженнями (петля, без охолодження, критичне в «Тоді») | **implemented як чернетка+симуляція**; **виконання правил сервером — НЕ IMPLEMENTED** (стан `aan` чесно відхиляється: `NOG_NIET_UITVOERBAAR`) | `Automatiseringen.tsx`, `droogloop()` |
 | Безпека: лише спостереження (контакт/рух/дим/газ/вода/замок/панель/присутність), явне `gecertificeerd: false`, попередження при спрацьованому датчику, замок/панель лише людиною з підтвердженням | **implemented** (не охоронна система — так і написано) | `Beveiliging.tsx` |
 | Енергія: тільки виміряні значення (vermogen/energie), історія з `history/period` джерела як SVG-лінія, без тарифів/оцінок | **implemented** | `Energie.tsx`, `haGeschiedenis` |
 | Події: журнал з джерелом, типом, серйозністю, часом джерела, кореляцією, фільтр, курсор | **implemented** | `Gebeurtenissen.tsx` |
-| Інтеграції: чесний каталог + майстер Home Assistant (адреса+токен → перевірка `/api/`, `/api/config` → знайти (з «уже на сайті»/критично/офлайн) → імпорт вибраного → синхронізація (оновлено/зникло/нові) → дозволити команди (step-up) → від'єднати) | **implemented** | `Integraties.tsx`, `backend/huis-adapter-thuis-assistent.ts` |
+| Інтеграції: чесний каталог + майстер Home Assistant (адреса+токен → перевірка `/api/`, `/api/config` → знайти (з «уже на сайті»/критично/офлайн) → імпорт вибраного → синхронізація (оновлено/зникло/нові) → дозволити команди (посилене підтвердження) → від'єднати) | **implemented** | `Integraties.tsx`, `backend/huis-adapter-thuis-assistent.ts` |
 | ШІ-помічник: ланцюжок пропозиція → рішення людини → команда через `ai-voorstel` з ACK; критичне відхиляється; TTL пропозиції; ручне створення для тесту ланцюжка | **implemented** (вбудованого чат-бота оселі немає — пропозиції приходять через MCP/сторінку; так і написано) | `Assistent.tsx`, `voorstelMaken/voorstelBesluiten` |
 | Налаштування: назва/часовий пояс/поверхи, учасники з ролями (тимчасові для інсталятора/підтримки), ще одна оселя | **implemented** | `Instellingen.tsx` |
 | Showroom: демо на вигаданих даних з явною позначкою, демо-план, 3 сценарії («Вечір», «Ранок», «Вода») як покроковий текстовий playback, без API/команд/токенів | **implemented** | `Showroom.tsx` |
 | Калькулятор: тип житла/м²/стадія/функції → зони, кількості, фактори складності; **без цін** (ТЗ: прайс не верифіковано) | **implemented** | `Planner.tsx`, `plannerStructuur()` |
 | uk/nl, клавіатура (Esc, Tab-пастка у шарах), aria (switch з `aria-checked="mixed"` при невідомому стані, role=tablist), тик-цілі ≥ 44 px, safe-area, світла/темна через токени, нижня панель на телефоні | **implemented** | `src/huis/huis.css`, `HuisLaag.tsx` |
-| WebSocket/push оновлення | **NOT IMPLEMENTED** — опитування 30 с + кнопка «Оновити»; команди опитуються кожні 1,5 с до кінцевого стану | — |
+| WebSocket/push оновлення | **НЕ IMPLEMENTED** — опитування 30 с + кнопка «Оновити»; команди опитуються кожні 1,5 с до кінцевого стану | — |
 
 Навігація: 13 вкладок `huis` зареєстровано в `public/canonical-service.js` (slugs: `overzicht, kamers, apparaten, scenes, automatiseringen, beveiliging, energie, activiteit, integraties, assistent, instellingen, showroom, planner`), `shared/menu-model.ts`, `shared/werkblad-register.ts`, `src/menu-voorkeuren.tsx`, `src/VerenigdDienstApp.tsx`. Іконки підменю унікальні й не збігаються з головними (тест `menu-v2`).
 
@@ -44,12 +44,12 @@
 
 | Інтеграція | Стан у коді | Примітка |
 |---|---|---|
-| Home Assistant (REST, long-lived token) | **implemented** — читання всіх сутностей; команди light/switch/input_boolean/fan/cover/climate/lock (lock лише людина+step-up); history | перевірено лише проти **імітованого** HA (`tests/eenheid/hulp/nep-thuis-assistent.ts`); **реальне залізо — NOT TESTED** |
+| Home Assistant (REST, long-lived token) | **implemented** — читання всіх сутностей; команди light/switch/input_boolean/fan/cover/climate/lock (lock лише людина+step-up); history | перевірено лише проти **імітованого** HA (`tests/eenheid/hulp/nep-thuis-assistent.ts`); **реальне залізо — НЕ TESTED** |
 | Matter/Thread, Zigbee, Z-Wave, Tuya/LSC, MQTT/ESPHome | **planned** — лише через Home Assistant | власного адаптера немає, кнопок «Підключити» немає |
 | KNX, Loxone, Google Home, Alexa | **planned** | адаптера немає |
 | Ajax Systems | **restricted/unsupported** — Enterprise API партнерський | не обіцяємо; керування лише з рідного застосунку |
-| Apple Home | **unsupported** з вебсайту | HomeKit лише через нативний SDK |
-| Камери/RTSP | **unsupported** у цьому випуску | без потоків |
+| Apple Home | **не підтримується** з вебсайту | HomeKit лише через нативний SDK |
+| Камери/RTSP | **не підтримується** у цьому випуску | без потоків |
 
 ### Перевірки (реальні цифри, це середовище)
 
@@ -66,11 +66,11 @@
 | Notities vNext на цій гілці: `notities-vnext-20261028` 62/62 (повторно після змін huis); e2e 39/39 на коміті `notities-vnext` | PASS (файли не перетинаються) |
 | `deploy/huis-vnext-terugdraaien.sql` | **прогнано** на окремій БД `mr_vers`: 11 таблиць + прапорець + запис міграції прибрано; `migrate.mjs` потім знову застосував 0128 без помилок |
 
-**NOT TESTED:** реальний Home Assistant та реальні пристрої (лише імітований REST); RLS з ролями `mijnruimte_app/system` на production (тут одна суперроль; policies створюються, але ефективну ізоляцію між користувачами перевіряє лише логіка `lidVan`); step-up із **застарілою** сесією (в e2e сесія свіжа, тож step-up проходить; на production з'явиться вікно «Підтвердіть доступ» — спільний механізм `src/platform/stap-op.ts`); поведінка при >1000 сутностей (ліміт імпорту за кодом 2000).
+**НЕ TESTED:** реальний Home Assistant та реальні пристрої (лише імітований REST); RLS з ролями `mijnruimte_app/system` на production (тут одна суперроль; policies створюються, але ефективну ізоляцію між користувачами перевіряє лише логіка `lidVan`); step-up із **застарілою** сесією (в e2e сесія свіжа, тож step-up проходить; на production з'явиться вікно «Підтвердіть доступ» — спільний механізм `src/platform/stap-op.ts`); поведінка при >1000 сутностей (ліміт імпорту за кодом 2000).
 
 ### Міграція 0128 (безпечна, ідемпотентна)
 
-`CREATE TABLE IF NOT EXISTS` ×11 (`huis_woningen, huis_leden, huis_ruimtes, huis_integraties, huis_apparaten, huis_toestanden, huis_opdrachten, huis_scenes, huis_automatiseringen, huis_gebeurtenissen, huis_voorstellen`), RLS policies за членством, GRANT'и (`migrations/rechten.sql` доповнено), прапорець `huis-vnext` (`ON CONFLICT DO NOTHING`, вимкнено). Існуючих таблиць не торкається. Нова змінна **`HUIS_ADAPTER_SLEUTEL_V1`** (необов'язкова; `ENV-VARS.md`).
+`CREATE TABLE IF NOT EXISTS` ×11 (`huis_woningen, huis_leden, huis_ruimtes, huis_integraties, huis_apparaten, huis_toestanden, huis_opdrachten, huis_scenes, huis_automatiseringen, huis_gebeurtenissen, huis_voorstellen`), RLS policies за членством, GRANT'и (`migrations/rechten.sql` доповнено), прапорець `huis-vnext` (`ON CONFLICT DO NOTHING`, вимкнено). Наявних таблиць не торкається. Нова змінна **`HUIS_ADAPTER_SLEUTEL_V1`** (необов'язкова; `ENV-VARS.md`).
 
 ### План відкату
 

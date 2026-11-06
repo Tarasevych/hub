@@ -1,78 +1,78 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUIMTES-COMPATIBILITEIT.uk.md) · [🇳🇱 **Nederlandse versie**](./RUIMTES-COMPATIBILITEIT.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-# Ruimtes: compatibiliteit van de browserextensie en de MCP-klanten
+# Простори: сумісність браузерного розширення та клієнтів MCP
 
-> **Коротко українською.** Розширення і MCP-клієнти входять не через cookie сайту, а через власні токени (токен агента
+> **Коротко.** Розширення і MCP-клієнти входять не через cookie сайту, а через власні токени (токен агента
 > розширення, OAuth-токен MCP). Тому прив'язку технічного простору до основної сесії сайту сервер має перевіряти сам, при
 > КОЖНОМУ виклику. Якщо основний акаунт не активний — виклик у технічному просторі відхиляється (401/403) з повідомленням
 > «Основний акаунт не активний». Приватний простір працює як раніше. Довгі дозволи розширення («1 рік», «Без обмеження»)
 > переживають вихід з однієї вкладки і закінчуються лише при виході з сайту або «Вийти всюди» (ваше рішення t330u).
 
-Status: ontwerp + adapter (backend/ruimtes-compatibiliteit.ts, extension/ruimte-fouten.js). Datum 28.10.2026. Agent 5.
+Статус: проєкт + адаптер (`backend/ruimtes-compatibiliteit.ts`, `extension/ruimte-fouten.js`). Дата: 28.10.2026. Агент 5.
 
-## 1. Hoe elke klant zich aanmeldt
+## 1. Як автентифікується кожен клієнт
 
-| Klant | Bewijs | Sitesessie (cookie) mee? | Ruimte bepaald door |
+| Клієнт | Доказ | Сесія сайту (cookie) передається? | Простір визначається за |
 |---|---|---|---|
-| Extensie, slot `prive` | agenttoken (Bearer), WebSocket-ticket 60 s | nee (`credentials: 'omit'`) | rij `agents.ruimte` = `prive` |
-| Extensie, slot `technisch` | eigen agenttoken + ondertekende ontgrendeling (HMAC, opdrachtsleutel van het slot) | nee; alleen `browser_sessie` (0111) en `activatie_id` | ontgrendeling `ruimte` + `tech_ruimte_sessies` (via `activatie_id`) |
-| Extensie, koppelen (`guide.js`) | sitecookie (eenmalig, `/api/owner/agents/pairing-code`) | ja | gekozen slot |
-| MCP-klant (connector, OAuth) | OAuth-toegangstoken | nee | live: `aiPoortNu(userId)` bij elke `tools/list` en `tools/call` |
-| MCP beheerhulpmiddelen (`BEHEER_TOOL_NAMEN`) | idem | nee | `aiPoortNu(...).ruimte === 'technisch'` bij uitvoeren |
+| Розширення, слот `prive` | токен агента (Bearer), квиток WebSocket на 60 с | ні (`credentials: 'omit'`) | рядком `agents.ruimte` = `prive` |
+| Розширення, слот `technisch` | власний токен агента + підписане розблокування (HMAC, ключ команд слота) | ні; лише `browser_sessie` (0111) та `activatie_id` | розблокуванням `ruimte` + `tech_ruimte_sessies` (через `activatie_id`) |
+| Розширення, прив'язування (`guide.js`) | cookie сайту (одноразово, `/api/owner/agents/pairing-code`) | так | обраним слотом |
+| Клієнт MCP (конектор, OAuth) | OAuth-токен доступу | ні | наживо: `aiPoortNu(userId)` під час кожного `tools/list` і `tools/call` |
+| Адмін-інструменти MCP (`BEHEER_TOOL_NAMEN`) | те саме | ні | `aiPoortNu(...).ruimte === 'technisch'` під час виконання |
 
-## 2. Verzoekpaden
+## 2. Шляхи запитів
 
-Extensie (`extension/background.js`, `guide.js`):
+Розширення (`extension/background.js`, `guide.js`):
 `GET /api/owner/agents/self` · `POST /api/owner/agents/pair` · `GET /api/owner/agents/pairing-code` (cookie) ·
-`GET /api/owner/agents/ws-ticket` · WebSocket `/agent/ws` (sluitcodes 4403 = ingetrokken, 4410 = noodstop) ·
+`GET /api/owner/agents/ws-ticket` · WebSocket `/agent/ws` (коди закриття 4403 = відкликано, 4410 = аварійна зупинка) ·
 `POST /api/owner/agents/ontgrendeling/intrekken-extensie` · `POST /api/owner/agents/extensie/chat` ·
-`POST /api/owner/agents/diagnostics/archive` · site: `/api/owner/agents/ontgrendeling` (cookie, ontgrendelen).
+`POST /api/owner/agents/diagnostics/archive` · сайт: `/api/owner/agents/ontgrendeling` (cookie, розблокування).
 
-MCP: `/mcp` (JSON-RPC `initialize`, `tools/list`, `tools/call`) via backend/mcp-connector-routes.ts → mcp-connector.ts,
-connector v2 (backend/connector-v2*.ts) en de MCP-klant naar buiten (backend/mcp-klant-routes.ts). Elke vraag
-«technisch?» loopt via `aiPoortNu` → `effectieveRuimte` → bij v2 `tech-ruimtes-kern.besluit(userId, {bron:'mcp'})`
-→ `ruimteToegang` (shared/ruimte-toegang.ts).
+MCP: `/mcp` (JSON-RPC `initialize`, `tools/list`, `tools/call`) через `backend/mcp-connector-routes.ts` → `mcp-connector.ts`,
+конектор v2 (`backend/connector-v2*.ts`) та зовнішній клієнт MCP (`backend/mcp-klant-routes.ts`). Кожна перевірка
+«чи технічний?» проходить через `aiPoortNu` → `effectieveRuimte` → у v2 `tech-ruimtes-kern.besluit(userId, {bron:'mcp'})`
+→ `ruimteToegang` (`shared/ruimte-toegang.ts`).
 
-## 3. Matrix: gedrag na scheiding per ruimte + binding aan de sitesessie
+## 3. Матриця: поведінка після розділення за просторами + прив'язки до сесії сайту
 
-| Situatie | Extensie prive | Extensie technisch | MCP prive-hulpmiddel | MCP technisch hulpmiddel |
+| Ситуація | Розширення `prive` | Розширення `technisch` | Приватний інструмент MCP | Технічний інструмент MCP |
 |---|---|---|---|---|
-| Sitesessie leeft, technische ruimte actief | werkt | werkt | werkt, scope `prive` | werkt, scope `technisch` |
-| Technische ruimte op pauze | werkt | geweigerd `PAUZE` (403) | werkt | verdwijnt uit `tools/list`; call → 403 `PAUZE` |
-| Uitloggen in ÉÉN tabblad | werkt | ontgrendeling «1 рік/Без обмеження» blijft; «до кінця активації» eindigt met de sessie | werkt | volgt de technische sessie |
-| Uitloggen van de site / «Вийти всюди» | agenttoken blijft (koppeling), maar `naUitloggen` trekt alle ontgrendelingen in | ingetrokken, 403 `SITE_SESSIE_WEG` | werkt (OAuth-grant is geen sitesessie) — zie besluit B | 403 `SITE_SESSIE_WEG` |
-| Account niet actief (geblokkeerd/gewist) | 401 `ACCOUNT_NIET_ACTIEF` → ontkoppelen | 401 | 401 | 401 |
-| Vlag `tech-ruimtes-v2` uit | als vóór v2 (pariteit) | als vóór v2 | als vóór v2 | als vóór v2 (`lopendeActivatie`) |
+| Сесія сайту жива, технічний простір активний | працює | працює | працює, простір `prive` | працює, простір `technisch` |
+| Технічний простір на паузі | працює | відхилено `PAUZE` (403) | працює | зникає з `tools/list`; виклик → 403 `PAUZE` |
+| Вихід в ОДНІЙ вкладці | працює | розблокування «1 рік/Без обмеження» лишається; «до кінця активації» закінчується разом із сесією | працює | слідує за технічною сесією |
+| Вихід із сайту / «Вийти всюди» | токен агента лишається (прив'язка), але `naUitloggen` відкликає всі розблокування | відкликано, 403 `SITE_SESSIE_WEG` | працює (OAuth-грант не є сесією сайту) — див. рішення B | 403 `SITE_SESSIE_WEG` |
+| Акаунт не активний (заблокований/видалений) | 401 `ACCOUNT_NIET_ACTIEF` → від'єднання | 401 | 401 | 401 |
+| Прапорець `tech-ruimtes-v2` вимкнено | як до v2 (паритет) | як до v2 | як до v2 | як до v2 (`lopendeActivatie`) |
 
-Belangrijk: de extensie en MCP sturen GEEN sitecookie mee. «Binding aan de sitesessie» kan voor hen dus alleen
-server-side, via de ankersessie van de technische ruimte (`tech_ruimte_sessies` → `siteSessieLeeft`). Een technische
-aanroep zonder levende ankersessie wordt geweigerd, ook als het token zelf nog geldig is.
+Важливо: розширення та MCP НЕ надсилають cookie сайту. Тому «прив'язка до сесії сайту» для них можлива лише
+на боці сервера, через якірну сесію технічного простору (`tech_ruimte_sessies` → `siteSessieLeeft`). Технічний
+виклик без живої якірної сесії відхиляється, навіть якщо сам токен ще дійсний.
 
-## 4. Contract dat Agent 1 moet waarmaken
+## 4. Контракт, який має виконати Агент 1
 
-1. **Scope in elke ontgrendelingsgrant.** `extensie_ontgrendelingen.ruimte` blijft verplicht (`prive`|`technisch`) en
-   een technische grant MOET `activatie_id` = id van een `tech_ruimte_sessies`-rij hebben. `scopeVanSessie(req)` mag een
-   grant nooit in een andere ruimte gebruiken dan de ruimte van het slot (WebSocket van slot X ⇒ alleen grant van X).
-2. **Ankercontrole bij elke technische extensieopdracht** (niet alleen bij ontgrendelen): `siteSessieLeeft` false ⇒ grant
-   intrekken met reden `site-sessie-weg` en WebSocket-bericht `{t:'vergrendeld', code:'SITE_SESSIE_WEG'}`.
-3. **MCP-scopeverklaring.** Elk hulpmiddel heeft een vaste scope: namen in `BEHEER_TOOL_NAMEN` en `BEHEER_ALLEEN_V2` = `technisch`,
-   al het andere = `prive`. Gegevens (mail, meldingen, instellingen) van een `prive`-hulpmiddel komen ALTIJD uit scope
-   `prive`, ook als de technische ruimte actief is (geen menging). Lade bij `gedeeld` blijft zoals in `aiPoortNu`.
-4. **Foutcodes** (JSON `{ error: <code>, uitleg: {uk, nl} }`), status:
-   - 401 `ACCOUNT_NIET_ACTIEF` — hoofdaccount niet actief; de klant ontkoppelt.
+1. **Простір (область дії) у кожному гранті розблокування.** `extensie_ontgrendelingen.ruimte` залишається обов'язковим (`prive`|`technisch`), а
+   технічний грант ПОВИНЕН мати `activatie_id` = id рядка `tech_ruimte_sessies`. `scopeVanSessie(req)` ніколи не може використовувати
+   грант в іншому просторі, ніж простір слота (WebSocket слота X ⇒ лише грант X).
+2. **Перевірка якоря під час кожної технічної команди розширення** (не лише під час розблокування): `siteSessieLeeft` false ⇒ відкликати
+   грант із причиною `site-sessie-weg` і надіслати WebSocket-повідомлення `{t:'vergrendeld', code:'SITE_SESSIE_WEG'}`.
+3. **Оголошення простору MCP.** Кожен інструмент має фіксований простір: назви у `BEHEER_TOOL_NAMEN` та `BEHEER_ALLEEN_V2` = `technisch`,
+   усе інше = `prive`. Дані (пошта, сповіщення, налаштування) інструмента `prive` ЗАВЖДИ беруться з простору
+   `prive`, навіть якщо технічний простір активний (жодного змішування). Лада при `gedeeld` залишається такою, як у `aiPoortNu`.
+4. **Коди помилок** (JSON `{ error: <code>, uitleg: {uk, nl} }`), статус:
+   - 401 `ACCOUNT_NIET_ACTIEF` — основний акаунт не активний; клієнт від'єднується.
    - 403 `SITE_SESSIE_WEG` — «Основний акаунт не активний: увійдіть на сайті знову.»
    - 403 `GEEN_TECH_SESSIE`, `VERLOPEN`, `GRENS_VOORBIJ`, `PAUZE`, `NIET_GEBONDEN`, `AI_NIET_TOEGESTAAN`, `GEEN_ROLLEN`,
-     `GEEN_TECH_PROFIEL` — technische ruimte niet beschikbaar; de klant blijft gekoppeld in `prive`.
-   - Bestaande `TECH_PROFILE_OFF` (403) blijft geldig als synoniem; nieuwe code mag erbij in het veld `reden`.
-   - WebSocket: 4403 = token ingetrokken (ontkoppelen), NIEUW 4401 = sitesessie weg (niet ontkoppelen, alleen vergrendelen).
-5. **Gevonden in de test (28.10.2026):** als de sitesessie wordt ingetrokken, krijgt een MCP-aanroep nu `GEEN_TECH_SESSIE`
-   (de technische sessie is al gesloten) in plaats van `SITE_SESSIE_WEG`. Daardoor ziet de mens de algemene melding en niet
-   «Основний акаунт не активний». Verzoek aan Agent 1: bij sluiten wegens sitesessie de reden bewaren en die code teruggeven.
-6. **Uitloggen:** `naUitloggen(userId, tabContext)` blijft: met tabContext + v2 ⇒ 0 intrekkingen; zonder ⇒ alles.
+     `GEEN_TECH_PROFIEL` — технічний простір недоступний; клієнт залишається підключеним у `prive`.
+   - Наявний `TECH_PROFILE_OFF` (403) залишається чинним як синонім; новий код може додаватися в поле `reden`.
+   - WebSocket: 4403 = токен відкликано (від'єднати), НОВИЙ 4401 = сесія сайту зникла (не від'єднувати, лише заблокувати).
+5. **Виявлено під час тесту (28.10.2026):** коли сесія сайту відкликається, виклик MCP зараз отримує `GEEN_TECH_SESSIE`
+   (технічна сесія вже закрита) замість `SITE_SESSIE_WEG`. Через це людина бачить загальне повідомлення, а не
+   «Основний акаунт не активний». Запит до Агента 1: при закритті через сесію сайту зберігати причину й повертати саме цей код.
+6. **Вихід:** `naUitloggen(userId, tabContext)` залишається: із `tabContext` + v2 ⇒ 0 відкликань; без ⇒ усі.
 
-De codes 1–4 zijn als pure functie vastgelegd in backend/ruimtes-compatibiliteit.ts; tests in
-tests/eenheid/ruimtes-compatibiliteit-*.test.ts.
+Пункти 1–4 зафіксовані як чисті функції в `backend/ruimtes-compatibiliteit.ts`; тести в
+`tests/eenheid/ruimtes-compatibiliteit-*.test.ts`.
 
-## 5. Open punten
-- Extensie opnieuw ondertekenen en `updates.xml` bijwerken: bekend open punt, niet gedaan.
-- Niet getest met de echte extensie in Chrome en met een echte MCP-klant (alleen gesimuleerd).
+## 5. Відкриті питання
+- Повторно підписати розширення та оновити `updates.xml`: відомий відкритий пункт, не виконано.
+- Не протестовано зі справжнім розширенням у Chrome та зі справжнім клієнтом MCP (лише симуляція).

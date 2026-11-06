@@ -1,115 +1,117 @@
+> 🇺🇦 **Українська (канонічна)** · 🇳🇱 [Nederlandse versie](./SKILL.nl.md)
+
 ---
 name: mijn-ruimte
-description: Bidirectional Google Antigravity plugin and MCP connector for Mijn Ruimte (*.tarasevych.com) — build and manage the site, control the browser extension, manage the local PC (agent.mjs), and administer the server and multi-agent coordination via https://mcp.tarasevych.com/antigravity.
+description: Двосторонній плагін і з'єднувач MCP Google Antigravity для Mijn Ruimte (*.tarasevych.com) — розбудова й керування сайтом, керування розширенням браузера, локальним комп'ютером (agent.mjs), сервером і багатоагентною координацією через https://mcp.tarasevych.com/antigravity.
 ---
 
-# Mijn Ruimte — Google Antigravity Plugin & Bidirectional Bridge (`/antigravity`)
+# Mijn Ruimte — плагін і двосторонній міст Google Antigravity (`/antigravity`)
 
-This skill equips **Google Antigravity** with a dedicated bidirectional connector (`https://mcp.tarasevych.com/antigravity`) and CLI bridge (`<path/to/this/skill>/scripts/mijn-ruimte`) to work with the **Mijn Ruimte** (`*.tarasevych.com`) platform across four live channels:
+Ця навичка надає **Google Antigravity** виділений двосторонній з'єднувач (`https://mcp.tarasevych.com/antigravity`) і міст командного рядка (`<шлях-до-навички>/scripts/mijn-ruimte`) для роботи з платформою **Mijn Ruimte** (`*.tarasevych.com`) через чотири робочі канали:
 
-1. **Site & Multi-Agent Coordination (`site` / `orch`)** — Read/write mail, calendar, cloud files, kanban board, GitHub repositories, and coordinate tasks across AI agents (`orch_overzicht`, `orch_context`, `orch_taak_start`, `orch_inleveren_*`).
-2. **Browser Extension (`browser`)** — Control the Mijn Ruimte Chrome/Firefox extension in real time across private (`_gebruiker`) and technical (`_beheer`) tab slots (`browser_open`, `browser_snapshot`, `browser_click`, `browser_type`, `browser_fill_form`, `browser_screenshot`, `browser_console`, `browser_network`, `browser_get_deep_diagnostics`, `browser_script`).
-3. **Local PC / Computer (`pc` via `agent.mjs`)** — Inspect and manage the paired computer (`machine_status`, `machine_processes`, `machine_read_file`, `machine_write_file`, `machine_list_dir`, `machine_exec`, `machine_docker`) in `_gebruiker` (personal PC) or `_beheer` (technical host).
-4. **Server & Releases (`server` in `_beheer`)** — Monitor and manage the production server while the owner's technical space is active (`server_health`, `deploy_status`, `deploy_logs`, `deploy_release`, `db_query_readonly`, `audit_tail`, `security_overview`).
+1. **Сайт і багатоагентна координація (`site` / `orch`)** — читання та запис пошти, календаря, хмарних файлів, дошки завдань, репозиторіїв GitHub і координація задач між агентами штучного інтелекту (`orch_overzicht`, `orch_context`, `orch_taak_start`, `orch_inleveren_*`).
+2. **Розширення браузера (`browser`)** — керування розширенням Mijn Ruimte для Chrome/Firefox у реальному часі в приватному (`_gebruiker`) і технічному (`_beheer`) слотах вкладок (`browser_open`, `browser_snapshot`, `browser_click`, `browser_type`, `browser_fill_form`, `browser_screenshot`, `browser_console`, `browser_network`, `browser_get_deep_diagnostics`, `browser_script`).
+3. **Локальний комп'ютер (`pc` через `agent.mjs`)** — огляд і керування підключеним комп'ютером (`machine_status`, `machine_processes`, `machine_read_file`, `machine_write_file`, `machine_list_dir`, `machine_exec`, `machine_docker`) у приватному (`_gebruiker`) або технічному (`_beheer`) контурі.
+4. **Сервер і випуски (`server` у `_beheer`)** — моніторинг і адміністрування робочого сервера за активного технічного простору власника (`server_health`, `deploy_status`, `deploy_logs`, `deploy_release`, `db_query_readonly`, `audit_tail`, `security_overview`).
 
-## Canonical Endpoint & Tool Naming
+## Канонічна адреса та іменування інструментів
 
-- **Dedicated MCP Endpoint**: `https://mcp.tarasevych.com/antigravity`
-- **OAuth Protected Resource Metadata (RFC 9728)**: `https://mcp.tarasevych.com/.well-known/oauth-protected-resource/antigravity`
-- **Web Control Panel**: `https://mcp.tarasevych.com/agenten#agent/antigravity`
-- **v2 Tool Name Pattern**: `<essentie>_antigravity_<subdomein>[_<dienst>]_tarasevych_com_<gebruiker|beheer>` (always `<= 64` characters).
-  - Tools ending in `_gebruiker` operate in the user's **private space**.
-  - Tools ending in `_beheer` operate in the **technical space** (visible and callable only while the owner's technical profile is active and delegated).
+- **Виділена кінцева точка MCP**: `https://mcp.tarasevych.com/antigravity`
+- **Метадані захищеного ресурсу OAuth (RFC 9728)**: `https://mcp.tarasevych.com/.well-known/oauth-protected-resource/antigravity`
+- **Вебпанель керування**: `https://mcp.tarasevych.com/agenten#agent/antigravity`
+- **Шаблон імен інструментів v2**: `<сутність>_antigravity_<піддомен>[_<служба>]_tarasevych_com_<gebruiker|beheer>` (завжди `<= 64` символи).
+  - Інструменти із закінченням `_gebruiker` працюють у **приватному просторі** користувача.
+  - Інструменти із закінченням `_beheer` працюють у **технічному просторі** (видимі й доступні лише тоді, коли технічний профіль власника активний і делегований).
 
-## CLI Commands (`<path/to/this/skill>/scripts/mijn-ruimte`)
+## Команди сценарію (`<шлях-до-навички>/scripts/mijn-ruimte`)
 
-Always invoke the bundled CLI script using `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte <Command> [flags]`:
+Викликайте вбудований сценарій за допомогою `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte <Команда> [прапорці]`:
 
-### 1. Configure & Test Connection
+### 1. Налаштування та перевірка з'єднання
 ```bash
-# Save endpoint & configure ~/.gemini/settings.json for Antigravity
-node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Verbind --url https://mcp.tarasevych.com/antigravity [--token <BEARER_TOKEN>]
+# Зберегти кінцеву точку та налаштувати ~/.gemini/settings.json для Antigravity
+node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Verbind --url https://mcp.tarasevych.com/antigravity [--token <ТОКЕН>]
 
-# Check live RFC 9728 PRM metadata, MCP session status, and visible tools per channel
+# Перевірити метадані RFC 9728, стан сесії MCP і видимі інструменти за каналами
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Status
 
-# List all granted tools (optionally filtered by --groep or --kant gebruiker|beheer)
+# Вивести всі надані інструменти (за потреби з фільтром --groep або --kant gebruiker|beheer)
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Lijst [--kant gebruiker|beheer]
 ```
 
-### 2. Bidirectional Site & Multi-Agent Coordination (`orch_*`)
+### 2. Двостороння координація сайту та агентів (`orch_*`)
 ```bash
-# Fetch live multi-agent orchestration overview from the site
+# Отримати актуальний огляд координації агентів із сайту
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte OrchOverzicht
 
-# Fetch compact rules context (CONTEXT-COMPACT.md + lock hash)
+# Отримати стислий контекст правил (CONTEXT-COMPACT.md + геш замка)
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte OrchContext
 
-# Register a new task in orchestration via MCP
+# Зареєструвати нову задачу в оркестрації через MCP
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte OrchTaakStart --id AGPLUGIN-002 --samenvatting "Опис задачі"
 ```
 
-### 3. Bidirectional Browser Control (`browser_*`)
+### 3. Двостороннє керування браузером (`browser_*`)
 ```bash
-# List open tabs in the unlocked browser slot
+# Перелік відкритих вкладок у розблокованому слоті браузера
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserTabs [--kant gebruiker|beheer]
 
-# Open a URL in the browser slot
+# Відкрити адресу в слоті браузера
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserOpen --doelUrl https://tarasevych.com [--kant gebruiker]
 
-# Capture DOM snapshot of the active tab
+# Зняти знімок дерева документа активної вкладки
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserSnapshot [--kant gebruiker]
 
-# Click or type in the active tab
+# Натиснути елемент або ввести текст в активній вкладці
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserKlik --selector "button[data-agent-terug]"
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserTyp --selector "input[name=q]" --tekst "Antigravity"
 
-# Take a screenshot or run deep Chrome Debugger diagnostics (_beheer)
+# Зробити знімок екрана або запустити глибоку діагностику налагоджувача (`_beheer`)
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserSchermafdruk [--kant gebruiker]
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserDiagnose
 ```
 
-### 4. Bidirectional Local PC Control (`machine_*`)
+### 4. Двостороннє керування локальним комп'ютером (`machine_*`)
 ```bash
-# System status (CPU, RAM, OS, uptime) of paired PC
+# Стан системи (процесор, пам'ять, ОС, час роботи) підключеного комп'ютера
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcStatus [--kant gebruiker]
 
-# List or read files in allowed roots on the PC
+# Переглянути теки або прочитати файли в дозволених кореневих каталогах
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcBestanden --pad . [--kant gebruiker]
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcLees --pad README.md [--kant gebruiker]
 
-# Write a file or run an allowlisted command on the PC
+# Записати файл або виконати дозволену команду на комп'ютері
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcSchrijf --pad notes.txt --inhoud "Тест"
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcOpdracht --opdracht "git status"
 
-# Inspect Docker containers on the PC or server
+# Перевірити контейнери Docker на комп'ютері або сервері
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcDocker [--kant gebruiker|beheer]
 ```
 
-### 5. Bidirectional Server & Release Administration (`_beheer`)
+### 5. Двостороннє адміністрування сервера та випусків (`_beheer`)
 ```bash
-# Check server health, services, and database status
+# Перевірити справність сервера, служб і бази даних
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerGezondheid
 
-# Check deployment status, live release, and service logs
+# Перевірити стан розгортання, встановлений випуск і журнали служб
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerUitrolStatus
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerRelease
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerLogs --dienst hub --regels 100
 
-# Tail the audit log
+# Переглянути останні записи журналу аудиту
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerAudit --limiet 25
 ```
 
-### 6. Generic Tool Call & Stdio MCP Bridge
+### 6. Довільний виклик інструмента та міст стандартного введення-виведення MCP
 ```bash
-# Call any v2 tool directly by name or short id
-node .agents/skills/mijn-ruimte/scripts/mijn-ruimte RoepAan --hulpmiddel <tool_name> --args '{"key":"value"}'
+# Викликати будь-який інструмент v2 безпосередньо за повною або короткою назвою
+node .agents/skills/mijn-ruimte/scripts/mijn-ruimte RoepAan --hulpmiddel <назва_інструмента> --args '{"ключ":"значення"}'
 
-# Run as a standard MCP stdio server bridging to https://mcp.tarasevych.com/antigravity
+# Запустити стандартний сервер stdio MCP з мостом до https://mcp.tarasevych.com/antigravity
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte McpStdio
 ```
 
-## Safety & Governance Rules
-- **Pending Approvals**: When a write/action tool returns `status: "pending"`, the site is waiting for the user's click in `BevestigingenPaneel` at `https://mcp.tarasevych.com/agenten#agent/antigravity`. Inform the user and do not retry in a loop.
-- **Technical Space (`_beheer`)**: If a `_beheer` tool returns `TECH_PROFILE_OFF`, ask the owner to enable or delegate the technical session on `https://mcp.tarasevych.com/agenten#agent/antigravity`.
-- **Repository Rules**: Always follow `AGENTS.md` and `ANTIGRAVITY.md` when modifying code in `Tarasevych/hub`.
+## Правила безпеки та врядування
+- **Очікування підтвердження**: коли інструмент запису або дії повертає `status: "pending"`, сайт очікує підтвердження користувача в `BevestigingenPaneel` на `https://mcp.tarasevych.com/agenten#agent/antigravity`. Повідомте про це користувача й не повторюйте виклик у циклі.
+- **Технічний простір (`_beheer`)**: якщо інструмент `_beheer` повертає `TECH_PROFILE_OFF`, попросіть власника увімкнути або делегувати технічну сесію на `https://mcp.tarasevych.com/agenten#agent/antigravity`.
+- **Правила репозиторію**: завжди дотримуйтесь `AGENTS.md` та `ANTIGRAVITY.md` під час внесення змін у `Tarasevych/hub`.

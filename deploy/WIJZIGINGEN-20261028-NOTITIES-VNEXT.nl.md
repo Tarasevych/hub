@@ -22,7 +22,7 @@ Aanpassing aan de tussentijdse update (28-10, 22:43): de eigenaar heeft `migrati
 | Veilige Markdown-weergave (alles wordt geëscaped, alleen `https`-links, DOMPurify als tweede laag) | **implemented** | `shared/notities-vnext-model.ts` → `markdownNaarHtml`, `src/notities/NotitieKaart.tsx` |
 | Scherm "Integraties" met eerlijke statussen (`beschikbaar` alleen bestanden; `alleen-invoer`; `beperkt`; `gepland`) — geen enkele "Koppelen"-knop zonder connector | **implemented** | `shared/notities-vnext-model.ts` → `NOTITIE_BRONNEN`, `src/notities/NotitiesBronnen.tsx` |
 
-Integratiematrix: Markdown/TXT/JSON — **implemented**; Obsidian, Apple Notes, HONOR/HUAWEI, Samsung — **import-only** (via dezelfde bestanden); Google Keep — **restricted** (Workspace); Google Calendar-koppeling, OneNote Graph, Evernote (MCP/ENEX), Notion, ColorNote — **planned** (geen connectoren, geen knoppen). Bijlagen, backlinks, herinneringen, OCR/spraak, AI, gezamenlijk bewerken, PWA offline — **niet geïmplementeerd** (P1/P2 volgens bestek).
+Integratiematrix: Markdown/TXT/JSON — **implemented**; Obsidian, Apple Notities, HONOR/HUAWEI, Samsung — **import-only** (via dezelfde bestanden); Google Behouden — **restricted** (Workspace); Google Calendar-koppeling, OneNote Graph, Evernote (MCP/ENEX), Notion, ColorNote — **planned** (geen connectoren, geen knoppen). Bijlagen, backlinks, herinneringen, OCR/spraak, AI, gezamenlijk bewerken, PWA offline — **niet geïmplementeerd** (P1/P2 volgens bestek).
 
 ### Gedrag van het oude pad na 0127
 
@@ -48,7 +48,7 @@ Omgeving: Node v22.22.0 (de repository vraagt ≥ 24; `npm ci` met EBADENGINE), 
 | `ontwerp-fundament` 31/34, `vlaggen` 53/54, `tech-bundels` 33/34, `account-wissen` 19/20 | **dezelfde 4 fouten op het basisarchief zonder mijn wijzigingen** (ruimtes.css/werkblad CSS, app-rol vlaggen, TechLaag, `cloud_provider_policy_audit_m6`) — geen enkele raakt de notitiebestanden |
 | Terugdraaien (`deploy/notities-vnext-terugdraaien.sql`) | SOURCE-ONLY: niet uitgevoerd op een live DB; logica: prullenbak → bord, DROP van drie tabellen, verwijderen van vlag en migratie-item 0127 |
 
-NOT TESTED: externe integraties (zijn niet aanwezig in de code), RLS met de rollen `mijnruimte_app/system` (in deze omgeving één superrol; policies zijn identiek aan 0019), screenreader, zoom 400 %, belasting.
+NIET TESTED: externe integraties (zijn niet aanwezig in de code), RLS met de rollen `mijnruimte_app/system` (in deze omgeving één superrol; policies zijn identiek aan 0019), screenreader, zoom 400 %, belasting.
 
 ### Terugdraaiplan
 
