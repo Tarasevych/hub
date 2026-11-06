@@ -216,6 +216,24 @@ export async function main(): Promise<number> {
   const { check, einde } = checker('extensie-ui');
   const innerHtml: number[] = [];
   try {
+    // ------------------------------------------------------------ 0.9.0 (EXT090-001): «Увійти» in de kop in plaats van «Обліковий запис: —»
+    for (const pagina of ['popup', 'sidepanel', 'options'] as const) {
+      const p = await laad(pagina, { ...status({ prive: 'niet-gekoppeld', profielTab: null }), accountEmail: '' });
+      const knop = p.$('inloggen');
+      check(`${pagina} zonder koppeling: geen «Обліковий запис: —» en geen «Активна вкладка не на tarasevych.com», wel «Не ввійшли» + knop «Увійти» met uitleg van de gevolgen`,
+        !!knop && knop.textContent === 'Увійти' && /Не ввійшли/.test(p.$('account').textContent) && !/—/.test(p.$('account').textContent)
+        && p.$('profiel-tab').hidden === true && /підключить це розширення/.test(knop.getAttribute('title') || '') && p.$('account').getAttribute('data-ingelogd') === '0',
+        `${p.$('account')?.textContent} / ${p.$('profiel-tab')?.hidden}`);
+      knop?.click(); await wacht();
+      check(`${pagina}: «Увійти» opent de site, die na het inloggen deze extensie meteen koppelt (?koppel=prive#extensie)`, p.tabs.at(-1) === 'https://mcp.tarasevych.com/agents?koppel=prive#extensie', p.tabs.join());
+    }
+    {
+      const p = await laad('popup', { ...status({ prive: 'vergrendeld' }), accountEmail: '' });
+      check('gekoppeld maar e-mail nog niet geladen: geen knop, wel «підключено (пошта завантажується…)» en het profiel van het tabblad',
+        !p.$('inloggen') && /підключено/.test(p.$('account').textContent) && p.$('profiel-tab').hidden === false && p.$('account').getAttribute('data-ingelogd') === '1', p.$('account').textContent);
+      const nl = await laad('popup', { ...status({ prive: 'niet-gekoppeld', profielTab: null }), accountEmail: '' }, { taal: 'nl-NL' });
+      check('nl: knop «Aanmelden» en «Niet aangemeld»', nl.$('inloggen')?.textContent === 'Aanmelden' && /Niet aangemeld/.test(nl.$('account').textContent));
+    }
     // ------------------------------------------------------------ pop-up: kaart «Як користувач», elke staat, zonder techRecht
     for (const staat of STATEN) {
       const p = await laad('popup', status({ prive: staat }));

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "EXT090-001",
+  "agent": "claude",
+  "tak": "feature/ext090-001-20261106-142448",
+  "basisCommit": "b14a59e3c4b259b57d413be498281d49f1e6969c",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.9",
+  "regelsHash": "fd7f99f180da62313ee13a1ffe7a99c5e933883419d54efc2d9f4d7bcd7b8dd4",
+  "staat": "in_progress",
+  "gestart": "2026-11-06T14:24:48.880Z",
+  "bijgewerkt": "2026-11-06T14:24:48.881Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

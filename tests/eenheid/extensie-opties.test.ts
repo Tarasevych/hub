@@ -84,7 +84,7 @@ export async function main(): Promise<number> {
     check('opties: mislukken wordt gemeld (diag-status), niet stil teruggesprongen', opt.includes("getElementById('diag-status')") && html.includes('id="diag-status"'));
     check('opties: zelftest zonder lijst breekt de pagina niet', opt.includes('!Array.isArray(r.checks)'));
     check("opties: «Керування на сайті» → https://mcp.tarasevych.com/agents#toegang (0.6: één hub)", opt.includes("'https://mcp.tarasevych.com/agents#toegang'"));
-    check('versie 0.8.1 (standaardpakket zonder debugger; was 0.8.0)', manifest.version === '0.8.1');
+    check('versie 0.9.1 (standaardpakket zonder debugger; 0.9.0 = ingebouwde AI van Chrome, 0.9.1 = zonder F5 + «Увійти»)', manifest.version === '0.9.1');
     const ui = readFileSync(join(W, 'extension/ui.js'), 'utf8');
     const pop = readFileSync(join(W, 'extension/popup.html'), 'utf8') + readFileSync(join(W, 'extension/popup.js'), 'utf8');
     check('0.6: koppelen als gebruiker «Додати доступ як користувач» → agents?koppel=prive#extensie; geen vaste technische knop meer in de pop-up',

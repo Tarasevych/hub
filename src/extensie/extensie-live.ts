@@ -17,6 +17,8 @@ import {
   PRIVE_HOSTS, PRIVE_MAX_DAGEN, STAAT_TEKST, isBrowserCap, isDiagRechtStand, isPriveHost, isToegestaneHost,
   type BrowserCap, type DiagRechtStand, type ExtensieAgentStatus, type ExtensieStaat,
 } from '../../shared/extensie-ontgrendeling';
+import { vergelijkVersie } from '../../shared/extensie-update';
+import { filterLokaleAiKeuze, type LokaleAiKeuze } from '../../shared/lokale-ai-model';
 
 export const POLL_MS = 10_000;
 /** Diensten waarop herhaald gepold wordt (zelfde set als EXTENSIE_DIENSTEN op de server). */
@@ -62,6 +64,8 @@ export type LokaalPubliek = {
   prive?: LokaalSlot; technisch?: LokaalSlot | null;
   /** 0.6.1: stand van het debuggerrecht (diepe diagnose). Ontbreekt bij 0.6.0 en ouder. */
   diagnostiek?: LokaalDiagnostiek;
+  /** 0.9.0 (EXT090-001): keuzes voor de ingebouwde AI van Chrome (hoofdschakelaar + API's); null = extensie meldt niets. */
+  lokaleAi?: LokaleAiKeuze | null;
 };
 
 const bool = (v: unknown) => (typeof v === 'boolean' ? v : undefined);
@@ -93,6 +97,7 @@ export function filterPubliek(data: unknown): LokaalPubliek | null {
     const g = d.diagnostiek as Record<string, unknown>;
     if (isDiagRechtStand(g.stand)) uit.diagnostiek = { stand: g.stand, optIn: g.optIn === true, actief: g.actief === true, aanvraagbaar: g.aanvraagbaar === true };
   }
+  if ('lokaleAi' in d) uit.lokaleAi = filterLokaleAiKeuze(d.lokaleAi);
   for (const s of SLOTS) {
     const v = d[s];
     if (v === null && s === 'technisch') uit.technisch = null;
@@ -324,6 +329,10 @@ export function maakExtensieLive(deps: LiveDeps): ExtensieLiveStore {
   const neemLokaal = (publiek: LokaalPubliek) => {
     const op = nu();
     const vorig = t.lokaal ?? {};
+    // EXT090-001: na bijwerken/herladen van de extensie kan een VERWEESDE brug van de oude versie nog op deze pagina hangen en
+    // «niet gekoppeld» melden naast de nieuwe. Een bericht met een LAGERE versie dan de hoogste die deze pagina al zag, telt niet:
+    // zo valt de sessie op de site niet weg en is F5 niet nodig.
+    if (publiek.versie && vorig.versie && vergelijkVersie(publiek.versie, vorig.versie) < 0) return;
     // Een andere agent (opnieuw gekoppeld) → oude velden niet meenemen.
     const basis = publiek.agentId && vorig.agentId && publiek.agentId !== vorig.agentId ? {} : vorig;
     zet({ lokaal: { ...basis, ...publiek }, lokaalOp: op, ...(publiek.staat ? { staatOp: op } : {}), ...(publiek.extensieId ? { extensieId: publiek.extensieId } : {}) });
