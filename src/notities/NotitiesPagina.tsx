@@ -12,6 +12,7 @@ import NotitieKaart from './NotitieKaart';
 import { NotitiesFout, notitiesClient, voorkeurenBewaren, voorkeurenLezen, type LijstAntwoord, type Voorkeuren } from './notities-client';
 import { SOORT_LABEL, foutTekst, inVeld, locale, tr, useSmal, type Lang } from './tekst';
 import './notities-vnext.css';
+import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../shared/zoek-diepe-link';
 
 const NotitieBewerker = lazy(() => import('./NotitieBewerker'));
 const NotitiesImport = lazy(() => import('./NotitiesImport'));
@@ -89,6 +90,15 @@ export default function NotitiesPagina({ lang }: { lang: Lang }) {
     finally { setBezig(false); }
   };
   const open = (n: Notitie) => { if (n.verwijderdOp) return; setLaag({ soort: 'bewerk', notitie: n }); };
+  // ZOEKDIEP-001 (05.11.2026): diepe link uit de zoekpagina (?open_item_id=<id>; zelfde id als het bord, migratie 0127) → de notitie
+  // ophalen (ook als zij niet op de eerste pagina staat) en in de bewerker openen. Niet gevonden → eerlijke melding.
+  const zoekNotitie = useRef(typeof location !== 'undefined' ? diepeWaarde(location.search, DIEPE_PARAMS.item) : '');
+  useEffect(() => {
+    const id = zoekNotitie.current; if (!id) return;
+    zoekNotitie.current = ''; wisDiepeParams(DIEPE_PARAMS.item);
+    notitiesClient.een(id).then((n) => { if (n && !n.verwijderdOp) open(n); else setFout(tr(lang, 'Нотатку з пошуку не знайдено: можливо, її вже видалено.', 'De notitie uit de zoekresultaten is niet gevonden: misschien is zij verwijderd.')); },
+      () => setFout(tr(lang, 'Нотатку з пошуку не знайдено: можливо, її вже видалено.', 'De notitie uit de zoekresultaten is niet gevonden: misschien is zij verwijderd.')));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const bewaard = (n: Notitie, nieuw: boolean) => { toon(nieuw ? tr(lang, 'Нотатку створено.', 'Notitie aangemaakt.') : tr(lang, 'Збережено.', 'Opgeslagen.')); if (nieuw) setLaag({ soort: 'bewerk', notitie: n }); void laad({ stil: true }); };
   const mapNieuw = async () => {
     const naam = (nieuweMap ?? '').trim(); if (!naam) { setNieuweMap(null); return; }

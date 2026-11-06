@@ -79,8 +79,19 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
 
   // Overdracht uit Overzicht/Werkruimtes: open een bestand of de nieuwe-mapdialoog direct bij binnenkomst.
   useEffect(() => {
+    // ZOEKDIEP-001 (05.11.2026): 'cvn-open' draagt een heel bestand (Overzicht/Recent/Postvak) óf een kale id (zoekpagina en
+    // diepe link ?open_item_id=). Vroeger werd een kale id stil genegeerd (JSON.parse faalde), dus «Пошук» opende nooit het bestand.
     const open = sessieNeem('cvn-open');
-    if (open) { try { const b = JSON.parse(open) as CloudBestand; if (b && typeof b === 'object' && b.id) setDetail(b); } catch { /* geen geldige overdracht — stil overslaan */ } }
+    if (open) {
+      let b: CloudBestand | null = null;
+      try { const p = JSON.parse(open) as CloudBestand; if (p && typeof p === 'object' && p.id) b = p; } catch { /* geen JSON: een kale id */ }
+      if (b) setDetail(b);
+      else if (/^[\x21-\x7e]{1,200}$/.test(open)) {
+        void cloudClient.bestanden({ id: open })
+          .then((l) => { if (l.bestanden[0]) setDetail(l.bestanden[0]); else toon(tr(lang, 'Файл не знайдено: можливо, його видалено або він належить іншому простору.', 'Bestand niet gevonden: misschien verwijderd of van een andere ruimte.')); })
+          .catch((e) => toon(cloudFoutTekst(lang, e)));
+      }
+    }
     if (sessieNeem('cvn-nieuwe-map') === '1') setLaag({ t: 'nieuwe-map' });
   }, []);
 

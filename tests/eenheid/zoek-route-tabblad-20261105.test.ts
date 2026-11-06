@@ -77,8 +77,10 @@ export async function main(): Promise<number> {
       urlVan((o) => o.id === 'pagina:mail/local') === 'https://mail.tarasevych.com/prive?lang=uk' && urlVan((o) => o.id === 'pagina:admin/sso') === 'https://admin.tarasevych.com/sso?lang=uk' && urlVan((o) => o.id === 'pagina:huis/devices') === 'https://huis.tarasevych.com/apparaten?lang=uk');
 
     // C. adapters (zelfde contract: pad = tabblad-id)
-    check('C adapters: mail inbox → /postvak-in (+ params), cloud search → /zoeken, hub notes → /notities, github repositories → /repositories',
-      routeUrl({ host: 'mail', pad: 'inbox', params: { bericht: 'm1' } }, 'nl') === 'https://mail.tarasevych.com/postvak-in?bericht=m1&lang=nl'
+    // ZOEKDIEP-001: de oude parameter `bericht` wordt `open_message_id` — de naam die de mailpagina leest (shared/zoek-diepe-link.ts).
+    check('C adapters: mail inbox → /postvak-in (+ open_message_id, ook uit het oude `bericht`), cloud search → /zoeken, hub notes → /notities, github repositories → /repositories',
+      routeUrl({ host: 'mail', pad: 'inbox', params: { bericht: 'm1' } }, 'nl') === 'https://mail.tarasevych.com/postvak-in?open_message_id=m1&lang=nl'
+      && routeUrl({ host: 'mail', pad: 'inbox', params: { open_message_id: 'm1', open_mail_account: 'a1' } }, 'nl') === 'https://mail.tarasevych.com/postvak-in?open_message_id=m1&open_mail_account=a1&lang=nl'
       && routeUrl({ host: 'cloud', pad: 'search' }, 'uk') === 'https://cloud.tarasevych.com/zoeken?lang=uk'
       && routeUrl({ host: 'hub', pad: 'notes' }, 'uk') === 'https://hub.tarasevych.com/notities?lang=uk'
       && routeUrl({ host: 'github', pad: 'repositories' }, 'uk') === 'https://github.tarasevych.com/repositories?lang=uk');

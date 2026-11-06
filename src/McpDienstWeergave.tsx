@@ -530,7 +530,7 @@ export default function McpServiceView({ lang, tab }: Props) {
                   </div>
                   {items.length === 0 ? <p className="mcp-meta">{t("У цій колонці немає задач.", "Geen taken in deze kolom.")}</p> : null}
                   {items.map((task) => (
-                    <div key={task.id} className="mcp-task" data-board-item={task.id}>
+                    <div key={task.id} className="mcp-task" data-board-item={task.id} data-zoek-doel={`bord:${task.id}`}>
                       <p>{task.title}</p>
                       <div className="mcp-moves" role="group" aria-label={t("Перемістити до", "Verplaatsen naar")}>
                         {statuses.filter((next) => next !== status).map((next) => (

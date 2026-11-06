@@ -8,6 +8,13 @@ const twee = (n: number) => String(n).padStart(2, '0');
 /** Plaatselijke kalenderdag (browsertijd) van een Date. */
 export const plaatselijkeDag = (d: Date) => `${d.getFullYear()}-${twee(d.getMonth() + 1)}-${twee(d.getDate())}`;
 export const vandaagPlaatselijk = () => plaatselijkeDag(new Date());
+/** ZOEKDIEP-001: de plaatselijke dag waarop een afspraak begint (hele dag: de datum zelf, nooit verschoven door de tijdzone). */
+export function dagVanItem(item: Pick<AgendaItem, 'begin' | 'heleDag'>): string {
+  const b = String(item.begin || '');
+  if (item.heleDag || DATUM.test(b)) return b.slice(0, 10);
+  const d = new Date(b);
+  return Number.isNaN(d.getTime()) ? '' : plaatselijkeDag(d);
+}
 
 /** Valt de afspraak (deels) op deze plaatselijke dag? Hele dagen zoals het model het zegt (inclusief einde). */
 export function opPlaatselijkeDag(item: Pick<AgendaItem, 'begin' | 'einde' | 'heleDag'>, dag: string): boolean {

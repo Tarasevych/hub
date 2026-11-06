@@ -253,8 +253,9 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
     try { requested = new URL(location.href).searchParams.get('open_item_id') || ''; } catch { requested = ''; }
     if (!requested) return;
     const known = [...data.items, ...data.inbox, ...data.recent].find(value => value.id === requested);
-    if (!known) return;
     openItemConsumed.current = true;
+    // ZOEKDIEP-001 (05.11.2026): niet gevonden bleef de parameter vroeger stil hangen; nu een eerlijke melding en weg uit de adresbalk.
+    if (!known) { try { const current = new URL(location.href); current.searchParams.delete('open_item_id'); history.replaceState({}, '', `${current.pathname}${current.search}${current.hash}`); } catch {} notify(t('Елемент із пошуку не знайдено в хмарі: можливо, його вже видалено або переміщено.', 'Het item uit de zoekresultaten staat niet (meer) in de cloud: misschien is het verwijderd of verplaatst.'), 'error'); return; }
     try { const current = new URL(location.href); current.searchParams.delete('open_item_id'); history.replaceState({}, '', `${current.pathname}${current.search}${current.hash}`); } catch {}
     void openItem(known);
   }, [loading, data.items, data.inbox, data.recent]);

@@ -13,6 +13,7 @@
 import { maskeerGeheimen } from '../shared/geheim-patronen';
 import { createHash } from 'node:crypto';
 import { alsGebruiker } from './ai-toestemmingen';
+import { verrijkDiepeRoutes } from './zoek/diepe-link';
 import type { Lade } from '../shared/ruimte-scheiding';
 import {
   BRON_NAAM, PG_STEMMER, SOORT_RANG, ZOEK_BRONNEN, ZOEK_VERSIE, isZoekBron, isZoekSoort, isZoekTaal,
@@ -59,7 +60,7 @@ export function objectNaarRij(o: ZoekObject): Rij {
   const inhoud = geheimenVerbergen(tekst(o.tekst, LIMIETEN.tekst));
   const trefwoorden = (o.trefwoorden || []).map(w => tekst(w, 200).trim()).filter(Boolean).slice(0, 200).join(' ; ').slice(0, LIMIETEN.trefwoorden);
   const pad = tekst(o.pad, LIMIETEN.pad);
-  const route = o.route && typeof o.route === 'object' && typeof o.route.pad === 'string' ? { host: o.route.host, pad: tekst(o.route.pad, 500), ...(o.route.hash ? { hash: tekst(o.route.hash, 200) } : {}), ...(o.route.params ? { params: Object.fromEntries(Object.entries(o.route.params).slice(0, 20).map(([k, v]) => [tekst(k, 60), tekst(v, 300)])) } : {}) } as ZoekRoute : null;
+  const route = o.route && typeof o.route === 'object' && typeof o.route.pad === 'string' ? { host: o.route.host, pad: tekst(o.route.pad, 500), ...(o.route.hash ? { hash: tekst(o.route.hash, 200) } : {}), ...(o.route.params ? { params: Object.fromEntries(Object.entries(o.route.params).slice(0, 20).map(([k, v]) => [tekst(k, 60), tekst(v, 1100)])) } : {}) } as ZoekRoute : null;
   const taal: ZoekTaal | '' = isZoekTaal(o.taal) ? o.taal : taalRaden(`${titel} ${omschrijving} ${inhoud.slice(0, 3000)}`);
   const formaat = tekst(o.formaat, 40).toLowerCase();
   let extra: Record<string, unknown> = o.extra && typeof o.extra === 'object' ? { ...o.extra } : {};
@@ -455,6 +456,8 @@ export async function zoekInLaden(groepen: ReadonlyArray<LadeGroep>, vraag: Zoek
       score, percent: percentVan(score, maxScore), uitleg: uitlegVan(signalen), fragment,
     };
   });
+  // ZOEKDIEP-001: oude objecten → de parameters die de pagina's lezen (backend/zoek/diepe-link.ts).
+  await verrijkDiepeRoutes(userId, items).catch(() => undefined);
   if (process.env.ZOEK_DEBUG === 'aan') console.error(`[zoek] node ${Date.now() - tNode} ms (fragmenten/uitleg voor ${items.length} rijen), totaal ${Date.now() - t0} ms`);
   return { q, qNorm, items, ...(uit.facets ? { facets: uit.facets } : {}), suggesties: uit.suggesties, totaal: uit.totaal, pagina, perPagina, bron: 'index', ...(uit.verzwakt ? { verzwakt: true } : {}), duurMs: Date.now() - t0, versie: ZOEK_VERSIE };
 }

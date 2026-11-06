@@ -27,7 +27,7 @@ const DIENSTEN = ['cloud', 'hub'] as const;
 
 // Spiegel van IntegratiesUit in src/cloud-vnext/cloud-client.ts (de browser is de bron van het contract; hier alleen de vorm).
 type IntegratiesUit = {
-  google: { gekoppeld: boolean; accounts: Array<{ id: string; email: string; actief: boolean; status: string; sync?: SyncFeit }>; fout?: string };
+  google: { gekoppeld: boolean; accounts: Array<{ id: string; email: string; actief: boolean; status: string; principalId?: string; sync?: SyncFeit }>; fout?: string };
   photos: { gekoppeld: boolean };
   m4: { stagingAan: boolean; aanbieders: Array<{ id: string; sleutelsAanwezig: boolean; accounts: Array<{ id: string; label: string; status: string }> }> };
   zoekIndex: { cloud: boolean; drive: boolean };
@@ -57,7 +57,7 @@ const M4_FAMILIES = [
 const envAanwezig = (naam: string) => Boolean(String(process.env[naam] || '').trim());
 
 type SnapshotAccount = { id: string; email: string; status: string } | null;
-type Snapshot = { id: string; accounts: Array<{ id: string; email: string; status: string }>; activeAccountId?: string };
+type Snapshot = { id: string; accounts: Array<{ id: string; email: string; status: string; principalId?: string }>; activeAccountId?: string };
 
 async function googleDeel(ownerUserId: string): Promise<IntegratiesUit['google']> {
   try {
@@ -67,6 +67,8 @@ async function googleDeel(ownerUserId: string): Promise<IntegratiesUit['google']
     const actiefId = String(google.activeAccountId || '');
     const accounts = (google.accounts || []).map((item) => ({
       id: String(item.id || ''), email: String(item.email || ''), actief: item.id === actiefId && item.status === 'connected', status: String(item.status || ''),
+      // ZOEKDIEP-001: de diepe link van een Drive-treffer noemt het account met principalId (open_drive_principal).
+      ...(item.principalId ? { principalId: String(item.principalId).slice(0, 120) } : {}),
     }));
     const feiten = await syncFeiten(ownerUserId);
     const metSync = accounts.map((item) => { const f = feiten.get(item.id); return f ? { ...item, sync: f } : item; });

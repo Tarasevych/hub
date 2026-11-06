@@ -2,11 +2,13 @@
 // tabbladen van de dienst cloud (public/canonical-service.js). De oude pagina (src/CloudFunctioneelWeergave.tsx) blijft achter
 // de vlag UIT volledig bestaan; beide lezen dezelfde records. Agenda en Foto's hergebruiken de bestaande Google-weergaven.
 import IntegratieStrook from '../integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, Cloud, FolderOpen, Images, Inbox, Link2, LayoutDashboard, MoreHorizontal, Plus, Search, Upload, Users } from 'lucide-react';
 import { cloudClient, CloudFout, type Overzicht as OverzichtUit } from './cloud-client';
 import { foutTekst, tr, useSmal, type Lang } from './tekst';
 import { paginaVerborgen } from '../foto/foto-vlaggen';
+import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../shared/zoek-diepe-link';
+import { sessieZet } from './hulp';
 import './cloud-vnext.css';
 import './cloud-vnext-integraties.css';
 import './cloud-vnext-mobiel.css';
@@ -33,11 +35,32 @@ const LABEL: Record<CloudTab, [string, string]> = {
   inbox: ['Швидкий вхід', 'Snelle invoer'], search: ['Пошук', 'Zoeken'], recent: ['Останні', 'Recent'], calendar: ['Календар', 'Agenda'], photos: ['Фото', 'Foto’s'],
   accounts: ['Інтеграції', 'Integraties'], google: ['Google Drive', 'Google Drive'], onedrive: ['OneDrive', 'OneDrive'], dropbox: ['Dropbox', 'Dropbox'],
 };
+/**
+ * ZOEKDIEP-001 (05.11.2026): een diepe link uit de zoekindex (?open_item_id= of ?open_file_id=&open_drive_principal=) gaat naar de
+ * bestaande overdracht tussen onderdelen (sessionStorage 'cvn-open' / 'cvn-drive-open'), en de parameters verdwijnen uit het adres.
+ * Geeft het tabblad terug dat de overdracht oppakt. Draait tijdens de render; gooit React die render weg (Suspense), dan staat
+ * de uitkomst nog in diepWachtend, want het adres is dan al schoon. Het effect van de pagina wist haar.
+ */
+let diepWachtend: CloudTab | '' = '';
+function neemDiepeLink(): CloudTab | '' {
+  if (typeof location === 'undefined') return '';
+  const item = diepeWaarde(location.search, DIEPE_PARAMS.item);
+  const bestand = diepeWaarde(location.search, DIEPE_PARAMS.bestand);
+  if (item) { sessieZet('cvn-open', item); wisDiepeParams(DIEPE_PARAMS.item); return (diepWachtend = 'files'); }
+  if (bestand) {
+    sessieZet('cvn-drive-open', JSON.stringify({ bestand, principal: diepeWaarde(location.search, DIEPE_PARAMS.drivePrincipal) }));
+    wisDiepeParams(DIEPE_PARAMS.bestand, DIEPE_PARAMS.drivePrincipal); return (diepWachtend = 'google');
+  }
+  return diepWachtend;
+}
 const ICOON: Record<CloudTab, typeof Cloud> = { overview: LayoutDashboard, files: FolderOpen, workspaces: Users, capture: Upload, inbox: Inbox, search: Search, recent: CalendarDays, calendar: CalendarDays, photos: Images, accounts: Link2, google: Cloud, onedrive: Cloud, dropbox: Cloud };
 
 export default function CloudPagina({ lang, tab, userEmail, sourceOrigin, tabContext, onNavigateTab }: { lang: Lang; tab: string; userEmail: string; sourceOrigin: string; tabContext: string; onNavigateTab: (id: string) => void }) {
   const smal = useSmal();
   const huidig: CloudTab = (TABS as readonly string[]).includes(tab) ? (tab as CloudTab) : 'overview';
+  // Tijdens de eerste render (vóór de effecten van de onderdelen), zodat «Мої файли» de overdracht bij binnenkomst al vindt.
+  const diep = useRef<CloudTab | '' | null>(null);
+  if (diep.current === null) diep.current = neemDiepeLink();
   const [ov, setOv] = useState<OverzichtUit | null>(null);
   const [fout, setFout] = useState('');
   const [melding, setMelding] = useState('');
@@ -48,6 +71,7 @@ export default function CloudPagina({ lang, tab, userEmail, sourceOrigin, tabCon
   }, [lang]);
   useEffect(() => { void vernieuw(); }, [vernieuw]);
   const naarTab = useCallback((t: CloudTab) => onNavigateTab(t), [onNavigateTab]);
+  useEffect(() => { const d = diep.current; diepWachtend = ''; if (d && d !== huidig) naarTab(d); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const props: OnderdeelProps = useMemo(() => ({ lang, smal, userEmail, sourceOrigin, tabContext, ov, vernieuw, toon, naarTab }), [lang, smal, userEmail, sourceOrigin, tabContext, ov, vernieuw, toon, naarTab]);
 
   const onderdeel = () => {
