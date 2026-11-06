@@ -12,6 +12,11 @@ import { checker } from './hulp/nep-google';
 
 const SCRIPT = 'deploy/uitrol/mijn-ruimte-uitrol.sh';
 const sh = (cmd: string, cwd?: string) => spawnSync('bash', ['-c', cmd], { cwd, encoding: 'utf8' });
+// Als root negeert het uitrolscript bewust alle UITROL_*-testpaden (zie plafond). Dan draait het als 'nobody' op de eigen
+// tijdelijke map (zoals ssh-ca-beheer.test.ts) — nooit tegen de echte /srv/mijn-ruimte/uitrol-inbox of /var/lib/mijn-ruimte-uitrol.
+const ALS_ROOT = process.getuid?.() === 0;
+const NIEMAND = 65534;
+const alsNiemand = (map: string) => { if (!ALS_ROOT) return {}; spawnSync('chown', ['-R', `${NIEMAND}:${NIEMAND}`, map]); return { uid: NIEMAND, gid: NIEMAND }; };
 
 function sleutel(map: string, naam: string) {
   const f = join(map, naam);
@@ -61,7 +66,7 @@ export async function main(): Promise<number> {
     const modusBestand = join(basis, 'modus');
     writeFileSync(stub, `#!/bin/bash\necho "$1 $2" >> "${spoor}"\ncat "$2/UITROL-VERSIE" >> "${spoor}"\nprintf '%s\\n' "\${MIJN_RUIMTE_UITROL_MODUS:-}" > "${modusBestand}"\n`); chmodSync(stub, 0o755);
     const env = { ...process.env, UITROL_INBOX: inbox, UITROL_WERK: werk, UITROL_STATUS_DIR: statusMap, UITROL_ONDERTEKENAARS: ondertekenaars, UITROL_INSTALLEER: stub, UITROL_LOCK: join(basis, 'lock'), UITROL_GROEP: 'nogroup', UITROL_PAKKETTEN_DIR: join(basis, 'pakketten') };
-    const draai = () => spawnSync('bash', [SCRIPT], { env, encoding: 'utf8' });
+    const draai = () => spawnSync('bash', [SCRIPT], { ...alsNiemand(basis), env, encoding: 'utf8' });
     const status = () => { try { return JSON.parse(readFileSync(join(statusMap, 'status.json'), 'utf8')); } catch { return {}; } };
     const spoorRegels = () => existsSync(spoor) ? readFileSync(spoor, 'utf8').trim().split('\n').filter(Boolean) : [];
     const leg = (bestand: string, metSig = true) => {
@@ -160,7 +165,7 @@ export async function main(): Promise<number> {
 
     // 10. ondertekenaarsbestand ontbreekt
     const p10 = pakket(pk, '20261008-130000'); onderteken(p10, goed); leg(p10);
-    r = spawnSync('bash', [SCRIPT], { env: { ...env, UITROL_ONDERTEKENAARS: join(basis, 'bestaat-niet') }, encoding: 'utf8' });
+    r = spawnSync('bash', [SCRIPT], { ...alsNiemand(basis), env: { ...env, UITROL_ONDERTEKENAARS: join(basis, 'bestaat-niet') }, encoding: 'utf8' });
     check('zonder publieke sleutel geen uitrol (GEEN_SLEUTEL)', r.status === 2 && status().code === 'GEEN_SLEUTEL');
 
     // ---------------------------------------------------------------- audit 18.10.2026: nooit stil sterven, echte oorzaak, voortgang, commit
@@ -218,7 +223,7 @@ async function nooitStil(c: NooitStilCtx) {
 
   // 3. onverwachte interne fout na «bezig CONTROLE» (testhaak, als root gewist) → trap schrijft mislukt AFGEBROKEN met regel en code.
   { const p = pakket(pk, '20261009-120000'); onderteken(p, goed); leg(p);
-    const r = spawnSync('bash', [SCRIPT], { env: { ...env, UITROL_TEST_BREEK: 'controle' }, encoding: 'utf8' });
+    const r = spawnSync('bash', [SCRIPT], { ...alsNiemand(basis), env: { ...env, UITROL_TEST_BREEK: 'controle' }, encoding: 'utf8' });
     const st = status();
     check('interne fout: vroeger bleef status «bezig CONTROLE»; nu mislukt AFGEBROKEN', r.status !== 0 && st.staat === 'mislukt' && st.code === 'AFGEBROKEN', `${r.status} ${JSON.stringify(st)}`);
     check('interne fout: tekst noemt regel en afsluitcode (uk + nl)', /рядок \d+, код \d+/.test(st.uk || '') && /regel \d+, code \d+/.test(st.nl || ''), `${st.uk} | ${st.nl}`);
@@ -229,7 +234,7 @@ async function nooitStil(c: NooitStilCtx) {
   { const stub = join(basis, 'stub-voortgang.sh');
     writeFileSync(stub, ['#!/bin/bash', ...[['kopie', 45], ['npm', 55], ['bouwen', 70], ['backup', 75], ['migraties', 80], ['activeren', 90], ['gezondheid', 95], ['nabewaken', 98]].map(([id, pct]) => `echo "[installeer] stap: ${id} (${pct}%) test"`), 'echo "[installeer] actief: x"', 'exit 0', ''].join('\n')); chmodSync(stub, 0o755);
     const p = pakket(pk, '20261009-130000'); onderteken(p, goed); leg(p);
-    const r = spawnSync('bash', [SCRIPT], { env: { ...env, UITROL_INSTALLEER: stub }, encoding: 'utf8' });
+    const r = spawnSync('bash', [SCRIPT], { ...alsNiemand(basis), env: { ...env, UITROL_INSTALLEER: stub }, encoding: 'utf8' });
     const pcts = runStappen().filter((s) => s.stap === 'installeren' && s.staat === 'bezig').map((s) => s.pct);
     check('voortgang: vroeger alleen 42 % tijdens het installeren; nu 42→45→55→70→75→80→90→95→98', r.status === 0 && JSON.stringify(pcts) === JSON.stringify([42, 45, 55, 70, 75, 80, 90, 95, 98]), JSON.stringify(pcts));
     check('voortgang: elke stapregel heeft een leesbare tekst (uk + nl)', runStappen().filter((s) => s.stap === 'installeren' && s.pct > 42).every((s) => s.uk.length > 10 && s.nl.length > 10));
@@ -254,7 +259,7 @@ echo "[installeer] FOUT: bouwen mislukt (journalctl -u mijn-ruimte-bouw-x)" >&2
 exit 1
 `); chmodSync(stub, 0o755);
     const p = pakket(pk, '20261009-140000'); onderteken(p, goed); leg(p);
-    const r = spawnSync('bash', [SCRIPT], { env: { ...env, UITROL_INSTALLEER: stub }, encoding: 'utf8' });
+    const r = spawnSync('bash', [SCRIPT], { ...alsNiemand(basis), env: { ...env, UITROL_INSTALLEER: stub }, encoding: 'utf8' });
     const st = status(); const g = laatsteGeb('INSTALLATIE_MISLUKT');
     check('oorzaak: mislukt INSTALLATIE_MISLUKT (exit 1)', r.status === 1 && st.staat === 'mislukt' && st.code === 'INSTALLATIE_MISLUKT', `${r.status} ${JSON.stringify(st)}`);
     check('oorzaak: «reden» is de EERSTE echte foutregel (error TS6133), niet «bouwen mislukt (journalctl …)»', /error TS6133: 'PackageOpen'/.test(st.reden || '') && !/journalctl/.test(st.reden || ''), st.reden);
@@ -268,7 +273,7 @@ exit 1
     const stub = join(basis, 'stub-traag.sh');
     writeFileSync(stub, `#!/bin/bash\necho $$ > "${pidBestand}"\necho "[installeer] stap: npm (55%) npm ci"\nsleep 60 & wait\n`); chmodSync(stub, 0o755);
     const p = pakket(pk, '20261009-150000'); onderteken(p, goed); leg(p);
-    const proc = spawn('bash', [SCRIPT], { env: { ...env, UITROL_INSTALLEER: stub }, stdio: 'ignore' });
+    const proc = spawn('bash', [SCRIPT], { ...alsNiemand(basis), env: { ...env, UITROL_INSTALLEER: stub }, stdio: 'ignore' });
     const klaar = new Promise<number | null>((res) => proc.on('exit', (code, sig) => res(code ?? (sig ? 128 : null))));
     for (let i = 0; i < 100 && !(status().code === 'INSTALLEREN' && existsSync(pidBestand)); i++) await new Promise((r) => setTimeout(r, 100));
     const bezig = status().code === 'INSTALLEREN';

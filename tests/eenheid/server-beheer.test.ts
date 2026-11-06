@@ -19,7 +19,15 @@ const OPDRACHT = 'deploy/opdracht/mijn-ruimte-opdracht.sh';
 const POLKIT = 'deploy/opdracht/50-mijn-ruimte-opdracht.rules';
 const SUDOERS = 'deploy/opdracht/mijn-ruimte-opdracht.sudoers';
 const WERKWOORDEN = ['status', 'releases', 'backup', 'uitrol-nu', 'terugdraaien'];
-const sh = (cmd: string, cwd?: string, env: Record<string, string> = {}) => spawnSync('bash', ['-c', cmd], { cwd, encoding: 'utf8', env: { ...process.env, ...env } });
+// Als root negeren de root-scripts bewust alle testpaden (veiligheidseis, zie plafond). Dan draaien de scripts als 'nobody' op de eigen
+// tijdelijke map (zoals ssh-ca-beheer.test.ts) — nooit tegen de echte /etc/mijn-ruimte, /var/lib/… of de echte systemctl-units.
+const ALS_ROOT = process.getuid?.() === 0;
+const NIEMAND = 65534;
+const alsNiemand = (map: string) => { if (!ALS_ROOT) return {}; spawnSync('chown', ['-R', `${NIEMAND}:${NIEMAND}`, map]); return { uid: NIEMAND, gid: NIEMAND }; };
+// root bedient daarna een repo van 'nobody': alleen voor de eigen testcommando's safe.directory (command-line scope).
+const ROOT_GIT: Record<string, string> = ALS_ROOT ? { GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'safe.directory', GIT_CONFIG_VALUE_0: '*' } : {};
+// Eigen git-omgeving: geen globale/systeemconfig van de gebruiker (bv. gpg.ssh.program of commit.gpgsign) — de testtags moeten met k1/k2 ondertekend zijn.
+const sh = (cmd: string, cwd?: string, env: Record<string, string> = {}) => spawnSync('bash', ['-c', cmd], { cwd, encoding: 'utf8', env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1', ...ROOT_GIT, ...env } });
 const lees = (f: string) => (existsSync(f) ? readFileSync(f, 'utf8') : '');
 
 function sleutel(map: string, naam: string) {
@@ -54,7 +62,7 @@ function gitopsTests(check: (n: string, ok: boolean, i?: string) => void) {
     const env = { GITOPS_RECHTEN: join(T, 'rechten.json'), GITOPS_ENV: join(T, 'gitops.env'), GITOPS_ONDERTEKENAARS: join(T, 'ondertekenaars'),
       GITOPS_STAAT: join(T, 'staat'), GITOPS_STATUS_DIR: join(T, 'status'), GITOPS_INSTALLEER: join(T, 'installeer'), GITOPS_LOCK: join(T, 'lock'),
       GITOPS_INSTALLEER_LOCK: join(T, 'installeer.lock'), GITOPS_GROEP: sh('id -gn').stdout.trim() };
-    const run = () => sh(`bash ${process.cwd()}/${GITOPS}`, T, env);
+    const run = () => spawnSync('bash', [`${process.cwd()}/${GITOPS}`], { cwd: T, encoding: 'utf8', env: { ...process.env, ...env }, ...alsNiemand(T) });
     const status = () => { try { return JSON.parse(readFileSync(join(T, 'status/gitops.json'), 'utf8')); } catch { return {}; } };
     const events = () => lees(join(T, 'status/gebeurtenissen.jsonl')).trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
     const installs = () => lees(join(T, 'installeer.log')).trim().split('\n').filter(Boolean);
@@ -142,7 +150,7 @@ function opdrachtTests(check: (n: string, ok: boolean, i?: string) => void) {
     const env = { OPDRACHT_RECHTEN: rechten, OPDRACHT_STATUS_DIR: join(T, 'status'), OPDRACHT_STAAT: join(T, 'staat'), OPDRACHT_APP_ROOT: join(T, 'app'),
       OPDRACHT_UITROL_STAAT: join(T, 'uitrol'), OPDRACHT_GITOPS_STAAT: join(T, 'gitops'), OPDRACHT_SYSTEMCTL: join(T, 'systemctl'),
       OPDRACHT_INSTALLEER: join(T, 'installeer'), OPDRACHT_GROEP: sh('id -gn').stdout.trim() };
-    const run = (...args: string[]) => spawnSync('bash', [`${process.cwd()}/${OPDRACHT}`, ...args], { encoding: 'utf8', env: { ...process.env, ...env } });
+    const run = (...args: string[]) => spawnSync('bash', [`${process.cwd()}/${OPDRACHT}`, ...args], { encoding: 'utf8', env: { ...process.env, ...env }, ...alsNiemand(T) });
     const res = (w: string) => { try { return JSON.parse(readFileSync(join(T, `status/opdracht-${w}.json`), 'utf8')); } catch { return null; } };
     const sysLog = () => lees(join(T, 'systemctl.log')).trim().split('\n').filter((l) => l && !l.startsWith('is-active'));
 
@@ -174,7 +182,7 @@ function opdrachtTests(check: (n: string, ok: boolean, i?: string) => void) {
     check('opdracht: schakelaar backup=false → geweigerd (3)', r.status === 3 && sysLog().length === 4); // backup + uitrol-nu (gitops, uitrol, goedkeuring)
     writeFileSync(rechten, '{kapot');
     check('opdracht: onleesbaar rechtenbestand → alleen lezen (status ja, backup nee)', run('status').status === 0 && run('backup').status === 3);
-    const ev = lees(join(T, 'status/gebeurtenissen.jsonl')).trim().split('\n').map((l) => JSON.parse(l));
+    const ev = lees(join(T, 'status/gebeurtenissen.jsonl')).trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
     check('opdracht: weigeringen en acties staan in het auditkanaal', ev.some((e) => e.code === 'ONBEKEND') && ev.some((e) => e.code === 'TERUGGEDRAAID') && ev.some((e) => e.code === 'TE_SNEL') && ev.every((e) => e.bron === 'opdracht'));
 
     const src = lees(OPDRACHT);
@@ -243,7 +251,8 @@ async function appTests(check: (n: string, ok: boolean, i?: string) => void) {
   const beheer = await import('../../backend/server-beheer');
   const { closePool } = await import('../../server/platform/pg');
   const T = mkdtempSync(join(tmpdir(), 'beheer-app-'));
-  const oud = { MCP_RECHTEN_PAD: process.env.MCP_RECHTEN_PAD, OPDRACHT_STATUS_DIR: process.env.OPDRACHT_STATUS_DIR, UPLOADS_DIR: process.env.UPLOADS_DIR };
+  const oud = { MCP_RECHTEN_PAD: process.env.MCP_RECHTEN_PAD, OPDRACHT_STATUS_DIR: process.env.OPDRACHT_STATUS_DIR, UPLOADS_DIR: process.env.UPLOADS_DIR, OWNER_EMAIL: process.env.OWNER_EMAIL };
+  process.env.OWNER_EMAIL = 'o@x'; // eigenaar = rol owner + OWNER_EMAIL (isOwner); de test bepaalt dat zelf
   process.env.MCP_RECHTEN_PAD = join(T, 'rechten.json'); process.env.OPDRACHT_STATUS_DIR = join(T, 'status'); process.env.UPLOADS_DIR = join(T, 'uploads');
   mkdirSync(join(T, 'status')); mkdirSync(join(T, 'uploads'));
   writeFileSync(process.env.MCP_RECHTEN_PAD, JSON.stringify({ read: true, opdracht: { terugdraaien: true } }));
