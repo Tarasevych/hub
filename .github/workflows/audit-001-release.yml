@@ -1,4 +1,4 @@
-name: AUDIT-001 · консолідований реліз 20261106-171500
+name: AUDIT-001 · консолідований реліз 20261106-180000
 
 on:
   push:
@@ -45,7 +45,7 @@ jobs:
       - name: Встановлена база з живого сайту · verifieer productiebasis
         run: |
           set -euo pipefail
-          export VERSIE="20261106-171500"
+          export VERSIE="20261106-180000"
           echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
           TS="$(date -u +%s)"
           URL="https://hub.tarasevych.com/api/version?ts=$TS"
@@ -69,7 +69,7 @@ jobs:
             echo "LIVE_COMMIT=3b64d1d3c8474f6279005ea8555a5f80e750aac9" >> "$GITHUB_ENV"
           fi
 
-      - name: Bouw en controleer pakket 20261106-171500
+      - name: Bouw en controleer pakket 20261106-180000
         run: |
           set -euo pipefail
           VERSIE="$RELEASE_VERSION"
@@ -77,7 +77,7 @@ jobs:
           {
             "schema": 1,
             "versie": "$VERSIE",
-            "aangemaakt": "2026-11-06T17:15:00Z",
+            "aangemaakt": "2026-11-06T18:00:00Z",
             "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis $LIVE_VERSIE @ ${LIVE_COMMIT:0:12}",
             "auteur": "Власник",
             "zonderAi": false,
@@ -156,11 +156,11 @@ jobs:
           {
             "geslaagd": 622,
             "mislukt": 0,
-            "samenvatting": "Повна 11-етапна збірка npm run build, серверний typecheck:server, перевірка zoek-ui-catalogus.mjs --controle та модульні тести (orch-*, zoek-*, extensie-*, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, uitrol-weergave-v2, werkblad-canvas-kern, meldingen-v2, ai-vertaling, ai-bronnen, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 622/622 перевірок пройдено, 0 помилок.",
+            "samenvatting": "Повна 11-етапна складання npm run build, серверний typecheck:server, перевірка zoek-ui-catalogus.mjs --controle та модульні тести (orch-*, zoek-*, extensie-*, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, uitrol-weergave-v2, werkblad-canvas-kern, meldingen-v2, ai-vertaling, ai-bronnen, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 622/622 перевірок пройдено, 0 помилок.",
             "falend": [],
             "basis": null,
             "uitleg": {
-              "uk": "Усі 622 перевірки у наборах модульних тестів, перевірка каталогу пошуку і всі 11 етапів збірки пройшли успішно (0 помилок).",
+              "uk": "Усі 622 перевірки у наборах модульних тестів, перевірка каталогу пошуку і всі 11 етапів складання пройшли успішно (0 помилок).",
               "nl": "Alle 622 controles in de eenheidstestsuites, de zoekcataloguscontrole en alle 11 bouwstappen zijn geslaagd (0 fouten)."
             }
           }
@@ -194,7 +194,7 @@ jobs:
           echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
           echo "pakket sha256: $SCHA"
 
-      - name: Publiceer GitHub Release 20261106-171500 en verifieer TRACE-001
+      - name: Publiceer GitHub Release 20261106-180000 en verifieer TRACE-001
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -206,7 +206,7 @@ jobs:
           - **Інсталяційний архів (\`.tar.gz\`):** \`https://github.com/Tarasevych/hub/releases/download/$VERSIE/mijn-ruimte-$VERSIE.tar.gz\`
           - **SHA-256 (\`.tar.gz\`):** \`$RELEASE_SHA\`
           - **Пакет передачі (\`-overdracht.zip\`):** \`https://github.com/Tarasevych/hub/releases/download/$VERSIE/mijn-ruimte-$VERSIE-antigravity-overdracht.zip\`
-          - **Встановлена серверна база (\`UITROL-BASIS\`):** \`$LIVE_VERSIE\` @ \`$LIVE_COMMIT\` (\`regelsVersie 1.4.10\`, \`B-015\`)
+          - **Встановлена серверна база (\`UITROL-BASIS\`):** \`$LIVE_VERSIE\` @ \`$LIVE_COMMIT\` (\`regelsVersie 1.4.11\`, \`B-016\`)
           - **BRON-COMMIT:** $COMMIT (гілка \`audit/audit-2026-11-05-20261105-070523\`, злито в \`integratie\` та \`voornaamst\`)
           - **Журнал розробки (TRACE-001):** \`orchestratie/ontwikkelarchieven/AUDIT-001.json\`
           EOF
