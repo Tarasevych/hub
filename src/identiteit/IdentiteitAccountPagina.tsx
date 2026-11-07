@@ -2,7 +2,7 @@
 // Секції наповнює наявний код сторінок identity — тут лише розкладка й перехід до розділу.
 import { useEffect, useState, type ReactNode } from 'react';
 import './identiteit-account.css';
-import { IDENTITY_TABS } from './identiteit-tabs';
+import { IDENTITEIT_TABS } from './identiteit-tabs';
 
 export type IdentitySectie = { id: string; titel: string; inhoud: ReactNode };
 
@@ -19,7 +19,7 @@ type Props = {
 
 const sectieId = (id: string) => `identity-sectie-${id}`;
 
-export function IdentityAccountPagina({ lang, actief, kop, secties, onKies }: Props) {
+export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies }: Props) {
   const [inBeeld, setInBeeld] = useState(actief);
 
   // Адреса змінилася (наприклад, клік у бічному меню або пряме посилання) — показуємо цей розділ.
@@ -64,7 +64,7 @@ export function IdentityAccountPagina({ lang, actief, kop, secties, onKies }: Pr
     <div className='ia-account'>
       {kop}
       <nav className='ia-toc' aria-label={lang === 'uk' ? 'Розділи облікового запису' : 'Accountonderdelen'}>
-        {IDENTITY_TABS.map((tab, index) => (
+        {IDENTITEIT_TABS.map((tab, index) => (
           <button
             key={tab.id}
             type='button'

@@ -20,7 +20,7 @@
 
 ## 2. Schermopbouw en de 12 secties
 
-Alle 12 secties uit `IDENTITY_TABS` (`src/identiteit/identiteit-tabs.ts`) staan onder elkaar op één pagina:
+Alle 12 secties uit `IDENTITEIT_TABS` (`src/identiteit/identiteit-tabs.ts`) staan onder elkaar op één pagina:
 
 | # | ID | Titel (🇳🇱 NL) | Titel (🇺🇦 UK) |
 |---|---|---|---|
