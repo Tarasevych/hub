@@ -1,12 +1,12 @@
 # Карта файлів «що де» — перейменування нідерландською, 24.10.2026
 
-Усі англійські назви файлів коду сайту (src, backend, shared, server, tests, scripts) перейменовано нідерландською за одним словником: **531 файлів**, ще **29** свідомо лишились зі старою назвою (нижче). Вміст файлів не змінювався — лише шляхи імпортів і посилання на шляхи. Машинна версія цієї карти — `docs/kaart/bestandskaart.json`; збірка (`npm run build`) запускає `scripts/kaart-controle.mjs`, який перевіряє, що кожен новий шлях існує, жоден старий не повернувся і в коді, тестах та документах немає посилань на старі шляхи. Нова англійська назва файлу дає попередження з підказкою нідерландською.
+Усі англійські назви файлів коду сайту (src, backend, shared, server, tests, scripts) перейменовано нідерландською за одним словником: **531 файлів**, ще **29** свідомо лишились зі старою назвою (нижче). Вміст файлів не змінювався — лише шляхи імпортів і посилання на шляхи. Машинна версія цієї карти — `docs/kaart/bestandskaart.json`; складання (`npm run build`) запускає `scripts/kaart-controle.mjs`, який перевіряє, що кожен новий шлях існує, жоден старий не повернувся і в коді, тестах та документах немає посилань на старі шляхи. Нова англійська назва файлу дає попередження з підказкою нідерландською.
 
 **Як знайти файл за старою назвою:** пошук старої назви на цій сторінці або в `bestandskaart.json` (поле `oud`).
 
 **Мапи:** `src/search` → `src/zoek`, `src/flags` → `src/vlaggen`, `src/remote` → `src/extern`.
 
-**Нові файли після перейменування** — в останньому розділі («Додані після перейменування»); вони теж у `bestandskaart.json` (поле `toegevoegd`), і збірка зупиняється, якщо такого файла більше немає.
+**Нові файли після перейменування** — в останньому розділі («Додані після перейменування»); вони теж у `bestandskaart.json` (поле `toegevoegd`), і складання зупиняється, якщо такого файла більше немає.
 
 ## Словник (найчастіші слова)
 
@@ -305,7 +305,7 @@
 
 | Нова назва | Була | Що всередині (експорти; перший рядок коментаря) |
 |---|---|---|
-| `backend/ai-mail-assistent.ts` | `backend/ai-mail-assistant.ts` | експорт: `TRANSFORM_ACTIONS`, `TEMPLATES`, `LANGUAGES`, `setAssistantDeps` +8 — ШІ-помічник у пошті: відповідь за контекстом потоку, стислий зміст довгого ланцюжка, перевірка тону перед відправкою та інструмент для тексту |
+| `backend/ai-mail-assistent.ts` | `backend/ai-mail-assistant.ts` | експорт: `TRANSFORM_ACTIONS`, `TEMPLATES`, `LANGUAGES`, `setAssistantDeps` +8 — ШІ-помічник у пошті: відповідь за контекстом потоку, стислий зміст довгого ланцюжка, перевірка тону перед надсиланням та інструмент для тексту |
 | `backend/mail-handschrift.ts` | `backend/mail-handwriting.ts` | експорт: `createMailHandwritingRoutes` |
 | `backend/mail-opdrachten.ts` | `backend/mail-commands.ts` | експорт: `normalizeMailRecipients`, `normalizeMailSendInput`, `mailSendPayloadHash`, `buildGmailRawMessage` +1 |
 | `backend/mail-opstel-html.ts` | `backend/mail-compose-html.ts` | експорт: `safeStyle`, `normalizeOutboundMailHtml`, `mailHtmlToPlainText` — Uitgaande HTML van E-mail (versturen, concepten in Gmail, AI): veilig maken MET behoud van de opmaak. |
@@ -326,7 +326,7 @@
 | `src/MailBerichtRij.tsx` | `src/MailMessageRow.tsx` | експорт: `MailMessageRow (default)` |
 | `src/MailBronWerkruimte.tsx` | `src/MailSourceWorkspace.tsx` | експорт: `MailSourceWorkspace (default)` |
 | `src/MailDatumKalender.tsx` | `src/MailDateCalendar.tsx` | експорт: `MailDateCalendar (default)` |
-| `src/MailDriveKnop.tsx` | `src/MailDiskKnop.tsx` | експорт: `MailDiskKnop (default)` — 3.1: Google Диск прямо в листі. Кнопка в нижньому рядку: якщо Диск підключено — список файлів із пошуком, клік вставляє в лист |
+| `src/MailDriveKnop.tsx` | `src/MailDiskKnop.tsx` | експорт: `MailDiskKnop (default)` — 3.1: Google Диск прямо в листі. Кнопка в нижньому рядку: якщо Диск під'єднано — список файлів із пошуком, натискання вставляє в лист |
 | `src/MailExternOpslaanDialoog.tsx` | `src/MailExternalSaveDialog.tsx` | експорт: `MailExternalSaveDialog (default)` |
 | `src/MailFunctioneelWeergave.tsx` | `src/MailFunctionalView.tsx` | експорт: `MailFunctionalView (default)` |
 | `src/MailGeavanceerdZoeken.tsx` | `src/MailAdvancedSearch.tsx` | експорт: `MailAdvancedSearch (default)` |
@@ -406,7 +406,7 @@
 | `src/mail-techniek.css` | `src/mail-engineering.css` |  |
 | `src/mail-tekst-passend.ts` | `src/mail-body-passend.ts` | експорт: `MAIL_BODY_MIN_SCHAAL`, `mailBodySchaal`, `mailDocumentHoogte`, `pasMailDocumentAan` — Passend maken van HTML-mail in het leeskader (mobiele pass 19.10.2026). |
 | `src/mail-toestand-intenties.ts` | `src/mail-state-intents.ts` | експорт: `createMailStateIntentId`, `submitMailStateIntent`, `waitMailStateIntent`, `createMailBulkRequestId` +2 |
-| `src/mail-ux-beoordeling-20261021.css` | `src/mail-ux-review-20261021.css` | РЕЦЕНЗІЯ UX ПОШТИ (21.10.2026) — свіже око після чотирьох агентів (сповіщення, «Новий лист», рядки, акаунти). |
+| `src/mail-ux-beoordeling-20261021.css` | `src/mail-ux-review-20261021.css` | РЕЦЕНЗІЯ UX ПОШТИ (21.10.2026) — свіже око після чотирьох агентів (сповіщення, «Новий лист», рядки, облікові записи). |
 | `src/mail-vaste-indeling.css` | `src/mail-fixed-layout.css` |  |
 | `src/mail-weergave-voorkeuren-cache.ts` | `src/mail-view-preferences-cache.ts` | експорт: `normalizeMailViewPreferences`, `hasMailViewPreferencesMirror`, `readMailViewPreferences`, `writeMailViewPreferences` |
 | `src/mail-weergave-voorkeuren-server.ts` | `src/mail-view-preferences-server.ts` | експорт: `loadMailViewPreferencesServer`, `publishMailViewPreferencesServer` |
@@ -415,7 +415,7 @@
 | `src/mail-zoek-versoepeling.ts` | `src/mail-search-relaxation.ts` | експорт: `mailSearchRelaxationPlans` |
 | `src/mail-zoek.ts` | `src/mail-search.ts` | експорт: `ARCHIVE_QUERY_PARTS`, `ARCHIVE_QUERY`, `mailAttachmentGroupExtensions`, `defaultMailSearchCriteria` +16 |
 | `tests/e2e/mail-opstel-venster.e2e.ts` | `tests/e2e/mail-compose-venster.e2e.ts` | експорт: `main` — E2E (Chrome) venster «Новий лист» (10.10): knoppen _ □ × zoals in Windows, compacte velden (Копія/прихована op de regel |
-| `tests/eenheid/ai-mail-assistent.test.ts` | `tests/eenheid/ai-mail-assistant.test.ts` | експорт: `main` — ШІ-помічник у пошті: безпека проти prompt injection (недовірені листи), правильні промпти для кожної дії, обробка помилок провайдера. |
+| `tests/eenheid/ai-mail-assistent.test.ts` | `tests/eenheid/ai-mail-assistant.test.ts` | експорт: `main` — ШІ-помічник у пошті: безпека проти prompt injection (недовірені листи), правильні запити для кожної дії, обробка помилок провайдера. |
 | `tests/eenheid/mail-opstel.test.ts` | `tests/eenheid/mail-compose.test.ts` | експорт: `main` — Mail opstellen op de server: MIME, concepten (eerst lokaal, daarna Gmail), direct verzenden, uitgestelde verzending en de wachtrij. |
 | `tests/eenheid/mail-ux-beoordeling-20261021.test.ts` | `tests/eenheid/mail-ux-review-20261021.test.ts` | експорт: `main`, `AI_BALK_KLEIN_SCHERM`, `MAIL_ZOEK_SMAL` — Eenheidstest 21.10.2026 (рецензент UX, свіже око після чотирьох агентів) — пошта на телефоні (360/390 px) і в альбомній |
 | `tests/eenheid/mail-wachtrij.test.ts` | `tests/eenheid/mail-queue.test.ts` | експорт: `main` — Mailtaken (provider.sync.*): de uitvoerlus mag niet blijven hangen op de eerste (oudste) 100 jobs van een eigenaar, en klaar-jobs worden opgeruimd. |
@@ -508,7 +508,7 @@
 | `tests/eenheid/hulp/nep-toegangssleutel.ts` | `tests/eenheid/hulp/nep-passkey.ts` | експорт: `cbor`, `nieuwePasskey`, `NEP_RP`, `registreer` +1 — Software-"passkey" voor tests: maakt echte WebAuthn-registraties en -asserties (ES256 of Ed25519) zoals een telefoon, |
 | `tests/eenheid/kluis-meta.test.ts` | `tests/eenheid/vault-meta.test.ts` | експорт: `main` — Kluis: metadata per sleutel (termijn, van wie, verantwoordelijke) en meldingen «скоро закінчиться» / «строк вийшов» — |
 | `tests/eenheid/toegangssleutels.test.ts` | `tests/eenheid/passkeys.test.ts` | експорт: `main` — Passkeys per gebruiker — Instellingen → «Способи входу» (backend/toegangssleutels.ts, migratie 0023, RUNBOOK §13). |
-| `tests/eenheid/toestemming-ruimte-cyclus-20261020.test.ts` | `tests/eenheid/consent-ruimte-cyclus-20261020.test.ts` | експорт: `main` — Цикл у вікні згоди «Доступ для Claude» (скарга власника 20.10.2026: «почали підключати конектор і не завершили — застрягло»). |
+| `tests/eenheid/toestemming-ruimte-cyclus-20261020.test.ts` | `tests/eenheid/consent-ruimte-cyclus-20261020.test.ts` | експорт: `main` — Цикл у вікні згоди «Доступ для Claude» (скарга власника 20.10.2026: «почали під'єднувати конектор і не завершили — застрягло»). |
 
 ## Технічний простір і адміністрування (55)
 
@@ -544,7 +544,7 @@
 | `src/beheer-console.css` | `src/admin-console.css` |  |
 | `src/beheer-termen.tsx` | `src/admin-terms.tsx` | експорт: `termLabel`, `termKnown`, `Term`, `TermList` +1 |
 | `src/beheer-uitrol.css` | `src/admin-uitrol.css` | Admin → «Оновлення» / «Updates» (passkey-goedkeuring) |
-| `src/extensie-map-installeer.ts` | `src/extension-folder-install.ts` | експорт: `PickerFailure`, `folderPickerSupported`, `SUBFOLDER`, `installExtensionToPickedFolder` — Встановлення розширення прямо з браузера в папку, яку користувач обирає сам у рідному вікні (File System Access API, Chromium). |
+| `src/extensie-map-installeer.ts` | `src/extension-folder-install.ts` | експорт: `PickerFailure`, `folderPickerSupported`, `SUBFOLDER`, `installExtensionToPickedFolder` — Встановлення розширення прямо з браузера в теку, яку користувач обирає сам у рідному вікні (File System Access API, Chromium). |
 | `src/extern/ExternBureaublad.tsx` | `src/remote/RemoteBureaublad.tsx` | експорт: `RemoteBureaublad (default)`, `RemoteSessie` — «Віддалений стіл» (technisch profiel, alleen eigenaar): RDP/VNC/SSH via Apache Guacamole. Eigen chunk (lazyTech in TechLaag); |
 | `src/extern/extern-opslag.ts` | `src/remote/remote-store.ts` | експорт: `remoteSessieBegin`, `remoteAantal`, `useRemoteAantal` — Hoeveel externe-bureaubladsessies dit tabblad open heeft — voor de aanduiding «активний віддалений сеанс» op de technische band. |
 | `src/extern/extern.css` | `src/remote/remote.css` | «Віддалений стіл» (src/extern/ExternBureaublad.tsx). Lichte en donkere thema's (html.theme-dark / theme-plum-dark), 390 px. |
@@ -561,7 +561,7 @@
 | `tests/eenheid/beheer-diagnostiek.test.ts` | `tests/eenheid/admin-diagnostiek.test.ts` | експорт: `main` — Admin → «Діагностика» (/diagnostiek): register ↔ uitvoerders, zuivere beoordelingen, sortering van «Потребує уваги», whitelist van de route, |
 | `tests/eenheid/beheer-integraties.test.ts` | `tests/eenheid/admin-integraties.test.ts` | експорт: `main` — Admin → /mappen «Інтеграції»: detailgegevens (eerlijk), populair/nieuw, beleid voor gebruikers, statuscontrole, loskoppelen, toegang en logboek. |
 | `tests/eenheid/beheer-overzicht.test.ts` | `tests/eenheid/admin-overzicht.test.ts` | експорт: `main` — Admin → «Огляд» (/overzicht): widgets/indeling (normalisatie, verplaatsen, formaat), privacy van gebeurtenissen en gebruikersgeschiedenis, |
-| `tests/eenheid/extensie-map-installeer.test.ts` | `tests/eenheid/extension-folder-install.test.ts` | експорт: `main` — Встановлення розширення через рідний вибір папки: запис лише після перевірки SHA-256, захист від небезпечних шляхів, скасування. |
+| `tests/eenheid/extensie-map-installeer.test.ts` | `tests/eenheid/extension-folder-install.test.ts` | експорт: `main` — Встановлення розширення через рідний вибір теки: запис лише після перевірки SHA-256, захист від небезпечних шляхів, скасування. |
 | `tests/eenheid/extern-bureaublad.test.ts` | `tests/eenheid/remote-bureaublad.test.ts` | експорт: `main` — Extern bureaublad via Apache Guacamole (uitvoerder D, 18.10.2026). Melding van de eigenaar: «Guacamole (RDP/VNC) — не впроваджено, |
 | `tests/eenheid/installeer-opdrachten.test.ts` | `tests/eenheid/install-commands.test.ts` | експорт: `main` — Opties voor Node.js per systeem/architectuur en de installatiecommando's voor de extensie (zonder .cmd/.ps1-download: Smart App Control blokkeert die)… |
 | `tests/eenheid/site-activiteit.test.ts` | `tests/eenheid/site-activity.test.ts` | експорт: `main` — Auditlogboek -> meldingen: juiste sectie/dienst per actie, ruis eruit, mislukkingen herkenbaar. |
@@ -596,7 +596,7 @@
 | `src/BrowserExtensiePaneel.tsx` | `src/BrowserExtensionPanel.tsx` | експорт: `BrowserExtensionPanel (default)` |
 | `src/ExtensieWizard.tsx` | `src/ExtensionWizard.tsx` | експорт: `ExtensionWizard (default)` |
 | `src/McpAgentenHub.tsx` | `src/McpAgentsHub.tsx` | De beheerpagina mcp.*/agents staat nu in ./agenten (tabbladen in GitHub-stijl). Dit bestand blijft als ingang voor bestaande imports. |
-| `src/McpAppsWeergave.tsx` | `src/McpAppsView.tsx` | експорт: `McpAppsView (default)` — mcp.*/apps — «Додатки на вашому залізі» (BYOS-PaaS). Eén plek voor de eigenaar: |
+| `src/McpAppsWeergave.tsx` | `src/McpAppsView.tsx` | експорт: `McpAppsView (default)` — mcp.*/apps — «Додатки на вашому обладнанні» (BYOS-PaaS). Eén plek voor de eigenaar: |
 | `src/McpBackupsKaart.tsx` | `src/McpBackupsCard.tsx` | експорт: `McpBackupsCard (default)` |
 | `src/McpConnectorPaneel.tsx` | `src/McpConnectorPanel.tsx` | експорт: `McpConnectorPanel (default)` |
 | `src/McpDienstWeergave.tsx` | `src/McpServiceView.tsx` | експорт: `ingangAdres`, `McpServiceView (default)` |
@@ -693,7 +693,7 @@
 
 | Файл | Що всередині | Відколи |
 |---|---|---|
-| `scripts/kaart-controle.mjs` | Перевірка цієї карти під час збірки (перший крок `npm run build`): старі шляхи, відсутні нові, англійські назви, відсутні додані файли. | 86fd409 |
+| `scripts/kaart-controle.mjs` | Перевірка цієї карти під час складання (перший крок `npm run build`): старі шляхи, відсутні нові, англійські назви, відсутні додані файли. | 86fd409 |
 | `tests/eenheid/bestandskaart-20261024.test.ts` | Тест карти й `kaart-controle`. | 86fd409 |
 | `src/mail/lees-modus.ts` | Вікно листа — правила без DOM: яка форма (повний / праворуч / знизу / плаваюче / телефон), роль для читача екрана, фокус, Escape, «Назад», межі поруч із меню й доком, «priority+» шапки. | пакет 1 «Adaptive Mail Canvas» |
 | `src/mail/LeesVenster.tsx` | Вікно листа — рамка навколо відкритого листа: одна для всіх форм; дає панелі дій (`MailLezerWerkbalk`) форму, плаваюче вікно й Escape. | пакет 1 «Adaptive Mail Canvas» |
@@ -732,11 +732,11 @@
 | `src/plaatsing/Plek.tsx` | Зони й гнізда в React: `useZone`, `<Gniezda>`, `<Plek knop>` (кнопка малюється у своєму гнізді), `<Actiestapel>` (над нижніми смугами), `<PlaatsActies>` («Перемістити до…», клавіатура, повернення), тип пристрою за шириною. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
 | `src/plaatsing/plaats-slepen.ts` | Розставлення: утримання 0,45 с (дотик) або 5 px мишею, «привид», зони з лічильником, повна зона відмовляє з підказкою, меню розгортається на ☰, Esc / скасування, права кнопка / клавіша меню → «Перемістити до…». | плаваючі кнопки «зони й гнізда» (25.10.2026) |
 | `src/plaatsing/plaats-flip.ts` | Плавне розсування сусідів у зоні під час перенесення (160 мс; без руху при «зменшити анімацію»). | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `src/plaatsing/plaatsing.css` | Один шар CSS для плаваючих кнопок: зони, гнізда, стос дій (розміри = модель), вікна над зонами (visibility), спливаюче сповіщення вгорі на телефоні, лічильник на ☰, перенесення, «Перемістити до…». | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `src/plaatsing/melding-plek.ts` | Місце спливаючого сповіщення: кандидати за порядком (комп'ютер — під дзвоником, унизу чи вгорі посередині; телефон — угорі під панеллю чи над стосом), перемагає перший, під яким немає малої кнопки (QA 12.10 №11). | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `scripts/plaatsing-controle.mjs` | Перевірка під час збірки: каталог і місткість для кожного типу пристрою, розміри CSS = модель, кожна кнопка рівно один `<Plek>`, жодного нового `position:fixed` поза шаром. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
+| `src/plaatsing/plaatsing.css` | Один шар CSS для плаваючих кнопок: зони, гнізда, стос дій (розміри = модель), вікна над зонами (visibility), спливне сповіщення вгорі на телефоні, лічильник на ☰, перенесення, «Перемістити до…». | плаваючі кнопки «зони й гнізда» (25.10.2026) |
+| `src/plaatsing/melding-plek.ts` | Місце спливного сповіщення: кандидати за порядком (комп'ютер — під дзвоником, унизу чи вгорі посередині; телефон — угорі під панеллю чи над стосом), перемагає перший, під яким немає малої кнопки (QA 12.10 №11). | плаваючі кнопки «зони й гнізда» (25.10.2026) |
+| `scripts/plaatsing-controle.mjs` | Перевірка під час складання: каталог і місткість для кожного типу пристрою, розміри CSS = модель, кожна кнопка рівно один `<Plek>`, жодного нового `position:fixed` поза шаром. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
 | `scripts/plaatsing-vaste-elementen.json` | Список CSS-правил із `position:fixed`, що були до шару (25.10.2026), і дозволені вікна/смуги з причиною — для `plaatsing-controle`. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
-| `tests/eenheid/plaatsing-20261025.test.ts` | Тест моделі й перевірки збірки: типи пристроїв, типові місця, місткість (43 200 комбінацій), перенесення й відмови, нормалізація, повернення, розміри, тексти, налаштування меню. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
+| `tests/eenheid/plaatsing-20261025.test.ts` | Тест моделі й перевірки складання: типи пристроїв, типові місця, місткість (43 200 комбінацій), перенесення й відмови, нормалізація, повернення, розміри, тексти, налаштування меню. | плаваючі кнопки «зони й гнізда» (25.10.2026) |
 | `tests/e2e/hulp/stand-plaatsing.ts` | Стенд `plaatsing-*`: виміри «до» (`plaatsing-nu`) і приймання «після» (`plaatsing-na`): прокрутка, адресний рядок, «Вгору», свайп, зум, комп'ютер → телефон, перезавантаження, перенесення, повна зона, розгортання меню, «Перемістити до…», вільне місце сповіщення; `plaatsing-dok` (док праворуч / угорі / унизу) і `plaatsing-lagen` (лічильники, підказка й меню у світлій і темній темі, з axe). | плаваючі кнопки «зони й гнізда» (25.10.2026) |
 | `shared/mail-acties.ts` | Один реєстр усіх дій з листами (39): група, тон, тексти uk/nl у шести формах, клавіша й стани; джерело для панелі рядка, меню ⋮, панелі виділення, вікна листа, нижньої смуги телефона, свайпу й підказки клавіш. | блок 1 «швидкі виправлення» (25.10.2026) |
 | `src/mail/MailActieKnop.tsx` | Піктограми й кнопка дії з реєстру (data-mail-actie, data-toon). | блок 1 «швидкі виправлення» (25.10.2026) |
@@ -747,6 +747,6 @@
 | `tests/eenheid/bevestig-toegang-opmaak-20261025.test.ts` | Тест вікна «Підтвердіть доступ» і чипів згоди: прапорець не розтягнуто, підпис у межах вікна, контраст підпису й пояснення на всіх 26 палітрах. | блок 1 «швидкі виправлення» (25.10.2026) |
 | `tests/e2e/hulp/stand-blok1.ts` | Стенд блоку 1: збирає кроки blok1-* чотирьох команд (кожна у своєму файлі). | блок 1 «швидкі виправлення» (25.10.2026) |
 | `tests/e2e/hulp/stand-blok1-acties.ts` | Стенд blok1-acties-*: панель у межах рядка в кожній густині, нічого не перекрито; однаковий колір дії на всіх поверхнях (світла й темна). | блок 1 «швидкі виправлення» (25.10.2026) |
-| `tests/e2e/hulp/stand-blok1-geminimaliseerd.ts` | Стенд blok1-geminimaliseerd-*: док ≤ 60 px згорнутим, перетягування без розтягування, F5; картка не росте від колеса, список прокручується, спливаючий перегляд більшає. | блок 1 «швидкі виправлення» (25.10.2026) |
+| `tests/e2e/hulp/stand-blok1-geminimaliseerd.ts` | Стенд blok1-geminimaliseerd-*: док ≤ 60 px згорнутим, перетягування без розтягування, F5; картка не росте від колеса, список прокручується, спливний перегляд більшає. | блок 1 «швидкі виправлення» (25.10.2026) |
 | `tests/e2e/hulp/stand-blok1-vensters.ts` | Стенд blok1-vensters: кожна кнопка кожного вікна (лист у чотирьох режимах, вкладення, «Новий лист», вікно платформи) і кожна [data-plaats-knop] «влучає» в себе за будь-якого місця дзвоника. | блок 1 «швидкі виправлення» (25.10.2026) |
 | `tests/e2e/hulp/stand-blok1-toegang.ts` | Стенд blok1-toegang-*: вікно «Підтвердіть доступ» (підпис у межах, контраст), чипи згоди на 390 px, сторінка ChatGPT з новими кроками й попередженням про план. | блок 1 «швидкі виправлення» (25.10.2026) |

@@ -6,15 +6,15 @@
   vereisten, operaties, nog te doen, beperking van de aanbieder, doeldienst, prioriteit. Inventaris: `docs/integraties/INVENTARIS.md` (gegenereerd).
 - **Accounts/stand**: bestaande serverroutes, geen nieuwe tokenopslag: `POST /api/owner/admin/integraties/stand` (kluis, AI-agenten, beleid,
   laatste controles), nieuw `POST /api/owner/admin/integraties/google-stand` (alleen de canonieke Google-grant), `…/controleer`, `…/loskoppelen`.
-- **Groep** (`groepVan`): fout → «Потребують уваги»; verbonden → «Підключені»; sleutel aanwezig maar niet gecontroleerd → «Потребують налаштування»;
-  klaar of werkende stroom elders → «Можна підключити»; basis aanwezig → «Потребують налаштування»; anders «У розробці». Nooit «Працює».
-- **Hoofdactie** (`actieVan`): Підключити / Керувати / Відновити / Налаштувати / План (in plaats van de uitgeschakelde «Скоро»).
-- **Levenscyclus** (doel): Доступна → Налаштовується → Авторизується → Перевіряється → Підключена → Працює / Потребує уваги / Відключена.
-  Fase 1 dekt: Доступна, Підключена (gelezen), Потребує уваги (fout), Налаштовується (sleutel zonder controle). De rest volgt met de wizard (fase 3).
+- **Groep** (`groepVan`): fout → «Потребують уваги»; verbonden → «Під'єднані»; sleutel aanwezig maar niet gecontroleerd → «Потребують налаштування»;
+  klaar of werkende stroom elders → «Можна під'єднати»; basis aanwezig → «Потребують налаштування»; anders «У розробці». Nooit «Працює».
+- **Hoofdactie** (`actieVan`): Під'єднати / Керувати / Відновити / Налаштувати / План (in plaats van de uitgeschakelde «Скоро»).
+- **Levenscyclus** (doel): Доступна → Налаштовується → Авторизується → Перевіряється → Під'єднана → Працює / Потребує уваги / Вимкнена.
+  Fase 1 dekt: Доступна, Під'єднана (gelezen), Потребує уваги (fout), Налаштовується (sleutel zonder controle). De rest volgt met de wizard (fase 3).
 - **Synchronisatie tussen tabbladen**: `BroadcastChannel('mr-integraties-stand')` — na elk vernieuwen lezen andere open catalogustabbladen opnieuw;
   het bericht bevat geen gegevens.
 
-## Oorzaak «Стан Google-підключень не вдалося прочитати» (BUG, direct opgelost, geen vlag)
+## Oorzaak «Стан Google-під'єднань не вдалося прочитати» (BUG, direct opgelost, geen vlag)
 Vastgesteld uit de code (niet in productie gereproduceerd — geen toegang tot *.tarasevych.com, bewust):
 1. De catalogus las de Google-stand uit `POST /api/owner/admin/diagnostics` (backend/index.ts).
 2. Die route doet `Promise.all([mailPlatformStatus(), googleSuiteOnboardingSnapshot(), adminLatest(cron)])` plus een auditregel.
@@ -28,7 +28,7 @@ Niet bewezen: welk van de drie onderdelen in productie precies faalt. Dat toont 
 
 ## Gevonden tegenstrijdigheden (audit, etappe A)
 - IMAP/SMTP, iCloud Mail en Yahoo Mail hebben een **volledige** stroom (backend/mail-imap.ts: inloggen IMAP+SMTP vóór opslaan, AES-GCM, controleren,
-  ontkoppelen) maar de catalogus noemde ze «Скоро». In de nieuwe weergave staan ze bij «Можна підключити» met een link naar Пошта → Акаунти.
+  ontkoppelen) maar de catalogus noemde ze «Скоро». In de nieuwe weergave staan ze bij «Можна під'єднати» met een link naar Пошта → Облікові записи.
 - OneDrive/Dropbox/Box: leesadapter bestaat (cloud-verbinding-m4-*), alleen app-sleutels van de aanbieder ontbreken → «Потребують налаштування».
 - Apple Calendar/Fastmail: CalDAV-lezen bestaat (backend/agenda-caldav.ts); schrijven niet.
 - Nextcloud/S3: basis in cloud-integratie-routes; geen wizard/controle.
@@ -38,7 +38,7 @@ Niet bewezen: welk van de drie onderdelen in productie precies faalt. Dat toont 
 ## Geprioriteerd plan
 | Prio | Wat | Afhankelijkheid |
 |---|---|---|
-| 1 | IMAP-stand (mail_imap) in `/integraties/stand`, zodat IMAP/iCloud/Yahoo «Підключені» kunnen worden | geen (code-only) |
+| 1 | IMAP-stand (mail_imap) in `/integraties/stand`, zodat IMAP/iCloud/Yahoo «Під'єднані» kunnen worden | geen (code-only) |
 | 1 | Nextcloud/WebDAV-wizard + PROPFIND-controle, S3 + ListObjectsV2-controle (testen tegen lokale WebDAV/MinIO) | geen |
 | 1 | Fastmail aan de IMAP-aanbieders | geen |
 | 1 | OneDrive/Dropbox/Box: wizard → bestaande kluis | app-sleutels van de eigenaar |
