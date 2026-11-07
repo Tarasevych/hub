@@ -8,14 +8,14 @@
 // per token de alternatieven (y↔i, kh↔h, g↔h, ts↔c, …) die als OF-alternatieven in de tsquery gaan; typefouten vangt pg_trgm.
 import { ZOEK_TALEN, type ZoekTaal } from './zoek-model';
 
-/** Cyrillisch → Latijn. Eén zoekschema (geen paspoortschema) voor uk/ru/bg; uk «и»=y, «і»=i, ru «ы»=y, «и»=i. */
+/** Cyrillisch → Latijn. Eén zoekschema (geen paspoortschema) voor uk; uk «и»=y, «і»=i. */
 export const TRANSLIT: ReadonlyArray<readonly [string, string]> = Object.freeze([
   ['щ', 'shch'], ['ж', 'zh'], ['ч', 'ch'], ['ш', 'sh'], ['ц', 'ts'], ['ю', 'yu'], ['я', 'ya'], ['є', 'ye'], ['ї', 'yi'],
-  ['х', 'kh'], ['а', 'a'], ['б', 'b'], ['в', 'v'], ['г', 'g'], ['ґ', 'g'], ['д', 'd'], ['е', 'e'], ['ё', 'e'], ['э', 'e'],
-  ['з', 'z'], ['и', 'y'], ['ы', 'y'], ['і', 'i'], ['й', 'y'], ['к', 'k'], ['л', 'l'], ['м', 'm'], ['н', 'n'], ['о', 'o'],
-  ['п', 'p'], ['р', 'r'], ['с', 's'], ['т', 't'], ['у', 'u'], ['ф', 'f'], ['ъ', ''], ['ь', ''], ['’', ''], ["'", ''], ['ʼ', ''],
-  // Servisch/Macedonisch/Wit-Russisch komen zelden voor; wat ervan voorkomt, blijft leesbaar:
-  ['ђ', 'dj'], ['ј', 'j'], ['љ', 'lj'], ['њ', 'nj'], ['ћ', 'c'], ['џ', 'dz'], ['ў', 'u'],
+  ['х', 'kh'], ['а', 'a'], ['б', 'b'], ['в', 'v'], ['г', 'g'], ['ґ', 'g'], ['д', 'd'], ['е', 'e'],
+  ['з', 'z'], ['и', 'y'], ['і', 'i'], ['й', 'y'], ['к', 'k'], ['л', 'l'], ['м', 'm'], ['н', 'n'], ['о', 'o'],
+  ['п', 'p'], ['р', 'r'], ['с', 's'], ['т', 't'], ['у', 'u'], ['ф', 'f'], ['ь', ''], ['’', ''], ["'", ''], ['ʼ', ''],
+  // Overige tekens en leestekens die in zoekvragen kunnen voorkomen:
+  ['ђ', 'dj'], ['ј', 'j'], ['љ', 'lj'], ['њ', 'nj'], ['ћ', 'c'], ['џ', 'dz'], ['ў', 'u'], ['«', ''], ['»', ''], ['„', ''], ['“', ''], ['”', ''],
 ] as const);
 /** Letters die NFKD niet ontleedt. */
 export const LATIJN_EXTRA: ReadonlyArray<readonly [string, string]> = Object.freeze([
@@ -30,7 +30,7 @@ const CYRILLISCH = /[\u0400-\u04ff]/;
 /** Volledige zoeknormalisatie (document én zoekvraag). Onafhankelijk van locale of database. */
 export function zoekNorm(v: unknown, max = 200000): string {
   let s = String(v ?? '').replace(/\u0000/g, '').slice(0, max).normalize('NFC').toLocaleLowerCase('und');
-  if (CYRILLISCH.test(s)) s = vervang(s, TRANSLIT);   // vóór NFKD: anders wordt «й/ї/ё» tot «и/і/е» ontleed
+  if (CYRILLISCH.test(s)) s = vervang(s, TRANSLIT);   // vóór NFKD: anders wordt «й/ї» tot «и/і» ontleed
   s = vervang(s, LATIJN_EXTRA);
   s = s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
   return s.replace(/[^\p{L}\p{N}@._-]+/gu, ' ').replace(/\s+/g, ' ').trim();
@@ -40,15 +40,13 @@ export function zoekNorm(v: unknown, max = 200000): string {
 export const zoekWoorden = (norm: string): string[] => norm.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 
 /**
- * Stopwoorden (9 talen, klein en gesloten). Alleen uit de ZOEKVRAAG weggelaten en alleen als er andere tokens overblijven;
+ * Stopwoorden (klein en gesloten). Alleen uit de ZOEKVRAAG weggelaten en alleen als er andere tokens overblijven;
  * in documenten blijven ze staan (ts_rank telt ze nauwelijks mee).
  */
 export const STOPWOORDEN: ReadonlySet<string> = new Set([
-  // uk / ru / bg (genormaliseerd)
+  // uk (genormaliseerd)
   'de', 'yak', 'shcho', 'tse', 'tsya', 'tsey', 'ta', 'i', 'y', 'u', 'v', 'na', 'z', 'iz', 'zi', 'do', 'po', 'za', 'dlya', 'pro', 'vid', 'pry', 'chy', 'abo', 'ale', 'ne', 'ni', 'moye', 'moya', 'miy', 'moyi', 'meni', 'ya', 'vy', 'ty', 'tut', 'tam',
   'khto', 'vse', 'vsi', 'use', 'usi', 'yakshcho', 'shchob', 'shche', 'odyn', 'odna', 'odnu', 'odne', 'mene', 'mozhna', 'treba', 'koly', 'kudy', 'yakyy', 'yaka', 'yake', 'bud', 'laska', 'svoyi', 'sviy', 'svoya',
-  'kak', 'gde', 'chto', 'eto', 'etot', 'eta', 'ili', 'no', 'ot', 'dlya', 'pri', 'moy', 'moya', 'moe', 'mne', 'vy', 'kde', 'kakvo', 'tova', 'sas', 'ot', 'kam',
-  'kto', 'esli', 'yeshche', 'eshche', 'mozhno', 'nuzhno', 'kogda', 'kuda', 'kakoy', 'kakaya', 'svoy', 'svoyu', 'odin', 'odnu', 'koy', 'ako', 'oshte', 'moya', 'moyat',
   // nl
   'de', 'het', 'een', 'en', 'of', 'van', 'in', 'op', 'te', 'is', 'hoe', 'waar', 'wat', 'mijn', 'ik', 'je', 'naar', 'met', 'voor', 'om', 'bij', 'dat', 'die', 'dit', 'kan', 'wil',
   'wie', 'heeft', 'nog', 'als', 'zijn', 'haar', 'hun', 'er', 'ook', 'wanneer', 'welke', 'moet', 'graag', 'anders',
@@ -158,14 +156,10 @@ export function taalRaden(v: unknown): ZoekTaal | '' {
   const s = String(v ?? '').slice(0, 4000).toLocaleLowerCase('und');
   if (CYRILLISCH.test(s)) {
     if (/[іїєґ]/.test(s)) return 'uk';
-    if (/[ыэ]/.test(s)) return 'ru';
-    if (/ъ/.test(s)) return 'bg';
-    // Geen onderscheidende letters: stopwoorden (bg «това/със/които/има», ru «это/что/или/для»).
     const w = new Set(s.split(/[^\u0400-\u04ff]+/).filter(Boolean));
-    const bg = ['това', 'със', 'които', 'който', 'какво', 'тези', 'има', 'няма'].filter(x => w.has(x)).length;
-    const ru = ['это', 'что', 'или', 'как', 'для', 'есть', 'нет', 'уже'].filter(x => w.has(x)).length;
-    if (bg > ru) return 'bg';
-    return /[\u0400-\u04ff]{3,}/.test(s) ? 'ru' : '';
+    const bg = ['това', 'които', 'който', 'какво', 'тези', 'има', 'няма'].filter(x => w.has(x)).length;
+    if (bg > 0) return 'bg';
+    return /[\u0400-\u04ff]{3,}/.test(s) ? 'uk' : '';
   }
   const woorden = zoekWoorden(zoekNorm(s));
   if (woorden.length < 3) return '';

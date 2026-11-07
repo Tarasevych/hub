@@ -1,6 +1,6 @@
 UITLEG-LEESMIJ.txt - C:\Users\t\AppData\Local\mijn-ruimte\rclone\
 (Спочатку українською, далі нідерландською / Eerst Oekraiens, daarna Nederlands)
-Цей файл без секретів, але ПАПКА містить доступ до Google Drive.
+Цей файл без секретів, але ТЕКА містить доступ до Google Drive.
 Dit bestand bevat geen geheimen, maar de MAP bevat de toegang tot Google Drive.
 
 УКРАЇНСЬКА
@@ -9,12 +9,12 @@ Dit bestand bevat geen geheimen, maar de MAP bevat de toegang tot Google Drive.
   config-wachtwoord.dpapi   випадковий пароль до rclone.conf, захищений Windows DPAPI:
                             розшифрувати може лише користувач t на цьому ПК.
   cache\, tmp\              тимчасове для rclone.
-  Права на папку: лише t. Створено скриптом T:\mijn-ruimte\scripts\cloud\cloud-koppelen.ps1.
+  Права на теку: лише t. Створено скриптом T:\mijn-ruimte\scripts\cloud\cloud-koppelen.ps1.
   Чому тут, а не на T:\/R:\: rclone мусить сам переписувати rclone.conf (токен оновлюється),
   а на T:\ і R:\ писати може лише PowerShell. Див. T:\mijn-ruimte\hulpmiddelen\rclone\UITLEG-LEESMIJ.txt.
   НЕ копіюйте, НЕ надсилайте, НЕ кладіть у хмару і НЕ додавайте до резервних копій -
   у разі втрати просто знову запустіть cloud-koppelen.ps1.
-  Видалити папку = вимкнути вивантаження в Drive (скрипт напише "NIET GEKOPPELD").
+  Видалити теку = вимкнути вивантаження в Drive (скрипт напише "NIET GEKOPPELD").
 
 NEDERLANDS
   rclone.conf               rclone-instellingen met de Google-toegang (token, Client ID/secret).
