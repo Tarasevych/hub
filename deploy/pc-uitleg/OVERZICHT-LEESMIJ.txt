@@ -40,7 +40,7 @@ Dit bestand staat zowel in T:\mijn-ruimte\ als in R:\mijn-ruimte-reservekopie\.
 - database\, momentopnamen\  зарезервовано для ручних дампів/знімків (зараз порожньо).
 - geheimen\     ЗАШИФРОВАНИЙ архів секретів сервера. Див. UITLEG-LEESMIJ.txt там.
 - scripts\      копії скриптів.
-- sleutels\     СЕКРЕТНИЙ ключ відновлення age + копія SSH-ключа. НАЙВАЖЛИВІША ПАПКА.
+- sleutels\     СЕКРЕТНИЙ ключ відновлення age + копія SSH-ключа. НАЙВАЖЛИВІША ТЕКА.
 - vm-back-ups\  зашифровані нічні резервні копії бази та файлів.
 - herstelset\   НАБІР ВІДНОВЛЕННЯ для зовнішнього диска (без секретного ключа). Почніть з
                 00-BEGIN-HIER-UA.pdf. Оновлення: scripts\herstelset-bijwerken.ps1 -Doel E:\
@@ -56,14 +56,14 @@ Dit bestand staat zowel in T:\mijn-ruimte\ als in R:\mijn-ruimte-reservekopie\.
 5. Забрати копію на ПК: scripts\reservekopie-ophalen.ps1 -> R:\...\vm-back-ups\.
 6. Відновлення: HERSTEL.md (GitHub + зашифрована копія + ключ відновлення).
 7. Google Drive: щодня після 09:00 ті самі ЗАШИФРОВАНІ копії + набір відновлення йдуть у
-   Google Drive (папка mijn-ruimte-reservekopie, доступ лише drive.file). Доступ Google
+   Google Drive (тека mijn-ruimte-reservekopie, доступ лише drive.file). Доступ Google
    (зашифрований) лежить поза T:\/R:\: C:\Users\t\AppData\Local\mijn-ruimte\rclone\.
 
 ЩО ВАЖЛИВО ЗРОБИТИ ВАМ
 - Зробити офлайн-копію herstelsleutel-age.txt (флешка в сейфі та/або папір).
 - Щоденне завдання "Mijn Ruimte - reservekopie ophalen" (09:00) вже є; воно ж робить копію в Drive.
-- ОДИН РАЗ підключити Google Drive: scripts\cloud\UITLEG-LEESMIJ.txt (кроки А і Б).
-- Ніколи не надсилати і не завантажувати в хмару вміст папок sleutels\ та SSH-ключ.
+- ОДИН РАЗ під'єднати Google Drive: scripts\cloud\UITLEG-LEESMIJ.txt (кроки А і Б).
+- Ніколи не надсилати і не завантажувати в хмару вміст тек sleutels\ та SSH-ключ.
 
 ##############################################################################
 NEDERLANDS
