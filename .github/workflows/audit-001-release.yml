@@ -1,4 +1,4 @@
-name: AUDIT-001 · консолідований випуск 20261107-130000
+name: AUDIT-001 · консолідований випуск 20261107-164500
 
 on:
   push:
@@ -52,7 +52,7 @@ jobs:
       - name: Встановлена база з живого сайту · verifieer productiebasis
         run: |
           set -euo pipefail
-          export VERSIE="20261107-130000"
+          export VERSIE="20261107-164500"
           echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
           TS="$(date -u +%s)"
           URL="https://hub.tarasevych.com/api/version?ts=$TS"
@@ -76,7 +76,7 @@ jobs:
             echo "LIVE_COMMIT=c9c95eaa64f99c4384185bfdca88c41722518d14" >> "$GITHUB_ENV"
           fi
 
-      - name: Bouw en controleer pakket 20261107-130000
+      - name: Bouw en controleer pakket 20261107-164500
         run: |
           set -euo pipefail
           VERSIE="$RELEASE_VERSION"
@@ -86,7 +86,7 @@ jobs:
           {
             "schema": 1,
             "versie": "$VERSIE",
-            "aangemaakt": "2026-11-07T13:00:00Z",
+            "aangemaakt": "2026-11-07T16:45:00Z",
             "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis $LIVE_VERSIE @ ${LIVE_COMMIT:0:12}",
             "auteur": "$ACCOUNT_AUTEUR",
             "zonderAi": false,
@@ -121,7 +121,7 @@ jobs:
                 "fixes": [
                   "Автоматичне підтягування фото профілю учасника-людини з особистого кабінету (включно з data:image/...;base64,... до 360 КБ) та відображення фірмових логотипів ШІ-агентів у всіх меню оновлень.",
                   "Коректне розпізнавання кириличних меж слів (ЄДРПОУ, ІПН, РНОКПП) під час знеособлення договорів через Unicode-перевірку меж слів.",
-                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера (20261107-121500) та нова версія пакета 20261107-130000.",
+                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера (20261107-121500) та нова версія пакета 20261107-164500.",
                   "Перевірка чистоти мови (0 російських літер, 0 русизмів/суржику, 0 англіцизмів) у всіх статтях та інтерфейсі."
                 ],
                 "beperkingen": [
@@ -140,7 +140,7 @@ jobs:
                 "fixes": [
                   "Automatisch ophalen van de profielfoto van menselijke deelnemers uit het persoonlijke kabinet (inclusief data:image/...;base64,... tot 360 KB) en weergave van merklogo's van AI-agenten in alle updatemenu's.",
                   "Correcte herkenning van Cyrillische woordgrenzen (ЄДРПОУ, ІПН, РНОКПП) bij contractanonimisering via Unicode-woordgrenscontroles.",
-                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie (20261107-121500) en nieuwe pakketversie 20261107-130000.",
+                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie (20261107-121500) en nieuwe pakketversie 20261107-164500.",
                   "Controle op taalzuiverheid (0 Russische letters, 0 russismen/Surzjyk, 0 anglicismen) in alle artikelen en de gebruikersomgeving."
                 ],
                 "beperkingen": [
@@ -197,7 +197,7 @@ jobs:
           echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
           echo "pakket sha256: $SCHA"
 
-      - name: Publiceer GitHub Release 20261107-130000 en verifieer TRACE-001
+      - name: Publiceer GitHub Release 20261107-164500 en verifieer TRACE-001
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
