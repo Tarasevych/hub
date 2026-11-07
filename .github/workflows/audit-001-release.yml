@@ -71,9 +71,9 @@ jobs:
               console.log("Встановлено на сайті: " + versie + " @ " + commit);
             ' "$RUNNER_TEMP/prod.json"
           else
-            echo "WAARSCHUWING: /api/version niet bereikbaar vanuit runner — gebruik fallback 20261106-171500"
-            echo "LIVE_VERSIE=20261106-171500" >> "$GITHUB_ENV"
-            echo "LIVE_COMMIT=2c71d1179064018bd60d3464a91e1a0ef17e912b" >> "$GITHUB_ENV"
+            echo "WAARSCHUWING: /api/version niet bereikbaar vanuit runner — gebruik fallback 20261107-121500"
+            echo "LIVE_VERSIE=20261107-121500" >> "$GITHUB_ENV"
+            echo "LIVE_COMMIT=c9c95eaa64f99c4384185bfdca88c41722518d14" >> "$GITHUB_ENV"
           fi
 
       - name: Bouw en controleer pakket 20261107-130000
@@ -120,8 +120,8 @@ jobs:
                 ],
                 "fixes": [
                   "Автоматичне підтягування фото профілю учасника-людини з особистого кабінету (включно з data:image/...;base64,... до 360 КБ) та відображення фірмових логотипів ШІ-агентів у всіх меню оновлень.",
-                  "Коректне розпізнавання кириличних меж слів (ЄДРПОУ, ІПН, РНОКПП) під час знеособлення договорів через Unicode-перевірку меж (?<![\\p{L}\\p{N}]).",
-                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера та нова версія пакета 20261107-130000.",
+                  "Коректне розпізнавання кириличних меж слів (ЄДРПОУ, ІПН, РНОКПП) під час знеособлення договорів через Unicode-перевірку меж слів.",
+                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера (20261107-121500) та нова версія пакета 20261107-130000.",
                   "Перевірка чистоти мови (0 російських літер, 0 русизмів/суржику, 0 англіцизмів) у всіх статтях та інтерфейсі."
                 ],
                 "beperkingen": [
@@ -139,8 +139,8 @@ jobs:
                 ],
                 "fixes": [
                   "Automatisch ophalen van de profielfoto van menselijke deelnemers uit het persoonlijke kabinet (inclusief data:image/...;base64,... tot 360 KB) en weergave van merklogo's van AI-agenten in alle updatemenu's.",
-                  "Correcte herkenning van Cyrillische woordgrenzen (ЄДРПОУ, ІПН, РНОКПП) bij contractanonimisering via Unicode-grenscontroles (?<![\\p{L}\\p{N}]).",
-                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie en nieuwe pakketversie 20261107-130000.",
+                  "Correcte herkenning van Cyrillische woordgrenzen (ЄДРПОУ, ІПН, РНОКПП) bij contractanonimisering via Unicode-woordgrenscontroles.",
+                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie (20261107-121500) en nieuwe pakketversie 20261107-130000.",
                   "Controle op taalzuiverheid (0 Russische letters, 0 russismen/Surzjyk, 0 anglicismen) in alle artikelen en de gebruikersomgeving."
                 ],
                 "beperkingen": [

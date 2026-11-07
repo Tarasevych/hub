@@ -9,8 +9,8 @@
     "agent": "antigravity",
     "model": "claude-opus-4-6 (20260205)",
     "basis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
-    "vorigeProductieversie": "20261106-171500",
-    "vorigeProductieCommit": "2c71d1179064018bd60d3464a91e1a0ef17e912b",
+    "vorigeProductieversie": "20261107-121500",
+    "vorigeProductieCommit": "c9c95eaa64f99c4384185bfdca88c41722518d14",
     "tak": "audit/audit-2026-11-05-20261105-070523"
   },
   "privacy": {
