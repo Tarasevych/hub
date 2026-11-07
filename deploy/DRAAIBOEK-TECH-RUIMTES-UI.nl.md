@@ -19,8 +19,8 @@ Werker T-UI, 27.10.2026. Hoort bij de backend van werker T-BACKEND (`backend/tec
   termijnenset (1 година … «До відкликання вручну»). Laatst gekozen tabblad blijft bewaard.
 - **Uitloggen in drie duidelijke keuzes** met gevolg: «Вийти з технічного сеансу» (blijft aangemeld; extensie-ontgrendelingen
   blijven), «Вийти з облікового запису на сайті» (sluit ook technisch; extensie-ontgrendelingen in deze browser vervallen), «Вийти всюди»
-  (opent Безпека → Сесії om te bevestigen). Plus: «Закриття однієї вкладки не знімає довгі дозволи розширення» (besluit t330u).
-- **Woorden** (audit): band en Сесії zeggen «до виходу з облікового запису на сайті» / «до завершення технічного сеансу»; het
+  (opent Безпека → Сеанси om te bevestigen). Plus: «Закриття однієї вкладки не знімає довгі дозволи розширення» (besluit t330u).
+- **Woorden** (audit): band en Сеанси zeggen «до виходу з облікового запису на сайті» / «до завершення технічного сеансу»; het
   bevestigvenster zegt «Не питати знову, доки я не вийду з облікового запису на сайті (не довше N год)».
 - Versheid tussen subdomeinen: status elke 15 s zolang het tabblad zichtbaar is + meteen bij focus/zichtbaar (was tot 60 s).
 

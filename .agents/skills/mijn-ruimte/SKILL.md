@@ -4,7 +4,7 @@
 
 ---
 name: mijn-ruimte
-description: Двосторонній модуль розширення і з'єднувач MCP Google Antigravity для Mijn Ruimte (*.tarasevych.com) — розбудова й керування сайтом, керування розширенням браузера, локальним комп'ютером (agent.mjs), сервером і багатоагентною координацією через https://mcp.tarasevych.com/antigravity.
+description: Двосторонній модуль розширення і з'єднувач MCP Google Antigravity для Mijn Ruimte (*.tarasevych.com) — розбудова й керування сайтом, керування розширенням оглядача, локальним комп'ютером (agent.mjs), сервером і багатоагентною координацією через https://mcp.tarasevych.com/antigravity.
 ---
 
 # Mijn Ruimte — модуль розширення і двосторонній міст Google Antigravity (`/antigravity`)
@@ -12,7 +12,7 @@ description: Двосторонній модуль розширення і з'є
 Ця навичка надає **Google Antigravity** виділений двосторонній з'єднувач (`https://mcp.tarasevych.com/antigravity`) і міст командного рядка (`<шлях-до-навички>/scripts/mijn-ruimte`) для роботи з платформою **Mijn Ruimte** (`*.tarasevych.com`) через чотири робочі канали:
 
 1. **Сайт і багатоагентна координація (`site` / `orch`)** — читання та запис пошти, календаря, хмарних файлів, дошки завдань, репозиторіїв GitHub і координація задач між агентами штучного інтелекту (`orch_overzicht`, `orch_context`, `orch_taak_start`, `orch_inleveren_*`).
-2. **Розширення браузера (`browser`)** — керування розширенням Mijn Ruimte для Chrome/Firefox у реальному часі в приватному (`_gebruiker`) і технічному (`_beheer`) слотах вкладок (`browser_open`, `browser_snapshot`, `browser_click`, `browser_type`, `browser_fill_form`, `browser_screenshot`, `browser_console`, `browser_network`, `browser_get_deep_diagnostics`, `browser_script`).
+2. **Розширення оглядача (`browser`)** — керування розширенням Mijn Ruimte для Chrome/Firefox у реальному часі в приватному (`_gebruiker`) і технічному (`_beheer`) слотах вкладок (`browser_open`, `browser_snapshot`, `browser_click`, `browser_type`, `browser_fill_form`, `browser_screenshot`, `browser_console`, `browser_network`, `browser_get_deep_diagnostics`, `browser_script`).
 3. **Локальний комп'ютер (`pc` через `agent.mjs`)** — огляд і керування під'єднаним комп'ютером (`machine_status`, `machine_processes`, `machine_read_file`, `machine_write_file`, `machine_list_dir`, `machine_exec`, `machine_docker`) у приватному (`_gebruiker`) або технічному (`_beheer`) контурі.
 4. **Сервер і випуски (`server` у `_beheer`)** — моніторинг і адміністрування робочого сервера за активного технічного простору власника (`server_health`, `deploy_status`, `deploy_logs`, `deploy_release`, `db_query_readonly`, `audit_tail`, `security_overview`).
 
@@ -32,9 +32,9 @@ description: Двосторонній модуль розширення і з'є
 ### 1. Налаштування та перевірка з'єднання
 ```bash
 # Зберегти кінцеву точку та налаштувати ~/.gemini/settings.json для Antigravity
-node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Verbind --url https://mcp.tarasevych.com/antigravity [--token <ТОКЕН>]
+node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Verbind --url https://mcp.tarasevych.com/antigravity [--token <МАРКЕР_ДОСТУПУ>]
 
-# Перевірити метадані RFC 9728, стан сесії MCP і видимі інструменти за каналами
+# Перевірити метадані RFC 9728, стан сеансу MCP і видимі інструменти за каналами
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Status
 
 # Вивести всі надані інструменти (за потреби з фільтром --groep або --kant gebruiker|beheer)
@@ -53,12 +53,12 @@ node .agents/skills/mijn-ruimte/scripts/mijn-ruimte OrchContext
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte OrchTaakStart --id AGPLUGIN-002 --samenvatting "Опис задачі"
 ```
 
-### 3. Двостороннє керування браузером (`browser_*`)
+### 3. Двостороннє керування оглядачем (`browser_*`)
 ```bash
-# Перелік відкритих вкладок у розблокованому слоті браузера
+# Перелік відкритих вкладок у розблокованому слоті оглядача
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserTabs [--kant gebruiker|beheer]
 
-# Відкрити адресу в слоті браузера
+# Відкрити адресу в слоті оглядача
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserOpen --doelUrl https://tarasevych.com [--kant gebruiker]
 
 # Зняти знімок дерева документа активної вкладки

@@ -1,7 +1,7 @@
 > 🌐 **Taal / Мова:** [Українська](АДАПТЕР-КЛОД.uk.md) · **Nederlands** | [Hoofdpagina](LEESMIJ.md) · [Documentatie-index](docs/INDEX.nl.md)
 
 <!-- orch-adapter -->
-# Адаптер для Claude (Claude Code, claude.ai, MCP-конектор mcp.tarasevych.com) · Adapter voor Claude (Claude Code, claude.ai, MCP-конектор mcp.tarasevych.com)
+# Перехідник для Claude (Claude Code, claude.ai, MCP-з'єднувач mcp.tarasevych.com) · Adapter voor Claude (Claude Code, claude.ai, MCP-з'єднувач mcp.tarasevych.com)
 
 Цей файл — лише вказівник. Усі правила — в **AGENTS.md** (канонічне джерело) і `orchestratie/beleid.json`. Тут нічого не додається й не скасовується.
 Dit bestand is alleen een verwijzing. Alle regels staan in **AGENTS.md** en `orchestratie/beleid.json`.

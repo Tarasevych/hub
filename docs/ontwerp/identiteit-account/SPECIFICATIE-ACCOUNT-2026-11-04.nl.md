@@ -32,7 +32,7 @@ Alle 12 secties uit `IDENTITY_TABS` (`src/identiteit/identiteit-tabs.ts`) staan 
 | 6 | `sharing` | Delen | Спільний доступ |
 | 7 | `identity` | Identiteiten | Ідентичності |
 | 8 | `account` | Account en gegevens | Обліковий запис і дані |
-| 9 | `sessions` | Sessies en apparaten | Сесії та пристрої |
+| 9 | `sessions` | Sessies en apparaten | Сеанси та пристрої |
 | 10 | `methods` | Aanmeldmethoden | Способи входу |
 | 11 | `security` | Beveiliging | Безпека |
 | 12 | `recovery` | Toegangsherstel | Відновлення доступу |

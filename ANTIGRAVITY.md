@@ -1,7 +1,7 @@
 > 🌐 **Мова:** **Українська** · [Nederlands](ANTIGRAVITY.nl.md) | [Головна](README.md) · [Покажчик документації](docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md)
 
 <!-- orch-adapter -->
-# Адаптер для Antigravity · Adapter voor Antigravity
+# Перехідник для Antigravity · Adapter voor Antigravity
 
 Цей файл — лише вказівник. Усі правила — в **AGENTS.md** (канонічне джерело) і `orchestratie/beleid.json`. Тут нічого не додається й не скасовується.
 Dit bestand is alleen een verwijzing. Alle regels staan in **AGENTS.md** en `orchestratie/beleid.json`.

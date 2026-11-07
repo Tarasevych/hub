@@ -1,7 +1,7 @@
 > 🌐 **Taal / Мова:** [Українська](АДАПТЕР-ГРОК.uk.md) · **Nederlands** | [Hoofdpagina](LEESMIJ.md) · [Documentatie-index](docs/INDEX.nl.md)
 
 <!-- orch-adapter -->
-# Адаптер для Grok (MCP-конектор, ZIP/TAR.GZ) · Adapter voor Grok (MCP-конектор, ZIP/TAR.GZ)
+# Перехідник для Grok (MCP-з'єднувач, ZIP/TAR.GZ) · Adapter voor Grok (MCP-з'єднувач, ZIP/TAR.GZ)
 
 Цей файл — лише вказівник. Усі правила — в **AGENTS.md** (канонічне джерело) і `orchestratie/beleid.json`. Тут нічого не додається й не скасовується.
 Dit bestand is alleen een verwijzing. Alle regels staan in **AGENTS.md** en `orchestratie/beleid.json`.

@@ -30,7 +30,7 @@ met daarin `AiVertalingBalk` (ШІ/vertaling) en per formaat de voorbeeldcompone
 | 16 | «По ширині» / «Вся сторінка» / «100%» | PDF-balk | passend maken (aria-pressed) | modus (segment) | 1 | actief | drie tekstknoppen |
 | 17 | PDF − / «100%» / + | PDF-balk | extra zoomfactor bovenop de modus | zoom | 1 | — | waarde = factor, niet het werkelijke % |
 | 18 | PDF-profiel/handtekening (`MailPdfProfileBanner`) | inhoud | XMP/handtekening-bewijs (technisch) | ⓘ-paneel | 4 | — | altijd zichtbaar |
-| 19 | Grafisch: «PNG / Нативний decode браузера» + Format/Bytes/Width/Height | inhoud (afbeelding) | technische metadata | ⓘ-paneel | 5 | — | altijd zichtbaar |
+| 19 | Grafisch: «PNG / Питомий decode оглядача» + Format/Bytes/Width/Height | inhoud (afbeelding) | technische metadata | ⓘ-paneel | 5 | — | altijd zichtbaar |
 | 20 | Klik naast de inhoud / op de achtergrond | stage/backdrop | minimaliseren | ongewijzigd | — | — | — |
 
 ## 2. Ontwerp v2 (document eerst)

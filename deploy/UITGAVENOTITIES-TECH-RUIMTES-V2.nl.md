@@ -63,14 +63,14 @@ gedrag. Tabellen `app.tech_ruimte_*` blijven staan en worden niet gelezen. Vorig
   met dezelfde termijnen (DB gecontroleerd); drie uitlogkeuzes; «Вийти з технічного сеансу» laat de site-sessie en «1 рік»-ontgrendeling
   staan; tweede tabblad deelt de sessie zonder bevestiging; één tabblad uitloggen laat «1 рік»/«без обмеження» en de sessie
   «до виходу з облікового запису на сайті» staan; «Вийти з облікового запису на сайті» (met bevestiging) beëindigt site + technisch en trekt ontgrendelingen in;
-  «Вийти всюди» leidt naar Безпека → Сесії; rol met plafond 60 min: 5 termijnen uitgegrijsd met reden; NL en 390 px zonder overloop.
+  «Вийти всюди» leidt naar Безпека → Сеанси; rol met plafond 60 min: 5 termijnen uitgegrijsd met reden; NL en 390 px zonder overloop.
 
 ## Wat NIET geverifieerd is
 - Aanmelden met Google en bevestigen met passkey/Google (lokaal niet mogelijk): de site-sessie is in de DB gezaaid; bevestiging liep
   via een echte TOTP-code in het echte venster (authenticator in de DB gezaaid).
 - Uitloggen in één tabblad is aangeroepen met hetzelfde API-verzoek als de client (`logout-current`) via fetch in de pagina; het hub-menu
   zelf heeft alleen «Вийти з цього обліковому запису» (hele browser).
-- «Вийти всюди» zelf (de bevestigde knop op Безпека → Сесії) is niet doorgeklikt; alleen de doorverwijzing.
+- «Вийти всюди» zelf (de bevestigde knop op Безпека → Сеанси) is niet doorgeklikt; alleen de doorverwijzing.
 - Echte browserextensie en echte MCP-client: ontgrendelingen en een MCP-verbinding zijn in de DB gezaaid; MCP-poortgedrag alleen in de
   eenheidstest (58).
 - Schaduwmodus alleen in de eenheidstest; adminpagina's met afdwinging (`beheer-alleen-tech`) niet in de browser getest.

@@ -242,7 +242,7 @@ portable Node in `T:\mijn-ruimte\hulpmiddelen\node`).
    geen fout in de app.
 6. **Herstart**: `systemctl restart mijn-ruimte` op de VM. De agent meldt `[agent] disconnected (<code>), retry in 1s`
    (de wachttijd loopt op tot 30 s) en verbindt daarna zelf opnieuw; de UI toont kort Disconnected en dan weer Connected.
-7. **Intrekken**: klik **Intrekken**. De agent meldt `токен відкликано або недійсний. Виконайте pair заново.` en stopt.
+7. **Intrekken**: klik **Intrekken**. De agent meldt `маркер доступу відкликано або недійсний. Виконайте pair заново.` en stopt.
    Het apparaat verdwijnt uit de lijst. Start `node $t\agent.mjs run` nogmaals: hetzelfde bericht (de server sluit met 4403).
 8. **Limiet**: vraag 6 koppelcodes binnen 10 minuten aan; de 6e geeft de melding over de limiet (5 per 10 minuten per gebruiker).
 

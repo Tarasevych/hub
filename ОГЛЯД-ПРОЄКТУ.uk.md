@@ -47,7 +47,7 @@
 3. [Повний путівник по гілках репозиторію (71 гілка: що де шукати)](#3-повний-путівник-по-гілках-репозиторію-71-гілка-що-де-шукати)
    - [3.1. Головні та інтеграційні гілки](#31-головні-та-інтеграційні-гілки)
    - [3.2. Активні гілки в роботі та кандидати на злиття (Листопад 2026)](#32-активні-гілки-в-роботі-та-кандидати-на-злиття-листопад-2026)
-   - [3.3. Злиті у `voornaamst` функціональні та випускні гілки (Жовтень–Листопад 2026)](#33-злиті-у-voornaamst-функціональні-та-релізні-гілки-жовтеньлистопад-2026)
+   - [3.3. Злиті у `voornaamst` функціональні та випускні гілки (Жовтень–Листопад 2026)](#33-злиті-у-voornaamst-функціональні-та-випускові-гілки-жовтеньлистопад-2026)
    - [3.4. Історичні та архівні гілки ранньої розробки (Вересень — 16 Жовтня 2026)](#34-історичні-та-архівні-гілки-ранньої-розробки-вересень--16-жовтня-2026)
 4. [Реєстр Pull Requests (#1–#27) та Випусків (GitHub Releases)](#4-реєстр-pull-requests-127-та-випусків-github-releases)
 5. [Структура репозиторію: де що лежить у коді](#5-структура-репозиторію-де-що-лежить-у-коді)
@@ -72,10 +72,10 @@
 | **[`id.tarasevych.com`](https://id.tarasevych.com)** | **Ідентичність (`id`)** | Єдиний центр входу та безпеки облікових записів: Google OIDC (PKCE + nonce + `__Secure-tsv_aanmeld_binding`), пароль + TOTP (`AES-256-GCM`) + коди відновлення, **WebAuthn Ключі доступу**, гостьові коди доступу (`/toegang`), Step-Up підтвердження чутливих дій, перемикання облікових записів та **12 розділів профілю**. | [`src/ToegangslaagWeergave.tsx`](src/ToegangslaagWeergave.tsx), [`backend/toegangslaag.ts`](backend/toegangslaag.ts), [`backend/toegangssleutels.ts`](backend/toegangssleutels.ts), [`backend/stap-op.ts`](backend/stap-op.ts) |
 | **[`cloud.tarasevych.com`](https://cloud.tarasevych.com)** | **Хмара (`cloud`)** | **Cloud vNext (M1–M11)**: робочі простори файлів, Google Drive проекція, клієнтське нульове розголошення шифрування (**M7 архітектура приватності** на базі WebAuthn PRF та ключа відновлення), універсальний переглядач файлів, фото-сервіс. | [`backend/cloud-platform.ts`](backend/cloud-platform.ts), [`backend/cloud-google-drive.ts`](backend/cloud-google-drive.ts), [`docs/АРХІТЕКТУРА-ПРИВАТНОСТІ-ХМАРИ-М7.uk.md`](docs/АРХІТЕКТУРА-ПРИВАТНОСТІ-ХМАРИ-М7.uk.md) |
 | **[`ai.tarasevych.com`](https://ai.tarasevych.com)** | **ШІ-простір (`ai`)** | Робота з приватними та технічними ШІ-моделями, дошка ШІ-агентів, гранулярні дозволи **«Доступ ШІ»** (обсяги повноважень по інструментах і чутливих даних), єдиний хаб під'єднань `/verbindingen`. | [`src/agenten/`](src/agenten/), [`backend/ai-beleid.ts`](backend/ai-beleid.ts), [`backend/connector-v2.ts`](backend/connector-v2.ts) |
-| **[`mcp.tarasevych.com`](https://mcp.tarasevych.com)** | **MCP-шлюз (`mcp`)** | Окремі конекторні адреси на кожного агента (`/claude`, `/gpt`, `/grok`, `/gemini`, `/copilot`, `/cursor`), OAuth 2.0 метадані, під'єднання зовнішніх MCP-серверів (`backend/mcp-klant/`), вебпанель **«Координація»** (`/agents` → `TabOrch.tsx`) та ізольовані двері порту `8091`. | [`src/agenten/TabOrch.tsx`](src/agenten/TabOrch.tsx), [`backend/orch-routes.ts`](backend/orch-routes.ts), [`deploy/ЄДИНИЙ-ШЛЯХ-ЗЄДНУВАЧА.md`](deploy/ЄДИНИЙ-ШЛЯХ-ЗЄДНУВАЧА.md) |
+| **[`mcp.tarasevych.com`](https://mcp.tarasevych.com)** | **MCP-шлюз (`mcp`)** | Окремі з'єднувальні адреси на кожного агента (`/claude`, `/gpt`, `/grok`, `/gemini`, `/copilot`, `/cursor`), OAuth 2.0 метадані, під'єднання зовнішніх MCP-серверів (`backend/mcp-klant/`), вебпанель **«Координація»** (`/agents` → `TabOrch.tsx`) та ізольовані двері порту `8091`. | [`src/agenten/TabOrch.tsx`](src/agenten/TabOrch.tsx), [`backend/orch-routes.ts`](backend/orch-routes.ts), [`deploy/ЄДИНИЙ-ШЛЯХ-ЗЄДНУВАЧА.md`](deploy/ЄДИНИЙ-ШЛЯХ-ЗЄДНУВАЧА.md) |
 | **[`github.tarasevych.com`](https://github.tarasevych.com)** | **GitHub (`github`)** | Під'єднання GitHub OAuth / GitHub App, огляд репозиторіїв, гілок, Pull Requests, фіксацій змін і випусків, індексація коду та задач у глобальний пошук `/zoek`. | [`shared/github-koppeling.ts`](shared/github-koppeling.ts), [`backend/uitrol-github.ts`](backend/uitrol-github.ts) |
 | **[`huis.tarasevych.com`](https://huis.tarasevych.com)** | **Розумний дім (`huis`)** | **Huis vNext**: інтеграція з Home Assistant та локальними шлюзами, управління кімнатами, пристроями й автоматизаціями, шифрування маркерів доступу перехідників (`HUIS_ADAPTER_SLEUTEL_V1`), захист підмережі управління. | [`shared/huis-model.ts`](shared/huis-model.ts), [`deploy/ЗМІНИ-20261028-ДІМ-ОНОВЛЕННЯ.md`](deploy/ЗМІНИ-20261028-ДІМ-ОНОВЛЕННЯ.md) |
-| **[`api.tarasevych.com`](https://api.tarasevych.com)** | **API та Сховище (`api`)** | Управління машинними маркерами доступу (`tsv_`), API-під'єднаннями, вебхуками та захищеним **Сховищем секретів власника (Sleutelkluis / Сховище)**. | [`src/ApiPlatformWeergave.tsx`](src/ApiPlatformWeergave.tsx), [`backend/api-platform-kluis.ts`](backend/api-platform-kluis.ts), [`shared/sleutelkluis.ts`](shared/sleutelkluis.ts) |
+| **[`api.tarasevych.com`](https://api.tarasevych.com)** | **API та Сховище (`api`)** | Управління машинними маркерами доступу (`tsv_`), API-під'єднаннями, вебвикликами та захищеним **Сховищем секретів власника (Sleutelkluis / Сховище)**. | [`src/ApiPlatformWeergave.tsx`](src/ApiPlatformWeergave.tsx), [`backend/api-platform-kluis.ts`](backend/api-platform-kluis.ts), [`shared/sleutelkluis.ts`](shared/sleutelkluis.ts) |
 | **[`admin.tarasevych.com`](https://admin.tarasevych.com)** | **Адмін (`admin`)** | **Технічний простір**: керування користувачами й ролями, журнал безпеки `app.audit` (лише дописування хеш-ланцюг), стан RLS-ізоляції, діагностика сервера й відмальовування (`rook-controle`), **Майстер під'єднань**, управління SSH-CA, термінал у оглядачі та центр **«Оновлення»** з криптографічним підтвердженням власника через Ключ доступу. | [`backend/server-beheer.ts`](backend/server-beheer.ts), [`backend/uitrol-goedkeuring.ts`](backend/uitrol-goedkeuring.ts), [`backend/eigenaar-besluit.ts`](backend/eigenaar-besluit.ts) |
 | **[`dashboard.tarasevych.com`](https://dashboard.tarasevych.com)** | **Панель керування (`dashboard`)** | Статична панель огляду з `/srv/mijn-ruimte/dashboard` (повністю відокремлена від сеансів та API). | [`server/start.ts`](server/start.ts), [`deploy/ОГЛЯД-РОЗГОРТАННЯ.md`](deploy/ОГЛЯД-РОЗГОРТАННЯ.md) |
 
@@ -90,10 +90,10 @@ flowchart TB
     subgraph VM["Власна Ubuntu 26.04.1 LTS ВМ (BYOS)"]
         CFD["cloudflared.service (Вихідний QUIC-тунель)"]
         subgraph App["Процес mijn-ruimte.service (127.0.0.1:8080, користувач mijnruimte)"]
-            SRV["server/start.ts · Канонічний роутер + CSRF + Rate Limiter + Auth-Poort"]
+            SRV["server/start.ts · Канонічний маршрутизатор + CSRF + Rate Limiter + Auth-Poort"]
             SPA["React 19 SPA (dist/) + 147 переглядачів форматів"]
             API["Backend API (backend/index.ts + спеціалізовані модулі)"]
-            WRK["Фоновий воркер пошуку та OCR (zoek-werker.mjs / Tesseract)"]
+            WRK["Фоновий фоновий виконавець пошуку та OCR (zoek-werker.mjs / Tesseract)"]
         end
         MCP8091["MCP-двері (127.0.0.1:8091 · deploy/mcp/server.mjs)"]
         PG[("PostgreSQL 18.6 (mijnruimte)\n139 міграцій · FORCE RLS\nmijnruimte_app | mijnruimte_system | mijnruimte_migrator")]
@@ -109,7 +109,7 @@ flowchart TB
     API -->|"SET LOCAL app.user_id"| PG
     API --> FS
     API --> WRK
-    ROOT -.->|"Атомарні релізи, резервні копії, Passkey-рішення"| App
+    ROOT -.->|"Атомарні випуски, резервні копії, Passkey-рішення"| App
     ROOT -.->|"Міграції та ролі БД"| PG
 ```
 
@@ -335,7 +335,7 @@ flowchart TB
 
 ### Останні випуски (GitHub Releases)
 
-За стандартом **TRACE-001**, кожен випуск публікується у [GitHub Releases](https://github.com/Tarasevych/hub/releases) і містить інсталяційний архів `mijn-ruimte-<versie>.tar.gz`, контрольний хеш `.tar.gz.sha256` та (для агентських передач) пакет `-overdracht.zip`:
+За стандартом **TRACE-001**, кожен випуск публікується у [GitHub Releases](https://github.com/Tarasevych/hub/releases) і містить встановлювальний архів `mijn-ruimte-<versie>.tar.gz`, контрольний хеш `.tar.gz.sha256` та (для агентських передач) пакет `-overdracht.zip`:
 
 | Тег випуску | Назва випуску | Дата (UTC) | Задача / Гілка |
 |---|---|---|---|
@@ -359,7 +359,7 @@ Tarasevych/hub
 ├── НОТАТКИ-БЕЗПЕКИ.md                # Аудит безпеки, виправлення фаз A/B/1/2/3/Audit/Zoek/Werkblad та відкриті питання
 ├── ПЛАН-ПЕРЕНЕСЕННЯ.md                   # Архітектурний план міграції з AppDeploy на self-hosted Node.js + PostgreSQL
 ├── cron.json                        # Визначення 6 фонових завдань (mail, google-sync, opruimen, mail-queue, diagnostiek, zoek-index)
-├── package.json                     # Залежності (Node >= 24) та скрипти складання, перевірок, міграцій і тестів
+├── package.json                     # Залежності (Node >= 24) та сценарії складання, перевірок, міграцій і тестів
 │
 ├── orchestratie/                    # Координація ШІ-агентів (ORCH-001) та трасування випусків (TRACE-001)
 │   ├── beleid.json                  # Машинна політика координації, списки агентів, каналів, обов'язкових перевірок
@@ -384,28 +384,28 @@ Tarasevych/hub
 │       ├── router.ts                # HTTP-маршрутизатор із перевіркою канонічності шляхів (PATH_NOT_CANONICAL)
 │       ├── auth-poort.ts            # Центральний шлюз авторизації та облік публічних маршрутів (PUBLIEKE_ROUTES)
 │       ├── beveiliging.ts           # Rate limiting, блокування входів (lockouts), криптографічні хелпери
-│       ├── rls-audit.ts             # Дзеркало перевірок Row-Level Security та логування порушень у app.rls_audit
+│       ├── rls-audit.ts             # Дзеркало перевірок Row-Level Security та журналювання порушень у app.rls_audit
 │       └── audit.ts                 # Запис у захищений хеш-ланцюгом журнал app.audit
 │
 ├── backend/                         # Серверна бізнес-логіка всіх 10 активних сервісів
-│   ├── index.ts                     # Основний реєстр маршрутів API, сесій, OAuth-транзакцій та робочих просторів
-│   ├── deployment-identity.ts       # Єдине джерело доменів (*.tarasevych.com) та параметрів сесійних кук
+│   ├── index.ts                     # Основний реєстр маршрутів API, сеансів, OAuth-транзакцій та робочих просторів
+│   ├── deployment-identity.ts       # Єдине джерело доменів (*.tarasevych.com) та параметрів сеансових кук
 │   ├── toegangslaag.ts              # Паролі, TOTP (AES-256-GCM), коди відновлення (HMAC), телефони, політики входу
 │   ├── toegangssleutels.ts          # Користувацькі WebAuthn Passkeys
 │   ├── stap-op.ts                   # Механізм Step-Up повторного підтвердження для чутливих дій
 │   ├── eigenaar-besluit.ts          # Passkey-рішення власника для root-дій (повернення стану, правила, зовнішні MCP-хости)
 │   ├── uitrol-goedkeuring.ts        # Перевірка, передконтроль (voorcontrole) та схвалення пакетів оновлень
-│   ├── uitrol-github.ts             # Перевірка походження коміту, гілки та SHA-256 GitHub Release-архіву (TRACE-001)
+│   ├── uitrol-github.ts             # Перевірка походження фіксації змін, гілки та SHA-256 GitHub Release-архіву (TRACE-001)
 │   ├── orch-routes.ts / orch-opslag.ts / orch-hulpmiddelen.ts # Веб/HTTP/MCP-інтерфейс системи координації ORCH-001
-│   ├── connector-v2.ts / mcp-klant/ # Шлюз ШІ-конекторів v2 (/claude, /gpt, /grok...) та клієнт зовнішніх MCP
+│   ├── connector-v2.ts / mcp-klant/ # Шлюз ШІ-з'єднувачів v2 (/claude, /gpt, /grok...) та клієнт зовнішніх MCP
 │   ├── google-suite-*.ts            # OAuth, Gmail, Google Drive, Google Calendar, Google Contacts (People API)
 │   ├── mail-microsoft.ts / mail-imap.ts # Інтеграція Outlook (Microsoft Graph) та універсального IMAP/SMTP
-│   ├── globaal-zoek.ts / zoek-index.ts / zoek/ # Глобальний пошук /zoek, індексатор, воркер текстів та OCR
+│   ├── globaal-zoek.ts / zoek-index.ts / zoek/ # Глобальний пошук /zoek, індексатор, фоновий виконавець текстів та OCR
 │   ├── cloud-platform.ts / cloud-google-drive.ts # Хмарне сховище Cloud vNext
 │   ├── werkblad-v3.ts               # Серверне ядро робочого полотна Werkblad v3
 │   └── juridisch.ts                 # Статичні двомовні юридичні сторінки GET /privacy та GET /terms
 │
-├── src/                             # Фронтенд (React 19 + TypeScript + Tailwind CSS)
+├── src/                             # Клієнтська частина (React 19 + TypeScript + Tailwind CSS)
 │   ├── main.tsx / App.tsx           # Точка входу SPA
 │   ├── VerenigdDienstApp.tsx        # Об'єднана оболонка сервісів, меню v2, перемикач просторів
 │   ├── GoogleMailWerkruimte.tsx     # Головний робочий простір пошти
@@ -414,13 +414,13 @@ Tarasevych/hub
 │   ├── plaatsing/                   # Система рухомих кнопок «Зони й гнізда» (Plek.tsx, plaats-slepen.ts)
 │   ├── agenten/                     # Інтерфейс керування ШІ-агентами, дозволами та вкладка «Координація» (TabOrch.tsx)
 │   ├── afstemming-vnext/            # Інтерфейс узгодження задач, конфліктів і випусків
-│   ├── merk/                        # Система офіційних та власних логотипів брендів (CC0/MIT + санітизований SVG)
+│   ├── merk/                        # Система офіційних та власних логотипів брендів (CC0/MIT + очищений SVG)
 │   └── zoek/                        # Інтерфейс глобального пошуку /zoek та управління індексацією
 │
-├── shared/                          # Спільні типи, моделі, правила та константи (доступні і на сервері, і в браузері)
+├── shared/                          # Спільні типи, моделі, правила та константи (доступні і на сервері, і в оглядачі)
 │   ├── orch-model.ts                # Модель даних та коди помилок координації агентів (ORCH_CODES)
 │   ├── ontwikkelarchief.ts          # Схема та валідатор журналу розробки TRACE-001 (ONTWIKKELARCHIEF.json)
-│   ├── uitrol-manifest.ts / uitrol-codes.ts # Маніфест пакета розгортання та коди відмов інсталятора
+│   ├── uitrol-manifest.ts / uitrol-codes.ts # Маніфест пакета розгортання та коди відмов встановлювача
 │   ├── plaatsing.ts                 # Математична модель зон і гнізд рухомих кнопок
 │   ├── mail-acties.ts               # Єдиний реєстр 39 дій над листами (тексти uk/nl, клавіші, кольорові тони)
 │   ├── ai-bronnen.ts                # Верифікація цитат і дат ШІ за оригінальним текстом листа
@@ -428,18 +428,18 @@ Tarasevych/hub
 │   └── geheim-patronen.ts           # Регулярні вирази для автоматичного приховування секретів у пошуковому індексі
 │
 ├── migrations/                      # 139 SQL-міграцій PostgreSQL (0001_basis.sql .. 0198_aanmeldmethoden_vnext.sql + rechten.sql)
-├── deploy/                          # Скрипти встановлення (installeer-app.sh), systemd-юніти, таймери, резервні копії, runbooks
+├── deploy/                          # Сценарії встановлення (installeer-app.sh), systemd-юніти, таймери, резервні копії, runbooks
 ├── docs/                            # Архітектурна документація, специфікації та карта файлів (docs/kaart/КАРТА-ФАЙЛІВ.md)
 ├── scripts/                         # CLI-утиліти складання, перевірок (kaart-controle, plaatsing-controle, l002-audit) та orch.mjs
 ├── tests/                           # Модульні (tests/eenheid/), візуальні (tests/visueel/) та E2E (tests/e2e/) тести
-└── extension/                       # Браузерне розширення Mijn Ruimte (Chrome / Edge)
+└── extension/                       # Оглядачеве розширення Mijn Ruimte (Chrome / Edge)
 ```
 
 ---
 
 ## 6. Змінні середовища, ключі шифрування та конфігурація (`ЗМІННІ-СЕРЕДОВИЩА.md`)
 
-Усі секрети на робоче середовище ВМ зберігаються виключно у файлі **`/etc/mijn-ruimte/geheimen.env`** (права `0600 root:root` або `0640 root:mijnruimte`), який завантажується через `EnvironmentFile=` у systemd-юнітах. Жоден секрет ніколи не комітиться в Git і не потрапляє у клієнтську складання. Повна документація: [`ЗМІННІ-СЕРЕДОВИЩА.md`](ЗМІННІ-СЕРЕДОВИЩА.md) та [`deploy/ОГЛЯД-РОЗГОРТАННЯ.md`](deploy/ОГЛЯД-РОЗГОРТАННЯ.md).
+Усі секрети на робоче середовище ВМ зберігаються виключно у файлі **`/etc/mijn-ruimte/geheimen.env`** (права `0600 root:root` або `0640 root:mijnruimte`), який завантажується через `EnvironmentFile=` у systemd-юнітах. Жоден секрет ніколи не фіксується у сховищі в Git і не потрапляє у клієнтську складання. Повна документація: [`ЗМІННІ-СЕРЕДОВИЩА.md`](ЗМІННІ-СЕРЕДОВИЩА.md) та [`deploy/ОГЛЯД-РОЗГОРТАННЯ.md`](deploy/ОГЛЯД-РОЗГОРТАННЯ.md).
 
 > [!TIP]
 > **Автоматична генерація відсутніх ключів на ВМ:**
@@ -554,7 +554,7 @@ Tarasevych/hub
 
 ```bash
 # 1. Локальний запуск та повна перевірка складання
-npm run dev                                          # Запуск Vite dev-сервера фронтенду
+npm run dev                                          # Запуск Vite dev-сервера клієнтської частини
 npm run build                                        # Повний конвеєр складання:
                                                      #   kaart-controle → plaatsing-controle → hulp-vraagtekens-controle →
                                                      #   zoek-ui-catalogus → l002-audit → mail-slimme-inbox-audit →
@@ -569,7 +569,7 @@ node scripts/plaatsing-controle.mjs                  # Перевірка зон
 node scripts/kleur-contrast-controle.mjs             # Перевірка контрастності кольорових палітр
 
 # 3. Команди оркестрації ШІ-агентів (ORCH-001)
-node scripts/orch.mjs controleer                     # Комплексна перевірка beleid.json, regels.lock.json, адаптерів, задач і черги
+node scripts/orch.mjs controleer                     # Комплексна перевірка beleid.json, regels.lock.json, перехідників, задач і черги
 node scripts/orch.mjs status                         # Поточний статус усіх зареєстрованих задач (in_progress / integrated / released / installed)
 node scripts/orch.mjs context                        # Генерація компактного контексту orchestratie/CONTEXT-COMPACT.md
 node scripts/orch.mjs taak-start --id <TASK-ID> --agent <agent> --basis <sha40> --tak <branch>

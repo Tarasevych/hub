@@ -364,7 +364,7 @@ de app-CSP `upgrade-insecure-requests` heeft). Kapot = storing → dezelfde teru
 `NAZORG_TERUGGEDRAAID` met `reden: rook`. Nooit twee keer (markering `nazorg-rook`).
 
 **«Діагностика» → «Сторінки й маршрути».** Elke pagina-controle toont naast de HTTP-schil wat de laatste browsercontrole over DIE pagina zei
-(`відмальовування ок у браузері (tijd)` / `відмальовування ЗЛАМАНО: …` → fout ROOK_KAPOT / `лише HTTP, відмальовування не перевірено (встановіть
+(`відмальовування ок у оглядачі (tijd)` / `відмальовування ЗЛАМАНО: …` → fout ROOK_KAPOT / `лише HTTP, відмальовування не перевірено (встановіть
 browser-controle)`). Het item «Відмальовування сторінок» leest `/var/lib/mijn-ruimte-uitrol-status/rook-controle.json` (ok / kapot / verouderd /
 niet gecontroleerd / nooit). De knop «Перевірити відмальовування» zet een **leeg** verzoekbestand in de goedkeur-inbox; de nazorg-timer ziet dat,
 verwijdert het en voert `rook-controle` uit (stand met testeigenaar; hoogstens 1× per 10 min; nooit terugdraaien). De site start zelf geen browser.
@@ -502,7 +502,7 @@ een assertie van een al bekende sleutel (`mijn-ruimte-goedkeur-sleutels.path`). 
 
 ### 13.3 Voorbereiders toestaan of intrekken
 
-Admin → «Оновлення» → «Кому дозволено готувати оновлення»: soort (обліковий запис / токен агента / MCP-під'єднання), wie, aantal dagen (1–30),
+Admin → «Оновлення» → «Кому дозволено готувати оновлення»: soort (обліковий запис / маркер доступу агента / MCP-під'єднання), wie, aantal dagen (1–30),
 «Дозволити» (extra bevestiging). «Відкликати» trekt meteen in en breekt lopende uploads af. Alles staat in de audit (`uitrol_voorbereider_*`). Een
 grant vervalt ook als het account geblokkeerd of met pensioen is of als AI voor dat account geblokkeerd is.
 
@@ -596,7 +596,7 @@ het; de registratie-opties droegen `hints: ['client-device','hybrid']`), dan ble
 (chunk na een nieuwe release, renderfout) werd bovendien stil `false`.
 
 **Herstel.**
-- Tijdens het wachten staat er een statusregel («Готуємо запит…» → «Відкрито вікно passkey браузера або Windows…», na 25 s
+- Tijdens het wachten staat er een statusregel («Готуємо запит…» → «Відкрито вікно passkey оглядача або Windows…», na 25 s
   een hint) met een werkende «Скасувати» (AbortController → «Додавання passkey скасовано.»). Elke fout komt als melding in
   de sectie en in de console.
 - Kan «Підтвердіть доступ» niet openen, dan geeft `client.ts` de fout `STAP_OP_VENSTER_FOUT` («оновіть сторінку»); een
@@ -711,8 +711,8 @@ hash:
 |---|---|
 | `#overzicht` | Огляд / Overzicht |
 | `#ai` | Під'єднані ШІ / Verbonden AI |
-| `#apparaten` | Пристрої й браузери / Apparaten en browsers |
-| `#tokens` | Токени / Tokens (двері сервера — на mcp/verbindingen, технічний профіль) |
+| `#apparaten` | Пристрої й оглядачі / Apparaten en browsers |
+| `#tokens` | Маркери доступу / Tokens (двері сервера — на mcp/verbindingen, технічний профіль) |
 | `#journaal` | Журнал / Logboek |
 
 - Een open rij staat ook in de hash, bijvoorbeeld `#apparaten/dev:<id>` of `#ai/oauth:<id>`.
@@ -814,7 +814,7 @@ Tests: `tests/eenheid/toegang-context.test.ts`, `uitrol-goedkeuring`, `passkeys`
 (screenshots `notities-*.png`, `intrekken-*.png`). Let op: de step-up-limiet is per IP — draai de e2e-bestanden met een
 pauze (≥ 2 min) of los, anders 429 op `/api/owner/access/stap-op`.
 
-### 13.11 Коди доступу для інших / toegangscodes, gastsessies en «Сесії» (migratie 0025)
+### 13.11 Коди доступу для інших / toegangscodes, gastsessies en «Сеанси» (migratie 0025)
 
 **Wat.** Op `id.tarasevych.com/methods` staat de sectie «Коди доступу для інших» (alleen de eigenaar; anderen krijgen
 `OWNER_REQUIRED` en zien de sectie niet). «Створити код доступу» vraagt naam, privénotitie, wat de gast mag bekijken,
@@ -850,9 +850,9 @@ IP-hash) en een uitklapbare geschiedenis. «Відкликати» vraagt een re
 beëindigt alle gastsessies van die code meteen. «Змінити строк»: inkorten mag zonder step-up (lopende gastsessies worden ook
 korter), verlengen of безстроково vraagt een sterke step-up.
 
-**«Сесії та пристрої»** (`id.tarasevych.com/sessions`, geen nieuw menu-item): eigen sessies tonen nu de echte aanmeldmethode
-(`authMethod`; tot passkey-aanmelden bestaat is dat meestal Google) en de duur; daaronder «Гостьові сесії» (code-naam, apparaat,
-gestart, laatst actief, duur, IP-hash) met per sessie «Завершити гостьову сесію». «Завершити всі інші» →
+**«Сеанси та пристрої»** (`id.tarasevych.com/sessions`, geen nieuw menu-item): eigen sessies tonen nu de echte aanmeldmethode
+(`authMethod`; tot passkey-aanmelden bestaat is dat meestal Google) en de duur; daaronder «Гостьові сеансу» (code-naam, apparaat,
+gestart, laatst actief, duur, IP-hash) met per sessie «Завершити гостьову сеанс». «Завершити всі інші» →
 `POST /api/owner/identity/security/revoke-others {gast:true}`: alle andere eigen sessies, tabbladen buiten deze sessie,
 onthouden browsers en alle levende gastsessies; deze aanmelding blijft.
 

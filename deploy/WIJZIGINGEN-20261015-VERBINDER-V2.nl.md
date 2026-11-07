@@ -32,7 +32,7 @@
    - Met zoekfunctie, risiconiveau, uitleg, schema en adres van het hulpmiddel.
    - Items «in ontwikkeling» worden getoond, maar kunnen niet worden ingeschakeld.
    - Bij opnieuw verbinden zijn drie secties zichtbaar: wat wordt toegevoegd, wat er al was, en wat niet wordt toegevoegd.
-5. **Tabblad «Конектори» (Connectoren)** op `mcp.*/agents` en op `mcp.*/verbindingen`.
+5. **Tabblad «З'єднувачі» (Connectoren)** op `mcp.*/agents` en op `mcp.*/verbindingen`.
    - Adressen met kopieer- en verbindingsknop.
    - Beperken werkt direct, uitbreiden pas na opnieuw verbinden; de keuze wordt onthouden.
    - Knoppen «Перепід'єднати» (Opnieuw verbinden) en «Відкликати» (Intrekken).
@@ -58,7 +58,7 @@
 - E2E in Chrome, `connector-v2` — 22/22:
   - volledig pad: Claude → stappenvenster → code → token;
   - `/ai/claude` via echte padverdeling;
-  - tabblad «Конектори»;
+  - tabblad «З'єднувачі»;
   - telefoon 390 px zonder afkapping;
   - geen enkele fout in de console.
 

@@ -1,12 +1,12 @@
 {
   "schema": 1,
-  "regelsVersie": "1.4.12",
-  "hash": "866cea1046388e418e7ebc4839499a075356c0c98bc92deccc589128bbd2ac77",
+  "regelsVersie": "1.4.13",
+  "hash": "4b08f84beda53f08065eb91485c159b72c26517a04e96ae6c5a22bb6fb30e3e4",
   "kritiekHash": "15fb72c45e30c0347440c8bc5002934d080b229eb61ce20543f5d1cd49b43bf7",
   "bestanden": {
     "AGENTS.md": "4cd0d3e172b59c40b621fd3a1ddda8920f4af8818452ca1e860607f3d06805e6",
-    "orchestratie/BESLUITEN.md": "fdd12f9c62b8f249e8ba62c8a4a65417e526004670d2b1024f9175108db51d3c",
-    "orchestratie/beleid.json": "f3d18558465a98a99c1bf82786fd5d3aa4f51c23e31e7b6e87ef2f7978fe0af7"
+    "orchestratie/BESLUITEN.md": "03244b9a026062f464f3af7e3728806c70fa4e1a9eb085dc013aab613f792efd",
+    "orchestratie/beleid.json": "64e67133d2c374a6d5f2eb2cd2e897c7729b53d1f20b0adedcb8e9836a35272a"
   },
   "eigenaar": null
 }

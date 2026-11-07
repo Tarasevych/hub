@@ -85,7 +85,7 @@ Installatie 155619 via de interface slaagde (3 min 19 s, root: `klaar/OK`), maar
 - Onder de actieve fase is nu zichtbaar welke deelstap precies draait (bijvoorbeeld «Bouwen (npm ci + vite)»).
 - Tests: `uitrol-runs` 39/39 (+3 voor de terugvalroute, met name dat een vreemd `installeer.log` nooit wordt gebruikt), `uitrol-herstel` 25/25, Chromium-run van de interface 25/25 (+2: status «goedgekeurd, wachten»).
 
-### Pagina «Конектори ШІ» (AI-connectoren: mcp → Agenten → Connectoren) herschreven
+### Pagina «З'єднувачі ШІ» (AI-connectoren: mcp → Agenten → Connectoren) herschreven
 - Agentkaarten met logo's (Claude, ChatGPT, Grok, Gemini, Copilot, Cursor): status, «Acties voor agent: 41 van 83 ingeschakeld», risiconiveau, ruimtes, «laatste actie».
 - Filters Alle / Verbonden / Beschikbaar / Wachten op herverbinding, zoeken, sorteren (standaard — **op laatste actie, nieuwste bovenaan**; ook op naam, aantal toestemmingen, risico).
 - Rechterkolom «Пришвидшене керування» (Versneld beheer): **Alle agenten inschakelen** (of alleen de aangevinkte), **Alle acties toestaan**, niveau (alleen lezen / lezen en schrijven / alleen schrijven / geen), categorie, ruimte (privé/technisch — technisch alleen voor de eigenaar);

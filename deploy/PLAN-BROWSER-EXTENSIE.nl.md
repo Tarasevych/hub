@@ -25,7 +25,7 @@ Doel: de gebruiker zet in zijn accountomgeving één schakelaar om, installeert 
 
 ## Fasen
 1. (voltooid) Knop «Перепід'єднати Claude» (Claude opnieuw verbinden) en toegangsstatussen.
-2. (voltooid) Paneel «Розширення браузера» (Browserextensie) in de accountomgeving, declaratie van site-acties (`src/ai-site-acties.ts`, WebMCP indien aanwezig), rechten op browserniveau en per afzonderlijk hulpmiddel; logboek via de algemene audit.
+2. (voltooid) Paneel «Розширення оглядача» (Browserextensie) in de accountomgeving, declaratie van site-acties (`src/ai-site-acties.ts`, WebMCP indien aanwezig), rechten op browserniveau en per afzonderlijk hulpmiddel; logboek via de algemene audit.
 3. (voltooid) Extensie (`extension/`), koppelen zonder code in te voeren, snapshot/navigate, migratie 0012, MCP-hulpmiddelen, tests (inclusief end-to-end keten).
 4. (voltooid) Klikken/typen/site-acties: uitsluitend met een bevestigingsverzoek.
 5. Publicatie in de Chrome Web Store (vereist besluit en account van de eigenaar) — openstaand. Controle in een echte Chrome-browser — handmatig na installatie.

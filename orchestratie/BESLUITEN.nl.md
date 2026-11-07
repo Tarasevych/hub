@@ -239,3 +239,8 @@ codes `ORCH_CODES` in `shared/orch-model.ts`, hulpteksten `orch.inlevering` / `o
 **Gevolgen.** `regelsVersie` 1.4.11 → 1.4.12; volledige tweetalige documentatie met zuivere bestandsnamen en inhoud.
 
 **Wie.** Verzoek van de eigenaar op 06-11-2026 (`AUDIT-001`); uitvoering door agent `antigravity`.
+
+## B-018 · 2026-11-06 · 1.4.13 · voorstel
+- **Geraakt:** `orchestratie/BESLUITEN.md`, `CLAUDE.md`, `.github/copilot-instructions.md`
+- **Reden:** Definitieve zuivering van verbogen technische termen in de begeleidende documentatie en het besluitenlogboek.
+- **Kern:** Alle verbogen leenwoorden zijn vervangen door zuivere Oekraïense equivalenten.

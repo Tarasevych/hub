@@ -1,7 +1,7 @@
 > 🌐 **Мова:** **Українська** · [Nederlands](GEMINI.nl.md) | [Головна](README.md) · [Покажчик документації](docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md)
 
 <!-- orch-adapter -->
-# Адаптер для Gemini (Gemini CLI / Antigravity-сумісні середовища) · Adapter voor Gemini (Gemini CLI / Antigravity-сумісні середовища)
+# Перехідник для Gemini (Gemini CLI / Antigravity-сумісні середовища) · Adapter voor Gemini (Gemini CLI / Antigravity-сумісні середовища)
 
 Цей файл — лише вказівник. Усі правила — в **AGENTS.md** (канонічне джерело) і `orchestratie/beleid.json`. Тут нічого не додається й не скасовується.
 Dit bestand is alleen een verwijzing. Alle regels staan in **AGENTS.md** en `orchestratie/beleid.json`.

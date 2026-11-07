@@ -251,7 +251,7 @@ A en C uit < 0,2 s), op tijd + tabblad vanuit A (zelfde einde), lijst 390 px lic
 extensie in echte Chromium (oud gedrag: schakelaar springt terug). Lokaal toegepast: 0071.
 
 ## Pakket uit git (geen «zonder-git»-waarschuwing meer)
-- Vanaf dit pakket wordt gebouwd met `deploy/uitrol/maak-voorstelpakket.sh` → `git archive` van een echte commit; `BRON-COMMIT` is die commit (40 hex). De voorcontrole toont «Коміт … — випуск відтворюваний з git».
+- Vanaf dit pakket wordt gebouwd met `deploy/uitrol/maak-voorstelpakket.sh` → `git archive` van een echte commit; `BRON-COMMIT` is die commit (40 hex). De voorcontrole toont «Фіксація змін … — випуск відтворюваний з git».
 - Bij het pakket hoort `mijn-ruimte-<versie>.bundle` (git bundle): de geschiedenis van de geïnstalleerde pakketten als commits met tags (`pakket-20261017-221747` … `pakket-20261018-153026`) plus de nieuwe commit. Importeren in de eigen repository:
   `git fetch /pad/mijn-ruimte-<versie>.bundle 'refs/heads/main:refs/heads/claude/<versie>' 'refs/tags/*:refs/tags/*'` en daarna naar GitHub pushen.
 - Reproduceerbaar: dezelfde commit + dezelfde versie/metadata geven bit voor bit hetzelfde archief (dubbel gebouwd: identieke sha256). Gecontroleerd: het archief bouwt (`npm run build`) zonder bestanden van buiten git.
@@ -313,7 +313,7 @@ extensie-ontgrendeling-crypto 12 (vaste testvector server = extensie), extensie-
 
 ## Y · 19.10.2026 — extensie 0.6 met twee profielen, hub «Під'єднання ШІ», «Доступи», contacten, mobiele mail (migraties 0073, 0074)
 
-**Waarom.** 0.5 maakte de extensie alleen-technisch: zonder tech-profiel verdween «Розширення браузера» van mcp.*/agents#apparaten/extensie.
+**Waarom.** 0.5 maakte de extensie alleen-technisch: zonder tech-profiel verdween «Розширення оглядача» van mcp.*/agents#apparaten/extensie.
 Nu: één extensie, twee profielen; de aangemelde sessie op de site is de enige bron van gezag (pakket 20261018-184832 vervalt, nooit geïnstalleerd).
 
 **Extensie 0.6.0 — twee sloten.** `prive` (koppeling in de accountruimte) en `technisch` (tweede koppeling, alleen te maken met lopende tech-activering). Elk slot:
@@ -330,7 +330,7 @@ prive-slot, een technische alleen het technische (nooit kruislings).
 `/api/owner/agents/extensie-beheer` (+ `/beleid`, `/intrekken`, `/verlengen`) voor eigenaar of activering met users.manage; eigenaar onaantastbaar
 voor anderen; nieuw beleid trekt wat erbuiten valt meteen in; melding aan de gebruiker; alles in audit.
 
-**Hub «Під'єднання ШІ» (mcp.*/agents).** Tabbladen Огляд · Конектори · Під'єднані ШІ · Розширення браузера · Пристрої · Токени · Доступи ·
+**Hub «Під'єднання ШІ» (mcp.*/agents).** Tabbladen Огляд · З'єднувачі · Під'єднані ШІ · Розширення оглядача · Пристрої · Маркери доступу · Доступи ·
 Технічне (alleen tech-modus) · Журнал. Oude adressen (#apparaten/extensie, #extension, mcp.*/verbindingen, ai.*/verbindingen) leiden hierheen;
 niets verwijderd. Огляд: matrix «Що через який спосіб» uit echte gegevens. Доступи: «Мої доступи» (alles wat ik gaf, per methode: intrekken,
 verlengen, beperken) en voor beheerders in tech-modus «Усі користувачі» (beleid, intrekken, verlengen).
@@ -358,7 +358,7 @@ tweede account (Google) als Учасник via «Додати інший обл�
 iframe + Esc; bijlagekaarten zonder naam; contacten-melding onder de zijbalk; scan vals «Бракує дозволу Gmail» bij 502 (gmailFoutVan); vals «Підозрілий»
 voor subdomein van hetzelfde organisatiedomein; «Відкрити листи від нього» zonder filter; «Зняти позначку»; NL-codes in historie; gesprek zonder laatste
 antwoord; Drive-zoeken per woord; cloud-viewer onder zijbalk. Gebruiker: Пошта → Облікові записи deed niets (MailAccountsHub zonder onConnect) → Google-OAuth
-start; «Сесія закінчилася» voor Учасник op mcp.* → nieuwe code API_RECHT_VEREIST met uitleg, geen polling, geen «Стоп»; entitlement «Доступ до ШІ-мосту»
+start; «Сеанс закінчилася» voor Учасник op mcp.* → nieuwe code API_RECHT_VEREIST met uitleg, geen polling, geen «Стоп»; entitlement «Доступ до ШІ-мосту»
 nu in admin/access; welkomstkaart «Що далі» na goedkeuring; wachtend account ziet alleen het modaal; extensie «прив'язане до іншого облікового запису»-kaart;
 accountwissel beëindigt het tech-profiel van het vorige account. Noodstop «Стоп» trekt nu ook alle MCP-connectorverbindingen en tokens in (vroeger
 bleven Claude-tools in beide ruimtes werken). Admin-journaal toonde alleen service='admin' (sessieveld als filter) → filterveld `dienst`.
@@ -447,7 +447,7 @@ geweigerd — ze kunnen niet op het bureaublad terechtkomen, ook niet via de dat
 **13. ai.* — echte beginpagina.** Wat dit onderdeel is, wat het in DIT account nu kan (recht, sleutel, model, gereedschappen — alles van de server),
 een werkend chatvenster met stoppen, modelkeuze uit wat de server echt heeft en concrete foutredenen, 14 startvragen die alleen klikbaar zijn als het
 benodigde gereedschap er is, en één scherm «alle gereedschappen» met status en directe links. Zonder recht `api-platform` volgt een uitleg in plaats van
-«Сесія закінчилася». Eerlijk benoemd: de chat op ai.* heeft nog geen post-, agenda- of Drive-gereedschap (dat zit alleen in de MCP-connector).
+«Сеанс закінчилася». Eerlijk benoemd: de chat op ai.* heeft nog geen post-, agenda- of Drive-gereedschap (dat zit alleen in de MCP-connector).
 
 **14. AI-knoppen in een geopend bericht.** Echte oorzaak: `.google-mail-reader` is een raster met twee rijen, en `MailReaderAi` was het derde kind — de
 balk nam de flexibele rij en het bericht viel in een impliciete rij buiten `overflow:hidden`. Opgelost met `:has(> .mra)` plus reset van de inhoudsregel.
@@ -612,11 +612,11 @@ Tegelijk is een verse regressie uit het werk van 19–20.10 gevonden: in `shared
 accounts, waardoor tabbladen van een ander account kwijtraakten «welk account hier actief is». Nu wordt alleen het account vergeten dat uitlogt. De server zelf deed het al goed:
 `logout-account-browser` raakt maar één account aan en verankert de cookie opnieuw op een ander levend account.
 
-Het vinkje «Зберегти цей обліковий запис для наступних сесій» was half-echt: de waarde ging bij het inloggen naar de server (en stuurde daadwerkelijk de privécache van de mail aan), maar
+Het vinkje «Зберегти цей обліковий запис для наступних сеансів» was half-echt: de waarde ging bij het inloggen naar de server (en stuurde daadwerkelijk de privécache van de mail aan), maar
 **werd nergens opgeslagen** — `useState(true)` gaf telkens weer «aan» terug, bewust uitzetten was onmogelijk, en op de hub ontbrak het vinkje helemaal. Nu leeft de keuze
-op het apparaat, wordt ze ook vanaf de hub meegestuurd, synchroniseert ze met het antwoord van de server en is ze zichtbaar in «Налаштування → Сесії та пристрої».
+op het apparaat, wordt ze ook vanaf de hub meegestuurd, synchroniseert ze met het antwoord van de server en is ze zichtbaar in «Налаштування → Сеанси та пристрої».
 
-**3. «Запамʼятати цей браузер (не питати знову до виходу)» werkte niet — helemaal niet.** De keuze werd nergens bewaard: `useState(false)` in het venster, TOTP en herstelcode
+**3. «Запамʼятати цей оглядач (не питати знову до виходу)» werkte niet — helemaal niet.** De keuze werd nergens bewaard: `useState(false)` in het venster, TOTP en herstelcode
 stuurden haar niet naar de server, passkey evenmin, en in de Google-tak werd een **andere** parameter meegestuurd (`remember` regelt het onthouden van het *inloggen*), die in
 `identity/transactions/create` voor step-up hard werd overschreven met `false`. Op de server was er nergens plek om dit op te slaan. Het bijschrift was op alle paden een loze belofte.
 Bovendien werd het vinkje gerenderd binnen het blok «Виникли проблеми?» — bij slechts één beschikbare methode was het niet eens zichtbaar.
@@ -849,7 +849,7 @@ voor de uitleg bij 308 en voor «Andere client» die geen eigen pad heeft. De in
 **Herindeling.** Nieuw `src/agenten/AgentPagina.tsx` — de plek `#agent/<slug>` binnen de bestaande hub (geen nieuwe pagina en geen nieuwe entiteit toegevoegd).
 Op één tabblad staat alles over één AI: verbinding (eigen adres, kopiëren, status, opnieuw verbinden, intrekken, actieve koppelingen), rechten
 (dezelfde `RechtenKiezer` — het formulier is geëxporteerd uit `ConnectorsTab`, geen kopie), ruimte, verbindingswijze en tokens, agentkleur
-en het journaal van **specifiek deze** agent. Om niets dubbel te hebben: «Конектори» is nu alleen nog een lijst en bulkacties, de kaart leidt naar de agentpagina;
+en het journaal van **specifiek deze** agent. Om niets dubbel te hebben: «З'єднувачі» is nu alleen nog een lijst en bulkacties, de kaart leidt naar de agentpagina;
 de gedeelde tabbladen (Пристрої, Зовнішні MCP, Розширення, volledig journaal) zijn gedeeld gebleven.
 
 ### Wat de eigenaar vóór de installatie moet weten

@@ -164,7 +164,7 @@ Symptoom: «Couldn't reach de MCP server», terwijl er in het applicatielogboek 
 
 ## AI koppelen: met één klik of handmatig (vanaf 13-10-2026)
 
-Site: `mcp.<domein>` → **Агенти → Токени → «Під'єднати ШІ»** (privéruimte) of **Технічні під'єднання → «Під'єднати ШІ»** (technische ruimte, alleen eigenaar met profiel). Kies de AI (Grok, Claude, ChatGPT, Gemini, Copilot, Cursor, overige),
+Site: `mcp.<domein>` → **Агенти → Маркери доступу → «Під'єднати ШІ»** (privéruimte) of **Технічні під'єднання → «Під'єднати ШІ»** (technische ruimte, alleen eigenaar met profiel). Kies de AI (Grok, Claude, ChatGPT, Gemini, Copilot, Cursor, overige),
 waarheen u wilt koppelen (**serverdeuren** `/Grok`, `/claude`, … — alleen servereigenaar; of **connector** `/mcp` — uw apparaten, mail, Drive)
 en de **toegangsduur** voor deze AI: 1 uur (wordt vernieuwd tot 14 dagen, aanbevolen), 8 uur, 1 dag, 7 dagen, 30 dagen, onbeperkt (tot intrekking).
 Lange termijnen (7 dagen en langer) vereisen een nieuwe aanmeldingsbevestiging (extra bevestiging). De termijn kan nogmaals worden aangepast in het venster «Дозволити».
@@ -173,12 +173,12 @@ Lange termijnen (7 dagen en langer) vereisen een nieuwe aanmeldingsbevestiging (
 - plak het adres (`https://mcp.<domein>/Grok` of `/mcp`) in de AI-client; de client opent zelf de site — u bent al aangemeld, klik op **«Дозволити»**;
 - de deuren (`GET /oauth/authorize`) vragen niet langer om een deurtoken: ze sturen door naar het sitevenster `…/verbindingen?consent=mrd_…` (technische ruimte)
   (controle van de eigenaarssessie + nieuwe aanmeldingsbevestiging), waarna de site het besluit via loopback doorgeeft aan de deur;
-- voor clients die zelf geen aanmeldvenster kunnen openen: gebruik de knop **«Отримати токен зараз»** (Nu token ophalen) — de site doorloopt zelf OAuth met PKCE in een pop-upvenster
+- voor clients die zelf geen aanmeldvenster kunnen openen: gebruik de knop **«Отримати маркер доступу зараз»** (Nu token ophalen) — de site doorloopt zelf OAuth met PKCE in een pop-upvenster
   en toont het Bearer-token eenmalig (inclusief kant-en-klare `mcp.json`-configuratie en een controleopdracht met `curl`).
 
-**2. «Під'єднати вручну (прямий токен)» (Handmatig koppelen met direct token)** — zoals voorheen: een `tvh_…`-token (30 dagen) in de header `Authorization: Bearer …` van de clientconfiguratie.
+**2. «Під'єднати вручну (прямий маркер доступу)» (Handmatig koppelen met direct token)** — zoals voorheen: een `tvh_…`-token (30 dagen) in de header `Authorization: Bearer …` van de clientconfiguratie.
 Dit werkt nu zowel op `/mcp` als op de deuren (op de deuren uitsluitend met een token van de servereigenaar). Het oude formulier met een deurtoken is behouden:
-`/oauth/authorize?…&methode=token` of via de link «Ввести токен дверей вручну» in het venster «Дозволити».
+`/oauth/authorize?…&methode=token` of via de link «Ввести маркер доступу дверей вручну» in het venster «Дозволити».
 
 **Wat er is veranderd in de deuren (`deploy/mcp/server.mjs`, service `mijn-ruimte-mcp`):**
 - metadata voor elke deur: `GET /.well-known/oauth-protected-resource/<deur>` (en `/<deur>/.well-known/oauth-protected-resource`)
