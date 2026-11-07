@@ -14,8 +14,10 @@
 // het zegt), de technische lade krijgt alles. Omdat de poort (gegevensRuimteVeilig) de technische lade alleen geeft bij een
 // levende activering, ziet niemand zonder actief technisch profiel ooit een technisch object — ook niet via suggesties.
 //
-// ROUTE. {host: dienst, pad: tabblad-id, hash?: '#<tab>', params?: {focus: '<data-hulp-sleutel>'}}: de pagina opent het tabblad via
-// canonicalServiceUrl(host, pad) en, bij `focus`, scrolt zij naar het element met data-hulp=<sleutel> (afspraak met Z4).
+// ROUTE. {host: dienst, pad: tabblad-id, hash?: '#<tab>', params?: {focus: '<data-hulp-sleutel>'}}: de client (src/zoek/zoek-kern.ts →
+// routeUrl) maakt daar https://<domein van de dienst>/<Nederlandse slug van het tabblad> van, en bij `focus` scrolt de pagina naar
+// het element met data-hulp=<sleutel> (afspraak met Z4). Tot 05.11.2026 kende de client de hosts identity/api/admin/huis niet en
+// las hij een tabblad-id als ongeldig pad: geen enkel object opende zijn tabblad (ORCH-001, oude fout; test zoek-route-tabblad).
 import { createHash } from 'node:crypto';
 import { DIENST_IDS, MENU_PAGINAS } from '../../shared/menu-model';
 import { BEHEER_PAGINAS } from '../../shared/beheer-paginas';
@@ -23,7 +25,7 @@ import { HULP_REGISTER } from '../../shared/hulp-register';
 import { V2_GROEPEN, V2_OPTIES, KANT_TEKST } from '../../shared/connector-v2/catalogus';
 import { CATEGORIEEN, INTEGRATIES, STATUS_LABEL } from '../../shared/integraties-catalogus';
 import { MAIL_AANBIEDERS } from '../../shared/mail-aanbieders';
-import { UI_DIENSTEN, UI_ELEMENTEN, UI_ELEMENTEN_VERSIE, uiPlekVan, type UiToegang } from '../../shared/zoek-ui-knoppen.generated';
+import { UI_DIENSTEN, UI_ELEMENTEN, UI_ELEMENTEN_VERSIE, UI_ONBEREIKBAAR, uiPlekVan, type UiToegang } from '../../shared/zoek-ui-knoppen.generated';
 import { serviceTabLabel } from '../../src/dienst-tab-labels';
 import type { ZoekObject, ZoekRoute, ZoekSoort, ZoekBron } from '../../shared/zoek-model';
 import type { Lade } from '../../shared/ruimte-scheiding';
@@ -36,63 +38,67 @@ export type UiObject = {
   pad: { uk: string; nl: string }; route: ZoekRoute; trefwoorden: string[]; extra: Record<string, unknown>;
 };
 
+/** Wat mensen typen als ze AI willen koppelen (hub «Підключення ШІ»). */
+const AI_KOPPELEN: readonly string[] = ['підключити ші', 'підключити claude', 'підключити chatgpt', 'конектор', 'mcp', 'доступи ші', 'що може ші', 'відкликати доступ', 'ai koppelen', 'claude koppelen', 'connector', 'ai-toegang', 'toegang intrekken'];
 /**
- * Bedoelingen («наміри»): wat mensen TYPEN als ze een pagina zoeken zonder de naam te kennen — uk / nl / en / ru, surzhyk en
- * vertalingen inbegrepen. Sleutel = 'dienst/tab' (of een object-id voor één element). Gewicht B (trefwoorden) in de kern.
+ * Bedoelingen («наміри»): wat mensen TYPEN als ze een pagina zoeken zonder de naam te kennen — uk / nl.
+ * Sleutel = 'dienst/tab' (of een object-id voor één element). Gewicht B (trefwoorden) in de kern.
  */
 const INTENTIES: Readonly<Record<string, readonly string[]>> = Object.freeze({
-  'identity/languages': ['змінити мову', 'поміняти мову', 'мова інтерфейсу', 'мова сайту', 'переключити мову', 'taal wijzigen', 'taal veranderen', 'taal instellen', 'change language', 'switch language', 'сменить язык', 'поменять язык', 'язык интерфейса', 'українська', 'nederlands', 'english'],
-  'identity/themes': ['темна тема', 'світла тема', 'змінити тему', 'нічний режим', 'темний режим', 'кольори', 'donker thema', 'licht thema', 'thema wijzigen', 'donkere modus', 'nachtmodus', 'kleuren', 'dark mode', 'light mode', 'change theme', 'тёмная тема', 'темная тема', 'сменить тему', 'ночной режим'],
-  'identity/sessions': ['вийти з усіх пристроїв', 'вийти скрізь', 'завершити сесії', 'активні сесії', 'хто входив у мій акаунт', 'хто заходив', 'пристрої входу', 'чужий вхід', 'overal afmelden', 'alle sessies beëindigen', 'actieve sessies', 'wie is aangemeld', 'aanmeldingen bekijken', 'apparaten', 'sign out everywhere', 'log out all devices', 'active sessions', 'who logged in', 'выйти со всех устройств', 'кто входил в мой аккаунт', 'активные сессии'],
-  'identity/menu': ['впорядкувати меню', 'налаштувати меню', 'сховати пункт меню', 'порядок меню', 'бічна панель', 'іконки меню', 'menu instellen', 'menu anders ordenen', 'menu-item verbergen', 'zijbalk', 'volgorde menu', 'customize menu', 'reorder menu', 'hide menu item', 'sidebar', 'настроить меню', 'порядок меню', 'скрыть пункт меню'],
-  'identity/methods': ['способи входу', 'passkey', 'ключ доступу', 'застосунок-автентифікатор', 'google вхід', 'шифрування моїх даних', 'зашифрувати дані', 'ключ шифрування', 'aanmeldmethoden', 'passkey toevoegen', 'authenticator-app', 'versleuteling van mijn gegevens', 'gegevens versleutelen', 'login methods', 'encrypt my data', 'encryption key', 'способы входа', 'шифрование моих данных', 'зашифровать данные'],
-  'identity/recovery': ['коди відновлення', 'загубив телефон', 'втратив доступ', 'відновити доступ', 'забув пароль', 'резервні коди', 'herstelcodes', 'telefoon kwijt', 'toegang herstellen', 'wachtwoord vergeten', 'recovery codes', 'lost my phone', 'restore access', 'forgot password', 'коды восстановления', 'потерял телефон', 'восстановить доступ', 'забыл пароль'],
-  'identity/security': ['двофакторна', '2fa', 'двоетапна перевірка', 'підтвердження входу', 'безпека акаунта', 'tweefactorauthenticatie', 'tweestapsverificatie', 'beveiliging account', 'two-factor', 'two factor authentication', 'двухфакторная', 'безопасность аккаунта'],
-  'identity/account': ['видалити акаунт', 'мій профіль', 'робочі простори', 'account verwijderen', 'mijn profiel', 'werkruimtes', 'delete account', 'my profile', 'удалить аккаунт', 'мой профиль'],
-  'identity/personalization': ['налаштування', 'персоналізація', 'instellingen', 'personalisatie', 'settings', 'preferences', 'настройки'],
-  'identity/widgets': ['додати блок', 'додати віджет', 'blok toevoegen', 'widget toevoegen', 'add widget', 'добавить блок'],
-  'identity/sharing': ['поділитися простором', 'надати доступ', 'приватне посилання', 'ruimte delen', 'toegang geven', 'privélink', 'share workspace', 'поделиться', 'дать доступ'],
-  'mail/accounts': ['додати скриньку', 'додати пошту', 'додати ще один gmail', 'підключити gmail', 'підключити пошту', 'поштові акаунти', 'друга пошта', 'imap', 'mailbox toevoegen', 'nog een gmail toevoegen', 'gmail koppelen', 'e-mailaccounts', 'tweede mailbox', 'add mailbox', 'add another gmail', 'connect email', 'email accounts', 'добавить почту', 'добавить ещё один gmail', 'подключить gmail', 'почтовые аккаунты'],
-  'mail/inbox': ['пошта', 'вхідні', 'листи', 'почта', 'письма', 'входящие', 'postvak in', 'e-mail', 'mail', 'inbox', 'brieven'],
-  'mail/settings': ['налаштування пошти', 'підпис', 'автовідповідь', 'mailinstellingen', 'handtekening', 'automatisch antwoord', 'mail settings', 'signature', 'auto reply', 'настройки почты', 'подпись'],
-  'mail/contacts': ['контакти', 'відправники', 'заблокувати відправника', 'contacten', 'afzenders', 'afzender blokkeren', 'contacts', 'senders', 'block sender', 'контакты', 'отправители'],
-  'mail/subscriptions': ['відписатися', 'розсилки', 'підписки', 'afmelden nieuwsbrief', 'abonnementen', 'unsubscribe', 'newsletters', 'отписаться', 'рассылки'],
-  'mail/spam': ['спам', 'spam', 'ongewenst', 'junk'],
-  'mail/trash': ['кошик', 'видалені листи', 'prullenbak', 'verwijderde mails', 'trash', 'deleted mail', 'корзина', 'удалённые письма'],
-  'mail/labels': ['мітки', 'ярлики', 'labels', 'etiketten', 'tags', 'метки', 'ярлыки'],
-  'mail/scheduled': ['заплановані листи', 'надіслати пізніше', 'gepland', 'later verzenden', 'scheduled send', 'отложенная отправка'],
-  'cloud/calendar': ['календар', 'події', 'зустріч', 'додати подію', 'agenda', 'afspraak', 'afspraak toevoegen', 'calendar', 'event', 'add event', 'календарь', 'встреча', 'добавить событие'],
-  'cloud/accounts': ['google drive', 'підключити drive', 'диск', 'drive koppelen', 'schijf', 'connect drive', 'подключить диск', 'гугл диск'],
-  'cloud/photos': ['фото', 'світлини', 'галерея', "foto's", 'galerij', 'photos', 'gallery', 'фотографии', 'галерея'],
-  'cloud/search': ['файли', 'документи', 'знайти файл', 'bestanden', 'documenten', 'bestand zoeken', 'files', 'documents', 'find file', 'файлы', 'документы', 'найти файл'],
-  'cloud/capture': ['швидко зберегти', 'зберегти посилання', 'snel opslaan', 'link bewaren', 'quick save', 'save link', 'быстро сохранить'],
-  'cloud/overview': ['хмара', 'сховище', 'робочі простори', 'cloud', 'opslag', 'werkruimtes', 'storage', 'облако', 'хранилище'],
-  'hub/tasks': ['завдання', 'задачі', 'дошка', 'to-do', 'taken', 'bord', 'tasks', 'todo', 'задачи', 'доска'],
-  'hub/notes': ['нотатки', 'записки', 'notities', 'notes', 'заметки'],
-  'hub/zoek': ['пошук', 'знайти', 'шукати', 'zoeken', 'vinden', 'search', 'find', 'поиск', 'найти'],
-  'hub/overview': ['головна', 'мій простір', 'огляд', 'startpagina', 'mijn ruimte', 'overzicht', 'home', 'dashboard', 'главная'],
-  'hub/recent': ['останні', 'нещодавні', 'recent', 'recente', 'недавние'],
-  'ai/agents': ['підключити шi', 'підключити claude', 'підключити chatgpt', 'конектор', 'mcp', 'доступи шi', 'що може шi', 'відкликати доступ', 'ai koppelen', 'claude koppelen', 'connector', 'ai-toegang', 'toegang intrekken', 'connect ai', 'connect claude', 'revoke access', 'подключить ии', 'подключить claude', 'коннектор', 'доступы ии'],
-  'ai/workspace': ['чат з шi', 'робочий простір шi', 'ai-chat', 'werkruimte', 'ai chat', 'чат с ии'],
-  'github/overview': ['github', 'репозиторії', 'код', 'issues', 'pull requests', 'repositories', 'code', 'репозитории', 'код'],
-  'github/accounts': ['підключити github', 'github koppelen', 'connect github', 'подключить github'],
-  'huis/overview': ['розумний дім', 'розумний будинок', 'slim huis', 'smart home', 'умный дом'],
-  'mcp/dashboard': ['розгортання', 'оновити сайт', 'реліз', 'uitrol', 'site bijwerken', 'release', 'deploy', 'деплой', 'развёртывание'],
-  'mcp/apps': ['додатки на сервері', 'контейнери', 'docker', 'apps op de server', 'containers', 'server apps', 'приложения на сервере'],
-  'admin/access': ['користувачі', 'запити доступу', 'ролі користувачів', 'заблокувати користувача', 'gebruikers', 'toegangsverzoeken', 'gebruiker blokkeren', 'users', 'access requests', 'block user', 'пользователи', 'запросы доступа'],
-  'admin/updates': ['оновлення', 'відкотити', 'версія сайту', 'updates', 'terugdraaien', 'versie', 'rollback', 'site version', 'обновления', 'откатить'],
-  'admin/contour': ['секрети', 'ключі', 'токени сервера', 'geheimen', 'sleutels', 'secrets', 'keys', 'секреты', 'ключи'],
-  'admin/diagnostics': ['діагностика', 'стан сервера', 'diagnostiek', 'serverstatus', 'diagnostics', 'server health', 'диагностика'],
-  'admin/audit': ['журнал', 'аудит', 'хто що змінив', 'logboek', 'audit', 'wie wijzigde wat', 'audit log', 'журнал', 'кто что менял'],
-  'admin/directories': ['інтеграції', 'каталог інтеграцій', 'integraties', 'integrations', 'интеграции'],
-  'admin/ai': ['доступ шi', 'політика шi', 'ai-toegang', 'ai-beleid', 'ai access policy', 'доступ ии'],
-  'admin/devices': ['пристрої', 'apparaten', 'devices', 'устройства'],
-  'admin/sso': ['sso', 'єдиний вхід', 'single sign-on', 'единый вход'],
-  'admin/roles': ['ролі', 'rollen', 'roles', 'роли'],
-  'api/vault': ['сховище секретів', 'kluis', 'geheimenkluis', 'vault', 'хранилище секретов'],
-  'api/access': ['api-доступ', 'api-токен', 'api-toegang', 'api token', 'api-доступ'],
+  'identity/languages': ['змінити мову', 'поміняти мову', 'мова інтерфейсу', 'мова сайту', 'перемкнути мову', 'taal wijzigen', 'taal veranderen', 'taal instellen', 'українська', 'нідерландська', 'nederlands', 'oekraïens'],
+  'identity/themes': ['темна тема', 'світла тема', 'змінити тему', 'нічний режим', 'темний режим', 'кольори', 'donker thema', 'licht thema', 'thema wijzigen', 'donkere modus', 'nachtmodus', 'kleuren'],
+  'identity/sessions': ['вийти з усіх пристроїв', 'вийти скрізь', 'завершити сесії', 'активні сесії', 'хто входив у мій акаунт', 'хто заходив', 'пристрої входу', 'чужий вхід', 'overal afmelden', 'alle sessies beëindigen', 'actieve sessies', 'wie is aangemeld', 'aanmeldingen bekijken', 'apparaten'],
+  'identity/menu': ['впорядкувати меню', 'налаштувати меню', 'сховати пункт меню', 'порядок меню', 'бічна панель', 'іконки меню', 'menu instellen', 'menu anders ordenen', 'menu-item verbergen', 'zijbalk', 'volgorde menu'],
+  'identity/methods': ['способи входу', 'passkey', 'ключ доступу', 'застосунок-автентифікатор', 'google вхід', 'шифрування моїх даних', 'зашифрувати дані', 'ключ шифрування', 'aanmeldmethoden', 'passkey toevoegen', 'authenticator-app', 'versleuteling van mijn gegevens', 'gegevens versleutelen'],
+  'identity/recovery': ['коди відновлення', 'загубив телефон', 'втратив доступ', 'відновити доступ', 'забув пароль', 'резервні коди', 'herstelcodes', 'telefoon kwijt', 'toegang herstellen', 'wachtwoord vergeten'],
+  'identity/security': ['двофакторна', '2fa', 'двоетапна перевірка', 'підтвердження входу', 'безпека акаунта', 'tweefactorauthenticatie', 'tweestapsverificatie', 'beveiliging account'],
+  'identity/account': ['видалити акаунт', 'мій профіль', 'робочі простори', 'account verwijderen', 'mijn profiel', 'werkruimtes'],
+  'identity/personalization': ['налаштування', 'персоналізація', 'instellingen', 'personalisatie', 'voorkeuren'],
+  'identity/widgets': ['додати блок', 'додати віджет', 'blok toevoegen', 'widget toevoegen'],
+  'identity/sharing': ['поділитися простором', 'надати доступ', 'приватне посилання', 'ruimte delen', 'toegang geven', 'privélink'],
+  'mail/accounts': ['додати скриньку', 'додати пошту', 'додати ще один gmail', 'підключити gmail', 'підключити пошту', 'поштові акаунти', 'друга пошта', 'imap', 'mailbox toevoegen', 'nog een gmail toevoegen', 'gmail koppelen', 'e-mailaccounts', 'tweede mailbox'],
+  'mail/inbox': ['пошта', 'вхідні', 'листи', 'postvak in', 'e-mail', 'mail', 'brieven'],
+  'mail/settings': ['налаштування пошти', 'підпис', 'автовідповідь', 'mailinstellingen', 'handtekening', 'automatisch antwoord'],
+  'mail/contacts': ['контакти', 'відправники', 'заблокувати відправника', 'contacten', 'afzenders', 'afzender blokkeren'],
+  'mail/subscriptions': ['відписатися', 'розсилання', 'підписки', 'afmelden nieuwsbrief', 'abonnementen', 'nieuwsbrieven'],
+  'mail/spam': ['спам', 'spam', 'ongewenst'],
+  'mail/trash': ['кошик', 'видалені листи', 'prullenbak', 'verwijderde mails'],
+  'mail/labels': ['мітки', 'ярлики', 'labels', 'etiketten'],
+  'mail/scheduled': ['заплановані листи', 'надіслати пізніше', 'gepland', 'later verzenden'],
+  'cloud/calendar': ['календар', 'події', 'зустріч', 'додати подію', 'agenda', 'afspraak', 'afspraak toevoegen'],
+  'cloud/accounts': ['google drive', 'підключити drive', 'диск', 'drive koppelen', 'schijf'],
+  'cloud/photos': ['фото', 'світлини', 'галерея', "foto's", 'galerij'],
+  'cloud/search': ['файли', 'документи', 'знайти файл', 'bestanden', 'documenten', 'bestand zoeken'],
+  'cloud/capture': ['швидко зберегти', 'зберегти посилання', 'snel opslaan', 'link bewaren'],
+  'cloud/overview': ['хмара', 'сховище', 'робочі простори', 'cloud', 'opslag', 'werkruimtes'],
+  'hub/tasks': ['завдання', 'задачі', 'дошка', 'taken', 'bord'],
+  'hub/notes': ['нотатки', 'записки', 'notities'],
+  'hub/zoek': ['пошук', 'знайти', 'шукати', 'zoeken', 'vinden'],
+  'hub/overview': ['головна', 'мій простір', 'огляд', 'startpagina', 'mijn ruimte', 'overzicht'],
+  'hub/recent': ['останні', 'нещодавні', 'recent', 'recente'],
+  // De hub «Підключення ШІ» staat op mcp.*/agents; ai.*/agents verwijst ernaar. Dezelfde bedoelingen voor beide.
+  'ai/agents': AI_KOPPELEN,
+  'mcp/agents': AI_KOPPELEN,
+  'ai/workspace': ['чат з ші', 'робочий простір ші', 'ai-chat', 'werkruimte'],
+  'github/overview': ['github', 'репозиторії', 'код', 'запити на злиття'],
+  'github/accounts': ['підключити github', 'github koppelen'],
+  'huis/overview': ['розумний дім', 'розумний будинок', 'slim huis'],
+  'mcp/dashboard': ['розгортання', 'оновити сайт', 'випуск', 'uitrol', 'site bijwerken'],
+  'mcp/apps': ['застосунки на сервері', 'контейнери', 'docker', 'apps op de server', 'containers'],
+  'admin/access': ['користувачі', 'запити доступу', 'ролі користувачів', 'заблокувати користувача', 'gebruikers', 'toegangsverzoeken', 'gebruiker blokkeren'],
+  'admin/updates': ['оновлення', 'відкотити', 'версія сайту', 'updates', 'terugdraaien', 'versie'],
+  'admin/contour': ['секрети', 'ключі', 'токени сервера', 'geheimen', 'sleutels'],
+  'admin/diagnostics': ['діагностика', 'стан сервера', 'diagnostiek', 'serverstatus'],
+  'admin/audit': ['журнал', 'аудит', 'хто що змінив', 'logboek', 'audit', 'wie wijzigde wat'],
+  'admin/directories': ['інтеграції', 'каталог інтеграцій', 'integraties'],
+  'admin/ai': ['доступ ші', 'політика ші', 'ai-toegang', 'ai-beleid'],
+  'admin/devices': ['пристрої', 'apparaten'],
+  'admin/sso': ['sso', 'єдиний вхід'],
+  'admin/roles': ['ролі', 'rollen'],
+  'api/vault': ['сховище секретів', 'kluis', 'geheimenkluis'],
+  'api/access': ['api-доступ', 'api-токен', 'api-toegang'],
   // Eén element: de sectie «Шифрування моїх даних» (SleutelkluisSectie) krijgt dezelfde bedoelingen als haar pagina.
-  'ui:sectie:identity/methods:14bcd57609': ['шифрування моїх даних', 'зашифрувати дані', 'ключ шифрування', 'versleuteling van mijn gegevens', 'gegevens versleutelen', 'encrypt my data', 'шифрование моих данных'],
+  'ui:sectie:identity/methods:14bcd57609': ['шифрування моїх даних', 'зашифрувати дані', 'ключ шифрування', 'versleuteling van mijn gegevens', 'gegevens versleutelen'],
 });
 const intenties = (dienst: string, tab: string, id?: string): string[] => [...(INTENTIES[`${dienst}/${tab}`] || []), ...(id ? INTENTIES[id] || [] : [])];
 
@@ -143,7 +149,7 @@ function bouw(): UiObject[] {
   // ---------------------------------------------------------------- gegenereerd uit src/**/*.tsx: knoppen, koppen, dialogen, hash-tabbladen
   for (const e of UI_ELEMENTEN) {
     const basis = strenger(e.toegang, dienstToegang(e.dienst, e.tab));
-    const toegang: UiToegang = e.soort === 'tab' && e.hash === 'technisch' ? 'technisch' : basis;
+    const toegang: UiToegang = e.soort === 'tab' && (e.hash === 'technisch' || e.hash === 'orch') ? 'technisch' : basis;
     const soort: ZoekSoort = e.soort === 'knop' ? 'knop' : e.soort === 'dialoog' ? 'dialoog' : 'pagina';
     const sectie = e.sectieUk ? { uk: e.sectieUk, nl: e.sectieNl } : null;
     const wat = e.soort === 'knop' ? { uk: 'Кнопка', nl: 'Knop' } : e.soort === 'dialoog' ? { uk: 'Вікно', nl: 'Venster' } : e.soort === 'tab' ? { uk: 'Вкладка', nl: 'Tabblad' } : { uk: 'Розділ сторінки', nl: 'Sectie van de pagina' };
@@ -159,7 +165,11 @@ function bouw(): UiObject[] {
   }
 
   // ---------------------------------------------------------------- «?»-uitleg: elke optie/schakelaar met wat/gevolg/risico
+  // Een «?» uit een bestand dat de site nergens laadt (UI_ONBEREIKBAAR, bv. src/BeheerSleutelsWeergave.tsx → keys.doel) is op geen
+  // enkele pagina te vinden: niet aanbieden (ORCH-001, na de onafhankelijke controle van 05.11.2026).
+  const dood = new Set(UI_ONBEREIKBAAR);
   for (const [sleutel, h] of Object.entries(HULP_REGISTER)) {
+    if (dood.has(h.bron)) continue;
     const plek = uiPlekVan(h.bron) || (h.bron.startsWith('deploy/') ? { dienst: 'admin', tab: 'updates', toegang: 'technisch' as UiToegang } : { dienst: 'hub', tab: 'overview', toegang: 'technisch' as UiToegang });
     const toegang = strenger(plek.toegang, dienstToegang(plek.dienst, plek.tab));
     const [watUk, watNl] = h.wat, [gevolgUk, gevolgNl] = h.gevolg, [risicoUk, risicoNl] = h.risico;
@@ -182,8 +192,9 @@ function bouw(): UiObject[] {
       id: `recht:${o.key}`, bron: 'instelling', soort: 'instelling', toegang,
       titels: { uk: knip(o.uk[0], 160), nl: knip(o.nl[0], 160) },
       omschrijving: { uk: knip(`${o.uk[1]} ${o.uk[2]} ${o.uk[3] || ''}`, 600), nl: knip(`${o.nl[1]} ${o.nl[2]} ${o.nl[3] || ''}`, 600) },
-      pad: { uk: `${dienstNaam('ai').uk} › Агенти › Конектори › ${groep?.uk || o.groep} › ${kant.uk}`, nl: `${dienstNaam('ai').nl} › Agenten › Connectors › ${groep?.nl || o.groep} › ${kant.nl}` },
-      route: route('ai', 'agents', { hash: 'connectors' }),
+      // De connectors staan in de hub op mcp.*/agents#connectors (tot 05.11.2026: ai.*/agents, alleen een verwijzing naar de hub).
+      pad: { uk: `${dienstNaam('mcp').uk} › ${tabNaam('agents').uk} › Конектори › ${groep?.uk || o.groep} › ${kant.uk}`, nl: `${dienstNaam('mcp').nl} › ${tabNaam('agents').nl} › Connectors › ${groep?.nl || o.groep} › ${kant.nl}` },
+      route: route('mcp', 'agents', { hash: 'connectors' }),
       trefwoorden: [o.id, o.essentie, o.weergave, o.groep, o.kant, o.soort, o.risico, ...(o.intern ? [o.intern] : [])],
       extra: { recht: o.key, groep: o.groep, kant: o.kant, risico: o.risico, soort: o.soort },
     });
