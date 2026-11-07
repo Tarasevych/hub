@@ -105,12 +105,18 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
     ? data.voorstellen.find((v) => v.status === 'uploaden' && v.versie === analyse.info.versie && v.sha256 === analyse.sha256 && v.bytes === bestand.size) : undefined), [data.voorstellen, analyse, bestand]);
   const onvoltooid = data.voorstellen.filter((v) => v.status === 'uploaden' && v.id !== hervatbaar?.id);
 
-  // Problemen: wat tar-lezen vond + «niet nieuwer dan de actieve versie» (root en de voorcontrole van de site weigeren dat ook).
+  // Problemen: wat tar-lezen vond + «niet nieuwer dan de actieve versie» vóórdat het pakket als voorstel op de server staat.
+  // Zodra dit pakket zelf al als voorstel op de server staat (`nieuw`, of een zojuist geïnstalleerd voorstel met dezelfde sha256),
+  // mag stap 2 na de installatie niet achteraf op rood springen met «Цей самий пакет уже встановлено».
+  const alDitPakketOpServer = useMemo(
+    () => !!nieuw || !!(analyse?.sha256 && data.voorstellen.some((v) => v.sha256 === analyse.sha256 && (v.status === 'goedgekeurd' || v.status === 'geinstalleerd'))),
+    [nieuw, analyse?.sha256, data.voorstellen],
+  );
   const problemen = useMemo(() => {
     const p = [...(analyse?.info.problemen || [])];
-    if (analyse && analyse.info.versie && /^\d{8}-\d{6}$/.test(analyse.info.versie) && actieveVersie && !(analyse.info.versie > actieveVersie) && !p.includes('NIET_NIEUWER')) p.push('NIET_NIEUWER');
+    if (!alDitPakketOpServer && analyse && analyse.info.versie && /^\d{8}-\d{6}$/.test(analyse.info.versie) && actieveVersie && !(analyse.info.versie > actieveVersie) && !p.includes('NIET_NIEUWER')) p.push('NIET_NIEUWER');
     return p;
-  }, [analyse, actieveVersie]);
+  }, [alDitPakketOpServer, analyse, actieveVersie]);
 
   const actief: StapId = !bestand || !soort || !soort.ok ? 'bestand'
     : bezigLezen || !analyse || problemen.length ? 'controle'
