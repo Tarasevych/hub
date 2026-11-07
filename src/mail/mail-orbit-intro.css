@@ -315,3 +315,154 @@
   .mail-orbit-kern-brief{width:106px;height:76px}
 }
 @media(prefers-reduced-motion:reduce){.mail-orbit-lichtpunten i{animation:none!important}}
+
+/* MAILFIT-001 · Empty inbox is a native, viewport-aware onboarding surface.
+   Only the empty-mail state is affected; connected inboxes retain their tools. */
+.mail-orbit-desktop-hoofdknop{display:none}
+.google-mail-workspace:has(.google-mail-orbit[data-mail-account-resolution-empty='true']) > .mail-workspace-heading,
+.google-mail-workspace:has(.google-mail-orbit[data-mail-account-resolution-empty='true']) > .mail-pagination-selection-dock{
+  display:none;
+}
+.mail-functional:has(.google-mail-orbit[data-mail-account-resolution-empty='true']) .mail-top-command-bar{
+  display:none;
+}
+.google-mail-orbit[data-mail-account-resolution-empty='true']{
+  display:grid;
+  align-content:center;
+  width:100%;min-width:0;
+  min-height:clamp(420px,calc(100dvh - 205px),760px);
+  box-sizing:border-box;
+  padding:10px clamp(8px,2vw,22px) 20px;
+}
+.mail-orbit-intro.is-inbox{
+  display:grid;
+  grid-template-columns:minmax(290px,.93fr) minmax(440px,1.3fr);
+  grid-template-areas:
+    'introduction artwork'
+    'actions artwork'
+    'catalogue catalogue'
+    'privacy privacy'
+    'footnote footnote';
+  column-gap:clamp(15px,2.2vw,32px);
+  row-gap:0;
+  align-items:center;justify-items:stretch;
+  width:min(100%,1090px);max-width:1090px;
+  margin:0 auto;
+  padding:clamp(22px,3vw,37px);
+  border:1px solid color-mix(in srgb,var(--orbit-accent) 9%,var(--line));
+  border-radius:clamp(30px,3vw,42px);
+  box-shadow:0 24px 74px color-mix(in srgb,var(--shadow,#354b54) 11%,transparent),0 4px 18px color-mix(in srgb,var(--orbit-accent) 5%,transparent);
+  text-align:left;
+  background:
+    radial-gradient(ellipse 55% 70% at 77% 48%,color-mix(in srgb,#c9e8e4 30%,transparent),transparent 85%),
+    radial-gradient(ellipse 45% 48% at 38% 67%,color-mix(in srgb,#f8dfc7 25%,transparent),transparent 89%),
+    var(--panel,#fff);
+}
+.mail-orbit-intro.is-inbox .mail-orbit-kop{grid-area:introduction;max-width:390px;justify-self:start}
+.mail-orbit-intro.is-inbox .mail-orbit-kicker{font-size:11px;letter-spacing:.09em}
+.mail-orbit-intro.is-inbox .mail-orbit-kop h2{
+  max-width:390px;
+  font-size:clamp(2rem,2.65vw,2.8rem);
+  line-height:1.09;
+  margin:15px 0 13px;
+}
+.mail-orbit-intro.is-inbox .mail-orbit-kop p{max-width:340px;font-size:clamp(.89rem,1.12vw,1rem);line-height:1.55}
+.mail-orbit-intro.is-inbox .mail-orbit-stage{
+  grid-area:artwork;
+  width:100%;max-width:660px;
+  height:clamp(318px,42dvh,370px);
+  margin:0 auto;
+}
+.mail-orbit-intro.is-inbox .mail-orbit-positie{width:116px}
+.mail-orbit-intro.is-inbox .mail-orbit-envelop{width:94px;height:65px;border-radius:19px}
+.mail-orbit-intro.is-inbox .mail-orbit-kern-brief{width:112px;height:82px;border-radius:22px}
+.mail-orbit-intro.is-inbox .mail-orbit-onder{grid-area:actions;justify-items:start;align-self:start;margin-top:19px}
+.mail-orbit-intro.is-inbox .mail-orbit-onder>p{display:none}
+.mail-orbit-intro.is-inbox .mail-orbit-knoppen{justify-content:flex-start}
+.mail-orbit-intro.is-inbox .mail-orbit-catalogus{grid-area:catalogue}
+.mail-orbit-intro.is-inbox .mail-orbit-vertrouwen{
+  grid-area:privacy;
+  margin-top:13px;padding-top:14px;
+  justify-content:flex-start;text-align:left;
+}
+.mail-orbit-intro.is-inbox .mail-orbit-beperking{grid-area:footnote;justify-content:flex-start;text-align:left}
+.mail-orbit-intro.is-inbox .mail-orbit-desktop-hoofdknop{
+  display:inline-flex;align-items:center;justify-content:center;gap:11px;
+  width:100%;max-width:310px;min-height:52px;
+  margin-top:24px;padding:11px 17px;
+  border:1px solid color-mix(in srgb,var(--orbit-accent) 76%,#fff);
+  border-radius:16px;
+  color:#fff;background:linear-gradient(117deg,color-mix(in srgb,var(--orbit-accent) 83%,#053d42),var(--orbit-accent));
+  box-shadow:0 13px 27px color-mix(in srgb,var(--orbit-accent) 25%,transparent);
+  font:inherit;font-size:15px;font-weight:740;cursor:pointer;
+  transition:transform .2s,box-shadow .2s;
+}
+.mail-orbit-intro.is-inbox .mail-orbit-desktop-hoofdknop>svg:last-child{margin-left:auto}
+.mail-orbit-intro.is-inbox .mail-orbit-desktop-hoofdknop:hover{transform:translateY(-2px);box-shadow:0 16px 31px color-mix(in srgb,var(--orbit-accent) 29%,transparent)}
+.mail-orbit-intro.is-inbox .mail-orbit-desktop-hoofdknop:focus-visible{outline:3px solid var(--orbit-accent);outline-offset:4px}
+
+/* Container queries follow the actual available mail column, not just screen width. */
+@container mail-list (max-width:940px){
+  .mail-orbit-intro.is-inbox{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:'introduction' 'artwork' 'actions' 'catalogue' 'privacy' 'footnote';
+    justify-items:center;
+    text-align:center;
+    width:min(100%,730px);
+    padding:clamp(18px,3.2vw,28px);
+  }
+  .mail-orbit-intro.is-inbox .mail-orbit-kop{justify-self:center;max-width:650px}
+  .mail-orbit-intro.is-inbox .mail-orbit-kop h2,.mail-orbit-intro.is-inbox .mail-orbit-kop p{max-width:650px}
+  .mail-orbit-intro.is-inbox .mail-orbit-stage{height:clamp(270px,35dvh,326px);width:min(100%,660px)}
+  .mail-orbit-intro.is-inbox .mail-orbit-desktop-hoofdknop{margin:15px auto 0}
+  .mail-orbit-intro.is-inbox .mail-orbit-onder{justify-items:center;margin-top:10px}
+  .mail-orbit-intro.is-inbox .mail-orbit-knoppen{justify-content:center}
+  .mail-orbit-intro.is-inbox .mail-orbit-vertrouwen,
+  .mail-orbit-intro.is-inbox .mail-orbit-beperking{display:none}
+}
+@media(max-height:760px) and (min-width:621px){
+  .google-mail-orbit[data-mail-account-resolution-empty='true']{min-height:0;padding-block:10px}
+  .mail-orbit-intro.is-inbox{padding-block:17px}
+  .mail-orbit-intro.is-inbox .mail-orbit-stage{height:clamp(260px,40dvh,310px)}
+  .mail-orbit-intro.is-inbox .mail-orbit-vertrouwen{margin-top:6px;padding-top:8px}
+  .mail-orbit-intro.is-inbox .mail-orbit-beperking{display:none}
+}
+@media(max-width:620px){
+  .google-mail-orbit[data-mail-account-resolution-empty='true']{
+    display:block;min-height:0;padding:5px 0 max(76px,env(safe-area-inset-bottom));
+  }
+  .mail-orbit-intro.is-inbox{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:'introduction' 'artwork' 'mobile-action' 'actions' 'catalogue';
+    justify-items:center;
+    width:100%;max-width:440px;margin:0 auto;
+    padding:19px clamp(11px,3vw,17px) 20px;
+    border-radius:clamp(24px,7vw,30px);
+    text-align:center;
+  }
+  .mail-orbit-intro.is-inbox .mail-orbit-kicker{font-size:10px}
+  .mail-orbit-intro.is-inbox .mail-orbit-kop h2{font-size:clamp(1.73rem,7vw,2.15rem);margin:9px 0 7px}
+  .mail-orbit-intro.is-inbox .mail-orbit-kop p{font-size:clamp(.82rem,3.5vw,.92rem);line-height:1.43}
+  .mail-orbit-intro.is-inbox .mail-orbit-stage{
+    height:clamp(246px,74vw,315px);max-width:380px;margin:5px auto 0;
+  }
+  .mail-orbit-intro.is-inbox .mail-orbit-stage[data-mail-orbit-active='ja']{height:clamp(370px,104vw,425px)}
+  .mail-orbit-intro.is-inbox .mail-orbit-positie{width:82px}
+  .mail-orbit-intro.is-inbox .mail-orbit-envelop{width:67px;height:48px;border-radius:15px}
+  .mail-orbit-intro.is-inbox .mail-orbit-kern-brief{width:100px;height:72px}
+  .mail-orbit-intro.is-inbox .mail-orbit-desktop-hoofdknop,
+  .mail-orbit-intro.is-inbox .mail-orbit-mobiel-aanwijzing,
+  .mail-orbit-intro.is-inbox .mail-orbit-mobiel-snel,
+  .mail-orbit-intro.is-inbox .mail-orbit-vertrouwen,
+  .mail-orbit-intro.is-inbox .mail-orbit-beperking{display:none}
+  .mail-orbit-intro.is-inbox .mail-orbit-mobiel-hoofdknop{
+    grid-area:mobile-action;display:flex;width:min(100%,340px);min-height:52px;
+    margin-top:2px;border-radius:16px;
+  }
+  .mail-orbit-intro.is-inbox .mail-orbit-onder{grid-area:actions;margin-top:11px}
+  .mail-orbit-intro.is-inbox .mail-orbit-knoppen{gap:5px}
+  .mail-orbit-intro.is-inbox .mail-orbit-catalogus-knop,.mail-orbit-intro.is-inbox .mail-orbit-beheer-knop{
+    min-height:36px;padding:6px 10px;font-size:12px;
+  }
+}
