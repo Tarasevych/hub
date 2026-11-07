@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "id": "IDENTITY-001",
+  "id": "IDENTITEIT-001",
   "agent": "claude",
-  "tak": "feature/identity-account-20261104-120000",
+  "tak": "fix/identiteit-account-namen-20261107-140000",
   "basisCommit": "c1a4375e091c9b48d4c2a980bd4c70ab47e5a90b",
   "basisVersie": "20261031-093842",
   "regelsVersie": "1.4.2",

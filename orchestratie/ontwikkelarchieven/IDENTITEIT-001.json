@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "taakId": "IDENTITY-001",
+  "taakId": "IDENTITEIT-001",
   "datum": "2026-11-04",
   "taal": "uk",
   "opdracht": "Eigenaar Test: модернізувати сторінку керування обліковим записом у категорії «ідентичність» (12 сторінок) — спершу дизайн і живий прототип, потім випуск, який власник зможе встановити через сайт (Admin → Оновлення). Взяти останній знімок, не перетирати чужі роботи, зафіксувати власною гілкою, оновити інформацію про оновлення на GitHub і на сайті.",
@@ -20,47 +20,70 @@
     {
       "volgorde": 1,
       "stap": "Досліджено проєкт: індекс 2684 файлів, 148 таблиць, 682 маршрути, категорія «ідентичність» налічує 12 сторінок.",
-      "bewijzen": ["docs/ontwerp/identiteit-account/ПОКРИТТЯ-ІДЕНТИЧНОСТІ.md", "docs/ontwerp/identiteit-account/ОГЛЯД-ОБЛІКОВОГО-ЗАПИСУ.md"]
+      "bewijzen": [
+        "docs/ontwerp/identiteit-account/ПОКРИТТЯ-ІДЕНТИЧНОСТІ.md",
+        "docs/ontwerp/identiteit-account/ОГЛЯД-ОБЛІКОВОГО-ЗАПИСУ.md"
+      ]
     },
     {
       "volgorde": 2,
       "stap": "Зібрано вимоги з 14 зображень власника й записано факти без вигадування сум, кодів і дат.",
-      "bewijzen": ["docs/ontwerp/identiteit-account/ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.md"]
+      "bewijzen": [
+        "docs/ontwerp/identiteit-account/ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.md"
+      ]
     },
     {
       "volgorde": 3,
       "stap": "Створено живий прототип на одній сторінці: дванадцять розділів категорії «ідентичність», меню 14 служб, прокрутка до розділу зі підсвічування під час прокрутки.",
-      "bewijzen": ["docs/ontwerp/identiteit-account/ПРОТОТИП-АКАУНТА.html"]
+      "bewijzen": [
+        "docs/ontwerp/identiteit-account/ПРОТОТИП-АКАУНТА.html"
+      ]
     },
     {
       "volgorde": 4,
       "stap": "Перевірено прототип у браузері: 12 секцій і заголовків, #svc/mail/inbox → заглушка, #identity/themes → «Теми», діалог фото (open=true, img після застосування), смітничок повертає ініціали.",
-      "bewijzen": ["docs/ontwerp/identiteit-account/ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.md"]
+      "bewijzen": [
+        "docs/ontwerp/identiteit-account/ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.md"
+      ]
     },
     {
       "volgorde": 5,
       "stap": "Старі 46 файлів дизайну переміщено в tijdelijke-bestanden/archief-ontwerp без видалення; створено README-account.md з одним актуальним файлом.",
-      "bewijzen": ["docs/ontwerp/identiteit-account/ОГЛЯД-ОБЛІКОВОГО-ЗАПИСУ.md"]
+      "bewijzen": [
+        "docs/ontwerp/identiteit-account/ОГЛЯД-ОБЛІКОВОГО-ЗАПИСУ.md"
+      ]
     },
     {
       "volgorde": 6,
       "stap": "Звірено правила 1.4.2 (фіксація змін c1a4375e, hash f5e5f6bc) і B-009; підтверджено прод 20261104-075953 @ e97a58c через /api/version?ts= (без cache-buster віддає стару 063430).",
-      "bewijzen": ["docs/ontwerp/identiteit-account/regels-1.4.2-verificatie.md", "docs/ontwerp/identiteit-account/uitrol-checklists.md"]
+      "bewijzen": [
+        "docs/ontwerp/identiteit-account/regels-1.4.2-verificatie.md",
+        "docs/ontwerp/identiteit-account/uitrol-checklists.md"
+      ]
     },
     {
       "volgorde": 7,
       "stap": "Власну гілку перебазовано на останній знімок origin/integratie (c1a4375, правила 1.4.2), щоб не перетирати чужі роботи; змінено лише docs/ і власний робочий процес.",
-      "bewijzen": ["git log --oneline c1a4375..HEAD", "git diff --name-only c1a4375...HEAD"]
+      "bewijzen": [
+        "git log --oneline c1a4375..HEAD",
+        "git diff --name-only c1a4375...HEAD"
+      ]
     },
     {
       "volgorde": 8,
       "stap": "Замість передавання токена в чат реліз збирає CI самої гілки через штатний GITHUB_TOKEN (contents: write): пакет, .sha256 і GitHub Release з тим самим архівом.",
-      "bewijzen": [".github/робочий процесs/identiteit-account-uitgave.yml"]
+      "bewijzen": [
+        ".github/робочий процесs/identiteit-account-uitgave.yml"
+      ]
     },
     {
       "volgorde": 9,
       "stap": "12 розділів перенесено в застосунок: оболонка в теці сторінки облікового запису з меню-змістом і підсвічуванням під час прокрутки, вікно фото з трьох джерел, пристосування до ширини за контейнером.",
-      "bewijzen": ["src/identiteit/IdentiteitAccountPagina.tsx", "src/identiteit/Profielfoto.tsx", "src/identiteit/identiteit-account.css"]
+      "bewijzen": [
+        "src/identiteit/IdentiteitAccountPagina.tsx",
+        "src/identiteit/Profielfoto.tsx",
+        "src/identiteit/identiteit-account.css"
+      ]
     }
   ],
   "keuzes": [

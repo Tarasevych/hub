@@ -14,7 +14,7 @@ on:
       - 'src/InstellingencentrumWeergave.tsx'
       - 'src/VerenigdDienstApp.tsx'
       - 'scripts/plaatsing-vaste-elementen.json'
-      - 'orchestratie/ontwikkelarchieven/IDENTITY-001.json'
+      - 'orchestratie/ontwikkelarchieven/IDENTITEIT-001.json'
       - '.github/workflows/identiteit-account-uitgave.yml'
 
 permissions:
@@ -137,7 +137,7 @@ jobs:
           VERSIE="$UITGAVE_VERSIE"
           HOLTE="$(git rev-parse HEAD)"
           TAK="${GITHUB_REF_NAME}"
-          DOSSIER="orchestratie/ontwikkelarchieven/IDENTITY-001.json"
+          DOSSIER="orchestratie/ontwikkelarchieven/IDENTITEIT-001.json"
           git show "HEAD:$DOSSIER" > "$RUNNER_TEMP/dossier.json"
           python3 - "$VERSIE" "$HOLTE" "$TAK" "$DOSSIER" "$RUNNER_TEMP" <<'PY'
           import hashlib, json, sys
@@ -146,13 +146,13 @@ jobs:
           dossier = json.loads(ruw.decode("utf-8"))
           verpligt = ["tijdlijn", "keuzes", "wijzigingen", "controles", "bronnen", "beperkingen"]
           ontbreekt = [k for k in verpligt if not isinstance(dossier.get(k), list) or not dossier[k]]
-          if dossier.get("schema") != 1 or dossier.get("taakId") != "IDENTITY-001" or ontbreekt:
+          if dossier.get("schema") != 1 or dossier.get("taakId") != "IDENTITEIT-001" or ontbreekt:
               sys.exit("ПОМИЛКА: у журналі бракує розділів: " + ", ".join(ontbreekt))
           if not isinstance(dossier.get("opdracht"), str) or len(dossier["opdracht"].strip()) < 40:
               sys.exit("ПОМИЛКА: поле opdracht у журналі надто коротке")
           if not isinstance(dossier.get("privacy"), dict) or dossier["privacy"].get("geheimenUitgesloten") is not True:
               sys.exit("ПОМИЛКА: у журналі немає підтвердження privacy.geheimenUitgesloten")
-          ref = {"schema": 1, "taakId": "IDENTITY-001", "repo": "Tarasevych/hub", "tak": tak, "commit": holte,
+          ref = {"schema": 1, "taakId": "IDENTITEIT-001", "repo": "Tarasevych/hub", "tak": tak, "commit": holte,
                  "pad": pad, "sha256": hashlib.sha256(ruw).hexdigest(),
                  "url": "https://github.com/Tarasevych/hub/blob/%s/%s" % (holte, pad),
                  "release": "https://github.com/Tarasevych/hub/releases/tag/%s" % versie,
@@ -197,7 +197,7 @@ jobs:
             "uitvoer/mijn-ruimte-$UITGAVE_VERSIE.tar.gz.sha256" \
             --target "$HOLTE" \
             --title "ІДЕНТИТЕТ-ACCOUNT · $UITGAVE_VERSIE" \
-            --notes "Сторінка керування обліковим записом: дванадцять розділів на одній сторінці з меню-змістом, підсвічуванням під час прокрутки й прямими посиланнями на розділ. Натискання на аватар відкриває вікно фото (пристрій, фото сервісу, посилання https); смітничок 24 px у куті не перекриває камеру. Пристосування до ширини за контейнером: кнопки на всю ширину до 640 px. Видалення фото на сервері ще не підтримується — смітничок повертає фото сервісу. Журнал розробки: orchestratie/ontwikkelarchieven/IDENTITY-001.json. Встановлення — лише за рішенням власника з ключем доступу. BRON-COMMIT: $HOLTE" \
+            --notes "Сторінка керування обліковим записом: дванадцять розділів на одній сторінці з меню-змістом, підсвічуванням під час прокрутки й прямими посиланнями на розділ. Натискання на аватар відкриває вікно фото (пристрій, фото сервісу, посилання https); смітничок 24 px у куті не перекриває камеру. Пристосування до ширини за контейнером: кнопки на всю ширину до 640 px. Видалення фото на сервері ще не підтримується — смітничок повертає фото сервісу. Журнал розробки: orchestratie/ontwikkelarchieven/IDENTITEIT-001.json. Встановлення — лише за рішенням власника з ключем доступу. BRON-COMMIT: $HOLTE" \
             --prerelease --latest=false
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$UITGAVE_VERSIE" \
             --jq '.assets[] | select(.name | endswith(".tar.gz")) | "\(.name) \(.digest)"' > "$RUNNER_TEMP/afdruk.txt"
