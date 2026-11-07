@@ -1,4 +1,4 @@
-name: AUDIT-001 · консолідований реліз 20261106-180000
+name: AUDIT-001 · консолідований випуск 20261106-190000
 
 on:
   push:
@@ -45,7 +45,7 @@ jobs:
       - name: Встановлена база з живого сайту · verifieer productiebasis
         run: |
           set -euo pipefail
-          export VERSIE="20261106-180000"
+          export VERSIE="20261106-190000"
           echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
           TS="$(date -u +%s)"
           URL="https://hub.tarasevych.com/api/version?ts=$TS"
@@ -69,7 +69,7 @@ jobs:
             echo "LIVE_COMMIT=3b64d1d3c8474f6279005ea8555a5f80e750aac9" >> "$GITHUB_ENV"
           fi
 
-      - name: Bouw en controleer pakket 20261106-180000
+      - name: Bouw en controleer pakket 20261106-190000
         run: |
           set -euo pipefail
           VERSIE="$RELEASE_VERSION"
@@ -77,7 +77,7 @@ jobs:
           {
             "schema": 1,
             "versie": "$VERSIE",
-            "aangemaakt": "2026-11-06T18:00:00Z",
+            "aangemaakt": "2026-11-06T19:00:00Z",
             "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis $LIVE_VERSIE @ ${LIVE_COMMIT:0:12}",
             "auteur": "Власник",
             "zonderAi": false,
@@ -114,38 +114,38 @@ jobs:
             ],
             "beschrijving": {
               "uk": {
-                "titel": "Аудит 05.11.2026, консолідація гілок (включно з DESIGN-003 і EXT090-001) та повне мовне очищення коду й документації (UK/NL)",
-                "samenvatting": "Повний аудит, безконфліктна консолідація паралельних напрямів робіт (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001/002/003, ORCH-001, ZOEKDIEP-001, AGPLUGIN-001, EXT090-001) і повне мовне очищення всього вихідного коду, пошукових каталогів, тестів та двомовних статей (.uk.md / .nl.md / .md) без російських літер, російських слів, суржику та англомовних пошукових фраз.",
+                "titel": "Аудит 05.11.2026, перейменування всіх статей на питомі назви та повне мовне очищення коду й документації (UK/NL)",
+                "samenvatting": "Повний аудит, безконфліктна консолідація паралельних напрямів робіт і повне перейменування та мовне очищення всіх статей (.uk.md / .nl.md / .md), каталогів, пошукових словників, коду й тестів без російських літер, русизмів, кальок, суржику та технічного сленгу.",
                 "wijzigingen": [
-                  "Вилучено всі російські та англійські пошукові інтенції й синоніми з backend/zoek/catalogus-ui.ts, shared/zoek-synoniemen.ts, shared/zoek-normalisatie.ts, src/zoek/zoek-logica.ts, src/MailVertalingBalk.tsx, міграцій та тестових наборів.",
-                  "Замінено всі суржикові кальки в компонентах src/, backend/, shared/, deploy/, розширенні браузера й тестах та перегенеровано shared/zoek-ui-knoppen.generated.ts.",
+                  "Перейменовано всі статті та підкаталоги документації на питомі українські (.md, .uk.md) та нідерландські (.nl.md) назви з оновленням усіх взаємних посилань.",
+                  "Замінено всі кальки, русизми та технічний сленг в усіх українських статтях, правилах оркестрації, компонентах src/, backend/, shared/, deploy/, розширенні оглядача й тестах.",
                   "Інтегровано DESIGN-003, EXT090-001 (розширення 0.9.2 з offscreen.html і локальним ШІ), AGPLUGIN-001, ZOEKDIEP-001, PRIVACY-001, MAILFIT-002 та IDENTITY-002 у всі активні гілки."
                 ],
                 "fixes": [
-                  "Повне усунення російських слів у PR #30 (backend/zoek/catalogus-ui.ts рядок 42 та суміжні файли пошуку) і синхронізація всіх активних гілок на GitHub.",
-                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера та тотожність BRON-COMMIT і HEAD гілки (commit == head) для TRACE-001.",
-                  "Перевірка відсутності російських літер і суржику в усіх текстових файлах репозиторію (0 збігів)."
+                  "Повне усунення російських слів, суржику та англіцизмів у всіх статтях і гілках репозиторію та синхронізація всіх активних гілок на GitHub.",
+                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера та тотожність BRON-COMMIT і верхівки гілки (commit == head) для TRACE-001.",
+                  "Перевірка відсутності російських літер, суржику та побитих відносних посилань у всіх 446 статтях репозиторію (0 збігів)."
                 ],
                 "beperkingen": [
-                  "Критичні політики в orchestratie/regels.lock.json мають статус «voorstel» до підпису власника приватним SSH-ключем."
+                  "Критичні політики в orchestratie/regels.lock.json мають статус «voorstel» (B-017, версія 1.4.12) до підпису власника особистим ключем безпечної оболонки."
                 ],
-                "instructies": "Завантажте mijn-ruimte-$VERSIE.tar.gz через майстер «Нове оновлення» в Admin → Оновлення та підтвердіть встановлення ключем доступу (passkey) власника."
+                "instructies": "Завантажте mijn-ruimte-$VERSIE.tar.gz через майстер «Нове оновлення» в Admin → Оновлення та підтвердіть встановлення ключем доступу власника."
               },
               "nl": {
-                "titel": "Audit 05-11-2026, consolidatie van takken (incl. DESIGN-003 en EXT090-001) en volledige taalzuivering van code en documentatie (UK/NL)",
-                "samenvatting": "Volledige audit, conflictvrije consolidatie van parallelle werkstromen (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001/002/003, ORCH-001, ZOEKDIEP-001, AGPLUGIN-001, EXT090-001) en volledige taalzuivering van alle broncode, zoekcatalogi, tests en tweetalige artikelen (.uk.md / .nl.md / .md) zonder Russische letters, Russische woorden, Surzjyk of Engelse zoekzinnen.",
+                "titel": "Audit 05-11-2026, hernoeming van alle artikelen naar zuivere namen en volledige taalzuivering van code en documentatie (UK/NL)",
+                "samenvatting": "Volledige audit, conflictvrije consolidatie van parallelle werkstromen en volledige hernoeming en taalzuivering van alle artikelen (.uk.md / .nl.md / .md), mappen, zoekcatalogi, broncode en tests zonder Russische letters, russismen, Surzjyk of technisch jargon.",
                 "wijzigingen": [
-                  "Alle Russische en Engelse zoekintenties en synoniemen verwijderd uit backend/zoek/catalogus-ui.ts, shared/zoek-synoniemen.ts, shared/zoek-normalisatie.ts, src/zoek/zoek-logica.ts, src/MailVertalingBalk.tsx, migraties en testsuites.",
-                  "Alle Surzjyk-vormen vervangen in componenten onder src/, backend/, shared/, deploy/, de browserextensie en tests, en shared/zoek-ui-knoppen.generated.ts opnieuw opgebouwd.",
+                  "Alle artikelen en documentatiemappen hernoemd naar zuivere Oekraïense (.md, .uk.md) en Nederlandse (.nl.md) bestandsnamen met bijgewerkte kruisverwijzingen.",
+                  "Alle Surzjyk-vormen, russismen en leenwoorden vervangen in alle Oekraïense artikelen, orchestratieregels, componenten onder src/, backend/, shared/, deploy/, de browserextensie en tests.",
                   "DESIGN-003, EXT090-001 (extensie 0.9.2 met offscreen.html en lokale AI), AGPLUGIN-001, ZOEKDIEP-001, PRIVACY-001, MAILFIT-002 en IDENTITY-002 geïntegreerd in alle actieve takken."
                 ],
                 "fixes": [
-                  "Volledige verwijdering van Russische woorden in PR #30 (backend/zoek/catalogus-ui.ts regel 42 en bijbehorende zoekbestanden) en synchronisatie van alle actieve takken op GitHub.",
+                  "Volledige verwijdering van Russische woorden, Surzjyk en anglicismen in alle artikelen en takken van de repository en synchronisatie van alle actieve takken op GitHub.",
                   "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie en gelijkheid van BRON-COMMIT en tak-HEAD (commit == head) voor TRACE-001.",
-                  "Controle op afwezigheid van Russische letters en Surzjyk in alle tekstbestanden van de repository (0 treffers)."
+                  "Controle op afwezigheid van Russische letters, Surzjyk en verbroken relatieve koppelingen in alle 446 artikelen van de repository (0 treffers)."
                 ],
                 "beperkingen": [
-                  "Kritieke beleidsregels in orchestratie/regels.lock.json staan op «voorstel» totdat de eigenaar ondertekent met zijn SSH-sleutel."
+                  "Kritieke beleidsregels in orchestratie/regels.lock.json staan op «voorstel» (B-017, versie 1.4.12) totdat de eigenaar ondertekent met zijn SSH-sleutel."
                 ],
                 "instructies": "Upload mijn-ruimte-$VERSIE.tar.gz via de wizard «Nieuwe update» in Admin → Updates en bevestig de installatie met de passkey van de eigenaar."
               }
@@ -156,7 +156,7 @@ jobs:
           {
             "geslaagd": 622,
             "mislukt": 0,
-            "samenvatting": "Повна 11-етапна складання npm run build, серверний typecheck:server, перевірка zoek-ui-catalogus.mjs --controle та модульні тести (orch-*, zoek-*, extensie-*, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, uitrol-weergave-v2, werkblad-canvas-kern, meldingen-v2, ai-vertaling, ai-bronnen, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 622/622 перевірок пройдено, 0 помилок.",
+            "samenvatting": "Повне 11-етапне складання npm run build, серверна перевірка типів typecheck:server, перевірка zoek-ui-catalogus.mjs --controle та модульні тести (orch-*, zoek-*, extensie-*, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, uitrol-weergave-v2, werkblad-canvas-kern, meldingen-v2, ai-vertaling, ai-bronnen, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 622/622 перевірок пройдено, 0 помилок.",
             "falend": [],
             "basis": null,
             "uitleg": {
@@ -194,7 +194,7 @@ jobs:
           echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
           echo "pakket sha256: $SCHA"
 
-      - name: Publiceer GitHub Release 20261106-180000 en verifieer TRACE-001
+      - name: Publiceer GitHub Release 20261106-190000 en verifieer TRACE-001
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -203,11 +203,11 @@ jobs:
           VERSIE="$RELEASE_VERSION"
           cat << EOF > "$RUNNER_TEMP/notes.md"
           ## Пряме посилання для встановлення (\`Admin → Оновлення\` / \`Updates\`)
-          - **Інсталяційний архів (\`.tar.gz\`):** \`https://github.com/Tarasevych/hub/releases/download/$VERSIE/mijn-ruimte-$VERSIE.tar.gz\`
+          - **Встановлювальний архів (\`.tar.gz\`):** \`https://github.com/Tarasevych/hub/releases/download/$VERSIE/mijn-ruimte-$VERSIE.tar.gz\`
           - **SHA-256 (\`.tar.gz\`):** \`$RELEASE_SHA\`
           - **Пакет передачі (\`-overdracht.zip\`):** \`https://github.com/Tarasevych/hub/releases/download/$VERSIE/mijn-ruimte-$VERSIE-antigravity-overdracht.zip\`
-          - **Встановлена серверна база (\`UITROL-BASIS\`):** \`$LIVE_VERSIE\` @ \`$LIVE_COMMIT\` (\`regelsVersie 1.4.11\`, \`B-016\`)
-          - **BRON-COMMIT:** $COMMIT (гілка \`audit/audit-2026-11-05-20261105-070523\`, злито в \`integratie\` та \`voornaamst\`)
+          - **Встановлена серверна база (\`UITROL-BASIS\`):** \`$LIVE_VERSIE\` @ \`$LIVE_COMMIT\` (\`regelsVersie 1.4.12\`, \`B-017\`)
+          - **Вихідна фіксація (\`BRON-COMMIT\`):** $COMMIT (гілка \`audit/audit-2026-11-05-20261105-070523\`, злито в \`integratie\` та \`voornaamst\`)
           - **Журнал розробки (TRACE-001):** \`orchestratie/ontwikkelarchieven/AUDIT-001.json\`
           EOF
           gh release delete "$VERSIE" --yes --cleanup-tag || true
@@ -217,7 +217,7 @@ jobs:
             "uitvoer/mijn-ruimte-$VERSIE-antigravity-overdracht.zip" \
             "uitvoer/mijn-ruimte-$VERSIE.voorstel.json" \
             --target "$COMMIT" \
-            --title "AUDIT-001 · $VERSIE (Консолідація та повне мовне очищення коду й документації UK/NL на базі $LIVE_VERSIE)" \
+            --title "AUDIT-001 · $VERSIE (Перейменування статей на питомі назви та повне мовне очищення UK/NL на базі $LIVE_VERSIE)" \
             --notes-file "$RUNNER_TEMP/notes.md" \
             --prerelease --latest=false
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" \
