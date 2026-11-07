@@ -12,7 +12,7 @@ sleutels aan (bestaande blijven; alleen naam + vingerafdruk worden getoond) en `
 automatisch als eerste stap. Het register zonder waarden (naam, doel, waar, vingerafdruk, datum): `mijn-ruimte-installeer
 geheimen-register --uit /etc/mijn-ruimte/GEHEIMEN-REGISTER.md` (sjabloon: `deploy/GEHEIMEN-REGISTER.md`). OAuth-clients van
 Google/Microsoft: `mijn-ruimte-installeer oauth-client google|microsoft` (verborgen invoer) of — voor Google en GitHub — het veld
-in admin → Інтеграції → **Майстер підключень** (kluis, passkey, geen herstart).
+in admin → Інтеграції → **Майстер під'єднань** (kluis, passkey, geen herstart).
 
 ## Verplicht
 
@@ -81,7 +81,7 @@ zelf uitzetten. Schakelen: `db-rollen-instellen.sh rls-aan|rls-uit`.
 
 | Naam | Doel | Genereren / waarde |
 |---|---|---|
-| `GOOGLE_OAUTH_CLIENT_ID` (alias `GOOGLE_SUITE_CLIENT_ID`; staat die er ook, dan wint `GOOGLE_SUITE_CLIENT_ID` — dan moet het dezelfde client zijn) | OAuth-client-ID (publiek). | Google Cloud Console → *APIs & Services* → *Credentials* → *Create credentials* → *OAuth client ID*, type *Web application*. Redirect-URI: **`https://id.<uw-domein>/`** (exact, met slash); JavaScript origins: `https://id.`, `https://hub.`, `https://mail.`, `https://cloud.<uw-domein>`. Scopes en branding onder *Google Auth Platform* (vroeger «OAuth consent screen»). De Майстер підключень toont deze waarden kant-en-klaar voor uw domein. |
+| `GOOGLE_OAUTH_CLIENT_ID` (alias `GOOGLE_SUITE_CLIENT_ID`; staat die er ook, dan wint `GOOGLE_SUITE_CLIENT_ID` — dan moet het dezelfde client zijn) | OAuth-client-ID (publiek). | Google Cloud Console → *APIs & Services* → *Credentials* → *Create credentials* → *OAuth client ID*, type *Web application*. Redirect-URI: **`https://id.<uw-domein>/`** (exact, met slash); JavaScript origins: `https://id.`, `https://hub.`, `https://mail.`, `https://cloud.<uw-domein>`. Scopes en branding onder *Google Auth Platform* (vroeger «OAuth consent screen»). De Майстер під'єднань toont deze waarden kant-en-klaar voor uw domein. |
 | `GOOGLE_OAUTH_CLIENT_SECRET` (alias `GOOGLE_SUITE_CLIENT_SECRET`) | OAuth-clientgeheim. | Uit dezelfde client. Zetten: `mijn-ruimte-installeer oauth-client google` (verborgen invoer, herstart + controle). **Of** via de wizard in de kluis (doel `google`, naam `google-oauth-client`, regels `client_id:`/`client_secret:`): env wint; staat er GEEN env-client, dan geldt de kluis van de eigenaar — zonder herstart (aanmelden via Google binnen 5 min; Gmail/Drive/Agenda meteen). Nooit half: alleen een id of alleen een secret in env wordt niet uit de kluis aangevuld. |
 
 Zonder client (env noch kluis) antwoordt de Google-aanmelding met **503 `GOOGLE_NOT_CONFIGURED`** (en maakt geen state-rijen).
@@ -142,7 +142,7 @@ vraagt ze niet). Staat de API uit, dan meldt de pagina dat eerlijk en blijft all
 | `ZOEK_INDEX_RUN_MS` / `ZOEK_INDEX_ITEMS` / `ZOEK_INDEX_SCAN_RIJEN` | `120000` / `60` / `400` | /zoek indexering (cron `zoek-index`, elke 5 min, + achtergrondronde in het serverproces bij een open sleutelkluis): tijdsbudget per run, wachtrij-items per run, bronrijen per scanstap (meer rijen → de stap plant zichzelf opnieuw; voortgang in de bronstand). |
 | `ZOEK_INDEX_VOLLEDIG_MIN` / `ZOEK_INDEX_GITHUB_MIN` | `15` / `30` | /zoek: minuten tussen afstemmingen op verdwenen rijen (alleen id’s), en tussen volledige GitHub-lezingen (geen wijzigingsfeed). Werkelijke vertraging per bron: ui ≤ 5 min; mail/cloud/drive/agenda/bord ≤ 5 min na de eigen synchronisatie; github ≤ 30 min; verwijderingen ≤ 15 min; bijlagen/inhoud/OCR: via de wachtrij daarna. |
 | `ZOEK_BEHEER_RUN_MS` / `ZOEK_BEHEER_ITEMS` | `600000` / `2000` | /zoek, handmatige indexatie vanuit het technisch profiel (zone D, 22.10.2026; `POST /api/owner/zoek/index/starten`, venster «Індексація» op /zoek): tijdsbudget en wachtrij-items per handmatige run. De run pakt alleen items van de eigen laden, onder dezelfde advisory lock als de cron (`cron:zoek-index`); daarna stopt hij netjes (status `tijd`/`limiet`) en pakt de cron de rest. Zie docs/zoek/ZOEK-BEHEER.md §5. |
-| `ROOK_CHROMIUM` | (zoekt `/srv/mijn-ruimte/browser/chrome-headless-shell`, `/usr/bin/chromium`…) | Rendercontrole (22.10.2026): pad naar de headless browser die de installer gebruikt; de app leest alleen OF hij bestaat («Діагностика» → «Рендеринг сторінок», knop «Перевірити рендеринг»). De app start zelf nooit een browser; de uitslag komt van root via `/var/lib/mijn-ruimte-uitrol-status/rook-controle.json`. Installeren: `sudo mijn-ruimte-installeer browser-controle`. |
+| `ROOK_CHROMIUM` | (zoekt `/srv/mijn-ruimte/browser/chrome-headless-shell`, `/usr/bin/chromium`…) | Rendercontrole (22.10.2026): pad naar de headless browser die de installer gebruikt; de app leest alleen OF hij bestaat («Діагностика» → «Відмальовування сторінок», knop «Перевірити відмальовування»). De app start zelf nooit een browser; de uitslag komt van root via `/var/lib/mijn-ruimte-uitrol-status/rook-controle.json`. Installeren: `sudo mijn-ruimte-installeer browser-controle`. |
 | `ZOEK_INDEX_INHOUD_MAX_MB` / `ZOEK_INDEX_SLEUTEL_WACHT_MIN` | `25` / `10` | /zoek: grootste bijlage/bestand waarvan de inhoud gelezen wordt; hoe lang een item wacht als de sleutelkluis (0092) dicht is (geen fout: stand «очікує входу»). |
 
 ## Alleen bij het bouwen
@@ -196,9 +196,9 @@ chown root:mijnruimte /etc/mijn-ruimte/geheimen.env && chmod 0640 /etc/mijn-ruim
   eigenaar het bewust toestaat). Dezelfde lijst kan ook in het root-bestand staan dat de deur al gebruikt,
   `/etc/mijn-ruimte/mcp-rechten.json` (pad instelbaar met `MCP_RECHTEN_PAD`), onder de sleutel `externeMcpHosts`:
   `{ "externeMcpHosts": ["api.githubcopilot.com"] }`. Staan beide er, dan geldt de som. Tokens horen NIET hier: die zet de
-  gebruiker zelf in zijn kluis bij het koppelen (mcp.* → Підключення ШІ → «Зовнішні MCP»).
+  gebruiker zelf in zijn kluis bij het koppelen (mcp.* → Під'єднання ШІ → «Зовнішні MCP»).
   Sinds 22.10.2026 beheert de eigenaar `externeMcpHosts` op die pagina zelf met een **passkey-besluit** (root schrijft het bestand;
-  RUNBOOK §15); hosts uit `EXTERNE_MCP_HOSTS` staan daar als «оточення» en zijn alleen hier te wijzigen.
+  RUNBOOK §15); hosts uit `EXTERNE_MCP_HOSTS` staan daar als «середовище» en zijn alleen hier te wijzigen.
 - `BESLUIT_INBOX` (standaard `/srv/mijn-ruimte/besluit-inbox`), `BESLUIT_APP_ROOT` (standaard `/srv/mijn-ruimte`: `current`, `VORIGE`,
   `releases/`) — besluiten van de eigenaar met passkey (`backend/eigenaar-besluit.ts`, RUNBOOK §15): waar de app het ondertekende
   besluit voor root neerlegt en waar ze de actieve/vorige release leest. De uitkomst komt uit `OPDRACHT_STATUS_DIR/besluit-<id>.json`.
