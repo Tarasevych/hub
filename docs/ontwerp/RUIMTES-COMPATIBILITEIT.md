@@ -2,8 +2,8 @@
 
 > **Коротко українською.** Розширення і MCP-клієнти входять не через cookie сайту, а через власні токени (токен агента
 > розширення, OAuth-токен MCP). Тому прив'язку технічного простору до основної сесії сайту сервер має перевіряти сам, при
-> КОЖНОМУ виклику. Якщо основний акаунт не активний — виклик у технічному просторі відхиляється (401/403) з повідомленням
-> «Основний акаунт не активний». Приватний простір працює як раніше. Довгі дозволи розширення («1 рік», «Без обмеження»)
+> КОЖНОМУ виклику. Якщо основний обліковий запис не активний — виклик у технічному просторі відхиляється (401/403) з повідомленням
+> «Основний обліковий запис не активний». Приватний простір працює як раніше. Довгі дозволи розширення («1 рік», «Без обмеження»)
 > переживають вихід з однієї вкладки і закінчуються лише при виході з сайту або «Вийти всюди» (ваше рішення t330u).
 
 Status: ontwerp + adapter (backend/ruimtes-compatibiliteit.ts, extension/ruimte-fouten.js). Datum 28.10.2026. Agent 5.
@@ -58,14 +58,14 @@ aanroep zonder levende ankersessie wordt geweigerd, ook als het token zelf nog g
    `prive`, ook als de technische ruimte actief is (geen menging). Lade bij `gedeeld` blijft zoals in `aiPoortNu`.
 4. **Foutcodes** (JSON `{ error: <code>, uitleg: {uk, nl} }`), status:
    - 401 `ACCOUNT_NIET_ACTIEF` — hoofdaccount niet actief; de klant ontkoppelt.
-   - 403 `SITE_SESSIE_WEG` — «Основний акаунт не активний: увійдіть на сайті знову.»
+   - 403 `SITE_SESSIE_WEG` — «Основний обліковий запис не активний: увійдіть на сайті знову.»
    - 403 `GEEN_TECH_SESSIE`, `VERLOPEN`, `GRENS_VOORBIJ`, `PAUZE`, `NIET_GEBONDEN`, `AI_NIET_TOEGESTAAN`, `GEEN_ROLLEN`,
      `GEEN_TECH_PROFIEL` — technische ruimte niet beschikbaar; de klant blijft gekoppeld in `prive`.
    - Bestaande `TECH_PROFILE_OFF` (403) blijft geldig als synoniem; nieuwe code mag erbij in het veld `reden`.
    - WebSocket: 4403 = token ingetrokken (ontkoppelen), NIEUW 4401 = sitesessie weg (niet ontkoppelen, alleen vergrendelen).
 5. **Gevonden in de test (28.10.2026):** als de sitesessie wordt ingetrokken, krijgt een MCP-aanroep nu `GEEN_TECH_SESSIE`
    (de technische sessie is al gesloten) in plaats van `SITE_SESSIE_WEG`. Daardoor ziet de mens de algemene melding en niet
-   «Основний акаунт не активний». Verzoek aan Agent 1: bij sluiten wegens sitesessie de reden bewaren en die code teruggeven.
+   «Основний обліковий запис не активний». Verzoek aan Agent 1: bij sluiten wegens sitesessie de reden bewaren en die code teruggeven.
 6. **Uitloggen:** `naUitloggen(userId, tabContext)` blijft: met tabContext + v2 ⇒ 0 intrekkingen; zonder ⇒ alles.
 
 De codes 1–4 zijn als pure functie vastgelegd in backend/ruimtes-compatibiliteit.ts; tests in
