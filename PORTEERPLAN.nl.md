@@ -234,7 +234,7 @@ Er is geen exportfunctie voor de AppDeploy-database of -storage (ook niet via de
 ### 4.1 Frontend build en serving
 * De build blijft `vite build` → `dist/`, met de pre-build scripts. Pas `vite.config.ts` aan: `outDir` vast op `dist`, `APPDEPLOY_*` eruit (eventueel `SOURCEMAP=hidden`), `base: '/'`.
 * `beveiliging-bouw.mjs` moet de uitvoer in een build-map zetten (nu herschrijft het `index.html` in git). Anders blijft de werkboom na elke build vuil.
-* `public/canonical-service.js`: `isTechnicalHost` wordt `false` in productie (de AppDeploy-host verdwijnt). De lijst met domeinen moet configureerbaar worden, zodat we lokaal kunnen testen (zie §7.3). Zet hem bijvoorbeeld in een door de server gegenereerde `/canonical-config.js`, of in een build-time `VITE_PUBLIC_DOMAIN`. Dezelfde lijst staat ook in `backend/index.ts` (`SERVICE_ORIGINS`), `backend/eigenaar-sessie-overdracht.ts`, `backend/google-suite-inrichting.ts` (`CALLBACK`), `backend/api-platform-kluis.ts` (`revealHostAllowed`) en enkele `src/*`. Dit wordt **één bron** in `backend/deployment-identity.ts` (`TECH_ORIGIN`, `API_COOKIE_PATH`, cookienamen).
+* `public/canonical-service.js`: `isTechnicalHost` wordt `false` in productie (de AppDeploy-host verdwijnt). De lijst met domeinen moet configureerbaar worden, zodat we lokaal kunnen testen (zie §7.3). Zet hem bijvoorbeeld in een door de server gegenereerde `/canonical-config.js`, of in een build-time `VITE_PUBLIC_DOMAIN`. Dezelfde lijst staat ook in `backend/index.ts` (`SERVICE_ORIGINS`), `backend/eigenaar-sessie-overdracht.ts`, `backend/google-suite-inrichting.ts` (`CALLBACK`), `backend/api-platform-kluis.ts` (`revealHostAllowed`) en enkele `src/*`. Dit wordt **één bron** in `backend/deployment-identiteit.ts` (`TECH_ORIGIN`, `API_COOKIE_PATH`, cookienamen).
 * De Node-server serveert alle hostnamen vanuit één proces. De dienst wordt bepaald door de `Host`-header (`ownerCustomHostService`), en die werkt al zo.
 
 ### 4.2 Hoe auth werkt
@@ -301,7 +301,7 @@ Conclusie: wat door de SDK faalt, is alleen de import-resolutie (`@appdeploy/cli
 
 ### 7.1 Omvang
 * **Mechanisch:** 61 import-regels (28 backend, 33 frontend).
-* **Inhoudelijk te wijzigen:** ±15 bestaande bestanden: `backend/index.ts`, `toegangslaag.ts`, `eigenaar-sessie-overdracht.ts`, `google-contour.ts`, `api-platform-kluis.ts`, `mail-platform.ts`, `mail-microsoft.ts`, `google-suite-inrichting.ts`, `google-suite-mail-browser.ts`, `rbac.ts`, `deployment-identity.ts`, `public/canonical-security.js`, `public/canonical-service.js`, `src/MailOpgemaaktDocumentVoorbeeld.tsx`, `vite.config.ts`, `package.json` en `scripts/beveiliging-bouw.mjs`/`l002-audit.mjs`.
+* **Inhoudelijk te wijzigen:** ±15 bestaande bestanden: `backend/index.ts`, `toegangslaag.ts`, `eigenaar-sessie-overdracht.ts`, `google-contour.ts`, `api-platform-kluis.ts`, `mail-platform.ts`, `mail-microsoft.ts`, `google-suite-inrichting.ts`, `google-suite-mail-browser.ts`, `rbac.ts`, `deployment-identiteit.ts`, `public/canonical-security.js`, `public/canonical-service.js`, `src/MailOpgemaaktDocumentVoorbeeld.tsx`, `vite.config.ts`, `package.json` en `scripts/beveiliging-bouw.mjs`/`l002-audit.mjs`.
 * **Nieuw:** ±15 bestanden: `server/platform/{db,storage,secrets,router,invites,ai,ratelimit,config}.ts`, `server/main.ts`, `server/cron.ts`, `src/platform/client.ts`, `migrations/0001_basis.sql` plus een runner, `deploy/` (systemd-units, cloudflared-voorbeeld, env-sjabloon) en tests.
 * **Verwijderen:** `backend/realtime.ts`, `backend/realtime-subscribers.ts`, `cron.json` (vervangen door timers).
 
@@ -328,7 +328,7 @@ Conclusie: wat door de SDK faalt, is alleen de import-resolutie (`@appdeploy/cli
 4. **Server-skelet:** `server/main.ts` (node:http, body-limiet, eventbouw, Host-validatie, Origin-check, security-headers, statische `dist/` met SPA-fallback, `/api/_healthcheck`). `router/json/error` met dezelfde semantiek.
 5. **Platform-shims:** `db` (Postgres JSONB), `storage` (fs), `secrets` (env), `invites`, `ai`. Migratie `0001_basis.sql` plus een runner (`node dist-server/migrate.mjs`).
 6. **Backend-imports** omzetten naar de alias. Bundelen met esbuild (`--platform=node --format=esm --target=node24 --packages=external`) naar `dist-server/server.mjs`, `cron.mjs` en `migrate.mjs`.
-7. **Opruimen:** realtime-code weg, technische host en QA-fixtures weg, `deployment-identity.ts` wordt de bron van domeinen en cookienamen (configureerbaar via `PUBLIC_DOMAIN`), en de cookies krijgen nieuwe attributen.
+7. **Opruimen:** realtime-code weg, technische host en QA-fixtures weg, `deployment-identiteit.ts` wordt de bron van domeinen en cookienamen (configureerbaar via `PUBLIC_DOMAIN`), en de cookies krijgen nieuwe attributen.
 8. **Beveiligingspunten** uit §5, in volgorde van ernst: 4 (Host), 3 (CSRF), 1 (rate limit), 2 (PKCE), 8 (eigenaar), 9 (contour), 7 (TOTP), 6 (DOMPurify), 5 (CSP), 10 (handoff), 11 (SSRF).
 9. **Cron** omzetten naar CLI en timers, met daarbij een TTL-opruimjob voor de dynamische tabellen, `rate_limits` en verlopen sessies.
 10. **Lokaal testen** (§7.3).

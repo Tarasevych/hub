@@ -63,7 +63,7 @@
 
 ### Сервісні хости екосистеми (`*.tarasevych.com`)
 
-Усі піддомени (визначені в [`backend/deployment-identity.ts`](backend/deployment-identity.ts) та маршрутизовані через [`deploy/cloudflared-config.yml`](deploy/cloudflared-config.yml)) обслуговуються єдиним серверним ядром на `127.0.0.1:8080` зі спільним захищеним контуром сеансів (`Domain=.tarasevych.com; Secure; HttpOnly; SameSite=Lax`):
+Усі піддомени (визначені в [`backend/deployment-identiteit.ts`](backend/deployment-identiteit.ts) та маршрутизовані через [`deploy/cloudflared-config.yml`](deploy/cloudflared-config.yml)) обслуговуються єдиним серверним ядром на `127.0.0.1:8080` зі спільним захищеним контуром сеансів (`Domain=.tarasevych.com; Secure; HttpOnly; SameSite=Lax`):
 
 | Піддомен | Служба | Призначення та ключові можливості | Основні модулі в коді |
 |---|---|---|---|
@@ -389,7 +389,7 @@ Tarasevych/hub
 │
 ├── backend/                         # Серверна бізнес-логіка всіх 10 активних сервісів
 │   ├── index.ts                     # Основний реєстр маршрутів API, сеансів, OAuth-транзакцій та робочих просторів
-│   ├── deployment-identity.ts       # Єдине джерело доменів (*.tarasevych.com) та параметрів сеансових кук
+│   ├── deployment-identiteit.ts       # Єдине джерело доменів (*.tarasevych.com) та параметрів сеансових кук
 │   ├── toegangslaag.ts              # Паролі, TOTP (AES-256-GCM), коди відновлення (HMAC), телефони, політики входу
 │   ├── toegangssleutels.ts          # Користувацькі WebAuthn Passkeys
 │   ├── stap-op.ts                   # Механізм Step-Up повторного підтвердження для чутливих дій

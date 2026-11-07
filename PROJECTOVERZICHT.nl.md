@@ -63,7 +63,7 @@ Elk artikel en elke documentatiepagina in de repository heeft twee volwaardige t
 
 ### Dienst-hosts van het ecosysteem (`*.tarasevych.com`)
 
-Alle subdomeinen (gedefinieerd in [`backend/deployment-identity.ts`](backend/deployment-identity.ts) en gerouteerd via [`deploy/cloudflared-config.yml`](deploy/cloudflared-config.yml)) worden bediend door één serverkern op `127.0.0.1:8080` met een gedeelde beveiligde sessielaag (`Domain=.tarasevych.com; Secure; HttpOnly; SameSite=Lax`):
+Alle subdomeinen (gedefinieerd in [`backend/deployment-identiteit.ts`](backend/deployment-identiteit.ts) en gerouteerd via [`deploy/cloudflared-config.yml`](deploy/cloudflared-config.yml)) worden bediend door één serverkern op `127.0.0.1:8080` met een gedeelde beveiligde sessielaag (`Domain=.tarasevych.com; Secure; HttpOnly; SameSite=Lax`):
 
 | Subdomein | Dienst | Doel en belangrijkste mogelijkheden | Kernmodules in de code |
 |---|---|---|---|
@@ -390,7 +390,7 @@ Tarasevych/hub
 │
 ├── backend/                         # Server-bedrijfslogica van alle 10 actieve diensten
 │   ├── index.ts                     # Hoofdregister van API-routes, sessies, OAuth-transacties en werkruimten
-│   ├── deployment-identity.ts       # Enige bron van domeinen (*.tarasevych.com) en sessiecookie-instellingen
+│   ├── deployment-identiteit.ts       # Enige bron van domeinen (*.tarasevych.com) en sessiecookie-instellingen
 │   ├── toegangslaag.ts              # Wachtwoorden, TOTP (AES-256-GCM), herstelcodes (HMAC), telefoons, aanmeldbeleid
 │   ├── toegangssleutels.ts          # Gebruikers-WebAuthn Passkeys
 │   ├── stap-op.ts                   # Step-Up herbevestigingsmechanisme voor gevoelige acties
