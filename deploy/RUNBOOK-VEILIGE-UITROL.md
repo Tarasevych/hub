@@ -426,7 +426,7 @@ een assertie van een al bekende sleutel (`mijn-ruimte-goedkeur-sleutels.path`). 
 
 ### 13.3 Voorbereiders toestaan of intrekken
 
-Admin → «Оновлення» → «Кому дозволено готувати оновлення»: soort (акаунт / токен агента / MCP-підключення), wie, aantal dagen (1–30),
+Admin → «Оновлення» → «Кому дозволено готувати оновлення»: soort (обліковий запис / токен агента / MCP-під'єднання), wie, aantal dagen (1–30),
 «Дозволити» (step-up). «Відкликати» trekt meteen in en breekt lopende uploads af. Alles staat in de audit (`uitrol_voorbereider_*`). Een
 grant vervalt ook als het account geblokkeerd of met pensioen is of als AI voor dat account geblokkeerd is.
 
@@ -582,7 +582,7 @@ step-up).
   `owner.step_up.google rejected`. Geen verse bevestiging: `STEP_UP_NOT_FRESH`.
 - De callback-antwoorden van een step-up dragen `stepUp: true`; bij een fout zet `OwnerIdentityCallback` de reden in
   `sessionStorage` (`mijn-ruimte-stap-op-fout`, alleen een foutcode) en stuurt terug naar de pagina. Het venster toont de
-  reden («Ви вибрали інший акаунт Google…», «Google не підтвердив новий вхід…»). Opent het venster opnieuw direct na een
+  reden («Ви вибрали інший обліковий запис Google…», «Google не підтвердив новий вхід…»). Opent het venster opnieuw direct na een
   hervatting zonder bewaarde reden, dan toont het «Повторний вхід через Google не підтвердив доступ…».
 
 **Herstelcodes (GitHub-achtig).**
@@ -634,7 +634,7 @@ hash:
 | Hash | Tabblad |
 |---|---|
 | `#overzicht` | Огляд / Overzicht |
-| `#ai` | Підключені ШІ / Verbonden AI |
+| `#ai` | Під'єднані ШІ / Verbonden AI |
 | `#apparaten` | Пристрої й браузери / Apparaten en browsers |
 | `#tokens` | Токени й двері / Tokens en deuren |
 | `#journaal` | Журнал / Logboek |
@@ -656,7 +656,7 @@ hash:
 - Rijen zijn standaard dicht: titel, één statusregel en een knop rechts. Open zie je alle technische gegevens.
 - Acties die iets weghalen, vragen eerst om een bevestiging op de pagina (geen `window.confirm`). Daarna volgen een
   spinner en een melding met wat er veranderde en hoe laat.
-- Ingetrokken of losgekoppelde items blijven zichtbaar in een dichte groep «Відкликані / Відключені» (90 dagen).
+- Ingetrokken of losgekoppelde items blijven zichtbaar in een dichte groep «Відкликані / Вимкнені» (90 dagen).
 
 **Nieuwe server-endpoints** (eigenaar, `ownerGate`):
 - `POST /api/owner/agents/overzicht` geeft:
@@ -727,7 +727,7 @@ haalt de sleutel uit `/etc/mijn-ruimte/goedkeur-passkeys.json`, schrijft de stat
 Een eenmaal ingetrokken vingerafdruk kan **niet** via de app (assertion) terugkomen (`OPNIEUW_VIA_SSH`), alleen met
 `sudo mijn-ruimte-passkey toevoegen <fp>` — dat wist de markering.
 
-**«Це був не я — скасувати та захистити акаунт».** Sterke step-up. Ligt het verzoek nog in de inbox: verzoek weg, recht
+**«Це був не я — скасувати та захистити обліковий запис».** Sterke step-up. Ligt het verzoek nog in de inbox: verzoek weg, recht
 blijft. Heeft root al verwerkt: nieuwe aanmelding + de UI toont eerlijk de SSH-opdracht. Een verwijderde passkey wordt in de
 app hersteld. De sessie die de wijziging deed wordt beëindigd (tenzij het de huidige is). Alles in audit + geschiedenis.
 
