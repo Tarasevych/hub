@@ -11,7 +11,7 @@ Alleen toevoegen. Elke wijziging van de regels = nieuw besluit hier + hogere `re
 ## B-001 · 2026-10-31 · 1.0.0 · voorstel
 
 **Контекст.** Над Mijn Ruimte паралельно працюють Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor. Правила були розсипані по
-`deploy/REGELS-UITROLPAKKET.md`, `RUNBOOK-*.md`, спільній папці знань і чатах; кожен агент мав власне уявлення про базу коду.
+`deploy/REGELS-UITROLPAKKET.md`, `RUNBOOK-*.md`, спільній теці знань і чатах; кожен агент мав власне уявлення про базу коду.
 
 **Рішення.** Єдине джерело правил — `AGENTS.md` (людиною) + `orchestratie/beleid.json` (машиною) + цей реєстр. `CLAUDE.md`, `GEMINI.md` та інші файли
 середовищ — лише адаптери ≤ 25 рядків із маркером `<!-- orch-adapter -->`. Відбиток правил фіксується в `orchestratie/regels.lock.json`;
@@ -73,7 +73,7 @@ Alleen toevoegen. Elke wijziging van de regels = nieuw besluit hier + hogere `re
 1. У пакеті `mijn-ruimte-<versie>.tar.gz` з'являється `UITROL-BASIS` (встановлена версія + commit + відбиток правил). Root-інсталятор звіряє його з
    `$WERK_ROOT/laatste-versie` і `laatste-commit` (`BASIS_VEROUDERD`, `BASIS_COMMIT_VERSCHILT`, `BASIS_ONGELDIG`), з `20261201-000000` — обов'язково
    (`GEEN_BASIS`). Якщо в пакеті є `orchestratie/regels.lock.json`, відбиток правил і `regelsVersie` мають збігатися (`REGELS_NIET_VERGRENDELD`),
-   а режим установки — бути дозволеним у `kritiek.installatieModi` (`MODUS_NIET_TOEGESTAAN`). GitOps (`gitops-ophalen.sh`, автоматично) працює лише
+   а режим встановлення — бути дозволеним у `kritiek.installatieModi` (`MODUS_NIET_TOEGESTAAN`). GitOps (`gitops-ophalen.sh`, автоматично) працює лише
    за `automatisch_beperkt` **і** підписаним власником lock.
 2. Єдиний пакет передачі `mijn-ruimte-<versie>-<agent>-overdracht.zip` збирає `node scripts/orch.mjs pakket` (через `maak-voorstelpakket.sh`, без
    дублювання): архів, SHA-256, `ORCH-OVERDRACHT.json`, `UITROL-MANIFEST.json`, тести, `RAPPORT.md`, коміти (`COMMITS.txt` + `commits.bundle`),
@@ -109,7 +109,7 @@ git і підпис SSH на ПК власника. Власник хоче ба
    `besluit`) у власний журнал `/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl` (0600) і переписує читабельну копію
    `/var/lib/mijn-ruimte-uitrol-status/orch-regels-bevestigd.json` (0640, останні 50) → застосунок, побачивши підтвердження, створює гілку
    `regels/<versie>-<час>` з новим `regels.lock.json` (`eigenaar.soort = "passkey"`, `besluit`, `passkey`), `CONTEXT-COMPACT.md`, виконує
-   `controleer` (при помилці все відкидається) і відправляє гілку в `origin`. Злиття в `integratie` лишається за власником.
+   `controleer` (при помилці все відкидається) і надсилає гілку в `origin`. Злиття в `integratie` лишається за власником.
 3. Lock із `eigenaar.soort = "passkey"` рівноцінний підписові SSH для `eigenaarStatus`/`controleer`. GitOps (`gitops-ophalen.sh`, root) довіряє
    такому lock **лише** якщо той самий запис (`besluit`, `regelsVersie`, `hash`, `kritiekHash`, `voorstel`) є в root-журналі — застосунок не може
    сам «підтвердити» правила. Підпис SSH лишається повноцінною альтернативою (`orch onderteken-bericht` / `bevestig`).
@@ -126,7 +126,7 @@ git і підпис SSH на ПК власника. Власник хоче ба
 
 **Контекст.** Власник вимагає для кожного наступного випуску постійний, відтворюваний журнал обробки запиту та перевірку, що повний код і точний інсталяційний архів справді опубліковані на GitHub. Попередні випуски містили commit, але не доводили наявності незмінного документа рішень і саме того tar.gz у GitHub Release.
 
-**Рішення.** Від `20261103-211555` кожен пакет має `ONTWIKKELARCHIEF.json` з `taakId`, `repo`, `tak`, 40-символьним `commit` (= `BRON-COMMIT`), `pad` на комічений журнал `orchestratie/ontwikkelarchieven/<TASK-ID>.json`, його SHA-256, канонічною URL до GitHub blob, URL GitHub Release за `UITROL-VERSIE` і назвою `.tar.gz`. Обов'язковий журнал має запит, часову послідовність, рішення та компроміси, зміни, тести, посилання на першоджерела/вкладення, відомі проблеми, причини та виключення. Штатний `orch pakket` перевіряє, що журнал уже в HEAD і не підмінений локально, та вписує посилання в tar. Site voorcontrole та root незалежно запитують лише фіксований GitHub API (`Tarasevych/hub`), перевіряють вміст документа і хеш, належність commit гілці, наявність GitHub Release і `asset.digest` SHA-256 ідентичного завантаженого tar.gz. Будь-яка невідповідність, відсутність або мережевий збій — fail closed. Без завершеної GitHub публікації встановити пакет не можна.
+**Рішення.** Від `20261103-211555` кожен пакет має `ONTWIKKELARCHIEF.json` з `taakId`, `repo`, `tak`, 40-символьним `commit` (= `BRON-COMMIT`), `pad` на комічений журнал `orchestratie/ontwikkelarchieven/<TASK-ID>.json`, його SHA-256, канонічною URL до GitHub blob, URL GitHub Release за `UITROL-VERSIE` і назвою `.tar.gz`. Обов'язковий журнал має запит, часову послідовність, рішення та компроміси, зміни, тести, посилання на першоджерела/вкладення, відомі проблеми, причини та виняток. Штатний `orch pakket` перевіряє, що журнал уже в HEAD і не підмінений локально, та вписує посилання в tar. Site voorcontrole та root незалежно запитують лише фіксований GitHub API (`Tarasevych/hub`), перевіряють вміст документа і хеш, належність commit гілці, наявність GitHub Release і `asset.digest` SHA-256 ідентичного завантаженого tar.gz. Будь-яка невідповідність, відсутність або мережевий збій — fail closed. Без завершеної GitHub публікації встановити пакет не можна.
 
 **Захист даних.** Не вносити секрети, приватні файли, вміст листів, необмежені журнали, сирі credentials та приховану chain-of-thought ШІ. Фіксувати доступні кроки й **стислі перевірювані обґрунтування** рішень, посилання/хеші артефактів, явні прогалини. Неможливість автоматично відновити внутрішню історію моделі треба позначати, а не вигадувати. Бінарний tar зберігається як GitHub Release asset, повний код — у git-коміті; через циклічність хешів сам tar не додається до власного джерельного commit.
 
@@ -166,3 +166,7 @@ git і підпис SSH на ПК власника. Власник хоче ба
 **Наслідки.** `regelsVersie` 1.4.1 → 1.4.2; оновлено `AGENTS.md`, `orchestratie/beleid.json`, `orchestratie/BESLUITEN.md`, `orchestratie/regels.lock.json`, `orchestratie/CONTEXT-COMPACT.md` та `deploy/*.service`. Усі агенти (через GitHub `integratie`/`voornaamst`, MCP `orch_context`/`orch_overzicht` або `CONTEXT-COMPACT.md`) отримують актуальні правила 1.4.2.
 
 **Хто.** Вимога власника Павла Тарасевича від 04.11.2026, реалізація агентом `antigravity`. Очікує passkey/SSH-підтвердження власника.
+
+## B-099 · 2026-11-06 · 1.4.3 · voorstel
+
+**Рішення.** Мовне очищення документації та статей гілки.
