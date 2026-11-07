@@ -22,7 +22,7 @@ De pagina `hub.<domein>/zoek` (menu «Zoeken») biedt één zoekfunctie over all
 
 De gebruiker hoeft de exacte naam van een functie niet te kennen: exacte treffers, prefixen (aanvullen), volledige tekst, normalisatie (hoofd-/kleine letters,
 diacritica, Cyrillisch ↔ Latijn), lichte morfologie, fuzzy zoeken (trigram, typefouten van 1–2 letters), synoniemen en meertalige
-equivalenten (uk, ru, nl, en, de, fr, pl, ro, bg), surzhyk/transliteratie (`poshta`, «настройки почты») en de beschrijving van het doel van een knop werken allemaal.
+equivalenten (uk, ru, nl, en, de, fr, pl, ro, bg), surzhyk/transliteratie (`poshta`, «настройки почти») en de beschrijving van het doel van een knop werken allemaal.
 Elke resultaatkaart legt uit **waarom** ze is gevonden (`uitleg`), toont het pad, een fragment met markering, een overeenkomstpercentage
 (0–100, methodiek hieronder) en een veilige navigatie (`route`: uitsluitend diensthost + pad, nooit een willekeurige URL).
 
@@ -121,7 +121,7 @@ Hetzelfde antwoordformaat als voorheen (`groups[{source, items[{id, title, subti
 ## 5. Normalisatie, talen, synoniemen (`shared/zoek-normalisatie.ts`, `shared/zoek-synoniemen.ts`)
 
 - `zoekNorm(s)`: NFC → kleine letters → Cyrillisch uk/ru/bg → Latijn (één tabel: х→kh, г→g, и→y, і→i, ї→yi, є→ye, щ→shch, ю→yu,
-  я→ya; ь/ъ/apostrof → ∅) → ł/ß/ø/æ/œ/đ/ı → NFKD zonder diacritica → alleen `\p{L}\p{N}@._-` → enkele spaties. Geen fonetische
+  я→ya; ь/'/apostrof → ∅) → ł/ß/ø/æ/œ/đ/ı → NFKD zonder diacritica → alleen `\p{L}\p{N}@._-` → enkele spaties. Geen fonetische
   samenvoeging (`Jan de Wijk` blijft `jan de wijk`). Identiek op server en client.
 - `zoekTokens(s)`: unieke tokens ≥2 tekens (splitst ook op `-_.@`), ≤12. Stopwoorden worden alleen verwijderd wanneer er andere tokens overblijven.
 - `varianten(token)` (alleen voor de **zoekopdracht**): surzhyk/transliteratie — `y↔i`, `kh↔h`, `g↔h`, `ts↔c`, `ye↔e`, `yi↔i`, `iu↔yu`, `ia↔ya`, `w↔v`,
@@ -129,7 +129,7 @@ Hetzelfde antwoordformaat als voorheen (`groups[{source, items[{id, title, subti
 - `lichteStam(token)`: gesloten lijst van achtervoegsels (uk/ru/bg/pl in Latijnse schrijfwijze: `-amy -ami -akh -iv -oyu -ovi -ykh -ymy -oho -omu
   -ty -la -sia …`, éénletterige `-a -y -i -u -o -e` voor woorden ≥5). **Grenzen**: geen stamwisseling (кінь/коня), geen voorvoegsels, geen woordenboek.
   Voor nl/en/de/fr/ro/ru draait de echte PostgreSQL-stemmer (`zoek_stam`).
-- `taalRaden(s)`: Cyrillisch (і/ї/є/ґ → uk; ы/э → ru; ъ zonder ы → bg), Latijn — stemming op basis van stopwoorden nl/en/de/fr/pl/ro.
+- `taalRaden(s)`: Cyrillisch (і/ї/є/ґ → uk; и/е → ru; ' zonder и → bg), Latijn — stemming op basis van stopwoorden nl/en/de/fr/pl/ro.
 - Synoniemen: `SYNONIEM_GROEPEN` ≥120 groepen `{canoniek, taal:'multi', domein, synoniemen[]}` met leden in 9 talen («пошта/почта/mail/e-mail/
   post/courrier/poczta/poștă/поща», «налаштування/settings/instellingen/Einstellungen/paramètres/ustawienia/setări/настройки» …).
   In `tsquery` gaan synoniemen **zonder** prefix `:*` (zodat `post` geen `postcode` vangt); letterlijke zoektokens en hun varianten krijgen wel een prefix.

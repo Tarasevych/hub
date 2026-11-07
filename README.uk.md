@@ -18,8 +18,8 @@
 | **2. Історія розвитку проєкту (Етапи I–VI)** | [`docs/hub/GESCHIEDENIS.uk.md`](./docs/hub/GESCHIEDENIS.uk.md) | [`docs/hub/GESCHIEDENIS.nl.md`](./docs/hub/GESCHIEDENIS.nl.md) |
 | **3. Путівник по 71 гілці, 27 PR та 18 релізах** | [`docs/hub/TAKKEN-EN-PRS.uk.md`](./docs/hub/TAKKEN-EN-PRS.uk.md) | [`docs/hub/TAKKEN-EN-PRS.nl.md`](./docs/hub/TAKKEN-EN-PRS.nl.md) |
 | **4. Структура репозиторію та карта коду** | [`docs/hub/MAP-STRUCTUUR.uk.md`](./docs/hub/MAP-STRUCTUUR.uk.md) | [`docs/hub/MAP-STRUCTUUR.nl.md`](./docs/hub/MAP-STRUCTUUR.nl.md) |
-| **5. Змінні оточення та ключі шифрування** | [`docs/hub/OMGEVINGSVARIABELEN.uk.md`](./docs/hub/OMGEVINGSVARIABELEN.uk.md) · [`ENV-VARS.uk.md`](./ENV-VARS.uk.md) | [`docs/hub/OMGEVINGSVARIABELEN.nl.md`](./docs/hub/OMGEVINGSVARIABELEN.nl.md) · [`ENV-VARS.nl.md`](./ENV-VARS.nl.md) |
-| **6. Оркестрація `ORCH-001`, `TRACE-001`, стек `B-009` та деплой** | [`docs/hub/ORCHESTRATIE-EN-UITROL.uk.md`](./docs/hub/ORCHESTRATIE-EN-UITROL.uk.md) | [`docs/hub/ORCHESTRATIE-EN-UITROL.nl.md`](./docs/hub/ORCHESTRATIE-EN-UITROL.nl.md) |
+| **5. Змінні середовища та ключі шифрування** | [`docs/hub/OMGEVINGSVARIABELEN.uk.md`](./docs/hub/OMGEVINGSVARIABELEN.uk.md) · [`ENV-VARS.uk.md`](./ENV-VARS.uk.md) | [`docs/hub/OMGEVINGSVARIABELEN.nl.md`](./docs/hub/OMGEVINGSVARIABELEN.nl.md) · [`ENV-VARS.nl.md`](./ENV-VARS.nl.md) |
+| **6. Оркестрація `ORCH-001`, `TRACE-001`, стек `B-009` та розгортання** | [`docs/hub/ORCHESTRATIE-EN-UITROL.uk.md`](./docs/hub/ORCHESTRATIE-EN-UITROL.uk.md) | [`docs/hub/ORCHESTRATIE-EN-UITROL.nl.md`](./docs/hub/ORCHESTRATIE-EN-UITROL.nl.md) |
 | **Канонічні правила агентів та реєстр рішень** | [`AGENTS.uk.md`](./AGENTS.uk.md) · [`orchestratie/BESLUITEN.uk.md`](./orchestratie/BESLUITEN.uk.md) | [`AGENTS.nl.md`](./AGENTS.nl.md) · [`orchestratie/BESLUITEN.nl.md`](./orchestratie/BESLUITEN.nl.md) |
 | **Безпека та план портування (Self-Hosting)** | [`SECURITY-NOTES.uk.md`](./SECURITY-NOTES.uk.md) · [`PORTEERPLAN.uk.md`](./PORTEERPLAN.uk.md) | [`SECURITY-NOTES.nl.md`](./SECURITY-NOTES.nl.md) · [`PORTEERPLAN.nl.md`](./PORTEERPLAN.nl.md) |
 
@@ -36,7 +36,7 @@
 | **Технологічний стек** | TypeScript 5.7 · React 19 · Vite 6 · Tailwind CSS 3 · Node.js 26 LTS (`node:http` + `esbuild`) · PostgreSQL 18 (JSONB + реляційні таблиці + FORCE RLS) · Systemd · Caddy · OPA · `age` |
 | **Канонічні правила (ORCH-001)** | [`AGENTS.md`](AGENTS.md) ([🇺🇦 UK](AGENTS.uk.md) · [🇳🇱 NL](AGENTS.nl.md)) · [`orchestratie/beleid.json`](orchestratie/beleid.json) · [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) ([🇺🇦 UK](orchestratie/BESLUITEN.uk.md) · [🇳🇱 NL](orchestratie/BESLUITEN.nl.md)) |
 | **Мовна конвенція** | Спілкування, документація, звіти — **українською (`uk`) та нідерландською (`nl`)**; шляхи URL/API та назви модулів у коді — **нідерландською (`nl`)**; інтерфейс користувача — **двомовний (`uk` / `nl`)** |
-| **Карта кодової бази** | [`docs/kaart/KAART-BESTANDEN.md`](docs/kaart/KAART-BESTANDEN.md) ([🇺🇦 UK](docs/kaart/KAART-BESTANDEN.uk.md) · [🇳🇱 NL](docs/kaart/KAART-BESTANDEN.nl.md)) та [`docs/kaart/bestandskaart.json`](docs/kaart/bestandskaart.json) *(531 перейменований модуль + нові модулі з автоматичною перевіркою збірки)* |
+| **Карта кодової бази** | [`docs/kaart/KAART-BESTANDEN.md`](docs/kaart/KAART-BESTANDEN.md) ([🇺🇦 UK](docs/kaart/KAART-BESTANDEN.uk.md) · [🇳🇱 NL](docs/kaart/KAART-BESTANDEN.nl.md)) та [`docs/kaart/bestandskaart.json`](docs/kaart/bestandskaart.json) *(531 перейменований модуль + нові модулі з автоматичною перевіркою складання)* |
 
 ---
 
@@ -51,7 +51,7 @@
    - [3.4. Історичні та архівні гілки ранньої розробки (Вересень — 16 Жовтня 2026)](#34-історичні-та-архівні-гілки-ранньої-розробки-вересень--16-жовтня-2026)
 4. [Реєстр Pull Requests (#1–#27) та Випусків (GitHub Releases)](#4-реєстр-pull-requests-127-та-випусків-github-releases)
 5. [Структура репозиторію: де що лежить у коді](#5-структура-репозиторію-де-що-лежить-у-коді)
-6. [Змінні оточення, ключі шифрування та конфігурація (`ENV-VARS.md`)](#6-змінні-оточення-ключі-шифрування-та-конфігурація-env-varsmd)
+6. [Змінні середовища, ключі шифрування та конфігурація (`ENV-VARS.md`)](#6-змінні-оточення-ключі-шифрування-та-конфігурація-env-varsmd)
 7. [Інфраструктура, серверний стек (`B-009`), безпека та резервне копіювання](#7-інфраструктура-серверний-стек-b-009-безпека-та-резервне-копіювання)
 8. [Координація ШІ-агентів (`ORCH-001` / `TRACE-001`) та команди розробки](#8-координація-ші-агентів-orch-001--trace-001-та-команди-розробки)
 
@@ -67,17 +67,17 @@
 
 | Піддомен | Служба | Призначення та ключові можливості | Основні модулі в коді |
 |---|---|---|---|
-| **[`hub.tarasevych.com`](https://hub.tarasevych.com)** | **Хаб (`hub`)** | Головне робоче полотно (**Werkblad v3**), віджети, швидкі дії, дошки, сповіщення (**Meldingen v2/v3**), глобальне **Меню v2** (док праворуч/угорі/унизу), глобальний пошук `/zoek`. | [`src/VerenigdDienstApp.tsx`](src/VerenigdDienstApp.tsx), [`backend/werkblad-v3.ts`](backend/werkblad-v3.ts), [`shared/menu-model.ts`](shared/menu-model.ts) |
+| **[`hub.tarasevych.com`](https://hub.tarasevych.com)** | **Хаб (`hub`)** | Головне робоче полотно (**Werkblad v3**), блоки інтерфейсу, швидкі дії, дошки, сповіщення (**Meldingen v2/v3**), глобальне **Меню v2** (док праворуч/угорі/унизу), глобальний пошук `/zoek`. | [`src/VerenigdDienstApp.tsx`](src/VerenigdDienstApp.tsx), [`backend/werkblad-v3.ts`](backend/werkblad-v3.ts), [`shared/menu-model.ts`](shared/menu-model.ts) |
 | **[`mail.tarasevych.com`](https://mail.tarasevych.com)** | **Пошта (`mail`)** | **Adaptive Mail Canvas**: Gmail (OAuth + Pub/Sub), Outlook (Microsoft Graph), IMAP/SMTP (iCloud, Ukr.net, Yahoo, I.ua). Орбіта сервісів, мобільні шторки, **147 спеціалізованих переглядачів і редакторів вкладень** (CAD, DICOM/медичні, біоінформатика, фінанси, музика, архіви, бази даних, PDF/Office), контекст гілки без ШІ та верифікований ШІ-переклад/вижимка з дослівними цитатами. | [`src/GoogleMailWerkruimte.tsx`](src/GoogleMailWerkruimte.tsx), [`src/mail/`](src/mail/), [`backend/mail-imap.ts`](backend/mail-imap.ts), [`backend/mail-microsoft.ts`](backend/mail-microsoft.ts) |
-| **[`id.tarasevych.com`](https://id.tarasevych.com)** | **Ідентичність (`id`)** | Єдиний центр входу та безпеки акаунтів: Google OIDC (PKCE + nonce + `__Secure-tsv_aanmeld_binding`), пароль + TOTP (`AES-256-GCM`) + коди відновлення, **WebAuthn Passkeys**, гостьові коди доступу (`/toegang`), Step-Up підтвердження чутливих дій, перемикання акаунтів та **12 розділів профілю**. | [`src/ToegangslaagWeergave.tsx`](src/ToegangslaagWeergave.tsx), [`backend/toegangslaag.ts`](backend/toegangslaag.ts), [`backend/toegangssleutels.ts`](backend/toegangssleutels.ts), [`backend/stap-op.ts`](backend/stap-op.ts) |
+| **[`id.tarasevych.com`](https://id.tarasevych.com)** | **Ідентичність (`id`)** | Єдиний центр входу та безпеки облікових записів: Google OIDC (PKCE + nonce + `__Secure-tsv_aanmeld_binding`), пароль + TOTP (`AES-256-GCM`) + коди відновлення, **WebAuthn Passkeys**, гостьові коди доступу (`/toegang`), Step-Up підтвердження чутливих дій, перемикання облікових записів та **12 розділів профілю**. | [`src/ToegangslaagWeergave.tsx`](src/ToegangslaagWeergave.tsx), [`backend/toegangslaag.ts`](backend/toegangslaag.ts), [`backend/toegangssleutels.ts`](backend/toegangssleutels.ts), [`backend/stap-op.ts`](backend/stap-op.ts) |
 | **[`cloud.tarasevych.com`](https://cloud.tarasevych.com)** | **Хмара (`cloud`)** | **Cloud vNext (M1–M11)**: робочі простори файлів, Google Drive проекція, клієнтське zero-knowledge шифрування (**M7 Privacy Architecture** на базі WebAuthn PRF та ключа відновлення), універсальний переглядач файлів, фото-сервіс. | [`backend/cloud-platform.ts`](backend/cloud-platform.ts), [`backend/cloud-google-drive.ts`](backend/cloud-google-drive.ts), [`docs/CLOUD-M7-PRIVACY-ARCHITECTURE.uk.md`](docs/CLOUD-M7-PRIVACY-ARCHITECTURE.uk.md) |
-| **[`ai.tarasevych.com`](https://ai.tarasevych.com)** | **ШІ-простір (`ai`)** | Робота з приватними та технічними ШІ-моделями, дошка ШІ-агентів, гранулярні дозволи **«Доступ ШІ»** (скоупи по інструментах і чутливих даних), єдиний хаб підключень `/verbindingen`. | [`src/agenten/`](src/agenten/), [`backend/ai-beleid.ts`](backend/ai-beleid.ts), [`backend/connector-v2.ts`](backend/connector-v2.ts) |
-| **[`mcp.tarasevych.com`](https://mcp.tarasevych.com)** | **MCP-шлюз (`mcp`)** | Окремі конекторні адреси на кожного агента (`/claude`, `/gpt`, `/grok`, `/gemini`, `/copilot`, `/cursor`), OAuth 2.0 метадані, підключення зовнішніх MCP-серверів (`backend/mcp-klant/`), вебпанель **«Координація»** (`/agents` → `TabOrch.tsx`) та ізольовані двері порту `8091`. | [`src/agenten/TabOrch.tsx`](src/agenten/TabOrch.tsx), [`backend/orch-routes.ts`](backend/orch-routes.ts), [`deploy/CONNECTOR-EEN-PAD.md`](deploy/CONNECTOR-EEN-PAD.md) |
-| **[`github.tarasevych.com`](https://github.tarasevych.com)** | **GitHub (`github`)** | Підключення GitHub OAuth / GitHub App, огляд репозиторіїв, гілок, Pull Requests, комітів і випусків, індексація коду та задач у глобальний пошук `/zoek`. | [`shared/github-koppeling.ts`](shared/github-koppeling.ts), [`backend/uitrol-github.ts`](backend/uitrol-github.ts) |
+| **[`ai.tarasevych.com`](https://ai.tarasevych.com)** | **ШІ-простір (`ai`)** | Робота з приватними та технічними ШІ-моделями, дошка ШІ-агентів, гранулярні дозволи **«Доступ ШІ»** (скоупи по інструментах і чутливих даних), єдиний хаб під'єднань `/verbindingen`. | [`src/agenten/`](src/agenten/), [`backend/ai-beleid.ts`](backend/ai-beleid.ts), [`backend/connector-v2.ts`](backend/connector-v2.ts) |
+| **[`mcp.tarasevych.com`](https://mcp.tarasevych.com)** | **MCP-шлюз (`mcp`)** | Окремі конекторні адреси на кожного агента (`/claude`, `/gpt`, `/grok`, `/gemini`, `/copilot`, `/cursor`), OAuth 2.0 метадані, під'єднання зовнішніх MCP-серверів (`backend/mcp-klant/`), вебпанель **«Координація»** (`/agents` → `TabOrch.tsx`) та ізольовані двері порту `8091`. | [`src/agenten/TabOrch.tsx`](src/agenten/TabOrch.tsx), [`backend/orch-routes.ts`](backend/orch-routes.ts), [`deploy/CONNECTOR-EEN-PAD.md`](deploy/CONNECTOR-EEN-PAD.md) |
+| **[`github.tarasevych.com`](https://github.tarasevych.com)** | **GitHub (`github`)** | Під'єднання GitHub OAuth / GitHub App, огляд репозиторіїв, гілок, Pull Requests, комітів і випусків, індексація коду та задач у глобальний пошук `/zoek`. | [`shared/github-koppeling.ts`](shared/github-koppeling.ts), [`backend/uitrol-github.ts`](backend/uitrol-github.ts) |
 | **[`huis.tarasevych.com`](https://huis.tarasevych.com)** | **Розумний дім (`huis`)** | **Huis vNext**: інтеграція з Home Assistant та локальними шлюзами, управління кімнатами, пристроями й автоматизаціями, шифрування токенів адаптерів (`HUIS_ADAPTER_SLEUTEL_V1`), захист підмережі управління. | [`shared/huis-model.ts`](shared/huis-model.ts), [`deploy/WIJZIGINGEN-20261028-HUIS-VNEXT.md`](deploy/WIJZIGINGEN-20261028-HUIS-VNEXT.md) |
-| **[`api.tarasevych.com`](https://api.tarasevych.com)** | **API та Сховище (`api`)** | Управління машинними токенами (`tsv_`), API-підключеннями, вебхуками та захищеним **Сховищем секретів власника (Sleutelkluis / Vault)**. | [`src/ApiPlatformWeergave.tsx`](src/ApiPlatformWeergave.tsx), [`backend/api-platform-kluis.ts`](backend/api-platform-kluis.ts), [`shared/sleutelkluis.ts`](shared/sleutelkluis.ts) |
-| **[`admin.tarasevych.com`](https://admin.tarasevych.com)** | **Адмін (`admin`)** | **Технічний простір**: керування користувачами й ролями, журнал безпеки `app.audit` (append-only хеш-ланцюг), стан RLS-ізоляції, діагностика сервера й рендерингу (`rook-controle`), **Майстер підключень**, управління SSH-CA, термінал у браузері та центр **«Оновлення»** з криптографічним підтвердженням власника через Passkey. | [`backend/server-beheer.ts`](backend/server-beheer.ts), [`backend/uitrol-goedkeuring.ts`](backend/uitrol-goedkeuring.ts), [`backend/eigenaar-besluit.ts`](backend/eigenaar-besluit.ts) |
-| **[`dashboard.tarasevych.com`](https://dashboard.tarasevych.com)** | **Дашборд (`dashboard`)** | Статична панель огляду з `/srv/mijn-ruimte/dashboard` (повністю відокремлена від сесій та API). | [`server/start.ts`](server/start.ts), [`deploy/LEESMIJ.md`](deploy/LEESMIJ.md) |
+| **[`api.tarasevych.com`](https://api.tarasevych.com)** | **API та Сховище (`api`)** | Управління машинними токенами (`tsv_`), API-під'єднаннями, вебхуками та захищеним **Сховищем секретів власника (Sleutelkluis / Vault)**. | [`src/ApiPlatformWeergave.tsx`](src/ApiPlatformWeergave.tsx), [`backend/api-platform-kluis.ts`](backend/api-platform-kluis.ts), [`shared/sleutelkluis.ts`](shared/sleutelkluis.ts) |
+| **[`admin.tarasevych.com`](https://admin.tarasevych.com)** | **Адмін (`admin`)** | **Технічний простір**: керування користувачами й ролями, журнал безпеки `app.audit` (append-only хеш-ланцюг), стан RLS-ізоляції, діагностика сервера й відмальовування (`rook-controle`), **Майстер під'єднань**, управління SSH-CA, термінал у браузері та центр **«Оновлення»** з криптографічним підтвердженням власника через Passkey. | [`backend/server-beheer.ts`](backend/server-beheer.ts), [`backend/uitrol-goedkeuring.ts`](backend/uitrol-goedkeuring.ts), [`backend/eigenaar-besluit.ts`](backend/eigenaar-besluit.ts) |
+| **[`dashboard.tarasevych.com`](https://dashboard.tarasevych.com)** | **Панель керування (`dashboard`)** | Статична панель огляду з `/srv/mijn-ruimte/dashboard` (повністю відокремлена від сесій та API). | [`server/start.ts`](server/start.ts), [`deploy/LEESMIJ.md`](deploy/LEESMIJ.md) |
 
 ### Архітектурна схема платформи
 
@@ -109,7 +109,7 @@ flowchart TB
     API -->|"SET LOCAL app.user_id"| PG
     API --> FS
     API --> WRK
-    ROOT -.->|"Атомарні релізи, бекапи, Passkey-рішення"| App
+    ROOT -.->|"Атомарні релізи, резервні копії, Passkey-рішення"| App
     ROOT -.->|"Міграції та ролі БД"| PG
 ```
 
@@ -137,12 +137,12 @@ flowchart TB
   - У гілці [`aanmeldmethoden`](https://github.com/Tarasevych/hub/tree/aanmeldmethoden) додано повноцінні користувацькі Passkeys у розділі «Способи входу» (`rpId: tarasevych.com`), а в [`bevestig-toegang`](https://github.com/Tarasevych/hub/tree/bevestig-toegang) — тимчасові коди доступу та гостьові сесії (`/toegang`).
 - **Глобальне Меню v2 ([`menu-v2`](https://github.com/Tarasevych/hub/tree/menu-v2), 09.10.2026):** створено нову навігаційну оболонку з доком (праворуч/угорі/унизу), швидкою панеллю та режимом редагування перетягуванням.
 - **Технічний профіль та MCP-Екосистема (12–16.10.2026):**
-  - Серія гілок `claude/*` та `cursor/*-8d4d` побудувала **розділення Приватного й Технічного просторів** ([`claude/tech-profiel-2026-10-13`](https://github.com/Tarasevych/hub/tree/claude/tech-profiel-2026-10-13), [`cursor/mcp-spiegel-na-b-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/mcp-spiegel-na-b-8d4d)), **підключення ШІ в один клік** ([`claude/mcp-een-klik-2026-10-13`](https://github.com/Tarasevych/hub/tree/claude/mcp-een-klik-2026-10-13)), **термінал у браузері на базі xterm** ([`cursor/terminal-etap-c-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/terminal-etap-c-8d4d)), **Дошку ШІ-агентів і гранулярні скоупи** ([`cursor/ai-agent-board-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/ai-agent-board-8d4d)) та **Конектор v2 з реальними діями** ([`claude/connector-v2-2026-10-15`](https://github.com/Tarasevych/hub/tree/claude/connector-v2-2026-10-15), [`cursor/connector-functies-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/connector-functies-8d4d)).
+  - Серія гілок `claude/*` та `cursor/*-8d4d` побудувала **розділення Приватного й Технічного просторів** ([`claude/tech-profiel-2026-10-13`](https://github.com/Tarasevych/hub/tree/claude/tech-profiel-2026-10-13), [`cursor/mcp-spiegel-na-b-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/mcp-spiegel-na-b-8d4d)), **під'єднання ШІ одним натисканням** ([`claude/mcp-een-klik-2026-10-13`](https://github.com/Tarasevych/hub/tree/claude/mcp-een-klik-2026-10-13)), **термінал у браузері на базі xterm** ([`cursor/terminal-etap-c-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/terminal-etap-c-8d4d)), **Дошку ШІ-агентів і гранулярні скоупи** ([`cursor/ai-agent-board-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/ai-agent-board-8d4d)) та **Конектор v2 з реальними діями** ([`claude/connector-v2-2026-10-15`](https://github.com/Tarasevych/hub/tree/claude/connector-v2-2026-10-15), [`cursor/connector-functies-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/connector-functies-8d4d)).
 
 ### Етап IV. Масштабне Розширення Модулів та Нідерландська Канонізація (17–30 Жовтня 2026)
 - **Sleutelkluis (Сховище ключів, 21.10.2026, міграція `0092`):** ключі даних користувача (DEK) ніколи не зберігаються на диску відкритими; для MCP-з'єднань агентів формуються криптографічні HKDF-конверти з `SLEUTELKLUIS_SLEUTEL_V1`.
 - **Глобальний пошук `/zoek` та OCR (22.10.2026, міграції `0100`–`0104`):** повнотекстовий пошук по інтерфейсу, пошті, вкладеннях, хмарі, календарях, дошці та GitHub із фоновим воркером вилучення тексту з PDF/Office/архівів (`zoek-werker.mjs`), OCR через Tesseract (`ukr+nld+eng+rus`) та автоматичним маскуванням секретів (`shared/geheim-patronen.ts`).
-- **Перевірка рендерингу при випуску (`rook-controle`, 22.10.2026):** після активації кожного релізу інсталятор запускає headless Chromium на ізольованій БД і перевіряє реальний рендеринг сторінок; при збої реліз автоматично відкочується (`ROOK_TERUGGEDRAAID`).
+- **Перевірка відмальовування при випуску (`rook-controle`, 22.10.2026):** після активації кожного релізу інсталятор запускає headless Chromium на ізольованій БД і перевіряє реальний відмальовування сторінок; при збої реліз автоматично повертається до попереднього стану (`ROOK_TERUGGEDRAAID`).
 - **Нідерландська канонізація коду (24.10.2026):** 531 файл у `src/`, `backend/`, `shared/`, `server/`, `tests/`, `scripts/` перейменовано нідерландською за єдиним словником ([`docs/kaart/KAART-BESTANDEN.md`](docs/kaart/KAART-BESTANDEN.md)), а скрипт [`scripts/kaart-controle.mjs`](scripts/kaart-controle.mjs) інтегровано в `npm run build`.
 - **Adaptive Mail Canvas (пакети 1–3, 24–25.10.2026):** єдина рамка читання листа (`LeesVenster.tsx`), панель контексту гілки без ШІ (`ContextPaneel.tsx`: хронологія, групи версій вкладень, SPF/DKIM/DMARC, події `.ics`), верифікований блок «Що від вас потрібно?» (`WatNodigBlok.tsx`) із перевіркою цитат за оригіналом (`shared/ai-bronnen.ts`), поабзацне порівняння перекладу (`VergelijkTabel.tsx`) та порівняння версій документів PDF/DOCX (`VersieVergelijk.tsx`).
 - **Зони й гнізда плаваючих кнопок (`shared/plaatsing.ts`, 25.10.2026):** математична модель розміщення всіх плаваючих елементів інтерфейсу без перекриттів для телефона, планшета й комп'ютера.
@@ -151,13 +151,13 @@ flowchart TB
 ### Етап V. Аудит `SEC-001`, Оркестрація Агентів `ORCH-001` та `UX-AI-VAULT-001` (30 Жовтня — 1 Листопада 2026)
 - **Консолідація та аудит безпеки `SEC-001` (30–31.10.2026):** актуальний production-код імпортовано в [`audit/sec-001-20261030`](https://github.com/Tarasevych/hub/tree/audit/sec-001-20261030), проведено аудит і виправлення у [`fix/sec-001-20261031-000224`](https://github.com/Tarasevych/hub/tree/fix/sec-001-20261031-000224) та базовий випуск [`release/sec-001-20261031-084138`](https://github.com/Tarasevych/hub/tree/release/sec-001-20261031-084138).
 - **Система мультиагентної координації `ORCH-001` (31.10.2026, рішення `B-001`–`B-006`):** створено єдине джерело правил [`AGENTS.md`](AGENTS.md), машинну політику [`orchestratie/beleid.json`](orchestratie/beleid.json), криптографічний відбиток [`orchestratie/regels.lock.json`](orchestratie/regels.lock.json) та CLI/MCP/веб-конвеєр [`scripts/orch.mjs`](scripts/orch.mjs) для узгодженої роботи 8 ШІ-агентів (Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor).
-- **`MCP-ACCESS-001` та `UX-AI-VAULT-001` (01.11.2026):** впроваджено точну діагностику доступу ШІ з ізоляцією за підключенням, керування агентом в одному місці з підтвердженням Passkey та єдине адаптивне Сховище секретів (PR #17, #18, #19).
+- **`MCP-ACCESS-001` та `UX-AI-VAULT-001` (01.11.2026):** впроваджено точну діагностику доступу ШІ з ізоляцією за під'єднанням, керування агентом в одному місці з підтвердженням Passkey та єдине адаптивне Сховище секретів (PR #17, #18, #19).
 
 ### Етап VI. `LOGIN-001`, Інтеграція `INTEG-001`, `TRACE-001`, Мобільна Орбіта Пошти, `PRIVACY-001` та `IDENTITY-ACCOUNT` (1–4 Листопада 2026)
-- **`LOGIN-001` (01–02.11.2026):** мінімалістичний адаптивний багатомовний екран входу та оновлене меню збережених акаунтів.
+- **`LOGIN-001` (01–02.11.2026):** мінімалістичний адаптивний багатомовний екран входу та оновлене меню збережених облікових записів.
 - **`INTEG-001` (03.11.2026):** масштабне зведення 9 паралельних гілок функціональності (сповіщення з поясненнями, дошка ШІ, смуга простору, прапорці мов, друк із перевіркою в Chrome, пошукове меню у верхній панелі, ремонт тестів) у єдину гілку [`feature/integ-001-zvedennia-20261103-102243`](https://github.com/Tarasevych/hub/tree/feature/integ-001-zvedennia-20261103-102243).
 - **`TRACE-001` (03.11.2026, рішення `B-007`/`B-008`, правила `1.4.1`):** обов'язковий незмінний журнал розробки `orchestratie/ontwikkelarchieven/<TASK-ID>.json` у кожному коміті випуску та жорстка перевірка SHA-256 релізного архіву `.tar.gz` через GitHub API як на сайті (`voorcontrole`), так і в root-інсталяторі.
-- **Серія оновлень Пошти (`MAILORBIT-001` → `MAILMOB-001` → `MAILPOLISH-001` → `MAILFIX-001` → `MAILFIT-001`/`002`, 03–04.11.2026):** інтерактивна орбіта поштових сервісів на порожній сторінці пошти, мобільні шторки підключення для екранів 320px+, синхронізація 12-годинного Step-Up дозволу («Не питати знову») та виправлення мобільної верстки.
+- **Серія оновлень Пошти (`MAILORBIT-001` → `MAILMOB-001` → `MAILPOLISH-001` → `MAILFIX-001` → `MAILFIT-001`/`002`, 03–04.11.2026):** інтерактивна орбіта поштових сервісів на порожній сторінці пошти, мобільні шторки під'єднання для екранів 320px+, синхронізація 12-годинного Step-Up дозволу («Не питати знову») та виправлення мобільної верстки.
 - **Оновлення серверного стека `B-009` (04.11.2026, правила `1.4.2`):** фіксація переходу production ВМ на `Ubuntu 26.04.1 LTS`, `Node.js 26.13.0 LTS`, `PostgreSQL 18.6`, `Caddy 2.11.7` та вирішення проблеми seccomp-фільтра `systemd 259` з викликом `openat2` у `GNU tar 1.35` (`RestrictSUIDSGID=no`).
 - **`PRIVACY-001` (04.11.2026, рішення `B-010`/`B-011`, правила `1.4.6`):** повне видалення персональних даних та реальних IP-адрес із коду, тестів, документації та історії git; винесення реквізитів у серверні змінні `MR_EIGENAAR_NAAM`, `MR_CONTACT_EMAIL`, `MR_BEHEERSUBNET`, `MR_VM_SSH`.
 - **`IDENTITY-ACCOUNT` / `IDENTITY-001` / `IDENTITY-002` (04.11.2026):** проєктування та реалізація єдиного екрана облікового запису з 12 розділами та діалогом керування фото профілю.
@@ -200,14 +200,14 @@ flowchart TB
 | Гілка | Коміт | Відносно `voornaamst` | PR / Реліз | Що всередині та де шукати |
 |---|---|---|---|---|
 | **[`fix/mailfit-002-20261104-170000`](https://github.com/Tarasevych/hub/tree/fix/mailfit-002-20261104-170000)** | `98beb2a` | **+47 комітів** (1 позаду) | Кандидат `MAILFIT-002` | **Найновіша гілка поштової серії `MAILFIT`.** Містить усі виправлення `MAILFIX-001` та `MAILFIT-001`, плюс сумісність із серверним контрактом `TRACE-001` без перезапису файлів `integratie`, оновлені фікстури регресійних тестів `ORCH` та досьє `orchestratie/ontwikkelarchieven/MAILFIT-002.json`. |
-| **[`fix/mailfit-001-20261104-110700`](https://github.com/Tarasevych/hub/tree/fix/mailfit-001-20261104-110700)** | `c3eb3f8` | **+21 коміт** (1 позаду) | [PR #27](https://github.com/Tarasevych/hub/pull/27) · Реліз `20261104-160049` | **`MAILFIT-001`:** центрований адаптивний порожній стан пошти (empty-inbox onboarding), чітка дія підключення Gmail, захист елементів керування вже підключеної скриньки. |
+| **[`fix/mailfit-001-20261104-110700`](https://github.com/Tarasevych/hub/tree/fix/mailfit-001-20261104-110700)** | `c3eb3f8` | **+21 коміт** (1 позаду) | [PR #27](https://github.com/Tarasevych/hub/pull/27) · Реліз `20261104-160049` | **`MAILFIT-001`:** центрований адаптивний порожній стан пошти (empty-inbox onboarding), чітка дія під'єднання Gmail, захист елементів керування вже під'єднаної скриньки. |
 | **[`fix/mailfix-001-20261104-095000`](https://github.com/Tarasevych/hub/tree/fix/mailfix-001-20261104-095000)** | `1d1d28b` | **+18 комітів** (1 позаду) | [PR #26](https://github.com/Tarasevych/hub/pull/26) | **`MAILFIX-001`:** виправлення мобільної ширини пошти, усунення дубльованої смуги сервісів, діагностика збою Gmail OAuth, живі браузерні DOM-перевірки (`tests/visueel/mailfix-screen.mjs`). |
 
 #### В. Обліковий запис та ідентичність: 12 розділів профілю (`IDENTITY-ACCOUNT` / `IDENTITY-001` / `IDENTITY-002`)
 | Гілка | Коміт | Відносно `voornaamst` | Реліз | Що всередині та де шукати |
 |---|---|---|---|---|
 | **[`feature/identity-account-ui-20261104-180000`](https://github.com/Tarasevych/hub/tree/feature/identity-account-ui-20261104-180000)** | `6e815a0` | **+7 власних комітів** *(база до 2-го rewrite)* | Реліз `20261104-204906` | **`IDENTITY-002` (повна реалізація UI):** єдиний екран облікового запису з **12 розділами** та діалогом керування фото профілю (`796223b`), плюс випуск із власної гілки (`6e815a0`). |
-| **[`fix/identity-release-guard-20261104-171500`](https://github.com/Tarasevych/hub/tree/fix/identity-release-guard-20261104-171500)** | `fb56cae` | **+8 комітів** (0 позаду) | — | **`IDENTITY-ACCOUNT` (захист CI та план інтеграції):** покрокова збірка пакета в CI, усунення `SIGPIPE` (`tar \| grep -q` під `pipefail`), блок `privacy` у журналі розробки та план інтеграції `IDENTITY-002` (побудована безпосередньо поверх `voornaamst` `3095e5f`). |
+| **[`fix/identity-release-guard-20261104-171500`](https://github.com/Tarasevych/hub/tree/fix/identity-release-guard-20261104-171500)** | `fb56cae` | **+8 комітів** (0 позаду) | — | **`IDENTITY-ACCOUNT` (захист CI та план інтеграції):** покрокова складання пакета в CI, усунення `SIGPIPE` (`tar \| grep -q` під `pipefail`), блок `privacy` у журналі розробки та план інтеграції `IDENTITY-002` (побудована безпосередньо поверх `voornaamst` `3095e5f`). |
 | **[`feature/identity-account-20261104-120000`](https://github.com/Tarasevych/hub/tree/feature/identity-account-20261104-120000)** | `50e6373` | **+5 комітів** (0 позаду) | Реліз `20261104-191935` | **`IDENTITY-001`:** дизайн, прототип і ТЗ 12 екранів облікового запису, реєстрація задачі `IDENTITY-001` та журнал розробки за стандартом `TRACE-001` поверх `voornaamst` `3095e5f`. |
 | **[`feature/identity-account-ui-20261104-1200`](https://github.com/Tarasevych/hub/tree/feature/identity-account-ui-20261104-1200)** | `db4ba84` | **+2 коміти** (1 позаду) | — | Початкова гілка документації та дизайну 12 екранів `IDENTITY-ACCOUNT` (замінена на `feature/identity-account-20261104-120000`). |
 
@@ -215,20 +215,20 @@ flowchart TB
 
 ### 3.3. Злиті у `voornaamst` функціональні та релізні гілки (Жовтень–Листопад 2026)
 
-Усі перелічені нижче **28 гілок** (`✅ Злито`) є прямими предками `voornaamst` (`3095e5f`), а також включають 3 допоміжні гілки-кандидати цього ж циклу:
+Усі перелічені нижче **28 гілок** (`✅ Злито`) є прямими предками `voornaamst` (`3095e5f`), а також охоплюють 3 допоміжні гілки-кандидати цього ж циклу:
 
 #### 1. Трасування випусків та Мобільна Орбіта Пошти (03–04.11.2026)
 | Гілка | Коміт | Статус у `voornaamst` | PR / Тег | Зміст гілки |
 |---|---|---|---|---|
 | **[`feature/mailpolish-001-20261104-084133`](https://github.com/Tarasevych/hub/tree/feature/mailpolish-001-20261104-084133)** | `7ba7a0d` | ✅ **Злито** | [PR #25](https://github.com/Tarasevych/hub/pull/25) · `20261104-075953` | **`MAILPOLISH-001`:** дизайнерське доопрацювання `MailKoppelVenster.tsx`, `MailOrbitIntro.tsx`, мобільних шторок `mail-koppel-mobile-sheet.css`, візуальні прев'ю та Chromium-знімки. |
-| **[`feature/mailmob-001-20261104-073200`](https://github.com/Tarasevych/hub/tree/feature/mailmob-001-20261104-073200)** | `2b418cf` | ✅ **Злито** | [PR #24](https://github.com/Tarasevych/hub/pull/24) · `20261104-063430` | **`MAILMOB-001`:** анімована 320px мобільна орбіта пошти, доступні вікна підключення та синхронізація 12-годинного Step-Up дозволу («Не питати знову» для Passkey/TOTP/Google). |
+| **[`feature/mailmob-001-20261104-073200`](https://github.com/Tarasevych/hub/tree/feature/mailmob-001-20261104-073200)** | `2b418cf` | ✅ **Злито** | [PR #24](https://github.com/Tarasevych/hub/pull/24) · `20261104-063430` | **`MAILMOB-001`:** анімована 320px мобільна орбіта пошти, доступні вікна під'єднання та синхронізація 12-годинного Step-Up дозволу («Не питати знову» для Passkey/TOTP/Google). |
 | **[`feature/trace-001-20261103-214810`](https://github.com/Tarasevych/hub/tree/feature/trace-001-20261103-214810)** | `017b8e1` | ✅ **Злито** | [PR #23](https://github.com/Tarasevych/hub/pull/23) | **`TRACE-001` (`B-007` / `B-008`, правила `1.4.1`):** обов'язковий `ONTWIKKELARCHIEF.json` у кожному пакеті випуску та перевірка SHA-256 архіву в GitHub Release на сайті й у root-інсталяторі. |
-| **[`feature/mailorbit-001-20261103-205354`](https://github.com/Tarasevych/hub/tree/feature/mailorbit-001-20261103-205354)** | `14698ac` | ✅ **Злито** | [PR #22](https://github.com/Tarasevych/hub/pull/22) · `20261103-211554` | **`MAILORBIT-001`:** жива інтерактивна орбіта поштових сервісів і справжні внутрішні вікна підключення при порожньому списку акаунтів або порожній скриньці. |
+| **[`feature/mailorbit-001-20261103-205354`](https://github.com/Tarasevych/hub/tree/feature/mailorbit-001-20261103-205354)** | `14698ac` | ✅ **Злито** | [PR #22](https://github.com/Tarasevych/hub/pull/22) · `20261103-211554` | **`MAILORBIT-001`:** жива інтерактивна орбіта поштових сервісів і справжні внутрішні вікна під'єднання при порожньому списку облікових записів або порожній скриньці. |
 
 #### 2. Велика інтеграція `INTEG-001` (03.11.2026 — 10 гілок)
 | Гілка | Коміт | Статус у `voornaamst` | Зміст гілки |
 |---|---|---|---|
-| **[`feature/integ-001-zvedennia-20261103-102243`](https://github.com/Tarasevych/hub/tree/feature/integ-001-zvedennia-20261103-102243)** | `78fbcf5` | ✅ **Злито** | **Зведена гілка `INTEG-001`:** об'єднує всі 9 тематичних гілок `integ-001-*`, повний GDPR/AVG-експорт акаунта без обрізання (`4ddf24d`), реєстрацію нових модулів (`cloud-vnext`, `foto-dienst`) у реєстрі шлюзу та `NoNewPrivileges=yes` для `besluit`-служби. |
+| **[`feature/integ-001-zvedennia-20261103-102243`](https://github.com/Tarasevych/hub/tree/feature/integ-001-zvedennia-20261103-102243)** | `78fbcf5` | ✅ **Злито** | **Зведена гілка `INTEG-001`:** об'єднує всі 9 тематичних гілок `integ-001-*`, повний GDPR/AVG-експорт облікового запису без обрізання (`4ddf24d`), реєстрацію нових модулів (`cloud-vnext`, `foto-dienst`) у реєстрі шлюзу та `NoNewPrivileges=yes` для `besluit`-служби. |
 | **[`feature/integ-001-meld-20261103-083755`](https://github.com/Tarasevych/hub/tree/feature/integ-001-meld-20261103-083755)** | `ff46129` | ✅ **Злито** | Тихі сповіщення з поясненнями у вкладці «Прочитані», оновлення E2E та UI-каталогу. |
 | **[`feature/integ-001-agpag1-20261103-083758`](https://github.com/Tarasevych/hub/tree/feature/integ-001-agpag1-20261103-083758)** | `e25b5a7` | ✅ **Злито** | Дошка ШІ: двомовні назви вкладок і блоків українською та нідерландською. |
 | **[`feature/integ-001-band-20261103-083753`](https://github.com/Tarasevych/hub/tree/feature/integ-001-band-20261103-083753)** | `b98bb2b` | ✅ **Злито** | Узгодження тестів `ui-audit-g` (8a) та фіксованої рамки (`vast-kader`) за рішенням щодо верхньої смуги. |
@@ -236,7 +236,7 @@ flowchart TB
 | **[`feature/integ-001-login-20261103-083803`](https://github.com/Tarasevych/hub/tree/feature/integ-001-login-20261103-083803)** | `6bbb685` | ✅ **Злито** | Перегенерація канонічного UI-каталогу після інтеграції нового екрана входу. |
 | **[`feature/integ-001-menu-20261103-083746`](https://github.com/Tarasevych/hub/tree/feature/integ-001-menu-20261103-083746)** | `ed46b36` | ✅ **Злито** | Виправлення відображення прапорця мови в меню (`object-fit: fill`, без обрізання). |
 | **[`feature/integ-001-print-20261103-083745`](https://github.com/Tarasevych/hub/tree/feature/integ-001-print-20261103-083745)** | `4de3780` | ✅ **Злито** | Cтатичні тести друку (76 перевірок) та перевірка друку у реальному Chrome (`scripts/afdruk-proef.mjs`). |
-| **[`feature/integ-001-zoek-20261103-083752`](https://github.com/Tarasevych/hub/tree/feature/integ-001-zoek-20261103-083752)** | `c15e6ae` | ✅ **Злито** | Випадаюче меню пошуку у верхній панелі (нещодавні запити, миттєві результати, навігація клавіатурою `Esc`/`Enter`/стрілки). |
+| **[`feature/integ-001-zoek-20261103-083752`](https://github.com/Tarasevych/hub/tree/feature/integ-001-zoek-20261103-083752)** | `c15e6ae` | ✅ **Злито** | Розкривне меню пошуку у верхній панелі (нещодавні запити, миттєві результати, навігація клавіатурою `Esc`/`Enter`/стрілки). |
 | **[`feature/integ-001-test-20261103-083753`](https://github.com/Tarasevych/hub/tree/feature/integ-001-test-20261103-083753)** | `feb9f1b` | ✅ **Злито** | Стабілізація модульних тестів (`afstemming-kern`, `agent-apps`, `apparaat-inrichten`). |
 | **[`wip/hub-voor-integratie-20261103`](https://github.com/Tarasevych/hub/tree/wip/hub-voor-integratie-20261103)** | `0ca4cad` | 📌 *Резервний знімок* | Страхувальний коміт незафіксованої локальної роботи (сповіщення, MCP) перед стартом інтеграції `INTEG-001`. |
 
@@ -244,22 +244,22 @@ flowchart TB
 | Гілка | Коміт | Статус у `voornaamst` | PR | Зміст гілки |
 |---|---|---|---|---|
 | **[`feature/login-001-plus-hub`](https://github.com/Tarasevych/hub/tree/feature/login-001-plus-hub)** | `3be89e0` | ✅ **Злито** | — | Інтеграція `LOGIN-001` із основними змінами хабу та виправлення тестів. |
-| **[`feature/login-001-20261101-184800-chatgpt`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-184800-chatgpt)** | `6952f8e` | ✅ **Злито** | [PR #20](https://github.com/Tarasevych/hub/pull/20) (Merged) | Мінімалістичний багатомовний екран входу без зайвих логотипів та безпечний GitHub CI для збірки непідписаних кандидатів. |
-| **[`feature/login-001-20261101-195230`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-195230)** | `8209000` | 📦 *Закритий кандидат* | [PR #21](https://github.com/Tarasevych/hub/pull/21) (Closed) | Альтернативна draft-гілка кандидата `LOGIN-001` (її напрацювання по меню акаунтів та кольорах технічної смуги перенесено у `feature/login-001-plus-hub`). |
+| **[`feature/login-001-20261101-184800-chatgpt`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-184800-chatgpt)** | `6952f8e` | ✅ **Злито** | [PR #20](https://github.com/Tarasevych/hub/pull/20) (Merged) | Мінімалістичний багатомовний екран входу без зайвих логотипів та безпечний GitHub CI для складання непідписаних кандидатів. |
+| **[`feature/login-001-20261101-195230`](https://github.com/Tarasevych/hub/tree/feature/login-001-20261101-195230)** | `8209000` | 📦 *Закритий кандидат* | [PR #21](https://github.com/Tarasevych/hub/pull/21) (Closed) | Альтернативна draft-гілка кандидата `LOGIN-001` (її напрацювання по меню облікових записів та кольорах технічної смуги перенесено у `feature/login-001-plus-hub`). |
 
 #### 4. Безпека `SEC-001`, Оркестрація `ORCH-001`, `MCP-ACCESS-001` та `UX-AI-VAULT-001` (30.10–01.11.2026)
 | Гілка | Коміт | Статус у `voornaamst` | PR | Зміст гілки |
 |---|---|---|---|---|
 | **[`release/ux-ai-vault-001-20261101-160600`](https://github.com/Tarasevych/hub/tree/release/ux-ai-vault-001-20261101-160600)** | `80716ac` | ✅ **Злито** | [PR #19](https://github.com/Tarasevych/hub/pull/19) (Merged) | **`UX-AI-VAULT-001`:** керування ШІ-агентом в одному місці з підтвердженням Passkey на місці та єдине адаптивне Сховище секретів. |
 | **[`release/sec-001-20261031-084138`](https://github.com/Tarasevych/hub/tree/release/sec-001-20261031-084138)** | `80716ac` | ✅ **Злито** | [PR #12](https://github.com/Tarasevych/hub/pull/12) (Merged) | Базова релізна гілка після злиття `SEC-001`, `ORCH-001`, `MCP-ACCESS-001` та `UX-AI-VAULT-001`. |
-| **[`claude/project-thread-99x4j9`](https://github.com/Tarasevych/hub/tree/claude/project-thread-99x4j9)** | `3dea7c1` | ✅ **Злито** | [PR #17](https://github.com/Tarasevych/hub/pull/17) (Merged) | Доопрацювання `ORCH-001` після PR #16: заборона здачі чужої задачі, ізоляція технічних MCP-підключень від приватного «Доступу ШІ». |
-| **[`fix/mcp-access-001-20261101-125530`](https://github.com/Tarasevych/hub/tree/fix/mcp-access-001-20261101-125530)** | `b864308` | ✅ **Злито** | [PR #18](https://github.com/Tarasevych/hub/pull/18) (Merged) | **`MCP-ACCESS-001`:** точна серверна діагностика доступу ШІ, ізоляція за підключенням, прямі дії в 1 клік та живе оновлення дозволів. |
+| **[`claude/project-thread-99x4j9`](https://github.com/Tarasevych/hub/tree/claude/project-thread-99x4j9)** | `3dea7c1` | ✅ **Злито** | [PR #17](https://github.com/Tarasevych/hub/pull/17) (Merged) | Доопрацювання `ORCH-001` після PR #16: заборона здачі чужої задачі, ізоляція технічних MCP-під'єднань від приватного «Доступу ШІ». |
+| **[`fix/mcp-access-001-20261101-125530`](https://github.com/Tarasevych/hub/tree/fix/mcp-access-001-20261101-125530)** | `b864308` | ✅ **Злито** | [PR #18](https://github.com/Tarasevych/hub/pull/18) (Merged) | **`MCP-ACCESS-001`:** точна серверна діагностика доступу ШІ, ізоляція за під'єднанням, прямі дії в 1 натискання та живе оновлення дозволів. |
 | **[`release/orch-001-mcp-20261031`](https://github.com/Tarasevych/hub/tree/release/orch-001-mcp-20261031)** | `d33d068` | ✅ **Злито** | [PR #16](https://github.com/Tarasevych/hub/pull/16) (Merged) | Спільний інтеграційний кандидат `ORCH-001` (PR #11 + PR #13) + `MCP-001` (PR #14) + `MCP-DEUR 8091` (PR #15). |
-| **[`fix/mcp-deur-uitrol-20261031-204604`](https://github.com/Tarasevych/hub/tree/fix/mcp-deur-uitrol-20261031-204604)** | `ebc3736` | ✅ **Злито** | [PR #15](https://github.com/Tarasevych/hub/pull/15) | Синхронізація `deploy/mcp/server.mjs` та автоматичний перезапуск служби порту `8091` під час встановлення і відкату. |
+| **[`fix/mcp-deur-uitrol-20261031-204604`](https://github.com/Tarasevych/hub/tree/fix/mcp-deur-uitrol-20261031-204604)** | `ebc3736` | ✅ **Злито** | [PR #15](https://github.com/Tarasevych/hub/pull/15) | Синхронізація `deploy/mcp/server.mjs` та автоматичний перезапуск служби порту `8091` під час встановлення і повернення стану. |
 | **[`fix/mcp-tools-catalog-20261031-192004`](https://github.com/Tarasevych/hub/tree/fix/mcp-tools-catalog-20261031-192004)** | `0b0b67c` | ✅ **Злито** | [PR #14](https://github.com/Tarasevych/hub/pull/14) | **`MCP-001`:** відновлення каталогу MCP-інструментів для Cursor Cloud / GitHub OAuth / Streamable HTTP. |
 | **[`feature/orch-001-20261031-112355`](https://github.com/Tarasevych/hub/tree/feature/orch-001-20261031-112355)** | `7176e95` | ✅ **Злито** | [PR #11](https://github.com/Tarasevych/hub/pull/11) | **`ORCH-001` (етапи 0–4):** створення `AGENTS.md`, `orchestratie/*`, `scripts/orch.mjs`, керування з сайту/MCP та затвердження правил через Passkey. |
 | **[`fix/orch-001-review-20261031-165744`](https://github.com/Tarasevych/hub/tree/fix/orch-001-review-20261031-165744)** | `1203048` | ✅ **Злито** | — | Виправлення безпеки `ORCH-001`: блокування виконання довільних тестових команд з пакета (RCE), перевірка SSHSIG у GitOps. |
-| **[`fix/orch-001-audit-20261031-170250`](https://github.com/Tarasevych/hub/tree/fix/orch-001-audit-20261031-170250)** | `315cebf` | 📦 *Включено в PR #16* | [PR #13](https://github.com/Tarasevych/hub/pull/13) (Closed) | Тести перевірки безпеки `ORCH-001` (перенесені в `fix/orch-001-review-20261031-165744` та `release/orch-001-mcp-20261031`). |
+| **[`fix/orch-001-audit-20261031-170250`](https://github.com/Tarasevych/hub/tree/fix/orch-001-audit-20261031-170250)** | `315cebf` | 📦 *Інтегровано в PR #16* | [PR #13](https://github.com/Tarasevych/hub/pull/13) (Closed) | Тести перевірки безпеки `ORCH-001` (перенесені в `fix/orch-001-review-20261031-165744` та `release/orch-001-mcp-20261031`). |
 | **[`fix/sec-001-20261031-000224`](https://github.com/Tarasevych/hub/tree/fix/sec-001-20261031-000224)** | `fd52dca` | ✅ **Злито** | — | Усунення вразливостей за результатами аудиту `SEC-001` та набір верифікаційних тестів. |
 | **[`audit/sec-001-20261030`](https://github.com/Tarasevych/hub/tree/audit/sec-001-20261030)** | `016093f` | ✅ **Злито** | — | Імпорт повного production-знімка від 30.10.2026 для проведення аудиту `SEC-001`. |
 
@@ -274,7 +274,7 @@ flowchart TB
 |---|---|---|---|
 | **[`Mijn-ruimte-reservekopieën`](https://github.com/Tarasevych/hub/tree/Mijn-ruimte-reservekopie%C3%ABn)** | `1f377ca` | 2026-09-24 | ✅ Початкова гілка репозиторію (предок `voornaamst`). |
 | **[`basis-voor-zelf-hosten`](https://github.com/Tarasevych/hub/tree/basis-voor-zelf-hosten)** | `722542c` | 2026-10-02 | Вихідний знімок коду з першими виправленнями безпеки перед відмовою від AppDeploy. |
-| **[`auth-fase-1`](https://github.com/Tarasevych/hub/tree/auth-fase-1)** | `a60525a` | 2026-10-03 | **Auth Fase 1:** прив'язка акаунтів за `(provider, subject)`, захист Google OAuth redirect-flow від Login-CSRF, видалення застарілих маршрутів сесій (міграція `0002`). |
+| **[`auth-fase-1`](https://github.com/Tarasevych/hub/tree/auth-fase-1)** | `a60525a` | 2026-10-03 | **Auth Fase 1:** прив'язка облікових записів за `(provider, subject)`, захист Google OAuth redirect-flow від Login-CSRF, видалення застарілих маршрутів сесій (міграція `0002`). |
 | **[`beveiliging-fase-2-3`](https://github.com/Tarasevych/hub/tree/beveiliging-fase-2-3)** | `77cddc6` | 2026-10-03 | **Beveiliging Fase 2 & 3:** PostgreSQL RLS (`0003`–`0005`), три ролі БД (`db-rollen.sql`), `auth-poort.ts`, append-only аудит (`0006`), Step-Up (`stap-op.ts`), GDPR-експорт. |
 | **[`beveiliging-fixes-audit`](https://github.com/Tarasevych/hub/tree/beveiliging-fixes-audit)** | `0f0cab4` | 2026-10-04 | **Audit Fixes (A1–A11):** зміцнення хеш-ланцюга `app.audit` (`0008`), RLS по таблицях (`0007`), публічні сторінки `/privacy` і `/terms`. |
 | **[`sync-actief`](https://github.com/Tarasevych/hub/tree/sync-actief)** | `cb130fd` | 2026-10-06 | Синхронізація стану активного релізу `20261006-124427` із production ВМ. |
@@ -283,7 +283,7 @@ flowchart TB
 #### 2. Passkeys, Гостьовий Доступ та Меню v2 (6–9 Жовтня 2026)
 | Гілка | Коміт | Дата | Опис етапу |
 |---|---|---|---|
-| **[`feature/connectors-agent`](https://github.com/Tarasevych/hub/tree/feature/connectors-agent)** | `c318679` | 2026-10-06 | Початкова архітектура підключення ШІ-агентів та runbook пакування. |
+| **[`feature/connectors-agent`](https://github.com/Tarasevych/hub/tree/feature/connectors-agent)** | `c318679` | 2026-10-06 | Початкова архітектура під'єднання ШІ-агентів та runbook пакування. |
 | **[`feature/connectors-agent-v2`](https://github.com/Tarasevych/hub/tree/feature/connectors-agent-v2)** | `053a29f` | 2026-10-08 | Розвиток конекторів агентів v2 та адаптивний редактор відповіді в мобільній пошті. |
 | **[`veilig-agenten-0.4`](https://github.com/Tarasevych/hub/tree/veilig-agenten-0.4)** | `f89d34f` | 2026-10-08 | Контур безпеки для ШІ-агентів версії 0.4 (`deploy/RUNBOOK-AGENTEN-0.4.md`). |
 | **[`passkey-schvalennya`](https://github.com/Tarasevych/hub/tree/passkey-schvalennya)** | `3cd66f4` | 2026-10-08 | Власне WebAuthn-ядро (`deploy/goedkeuring/webauthn-kern.mjs`) та схвалення серверних оновлень власником через Passkey (`Admin → Оновлення`). |
@@ -295,8 +295,8 @@ flowchart TB
 | Гілка | Коміт | Дата | PR | Опис етапу |
 |---|---|---|---|---|
 | **[`claude/plan-2026-10-09`](https://github.com/Tarasevych/hub/tree/claude/plan-2026-10-09)** | `0c18e79` | 2026-10-12 | — | Виправлення пошти за QA-звітами від 12.10 (десктоп і мобільний телефон). |
-| **[`claude/mcp-een-klik-2026-10-13`](https://github.com/Tarasevych/hub/tree/claude/mcp-een-klik-2026-10-13)** | `c503db1` | 2026-10-13 | — | Підключення ШІ по MCP «в один клік» або вручну, підтвердження дверей на сайті з вибором терміну дії. |
-| **[`cursor/terminal-etap-c-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/terminal-etap-c-8d4d)** | `e9128e4` | 2026-10-13 | [PR #1](https://github.com/Tarasevych/hub/pull/1) | **Етап C:** вбудований термінал у браузері на базі `@xterm/xterm` (вимкнений за замовчуванням). |
+| **[`claude/mcp-een-klik-2026-10-13`](https://github.com/Tarasevych/hub/tree/claude/mcp-een-klik-2026-10-13)** | `c503db1` | 2026-10-13 | — | Під'єднання ШІ по MCP «одним натисканням» або вручну, підтвердження дверей на сайті з вибором терміну дії. |
+| **[`cursor/terminal-etap-c-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/terminal-etap-c-8d4d)** | `e9128e4` | 2026-10-13 | [PR #1](https://github.com/Tarasevych/hub/pull/1) | **Етап C:** вбудований термінал у браузері на базі `@xterm/xterm` (вимкнений типово). |
 | **[`cursor/ssh-uitrol-audit-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/ssh-uitrol-audit-8d4d)** | `596cd4a` | 2026-10-13 | [PR #2](https://github.com/Tarasevych/hub/pull/2) | Запис SSH-встановлення в історію оновлень та журнал аудиту. |
 | **[`cursor/mcp-spiegel-tools-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/mcp-spiegel-tools-8d4d)** | `30b45a4` | 2026-10-14 | [PR #3](https://github.com/Tarasevych/hub/pull/3) | Відображення інструментів дверей у MCP-конекторі (випуск, дошка, карта сервісів). |
 | **[`claude/tech-profiel-2026-10-13`](https://github.com/Tarasevych/hub/tree/claude/tech-profiel-2026-10-13)** | `363fa72` | 2026-10-14 | — | **Етап B:** ізоляція адмін-прав виключно в активному Технічному профілі (`deploy/BEHEER-ALLEEN-TECH.md`). |
@@ -304,11 +304,11 @@ flowchart TB
 | **[`cursor/ai-vertaling-context-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/ai-vertaling-context-8d4d)** | `dda7668` | 2026-10-14 | [PR #5](https://github.com/Tarasevych/hub/pull/5) | ШІ-переклад листів на місці, стисла вижимка та міжскриньковий контекст листів і документів. |
 | **[`cursor/ai-agent-scopes-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/ai-agent-scopes-8d4d)** | `013eaa5` | 2026-10-14 | [PR #7](https://github.com/Tarasevych/hub/pull/7) | Гранулярні дозволи «Доступ ШІ» (скоупи інструментів каталогу та чутливих даних, міграція `0044`). |
 | **[`cursor/ai-agent-board-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/ai-agent-board-8d4d)** | `11f5232` | 2026-10-15 | [PR #6](https://github.com/Tarasevych/hub/pull/6) | Об'єднання Дошки ШІ-агентів (`0043`), гранулярних дозволів (`0044`) та ШІ-перекладу/контексту. |
-| **[`cursor/connector-integraties-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/connector-integraties-8d4d)** | `796b78f` | 2026-10-15 | [PR #8](https://github.com/Tarasevych/hub/pull/8) | Окремі адреси конекторів ШІ, нідерландські назви маршрутів та покрокове підключення з грантами. |
+| **[`cursor/connector-integraties-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/connector-integraties-8d4d)** | `796b78f` | 2026-10-15 | [PR #8](https://github.com/Tarasevych/hub/pull/8) | Окремі адреси конекторів ШІ, нідерландські назви маршрутів та покрокове під'єднання з грантами. |
 | **[`cursor/connector-uitvoeren-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/connector-uitvoeren-8d4d)** | `65cfeb9` | 2026-10-15 | [PR #9](https://github.com/Tarasevych/hub/pull/9) | Реальні дії конектора: надсилання пошти, запис Диска й календаря, дошка, пошук, GitHub. |
 | **[`cursor/connector-functies-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/connector-functies-8d4d)** | `9d5a4be` | 2026-10-15 | [PR #10](https://github.com/Tarasevych/hub/pull/10) | Повний каталог конектора як реальні дії (Figma, Notion, GitHub, Wix, Stripe, випуски). |
 | **[`cursor/release-tar-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/release-tar-8d4d)** | `63a7d48` | 2026-10-15 | — | Гілка пакета випуску `mijn-ruimte-20261015-123546` (реальні дії конекторів). |
-| **[`claude/connector-v2-2026-10-15`](https://github.com/Tarasevych/hub/tree/claude/connector-v2-2026-10-15)** | `4135dfd` | 2026-10-15 | — | Зведення A2/A3: `ai/verbindingen` як єдиний хаб підключень ШІ з підвкладками (`deploy/CONNECTOR-V2.md`). |
+| **[`claude/connector-v2-2026-10-15`](https://github.com/Tarasevych/hub/tree/claude/connector-v2-2026-10-15)** | `4135dfd` | 2026-10-15 | — | Зведення A2/A3: `ai/verbindingen` як єдиний хаб під'єднань ШІ з підвкладками (`deploy/CONNECTOR-V2.md`). |
 | **[`fix/mail-compose-float-independent`](https://github.com/Tarasevych/hub/tree/fix/mail-compose-float-independent)** | `f7de4d8` | 2026-10-16 | — | Незалежне плаваюче вікно написання листа та автооновлення статусів адмін-панелі кожні 10 с. |
 
 ---
@@ -327,7 +327,7 @@ flowchart TB
 | **[#22](https://github.com/Tarasevych/hub/pull/22)** | 🟢 OPEN* | `MAILORBIT-001: інтерактивні поштові сервіси на порожній сторінці` | `feature/mailorbit-001-20261103-205354` → `feature/integ-001-zvedennia-20261103-102243` | ✅ **Вже злито у `voornaamst` (`14698ac`)**. |
 | **[#20](https://github.com/Tarasevych/hub/pull/20)** | 🟣 MERGED | `LOGIN-001: minimalistische meertalige aanmeldweergave zonder logo` | `feature/login-001-20261101-184800-chatgpt` → `integratie` | ✅ Злито 04.11.2026. |
 | **[#19](https://github.com/Tarasevych/hub/pull/19)** | 🟣 MERGED | `UX-AI-VAULT-001 + PR #17: керування ШІ-агентом в 1 місці з Passkey та Сховище секретів` | `release/ux-ai-vault-001-20261101-160600` → `release/sec-001-20261031-084138` | ✅ Злито 01.11.2026. |
-| **[#18](https://github.com/Tarasevych/hub/pull/18)** | 🟣 MERGED | `MCP-ACCESS-001: точна серверна діагностика доступу ШІ, ізоляція за підключенням` | `fix/mcp-access-001-20261101-125530` → `release/sec-001-20261031-084138` | ✅ Злито 01.11.2026. |
+| **[#18](https://github.com/Tarasevych/hub/pull/18)** | 🟣 MERGED | `MCP-ACCESS-001: точна серверна діагностика доступу ШІ, ізоляція за під'єднанням` | `fix/mcp-access-001-20261101-125530` → `release/sec-001-20261031-084138` | ✅ Злито 01.11.2026. |
 | **[#17](https://github.com/Tarasevych/hub/pull/17)** | 🟣 MERGED | `ORCH-001 після злиття PR #16: чужу задачу не здати, розділені простори «Доступу ШІ»` | `claude/project-thread-99x4j9` → `release/sec-001-20261031-084138` | ✅ Злито 01.11.2026. |
 | **[#16](https://github.com/Tarasevych/hub/pull/16)** | 🟣 MERGED | `INTEGRATIE: спільний кандидат ORCH-001 (PR #11 + #13) + MCP-001 (#14) + MCP-DEUR 8091 (#15)` | `release/orch-001-mcp-20261031` → `release/sec-001-20261031-084138` | ✅ Злито 01.11.2026 (закриває PR #11, #13, #14, #15). |
 | **[#12](https://github.com/Tarasevych/hub/pull/12)** | 🟣 MERGED | `Add comprehensive backend modules and deployment documentation` | `release/sec-001-20261031-084138` → `voornaamst` | ✅ Злито 04.11.2026. |
@@ -355,11 +355,11 @@ flowchart TB
 ```text
 Tarasevych/hub
 ├── AGENTS.md                        # Канонічні правила для всіх ШІ-агентів та розробників (ORCH-001)
-├── ENV-VARS.md                      # Повний опис змінних оточення та ключів шифрування (/etc/mijn-ruimte/geheimen.env)
+├── ENV-VARS.md                      # Повний опис змінних середовища та ключів шифрування (/etc/mijn-ruimte/geheimen.env)
 ├── SECURITY-NOTES.md                # Аудит безпеки, виправлення фаз A/B/1/2/3/Audit/Zoek/Werkblad та відкриті питання
 ├── PORTEERPLAN.md                   # Архітектурний план міграції з AppDeploy на self-hosted Node.js + PostgreSQL
 ├── cron.json                        # Визначення 6 фонових завдань (mail, google-sync, opruimen, mail-queue, diagnostiek, zoek-index)
-├── package.json                     # Залежності (Node >= 24) та скрипти збірки, перевірок, міграцій і тестів
+├── package.json                     # Залежності (Node >= 24) та скрипти складання, перевірок, міграцій і тестів
 │
 ├── orchestratie/                    # Координація ШІ-агентів (ORCH-001) та трасування випусків (TRACE-001)
 │   ├── beleid.json                  # Машинна політика координації, списки агентів, каналів, обов'язкових перевірок
@@ -380,7 +380,7 @@ Tarasevych/hub
 │       ├── db.ts                    # Робота з app.records (JSONB), атомарні takeOne / takeArrayValue / zetAlsHoger, RLS-контекст
 │       ├── pg.ts                    # Пули з'єднань для 3 ролей БД (migrator, app, system)
 │       ├── opslag.ts                # Локальне файлове сховище (/srv/data/uploads) із захистом шляхів та власника
-│       ├── geheimen.ts              # Доступ до секретів оточення за білим списком
+│       ├── geheimen.ts              # Доступ до секретів середовище за білим списком
 │       ├── router.ts                # HTTP-маршрутизатор із перевіркою канонічності шляхів (PATH_NOT_CANONICAL)
 │       ├── auth-poort.ts            # Центральний шлюз авторизації та облік публічних маршрутів (PUBLIEKE_ROUTES)
 │       ├── beveiliging.ts           # Rate limiting, блокування входів (lockouts), криптографічні хелпери
@@ -388,12 +388,12 @@ Tarasevych/hub
 │       └── audit.ts                 # Запис у захищений хеш-ланцюгом журнал app.audit
 │
 ├── backend/                         # Серверна бізнес-логіка всіх 10 активних сервісів
-│   ├── index.ts                     # Основний реєстр маршрутів API, сесій, OAuth-транзакцій та воркспейсів
+│   ├── index.ts                     # Основний реєстр маршрутів API, сесій, OAuth-транзакцій та робочих просторів
 │   ├── deployment-identity.ts       # Єдине джерело доменів (*.tarasevych.com) та параметрів сесійних кук
 │   ├── toegangslaag.ts              # Паролі, TOTP (AES-256-GCM), коди відновлення (HMAC), телефони, політики входу
 │   ├── toegangssleutels.ts          # Користувацькі WebAuthn Passkeys
 │   ├── stap-op.ts                   # Механізм Step-Up повторного підтвердження для чутливих дій
-│   ├── eigenaar-besluit.ts          # Passkey-рішення власника для root-дій (відкат, правила, зовнішні MCP-хости)
+│   ├── eigenaar-besluit.ts          # Passkey-рішення власника для root-дій (повернення стану, правила, зовнішні MCP-хости)
 │   ├── uitrol-goedkeuring.ts        # Перевірка, передконтроль (voorcontrole) та схвалення пакетів оновлень
 │   ├── uitrol-github.ts             # Перевірка походження коміту, гілки та SHA-256 GitHub Release-архіву (TRACE-001)
 │   ├── orch-routes.ts / orch-opslag.ts / orch-hulpmiddelen.ts # Веб/HTTP/MCP-інтерфейс системи координації ORCH-001
@@ -428,18 +428,18 @@ Tarasevych/hub
 │   └── geheim-patronen.ts           # Регулярні вирази для автоматичного приховування секретів у пошуковому індексі
 │
 ├── migrations/                      # 139 SQL-міграцій PostgreSQL (0001_basis.sql .. 0198_aanmeldmethoden_vnext.sql + rechten.sql)
-├── deploy/                          # Скрипти встановлення (installeer-app.sh), systemd-юніти, таймери, бекапи, runbooks
+├── deploy/                          # Скрипти встановлення (installeer-app.sh), systemd-юніти, таймери, резервні копії, runbooks
 ├── docs/                            # Архітектурна документація, специфікації та карта файлів (docs/kaart/KAART-BESTANDEN.md)
-├── scripts/                         # CLI-утиліти збірки, перевірок (kaart-controle, plaatsing-controle, l002-audit) та orch.mjs
+├── scripts/                         # CLI-утиліти складання, перевірок (kaart-controle, plaatsing-controle, l002-audit) та orch.mjs
 ├── tests/                           # Модульні (tests/eenheid/), візуальні (tests/visueel/) та E2E (tests/e2e/) тести
 └── extension/                       # Браузерне розширення Mijn Ruimte (Chrome / Edge)
 ```
 
 ---
 
-## 6. Змінні оточення, ключі шифрування та конфігурація (`ENV-VARS.md`)
+## 6. Змінні середовища, ключі шифрування та конфігурація (`ENV-VARS.md`)
 
-Усі секрети на production ВМ зберігаються виключно у файлі **`/etc/mijn-ruimte/geheimen.env`** (права `0600 root:root` або `0640 root:mijnruimte`), який завантажується через `EnvironmentFile=` у systemd-юнітах. Жоден секрет ніколи не комітиться в Git і не потрапляє у клієнтську збірку. Повна документація: [`ENV-VARS.md`](ENV-VARS.md) та [`deploy/LEESMIJ.md`](deploy/LEESMIJ.md).
+Усі секрети на production ВМ зберігаються виключно у файлі **`/etc/mijn-ruimte/geheimen.env`** (права `0600 root:root` або `0640 root:mijnruimte`), який завантажується через `EnvironmentFile=` у systemd-юнітах. Жоден секрет ніколи не комітиться в Git і не потрапляє у клієнтську складання. Повна документація: [`ENV-VARS.md`](ENV-VARS.md) та [`deploy/LEESMIJ.md`](deploy/LEESMIJ.md).
 
 > [!TIP]
 > **Автоматична генерація відсутніх ключів на ВМ:**
@@ -449,7 +449,7 @@ Tarasevych/hub
 
 | Змінна | Призначення | Формат / Генерація |
 |---|---|---|
-| `DATABASE_URL` | Основне підключення до PostgreSQL (БД `mijnruimte`, версія PG ≥ 16, на продакшені PG 18.6). Після розділення ролей переноситься у `/etc/mijn-ruimte/migratie.env`. | `postgres://mijnruimte:<пароль>@127.0.0.1:5432/mijnruimte` |
+| `DATABASE_URL` | Основне під'єднання до PostgreSQL (БД `mijnruimte`, версія PG ≥ 16, на продакшені PG 18.6). Після розділення ролей переноситься у `/etc/mijn-ruimte/migratie.env`. | `postgres://mijnruimte:<пароль>@127.0.0.1:5432/mijnruimte` |
 | `OWNER_EMAIL` | E-mail адреса власника платформи (super-admin). Сервер не запуститься без цієї змінної. | E-mail у нижньому регістрі |
 | `AUDIT_IP_PEPPER` | Таємний pepper (`HMAC-SHA256`, мін. 32 символи) для хешування IP-адрес у `app.audit` (`ip_hash`). Сервер не стартує без нього. | `openssl rand -base64 48 \| tr -d '\n'` |
 | `TOTP_ENCRYPTION_KEY_V1` | Ключ `AES-256-GCM` (32 байти, AAD = `userId`) для шифрування секретів TOTP двофакторної автентифікації. | `openssl rand -base64 32` |
@@ -457,7 +457,7 @@ Tarasevych/hub
 | `GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1` | Шифрує збережені Google OAuth гранти та refresh-токени. | `openssl rand -base64 32` |
 | `OWNER_VAULT_ENCRYPTION_KEY_V1` | Шифрує секрети в API-сховищі власника (`admin` / `api`). | `openssl rand -base64 32` |
 | `MAIL_TOKEN_ENCRYPTION_KEY_V1` | Шифрує OAuth-токени поштових провайдерів (рівно 32 байти). | `openssl rand -base64 32` |
-| `MAIL_APP_WACHTWOORD_SLEUTEL_V1` | Шифрує паролі додатків IMAP/SMTP-скриньок (iCloud, Ukr.net, Yahoo, I.ua), прив'язані до `user + row + ruimte`. Без ключа підключення відхиляється (жодного fallback). | `openssl rand -base64 32` |
+| `MAIL_APP_WACHTWOORD_SLEUTEL_V1` | Шифрує паролі додатків IMAP/SMTP-скриньок (iCloud, Ukr.net, Yahoo, I.ua), прив'язані до `user + row + ruimte`. Без ключа під'єднання відхиляється (жодного fallback). | `openssl rand -base64 32` |
 | `AGENDA_ABONNEMENT_SLEUTEL_V1` | Шифрує паролі додатків CalDAV-календарів (iCloud, Fastmail, Nextcloud). | `openssl rand -base64 32` |
 | `SLEUTELKLUIS_SLEUTEL_V1` | Серверний pepper Сховища ключів (міграція `0092`) для обгортання ключа даних (DEK) користувача при створенні MCP-конвертів ШІ-агентів через `HKDF(agent_token + pepper)`. **Не видаляти і не ротувати без перевипуску конвертів.** | `openssl rand -base64 32` |
 | `GITHUB_KOPPELING_SLEUTEL_V1` | Шифрує збережені токени інтеграції GitHub (OAuth, refresh, installation token). За відсутності використовує `TOTP_ENCRYPTION_KEY_V1`. | `openssl rand -base64 32` |
@@ -473,17 +473,17 @@ Tarasevych/hub
 | `SCIM_BEARER_TOKEN` | Проویжинінг | порожньо (вимк.) | Токен для вхідного SCIM-провижинінгу користувачів. |
 | `DATABASE_URL_MIGRATIE` | Ролі БД (`migratie.env`) | — | Роль `mijnruimte_migrator` (власник схеми `app`), завантажується лише під час міграцій. |
 | `DATABASE_URL_APP` | Ролі БД (`geheimen.env`) | — | Роль `mijnruimte_app` (`NOBYPASSRLS`, лише DML під політиками RLS для запитів користувачів). |
-| `DATABASE_URL_SYSTEM` | Ролі БД (`geheimen.env`) | — | Роль `mijnruimte_system` (`BYPASSRLS` для сесій, входу, cron, бекапів, але без права зміни `app.audit`). |
+| `DATABASE_URL_SYSTEM` | Ролі БД (`geheimen.env`) | — | Роль `mijnruimte_system` (`BYPASSRLS` для сесій, входу, cron, резервних копій, але без права зміни `app.audit`). |
 | `AUTH_POORT_AFDWINGEN` | Безпека | `0` (лог) | `1` = центральний шлюз `auth-poort.ts` блокує (`401`) будь-яку анонімну 2xx-відповідь поза `PUBLIEKE_ROUTES`. |
 | `STAP_OP_UIT` | Безпека | `0` | Аварійне вимкнення вимоги Step-Up (`STEP_UP_REQUIRED`) для чутливих дій. |
 | `STAP_OP_GOOGLE_ZONDER_AUTH_TIME` | Безпека | `0` | `1` = дозволити Google Step-Up без `auth_time` у токені, якщо OAuth-потік завершено менш ніж за 5 хв. |
-| `ACCOUNT_DEFINITIEF_WISSEN` | Приватність | `0` (dry-run) | `1` = фонова задача `opruimen` остаточно видаляє акаунти після завершення 30-денного періоду відновлення. |
+| `ACCOUNT_DEFINITIEF_WISSEN` | Приватність | `0` (dry-run) | `1` = фонова задача `opruimen` остаточно видаляє облікові записи після завершення 30-денного періоду відновлення. |
 
 ### 6.3. Зовнішні інтеграції (Google, Microsoft Graph, Gmail Pub/Sub)
 
 | Змінна | Призначення |
 |---|---|
-| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | OAuth 2.0 клієнт Google (Redirect URI: `https://id.tarasevych.com/`). Може також задаватися через Сховище власника у `Admin → Інтеграції → Майстер підключень` без перезапуску сервера. |
+| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | OAuth 2.0 клієнт Google (Redirect URI: `https://id.tarasevych.com/`). Може також задаватися через Сховище власника у `Admin → Інтеграції → Майстер під'єднань` без перезапуску сервера. |
 | `GOOGLE_SUITE_CLIENT_ID` / `GOOGLE_SUITE_CLIENT_SECRET` | Аліас клієнта для Google Suite (якщо заданий, має збігатися з `GOOGLE_OAUTH_CLIENT_ID`). |
 | `GOOGLE_GMAIL_PUBSUB_TOPIC` / `_AUDIENCE` / `_SERVICE_ACCOUNT_EMAIL` | Параметри миттєвих push-сповіщень Gmail через Google Cloud Pub/Sub (`deploy/MAIL-PUSH-PUBSUB.md`). |
 | `MICROSOFT_GRAPH_CLIENT_ID` / `_CLIENT_SECRET` / `_TENANT_ID` | Дані реєстрації додатка в Microsoft Entra ID для пошти Outlook (`mijn-ruimte-installeer oauth-client microsoft`). |
@@ -496,7 +496,7 @@ Tarasevych/hub
 | `HOST` / `PORT` | `127.0.0.1` / `8080` | Локальна адреса і порт HTTP-сервера (трафік надходить виключно через `cloudflared`). |
 | `DIST_DIR` / `MIGRATIONS_DIR` | `<release>/dist` / `<release>/migrations` | Шляхи до зібраного фронтенду та SQL-міграцій активного випуску. |
 | `UPLOADS_DIR` | `/srv/data/uploads` | Єдина директорія, відкрита на запис для основного сервісу (`ReadWritePaths`). |
-| `DASHBOARD_DIR` | `/srv/mijn-ruimte/dashboard` | Директорія статичного дашборду для `dashboard.tarasevych.com`. |
+| `DASHBOARD_DIR` | `/srv/mijn-ruimte/dashboard` | Директорія статичного панелі керування для `dashboard.tarasevych.com`. |
 | `MERK_EIGEN_MAP` | `/srv/mijn-ruimte/merk-eigen` | Директорія власних офіційних логотипів брендів (`.svg`/`.png` ≤ 200 КБ). |
 | `MAX_BODY_BYTES` / `PG_POOL_MAX` | `12582912` (12 MiB) / `10` | Ліміт розміру HTTP-тіла запиту та розмір пулу з'єднань PostgreSQL. |
 | `API_RATE_LIMIT_PER_MIN` | `600` | Загальний ліміт запитів до `/api/*` з одного IP на хвилину (для входу/MFA діють жорсткіші ліміти: 10–20/хв). |
@@ -507,7 +507,7 @@ Tarasevych/hub
 | `EXTERNE_MCP_HOSTS` / `MCP_RECHTEN_PAD` | порожньо / `/etc/mijn-ruimte/mcp-rechten.json` | Білий список хостів зовнішніх MCP-серверів (також керується власником через Passkey на сайті). |
 | `ORCH_WORTEL` / `ORCH_INBOX` | `/srv/mijn-ruimte/orch-repo` / `/srv/mijn-ruimte/orch-inbox` | Серверна робоча копія репозиторію координації `ORCH-001` та директорія прийому пакетів від агентів. |
 | `BESLUIT_INBOX` / `BESLUIT_APP_ROOT` | `/srv/mijn-ruimte/besluit-inbox` / `/srv/mijn-ruimte` | Шляхи обміну підписаними Passkey-рішеннями власника між вебдодатком та root-службою `mijn-ruimte-besluit`. |
-| `ROOK_CHROMIUM` | автопошук `/srv/mijn-ruimte/browser/chrome-headless-shell` | Шлях до headless-браузера для автоматичної перевірки рендерингу сторінок після випуску. |
+| `ROOK_CHROMIUM` | автопошук `/srv/mijn-ruimte/browser/chrome-headless-shell` | Шлях до headless-браузера для автоматичної перевірки відмальовування сторінок після випуску. |
 | `MR_EIGENAAR_NAAM` / `MR_CONTACT_EMAIL` | `власник / eigenaar` / `op aanvraag` | Ім'я контролера даних та контактний e-mail для публічних сторінок `/privacy` і `/terms` (`PRIVACY-001` / B-010). |
 | `MR_BEHEERSUBNET` / `MR_VM_SSH` | `10.0.0.0/8` / `mijn-ruimte-vm` | Підмережа управління для захисту шлюзів Huis vNext та SSH-ціль для адміністративних скриптів (`B-010`). |
 
@@ -523,7 +523,7 @@ Tarasevych/hub
 | **Середовище виконання** | `Node.js v26.13.0 LTS` (`npm 11.20.0`) |
 | **База даних** | `PostgreSQL 18.6` (`/srv/data/postgresql/18/main` з увімкненим `--data-checksums`) |
 | **Мережа та шлюзи** | `Cloudflare Tunnel (cloudflared 2026.10.7)` · `Caddy v2.11.7` (`admin unix//run/caddy/admin.sock\|0660`) · `OPA v1.22.0` (`127.0.0.1:8181`) |
-| **Контейнери та криптографія** | `Docker 29.9.2` (`containerd 2.4.2`) · `age v1.3.2` (асиметричне шифрування бекапів) |
+| **Контейнери та криптографія** | `Docker 29.9.2` (`containerd 2.4.2`) · `age v1.3.2` (асиметричне шифрування резервних копій) |
 | **Особливість `systemd 259` + `GNU tar 1.35`** | У `Ubuntu 26.04.1 LTS` `tar --extract` викликає `openat2(..., RESOLVE_BENEATH)`. Щоб seccomp-фільтр `systemd 259` не блокував його з `-ENOSYS`, у всіх `deploy/*.service` та серверних drop-in встановлено `RestrictSUIDSGID=no` (при збереженні `NoNewPrivileges=yes`, `ProtectSystem=strict`, `PrivateTmp=yes`). |
 
 ### 7.2. Фонові завдання (`cron.json` та systemd-таймери)
@@ -535,7 +535,7 @@ Tarasevych/hub
 | `mail-provider-maintenance` | `*/5 * * * *` (кожні 5 хв) | Синхронізація та обслуговування поштових скриньок (`mailMaintenanceCron`, `batchLimit: 3`). |
 | `google-suite-bplus-sync` | `*/5 * * * *` (кожні 5 хв) | Фонова синхронізація Google Suite — пошта, календар, диск (`googleSuiteSyncCron`, `accountLimit: 10`). |
 | `zoek-index` | `*/5 * * * *` (кожні 5 хв) | Індексація нових та змінених об'єктів у глобальний пошук `/zoek` (`zoekIndexCron`, `limiet: 60`). |
-| `mail-queue-send` | `* * * * *` (щохвилини) | Відправлення листів із черги вихідної пошти (`mailQueueCron`). |
+| `mail-queue-send` | `* * * * *` (щохвилини) | Надсилання листів із черги вихідної пошти (`mailQueueCron`). |
 | `diagnostiek-server` | `*/15 * * * *` (кожні 15 хв) | Збір показників здоров'я сервера та перевірок безпеки (`diagnostiekServerCron`). |
 | `opruimen` | `17 * * * *` (щогодини) | Очищення прострочених OAuth-станів, PKCE, сесій, handoff-кодів, лімітів та старих логів (`opruimCron`). |
 | `mijn-ruimte-backup.timer` | Щодня о `03:30` | Дамп PostgreSQL (`pg_dump -Fc`) + архів `/srv/data/uploads`, зашифровані напряму через `age -R` публічним ключем (`/etc/mijn-ruimte/backup-ontvanger.age.pub`) у `/srv/backups/mijn-ruimte/<дата>/`. |
@@ -553,9 +553,9 @@ Tarasevych/hub
 ### Основні команди розробки, перевірки та оркестрації
 
 ```bash
-# 1. Локальний запуск та повна перевірка збірки
+# 1. Локальний запуск та повна перевірка складання
 npm run dev                                          # Запуск Vite dev-сервера фронтенду
-npm run build                                        # Повний конвеєр збірки:
+npm run build                                        # Повний конвеєр складання:
                                                      #   kaart-controle → plaatsing-controle → hulp-vraagtekens-controle →
                                                      #   zoek-ui-catalogus → l002-audit → mail-slimme-inbox-audit →
                                                      #   kleur-contrast-controle → vite build → tech-bundels-controle →
@@ -574,7 +574,7 @@ node scripts/orch.mjs status                         # Поточний стат
 node scripts/orch.mjs context                        # Генерація компактного контексту orchestratie/CONTEXT-COMPACT.md
 node scripts/orch.mjs taak-start --id <TASK-ID> --agent <agent> --basis <sha40> --tak <branch>
 node scripts/orch.mjs versheid --taak <TASK-ID> --fase start|overdracht
-node scripts/orch.mjs pakket --taak <TASK-ID> --auteur "<Ім'я>"   # Збірка mijn-ruimte-<versie>.tar.gz + <versie>-<agent>-overdracht.zip
+node scripts/orch.mjs pakket --taak <TASK-ID> --auteur "<Ім'я>"   # Складання mijn-ruimte-<versie>.tar.gz + <versie>-<agent>-overdracht.zip
 node scripts/orch.mjs pakket-controleer --bron uitvoer/mijn-ruimte-<versie>-<agent>-overdracht.zip
 node scripts/orch.mjs inleveren --bron <zip|tar.gz|patch|тека|гілка>
 node scripts/orch.mjs wachtrij toon|volgende|klaar|terugtrekken
@@ -592,13 +592,13 @@ node scripts/orch.mjs wachtrij toon|volgende|klaar|terugtrekken
   - Історія розвитку (Етапи I–VI): [🇺🇦 UK](docs/hub/GESCHIEDENIS.uk.md) ↔ [🇳🇱 NL](docs/hub/GESCHIEDENIS.nl.md)
   - Гілки (71), PR (#1–#27) та Релізи (18): [🇺🇦 UK](docs/hub/TAKKEN-EN-PRS.uk.md) ↔ [🇳🇱 NL](docs/hub/TAKKEN-EN-PRS.nl.md)
   - Структура репозиторію та карта коду: [🇺🇦 UK](docs/hub/MAP-STRUCTUUR.uk.md) ↔ [🇳🇱 NL](docs/hub/MAP-STRUCTUUR.nl.md)
-  - Змінні оточення та ключі: [🇺🇦 UK](docs/hub/OMGEVINGSVARIABELEN.uk.md) ↔ [🇳🇱 NL](docs/hub/OMGEVINGSVARIABELEN.nl.md)
+  - Змінні середовища та ключі: [🇺🇦 UK](docs/hub/OMGEVINGSVARIABELEN.uk.md) ↔ [🇳🇱 NL](docs/hub/OMGEVINGSVARIABELEN.nl.md)
   - Оркестрація та розгортання: [🇺🇦 UK](docs/hub/ORCHESTRATIE-EN-UITROL.uk.md) ↔ [🇳🇱 NL](docs/hub/ORCHESTRATIE-EN-UITROL.nl.md)
 - **Правила та управління (`ORCH-001`):**
   - [`AGENTS.md`](AGENTS.md) ([🇺🇦 UK](AGENTS.uk.md) ↔ [🇳🇱 NL](AGENTS.nl.md)) · [`orchestratie/beleid.json`](orchestratie/beleid.json) · [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) ([🇺🇦 UK](orchestratie/BESLUITEN.uk.md) ↔ [🇳🇱 NL](orchestratie/BESLUITEN.nl.md))
 - **Карта файлів (EN → NL):**
   - [`docs/kaart/KAART-BESTANDEN.md`](docs/kaart/KAART-BESTANDEN.md) ([🇺🇦 UK](docs/kaart/KAART-BESTANDEN.uk.md) ↔ [🇳🇱 NL](docs/kaart/KAART-BESTANDEN.nl.md))
-- **Змінні оточення та секрети:**
+- **Змінні середовища та секрети:**
   - [`ENV-VARS.md`](ENV-VARS.md) ([🇺🇦 UK](ENV-VARS.uk.md) ↔ [🇳🇱 NL](ENV-VARS.nl.md)) · [`deploy/GEHEIMEN-REGISTER.md`](deploy/GEHEIMEN-REGISTER.md) ([🇺🇦 UK](deploy/GEHEIMEN-REGISTER.uk.md) ↔ [🇳🇱 NL](deploy/GEHEIMEN-REGISTER.nl.md)) · [`deploy/KLYUCHI-I-SHYFRUVANNYA.md`](deploy/KLYUCHI-I-SHYFRUVANNYA.md) ([🇺🇦 UK](deploy/KLYUCHI-I-SHYFRUVANNYA.uk.md) ↔ [🇳🇱 NL](deploy/KLYUCHI-I-SHYFRUVANNYA.nl.md))
 - **Безпека, порт-план та аудит:**
   - [`SECURITY-NOTES.md`](SECURITY-NOTES.md) ([🇺🇦 UK](SECURITY-NOTES.uk.md) ↔ [🇳🇱 NL](SECURITY-NOTES.nl.md)) · [`PORTEERPLAN.md`](PORTEERPLAN.md) ([🇺🇦 UK](PORTEERPLAN.uk.md) ↔ [🇳🇱 NL](PORTEERPLAN.nl.md)) · [`docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.md`](docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.md) ([🇺🇦 UK](docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.uk.md) ↔ [🇳🇱 NL](docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.nl.md)) · [`docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.md`](docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.md) ([🇺🇦 UK](docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.uk.md) ↔ [🇳🇱 NL](docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.nl.md))

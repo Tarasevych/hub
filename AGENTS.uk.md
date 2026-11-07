@@ -80,7 +80,7 @@
   `mijn-ruimte-<versie>.tar.gz` (через `deploy/uitrol/maak-voorstelpakket.sh`, з файлом `UITROL-BASIS` = встановлена версія + commit + відбиток
   правил) і пакет передачі `mijn-ruimte-<versie>-<agent>-overdracht.zip` (архів, `.sha256`, `ORCH-OVERDRACHT.json`, `UITROL-MANIFEST.json`,
   `TESTRESULTATEN.json`, `RAPPORT.md`, `COMMITS.txt` + `commits.bundle`, `AGENTEN.json`, `.sig` — лише якщо власник підписав на своєму ПК).
-  Перевірка без установки: `pakket-controleer --bron <zip>`; імпорт на іншому боці без git: `inleveren --bron <zip>` (той самий конвеєр).
+  Перевірка без встановлення: `pakket-controleer --bron <zip>`; імпорт на іншому боці без git: `inleveren --bron <zip>` (той самий конвеєр).
 - Інсталятор (root) відхиляє пакет: база старіша за встановлену (`BASIS_VEROUDERD`), інший встановлений commit (`BASIS_COMMIT_VERSCHILT`),
   без `UITROL-BASIS` із версії `20261201` (`GEEN_BASIS`), правила ≠ `regels.lock.json` (`REGELS_NIET_VERGRENDELD`), режим поза політикою
   (`MODUS_NIET_TOEGESTAAN`). GitOps (автоматично) працює лише за `automatisch_beperkt` **і** підписаним lock. Приватні ключі агентам не передаються.
@@ -104,19 +104,19 @@
 | Задачі агентів | `orchestratie/taken/<TASK-ID>.json` |
 | Записи передач (усі канали, прийняті й відхилені) | `orchestratie/inleveringen/<TASK-ID>-<час>.json` |
 | Черга інтеграції | [`orchestratie/wachtrij.json`](./orchestratie/wachtrij.json) |
-| Факт установки (пише інсталятор/власник) | [`orchestratie/geinstalleerd.json`](./orchestratie/geinstalleerd.json) |
+| Факт встановлення (пише інсталятор/власник) | [`orchestratie/geinstalleerd.json`](./orchestratie/geinstalleerd.json) |
 | Шаблони передачі | `orchestratie/sjablonen/` |
 | Пакети випуску (локально, не в git) | `uitvoer/` — `mijn-ruimte-<versie>.tar.gz` + `mijn-ruimte-<versie>-<agent>-overdracht.zip` (`orch pakket`) |
 | Стан координації при злитті | [`.gitattributes`](./.gitattributes) (`merge=orch-staat`: версія `integratie` перемагає) |
 | Журнал розробки для випуску | `orchestratie/ontwikkelarchieven/<TASK-ID>.json` (у git), `ONTWIKKELARCHIEF.json` (у тар) |
 | Правила пакета випуску | [`deploy/REGELS-UITROLPAKKET.md`](./deploy/REGELS-UITROLPAKKET.md), [`shared/uitrol-manifest.ts`](./shared/uitrol-manifest.ts), [`shared/uitrol-codes.ts`](./shared/uitrol-codes.ts) |
-| Безпечне розгортання, passkey, відкат | [`deploy/RUNBOOK-VEILIGE-UITROL.md`](./deploy/RUNBOOK-VEILIGE-UITROL.md) (§13 passkey, §15 рішення власника, §18 координація на сервері) |
+| Безпечне розгортання, passkey, повернення стану | [`deploy/RUNBOOK-VEILIGE-UITROL.md`](./deploy/RUNBOOK-VEILIGE-UITROL.md) (§13 passkey, §15 рішення власника, §18 координація на сервері) |
 | Керування з сайту / HTTP / MCP (та сама логіка, що й CLI) | [`src/agenten/TabOrch.tsx`](./src/agenten/TabOrch.tsx), [`backend/orch-routes.ts`](./backend/orch-routes.ts) (`/api/owner/orch/*`), [`backend/orch-opslag.ts`](./backend/orch-opslag.ts), [`backend/orch-hulpmiddelen.ts`](./backend/orch-hulpmiddelen.ts) (`orch_*`), [`shared/orch-model.ts`](./shared/orch-model.ts) |
 | Робоча копія координації на сервері, завантаження | `ORCH_WORTEL` (`/srv/mijn-ruimte/orch-repo`), `ORCH_INBOX` (`/srv/mijn-ruimte/orch-inbox`) |
 | Підтвердження правил passkey (пише лише root) | `/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl`; копія для застосунку `/var/lib/mijn-ruimte-uitrol-status/orch-regels-bevestigd.json` |
 | Доступи агентів, MCP | [`deploy/RUNBOOK-AGENTEN-0.4.md`](./deploy/RUNBOOK-AGENTEN-0.4.md), [`deploy/MCP-CONNECTOR.md`](./deploy/MCP-CONNECTOR.md), [`deploy/CONNECTOR-V2.md`](./deploy/CONNECTOR-V2.md) |
 | Afstemming (задачі/конфлікти/випуски на сайті) | [`shared/afstemming-model.ts`](./shared/afstemming-model.ts), `backend/afstemming-*.ts`, `src/afstemming-vnext/` |
-| Спільна папка знань (поза репозиторієм) | проєктна папка `knowledge/claude/` — довідка, не джерело правил |
+| Спільна тека знань (поза репозиторієм) | проєктна тека `knowledge/claude/` — довідка, не джерело правил |
 
 ## 7. Команди
 
@@ -134,7 +134,7 @@ node scripts/orch.mjs status                         # in_progress / integrated 
 node scripts/orch.mjs staat-commit                   # закомітити лише файли стану координації
 node scripts/orch.mjs pakket --taak ORCH-001 --auteur "Імʼя" [--manifest m.json] [--testresultaten t.json] [--sig p.sig] [--uit uitvoer]
                                                      # tar.gz (UITROL-BASIS) + <versie>-<agent>-overdracht.zip; задача → released
-node scripts/orch.mjs pakket-controleer --bron uitvoer/mijn-ruimte-<versie>-<agent>-overdracht.zip   # перевірка без установки
+node scripts/orch.mjs pakket-controleer --bron uitvoer/mijn-ruimte-<versie>-<agent>-overdracht.zip   # перевірка без встановлення
 node scripts/orch.mjs onderteken-bericht             # рядок, який власник підписує (ssh-keygen -Y sign -n mijn-ruimte-regels)
 node scripts/orch.mjs bevestig <bericht.sig>         # записати підпис власника в lock (альтернатива — passkey на сайті, §5)
 node scripts/eenheidstests.mjs orch                  # тести координації (kern, cli, inleveren, pakket, uitrol-basis, site, besluit-root)

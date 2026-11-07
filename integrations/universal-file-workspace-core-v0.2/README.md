@@ -16,8 +16,8 @@ Requires Node.js 22+ and TypeScript (`tsc`) available locally. No network depend
 
 ## Не заявлено як виконане
 
-Поточний production source не змінено, не перевірено поточний Git commit, реальні OAuth/Drive/Gmail/GitHub адаптери ще не підключено, серверних конвертацій і криптографічної валідації немає. `proposedEngines` — маніфести майбутніх інтеграцій; їхні actual packages не входять у цей starter. До включення в production потрібна реальна інтеграція, tests, security review.
+Поточний production source не змінено, не перевірено поточний Git commit, реальні OAuth/Drive/Gmail/GitHub адаптери ще не під'єднано, серверних конвертацій і криптографічної валідації немає. `proposedEngines` — маніфести майбутніх інтеграцій; їхні actual packages не входять у цей starter. До увімкнення в production потрібна реальна інтеграція, tests, security review.
 
 ## Базовий пріоритет
 
-Reuse існуючих viewer functions перш ніж замінювати. Спочатку read-only core & consumer migration, потім повноцінний engine settings, write/convert jobs та документні редактори.
+Reuse наявних viewer functions перш ніж замінювати. Спочатку read-only core & consumer migration, потім повноцінний engine settings, write/convert jobs та документні редактори.

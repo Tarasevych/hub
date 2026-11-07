@@ -28,10 +28,10 @@ Alle 12 secties uit `IDENTITY_TABS` (`src/identity/identity-tabs.ts`) staan onde
 | 2 | `menu` | Menu | Меню |
 | 3 | `themes` | Thema’s | Теми |
 | 4 | `languages` | Talen | Мови |
-| 5 | `widgets` | Widgets | Віджети |
+| 5 | `widgets` | Widgets | Блоки інтерфейсу |
 | 6 | `sharing` | Delen | Спільний доступ |
 | 7 | `identity` | Identiteiten | Ідентичності |
-| 8 | `account` | Account en gegevens | Акаунт і дані |
+| 8 | `account` | Account en gegevens | Обліковий запис і дані |
 | 9 | `sessions` | Sessies en apparaten | Сесії та пристрої |
 | 10 | `methods` | Aanmeldmethoden | Способи входу |
 | 11 | `security` | Beveiliging | Безпека |

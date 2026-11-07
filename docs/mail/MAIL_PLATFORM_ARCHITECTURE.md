@@ -4,7 +4,7 @@
 
 ## 1. Мета і межа
 
-Цей документ визначає production-target архітектуру реальної поштової платформи `mail.tarasevych.com`, інтегрованої з canonical identity/session model. Поточний Mail Phase 1 залишається чесним manual/QA контуром. Цей реліз не активує Gmail або Microsoft OAuth, не зберігає provider tokens і не оголошує push/sync підключеними.
+Цей документ визначає production-target архітектуру реальної поштової платформи `mail.tarasevych.com`, інтегрованої з canonical identity/session model. Поточний Mail Phase 1 залишається чесним manual/QA контуром. Цей реліз не активує Gmail або Microsoft OAuth, не зберігає provider tokens і не оголошує push/sync під'єднаними.
 
 Основна продуктова модель — **Inbox Functional**: система зменшує виконавче тертя, а не вимагає Inbox Zero. Синхронізація постачає достовірні provider-дані; нейроінклюзивний шар перетворює їх на одну найближчу дію, cited summary, silent resume-context persistence і energy-aware інтерфейс.
 
