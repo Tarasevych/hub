@@ -1,8 +1,8 @@
 <!-- GEGENEREERD door node scripts/orch.mjs context — niet met de hand wijzigen · ЗГЕНЕРОВАНО, не редагувати вручну -->
 # Mijn Ruimte — компактний контекст агента · compacte agentcontext
 
-- regelsVersie: `1.4.7`
-- regelsHash: `0d80669c49889ec9394a1a9e50d903e2f9c2da776ffe01e9dd4619aa67019d75`
+- regelsVersie: `1.4.8`
+- regelsHash: `d8cb06d9fb279ed89b53d35888a95e4f5a37b5e039c7d4ed7d497faf99430f74`
 - kritiekHash: `15fb72c45e30c0347440c8bc5002934d080b229eb61ce20543f5d1cd49b43bf7` (НЕ підтверджено власником · NIET bevestigd door eigenaar)
 - база · basis: `20261104-164906` @ `50e63737ddb3f7b032f8fc74dc343ed28fda0af8` (opgave_eigenaar)
 - інтеграційна гілка · integratietak: `integratie`
@@ -18,10 +18,10 @@
 
 ## 1. Платформа · Platform (незмінне)
 
-- Mijn Ruimte — self-hosted BYOS-платформа (Ubuntu VM на залізі користувача). Жодних зовнішніх хмар для хостингу чи розгортання.
-- Випуски атомарні: `mijn-ruimte-YYYYMMDD-HHMMSS.tar.gz`, SHA-256, установка лише через `/usr/local/sbin/mijn-ruimte-installeer`
+- Mijn Ruimte — self-hosted BYOS-платформа (Ubuntu VM на обладнанні користувача). Жодних зовнішніх хмар для хостингу чи розгортання.
+- Випуски атомарні: `mijn-ruimte-YYYYMMDD-HHMMSS.tar.gz`, SHA-256, встановлення лише через `/usr/local/sbin/mijn-ruimte-installeer`
   (`deploy/uitrol/mijn-ruimte-uitrol.sh`). Правила пакета: `deploy/REGELS-UITROLPAKKET.md` (UITROL-VERSIE, AUTEUR, AGENT, SAMENVATTING, BRON-COMMIT, UITROL-MANIFEST.json з 20261101).
-- Жодного сирого root: дії від робочого користувача (`beheer`), системні зміни через заздалегідь написані конфіги/units. Нічого не розпаковувати в `/root`.
+- Жодного прямого доступу root: дії від робочого користувача (`beheer`), системні зміни через заздалегідь написані конфіги/units. Нічого не розпаковувати в `/root`.
 - Простори користувачів ізольовані й шифровані їхнім методом входу; власник сервера не має змоги їх розшифрувати.
 - Мови: спілкування і звіти — українською; коментарі в коді — українською або нідерландською; тексти UI — українською/нідерландською.
   Англійська лише для неперекладних технічних термінів. Шляхи/адреси — нідерландською (`/verbindingen`, не `/connections`).
