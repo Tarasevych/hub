@@ -7,7 +7,7 @@
 - **Test:** `tests/eenheid/tech-sessies.test.ts` (18 controles) reproduceert eerst het lek (activering zonder sessie blijft zichtbaar) en bewijst daarna via de echte routes: revoke-all / items/:id/revoke / emergency / revoke-others / tech-beeindigen / tab-intrekking / opnieuw aanmelden → 403 zonder stap-op / logboekredenen. `tech-profiel` blijft 36/36.
 - Bestanden: `migrations/0060_tech_activatie_sessie.sql`, `backend/tech-profiel.ts`, `backend/tech-routes.ts`, `backend/index.ts` (4 revoke-routes, overview, nieuwe route), `src/SecuritySessionsPanel.tsx`, `src/sessies/sessies.css`, `src/UnifiedServiceApp.tsx` (type + mapping).
 
-## Punt 5 — «Старий Google-акаунт не повинен створювати другого власника» (uitvoerder E)
+## Punt 5 — «Старий Google-обліковий запис не повинен створювати другого власника» (uitvoerder E)
 
 **Verdict: artefact van de testomgeving, géén codefout — maar nu met harde vangrails in de code.**
 
@@ -55,7 +55,7 @@ Probleem (audit §3.2/§6): vier bronnen (status.json, gebeurtenissen.jsonl, `ap
 - **Weg:** `issue_session_token`, `exchange_session`, `auto_session` (uit `OWNER_TOOLS`, `shared/ai-ruimte.ts`, `shared/ai-toegang.ts`, `shared/ai-beleid/catalog.ts`, `src/mcp-catalog.ts`); `backend/agent-session.ts` en `agent-session-route.ts` verwijderd. Een aanroep geeft `TOOL_VERWIJDERD` en komt in het journaal (`agent.sessie_tool.geweigerd`).
 - **Sessiecontrole** (`backend/index.ts` `ownerFindSession`): een rij met `authMethod: 'agent-token'` of `verwijderdOp` geldt nooit — ook niet als het id «gerepareerd» wordt (de PoC uit de audit).
 - **Migratie 0059:** tabel `app.agent_namens_sessies` (agent, ruimte, omvang, 15 min … 8 u via CHECK, teller, intrekken; alleen systeemrol) en markeert bestaande spooksessies met `verwijderdOp`/`verwijderdReden='AUDIT_K1'` (niet gewist).
-- **Namens-sessie** (`backend/agent-namens.ts`, routes `/api/owner/agent-namens/{lijst,aanmaken,intrekken,spoken/opruimen}`): alleen de eigenaar op admin.*, aanmaken/opruimen alleen na **passkey**-step-up (TOTP/Google tellen niet), bevestiging na één actie verbruikt. Geen cookie of token: de agent gebruikt zijn bestaande koppeling; `callSite` (`backend/site-dispatch.ts`) laat de alleen-lezen beheerroutes uit de omvang toe zolang er voor DEZE agent en ruimte een actieve toestemming is. Nieuw hulpmiddel `get_admin_view` (technisch, alleen lezen; v2-naam `tonen_beheer_namens_*_beheer` — bestaande koppelingen zien het pas na «Змінити → перепідключити»).
+- **Namens-sessie** (`backend/agent-namens.ts`, routes `/api/owner/agent-namens/{lijst,aanmaken,intrekken,spoken/opruimen}`): alleen de eigenaar op admin.*, aanmaken/opruimen alleen na **passkey**-step-up (TOTP/Google tellen niet), bevestiging na één actie verbruikt. Geen cookie of token: de agent gebruikt zijn bestaande koppeling; `callSite` (`backend/site-dispatch.ts`) laat de alleen-lezen beheerroutes uit de omvang toe zolang er voor DEZE agent en ruimte een actieve toestemming is. Nieuw hulpmiddel `get_admin_view` (technisch, alleen lezen; v2-naam `tonen_beheer_namens_*_beheer` — bestaande koppelingen zien het pas na «Змінити → перепід'єднати»).
 - **Twee hekken** (`AGENT_VERBODEN`): account, rollen, aanmeldmethoden/passkeys, namens-sessies, grants, goedkeuren, AI-beleid, geheimen/vault/contour, connector-rechten, technisch profiel, agenttokens, serveropdrachten → `AGENT_NIET_TOEGESTAAN` in `callSite` én in `ownerRequireSession` voor gedelegeerde verzoeken.
 - **Journaal:** elke regel in zo'n verzoek krijgt `details.actorType='agent'`, `details.agent` en «від імені» (`ctx_namens` = id van de namens-sessie); acties `agent.namens.{aangemaakt,ingetrokken,geweigerd,spoken_opgeruimd}`.
 - **UI:** «Доступ ШІ» → blok «Агенти від імені власника»: actieve toestemmingen (agent, ruimte, resttijd, aantal acties, «Відкликати»), beëindigde, en «Примарні сесії (знешкоджено)» met «Очистити назавжди» (passkey).
@@ -71,7 +71,7 @@ installatie op 42 %. De app sloot na 30 min af terwijl systemd 45 min toestaat. 
   (regel + afsluitcode) of `mislukt ONDERBROKEN` (SIGTERM/timeout; de installer wordt mee gestopt) in status.json, stappen.jsonl en gebeurtenissen.jsonl, en haalt het
   pakket uit de inbox. Testhaak `UITROL_TEST_BREEK` (als root gewist).
 - **Oorzaak:** eerste regel met `error|ERR!|[installeer] FOUT:|psql …ERROR|FATAL|Traceback|fatal:` vanaf het begin van het lopende onderdeel, + 2 regels ervoor en 3
-  erna → `reden` + `context[]` in status.json en de gebeurtenis; tekst noemt de stap («збірка»/«bouwen»). App: kolommen `reden`, `context` in `app.uitrol_runs`
+  erna → `reden` + `context[]` in status.json en de gebeurtenis; tekst noemt de stap («складання»/«bouwen»). App: kolommen `reden`, `context` in `app.uitrol_runs`
   (0063); UI-blok «Причина / Oorzaak» met context en «Що робити» (`src/uitrol/Oorzaak.tsx`) in de live-kaart en de details.
 - **Voortgang:** `voortgang <id> <pct>` in `deploy/installeer-app.sh` (kopie 45, npm 55, bouwen 70, backup 75, migraties 80, activeren 90, gezondheid 95,
   nabewaken 98); root zet elke regel als stap «installeren» met dat percentage (`installeer_stappen`). `subVanRegel` en de begintijden kennen de nieuwe regels.
@@ -109,7 +109,7 @@ installatie op 42 %. De app sloot na 30 min af terwijl systemd 45 min toestaat. 
     (allowlist in `server/start.ts`, `X-Pakket-Sha256`). De browser controleert de sha256 na het downloaden. Beide in het journaal (`owner.uitrol.pakket.gedownload`).
     Runs van vóór deze reparatie: uitleg «архів не збережено (до виправлення 18.10.2026)» in plaats van een knop.
   - «Налаштування → Архіви випусків і GitHub»: welke token (kluisdoel **`github-uitrol`** — technisch, alleen releases, fine-grained `Contents: write` op één repo —
-    heeft voorrang op de persoonlijke **`github`**; alleen naam + aanwezig, nooit de waarde), knop «Підключити GitHub» → «Секрети й ключі» (passkey),
+    heeft voorrang op de persoonlijke **`github`**; alleen naam + aanwezig, nooit de waarde), knop «Під'єднати GitHub» → «Секрети й ключі» (passkey),
     repository `eigenaar/repo`, «Публікувати автоматично», archiefmap (aantal, grootte) met «Видалити старіші» (bewaar N ≥ 3 nieuwste, de actieve altijd; passkey),
     logboek van publicaties (ook mislukte, met vertaalde reden).
   - `backend/uitrol-github.ts`: release `uitrol-<versie>` met echte JSON (wijzigingen + sha256 + commit), `target_commitish` alleen bij een 40-hex BRON-COMMIT,
