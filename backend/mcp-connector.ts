@@ -24,7 +24,7 @@ import { geefVoorNieuweKoppeling } from './ai-toegang';
 import { meldLijstGewijzigd, sluitStromenVan } from './connector-v2-stroom';
 import { callTool, listTools, resolveAlias, taalVanGebruiker, vertaal, type ToolDef } from './connectors-hulpmiddelen';
 import type { ToolTaal } from '../shared/hulpmiddel-teksten';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 import * as st from './mcp-connector-opslag';
 import { UITROL_TOOLS, UITROL_TOOL_NAMEN, UitrolFout, heeftVoorbereiderGrant, isGoedkeurPoging, voerUitrolToolUit, type Onderwerp } from './uitrol-goedkeuring';
 import { BEHEER_ALLEEN_V2, BEHEER_TOOL_NAMEN, voerBeheerToolUit } from './ai-beheer-hulpmiddelen';

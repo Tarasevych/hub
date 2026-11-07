@@ -13,7 +13,7 @@
 import { error, json } from '../server/platform';
 import { rateLimit } from '../server/platform/beveiliging';
 import type { RouterMiddleware } from '../server/platform/router';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 import { ladePoort } from './ruimte-cloud-agenda';
 import { cloudAiBestandOpslaan } from './cloud-platform';
 import { controleerMermaid, mermaidBestandsnaam } from '../shared/mermaid-schema';

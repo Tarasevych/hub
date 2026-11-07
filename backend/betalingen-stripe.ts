@@ -10,7 +10,7 @@
 //     cijfers, geen betaal- of factuurlinks (een hosted_invoice_url is een sleutel om te betalen);
 //   • zonder sleutel: een eerlijke fout met de weg naar de wizard, nooit een lege lijst die «geen betalingen» lijkt.
 import { apiPlatformVaultItems, readOwnerVaultPlaintext } from './api-platform-kluis';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 
 export const STRIPE_API = 'https://api.stripe.com';
 export const STRIPE_DOEL = 'stripe';

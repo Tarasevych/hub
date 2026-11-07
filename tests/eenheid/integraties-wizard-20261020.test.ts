@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { checker } from './hulp/nep-google';
-import { SERVICE_HOSTS } from '../../backend/deployment-identity';
+import { SERVICE_HOSTS } from '../../backend/deployment-identiteit';
 import {
   GITHUB_OAUTH_SCOPES, GOOGLE_LOGIN_SCOPES, GOOGLE_SUITE_SCOPES, MICROSOFT_GRAPH_SCOPES, WIZARD_CODES, WIZARD_PROVIDERS, WIZARD_STAPPEN,
   geldigSecret, geldigeClientId, googleKluisTekst, leesGoogleKluis, wizardCodeTekst, wizardWaarden,

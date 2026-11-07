@@ -19,7 +19,7 @@ export async function main(): Promise<number> {
   writeFileSync(join(cur, 'deploy', 'agent', 'agent.mjs'), readFileSync(resolve('deploy/agent/agent.mjs')));
   writeFileSync(join(cur, 'deploy', 'mijn-ruimte-apparaat.service'), readFileSync(resolve('deploy/mijn-ruimte-apparaat.service')));
   writeFileSync(join(cur, 'dist-server', 'apparaat-koppelcode.mjs'), '// nep\n');
-  writeFileSync(join(cur, 'backend', 'deployment-identity.ts'), "export const PUBLIC_DOMAIN = 'example.test';\n");
+  writeFileSync(join(cur, 'backend', 'deployment-identiteit.ts'), "export const PUBLIC_DOMAIN = 'example.test';\n");
   const stub = (naam: string, inhoud: string) => { writeFileSync(join(bin, naam), `#!/bin/bash\n${inhoud}\n`); chmodSync(join(bin, naam), 0o755); };
   // systemd-run: schrijft zijn argumenten weg en geeft de koppelcode (of een fout, gestuurd via CODE_MODUS).
   stub('systemd-run', `printf '%s\\n' "$@" > "${log}/systemd-run.txt"\ncase "\${CODE_MODUS:-ok}" in ok) echo "[apparaat-koppelcode] ok" >&2; echo ABCD2345 ;; geen) echo "[apparaat-koppelcode] EIGENAAR_NIET_AANGEMELD: nog niet aangemeld" >&2; exit 3 ;; geen0) echo "[apparaat-koppelcode] EIGENAAR_NIET_AANGEMELD: nog niet aangemeld" >&2; exit 0 ;; fout) echo "[apparaat-koppelcode] PAIRING_CODE_RATE_LIMITED: te veel" >&2; exit 1 ;; *) exit 1 ;; esac`);

@@ -22,7 +22,7 @@ Let op: de aanwezigheid van bronmodules **bewijst niet** dat alle afzonderlijke 
 
 ### Identiteitswijziging (belangrijk)
 
-In het nieuwe `backend/deployment-identity.ts` is de canonieke toestand **zelfstandig**, `APP_ID='migrated-bg2v4h'`, `API_COOKIE_PATH='/'`, subdomeinen `*.tarasevych.com`. Historische waarden `app-8ppuax` en `c28444ec7eb73654e9` **niet terugzetten**. Bestanden voor authenticatie, OAuth, beleid, proxyconfiguratie, DB-migraties, Service Achtergrondproces en de installer zelf zijn ongewijzigd gebleven.
+In het nieuwe `backend/deployment-identiteit.ts` is de canonieke toestand **zelfstandig**, `APP_ID='migrated-bg2v4h'`, `API_COOKIE_PATH='/'`, subdomeinen `*.tarasevych.com`. Historische waarden `app-8ppuax` en `c28444ec7eb73654e9` **niet terugzetten**. Bestanden voor authenticatie, OAuth, beleid, proxyconfiguratie, DB-migraties, Service Achtergrondproces en de installer zelf zijn ongewijzigd gebleven.
 
 ## 1. Wijzigingen in v0.3
 

@@ -46,7 +46,7 @@ Tarasevych/hub
 │
 ├── backend/                         # Server-side bedrijfslogica van alle 10 actieve diensten
 │   ├── index.ts                     # Hoofdregister van API-routes, sessies, OAuth-transacties en werkruimtes
-│   ├── deployment-identity.ts       # Enige bron voor domeinen (*.tarasevych.com) en sessiecookie-parameters
+│   ├── deployment-identiteit.ts       # Enige bron voor domeinen (*.tarasevych.com) en sessiecookie-parameters
 │   ├── toegangslaag.ts              # Wachtwoorden, TOTP (AES-256-GCM), herstelcodes (HMAC), telefoons, inlogbeleid
 │   ├── toegangssleutels.ts          # Gebruikers-WebAuthn Passkeys
 │   ├── stap-op.ts                   # Step-Up herbevestigingsmechanisme voor gevoelige acties

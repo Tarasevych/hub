@@ -200,7 +200,7 @@ export async function main(): Promise<number> {
   let server: http.Server | null = null;
   try {
     const { createServer } = await import('../../server/start');
-    const { SERVICE_HOSTS } = await import('../../backend/deployment-identity');
+    const { SERVICE_HOSTS } = await import('../../backend/deployment-identiteit');
     server = createServer();
     await new Promise<void>((r) => server!.listen(0, '127.0.0.1', () => r()));
     const poort = (server.address() as { port: number }).port;

@@ -2,7 +2,7 @@
 // moet invullen om OAuth-koppelingen aan DEZE installatie te hangen (Google Cloud, Microsoft Entra, GitHub).
 //
 // Waarom een apart, puur bestand: de browser (src/integraties/Wizard.tsx), de server (backend/integraties-wizard.ts) en de
-// tests lezen dezelfde waarden. Alles wordt gerekend uit de hostnamen van de deployment (backend/deployment-identity.ts →
+// tests lezen dezelfde waarden. Alles wordt gerekend uit de hostnamen van de deployment (backend/deployment-identiteit.ts →
 // SERVICE_HOSTS), nooit uit een vaste domeinnaam: zet iemand de site op voorbeeld.nl, dan staan hier de adressen van voorbeeld.nl.
 //
 // Eerlijkheid:

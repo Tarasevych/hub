@@ -6,7 +6,7 @@ import { error, json } from '../server/platform';
 import { rateLimit } from '../server/platform/beveiliging';
 import { apiPlatformVaultItems, readOwnerVaultPlaintext } from './api-platform-kluis';
 import { metaUitRecord, vaultStaat } from '../shared/kluis-meta';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 import {
   GITHUB_APP_DOEL, GITHUB_OAUTH_DOEL, githubInstelWaarden, type GithubSleutelFeiten, type GithubVerbindingFeiten,
 } from '../shared/github-koppeling';

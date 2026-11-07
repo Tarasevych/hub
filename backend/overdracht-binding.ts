@@ -11,7 +11,7 @@
 // Een andere browser kan de cookie niet lezen of zetten (HttpOnly, eigen domein), dus een
 // ondergeschoven code is daar waardeloos.
 import {createHash,randomBytes} from 'node:crypto';
-import {COOKIE_SCOPE} from './deployment-identity';
+import {COOKIE_SCOPE} from './deployment-identiteit';
 
 export const HANDOFF_BINDING_COOKIE='tsv_handoff_binding';
 const MAX_AGE_S=30*24*60*60;

@@ -16,7 +16,7 @@ import { randomToken, sha256 } from './connectors-crypto';
 import * as store from './connectors-opslag';
 import { agentOnline, registreerTerminal, stuurNaarAgent, stuurTerminalOpen } from './connectors-gateway';
 import { actieveActivatie, TAB_RE, TechFout, type Gebruiker } from './tech-profiel';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 import { magApparaat } from '../shared/terminal';
 import * as opdr from './terminal-opdrachten';
 

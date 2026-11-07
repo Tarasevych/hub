@@ -73,7 +73,7 @@ export async function main(): Promise<number> {
   try {
     // ---------------------------------------------------------- reproductie K1 (bootstrap met een sessie zoals exchangeAgentToken die maakte)
     const { handler } = await import('../../backend/index');
-    const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identity');
+    const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identiteit');
     const maakSessie = async (authMethod: string | undefined, extra: Record<string, unknown> = {}) => {
       const token = randomBytes(32).toString('base64url'); const now = Date.now();
       const id = randomUUID();

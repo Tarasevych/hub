@@ -1,0 +1,205 @@
+name: IDENTITEIT-ACCOUNT · сторінка облікового запису (випуск)
+
+# Випуск сторінки облікового запису: один екран із дванадцяти розділів.
+# Пакет містить теку src/identiteit, опис у docs/ontwerp/identiteit-account і журнал завдання.
+# Ключ доступу в чат не передається: працює штатний ключ GitHub із правом запису вмісту.
+
+on:
+  push:
+    branches:
+      - 'feature/identiteit-account-**'
+    paths:
+      - 'docs/ontwerp/identiteit-account/**'
+      - 'src/identiteit/**'
+      - 'src/InstellingencentrumWeergave.tsx'
+      - 'src/VerenigdDienstApp.tsx'
+      - 'scripts/plaatsing-vaste-elementen.json'
+      - 'orchestratie/ontwikkelarchieven/IDENTITEIT-001.json'
+      - '.github/workflows/identiteit-account-uitgave.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: identiteit-account-uitgave
+  cancel-in-progress: false
+
+jobs:
+  uitgave:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Отримати теку сховища
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Пропустити, якщо для цієї фіксації вже є випуск
+        id: bestaatal
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VASTLEGGING="$(git rev-parse HEAD)"
+          BESTAAND="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq ".[] | select((.body // \"\") | contains(\"BRON-COMMIT: $VASTLEGGING\")) | .tag_name" | head -n 1)"
+          if [ -n "$BESTAAND" ]; then
+            echo "bestaat=$BESTAAND" >> "$GITHUB_OUTPUT"
+            echo "для цієї фіксації вже є випуск ($BESTAAND) — другого пакета не буде"
+          else
+            echo "bestaat=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Звірити робочу основу (без здогадів)
+        if: steps.bestaatal.outputs.bestaat == ''
+        run: |
+          set -euo pipefail
+          TS="$(date -u +%s)"
+          URL="https://hub.tarasevych.com/api/version?ts=$TS"
+          echo "запит: $URL"
+          if ! curl --fail --silent --show-error --max-time 30 "$URL" -o "$RUNNER_TEMP/prod.json"; then
+            echo "ПОМИЛКА: робочий сайт не відповів на /api/version ($URL) — основа невідома, пакет не складаємо." >&2
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/prod.json"
+          VERSIE="$(node -e 'const d=require(process.argv[1]);process.stdout.write(String(d.versie||""))' "$RUNNER_TEMP/prod.json")"
+          VASTLEGGING="$(node -e 'const d=require(process.argv[1]);process.stdout.write(String(d.bronCommit||d.commit||""))' "$RUNNER_TEMP/prod.json")"
+          node -e '
+            const [versie, vastlegging] = process.argv.slice(1);
+            if (!/^\d{8}-\d{6}$/.test(versie)) { console.error("ПОМИЛКА: некоректна версія у /api/version: " + versie); process.exit(1); }
+            if (!/^[0-9a-f]{40}$/.test(vastlegging)) { console.error("ПОМИЛКА: некоректна фіксація у /api/version: " + vastlegging); process.exit(1); }
+            console.log("основа: " + versie + " @ " + vastlegging.slice(0, 12));
+          ' "$VERSIE" "$VASTLEGGING"
+          {
+            echo "BASIS_VERSIE=$VERSIE"
+            echo "BASIS_COMMIT=$VASTLEGGING"
+          } >> "$GITHUB_ENV"
+
+      - name: Скласти опис випуску
+        if: steps.bestaatal.outputs.bestaat == ''
+        env:
+          SAMENVATTING_UK: "Сторінка облікового запису: дванадцять розділів на одній сторінці з меню-змістом і прокруткою, вікно фото з трьох джерел, пристосування до ширини екрана."
+          SAMENVATTING_NL: "De accountpagina: twaalf onderdelen op één pagina met inhoudsopgave en scrollen, een venster voor foto's uit drie bronnen en aanpassing aan de schermbreedte."
+          BEPERKING_UK: "Розділи з власними екранами лишилися без змін; випробувань застосунку не запускали — перевірено складання типів і повне складання проєкту."
+          BEPERKING_NL: "Onderdelen met een eigen scherm bleven ongewijzigd; toepassingstests niet uitgevoerd — wel typedracht en volledige bouw van het project."
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "UITGAVE_VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          echo "версія випуску: $VERSIE"
+          VASTLEGGING="$(git rev-parse HEAD)"
+          python3 - "$VERSIE" "$VASTLEGGING" "$RUNNER_TEMP/UITROL-MANIFEST.json" <<'PY'
+          import datetime, json, os, sys
+          versie, vastlegging, uit = sys.argv[1:4]
+          basis_versie = os.environ["BASIS_VERSIE"]
+          basis_vastlegging = os.environ["BASIS_COMMIT"]
+          m = {
+              "schema": 1,
+              "versie": versie,
+              "aangemaakt": datetime.datetime.now(datetime.timezone.utc).astimezone().isoformat(timespec="seconds"),
+              "herkomst": "сховище Tarasevych/hub, гілка %s, фіксація %s, основа %s @ %s"
+                          % (os.environ.get("GITHUB_REF_NAME", "невідома"), vastlegging, basis_versie, basis_vastlegging[:12]),
+              "auteur": "Тарасевич Павло",
+              "zonderAi": False,
+              "deelnemers": [
+                  {"soort": "mens", "naam": "Тарасевич Павло", "rollen": ["auteur", "controle"]},
+                  {"soort": "ai", "naam": "AutoClaw", "platform": "AutoClaw", "tool": "PowerShell, git, GitHub Actions",
+                   "model": {"id": None, "versie": None, "bron": "onbekend"},
+                   "rollen": ["ontwikkeling", "verpakken"]},
+              ],
+              "beschrijving": {
+                  "uk": {"titel": "Сторінка облікового запису",
+                         "samenvatting": os.environ["SAMENVATTING_UK"],
+                         "wijzigingen": ["Дванадцять розділів на одній сторінці з меню-змістом і підсвічуванням під час прокрутки",
+                                         "Вікно фото: пристрій, фото сервісу, посилання https; смітничок 24 px у куті",
+                                         "Пристосування до ширини за контейнером: кнопки на всю ширину до 640 px"],
+                         "fixes": [],
+                         "beperkingen": [os.environ["BEPERKING_UK"]],
+                         "instructies": "Перегляньте сторінку й підтвердьте випуск ключем доступу власника."},
+                  "nl": {"titel": "Accountpagina",
+                         "samenvatting": os.environ["SAMENVATTING_NL"],
+                         "wijzigingen": ["Twaalf onderdelen op één pagina met inhoudsopgave en markering tijdens scrollen",
+                                         "Venster voor foto's: apparaat, servicefoto, https-koppeling; prullenbak van 24 px in de hoek",
+                                         "Aanpassing aan de breedte via de container: knoppen over de volle breedte tot 640 px"],
+                         "fixes": [],
+                         "beperkingen": [os.environ["BEPERKING_NL"]],
+                         "instructies": "Bekijk de pagina en keur de uitgave goed met de toegangssleutel van de eigenaar."},
+              },
+          }
+          with open(uit, "w", encoding="utf-8") as f:
+              f.write(json.dumps(m, ensure_ascii=False, indent=2) + "\n")
+          print("опис: " + uit)
+          PY
+
+      - name: Скласти пакет
+        if: steps.bestaatal.outputs.bestaat == ''
+        run: |
+          set -euo pipefail
+          VERSIE="$UITGAVE_VERSIE"
+          HOLTE="$(git rev-parse HEAD)"
+          TAK="${GITHUB_REF_NAME}"
+          DOSSIER="orchestratie/ontwikkelarchieven/IDENTITEIT-001.json"
+          git show "HEAD:$DOSSIER" > "$RUNNER_TEMP/dossier.json"
+          python3 - "$VERSIE" "$HOLTE" "$TAK" "$DOSSIER" "$RUNNER_TEMP" <<'PY'
+          import hashlib, json, sys
+          versie, holte, tak, pad, tydelik = sys.argv[1:6]
+          ruw = open(tydelik + "/dossier.json", "rb").read()
+          dossier = json.loads(ruw.decode("utf-8"))
+          verpligt = ["tijdlijn", "keuzes", "wijzigingen", "controles", "bronnen", "beperkingen"]
+          ontbreekt = [k for k in verpligt if not isinstance(dossier.get(k), list) or not dossier[k]]
+          if dossier.get("schema") != 1 or dossier.get("taakId") != "IDENTITEIT-001" or ontbreekt:
+              sys.exit("ПОМИЛКА: у журналі бракує розділів: " + ", ".join(ontbreekt))
+          if not isinstance(dossier.get("opdracht"), str) or len(dossier["opdracht"].strip()) < 40:
+              sys.exit("ПОМИЛКА: поле opdracht у журналі надто коротке")
+          if not isinstance(dossier.get("privacy"), dict) or dossier["privacy"].get("geheimenUitgesloten") is not True:
+              sys.exit("ПОМИЛКА: у журналі немає підтвердження privacy.geheimenUitgesloten")
+          ref = {"schema": 1, "taakId": "IDENTITEIT-001", "repo": "Tarasevych/hub", "tak": tak, "commit": holte,
+                 "pad": pad, "sha256": hashlib.sha256(ruw).hexdigest(),
+                 "url": "https://github.com/Tarasevych/hub/blob/%s/%s" % (holte, pad),
+                 "release": "https://github.com/Tarasevych/hub/releases/tag/%s" % versie,
+                 "pakket": "mijn-ruimte-%s.tar.gz" % versie}
+          open(tydelik + "/ONTWIKKELARCHIEF.json", "w", encoding="utf-8").write(json.dumps(ref, ensure_ascii=False, indent=2) + "\n")
+          print("відбиток журналу: " + ref["sha256"])
+          PY
+          mkdir -p uitvoer
+          AUTEUR="Тарасевич Павло" \
+          AGENT="autoclaw" \
+          SAMENVATTING="Сторінка облікового запису: дванадцять розділів на одній сторінці з меню-змістом і прокруткою, вікно фото з трьох джерел, пристосування до ширини екрана." \
+          BASIS_VERSIE="$BASIS_VERSIE" \
+          BASIS_COMMIT="$BASIS_COMMIT" \
+          UITROL_VERSIE_OVERRIDE="$VERSIE" \
+          MANIFEST="$RUNNER_TEMP/UITROL-MANIFEST.json" \
+          ONTWIKKELARCHIEF_BESTAND="$RUNNER_TEMP/ONTWIKKELARCHIEF.json" \
+          bash deploy/uitrol/maak-voorstelpakket.sh uitvoer HEAD
+          test -f "uitvoer/mijn-ruimte-$VERSIE.tar.gz"
+          (cd uitvoer && sha256sum "mijn-ruimte-$VERSIE.tar.gz" > "mijn-ruimte-$VERSIE.tar.gz.sha256")
+          (cd uitvoer && sha256sum -c "mijn-ruimte-$VERSIE.tar.gz.sha256")
+          # без `tar | grep -q`: під pipefail закриття потоку дає код 141, тому спершу зберігаємо перелік
+          tar -tzf "uitvoer/mijn-ruimte-$VERSIE.tar.gz" > "$RUNNER_TEMP/archiefinhoud.txt"
+          grep -qxF "mijn-ruimte-$VERSIE/ONTWIKKELARCHIEF.json" "$RUNNER_TEMP/archiefinhoud.txt"
+          grep -qxF "mijn-ruimte-$VERSIE/src/identiteit/IdentiteitAccountPagina.tsx" "$RUNNER_TEMP/archiefinhoud.txt"
+          SCHA="$(sha256sum "uitvoer/mijn-ruimte-$VERSIE.tar.gz" | cut -d' ' -f1)"
+          echo "UITGAVE_SCHA=$SCHA" >> "$GITHUB_ENV"
+          python3 - "$VERSIE" "$SCHA" "uitvoer/mijn-ruimte-$VERSIE.tar.gz" <<'PY'
+          import json, os, sys
+          versie, scha, pad = sys.argv[1:4]
+          print(json.dumps({"versie": versie, "sha256": scha, "bytes": os.path.getsize(pad)}, ensure_ascii=False))
+          PY
+
+      - name: Оприлюднити випуск на GitHub
+        if: steps.bestaatal.outputs.bestaat == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          HOLTE="$(git rev-parse HEAD)"
+          gh release create "$UITGAVE_VERSIE" \
+            "uitvoer/mijn-ruimte-$UITGAVE_VERSIE.tar.gz" \
+            "uitvoer/mijn-ruimte-$UITGAVE_VERSIE.tar.gz.sha256" \
+            --target "$HOLTE" \
+            --title "ІДЕНТИТЕТ-ACCOUNT · $UITGAVE_VERSIE" \
+            --notes "Сторінка керування обліковим записом: дванадцять розділів на одній сторінці з меню-змістом, підсвічуванням під час прокрутки й прямими посиланнями на розділ. Натискання на аватар відкриває вікно фото (пристрій, фото сервісу, посилання https); смітничок 24 px у куті не перекриває камеру. Пристосування до ширини за контейнером: кнопки на всю ширину до 640 px. Видалення фото на сервері ще не підтримується — смітничок повертає фото сервісу. Журнал розробки: orchestratie/ontwikkelarchieven/IDENTITEIT-001.json. Встановлення — лише за рішенням власника з ключем доступу. BRON-COMMIT: $HOLTE" \
+            --prerelease --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$UITGAVE_VERSIE" \
+            --jq '.assets[] | select(.name | endswith(".tar.gz")) | "\(.name) \(.digest)"' > "$RUNNER_TEMP/afdruk.txt"
+          cat "$RUNNER_TEMP/afdruk.txt"
+          grep -q "sha256:$UITGAVE_SCHA" "$RUNNER_TEMP/afdruk.txt" || { echo "ПОМИЛКА: відбиток на GitHub не збігається з $UITGAVE_SCHA" >&2; exit 1; }

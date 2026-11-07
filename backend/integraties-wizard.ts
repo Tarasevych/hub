@@ -18,7 +18,7 @@ import { error, json, secrets } from '../server/platform';
 import { envKey32 } from '../server/platform/beveiliging';
 import type { RouterMiddleware } from '../server/platform/router';
 import { getPool } from '../server/platform/pg';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 import { resolveGoogleContour } from './google-contour';
 import { oauthApp, appSleutel, doelAanwezig } from './github-koppeling-opslag';
 import { appInstallaties } from './github-app';

@@ -7,7 +7,7 @@
 // De publieke callback accepteert de state uitsluitend als dezelfde browser deze cookie meestuurt (tijdconstant)
 // en wist de cookie direct bij afronding.
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { COOKIE_SCOPE } from './deployment-identity';
+import { COOKIE_SCOPE } from './deployment-identiteit';
 import { metBindingCookie } from './overdracht-binding';
 
 export { metBindingCookie };

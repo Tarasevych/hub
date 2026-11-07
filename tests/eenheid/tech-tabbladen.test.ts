@@ -18,7 +18,7 @@ export async function main(): Promise<number> {
   const { check, einde } = checker('tech-tabbladen');
   const pool = getPool('systeem');
   const { handler } = await import('../../backend/index');
-  const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identity');
+  const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identiteit');
 
   const bestaand = (await pool.query(`SELECT id, data->>'email' AS email FROM app.records WHERE tbl='users' AND data->>'role'='owner' LIMIT 1`)).rows[0];
   const uid = bestaand ? String(bestaand.id) : randomUUID();

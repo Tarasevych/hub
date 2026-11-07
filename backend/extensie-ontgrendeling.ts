@@ -25,7 +25,7 @@ import { getPool } from '../server/platform/pg';
 import * as grants from './ai-toestemmingen';
 import { openCommandKey, signOntgrendeling } from './connectors-crypto';
 import * as store from './connectors-opslag';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 import { capsBinnenBeleid, leesBeleid, maxDuurMs, ruimteAan } from './extensie-beleid';
 import { huidigeNamens } from './mcp-namens';
 import * as agentKleuren from './agent-kleuren';

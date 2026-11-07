@@ -82,7 +82,7 @@ export async function main(): Promise<number> {
   const { check, einde } = checker('meldingen-sferen-20261022');
   const pool = getPool('systeem');
   const idx = await import('../../backend/index');
-  const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identity');
+  const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identiteit');
   const sfx = randomBytes(4).toString('hex');
   const stil = console.error; console.error = () => {};
   const sessies: string[] = [];
