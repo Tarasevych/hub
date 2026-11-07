@@ -62,7 +62,7 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
 | `db-rollen.sql` / `db-rollen-terug.sql` | Rollen, eigendom, rechten, `FORCE ROW LEVEL SECURITY`, `jsonb_contains` LEAKPROOF (GIN-index onder RLS; opnieuw draaien na een major-upgrade van Postgres) / eigendom terug naar de oude rol, FORCE en afdwingen uit. |
 | `geheimen-aanmaken.sh` | **20.10.2026.** Genereert ALLE ontbrekende sleutels (`openssl rand`) in `geheimen.env` (incl. `MAIL_APP_WACHTWOORD_SLEUTEL_V1`, `AGENDA_ABONNEMENT_SLEUTEL_V1`); bestaande waarden blijven; toont alleen naam + vingerafdruk; schrijft `geheimen.journaal`. Loopt automatisch als eerste stap van `installeer-app.sh installeren`; met de hand: `mijn-ruimte-installeer geheimen`. `geheimen-aanvullen.sh` (oude naam) verwijst ernaar. |
 | `geheimen-register.sh` | Register van alle geheimen zonder waarden (naam, doel, waar, vingerafdruk, datum, wie roteert): `mijn-ruimte-installeer geheimen-register --uit /etc/mijn-ruimte/GEHEIMEN-REGISTER.md`. Sjabloon voor de eigenaar: `GEHEIMEN-REGISTER.md`. |
-| `oauth-client-zetten.sh` | OAuth-client van Google of Microsoft in `geheimen.env` zetten met VERBORGEN invoer (terminal) of via stdin (pc-script), formaatcontrole, atomisch schrijven, herstart + `/__gezondheid`-controle: `mijn-ruimte-installeer oauth-client google|microsoft`. `google-login-zetten.sh` (oude naam) verwijst ernaar. De waarden zelf staan in admin → Інтеграції → Майстер підключень. |
+| `oauth-client-zetten.sh` | OAuth-client van Google of Microsoft in `geheimen.env` zetten met VERBORGEN invoer (terminal) of via stdin (pc-script), formaatcontrole, atomisch schrijven, herstart + `/__gezondheid`-controle: `mijn-ruimte-installeer oauth-client google|microsoft`. `google-login-zetten.sh` (oude naam) verwijst ernaar. De waarden zelf staan in admin → Інтеграції → Майстер під'єднань. |
 | `google-login-zetten.sh` | Installeren als `/usr/local/sbin/google-login-zetten` (`install -o root -g root -m 0755`). Leest twee regels van stdin (client-ID, client-secret), controleert het formaat, zet `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` in `geheimen.env` (eigenaar/rechten blijven, atomisch via tijdelijk bestand + `mv`), verwijdert een afwijkende `GOOGLE_SUITE_CLIENT_ID` (die wint anders), herstart `mijn-ruimte`, eist `is-active` + HTTP 200 voor `Host: hub.tarasevych.com` op `127.0.0.1:8080`. Back-up (root, 0600) wordt na succes geshred; bij falen oud bestand terug + herstart. Toont nooit waarden. |
 | `../scripts/google-login-instellen.ps1` | Windows-pc: vraagt Client ID (zichtbaar) en Client secret (`Read-Host -AsSecureString`) en stuurt ze via de **stdin** van `ssh -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver -o BatchMode=yes beheer@203.0.113.10 sudo -n /usr/local/sbin/google-login-zetten`; toont alleen OK/mislukt. Vereist dat `beheer` dit zonder wachtwoord mag (`sudo -n`, zoals in `HERSTEL.md`). |
 
@@ -78,7 +78,7 @@ Dit zijn geen app-geheimen (die staan in `ENV-VARS.md`), alleen instellingen van
 | `UPLOADS_DIR` | `backup-maken.sh`, units | `/srv/data/uploads` | Map met geüploade bestanden. |
 | `BOUW_GEHEUGEN_MAX` / `BOUW_SWAP_MAX` / `BOUW_HEAP_MB` | `installeer-app.sh` | `1400M` / `2G` / `2048` | Geheugenplafond (cgroup) en Node-heap voor de build. De vite-build heeft ~1,5 GB heap nodig; op een VM met 2 GB RAM wijkt hij uit naar swap. Een tekort stopt alleen de build. |
 | `ROOK_UIT` / `ROOK_CHROMIUM` / `ROOK_GEHEUGEN_MAX` / `ROOK_TIJD_SEC` / `ROOK_PAGINA_SEC` | `installeer-app.sh` | uit / (zoekt zelf) / `1500M` / `600` / `20` | Rendercontrole na het activeren (22.10.2026, RUNBOOK-VEILIGE-UITROL §8a): `ROOK_UIT=1` slaat hem over; pad naar de browser; geheugenplafond en tijdslimiet van de stand; seconden per pagina. |
-| `NAZORG_ROOK_NA` / `NAZORG_ROOK_TUSSEN` | `mijn-ruimte-nazorg.sh` | `120` / `600` | Seconden na de activering vóór de live rendercontrole; minimale tussentijd voor verzoeken vanaf de site («Перевірити рендеринг»). |
+| `NAZORG_ROOK_NA` / `NAZORG_ROOK_TUSSEN` | `mijn-ruimte-nazorg.sh` | `120` / `600` | Seconden na de activering vóór de live rendercontrole; minimale tussentijd voor verzoeken vanaf de site («Перевірити відмальовування»). |
 | `BACKUP_DIR` | `backup-maken.sh` | `/srv/backups/mijn-ruimte` | Doelmap van de back-ups op de VM. |
 | `BACKUP_BEWAAR_DAGEN` | `backup-maken.sh` | `7` | Hoeveel dagen back-ups op de VM blijven staan. |
 | `BACKUP_ONTVANGER` | `backup-maken.sh` | `/etc/mijn-ruimte/backup-ontvanger.age.pub` | Publieke age-sleutel waarnaar versleuteld wordt. |
@@ -98,7 +98,7 @@ gebruiksrecht).
 | Grootte | ≤ **200 KB** per bestand, hoogstens 64 bestanden. |
 | PNG | moet een echte PNG zijn (handtekening + IHDR). |
 | SVG | wordt **ontsmet**: XML-proloog, commentaar, `<metadata>` en editor-naamruimten (inkscape, sodipodi, …) gaan eruit. **Geweigerd** (met reden) wordt elk bestand met `<script>`, `<foreignObject>`, `<image>`, `<a>`, animatie-elementen, `on…`-attributen, `javascript:`, `href`/`url()` naar iets anders dan `#…`, `@import`, `DOCTYPE`/`ENTITY`, of een onbekend element. De browser krijgt het bestand als data-URI in een `<img>` (daar voert een SVG nooit script uit). |
-| Opladen via de site | admin → **Інтеграції** → «Майстер підключень» → «Власні логотипи сервісів»: dienst kiezen, bestand kiezen. Alleen de eigenaar, met een verse **passkey**-bevestiging; elke wijziging staat in het beheerjournaal (`integration.merk-eigen.*`). Daar staan ook de bestanden uit de map die NIET aanvaard zijn, met de reden. |
+| Opladen via de site | admin → **Інтеграції** → «Майстер під'єднань» → «Власні логотипи сервісів»: dienst kiezen, bestand kiezen. Alleen de eigenaar, met een verse **passkey**-bevestiging; elke wijziging staat in het beheerjournaal (`integration.merk-eigen.*`). Daar staan ook de bestanden uit de map die NIET aanvaard zijn, met de reden. |
 | Met de hand | als `beheer`: het bestand eerst naar uw thuismap kopiëren (`scp`), dan `sudo -u mijnruimte install -m 0644 ~/ukrnet.svg /srv/mijn-ruimte/merk-eigen/ukrnet.svg`. Geen herstart nodig: de server leest de map opnieuw (cache 30 s); een open pagina ziet het na herladen. |
 | Weghalen | in admin «Видалити», of het bestand uit de map verwijderen. Dan komt de neutrale plaat (of de ingebouwde vorm) terug. |
 
@@ -166,10 +166,10 @@ Omgevingsvariabelen `ZOEK_*`: `ENV-VARS.md`. De index is afgeleide data: `TRUNCA
 HTTP 200 is geen bewijs dat een pagina rendert (release 20261021-221718: «Buffer is not defined», elke admin-pagina wit). Na het activeren
 opent de installer de sleutelpagina's in een headless Chromium op de server (wegwerpkopie van de release op een eigen database
 `mijnruimte_rook_<stempel>`, testeigenaar + technisch profiel) en importeert elke bundel; kapot → automatisch terug naar de vorige release
-(gebeurtenis `ROOK_TERUGGEDRAAID` op «Оновлення»). Zonder browser alleen de modulecontrole in Node, eerlijk gemeld als «рендеринг не перевірено».
+(gebeurtenis `ROOK_TERUGGEDRAAID` op «Оновлення»). Zonder browser alleen de modulecontrole in Node, eerlijk gemeld als «відмальовування не перевірено».
 ```bash
 sudo /usr/local/sbin/mijn-ruimte-installeer browser-controle      # eenmalig: chrome-headless-shell (vastgepind, SHA-256) in /srv/mijn-ruimte/browser
-sudo /usr/local/sbin/mijn-ruimte-installeer rook-controle [--live]  # handmatig; «Діагностика» → «Перевірити рендеринг» doet hetzelfde via de nazorg-timer
+sudo /usr/local/sbin/mijn-ruimte-installeer rook-controle [--live]  # handmatig; «Діагностика» → «Перевірити відмальовування» doet hetzelfde via de nazorg-timer
 ```
 Uitslag: `/var/lib/mijn-ruimte-uitrol-status/rook-controle.json` (en `rook-controle-kapot.json`). Details: `RUNBOOK-VEILIGE-UITROL.md` §8a.
 
