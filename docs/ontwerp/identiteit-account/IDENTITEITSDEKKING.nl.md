@@ -1,11 +1,11 @@
 > 🌐 **Taal / Мова:** [Українська](ПОКРИТТЯ-ІДЕНТИЧНОСТІ.uk.md) · **Nederlands** | [Hoofdpagina](../../../LEESMIJ.md) · [Documentatie-index](../../INDEX.nl.md)
 
-# Dekking van categorie `identity` — 12 secties (`identity-coverage.nl.md`)
+# Dekking van categorie `identity` — 12 secties (`IDENTITEITSDEKKING.nl.md`)
 
 - **Bron van de lijst:** `shared/menu-model.ts → MENU_PAGINAS.identity` en `src/identiteit/identiteit-tabs.ts`.
-- **Interactief prototype:** [`identity-live.html`](./identity-live.html).
+- **Interactief prototype:** [`ПРОТОТИП-АКАУНТА.html`](./ПРОТОТИП-АКАУНТА.html).
 - **Productie-UI in de applicatie:** `src/identiteit/IdentiteitAccountPagina.tsx`, `src/identiteit/Profielfoto.tsx`, `src/identiteit/identiteit-account.css` (`IDENTITY-002`).
-- **Technische specificatie:** [`TZ-account-2026-11-04.nl.md`](./SPECIFICATIE-ACCOUNT-2026-11-04.nl.md).
+- **Technische specificatie:** [`SPECIFICATIE-ACCOUNT-2026-11-04.nl.md`](./SPECIFICATIE-ACCOUNT-2026-11-04.nl.md).
 
 | # | Sectie | Dekking in prototype en applicatie | Status |
 |---|---|---|---|
@@ -22,4 +22,4 @@
 | 11 | `widgets` | Volgorde en zichtbaarheid van werkbladwidgets | ✅ |
 | 12 | `sharing` | Gedeelde toegang, rechtenniveaus en gastsessies | ✅ |
 
-**Totaal: 12/12 secties geïntegreerd op één pagina met inhoudsopgave (`.ia-toc`) en `scroll-spy`.**
+**Totaal: 12/12 secties geïntegreerd op één pagina met inhoudsopgave (`.ia-toc`) en markering tijdens scrollen.**
