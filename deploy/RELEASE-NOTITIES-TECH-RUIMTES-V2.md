@@ -6,7 +6,7 @@ aangeraakt; geen enkel verzoek naar *.tarasevych.com (alle tests liepen lokaal, 
 ## Samenvatting
 Twee parallelle ruimtes van één account: «Звичайний простір» en «Технічний простір». Wisselen zonder opnieuw aan te melden
 (terug naar Звичайний = **pauze**), drie duidelijke termijnen: «На час (до HH:MM)», «До завершення технічного сеансу»,
-«До виходу з акаунта на сайті». Uitloggen van de site sluit altijd ook de technische sessie; «Вийти з технічного сеансу» logt nooit uit
+«До виходу з облікового запису на сайті». Uitloggen van de site sluit altijd ook de technische sessie; «Вийти з технічного сеансу» logt nooit uit
 van de site; uitloggen in één tabblad laat lange extensie-ontgrendelingen («1 рік», «без обмеження») staan — alleen afmelden van de site of
 «Вийти всюди» trekt ze in. Eén beslisfunctie (`shared/ruimte-toegang.ts`) voor site, AI/MCP en extensie; AI-toegang gebruikt dezelfde
 drie termijnen. Niet-beschikbare termijnen blijven zichtbaar, uitgegrijsd, met reden. Nieuw venster «Доступ і терміни» (6 tabbladen),
@@ -60,14 +60,14 @@ gedrag. Tabellen `app.tech_ruimte_*` blijven staan en worden niet gelezen. Vorig
   bevestiging (bevestigingsrecords gewist); termijn bijtellen (+1 u) en vervangen (15 min); «Доступ і терміни» (6 tabs) en AI-toegang
   met dezelfde termijnen (DB gecontroleerd); drie uitlogkeuzes; «Вийти з технічного сеансу» laat de site-sessie en «1 рік»-ontgrendeling
   staan; tweede tabblad deelt de sessie zonder bevestiging; één tabblad uitloggen laat «1 рік»/«без обмеження» en de sessie
-  «до виходу з акаунта на сайті» staan; «Вийти з акаунта на сайті» (met bevestiging) beëindigt site + technisch en trekt ontgrendelingen in;
+  «до виходу з облікового запису на сайті» staan; «Вийти з облікового запису на сайті» (met bevestiging) beëindigt site + technisch en trekt ontgrendelingen in;
   «Вийти всюди» leidt naar Безпека → Сесії; rol met plafond 60 min: 5 termijnen uitgegrijsd met reden; NL en 390 px zonder overloop.
 
 ## Wat NIET geverifieerd is
 - Aanmelden met Google en bevestigen met passkey/Google (lokaal niet mogelijk): de site-sessie is in de DB gezaaid; bevestiging liep
   via een echte TOTP-code in het echte venster (authenticator in de DB gezaaid).
 - Uitloggen in één tabblad is aangeroepen met hetzelfde API-verzoek als de client (`logout-current`) via fetch in de pagina; het hub-menu
-  zelf heeft alleen «Вийти з цього акаунту» (hele browser).
+  zelf heeft alleen «Вийти з цього обліковому запису» (hele browser).
 - «Вийти всюди» zelf (de bevestigde knop op Безпека → Сесії) is niet doorgeklikt; alleen de doorverwijzing.
 - Echte browserextensie en echte MCP-client: ontgrendelingen en een MCP-verbinding zijn in de DB gezaaid; MCP-poortgedrag alleen in de
   eenheidstest (58).

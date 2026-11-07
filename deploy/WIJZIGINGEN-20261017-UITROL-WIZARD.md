@@ -5,9 +5,9 @@ Voortbouwend op `WIJZIGINGEN-20261017-UITROL-DASHBOARD.md`. Alles hieronder is i
 
 ## 1. Technisch profiel (migratie 0048)
 - Vaste duren: 8 uur erbij (eigenaar-plafond 480 min). Rollen met een plafond < 240 min (beheerder, 60) krijgen **geen** open einde.
-- «До виходу з акаунта» en «До виходу з технічного profile» hebben geen tijdslimiet meer (technische achtervang 366 dagen in de database).
+- «До виходу з облікового запису» en «До виходу з технічного profile» hebben geen tijdslimiet meer (technische achtervang 366 dagen in de database).
 - Het profiel eindigt bij uitloggen (`beeindigenBijUitloggen`, aangeroepen bij uitloggen van deze browser/het account/overal/alle browsers).
-- Het dialoogvenster toont geen «(не довше …)»-tekst meer; de balk toont «до виходу з акаунта / з профілю».
+- Het dialoogvenster toont geen «(не довше …)»-tekst meer; de balk toont «до виходу з облікового запису / з профілю».
 
 ## 2. Wizard «Нове оновлення» (`src/uitrol/Upload.tsx`, vervangt «крок 5»)
 Vijf stappen: Файл → Перевірка → Завантаження → Схвалення → Встановлення. Na elke afgeronde stap scrollt de pagina naar de volgende,
